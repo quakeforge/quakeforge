@@ -64,7 +64,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/quakeio.h"
 #include "QF/sys.h"
@@ -421,7 +420,7 @@ SL_Con_List (server_entry_t *sldata)
 		cp = SL_Get_By_Num (sldata, serv);
 		if (!cp)
 			break;
-		Con_Printf ("%i) %s\n", (serv + 1), cp->desc);
+		Sys_Printf ("%i) %s\n", (serv + 1), cp->desc);
 	}
 }
 
@@ -461,27 +460,27 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 	cp = SL_Get_By_Num (sldata, (slitemno - 1));
 	if (!cp)
 		return;
-	Con_Printf ("Server: %s\n", cp->server);
-	Con_Printf ("Ping: ");
+	Sys_Printf ("Server: %s\n", cp->server);
+	Sys_Printf ("Ping: ");
 	if (cp->pongback)
-		Con_Printf ("%i\n", (int) (cp->pongback * 1000));
+		Sys_Printf ("%i\n", (int) (cp->pongback * 1000));
 	else
-		Con_Printf ("N/A\n");
+		Sys_Printf ("N/A\n");
 	if (cp->status) {
 		char *s;
 
-		Con_Printf ("Name: %s\n", cp->desc);
-		Con_Printf ("Game: %s\n", Info_ValueForKey (cp->status, "*gamedir"));
-		Con_Printf ("Map: %s\n", Info_ValueForKey (cp->status, "map"));
+		Sys_Printf ("Name: %s\n", cp->desc);
+		Sys_Printf ("Game: %s\n", Info_ValueForKey (cp->status, "*gamedir"));
+		Sys_Printf ("Map: %s\n", Info_ValueForKey (cp->status, "map"));
 
 		s = Info_MakeString (cp->status, 0);
 		for (i = 0; i < strlen (s); i++)
 			if (s[i] == '\n')
 				playercount++;
-		Con_Printf ("Players: %i/%s\n", playercount,
+		Sys_Printf ("Players: %i/%s\n", playercount,
 					Info_ValueForKey (cp->status, "maxclients"));
 	} else
-		Con_Printf ("No Details Available\n");
+		Sys_Printf ("No Details Available\n");
 }
 
 static void
@@ -535,35 +534,35 @@ SL_Command (void)
 		SL_Con_List (slist); 
 	else if (strcasecmp (Cmd_Argv (1), "switch") == 0) {
 		if (SL_Switch ())
-			Con_Printf ("Switched to Server List from Masters\n");
+			Sys_Printf ("Switched to Server List from Masters\n");
 		else
-			Con_Printf ("Switched to Favorite Server List\n");
+			Sys_Printf ("Switched to Favorite Server List\n");
 	} else if (strcasecmp (Cmd_Argv (1), "refresh") == 0) {
 		if (Cmd_Argc () == 2)
 			SL_Update (slist);
 		else
-			Con_Printf ("Syntax: slist refresh\n");
+			Sys_Printf ("Syntax: slist refresh\n");
 	} else if (strcasecmp (Cmd_Argv (1),"update") == 0) {
 		if (Cmd_Argc () == 2) {
 			if (!which_slist)
-				Con_Printf ("ERROR: This of for updating the servers from a "
+				Sys_Printf ("ERROR: This of for updating the servers from a "
 							"list of masters\n");
 			else
 				SL_MasterUpdate ();
 		} else
-			Con_Printf ("Syntax: slist update\n");
+			Sys_Printf ("Syntax: slist update\n");
 	} else if (strcasecmp (Cmd_Argv (1), "connect") == 0) {
 		if (Cmd_Argc () == 3) {
 			sltemp = atoi (Cmd_Argv (2)); 
 			if (sltemp && (sltemp <= SL_Len (slist)))
 				SL_Connect (slist, sltemp);
 			else
-				Con_Printf ("Error: Invalid Server Number -> %s\n",
+				Sys_Printf ("Error: Invalid Server Number -> %s\n",
 							Cmd_Argv (2));
 		} else if ((Cmd_Argc () == 2) && slist_last_details)
 			SL_Connect (slist, slist_last_details);
 		else
-			Con_Printf ("Syntax: slist connect #\n");
+			Sys_Printf ("Syntax: slist connect #\n");
 	} else {
 		sltemp = atoi (Cmd_Argv (1));
 		if ((Cmd_Argc () == 2) && sltemp && (sltemp <= SL_Len (slist)))

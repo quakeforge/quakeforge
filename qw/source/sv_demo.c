@@ -150,7 +150,7 @@ void
 SV_Stop (int reason)
 {
 	if (!recorder) {
-		Con_Printf ("Not recording a demo.\n");
+		Sys_Printf ("Not recording a demo.\n");
 		return;
 	}
 
@@ -377,7 +377,7 @@ SV_Record (char *name)
 
 	demo_file = QFS_Open (name, "wb");
 	if (!demo_file) {
-		Con_Printf ("ERROR: couldn't open %s\n", name);
+		Sys_Printf ("ERROR: couldn't open %s\n", name);
 		return;
 	}
 
@@ -633,12 +633,12 @@ SV_Record_f (void)
 	dstring_t  *name = dstring_newstr ();
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("record <demoname>\n");
+		Sys_Printf ("record <demoname>\n");
 		return;
 	}
 
 	if (sv.state != ss_active) {
-		Con_Printf ("Not active yet.\n");
+		Sys_Printf ("Not active yet.\n");
 		return;
 	}
 
@@ -734,7 +734,7 @@ SV_EasyRecord_f (void)
 	int         i;
 
 	if (Cmd_Argc () > 2) {
-		Con_Printf ("easyrecord [demoname]\n");
+		Sys_Printf ("easyrecord [demoname]\n");
 		return;
 	}
 
@@ -791,7 +791,7 @@ Demo_Init (void)
 	}
 
 	if (size < MIN_DEMO_MEMORY) {
-		Con_Printf ("Minimum memory size for demo cache is %dk\n",
+		Sys_Printf ("Minimum memory size for demo cache is %dk\n",
 					MIN_DEMO_MEMORY / 1024);
 		size = MIN_DEMO_MEMORY;
 	}

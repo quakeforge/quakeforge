@@ -475,7 +475,7 @@ PF_log (progs_t *pr)
 static void
 PF_conprint (progs_t *pr)
 {
-	Con_Printf ("%s", PF_VarString (pr, 0));
+	Sys_Printf ("%s", PF_VarString (pr, 0));
 }
 
 #define QWE (PR_RANGE_QWE << PR_RANGE_SHIFT) |

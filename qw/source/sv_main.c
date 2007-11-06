@@ -274,7 +274,7 @@ SV_Error (const char *error, va_list argptr)
 	string = dstring_new ();
 	dvsprintf (string, error, argptr);
 
-	Con_Printf ("%s\n", string->str);
+	Sys_Printf ("%s\n", string->str);
 
 	if (sv_net_initialized) {
 		dstring_insertstr (string, 0, "server crashed: ");
@@ -633,7 +633,7 @@ SVC_Log (void)
 		return;
 	}
 
-	Con_DPrintf ("sending log %i to %s\n", svs.logsequence - 1,
+	Sys_DPrintf ("sending log %i to %s\n", svs.logsequence - 1,
 				 NET_AdrToString (net_from));
 
 //	snprintf (data, sizeof (data), "stdlog %i\n", svs.logsequence - 1);
@@ -1790,7 +1790,7 @@ SV_ReadPackets (void)
 			if (cl->netchan.qport != qport)
 				continue;
 			if (cl->netchan.remote_address.port != net_from.port) {
-				Con_DPrintf ("SV_ReadPackets: fixing up a translated port\n");
+				Sys_DPrintf ("SV_ReadPackets: fixing up a translated port\n");
 				cl->netchan.remote_address.port = net_from.port;
 			}
 			if (Netchan_Process (&cl->netchan)) {

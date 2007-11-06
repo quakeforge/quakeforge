@@ -50,16 +50,17 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/dstring.h"
+#include "QF/gib.h"
 #include "QF/hash.h"
 #include "QF/idparse.h"
 #include "QF/msg.h"
 #include "QF/quakeio.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
+#include "QF/sys.h"
 #include "QF/teamplay.h"
 #include "QF/va.h"
-#include "QF/dstring.h"
-#include "QF/gib.h"
 
 #include "qw/bothdefs.h"
 #include "cl_cam.h"
@@ -216,7 +217,7 @@ CL_CheckOrDownloadFile (const char *filename)
 	QFile	   *f;
 
 	if (strstr (filename, "..")) {
-		Con_Printf ("Refusing to download a path with ..\n");
+		Sys_Printf ("Refusing to download a path with ..\n");
 		return true;
 	}
 /*
@@ -232,7 +233,7 @@ CL_CheckOrDownloadFile (const char *filename)
 	}
 	// ZOID - can't download when recording
 	if (cls.demorecording) {
-		Con_Printf ("Unable to download %s in record mode.\n",
+		Sys_Printf ("Unable to download %s in record mode.\n",
 					cls.downloadname->str);
 		return true;
 	}
@@ -242,7 +243,7 @@ CL_CheckOrDownloadFile (const char *filename)
 
 	dstring_copystr (cls.downloadname, filename);
 	dstring_copystr (cls.downloadtempname, filename);
-	Con_Printf ("Downloading %s...\n", cls.downloadname->str);
+	Sys_Printf ("Downloading %s...\n", cls.downloadname->str);
 
 	// download to a temp name, and only rename to the real name when done,
 	// so if interrupted a runt file wont be left
@@ -277,7 +278,7 @@ Model_NextDownload (void)
 	int			i;
 
 	if (cls.downloadnumber == 0) {
-		Con_Printf ("Checking models...\n");
+		Sys_Printf ("Checking models...\n");
 		CL_UpdateScreen (realtime);
 		cls.downloadnumber = 1;
 	}
@@ -303,9 +304,9 @@ Model_NextDownload (void)
 		cl.model_precache[i] = Mod_ForName (cl.model_name[i], false);
 
 		if (!cl.model_precache[i]) {
-			Con_Printf ("\nThe required model file '%s' could not be found or "
+			Sys_Printf ("\nThe required model file '%s' could not be found or "
 						"downloaded.\n\n", cl.model_name[i]);
-			Con_Printf ("You may need to download or purchase a %s client "
+			Sys_Printf ("You may need to download or purchase a %s client "
 						"pack in order to play on this server.\n\n",
 						qfs_gamedir->gamedir);
 			CL_Disconnect ();
@@ -337,8 +338,8 @@ Model_NextDownload (void)
 	// Something went wrong (probably in the server, probably a TF server)
 	// We need to disconnect gracefully.
 	if (!cl.model_precache[1]) {
-		Con_Printf ("\nThe server has failed to provide the map name.\n\n");
-		Con_Printf ("Disconnecting to prevent a crash.\n\n");
+		Sys_Printf ("\nThe server has failed to provide the map name.\n\n");
+		Sys_Printf ("Disconnecting to prevent a crash.\n\n");
 		CL_Disconnect ();
 		return;
 	}
@@ -363,7 +364,7 @@ Sound_NextDownload (void)
 	int			i;
 
 	if (cls.downloadnumber == 0) {
-		Con_Printf ("Checking sounds...\n");
+		Sys_Printf ("Checking sounds...\n");
 		CL_UpdateScreen (realtime);
 		cls.downloadnumber = 1;
 	}
@@ -413,7 +414,7 @@ CL_RequestNextDownload (void)
 			break;
 		case dl_none:
 		default:
-			Con_DPrintf ("Unknown download type.\n");
+			Sys_DPrintf ("Unknown download type.\n");
 	}
 }
 
@@ -440,7 +441,7 @@ CL_FinishDownload (void)
 					  cls.downloadname->str + 6);
 		}
 		if (QFS_Rename (oldn->str, newn->str))
-			Con_Printf ("failed to rename %s to %s, %s.\n", oldn->str,
+			Sys_Printf ("failed to rename %s to %s, %s.\n", oldn->str,
 						newn->str, strerror (errno));
 		dstring_delete (oldn);
 		dstring_delete (newn);
@@ -497,7 +498,7 @@ CL_OpenDownload (void)
 	if (!cls.download) {
 		dstring_clearstr (cls.downloadname);
 		dstring_clearstr (cls.downloadurl);
-		Con_Printf ("Failed to open %s\n", name->str);
+		Sys_Printf ("Failed to open %s\n", name->str);
 		CL_RequestNextDownload ();
 		return 0;
 	}
@@ -529,9 +530,9 @@ CL_ParseDownload (void)
 	}
 
 	if (size == DL_NOFILE) {
-		Con_Printf ("File not found.\n");
+		Sys_Printf ("File not found.\n");
 		if (cls.download) {
-			Con_Printf ("cls.download shouldn't have been set\n");
+			Sys_Printf ("cls.download shouldn't have been set\n");
 			Qclose (cls.download);
 			cls.download = NULL;
 		}
@@ -548,7 +549,7 @@ CL_ParseDownload (void)
 		if (strncmp (newname, cls.downloadname->str,
 					 strlen (cls.downloadname->str))
 			|| strstr (newname + strlen (cls.downloadname->str), "/")) {
-			Con_Printf
+			Sys_Printf
 				("WARNING: server tried to give a strange new name: %s\n",
 				 newname);
 			CL_RequestNextDownload ();
@@ -559,7 +560,7 @@ CL_ParseDownload (void)
 			unlink (cls.downloadname->str);
 		}
 		dstring_copystr (cls.downloadname, newname);
-		Con_Printf ("downloading to %s\n", cls.downloadname->str);
+		Sys_Printf ("downloading to %s\n", cls.downloadname->str);
 		return;
 	}
 	if (size == DL_HTTP) {
@@ -571,7 +572,7 @@ CL_ParseDownload (void)
 			if (strncmp (newname, cls.downloadname->str,
 						 strlen (cls.downloadname->str))
 				|| strstr (newname + strlen (cls.downloadname->str), "/")) {
-				Con_Printf
+				Sys_Printf
 					("WARNING: server tried to give a strange new name: %s\n",
 					 newname);
 				CL_RequestNextDownload ();
@@ -584,13 +585,13 @@ CL_ParseDownload (void)
 			dstring_copystr (cls.downloadname, newname);
 		}
 		dstring_copystr (cls.downloadurl, url);
-		Con_Printf ("downloading %s to %s\n", cls.downloadurl->str,
+		Sys_Printf ("downloading %s to %s\n", cls.downloadurl->str,
 					cls.downloadname->str);
 		CL_HTTP_StartDownload ();
 #else
 		MSG_ReadString (net_message);
 		MSG_ReadString (net_message);
-		Con_Printf ("server sent http redirect but we don't know how to handle"
+		Sys_Printf ("server sent http redirect but we don't know how to handle"
 					"it :(\n");
 #endif
 		CL_OpenDownload ();
@@ -649,12 +650,12 @@ CL_NextUpload (void)
 	MSG_WriteByte (&cls.netchan.message, percent);
 	SZ_Write (&cls.netchan.message, buffer, r);
 
-	Con_DPrintf ("UPLOAD: %6d: %d written\n", upload_pos - r, r);
+	Sys_DPrintf ("UPLOAD: %6d: %d written\n", upload_pos - r, r);
 
 	if (upload_pos != upload_size)
 		return;
 
-	Con_Printf ("Upload completed\n");
+	Sys_Printf ("Upload completed\n");
 
 	free (upload_data);
 	upload_data = 0;
@@ -671,7 +672,7 @@ CL_StartUpload (byte * data, int size)
 	if (upload_data)
 		free (upload_data);
 
-	Con_DPrintf ("Upload starting of %d...\n", size);
+	Sys_DPrintf ("Upload starting of %d...\n", size);
 
 	upload_data = malloc (size);
 	memcpy (upload_data, data, size);
@@ -722,7 +723,7 @@ CL_ParseServerData (void)
 	int			protover;
 	qboolean	cflag = false;
 
-	Con_DPrintf ("Serverdata packet received.\n");
+	Sys_DPrintf ("Serverdata packet received.\n");
 
 	// wipe the client_state_t struct
 	CL_ClearState ();
@@ -783,9 +784,9 @@ CL_ParseServerData (void)
 	movevars.entgravity = MSG_ReadFloat (net_message);
 
 	// separate the printfs so the server message can have a color
-	Con_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"
+	Sys_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"
 				"\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
-	Con_Printf ("%c%s\n", 2, str);
+	Sys_Printf ("%c%s\n", 2, str);
 
 	// ask for the sound list next
 	memset (cl.sound_name, 0, sizeof (cl.sound_name));
@@ -1115,7 +1116,7 @@ CL_SetInfo (void)
 	strncpy (value, MSG_ReadString (net_message), sizeof (value) - 1);
 	key[sizeof (value) - 1] = 0;
 
-	Con_DPrintf ("SETINFO %s: %s=%s\n", player->name, key, value);
+	Sys_DPrintf ("SETINFO %s: %s=%s\n", player->name, key, value);
 
 	if (!player->userinfo)
 		player->userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
@@ -1137,7 +1138,7 @@ CL_ServerInfo (void)
 	strncpy (value, MSG_ReadString (net_message), sizeof (value) - 1);
 	key[sizeof (value) - 1] = 0;
 
-	Con_DPrintf ("SERVERINFO: %s=%s\n", key, value);
+	Sys_DPrintf ("SERVERINFO: %s=%s\n", key, value);
 
 	Info_SetValueForKey (cl.serverinfo, key, value, 0);
 	if (strequal (key, "chase")) {
@@ -1232,7 +1233,7 @@ CL_MuzzleFlash (void)
 
 #define SHOWNET(x) \
 	if (cl_shownet->int_val == 2) \
-		Con_Printf ("%3i:%s\n", net_message->readcount-1, x);
+		Sys_Printf ("%3i:%s\n", net_message->readcount-1, x);
 
 int			received_framecount;
 
@@ -1249,9 +1250,9 @@ CL_ParseServerMessage (void)
 
 	// if recording demos, copy the message out
 	if (cl_shownet->int_val == 1)
-		Con_Printf ("%i ", net_message->message->cursize);
+		Sys_Printf ("%i ", net_message->message->cursize);
 	else if (cl_shownet->int_val == 2)
-		Con_Printf ("------------------ %d\n",
+		Sys_Printf ("------------------ %d\n",
 					cls.netchan.incoming_acknowledged);
 
 	CL_ParseClientdata ();
@@ -1320,7 +1321,7 @@ CL_ParseServerMessage (void)
 						GIB_Event_Callback (cl_chat_e, 1, s);
 					Team_ParseChat (s);
 				}
-				Con_Printf ("%s", s);
+				Sys_Printf ("%s", s);
 				Con_SetOrMask (0);
 				break;
 			}
@@ -1332,15 +1333,15 @@ CL_ParseServerMessage (void)
 				s = MSG_ReadString (net_message);
 				if (s[strlen (s) - 1] == '\n') {
 					if (stuffbuf && stuffbuf->str[0]) {
-						Con_DPrintf ("stufftext: %s%s\n", stuffbuf->str, s);
+						Sys_DPrintf ("stufftext: %s%s\n", stuffbuf->str, s);
 						Cbuf_AddText (cl_stbuf, stuffbuf->str);
 						dstring_clearstr (stuffbuf);
 					} else {
-						Con_DPrintf ("stufftext: %s\n", s);
+						Sys_DPrintf ("stufftext: %s\n", s);
 					}
 					Cbuf_AddText (cl_stbuf, s);
 				} else {
-					Con_DPrintf ("partial stufftext: %s\n", s);
+					Sys_DPrintf ("partial stufftext: %s\n", s);
 					if (!stuffbuf)
 						stuffbuf = dstring_newstr ();
 					dstring_appendstr (stuffbuf, s);
@@ -1470,21 +1471,21 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_intermission:
-				Con_DPrintf ("svc_intermission\n");
+				Sys_DPrintf ("svc_intermission\n");
 
 				cl.intermission = 1;
 				r_force_fullscreen = 1;
 				cl.completed_time = realtime;
 				vid.recalc_refdef = true;	// go to full screen
-				Con_DPrintf ("intermission simorg: ");
+				Sys_DPrintf ("intermission simorg: ");
 				MSG_ReadCoordV (net_message, cl.simorg);
 				for (i = 0; i < 3; i++)
-					Con_DPrintf ("%f ", cl.simorg[i]);
-				Con_DPrintf ("\nintermission simangles: ");
+					Sys_DPrintf ("%f ", cl.simorg[i]);
+				Sys_DPrintf ("\nintermission simangles: ");
 				MSG_ReadAngleV (net_message, cl.simangles);
 				for (i = 0; i < 3; i++)
-					Con_DPrintf ("%f ", cl.simangles[i]);
-				Con_DPrintf ("\n");
+					Sys_DPrintf ("%f ", cl.simangles[i]);
+				Sys_DPrintf ("\n");
 				VectorZero (cl.simvel);
 
 				// automatic fraglogging (by elmex)

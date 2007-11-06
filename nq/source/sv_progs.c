@@ -39,9 +39,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/quakefs.h"
+#include "QF/sys.h"
 
 #include "compat.h"
 #include "host.h"
@@ -129,7 +129,7 @@ ED_PrintEdict_f (void)
 	int         i;
 
 	i = atoi (Cmd_Argv (1));
-	Con_Printf ("\n EDICT %i:\n", i);
+	Sys_Printf ("\n EDICT %i:\n", i);
 	ED_PrintNum (&sv_pr_state, i);
 }
 
@@ -143,7 +143,7 @@ static void
 PR_Profile_f (void)
 {
 	if (!sv_pr_state.progs) {
-		Con_Printf ("no progs loaded\n");
+		Sys_Printf ("no progs loaded\n");
 		return;
 	}
 	PR_Profile (&sv_pr_state);
@@ -480,7 +480,7 @@ SV_LoadProgs (void)
 		sv_range = PR_RANGE_NONE;
 		range = "None";
 	}
-	Con_DPrintf ("Using %s builtin extention mapping\n", range);
+	Sys_DPrintf ("Using %s builtin extention mapping\n", range);
 
 	PR_LoadProgs (&sv_pr_state, progs_name, sv.max_edicts,
 				  sv_progs_zone->int_val * 1024);

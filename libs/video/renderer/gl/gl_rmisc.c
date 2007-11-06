@@ -41,7 +41,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdio.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/quakefs.h"
@@ -133,7 +132,7 @@ void
 R_LoadSky_f (void)
 {
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("loadsky <name> : load a skybox\n");
+		Sys_Printf ("loadsky <name> : load a skybox\n");
 		return;
 	}
 
@@ -241,7 +240,7 @@ R_TimeRefresh_f (void)
 
 	stop = Sys_DoubleTime ();
 	time = stop - start;
-	Con_Printf ("%f seconds (%f fps)\n", time, 128 / time);
+	Sys_Printf ("%f seconds (%f fps)\n", time, 128 / time);
 
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 }

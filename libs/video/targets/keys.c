@@ -403,7 +403,7 @@ Key_Game (knum_t key, short unicode)
 		kb = Key_GetBinding (IMT_0, key);
 
 /*
-	Con_Printf("kb %p, game_target %d, key_dest %d, key %d\n", kb,
+	Sys_Printf("kb %p, game_target %d, key_dest %d, key %d\n", kb,
 			game_target, key_dest, key);
 */
 	if (!kb)
@@ -535,13 +535,13 @@ Key_In_Unbind (const char *imt, const char *key)
 
 	t = Key_StringToIMTnum (imt);
 	if (t == -1) {
-		Con_Printf ("\"%s\" isn't a valid imt\n", imt);
+		Sys_Printf ("\"%s\" isn't a valid imt\n", imt);
 		return;
 	}
 
 	b = Key_StringToKeynum (key);
 	if (b == -1) {
-		Con_Printf ("\"%s\" isn't a valid key\n", key);
+		Sys_Printf ("\"%s\" isn't a valid key\n", key);
 		return;
 	}
 
@@ -552,7 +552,7 @@ static void
 Key_In_Unbind_f (void)
 {
 	if (Cmd_Argc () != 3) {
-		Con_Printf ("in_unbind <imt> <key> : remove commands from a key\n");
+		Sys_Printf ("in_unbind <imt> <key> : remove commands from a key\n");
 		return;
 	}
 	Key_In_Unbind (Cmd_Argv (1), Cmd_Argv (2));
@@ -575,22 +575,22 @@ Key_In_Bind (const char *imt, const char *key, const char *cmd)
 
 	t = Key_StringToIMTnum (imt);
 	if (t == -1) {
-		Con_Printf ("\"%s\" isn't a valid imt\n", imt);
+		Sys_Printf ("\"%s\" isn't a valid imt\n", imt);
 		return;
 	}
 
 	b = Key_StringToKeynum (key);
 	if (b == -1) {
-		Con_Printf ("\"%s\" isn't a valid key\n", key);
+		Sys_Printf ("\"%s\" isn't a valid key\n", key);
 		return;
 	}
 
 	if (!cmd) {
 		if (Key_GetBinding (t, b))
-			Con_Printf ("%s %s \"%s\"\n", imt, key,
+			Sys_Printf ("%s %s \"%s\"\n", imt, key,
 						Key_GetBinding(t, b));
 		else
-			Con_Printf ("%s %s is not bound\n", imt, key);
+			Sys_Printf ("%s %s is not bound\n", imt, key);
 		return;
 	}
 	Key_SetBinding (t, b, cmd);
@@ -606,7 +606,7 @@ Key_In_Bind_f (void)
 	c = Cmd_Argc ();
 
 	if (c < 3) {
-		Con_Printf ("in_bind <imt> <key> [command] : attach a command to a "
+		Sys_Printf ("in_bind <imt> <key> [command] : attach a command to a "
 					"key\n");
 		return;
 	}
@@ -635,7 +635,7 @@ Key_Unbind_f (void)
 	const char *key;
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("unbind <key> : remove commands from a key\n");
+		Sys_Printf ("unbind <key> : remove commands from a key\n");
 		return;
 	}
 	key = OK_TranslateKeyName (Cmd_Argv (1));
@@ -652,7 +652,7 @@ Key_Bind_f (void)
 	c = Cmd_Argc ();
 
 	if (c < 2) {
-		Con_Printf ("bind <key> [command] : attach a command to a key\n");
+		Sys_Printf ("bind <key> [command] : attach a command to a key\n");
 		return;
 	}
 
@@ -710,7 +710,7 @@ static void
 in_bind_imt_f (cvar_t *var)
 {
 	if (Key_StringToIMTnum (var->string) == -1) {
-		Con_Printf ("\"%s\" is not a valid imt. setting to \"imt_default\"\n",
+		Sys_Printf ("\"%s\" is not a valid imt. setting to \"imt_default\"\n",
 					var->string);
 		Cvar_Set (var, "imt_default");
 	}
@@ -724,14 +724,14 @@ Key_InputMappingTable_f (void)
 	c = Cmd_Argc ();
 
 	if (c != 2) {
-		Con_Printf ("Current imt is %s\n", Key_IMTnumToString(game_target));
-		Con_Printf ("imt <imt> : set to a specific input mapping table\n");
+		Sys_Printf ("Current imt is %s\n", Key_IMTnumToString(game_target));
+		Sys_Printf ("imt <imt> : set to a specific input mapping table\n");
 		return;
 	}
 
 	t = Key_StringToIMTnum (Cmd_Argv (1));
 	if (t == -1) {
-		Con_Printf ("\"%s\" isn't a valid imt\n", Cmd_Argv (1));
+		Sys_Printf ("\"%s\" isn't a valid imt\n", Cmd_Argv (1));
 		return;
 	}
 
@@ -785,12 +785,12 @@ keyhelp_f (void)
 VISIBLE void
 Key_Event (knum_t key, short unicode, qboolean down)
 {
-//  Con_Printf ("%d %d %d : %d\n", game_target, key_dest, key, down); //@@@
+//  Sys_Printf ("%d %d %d : %d\n", game_target, key_dest, key, down); //@@@
 
 	if (down) {
 		keydown[key]++;
 		if (keyhelp) {
-			Con_Printf ("Key name for that key is \"%s\"\n",
+			Sys_Printf ("Key name for that key is \"%s\"\n",
 						Key_KeynumToString (key));
 			keyhelp = 0;
 			return; // gobble the key

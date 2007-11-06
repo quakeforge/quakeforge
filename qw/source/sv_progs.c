@@ -500,7 +500,7 @@ SV_LoadProgs (void)
 		sv_range = PR_RANGE_NONE;
 		range = "None";
 	}
-	Con_DPrintf ("Using %s builtin extention mapping\n", range);
+	Sys_DPrintf ("Using %s builtin extention mapping\n", range);
 
 	if (qfs_gamedir->gamecode && *qfs_gamedir->gamecode)
 		progs_name = qfs_gamedir->gamecode;

@@ -45,6 +45,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/plugin.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 #include "compat.h"
 
@@ -128,23 +129,23 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 				cmd_len++;
 		} while (i == 3);
 		// 'quakebar'
-		Con_Printf ("\n\35");
+		Sys_Printf ("\n\35");
 		for (i = 0; i < con_linewidth - 4; i++)
-			Con_Printf ("\36");
-		Con_Printf ("\37\n");
+			Sys_Printf ("\36");
+		Sys_Printf ("\37\n");
 
 		// Print Possible Commands
 		if (c) {
-			Con_Printf ("%i possible command%s\n", c, (c > 1) ? "s: " : ":");
+			Sys_Printf ("%i possible command%s\n", c, (c > 1) ? "s: " : ":");
 			Con_DisplayList (list[0], con_linewidth);
 		}
 		
 		if (v) {
-			Con_Printf ("%i possible variable%s\n", v, (v > 1) ? "s: " : ":");
+			Sys_Printf ("%i possible variable%s\n", v, (v > 1) ? "s: " : ":");
 			Con_DisplayList (list[1], con_linewidth);
 		}
 		if (o) {
-			Con_Printf ("%i possible matche%s\n", o, (o > 1) ? "s: " : ":");
+			Sys_Printf ("%i possible matche%s\n", o, (o > 1) ? "s: " : ":");
 			Con_DisplayList (list[2], con_linewidth);
 		}
 	}

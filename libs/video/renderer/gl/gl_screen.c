@@ -40,7 +40,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <time.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/dstring.h"
@@ -142,7 +141,7 @@ SCR_ScreenShot_f (void)
 	// find a file name to save it to 
 	if (!QFS_NextFilename (pcxname,
 						   va ("%s/qf", qfs_gamedir->dir.def), ".tga")) {
-		Con_Printf ("SCR_ScreenShot_f: Couldn't create a TGA file\n");
+		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a TGA file\n");
 	} else {
 		buffer = malloc (glwidth * glheight * 3);
 		SYS_CHECKMEM (buffer);
@@ -150,7 +149,7 @@ SCR_ScreenShot_f (void)
 						GL_UNSIGNED_BYTE, buffer);
 		WriteTGAfile (pcxname->str, buffer, glwidth, glheight);
 		free (buffer);
-		Con_Printf ("Wrote %s/%s\n", qfs_userpath, pcxname->str);
+		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, pcxname->str);
 	}
 	dstring_delete (pcxname);
 }
@@ -265,7 +264,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	if (r_speeds->int_val) {
 //		qfglFinish ();
 		time2 = Sys_DoubleTime ();
-		Con_Printf ("%3i ms  %4i wpoly %4i epoly %4i parts\n",
+		Sys_Printf ("%3i ms  %4i wpoly %4i epoly %4i parts\n",
 					(int) ((time2 - time1) * 1000), c_brush_polys,
 					c_alias_polys, numparticles);
 	}

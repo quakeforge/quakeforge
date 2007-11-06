@@ -39,10 +39,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/screen.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "cl_parse.h"
@@ -67,7 +67,7 @@ Skin_NextDownload (void)
 		return;
 
 	if (cls.downloadnumber == 0) {
-		Con_Printf ("Checking skins...\n");
+		Sys_Printf ("Checking skins...\n");
 		CL_UpdateScreen (realtime);
 	}
 	cls.downloadtype = dl_skin;
@@ -136,10 +136,10 @@ CL_AllSkins_f (void)
 	if (Cmd_Argc () == 2) {
 		strcpy (allskins, Cmd_Argv (1));
 	} else if (Cmd_Argc () == 1) {
-		Con_Printf ("clearing allskins\n");
+		Sys_Printf ("clearing allskins\n");
 		allskins[0] = 0;
 	} else {
-		Con_Printf ("Usage: allskins [name]\n");
+		Sys_Printf ("Usage: allskins [name]\n");
 		return;
 	}
 	CL_Skins_f ();
@@ -153,10 +153,10 @@ CL_Color_f (void)
 	int         top, bottom;
 
 	if (Cmd_Argc () == 1) {
-		Con_Printf ("\"color\" is \"%s %s\"\n",
+		Sys_Printf ("\"color\" is \"%s %s\"\n",
 					Info_ValueForKey (cls.userinfo, "topcolor"),
 					Info_ValueForKey (cls.userinfo, "bottomcolor"));
-		Con_Printf ("color <0-13> [0-13]\n");
+		Sys_Printf ("color <0-13> [0-13]\n");
 		return;
 	}
 

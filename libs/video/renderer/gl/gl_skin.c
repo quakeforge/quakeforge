@@ -38,11 +38,11 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/skin.h"
+#include "QF/sys.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_textures.h"
@@ -221,7 +221,7 @@ Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 	paliashdr = Cache_Get (&model->cache);
 	if (skinnum < 0
 		|| skinnum >= paliashdr->mdl.numskins) {
-		Con_Printf ("(%d): Invalid player skin #%d\n", slot,
+		Sys_Printf ("(%d): Invalid player skin #%d\n", slot,
 					skinnum);
 		skinnum = 0;
 	}

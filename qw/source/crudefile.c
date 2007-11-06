@@ -45,11 +45,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "QF/console.h"
-#include "QF/dstring.h"
-#include "QF/sys.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/quakefs.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/zone.h"
 
@@ -185,7 +184,7 @@ CF_CloseAllFiles ()
 
 	for (i = 0; i < cf_filepcount; i++)
 		if (cf_filep[i].file) {
-			Con_DPrintf ("Warning: closing Crude File %d left over from last "
+			Sys_DPrintf ("Warning: closing Crude File %d left over from last "
 						 "map\n", i);
 			CF_Close (i);
 		}

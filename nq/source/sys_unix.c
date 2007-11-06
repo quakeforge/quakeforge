@@ -51,7 +51,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
@@ -92,7 +91,7 @@ main (int c, const char *v[])
 
 	if (!sys_nostdout->int_val) {
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
-		Con_Printf ("Quake -- Version %s\n", NQ_VERSION);
+		Sys_Printf ("Quake -- Version %s\n", NQ_VERSION);
 	}
 
 	oldtime = Sys_DoubleTime () - 0.1;

@@ -106,7 +106,7 @@ menu_resolve_globals (progs_t *pr)
 	menu_pr_state.globals.time = &G_FLOAT (pr, def->ofs);
 	return 1;
 error:
-	Con_Printf ("%s: undefined symbol %s\n", pr->progs_name, sym);
+	Sys_Printf ("%s: undefined symbol %s\n", pr->progs_name, sym);
 	return 0;
 }
 
@@ -345,7 +345,7 @@ bi_Menu_SelectMenu (progs_t *pr)
 		}
 	} else {
 		if (name && *name)
-			Con_Printf ("no menu \"%s\"\n", name);
+			Sys_Printf ("no menu \"%s\"\n", name);
 		if (con_data.force_commandline) {
 			key_dest = key_console;
 			game_target = IMT_CONSOLE;
@@ -495,7 +495,7 @@ Menu_Load (void)
 	if (!menu_pr_state.progs) {
 		// Not a fatal error, just means no menus
 		Con_SetOrMask (0x80);
-		Con_Printf ("Menu_Load: could not load %s\n",
+		Sys_Printf ("Menu_Load: could not load %s\n",
 					menu_pr_state.progs_name);
 		Con_SetOrMask (0x00);
 		return;

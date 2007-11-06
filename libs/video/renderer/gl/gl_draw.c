@@ -41,7 +41,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdio.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/dstring.h"
@@ -136,7 +135,7 @@ Draw_InitText (void)
 		tVAsize = 0;
 
 	if (tVAsize) {
-		Con_Printf ("Text: %i maximum vertex elements.\n", tVAsize);
+		Sys_Printf ("Text: %i maximum vertex elements.\n", tVAsize);
 
 		if (textVertices)
 			free (textVertices);
@@ -154,7 +153,7 @@ Draw_InitText (void)
 		for (i = 0; i < tVAsize; i++)
 			tVAindices[i] = i;
 	} else {
-		Con_Printf ("Text: Vertex Array use disabled.\n");
+		Sys_Printf ("Text: Vertex Array use disabled.\n");
 	}
 }
 

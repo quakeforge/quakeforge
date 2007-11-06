@@ -283,7 +283,7 @@ VID_SetMode (const char *name, unsigned char *palette)
 
 	vmode = FindVideoMode(name);
 	if (!vmode) {
-		// Con_Printf ("No such video mode: %s\n", name);
+		// Sys_Printf ("No such video mode: %s\n", name);
 		return 0;
 	}
 

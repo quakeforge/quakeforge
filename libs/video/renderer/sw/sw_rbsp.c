@@ -33,7 +33,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <math.h>
 
-#include "QF/console.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 
@@ -216,7 +215,7 @@ R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 			// and exiting points
 			// FIXME: share the clip edge by having a winding direction flag?
 			if (numbedges >= (MAX_BMODEL_EDGES - 1)) {
-				Con_Printf ("Out of edges for bmodel\n");
+				Sys_Printf ("Out of edges for bmodel\n");
 				return;
 			}
 
@@ -253,7 +252,7 @@ R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 	// plane to both sides (but in opposite directions)
 	if (makeclippededge) {
 		if (numbedges >= (MAX_BMODEL_EDGES - 2)) {
-			Con_Printf ("Out of edges for bmodel\n");
+			Sys_Printf ("Out of edges for bmodel\n");
 			return;
 		}
 

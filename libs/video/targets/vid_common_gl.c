@@ -42,7 +42,6 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/qargs.h"
@@ -198,7 +197,7 @@ gl_multitexture_f (cvar_t *var)
 					qfglDisable (GL_TEXTURE_2D);
 				} else {
 					gl_mtex_fullbright = false;
-					Con_Printf ("Not enough TMUs for BSP fullbrights.\n");	
+					Sys_Printf ("Not enough TMUs for BSP fullbrights.\n");	
 				}
 			}
 		} else {
@@ -248,7 +247,7 @@ gl_anisotropy_f (cvar_t * var)
 	} else {
 		aniso = 1.0;
 		if (var)
-			Con_Printf ("Anisotropy (GL_EXT_texture_filter_anisotropic) is "
+			Sys_Printf ("Anisotropy (GL_EXT_texture_filter_anisotropic) is "
 						"not supported by your hardware and/or drivers.\n");
 	}
 }
@@ -265,7 +264,7 @@ gl_tessellate_f (cvar_t * var)
 	} else {
 		tess = 0;
 		if (var)
-			Con_Printf ("TruForm (GL_ATI_pn_triangles) is not supported by "
+			Sys_Printf ("TruForm (GL_ATI_pn_triangles) is not supported by "
 						"your hardware and/or drivers.\n");
 	}
 }
@@ -335,14 +334,14 @@ CheckGLVersionString (void)
 	} else {
 		Sys_Error ("Malformed OpenGL version string!");
 	}
-	Con_Printf ("GL_VERSION: %s\n", gl_version);
+	Sys_Printf ("GL_VERSION: %s\n", gl_version);
 
 	gl_vendor = (char *) qfglGetString (GL_VENDOR);
-	Con_Printf ("GL_VENDOR: %s\n", gl_vendor);
+	Sys_Printf ("GL_VENDOR: %s\n", gl_vendor);
 	gl_renderer = (char *) qfglGetString (GL_RENDERER);
-	Con_Printf ("GL_RENDERER: %s\n", gl_renderer);
+	Sys_Printf ("GL_RENDERER: %s\n", gl_renderer);
 	gl_extensions = (char *) qfglGetString (GL_EXTENSIONS);
-	Con_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
+	Sys_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
 
 	if (strstr (gl_renderer, "Mesa DRI Mach64"))
 		gl_feature_mach64 = true;
@@ -377,14 +376,14 @@ CheckCombineExtensions (void)
 {
 	if (gl_major >= 1 && gl_minor >= 3) {
 		gl_combine_capable = true;
-		Con_Printf ("COMBINE active, multitextured doublebright enabled.\n");
+		Sys_Printf ("COMBINE active, multitextured doublebright enabled.\n");
 	} else if (QFGL_ExtensionPresent ("GL_ARB_texture_env_combine")) {
 		gl_combine_capable = true;
-		Con_Printf ("COMBINE_ARB active, multitextured doublebright "
+		Sys_Printf ("COMBINE_ARB active, multitextured doublebright "
 					"enabled.\n");
 	} else {
 		gl_combine_capable = false;
-		Con_Printf ("GL_ARB_texture_env_combine not found. gl_doublebright "
+		Sys_Printf ("GL_ARB_texture_env_combine not found. gl_doublebright "
 					"will have no effect with gl_multitexture on.\n");
 	}
 }
@@ -397,15 +396,15 @@ CheckCombineExtensions (void)
 static void
 CheckMultiTextureExtensions (void)
 {
-	Con_Printf ("Checking for multitexture: ");
+	Sys_Printf ("Checking for multitexture: ");
 	if (COM_CheckParm ("-nomtex")) {
-		Con_Printf ("disabled.\n");
+		Sys_Printf ("disabled.\n");
 		return;
 	}
 	if (gl_major >= 1 && gl_minor >= 3) {
 		qfglGetIntegerv (GL_MAX_TEXTURE_UNITS, &gl_mtex_tmus);
 		if (gl_mtex_tmus >= 2) {
-			Con_Printf ("enabled, %d TMUs.\n", gl_mtex_tmus);
+			Sys_Printf ("enabled, %d TMUs.\n", gl_mtex_tmus);
 			qglMultiTexCoord2f =
 				QFGL_ExtensionAddress ("glMultiTexCoord2f");
 			qglMultiTexCoord2fv =
@@ -415,15 +414,15 @@ CheckMultiTextureExtensions (void)
 			if (qglMultiTexCoord2f && gl_mtex_enum)
 				gl_mtex_capable = true;
 			else
-				Con_Printf ("Multitexture disabled, could not find required "
+				Sys_Printf ("Multitexture disabled, could not find required "
 							"functions\n");
 		} else {
-			Con_Printf ("Multitexture disabled, not enough TMUs.\n");
+			Sys_Printf ("Multitexture disabled, not enough TMUs.\n");
 		}
 	} else if (QFGL_ExtensionPresent ("GL_ARB_multitexture")) {
 		qfglGetIntegerv (GL_MAX_TEXTURE_UNITS_ARB, &gl_mtex_tmus);
 		if (gl_mtex_tmus >= 2) {
-			Con_Printf ("enabled, %d TMUs.\n", gl_mtex_tmus);
+			Sys_Printf ("enabled, %d TMUs.\n", gl_mtex_tmus);
 			qglMultiTexCoord2f =
 				QFGL_ExtensionAddress ("glMultiTexCoord2fARB");
 			qglMultiTexCoord2fv =
@@ -433,13 +432,13 @@ CheckMultiTextureExtensions (void)
 			if (qglMultiTexCoord2f && gl_mtex_enum)
 				gl_mtex_capable = true;
 			else
-				Con_Printf ("Multitexture disabled, could not find required "
+				Sys_Printf ("Multitexture disabled, could not find required "
 							"functions\n");
 		} else {
-			Con_Printf ("Multitexture disabled, not enough TMUs.\n");
+			Sys_Printf ("Multitexture disabled, not enough TMUs.\n");
 		}
 	} else {
-		Con_Printf ("not found.\n");
+		Sys_Printf ("not found.\n");
 	}
 }
 
@@ -482,7 +481,7 @@ CheckLights (void)
 			specular[4] = {0.1, 0.1, 0.1, 1.0};
 
 	qfglGetIntegerv (GL_MAX_LIGHTS, &gl_max_lights);
-	Con_Printf ("Max GL Lights %d.\n", gl_max_lights);
+	Sys_Printf ("Max GL Lights %d.\n", gl_max_lights);
 
 	qfglEnable (GL_LIGHTING);
 	qfglLightModelfv (GL_LIGHT_MODEL_AMBIENT, dark);
@@ -517,7 +516,7 @@ VID_SetPalette (unsigned char *palette)
 	QFile      *f;
 
 	// 8 8 8 encoding
-//	Con_Printf ("Converting 8to24\n");
+//	Sys_Printf ("Converting 8to24\n");
 
 	pal = palette;
 	table = d_8to24table;
@@ -644,11 +643,11 @@ Tdfx_Init8bitPalette (void)
 
 		if (!(qgl3DfxSetPaletteEXT =
 			  QFGL_ExtensionAddress ("gl3DfxSetPaletteEXT"))) {
-			Con_Printf ("3DFX_set_global_palette not found.\n");
+			Sys_Printf ("3DFX_set_global_palette not found.\n");
 			return;
 		}
 
-		Con_Printf ("3DFX_set_global_palette.\n");
+		Sys_Printf ("3DFX_set_global_palette.\n");
 
 		oldpal = (char *) d_8to24table;	// d_8to24table3dfx;
 		for (i = 0; i < 256; i++) {
@@ -662,7 +661,7 @@ Tdfx_Init8bitPalette (void)
 		qgl3DfxSetPaletteEXT ((GLuint *) table);
 		is8bit = true;
 	} else {
-		Con_Printf ("\n    3DFX_set_global_palette not found.");
+		Sys_Printf ("\n    3DFX_set_global_palette not found.");
 	}
 }
 
@@ -687,11 +686,11 @@ Shared_Init8bitPalette (void)
 
 	if (QFGL_ExtensionPresent ("GL_EXT_shared_texture_palette")) {
 		if (!(qglColorTableEXT = QFGL_ExtensionAddress ("glColorTableEXT"))) {
-			Con_Printf ("glColorTableEXT not found.\n");
+			Sys_Printf ("glColorTableEXT not found.\n");
 			return;
 		}
 
-		Con_Printf ("GL_EXT_shared_texture_palette\n");
+		Sys_Printf ("GL_EXT_shared_texture_palette\n");
 
 		qfglEnable (GL_SHARED_TEXTURE_PALETTE_EXT);
 		oldPalette = (GLubyte *) d_8to24table;	// d_8to24table3dfx;
@@ -706,21 +705,21 @@ Shared_Init8bitPalette (void)
 							GL_UNSIGNED_BYTE, (GLvoid *) thePalette);
 		is8bit = true;
 	} else {
-		Con_Printf ("\n    GL_EXT_shared_texture_palette not found.");
+		Sys_Printf ("\n    GL_EXT_shared_texture_palette not found.");
 	}
 }
 
 void
 VID_Init8bitPalette (void)
 {
-	Con_Printf ("Checking for 8-bit extension: ");
+	Sys_Printf ("Checking for 8-bit extension: ");
 	if (vid_use8bit->int_val) {
 		Tdfx_Init8bitPalette ();
 		Shared_Init8bitPalette ();
 		if (!is8bit)
-			Con_Printf ("\n  8-bit extension not found.\n");
+			Sys_Printf ("\n  8-bit extension not found.\n");
 	} else {
-		Con_Printf ("disabled.\n");
+		Sys_Printf ("disabled.\n");
 	}
 }
 

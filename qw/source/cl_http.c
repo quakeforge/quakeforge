@@ -38,8 +38,8 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <curl/curl.h>
 
-#include "QF/console.h"
 #include "QF/dstring.h"
+#include "QF/sys.h"
 
 #include "cl_http.h"
 #include "cl_parse.h"
@@ -60,7 +60,7 @@ static size_t
 http_write (void *ptr, size_t size, size_t nmemb, void *stream)
 {
 	if (!cls.download) {
-		Con_Printf ("http_write: unexpected call\n");
+		Sys_Printf ("http_write: unexpected call\n");
 		return -1;
 	}
 	return Qwrite (cls.download, ptr, size * nmemb);
@@ -114,7 +114,7 @@ CL_HTTP_Update (void)
 			if (response_code == 200) {
 				CL_FinishDownload ();
 			} else {
-				Con_Printf ("download failed: %ld\n", response_code);
+				Sys_Printf ("download failed: %ld\n", response_code);
 				CL_FailDownload ();
 			}
 			curl_multi_remove_handle (multi_handle, easy_handle);

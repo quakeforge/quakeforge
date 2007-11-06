@@ -42,7 +42,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/locs.h"
@@ -822,15 +821,15 @@ R_InitFishEyeOnce (void)
 
 	if (fisheye_init_once_completed)
 		return 1;
-	Con_Printf ("GL_ARB_texture_cube_map ");
+	Sys_Printf ("GL_ARB_texture_cube_map ");
 	if (QFGL_ExtensionPresent ("GL_ARB_texture_cube_map")) {
 		qfglGetIntegerv (GL_MAX_CUBE_MAP_TEXTURE_SIZE_ARB,
 						 &gl_cube_map_maxtex);
-		Con_Printf ("present, max texture size %d.\n",
+		Sys_Printf ("present, max texture size %d.\n",
 					(int) gl_cube_map_maxtex);
 		gl_cube_map_capable = true;
 	} else {
-		Con_Printf ("not found.\n");
+		Sys_Printf ("not found.\n");
 		gl_cube_map_capable = false;
 	}
 	fisheye_init_once_completed = true;

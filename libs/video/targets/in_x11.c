@@ -60,7 +60,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include "QF/cdaudio.h"
-#include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
@@ -591,7 +590,7 @@ grab_error (int code, const char *device)
 			reason = "unknown reason";
 			break;
 	}
-	Con_Printf ("failed to grab %s: %s\n", device, reason);
+	Sys_Printf ("failed to grab %s: %s\n", device, reason);
 }
 
 void
@@ -645,7 +644,7 @@ IN_LL_ProcessEvents (void)
 void
 IN_LL_Shutdown (void)
 {
-	Con_Printf ("IN_LL_Shutdown\n");
+	Sys_Printf ("IN_LL_Shutdown\n");
 	in_mouse_avail = 0;
 	if (x_disp) {
 		XAutoRepeatOn (x_disp);

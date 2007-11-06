@@ -255,19 +255,19 @@ Condump_f (void)
 	char        name[MAX_OSPATH];
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("usage: condump <filename>\n");
+		Sys_Printf ("usage: condump <filename>\n");
 		return;
 	}
 
 	if (strchr (Cmd_Argv (1), '/') || strchr (Cmd_Argv (1), '\\')) {
-		Con_Printf ("invalid character in filename\n");
+		Sys_Printf ("invalid character in filename\n");
 		return;
 	}
 	snprintf (name, sizeof (name), "%s/%s.txt", qfs_gamedir->dir.def,
 			  Cmd_Argv (1));
 
 	if (!(file = QFS_WOpen (name, 0))) {
-		Con_Printf ("could not open %s for writing: %s\n", name,
+		Sys_Printf ("could not open %s for writing: %s\n", name,
 					strerror (errno));
 		return;
 	}
@@ -307,7 +307,7 @@ cl_exec_line_rcon (void *data, const char *line)
 	Cbuf_AddText (con_data.cbuf, "rcon ");
 	Cbuf_AddText (con_data.cbuf, line);
 	Cbuf_AddText (con_data.cbuf, "\n");
-	Con_Printf ("rcon %s\n", line);
+	Sys_Printf ("rcon %s\n", line);
 	return 0;
 }
 
@@ -321,8 +321,8 @@ cl_conmode_f (cvar_t *var)
 	} else if (!strcmp (var->string, "rcon")) {
 		con_data.exec_line = cl_exec_line_rcon;
 	} else {
-		Con_Printf ("mode must be one of \"command\", \"chat\" or \"rcon\"\n");
-		Con_Printf ("    forcing \"command\"\n");
+		Sys_Printf ("mode must be one of \"command\", \"chat\" or \"rcon\"\n");
+		Sys_Printf ("    forcing \"command\"\n");
 		Cvar_Set (var, "command");
 	}
 }
@@ -896,7 +896,7 @@ C_Init (void)
 
 	C_CheckResize ();
 
-	Con_Printf ("Console initialized.\n");
+	Sys_Printf ("Console initialized.\n");
 
 	// register our commands
 	Cmd_AddCommand ("toggleconsole", ToggleConsole_f,

@@ -38,11 +38,11 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/image.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/GL/defines.h"
@@ -129,11 +129,11 @@ R_LoadSkys (const char *skyname)
 
 		targa = LoadImage (name = va ("env/%s%s", skyname, suf[i]));
 		if (!targa || targa->format < 3) {	// FIXME Can't do PCX right now
-			Con_DPrintf ("Couldn't load %s\n", name);
+			Sys_DPrintf ("Couldn't load %s\n", name);
 			// also look in gfx/env, where Darkplaces looks for skies
 			targa = LoadImage (name = va ("gfx/env/%s%s", skyname, suf[i]));
 			if (!targa) {
-				Con_DPrintf ("Couldn't load %s\n", name);
+				Sys_DPrintf ("Couldn't load %s\n", name);
 				skyloaded = false;
 				continue;
 			}
@@ -169,7 +169,7 @@ R_LoadSkys (const char *skyname)
 #endif
 	}
 	if (!skyloaded)
-		Con_Printf ("Unable to load skybox %s, using normal sky\n", skyname);
+		Sys_Printf ("Unable to load skybox %s, using normal sky\n", skyname);
 }
 
 static void

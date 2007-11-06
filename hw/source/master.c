@@ -230,7 +230,7 @@ SV_InitNet (void)
 	p = COM_CheckParm ("-port");
 	if (p && p < com_argc) {
 		port = atoi (com_argv[p + 1]);
-		Con_Printf ("Port: %i\n", port);
+		Sys_Printf ("Port: %i\n", port);
 	}
 	NET_Init (port);
 
@@ -252,20 +252,20 @@ AnalysePacket (void)
 	byte       *p, *data;
 	int         i, size, rsize;
 
-	Con_Printf ("%s >> unknown packet:\n", NET_AdrToString (net_from));
+	Sys_Printf ("%s >> unknown packet:\n", NET_AdrToString (net_from));
 
 	data = net_message->message->data;
 	size = net_message->message->cursize;
 
 	for (p = data; (rsize = min (size - (p - data), 16)); p += rsize) {
-		Con_Printf ("%04X:", (unsigned) (p - data));
+		Sys_Printf ("%04X:", (unsigned) (p - data));
 		memcpy (buf, p, rsize);
 		for (i = 0; i < rsize; i++) {
-			Con_Printf (" %02X", buf[i]);
+			Sys_Printf (" %02X", buf[i]);
 			if (buf[i] < ' ' || buf [i] > '~')
 				buf[i] = '.';
 		}
-		Con_Printf ("%*.*s\n", 1 + (16 - rsize) * 3 + rsize, rsize, buf);
+		Sys_Printf ("%*.*s\n", 1 + (16 - rsize) * 3 + rsize, rsize, buf);
 	}
 }
 
@@ -314,7 +314,7 @@ Mst_Packet (void)
 	msg = net_message->message->data[1];
 	if (msg == A2A_PING) {
 		Filter ();
-		Con_Printf ("%s >> A2A_PING\n", NET_AdrToString (net_from));
+		Sys_Printf ("%s >> A2A_PING\n", NET_AdrToString (net_from));
 		if (!(sv = SVL_Find (net_from))) {
 			sv = SVL_New (&net_from);
 			SVL_Add (sv);
@@ -322,7 +322,7 @@ Mst_Packet (void)
 		sv->timeout = Sys_DoubleTime ();
 	} else if (msg == S2M_HEARTBEAT) {
 		Filter ();
-		Con_Printf ("%s >> S2M_HEARTBEAT\n", NET_AdrToString (net_from));
+		Sys_Printf ("%s >> S2M_HEARTBEAT\n", NET_AdrToString (net_from));
 		if (!(sv = SVL_Find (net_from))) {
 			sv = SVL_New (&net_from);
 			SVL_Add (sv);
@@ -330,22 +330,22 @@ Mst_Packet (void)
 		sv->timeout = Sys_DoubleTime ();
 	} else if (msg == S2M_SHUTDOWN) {
 		Filter ();
-		Con_Printf ("%s >> S2M_SHUTDOWN\n", NET_AdrToString (net_from));
+		Sys_Printf ("%s >> S2M_SHUTDOWN\n", NET_AdrToString (net_from));
 		if ((sv = SVL_Find (net_from))) {
 			SVL_Remove (sv);
 			free (sv);
 		}
 	} else if (msg == S2C_CHALLENGE) {
-		Con_Printf ("%s >> ", NET_AdrToString (net_from));
-		Con_Printf ("Gamespy server list request\n");
+		Sys_Printf ("%s >> ", NET_AdrToString (net_from));
+		Sys_Printf ("Gamespy server list request\n");
 		Mst_SendList ();
 	} else {
 		byte       *p;
 
 		p = net_message->message->data;
 		if (p[0] == 0 && p[1] == 'y') {
-			Con_Printf ("%s >> ", NET_AdrToString (net_from));
-			Con_Printf ("Pingtool server list request\n");
+			Sys_Printf ("%s >> ", NET_AdrToString (net_from));
+			Sys_Printf ("Pingtool server list request\n");
 			Mst_SendList ();
 		} else {
 			AnalysePacket ();
@@ -368,7 +368,7 @@ FilterAdd (int arg)
 	netadr_t    to, from;
 
 	if (Cmd_Argc () - arg != 2) {
-		Con_Printf ("Invalid command parameters. "
+		Sys_Printf ("Invalid command parameters. "
 					"Usage:\nfilter add x.x.x.x:port x.x.x.x:port\n\n");
 		return;
 	}
@@ -379,12 +379,12 @@ FilterAdd (int arg)
 	if (from.port == 0)
 		from.port = BigShort (PORT_SERVER);
 	if (!(filter = FL_Find (from))) {
-		Con_Printf ("Added filter %s\t\t%s\n", Cmd_Argv (arg),
+		Sys_Printf ("Added filter %s\t\t%s\n", Cmd_Argv (arg),
 					Cmd_Argv (arg + 1));
 		filter = FL_New (&from, &to);
 		FL_Add (filter);
 	} else
-		Con_Printf ("%s already defined\n\n", Cmd_Argv (arg));
+		Sys_Printf ("%s already defined\n\n", Cmd_Argv (arg));
 }
 
 static void
@@ -394,17 +394,17 @@ FilterRemove (int arg)
 	netadr_t    from;
 
 	if (Cmd_Argc () - arg != 1) {
-		Con_Printf ("Invalid command parameters. Usage:\n"
+		Sys_Printf ("Invalid command parameters. Usage:\n"
 					"filter remove x.x.x.x:port\n\n");
 		return;
 	}
 	NET_StringToAdr (Cmd_Argv (arg), &from);
 	if ((filter = FL_Find (from))) {
-		Con_Printf ("Removed %s\n\n", Cmd_Argv (arg));
+		Sys_Printf ("Removed %s\n\n", Cmd_Argv (arg));
 		FL_Remove (filter);
 		free (filter);
 	} else
-		Con_Printf ("Cannot find %s\n\n", Cmd_Argv (arg));
+		Sys_Printf ("Cannot find %s\n\n", Cmd_Argv (arg));
 }
 
 static void
@@ -413,18 +413,18 @@ FilterList (void)
 	filter_t   *filter;
 
 	for (filter = filter_list; filter; filter = filter->next) {
-		Con_Printf ("%s", NET_AdrToString (filter->from));
-		Con_Printf ("\t\t%s\n", NET_AdrToString (filter->to));
+		Sys_Printf ("%s", NET_AdrToString (filter->from));
+		Sys_Printf ("\t\t%s\n", NET_AdrToString (filter->to));
 	}
 	if (filter_list == NULL)
-		Con_Printf ("No filter\n");
-	Con_Printf ("\n");
+		Sys_Printf ("No filter\n");
+	Sys_Printf ("\n");
 }
 
 static void
 FilterClear (void)
 {
-	Con_Printf ("Removed all filters\n\n");
+	Sys_Printf ("Removed all filters\n\n");
 	FL_Clear ();
 }
 
@@ -490,7 +490,7 @@ SV_TimeOut (void)
 	for (sv = sv_list; sv;) {
 		if (sv->timeout + SV_TIMEOUT < time) {
 			next = sv->next;
-			Con_Printf ("%s timed out\n", NET_AdrToString (sv->ip));
+			Sys_Printf ("%s timed out\n", NET_AdrToString (sv->ip));
 			SVL_Remove (sv);
 			free (sv);
 			sv = next;
@@ -512,7 +512,7 @@ SV_Frame (void)
 static void
 MST_Quit_f (void)
 {
-	Con_Printf ("HW master shutdown\n");
+	Sys_Printf ("HW master shutdown\n");
 	Sys_Quit ();
 }
 
@@ -550,8 +550,8 @@ main (int argc, const char **argv)
 	con_list_print = Sys_Printf;
 
 	SV_InitNet ();
-	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
-	Con_Printf ("======== HW master initialized ========\n\n");
+	Sys_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
+	Sys_Printf ("======== HW master initialized ========\n\n");
 	while (1) {
 		SV_Frame ();
 	}

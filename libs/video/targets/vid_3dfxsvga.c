@@ -45,7 +45,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <setjmp.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
@@ -176,20 +175,20 @@ GL_Init (void)
 	if (!(dither_select = QFGL_ExtensionAddress ("gl3DfxSetDitherModeEXT")))
 		return;
 
-	Con_Printf ("Dithering: ");
+	Sys_Printf ("Dithering: ");
 
 	if ((p = COM_CheckParm ("-dither")) && p < com_argc) {
 		if (strequal (com_argv[p+1], "2x2")) {
 			dither_select (GR_DITHER_2x2);
-			Con_Printf ("2x2.\n");
+			Sys_Printf ("2x2.\n");
 		}
 		if (strequal (com_argv[p+1], "4x4")) {
 			dither_select (GR_DITHER_4x4);
-			Con_Printf ("4x4.\n");
+			Sys_Printf ("4x4.\n");
 		}
 	} else {
 		qfglDisable (GL_DITHER);
-		Con_Printf ("disabled.\n");
+		Sys_Printf ("disabled.\n");
 	}
 }
 
@@ -344,7 +343,7 @@ VID_Init (unsigned char *palette)
 
 	vid.initialized = true;
 
-	Con_Printf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
+	Sys_Printf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
 
 	vid.recalc_refdef = 1;				// force a surface cache flush
 }

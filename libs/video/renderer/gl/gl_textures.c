@@ -42,7 +42,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdio.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
@@ -197,10 +196,10 @@ GL_TextureMode_f (void)
 	if (Cmd_Argc () == 1) {
 		for (i = 0; i < 6; i++)
 			if (gl_filter_min == modes[i].minimize) {
-				Con_Printf ("%s\n", modes[i].name);
+				Sys_Printf ("%s\n", modes[i].name);
 				return;
 			}
-		Con_Printf ("current filter is unknown?\n");
+		Sys_Printf ("current filter is unknown?\n");
 		return;
 	}
 
@@ -210,7 +209,7 @@ GL_TextureMode_f (void)
 	}
 
 	if (i == 6) {
-		Con_Printf ("bad filter name\n");
+		Sys_Printf ("bad filter name\n");
 		return;
 	}
 
@@ -240,10 +239,10 @@ GL_TextureDepth_f (int format)
 
 	for (i = 0; i < 42; i++) {
 		if (format == formats[i].format) {
-			Con_Printf ("%s\n", formats[i].name);
+			Sys_Printf ("%s\n", formats[i].name);
 			return GL_RGBA;
 		}
-		Con_Printf ("Current texture format is unknown.\n");
+		Sys_Printf ("Current texture format is unknown.\n");
 		return GL_RGBA;
 	}
 
@@ -253,7 +252,7 @@ GL_TextureDepth_f (int format)
 	}
 
 	if (formats[i].format == 0) {
-		Con_Printf ("bad texture format name\n");
+		Sys_Printf ("bad texture format name\n");
 		return GL_RGBA;
 	}
 

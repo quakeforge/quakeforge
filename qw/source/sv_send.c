@@ -42,7 +42,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdlib.h>
 #include <time.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/msg.h"
@@ -234,7 +233,7 @@ SV_Print (const char *fmt, va_list args)
 			pending = 0;
 		}
 
-		Con_Printf ("%s", msg2);		// also echo to debugging console
+		Sys_Printf ("%s", msg2);		// also echo to debugging console
 	}
 }
 

@@ -40,11 +40,11 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/checksum.h"
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
+#include "QF/sys.h"
 #include "QF/teamplay.h"
 #include "QF/va.h"
 
@@ -109,7 +109,7 @@ KeyDown (kbutton_t *b)
 	else if (!b->down[1])
 		b->down[1] = k;
 	else {
-		Con_Printf ("Three keys down for a button!\n");
+		Sys_Printf ("Three keys down for a button!\n");
 		return;
 	}
 

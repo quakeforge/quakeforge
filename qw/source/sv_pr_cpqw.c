@@ -666,7 +666,7 @@ PF_clientsound (progs_t *pr)
 			break;
 
 	if (sound_num == MAX_SOUNDS || !sv.sound_precache[sound_num]) {
-		Con_Printf ("SV_StartSound: %s not precacheed\n", sample);
+		Sys_Printf ("SV_StartSound: %s not precacheed\n", sample);
 		return;
 	}
 

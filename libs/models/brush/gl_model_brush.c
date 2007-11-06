@@ -160,9 +160,9 @@ Mod_LoadLighting (lump_t *l)
 					loadmodel->lightdata = data + 8;
 					return;
 				} else
-					Sys_Printf ("Unknown .lit file version (%d)\n", i);
+					Sys_DPrintf ("Unknown .lit file version (%d)\n", i);
 			} else
-				Sys_Printf ("Corrupt .lit file (old version?), ignoring\n");
+				Sys_DPrintf ("Corrupt .lit file (old version?), ignoring\n");
 		}
 	}
 	// LordHavoc: oh well, expand the white lighting data

@@ -90,8 +90,6 @@ void Con_CheckResize (void);
 void Con_DrawConsole (void);
 
 void Con_Print (const char *fmt, va_list args);
-void Con_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
-void Con_DPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void Con_ToggleConsole_f (void);
 
 // wrapper function to attempt to either complete the command line

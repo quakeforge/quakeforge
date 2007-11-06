@@ -142,7 +142,7 @@ get_address (int sock)
 		if (ioctl (sock, SIOCGIFADDR, &ifr[i]) == -1)
 			continue;
 		in_addr = (struct sockaddr_in *)&ifr[i].ifr_addr;
-		Con_DPrintf ("%s: %s\n", ifr[i].ifr_name,
+		Sys_DPrintf ("%s: %s\n", ifr[i].ifr_name,
 					 inet_ntoa (in_addr->sin_addr));
 		addr = *(unsigned *)&in_addr->sin_addr;
 		if (addr != htonl (0x7f000001)) {
@@ -202,7 +202,7 @@ UDP_Init (void)
 	if (colon)
 		*colon = 0;
 
-	Con_Printf ("UDP (IPv4) Initialized\n");
+	Sys_Printf ("UDP (IPv4) Initialized\n");
 	tcpipAvailable = true;
 
 	return net_controlsocket;
@@ -397,7 +397,7 @@ UDP_Broadcast (int socket, byte * buf, int len)
 			Sys_Error ("Attempted to use multiple broadcasts sockets");
 		ret = UDP_MakeSocketBroadcastCapable (socket);
 		if (ret == -1) {
-			Con_Printf ("Unable to make socket broadcast capable\n");
+			Sys_Printf ("Unable to make socket broadcast capable\n");
 			return ret;
 		}
 	}

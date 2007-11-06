@@ -254,7 +254,7 @@ Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	// check for message overflow
 	if (chan->message.overflowed) {
 		chan->fatal_error = true;
-		Con_Printf ("%s:Outgoing message overflow\n",
+		Sys_Printf ("%s:Outgoing message overflow\n",
 					NET_AdrToString (chan->remote_address));
 		return;
 	}
@@ -316,7 +316,7 @@ Netchan_Transmit (netchan_t *chan, int length, byte *data)
 		chan->cleartime = *net_realtime;
 
 	if (showpackets->int_val & 1)
-		Con_Printf ("--> s=%i(%i) a=%i(%i) %-4i %i\n", chan->outgoing_sequence,
+		Sys_Printf ("--> s=%i(%i) a=%i(%i) %-4i %i\n", chan->outgoing_sequence,
 					send_reliable, chan->incoming_sequence,
 					chan->incoming_reliable_sequence, send.cursize,
 					chan->outgoing_sequence - chan->incoming_sequence);
@@ -354,7 +354,7 @@ Netchan_Process (netchan_t *chan)
 	sequence_ack &= ~(1 << 31);
 
 	if (showpackets->int_val & 2)
-		Con_Printf ("<-- s=%i(%i) a=%i(%i) %i\n", sequence, reliable_message,
+		Sys_Printf ("<-- s=%i(%i) a=%i(%i) %i\n", sequence, reliable_message,
 					sequence_ack, reliable_ack, net_message->message->cursize);
 
 	// get a rate estimation
@@ -387,7 +387,7 @@ Netchan_Process (netchan_t *chan)
 	// discard stale or duplicated packets
 	if (sequence < (unsigned int) chan->incoming_sequence + 1) {
 		if (showdrop->int_val)
-			Con_Printf ("%s:Out of order packet %i at %i\n",
+			Sys_Printf ("%s:Out of order packet %i at %i\n",
 						NET_AdrToString (chan->remote_address), sequence,
 						chan->incoming_sequence);
 		return false;
@@ -399,7 +399,7 @@ Netchan_Process (netchan_t *chan)
 		chan->drop_count += 1;
 
 		if (showdrop->int_val)
-			Con_Printf ("%s:Dropped %i packets at %i\n",
+			Sys_Printf ("%s:Dropped %i packets at %i\n",
 						NET_AdrToString (chan->remote_address),
 						sequence - (chan->incoming_sequence + 1), sequence);
 	}

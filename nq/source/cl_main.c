@@ -42,6 +42,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "chase.h"
@@ -217,7 +218,7 @@ CL_Disconnect (void)
 		if (cls.demorecording)
 			CL_Stop_f ();
 
-		Con_DPrintf ("Sending clc_disconnect\n");
+		Sys_DPrintf ("Sending clc_disconnect\n");
 		SZ_Clear (&cls.message);
 		MSG_WriteByte (&cls.message, clc_disconnect);
 		NET_SendUnreliableMessage (cls.netcon, &cls.message);
@@ -260,7 +261,7 @@ CL_EstablishConnection (const char *host)
 	cls.netcon = NET_Connect (host);
 	if (!cls.netcon)
 		Host_Error ("CL_Connect: connect failed\n");
-	Con_DPrintf ("CL_EstablishConnection: connected to %s\n", host);
+	Sys_DPrintf ("CL_EstablishConnection: connected to %s\n", host);
 
 	cls.demonum = -1;					// not in the demo loop now
 	CL_SetState (ca_connected);
@@ -280,7 +281,7 @@ CL_SignonReply (void)
 {
 	char        str[8192];
 
-	Con_DPrintf ("CL_SignonReply: %i\n", cls.signon);
+	Sys_DPrintf ("CL_SignonReply: %i\n", cls.signon);
 
 	switch (cls.signon) {
 	case 1:
@@ -328,7 +329,7 @@ CL_NextDemo (void)
 	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS) {
 		cls.demonum = 0;
 		if (!cls.demos[cls.demonum][0]) {
-			Con_Printf ("No demos listed with startdemos\n");
+			Sys_Printf ("No demos listed with startdemos\n");
 			cls.demonum = -1;
 			return;
 		}
@@ -346,12 +347,12 @@ CL_PrintEntities_f (void)
 	int         i;
 
 	for (i = 0, ent = cl_entities; i < cl.num_entities; i++, ent++) {
-		Con_Printf ("%3i:", i);
+		Sys_Printf ("%3i:", i);
 		if (!ent->model) {
-			Con_Printf ("EMPTY\n");
+			Sys_Printf ("EMPTY\n");
 			continue;
 		}
-		Con_Printf ("%s:%2i  (%5.1f,%5.1f,%5.1f) [%5.1f %5.1f %5.1f]\n",
+		Sys_Printf ("%s:%2i  (%5.1f,%5.1f,%5.1f) [%5.1f %5.1f %5.1f]\n",
 					ent->model->name, ent->frame, ent->origin[0],
 					ent->origin[1], ent->origin[2], ent->angles[0],
 					ent->angles[1], ent->angles[2]);
@@ -660,7 +661,7 @@ CL_ReadFromServer (void)
 	} while (ret && cls.state == ca_connected);
 
 	if (cl_shownet->int_val)
-		Con_Printf ("\n");
+		Sys_Printf ("\n");
 
 	R_ClearEnts ();
 
@@ -696,7 +697,7 @@ CL_SendCmd (void)
 		return;							// no message at all
 
 	if (!NET_CanSendMessage (cls.netcon)) {
-		Con_DPrintf ("CL_WriteToServer: can't send\n");
+		Sys_DPrintf ("CL_WriteToServer: can't send\n");
 		return;
 	}
 

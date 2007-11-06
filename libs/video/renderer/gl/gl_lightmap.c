@@ -42,7 +42,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <math.h>
 #include <stdio.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/sys.h"
@@ -540,7 +539,7 @@ gl_overbright_f (cvar_t *var)
 
 	if (var->int_val) {
 		if (!gl_combine_capable && gl_mtex_capable) {
-			Con_Printf ("Warning: gl_overbright has no effect with "
+			Sys_Printf ("Warning: gl_overbright has no effect with "
 						"gl_multitexture enabled if you don't have "
 						"GL_COMBINE support in your driver.\n");
 			lm_src_blend = GL_ZERO;

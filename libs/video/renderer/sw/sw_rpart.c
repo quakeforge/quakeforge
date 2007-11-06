@@ -33,11 +33,11 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <stdlib.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
+#include "QF/sys.h"
 
 #include "compat.h"
 #include "r_cvar.h"
@@ -81,11 +81,11 @@ R_ReadPointFile_f (void)
 
 	QFS_FOpenFile (name, &f);
 	if (!f) {
-		Con_Printf ("couldn't open %s\n", name);
+		Sys_Printf ("couldn't open %s\n", name);
 		return;
 	}
 
-	Con_Printf ("Reading %s...\n", name);
+	Sys_Printf ("Reading %s...\n", name);
 	c = 0;
 	for (;;) {
 		char        buf[64];
@@ -97,7 +97,7 @@ R_ReadPointFile_f (void)
 		c++;
 
 		if (!free_particles) {
-			Con_Printf ("Not enough free particles\n");
+			Sys_Printf ("Not enough free particles\n");
 			break;
 		}
 		p = free_particles;
@@ -113,7 +113,7 @@ R_ReadPointFile_f (void)
 	}
 
 	Qclose (f);
-	Con_Printf ("%i points read\n", c);
+	Sys_Printf ("%i points read\n", c);
 }
 
 static void
@@ -818,7 +818,7 @@ R_DrawParticles (void)
 					p->vel[2] -= grav;
 					break;
 				default:
-					Con_DPrintf ("unhandled particle type %d\n", p->type);
+					Sys_DPrintf ("unhandled particle type %d\n", p->type);
 					break;
 			}
 		}

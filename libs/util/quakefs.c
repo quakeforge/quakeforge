@@ -654,7 +654,7 @@ QFS_WriteBuffers (const char *filename, int count, ...)
 		Sys_Error ("Error opening %s", filename);
 	}
 
-	Sys_Printf ("QFS_WriteBuffers: %s\n", filename);
+	Sys_DPrintf ("QFS_WriteBuffers: %s\n", filename);
 	while (count--) {
 		void       *data = va_arg (args, void *);
 		int         len = va_arg (args, int);
@@ -1008,7 +1008,7 @@ QFS_LoadPackFile (char *packfile)
 	pack_t     *pack = pack_open (packfile);
 
 	if (pack)
-		Sys_Printf ("Added packfile %s (%i files)\n",
+		Sys_DPrintf ("Added packfile %s (%i files)\n",
 					packfile, pack->numfiles);
 	return pack;
 }

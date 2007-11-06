@@ -267,7 +267,7 @@ NET_GetPacket (void)
 		int         err = WSAGetLastError ();
 
 		if (err == WSAEMSGSIZE) {
-			Con_Printf ("Warning:  Oversize packet from %s\n",
+			Sys_Printf ("Warning:  Oversize packet from %s\n",
 						NET_AdrToString (net_from));
 			return false;
 		}
@@ -283,27 +283,27 @@ NET_GetPacket (void)
 #endif // _WIN32
 		if (err == EWOULDBLOCK)
 			return false;
-		Con_Printf ("NET_GetPacket: %d: %d: %s\n", net_socket, err,
+		Sys_Printf ("NET_GetPacket: %d: %d: %s\n", net_socket, err,
 					strerror (err));
 		return false;
 	}
 
 	// Check for malformed packets
 	if (ntohs (net_from.port) < 1024) {
-		Con_Printf ("Warning: Packet from %s dropped: Bad port\n",
+		Sys_Printf ("Warning: Packet from %s dropped: Bad port\n",
 					NET_AdrToString (net_from));
 		return false;
 	}
 
 	if (from.sin_addr.s_addr==INADDR_ANY || from.sin_addr.s_addr == 
 		INADDR_BROADCAST) {
-		Con_Printf ("Warning: Packet dropped - bad address\n");
+		Sys_Printf ("Warning: Packet dropped - bad address\n");
 		return false;
 	}
 
 	_net_message_message.cursize = ret;
 	if (ret == sizeof (net_message_buffer)) {
-		Con_Printf ("Oversize packet from %s\n", NET_AdrToString (net_from));
+		Sys_Printf ("Oversize packet from %s\n", NET_AdrToString (net_from));
 		return false;
 	}
 
@@ -335,7 +335,7 @@ NET_SendPacket (int length, const void *data, netadr_t to)
 		if (err == EWOULDBLOCK)
 			return;
 
-		Con_Printf ("NET_SendPacket: %d: %d: %s\n", net_socket, err,
+		Sys_Printf ("NET_SendPacket: %d: %d: %s\n", net_socket, err,
 					strerror (errno));
 	}
 }
@@ -363,7 +363,7 @@ UDP_OpenSocket (int port)
 // ZOID -- check for interface binding option
 	if ((i = COM_CheckParm ("-ip")) != 0 && i < com_argc) {
 		address.sin_addr.s_addr = inet_addr (com_argv[i + 1]);
-		Con_Printf ("Binding to IP Interface Address of %s\n",
+		Sys_Printf ("Binding to IP Interface Address of %s\n",
 					inet_ntoa (address.sin_addr));
 	} else
 		address.sin_addr.s_addr = INADDR_ANY;
@@ -394,7 +394,7 @@ NET_GetLocalAddress (void)
 		Sys_Error ("NET_Init: getsockname: %s", strerror (errno));
 	net_local_adr.port = address.sin_port;
 
-	Con_Printf ("IP address %s\n", NET_AdrToString (net_local_adr));
+	Sys_Printf ("IP address %s\n", NET_AdrToString (net_local_adr));
 }
 
 void
@@ -423,7 +423,7 @@ NET_Init (int port)
 	net_loopback_adr.ip[0] = 127;
 	net_loopback_adr.ip[3] = 1;
 
-	Con_Printf ("UDP (IPv4) Initialized\n");
+	Sys_Printf ("UDP (IPv4) Initialized\n");
 }
 
 void

@@ -38,7 +38,6 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/quakefs.h"
@@ -609,7 +608,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 
 	if (x < 0 || x + w > (int) vid.width
 		|| y < 0 || y + h > (int) vid.height) {
-		Con_Printf ("Bad Draw_Fill(%d, %d, %d, %d, %c)\n", x, y, w, h, c);
+		Sys_Printf ("Bad Draw_Fill(%d, %d, %d, %d, %c)\n", x, y, w, h, c);
 		return;
 	}
 

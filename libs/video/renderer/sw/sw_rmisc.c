@@ -32,7 +32,6 @@ static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/render.h"
@@ -81,7 +80,7 @@ R_TimeRefresh_f (void)
 	}
 	stop = Sys_DoubleTime ();
 	time = stop - start;
-	Con_Printf ("%f seconds (%f fps)\n", time, 128 / time);
+	Sys_Printf ("%f seconds (%f fps)\n", time, 128 / time);
 
 	r_refdef.viewangles[1] = startangle;
 }
@@ -90,7 +89,7 @@ void
 R_LoadSky_f (void)
 {
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("loadsky <name> : load a skybox\n");
+		Sys_Printf ("loadsky <name> : load a skybox\n");
 		return;
 	}
 
@@ -107,7 +106,7 @@ R_PrintTimes (void)
 
 	ms = 1000 * (r_time2 - r_time1);
 
-	Con_Printf ("%5.1f ms %3i/%3i/%3i poly %3i surf\n",
+	Sys_Printf ("%5.1f ms %3i/%3i/%3i poly %3i surf\n",
 				ms, c_faceclip, r_polycount, r_drawnpolycount, c_surf);
 	c_surf = 0;
 }
@@ -129,7 +128,7 @@ R_PrintDSpeeds (void)
 	dv_time = (dv_time2 - dv_time1) * 1000;
 	ms = (r_time2 - r_time1) * 1000;
 
-	Con_Printf ("%3i %4.1fp %3iw %4.1fb %3is %4.1fe %4.1fv\n",
+	Sys_Printf ("%3i %4.1fp %3iw %4.1fb %3is %4.1fe %4.1fv\n",
 				(int) ms, dp_time, (int) rw_time, db_time, (int) se_time,
 				de_time, dv_time);
 }
@@ -137,7 +136,7 @@ R_PrintDSpeeds (void)
 void
 R_PrintAliasStats (void)
 {
-	Con_Printf ("%3i polygon model drawn\n", r_amodels_drawn);
+	Sys_Printf ("%3i polygon model drawn\n", r_amodels_drawn);
 }
 
 void
@@ -225,7 +224,7 @@ R_SetupFrame (void)
 		if ((surface_p - surfaces) > r_maxsurfsseen)
 			r_maxsurfsseen = surface_p - surfaces;
 
-		Con_Printf ("Used %ld of %ld surfs; %d max\n",
+		Sys_Printf ("Used %ld of %ld surfs; %d max\n",
 					(long)(surface_p - surfaces),
 					(long)(surf_max - surfaces), r_maxsurfsseen);
 	}
@@ -236,7 +235,7 @@ R_SetupFrame (void)
 		if (edgecount > r_maxedgesseen)
 			r_maxedgesseen = edgecount;
 
-		Con_Printf ("Used %d of %d edges; %d max\n", edgecount,
+		Sys_Printf ("Used %d of %d edges; %d max\n", edgecount,
 					r_numallocatededges, r_maxedgesseen);
 	}
 

@@ -39,7 +39,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include "QF/cbuf.h"
-#include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/keys.h"
@@ -462,7 +461,7 @@ SV_ReadClientMessage (void)
 	  nextmsg:
 		ret = NET_GetMessage (host_client->netconnection);
 		if (ret == -1) {
-			Con_Printf ("SV_ReadClientMessage: NET_GetMessage failed\n");
+			Sys_Printf ("SV_ReadClientMessage: NET_GetMessage failed\n");
 			return false;
 		}
 		if (!ret)
@@ -475,7 +474,7 @@ SV_ReadClientMessage (void)
 				return false;			// a command caused an error
 
 			if (net_message->badread) {
-				Con_Printf ("SV_ReadClientMessage: badread\n");
+				Sys_Printf ("SV_ReadClientMessage: badread\n");
 				return false;
 			}
 
@@ -486,7 +485,7 @@ SV_ReadClientMessage (void)
 				goto nextmsg;			// end of message
 
 			default:
-				Con_Printf ("SV_ReadClientMessage: unknown command char\n");
+				Sys_Printf ("SV_ReadClientMessage: unknown command char\n");
 				return false;
 
 			case clc_nop:
@@ -541,7 +540,7 @@ SV_ReadClientMessage (void)
 				else if (ret == 1)
 					Cmd_ExecuteString (s, src_client);
 				else
-					Con_DPrintf ("%s tried to %s\n", host_client->name, s);
+					Sys_DPrintf ("%s tried to %s\n", host_client->name, s);
 				break;
 
 			case clc_disconnect:

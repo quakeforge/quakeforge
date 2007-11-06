@@ -42,7 +42,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/locs.h"
 #include "QF/mathlib.h"
@@ -259,7 +258,7 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 
 	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
 		if (developer->int_val)
-			Con_Printf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
+			Sys_Printf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
 						currententity->model->name);
 		frame = 0;
 	}
@@ -365,7 +364,7 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 
 	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
 		if (developer->int_val)
-			Con_Printf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
+			Sys_Printf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
 						currententity->model->name);
 		frame = 0;
 	}
@@ -468,7 +467,7 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 	maliasskingroup_t *paliasskingroup;
 
 	if ((skinnum >= ahdr->mdl.numskins) || (skinnum < 0)) {
-		Con_DPrintf ("R_AliasSetupSkin: no such skin # %d\n", skinnum);
+		Sys_DPrintf ("R_AliasSetupSkin: no such skin # %d\n", skinnum);
 		skinnum = 0;
 	}
 

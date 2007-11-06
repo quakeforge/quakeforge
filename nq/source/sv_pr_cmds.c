@@ -41,7 +41,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cbuf.h"
 #include "QF/clip_hull.h"
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/ruamoko.h"
@@ -73,7 +72,7 @@ PF_error (progs_t *pr)
 	edict_t    *ed;
 
 	s = PF_VarString (pr, 0);
-	Con_Printf ("======SERVER ERROR in %s:\n%s\n",
+	Sys_Printf ("======SERVER ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->descriptor->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
@@ -97,7 +96,7 @@ PF_objerror (progs_t *pr)
 	edict_t    *ed;
 
 	s = PF_VarString (pr, 0);
-	Con_Printf ("======OBJECT ERROR in %s:\n%s\n",
+	Sys_Printf ("======OBJECT ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->descriptor->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
@@ -305,7 +304,7 @@ PF_sprint (progs_t *pr)
 	s = PF_VarString (pr, 1);
 
 	if (entnum < 1 || entnum > svs.maxclients) {
-		Con_Printf ("tried to sprint to a non-client\n");
+		Sys_Printf ("tried to sprint to a non-client\n");
 		return;
 	}
 
@@ -334,7 +333,7 @@ PF_centerprint (progs_t *pr)
 	s = PF_VarString (pr, 1);
 
 	if (entnum < 1 || entnum > svs.maxclients) {
-		Con_Printf ("tried to sprint to a non-client\n");
+		Sys_Printf ("tried to sprint to a non-client\n");
 		return;
 	}
 
@@ -383,7 +382,7 @@ PF_ambientsound (progs_t *pr)
 			break;
 
 	if (!*check) {
-		Con_Printf ("no precache: %s\n", samp);
+		Sys_Printf ("no precache: %s\n", samp);
 		return;
 	}
 

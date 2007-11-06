@@ -113,7 +113,7 @@ Con_ExecLine (const char *line)
 	}
   no_lf:
 	if (echo)
-		Con_Printf ("%s\n", line);
+		Sys_Printf ("%s\n", line);
 }
 
 VISIBLE void
@@ -134,39 +134,12 @@ Con_Shutdown (void)
 }
 
 VISIBLE void
-Con_Printf (const char *fmt, ...)
-{
-	va_list		args;
-
-	va_start (args, fmt);
-	if (con_module)
-		con_module->functions->console->pC_Print (fmt, args);
-	else
-		vfprintf (stdout, fmt, args);
-	va_end (args);
-}
-
-VISIBLE void
 Con_Print (const char *fmt, va_list args)
 {
 	if (con_module)
 		con_module->functions->console->pC_Print (fmt, args);
 	else
 		vfprintf (stdout, fmt, args);
-}
-
-VISIBLE void
-Con_DPrintf (const char *fmt, ...)
-{
-	if (developer && developer->int_val) {
-		va_list     args;
-		va_start (args, fmt);
-		if (con_module)
-			con_module->functions->console->pC_Print (fmt, args);
-		else
-			vfprintf (stdout, fmt, args);
-		va_end (args);
-	}
 }
 
 VISIBLE void
@@ -179,7 +152,7 @@ Con_ProcessInput (void)
 
 		if (!been_there_done_that) {
 			been_there_done_that = 1;
-			Con_Printf ("no input for you\n");
+			Sys_Printf ("no input for you\n");
 		}
 	}
 }

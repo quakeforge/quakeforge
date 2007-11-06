@@ -242,7 +242,7 @@ static void
 CL_Quit_f (void)
 {
 	if (!con_module)
-		Con_Printf ("I hope you wanted to quit\n");
+		Sys_Printf ("I hope you wanted to quit\n");
 	CL_Disconnect ();
 	Sys_Quit ();
 }
@@ -250,8 +250,8 @@ CL_Quit_f (void)
 static void
 CL_Version_f (void)
 {
-	Con_Printf ("%s Version %s\n", PROGRAM, VERSION);
-	Con_Printf ("Binary: " __TIME__ " " __DATE__ "\n");
+	Sys_Printf ("%s Version %s\n", PROGRAM, VERSION);
+	Sys_Printf ("Binary: " __TIME__ " " __DATE__ "\n");
 }
 
 /*
@@ -275,7 +275,7 @@ CL_SendConnectPacket (void)
 	t1 = Sys_DoubleTime ();
 
 	if (!NET_StringToAdr (cls.servername, &cls.server_addr)) {
-		Con_Printf ("Bad server address\n");
+		Sys_Printf ("Bad server address\n");
 		connect_time = -1;
 		return;
 	}
@@ -316,7 +316,7 @@ CL_CheckForResend (void)
 
 	t1 = Sys_DoubleTime ();
 	if (!NET_StringToAdr (cls.servername, &cls.server_addr)) {
-		Con_Printf ("Bad server address\n");
+		Sys_Printf ("Bad server address\n");
 		connect_time = -1;
 		return;
 	}
@@ -328,7 +328,7 @@ CL_CheckForResend (void)
 	connect_time = realtime + t2 - t1;	// for retransmit requests
 
 	VID_SetCaption (va ("Connecting to %s", cls.servername));
-	Con_Printf ("Connecting to %s...\n", cls.servername);
+	Sys_Printf ("Connecting to %s...\n", cls.servername);
 	Netchan_SendPacket (strlen (getchallenge), (void *) getchallenge,
 						cls.server_addr);
 }
@@ -346,7 +346,7 @@ CL_Connect_f (void)
 	const char *server;
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("usage: connect <server>\n");
+		Sys_Printf ("usage: connect <server>\n");
 		return;
 	}
 
@@ -381,7 +381,7 @@ CL_Rcon_f (void)
 		to = cls.netchan.remote_address;
 	else {
 		if (!rcon_address->string[0]) {
-			Con_Printf ("You must either be connected, or set the "
+			Sys_Printf ("You must either be connected, or set the "
 						"'rcon_address' cvar to issue rcon commands\n");
 			return;
 		}
@@ -416,7 +416,7 @@ CL_ClearState (void)
 
 	CL_Init_Entity (&cl.viewent);
 
-	Con_DPrintf ("Clearing memory\n");
+	Sys_DPrintf ("Clearing memory\n");
 	D_FlushCaches ();
 	Mod_ClearAll ();
 	if (host_hunklevel)					// FIXME: check this...
@@ -546,7 +546,7 @@ CL_User_f (void)
 	int         uid, i;
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("Usage: user <username / userid>\n");
+		Sys_Printf ("Usage: user <username / userid>\n");
 		return;
 	}
 
@@ -561,7 +561,7 @@ CL_User_f (void)
 			return;
 		}
 	}
-	Con_Printf ("User not in server.\n");
+	Sys_Printf ("User not in server.\n");
 }
 
 /*
@@ -575,17 +575,17 @@ CL_Users_f (void)
 	int         c, i;
 
 	c = 0;
-	Con_Printf ("userid frags name\n");
-	Con_Printf ("------ ----- ----\n");
+	Sys_Printf ("userid frags name\n");
+	Sys_Printf ("------ ----- ----\n");
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		if (cl.players[i].name[0]) {
-			Con_Printf ("%6i %4i %s\n", cl.players[i].userid,
+			Sys_Printf ("%6i %4i %s\n", cl.players[i].userid,
 						cl.players[i].frags, cl.players[i].name);
 			c++;
 		}
 	}
 
-	Con_Printf ("%i total users\n", c);
+	Sys_Printf ("%i total users\n", c);
 }
 
 /*
@@ -599,30 +599,30 @@ CL_FullServerinfo_f (void)
 	const char *p;
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("usage: fullserverinfo <complete info string>\n");
+		Sys_Printf ("usage: fullserverinfo <complete info string>\n");
 		return;
 	}
 
-	Con_DPrintf ("Cmd_Argv (1): '%s'\n", Cmd_Argv (1));
+	Sys_DPrintf ("Cmd_Argv (1): '%s'\n", Cmd_Argv (1));
 	Info_Destroy (cl.serverinfo);
 	cl.serverinfo = Info_ParseString (Cmd_Argv (1), MAX_SERVERINFO_STRING, 0);
-	Con_DPrintf ("cl.serverinfo: '%s'\n", Info_MakeString (cl.serverinfo, 0));
+	Sys_DPrintf ("cl.serverinfo: '%s'\n", Info_MakeString (cl.serverinfo, 0));
 
 	if ((p = Info_ValueForKey (cl.serverinfo, "*qf_version")) && *p) {
 		if (server_version == NULL)
-			Con_Printf ("QuakeForge v%s Server\n", p);
+			Sys_Printf ("QuakeForge v%s Server\n", p);
 		server_version = strdup (p);
 	} else if ((p = Info_ValueForKey (cl.serverinfo, "*version")) && *p) {
 		if (server_version == NULL)
-			Con_Printf ("QuakeWorld v%s Server\n", p);
+			Sys_Printf ("QuakeWorld v%s Server\n", p);
 		server_version = strdup (p);
 	}
 
 	if ((p = Info_ValueForKey (cl.serverinfo, "*qsg_version")) && *p) {
 		if ((cl.stdver = atof (p)))
-			Con_Printf ("Server supports QSG v%s protocol\n", p);
+			Sys_Printf ("Server supports QSG v%s protocol\n", p);
 		else
-			Con_Printf ("Invalid QSG Protocol number: %s", p);
+			Sys_Printf ("Invalid QSG Protocol number: %s", p);
 	}
 
 	cl.chase = cl.sv_cshifts = cl.no_pogo_stick = cl.teamplay = 0;
@@ -691,7 +691,7 @@ CL_FullInfo_f (void)
 	info_t     *info;
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("fullinfo <complete info string>\n");
+		Sys_Printf ("fullinfo <complete info string>\n");
 		return;
 	}
 
@@ -713,7 +713,7 @@ CL_SetInfo_f (void)
 		return;
 	}
 	if (Cmd_Argc () != 3) {
-		Con_Printf ("usage: setinfo [ <key> <value> ]\n");
+		Sys_Printf ("usage: setinfo [ <key> <value> ]\n");
 		return;
 	}
 	if (strcaseequal (Cmd_Argv (1), pmodel_name)
@@ -743,12 +743,12 @@ CL_Packet_f (void)
 	netadr_t    adr;
 
 	if (Cmd_Argc () != 3) {
-		Con_Printf ("packet <destination> <contents>\n");
+		Sys_Printf ("packet <destination> <contents>\n");
 		return;
 	}
 
 	if (!NET_StringToAdr (Cmd_Argv (1), &adr)) {
-		Con_Printf ("Bad address\n");
+		Sys_Printf ("Bad address\n");
 		return;
 	}
 
@@ -811,7 +811,7 @@ CL_Changing_f (void)
 	r_force_fullscreen = 0;
 	CL_SetState (ca_connected);			// not active anymore, but not
 										// disconnected
-	Con_Printf ("\nChanging map...\n");
+	Sys_Printf ("\nChanging map...\n");
 }
 
 /*
@@ -830,7 +830,7 @@ CL_Reconnect_f (void)
 	S_StopAllSounds ();
 
 	if (cls.state == ca_connected) {
-		Con_Printf ("reconnecting...\n");
+		Sys_Printf ("reconnecting...\n");
 		VID_SetCaption ("Reconnecting");
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, "new");
@@ -838,7 +838,7 @@ CL_Reconnect_f (void)
 	}
 
 	if (!*cls.servername) {
-		Con_Printf ("No server to reconnect to...\n");
+		Sys_Printf ("No server to reconnect to...\n");
 		return;
 	}
 
@@ -865,19 +865,19 @@ CL_ConnectionlessPacket (void)
 	if (!cls.demoplayback
 		&& (cl_paranoid->int_val
 			|| !NET_CompareAdr (net_from, cls.server_addr)))
-		Con_Printf ("%s: ", NET_AdrToString (net_from));
+		Sys_Printf ("%s: ", NET_AdrToString (net_from));
 	if (c == S2C_CONNECTION) {
-		Con_Printf ("connection\n");
+		Sys_Printf ("connection\n");
 		if (cls.state >= ca_connected) {
 			if (!cls.demoplayback)
-				Con_Printf ("Dup connect received.  Ignored.\n");
+				Sys_Printf ("Dup connect received.  Ignored.\n");
 			return;
 		}
 		Netchan_Setup (&cls.netchan, net_from, cls.qport, NC_SEND_QPORT);
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, "new");
 		CL_SetState (ca_connected);
-		Con_Printf ("Connected.\n");
+		Sys_Printf ("Connected.\n");
 		allowremotecmd = false;			// localid required now for remote
 										// cmds
 		return;
@@ -887,7 +887,7 @@ CL_ConnectionlessPacket (void)
 		char       *cmdtext;
 		int         len;
 
-		Con_Printf ("client command\n");
+		Sys_Printf ("client command\n");
 
 		if (!cl_allow_cmd_pkt->int_val
 			|| (!NET_CompareBaseAdr (net_from, net_local_adr)
@@ -895,7 +895,7 @@ CL_ConnectionlessPacket (void)
 				&& (!cl_cmd_pkt_adr->string[0]
 					|| !NET_CompareBaseAdr (net_from,
 											cl_cmd_packet_address)))) {
-			Con_Printf ("Command packet from remote host.  Ignored.\n");
+			Sys_Printf ("Command packet from remote host.  Ignored.\n");
 			return;
 		}
 		if (cl_cmd_pkt_adr->string[0]
@@ -918,25 +918,25 @@ CL_ConnectionlessPacket (void)
 								(int) strlen (localid->string) > len ||
 								strncmp (localid->string, s, len))) {
 			if (!*localid->string) {
-				Con_Printf ("===========================\n");
-				Con_Printf ("Command packet received from local host, but no "
+				Sys_Printf ("===========================\n");
+				Sys_Printf ("Command packet received from local host, but no "
 							"localid has been set.  You may need to upgrade "
 							"your server browser.\n");
-				Con_Printf ("===========================\n");
+				Sys_Printf ("===========================\n");
 				return;
 			}
-			Con_Printf ("===========================\n");
-			Con_Printf
+			Sys_Printf ("===========================\n");
+			Sys_Printf
 				("Invalid localid on command packet received from local host. "
 				 "\n|%s| != |%s|\n"
 				 "You may need to reload your server browser and %s.\n", s,
 				 localid->string, PROGRAM);
-			Con_Printf ("===========================\n");
+			Sys_Printf ("===========================\n");
 			Cvar_Set (localid, "");
 			return;
 		}
 
-		Con_Printf ("%s\n", cmdtext);
+		Sys_Printf ("%s\n", cmdtext);
 		Cbuf_AddText (cl_cbuf, cmdtext);
 		allowremotecmd = false;
 		return;
@@ -946,21 +946,21 @@ CL_ConnectionlessPacket (void)
 		s = MSG_ReadString (net_message);
 		if (SL_CheckStatus (NET_AdrToString (net_from), s))
 		{
-			Con_Printf ("status response\n");
+			Sys_Printf ("status response\n");
 			return;
 		} else if (!cls.demoplayback
 				   && (cl_paranoid->int_val
 					   || !NET_CompareAdr (net_from, cls.server_addr))) {
-			Con_Printf ("print\n");
+			Sys_Printf ("print\n");
 		}
-		Con_Printf ("%s", s);
+		Sys_Printf ("%s", s);
 		return;
 	}
 	// ping from somewhere
 	if (c == A2A_PING) {
 		char        data[6];
 
-		Con_Printf ("ping\n");
+		Sys_Printf ("ping\n");
 
 		data[0] = 0xff;
 		data[1] = 0xff;
@@ -974,22 +974,22 @@ CL_ConnectionlessPacket (void)
 	}
 
 	if (c == S2C_CHALLENGE) {
-		Con_Printf ("challenge");
+		Sys_Printf ("challenge");
 		if (cls.state >= ca_connected) {
 			if (!cls.demoplayback)
-				Con_Printf ("\nDup challenge received.  Ignored.\n");
+				Sys_Printf ("\nDup challenge received.  Ignored.\n");
 			return;
 		}
 
 		s = MSG_ReadString (net_message);
 		cls.challenge = atoi (s);
 		if (strstr (s, "QF")) {
-			Con_Printf (": QuakeForge server detected\n");
+			Sys_Printf (": QuakeForge server detected\n");
 			CL_AddQFInfoKeys ();
 		} else if (strstr (s, "EXT")) {
 			CL_AddQFInfoKeys ();
 		} else {
-			Con_Printf ("\n");
+			Sys_Printf ("\n");
 		}
 		CL_SendConnectPacket ();
 		return;
@@ -997,7 +997,7 @@ CL_ConnectionlessPacket (void)
 
 	if (c == M2C_MASTER_REPLY)
 	{
-		Con_Printf ("Master Server Reply\n");
+		Sys_Printf ("Master Server Reply\n");
 		clcp_temp = MSG_ReadByte (net_message);
 		s = MSG_ReadString (net_message);
 		MSL_ParseServerList (s);
@@ -1007,11 +1007,11 @@ CL_ConnectionlessPacket (void)
 		if (cls.demoplayback)
 			Host_EndGame ("End of demo");
 		else
-			Con_Printf ("svc_disconnect\n");
+			Sys_Printf ("svc_disconnect\n");
 		return;
 	}
 
-	Con_Printf ("unknown:  %c\n", c);
+	Sys_Printf ("unknown:  %c\n", c);
 }		
 
 void
@@ -1037,14 +1037,14 @@ CL_ReadPackets (void)
 			continue;
 		}
 		if (net_message->message->cursize < 8 && !cls.demoplayback2) {
-			Con_Printf ("%s: Runt packet\n", NET_AdrToString (net_from));
+			Sys_Printf ("%s: Runt packet\n", NET_AdrToString (net_from));
 			continue;
 		}
 
 		// packet from server
 		if (!cls.demoplayback &&
 			!NET_CompareAdr (net_from, cls.netchan.remote_address)) {
-			Con_DPrintf ("%s:sequenced packet without connection\n",
+			Sys_DPrintf ("%s:sequenced packet without connection\n",
 						 NET_AdrToString (net_from));
 			continue;
 		}
@@ -1061,7 +1061,7 @@ CL_ReadPackets (void)
 	// check timeout
 	if (!cls.demoplayback && cls.state >= ca_connected
 		&& realtime - cls.netchan.last_received > cl_timeout->value) {
-		Con_Printf ("\nServer connection timed out.\n");
+		Sys_Printf ("\nServer connection timed out.\n");
 		CL_Disconnect ();
 		return;
 	}
@@ -1072,12 +1072,12 @@ static void
 CL_Download_f (void)
 {
 	if (cls.state == ca_disconnected || cls.demoplayback) {
-		Con_Printf ("Must be connected.\n");
+		Sys_Printf ("Must be connected.\n");
 		return;
 	}
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("Usage: download <datafile>\n");
+		Sys_Printf ("Usage: download <datafile>\n");
 		return;
 	}
 
@@ -1094,7 +1094,7 @@ CL_Download_f (void)
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		SZ_Print (&cls.netchan.message, va ("download %s\n", Cmd_Argv (1)));
 	} else {
-		Con_Printf ("error downloading %s: %s\n", Cmd_Argv (1),
+		Sys_Printf ("error downloading %s: %s\n", Cmd_Argv (1),
 					strerror (errno));
 	}
 }
@@ -1141,7 +1141,7 @@ CL_SetState (cactive_t state)
 	};
 	cactive_t   old_state = cls.state;
 
-	Con_DPrintf ("CL_SetState (%s)\n", state_names[state]);
+	Sys_DPrintf ("CL_SetState (%s)\n", state_names[state]);
 	cls.state = state;
 	if (old_state != state) {
 		if (old_state == ca_active) {
@@ -1405,9 +1405,9 @@ Host_EndGame (const char *message, ...)
 	va_start (argptr, message);
 	dvsprintf (str, message, argptr);
 	va_end (argptr);
-	Con_Printf ("\n===========================\n");
-	Con_Printf ("Host_EndGame: %s\n", str->str);
-	Con_Printf ("===========================\n\n");
+	Sys_Printf ("\n===========================\n");
+	Sys_Printf ("Host_EndGame: %s\n", str->str);
+	Sys_Printf ("===========================\n\n");
 
 	CL_Disconnect ();
 
@@ -1438,7 +1438,7 @@ Host_Error (const char *error, ...)
 	dvsprintf (str, error, argptr);
 	va_end (argptr);
 
-	Con_Printf ("Host_Error: %s", str->str);
+	Sys_Printf ("Host_Error: %s", str->str);
 
 	CL_Disconnect ();
 	cls.demonum = -1;
@@ -1467,7 +1467,7 @@ Host_WriteConfiguration (void)
 
 		f = QFS_WOpen (path, 0);
 		if (!f) {
-			Con_Printf ("Couldn't write config.cfg.\n");
+			Sys_Printf ("Couldn't write config.cfg.\n");
 			return;
 		}
 
@@ -1632,7 +1632,7 @@ Host_Frame (float time)
 		time3 = Sys_DoubleTime ();
 		pass2 = (time2 - time1) * 1000;
 		pass3 = (time3 - time2) * 1000;
-		Con_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
+		Sys_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
 					pass1 + pass2 + pass3, pass1, pass2, pass3);
 	}
 
@@ -1829,7 +1829,7 @@ Host_Init (void)
 
 	CL_Demo_Init ();
 
-	Con_Printf ("%4.1f megabyte heap.\n", cl_mem_size->value);
+	Sys_Printf ("%4.1f megabyte heap.\n", cl_mem_size->value);
 
 	host_basepal = (byte *) QFS_LoadHunkFile ("gfx/palette.lmp");
 	if (!host_basepal)
@@ -1868,9 +1868,9 @@ Host_Init (void)
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
 
-	Con_Printf ("\nClient version %s (build %04d)\n\n", VERSION,
+	Sys_Printf ("\nClient version %s (build %04d)\n\n", VERSION,
 				build_number ());
-	Con_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", PROGRAM);
+	Sys_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", PROGRAM);
 
 	// make sure all + commands have been executed
 	Cbuf_Execute_Stack (cl_cbuf);

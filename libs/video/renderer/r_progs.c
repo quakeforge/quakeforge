@@ -39,11 +39,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 #include <stdlib.h>
 
-#include "QF/console.h"
 #include "QF/draw.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
 #include "QF/render.h"
+#include "QF/sys.h"
 
 typedef struct {
 	int         width;
@@ -84,7 +84,7 @@ bi_Draw_CachePic (progs_t *pr)
 	qpic_res_t *rpic = Hash_Find (res->pic_hash, path);
 
 	if (!pic) {
-		Con_DPrintf ("can't load %s\n", path);
+		Sys_DPrintf ("can't load %s\n", path);
 		R_INT (pr) = 0;
 		return;
 	}

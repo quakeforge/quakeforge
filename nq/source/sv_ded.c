@@ -36,7 +36,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/csqc.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
@@ -141,9 +140,9 @@ color_f (void)
 	char        playercolor;
 
 	if (Cmd_Argc () <= 1) {
-		Con_Printf ("\"color\" is \"%d %d\"\n", (host_client->colors) >> 4,
+		Sys_Printf ("\"color\" is \"%d %d\"\n", (host_client->colors) >> 4,
 					(host_client->colors) & 0x0f);
-		Con_Printf ("color <0-13> [0-13]\n");
+		Sys_Printf ("color <0-13> [0-13]\n");
 		return;
 	}
 

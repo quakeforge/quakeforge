@@ -47,7 +47,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <time.h>
 	
 #include "QF/cbuf.h"
-#include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
@@ -391,7 +390,7 @@ readit:
 			goto readit;
 
 		default:
-			Con_Printf ("Corrupted demo.\n");
+			Sys_Printf ("Corrupted demo.\n");
 			CL_StopPlayback ();
 			return 0;
 	}
@@ -437,7 +436,7 @@ void
 CL_Stop_f (void)
 {
 	if (!cls.demorecording) {
-		Con_Printf ("Not recording a demo.\n");
+		Sys_Printf ("Not recording a demo.\n");
 		return;
 	}
 	// write a disconnect message to the demo file
@@ -451,7 +450,7 @@ CL_Stop_f (void)
 	Qclose (cls.demofile);
 	cls.demofile = NULL;
 	cls.demorecording = false;
-	Con_Printf ("Completed demo\n");
+	Sys_Printf ("Completed demo\n");
 }
 
 /*
@@ -570,11 +569,11 @@ CL_Record (const char *argv1)
 		cls.demofile = QFS_WOpen (name, 0);
 	}
 	if (!cls.demofile) {
-		Con_Printf ("ERROR: couldn't open.\n");
+		Sys_Printf ("ERROR: couldn't open.\n");
 		return;
 	}
 
-	Con_Printf ("recording to %s.\n", name);
+	Sys_Printf ("recording to %s.\n", name);
 	cls.demorecording = true;
 
 /*-------------------------------------------------*/
@@ -819,12 +818,12 @@ CL_Record_f (void)
 	if (Cmd_Argc () > 2) {
 		// we use a demo name like year-month-day-hours-minutes-mapname.qwd
 		// if there is no argument
-		Con_Printf ("record [demoname]\n");
+		Sys_Printf ("record [demoname]\n");
 		return;
 	}
 
 	if (cls.demoplayback || cls.state != ca_active) {
-		Con_Printf ("You must be connected to record.\n");
+		Sys_Printf ("You must be connected to record.\n");
 		return;
 	}
 
@@ -849,12 +848,12 @@ CL_ReRecord_f (void)
 
 	c = Cmd_Argc ();
 	if (c != 2) {
-		Con_Printf ("rerecord <demoname>\n");
+		Sys_Printf ("rerecord <demoname>\n");
 		return;
 	}
 
 	if (!*cls.servername) {
-		Con_Printf ("No server to reconnect to...\n");
+		Sys_Printf ("No server to reconnect to...\n");
 		return;
 	}
 
@@ -869,11 +868,11 @@ CL_ReRecord_f (void)
 
 	cls.demofile = QFS_WOpen (name, 0);
 	if (!cls.demofile) {
-		Con_Printf ("ERROR: couldn't open.\n");
+		Sys_Printf ("ERROR: couldn't open.\n");
 		return;
 	}
 
-	Con_Printf ("recording to %s.\n", name);
+	Sys_Printf ("recording to %s.\n", name);
 	cls.demorecording = true;
 
 	CL_Disconnect ();
@@ -889,10 +888,10 @@ CL_StartDemo (void)
 	strncpy (name, demoname, sizeof (name));
 	QFS_DefaultExtension (name, ".qwd");
 
-	Con_Printf ("Playing demo from %s.\n", name);
+	Sys_Printf ("Playing demo from %s.\n", name);
 	QFS_FOpenFile (name, &cls.demofile);
 	if (!cls.demofile) {
-		Con_Printf ("ERROR: couldn't open.\n");
+		Sys_Printf ("ERROR: couldn't open.\n");
 		cls.demonum = -1;				// stop demo loop
 		return;
 	}
@@ -901,9 +900,9 @@ CL_StartDemo (void)
 	net_blocksend = 1;
 	if (strequal (QFS_FileExtension (name), ".mvd")) {
 		cls.demoplayback2 = true;
-		Con_Printf ("mvd\n");
+		Sys_Printf ("mvd\n");
 	} else {
-		Con_Printf ("qwd\n");
+		Sys_Printf ("qwd\n");
 	}
 	CL_SetState (ca_demostart);
 	Netchan_Setup (&cls.netchan, net_from, 0, NC_SEND_QPORT);
@@ -927,7 +926,7 @@ void
 CL_PlayDemo_f (void)
 {
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("play <demoname> : plays a demo\n");
+		Sys_Printf ("play <demoname> : plays a demo\n");
 		return;
 	}
 	timedemo_runs = timedemo_count = 1;	// make sure looped timedemos stop
@@ -978,7 +977,7 @@ CL_FinishTimeDemo (void)
 	time = Sys_DoubleTime () - cls.td_starttime;
 	if (!time)
 		time = 1;
-	Con_Printf ("%i frame%s %.4g seconds %.4g fps\n", frames,
+	Sys_Printf ("%i frame%s %.4g seconds %.4g fps\n", frames,
 				frames == 1 ? "" : "s", time, frames / time);
 
 	CL_TimeFrames_DumpLog ();
@@ -1007,10 +1006,10 @@ CL_FinishTimeDemo (void)
 			for (i = 0; i < timedemo_runs; i++)
 				variance += sqr (timedemo_data[i].fps - average);
 			variance /= timedemo_runs;
-			Con_Printf ("timedemo stats for %d runs:\n", timedemo_runs);
-			Con_Printf ("  average fps: %.3f\n", average);
-			Con_Printf ("  min/max fps: %.3f/%.3f\n", min, max);
-			Con_Printf ("std deviation: %.3f fps\n", sqrt (variance));
+			Sys_Printf ("timedemo stats for %d runs:\n", timedemo_runs);
+			Sys_Printf ("  average fps: %.3f\n", average);
+			Sys_Printf ("  min/max fps: %.3f/%.3f\n", min, max);
+			Sys_Printf ("std deviation: %.3f fps\n", sqrt (variance));
 		}
 		free (timedemo_data);
 		timedemo_data = 0;
@@ -1028,7 +1027,7 @@ void
 CL_TimeDemo_f (void)
 {
 	if (Cmd_Argc () < 2 || Cmd_Argc () > 3) {
-		Con_Printf ("timedemo <demoname> [count]: gets demo speeds\n");
+		Sys_Printf ("timedemo <demoname> [count]: gets demo speeds\n");
 		return;
 	}
 	timedemo_runs = timedemo_count = 1;	// make sure looped timedemos stop
@@ -1101,10 +1100,10 @@ CL_TimeFrames_DumpLog (void)
 	if (demo_timeframes_isactive == 0)
 		return;
 
-	Con_Printf ("Dumping Timed Frames log: %s\n", filename);
+	Sys_Printf ("Dumping Timed Frames log: %s\n", filename);
 	outputfile = QFS_Open (filename, "w");
 	if (!outputfile) {
-		Con_Printf ("Could not open: %s\n", filename);
+		Sys_Printf ("Could not open: %s\n", filename);
 		return;
 	}
 	for (i = 1; i < demo_timeframes_index; i++) {

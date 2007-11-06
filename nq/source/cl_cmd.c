@@ -35,9 +35,9 @@
 #endif
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/msg.h"
 #include "QF/sizebuf.h"
+#include "QF/sys.h"
 
 #include "client.h"
 
@@ -51,7 +51,7 @@ void
 CL_Cmd_ForwardToServer (void)
 {
 	if (cls.state != ca_connected) {
-		Con_Printf ("Can't \"%s\", not connected\n", Cmd_Argv (0));
+		Sys_Printf ("Can't \"%s\", not connected\n", Cmd_Argv (0));
 		return;
 	}
 

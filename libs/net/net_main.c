@@ -211,7 +211,7 @@ static void
 NET_Listen_f (void)
 {
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("\"listen\" is \"%u\"\n", listening ? 1 : 0);
+		Sys_Printf ("\"listen\" is \"%u\"\n", listening ? 1 : 0);
 		return;
 	}
 
@@ -232,12 +232,12 @@ MaxPlayers_f (void)
 	int         n;
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("\"maxplayers\" is \"%u\"\n", svs.maxclients);
+		Sys_Printf ("\"maxplayers\" is \"%u\"\n", svs.maxclients);
 		return;
 	}
 
 	if (sv.active) {
-		Con_Printf
+		Sys_Printf
 			("maxplayers can not be changed while a server is running.\n");
 		return;
 	}
@@ -247,7 +247,7 @@ MaxPlayers_f (void)
 		n = 1;
 	if (n > svs.maxclientslimit) {
 		n = svs.maxclientslimit;
-		Con_Printf ("\"maxplayers\" set to \"%u\"\n", n);
+		Sys_Printf ("\"maxplayers\" set to \"%u\"\n", n);
 	}
 
 	if ((n == 1) && listening)
@@ -270,13 +270,13 @@ NET_Port_f (void)
 	int         n;
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("\"port\" is \"%u\"\n", net_hostport);
+		Sys_Printf ("\"port\" is \"%u\"\n", net_hostport);
 		return;
 	}
 
 	n = atoi (Cmd_Argv (1));
 	if (n < 1 || n > 65534) {
-		Con_Printf ("Bad value, must be between 1 and 65534\n");
+		Sys_Printf ("Bad value, must be between 1 and 65534\n");
 		return;
 	}
 
@@ -294,8 +294,8 @@ NET_Port_f (void)
 static void
 PrintSlistHeader (void)
 {
-	Con_Printf ("Server          Map             Users\n");
-	Con_Printf ("--------------- --------------- -----\n");
+	Sys_Printf ("Server          Map             Users\n");
+	Sys_Printf ("--------------- --------------- -----\n");
 	slistLastShown = 0;
 }
 
@@ -307,11 +307,11 @@ PrintSlist (void)
 
 	for (n = slistLastShown; n < hostCacheCount; n++) {
 		if (hostcache[n].maxusers)
-			Con_Printf ("%-15.15s %-15.15s %2u/%2u\n", hostcache[n].name,
+			Sys_Printf ("%-15.15s %-15.15s %2u/%2u\n", hostcache[n].name,
 						hostcache[n].map, hostcache[n].users,
 						hostcache[n].maxusers);
 		else
-			Con_Printf ("%-15.15s %-15.15s\n", hostcache[n].name,
+			Sys_Printf ("%-15.15s %-15.15s\n", hostcache[n].name,
 						hostcache[n].map);
 	}
 	slistLastShown = n;
@@ -322,9 +322,9 @@ static void
 PrintSlistTrailer (void)
 {
 	if (hostCacheCount)
-		Con_Printf ("== end list ==\n\n");
+		Sys_Printf ("== end list ==\n\n");
 	else
-		Con_Printf ("No Quake servers found.\n\n");
+		Sys_Printf ("No Quake servers found.\n\n");
 }
 
 
@@ -335,7 +335,7 @@ NET_Slist_f (void)
 		return;
 
 	if (!slistSilent) {
-		Con_Printf ("Looking for Quake servers...\n");
+		Sys_Printf ("Looking for Quake servers...\n");
 		PrintSlistHeader ();
 	}
 
@@ -442,7 +442,7 @@ NET_Connect (const char *host)
 		if (hostCacheCount != 1)
 			return NULL;
 		host = hostcache[0].cname;
-		Con_Printf ("Connecting to...\n%s @ %s\n\n", hostcache[0].name, host);
+		Sys_Printf ("Connecting to...\n%s @ %s\n\n", hostcache[0].name, host);
 	}
 
 	if (hostCacheCount)
@@ -462,7 +462,7 @@ NET_Connect (const char *host)
 	}
 
 	if (host) {
-		Con_Printf ("\n");
+		Sys_Printf ("\n");
 		PrintSlistHeader ();
 		PrintSlist ();
 		PrintSlistTrailer ();
@@ -573,7 +573,7 @@ NET_GetMessage (qsocket_t * sock)
 		return -1;
 
 	if (sock->disconnected) {
-		Con_Printf ("NET_GetMessage: disconnected socket\n");
+		Sys_Printf ("NET_GetMessage: disconnected socket\n");
 		return -1;
 	}
 
@@ -650,7 +650,7 @@ NET_SendMessage (qsocket_t * sock, sizebuf_t *data)
 		return -1;
 
 	if (sock->disconnected) {
-		Con_Printf ("NET_SendMessage: disconnected socket\n");
+		Sys_Printf ("NET_SendMessage: disconnected socket\n");
 		return -1;
 	}
 
@@ -680,7 +680,7 @@ NET_SendUnreliableMessage (qsocket_t * sock, sizebuf_t *data)
 		return -1;
 
 	if (sock->disconnected) {
-		Con_Printf ("NET_SendMessage: disconnected socket\n");
+		Sys_Printf ("NET_SendMessage: disconnected socket\n");
 		return -1;
 	}
 
@@ -891,9 +891,9 @@ NET_Init (void)
 	}
 
 	if (*my_ipx_address)
-		Con_DPrintf ("IPX address %s\n", my_ipx_address);
+		Sys_DPrintf ("IPX address %s\n", my_ipx_address);
 	if (*my_tcpip_address)
-		Con_DPrintf ("TCP/IP address %s\n", my_tcpip_address);
+		Sys_DPrintf ("TCP/IP address %s\n", my_tcpip_address);
 }
 
 /*
@@ -924,7 +924,7 @@ NET_Shutdown (void)
 	}
 
 	if (vcrFile) {
-		Con_Printf ("Closing vcrfile.\n");
+		Sys_Printf ("Closing vcrfile.\n");
 		Qclose (vcrFile);
 	}
 }

@@ -224,7 +224,7 @@ SV_Restart_f (void)
 			Netchan_Transmit (&client->netchan, net_message->message->cursize,
 							  net_message->message->data);
 	}
-	Con_Printf ("Shutting down: server restart, shell must relaunch server\n");
+	Sys_Printf ("Shutting down: server restart, shell must relaunch server\n");
 	SV_Shutdown ();
 	// Error code 2 on exit, indication shell must restart the server
 	exit (2);

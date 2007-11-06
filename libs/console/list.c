@@ -39,8 +39,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include "QF/console.h"
+#include "QF/sys.h"
 
-VISIBLE void (*con_list_print)(const char *fmt, ...) = Con_Printf;
+VISIBLE void (*con_list_print)(const char *fmt, ...) = Sys_Printf;
 
 /*
 	Con_DisplayList

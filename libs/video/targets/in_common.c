@@ -50,13 +50,13 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/in_event.h"
 #include "QF/input.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/mathlib.h"
+#include "QF/sys.h"
 #include "QF/vid.h"
 
 VISIBLE viewdelta_t viewdelta;
@@ -135,7 +135,7 @@ IN_Shutdown (void)
 {
 	JOY_Shutdown ();
 
-	Con_Printf ("IN_Shutdown\n");
+	Sys_Printf ("IN_Shutdown\n");
 	IN_LL_Shutdown ();
 
 	IE_Shutdown ();

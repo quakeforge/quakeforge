@@ -47,7 +47,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <math.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/locs.h"
 #include "QF/mathlib.h"
@@ -862,10 +861,10 @@ R_RenderView_ (void)
 		R_PrintDSpeeds ();
 
 	if (r_reportsurfout->int_val && r_outofsurfaces)
-		Con_Printf ("Short %d surfaces\n", r_outofsurfaces);
+		Sys_Printf ("Short %d surfaces\n", r_outofsurfaces);
 
 	if (r_reportedgeout->int_val && r_outofedges)
-		Con_Printf ("Short roughly %d edges\n", r_outofedges * 2 / 3);
+		Sys_Printf ("Short roughly %d edges\n", r_outofedges * 2 / 3);
 
 	// back to high floating-point precision
 	R_HighFPPrecision ();

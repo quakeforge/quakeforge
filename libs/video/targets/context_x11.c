@@ -63,7 +63,6 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <X11/extensions/xf86vmode.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/qargs.h"
@@ -129,7 +128,7 @@ configure_notify (XEvent *event)
 	if (vidmode_active)
 		X11_ForceViewPort ();
 #endif
-	Con_DPrintf ("ConfigureNotify: %ld %d %ld %ld %d,%d (%d,%d) %d %ld %d\n",
+	Sys_DPrintf ("ConfigureNotify: %ld %d %ld %ld %d,%d (%d,%d) %d %ld %d\n",
 				 c->serial, c->send_event, c->event, c->window, c->x, c->y,
 				 c->width, c->height, c->border_width, c->above,
 				 c->override_redirect);
@@ -139,7 +138,7 @@ qboolean
 X11_AddEvent (int event, void (*event_handler) (XEvent *))
 {
 	if (event >= LASTEvent) {
-		Sys_Printf ("event: %d, LASTEvent: %d\n", event, LASTEvent);
+		Sys_DPrintf ("event: %d, LASTEvent: %d\n", event, LASTEvent);
 		return false;
 	}
 	
@@ -430,7 +429,7 @@ X11_SetVidMode (int width, int height)
 			}
 
 			if (found_mode) {
-				Con_DPrintf ("VID: Chose video mode: %dx%d\n", scr_width,
+				Sys_DPrintf ("VID: Chose video mode: %dx%d\n", scr_width,
 							 scr_height);
 
 				XF86VidModeSwitchToMode (x_disp, x_screen,
@@ -438,7 +437,7 @@ X11_SetVidMode (int width, int height)
 				vidmode_active = true;
 				X11_SetScreenSaver ();
 			} else {
-				Con_Printf ("VID: Mode %dx%d can't go fullscreen.\n",
+				Sys_Printf ("VID: Mode %dx%d can't go fullscreen.\n",
 							scr_width, scr_height);
 				vidmode_avail = vidmode_active = false;
 			}

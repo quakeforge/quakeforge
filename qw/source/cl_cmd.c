@@ -40,8 +40,8 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/msg.h"
+#include "QF/sys.h"
 #include "QF/teamplay.h"
 
 #include "client.h"
@@ -58,7 +58,7 @@ void
 CL_Cmd_ForwardToServer (void)
 {
 	if (cls.state == ca_disconnected) {
-		Con_Printf ("Can't \"%s\", not connected\n", Cmd_Argv (0));
+		Sys_Printf ("Can't \"%s\", not connected\n", Cmd_Argv (0));
 		return;
 	}
 
@@ -96,7 +96,7 @@ static void
 CL_Cmd_ForwardToServer_f (void)
 {
 	if (cls.state == ca_disconnected) {
-		Con_Printf ("Can't \"%s\", not connected\n", Cmd_Argv (0));
+		Sys_Printf ("Can't \"%s\", not connected\n", Cmd_Argv (0));
 		return;
 	}
 

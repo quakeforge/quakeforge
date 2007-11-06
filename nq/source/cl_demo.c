@@ -39,7 +39,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
@@ -174,7 +173,7 @@ CL_GetMessage (void)
 		// discard nop keepalive message
 		if (net_message->message->cursize == 1
 			&& net_message->message->data[0] == svc_nop)
-			Con_Printf ("<-- server to client keepalive\n");
+			Sys_Printf ("<-- server to client keepalive\n");
 		else
 			break;
 	}
@@ -198,7 +197,7 @@ CL_Stop_f (void)
 		return;
 
 	if (!cls.demorecording) {
-		Con_Printf ("Not recording a demo.\n");
+		Sys_Printf ("Not recording a demo.\n");
 		return;
 	}
 // write a disconnect message to the demo file
@@ -210,7 +209,7 @@ CL_Stop_f (void)
 	Qclose (cls.demofile);
 	cls.demofile = NULL;
 	cls.demorecording = false;
-	Con_Printf ("Completed demo\n");
+	Sys_Printf ("Completed demo\n");
 }
 
 
@@ -231,24 +230,24 @@ CL_Record_f (void)
 
 	c = Cmd_Argc ();
 	if (c != 2 && c != 3 && c != 4) {
-		Con_Printf ("record <demoname> [<map> [cd track]]\n");
+		Sys_Printf ("record <demoname> [<map> [cd track]]\n");
 		return;
 	}
 
 	if (strstr (Cmd_Argv (1), "..")) {
-		Con_Printf ("Relative pathnames are not allowed.\n");
+		Sys_Printf ("Relative pathnames are not allowed.\n");
 		return;
 	}
 
 	if (c == 2 && cls.state == ca_connected) {
-		Con_Printf
+		Sys_Printf
 			("Can not record - already connected to server\nClient demo recording must be started before connecting\n");
 		return;
 	}
 // write the forced cd track number, or -1
 	if (c == 4) {
 		track = atoi (Cmd_Argv (3));
-		Con_Printf ("Forcing CD track to %i\n", cls.forcetrack);
+		Sys_Printf ("Forcing CD track to %i\n", cls.forcetrack);
 	} else
 		track = -1;
 
@@ -274,11 +273,11 @@ CL_Record_f (void)
 	}
 
 	if (!cls.demofile) {
-		Con_Printf ("ERROR: couldn't open.\n");
+		Sys_Printf ("ERROR: couldn't open.\n");
 		return;
 	}
 
-	Con_Printf ("recording to %s.\n", name);
+	Sys_Printf ("recording to %s.\n", name);
 	cls.demorecording = true;
 
 	cls.forcetrack = track;
@@ -303,10 +302,10 @@ CL_StartDemo (void)
 	strncpy (name, demoname, sizeof (name));
 	QFS_DefaultExtension (name, ".dem");
 
-	Con_Printf ("Playing demo from %s.\n", name);
+	Sys_Printf ("Playing demo from %s.\n", name);
 	QFS_FOpenFile (name, &cls.demofile);
 	if (!cls.demofile) {
-		Con_Printf ("ERROR: couldn't open.\n");
+		Sys_Printf ("ERROR: couldn't open.\n");
 		cls.demonum = -1;				// stop demo loop
 		return;
 	}
@@ -340,7 +339,7 @@ CL_PlayDemo_f (void)
 		return;
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("play <demoname> : plays a demo\n");
+		Sys_Printf ("play <demoname> : plays a demo\n");
 		return;
 	}
 	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
@@ -373,7 +372,7 @@ CL_FinishTimeDemo (void)
 	time = realtime - cls.td_starttime;
 	if (!time)
 		time = 1;
-	Con_Printf ("%i frame%s %.4g seconds %.4g fps\n", frames,
+	Sys_Printf ("%i frame%s %.4g seconds %.4g fps\n", frames,
 				frames == 1 ? "" : "s", time, frames / time);
 	if (--timedemo_count > 0)
 		CL_StartTimeDemo ();
@@ -392,7 +391,7 @@ CL_TimeDemo_f (void)
 		return;
 
 	if (Cmd_Argc () < 2 || Cmd_Argc () > 3) {
-		Con_Printf ("timedemo <demoname> [count]: gets demo speeds\n");
+		Sys_Printf ("timedemo <demoname> [count]: gets demo speeds\n");
 		return;
 	}
 	if (Cmd_Argc () == 3) {

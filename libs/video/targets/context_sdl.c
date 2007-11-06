@@ -15,9 +15,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdlib.h>
 #include <SDL.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
 
@@ -72,7 +72,7 @@ VID_UpdateFullscreen (cvar_t *vid_fullscreen)
 	if ((vid_fullscreen->int_val && !(screen->flags & SDL_FULLSCREEN))
 		|| (!vid_fullscreen->int_val && screen->flags & SDL_FULLSCREEN))
 		if (!SDL_WM_ToggleFullScreen (screen))
-			Con_Printf ("VID_UpdateFullscreen: error setting fullscreen\n");
+			Sys_Printf ("VID_UpdateFullscreen: error setting fullscreen\n");
 	IN_UpdateGrab (in_grab);
 }
 

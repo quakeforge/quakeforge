@@ -40,7 +40,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <time.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/dstring.h"
@@ -163,7 +162,7 @@ SCR_ScreenShot_f (void)
 	// find a file name to save it to 
 	if (!QFS_NextFilename (pcxname,
 						   va ("%s/qf", qfs_gamedir->dir.def), ".pcx")) {
-		Con_Printf ("SCR_ScreenShot_f: Couldn't create a PCX");
+		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PCX");
 	} else {
 		// enable direct drawing of console to back buffer
 		D_EnableBackBufferAccess ();
@@ -178,7 +177,7 @@ SCR_ScreenShot_f (void)
 		// time
 		D_DisableBackBufferAccess ();
 
-		Con_Printf ("Wrote %s/%s\n", qfs_userpath, pcxname->str);
+		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, pcxname->str);
 	}
 	dstring_delete (pcxname);
 }

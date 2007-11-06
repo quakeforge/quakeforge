@@ -47,6 +47,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/idparse.h"
 #include "QF/info.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "compat.h"
@@ -428,7 +429,7 @@ SV_qtvPacket (int qport)
 		if (proxies[i].netchan.qport != qport)
 			continue;
 		if (proxies[i].netchan.remote_address.port != net_from.port) {
-			Con_DPrintf ("SV_ReadPackets: fixing up a translated port\n");
+			Sys_DPrintf ("SV_ReadPackets: fixing up a translated port\n");
 			proxies[i].netchan.remote_address.port = net_from.port;
 		}
 		if (Netchan_Process (&proxies[i].netchan)) {

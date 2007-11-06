@@ -269,7 +269,7 @@ NET_StringToAdr (const char *s, netadr_t *a)
 		addrs++;
 		for (; *space && *space != ']'; space++);
 		if (!*space) {
-			Con_Printf ("NET_StringToAdr: invalid IPv6 address %s\n", s);
+			Sys_Printf ("NET_StringToAdr: invalid IPv6 address %s\n", s);
 			return 0;
 		}
 		*space++ = '\0';
@@ -284,7 +284,7 @@ NET_StringToAdr (const char *s, netadr_t *a)
 
 	if ((err = getaddrinfo (addrs, ports, &hints, &resultp))) {
 		// Error
-		Con_Printf ("NET_StringToAdr: string %s:\n%s\n", s,
+		Sys_Printf ("NET_StringToAdr: string %s:\n%s\n", s,
 					gai_strerror (err));
 		return 0;
 	}
@@ -309,7 +309,7 @@ NET_StringToAdr (const char *s, netadr_t *a)
 
 			break;
 		default:
-			Con_Printf ("NET_StringToAdr: string %s:\nprotocol family %d not "
+			Sys_Printf ("NET_StringToAdr: string %s:\nprotocol family %d not "
 						"supported\n", s, resultp->ai_family);
 			return 0;
 	}
@@ -369,7 +369,7 @@ NET_GetPacket (void)
 		int         err = WSAGetLastError ();
 
 		if (err == WSAEMSGSIZE) {
-			Con_Printf ("Warning:  Oversize packet from %s\n",
+			Sys_Printf ("Warning:  Oversize packet from %s\n",
 						NET_AdrToString (net_from));
 			return false;
 		}
@@ -381,13 +381,13 @@ NET_GetPacket (void)
 #endif // _WIN32
 		if (err == EWOULDBLOCK)
 			return false;
-		Con_Printf ("NET_GetPacket: %s\n", strerror (err));
+		Sys_Printf ("NET_GetPacket: %s\n", strerror (err));
 		return false;
 	}
 
 	_net_message_message.cursize = ret;
 	if (ret == sizeof (net_message_buffer)) {
-		Con_Printf ("Oversize packet from %s\n", NET_AdrToString (net_from));
+		Sys_Printf ("Oversize packet from %s\n", NET_AdrToString (net_from));
 		return false;
 	}
 
@@ -422,7 +422,7 @@ NET_SendPacket (int length, const void *data, netadr_t to)
 		if (err == EWOULDBLOCK)
 			return;
 
-		Con_Printf ("NET_SendPacket: %s\n", strerror (err));
+		Sys_Printf ("NET_SendPacket: %s\n", strerror (err));
 	}
 }
 
@@ -465,7 +465,7 @@ UDP_OpenSocket (int port)
 	} else {
 		Host = "0::0";
 	}
-	Con_Printf ("Binding to IP Interface Address of %s\n", Host);
+	Sys_Printf ("Binding to IP Interface Address of %s\n", Host);
 
 	if (port == PORT_ANY)
 		Service = NULL;
@@ -522,7 +522,7 @@ NET_GetLocalAddress (void)
 		Sys_Error ("NET_GetLocalAddress: getsockname: %s", strerror (errno));
 	net_local_adr.port = address.sin6_port;
 
-	Con_Printf ("IP address %s\n", NET_AdrToString (net_local_adr));
+	Sys_Printf ("IP address %s\n", NET_AdrToString (net_local_adr));
 }
 
 void
@@ -551,7 +551,7 @@ NET_Init (int port)
 
 	net_loopback_adr.ip[15] = 1;
 
-	Con_Printf ("UDP (IPv6) Initialized\n");
+	Sys_Printf ("UDP (IPv6) Initialized\n");
 }
 
 void

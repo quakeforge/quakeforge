@@ -41,7 +41,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -161,7 +160,7 @@ R_InitParticles (void)
 		else
 			pVAsize = 0;
 		if (pVAsize) {
-			Con_Printf ("Particles: %i maximum vertex elements.\n", pVAsize);
+			Sys_Printf ("Particles: %i maximum vertex elements.\n", pVAsize);
 
 			if (particleVertexArray)
 				free (particleVertexArray);
@@ -175,7 +174,7 @@ R_InitParticles (void)
 			for (i = 0; i < pVAsize; i++)
 				pVAindices[i] = i;
 		} else {
-			Con_Printf ("Particles: Vertex Array use disabled.\n");
+			Sys_Printf ("Particles: Vertex Array use disabled.\n");
 		}
 	} else {
 		if (particleVertexArray) {
@@ -210,11 +209,11 @@ R_ReadPointFile_f (void)
 
 	QFS_FOpenFile (name, &f);
 	if (!f) {
-		Con_Printf ("couldn't open %s\n", name);
+		Sys_Printf ("couldn't open %s\n", name);
 		return;
 	}
 
-	Con_Printf ("Reading %s...\n", name);
+	Sys_Printf ("Reading %s...\n", name);
 	c = 0;
 	for (;;) {
 		char        buf[64];
@@ -226,7 +225,7 @@ R_ReadPointFile_f (void)
 		c++;
 
 		if (numparticles >= r_maxparticles) {
-			Con_Printf ("Not enough free particles\n");
+			Sys_Printf ("Not enough free particles\n");
 			break;
 		} else {
 			particle_new (pt_static, part_tex_dot, org, 1.5, vec3_origin,
@@ -234,7 +233,7 @@ R_ReadPointFile_f (void)
 		}
 	}
 	Qclose (f);
-	Con_Printf ("%i points read\n", c);
+	Sys_Printf ("%i points read\n", c);
 }
 
 static void
@@ -1549,7 +1548,7 @@ R_ParticlePhysics (particle_t *part)
 			part->scale -= time2;
 			break;
 		default:
-			Con_DPrintf ("unhandled particle type %d\n", part->type);
+			Sys_DPrintf ("unhandled particle type %d\n", part->type);
 			break;
 	}
 }

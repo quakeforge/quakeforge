@@ -157,7 +157,7 @@ WINS_Init (void)
 	hInst = LoadLibrary ("wsock32.dll");
 
 	if (hInst == NULL) {
-		Con_Printf ("Failed to load winsock.dll\n");
+		Sys_Printf ("Failed to load winsock.dll\n");
 		winsock_lib_initialized = false;
 		return -1;
 	}
@@ -182,7 +182,7 @@ WINS_Init (void)
 		!psocket || !pioctlsocket || !psetsockopt ||
 		!precvfrom || !psendto || !pclosesocket ||
 		!pgethostname || !pgethostbyname || !pgethostbyaddr || !pgetsockname) {
-		Con_Printf ("Couldn't GetProcAddress from winsock.dll\n");
+		Sys_Printf ("Couldn't GetProcAddress from winsock.dll\n");
 		return -1;
 	}
 
@@ -195,7 +195,7 @@ WINS_Init (void)
 		r = pWSAStartup (MAKEWORD (1, 1), &winsockdata);
 
 		if (r) {
-			Con_Printf ("Winsock initialization failed.\n");
+			Sys_Printf ("Winsock initialization failed.\n");
 			return -1;
 		}
 	}
@@ -203,7 +203,7 @@ WINS_Init (void)
 
 	// determine my name
 	if (pgethostname (buff, MAXHOSTNAMELEN) == SOCKET_ERROR) {
-		Con_DPrintf ("Winsock TCP/IP Initialization failed.\n");
+		Sys_DPrintf ("Winsock TCP/IP Initialization failed.\n");
 		if (--winsock_initialized == 0)
 			pWSACleanup ();
 		return -1;
@@ -241,7 +241,7 @@ WINS_Init (void)
 	}
 
 	if ((net_controlsocket = WINS_OpenSocket (0)) == -1) {
-		Con_Printf ("WINS_Init: Unable to open control socket\n");
+		Sys_Printf ("WINS_Init: Unable to open control socket\n");
 		if (--winsock_initialized == 0)
 			pWSACleanup ();
 		return -1;
@@ -251,7 +251,7 @@ WINS_Init (void)
 	((struct sockaddr_in *) &broadcastaddr)->sin_addr.s_addr = INADDR_BROADCAST;
 	((struct sockaddr_in *) &broadcastaddr)->sin_port = htons ((unsigned short) net_hostport);
 
-	Con_Printf ("Winsock TCP/IP Initialized\n");
+	Sys_Printf ("Winsock TCP/IP Initialized\n");
 	tcpipAvailable = true;
 
 	return net_controlsocket;
@@ -459,7 +459,7 @@ WINS_Broadcast (int socket, byte * buf, int len)
 		WINS_GetLocalAddress ();
 		ret = WINS_MakeSocketBroadcastCapable (socket);
 		if (ret == -1) {
-			Con_Printf ("Unable to make socket broadcast capable\n");
+			Sys_Printf ("Unable to make socket broadcast capable\n");
 			return ret;
 		}
 	}

@@ -53,7 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <X11/extensions/xf86vmstr.h>
 #endif
 
-#include "QF/console.h"
+#include "QF/sys.h"
 
 #include "dga_check.h"
 
@@ -88,11 +88,11 @@ VID_CheckDGA (Display * dpy, int *maj_ver, int *min_ver, int *hasvideo)
 	}
 
 	if ((!maj_ver) || (*maj_ver != XDGA_MAJOR_VERSION)) {
-		Con_Printf ("VID: Incorrect DGA version: %d.%d, \n", *maj_ver,
+		Sys_Printf ("VID: Incorrect DGA version: %d.%d, \n", *maj_ver,
 					*min_ver);
 		return false;
 	}
-	Con_Printf ("VID: DGA version: %d.%d\n", *maj_ver, *min_ver);
+	Sys_Printf ("VID: DGA version: %d.%d\n", *maj_ver, *min_ver);
 
 	if (!hasvideo)
 		hasvideo = &dummy_video;
@@ -142,12 +142,12 @@ VID_CheckVMode (Display * dpy, int *maj_ver, int *min_ver)
 		return false;
 
 	if ((!maj_ver) || (*maj_ver != XF86VIDMODE_MAJOR_VERSION)) {
-		Con_Printf ("VID: Incorrect VidMode version: %d.%d\n", *maj_ver,
+		Sys_Printf ("VID: Incorrect VidMode version: %d.%d\n", *maj_ver,
 					*min_ver);
 		return false;
 	}
 
-	Con_Printf ("VID: VidMode version: %d.%d\n", *maj_ver, *min_ver);
+	Sys_Printf ("VID: VidMode version: %d.%d\n", *maj_ver, *min_ver);
 	return true;
 #else
 	return false;

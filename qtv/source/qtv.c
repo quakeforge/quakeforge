@@ -107,12 +107,12 @@ qtv_print (const char *fmt, va_list args)
 		char        stamp[123];
 
 		if (pending) {
-			Con_Printf ("%s", msg->str);
+			Sys_Printf ("%s", msg->str);
 		} else {
 			mytime = time (NULL);
 			local = localtime (&mytime);
 			strftime (stamp, sizeof (stamp), "[%b %e %X] ", local);
-			Con_Printf ("%s%s", stamp, msg->str);
+			Sys_Printf ("%s%s", stamp, msg->str);
 		}
 		if (msg->str[0] && msg->str[strlen (msg->str) - 1] != '\n') {
 			pending = 1;
@@ -347,7 +347,7 @@ qtv_connectionless_packet (void)
 			default:
 				goto bad_packet;
 			case A2C_PRINT:
-				Con_Printf ("%s", str + 1);
+				Sys_Printf ("%s", str + 1);
 				break;
 			case A2A_PING:
 				qtv_ping ();
@@ -355,7 +355,7 @@ qtv_connectionless_packet (void)
 		}
 	} else {
 bad_packet:
-		Con_Printf ("bad connectionless packet from %s:\n%s\n",
+		Sys_Printf ("bad connectionless packet from %s:\n%s\n",
 					NET_AdrToString (net_from), str);
 	}
 }
@@ -381,7 +381,7 @@ main (int argc, const char *argv[])
 
 	qtv_init ();
 	
-	Con_Printf ("Ohayou gozaimasu\n");
+	Sys_Printf ("Ohayou gozaimasu\n");
 
 	while (1) {
 		Cbuf_Execute_Stack (qtv_cbuf);

@@ -146,7 +146,7 @@ Host_EndGame (const char *message, ...)
 	va_start (argptr, message);
 	dvsprintf (str, message, argptr);
 	va_end (argptr);
-	Con_DPrintf ("Host_EndGame: %s\n", str->str);
+	Sys_DPrintf ("Host_EndGame: %s\n", str->str);
 
 	if (sv.active)
 		Host_ShutdownServer (false);
@@ -194,7 +194,7 @@ Host_Error (const char *error, ...)
 	if (cls.state == ca_dedicated)
 		Sys_Error ("Host_Error: %s", str->str);		// dedicated servers exit
 
-	Con_Printf ("Host_Error: %s\n", str->str);
+	Sys_Printf ("Host_Error: %s\n", str->str);
 
 	CL_Disconnect ();
 	cls.demonum = -1;
@@ -299,7 +299,7 @@ Host_WriteConfiguration (void)
 		char       *path = va ("%s/config.cfg", qfs_gamedir->dir.def);
 		f = QFS_WOpen (path, 0);
 		if (!f) {
-			Con_Printf ("Couldn't write config.cfg.\n");
+			Sys_Printf ("Couldn't write config.cfg.\n");
 			return;
 		}
 
@@ -410,7 +410,7 @@ SV_DropClient (qboolean crash)
 			*sv_globals.self = saveSelf;
 		}
 
-		Con_Printf ("Client %s removed\n", host_client->name);
+		Sys_Printf ("Client %s removed\n", host_client->name);
 	}
 	// break the net connection
 	NET_Close (host_client->netconnection);
@@ -489,7 +489,7 @@ Host_ShutdownServer (qboolean crash)
 	MSG_WriteByte (&buf, svc_disconnect);
 	count = NET_SendToAll (&buf, 5);
 	if (count)
-		Con_Printf
+		Sys_Printf
 			("Host_ShutdownServer: NET_SendToAll failed for %u clients\n",
 			 count);
 
@@ -512,7 +512,7 @@ Host_ShutdownServer (qboolean crash)
 void
 Host_ClearMemory (void)
 {
-	Con_DPrintf ("Clearing memory\n");
+	Sys_DPrintf ("Clearing memory\n");
 	D_FlushCaches ();
 	Mod_ClearAll ();
 	if (host_hunklevel)
@@ -633,7 +633,7 @@ Host_ClientFrame (void)
 		time3 = Sys_DoubleTime ();
 		pass2 = (time2 - time1) * 1000;
 		pass3 = (time3 - time2) * 1000;
-		Con_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
+		Sys_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
 					pass1 + pass2 + pass3, pass1, pass2, pass3);
 	}
 }
@@ -732,7 +732,7 @@ Host_Frame (float time)
 			c++;
 	}
 
-	Con_Printf ("serverprofile: %2i clients %2i msec\n", c, m);
+	Sys_Printf ("serverprofile: %2i clients %2i msec\n", c, m);
 }
 
 
@@ -867,7 +867,7 @@ Host_Init (void)
 {
 	const char *mp;
 
-	Con_Printf ("Host_Init\n");
+	Sys_Printf ("Host_Init\n");
 
 	host_cbuf = Cbuf_New (&id_interp);
 	cmd_source = src_command;
@@ -964,7 +964,7 @@ Host_Init (void)
 	SV_Progs_Init ();
 	SV_Init ();
 
-	Con_Printf ("%4.1f megabyte heap\n", host_mem_size->value);
+	Sys_Printf ("%4.1f megabyte heap\n", host_mem_size->value);
 
 	if (cls.state != ca_dedicated) {
 		host_basepal = (byte *) QFS_LoadHunkFile ("gfx/palette.lmp");
@@ -1004,10 +1004,10 @@ Host_Init (void)
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
 
-	Con_Printf ("\nVersion %s (build %04d)\n\n", VERSION,
+	Sys_Printf ("\nVersion %s (build %04d)\n\n", VERSION,
 				build_number ());
 
-	Con_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", PROGRAM);
+	Sys_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", PROGRAM);
 
 	host_initialized = true;
 

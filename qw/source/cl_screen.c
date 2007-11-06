@@ -47,6 +47,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/msg.h"
 #include "QF/pcx.h"
 #include "QF/screen.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "cl_parse.h"
@@ -134,7 +135,7 @@ CL_RSShot_f (void)
 	if (cls.state < ca_onserver)
 		return;							// must be connected
 
-	Con_Printf ("Remote screen shot requested.\n");
+	Sys_Printf ("Remote screen shot requested.\n");
 
 	tex = SCR_ScreenShot (RSSHOT_WIDTH, RSSHOT_HEIGHT);
 
@@ -161,7 +162,7 @@ CL_RSShot_f (void)
 	}
 	if (pcx) {
 		CL_StartUpload ((void *)pcx, pcx_len);
-		Con_Printf ("Wrote %s\n", "rss.pcx");
-		Con_Printf ("Sending shot to server...\n");
+		Sys_Printf ("Wrote %s\n", "rss.pcx");
+		Sys_Printf ("Sending shot to server...\n");
 	}
 }

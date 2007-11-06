@@ -36,11 +36,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <unistd.h>
 #include <linux/joystick.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/qtypes.h"
+#include "QF/sys.h"
 
 // Variables and structures for this driver
 int         joy_handle;
@@ -99,8 +99,8 @@ JOY_Close (void)
 
 	i = close (joy_handle);
 	if (i) {
-		Con_Printf ("JOY: Failed to close joystick device!\n");
+		Sys_Printf ("JOY: Failed to close joystick device!\n");
 	} else {
-		Con_Printf ("JOY_Shutdown\n");
+		Sys_Printf ("JOY_Shutdown\n");
 	}
 }

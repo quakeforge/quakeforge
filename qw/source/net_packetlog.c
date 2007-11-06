@@ -53,6 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/quakefs.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "compat.h"
@@ -171,7 +172,7 @@ static qmsg_t      packet = {0, 0, &_packet};
 static int
 Net_LogStart (const char *fname)
 {
-	Con_Printf ("Opening packet logfile: %s\n", fname);
+	Sys_Printf ("Opening packet logfile: %s\n", fname);
 	Net_PacketLog = QFS_Open (fname, "at");
 	if (!Net_PacketLog)
 		return -1;
@@ -963,11 +964,11 @@ static void
 Net_PacketLog_Zap_f (void)
 {
 	if (Net_PacketLog && Net_PacketLog != _stdout) {
-		Con_Printf ("truncating packet logfile: %s\n", "qfpacket.log");
+		Sys_Printf ("truncating packet logfile: %s\n", "qfpacket.log");
 		Qseek (Net_PacketLog, 0, 0);
 		Qwrite (Net_PacketLog, 0, 0);
 	} else {
-		Con_Printf ("Deleting packet logfile: %s\n", "qfpacket.log");
+		Sys_Printf ("Deleting packet logfile: %s\n", "qfpacket.log");
 		QFS_Remove ("qfpacket.log");
 	}
 }

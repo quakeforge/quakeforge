@@ -31,7 +31,6 @@
 static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
-#include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
@@ -144,7 +143,7 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 			break;
 
 	if (sound_num == MAX_SOUNDS || !sv.sound_precache[sound_num]) {
-		Con_Printf ("SV_StartSound: %s not precacheed\n", sample);
+		Sys_Printf ("SV_StartSound: %s not precacheed\n", sample);
 		return;
 	}
 
@@ -248,7 +247,7 @@ SV_ConnectClient (int clientnum)
 
 	client = svs.clients + clientnum;
 
-	Con_DPrintf ("Client %s connected\n", client->netconnection->address);
+	Sys_DPrintf ("Client %s connected\n", client->netconnection->address);
 
 	edictnum = clientnum + 1;
 
@@ -409,7 +408,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 		}
 
 		if (msg->maxsize - msg->cursize < 16) {
-			Con_Printf ("packet overflow\n");
+			Sys_Printf ("packet overflow\n");
 			return;
 		}
 		// send an update
@@ -909,7 +908,7 @@ SV_SpawnServer (const char *server)
 	if (hostname->string[0] == 0)
 		Cvar_Set (hostname, "UNNAMED");
 
-	Con_DPrintf ("SpawnServer: %s\n", server);
+	Sys_DPrintf ("SpawnServer: %s\n", server);
 	svs.changelevel_issued = false;		// now safe to issue another
 
 	// tell all connected clients that we are going to a new level
@@ -973,7 +972,7 @@ SV_SpawnServer (const char *server)
 	snprintf (sv.modelname, sizeof (sv.modelname), "maps/%s.bsp", server);
 	sv.worldmodel = Mod_ForName (sv.modelname, false);
 	if (!sv.worldmodel) {
-		Con_Printf ("Couldn't spawn server %s\n", sv.modelname);
+		Sys_Printf ("Couldn't spawn server %s\n", sv.modelname);
 		sv.active = false;
 		S_UnblockSound ();
 		return;
@@ -1040,6 +1039,6 @@ SV_SpawnServer (const char *server)
 		if (host_client->active)
 			SV_SendServerinfo (host_client);
 
-	Con_DPrintf ("Server spawned.\n");
+	Sys_DPrintf ("Server spawned.\n");
 	S_UnblockSound ();
 }

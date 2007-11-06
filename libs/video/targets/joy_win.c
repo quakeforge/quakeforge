@@ -39,12 +39,12 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "winquake.h"
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
+#include "QF/sys.h"
 
 #include "compat.h"
 
@@ -149,13 +149,13 @@ _JOY_Read (void)
 			ji.dwUpos += 100;
 		}
 		if (joy_debug->int_val) {
-			if (ji.dwXpos) Con_Printf("X: %ld\n",ji.dwXpos);
-			if (ji.dwYpos) Con_Printf("Y: %ld\n",ji.dwYpos);
-			if (ji.dwZpos) Con_Printf("Z: %ld\n",ji.dwZpos);
-			if (ji.dwRpos) Con_Printf("R: %ld\n",ji.dwRpos);
-			if (ji.dwUpos) Con_Printf("U: %ld\n",ji.dwUpos);
-			if (ji.dwVpos) Con_Printf("V: %ld\n",ji.dwVpos);
-			if (ji.dwButtons) Con_Printf("B: %ld\n",ji.dwButtons);
+			if (ji.dwXpos) Sys_Printf("X: %ld\n",ji.dwXpos);
+			if (ji.dwYpos) Sys_Printf("Y: %ld\n",ji.dwYpos);
+			if (ji.dwZpos) Sys_Printf("Z: %ld\n",ji.dwZpos);
+			if (ji.dwRpos) Sys_Printf("R: %ld\n",ji.dwRpos);
+			if (ji.dwUpos) Sys_Printf("U: %ld\n",ji.dwUpos);
+			if (ji.dwVpos) Sys_Printf("V: %ld\n",ji.dwVpos);
+			if (ji.dwButtons) Sys_Printf("B: %ld\n",ji.dwButtons);
 		}
 		return true;
 	} else {							// read error
@@ -233,7 +233,7 @@ JOY_StartupJoystick (void)
 
 	// verify joystick driver is present
 	if ((numdevs = joyGetNumDevs ()) == 0) {
-		Con_Printf ("\njoystick not found -- driver not present\n\n");
+		Sys_Printf ("\njoystick not found -- driver not present\n\n");
 		return -1;
 	}
 	// cycle through the joystick ids for the first valid one
@@ -248,7 +248,7 @@ JOY_StartupJoystick (void)
 
 	// abort startup if we didn't find a valid joystick
 	if (mmr != JOYERR_NOERROR) {
-		Con_Printf ("\njoystick not found -- no valid joysticks (%x)\n\n",
+		Sys_Printf ("\njoystick not found -- no valid joysticks (%x)\n\n",
 					mmr);
 		return -1;
 	}
@@ -256,7 +256,7 @@ JOY_StartupJoystick (void)
 	// abort startup if command fails
 	memset (&jc, 0, sizeof (jc));
 	if ((mmr = joyGetDevCaps (joy_id, &jc, sizeof (jc))) != JOYERR_NOERROR) {
-		Con_Printf
+		Sys_Printf
 			("\njoystick not found -- invalid joystick capabilities (%x)\n\n",
 			 mmr);
 		return -1;
@@ -276,7 +276,7 @@ JOY_StartupJoystick (void)
 	joy_found = true;
 	// FIXME: do this right
 	joy_active = true;
-	Con_Printf ("\njoystick detected\n\n");
+	Sys_Printf ("\njoystick detected\n\n");
 	return 0;
 }
 
@@ -319,7 +319,7 @@ JOY_AdvancedUpdate_f (void)
 	} else {
 		if (strcmp (joy_name->string, "joystick") != 0) {
 			// notify user of advanced controller
-			Con_Printf ("\n%s configured\n\n", joy_name->string);
+			Sys_Printf ("\n%s configured\n\n", joy_name->string);
 		}
 		// advanced initialization here
 		// data supplied by user via joy_axisn cvars

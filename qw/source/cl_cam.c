@@ -45,7 +45,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <math.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
 
@@ -623,7 +622,7 @@ Cam_FinishMove (usercmd_t *cmd)
 		}
 		oldbuttons |= BUTTON_JUMP;		// don't jump again until released
 	}
-//	Con_Printf ("Selecting track target...\n");
+//	Sys_Printf ("Selecting track target...\n");
 
 	if (locked && autocam)
 		end = (spec_track + 1) % MAX_CLIENTS;
@@ -647,7 +646,7 @@ Cam_FinishMove (usercmd_t *cmd)
 		ideal_track = i;
 		return;
 	}
-	Con_Printf ("No target found ...\n");
+	Sys_Printf ("No target found ...\n");
 	autocam = locked = false;
 }
 

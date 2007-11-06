@@ -308,7 +308,7 @@ SV_SpawnServer (const char *server)
 	edict_t    *ent;
 	int         i;
 
-	Con_DPrintf ("SpawnServer: %s\n", server);
+	Sys_DPrintf ("SpawnServer: %s\n", server);
 
 	SV_SaveSpawnparms ();
 
@@ -445,7 +445,7 @@ SV_SpawnServer (const char *server)
 	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
 
 	Info_SetValueForKey (svs.info, "map", sv.name, !sv_highchars->int_val);
-	Con_DPrintf ("Server spawned.\n");
+	Sys_DPrintf ("Server spawned.\n");
 	if (sv_map_e->func)
 		GIB_Event_Callback (sv_map_e, 1, server);
 }

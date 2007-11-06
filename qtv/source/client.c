@@ -46,12 +46,12 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/checksum.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/idparse.h"
 #include "QF/info.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "qw/bothdefs.h"
@@ -577,7 +577,7 @@ client_parse_message (client_t *cl)
 											  MSG_GetReadCount (net_message) -
 											  checksumIndex - 1, seq_hash);
 				if (calculatedChecksum != checksum) {
-					Con_DPrintf
+					Sys_DPrintf
 						("Failed command checksum for %s(%d) (%d != %d)\n",
 						 Info_ValueForKey (cl->userinfo, "name"),
 						 cl->netchan.incoming_sequence, checksum,

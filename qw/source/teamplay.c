@@ -43,16 +43,15 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <ctype.h>
 
 #include "QF/cbuf.h"
-#include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/gib.h"
 #include "QF/locs.h"
 #include "QF/model.h"
-#include "QF/sys.h"
-#include "QF/teamplay.h"
 #include "QF/va.h"
 #include "QF/skin.h"
-#include "QF/gib.h"
+#include "QF/sys.h"
+#include "QF/teamplay.h"
 
 #include "qw/bothdefs.h"
 #include "cl_input.h"
@@ -342,13 +341,13 @@ locs_loc (void)
 
 	// FIXME: need to check to ensure you are actually in the game and alive.
 	if (Cmd_Argc () == 1 || strcmp (Cmd_Argv (1), "help") == 0) {
-		Con_Printf ("loc <add|delete|rename|move|save|zsave> [<description>] "
+		Sys_Printf ("loc <add|delete|rename|move|save|zsave> [<description>] "
 					":Modifies location data, add|rename take <description> "
 					"parameter\n");
 		return;
 	}
 	if (!cl.worldmodel) {
-		Con_Printf ("No map loaded. Unable to work with location markers.\n");
+		Sys_Printf ("No map loaded. Unable to work with location markers.\n");
 		return;
 	}
 	if (Cmd_Argc () >= 3)
@@ -365,21 +364,21 @@ locs_loc (void)
 		if (Cmd_Argc () == 2) {
 			locs_save (locfile, false);
 		} else
-			Con_Printf ("loc save :saves locs from memory into a .loc file\n");
+			Sys_Printf ("loc save :saves locs from memory into a .loc file\n");
 	}
 
 	if (strcasecmp (Cmd_Argv (1), "zsave") == 0) {
 		if (Cmd_Argc () == 2) {
 			locs_save (locfile, true);
 		} else
-			Con_Printf ("loc save :saves locs from memory into a .loc file\n");
+			Sys_Printf ("loc save :saves locs from memory into a .loc file\n");
 	}
 
 	if (strcasecmp (Cmd_Argv (1), "add") == 0) {
 		if (Cmd_Argc () >= 3)
 			locs_mark (cl.simorg, desc);
 		else
-			Con_Printf ("loc add <description> :marks the current location "
+			Sys_Printf ("loc add <description> :marks the current location "
 						"with the description and records the information "
 						"into a loc file.\n");
 	}
@@ -388,7 +387,7 @@ locs_loc (void)
 		if (Cmd_Argc () >= 3)
 			locs_edit (cl.simorg, desc);
 		else
-			Con_Printf ("loc rename <description> :changes the description of "
+			Sys_Printf ("loc rename <description> :changes the description of "
 					    "the nearest location marker\n");
 	}
 
@@ -396,14 +395,14 @@ locs_loc (void)
 		if (Cmd_Argc () == 2)
 			locs_del (cl.simorg);
 		else
-			Con_Printf ("loc delete :removes nearest location marker\n");
+			Sys_Printf ("loc delete :removes nearest location marker\n");
 	}
 
 	if (strcasecmp (Cmd_Argv (1),"move") == 0) {
 		if (Cmd_Argc () == 2)
 			locs_edit (cl.simorg, NULL);
 		else
-			Con_Printf ("loc move :moves the nearest location marker to your "
+			Sys_Printf ("loc move :moves the nearest location marker to your "
 						"current location\n");
 	}
 }

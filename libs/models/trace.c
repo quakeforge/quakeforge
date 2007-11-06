@@ -138,7 +138,7 @@ impact (tl_t *tl)
 		frac = (t1 - offset) / (t1 - t2);
 	} else {
 		frac = 0;
-		Sys_Printf ("help! help! the world is falling apart!\n");
+		Sys_DPrintf ("help! help! the world is falling apart!\n");
 	}
 	if (frac >= 0) {
 		tl->fraction = frac;
@@ -396,7 +396,7 @@ MOD_TraceLine (hull_t *hull, int num,
 			frac = (start_dist + offset) / (start_dist - end_dist);
 		} else {
 			// get here only when offset is non-zero
-			Sys_Printf ("foo\n");
+			Sys_DPrintf ("foo\n");
 			frac = 1;
 			side = start_dist < end_dist;
 		}

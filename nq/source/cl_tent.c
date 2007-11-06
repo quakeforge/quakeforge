@@ -41,7 +41,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <math.h>
 #include <stdlib.h>
 
-#include "QF/console.h"
 #include "QF/model.h"
 #include "QF/msg.h"
 #include "QF/sound.h"
@@ -176,7 +175,7 @@ beam_alloc (int ent)
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
 		if (!b->model || b->endtime < cl.time)
 			return b;
-	Con_Printf ("beam list overflow!\n");
+	Sys_Printf ("beam list overflow!\n");
 	return 0;
 }
 

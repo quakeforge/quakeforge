@@ -31,7 +31,6 @@
 static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/sys.h"
 
@@ -85,7 +84,7 @@ SV_CheckAllEnts (void)
 			continue;
 
 		if (SV_TestEntityPosition (check))
-			Con_Printf ("entity in invalid position\n");
+			Sys_Printf ("entity in invalid position\n");
 	}
 }
 #endif
@@ -97,13 +96,13 @@ SV_CheckVelocity (edict_t *ent)
 	// bound velocity
 	for (i = 0; i < 3; i++) {
 		if (IS_NAN (SVvector (ent, velocity)[i])) {
-			Con_Printf ("Got a NaN velocity on %s\n",
+			Sys_Printf ("Got a NaN velocity on %s\n",
 						PR_GetString (&sv_pr_state, SVstring (ent,
 															  classname)));
 			SVvector (ent, velocity)[i] = 0;
 		}
 		if (IS_NAN (SVvector (ent, origin)[i])) {
-			Con_Printf ("Got a NaN origin on %s\n",
+			Sys_Printf ("Got a NaN origin on %s\n",
 						PR_GetString (&sv_pr_state, SVstring (ent,
 															  classname)));
 			SVvector (ent, origin)[i] = 0;

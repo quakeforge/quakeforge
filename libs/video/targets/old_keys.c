@@ -51,8 +51,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <ctype.h>
 #include <stdlib.h>
 
-#include "QF/console.h"
 #include "QF/hash.h"
+#include "QF/sys.h"
 
 #include "old_keys.h"
 
@@ -253,7 +253,7 @@ OK_TranslateKeyName (const char *name)
 		s++;
 	ok = Hash_Find (old_key_table, uname);
 	if (!ok) {
-		Con_Printf ("unknown old keyname: %s\n", uname);
+		Sys_Printf ("unknown old keyname: %s\n", uname);
 		return name;
 	}
 	return ok->new_name;

@@ -41,9 +41,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 
-#include "QF/console.h"
 #include "QF/model.h"
 #include "QF/render.h"
+#include "QF/sys.h"
 
 #include "compat.h"
 #include "r_local.h"
@@ -74,7 +74,7 @@ R_GetSpriteFrame (entity_t *currententity)
 	frame = currententity->frame;
 
 	if ((frame >= psprite->numframes) || (frame < 0)) {
-		Con_Printf ("R_DrawSprite: no such frame %d\n", frame);
+		Sys_Printf ("R_DrawSprite: no such frame %d\n", frame);
 		frame = 0;
 	}
 
@@ -260,7 +260,7 @@ R_InitSprites (void)
 #else
 			sVAsize = 4;
 #endif
-			Con_Printf ("Sprites: %i maximum vertex elements.\n", sVAsize);
+			Sys_Printf ("Sprites: %i maximum vertex elements.\n", sVAsize);
 
 			if (spriteVertexArray)
 				free (spriteVertexArray);

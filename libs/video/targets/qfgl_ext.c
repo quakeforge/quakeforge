@@ -57,7 +57,6 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
@@ -72,20 +71,20 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 {
 	void	*glfunc = NULL;
 
-	Con_DPrintf ("DEBUG: Finding symbol %s ... ", name);
+	Sys_DPrintf ("DEBUG: Finding symbol %s ... ", name);
 
 	glfunc = QFGL_GetProcAddress (handle, name);
 	if (glfunc) {
-		Con_DPrintf ("found [%p]\n", glfunc);
+		Sys_DPrintf ("found [%p]\n", glfunc);
 		return glfunc;
 	}
-	Con_DPrintf ("not found\n");
+	Sys_DPrintf ("not found\n");
 
 	if (crit) {
 		if (strncmp ("fxMesa", name, 6) == 0) {
-			Con_Printf ("This target requires a special version of Mesa with "
+			Sys_Printf ("This target requires a special version of Mesa with "
 						"support for Glide and SVGAlib.\n");
-			Con_Printf ("If you are in X, try using a GLX or SGL target.\n");
+			Sys_Printf ("If you are in X, try using a GLX or SGL target.\n");
 		}
 		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...",
 				   name);

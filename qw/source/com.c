@@ -34,7 +34,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <ctype.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -71,7 +70,7 @@ COM_CheckRegistered (void)
 
 	if (static_registered) {
 		Cvar_Set (registered, "1");
-		Con_Printf ("Playing registered version.\n");
+		Sys_Printf ("Playing registered version.\n");
 	}
 }
 

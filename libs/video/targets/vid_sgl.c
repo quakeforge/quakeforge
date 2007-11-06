@@ -191,7 +191,7 @@ success:
 	VID_SetPalette (vid.palette);
 	VID_Init8bitPalette ();	// Check for 3DFX Extensions and initialize them.
 
-	Con_Printf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
+	Sys_Printf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
 
 	vid.initialized = true;
 

@@ -33,9 +33,9 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <math.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qtypes.h"
+#include "QF/sys.h"
 
 #include "client.h"
 #include "compat.h"
@@ -188,7 +188,7 @@ PM_FlyMove (void)
 		if (i != numplanes) {			// go along this plane
 		} else {						// go along the crease
 			if (numplanes != 2) {
-//				Con_Printf ("clip velocity, numplanes == %i\n",numplanes);
+//				Sys_Printf ("clip velocity, numplanes == %i\n",numplanes);
 				VectorZero (pmove.velocity);
 				break;
 			}
@@ -467,7 +467,7 @@ PM_WaterMove (void)
 
 	// water acceleration
 //	if (pmove.waterjumptime)
-//		Con_Printf ("wm->%f, %f, %f\n", pmove.velocity[0], pmove.velocity[1],
+//		Sys_Printf ("wm->%f, %f, %f\n", pmove.velocity[0], pmove.velocity[1],
 //					pmove.velocity[2]);
 	PM_Accelerate (wishdir, wishspeed, movevars.wateraccelerate);
 
@@ -720,7 +720,7 @@ NudgePosition (void)
 		}
 	}
 	VectorCopy (base, pmove.origin);
-//	Con_DPrintf ("NudgePosition: stuck\n");
+//	Sys_DPrintf ("NudgePosition: stuck\n");
 }
 
 static void

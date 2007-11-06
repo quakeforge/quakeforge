@@ -38,7 +38,6 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/image.h"
@@ -165,7 +164,7 @@ Skin_Cache (skin_t *skin)
 	snprintf (name, sizeof (name), "skins/%s.pcx", skin->name);
 	QFS_FOpenFile (name, &file);
 	if (!file) {
-		Con_Printf ("Couldn't load skin %s\n", name);
+		Sys_Printf ("Couldn't load skin %s\n", name);
 		snprintf (name, sizeof (name), "skins/%s.pcx", baseskin->string);
 		QFS_FOpenFile (name, &file);
 		if (!file) {
@@ -185,7 +184,7 @@ Skin_Cache (skin_t *skin)
 
 	if (!tex || tex->width > 320 || tex->height > 200) {
 		skin->failedload = true;
-		Con_Printf ("Bad skin %s\n", name);
+		Sys_Printf ("Bad skin %s\n", name);
 		return NULL;
 	}
 

@@ -54,7 +54,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <vga.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/qargs.h"
@@ -245,7 +244,7 @@ get_mode (int width, int height, int depth)
 void
 VID_Shutdown (void)
 {
-	Sys_Printf ("VID_Shutdown\n");
+	Sys_DPrintf ("VID_Shutdown\n");
 
 	if (!svgalib_inited)
 		return;
@@ -284,7 +283,7 @@ VID_SetMode (int modenum, unsigned char *palette)
 	int         err;
 
 	if ((modenum >= num_modes) || (modenum < 0) || !modes[modenum].width) {
-		Con_Printf ("No such video mode: %d\n", modenum);
+		Sys_Printf ("No such video mode: %d\n", modenum);
 
 		return 0;
 	}
@@ -369,7 +368,7 @@ VID_Init (unsigned char *palette)
 		Sys_Error ("SVGALib failed to allocate a new VC");
 
 	if (vga_runinbackground_version () == 1) {
-		Con_Printf ("SVGALIB background support detected\n");
+		Sys_Printf ("SVGALIB background support detected\n");
 		vga_runinbackground (VGA_GOTOBACK, goto_background);
 		vga_runinbackground (VGA_COMEFROMBACK, comefrom_background);
 		vga_runinbackground (1);

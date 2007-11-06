@@ -37,11 +37,11 @@
 #endif
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/info.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
+#include "QF/sys.h"
 
 #include "game.h"
 #include "server.h"
@@ -59,12 +59,12 @@ SV_Gamedir_f (void)
 	const char *dir;
 
 	if (Cmd_Argc () == 1) {
-		Con_Printf ("Current gamedir: %s\n", qfs_gamedir->gamedir);
+		Sys_Printf ("Current gamedir: %s\n", qfs_gamedir->gamedir);
 		return;
 	}
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("Usage: gamedir <newdir>\n");
+		Sys_Printf ("Usage: gamedir <newdir>\n");
 		return;
 	}
 
@@ -72,7 +72,7 @@ SV_Gamedir_f (void)
 
 	if (strstr (dir, "..") || strstr (dir, "/")
 		|| strstr (dir, "\\") || strstr (dir, ":")) {
-		Con_Printf ("Gamedir should be a single filename, not a path\n");
+		Sys_Printf ("Gamedir should be a single filename, not a path\n");
 		return;
 	}
 

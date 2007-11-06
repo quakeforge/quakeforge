@@ -635,8 +635,8 @@ sv_conmode_f (cvar_t *var)
 	} else if (!strcmp (var->string, "chat")) {
 		sv_con_data.exec_line = sv_exec_line_chat;
 	} else {
-		Con_Printf ("mode must be one of \"command\" or \"chat\"\n");
-		Con_Printf ("    forcing \"command\"\n");
+		Sys_Printf ("mode must be one of \"command\" or \"chat\"\n");
+		Sys_Printf ("    forcing \"command\"\n");
 		Cvar_Set (var, "command");
 	}
 }

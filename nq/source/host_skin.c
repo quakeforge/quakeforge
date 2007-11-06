@@ -39,8 +39,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include "QF/cmd.h"
-#include "compat.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/screen.h"
@@ -48,6 +46,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "compat.h"
 #include "client.h"
 #include "host.h"
 #include "server.h"
@@ -67,9 +66,9 @@ Host_Color_f (void)
 	char        playercolor;
 
 	if (Cmd_Argc () == 1) {
-		Con_Printf ("\"color\" is \"%d %d\"\n", (cl_color->int_val) >> 4,
+		Sys_Printf ("\"color\" is \"%d %d\"\n", (cl_color->int_val) >> 4,
 					(cl_color->int_val) & 0x0f);
-		Con_Printf ("color <0-13> [0-13]\n");
+		Sys_Printf ("color <0-13> [0-13]\n");
 		return;
 	}
 

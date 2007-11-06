@@ -35,7 +35,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/keys.h"
@@ -315,7 +314,7 @@ VID_SetMode (unsigned char *palette)
 	// fix the leftover Alt from any Alt-Tab or the like that switched us away
 	IN_ClearStates ();
 
-	Con_Printf ("Video mode %ix%i initialized.\n", vid_width->int_val,
+	Sys_Printf ("Video mode %ix%i initialized.\n", vid_width->int_val,
 				vid_height->int_val);
 
 	VID_SetPalette (palette);

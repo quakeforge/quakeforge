@@ -147,7 +147,7 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 	// fail if the command already exists
 	cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_name);
 	if (cmd) {
-		Sys_Printf ("Cmd_AddCommand: %s already defined\n", cmd_name);
+		Sys_DPrintf ("Cmd_AddCommand: %s already defined\n", cmd_name);
 		return 0;
 	}
 

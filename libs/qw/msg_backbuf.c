@@ -38,8 +38,8 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/msg.h"
+#include "QF/sys.h"
 
 #include "netchan.h"
 #include "qw/msg_backbuf.h"
@@ -50,7 +50,7 @@ PushBackbuf (backbuf_t *rel)
 {
 	int         tail_backbuf;
 
-	Con_DPrintf ("backbuffering %d %s\n", rel->num_backbuf, rel->name);
+	Sys_DPrintf ("backbuffering %d %s\n", rel->num_backbuf, rel->name);
 	tail_backbuf = (rel->head_backbuf + rel->num_backbuf) % MAX_BACK_BUFFERS;
 	memset (&rel->backbuf, 0, sizeof (rel->backbuf));
 	rel->backbuf.allowoverflow = true;
@@ -94,7 +94,7 @@ MSG_ReliableCheckBlock (backbuf_t *rel, int maxsize)
 
 		if (rel->backbuf.cursize > rel->backbuf.maxsize - maxsize - 1) {
 			if (rel->num_backbuf == MAX_BACK_BUFFERS) {
-				Con_Printf ("WARNING: MAX_BACK_BUFFERS for %s\n", rel->name);
+				Sys_Printf ("WARNING: MAX_BACK_BUFFERS for %s\n", rel->name);
 				rel->backbuf.cursize = 0;	// don't overflow without
 											// allowoverflow set
 				msg->overflowed = true;		// this will drop the client
@@ -129,7 +129,7 @@ MSG_Reliable_FinishWrite (backbuf_t *rel)
 		rel->backbuf_size[tail_backbuf] = rel->backbuf.cursize;
 
 		if (rel->backbuf.overflowed) {
-			Con_Printf ("WARNING: backbuf [%d] overflow for %s\n",
+			Sys_Printf ("WARNING: backbuf [%d] overflow for %s\n",
 						rel->num_backbuf, rel->name);
 			rel->netchan->message.overflowed = true;	// this will drop the
 														// client
@@ -268,7 +268,7 @@ MSG_Reliable_Send (backbuf_t *rel)
 		return;
 	// will it fit?
 	if (msg->cursize + *size < msg->maxsize) {
-		Con_DPrintf ("%s: backbuf %d bytes\n", rel->name, *size);
+		Sys_DPrintf ("%s: backbuf %d bytes\n", rel->name, *size);
 		// it'll fit
 		SZ_Write (msg, data, *size);
 

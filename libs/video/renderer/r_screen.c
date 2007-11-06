@@ -39,7 +39,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/image.h"
@@ -83,7 +82,7 @@ static __attribute__ ((used)) const char rcsid[] =
 	CenterPrint ()
 	SlowPrint ()
 	Screen_Update ();
-	Con_Printf ();
+	Sys_Printf ();
 
 	net
 	turn off messages option

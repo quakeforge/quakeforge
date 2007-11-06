@@ -39,11 +39,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
+#include "QF/sys.h"
 
 #include "chase.h"
 #include "client.h"
@@ -97,7 +97,7 @@ KeyPress (kbutton_t *b)
 	else if (!b->down[1])
 		b->down[1] = k;
 	else {
-		Con_Printf ("Three keys down for a button!\n");
+		Sys_Printf ("Three keys down for a button!\n");
 		return;
 	}
 
@@ -587,7 +587,7 @@ CL_SendMove (usercmd_t *cmd)
 		return;
 
 	if (NET_SendUnreliableMessage (cls.netcon, &buf) == -1) {
-		Con_Printf ("CL_SendMove: lost server connection\n");
+		Sys_Printf ("CL_SendMove: lost server connection\n");
 		CL_Disconnect ();
 	}
 }

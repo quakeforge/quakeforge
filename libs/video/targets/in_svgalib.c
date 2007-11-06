@@ -51,7 +51,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <vgamouse.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/joystick.h"
@@ -116,7 +115,7 @@ keyhandler (int scancode, int state)
 		default:
 			break;
 	}
-	//Con_DPrintf ("%d %02x %02lx %04x %c\n", sc, press, shifts,
+	//Sys_DPrintf ("%d %02x %02lx %04x %c\n", sc, press, shifts,
 	//			 key, ascii > 32 && ascii < 127 ? ascii : '#');
 	Key_Event (key, ascii, press);
 }
@@ -394,7 +393,7 @@ IN_InitMouse (void)
 	//       closing it to ensure its opened how we want it
 	mouse_close();
 	if (mouse_init ((char *)mousedev, mtype, mouserate)) {
-		Con_Printf ("No mouse found. Check your libvga.conf mouse settings"
+		Sys_Printf ("No mouse found. Check your libvga.conf mouse settings"
 					" and that the mouse\n"
 					"device has appropriate permission settings.\n");
 		UseMouse = 0;
@@ -407,7 +406,7 @@ IN_InitMouse (void)
 void
 IN_LL_Shutdown (void)
 {
-	Con_Printf ("IN_LL_Shutdown\n");
+	Sys_Printf ("IN_LL_Shutdown\n");
 
 	if (UseMouse)
 		mouse_close ();

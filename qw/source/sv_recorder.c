@@ -51,6 +51,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdint.h>
 
 #include "QF/sizebuf.h"
+#include "QF/sys.h"
 
 #include "qw/bothdefs.h"
 #include "server.h"
@@ -189,7 +190,7 @@ write_msg (sizebuf_t *msg, int type, int to, float time, sizebuf_t *dst)
 			default:
 				while (sv.recorders)
 					SVR_RemoveUser (sv.recorders);
-				Con_Printf ("bad demo message type:%d", type);
+				Sys_Printf ("bad demo message type:%d", type);
 				return;
 		}
 	} else {

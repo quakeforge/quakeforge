@@ -38,12 +38,12 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/locs.h"
 #include "QF/msg.h"
 #include "QF/render.h"
 #include "QF/skin.h"
+#include "QF/sys.h"
 
 #include "qw/msg_ucmd.h"
 
@@ -262,7 +262,7 @@ FlushEntityPacket (void)
 	entity_state_t	olde, newe;
 	int				word;
 
-	Con_DPrintf ("FlushEntityPacket\n");
+	Sys_DPrintf ("FlushEntityPacket\n");
 
 	memset (&olde, 0, sizeof (olde));
 
@@ -303,7 +303,7 @@ CL_ParsePacketEntities (qboolean delta)
 		if (cls.demoplayback2)
 			from = oldpacket = (cls.netchan.incoming_sequence - 1);
 		if ((from & UPDATE_MASK) != (oldpacket & UPDATE_MASK))
-			Con_DPrintf ("WARNING: from mismatch\n");
+			Sys_DPrintf ("WARNING: from mismatch\n");
 	} else
 		oldpacket = -1;
 
@@ -351,7 +351,7 @@ CL_ParsePacketEntities (qboolean delta)
 
 		while (newnum > oldnum) {
 			if (full) {
-				Con_Printf ("WARNING: oldcopy on full update");
+				Sys_Printf ("WARNING: oldcopy on full update");
 				FlushEntityPacket ();
 				return;
 			}
@@ -370,7 +370,7 @@ CL_ParsePacketEntities (qboolean delta)
 			if (word & U_REMOVE) {
 				if (full) {
 					cl.validsequence = 0;
-					Con_Printf ("WARNING: U_REMOVE on full update\n");
+					Sys_Printf ("WARNING: U_REMOVE on full update\n");
 					FlushEntityPacket ();
 					return;
 				}
@@ -389,7 +389,7 @@ CL_ParsePacketEntities (qboolean delta)
 		if (newnum == oldnum) {					// delta from previous
 			if (full) {
 				cl.validsequence = 0;
-				Con_Printf ("WARNING: delta on full update");
+				Sys_Printf ("WARNING: delta on full update");
 			}
 			if (word & U_REMOVE) {				// Clear the entity
 				entity_t	*ent = &cl_packet_ents[newnum];
@@ -1010,7 +1010,7 @@ CL_SetSolidEntities (void)
 		if (cl.model_precache[state->modelindex]->hulls[1].firstclipnode
 			|| cl.model_precache[state->modelindex]->clipbox) {
 			if (pmove.numphysent == MAX_PHYSENTS) {
-				Con_Printf ("WARNING: entity physent overflow, email "
+				Sys_Printf ("WARNING: entity physent overflow, email "
 							"quakeforge-devel@lists.quakeforge.net\n");
 				break;
 			}
@@ -1078,11 +1078,11 @@ CL_SetUpPlayerPrediction (qboolean dopred)
 			msec = 500 * (playertime - state->state_time);
 			if (msec <= 0 || !dopred) {
 				VectorCopy (state->pls.origin, pplayer->origin);
-//				Con_DPrintf ("nopredict\n");
+//				Sys_DPrintf ("nopredict\n");
 			} else {
 				// predict players movement
 				state->pls.cmd.msec = msec = min (msec, 255);
-//				Con_DPrintf ("predict: %i\n", msec);
+//				Sys_DPrintf ("predict: %i\n", msec);
 
 				CL_PredictUsercmd (state, &exact, &state->pls.cmd, false);
 				VectorCopy (exact.pls.origin, pplayer->origin);
@@ -1123,7 +1123,7 @@ CL_SetSolidPlayers (int playernum)
 			continue;					// dead players aren't solid
 
 		if (pmove.numphysent == MAX_PHYSENTS) {
-			Con_Printf ("WARNING: player physent overflow, email "
+			Sys_Printf ("WARNING: player physent overflow, email "
 						"quakeforge-devel@lists.quakeforge.net\n");
 			break;
 		}

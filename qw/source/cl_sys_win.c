@@ -44,7 +44,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdio.h>
 #include "winquake.h"
 
-#include "QF/console.h"
 #include "QF/qargs.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
@@ -211,7 +210,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	if (!tevent)
 		Sys_Error ("Couldn't create event");
 
-	Con_Printf ("Host_Init\n");
+	Sys_Printf ("Host_Init\n");
 	Host_Init ();
 
 	Sys_RegisterShutdown (Host_Shutdown);

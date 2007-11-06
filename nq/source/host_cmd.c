@@ -70,7 +70,7 @@ Host_Quit_f (void)
 //		return;
 //	}
 	if (!con_module)
-		Con_Printf ("I hope you wanted to quit\n");
+		Sys_Printf ("I hope you wanted to quit\n");
 	CL_Disconnect ();
 	Host_ShutdownServer (false);
 
@@ -92,7 +92,7 @@ Host_Status_f (void)
 			CL_Cmd_ForwardToServer ();
 			return;
 		}
-		print = Con_Printf;
+		print = Sys_Printf;
 	} else
 		print = SV_ClientPrintf;
 
@@ -277,11 +277,11 @@ Host_Map_f (void)
 		return;
 
 	if (Cmd_Argc () > 2) {
-		Con_Printf ("map <levelname> : continue game on a new level\n");
+		Sys_Printf ("map <levelname> : continue game on a new level\n");
 		return;
 	}
 	if (Cmd_Argc () == 1) {
-		Con_Printf ("map is %s (%s)\n", sv.name, nice_time (sv.time));
+		Sys_Printf ("map is %s (%s)\n", sv.name, nice_time (sv.time));
 		return;
 	}
 
@@ -289,7 +289,7 @@ Host_Map_f (void)
 	expanded = va ("maps/%s.bsp", Cmd_Argv (1));
 	QFS_FOpenFile (expanded, &f);
 	if (!f) {
-		Con_Printf ("Can't find %s\n", expanded);
+		Sys_Printf ("Can't find %s\n", expanded);
 		return;
 	}
 	Qclose (f);
@@ -337,12 +337,12 @@ Host_Changelevel_f (void)
 	char        level[MAX_QPATH];
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("changelevel <levelname> : continue game on a new "
+		Sys_Printf ("changelevel <levelname> : continue game on a new "
 					"level\n");
 		return;
 	}
 	if (!sv.active || cls.demoplayback) {
-		Con_Printf ("Only the server may changelevel\n");
+		Sys_Printf ("Only the server may changelevel\n");
 		return;
 	}
 	SV_SaveSpawnparms ();
@@ -540,34 +540,34 @@ Host_Savegame_f (void)
 		return;
 
 	if (!sv.active) {
-		Con_Printf ("Not playing a local game.\n");
+		Sys_Printf ("Not playing a local game.\n");
 		return;
 	}
 
 	if (cl.intermission) {
-		Con_Printf ("Can't save in intermission.\n");
+		Sys_Printf ("Can't save in intermission.\n");
 		return;
 	}
 
 	if (svs.maxclients != 1) {
-		Con_Printf ("Can't save multiplayer games.\n");
+		Sys_Printf ("Can't save multiplayer games.\n");
 		return;
 	}
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("save <savename> : save a game\n");
+		Sys_Printf ("save <savename> : save a game\n");
 		return;
 	}
 
 	if (strstr (Cmd_Argv (1), "..")) {
-		Con_Printf ("Relative pathnames are not allowed.\n");
+		Sys_Printf ("Relative pathnames are not allowed.\n");
 		return;
 	}
 
 	for (i = 0; i < svs.maxclients; i++) {
 		if (svs.clients[i].active && (SVfloat (svs.clients[i].edict, health)
 									  <= 0)) {
-			Con_Printf ("Can't savegame with a dead player\n");
+			Sys_Printf ("Can't savegame with a dead player\n");
 			return;
 		}
 	}
@@ -576,10 +576,10 @@ Host_Savegame_f (void)
 			  qfs_gamedir->dir.def, Cmd_Argv (1));
 	QFS_DefaultExtension (name, ".sav");
 
-	Con_Printf ("Saving game to %s...\n", name);
+	Sys_Printf ("Saving game to %s...\n", name);
 	f = QFS_WOpen (name, 0);
 	if (!f) {
-		Con_Printf ("ERROR: couldn't open.\n");
+		Sys_Printf ("ERROR: couldn't open.\n");
 		return;
 	}
 
@@ -588,7 +588,7 @@ Host_Savegame_f (void)
 	free (save_text);
 
 	Qclose (f);
-	Con_Printf ("done.\n");
+	Sys_Printf ("done.\n");
 }
 
 static void
@@ -612,7 +612,7 @@ Host_Loadgame_f (void)
 		goto end;
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("load <savename> : load a game\n");
+		Sys_Printf ("load <savename> : load a game\n");
 		goto end;
 	}
 
@@ -629,10 +629,10 @@ Host_Loadgame_f (void)
 	// been used.  The menu calls it before stuffing loadgame command
 //  SCR_BeginLoadingPlaque ();
 
-	Con_Printf ("Loading game from %s...\n", name->str);
+	Sys_Printf ("Loading game from %s...\n", name->str);
 	f = QFS_Open (name->str, "rz");
 	if (!f) {
-		Con_Printf ("ERROR: couldn't open.\n");
+		Sys_Printf ("ERROR: couldn't open.\n");
 		goto end;
 	}
 	script_data = malloc (Qfilesize (f) + 1);
@@ -646,14 +646,14 @@ Host_Loadgame_f (void)
 	Script_GetToken (script, 1);
 	if (strequal (script->token->str, PROGRAM)) {
 		if (!Script_TokenAvailable (script, 1)) {
-			Con_Printf ("Unexpected EOF reading %s\n", name->str);
+			Sys_Printf ("Unexpected EOF reading %s\n", name->str);
 			goto end;
 		}
 		game = PL_GetPropertyList (script->p);
 	} else {
 		sscanf (script->token->str, "%i", &version);
 		if (version != SAVEGAME_VERSION) {
-			Con_Printf ("Savegame is version %i, not %i\n", version,
+			Sys_Printf ("Savegame is version %i, not %i\n", version,
 						SAVEGAME_VERSION);
 			goto end;
 		}
@@ -674,7 +674,7 @@ Host_Loadgame_f (void)
 
 	SV_SpawnServer (mapname);
 	if (!sv.active) {
-		Con_Printf ("Couldn't load map %s\n", mapname);
+		Sys_Printf ("Couldn't load map %s\n", mapname);
 		goto end;
 	}
 	sv.paused = true;					// pause until all clients connect
@@ -741,7 +741,7 @@ Host_Name_f (void)
 	const char *newName;
 
 	if (Cmd_Argc () == 1) {
-		Con_Printf ("\"name\" is \"%s\"\n", cl_name->string);
+		Sys_Printf ("\"name\" is \"%s\"\n", cl_name->string);
 		return;
 	}
 	if (Cmd_Argc () == 2)
@@ -760,7 +760,7 @@ Host_Name_f (void)
 
 	if (host_client->name[0] && strcmp (host_client->name, "unconnected"))
 		if (strcmp (host_client->name, newName) != 0)
-			Con_Printf ("%s renamed to %s\n", host_client->name, newName);
+			Sys_Printf ("%s renamed to %s\n", host_client->name, newName);
 	strcpy (host_client->name, newName);
 	SVstring (host_client->edict, netname) =
 		PR_SetString (&sv_pr_state, host_client->name);
@@ -774,8 +774,8 @@ Host_Name_f (void)
 static void
 Host_Version_f (void)
 {
-	Con_Printf ("Version %s\n", VERSION);
-	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
+	Sys_Printf ("Version %s\n", VERSION);
+	Sys_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
 }
 
 static void
@@ -834,7 +834,7 @@ Host_Say (qboolean teamonly)
 	}
 	host_client = save;
 
-	Con_Printf ("%s", &text[1]);
+	Sys_Printf ("%s", &text[1]);
 }
 
 static void
@@ -951,12 +951,12 @@ static void
 Host_PreSpawn_f (void)
 {
 	if (cmd_source == src_command) {
-		Con_Printf ("prespawn is not valid from the console\n");
+		Sys_Printf ("prespawn is not valid from the console\n");
 		return;
 	}
 
 	if (host_client->spawned) {
-		Con_Printf ("prespawn not valid -- already spawned\n");
+		Sys_Printf ("prespawn not valid -- already spawned\n");
 		return;
 	}
 
@@ -974,12 +974,12 @@ Host_Spawn_f (void)
 	edict_t    *ent;
 
 	if (cmd_source == src_command) {
-		Con_Printf ("spawn is not valid from the console\n");
+		Sys_Printf ("spawn is not valid from the console\n");
 		return;
 	}
 
 	if (host_client->spawned) {
-		Con_Printf ("Spawn not valid -- already spawned\n");
+		Sys_Printf ("Spawn not valid -- already spawned\n");
 		return;
 	}
 	// run the entrance script
@@ -1004,7 +1004,7 @@ Host_Spawn_f (void)
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.ClientConnect);
 		if ((Sys_DoubleTime () - host_client->netconnection->connecttime) <=
-			sv.time) Con_Printf ("%s entered the game\n", host_client->name);
+			sv.time) Sys_Printf ("%s entered the game\n", host_client->name);
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.PutClientInServer);
 	}
 
@@ -1077,7 +1077,7 @@ static void
 Host_Begin_f (void)
 {
 	if (cmd_source == src_command) {
-		Con_Printf ("begin is not valid from the console\n");
+		Sys_Printf ("begin is not valid from the console\n");
 		return;
 	}
 
@@ -1298,7 +1298,7 @@ FindViewthing (void)
 					 "viewthing"))
 			return e;
 	}
-	Con_Printf ("No viewthing on map\n");
+	Sys_Printf ("No viewthing on map\n");
 	return NULL;
 }
 
@@ -1314,7 +1314,7 @@ Host_Viewmodel_f (void)
 
 	m = Mod_ForName (Cmd_Argv (1), false);
 	if (!m) {
-		Con_Printf ("Can't load %s\n", Cmd_Argv (1));
+		Sys_Printf ("Can't load %s\n", Cmd_Argv (1));
 		return;
 	}
 
@@ -1352,7 +1352,7 @@ PrintFrameName (model_t *m, int frame)
 		return;
 	pframedesc = &hdr->frames[frame];
 
-	Con_Printf ("frame %i: %s\n", frame, pframedesc->name);
+	Sys_Printf ("frame %i: %s\n", frame, pframedesc->name);
 	Cache_Release (&m->cache);
 }
 
@@ -1408,10 +1408,10 @@ Host_Startdemos_f (void)
 
 	c = Cmd_Argc () - 1;
 	if (c > MAX_DEMOS) {
-		Con_Printf ("Max %i demos in demoloop\n", MAX_DEMOS);
+		Sys_Printf ("Max %i demos in demoloop\n", MAX_DEMOS);
 		c = MAX_DEMOS;
 	}
-	Con_Printf ("%i demo(s) in loop\n", c);
+	Sys_Printf ("%i demo(s) in loop\n", c);
 
 	for (i = 1; i < c + 1; i++)
 		strncpy (cls.demos[i - 1], Cmd_Argv (i), sizeof (cls.demos[0]) - 1);

@@ -41,7 +41,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <dinput.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/keys.h"
@@ -224,7 +223,7 @@ IN_InitDInput (void)
 		hInstDI = LoadLibrary ("dinput.dll");
 
 		if (hInstDI == NULL) {
-			Con_Printf ("Couldn't load dinput.dll\n");
+			Sys_Printf ("Couldn't load dinput.dll\n");
 			return false;
 		}
 	}
@@ -234,7 +233,7 @@ IN_InitDInput (void)
 			(void *) GetProcAddress (hInstDI, "DirectInputCreateA");
 
 		if (!pDirectInputCreate) {
-			Con_Printf ("Couldn't get DI proc addr\n");
+			Sys_Printf ("Couldn't get DI proc addr\n");
 			return false;
 		}
 	}
@@ -248,14 +247,14 @@ IN_InitDInput (void)
 	hr = IDirectInput_CreateDevice (g_pdi, &GUID_SysMouse, &g_pMouse, NULL);
 
 	if (FAILED (hr)) {
-		Con_Printf ("Couldn't open DI mouse device\n");
+		Sys_Printf ("Couldn't open DI mouse device\n");
 		return false;
 	}
 	// set the data format to "mouse format".
 	hr = IDirectInputDevice_SetDataFormat (g_pMouse, &df);
 
 	if (FAILED (hr)) {
-		Con_Printf ("Couldn't set DI mouse format\n");
+		Sys_Printf ("Couldn't set DI mouse format\n");
 		return false;
 	}
 	// set the cooperativity level.
@@ -264,7 +263,7 @@ IN_InitDInput (void)
 												 DISCL_FOREGROUND);
 
 	if (FAILED (hr)) {
-		Con_Printf ("Couldn't set DI coop level\n");
+		Sys_Printf ("Couldn't set DI coop level\n");
 		return false;
 	}
 
@@ -274,7 +273,7 @@ IN_InitDInput (void)
 										 &dipdw.diph);
 
 	if (FAILED (hr)) {
-		Con_Printf ("Couldn't set DI buffersize\n");
+		Sys_Printf ("Couldn't set DI buffersize\n");
 		return false;
 	}
 
@@ -295,9 +294,9 @@ IN_StartupMouse (void)
 		dinput = IN_InitDInput ();
 
 		if (dinput) {
-			Con_Printf ("DirectInput initialized\n");
+			Sys_Printf ("DirectInput initialized\n");
 		} else {
-			Con_Printf ("DirectInput not initialized\n");
+			Sys_Printf ("DirectInput not initialized\n");
 		}
 	}
 
@@ -681,7 +680,7 @@ MapKey (unsigned int keycode, int press, int *k, int *u)
 			break;
 	}
 
-	Con_DPrintf ("%08x %d %02x %02lx %04x %c\n", keycode, press, scan, shifts,
+	Sys_DPrintf ("%08x %d %02x %02lx %04x %c\n", keycode, press, scan, shifts,
 				 key, uc > 32 && uc < 127 ? uc : '#');
 	*k = key;
 	*u = uc;

@@ -40,7 +40,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <math.h>
 
-#include "QF/console.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 
@@ -246,7 +245,7 @@ R_GetSpriteframe (msprite_t *psprite)
 	frame = currententity->frame;
 
 	if ((frame >= psprite->numframes) || (frame < 0)) {
-		Con_Printf ("R_DrawSprite: no such frame %d\n", frame);
+		Sys_Printf ("R_DrawSprite: no such frame %d\n", frame);
 		frame = 0;
 	}
 

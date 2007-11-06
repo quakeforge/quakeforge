@@ -44,7 +44,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <limits.h>
 
-#include "QF/console.h"
 #include "QF/locs.h"
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
@@ -142,7 +141,7 @@ locs_load (const char *filename)
 	snprintf (tmp, sizeof (tmp), "maps/%s", filename);
 	templength = QFS_FOpenFile (tmp, &file);
 	if (!file) {
-		Con_Printf ("Couldn't load %s\n", tmp);
+		Sys_Printf ("Couldn't load %s\n", tmp);
 		return;
 	}
 	while ((line = Qgetline (file))) {
@@ -207,7 +206,7 @@ locs_save (const char *filename, qboolean gz)
 	} else
 		locfd = QFS_Open (filename, "w+");
 	if (locfd == 0) {
-		Con_Printf ("ERROR: Unable to open %s\n", filename);
+		Sys_Printf ("ERROR: Unable to open %s\n", filename);
 		return;
 	}
 	for (i = 0; i < locations_count; i++) 
@@ -221,7 +220,7 @@ void
 locs_mark (const vec3_t loc, const char *desc)
 {
 	locs_add (loc, desc);
-	Con_Printf ("Marked current location: %s\n", desc);
+	Sys_Printf ("Marked current location: %s\n", desc);
 }
 
 /*
@@ -239,16 +238,16 @@ locs_edit (const vec3_t loc, const char *desc)
 		i = locs_nearest (loc);
 		if (!desc) {
 			VectorCopy (loc, locations[i]->loc);
-			Con_Printf ("Moving location marker for %s\n",
+			Sys_Printf ("Moving location marker for %s\n",
 					locations[i]->name);
 		} else {
 			free ((void *) locations[i]->name);
 			locations[i]->name = strdup (desc);
-			Con_Printf ("Changing location description to %s\n",
+			Sys_Printf ("Changing location description to %s\n",
 					locations[i]->name);
 		}
 	} else 
-		Con_Printf ("Error: No location markers to modify!\n");
+		Sys_Printf ("Error: No location markers to modify!\n");
 }
 
 void
@@ -258,7 +257,7 @@ locs_del (const vec3_t loc)
 
 	if (locations_count) {
 		i = locs_nearest (loc);
-		Con_Printf ("Removing location marker for %s\n",
+		Sys_Printf ("Removing location marker for %s\n",
 				locations[i]->name);
 		free ((void *) locations[i]->name);
 		free ((void *) locations[i]);
@@ -267,7 +266,7 @@ locs_del (const vec3_t loc)
 			locations[i] = locations[i+1];
 		locations[locations_count] = NULL;
 	} else 
-		Con_Printf ("Error: No location markers to remove\n");
+		Sys_Printf ("Error: No location markers to remove\n");
 }
 
 void
