@@ -198,7 +198,7 @@ get_mode (unsigned int width, unsigned int height, unsigned int depth)
 	}
 
 	Sys_Printf ("Mode %dx%d (%d bits) not supported\n",
-			width, height, depth);
+				width, height, depth);
 
 	return "640x480-60";
 }
@@ -211,7 +211,7 @@ static struct fb_var_screeninfo orig_var;
 void
 VID_Shutdown (void)
 {
-	Sys_Printf ("VID_Shutdown\n");
+	Sys_DPrintf ("VID_Shutdown\n");
 
 	if (!fbdev_inited)
 		return;

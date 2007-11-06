@@ -821,15 +821,15 @@ R_InitFishEyeOnce (void)
 
 	if (fisheye_init_once_completed)
 		return 1;
-	Sys_Printf ("GL_ARB_texture_cube_map ");
+	Sys_DPrintf ("GL_ARB_texture_cube_map ");
 	if (QFGL_ExtensionPresent ("GL_ARB_texture_cube_map")) {
 		qfglGetIntegerv (GL_MAX_CUBE_MAP_TEXTURE_SIZE_ARB,
 						 &gl_cube_map_maxtex);
-		Sys_Printf ("present, max texture size %d.\n",
+		Sys_DPrintf ("present, max texture size %d.\n",
 					(int) gl_cube_map_maxtex);
 		gl_cube_map_capable = true;
 	} else {
-		Sys_Printf ("not found.\n");
+		Sys_DPrintf ("not found.\n");
 		gl_cube_map_capable = false;
 	}
 	fisheye_init_once_completed = true;

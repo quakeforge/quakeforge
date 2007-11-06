@@ -403,8 +403,8 @@ Key_Game (knum_t key, short unicode)
 		kb = Key_GetBinding (IMT_0, key);
 
 /*
-	Sys_Printf("kb %p, game_target %d, key_dest %d, key %d\n", kb,
-			game_target, key_dest, key);
+	Sys_DPrintf("kb %p, game_target %d, key_dest %d, key %d\n", kb,
+				game_target, key_dest, key);
 */
 	if (!kb)
 		return false;

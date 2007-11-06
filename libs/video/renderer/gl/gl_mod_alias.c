@@ -258,8 +258,8 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 
 	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
 		if (developer->int_val)
-			Sys_Printf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
-						currententity->model->name);
+			Sys_DPrintf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
+						 currententity->model->name);
 		frame = 0;
 	}
 
@@ -364,8 +364,8 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 
 	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
 		if (developer->int_val)
-			Sys_Printf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
-						currententity->model->name);
+			Sys_DPrintf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
+						 currententity->model->name);
 		frame = 0;
 	}
 

@@ -644,7 +644,7 @@ IN_LL_ProcessEvents (void)
 void
 IN_LL_Shutdown (void)
 {
-	Sys_Printf ("IN_LL_Shutdown\n");
+	Sys_DPrintf ("IN_LL_Shutdown\n");
 	in_mouse_avail = 0;
 	if (x_disp) {
 		XAutoRepeatOn (x_disp);

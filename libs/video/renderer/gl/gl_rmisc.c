@@ -240,7 +240,7 @@ R_TimeRefresh_f (void)
 
 	stop = Sys_DoubleTime ();
 	time = stop - start;
-	Sys_Printf ("%f seconds (%f fps)\n", time, 128 / time);
+	Sys_DPrintf ("%f seconds (%f fps)\n", time, 128 / time);
 
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 }

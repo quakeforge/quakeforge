@@ -160,7 +160,7 @@ R_InitParticles (void)
 		else
 			pVAsize = 0;
 		if (pVAsize) {
-			Sys_Printf ("Particles: %i maximum vertex elements.\n", pVAsize);
+			Sys_DPrintf ("Particles: %i maximum vertex elements.\n", pVAsize);
 
 			if (particleVertexArray)
 				free (particleVertexArray);
@@ -174,7 +174,7 @@ R_InitParticles (void)
 			for (i = 0; i < pVAsize; i++)
 				pVAindices[i] = i;
 		} else {
-			Sys_Printf ("Particles: Vertex Array use disabled.\n");
+			Sys_DPrintf ("Particles: Vertex Array use disabled.\n");
 		}
 	} else {
 		if (particleVertexArray) {
@@ -213,7 +213,7 @@ R_ReadPointFile_f (void)
 		return;
 	}
 
-	Sys_Printf ("Reading %s...\n", name);
+	Sys_DPrintf ("Reading %s...\n", name);
 	c = 0;
 	for (;;) {
 		char        buf[64];
@@ -225,7 +225,7 @@ R_ReadPointFile_f (void)
 		c++;
 
 		if (numparticles >= r_maxparticles) {
-			Sys_Printf ("Not enough free particles\n");
+			Sys_DPrintf ("Not enough free particles\n");
 			break;
 		} else {
 			particle_new (pt_static, part_tex_dot, org, 1.5, vec3_origin,
@@ -233,7 +233,7 @@ R_ReadPointFile_f (void)
 		}
 	}
 	Qclose (f);
-	Sys_Printf ("%i points read\n", c);
+	Sys_DPrintf ("%i points read\n", c);
 }
 
 static void
