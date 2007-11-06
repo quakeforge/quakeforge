@@ -31,7 +31,6 @@
 static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/joystick.h"
 #include "QF/qtypes.h"

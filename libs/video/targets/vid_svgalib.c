@@ -54,6 +54,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <vga.h>
 
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/qargs.h"

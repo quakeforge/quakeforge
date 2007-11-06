@@ -46,6 +46,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <setjmp.h>
 
 #include "QF/cvar.h"
+#include "QF/console.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"

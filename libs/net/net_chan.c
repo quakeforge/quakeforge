@@ -44,7 +44,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdarg.h>
 #include <time.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/msg.h"

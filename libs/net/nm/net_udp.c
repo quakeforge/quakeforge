@@ -80,7 +80,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <sys/ioctl.h>
 #include <net/if.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/qargs.h"

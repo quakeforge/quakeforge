@@ -33,7 +33,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <stdlib.h>
 
-#include "QF/console.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 

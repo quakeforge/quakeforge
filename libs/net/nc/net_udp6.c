@@ -99,7 +99,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #undef model_t
 
-#include "QF/console.h"
 #include "QF/dstring.h"
 #include "QF/msg.h"
 #include "QF/qargs.h"

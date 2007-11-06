@@ -35,6 +35,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/keys.h"

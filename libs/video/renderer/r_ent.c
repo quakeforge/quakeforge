@@ -41,7 +41,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <math.h>
 #include <stdlib.h>
 
-#include "QF/console.h"
 #include "QF/model.h"
 #include "QF/msg.h"
 #include "QF/render.h"
