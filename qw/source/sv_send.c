@@ -43,6 +43,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <time.h>
 
 #include "QF/cvar.h"
+#include "QF/console.h"
 #include "QF/dstring.h"
 #include "QF/msg.h"
 #include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
@@ -233,7 +234,7 @@ SV_Print (const char *fmt, va_list args)
 			pending = 0;
 		}
 
-		Sys_Printf ("%s", msg2);		// also echo to debugging console
+		Con_Printf ("%s", msg2);		// also echo to debugging console
 	}
 }
 

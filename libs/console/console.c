@@ -134,6 +134,19 @@ Con_Shutdown (void)
 }
 
 VISIBLE void
+Con_Printf (const char *fmt, ...)
+{
+	va_list     args;
+
+	va_start (args, fmt);
+	if (con_module)
+		con_module->functions->console->pC_Print (fmt, args);
+	else
+		vfprintf (stdout, fmt, args);
+	va_end (args);
+}
+
+VISIBLE void
 Con_Print (const char *fmt, va_list args)
 {
 	if (con_module)

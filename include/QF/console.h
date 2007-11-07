@@ -89,6 +89,7 @@ extern struct console_data_s con_data;
 void Con_CheckResize (void);
 void Con_DrawConsole (void);
 
+VISIBLE void Con_Printf (const char *fmt, ...);
 void Con_Print (const char *fmt, va_list args);
 void Con_ToggleConsole_f (void);
 
