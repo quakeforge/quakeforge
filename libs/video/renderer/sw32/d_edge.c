@@ -31,10 +31,6 @@
 static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
-#ifdef HAVE_STDINT_H
-# include <stdint.h>
-#endif
-
 #include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/sys.h"

@@ -48,7 +48,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <sys/time.h>
 #endif
 #include <time.h>
-#include <stdint.h>
 
 #include "QF/sizebuf.h"
 #include "QF/sys.h"

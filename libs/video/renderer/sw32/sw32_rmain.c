@@ -37,9 +37,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#ifdef HAVE_STDINT_H
-# include <stdint.h>
-#endif
 
 #include <math.h>
 
