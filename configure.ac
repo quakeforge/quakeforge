@@ -1655,9 +1655,12 @@ if test "x$GCC" != xyes; then
 fi
 
 AC_ARG_ENABLE(Werror,
-[  --enable-Werror         treat warnings as errors]
+[  --disable-Werror        Do not treat warnings as errors]
 )
 dnl We want warnings, lots of warnings...
+dnl The help text should be INVERTED before release!
+dnl when in svn, this test defaults to ENABLED.
+dnl In a release, this test defaults to DISABLED.
 if test "x$GCC" = "xyes"; then
 	if test "x$enable_Werror" $cvs_def_enabled; then
 		CFLAGS="$CFLAGS -Wall -Werror -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations"
