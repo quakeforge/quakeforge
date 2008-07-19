@@ -94,7 +94,7 @@ Skin_Set_Translate (int top, int bottom, void *_dest)
 	}
 }
 
-static inline void
+static void
 build_skin_8 (byte * original, int tinwidth, int tinheight,
 			  unsigned int scaled_width, unsigned int scaled_height,
 			  int inwidth, qboolean alpha)
@@ -121,7 +121,7 @@ build_skin_8 (byte * original, int tinwidth, int tinheight,
 					alpha);
 }
 
-static inline void
+static void
 build_skin_32 (byte * original, int tinwidth, int tinheight,
 			   unsigned int scaled_width, unsigned int scaled_height,
 			   int inwidth, qboolean alpha)

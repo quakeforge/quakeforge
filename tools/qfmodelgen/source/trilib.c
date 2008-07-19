@@ -74,8 +74,8 @@ LoadTriangleList (char *filename, triangle_t **pptri, int *numtriangles)
 {
 	QFile       *input;
 	char        name[256], tex[256];
-	float       start, t;
-	int         count, exitpattern, iLevel, magic, i;
+	float       start, exitpattern, t;
+	int         count, iLevel, magic, i;
 	tf_triangle	tri;
 	triangle_t	*ptri;
 
@@ -105,8 +105,8 @@ LoadTriangleList (char *filename, triangle_t **pptri, int *numtriangles)
 
 	while (Qeof(input) == 0) {
 		Qread(input, &start,  sizeof (float));
-		*(int *) (char *) &start = BigLong (*(int *) (char *) &start);
-		if (*(int *) (char *) &start != exitpattern) {
+		start = BigFloat (start);
+		if (start != exitpattern) {
 			if (start == FLOAT_START) {
 				// Start of an object or group of objects.
 				i = -1;

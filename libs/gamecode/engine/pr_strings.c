@@ -340,7 +340,7 @@ PR_SetString (progs_t *pr, const char *s)
 		s = "";
 	sr = Hash_Find (pr->strref_hash, s);
 
-	if (!sr) {
+	if (__builtin_expect (!sr, 1)) {
 		sr = new_string_ref (pr);
 		sr->type = str_static;
 		sr->s.string = pr_strdup(pr, s);

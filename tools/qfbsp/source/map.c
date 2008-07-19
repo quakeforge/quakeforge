@@ -116,7 +116,7 @@ FindTexinfo (texinfo_t *t)
 			continue;
 
 		for (j = 0; j < 8; j++)
-			if (t->vecs[0][j] != tex->vecs[0][j])
+			if (t->vecs[j / 4][j % 4] != tex->vecs[j / 4][j % 4])
 				break;
 		if (j != 8)
 			continue;

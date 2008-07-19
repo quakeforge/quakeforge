@@ -92,7 +92,7 @@ gl_lightmap_init (void)
 	for (s = 1; s < 8192; s++)
 		dlightdivtable[s] = 1048576 / (s << 7);
 }
-
+/*
 static void
 R_RecursiveLightUpdate (mnode_t *node)
 {
@@ -108,7 +108,7 @@ R_RecursiveLightUpdate (mnode_t *node)
 			 c--, surf++)
 			surf->cached_dlight = true;
 }
-
+*/
 static inline void
 R_AddDynamicLights_1 (msurface_t *surf)
 {

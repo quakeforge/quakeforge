@@ -149,7 +149,8 @@ plotpoint (image_t *image, long xco, long yco, unsigned int color)
 {
 	unsigned int bigcol = 0;
 
-	if (xco < 0 || xco > image->width || yco < 0 || yco > image->height)
+	if (image->width < 0 || image->height < 0
+		|| xco < 0 || xco > image->width || yco < 0 || yco > image->height)
 		return;
 
 	bigcol = (unsigned int) image->image[yco * image->width + xco];

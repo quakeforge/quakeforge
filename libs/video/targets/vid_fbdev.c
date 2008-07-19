@@ -58,7 +58,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <asm/page.h>
 #include <linux/kd.h>
 #include <linux/vt.h>
 #include <sys/stat.h>
@@ -76,6 +75,11 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "d_iface.h"
 #include "fbset.h"
+
+#ifndef PAGE_SIZE
+# define PAGE_SIZE (sysconf(_SC_PAGESIZE))
+# define PAGE_MASK (~(PAGE_SIZE-1))
+#endif
 
 static struct VideoMode current_mode;
 static char current_name[32];

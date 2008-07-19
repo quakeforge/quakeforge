@@ -55,7 +55,7 @@ face to region mapping numbers
 int         firstedge;
 vec3_t      region_mins, region_maxs;
 
-
+/*
 static void
 AddPointToRegion (vec3_t p)
 {
@@ -157,7 +157,7 @@ RecursiveGrowRegion (dface_t *r, face_t *f)
 	}
 
 }
-
+*/
 int         edgemapping[MAX_MAP_EDGES];
 
 typedef struct {

@@ -90,7 +90,7 @@ float   r_avertexnormal_dots[SHADEDOT_QUANT][256] = {
 vec3_t		shadevector;
 
 
-static inline void
+static void
 GL_DrawAliasFrameTri (vert_order_t *vo)
 {
 	int         count = vo->count;
@@ -133,7 +133,7 @@ GL_DrawAliasFrameTriMulti (vert_order_t *vo)
 	qfglEnd ();
 }
 
-static inline void
+static void
 GL_DrawAliasFrame (vert_order_t *vo)
 {
 	int         count;

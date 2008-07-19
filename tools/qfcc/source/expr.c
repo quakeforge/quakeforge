@@ -2319,7 +2319,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 	return e;
 }
 
-static inline int
+static int
 is_indirect (expr_t *e)
 {
 	if (e->type == ex_expr && e->e.expr.op == '.')
