@@ -49,17 +49,14 @@ if test -n "$lt" ; then
 		LTIZE_VER_MINOR=`echo $LTIZE_VER | cut -f2 -d'.' | sed -e 's/[^0-9]//g'`
 
 		if test "$LTIZE_VER_MAJOR" -lt "1"; then
-			echo "Libtool 1.4 or greater needed to build configure."
-			exit 1
+			errors="Libtool 1.4 or greater needed to build configure.\n$errors"
 		fi
 		if test "$LTIZE_VER_MAJOR" -eq "1" -a "$LTIZE_VER_MINOR" -lt "4" ; then
-			echo "Libtool 1.4 or greater needed to build configure."
-			exit 1
+			errors="Libtool 1.4 or greater needed to build configure.\n$errors"
 		fi
 	fi
 else
-	echo Libtool not found. QuakeForge CVS requires libtool to bootstrap itself.
-	exit 1
+	errors="Libtool not found. QuakeForge CVS requires libtool to bootstrap itself.\n$errors"
 fi
 
 # Check Autoconf version
@@ -71,18 +68,15 @@ if test -n "$ac" ; then
 		AC_VER_MINOR=`echo $AC_VER | cut -f2 -d'.' | sed 's/[^0-9]*$//'`
 
 		if test "$AC_VER_MAJOR" -lt "2" ; then
-			echo "Autoconf 2.52 or greater needed to build configure."
-			exit 1
+			errors="Autoconf 2.52 or greater needed to build configure.\n$errors"
 		fi
 
 		if test "$AC_VER_MAJOR" -eq "2" -a "$AC_VER_MINOR" -lt "52" ; then
-			echo "Autoconf 2.52 or greater needed to build configure."
-			exit 1
+			errors="Autoconf 2.52 or greater needed to build configure.\n$errors"
 		fi
 	fi
 else
-	echo Autoconf not found. QuakeForge CVS requires autoconf to bootstrap itself.
-	exit 1
+	errors="Autoconf not found. QuakeForge CVS requires autoconf to bootstrap itself.\n$errors"
 fi
 
 am=`which automake`
@@ -92,16 +86,18 @@ if test -n "$am" ; then
 		AM_VER_MAJOR=`echo $AM_VER | cut -f1 -d.`
 		AM_VER_MINOR=`echo $AM_VER | cut -f2 -d.`
 		if test "$AM_VER_MAJOR" -lt "1"; then
-			echo "Automake 1.6 or greater needed to build makefiles."
-			exit 1
+			errors="Automake 1.6 or greater needed to build makefiles.\n$errors"
 		fi
 		if test "$AM_VER_MAJOR" -eq "1" -a "$AM_VER_MINOR" -lt "6"; then
-			echo "Automake 1.6 or greater needed to build makefiles."
-			exit 1
+			errors="Automake 1.6 or greater needed to build makefiles.\n$errors"
 		fi
 	fi
 else
-	echo Automake not found. QuakeForge CVS requires automake to bootstrap itself.
+	errors="Automake not found. QuakeForge CVS requires automake to bootstrap itself.\n$errors"
+fi
+
+if test -n "$errors" ; then
+	echo -e $errors
 	exit 1
 fi
 
