@@ -143,7 +143,7 @@ qboolean
 VCR_CanSendMessage (qsocket_t * sock)
 {
 	qboolean    ret;
-	long       *driverdata = (long *) &sock->driverdata;
+	long       *driverdata = (long *) (char *) &sock->driverdata;
 
 	if (host_time != next.time || next.op != VCR_OP_CANSENDMESSAGE
 		|| next.session != *driverdata)
@@ -191,7 +191,7 @@ VCR_CheckNewConnections (void)
 	}
 
 	sock = NET_NewQSocket ();
-	driverdata = (long *) &sock->driverdata;
+	driverdata = (long *) (char *) &sock->driverdata;
 	*driverdata = next.session;
 
 	Qread (vcrFile, sock->address, NET_NAMELEN);
