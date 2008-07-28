@@ -97,7 +97,7 @@ int
 VCR_GetMessage (qsocket_t * sock)
 {
 	int         ret;
-	long       *driverdata = (long *) &sock->driverdata;
+	long       *driverdata = (long *) (char *) &sock->driverdata;
 
 	if (host_time != next.time || next.op != VCR_OP_GETMESSAGE
 		|| next.session != *driverdata)
