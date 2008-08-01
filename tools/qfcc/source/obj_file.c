@@ -79,21 +79,21 @@ count_relocs (reloc_t *reloc)
 }
 
 static void
-allocate_stuff (void)
+allocate_stuff (pr_info_t *pr)
 {
 	def_t      *def;
 	function_t *func;
 
 	num_defs = 0;
-	num_funcs = pr.num_functions - 1;
+	num_funcs = pr->num_functions - 1;
 	num_relocs = 0;
-	for (def = pr.scope->head; def; def = def->def_next) {
+	for (def = pr->scope->head; def; def = def->def_next) {
 		if (def->alias)
 			continue;
 		num_defs++;
 		num_relocs += count_relocs (def->refs);
 	}
-	for (func = pr.func_head; func; func = func->next) {
+	for (func = pr->func_head; func; func = func->next) {
 		num_relocs += count_relocs (func->refs);
 		if (func->scope) {
 			num_defs += func->scope->num_defs;
@@ -102,7 +102,7 @@ allocate_stuff (void)
 			}
 		}
 	}
-	num_relocs += count_relocs (pr.relocs);
+	num_relocs += count_relocs (pr->relocs);
 	if (num_defs)
 		defs = calloc (num_defs, sizeof (qfo_def_t));
 	if (num_funcs)
@@ -182,7 +182,7 @@ write_def (def_t *d, qfo_def_t *def, qfo_reloc_t **reloc)
 }
 
 static void
-setup_data (void)
+setup_data (pr_info_t *pr)
 {
 	qfo_def_t  *def = defs;
 	def_t      *d;
@@ -194,10 +194,10 @@ setup_data (void)
 	pr_type_t  *var;
 	pr_lineno_t *line;
 
-	for (d = pr.scope->head; d; d = d->def_next)
+	for (d = pr->scope->head; d; d = d->def_next)
 		if (!d->alias)
 			write_def (d, def++, &reloc);
-	for (f = pr.func_head; f; f = f->next, func++) {
+	for (f = pr->func_head; f; f = f->next, func++) {
 		func->name           = LittleLong (f->s_name);
 		func->file           = LittleLong (f->s_file);
 		func->line           = LittleLong (f->def->line);
@@ -225,25 +225,25 @@ setup_data (void)
 			for (d = f->scope->head; d; d = d->def_next)
 				write_def (d, def++, &reloc);
 	}
-	for (r = pr.relocs; r; r = r->next)
+	for (r = pr->relocs; r; r = r->next)
 		if (r->type == rel_def_op)
 			write_one_reloc (r, &reloc, r->label->ofs);
 		else
 			write_one_reloc (r, &reloc, 0);
-	for (st = pr.code->code; st - pr.code->code < pr.code->size; st++) {
+	for (st = pr->code->code; st - pr->code->code < pr->code->size; st++) {
 		st->op = LittleLong (st->op);
 		st->a  = LittleLong (st->a);
 		st->b  = LittleLong (st->b);
 		st->c  = LittleLong (st->c);
 	}
-	for (var = pr.near_data->data;
-		 var - pr.near_data->data < pr.near_data->size; var++)
+	for (var = pr->near_data->data;
+		 var - pr->near_data->data < pr->near_data->size; var++)
 		var->integer_var = LittleLong (var->integer_var);
-	if (pr.far_data)
-		for (var = pr.far_data->data;
-			 var - pr.far_data->data < pr.far_data->size; var++)
+	if (pr->far_data)
+		for (var = pr->far_data->data;
+			 var - pr->far_data->data < pr->far_data->size; var++)
 			var->integer_var = LittleLong (var->integer_var);
-	for (line = pr.linenos; line - pr.linenos < pr.num_linenos; line++) {
+	for (line = pr->linenos; line - pr->linenos < pr->num_linenos; line++) {
 		line->fa.addr = LittleLong (line->fa.addr);
 		line->line    = LittleLong (line->line);
 	}
@@ -263,8 +263,8 @@ qfo_from_progs (pr_info_t *pr)
 	qfo_t      *qfo;
 
 	types = strpool_new ();
-	allocate_stuff ();
-	setup_data ();
+	allocate_stuff (pr);
+	setup_data (pr);
 
 	round_strings (pr->strings);
 	round_strings (types);

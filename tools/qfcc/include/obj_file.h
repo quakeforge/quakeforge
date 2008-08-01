@@ -211,11 +211,33 @@ typedef struct qfo_func_s {
 
 /** Evil source of many headaches. The whole reason I've started writing this
 	documentation.
+	relocs are always in the order:
+		referenced relocs
+		unreferenced relocs
+
+	For \c ref_op_* relocation types, \c ofs is the code section address of the
+	statement that needs to be adjusted.
+	
+	For \c rel_def_* relocation types,
+	\c ofs refers to the data section address of the word that needs to be
+	adjusted.
+
+	For \c ref_*_def(_ofs) relocation types, \c def is the index of the
+	referenced def.
+	
+	For \c ref_*_op relocation types, \c def is the address of
+	the referenced statement.
+	
+	For \c ref_*_string relocation types, \c def is
+	always 0.
+	
+	For \c ref_*_field(_ofs) relocation types, \c def is the index of
+	the referenced field def.
 */
 typedef struct qfo_reloc_s {
-	pr_int_t    ofs;
-	pr_int_t    type;
-	pr_int_t    def;
+	pr_int_t    ofs;			///< offset of the relocation
+	pr_int_t    type;			///< type of the relocation (::reloc_type)
+	pr_int_t    def;			///< "def" this relocation is for
 } qfo_reloc_t;
 
 /** In-memory representation of a QFO object file.
@@ -304,7 +326,37 @@ typedef struct qfo_s {
 
 	\hideinitializer
 */
-#define	QFO_STRING(q, o)	G_GETSTR (QFO_var (q, string, o))
+#define	QFO_STRING(q, o)	QFO_var (q, string, o)
+
+/** Retrieve a string from the object file, converting it to a C string.
+
+	\param q pointer to ::qfo_t struct
+	\param s offset into object file string space
+	\return (char *)
+
+	\hideinitializer
+*/
+#define QFO_GETSTR(q, s)	((q)->strings + (s))
+
+/** Retrieve a type string from the object file, converting it to a C string.
+
+	\param q pointer to ::qfo_t struct
+	\param s offset into object file type string space
+	\return (char *)
+
+	\hideinitializer
+*/
+#define QFO_TYPESTR(q, s)	((q)->types + (s))
+
+/** Access a string global, converting it to a C string.
+
+	\param q pointer to ::qfo_t struct
+	\param o offset into object file data space
+	\return (char *)
+
+	\hideinitializer
+*/
+#define QFO_GSTRING(q, o)	(QFO_GETSTR (q, (QFO_STRING (q, o))))
 
 /** Access a function variable in the object file. Can be assigned to.
 

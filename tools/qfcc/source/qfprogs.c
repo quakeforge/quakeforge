@@ -481,7 +481,7 @@ operation_t operations[] = {
 	{dump_globals,		qfo_globals},		// globals
 	{dump_strings,		0},					// strings
 	{dump_fields,		0},					// fields
-	{dump_functions,	0},					// functions
+	{dump_functions,	qfo_functions},		// functions
 	{dump_lines,		0},					// lines
 	{dump_modules,		0},					// modules
 	{0,					qfo_relocs},		// relocs

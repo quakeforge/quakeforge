@@ -49,6 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "debug.h"
 #include "emit.h"
 #include "expr.h"
+#include "function.h"
 #include "immediate.h"
 #include "opcodes.h"
 #include "options.h"
@@ -130,7 +131,7 @@ emit_statement (expr_t *e, opcode_t *op, def_t *var_a, def_t *var_b,
 		error (e, "ice ice baby");
 		abort ();
 	}
-	if (options.code.debug) {
+	if (options.code.debug && current_func->aux) {
 		pr_uint_t   line = (e ? e->line : pr.source_line) - lineno_base;
 
 		if (line != pr.linenos[pr.num_linenos - 1].line) {

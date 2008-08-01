@@ -349,15 +349,18 @@ fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
 	pr_int_t    i;
 	qfo_reloc_t *reloc;
 	qfo_func_t *func;
+	const char *full_type = QFO_TYPESTR (qfo, def->full_type);
+	const char *name = QFO_GETSTR (qfo, def->name);
 
-	def->full_type = strpool_addstr (type_strings,
-									 qfo->types + def->full_type);
-	def->name = strpool_addstr (strings, qfo->strings + def->name);
+	def->full_type = strpool_addstr (type_strings, full_type);
+	def->name = strpool_addstr (strings, name);
+
 	def->relocs += reloc_base;
 	for (i = 0, reloc = relocs.relocs + def->relocs;
 		 i < def->num_relocs;
 		 i++, reloc++)
 		reloc->def = def_num;
+
 	def->file = strpool_addstr (strings, qfo->strings + def->file);
 
 	if ((def->flags & (QFOD_LOCAL | QFOD_ABSOLUTE)))
@@ -384,6 +387,9 @@ fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
 	process_def (def);
 }
 
+/*	Transfer global defs from the object file. Local defs are skipped because
+	they will be handled by add_funcs.
+*/
 static void
 add_defs (qfo_t *qfo)
 {
@@ -392,12 +398,14 @@ add_defs (qfo_t *qfo)
 	for (s = e = qfo->defs; s - qfo->defs < qfo->num_defs; s = e) {
 		int         def_num = global_defs.num_defs;
 		qfo_def_t  *d;
+		// find the end of the current chunk of global defs
 		while (e - qfo->defs < qfo->num_defs && !(e->flags & QFOD_LOCAL))
 			e++;
 		defgroup_add_defs (&global_defs, s, e - s);
 		for (d = global_defs.defs + def_num; def_num < global_defs.num_defs;
 			 d++, def_num++)
 			fixup_def (qfo, d, def_num);
+		// find the beginning of the next chunk of global defs
 		while (e - qfo->defs < qfo->num_defs && (e->flags & QFOD_LOCAL))
 			e++;
 	}
@@ -647,18 +655,21 @@ define_def (const char *name, etype_t basic_type, const char *full_type,
 	val->integer_var = v;
 
 	memset (&d, 0, sizeof (d));
+
 	d.basic_type = basic_type;
 	d.full_type = strpool_addstr (type_strings, full_type);
 	d.name = strpool_addstr (strings, name);
 	d.ofs = data->size;
-	d.flags = QFOD_GLOBAL | flags;
 	if (basic_type == ev_field) {
 		d.relocs = relocs.num_relocs;
 		d.num_relocs = 1;
 	}
+	d.flags = QFOD_GLOBAL | flags;
+
 	defspace_adddata (data, val, size);
 	defgroup_add_defs (&global_defs, &d, 1);
 	process_def (global_defs.defs + global_defs.num_defs - 1);
+
 	if (basic_type == ev_field) {
 		int         def_num = global_defs.num_defs - 1;
 		qfo_def_t  *def = global_defs.defs + def_num;

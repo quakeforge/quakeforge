@@ -32,24 +32,34 @@
 #ifndef __reloc_h
 #define __reloc_h
 
+/** \defgroup qfcc_reloc Relocation handling
+	\ingroup qfcc
+*/
+///@{
+
+/** Relocation record types.
+	Types marked with * are relative and fixed up before the qfo is written.
+	Types marked with ! are handled by only by the linker.
+	Types marked with + use pr.relocs
+*/
 typedef enum {
-	rel_none,
-	rel_op_a_def,
-	rel_op_b_def,
-	rel_op_c_def,
-	rel_op_a_op,
-	rel_op_b_op,
-	rel_op_c_op,
-	rel_def_op,
-	rel_def_def,
-	rel_def_func,
-	rel_def_string,
-	rel_def_field,
-	rel_op_a_def_ofs,
-	rel_op_b_def_ofs,
-	rel_op_c_def_ofs,
-	rel_def_def_ofs,
-	rel_def_field_ofs,
+	rel_none,			///< no relocation
+	rel_op_a_def,		///< code[ref.ofs].a = def ofs
+	rel_op_b_def,		///< code[ref.ofs].b = def ofs
+	rel_op_c_def,		///< code[ref.ofs].c = def ofs
+	rel_op_a_op,		///< * code[ref.ofs].a = code ofs - ref.ofs
+	rel_op_b_op,		///< * code[ref.ofs].b = code ofs - ref.ofs
+	rel_op_c_op,		///< * code[ref.ofs].c = code ofs - ref.ofs
+	rel_def_op,			///< + data[ref.ofs] = code ofs
+	rel_def_def,		///< data[ref.ofs] = def ofs
+	rel_def_func,		///< +(sometimes) data[ref.ofs] = ofs
+	rel_def_string,		///< + ! data[ref.ofs] = string index
+	rel_def_field,		///< ! data[ref.ofs] = field def ofs
+	rel_op_a_def_ofs,	///< code[ref.ofs].a += def ofs
+	rel_op_b_def_ofs,	///< code[ref.ofs].b += def ofs
+	rel_op_c_def_ofs,	///< code[ref.ofs].c += def ofs
+	rel_def_def_ofs,	///< data[ref.ofs] += def ofs
+	rel_def_field_ofs,	///< data[ref.ofs] += field def ofs
 } reloc_type;
 
 typedef struct reloc_s {
@@ -76,5 +86,7 @@ void reloc_def_string (int ofs);
 void reloc_def_field (struct def_s *def, int ofs);
 void reloc_def_field_ofs (struct def_s *def, int ofs);
 void reloc_def_op (struct ex_label_s *label, int ofs);
+
+///@}
 
 #endif//__reloc_h

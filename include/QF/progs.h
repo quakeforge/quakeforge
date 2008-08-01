@@ -422,7 +422,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define G_EDICTNUM(p,o)	NUM_FOR_EDICT(p, G_EDICT (p, o))
 
-/** Access a a string global, converting it to a C string. Kills the program
+/** Access a string global, converting it to a C string. Kills the program
 	if the string is invalid.
 
 	\par QC type:

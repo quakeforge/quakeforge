@@ -395,15 +395,19 @@ new_function (const char *name)
 	function_t	*f;
 
 	ALLOC (1024, function_t, functions, f);
+	f->s_name = ReuseString (name);
+	f->s_file = pr.source_file;
+	return f;
+}
 
+void
+add_function (function_t *f)
+{
 	*pr.func_tail = f;
 	pr.func_tail = &f->next;
 	f->function_num = pr.num_functions++;
-	f->s_name = ReuseString (name);
-	f->s_file = pr.source_file;
 	if (options.code.debug)
 		f->aux = new_auxfunction ();
-	return f;
 }
 
 function_t *
@@ -440,12 +444,12 @@ build_builtin_function (def_t *def, expr_t *bi_val)
 	}
 
 	f = new_function (def->name);
+	add_function (f);
 
 	f->builtin = bi_val->type == ex_integer ? bi_val->e.integer_val
 											: (int)bi_val->e.float_val;
 	f->def = def;
-	if (!def->external)
-		reloc_def_func (f, def->ofs);
+	reloc_def_func (f, def->ofs);
 	build_function (f);
 	finish_function (f);
 	return f;

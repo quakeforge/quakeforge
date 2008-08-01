@@ -524,9 +524,12 @@ func_init
 builtin_function
 	: /* emtpy */
 		{
-			$$ = build_builtin_function ($<def>-1, $<expr>0);
-			build_scope ($$, $$->def, current_params);
-			flush_scope ($$->scope, 1);
+			def_t *def = $<def>-1;
+			if (!def->external) {
+				$$ = build_builtin_function (def, $<expr>0);
+				build_scope ($$, $$->def, current_params);
+				flush_scope ($$->scope, 1);
+			}
 		}
 	;
 
@@ -716,10 +719,12 @@ begin_function
 				error (0, "%s redefined", $<def>0->name);
 			$$ = current_func = new_function ($<def>0->name);
 			$$->def = $<def>0;
-			if (!$$->def->external)
+			if (!$$->def->external) {
+				add_function ($$);
 				reloc_def_func ($$, $$->def->ofs);
+			}
 			$$->code = pr.code->size;
-			if (options.code.debug) {
+			if (options.code.debug && current_func->aux) {
 				pr_lineno_t *lineno = new_lineno ();
 				$$->aux->source_line = $$->def->line;
 				$$->aux->line_info = lineno - pr.linenos;
