@@ -125,7 +125,7 @@ int
 VCR_SendMessage (qsocket_t * sock, sizebuf_t *data)
 {
 	int         ret;
-	long       *driverdata = (long *) &sock->driverdata;
+	long       *driverdata = (long *) (char *) &sock->driverdata;
 
 	if (host_time != next.time || next.op != VCR_OP_SENDMESSAGE
 		|| next.session != *driverdata)
