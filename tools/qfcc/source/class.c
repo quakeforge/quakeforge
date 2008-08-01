@@ -731,7 +731,8 @@ class_finish_module (void)
 			pr.scope, st_extern);
 
 	init_def = get_def (&type_function, ".ctor", pr.scope, st_static);
-	init_func = new_function (".ctor");
+	current_func = init_func = new_function (".ctor");
+	add_function (init_func);
 	init_func->def = init_def;
 	reloc_def_func (init_func, init_def->ofs);
 	init_func->code = pr.code->size;
@@ -745,6 +746,7 @@ class_finish_module (void)
 									 		   0, 0)));
 	emit_function (init_func, init_expr);
 	finish_function (init_func);
+	current_func = 0;
 }
 
 protocol_t *
