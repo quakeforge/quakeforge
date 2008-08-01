@@ -459,7 +459,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define G_GPOINTER(p,o)	PR_GetPointer (p, o)
 
-/** Access an entity global.
+/** Access a structure global. Can be assigned to.
 
 	\par QC type:
 		\c void[]

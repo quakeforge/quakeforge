@@ -31,14 +31,16 @@
 #ifndef __qfcc_h
 #define __qfcc_h
 
+/** \defgroup qfcc QuakeC compiler
+*/
+
 #include <stdio.h>
 #include "QF/pr_comp.h"
 
-//============================================================================
-
-#define	MAX_REGS		65536
-
-//=============================================================================
+/** \defgroup qfcc_general General functions
+	\ingroup qfcc
+*/
+//@{
 
 typedef struct srcline_s srcline_t;
 struct srcline_s {
@@ -90,7 +92,6 @@ typedef struct pr_info_s {
 
 extern	pr_info_t	pr;
 
-//============================================================================
 
 extern	char		destfile[];
 
@@ -138,5 +139,7 @@ char *fix_backslash (char *path);
 	} while (0)
 
 #define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
+
+//@}
 
 #endif//__qfcc_h

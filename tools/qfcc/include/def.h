@@ -40,39 +40,39 @@ typedef struct def_s {
 	const char		*name;
 	int				ofs;
 
-	struct reloc_s *refs;			// for relocations
+	struct reloc_s *refs;			///< for relocations
 
-	unsigned		initialized:1;	// for uninit var detection
-	unsigned		suppress:1;	// for uninit var detection suppression
-	unsigned		set:1;			// uninit var auto-inited
-	unsigned		constant:1;	// 1 when a declaration included "= immediate"
-	unsigned		freed:1;		// already freed from the scope
-	unsigned		removed:1;		// already removed from the symbol table
-	unsigned		used:1;			// unused local detection
-	unsigned		absolute:1;		// don't relocate (for temps for shorts)
-	unsigned		managed:1;		// managed temp
-	unsigned		global:1;		// globally declared def
-	unsigned		external:1;		// externally declared def
-	unsigned		local:1;		// function local def
-	unsigned		system:1;		// system def
-	unsigned        nosave:1;		// don't set DEF_SAVEGLOBAL
+	unsigned		initialized:1;	///< for uninit var detection
+	unsigned		suppress:1;	///< for uninit var detection suppression
+	unsigned		set:1;			///< uninit var auto-inited
+	unsigned		constant:1;	///< 1 when a declaration included "= immediate"
+	unsigned		freed:1;		///< already freed from the scope
+	unsigned		removed:1;		///< already removed from the symbol table
+	unsigned		used:1;			///< unused local detection
+	unsigned		absolute:1;		///< don't relocate (for temps for shorts)
+	unsigned		managed:1;		///< managed temp
+	unsigned		global:1;		///< globally declared def
+	unsigned		external:1;		///< externally declared def
+	unsigned		local:1;		///< function local def
+	unsigned		system:1;		///< system def
+	unsigned        nosave:1;		///< don't set DEF_SAVEGLOBAL
 
-	string_t		file;			// source file
-	int				line;			// source line
+	string_t		file;			///< source file
+	int				line;			///< source line
 
-	int				users;			// ref counted temps
-	struct expr_s	*expr;			// temp expr using this def
+	int				users;			///< ref counted temps
+	struct expr_s	*expr;			///< temp expr using this def
 
-	struct def_s	*def_next;		// next def in scope
-	struct def_s	*next;			// general purpose linking
-	struct scope_s	*scope;			// scope the var was defined in
+	struct def_s	*def_next;		///< next def in scope
+	struct def_s	*next;			///< general purpose linking
+	struct scope_s	*scope;			///< scope the var was defined in
 	struct defspace_s *space;
-	struct def_s	*parent;		// vector/quaternion member
-	struct def_s    *alias;			// def for which this is an alias
+	struct def_s	*parent;		///< vector/quaternion member
+	struct def_s    *alias;			///< def for which this is an alias
 
-	int              obj_def;		// index to def in qfo defs
+	int              obj_def;		///< index to def in qfo defs
 
-	void			*return_addr;	// who allocated this
+	void			*return_addr;	///< who allocated this
 } def_t;
 
 typedef struct defspace_s {
