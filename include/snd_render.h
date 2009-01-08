@@ -120,7 +120,13 @@ struct sfxbuffer_s {
 	*/
 	void        (*setpos) (sfxbuffer_t *buffer, unsigned int pos);
 	sfx_t      *sfx;			//!< owning sfx_t instance
-	byte        data[4];		//!< sample data
+	/** Points to the beginning of the sample data within sample_data.
+	*/
+	byte       *data;
+	/** Sample data. The block at the beginning of the buffer (size depends on
+		sample size) holds the state information for resampling.
+	*/
+	byte        sample_data[4];
 };
 
 /** Representation of sound loaded that is streamed in as needed.
@@ -136,7 +142,7 @@ struct sfxstream_s {
 		\param length	number of raw samples to resample
 		\param prev		pointer to end of last resample for smoothing
 	*/
-	void        (*resample)(sfxbuffer_t *, byte *, int, void *);
+	void        (*resample)(sfxbuffer_t *, byte *, int);
 	/** Read data from the stream.
 		\param file		handle for "file" representing the stream
 						(sfxstream_s::file)
@@ -395,17 +401,15 @@ void SND_SetPaint (sfxbuffer_t *sc);
 	\param sc		buffer to write resampled sound
 	\param data		raw sample data
 	\param length	number of raw samples to resample
-	\param prev		pointer to end of last resample for smoothing
 */
-void SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev);
+void SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length);
 
 /** Copy/resample stereo data into sample buffer, resampling as necessary.
 	\param sc		buffer to write resampled sound
 	\param data		raw sample data
 	\param length	number of raw samples to resample
-	\param prev		pointer to end of last resample for smoothing
 */
-void SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev);
+void SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length);
 //@}
 
 

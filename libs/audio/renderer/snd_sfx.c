@@ -119,6 +119,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	wavinfo_t  *info = &stream->wavinfo;
 	int         samples;
 	int         size;
+	int         width;
 
 	sfx_t      *new_sfx = calloc (1, sizeof (sfx_t));
 
@@ -131,15 +132,18 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	new_sfx->close = close;
 
 	samples = snd_shm->speed * 0.3;
-	size = samples = (samples + 255) & ~255;
+	samples = (samples + 255) & ~255;
+	size = samples + 1;		// one extra sample for the resampler
+	width = 1;
 	if (!snd_loadas8bit->int_val)
-		size *= 2;
+		width *= 2;
 	if (info->channels == 2)
-		size *= 2;
+		width *= 2;
+	size *= width;
 
 	stream = calloc (1, sizeof (sfxstream_t) + size);
 	new_sfx->data.stream = stream;
-	memcpy (stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
+	memcpy (stream->buffer.sample_data + size, "\xde\xad\xbe\xef", 4);
 	stream->file = file;
 	stream->sfx = new_sfx;
 	stream->resample = info->channels == 2 ? SND_ResampleStereo
@@ -153,9 +157,15 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	stream->buffer.advance = SND_StreamAdvance;
 	stream->buffer.setpos = SND_StreamSetPos;
 	stream->buffer.sfx = new_sfx;
+	stream->buffer.data = &stream->buffer.sample_data[width];
+	if (info->width == 1) {
+		stream->buffer.sample_data[0] = 128;
+		if (info->channels == 2)
+			stream->buffer.sample_data[1] = 128;
+	}
 	SND_SetPaint (&stream->buffer);
 
-	stream->resample (&stream->buffer, 0, 0, 0);	// get sfx setup properly
+	stream->resample (&stream->buffer, 0, 0);		// get sfx setup properly
 	stream->seek (stream->file, 0, &stream->wavinfo);
 
 	stream->buffer.advance (&stream->buffer, 0);

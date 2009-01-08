@@ -156,7 +156,7 @@ vorbis_load (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 	byte       *data;
 	sfxbuffer_t *sc = 0;
 	sfx_t      *sfx = block->sfx;
-	void       (*resample)(sfxbuffer_t *, byte *, int, void *);
+	void       (*resample)(sfxbuffer_t *, byte *, int);
 	wavinfo_t  *info = &block->wavinfo;
 
 	switch (info->channels) {
@@ -183,7 +183,7 @@ vorbis_load (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 	if (vorbis_read (vf, data, info->datalen) < 0)
 		goto bail;
 	SND_SetPaint (sc);
-	resample (sc, data, info->samples, 0);
+	resample (sc, data, info->samples);
 	sc->head = sc->length;
   bail:
 	if (data)

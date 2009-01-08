@@ -61,6 +61,39 @@ typedef struct {
 cvar_t         *snd_loadas8bit;
 cvar_t         *snd_interp;
 
+static inline int
+snd_convert_8_to_8 (byte data)
+{
+	return data - 128;
+}
+
+static inline int
+snd_convert_8_to_16 (byte data)
+{
+	return snd_convert_8_to_8 (data) << 8;
+}
+
+static inline int
+snd_convert_16_to_16 (short data)
+{
+	return LittleShort (data);
+}
+
+static inline int
+snd_convert_16_to_8 (short data)
+{
+	return snd_convert_16_to_16 (data) >> 8;
+}
+
+#define FAST_RESAMPLE(in,out,count,convert)	\
+	do {									\
+		int         i;						\
+											\
+		for (i = 0; i < count; i++) {		\
+			*out++ = convert (*in++);		\
+		}									\
+	} while (0)
+
 static void
 check_buffer_integrity (sfxbuffer_t *sc, int width, const char *func)
 {
@@ -71,8 +104,9 @@ check_buffer_integrity (sfxbuffer_t *sc, int width, const char *func)
 }
 
 void
-SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
+SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length)
 {
+	void       *prev = 0;
 	byte       *ib, *ob, *pb;
 	int			fracstep, outcount, sample, samplefrac, srcsample, i;
 	float		stepscale;
@@ -83,6 +117,9 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
 	int         outwidth;
 	short       zero_s[1];
 	byte        zero_b[1];
+
+	if (sc->data != sc->sample_data)
+		prev = sc->data;
 
 	is = (short *) data;
 	os = (short *) sc->data;
@@ -111,18 +148,16 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
 	else
 		sc->sfx->loopstart = (unsigned int)-1;
 
-	if (snd_loadas8bit->int_val) {
+	if (snd_loadas8bit->int_val)
 		sc->bps = outwidth = 1;
-		if (prev) {
-			zero_s[0] = ((char *)prev)[0];
-			zero_b[0] = ((char *)prev)[0] + 128;
-		}
-	} else {
+	else
 		sc->bps = outwidth = 2;
-		if (prev) {
+
+	if (prev) {
+		if (inwidth == 1)
+			zero_b[0] = ((char *)prev)[0];
+		else
 			zero_s[0] = ((short *)prev)[0];
-			zero_b[0] = (((short *)prev)[0] >> 8) + 128;
-		}
 	}
 
 	if (!length)
@@ -131,29 +166,19 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev)
 	// resample / decimate to the current source rate
 	if (stepscale == 1) {
 		if (inwidth == 1) {
-			if (outwidth == 1) {
-				for (i = 0; i < outcount; i++) {
-					*ob++ = *ib++ - 128;
-				}
-			} else if (outwidth == 2) {
-				for (i = 0; i < outcount; i++) {
-					*os++ = (*ib++ - 128) << 8;
-				}
-			} else {
+			if (outwidth == 1)
+				FAST_RESAMPLE (ib, ob, outcount, snd_convert_8_to_8);
+			else if (outwidth == 2)
+				FAST_RESAMPLE (ib, os, outcount, snd_convert_8_to_16);
+			else
 				goto general_Mono;
-			}
 		} else if (inwidth == 2) {
-			if (outwidth == 1) {
-				for (i = 0; i < outcount; i++) {
-					*ob++ = LittleShort (*is++) >> 8;
-				}
-			} else if (outwidth == 2) {
-				for (i = 0; i < outcount; i++) {
-					*os++ = LittleShort (*is++);
-				}
-			} else {
+			if (outwidth == 1)
+				FAST_RESAMPLE (is, ob, outcount, snd_convert_16_to_8);
+			else if (outwidth == 2)
+				FAST_RESAMPLE (is, os, outcount, snd_convert_16_to_16);
+			else
 				goto general_Mono;
-			}
 		}
 	} else {				// general case
 general_Mono:
@@ -165,12 +190,12 @@ general_Mono:
 				int         s1, s2;
 
 				if (inwidth == 2) {
-					s1 = LittleShort (*ps);
-					s2 = LittleShort (*is);
+					s1 = snd_convert_16_to_16 (*ps);
+					s2 = snd_convert_16_to_16 (*is);
 					ps = is++;
 				} else {
-					s1 = (*pb - 128) << 8;
-					s2 = (*ib - 128) << 8;
+					s1 = snd_convert_8_to_16 (*pb);
+					s2 = snd_convert_8_to_16 (*ib);
 					pb = ib++;
 				}
 				for (j = 0; j < points; j++) {
@@ -187,6 +212,12 @@ general_Mono:
 					ob += points;
 				}
 			}
+			if (prev) {
+				if (inwidth == 1)
+					((char *)prev)[0] = *pb;
+				else
+					((short *)prev)[0] = *ps;
+			}
 		} else {
 			samplefrac = 0;
 			fracstep = stepscale * 256;
@@ -194,9 +225,9 @@ general_Mono:
 				srcsample = samplefrac >> 8;
 				samplefrac += fracstep;
 				if (inwidth == 2)
-					sample = LittleShort (is[srcsample]);
+					sample = snd_convert_16_to_16 (is[srcsample]);
 				else
-					sample = (ib[srcsample] - 128) << 8;
+					sample = snd_convert_8_to_16 (ib[srcsample]);
 				if (outwidth == 2)
 					os[i] = sample;
 				else
@@ -208,8 +239,9 @@ general_Mono:
 }
 
 void
-SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
+SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length)
 {
+	void       *prev = 0;
 	int			fracstep, outcount, outwidth, samplefrac, srcsample, sl, sr, i;
 	float		stepscale;
 	stereo8_t  *ib, *ob, *pb;
@@ -219,6 +251,9 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
 	int         inrate = info->rate;
 	stereo16_t  zero_s;
 	stereo8_t   zero_b;
+
+	if (sc->data != sc->sample_data)
+		prev = sc->data;
 
 	is = (stereo16_t *) data;
 	os = (stereo16_t *) sc->data;
@@ -249,20 +284,18 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
 	if (snd_loadas8bit->int_val) {
 		outwidth = 1;
 		sc->bps = 2;
-		if (prev) {
-			zero_s.left = ((char *)prev)[0];
-			zero_s.right = ((char *)prev)[1];
-			zero_b.left = ((char *)prev)[0] + 128;
-			zero_b.right = ((char *)prev)[1] + 128;
-		}
 	} else {
 		outwidth = 2;
 		sc->bps = 4;
-		if (prev) {
+	}
+
+	if (prev) {
+		if (inwidth == 1) {
+			zero_b.left = ((char *)prev)[0];
+			zero_b.right = ((char *)prev)[1];
+		} else {
 			zero_s.left = ((short *)prev)[0];
 			zero_s.right = ((short *)prev)[1];
-			zero_b.left = (((short *)prev)[0] >> 8) + 128;
-			zero_b.right = (((short *)prev)[1] >> 8) + 128;
 		}
 	}
 
@@ -338,6 +371,15 @@ general_Stereo:
 					os += points;
 				} else {
 					ob += points;
+				}
+			}
+			if (prev) {
+				if (inwidth == 1) {
+					((char *)prev)[0] = pb->left;
+					((char *)prev)[1] = pb->right;
+				} else {
+					((short *)prev)[0] = ps->left;
+					((short *)prev)[1] = ps->right;
 				}
 			}
 		} else {

@@ -73,9 +73,9 @@ wav_callback_load (void *object, cache_allocator_t allocator)
 	buffer->sfx = sfx;
 	SND_SetPaint (buffer);
 	if (info->channels == 2)
-		SND_ResampleStereo (buffer, data, info->samples, 0);
+		SND_ResampleStereo (buffer, data, info->samples);
 	else
-		SND_ResampleMono (buffer, data, info->samples, 0);
+		SND_ResampleMono (buffer, data, info->samples);
 	buffer->head = buffer->length;
 	free (data);
 }

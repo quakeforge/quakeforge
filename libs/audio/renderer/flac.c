@@ -345,7 +345,7 @@ flac_load (flacfile_t *ff, sfxblock_t *block, cache_allocator_t allocator)
 	byte       *data;
 	sfxbuffer_t *sc = 0;
 	sfx_t      *sfx = block->sfx;
-	void       (*resample)(sfxbuffer_t *, byte *, int, void *);
+	void       (*resample)(sfxbuffer_t *, byte *, int);
 	wavinfo_t  *info = &block->wavinfo;
 
 	switch (ff->info.channels) {
@@ -372,7 +372,7 @@ flac_load (flacfile_t *ff, sfxblock_t *block, cache_allocator_t allocator)
 	if (flac_read (ff, data, info->datalen) < 0)
 		goto bail;
 	SND_SetPaint (sc);
-	resample (sc, data, info->samples, 0);
+	resample (sc, data, info->samples);
 	sc->head = sc->length;
   bail:
 	if (data)

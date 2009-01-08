@@ -157,16 +157,13 @@ SND_StreamWavinfo (sfx_t *sfx)
 }
 
 static void
-read_samples (sfxbuffer_t *buffer, int count, void *prev)
+read_samples (sfxbuffer_t *buffer, int count)
 {
 
 	if (buffer->head + count > buffer->length) {
-		int         s = (buffer->length - 1);
-
 		count -= buffer->length - buffer->head;
-		read_samples (buffer, buffer->length - buffer->head, prev);
-		prev = buffer->data + s * buffer->bps;
-		read_samples (buffer, count, prev);
+		read_samples (buffer, buffer->length - buffer->head);
+		read_samples (buffer, count);
 	} else {
 		float       stepscale;
 		int         samples, size;
@@ -183,7 +180,7 @@ read_samples (sfxbuffer_t *buffer, int count, void *prev)
 			byte       *data = alloca (size);
 			if (stream->read (stream->file, data, size, info) != size)
 				Sys_Printf ("%s r\n", sfx->name);
-			stream->resample (buffer, data, samples, prev);
+			stream->resample (buffer, data, samples);
 		} else {
 			if (stream->read (stream->file, buffer->data, size, info) != size)
 				Sys_Printf ("%s nr\n", sfx->name);
@@ -198,7 +195,6 @@ static void
 fill_buffer (sfx_t *sfx, sfxstream_t *stream, sfxbuffer_t *buffer,
 			 wavinfo_t *info, unsigned int headpos)
 {
-	void       *prev;
 	unsigned int samples;
 	unsigned int loop_samples = 0;
 
@@ -220,23 +216,17 @@ fill_buffer (sfx_t *sfx, sfxstream_t *stream, sfxbuffer_t *buffer,
 			int         s = buffer->head - 1;
 			if (!buffer->head)
 				s += buffer->length;
-			prev = buffer->data + s * buffer->bps;
-		} else {
-			prev = 0;
 		}
-		read_samples (buffer, samples, prev);
+		read_samples (buffer, samples);
 	}
 	if (loop_samples) {
 		if (buffer->head != buffer->tail) {
 			int         s = buffer->head - 1;
 			if (!buffer->head)
 				s += buffer->length;
-			prev = buffer->data + s * buffer->bps;
-		} else {
-			prev = 0;
 		}
 		stream->seek (stream->file, info->loopstart, info);
-		read_samples (buffer, loop_samples, prev);
+		read_samples (buffer, loop_samples);
 	}
 }
 
@@ -403,6 +393,7 @@ SND_GetCache (long samples, int rate, int inwidth, int channels,
 		return 0;
 	memset (sc, 0, sizeof (sfxbuffer_t) + size);
 	sc->length = len;
+	sc->data = sc->sample_data;
 	memcpy (sc->data + size, "\xde\xad\xbe\xef", 4);
 	return sc;
 }
