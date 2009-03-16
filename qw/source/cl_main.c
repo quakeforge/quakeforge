@@ -1775,7 +1775,6 @@ Host_Init (void)
 	CL_Init_Cvars ();
 	CL_Prediction_Init_Cvars ();
 	COM_Init_Cvars ();
-	Con_Init_Cvars ();
 	Game_Init_Cvars ();
 	IN_Init_Cvars ();
 	Key_Init_Cvars ();

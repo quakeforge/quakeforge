@@ -422,7 +422,7 @@ C_Print (const char *fmt, va_list args)
 		if (!con->x) {
 			Linefeed ();
 			// mark time for transparent overlay
-			if (con->current >= 0)
+			if (con->current >= 0 && con_data.realtime)
 				con_times[con->current % NUM_CON_TIMES] = *con_data.realtime;
 		}
 
@@ -560,7 +560,7 @@ DrawInputLine (int x, int y, int cursor, inputline_t *il)
 	} else {
 		Draw_nString (x, y, s, il->width - 1);
 	}
-	if (cursor) {
+	if (cursor && con_data.realtime) {
 		float       t = *con_data.realtime * con_cursorspeed;
 		int         ch = 10 + ((int) (t) & 1);
 		Draw_Character (x + ((il->linepos - il->scroll) << 3), y, ch);
@@ -705,6 +705,9 @@ draw_notify (view_t *view)
 	int			i, x, y;
 	char	   *text;
 	float		time;
+
+	if (!con_data.realtime)
+		return;
 
 	x = view->xabs + 8;
 	y = view->yabs;

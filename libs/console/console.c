@@ -57,24 +57,15 @@ static U void (*const display)(const char **, int) = Con_DisplayList;
 
 static cvar_t *con_interpreter;
 
-VISIBLE void
-Con_Init (const char *plugin_name)
-{
-	con_module = PI_LoadPlugin ("console", plugin_name);
-	if (con_module) {
-		con_module->functions->general->p_Init ();
-		Sys_SetStdPrintf (con_module->functions->console->pC_Print);
-	} else {
-		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
-	}
-}
-
 static void
 Con_Interp_f (cvar_t *var)
 {
+	if (!con_module)
+		return;
+
 	cbuf_interpreter_t *interp = Cmd_GetProvider(var->string);
 
-	if (con_module && interp) {
+	if (interp) {
 		cbuf_t *new;
 
 		Sys_Printf ("Switching to interpreter '%s'\n", var->string);
@@ -90,6 +81,21 @@ Con_Interp_f (cvar_t *var)
 	} else {
 		Sys_Printf ("Unknown interpreter '%s'\n", var->string);
 	}
+}
+
+VISIBLE void
+Con_Init (const char *plugin_name)
+{
+	con_module = PI_LoadPlugin ("console", plugin_name);
+	if (con_module) {
+		con_module->functions->general->p_Init ();
+		Sys_SetStdPrintf (con_module->functions->console->pC_Print);
+	} else {
+		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
+	}
+	con_interpreter = 
+		Cvar_Get("con_interpreter", "id", CVAR_NONE, Con_Interp_f,
+				 "Interpreter for the interactive console");
 }
 
 VISIBLE void
@@ -114,14 +120,6 @@ Con_ExecLine (const char *line)
   no_lf:
 	if (echo)
 		Sys_Printf ("%s\n", line);
-}
-
-VISIBLE void
-Con_Init_Cvars (void)
-{
-	con_interpreter = 
-		Cvar_Get("con_interpreter", "id", CVAR_NONE, Con_Interp_f,
-				 "Interpreter for the interactive console");
 }
 
 VISIBLE void

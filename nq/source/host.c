@@ -922,7 +922,6 @@ Host_Init (void)
 	VID_Init_Cvars ();
 	S_Init_Cvars ();
 	Key_Init_Cvars ();
-	Con_Init_Cvars ();
 	PR_Init_Cvars ();
 	SV_Progs_Init_Cvars ();
 	R_Init_Cvars ();
