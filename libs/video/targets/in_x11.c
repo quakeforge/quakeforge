@@ -350,6 +350,12 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 		case XK_Meta_R:
 			key = QFK_RMETA;
 			break;
+		case XK_Super_L:
+			key = QFK_LSUPER;
+			break;
+		case XK_Super_R:
+			key = QFK_RSUPER;
+			break;
 
 		case XK_Multi_key:
 			key = QFK_COMPOSE;
@@ -431,6 +437,64 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 			break;
 		case XK_agrave:
 			key = QFK_WORLD_64;
+			break;
+
+		case XK_Kanji:
+			key = QFK_KANJI;
+			break;
+		case XK_Muhenkan:
+			key = QFK_MUHENKAN;
+			break;
+		case XK_Henkan:
+			key = QFK_HENKAN;
+			break;
+		case XK_Romaji:
+			key = QFK_ROMAJI;
+			break;
+		case XK_Hiragana:
+			key = QFK_HIRAGANA;
+			break;
+		case XK_Katakana:
+			key = QFK_KATAKANA;
+			break;
+		case XK_Hiragana_Katakana:
+			key = QFK_HIRAGANA_kATAKANA;
+			break;
+		case XK_Zenkaku:
+			key = QFK_ZENKAKU;
+			break;
+		case XK_Hankaku:
+			key = QFK_HANKAKU;
+			break;
+		case XK_Zenkaku_Hankaku:
+			key = QFK_ZENKAKU_HANKAKU;
+			break;
+		case XK_Touroku:
+			key = QFK_TOUROKU;
+			break;
+		case XK_Massyo:
+			key = QFK_MASSYO;
+			break;
+		case XK_Kana_Lock:
+			key = QFK_KANA_LOCK;
+			break;
+		case XK_Kana_Shift:
+			key = QFK_KANA_SHIFT;
+			break;
+		case XK_Eisu_Shift:
+			key = QFK_EISU_SHIFT;
+			break;
+		case XK_Eisu_toggle:
+			key = QFK_EISU_TOGGLE;
+			break;
+		case XK_Kanji_Bangou:
+			key = QFK_KANJI_BANGOU;
+			break;
+		case XK_Zen_Koho:
+			key = QFK_ZEN_KOHO;
+			break;
+		case XK_Mae_Koho:
+			key = QFK_MAE_KOHO;
 			break;
 
 		default:

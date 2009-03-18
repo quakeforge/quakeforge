@@ -293,6 +293,28 @@ typedef enum {
 	QFK_POWER			= 320,		/* Power Macintosh power key */
 	QFK_EURO			= 321,		/* Some european keyboards */
 	QFK_UNDO			= 322,
+
+	/* Japanese keys */
+	QFK_KANJI,						/* Kanji, Kanji convert */
+	QFK_MUHENKAN,					/* Cancel Conversion */
+	QFK_HENKAN,						/* Alias for Henkan_Mode */
+	QFK_ROMAJI,						/* to Romaji */
+	QFK_HIRAGANA,					/* to Hiragana */
+	QFK_KATAKANA,					/* to Katakana */
+	QFK_HIRAGANA_kATAKANA,			/* Hiragana/Katakana toggle */
+	QFK_ZENKAKU,					/* to Zenkaku */
+	QFK_HANKAKU,					/* to Hankaku */
+	QFK_ZENKAKU_HANKAKU,			/* Zenkaku/Hankaku toggle */
+	QFK_TOUROKU,					/* Add to Dictionary */
+	QFK_MASSYO,						/* Delete from Dictionary */
+	QFK_KANA_LOCK,					/* Kana Lock */
+	QFK_KANA_SHIFT,					/* Kana Shift */
+	QFK_EISU_SHIFT,					/* Alphanumeric Shift */
+	QFK_EISU_TOGGLE,				/* Alphanumeric toggle */
+	QFK_KANJI_BANGOU,				/* Codeinput */
+	QFK_ZEN_KOHO,					/* Multiple/All Candidate(s) */
+	QFK_MAE_KOHO,					/* Previous Candidate */
+
 	/* Add any other keys here */
 
 //
