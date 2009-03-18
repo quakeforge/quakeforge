@@ -763,6 +763,8 @@ ProcessFile (void)
 			extract_textures ();
 		if (options.extract_entities)
 			extract_entities ();
+		if (options.extract_hull)
+			extract_hull ();
 		return;
 	}
 

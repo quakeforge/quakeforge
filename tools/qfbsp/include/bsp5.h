@@ -246,6 +246,7 @@ void LoadBSP (void);
 void bsp2prt (void);
 void extract_textures (void);
 void extract_entities (void);
+void extract_hull (void);
 
 //=============================================================================
 

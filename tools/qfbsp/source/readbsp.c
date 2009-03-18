@@ -54,6 +54,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "bsp5.h"
 #include "options.h"
 
+dmodel_t   *models;
 face_t     *mfaces;
 node_t     *nodes;
 node_t     *leafs;
@@ -421,4 +422,56 @@ extract_entities (void)
 		ef = Qopen (entfile, "wt");
 	Qwrite (ef, bsp->entdata, i);
 	Qclose (ef);
+}
+
+void
+extract_hull (void)
+{
+//	hullfile = output_file (".c");
+	char       *hullfile;
+	int         i, j;
+	QFile      *hf;
+
+	hullfile = output_file (".c");
+	if (strcmp (hullfile, "-") == 0)
+		hf = Qdopen (1, "wt");
+	else
+		hf = Qopen (hullfile, "wt");
+
+	printf ("%d\n", bsp->nummodels);
+	for (i = 0; i < bsp->nummodels; i++) {
+		dmodel_t   *m = bsp->models + i;
+		printf ("mins: (%g, %g, %g)\n", m->mins[0], m->mins[1], m->mins[2]);
+		printf ("maxs: (%g, %g, %g)\n", m->maxs[0], m->maxs[1], m->maxs[2]);
+		printf ("origin: (%g, %g, %g)\n",
+				m->origin[0], m->origin[1], m->origin[2]);
+		for (j = 0; j < MAX_MAP_HULLS; j++)
+			printf ("headnodes[%d]: %d\n", j, m->headnode[j]);
+		printf ("visleafs: %d\n", m->visleafs);
+		printf ("firstface: %d\n", m->firstface);
+		printf ("numfaces: %d\n", m->numfaces);
+		printf ("\n");
+	}
+	Qprintf (hf, "dclipnode_t clipnodes[] = {\n");
+	for (i = 0; i < bsp->numnodes; i++) {
+		int         c0, c1;
+		c0 = bsp->nodes[i].children[0];
+		c1 = bsp->nodes[i].children[1];
+		if (c0 < 0)
+			c0 = bsp->leafs[-1 - c0].contents;
+		if (c1 < 0)
+			c1 = bsp->leafs[-1 - c1].contents;
+		Qprintf (hf, "\t{%d, {%d, %d}},\t// %d\n", bsp->nodes[i].planenum,
+				 c0, c1, i);
+	}
+	Qprintf (hf, "};\n");
+	Qprintf (hf, "mplane_t planes[] = {\n");
+	for (i = 0; i < bsp->numplanes; i++) {
+		Qprintf (hf, "\t{{%g, %g, %g}, %g, %d, 0, {0, 0}},\t// %d\n",
+				 bsp->planes[i].normal[0], bsp->planes[i].normal[1],
+				 bsp->planes[i].normal[2],
+				 bsp->planes[i].dist, bsp->planes[i].type,
+				 i);
+	}
+	Qprintf (hf, "};\n");
 }
