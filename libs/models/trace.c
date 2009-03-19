@@ -48,6 +48,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "world.h"
 
 /* LINE TESTING IN HULLS */
+//#undef DIST_EPSILON
+//#define DIST_EPSILON 0
 
 static inline void
 calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
@@ -92,9 +94,30 @@ typedef struct {
 	hull_t      hull;
 	mplane_t   *plane;
 	mplane_t   *impact;
+	int         impactside;
 	float       fraction;
 	int         flags;
 } tl_t;
+
+static inline vec_t
+sgn (vec_t v)
+{
+	return v < 0 ? -1 : (v > 0 ? 1 : -1);
+}
+
+static inline vec_t
+select_point (mplane_t *split, int side, int axis, tl_t *tl)
+{
+	vec_t       s = sgn (tl->impact->normal[axis]);
+	if (!tl->impactside)
+		s = -s;
+	if (!s) {
+		s = sgn (split->normal[axis]);
+		if (!side)
+			s = -s;
+	}
+	return tl->extents[axis] * s;
+}
 
 static inline void
 check_contents (int num, tl_t *tl)
@@ -129,12 +152,16 @@ static void
 impact (tl_t *tl)
 {
 	float       t1, t2, offset, frac;
+	int         side = 0;
+
 	t1 = PlaneDiff (tl->start, tl->plane);
 	t2 = PlaneDiff (tl->end, tl->plane);
 	offset = calc_offset (tl, tl->plane);
 	if (t1 < t2) {
+		side = -1;
 		frac = (t1 + offset) / (t1 - t2);
 	} else if (t1 > t2) {
+		side = 0;
 		frac = (t1 - offset) / (t1 - t2);
 	} else {
 		frac = 0;
@@ -143,6 +170,25 @@ impact (tl_t *tl)
 	if (frac >= 0) {
 		tl->fraction = frac;
 		tl->impact = tl->plane;
+		tl->impactside = side;
+	}
+}
+
+static void
+validate_impact (mplane_t *split, int side, tl_t *tl)
+{
+	vec3_t      dist, point;
+	int         pside;
+
+	VectorSubtract (tl->end, tl->start, dist);
+	VectorMultAdd (tl->start, tl->fraction, dist, point);
+	point[0] += select_point (split, !side, 0, tl);
+	point[1] += select_point (split, !side, 1, tl);
+	point[2] += select_point (split, !side, 2, tl);
+	pside = PlaneDiff (point, split) < 0;
+	if (pside != side) {
+		tl->fraction = 1;
+		tl->impact = 0;
 	}
 }
 
@@ -157,28 +203,35 @@ traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 	vec3_t      mid;
 	int         c1, c2;
 
-	while (num >= 0) {
-		node = tl->hull.clipnodes + num;
-		plane = tl->hull.planes + node->planenum;
+	// Skip past nodes that don't intersect with the line.
+	do {
+//		Sys_Printf ("%d\n", num);
+		while (num >= 0) {
+			node = tl->hull.clipnodes + num;
+			plane = tl->hull.planes + node->planenum;
 
-		t1 = PlaneDiff (p1, plane);
-		t2 = PlaneDiff (p2, plane);
-		offset = calc_offset (tl, plane);
+			t1 = PlaneDiff (p1, plane);
+			t2 = PlaneDiff (p2, plane);
+			offset = calc_offset (tl, plane);
 
-		if (t1 >= offset && t2 >= offset) {
-			num = node->children[0];
-		} else if (t1 < -offset && t2 < -offset) {
-			num = node->children[1];
-		} else {
-			break;
+			if (t1 >= offset && t2 >= offset) {
+				num = node->children[0];
+			} else if (t1 < -offset && t2 < -offset) {
+				num = node->children[1];
+			} else {
+				break;
+			}
+//			Sys_Printf ("%d\n", num);
 		}
-	}
-	if (num < 0)
-		return num;
+		if (num < 0)
+			return num;
+	} while (0);
 
 //	if (t1 == t2) {
 	if (t1 >= -offset && t1 < offset && t2 >= -offset && t2 < offset) {
 		c1 = c2 = traceline (node->children[0], p1f, p2f, p1, p2, tl);
+		if (tl->impact)
+			validate_impact (plane, 0, tl);
 		if (c1 != CONTENTS_SOLID)
 			c2 = traceline (node->children[1], p1f, p2f, p1, p2, tl);
 		if (c1 == CONTENTS_SOLID || c2 == CONTENTS_SOLID) {
@@ -203,7 +256,7 @@ traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 			side = 1;
 			frac  = (t1 - offset) / (t1 - t2);
 			frac2 = (t1 + offset) / (t1 - t2);
-		} else if (t1 > t2) {
+		} else /*if (t1 > t2)*/ {
 			side = 0;
 			frac  = (t1 + offset) / (t1 - t2);
 			frac2 = (t1 - offset) / (t1 - t2);
