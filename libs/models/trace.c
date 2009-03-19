@@ -102,7 +102,7 @@ typedef struct {
 static inline vec_t
 sgn (vec_t v)
 {
-	return v < 0 ? -1 : (v > 0 ? 1 : -1);
+	return v < 0 ? -1 : (v > 0 ? 1 : 0);
 }
 
 static inline vec_t
