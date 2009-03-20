@@ -8,7 +8,7 @@ noinst_PROGRAMS= testclip
 
 testclip_SOURCES=testclip.c
 testclip_LDADD= libQFmodels.la
-testclip_DEPENDENCIES= libQFmodels.la
+testclip_DEPENDENCIES=
 
 lib_LTLIBRARIES=	libQFmodels.la @VID_MODEL_TARGETS@
 EXTRA_LTLIBRARIES= \
