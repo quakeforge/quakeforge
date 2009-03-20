@@ -210,8 +210,12 @@ test_t tests[] = {
 	{"run over top of ramp: hull3",
 		&hull3, {480, -216, 76}, {480, -200, 76}, {1, 0, 0, 1, 0}},
 
-	{"drop onto top of ramp: hull2",
-		&hull3, {468, -216, 80}, {468, -216, 72}, {0.5, 0, 0, 1, 0}},
+	{"drop onto top of ramp, A: hull3",
+		&hull3, {480, -207.977, 77}, {468, -207.977, 75}, {0.5, 0, 0, 1, 0}},
+	{"drop onto top of ramp, B: hull3",
+		&hull3, {480, -208.873, 77}, {468, -208.873, 75}, {0.5, 0, 0, 1, 0}},
+	{"diagonal drop onto top of ramp: hull3",
+		&hull3, {480, -208.873, 77}, {468, -207.977, 75}, {0.5, 0, 0, 1, 0}},
 };
 const int num_tests = sizeof (tests) / sizeof (tests[0]);
 
