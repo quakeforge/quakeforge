@@ -83,7 +83,7 @@ calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 	VectorSubtract (end, start, dist);
 	VectorMultAdd (start, frac, dist, trace->endpos);
 }
-#if 0
+#ifdef ENABLE_BOXCLIP
 typedef struct {
 	mplane_t    *plane;
 	int          side;

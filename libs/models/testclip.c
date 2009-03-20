@@ -5,6 +5,7 @@
 
 #undef DIST_EPSILON
 #define DIST_EPSILON 0
+#define ENABLE_BOXCLIP
 #include "trace.c"
 
 dclipnode_t clipnodes1[] = {
