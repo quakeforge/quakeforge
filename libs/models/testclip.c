@@ -246,7 +246,8 @@ run_test (test_t *test)
 	VectorSubtract (test->end, test->start, end);
 	VectorMultAdd (test->start, test->expect.frac, end, end);
 	if (verbose)
-		printf ("(%g %g %g) -> (%g %g %g) => (%g %g %g) %3g %d %d %d %d\n",
+		printf ("expect: (%g %g %g) -> (%g %g %g) => (%g %g %g)"
+				" %3g %d %d %d %d\n",
 				test->start[0], test->start[1], test->start[2],
 				test->end[0], test->end[1], test->end[2],
 				end[0], end[1], end[2],
@@ -255,7 +256,8 @@ run_test (test_t *test)
 				test->expect.inopen, test->expect.inwater);
 	trace_t trace = do_trace (test->hull, test->start, test->end);
 	if (verbose)
-		printf ("(%g %g %g) -> (%g %g %g) => (%g %g %g) %3g %d %d %d %d\n",
+		printf ("   got: (%g %g %g) -> (%g %g %g) => (%g %g %g)"
+				" %3g %d %d %d %d\n",
 				test->start[0], test->start[1], test->start[2],
 				test->end[0], test->end[1], test->end[2],
 				trace.endpos[0], trace.endpos[1], trace.endpos[2],
