@@ -123,6 +123,11 @@ set_impact (tl_t *tl, mplane_t *plane, int side)
 	tl->impact.side = side;
 }
 
+#define print_tp(tp) \
+	Sys_Printf ("%s [(%g %g %g) %g %d]\n", #tp, \
+				(tp).plane->normal[0], (tp).plane->normal[1], \
+				(tp).plane->normal[2], (tp).plane->dist, (tp).side)
+
 static inline vec_t
 sgn (vec_t v)
 {
@@ -140,7 +145,7 @@ select_point (tl_t *tl, tp_t *impact, tp_t *split, vec3_t offs)
 			s = -s;
 		if (!s) {
 			s = sgn (split->plane->normal[axis]);
-			if (!split->side)
+			if (split->side)
 				s = -s;
 		}
 		offs[axis] = tl->extents[axis] * s;
@@ -198,6 +203,7 @@ impact (tl_t *tl)
 	if (frac >= 0) {
 		tl->fraction = frac;
 		set_impact (tl, tl->split.plane, side);
+//		print_tp (tl->impact);
 	}
 }
 
@@ -205,15 +211,22 @@ static int
 validate_impact (tp_t *split, tl_t *tl)
 {
 	vec3_t      dist, point, offs;
-	int         pside;
+	int         side;
 
 	VectorSubtract (tl->end, tl->start, dist);
 	VectorMultAdd (tl->start, tl->fraction, dist, point);
 	select_point (tl, &tl->impact, split, offs);
 	VectorAdd (point, offs, point);
-	pside = PlaneDiff (point, split->plane) < 0;
-//	Sys_Printf ("impact: (%g %g %g) %d %d\n", point[0], point[1], point[2], pside, split->side);
-	if (pside != split->side) {
+	side = PlaneDiff (point, split->plane) < 0;
+#if 0
+	Sys_Printf ("\nimpact: (%g %g %g) (%g %g %g) %d %d\n",
+				point[0], point[1], point[2],
+				offs[0], offs[1], offs[2],
+				side, split->side);
+	print_tp (tl->impact);
+	print_tp (*split);
+#endif
+	if (side != split->side) {
 		tl->fraction = 1;
 		set_impact (tl, 0, 0);
 		return 0;
@@ -221,33 +234,91 @@ validate_impact (tp_t *split, tl_t *tl)
 	return 1;
 }
 
-static int
-validate_solid (const vec3_t p1, const vec3_t p2, float t1, float t2,
-				tp_t *wall, tp_t *split, tl_t *tl)
-{
-	float       frac, offset;
-	int         side;
-	vec3_t      dist, point, offs;
+#define set_point(a,s,b,c) \
+	do { \
+		(c)[0] = (a)[0] + (s)[0] * (b)[0]; \
+		(c)[1] = (a)[1] + (s)[1] * (b)[1]; \
+		(c)[2] = (a)[2] + (s)[2] * (b)[2]; \
+	} while (0)
 
-//	if (!tl->plane)
-//		return 1;
-	if (t1 == t2)
+static int
+validate_solid (const vec3_t p, tp_t *wall, tp_t *split, tl_t *tl)
+{
+	static const vec3_t edges[][2] = {
+		{{ 1, -1,  1}, { 1,  1,  1}},
+		{{-1, -1,  1}, { 1, -1,  1}},
+		{{-1, -1,  1}, {-1,  1,  1}},
+		{{-1,  1,  1}, { 1,  1,  1}},
+
+		{{ 1,  1, -1}, { 1,  1,  1}},
+		{{ 1, -1, -1}, { 1, -1,  1}},
+		{{-1, -1, -1}, {-1, -1,  1}},
+		{{-1,  1, -1}, {-1,  1,  1}},
+
+		{{ 1, -1, -1}, { 1,  1,  1}},
+		{{-1, -1, -1}, { 1, -1,  1}},
+		{{-1, -1, -1}, {-1,  1,  1}},
+		{{-1,  1, -1}, { 1,  1,  1}},
+	};
+	static const int tests[] = {
+		0xa0a, 0x505, 0x0f0, 0x5f5, 0xafa, 0xf0f, 0xfff,
+	};
+	float       t, t1, t2, frac;
+	int         side;
+	vec3_t      p1, p2, dist, point;
+
+	int         type = wall->plane->type;
+	int         i;
+
+	if (!split->plane)
 		return 1;
-	offset = calc_offset (tl, wall->plane);
-	if (t1 < t2)
-		frac = (t1 - offset) / (t1 - t2);
-	else
-		frac = (t1 + offset) / (t1 - t2);
-	VectorSubtract (p2, p1, dist);
-	VectorMultAdd (p1, frac, dist, point);
-	select_point (tl, wall, split, offs);
-	VectorAdd (point, offs, point);
-	side = PlaneDiff (point, split->plane) < 0;
-//	Sys_Printf ("solid: (%g %g %g) %d %d\n", point[0], point[1], point[2], side, split->side);
-	if (side != split->side) {
-		return 0;
+
+	if (type >= 3) {
+		// don't trust multi-axial types
+		if (!wall->plane->normal[0])
+			type = 3;
+		else if (!wall->plane->normal[1])
+			type = 4;
+		else if (!wall->plane->normal[1])
+			type = 5;
+		else
+			type = 6;
 	}
-	return 1;
+	for (i = 0; i < 12; i++) {
+		if (!(tests[type] & (1 << i)))
+			continue;
+
+		set_point (p, edges[i][0], tl->extents, p1);
+		set_point (p, edges[i][1], tl->extents, p2);
+
+		t1 = PlaneDiff (p1, wall->plane);
+		t2 = PlaneDiff (p2, wall->plane);
+		if (t1 == t2)	// shouldn't happen because of the test bits, but...
+			continue;	// the edge is parallel to the plane
+
+		frac = t1 / (t1 - t2);
+		if (frac < 0 || frac > 1)
+			continue;	// the edge didn't hit the plane
+
+		VectorSubtract (p2, p1, dist);
+		VectorMultAdd (p1, frac, dist, point);
+
+		t = PlaneDiff (point, split->plane);
+
+		side = t < 0;
+
+		if (side == split->side)
+			return 1;
+	}
+#if 0
+	Sys_Printf ("\nsolid: (%g %g %g) (%g %g %g) %d %d\n",
+				point[0], point[1], point[2],
+				offs[0], offs[1], offs[2],
+				side, split->side);
+	print_tp (*wall);
+	print_tp (*split);
+#endif
+	return 0;
 }
 
 static int
@@ -291,7 +362,7 @@ traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 		set_split (tl, plane, 0, &split);
 		c1 = c2 = traceline (node->children[0], p1f, p2f, p1, p2, tl);
 		if (c1 == CONTENTS_SOLID) {
-			if (!validate_solid (p1, p2, t1, t2, &tl->split, &split, tl))
+			if (!validate_solid (p1, &tl->split, &split, tl))
 				c1 = CONTENTS_EMPTY;
 		} else {
 			if (tl->impact.plane)
@@ -300,9 +371,8 @@ traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 		if (c1 != CONTENTS_SOLID) {
 			set_split (tl, plane, 1, 0);
 			c2 = traceline (node->children[1], p1f, p2f, p1, p2, tl);
-			if (c2 == CONTENTS_SOLID && !validate_solid (p1, p2, t1, t2,
-														 &tl->split, &split,
-														 tl))
+			if (c2 == CONTENTS_SOLID && !validate_solid (p1, &tl->split,
+														 &split, tl))
 				c2 = CONTENTS_EMPTY;
 		}
 		restore_split (tl, &split);
@@ -311,8 +381,8 @@ traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 				tl->flags &= 3;
 				tl->flags |= 2;
 			}
-			if (tl->split.plane)
-				impact (tl);
+//			if (tl->split.plane)
+//				impact (tl);
 			return CONTENTS_SOLID;
 		}
 		if (c1 == CONTENTS_EMPTY && c2 == CONTENTS_EMPTY) {
@@ -326,12 +396,12 @@ traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 	} else {
 		if (t1 < t2) {
 			side = 1;
-			frac  = (t1 - offset) / (t1 - t2);
-			frac2 = (t1 + offset) / (t1 - t2);
-		} else /*if (t1 > t2)*/ {
-			side = 0;
 			frac  = (t1 + offset) / (t1 - t2);
 			frac2 = (t1 - offset) / (t1 - t2);
+		} else /*if (t1 > t2)*/ {
+			side = 0;
+			frac  = (t1 - offset) / (t1 - t2);
+			frac2 = (t1 + offset) / (t1 - t2);
 		}
 
 		frac = bound (0, frac, 1);

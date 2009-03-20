@@ -169,29 +169,46 @@ typedef struct {
 } test_t;
 
 test_t tests[] = {
-	{0, &hull1, {0, 47, 40}, {0, 47, 32}, {0.5, 0, 0, 1, 0}},
-	{0, &hull1, {0, 48, 40}, {0, 48, 32}, {1, 0, 0, 1, 0}},
+	{"drop on trench edge",
+		&hull1, {0, 47, 40}, {0, 47, 32}, {0.5, 0, 0, 1, 0}},
+	{"drop past trench edge",
+		&hull1, {0, 48, 40}, {0, 48, 32}, {1, 0, 0, 1, 0}},
 
-	{0, &hull1, {0, 52, 35}, {0, 44, 35}, {0.5, 0, 0, 1, 0}},
-	{0, &hull1, {0, 52, 36}, {0, 44, 36}, {1, 0, 0, 1, 0}},
+	{"run into trench edge",
+		&hull1, {0, 52, 35}, {0, 44, 35}, {0.5, 0, 0, 1, 0}},
+	{"run over trench edge",
+		&hull1, {0, 52, 36}, {0, 44, 36}, {1, 0, 0, 1, 0}},
 
-	{0, &hull1, {47, -32, 36}, {49, -32, 36}, {1, 0, 0, 1, 0}},
-	{0, &hull1, {48, -32, 36}, {50, -32, 36}, {1, 0, 1, 1, 0}},
+	{"run into end of 2nd shelf",
+		&hull1, {47, -32, 36}, {49, -32, 36}, {0.5, 0, 0, 1, 0}},
+	{"run inside end of 2nd shelf",
+		&hull1, {48, -32, 36}, {50, -32, 36}, {1, 1, 1, 0, 0}},
 
-	{0, &hull1, {44, -32, 59}, {52, -32, 59}, {0.5, 0, 0, 1, 0}},
-	{0, &hull1, {44, -32, 60}, {52, -32, 60}, {1, 0, 0, 1, 0}},
+	{"run into end of 2nd shelf p2",
+		&hull1, {44, -32, 59}, {52, -32, 59}, {0.5, 0, 0, 1, 0}},
+	{"run over end of 2nd shelf",
+		&hull1, {44, -32, 60}, {52, -32, 60}, {1, 0, 0, 1, 0}},
 
-	{0, &hull1, {47, -32, 76}, {47, -32, 44}, {1, 0, 1, 1, 0}},
-	{0, &hull1, {48, -32, 76}, {48, -32, 44}, {0.5, 0, 1, 1, 0}},
+	{"drop past end of 2nd shelf",
+		&hull1, {47, -32, 76}, {47, -32, 44}, {1, 0, 1, 1, 0}},
+	{"drop onto end of 2nd shelf",
+		&hull1, {48, -32, 76}, {48, -32, 44}, {0.5, 0, 1, 1, 0}},
 
-	{0, &hull2, {896, 2048, -144}, {896, 2048, -152}, {0.5, 0, 0, 1, 0}},
+	{"drop onto top of ramp: hull2",
+		&hull2, {896, 2048, -144}, {896, 2048, -152}, {0.5, 0, 0, 1, 0}},
 
-	{0, &hull1, {96, -47.9612, 61}, {96, -47.1025, 59}, {0.5, 0, 0, 1, 0}},
+	{"drop onto edge of 2nd shelf p1",
+		&hull1, {96, -47, 61}, {96, -47, 59}, {0.5, 0, 0, 1, 0}},
 
-	{0, &hull1, {94.8916, -34.8506, 61}, {94.8146, -28.5696, 59},
-		{1, 0, 0, 1, 0}},
+	{"drop onto edge of 2nd shelf p2",
+		&hull1, {96, -47.9612, 61}, {96, -47.1025, 59}, {0.5, 0, 0, 1, 0}},
 
-	{0, &hull3, {480, -216, 76}, {480, -200, 76}, {0.5, 0, 0, 1, 0}},
+	{"drop onto edge of 2nd shelf p3",
+		&hull1, {94.8916, -34.8506, 61}, {94.8146, -28.5696, 59},
+		{0.5, 0, 0, 1, 0}},
+
+	{"run over top of ramp: hull3",
+		&hull3, {480, -216, 76}, {480, -200, 76}, {1, 0, 0, 1, 0}},
 };
 const int num_tests = sizeof (tests) / sizeof (tests[0]);
 
@@ -254,7 +271,7 @@ run_test (test_t *test)
 		desc = va ("(%d) %s", (int)(long)(test - tests), test->desc);
 	else
 		desc = va ("test #%d", (int)(long)(test - tests));
-	printf ("%s: %s\n", desc, res ? "PASS" : "FAIL");
+	printf ("%s: %s\n", res ? "PASS" : "FAIL", desc);
 	return res;
 }
 
@@ -282,8 +299,11 @@ main (int argc, char **argv)
 	}
 
 	if (test == -1) {
-		for (i = 0; i < num_tests; i++)
+		for (i = 0; i < num_tests; i++) {
+			if (verbose && i)
+				puts ("");
 			pass &= run_test (&tests[i]);
+		}
 	} else if (test >= 0 && test < num_tests) {
 		pass &= run_test (&tests[test]);
 	} else {
