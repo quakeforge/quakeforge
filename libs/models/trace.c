@@ -96,6 +96,7 @@ typedef struct {
 	qboolean    isbox;
 	hull_t      hull;
 	tp_t        split;
+	tp_t        straddle;
 	tp_t        impact;
 	float       fraction;
 	int         flags;
@@ -114,6 +115,21 @@ static inline void
 restore_split (tl_t *tl, tp_t *s)
 {
 	tl->split = *s;
+}
+
+static inline void
+set_straddle (tl_t *tl, mplane_t *plane, int side, tp_t *s)
+{
+	if (s)
+		*s = tl->straddle;
+	tl->straddle.plane = plane;
+	tl->straddle.side = side;
+}
+
+static inline void
+restore_straddle (tl_t *tl, tp_t *s)
+{
+	tl->straddle = *s;
 }
 
 static inline void
@@ -242,7 +258,7 @@ validate_impact (tp_t *split, tl_t *tl)
 	} while (0)
 
 static int
-validate_solid (const vec3_t p, tp_t *wall, tp_t *split, tl_t *tl)
+validate_solid (const vec3_t p, tp_t *wall, tp_t *straddle, tl_t *tl)
 {
 	static const vec3_t edges[][2] = {
 		{{ 1, -1,  1}, { 1,  1,  1}},
@@ -270,8 +286,25 @@ validate_solid (const vec3_t p, tp_t *wall, tp_t *split, tl_t *tl)
 	int         type = wall->plane->type;
 	int         i;
 
-	if (!split->plane)
+	if (!straddle->plane)
 		return 1;
+
+	for (i = 0; i < 4; i++) {
+		set_point (p, edges[i + 4][0], tl->extents, p1);
+		t1 = PlaneDiff (p1, wall->plane);
+		if ((t1 < 0) == wall->side) {
+			t = PlaneDiff (p1, straddle->plane);
+			if ((t < 0) == straddle->side)
+				return 1;
+		}
+		set_point (p, edges[i + 4][1], tl->extents, p2);
+		t2 = PlaneDiff (p2, wall->plane);
+		if ((t2 < 0) == wall->side) {
+			t = PlaneDiff (p2, straddle->plane);
+			if ((t < 0) == straddle->side)
+				return 1;
+		}
+	}
 
 	if (type >= 3) {
 		// don't trust multi-axial types
@@ -303,20 +336,20 @@ validate_solid (const vec3_t p, tp_t *wall, tp_t *split, tl_t *tl)
 		VectorSubtract (p2, p1, dist);
 		VectorMultAdd (p1, frac, dist, point);
 
-		t = PlaneDiff (point, split->plane);
+		t = PlaneDiff (point, straddle->plane);
 
 		side = t < 0;
 
-		if (side == split->side)
+		if (!t || side == straddle->side)
 			return 1;
 	}
 #if 0
 	Sys_Printf ("\nsolid: (%g %g %g) (%g %g %g) %d %d\n",
 				point[0], point[1], point[2],
 				offs[0], offs[1], offs[2],
-				side, split->side);
+				side, straddle->side);
 	print_tp (*wall);
-	print_tp (*split);
+	print_tp (*straddle);
 #endif
 	return 0;
 }
@@ -359,23 +392,25 @@ traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 
 //	if (t1 == t2) {
 	if (t1 >= -offset && t1 < offset && t2 >= -offset && t2 < offset) {
-		set_split (tl, plane, 0, &split);
+		tp_t        straddle;
+
+		set_straddle (tl, plane, 0, &straddle);
 		c1 = c2 = traceline (node->children[0], p1f, p2f, p1, p2, tl);
 		if (c1 == CONTENTS_SOLID) {
-			if (!validate_solid (p1, &tl->split, &split, tl))
+			if (!validate_solid (p1, &tl->straddle, &straddle, tl))
 				c1 = CONTENTS_EMPTY;
 		} else {
 			if (tl->impact.plane)
-				validate_impact (&tl->split, tl);
+				validate_impact (&tl->straddle, tl);
 		}
 		if (c1 != CONTENTS_SOLID) {
-			set_split (tl, plane, 1, 0);
+			set_straddle (tl, plane, 1, 0);
 			c2 = traceline (node->children[1], p1f, p2f, p1, p2, tl);
-			if (c2 == CONTENTS_SOLID && !validate_solid (p1, &tl->split,
-														 &split, tl))
+			if (c2 == CONTENTS_SOLID && !validate_solid (p1, &tl->straddle,
+														 &straddle, tl))
 				c2 = CONTENTS_EMPTY;
 		}
-		restore_split (tl, &split);
+		restore_straddle (tl, &straddle);
 		if (c1 == CONTENTS_SOLID || c2 == CONTENTS_SOLID) {
 			if (!p1f) {
 				tl->flags &= 3;
@@ -396,12 +431,12 @@ traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 	} else {
 		if (t1 < t2) {
 			side = 1;
-			frac  = (t1 + offset) / (t1 - t2);
-			frac2 = (t1 - offset) / (t1 - t2);
-		} else /*if (t1 > t2)*/ {
-			side = 0;
 			frac  = (t1 - offset) / (t1 - t2);
 			frac2 = (t1 + offset) / (t1 - t2);
+		} else /*if (t1 > t2)*/ {
+			side = 0;
+			frac  = (t1 + offset) / (t1 - t2);
+			frac2 = (t1 - offset) / (t1 - t2);
 		}
 
 		frac = bound (0, frac, 1);
@@ -450,6 +485,7 @@ MOD_TraceLine (hull_t *hull, int num,
 	tl.hull = *hull;
 	tl.fraction = 1;
 	set_split (&tl, 0, 0, 0);
+	set_straddle (&tl, 0, 0, 0);
 	set_impact (&tl, 0, 0);
 	tl.flags = 1;
 	tl.isbox = trace->isbox;
