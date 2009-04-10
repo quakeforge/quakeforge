@@ -199,7 +199,7 @@ SV_SendServerinfo (client_t *client)
 	else
 		MSG_WriteByte (&client->message, GAME_COOP);
 
-	snprintf (message, sizeof (message),
+	snprintf (message, sizeof (message), "%s", 
 			  PR_GetString (&sv_pr_state, SVstring (sv.edicts, message)));
 
 	MSG_WriteString (&client->message, message);

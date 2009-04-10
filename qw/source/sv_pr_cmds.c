@@ -1481,7 +1481,7 @@ PF_logfrag (progs_t *pr)
 
 	SZ_Print (&svs.log[svs.logsequence & 1], s);
 	if (sv_fraglogfile) {
-		Qprintf (sv_fraglogfile, s);
+		Qprintf (sv_fraglogfile, "%s", s);
 		Qflush (sv_fraglogfile);
 	}
 }

@@ -1337,7 +1337,7 @@ _Datagram_Connect (const char *host)
 	ret = MSG_ReadByte (net_message);
 	if (ret == CCREP_REJECT) {
 		reason = MSG_ReadString (net_message);
-		Sys_Printf (reason);
+		Sys_Printf ("%s\n", reason);
 //		strncpy (m_return_reason, reason, 31);
 		goto ErrorReturn;
 	}
