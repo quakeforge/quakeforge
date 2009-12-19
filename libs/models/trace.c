@@ -83,11 +83,25 @@ calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 	VectorSubtract (end, start, dist);
 	VectorMultAdd (start, frac, dist, trace->endpos);
 }
-#ifdef ENABLE_BOXCLIP
+#if ENABLE_BOXCLIP || defined(TEST_BOXCLIP)
+
+#define ALLSOLID 1
+#define STARTSOLID 2
+#define INOPEN 4
+#define INWATER 8
+
+#define SOLID (ALLSOLID | STARTSOLID)
+
 typedef struct {
 	mplane_t    *plane;
+	vec3_t       point;				// arbitrary point on plane
 	int          side;
 } tp_t;
+
+typedef struct {
+	vec3_t      p;
+	vec3_t		v;
+} line_t;
 
 typedef struct {
 	const vec_t *start;
@@ -96,40 +110,23 @@ typedef struct {
 	qboolean    isbox;
 	hull_t      hull;
 	tp_t        split;
-	tp_t        straddle;
 	tp_t        impact;
 	float       fraction;
 	int         flags;
 } tl_t;
 
 static inline void
-set_split (tl_t *tl, mplane_t *plane, int side, tp_t *s)
+set_split (tl_t *tl, tp_t *n,  tp_t *o)
 {
-	if (s)
-		*s = tl->split;
-	tl->split.plane = plane;
-	tl->split.side = side;
-}
-
-static inline void
-restore_split (tl_t *tl, tp_t *s)
-{
-	tl->split = *s;
-}
-
-static inline void
-set_straddle (tl_t *tl, mplane_t *plane, int side, tp_t *s)
-{
-	if (s)
-		*s = tl->straddle;
-	tl->straddle.plane = plane;
-	tl->straddle.side = side;
-}
-
-static inline void
-restore_straddle (tl_t *tl, tp_t *s)
-{
-	tl->straddle = *s;
+	if (o)
+		*o = tl->split;
+	if (n) {
+		tl->split = *n;
+	} else {
+		tl->split.plane = 0;
+		VectorZero (tl->split.point);
+		tl->split.side = 0;
+	}
 }
 
 static inline void
@@ -150,39 +147,6 @@ sgn (vec_t v)
 	return v < 0 ? -1 : (v > 0 ? 1 : 0);
 }
 
-static inline void
-select_point (tl_t *tl, tp_t *impact, tp_t *split, vec3_t offs)
-{
-	int         axis;
-
-	for (axis = 0; axis < 3; axis++) {
-		vec_t       s = sgn (impact->plane->normal[axis]);
-		if (!impact->side)
-			s = -s;
-		if (!s) {
-			s = sgn (split->plane->normal[axis]);
-			if (split->side)
-				s = -s;
-		}
-		offs[axis] = tl->extents[axis] * s;
-	}
-}
-
-static inline void
-check_contents (int num, tl_t *tl)
-{
-	if (num != CONTENTS_SOLID) {
-		tl->flags &= ~1;
-		if (num == CONTENTS_EMPTY)
-			tl->flags |= 4;
-		else
-			tl->flags |= 8;
-	} else {
-		if (!(tl->flags & 12))
-			tl->flags |= 2;
-	}
-}
-
 static inline float
 calc_offset (tl_t *tl, mplane_t *plane)
 {
@@ -197,15 +161,16 @@ calc_offset (tl_t *tl, mplane_t *plane)
 	return 0;
 }
 
+
 static void
-impact (tl_t *tl)
+impact (tl_t *tl, tp_t *split)
 {
 	float       t1, t2, offset, frac;
 	int         side = 0;
 
-	t1 = PlaneDiff (tl->start, tl->split.plane);
-	t2 = PlaneDiff (tl->end, tl->split.plane);
-	offset = calc_offset (tl, tl->split.plane);
+	t1 = PlaneDiff (tl->start, split->plane);
+	t2 = PlaneDiff (tl->end, split->plane);
+	offset = calc_offset (tl, split->plane);
 	if (t1 < t2) {
 		side = -1;
 		frac = (t1 + offset) / (t1 - t2);
@@ -218,140 +183,73 @@ impact (tl_t *tl)
 	}
 	if (frac >= 0) {
 		tl->fraction = frac;
-		set_impact (tl, tl->split.plane, side);
+		set_impact (tl, split->plane, side);
 //		print_tp (tl->impact);
 	}
 }
 
-static int
-validate_impact (tp_t *split, tl_t *tl)
+static void
+select_vertex (tl_t *tl, tp_t *split, vec3_t vert)
 {
-	vec3_t      dist, point, offs;
-	int         side;
+	int         axis;
 
-	VectorSubtract (tl->end, tl->start, dist);
-	VectorMultAdd (tl->start, tl->fraction, dist, point);
-	select_point (tl, &tl->impact, split, offs);
-	VectorAdd (point, offs, point);
-	side = PlaneDiff (point, split->plane) < 0;
-#if 0
-	Sys_Printf ("\nimpact: (%g %g %g) (%g %g %g) %d %d\n",
-				point[0], point[1], point[2],
-				offs[0], offs[1], offs[2],
-				side, split->side);
-	print_tp (tl->impact);
-	print_tp (*split);
-#endif
-	if (side != split->side) {
-		tl->fraction = 1;
-		set_impact (tl, 0, 0);
-		return 0;
+	for (axis = 0; axis < 3; axis++) {
+		vec_t       s = sgn (tl->split.plane->normal[axis]);
+		if (!tl->split.side)
+			s = -s;
+		if (!s) {
+			s = sgn (split->plane->normal[axis]);
+			if (split->side)
+				s = -s;
+			if (!s)
+				s = 1;
+		}
+		vert[axis] = tl->extents[axis] * s;
 	}
+}
+
+static int
+intersection_point (const mplane_t *plane, const vec3_t _p1, const vec3_t _p2,
+					const vec3_t offs, vec3_t point)
+{
+	vec_t       t1, t2;
+	vec3_t      p1, p2;
+
+	VectorAdd (_p1, offs, p1);
+	VectorAdd (_p2, offs, p2);
+
+	t1 = PlaneDiff (p1, plane);
+	t2 = PlaneDiff (p2, plane);
+
+	if (!(t1 - t2))
+		return 0;
+	VectorSubtract (p2, p1, point);
+	VectorMultAdd (p1, t1 / (t1 - t2), point, point);
 	return 1;
 }
 
-#define set_point(a,s,b,c) \
-	do { \
-		(c)[0] = (a)[0] + (s)[0] * (b)[0]; \
-		(c)[1] = (a)[1] + (s)[1] * (b)[1]; \
-		(c)[2] = (a)[2] + (s)[2] * (b)[2]; \
-	} while (0)
-
 static int
-validate_solid (const vec3_t p, tp_t *wall, tp_t *straddle, tl_t *tl)
+intersection_line (tl_t *tl, tp_t *split, const vec3_t p1, const vec3_t p2,
+				   line_t *line)
 {
-	static const vec3_t edges[][2] = {
-		{{ 1, -1,  1}, { 1,  1,  1}},
-		{{-1, -1,  1}, { 1, -1,  1}},
-		{{-1, -1,  1}, {-1,  1,  1}},
-		{{-1,  1,  1}, { 1,  1,  1}},
+	const vec_t *pn1 = tl->split.plane->normal;
+	const vec_t *pp1 = tl->split.point;
+	const vec_t *pn2 = split->plane->normal;
+	const vec_t *pp2 = split->point;
+	vec3_t      pvec;
+	vec_t       t;
 
-		{{ 1,  1, -1}, { 1,  1,  1}},
-		{{ 1, -1, -1}, { 1, -1,  1}},
-		{{-1, -1, -1}, {-1, -1,  1}},
-		{{-1,  1, -1}, {-1,  1,  1}},
-
-		{{ 1, -1, -1}, { 1,  1, -1}},
-		{{-1, -1, -1}, { 1, -1, -1}},
-		{{-1, -1, -1}, {-1,  1, -1}},
-		{{-1,  1, -1}, { 1,  1, -1}},
-	};
-	static const int tests[] = {
-		0xa0a, 0x505, 0x0f0, 0x5f5, 0xafa, 0xf0f, 0xfff,
-	};
-	float       t, t1, t2, frac;
-	int         side;
-	vec3_t      p1, p2, dist, point;
-
-	int         type = wall->plane->type;
-	int         i;
-
-	if (!straddle->plane)
-		return 1;
-
-	for (i = 0; i < 4; i++) {
-		set_point (p, edges[i + 4][0], tl->extents, p1);
-		t1 = PlaneDiff (p1, wall->plane);
-		if ((t1 < 0) == wall->side) {
-			t = PlaneDiff (p1, straddle->plane);
-			if ((t < 0) == straddle->side)
-				return 1;
-		}
-		set_point (p, edges[i + 4][1], tl->extents, p2);
-		t2 = PlaneDiff (p2, wall->plane);
-		if ((t2 < 0) == wall->side) {
-			t = PlaneDiff (p2, straddle->plane);
-			if ((t < 0) == straddle->side)
-				return 1;
-		}
-	}
-
-	if (type >= 3) {
-		// don't trust multi-axial types
-		if (!wall->plane->normal[0])
-			type = 3;
-		else if (!wall->plane->normal[1])
-			type = 4;
-		else if (!wall->plane->normal[1])
-			type = 5;
-		else
-			type = 6;
-	}
-	for (i = 0; i < 12; i++) {
-		if (!(tests[type] & (1 << i)))
-			continue;
-
-		set_point (p, edges[i][0], tl->extents, p1);
-		set_point (p, edges[i][1], tl->extents, p2);
-
-		t1 = PlaneDiff (p1, wall->plane);
-		t2 = PlaneDiff (p2, wall->plane);
-		if (t1 == t2)	// shouldn't happen because of the test bits, but...
-			continue;	// the edge is parallel to the plane
-
-		frac = t1 / (t1 - t2);
-		if (frac < 0 || frac > 1)
-			continue;	// the edge didn't hit the plane
-
-		VectorSubtract (p2, p1, dist);
-		VectorMultAdd (p1, frac, dist, point);
-
-		t = PlaneDiff (point, straddle->plane);
-
-		side = t < 0;
-
-		if (!t || side == straddle->side)
-			return 1;
-	}
-#if 0
-	Sys_Printf ("\nsolid: (%g %g %g) (%g %g %g) %d %d\n",
-				point[0], point[1], point[2],
-				offs[0], offs[1], offs[2],
-				side, straddle->side);
-	print_tp (*wall);
-	print_tp (*straddle);
-#endif
-	return 0;
+	// find the line of intersection of the two planes, both direction
+	// and a point on the line.
+	CrossProduct (pn1, pn2, line->v);
+	if (VectorIsZero (line->v))
+		//planes are parallel, no intersection
+		return 0;
+	CrossProduct (pn1, line->v, pvec);
+	VectorSubtract (pp2, pp1, line->p);
+	t = DotProduct (line->p, pn2) / DotProduct (pvec, pn2);
+	VectorMultAdd (pp1, t, line->p, line->p);
+	return 1;
 }
 
 static int
@@ -361,13 +259,17 @@ traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 	dclipnode_t *node;
 	mplane_t   *plane;
 	float       t1, t2, frac, frac2, midf, offset;
-	int         side;
+	int         side, cross;
 	vec3_t      mid;
 	int         c1, c2;
-	tp_t        split;
 
-	// Skip past nodes that don't intersect with the line.
+	tp_t        split, save;
+	line_t      line;
+	vec3_t      dist, vert, vert2, point;
+	int         check_intersection;
+
 	do {
+		// Skip past non-intersecting nodes
 //		Sys_Printf ("%d\n", num);
 		while (num >= 0) {
 			node = tl->hull.clipnodes + num;
@@ -378,97 +280,121 @@ traceline (int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2,
 			offset = calc_offset (tl, plane);
 
 			if (t1 >= offset && t2 >= offset) {
-				num = node->children[0];
+				num = node->children[side = 0];
 			} else if (t1 < -offset && t2 < -offset) {
-				num = node->children[1];
+				num = node->children[side = 1];
 			} else {
 				break;
 			}
 //			Sys_Printf ("%d\n", num);
 		}
-		if (num < 0)
+		if (num < 0) {
 			return num;
-	} while (0);
-
-//	if (t1 == t2) {
-	if (t1 >= -offset && t1 < offset && t2 >= -offset && t2 < offset) {
-		tp_t        straddle;
-
-		set_straddle (tl, plane, 0, &straddle);
-		c1 = c2 = traceline (node->children[0], p1f, p2f, p1, p2, tl);
-		if (c1 == CONTENTS_SOLID) {
-			if (!validate_solid (p1, &tl->straddle, &straddle, tl))
-				c1 = CONTENTS_EMPTY;
-		} else {
-			if (tl->impact.plane)
-				validate_impact (&tl->straddle, tl);
 		}
-		if (c1 != CONTENTS_SOLID) {
-			set_straddle (tl, plane, 1, 0);
-			c2 = traceline (node->children[1], p1f, p2f, p1, p2, tl);
-			if (c2 == CONTENTS_SOLID && !validate_solid (p1, &tl->straddle,
-														 &straddle, tl))
-				c2 = CONTENTS_EMPTY;
-		}
-		restore_straddle (tl, &straddle);
-		if (c1 == CONTENTS_SOLID || c2 == CONTENTS_SOLID) {
-			if (!p1f) {
-				tl->flags &= 3;
-				tl->flags |= 2;
+
+		split.plane = plane;
+		split.side = t1 < t2;
+		VectorSubtract (p2, p1, dist);
+		VectorMultAdd (p1, t1 / (t1 - t2), dist, split.point);
+		if (tl->split.plane) {
+			select_vertex (tl, &split, vert);
+			if ((t1 >= -offset && t1 < offset)
+				&& (t2 < -offset || t2 >= offset)) {
+				// p1 straddles the plane, p2 is clear of the plane
+				intersection_point (tl->split.plane, p1, p2, vert, point);
+				if ((PlaneDiff (point, plane) < 0) != (t1 < t2)) {
+					// the trace misses the intersection of the two planes, so
+					// both ends of the trace are really on the same side of
+					// the plane
+					num = node->children[!(t1 < t2)];
+					continue;
+				}
 			}
-//			if (tl->split.plane)
-//				impact (tl);
-			return CONTENTS_SOLID;
 		}
-		if (c1 == CONTENTS_EMPTY && c2 == CONTENTS_EMPTY) {
-			tl->flags &= ~1;
-			tl->flags |= 4;
-		} else {
-			tl->flags &= ~1;
-			tl->flags |= 8;
-		}
-		return min (c1, c2); //FIXME correct?
-	} else {
-		if (t1 < t2) {
-			side = 1;
-			frac  = (t1 - offset) / (t1 - t2);
-			frac2 = (t1 + offset) / (t1 - t2);
-		} else /*if (t1 > t2)*/ {
-			side = 0;
-			frac  = (t1 + offset) / (t1 - t2);
-			frac2 = (t1 - offset) / (t1 - t2);
-		}
+		break;
+	} while (1);
 
+	check_intersection = 0;
+	if (tl->split.plane) {
+		VectorNegate (vert, vert2);
+		intersection_point (tl->split.plane, p1, p2, vert2, point);
+		if ((PlaneDiff (point, plane) < 0) != (t1 < t2)) {
+			// the two edges of the hypercube of motion are on opposite sides
+			// of the line of intersection of the two planes, so the box hits
+			// the intersection somewhere
+			check_intersection = 1;
+		}
+	}
+	cross = !(t1 >= -offset && t1 < offset && t2 >= -offset && t2 < offset);
+
+	if (t1 < t2) {
+		side = 1;
+		frac  = (t1 - offset) / (t1 - t2);
+		frac2 = (t1 + offset) / (t1 - t2);
+	} else {
+		side = 0;
+		frac  = (t1 + offset) / (t1 - t2);
+		frac2 = (t1 - offset) / (t1 - t2);
+	}
+
+	if (check_intersection) {
+		intersection_line (tl, &split, p1, p2, &line);
+	}
+
+	set_split (tl, &split, &save);
+	if (cross) {
 		frac = bound (0, frac, 1);
 		midf = p1f + (p2f - p1f) * frac;
-		VectorSubtract (p2, p1, mid);
-		VectorMultAdd (p1, frac, mid, mid);
+		VectorMultAdd (p1, frac, dist, mid);
 		c1 = c2 = traceline (node->children[side], p1f, midf, p1, mid, tl);
 
 		frac2 = bound (0, frac2, 1);
 		midf = p1f + (p2f - p1f) * frac2;
-		set_split (tl, plane, side ^ 1, &split);
-		if (!tl->impact.plane || midf <= tl->fraction) {
-			VectorSubtract (p2, p1, mid);
-			VectorMultAdd (p1, frac2, mid, mid);
+		if (!tl->impact.plane || midf < tl->fraction) {
+			VectorMultAdd (p1, frac2, dist, mid);
 			c2 = traceline (node->children[side ^ 1], midf, p2f, mid, p2, tl);
 		}
-
+	} else {
+		c1 = c2 = traceline (node->children[side], p1f, p2f, p1, mid, tl);
+		if (c1 != CONTENTS_SOLID)
+			c2 = traceline (node->children[side ^ 1], p1f, p2f, mid, p2, tl);
+		if (c1 == CONTENTS_SOLID || c2 == CONTENTS_SOLID)
+			c1 = c2 = CONTENTS_SOLID;
+		else
+			c1 = c2 = min (c1, c2);
+	}
+	set_split (tl, &save, 0);
+	if (cross) {
 		if (c1 != CONTENTS_SOLID && c2 == CONTENTS_SOLID)
-			impact (tl);
-		restore_split (tl, &split);
-		if (c1 == CONTENTS_SOLID && !(tl->flags & 0xc))
-			tl->flags |= 2;
+			impact (tl, &split);
+		if (c1 == CONTENTS_SOLID && !(tl->flags & SOLID))
+			tl->flags |= STARTSOLID;
 		if (c1 == CONTENTS_EMPTY || c2 == CONTENTS_EMPTY) {
-			tl->flags &= ~1;
-			tl->flags |= 4;
+			tl->flags &= ~ALLSOLID;
+			tl->flags |= INOPEN;
 		}
 		if (c1 < CONTENTS_SOLID || c2 < CONTENTS_SOLID) {
-			tl->flags &= ~1;
-			tl->flags |= 8;
+			tl->flags &= ~ALLSOLID;
+			tl->flags |= INWATER;
 		}
-
-		return frac2 ? c1 : c2;
+		return c1;
+		//return frac2 ? c1 : c2;
+	} else {
+		if (c1 == CONTENTS_SOLID || c2 == CONTENTS_SOLID) {
+			if (!p1f) {
+				tl->flags &= SOLID;
+				tl->flags |= STARTSOLID;
+			}
+			return CONTENTS_SOLID;
+		}
+		if (c1 == CONTENTS_EMPTY && c2 == CONTENTS_EMPTY) {
+			tl->flags &= ~ALLSOLID;
+			tl->flags |= INOPEN;
+		} else {
+			tl->flags &= ~ALLSOLID;
+			tl->flags |= INWATER;
+		}
+		return min (c1, c2); //FIXME correct?
 	}
 }
 
@@ -482,30 +408,29 @@ MOD_TraceLine (hull_t *hull, int num,
 
 	tl.start = start_point;
 	tl.end = end_point;
-	tl.hull = *hull;
-	tl.fraction = 1;
-	set_split (&tl, 0, 0, 0);
-	set_straddle (&tl, 0, 0, 0);
-	set_impact (&tl, 0, 0);
-	tl.flags = 1;
-	tl.isbox = trace->isbox;
 	tl.extents = trace->extents;
+	tl.isbox = trace->isbox;
+	tl.hull = *hull;
+	set_split (&tl, 0, 0);
+	set_impact (&tl, 0, 0);
+	tl.fraction = 1;
+	tl.flags = ALLSOLID;
 	c = traceline (num, 0, 1, start_point, end_point, &tl);
 	if (c == CONTENTS_EMPTY) {
-		tl.flags &= ~1;
-		tl.flags |= 4;
+		tl.flags &= ~ALLSOLID;
+		tl.flags |= INOPEN;
 	}
 	if (c < CONTENTS_SOLID) {
-		tl.flags &= ~1;
-		tl.flags |= 8;
+		tl.flags &= ~ALLSOLID;
+		tl.flags |= INOPEN;
 	}
 	if (tl.fraction < 1) {
 		calc_impact (trace, start_point, end_point, tl.impact.plane);
 	}
-	trace->allsolid = (tl.flags & 1) != 0;
-	trace->startsolid = (tl.flags & 2) != 0;
-	trace->inopen = (tl.flags & 4) != 0;
-	trace->inwater = (tl.flags & 8) != 0;
+	trace->allsolid = (tl.flags & ALLSOLID) != 0;
+	trace->startsolid = (tl.flags & STARTSOLID) != 0;
+	trace->inopen = (tl.flags & INOPEN) != 0;
+	trace->inwater = (tl.flags & INWATER) != 0;
 }
 #else
 typedef struct {

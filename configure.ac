@@ -1739,6 +1739,17 @@ fi
 AC_SUBST(Z_LIBS)
 AM_CONDITIONAL(HAVE_ZLIB, test "$HAVE_ZLIB" = "yes")
 
+AC_ARG_ENABLE(boxclip,
+[  --enable-boxclip           enable box clipping],
+	boxclip=$enable_boxclip,
+	boxclip=no
+)
+if test "x$boxclip" != xno; then
+	AC_DEFINE(ENABLE_BOXCLIP, 1, [Define if you want boxclipping])
+else
+	AC_DEFINE(ENABLE_BOXCLIP, 0, [Define if you want boxclipping])
+fi
+
 dnl ==================================================================
 dnl Find out what to build
 dnl ==================================================================

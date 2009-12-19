@@ -5,8 +5,27 @@
 
 #undef DIST_EPSILON
 #define DIST_EPSILON 0
-#define ENABLE_BOXCLIP
+#define TEST_BOXCLIP
 #include "trace.c"
+
+dclipnode_t clipnodes0[] = {
+	{  0, { 1, -1}},
+	{  1, {-1, -2}},
+};
+
+mplane_t planes0[] = {
+	{{1, 0, 0}, 0, 0, 0},		//  0
+	{{0.8, 0, 0.6}, 0, 4, 0},	//  1 
+};
+
+hull_t hull0 = {
+	clipnodes0,
+	planes0,
+	0,
+	1,
+	{0, 0, 0},
+	{0, 0, 0},
+};
 
 dclipnode_t clipnodes1[] = {
 	{  0, { 1, -2}},
@@ -149,7 +168,7 @@ hull_t hull3 = {
 	clipnodes3,
 	planes3,
 	0,
-	6,
+	16,
 	{0, 0, 0},
 	{0, 0, 0},
 };
@@ -229,6 +248,12 @@ typedef struct {
 } test_t;
 
 test_t tests[] = {
+	{0, &hull0, {-20, 0, 28}, {20, 0, 28}, {1, 0, 0, 1, 0}},
+	{0, &hull0, {-20, 0, 27}, {20, 0, 27}, {0.1, 0, 0, 1, 0}},
+	{0, &hull0, {-20, 0, -76}, {20, 0, -76}, {0.1, 0, 0, 1, 0}},
+	{0, &hull0, {-20, 0, -77}, {20, 0, -77}, {0.1, 0, 0, 1, 0}},
+
+
 	{"drop on trench edge",
 		&hull1, {0, 47, 40}, {0, 47, 32}, {0.5, 0, 0, 1, 0}},
 	{"drop past trench edge",
@@ -279,6 +304,8 @@ test_t tests[] = {
 
 	{"drop onto thin bridge",
 		&hull4, {544, 1080, 5}, {544, 1080, 3}, {0.5, 0, 0, 1, 0}},
+	{"long drop onto thin bridge",
+		&hull4, {544, 1080, 78}, {544, 1080, -70}, {0.5, 0, 0, 1, 0}},
 };
 const int num_tests = sizeof (tests) / sizeof (tests[0]);
 
