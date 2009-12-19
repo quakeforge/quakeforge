@@ -156,14 +156,6 @@ void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, int flags);
 qboolean Netchan_CanPacket (netchan_t *chan);
 qboolean Netchan_CanReliable (netchan_t *chan);
 
-static inline void
-Netchan_SendPacket (int length, const void *data, netadr_t to)
-{
-#if 0
-	if (net_packetlog->int_val)
-		Log_Outgoing_Packet(data, length, 1);
-#endif
-	NET_SendPacket (length, data, to);
-}
+void Netchan_SendPacket (int length, const void *data, netadr_t to);
 
 #endif // _NET_H

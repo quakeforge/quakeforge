@@ -1220,7 +1220,10 @@ SV_MaskIPCompare (byte *a, byte *b, int mask)
 #endif
 
 	for (i = 0; i < intcount; i++) {
-		if ((((unsigned int *)a)[i] & ipmasks[mask > 32 ? 32 : mask]) != ((unsigned int *)b)[i])
+		unsigned int x, y;
+		memcpy (&x, a + i * 4, 4);
+		memcpy (&y, b + i * 4, 4);
+		if ((x & ipmasks[mask > 32 ? 32 : mask]) != y)
 			return false;
 		if ((mask -= 32) < 0)
 			mask = 0;

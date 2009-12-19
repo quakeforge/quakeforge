@@ -287,7 +287,7 @@ Sbar_Changed (void)
 	sb_updates = 0;						// update next frame
 }
 
-static inline void
+static void
 draw_pic (view_t *view, int x, int y, qpic_t *pic)
 {
 	Draw_Pic (view->xabs + x, view->yabs + y, pic);

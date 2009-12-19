@@ -190,10 +190,14 @@ UDP_Init (void)
 
 	get_address (net_controlsocket);
 
-	((struct sockaddr_in *) &broadcastaddr)->sin_family = AF_INET;
-	((struct sockaddr_in *) &broadcastaddr)->sin_addr.s_addr =
-		INADDR_BROADCAST;
-	((struct sockaddr_in *) &broadcastaddr)->sin_port = htons (net_hostport);
+	{
+		struct sockaddr_in t;
+		memcpy (&t, &broadcastaddr, sizeof (t));
+		t.sin_family = AF_INET;
+		t.sin_addr.s_addr = INADDR_BROADCAST;
+		t.sin_port = htons (net_hostport);
+		memcpy (&broadcastaddr, &t, sizeof (broadcastaddr));
+	}
 
 	UDP_GetSocketAddr (net_controlsocket, &addr);
 	strcpy (my_tcpip_address, UDP_AddrToString (&addr));

@@ -57,7 +57,7 @@
 
 typedef struct qpic_s {
 	int			width, height;
-	byte		data[4];			// variably sized
+	byte		data[];			// variably sized
 } qpic_t;
 
 typedef struct wadinfo_s {

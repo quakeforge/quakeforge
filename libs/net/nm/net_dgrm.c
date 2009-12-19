@@ -60,33 +60,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef BAN_TEST
 #if defined(_WIN32)
 #include <windows.h>
-#elif defined (NeXT)
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #else
-#define AF_INET 		2				/* internet */
-struct in_addr {
-	union {
-		struct {
-			unsigned char s_b1, s_b2, s_b3, s_b4;
-		} S_un_b;
-		struct {
-			unsigned short s_w1, s_w2;
-		} S_un_w;
-		unsigned S_addr;
-	} S_un;
-};
-
-#define	s_addr	S_un.S_addr				/* can be used for most tcp & ip code 
-										 */
-struct sockaddr_in {
-	short       sin_family;
-	unsigned short sin_port;
-	struct in_addr sin_addr;
-	char        sin_zero[8];
-};
-char       *inet_ntoa (struct in_addr in);
-unsigned inet_addr (const char *cp);
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <arpa/inet.h>
 #endif
 #endif // BAN_TEST
 
@@ -122,8 +99,8 @@ struct {
 
 
 #ifdef BAN_TEST
-unsigned banAddr = 0x00000000;
-unsigned banMask = 0xffffffff;
+in_addr_t banAddr = 0x00000000;
+in_addr_t banMask = 0xffffffff;
 
 static void
 NET_Ban_f (void)
@@ -147,8 +124,11 @@ NET_Ban_f (void)
 	switch (Cmd_Argc ()) {
 		case 1:
 		if (((struct in_addr *) &banAddr)->s_addr) {
-			strcpy (addrStr, inet_ntoa (*(struct in_addr *) &banAddr));
-			strcpy (maskStr, inet_ntoa (*(struct in_addr *) &banMask));
+			struct in_addr t;
+			t.s_addr = banAddr;
+			strcpy (addrStr, inet_ntoa (t));
+			t.s_addr = banMask;
+			strcpy (maskStr, inet_ntoa (t));
 			print ("Banning %s [%s]\n", addrStr, maskStr);
 		} else
 			print ("Banning not active\n");

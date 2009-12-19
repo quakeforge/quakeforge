@@ -167,7 +167,7 @@ Draw_PicFromWad (const char *name)
 	pic = W_GetLumpName (name);
 	targa = LoadImage (name);
 	if (targa) {
-		p = malloc (sizeof (qpic_t));
+		p = malloc (sizeof (qpic_t) + sizeof (glpic_t));
 		p->width = pic->width;
 		p->height = pic->height;
 		gl = (glpic_t *) p->data;
@@ -733,8 +733,10 @@ Draw_ConsoleBackground (int lines, byte alpha)
 VISIBLE void
 Draw_TileClear (int x, int y, int w, int h)
 {
+	glpic_t    *gl;
 	qfglColor3ubv (color_0_8);
-	qfglBindTexture (GL_TEXTURE_2D, *(int *) draw_backtile->data);
+	gl = (glpic_t *) draw_backtile->data;
+	qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
 	qfglBegin (GL_QUADS);
 	qfglTexCoord2f (x / 64.0, y / 64.0);
 	qfglVertex2f (x, y);

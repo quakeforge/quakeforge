@@ -272,7 +272,7 @@ Sbar_Changed (void)
 }
 
 
-static inline void
+static void
 draw_pic (view_t *view, int x, int y, qpic_t *pic)
 {
 	Draw_Pic (view->xabs + x, view->yabs + y, pic);

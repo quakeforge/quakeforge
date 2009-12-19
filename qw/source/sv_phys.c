@@ -96,9 +96,10 @@ void
 SV_CheckVelocity (edict_t *ent)
 {
 	float       wishspeed;
-	int         i;
+//	int         i;
 
 	// bound velocity
+#if 0
 	for (i = 0; i < 3; i++) {
 		if (IS_NAN (SVvector (ent, velocity)[i])) {
 			Sys_Printf ("Got a NaN velocity on %s\n",
@@ -113,6 +114,7 @@ SV_CheckVelocity (edict_t *ent)
 			SVvector (ent, origin)[i] = 0;
 		}
 	}
+#endif
 	wishspeed = VectorLength (SVvector (ent, velocity));
 	if (wishspeed > sv_maxvelocity->value) {
 		VectorScale (SVvector (ent, velocity), sv_maxvelocity->value /

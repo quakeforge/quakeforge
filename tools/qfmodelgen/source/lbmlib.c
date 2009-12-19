@@ -33,10 +33,10 @@
 #include "lbmlib.h"
 
 static int
-LoadFile (const char *fname, void **buf)
+LoadFile (const char *fname, byte **buf)
 {
 	QFile      *file;
-	char       *src;
+	byte       *src;
 	int         len;
 
 	*buf = 0;
@@ -345,7 +345,7 @@ LoadLBM (char *filename, byte **picture, byte **palette)
 	mungecall = NULL;
 
 // load the LBM
-	LoadFile (filename, (void **) (char *)&LBMbuffer);
+	LoadFile (filename, &LBMbuffer);
 
 // parse the LBM header
 	LBM_P = LBMbuffer;

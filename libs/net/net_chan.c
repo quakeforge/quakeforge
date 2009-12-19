@@ -428,3 +428,13 @@ Netchan_Process (netchan_t *chan)
 
 	return true;
 }
+
+void
+Netchan_SendPacket (int length, const void *data, netadr_t to)
+{
+#if 0
+	if (net_packetlog->int_val)
+		Log_Outgoing_Packet (data, length, 1);
+#endif
+	NET_SendPacket (length, data, to);
+}

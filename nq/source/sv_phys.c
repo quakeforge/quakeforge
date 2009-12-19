@@ -95,6 +95,7 @@ SV_CheckVelocity (edict_t *ent)
 
 	// bound velocity
 	for (i = 0; i < 3; i++) {
+#if 0
 		if (IS_NAN (SVvector (ent, velocity)[i])) {
 			Sys_Printf ("Got a NaN velocity on %s\n",
 						PR_GetString (&sv_pr_state, SVstring (ent,
@@ -107,6 +108,7 @@ SV_CheckVelocity (edict_t *ent)
 															  classname)));
 			SVvector (ent, origin)[i] = 0;
 		}
+#endif
 		if (SVvector (ent, velocity)[i] > sv_maxvelocity->value)
 			SVvector (ent, velocity)[i] = sv_maxvelocity->value;
 		else if (SVvector (ent, velocity)[i] < -sv_maxvelocity->value)
