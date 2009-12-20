@@ -1,6 +1,42 @@
 NEWS for the QuakeForge project
 -------------------------------
 
+Changes from 0.5.5
+	o General enhancements
+		* more fullscreen toggle fixes
+		* lighting tweaks
+		* don't lose sound when switching workplaces in X
+		* "lagged dlights" in mvds fixed
+		* flac sound file support
+		* support multiple directories in fs_sharepath
+		* new savegame format
+		* JACK audio output
+		* http download support
+		* CPQW support
+		* gold-key/radiation-symbol bug in rock2 fixed
+		* support for very big maps (eg marcher.bsp)
+		* beams (lightning etc) can be any length
+		* unlimited beams
+		* support for Japanese keyboards
+	o Ruamoko
+		* plist access
+		* entity parsing support
+		* quake script parsing support
+	o qfcc
+		* function overloading
+		* allow entity.vector.x (etc) instead of entity.vector_x
+		* many ObjectiveQuakeC fixes
+		* optional constant-vector parameter space optimisation (slows down
+		  the code, though): can compile the version of frogbot that has
+		  waypoints for almost 300 maps.
+		* rcall support
+		* static local vars
+		* more pointer support
+		* better compatibility with qcc
+	o Tools
+		* filter for displaying item information from a map (itemslist.py)
+		* wad tool improvements
+
 Changes from 0.5.4
     o General enhancements
         * bring back a bunch of fixes from 0.5.3 (including news items) that
