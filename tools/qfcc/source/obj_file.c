@@ -492,9 +492,9 @@ init_space (int size, pr_type_t *data)
 {
 	defspace_t *space = new_defspace ();
 	space->size = size;
-	space->max_size = RUP (space->size, 65536);
+	space->max_size = RUP (space->size, 32);
 	if (!space->max_size)
-		space->max_size = 65536;
+		space->max_size = 32;
 	space->data = malloc (space->max_size * sizeof (pr_type_t));
 	if (size && data) {
 		memcpy (space->data, data, size * sizeof (pr_type_t));
