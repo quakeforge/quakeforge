@@ -1704,37 +1704,8 @@ dnl silence automake about .r files
 F77=touch
 AC_SUBST(F77)
 
-dnl ==================================================================
-dnl Make sure we link against a working zlib
-dnl ==================================================================
-
 if test "x$HAVE_ZLIB" = xyes; then
-	x11_old_libz=no
-	if test -n "$X_LIBS"; then
-		AC_MSG_CHECKING(for libz.a in X11)
-		for d in `echo $X_LIBS | sed -e 's/-L//'`; do
-			if test -f $d/libz.a; then
-				x11_old_libz=$d
-				break
-			fi
-		done
-	fi
-	if test "x$x11_old_libz" != xno; then
-		AC_MSG_RESULT(yes)
-		AC_MSG_WARN(there is an old libz.a in $x11_old_libz)
-		AC_MSG_WARN($PROGRAM is unable to support compression)
-		AC_MSG_WARN(due to library search order issues)
-		AC_MSG_WARN(if you wish to have compression support)
-		AC_MSG_WARN(please delete $x11_old_libz/libz.a)
-		ac_cv_header_zlib_h=no
-		HAVE_ZLIB="no, due to conflicting $x11_old_libz/libz.a"
-		Z_LIBS=""
-	else
-		if test -n "$X_LIBS"; then
-			AC_MSG_RESULT(no)
-		fi
-		AC_DEFINE(HAVE_ZLIB, 1, [Define if you have zlib])
-	fi
+	AC_DEFINE(HAVE_ZLIB, 1, [Define if you have zlib])
 fi
 AC_SUBST(Z_LIBS)
 AM_CONDITIONAL(HAVE_ZLIB, test "$HAVE_ZLIB" = "yes")
