@@ -63,8 +63,8 @@ D_WarpScreen (void)
 		int        *turb;
 		int        *col;
 		byte      **row;
-		byte       *rowptr[1024];
-		int         column[1280];
+		byte       *rowptr[MAXHEIGHT];
+		int         column[MAXWIDTH];
 		float       wratio, hratio;
 
 		w = r_refdef.vrect.width;
@@ -109,8 +109,8 @@ D_WarpScreen (void)
 		int        *turb;
 		int        *col;
 		short     **row;
-		short      *rowptr[1024];
-		int         column[1280];
+		short      *rowptr[MAXHEIGHT];
+		int         column[MAXWIDTH];
 		float       wratio, hratio;
 
 		w = r_refdef.vrect.width;
@@ -155,8 +155,8 @@ D_WarpScreen (void)
 		int        *turb;
 		int        *col;
 		int       **row;
-		int        *rowptr[1024];
-		int         column[1280];
+		int        *rowptr[MAXHEIGHT];
+		int         column[MAXWIDTH];
 		float       wratio, hratio;
 
 		w = r_refdef.vrect.width;

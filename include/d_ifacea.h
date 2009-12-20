@@ -44,7 +44,7 @@
 #define	CYCLE	128
 
 // !!! if this is changed, it must be changed in r_shared.h too !!!
-#define	MAXHEIGHT	1024
+#define	MAXHEIGHT	4096
 
 // !!! if this is changed, it must be changed in d_iface.h too !!!
 #define CACHE_SIZE	32		// used to align key data structures

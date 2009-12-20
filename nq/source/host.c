@@ -836,7 +836,7 @@ CL_Init_Memory (void)
 	else
 		minimum_memory = MINIMUM_MEMORY_LEVELPAK;
 
-	host_mem_size = Cvar_Get ("host_mem_size", "16", CVAR_NONE, NULL,
+	host_mem_size = Cvar_Get ("host_mem_size", "32", CVAR_NONE, NULL,
 							  "Amount of memory (in MB) to allocate for the "
 							  PROGRAM " heap");
 	if (mem_parm)
