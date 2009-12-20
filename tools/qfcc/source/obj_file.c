@@ -494,7 +494,7 @@ init_space (int size, pr_type_t *data)
 	space->size = size;
 	space->max_size = RUP (space->size, 65536);
 	if (!space->max_size)
-		space->max_size=65536;
+		space->max_size = 65536;
 	space->data = malloc (space->max_size * sizeof (pr_type_t));
 	if (size && data) {
 		memcpy (space->data, data, size * sizeof (pr_type_t));

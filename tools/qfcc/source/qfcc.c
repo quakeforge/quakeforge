@@ -223,6 +223,7 @@ WriteData (int crc)
 
 	if (!(h = Qopen (options.output_file, "wb")))
 		Sys_Error ("%s: %s\n", options.output_file, strerror(errno));
+	memset (&progs, 0, sizeof (progs));
 	Qwrite (h, &progs, sizeof (progs));
 
 	progs.ofs_strings = Qtell (h);
@@ -302,6 +303,7 @@ WriteData (int crc)
 	if (!(h = Qopen (options.output_file, "rb")))
 		Sys_Error ("%s: %s\n", options.output_file, strerror(errno));
 
+	memset (&debug, 0, sizeof (debug));
 	debug.version = LittleLong (PROG_DEBUG_VERSION);
 	CRC_Init (&debug.crc);
 	while ((i = Qgetc (h)) != EOF)
@@ -474,8 +476,12 @@ finish_compilation (void)
 			relocate_refs (def->refs, def->ofs);
 		}
 	}
-	if (options.code.local_merging)
-		new_location_size (num_localdefs, pr.near_data);
+	if (options.code.local_merging) {
+		int         ofs;
+		for (ofs = new_location_size (num_localdefs, pr.near_data);
+			 ofs < pr.near_data->size; ofs++)
+			G_INT (ofs) = 0;
+	}
 
 	for (l = pr.labels; l; l = l->next)
 		relocate_refs (l->refs, l->ofs);
