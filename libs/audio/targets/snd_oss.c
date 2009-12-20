@@ -84,7 +84,7 @@ static int			mmaped_io = 0;
 static const char  *snd_dev = "/dev/dsp";
 static volatile dma_t sn;
 
-static int			tryrates[] = { 11025, 22050, 22051, 44100, 8000 };
+static int			tryrates[] = { 44100, 48000, 11025, 22050, 22051, 44100, 8000 };
 
 static cvar_t	   *snd_stereo;
 static cvar_t	   *snd_rate;
@@ -172,12 +172,6 @@ try_open (int rw)
 		return 0;
 	}
 
-	if (ioctl (audio_fd, SNDCTL_DSP_GETOSPACE, &info) == -1) {
-		Sys_Printf ("Um, can't do GETOSPACE?: %s\n", strerror (errno));
-		close (audio_fd);
-		return 0;
-	}
-
 	// set sample bits & speed
 	sn.samplebits = snd_bits->int_val;
 
@@ -191,48 +185,6 @@ try_open (int rw)
 				sn.samplebits = 8;
 			}
 		}
-	}
-
-	if (snd_rate->int_val) {
-		sn.speed = snd_rate->int_val;
-	} else {
-		for (i = 0; i < ((int) sizeof (tryrates) / 4); i++)
-			if (!ioctl (audio_fd, SNDCTL_DSP_SPEED, &tryrates[i]))
-				break;
-		sn.speed = tryrates[i];
-	}
-
-	if (!snd_stereo->int_val) {
-		sn.channels = 1;
-	} else {
-		sn.channels = 2;
-	}
-
-	sn.samples = info.fragstotal * info.fragsize / (sn.samplebits / 8);
-	sn.submission_chunk = 1;
-
-	tmp = 0;
-	if (sn.channels == 2)
-		tmp = 1;
-	rc = ioctl (audio_fd, SNDCTL_DSP_STEREO, &tmp);
-	if (rc < 0) {
-		Sys_Printf ("Could not set %s to stereo=%d: %s\n", snd_dev,
-					sn.channels, strerror (errno));
-		close (audio_fd);
-		return 0;
-	}
-
-	if (tmp)
-		sn.channels = 2;
-	else
-		sn.channels = 1;
-
-	rc = ioctl (audio_fd, SNDCTL_DSP_SPEED, &sn.speed);
-	if (rc < 0) {
-		Sys_Printf ("Could not set %s speed to %d: %s\n", snd_dev, sn.speed,
-					strerror (errno));
-		close (audio_fd);
-		return 0;
 	}
 
 	if (sn.samplebits == 16) {
@@ -260,6 +212,47 @@ try_open (int rw)
 		return 0;
 	}
     
+	tmp = sn.channels;
+	rc = ioctl (audio_fd, SNDCTL_DSP_CHANNELS, &tmp);
+	if (rc < 0) {
+		Sys_Printf ("Could not set %s to stereo=%d: %s\n", snd_dev,
+					sn.channels, strerror (errno));
+		close (audio_fd);
+		return 0;
+	}
+
+	if (snd_rate->int_val) {
+		sn.speed = snd_rate->int_val;
+	} else {
+		for (i = 0; i < ((int) sizeof (tryrates) / 4); i++)
+			if (!ioctl (audio_fd, SNDCTL_DSP_SPEED, &tryrates[i]))
+				break;
+		sn.speed = tryrates[i];
+	}
+
+	if (!snd_stereo->int_val) {
+		sn.channels = 1;
+	} else {
+		sn.channels = 2;
+	}
+
+	rc = ioctl (audio_fd, SNDCTL_DSP_SPEED, &sn.speed);
+	if (rc < 0) {
+		Sys_Printf ("Could not set %s speed to %d: %s\n", snd_dev, sn.speed,
+					strerror (errno));
+		close (audio_fd);
+		return 0;
+	}
+
+	if (ioctl (audio_fd, SNDCTL_DSP_GETOSPACE, &info) == -1) {
+		Sys_Printf ("Um, can't do GETOSPACE?: %s\n", strerror (errno));
+		close (audio_fd);
+		return 0;
+	}
+
+	sn.samples = info.fragstotal * info.fragsize / (sn.samplebits / 8);
+	sn.submission_chunk = 1;
+
 	if (mmaped_io) {				// memory map the dma buffer
 		unsigned long sz = sysconf (_SC_PAGESIZE);
 		unsigned long len = info.fragstotal * info.fragsize;
