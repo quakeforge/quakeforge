@@ -2291,10 +2291,12 @@ QF_DEPS(WAV,
 	[$(WIN32_LIBS)],
 )
 
-AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/', [Define this to your operating system's path separator character])
+AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/', [Define this to your operating system path separator character])
 AC_DEFINE_UNQUOTED(CPP_NAME, "$CPP_NAME", [Define this to the command line for the C preprocessor])
-AC_DEFINE_UNQUOTED(QFCC_INCLUDE_PATH, "$prefix/include/QF/ruamoko", [Define this to where qfcc should look for header files])
-AC_DEFINE_UNQUOTED(QFCC_LIB_PATH, "$libdir/ruamoko", [Define this to where qfcc should look for lib files])
+AC_DEFINE_UNQUOTED(QFCC_INCLUDE_PATH, "${prefix}/include/QF/ruamoko", [Define this to where qfcc should look for header files])
+eval expanded_libdir="${libdir}/ruamoko"
+eval expanded_libdir="${expanded_libdir}"
+AC_DEFINE_UNQUOTED(QFCC_LIB_PATH, "${expanded_libdir}", [Define this to where qfcc should look for lib files])
 
 AM_CONDITIONAL(BUILD_GL, test "$BUILD_GL" = "yes")
 AM_CONDITIONAL(BUILD_SW, test "$BUILD_SW" = "yes")
