@@ -145,6 +145,7 @@ emit_statement (expr_t *e, opcode_t *op, def_t *var_a, def_t *var_b,
 	statement->op = op->opcode;
 	statement->a = var_a ? var_a->ofs : 0;
 	statement->b = var_b ? var_b->ofs : 0;
+	statement->c = 0;
 	if (op->type_c == ev_void || op->right_associative) {
 		// ifs, gotos, and assignments don't need vars allocated
 		if (var_c)
