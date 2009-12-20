@@ -284,6 +284,15 @@ VID_SetMode (const char *name, unsigned char *palette)
 	struct fb_fix_screeninfo fix;
 	int err;
 	unsigned long smem_start, smem_offset;
+	long pagesize, pagemask;
+
+	errno = 0;
+	pagesize = sysconf(_SC_PAGESIZE);
+	if (errno) {
+		Con_Printf("Cannot get page size: %s\n", strerror(errno));
+		return 0;
+	}
+	pagemask = ~(pagesize-1);
 
 	vmode = FindVideoMode(name);
 	if (!vmode) {
@@ -323,9 +332,9 @@ VID_SetMode (const char *name, unsigned char *palette)
 	err = ioctl(fb_fd, FBIOGET_FSCREENINFO, &fix);
 	if (err)
 		Sys_Error ("Video mode failed: %s", name);
-	smem_start = (unsigned long)fix.smem_start & PAGE_MASK;
-	smem_offset = (unsigned long)fix.smem_start & ~PAGE_MASK;
-	fb_map_length = (smem_offset+fix.smem_len+~PAGE_MASK) & PAGE_MASK;
+	smem_start = (unsigned long)fix.smem_start & pagemask;
+	smem_offset = (unsigned long)fix.smem_start & ~pagemask;
+	fb_map_length = (smem_offset+fix.smem_len+~pagemask) & pagemask;
 	fb_map_addr = mmap(0, fb_map_length, PROT_WRITE, MAP_SHARED,
 							   fb_fd, 0);
 	if (!fb_map_addr)
