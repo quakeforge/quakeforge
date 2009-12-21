@@ -119,13 +119,13 @@ VID_GetWindowSize (int def_w, int def_h)
 		if (pnum >= com_argc - 1)
 			Sys_Error ("VID: -conwidth <width>");
 		Cvar_Set (con_width, com_argv[pnum + 1]);
-		if (!vid_height->int_val)
-			Sys_Error ("VID: Bad console width");
 	}
+	// make con_width a multiple of 8 and >= 320
+	Cvar_Set (con_width, va ("%d", max (con_width->int_val & ~7, 320)));
 	Cvar_SetFlags (con_width, con_width->flags | CVAR_ROM);
 	vid.conwidth = con_width->int_val;
 
-	conheight = ((vid.conwidth & 0xFFF8) * 3) / 4;
+	conheight = (vid.conwidth * 3) / 4;
 	con_height = Cvar_Get ("con_height", va ("%d", conheight), CVAR_NONE, NULL,
 						   "console effective height (GL only)");
 	if ((pnum = COM_CheckParm ("-conheight"))) {
@@ -133,6 +133,8 @@ VID_GetWindowSize (int def_w, int def_h)
 			Sys_Error ("VID: -conheight <width>");
 		Cvar_Set (con_height, com_argv[pnum + 1]);
 	}
+	// make con_height >= 200
+	Cvar_Set (con_height, va ("%d", max (con_height->int_val, 200)));
 	Cvar_SetFlags (con_height, con_height->flags | CVAR_ROM);
 	vid.conheight = con_height->int_val;
 }

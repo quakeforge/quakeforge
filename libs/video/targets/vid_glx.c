@@ -209,12 +209,6 @@ VID_Init (unsigned char *palette)
 	vid.colormap8 = vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 
-	vid.conwidth &= 0xfff8;				// make it a multiple of eight
-	vid.conwidth = max (vid.conwidth, 320);
-
-	// pick a conheight that matches with correct aspect
-	vid.conheight = (vid.conwidth * 3) / 4;
-
 	if ((i = COM_CheckParm ("-conheight")))	// conheight no smaller than 200p
 		vid.conheight = atoi (com_argv[i + 1]);
 	vid.conheight = max (vid.conheight, 200);
