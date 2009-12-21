@@ -481,7 +481,7 @@ static pr_auxfunction_t *
 get_aux_function (progs_t *pr)
 {
 	dfunction_t *func;
-	if (!pr->pr_xfunction)
+	if (!pr->pr_xfunction || !pr->auxfunction_map)
 		return 0;
 	func = pr->pr_xfunction->descriptor;
 	return pr->auxfunction_map[func - pr->pr_functions];
