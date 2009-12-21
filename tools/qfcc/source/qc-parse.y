@@ -335,11 +335,11 @@ struct_defs
 	;
 
 struct_def
-	: type { $$ = $1; } struct_def_list { $$ = $<type>2; }
+	: type { $<type>$ = $1; } struct_def_list { $$ = $<type>2; }
 	;
 
 struct_def_list
-	: struct_def_list ',' { $$ = $<type>0; } struct_def_item
+	: struct_def_list ',' { $<type>$ = $<type>0; } struct_def_item
 		{ (void) ($<type>3); }
 	| struct_def_item
 	;
@@ -471,7 +471,7 @@ array_decl
 	;
 
 def_list
-	: def_list ',' { $$ = $<type>0; } def_item { (void) ($<type>3); }
+	: def_list ',' { $<type>$ = $<type>0; } def_item { (void) ($<type>3); }
 	| def_item
 	;
 
@@ -690,7 +690,7 @@ element_list1
 element
 	: '{'
 		{
-			$$ = current_init;
+			$<expr>$ = current_init;
 			current_init = new_block_expr ();
 		}
 	  element_list
@@ -1317,8 +1317,12 @@ protocol_name
 classdef
 	: INTERFACE new_class_name
 	  protocolrefs						{ class_add_protocols ($2, $3); }
-	  '{'								{ $$ = $2; }
-	  ivar_decl_list '}'				{ class_add_ivars ($2, $7); $$ = $2; }
+	  '{'								{ $<class>$ = $2; }
+	  ivar_decl_list '}'
+		{
+			class_add_ivars ($2, $7);
+			$<class>$ = $2;
+		}
 	  methodprotolist					{ class_add_methods ($2, $10); }
 	  END
 		{
@@ -1328,7 +1332,10 @@ classdef
 		}
 	| INTERFACE new_class_name
 	  protocolrefs					{ class_add_protocols ($2, $3); }
-					{ class_add_ivars ($2, class_new_ivars ($2)); $$ = $2; }
+		{
+			class_add_ivars ($2, class_new_ivars ($2));
+			$<class>$ = $2;
+		}
 	  methodprotolist					{ class_add_methods ($2, $6); }
 	  END
 		{
@@ -1337,8 +1344,12 @@ classdef
 		}
 	| INTERFACE new_class_with_super
 	  protocolrefs						{ class_add_protocols ($2, $3);}
-	  '{'								{ $$ = $2; }
-	  ivar_decl_list '}'				{ class_add_ivars ($2, $7); $$ = $2; }
+	  '{'								{ $<class>$ = $2; }
+	  ivar_decl_list '}'
+		{
+			class_add_ivars ($2, $7);
+			$<class>$ = $2;
+		}
 	  methodprotolist					{ class_add_methods ($2, $10); }
 	  END
 		{
@@ -1348,7 +1359,10 @@ classdef
 		}
 	| INTERFACE new_class_with_super
 	  protocolrefs						{ class_add_protocols ($2, $3); }
-					{ class_add_ivars ($2, class_new_ivars ($2)); $$ = $2; }
+		{
+			class_add_ivars ($2, class_new_ivars ($2));
+			$<class>$ = $2;
+		}
 	  methodprotolist					{ class_add_methods ($2, $6); }
 	  END
 		{
@@ -1356,7 +1370,11 @@ classdef
 			(void) ($<class>5);
 		}
 	| INTERFACE new_category_name
-	  protocolrefs		{ category_add_protocols ($2, $3); $$ = $2->class;}
+	  protocolrefs
+		{
+			category_add_protocols ($2, $3);
+			$<class>$ = $2->class;
+		}
 	  methodprotolist					{ category_add_methods ($2, $5); }
 	  END
 		{
@@ -1364,7 +1382,7 @@ classdef
 			(void) ($<class>4);
 		}
 	| IMPLEMENTATION class_name			{ class_begin (&$2->class_type); }
-	  '{'								{ $$ = $2; }
+	  '{'								{ $<class>$ = $2; }
 	  ivar_decl_list '}'
 		{
 			class_check_ivars ($2, $6);
@@ -1372,7 +1390,7 @@ classdef
 		}
 	| IMPLEMENTATION class_name			{ class_begin (&$2->class_type); }
 	| IMPLEMENTATION class_with_super	{ class_begin (&$2->class_type); }
-	  '{'								{ $$ = $2; }
+	  '{'								{ $<class>$ = $2; }
 	  ivar_decl_list '}'
 		{
 			class_check_ivars ($2, $6);
@@ -1391,7 +1409,7 @@ protocoldef
 
 protocolrefs
 	: /* emtpy */				{ $$ = 0; }
-	| LT 						{ $$ = new_protocol_list (); }
+	| LT 						{ $<protocol_list>$ = new_protocol_list (); }
 	  protocol_list GT			{ $$ = $3; (void) ($<protocol_list>2); }
 	;
 
@@ -1437,12 +1455,12 @@ ivar_decls
 	;
 
 ivar_decl
-	: type { $$ = $1; } ivars	{ (void) ($<type>2); }
+	: type { $<type>$ = $1; } ivars	{ (void) ($<type>2); }
 	;
 
 ivars
 	: ivar_declarator
-	| ivars ',' { $$ = $<type>0; } ivar_declarator { (void) ($<type>3); }
+	| ivars ',' { $<type>$ = $<type>0; } ivar_declarator { (void) ($<type>3); }
 	;
 
 ivar_declarator
@@ -1461,7 +1479,7 @@ methoddef
 	  opt_state_expr
 		{ $<op>$ = current_storage; }
 		{
-			$$ = $2->def = method_def (current_class, $2);
+			$<def>$ = $2->def = method_def (current_class, $2);
 			current_params = $2->params;
 		}
 	  begin_function statement_block { $<op>$ = $<op>5; } end_function
