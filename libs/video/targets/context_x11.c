@@ -340,7 +340,6 @@ X11_SetMouse (void)
 }
 
 #ifdef HAVE_VIDMODE
-# ifdef X_XF86VidModeGetGamma
 static vec3_t *
 X11_GetGamma (void)
 {
@@ -361,7 +360,6 @@ X11_GetGamma (void)
 	vid_gamma_avail = false;
 	return NULL;
 }
-# endif
 #endif
 
 void
