@@ -232,6 +232,7 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 	static dstring_t name = {&dstring_default_mem, 0, 0, 0};
 	size_t      count;
 	int         len, i;
+	unsigned    width, height;
 	unsigned    u;
 	QFile      *file;
 	byte       *buffer;
@@ -301,6 +302,22 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 			buffer = malloc (pf->size);
 			Qread (wad->handle, buffer, pf->size);
 			miptex = (miptex_t *) buffer;
+			width = LittleLong (miptex->width);
+			height = LittleLong (miptex->height);
+			if (width > (unsigned) pf->size || height > (unsigned) pf->size
+				|| (width * height * 3 / 2
+					+ sizeof (miptex_t)) > (unsigned) pf->size) {
+				if (options.verbosity)
+					fprintf (stderr, "bogus MIPTEX. treating as raw data\n");
+				if (Qwrite (file, buffer, pf->size) != pf->size) {
+					fprintf (stderr, "Error writing to %s\n", name.str);
+					return -1;
+				}
+				Qclose (file);
+				return 0;
+			}
+			miptex->width = width;
+			miptex->height = height;
 			for (i = 0; i < 4; i++)
 				miptex->offsets[i] = LittleLong (miptex->offsets[i]);
 			if (options.verbosity > 1)
