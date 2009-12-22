@@ -1356,6 +1356,18 @@ else
 	cvs_def_disabled="!= xno"
 fi
 
+dnl Whether to enable XDG support or not
+AC_ARG_ENABLE(xdg,
+[  --enable-xdg               enable XDG support],
+  xdg=$enable_xdg,
+  xdg=no
+)
+if test "x$xdg" != xno; then
+  HAVE_XDG=yes
+else
+  HAVE_XDG=no
+fi
+
 dnl Set $prefix and $exec_prefix to $ac_default_prefix if they are not set
 test "x$prefix" = "xNONE" && eval prefix="${ac_default_prefix}"
 test "x$exec_prefix" = "xNONE" && eval exec_prefix="${prefix}"
@@ -1368,10 +1380,16 @@ if test "x$SYSTYPE" = "xWIN32"; then
 	default_userpath="."
 else
 	default_globalconf="/etc/${PACKAGE}.conf"
-	default_userconf="~/.${PACKAGE}rc"
 	eval foo="$datarootdir"
 	default_sharepath="$foo/games/$PACKAGE"
-	default_userpath="~/.$PACKAGE"
+
+	if test "x$HAVE_XDG" = "xyes"; then
+		default_userconf="~/.config/${PACKAGE}/${PACKAGE}.conf"
+		default_userpath="~/.local/share/${PACKAGE}"
+  	else
+		default_userconf="~/.${PACKAGE}rc"
+		default_userpath="~/.$PACKAGE"
+  	fi
 fi
 
 AC_ARG_WITH(global-cfg,
@@ -1709,6 +1727,7 @@ if test "x$HAVE_ZLIB" = xyes; then
 fi
 AC_SUBST(Z_LIBS)
 AM_CONDITIONAL(HAVE_ZLIB, test "$HAVE_ZLIB" = "yes")
+AM_CONDITIONAL(HAVE_XDG, test "$HAVE_XDG" = "yes")
 
 AC_ARG_ENABLE(boxclip,
 [  --enable-boxclip           enable box clipping],
@@ -1746,6 +1765,8 @@ HW_TARGETS=""
 QTV_TARGETS=""
 QW_TARGETS=""
 NQ_TARGETS=""
+QW_DESKTOP_DATA=""
+NQ_DESKTOP_DATA=""
 
 BUILD_GL=no
 BUILD_SW32=no
@@ -1783,6 +1804,8 @@ if test "x$HAVE_X" = xyes; then
 	if test "x$ENABLE_clients_glx" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-glx\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-glx\$(EXEEXT)"
+		QW_DESKTOP_DATA="$QW_DESKTOP_DATA quakeforge-qw-glx.desktop"
+		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-glx.desktop"
 		CL_TARGETS="$CL_TARGETS GLX"
 		VID_TARGETS="$VID_TARGETS libQFglx.la"
 		BUILD_GL=yes
@@ -1794,6 +1817,8 @@ if test "x$HAVE_X" = xyes; then
 	if test "x$ENABLE_clients_x11" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-x11\$(EXEEXT)"
+		QW_DESKTOP_DATA="$QW_DESKTOP_DATA quakeforge-qw-x11.desktop"
+		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-x11.desktop"
 		CL_TARGETS="$CL_TARGETS X11"
 		VID_TARGETS="$VID_TARGETS libQFx11.la"
 		BUILD_SW=yes
@@ -1821,6 +1846,8 @@ if test "x$HAVE_SDL" = xyes; then
 	if test "x$ENABLE_clients_sdl" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-sdl\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-sdl\$(EXEEXT)"
+		QW_DESKTOP_DATA="$QW_DESKTOP_DATA quakeforge-qw-sdl.desktop"
+		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-sdl.desktop"
 		CL_TARGETS="$CL_TARGETS SDL"
 		VID_TARGETS="$VID_TARGETS libQFsdl.la"
 		BUILD_SW=yes
@@ -1833,6 +1860,8 @@ if test "x$HAVE_SDL" = xyes; then
 	if test "x$ENABLE_clients_sdl32" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-sdl32\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-sdl32\$(EXEEXT)"
+		QW_DESKTOP_DATA="$QW_DESKTOP_DATA quakeforge-qw-sdl32.desktop"
+		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-sdl32.desktop"
 		CL_TARGETS="$CL_TARGETS SDL32"
 		VID_TARGETS="$VID_TARGETS libQFsdl32.la"
 		BUILD_SW32=yes
@@ -1845,6 +1874,8 @@ if test "x$HAVE_SDL" = xyes; then
 	if test "x$ENABLE_clients_sgl" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-sgl\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-sgl\$(EXEEXT)"
+		QW_DESKTOP_DATA="$QW_DESKTOP_DATA quakeforge-qw-sgl.desktop"
+		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-sgl.desktop"
 		CL_TARGETS="$CL_TARGETS SDL-GL"
 		VID_TARGETS="$VID_TARGETS libQFsgl.la"
 		BUILD_GL=yes
@@ -2203,8 +2234,10 @@ AC_DEFINE_UNQUOTED(SND_RENDER_PROTOS, $SND_RENDER_PROTOS, [list of sound render 
 
 AC_SUBST(HW_TARGETS)
 AC_SUBST(NQ_TARGETS)
+AC_SUBST(NQ_DESKTOP_DATA)
 AC_SUBST(QTV_TARGETS)
 AC_SUBST(QW_TARGETS)
+AC_SUBST(QW_DESKTOP_DATA)
 AC_SUBST(SERVER_PLUGIN_STATIC)
 AC_SUBST(SERVER_PLUGIN_STATIC_LIBS)
 AC_SUBST(SERVER_PLUGIN_TARGETS)
@@ -2448,6 +2481,7 @@ AC_MSG_RESULT([
 	User configuration file     : $userconf
 	OpenGL dynamic lib          : $gl_driver
 	libWildMidi Support         : $HAVE_WILDMIDI
+	XDG support                 : $HAVE_XDG
 ])
 
 if test -d $srcdir/.svn; then

@@ -1,0 +1,18 @@
+[Desktop Entry]
+Version=1.0
+
+Type=Application
+
+Name=QuakeForge QuakeWorld (SDL)
+GenericName=QuakeWorld (SDL)
+Comment=A first person shooter game
+Comment[fr]=Un jeu de tir subjectif
+Comment[it]=Sparatutto in prima persona
+Icon=quake
+
+Categories=SDL;Game;ActionGame;
+
+Exec=qw-client-sdl
+TryExec=qw-client-sdl
+Terminal=false
+StartupNotify=false

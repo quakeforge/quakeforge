@@ -1,0 +1,18 @@
+[Desktop Entry]
+Version=1.0
+
+Type=Application
+
+Name=QuakeForge QuakeWorld (X11)
+GenericName=QuakeWorld (X11)
+Comment=A first person shooter game
+Comment[fr]=Un jeu de tir subjectif
+Comment[it]=Sparatutto in prima persona
+Icon=quake
+
+Categories=Game;ActionGame;
+
+Exec=qw-client-x11
+TryExec=qw-client-x11
+Terminal=false
+StartupNotify=false

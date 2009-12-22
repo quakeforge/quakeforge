@@ -1,0 +1,18 @@
+[Desktop Entry]
+Version=1.0
+
+Type=Application
+
+Name=QuakeForge (SDL)
+GenericName=Quake (SDL)
+Comment=A first person shooter game
+Comment[fr]=Un jeu de tir subjectif
+Comment[it]=Sparatutto in prima persona
+Icon=quake
+
+Categories=SDL;Game;ActionGame;
+
+Exec=nq-sdl
+TryExec=nq-sdl
+Terminal=false
+StartupNotify=false

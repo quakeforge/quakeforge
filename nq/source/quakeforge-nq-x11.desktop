@@ -1,0 +1,18 @@
+[Desktop Entry]
+Version=1.0
+
+Type=Application
+
+Name=QuakeForge (X11)
+GenericName=Quake (X11)
+Comment=A first person shooter game
+Comment[fr]=Un jeu de tir subjectif
+Comment[it]=Sparatutto in prima persona
+Icon=quake
+
+Categories=Game;ActionGame;
+
+Exec=nq-x11
+TryExec=nq-x11
+Terminal=false
+StartupNotify=false

@@ -33,6 +33,12 @@ AUTOMAKE_OPTIONS=	foreign
 INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include
 SDL_LIBS = @SDL_LIBS@
 
+# Desktop files
+if HAVE_XDG
+desktopdir=$(datarootdir)/applications
+desktop_DATA= @QW_DESKTOP_DATA@
+endif
+
 bin_PROGRAMS=	@QW_TARGETS@
 
 EXTRA_PROGRAMS= qw-client-fbdev qw-client-glx qw-client-mgl qw-client-sdl \

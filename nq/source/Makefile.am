@@ -33,6 +33,12 @@ AUTOMAKE_OPTIONS= foreign
 INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/nq/include
 SDL_LIBS = @SDL_LIBS@
 
+# Desktop files
+if HAVE_XDG
+desktopdir=$(datarootdir)/applications
+desktop_DATA= @NQ_DESKTOP_DATA@
+endif
+
 bin_PROGRAMS=	@NQ_TARGETS@
 
 EXTRA_PROGRAMS= nq-fbdev nq-glx nq-mgl nq-sdl nq-sdl32 nq-sgl nq-svga nq-3dfx \
