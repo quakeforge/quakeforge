@@ -307,8 +307,6 @@ VID_SetMode (int modenum, unsigned char *palette)
 	vid.colormap8 = (byte *) vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 	vid.conrowbytes = vid.rowbytes;
-	vid.conwidth = vid.width;
-	vid.conheight = vid.height;
 	vid.numpages = 1;
 
 	// alloc screen buffer, z-buffer, and surface cache

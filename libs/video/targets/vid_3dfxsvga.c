@@ -304,10 +304,6 @@ VID_Init (unsigned char *palette)
 	attribs[4] = 1;
 	attribs[5] = FXMESA_NONE;
 
-	vid.width = vid.conwidth = min (vid.conwidth, (unsigned int) scr_width);
-	vid.height = vid.conheight = min (vid.conheight,
-									  (unsigned int) scr_height);
-
 	Con_CheckResize (); // Now that we have a window size, fix console
 
 	fc = qf_fxMesaCreateContext (0, findres (&scr_width, &scr_height),

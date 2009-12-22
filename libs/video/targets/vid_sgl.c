@@ -117,17 +117,6 @@ VID_Init (unsigned char *palette)
 	vid.colormap8 = vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 
-	vid.conwidth &= 0xfff8;				// make it a multiple of eight
-	if (vid.conwidth < 320)
-		vid.conwidth = 320;
-
-	// pick a conheight that matches with correct aspect
-	vid.conheight = (vid.conwidth * 3) / 4;
-
-	i = COM_CheckParm ("-conheight");
-	if (i != 0)						// Set console height, no smaller than 200
-		vid.conheight = max (atoi (com_argv[i + 1]), 200);
-
 	// Check if we want fullscreen
 	if (vid_fullscreen->int_val) {
 		flags |= SDL_FULLSCREEN;
@@ -176,9 +165,6 @@ VID_Init (unsigned char *palette)
 	SDL_Quit ();
 
 success:
-	vid.height = vid.conheight = min (vid.conheight,
-									  (unsigned int) scr_height);
-	vid.width = vid.conwidth = min (vid.conwidth, (unsigned int) scr_width);
 	Con_CheckResize (); // Now that we have a window size, fix console
 
 	vid.numpages = 2;

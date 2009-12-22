@@ -44,6 +44,10 @@ VID_InitBuffers (void)
 {
 	int         buffersize, zbuffersize, cachesize = 1;
 
+	// No console scaling in the sw renderer
+	vid.conwidth = vid.width;
+	vid.conheight = vid.height;
+
 	// Calculate the sizes we want first
 	buffersize = vid.rowbytes * vid.height;
 	zbuffersize = vid.width * vid.height * sizeof (*vid.zbuffer);

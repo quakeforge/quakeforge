@@ -149,8 +149,8 @@ VID_Init (unsigned char *palette)
 	}
 
 	// now we know everything we need to know about the buffer
-	VGA_width = vid.conwidth = vid.width;
-	VGA_height = vid.conheight = vid.height;
+	VGA_width = vid.width;
+	VGA_height = vid.height;
 	Con_CheckResize (); // Now that we have a window size, fix console
 	vid.numpages = 1;
 	if (vid_colormap)

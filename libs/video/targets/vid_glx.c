@@ -208,10 +208,6 @@ VID_Init (unsigned char *palette)
 	vid.colormap8 = vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 
-	vid.height = vid.conheight = min (vid.conheight,
-									  (unsigned int) scr_height);
-	vid.width = vid.conwidth = min (vid.conwidth, (unsigned int) scr_width);
-
 	Con_CheckResize ();		// Now that we have a window size, fix console
 
 	X11_OpenDisplay ();

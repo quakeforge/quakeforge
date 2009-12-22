@@ -383,8 +383,6 @@ x11_init_buffers (void)
 	}
 	vid.conbuffer = vid.buffer;
 
-	vid.conwidth = vid.width;
-	vid.conheight = vid.height;
 	vid.conrowbytes = vid.rowbytes;
 	Con_CheckResize (); // Now that we have a window size, fix console
 }

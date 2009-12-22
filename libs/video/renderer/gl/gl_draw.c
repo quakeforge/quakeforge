@@ -783,9 +783,9 @@ Draw_FadeScreen (void)
 	qfglBegin (GL_QUADS);
 
 	qfglVertex2f (0, 0);
-	qfglVertex2f (vid.width, 0);
-	qfglVertex2f (vid.width, vid.height);
-	qfglVertex2f (0, vid.height);
+	qfglVertex2f (vid.conwidth, 0);
+	qfglVertex2f (vid.conwidth, vid.conheight);
+	qfglVertex2f (0, vid.conheight);
 
 	qfglEnd ();
 	qfglColor3ubv (color_white);
@@ -806,7 +806,7 @@ GL_Set2D (void)
 
 	qfglMatrixMode (GL_PROJECTION);
 	qfglLoadIdentity ();
-	qfglOrtho (0, vid.width, vid.height, 0, -99999, 99999);
+	qfglOrtho (0, vid.conwidth, vid.conheight, 0, -99999, 99999);
 
 	qfglMatrixMode (GL_MODELVIEW);
 	qfglLoadIdentity ();
