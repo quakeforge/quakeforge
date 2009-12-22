@@ -113,6 +113,8 @@ VID_GetWindowSize (int def_w, int def_h)
 	scr_width = vid.width = vid_width->int_val;
 	scr_height = vid.height = vid_height->int_val;
 
+	vid.aspect = (4.0 * vid.height) / (3.0 * vid.width);
+
 	con_width = Cvar_Get ("con_width", va ("%d", scr_width), CVAR_NONE, NULL,
 						  "console effective width (GL only)");
 	if ((pnum = COM_CheckParm ("-conwidth"))) {

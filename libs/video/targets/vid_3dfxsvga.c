@@ -304,18 +304,6 @@ VID_Init (unsigned char *palette)
 	attribs[4] = 1;
 	attribs[5] = FXMESA_NONE;
 
-	vid.conwidth &= 0xfff8;				// make it a multiple of eight
-
-	vid.conwidth = max (vid.conwidth, 320);
-
-	// pick a conheight that matches with correct aspect
-	vid.conheight = (vid.conwidth * 3) / 4;
-
-	if ((i = COM_CheckParm ("-conheight")) != 0)
-		vid.conheight = atoi (com_argv[i + 1]);
-
-	vid.conheight = max (vid.conheight, 200);
-
 	vid.width = vid.conwidth = min (vid.conwidth, (unsigned int) scr_width);
 	vid.height = vid.conheight = min (vid.conheight,
 									  (unsigned int) scr_height);
@@ -329,7 +317,6 @@ VID_Init (unsigned char *palette)
 
 	qf_fxMesaMakeCurrent (fc);
 
-	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 	vid.numpages = 2;
 
 	vid_gamma_avail = 1;

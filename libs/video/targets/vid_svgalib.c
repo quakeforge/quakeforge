@@ -304,7 +304,6 @@ VID_SetMode (int modenum, unsigned char *palette)
 		vid.rowbytes = modes[current_mode].linewidth * 4;
 	}
 
-	vid.aspect = ((float) vid.height / (float) vid.width) * (4.0 / 3.0);
 	vid.colormap8 = (byte *) vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 	vid.conrowbytes = vid.rowbytes;

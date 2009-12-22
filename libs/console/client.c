@@ -189,7 +189,7 @@ Resize (old_console_t *con)
 	char		tbuf[CON_TEXTSIZE];
 	int			width, oldwidth, oldtotallines, numlines, numchars, i, j;
 
-	width = (vid.width >> 3) - 2;
+	width = (vid.conwidth >> 3) - 2;
 
 	if (width < 1) {					// video hasn't been initialized yet
 		width = 38;
@@ -673,7 +673,7 @@ draw_console (view_t *view)
 	if (con_data.force_commandline) {
 		alpha = 255;
 	} else {
-		float       y = vid.height * con_size->value;
+		float       y = vid.conheight * con_size->value;
 		alpha = 255 * con_alpha->value * view->ylen / y;
 		alpha = min (alpha, 255);
 	}
@@ -736,9 +736,9 @@ setup_console (void)
 	float       lines;
 
 	if (con_data.force_commandline) {
-		lines = con_data.lines = vid.height;
+		lines = con_data.lines = vid.conheight;
 	} else if (key_dest == key_console) {
-		lines = vid.height * bound (0.2, con_size->value, 1);
+		lines = vid.conheight * bound (0.2, con_size->value, 1);
 	} else {
 		lines = 0;
 	}
@@ -750,7 +750,7 @@ setup_console (void)
 		con_data.lines += max (0.2, con_speed->value) * *con_data.frametime;
 		con_data.lines = min (con_data.lines, lines);
 	}
-	if (con_data.lines >= vid.height - r_lineadj)
+	if (con_data.lines >= vid.conheight - r_lineadj)
 		scr_copyeverything = 1;
 }
 

@@ -177,7 +177,6 @@ VID_Center_f (void)
 void
 VID_Init (unsigned char *palette)
 {
-	int         i;
 	int         attrib[] = {
 		GLX_RGBA,
 		GLX_RED_SIZE, 1,
@@ -209,10 +208,6 @@ VID_Init (unsigned char *palette)
 	vid.colormap8 = vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 
-	if ((i = COM_CheckParm ("-conheight")))	// conheight no smaller than 200p
-		vid.conheight = atoi (com_argv[i + 1]);
-	vid.conheight = max (vid.conheight, 200);
-
 	vid.height = vid.conheight = min (vid.conheight,
 									  (unsigned int) scr_height);
 	vid.width = vid.conwidth = min (vid.conwidth, (unsigned int) scr_width);
@@ -237,7 +232,6 @@ VID_Init (unsigned char *palette)
 
 	qfglXMakeCurrent (x_disp, x_win, ctx);
 
-	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 	vid.numpages = 2;
 
 	GL_Init ();

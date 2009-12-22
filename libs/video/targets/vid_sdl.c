@@ -111,7 +111,6 @@ VID_Init (unsigned char *palette)
 	VGA_width = vid.conwidth = vid.width;
 	VGA_height = vid.conheight = vid.height;
 	Con_CheckResize (); // Now that we have a window size, fix console
-	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 	vid.numpages = 1;
 	vid.colormap8 = vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));

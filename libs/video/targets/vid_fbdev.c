@@ -306,12 +306,9 @@ VID_SetMode (const char *name, unsigned char *palette)
 	vid.width = vmode->xres;
 	vid.height = vmode->yres;
 	vid.rowbytes = vmode->xres * (vmode->depth >> 3);
-	vid.aspect = ((float) vid.height / (float) vid.width) * (4.0 / 3.0);
 	vid.colormap8 = (byte *) vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 	vid.conrowbytes = vid.rowbytes;
-	vid.conwidth = vid.width;
-	vid.conheight = vid.height;
 	vid.numpages = 1;
 
 	if (fb_map_addr) {

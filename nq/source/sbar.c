@@ -1009,7 +1009,7 @@ Sbar_Draw (void)
 	if ((sb_updates >= vid.numpages) && !headsup)
 		return;
 
-	if (con_module && con_module->data->console->lines == vid.height)
+	if (con_module && con_module->data->console->lines == vid.conheight)
 		return;							// console is full screen
 
 	if (cls.state == ca_active
@@ -1325,8 +1325,8 @@ init_sbar_views (void)
 	view->draw = draw_status;
 	view_add (sbar_view, view);
 
-	if (vid.width > 320) {
-		int         l = (vid.width - 320) / 2;
+	if (vid.conwidth > 320) {
+		int         l = (vid.conwidth - 320) / 2;
 
 		view = view_new (-l, 0, l, 48, grav_southwest);
 		view->draw = draw_tile;
@@ -1431,8 +1431,8 @@ init_hipnotic_sbar_views (void)
 	view->draw = draw_hipnotic_status;
 	view_add (sbar_view, view);
 
-	if (vid.width > 320) {
-		int         l = (vid.width - 320) / 2;
+	if (vid.conwidth > 320) {
+		int         l = (vid.conwidth - 320) / 2;
 
 		view = view_new (-l, 0, l, 48, grav_southwest);
 		view->draw = draw_tile;
@@ -1538,8 +1538,8 @@ init_rogue_sbar_views (void)
 	view->draw = draw_rogue_status;
 	view_add (sbar_view, view);
 
-	if (vid.width > 320) {
-		int         l = (vid.width - 320) / 2;
+	if (vid.conwidth > 320) {
+		int         l = (vid.conwidth - 320) / 2;
 
 		view = view_new (-l, 0, l, 48, grav_southwest);
 		view->draw = draw_tile;

@@ -387,8 +387,6 @@ x11_init_buffers (void)
 	vid.conheight = vid.height;
 	vid.conrowbytes = vid.rowbytes;
 	Con_CheckResize (); // Now that we have a window size, fix console
-
-	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 }
 
 static void

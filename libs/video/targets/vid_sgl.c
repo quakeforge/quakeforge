@@ -181,7 +181,6 @@ success:
 	vid.width = vid.conwidth = min (vid.conwidth, (unsigned int) scr_width);
 	Con_CheckResize (); // Now that we have a window size, fix console
 
-	vid.aspect = ((float) vid.height / (float) vid.width) * (4.0 / 3.0);
 	vid.numpages = 2;
 
 	GL_Init ();

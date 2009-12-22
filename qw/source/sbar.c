@@ -961,7 +961,7 @@ Sbar_Draw (void)
 	if ((sb_updates >= vid.numpages) && !headsup)
 		return;
 
-	if (con_module && con_module->data->console->lines == vid.height)
+	if (con_module && con_module->data->console->lines == vid.conheight)
 		return;
 
 	if (cls.state == ca_active
@@ -1436,7 +1436,7 @@ Sbar_DeathmatchOverlay (view_t *view, int start)
 	int			l, y;
 	int			skip = 10;
 
-	if (vid.width < 244) // FIXME: magic number, gained through experimentation
+	if (vid.conwidth < 244) // FIXME: magic number, gained through experimentation
 		return;
 
 	if (largegame)
@@ -1850,8 +1850,8 @@ init_sbar_views (void)
 	if (miniteam_view)
 		view_add (sbar_view, miniteam_view);
 
-	if (vid.width > 640) {
-		int         l = (vid.width - 640) / 2;
+	if (vid.conwidth > 640) {
+		int         l = (vid.conwidth - 640) / 2;
 
 		view = view_new (-l, 0, l, 48, grav_southwest);
 		view->draw = draw_tile;

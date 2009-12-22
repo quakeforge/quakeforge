@@ -59,8 +59,8 @@ CL_NetGraph (void)
 	if (!r_netgraph->int_val)
 		return;
 
-	x = hudswap ? vid.width - (NET_TIMINGS + 16): 0;
-	y = vid.height - sb_lines - 24 - r_graphheight->int_val - 1;
+	x = hudswap ? vid.conwidth - (NET_TIMINGS + 16): 0;
+	y = vid.conheight - sb_lines - 24 - r_graphheight->int_val - 1;
 
 	h = r_graphheight->int_val % 8;
 
@@ -69,8 +69,8 @@ CL_NetGraph (void)
 					  r_netgraph_alpha->value * 255);
 
 	lost = CL_CalcNet ();
-	x = hudswap ? vid.width - (NET_TIMINGS + 8) : 8;
-	y = vid.height - sb_lines - 9;
+	x = hudswap ? vid.conwidth - (NET_TIMINGS + 8) : 8;
+	y = vid.conheight - sb_lines - 9;
 
 	l = NET_TIMINGS;
 	if (l > r_refdef.vrect.width - 8)
@@ -85,10 +85,10 @@ CL_NetGraph (void)
 	}
 	R_LineGraph (x, y, &packet_latency[a], l);
 
-	y = vid.height - sb_lines - 24 - r_graphheight->int_val + 7;
+	y = vid.conheight - sb_lines - 24 - r_graphheight->int_val + 7;
 	snprintf (st, sizeof (st), "%3i%% packet loss", lost);
 	if (hudswap) {
-		Draw_String (vid.width - ((strlen (st) * 8) + 8), y, st);
+		Draw_String (vid.conwidth - ((strlen (st) * 8) + 8), y, st);
 	} else {
 		Draw_String (8, y, st);
 	}
