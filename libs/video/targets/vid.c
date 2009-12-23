@@ -59,7 +59,6 @@ qboolean	vid_gamma_avail;		// hardware gamma availability
 VISIBLE unsigned int	d_8to24table[256];
 
 /* Screen size */
-int 		scr_width, scr_height;
 cvar_t	   *vid_width;
 cvar_t	   *vid_height;
 
@@ -110,12 +109,12 @@ VID_GetWindowSize (int def_w, int def_h)
 	Cvar_SetFlags (vid_width, vid_width->flags | CVAR_ROM);
 	Cvar_SetFlags (vid_height, vid_height->flags | CVAR_ROM);
 
-	scr_width = vid.width = vid_width->int_val;
-	scr_height = vid.height = vid_height->int_val;
+	vid.width = vid_width->int_val;
+	vid.height = vid_height->int_val;
 
 	vid.aspect = (4.0 * vid.height) / (3.0 * vid.width);
 
-	con_width = Cvar_Get ("con_width", va ("%d", scr_width), CVAR_NONE, NULL,
+	con_width = Cvar_Get ("con_width", va ("%d", vid.width), CVAR_NONE, NULL,
 						  "console effective width (GL only)");
 	if ((pnum = COM_CheckParm ("-conwidth"))) {
 		if (pnum >= com_argc - 1)

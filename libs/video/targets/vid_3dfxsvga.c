@@ -306,7 +306,7 @@ VID_Init (unsigned char *palette)
 
 	Con_CheckResize (); // Now that we have a window size, fix console
 
-	fc = qf_fxMesaCreateContext (0, findres (&scr_width, &scr_height),
+	fc = qf_fxMesaCreateContext (0, findres (&vid.width, &vid.height),
 							  GR_REFRESH_75Hz, attribs);
 	if (!fc)
 		Sys_Error ("Unable to create 3DFX context.");
@@ -327,7 +327,7 @@ VID_Init (unsigned char *palette)
 
 	vid.initialized = true;
 
-	Sys_DPrintf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
+	Sys_DPrintf ("Video mode %dx%d initialized.\n", vid.width, vid.height);
 
 	vid.recalc_refdef = 1;				// force a surface cache flush
 }

@@ -218,8 +218,8 @@ VID_Init (unsigned char *palette)
 	}
 	x_vis = x_visinfo->visual;
 
-	X11_SetVidMode (scr_width, scr_height);
-	X11_CreateWindow (scr_width, scr_height);
+	X11_SetVidMode (vid.width, vid.height);
+	X11_CreateWindow (vid.width, vid.height);
 	X11_CreateNullCursor ();	// hide mouse pointer
 
 	XSync (x_disp, 0);
@@ -238,7 +238,7 @@ VID_Init (unsigned char *palette)
 	VID_Init8bitPalette ();
 	VID_SetPalette (vid.palette);
 
-	Sys_DPrintf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
+	Sys_DPrintf ("Video mode %dx%d initialized.\n", vid.width, vid.height);
 
 	vid.initialized = true;
 

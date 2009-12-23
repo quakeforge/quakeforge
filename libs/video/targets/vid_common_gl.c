@@ -617,8 +617,8 @@ VISIBLE void
 GL_BeginRendering (int *x, int *y, int *width, int *height)
 {
 	*x = *y = 0;
-	*width = scr_width;
-	*height = scr_height;
+	*width = vid.width;
+	*height = vid.height;
 }
 
 VISIBLE qboolean

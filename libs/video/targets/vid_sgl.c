@@ -154,7 +154,7 @@ VID_Init (unsigned char *palette)
 		for (j = 0; j < 5; j++) {
 			for (k = 32; k >= 16; k -= 8) {
 				SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, k);
-				if ((screen = SDL_SetVideoMode (scr_width, scr_height,
+				if ((screen = SDL_SetVideoMode (vid.width, vid.height,
 												color[j], flags)))
 					goto success;
 			}
@@ -176,7 +176,7 @@ success:
 	VID_SetPalette (vid.palette);
 	VID_Init8bitPalette ();	// Check for 3DFX Extensions and initialize them.
 
-	Sys_DPrintf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
+	Sys_DPrintf ("Video mode %dx%d initialized.\n", vid.width, vid.height);
 
 	vid.initialized = true;
 

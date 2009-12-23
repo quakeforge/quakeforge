@@ -322,7 +322,8 @@ check_mouse_event (Display *disp, XEvent *ev, XPointer arg)
 	XMotionEvent *me = &ev->xmotion;
 	if (ev->type != MotionNotify)
 		return False;
-	if (me->x != scr_width / 2 || me->y != scr_height / 2)
+	if ((unsigned) me->x != vid.width / 2
+		|| (unsigned) me->y != vid.height / 2)
 		return False;
 	return True;
 }
@@ -333,8 +334,8 @@ X11_SetMouse (void)
 	XEvent	ev;
 
 	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, 0, 0);
-	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, scr_width / 2,
-				  scr_height / 2);
+	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0,
+				  vid.width / 2, vid.height / 2);
 	XPeekIfEvent (x_disp, &ev, check_mouse_event, 0);
 	x_mouse_time = ev.xmotion.time;
 }
@@ -418,8 +419,8 @@ X11_SetVidMode (int width, int height)
 			}
 
 			for (i = 0; i < nummodes; i++) {
-				if ((vidmodes[i]->hdisplay == scr_width) &&
-						(vidmodes[i]->vdisplay == scr_height)) {
+				if ((vidmodes[i]->hdisplay == vid.width) &&
+						(vidmodes[i]->vdisplay == vid.height)) {
 					found_mode = true;
 					best_mode = i;
 					break;
@@ -427,8 +428,8 @@ X11_SetVidMode (int width, int height)
 			}
 
 			if (found_mode) {
-				Sys_DPrintf ("VID: Chose video mode: %dx%d\n", scr_width,
-							 scr_height);
+				Sys_DPrintf ("VID: Chose video mode: %dx%d\n",
+							 vid.width, vid.height);
 
 				XF86VidModeSwitchToMode (x_disp, x_screen,
 										 vidmodes[best_mode]);
@@ -436,7 +437,7 @@ X11_SetVidMode (int width, int height)
 				X11_SetScreenSaver ();
 			} else {
 				Sys_Printf ("VID: Mode %dx%d can't go fullscreen.\n",
-							scr_width, scr_height);
+							vid.width, vid.height);
 				vidmode_avail = vidmode_active = false;
 			}
 		}
@@ -465,7 +466,7 @@ X11_UpdateFullscreen (cvar_t *fullscreen)
 		window_y = pos_y;
 		window_saved = 1;
 
-		X11_SetVidMode (scr_width, scr_height);
+		X11_SetVidMode (vid.width, vid.height);
 
 		if (!vidmode_active) {
 			window_saved = 0;

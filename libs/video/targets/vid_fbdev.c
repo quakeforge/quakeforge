@@ -410,8 +410,8 @@ VID_Init (unsigned char *palette)
 		return;
 
 	if (COM_CheckParm ("-novideo")) {
-		scr_width = vid.width = 320;
-		scr_height = vid.height = 200;
+		vid.width = 320;
+		vid.height = 200;
 		vid.rowbytes = 320;
 		vid.aspect = ((float) vid.height / (float) vid.width) * (4.0 / 3.0);
 		vid.colormap8 = (byte *) vid_colormap;
