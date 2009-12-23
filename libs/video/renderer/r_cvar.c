@@ -217,7 +217,7 @@ scr_ffov_f (cvar_t *var)
 static void
 viewsize_f (cvar_t *var)
 {
-	if (var->int_val < 32 || var->int_val > 120) {
+	if (var->int_val < 30 || var->int_val > 120) {
 		Cvar_SetValue (var, bound (30, var->int_val, 120));
 	} else {
 		vid.recalc_refdef = true;
