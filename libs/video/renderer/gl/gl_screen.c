@@ -256,6 +256,8 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	// draw any areas not covered by the refresh
 	SCR_TileClear ();
 
+	GL_Set2DScaled ();
+
 	while (*scr_funcs) {
 		(*scr_funcs)();
 		scr_funcs++;

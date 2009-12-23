@@ -794,19 +794,14 @@ Draw_FadeScreen (void)
 	Sbar_Changed ();
 }
 
-/*
-	GL_Set2D
-
-	Setup as if the screen was 320*200
-*/
-void
-GL_Set2D (void)
+static void
+set_2d (int width, int height)
 {
 	qfglViewport (glx, gly, glwidth, glheight);
 
 	qfglMatrixMode (GL_PROJECTION);
 	qfglLoadIdentity ();
-	qfglOrtho (0, vid.conwidth, vid.conheight, 0, -99999, 99999);
+	qfglOrtho (0, width, height, 0, -99999, 99999);
 
 	qfglMatrixMode (GL_MODELVIEW);
 	qfglLoadIdentity ();
@@ -821,6 +816,18 @@ GL_Set2D (void)
 	qfglEnableClientState (GL_TEXTURE_COORD_ARRAY);
 	qfglTexCoordPointer (2, GL_FLOAT, 0, textCoords);
 	qfglDisableClientState (GL_COLOR_ARRAY);
+}
+
+void
+GL_Set2D (void)
+{
+	set_2d (vid.width, vid.height);
+}
+
+void
+GL_Set2DScaled (void)
+{
+	set_2d (vid.conwidth, vid.conheight);
 }
 
 void

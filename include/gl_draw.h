@@ -30,6 +30,7 @@
 #define __gl_draw_h
 
 void GL_Set2D (void);
+void GL_Set2DScaled (void);
 void GL_DrawReset (void);
 void GL_FlushText (void);
 
