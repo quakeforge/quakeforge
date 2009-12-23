@@ -63,7 +63,7 @@ typedef struct {
 	unsigned int	 rowbytes;		// may be > width if displayed in a window
 	unsigned int	 width;		
 	unsigned int	 height;
-	float			 aspect;	// width / height -- < 0 is taller than wide
+	float			 aspect;	// width / height -- < 1 is taller than wide
 	int				 numpages;
 	qboolean		 recalc_refdef;	// if true, recalc vid-based stuff
 	qboolean		 cshift_changed;
