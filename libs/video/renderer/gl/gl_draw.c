@@ -55,7 +55,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
-#include "QF/GL/qf_screen.h"
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 #include "QF/GL/types.h"
@@ -797,7 +796,7 @@ Draw_FadeScreen (void)
 static void
 set_2d (int width, int height)
 {
-	qfglViewport (glx, gly, glwidth, glheight);
+	qfglViewport (0, 0, vid.width, vid.height);
 
 	qfglMatrixMode (GL_PROJECTION);
 	qfglLoadIdentity ();

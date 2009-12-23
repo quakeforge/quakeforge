@@ -64,8 +64,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "sbar.h"
 #include "view.h"
 
-int         glx, gly, glwidth, glheight;
-
 /* SCREEN SHOTS */
 
 VISIBLE tex_t *
@@ -143,11 +141,11 @@ SCR_ScreenShot_f (void)
 						   va ("%s/qf", qfs_gamedir->dir.def), ".tga")) {
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a TGA file\n");
 	} else {
-		buffer = malloc (glwidth * glheight * 3);
+		buffer = malloc (vid.width * vid.height * 3);
 		SYS_CHECKMEM (buffer);
-		qfglReadPixels (glx, gly, glwidth, glheight, GL_BGR_EXT,
+		qfglReadPixels (0, 0, vid.width, vid.height, GL_BGR_EXT,
 						GL_UNSIGNED_BYTE, buffer);
-		WriteTGAfile (pcxname->str, buffer, glwidth, glheight);
+		WriteTGAfile (pcxname->str, buffer, vid.width, vid.height);
 		free (buffer);
 		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, pcxname->str);
 	}
@@ -210,7 +208,6 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	if (!scr_initialized)
 		return;							// not initialized yet
 
-	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 	begun = 1;
 
 	if (r_speeds->int_val) {

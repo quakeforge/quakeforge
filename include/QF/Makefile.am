@@ -13,8 +13,8 @@ nobase_pkginclude_HEADERS = \
 	\
 	GL/ati.h GL/defines.h GL/extensions.h GL/funcs.h GL/qf_explosions.h \
 	GL/qf_funcs_list.h GL/qf_lightmap.h GL/qf_noisetextures.h \
-	GL/qf_rlight.h GL/qf_rmain.h GL/qf_rsurf.h GL/qf_screen.h GL/qf_sky.h \
-	GL/qf_textures.h GL/qf_vid.h GL/types.h \
+	GL/qf_rlight.h GL/qf_rmain.h GL/qf_rsurf.h GL/qf_sky.h GL/qf_textures.h \
+	GL/qf_vid.h GL/types.h \
 	\
 	plugin/cd.h plugin/console.h plugin/general.h plugin/input.h \
 	plugin/snd_output.h plugin/snd_render.h

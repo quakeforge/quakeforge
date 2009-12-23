@@ -52,7 +52,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
-#include "QF/GL/qf_screen.h"
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 
@@ -85,39 +84,33 @@ R_Envmap_f (void)
 	r_refdef.viewangles[0] = 0;
 	r_refdef.viewangles[1] = 0;
 	r_refdef.viewangles[2] = 0;
-	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 	R_RenderView ();
 	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	QFS_WriteFile ("env0.rgb", buffer, sizeof (buffer));
 
 	r_refdef.viewangles[1] = 90;
-	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 	R_RenderView ();
 	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	QFS_WriteFile ("env1.rgb", buffer, sizeof (buffer));
 
 	r_refdef.viewangles[1] = 180;
-	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 	R_RenderView ();
 	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	QFS_WriteFile ("env2.rgb", buffer, sizeof (buffer));
 
 	r_refdef.viewangles[1] = 270;
-	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 	R_RenderView ();
 	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	QFS_WriteFile ("env3.rgb", buffer, sizeof (buffer));
 
 	r_refdef.viewangles[0] = -90;
 	r_refdef.viewangles[1] = 0;
-	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 	R_RenderView ();
 	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	QFS_WriteFile ("env4.rgb", buffer, sizeof (buffer));
 
 	r_refdef.viewangles[0] = 90;
 	r_refdef.viewangles[1] = 0;
-	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 	R_RenderView ();
 	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	QFS_WriteFile ("env5.rgb", buffer, sizeof (buffer));
@@ -232,7 +225,6 @@ R_TimeRefresh_f (void)
 
 	start = Sys_DoubleTime ();
 	for (i = 0; i < 128; i++) {
-		GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 		r_refdef.viewangles[1] = i * (360.0 / 128.0);
 		R_RenderView ();
 		GL_EndRendering ();
@@ -241,8 +233,6 @@ R_TimeRefresh_f (void)
 	stop = Sys_DoubleTime ();
 	time = stop - start;
 	Sys_DPrintf ("%f seconds (%f fps)\n", time, 128 / time);
-
-	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 }
 
 VISIBLE void

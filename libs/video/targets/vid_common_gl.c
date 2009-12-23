@@ -613,14 +613,6 @@ GL_Init_Common (void)
 	CheckLights ();
 }
 
-VISIBLE void
-GL_BeginRendering (int *x, int *y, int *width, int *height)
-{
-	*x = *y = 0;
-	*width = vid.width;
-	*height = vid.height;
-}
-
 VISIBLE qboolean
 VID_Is8bit (void)
 {

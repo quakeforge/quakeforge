@@ -56,7 +56,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/qf_rlight.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
-#include "QF/GL/qf_screen.h"
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"

@@ -57,7 +57,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/qf_rlight.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
-#include "QF/GL/qf_screen.h"
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
@@ -462,7 +461,7 @@ R_SetupGL_Viewport_and_Perspective (void)
 		h = r_refdef.vrect.height;
 	}
 //	printf ("glViewport(%d, %d, %d, %d)\n", glx + x, gly + y2, w, h);
-	qfglViewport (glx + x, gly + y2, w, h);
+	qfglViewport (x, y2, w, h);
 	screenaspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
 	MYgluPerspective (r_refdef.fov_y, screenaspect, r_nearclip->value,
 					  r_farclip->value);
@@ -920,7 +919,7 @@ static void
 R_RenderViewFishEye (void)
 {
 	float s_fov_x, s_fov_y;
-	int s_vid_w, s_vid_h, s_rect_w, s_rect_h, s_gl_w, s_gl_h;
+	int s_vid_w, s_vid_h, s_rect_w, s_rect_h;
 
 	if (!R_InitFishEye()) return;
 
@@ -931,13 +930,11 @@ R_RenderViewFishEye (void)
 	s_vid_h = vid.height;
 	s_rect_w = r_refdef.vrect.width;
 	s_rect_h = r_refdef.vrect.height;
-	s_gl_w = glwidth;
-	s_gl_h = glheight;
 	// the view should be square
 	r_refdef.fov_x = r_refdef.fov_y = 90;
 	vid.width = vid.height =
 		r_refdef.vrect.height = r_refdef.vrect.width =
-		glwidth = glheight = gl_cube_map_size;
+		gl_cube_map_size;
 	switch (scr_fviews->int_val) {
 		case 6:   R_RenderCubeSide (BOX_BEHIND);
 		case 5:   R_RenderCubeSide (BOX_BOTTOM);
@@ -953,8 +950,6 @@ R_RenderViewFishEye (void)
 	vid.height = s_vid_h;
 	r_refdef.vrect.width = s_rect_w;
 	r_refdef.vrect.height = s_rect_h;
-	glwidth = s_gl_w;
-	glheight = s_gl_h;
 	R_SetupGL_Viewport_and_Perspective ();
 	qfglMatrixMode (GL_MODELVIEW);
 	qfglCallList (fisheye_grid);
