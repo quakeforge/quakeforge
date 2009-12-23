@@ -445,7 +445,7 @@ static void
 R_SetupGL_Viewport_and_Perspective (void)
 {
 	float		screenaspect;
-	int			x, x2, y2, y, w, h;
+	int			x, y, w, h;
 
 	// set up viewpoint
 	qfglMatrixMode (GL_PROJECTION);
