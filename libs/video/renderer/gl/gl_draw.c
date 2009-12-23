@@ -584,8 +584,8 @@ Draw_Crosshair (void)
 	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
 		return;
 
-	x = scr_vrect.x + scr_vrect.width / 2 + cl_crossx->int_val;
-	y = scr_vrect.y + scr_vrect.height / 2 + cl_crossy->int_val;
+	x = vid.conwidth / 2 + cl_crossx->int_val;
+	y = vid.conheight / 2 + cl_crossy->int_val;
 
 	crosshair_func[ch] (x, y);
 }
