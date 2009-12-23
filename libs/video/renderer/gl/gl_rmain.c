@@ -455,24 +455,8 @@ R_SetupGL_Viewport_and_Perspective (void)
 		x = y2 = 0;
 		w = h = 256;
 	} else {
-		x = r_refdef.vrect.x * glwidth / vid.width;
-		x2 = (r_refdef.vrect.x + r_refdef.vrect.width) * glwidth / vid.width;
-		y = (vid.height - r_refdef.vrect.y) * glheight / vid.height;
-		y2 = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height)) *
-			glheight / vid.height;
-
-		// fudge around because of frac screen scale
-		if (x > 0)
-			x--;
-		if (x2 < glwidth)
-			x2++;
-		if (y2 < 0)
-			y2--;
-		if (y < glheight)
-			y++;
-
-		w = x2 - x;
-		h = y - y2;
+		w = r_refdef.vrect.width;
+		h = r_refdef.vrect.height;
 	}
 //	printf ("glViewport(%d, %d, %d, %d)\n", glx + x, gly + y2, w, h);
 	qfglViewport (glx + x, gly + y2, w, h);
