@@ -110,7 +110,6 @@ VID_Init (unsigned char *palette)
 	// now know everything we need to know about the buffer
 	VGA_width = vid.width;
 	VGA_height = vid.height;
-	Con_CheckResize (); // Now that we have a window size, fix console
 	vid.numpages = 1;
 	vid.colormap8 = vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
@@ -122,6 +121,8 @@ VID_Init (unsigned char *palette)
 	vid.direct = 0;
 
 	VID_InitBuffers ();		// allocate z buffer and surface cache
+
+	Con_CheckResize ();		// Now that we have a window size, fix console
 
 	SDL_ShowCursor (0);		// hide the mouse pointer
 

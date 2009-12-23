@@ -151,7 +151,6 @@ VID_Init (unsigned char *palette)
 	// now we know everything we need to know about the buffer
 	VGA_width = vid.width;
 	VGA_height = vid.height;
-	Con_CheckResize (); // Now that we have a window size, fix console
 	vid.numpages = 1;
 	if (vid_colormap)
 		VID_MakeColormaps(256 - vid_colormap[16384], vid.palette);
@@ -165,6 +164,8 @@ VID_Init (unsigned char *palette)
 	vid.do_screen_buffer = do_screen_buffer;
 
 	VID_InitBuffers ();		// allocate z buffer and surface cache
+
+	Con_CheckResize ();		// Now that we have a window size, fix console
 
 	SDL_ShowCursor (0);		// initialize the mouse
 

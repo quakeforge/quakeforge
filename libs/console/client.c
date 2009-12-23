@@ -827,13 +827,13 @@ C_Init (void)
 
 	con_debuglog = COM_CheckParm ("-condebug");
 
+	// The console will get resized, so assume initial size is 320x200
 	con_data.view = view_new (0, 0, 320, 200, grav_northeast);
-
 	console_view = view_new (0, 0, 320, 200, grav_northwest);
 	say_view     = view_new (0, 0, 320, 8, grav_northwest);
 	notify_view  = view_new (0, 8, 320, 32, grav_northwest);
 	menu_view    = view_new (0, 0, 320, 200, grav_center);
-	hud_view     = view_new (0, 0, vid.conwidth, vid.conheight, grav_northeast);
+	hud_view     = view_new (0, 0, 320, 200, grav_northeast);
 
 	view_add (con_data.view, say_view);
 	view_add (con_data.view, notify_view);
