@@ -153,7 +153,7 @@ VID_GetWindowSize (int def_w, int def_h)
 	Cvar_SetFlags (con_width, con_width->flags | CVAR_ROM);
 	vid.conwidth = con_width->int_val;
 
-	conheight = (vid.conwidth * 3) / 4;
+	conheight = (vid.conwidth * vid_aspect->vec[1]) / vid_aspect->vec[0];
 	con_height = Cvar_Get ("con_height", va ("%d", conheight), CVAR_NONE, NULL,
 						   "console effective height (GL only)");
 	if ((pnum = COM_CheckParm ("-conheight"))) {
