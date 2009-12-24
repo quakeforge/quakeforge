@@ -51,6 +51,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "snd_render.h"
 
 static int snd_blocked = 0;
+static int snd_shutdown = 0;
 static jack_client_t *jack_handle;
 static jack_port_t *jack_out[2];
 static dma_t    _snd_shm;
@@ -62,6 +63,20 @@ s_stop_all_sounds (void)
 {
 	SND_StopAllSounds ();
 	SND_ScanChannels (1);
+}
+
+static void
+s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
+		  const vec3_t up)
+{
+	if (snd_shutdown) {
+		if (snd_shutdown == 1) {
+			snd_shutdown++;
+			Sys_Printf ("Lost connection to jackd\n");
+		}
+		return;
+	}
+	SND_SetListener (origin, forward, right, up);
 }
 
 static void
@@ -149,6 +164,13 @@ snd_jack_process (jack_nframes_t nframes, void *arg)
 static void
 snd_jack_shutdown (void *arg)
 {
+	int         i;
+	channel_t  *ch;
+	snd_shutdown = 1;
+	for (i = 0; i < MAX_CHANNELS; i++) {
+		ch = &snd_channels[i];
+		ch->done = ch->stop = 1;
+	}
 }
 
 static void
@@ -219,7 +241,7 @@ static snd_render_funcs_t plugin_info_render_funcs = {
 	SND_StartSound,
 	SND_StopSound,
 	SND_PrecacheSound,
-	SND_SetListener,
+	s_update,
 	s_stop_all_sounds,
 	s_extra_update,
 	SND_LocalSound,
