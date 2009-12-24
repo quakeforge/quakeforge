@@ -1348,7 +1348,7 @@ dnl ==================================================================
 dnl Misc checks
 dnl ==================================================================
 
-if test -d $srcdir/.svn; then
+if test -d $srcdir/.svn -o -d $srcdir/.git; then
 	cvs_def_enabled="!= xno"
 	cvs_def_disabled="= xyes"
 else
