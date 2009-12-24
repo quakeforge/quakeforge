@@ -61,9 +61,30 @@ VISIBLE unsigned int	d_8to24table[256];
 /* Screen size */
 cvar_t	   *vid_width;
 cvar_t	   *vid_height;
+cvar_t     *vid_aspect;
 
 cvar_t     *vid_fullscreen;
 
+static void
+vid_aspect_f (cvar_t *var)
+{
+	const char *p = strchr (var->string, ':');
+	float       w, h;
+
+	if (p) {
+		w = atof (var->string);
+		h = atof (p + 1);
+		if (w > 0.0 && h > 0.0) {
+			var->vec[0] = w;
+			var->vec[1] = h;
+			return;
+		}
+	}
+	Sys_Printf ("badly formed aspect ratio: %s. Using default 4:3\n",
+				var->string);
+	var->vec[0] = 4.0;
+	var->vec[1] = 3.0;
+}
 
 void
 VID_GetWindowSize (int def_w, int def_h)
@@ -74,6 +95,11 @@ VID_GetWindowSize (int def_w, int def_h)
 			"screen width");
 	vid_height = Cvar_Get ("vid_height", va ("%d", def_h), CVAR_NONE, NULL,
 			"screen height");
+	vid_aspect = Cvar_Get ("vid_aspect", "4:3", CVAR_ROM, vid_aspect_f,
+			"Physical screen aspect ratio in \"width:height\" format. "
+			"Common values are 4:3, 5:3, 8:5, 16:9, but any width:height "
+			"measurement will do (eg, 475:296.875 the approximate dimentions "
+			"in mm of the display area of a certain monitor)");
 
 	if ((pnum = COM_CheckParm ("-width"))) {
 		if (pnum >= com_argc - 1)
@@ -112,7 +138,8 @@ VID_GetWindowSize (int def_w, int def_h)
 	vid.width = vid_width->int_val;
 	vid.height = vid_height->int_val;
 
-	vid.aspect = (4.0 * vid.height) / (3.0 * vid.width);
+	vid.aspect = ((vid_aspect->vec[0] * vid.height)
+				  / (vid_aspect->vec[1] * vid.width));
 
 	con_width = Cvar_Get ("con_width", va ("%d", vid.width), CVAR_NONE, NULL,
 						  "console effective width (GL only)");
