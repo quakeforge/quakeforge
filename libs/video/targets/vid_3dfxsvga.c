@@ -201,7 +201,7 @@ GL_EndRendering (void)
 	Sbar_Changed ();
 }
 
-static int  resolutions[][3] = {
+static unsigned int  resolutions[][3] = {
 	{320, 200, GR_RESOLUTION_320x200},
 	{320, 240, GR_RESOLUTION_320x240},
 	{400, 256, GR_RESOLUTION_400x256},
@@ -253,7 +253,7 @@ static int  resolutions[][3] = {
 #define NUM_RESOLUTIONS		(sizeof (resolutions) / (sizeof (int) * 3))
 
 static int
-findres (int *width, int *height)
+findres (unsigned int *width, unsigned int *height)
 {
 	unsigned int i;
 
@@ -273,7 +273,6 @@ findres (int *width, int *height)
 void
 VID_Init (unsigned char *palette)
 {
-	int         i;
 	GLint       attribs[32];
 
 	GLF_Init ();
