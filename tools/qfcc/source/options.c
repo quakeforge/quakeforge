@@ -65,6 +65,7 @@ enum {
 	OPT_CPP,
 	OPT_INCLUDE,
 	OPT_PROGDEFS,
+	OPT_QCCX_ESCAPES,
 	OPT_TRADITIONAL,
 };
 
@@ -80,6 +81,7 @@ static struct option const long_options[] = {
 	{"output-file", required_argument, 0, 'o'},
 	{"progdefs", no_argument, 0, OPT_PROGDEFS},
 	{"progs-src", required_argument, 0, 'P'},
+	{"qccx-escapes", no_argument, 0, OPT_QCCX_ESCAPES},
 	{"quiet", no_argument, 0, 'q'},
 	{"relocatable", no_argument, 0, 'r'},
 	{"save-temps", no_argument, 0, 'S'},
@@ -151,6 +153,8 @@ usage (int status)
 "    -P, --progs-src FILE      File to use instead of progs.src\n"
 "    -p, --strip-path NUM      Strip NUM leading path elements from file\n"
 "                              names\n"
+"        --qccx-escapes        Use QCCX escape sequences instead of standard\n"
+"                              C/QuakeForge sequences.\n"
 "    -q, --quiet               Inhibit usual output\n"
 "    -r, --relocatable         Incremental linking\n"
 "    -S, --save-temps          Do not delete temporary files\n"
@@ -323,6 +327,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case OPT_PROGDEFS:
 				options.progdefs_h = true;
+				break;
+			case OPT_QCCX_ESCAPES:
+				options.qccx_escapes = true;
 				break;
 			case 'q':					// quiet
 				options.verbosity -= 1;

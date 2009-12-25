@@ -542,8 +542,10 @@ make_string (char *token, char **end)
 					c = '\a';
 					break;
 				case 'b':
-					//XXX mask ^= 0x80;
-					c = '\b';
+					if (options.qccx_escapes)
+						mask ^= 0x80;
+					else
+						c = '\b';
 					break;
 				case 'e':
 					c = '\033';
@@ -566,33 +568,37 @@ make_string (char *token, char **end)
 					boldnext = 1;
 					continue;
 				case '[':
-					c = 0x90;
+					c = 0x90;		// gold [
 					break;
 				case ']':
-					c = 0x91;
+					c = 0x91;		// gold ]
 					break;
 				case '.':
-					c = 28;
+					c = 28;			// center dot
 					break;
 				case '<':
-					//XXX c = 29;
-					mask = 0x80;
+					if (options.qccx_escapes)
+						c = 29;			// brown left end
+					else
+						mask = 0x80;
 					continue;
 				case '-':
-					c = 30;
+					c = 30;			// brown center bit
 					break;
 				case '>':
-					//XXX c = 31;
-					mask = 0x00;
+					if (options.qccx_escapes)
+						c = 31;			// broun right end
+					else
+						mask = 0x00;
 					continue;
 				case '(':
-					c = 128;
+					c = 128;		// left slider end
 					break;
 				case '=':
-					c = 129;
+					c = 129;		// slider center
 					break;
 				case ')':
-					c = 130;
+					c = 130;		// right slider end
 					break;
 				case '{':
 					c = 0;

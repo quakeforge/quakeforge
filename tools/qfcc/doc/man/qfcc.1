@@ -113,6 +113,10 @@ In \fBprogs.src\fP mode, this overrides the output file in \*[progs.src].
 File to use instead of \*[progs.src].
 No effect in separate compilation mode.
 .TP
+.B \-P, \-\-qccx\-escapes FILE
+Use QCCX escape sequences instead of standard C/QuakeForge sequences in
+strings. See \fBESCAPE SEQUENCES\fP for details.
+.TP
 .B \-p, \-\-strip\-path NUM
 Strip NUM leading path elements from file names.
 eg. -p 3 will strip the
@@ -420,6 +424,91 @@ overridden using \fB--traditional\fP.
 When using \*[cpp], each source file is passed through the preprocessor
 individually.
 Each file is truly independent of any other file on the command line.
+.SH "ESCAPE SEQUENCES"
+\*[qfcc] supports a variety of string escape sequences. This includes those of
+\fBqcc\fP (which are a subset of those in standard C), standard C and
+\fBqccx\fP. There are some conflicts between the escape sequences, but
+\fB\-\-qccx\-escapes\fP selects which set to use.
+.TP
+.B \(rs\(rs
+Backslash.
+.TP
+.B \(rsn
+Line feed.
+.TP
+.B \(rs"
+Double quote.
+.TP
+.B \(rs\'
+Single quote.
+.TP
+.B \(rs0-7
+Octal character code, up to three digits.
+.TP
+.B \(rsx0-9A-Fa-f
+Hexadecimal character code, any number of digits, but only the least significant byte will be used.
+.TP
+.B \(rsa
+Bell character (not in quake engines). Equivalent to \(rsx07.
+.TP
+.B \(rsb
+Backspace character (not in quake engines). Equivalent to \(rsx08. This
+conflicts with \fBqccx\fP. In \fBqccx\fP, this toggles bronze characters. Use
+\fB\-\-qccx\-escapes\fP to select \fBqccx\fP behaviour.
+.TP
+.B \(rse
+Escape character (not in quake engines). Equivalent to \(rsx1b (dull 9).
+.TP
+.B \(rsf
+Formfeed character (not in quake engines). Equivalent to \(rsx0c.
+.TP
+.B \(rsr
+Carriage return. Equivalent to \(rsx0d.
+.TP
+.B \(rst
+Tab character. Equivalent to \(rsx09.
+.TP
+.B \(rsv
+Vertical tab. Equivalent to \(rsx0b.
+.TP
+.B \(rs^
+Make the next character "bold" (add 0x80).
+.TP
+.B \(rs[
+Gold [ character. Equivalent to \(rsx90.
+.TP
+.B \(rs]
+Gold ] character. Equivalent to \(rsx91.
+.TP
+.B \(rs.
+Center dot. Equivalent to \(rsx1c.
+.TP
+.B \(rs<
+Turn on "bold" characters (add 0x80). This conflicts with \fBqccx\fP. In
+\fBqccx\fP, this produces the brown left end. Equivalent to \(rsx1d. Use
+\fB\-\-qccx\-escapes\fP to select \fBqccx\fP behaviour.
+.TP
+.B \(rs\-
+Brown center bit. Equivalent to \(rsx1e.
+.TP
+.B \(rs>
+Turn off "bold" characters (add 0x80). This conflicts with \fBqccx\fP. In
+\fBqccx\fP, this produces the brown right end. Equivalent to \(rsx1f. Use
+\fB\-\-qccx\-escapes\fP to select \fBqccx\fP behaviour.
+.TP
+.B \(rs(
+Left slider end. Equivalent to \(rsx80.
+.TP
+.B \(rs=
+Slider center. Equivalent to \(rsx81.
+.TP
+.B \(rs)
+Right slider end. Equivalent to \(rsx82.
+.TP
+.B \(rs{0-255}
+Decimal character code.
+.P
+\fB\-\-qccx\-escapes\fP has no effect on sequences that do not conflict.
 .SH TRADITIONAL VS ADVANCED
 Compared to \fBqcc\fP, \*[qfcc] has many advanced features and is much stricter
 about type checking.
