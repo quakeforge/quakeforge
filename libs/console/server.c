@@ -170,14 +170,14 @@ static inline void
 sv_refresh (view_t *view)
 {
 	sv_view_t  *sv_view = view->data;
-	wnoutrefresh (sv_view->win);
+	wnoutrefresh ((WINDOW *) sv_view->win);
 }
 
 static inline int
 sv_getch (view_t *view)
 {
 	sv_view_t  *sv_view = view->data;
-	return wgetch (sv_view->win);
+	return wgetch ((WINDOW *) sv_view->win);
 }
 
 static inline void
@@ -186,7 +186,7 @@ sv_draw (view_t *view)
 	sv_view_t  *sv_view = view->data;
 	if (sv_view->draw)
 		sv_view->draw (view);
-	wnoutrefresh (sv_view->win);
+	wnoutrefresh ((WINDOW *) sv_view->win);
 }
 
 static inline void
@@ -203,14 +203,11 @@ sv_setgeometry (view_t *view)
 static void
 sv_complete (inputline_t *il)
 {
-	view_t     *view = il->user_data;
 	batch_print = 1;
 	Con_BasicCompleteCommandLine (il);
-	sv_refresh (view);
 	batch_print = 0;
 
 	sv_refresh (output);
-	// move the cursor back to the input line
 	sv_refresh (input);
 	doupdate ();
 }
@@ -460,7 +457,6 @@ process_input (void)
 		}
 		C_KeyEvent (ch, 0, 1);
 	}
-	doupdate ();
 }
 
 static void
@@ -493,8 +489,10 @@ key_event (knum_t key, short unicode, qboolean down)
 		default:
 			sv_view = input->data;
 			Con_ProcessInputLine (sv_view->obj, key);
+			sv_refresh (input);
 			break;
 	}
+	doupdate ();
 }
 
 static void
@@ -507,8 +505,6 @@ print (char *txt)
 			draw_fun_char (sv_view->win, (byte) *txt++, 0);
 		if (!batch_print) {
 			sv_refresh (output);
-			// move the cursor back to the input line
-			sv_refresh (input);
 			doupdate ();
 		}
 	}
