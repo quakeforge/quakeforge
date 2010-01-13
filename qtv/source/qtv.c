@@ -107,12 +107,12 @@ qtv_print (const char *fmt, va_list args)
 		char        stamp[123];
 
 		if (pending) {
-			Sys_Printf ("%s", msg->str);
+			Con_Printf ("%s", msg->str);
 		} else {
 			mytime = time (NULL);
 			local = localtime (&mytime);
 			strftime (stamp, sizeof (stamp), "[%b %e %X] ", local);
-			Sys_Printf ("%s%s", stamp, msg->str);
+			Con_Printf ("%s%s", stamp, msg->str);
 		}
 		if (msg->str[0] && msg->str[strlen (msg->str) - 1] != '\n') {
 			pending = 1;
