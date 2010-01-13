@@ -921,6 +921,7 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				MSG_ReadByte (msg);
 				MSG_ReadByte (msg);
 				MSG_ReadCoordV (msg, v);
+				send = 0;
 				break;
 			case svc_temp_entity:
 				sv_temp_entity (sv, msg);
@@ -1018,19 +1019,24 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 			case svc_chokecount:
 				//XXX
 				MSG_ReadByte (msg);
+				send = 0;
 				break;
 			case svc_serverdata:
 				sv_serverdata (sv, msg);
+				send = 0;
 				break;
 			case svc_stufftext:
 				sv_stringcmd (sv, msg);
+				send = 0;
 				break;
 
 			case svc_soundlist:
 				sv_soundlist (sv, msg);
+				send = 0;
 				break;
 			case svc_modellist:
 				sv_modellist (sv, msg);
+				send = 0;
 				break;
 
 			case svc_spawnstaticsound:
@@ -1039,13 +1045,16 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				MSG_ReadByte (msg);
 				MSG_ReadByte (msg);
 				MSG_ReadByte (msg);
+				send = 0;
 				break;
 
 			case svc_spawnbaseline:
 				sv_spawnbaseline (sv, msg);
+				send = 0;
 				break;
 			case svc_spawnstatic:
 				sv_spawnstatic (sv, msg);
+				send = 0;
 				break;
 			case svc_lightstyle:
 				sv_lightstyle (sv, msg);
