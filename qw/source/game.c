@@ -72,7 +72,7 @@ SV_Gamedir_f (void)
 
 	if (strstr (dir, "..") || strstr (dir, "/")
 		|| strstr (dir, "\\") || strstr (dir, ":")) {
-		Sys_Printf ("Gamedir should be a single filename, not a path\n");
+		Sys_Printf ("Gamedir must be a single filename, not a path\n");
 		return;
 	}
 
