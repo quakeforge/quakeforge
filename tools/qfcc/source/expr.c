@@ -2268,6 +2268,16 @@ array_expr (expr_t *array, expr_t *index)
 }
 
 expr_t *
+pointer_expr (expr_t *pointer)
+{
+	type_t     *pointer_type = get_type (pointer);
+
+	if (pointer_type->type != ev_pointer)
+		return error (pointer, "not a pointer");
+	return array_expr (pointer, new_integer_expr (0));
+}
+
+expr_t *
 address_expr (expr_t *e1, expr_t *e2, type_t *t)
 {
 	expr_t     *e;
