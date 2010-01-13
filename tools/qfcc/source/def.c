@@ -420,9 +420,9 @@ get_tempdef (type_t *type, scope_t *scope)
 		def->type = type;
 	} else {
 		def = new_def (type, va (".tmp%d", tempdef_counter++), scope);
-		def->return_addr = __builtin_return_address (0);
 		def->ofs = new_location (type, scope->space);
 	}
+	def->return_addr = __builtin_return_address (0);
 	def->freed = def->removed = def->users = 0;
 	def->next = temp_scope.next;
 	set_storage_bits (def, st_local);
@@ -446,9 +446,11 @@ free_tempdefs (void)
 				expr_t      e;
 				e.file = d->file;
 				e.line = d->line;
-				notice (&e, "temp def over-freed:%s %3d %3d %d",
+				notice (&e, "temp def over-freed:%s offs:%d users:%d "
+							"managed:%d %s",
 						pr_type_name[d->type->type],
-						d->ofs, d->users, d->managed);
+						d->ofs, d->users, d->managed,
+						d->name);
 			}
 			size = type_size (d->type) - 1;
 			if (d->expr)
@@ -480,9 +482,9 @@ reset_tempdefs (void)
 		expr_t      e;
 		e.file = d->file;
 		e.line = d->line;
-		notice (&e, "temp def under-freed:%s %3d %3d %d",
+		notice (&e, "temp def under-freed:%s ofs:%d users:%d managed:%d %s",
 				pr_type_name[d->type->type],
-				d->ofs, d->users, d->managed);
+				d->ofs, d->users, d->managed, d->name);
 	}
 	temp_scope.next = 0;
 }
