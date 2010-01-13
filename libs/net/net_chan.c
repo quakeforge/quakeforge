@@ -315,9 +315,10 @@ Netchan_Transmit (netchan_t *chan, int length, byte *data)
 		chan->cleartime = *net_realtime;
 
 	if (showpackets->int_val & 1)
-		Sys_Printf ("--> s=%i(%i) a=%i(%i) %-4i %i\n", chan->outgoing_sequence,
-					send_reliable, chan->incoming_sequence,
-					chan->incoming_reliable_sequence, send.cursize,
+		Sys_Printf ("--> s=%i(%i) a=%i(%i) %-4i %i\n",
+					chan->outgoing_sequence, send_reliable,
+					chan->incoming_sequence, chan->incoming_reliable_sequence,
+					send.cursize,
 					chan->outgoing_sequence - chan->incoming_sequence);
 }
 

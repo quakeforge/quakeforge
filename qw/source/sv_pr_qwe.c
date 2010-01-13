@@ -372,7 +372,7 @@ PF_forcedemoframe (progs_t *pr)
 {
 	SVR_ForceFrame ();
 	if (P_FLOAT (pr, 0) == 1)
-		SV_SendDemoMessage ();
+		SVR_SendMessages ();
 }
 
 

@@ -217,7 +217,7 @@ write_to_msg (int type, int to, float time, sizebuf_t *dst)
 		size = p->size;
 		pos += HEADER + size;
 
-		// no type means we are writing to disk everything
+		// no type means we are writing everything to disk
 		if (!type || (p->type == type && p->to == to)) {
 			if (size) {
 				msg.data = p->data;
@@ -225,7 +225,7 @@ write_to_msg (int type, int to, float time, sizebuf_t *dst)
 
 				write_msg (&msg, p->type, p->to, time, dst);
 			}
-			// data is written so it need to be cleard from demobuf
+			// data is written so it needs to be cleard from demobuf
 			if (rec.dbuf->sz.data != (byte *) p)
 				memmove (rec.dbuf->sz.data + size + HEADER,
 						 rec.dbuf->sz.data, (byte *) p - rec.dbuf->sz.data);
@@ -553,7 +553,7 @@ demo_pings (void)
 }
 
 void
-SV_SendDemoMessage (void)
+SVR_SendMessages (void)
 {
 	int         i, j;
 	client_t   *c;

@@ -331,6 +331,9 @@ qtv_parse (sv_qtv_t *proxy)
 		proxy->netchan.outgoing_sequence = proxy->netchan.incoming_sequence;
 		proxy->packet = true;
 	} else {
+		SV_Printf ("qtv_parse: slipped sequence: %d %d\n",
+				   proxy->netchan.incoming_sequence,
+				   proxy->netchan.outgoing_sequence);
 		proxy->packet = false;		// don't reply, sequences have slipped
 		return;						// FIXME right thing?
 	}
@@ -338,7 +341,7 @@ qtv_parse (sv_qtv_t *proxy)
 		SVR_SetDelta (proxy->recorder, -1, proxy->netchan.incoming_sequence);
 	while (1) {
 		if (net_message->badread) {
-			SV_Printf ("SV_ReadClientMessage: badread\n");
+			SV_Printf ("qtv_parse: badread\n");
 			drop_proxy (proxy);
 			return;
 		}
@@ -349,7 +352,7 @@ qtv_parse (sv_qtv_t *proxy)
 
 		switch (c) {
 			default:
-				SV_Printf ("SV_ReadClientMessage: unknown command char\n");
+				SV_Printf ("qtv_parse: unknown command char\n");
 				drop_proxy (proxy);
 				return;
 			case qtv_nop:
