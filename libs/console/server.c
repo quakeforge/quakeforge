@@ -200,6 +200,14 @@ sv_setgeometry (view_t *view)
 }
 
 static void
+sv_complete (inputline_t *il)
+{
+	view_t     *view = il->user_data;
+	Con_BasicCompleteCommandLine (il);
+	sv_refresh (view);
+}
+
+static void
 draw_output (view_t *view)
 {
 	sv_view_t  *sv_view = view->data;
@@ -523,7 +531,7 @@ create_input_line (int width)
 	inputline_t *input_line;
 
 	input_line = Con_CreateInputLine (16, MAXCMDLINE, ']');
-	input_line->complete = Con_BasicCompleteCommandLine;
+	input_line->complete = sv_complete;
 	input_line->enter = Con_ExecLine;
 	input_line->user_data = input;
 	input_line->draw = draw_input_line;
