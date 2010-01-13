@@ -952,8 +952,8 @@ typedef void (*builtin_proc) (progs_t *pr);
 	to register the module's QC builtin functions.
 */
 typedef struct {
-	/// QC name of the builtin. Must be an exact match for automaticly resolved
-	/// builtins (func = \#0 in QC). NULL indicates end of array for
+	/// QC name of the builtin. Must be an exact match for automatically
+	/// resolved builtins (func = \#0 in QC). NULL indicates end of array for
 	/// PR_RegisterBuiltins()
 	const char *name;
 	/// Pointer to the C implementation of the builtin function.
@@ -999,11 +999,9 @@ builtin_t *PR_FindBuiltin (progs_t *pr, const char *name);
 */
 builtin_t *PR_FindBuiltinNum (progs_t *pr, pr_int_t num);
 
-/** Fixup all automaticly resolved builtin functions (func = #0 in QC).
-	Performs any necessary builtin function number mapping. Also edits the
-	dfunction_t entry for all builtin functions to contain the function
-	pointer to the C implementation of the builtin function. Automaticly
-	during progs load.
+/** Fixup all automatically resolved builtin functions (func = #0 in QC).
+	Performs any necessary builtin function number mapping. Also builds the
+	bfunction_t table. Called automatically during progs load.
 	\param pr pointer to ::progs_t VM struct
 	\return true for success, false for failure
 */
@@ -1038,7 +1036,7 @@ int PR_RelocateBuiltins (progs_t *pr);
 //@{
 
 /** Initialize the string tables using the strings supplied by the progs.
-	Automaticly called at progs load.
+	Called automatically during progs load.
 	\param pr pointer to ::progs_t VM struct
 	\return true for success, false for failure
 */
@@ -1058,7 +1056,7 @@ qboolean PR_StringValid (progs_t *pr, string_t num);
 */
 const char *PR_GetString(progs_t *pr, string_t num);
 
-/** Retieve the dstring_t associated with a mutable string.
+/** Retrieve the dstring_t associated with a mutable string.
 	\param pr pointer to ::progs_t VM struct
 	\param num string index of the mutable string
 	\return the dstring implementing the mutable string
@@ -1091,7 +1089,7 @@ string_t PR_SetReturnString(progs_t *pr, const char *s);
 */
 string_t PR_SetTempString(progs_t *pr, const char *s);
 
-/** Make a tempoary progs string that is the concatenation of two C strings.
+/** Make a temporary progs string that is the concatenation of two C strings.
 	\param pr pointer to ::progs_t VM struct
 	\param a C string
 	\param b C string
@@ -1138,8 +1136,9 @@ void PR_FreeString (progs_t *pr, string_t str);
 void PR_FreeTempStrings (progs_t *pr);
 
 /** Formatted printing similar to C's vsprintf, but using QC types.
-	The format string is a string of characters (other than \c \%) to be printed
-	that includes optional format specifiers, one for each arg to be printed.
+	The format string is a string of characters (other than \c \%) to be
+	printed that includes optional format specifiers, one for each arg to be
+	printed.
 	A format specifier can be one of two forms:
 	<ul>
 	<li>\c "%%"	print a single \c '\%'
@@ -1318,7 +1317,7 @@ extern struct cvar_s *pr_faultchecks;
 
 /** \defgroup pr_cmds Quake and Quakeworld common builtins
 	\ingroup progs
-	\todo This doesn't really belong in progs.
+	\todo This really doesn't belong in progs.
 */
 //@{
 
@@ -1472,17 +1471,15 @@ struct progs_s {
 	pr_type_t   wp_val;
 	//@}
 
-	/// required globals (for OP_STATE)
 	struct {
-		float      *time;
-		pr_int_t   *self;
+		float      *time;		///< required for OP_STATE
+		pr_int_t   *self;		///< required for OP_STATE
 	} globals;
-	/// required fields (for OP_STATE)
 	struct {
-		pr_int_t    nextthink;
-		pr_int_t    frame;
-		pr_int_t    think;
-		pr_int_t    this;
+		pr_int_t    nextthink;	///< required for OP_STATE
+		pr_int_t    frame;		///< required for OP_STATE
+		pr_int_t    think;		///< required for OP_STATE
+		pr_int_t    this;		///< optional for entity<->object linking
 	} fields;
 };
 
