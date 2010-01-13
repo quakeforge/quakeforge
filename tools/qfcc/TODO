@@ -21,8 +21,12 @@ X	clean up error expression handling to minimize follow on errors
 X	object oriented features ala Objective-C
 X	short circuit logic for && and || (optional?)
 X	quaternion type. Tricky: requires 4 word args/return
-o	CSE optimizations. Hard?
+X	pass the first two parms in call->b and call->c
+X	CSE optimizations. Hard?
 o	fix local structure used/uninitialized warnings
 o	arrays in entities/structures?
 o	try to reduce memory consumption
-X	pass the first two parms in call->b and call->c
+o	unnamed function parameters for prototypes/typdefs etc.
+o	embedded nul characters in strings
+o	smarter temp def handling
+?	"":"" string concatenation (parser issues)
