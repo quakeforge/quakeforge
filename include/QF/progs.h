@@ -76,7 +76,7 @@ void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(pri
 	\param pr pointer to ::progs_t VM struct
 	\warning failure to use this macro before assigning to the P_* macros can
 	cause corruption of the VM data due to "register" based calling. Can be
-	safely ignored for parameterless functions, or forwardning parameters
+	safely ignored for parameterless functions, or forwarding parameters
 	though a builtin.
 
 	\hideinitializer

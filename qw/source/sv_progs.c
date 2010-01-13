@@ -133,7 +133,7 @@ ED_PrintEdicts_f (void)
 /*
 	ED_PrintEdict_f
 
-	For debugging, prints a single edicy
+	For debugging, prints a single edict
 */
 static void
 ED_PrintEdict_f (void)
@@ -509,7 +509,7 @@ SV_LoadProgs (void)
 
 	PR_LoadProgs (&sv_pr_state, progs_name, MAX_EDICTS,
 				  sv_progs_zone->int_val * 1024);
-	if (!sv_pr_state.progs || !PR_RelocateBuiltins (&sv_pr_state))
+	if (!sv_pr_state.progs)
 		Sys_Error ("SV_LoadProgs: couldn't load %s", progs_name);
 }
 

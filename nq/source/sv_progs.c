@@ -486,8 +486,6 @@ SV_LoadProgs (void)
 				  sv_progs_zone->int_val * 1024);
 	if (!sv_pr_state.progs)
 		Host_Error ("SV_LoadProgs: couldn't load %s", progs_name);
-
-
 }
 
 void
