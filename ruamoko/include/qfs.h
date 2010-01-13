@@ -3,7 +3,10 @@
 
 #include "qfile.h"
 
-struct _qfslist_t = {};
+struct _qfslist_t = {
+	integer count;
+	string []list;
+};
 typedef struct _qfslist_t [] QFSlist;
 
 @extern QFile (string path, string mode) QFS_Open;

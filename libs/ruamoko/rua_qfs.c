@@ -165,17 +165,23 @@ bi_QFS_Filelist (progs_t *pr)
 
 	list = PR_Zone_Malloc (pr, sizeof (list) + filelist->count * 4);
 	list->count = filelist->count;
-	strings = (string_t *) list + 1;
+	strings = (string_t *) (list + 1);
 	list->list = PR_SetPointer (pr, strings);
 	for (i = 0; i < filelist->count; i++)
-		strings[i] = PR_SetTempString (pr, filelist->list[i]);
+		strings[i] = PR_SetDynamicString (pr, filelist->list[i]);
 	RETURN_POINTER (pr, list);
 }
 
 static void
 bi_QFS_FilelistFree (progs_t *pr)
 {
-	PR_Zone_Free (pr, P_GPOINTER (pr, 0));
+	qfslist_t  *list = &P_STRUCT (pr, qfslist_t, 0);
+	string_t   *strings = &G_STRUCT (pr, string_t, list->list);
+	int         i;
+
+	for (i = 0; i < list->count; i++)
+		PR_FreeString (pr, strings[i]);
+	PR_Zone_Free (pr, list);
 }
 
 static builtin_t builtins[] = {
