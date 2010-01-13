@@ -257,7 +257,7 @@ PR_LeaveFunction (progs_t *pr)
 			&pr->localstack[pr->localstack_used], sizeof (pr_type_t) * c);
 }
 
-static void
+VISIBLE void
 PR_BoundsCheckSize (progs_t *pr, int addr, unsigned size)
 {
 	if (addr < 0 || addr >= pr->globals_size
@@ -266,7 +266,7 @@ PR_BoundsCheckSize (progs_t *pr, int addr, unsigned size)
 					 pr->globals_size, size);
 }
 
-static void
+VISIBLE void
 PR_BoundsCheck (progs_t *pr, int addr, etype_t type)
 {
 	PR_BoundsCheckSize (pr, addr, pr_type_size[type]);

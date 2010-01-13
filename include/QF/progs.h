@@ -204,6 +204,9 @@ int PR_RunLoadFuncs (progs_t *pr);
 */
 int PR_Check_Opcodes (progs_t *pr);
 
+void PR_BoundsCheckSize (progs_t *pr, int addr, unsigned size);
+void PR_BoundsCheck (progs_t *pr, int addr, etype_t type);
+
 //@}
 
 /** \defgroup progs_edict Edict management

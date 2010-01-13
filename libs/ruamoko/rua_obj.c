@@ -912,14 +912,14 @@ rua_obj_msg_sendv (progs_t *pr)
 	int         count = args->count;
 	func_t      imp = obj_msg_lookup (pr, receiver, op);
 
-	//FIXME bounds checking
+	count = bound (0, count, 6);
+	if (count && pr_boundscheck->int_val)
+		PR_BoundsCheckSize (pr, args->list, count * pr->pr_param_size);
 	if (!imp)
 		PR_RunError (pr, "%s does not respond to %s",
 					 PR_GetString (pr, object_get_class_name (pr, receiver)),
 					 PR_GetString (pr, pr->selector_names[op->sel_id]));
-	if (count > 6)
-		count = 6;
-	if (count > 0)
+	if (count)
 		memcpy (pr->pr_params[2], params, count * 4 * pr->pr_param_size);
 	PR_CallFunction (pr, imp);
 }
