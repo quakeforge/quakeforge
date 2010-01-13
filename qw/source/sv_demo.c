@@ -139,6 +139,7 @@ demo_finish (void *unused, sizebuf_t *msg)
 	MSG_WriteByte (msg, svc_disconnect);
 	MSG_WriteString (msg, "EndOfDemo");
 	recorder = 0;
+	sv.recording_demo = 0;
 }
 
 /*
@@ -164,6 +165,8 @@ SV_Stop (int reason)
 
 		demo_file = NULL;
 		SVR_RemoveUser (recorder);
+		recorder = 0;
+		sv.recording_demo = 0;
 
 		SV_BroadcastPrintf (PRINT_CHAT,
 							"Server recording canceled, demo removed\n");
@@ -180,6 +183,7 @@ SV_Stop (int reason)
 	Qclose (demo_file);
 	demo_file = NULL;
 	recorder = 0;
+	sv.recording_demo = 0;
 	if (!reason)
 		SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
 	else
@@ -417,6 +421,7 @@ SV_Record (char *name)
 
 	recorder = SVR_AddUser (demo_write, demo_frame, demo_end_frame,
 							demo_finish, 1, 0);
+	sv.recording_demo = 1;
 	delta_sequence = -1;
 	demo_time = sv.time;
 

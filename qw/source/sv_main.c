@@ -248,7 +248,7 @@ SV_Shutdown (void)
 		Qclose (sv_fraglogfile);
 		sv_fraglogfile = NULL;
 	}
-	if (sv.recorders)
+	if (sv.recording_demo)
 		SV_Stop (0);
 
 	NET_Shutdown ();

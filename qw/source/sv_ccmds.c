@@ -462,7 +462,7 @@ SV_Map_f (void)
 	Qclose (f);
 	free (expanded);
 
-	if (sv.recorders)
+	if (sv.recording_demo)
 		SV_Stop (0);
 
 	SV_BroadcastCommand ("changing\n");

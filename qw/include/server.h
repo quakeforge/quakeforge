@@ -112,6 +112,7 @@ typedef struct {
 	byte		signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
 
 	// demo stuff
+	int         recording_demo;
 	struct recorder_s *recorders;
 } server_t;
 
