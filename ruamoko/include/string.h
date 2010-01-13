@@ -6,7 +6,7 @@
 @extern float (string s) stof;
 @extern float (string s) strlen;
 @extern float (string goal, string s) charcount;
-@extern string (...) sprintf;
+@extern string (string fmt, ...) sprintf;
 @extern string (integer i) itos;
 @extern integer (string s) stoi;
 @extern vector (string s) stov;
