@@ -99,6 +99,7 @@ static view_t *status;
 static view_t *input;
 static int screen_x, screen_y;
 static int interrupted;
+static int batch_print;
 
 #define     MAXCMDLINE  256
 
@@ -203,8 +204,15 @@ static void
 sv_complete (inputline_t *il)
 {
 	view_t     *view = il->user_data;
+	batch_print = 1;
 	Con_BasicCompleteCommandLine (il);
 	sv_refresh (view);
+	batch_print = 0;
+
+	sv_refresh (output);
+	// move the cursor back to the input line
+	sv_refresh (input);
+	doupdate ();
 }
 
 static void
@@ -340,22 +348,30 @@ sigwinch (int sig)
 }
 
 static void
+get_size (int *xlen, int *ylen)
+{
+	struct winsize size;
+
+	*xlen = *ylen = 0;
+	if (ioctl (fileno (stdout), TIOCGWINSZ, &size) != 0)
+		return;
+	*xlen = size.ws_col;
+	*ylen = size.ws_row;
+}
+
+static void
 process_input (void)
 {
 	int         ch;
 	int         escape = 0;
 
 	if (interrupted) {
-		struct winsize size;
-
 		interrupted = 0;
-		if (ioctl (fileno (stdout), TIOCGWINSZ, &size) == 0) {
-			resizeterm (size.ws_row, size.ws_col);
-			getmaxyx (stdscr, screen_y, screen_x);
-			con_linewidth = screen_x;
-			view_resize (sv_con_data.view, screen_x, screen_y);
-			sv_con_data.view->draw (sv_con_data.view);
-		}
+		get_size (&screen_x, &screen_y);
+		resizeterm (screen_y, screen_x);
+		con_linewidth = screen_x;
+		view_resize (sv_con_data.view, screen_x, screen_y);
+		sv_con_data.view->draw (sv_con_data.view);
 	}
 
 	for (ch = 1; ch; ) {
@@ -489,10 +505,12 @@ print (char *txt)
 	if (!view_offset) {
 		while (*txt)
 			draw_fun_char (sv_view->win, (byte) *txt++, 0);
-		sv_refresh (output);
-		// move the cursor back to the input line
-		sv_refresh (input);
-		doupdate ();
+		if (!batch_print) {
+			sv_refresh (output);
+			// move the cursor back to the input line
+			sv_refresh (input);
+			doupdate ();
+		}
 	}
 }
 
@@ -551,9 +569,8 @@ init (void)
 	noecho ();
 
 	nonl ();
-	intrflush (stdscr, FALSE);
 
-	getmaxyx (stdscr, screen_y, screen_x);
+	get_size (&screen_x, &screen_y);
 	sv_con_data.view = view_new (0, 0, screen_x, screen_y, grav_northwest);
 
 	output = create_window (sv_con_data.view,
@@ -591,7 +608,7 @@ init (void)
 	con_linewidth = screen_x;
 
 	sv_con_data.view->draw (sv_con_data.view);
-	doupdate ();
+	wrefresh (curscr);
 }
 #endif
 
