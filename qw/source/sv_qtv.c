@@ -3,10 +3,10 @@
 
 	#DESCRIPTION#
 
-	Copyright (C) 2004 #AUTHOR#
+	Copyright (C) 2004 Bill Currie <bill@taniwha.org>
 
-	Author: #AUTHOR#
-	Date: #DATE#
+	Author: Bill Currie
+	Date: 2004/3/4
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -281,6 +281,8 @@ qtv_begin_f (sv_qtv_t *proxy)
 	if (!proxy->recorder)
 		proxy->recorder = SVR_AddUser (qtv_write, qtv_frame, 0, qtv_finish, 0,
 									   proxy);
+	else
+		SVR_Continue (proxy->recorder);
 	proxy->begun = 1;
 }
 
@@ -523,5 +525,47 @@ SV_qtvFinalMessage (const char *message)
 			continue;
 		Netchan_Transmit (&proxy->netchan, net_message->message->cursize,
 						  net_message->message->data);
+	}
+}
+
+void
+SV_qtvChanging (void)
+{
+	sv_qtv_t   *proxy;
+	int         i, len;
+	sizebuf_t  *buf;
+	const char *msg;
+
+	msg = va ("%cchanging", qtv_stringcmd);
+	len = strlen (msg) + 1;
+	for (i = 0; i < MAX_PROXIES; i++) {
+		proxy = proxies + i;
+		if (!proxy->info)
+			continue;
+		SVR_Pause (proxy->recorder);
+
+		buf = MSG_ReliableCheckBlock (&proxy->backbuf, len);
+		MSG_ReliableWrite_SZ (&proxy->backbuf, msg, len);
+	}
+	SV_qtvSendMessages ();
+}
+
+void
+SV_qtvReconnect (void)
+{
+	sv_qtv_t   *proxy;
+	int         i, len;
+	sizebuf_t  *buf;
+	const char *msg;
+
+	msg = va ("%creconnect", qtv_stringcmd);
+	len = strlen (msg) + 1;
+	for (i = 0; i < MAX_PROXIES; i++) {
+		proxy = proxies + i;
+		if (!proxy->info)
+			continue;
+
+		buf = MSG_ReliableCheckBlock (&proxy->backbuf, len);
+		MSG_ReliableWrite_SZ (&proxy->backbuf, msg, len);
 	}
 }

@@ -797,7 +797,7 @@ CL_NextDemo (void)
 /*
 	CL_Changing_f
 
-	Just sent as a hint to the client that they should
+	Sent as just a hint to the client that they should
 	drop to full console
 */
 static void

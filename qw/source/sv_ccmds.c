@@ -57,6 +57,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "server.h"
 #include "sv_demo.h"
 #include "sv_progs.h"
+#include "sv_qtv.h"
 #include "sv_recorder.h"
 
 qboolean    sv_allow_cheats;
@@ -465,12 +466,14 @@ SV_Map_f (void)
 	if (sv.recording_demo)
 		SV_Stop (0);
 
+	SV_qtvChanging ();
 	SV_BroadcastCommand ("changing\n");
 	SV_SendMessagesToAll ();
 
 	dstring_copystr (curlevel, level);
 	SV_SpawnServer (level);
 
+	SV_qtvReconnect ();
 	SV_BroadcastCommand ("reconnect\n");
 }
 

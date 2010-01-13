@@ -38,5 +38,7 @@ int SV_qtvPacket (int qport);
 void SV_qtvCheckTimeouts (void);
 void SV_qtvSendMessages (void);
 void SV_qtvFinalMessage (const char *message);
+void SV_qtvChanging (void);
+void SV_qtvReconnect (void);
 
 #endif//__sv_qtv_h

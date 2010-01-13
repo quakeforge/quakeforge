@@ -519,9 +519,9 @@ server_run (server_t *sv)
 	static byte delta_msg[2] = {qtv_delta};
 	static byte nop_msg[1] = {qtv_nop};
 
+	sv->next_run = realtime + 0.03;
 	if (sv->connected > 1) {
 		int         frame = (sv->netchan.outgoing_sequence) & UPDATE_MASK;
-		sv->next_run = realtime + 0.03;
 		sv->frames[frame].delta_sequence = sv->delta;
 		if (sv->validsequence && sv->delta != -1) {
 			delta_msg[1] = sv->delta;
@@ -532,7 +532,8 @@ server_run (server_t *sv)
 			return;
 		}
 	}
-	Netchan_Transmit (&sv->netchan, 0, 0);
+	if (sv->netchan.message.cursize)
+		Netchan_Transmit (&sv->netchan, 0, 0);
 }
 
 void

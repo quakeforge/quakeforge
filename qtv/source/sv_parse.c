@@ -219,6 +219,8 @@ sv_changing_f (server_t *sv)
 	sv->connected = 1;
 	sv->num_signon_buffers = 0;
 	qtv_printf ("Changing map...\n");
+	MSG_WriteByte (&sv->netchan.message, qtv_nop);
+	sv->next_run = realtime;
 }
 
 static void
@@ -229,6 +231,7 @@ sv_reconnect_f (server_t *sv)
 	qtv_printf ("Reconnecting...\n");
 	MSG_WriteByte (msg, qtv_stringcmd);
 	MSG_WriteString (msg, "new");
+	sv->next_run = realtime;
 }
 
 typedef struct {

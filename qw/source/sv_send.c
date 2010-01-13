@@ -53,7 +53,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "server.h"
 #include "sv_progs.h"
-#include "sv_qtv.h"
 #include "sv_recorder.h"
 
 #define CHAN_AUTO   0
@@ -822,21 +821,12 @@ SV_SendMessagesToAll (void)
 {
 	client_t   *c;
 	int         i;
-	double      demo_start, demo_end;
 
 	for (i = 0, c = svs.clients; i < MAX_CLIENTS; i++, c++)
 		if (c->state < cs_zombie)	// FIXME: should this send to only active?
 			c->send_message = true;
 
 	SV_SendClientMessages ();
-
-	demo_start = Sys_DoubleTime ();
-	if (sv.recorders)
-		SVR_SendMessages ();
-	demo_end = Sys_DoubleTime ();
-	svs.stats.demo += demo_end - demo_start;
-
-	SV_qtvSendMessages ();
 }
 
 void

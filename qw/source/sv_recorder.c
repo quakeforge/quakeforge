@@ -110,6 +110,7 @@ struct recorder_s {
 	void      (*end_frame)(recorder_t *, void *);
 	void      (*finish)(void *, sizebuf_t *);
 	void       *user;
+	int         paused;
 	delta_t     delta;
 	entity_state_t entities[UPDATE_BACKUP][MAX_DEMO_PACKET_ENTITIES];
 	plent_state_t players[UPDATE_BACKUP][MAX_CLIENTS];
@@ -458,8 +459,11 @@ write_packet (void)
 
 	write_to_msg (0, 0, time, &msg);
 
-	for (r = sv.recorders; r; r = r->next)
+	for (r = sv.recorders; r; r = r->next) {
+		if (r->paused)
+			continue;
 		r->write (r->user, &msg, 1);
+	}
 
 	rec.dbuf = &rec.frames[rec.parsecount & DEMO_FRAMES_MASK].buf;
 	rec.dbuf->sz.maxsize = MAXSIZE + rec.dbuf->bufsize;
@@ -602,6 +606,8 @@ SVR_SendMessages (void)
 	// this will include clients, a packetentities, and
 	// possibly a nails update
 	for (r = sv.recorders; r; r = r->next) {
+		if (r->paused)
+			continue;
 		write_datagram (r);
 		if (r->end_frame)
 			r->end_frame (r, r->user);
@@ -611,6 +617,18 @@ SVR_SendMessages (void)
 	rec.parsecount++;
 	set_msgbuf (rec.dbuf, &rec.frames[rec.parsecount & DEMO_FRAMES_MASK].buf);
 	rec.lastwritten++;
+}
+
+void
+SVR_Pause (recorder_t *r)
+{
+	r->paused = 1;
+}
+
+void
+SVR_Continue (recorder_t *r)
+{
+	r->paused = 0;
 }
 
 void

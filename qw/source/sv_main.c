@@ -1774,7 +1774,8 @@ SV_ReadPackets (void)
 		}
 
 		if (net_message->message->cursize < 11) {
-			SV_Printf ("%s: Runt packet\n", NET_AdrToString (net_from));
+			SV_Printf ("%s: Runt packet: %d\n", NET_AdrToString (net_from),
+					   net_message->message->cursize);
 			continue;
 		}
 		// read the qport out of the message so we can fix up
