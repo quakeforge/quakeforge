@@ -2272,6 +2272,8 @@ pointer_expr (expr_t *pointer)
 {
 	type_t     *pointer_type = get_type (pointer);
 
+	if (pointer->type == ex_error)
+		return pointer;
 	if (pointer_type->type != ev_pointer)
 		return error (pointer, "not a pointer");
 	return array_expr (pointer, new_integer_expr (0));
