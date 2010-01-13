@@ -191,6 +191,7 @@ expr_t *new_param_expr (struct type_s *type, int num);
 expr_t *new_move_expr (expr_t *e1, expr_t *e2, struct type_s *type);
 
 void inc_users (expr_t *e);
+void dec_users (expr_t *e);
 void convert_name (expr_t *e);
 
 expr_t *append_expr (expr_t *block, expr_t *e);

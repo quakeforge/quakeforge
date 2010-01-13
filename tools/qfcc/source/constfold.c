@@ -151,7 +151,14 @@ convert_to_float (expr_t *e)
 		case ex_uexpr:
 		case ex_temp:
 		case ex_block:
-			return cast_expr (&type_float, e);
+			e = cast_expr (&type_float, e);
+			// The expression of which this is a sub-expression has already 
+			// incremented users, so we don't need cast_expr to do so again,
+			// however, since cast_expr does so unconditionally, we must undo
+			// the increment.
+			if (e && e->type == ex_uexpr && e->e.expr.op == 'C')
+				dec_users (e->e.expr.e1);
+			return e;
 		default:
 			internal_error (e);
 	}

@@ -336,6 +336,15 @@ inc_users (expr_t *e)
 		inc_users (e->e.block.result);
 }
 
+void
+dec_users (expr_t *e)
+{
+	if (e && e->type == ex_temp)
+		e->e.temp.users--;
+	else if (e && e->type == ex_block)
+		dec_users (e->e.block.result);
+}
+
 expr_t *
 new_expr (void)
 {
