@@ -201,7 +201,7 @@ save_signon (server_t *sv, qmsg_t *msg, int start)
 
 	if (!size)
 		return;
-	Sys_DPrintf ("save_signon: %d\n", sv->num_signon_buffers);
+
 	if (sv->num_signon_buffers >= MAX_SIGNON_BUFFERS)
 		Sys_Error ("too many signon buffers: %d\n", sv->num_signon_buffers);
 	sv->signon_buffer_size[sv->num_signon_buffers] = size;

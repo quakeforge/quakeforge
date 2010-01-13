@@ -278,8 +278,9 @@ qtv_begin_f (sv_qtv_t *proxy)
 		qtv_new_f (proxy);
 		return;
 	}
-	proxy->recorder = SVR_AddUser (qtv_write, qtv_frame, 0, qtv_finish, 0,
-								   proxy);
+	if (!proxy->recorder)
+		proxy->recorder = SVR_AddUser (qtv_write, qtv_frame, 0, qtv_finish, 0,
+									   proxy);
 	proxy->begun = 1;
 }
 
