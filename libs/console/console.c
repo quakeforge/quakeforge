@@ -108,7 +108,7 @@ Con_ExecLine (const char *line)
 	} else if (line[0] == '|') {
 		Cbuf_AddText (cd->cbuf, line);
 		Cbuf_AddText (cd->cbuf, "\n");
-	} else if (line[0] == '\\' || line[0] == '/') {
+	} else if (line[0] == '/') {
 		Cbuf_AddText (cd->cbuf, line + 1);
 		Cbuf_AddText (cd->cbuf, "\n");
 	} else if (cd->exec_line) {
