@@ -525,8 +525,8 @@ make_string (char *token, char **end)
 							error (0, "EOF inside quote");
 						break;
 					}
-				case 8:
-				case 9:
+				case '8':
+				case '9':
 					c = 18 + c - '0';
 					break;
 				case 'x':
