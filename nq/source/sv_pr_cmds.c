@@ -1379,7 +1379,7 @@ PF_checkextension (progs_t *pr)
 	R_FLOAT (pr) = 0;			// FIXME: make this function actually useful
 }
 
-// float (entity client) CL_Active
+// integer (entity client) CL_Active
 static void
 PF_CL_Active (progs_t *pr)
 {
@@ -1393,7 +1393,7 @@ PF_CL_Active (progs_t *pr)
 		PR_RunError (pr, "Entity is not a client");
 
 	client = svs.clients + (i - 1);
-	R_FLOAT (pr) = client->active;
+	R_INT (pr) = client->active;
 }
 
 // vector (entity client) CL_Cmd
@@ -1415,7 +1415,7 @@ PF_CL_Cmd (progs_t *pr)
 	R_VECTOR (pr)[2] = client->cmd.upmove;
 }
 
-// float (entity client) CL_Colors
+// integer (entity client) CL_Colors
 static void
 PF_CL_Colors (progs_t *pr)
 {
@@ -1429,10 +1429,10 @@ PF_CL_Colors (progs_t *pr)
 		PR_RunError (pr, "Entity is not a client");
 
 	client = svs.clients + (i - 1);
-	R_FLOAT (pr) = client->colors;
+	R_INT (pr) = client->colors;
 }
 
-// float (entity client) CL_Ping
+// integer (entity client) CL_Ping
 static void
 PF_CL_Ping (progs_t *pr)
 {
@@ -1452,7 +1452,7 @@ PF_CL_Ping (progs_t *pr)
 		ping += client->ping_times[i] * 1000;
 
 	ping = floor (ping / 16);
-	R_FLOAT (pr) = ping;
+	R_INT (pr) = ping;
 }
 
 // string (entity client) CL_Address
