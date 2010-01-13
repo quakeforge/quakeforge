@@ -1213,11 +1213,28 @@ check_global (progs_t *pr, dstatement_t *st, opcode_t *op, etype_t type,
 			}
 			break;
 		default:
-			if (operand >= pr->progs->numglobals) {
+			if (operand + (unsigned) pr_type_size[type]
+				> pr->progs->numglobals) {
 				msg = "out of bounds global index";
 				goto error;
 			}
 			break;
+	}
+	return;
+error:
+	PR_PrintStatement (pr, st, 0);
+	PR_Error (pr, "PR_Check_Opcodes: %s (statement %ld: %s)", msg,
+			  (long)(st - pr->pr_statements), op->opname);
+}
+
+static inline void
+check_global_size (progs_t *pr, dstatement_t *st, opcode_t *op,
+				   unsigned short size, unsigned short operand)
+{
+	const char *msg;
+	if (operand + size > pr->progs->numglobals) {
+		msg = "out of bounds global index";
+		goto error;
 	}
 	return;
 error:
@@ -1299,6 +1316,10 @@ PR_Check_Opcodes (progs_t *pr)
 					check_global (pr, st, op, op->type_a, st->a);
 					check_global (pr, st, op, op->type_b, st->b);
 					check_global (pr, st, op, op->type_c, st->c);
+					break;
+				case OP_MOVE:
+					check_global_size (pr, st, op, st->b, st->a);
+					check_global_size (pr, st, op, st->b, st->c);
 					break;
 				default:
 					check_global (pr, st, op, op->type_a, st->a);

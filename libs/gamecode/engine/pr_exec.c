@@ -257,6 +257,21 @@ PR_LeaveFunction (progs_t *pr)
 			&pr->localstack[pr->localstack_used], sizeof (pr_type_t) * c);
 }
 
+static void
+PR_BoundsCheckSize (progs_t *pr, int addr, unsigned size)
+{
+	if (addr < 0 || addr >= pr->globals_size
+		|| size > (unsigned) (pr->globals_size - addr))
+		PR_RunError (pr, "invalid memory access: %d (0 to %d-%d)", addr,
+					 pr->globals_size, size);
+}
+
+static void
+PR_BoundsCheck (progs_t *pr, int addr, etype_t type)
+{
+	PR_BoundsCheckSize (pr, addr, pr_type_size[type]);
+}
+
 #define OPA (*op_a)
 #define OPB (*op_b)
 #define OPC (*op_c)
@@ -576,18 +591,27 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STOREP_I:
 			case OP_STOREP_U:
 			case OP_STOREP_P:
-				//FIXME put bounds checking back
-				ptr = pr->pr_globals + OPB.integer_var;
+				pointer = OPB.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_integer);
+				}
+				ptr = pr->pr_globals + pointer;
 				ptr->integer_var = OPA.integer_var;
 				break;
 			case OP_STOREP_V:
-				//FIXME put bounds checking back
-				ptr = pr->pr_globals + OPB.integer_var;
+				pointer = OPB.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_vector);
+				}
+				ptr = pr->pr_globals + pointer;
 				VectorCopy (OPA.vector_var, ptr->vector_var);
 				break;
 			case OP_STOREP_Q:
-				//FIXME put bounds checking back
-				ptr = pr->pr_globals + OPB.integer_var;
+				pointer = OPB.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_quat);
+				}
+				ptr = pr->pr_globals + pointer;
 				QuatCopy (OPA.quat_var, ptr->quat_var);
 				break;
 
@@ -674,20 +698,26 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_LOADB_I:
 			case OP_LOADB_U:
 			case OP_LOADB_P:
-				//FIXME put bounds checking in
 				pointer = OPA.integer_var + OPB.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_integer);
+				}
 				ptr = pr->pr_globals + pointer;
 				OPC.integer_var = ptr->integer_var;
 				break;
 			case OP_LOADB_V:
-				//FIXME put bounds checking in
 				pointer = OPA.integer_var + OPB.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_vector);
+				}
 				ptr = pr->pr_globals + pointer;
 				VectorCopy (ptr->vector_var, OPC.vector_var);
 				break;
 			case OP_LOADB_Q:
-				//FIXME put bounds checking in
 				pointer = OPA.integer_var + OPB.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_quat);
+				}
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (ptr->quat_var, OPC.quat_var);
 				break;
@@ -700,20 +730,26 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_LOADBI_I:
 			case OP_LOADBI_U:
 			case OP_LOADBI_P:
-				//FIXME put bounds checking in
 				pointer = OPA.integer_var + (short) st->b;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_integer);
+				}
 				ptr = pr->pr_globals + pointer;
 				OPC.integer_var = ptr->integer_var;
 				break;
 			case OP_LOADBI_V:
-				//FIXME put bounds checking in
 				pointer = OPA.integer_var + (short) st->b;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_vector);
+				}
 				ptr = pr->pr_globals + pointer;
 				VectorCopy (ptr->vector_var, OPC.vector_var);
 				break;
 			case OP_LOADBI_Q:
-				//FIXME put bounds checking in
 				pointer = OPA.integer_var + (short) st->b;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_quat);
+				}
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (ptr->quat_var, OPC.quat_var);
 				break;
@@ -736,20 +772,26 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STOREB_I:
 			case OP_STOREB_U:
 			case OP_STOREB_P:
-				//FIXME put bounds checking in
 				pointer = OPB.integer_var + OPC.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_integer);
+				}
 				ptr = pr->pr_globals + pointer;
 				ptr->integer_var = OPA.integer_var;
 				break;
 			case OP_STOREB_V:
-				//FIXME put bounds checking in
 				pointer = OPB.integer_var + OPC.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_vector);
+				}
 				ptr = pr->pr_globals + pointer;
 				VectorCopy (OPA.vector_var, ptr->vector_var);
 				break;
 			case OP_STOREB_Q:
-				//FIXME put bounds checking in
 				pointer = OPB.integer_var + OPC.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_quat);
+				}
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (OPA.quat_var, ptr->quat_var);
 				break;
@@ -762,20 +804,26 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STOREBI_I:
 			case OP_STOREBI_U:
 			case OP_STOREBI_P:
-				//FIXME put bounds checking in
 				pointer = OPB.integer_var + (short) st->c;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_integer);
+				}
 				ptr = pr->pr_globals + pointer;
 				ptr->integer_var = OPA.integer_var;
 				break;
 			case OP_STOREBI_V:
-				//FIXME put bounds checking in
 				pointer = OPB.integer_var + (short) st->c;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_vector);
+				}
 				ptr = pr->pr_globals + pointer;
 				VectorCopy (OPA.vector_var, ptr->vector_var);
 				break;
 			case OP_STOREBI_Q:
-				//FIXME put bounds checking in
 				pointer = OPB.integer_var + (short) st->c;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_quat);
+				}
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (OPA.quat_var, ptr->quat_var);
 				break;
@@ -830,8 +878,10 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 			case OP_JUMPB:
-				//FIXME put bounds checking in
 				pointer = st->a + OPB.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_integer);
+				}
 				ptr = pr->pr_globals + pointer;
 				pointer = ptr->integer_var;
 				if (pr_boundscheck->int_val
@@ -1035,6 +1085,10 @@ op_call:
 				memmove (&OPC, &OPA, st->b * 4);
 				break;
 			case OP_MOVEP:
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheckSize (pr, OPC.integer_var, OPB.uinteger_var);
+					PR_BoundsCheckSize (pr, OPA.integer_var, OPB.uinteger_var);
+				}
 				memmove (pr->pr_globals + OPC.integer_var,
 						 pr->pr_globals + OPA.integer_var,
 						 OPB.uinteger_var * 4);
