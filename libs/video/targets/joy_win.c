@@ -311,7 +311,7 @@ JOY_AdvancedUpdate_f (void)
 
 	if (joy_advanced->int_val) {
 		// default joystick initialization
-		// 2 axes only with joystick control
+		// only 2 axes with joystick control
 		dwAxisMap[JOY_AXIS_X] = AxisTurn;
 		// dwControlMap[JOY_AXIS_X] = JOY_ABSOLUTE_AXIS;
 		dwAxisMap[JOY_AXIS_Y] = AxisForward;

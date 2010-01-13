@@ -450,7 +450,7 @@ AC_TRY_COMPILE(
 	AC_MSG_RESULT(no)
 )
 
-dnl maybe these two (at least the 2nd) should only be checked if ipv6 is enabled?
+dnl maybe these two (at least the 2nd) should be checked only if ipv6 is enabled?
 AC_MSG_CHECKING(for ss_len in struct sockaddr_storage)
 AC_TRY_COMPILE(
 	[#include <sys/types.h>

@@ -118,7 +118,7 @@ midi_stream_close (sfx_t *sfx)
 }
 
 /*
- * Note: we only set the QF stream up here.
+ * Note: we set up only the QF stream here.
  * The WildMidi stream was setup when SND_OpenMidi was called
  * so stream->file contains the WildMidi handle for the midi
  */

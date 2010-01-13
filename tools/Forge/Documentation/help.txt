@@ -68,7 +68,7 @@ If the button is released when the new brush has no volume (a veneer), the brush
 click drag with a single brush selected
 If the click is inside the selected brush, the brush will be dragged around without changing its shape.
 
-If the click is outside the brush, dragging will move the planes that face the click point.   Planes will only move directly along their normals, so a recrilinear brush will stay rectilinear.
+If the click is outside the brush, dragging will move the planes that face the click point.   Planes will move only directly along their normals, so a recrilinear brush will stay rectilinear.
 
 Spawned entity brushes (monsters, etc) can not be resized at all.
 

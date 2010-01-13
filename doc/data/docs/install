@@ -64,7 +64,7 @@ glX support.
 
 Requirements for X11 Quake:
 
-- X11R5 later, only tested with XFree86, should work with most X Servers
+- X11R5 later, tested only with XFree86, should work with most X Servers
 - libc 5.2.18 or later (5.0.9 will not work, /lib/libc.so.5.2.18)
   or glibc (libc6) for the glibc version
 - CD-ROM for CDAudio
@@ -79,7 +79,7 @@ Additional notes for SVGALib Quake
 ----------------------------------
 
 SVGALib may not detect a 3-button mouse properly (it
-will only use two buttons).  Check your /etc/vga/libvga.config
+will use only two buttons).  Check your /etc/vga/libvga.config
 and set it up for your mouse type.
 
 Also, newer versions of SVGALib have an mouse_accel_type option.  Most

@@ -55,7 +55,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 	Continuous button event tracking is complicated by the fact that two
 	different input sources (say, mouse button 1 and the control key) can
-	both press the same button, but the button should only be released when
+	both press the same button, but the button should be released only when
 	both of the pressing key have been released.
 
 	When a key event issues a button command (+forward, +attack, etc), it

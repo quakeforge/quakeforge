@@ -515,7 +515,7 @@ NumberLeafs_r (node_t *node)
 
 	for (p = node->portals; p;) {
 		if (p->nodes[0] == node) {
-			// only write out from first leaf
+			// write out from only the first leaf
 			if (SameContents(p->nodes[0], p->nodes[1]))
 				num_visportals++;
 			p = p->next[0];

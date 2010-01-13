@@ -370,7 +370,7 @@ Netchan_Process (netchan_t *chan)
 			if (chan->rate > 1.0 / 5000)
 				chan->rate = 1.0 / 5000;
 		} else {
-			if (chan->outgoing_size[i] < 512) {	// only deal with small
+			if (chan->outgoing_size[i] < 512) {	// deal with only small
 												// messages
 				rate = chan->outgoing_size[i] / time;
 				if (rate > 5000)

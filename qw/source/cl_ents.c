@@ -914,7 +914,7 @@ CL_LinkPlayers (void)
 				|| i == 93 || i == 102))
 			continue;
 
-		// only predict half the move to minimize overruns
+		// predict only half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);
 		if (msec <= 0 || (!cl_predict_players->int_val) || cls.demoplayback2) {
 			VectorCopy (state->pls.origin, ent->origin);
@@ -1074,7 +1074,7 @@ CL_SetUpPlayerPrediction (qboolean dopred)
 			VectorCopy (cl.frames[cls.netchan.outgoing_sequence & UPDATE_MASK].
 						playerstate[cl.playernum].pls.origin, pplayer->origin);
 		} else {
-			// only predict half the move to minimize overruns
+			// predict only half the move to minimize overruns
 			msec = 500 * (playertime - state->state_time);
 			if (msec <= 0 || !dopred) {
 				VectorCopy (state->pls.origin, pplayer->origin);

@@ -241,7 +241,7 @@ typedef struct
 	cshift_t	prev_cshifts[NUM_CSHIFTS];	// and content types
 
 // the client maintains its own idea of view angles, which are sent to the
-// server each frame.  And only reset at level change and teleport times
+// server each frame.  And reset only at level change and teleport times
 	vec3_t		viewangles;
 
 // the client simulates or interpolates movement to get these values

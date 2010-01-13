@@ -477,7 +477,7 @@ R_ScanEdges (void)
 	span_p = basespan_p;
 
 	// clear active edges to just the background edges around the whole screen
-	// FIXME: most of this only needs to be set up once
+	// FIXME: most of this needs to be set up only once
 	edge_head.u = r_refdef.vrect.x << 20;
 	edge_head_u_shift20 = edge_head.u >> 20;
 	edge_head.u_step = 0;

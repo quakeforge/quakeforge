@@ -39,7 +39,7 @@
 
 /** Relocation record types.
 	Types marked with * are relative and fixed up before the qfo is written.
-	Types marked with ! are handled by only by the linker.
+	Types marked with ! are handled by only the linker.
 	Types marked with + use pr.relocs
 */
 typedef enum {

@@ -20,8 +20,8 @@ report at http://www.idsoftware.com/contact/.
 
 The material accompanying Quake is the reference for all
 non-Windows-related matters concerning WinQuake; in terms of gameplay,
-WQ is the same as Quake.  This file contains Windows-related
-information only.
+WQ is the same as Quake.  This file contains only Windows-related
+information.
 
 The rest of this document is organized as follows:
 
@@ -138,7 +138,7 @@ To use the joystick, you must bring down the console by pressing the
 tilde ('~') key, and type "joystick 1<enter>"; you can disable the
 joystick with "joystick 0<enter>" at any time.  The joystick setting
 remains in effect for subsequent WinQuake sessions until changed, so
-you only need to do joystick 1 once to enable the joystick.  If the
+you need to do joystick 1 only once to enable the joystick.  If the
 joystick somehow causes problems that keep you from being able to run
 WinQuake at all, you can start WinQuake -nojoy to complete disable the
 joystick for that session.
@@ -446,13 +446,13 @@ forced them to disable the joystick--even some people who didn't
 have a joystick attached.  Since most people don't have joysticks,
 we've decided to disable the joystick by default, and let people
 who do want to use it set joystick 1 in the console (WinQuake
-remembers this setting, so this only needs to be done once).
+remembers this setting, so this needs to be done only once).
 
 
 WQ runs very slowly when it has the focus under NT
 --------------------------------------------------
 In one case, WQ ran very slowly when it had the focus, but fast when
-it didn't (obviously this is only visible in windowed modes).  The
+it didn't (obviously this is visible only in windowed modes).  The
 problem turned out to be that NT had a Sidewinder 3D Pro joystick
 driver installed; when the driver was removed, things were fine.
 If you see a similar problem, check whether WQ is detecting that
@@ -478,10 +478,10 @@ internals make this not fixable without a good chance of
 breaking something more important, so it'll have to stay this way.
 
 
-Alt-Tab fullscreen only works sometimes
+Alt-Tab fullscreen works only sometimes
 ---------------------------------------
 I know it seems that way, but actually the trick is that on Win95
-it only works if you let go of Tab before you let go of Alt.
+it works only if you let go of Tab before you let go of Alt.
 This is due to a Windows quirk involving what key sequences are
 passed along, so you'll have to work around it by remembering to
 let go of Tab first.
@@ -497,7 +497,7 @@ size of the low-res mode.  There is no known workaround.
 
 Dprint in progs doesn't work
 ----------------------------
-Dprint means "developer print," so it only works if the developer
+Dprint means "developer print," so it works only if the developer
 console variable is set to 1.  It was a bug in earlier versions that
 it worked even when developer was set to 0.
 
@@ -802,7 +802,7 @@ variable; it retains its setting until it is explicitly changed again,
 even across multiple WinQuake sessions.
 
 The vid_forcemode console command sets the specified mode, even if
-it's the same as the current mode (normally the mode set only happens
+it's the same as the current mode (normally the mode set happens only
 if the new mode differs from the current mode).  This is generally
 useful only if you've modified the characteristics of video mode 2
 (the configurable window) while you're in mode 2, and want to force
@@ -1024,11 +1024,11 @@ clicking on the maximize button.  Added two commands:
 vid_fullscreen to switch to vid_fullscreen_mode, and
 vid_windowed to switch to vid_windowed mode.
 
-Changed joystick default to disabled; now it only works if the
+Changed joystick default to disabled; now it works only if the
 joystick cvar is set to 1; however, this setting now remains in
 effect permanently.  Added joystick documentation below.
 
-Documented dprint only works if developer set to 1.
+Documented dprint works only if developer set to 1.
 
 Documented scrunching of MS-DOS windows on Alt-Tab.
 
@@ -1052,7 +1052,7 @@ so buggy that WinQuake crashes in faster configurations, and that
 SciTech Display Doctor is the easiest way to get reliable VESA
 support.
 
-Added note on Alt-Tab only working if Tab released first.
+Added note on Alt-Tab working only if Tab released first.
 
 
 *** WinQuake 0.992 ***

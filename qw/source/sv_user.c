@@ -1845,7 +1845,7 @@ SV_ExecuteClientMessage (client_t *cl)
 	client_frame_t *frame;
 	int         checksumIndex, seq_hash, c;
 	usercmd_t   oldest, oldcmd, newcmd;
-	qboolean    move_issued = false;	// only allow one move command
+	qboolean    move_issued = false;	// allow only one move command
 	vec3_t      o;
 
 	// calc ping time
@@ -1961,7 +1961,7 @@ SV_ExecuteClientMessage (client_t *cl)
 
 			case clc_tmove:
 				MSG_ReadCoordV (net_message, o);
-				// only allowed by spectators
+				// allowed for only spectators
 				if (host_client->spectator) {
 					VectorCopy (o, SVvector (sv_player, origin));
 					SV_LinkEdict (sv_player, false);

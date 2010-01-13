@@ -89,7 +89,7 @@
 					Name="InteractiveScanner"
 					DisplayName="Generate an interactive scanner"
 					PropertyPageName="Performance"
-					Description="Instructs flex to generate an interactive scanner. An interactive scanner is one that only looks ahead to decide what token has been matched if it absolutely must."
+					Description="Instructs flex to generate an interactive scanner. An interactive scanner is one that looks ahead to decide what token has been matched only if it absolutely must."
 					Switch="-I"
 				/>
 				<BooleanProperty

@@ -272,7 +272,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			continue;
 
 		if (!prevstack->pass) {
-			// the second cluster can only be blocked if coplanar
+			// the second cluster can be blocked only if coplanar
 
 			stack.source = prevstack->source;
 			stack.pass = target;

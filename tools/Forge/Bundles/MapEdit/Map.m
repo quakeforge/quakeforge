@@ -466,7 +466,7 @@ to intervening world brushes
 =================
 grabRay
 
-only checks the selected brushes
+checks only the selected brushes
 Returns the brush hit, or nil if missed.
 =================
 */

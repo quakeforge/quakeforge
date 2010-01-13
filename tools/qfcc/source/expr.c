@@ -312,11 +312,11 @@ check_initialized (expr_t *e)
 			else
 				notice (e, "%s may be used uninitialized", name);
 		}
-		e->e.def->suppress = 1;	// only warn once
+		e->e.def->suppress = 1;	// warn only once
 		if (options.traditional && options.code.local_merging
 			&& !e->e.def->set) {
 			def_t      *def = e->e.def;
-			e->e.def->set = 1;	// only auto-init once
+			e->e.def->set = 1;	// auto-init only once
 			e = assign_expr (e, new_nil_expr ());
 			e->file = def->file;
 			e->line = def->line;
@@ -2874,7 +2874,7 @@ _warning (expr_t *e, const char *fmt, va_list args)
 
 	report_function (e);
 	if (options.warnings.promote) {
-		options.warnings.promote = 0;	// only want to do this once
+		options.warnings.promote = 0;	// want to do this only once
 		fprintf (stderr, "%s: warnings treated as errors\n", "qfcc");
 		pr.error_count++;
 	}

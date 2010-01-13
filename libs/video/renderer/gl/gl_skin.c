@@ -215,7 +215,7 @@ Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 	
 	if (!model)							// player doesn't have a model yet
 		return;
-	if (model->type != mod_alias)		// only translate skins on alias models
+	if (model->type != mod_alias)		// translate skins only on alias models
 		return;
 
 	paliashdr = Cache_Get (&model->cache);
@@ -247,7 +247,7 @@ Skin_Player_Model (model_t *model)
 	player_height = 194;
 	if (!model)							// player doesn't have a model yet
 		return;
-	if (model->type != mod_alias)		// only translate skins on alias models
+	if (model->type != mod_alias)		// translate skins only on alias models
 		return;
 
 	paliashdr = Cache_Get (&model->cache);

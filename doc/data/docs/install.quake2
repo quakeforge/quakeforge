@@ -128,7 +128,7 @@ And the ref_soft.so and ref_gl.so files must owned by root.
 The file /etc/quake2.conf must be installed.  This file contains a single
 line with the path of where the ref shared libraries can be found.
 A sample one is included that lists /usr/games/quake2 as the default
-path.  The libraries are only loaded out of the directory listed in
+path.  The libraries are loaded out of only the directory listed in
 /etc/quake2.conf for security considerations.
 
 Special permissions are not required for the softx renderer, but quake2 may

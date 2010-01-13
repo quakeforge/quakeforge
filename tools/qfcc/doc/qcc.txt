@@ -63,7 +63,7 @@ can continue with those characters or 0-9.
 
 There are two levels of scoping: global, and function.  The parameter list
 of a function and any vars declared inside a function with the "local"
-statement are only visible within that function, 
+statement are visible only within that function, 
 
 
 immediates

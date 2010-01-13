@@ -108,7 +108,7 @@ int fnmatch (const char *__pattern, const char *__string, int __flags);
 	The "user directory" is the path to the directory holding the quake.exe
 	and all game directories.  This can be overridden with the "fs_sharepath"
 	and "fs_userpath" cvars to allow code debugging in a different directory.
-	The base directory is only used during filesystem initialization.
+	The base directory is used only during filesystem initialization.
 
 	The "game directory" is the first tree on the search path and directory
 	that all generated files (savegames, screenshots, demos, config files)
@@ -117,7 +117,7 @@ int fnmatch (const char *__pattern, const char *__string, int __flags);
 	executing.  This is a precacution against having a malicious server
 	instruct clients to write files over areas they shouldn't.
 
-	The "cache directory" is only used during development to save network
+	The "cache directory" is used only during development to save network
 	bandwidth, especially over ISDN / T1 lines.  If there is a cache directory
 	specified, when a file is found by the normal search path, it will be
 	mirrored into the cache directory, then opened there.
@@ -1256,7 +1256,7 @@ QFS_Init (const char *game)
 	int         i;
 
 	fs_sharepath = Cvar_Get ("fs_sharepath", FS_SHAREPATH, CVAR_ROM, NULL,
-							 "location of shared (read only) game "
+							 "location of shared (read-only) game "
 							 "directories");
 	fs_userpath = Cvar_Get ("fs_userpath", FS_USERPATH, CVAR_ROM, NULL,
 							"location of your game directories");

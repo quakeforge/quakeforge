@@ -257,7 +257,7 @@ plitem_t *PL_NewString (const char *);
 /** Free a property list object.
 
 	This function takes care of freeing any referenced property list data, so
-	only call it on top-level objects.
+	call it only on top-level objects.
 
 	\param item the property list object to be freed
 */

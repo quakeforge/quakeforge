@@ -518,7 +518,7 @@ program blocks
 , or groups of GIB commands.
  To facilitate readable formatting of code, line breaks are allowed within
  curly braces.
- Curly braces should only be used where GIB code is appropriate, such as
+ Curly braces should be used only where GIB code is appropriate, such as
  in a loop or function definitions.
  Arguments in curly braces 
 \emph on 
@@ -715,7 +715,7 @@ A new argument is created in the command for each element of an array or
  each key in a hash.
 \layout Standard
 
-Note that console variables cannot be expanded, as they may only hold one
+Note that console variables cannot be expanded, as they may hold only one
  value.
 \layout Subsection
 
@@ -762,7 +762,7 @@ To embed the value of a console variable in an argument, include the name
 $
 \family default 
 ).
- This only works within normal arguments or parenthesis-enclosed arguments.
+ This works only within normal arguments or parenthesis-enclosed arguments.
  Examples:
 \layout LyX-Code
 

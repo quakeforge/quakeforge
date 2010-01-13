@@ -705,7 +705,7 @@ PR_CheckEmptyString (progs_t *pr, const char *s)
 void
 PF_precache_file (progs_t *pr)
 {
-	// precache_file is only used to copy files with qcc, it does nothing
+	// precache_file is used only to copy files with qcc, it does nothing
 	R_INT (pr) = P_INT (pr, 0);
 }
 
@@ -718,7 +718,7 @@ PF_precache_sound (progs_t *pr)
 	int         i;
 
 	if (sv.state != ss_loading)
-		PR_RunError (pr, "PF_Precache_*: Precache can only be done in spawn "
+		PR_RunError (pr, "PF_Precache_*: Precache can be done only in spawn "
 					 "functions");
 
 	s = P_GSTRING (pr, 0);
@@ -745,7 +745,7 @@ PF_precache_model (progs_t *pr)
 	int         i;
 
 	if (sv.state != ss_loading)
-		PR_RunError (pr, "PF_Precache_*: Precache can only be done in spawn "
+		PR_RunError (pr, "PF_Precache_*: Precache can be done only in spawn "
 					 "functions");
 
 	s = P_GSTRING (pr, 0);

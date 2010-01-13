@@ -854,7 +854,7 @@ saveAs
 
 - deselect: sender
 {
-	if ([clipper_i hide])	// first click hides clipper only
+	if ([clipper_i hide])	// first click hides only the clipper
 		return [self updateAll];
 
 	[map_i setCurrentEntity: [map_i objectAt: 0]];	// make world selected

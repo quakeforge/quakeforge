@@ -235,7 +235,7 @@ X11_OpenDisplay (void)
 		x_screen = DefaultScreen (x_disp);
 		x_root = RootWindow (x_disp, x_screen);
 
-		XSynchronize (x_disp, true);		// for debugging only
+		XSynchronize (x_disp, true);		// only for debugging
 
 		x_disp_ref_count = 1;
 	} else {

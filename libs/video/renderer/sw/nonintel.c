@@ -43,12 +43,12 @@ int         r_bmodelactive;
 void
 R_SurfPatch (void)
 {
-	// we only patch code on Intel
+	// we patch code only on Intel
 }
 
 void
 R_SurfacePatch (void)
 {
-	// we only patch code on Intel
+	// we patch code only on Intel
 }
 #endif // !USE_INTEL_ASM

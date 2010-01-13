@@ -27,7 +27,7 @@ Basic process to build and install QuakeForge:
 
 You may want to check `./configure --help` and select options.
 
-To only build and install the quakeworld server:
+To build and install only the quakeworld server:
 	./bootstrap
 	./configure --without-clients --without-tools --with-servers=qw
 	make install

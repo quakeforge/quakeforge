@@ -575,7 +575,7 @@ V_CalcIntermissionRefdef (void)
 	// ent is the player model (visible when out of body)
 	ent = &cl_entities[cl.viewentity];
 
-	// view is the weapon model (only visible from inside body)
+	// view is the weapon model (visible only from inside body)
 	view = &cl.viewent;
 
 	VectorCopy (ent->origin, r_refdef.vieworg);
@@ -602,7 +602,7 @@ V_CalcRefdef (void)
 
 	// ent is the player model (visible when out of body)
 	ent = &cl_entities[cl.viewentity];
-	// view is the weapon model (only visible from inside body)
+	// view is the weapon model (visible only from inside body)
 	view = &cl.viewent;
 
 	bob = V_CalcBob ();
@@ -613,7 +613,7 @@ V_CalcRefdef (void)
 
 	// never let it sit exactly on a node line, because a water plane can
 	// dissapear when viewed with the eye exactly on it.
-	// server protocol only specifies to 1/16 pixel, so add 1/32 in each axis
+	// server protocol specifies to only 1/16 pixel, so add 1/32 in each axis
 	r_refdef.vieworg[0] += 1.0 / 32;
 	r_refdef.vieworg[1] += 1.0 / 32;
 	r_refdef.vieworg[2] += 1.0 / 32;

@@ -80,7 +80,7 @@ typedef struct
 	edict_t		*edicts;			// can NOT be array indexed, because
 									// edict_t is variable sized, but can
 									// be used to reference the world ent
-	server_state_t	state;			// some actions are only valid during load
+	server_state_t	state;			// some actions are valid only during load
 
 	sizebuf_t	datagram;
 	byte		datagram_buf[MAX_DATAGRAM];
@@ -102,7 +102,7 @@ typedef struct client_s
 	qboolean		spawned;			// false = don't send datagrams
 	qboolean		dropasap;			// has been told to go to another level
 	qboolean		privileged;			// can execute any host command
-	qboolean		sendsignon;			// only valid before spawned
+	qboolean		sendsignon;			// valid only before spawned
 
 	double			last_message;		// reliable messages must be sent
 										// periodically

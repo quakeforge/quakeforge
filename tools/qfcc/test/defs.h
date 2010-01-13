@@ -526,7 +526,7 @@
 @extern .string         mdl;
 @extern .vector         mangle;                 // angle at start
 
-@extern .vector         oldorigin;              // only used by secret door
+@extern .vector         oldorigin;              // used by only secret doors
 
 @extern .float          t_length, t_width;
 

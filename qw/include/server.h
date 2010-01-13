@@ -53,12 +53,12 @@ typedef enum {
 	ss_loading,			// spawning level edicts
 	ss_active			// actively running
 } server_state_t;
-// some qc commands are only valid before the server has finished
+// some qc commands are valid only before the server has finished
 // initializing (precache commands, static sounds / objects, etc)
 
 typedef struct {
 	qboolean	active;				// false when server is going down
-	server_state_t	state;			// precache commands are only valid during load
+	server_state_t	state;			// precache commands are valid only during load
 
 	double		time;
 	
@@ -201,7 +201,7 @@ typedef struct client_s {
 										// extracted from userinfo
 	int				messagelevel;		// for filtering printed messages
 
-	// the datagram is written to after every frame, but only cleared
+	// the datagram is written to after every frame, but cleared only
 	// when it is sent out to the client.  overflow is tolerated.
 	sizebuf_t		datagram;
 	byte			datagram_buf[MAX_DATAGRAM];

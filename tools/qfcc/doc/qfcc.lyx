@@ -2449,7 +2449,7 @@ expr
 )
 \family default 
  cast expression.
- Only works for converting between integer and float types and between pointer
+ Works only for converting between integer and float types and between pointer
  types.
 \layout Labeling
 \labelwidthstring 00.00.0000

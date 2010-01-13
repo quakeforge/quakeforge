@@ -274,7 +274,7 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 	DivideWinding
 
 	Divides a winding by a plane, producing one or two windings.  The
-	original winding is not damaged or freed.  If only on one side, the
+	original winding is not damaged or freed.  If on only one side, the
 	returned winding will be the input winding.  If on both sides, two
 	new windings will be created.
 */
@@ -595,7 +595,7 @@ WriteClipHull (void)
 	for (i = 0; i < bsp->numclipnodes; i++) {
 		d = &bsp->clipnodes[i];
 		p = &bsp->planes[d->planenum];
-		// the node number is only written out for human readability
+		// the node number is written out only for human readability
 		fprintf (f, "%5i : %f %f %f %f : %5i %5i\n", i, p->normal[0],
 				 p->normal[1], p->normal[2], p->dist, d->children[0],
 				 d->children[1]);
@@ -687,7 +687,7 @@ CreateSingleHull (void)
 static void
 CreateHulls (void)
 {
-	// commanded to create a single hull only
+	// commanded to create only a single hull
 	if (hullnum) {
 		CreateSingleHull ();
 		exit (0);

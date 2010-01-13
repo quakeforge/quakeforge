@@ -26,7 +26,7 @@
 	$Id$
 */
 
-// the status bar is only redrawn if something has changed, but if anything
+// the status bar is redrawn only if something has changed, but if anything
 // does, the entire thing will be redrawn for the next vid.numpages frames.
 
 #ifndef _SBAR_H

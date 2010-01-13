@@ -481,7 +481,7 @@ Cvar_Init (void)
 	Cmd_AddCommand ("set", Cvar_Set_f, "Set the selected variable, useful on "
 					"the command line (+set variablename setting)");
 	Cmd_AddCommand ("setrom", Cvar_Setrom_f, "Set the selected variable and "
-					"make it read only, useful on the command line. "
+					"make it read-only, useful on the command line. "
 					"(+setrom variablename setting)");
 	Cmd_AddCommand ("seta", Cvar_Seta_f, "Set the selected variable, and make "
 					"it archived, useful on the command line (+seta "

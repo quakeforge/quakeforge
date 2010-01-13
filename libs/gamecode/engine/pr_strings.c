@@ -178,7 +178,7 @@ strref_free (void *_sr, void *_pr)
 	progs_t		*pr = (progs_t*)_pr;
 	strref_t	*sr = (strref_t*)_sr;
 
-	// Since this is only ever called by Hash_FlushTable, the memory pointed
+	// Since this is called only by Hash_FlushTable, the memory pointed
 	// to by sr->string or sr->dstring has already been lost in the progs
 	// load/reload and thus there's no need to free it.
 

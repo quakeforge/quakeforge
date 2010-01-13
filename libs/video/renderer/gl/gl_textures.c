@@ -171,7 +171,7 @@ static glformat_t formats[] = {
 	{"BGRA_EXT", BGRA_EXT},
 */
 /* 1.4 texture_compression -- Append _ARB for older ARB version.
- * only applicable for CompressedTexImage and CompressedTexSubimage
+ * applicable only for CompressedTexImage and CompressedTexSubimage
  * which will complicate upload paths. *ponder*
 	{"COMPRESSED_ALPHA", COMPRESSED_ALPHA},
 	{"COMPRESSED_LUMINANCE", COMPRESSED_LUMINANCE},

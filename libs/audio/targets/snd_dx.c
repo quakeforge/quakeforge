@@ -130,7 +130,7 @@ FreeSound (void)
 		IDirectSoundBuffer_Stop (pDSBuf);
 		IDirectSound_Release (pDSBuf);
 	}
-// only release primary buffer if it's not also the mixing buffer we just released
+// release primary buffer only if it's not also the mixing buffer we just released
 	if (pDSPBuf && (pDSBuf != pDSPBuf)) {
 		IDirectSound_Release (pDSPBuf);
 	}

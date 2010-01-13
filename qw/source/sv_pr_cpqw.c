@@ -130,7 +130,7 @@ PF_padstr (progs_t *pr)
 #define COLSTR_NUMBER  4				// converts any numbers to special
 										// number chars
 #define COLSTR_NUMBERV 5				// second variant of special number
-										// chars (only different on some
+										// chars (different on only some
 										// non-original charsets)
 
 static void

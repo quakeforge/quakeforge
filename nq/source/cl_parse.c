@@ -584,7 +584,7 @@ CL_ParseBaseline (cl_entity_state_t *state)
 /*
 	CL_ParseClientdata
 
-	Server information pertaining to this client only
+	Server information pertaining to only this client
 */
 static void
 CL_ParseClientdata (int bits)

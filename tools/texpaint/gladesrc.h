@@ -31,8 +31,8 @@ get_widget                             (GtkWidget       *widget,
 
 
  /*
-  * This is an internally used function for setting notebook tabs. It is only
-  * included in this header file so you don't get compilation warnings
+  * This is an internally used function for setting notebook tabs. It is
+  * included in this header file only so you don't get compilation warnings
   */
 void
 set_notebook_tab                       (GtkWidget       *notebook,

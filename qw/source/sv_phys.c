@@ -54,7 +54,7 @@ static __attribute__ ((used)) const char rcsid[] =
 	walking monsters are SOLID_SLIDEBOX and MOVETYPE_STEP
 	flying/floating monsters are SOLID_SLIDEBOX and MOVETYPE_FLY
 
-	solid_edge items only clip against bsp models.
+	solid_edge items clip against only bsp models.
 */
 
 cvar_t     *sv_gravity;
@@ -367,7 +367,7 @@ SV_PushEntity (edict_t *ent, vec3_t push)
 						 SVvector (ent, maxs), end, MOVE_MISSILE, ent);
 	else if (SVfloat (ent, solid) == SOLID_TRIGGER
 			 || SVfloat (ent, solid) == SOLID_NOT)
-		// only clip against bmodels
+		// clip against only bmodels
 		trace = SV_Move (SVvector (ent, origin), SVvector (ent, mins),
 						 SVvector (ent, maxs), end, MOVE_NOMONSTERS, ent);
 	else

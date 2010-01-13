@@ -920,7 +920,7 @@ SVC_DirectConnect (void)
 	newcl->datagram.data = newcl->datagram_buf;
 	newcl->datagram.maxsize = sizeof (newcl->datagram_buf);
 
-	// spectator mode can ONLY be set at join time
+	// spectator mode can be set ONLY at join time
 	newcl->spectator = spectator;
 
 	// parse some info from the info strings
@@ -1118,7 +1118,7 @@ SV_ConnectionlessPacket (void)
 	will match any value, so you can specify an entire class C network with
 	"addip 192.246.40".
 
-	Removeip will only remove an address specified exactly the same way.
+	Removeip will remove only an address specified exactly the same way.
 	You cannot addip a subnet, then removeip a single host.
 
 	listip
@@ -1135,7 +1135,7 @@ SV_ConnectionlessPacket (void)
 	prohibited from entering the game.  This is the default setting.
 
 	If 0, then only addresses matching the list will be allowed.  This lets
-	you easily set up a private game, or a game that only allows players
+	you easily set up a private game, or a game that allows only players
 	from your local network.
 */
 
@@ -2102,10 +2102,11 @@ SV_InitLocal (void)
 						   "Sets the rules for weapon and item respawning. "
 						   "1 Does not leave weapons on the map. You can "
 						   "pickup weapons and items and they will respawn, "
-						   "2 Leaves weapons on the map. You can only pick up "
-						   "a weapon once. Picked up items will not respawn, "
-						   "3 Leaves weapons on the map. You can only pick up "
-						   "a weapon once. Picked up items will respawn.");
+						   "2 Leaves weapons on the map. You can pick up a "
+						   "weapon only once. Picked up items will not "
+						   "respawn, 3 Leaves weapons on the map. You can "
+						   "pick up a weapon only once. Picked up items will "
+						   "respawn.");
 	coop = Cvar_Get ("coop", "0", CVAR_NONE, NULL, "co-op mode for progs that "
 					 "support it");
 	skill = Cvar_Get ("skill", "0", CVAR_NONE, NULL, "skill setting for progs "
@@ -2213,7 +2214,7 @@ SV_InitLocal (void)
 								 "Handling of double entity remove.  "
 								 "0 is silently ignore, 1 prints a "
 								 "traceback, and 2 gives an error.\n"
-								 "Only works if debugging is available "
+								 "works Only if debugging is available "
 								 "and enabled");
 	// DoS protection
 	Cmd_AddCommand ("netdosexpire", SV_netDoSexpire_f, "FIXME: part of DoS "
@@ -2335,7 +2336,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 	}
 	*r = '\0';
 
-	// empty (or whitespace only) name
+	// empty (or only whitespace) name
 	if (!*newname)
 		badname = true;
 
@@ -2511,7 +2512,7 @@ SV_Init (void)
 
 	// execute the global configuration file if it exists
 	// would have been nice if Cmd_Exec_f could have been used, but it
-	// only reads from within the quake file system, and changing that is
+	// reads from only within the quake file system, and changing that is
 	// probably Not A Good Thing (tm).
 	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG,
 							 CVAR_ROM, 0, "global configuration file");

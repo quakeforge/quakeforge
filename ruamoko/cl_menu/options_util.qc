@@ -261,7 +261,7 @@
 	local integer xl;
 	xl = xlen / 8 - 2;
 	text_box (xabs, yabs, xl, ylen / 8 - 2);
-	xl = (xl + 1) & ~1;		// text_box only does multiples of 2
+	xl = (xl + 1) & ~1;		// text_box does only multiples of 2
 	Draw_Fill (xabs + 8, yabs + 8, xl * 8, ylen - 16,
 			   [color value] * 16 + 8);
 }

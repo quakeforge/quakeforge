@@ -151,7 +151,7 @@ my @Ignore_Files;
 # and user might add "i" by using --case-insensitive option.
 my $Case_Insensitive = 0;
 
-# Maybe only show log messages matching a certain regular expression.
+# Maybe show only log messages matching a certain regular expression.
 my $Regexp_Gate = "";
 
 # Pass this global option string along to cvs, to the left of `log':

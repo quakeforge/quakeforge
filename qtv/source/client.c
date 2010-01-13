@@ -661,7 +661,7 @@ write_player (int num, plent_state_t *pl, server_t *sv, sizebuf_t *msg)
 #endif
 
 //	if (cl->spectator) {
-//		// only sent origin and velocity to spectators
+//		// send only origin and velocity to spectators
 //		pflags &= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3;
 //	} else if (ent == clent) {
 //		// don't send a lot of data on personal entity

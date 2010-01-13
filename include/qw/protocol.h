@@ -183,7 +183,7 @@
 #define	PF_MODEL		(1<<5)
 #define	PF_SKINNUM		(1<<6)
 #define	PF_EFFECTS		(1<<7)
-#define	PF_WEAPONFRAME	(1<<8)		// only sent for view player
+#define	PF_WEAPONFRAME	(1<<8)		// sent for only view player
 #define	PF_DEAD			(1<<9)		// don't block movement any more
 #define	PF_GIB			(1<<10)		// offset the view height differently
 #define	PF_NOGRAV		(1<<11)		// don't apply gravity for prediction
@@ -258,7 +258,7 @@
 
 // ============================================================================
 
-// a sound with no channel is a local only sound
+// a sound with no channel is a local-only sound
 // the sound field has bits 0-2: channel, 3-12: entity
 #define	SND_VOLUME		(1<<15)		// a byte
 #define	SND_ATTENUATION	(1<<14)		// a byte

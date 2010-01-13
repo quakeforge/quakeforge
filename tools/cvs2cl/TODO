@@ -8,7 +8,7 @@ Type C-c C-t to collapse all entries, C-c C-a to show them.
 
 * Cumulative behavior?
 Would be great if cvs2cl could read an existing ChangeLog and then
-only get the amount of information required to bring it up to date.
+get only the amount of information required to bring it up to date.
 I.e., it would find the front date in the ChangeLog and use that in a
 "cvs log -d" invocation.  Heh.  Easy to do.  So do it.
 

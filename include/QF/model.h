@@ -417,7 +417,7 @@ typedef struct model_s
 	unsigned int checksum2;
 
 // additional model data
-	cache_user_t cache;		// only access through Mod_Extradata
+	cache_user_t cache;		// access only through Mod_Extradata
 } model_t;
 
 // ============================================================================

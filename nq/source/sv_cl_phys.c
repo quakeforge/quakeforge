@@ -222,7 +222,7 @@ SV_TryUnstick (edict_t *ent, vec3_t oldvel)
 /*
   SV_WalkMove
 
-  Only used by players
+  Used by only players
 */
 static void
 SV_WalkMove (edict_t *ent)

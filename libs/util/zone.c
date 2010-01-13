@@ -66,7 +66,7 @@ static qboolean Cache_FreeLRU (void);
 
 	The rover can be left pointing at a non-empty block
 
-	The zone calls are pretty much only used for small strings and structures,
+	The zone calls are pretty much used only for small strings and structures,
 	all big things are allocated on the hunk.
 */
 
@@ -587,7 +587,7 @@ Cache_Move (cache_system_t * c)
 {
 	cache_system_t *new;
 
-	// we are clearing up space at the bottom, so only allocate it late
+	// we are clearing up space at the bottom, so allocate it late
 	new = Cache_TryAlloc (c->size, true);
 	if (new) {
 		Sys_DPrintf ("cache_move ok\n");

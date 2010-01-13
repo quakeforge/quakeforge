@@ -569,7 +569,7 @@ SV_GetStats (edict_t *ent, int spectator, int stats[])
 /*
 	SV_UpdateClientStats
 
-	Performs a delta update of the stats array.  This should only be performed
+	Performs a delta update of the stats array.  This should be performed only
 	when a reliable message can be delivered this frame.
 */
 static void
@@ -733,7 +733,7 @@ SV_UpdateToReliableMessages (void)
 								sv.reliable_datagram.cursize);
 
 		if (client->state != cs_spawned)
-			continue;					// datagrams only go to spawned
+			continue;					// datagrams go to only spawned
 		SZ_Write (&client->datagram, sv.datagram.data, sv.datagram.cursize);
 	}
 
@@ -788,7 +788,7 @@ SV_SendClientMessages (void)
 				c->send_message = true;
 				c->netchan.cleartime = 0;	// don't choke this message
 			}
-			// only send messages if the client has sent one
+			// send messages only if the client has sent one
 			// and the bandwidth is not choked
 			if (!c->send_message)
 				continue;
@@ -823,7 +823,7 @@ SV_SendMessagesToAll (void)
 	int         i;
 
 	for (i = 0, c = svs.clients; i < MAX_CLIENTS; i++, c++)
-		if (c->state < cs_zombie)	// FIXME: should this only send to active?
+		if (c->state < cs_zombie)	// FIXME: should this send to only active?
 			c->send_message = true;
 
 	SV_SendClientMessages ();

@@ -299,7 +299,7 @@ SV_CheckModel (const char *mdl)
 	Change the server to a new map, taking all connected
 	clients along with it.
 
-	This is only called from the SV_Map_f () function.
+	This is called from only the SV_Map_f () function.
 */
 void
 SV_SpawnServer (const char *server)
@@ -356,7 +356,7 @@ SV_SpawnServer (const char *server)
 		ent->data = &baselines[i];
 	}
 
-	// leave slots at start for clients only
+	// leave slots at start for only clients
 	sv.num_edicts = MAX_CLIENTS + 1;
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		ent = EDICT_NUM (&sv_pr_state, i + 1);

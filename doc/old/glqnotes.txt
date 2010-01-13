@@ -19,7 +19,7 @@ by well under one frame per second.
 3dfx has provided an opengl32.dll that implements everything glquake needs, 
 but it is not a full opengl implementation.  Other opengl applications are 
 very unlikely to work with it, so consider it basically a "glquake driver".  
-See the encluded 3dfx.txt for specific instalation notes.  3dfx can only run 
+See the encluded 3dfx.txt for specific instalation notes.  3dfx can run only
 full screen, but you must still have your desktop set to a 16 bit color mode 
 for glquake to start.
 
@@ -27,7 +27,7 @@ resolution options
 ------------------
 We had dynamic resolution changing in glquake for a while, but every single 
 opengl driver I tried it on messed up in one way or another, so it is now 
-limited to startup time only.
+limited to only startup time.
 
 glquake -window
 This will start glquake in a window on your desktop instead of switching the 
@@ -59,10 +59,10 @@ There are several options that let you trade off visual quality for better
 performance.
 
 There is no way to flush already loaded textures, so it is best to change 
-these options on the command line, or they will only take effect on some of 
+these options on the command line, or they will take effect on only some of 
 the textures when you change levels.
 
-OpenGL only allows textures to repeat on power of two boundaries (32, 64, 
+OpenGL allows textures to repeat only on power of two boundaries (32, 64, 
 128, etc), but software quake had a number of textures that repeated at 24 
 or 96 pixel boundaries.  These need to be either stretched out to the next 
 higher size, or shrunk down to the next lower.  By default, they are filtered 
@@ -81,7 +81,7 @@ This makes them blurry, but very small.  You can set this to 2 to make the
 textures one quarter the resolution on each axis for REALLY blurry textures.
 
 glquake +gl_playermip 1
-This is similar to picmip, but is only used for other players in deathmatch.  
+This is similar to picmip, but is used only for other players in deathmatch.  
 Each player in a deathmatch requires an individual skin texture, so this can 
 be a serious problem for texture management.  It wouldn't be unreasonable to 
 set this to 2 or even 3 if you are playing competatively (and don't care if 

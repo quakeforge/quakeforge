@@ -682,7 +682,7 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 		}
 
 		if (cl->spectator) {
-			// only send origin and velocity of spectators
+			// send only origin and velocity of spectators
 			mask &= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3;
 		} else if (ent == clent) {
 			// don't send a lot of data on personal entity
@@ -720,7 +720,7 @@ calc_pvs (delta_t *delta)
 		VectorAdd (SVvector (clent, origin), SVvector (clent, view_ofs), org);
 		pvs = SV_FatPVS (org);
 	} else if (delta->pvs == dt_pvs_fat) {
-		// when recording a demo, only send entities that can be seen. Can help
+		// when recording a demo, send only entities that can be seen. Can help
 		// shrink the mvd at expense of effectively lossy compressio (ents that
 		// can't be seen by a player either won't get updated or will disappear
 		// for people watching the mvd from viewpoints with no players around

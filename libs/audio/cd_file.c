@@ -430,7 +430,7 @@ I_OGGMus_Update (void)
 {
 	if (!cd_channel || !cd_channel->done)
 		return;
-	// will only get here when multi-tracked
+	// will get here only when multi-tracked
 	I_OGGMus_Stop ();
 	I_OGGMus_PlayNext (0);
 }

@@ -734,7 +734,7 @@ do_precache (progs_t *pr, const char **cache, int max, const char *name,
 	char       *s;
 
 	if (sv.state != ss_loading)
-		PR_RunError (pr, "%s: Precache can only be done in spawn functions",
+		PR_RunError (pr, "%s: Precache can be done in only spawn functions",
 					 func);
 
 	PR_CheckEmptyString (pr, name);
@@ -764,7 +764,7 @@ do_precache (progs_t *pr, const char **cache, int max, const char *name,
 // string (string s) precache_file2
 static void
 PF_precache_file (progs_t *pr)
-{										// precache_file is only used to copy 
+{										// precache_file is used only to copy 
 										// files with qcc, it does nothing
 	R_INT (pr) = P_INT (pr, 0);
 }
@@ -1090,7 +1090,7 @@ WriteDest (progs_t *pr)
 
 		case MSG_INIT:
 			if (sv.state != ss_loading)
-				PR_RunError (pr, "PF_Write_*: MSG_INIT can only be written in "
+				PR_RunError (pr, "PF_Write_*: MSG_INIT can be written in only "
 							 "spawn functions");
 			return &sv.signon;
 

@@ -246,7 +246,7 @@ R_DrawSurface (void)
 //==============================
 
 	pblockdrawer = surfmiptable[r_drawsurf.surfmip];
-	// TODO: only needs to be set when there is a display settings change
+	// TODO: needs to be set only when there is a display settings change
 	horzblockstep = blocksize;
 
 	smax = mt->width >> r_drawsurf.surfmip;

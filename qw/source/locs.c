@@ -161,8 +161,8 @@ locs_load (const char *filename)
 		t2 = strrchr (t1, '\n');
 		if (t2) {
 			t2[0] = '\0';
-			// handle dos format lines (QFS_FOpenFile is binary only)
-			// and unix is effectively binary only anyway
+			// handle dos format lines (QFS_FOpenFile is binary-only)
+			// and unix is effectively binary-only anyway
 			while (t2 > t1 && t2[-1] == '\r') {
 				t2[-1] = '\0';
 				t2--;

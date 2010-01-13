@@ -245,7 +245,7 @@ CL_CheckOrDownloadFile (const char *filename)
 	dstring_copystr (cls.downloadtempname, filename);
 	Sys_Printf ("Downloading %s...\n", cls.downloadname->str);
 
-	// download to a temp name, and only rename to the real name when done,
+	// download to a temp name, and rename to the real name only when done,
 	// so if interrupted a runt file wont be left
 	QFS_StripExtension (cls.downloadname->str, cls.downloadtempname->str);
 	dstring_appendstr (cls.downloadtempname, ".tmp");
@@ -988,7 +988,7 @@ CL_ParseStartSoundPacket (void)
 /*
 	CL_ParseClientdata
 
-	Server information pertaining to this client only, sent every frame
+	Server information pertaining to only this client, sent every frame
 */
 void
 CL_ParseClientdata (void)

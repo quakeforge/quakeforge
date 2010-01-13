@@ -74,7 +74,7 @@ skin_get_key (void *_skin, void *unused)
 	return skin->name;
 }
 
-#if 0 //XXX qw only atm
+#if 0 //XXX only qw atm
 /*
 	Skin_Find
 
@@ -145,7 +145,7 @@ Skin_Cache (skin_t *skin)
 	byte       *ipix, *opix;
 	int         i, numfb;
 
-#if 0 //XXX qw only atm
+#if 0 //XXX only qw atm
 	if (cls.downloadtype == dl_skin)		// use base until downloaded
 		return NULL;
 #endif

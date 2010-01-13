@@ -758,7 +758,7 @@ qtexture_t *TEX_ForName (char *name)
 };
 
 //
-// Scan thru map & only display textures that are in map
+// Scan thru map & display only textures that are in map
 //
 - onlyShowMapTextures:sender
 {

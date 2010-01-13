@@ -606,7 +606,7 @@ V_CalcRefdef (void)
 
 	V_DriftPitch ();
 
-	// view is the weapon model (only visible from inside body)
+	// view is the weapon model (visible only from inside body)
 	view = &cl.viewent;
 
 	bob = V_CalcBob ();
@@ -618,7 +618,7 @@ V_CalcRefdef (void)
 
 	// never let it sit exactly on a node line, because a water plane can
 	// disappear when viewed with the eye exactly on it.
-	// server protocol only specifies to 1/8 pixel, so add 1/16 in each axis
+	// server protocol specifies to only 1/8 pixel, so add 1/16 in each axis
 	r_refdef.vieworg[0] += (1.0 / 16.0);
 	r_refdef.vieworg[1] += (1.0 / 16.0);
 	r_refdef.vieworg[2] += (1.0 / 16.0);

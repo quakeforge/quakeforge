@@ -160,7 +160,7 @@ extern qboolean	r_recursiveaffinetriangles;	// true if a driver wants to use
 											//  and vertex drawing via
 											//  D_PolysetDrawFinalVerts() past
 											//  a certain distance (normally 
-											//  only used by the software
+											//  used only by the software
 											//  driver)
 extern float	r_aliasuvscale;		// scale-up factor for screen u and v
 									//  on Alias vertices passed to driver

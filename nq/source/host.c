@@ -441,7 +441,7 @@ SV_DropClient (qboolean crash)
 /*
 	Host_ShutdownServer
 
-	This only happens at the end of a game, not between levels
+	This happens only at the end of a game, not between levels
 */
 void
 Host_ShutdownServer (qboolean crash)
@@ -888,7 +888,7 @@ Host_Init (void)
 
 	// execute the global configuration file if it exists
 	// would have been nice if Cmd_Exec_f could have been used, but it
-	// only reads from within the quake file system, and changing that is
+	// reads only from within the quake file system, and changing that is
 	// probably Not A Good Thing (tm).
 	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG,
 							 CVAR_ROM, NULL, "global configuration file");

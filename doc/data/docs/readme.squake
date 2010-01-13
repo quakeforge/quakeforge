@@ -24,7 +24,7 @@ Full sound support is included.  The default sound rate is 16-bit stereo,
 11KHz.  You can change this in the options section below.
 
 Mouse works great, but SVGALib may not detect a 3-button mouse properly (it
-will only use two buttons).  Check your /etc/libvga.config (or
+will use only two buttons).  Check your /etc/libvga.config (or
 /etc/vga/libvga.config for SlackWare users).
 
 **Version 1.1 fixes some crash bugs with the mission packs.

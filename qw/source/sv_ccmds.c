@@ -146,7 +146,7 @@ SV_Match_User (const char *substr)
 /*
 	OPERATOR CONSOLE ONLY COMMANDS
 
-	These commands can only be entered from stdin or by a remote operator
+	These commands can be entered only from stdin or by a remote operator
 	datagram
 */
 
@@ -165,7 +165,7 @@ SV_SetMaster_f (void)
 
 	for (i = 1; i < Cmd_Argc (); i++) {
 		if (i > MAX_MASTERS) {
-			SV_Printf ("Too many masters specified. Only using the first %d\n",
+			SV_Printf ("Too many masters specified. Using only the first %d\n",
 					   MAX_MASTERS);
 			break;
 		}
@@ -1063,7 +1063,7 @@ SV_Floodprot_f (void)
 	}
 
 	if (arg1 > 10) {
-		SV_Printf ("Can only track up to 10 messages.\n");
+		SV_Printf ("Can track up to only 10 messages.\n");
 		return;
 	}
 

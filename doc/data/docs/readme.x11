@@ -4,7 +4,7 @@ README for Linux SVGALib Quake
 
 Requirements:
 
-- X11R5 later, only tested with XFree86, should work with most X Servers
+- X11R5 later, tested with only XFree86, should work with most X Servers
 - libc 5.2.18 or later (5.0.9 will not work, /lib/libc.so.5.2.18)
 - CD-ROM for CDAudio
 - Soundcard capable of mmap'd buffers.  USSLite 3.5.4 was used to build squake

@@ -845,7 +845,7 @@ draw_rogue_status (view_t *view)
 	else if (cl.stats[STAT_ITEMS] & RIT_ARMOR1)
 		draw_pic (view, 0, 0, sb_armor[0]);
 
-	// PGM 03/02/97 - fixed so color swatch only appears in CTF modes
+	// PGM 03/02/97 - fixed so color swatch appears in only CTF modes
 	if (cl.maxclients != 1 && teamplay->int_val > 3 && teamplay->int_val < 7)
 		draw_rogue_face (view);
 	else

@@ -71,7 +71,7 @@ typedef struct visfacet_s {
 	int				contents[2];	// 0 = front side
 
 	struct visfacet_s	*original;		// face on node
-	int				outputnumber;		// only valid for original faces after
+	int				outputnumber;		// valid only for original faces after
 										// write surfaces
 	qboolean        detail;				// is a detail face
 
@@ -83,7 +83,7 @@ typedef struct surface_s {
 	struct surface_s	*next;
 	struct surface_s	*original;	// before BSP cuts it up
 	int			planenum;
-	int			outputplanenum;		// only valid after WriteSurfacePlanes
+	int			outputplanenum;		// valid only after WriteSurfacePlanes
 	vec3_t		mins, maxs;
 	qboolean		onnode;			// true if surface has already been used
 									// as a splitting node
@@ -100,10 +100,10 @@ typedef struct node_s {
 
 // information for decision nodes	
 	int				planenum;		// -1 = leaf node	
-	int				outputplanenum;	// only valid after WriteNodePlanes
+	int				outputplanenum;	// valid only after WriteNodePlanes
 	int				firstface;		// decision node only
 	int				numfaces;		// decision node only
-	struct node_s	*children[2];	// only valid for decision nodes
+	struct node_s	*children[2];	// valid only for decision nodes
 	face_t			*faces;			// decision nodes only, list for both sides
 	
 // information for leafs
@@ -252,7 +252,7 @@ void extract_hull (void);
 
 extern	brushset_t	*brushset;
 
-void qprintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));	// only prints if verbose
+void qprintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));	// prints only if verbose
 
 extern	int		valid;
 

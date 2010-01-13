@@ -92,7 +92,7 @@
 #define	SU_ARMOR		(1<<13)
 #define	SU_WEAPON		(1<<14)
 
-// a sound with no channel is a local only sound
+// a sound with no channel is a local-only sound
 #define	SND_VOLUME		(1<<0)		// a byte
 #define	SND_ATTENUATION	(1<<1)		// a byte
 #define	SND_LOOPING		(1<<2)		// a long

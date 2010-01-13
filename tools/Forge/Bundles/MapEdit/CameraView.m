@@ -206,7 +206,7 @@ typedef struct
 {
 	vec3_t	trans;
 	int		clipflags;
-	vec3_t	screen;			// only valid if clipflags == 0
+	vec3_t	screen;			// valid only if clipflags == 0
 } campt_t;
 #define	CLIP_RIGHT	1
 #define	CLIP_LEFT	2

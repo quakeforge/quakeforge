@@ -265,7 +265,7 @@ WriteDrawNodes (node_t *headnode)
 /*
 	BumpModel
 
-	Used by the clipping hull processes that only need to store headclipnode
+	Used by the clipping hull processes that need to store only headclipnode
 */
 void
 BumpModel (int hullnum)

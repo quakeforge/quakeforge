@@ -74,7 +74,7 @@ If done in the straightforward fashion, some of the
 sample points will be inside walls or on the other side of walls, causing
 false shadows and light bleeds.
 
-To solve this, I only consider a sample point valid if a line can be drawn
+To solve this, I consider a sample point valid only if a line can be drawn
 between it and the exact midpoint of the face.  If invalid, it is adjusted
 towards the center until it is valid.
 

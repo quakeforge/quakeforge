@@ -136,7 +136,7 @@ and copy id1/*.pak to it. (<quakeforge-prefix> will be /usr/local/ by default)
 Example:
   $ cd <quakeforge-prefix>
   $ mkdir -p share/games/quakeforge/id1/
-(Note: the -p option is only avaible on systems with GNU-fileutils, make the
+(Note: the -p option is avaible only on systems with GNU-fileutils, make the
  missing parent-directorys manually if -p switch fails)
   $ cp <quake1-dir>/id1/*.pak <quakeforge-prefix>/share/games/quakeforge/id1/
 

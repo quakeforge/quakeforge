@@ -239,7 +239,7 @@ Changes from 0.5.2
         * X11 (nq-x11 and qw-client-x11) no longer hangs on 32bpp displays
         * new `view' system giving easier to control hud elements, centered
           menus and locatable scoreboard (hud_scoreboard_gravity)
-        * OSS sound driver fixes: some kernel drivers need write only access,
+        * OSS sound driver fixes: some kernel drivers need write-only access,
           others need read/write
         * able to load/unload semi-arbitrary plug-ins using console commands
         * streaming for large sound files (eg., full length oggs)
@@ -262,7 +262,7 @@ Changes from 0.5.2
         * remote screen shots work
         * curses console no longer default
         * more key-names supported
-        * Matthew Wong's bsp2bmp `imported' as bsp2img. pcx output only
+        * Matthew Wong's bsp2bmp `imported' as bsp2img. only pcx output
           currently.
         * console operator chat messages get echoed
         * BSD fseek bug fixed
@@ -427,7 +427,7 @@ Changes from 0.3.0
         * See gib.html in doc for more information.
 
     o Enhanced time cheat ("speed cheat") protection
-        * Time cheats only work for a split-second before protection
+        * Time cheats work for only a split-second before protection
           kicks in.
         * Players moving with wrong timings are sped up/slowed down to
           the correct speed.

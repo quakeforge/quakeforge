@@ -19,7 +19,7 @@ This is actually by design.
 
 Yeah, I've been busy of late (finally got back into the swing of things:).
 
-> Should the console only be capturing certain keys? or everything?
+> Should the console be capturing only certain keys? or everything?
 
 Well, the console /is/ capturing the keys. They're just not bound to any
 action. qf 0.5 has a rather powerful key binding system (thanks to Mercury)

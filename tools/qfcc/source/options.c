@@ -100,7 +100,7 @@ static const char *short_options =
 	"C:"	// code options
 	"c"		// separate compilation
 	"D:"	// define
-	"E"		// preprocess only
+	"E"		// only preprocess
 	"F"		// generate files.dat
 	"g"		// debug
 	"h"		// help
@@ -133,10 +133,10 @@ usage (int status)
 "        --advanced            Advanced Ruamoko mode\n"
 "                              default for separate compilation mode\n"
 "    -C, --code OPTION,...     Set code generation options\n"
-"    -c                        Compile only, don't link\n"
+"    -c                        Only compile, don't link\n"
 "        --cpp CPPSPEC         cpp execution command line\n"
 "    -D, --define SYMBOL[=VAL] Define symbols for the preprocessor\n"
-"    -E                        Preprocess only\n"
+"    -E                        Only preprocess\n"
 "    -F, --files               Generate files.dat\n"
 "    -g                        Generate debugging info\n"
 "    -h, --help                Display this help and exit\n"

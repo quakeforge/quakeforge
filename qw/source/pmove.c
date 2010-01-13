@@ -659,7 +659,7 @@ CheckWaterJump (void)
 
 	// ZOID, don't hop out if we just jumped in
 	if (pmove.velocity[2] < -180)
-		return;							// only hop out if we are moving up
+		return;							// hop out only if we are moving up
 
 	// see if near an edge
 	flatforward[0] = forward[0];

@@ -157,7 +157,7 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 	if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION)
 		field_mask |= SND_ATTENUATION;
 
-	// directed messages go only to the entity the are targeted on
+	// directed messages go to only the entity on which they are targeted
 	MSG_WriteByte (&sv.datagram, svc_sound);
 	MSG_WriteByte (&sv.datagram, field_mask);
 	if (field_mask & SND_VOLUME)
@@ -232,7 +232,7 @@ SV_SendServerinfo (client_t *client)
 /*
   SV_ConnectClient
 
-  Initializes a client_t for a new net connection.  This will only be called
+  Initializes a client_t for a new net connection.  This will be called only
   once for a player each game, not once for each level change.
 */
 static void
@@ -743,8 +743,8 @@ SV_SendClientMessages (void)
 			}
 		}
 
-		// check for an overflowed message.  Should only happen on a very
-		// fucked up connection that backs up a lot, then changes level
+		// check for an overflowed message.  Should happen only on a very
+		// bad up connection that backs up a lot, then changes level
 		if (host_client->message.overflowed) {
 			SV_DropClient (true);
 			host_client->message.overflowed = false;
@@ -956,7 +956,7 @@ SV_SpawnServer (const char *server)
 	sv.signon.cursize = 0;
 	sv.signon.data = sv.signon_buf;
 
-	// leave slots at start for clients only
+	// leave slots at start for only clients
 	sv.num_edicts = svs.maxclients + 1;
 	for (i = 0; i < svs.maxclients; i++) {
 		ent = EDICT_NUM (&sv_pr_state, i + 1);

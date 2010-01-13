@@ -214,7 +214,7 @@ WINS_Init (void)
 			if ((*p < '0' || *p > '9') && *p != '.')
 				break;
 
-		// if it is a real name, strip off the domain; we only want the host
+		// if it is a real name, strip off the domain; we want only the host
 		if (*p) {
 			for (i = 0; i < 15; i++)
 				if (buff[i] == '.')

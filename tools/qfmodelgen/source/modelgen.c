@@ -57,16 +57,16 @@
 typedef struct {
 	aliasframetype_t	type;		// single frame or group of frames
 	void				*pdata;		// either a daliasframe_t or group info
-	float				interval;	// only used for frames in groups
-	int					numgroupframes;	// only used by group headers
+	float				interval;	// used only for frames in groups
+	int					numgroupframes;	// used only by group headers
 	char				name[16];
 } aliaspackage_t;
 
 typedef struct {
 	aliasskintype_t		type;		// single skin or group of skiins
 	void				*pdata;		// either a daliasskinframe_t or group info
-	float				interval;	// only used for skins in groups
-	int					numgroupskins;	// only used by group headers
+	float				interval;	// used only for skins in groups
+	int					numgroupskins;	// used only by group headers
 } aliasskinpackage_t;
 
 typedef struct {

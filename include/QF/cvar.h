@@ -66,7 +66,7 @@ typedef struct cvar_alias_s
 #define	CVAR_NOTIFY			32		// Will notify players when changed.
 #define	CVAR_ROM			64		// display only, cannot be set by user at all
 #define	CVAR_USER_CREATED	128		// created by a set command
-#define CVAR_LATCH			2048	// will only change when C code next does
+#define CVAR_LATCH			2048	// will change only when C code next does
 									// a Cvar_Get(), so it can't be changed
 
 // Zoid| A good CVAR_ROM example is userpath.  The code should read "cvar_t

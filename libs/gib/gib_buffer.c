@@ -142,7 +142,7 @@ GIB_Buffer_Add (cbuf_t * cbuf, const char *str)
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
 	gib_tree_t **save, *cur;
 
-	// AddText should only be used to populate a buffer before
+	// AddText should be used only to populate a buffer before
 	// executing it and shouldn't happen to a running GIB buffer,
 	// but if it does, try to find somewhere else to put the text.
 	if (g->ip) {

@@ -15,7 +15,7 @@ Description: QuakeForge 3D game engine - Fake package
  remain compatible with the original games released by id Software while
  adding portability and optional extensions to enhance gameplay.
  .
- This package only exists to depend on a client and suggest a server.
+ This package exists only to depend on a client and suggest a server.
 
 Package: quakeforge-common
 Architecture: any

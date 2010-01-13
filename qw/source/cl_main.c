@@ -1248,8 +1248,8 @@ CL_Init (void)
 	Cmd_AddCommand ("pause", CL_Cmd_ForwardToServer, "Pause the game");
 	Cmd_AddCommand ("say", CL_Cmd_ForwardToServer, "Say something to all "
 					"other players");
-	Cmd_AddCommand ("say_team", CL_Cmd_ForwardToServer, "Say something only "
-					"to people on your team");
+	Cmd_AddCommand ("say_team", CL_Cmd_ForwardToServer, "Say something to "
+					"only people on your team");
 	Cmd_AddCommand ("serverinfo", CL_Cmd_ForwardToServer, "Report the current "
 					"server info");
 	cl_player_health_e = GIB_Event_New ("player.health");
@@ -1735,7 +1735,7 @@ Host_Init (void)
 
 	// execute the global configuration file if it exists
 	// would have been nice if Cmd_Exec_f could have been used, but it
-	// only reads from within the quake file system, and changing that is
+	// reads from only within the quake file system, and changing that is
 	// probably Not A Good Thing (tm).
 	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG, CVAR_ROM, NULL,
 							 "global configuration file");

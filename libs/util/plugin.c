@@ -63,7 +63,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 
-// loaded_plugins is for plugins loaded from scripts only - not system
+// loaded_plugins is only for plugins loaded from scripts - not system
 // plugins
 
 typedef struct loaded_plugin_s {
