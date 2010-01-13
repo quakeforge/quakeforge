@@ -918,7 +918,8 @@ rua_obj_msg_sendv (progs_t *pr)
 					 PR_GetString (pr, pr->selector_names[op->sel_id]));
 	if (count > 6)
 		count = 6;
-	memcpy (pr->pr_params[2], params, count * 4 * pr->pr_param_size);
+	if (count > 0)
+		memcpy (pr->pr_params[2], params, count * 4 * pr->pr_param_size);
 	PR_CallFunction (pr, imp);
 }
 
