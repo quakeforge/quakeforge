@@ -514,14 +514,20 @@ make_string (char *token, char **end)
 				case '5':
 				case '6':
 				case '7':
-					for (i = c = 0; i < 3
-						 && *token >= '0'
-						 && *token <= '7'; i++, token++) {
-						c *= 8;
-						c += *token - '0';
+					if (!options.qccx_escapes) {
+						for (i = c = 0; i < 3
+							 && *token >= '0'
+							 && *token <= '7'; i++, token++) {
+							c *= 8;
+							c += *token - '0';
+						}
+						if (!*token)
+							error (0, "EOF inside quote");
+						break;
 					}
-					if (!*token)
-						error (0, "EOF inside quote");
+				case 8:
+				case 9:
+					c = 18 + c - '0';
 					break;
 				case 'x':
 					c = 0;
@@ -621,7 +627,7 @@ make_string (char *token, char **end)
 					break;
 			}
 		} else if (c == quote) {
-			break;;
+			break;
 		}
 		if (boldnext)
 			c = c ^ 0x80;

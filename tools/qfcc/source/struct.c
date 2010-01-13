@@ -97,7 +97,7 @@ new_struct_field (struct_t *strct, type_t *type, const char *name,
 		if (size > strct->size)
 			strct->size = size;
 	} else {
-		field->offset = strct->size;;
+		field->offset = strct->size;
 		strct->size += type_size (type);
 	}
 	field->next = 0;
