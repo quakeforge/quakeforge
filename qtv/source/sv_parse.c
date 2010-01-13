@@ -177,6 +177,7 @@ sv_modellist (server_t *sv, qmsg_t *msg)
 		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
 		MSG_WriteString (&sv->netchan.message,
 						 va ("prespawn %d 0 0", sv->spawncount));
+		sv->signon = 1;
 	}
 	sv->next_run = realtime;
 }
@@ -185,9 +186,8 @@ static void
 sv_cmd_f (server_t *sv)
 {
 	if (Cmd_Argc () > 1) {
-		sv->signon = 0;
-		if (strcmp (Cmd_Argv (1), "prespawn") == 0)
-			sv->signon = 1;
+		if (!strcmp (Cmd_Argv(1), "spawn"))
+			sv->signon = 0;
 		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
 		SZ_Print (&sv->netchan.message, Cmd_Args (1));
 	}
@@ -213,6 +213,24 @@ sv_skins_f (server_t *sv)
 	}
 }
 
+static void
+sv_changing_f (server_t *sv)
+{
+	sv->connected = 1;
+	sv->num_signon_buffers = 0;
+	qtv_printf ("Changing map...\n");
+}
+
+static void
+sv_reconnect_f (server_t *sv)
+{
+	sizebuf_t  *msg = &sv->netchan.message;
+
+	qtv_printf ("Reconnecting...\n");
+	MSG_WriteByte (msg, qtv_stringcmd);
+	MSG_WriteString (msg, "new");
+}
+
 typedef struct {
 	const char *name;
 	void      (*func) (server_t *sv);
@@ -221,6 +239,8 @@ typedef struct {
 svcmd_t svcmds[] = {
 	{"cmd",			sv_cmd_f},
 	{"skins",		sv_skins_f},
+	{"changing",	sv_changing_f},
+	{"reconnect",	sv_reconnect_f},
 
 	{0,				0},
 };
@@ -332,6 +352,11 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 	int         newpacket, oldpacket;
 	int         full;
 	packet_entities_t *oldp, *newp, dummy;
+
+	if (sv->connected < 2) {
+		flush_entity_packet (sv, msg);
+		return;
+	}
 
 	newpacket = sv->netchan.incoming_sequence & UPDATE_MASK;
 	newp = &sv->frames[newpacket].entities;
@@ -846,28 +871,12 @@ sv_updateentertime (server_t *sv, qmsg_t *msg)
 	pl->time = time;
 }
 
-static void
-save_signon (server_t *sv, qmsg_t *msg, int start)
-{
-	int         size = msg->readcount - start;
-	byte       *buf = msg->message->data + start;
-
-	if (!size)
-		return;
-
-	sv->signon_buffer_size[sv->num_signon_buffers] = size;
-	memcpy (sv->signon_buffers[sv->num_signon_buffers], buf, size);
-	sv->num_signon_buffers++;
-}
-
 void
 sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 {
 	int         svc;
 	vec3_t      v;
 	player_t   *pl;
-	int         start = msg->readcount;
-	int         signon_saved = 0;
 
 	while (1) {
 		int         bc_len = msg->readcount;
@@ -1011,10 +1020,6 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				sv_serverdata (sv, msg);
 				break;
 			case svc_stufftext:
-				if (sv->signon && !signon_saved) {
-					save_signon (sv, msg, start);
-					signon_saved = 1;
-				}
 				sv_stringcmd (sv, msg);
 				break;
 
@@ -1047,8 +1052,5 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 			bc_len = msg->readcount - bc_len;
 			Server_Broadcast (sv, reliable, bc_data, bc_len);
 		}
-	}
-	if (sv->signon && !signon_saved) {
-		save_signon (sv, msg, start);
 	}
 }

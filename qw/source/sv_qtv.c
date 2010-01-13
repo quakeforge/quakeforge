@@ -121,6 +121,7 @@ qtv_new_f (sv_qtv_t *proxy)
 	buf = proxy->netchan.message.data + pos;
 	buf[0] = len & 0xff;
 	buf[1] |= (len >> 8) & 0x0f;
+	proxy->begun = 0;
 }
 
 static void
@@ -163,7 +164,7 @@ qtv_modellist_f (sv_qtv_t *proxy)
 	}
 
 	n = atoi (Cmd_Argv (2));
-	if (n >= MAX_SOUNDS) {
+	if (n >= MAX_MODELS) {
 		qtv_new_f (proxy);
 		return;
 	}
@@ -198,7 +199,7 @@ qtv_prespawn_f (sv_qtv_t *proxy)
 		command = va ("cmd spawn %i 0\n", svs.spawncount);
 	else
 		command = va ("cmd prespawn %i %i\n", svs.spawncount, buf + 1);
-	size = (5 + sv.signon_buffer_size[buf]) + (1 + strlen (command) + 1);
+	size = (3 + sv.signon_buffer_size[buf]) + (1 + strlen (command) + 1);
 
 	msg = MSG_ReliableCheckBlock (&proxy->backbuf, size);
 
@@ -247,7 +248,7 @@ qtv_write (void *r, sizebuf_t *msg, int reliable)
 	if (!msg->cursize)
 		return;
 	if (reliable) {
-		buf = MSG_ReliableCheckBlock (&proxy->backbuf, msg->cursize);
+		buf = MSG_ReliableCheckBlock (&proxy->backbuf, msg->cursize + 3);
 		type = qtv_p_reliable;
 	} else {
 		buf = &proxy->datagram;

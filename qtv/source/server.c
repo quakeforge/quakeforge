@@ -194,22 +194,54 @@ qtv_parse_updates (server_t *sv, qmsg_t *msg, int reliable)
 }
 
 static void
+save_signon (server_t *sv, qmsg_t *msg, int start)
+{
+	int         size = msg->readcount - start;
+	byte       *buf = msg->message->data + start;
+
+	if (!size)
+		return;
+	Sys_DPrintf ("save_signon: %d\n", sv->num_signon_buffers);
+	if (sv->num_signon_buffers >= MAX_SIGNON_BUFFERS)
+		Sys_Error ("too many signon buffers: %d\n", sv->num_signon_buffers);
+	sv->signon_buffer_size[sv->num_signon_buffers] = size;
+	memcpy (sv->signon_buffers[sv->num_signon_buffers], buf, size);
+	sv->num_signon_buffers++;
+}
+
+static void
 qtv_packet_f (server_t *sv)
 {
 	int         len, type;
 	int         reliable = 0;
 	sizebuf_t   sub_message_buf;
 	qmsg_t      sub_message;
+	int         start = -1;
 
 	len = MSG_ReadShort (net_message);
 	type = len & 0xf000;
 	len &= 0x0fff;
 	setup_sub_message (net_message, &sub_message, &sub_message_buf, len);
-	//qtv_printf ("qtv_packet: %x %d\n", type, len);
+	if (0) {
+		static const char *qtv_types[16] = {
+			"qtv_p_signon",
+			"qtv_p_print",
+			"qtv_p_reliable",
+			"qtv_p_unreliable",
+			"[4]", "[5]", "[6]", "[7]",
+			"[8]", "[9]", "[a]", "[b]",
+			"[c]", "[d]", "[e]", "[f]",
+		};
+		qtv_printf ("qtv_packet: %s %d\n", qtv_types[type >> 12], len);
+	}
 	switch (type) {
 		case qtv_p_signon:
+			if (sv->signon)
+				start = sub_message.readcount;
 			setup_player_list (sv, ~0);
 			sv_parse (sv, &sub_message, 1);
+			if (start >= 0)
+				save_signon (sv, &sub_message, start);
 			break;
 		case qtv_p_print:
 			qtv_printf ("%s\n", MSG_ReadString (net_message));
@@ -234,13 +266,23 @@ server_handler (connection_t *con, void *object)
 		return;
 	if (!Netchan_Process (&sv->netchan))
 		return;
+	if (0) {
+		int         i;
+
+		for (i = 0; i < net_message->message->cursize; i++)
+			qtv_printf ("%c%02x", (i % 16) ? ' ' : '\n',
+						net_message->message->data[i]);
+		qtv_printf ("\n");
+	}
 	while (1) {
 		int         cmd;
 		if (net_message->badread) {
+			qtv_printf ("badread\n");
 			break;
 		}
 		cmd = MSG_ReadByte (net_message);
 		if (cmd == -1) {
+			//qtv_printf ("cmd = -1\n");
 			net_message->readcount++;
 			break;
 		}
@@ -424,7 +466,7 @@ sv_del_f (void)
 	}
 	name = Cmd_Argv (1);
 	if (!(sv = Hash_Del (server_hash, name))) {
-		qtv_printf ("sv_new: %s unknown\n", name);
+		qtv_printf ("sv_del: %s unknown\n", name);
 		return;
 	}
 	Hash_Free (server_hash, sv);
@@ -468,6 +510,7 @@ server_run (server_t *sv)
 {
 	static byte delta_msg[2] = {qtv_delta};
 	static byte nop_msg[1] = {qtv_nop};
+
 	if (sv->connected > 1) {
 		int         frame = (sv->netchan.outgoing_sequence) & UPDATE_MASK;
 		sv->next_run = realtime + 0.03;
@@ -500,6 +543,12 @@ Server_Frame (void)
 	server_t   *sv;
 
 	for (sv = servers; sv; sv = sv->next) {
+		if (realtime - sv->netchan.last_received > sv_timeout->value) {
+			qtv_printf ("Server %s timed out\n", sv->name);
+			Hash_Del (server_hash, sv->name);
+			Hash_Free (server_hash, sv);
+			continue;
+		}
 		if (sv->next_run && sv->next_run <= realtime) {
 			sv->next_run = 0;
 			server_run (sv);

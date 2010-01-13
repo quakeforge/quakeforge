@@ -76,6 +76,8 @@ static plugin_list_t server_plugin_list[] = {
 
 double realtime;
 
+cvar_t     *sv_timeout;
+
 cbuf_t     *qtv_cbuf;
 cbuf_args_t *qtv_args;
 
@@ -238,6 +240,7 @@ qtv_net_init (void)
 {
 	qtv_port = Cvar_Get ("qtv_port", va ("%d", PORT_QTV), 0, 0,
 						 "udp port to use");
+	sv_timeout = Cvar_Get ("sv_timeout", "60", 0, 0, "server timeout");
 	NET_Init (qtv_port->int_val);
 	Connection_Init ();
 	net_realtime = &realtime;
