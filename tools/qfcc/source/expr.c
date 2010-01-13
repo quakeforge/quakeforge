@@ -1383,6 +1383,14 @@ is_compare (int op)
 }
 
 int
+is_math (int op)
+{
+	if (op == '*' || op == '/' || op == '+' || op == '-')
+		return 1;
+	return 0;
+}
+
+int
 is_logic (int op)
 {
 	if (op == OR || op == AND)
@@ -1411,9 +1419,7 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 	if (options.traditional) {
 		if (e2->type == ex_expr && !e2->paren) {
 			if (((op == '&' || op == '|')
-				 && (e2->e.expr.op == '*' || e2->e.expr.op == '/'
-					 || e2->e.expr.op == '+' || e2->e.expr.op == '-'
-					 || is_compare (e2->e.expr.op)))
+				 && (is_math (e2->e.expr.op) || is_compare (e2->e.expr.op)))
 				|| (op == '='
 					&& (e2->e.expr.op == OR || e2->e.expr.op == AND))) {
 				notice (e1, "precedence of `%s' and `%s' inverted for "
@@ -1435,9 +1441,7 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 			}
 		} else if (e1->type == ex_expr && !e1->paren) {
 			if (((op == '&' || op == '|')
-				 && (e1->e.expr.op == '*' || e1->e.expr.op == '/'
-					 || e1->e.expr.op == '+' || e1->e.expr.op == '-'
-					 || is_compare (e1->e.expr.op)))
+				 && (is_math (e1->e.expr.op) || is_compare (e1->e.expr.op)))
 				|| (op == '='
 					&& (e1->e.expr.op == OR || e1->e.expr.op == AND))) {
 				notice (e1, "precedence of `%s' and `%s' inverted for "
@@ -1451,10 +1455,26 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 	} else {
 		if (e2->type == ex_expr && !e2->paren) {
 			if ((op == '&' || op == '|' || op == '^')
-				&& is_compare (e2->e.expr.op)) {
+				&& (is_math (e2->e.expr.op) || is_compare (e2->e.expr.op))) {
 				if (options.warnings.precedence)
-					warning (e2, "suggest parentheses around comparison in "
-							 "operand of %c", op);
+					warning (e2, "suggest parentheses around %s in "
+							 "operand of %c",
+							 is_compare (e2->e.expr.op)
+							 		? "comparison"
+							 		: get_op_string (e2->e.expr.op),
+							 op);
+			}
+		}
+		if (e1->type == ex_expr && !e1->paren) {
+			if ((op == '&' || op == '|' || op == '^')
+				&& (is_math (e1->e.expr.op) || is_compare (e1->e.expr.op))) {
+				if (options.warnings.precedence)
+					warning (e1, "suggest parentheses around %s in "
+							 "operand of %c",
+							 is_compare (e1->e.expr.op)
+							 		? "comparison"
+							 		: get_op_string (e1->e.expr.op),
+							 op);
 			}
 		}
 	}

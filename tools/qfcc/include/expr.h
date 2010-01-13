@@ -180,6 +180,7 @@ expr_t *new_short_expr (short short_val);
 
 int is_constant (expr_t *e);
 int is_compare (int op);
+int is_math (int op);
 int is_logic (int op);
 expr_t *constant_expr (expr_t *var);
 
