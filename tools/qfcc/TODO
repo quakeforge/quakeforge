@@ -29,4 +29,6 @@ o	try to reduce memory consumption
 o	unnamed function parameters for prototypes/typdefs etc.
 o	embedded nul characters in strings
 o	smarter temp def handling
+o	C style pointer/array declarations (type system in general?)
+o	better error handling to continue parsing after a syntax error
 ?	"":"" string concatenation (parser issues)
