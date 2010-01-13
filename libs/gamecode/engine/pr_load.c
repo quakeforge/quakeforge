@@ -106,7 +106,21 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 	int         mem_size;
 	dprograms_t progs;
 
+	if (!pr->file_error)
+		pr->file_error = file_error;
+	if (!pr->load_file)
+		pr->load_file = load_file;
+	if (!pr->allocate_progs_mem)
+		pr->allocate_progs_mem = allocate_progs_mem;
+	if (!pr->free_progs_mem)
+		pr->free_progs_mem = free_progs_mem;
+
+	PR_Resources_Clear (pr);
+	PR_ClearReturnStrings (pr);
+	if (pr->progs)
+		pr->free_progs_mem (pr, pr->progs);
 	pr->progs = 0;
+
 	if (Qread (file, &progs, sizeof (progs)) != sizeof (progs))
 		PR_Error (pr, "error reading header");
 
@@ -164,19 +178,6 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 	pr->pr_edict_size &= ~(sizeof (void*) - 1);
 	pr->pr_edictareasize = edicts * pr->pr_edict_size;
 
-	if (!pr->file_error)
-		pr->file_error = file_error;
-	if (!pr->load_file)
-		pr->load_file = load_file;
-	if (!pr->allocate_progs_mem)
-		pr->allocate_progs_mem = allocate_progs_mem;
-	if (!pr->free_progs_mem)
-		pr->free_progs_mem = free_progs_mem;
-
-	PR_Resources_Clear (pr);
-	PR_ClearReturnStrings (pr);
-	if (pr->progs)
-		pr->free_progs_mem (pr, pr->progs);
 	mem_size = pr->progs_size + pr->zone_size + pr->pr_edictareasize;
 	pr->progs = pr->allocate_progs_mem (pr, mem_size + 1);
 	if (!pr->progs)
