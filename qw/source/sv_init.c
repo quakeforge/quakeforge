@@ -307,6 +307,7 @@ SV_SpawnServer (const char *server)
 	char       *buf;
 	edict_t    *ent;
 	int         i;
+	struct recorder_s *recorders;
 
 	Sys_DPrintf ("SpawnServer: %s\n", server);
 
@@ -321,8 +322,11 @@ SV_SpawnServer (const char *server)
 	Mod_ClearAll ();
 	Hunk_FreeToLowMark (host_hunklevel);
 
-	// wipe the entire per-level structure
+	// wipe the entire per-level structure, but don't lose sv.recorders
+	// (good thing we're not multi-threaded FIXME?)
+	recorders = sv.recorders;
 	memset (&sv, 0, sizeof (sv));
+	sv.recorders = recorders;
 
 	sv.datagram.maxsize = sizeof (sv.datagram_buf);
 	sv.datagram.data = sv.datagram_buf;
