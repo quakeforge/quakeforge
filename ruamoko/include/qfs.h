@@ -3,7 +3,7 @@
 
 #include "qfile.h"
 
-struct _qfslist_t = {
+struct _qfslist_t {
 	integer count;
 	string []list;
 };

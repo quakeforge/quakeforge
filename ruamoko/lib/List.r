@@ -1,6 +1,6 @@
 #include "List.h"
 
-struct list_bucket_s = {
+struct list_bucket_s {
 	struct list_bucket_s [] next;
 	struct list_bucket_s [][] prev;
 	id obj;

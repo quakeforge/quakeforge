@@ -3,7 +3,7 @@
 
 #include "Object.h"
 
-struct _qpic_t = {
+struct _qpic_t {
 	integer width;
 	integer height;
 };

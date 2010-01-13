@@ -3,7 +3,7 @@
 
 #include "View.h"
 
-struct _inputline_t = {};	// opaque type :)
+struct _inputline_t {};	// opaque type :)
 typedef struct _inputline_t [] inputline_t;
 
 @extern inputline_t (integer lines, integer size, integer prompt) InputLine_Create;
@@ -16,7 +16,7 @@ typedef struct _inputline_t [] inputline_t;
 @extern void (inputline_t il, string str) InputLine_SetText;
 @extern string (inputline_t il) InputLine_GetText;
 
-struct il_data_t = {
+struct il_data_t {
 	integer		x, y;
 	integer		xbase, ybase;
 	BOOL		cursor;

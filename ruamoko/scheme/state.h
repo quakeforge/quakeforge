@@ -7,7 +7,7 @@
 
 @class Continuation;
 
-struct state_s = {
+struct state_s {
     instruction_t [] program;
     lineinfo_t [] lineinfo;
     integer pc;

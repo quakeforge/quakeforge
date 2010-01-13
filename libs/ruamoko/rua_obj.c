@@ -912,6 +912,7 @@ rua_obj_msg_sendv (progs_t *pr)
 	int         count = args->count;
 	func_t      imp = obj_msg_lookup (pr, receiver, op);
 
+	//FIXME bounds checking
 	if (!imp)
 		PR_RunError (pr, "%s does not respond to %s",
 					 PR_GetString (pr, object_get_class_name (pr, receiver)),

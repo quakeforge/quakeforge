@@ -1,7 +1,7 @@
 #ifndef __ruamoko_hash_h
 #define __ruamoko_hash_h
 
-struct _hashtab_t = {};
+struct _hashtab_t {};
 typedef struct _hashtab_t [] hashtab_t;
 
 @extern hashtab_t (integer size, string (void []ele, void []data) gk, void (void []ele, void []data) f, void [] ud) Hash_NewTable;

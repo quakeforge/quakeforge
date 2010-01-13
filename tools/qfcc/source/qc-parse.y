@@ -231,9 +231,9 @@ def
 	| storage_class '{' simple_defs '}' ';'
 	  { current_storage = st_global; }
 	| STRUCT identifier
-	  { current_struct = new_struct ($2); } opt_eq '{' struct_defs '}' ';' { }
+	  { current_struct = new_struct ($2); } '{' struct_defs '}' ';' { }
 	| UNION identifier
-	  { current_struct = new_union ($2); } opt_eq '{' struct_defs '}' ';' { }
+	  { current_struct = new_union ($2); } '{' struct_defs '}' ';' { }
 	| STRUCT identifier ';'		{ decl_struct ($2); }
 	| UNION identifier ';'		{ decl_union ($2); }
 	| ENUM '{' enum_list opt_comma '}' ';'
@@ -245,11 +245,6 @@ def
 			process_enum ($4);
 			new_typedef ($7, &type_integer);
 		}
-	;
-
-opt_eq
-	: /* empty */				{ }
-	| '='						{ }
 	;
 
 opt_semi

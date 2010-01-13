@@ -41,7 +41,7 @@ Array movement_bindings;
 Array misc_bindings;
 Array weapon_bindings;
 
-struct binding_s = {
+struct binding_s {
 	string      text;
 	string      command;
 	string      keys;
