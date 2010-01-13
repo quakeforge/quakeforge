@@ -60,17 +60,15 @@ static __attribute__ ((used)) const char rcsid[] =
 VISIBLE void
 Con_BasicCompleteCommandLine (inputline_t *il)
 {
-	char       *s;
+	const char *s;
 	const char *cmd = "", **list[3] = {0, 0, 0};
 	int         cmd_len, c, i, v, o;
 	cbuf_t     *cbuf;
 
 	s = il->lines[il->edit_line] + 1;
 	
-	if (*s == '\\' || *s == '/')
+	if (*s == '/')
 		s++;
-
-	s = strdup (s);
 
 	cbuf = con_module->data->console->cbuf;
 
@@ -162,7 +160,8 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 		overwrite = va("%.*s%.*s", bound, s, cmd_len, cmd);
 	
 		il->lines[il->edit_line][1] = '/';
-		strncpy (il->lines[il->edit_line] + 2, overwrite, strlen (overwrite));
+		strncpy (il->lines[il->edit_line] + 2, overwrite, il->line_size - 3);
+		il->lines[il->edit_line][il->line_size-1] = 0;
 		il->linepos = strlen (overwrite) + 2;
 		if (c + v == 1 && !o) {
 			il->lines[il->edit_line][il->linepos] = ' ';
@@ -172,7 +171,5 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 	}
 	for (i = 0; i < 3; i++)
 		if (list[i])
-			free ((void *) list[i]);
-			
-	free (s);
+			free (list[i]);
 }
