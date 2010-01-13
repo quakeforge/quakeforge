@@ -47,5 +47,6 @@ struct sizebuf_s *SVR_Datagram (void);
 void SVR_ForceFrame (void);
 void SVR_SetDelta (recorder_t *r, int delta, int in_frame);
 void SVR_SendMessages (void);
+int SVR_NumRecorders (void);
 
 #endif//__sv_recorder_h

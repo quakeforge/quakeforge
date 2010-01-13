@@ -623,3 +623,14 @@ SVR_SetDelta (recorder_t *r, int delta, int in_frame)
 	if (in_frame != -1)
 		r->delta.in_frame = in_frame & UPDATE_MASK;
 }
+
+int
+SVR_NumRecorders (void)
+{
+	recorder_t *rec;
+	int         count;
+
+	for (count = 0, rec = sv.recorders; rec; count++, rec = rec->next)
+		;
+	return count;
+}
