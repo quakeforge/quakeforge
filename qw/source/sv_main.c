@@ -1866,17 +1866,6 @@ SV_CheckTimeouts (void)
 }
 
 /*
-  SV_GetConsoleCommands
-
-  Add them exactly as if they had been typed at the console
-*/
-static void
-SV_GetConsoleCommands (void)
-{
-	Con_ProcessInput ();
-}
-
-/*
 	SV_CheckVars
 */
 static void
@@ -1968,11 +1957,10 @@ SV_Frame (float time)
 	// get packets
 	SV_ReadPackets ();
 
-	// check for commands typed to the host
-	SV_GetConsoleCommands ();
+	// check for typing at the console
+	Con_ProcessInput ();
 
 	// process gib threads
-
 	GIB_Thread_Execute ();
 
 	// process console commands
@@ -2011,7 +1999,6 @@ SV_Frame (float time)
 		svs.stats.demo = 0;
 		Con_DrawConsole ();
 	}
-	Con_ProcessInput ();	//XXX evil hack to get the cursor in the right place
 }
 
 static void
