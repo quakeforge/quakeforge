@@ -127,6 +127,8 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 	// store prog crc
 	pr->crc = CRC_Block ((byte*)&progs, sizeof (progs));
 
+	pr->denorm_found = 0;
+
 	// byte swap the header
 	for (i = 0; i < sizeof (progs) / 4; i++)
 		((int *) &progs)[i] = LittleLong (((int *) &progs)[i]);

@@ -1372,6 +1372,7 @@ struct progs_s {
 	dprograms_t *progs;
 	int         progs_size;
 	unsigned short crc;
+	int         denorm_found;
 
 	struct memzone_s *zone;
 	int         zone_size;

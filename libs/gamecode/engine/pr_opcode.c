@@ -45,6 +45,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/pr_comp.h"
 #include "QF/progs.h"
+#include "QF/sys.h"
 
 hashtab_t *opcode_table;
 
@@ -1197,6 +1198,8 @@ check_branch (progs_t *pr, dstatement_t *st, opcode_t *op, short offset)
 				  (long)(st - pr->pr_statements), op->opname);
 }
 
+#define ISDENORM(x) ((x) && !((x) & 0x7f800000))
+
 static inline void
 check_global (progs_t *pr, dstatement_t *st, opcode_t *op, etype_t type,
 			  unsigned short operand)
@@ -1216,6 +1219,22 @@ check_global (progs_t *pr, dstatement_t *st, opcode_t *op, etype_t type,
 			if (operand + (unsigned) pr_type_size[type]
 				> pr->progs->numglobals) {
 				msg = "out of bounds global index";
+				goto error;
+			}
+			if (type == ev_float)
+			if (ISDENORM (G_INT (pr, operand))
+				&& !pr->denorm_found) {
+				pr->denorm_found = 1;
+				if (pr_boundscheck-> int_val) {
+					Sys_Printf ("DENORMAL floats detected, these progs might "
+								"not work. Good luck.\n");
+					return;
+				}
+				msg = "DENORMAL float detected. These progs are probably "
+					"using qccx arrays and integers. If just simple arrays "
+					"are being used, then they should work, but if "
+					"internal.qc is used, they most definitely will NOT. To"
+					"allow these progs to be used, set pr_boundscheck to 1.";
 				goto error;
 			}
 			break;
@@ -1255,7 +1274,10 @@ PR_Check_Opcodes (progs_t *pr)
 		&& pr->fields.think != -1 && pr->fields.frame != -1)
 		state_ok = 1;
 
-	if (!pr_boundscheck->int_val) {
+	//FIXME need to decide if I really want to always do static bounds checking
+	// the only problem is that it slows progs load a little, but it's the only
+	// way to check for qccx' evil
+	if (0 && !pr_boundscheck->int_val) {
 		for (i = 0, st = pr->pr_statements; i < pr->progs->numstatements;
 			 st++, i++) {
 			op = PR_Opcode (st->op);
