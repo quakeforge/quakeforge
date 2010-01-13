@@ -515,7 +515,8 @@ PR_FreeTempStrings (progs_t *pr)
 		t = sr->next;
 		if (sr->type != str_temp)
 			PR_Error (pr, "internal string error");
-		if (R_STRING (pr) < 0 && string_index (pr, sr) == R_STRING (pr)) {
+		if (R_STRING (pr) < 0 && string_index (pr, sr) == R_STRING (pr)
+			&& pr->pr_depth) {
 			prstack_t  *frame = pr->pr_stack + pr->pr_depth - 1;
 			sr->next = frame->tstr;
 			frame->tstr = sr;
