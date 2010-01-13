@@ -68,6 +68,20 @@ static void
 sv_serverdata (server_t *sv, qmsg_t *msg)
 {
 	const char *str;
+	int         i;
+
+	for (i = 0; i < MAX_SOUNDS; i++) {
+		if (sv->soundlist[i]) {
+			free (sv->soundlist[i]);
+			sv->soundlist[i] = 0;
+		}
+	}
+	for (i = 0; i < MAX_MODELS; i++) {
+		if (sv->modellist[i]) {
+			free (sv->modellist[i]);
+			sv->modellist[i] = 0;
+		}
+	}
 
 	sv->ver = MSG_ReadLong (msg);
 	sv->spawncount = MSG_ReadLong (msg);
@@ -225,8 +239,10 @@ sv_changing_f (server_t *sv)
 	MSG_WriteByte (&sv->netchan.message, qtv_nop);
 	sv->next_run = realtime;
 	Server_BroadcastCommand (sv, "changing\n");
-	for (cl = sv->clients; cl; cl = cl->next)
+	for (cl = sv->clients; cl; cl = cl->next) {
+		cl->connected = 0;
 		Client_SendMessages (cl);
+	}
 }
 
 static void
