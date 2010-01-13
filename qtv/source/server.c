@@ -111,6 +111,13 @@ server_free (void *_sv, void *unused)
 	free (sv);
 }
 
+static void
+server_drop (server_t *sv)
+{
+	Hash_Del (server_hash, sv->name);
+	Hash_Free (server_hash, sv);
+}
+
 static int
 server_compare (const void *a, const void *b)
 {
@@ -244,7 +251,8 @@ qtv_packet_f (server_t *sv)
 				save_signon (sv, &sub_message, start);
 			break;
 		case qtv_p_print:
-			qtv_printf ("%s\n", MSG_ReadString (net_message));
+			MSG_ReadByte (&sub_message);
+			qtv_printf ("%s\n", MSG_ReadString (&sub_message));
 			break;
 		case qtv_p_reliable:
 			reliable = 1;
@@ -299,6 +307,7 @@ server_handler (connection_t *con, void *object)
 				goto bail;
 			case qtv_disconnect:
 				qtv_printf ("%s: disconnected\n", sv->name);
+				server_drop (sv);
 				break;
 			case qtv_stringcmd:
 				sv_stringcmd (sv, net_message);
@@ -386,8 +395,7 @@ server_challenge (connection_t *con, void *object)
 
 	if (!qtv) {
 		qtv_printf ("%s can't handle qtv.\n", sv->name);
-		Hash_Del (server_hash, sv->name);
-		Hash_Free (server_hash, sv);
+		server_drop (sv);
 		return;
 	}
 
@@ -545,9 +553,8 @@ Server_Frame (void)
 	for (sv = servers; sv; sv = sv->next) {
 		if (realtime - sv->netchan.last_received > sv_timeout->value) {
 			qtv_printf ("Server %s timed out\n", sv->name);
-			Hash_Del (server_hash, sv->name);
-			Hash_Free (server_hash, sv);
-			continue;
+			server_drop (sv);
+			return; // chain has changed, avoid segfaulting
 		}
 		if (sv->next_run && sv->next_run <= realtime) {
 			sv->next_run = 0;
