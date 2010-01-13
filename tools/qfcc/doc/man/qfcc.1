@@ -443,10 +443,16 @@ Double quote.
 Single quote.
 .TP
 .B \(rs0-7
-Octal character code, up to three digits.
+Octal character code, up to three digits. This conflicts with \fBqccx\fP. In
+\fBqccx\fP, this produces gold digits. Use \fB\-\-qccx\-escapes\fP to select
+\fBqccx\fP behaviour.
+.TP
+.B \(rs8-9
+Produce gold digits.
 .TP
 .B \(rsx0-9A-Fa-f
-Hexadecimal character code, any number of digits, but only the least significant byte will be used.
+Hexadecimal character code, any number of digits, but only the least
+significant byte will be used.
 .TP
 .B \(rsa
 Bell character (not in quake engines). Equivalent to \(rsx07.
