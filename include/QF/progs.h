@@ -1020,7 +1020,7 @@ int PR_RelocateBuiltins (progs_t *pr);
 	temporary strings, as well as mutable strings using dstrings.
 
 	Permanent strings are either supplied by the progs (+ve string index) or
-	set the the main program using PR_SetString(). Permanent strings can never
+	set by the main program using PR_SetString(). Permanent strings can never
 	be altered and will exist until the next progs load.
 
 	Dynamic strings can be freed at any time, but not altered.

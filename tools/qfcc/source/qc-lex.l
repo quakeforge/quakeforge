@@ -605,7 +605,7 @@ make_string (char *token, char **end)
 					while (*token && *token != '}'
 						   && isdigit ((unsigned char)*token)) {
 						c *= 10;
-						c += *token - '0';
+						c += *token++ - '0';
 					}
 					if (!*token)
 						error (0, "EOF inside quote");
