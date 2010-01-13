@@ -190,7 +190,7 @@ integer (integer x, integer y) load_draw =
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
 		Draw_String (x + 16, y + 32 + 8 * i, filenames[i]);
 	Draw_Character (x + 8, y + 32 + load_cursor * 8,
-					12 + (integer) (time * 4) & 1);
+					12 + ((integer) (time * 4) & 1));
 	return 1;
 };
 
@@ -202,7 +202,7 @@ integer (integer x, integer y) save_draw =
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
 		Draw_String (x + 16, y + 32 + 8 * i, filenames[i]);
 	Draw_Character (x + 8, y + 32 + save_cursor * 8,
-					12 + (integer) (time * 4) & 1);
+					12 + ((integer) (time * 4) & 1));
 	return 1;
 };
 
@@ -419,7 +419,7 @@ integer (integer x, integer y) lanconfig_draw =
 	}
 	if (!input_active)
 		Draw_Character (basex - 8, y + lanConfig_cursor_table[lanConfig_cursor],
-						12 + (integer) (time * 4) & 1);
+						12 + ((integer) (time * 4) & 1));
 
 	return 0;
 };

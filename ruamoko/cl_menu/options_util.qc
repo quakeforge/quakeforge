@@ -482,7 +482,7 @@ void (integer x, integer y)
 opt_cursor =
 {
 	// use time becaus we want a nice rotaing cursor
-	Draw_Character (x, y, 12 + (integer) (time * 4) & 1);
+	Draw_Character (x, y, 12 + ((integer) (time * 4) & 1));
 };
 
 /*
