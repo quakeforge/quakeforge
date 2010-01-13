@@ -105,12 +105,6 @@ static void OutofBandPrintf (netadr_t where, const char *fmt, ...) __attribute__
 
 //	USER STRINGCMD EXECUTION host_client and sv_player will be valid.
 
-/*
-	SV_New_f
-
-	Sends the first message from the server to a connected client.
-	This will be sent on the initial connection and upon each server load.
-*/
 void
 SV_WriteWorldVars (netchan_t *netchan)
 {
@@ -143,6 +137,12 @@ SV_WriteWorldVars (netchan_t *netchan)
 						 Info_MakeString (svs.info, 0)));
 }
 
+/*
+	SV_New_f
+
+	Sends the first message from the server to a connected client.
+	This will be sent on the initial connection and upon each server load.
+*/
 static void
 SV_New_f (void *unused)
 {
@@ -164,7 +164,7 @@ SV_New_f (void *unused)
 // NOTE:  This doesn't go through MSG_ReliableWrite since it's before the
 // user spawns.  These functions are written to not overflow
 	if (host_client->backbuf.num_backbuf) {
-		SV_Printf ("WARNING %s: [SV_New] Back buffered (%d0, clearing\n",
+		SV_Printf ("WARNING %s: [SV_New] Back buffered (%d), clearing\n",
 					host_client->name, host_client->netchan.message.cursize);
 		host_client->backbuf.num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
@@ -185,8 +185,8 @@ SV_New_f (void *unused)
 
 	// Trigger GIB connection event
 	if (sv_client_connect_e->func)
-		GIB_Event_Callback (sv_client_connect_e, 1, va ("%u",
-														host_client->userid));
+		GIB_Event_Callback (sv_client_connect_e, 1,
+							va ("%u", host_client->userid));
 }
 
 void

@@ -24,6 +24,7 @@ if test "$1" = "clean"; then
 
 	cd -
 	find . -name Makefile -print0 | xargs $ARGS rm -f
+	find . -name core -print0 | xargs $ARGS rm -f
 	rm -f RPM/build_rpm RPM/quakeforge.conf RPM/quakeforge.spec RPM/rpmmacros
 	find . -name '*.o' -type f -print0 | xargs $ARGS rm -f
 	find . -name '*.lo' -type f -print0 | xargs $ARGS rm -f

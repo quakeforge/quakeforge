@@ -1,0 +1,28 @@
+[oob]getchallenge\n
+                                [oob]c[challenge][ext]
+[oob]connect [protover] [qport] [challenge] [userinfo]
+                                [oob]j
+[chan][clc_stringcmd]new
+                                [chan][svc_serverdata][data]
+[chan][clc_stringcmd]soundlist [svcount] 0
+{
+                                    [chan][svc_soundlist][data][next]
+    [chan][clc_stringcmd]soundlist [svcount] [next]
+}
+                                [chan][svc_soundlist][data]0
+[chan][clc_stringcmd]modellist [svcount] 0
+{
+                                    [chan][svc_modellist][data][next]
+    [chan][clc_stringcmd]modellist [svcount] [next]
+}
+                                [chan][svc_modellist][data]0
+[chan][clc_stringcmd]prespawn [svcount] [n=0] [wcsum]
+{
+                                    [chan][signon buffer n][stuffcmd]prespawn...
+    [chan][clc_stringcmd]prespawn [svcount] [n]
+}
+                                [chan][signon buffer n][stuffcmd]spawn...
+[chan][clc_stringcmd]spawn [svcount] 0
+                                [chan][spawn info][stuffcmd]skins
+[chan][clc_stringcmd]begin [svcount]
+....
