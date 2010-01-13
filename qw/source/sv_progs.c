@@ -25,7 +25,7 @@
 
 */
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+# include "config.h"
 #endif
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -47,11 +47,11 @@
 #include "sv_pr_qwe.h"
 #include "world.h"
 
+progs_t     sv_pr_state;
 sv_globals_t sv_globals;
 sv_funcs_t sv_funcs;
 sv_fields_t sv_fields;
 
-progs_t	    sv_pr_state;
 cvar_t     *r_skyname;
 cvar_t     *sv_progs;
 cvar_t     *sv_progs_zone;
@@ -154,6 +154,10 @@ ED_Count_f (void)
 static void
 PR_Profile_f (void)
 {
+	if (!sv_pr_state.progs) {
+		Sys_Printf ("no progs loaded\n");
+		return;
+	}
 	PR_Profile (&sv_pr_state);
 }
 
@@ -329,15 +333,15 @@ static sv_def_t qw_opt_funcs[] = {
 };
 
 static sv_def_t qw_opt_fields[] = {
-	{ev_integer,	0,	"rotated_bbox",	&sv_fields.rotated_bbox},
-	{ev_float,		0,	"alpha",		&sv_fields.alpha},
-	{ev_float,		0,	"scale",		&sv_fields.scale},
-	{ev_float,		0,	"glow_size",	&sv_fields.glow_size},
-	{ev_float,		0,	"glow_color",	&sv_fields.glow_color},
-	{ev_vector,		0,	"colormod",		&sv_fields.colormod},
+	{ev_integer,	0,	"rotated_bbox",		&sv_fields.rotated_bbox},
+	{ev_float,		0,	"alpha",			&sv_fields.alpha},
+	{ev_float,		0,	"scale",			&sv_fields.scale},
+	{ev_float,		0,	"glow_size",		&sv_fields.glow_size},
+	{ev_float,		0,	"glow_color",		&sv_fields.glow_color},
+	{ev_vector,		0,	"colormod",			&sv_fields.colormod},
 
-	{ev_float,		0,	"gravity",		&sv_fields.gravity},
-	{ev_float,		0,	"maxspeed",		&sv_fields.maxspeed},
+	{ev_float,		0,	"gravity",			&sv_fields.gravity},
+	{ev_float,		0,	"maxspeed",			&sv_fields.maxspeed},
 	{ev_void,		0,	0},
 };
 
@@ -477,12 +481,6 @@ SV_LoadProgs (void)
 	const char *progs_name = "qwprogs.dat";
 	const char *range;
 
-	memset (&sv_globals, 0, sizeof (sv_funcs));
-	memset (&sv_funcs, 0, sizeof (sv_funcs));
-
-	sv_cbuf->unknown_command = 0;
-	ucmd_unknown = 0;
-
 	if (strequal (sv_progs_ext->string, "qf")) {
 		sv_range = PR_RANGE_QF;
 		range = "QF";
@@ -501,6 +499,12 @@ SV_LoadProgs (void)
 		range = "None";
 	}
 	Sys_DPrintf ("Using %s builtin extention mapping\n", range);
+
+	memset (&sv_globals, 0, sizeof (sv_funcs));
+	memset (&sv_funcs, 0, sizeof (sv_funcs));
+
+	sv_cbuf->unknown_command = 0;
+	ucmd_unknown = 0;
 
 	if (qfs_gamedir->gamecode && *qfs_gamedir->gamecode)
 		progs_name = qfs_gamedir->gamecode;

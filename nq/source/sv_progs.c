@@ -32,10 +32,10 @@ static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
-# include "string.h"
+# include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
-# include "strings.h"
+# include <strings.h>
 #endif
 
 #include "QF/cmd.h"
@@ -119,9 +119,9 @@ ED_PrintEdicts_f (void)
 }
 
 /*
-  ED_PrintEdict_f
+	ED_PrintEdict_f
 
-  For debugging, prints a single edicy
+	For debugging, prints a single edict
 */
 static void
 ED_PrintEdict_f (void)
@@ -147,6 +147,18 @@ PR_Profile_f (void)
 		return;
 	}
 	PR_Profile (&sv_pr_state);
+}
+
+static void
+watch_f (void)
+{
+	PR_Debug_Watch (&sv_pr_state, Cmd_Argc () < 2 ? 0 : Cmd_Args (1));
+}
+
+static void
+print_f (void)
+{
+	PR_Debug_Print (&sv_pr_state, Cmd_Argc () < 2 ? 0 : Cmd_Args (1));
 }
 
 static int
@@ -309,6 +321,8 @@ static sv_def_t nq_opt_funcs[] = {
 };
 
 static sv_def_t nq_opt_fields[] = {
+	{ev_integer,	0,	"rotated_bbox",		&sv_fields.rotated_bbox},
+	{ev_float,		0,	"gravity",			&sv_fields.gravity},
 	// Quake 2 fields?
 	{ev_float,		0,	"dmg",				&sv_fields.dmg},
 	{ev_float,		0,	"dmgtime",			&sv_fields.dmgtime},
@@ -323,9 +337,6 @@ static sv_def_t nq_opt_fields[] = {
 	{ev_float,		0,	"items2",			&sv_fields.items2},
 	{ev_float,		0,	"pitch_speed",		&sv_fields.pitch_speed},
 	{ev_float,		0,	"lastruntime",		&sv_fields.lastruntime},
-
-	{ev_integer,	0,	"rotated_bbox",		&sv_fields.rotated_bbox},
-	{ev_float,		0,	"gravity",			&sv_fields.gravity},
 	{ev_void,		0,	0},
 };
 
@@ -465,11 +476,6 @@ SV_LoadProgs (void)
 	const char *progs_name = "progs.dat";
 	const char *range;
 
-	if (qfs_gamedir->gamecode && *qfs_gamedir->gamecode)
-		progs_name = qfs_gamedir->gamecode;
-	if (*sv_progs->string)
-		progs_name = sv_progs->string;
-
 	if (strequal (sv_progs_ext->string, "qf")) {
 		sv_range = PR_RANGE_QF;
 		range = "QF";
@@ -482,6 +488,14 @@ SV_LoadProgs (void)
 	}
 	Sys_DPrintf ("Using %s builtin extention mapping\n", range);
 
+	memset (&sv_globals, 0, sizeof (sv_funcs));
+	memset (&sv_funcs, 0, sizeof (sv_funcs));
+
+	if (qfs_gamedir->gamecode && *qfs_gamedir->gamecode)
+		progs_name = qfs_gamedir->gamecode;
+	if (*sv_progs->string)
+		progs_name = sv_progs->string;
+
 	PR_LoadProgs (&sv_pr_state, progs_name, sv.max_edicts,
 				  sv_progs_zone->int_val * 1024);
 	if (!sv_pr_state.progs)
@@ -491,6 +505,7 @@ SV_LoadProgs (void)
 void
 SV_Progs_Init (void)
 {
+	pr_gametype = "netquake";
 	sv_pr_state.edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
 	sv_pr_state.reserved_edicts = &svs.maxclients;
@@ -508,8 +523,10 @@ SV_Progs_Init (void)
 					"Display information on all edicts in the game.");
 	Cmd_AddCommand ("edictcount", ED_Count_f,
 					"Display summary information on the edicts in the game.");
-	Cmd_AddCommand ("profile", PR_Profile_f, "FIXME: Report information "
-					"about QuakeC Stuff (\?\?\?) No Description");
+	Cmd_AddCommand ("profile", PR_Profile_f, "FIXME: Report information about "
+					"QuakeC Stuff (\?\?\?) No Description");
+	Cmd_AddCommand ("watch", watch_f, "set watchpoint");
+	Cmd_AddCommand ("print", print_f, "print value at location");
 }
 
 void

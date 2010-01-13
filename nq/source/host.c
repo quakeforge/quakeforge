@@ -910,8 +910,6 @@ Host_Init (void)
 
 	CL_Init_Memory ();
 
-	pr_gametype = "netquake";
-
 	mp = Game_Init ();
 	QFS_Init (mp);
 	PI_Init ();
