@@ -73,7 +73,7 @@ typedef struct challenge_s {
 
 void Client_Init (void);
 void Client_NewConnection (void);
-
+void Client_SendMessages (client_t *cl);
 void Client_New (client_t *cl);
 void Client_Frame (void);
 

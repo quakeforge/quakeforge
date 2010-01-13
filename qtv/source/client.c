@@ -86,8 +86,12 @@ client_drop (client_t *cl)
 static void
 cl_new_f (client_t *cl, void *unused)
 {
-	qtv_printf ("\"cmd list\" for a list of servers\n");
-	qtv_printf ("\"cmd connect <servername>\" to connect to a server\n");
+	if (!cl->server) {
+		qtv_printf ("\"cmd list\" for a list of servers\n");
+		qtv_printf ("\"cmd connect <servername>\" to connect to a server\n");
+	} else {
+		Client_New (cl);
+	}
 }
 
 static void
@@ -1051,8 +1055,8 @@ write_players (client_t *client, sizebuf_t *msg)
 	}
 }
 
-static void
-cl_send_messages (client_t *cl)
+void
+Client_SendMessages (client_t *cl)
 {
 	byte        buf[MAX_DATAGRAM];
 	sizebuf_t   msg;
@@ -1266,7 +1270,7 @@ Client_Frame (void)
 			continue;
 		}
 		if (cl->send_message) {
-			cl_send_messages (cl);
+			Client_SendMessages (cl);
 			cl->send_message = false;
 		}
 		c = &(*c)->clnext;

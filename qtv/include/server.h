@@ -110,7 +110,9 @@ void Server_Frame (void);
 void Server_List (void);
 void Server_Connect (const char *name, struct client_s *client);
 void Server_Disconnect (struct client_s *client);
-void Server_Broadcast (server_t *sv, int reliable, byte *msg, int len);
+void Server_Broadcast (server_t *sv, int reliable, int all, const byte *msg,
+					   int len);
+void Server_BroadcastCommand (server_t *sv, const char *cmd);
 
 struct qmsg_s;
 void sv_parse (server_t *sv, struct msg_s *msg, int reliable);

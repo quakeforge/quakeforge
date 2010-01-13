@@ -211,16 +211,22 @@ sv_skins_f (server_t *sv)
 		sv->frames[i].entities.entities = sv->entity_states[i];
 		sv->frames[i].players.players = sv->player_states[i];
 	}
+	Server_BroadcastCommand (sv, "reconnect\n");
 }
 
 static void
 sv_changing_f (server_t *sv)
 {
+	client_t   *cl;
+
 	sv->connected = 1;
 	sv->num_signon_buffers = 0;
 	qtv_printf ("Changing map...\n");
 	MSG_WriteByte (&sv->netchan.message, qtv_nop);
 	sv->next_run = realtime;
+	Server_BroadcastCommand (sv, "changing\n");
+	for (cl = sv->clients; cl; cl = cl->next)
+		Client_SendMessages (cl);
 }
 
 static void
@@ -1062,7 +1068,7 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 		}
 		if (send) {
 			bc_len = msg->readcount - bc_len;
-			Server_Broadcast (sv, reliable, bc_data, bc_len);
+			Server_Broadcast (sv, reliable, 0, bc_data, bc_len);
 		}
 	}
 }

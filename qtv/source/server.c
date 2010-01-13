@@ -601,7 +601,8 @@ Server_Disconnect (struct client_s *client)
 }
 
 void
-Server_Broadcast (server_t *sv, int reliable, byte *msg, int len)
+Server_Broadcast (server_t *sv, int reliable, int all, const byte *msg,
+				  int len)
 {
 	client_t   *cl;
 	byte        svc;
@@ -611,7 +612,8 @@ Server_Broadcast (server_t *sv, int reliable, byte *msg, int len)
 	svc = *msg++;
 	len--;
 	for (cl = sv->clients; cl; cl = cl->next) {
-		if ((sv->player_mask != ~0u) && !(sv->player_mask & cl->spec_track))
+		if (!all && (sv->player_mask != ~0u)
+			&& !(sv->player_mask & cl->spec_track))
 			continue;
 		if (reliable) {
 			MSG_ReliableWrite_Begin (&cl->backbuf, svc, len + 1);
@@ -620,4 +622,12 @@ Server_Broadcast (server_t *sv, int reliable, byte *msg, int len)
 			SZ_Write (&cl->datagram, msg - 1, len + 1);
 		}
 	}
+}
+
+void
+Server_BroadcastCommand (server_t *sv, const char *cmd)
+{
+	const char *msg = va ("%c%s", svc_stufftext, cmd);
+	int         len = strlen (msg) + 1;
+	Server_Broadcast (sv, 1, 1, (const byte *) msg, len);
 }
