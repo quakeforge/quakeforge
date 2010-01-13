@@ -876,7 +876,7 @@ VISIBLE opcode_t pr_opcodes[] = {
 
 	{"<STATE>", "state.f", OP_STATE_F, false,
 	 ev_float, ev_func, ev_float,
-	 PROG_ID_VERSION,
+	 PROG_VERSION,
 	 "%Ga, %Gb, %Gc",
 	},
 
