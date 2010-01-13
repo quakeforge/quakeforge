@@ -472,7 +472,10 @@ emit_deref_expr (expr_t *e, def_t *dest)
 		&& e->e.expr.op == '&'
 		&& e->e.expr.e1->type < ex_string)
 		e->e.expr.op = '.';
-	d = emit_sub_expr (e, dest);
+	if (e->type == ex_uexpr && e->e.expr.op == '.')
+		d = emit_sub_expr (e, 0);
+	else
+		d = emit_sub_expr (e, dest);
 
 	if (dest && d != dest) {
 		zero.type = ex_short;
