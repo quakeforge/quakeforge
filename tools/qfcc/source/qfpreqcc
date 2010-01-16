@@ -320,17 +320,22 @@ def process_source (source_file):
 no_delete = 0
 use_cpp = 0
 i = 0
+qfcc_prefix = ""	# search the path
 while i < len (sys.argv):
 	if sys.argv[i] == '--keep':
 		no_delete = 1
 		del sys.argv[i]
 		continue
 	elif sys.argv[i] == '--verbose':
-		verbose = 1;
+		verbose = 1
 		del sys.argv[i]
 		continue
 	elif sys.argv[i] == '--cpp':
-		use_cpp = 1;
+		use_cpp = 1
+		del sys.argv[i]
+		continue
+	elif sys.argv[i] == '--local-qfcc':
+		qfcc_prefix = "./"	# search the local directory
 		del sys.argv[i]
 		continue
 	i = i + 1
@@ -349,9 +354,13 @@ if not verbose:
 	args = ["--quiet"] + args
 if not use_cpp:
 	args = ["-C", "no-cpp"] + args
-args = ["qfcc"] + args
-os.spawnvp (os.P_WAIT, "qfcc", args)
+args = [qfcc_prefix + "qfcc"] + args
+err = os.spawnvp (os.P_WAIT, qfcc_prefix + "qfcc", args)
 if not no_delete:
 	for l in qcc_list:
 		os.unlink (l)
 	os.unlink (progs_src)
+if err == 127:
+	print "Could not execute qfcc. Ensure qfcc is either in a directory in"
+	print "$PATH, or in the current directory and run qfpreqcc with",
+	print "\"--local-qfcc\"."
