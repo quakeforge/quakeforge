@@ -102,4 +102,4 @@ if test -n "$errors" ; then
 	exit 1
 fi
 
-aclocal && autoheader && $libtoolize --automake && automake --add-missing && autoconf
+aclocal -I m4 && autoheader && $libtoolize --automake && automake --add-missing && autoconf
