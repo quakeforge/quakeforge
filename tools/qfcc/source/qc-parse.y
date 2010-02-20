@@ -1733,7 +1733,7 @@ create_def (type_t *type, const char *name, scope_t *scope,
 				warning (0, "local %s shadows param %s", name,
 						 def->name);
 			}
-			if (def->scope == scope) {
+			if (def->scope == scope && options.warnings.redeclared) {
 				expr_t      e;
 				warning (0, "local %s redeclared", name);
 				e.file = def->file;

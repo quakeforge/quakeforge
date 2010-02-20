@@ -217,6 +217,7 @@ warning_usage (void)
 "                            interface.\n"
 "    none                    Turn off all warnings.\n"
 "    [no-]precedence         Warn about potentially ambiguous logic.\n"
+"    [no-]redeclared         Warn about redeclared local variables.\n"
 "    [no-]traditional        Warn about bad code that qcc allowed.\n"
 "    [no-]undef-function     Warn about calling a yet to be defined\n"
 "                            function.\n"
@@ -276,6 +277,7 @@ DecodeArgs (int argc, char **argv)
 	options.warnings.precedence = true;
 	options.warnings.initializer = true;
 	options.warnings.unimplemented = true;
+	options.warnings.redeclared = true;
 
 	options.single_cpp = true;
 	options.save_temps = false;
@@ -417,6 +419,7 @@ DecodeArgs (int argc, char **argv)
 							options.warnings.precedence = true;
 							options.warnings.initializer = true;
 							options.warnings.unimplemented = true;
+							options.warnings.redeclared = true;
 						} else if (!(strcasecmp (temp, "none"))) {
 							options.warnings.cow = false;
 							options.warnings.undefined_function = false;
@@ -430,6 +433,7 @@ DecodeArgs (int argc, char **argv)
 							options.warnings.precedence = false;
 							options.warnings.initializer = false;
 							options.warnings.unimplemented = false;
+							options.warnings.redeclared = false;
 						} else {
 							qboolean    flag = true;
 
@@ -453,6 +457,8 @@ DecodeArgs (int argc, char **argv)
 								options.warnings.interface_check = flag;
 							} else if (!strcasecmp (temp, "precedence")) {
 								options.warnings.precedence = flag;
+							} else if (!strcasecmp (temp, "redeclared")) {
+								options.warnings.redeclared = flag;
 							} else if (!strcasecmp (temp, "traditional")) {
 								options.warnings.traditional = flag;
 							} else if (!strcasecmp (temp, "undef-function")) {

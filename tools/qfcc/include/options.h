@@ -58,6 +58,7 @@ typedef struct {
 	qboolean	precedence;			// Warn on precedence issues
 	qboolean	initializer;		// Warn on excessive initializer elements
 	qboolean	unimplemented;		// Warn on unimplemented class methods
+	qboolean	redeclared;			// Warn on redeclared local variables
 } warn_options_t;
 
 typedef struct {
