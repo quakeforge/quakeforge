@@ -276,6 +276,9 @@ get_def (type_t *type, const char *name, scope_t *scope,
 			space = pr.near_data;
 			break;
 	}
+	// new_def sets def->space to the scope's space, but that is generally
+	// not valid for st_static or st_extern
+	def->space = space;
 	if (space) {
 		if (type->type == ev_field && type->aux_type == &type_vector)
 			def->ofs = new_location (type->aux_type, space);
