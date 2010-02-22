@@ -577,6 +577,8 @@ var_initializer
 			type_t     *type = $<type>-1;
 
 			if (current_scope->type == sc_params) {
+				// In traditional mode, this is the only scope that functions
+				// have.
 				local = 0;
 				$$ = create_def (type, name, current_scope, st_static);
 			} else {
