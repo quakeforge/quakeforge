@@ -410,7 +410,7 @@ NET_SendPacket (int length, const void *data, netadr_t to)
 
 #ifndef SERVERONLY
 		if (err == WSAEADDRNOTAVAIL)
-			Con_DPrintf ("NET_SendPacket Warning: %i\n", err);
+			Sys_Printf ("NET_SendPacket Warning: %i\n", err);
 #endif
 #else /* _WIN32 */
 		int         err = errno;

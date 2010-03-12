@@ -266,12 +266,12 @@ NET_GetPacket (void)
 		int         err = WSAGetLastError ();
 
 		if (err == WSAEMSGSIZE) {
-			Sys_Printf ("Warning:  Oversize packet from %s\n",
+			Sys_Printf ("NET_GetPacket Warning:  Oversize packet from %s\n",
 						NET_AdrToString (net_from));
 			return false;
 		}
 		if (err == 10054) {
-			Con_DPrintf ("error 10054 from %s\n", NET_AdrToString (net_from));
+			Sys_Printf ("NET_GetPacket: error 10054 from %s\n", NET_AdrToString (net_from));
 			return false;
 		}
 #else // _WIN32
@@ -324,7 +324,7 @@ NET_SendPacket (int length, const void *data, netadr_t to)
 		int         err = WSAGetLastError ();
 
 		if (err == WSAEADDRNOTAVAIL)
-			Con_DPrintf ("NET_SendPacket Warning: %i\n", err);
+			Sys_Printf ("NET_SendPacket Warning: %i\n", err);
 #else // _WIN32
 		int         err = errno;
 

@@ -60,10 +60,12 @@ static cvar_t *con_interpreter;
 static void
 Con_Interp_f (cvar_t *var)
 {
+	cbuf_interpreter_t *interp;
+
 	if (!con_module)
 		return;
 
-	cbuf_interpreter_t *interp = Cmd_GetProvider(var->string);
+	interp = Cmd_GetProvider(var->string);
 
 	if (interp) {
 		cbuf_t *new;
