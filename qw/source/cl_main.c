@@ -861,6 +861,8 @@ CL_ConnectionlessPacket (void)
 	MSG_ReadLong (net_message);					// skip the -1
 
 	c = MSG_ReadByte (net_message);
+	if (net_message->badread)
+		return;
 	clcp_temp = 0;
 	if (!cls.demoplayback
 		&& (cl_paranoid->int_val
