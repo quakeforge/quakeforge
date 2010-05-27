@@ -355,7 +355,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 	dstatement_t *st;
 	edict_t    *ed;
 	pr_type_t  *ptr;
-	pr_type_t   old_val, *watch = 0;
+	pr_type_t   old_val = {0}, *watch = 0;
 
 	// make a stack frame
 	exitdepth = pr->pr_depth;

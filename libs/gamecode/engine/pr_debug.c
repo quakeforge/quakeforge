@@ -246,7 +246,8 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 			f->lines[++f->num_lines].text = l + 1;
 		}
 	}
-	f->lines[f->num_lines++].len = l - f->lines[f->num_lines].text;
+	f->lines[f->num_lines].len = l - f->lines[f->num_lines].text;
+	f->num_lines++;
 	f->pr = pr;
 	Hash_Add (file_hash, f);
 	return f;
