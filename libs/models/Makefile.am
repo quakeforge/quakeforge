@@ -7,7 +7,7 @@ INCLUDES= -I$(top_srcdir)/include
 noinst_PROGRAMS= testclip
 
 testclip_SOURCES=testclip.c
-testclip_LDADD= libQFmodels.la
+testclip_LDADD= libQFmodels.la $(top_builddir)/libs/util/libQFutil.la
 testclip_DEPENDENCIES=
 
 lib_LTLIBRARIES=	libQFmodels.la @VID_MODEL_TARGETS@
