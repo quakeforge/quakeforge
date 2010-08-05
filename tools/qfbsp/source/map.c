@@ -41,6 +41,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/va.h"
 
 #include "bsp5.h"
+#include "compat.h"
 
 int         nummapbrushfaces;
 int         nummapbrushes;
@@ -485,7 +486,15 @@ LoadMapFile (const char *filename)
 
 	num_entities = 0;
 
-	while (ParseEntity ()) {
+	if (Script_GetToken (map_script, 1)) {
+		if (strequal (map_script->token->str, "QuakeForge-map")) {
+			if (!Script_TokenAvailable (map_script, 1))
+				map_error ("Unexpected EOF reading %s\n", filename);
+		} else {
+			Script_UngetToken (map_script);
+			while (ParseEntity ())
+				;
+		}
 	}
 
 	Script_Delete (map_script);
