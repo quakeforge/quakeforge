@@ -165,8 +165,17 @@ write_msg (sizebuf_t *msg, int type, int to, float time, sizebuf_t *dst)
 
 	msec = (time - prevtime) * 1000;
 	prevtime += msec * 0.001;
-	if (msec > 255)
-		msec = 255;
+	while (msec > 250) {
+		//the maximum interval we can send is 255ms, but that's nasty with,
+		//floats, so keep things to a nice round number of 250ms (0.25 is float
+		//friendly)
+		MSG_WriteByte (dst, 250);
+		MSG_WriteByte (dst, dem_read);
+		MSG_WriteLong (dst, -1);
+		MSG_WriteByte (dst, A2C_PRINT);
+		MSG_WriteString (dst, "");
+		msec -= 250;
+	}
 	if (msec < 2)
 		msec = 0;
 
