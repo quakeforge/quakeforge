@@ -66,6 +66,14 @@ s_stop_all_sounds (void)
 }
 
 static void
+s_start_sound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
+			   float fvol, float attenuation)
+{
+	if (!snd_shutdown)
+		SND_StartSound (entnum, entchannel, sfx, origin, fvol, attenuation);
+}
+
+static void
 s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 		  const vec3_t up)
 {
@@ -82,6 +90,13 @@ s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 static void
 s_extra_update (void)
 {
+}
+
+static void
+s_local_sound (const char *sound)
+{
+	if (!snd_shutdown)
+		SND_LocalSound (sound);
 }
 
 static void
@@ -121,6 +136,14 @@ s_unblock_sound (void)
 		//s_jack_activate ();
 		//Sys_Printf ("jack_activate\n");
 	}
+}
+
+static channel_t *
+s_alloc_channel (void)
+{
+	if (!snd_shutdown)
+		return SND_AllocChannel ();
+	return 0;
 }
 
 static void
@@ -238,17 +261,17 @@ static snd_render_funcs_t plugin_info_render_funcs = {
 	SND_AmbientOff,
 	SND_AmbientOn,
 	SND_StaticSound,
-	SND_StartSound,
+	s_start_sound,
 	SND_StopSound,
 	SND_PrecacheSound,
 	s_update,
 	s_stop_all_sounds,
 	s_extra_update,
-	SND_LocalSound,
+	s_local_sound,
 	s_block_sound,
 	s_unblock_sound,
 	SND_LoadSound,
-	SND_AllocChannel,
+	s_alloc_channel,
 	SND_ChannelStop,
 };
 
