@@ -814,7 +814,7 @@ fi
 
 dnl Check for XFree86-VidMode support
 AC_ARG_ENABLE(vidmode,
-[  --disable-vidmode       don't use XFree86 VidMode extension],
+[  --disable-vidmode       do not use XFree86 VidMode extension],
 	HAVE_VIDMODE=$enable_vidmode, HAVE_VIDMODE=auto)
 if test "x$HAVE_VIDMODE" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
@@ -835,19 +835,29 @@ AC_SUBST(VIDMODE_LIBS)
 
 dnl Check for DGA support
 AC_ARG_ENABLE(dga,
-[  --disable-dga           don't use XFree86 DGA extension],
+[  --disable-dga           do not use XFree86 DGA extension],
 HAVE_DGA=$enable_dga, HAVE_DGA=auto)
 if test "x$HAVE_DGA" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$X_CFLAGS $CPPFLAGS"
-	AC_CHECK_HEADER(X11/extensions/xf86dga.h,
+	AC_CHECK_HEADER(X11/extensions/Xxf86dga.h,
 		dnl Make sure the library works
 		[AC_CHECK_LIB(Xxf86dga, XF86DGAQueryVersion,
 			AC_DEFINE(HAVE_DGA, 1, [Define if you have the XFree86 DGA extension])
 			DGA_LIBS="-lXxf86dga",,
 			[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
 		)],
-		[],
+		[AC_CHECK_HEADER(X11/extensions/xf86dga.h,
+			dnl Make sure the library works
+			[AC_CHECK_LIB(Xxf86dga, XF86DGAQueryVersion,
+				AC_DEFINE(HAVE_DGA, 1, [Define if you have the XFree86 DGA extension])
+				AC_DEFINE(DGA_OLD_HEADERS, 1, [Define if DGA uses old headers])
+				DGA_LIBS="-lXxf86dga",,
+				[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
+			)],
+			[],
+			[#include <X11/Xlib.h>]
+		)],
 		[#include <X11/Xlib.h>]
 	)
 	CPPFLAGS="$save_CPPFLAGS"

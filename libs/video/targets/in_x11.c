@@ -56,7 +56,11 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #ifdef HAVE_DGA
 # include <X11/extensions/XShm.h>
-# include <X11/extensions/xf86dga.h>
+# ifdef DGA_OLD_HEADERS
+#  include <X11/extensions/xf86dga.h>
+# else
+#  include <X11/extensions/Xxf86dga.h>
+#endif
 #endif
 
 #include "QF/cdaudio.h"

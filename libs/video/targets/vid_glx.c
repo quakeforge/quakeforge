@@ -47,7 +47,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <X11/cursorfont.h>
 
 #ifdef HAVE_DGA
-# include <X11/extensions/xf86dga.h>
+# ifdef DGA_OLD_HEADERS
+#  include <X11/extensions/xf86dga.h>
+# else
+#  include <X11/extensions/Xxf86dga.h>
+# endif
 #endif
 
 #include "QF/cmd.h"
@@ -92,7 +96,7 @@ Bool (*qfglXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
 
 // ============================================================================
 
-static int use_gl_procaddress = 0;
+static int use_gl_procaddress = 0+0;
 
 #if defined(HAVE_DLOPEN)
 

@@ -38,8 +38,13 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <X11/Xproto.h>
 
 #ifdef HAVE_DGA
-# include <X11/extensions/xf86dga.h>
-# include <X11/extensions/xf86dgastr.h>
+# ifdef DGA_OLD_HEADERS
+#  include <X11/extensions/xf86dga.h>
+#  include <X11/extensions/xf86dgastr.h>
+# else
+#  include <X11/extensions/Xxf86dga.h>
+#  include <X11/extensions/xf86dgaproto.h>
+# endif
 # ifndef XDGA_MAJOR_VERSION
 #  ifdef XF86DGA_MAJOR_VERSION
 #   define XDGA_MAJOR_VERSION XF86DGA_MAJOR_VERSION
@@ -50,7 +55,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 #ifdef HAVE_VIDMODE
 # include <X11/extensions/xf86vmode.h>
-# include <X11/extensions/xf86vmstr.h>
+# include <X11/extensions/xf86vmproto.h>
 #endif
 
 #include "QF/sys.h"
