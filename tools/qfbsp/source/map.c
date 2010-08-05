@@ -54,7 +54,7 @@ char        miptex[MAX_MAP_TEXINFO][16];
 
 int         numdetailbrushes;
 
-script_t   *map;
+script_t   *map_script;
 
 static void __attribute__ ((format (printf, 1, 2), noreturn))
 map_error (const char *fmt, ...)
@@ -62,7 +62,7 @@ map_error (const char *fmt, ...)
 	va_list     args;
 
 	va_start (args, fmt);
-	fprintf (stderr, "%s:%d: ", map->file, map->line);
+	fprintf (stderr, "%s:%d: ", map_script->file, map_script->line);
 	vfprintf (stderr, fmt, args);
 	fprintf (stderr, "\n");
 	va_end (args);
@@ -142,9 +142,9 @@ ParseEpair (void)
 	e->next = mapent->epairs;
 	mapent->epairs = e;
 
-	e->key = strdup (map->token->str);
-	Script_GetToken (map, false);
-	e->value = strdup (map->token->str);
+	e->key = strdup (map_script->token->str);
+	Script_GetToken (map_script, false);
+	e->value = strdup (map_script->token->str);
 }
 
 vec3_t      baseaxis[18] = {
@@ -183,18 +183,18 @@ ParseVerts (int *n_verts)
 	vec3_t     *verts;
 	int         i;
 
-	if (map->token->str[0] != ':')
+	if (map_script->token->str[0] != ':')
 		map_error ("parsing brush");
-	*n_verts = atoi (map->token->str + 1);
+	*n_verts = atoi (map_script->token->str + 1);
 	verts = malloc (sizeof (vec3_t) * *n_verts);
 
 	for (i = 0; i < *n_verts; i++) {
-		Script_GetToken (map, true);
-		verts[i][0] = atof (map->token->str);
-		Script_GetToken (map, true);
-		verts[i][1] = atof (map->token->str);
-		Script_GetToken (map, true);
-		verts[i][2] = atof (map->token->str);
+		Script_GetToken (map_script, true);
+		verts[i][0] = atof (map_script->token->str);
+		Script_GetToken (map_script, true);
+		verts[i][1] = atof (map_script->token->str);
+		Script_GetToken (map_script, true);
+		verts[i][2] = atof (map_script->token->str);
 	}
 
 	return verts;
@@ -220,45 +220,45 @@ ParseBrush (void)
 	b->next = mapent->brushes;
 	mapent->brushes = b;
 
-	Script_GetToken (map, true);
-	if (strcmp (map->token->str, "(") != 0) {
+	Script_GetToken (map_script, true);
+	if (strcmp (map_script->token->str, "(") != 0) {
 		verts = ParseVerts (&n_verts);
 	} else {
-		Script_UngetToken (map);
+		Script_UngetToken (map_script);
 	}
 
 	do {
-		if (!Script_GetToken (map, true))
+		if (!Script_GetToken (map_script, true))
 			break;
-		if (!strcmp (map->token->str, "}"))
+		if (!strcmp (map_script->token->str, "}"))
 			break;
 
 		if (verts) {
 			int         n_v, v;
-			n_v = atoi (map->token->str);
-			Script_GetToken (map, false);
+			n_v = atoi (map_script->token->str);
+			Script_GetToken (map_script, false);
 			for (i = 0; i < n_v; i++) {
-				Script_GetToken (map, false);
-				v = atof (map->token->str);
+				Script_GetToken (map_script, false);
+				v = atof (map_script->token->str);
 				if (i < 3)
 					VectorCopy (verts[v], planepts[i]);
 			}
-			Script_GetToken (map, false);
+			Script_GetToken (map_script, false);
 		} else {
 			// read the three point plane definition
 			for (i = 0; i < 3; i++) {
 				if (i != 0)
-					Script_GetToken (map, true);
-				if (strcmp (map->token->str, "("))
+					Script_GetToken (map_script, true);
+				if (strcmp (map_script->token->str, "("))
 					map_error ("parsing brush");
 
 				for (j = 0; j < 3; j++) {
-					Script_GetToken (map, false);
-					planepts[i][j] = atof (map->token->str);
+					Script_GetToken (map_script, false);
+					planepts[i][j] = atof (map_script->token->str);
 				}
 
-				Script_GetToken (map, false);
-				if (strcmp (map->token->str, ")"))
+				Script_GetToken (map_script, false);
+				if (strcmp (map_script->token->str, ")"))
 					map_error ("parsing brush");
 			}
 		}
@@ -272,53 +272,53 @@ ParseBrush (void)
 
 		// read the texturedef
 		memset (&tx, 0, sizeof (tx));
-		Script_GetToken (map, false);
-		tx.miptex = FindMiptex (map->token->str);
-		Script_GetToken (map, false);
-		if ((hltexdef = !strcmp (map->token->str, "["))) {
+		Script_GetToken (map_script, false);
+		tx.miptex = FindMiptex (map_script->token->str);
+		Script_GetToken (map_script, false);
+		if ((hltexdef = !strcmp (map_script->token->str, "["))) {
 			// S vector
-			Script_GetToken (map, false);
-			vecs[0][0] = atof (map->token->str);
-			Script_GetToken (map, false);
-			vecs[0][1] = atof (map->token->str);
-			Script_GetToken (map, false);
-			vecs[0][2] = atof (map->token->str);
-			Script_GetToken (map, false);
-			vecs[0][3] = atof (map->token->str);
-			Script_GetToken (map, false);
-			if (strcmp (map->token->str, "]"))
+			Script_GetToken (map_script, false);
+			vecs[0][0] = atof (map_script->token->str);
+			Script_GetToken (map_script, false);
+			vecs[0][1] = atof (map_script->token->str);
+			Script_GetToken (map_script, false);
+			vecs[0][2] = atof (map_script->token->str);
+			Script_GetToken (map_script, false);
+			vecs[0][3] = atof (map_script->token->str);
+			Script_GetToken (map_script, false);
+			if (strcmp (map_script->token->str, "]"))
 				map_error ("missing ]");
-			Script_GetToken (map, false);
-			if (strcmp (map->token->str, "["))
+			Script_GetToken (map_script, false);
+			if (strcmp (map_script->token->str, "["))
 				map_error ("missing [");
 			// T vector
-			Script_GetToken (map, false);
-			vecs[1][0] = atof (map->token->str);
-			Script_GetToken (map, false);
-			vecs[1][1] = atof (map->token->str);
-			Script_GetToken (map, false);
-			vecs[1][2] = atof (map->token->str);
-			Script_GetToken (map, false);
-			vecs[1][3] = atof (map->token->str);
-			Script_GetToken (map, false);
-			if (strcmp (map->token->str, "]"))
+			Script_GetToken (map_script, false);
+			vecs[1][0] = atof (map_script->token->str);
+			Script_GetToken (map_script, false);
+			vecs[1][1] = atof (map_script->token->str);
+			Script_GetToken (map_script, false);
+			vecs[1][2] = atof (map_script->token->str);
+			Script_GetToken (map_script, false);
+			vecs[1][3] = atof (map_script->token->str);
+			Script_GetToken (map_script, false);
+			if (strcmp (map_script->token->str, "]"))
 				map_error ("missing ]");
 		} else {
-			vecs[0][3] = atof (map->token->str);
-			Script_GetToken (map, false);
-			vecs[1][3] = atof (map->token->str);
+			vecs[0][3] = atof (map_script->token->str);
+			Script_GetToken (map_script, false);
+			vecs[1][3] = atof (map_script->token->str);
 		}
 
-		Script_GetToken (map, false);
-		rotate = atof (map->token->str);
-		Script_GetToken (map, false);
-		scale[0] = atof (map->token->str);
-		Script_GetToken (map, false);
-		scale[1] = atof (map->token->str);
+		Script_GetToken (map_script, false);
+		rotate = atof (map_script->token->str);
+		Script_GetToken (map_script, false);
+		scale[0] = atof (map_script->token->str);
+		Script_GetToken (map_script, false);
+		scale[1] = atof (map_script->token->str);
 
-		while (Script_TokenAvailable (map, false)) {
-			Script_GetToken (map, false);
-			if (!strcmp (map->token->str, "detail"))
+		while (Script_TokenAvailable (map_script, false)) {
+			Script_GetToken (map_script, false);
+			if (!strcmp (map_script->token->str, "detail"))
 				b->detail = 1;
 			else
 				map_error ("parse error");
@@ -343,7 +343,7 @@ ParseBrush (void)
 
 		if (DotProduct (plane.normal, plane.normal) < 0.1) {
 			printf ("WARNING: brush plane with no normal on line %d\n",
-					map->line);
+					map_script->line);
 			continue;
 		}
 
@@ -417,10 +417,10 @@ ParseBrush (void)
 static qboolean
 ParseEntity (void)
 {
-	if (!Script_GetToken (map, true))
+	if (!Script_GetToken (map_script, true))
 		return false;
 
-	if (strcmp (map->token->str, "{"))
+	if (strcmp (map_script->token->str, "{"))
 		map_error ("ParseEntity: { not found");
 
 	if (num_entities == MAX_MAP_ENTITIES)
@@ -430,11 +430,11 @@ ParseEntity (void)
 	num_entities++;
 
 	do {
-		if (!Script_GetToken (map, true))
+		if (!Script_GetToken (map_script, true))
 			map_error ("ParseEntity: EOF without closing brace");
-		if (!strcmp (map->token->str, "}"))
+		if (!strcmp (map_script->token->str, "}"))
 			break;
-		if (!strcmp (map->token->str, "{"))
+		if (!strcmp (map_script->token->str, "{"))
 			ParseBrush ();
 		else
 			ParseEpair ();
@@ -480,16 +480,16 @@ LoadMapFile (const char *filename)
 	buf[bytes] = 0;
 	Qclose (file);
 
-	map = Script_New ();
-	Script_Start (map, filename, buf);
+	map_script = Script_New ();
+	Script_Start (map_script, filename, buf);
 
 	num_entities = 0;
 
 	while (ParseEntity ()) {
 	}
 
-	Script_Delete (map);
-	map = 0;
+	Script_Delete (map_script);
+	map_script = 0;
 	free (buf);
 
 	qprintf ("--- LoadMapFile ---\n");
