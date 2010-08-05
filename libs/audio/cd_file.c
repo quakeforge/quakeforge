@@ -234,7 +234,7 @@ I_OGGMus_PlayNext (int looping)
 		track = PL_String (PL_ObjectAtIndex (play_list, play_pos));
 		looping = 0;
 	}
-	Sys_Printf ("Playing: %s.\n", track);
+
 	if (cd_channel) {
 		S_ChannelStop (cd_channel);
 		cd_channel = 0;
@@ -248,7 +248,7 @@ I_OGGMus_PlayNext (int looping)
 		cd_channel = 0;
 		return;
 	}
-
+	Sys_Printf ("Playing: %s.\n", track);
 	if (sfx->wavinfo)
 		info = sfx->wavinfo (sfx);
 	if (info) {
