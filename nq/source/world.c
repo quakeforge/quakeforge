@@ -500,6 +500,9 @@ SV_TestEntityPosition (edict_t *ent)
 	return NULL;
 }
 
+#if ENABLE_BOXCLIP
+int dp;
+#endif
 
 /*
 	SV_ClipMoveToEntity
@@ -520,7 +523,7 @@ SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, const vec3_t start,
 
 	trace.fraction = 1;
 	trace.allsolid = true;
-	trace.isbox = 0 ? true : false;//XXX box clipping test
+	trace.isbox = ENABLE_BOXCLIP ? true : false;//XXX box clipping test
 	VectorCopy (end, trace.endpos);
 
 	// get the clipping hull
@@ -536,6 +539,18 @@ SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, const vec3_t start,
 	// fix trace up by the offset
 	if (trace.fraction != 1)
 		VectorAdd (trace.endpos, offset, trace.endpos);
+
+#if ENABLE_BOXCLIP
+	if (dp)
+		printf ("(%g %g %g) -> (%g %g %g) => (%g %g %g)"
+				" %3g %d %d %d %d\n",
+				start_l[0], start_l[1], start_l[2],
+				end_l[0], end_l[1], end_l[2],
+				trace.endpos[0], trace.endpos[1], trace.endpos[2],
+				trace.fraction,
+				trace.allsolid, trace.startsolid,
+				trace.inopen, trace.inwater);
+#endif
 
 	// did we clip the move?
 	if (trace.fraction < 1 || trace.startsolid)

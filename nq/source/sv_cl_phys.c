@@ -56,6 +56,10 @@ SV_CheckStuck (edict_t *ent)
 	int         i, j, z;
 	vec3_t      org;
 
+#if ENABLE_BOXCLIP
+	return;
+#endif
+
 	if (!SV_TestEntityPosition (ent)) {
 		VectorCopy (SVvector (ent, origin), SVvector (ent, oldorigin));
 		return;

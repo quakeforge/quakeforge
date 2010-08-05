@@ -237,14 +237,23 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 	time_left = time;
 
 	for (bumpcount = 0; bumpcount < numbumps; bumpcount++) {
+#if ENABLE_BOXCLIP
+		extern int dp;
+#endif
 		if (VectorIsZero (SVvector (ent, velocity)))
 			break;
 
 		VectorMultAdd (SVvector (ent, origin), time_left,
 					   SVvector (ent, velocity), end);
 
+#if ENABLE_BOXCLIP
+		dp = 1;
+#endif
 		trace = SV_Move (SVvector (ent, origin), SVvector (ent, mins),
 						 SVvector (ent, maxs), end, false, ent);
+#if ENABLE_BOXCLIP
+		dp = 0;
+#endif
 
 		if (trace.allsolid) {			// entity is trapped in another solid
 			VectorZero (SVvector (ent, velocity));
