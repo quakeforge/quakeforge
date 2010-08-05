@@ -81,6 +81,24 @@ case "$host_os" in
 	;;
 esac
 
+dnl Check for ia32
+AC_MSG_CHECKING(for an ia32 machine)
+case "${target}" in
+	i?86-*-*)
+		AC_MSG_RESULT(yes)
+		AC_MSG_CHECKING(to see if we should disable asm optimizations)
+		AC_ARG_ENABLE(asmopt,
+			[  --disable-asmopt        disable assembler optimization],
+			AC_MSG_RESULT(yes),
+ 			AC_DEFINE(USE_INTEL_ASM, 1, [Define this if you want to use Intel assembly optimizations])
+			ASM_ARCH=yes
+			AC_MSG_RESULT(no)
+		)
+		;;
+	*) AC_MSG_RESULT(no)
+esac
+AM_CONDITIONAL(ASM_ARCH, test "x$ASM_ARCH" = "xyes")
+
 dnl ==================================================================
 dnl Checks for programs.
 dnl ==================================================================
@@ -760,14 +778,20 @@ if test "x$HAVE_SVGA" != xno; then
 	AC_CHECK_HEADER(vga.h, HAVE_SVGA=yes, HAVE_SVGA=no)
 	CPPFLAGS="$save_CPPFLAGS"
 
-	dnl Make sure -lvga works
-	if test "x$HAVE_SVGA" = xyes; then
-		AC_CHECK_LIB(vga, vga_getmousetype, SVGA_LIBS="$SVGA_LIBS -lvga"
-			HAVE_SVGA=yes, HAVE_SVGA=no, [$SVGA_LIBS]
-		)
-	fi 
-	if test "x$HAVE_SVGA" != xyes; then
-		SVGA_CFLAGS="" SVGA_LIBS=""
+	if test "x$ASM_ARCH" = xyes; then
+		dnl Make sure -lvga works
+		if test "x$HAVE_SVGA" = xyes; then
+			AC_CHECK_LIB(vga, vga_getmousetype, SVGA_LIBS="$SVGA_LIBS -lvga"
+				HAVE_SVGA=yes, HAVE_SVGA=no, [$SVGA_LIBS]
+			)
+		fi 
+		if test "x$HAVE_SVGA" != xyes; then
+			SVGA_CFLAGS="" SVGA_LIBS=""
+		fi
+	else
+		HAVE_SVGA=no
+		SVGA_CFLAGS=
+		SVGA_LIBS=
 	fi
 fi
 AC_SUBST(HAVE_SVGA)
@@ -923,24 +947,6 @@ case "${host}" in
 esac
 AM_CONDITIONAL(SYSTYPE_WIN32, test "x$SYSTYPE" = "xWIN32")
 AC_SUBST(WIN32_LIBS)
-
-dnl Check for ia32
-AC_MSG_CHECKING(for an ia32 machine)
-case "${host}" in
-	i?86-*-*)
-		AC_MSG_RESULT(yes)
-		AC_MSG_CHECKING(to see if we should disable asm optimizations)
-		AC_ARG_ENABLE(asmopt,
-			[  --disable-asmopt        disable assembler optimization],
-			AC_MSG_RESULT(yes),
- 			AC_DEFINE(USE_INTEL_ASM, 1, [Define this if you want to use Intel assembly optimizations])
-			ASM_ARCH=yes
-			AC_MSG_RESULT(no)
-		)
-		;;
-	*) AC_MSG_RESULT(no)
-esac
-AM_CONDITIONAL(ASM_ARCH, test "x$ASM_ARCH" = "xyes")
 
 dnl ==================================================================
 dnl Checks for sound
