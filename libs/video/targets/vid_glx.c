@@ -48,7 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #ifdef HAVE_DGA
 # ifdef DGA_OLD_HEADERS
-#  include <X11/extensions/xf86dga.h>
+#  include <X11/extensions/Xxf86dga.h>
 # else
 #  include <X11/extensions/Xxf86dga.h>
 # endif
@@ -96,7 +96,7 @@ Bool (*qfglXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
 
 // ============================================================================
 
-static int use_gl_procaddress = 0+0;
+static int use_gl_procaddress = 0;
 
 #if defined(HAVE_DLOPEN)
 
