@@ -168,6 +168,7 @@ snd_jack_xfer (int endtime)
 		return;
 	}
 	for (i = 0; i < count; i++) {
+		/* max is +/- 1.0. need to implement clamping. */
 		*output[0]++ = 0.25 * snd_paintbuffer[i].left / 65536.0;
 		*output[1]++ = 0.25 * snd_paintbuffer[i].right / 65536.0;
 	}
