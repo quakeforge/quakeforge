@@ -1076,6 +1076,35 @@ if test "x$enable_jack" != "xno"; then
 fi
 AC_SUBST(JACK_LIBS)
 
+AC_ARG_ENABLE(samplerate,
+[  --disable-samplerate    disable libsamplerate support],
+)
+HAVE_SAMPLERATE=no
+SAMPLERATE_LIBS=""
+if test "x$enable_samplerate" != "xno"; then
+	if test "x$PKG_CONFIG" != "x"; then
+		PKG_CHECK_MODULES([SAMPLERATE], [samplerate], HAVE_SAMPLERATE=yes,
+						  HAVE_SAMPLERATE=no)
+		if test "x$HAVE_SAMPLERATE" = "xyes"; then
+			AC_DEFINE(HAVE_SAMPLERATE, 1, [Define if you have libsamplerate])
+		fi
+	else
+		AC_CHECK_LIB(samplerate, src_callback_new, HAVE_SAMPLERATE=yes,
+					 HAVE_SAMPLERATE=no, [$LIBS])
+		if test "x$HAVE_SAMPLERATE" = "xyes"; then
+			AC_CHECK_HEADER(samplerate.h, HAVE_SAMPLERATE=yes,
+							HAVE_SAMPLERATE=no)
+			if test "x$HAVE_SAMPLERATE" = "xyes"; then
+				SAMPLERATE_LIBS="-lsamplerate"
+				AC_DEFINE(HAVE_SAMPLERATE, 1,
+						  [Define if you have libsamplerate])
+			fi
+		fi
+	fi
+fi
+AC_SUBST(SAMPLERATE_LIBS)
+AM_CONDITIONAL(HAVE_SAMPLERATE, test "$HAVE_SAMPLERATE" = "yes")
+
 SOUND_TYPES="$SOUND_TYPES DISK"
 
 dnl MME
