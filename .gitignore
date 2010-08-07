@@ -1,24 +1,823 @@
-.vimrc
-ChangeLog
-Makefile
-Makefile.in
-aclocal.m4
-autom4te.cache
-build-stamp
-changelog-stamp
-compile
-config.cache
-config.guess
-config.log
-config.status
-config.sub
-configure
-configure-stamp
-depcomp
-install-sh
-libtool
-ltmain.sh
-missing
-mkinstalldirs
-quakeforge-config
-quakeforge.lsm
+
+# /
+/*.o
+/.vimrc
+/ChangeLog
+/Makefile
+/Makefile.in
+/aclocal.m4
+/autom4te.cache
+/build-stamp
+/changelog-stamp
+/compile
+/config.cache
+/config.guess
+/config.log
+/config.status
+/config.sub
+/configure
+/configure-stamp
+/depcomp
+/install-sh
+/libtool
+/ltmain.sh
+/missing
+/mkinstalldirs
+/quakeforge-config
+/quakeforge.lsm
+/ylwrap
+
+# /RPM/
+/RPM/Makefile
+/RPM/Makefile.in
+/RPM/build_rpm
+/RPM/quakeforge.conf
+/RPM/quakeforge.spec
+
+# /debian/
+/debian/*.debhelper
+/debian/*.substvars
+/debian/Makefile
+/debian/Makefile.in
+/debian/files
+/debian/qfcc
+/debian/quakeforge
+/debian/quakeforge-alsa
+/debian/quakeforge-common
+/debian/quakeforge-common.conffiles
+/debian/quakeforge-dev
+/debian/quakeforge-glx
+/debian/quakeforge-libs-gl
+/debian/quakeforge-libs-sw
+/debian/quakeforge-maptools
+/debian/quakeforge-oss
+/debian/quakeforge-sdl
+/debian/quakeforge-servers
+/debian/quakeforge-sgl
+/debian/quakeforge-stub
+/debian/quakeforge-svga
+/debian/quakeforge-utils
+/debian/quakeforge-x11
+/debian/tmp
+
+# /doc/
+/doc/Makefile
+/doc/Makefile.in
+/doc/doxygen
+/doc/man
+/doc/quakeforge.dox
+/doc/texinfo
+
+# /doc/man/
+/doc/man/Makefile.in
+/doc/man/Makefile
+
+# /hw/
+/hw/.vimrc
+/hw/Makefile
+/hw/Makefile.in
+
+# /hw/include/
+/hw/include/.vimrc
+/hw/include/Makefile.in
+/hw/include/Makefile
+
+# /hw/source/
+/hw/source/*.a
+/hw/source/*.d
+/hw/source/*.i
+/hw/source/*.o
+/hw/source/*.obj
+/hw/source/*.s
+/hw/source/*.lo
+/hw/source/*.la
+/hw/source/.deps
+/hw/source/.libs
+/hw/source/.vimrc
+/hw/source/Makefile
+/hw/source/Makefile.in
+/hw/source/hw-master
+
+# /include/
+/include/.vimrc
+/include/Makefile.in
+/include/Makefile
+/include/config.h.in
+/include/config.h
+/include/stamp-*
+
+# /include/QF/
+/include/QF/.vimrc
+/include/QF/Makefile
+/include/QF/Makefile.in
+
+# /include/QF/GL/
+/include/QF/GL/.vimrc
+/include/QF/GL/Makefile
+/include/QF/GL/Makefile.in
+
+# /include/QF/classes/
+/include/QF/classes/.vimrc
+/include/QF/classes/Makefile
+/include/QF/classes/Makefile.in
+
+# /include/QF/plugin/
+/include/QF/plugin/.vimrc
+/include/QF/plugin/Makefile
+/include/QF/plugin/Makefile.in
+
+# /libs/
+/libs/.vimrc
+/libs/Makefile.in
+/libs/Makefile
+
+# /libs/audio/
+/libs/audio/*.la
+/libs/audio/*.lo
+/libs/audio/.deps
+/libs/audio/.libs
+/libs/audio/.vimrc
+/libs/audio/Makefile
+/libs/audio/Makefile.in
+
+# /libs/audio/cd/
+/libs/audio/cd/*.la
+/libs/audio/cd/*.lo
+/libs/audio/cd/.deps
+/libs/audio/cd/.libs
+/libs/audio/cd/.vimrc
+/libs/audio/cd/Makefile
+/libs/audio/cd/Makefile.in
+
+# /libs/audio/renderer/
+/libs/audio/renderer/*.la
+/libs/audio/renderer/*.lo
+/libs/audio/renderer/.deps
+/libs/audio/renderer/.libs
+/libs/audio/renderer/.vimrc
+/libs/audio/renderer/Makefile
+/libs/audio/renderer/Makefile.in
+
+# /libs/audio/targets/
+/libs/audio/targets/*.la
+/libs/audio/targets/*.lo
+/libs/audio/targets/.deps
+/libs/audio/targets/.libs
+/libs/audio/targets/.vimrc
+/libs/audio/targets/Makefile
+/libs/audio/targets/Makefile.in
+
+# /libs/console/
+/libs/console/*.la
+/libs/console/*.lo
+/libs/console/.deps
+/libs/console/.libs
+/libs/console/.vimrc
+/libs/console/Makefile
+/libs/console/Makefile.in
+
+# /libs/gamecode/
+/libs/gamecode/*.la
+/libs/gamecode/*.lo
+/libs/gamecode/.deps
+/libs/gamecode/.libs
+/libs/gamecode/.vimrc
+/libs/gamecode/Makefile
+/libs/gamecode/Makefile.in
+
+# /libs/gamecode/builtins/
+/libs/gamecode/builtins/*.la
+/libs/gamecode/builtins/*.lo
+/libs/gamecode/builtins/.deps
+/libs/gamecode/builtins/.libs
+/libs/gamecode/builtins/.vimrc
+/libs/gamecode/builtins/Makefile
+/libs/gamecode/builtins/Makefile.in
+
+# /libs/gamecode/engine/
+/libs/gamecode/engine/*.la
+/libs/gamecode/engine/*.lo
+/libs/gamecode/engine/.deps
+/libs/gamecode/engine/.libs
+/libs/gamecode/engine/.vimrc
+/libs/gamecode/engine/Makefile
+/libs/gamecode/engine/Makefile.in
+
+# /libs/gib/
+/libs/gib/*.la
+/libs/gib/*.lo
+/libs/gib/.deps
+/libs/gib/.libs
+/libs/gib/.vimrc
+/libs/gib/Makefile
+/libs/gib/Makefile.in
+
+# /libs/image/
+/libs/image/*.la
+/libs/image/*.lo
+/libs/image/.deps
+/libs/image/.libs
+/libs/image/.vimrc
+/libs/image/Makefile
+/libs/image/Makefile.in
+
+# /libs/models/
+/libs/models/*.la
+/libs/models/*.lo
+/libs/models/.deps
+/libs/models/.libs
+/libs/models/.vimrc
+/libs/models/Makefile
+/libs/models/Makefile.in
+
+# /libs/models/alias/
+/libs/models/alias/*.la
+/libs/models/alias/*.lo
+/libs/models/alias/.deps
+/libs/models/alias/.libs
+/libs/models/alias/.vimrc
+/libs/models/alias/Makefile
+/libs/models/alias/Makefile.in
+
+# /libs/models/brush/
+/libs/models/brush/*.la
+/libs/models/brush/*.lo
+/libs/models/brush/.deps
+/libs/models/brush/.libs
+/libs/models/brush/.vimrc
+/libs/models/brush/Makefile
+/libs/models/brush/Makefile.in
+
+# /libs/models/sprite/
+/libs/models/sprite/*.la
+/libs/models/sprite/*.lo
+/libs/models/sprite/.deps
+/libs/models/sprite/.libs
+/libs/models/sprite/.vimrc
+/libs/models/sprite/Makefile
+/libs/models/sprite/Makefile.in
+
+# /libs/net/
+/libs/net/*.la
+/libs/net/*.lo
+/libs/net/.deps
+/libs/net/.libs
+/libs/net/.vimrc
+/libs/net/Makefile
+/libs/net/Makefile.in
+
+# /libs/net/nc/
+/libs/net/nc/*.la
+/libs/net/nc/*.lo
+/libs/net/nc/.deps
+/libs/net/nc/.libs
+/libs/net/nc/.vimrc
+/libs/net/nc/Makefile
+/libs/net/nc/Makefile.in
+
+# /libs/net/nm/
+/libs/net/nm/*.la
+/libs/net/nm/*.lo
+/libs/net/nm/.deps
+/libs/net/nm/.libs
+/libs/net/nm/.vimrc
+/libs/net/nm/Makefile
+/libs/net/nm/Makefile.in
+
+# /libs/object/
+/libs/object/*.la
+/libs/object/*.lo
+/libs/object/.deps
+/libs/object/.libs
+/libs/object/.vimrc
+/libs/object/Makefile
+/libs/object/Makefile.in
+
+# /libs/qw/
+/libs/qw/*.a
+/libs/qw/*.la
+/libs/qw/*.lo
+/libs/qw/.deps
+/libs/qw/.libs
+/libs/qw/.vimrc
+/libs/qw/Makefile
+/libs/qw/Makefile.in
+
+# /libs/ruamoko/
+/libs/ruamoko/*.la
+/libs/ruamoko/*.lo
+/libs/ruamoko/.deps
+/libs/ruamoko/.libs
+/libs/ruamoko/.vimrc
+/libs/ruamoko/Makefile
+/libs/ruamoko/Makefile.in
+
+# /libs/util/
+/libs/util/*.la
+/libs/util/*.lo
+/libs/util/.deps
+/libs/util/.libs
+/libs/util/.vimrc
+/libs/util/Makefile
+/libs/util/Makefile.in
+
+# /libs/video/
+/libs/video/.vimrc
+/libs/video/Makefile.in
+/libs/video/Makefile
+
+# /libs/video/renderer/
+/libs/video/renderer/*.la
+/libs/video/renderer/*.lo
+/libs/video/renderer/.deps
+/libs/video/renderer/.libs
+/libs/video/renderer/.vimrc
+/libs/video/renderer/Makefile
+/libs/video/renderer/Makefile.in
+/libs/video/renderer/fbset_modes_y.[ch]
+/libs/video/renderer/fbset_modes_l.c
+
+# /libs/video/renderer/gl/
+/libs/video/renderer/gl/*.la
+/libs/video/renderer/gl/*.lo
+/libs/video/renderer/gl/.deps
+/libs/video/renderer/gl/.libs
+/libs/video/renderer/gl/.vimrc
+/libs/video/renderer/gl/Makefile
+/libs/video/renderer/gl/Makefile.in
+/libs/video/renderer/gl/fbset_modes_y.[ch]
+/libs/video/renderer/gl/fbset_modes_l.c
+
+# /libs/video/renderer/sw/
+/libs/video/renderer/sw/*.la
+/libs/video/renderer/sw/*.lo
+/libs/video/renderer/sw/.deps
+/libs/video/renderer/sw/.libs
+/libs/video/renderer/sw/.vimrc
+/libs/video/renderer/sw/Makefile
+/libs/video/renderer/sw/Makefile.in
+/libs/video/renderer/sw/fbset_modes_y.[ch]
+/libs/video/renderer/sw/fbset_modes_l.c
+
+# /libs/video/renderer/sw32/
+/libs/video/renderer/sw32/*.la
+/libs/video/renderer/sw32/*.lo
+/libs/video/renderer/sw32/.deps
+/libs/video/renderer/sw32/.libs
+/libs/video/renderer/sw32/.vimrc
+/libs/video/renderer/sw32/Makefile
+/libs/video/renderer/sw32/Makefile.in
+
+# /libs/video/targets/
+/libs/video/targets/*.la
+/libs/video/targets/*.lo
+/libs/video/targets/.deps
+/libs/video/targets/.libs
+/libs/video/targets/.vimrc
+/libs/video/targets/Makefile
+/libs/video/targets/Makefile.in
+/libs/video/targets/fbset_modes_y.[ch]
+/libs/video/targets/fbset_modes_l.c
+
+# /m4/
+/m4/libtool.m4
+/m4/ltoptions.m4
+/m4/ltsugar.m4
+/m4/ltversion.m4
+/m4/lt~obsolete.m4
+
+# /nq/
+/nq/.vimrc
+/nq/Makefile
+/nq/Makefile.in
+
+# /nq/include/
+/nq/include/.vimrc
+/nq/include/Makefile.in
+/nq/include/Makefile
+/nq/include/config.h
+/nq/include/config.h.in
+/nq/include/stamp-h
+
+# /nq/source/
+/nq/source/*.a
+/nq/source/*.d
+/nq/source/*.o
+/nq/source/*.obj
+/nq/source/*.lo
+/nq/source/*.la
+/nq/source/.deps
+/nq/source/.libs
+/nq/source/.vimrc
+/nq/source/Makefile
+/nq/source/Makefile.in
+/nq/source/fbset_modes_l.c
+/nq/source/fbset_modes_y.c
+/nq/source/fbset_modes_y.h
+/nq/source/nq-3dfx
+/nq/source/nq-fbdev
+/nq/source/nq-glx
+/nq/source/nq-sdl
+/nq/source/nq-sdl32
+/nq/source/nq-sgl
+/nq/source/nq-svga
+/nq/source/nq-wgl.exe
+/nq/source/nq-x11
+/nq/source/nq.exe
+/nq/source/nq-server
+
+# /pkg-config/
+/pkg-config/Makefile.in
+
+# /qtv/
+/qtv/.vimrc
+/qtv/Makefile
+/qtv/Makefile.in
+
+# /qtv/include/
+/qtv/include/.vimrc
+/qtv/include/Makefile.in
+/qtv/include/Makefile
+/qtv/include/config.h.in
+/qtv/include/stamp-h.in
+/qtv/include/stamp-h
+/qtv/include/config.h
+
+# /qtv/source/
+/qtv/source/*.a
+/qtv/source/*.d
+/qtv/source/*.i
+/qtv/source/*.o
+/qtv/source/*.obj
+/qtv/source/*.s
+/qtv/source/*.lo
+/qtv/source/*.la
+/qtv/source/.deps
+/qtv/source/.libs
+/qtv/source/.vimrc
+/qtv/source/Makefile
+/qtv/source/Makefile.in
+/qtv/source/qtv
+/qtv/source/qtv.exe
+
+# /qw/
+/qw/.vimrc
+/qw/Makefile
+/qw/Makefile.in
+
+# /qw/include/
+/qw/include/.vimrc
+/qw/include/Makefile.in
+/qw/include/Makefile
+/qw/include/config.h.in
+/qw/include/stamp-h.in
+/qw/include/stamp-h
+/qw/include/config.h
+
+# /qw/source/
+/qw/source/*.a
+/qw/source/*.d
+/qw/source/*.i
+/qw/source/*.o
+/qw/source/*.obj
+/qw/source/*.s
+/qw/source/*.lo
+/qw/source/*.la
+/qw/source/.deps
+/qw/source/.libs
+/qw/source/.vimrc
+/qw/source/Makefile
+/qw/source/Makefile.in
+/qw/source/client.exe
+/qw/source/fbset_modes_l.c
+/qw/source/fbset_modes_y.c
+/qw/source/fbset_modes_y.h
+/qw/source/qw-client-3dfx
+/qw/source/qw-client-3dfx.exe
+/qw/source/qw-client-fbdev
+/qw/source/qw-client-glx
+/qw/source/qw-client-glx.exe
+/qw/source/qw-client-sdl
+/qw/source/qw-client-sdl.exe
+/qw/source/qw-client-sdl32
+/qw/source/qw-client-sdl32.exe
+/qw/source/qw-client-sgl
+/qw/source/qw-client-sgl.exe
+/qw/source/qw-client-svga
+/qw/source/qw-client-svga.exe
+/qw/source/qw-client-x11
+/qw/source/qw-client-x11.exe
+/qw/source/qw-master
+/qw/source/qw-master.exe
+/qw/source/qw-server
+/qw/source/qw-server.exe
+
+# /ruamoko/
+/ruamoko/*.d
+/ruamoko/*.dat
+/ruamoko/*.qfo
+/ruamoko/*.sym
+/ruamoko/.vimrc
+/ruamoko/Makefile
+/ruamoko/Makefile.in
+
+# /ruamoko/cl_menu/
+/ruamoko/cl_menu/*.dat
+/ruamoko/cl_menu/*.gz
+/ruamoko/cl_menu/*.qfo
+/ruamoko/cl_menu/*.src
+/ruamoko/cl_menu/*.sym
+/ruamoko/cl_menu/.vimrc
+/ruamoko/cl_menu/Makefile.in
+/ruamoko/cl_menu/Makefile
+
+# /ruamoko/game/
+/ruamoko/game/*.d
+/ruamoko/game/*.dat
+/ruamoko/game/*.dat.gz
+/ruamoko/game/*.qfo
+/ruamoko/game/*.sym
+/ruamoko/game/*.sym.gz
+/ruamoko/game/.deps
+/ruamoko/game/.vimrc
+/ruamoko/game/Makefile
+/ruamoko/game/Makefile.in
+
+# /ruamoko/gui/
+/ruamoko/gui/*.d
+/ruamoko/gui/*.dat
+/ruamoko/gui/*.pak
+/ruamoko/gui/*.qfo
+/ruamoko/gui/*.sym
+/ruamoko/gui/.deps
+/ruamoko/gui/.vimrc
+/ruamoko/gui/Makefile
+/ruamoko/gui/Makefile.in
+
+# /ruamoko/include/
+/ruamoko/include/*.d
+/ruamoko/include/*.dat
+/ruamoko/include/*.qfo
+/ruamoko/include/*.sym
+/ruamoko/include/.deps
+/ruamoko/include/.vimrc
+/ruamoko/include/Makefile
+/ruamoko/include/Makefile.in
+
+# /ruamoko/lib/
+/ruamoko/lib/*.d
+/ruamoko/lib/*.dat
+/ruamoko/lib/*.pak
+/ruamoko/lib/*.qfo
+/ruamoko/lib/*.sym
+/ruamoko/lib/.deps
+/ruamoko/lib/.vimrc
+/ruamoko/lib/Makefile
+/ruamoko/lib/Makefile.in
+
+# /ruamoko/scheme/
+/ruamoko/scheme/*.dat
+/ruamoko/scheme/*.gz
+/ruamoko/scheme/*.qfo
+/ruamoko/scheme/*.src
+/ruamoko/scheme/*.sym
+/ruamoko/scheme/.vimrc
+/ruamoko/scheme/*~
+/ruamoko/scheme/Makefile.in
+/ruamoko/scheme/Makefile
+
+# /tools/
+/tools/.vimrc
+/tools/Makefile.in
+/tools/Makefile
+
+# /tools/Forge/
+/tools/Forge/.vimrc
+/tools/Forge/Forge.app
+/tools/Forge/Forge.debug
+/tools/Forge/Forge.profile
+/tools/Forge/*_obj
+
+# /tools/Forge/Bundles/MainPrefs/
+/tools/Forge/Bundles/MainPrefs/.vimrc
+/tools/Forge/Bundles/MainPrefs/shared_debug_obj
+/tools/Forge/Bundles/MainPrefs/shared_obj
+/tools/Forge/Bundles/MainPrefs/shared_profile_debug_obj
+/tools/Forge/Bundles/MainPrefs/shared_profile_obj
+/tools/Forge/Bundles/MainPrefs/obj
+/tools/Forge/Bundles/MainPrefs/*.forgeb
+
+# /tools/Forge/Bundles/MapEdit/
+/tools/Forge/Bundles/MapEdit/.vimrc
+/tools/Forge/Bundles/MapEdit/shared_debug_obj
+/tools/Forge/Bundles/MapEdit/shared_obj
+/tools/Forge/Bundles/MapEdit/shared_profile_debug_obj
+/tools/Forge/Bundles/MapEdit/shared_profile_obj
+/tools/Forge/Bundles/MapEdit/obj
+/tools/Forge/Bundles/MapEdit/*.forgeb
+
+# /tools/bsp2img/
+/tools/bsp2img/.deps
+/tools/bsp2img/.libs
+/tools/bsp2img/.vimrc
+/tools/bsp2img/Makefile
+/tools/bsp2img/Makefile.in
+/tools/bsp2img/bsp2img
+
+# /tools/carne/
+/tools/carne/.deps
+/tools/carne/.libs
+/tools/carne/.vimrc
+/tools/carne/Makefile
+/tools/carne/Makefile.in
+/tools/carne/carne
+
+# /tools/cross/
+/tools/cross/binutils-i386-mingw32msvc
+/tools/cross/gcc-i386-mingw32msvc
+/tools/cross/source
+
+# /tools/gas2masm/
+/tools/gas2masm/gas2masm
+
+# /tools/gl_stub/
+/tools/gl_stub/.vimrc
+/tools/gl_stub/*.so
+
+# /tools/pak/
+/tools/pak/*.d
+/tools/pak/*.la
+/tools/pak/*.lo
+/tools/pak/.deps
+/tools/pak/.libs
+/tools/pak/.vimrc
+/tools/pak/Makefile
+/tools/pak/Makefile.in
+/tools/pak/pak
+
+# /tools/qfbsp/
+/tools/qfbsp/.vimrc
+/tools/qfbsp/.deps
+/tools/qfbsp/Makefile.in
+/tools/qfbsp/Makefile
+
+# /tools/qfbsp/include/
+/tools/qfbsp/include/.vimrc
+/tools/qfbsp/include/Makefile.in
+/tools/qfbsp/include/Makefile
+
+# /tools/qfbsp/source/
+/tools/qfbsp/source/.vimrc
+/tools/qfbsp/source/.deps
+/tools/qfbsp/source/.libs
+/tools/qfbsp/source/Makefile.in
+/tools/qfbsp/source/Makefile
+/tools/qfbsp/source/qfbsp
+
+# /tools/qfcc/
+/tools/qfcc/.vimrc
+/tools/qfcc/ChangeLog
+/tools/qfcc/Makefile
+/tools/qfcc/Makefile.in
+/tools/qfcc/aclocal.m4
+/tools/qfcc/confdefs.h
+/tools/qfcc/configure
+/tools/qfcc/config.log
+/tools/qfcc/config.cache
+/tools/qfcc/config.status
+/tools/qfcc/qfcc.lsm
+
+# /tools/qfcc/doc/
+/tools/qfcc/doc/*.dvi
+/tools/qfcc/doc/*.pdf
+/tools/qfcc/doc/Makefile
+/tools/qfcc/doc/Makefile.in
+
+# /tools/qfcc/doc/man/
+/tools/qfcc/doc/man/Makefile
+/tools/qfcc/doc/man/Makefile.in
+
+# /tools/qfcc/include/
+/tools/qfcc/include/.vimrc
+/tools/qfcc/include/config.h.in
+/tools/qfcc/include/Makefile.in
+/tools/qfcc/include/Makefile
+/tools/qfcc/include/config.h
+/tools/qfcc/include/stamp-*
+
+# /tools/qfcc/source/
+/tools/qfcc/source/.deps
+/tools/qfcc/source/.libs
+/tools/qfcc/source/.vimrc
+/tools/qfcc/source/Makefile.in
+/tools/qfcc/source/Makefile
+/tools/qfcc/source/qc-lex.c
+/tools/qfcc/source/qc-parse.c
+/tools/qfcc/source/qc-parse.h
+/tools/qfcc/source/qc-parse.output
+/tools/qfcc/source/qfcc
+/tools/qfcc/source/qfprogs
+
+# /tools/qflight/
+/tools/qflight/.vimrc
+/tools/qflight/Makefile.in
+/tools/qflight/Makefile
+
+# /tools/qflight/include/
+/tools/qflight/include/.vimrc
+/tools/qflight/include/Makefile.in
+/tools/qflight/include/Makefile
+
+# /tools/qflight/source/
+/tools/qflight/source/.vimrc
+/tools/qflight/source/.deps
+/tools/qflight/source/.libs
+/tools/qflight/source/Makefile.in
+/tools/qflight/source/Makefile
+/tools/qflight/source/qflight
+
+# /tools/qfmodelgen/
+/tools/qfmodelgen/.vimrc
+/tools/qfmodelgen/Makefile.in
+/tools/qfmodelgen/Makefile
+
+# /tools/qfmodelgen/include/
+/tools/qfmodelgen/include/.vimrc
+/tools/qfmodelgen/include/Makefile.in
+/tools/qfmodelgen/include/Makefile
+
+# /tools/qfmodelgen/source/
+/tools/qfmodelgen/source/.vimrc
+/tools/qfmodelgen/source/.deps
+/tools/qfmodelgen/source/.libs
+/tools/qfmodelgen/source/Makefile.in
+/tools/qfmodelgen/source/Makefile
+/tools/qfmodelgen/source/qfmodelgen
+
+# /tools/qfvis/
+/tools/qfvis/.vimrc
+/tools/qfvis/.deps
+/tools/qfvis/Makefile.in
+/tools/qfvis/Makefile
+
+# /tools/qfvis/include/
+/tools/qfvis/include/.vimrc
+/tools/qfvis/include/Makefile.in
+/tools/qfvis/include/Makefile
+
+# /tools/qfvis/source/
+/tools/qfvis/source/.vimrc
+/tools/qfvis/source/.deps
+/tools/qfvis/source/.libs
+/tools/qfvis/source/Makefile.in
+/tools/qfvis/source/Makefile
+/tools/qfvis/source/qfvis
+
+# /tools/quaketoascii/
+/tools/quaketoascii/quaketoascii
+
+# /tools/qwaq/
+/tools/qwaq/*.dat
+/tools/qwaq/*.src
+/tools/qwaq/*.sym
+/tools/qwaq/.deps
+/tools/qwaq/.libs
+/tools/qwaq/.vimrc
+/tools/qwaq/Makefile
+/tools/qwaq/Makefile.in
+/tools/qwaq/qwaq
+
+# /tools/texpaint/
+/tools/texpaint/.deps
+/tools/texpaint/Makefile
+/tools/texpaint/Makefile.in
+/tools/texpaint/aclocal.m4
+/tools/texpaint/autom4te.cache
+/tools/texpaint/config.h
+/tools/texpaint/config.log
+/tools/texpaint/config.status
+/tools/texpaint/configure
+/tools/texpaint/stamp-h1
+/tools/texpaint/texturepaint
+
+# /tools/wad/
+/tools/wad/*.d
+/tools/wad/*.la
+/tools/wad/*.lo
+/tools/wad/.deps
+/tools/wad/.libs
+/tools/wad/.vimrc
+/tools/wad/Makefile
+/tools/wad/Makefile.in
+/tools/wad/wad
+
+# /tools/wav/
+/tools/wav/*.d
+/tools/wav/*.la
+/tools/wav/*.lo
+/tools/wav/.deps
+/tools/wav/.libs
+/tools/wav/.vimrc
+/tools/wav/Makefile
+/tools/wav/Makefile.in
+/tools/wav/qfwavinfo

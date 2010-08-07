@@ -1,9 +1,0 @@
-*.dat
-*.src
-*.sym
-.deps
-.libs
-.vimrc
-Makefile
-Makefile.in
-qwaq

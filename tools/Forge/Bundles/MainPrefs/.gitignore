@@ -1,7 +1,0 @@
-.vimrc
-shared_debug_obj
-shared_obj
-shared_profile_debug_obj
-shared_profile_obj
-obj
-*.forgeb

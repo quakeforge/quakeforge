@@ -1,7 +1,0 @@
-*.d
-*.dat
-*.qfo
-*.sym
-.vimrc
-Makefile
-Makefile.in

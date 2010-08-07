@@ -1,9 +1,0 @@
-*.a
-*.la
-*.lo
-.deps
-.libs
-.vimrc
-Makefile
-Makefile.in
-
