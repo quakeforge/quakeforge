@@ -1,6 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 AUTOMAKE_OPTIONS= foreign
 
+ACLOCAL_AMFLAGS = -I m4
+
 SUBDIRS=	RPM debian doc include libs hw nq qtv qw tools ruamoko pkg-config
 
 ## configure.ac needs to be listed here for older autoconfs
