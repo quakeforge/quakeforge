@@ -419,36 +419,41 @@ void SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length);
 //@{
 /** Load the referenced sound.
 	\param sfx		sound reference
+	\return			0 if ok, -1 on error
 */
-void SND_Load (sfx_t *sfx);
+int SND_Load (sfx_t *sfx);
 
 /** Load the referenced sound from the specified Ogg file.
 	\param file		pre-opened Ogg file
 	\param sfx		sound reference
 	\param realname	path of sound file should it need to be re-opened
+	\return			0 if ok, -1 on error
 */
-void SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname);
+int SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname);
 
 /** Load the referenced sound from the specified FLAC file.
 	\param file		pre-opened FLAC file
 	\param sfx		sound reference
 	\param realname	path of sound file should it need to be re-opened
+	\return			0 if ok, -1 on error
 */
-void SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname);
+int SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname);
 
 /** Load the referenced sound from the specified WAV file.
 	\param file		pre-opened WAV file
 	\param sfx		sound reference
 	\param realname	path of sound file should it need to be re-opened
+	\return			0 if ok, -1 on error
 */
-void SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
+int SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
 
 /** Load the referenced sound from the specified MIDI file.
 	\param file		pre-opened MIDI file
 	\param sfx		sound reference
 	\param realname	path of sound file should it need to be re-opened
+	\return			0 if ok, -1 on error
 */
-void SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
+int SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
 //@}
 
 /** \defgroup sound_render_cache_stream Cache/Stream Functions.

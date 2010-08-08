@@ -187,7 +187,10 @@ SND_LoadSound (const char *name)
 	sfx = &snd_sfx[snd_num_sfx++];
 	sfx->name = strdup (name);
 	sfx->owner = sfx;
-	SND_Load (sfx);
+	if (SND_Load (sfx) == -1) {
+		snd_num_sfx--;
+		return 0;
+	}
 	Hash_Add (snd_sfx_hash, sfx);
 	return sfx;
 }

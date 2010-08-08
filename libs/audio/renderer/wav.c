@@ -232,15 +232,14 @@ bail:
 	return info;
 }
 
-void
+int
 SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 {
 	wavinfo_t   info;
 
 	info = get_info (file);
 	if (!info.rate) {
-		Qclose (file);
-		return;
+		return -1;
 	}
 
 	if (info.samples / info.rate < 3) {
@@ -250,4 +249,5 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 		Sys_DPrintf ("stream %s\n", realname);
 		wav_stream (sfx, realname, file, info);
 	}
+	return 0;
 }

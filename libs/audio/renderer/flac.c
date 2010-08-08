@@ -516,7 +516,7 @@ get_info (flacfile_t *ff)
 	return info;
 }
 
-void
+int
 SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname)
 {
 	flacfile_t *ff;
@@ -524,13 +524,12 @@ SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname)
 
 	if (!(ff = open_flac (file))) {
 		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
-		Qclose (file);
-		return;
+		return -1;
 	}
 	info = get_info (ff);
 	if (info.channels < 1 || info.channels > 2) {
 		Sys_Printf ("unsupported number of channels");
-		return;
+		return -1;
 	}
 	if (info.samples / info.rate < 3) {
 		Sys_DPrintf ("cache %s\n", realname);
@@ -539,6 +538,7 @@ SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname)
 		Sys_DPrintf ("stream %s\n", realname);
 		flac_stream (sfx, realname, ff, info);
 	}
+	return 0;
 }
 
 #endif//HAVE_FLAC
