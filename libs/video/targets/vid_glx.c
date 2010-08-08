@@ -48,7 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #ifdef HAVE_DGA
 # ifdef DGA_OLD_HEADERS
-#  include <X11/extensions/Xxf86dga.h>
+#  include <X11/extensions/xf86dga.h>
 # else
 #  include <X11/extensions/Xxf86dga.h>
 # endif
