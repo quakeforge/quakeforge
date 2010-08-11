@@ -49,8 +49,8 @@ enclosed in ().
 The three points (from either mode) are then used to calculate the plane
 normal and offset:
 \verbatim
-n = (p0 - p1) x (p2 - p1)
-d = p1 . n
+n = (p0 - p1) x (p2 - p1) # normal
+d = p1 . n # offset
 \endverbatim
 
 The texture name is just a simple string (no spaces) that specifies the name
