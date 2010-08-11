@@ -93,12 +93,12 @@ typedef struct qfo_def_s {
 	string_t    file;			///< source file name
 	pr_int_t    line;			///< source line number
 } qfo_def_t;
-///@}
+//@}
 
 /** \defgroup qfcc_qfo_QFOD QFOD flags
 	\ingroup qfcc_qfo
 */
-///@{
+//@{
 
 /** The def has been initialized.
 
@@ -148,11 +148,11 @@ typedef struct qfo_def_s {
 	\hideinitializer
 */
 #define QFOD_NOSAVE			(1u<<7)
-///@}
+//@}
 
-/** \ingroup qfcc_qfo
+/** \addtogroup qfcc_qfo
 */
-///@{
+//@{
 
 /** Representation of a function in the object file.
 */
@@ -168,11 +168,11 @@ typedef struct qfo_func_s {
 		function and the VM resolves the function number using the function
 		name.
 	*/
-	///@{
+	//@{
 	pr_int_t    builtin;		///< VM builtin function number
 	pr_int_t    code;			///< Address in the code section of the first
 								///< instruction of the function.
-	///@}
+	//@}
 
 	pr_int_t    def;			///< def that references this function. Index
 								///< to ::qfo_def_t. The data word pointed to
@@ -181,21 +181,21 @@ typedef struct qfo_func_s {
 
 	/** \name Function local data.
 	*/
-	///@{
+	//@{
 	pr_int_t    locals_size;	///< Number of words of local data reqired by
 								///< the function.
 	pr_int_t    local_defs;		///< Index to the first ::qfo_def_t def record
 								///< representing the functions local
 								///< variables.
 	pr_int_t    num_local_defs;	///< Number of local def records.
-	///@}
+	//@}
 
 	pr_int_t    line_info;		///< Index to first ::pr_lineno_t line record.
 								///< Zero if there are no records.
 
 	/** \name Function parameters.
 	*/
-	///@{
+	//@{
 	pr_int_t    num_parms;		///< Number of parameters this function
 								///< accepts. Maximum number is defined by
 								///< #MAX_PARMS. Negative numbers give the
@@ -203,15 +203,15 @@ typedef struct qfo_func_s {
 								///< \f$-num\_parms - 1\f$
 	byte        parm_size[MAX_PARMS]; ///< Number of words used by each
 								///< parameter.
-	///@}
+	//@}
 
 	/** \name Function relocation records.
 		XXX not sure how these work
 	*/
-	///@{
+	//@{
 	pr_int_t    relocs;			///< Index to first ::qfo_reloc_t reloc record.
 	pr_int_t    num_relocs;		///< Number of reloc records.
-	///@}
+	//@}
 } qfo_func_t;
 
 /** Evil source of many headaches. The whole reason I've started writing this
@@ -268,13 +268,13 @@ typedef struct qfo_s {
 	int         types_size;
 	int         entity_fields;
 } qfo_t;
-///@}
+//@}
 
 /** \defgroup qfcc_qfo_data_access QFO Data Acess
 	\ingroup qfcc_qfo
 	Macros for accessing data in the QFO address space
 */
-///@{
+//@{
 
 /** \internal
 	\param q pointer to ::qfo_t struct
@@ -402,11 +402,11 @@ typedef struct qfo_s {
 */
 #define QFO_STRUCT(q, t,o)	(*QFO_POINTER (q, t, o))
 
-///@}
+//@}
 
-/** \ingroup qfcc_qfo
+/** \addtogroup qfcc_qfo
 */
-///@{
+//@{
 
 struct pr_info_s;
 
