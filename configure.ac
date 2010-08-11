@@ -622,7 +622,7 @@ if test "x$enable_vorbis" != "xno"; then
 fi
 
 AM_CONDITIONAL(HAVE_FLAC, test "x$HAVE_FLAC" = "xyes")
-AM_CONDITIONAL(HAVE_MIDI, test "x$HAVE_MIDI" = "xyes")
+AM_CONDITIONAL(HAVE_MIDI, test "x$HAVE_WILDMIDI" = "xyes")
 AM_CONDITIONAL(HAVE_VORBIS, test "x$HAVE_VORBIS" = "xyes")
 
 AC_ARG_ENABLE(zlib,
