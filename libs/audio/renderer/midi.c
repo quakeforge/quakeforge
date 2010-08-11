@@ -31,8 +31,6 @@
 static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
-#ifdef HAVE_WILDMIDI
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -184,4 +182,3 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 	SND_SFX_Stream (sfx, realname, info, midi_stream_open);
 	return 0;
 }
-#endif // HAVE_WILDMIDI

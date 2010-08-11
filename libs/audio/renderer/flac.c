@@ -34,8 +34,6 @@
 static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
-#ifdef HAVE_FLAC
-
 #ifdef HAVE_STRING_H
 # include "string.h"
 #endif
@@ -503,5 +501,3 @@ SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname)
 	}
 	return 0;
 }
-
-#endif//HAVE_FLAC

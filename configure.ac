@@ -579,6 +579,17 @@ case "$target_os" in
 	;;
 esac	
 
+AC_ARG_ENABLE(flac,
+[  --disable-flac           disable flac support],
+)
+HAVE_FLAC=no
+if test "x$enable_flac" != "xno"; then
+  AM_PATH_LIBFLAC(HAVE_FLAC=yes, HAVE_FLAC=no)
+  if test "x$HAVE_FLAC" = xyes; then
+    AC_DEFINE(HAVE_FLAC, 1, [define this if you have flac libs])
+  fi
+fi
+
 AC_ARG_ENABLE(wildmidi,
 [  --disable-wildmidi         disable libWildMidi support],
 )
@@ -594,13 +605,11 @@ if test "x$enable_wildmidi" != "xno"; then
     fi
   fi
 fi							
-
 AC_SUBST(WM_LIBS)
 
 AC_ARG_ENABLE(vorbis,
 [  --disable-vorbis         disable ogg vorbis support],
 )
-
 HAVE_VORBIS=no
 if test "x$enable_vorbis" != "xno"; then
   XIPH_PATH_OGG(HAVE_OGG=yes, HAVE_OGG=no)
@@ -612,17 +621,9 @@ if test "x$enable_vorbis" != "xno"; then
   fi
 fi
 
-AC_ARG_ENABLE(flac,
-[  --disable-flac           disable flac support],
-)
-
-HAVE_FLAC=no
-if test "x$enable_flac" != "xno"; then
-  AM_PATH_LIBFLAC(HAVE_FLAC=yes, HAVE_FLAC=no)
-  if test "x$HAVE_FLAC" = xyes; then
-    AC_DEFINE(HAVE_FLAC, 1, [define this if you have flac libs])
-  fi
-fi
+AM_CONDITIONAL(HAVE_FLAC, test "x$HAVE_FLAC" = "xyes")
+AM_CONDITIONAL(HAVE_MIDI, test "x$HAVE_MIDI" = "xyes")
+AM_CONDITIONAL(HAVE_VORBIS, test "x$HAVE_VORBIS" = "xyes")
 
 AC_ARG_ENABLE(zlib,
 [  --disable-zlib          disable zlib support],
