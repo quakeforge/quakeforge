@@ -47,6 +47,15 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "snd_render.h"
 
+#define FRAMES 1024
+#define CHANNELS 2
+#define WIDTH 2
+
+typedef struct {
+	float       data[FRAMES * CHANNELS];
+	midi       *handle;
+} midi_file_t;
+
 static int midi_intiialized = 0;
 
 static cvar_t  *wildmidi_volume;
@@ -88,47 +97,45 @@ midi_get_info (void * handle) {
 	return info;
 }
 
-static int
-midi_stream_read (void *file, float *buf, int count, wavinfo_t *info)
+static long
+midi_stream_read (void *file, float **buf)
 {
-	int         size = count * info->channels * info->width;
+	sfxstream_t *stream = (sfxstream_t *) file;
+	midi_file_t *mf = (midi_file_t *) stream->file;
+	int         size = FRAMES * CHANNELS * WIDTH;
 	int         res;
 	byte       *data = alloca (size);
 
-	res = WildMidi_GetOutput (file, (char *)data, size);
-	if (res > 0) {
-		res /= info->channels * info->width;
-		SND_Convert (data, buf, res, info->channels, info->width);
-	}
+	res = WildMidi_GetOutput (mf->handle, (char *)data, size);
+	if (res < 0)
+		return res;
+	res /= CHANNELS * WIDTH;
+	SND_Convert (data, mf->data, res, CHANNELS, WIDTH);
+	*buf = mf->data;
 	return res;
 }
 
 static int
-midi_stream_seek (void *file, int pos, wavinfo_t *info)
+midi_stream_seek (sfxstream_t *stream, int pos)
 {
 	unsigned long int new_pos;
-	pos *= info->width * info->channels;
-	pos += info->dataofs;
+	pos *= stream->wavinfo.width * stream->wavinfo.channels;
+	pos += stream->wavinfo.dataofs;
 	new_pos = pos;
 	
-	return WildMidi_SampledSeek(file, &new_pos);
+	return WildMidi_SampledSeek(stream->file, &new_pos);
 }
 
 static void
 midi_stream_close (sfx_t *sfx)
 {
 	sfxstream_t *stream = sfx->data.stream;
+	midi_file_t *mf = (midi_file_t *) stream->file;
 
-	WildMidi_Close (stream->file);
-	free (stream);
-	free (sfx);
+	WildMidi_Close (mf->handle);
+	free (mf);
+	SND_SFX_StreamClose (sfx);
 }
-
-/*
- * Note: we set up only the QF stream here.
- * The WildMidi stream was setup when SND_OpenMidi was called
- * so stream->file contains the WildMidi handle for the midi
- */
 
 static sfx_t *
 midi_stream_open (sfx_t *sfx)
@@ -138,6 +145,7 @@ midi_stream_open (sfx_t *sfx)
 	midi	   *handle;
 	unsigned char *local_buffer;
 	unsigned long int local_buffer_size;
+	midi_file_t *mf;
 
 	QFS_FOpenFile (stream->file, &file);
 
@@ -152,7 +160,10 @@ midi_stream_open (sfx_t *sfx)
 	if (handle == NULL) 
 		return NULL;	
 
-	return SND_SFX_StreamOpen (sfx, handle, midi_stream_read, midi_stream_seek,
+	mf = calloc (sizeof (midi_file_t), 1);
+	mf->handle = handle;
+
+	return SND_SFX_StreamOpen (sfx, mf, midi_stream_read, midi_stream_seek,
 							   midi_stream_close);
 }
 

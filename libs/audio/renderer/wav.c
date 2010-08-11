@@ -48,6 +48,13 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "snd_render.h"
 
+#define FRAMES 1024
+
+typedef struct {
+	float      *data;
+	QFile      *file;
+} wav_file_t;
+
 static void
 wav_callback_load (void *object, cache_allocator_t allocator)
 {
@@ -91,37 +98,49 @@ wav_cache (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 	SND_SFX_Cache (sfx, realname, info, wav_callback_load);
 }
 
-static int
-wav_stream_read (void *file, float *buf, int count, wavinfo_t *info)
+static long
+wav_stream_read (void *file, float **buf)
 {
+	sfxstream_t *stream = (sfxstream_t *) file;
+	wavinfo_t  *info = &stream->wavinfo;
+	wav_file_t *wf = (wav_file_t *) stream->file;
 	int         res;
-	int         len = count * info->channels * info->width;
+	int         len = FRAMES * info->channels * info->width;
 	byte       *data = alloca (len);
 
-	res = Qread (file, data, len);
-	if (res > 0) {
-		res /= (info->channels * info->width);
-		SND_Convert (data, buf, res, info->channels, info->width);
-	}
+	if (!wf->data)
+		wf->data = malloc (FRAMES * info->channels * sizeof (float));
+
+	res = Qread (wf->file, data, len);
+	if (res <= 0)
+		return res;
+	res /= (info->channels * info->width);
+	SND_Convert (data, wf->data, res, info->channels, info->width);
+	*buf = wf->data;
 	return res;
 }
 
 static int
-wav_stream_seek (void *file, int pos, wavinfo_t *info)
+wav_stream_seek (sfxstream_t *stream, int pos)
 {
+	wavinfo_t  *info = &stream->wavinfo;
+	wav_file_t *wf = (wav_file_t *) stream->file;
 	pos *= info->width * info->channels;
 	pos += info->dataofs;
-	return Qseek (file, pos, SEEK_SET);
+	return Qseek (wf->file, pos, SEEK_SET);
 }
 
 static void
 wav_stream_close (sfx_t *sfx)
 {
 	sfxstream_t *stream = sfx->data.stream;
+	wav_file_t *wf = (wav_file_t *) stream->file;
 
-	Qclose (stream->file);
-	free (stream);
-	free (sfx);
+	Qclose (wf->file);
+	if (wf->data)
+		free (wf->data);
+	free (wf);
+	SND_SFX_StreamClose (sfx);
 }
 
 static sfx_t *
@@ -129,12 +148,15 @@ wav_stream_open (sfx_t *sfx)
 {
 	sfxstream_t *stream = sfx->data.stream;
 	QFile      *file;
+	wav_file_t *wf;
 
 	QFS_FOpenFile (stream->file, &file);
 	if (!file)
 		return 0;
 
-	return SND_SFX_StreamOpen (sfx, file, wav_stream_read, wav_stream_seek,
+	wf = calloc (sizeof (wav_file_t), 1);
+	wf->file = file;
+	return SND_SFX_StreamOpen (sfx, wf, wav_stream_read, wav_stream_seek,
 							   wav_stream_close);
 }
 

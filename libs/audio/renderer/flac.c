@@ -335,16 +335,20 @@ flac_cache (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 	SND_SFX_Cache (sfx, realname, info, flac_callback_load);
 }
 
-static int
-flac_stream_read (void *file, float *buf, int count, wavinfo_t *info)
+static long
+flac_stream_read (void *file, float **buf)
 {
-	return flac_read (file, buf, count);
+	sfxstream_t *stream = (sfxstream_t *) file;
+	flacfile_t *ff = (flacfile_t *) stream->file;
+	FLAC__stream_decoder_process_single (ff->decoder);
+	*buf = ff->buffer;
+	return ff->size;
 }
 
 static int
-flac_stream_seek (void *file, int pos, wavinfo_t *info)
+flac_stream_seek (sfxstream_t *stream, int pos)
 {
-	flacfile_t *ff = file;
+	flacfile_t *ff = stream->file;
 
 	ff->pos = ff->size = 0;
 	return FLAC__stream_decoder_seek_absolute (ff->decoder, pos);
@@ -356,8 +360,7 @@ flac_stream_close (sfx_t *sfx)
 	sfxstream_t *stream = sfx->data.stream;
 
 	flac_close (stream->file);
-	free (stream);
-	free (sfx);
+	SND_SFX_StreamClose (sfx);
 }
 
 static sfx_t *

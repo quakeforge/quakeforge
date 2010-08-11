@@ -134,31 +134,33 @@ struct sfxstream_s {
 	void       *file;			//!< handle for "file" representing the stream
 	wavinfo_t   wavinfo;		//!< description of sound data
 	unsigned    pos;			//!< position of next frame full stream
-	/**			resampler state information */
-	void       *state;
-	/** Resample raw data into internal format.
-		\param sc		buffer to write resampled sound (sfxstream_s::buffer)
-		\param data		raw sample data
-		\param length	number of frames to resample
-		\param prev		pointer to end of last resample for smoothing
-	*/
-	int         (*resample)(sfxbuffer_t *, float *, int);
+
+	void       *state;			//!< resampler state information
 	/** Read data from the stream.
-		\param file		handle for "file" representing the stream
-						(sfxstream_s::file)
+		This is a low-level function used by sfxstream_t::read. The read
+		samples will be at the sample rate of the underlying stream.
+		\param cb_data	stream relevant infomation (actually ::sfxstream_t
+						("this"), but this signature is used for compatibility
+						with libsamplerate
+		\param data		address of pointer to be set to point to the buffer
+						holding the samples
+	*/
+	long        (*ll_read)(void *cb_data, float **data);
+	/** Read data from the stream.
+		This is a high-level function for use in the mixer. The read samples
+		will always at be the correct sample rate for the mixer, reguardless
+		of the sample rate in the underlying stream.
+		\param stream	"this"
 		\param data		destination of read data
-		\param frames	number of frames to read from stream
-		\param info		description of sound data (sfxstream_s::wavinfo)
+		\param frames	maximum number of frames to read from stream
 		\return			number of frames read from stream
 	*/
-	int         (*read)(void *file, float *data, int frames, wavinfo_t *info);
+	int         (*read)(sfxstream_t *stream, float *data, int frames);
 	/** Seek to an absolute position within the stream.
-		\param file		handle for "file" representing the stream
-						(sfxstream_s::file)
+		\param stream	"this"
 		\param pos		frame position with the stream
-		\param info		description of sound data (sfxstream_s::wavinfo)
 	*/
-	int         (*seek)(void *file, int pos, wavinfo_t *info);
+	int         (*seek)(sfxstream_t *stream, int pos);
 	sfxbuffer_t buffer;			//<! stream's ring buffer
 };
 
@@ -250,9 +252,14 @@ void SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
 	\param close
 */
 sfx_t *SND_SFX_StreamOpen (sfx_t *sfx, void *file,
-						   int (*read)(void *, float *, int, wavinfo_t *),
-						   int (*seek)(void *, int, wavinfo_t *),
+						   long (*read)(void *, float **),
+						   int (*seek)(sfxstream_t *, int),
 						   void (*close) (sfx_t *));
+
+/** Close a stream.
+	\param sfx
+*/
+void SND_SFX_StreamClose (sfx_t *sfx);
 
 /** Pre-load a sound into the cache.
 	\param sample	name of sound to precache
@@ -403,6 +410,11 @@ void SND_SetPaint (sfxbuffer_t *sc);
 */
 void SND_SetupResampler (sfxbuffer_t *sc, int streamed);
 
+/** Free memory allocated for the resampler.
+	\param stream	stream to pulldown
+*/
+void SND_PulldownResampler (sfxstream_t *stream);
+
 /** Copy/resample data into buffer, resampling as necessary.
 	\param sc		buffer to write resampled sound
 	\param data		raw sample data
@@ -543,7 +555,6 @@ void SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos);
 /** Allocate a sound buffer from cache for cached sounds.
 	\param samples	size in samples
 	\param rate		sample rate
-	\param inwidth	bits per sample of input data
 	\param channels	number of channels in input data
 	\param block	cached sound descriptor to initialize
 	\param allocator cache allocator function

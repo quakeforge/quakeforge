@@ -111,8 +111,8 @@ SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
 
 sfx_t *
 SND_SFX_StreamOpen (sfx_t *sfx, void *file,
-					int (*read)(void *, float *, int, wavinfo_t *),
-					int (*seek)(void *, int, wavinfo_t *),
+					long (*read)(void *, float **),
+					int (*seek)(sfxstream_t *, int),
 					void (*close) (sfx_t *))
 {
 	sfxstream_t *stream = sfx->data.stream;
@@ -139,7 +139,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	memcpy ((byte *) stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
 	stream->file = file;
 	stream->sfx = new_sfx;
-	stream->read = read;
+	stream->ll_read = read;
 	stream->seek = seek;
 
 	stream->wavinfo = *sfx->wavinfo (sfx);
@@ -154,6 +154,15 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	stream->buffer.setpos (&stream->buffer, 0);		// pre-fill the buffer
 
 	return new_sfx;
+}
+
+void
+SND_SFX_StreamClose (sfx_t *sfx)
+{
+	sfxstream_t *stream = sfx->data.stream;
+	SND_PulldownResampler (stream);
+	free (stream);
+	free (sfx);
 }
 
 sfx_t *

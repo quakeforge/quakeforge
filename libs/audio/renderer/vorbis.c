@@ -51,6 +51,13 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "snd_render.h"
 
+#define FRAMES 1024
+
+typedef struct {
+	float      *data;
+	OggVorbis_File *vf;
+} vorbis_file_t;
+
 static size_t
 vorbis_read_func (void *ptr, size_t size, size_t nmemb, void *datasource)
 {
@@ -211,26 +218,40 @@ vorbis_cache (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 	SND_SFX_Cache (sfx, realname, info, vorbis_callback_load);
 }
 
-static int
-vorbis_stream_read (void *file, float *buf, int count, wavinfo_t *info)
+static long
+vorbis_stream_read (void *file, float **buf)
 {
-	return vorbis_read (file, buf, count, info);
+	sfxstream_t *stream = (sfxstream_t *) file;
+	vorbis_file_t *vf = (vorbis_file_t *) stream->file;
+	int         res;
+
+	if (!vf->data)
+		vf->data = malloc (FRAMES * stream->wavinfo.channels * sizeof (float));
+	res = vorbis_read (vf->vf, vf->data, FRAMES, &stream->wavinfo);
+	if (res <= 0)
+		return res;
+	*buf = vf->data;
+	return res;
 }
 
 static int
-vorbis_stream_seek (void *file, int pos, wavinfo_t *info)
+vorbis_stream_seek (sfxstream_t *stream, int pos)
 {
-	return ov_pcm_seek (file, pos);
+	vorbis_file_t *vf = (vorbis_file_t *) stream->file;
+	return ov_pcm_seek (vf->vf, pos);
 }
 
 static void
 vorbis_stream_close (sfx_t *sfx)
 {
 	sfxstream_t *stream = sfx->data.stream;
+	vorbis_file_t *vf = (vorbis_file_t *) stream->file;
 
-	ov_clear (stream->file);
-	free (stream);
-	free (sfx);
+	if (vf->data)
+		free (vf->data);
+	ov_clear (vf->vf);
+	free (vf);
+	SND_SFX_StreamClose (sfx);
 }
 
 static sfx_t *
@@ -238,14 +259,15 @@ vorbis_stream_open (sfx_t *sfx)
 {
 	sfxstream_t *stream = sfx->data.stream;
 	QFile      *file;
-	void       *f;
+	vorbis_file_t *f;
 
 	QFS_FOpenFile (stream->file, &file);
 	if (!file)
 		return 0;
 
-	f = malloc (sizeof (OggVorbis_File));
-	if (ov_open_callbacks (file, f, 0, 0, callbacks) < 0) {
+	f = calloc (sizeof (vorbis_file_t), 1);
+	f->vf = malloc (sizeof (OggVorbis_File));
+	if (ov_open_callbacks (file, f->vf, 0, 0, callbacks) < 0) {
 		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
 		Qclose (file);
 		free (f);

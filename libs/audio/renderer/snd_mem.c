@@ -165,36 +165,15 @@ read_samples (sfxbuffer_t *buffer, int count)
 		read_samples (buffer, buffer->length - buffer->head);
 		read_samples (buffer, count);
 	} else {
-		float       stepscale;
-		int         frames, size;
 		sfx_t      *sfx = buffer->sfx;
 		sfxstream_t *stream = sfx->data.stream;
 		wavinfo_t  *info = &stream->wavinfo;
+		float      *data = buffer->data + buffer->head * info->channels;
+		int         c;
 
-		stepscale = (float) info->rate / snd_shm->speed;
+		if ((c = stream->read (stream, data, count)) != count)
+			Sys_Printf ("%s nr %d %d\n", sfx->name, count, c);
 
-		frames = count * stepscale;
-		size = frames * info->channels * sizeof (float);
-
-		if (stream->resample) {
-			float      *data = alloca (size);
-			int         c;
-
-			if (stream->read (stream->file, data, frames, info) != frames)
-				Sys_Printf ("%s r\n", sfx->name);
-			c = stream->resample (buffer, data, frames);
-			if (c < count) {
-				data = buffer->data + (buffer->head + c - 1) * info->channels;
-				while (c++ < count) {
-					memcpy (data + info->channels, data,
-							info->channels * sizeof (float));
-				}
-			}
-		} else {
-			float      *data = buffer->data + buffer->head * info->channels;
-			if (stream->read (stream->file, data, frames, info) != frames)
-				Sys_Printf ("%s nr\n", sfx->name);
-		}
 		buffer->head += count;
 		if (buffer->head >= buffer->length)
 			buffer->head -= buffer->length;
@@ -224,7 +203,7 @@ fill_buffer (sfx_t *sfx, sfxstream_t *stream, sfxbuffer_t *buffer,
 	if (samples)
 		read_samples (buffer, samples);
 	if (loop_samples) {
-		stream->seek (stream->file, info->loopstart, info);
+		stream->seek (stream, info->loopstart);
 		read_samples (buffer, loop_samples);
 	}
 }
@@ -242,7 +221,7 @@ SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos)
 	buffer->head = buffer->tail = 0;
 	buffer->pos = pos;
 	stream->pos = pos;
-	stream->seek (stream->file, buffer->pos * stepscale, info);
+	stream->seek (stream, buffer->pos * stepscale);
 	fill_buffer (sfx, stream, buffer, info, pos);
 }
 
@@ -291,7 +270,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 			stream->pos = buffer->pos;
 		}
 		headpos = buffer->pos;
-		stream->seek (stream->file, buffer->pos * stepscale, info);
+		stream->seek (stream, buffer->pos * stepscale);
 	} else {
 		buffer->pos += count;
 		if (buffer->pos >= sfx->length) {
@@ -300,7 +279,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 				headpos = buffer->pos = 0;
 				buffer->head = buffer->tail = 0;
 				count = 0;
-				stream->seek (stream->file, buffer->pos * stepscale, info);
+				stream->seek (stream, buffer->pos * stepscale);
 			} else {
 				buffer->pos -= sfx->length - sfx->loopstart;
 			}

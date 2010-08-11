@@ -50,6 +50,12 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "snd_render.h"
 
+typedef struct {
+	float      *data;
+	int         size;
+	int         pos;
+} snd_null_state_t;
+
 static void
 check_buffer_integrity (sfxbuffer_t *sc, int width, const char *func)
 {
@@ -85,28 +91,40 @@ SND_Resample (sfxbuffer_t *sc, float *data, int length)
 }
 
 static int
-SND_ResampleStream (sfxbuffer_t *sc, float *data, int length)
+snd_read (sfxstream_t *stream, float *data, int frames)
 {
-	SRC_DATA    src_data;
-	SRC_STATE  *state = (SRC_STATE *) sc->sfx->data.stream->state;
+	snd_null_state_t *state = (snd_null_state_t *) stream->state;
+	int         channels = stream->buffer.channels;
+	int         framesize = channels * sizeof (float);
+	int         count;
+	int         read = 0;
 
-	int			outcount;
-	double		stepscale;
-	wavinfo_t  *info = sc->sfx->wavinfo (sc->sfx);
-	int         inrate = info->rate;
+	while (frames) {
+		if (state->pos == state->size) {
+			state->size = stream->ll_read (stream, &state->data);
+			if (state->size <= 0)
+				return state->size;
+			state->pos = 0;
+		}
+		count = frames;
+		if (count > state->size - state->pos)
+			count = state->size - state->pos;
+		memcpy (data, state->data + state->pos * channels, count * framesize);
+		state->pos += count;
+		frames -= count;
+		read += count;
+		data += count * channels;
+	}
+	return read;
+}
 
-	stepscale = (double) snd_shm->speed / inrate;
-	outcount = length * stepscale;
+static int
+snd_resample_read (sfxstream_t *stream, float *data, int frames)
+{
+	int         inrate = stream->wavinfo.rate;
+	double ratio = (double) snd_shm->speed / inrate;
 
-	src_data.data_in = data;
-	src_data.data_out = sc->data + sc->head * sc->channels;
-	src_data.input_frames = length;
-	src_data.output_frames = outcount;
-	src_data.src_ratio = stepscale;
-	src_data.end_of_input = 0; //XXX
-
-	src_process (state, &src_data);
-	return src_data.output_frames_gen;
+	return src_callback_read (stream->state, ratio, frames, data);
 }
 
 void
@@ -131,12 +149,24 @@ SND_SetupResampler (sfxbuffer_t *sc, int streamed)
 		sfxstream_t *stream = sc->sfx->data.stream;
 
 		if (snd_shm->speed == inrate) {
-			stream->state = 0;
-			stream->resample = 0;
+			stream->state = calloc (sizeof (snd_null_state_t), 1);
+			stream->read = snd_read;
 		} else {
-			stream->state = src_new (SRC_LINEAR, info->channels, &err);
-			stream->resample = SND_ResampleStream;
+			stream->state = src_callback_new (stream->ll_read,
+											  SRC_LINEAR, info->channels,
+											  &err, stream);
+			stream->read = snd_resample_read;
 		}
+	}
+}
+
+void
+SND_PulldownResampler (sfxstream_t *stream)
+{
+	if (stream->read == snd_resample_read) {
+		src_delete (stream->state);
+	} else {
+		free (stream->state);
 	}
 }
 
