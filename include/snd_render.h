@@ -67,7 +67,7 @@ struct dma_s {
 	int				frames;					//!< frames in buffer
 											//!< 1 frame = channels samples
 	int				submission_chunk;		//!< don't mix less than this #
-	int				framepos;				//!< ??
+	int				framepos;				//!< position of dma cursor
 	unsigned char	*buffer;				//!< destination for mixed sound
 	/** Transfer mixed samples to the output.
 		\param endtime	sample end time (count = endtime - snd_paintedtime)
