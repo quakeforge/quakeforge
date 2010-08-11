@@ -1077,9 +1077,9 @@ if test "x$enable_jack" != "xno"; then
 fi
 AC_SUBST(JACK_LIBS)
 
-AC_ARG_ENABLE(samplerate,
-[  --disable-samplerate    disable libsamplerate support],
-)
+dnl AC_ARG_ENABLE(samplerate,
+dnl [  --disable-samplerate    disable libsamplerate support],
+dnl )
 HAVE_SAMPLERATE=no
 SAMPLERATE_LIBS=""
 if test "x$enable_samplerate" != "xno"; then
@@ -1104,7 +1104,10 @@ if test "x$enable_samplerate" != "xno"; then
 	fi
 fi
 AC_SUBST(SAMPLERATE_LIBS)
-AM_CONDITIONAL(HAVE_SAMPLERATE, test "$HAVE_SAMPLERATE" = "yes")
+dnl AM_CONDITIONAL(HAVE_SAMPLERATE, test "$HAVE_SAMPLERATE" = "yes")
+if test "x$HAVE_SAMPLERATE" = "xno"; then
+	AC_MSG_ERROR(libsamplerate is required but wasn't found)
+fi
 
 SOUND_TYPES="$SOUND_TYPES DISK"
 
