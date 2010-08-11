@@ -84,11 +84,11 @@ SND_Resample (sfxbuffer_t *sc, float *data, int length)
 	check_buffer_integrity (sc, outwidth, __FUNCTION__);
 }
 
-static void
+static int
 SND_ResampleStream (sfxbuffer_t *sc, float *data, int length)
 {
 	SRC_DATA    src_data;
-	SRC_STATE  *state = (SRC_STATE *) sc->state;
+	SRC_STATE  *state = (SRC_STATE *) sc->sfx->data.stream->state;
 
 	int			outcount;
 	double		stepscale;
@@ -106,6 +106,7 @@ SND_ResampleStream (sfxbuffer_t *sc, float *data, int length)
 	src_data.end_of_input = 0; //XXX
 
 	src_process (state, &src_data);
+	return src_data.output_frames_gen;
 }
 
 void
@@ -130,14 +131,12 @@ SND_SetupResampler (sfxbuffer_t *sc, int streamed)
 		sfxstream_t *stream = sc->sfx->data.stream;
 
 		if (snd_shm->speed == inrate) {
-			sc->state = 0;
+			stream->state = 0;
 			stream->resample = 0;
 		} else {
-			sc->state = src_new (SRC_LINEAR, info->channels, &err);
+			stream->state = src_new (SRC_LINEAR, info->channels, &err);
 			stream->resample = SND_ResampleStream;
 		}
-	} else {
-		sc->state = 0;
 	}
 }
 

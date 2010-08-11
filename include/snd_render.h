@@ -121,9 +121,6 @@ struct sfxbuffer_s {
 	*/
 	void        (*setpos) (sfxbuffer_t *buffer, unsigned int pos);
 	sfx_t      *sfx;			//!< owning sfx_t instance
-	/**			resampler state information
-	*/
-	void       *state;
 	/** Sample data. The block at the beginning of the buffer (size depends on
 		sample size)
 	*/
@@ -137,13 +134,15 @@ struct sfxstream_s {
 	void       *file;			//!< handle for "file" representing the stream
 	wavinfo_t   wavinfo;		//!< description of sound data
 	unsigned    pos;			//!< position of next frame full stream
+	/**			resampler state information */
+	void       *state;
 	/** Resample raw data into internal format.
 		\param sc		buffer to write resampled sound (sfxstream_s::buffer)
 		\param data		raw sample data
 		\param length	number of frames to resample
 		\param prev		pointer to end of last resample for smoothing
 	*/
-	void        (*resample)(sfxbuffer_t *, float *, int);
+	int         (*resample)(sfxbuffer_t *, float *, int);
 	/** Read data from the stream.
 		\param file		handle for "file" representing the stream
 						(sfxstream_s::file)

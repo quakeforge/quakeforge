@@ -386,7 +386,7 @@ s_updateAmbientSounds (void)
 	if (!snd_ambient)
 		return;
 	// calc ambient sound levels
-	if (!*snd_render_data.worldmodel)
+	if (!snd_render_data.worldmodel || !*snd_render_data.worldmodel)
 		return;
 
 	l = Mod_PointInLeaf (listener_origin, *snd_render_data.worldmodel);
@@ -462,7 +462,8 @@ s_spatialize (channel_t *ch)
 	ch->oldphase = ch->phase;
 
 	// anything coming from the view entity will always be full volume
-	if (ch->entnum == *snd_render_data.viewentity) {
+	if (!snd_render_data.viewentity
+		|| ch->entnum == *snd_render_data.viewentity) {
 		ch->leftvol = ch->master_vol;
 		ch->rightvol = ch->master_vol;
 		ch->phase = 0;

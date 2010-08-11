@@ -10,6 +10,12 @@ plugin_ldflags= @plugin_ldflags@ -module
 plugin_libadd= @plugin_libadd@
 EXEEXT=
 
+noinst_PROGRAMS= testsound
+
+testsound_SOURCES= testsound.c
+testsound_LDADD= $(top_builddir)/libs/audio/libQFsound.la
+testsound_DEPENDENCIES= $(top_builddir)/libs/audio/libQFsound.la
+
 plugin_LTLIBRARIES=	@CD_PLUGIN_TARGETS@
 noinst_LTLIBRARIES=	@CD_PLUGIN_STATIC@
 lib_LTLIBRARIES=	@CD_TARGETS@ @SND_TARGETS@

@@ -139,7 +139,6 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	memcpy ((byte *) stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
 	stream->file = file;
 	stream->sfx = new_sfx;
-	stream->resample = SND_Resample;
 	stream->read = read;
 	stream->seek = seek;
 

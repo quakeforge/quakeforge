@@ -178,9 +178,18 @@ read_samples (sfxbuffer_t *buffer, int count)
 
 		if (stream->resample) {
 			float      *data = alloca (size);
+			int         c;
+
 			if (stream->read (stream->file, data, frames, info) != frames)
 				Sys_Printf ("%s r\n", sfx->name);
-			stream->resample (buffer, data, frames);
+			c = stream->resample (buffer, data, frames);
+			if (c < count) {
+				data = buffer->data + (buffer->head + c - 1) * info->channels;
+				while (c++ < count) {
+					memcpy (data + info->channels, data,
+							info->channels * sizeof (float));
+				}
+			}
 		} else {
 			float      *data = buffer->data + buffer->head * info->channels;
 			if (stream->read (stream->file, data, frames, info) != frames)
