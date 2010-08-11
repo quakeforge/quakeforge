@@ -106,18 +106,18 @@ vorbis_get_info (OggVorbis_File *vf)
 		samples = sample_start + sample_count;
 
 	info.rate = vi->rate;
-	info.width = 2;
+	info.width = sizeof (float);
 	info.channels = vi->channels;
 	info.loopstart = sample_start;
-	info.samples = samples;
+	info.frames = samples;
 	info.dataofs = 0;
-	info.datalen = samples * 2;
+	info.datalen = samples * info.channels * info.width;
 
 	if (developer->int_val) {
 		Sys_Printf ("\nBitstream is %d channel, %dHz\n",
 					info.channels, info.rate);
 		Sys_Printf ("\nDecoded length: %d samples (%d bytes)\n",
-					info.samples, info.samples * info.channels * 2);
+					info.frames, info.width);
 		Sys_Printf ("Encoded by: %s\n\n", ov_comment (vf, -1)->vendor);
 	}
 
@@ -125,18 +125,25 @@ vorbis_get_info (OggVorbis_File *vf)
 }
 
 static int
-vorbis_read (OggVorbis_File *vf, byte *buf, int len)
+vorbis_read (OggVorbis_File *vf, float *buf, int len, wavinfo_t *info)
 {
+	unsigned    i;
+	int         j;
 	int         count = 0;
 	int         current_section;
+	float     **vbuf;
 
 	while (len) {
-		int         res = ov_read (vf, (char *) buf, len, 0, 2, 1,
-								   &current_section);
+		int         res = ov_read_float (vf, &vbuf, len, &current_section);
+
 		if (res > 0) {
+			for (i = 0; i < info->channels; i++)
+				for (j = 0; j < res; j++) {
+					buf[j * info->channels + i] = vbuf[i][j];
+				}
 			count += res;
 			len -= res;
-			buf += res;
+			buf += res * info->channels;
 		} else if (res < 0) {
 			Sys_Printf ("vorbis error %d\n", res);
 			return -1;
@@ -151,37 +158,23 @@ vorbis_read (OggVorbis_File *vf, byte *buf, int len)
 static sfxbuffer_t *
 vorbis_load (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 {
-	byte       *data;
+	float      *data;
 	sfxbuffer_t *sc = 0;
 	sfx_t      *sfx = block->sfx;
-	void       (*resample)(sfxbuffer_t *, byte *, int);
 	wavinfo_t  *info = &block->wavinfo;
-
-	switch (info->channels) {
-		case 1:
-			resample = SND_ResampleMono;
-			break;
-		case 2:
-			resample = SND_ResampleStereo;
-			break;
-		default:
-			Sys_Printf ("%s: unsupported channel count: %d\n",
-						sfx->name, info->channels);
-			return 0;
-	}
 
 	data = malloc (info->datalen);
 	if (!data)
 		goto bail;
-	sc = SND_GetCache (info->samples, info->rate, info->width, info->channels,
+	sc = SND_GetCache (info->frames, info->rate, info->channels,
 					   block, allocator);
 	if (!sc)
 		goto bail;
 	sc->sfx = sfx;
-	if (vorbis_read (vf, data, info->datalen) < 0)
+	if (vorbis_read (vf, data, info->frames, info) < 0)
 		goto bail;
 	SND_SetPaint (sc);
-	resample (sc, data, info->samples);
+	SND_Resample (sc, data, info->frames);
 	sc->head = sc->length;
   bail:
 	if (data)
@@ -218,9 +211,9 @@ vorbis_cache (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 }
 
 static int
-vorbis_stream_read (void *file, byte *buf, int count, wavinfo_t *info)
+vorbis_stream_read (void *file, float *buf, int count, wavinfo_t *info)
 {
-	return vorbis_read (file, buf, count);
+	return vorbis_read (file, buf, count, info);
 }
 
 static int
@@ -285,7 +278,7 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 		Sys_Printf ("unsupported number of channels");
 		return -1;
 	}
-	if (info.samples / info.rate < 3) {
+	if (info.frames / info.rate < 3) {
 		Sys_DPrintf ("cache %s\n", realname);
 		vorbis_cache (sfx, realname, &vf, info);
 	} else {

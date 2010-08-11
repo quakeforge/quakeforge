@@ -111,15 +111,14 @@ SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
 
 sfx_t *
 SND_SFX_StreamOpen (sfx_t *sfx, void *file,
-					int (*read)(void *, byte *, int, wavinfo_t *),
+					int (*read)(void *, float *, int, wavinfo_t *),
 					int (*seek)(void *, int, wavinfo_t *),
 					void (*close) (sfx_t *))
 {
 	sfxstream_t *stream = sfx->data.stream;
 	wavinfo_t  *info = &stream->wavinfo;
-	int         samples;
+	int         frames;
 	int         size;
-	int         width;
 
 	sfx_t      *new_sfx = calloc (1, sizeof (sfx_t));
 
@@ -131,38 +130,27 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	new_sfx->getbuffer = SND_StreamGetBuffer;
 	new_sfx->close = close;
 
-	samples = snd_shm->speed * 0.3;
-	samples = (samples + 255) & ~255;
-	size = samples + 1;		// one extra sample for the resampler
-	width = 1;
-	if (!snd_loadas8bit->int_val)
-		width *= 2;
-	if (info->channels == 2)
-		width *= 2;
-	size *= width;
+	frames = snd_shm->speed * 0.3;
+	frames = (frames + 255) & ~255;
+	size = frames + 1;		// one extra sample for the resampler
+	size *= info->channels * sizeof (float);
 
 	stream = calloc (1, sizeof (sfxstream_t) + size);
 	new_sfx->data.stream = stream;
-	memcpy (stream->buffer.sample_data + size, "\xde\xad\xbe\xef", 4);
+	memcpy ((byte *) stream->buffer.sample_data + size, "\xde\xad\xbe\xef", 4);
 	stream->file = file;
 	stream->sfx = new_sfx;
-	stream->resample = info->channels == 2 ? SND_ResampleStereo
-										   : SND_ResampleMono;
+	stream->resample = SND_Resample;
 	stream->read = read;
 	stream->seek = seek;
 
 	stream->wavinfo = *sfx->wavinfo (sfx);
 
-	stream->buffer.length = samples;
+	stream->buffer.length = frames;
 	stream->buffer.advance = SND_StreamAdvance;
 	stream->buffer.setpos = SND_StreamSetPos;
 	stream->buffer.sfx = new_sfx;
-	stream->buffer.data = &stream->buffer.sample_data[width];
-	if (info->width == 1) {
-		stream->buffer.sample_data[0] = 128;
-		if (info->channels == 2)
-			stream->buffer.sample_data[1] = 128;
-	}
+	stream->buffer.data = &stream->buffer.sample_data[info->channels];
 	SND_SetPaint (&stream->buffer);
 
 	stream->resample (&stream->buffer, 0, 0);		// get sfx setup properly

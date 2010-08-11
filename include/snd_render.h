@@ -54,8 +54,8 @@ typedef struct sfxstream_s sfxstream_t;
 /** Represent a sound sample in the mixer.
 */
 struct portable_samplepair_s {
-	int         left;						//!< left sample
-	int         right;						//!< right sample
+	float        left;						//!< left sample
+	float        right;						//!< right sample
 };
 
 /** communication structure between output drivers and renderer
@@ -82,10 +82,10 @@ struct dma_s {
 */
 struct wavinfo_s {
 	unsigned    rate;			//!< sample rate
-	unsigned    width;			//!< bits per sample
+	unsigned    width;			//!< bytes per sample
 	unsigned    channels;		//!< number of channels
-	unsigned    loopstart;		//!< start sample of loop. -1 = no loop
-	unsigned    samples;		//!< size of sound in samples
+	unsigned    loopstart;		//!< start frame of loop. -1 = no loop
+	unsigned    frames;			//!< size of sound in frames
 	unsigned    dataofs;		//!< chunk starts this many bytes from BOF
 	unsigned    datalen;		//!< chunk bytes
 };
@@ -96,38 +96,38 @@ struct wavinfo_s {
 struct sfxbuffer_s {
 	unsigned    head;			//!< ring buffer head position in sampels
 	unsigned    tail;			//!< ring buffer tail position in sampels
-	unsigned    length;			//!< length of buffer in samples
+	unsigned    length;			//!< length of buffer in frames
 	unsigned    pos;			//!< position of tail within full stream
-	unsigned    bps;			//!< bytes per sample: 1 2 4 usually
+	unsigned    channels;		//!< number of channels per frame
 	/** paint samples into the mix buffer
 		\param offset   offset into the mix buffer at which to start mixing
 						the channel
 		\param ch		sound channel
 		\param buffer	sound data
-		\param count	number of samples to paint
+		\param count	number of frames to paint
 	*/
-	void        (*paint) (int offset, channel_t *ch, void *buffer,
+	void        (*paint) (int offset, channel_t *ch, float *buffer,
 						  unsigned count);
 	/** Advance the position with the stream, updating the ring buffer as
 		necessary. Null for chached sounds.
 		\param buffer	"this"
-		\param count	number of samples to advance
+		\param count	number of frames to advance
 	*/
 	void        (*advance) (sfxbuffer_t *buffer, unsigned int count);
 	/** Seek to an absolute position within the stream, resetting the ring
 		buffer.
 		\param buffer	"this"
-		\param pos		sample position with the stream
+		\param pos		frame position with the stream
 	*/
 	void        (*setpos) (sfxbuffer_t *buffer, unsigned int pos);
 	sfx_t      *sfx;			//!< owning sfx_t instance
 	/** Points to the beginning of the sample data within sample_data.
 	*/
-	byte       *data;
+	float      *data;
 	/** Sample data. The block at the beginning of the buffer (size depends on
 		sample size) holds the state information for resampling.
 	*/
-	byte        sample_data[4];
+	float       sample_data[1];
 };
 
 /** Representation of sound loaded that is streamed in as needed.
@@ -136,27 +136,27 @@ struct sfxstream_s {
 	sfx_t      *sfx;			//!< owning sfx_t instance
 	void       *file;			//!< handle for "file" representing the stream
 	wavinfo_t   wavinfo;		//!< description of sound data
-	unsigned    pos;			//!< position of next sample within full stream
+	unsigned    pos;			//!< position of next frame full stream
 	/** Resample raw data into internal format.
 		\param sc		buffer to write resampled sound (sfxstream_s::buffer)
 		\param data		raw sample data
-		\param length	number of raw samples to resample
+		\param length	number of frames to resample
 		\param prev		pointer to end of last resample for smoothing
 	*/
-	void        (*resample)(sfxbuffer_t *, byte *, int);
+	void        (*resample)(sfxbuffer_t *, float *, int);
 	/** Read data from the stream.
 		\param file		handle for "file" representing the stream
 						(sfxstream_s::file)
 		\param data		destination of read data
-		\param bytes	number of bytes to read from stream
+		\param frames	number of frames to read from stream
 		\param info		description of sound data (sfxstream_s::wavinfo)
-		\return			number of bytes read from stream
+		\return			number of frames read from stream
 	*/
-	int         (*read)(void *file, byte *data, int bytes, wavinfo_t *info);
+	int         (*read)(void *file, float *data, int frames, wavinfo_t *info);
 	/** Seek to an absolute position within the stream.
 		\param file		handle for "file" representing the stream
 						(sfxstream_s::file)
-		\param pos		sample position with the stream
+		\param pos		frame position with the stream
 		\param info		description of sound data (sfxstream_s::wavinfo)
 	*/
 	int         (*seek)(void *file, int pos, wavinfo_t *info);
@@ -251,7 +251,7 @@ void SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
 	\param close
 */
 sfx_t *SND_SFX_StreamOpen (sfx_t *sfx, void *file,
-						   int (*read)(void *, byte *, int, wavinfo_t *),
+						   int (*read)(void *, float *, int, wavinfo_t *),
 						   int (*seek)(void *, int, wavinfo_t *),
 						   void (*close) (sfx_t *));
 
@@ -398,19 +398,22 @@ void SND_SetPaint (sfxbuffer_t *sc);
 	\ingroup sound_render
 */
 //@{
-/** Copy/resample mono data into sample buffer, resampling as necessary.
+/** Copy/resample data into buffer, resampling as necessary.
 	\param sc		buffer to write resampled sound
 	\param data		raw sample data
-	\param length	number of raw samples to resample
+	\param length	number of frames to resample
 */
-void SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length);
+void SND_Resample (sfxbuffer_t *sc, float *data, int length);
 
-/** Copy/resample stereo data into sample buffer, resampling as necessary.
-	\param sc		buffer to write resampled sound
-	\param data		raw sample data
-	\param length	number of raw samples to resample
+/** Convert integer sample data to float sample data.
+	\param idata	integer data buffer
+	\param fdata	float data buffer
+	\param frames	number of frames
+	\param channels	number of channels per frame
+	\param width	bytes per channel
 */
-void SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length);
+void SND_Convert (byte *idata, float *fdata, int frames, int channels,
+				  int width);
 //@}
 
 
@@ -541,7 +544,7 @@ void SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos);
 	\param allocator cache allocator function
 	\return			pointer to sound sample buffer (setup for block mode)
 */
-sfxbuffer_t *SND_GetCache (long samples, int rate, int inwidth, int channels,
+sfxbuffer_t *SND_GetCache (long samples, int rate, int channels,
 						   sfxblock_t *block, cache_allocator_t allocator);
 //@}
 

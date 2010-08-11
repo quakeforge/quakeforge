@@ -82,16 +82,25 @@ midi_get_info (void * handle) {
 	info.width = 2;
 	info.channels = 2;
 	info.loopstart = -1;
-	info.samples = wm_info->approx_total_samples;
+	info.frames = wm_info->approx_total_samples;
 	info.dataofs = 0;
-	info.datalen = info.samples * 4;
+	info.datalen = info.frames * info.channels * info.width;
 	return info;
 }
 
 static int
-midi_stream_read (void *file, byte *buf, int count, wavinfo_t *info)
+midi_stream_read (void *file, float *buf, int count, wavinfo_t *info)
 {
-	return WildMidi_GetOutput (file, (char *)buf, (unsigned long int)count);
+	int         size = count * info->channels * info->width;
+	int         res;
+	byte       *data = alloca (size);
+
+	res = WildMidi_GetOutput (file, (char *)data, size);
+	if (res > 0) {
+		res /= info->channels * info->width;
+		SND_Convert (data, buf, res, info->channels, info->width);
+	}
+	return res;
 }
 
 static int

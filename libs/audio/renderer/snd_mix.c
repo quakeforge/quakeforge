@@ -47,6 +47,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "snd_render.h"
 
+#define VOLSCALE 1024.0				// so mixing is less likely to overflow
+									// note: must be >= 255 due to the channel
+									// volumes being 0-255.
+
 cvar_t     *snd_volume;
 
 unsigned    snd_paintedtime;				// sample PAIRS
@@ -54,7 +58,6 @@ unsigned    snd_paintedtime;				// sample PAIRS
 portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 static int  max_overpaint;				// number of extra samples painted
 										// due to phase shift
-static int         snd_scaletable[32][256];
 
 /* CHANNEL MIXING */
 
@@ -78,7 +81,7 @@ snd_paint_channel (channel_t *ch, sfxbuffer_t *sc, int count)
 {
 	unsigned    pos;
 	int         offs = 0;
-	byte       *samps;
+	float      *samps;
 
 	if ((int) ch->pos < 0) {
 		ch->pos += count;
@@ -91,7 +94,7 @@ snd_paint_channel (channel_t *ch, sfxbuffer_t *sc, int count)
 	if (ch->pos < sc->pos || ch->pos - sc->pos >= sc->length)
 		sc->setpos (sc, ch->pos);
 	pos = (ch->pos - sc->pos + sc->tail) % sc->length;
-	samps = sc->data + pos * sc->bps;
+	samps = sc->data + pos * sc->channels;
 
 	if (pos + count > sc->length) {
 		unsigned    sub = sc->length - pos;
@@ -113,7 +116,10 @@ SND_PaintChannels (unsigned endtime)
 	sfxbuffer_t *sc;
 
 	// clear the paint buffer
-	memset (snd_paintbuffer, 0, sizeof (snd_paintbuffer));
+	for (i = 0; i < PAINTBUFFER_SIZE * 2; i++) {
+		snd_paintbuffer[i].left = 0;
+		snd_paintbuffer[i].right = 0;
+	}
 
 	while (snd_paintedtime < endtime) {
 		// if snd_paintbuffer is smaller than DMA buffer
@@ -173,59 +179,19 @@ SND_PaintChannels (unsigned endtime)
 	}
 }
 
-void
-SND_InitScaletable (void)
-{
-	int			i, j;
-
-	for (i = 0; i < 32; i++)
-		for (j = 0; j < 256; j++)
-			snd_scaletable[i][j] = ((signed char) j) * i * 8;
-}
-
 static void
-snd_paint_mono_8 (int offs, channel_t *ch, void *bytes, unsigned count)
+snd_paint_mono (int offs, channel_t *ch, float *sfx, unsigned count)
 {
-	byte       *sfx;
-	int         data;
-	unsigned    i;
-	int        *lscale, *rscale;
-	portable_samplepair_t *pair;
-
-	if (ch->leftvol > 255)
-		ch->leftvol = 255;
-	if (ch->rightvol > 255)
-		ch->rightvol = 255;
-
-	lscale = snd_scaletable[ch->leftvol >> 3];
-	rscale = snd_scaletable[ch->rightvol >> 3];
-	sfx = (byte *) bytes;
-
-	pair = snd_paintbuffer + offs;
-
-	for (i = 0; i < count; i++) {
-		data = sfx[i];
-		pair[i].left += lscale[data];
-		pair[i].right += rscale[data];
-	}
-}
-
-static void
-snd_paint_mono_16 (int offs, channel_t *ch, void *bytes, unsigned count)
-{
-	int         leftvol, rightvol;
+	float       leftvol, rightvol;
 	unsigned    left_phase, right_phase;	// Never allowed < 0 anyway
 	unsigned    i = 0;
-	short      *sfx;
 	portable_samplepair_t *pair;
 
-	leftvol = ch->leftvol;
-	rightvol = ch->rightvol;
+	leftvol = ch->leftvol / VOLSCALE;
+	rightvol = ch->rightvol / VOLSCALE;
 
 	max_overpaint = max (abs (ch->phase),
 						 max (abs (ch->oldphase), max_overpaint));
-
-	sfx = (signed short *) bytes;
 
 	pair = snd_paintbuffer + offs;
 
@@ -265,8 +231,8 @@ snd_paint_mono_16 (int offs, channel_t *ch, void *bytes, unsigned count)
 		c = min (count, max (count_right, count_left));
 		count -= c;
 		while (c) {
-			int         left = (sfx[i] * leftvol) >> 8;
-			int         right = (sfx[i] * rightvol) >> 8;
+			float       left = sfx[i] * leftvol;
+			float       right = sfx[i] * rightvol;
 
 			if (new_phase_left < old_phase_left) {
 				if (!(count_left & 1)) {
@@ -302,48 +268,22 @@ snd_paint_mono_16 (int offs, channel_t *ch, void *bytes, unsigned count)
 	}
 
 	for (i = 0; i < count; i++) {
-		pair[i + left_phase].left += (sfx[i] * leftvol) >> 8;
-		pair[i + right_phase].right += (sfx[i] * rightvol) >> 8;
+		pair[i + left_phase].left += sfx[i] * leftvol;
+		pair[i + right_phase].right += sfx[i] * rightvol;
 	}
 }
 
 static void
-snd_paint_stereo_8 (int offs, channel_t *ch, void *bytes, unsigned count)
+snd_paint_stereo (int offs, channel_t *ch, float *samp, unsigned count)
 {
-	byte       *samp;
 	portable_samplepair_t *pair;
-	int		   *lscale, *rscale;
+	float       leftvol = ch->leftvol / VOLSCALE;
+	float       rightvol = ch->rightvol / VOLSCALE;
 
-	if (ch->leftvol > 255)
-		ch->leftvol = 255;
-	if (ch->rightvol > 255)
-		ch->rightvol = 255;
-
-	lscale = snd_scaletable[ch->leftvol >> 3];
-	rscale = snd_scaletable[ch->rightvol >> 3];
-
-	samp = bytes;
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
-		pair->left += lscale[*samp++];
-		pair->right += rscale[*samp++];
-		pair++;
-	}
-}
-
-static void
-snd_paint_stereo_16 (int offs, channel_t *ch, void *bytes, unsigned count)
-{
-	short      *samp;
-	portable_samplepair_t *pair;
-	int         leftvol = ch->leftvol;
-	int         rightvol = ch->rightvol;
-
-	samp = (short *) bytes;
-	pair = snd_paintbuffer + offs;
-	while (count-- > 0) {
-		pair->left += (*samp++ * leftvol) >> 8;
-		pair->right += (*samp++ * rightvol) >> 8;
+		pair->left += *samp++ * leftvol;
+		pair->right += *samp++ * rightvol;
 		pair++;
 	}
 }
@@ -352,15 +292,8 @@ void
 SND_SetPaint (sfxbuffer_t *sc)
 {
 	wavinfo_t *info = sc->sfx->wavinfo (sc->sfx);
-	if (snd_loadas8bit->int_val) {
-		if (info->channels == 2)
-			sc->paint = snd_paint_stereo_8;
-		else
-			sc->paint = snd_paint_mono_8;
-	} else {
-		if (info->channels == 2)
-			sc->paint = snd_paint_stereo_16;
-		else
-			sc->paint = snd_paint_mono_16;
-	}
+	if (info->channels == 2)
+		sc->paint = snd_paint_stereo;
+	else
+		sc->paint = snd_paint_mono;
 }

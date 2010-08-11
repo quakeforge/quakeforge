@@ -55,7 +55,9 @@ wav_callback_load (void *object, cache_allocator_t allocator)
 	sfx_t      *sfx = block->sfx;
 	const char *name = (const char *) block->file;
 	QFile      *file;
+	int         len;
 	byte       *data;
+	float      *fdata;
 	sfxbuffer_t *buffer;
 	wavinfo_t  *info = &block->wavinfo;
 
@@ -64,18 +66,19 @@ wav_callback_load (void *object, cache_allocator_t allocator)
 		return; //FIXME Sys_Error?
 
 	Qseek (file, info->dataofs, SEEK_SET);
-	data = malloc (info->datalen);
+	len = info->datalen + info->frames * info->channels * sizeof (float);
+	data = malloc (len);
+	fdata = (float *) (data + info->datalen);
 	Qread (file, data, info->datalen);
 	Qclose (file);
 
-	buffer = SND_GetCache (info->samples, info->rate, info->width,
+	SND_Convert (data, fdata, info->frames, info->channels, info->width);
+
+	buffer = SND_GetCache (info->frames, info->rate,
 						   info->channels, block, allocator);
 	buffer->sfx = sfx;
 	SND_SetPaint (buffer);
-	if (info->channels == 2)
-		SND_ResampleStereo (buffer, data, info->samples);
-	else
-		SND_ResampleMono (buffer, data, info->samples);
+	SND_Resample (buffer, fdata, info->frames);
 	buffer->head = buffer->length;
 	free (data);
 }
@@ -88,9 +91,18 @@ wav_cache (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 }
 
 static int
-wav_stream_read (void *file, byte *buf, int count, wavinfo_t *info)
+wav_stream_read (void *file, float *buf, int count, wavinfo_t *info)
 {
-	return Qread (file, buf, count);
+	int         res;
+	int         len = count * info->channels * info->width;
+	byte       *data = alloca (len);
+
+	res = Qread (file, data, len);
+	if (res > 0) {
+		res /= (info->channels * info->width);
+		SND_Convert (data, buf, res, info->channels, info->width);
+	}
+	return res;
 }
 
 static int
@@ -214,16 +226,16 @@ wav_get_info (QFile *file)
 	info.rate = dfmt->samples_per_sec;
 	info.width = dfmt->bits_per_sample / 8;
 	info.channels = dfmt->channels;
-	info.samples = 0;
+	info.frames = 0;
 	if (cp) {
 		info.loopstart = cp->sample_offset;
 		if (dltxt)
-			info.samples = info.loopstart + dltxt->len;
+			info.frames = info.loopstart + dltxt->len;
 	} else {
 		info.loopstart = -1;
 	}
-	if (!info.samples)
-		info.samples = data->ck.len / (info.width * info.channels);
+	if (!info.frames)
+		info.frames = data->ck.len / (info.width * info.channels);
 	info.dataofs = *(int *)data->data;
 	info.datalen = data->ck.len;
 
@@ -242,7 +254,7 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 		return -1;
 	}
 
-	if (info.samples / info.rate < 3) {
+	if (info.frames / info.rate < 3) {
 		Sys_DPrintf ("cache %s\n", realname);
 		wav_cache (sfx, realname, file, info);
 	} else {

@@ -46,6 +46,6 @@ EXTRA_snd_render_default_la_SOURCES= $(extra_format_src)
 
 snd_render_jack_la_LDFLAGS=	$(plugin_ldflags)
 snd_render_jack_la_SOURCES=	snd_jack.c $(snd_common) $(format_src)
-snd_render_jack_la_LIBADD=	$(VORBISFILE_LIBS) $(VORBIS_LIBS) $(LIBFLAC_LIBS) $(OGG_LIBS) $(WM_LIBS) $(JACK_LIBS) $(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/models/libQFmodels.la
+snd_render_jack_la_LIBADD=	$(SAMPLERATE_LIBS) $(VORBISFILE_LIBS) $(VORBIS_LIBS) $(LIBFLAC_LIBS) $(OGG_LIBS) $(WM_LIBS) $(JACK_LIBS) $(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/models/libQFmodels.la
 snd_render_jack_la_DEPENDENCIES=
 EXTRA_snd_render_jack_la_SOURCES= $(extra_format_src)

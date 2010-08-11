@@ -166,23 +166,24 @@ read_samples (sfxbuffer_t *buffer, int count)
 		read_samples (buffer, count);
 	} else {
 		float       stepscale;
-		int         samples, size;
+		int         frames, size;
 		sfx_t      *sfx = buffer->sfx;
 		sfxstream_t *stream = sfx->data.stream;
 		wavinfo_t  *info = &stream->wavinfo;
 
 		stepscale = (float) info->rate / snd_shm->speed;
 
-		samples = count * stepscale;
-		size = samples * info->width * info->channels;
+		frames = count * stepscale;
+		size = frames * info->channels * sizeof (float);
 
 		if (stream->resample) {
-			byte       *data = alloca (size);
-			if (stream->read (stream->file, data, size, info) != size)
+			float      *data = alloca (size);
+			if (stream->read (stream->file, data, frames, info) != frames)
 				Sys_Printf ("%s r\n", sfx->name);
-			stream->resample (buffer, data, samples);
+			stream->resample (buffer, data, frames);
 		} else {
-			if (stream->read (stream->file, buffer->data, size, info) != size)
+			float      *data = buffer->data + buffer->head * info->channels;
+			if (stream->read (stream->file, data, frames, info) != frames)
 				Sys_Printf ("%s nr\n", sfx->name);
 		}
 		buffer->head += count;
@@ -211,20 +212,9 @@ fill_buffer (sfx_t *sfx, sfxstream_t *stream, sfxbuffer_t *buffer,
 			samples -= loop_samples;
 		}
 	}
-	if (samples) {
-		if (buffer->head != buffer->tail) {
-			int         s = buffer->head - 1;
-			if (!buffer->head)
-				s += buffer->length;
-		}
+	if (samples)
 		read_samples (buffer, samples);
-	}
 	if (loop_samples) {
-		if (buffer->head != buffer->tail) {
-			int         s = buffer->head - 1;
-			if (!buffer->head)
-				s += buffer->length;
-		}
 		stream->seek (stream->file, info->loopstart, info);
 		read_samples (buffer, loop_samples);
 	}
@@ -381,25 +371,24 @@ bail:
 }
 
 sfxbuffer_t *
-SND_GetCache (long samples, int rate, int inwidth, int channels,
+SND_GetCache (long frames, int rate, int channels,
 			  sfxblock_t *block, cache_allocator_t allocator)
 {
-	int         len, size, width;
+	int         len, size;
 	float		stepscale;
 	sfxbuffer_t *sc;
 	sfx_t      *sfx = block->sfx;
 
-	width = snd_loadas8bit->int_val ? 1 : 2;
 	stepscale = (float) rate / snd_shm->speed;
-	len = size = samples / stepscale;
-//	printf ("%ld %d\n", samples, size);
-	size *= width * channels;
+	len = size = frames / stepscale;
+//	printf ("%ld %d\n", frames, size);
+	size *= sizeof (float) * channels;
 	sc = allocator (&block->cache, sizeof (sfxbuffer_t) + size, sfx->name);
 	if (!sc)
 		return 0;
 	memset (sc, 0, sizeof (sfxbuffer_t) + size);
 	sc->length = len;
 	sc->data = sc->sample_data;
-	memcpy (sc->data + size, "\xde\xad\xbe\xef", 4);
+	memcpy (sc->data + len * channels, "\xde\xad\xbe\xef", 4);
 	return sc;
 }

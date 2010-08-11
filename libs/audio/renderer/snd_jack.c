@@ -158,6 +158,7 @@ snd_jack_xfer (int endtime)
 {
 	int         i;
 	int         count;
+	float       snd_vol = snd_volume->value;
 
 	count = endtime - snd_paintedtime;
 	if (snd_blocked) {
@@ -169,8 +170,8 @@ snd_jack_xfer (int endtime)
 	}
 	for (i = 0; i < count; i++) {
 		/* max is +/- 1.0. need to implement clamping. */
-		*output[0]++ = 0.25 * snd_paintbuffer[i].left / 65536.0;
-		*output[1]++ = 0.25 * snd_paintbuffer[i].right / 65536.0;
+		*output[0]++ = snd_vol * snd_paintbuffer[i].left;
+		*output[1]++ = snd_vol * snd_paintbuffer[i].right;
 	}
 }
 
@@ -210,10 +211,6 @@ s_init (void)
 
 	snd_volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
 						   "Set the volume for sound playback");
-	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
-						   "control sample interpolation");
-	snd_loadas8bit = Cvar_Get ("snd_loadas8bit", "0", CVAR_NONE, NULL,
-							   "Toggles loading sounds as 8-bit samples");
 	snd_jack_server = Cvar_Get ("snd_jack_server", "default", CVAR_ROM, NULL,
 								"The name of the JACK server to connect to");
 
@@ -235,10 +232,6 @@ s_init (void)
 	snd_shm->speed = jack_get_sample_rate (jack_handle);
 	s_jack_activate ();
 	Sys_Printf ("Connected to JACK: %d Sps\n", snd_shm->speed);
-	if (snd_shm->speed > 44100) {
-		Sys_Printf ("FIXME clamping Sps to 44100 until resampling is fixed\n");
-		snd_shm->speed = 44100;
-	}
 }
 
 static void

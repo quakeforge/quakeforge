@@ -96,9 +96,9 @@ typedef struct {
 	QFile      *file;
 	FLAC__StreamMetadata_StreamInfo info;
 	FLAC__StreamMetadata *vorbis_info;
-	byte       *buffer;
-	int         size;
-	int         pos;
+	float      *buffer;
+	int         size;					// in frames
+	int         pos;					// in frames
 } flacfile_t;
 
 static void
@@ -156,49 +156,21 @@ flac_write_func (const FLAC__StreamDecoder *decoder,
 				 void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
-	int         bps = ff->info.bits_per_sample / 8;
+	float      *out;
+	float       scale = 2.0 / (1 << ff->info.bits_per_sample);
+	unsigned    i, j;
 
 	if (!ff->buffer)
-		ff->buffer = malloc (ff->info.max_blocksize * ff->info.channels * bps);
-	if (ff->info.channels == 1) {
-		unsigned    i;
-		const FLAC__int32 *in = buffer[0];
+		ff->buffer = malloc (ff->info.max_blocksize * ff->info.channels
+							 * sizeof (float));
+	for (j = 0; j < ff->info.channels; j++) {
+		const FLAC__int32 *in = buffer[j];
 
-		if (ff->info.bits_per_sample == 8) {
-			byte       *out = ff->buffer;
-
-			for (i = 0; i < frame->header.blocksize; i++)
-				*out++ = *in++ + 128;
-		} else {
-			short      *out = (short *) ff->buffer;
-
-			for (i = 0; i < frame->header.blocksize; i++)
-				*out++ = *in++;
-		}
-	} else {
-		unsigned    i;
-		const FLAC__int32 *li = buffer[0];
-		const FLAC__int32 *ri = buffer[1];
-
-		if (ff->info.bits_per_sample == 8) {
-			char       *lo = (char *) ff->buffer + 0;
-			char       *ro = (char *) ff->buffer + 1;
-
-			for (i = 0; i < frame->header.blocksize; i++, lo++, ro++) {
-				*lo++ = *li++ + 128;
-				*ro++ = *ri++ + 128;
-			}
-		} else {
-			short      *lo = (short *) ff->buffer + 0;
-			short      *ro = (short *) ff->buffer + 1;
-
-			for (i = 0; i < frame->header.blocksize; i++, lo++, ro++) {
-				*lo++ = LittleShort (*li++);
-				*ro++ = LittleShort (*ri++);
-			}
-		}
+		out = ff->buffer + j;
+		for (i = 0; i < frame->header.blocksize; i++, out += ff->info.channels)
+			*out = *in++ * scale;
 	}
-	ff->size = frame->header.blocksize * bps * ff->info.channels;
+	ff->size = frame->header.blocksize;
 	ff->pos = 0;
 	return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
@@ -276,7 +248,7 @@ flac_close (flacfile_t *ff)
 }
 
 static int
-flac_read (flacfile_t *ff, byte *buf, int len)
+flac_read (flacfile_t *ff, float *buf, int len)
 {
 	int         count = 0;
 
@@ -288,7 +260,8 @@ flac_read (flacfile_t *ff, byte *buf, int len)
 		if (res > len)
 			res = len;
 		if (res > 0) {
-			memcpy (buf, ff->buffer + ff->pos, res);
+			memcpy (buf, ff->buffer + ff->pos * ff->info.channels,
+					res * ff->info.channels * sizeof (float));
 			count += res;
 			len -= res;
 			buf += res;
@@ -307,37 +280,23 @@ flac_read (flacfile_t *ff, byte *buf, int len)
 static sfxbuffer_t *
 flac_load (flacfile_t *ff, sfxblock_t *block, cache_allocator_t allocator)
 {
-	byte       *data;
+	float      *data;
 	sfxbuffer_t *sc = 0;
 	sfx_t      *sfx = block->sfx;
-	void       (*resample)(sfxbuffer_t *, byte *, int);
 	wavinfo_t  *info = &block->wavinfo;
-
-	switch (ff->info.channels) {
-		case 1:
-			resample = SND_ResampleMono;
-			break;
-		case 2:
-			resample = SND_ResampleStereo;
-			break;
-		default:
-			Sys_Printf ("%s: unsupported channel count: %d\n",
-						sfx->name, info->channels);
-			return 0;
-	}
 
 	data = malloc (info->datalen);
 	if (!data)
 		goto bail;
-	sc = SND_GetCache (info->samples, info->rate, info->width, info->channels,
+	sc = SND_GetCache (info->frames, info->rate, info->channels,
 					   block, allocator);
 	if (!sc)
 		goto bail;
 	sc->sfx = sfx;
-	if (flac_read (ff, data, info->datalen) < 0)
+	if (flac_read (ff, data, info->frames) < 0)
 		goto bail;
 	SND_SetPaint (sc);
-	resample (sc, data, info->samples);
+	SND_Resample (sc, data, info->frames);
 	sc->head = sc->length;
   bail:
 	if (data)
@@ -374,7 +333,7 @@ flac_cache (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 }
 
 static int
-flac_stream_read (void *file, byte *buf, int count, wavinfo_t *info)
+flac_stream_read (void *file, float *buf, int count, wavinfo_t *info)
 {
 	return flac_read (file, buf, count);
 }
@@ -459,15 +418,15 @@ flac_get_info (flacfile_t *ff)
 	info.width = ff->info.bits_per_sample / 8;
 	info.channels = ff->info.channels;
 	info.loopstart = sample_start;
-	info.samples = samples;
+	info.frames = samples;
 	info.dataofs = 0;
-	info.datalen = samples * 2;
+	info.datalen = samples * info.channels * sizeof (float);
 
 	if (developer->int_val) {
 		Sys_Printf ("\nBitstream is %d channel, %dHz\n",
 					info.channels, info.rate);
 		Sys_Printf ("\nDecoded length: %d samples (%d bytes)\n",
-					info.samples, info.samples * info.channels * 2);
+					info.frames, info.width);
 		if (vc) {
 			Sys_Printf ("Encoded by: %.*s\n\n",
 						vc->vendor_string.length, vc->vendor_string.entry);
@@ -492,7 +451,7 @@ SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname)
 		Sys_Printf ("unsupported number of channels");
 		return -1;
 	}
-	if (info.samples / info.rate < 3) {
+	if (info.frames / info.rate < 3) {
 		Sys_DPrintf ("cache %s\n", realname);
 		flac_cache (sfx, realname, ff, info);
 	} else {

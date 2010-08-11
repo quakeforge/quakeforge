@@ -72,110 +72,44 @@ static general_data_t plugin_info_general_data;
 
 static snd_output_funcs_t *snd_output_funcs;
 
-static int        *snd_p, snd_linear_count, snd_vol;
-static short      *snd_out;
-
-static void
-SND_WriteLinearBlastStereo16 (void)
-{
-	int			val, i;
-
-	for (i = 0; i < snd_linear_count * 2; i += 2) {
-		val = (snd_p[i] * snd_vol) >> 8;
-		if (val > 0x7fff)
-			snd_out[i] = 0x7fff;
-		else if (val < (short) 0x8000)
-			snd_out[i] = (short) 0x8000;
-		else
-			snd_out[i] = val;
-
-		val = (snd_p[i + 1] * snd_vol) >> 8;
-		if (val > 0x7fff)
-			snd_out[i + 1] = 0x7fff;
-		else if (val < (short) 0x8000)
-			snd_out[i + 1] = (short) 0x8000;
-		else
-			snd_out[i + 1] = val;
-	}
-}
-
-static void
-s_xfer_stereo_16 (int endtime)
-{
-	int			lpaintedtime, lpos;
-	short      *pbuf;
-
-	snd_vol = snd_volume->value * 256;
-
-	snd_p = (int *) snd_paintbuffer;
-	lpaintedtime = snd_paintedtime;
-
-
-	pbuf = (short *) snd_shm->buffer;
-
-	while (lpaintedtime < endtime) {
-		// handle recirculating buffer issues
-		lpos = lpaintedtime & (snd_shm->frames - 1);
-
-		snd_out = pbuf + (lpos << 1);
-
-		snd_linear_count = snd_shm->frames - lpos;
-		if (lpaintedtime + snd_linear_count > endtime)
-			snd_linear_count = endtime - lpaintedtime;
-
-		// write a linear blast of samples
-		SND_WriteLinearBlastStereo16 ();
-
-		snd_p += snd_linear_count << 1;
-		lpaintedtime += snd_linear_count;
-	}
-}
-
 static void
 s_xfer_paint_buffer (int endtime)
 {
-	int			count, out_idx, out_mask, snd_vol, step, val;
-	int		   *p;
-	unsigned int *pbuf;
+	int			count, out_idx, out_mask, step, val;
+	float       snd_vol;
+	float	   *p;
 
-	if (snd_shm->samplebits == 16 && snd_shm->channels == 2) {
-		s_xfer_stereo_16 (endtime);
-		return;
-	}
-
-	p = (int *) snd_paintbuffer;
+	p = (float *) snd_paintbuffer;
 	count = (endtime - snd_paintedtime) * snd_shm->channels;
 	out_mask = snd_shm->frames - 1;
 	out_idx = snd_paintedtime * snd_shm->channels & out_mask;
 	step = 3 - snd_shm->channels;
-	snd_vol = snd_volume->value * 256;
-
-	pbuf = (unsigned int *) snd_shm->buffer;
+	snd_vol = snd_volume->value;
 
 	if (snd_shm->samplebits == 16) {
-		short      *out = (short *) pbuf;
+		short      *out = (short *) snd_shm->buffer;
 
 		while (count--) {
-			val = (*p * snd_vol) >> 8;
+			val = (*p * snd_vol) * 0x8000;
 			p += step;
 			if (val > 0x7fff)
 				val = 0x7fff;
-			else if (val < (short) 0x8000)
-				val = (short) 0x8000;
+			else if (val < -0x8000)
+				val = -0x8000;
 			out[out_idx] = val;
 			out_idx = (out_idx + 1) & out_mask;
 		}
 	} else if (snd_shm->samplebits == 8) {
-		unsigned char *out = (unsigned char *) pbuf;
+		unsigned char *out = (unsigned char *) snd_shm->buffer;
 
 		while (count--) {
-			val = (*p * snd_vol) >> 8;
+			val = (*p * snd_vol) * 128;
 			p += step;
-			if (val > 0x7fff)
-				val = 0x7fff;
-			else if (val < (short) 0x8000)
-				val = (short) 0x8000;
-			out[out_idx] = (val >> 8) + 128;
+			if (val > 0x7f)
+				val = 0x7f;
+			else if (val < -0x80)
+				val = -0x80;
+			out[out_idx] = val + 0x80;
 			out_idx = (out_idx + 1) & out_mask;
 		}
 	}
@@ -352,10 +286,6 @@ s_startup (void)
 		return;
 	}
 	snd_shm->xfer = s_xfer_paint_buffer;
-	if (snd_shm->speed > 44100) {
-		Sys_Printf ("FIXME clamping Sps to 44100 until resampling is fixed\n");
-		snd_shm->speed = 44100;
-	}
 
 	sound_started = 1;
 }
@@ -385,10 +315,6 @@ s_init (void)
 						"Set to turn sound off");
 	snd_volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
 						   "Set the volume for sound playback");
-	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
-						   "control sample interpolation");
-	snd_loadas8bit = Cvar_Get ("snd_loadas8bit", "0", CVAR_NONE, NULL,
-							   "Toggles loading sounds as 8-bit samples");
 	snd_mixahead = Cvar_Get ("snd_mixahead", "0.1", CVAR_ARCHIVE, NULL,
 							  "Delay time for sounds");
 	snd_noextraupdate = Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE, NULL,
@@ -412,8 +338,6 @@ s_init (void)
 
 	SND_SFX_Init ();
 	SND_Channels_Init ();
-
-	SND_InitScaletable ();
 
 	s_stop_all_sounds ();
 }
