@@ -133,7 +133,7 @@ wav_stream (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 }
 
 static wavinfo_t
-get_info (QFile *file)
+wav_get_info (QFile *file)
 {
 	riff_t     *riff;
 	riff_d_chunk_t **ck;
@@ -237,7 +237,7 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 {
 	wavinfo_t   info;
 
-	info = get_info (file);
+	info = wav_get_info (file);
 	if (!info.rate) {
 		return -1;
 	}

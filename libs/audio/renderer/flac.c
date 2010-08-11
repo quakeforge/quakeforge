@@ -104,14 +104,14 @@ typedef struct {
 } flacfile_t;
 
 static void
-error_func (const FLAC__StreamDecoder *decoder,
-			FLAC__StreamDecoderErrorStatus status, void *client_data)
+flac_error_func (const FLAC__StreamDecoder *decoder,
+				 FLAC__StreamDecoderErrorStatus status, void *client_data)
 {
 }
 
 static FLAC__StreamDecoderReadStatus
-read_func (const FLAC__StreamDecoder *decoder, FLAC__byte buffer[],
-		   size_t *bytes, void *client_data)
+flac_read_func (const FLAC__StreamDecoder *decoder, FLAC__byte buffer[],
+			    size_t *bytes, void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	*bytes = Qread (ff->file, buffer, *bytes);
@@ -119,8 +119,8 @@ read_func (const FLAC__StreamDecoder *decoder, FLAC__byte buffer[],
 }
 
 static FLAC__StreamDecoderSeekStatus
-seek_func (const FLAC__StreamDecoder *decoder,
-		   FLAC__uint64 absolute_byte_offset, void *client_data)
+flac_seek_func (const FLAC__StreamDecoder *decoder,
+			    FLAC__uint64 absolute_byte_offset, void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	Qseek (ff->file, absolute_byte_offset, SEEK_SET);
@@ -128,8 +128,8 @@ seek_func (const FLAC__StreamDecoder *decoder,
 }
 
 static FLAC__StreamDecoderTellStatus
-tell_func (const FLAC__StreamDecoder *decoder,
-		   FLAC__uint64 *absolute_byte_offset, void *client_data)
+flac_tell_func (const FLAC__StreamDecoder *decoder,
+			    FLAC__uint64 *absolute_byte_offset, void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	*absolute_byte_offset = Qtell (ff->file);
@@ -137,8 +137,8 @@ tell_func (const FLAC__StreamDecoder *decoder,
 }
 
 static FLAC__StreamDecoderLengthStatus
-length_func (const FLAC__StreamDecoder *decoder,
-			 FLAC__uint64 *stream_length, void *client_data)
+flac_length_func (const FLAC__StreamDecoder *decoder,
+				  FLAC__uint64 *stream_length, void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	*stream_length = Qfilesize (ff->file);
@@ -146,16 +146,16 @@ length_func (const FLAC__StreamDecoder *decoder,
 }
 
 static FLAC__bool
-eof_func (const FLAC__StreamDecoder *decoder, void *client_data)
+flac_eof_func (const FLAC__StreamDecoder *decoder, void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	return Qeof (ff->file);
 }
 
 static FLAC__StreamDecoderWriteStatus
-write_func (const FLAC__StreamDecoder *decoder,
-			const FLAC__Frame *frame, const FLAC__int32 * const buffer[],
-			void *client_data)
+flac_write_func (const FLAC__StreamDecoder *decoder,
+				 const FLAC__Frame *frame, const FLAC__int32 * const buffer[],
+				 void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	int         bps = ff->info.bits_per_sample / 8;
@@ -206,8 +206,8 @@ write_func (const FLAC__StreamDecoder *decoder,
 }
 
 static void
-meta_func (const FLAC__StreamDecoder *decoder,
-		   const FLAC__StreamMetadata *metadata, void *client_data)
+flac_meta_func (const FLAC__StreamDecoder *decoder,
+			    const FLAC__StreamMetadata *metadata, void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	if (metadata->type == FLAC__METADATA_TYPE_STREAMINFO)
@@ -217,23 +217,29 @@ meta_func (const FLAC__StreamDecoder *decoder,
 }
 
 static flacfile_t *
-open_flac (QFile *file)
+flac_open (QFile *file)
 {
 	flacfile_t *ff = calloc (1, sizeof (flacfile_t));
 	ff->decoder = FLAC__stream_decoder_new ();
 	ff->file = file;
 
 #ifdef LEGACY_FLAC
-	FLAC__seekable_stream_decoder_set_error_callback (ff->decoder, error_func);
-	FLAC__seekable_stream_decoder_set_read_callback (ff->decoder, read_func);
-	FLAC__seekable_stream_decoder_set_seek_callback (ff->decoder, seek_func);
-	FLAC__seekable_stream_decoder_set_tell_callback (ff->decoder, tell_func);
+	FLAC__seekable_stream_decoder_set_error_callback (ff->decoder,
+													  flac_error_func);
+	FLAC__seekable_stream_decoder_set_read_callback (ff->decoder,
+													 flac_read_func);
+	FLAC__seekable_stream_decoder_set_seek_callback (ff->decoder,
+													 flac_seek_func);
+	FLAC__seekable_stream_decoder_set_tell_callback (ff->decoder,
+													 flac_tell_func);
 	FLAC__seekable_stream_decoder_set_length_callback (ff->decoder,
-													   length_func);
-	FLAC__seekable_stream_decoder_set_eof_callback (ff->decoder, eof_func);
-	FLAC__seekable_stream_decoder_set_write_callback (ff->decoder, write_func);
+													   flac_length_func);
+	FLAC__seekable_stream_decoder_set_eof_callback (ff->decoder,
+													flac_eof_func);
+	FLAC__seekable_stream_decoder_set_write_callback (ff->decoder,
+													  flac_write_func);
 	FLAC__seekable_stream_decoder_set_metadata_callback (ff->decoder,
-														 meta_func);
+														 flac_meta_func);
 	FLAC__seekable_stream_decoder_set_client_data (ff->decoder, ff);
 	FLAC__seekable_stream_decoder_set_metadata_respond (ff->decoder,
 			FLAC__METADATA_TYPE_VORBIS_COMMENT);
@@ -241,15 +247,21 @@ open_flac (QFile *file)
 	FLAC__seekable_stream_decoder_init (ff->decoder);
 	FLAC__seekable_stream_decoder_process_until_end_of_metadata (ff->decoder);
 #else
-	FLAC__stream_decoder_set_metadata_respond (ff->decoder, FLAC__METADATA_TYPE_VORBIS_COMMENT);
-	FLAC__stream_decoder_init_stream(ff->decoder, read_func, seek_func, tell_func, length_func, eof_func, write_func, meta_func, error_func, ff);
+	FLAC__stream_decoder_set_metadata_respond (ff->decoder,
+			FLAC__METADATA_TYPE_VORBIS_COMMENT);
+	FLAC__stream_decoder_init_stream(ff->decoder,
+									 flac_read_func, flac_seek_func,
+									 flac_tell_func, flac_length_func,
+									 flac_eof_func, flac_write_func,
+									 flac_meta_func, flac_error_func,
+									 ff);
 	FLAC__stream_decoder_process_until_end_of_metadata (ff->decoder);
 #endif
 	return ff;
 }
 
 static void
-close_flac (flacfile_t *ff)
+flac_close (flacfile_t *ff)
 {
 	FLAC__stream_decoder_finish (ff->decoder);
 	FLAC__stream_decoder_delete (ff->decoder);
@@ -332,7 +344,7 @@ flac_load (flacfile_t *ff, sfxblock_t *block, cache_allocator_t allocator)
   bail:
 	if (data)
 		free (data);
-	close_flac (ff);
+	flac_close (ff);
 	return sc;
 }
 
@@ -348,7 +360,7 @@ flac_callback_load (void *object, cache_allocator_t allocator)
 	if (!file)
 		return; //FIXME Sys_Error?
 
-	if (!(ff = open_flac (file))) {
+	if (!(ff = flac_open (file))) {
 		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
 		Qclose (file);
 		return; //FIXME Sys_Error?
@@ -359,7 +371,7 @@ flac_callback_load (void *object, cache_allocator_t allocator)
 static void
 flac_cache (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 {
-	close_flac (ff);
+	flac_close (ff);
 	SND_SFX_Cache (sfx, realname, info, flac_callback_load);
 }
 
@@ -383,7 +395,7 @@ flac_stream_close (sfx_t *sfx)
 {
 	sfxstream_t *stream = sfx->data.stream;
 
-	close_flac (stream->file);
+	flac_close (stream->file);
 	free (stream);
 	free (sfx);
 }
@@ -399,7 +411,7 @@ flac_stream_open (sfx_t *sfx)
 	if (!file)
 		return 0;
 
-	f = open_flac (file);
+	f = flac_open (file);
 	if (!f) {
 		Sys_Printf ("Input does not appear to be a flac bitstream.\n");
 		Qclose (file);
@@ -413,12 +425,12 @@ flac_stream_open (sfx_t *sfx)
 static void
 flac_stream (sfx_t *sfx, char *realname, flacfile_t *ff, wavinfo_t info)
 {
-	close_flac (ff);
+	flac_close (ff);
 	SND_SFX_Stream (sfx, realname, info, flac_stream_open);
 }
 
 static wavinfo_t
-get_info (flacfile_t *ff)
+flac_get_info (flacfile_t *ff)
 {
 	int         sample_start = -1, sample_count = 0;
 	int         samples;
@@ -473,11 +485,11 @@ SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname)
 	flacfile_t *ff;
 	wavinfo_t   info;
 
-	if (!(ff = open_flac (file))) {
-		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
+	if (!(ff = flac_open (file))) {
+		Sys_Printf ("Input does not appear to be a FLAC bitstream.\n");
 		return -1;
 	}
-	info = get_info (ff);
+	info = flac_get_info (ff);
 	if (info.channels < 1 || info.channels > 2) {
 		Sys_Printf ("unsupported number of channels");
 		return -1;

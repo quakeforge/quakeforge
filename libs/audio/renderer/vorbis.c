@@ -54,39 +54,39 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "snd_render.h"
 
 static size_t
-read_func (void *ptr, size_t size, size_t nmemb, void *datasource)
+vorbis_read_func (void *ptr, size_t size, size_t nmemb, void *datasource)
 {
 	return Qread (datasource, ptr, size * nmemb);
 }
 
 static int
-seek_func (void *datasource, ogg_int64_t offset, int whence)
+vorbis_seek_func (void *datasource, ogg_int64_t offset, int whence)
 {
 	return Qseek (datasource, offset, whence);
 }
 
 static int
-close_func (void *datasource)
+vorbis_close_func (void *datasource)
 {
 	Qclose (datasource);
 	return 0;
 }
 
 static long
-tell_func (void *datasource)
+vorbis_tell_func (void *datasource)
 {
 	return Qtell (datasource);
 }
 
 static ov_callbacks callbacks = {
-	read_func,
-	seek_func,
-	close_func,
-	tell_func,
+	vorbis_read_func,
+	vorbis_seek_func,
+	vorbis_close_func,
+	vorbis_tell_func,
 };
 
 static wavinfo_t
-get_info (OggVorbis_File *vf)
+vorbis_get_info (OggVorbis_File *vf)
 {
 	vorbis_info *vi;
 	int         sample_start = -1, sample_count = 0;
@@ -282,7 +282,7 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 		free (realname);
 		return -1;
 	}
-	info = get_info (&vf);
+	info = vorbis_get_info (&vf);
 	if (info.channels < 1 || info.channels > 2) {
 		Sys_Printf ("unsupported number of channels");
 		return -1;

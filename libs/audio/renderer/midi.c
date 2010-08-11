@@ -69,7 +69,7 @@ midi_init ( void ) {
 }
 
 static wavinfo_t
-get_info (void * handle) {
+midi_get_info (void * handle) {
 	wavinfo_t   info;
 	struct _WM_Info *wm_info;
 
@@ -174,7 +174,7 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 	if (handle == NULL) 
 		return -1;
 
-	info = get_info (handle);
+	info = midi_get_info (handle);
 
 	WildMidi_Close (handle);
 
