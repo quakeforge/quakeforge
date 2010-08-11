@@ -159,7 +159,8 @@ flac_write_func (const FLAC__StreamDecoder *decoder,
 	float      *out;
 	float       scale = 2.0 / (1 << ff->info.bits_per_sample);
 	int         step = ff->info.channels;
-	unsigned    i, j;
+	unsigned    j;
+	int         i;
 
 	if (!ff->buffer)
 		ff->buffer = calloc (ff->info.max_blocksize * ff->info.channels,
@@ -265,7 +266,7 @@ flac_read (flacfile_t *ff, float *buf, int len)
 					res * ff->info.channels * sizeof (float));
 			count += res;
 			len -= res;
-			buf += res;
+			buf += res * ff->info.channels;
 			ff->pos += res;
 		} else if (res < 0) {
 			Sys_Printf ("flac error %d\n", res);
