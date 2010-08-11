@@ -68,12 +68,33 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "snd_render.h"
 
-typedef struct {
 #ifdef LEGACY_FLAC
-	FLAC__SeekableStreamDecoder *decoder;
-#else
-	FLAC__StreamDecoder *decoder;
+#define FLAC__StreamDecoder FLAC__SeekableStreamDecoder
+#define FLAC__StreamDecoderReadStatus FLAC__SeekableStreamDecoderReadStatus
+#define FLAC__StreamDecoderSeekStatus FLAC__SeekableStreamDecoderSeekStatus
+#define FLAC__StreamDecoderTellStatus FLAC__SeekableStreamDecoderTellStatus
+#define FLAC__StreamDecoderLengthStatus FLAC__SeekableStreamDecoderLengthStatus
+
+#define FLAC__stream_decoder_new FLAC__seekable_stream_decoder_new
+#define FLAC__stream_decoder_finish FLAC__seekable_stream_decoder_finish
+#define FLAC__stream_decoder_delete FLAC__seekable_stream_decoder_delete
+#define FLAC__stream_decoder_process_single \
+		FLAC__seekable_stream_decoder_process_single
+#define FLAC__stream_decoder_seek_absolute \
+		FLAC__seekable_stream_decoder_seek_absolute
+
+#define FLAC__STREAM_DECODER_READ_STATUS_CONTINUE \
+		FLAC__SEEKABLE_STREAM_DECODER_READ_STATUS_OK
+#define FLAC__STREAM_DECODER_SEEK_STATUS_OK \
+		FLAC__SEEKABLE_STREAM_DECODER_SEEK_STATUS_OK
+#define FLAC__STREAM_DECODER_TELL_STATUS_OK \
+		FLAC__SEEKABLE_STREAM_DECODER_TELL_STATUS_OK
+#define FLAC__STREAM_DECODER_LENGTH_STATUS_OK \
+		FLAC__SEEKABLE_STREAM_DECODER_LENGTH_STATUS_OK
 #endif
+
+typedef struct {
+	FLAC__StreamDecoder *decoder;
 	QFile      *file;
 	FLAC__StreamMetadata_StreamInfo info;
 	FLAC__StreamMetadata *vorbis_info;
@@ -83,105 +104,56 @@ typedef struct {
 } flacfile_t;
 
 static void
-#ifdef LEGACY_FLAC
-error_func (const FLAC__SeekableStreamDecoder *decoder,
-#else
 error_func (const FLAC__StreamDecoder *decoder,
-#endif
 			FLAC__StreamDecoderErrorStatus status, void *client_data)
 {
 }
 
-#ifdef LEGACY_FLAC
-static FLAC__SeekableStreamDecoderReadStatus
-read_func (const FLAC__SeekableStreamDecoder *decoder, FLAC__byte buffer[],
-		   unsigned *bytes, void *client_data)
-#else
 static FLAC__StreamDecoderReadStatus
 read_func (const FLAC__StreamDecoder *decoder, FLAC__byte buffer[],
 		   size_t *bytes, void *client_data)
-#endif
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	*bytes = Qread (ff->file, buffer, *bytes);
-#ifdef LEGACY_FLAC
-	return FLAC__SEEKABLE_STREAM_DECODER_READ_STATUS_OK;
-#else
 	return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
-#endif
 }
 
-#ifdef LEGACY_FLAC
-static FLAC__SeekableStreamDecoderSeekStatus
-seek_func (const FLAC__SeekableStreamDecoder *decoder,
-#else
 static FLAC__StreamDecoderSeekStatus
 seek_func (const FLAC__StreamDecoder *decoder,
-#endif
 		   FLAC__uint64 absolute_byte_offset, void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	Qseek (ff->file, absolute_byte_offset, SEEK_SET);
-#ifdef LEGACY_FLAC
-	return FLAC__SEEKABLE_STREAM_DECODER_SEEK_STATUS_OK;
-#else
-	return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
-#endif
+	return FLAC__STREAM_DECODER_SEEK_STATUS_OK;
 }
 
-#ifdef LEGACY_FLAC
-static FLAC__SeekableStreamDecoderTellStatus
-tell_func (const FLAC__SeekableStreamDecoder *decoder,
-#else
 static FLAC__StreamDecoderTellStatus
 tell_func (const FLAC__StreamDecoder *decoder,
-#endif
 		   FLAC__uint64 *absolute_byte_offset, void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	*absolute_byte_offset = Qtell (ff->file);
-#ifdef LEGACY_FLAC
-	return FLAC__SEEKABLE_STREAM_DECODER_TELL_STATUS_OK;
-#else
 	return FLAC__STREAM_DECODER_TELL_STATUS_OK;
-#endif
 }
 
-#ifdef LEGACY_FLAC
-static FLAC__SeekableStreamDecoderLengthStatus
-length_func (const FLAC__SeekableStreamDecoder *decoder,
-#else
 static FLAC__StreamDecoderLengthStatus
 length_func (const FLAC__StreamDecoder *decoder,
-#endif
-		   FLAC__uint64 *stream_length, void *client_data)
+			 FLAC__uint64 *stream_length, void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	*stream_length = Qfilesize (ff->file);
-#ifdef LEGACY_FLAC
-	return FLAC__SEEKABLE_STREAM_DECODER_LENGTH_STATUS_OK;
-#else
 	return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
-#endif
 }
 
 static FLAC__bool
-#ifdef LEGACY_FLAC
-eof_func (const FLAC__SeekableStreamDecoder *decoder, void *client_data)
-#else
 eof_func (const FLAC__StreamDecoder *decoder, void *client_data)
-#endif
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
 	return Qeof (ff->file);
 }
 
 static FLAC__StreamDecoderWriteStatus
-#ifdef LEGACY_FLAC
-write_func (const FLAC__SeekableStreamDecoder *decoder,
-#else
 write_func (const FLAC__StreamDecoder *decoder,
-#endif
 			const FLAC__Frame *frame, const FLAC__int32 * const buffer[],
 			void *client_data)
 {
@@ -234,11 +206,7 @@ write_func (const FLAC__StreamDecoder *decoder,
 }
 
 static void
-#ifdef LEGACY_FLAC
-meta_func (const FLAC__SeekableStreamDecoder *decoder,
-#else
 meta_func (const FLAC__StreamDecoder *decoder,
-#endif
 		   const FLAC__StreamMetadata *metadata, void *client_data)
 {
 	flacfile_t *ff = (flacfile_t *) client_data;
@@ -252,11 +220,7 @@ static flacfile_t *
 open_flac (QFile *file)
 {
 	flacfile_t *ff = calloc (1, sizeof (flacfile_t));
-#ifdef LEGACY_FLAC
-	ff->decoder = FLAC__seekable_stream_decoder_new ();
-#else
 	ff->decoder = FLAC__stream_decoder_new ();
-#endif
 	ff->file = file;
 
 #ifdef LEGACY_FLAC
@@ -287,13 +251,8 @@ open_flac (QFile *file)
 static void
 close_flac (flacfile_t *ff)
 {
-#ifdef LEGACY_FLAC
-	FLAC__seekable_stream_decoder_finish (ff->decoder);
-	FLAC__seekable_stream_decoder_delete (ff->decoder);
-#else
 	FLAC__stream_decoder_finish (ff->decoder);
 	FLAC__stream_decoder_delete (ff->decoder);
-#endif
 
 	if (ff->vorbis_info)
 		FLAC__metadata_object_delete (ff->vorbis_info);
@@ -314,11 +273,7 @@ flac_read (flacfile_t *ff, byte *buf, int len)
 	while (len) {
 		int         res = 0;
 		if (ff->size == ff->pos)
-#ifdef LEGACY_FLAC
-			FLAC__seekable_stream_decoder_process_single (ff->decoder);
-#else
 			FLAC__stream_decoder_process_single (ff->decoder);
-#endif
 		res = ff->size - ff->pos;
 		if (res > len)
 			res = len;
@@ -420,11 +375,7 @@ flac_stream_seek (void *file, int pos, wavinfo_t *info)
 	flacfile_t *ff = file;
 
 	ff->pos = ff->size = 0;
-#ifdef LEGACY_FLAC
-	return FLAC__seekable_stream_decoder_seek_absolute (ff->decoder, pos);
-#else
 	return FLAC__stream_decoder_seek_absolute (ff->decoder, pos);
-#endif
 }
 
 static void
