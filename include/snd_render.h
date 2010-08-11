@@ -146,6 +146,11 @@ struct sfxstream_s {
 						holding the samples
 	*/
 	long        (*ll_read)(void *cb_data, float **data);
+	/** Seek to an absolute position within the stream (low level).
+		\param stream	"this"
+		\param pos		frame position with the stream
+	*/
+	int         (*ll_seek)(sfxstream_t *stream, int pos);
 	/** Read data from the stream.
 		This is a high-level function for use in the mixer. The read samples
 		will always at be the correct sample rate for the mixer, reguardless

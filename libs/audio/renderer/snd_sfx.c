@@ -140,7 +140,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	stream->file = file;
 	stream->sfx = new_sfx;
 	stream->ll_read = read;
-	stream->seek = seek;
+	stream->ll_seek = seek;
 
 	stream->wavinfo = *sfx->wavinfo (sfx);
 

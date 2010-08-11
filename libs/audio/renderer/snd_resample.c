@@ -127,6 +127,20 @@ snd_resample_read (sfxstream_t *stream, float *data, int frames)
 	return src_callback_read (stream->state, ratio, frames, data);
 }
 
+static int
+snd_seek (sfxstream_t *stream, int pos)
+{
+	int res = stream->ll_seek (stream, pos);
+	if (stream->read == snd_resample_read) {
+		src_reset (stream->state);
+	} else {
+		snd_null_state_t *state = (snd_null_state_t *) stream->state;
+		state->size = 0;
+		state->pos = 0;
+	}
+	return res;
+}
+
 void
 SND_SetupResampler (sfxbuffer_t *sc, int streamed)
 {
@@ -157,6 +171,7 @@ SND_SetupResampler (sfxbuffer_t *sc, int streamed)
 											  &err, stream);
 			stream->read = snd_resample_read;
 		}
+		stream->seek = snd_seek;
 	}
 }
 
