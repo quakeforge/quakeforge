@@ -93,6 +93,7 @@ typedef struct qfo_def_s {
 	string_t    file;			///< source file name
 	pr_int_t    line;			///< source line number
 } qfo_def_t;
+///@}
 
 /** \defgroup qfcc_qfo_QFOD QFOD flags
 	\ingroup qfcc_qfo
@@ -149,6 +150,10 @@ typedef struct qfo_def_s {
 #define QFOD_NOSAVE			(1u<<7)
 ///@}
 
+/** \ingroup qfcc_qfo
+*/
+///@{
+
 /** Representation of a function in the object file.
 */
 typedef struct qfo_func_s {
@@ -185,7 +190,7 @@ typedef struct qfo_func_s {
 	pr_int_t    num_local_defs;	///< Number of local def records.
 	///@}
 
-	pr_int_t    line_info;		///< Index to first ::qfo_line_t line record.
+	pr_int_t    line_info;		///< Index to first ::pr_lineno_t line record.
 								///< Zero if there are no records.
 
 	/** \name Function parameters.
@@ -263,6 +268,7 @@ typedef struct qfo_s {
 	int         types_size;
 	int         entity_fields;
 } qfo_t;
+///@}
 
 /** \defgroup qfcc_qfo_data_access QFO Data Acess
 	\ingroup qfcc_qfo
@@ -375,6 +381,7 @@ typedef struct qfo_s {
 	\par QC type:
 		\c void []
 	\param q pointer to ::qfo_t struct
+	\param t C type of the structure
 	\param o offset into object file data space
 	\return pointer_t lvalue
 
@@ -396,6 +403,10 @@ typedef struct qfo_s {
 #define QFO_STRUCT(q, t,o)	(*QFO_POINTER (q, t, o))
 
 ///@}
+
+/** \ingroup qfcc_qfo
+*/
+///@{
 
 struct pr_info_s;
 
@@ -453,7 +464,7 @@ void qfo_add_data (qfo_t *qfo, pr_type_t *data, int data_size);
 /** Add a block of far data to a ::qfo_t struct.
 	\param qfo ::qfo_t struct to add to
 	\param far_data pointer to beginning of far data block
-	\param data_size number of data words in the far data block
+	\param far_data_size number of data words in the far data block
 */
 void qfo_add_far_data (qfo_t *qfo, pr_type_t *far_data, int far_data_size);
 
