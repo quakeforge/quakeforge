@@ -69,25 +69,25 @@ static snd_output_funcs_t      plugin_info_snd_output_funcs;
 static void
 paint_audio (void *unused, Uint8 * stream, int len)
 {
-	int sampleposbytes, samplesbytes, streamsamples;
+	int frameposbytes, framesbytes, frames;
 
-	streamsamples = len / (sn.samplebits / 8);
-	sampleposbytes = sn.samplepos * (sn.samplebits / 8);
-	samplesbytes = sn.samples * (sn.samplebits / 8);
+	frames = len / (sn.channels * (sn.samplebits / 8));
+	frameposbytes = sn.framepos * sn.channels * (sn.samplebits / 8);
+	framesbytes = sn.frames * sn.channels * (sn.samplebits / 8);
 
-	sn.samplepos += streamsamples;
-	while (sn.samplepos >= sn.samples)
-		sn.samplepos -= sn.samples;
+	sn.framepos += frames;
+	while (sn.framepos >= sn.frames)
+		sn.framepos -= sn.frames;
 
-	if (sn.samplepos + streamsamples <= sn.samples)
-		memcpy (stream, sn.buffer + sampleposbytes, len);
+	if (sn.framepos + frames <= sn.frames)
+		memcpy (stream, sn.buffer + frameposbytes, len);
 	else {
-		memcpy (stream, sn.buffer + sampleposbytes, samplesbytes -
-				sampleposbytes);
-		memcpy (stream + samplesbytes - sampleposbytes, sn.buffer, len -
-				(samplesbytes - sampleposbytes));
+		memcpy (stream, sn.buffer + frameposbytes, framesbytes -
+				frameposbytes);
+		memcpy (stream + framesbytes - frameposbytes, sn.buffer, len -
+				(framesbytes - frameposbytes));
 	}
-	*plugin_info_snd_output_data.soundtime += streamsamples;
+	*plugin_info_snd_output_data.soundtime += frames;
 }
 
 static void
@@ -165,10 +165,10 @@ SNDDMA_Init (void)
 	sn.samplebits = (obtained.format & 0xFF);
 	sn.speed = obtained.freq;
 	sn.channels = obtained.channels;
-	sn.samples = obtained.samples * 16;
-	sn.samplepos = 0;
+	sn.frames = obtained.samples * 8;	// 8 chunks in the buffer
+	sn.framepos = 0;
 	sn.submission_chunk = 1;
-	sn.buffer = calloc(sn.samples * (sn.samplebits / 8), 1);
+	sn.buffer = calloc(sn.frames * sn.channels * (sn.samplebits / 8), 1);
 	if (!sn.buffer)
 	{
 		Sys_Error ("Failed to allocate buffer for sound!");
@@ -181,7 +181,7 @@ SNDDMA_Init (void)
 static int
 SNDDMA_GetDMAPos (void)
 {
-	return sn.samplepos;
+	return sn.framepos;
 }
 
 static void

@@ -55,11 +55,13 @@ struct sfx_s
 
 	struct sfxbuffer_s *(*touch) (sfx_t *sfx);
 	struct sfxbuffer_s *(*retain) (sfx_t *sfx);
+	void        (*release) (sfx_t *sfx);
+
 	struct sfxbuffer_s *(*getbuffer) (sfx_t *sfx);
 	struct wavinfo_s *(*wavinfo) (sfx_t *sfx);
+
 	sfx_t      *(*open) (sfx_t *sfx);
 	void        (*close) (sfx_t *sfx);
-	void        (*release) (sfx_t *sfx);
 };
 //@}
 

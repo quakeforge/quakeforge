@@ -104,8 +104,8 @@ SNDDMA_Init (void)
 static int
 SNDDMA_GetDMAPos (void)
 {
-	sn.samplepos = 0;
-	return sn.samplepos;
+	sn.framepos = 0;
+	return sn.framepos;
 }
 
 static void

@@ -321,7 +321,7 @@ SNDDMA_Init (void)
 	memset ((dma_t *) &sn, 0, sizeof (sn));
 	sn.channels = stereo + 1;
 
-	// don't mix less than this in mono samples:
+	// don't mix less than this in frames:
 	err = qfsnd_pcm_hw_params_get_period_size (hw, (snd_pcm_uframes_t *)
 											   (char *)
 											   &sn.submission_chunk, 0);
@@ -331,7 +331,7 @@ SNDDMA_Init (void)
 		goto error;
 	}
 
-	sn.samplepos = 0;
+	sn.framepos = 0;
 	sn.samplebits = bps;
 
 	err = qfsnd_pcm_hw_params_get_buffer_size (hw, &buffer_size);
@@ -346,12 +346,12 @@ SNDDMA_Init (void)
 		Sys_Printf ("to have a power of 2 buffer size\n");
 	}
 
-	sn.samples = buffer_size * sn.channels;
+	sn.frames = buffer_size;
 	sn.speed = rate;
 	SNDDMA_GetDMAPos ();		//XXX sets sn.buffer
-	Sys_Printf ("%5d stereo\n", sn.channels - 1);
-	Sys_Printf ("%5d samples\n", sn.samples);
-	Sys_Printf ("%5d samplepos\n", sn.samplepos);
+	Sys_Printf ("%5d channels\n", sn.channels);
+	Sys_Printf ("%5d samples\n", sn.frames);
+	Sys_Printf ("%5d samplepos\n", sn.framepos);
 	Sys_Printf ("%5d samplebits\n", sn.samplebits);
 	Sys_Printf ("%5d submission_chunk\n", sn.submission_chunk);
 	Sys_Printf ("%5d speed\n", sn.speed);
@@ -369,15 +369,13 @@ SNDDMA_GetDMAPos (void)
 {
 	const snd_pcm_channel_area_t *areas;
 	snd_pcm_uframes_t offset;
-	snd_pcm_uframes_t nframes = sn.samples/sn.channels;
+	snd_pcm_uframes_t nframes = sn.frames;
 
 	qfsnd_pcm_avail_update (pcm);
 	qfsnd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);
-	offset *= sn.channels;
-	nframes *= sn.channels;
-	sn.samplepos = offset;
+	sn.framepos = offset;
 	sn.buffer = areas->addr;	//XXX FIXME there's an area per channel
-	return sn.samplepos;
+	return sn.framepos;
 }
 
 static void

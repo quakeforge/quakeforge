@@ -80,7 +80,7 @@ SND_WriteLinearBlastStereo16 (void)
 {
 	int			val, i;
 
-	for (i = 0; i < snd_linear_count; i += 2) {
+	for (i = 0; i < snd_linear_count * 2; i += 2) {
 		val = (snd_p[i] * snd_vol) >> 8;
 		if (val > 0x7fff)
 			snd_out[i] = 0x7fff;
@@ -103,7 +103,7 @@ static void
 s_xfer_stereo_16 (int endtime)
 {
 	int			lpaintedtime, lpos;
-	unsigned int *pbuf;
+	short      *pbuf;
 
 	snd_vol = snd_volume->value * 256;
 
@@ -111,25 +111,23 @@ s_xfer_stereo_16 (int endtime)
 	lpaintedtime = snd_paintedtime;
 
 
-	pbuf = (unsigned int *) snd_shm->buffer;
+	pbuf = (short *) snd_shm->buffer;
 
 	while (lpaintedtime < endtime) {
 		// handle recirculating buffer issues
-		lpos = lpaintedtime & ((snd_shm->samples >> 1) - 1);
+		lpos = lpaintedtime & (snd_shm->frames - 1);
 
-		snd_out = (short *) pbuf + (lpos << 1);
+		snd_out = pbuf + (lpos << 1);
 
-		snd_linear_count = (snd_shm->samples >> 1) - lpos;
+		snd_linear_count = snd_shm->frames - lpos;
 		if (lpaintedtime + snd_linear_count > endtime)
 			snd_linear_count = endtime - lpaintedtime;
-
-		snd_linear_count <<= 1;
 
 		// write a linear blast of samples
 		SND_WriteLinearBlastStereo16 ();
 
-		snd_p += snd_linear_count;
-		lpaintedtime += (snd_linear_count >> 1);
+		snd_p += snd_linear_count << 1;
+		lpaintedtime += snd_linear_count;
 	}
 }
 
@@ -147,7 +145,7 @@ s_xfer_paint_buffer (int endtime)
 
 	p = (int *) snd_paintbuffer;
 	count = (endtime - snd_paintedtime) * snd_shm->channels;
-	out_mask = snd_shm->samples - 1;
+	out_mask = snd_shm->frames - 1;
 	out_idx = snd_paintedtime * snd_shm->channels & out_mask;
 	step = 3 - snd_shm->channels;
 	snd_vol = snd_volume->value * 256;
@@ -187,6 +185,7 @@ static void
 s_clear_buffer (void)
 {
 	int			clear, i;
+	int         count;
 
 	if (!sound_started || !snd_shm || !snd_shm->buffer)
 		return;
@@ -196,7 +195,8 @@ s_clear_buffer (void)
 	else
 		clear = 0;
 
-	for (i = 0; i < snd_shm->samples * snd_shm->samplebits / 8; i++)
+	count = snd_shm->frames * snd_shm->channels * snd_shm->samplebits / 8;
+	for (i = 0; i < count; i++)
 		snd_shm->buffer[i] = clear;
 }
 
@@ -213,29 +213,29 @@ s_stop_all_sounds (void)
 static void
 s_get_soundtime (void)
 {
-	int			fullsamples, samplepos;
-	static int	buffers, oldsamplepos;
+	int			frames, framepos;
+	static int	buffers, oldframepos;
 
-	fullsamples = snd_shm->samples / snd_shm->channels;
+	frames = snd_shm->frames;
 
 	// it is possible to miscount buffers if it has wrapped twice between
 	// calls to s_update.  Oh well.
-	if ((samplepos = snd_output_funcs->pS_O_GetDMAPos ()) == -1)
+	if ((framepos = snd_output_funcs->pS_O_GetDMAPos ()) == -1)
 		return;
 	
-	if (samplepos < oldsamplepos) {
+	if (framepos < oldframepos) {
 		buffers++;						// buffer wrapped
 
 		if (snd_paintedtime > 0x40000000) {	// time to chop things off to avoid
 			// 32 bit limits
 			buffers = 0;
-			snd_paintedtime = fullsamples;
+			snd_paintedtime = frames;
 			s_stop_all_sounds ();
 		}
 	}
-	oldsamplepos = samplepos;
+	oldframepos = framepos;
 
-	soundtime = buffers * fullsamples + samplepos / snd_shm->channels;
+	soundtime = buffers * frames + framepos;
 }
 
 static void
@@ -256,7 +256,7 @@ s_update_ (void)
 	}
 	// mix ahead of current position
 	endtime = soundtime + snd_mixahead->value * snd_shm->speed;
-	samps = snd_shm->samples >> (snd_shm->channels - 1);
+	samps = snd_shm->frames;
 	if (endtime - soundtime > samps)
 		endtime = soundtime + samps;
 
@@ -322,13 +322,13 @@ s_soundinfo_f (void)
 		return;
 	}
 
-	Sys_Printf ("%5d stereo\n", snd_shm->channels - 1);
-	Sys_Printf ("%5d samples\n", snd_shm->samples);
-	Sys_Printf ("%5d samplepos\n", snd_shm->samplepos);
+	Sys_Printf ("%5d channels\n", snd_shm->channels);
+	Sys_Printf ("%5d frames\n", snd_shm->frames);
+	Sys_Printf ("%5d framepos\n", snd_shm->framepos);
 	Sys_Printf ("%5d samplebits\n", snd_shm->samplebits);
 	Sys_Printf ("%5d submission_chunk\n", snd_shm->submission_chunk);
 	Sys_Printf ("%5d speed\n", snd_shm->speed);
-	Sys_Printf ("0x%p dma buffer\n", snd_shm->buffer);
+	Sys_Printf ("0x%lx dma buffer\n", (long) snd_shm->buffer);
 	Sys_Printf ("%5d total_channels\n", snd_total_channels);
 }
 

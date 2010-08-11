@@ -250,7 +250,7 @@ try_open (int rw)
 		return 0;
 	}
 
-	sn.samples = info.fragstotal * info.fragsize / (sn.samplebits / 8);
+	sn.frames = info.fragstotal;
 	sn.submission_chunk = 1;
 
 	if (mmaped_io) {				// memory map the dma buffer
@@ -265,7 +265,7 @@ try_open (int rw)
 			return 0;
 		}
 	} else {
-		sn.buffer = malloc (sn.samples * (sn.samplebits / 8) * 2);
+		sn.buffer = malloc (sn.frames * sn.channels * (sn.samplebits / 8));
 		if (!sn.buffer) {
 			Sys_Printf ("SNDDMA_Init: memory allocation failure\n");
 			close (audio_fd);
@@ -279,7 +279,7 @@ try_open (int rw)
 	if (rc < 0) {
 		Sys_Printf ("Could not toggle.: %s\n", strerror (errno));
 		if (mmaped_io)
-			munmap (sn.buffer, sn.samples * sn.samplebits / 8);
+			munmap (sn.buffer, sn.frames * sn.channels * sn.samplebits / 8);
 		close (audio_fd);
 		return 0;
 	}
@@ -288,12 +288,12 @@ try_open (int rw)
 	if (rc < 0) {
 		Sys_Printf ("Could not toggle.: %s\n", strerror (errno));
 		if (mmaped_io)
-			munmap (sn.buffer, sn.samples * sn.samplebits / 8);
+			munmap (sn.buffer, sn.frames * sn.channels * sn.samplebits / 8);
 		close (audio_fd);
 		return 0;
 	}
 
-	sn.samplepos = 0;
+	sn.framepos = 0;
 
 	snd_inited = 1;
 	return &sn;
@@ -319,16 +319,16 @@ SNDDMA_GetDMAPos (void)
 	if (ioctl (audio_fd, SNDCTL_DSP_GETOPTR, &count) == -1) {
 		Sys_Printf ("Uh, %s dead: %s\n", snd_dev, strerror (errno));
 		if (mmaped_io)
-			munmap (sn.buffer, sn.samples * sn.samplebits / 8);
+			munmap (sn.buffer, sn.frames * sn.channels * sn.samplebits / 8);
 		close (audio_fd);
 		snd_inited = 0;
 		return 0;
 	}
 //	sn.samplepos = (count.bytes / (sn.samplebits / 8)) & (sn.samples-1);
 //	fprintf(stderr, "%d \r", count.ptr);
-	sn.samplepos = count.ptr / (sn.samplebits / 8);
+	sn.framepos = count.ptr / (sn.samplebits / 8) / sn.channels; //XXX???
 
-	return sn.samplepos;
+	return sn.framepos;
 
 }
 
@@ -337,14 +337,17 @@ SNDDMA_Shutdown (void)
 {
 	if (snd_inited) {
 		if (mmaped_io)
-			munmap (sn.buffer, sn.samples * sn.samplebits / 8);
+			munmap (sn.buffer, sn.frames * sn.channels * sn.samplebits / 8);
 		close (audio_fd);
 		snd_inited = 0;
 	}
 }
 
-#define BITSIZE (sn.samplebits / 8)
-#define BYTES (samples / BITSIZE)
+static int
+sample_bytes (int frames)
+{
+	return frames * sn.channels * sn.samplebits / 8;
+}
 
 /*
 	SNDDMA_Submit
@@ -354,25 +357,27 @@ SNDDMA_Shutdown (void)
 static void
 SNDDMA_Submit (void)
 {
-	int		samples;
+	int		frames;
+	int     len;
+	int     offset;
 
 	if (snd_inited && !mmaped_io) {
-		samples = *plugin_info_snd_output_data.paintedtime
+		frames = *plugin_info_snd_output_data.paintedtime
 			- *plugin_info_snd_output_data.soundtime;
+		offset = frames * sn.channels * sn.samplebits / 8;
 
-		if (sn.samplepos + BYTES <= sn.samples) {
-			if (write (audio_fd, sn.buffer + BYTES, samples) != samples)
+		if (sn.framepos + frames <= sn.frames) {
+			len = sample_bytes (frames);
+			if (write (audio_fd, sn.buffer + offset, len) != len)
 				Sys_Printf ("SNDDMA_Submit(): %s\n", strerror (errno));
 		} else {
-			if (write (audio_fd, sn.buffer + BYTES, sn.samples -
-					   sn.samplepos) != sn.samples - sn.samplepos)
+			int     len = sample_bytes (sn.frames - sn.framepos);
+			if (write (audio_fd, sn.buffer + offset, len) != len)
 				Sys_Printf ("SNDDMA_Submit(): %s\n", strerror (errno));
-			if (write (audio_fd, sn.buffer, BYTES - (sn.samples -
-													 sn.samplepos)) !=
-				BYTES - (sn.samples - sn.samplepos))
+			if (write (audio_fd, sn.buffer, offset - len) != offset - len)
 				Sys_Printf ("SNDDMA_Submit(): %s\n", strerror (errno));
 		}
-		*plugin_info_snd_output_data.soundtime += samples;
+		*plugin_info_snd_output_data.soundtime += frames;
 	}
 }
 
