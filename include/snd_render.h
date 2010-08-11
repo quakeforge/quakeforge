@@ -121,13 +121,13 @@ struct sfxbuffer_s {
 	*/
 	void        (*setpos) (sfxbuffer_t *buffer, unsigned int pos);
 	sfx_t      *sfx;			//!< owning sfx_t instance
-	/** Points to the beginning of the sample data within sample_data.
+	/**			resampler state information
 	*/
-	float      *data;
+	void       *state;
 	/** Sample data. The block at the beginning of the buffer (size depends on
-		sample size) holds the state information for resampling.
+		sample size)
 	*/
-	float       sample_data[1];
+	float       data[1];
 };
 
 /** Representation of sound loaded that is streamed in as needed.
@@ -398,6 +398,12 @@ void SND_SetPaint (sfxbuffer_t *sc);
 	\ingroup sound_render
 */
 //@{
+/** Set up the various parameters that depend on the actual sample rate.
+	\param sc		buffer to setup
+	\param streamed	non-zero if this is for a stream.
+*/
+void SND_SetupResampler (sfxbuffer_t *sc, int streamed);
+
 /** Copy/resample data into buffer, resampling as necessary.
 	\param sc		buffer to write resampled sound
 	\param data		raw sample data

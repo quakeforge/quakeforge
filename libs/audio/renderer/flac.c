@@ -158,20 +158,21 @@ flac_write_func (const FLAC__StreamDecoder *decoder,
 	flacfile_t *ff = (flacfile_t *) client_data;
 	float      *out;
 	float       scale = 2.0 / (1 << ff->info.bits_per_sample);
+	int         step = ff->info.channels;
 	unsigned    i, j;
 
 	if (!ff->buffer)
-		ff->buffer = malloc (ff->info.max_blocksize * ff->info.channels
-							 * sizeof (float));
+		ff->buffer = calloc (ff->info.max_blocksize * ff->info.channels,
+							 sizeof (float));
+	ff->size = frame->header.blocksize;
+	ff->pos = 0;
 	for (j = 0; j < ff->info.channels; j++) {
 		const FLAC__int32 *in = buffer[j];
 
 		out = ff->buffer + j;
-		for (i = 0; i < frame->header.blocksize; i++, out += ff->info.channels)
+		for (i = 0; i < ff->size; i++, out += step)
 			*out = *in++ * scale;
 	}
-	ff->size = frame->header.blocksize;
-	ff->pos = 0;
 	return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
 
@@ -296,6 +297,7 @@ flac_load (flacfile_t *ff, sfxblock_t *block, cache_allocator_t allocator)
 	if (flac_read (ff, data, info->frames) < 0)
 		goto bail;
 	SND_SetPaint (sc);
+	SND_SetupResampler (sc, 0);
 	SND_Resample (sc, data, info->frames);
 	sc->head = sc->length;
   bail:

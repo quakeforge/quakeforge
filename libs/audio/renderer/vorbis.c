@@ -174,6 +174,7 @@ vorbis_load (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 	if (vorbis_read (vf, data, info->frames, info) < 0)
 		goto bail;
 	SND_SetPaint (sc);
+	SND_SetupResampler (sc, 0);
 	SND_Resample (sc, data, info->frames);
 	sc->head = sc->length;
   bail:

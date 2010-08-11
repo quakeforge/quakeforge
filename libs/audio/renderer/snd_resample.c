@@ -70,20 +70,7 @@ SND_Resample (sfxbuffer_t *sc, float *data, int length)
 	SRC_DATA    src_data;
 
 	stepscale = (double) snd_shm->speed / inrate;
-
 	outcount = length * stepscale;
-
-	sc->sfx->length = info->frames * stepscale;
-	//printf ("%s %d %g %d\n", sc->sfx->name, length, stepscale, sc->sfx->length);
-	if (info->loopstart != (unsigned int)-1)
-		sc->sfx->loopstart = info->loopstart * stepscale;
-	else
-		sc->sfx->loopstart = (unsigned int)-1;
-
-	sc->channels = info->channels;
-
-	if (!length)
-		return;
 
 	src_data.data_in = data;
 	src_data.data_out = sc->data + sc->head * sc->channels;
@@ -95,6 +82,63 @@ SND_Resample (sfxbuffer_t *sc, float *data, int length)
 
 	outwidth = info->channels * sizeof (float);
 	check_buffer_integrity (sc, outwidth, __FUNCTION__);
+}
+
+static void
+SND_ResampleStream (sfxbuffer_t *sc, float *data, int length)
+{
+	SRC_DATA    src_data;
+	SRC_STATE  *state = (SRC_STATE *) sc->state;
+
+	int			outcount;
+	double		stepscale;
+	wavinfo_t  *info = sc->sfx->wavinfo (sc->sfx);
+	int         inrate = info->rate;
+
+	stepscale = (double) snd_shm->speed / inrate;
+	outcount = length * stepscale;
+
+	src_data.data_in = data;
+	src_data.data_out = sc->data + sc->head * sc->channels;
+	src_data.input_frames = length;
+	src_data.output_frames = outcount;
+	src_data.src_ratio = stepscale;
+	src_data.end_of_input = 0; //XXX
+
+	src_process (state, &src_data);
+}
+
+void
+SND_SetupResampler (sfxbuffer_t *sc, int streamed)
+{
+	double		stepscale;
+	wavinfo_t  *info = sc->sfx->wavinfo (sc->sfx);
+	int         inrate = info->rate;
+
+	stepscale = (double) snd_shm->speed / inrate;
+
+	sc->sfx->length = info->frames * stepscale;
+	if (info->loopstart != (unsigned int)-1)
+		sc->sfx->loopstart = info->loopstart * stepscale;
+	else
+		sc->sfx->loopstart = (unsigned int)-1;
+
+	sc->channels = info->channels;
+
+	if (streamed) {
+		int         err;
+		sfxstream_t *stream = sc->sfx->data.stream;
+
+		if (snd_shm->speed == inrate) {
+			sc->state = 0;
+			stream->resample = 0;
+		} else {
+			sc->state = src_new (SRC_LINEAR, info->channels, &err);
+			stream->resample = SND_ResampleStream;
+		}
+	} else {
+		sc->state = 0;
+	}
 }
 
 void

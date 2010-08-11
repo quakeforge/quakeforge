@@ -132,12 +132,11 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 
 	frames = snd_shm->speed * 0.3;
 	frames = (frames + 255) & ~255;
-	size = frames + 1;		// one extra sample for the resampler
-	size *= info->channels * sizeof (float);
+	size = frames * info->channels * sizeof (float);
 
 	stream = calloc (1, sizeof (sfxstream_t) + size);
 	new_sfx->data.stream = stream;
-	memcpy ((byte *) stream->buffer.sample_data + size, "\xde\xad\xbe\xef", 4);
+	memcpy ((byte *) stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
 	stream->file = file;
 	stream->sfx = new_sfx;
 	stream->resample = SND_Resample;
@@ -150,10 +149,9 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	stream->buffer.advance = SND_StreamAdvance;
 	stream->buffer.setpos = SND_StreamSetPos;
 	stream->buffer.sfx = new_sfx;
-	stream->buffer.data = &stream->buffer.sample_data[info->channels];
 	SND_SetPaint (&stream->buffer);
 
-	stream->resample (&stream->buffer, 0, 0);		// get sfx setup properly
+	SND_SetupResampler (&stream->buffer, 1);		// get sfx setup properly
 	stream->buffer.setpos (&stream->buffer, 0);		// pre-fill the buffer
 
 	return new_sfx;
