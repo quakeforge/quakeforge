@@ -1,0 +1,10 @@
+Swiped from the vorbis docs
+    * one channel - the stream is monophonic
+    * two channels - the stream is stereo. channel order: left, right
+    * three channels - the stream is a 1d-surround encoding. channel order: left, center, right
+    * four channels - the stream is quadraphonic surround. channel order: front left, front right, rear left, rear right
+    * five channels - the stream is five-channel surround. channel order: front left, center, front right, rear left, rear right
+    * six channels - the stream is 5.1 surround. channel order: front left, center, front right, rear left, rear right, LFE
+    * seven channels - the stream is 6.1 surround. channel order: front left, center, front right, side left, side right, rear center, LFE
+    * eight channels - the stream is 7.1 surround. channel order: front left, center, front right, side left, side right, rear left, rear right, LFE
+    * greater than eight channels - channel use and order is undefined 
