@@ -453,7 +453,7 @@ SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname)
 		return -1;
 	}
 	info = flac_get_info (ff);
-	if (info.channels < 1 || info.channels > 2) {
+	if (info.channels < 1 || info.channels > 8) {
 		Sys_Printf ("unsupported number of channels");
 		return -1;
 	}

@@ -241,7 +241,7 @@ wav_get_info (QFile *file)
 		Sys_Printf ("not Microsfot PCM\n");
 		goto bail;
 	}
-	if (dfmt->channels < 1 || dfmt->channels > 2) {
+	if (dfmt->channels < 1 || dfmt->channels > 8) {
 		Sys_Printf ("unsupported channel count\n");
 		goto bail;
 	}

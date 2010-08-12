@@ -47,7 +47,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "snd_render.h"
 
-#define VOLSCALE 1024.0				// so mixing is less likely to overflow
+#define VOLSCALE 512.0				// so mixing is less likely to overflow
 									// note: must be >= 255 due to the channel
 									// volumes being 0-255.
 
@@ -179,6 +179,45 @@ SND_PaintChannels (unsigned endtime)
 	}
 }
 
+static inline void
+snd_mix_single (portable_samplepair_t *pair, float **samp,
+				float lvol, float rvol)
+{
+	float       single = *(*samp)++;
+
+	pair->left += single * lvol;
+	pair->right += single * rvol;
+}
+
+static inline void
+snd_mix_pair (portable_samplepair_t *pair, float **samp,
+			  float lvol, float rvol)
+{
+	float       left = *(*samp)++;
+	float       right = *(*samp)++;
+
+	pair->left += left * lvol;
+	pair->right += right * rvol;
+}
+
+static inline void
+snd_mix_tripple (portable_samplepair_t *pair, float **samp,
+				 float lvol, float rvol)
+{
+	float       left = *(*samp)++;
+	float       center = *(*samp)++;
+	float       right = *(*samp)++;
+
+	pair->left += left * lvol;
+	pair->left += center * lvol;
+	pair->right += center * rvol;
+	pair->right += right * rvol;
+}
+
+/*	mono
+		center
+	Spacializes the sound.
+*/
 static void
 snd_paint_mono (int offs, channel_t *ch, float *sfx, unsigned count)
 {
@@ -273,6 +312,10 @@ snd_paint_mono (int offs, channel_t *ch, float *sfx, unsigned count)
 	}
 }
 
+/*	stereo
+		left, right
+	Does not spacialize the sound.
+*/
 static void
 snd_paint_stereo (int offs, channel_t *ch, float *samp, unsigned count)
 {
@@ -282,8 +325,135 @@ snd_paint_stereo (int offs, channel_t *ch, float *samp, unsigned count)
 
 	pair = snd_paintbuffer + offs;
 	while (count-- > 0) {
-		pair->left += *samp++ * leftvol;
-		pair->right += *samp++ * rightvol;
+		snd_mix_pair (pair, &samp, leftvol, rightvol);
+		pair++;
+	}
+}
+
+/*	1d surround
+		left, center, right
+	Does not spacialize the sound.
+*/
+static void
+snd_paint_3 (int offs, channel_t *ch, float *samp, unsigned count)
+{
+	portable_samplepair_t *pair;
+	float       leftvol = ch->leftvol / VOLSCALE;
+	float       rightvol = ch->rightvol / VOLSCALE;
+
+	pair = snd_paintbuffer + offs;
+	while (count-- > 0) {
+		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		pair++;
+	}
+}
+
+/*	quadraphonic surround
+		front (left, right),
+		rear (left, right)
+	Does not spacialize the sound.
+*/
+static void
+snd_paint_4 (int offs, channel_t *ch, float *samp, unsigned count)
+{
+	portable_samplepair_t *pair;
+	float       leftvol = ch->leftvol / VOLSCALE;
+	float       rightvol = ch->rightvol / VOLSCALE;
+
+	pair = snd_paintbuffer + offs;
+	while (count-- > 0) {
+		snd_mix_pair (pair, &samp, leftvol, rightvol);
+		snd_mix_pair (pair, &samp, leftvol, rightvol);
+		pair++;
+	}
+}
+
+/*	five-channel surround
+		front (left, center, right),
+		rear (left, right)
+	Does not spacialize the sound.
+*/
+static void
+snd_paint_5 (int offs, channel_t *ch, float *samp, unsigned count)
+{
+	portable_samplepair_t *pair;
+	float       leftvol = ch->leftvol / VOLSCALE;
+	float       rightvol = ch->rightvol / VOLSCALE;
+
+	pair = snd_paintbuffer + offs;
+	while (count-- > 0) {
+		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		snd_mix_pair (pair, &samp, leftvol, rightvol);
+		pair++;
+	}
+}
+
+/*	5.1 surround
+		front (left, center, right),
+		rear (left, right),
+		lfe
+	Does not spacialize the sound.
+*/
+static void
+snd_paint_6 (int offs, channel_t *ch, float *samp, unsigned count)
+{
+	portable_samplepair_t *pair;
+	float       leftvol = ch->leftvol / VOLSCALE;
+	float       rightvol = ch->rightvol / VOLSCALE;
+
+	pair = snd_paintbuffer + offs;
+	while (count-- > 0) {
+		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		snd_mix_pair (pair, &samp, leftvol, rightvol);
+		snd_mix_single (pair, &samp, leftvol, rightvol);
+		pair++;
+	}
+}
+
+/*	6.1 surround
+		front (left, center, right),
+		side (left, right),
+		rear (center),
+		lfe
+	Does not spacialize the sound.
+*/
+static void
+snd_paint_7 (int offs, channel_t *ch, float *samp, unsigned count)
+{
+	portable_samplepair_t *pair;
+	float       leftvol = ch->leftvol / VOLSCALE;
+	float       rightvol = ch->rightvol / VOLSCALE;
+
+	pair = snd_paintbuffer + offs;
+	while (count-- > 0) {
+		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		snd_mix_pair (pair, &samp, leftvol, rightvol);
+		snd_mix_single (pair, &samp, leftvol, rightvol);
+		snd_mix_single (pair, &samp, leftvol, rightvol);
+		pair++;
+	}
+}
+
+/*	7.1 surround
+		front (left, center, right),
+		side (left, right),
+		rear (left, right),
+		lfe
+	Does not spacialize the sound.
+*/
+static void
+snd_paint_8 (int offs, channel_t *ch, float *samp, unsigned count)
+{
+	portable_samplepair_t *pair;
+	float       leftvol = ch->leftvol / VOLSCALE;
+	float       rightvol = ch->rightvol / VOLSCALE;
+
+	pair = snd_paintbuffer + offs;
+	while (count-- > 0) {
+		snd_mix_tripple (pair, &samp, leftvol, rightvol);
+		snd_mix_pair (pair, &samp, leftvol, rightvol);
+		snd_mix_pair (pair, &samp, leftvol, rightvol);
+		snd_mix_single (pair, &samp, leftvol, rightvol);
 		pair++;
 	}
 }
@@ -291,9 +461,20 @@ snd_paint_stereo (int offs, channel_t *ch, float *samp, unsigned count)
 void
 SND_SetPaint (sfxbuffer_t *sc)
 {
+	static sfxpaint_t *painters[] = {
+		0,
+		snd_paint_mono,
+		snd_paint_stereo,
+		snd_paint_3,
+		snd_paint_4,
+		snd_paint_5,
+		snd_paint_6,
+		snd_paint_7,
+		snd_paint_8,
+	};
+
 	wavinfo_t *info = sc->sfx->wavinfo (sc->sfx);
-	if (info->channels == 2)
-		sc->paint = snd_paint_stereo;
-	else
-		sc->paint = snd_paint_mono;
+	if (info->channels < 0 || info->channels > 8)
+		Sys_Error ("illegal channel count %d", info->channels);
+	sc->paint = painters[info->channels];
 }

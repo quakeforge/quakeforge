@@ -50,6 +50,14 @@ typedef struct channel_s channel_t;
 typedef struct sfxbuffer_s sfxbuffer_t;
 typedef struct sfxblock_s sfxblock_t;
 typedef struct sfxstream_s sfxstream_t;
+/** paint samples into the mix buffer
+	\param offset   offset into the mix buffer at which to start mixing
+					the channel
+	\param ch		sound channel
+	\param buffer	sound data
+	\param count	number of frames to paint
+*/
+typedef void sfxpaint_t (int, channel_t *, float *, unsigned);
 
 /** Represent a sound sample in the mixer.
 */
@@ -99,15 +107,7 @@ struct sfxbuffer_s {
 	unsigned    length;			//!< length of buffer in frames
 	unsigned    pos;			//!< position of tail within full stream
 	unsigned    channels;		//!< number of channels per frame
-	/** paint samples into the mix buffer
-		\param offset   offset into the mix buffer at which to start mixing
-						the channel
-		\param ch		sound channel
-		\param buffer	sound data
-		\param count	number of frames to paint
-	*/
-	void        (*paint) (int offset, channel_t *ch, float *buffer,
-						  unsigned count);
+	sfxpaint_t *paint;			//!< channel count specific paint function
 	/** Advance the position with the stream, updating the ring buffer as
 		necessary. Null for chached sounds.
 		\param buffer	"this"
