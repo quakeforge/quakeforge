@@ -447,7 +447,9 @@ SV_Map_f (void)
 		return;
 	}
 	if (Cmd_Argc () == 1) {
-		SV_Printf ("map is %s (%s)\n", curlevel->str, nice_time (sv.time));
+		SV_Printf ("map is %s \"%s\" (%s)\n", curlevel->str,
+				   PR_GetString (&sv_pr_state, SVstring (sv.edicts, message)),
+				   nice_time (sv.time));
 		return;
 	}
 	level = Cmd_Argv (1);

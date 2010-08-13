@@ -281,7 +281,9 @@ Host_Map_f (void)
 		return;
 	}
 	if (Cmd_Argc () == 1) {
-		Sys_Printf ("map is %s (%s)\n", sv.name, nice_time (sv.time));
+		Sys_Printf ("map is %s \"%s\" (%s)\n", sv.name,
+					PR_GetString (&sv_pr_state, SVstring (sv.edicts, message)),
+					nice_time (sv.time));
 		return;
 	}
 
