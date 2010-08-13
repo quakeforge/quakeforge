@@ -225,7 +225,7 @@ SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos)
 	fill_buffer (sfx, stream, buffer, info, pos);
 }
 
-void
+int
 SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 {
 	float       stepscale;
@@ -237,7 +237,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 	stream->pos += count;
 	count = (stream->pos - buffer->pos) & ~255;
 	if (!count)
-		return;
+		return 1;
 
 	stepscale = (float) info->rate / snd_shm->speed;
 
@@ -291,6 +291,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 			buffer->tail -= buffer->length;
 	}
 	fill_buffer (sfx, stream, buffer, info, headpos);
+	return !stream->error;
 }
 
 int

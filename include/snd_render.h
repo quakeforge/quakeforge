@@ -112,8 +112,9 @@ struct sfxbuffer_s {
 		necessary. Null for chached sounds.
 		\param buffer	"this"
 		\param count	number of frames to advance
+		\return			true for success, false if an error occured
 	*/
-	void        (*advance) (sfxbuffer_t *buffer, unsigned int count);
+	int         (*advance) (sfxbuffer_t *buffer, unsigned int count);
 	/** Seek to an absolute position within the stream, resetting the ring
 		buffer.
 		\param buffer	"this"
@@ -134,6 +135,7 @@ struct sfxstream_s {
 	void       *file;			//!< handle for "file" representing the stream
 	wavinfo_t   wavinfo;		//!< description of sound data
 	unsigned    pos;			//!< position of next frame full stream
+	int         error;			//!< an error occured while reading
 
 	void       *state;			//!< resampler state information
 	/** Read data from the stream.
@@ -548,7 +550,7 @@ void SND_StreamRelease (sfx_t *sfx);
 	\param buffer	"this"
 	\param count	number of samples to advance
 */
-void SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count);
+int SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count);
 
 /** Seek to an absolute position within the stream, resetting the ring
 	buffer.

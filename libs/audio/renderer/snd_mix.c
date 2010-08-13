@@ -156,8 +156,14 @@ SND_PaintChannels (unsigned endtime)
 				if (count > 0) {
 					if (ch->leftvol || ch->rightvol) {
 						snd_paint_channel (ch, sc, count);
-						if (sc->advance)
-							sc->advance (sc, count);
+						if (sc->advance) {
+							if (!sc->advance (sc, count)) {
+								// this channel can no longer be used as its
+								// source has died.
+								ch->done = 1;
+								break;
+							}
+						}
 					}
 					ltime += count;
 				}

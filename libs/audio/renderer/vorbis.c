@@ -228,8 +228,10 @@ vorbis_stream_read (void *file, float **buf)
 	if (!vf->data)
 		vf->data = malloc (FRAMES * stream->wavinfo.channels * sizeof (float));
 	res = vorbis_read (vf->vf, vf->data, FRAMES, &stream->wavinfo);
-	if (res <= 0)
+	if (res <= 0) {
+		stream->error = 1;
 		return res;
+	}
 	*buf = vf->data;
 	return res;
 }

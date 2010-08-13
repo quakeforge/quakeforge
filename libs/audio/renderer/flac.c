@@ -340,7 +340,12 @@ flac_stream_read (void *file, float **buf)
 {
 	sfxstream_t *stream = (sfxstream_t *) file;
 	flacfile_t *ff = (flacfile_t *) stream->file;
-	FLAC__stream_decoder_process_single (ff->decoder);
+	int res = FLAC__stream_decoder_process_single (ff->decoder);
+
+	if (!res) {
+		stream->error = 1;
+		return -1;
+	}
 	*buf = ff->buffer;
 	return ff->size;
 }

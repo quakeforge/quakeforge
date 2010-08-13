@@ -112,8 +112,10 @@ wav_stream_read (void *file, float **buf)
 		wf->data = malloc (FRAMES * info->channels * sizeof (float));
 
 	res = Qread (wf->file, data, len);
-	if (res <= 0)
+	if (res <= 0) {
+		stream->error = 1;
 		return res;
+	}
 	res /= (info->channels * info->width);
 	SND_Convert (data, wf->data, res, info->channels, info->width);
 	*buf = wf->data;
