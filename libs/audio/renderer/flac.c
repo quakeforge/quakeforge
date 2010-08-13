@@ -344,7 +344,7 @@ flac_stream_read (void *file, float **buf)
 
 	if (!res) {
 		stream->error = 1;
-		return -1;
+		return 0;
 	}
 	*buf = ff->buffer;
 	return ff->size;

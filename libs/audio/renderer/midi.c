@@ -109,7 +109,7 @@ midi_stream_read (void *file, float **buf)
 	res = WildMidi_GetOutput (mf->handle, (char *)data, size);
 	if (res <= 0) {
 		stream->error = 1;
-		return res;
+		return 0;
 	}
 	res /= CHANNELS * WIDTH;
 	SND_Convert (data, mf->data, res, CHANNELS, WIDTH);

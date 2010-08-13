@@ -230,7 +230,7 @@ vorbis_stream_read (void *file, float **buf)
 	res = vorbis_read (vf->vf, vf->data, FRAMES, &stream->wavinfo);
 	if (res <= 0) {
 		stream->error = 1;
-		return res;
+		return 0;
 	}
 	*buf = vf->data;
 	return res;
