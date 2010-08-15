@@ -326,7 +326,7 @@ SNDDMA_GetDMAPos (void)
 	}
 //	sn.samplepos = (count.bytes / (sn.samplebits / 8)) & (sn.samples-1);
 //	fprintf(stderr, "%d \r", count.ptr);
-	sn.framepos = count.ptr / (sn.samplebits / 8) / sn.channels; //XXX???
+	sn.framepos = count.ptr / (sn.samplebits / 8);
 
 	return sn.framepos;
 

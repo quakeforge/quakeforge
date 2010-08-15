@@ -109,11 +109,11 @@ main (int argc, const char *argv[])
 	COM_InitArgv (argc, argv);
 	init ();
 	Cbuf_Execute_Stack (testsound_cbuf);
-//	while (1) {
+	while (1) {
 		Cbuf_Execute_Stack (testsound_cbuf);
 
 		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
-		sleep(100);
-//	}
+		usleep(20 * 1000);
+	}
 	Sys_Quit ();
 }

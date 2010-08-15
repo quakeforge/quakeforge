@@ -405,7 +405,7 @@ SNDDMA_Submit (void)
 	if (snd_blocked)
 		return;
 
-	nframes = count / sn.channels;
+	nframes = count;
 
 	qfsnd_pcm_avail_update (pcm);
 	qfsnd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);

@@ -81,8 +81,8 @@ s_xfer_paint_buffer (int endtime)
 
 	p = (float *) snd_paintbuffer;
 	count = (endtime - snd_paintedtime) * snd_shm->channels;
-	out_mask = snd_shm->frames - 1;
-	out_idx = snd_paintedtime * snd_shm->channels & out_mask;
+	out_mask = (snd_shm->frames * snd_shm->channels) - 1;
+	out_idx = (snd_paintedtime * snd_shm->channels) & out_mask;
 	step = 3 - snd_shm->channels;
 	snd_vol = snd_volume->value;
 
