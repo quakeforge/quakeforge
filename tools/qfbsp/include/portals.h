@@ -16,78 +16,27 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 	See file, 'COPYING', for details.
+
+	$Id$
 */
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
+#ifndef qfbsp_portals_h
+#define qfbsp_portals_h
 
-#include "draw.h"
+struct node_s;
 
+typedef struct portal_s {
+	int			planenum;
+	struct node_s *nodes[2];		// [0] = front side of planenum
+	struct portal_s	*next[2];	
+	struct winding_s *winding;
+} portal_t;
 
-void
-Draw_ClearBounds (void)
-{
-}
+extern struct node_s outside_node;		// portals outside the world face this
 
-void
-Draw_AddToBounds (vec3_t v)
-{
-}
+void PortalizeWorld (struct node_s *headnode);
+void PortalizeWorldDetail (struct node_s *headnode);	// stop at detail nodes
+void WritePortalfile (struct node_s *headnode);
+void FreeAllPortals (struct node_s *node);
 
-void
-Draw_DrawFace (struct visfacet_s *f)
-{
-}
-
-void
-Draw_ClearWindow (void)
-{
-}
-
-void
-Draw_SetRed (void)
-{
-}
-
-void
-Draw_SetGrey (void)
-{
-}
-
-void
-Draw_SetBlack (void)
-{
-}
-
-void
-DrawPoint (vec3_t v)
-{
-}
-
-void
-DrawLeaf (struct node_s *l, int color)
-{
-}
-
-void
-DrawBrush (struct brush_s *b)
-{
-}
-
-void
-DrawWinding (struct winding_s *w)
-{
-}
-
-void
-DrawTri (vec3_t p1, vec3_t p2, vec3_t p3)
-{
-}
-
-void
-DrawPortal (struct portal_s *portal)
-{
-}
+#endif//qfbsp_portals_h

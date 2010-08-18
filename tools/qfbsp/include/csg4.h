@@ -16,78 +16,27 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 	See file, 'COPYING', for details.
+
+	$Id$
 */
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
+#ifndef qfbsp_csg4_h
+#define qfbsp_csg4_h
 
-#include "draw.h"
+#include "QF/bspfile.h"
 
+struct plane_s;
+struct visfacet_s;
+struct brushset_s;
+struct surface_s;
 
-void
-Draw_ClearBounds (void)
-{
-}
+// build surfaces is also used by GatherNodeFaces
+extern struct visfacet_s *validfaces[MAX_MAP_PLANES];
+struct surface_s *BuildSurfaces (void);
 
-void
-Draw_AddToBounds (vec3_t v)
-{
-}
+struct visfacet_s *NewFaceFromFace (struct visfacet_s *in);
+struct surface_s *CSGFaces (struct brushset_s *bs);
+void SplitFace (struct visfacet_s *in, struct plane_s *split,
+				struct visfacet_s **front, struct visfacet_s **back);
 
-void
-Draw_DrawFace (struct visfacet_s *f)
-{
-}
-
-void
-Draw_ClearWindow (void)
-{
-}
-
-void
-Draw_SetRed (void)
-{
-}
-
-void
-Draw_SetGrey (void)
-{
-}
-
-void
-Draw_SetBlack (void)
-{
-}
-
-void
-DrawPoint (vec3_t v)
-{
-}
-
-void
-DrawLeaf (struct node_s *l, int color)
-{
-}
-
-void
-DrawBrush (struct brush_s *b)
-{
-}
-
-void
-DrawWinding (struct winding_s *w)
-{
-}
-
-void
-DrawTri (vec3_t p1, vec3_t p2, vec3_t p3)
-{
-}
-
-void
-DrawPortal (struct portal_s *portal)
-{
-}
+#endif//qfbsp_csg4_h

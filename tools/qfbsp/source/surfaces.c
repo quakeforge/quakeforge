@@ -32,7 +32,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "bsp5.h"
+#include "csg4.h"
 #include "options.h"
+#include "region.h"
+#include "surfaces.h"
+#include "winding.h"
 
 /*
 	a surface has all of the faces that could be drawn on a given plane

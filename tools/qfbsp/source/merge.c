@@ -26,7 +26,12 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/sys.h"
 
+#include "brush.h"
 #include "bsp5.h"
+#include "csg4.h"
+#include "draw.h"
+#include "merge.h"
+#include "winding.h"
 
 #define CONTINUOUS_EPSILON	0.001
 

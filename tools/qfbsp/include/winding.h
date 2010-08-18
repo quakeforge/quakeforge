@@ -16,78 +16,29 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 	See file, 'COPYING', for details.
+
+	$Id$
 */
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
+#ifndef qfbsp_winding_h
+#define qfbsp_winding_h
 
-#include "draw.h"
+#include "QF/mathlib.h"
 
+struct plane_s;
 
-void
-Draw_ClearBounds (void)
-{
-}
+typedef struct winding_s {
+	int		numpoints;
+	vec3_t	points[8];			// variable sized
+} winding_t;
 
-void
-Draw_AddToBounds (vec3_t v)
-{
-}
+winding_t *BaseWindingForPlane (struct plane_s *p);
+winding_t *NewWinding (int points);
+void FreeWinding (winding_t *w);
+winding_t *CopyWinding (winding_t *w);
+winding_t *CopyWindingReverse (winding_t *w);
+winding_t *ClipWinding (winding_t *in, struct plane_s *split, qboolean keepon);
+void DivideWinding (winding_t *in, struct plane_s *split,
+					winding_t **front, winding_t **back);
 
-void
-Draw_DrawFace (struct visfacet_s *f)
-{
-}
-
-void
-Draw_ClearWindow (void)
-{
-}
-
-void
-Draw_SetRed (void)
-{
-}
-
-void
-Draw_SetGrey (void)
-{
-}
-
-void
-Draw_SetBlack (void)
-{
-}
-
-void
-DrawPoint (vec3_t v)
-{
-}
-
-void
-DrawLeaf (struct node_s *l, int color)
-{
-}
-
-void
-DrawBrush (struct brush_s *b)
-{
-}
-
-void
-DrawWinding (struct winding_s *w)
-{
-}
-
-void
-DrawTri (vec3_t p1, vec3_t p2, vec3_t p3)
-{
-}
-
-void
-DrawPortal (struct portal_s *portal)
-{
-}
+#endif//qfbsp_winding_h

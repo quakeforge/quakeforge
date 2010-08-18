@@ -26,8 +26,8 @@
 	$Id$
 */
 
-#ifndef __options_h
-#define __options_h
+#ifndef qfbsp_options_h
+#define qfbsp_options_h
 
 #include "QF/qtypes.h"
 
@@ -59,4 +59,4 @@ typedef struct {
 extern options_t options;
 int DecodeArgs (int argc, char **argv);
 extern const char *this_program;
-#endif//__options_h
+#endif//qfbsp_options_h

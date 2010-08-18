@@ -25,8 +25,13 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/sys.h"
 
+#include "brush.h"
 #include "bsp5.h"
+#include "draw.h"
 #include "options.h"
+#include "portals.h"
+#include "outside.h"
+#include "winding.h"
 
 int         outleafs;
 

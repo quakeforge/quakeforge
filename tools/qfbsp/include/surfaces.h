@@ -16,78 +16,30 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 	See file, 'COPYING', for details.
+
+	$Id$
 */
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
+#ifndef surfaces_h
+#define surfaces_h
 
-#include "draw.h"
+#include "QF/bspfile.h"
 
+struct visfacet_s;
+struct node_s;
+struct surface_s;
 
-void
-Draw_ClearBounds (void)
-{
-}
+extern int c_cornerverts;
+extern int c_tryedges;
+extern struct visfacet_s *edgefaces[MAX_MAP_EDGES][2];
 
-void
-Draw_AddToBounds (vec3_t v)
-{
-}
+extern int firstmodeledge;
+extern int firstmodelface;
 
-void
-Draw_DrawFace (struct visfacet_s *f)
-{
-}
+void SubdivideFace (struct visfacet_s *f, struct visfacet_s **prevptr);
 
-void
-Draw_ClearWindow (void)
-{
-}
+struct surface_s *GatherNodeFaces (struct node_s *headnode);
 
-void
-Draw_SetRed (void)
-{
-}
+void MakeFaceEdges (struct node_s *headnode);
 
-void
-Draw_SetGrey (void)
-{
-}
-
-void
-Draw_SetBlack (void)
-{
-}
-
-void
-DrawPoint (vec3_t v)
-{
-}
-
-void
-DrawLeaf (struct node_s *l, int color)
-{
-}
-
-void
-DrawBrush (struct brush_s *b)
-{
-}
-
-void
-DrawWinding (struct winding_s *w)
-{
-}
-
-void
-DrawTri (vec3_t p1, vec3_t p2, vec3_t p3)
-{
-}
-
-void
-DrawPortal (struct portal_s *portal)
-{
-}
+#endif//surfaces_h

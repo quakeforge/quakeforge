@@ -32,8 +32,11 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 
+#include "brush.h"
 #include "bsp5.h"
 #include "options.h"
+#include "winding.h"
+#include "tjunc.h"
 
 typedef struct wvert_s {
 	vec_t       t;

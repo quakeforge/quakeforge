@@ -16,78 +16,23 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 	See file, 'COPYING', for details.
+
+	$Id$
 */
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
+#ifndef qfbsp_solidbsp_h
+#define qfbsp_solidbsp_h
 
-#include "draw.h"
+#include "QF/qtypes.h"
 
+struct visfacet_s;
+struct plane_s;
+struct surface_s;
+struct node_s;
 
-void
-Draw_ClearBounds (void)
-{
-}
+void DivideFacet (struct visfacet_s *in, struct plane_s *split,
+				  struct visfacet_s **front, struct visfacet_s **back);
+void CalcSurfaceInfo (struct surface_s *surf);
+struct node_s *SolidBSP (struct surface_s *surfhead, qboolean midsplit);
 
-void
-Draw_AddToBounds (vec3_t v)
-{
-}
-
-void
-Draw_DrawFace (struct visfacet_s *f)
-{
-}
-
-void
-Draw_ClearWindow (void)
-{
-}
-
-void
-Draw_SetRed (void)
-{
-}
-
-void
-Draw_SetGrey (void)
-{
-}
-
-void
-Draw_SetBlack (void)
-{
-}
-
-void
-DrawPoint (vec3_t v)
-{
-}
-
-void
-DrawLeaf (struct node_s *l, int color)
-{
-}
-
-void
-DrawBrush (struct brush_s *b)
-{
-}
-
-void
-DrawWinding (struct winding_s *w)
-{
-}
-
-void
-DrawTri (vec3_t p1, vec3_t p2, vec3_t p3)
-{
-}
-
-void
-DrawPortal (struct portal_s *portal)
-{
-}
+#endif//qfbsp_solidbsp_h

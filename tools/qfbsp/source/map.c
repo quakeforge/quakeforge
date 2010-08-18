@@ -40,8 +40,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "bsp5.h"
 #include "compat.h"
+
+#include "map.h"
 
 int         nummapbrushfaces;
 int         nummapbrushes;

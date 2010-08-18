@@ -36,7 +36,7 @@
 typedef struct
 {
 	vec3_t	normal;
-	float	dist;
+	vec_t	dist;
 } plane_t;
 
 typedef struct trace_s {

@@ -51,8 +51,12 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/va.h"
 #include "QF/wad.h"
 
+#include "brush.h"
 #include "bsp5.h"
 #include "options.h"
+#include "portals.h"
+#include "readbsp.h"
+#include "winding.h"
 
 dmodel_t   *models;
 face_t     *mfaces;

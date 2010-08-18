@@ -31,8 +31,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "compat.h"
+
 #include "bsp5.h"
-#include "options.h"
+#include "region.h"
+#include "surfaces.h"
+#include "winding.h"
 
 /*
 input

@@ -40,8 +40,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/va.h"
 #include "QF/wad.h"
 
+#include "brush.h"
 #include "bsp5.h"
 #include "options.h"
+#include "writebsp.h"
 
 int         headclipnode;
 int         firstface;

@@ -31,7 +31,13 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/sys.h"
 
+#include "brush.h"
+#include "csg4.h"
 #include "bsp5.h"
+#include "draw.h"
+#include "solidbsp.h"
+#include "surfaces.h"
+#include "winding.h"
 
 int         leaffaces;
 int         nodefaces;

@@ -16,78 +16,39 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 	See file, 'COPYING', for details.
+
+	$Id$
 */
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
+#ifndef qfbsp_brush_h
+#define qfbsp_brush_h
 
-#include "draw.h"
+#include "QF/mathlib.h"
 
+#include "bsp5.h"
+#include "map.h"
 
-void
-Draw_ClearBounds (void)
-{
-}
+#define	NUM_HULLS		2				// normal and +16
 
-void
-Draw_AddToBounds (vec3_t v)
-{
-}
+#define	NUM_CONTENTS	2				// solid and water
 
-void
-Draw_DrawFace (struct visfacet_s *f)
-{
-}
+typedef struct brush_s {
+	struct brush_s	*next;
+	vec3_t			mins, maxs;
+	struct visfacet_s *faces;
+	int				contents;
+} brush_t;
 
-void
-Draw_ClearWindow (void)
-{
-}
+typedef struct brushset_s {
+	vec3_t		mins, maxs;
+	brush_t		*brushes;		// NULL terminated list
+} brushset_t;
 
-void
-Draw_SetRed (void)
-{
-}
+extern	int			numbrushplanes;
+extern	plane_t		planes[MAX_MAP_PLANES];
 
-void
-Draw_SetGrey (void)
-{
-}
+brushset_t *Brush_LoadEntity (entity_t *ent, int hullnum);
+int	PlaneTypeForNormal (vec3_t normal);
+int	FindPlane (plane_t *dplane, int *side);
 
-void
-Draw_SetBlack (void)
-{
-}
-
-void
-DrawPoint (vec3_t v)
-{
-}
-
-void
-DrawLeaf (struct node_s *l, int color)
-{
-}
-
-void
-DrawBrush (struct brush_s *b)
-{
-}
-
-void
-DrawWinding (struct winding_s *w)
-{
-}
-
-void
-DrawTri (vec3_t p1, vec3_t p2, vec3_t p3)
-{
-}
-
-void
-DrawPortal (struct portal_s *portal)
-{
-}
+#endif//qfbsp_brush_h

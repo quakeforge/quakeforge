@@ -30,8 +30,12 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/sys.h"
 
+#include "brush.h"
 #include "bsp5.h"
+#include "draw.h"
 #include "options.h"
+#include "portals.h"
+#include "winding.h"
 
 node_t      outside_node;				// portals outside the world face this
 

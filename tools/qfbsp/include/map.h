@@ -20,12 +20,17 @@
 	$Id$
 */
 
+#ifndef qfbsp_map_h
+#define qfbsp_map_h
+
+#include "bsp5.h"
+
 #define	MAX_FACES		256
 typedef struct mface_s
 {
-	struct mface_s	*next;
-	plane_t			plane;
-	int				texinfo;
+	struct mface_s *next;
+	plane_t     plane;
+	int         texinfo;
 } mface_t;
 
 typedef struct mbrush_s
@@ -68,3 +73,5 @@ void	SetKeyValue (entity_t *ent, const char *key, const char *value);
 void 	GetVectorForKey (entity_t *ent, const char *key, vec3_t vec);
 
 void	WriteEntitiesToString (void);
+
+#endif//qfbsp_map_h

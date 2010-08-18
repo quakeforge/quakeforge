@@ -30,8 +30,12 @@
 #include "QF/sys.h"
 
 #include "compat.h"
+
+#include "brush.h"
 #include "bsp5.h"
+#include "draw.h"
 #include "options.h"
+#include "winding.h"
 
 int         numbrushplanes;
 plane_t     planes[MAX_MAP_PLANES];
