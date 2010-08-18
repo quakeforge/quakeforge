@@ -83,7 +83,7 @@ esac
 
 dnl Check for ia32
 AC_MSG_CHECKING(for an ia32 machine)
-case "${target}" in
+case "${host}" in
 	i?86-*-*)
 		AC_MSG_RESULT(yes)
 		AC_MSG_CHECKING(to see if we should disable asm optimizations)
@@ -142,7 +142,7 @@ if test "x$cpp_name" != xauto; then
 	CPP_NAME="$cpp_name"
 else
 	CPP_NAME="cpp %d -o %o %i"
-	case "$target_os" in
+	case "$host_os" in
 		*freebsd*)
 			CPP_NAME="cpp %d %i %o"
 			;;
@@ -566,7 +566,7 @@ if test "x$ac_cv_func_vsnprintf" = "xno" -a \
 fi
 
 WINMM=""
-case "$target_os" in
+case "$host_os" in
 	cygwin*)
 		WINMM="-lwinmm"
 	;;
@@ -1608,9 +1608,9 @@ if test "x$optimize" = xyes; then
 		)
 		case "$arch" in
 			auto)
-				case "${target_cpu}" in
+				case "${host_cpu}" in
 					i?86)
-						MORE_CFLAGS="-march=${target_cpu}"
+						MORE_CFLAGS="-march=${host_cpu}"
 						;;
 					*)
 						MORE_CFLAGS=""
