@@ -32,8 +32,8 @@ To build and install only the quakeworld server:
 	./configure --without-clients --without-tools --with-servers=qw
 	make install
 
-To build documentation (doxygen is required, as is an already configured
-source tree):
+To build documentation (doxygen, dot and mscgen are required, as is an already
+configured source tree):
 	cd doc
 	make doc
 
