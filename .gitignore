@@ -5,6 +5,7 @@
 *.obj
 *.o
 *~
+autom4te.cache/
 .deps/
 .libs/
 .vimrc
@@ -14,7 +15,6 @@ Makefile.in
 
 # /
 /aclocal.m4
-/autom4te.cache
 /build-stamp
 /changelog-stamp
 /compile
@@ -71,6 +71,13 @@ Makefile.in
 /doc/progs/vm-mem.png
 /doc/quakeforge.dox
 /doc/texinfo
+/doc/stamp-*
+/doc/aclocal.m4
+/doc/config.h
+/doc/config.h.in
+/doc/config.log
+/doc/config.status
+/doc/configure
 
 # /doc/man/
 
