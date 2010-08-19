@@ -1,3 +1,8 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+/**
+\page key_binding New Bind System
+
+\verbatim
 To: Colin Thompson
 Subject: Re: toggle console problem
 From: Bill Currie
@@ -74,3 +79,5 @@ PS: incase nobodie's noticed: chat now has input history. just use the up/down
 arrow keys.
 -- 
 Leave others their otherness. -- Aratak
+\endverbatim
+*/

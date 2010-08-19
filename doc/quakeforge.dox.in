@@ -25,13 +25,13 @@ DOXYFILE_ENCODING      = UTF-8
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded
 # by quotes) that should identify the project.
 
-PROJECT_NAME           = @PROGRAM@
+PROJECT_NAME           = @PACKAGE_NAME@
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number.
 # This could be handy for archiving the generated documentation or
 # if some version control system is used.
 
-PROJECT_NUMBER         = @VERSION@
+PROJECT_NUMBER         = @PACKAGE_VERSION@
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute)
 # base path where the generated documentation will be put.
@@ -587,9 +587,16 @@ INPUT                 += @top_srcdir@/nq
 INPUT                 += @top_srcdir@/qtv
 INPUT                 += @top_srcdir@/qw
 INPUT                 += @top_srcdir@/tools
-INPUT                 += @top_srcdir@/doc/quakeforge.txt
+INPUT                 += @top_srcdir@/doc/bind.txt
+INPUT                 += @top_srcdir@/doc/connect.txt
+INPUT                 += @top_srcdir@/doc/cshifts.txt
 INPUT                 += @top_srcdir@/doc/faq.txt
 INPUT                 += @top_srcdir@/doc/mapformat.txt
+INPUT                 += @top_srcdir@/doc/quakeforge.txt
+INPUT                 += @top_srcdir@/doc/qw-cap-spec.txt
+INPUT                 += @top_srcdir@/doc/qw-download-spec.txt
+INPUT                 += @top_srcdir@/doc/surround-sound.txt
+INPUT                 += @top_srcdir@/doc/timestamps.txt
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is

@@ -1,23 +1,28 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+/**
+\page qw_cap_spec QW Capabilities String
+
 Client capabilities are specified using the "*cap" info key.  The info string
 is made up of single char flags (possibly with modifiers, though currently
 none exist).
 
 Defined capabilities (* = not implemented):
-z   client can accept gzipped files.
-h   http transfers
-f   * ftp transfers
-a   * audio channel (voice chat)
-i   * irc
-p   pogo stick control
-t   team messages
+\li z   client can accept gzipped files.
+\li h   http transfers
+\li f   * ftp transfers
+\li a   * audio channel (voice chat)
+\li i   * irc
+\li p   pogo stick control
+\li t   team messages
 
-For more information on z and h, see qw-download-spec.txt.
+For more information on z and h, see \ref qw_download_spec.
 
 The QuakeForge clients will not send "*cap" to the server unless "QF" or "EXT"
 is detected in the challenge string sent by the server.
 
 From the QuakeForge quakeworld server:
 
+\verbatim
     if (sv_extensions->int_val) {
         extended = " QF qtv EXT";
     }
@@ -25,3 +30,5 @@ From the QuakeForge quakeworld server:
     // send it to the client
     Netchan_OutOfBandPrint (net_from, "%c%i%s", S2C_CHALLENGE,
                             svs.challenges[i].challenge, extended);
+\endverbatim
+*/

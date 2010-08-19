@@ -1,77 +1,81 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+/**
+\page server_timestampes Server Log Timestamps
+
 To enable time-stamped messages in the server, set the Cvar sv_timestamps to a
 value other than 0. When enabled, the string Cvar sv_timefmt is used to format
 the date and time.
 
 The following special codes are interpreted inside sv_timefmt strings.
 
-       %a     The abbreviated weekday name according to the  cur­
-              rent locale.
-
-       %A     The  full  weekday  name  according  to the current
+       \%a    The abbreviated weekday name according to the  current
               locale.
 
-       %b     The abbreviated month name according to the current
+       \%A    The  full  weekday  name  according  to the current
               locale.
 
-       %B     The  full  month  name  according  to  the  current
+       \%b    The abbreviated month name according to the current
               locale.
 
-       %c     The preferred date and time representation for  the
+       \%B    The  full  month  name  according  to  the  current
+              locale.
+
+       \%c    The preferred date and time representation for  the
               current locale.
 
-       %d     The  day of the month as a decimal number (range 01
+       \%d    The  day of the month as a decimal number (range 01
               to 31).
 
-       %h     Equivalent to %b. (SU)
+       \%h    Equivalent to %b. (SU)
 
-       %H     The  hour as a decimal number using a 24-hour clock
+       \%H    The  hour as a decimal number using a 24-hour clock
               (range 00 to 23).
 
-       %I     The hour as a decimal number using a 12-hour  clock
+       \%I    The hour as a decimal number using a 12-hour  clock
               (range 01 to 12).
 
-       %j     The  day of the year as a decimal number (range 001
+       \%j    The  day of the year as a decimal number (range 001
               to 366).
 
-       %k     The hour (24-hour clock) as a decimal number (range
+       \%k    The hour (24-hour clock) as a decimal number (range
               0  to  23);  single digits are preceded by a blank.
               (See also %H.) (TZ)
 
-       %m     The month as a decimal number (range 01 to 12).
+       \%m    The month as a decimal number (range 01 to 12).
 
-       %M     The minute as a decimal number (range 00 to 59).
+       \%M    The minute as a decimal number (range 00 to 59).
 
-       %p     Either `AM' or `PM' according  to  the  given  time
+       \%p    Either `AM' or `PM' according  to  the  given  time
               value, or the corresponding strings for the current
               locale.  Noon is treated as `pm'  and  midnight  as
               `am'.
 
-       %S     The second as a decimal number (range 00 to 61).
+       \%S    The second as a decimal number (range 00 to 61).
 
-       %U     The week number of the current year  as  a  decimal
+       \%U    The week number of the current year  as  a  decimal
               number,  range  00  to  53, starting with the first
               Sunday as the first day of week 01. See also %V and
               %W.
 
-       %w     The  day  of  the  week as a decimal, range 0 to 6,
+       \%w    The  day  of  the  week as a decimal, range 0 to 6,
               Sunday being 0.  See also %u.
 
-       %W     The week number of the current year  as  a  decimal
+       \%W    The week number of the current year  as  a  decimal
               number,  range  00  to  53, starting with the first
               Monday as the first day of week 01.
 
-       %x     The preferred date representation for  the  current
+       \%x    The preferred date representation for  the  current
               locale without the time.
 
-       %X     The  preferred  time representation for the current
+       \%X    The  preferred  time representation for the current
               locale without the date.
 
-       %y     The year as a  decimal  number  without  a  century
+       \%y    The year as a  decimal  number  without  a  century
               (range 00 to 99).
 
-       %Y     The year as a decimal number including the century.
+       \%Y    The year as a decimal number including the century.
 
-       %Z     The time zone name or abbreviation.
+       \%Z    The time zone name or abbreviation.
        
-       %%     A literal `%' character.
-
+       \%\%   A literal `\%' character.
+*/

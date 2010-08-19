@@ -1,27 +1,33 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+/**
+\page cshift_cvars cshift control
+
 New cvars:
-cl_cshift_bonus: Set to 0 to disable bonus flashes.
-cl_cshift_contents: Set to 0 to disable content blends.
-cl_cshift_damage: Set to 0 to disable damage blends.
-cl_cshift_powerup: Set to 0 to disable powerup (quad, pent, etc) blends.
+\li cl_cshift_bonus: Set to 0 to disable bonus flashes.
+\li cl_cshift_contents: Set to 0 to disable content blends.
+\li cl_cshift_damage: Set to 0 to disable damage blends.
+\li cl_cshift_powerup: Set to 0 to disable powerup (quad, pent, etc) blends.
 
 All of these cvars work for both GL and software, and all of them check
 the value of the "cshifts" serverinfo. cshifts is a bit field, with the
 following bits defined:
 
-bonus: 1
-contents: 2
-damage: 4
-powerup: 8
+\li bonus: 1
+\li contents: 2
+\li damage: 4
+\li powerup: 8
 
 An admin can force any of these to be respected by choosing the numbers of
 the cshifts to be enforced, and adding them up.
 
 examples:
-
+\verbatim
 serverinfo cshifts 15
-
+\endverbatim
 turns them all on.
 
+\verbatim
 serverinfo cshifts 10
-
+\endverbatim
 turns on powerup and contents shifts.
+*/

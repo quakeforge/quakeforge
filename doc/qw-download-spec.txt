@@ -1,7 +1,13 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+/**
+\page qw_download_spec QW Download Specification
+
 client has 'h' flag in "*cap" info string
 
 format of svc_download message:
+\verbatim
 <size (short)> <percent (byte)> ([url (string)] [newname (string)] | [data])
+\endverbatim
 
 size and percent are always present.
 
@@ -16,23 +22,25 @@ currently used for gzipped transfers, but there are plans to enable whole pak
 downloads (similar to RTCW and ET)).
 
 size is the number of data bytes in the message (if >= 0) or a special flag:
--1      file not found. download aborted
--2      download filename is not what was requested (in QF, this is because
+\li -1  file not found. download aborted
+\li -2  download filename is not what was requested (in QF, this is because
         the file has been gzipped and has the .gz extension). In this case,
         newname is in the message. Currently, QF checks newname to ensure the
         only modification is the addition of an extension.
--3      http redirect. url is always present and is the full url to download.
+\li -3  http redirect. url is always present and is the full url to download.
         If the download name is the same as the requested name, newname will
         be the empty string (""), otherwise it contains the new name of the
         file. See -2.
 
 QF #defines for the above values:
+\verbatim
 #define DL_NOFILE       -1
 #define DL_RENAME       -2
 #define DL_HTTP         -3
+\endverbatim
 
 Pseudo-code representing client side handling of svc_download
-========
+\verbatim
 CL_ParseDownload
 {
     size = MSG_ReadShort (net_message);
@@ -65,11 +73,10 @@ CL_ParseDownload
     }
     normal download processing
 }
-========
+\endverbatim
 
-NOTES:
-While the QF quakeworld server simply appends the requested file's path to the
-given url base, with the addition of a '/' (eg, "maps/foo.map" to
+\note While the QF quakeworld server simply appends the requested file's path
+to the given url base, with the addition of a '/' (eg, "maps/foo.map" to
 "http://server/downloads", giving "http://server/downloads/maps/foo.map"), so
 long as it is reasonable for the client to not rename the download file, there
 is no requirement for the full url to match the requested name in any manner,
@@ -77,12 +84,11 @@ and newname can be left as empty (""). However, if the client must rename the
 file, set newname to the new name. The extension checking is done as a
 security measure.
 
-Currently, the only reason QF renames a download is if it found eg
+\note Currently, the only reason QF renames a download is if it found eg
 "maps/foo.map.gz" instead of "maps/foo.map" (2:1 to 3:1 compression on maps is
 nice). This is the basis of the extension checking the QF clients do.
 
-TODO:
-[this has no bearing on the protocol itself]
+\todo [this has no bearing on the protocol itself]
 One good reason for the name being quite different is when the requested file
 is part of a pak file (and downloading the pak file is permitted), the entire
 pak file can be sent instead. QF does not yet do this, but it should be easy
@@ -91,3 +97,4 @@ downloading is permitted, do a rename (-2 for non-http, set newname in http)
 and send that instead. The client can check for a ".pak" extension in the
 rename, permit it, and then cause a rescan of the game directory in order to
 pick up the new pak file.
+*/

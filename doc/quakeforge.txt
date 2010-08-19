@@ -1,10 +1,17 @@
 //unfortunatly, have to wrap the docs in a C comment for doxygen
 /**
 \mainpage QuakeForge
-QuakeForge is a 3D graphics game engine based on id Software's legendary
+
+QuakeForge is a 3D graphics game engine based on
+<a href="http://www.idsoftware.com/">id Software's</a> legendary
 Quake and QuakeWorld game engine.  Our purpose?  To improve the state of the
 game by improving the engine and making it accessable to the largest number
 of players we can.
 
-\ref faq
+\li \ref faq
+\li \ref key_binding
+\li \ref cshift_cvars
+\li \ref qw_cap_spec
+\li \ref qw_download_spec
+\li \ref server_timestampes
 */
