@@ -596,10 +596,10 @@ VID_SetCaption (const char *text)
 		char *temp = strdup (text);
 
 		SetWindowText (mainwindow,
-					   (LPSTR) va ("%s %s: %s", PROGRAM, VERSION, temp));
+					   (LPSTR) va ("%s: %s", PACKAGE_STRING, temp));
 		free (temp);
 	} else {
-		SetWindowText (mainwindow, (LPSTR) va ("%s %s", PROGRAM, VERSION));
+		SetWindowText (mainwindow, (LPSTR) va ("%s", PACKAGE_STRING));
 	}
 }
 

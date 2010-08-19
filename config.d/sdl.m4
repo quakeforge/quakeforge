@@ -1,0 +1,45 @@
+dnl SDL/SDL-GL checks
+AC_ARG_ENABLE(sdl,
+[  --disable-sdl           disable checking for SDL],
+)
+
+if test "x$enable_sdl" != xno; then
+	AM_PATH_SDL(1.2.0,
+		HAVE_SDL=yes,
+		HAVE_SDL=no)
+	AC_SUBST(HAVE_SDL)
+	if test "x$HAVE_SDL" = "xyes"; then
+		case "$host_os" in
+			mingw*)
+				case "$build_os" in
+					cygwin*)
+						SDL_LIBS=`echo $SDL_LIBS | sed -e 's/-mwindows//'`
+						;;
+				esac
+			;;
+		esac
+	fi
+fi
+
+dnl SDL-AUDIO checks
+AC_ARG_ENABLE(sdl-audio,
+[  --disable-sdl-audio     disable checking for SDL-AUDIO],
+)
+
+if test "x$enable_sdl_audio" != xno; then
+	if test "x$HAVE_SDL" = "xyes"; then
+		HAVE_SDL_AUDIO=yes
+		AC_SUBST(HAVE_SDL_AUDIO)
+	fi
+fi
+
+dnl SDL-CD checks
+AC_ARG_ENABLE(sdl-cd,
+[  --disable-sdl-cd        disable checking for SDL-CD],
+)
+if test "x$enable_sdl_cd" != xno; then
+	if test "x$HAVE_SDL" = "xyes"; then
+		HAVE_SDL_CD=yes
+		AC_SUBST(HAVE_SDL_CD)
+	fi
+fi

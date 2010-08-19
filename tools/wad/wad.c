@@ -124,7 +124,7 @@ decode_args (int argc, char **argv)
 				usage (0);
 				break;
 			case 'V':					// version
-				printf ("wad version %s\n", VERSION);
+				printf ("wad version %s\n", PACKAGE_VERSION);
 				exit (0);
 				break;
 			case 'c':					// create

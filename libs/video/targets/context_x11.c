@@ -523,10 +523,10 @@ X11_CreateWindow (int width, int height)
 		XFree (SizeHints);
 	}
 	// Set window title
-	X11_SetCaption (va ("%s %s", PROGRAM, VERSION));
+	X11_SetCaption (va ("%s", PACKAGE_STRING));
 
 	// Set icon name
-	XSetIconName (x_disp, x_win, PROGRAM);
+	XSetIconName (x_disp, x_win, PACKAGE_NAME);
 
 	// Set window class
 	ClassHint = XAllocClassHint ();

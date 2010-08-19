@@ -209,7 +209,7 @@ qtv_memory_init (void)
 
 	qtv_mem_size = Cvar_Get ("qtv_mem_size", "8", CVAR_NONE, NULL,
 							 "Amount of memory (in MB) to allocate for the "
-							 PROGRAM " heap");
+							 PACKAGE_NAME " heap");
 
 	Cvar_SetFlags (qtv_mem_size, qtv_mem_size->flags | CVAR_ROM);
 	mem_size = (int) (qtv_mem_size->value * 1024 * 1024);
@@ -322,7 +322,7 @@ static void
 qtv_status (void)
 {
 	qtv_begin_redirect (RD_PACKET, 0);
-	Sys_Printf ("\\*version\\%s qtv %s", QW_VERSION, VERSION);
+	Sys_Printf ("\\*version\\%s qtv %s", QW_VERSION, PACKAGE_VERSION);
 	qtv_end_redirect ();
 }
 

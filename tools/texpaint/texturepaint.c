@@ -1056,7 +1056,7 @@ void init_dialog(void)
 	add_anim_button(w,3,begin_xpm);
 	add_anim_button(w,4,end_xpm);
 
-	sprintf(version,"Texture Paint %s",VERSION);
+	sprintf(version,"Texture Paint %s",PACKAGE_VERSION);
 	gtk_label_set(GTK_LABEL(get_widget(dialog->widget,"version")),version);
 	dialog->paint_image=-1;
 	dialog->texture_drawable=-1;

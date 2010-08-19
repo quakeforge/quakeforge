@@ -452,7 +452,7 @@ sv_new_f (void)
 	sv->qport = qport->int_val;
 	sv->info = Info_ParseString ("", MAX_INFO_STRING, 0);
 	Info_SetValueForStarKey (sv->info, "*ver",
-							 va ("%s QTV %s", QW_VERSION, VERSION), 0);
+							 va ("%s QTV %s", QW_VERSION, PACKAGE_VERSION), 0);
 	Info_SetValueForStarKey (sv->info, "*qsg_version", QW_QSG_VERSION, 0);
 	Info_SetValueForKey (sv->info, "name", "QTV Proxy", 0);
 	Hash_Add (server_hash, sv);

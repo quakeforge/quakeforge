@@ -237,7 +237,7 @@ R_Init_Cvars (void)
 						  "Sets the position of the crosshair on the X-axis.");
 	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_ARCHIVE, NULL,
 						  "Sets the position of the crosshair on the Y-axis.");
-	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE,
+	cl_verstring = Cvar_Get ("cl_verstring", PACKAGE_VERSION, CVAR_NONE,
 							 NULL, "Client version string");
 	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, NULL, "Crosshair "
 						  "type. 0 off, 1 old white, 2 new with colors");

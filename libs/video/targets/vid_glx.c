@@ -261,10 +261,10 @@ VID_SetCaption (const char *text)
 	if (text && *text) {
 		char	*temp = strdup (text);
 
-		X11_SetCaption (va ("%s %s: %s", PROGRAM, VERSION, temp));
+		X11_SetCaption (va ("%s: %s", PACKAGE_STRING, temp));
 		free (temp);
 	} else {
-		X11_SetCaption (va ("%s %s", PROGRAM, VERSION));
+		X11_SetCaption (va ("%s", PACKAGE_STRING));
 	}
 }
 

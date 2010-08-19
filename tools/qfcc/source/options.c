@@ -312,7 +312,7 @@ DecodeArgs (int argc, char **argv)
 				usage (0);
 				break;
 			case 'V':					// version
-				printf ("%s version %s\n", PACKAGE, VERSION);
+				printf ("%s version %s\n", PACKAGE_NAME, PACKAGE_VERSION);
 				exit (0);
 				break;
 			case 's':					// src dir

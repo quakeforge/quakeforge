@@ -431,7 +431,7 @@ Locs_Init (void)
 static const char *
 Team_F_Version (char *args)
 {
-	return va ("say %s %s", PROGRAM, VERSION);
+	return va ("say %s", PACKAGE_STRING);
 }
 
 static const char *

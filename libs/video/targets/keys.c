@@ -881,7 +881,7 @@ Key_Init (cbuf_t *cb)
 	Cmd_AddCommand ("bindlist", Key_Bindlist_f, "list all of the key bindings");
 	Cmd_AddCommand ("keyhelp", keyhelp_f, "display the keyname for the next "
 					"RECOGNIZED key-press. If the key pressed produces no "
-					"output, " PROGRAM " does not recognise that key.");
+					"output, " PACKAGE_NAME " does not recognise that key.");
 
 	GIB_Builtin_Add ("bind::get", Key_GIB_Bind_Get_f);
 

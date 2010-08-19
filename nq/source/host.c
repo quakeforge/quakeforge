@@ -838,7 +838,7 @@ CL_Init_Memory (void)
 
 	host_mem_size = Cvar_Get ("host_mem_size", "32", CVAR_NONE, NULL,
 							  "Amount of memory (in MB) to allocate for the "
-							  PROGRAM " heap");
+							  PACKAGE_NAME " heap");
 	if (mem_parm)
 		Cvar_Set (host_mem_size, com_argv[mem_parm + 1]);
 
@@ -1001,10 +1001,11 @@ Host_Init (void)
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
 
-	Sys_Printf ("\nVersion %s (build %04d)\n\n", VERSION,
+	Sys_Printf ("\nVersion %s (build %04d)\n\n", PACKAGE_VERSION,
 				build_number ());
 
-	Sys_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", PROGRAM);
+	Sys_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n",
+			    PACKAGE_NAME);
 
 	host_initialized = true;
 

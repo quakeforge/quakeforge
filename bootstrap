@@ -49,10 +49,10 @@ if test -n "$lt" ; then
 		LTIZE_VER_MAJOR=`echo $LTIZE_VER | cut -f1 -d'.'`
 		LTIZE_VER_MINOR=`echo $LTIZE_VER | cut -f2 -d'.' | sed -e 's/[^0-9]//g'`
 
-		if test "$LTIZE_VER_MAJOR" -lt "1"; then
+		if test "$LTIZE_VER_MAJOR" -lt "2"; then
 			errors="Libtool 1.4 or greater needed to build configure.\n$errors"
 		fi
-		if test "$LTIZE_VER_MAJOR" -eq "1" -a "$LTIZE_VER_MINOR" -lt "4" ; then
+		if test "$LTIZE_VER_MAJOR" -eq "2" -a "$LTIZE_VER_MINOR" -lt "2" ; then
 			errors="Libtool 1.4 or greater needed to build configure.\n$errors"
 		fi
 	fi
@@ -69,11 +69,11 @@ if test -n "$ac" ; then
 		AC_VER_MINOR=`echo $AC_VER | cut -f2 -d'.' | sed 's/[^0-9]*$//'`
 
 		if test "$AC_VER_MAJOR" -lt "2" ; then
-			errors="Autoconf 2.52 or greater needed to build configure.\n$errors"
+			errors="Autoconf 2.67 or greater needed to build configure.\n$errors"
 		fi
 
-		if test "$AC_VER_MAJOR" -eq "2" -a "$AC_VER_MINOR" -lt "52" ; then
-			errors="Autoconf 2.52 or greater needed to build configure.\n$errors"
+		if test "$AC_VER_MAJOR" -eq "2" -a "$AC_VER_MINOR" -lt "67" ; then
+			errors="Autoconf 2.67 or greater needed to build configure.\n$errors"
 		fi
 	fi
 else
@@ -89,8 +89,8 @@ if test -n "$am" ; then
 		if test "$AM_VER_MAJOR" -lt "1"; then
 			errors="Automake 1.6 or greater needed to build makefiles.\n$errors"
 		fi
-		if test "$AM_VER_MAJOR" -eq "1" -a "$AM_VER_MINOR" -lt "6"; then
-			errors="Automake 1.6 or greater needed to build makefiles.\n$errors"
+		if test "$AM_VER_MAJOR" -eq "1" -a "$AM_VER_MINOR" -lt "11"; then
+			errors="Automake 1.11 or greater needed to build makefiles.\n$errors"
 		fi
 	fi
 else

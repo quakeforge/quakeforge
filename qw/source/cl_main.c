@@ -250,7 +250,7 @@ CL_Quit_f (void)
 static void
 CL_Version_f (void)
 {
-	Sys_Printf ("%s Version %s\n", PROGRAM, VERSION);
+	Sys_Printf ("%s Version %s\n", PACKAGE_NAME, PACKAGE_VERSION);
 	Sys_Printf ("Binary: " __TIME__ " " __DATE__ "\n");
 }
 
@@ -675,7 +675,7 @@ CL_AddQFInfoKeys (void)
 		;
 
 	Info_SetValueForStarKey (cls.userinfo, "*cap", cap, 0);
-	Info_SetValueForStarKey (cls.userinfo, "*qf_version", VERSION, 0);
+	Info_SetValueForStarKey (cls.userinfo, "*qf_version", PACKAGE_VERSION, 0);
 	Info_SetValueForStarKey (cls.userinfo, "*qsg_version", QW_QSG_VERSION, 0);
 }
 
@@ -932,7 +932,7 @@ CL_ConnectionlessPacket (void)
 				("Invalid localid on command packet received from local host. "
 				 "\n|%s| != |%s|\n"
 				 "You may need to reload your server browser and %s.\n", s,
-				 localid->string, PROGRAM);
+				 localid->string, PACKAGE_NAME);
 			Sys_Printf ("===========================\n");
 			Cvar_Set (localid, "");
 			return;
@@ -1673,7 +1673,7 @@ CL_Init_Memory (void)
 
 	cl_mem_size = Cvar_Get ("cl_mem_size", "16", CVAR_NONE, NULL,
 							"Amount of memory (in MB) to allocate for the "
-							PROGRAM " heap");
+							PACKAGE_NAME " heap");
 	if (mem_parm)
 		Cvar_Set (cl_mem_size, com_argv[mem_parm + 1]);
 
@@ -1869,9 +1869,10 @@ Host_Init (void)
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
 
-	Sys_Printf ("\nClient version %s (build %04d)\n\n", VERSION,
+	Sys_Printf ("\nClient version %s (build %04d)\n\n", PACKAGE_VERSION,
 				build_number ());
-	Sys_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", PROGRAM);
+	Sys_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n",
+				PACKAGE_NAME);
 
 	// make sure all + commands have been executed
 	Cbuf_Execute_Stack (cl_cbuf);

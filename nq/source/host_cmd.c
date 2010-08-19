@@ -97,7 +97,7 @@ Host_Status_f (void)
 		print = SV_ClientPrintf;
 
 	print ("host:    %s\n", Cvar_VariableString ("hostname"));
-	print ("version: %4.2f\n", VERSION);
+	print ("version: %4.2f\n", PACKAGE_VERSION);
 	if (tcpipAvailable)
 		print ("tcp/ip:  %s\n", my_tcpip_address);
 	if (ipxAvailable)
@@ -586,7 +586,7 @@ Host_Savegame_f (void)
 	}
 
 	save_text = PL_WritePropertyList (game_dict ());
-	Qprintf (f, "%s\n%s", PROGRAM, save_text);
+	Qprintf (f, "%s\n%s", PACKAGE_NAME, save_text);
 	free (save_text);
 
 	Qclose (f);
@@ -646,7 +646,7 @@ Host_Loadgame_f (void)
 	Script_Start (script, name->str, script_data);
 
 	Script_GetToken (script, 1);
-	if (strequal (script->token->str, PROGRAM)) {
+	if (strequal (script->token->str, PACKAGE_NAME)) {
 		if (!Script_TokenAvailable (script, 1)) {
 			Sys_Printf ("Unexpected EOF reading %s\n", name->str);
 			goto end;
@@ -776,7 +776,7 @@ Host_Name_f (void)
 static void
 Host_Version_f (void)
 {
-	Sys_Printf ("Version %s\n", VERSION);
+	Sys_Printf ("Version %s\n", PACKAGE_VERSION);
 	Sys_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
 }
 

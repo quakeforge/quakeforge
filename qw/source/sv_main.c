@@ -2228,7 +2228,7 @@ SV_InitLocal (void)
 							 !sv_highchars->int_val);
 
 	// Brand server as QF, with appropriate QSG standards version  --KB
-	Info_SetValueForStarKey (svs.info, "*qf_version", VERSION,
+	Info_SetValueForStarKey (svs.info, "*qf_version", PACKAGE_VERSION,
 							 !sv_highchars->int_val);
 	Info_SetValueForStarKey (svs.info, "*qsg_version", QW_QSG_VERSION,
 							 !sv_highchars->int_val);
@@ -2448,7 +2448,7 @@ SV_Init_Memory (void)
 
 	sv_mem_size = Cvar_Get ("sv_mem_size", "8", CVAR_NONE, NULL,
 							"Amount of memory (in MB) to allocate for the "
-							PROGRAM " heap");
+							PACKAGE_NAME " heap");
 	if (mem_parm)
 		Cvar_Set (sv_mem_size, com_argv[mem_parm + 1]);
 
@@ -2581,11 +2581,12 @@ SV_Init (void)
 	SV_Printf ("%4.1f megabyte heap\n", sv_mem_size->value);
 
 	SV_Printf ("\n");
-	SV_Printf ("%s server, Version %s (build %04d)\n", PROGRAM, VERSION,
-				build_number ());
+	SV_Printf ("%s server, Version %s (build %04d)\n",
+			   PACKAGE_NAME, PACKAGE_VERSION,
+			   build_number ());
 	SV_Printf ("\n");
 
-	SV_Printf ("<==> %s initialized <==>\n", PROGRAM);
+	SV_Printf ("<==> %s initialized <==>\n", PACKAGE_NAME);
 
 	// process command line arguments
 	Cmd_Exec_File (sv_cbuf, fs_usercfg->string, 0);
