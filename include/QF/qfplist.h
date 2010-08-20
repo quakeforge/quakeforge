@@ -232,12 +232,13 @@ plitem_t *PL_NewDictionary (void);
 plitem_t *PL_NewArray (void);
 
 /** Create a new data object from the given data.
-	Makes a copy of the given data.
+	Takes ownership of the given data.
 	\param data	pointer to data buffer
 	\param size	number of bytes in the buffer
 	\return the new dictionary object
+	\note The data will be freed via free() when the item is freed.
 */
-plitem_t *PL_NewData (void *data, int size);
+plitem_t *PL_NewData (void *data, size_t size);
 
 /** Create a new string object.
 	Makes a copy of the given string.

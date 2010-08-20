@@ -164,13 +164,12 @@ PL_NewArray (void)
 }
 
 VISIBLE plitem_t *
-PL_NewData (void *data, int size)
+PL_NewData (void *data, size_t size)
 {
 	plitem_t   *item = PL_NewItem (QFBinary);
 	plbinary_t *bin = malloc (sizeof (plbinary_t));
 	item->data = bin;
-	bin->data = malloc (size);
-	memcpy (bin->data, data, size);
+	bin->data = data;
 	bin->size = size;
 	return item;
 }
