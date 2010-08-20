@@ -39,79 +39,49 @@
 /**
 	There are four types of data that can be stored in a property list:
 
-		QFDictionary	A list of values, each associated with a key (a C
-						string).
-		QFArray			A list of indexed values
-		QFString		A string.
-		QFBinary		Random binary data. The parser doesn't load these yet.
+	<dl>
+		<dt>QFDictionary</dt>	<dd>A list of values, each associated with a
+								key (a C string).</dd>
+		<dt>QFArray</dt>		<dd>A list of indexed values</dd>
+		<dt>QFString</dt>		<dd>A string.</dd>
+		<dt>QFBinary</dt>		<dd>Random binary data.</dd>
+	</dl>
 
 	In textual form, a dictionary looks like:
-
+	\code
 	{
 		key = value;
 	}
-
+	\endcode
 	An array looks like:
-
+	\code
 	(
 		value1,
 		value2
 	)
-
+	\endcode
 	An unquoted string may contain only alphanumeric characters and/or the
-	underscore character, '_'. Quoted strings may contain whitespace, C escape
-	sequences, and so on. The quote character is '"'. Optionally, Python style
-	long strings ("""...""") may be used, allowing for unquoted '"' quotes in
-	the string.
+	underscore character, <code>_</code>. Quoted strings may contain
+	whitespace, C escape sequences, and so on. The quote character is
+	<code>\"</code>. Optionally, Python style long strings
+	(<code>\"\"\"...\"\"\"</code>) may be used, allowing for unquoted
+	<code>"</code> quotes in the string.
 
 	<!-- in the following paragraph, the \< and \> are just < and >. the \ is
 		 for doxygen -->
-	QFBinary data is hex-encoded and contained within angle brackets, \< \>.
-	The length of the encoded data must be an even number, so while \<FF00\>
-	is valid, \<F00\> isn't.
+	QFBinary data is hex-encoded and contained within angle brackets, \c \<
+	\c \>.  The length of the encoded data must be an even number, so while 
+	\c \<FF00\> is valid, \c \<F00\> isn't.
 
 	Property lists may contain C-style or BCPL-style comments.
 */
-typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;	// possible types
+typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;
 
-/*
-	Generic property list item
+/**	Generic property list item.
+
+	All inspection and manipulation is to be done via the accessor functions.
 */
-struct plitem_s {
-	pltype_t	type;		// Type
-	void		*data;
-};
 typedef struct plitem_s plitem_t;
-
-/*
-	Dictionaries
-*/
-struct dictkey_s {
-	char		*key;
-	plitem_t	*value;
-};
-typedef struct dictkey_s	dictkey_t;
-
-/*
-	Arrays
-*/
-struct plarray_s {
-	int				numvals;		// Number of items in array
-	int				maxvals;
-	struct plitem_s **values;	 	// Array data
-};
-typedef struct plarray_s	plarray_t;
-
-/*
-	Typeless, unformatted binary data (not supported yet)
-*/
-struct plbinary_s {
-	size_t		size;
-	void		*data;
-};
-typedef struct plbinary_s	plbinary_t;
-
-struct hashtab_s;
 
 /** Create an in-memory representation of the contents of a property list.
 	
@@ -249,10 +219,32 @@ qboolean PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index);
 */
 plitem_t *PL_RemoveObjectAtIndex (plitem_t *array, int index);
 
+/** Create a new dictionary object.
+	The dictionary will be empty.
+	\return the new dictionary object
+*/
 plitem_t *PL_NewDictionary (void);
+
+/** Create a new array object.
+	The array will be empty.
+	\return the new array object
+*/
 plitem_t *PL_NewArray (void);
-plitem_t *PL_NewData (void *, int);
-plitem_t *PL_NewString (const char *);
+
+/** Create a new data object from the given data.
+	Makes a copy of the given data.
+	\param data	pointer to data buffer
+	\param size	number of bytes in the buffer
+	\return the new dictionary object
+*/
+plitem_t *PL_NewData (void *data, int size);
+
+/** Create a new string object.
+	Makes a copy of the given string.
+	\param str	C string to copy
+	\return the new dictionary object
+*/
+plitem_t *PL_NewString (const char *str);
 
 /** Free a property list object.
 
@@ -262,14 +254,6 @@ plitem_t *PL_NewString (const char *);
 	\param item the property list object to be freed
 */
 void PL_Free (plitem_t *item);
-
-typedef struct pldata_s {	// Unparsed property list string
-	const char		*ptr;
-	unsigned int	end;
-	unsigned int	pos;
-	unsigned int	line;
-	const char		*error;
-} pldata_t;
 
 //@}
 

@@ -45,6 +45,51 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
+/*
+	Generic property list item.
+*/
+struct plitem_s {
+	pltype_t	type;
+	void		*data;
+};
+
+/*
+	Dictionaries
+*/
+struct dictkey_s {
+	char		*key;
+	plitem_t	*value;
+};
+typedef struct dictkey_s	dictkey_t;
+
+/*
+	Arrays
+*/
+struct plarray_s {
+	int				numvals;		///< Number of items in array
+	int				maxvals;		///< Number of items that can be stored
+									///< before a realloc is necesary.
+	struct plitem_s **values;	 	///< Array data
+};
+typedef struct plarray_s	plarray_t;
+
+/*
+	Typeless, unformatted binary data
+*/
+struct plbinary_s {
+	size_t		size;
+	void		*data;
+};
+typedef struct plbinary_s	plbinary_t;
+
+typedef struct pldata_s {	// Unparsed property list string
+	const char		*ptr;
+	unsigned int	end;
+	unsigned int	pos;
+	unsigned int	line;
+	const char		*error;
+} pldata_t;
+
 //	Ugly defines for fast checking and conversion from char to number
 #define inrange(ch,min,max) ((ch) >= (min) && (ch) <= (max))
 #define char2num(ch) \
@@ -124,7 +169,8 @@ PL_NewData (void *data, int size)
 	plitem_t   *item = PL_NewItem (QFBinary);
 	plbinary_t *bin = malloc (sizeof (plbinary_t));
 	item->data = bin;
-	bin->data = data;
+	bin->data = malloc (size);
+	memcpy (bin->data, data, size);
 	bin->size = size;
 	return item;
 }
