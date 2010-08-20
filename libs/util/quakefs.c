@@ -354,18 +354,24 @@ qfs_inherit (plitem_t *plist, plitem_t *gdpl, gamedir_t *gamedir,
 		qfs_get_gd_params (gdpl, gamedir, path, vars);
 		qfs_inherit (plist, gdpl, gamedir, path, dirs, vars);
 	} else if (base->type == QFArray) {
-		int         i;
-		plarray_t  *a = base->data;
-		for (i = 0; i < a->numvals; i++) {
-			base = a->values[i];
-			if (Hash_Find (dirs, base->data))
+		int         i, num_dirs;
+		plitem_t   *basedir_item;
+		const char *basedir;
+
+		num_dirs = PL_A_NumObjects (base);
+		for (i = 0; i < num_dirs; i++) {
+			basedir_item = PL_ObjectAtIndex (base, i);
+			if (!basedir_item)
 				continue;
-			gdpl = PL_ObjectForKey (plist, base->data);
+			basedir = PL_String (basedir_item);
+			if (!basedir || Hash_Find (dirs, basedir))
+				continue;
+			gdpl = PL_ObjectForKey (plist, basedir);
 			if (!gdpl) {
-				Sys_Printf ("base `%s' not found\n", (char *)base->data);
+				Sys_Printf ("base `%s' not found\n", basedir);
 				continue;
 			}
-			qfs_set_var (vars, "gamedir", base->data);
+			qfs_set_var (vars, "gamedir", basedir);
 			Hash_Add (dirs, strdup (base->data));
 			qfs_get_gd_params (gdpl, gamedir, path, vars);
 			qfs_inherit (plist, gdpl, gamedir, path, dirs, vars);
@@ -376,7 +382,7 @@ qfs_inherit (plitem_t *plist, plitem_t *gdpl, gamedir_t *gamedir,
 static int
 qfs_compare (const void *a, const void *b)
 {
-	return strcmp ((*(dictkey_t **)a)->key, (*(dictkey_t **)b)->key);
+	return strcmp (*(const char **) a, *(const char **) b);
 }
 
 static const char *
@@ -397,19 +403,24 @@ qfs_find_gamedir (const char *name, hashtab_t *dirs)
 	plitem_t   *gdpl = PL_ObjectForKey (qfs_gd_plist, name);
 
 	if (!gdpl) {
-		dictkey_t **list = (dictkey_t **) Hash_GetList (qfs_gd_plist->data);
-		dictkey_t **l;
-		for (l = list; *l; l++)
-			;
-		qsort (list, l - list, sizeof (char *), qfs_compare);
-		while (l-- != list) {
-			if (!fnmatch ((*l)->key, name, 0)) {
-				gdpl = (*l)->value;
-				Hash_Add (dirs, strdup ((*l)->key));
+		plitem_t   *keys = PL_D_AllKeys (qfs_gd_plist);
+		int         num_keys = PL_A_NumObjects (keys);
+		const char **list = malloc (num_keys * sizeof (char *));
+		int         i;
+
+		for (i = 0; i < num_keys; i++)
+			list[i] = PL_String (PL_ObjectAtIndex (keys, i));
+		qsort (list, num_keys, sizeof (const char *), qfs_compare);
+
+		while (i--) {
+			if (!fnmatch (list[i], name, 0)) {
+				gdpl = PL_ObjectForKey (qfs_gd_plist, list[i]);
+				Hash_Add (dirs, strdup (list[i]));
 				break;
 			}
 		}
 		free (list);
+		PL_Free (keys);
 	}
 	return gdpl;
 }
