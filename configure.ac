@@ -4,7 +4,14 @@ AC_PREREQ(2.67)
 dnl This is the only place where the package name and version appear
 AC_INIT([QuakeForge], [git-master])
 AM_INIT_AUTOMAKE([foreign])
+
+dnl LT_INIT messes with CFLAGS (evil bastard)
+if test "x${CFLAGS-unset}" = xunset; then
+	CFLAGS=""
+fi
+saved_CFLAGS="$CFLAGS"
 LT_INIT([win32-dll])
+CFLAGS="$saved_CFLAGS"
 
 AC_REVISION([$Revision$]) dnl
 
@@ -17,9 +24,6 @@ m4_include(config.d/versions.m4)
 
 AC_LANG_C
 
-if test "x${CFLAGS-unset}" = xunset; then
-	CFLAGS=""
-fi
 if test "$x{AR-unset}" = xunset; then
 	AR="ar"
 fi

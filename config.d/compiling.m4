@@ -6,6 +6,23 @@ else
 	cvs_def_disabled="!= xno"
 fi
 
+if test "x$GCC" = xyes; then
+	set $CC
+	shift
+	args="$*"
+	AC_MSG_CHECKING(for gcc version)
+	CCVER="gcc `$CC --version | grep '[[0-9]]\.[[0-9]]' | sed -e 's/.*(GCC)//' -e 's/[[^0-9]]*\([[0-9.]]*\).*/\1/'`"
+	set $CCVER
+	save_IFS="$IFS"
+	IFS="."
+	set $2
+	CC_MAJ=$1
+	CC_MIN=$2
+	CC_SUB=$3
+	IFS="$save_IFS"
+	AC_MSG_RESULT($CCVER)
+fi
+
 AC_ARG_ENABLE(debug,
 	[  --disable-debug         compile without debugging],
 	debug=$enable_debug
@@ -29,20 +46,6 @@ if test "x$optimize" = xyes; then
 	AC_MSG_RESULT(yes)
 	BUILD_TYPE="$BUILD_TYPE Optimize"
 	if test "x$GCC" = xyes; then
-		set $CC
-		shift
-		args="$*"
-		AC_MSG_CHECKING(for gcc version)
-		CCVER="gcc `$CC --version | grep '[[0-9]]\.[[0-9]]' | sed -e 's/.*(GCC)//' -e 's/[[^0-9]]*\([[0-9.]]*\).*/\1/'`"
-		set $CCVER
-		save_IFS="$IFS"
-		IFS="."
-		set $2
-		CC_MAJ=$1
-		CC_MIN=$2
-		CC_SUB=$3
-		IFS="$save_IFS"
-		AC_MSG_RESULT($CCVER)
 		saved_cflags="$CFLAGS"
 		CFLAGS=""
 		QF_CC_OPTION(-frename-registers)
