@@ -119,17 +119,6 @@ if test "x$enable_typecheck_progs" = xyes; then
 	AC_DEFINE(TYPECHECK_PROGS, 1, [Define this if you want progs typechecking])
 fi
 
-AC_ARG_ENABLE(boxclip,
-[  --enable-boxclip           enable box clipping],
-	boxclip=$enable_boxclip,
-	boxclip=no
-)
-if test "x$boxclip" != xno; then
-	AC_DEFINE(ENABLE_BOXCLIP, 1, [Define if you want boxclipping])
-else
-	AC_DEFINE(ENABLE_BOXCLIP, 0, [Define if you want boxclipping])
-fi
-
 
 dnl Output files
 m4_include(config.d/rpm.m4)
