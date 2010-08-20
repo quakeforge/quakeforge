@@ -429,6 +429,9 @@
 
 # /pkg-config/
 /pkg-config/Makefile.in
+/pkg-config/Makefile
+/pkg-config/qfcc.pc
+/pkg-config/quakeforge.pc
 
 # /qtv/
 /qtv/.vimrc
