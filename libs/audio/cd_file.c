@@ -174,7 +174,7 @@ Load_Tracklist (void)
 	Qread (oggfile, buffile, size);
 
 	tracklist = PL_GetPropertyList (buffile);
-	if (!tracklist || tracklist->type != QFDictionary) {
+	if (!tracklist || PL_Type (tracklist) != QFDictionary) {
 		Sys_Printf ("Malformed or empty tracklist file. check mus_ogglist\n");
 		return -1;
 	}
@@ -198,16 +198,16 @@ I_OGGMus_SetPlayList (int track)
 		Sys_Printf ("No Track entry for track #%d.\n", track);
 		return;
 	}
-	if (play_list->type == QFString)
+	if (PL_Type (play_list) == QFString)
 		return;
-	if (play_list->type != QFArray) {
+	if (PL_Type (play_list) != QFArray) {
 		Sys_Printf ("Track entry for track #%d not string or array.\n", track);
 		play_list = 0;
 		return;
 	}
 	for (i = 0; i < PL_A_NumObjects (play_list); i++) {
 		plitem_t   *item = PL_ObjectAtIndex (play_list, i);
-		if (!item || item->type != QFString) {
+		if (!item || PL_Type (item) != QFString) {
 			Sys_Printf ("Bad subtract %d in track %d.\n", i, track);
 			play_list = 0;
 			return;
@@ -224,7 +224,7 @@ I_OGGMus_PlayNext (int looping)
 
 	if (!play_list)
 		return;
-	if (play_list->type == QFString) {
+	if (PL_Type (play_list) == QFString) {
 		track = PL_String (play_list);
 		play_pos = 0;
 	} else {
@@ -331,7 +331,7 @@ I_OGGMus_Info (void)
 			continue;
 		}
 
-		Sys_Printf (" %s  -  %s\n", trackstring, (char *) currenttrack->data);
+		Sys_Printf (" %s  -  %s\n", trackstring, PL_String (currenttrack));
 		count++;
 	}
 }

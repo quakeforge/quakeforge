@@ -308,9 +308,10 @@ qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path,
 				   hashtab_t *vars)
 {
 	plitem_t   *p;
+	const char *ps;
 
-	if ((p = PL_ObjectForKey (gdpl, "Path")) && *(char *) p->data) {
-		char       *str = qfs_var_subst (p->data, vars);
+	if ((p = PL_ObjectForKey (gdpl, "Path")) && *(ps = PL_String (p))) {
+		char       *str = qfs_var_subst (ps, vars);
 		char       *e = strchr (str, '"');
 
 		if (!e)
@@ -322,60 +323,70 @@ qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path,
 		free (str);
 	}
 	if (!gamedir->gamecode && (p = PL_ObjectForKey (gdpl, "GameCode")))
-		gamedir->gamecode = qfs_var_subst (p->data, vars);
+		gamedir->gamecode = qfs_var_subst (PL_String (p), vars);
 	if (!gamedir->dir.skins && (p = PL_ObjectForKey (gdpl, "SkinPath")))
-		gamedir->dir.skins = qfs_var_subst (p->data, vars);
+		gamedir->dir.skins = qfs_var_subst (PL_String (p), vars);
 	if (!gamedir->dir.progs && (p = PL_ObjectForKey (gdpl, "ProgPath")))
-		gamedir->dir.progs = qfs_var_subst (p->data, vars);
+		gamedir->dir.progs = qfs_var_subst (PL_String (p), vars);
 	if (!gamedir->dir.sound && (p = PL_ObjectForKey (gdpl, "SoundPath")))
-		gamedir->dir.sound = qfs_var_subst (p->data, vars);
+		gamedir->dir.sound = qfs_var_subst (PL_String (p), vars);
 	if (!gamedir->dir.maps && (p = PL_ObjectForKey (gdpl, "MapPath")))
-		gamedir->dir.maps = qfs_var_subst (p->data, vars);
+		gamedir->dir.maps = qfs_var_subst (PL_String (p), vars);
 }
 
 static void
 qfs_inherit (plitem_t *plist, plitem_t *gdpl, gamedir_t *gamedir,
 			 dstring_t *path, hashtab_t *dirs, hashtab_t *vars)
 {
-	plitem_t   *base;
+	plitem_t   *base_item;
 
-	if (!(base = PL_ObjectForKey (gdpl, "Inherit")))
+	if (!(base_item = PL_ObjectForKey (gdpl, "Inherit")))
 		return;
-	if (base->type == QFString) {
-		if (Hash_Find (dirs, base->data))
-			return;
-		gdpl = PL_ObjectForKey (plist, base->data);
-		if (!gdpl) {
-			Sys_Printf ("base `%s' not found\n", (char *)base->data);
-			return;
-		}
-		qfs_set_var (vars, "gamedir", base->data);
-		Hash_Add (dirs, strdup (base->data));
-		qfs_get_gd_params (gdpl, gamedir, path, vars);
-		qfs_inherit (plist, gdpl, gamedir, path, dirs, vars);
-	} else if (base->type == QFArray) {
-		int         i, num_dirs;
-		plitem_t   *basedir_item;
-		const char *basedir;
-
-		num_dirs = PL_A_NumObjects (base);
-		for (i = 0; i < num_dirs; i++) {
-			basedir_item = PL_ObjectAtIndex (base, i);
-			if (!basedir_item)
-				continue;
-			basedir = PL_String (basedir_item);
-			if (!basedir || Hash_Find (dirs, basedir))
-				continue;
-			gdpl = PL_ObjectForKey (plist, basedir);
-			if (!gdpl) {
-				Sys_Printf ("base `%s' not found\n", basedir);
-				continue;
+	switch (PL_Type (base_item)) {
+		case QFString:
+			{
+				const char *base = PL_String (base_item);
+				if (Hash_Find (dirs, base))
+					return;
+				gdpl = PL_ObjectForKey (plist, base);
+				if (!gdpl) {
+					Sys_Printf ("base `%s' not found\n", base);
+					return;
+				}
+				qfs_set_var (vars, "gamedir", base);
+				Hash_Add (dirs, strdup (base));
+				qfs_get_gd_params (gdpl, gamedir, path, vars);
+				qfs_inherit (plist, gdpl, gamedir, path, dirs, vars);
 			}
-			qfs_set_var (vars, "gamedir", basedir);
-			Hash_Add (dirs, strdup (base->data));
-			qfs_get_gd_params (gdpl, gamedir, path, vars);
-			qfs_inherit (plist, gdpl, gamedir, path, dirs, vars);
-		}
+			break;
+		case QFArray:
+			{
+				int         i, num_dirs;
+				plitem_t   *basedir_item;
+				const char *basedir;
+
+				num_dirs = PL_A_NumObjects (base_item);
+				for (i = 0; i < num_dirs; i++) {
+					basedir_item = PL_ObjectAtIndex (base_item, i);
+					if (!basedir_item)
+						continue;
+					basedir = PL_String (basedir_item);
+					if (!basedir || Hash_Find (dirs, basedir))
+						continue;
+					gdpl = PL_ObjectForKey (plist, basedir);
+					if (!gdpl) {
+						Sys_Printf ("base `%s' not found\n", basedir);
+						continue;
+					}
+					qfs_set_var (vars, "gamedir", basedir);
+					Hash_Add (dirs, strdup (basedir));
+					qfs_get_gd_params (gdpl, gamedir, path, vars);
+					qfs_inherit (plist, gdpl, gamedir, path, dirs, vars);
+				}
+			}
+			break;
+		default:
+			break;
 	}
 }
 
@@ -577,7 +588,7 @@ qfs_load_config (void)
 		PL_Free (qfs_gd_plist);
 	qfs_gd_plist = PL_GetPropertyList (buf);
 	free (buf);
-	if (qfs_gd_plist && qfs_gd_plist->type == QFDictionary)
+	if (qfs_gd_plist && PL_Type (qfs_gd_plist) == QFDictionary)
 		return;		// done
 	Sys_Printf ("not a dictionary\n");
 no_config:

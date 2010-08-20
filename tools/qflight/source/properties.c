@@ -156,14 +156,6 @@ parse_noise (const char *arg)
 	}
 }
 
-static inline const char *
-plstring (plitem_t *pl)
-{
-	if (pl->type == QFString)
-		return pl->data;
-	return 0;
-}
-
 static plitem_t *
 get_item (const char *key, plitem_t *d1, plitem_t *d2)
 {
@@ -189,12 +181,12 @@ set_properties (entity_t *ent, plitem_t *dict)
 	}
 	if ((p = get_item ("light", dict, prop))
 		|| (p = get_item ("_light", dict, prop))) {
-		if ((str = plstring (p))) {
+		if ((str = PL_String (p))) {
 			ent->light = parse_light (str, ent->color);
 		}
 	}
 	if ((p = get_item ("style", dict, prop))) {
-		if ((str = plstring (p))) {
+		if ((str = PL_String (p))) {
 			ent->style = atoi (str);
 			if ((unsigned) ent->style > 254)
 				fprintf (stderr, "Bad light style %i (must be 0-254)",
@@ -202,29 +194,29 @@ set_properties (entity_t *ent, plitem_t *dict)
 		}
 	}
 	if ((p = get_item ("angle", dict, prop))) {
-		if ((str = plstring (p))) {
+		if ((str = PL_String (p))) {
 			ent->angle = parse_float (str);
 		}
 	}
 	if ((p = get_item ("wait", dict, prop))) {
-		if ((str = plstring (p))) {
+		if ((str = PL_String (p))) {
 			ent->falloff = parse_float (str);
 			ent->falloff *= ent->falloff;			// presquared
 		}
 	}
 	if ((p = get_item ("_lightradius", dict, prop))) {
-		if ((str = plstring (p))) {
+		if ((str = PL_String (p))) {
 			ent->lightradius = parse_float (str);
 		}
 	}
 	if ((p = get_item ("color", dict, prop))
 		|| (p = get_item ("_color", dict, prop))) {
-		if ((str = plstring (p))) {
+		if ((str = PL_String (p))) {
 			parse_color (str, ent->color2);
 		}
 	}
 	if ((p = get_item ("_attenuation", dict, prop))) {
-		if ((str = plstring (p))) {
+		if ((str = PL_String (p))) {
 			ent->attenuation = parse_attenuation (str);
 			if (ent->attenuation == -1) {
 				ent->attenuation = options.attenuation;
@@ -234,27 +226,27 @@ set_properties (entity_t *ent, plitem_t *dict)
 		}
 	}
 	if ((p = get_item ("_radius", dict, prop))) {
-		if ((str = plstring (p))) {
+		if ((str = PL_String (p))) {
 			ent->radius = parse_float (str);
 		}
 	}
 	if ((p = get_item ("_noise", dict, prop))) {
-		if ((str = plstring (p))) {
+		if ((str = PL_String (p))) {
 			ent->noise = parse_float (str);
 		}
 	}
 	if ((p = get_item ("_noisetype", dict, prop))) {
-		if ((str = plstring (p))) {
+		if ((str = PL_String (p))) {
 			ent->noisetype = parse_noise (str);
 		}
 	}
 	if ((p = get_item ("_persistence", dict, prop))) {
-		if ((str = plstring (p))) {
+		if ((str = PL_String (p))) {
 			ent->persistence = parse_float (str);
 		}
 	}
 	if ((p = get_item ("_resolution", dict, prop))) {
-		if ((str = plstring (p))) {
+		if ((str = PL_String (p))) {
 			ent->resolution = parse_float (str);
 		}
 	}
