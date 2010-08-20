@@ -8,10 +8,10 @@ Quake and QuakeWorld game engine.  Our purpose?  To improve the state of the
 game by improving the engine and making it accessable to the largest number
 of players we can.
 
-\li \ref faq
-\li \ref key_binding
-\li \ref cshift_cvars
-\li \ref qw_cap_spec
-\li \ref qw_download_spec
-\li \ref server_timestampes
+\li \subpage faq
+\li \subpage key_binding
+\li \subpage cshift_cvars
+\li \subpage qw_cap_spec
+\li \subpage qw_download_spec
+\li \subpage server_timestampes
 */
