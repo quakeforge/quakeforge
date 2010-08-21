@@ -49,11 +49,11 @@ static __attribute__ ((used)) const char rcsid[] =
 static void
 swap_bsp (bsp_t *bsp, int todisk)
 {
-	int				 c, i, j;
-	dmiptexlump_t	*mtl;
-	dmodel_t		*d;
+	int             c, i, j;
+	dmiptexlump_t  *mtl;
+	dmodel_t       *d;
 
-	// models	
+	// models
 	for (i=0 ; i<bsp->nummodels ; i++) {
 		d = &bsp->models[i];
 
@@ -157,13 +157,13 @@ swap_bsp (bsp_t *bsp, int todisk)
 	
 	// marksurfaces
 	for (i=0 ; i<bsp->nummarksurfaces ; i++) {
-		unsigned short *marksurface = &bsp->marksurfaces[i];
+		uint16_t   *marksurface = &bsp->marksurfaces[i];
 		*marksurface = LittleShort (*marksurface);
 	}
 
 	// surfedges
 	for (i=0 ; i<bsp->numsurfedges ; i++) {
-		int        *surfedge = &bsp->surfedges[i];
+		int32_t    *surfedge = &bsp->surfedges[i];
 		*surfedge = LittleLong (*surfedge);
 	}
 
@@ -176,7 +176,7 @@ swap_bsp (bsp_t *bsp, int todisk)
 }
 
 bsp_t *
-LoadBSPMem (void *mem, int size)
+LoadBSPMem (void *mem, size_t size)
 {
 	dheader_t  *header = mem;
 	bsp_t      *bsp;
@@ -235,7 +235,7 @@ do { \
 }
 
 VISIBLE bsp_t *
-LoadBSPFile (QFile *file, int size)
+LoadBSPFile (QFile *file, size_t size)
 {
 	void       *buf;
 	bsp_t      *bsp;
@@ -254,8 +254,8 @@ LoadBSPFile (QFile *file, int size)
 */
 VISIBLE void
 WriteBSPFile (bsp_t *bsp, QFile *file)
-{		
-	int         size;
+{
+	size_t      size;
 	dheader_t  *header;
 	byte       *data;
 
@@ -275,8 +275,8 @@ WriteBSPFile (bsp_t *bsp, QFile *file)
 	size += ROUND (bsp->numfaces * sizeof (dface_t));
 	size += ROUND (bsp->numclipnodes * sizeof (dclipnode_t));
 	size += ROUND (bsp->numedges * sizeof (dedge_t));
-	size += ROUND (bsp->nummarksurfaces * sizeof (unsigned short));
-	size += ROUND (bsp->numsurfedges * sizeof (int));
+	size += ROUND (bsp->nummarksurfaces * sizeof (uint16_t));
+	size += ROUND (bsp->numsurfedges * sizeof (uint32_t));
 
 	header = malloc (size);
 	memset (header, 0, size);
@@ -390,11 +390,11 @@ BSP_AddClipnode (bsp_t *bsp, dclipnode_t *clipnode)
 }
 
 VISIBLE void
-BSP_AddMarkSurface (bsp_t *bsp, unsigned short marksurface)
+BSP_AddMarkSurface (bsp_t *bsp, int marksurface)
 {
 	bsp->marksurfaces = realloc (bsp->marksurfaces,
 								 (bsp->nummarksurfaces + 1)
-								 * sizeof (unsigned short));
+								 * sizeof (uint16_t));
 	bsp->marksurfaces[bsp->nummarksurfaces++] = marksurface;
 }
 
@@ -402,7 +402,7 @@ VISIBLE void
 BSP_AddSurfEdge (bsp_t *bsp, int surfedge)
 {
 	bsp->surfedges = realloc (bsp->surfedges,
-							  (bsp->numsurfedges + 1) * sizeof (int));
+							  (bsp->numsurfedges + 1) * sizeof (int32_t));
 	bsp->surfedges[bsp->numsurfedges++] = surfedge;
 }
 
@@ -423,7 +423,7 @@ BSP_AddModel (bsp_t *bsp, dmodel_t *model)
 }
 
 VISIBLE void
-BSP_AddLighting (bsp_t *bsp, byte *lightdata, int lightdatasize)
+BSP_AddLighting (bsp_t *bsp, byte *lightdata, size_t lightdatasize)
 {
 	bsp->lightdatasize = lightdatasize;
 	bsp->lightdata = malloc (lightdatasize);
@@ -431,7 +431,7 @@ BSP_AddLighting (bsp_t *bsp, byte *lightdata, int lightdatasize)
 }
 
 VISIBLE void
-BSP_AddVisibility (bsp_t *bsp, byte *visdata, int visdatasize)
+BSP_AddVisibility (bsp_t *bsp, byte *visdata, size_t visdatasize)
 {
 	bsp->visdatasize = visdatasize;
 	bsp->visdata = malloc (visdatasize);
@@ -439,7 +439,7 @@ BSP_AddVisibility (bsp_t *bsp, byte *visdata, int visdatasize)
 }
 
 VISIBLE void
-BSP_AddEntities (bsp_t *bsp, char *entdata, int entdatasize)
+BSP_AddEntities (bsp_t *bsp, char *entdata, size_t entdatasize)
 {
 	bsp->entdatasize = entdatasize;
 	bsp->entdata = malloc (entdatasize);
@@ -447,7 +447,7 @@ BSP_AddEntities (bsp_t *bsp, char *entdata, int entdatasize)
 }
 
 VISIBLE void
-BSP_AddTextures (bsp_t *bsp, byte *texdata, int texdatasize)
+BSP_AddTextures (bsp_t *bsp, byte *texdata, size_t texdatasize)
 {
 	bsp->texdatasize = texdatasize;
 	bsp->texdata = malloc (texdatasize);

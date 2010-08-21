@@ -169,7 +169,7 @@ LightWorld (void)
 	BSP_AddLighting (bsp, (byte *) lightdata->str, lightdata->size);
 
 	if (options.verbosity >= 0)
-		printf ("lightdatasize: %i\n", bsp->lightdatasize);
+		printf ("lightdatasize: %zi\n", bsp->lightdatasize);
 }
 
 int

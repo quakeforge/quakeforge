@@ -83,7 +83,7 @@ int         c_vistest;
 int         numportals;
 int         portalclusters;
 int         numrealleafs;
-int         originalvismapsize;
+size_t      originalvismapsize;
 int         totalvis;
 int         count_sep;
 int         bitbytes;	// (portalleafs + 63)>>3
@@ -848,7 +848,7 @@ main (int argc, char **argv)
 
 	BSP_AddVisibility (bsp, (byte *) visdata->str, visdata->size);
 	if (options.verbosity >= 0)
-		printf ("visdatasize:%i  compressed from %i\n", bsp->visdatasize,
+		printf ("visdatasize:%zi  compressed from %zi\n", bsp->visdatasize,
 				originalvismapsize);
 
 	CalcAmbientSounds ();
