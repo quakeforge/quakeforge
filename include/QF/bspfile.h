@@ -33,36 +33,36 @@
 
 // upper design bounds
 
-#define	MAX_MAP_HULLS		4
+#define MAX_MAP_HULLS			4
 
-#define	MAX_MAP_MODELS		256
-#define	MAX_MAP_BRUSHES		4096
-#define	MAX_MAP_ENTITIES	1024
-#define	MAX_MAP_ENTSTRING	65536
+#define MAX_MAP_MODELS			256
+#define MAX_MAP_BRUSHES			4096
+#define MAX_MAP_ENTITIES		1024
+#define MAX_MAP_ENTSTRING		65536
 
-#define	MAX_MAP_PLANES		32767
-//#define	MAX_MAP_PLANES		8192
-#define	MAX_MAP_NODES		32767		// because negative shorts are contents
-#define	MAX_MAP_CLIPNODES	32767		//
-#define	MAX_MAP_LEAFS		32767		//
-//#define	MAX_MAP_LEAFS		8192
-#define	MAX_MAP_VERTS		65535
-#define	MAX_MAP_FACES		65535
-#define	MAX_MAP_MARKSURFACES 65535
-#define	MAX_MAP_TEXINFO		4096
-#define	MAX_MAP_EDGES		256000
-#define	MAX_MAP_SURFEDGES	512000
-#define	MAX_MAP_TEXTURES	512
-#define	MAX_MAP_MIPTEX		0x200000
-#define	MAX_MAP_LIGHTING	0x100000
-#define	MAX_MAP_VISIBILITY	0x100000
+#define MAX_MAP_PLANES			32767
+//#define MAX_MAP_PLANES		8192
+#define MAX_MAP_NODES			32767	// because negative shorts are contents
+#define MAX_MAP_CLIPNODES		32767	//
+#define MAX_MAP_LEAFS			32767	//
+//#define MAX_MAP_LEAFS			8192
+#define MAX_MAP_VERTS			65535
+#define MAX_MAP_FACES			65535
+#define MAX_MAP_MARKSURFACES	65535
+#define MAX_MAP_TEXINFO			4096
+#define MAX_MAP_EDGES			256000
+#define MAX_MAP_SURFEDGES		512000
+#define MAX_MAP_TEXTURES		512
+#define MAX_MAP_MIPTEX			0x200000
+#define MAX_MAP_LIGHTING		0x100000
+#define MAX_MAP_VISIBILITY		0x100000
 
-#define	MAX_MAP_PORTALS		65536
+#define MAX_MAP_PORTALS			65536
 
 // key / value pair sizes
 
-#define	MAX_KEY		32
-#define	MAX_VALUE	1024
+#define MAX_KEY		32
+#define MAX_VALUE	1024
 
 
 //=============================================================================
@@ -72,210 +72,208 @@
 
 #define BSPVERSION		29
 #define Q2BSPVERSION	38
-#define	TOOLVERSION		2
+#define TOOLVERSION		2
 
 typedef struct lump_s {
-	int32_t	fileofs;
-	int32_t	filelen;
+	int32_t fileofs;
+	int32_t filelen;
 } lump_t;
 
-#define	LUMP_ENTITIES	0
-#define	LUMP_PLANES		1
-#define	LUMP_TEXTURES	2
-#define	LUMP_VERTEXES	3
-#define	LUMP_VISIBILITY	4
-#define	LUMP_NODES		5
-#define	LUMP_TEXINFO	6
-#define	LUMP_FACES		7
-#define	LUMP_LIGHTING	8
-#define	LUMP_CLIPNODES	9
-#define	LUMP_LEAFS		10
-#define	LUMP_MARKSURFACES 11
-#define	LUMP_EDGES		12
-#define	LUMP_SURFEDGES	13
-#define	LUMP_MODELS		14
-#define	HEADER_LUMPS	15
+#define LUMP_ENTITIES		0
+#define LUMP_PLANES			1
+#define LUMP_TEXTURES		2
+#define LUMP_VERTEXES		3
+#define LUMP_VISIBILITY		4
+#define LUMP_NODES			5
+#define LUMP_TEXINFO		6
+#define LUMP_FACES			7
+#define LUMP_LIGHTING		8
+#define LUMP_CLIPNODES		9
+#define LUMP_LEAFS			10
+#define LUMP_MARKSURFACES	11
+#define LUMP_EDGES			12
+#define LUMP_SURFEDGES		13
+#define LUMP_MODELS			14
+#define HEADER_LUMPS		15
 
 typedef struct dmodel_s {
-	float		mins[3], maxs[3];
-	float		origin[3];
-	int32_t		headnode[MAX_MAP_HULLS];
-	int32_t		visleafs;		// not including the solid leaf 0
-	int32_t		firstface, numfaces;
+	float       mins[3], maxs[3];
+	float       origin[3];
+	int32_t     headnode[MAX_MAP_HULLS];
+	int32_t     visleafs;				// not including the solid leaf 0
+	int32_t     firstface, numfaces;
 } dmodel_t;
 
 typedef struct dheader_s {
-	int32_t		version;	
-	lump_t		lumps[HEADER_LUMPS];
+	int32_t     version;
+	lump_t      lumps[HEADER_LUMPS];
 } dheader_t;
 
 typedef struct dmiptexlump_s {
-	int32_t		nummiptex;
-	int32_t		dataofs[4];		// [nummiptex]
+	int32_t     nummiptex;
+	int32_t     dataofs[4];				// [nummiptex]
 } dmiptexlump_t;
 
-#define	MIPLEVELS	4
+#define MIPLEVELS   4
 typedef struct miptex_s {
-	char		name[16];
-	uint32_t	width, height;
-	uint32_t	offsets[MIPLEVELS];		// four mip maps stored
+	char        name[16];
+	uint32_t    width, height;
+	uint32_t    offsets[MIPLEVELS];		// four mip maps stored
 } miptex_t;
 
 
 typedef struct dvertex_s {
-	float	point[3];
+	float   point[3];
 } dvertex_t;
 
 
 // 0-2 are axial planes
-#define	PLANE_X			0
-#define	PLANE_Y			1
-#define	PLANE_Z			2
-
+#define PLANE_X		0
+#define PLANE_Y		1
+#define PLANE_Z		2
 // 3-5 are non-axial planes snapped to the nearest
-#define	PLANE_ANYX		3
-#define	PLANE_ANYY		4
-#define	PLANE_ANYZ		5
+#define PLANE_ANYX	3
+#define PLANE_ANYY	4
+#define PLANE_ANYZ	5
 
 typedef struct dplane_s {
-	float	normal[3];
-	float	dist;
-	int32_t	type;		// PLANE_X - PLANE_ANYZ ?remove? trivial to regenerate
+	float   normal[3];
+	float   dist;
+	int32_t type;						// PLANE_X - PLANE_ANYZ
 } dplane_t;
 
-#define	CONTENTS_EMPTY		-1
-#define	CONTENTS_SOLID		-2
-#define	CONTENTS_WATER		-3
-#define	CONTENTS_SLIME		-4
-#define	CONTENTS_LAVA		-5
-#define	CONTENTS_SKY		-6
-#define	CONTENTS_ORIGIN		-7              // removed at csg time
-#define	CONTENTS_CLIP		-8              // changed to contents_solid
+#define CONTENTS_EMPTY			-1
+#define CONTENTS_SOLID			-2
+#define CONTENTS_WATER			-3
+#define CONTENTS_SLIME			-4
+#define CONTENTS_LAVA			-5
+#define CONTENTS_SKY			-6
+#define CONTENTS_ORIGIN			-7		// removed at csg time
+#define CONTENTS_CLIP			-8		// changed to contents_solid
 
-#define	CONTENTS_CURRENT_0		-9
-#define	CONTENTS_CURRENT_90		-10
-#define	CONTENTS_CURRENT_180	-11
-#define	CONTENTS_CURRENT_270	-12
-#define	CONTENTS_CURRENT_UP		-13
-#define	CONTENTS_CURRENT_DOWN	-14
+#define CONTENTS_CURRENT_0		-9
+#define CONTENTS_CURRENT_90		-10
+#define CONTENTS_CURRENT_180	-11
+#define CONTENTS_CURRENT_270	-12
+#define CONTENTS_CURRENT_UP		-13
+#define CONTENTS_CURRENT_DOWN	-14
 
 
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct dnode_s {
-	int32_t		planenum;
-	int16_t		children[2];	// negative numbers are -(leafs+1), not nodes
-	int16_t		mins[3];		// for sphere culling
-	int16_t		maxs[3];
-	uint16_t	firstface;
-	uint16_t	numfaces;	// counting both sides
+	int32_t     planenum;
+	int16_t     children[2];	// negative numbers are -(leafs+1), not nodes
+	int16_t     mins[3];		// for sphere culling
+	int16_t     maxs[3];
+	uint16_t    firstface;
+	uint16_t    numfaces;		// counting both sides
 } dnode_t;
 
 typedef struct dclipnode_s {
-	int32_t		planenum;
-	int16_t		children[2];	// negative numbers are contents
+	int32_t     planenum;
+	int16_t     children[2];	// negative numbers are contents
 } dclipnode_t;
 
 
 typedef struct texinfo_s {
-	float		vecs[2][4];		// [s/t][xyz offset]
-	int32_t		miptex;
-	int32_t		flags;
+	float       vecs[2][4];		// [s/t][xyz offset]
+	int32_t     miptex;
+	int32_t     flags;
 } texinfo_t;
-#define	TEX_SPECIAL		1		// sky or slime, no lightmap or 256 subdivision
+#define TEX_SPECIAL 1			// sky or slime, no lightmap or 256 subdivision
 
 // note that edge 0 is never used, because negative edge nums are used for
 // counterclockwise use of the edge in a face
 typedef struct dedge_s {
-	uint16_t	v[2];		// vertex numbers
+	uint16_t    v[2];			// vertex numbers
 } dedge_t;
 
-#define	MAXLIGHTMAPS	4
+#define MAXLIGHTMAPS 4
 typedef struct dface_s {
-	int16_t		planenum;
-	int16_t		side;
+	int16_t     planenum;
+	int16_t     side;
 
-	int32_t		firstedge;		// we must support > 64k edges
-	int16_t		numedges;	
-	int16_t		texinfo;
+	int32_t     firstedge;		// we must support > 64k edges
+	int16_t     numedges;
+	int16_t     texinfo;
 
 // lighting info
-	byte		styles[MAXLIGHTMAPS];
-	int32_t		lightofs;		// start of [numstyles*surfsize] samples
+	byte        styles[MAXLIGHTMAPS];
+	int32_t     lightofs;		// start of [numstyles*surfsize] samples
 } dface_t;
 
 
-#define	AMBIENT_WATER	0
-#define	AMBIENT_SKY		1
-#define	AMBIENT_SLIME	2
-#define	AMBIENT_LAVA	3
+#define AMBIENT_WATER   0
+#define AMBIENT_SKY     1
+#define AMBIENT_SLIME   2
+#define AMBIENT_LAVA    3
 
-#define	NUM_AMBIENTS			4		// automatic ambient sounds
+#define NUM_AMBIENTS    4			// automatic ambient sounds
 
 // leaf 0 is the generic CONTENTS_SOLID leaf, used for all solid areas
 // all other leafs need visibility info
 typedef struct dleaf_s {
-	int32_t		contents;
-	int32_t		visofs;				// -1 = no visibility info
+	int32_t     contents;
+	int32_t     visofs;				// -1 = no visibility info
 
-	int16_t		mins[3];			// for frustum culling
-	int16_t		maxs[3];
+	int16_t     mins[3];			// for frustum culling
+	int16_t     maxs[3];
 
-	uint16_t	firstmarksurface;
-	uint16_t	nummarksurfaces;
+	uint16_t    firstmarksurface;
+	uint16_t    nummarksurfaces;
 
-	byte		ambient_level[NUM_AMBIENTS];
+	byte        ambient_level[NUM_AMBIENTS];
 } dleaf_t;
 
 //============================================================================
 
 typedef struct bsp_s {
-	dheader_t  *header;			// if this is non-null, all data is in one
-								// contiguous block
+	dheader_t  *header;
 
-	int			nummodels;
-	dmodel_t	*models;
+	int          nummodels;
+	dmodel_t    *models;
 
-	size_t		visdatasize;
-	byte		*visdata;
+	size_t      visdatasize;
+	byte       *visdata;
 
-	size_t		lightdatasize;
-	byte		*lightdata;
+	size_t      lightdatasize;
+	byte       *lightdata;
 
-	size_t		texdatasize;
-	byte		*texdata; // (dmiptexlump_t)
+	size_t      texdatasize;
+	byte       *texdata;			// (dmiptexlump_t)
 
-	size_t		entdatasize;
-	char		*entdata;
+	size_t      entdatasize;
+	char       *entdata;
 
-	int			numleafs;
-	dleaf_t		*leafs;
+	int         numleafs;
+	dleaf_t    *leafs;
 
-	int			numplanes;
-	dplane_t	*planes;
+	int         numplanes;
+	dplane_t   *planes;
 
-	int			numvertexes;
-	dvertex_t	*vertexes;
+	int         numvertexes;
+	dvertex_t  *vertexes;
 
-	int			numnodes;
-	dnode_t		*nodes;
+	int         numnodes;
+	dnode_t    *nodes;
 
-	int			numtexinfo;
-	texinfo_t	*texinfo;
+	int         numtexinfo;
+	texinfo_t  *texinfo;
 
-	int			numfaces;
-	dface_t		*faces;
+	int         numfaces;
+	dface_t    *faces;
 
-	int			numclipnodes;
-	dclipnode_t	*clipnodes;
+	int         numclipnodes;
+	dclipnode_t *clipnodes;
 
-	int			numedges;
-	dedge_t		*edges;
+	int         numedges;
+	dedge_t    *edges;
 
-	int			nummarksurfaces;
-	uint16_t	*marksurfaces;
+	int         nummarksurfaces;
+	uint16_t   *marksurfaces;
 
-	int			numsurfedges;
-	int32_t		*surfedges;
+	int         numsurfedges;
+	int32_t    *surfedges;
 } bsp_t;
 
 bsp_t *LoadBSPMem (void *mem, size_t size);
@@ -298,4 +296,4 @@ void BSP_AddVisibility (bsp_t *bsp, byte *visdata, size_t visdatasize);
 void BSP_AddEntities (bsp_t *bsp, char *entdata, size_t entdatasize);
 void BSP_AddTextures (bsp_t *bsp, byte *texdata, size_t texdatasize);
 
-#endif	// __bspfile_h_
+#endif//__bspfile_h_
