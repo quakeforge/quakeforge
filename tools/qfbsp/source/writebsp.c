@@ -187,6 +187,8 @@ WriteLeaf (node_t *node)
 	}
 
 	leaf_p.nummarksurfaces = bsp->nummarksurfaces - leaf_p.firstmarksurface;
+
+	memset (leaf_p.ambient_level, 0, sizeof (leaf_p.ambient_level));
 	BSP_AddLeaf (bsp, &leaf_p);
 }
 
@@ -244,6 +246,8 @@ WriteDrawNodes (node_t *headnode)
 		Sys_Error ("nummodels == MAX_MAP_MODELS");
 
 	bm.headnode[0] = bsp->numnodes;
+	for (i = 1; i < MAX_MAP_HULLS; i++)
+		bm.headnode[i] = 0;
 	bm.firstface = firstface;
 	bm.numfaces = bsp->numfaces - firstface;
 	firstface = bsp->numfaces;
@@ -260,6 +264,7 @@ WriteDrawNodes (node_t *headnode)
 		bm.mins[i] = headnode->mins[i] + SIDESPACE + 1;   // remove the padding
 		bm.maxs[i] = headnode->maxs[i] - SIDESPACE - 1;
 	}
+	VectorZero (bm.origin);
 	BSP_AddModel (bsp, &bm);
 	// FIXME: are all the children decendant of padded nodes?
 }
