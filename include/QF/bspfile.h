@@ -229,6 +229,9 @@ typedef struct dleaf_s {
 //============================================================================
 
 typedef struct bsp_s {
+	dheader_t  *header;			// if this is non-null, all data is in one
+								// contiguous block
+
 	int			nummodels;
 	dmodel_t	*models;
 
@@ -277,7 +280,7 @@ typedef struct bsp_s {
 
 bsp_t *LoadBSPMem (void *mem, size_t size);
 bsp_t *LoadBSPFile (QFile *file, size_t size);
-void WriteBSPFile (bsp_t *bsp, QFile *file);
+void WriteBSPFile (const bsp_t *bsp, QFile *file);
 bsp_t *BSP_New (void);
 void BSP_AddPlane (bsp_t *bsp, dplane_t *plane);
 void BSP_AddLeaf (bsp_t *bsp, dleaf_t *leaf);

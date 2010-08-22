@@ -53,6 +53,16 @@ swap_bsp (bsp_t *bsp, int todisk)
 	dmiptexlump_t  *mtl;
 	dmodel_t       *d;
 
+	if (bsp->header) {
+		bsp->header->version = LittleLong (bsp->header->version);
+		for (i = 0; i < HEADER_LUMPS; i++) {
+			bsp->header->lumps[i].fileofs =
+				LittleLong (bsp->header->lumps[i].fileofs);
+			bsp->header->lumps[i].filelen =
+				LittleLong (bsp->header->lumps[i].filelen);
+		}
+	}
+
 	// models
 	for (i=0 ; i<bsp->nummodels ; i++) {
 		d = &bsp->models[i];
@@ -185,6 +195,9 @@ LoadBSPMem (void *mem, size_t size)
 		Sys_Error ("version %i, not %i", LittleLong (header->version),
 				   BSPVERSION);
 
+	bsp = malloc (sizeof (bsp_t));
+	bsp->header = 0;
+
 #undef SET_LUMP
 #define SET_LUMP(l,n) \
 do { \
@@ -194,11 +207,12 @@ do { \
 		memcpy (bsp->n, \
 				(byte *) header + LittleLong (header->lumps[l].fileofs), \
 				bsp->num##n); \
+	} else { \
+		bsp->n = 0; \
 	} \
 	bsp->num##n /= sizeof (bsp->n[0]); \
 } while (0)
 
-	bsp = malloc (sizeof (bsp_t));
 	SET_LUMP (LUMP_PLANES, planes);
 	SET_LUMP (LUMP_LEAFS, leafs);
 	SET_LUMP (LUMP_VERTEXES, vertexes);
@@ -220,15 +234,15 @@ do { \
 		memcpy (bsp->n, \
 				(byte *) header + LittleLong (header->lumps[l].fileofs), \
 				bsp->n##size); \
+	} else { \
+		bsp->n = 0; \
 	} \
-	bsp->n##size /= sizeof (bsp->n[0]); \
 } while (0)
 
 	SET_LUMP (LUMP_LIGHTING, lightdata);
 	SET_LUMP (LUMP_VISIBILITY, visdata);
 	SET_LUMP (LUMP_ENTITIES, entdata);
 	SET_LUMP (LUMP_TEXTURES, texdata);
-
 
 	swap_bsp (bsp, 0);
 	return bsp;
@@ -249,15 +263,13 @@ LoadBSPFile (QFile *file, size_t size)
 
 /*
 	WriteBSPFile
-
-	Swaps the bsp file in place, so it should not be referenced again
 */
 VISIBLE void
-WriteBSPFile (bsp_t *bsp, QFile *file)
+WriteBSPFile (const bsp_t *bsp, QFile *file)
 {
 	size_t      size;
-	dheader_t  *header;
 	byte       *data;
+	bsp_t       tbsp;
 
 #define ROUND(x) (((x) + 3) & ~3)
 
@@ -278,24 +290,28 @@ WriteBSPFile (bsp_t *bsp, QFile *file)
 	size += ROUND (bsp->nummarksurfaces * sizeof (uint16_t));
 	size += ROUND (bsp->numsurfedges * sizeof (uint32_t));
 
-	header = malloc (size);
-	memset (header, 0, size);
-
-	swap_bsp (bsp, 1);
+	tbsp.header = calloc (size, 1);
 
 #undef SET_LUMP
 #define SET_LUMP(l,n) \
 do { \
-	bsp->num##n *= sizeof (bsp->n[0]); \
-	header->lumps[l].fileofs = LittleLong (data - (byte *) header); \
-	header->lumps[l].filelen = LittleLong (bsp->num##n); \
-	memcpy (data, bsp->n, bsp->num##n); \
-	data += ROUND (bsp->num##n); \
+	tbsp.num##n = bsp->num##n; \
+	if (tbsp.num##n) {\
+		tbsp.n = (void *) data; \
+		tbsp.header->lumps[l].fileofs = data - (byte *) tbsp.header; \
+		tbsp.header->lumps[l].filelen = tbsp.num##n * sizeof (bsp->n[0]); \
+		memcpy (data, bsp->n, tbsp.header->lumps[l].filelen); \
+		data += ROUND (tbsp.header->lumps[l].filelen); \
+	} else {\
+		tbsp.n = 0; \
+		tbsp.header->lumps[l].fileofs = 0; \
+		tbsp.header->lumps[l].filelen = 0; \
+	} \
 } while (0)
 
-	header->version = LittleLong (BSPVERSION);
+	tbsp.header->version = BSPVERSION;
 
-	data = (byte *) &header[1];
+	data = (byte *) &tbsp.header[1];
 	SET_LUMP (LUMP_PLANES, planes);
 	SET_LUMP (LUMP_LEAFS, leafs);
 	SET_LUMP (LUMP_VERTEXES, vertexes);
@@ -311,11 +327,18 @@ do { \
 #undef SET_LUMP
 #define SET_LUMP(l,n) \
 do { \
-	bsp->n##size *= sizeof (bsp->n[0]); \
-	header->lumps[l].fileofs = LittleLong (data - (byte *) header); \
-	header->lumps[l].filelen = LittleLong (bsp->n##size); \
-	memcpy (data, bsp->n, bsp->n##size); \
-	data += ROUND (bsp->n##size); \
+	tbsp.n##size = bsp->n##size; \
+	if (tbsp.n##size) { \
+		tbsp.n = (void *) data; \
+		tbsp.header->lumps[l].fileofs = data - (byte *) tbsp.header; \
+		tbsp.header->lumps[l].filelen = tbsp.n##size; \
+		memcpy (data, bsp->n, bsp->n##size); \
+		data += ROUND (tbsp.header->lumps[l].filelen); \
+	} else {\
+		tbsp.n = 0; \
+		tbsp.header->lumps[l].fileofs = 0; \
+		tbsp.header->lumps[l].filelen = 0; \
+	} \
 } while (0)
 
 	SET_LUMP (LUMP_LIGHTING, lightdata);
@@ -323,8 +346,10 @@ do { \
 	SET_LUMP (LUMP_ENTITIES, entdata);
 	SET_LUMP (LUMP_TEXTURES, texdata);
 
-	Qwrite (file, header, size);
-	free (header);
+	swap_bsp (&tbsp, 1);
+
+	Qwrite (file, tbsp.header, size);
+	free (tbsp.header);
 }
 
 VISIBLE bsp_t *
