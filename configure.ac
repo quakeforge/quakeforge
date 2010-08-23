@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.67)
 
 dnl This is the only place where the package name and version appear
-AC_INIT([QuakeForge], m4_esyscmd([git log -1 --pretty=%h HEAD | tr -d '\n']))
+AC_INIT([QuakeForge], [git-master])
 AM_INIT_AUTOMAKE([foreign])
 LT_INIT([win32-dll])
 
@@ -126,8 +126,8 @@ else
 	AC_DEFINE(ENABLE_BOXCLIP, 0, [Define if you want boxclipping])
 fi
 
-TOPDIR=`readlink -f ${srcdir}`
-AC_SUBST(TOPDIR)
+TOPSRC=`readlink -f ${srcdir}`
+AC_SUBST(TOPSRC)
 
 dnl Output files
 m4_include(config.d/rpm.m4)
