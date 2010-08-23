@@ -149,8 +149,9 @@ plotpoint (image_t *image, long xco, long yco, unsigned int color)
 {
 	unsigned int bigcol = 0;
 
-	if (image->width < 0 || image->height < 0
-		|| xco < 0 || xco > image->width || yco < 0 || yco > image->height)
+	if (image->width <= 0 || image->height <= 0
+		|| xco < 0 || xco >= image->width
+		|| yco < 0 || yco >= image->height)
 		return;
 
 	bigcol = (unsigned int) image->image[yco * image->width + xco];
@@ -729,10 +730,10 @@ render_map (bsp_t *bsp)
 	{
 		long        width, height;
 
-		width = (maxX - minX) / options.scaledown;
+		width = (maxX - minX + 1) / options.scaledown;
 		width += (options.image_pad + options.z_pad) * 2;
 
-		height = (maxY - minY) / options.scaledown;
+		height = (maxY - minY + 1) / options.scaledown;
 		height += (options.image_pad + options.z_pad) * 2;
 
 		image = create_image (width, height);
@@ -964,6 +965,7 @@ main (int argc, char *argv[])
 	Qclose (bspfile);
 
 	image = render_map (bsp);
+	BSP_Free (bsp);
 
 	/* Write image */
 
