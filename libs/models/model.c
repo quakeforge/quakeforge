@@ -155,10 +155,10 @@ Mod_FindName (const char *name)
 static model_t *
 Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 {
-	unsigned int *buf;
+	uint32_t   *buf;
 
 	// load the file
-	buf = (unsigned int *) QFS_LoadFile (mod->name, 0);
+	buf = (uint32_t *) QFS_LoadFile (mod->name, 0);
 	if (!buf) {
 		if (crash)
 			Sys_Error ("Mod_LoadModel: %s not found", mod->name);
@@ -181,7 +181,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	mod->needload = false;
 	mod->hasfullbrights = false;
 
-	switch (LittleLong (*(unsigned int *) buf)) {
+	switch (LittleLong (*buf)) {
 		case IDHEADER_MDL:			// Type 6: Quake 1 .mdl
 		case HEADER_MDL16:			// QF Type 6 extended for 16bit precision
 			if (strequal (mod->name, "progs/grenade.mdl")) {
