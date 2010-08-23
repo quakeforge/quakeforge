@@ -47,7 +47,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 static void
-swap_bsp (bsp_t *bsp, int todisk)
+swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
+		  void *cbdata)
 {
 	int             c, i, j;
 	dmiptexlump_t  *mtl;
@@ -61,6 +62,8 @@ swap_bsp (bsp_t *bsp, int todisk)
 			bsp->header->lumps[i].filelen =
 				LittleLong (bsp->header->lumps[i].filelen);
 		}
+		if (cb)
+			cb (bsp, cbdata);
 	}
 
 	// models
@@ -186,11 +189,10 @@ swap_bsp (bsp_t *bsp, int todisk)
 }
 
 bsp_t *
-LoadBSPMem (void *mem, size_t mem_size)
+LoadBSPMem (void *mem, size_t mem_size, void (*cb) (const bsp_t *, void *),
+			void *cbdata)
 {
-	byte       *data = mem;
 	bsp_t      *bsp;
-	size_t      size;
 
 	bsp = calloc (sizeof (bsp_t), 1);
 
@@ -203,11 +205,13 @@ LoadBSPMem (void *mem, size_t mem_size)
 #undef SET_LUMP
 #define SET_LUMP(l,n) \
 do { \
-	size = LittleLong (bsp->header->lumps[l].filelen); \
-	data = (byte *) mem + LittleLong (bsp->header->lumps[l].fileofs); \
-	if ((data + size) > ((byte *) mem + mem_size)) { \
+	size_t      size = LittleLong (bsp->header->lumps[l].filelen); \
+	size_t      offs = LittleLong (bsp->header->lumps[l].fileofs); \
+	void       *data = (byte *) mem + offs; \
+	if (offs >= mem_size || (offs + size) > mem_size) \
 		Sys_Error ("invalid lump"); \
-	} \
+	if (size % sizeof (bsp->n[0])) \
+		Sys_Error ("funny lump size"); \
 	bsp->n = 0; \
 	if (size) \
 		bsp->n = (void *) data; \
@@ -229,11 +233,11 @@ do { \
 #undef SET_LUMP
 #define SET_LUMP(l,n) \
 do { \
-	size = LittleLong (bsp->header->lumps[l].filelen); \
-	data = (byte *) mem + LittleLong (bsp->header->lumps[l].fileofs); \
-	if ((data + size) > ((byte *) mem + mem_size)) { \
+	size_t      size = LittleLong (bsp->header->lumps[l].filelen); \
+	size_t      offs = LittleLong (bsp->header->lumps[l].fileofs); \
+	void       *data = (byte *) mem + offs; \
+	if (offs >= mem_size || (offs + size) > mem_size) \
 		Sys_Error ("invalid lump"); \
-	} \
 	bsp->n = 0; \
 	if (size) \
 		bsp->n = (void *) data; \
@@ -245,7 +249,7 @@ do { \
 	SET_LUMP (LUMP_ENTITIES, entdata);
 	SET_LUMP (LUMP_TEXTURES, texdata);
 
-	swap_bsp (bsp, 0);
+	swap_bsp (bsp, 0, cb, cbdata);
 	return bsp;
 }
 
@@ -257,7 +261,7 @@ LoadBSPFile (QFile *file, size_t size)
 
 	buf = malloc (size);
 	Qread (file, buf, size);
-	bsp = LoadBSPMem (buf, size);
+	bsp = LoadBSPMem (buf, size, 0, 0);
 	bsp->own_header = 1;
 	return bsp;
 }
@@ -347,7 +351,7 @@ do { \
 	SET_LUMP (LUMP_ENTITIES, entdata);
 	SET_LUMP (LUMP_TEXTURES, texdata);
 
-	swap_bsp (&tbsp, 1);
+	swap_bsp (&tbsp, 1, 0, 0);
 
 	Qwrite (file, tbsp.header, size);
 	free (tbsp.header);

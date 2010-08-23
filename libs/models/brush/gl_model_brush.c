@@ -137,12 +137,13 @@ Mod_LoadExternalTextures (model_t *mod)
 }
 
 void
-Mod_LoadLighting (lump_t *l)
+Mod_LoadLighting (bsp_t *bsp)
 {
 	byte        d;
 	byte       *in, *out, *data;
 	dstring_t  *litfilename = dstring_new ();
-	int         i;
+	size_t      i;
+	int         ver;
 
 	dstring_copystr (litfilename, loadmodel->name);
 	loadmodel->lightdata = NULL;
@@ -154,36 +155,37 @@ Mod_LoadLighting (lump_t *l)
 		if (data) {
 			if (data[0] == 'Q' && data[1] == 'L' && data[2] == 'I'
 				&& data[3] == 'T') {
-				i = LittleLong (((int *) data)[1]);
-				if (i == 1) {
+				ver = LittleLong (((int32_t *) data)[1]);
+				if (ver == 1) {
 					Sys_DPrintf ("%s loaded", litfilename->str);
 					loadmodel->lightdata = data + 8;
 					return;
 				} else
-					Sys_DPrintf ("Unknown .lit file version (%d)\n", i);
+					Sys_DPrintf ("Unknown .lit file version (%d)\n", ver);
 			} else
 				Sys_DPrintf ("Corrupt .lit file (old version?), ignoring\n");
 		}
 	}
 	// LordHavoc: oh well, expand the white lighting data
-	if (!l->filelen) {
+	if (!bsp->lightdatasize) {
 		dstring_delete (litfilename);
 		return;
 	}
-	loadmodel->lightdata = Hunk_AllocName (l->filelen * mod_lightmap_bytes,
+	loadmodel->lightdata = Hunk_AllocName (bsp->lightdatasize
+											* mod_lightmap_bytes,
 										   litfilename->str);
-	in = mod_base + l->fileofs;
+	in = bsp->lightdata;
 	out = loadmodel->lightdata;
 
 	if (mod_lightmap_bytes > 1)
-		for (i = 0; i < l->filelen ; i++) {
+		for (i = 0; i < bsp->lightdatasize ; i++) {
 			d = gammatable[*in++];
 			*out++ = d;
 			*out++ = d;
 			*out++ = d;
 		}
 	else
-		for (i = 0; i < l->filelen ; i++)
+		for (i = 0; i < bsp->lightdatasize ; i++)
 			*out++ = gammatable[*in++];
 	dstring_delete (litfilename);
 }

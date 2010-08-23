@@ -292,7 +292,24 @@ typedef struct bsp_s {
 	int32_t    *surfedges;
 } bsp_t;
 
-bsp_t *LoadBSPMem (void *mem, size_t size);
+/**	Create a bsp structure from a memory buffer.
+	The returned structure will be setup to point into the supplied buffer.
+	All structures within the bsp will be byte-swapped. For this reason, if
+	a callback is provided, the callback be called after byteswapping the
+	header, but before byteswapping any data in the lumps.
+
+	\param mem		The buffer holding the bsp data.
+	\param size		The size of the buffer. This is used for sanity checking.
+	\param cb		Pointer to the callback function.
+	\param cbdata	Pointer to extra data for the callback.
+	\return			Initialized bsp structure.
+
+	\note The caller maintains ownership of the memory buffer. BSP_Free will
+	free only the bsp structure itself. However, if the caller wishes to
+	relinquish ownership of the buffer, set bsp_t::own_header to true.
+*/
+bsp_t *LoadBSPMem (void *mem, size_t size, void (*cb) (const bsp_t *, void *),
+				   void *cbdata);
 bsp_t *LoadBSPFile (QFile *file, size_t size);
 void WriteBSPFile (const bsp_t *bsp, QFile *file);
 bsp_t *BSP_New (void);
