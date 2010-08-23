@@ -228,50 +228,66 @@ typedef struct dleaf_s {
 //============================================================================
 
 typedef struct bsp_s {
+	int         own_header;
 	dheader_t  *header;
 
-	int          nummodels;
-	dmodel_t    *models;
+	int         own_models;
+	int         nummodels;
+	dmodel_t   *models;
 
+	int         own_visdata;
 	size_t      visdatasize;
 	byte       *visdata;
 
+	int         own_lightdata;
 	size_t      lightdatasize;
 	byte       *lightdata;
 
+	int         own_texdata;
 	size_t      texdatasize;
 	byte       *texdata;			// (dmiptexlump_t)
 
+	int         own_entdata;
 	size_t      entdatasize;
 	char       *entdata;
 
+	int         own_leafs;
 	int         numleafs;
 	dleaf_t    *leafs;
 
+	int         own_planes;
 	int         numplanes;
 	dplane_t   *planes;
 
+	int         own_vertexes;
 	int         numvertexes;
 	dvertex_t  *vertexes;
 
+	int         own_nodes;
 	int         numnodes;
 	dnode_t    *nodes;
 
+	int         own_texinfo;
 	int         numtexinfo;
 	texinfo_t  *texinfo;
 
+	int         own_faces;
 	int         numfaces;
 	dface_t    *faces;
 
+	int         own_clipnodes;
 	int         numclipnodes;
 	dclipnode_t *clipnodes;
 
+	int         own_edges;
 	int         numedges;
 	dedge_t    *edges;
 
+	int         own_marksurfaces;
 	int         nummarksurfaces;
 	uint16_t   *marksurfaces;
 
+	int         own_surfedges;
 	int         numsurfedges;
 	int32_t    *surfedges;
 } bsp_t;
@@ -280,6 +296,7 @@ bsp_t *LoadBSPMem (void *mem, size_t size);
 bsp_t *LoadBSPFile (QFile *file, size_t size);
 void WriteBSPFile (const bsp_t *bsp, QFile *file);
 bsp_t *BSP_New (void);
+void BSP_Free (bsp_t *bsp);
 void BSP_AddPlane (bsp_t *bsp, dplane_t *plane);
 void BSP_AddLeaf (bsp_t *bsp, dleaf_t *leaf);
 void BSP_AddVertex (bsp_t *bsp, dvertex_t *vertex);

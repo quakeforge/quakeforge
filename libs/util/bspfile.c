@@ -359,97 +359,130 @@ BSP_New (void)
 }
 
 VISIBLE void
+BSP_Free (bsp_t *bsp)
+{
+#define FREE(X) \
+	do { \
+		if (bsp->own_##X && bsp->X) \
+			free (bsp->X); \
+	} while (0)
+
+	FREE (models);
+	FREE (visdata);
+	FREE (lightdata);
+	FREE (texdata);
+	FREE (entdata);
+	FREE (leafs);
+	FREE (planes);
+	FREE (vertexes);
+	FREE (nodes);
+	FREE (texinfo);
+	FREE (faces);
+	FREE (clipnodes);
+	FREE (edges);
+	FREE (marksurfaces);
+	FREE (surfedges);
+	FREE (header);
+
+	free (bsp);
+}
+
+#define REALLOC(X) \
+	do { \
+		if (!bsp->own_##X) { \
+			bsp->own_##X = 1; \
+			bsp->X = 0; \
+		} \
+		bsp->X = realloc (bsp->X, (bsp->num##X + 1) * sizeof (bsp->X[0])); \
+	} while (0)
+
+VISIBLE void
 BSP_AddPlane (bsp_t *bsp, dplane_t *plane)
 {
-	bsp->planes = realloc (bsp->planes,
-						   (bsp->numplanes + 1) * sizeof (dplane_t));
+	REALLOC (planes);
 	bsp->planes[bsp->numplanes++] = *plane;
 }
 
 VISIBLE void
 BSP_AddLeaf (bsp_t *bsp, dleaf_t *leaf)
 {
-	bsp->leafs = realloc (bsp->leafs,
-						  (bsp->numleafs + 1) * sizeof (dleaf_t));
+	REALLOC (leafs);
 	bsp->leafs[bsp->numleafs++] = *leaf;
 }
 
 VISIBLE void
 BSP_AddVertex (bsp_t *bsp, dvertex_t *vertex)
 {
-	bsp->vertexes = realloc (bsp->vertexes,
-							 (bsp->numvertexes + 1) * sizeof (dvertex_t));
+	REALLOC (vertexes);
 	bsp->vertexes[bsp->numvertexes++] = *vertex;
 }
 
 VISIBLE void
 BSP_AddNode (bsp_t *bsp, dnode_t *node)
 {
-	bsp->nodes = realloc (bsp->nodes,
-						  (bsp->numnodes + 1) * sizeof (dnode_t));
+	REALLOC (nodes);
 	bsp->nodes[bsp->numnodes++] = *node;
 }
 
 VISIBLE void
 BSP_AddTexinfo (bsp_t *bsp, texinfo_t *texinfo)
 {
-	bsp->texinfo = realloc (bsp->texinfo,
-							(bsp->numtexinfo + 1) * sizeof (texinfo_t));
+	REALLOC (texinfo);
 	bsp->texinfo[bsp->numtexinfo++] = *texinfo;
 }
 
 VISIBLE void
 BSP_AddFace (bsp_t *bsp, dface_t *face)
 {
-	bsp->faces = realloc (bsp->faces,
-						  (bsp->numfaces + 1) * sizeof (dface_t));
+	REALLOC (faces);
 	bsp->faces[bsp->numfaces++] = *face;
 }
 
 VISIBLE void
 BSP_AddClipnode (bsp_t *bsp, dclipnode_t *clipnode)
 {
-	bsp->clipnodes = realloc (bsp->clipnodes,
-							  (bsp->numclipnodes + 1) * sizeof (dclipnode_t));
+	REALLOC (clipnodes);
 	bsp->clipnodes[bsp->numclipnodes++] = *clipnode;
 }
 
 VISIBLE void
 BSP_AddMarkSurface (bsp_t *bsp, int marksurface)
 {
-	bsp->marksurfaces = realloc (bsp->marksurfaces,
-								 (bsp->nummarksurfaces + 1)
-								 * sizeof (uint16_t));
+	REALLOC (marksurfaces);
 	bsp->marksurfaces[bsp->nummarksurfaces++] = marksurface;
 }
 
 VISIBLE void
 BSP_AddSurfEdge (bsp_t *bsp, int surfedge)
 {
-	bsp->surfedges = realloc (bsp->surfedges,
-							  (bsp->numsurfedges + 1) * sizeof (int32_t));
+	REALLOC (surfedges);
 	bsp->surfedges[bsp->numsurfedges++] = surfedge;
 }
 
 VISIBLE void
 BSP_AddEdge (bsp_t *bsp, dedge_t *edge)
 {
-	bsp->edges = realloc (bsp->edges,
-						  (bsp->numedges + 1) * sizeof (dedge_t));
+	REALLOC (edges);
 	bsp->edges[bsp->numedges++] = *edge;
 }
 
 VISIBLE void
 BSP_AddModel (bsp_t *bsp, dmodel_t *model)
 {
-	bsp->models = realloc (bsp->models,
-						   (bsp->nummodels + 1) * sizeof (dmodel_t));
+	REALLOC (models);
 	bsp->models[bsp->nummodels++] = *model;
 }
+
+#define OWN(X) \
+	do { \
+		FREE(X); \
+		bsp->own_##X = 1; \
+	} while (0)
 
 VISIBLE void
 BSP_AddLighting (bsp_t *bsp, byte *lightdata, size_t lightdatasize)
 {
+	OWN (lightdata);
 	bsp->lightdatasize = lightdatasize;
 	bsp->lightdata = malloc (lightdatasize);
 	memcpy (bsp->lightdata, lightdata, lightdatasize);
@@ -458,6 +491,7 @@ BSP_AddLighting (bsp_t *bsp, byte *lightdata, size_t lightdatasize)
 VISIBLE void
 BSP_AddVisibility (bsp_t *bsp, byte *visdata, size_t visdatasize)
 {
+	OWN (visdata);
 	bsp->visdatasize = visdatasize;
 	bsp->visdata = malloc (visdatasize);
 	memcpy (bsp->visdata, visdata, visdatasize);
@@ -466,6 +500,7 @@ BSP_AddVisibility (bsp_t *bsp, byte *visdata, size_t visdatasize)
 VISIBLE void
 BSP_AddEntities (bsp_t *bsp, char *entdata, size_t entdatasize)
 {
+	OWN (entdata);
 	bsp->entdatasize = entdatasize;
 	bsp->entdata = malloc (entdatasize);
 	memcpy (bsp->entdata, entdata, entdatasize);
@@ -474,6 +509,7 @@ BSP_AddEntities (bsp_t *bsp, char *entdata, size_t entdatasize)
 VISIBLE void
 BSP_AddTextures (bsp_t *bsp, byte *texdata, size_t texdatasize)
 {
+	OWN (texdata);
 	bsp->texdatasize = texdatasize;
 	bsp->texdata = malloc (texdatasize);
 	memcpy (bsp->texdata, texdata, texdatasize);

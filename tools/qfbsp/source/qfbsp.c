@@ -290,6 +290,7 @@ UpdateEntLump (void)
 	if (!f)
 		Sys_Error ("couldn't open %s. %s", options.bspfile, strerror(errno));
 	WriteBSPFile (bsp, f);
+	BSP_Free (bsp);
 	Qclose (f);
 }
 
@@ -495,6 +496,7 @@ ProcessFile (void)
 			extract_entities ();
 		if (options.extract_hull)
 			extract_hull ();
+		BSP_Free (bsp);
 		return;
 	}
 
@@ -503,6 +505,7 @@ ProcessFile (void)
 
 	if (options.onlyents) {
 		UpdateEntLump ();
+		BSP_Free (bsp);
 		return;
 	}
 
@@ -527,6 +530,7 @@ ProcessFile (void)
 
 	WriteEntitiesToString ();
 	FinishBSPFile ();
+	BSP_Free (bsp);
 }
 
 int
