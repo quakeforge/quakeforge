@@ -258,6 +258,7 @@ LoadBSPFile (QFile *file, size_t size)
 	buf = malloc (size);
 	Qread (file, buf, size);
 	bsp = LoadBSPMem (buf, size);
+	bsp->own_header = 1;
 	return bsp;
 }
 
