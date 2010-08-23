@@ -4,7 +4,14 @@ AC_PREREQ(2.67)
 dnl This is the only place where the package name and version appear
 AC_INIT([QuakeForge], [git-master])
 AM_INIT_AUTOMAKE([foreign])
+
+dnl LT_INIT messes with CFLAGS (evil bastard)
+if test "x${CFLAGS-unset}" = xunset; then
+	CFLAGS=""
+fi
+saved_CFLAGS="$CFLAGS"
 LT_INIT([win32-dll])
+CFLAGS="$saved_CFLAGS"
 
 AC_REVISION([$Revision$]) dnl
 
@@ -17,9 +24,6 @@ m4_include(config.d/versions.m4)
 
 AC_LANG_C
 
-if test "x${CFLAGS-unset}" = xunset; then
-	CFLAGS=""
-fi
 if test "$x{AR-unset}" = xunset; then
 	AR="ar"
 fi
@@ -113,17 +117,6 @@ AC_ARG_ENABLE(typecheck-progs,
 	[  --enable-typecheck-progs Enable type checking on progs field access])
 if test "x$enable_typecheck_progs" = xyes; then
 	AC_DEFINE(TYPECHECK_PROGS, 1, [Define this if you want progs typechecking])
-fi
-
-AC_ARG_ENABLE(boxclip,
-[  --enable-boxclip           enable box clipping],
-	boxclip=$enable_boxclip,
-	boxclip=no
-)
-if test "x$boxclip" != xno; then
-	AC_DEFINE(ENABLE_BOXCLIP, 1, [Define if you want boxclipping])
-else
-	AC_DEFINE(ENABLE_BOXCLIP, 0, [Define if you want boxclipping])
 fi
 
 TOPSRC=`readlink -f ${srcdir}`

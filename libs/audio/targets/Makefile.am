@@ -4,7 +4,7 @@ CFLAGS+= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 SDL_LIBS = @SDL_LIBS@
 plugin_version= 1:0:0
-plugin_ldflags= @plugin_ldflags@ -module
+plugin_ldflags= @plugin_ldflags@ -module -rpath $(plugindir)
 plugin_libadd= @plugin_libadd@
 EXEEXT=
 
@@ -50,7 +50,7 @@ snd_output_win_la_CFLAGS=	$(WIN32SND_CFLAGS)
 snd_output_win_la_SOURCES=	snd_win.c
 
 snd_output_dx_la_LDFLAGS=	$(plugin_ldflags)
-snd_output_dx_la_LIBADD=		$(WINSND_LIBS) $(plugin_libadd)
+snd_output_dx_la_LIBADD=	$(WINSND_LIBS) $(plugin_libadd)
 snd_output_dx_la_CFLAGS=	$(WIN32SND_CFLAGS)
 snd_output_dx_la_SOURCES=	snd_dx.c
 

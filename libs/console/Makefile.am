@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS= foreign
 CFLAGS+= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 plugin_version= 1:0:0
-plugin_ldflags= @plugin_ldflags@ -module
+plugin_ldflags= @plugin_ldflags@ -module -rpath $(plugindir)
 plugin_libadd= @plugin_libadd@
 EXEEXT=
 

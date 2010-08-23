@@ -3,13 +3,15 @@
 \page surround_sound_spec Description of Surround-Sound Channels
 
 Swiped from the vorbis docs
-\li one channel - the stream is monophonic
-\li two channels - the stream is stereo. channel order: left, right
-\li three channels - the stream is a 1d-surround encoding. channel order: left, center, right
-\li four channels - the stream is quadraphonic surround. channel order: front left, front right, rear left, rear right
-\li five channels - the stream is five-channel surround. channel order: front left, center, front right, rear left, rear right
-\li six channels - the stream is 5.1 surround. channel order: front left, center, front right, rear left, rear right, LFE
-\li seven channels - the stream is 6.1 surround. channel order: front left, center, front right, side left, side right, rear center, LFE
-\li eight channels - the stream is 7.1 surround. channel order: front left, center, front right, side left, side right, rear left, rear right, LFE
-\li greater than eight channels - channel use and order is undefined 
+<dl>
+<dt>one channel</dt> <dd>the stream is monophonic</dd>
+<dt>two channels</dt> <dd>the stream is stereo. channel order: left, right</dd>
+<dt>three channels</dt> <dd>the stream is a 1d-surround encoding. channel order: left, center, right</dd>
+<dt>four channels</dt> <dd>the stream is quadraphonic surround. channel order: front left, front right, rear left, rear right</dd>
+<dt>five channels</dt> <dd>the stream is five-channel surround. channel order: front left, center, front right, rear left, rear right</dd>
+<dt>six channels</dt> <dd>the stream is 5.1 surround. channel order: front left, center, front right, rear left, rear right, LFE</dd>
+<dt>seven channels</dt> <dd>the stream is 6.1 surround. channel order: front left, center, front right, side left, side right, rear center, LFE</dd>
+<dt>eight channels</dt> <dd>the stream is 7.1 surround. channel order: front left, center, front right, side left, side right, rear left, rear right, LFE</dd>
+<dt>greater than eight channels</dt> <dd>channel use and order is undefined </dd>
+</dl>
 */

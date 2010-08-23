@@ -31,8 +31,6 @@ SUBDIRS=	include source doc
 #  uncomment the following if qfcc requires the math library
 #qfcc_LDADD=-lm
 
-EXTRA_DIST=qfcc.lsm.in
-
 dist-zip: distdir
 	-chmod -R a+r $(distdir)
 	ZIP="-r9q" zip $(distdir).zip $(NOCONV_DIST)
