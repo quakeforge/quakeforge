@@ -186,31 +186,32 @@ swap_bsp (bsp_t *bsp, int todisk)
 }
 
 bsp_t *
-LoadBSPMem (void *mem, size_t size)
+LoadBSPMem (void *mem, size_t mem_size)
 {
-	dheader_t  *header = mem;
+	byte       *data = mem;
 	bsp_t      *bsp;
+	size_t      size;
 
-	if (LittleLong (header->version) != BSPVERSION)
-		Sys_Error ("version %i, not %i", LittleLong (header->version),
+	bsp = calloc (sizeof (bsp_t), 1);
+
+	bsp->header = mem;
+
+	if (LittleLong (bsp->header->version) != BSPVERSION)
+		Sys_Error ("version %i, not %i", LittleLong (bsp->header->version),
 				   BSPVERSION);
-
-	bsp = malloc (sizeof (bsp_t));
-	bsp->header = 0;
 
 #undef SET_LUMP
 #define SET_LUMP(l,n) \
 do { \
-	bsp->num##n = LittleLong (header->lumps[l].filelen); \
-	if (bsp->num##n) { \
-		bsp->n = malloc (bsp->num##n); \
-		memcpy (bsp->n, \
-				(byte *) header + LittleLong (header->lumps[l].fileofs), \
-				bsp->num##n); \
-	} else { \
-		bsp->n = 0; \
+	size = LittleLong (bsp->header->lumps[l].filelen); \
+	data = (byte *) mem + LittleLong (bsp->header->lumps[l].fileofs); \
+	if ((data + size) > ((byte *) mem + mem_size)) { \
+		Sys_Error ("invalid lump"); \
 	} \
-	bsp->num##n /= sizeof (bsp->n[0]); \
+	bsp->n = 0; \
+	if (size) \
+		bsp->n = (void *) data; \
+	bsp->num##n = size / sizeof (bsp->n[0]); \
 } while (0)
 
 	SET_LUMP (LUMP_PLANES, planes);
@@ -228,15 +229,15 @@ do { \
 #undef SET_LUMP
 #define SET_LUMP(l,n) \
 do { \
-	bsp->n##size = LittleLong (header->lumps[l].filelen); \
-	if (bsp->n##size) { \
-		bsp->n = malloc (bsp->n##size); \
-		memcpy (bsp->n, \
-				(byte *) header + LittleLong (header->lumps[l].fileofs), \
-				bsp->n##size); \
-	} else { \
-		bsp->n = 0; \
+	size = LittleLong (bsp->header->lumps[l].filelen); \
+	data = (byte *) mem + LittleLong (bsp->header->lumps[l].fileofs); \
+	if ((data + size) > ((byte *) mem + mem_size)) { \
+		Sys_Error ("invalid lump"); \
 	} \
+	bsp->n = 0; \
+	if (size) \
+		bsp->n = (void *) data; \
+	bsp->n##size = size; \
 } while (0)
 
 	SET_LUMP (LUMP_LIGHTING, lightdata);
@@ -257,7 +258,6 @@ LoadBSPFile (QFile *file, size_t size)
 	buf = malloc (size);
 	Qread (file, buf, size);
 	bsp = LoadBSPMem (buf, size);
-	free (buf);
 	return bsp;
 }
 
