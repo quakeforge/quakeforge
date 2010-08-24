@@ -48,7 +48,8 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/pakfile.h"
 #include "QF/qendian.h"
-#include "QF/quakefs.h"
+#include "QF/quakeio.h"
+#include "QF/sys.h"
 
 static const char *
 pack_get_key (void *p, void *unused)
@@ -260,7 +261,7 @@ pack_extract (pack_t *pack, dpackfile_t *pf)
 	QFile      *file;
 	char        buffer[16384];
 
-	if (QFS_CreatePath (name) == -1)
+	if (Sys_CreatePath (name) == -1)
 		return -1;
 	if (!(file = Qopen (name, "wb")))
 		return -1;

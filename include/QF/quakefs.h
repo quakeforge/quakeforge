@@ -239,7 +239,6 @@ byte *QFS_LoadHunkFile (const char *path);
 */
 void QFS_LoadCacheFile (const char *path, struct cache_user_s *cu);
 
-int QFS_CreatePath (const char *path);
 /**	Rename a file.
 
 	\param old_path	The file to rename.

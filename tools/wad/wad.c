@@ -53,7 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <QF/pcx.h>
 #include <QF/qtypes.h>
 #include <QF/qendian.h>
-#include <QF/quakefs.h>
+#include <QF/quakeio.h>
 #include <QF/wadfile.h>
 #include <QF/sys.h>
 #include <QF/zone.h>
@@ -258,7 +258,7 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 			break;
 	}
 
-	if (QFS_CreatePath (name.str) == -1)
+	if (Sys_CreatePath (name.str) == -1)
 		return -1;
 	if (!(file = Qopen (name.str, "wb")))
 		return -1;

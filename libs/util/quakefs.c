@@ -721,24 +721,6 @@ QFS_WriteFile (const char *filename, const void *data, int len)
 	Qclose (f);
 }
 
-VISIBLE int
-QFS_CreatePath (const char *path)
-{
-	char       *ofs;
-	char       *e_path = alloca (strlen (path) + 1);
-
-	strcpy (e_path, path);
-	for (ofs = e_path + 1; *ofs; ofs++) {
-		if (*ofs == '/') {				// create the directory
-			*ofs = 0;
-			if (Sys_mkdir (e_path) == -1)
-				return -1;
-			*ofs = '/';
-		}
-	}
-	return 0;
-}
-
 static QFile *
 qfs_openread (const char *path, int offs, int len, int zip)
 {
@@ -1466,7 +1448,7 @@ QFS_Open (const char *path, const char *mode)
 			if (*m == 'w' || *m == '+' || *m == 'a')
 				write = 1;
 		if (write)
-			if (QFS_CreatePath (full_path->str) == -1)
+			if (Sys_CreatePath (full_path->str) == -1)
 				goto done;
 		file = Qopen (full_path->str, mode);
 	}
@@ -1496,7 +1478,7 @@ QFS_Rename (const char *old_path, const char *new_path)
 
 	if ((ret = qfs_expand_userpath (full_old, old_path)) != -1)
 		if ((ret = qfs_expand_userpath (full_new, old_path)) != -1)
-			if ((ret = QFS_CreatePath (full_new->str)) != -1)
+			if ((ret = Sys_CreatePath (full_new->str)) != -1)
 				ret = Qrename (full_old->str, full_new->str);
 	dstring_delete (full_old);
 	dstring_delete (full_new);

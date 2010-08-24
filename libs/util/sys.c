@@ -757,3 +757,21 @@ Sys_Init (void)
 	signal (SIGTERM, signal_handler);
 	signal (SIGFPE, signal_handler);
 }
+
+VISIBLE int
+Sys_CreatePath (const char *path)
+{
+	char       *ofs;
+	char       *e_path = alloca (strlen (path) + 1);
+
+	strcpy (e_path, path);
+	for (ofs = e_path + 1; *ofs; ofs++) {
+		if (*ofs == '/') {				// create the directory
+			*ofs = 0;
+			if (Sys_mkdir (e_path) == -1)
+				return -1;
+			*ofs = '/';
+		}
+	}
+	return 0;
+}

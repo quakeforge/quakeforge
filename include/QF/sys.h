@@ -112,6 +112,17 @@ void Sys_DebugLog(const char *file, const char *fmt, ...) __attribute__((format(
 			Sys_Error ("%s: Failed to allocate memory.", __FUNCTION__);	\
 	} while (0)
 
+/**	Create all parent directories leading to the file specified by path.
+
+	\param path		The path to create.
+	\return			0 on success, -1 on failure.
+
+	\note No directory will be created for the name after the final
+	<code>/</code>. This is to allow the same path string to be used for
+	both this function and Qopen.
+*/
+int Sys_CreatePath (const char *path);
+
 //@}
 
 #endif // __sys_h
