@@ -217,6 +217,14 @@ dstring_newstr (void)
 	return _dstring_newstr (&dstring_default_mem);
 }
 
+VISIBLE dstring_t *
+dstring_strdup (const char *str)
+{
+	dstring_t  *dstr = dstring_new ();
+	dstring_copystr (dstr, str);
+	return dstr;
+}
+
 VISIBLE char *
 dstring_reservestr (dstring_t *dstr, unsigned len)
 {

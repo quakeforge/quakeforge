@@ -57,8 +57,8 @@ extern dstring_mem_t dstring_default_mem;
 /** Create a new dstring. size and truesize start at 0 and no string buffer
 	is allocated.
 */
-dstring_t *_dstring_new(dstring_mem_t *mem);
-dstring_t *dstring_new(void);
+dstring_t *_dstring_new (dstring_mem_t *mem);
+dstring_t *dstring_new (void);
 //@}
 /** Delete a dstring. Both the string buffer and dstring object are freed.
 */
@@ -111,6 +111,11 @@ char *dstring_freeze (dstring_t *dstr);
 dstring_t *_dstring_newstr (dstring_mem_t *mem);
 dstring_t *dstring_newstr (void);
 //@}
+/** Create a new dstring from a string. Similar to strdup().
+	\param str		the string to copy
+	\return			inititialized dstring
+*/
+dstring_t *dstring_strdup (const char *str);
 /** Open up a hole in the string buffer. The contents of the opened hole
 	are undefined. The size of the opened hole will be 1 bigger than specified
 	allowing for a null terminator.
