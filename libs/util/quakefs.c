@@ -133,7 +133,13 @@ VISIBLE const char *qfs_userpath;
 
 VISIBLE int qfs_filesize;
 
-searchpath_t *qfs_searchpaths;
+typedef struct searchpath_s {
+	char       *filename;
+	struct pack_s *pack;	// only one of filename / pack will be used
+	struct searchpath_s *next;
+} searchpath_t;
+
+static searchpath_t *qfs_searchpaths;
 
 //QFS
 

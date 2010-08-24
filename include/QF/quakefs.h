@@ -47,12 +47,6 @@ typedef struct filelist_s {
 	int         size;
 } filelist_t;
 
-typedef struct searchpath_s {
-	char       *filename;
-	struct pack_s *pack;	// only one of filename / pack will be used
-	struct searchpath_s *next;
-} searchpath_t;
-
 typedef struct gamedir_s {
 	const char *name;
 	const char *gamedir;
@@ -72,7 +66,6 @@ typedef struct gamedir_s {
 */
 typedef void gamedir_callback_t (int phase);
 
-extern searchpath_t *qfs_searchpaths;
 extern gamedir_t *qfs_gamedir;
 
 extern struct cvar_s *fs_sharepath;
