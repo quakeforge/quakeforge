@@ -384,21 +384,6 @@ void QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 */
 void QFS_FilelistFree (filelist_t *list);
 
-
-/**	Expand leading "~/" in \a path to the user's home directory.
-	On Linux-like systems, the user's home directory is obtained from the
-	system, or failing that, the \c HOME environment variable.
-
-	On Windows systems, first the \c HOME environment variable is checked.
-	If \c HOME is not set, \c WINDIR is used.
-
-	\param path		the path to check for "~/"
-	\return			the expanded path
-	\note It is the caller's responsibility to free the returned string.
-	FIXME: rename to QFS_*
-*/
-char *expand_squiggle (const char *path);
-
 //@}
 
 #endif // __quakefs_h

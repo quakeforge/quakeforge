@@ -43,9 +43,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_IO_H
 # include <io.h>
 #endif
-#ifdef HAVE_PWD_H
-# include <pwd.h>
-#endif
 
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
@@ -576,7 +573,7 @@ qfs_load_config (void)
 	char       *dirconf;
 
 	if (*fs_dirconf->string) {
-		dirconf = expand_squiggle (fs_dirconf->string);
+		dirconf = Sys_ExpandSquiggle (fs_dirconf->string);
 		if (!(f = Qopen (dirconf, "rt")))
 			Sys_DPrintf ("Could not load `%s', using builtin defaults\n",
 						 dirconf);
@@ -1246,38 +1243,6 @@ QFS_GamedirCallback (gamedir_callback_t *func)
 	num_gamedir_callbacks++;
 }
 
-char *
-expand_squiggle (const char *path)
-{
-	char       *home;
-
-#ifndef _WIN32
-	struct passwd *pwd_ent;
-#endif
-
-	if (strncmp (path, "~/", 2) != 0) {
-		return strdup (path);
-	}
-
-#ifdef _WIN32
-	// LordHavoc: first check HOME to duplicate previous version behavior
-	// (also handy if someone wants it elsewhere than their windows directory)
-	home = getenv ("HOME");
-	if (!home || !home[0])
-		home = getenv ("WINDIR");
-#else
-	if ((pwd_ent = getpwuid (getuid ()))) {
-		home = pwd_ent->pw_dir;
-	} else
-		home = getenv ("HOME");
-#endif
-
-	if (home)
-		return nva ("%s%s", home, path + 1);	// skip leading ~
-
-	return strdup (path);
-}
-
 static void
 qfs_path_cvar (cvar_t *var)
 {
@@ -1304,7 +1269,7 @@ QFS_Init (const char *game)
 
 	Cmd_AddCommand ("path", qfs_path_f, "Show what paths Quake is using");
 
-	qfs_userpath = expand_squiggle (fs_userpath->string);
+	qfs_userpath = Sys_ExpandSquiggle (fs_userpath->string);
 
 	qfs_load_config ();
 

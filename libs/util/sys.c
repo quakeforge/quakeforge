@@ -55,6 +55,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_SYS_MMAN_H
 # include <sys/mman.h>
 #endif
+#ifdef HAVE_PWD_H
+# include <pwd.h>
+#endif
 
 #include <signal.h>
 #include <setjmp.h>
@@ -76,6 +79,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/sys.h"
 #include "QF/quakefs.h"
+#include "QF/va.h"
 
 #include "compat.h"
 
@@ -774,4 +778,36 @@ Sys_CreatePath (const char *path)
 		}
 	}
 	return 0;
+}
+
+char *
+Sys_ExpandSquiggle (const char *path)
+{
+	char       *home;
+
+#ifndef _WIN32
+	struct passwd *pwd_ent;
+#endif
+
+	if (strncmp (path, "~/", 2) != 0) {
+		return strdup (path);
+	}
+
+#ifdef _WIN32
+	// LordHavoc: first check HOME to duplicate previous version behavior
+	// (also handy if someone wants it elsewhere than their windows directory)
+	home = getenv ("HOME");
+	if (!home || !home[0])
+		home = getenv ("WINDIR");
+#else
+	if ((pwd_ent = getpwuid (getuid ()))) {
+		home = pwd_ent->pw_dir;
+	} else
+		home = getenv ("HOME");
+#endif
+
+	if (home)
+		return nva ("%s%s", home, path + 1);	// skip leading ~
+
+	return strdup (path);
 }

@@ -649,7 +649,7 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 	if (qfs) {
 		QFS_FOpenFile (path, &file);
 	} else {
-		char *newpath = expand_squiggle (path);
+		char *newpath = Sys_ExpandSquiggle (path);
 		file = Qopen (newpath, "r");
 		free (newpath);
 	}
