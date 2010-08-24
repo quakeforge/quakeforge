@@ -145,7 +145,7 @@ typedef struct
 // private userinfo for sending to masterless servers
 	struct info_s	*userinfo;
 
-	char		servername[MAX_OSPATH];	// name of server from original connect
+	struct dstring_s *servername;		// name of server from original connect
 	netadr_t	server_addr;			// address of server
 
 	int			qport;

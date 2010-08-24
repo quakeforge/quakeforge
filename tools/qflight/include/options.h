@@ -48,7 +48,7 @@ typedef struct {
 } options_t;
 
 extern options_t options;
-extern char *bspfile;
+extern struct dstring_s *bspfile;
 extern const char *this_program;
 
 int DecodeArgs (int argc, char **argv);

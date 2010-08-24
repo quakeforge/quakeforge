@@ -1096,7 +1096,7 @@ Sbar_LogFrags (void)
 	if (t)
 		Qwrite (file, t, strlen (t));
 
-	Qprintf (file, "%s\n%s %s\n", cls.servername, cl.worldmodel->name,
+	Qprintf (file, "%s\n%s %s\n", cls.servername->str, cl.worldmodel->name,
 			 cl.levelname);
 
 	// scores   

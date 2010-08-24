@@ -43,6 +43,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/dstring.h"
 #include "QF/image.h"
 #include "QF/msg.h"
 #include "QF/pcx.h"
@@ -146,7 +147,7 @@ CL_RSShot_f (void)
 		SCR_DrawStringToSnap (st, tex, tex->width - strlen (st) * 8,
 							  tex->height - 1);
 
-		strncpy (st, cls.servername, sizeof (st));
+		strncpy (st, cls.servername->str, sizeof (st));
 		st[sizeof (st) - 1] = 0;
 		SCR_DrawStringToSnap (st, tex, tex->width - strlen (st) * 8,
 							  tex->height - 11);

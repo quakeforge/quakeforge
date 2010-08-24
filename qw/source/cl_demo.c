@@ -49,6 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/msg.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
@@ -514,12 +515,11 @@ void
 CL_Record (const char *argv1)
 {
 	byte        buf_data[MAX_MSGLEN + 10];	// + 10 for header
-	char        name[MAX_OSPATH];
+	dstring_t  *name;
 	char       *s;
 	char        timestring[20];
-	char        mapname[MAX_OSPATH];
 
-	int         n, i, j, l=0;
+	int         n, i, j;
 	size_t      k;
 	int         seq = 1;
 	entity_t   *ent;
@@ -529,20 +529,14 @@ CL_Record (const char *argv1)
 	time_t      tim;
 
 	if (!argv1) {
+		char       *mapname;
+
 		// Get time to a useable format
 		time (&tim);
 		strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
 
 		// the leading path-name is to be removed from cl.worldmodel->name
-		for (k = 0; k <= strlen (cl.worldmodel->name); k++) {
-			if (cl.worldmodel->name[k] == '/') {
-				l = 0;
-				mapname[l] = '\0';
-				continue;
-			}
-			mapname[l] = cl.worldmodel->name[k];
-			l++;
-		}
+		mapname = strdup (QFS_SkipPath (cl.worldmodel->name));
 
 		// the map name is cut off after any "." because this would prevent
 		// ".qwd" from being appended
@@ -551,29 +545,33 @@ CL_Record (const char *argv1)
 			if (mapname[k] == '.')
 				mapname[k] = '\0';
 
-		snprintf (name, sizeof (name), "%s/%s-%s", qfs_gamedir->dir.def,
-				  timestring, mapname);
+		name = dstring_new ();
+		dsprintf (name, "%s/%s-%s", qfs_gamedir->dir.def, timestring, mapname);
+		free (mapname);
 	} else {
-		snprintf (name, sizeof (name), "%s/%s", qfs_gamedir->dir.def, argv1);
+		name = dstring_new ();
+		dsprintf (name, "%s/%s", qfs_gamedir->dir.def, argv1);
 	}
 
 	// open the demo file
 #ifdef HAVE_ZLIB
 	if (demo_gzip->int_val) {
 		QFS_DefaultExtension (name, ".qwd.gz");
-		cls.demofile = QFS_WOpen (name, demo_gzip->int_val);
+		cls.demofile = QFS_WOpen (name->str, demo_gzip->int_val);
 	} else
 #endif
 	{
 		QFS_DefaultExtension (name, ".qwd");
-		cls.demofile = QFS_WOpen (name, 0);
+		cls.demofile = QFS_WOpen (name->str, 0);
 	}
 	if (!cls.demofile) {
 		Sys_Printf ("ERROR: couldn't open.\n");
+		dstring_delete (name);
 		return;
 	}
 
-	Sys_Printf ("recording to %s.\n", name);
+	Sys_Printf ("recording to %s.\n", name->str);
+	dstring_delete (name);
 	cls.demorecording = true;
 
 /*-------------------------------------------------*/
@@ -843,7 +841,7 @@ CL_Record_f (void)
 void
 CL_ReRecord_f (void)
 {
-	char		name[MAX_OSPATH];
+	dstring_t  *name;
 	int			c;
 
 	c = Cmd_Argc ();
@@ -852,53 +850,54 @@ CL_ReRecord_f (void)
 		return;
 	}
 
-	if (!*cls.servername) {
-		Sys_Printf ("No server to reconnect to...\n");
+	if (!cls.servername || !cls.servername->str) {
+		Sys_Printf ("No server to which to reconnect...\n");
 		return;
 	}
 
 	if (cls.demorecording)
 		CL_Stop_f ();
 
-	snprintf (name, sizeof (name), "%s/%s",
-			  qfs_gamedir->dir.def, Cmd_Argv (1));
+	name = dstring_newstr ();
+	dsprintf (name, "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
 
 	// open the demo file
 	QFS_DefaultExtension (name, ".qwd");
 
-	cls.demofile = QFS_WOpen (name, 0);
+	cls.demofile = QFS_WOpen (name->str, 0);
 	if (!cls.demofile) {
 		Sys_Printf ("ERROR: couldn't open.\n");
-		return;
+	} else {
+		Sys_Printf ("recording to %s.\n", name->str);
+		cls.demorecording = true;
+
+		CL_Disconnect ();
+		CL_BeginServerConnect ();
 	}
-
-	Sys_Printf ("recording to %s.\n", name);
-	cls.demorecording = true;
-
-	CL_Disconnect ();
-	CL_BeginServerConnect ();
+	dstring_delete (name);
 }
 
 static void
 CL_StartDemo (void)
 {
-	char		name[MAX_OSPATH];
+	dstring_t  *name = dstring_newstr ();
 
 	// open the demo file
-	strncpy (name, demoname, sizeof (name));
+	dstring_copystr (name, demoname);
 	QFS_DefaultExtension (name, ".qwd");
 
-	Sys_Printf ("Playing demo from %s.\n", name);
-	QFS_FOpenFile (name, &cls.demofile);
+	Sys_Printf ("Playing demo from %s.\n", name->str);
+	QFS_FOpenFile (name->str, &cls.demofile);
 	if (!cls.demofile) {
 		Sys_Printf ("ERROR: couldn't open.\n");
 		cls.demonum = -1;				// stop demo loop
+		dstring_delete (name);
 		return;
 	}
 
 	cls.demoplayback = true;
 	net_blocksend = 1;
-	if (strequal (QFS_FileExtension (name), ".mvd")) {
+	if (strequal (QFS_FileExtension (name->str), ".mvd")) {
 		cls.demoplayback2 = true;
 		Sys_Printf ("mvd\n");
 	} else {
@@ -915,6 +914,8 @@ CL_StartDemo (void)
 	demotime_cached = 0;
 	nextdemotime = 0;
 	CL_ClearPredict ();
+
+	dstring_delete (name);
 }
 
 /*

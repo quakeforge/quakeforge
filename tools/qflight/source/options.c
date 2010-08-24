@@ -41,6 +41,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <errno.h>
 #include <stdlib.h>
 
+#include "QF/dstring.h"
 #include "QF/qtypes.h"
 
 #include "compat.h"
@@ -184,7 +185,7 @@ DecodeArgs (int argc, char **argv)
 					usage (1);
 				break;
 			case 'f':
-				bspfile = strdup (optarg);
+				bspfile = dstring_strdup (optarg);
 				break;
 			case 'P':
 				options.properties_filename = strdup (optarg);
@@ -195,7 +196,7 @@ DecodeArgs (int argc, char **argv)
 	}
 	options.extrascale = 1.0 / (1 << (options.extrabit * 2));
 	if ((!bspfile) && argv[optind] && *(argv[optind]))
-		bspfile = strdup (argv[optind++]);
+		bspfile = dstring_strdup (argv[optind++]);
 
 	return optind;
 }

@@ -1011,10 +1011,10 @@ ParseScript (void)
 int
 main (int argc, char **argv)
 {
-	int		i, bytes;
-	char	path[1024];
-	QFile  *file;
-	char   *buf;
+	int         i, bytes;
+	dstring_t  *path;
+	QFile      *file;
+	char       *buf;
 
 	if (argc != 2)
 		Sys_Error ("usage: modelgen file.qc");
@@ -1022,19 +1022,19 @@ main (int argc, char **argv)
 	i = 1;
 
 // load the script
-	strcpy (path, argv[i]);
+	path = dstring_strdup (argv[i]);
 	QFS_DefaultExtension (path, ".qc");
-	SetQdirFromPath (path);
+	SetQdirFromPath (path->str);
 
-	file = Qopen (path, "rt");
+	file = Qopen (path->str, "rt");
 	if (!file)
-		Sys_Error ("couldn't open %s. %s", path, strerror(errno));
+		Sys_Error ("couldn't open %s. %s", path->str, strerror(errno));
 	bytes = Qfilesize (file);
 	buf = malloc (bytes + 1);
 	bytes = Qread (file, buf, bytes);
 	buf[bytes] = 0;
 	Qclose (file);
-	Script_Start (&scr, path, buf);
+	Script_Start (&scr, path->str, buf);
 
 	
 // parse it

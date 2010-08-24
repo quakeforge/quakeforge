@@ -252,7 +252,7 @@ Condump_f (void)
 	int         line = con->current - con->numlines;
 	const char *start, *end;
 	QFile      *file;
-	char        name[MAX_OSPATH];
+	char       *name;
 
 	if (Cmd_Argc () != 2) {
 		Sys_Printf ("usage: condump <filename>\n");
@@ -263,8 +263,7 @@ Condump_f (void)
 		Sys_Printf ("invalid character in filename\n");
 		return;
 	}
-	snprintf (name, sizeof (name), "%s/%s.txt", qfs_gamedir->dir.def,
-			  Cmd_Argv (1));
+	name = va ("%s/%s.txt", qfs_gamedir->dir.def, Cmd_Argv (1));
 
 	if (!(file = QFS_WOpen (name, 0))) {
 		Sys_Printf ("could not open %s for writing: %s\n", name,
@@ -777,15 +776,13 @@ C_ProcessInput (void)
 static void
 C_NewMap (void)
 {
-	static int  first_time = 1;
-	static char old_gamedir[MAX_OSPATH];
+	static dstring_t *old_gamedir = 0;
 
-	if (first_time || !strequal (old_gamedir, qfs_gamedir->gamedir)) {
-		first_time = 0;
+	if (!old_gamedir || !strequal (old_gamedir->str, qfs_gamedir->gamedir))
 		Menu_Load ();
-	}
-	strncpy (old_gamedir, qfs_gamedir->gamedir, sizeof (old_gamedir));
-	old_gamedir[sizeof (old_gamedir) - 1] = 0;
+	if (!old_gamedir)
+		old_gamedir = dstring_newstr ();
+	dstring_copystr (old_gamedir, qfs_gamedir->gamedir);
 }
 
 static void

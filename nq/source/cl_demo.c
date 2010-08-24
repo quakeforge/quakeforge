@@ -40,6 +40,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
 #include "QF/qendian.h"
@@ -222,7 +223,7 @@ void
 CL_Record_f (void)
 {
 	int         c;
-	char        name[MAX_OSPATH];
+	dstring_t  *name;
 	int         track;
 
 	if (cmd_source != src_command)
@@ -251,8 +252,8 @@ CL_Record_f (void)
 	} else
 		track = -1;
 
-	snprintf (name, sizeof (name), "%s/%s",
-			  qfs_gamedir->dir.def, Cmd_Argv (1));
+	name = dstring_new ();
+	dsprintf (name, "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
 
 // start the map up
 //
@@ -264,32 +265,31 @@ CL_Record_f (void)
 #ifdef HAVE_ZLIB
 	if (demo_gzip->int_val) {
 		QFS_DefaultExtension (name, ".dem.gz");
-		cls.demofile = QFS_WOpen (name, demo_gzip->int_val);
+		cls.demofile = QFS_WOpen (name->str, demo_gzip->int_val);
 	} else
 #endif
 	{
 		QFS_DefaultExtension (name, ".dem");
-		cls.demofile = QFS_WOpen (name, 0);
+		cls.demofile = QFS_WOpen (name->str, 0);
 	}
 
 	if (!cls.demofile) {
 		Sys_Printf ("ERROR: couldn't open.\n");
-		return;
+	} else {
+		Sys_Printf ("recording to %s.\n", name->str);
+		cls.demorecording = true;
+
+		cls.forcetrack = track;
+		Qprintf (cls.demofile, "%i\n", cls.forcetrack);
 	}
-
-	Sys_Printf ("recording to %s.\n", name);
-	cls.demorecording = true;
-
-	cls.forcetrack = track;
-	Qprintf (cls.demofile, "%i\n", cls.forcetrack);
-
+	dstring_delete (name);
 }
 
 
 static void
 CL_StartDemo (void)
 {
-	char        name[256];
+	dstring_t  *name;
 	int         c;
 	qboolean    neg = false;
 
@@ -299,11 +299,12 @@ CL_StartDemo (void)
 
 // open the demo file
 //
-	strncpy (name, demoname, sizeof (name));
+	name = dstring_strdup (demoname);
 	QFS_DefaultExtension (name, ".dem");
 
-	Sys_Printf ("Playing demo from %s.\n", name);
-	QFS_FOpenFile (name, &cls.demofile);
+	Sys_Printf ("Playing demo from %s.\n", name->str);
+	QFS_FOpenFile (name->str, &cls.demofile);
+	dstring_delete (name);
 	if (!cls.demofile) {
 		Sys_Printf ("ERROR: couldn't open.\n");
 		cls.demonum = -1;				// stop demo loop
@@ -324,9 +325,8 @@ CL_StartDemo (void)
 
 	if (neg)
 		cls.forcetrack = -cls.forcetrack;
-// ZOID, fscanf is evil
-//  fscanf (cls.demofile, "%i\n", &cls.forcetrack);
 }
+
 /*
 	CL_PlayDemo_f
 

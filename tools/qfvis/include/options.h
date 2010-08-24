@@ -36,7 +36,7 @@ typedef struct {
 	int         threads;
 	qboolean    minimal;
 	int         level;
-	char       *bspfile;
+	struct dstring_s *bspfile;
 } options_t;
 
 extern options_t options;

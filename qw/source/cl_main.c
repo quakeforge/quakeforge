@@ -274,7 +274,7 @@ CL_SendConnectPacket (void)
 
 	t1 = Sys_DoubleTime ();
 
-	if (!NET_StringToAdr (cls.servername, &cls.server_addr)) {
+	if (!NET_StringToAdr (cls.servername->str, &cls.server_addr)) {
 		Sys_Printf ("Bad server address\n");
 		connect_time = -1;
 		return;
@@ -315,7 +315,7 @@ CL_CheckForResend (void)
 		return;
 
 	t1 = Sys_DoubleTime ();
-	if (!NET_StringToAdr (cls.servername, &cls.server_addr)) {
+	if (!NET_StringToAdr (cls.servername->str, &cls.server_addr)) {
 		Sys_Printf ("Bad server address\n");
 		connect_time = -1;
 		return;
@@ -327,8 +327,8 @@ CL_CheckForResend (void)
 
 	connect_time = realtime + t2 - t1;	// for retransmit requests
 
-	VID_SetCaption (va ("Connecting to %s", cls.servername));
-	Sys_Printf ("Connecting to %s...\n", cls.servername);
+	VID_SetCaption (va ("Connecting to %s", cls.servername->str));
+	Sys_Printf ("Connecting to %s...\n", cls.servername->str);
 	Netchan_SendPacket (strlen (getchallenge), (void *) getchallenge,
 						cls.server_addr);
 }
@@ -355,7 +355,7 @@ CL_Connect_f (void)
 	CL_Disconnect ();
 	CL_Chat_Flush_Ignores ();
 
-	strncpy (cls.servername, server, sizeof (cls.servername) - 1);
+	dstring_copystr (cls.servername, server);
 	CL_BeginServerConnect ();
 }
 
@@ -837,8 +837,8 @@ CL_Reconnect_f (void)
 		return;
 	}
 
-	if (!*cls.servername) {
-		Sys_Printf ("No server to reconnect to...\n");
+	if (!*cls.servername->str) {
+		Sys_Printf ("No server to which to reconnect...\n");
 		return;
 	}
 
@@ -1158,7 +1158,7 @@ CL_SetState (cactive_t state)
 				CL_Stop_f ();
 		} else if (state == ca_active) {
 			// entering active state
-			VID_SetCaption (cls.servername);
+			VID_SetCaption (cls.servername->str);
 			IN_ClearStates ();
 			R_ClearEnts ();
 			r_active = true;
@@ -1762,6 +1762,7 @@ Host_Init (void)
 	pr_gametype = "quakeworld";
 
 	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
+	cls.servername = dstring_newstr ();
 	cls.downloadtempname = dstring_newstr ();
 	cls.downloadname = dstring_newstr ();
 	cls.downloadurl = dstring_newstr ();

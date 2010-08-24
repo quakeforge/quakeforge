@@ -32,12 +32,19 @@ static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #include <stdlib.h>
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "compat.h"
 #include "r_cvar.h"
@@ -75,9 +82,16 @@ R_ReadPointFile_f (void)
 	vec3_t      org;
 	int         c, r;
 	particle_t *p;
-	char        name[MAX_OSPATH];
+	const char *name;
+	char       *mapname;
 
-	// FIXME    snprintf (name, sizeof (name), "maps/%s.pts", sv.name);
+	mapname = strdup (r_worldentity.model->name);
+	if (!mapname)
+		Sys_Error ("Can't duplicate mapname!");
+	QFS_StripExtension (mapname, mapname);
+
+	name = va ("maps/%s.pts", mapname);
+	free (mapname);
 
 	QFS_FOpenFile (name, &f);
 	if (!f) {

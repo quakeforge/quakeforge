@@ -422,7 +422,7 @@ void
 CL_FinishDownload (void)
 {
 	Qclose (cls.download);
-	VID_SetCaption (va ("Connecting to %s", cls.servername));
+	VID_SetCaption (va ("Connecting to %s", cls.servername->str));
 
 	// rename the temp file to it's final name
 	if (strcmp (cls.downloadtempname->str, cls.downloadname->str)) {

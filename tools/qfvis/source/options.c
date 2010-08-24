@@ -41,6 +41,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdio.h>
 #include <getopt.h>
 
+#include "QF/dstring.h"
+
 #include "options.h"
 
 const char *this_program;
@@ -122,14 +124,14 @@ DecodeArgs (int argc, char **argv)
 				options.level = atoi (optarg);
 				break;
 			case 'f':					// set filename
-				options.bspfile = strdup (optarg);
+				options.bspfile = dstring_strdup (optarg);
 				break;
 			default:
 				usage (1);
 		}
 	}
 	if ((!options.bspfile) && argv[optind] && *(argv[optind]))
-		options.bspfile = strdup (argv[optind++]);
+		options.bspfile = dstring_strdup (argv[optind++]);
 
 	return optind;
 }

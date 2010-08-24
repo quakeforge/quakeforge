@@ -65,7 +65,7 @@ static __attribute__ ((used)) const char rcsid[] =
 options_t	options;
 bsp_t *bsp;
 
-char *bspfile;
+dstring_t *bspfile;
 dstring_t *litfile;
 
 float scalecos = 0.5;
@@ -176,7 +176,6 @@ int
 main (int argc, char **argv)
 {
 	double      start, stop;
-	char       *e;
 	QFile      *f;
 
 	start = Sys_DoubleTime ();
@@ -192,20 +191,17 @@ main (int argc, char **argv)
 
     InitThreads ();
 
-	QFS_StripExtension (bspfile, bspfile);
-	QFS_DefaultExtension (bspfile, ".bsp");
+	QFS_SetExtension (bspfile, ".bsp");
 
-	litfile = dstring_new ();
-	dstring_copystr (litfile, bspfile);
-	e = strrchr (litfile->str, '.');
-	dstring_replace (litfile, e - litfile->str, -1, ".lit", 5);
+	litfile = dstring_strdup (bspfile->str);
+	QFS_SetExtension (litfile, ".lit");
 
 	if (options.properties_filename)
 		LoadProperties (options.properties_filename);
 
-	f = Qopen (bspfile, "rbz");
+	f = Qopen (bspfile->str, "rbz");
 	if (!f)
-		Sys_Error ("could not open %s for reading", bspfile);
+		Sys_Error ("could not open %s for reading", bspfile->str);
 	bsp = LoadBSPFile (f, Qfilesize (f));
 	Qclose (f);
 	LoadEntities ();
@@ -216,9 +212,9 @@ main (int argc, char **argv)
 
 	WriteEntitiesToString ();
 
-	f = Qopen (bspfile, "wb");
+	f = Qopen (bspfile->str, "wb");
 	if (!f)
-		Sys_Error ("could not open %s for writing", bspfile);
+		Sys_Error ("could not open %s for writing", bspfile->str);
 	WriteBSPFile (bsp, f);
 	Qclose (f);
 

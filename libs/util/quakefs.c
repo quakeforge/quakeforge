@@ -498,6 +498,9 @@ qfs_build_gamedir (const char **list)
 			free (qfs_searchpaths->pack->files);
 			free (qfs_searchpaths->pack);
 		}
+		if (qfs_searchpaths->filename)
+			free (qfs_searchpaths->filename);
+
 		next = qfs_searchpaths->next;
 		free (qfs_searchpaths);
 		qfs_searchpaths = next;
@@ -1036,7 +1039,6 @@ QFS_LoadPackFile (char *packfile)
 }
 
 #define FBLOCK_SIZE	32
-#define FNAME_SIZE	MAX_OSPATH
 
 // Note, this is /NOT/ a work-alike strcmp, this groups numbers sanely.
 static int
@@ -1109,12 +1111,9 @@ QFS_LoadGameDirectory (const char *dir)
 					pakfiles[i] = NULL;
 			}
 
-			pakfiles[count] = malloc (FNAME_SIZE);
+			pakfiles[count] = nva ("%s/%s", dir, dirent->d_name);
 			if (!pakfiles[count])
 				Sys_Error ("QFS_LoadGameDirectory: MemoryAllocationFailure");
-			snprintf (pakfiles[count], FNAME_SIZE - 1, "%s/%s", dir,
-					  dirent->d_name);
-			pakfiles[count][FNAME_SIZE - 1] = '\0';
 			count++;
 		}
 	}
@@ -1131,7 +1130,8 @@ QFS_LoadGameDirectory (const char *dir)
 		if (!pak) {
 			Sys_Error ("Bad pakfile %s!!", pakfiles[i]);
 		} else {
-			search = calloc (1, sizeof (searchpath_t));
+			search = malloc (sizeof (searchpath_t));
+			search->filename = 0;
 			search->pack = pak;
 			search->next = qfs_searchpaths;
 			qfs_searchpaths = search;
@@ -1156,8 +1156,9 @@ QFS_AddDirectory (const char *dir)
 	searchpath_t *search;
 
 	// add the directory to the search path
-	search = calloc (1, sizeof (searchpath_t));
-	strcpy (search->filename, dir);
+	search = malloc (sizeof (searchpath_t));
+	search->filename = strdup (dir);
+	search->pack = 0;
 	search->next = qfs_searchpaths;
 	qfs_searchpaths = search;
 
@@ -1359,21 +1360,33 @@ QFS_FileExtension (const char *in)
 }
 
 VISIBLE void
-QFS_DefaultExtension (char *path, const char *extension)
+QFS_DefaultExtension (dstring_t *path, const char *extension)
 {
-	char       *src;
+	const char *src;
 
 	// if path doesn't have a .EXT, append extension
 	// (extension should include the .)
-	src = path + strlen (path) - 1;
+	src = path->str + strlen (path->str) - 1;
 
-	while (*src != '/' && src != path) {
+	while (*src != '/' && src != path->str) {
 		if (*src == '.')
 			return;						// it has an extension
 		src--;
 	}
 
-	strncat (path, extension, MAX_OSPATH - strlen (path));
+	dstring_appendstr (path, extension);
+}
+
+VISIBLE void
+QFS_SetExtension (struct dstring_s *path, const char *extension)
+{
+	const char *ext = QFS_FileExtension (path->str);
+
+	if (ext != path->str) {
+		path->str[ext - path->str] = 0;
+		path->size = ext - path->str + 1;
+	}
+	dstring_appendstr (path, extension);
 }
 
 VISIBLE int
@@ -1503,7 +1516,6 @@ QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 	searchpath_t *search;
 	DIR        *dir_ptr;
 	struct dirent *dirent;
-	char        buf[MAX_OSPATH];
 
 	for (search = qfs_searchpaths; search != NULL; search = search->next) {
 		if (search->pack) {
@@ -1518,8 +1530,7 @@ QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 					QFS_FilelistAdd (list, name, strip ? ext : 0);
 			}
 		} else {
-			snprintf (buf, sizeof (buf), "%s/%s", search->filename, path);
-			dir_ptr = opendir (buf);
+			dir_ptr = opendir (va ("%s/%s", search->filename, path));
 			if (!dir_ptr)
 				continue;
 			while ((dirent = readdir (dir_ptr)))

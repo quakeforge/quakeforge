@@ -655,9 +655,7 @@ SV_Record_f (void)
 			  sv_demoSuffix->string);
 
 	// open the demo file
-	name->size += 4;
-	dstring_adjust (name);
-	QFS_DefaultExtension (name->str, ".mvd");
+	QFS_DefaultExtension (name, ".mvd");
 
 	SV_Record (name->str);
 

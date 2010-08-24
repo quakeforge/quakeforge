@@ -533,7 +533,7 @@ convert_to_game_dict (script_t *script)
 static void
 Host_Savegame_f (void)
 {
-	char        name[256];
+	dstring_t  *name;
 	char       *save_text;
 	QFile      *f;
 	int         i;
@@ -574,12 +574,13 @@ Host_Savegame_f (void)
 		}
 	}
 
-	snprintf (name, sizeof (name), "%s/%s",
-			  qfs_gamedir->dir.def, Cmd_Argv (1));
+	name = dstring_newstr ();
+	dsprintf (name, "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
 	QFS_DefaultExtension (name, ".sav");
 
-	Sys_Printf ("Saving game to %s...\n", name);
-	f = QFS_WOpen (name, 0);
+	Sys_Printf ("Saving game to %s...\n", name->str);
+	f = QFS_WOpen (name->str, 0);
+	dstring_delete (name);
 	if (!f) {
 		Sys_Printf ("ERROR: couldn't open.\n");
 		return;
@@ -622,10 +623,7 @@ Host_Loadgame_f (void)
 
 	name = dstring_newstr ();
 	dsprintf (name, "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
-	name->size += 4;
-	dstring_adjust (name);
-			  
-	QFS_DefaultExtension (name->str, ".sav");
+	QFS_DefaultExtension (name, ".sav");
 
 	// we can't call SCR_BeginLoadingPlaque, because too much stack space has
 	// been used.  The menu calls it before stuffing loadgame command

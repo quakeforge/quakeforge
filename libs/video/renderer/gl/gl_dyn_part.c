@@ -46,6 +46,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_explosions.h"
@@ -191,7 +192,8 @@ R_InitParticles (void)
 void
 R_ReadPointFile_f (void)
 {
-	char        name[MAX_OSPATH], *mapname, *t1;
+	const char *name;
+	char       *mapname;
 	int         c, r;
 	vec3_t      org;
 	QFile      *f;
@@ -199,12 +201,9 @@ R_ReadPointFile_f (void)
 	mapname = strdup (r_worldentity.model->name);
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
-	t1 = strrchr (mapname, '.');
-	if (!t1)
-		Sys_Error ("Can't find .!");
-	t1[0] = '\0';
+	QFS_StripExtension (mapname, mapname);
 
-	snprintf (name, sizeof (name), "%s.pts", mapname);
+	name = va ("%s.pts", mapname);
 	free (mapname);
 
 	QFS_FOpenFile (name, &f);

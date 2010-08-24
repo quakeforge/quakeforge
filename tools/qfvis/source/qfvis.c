@@ -824,21 +824,18 @@ main (int argc, char **argv)
 		Sys_Error ("%s: no bsp file specified.", this_program);
 	}
 
-	QFS_StripExtension (options.bspfile, options.bspfile);
-	QFS_DefaultExtension (options.bspfile, ".bsp");
+	QFS_SetExtension (options.bspfile, ".bsp");
 	
-	f = Qopen (options.bspfile, "rb");
+	f = Qopen (options.bspfile->str, "rb");
 	if (!f)
-		Sys_Error ("couldn't open %s for reading.", options.bspfile);
+		Sys_Error ("couldn't open %s for reading.", options.bspfile->str);
 	bsp = LoadBSPFile (f, Qfilesize (f));
 	Qclose (f);
 
 	visdata = dstring_new ();
 
-	portalfile->size = strlen (options.bspfile) + 1;
-	dstring_adjust (portalfile);
-	QFS_StripExtension (options.bspfile, portalfile->str);
-	dstring_appendstr (portalfile, ".prt");
+	dstring_copystr (portalfile, options.bspfile->str);
+	QFS_SetExtension (portalfile, ".prt");
 	LoadPortals (portalfile->str);
 
 	uncompressed = calloc (bitbytes_l, portalclusters);
@@ -856,9 +853,9 @@ main (int argc, char **argv)
 
 	CalcAmbientSounds ();
 
-	f = Qopen (options.bspfile, "wb");
+	f = Qopen (options.bspfile->str, "wb");
 	if (!f)
-		Sys_Error ("couldn't open %s for writing.", options.bspfile);
+		Sys_Error ("couldn't open %s for writing.", options.bspfile->str);
 	WriteBSPFile (bsp, f);
 	Qclose (f);
 

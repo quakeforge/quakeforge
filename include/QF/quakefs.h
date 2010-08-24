@@ -41,8 +41,6 @@
 
 //============================================================================
 
-#define	MAX_OSPATH	128		// max length of a filesystem pathname
-
 #define MAX_GAMEDIR_CALLBACKS 128	// most QFS_GamedirCallback calls.
 
 typedef struct filelist_s {
@@ -52,7 +50,7 @@ typedef struct filelist_s {
 } filelist_t;
 
 typedef struct searchpath_s {
-	char        filename[MAX_OSPATH];
+	char       *filename;
 	struct pack_s *pack;	// only one of filename / pack will be used
 	struct searchpath_s *next;
 } searchpath_t;
@@ -115,7 +113,8 @@ int QFS_NextFilename (struct dstring_s *filename, const char *prefix,
 					  const char *ext);
 
 char *QFS_FileBase (const char *in);
-void QFS_DefaultExtension (char *path, const char *extension);
+void QFS_DefaultExtension (struct dstring_s *path, const char *extension);
+void QFS_SetExtension (struct dstring_s *path, const char *extension);
 void QFS_StripExtension (const char *in, char *out);
 char *QFS_CompressPath (const char *pth);
 const char *QFS_SkipPath (const char *pathname);

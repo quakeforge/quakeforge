@@ -48,6 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "client.h"
 #include "compat.h"
@@ -193,16 +194,13 @@ locs_reset (void)
 void
 locs_save (const char *filename, qboolean gz)
 {
-	char locfile[MAX_OSPATH];
 	int i;
 	QFile *locfd;
 	
 	if (gz) {
-		if (strncmp (filename + strlen (filename) - 3,".gz", 3) != 0)
-			snprintf (locfile, sizeof (locfile), "%s.gz", filename);
-		else
-			strcpy (locfile, filename);
-		locfd = QFS_Open (locfile, "z9w+");
+		if (strcmp (QFS_FileExtension (filename), ".gz") != 0)
+			filename = va ("%s.gz", filename);
+		locfd = QFS_Open (filename, "z9w+");
 	} else
 		locfd = QFS_Open (filename, "w+");
 	if (locfd == 0) {

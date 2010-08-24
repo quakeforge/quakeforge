@@ -249,23 +249,18 @@ LoadBSP (void)
 static char *
 output_file (const char *ext)
 {
-	char       *name;
+	dstring_t  *name;
 
+	name = dstring_newstr ();
 	if (options.output_file) {
-		if (strcmp (options.output_file, "-") == 0)
-			return options.output_file;
-		name = malloc (strlen (options.output_file) + strlen (ext) + 1);
-		strcpy (name, options.output_file);
-		QFS_DefaultExtension (name, ext);
+		dstring_copystr (name, options.output_file);
+		if (strcmp (options.output_file, "-") != 0)
+			QFS_DefaultExtension (name, ext);
 	} else {
-		name = malloc (strlen (options.bspfile) + strlen (ext) + 1);
-		QFS_StripExtension (options.bspfile, name);
-		if (strcmp (QFS_FileExtension (options.bspfile), ".gz") == 0) {
-			QFS_StripExtension (name, name);
-		}
-		strcat (name, ext);
+		dstring_copystr (name, options.bspfile);
+		QFS_StripExtension (name->str, name->str);
 	}
-	return name;
+	return dstring_freeze (name);
 }
 
 void

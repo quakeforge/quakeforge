@@ -65,6 +65,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/quakeio.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -428,8 +429,8 @@ static void
 SL_Connect (server_entry_t *sldata, int slitemno)
 {
 	CL_Disconnect ();
-	strncpy (cls.servername, SL_Get_By_Num (sldata, (slitemno - 1))->server,
-			 sizeof (cls.servername) - 0);
+	dstring_copystr (cls.servername,
+					 SL_Get_By_Num (sldata, (slitemno - 1))->server);
 	CL_BeginServerConnect ();
 }
 
