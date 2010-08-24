@@ -84,6 +84,7 @@ typedef struct server_s {
 	char       *soundlist[MAX_SOUNDS + 1];
 	char       *modellist[MAX_MODELS + 1];
 	char       *lightstyles[MAX_LIGHTSTYLES];
+	struct model_s *worldmodel;
 	int         playermodel;
 	int         num_signon_buffers;
 	int         signon_buffer_size[MAX_SIGNON_BUFFERS];

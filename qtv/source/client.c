@@ -976,13 +976,57 @@ emit_entities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 	MSG_WriteShort (msg, 0);			// end of packetentities
 }
 
+static byte fatpvs[MAX_MAP_LEAFS / 8];
+int         fatbytes;
+
+static void
+add_to_fat_pvs (vec3_t org, mnode_t *node, server_t *sv)
+{
+	byte       *pvs;
+	int         i;
+	float       d;
+	mplane_t   *plane;
+
+	while (1) {
+		// if this is a leaf, accumulate the pvs bits
+		if (node->contents < 0) {
+			if (node->contents != CONTENTS_SOLID) {
+				pvs = Mod_LeafPVS ((mleaf_t *) node, sv->worldmodel);
+				for (i = 0; i < fatbytes; i++)
+					fatpvs[i] |= pvs[i];
+			}
+			return;
+		}
+
+		plane = node->plane;
+		d = DotProduct (org, plane->normal) - plane->dist;
+		if (d > 8)
+			node = node->children[0];
+		else if (d < -8)
+			node = node->children[1];
+		else {							// go down both
+			add_to_fat_pvs (org, node->children[0], sv);
+			node = node->children[1];
+		}
+	}
+}
+
+static byte *
+fat_pvs (vec3_t org, server_t *sv)
+{
+	fatbytes = (sv->worldmodel->numleafs + 31) >> 3;
+	memset (fatpvs, 0, fatbytes);
+	add_to_fat_pvs (org, sv->worldmodel->nodes, sv);
+	return fatpvs;
+}
+
 static void
 write_entities (client_t *client, sizebuf_t *msg)
 {
-	//byte       *pvs = 0;
-	//int         i;
+	byte       *pvs = 0;
+	int         i;
 	int         e;
-	//vec3_t      org;
+	vec3_t      org;
 	frame_t    *frame;
 	entity_state_t *ent;
 	entity_state_t *state;
@@ -993,9 +1037,9 @@ write_entities (client_t *client, sizebuf_t *msg)
 	frame = &client->frames[client->netchan.incoming_sequence & UPDATE_MASK];
 
 	// find the client's PVS
-	//clent = client->edict;
-	//VectorAdd (SVvector (clent, origin), SVvector (clent, view_ofs), org);
-	//pvs = SV_FatPVS (org);
+	VectorCopy (client->state.origin, org);
+	org[2] += 22;	//XXX standard spectator view offset
+	pvs = fat_pvs (org, sv);
 
 	// put other visible entities into either a packet_entities or a nails
 	// message
@@ -1010,7 +1054,6 @@ write_entities (client_t *client, sizebuf_t *msg)
 			continue;
 		if (ent->number && ent->number != e)
 			qtv_printf ("%d %d\n", e, ent->number);
-#if 0
 		if (pvs) {
 			// ignore if not touching a PV leaf
 			for (i = 0; i < ent->num_leafs; i++)
@@ -1020,7 +1063,6 @@ write_entities (client_t *client, sizebuf_t *msg)
 			if (i == ent->num_leafs)
 				continue;					// not visible
 		}
-#endif
 //		if (SV_AddNailUpdate (ent))
 //			continue;					// added to the special update list
 
