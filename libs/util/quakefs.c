@@ -608,6 +608,63 @@ no_config:
 	qfs_gd_plist = PL_GetPropertyList (qfs_default_dirconf);
 }
 
+/*
+	contains_updir
+
+	Checks if a string contains an updir ('..'), either at the ends or
+	surrounded by slashes ('/').  Doesn't check for leading slash.
+	Assumes canonical (compressed) path.
+*/
+static inline int
+contains_updir (const char *path, int levels)
+{
+	do {
+		if (path[0] != '.' || path[1] != '.'
+			|| (path[2] != '/' && path[2] != 0))
+			return 0;
+		if (!path[2])
+			break;
+		// first part of path is ../
+		if (levels <= 0)
+			return 1;
+		path += 3;
+	} while (levels-- > 0);
+	return 0;
+}
+
+static int
+qfs_expand_path (dstring_t *full_path, const char *base, const char *path)
+{
+	const char *separator = "/";
+	char       *cpath;
+	int         len;
+
+	if (!base || !*base) {
+		errno = EACCES;
+		return -1;
+	}
+	cpath = QFS_CompressPath (path);
+	if (contains_updir (cpath, 0)) {
+		free (cpath);
+		errno = EACCES;
+		return -1;
+	}
+	if (*cpath == '/')
+		separator = "";
+	len = strlen (base);
+	if (base[len -1] == '/')
+		len--;
+	dsprintf (full_path, "%.*s%s%s", len, base, separator, cpath);
+	free (cpath);
+	return 0;
+}
+
+static int
+qfs_expand_userpath (dstring_t *full_path, const char *path)
+{
+	return qfs_expand_path (full_path, qfs_userpath, path);
+}
+
 VISIBLE char *
 QFS_FileBase (const char *in)
 {
@@ -762,30 +819,6 @@ QFS_CompressPath (const char *pth)
 	return path;
 }
 
-/*
-	contains_updir
-
-	Checks if a string contains an updir ('..'), either at the ends or
-	surrounded by slashes ('/').  Doesn't check for leading slash.
-	Assumes canonical (compressed) path.
-*/
-static inline int
-contains_updir (const char *path, int levels)
-{
-	do {
-		if (path[0] != '.' || path[1] != '.'
-			|| (path[2] != '/' && path[2] != 0))
-			return 0;
-		if (!path[2])
-			break;
-		// first part of path is ../
-		if (levels <= 0)
-			return 1;
-		path += 3;
-	} while (levels-- > 0);
-	return 0;
-}
-
 VISIBLE int file_from_pak; // global indicating file came from pack file ZOID
 
 /*
@@ -799,8 +832,6 @@ static int
 open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 		   dstring_t *foundname, int zip)
 {
-	char       *netpath;
-
 	file_from_pak = 0;
 
 	// is the element a pak file?
@@ -823,22 +854,26 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 		}
 	} else {
 		// check a file in the directory tree
-		netpath = nva ("%s/%s", search->filename, filename);
+		dstring_t  *netpath = dstring_new ();
 
-		if (foundname) {
-			dstring_clearstr (foundname);
-			dstring_appendstr (foundname, filename);
+		if (qfs_expand_path (netpath, search->filename, filename) == 0) {
+			if (foundname) {
+				dstring_clearstr (foundname);
+				dstring_appendstr (foundname, filename);
+			}
+			if (Sys_FileTime (netpath->str) == -1) {
+				dstring_delete (netpath);
+				return -1;
+			}
+
+			Sys_DPrintf ("FindFile: %s\n", netpath->str);
+
+			*gzfile = QFS_OpenRead (netpath->str, -1, -1, zip);
+			dstring_delete (netpath);
+			return qfs_filesize;
 		}
-		if (Sys_FileTime (netpath) == -1) {
-			free (netpath);
-			return -1;
-		}
-
-		Sys_DPrintf ("FindFile: %s\n", netpath);
-
-		*gzfile = QFS_OpenRead (netpath, -1, -1, zip);
-		free (netpath);
-		return qfs_filesize;
+		dstring_delete (netpath);
+		return -1;
 	}
 
 	return -1;
@@ -1084,6 +1119,8 @@ QFS_LoadGameDirectory (const char *dir)
 					pakfiles[i] = NULL;
 			}
 
+			// at this point, dir is known to not have a trailing /, and
+			// dirent->d_name definitely won't start with one.
 			pakfiles[count] = nva ("%s/%s", dir, dirent->d_name);
 			if (!pakfiles[count])
 				Sys_Error ("QFS_LoadGameDirectory: MemoryAllocationFailure");
@@ -1145,12 +1182,14 @@ QFS_AddGameDirectory (const char *dir)
 	const char *e;
 	const char *s;
 	dstring_t  *s_dir;
+	dstring_t  *f_dir;
 
 	if (!*dir)
 		return;
 	e = fs_sharepath->string + strlen (fs_sharepath->string);
 	s = e;
 	s_dir = dstring_new ();
+	f_dir = dstring_new ();
 
 	while (s >= fs_sharepath->string) {
 		while (s != fs_sharepath->string && s[-1] !=':')
@@ -1158,17 +1197,24 @@ QFS_AddGameDirectory (const char *dir)
 		if (s != e) {
 			dsprintf (s_dir, "%.*s", (int) (e - s), s);
 			if (strcmp (s_dir->str, fs_userpath->string) != 0) {
-				Sys_DPrintf ("QFS_AddGameDirectory (\"%s/%s\")\n",
-							 s_dir->str, dir);
+				if (qfs_expand_path (f_dir, s_dir->str, dir) != 0) {
+					Sys_Printf ("dropping bad directory %s\n", dir);
+					break;
+				}
+				Sys_DPrintf ("QFS_AddGameDirectory (\"%s\")\n", f_dir->str);
 
-				QFS_AddDirectory (va ("%s/%s", s_dir->str, dir));
+				QFS_AddDirectory (f_dir->str);
 			}
 		}
 		e = --s;
 	}
 
-	Sys_DPrintf ("QFS_AddGameDirectory (\"%s/%s\")\n", qfs_userpath, dir);
-	QFS_AddDirectory (va ("%s/%s", qfs_userpath, dir));
+	qfs_expand_userpath (f_dir, dir);
+	Sys_DPrintf ("QFS_AddGameDirectory (\"%s\")\n", f_dir->str);
+	QFS_AddDirectory (f_dir->str);
+
+	dstring_delete (f_dir);
+	dstring_delete (s_dir);
 }
 
 /*
@@ -1251,15 +1297,26 @@ expand_squiggle (const char *path)
 	return strdup (path);
 }
 
+static void
+qfs_path_cvar (cvar_t *var)
+{
+	char       *cpath = QFS_CompressPath (var->string);
+	if (strcmp (cpath, var->string))
+		Cvar_Set (var, cpath);
+	free (cpath);
+}
+
 VISIBLE void
 QFS_Init (const char *game)
 {
 	int         i;
 
-	fs_sharepath = Cvar_Get ("fs_sharepath", FS_SHAREPATH, CVAR_ROM, NULL,
+	fs_sharepath = Cvar_Get ("fs_sharepath", FS_SHAREPATH, CVAR_ROM,
+							 qfs_path_cvar,
 							 "location of shared (read-only) game "
 							 "directories");
-	fs_userpath = Cvar_Get ("fs_userpath", FS_USERPATH, CVAR_ROM, NULL,
+	fs_userpath = Cvar_Get ("fs_userpath", FS_USERPATH, CVAR_ROM, 
+							qfs_path_cvar,
 							"location of your game directories");
 	fs_dirconf = Cvar_Get ("fs_dirconf", "", CVAR_ROM, NULL,
 							"full path to gamedir.conf FIXME");
@@ -1372,6 +1429,8 @@ QFS_NextFilename (dstring_t *filename, const char *prefix, const char *ext)
 {
 	char       *digits;
 	int         i;
+	int         ret = 0;
+	dstring_t  *full_path = dstring_new ();
 
 	dsprintf (filename, "%s0000%s", prefix, ext);
 	digits = filename->str + strlen (prefix);
@@ -1381,10 +1440,17 @@ QFS_NextFilename (dstring_t *filename, const char *prefix, const char *ext)
 		digits[1] = i / 100 % 10 + '0';
 		digits[2] = i / 10 % 10 + '0';
 		digits[3] = i % 10 + '0';
-		if (Sys_FileTime (va ("%s/%s", qfs_userpath, filename->str)) == -1)
-			return 1;					// file doesn't exist
+
+		if (qfs_expand_userpath (full_path, filename->str) == -1)
+			break;
+		if (Sys_FileTime (full_path->str) == -1) {
+			// file doesn't exist, so we can use this name
+			ret = 1;
+			break;
+		}
 	}
-	return 0;
+	dstring_delete (full_path);
+	return ret;
 }
 
 VISIBLE QFile *
@@ -1393,14 +1459,9 @@ QFS_Open (const char *path, const char *mode)
 	dstring_t  *full_path = dstring_new ();
 	QFile      *file = 0;
 	const char *m;
-	char       *cpath;
 	int         write = 0;
 
-	cpath = QFS_CompressPath (path);
-	if (contains_updir (cpath, 0)) {
-		errno = EACCES;
-	} else {
-		dsprintf (full_path, "%s/%s", qfs_userpath, cpath);
+	if (qfs_expand_userpath (full_path, path) == 0) {
 		Sys_DPrintf ("QFS_Open: %s %s\n", full_path->str, mode);
 		for (m = mode; *m; m++)
 			if (*m == 'w' || *m == '+' || *m == 'a')
@@ -1412,7 +1473,6 @@ QFS_Open (const char *path, const char *mode)
 	}
 done:
 	dstring_delete (full_path);
-	free (cpath);
 	return file;
 }
 
@@ -1435,10 +1495,10 @@ QFS_Rename (const char *old_path, const char *new_path)
 	dstring_t  *full_new = dstring_new ();
 	int         ret;
 
-	dsprintf (full_old, "%s/%s", qfs_userpath, old_path);
-	dsprintf (full_new, "%s/%s", qfs_userpath, new_path);
-	if ((ret = QFS_CreatePath (full_new->str)) != -1)
-		ret = Qrename (full_old->str, full_new->str);
+	if ((ret = qfs_expand_userpath (full_old, old_path)) != -1)
+		if ((ret = qfs_expand_userpath (full_new, old_path)) != -1)
+			if ((ret = QFS_CreatePath (full_new->str)) != -1)
+				ret = Qrename (full_old->str, full_new->str);
 	dstring_delete (full_old);
 	dstring_delete (full_new);
 	return ret;
@@ -1450,8 +1510,8 @@ QFS_Remove (const char *path)
 	dstring_t  *full_path = dstring_new ();
 	int         ret;
 
-	dsprintf (full_path, "%s/%s", qfs_userpath, path);
-	ret = Qremove (full_path->str);
+	if ((ret = qfs_expand_userpath (full_path, path)) != -1)
+		ret = Qremove (full_path->str);
 	dstring_delete (full_path);
 	return ret;
 }
@@ -1494,6 +1554,15 @@ QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 	searchpath_t *search;
 	DIR        *dir_ptr;
 	struct dirent *dirent;
+	char       *cpath, *cp;
+	const char *separator = "/";
+
+	if (strchr (ext, '/') || strchr (ext, '\\'))
+		return;
+
+	cp = cpath = QFS_CompressPath (path);
+	if (*cp == '/')
+		separator = "";
 
 	for (search = qfs_searchpaths; search != NULL; search = search->next) {
 		if (search->pack) {
@@ -1503,12 +1572,12 @@ QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 			for (i = 0; i < pak->numfiles; i++) {
 				char       *name = pak->files[i].name;
 
-				if (!fnmatch (va("%s*.%s", path, ext), name, FNM_PATHNAME)
-					|| !fnmatch (va("%s*.%s.gz", path, ext), name, FNM_PATHNAME))
+				if (!fnmatch (va("%s*.%s", cp, ext), name, FNM_PATHNAME)
+					|| !fnmatch (va("%s*.%s.gz", cp, ext), name, FNM_PATHNAME))
 					QFS_FilelistAdd (list, name, strip ? ext : 0);
 			}
 		} else {
-			dir_ptr = opendir (va ("%s/%s", search->filename, path));
+			dir_ptr = opendir (va ("%s/%s", search->filename, cp));
 			if (!dir_ptr)
 				continue;
 			while ((dirent = readdir (dir_ptr)))
@@ -1518,6 +1587,7 @@ QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 			closedir (dir_ptr);
 		}
 	}
+	free (cpath);
 }
 
 VISIBLE void
