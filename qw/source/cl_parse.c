@@ -480,7 +480,7 @@ CL_OpenDownload (void)
 		path = qfs_gamedir->dir.skins;
 		fname = cls.downloadtempname->str + 6;
 	} else if (strncmp (cls.downloadtempname->str, "progs/", 6) == 0) {
-		path = qfs_gamedir->dir.progs;
+		path = qfs_gamedir->dir.models;
 		fname = cls.downloadtempname->str + 6;
 	} else if (strncmp (cls.downloadtempname->str, "sound/", 6) == 0) {
 		path = qfs_gamedir->dir.sound;

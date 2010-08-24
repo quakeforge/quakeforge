@@ -334,8 +334,8 @@ qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path,
 		gamedir->gamecode = qfs_var_subst (PL_String (p), vars);
 	if (!gamedir->dir.skins && (p = PL_ObjectForKey (gdpl, "SkinPath")))
 		gamedir->dir.skins = qfs_var_subst (PL_String (p), vars);
-	if (!gamedir->dir.progs && (p = PL_ObjectForKey (gdpl, "ProgPath")))
-		gamedir->dir.progs = qfs_var_subst (PL_String (p), vars);
+	if (!gamedir->dir.models && (p = PL_ObjectForKey (gdpl, "ModelPath")))
+		gamedir->dir.models = qfs_var_subst (PL_String (p), vars);
 	if (!gamedir->dir.sound && (p = PL_ObjectForKey (gdpl, "SoundPath")))
 		gamedir->dir.sound = qfs_var_subst (PL_String (p), vars);
 	if (!gamedir->dir.maps && (p = PL_ObjectForKey (gdpl, "MapPath")))
@@ -489,8 +489,8 @@ qfs_build_gamedir (const char **list)
 			free ((char *)qfs_gamedir->dir.def);
 		if (qfs_gamedir->dir.skins)
 			free ((char *)qfs_gamedir->dir.skins);
-		if (qfs_gamedir->dir.progs)
-			free ((char *)qfs_gamedir->dir.progs);
+		if (qfs_gamedir->dir.models)
+			free ((char *)qfs_gamedir->dir.models);
 		if (qfs_gamedir->dir.sound)
 			free ((char *)qfs_gamedir->dir.sound);
 		if (qfs_gamedir->dir.maps)
@@ -544,8 +544,8 @@ qfs_build_gamedir (const char **list)
 							gamedir->path);
 	if (!gamedir->dir.skins)
 		gamedir->dir.skins = nva ("%s/skins", gamedir->dir.def);
-	if (!gamedir->dir.progs)
-		gamedir->dir.progs = nva ("%s/progs", gamedir->dir.def);
+	if (!gamedir->dir.models)
+		gamedir->dir.models = nva ("%s/progs", gamedir->dir.def);
 	if (!gamedir->dir.sound)
 		gamedir->dir.sound = nva ("%s/sound", gamedir->dir.def);
 	if (!gamedir->dir.maps)
@@ -558,7 +558,7 @@ qfs_build_gamedir (const char **list)
 	Sys_DPrintf ("    gamecode: %s\n", qfs_gamedir->gamecode);
 	Sys_DPrintf ("    def     : %s\n", qfs_gamedir->dir.def);
 	Sys_DPrintf ("    skins   : %s\n", qfs_gamedir->dir.skins);
-	Sys_DPrintf ("    progs   : %s\n", qfs_gamedir->dir.progs);
+	Sys_DPrintf ("    models  : %s\n", qfs_gamedir->dir.models);
 	Sys_DPrintf ("    sound   : %s\n", qfs_gamedir->dir.sound);
 	Sys_DPrintf ("    maps    : %s\n", qfs_gamedir->dir.maps);
 	qfs_process_path (qfs_gamedir->path, dir);

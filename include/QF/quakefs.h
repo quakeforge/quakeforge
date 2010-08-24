@@ -55,7 +55,7 @@ typedef struct gamedir_s {
 	struct {
 		const char *def;
 		const char *skins;
-		const char *progs;
+		const char *models;
 		const char *sound;
 		const char *maps;
 	} dir;
