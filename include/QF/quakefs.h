@@ -78,7 +78,7 @@ struct dstring_s;
 
 void QFS_Init (const char *game);
 
-void QFS_Gamedir (const char *dir);
+void QFS_Gamedir (const char *gamedir);
 
 QFile *QFS_Open (const char *path, const char *mode);
 QFile *QFS_WOpen (const char *path, int zip);

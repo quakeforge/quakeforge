@@ -1177,10 +1177,10 @@ QFS_AddGameDirectory (const char *dir)
 	Sets the gamedir and path to a different directory.
 */
 VISIBLE void
-QFS_Gamedir (const char *dir)
+QFS_Gamedir (const char *gamedir)
 {
 	int         i;
-	const char *list[2] = {dir, 0};
+	const char *list[2] = {gamedir, 0};
 
 	qfs_build_gamedir (list);
 
