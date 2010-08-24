@@ -590,6 +590,7 @@ INPUT                 += @TOPSRC@/tools
 INPUT                 += @TOPSRC@/doc/bind.txt
 INPUT                 += @TOPSRC@/doc/connect.txt
 INPUT                 += @TOPSRC@/doc/cshifts.txt
+INPUT                 += @TOPSRC@/doc/dirconf.txt
 INPUT                 += @TOPSRC@/doc/faq.txt
 INPUT                 += @TOPSRC@/doc/mapformat.txt
 INPUT                 += @TOPSRC@/doc/quakeforge.txt

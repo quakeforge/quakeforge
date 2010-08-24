@@ -1,0 +1,109 @@
+//unfortunatly, have to wrap the docs in a C comment for doxygen
+/**
+\page dirconf Directory Configuration
+
+QuakeForge allows the structure of the game data directory tree to be
+specified at run time. The default configuration is given below, but can be
+overridden by setting the \c fs_dirconf Cvar to point to a configuration
+file (eg, <code>"~/.quakeforge/gamedir.conf"</code>)
+
+\verbatim
+QF = {
+	Path = "QF";
+};
+Quake = {
+	Inherit = QF;
+	Path = "id1";
+	GameCode = "progs.dat";
+};
+QuakeWorld = {
+	Inherit = (Quake);
+	Path = "qw";
+	SkinPath = "${path}/skins";
+	GameCode = "qwprogs.dat";
+};
+"qw:qw" = {
+	Inherit = (QuakeWorld);
+};
+"qw:*" = {
+	Inherit = (QuakeWorld);
+	Path = "$gamedir";
+};
+"nq:*" = {
+	Inherit = (Quake);
+	Path = "$gamedir";
+};
+"hipnotic" = {
+	Inherit = (Quake);
+	Path = "hipnotic";
+};
+"hipnotic:*" = {
+	Inherit = (hipnotic);
+	Path = "$gamedir";
+};
+"rogue" = {
+	Inherit = (Quake);
+	Path = "rogue";
+};
+"rogue:*" = {
+	Inherit = (rogue);
+	Path = "$gamedir";
+};
+"abyss" = {
+	Inherit = (Quake);
+	Path = "abyss";
+};
+"abyss:*" = {
+	Inherit = (abyss);
+	Path = "$gamedir";
+};
+\endverbatim
+
+The directory config is a collection of tags with collections of
+attributes. Normally, the tags will be in the form of either
+<code>\"[name]\"</code> or <code>\"[name]:*\"</code>. The first form is
+usually used for allowing inheritance (via the \c Inherit attribute)
+
+Supported attributes are:
+<dl>
+	<dt><code>Path</code></dt>
+		<dd>The relative path of the mod directory.</dd>
+	<dt><code>GameCode</code></dt>
+		<dd>The name of the mod progs file. This is relative to the mod
+		directory</dd>
+	<dt><code>SkinPath</code></dt>
+		<dd>Directory to which downloaded skins will be saved. This is
+		relative to the QuakeForge data directory, and thus the default
+		configuration uses <code>\${path}</code>. This attribute is ignored
+		by nq clients and servers.</dd>
+	<dt><code>SoundPath</code></dt>
+		<dd>Where to look for sounds. Defaults to
+		<code>\${path}/sound</code></dd>
+	<dt><code>ModelPath</code></dt>
+		<dd>Where to look for models. Defaults to
+		<code>\${path}/progs</code></dd>
+	<dt><code>MapPath</code></dt>
+		<dd>Where to look for maps. Defaults to
+		<code>\${path}/maps</code>.</dd>
+</dl>
+
+Attribute allow variable substitution. Variables can take the form of
+either <code>\$NAME</code> or <code>\${NAME}</code>, where the latter is
+useful when the end of \c NAME is ambiguous (eg,
+<code>\${NAME}STUFF</code> vs <code>\$NAME/STUFF</code>).
+
+Supported vars are:
+<dl>
+	<dt><code>gamedir</code></dt>
+		<dd>This is the current mod directory as specified by either
+		<code>-game [modname]</code> on the command line (nq) or the
+		<code>gamedir [modname]</code> console command.</dd>
+	<dt><code>path</code></dt>
+		<dd>This is the first directory in the \c Path attribute. If the
+		current tag does not set the \c Path attribute, this variable will
+		be undefined.</dd>
+	<dt><code>\$</code></dt>
+		<dd>The way to get <code>\$</code> into an attribute is by using
+		<code>\$\$</code></dd>
+</dl>
+*/

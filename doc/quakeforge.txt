@@ -11,6 +11,7 @@ of players we can.
 \li \subpage faq
 \li \subpage key_binding
 \li \subpage cshift_cvars
+\li \subpage dirconf
 \li \subpage qw_cap_spec
 \li \subpage qw_download_spec
 \li \subpage server_timestampes
