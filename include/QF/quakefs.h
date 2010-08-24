@@ -89,7 +89,6 @@ int _QFS_FOpenFile (const char *filename, QFile **gzfile,
 int QFS_FOpenFile (const char *filename, QFile **gzfile);
 byte *QFS_LoadFile (const char *path, int usehunk);
 byte *QFS_LoadStackFile (const char *path, void *buffer, int bufsize);
-byte *QFS_LoadTempFile (const char *path);
 byte *QFS_LoadHunkFile (const char *path);
 void QFS_LoadCacheFile (const char *path, struct cache_user_s *cu);
 
@@ -115,8 +114,6 @@ void QFS_FilelistAdd (filelist_t *filelist, const char *fname,
 void QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 					   int strip);
 void QFS_FilelistFree (filelist_t *list);
-void QFS_FilelistEnumerate(filelist_t* list, const char* path);
-qboolean QFS_IsDirectory (const char *path);
 
 
 /**	Expand leading "~/" in \a path to the user's home directory.
