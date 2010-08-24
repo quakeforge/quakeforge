@@ -68,9 +68,6 @@ typedef void gamedir_callback_t (int phase);
 
 extern gamedir_t *qfs_gamedir;
 
-extern struct cvar_s *fs_sharepath;
-extern struct cvar_s *fs_userpath;
-
 extern const char *qfs_userpath;
 
 extern int file_from_pak;

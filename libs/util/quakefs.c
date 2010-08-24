@@ -125,9 +125,9 @@ int fnmatch (const char *__pattern, const char *__string, int __flags);
 
 // QUAKE FILESYSTEM
 
-cvar_t     *fs_userpath;
-cvar_t     *fs_sharepath;
-cvar_t     *fs_dirconf;
+static cvar_t *fs_userpath;
+static cvar_t *fs_sharepath;
+static cvar_t *fs_dirconf;
 
 VISIBLE const char *qfs_userpath;
 
