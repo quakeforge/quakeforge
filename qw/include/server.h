@@ -39,6 +39,7 @@
 
 #include "host.h"
 #include "netchan.h"
+#include "qw/bothdefs.h"
 #include "qw/msg_backbuf.h"
 #include "qw/protocol.h"
 

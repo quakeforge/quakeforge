@@ -297,7 +297,7 @@ void SND_SFX_Init (void);
 */
 //@{
 #define	MAX_CHANNELS			512	//!< number of available mixing channels
-#define	MAX_DYNAMIC_CHANNELS	8	//!< number of dynamic channels
+#define	MAX_DYNAMIC_CHANNELS	128	//!< number of dynamic channels
 #define MAX_STATIC_CHANNELS		256	//!< number of static channels
 extern	channel_t   snd_channels[MAX_CHANNELS];	//!< pool of available channels
 extern	int			snd_total_channels;	//!< number of active channels

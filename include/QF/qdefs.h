@@ -34,12 +34,9 @@
 #define MAX_QPATH		64
 #define MAX_CL_STATS	32
 #define NUM_CSHIFTS		4
-#define MAX_MODELS		256
-#define MAX_SOUNDS		256
 #define MAX_SCOREBOARD		16
 #define MAX_SCOREBOARDNAME 32
 #define MAX_STYLESTRING	64
-#define MAX_EDICTS		768
 #define MAX_LIGHTSTYLES	64
 
 #define clc_stringcmd	4

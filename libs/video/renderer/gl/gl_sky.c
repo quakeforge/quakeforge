@@ -110,7 +110,7 @@ vec5_t      skyvec[6][4] = {
 	}
 };
 
-void
+VISIBLE void
 R_LoadSkys (const char *skyname)
 {
 	const char *name;

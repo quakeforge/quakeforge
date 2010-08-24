@@ -33,6 +33,7 @@
 #define __server_h
 
 #include "netchan.h"
+#include "qw/bothdefs.h"
 #include "qw/pmove.h"
 
 struct client_s;

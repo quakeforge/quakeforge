@@ -262,10 +262,16 @@ PF_setmodel (progs_t *pr)
 
 	mod = sv.models[(int) SVfloat (e, modelindex)];	// Mod_ForName (m, true);
 
-	if (mod)
-		SetMinMaxSize (pr, e, mod->mins, mod->maxs, true);
-	else
+	if (mod) {
+		// FIXME disabled for now as setting clipmins/maxs is currently
+		// too messy
+		//if (mod->type == mod_brush)
+		//	SetMinMaxSize (pr, e, mod->clipmins, mod->clipmaxs, true);
+		//else
+			SetMinMaxSize (pr, e, mod->mins, mod->maxs, true);
+	} else {
 		SetMinMaxSize (pr, e, vec3_origin, vec3_origin, true);
+	}
 }
 
 /*
@@ -370,6 +376,7 @@ PF_ambientsound (progs_t *pr)
 	float      *pos;
 	float       vol, attenuation;
 	int         soundnum;
+	int         large = false;
 
 	pos = P_VECTOR (pr, 0);
 	samp = P_GSTRING (pr, 1);
@@ -385,11 +392,20 @@ PF_ambientsound (progs_t *pr)
 		Sys_Printf ("no precache: %s\n", samp);
 		return;
 	}
+	if (soundnum > 255) {
+		if (sv.protocol == PROTOCOL_NETQUAKE)
+			return;
+		large = true;
+	}
 
 	// add an svc_spawnambient command to the level signon packet
-	MSG_WriteByte (&sv.signon, svc_spawnstaticsound);
+	MSG_WriteByte (&sv.signon,
+				   large ? svc_spawnstaticsound2 : svc_spawnstaticsound);
 	MSG_WriteCoordV (&sv.signon, pos);
-	MSG_WriteByte (&sv.signon, soundnum);
+	if (large)
+		MSG_WriteShort (&sv.signon, soundnum);
+	else
+		MSG_WriteByte (&sv.signon, soundnum);
 	MSG_WriteByte (&sv.signon, vol * 255);
 	MSG_WriteByte (&sv.signon, attenuation * 64);
 
@@ -1141,22 +1157,57 @@ PF_makestatic (progs_t *pr)
 {
 	const char *model;
 	edict_t    *ent;
+	int         bits = 0;
 
 	ent = P_EDICT (pr, 0);
-
-	MSG_WriteByte (&sv.signon, svc_spawnstatic);
+	//if (ent->alpha == ENTALPHA_ZERO) { //FIXME
+	//	//johnfitz -- don't send invisible static entities
+	//	goto nosend;
+	//}
 
 	model = PR_GetString (pr, SVstring (ent, model));
-	MSG_WriteByte (&sv.signon, SV_ModelIndex (model));
+	if (sv.protocol == PROTOCOL_NETQUAKE) {
+		if (SV_ModelIndex (model) & 0xff00
+			|| (int) SVfloat (ent, frame) & 0xff00)
+			goto nosend;
+	} else {
+		if (SV_ModelIndex (model) & 0xff00)
+			bits |= B_LARGEMODEL;
+		if ((int) SVfloat (ent, frame) & 0xff00)
+			bits |= B_LARGEFRAME;
+		//FIXME
+		//if (ent->alpha != ENTALPHA_DEFAULT)
+		//	bits |= B_ALPHA;
+	}
 
-	MSG_WriteByte (&sv.signon, SVfloat (ent, frame));
+	if (bits) {
+		MSG_WriteByte (&sv.signon, svc_spawnstatic2);
+		MSG_WriteByte (&sv.signon, bits);
+	} else {
+		MSG_WriteByte (&sv.signon, svc_spawnstatic);
+	}
+
+	if (bits & B_LARGEMODEL)
+		MSG_WriteShort (&sv.signon, SV_ModelIndex (model));
+	else
+		MSG_WriteByte (&sv.signon, SV_ModelIndex (model));
+
+	if (bits & B_LARGEFRAME)
+		MSG_WriteShort (&sv.signon, SVfloat (ent, frame));
+	else
+		MSG_WriteByte (&sv.signon, SVfloat (ent, frame));
+
 	MSG_WriteByte (&sv.signon, SVfloat (ent, colormap));
 	MSG_WriteByte (&sv.signon, SVfloat (ent, skin));
 
 	MSG_WriteCoordAngleV (&sv.signon, SVvector (ent, origin),
 						  SVvector (ent, angles));
 
+	//FIXME
+	//if (bits & B_ALPHA)
+	//	MSG_WriteByte (&sv.signon, ent->alpha);
 	// throw the entity away now
+nosend:
 	ED_Free (pr, ent);
 }
 

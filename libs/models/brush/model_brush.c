@@ -357,6 +357,18 @@ Mod_LoadSubmodels (bsp_t *bsp)
 		out->firstface = LittleLong (in->firstface);
 		out->numfaces = LittleLong (in->numfaces);
 	}
+
+	out = loadmodel->submodels;
+
+	if (out->visleafs > MAX_MAP_LEAFS) {
+		Sys_Error ("Mod_LoadSubmodels: too many visleafs (%d, max = %d) in %s",
+				   out->visleafs, MAX_MAP_LEAFS, loadmodel->name);
+	}
+
+	if (out->visleafs > 8192)
+		Sys_MaskPrintf (SYS_WARN,
+						"%i visleafs exceeds standard limit of 8192.\n",
+						out->visleafs);
 }
 
 static void
@@ -473,8 +485,8 @@ CalcSurfaceExtents (msurface_t *s)
 
 		s->texturemins[i] = bmins[i] * 16;
 		s->extents[i] = (bmaxs[i] - bmins[i]) * 16;
-		// FIXME even 512 is really too small, need a saner test
-		if (!(tex->flags & TEX_SPECIAL) && s->extents[i] > 512)
+		// FIXME even 2000 is really too small, need a saner test
+		if (!(tex->flags & TEX_SPECIAL) && s->extents[i] > 2000)
 			Sys_Error ("Bad surface extents: %d %x %d %d", i, tex->flags,
 					   s->extents[i], LongSwap (s->extents[i]));
 	}
@@ -490,6 +502,11 @@ Mod_LoadFaces (bsp_t *bsp)
 	in = bsp->faces;
 	count = bsp->numfaces;
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
+
+	if (count > 32767) {
+		Sys_MaskPrintf (SYS_WARN,
+						"%i faces exceeds standard limit of 32767.\n", count);
+	}
 
 	loadmodel->surfaces = out;
 	loadmodel->numsurfaces = count;
@@ -566,6 +583,11 @@ Mod_LoadNodes (bsp_t *bsp)
 	count = bsp->numnodes;
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
+	if (count > 32767) {
+		Sys_MaskPrintf (SYS_WARN,
+						"%i nodes exceeds standard limit of 32767.\n", count);
+	}
+
 	loadmodel->nodes = out;
 	loadmodel->numnodes = count;
 
@@ -582,11 +604,22 @@ Mod_LoadNodes (bsp_t *bsp)
 		out->numsurfaces = LittleShort (in->numfaces);
 
 		for (j = 0; j < 2; j++) {
-			p = LittleShort (in->children[j]);
-			if (p >= 0)
+			// handle > 32k nodes. From darkplaces via fitzquake
+			p = (unsigned short) LittleShort (in->children[j]);
+			if (p < count) {
 				out->children[j] = loadmodel->nodes + p;
-			else
-				out->children[j] = (mnode_t *) (loadmodel->leafs + (-1 - p));
+			} else {
+				p = 65535 - p; //NOTE this uses 65535 intentionally, -1 is leaf
+				if (p < loadmodel->numleafs) {
+					out->children[j] = (mnode_t *) (loadmodel->leafs + p);
+				} else {
+					Sys_Printf ("Mod_LoadNodes: invalid leaf index %i "
+								"(file has only %i leafs)\n", p,
+								loadmodel->numleafs);
+					//map it to the solid leaf
+					out->children[j] = (mnode_t *)(loadmodel->leafs);
+				}
+			}
 		}
 	}
 
@@ -605,6 +638,9 @@ Mod_LoadLeafs (bsp_t *bsp)
 	count = bsp->numleafs;
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
+	if (count > 32767)
+		Sys_Error ("%i leafs exceeds limit of 32767.\n", count);
+
 	loadmodel->leafs = out;
 	loadmodel->numleafs = count;
 //	snprintf(s, sizeof (s), "maps/%s.bsp",
@@ -621,8 +657,8 @@ Mod_LoadLeafs (bsp_t *bsp)
 		out->contents = p;
 
 		out->firstmarksurface = loadmodel->marksurfaces +
-			LittleShort (in->firstmarksurface);
-		out->nummarksurfaces = LittleShort (in->nummarksurfaces);
+			(uint16_t) LittleShort (in->firstmarksurface);
+		out->nummarksurfaces = (uint16_t) LittleShort (in->nummarksurfaces);
 
 		p = LittleLong (in->visofs);
 		if (p == -1)
@@ -657,6 +693,12 @@ Mod_LoadClipnodes (bsp_t *bsp)
 	count = bsp->numclipnodes;
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
+	if (count > 32767) {
+		Sys_MaskPrintf (SYS_WARN,
+						"%i clilpnodes exceeds standard limit of 32767.\n",
+						count);
+	}
+
 	loadmodel->clipnodes = out;
 	loadmodel->numclipnodes = count;
 
@@ -688,8 +730,14 @@ Mod_LoadClipnodes (bsp_t *bsp)
 
 	for (i = 0; i < count; i++, out++, in++) {
 		out->planenum = LittleLong (in->planenum);
-		out->children[0] = LittleShort (in->children[0]);
-		out->children[1] = LittleShort (in->children[1]);
+		if (out->planenum < 0 || out->planenum >= loadmodel->numplanes)
+			Sys_Error ("Mod_LoadClipnodes: planenum out of bounds");
+		out->children[0] = (uint16_t) LittleShort (in->children[0]);
+		out->children[1] = (uint16_t) LittleShort (in->children[1]);
+		if (out->children[0] >= count)
+			out->children[0] -= 65536;
+		if (out->children[1] >= count)
+			out->children[1] -= 65536;
 		if ((out->children[0] >= 0
 			 && (out->children[0] < hull->firstclipnode
 				 || out->children[0] > hull->lastclipnode))
@@ -748,11 +796,17 @@ Mod_LoadMarksurfaces (bsp_t *bsp)
 	count = bsp->nummarksurfaces;
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
+	if (count > 32767) {
+		Sys_MaskPrintf (SYS_WARN,
+						"%i marksurfaces exceeds standard limit of 32767.\n",
+						count);
+	}
+
 	loadmodel->marksurfaces = out;
 	loadmodel->nummarksurfaces = count;
 
 	for (i = 0; i < count; i++) {
-		j = LittleShort (in[i]);
+		j = (uint16_t) LittleShort (in[i]);
 		if (j >= loadmodel->numsurfaces)
 			Sys_Error ("Mod_ParseMarksurfaces: bad surface number");
 		out[i] = loadmodel->surfaces + j;

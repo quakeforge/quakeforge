@@ -608,7 +608,7 @@ CL_RelinkEntities (void)
 		CL_NewDlight (i, ent->origin, state->effects);
 		if (VectorDistance_fast (state->msg_origins[1], ent->origin)
 			> (256 * 256))
-			VectorCopy (ent ->origin, state->msg_origins[1]);
+			VectorCopy (ent->origin, state->msg_origins[1]);
 		if (ent->model->flags & EF_ROCKET) {
 			dl = R_AllocDlight (i);
 			if (dl) {
@@ -729,6 +729,10 @@ CL_SetState (cactive_t state)
 			key_dest = key_console;
 			VID_SetCaption ("Disconnected");
 		}
+		if (state == ca_connected)
+			S_AmbientOn ();
+		else
+			S_AmbientOff ();
 	}
 	if (con_module)
 		con_module->data->console->force_commandline = (state != ca_active);

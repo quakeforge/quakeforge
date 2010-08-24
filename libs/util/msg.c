@@ -160,9 +160,24 @@ MSG_WriteAngleV (sizebuf_t *sb, const vec3_t angles)
 }
 
 VISIBLE void
-MSG_WriteAngle16 (sizebuf_t *sb, float angle16)
+MSG_WriteAngle16 (sizebuf_t *sb, float angle)
 {
-	MSG_WriteShort (sb, (int) (angle16 * (65536.0 / 360.0)) & 65535);
+	MSG_WriteShort (sb, (int) (angle * (65536.0 / 360.0)) & 65535);
+}
+
+VISIBLE void
+MSG_WriteAngle16V (sizebuf_t *sb, const vec3_t angles)
+{
+	byte   *buf;
+	int		i;
+	unsigned short ang;
+
+	buf = SZ_GetSpace (sb, 6);
+	for (i = 0; i < 3; i++) {
+		ang = (int) (angles[i] * (65536.0 / 360.0)) & 65535;
+		*buf++ = ang & 0xff;
+		*buf++ = ang >> 8;
+	}
 }
 
 VISIBLE void
@@ -381,6 +396,19 @@ VISIBLE float
 MSG_ReadAngle16 (qmsg_t *msg)
 {
 	return MSG_ReadShort (msg) * (360.0 / 65536.0);
+}
+
+VISIBLE void
+MSG_ReadAngle16V (qmsg_t *msg, vec3_t angles)
+{
+	int		i;
+	short   ang;
+
+	for (i = 0; i < 3; i++) {
+		ang = MSG_ReadByte (msg);
+		ang |= MSG_ReadByte (msg) << 8;
+		angles[i] = ang * (360.0 / 65536.0);
+	}
 }
 
 VISIBLE int

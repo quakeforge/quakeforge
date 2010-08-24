@@ -112,6 +112,7 @@ cvar_t     *host_mem_size;
 
 cvar_t     *host_framerate;
 cvar_t     *host_speeds;
+cvar_t     *max_edicts;
 
 cvar_t     *sys_ticrate;
 cvar_t     *serverprofile;
@@ -258,6 +259,8 @@ Host_InitLocal (void)
 	host_speeds =
 		Cvar_Get ("host_speeds", "0", CVAR_NONE, NULL,
 				"set for running times");
+	max_edicts = Cvar_Get ("max_edicts", "1024", CVAR_NONE, NULL,
+						   "maximum server edicts");
 
 	sys_ticrate = Cvar_Get ("sys_ticrate", "0.05", CVAR_NONE, NULL, "None");
 	serverprofile = Cvar_Get ("serverprofile", "0", CVAR_NONE, NULL, "None");

@@ -89,7 +89,9 @@ typedef struct
 	byte		reliable_datagram_buf[MAX_DATAGRAM];
 
 	sizebuf_t	signon;
-	byte		signon_buf[8192];
+	byte		signon_buf[MAX_MSGLEN-2];
+
+	unsigned    protocol;
 } server_t;
 
 
@@ -212,6 +214,8 @@ extern	struct cvar_s	*sv_idealpitchscale;
 extern	struct cvar_s	*sv_aim;
 extern	struct cvar_s	*sv_friction;
 extern	struct cvar_s	*sv_stopspeed;
+
+extern	struct cvar_s	*max_edicts;
 
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server

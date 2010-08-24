@@ -128,6 +128,7 @@ qboolean
 SV_RunThink (edict_t *ent)
 {
 	float       thinktime;
+	float       oldframe;
 
 	do {
 		thinktime = SVfloat (ent, nextthink);
@@ -138,12 +139,27 @@ SV_RunThink (edict_t *ent)
 			thinktime = sv.time;		// don't let things stay in the past.
 										// it is possible to start that way
 										// by a trigger with a local time.
+		oldframe = SVfloat (ent, frame);
+
 		SVfloat (ent, nextthink) = 0;
 		*sv_globals.time = thinktime;
 		sv_pr_think (ent);
 
 		if (ent->free)
 			return false;
+#if 0 //FIXME
+		ent->sendinterval = false;
+		if (SVfloat (ent, nextthink)
+			&& (SVfloat (ent, movetype) == MOVETYPE_STEP
+				|| SVfloat (ent, frame) != oldframe)) {
+			int         i;
+			i = rint ((SVfloat (ent, nextthink) - thinktime) * 255);
+			if (i >= 0 && i < 256 && i != 25 && i != 26) {
+				//25 and 26 are close enough to 0.1 to not send
+				ent->sendinterval = true;
+			}
+		}
+#endif
 	} while (0);
 
 	return true;
@@ -383,10 +399,11 @@ SV_Push (edict_t *pusher, vec3_t move)
 	float       solid_save;
 	int         num_moved, i, e;
 	edict_t    *check, *block;
-	edict_t    *moved_edict[MAX_EDICTS];
+	edict_t   **moved_edict;
 	vec3_t      entorig;
 	vec3_t      mins, maxs, pushorig;
-	vec3_t      moved_from[MAX_EDICTS];
+	vec3_t     *moved_from;
+	int         mark;
 
 	VectorAdd (SVvector (pusher, absmin), move, mins);
 	VectorAdd (SVvector (pusher, absmax), move, maxs);
@@ -396,6 +413,10 @@ SV_Push (edict_t *pusher, vec3_t move)
 	// move the pusher to it's final position
 	VectorAdd (SVvector (pusher, origin), move, SVvector (pusher, origin));
 	SV_LinkEdict (pusher, false);
+
+	mark = Hunk_LowMark ();
+	moved_edict = Hunk_Alloc (sv.num_edicts * sizeof (edict_t *));
+	moved_from = Hunk_Alloc (sv.num_edicts * sizeof (vec_t));
 
 	// see if any solid entities are inside the final position
 	num_moved = 0;
@@ -473,8 +494,10 @@ SV_Push (edict_t *pusher, vec3_t move)
 			VectorCopy (moved_from[i], SVvector (moved_edict[i], origin));
 			SV_LinkEdict (moved_edict[i], false);
 		}
+		Hunk_FreeToLowMark (mark);
 		return false;
 	}
+	Hunk_FreeToLowMark (mark);
 	return true;
 }
 
