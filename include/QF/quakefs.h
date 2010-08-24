@@ -41,8 +41,6 @@
 
 //============================================================================
 
-#define MAX_GAMEDIR_CALLBACKS 128	// most QFS_GamedirCallback calls.
-
 typedef struct filelist_s {
 	char      **list;
 	int         count;

@@ -201,8 +201,10 @@ static const char *qfs_default_dirconf =
 	"}";
 
 
-static gamedir_callback_t *gamedir_callbacks[MAX_GAMEDIR_CALLBACKS];
+#define GAMEDIR_CALLBACK_CHUNK 16
+static gamedir_callback_t **gamedir_callbacks;
 static int num_gamedir_callbacks;
+static int max_gamedir_callbacks;
 
 static const char *
 qfs_var_get_key (void *_v, void *unused)
@@ -1229,8 +1231,13 @@ QFS_Gamedir (const char *dir)
 VISIBLE void
 QFS_GamedirCallback (gamedir_callback_t *func)
 {
-	if (num_gamedir_callbacks == MAX_GAMEDIR_CALLBACKS) {
-		Sys_Error ("Too many gamedir callbacks!\n");
+	if (num_gamedir_callbacks == max_gamedir_callbacks) {
+		size_t size = (max_gamedir_callbacks + GAMEDIR_CALLBACK_CHUNK) 
+					  * sizeof (gamedir_callback_t *);
+		gamedir_callbacks = realloc (gamedir_callbacks, size);
+		if (!gamedir_callbacks)
+			Sys_Error ("Too many gamedir callbacks!\n");
+		max_gamedir_callbacks += GAMEDIR_CALLBACK_CHUNK;
 	}
 
 	if (!func) {
