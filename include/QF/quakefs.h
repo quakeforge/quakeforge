@@ -83,7 +83,6 @@ void QFS_Gamedir (const char *dir);
 QFile *QFS_Open (const char *path, const char *mode);
 QFile *QFS_WOpen (const char *path, int zip);
 void QFS_WriteFile (const char *filename, const void *data, int len);
-void QFS_WriteBuffers (const char *filename, int count, ...);
 
 int _QFS_FOpenFile (const char *filename, QFile **gzfile,
 					struct dstring_s *foundname, int zip);

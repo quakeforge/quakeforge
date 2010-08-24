@@ -665,6 +665,7 @@ LoadTGA (QFile *fin)
 VISIBLE void
 WriteTGAfile (const char *tganame, byte *data, int width, int height)
 {
+	QFile      *qfile;
 	TargaHeader header;
 
 	memset (&header, 0, sizeof (header));
@@ -673,6 +674,12 @@ WriteTGAfile (const char *tganame, byte *data, int width, int height)
 	header.height = LittleShort (height);
 	header.pixel_size = 24;
 
-	QFS_WriteBuffers (tganame, 2, &header, sizeof (header), data,
-					  width * height * 3);
+	qfile = QFS_WOpen (tganame, 0);
+	if (!qfile) {
+		Sys_Printf ("Error opening %s", tganame);
+		return;
+	}
+	Qwrite (qfile, &header, sizeof (header));
+	Qwrite (qfile, data, width * height * 3);
+	Qclose (qfile);
 }

@@ -669,35 +669,6 @@ QFS_WriteFile (const char *filename, const void *data, int len)
 	Qclose (f);
 }
 
-/*
-	QFS_WriteBuffers
-
-	The filename will be prefixed by the current game directory
-*/
-VISIBLE void
-QFS_WriteBuffers (const char *filename, int count, ...)
-{
-	va_list     args;
-	QFile      *f;
-
-	va_start (args, count);
-
-	f = QFS_WOpen (filename, 0);
-	if (!f) {
-		Sys_Error ("Error opening %s", filename);
-	}
-
-	Sys_DPrintf ("QFS_WriteBuffers: %s\n", filename);
-	while (count--) {
-		void       *data = va_arg (args, void *);
-		int         len = va_arg (args, int);
-
-		Qwrite (f, data, len);
-	}
-	Qclose (f);
-	va_end (args);
-}
-
 VISIBLE int
 QFS_CreatePath (const char *path)
 {
