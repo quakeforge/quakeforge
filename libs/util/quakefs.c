@@ -1244,11 +1244,6 @@ QFS_Gamedir (const char *gamedir)
 	}
 }
 
-/*
-	QFS_GamedirCallback
-
-	Kludge to fix all the stuff that changing gamedirs breaks
-*/
 VISIBLE void
 QFS_GamedirCallback (gamedir_callback_t *func)
 {
