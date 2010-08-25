@@ -707,11 +707,6 @@ qfs_path_f (void)
 	}
 }
 
-/*
-	QFS_WriteFile
-
-	The filename will be prefixed by the current game directory
-*/
 VISIBLE void
 QFS_WriteFile (const char *filename, const void *data, int len)
 {
