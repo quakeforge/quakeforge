@@ -785,7 +785,14 @@ QFS_CompressPath (const char *pth)
 						d--;
 					if (d == path
 						&& d[0] == '.' && d[1] == '.'
-						&& (d[2] == '/' || d[2] == '0')) {
+						&& (d[2] == '/' || d[2] == '\0')) {
+						p += 2 + (p[2] == '/');
+						continue;
+					}
+					if (d[0] == '/'
+						&& d[1] == '.' && d[2] == '.'
+						&& (d[3] == '/' || d[3] == '\0')) {
+						*p = 0;
 						p += 2 + (p[2] == '/');
 						continue;
 					}
@@ -804,12 +811,16 @@ QFS_CompressPath (const char *pth)
 			p++;
 		if (*p == '/') {
 			p++;
+			// skip over multiple / (foo//bar -> foo/bar)
 			for (d = p; *d == '/'; d++)
 				;
 			if (d != p)
 				strcpy (p, d);
 		}
 	}
+	// strip any trailing /, but not if it's the root /
+	if (--p != path && *p == '/')
+		*p = 0;
 
 	return path;
 }
