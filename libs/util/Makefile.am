@@ -41,4 +41,11 @@ libQFutil_la_SOURCES= \
 	qfplist.c quakefs.c quakeio.c riff.c script.c sizebuf.c string.c sys.c \
 	va.c ver_check.c wad.c wadfile.c zone.c $(fnmatch) $(getopt)
 
+check_PROGRAMS=test-qfs
+
+test_qfs_SOURCES=test-qfs.c
+test_qfs_LDADD=$(builddir)/libQFutil.la
+test_qfs_DEPENDENCIES=$(builddir)/libQFutil.la
+
 EXTRA_DIST= $(fnmatch_src) $(getopt_src)
+TESTS=$(check_PROGRAMS)
