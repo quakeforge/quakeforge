@@ -148,7 +148,7 @@ typedef struct qfs_var_s {
 	char       *val;
 } qfs_var_t;
 
-static void QFS_AddGameDirectory (const char *dir);
+static void qfs_add_gamedir (const char *dir);
 
 VISIBLE gamedir_t  *qfs_gamedir;
 static plitem_t *qfs_gd_plist;
@@ -456,7 +456,7 @@ qfs_process_path (const char *path, const char *gamedir)
 			s--;
 		if (s != e) {
 			dsprintf (dir, "%.*s", (int) (e - s), s);
-			QFS_AddGameDirectory (dir->str);
+			qfs_add_gamedir (dir->str);
 		}
 		e = --s;
 	}
@@ -609,14 +609,14 @@ no_config:
 }
 
 /*
-	contains_updir
+	qfs_contains_updir
 
 	Checks if a string contains an updir ('..'), either at the ends or
 	surrounded by slashes ('/').  Doesn't check for leading slash.
 	Assumes canonical (compressed) path.
 */
 static inline int
-contains_updir (const char *path, int levels)
+qfs_contains_updir (const char *path, int levels)
 {
 	do {
 		if (path[0] != '.' || path[1] != '.'
@@ -644,7 +644,7 @@ qfs_expand_path (dstring_t *full_path, const char *base, const char *path)
 		return -1;
 	}
 	cpath = QFS_CompressPath (path);
-	if (contains_updir (cpath, 0)) {
+	if (qfs_contains_updir (cpath, 0)) {
 		free (cpath);
 		errno = EACCES;
 		return -1;
@@ -693,7 +693,7 @@ QFS_FileBase (const char *in)
 
 
 static void
-QFS_Path_f (void)
+qfs_path_f (void)
 {
 	searchpath_t *s;
 
@@ -745,7 +745,7 @@ QFS_CreatePath (const char *path)
 }
 
 static QFile *
-QFS_OpenRead (const char *path, int offs, int len, int zip)
+qfs_openread (const char *path, int offs, int len, int zip)
 {
 	QFile      *file;
 
@@ -847,7 +847,7 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 				dstring_clearstr (foundname);
 				dstring_appendstr (foundname, packfile->name);
 			}
-			*gzfile = QFS_OpenRead (search->pack->filename, packfile->filepos,
+			*gzfile = qfs_openread (search->pack->filename, packfile->filepos,
 									packfile->filelen, zip);
 			file_from_pak = 1;
 			return qfs_filesize;
@@ -868,7 +868,7 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 
 			Sys_DPrintf ("FindFile: %s\n", netpath->str);
 
-			*gzfile = QFS_OpenRead (netpath->str, -1, -1, zip);
+			*gzfile = qfs_openread (netpath->str, -1, -1, zip);
 			dstring_delete (netpath);
 			return qfs_filesize;
 		}
@@ -894,7 +894,7 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 
 	// make sure they're not trying to do weird stuff with our private files
 	path = QFS_CompressPath (filename);
-	if (contains_updir(path, 1)) {
+	if (qfs_contains_updir(path, 1)) {
 		Sys_DPrintf ("FindFile: %s: attempt to escape directory tree!\n", path);
 		goto error;
 	}
@@ -1028,7 +1028,7 @@ QFS_LoadStackFile (const char *path, void *buffer, int bufsize)
 }
 
 /*
-	QFS_LoadPackFile
+	qfs_load_pakfile
 
 	Takes an explicit (not game tree related) path to a pak file.
 
@@ -1036,7 +1036,7 @@ QFS_LoadStackFile (const char *path, void *buffer, int bufsize)
 	of the list so they override previous pack files.
 */
 static pack_t     *
-QFS_LoadPackFile (char *packfile)
+qfs_load_pakfile (char *packfile)
 {
 	pack_t     *pack = pack_open (packfile);
 
@@ -1050,7 +1050,7 @@ QFS_LoadPackFile (char *packfile)
 
 // Note, this is /NOT/ a work-alike strcmp, this groups numbers sanely.
 static int
-qstrcmp (char **os1, char **os2)
+qfs_file_sort (char **os1, char **os2)
 {
 	int         in1, in2, n1, n2;
 	char       *s1, *s2;
@@ -1082,7 +1082,7 @@ qstrcmp (char **os1, char **os2)
 }
 
 static void
-QFS_LoadGameDirectory (const char *dir)
+qfs_load_gamedir (const char *dir)
 {
 	searchpath_t *search;
 	pack_t     *pak;
@@ -1091,13 +1091,13 @@ QFS_LoadGameDirectory (const char *dir)
 	char      **pakfiles = NULL;
 	int         i = 0, bufsize = 0, count = 0;
 
-	Sys_DPrintf ("QFS_LoadGameDirectory (\"%s\")\n", dir);
+	Sys_DPrintf ("qfs_load_gamedir (\"%s\")\n", dir);
 
 	pakfiles = calloc (1, FBLOCK_SIZE * sizeof (char *));
 
 	bufsize += FBLOCK_SIZE;
 	if (!pakfiles)
-		goto QFS_LoadGameDirectory_free;
+		goto qfs_load_gamedir_free;
 
 	for (i = 0; i < bufsize; i++) {
 		pakfiles[i] = NULL;
@@ -1105,7 +1105,7 @@ QFS_LoadGameDirectory (const char *dir)
 
 	dir_ptr = opendir (dir);
 	if (!dir_ptr)
-		goto QFS_LoadGameDirectory_free;
+		goto qfs_load_gamedir_free;
 
 	while ((dirent = readdir (dir_ptr))) {
 		if (!fnmatch ("*.pak", dirent->d_name, 0)) {
@@ -1114,7 +1114,7 @@ QFS_LoadGameDirectory (const char *dir)
 				pakfiles = realloc (pakfiles, bufsize * sizeof (char *));
 
 				if (!pakfiles)
-					goto QFS_LoadGameDirectory_free;
+					goto qfs_load_gamedir_free;
 				for (i = count; i < bufsize; i++)
 					pakfiles[i] = NULL;
 			}
@@ -1123,19 +1123,17 @@ QFS_LoadGameDirectory (const char *dir)
 			// dirent->d_name definitely won't start with one.
 			pakfiles[count] = nva ("%s/%s", dir, dirent->d_name);
 			if (!pakfiles[count])
-				Sys_Error ("QFS_LoadGameDirectory: MemoryAllocationFailure");
+				Sys_Error ("qfs_load_gamedir: Memory allocation failure");
 			count++;
 		}
 	}
 	closedir (dir_ptr);
 
-	// XXX WARNING!!! This is /NOT/ subtable for strcmp!!!!!
-	// This passes 'void **' instead of 'char *' to the cmp function!
 	qsort (pakfiles, count, sizeof (char *),
-		   (int (*)(const void *, const void *)) qstrcmp);
+		   (int (*)(const void *, const void *)) qfs_file_sort);
 
 	for (i = 0; i < count; i++) {
-		pak = QFS_LoadPackFile (pakfiles[i]);
+		pak = qfs_load_pakfile (pakfiles[i]);
 
 		if (!pak) {
 			Sys_Error ("Bad pakfile %s!!", pakfiles[i]);
@@ -1148,20 +1146,20 @@ QFS_LoadGameDirectory (const char *dir)
 		}
 	}
 
-  QFS_LoadGameDirectory_free:
+  qfs_load_gamedir_free:
 	for (i = 0; i < count; i++)
 		free (pakfiles[i]);
 	free (pakfiles);
 }
 
 /*
-	QFS_AddDirectory
+	qfs_add_dir
 
 	Adds the directory to the head of the path, then loads and adds pak0.pak
 	pak1.pak ...
 */
 static void
-QFS_AddDirectory (const char *dir)
+qfs_add_dir (const char *dir)
 {
 	searchpath_t *search;
 
@@ -1173,11 +1171,11 @@ QFS_AddDirectory (const char *dir)
 	qfs_searchpaths = search;
 
 	// add any pak files in the format pak0.pak pak1.pak, ...
-	QFS_LoadGameDirectory (dir);
+	qfs_load_gamedir (dir);
 }
 
 static void
-QFS_AddGameDirectory (const char *dir)
+qfs_add_gamedir (const char *dir)
 {
 	const char *e;
 	const char *s;
@@ -1201,17 +1199,17 @@ QFS_AddGameDirectory (const char *dir)
 					Sys_Printf ("dropping bad directory %s\n", dir);
 					break;
 				}
-				Sys_DPrintf ("QFS_AddGameDirectory (\"%s\")\n", f_dir->str);
+				Sys_DPrintf ("qfs_add_gamedir (\"%s\")\n", f_dir->str);
 
-				QFS_AddDirectory (f_dir->str);
+				qfs_add_dir (f_dir->str);
 			}
 		}
 		e = --s;
 	}
 
 	qfs_expand_userpath (f_dir, dir);
-	Sys_DPrintf ("QFS_AddGameDirectory (\"%s\")\n", f_dir->str);
-	QFS_AddDirectory (f_dir->str);
+	Sys_DPrintf ("qfs_add_gamedir (\"%s\")\n", f_dir->str);
+	qfs_add_dir (f_dir->str);
 
 	dstring_delete (f_dir);
 	dstring_delete (s_dir);
@@ -1321,7 +1319,7 @@ QFS_Init (const char *game)
 	fs_dirconf = Cvar_Get ("fs_dirconf", "", CVAR_ROM, NULL,
 							"full path to gamedir.conf FIXME");
 
-	Cmd_AddCommand ("path", QFS_Path_f, "Show what paths Quake is using");
+	Cmd_AddCommand ("path", qfs_path_f, "Show what paths Quake is using");
 
 	qfs_userpath = expand_squiggle (fs_userpath->string);
 
