@@ -63,7 +63,7 @@ static struct option const long_options[] = {
 	{"extract-hull",		no_argument,		0, 258},
 	{"usehulls",			no_argument,		0, 'u'},
 	{"hullnum",				required_argument,	0, 'H'},
-	{"subdivide",			required_argument,	0, 's'},	
+	{"subdivide",			required_argument,	0, 's'},
 	{"wadpath",				required_argument,	0, 'w'},
 	{"watervis",			no_argument,		0, 'W'},
 	{NULL, 0, NULL, 0}
@@ -134,7 +134,7 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'v':					// verbose
 				options.verbosity += 1;
-				break;			
+				break;
 			case 'h':					// help
 				usage (0);
 				break;
@@ -195,7 +195,7 @@ DecodeArgs (int argc, char **argv)
 				usage (1);
 		}
 	}
-	
+
 	if (options.extract) {
 		options.bspfile = strdup (argv[optind++]);
 	} else {

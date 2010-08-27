@@ -221,7 +221,7 @@ ProcessEntity (int entnum)
 		BumpModel (hullnum);
 	} else {
 		// SolidBSP generates a node tree
-		// 
+		//
 		// if not the world, make a good tree first
 		// the world is just going to make a bad tree
 		// because the outside filling will force a regeneration later

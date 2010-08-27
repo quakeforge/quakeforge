@@ -124,7 +124,7 @@ WriteClipNodes_r (node_t *node)
 	dclipnode_t cn;
 	int         num, c, i;
 
-	// FIXME: free more stuff?  
+	// FIXME: free more stuff?
 	if (node->planenum == -1) {
 		num = node->contents;
 		free (node);
@@ -200,7 +200,7 @@ WriteDrawNodes_r (node_t *node)
 	int         i;
 	int         nodenum = bsp->numnodes;
 
-	// emit a node  
+	// emit a node
 	if (bsp->numnodes == MAX_MAP_NODES)
 		Sys_Error ("numnodes == MAX_MAP_NODES");
 	BSP_AddNode (bsp, &dummy);

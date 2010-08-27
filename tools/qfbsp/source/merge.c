@@ -154,7 +154,7 @@ MergeFaceToList (face_t *face, face_t *list)
 	face_t     *newf, *f;
 
 	for (f = list; f; f = f->next) {
-//		CheckColinear (f);        
+//		CheckColinear (f);
 		if (mergedebug) {
 			Draw_ClearWindow ();
 			Draw_DrawFace (face);

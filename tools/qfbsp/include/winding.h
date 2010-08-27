@@ -28,8 +28,8 @@
 struct plane_s;
 
 typedef struct winding_s {
-	int		numpoints;
-	vec3_t	points[8];			// variable sized
+	int         numpoints;
+	vec3_t      points[8];			// variable sized
 } winding_t;
 
 winding_t *BaseWindingForPlane (struct plane_s *p);

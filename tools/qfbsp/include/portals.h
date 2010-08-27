@@ -26,13 +26,13 @@
 struct node_s;
 
 typedef struct portal_s {
-	int			planenum;
+	int         planenum;
 	struct node_s *nodes[2];		// [0] = front side of planenum
-	struct portal_s	*next[2];	
+	struct portal_s *next[2];
 	struct winding_s *winding;
 } portal_t;
 
-extern struct node_s outside_node;		// portals outside the world face this
+extern struct node_s outside_node;	// portals outside the world face this
 
 void PortalizeWorld (struct node_s *headnode);
 void PortalizeWorldDetail (struct node_s *headnode);	// stop at detail nodes

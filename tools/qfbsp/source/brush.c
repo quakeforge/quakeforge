@@ -251,7 +251,7 @@ FindPlane (plane_t *dplane, int *side)
 		vec3_t t;
 		VectorSubtract (dp->normal, pl.normal, t);
 		dot = DotProduct (dp->normal, pl.normal);
-		if (dot > 1.0 - ANGLEEPSILON 
+		if (dot > 1.0 - ANGLEEPSILON
 			&& fabs(dp->dist - pl.dist) < DISTEPSILON) {	// regular match
 			return i;
 		}
@@ -645,7 +645,7 @@ ExpandBrush (int hullnum)
 
 	Converts a mapbrush to a bsp brush
 */
-static brush_t    *
+static brush_t *
 LoadBrush (mbrush_t *mb, int hullnum)
 {
 	brush_t    *b;

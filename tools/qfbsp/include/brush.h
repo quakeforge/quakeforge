@@ -33,19 +33,19 @@
 #define	NUM_CONTENTS	2				// solid and water
 
 typedef struct brush_s {
-	struct brush_s	*next;
-	vec3_t			mins, maxs;
+	struct brush_s *next;
+	vec3_t      mins, maxs;
 	struct visfacet_s *faces;
-	int				contents;
+	int         contents;
 } brush_t;
 
 typedef struct brushset_s {
-	vec3_t		mins, maxs;
-	brush_t		*brushes;		// NULL terminated list
+	vec3_t      mins, maxs;
+	brush_t    *brushes;			// NULL terminated list
 } brushset_t;
 
-extern	int			numbrushplanes;
-extern	plane_t		planes[MAX_MAP_PLANES];
+extern int      numbrushplanes;
+extern plane_t  planes[MAX_MAP_PLANES];
 
 brushset_t *Brush_LoadEntity (entity_t *ent, int hullnum);
 
