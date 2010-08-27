@@ -374,9 +374,9 @@ CreateBrushFaces (void)
 			min = brush_mins[2];
 
 		max = brush_maxs[0];
-		if (max > brush_maxs[1])
+		if (max < brush_maxs[1])
 			max = brush_maxs[1];
-		if (max > brush_maxs[2])
+		if (max < brush_maxs[2])
 			max = brush_maxs[2];
 
 		delta = fabs(max);
