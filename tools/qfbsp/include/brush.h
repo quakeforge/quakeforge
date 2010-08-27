@@ -48,7 +48,7 @@ extern	int			numbrushplanes;
 extern	plane_t		planes[MAX_MAP_PLANES];
 
 brushset_t *Brush_LoadEntity (entity_t *ent, int hullnum);
-int	PlaneTypeForNormal (vec3_t normal);
+int	PlaneTypeForNormal (const vec3_t normal);
 int	FindPlane (plane_t *dplane, int *side);
 
 #endif//qfbsp_brush_h

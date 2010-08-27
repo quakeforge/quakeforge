@@ -134,7 +134,7 @@ AddToBounds (brushset_t *bs, vec3_t v)
 }
 
 int
-PlaneTypeForNormal (vec3_t normal)
+PlaneTypeForNormal (const vec3_t normal)
 {
 	float	ax, ay, az;
 
