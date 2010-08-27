@@ -137,6 +137,7 @@ int
 PlaneTypeForNormal (const vec3_t normal)
 {
 	float	ax, ay, az;
+	int     type;
 
 	// NOTE: should these have an epsilon around 1.0?
 	if (normal[0] == 1.0)
@@ -153,10 +154,14 @@ PlaneTypeForNormal (const vec3_t normal)
 	az = fabs(normal[2]);
 
 	if (ax >= ay && ax >= az)
-		return PLANE_ANYX;
-	if (ay >= ax && ay >= az)
-		return PLANE_ANYY;
-	return PLANE_ANYZ;
+		type = PLANE_ANYX;
+	else if (ay >= ax && ay >= az)
+		type = PLANE_ANYY;
+	else
+		type = PLANE_ANYZ;
+	if (normal[type - PLANE_ANYX] < 0)
+		Sys_Error ("PlaneTypeForNormal: not a canonical vector");
+	return type;
 }
 
 #define	DISTEPSILON		0.01
