@@ -48,7 +48,24 @@ extern	int			numbrushplanes;
 extern	plane_t		planes[MAX_MAP_PLANES];
 
 brushset_t *Brush_LoadEntity (entity_t *ent, int hullnum);
+
+/**	Determine the primary axis of the normal.
+
+	\param normal	Must be canonical.
+*/
 int	PlaneTypeForNormal (const vec3_t normal);
+
+/**	Add a plane to the global list of planes.
+
+	Make the plane canonical, and add it to the global list of planes if it
+	does not duplicate a plane that is already in the list. If the plane is
+	flipped while being made canonical, side will be set to 1, otherwise side
+	will be 0.
+
+	\param dplane	The plane to add.
+	\param side		The side of the plane that will be front.
+	\return			global plane number.
+*/
 int	FindPlane (plane_t *dplane, int *side);
 
 #endif//qfbsp_brush_h

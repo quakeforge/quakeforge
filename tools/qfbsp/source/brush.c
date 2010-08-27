@@ -167,11 +167,20 @@ PlaneTypeForNormal (const vec3_t normal)
 #define	DISTEPSILON		0.01
 #define	ANGLEEPSILON	0.00001
 
+/**	Make the plane canonical.
+
+	A cononical plane is one whose normal points towards +inf on its primary
+	axis. The primary axis is that which has the largest magnitude of the
+	vector's components.
+
+	\param dp		The plane to make canonical.
+*/
 static void
 NormalizePlane (plane_t *dp)
 {
 	vec_t	ax, ay, az;
 
+	// Make axis aligned planes point to +inf.
 	if (dp->normal[0] == -1.0) {
 		dp->normal[0] = 1.0;
 		dp->dist = -dp->dist;
@@ -183,6 +192,8 @@ NormalizePlane (plane_t *dp)
 		dp->dist = -dp->dist;
 	}
 
+	// For axis aligned planes, set the plane type and ensure the normal
+	// vector is mathematically correct.
 	if (dp->normal[0] == 1.0) {
 		dp->type = PLANE_X;
 		dp->normal[1] = dp->normal[2] = 0.0;
@@ -199,6 +210,7 @@ NormalizePlane (plane_t *dp)
 		return;
 	}
 
+	// Find out with which axis the plane is most aligned.
 	ax = fabs (dp->normal[0]);
 	ay = fabs (dp->normal[1]);
 	az = fabs (dp->normal[2]);
@@ -209,17 +221,13 @@ NormalizePlane (plane_t *dp)
 		dp->type = PLANE_ANYY;
 	else
 		dp->type = PLANE_ANYZ;
+	// Make the plane's normal point towards +inf along its primary axis.
 	if (dp->normal[dp->type - PLANE_ANYX] < 0) {
 		VectorNegate (dp->normal, dp->normal);
 		dp->dist = -dp->dist;
 	}
 }
 
-/*
-	FindPlane
-
-	Returns a global plane number and the side that will be the front
-*/
 int
 FindPlane (plane_t *dplane, int *side)
 {
