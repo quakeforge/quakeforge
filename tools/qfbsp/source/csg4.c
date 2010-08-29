@@ -53,7 +53,7 @@ int         csgfaces;
 int         csgmergefaces;
 
 face_t *
-NewFaceFromFace (face_t *in)
+NewFaceFromFace (const face_t *in)
 {
 	face_t     *newf;
 

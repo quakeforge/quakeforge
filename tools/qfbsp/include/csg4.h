@@ -50,7 +50,7 @@ struct surface_s *BuildSurfaces (void);
 	\return			The new face.
 
 */
-struct visfacet_s *NewFaceFromFace (struct visfacet_s *in);
+struct visfacet_s *NewFaceFromFace (const struct visfacet_s *in);
 
 /**	Convert a brush-set to a list of clipped faces.
 
