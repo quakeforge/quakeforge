@@ -359,10 +359,8 @@ CSGFaces (brushset_t *bs)
 		}
 
 		// all of the faces left in outside are real surface faces
-		if (b1->contents != CONTENTS_SOLID)
-			SaveOutside (true);			// mirror faces for inside view
-		else
-			SaveOutside (false);
+		// if the brush is not solid, mirror the faces for the inside view
+		SaveOutside (b1->contents != CONTENTS_SOLID);
 	}
 
 #if 0
