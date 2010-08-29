@@ -37,17 +37,21 @@ static __attribute__ ((used)) const char rcsid[] =
 #define CONTINUOUS_EPSILON	0.001
 
 
-/*
-	TryMerge
+/**	Try to merge two polygons.
 
 	If two polygons share a common edge and the edges that meet at the common
-	points are both inside the other polygons, merge them
+	points are both inside the other polygons, merge them. The two polygons
+	must be on the same plane, the same side of the plane, have the same
+	texture and have the same contents on each side.
 
-	Returns NULL if the faces couldn't be merged, or the new face.
-	The originals will NOT be freed.
+	\param f1		The first face.
+	\param f2		The second face.
+	\return			The new face or NULL if the faces could not be merged.
+
+	\note The originals will NOT be freed.
 */
-static face_t     *
-TryMerge (face_t *f1, face_t *f2)
+static face_t *
+TryMerge (const face_t *f1, const face_t *f2)
 {
 	face_t     *newf;
 	int         i, j, k, l;
@@ -69,10 +73,10 @@ TryMerge (face_t *f1, face_t *f2)
 	if (f1->contents[1] != f2->contents[1])
 		return NULL;
 
-	// find a common edge
-	p1 = p2 = NULL;						// stop compiler warning
+	p1 = p2 = NULL;
 	j = 0;
 
+	// find a common edge
 	for (i = 0; i < f1p->numpoints; i++) {
 		p1 = f1p->points[i];
 		p2 = f1p->points[(i + 1) % f1p->numpoints];
@@ -149,7 +153,7 @@ found_edge:
 }
 
 qboolean    mergedebug;
-face_t     *
+face_t *
 MergeFaceToList (face_t *face, face_t *list)
 {
 	face_t     *newf, *f;
@@ -176,7 +180,7 @@ MergeFaceToList (face_t *face, face_t *list)
 	return face;
 }
 
-face_t     *
+face_t *
 FreeMergeListScraps (face_t *merged)
 {
 	face_t     *head, *next;
