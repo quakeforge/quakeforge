@@ -36,6 +36,44 @@ extern struct visfacet_s *edgefaces[MAX_MAP_EDGES][2];
 extern int firstmodeledge;
 extern int firstmodelface;
 
+/**	Allocate a new face.
+
+	Increases \c c_activefaces by one.
+
+	\return			Pointer to the new face.
+*/
+face_t *AllocFace (void);
+
+/**	Free a face.
+
+	Only the first face will be freed. If the face is linked to another face,
+	that face will have to be freed seperately.
+
+	Reduces \c c_activefaces by one.
+
+	\param f		The face to free.
+*/
+void FreeFace (face_t *f);
+
+/**	Allocate a new surface.
+
+	Increases \c c_activesurfaces by one.
+
+	\return			Pointer to the new surface.
+*/
+surface_t *AllocSurface (void);
+
+/**	Free a surface.
+
+	Only the first surface will be freed. If the surface is linked to another
+	surface, that surface will have to be freed seperately.
+
+	Reduces \c c_activefaces by one.
+
+	\param s		The face to free.
+*/
+void FreeSurface (surface_t *s);
+
 void SubdivideFace (struct visfacet_s *f, struct visfacet_s **prevptr);
 
 struct surface_s *GatherNodeFaces (struct node_s *headnode);

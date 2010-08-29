@@ -65,9 +65,6 @@ bsp_t      *bsp;
 
 brushset_t *brushset;
 
-int         c_activefaces, c_peakfaces;
-int         c_activesurfaces, c_peaksurfaces;
-int         c_activeportals, c_peakportals;
 int         valid;
 
 char       *argv0;						// changed after fork();
@@ -76,73 +73,6 @@ qboolean    worldmodel;
 
 int         hullnum;
 
-
-face_t *
-AllocFace (void)
-{
-	face_t     *f;
-
-	c_activefaces++;
-	if (c_activefaces > c_peakfaces)
-		c_peakfaces = c_activefaces;
-
-	f = malloc (sizeof (face_t));
-	memset (f, 0, sizeof (face_t));
-	f->planenum = -1;
-
-	return f;
-}
-
-void
-FreeFace (face_t *f)
-{
-	c_activefaces--;
-	free (f);
-}
-
-surface_t *
-AllocSurface (void)
-{
-	surface_t  *s;
-
-	s = malloc (sizeof (surface_t));
-	memset (s, 0, sizeof (surface_t));
-
-	c_activesurfaces++;
-	if (c_activesurfaces > c_peaksurfaces)
-		c_peaksurfaces = c_activesurfaces;
-
-	return s;
-}
-
-void
-FreeSurface (surface_t *s)
-{
-	c_activesurfaces--;
-	free (s);
-}
-
-portal_t *
-AllocPortal (void)
-{
-	portal_t   *p;
-
-	c_activeportals++;
-	if (c_activeportals > c_peakportals)
-		c_peakportals = c_activeportals;
-
-	p = malloc (sizeof (portal_t));
-	memset (p, 0, sizeof (portal_t));
-
-	return p;
-}
-
-void
-FreePortal (portal_t *p)
-{
-	c_activeportals--;
-	free (p);
-}
 
 node_t *
 AllocNode (void)
@@ -153,17 +83,6 @@ AllocNode (void)
 	memset (n, 0, sizeof (node_t));
 
 	return n;
-}
-
-brush_t *
-AllocBrush (void)
-{
-	brush_t    *b;
-
-	b = malloc (sizeof (brush_t));
-	memset (b, 0, sizeof (brush_t));
-
-	return b;
 }
 
 static void

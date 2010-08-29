@@ -34,6 +34,25 @@ typedef struct portal_s {
 
 extern struct node_s outside_node;	// portals outside the world face this
 
+/**	Allocate a new portal.
+
+	Increases \c c_activeportals by one.
+
+	\return			Pointer to the new portal.
+*/
+portal_t *AllocPortal (void);
+
+/**	Free a portal.
+
+	Only the first portal will be freed. If the portal is linked to other
+	portals, those portals will have to be freed seperately.
+
+	Reduces \c c_activeportals by one.
+
+	\param p		The portal to free.
+*/
+void FreePortal (portal_t *p);
+
 void PortalizeWorld (struct node_s *headnode);
 void PortalizeWorldDetail (struct node_s *headnode);	// stop at detail nodes
 void WritePortalfile (struct node_s *headnode);

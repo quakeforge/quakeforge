@@ -31,6 +31,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "csg4.h"
 #include "draw.h"
 #include "merge.h"
+#include "surfaces.h"
 #include "winding.h"
 
 #define CONTINUOUS_EPSILON	0.001

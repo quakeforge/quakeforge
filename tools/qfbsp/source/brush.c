@@ -35,6 +35,7 @@
 #include "bsp5.h"
 #include "draw.h"
 #include "options.h"
+#include "surfaces.h"
 #include "winding.h"
 
 int         numbrushplanes;
@@ -44,6 +45,17 @@ int         numbrushfaces;
 mface_t     faces[MAX_FACES];	// beveled clipping hull can generate many extra
 
 static entity_t *CurrentEntity;
+
+brush_t *
+AllocBrush (void)
+{
+	brush_t    *b;
+
+	b = malloc (sizeof (brush_t));
+	memset (b, 0, sizeof (brush_t));
+
+	return b;
+}
 
 /*
 	CheckFace

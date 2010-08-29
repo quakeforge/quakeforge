@@ -46,7 +46,54 @@ static __attribute__ ((used)) const char rcsid[] =
 */
 surface_t   newcopy_t;
 int         subdivides;
+int         c_activefaces, c_peakfaces;
+int         c_activesurfaces, c_peaksurfaces;
 
+
+face_t *
+AllocFace (void)
+{
+	face_t     *f;
+
+	c_activefaces++;
+	if (c_activefaces > c_peakfaces)
+		c_peakfaces = c_activefaces;
+
+	f = malloc (sizeof (face_t));
+	memset (f, 0, sizeof (face_t));
+	f->planenum = -1;
+
+	return f;
+}
+
+void
+FreeFace (face_t *f)
+{
+	c_activefaces--;
+	free (f);
+}
+
+surface_t *
+AllocSurface (void)
+{
+	surface_t  *s;
+
+	s = malloc (sizeof (surface_t));
+	memset (s, 0, sizeof (surface_t));
+
+	c_activesurfaces++;
+	if (c_activesurfaces > c_peaksurfaces)
+		c_peaksurfaces = c_activesurfaces;
+
+	return s;
+}
+
+void
+FreeSurface (surface_t *s)
+{
+	c_activesurfaces--;
+	free (s);
+}
 
 /*
 	SubdivideFace

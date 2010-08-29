@@ -80,25 +80,25 @@ typedef struct surface_s {
 #define PLANENUM_LEAF  -1
 
 typedef struct node_s {
-	vec3_t      mins,maxs;		// bounding volume, not just points inside
+	vec3_t      mins,maxs;		///< bounding volume, not just points inside
 
 // information for decision nodes	
-	int         planenum;		// -1 = leaf node	
-	int         outputplanenum;	// valid only after WriteNodePlanes
-	int         firstface;		// decision node only
-	int         numfaces;		// decision node only
-	struct node_s *children[2];	// valid only for decision nodes
-	face_t     *faces;			// decision nodes only, list for both sides
+	int         planenum;		///< -1 = leaf node	
+	int         outputplanenum;	///< valid only after WriteNodePlanes
+	int         firstface;		///< decision node only
+	int         numfaces;		///< decision node only
+	struct node_s *children[2];	///< valid only for decision nodes
+	face_t     *faces;			///< decision nodes only, list for both sides
 
 // information for leafs
-	int         contents;		// leaf nodes (0 for decision nodes)
-	face_t    **markfaces;		// leaf nodes only, point to node faces
+	int         contents;		///< leaf nodes (0 for decision nodes)
+	face_t    **markfaces;		///< leaf nodes only, point to node faces
 	struct portal_s *portals;
-	int         visleafnum;		// -1 = solid
-	int         valid;			// for flood filling
-	int         occupied;		// light number in leaf for outside filling
-	int         o_dist;			// distance to nearest entity
-	int         detail;			// 1 if created by detail split
+	int         visleafnum;		///< -1 = solid
+	int         valid;			///< for flood filling
+	int         occupied;		///< light number in leaf for outside filling
+	int         o_dist;			///< distance to nearest entity
+	int         detail;			///< 1 if created by detail split
 } node_t;
 
 
@@ -106,7 +106,11 @@ typedef struct node_s {
 
 extern struct brushset_s *brushset;
 
-void qprintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));	// prints only if verbose
+/**	Formatted printing with verbosity control.
+
+	Behaves the same as printf except it prints only when verbose is true.
+*/
+void qprintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
 extern int  valid;
 
@@ -114,17 +118,11 @@ extern qboolean worldmodel;
 
 // misc functions
 
-face_t *AllocFace (void);
-void FreeFace (face_t *f);
+/**	Allocate a new node.
 
-struct portal_s *AllocPortal (void);
-void FreePortal (struct portal_s *p);
-
-surface_t *AllocSurface (void);
-void FreeSurface (surface_t *s);
-
+	\return			Pointer to the new node.
+*/
 node_t *AllocNode (void);
-struct brush_s *AllocBrush (void);
 
 //=============================================================================
 

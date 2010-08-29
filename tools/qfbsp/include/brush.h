@@ -47,6 +47,12 @@ typedef struct brushset_s {
 extern int      numbrushplanes;
 extern plane_t  planes[MAX_MAP_PLANES];
 
+/**	Allocate a new brush.
+
+	\return			Pointer to the new brush.
+*/
+brush_t *AllocBrush (void);
+
 brushset_t *Brush_LoadEntity (entity_t *ent, int hullnum);
 
 /**	Determine the primary axis of the normal.

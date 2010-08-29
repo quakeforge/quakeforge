@@ -25,8 +25,9 @@ static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
-# include "string.h"
+# include <string.h>
 #endif
+#include <stdlib.h>
 
 #include "QF/sys.h"
 
@@ -37,7 +38,31 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "portals.h"
 #include "winding.h"
 
+int         c_activeportals, c_peakportals;
+
 node_t      outside_node;				// portals outside the world face this
+
+portal_t *
+AllocPortal (void)
+{
+	portal_t   *p;
+
+	c_activeportals++;
+	if (c_activeportals > c_peakportals)
+		c_peakportals = c_activeportals;
+
+	p = malloc (sizeof (portal_t));
+	memset (p, 0, sizeof (portal_t));
+
+	return p;
+}
+
+void
+FreePortal (portal_t *p)
+{
+	c_activeportals--;
+	free (p);
+}
 
 
 static void
