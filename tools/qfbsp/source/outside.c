@@ -35,6 +35,12 @@ static __attribute__ ((used)) const char rcsid[] =
 
 int         outleafs;
 
+/**	Find the leaf node in which the point is.
+
+	\param node		The root of the bsp tree.
+	\param point	The point's location.
+	\return			The leaf node in which the point is.
+*/
 static node_t *
 PointInLeaf (node_t *node, vec3_t point)
 {
@@ -47,6 +53,13 @@ PointInLeaf (node_t *node, vec3_t point)
 	return node;
 }
 
+/**	Set the distance to a node from all reachable nodes.
+
+	Purpose unknown: not in the id code and the information is not used
+	anywhere. Probably a bad port from either hqbsp or oq.
+
+	\todo Find the port source and either fix qfbsp or nuke this function.
+*/
 static void
 FloodEntDist_r (node_t *n, int dist)
 {
@@ -73,6 +86,15 @@ FloodEntDist_r (node_t *n, int dist)
 	}
 }
 
+/**	Try to place an entity in the map.
+
+	The entity must be in open space.
+
+	\param num		The entity number.
+	\param point	The entity's origin.
+	\param headnode	The root of the map's bsp tree.
+	\return			true if the entity could be placed, false otherwise.
+*/
 static qboolean
 PlaceOccupant (int num, vec3_t point, node_t *headnode)
 {
@@ -91,6 +113,11 @@ PlaceOccupant (int num, vec3_t point, node_t *headnode)
 portal_t   *prevleaknode;
 FILE       *leakfile;
 
+/**	Write the coords for points joining two portals to the point file.
+
+	\param n2		The second portal.
+	\note The first portal is set by the preceeding call.
+*/
 static void
 MarkLeakTrail (portal_t *n2)
 {
@@ -136,11 +163,14 @@ MarkLeakTrail (portal_t *n2)
 
 int         hit_occupied;
 
-/*
-	RecursiveFillOutside
+/**	Recurse through the map setting the outside nodes to solid.
 
-	If fill is false, just check, don't fill
-	Returns true if an occupied leaf is reached
+	Recursively traverses the portals of the start node.
+
+	\param l		The start node.
+	\param fill		If false, just check, don't fill
+	\return			\c true if an occupied leaf is reached, otherwise
+					\c false.
 */
 static qboolean
 RecursiveFillOutside (node_t *l, qboolean fill)
@@ -188,6 +218,12 @@ RecursiveFillOutside (node_t *l, qboolean fill)
 	return res;
 }
 
+/**	Remove faces from filled in leafs.
+
+	Recursively traverses the portals of the start node.
+
+	\param node		Start node.
+*/
 static void
 ClearOutFaces (node_t *node)
 {
@@ -223,6 +259,8 @@ FillOutside (node_t *node)
 		return false;
 	}
 
+	// Place the map's entities in the map. inside will be true if at least
+	// one entitie could be placed.
 	inside = false;
 	for (i = 1; i < num_entities; i++) {
 		if (!_VectorCompare (entities[i].origin, vec3_origin)) {
@@ -268,7 +306,7 @@ FillOutside (node_t *node)
 	valid++;
 	RecursiveFillOutside (outside_node.portals->nodes[s], true);
 
-	// remove faces from filled in leafs    
+	// remove faces from filled in leafs
 	ClearOutFaces (node);
 
 	qprintf ("%4i outleafs\n", outleafs);

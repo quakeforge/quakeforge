@@ -24,6 +24,17 @@
 #define qfbsp_outside_h
 
 struct node_s;
+
+/**	Make the outside of the map solid.
+
+	Removes any faces from filled nodes.
+
+	\pre outside_node must be initilized.
+
+	\param node		The root of the map's bsp.
+	\return			\c true if the outside has been set solid, otherwise
+					\c false.
+*/
 qboolean FillOutside (struct node_s *node);
 
 #endif//qfbsp_outside_h
