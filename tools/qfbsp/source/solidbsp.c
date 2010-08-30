@@ -64,7 +64,7 @@ FaceSide (face_t *in, plane_t *split)
 	frontcount = backcount = 0;
 
 	// axial planes are fast
-	if (split->type < 3)
+	if (split->type < 3) {
 		for (i = 0, p = inp->points[0] + split->type; i < inp->numpoints;
 			 i++, p += 3) {
 			if (*p > split->dist + ON_EPSILON) {
@@ -76,7 +76,8 @@ FaceSide (face_t *in, plane_t *split)
 					return SIDE_ON;
 				backcount = 1;
 			}
-	} else
+		}
+	} else {
 		// sloping planes take longer
 		for (i = 0, p = inp->points[0]; i < inp->numpoints; i++, p += 3) {
 			dot = DotProduct (p, split->normal);
@@ -91,6 +92,7 @@ FaceSide (face_t *in, plane_t *split)
 				backcount = 1;
 			}
 		}
+	}
 
 	if (!frontcount)
 		return SIDE_BACK;
@@ -105,7 +107,7 @@ FaceSide (face_t *in, plane_t *split)
 
 	The clipping hull BSP doesn't worry about avoiding splits
 */
-static surface_t  *
+static surface_t *
 ChooseMidPlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs)
 {
 	int         j, l;
