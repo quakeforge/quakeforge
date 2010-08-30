@@ -48,14 +48,14 @@ typedef struct visfacet_s {
 	struct visfacet_s *next;
 
 	int         planenum;
-	int         planeside;		// which side is the front of the face
+	int         planeside;		///< which side is the front of the face
 	int         texturenum;
-	int         contents[2];	// 0 = front side
+	int         contents[2];	///< 0 = front side
 
-	struct visfacet_s *original;// face on node
-	int         outputnumber;	// valid only for original faces after
-								// write surfaces
-	qboolean    detail;			// is a detail face
+	struct visfacet_s *original;///< face on node
+	int         outputnumber;	///< valid only for original faces after
+								///< write surfaces
+	qboolean    detail;			///< is a detail face
 
 	struct winding_s *points;
 	int        *edges;
@@ -63,17 +63,17 @@ typedef struct visfacet_s {
 
 typedef struct surface_s {
 	struct surface_s *next;
-	struct surface_s *original;	// before BSP cuts it up
+	struct surface_s *original;	///< before BSP cuts it up
 	int         planenum;
-	int         outputplanenum;	// valid only after WriteSurfacePlanes
+	int         outputplanenum;	///< valid only after WriteSurfacePlanes
 	vec3_t      mins, maxs;
-	qboolean    onnode;			// true if surface has already been used
-								// as a splitting node
-	qboolean    has_detail;		// true if the surface has detail brushes
-	qboolean    has_struct;		// true if the surface has non-detail
-								// brushes
-	face_t     *faces;			// links to all the faces on either side
-								// of the surf
+	qboolean    onnode;			///< true if surface has already been used
+								///< as a splitting node
+	qboolean    has_detail;		///< true if the surface has detail brushes
+	qboolean    has_struct;		///< true if the surface has non-detail
+								///< brushes
+	face_t     *faces;			///< links to all the faces on either side
+								///< of the surf
 } surface_t;
 
 // there is a node_t structure for every node and leaf in the bsp tree
@@ -82,8 +82,8 @@ typedef struct surface_s {
 typedef struct node_s {
 	vec3_t      mins,maxs;		///< bounding volume, not just points inside
 
-// information for decision nodes	
-	int         planenum;		///< -1 = leaf node	
+// information for decision nodes
+	int         planenum;		///< -1 = leaf node
 	int         outputplanenum;	///< valid only after WriteNodePlanes
 	int         firstface;		///< decision node only
 	int         numfaces;		///< decision node only
@@ -93,7 +93,7 @@ typedef struct node_s {
 // information for leafs
 	int         contents;		///< leaf nodes (0 for decision nodes)
 	face_t    **markfaces;		///< leaf nodes only, point to node faces
-	struct portal_s *portals;
+	struct portal_s *portals;	///< portals on this leaf
 	int         visleafnum;		///< -1 = solid
 	int         valid;			///< for flood filling
 	int         occupied;		///< light number in leaf for outside filling
