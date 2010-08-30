@@ -169,26 +169,10 @@ FindEdge (vec3_t p1, vec3_t p2, vec_t *t1, vec_t *t2)
 	h = HashVec (origin);
 
 	for (w = wedge_hash[h]; w; w = w->next) {
-		temp = w->origin[0] - origin[0];
-		if (temp < -EQUAL_EPSILON || temp > EQUAL_EPSILON)
+		if (!_VectorCompare (w->origin, origin))
 			continue;
-		temp = w->origin[1] - origin[1];
-		if (temp < -EQUAL_EPSILON || temp > EQUAL_EPSILON)
+		if (!_VectorCompare (w->dir, dir))
 			continue;
-		temp = w->origin[2] - origin[2];
-		if (temp < -EQUAL_EPSILON || temp > EQUAL_EPSILON)
-			continue;
-
-		temp = w->dir[0] - dir[0];
-		if (temp < -EQUAL_EPSILON || temp > EQUAL_EPSILON)
-			continue;
-		temp = w->dir[1] - dir[1];
-		if (temp < -EQUAL_EPSILON || temp > EQUAL_EPSILON)
-			continue;
-		temp = w->dir[2] - dir[2];
-		if (temp < -EQUAL_EPSILON || temp > EQUAL_EPSILON)
-			continue;
-
 		return w;
 	}
 
