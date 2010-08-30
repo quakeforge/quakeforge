@@ -64,7 +64,12 @@ FreePortal (portal_t *p)
 	free (p);
 }
 
+/**	Link the portal into the nodes on either side of the portal.
 
+	\param p		The portal to link.
+	\param front	The node on the front side of the portal.
+	\param back		The node on the back side of the portal.
+*/
 static void
 AddPortalToNodes (portal_t *p, node_t *front, node_t *back)
 {
@@ -80,6 +85,13 @@ AddPortalToNodes (portal_t *p, node_t *front, node_t *back)
 	back->portals = p;
 }
 
+/**	Remove the portal from a node.
+
+	The portal most be linked into the node and bounding the node.
+
+	\param portal	The portal to remove.
+	\param l		The leaf node from which to remove the portal.
+*/
 static void
 RemovePortalFromNode (portal_t *portal, node_t *l)
 {
@@ -112,6 +124,10 @@ RemovePortalFromNode (portal_t *portal, node_t *l)
 	}
 }
 
+/**	Calculate the bounding box of the node based on its portals.
+
+	\param node		The node of which to calculate the bounding box.
+*/
 static void
 CalcNodeBounds (node_t *node)
 {
@@ -145,10 +161,11 @@ CalcNodeBounds (node_t *node)
 	}
 }
 
-/*
-	MakeHeadnodePortals
+/**	Make portals for the head node, initializing outside_node.
 
-	The created portals will face the global outside_node
+	The created portals will face the global outside_node.
+
+	\param node		The head node.
 */
 static void
 MakeHeadnodePortals (node_t *node)
@@ -169,7 +186,9 @@ MakeHeadnodePortals (node_t *node)
 	outside_node.contents = CONTENTS_SOLID;
 	outside_node.portals = NULL;
 
-	for (i = 0; i < 3; i++)
+	// create a brush based on the enlarged bounding box.
+	// The brush has all sides pointing in.
+	for (i = 0; i < 3; i++) {
 		for (j = 0; j < 2; j++) {
 			n = j * 3 + i;
 
@@ -193,6 +212,7 @@ MakeHeadnodePortals (node_t *node)
 			else
 				AddPortalToNodes (p, node, &outside_node);
 		}
+	}
 
 	// clip the basewindings by all the other planes
 	for (i = 0; i < 6; i++) {
@@ -205,9 +225,13 @@ MakeHeadnodePortals (node_t *node)
 	}
 }
 
-//============================================================================
+/**	Calculate the plane holding the winding.
 
+	Uses the first three points of the winding.
 
+	\param w		The plane for which to calculate the plane.
+	\param plane	The plane to set.
+*/
 static void
 PlaneFromWinding (winding_t *w, plane_t *plane)
 {
@@ -236,7 +260,7 @@ CutNodePortals_r (node_t *node)
 
 	CalcNodeBounds (node);
 
-	// seperate the portals on node into it's children  
+	// seperate the portals on node into it's children
 	if (node->contents)
 		return;							// at a leaf, no more dividing
 
@@ -333,11 +357,6 @@ CutNodePortals_r (node_t *node)
 	CutNodePortals_r (b);
 }
 
-/*
-	PortalizeWorld
-
-	Builds the exact polyhedrons for the nodes and leafs
-*/
 void
 PortalizeWorld (node_t *headnode)
 {
@@ -348,11 +367,6 @@ PortalizeWorld (node_t *headnode)
 	CutNodePortals_r (headnode);
 }
 
-/*
-	PortalizeWorldDetail
-
-	Like PortalizeWorld, but stop at detail nodes - Alexander Malmberg.
-*/
 void
 PortalizeWorldDetail (node_t *headnode)
 {
@@ -394,6 +408,12 @@ int         num_visleafs;				// leafs the player can be in
 int         num_visportals;
 int         num_realleafs;
 
+/**	Check if a node has the specified contents.
+
+	\param n		The node to check.
+	\param cont		The contents for which to check.
+	\return			1 if the node has the specified contents, otherwise 0.
+*/
 static int
 HasContents (node_t *n, int cont)
 {
@@ -406,6 +426,11 @@ HasContents (node_t *n, int cont)
 	return HasContents (n->children[1], cont);
 }
 
+/**	Check if two nodes have the same non-solid contents somewhere within them.
+
+	\param n1		The first node to check.
+	\param n2		The second node to check.
+*/
 static int
 ShareContents (node_t *n1, node_t *n2)
 {
@@ -421,6 +446,13 @@ ShareContents (node_t *n1, node_t *n2)
 	return ShareContents (n1->children[1], n2);
 }
 
+/**	Check if two nodes have the same non-solid, non-sky contents.
+
+	\node Affected by watervis.
+
+	\param n1		The first node to check.
+	\param n2		The second node to check.
+*/
 static int
 SameContents (node_t *n1, node_t *n2)
 {
@@ -439,6 +471,11 @@ SameContents (node_t *n1, node_t *n2)
 	return n1->contents == n2->contents;
 }
 
+/**	Recurse through the world bsp, writing the portals for each leaf node to
+	the portal file.
+
+	\param node		The current node of the bsp. Call with the root node.
+*/
 static void
 WritePortalFile_r (node_t *node)
 {
@@ -486,9 +523,12 @@ WritePortalFile_r (node_t *node)
 		else
 			p = p->next[1];
 	}
-
 }
 
+/**	Write the vis leaf number to the portal file.
+
+	\param n		The current node of the bsp. Call with the root node.
+*/
 static void
 WritePortalLeafs_r (node_t *n)
 {
@@ -501,6 +541,11 @@ WritePortalLeafs_r (node_t *n)
 	}
 }
 
+/**	Set the vis leaf number of the leafs in a detail cluster.
+
+	\param n		The current node. Call with the detail node.
+	\param num		The vis leaf number.
+*/
 static void
 SetCluster_r (node_t *n, int num)
 {
@@ -518,6 +563,10 @@ SetCluster_r (node_t *n, int num)
 		num_realleafs++;
 }
 
+/**	Set the vis leaf number of the leafs in a bsp tree.
+
+	\param node		The current node. Call with the root node.
+*/
 static void
 NumberLeafs_r (node_t *node)
 {
