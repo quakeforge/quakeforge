@@ -25,6 +25,10 @@
 
 struct node_s;
 
+/**	Write the faces and edges to the bsp file.
+
+	\param headnode	The root of the map's bsp.
+*/
 void GrowNodeRegions (struct node_s *headnode);
 
 #endif//qfbsp_region_h

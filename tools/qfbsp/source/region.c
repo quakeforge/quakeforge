@@ -132,7 +132,7 @@ RecursiveGrowRegion (dface_t *r, face_t *f)
 		Sys_Error ("RecursiveGrowRegion: region collision");
 	f->outputnumber = bsp->numfaces;
 
-	// add edges    
+	// add edges
 	for (i = 0; i < f->points->numpoints; i++) {
 		e = f->edges[i];
 		if (!edgefaces[abs (e)][0])
@@ -265,7 +265,7 @@ GrowNodeRegions (node_t *headnode)
 		vec3_t	dir;
 		vec3_t	origin;
 		vec3_t	p[2];
-	} 
+	}
 
 	for all faces
 		for all edges
