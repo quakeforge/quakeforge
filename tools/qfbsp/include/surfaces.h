@@ -74,10 +74,26 @@ surface_t *AllocSurface (void);
 */
 void FreeSurface (surface_t *s);
 
+/**	Split any faces that are too big.
+
+	If the face is > options.subdivide_size in either texture direction,
+	carve off a valid sized piece and insert the remainder in the next link.
+
+	\param f		The face to subdivide.
+	\param prevptr	The address of the pointer to this face. For nice linked
+					list manipulation.
+*/
 void SubdivideFace (struct visfacet_s *f, struct visfacet_s **prevptr);
 
+/**	Free the current node tree and return a new chain of the surfaces that
+	have inside faces.
+*/
 struct surface_s *GatherNodeFaces (struct node_s *headnode);
 
+/**	Give edges to all the faces in the bsp tree.
+
+	\param headnode	The root of the bsp tree.
+*/
 void MakeFaceEdges (struct node_s *headnode);
 
 #endif//surfaces_h
