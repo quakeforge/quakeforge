@@ -111,33 +111,36 @@ CanonicalVector (vec3_t vec)
 	if (len < EQUAL_EPSILON)
 		return false;
 
-	if (vec[0] > EQUAL_EPSILON)
+	if (vec[0] > EQUAL_EPSILON) {
 		return true;
-	else if (vec[0] < -EQUAL_EPSILON) {
+	} else if (vec[0] < -EQUAL_EPSILON) {
 		VectorNegate (vec, vec);
 		return true;
-	} else
+	} else {
 		vec[0] = 0;
+	}
 
-	if (vec[1] > EQUAL_EPSILON)
+	if (vec[1] > EQUAL_EPSILON) {
 		return true;
-	else if (vec[1] < -EQUAL_EPSILON) {
+	} else if (vec[1] < -EQUAL_EPSILON) {
 		VectorNegate (vec, vec);
 		return true;
-	} else
+	} else {
 		vec[1] = 0;
+	}
 
-	if (vec[2] > EQUAL_EPSILON)
+	if (vec[2] > EQUAL_EPSILON) {
 		return true;
-	else if (vec[2] < -EQUAL_EPSILON) {
+	} else if (vec[2] < -EQUAL_EPSILON) {
 		VectorNegate (vec, vec);
 		return true;
-	} else
+	} else {
 		vec[2] = 0;
+	}
 	return false;
 }
 
-static wedge_t    *
+static wedge_t *
 FindEdge (vec3_t p1, vec3_t p2, vec_t *t1, vec_t *t2)
 {
 	int         h;

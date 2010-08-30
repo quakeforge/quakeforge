@@ -189,7 +189,7 @@ GatherNodeFaces_r (node_t *node)
 	}
 }
 
-surface_t  *
+surface_t *
 GatherNodeFaces (node_t *headnode)
 {
 	memset (validfaces, 0, sizeof (validfaces));

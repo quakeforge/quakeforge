@@ -165,7 +165,7 @@ ChooseMidPlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs)
 
 	The real BSP hueristic
 */
-static surface_t  *
+static surface_t *
 ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
 					 qboolean usefloors, qboolean usedetail)
 {
@@ -263,7 +263,7 @@ ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
 	Selects a surface from a linked list of surfaces to split the group on
 	returns NULL if the surface list can not be divided any more (a leaf)
 */
-static surface_t  *
+static surface_t *
 SelectPartition (surface_t *surfaces, int *detail)
 {
 	int         i, j;
@@ -275,11 +275,12 @@ SelectPartition (surface_t *surfaces, int *detail)
 	// count onnode surfaces
 	i = 0;
 	bestsurface = NULL;
-	for (p = surfaces; p; p = p->next)
+	for (p = surfaces; p; p = p->next) {
 		if (!p->onnode) {
 			i++;
 			bestsurface = p;
 		}
+	}
 
 	if (i == 0)
 		return NULL;
@@ -296,13 +297,14 @@ SelectPartition (surface_t *surfaces, int *detail)
 		maxs[i] = -BOGUS_RANGE;
 	}
 
-	for (p = surfaces; p; p = p->next)
+	for (p = surfaces; p; p = p->next) {
 		for (j = 0; j < 3; j++) {
 			if (p->mins[j] < mins[j])
 				mins[j] = p->mins[j];
 			if (p->maxs[j] > maxs[j])
 				maxs[j] = p->maxs[j];
 		}
+	}
 
 	if (usemidsplit)					// do fast way for clipping hull
 		return ChooseMidPlaneFromList (surfaces, mins, maxs);
@@ -328,7 +330,7 @@ SelectPartition (surface_t *surfaces, int *detail)
 	Calculates the bounding box
 */
 void
-CalcSurfaceInfo (surface_t * surf)
+CalcSurfaceInfo (surface_t *surf)
 {
 	face_t     *f;
 	int         i, j;
@@ -346,13 +348,14 @@ CalcSurfaceInfo (surface_t * surf)
 		winding_t  *fp = f->points;
 		if (f->contents[0] >= 0 || f->contents[1] >= 0)
 			Sys_Error ("Bad contents");
-		for (i = 0; i < fp->numpoints; i++)
+		for (i = 0; i < fp->numpoints; i++) {
 			for (j = 0; j < 3; j++) {
 				if (fp->points[i][j] < surf->mins[j])
 					surf->mins[j] = fp->points[i][j];
 				if (fp->points[i][j] > surf->maxs[j])
 					surf->maxs[j] = fp->points[i][j];
 			}
+		}
 	}
 }
 
@@ -554,7 +557,7 @@ LinkConvexFaces (surface_t *planelist, node_t *leafnode)
 
 	Returns a duplicated list of all faces on surface
 */
-static face_t     *
+static face_t *
 LinkNodeFaces (surface_t *surface)
 {
 	face_t     *list, *new, **prevptr, *f;
@@ -643,7 +646,7 @@ PartitionSurfaces (surface_t *surfaces, node_t *node)
 	PartitionSurfaces (backlist, node->children[1]);
 }
 
-node_t     *
+node_t *
 SolidBSP (surface_t *surfhead, qboolean midsplit)
 {
 	int         i;
