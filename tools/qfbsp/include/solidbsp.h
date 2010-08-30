@@ -30,9 +30,18 @@ struct plane_s;
 struct surface_s;
 struct node_s;
 
-void DivideFacet (struct visfacet_s *in, struct plane_s *split,
-				  struct visfacet_s **front, struct visfacet_s **back);
+/**	Calculate the bounding box of the surface.
+
+	\param surf		The surface of which to calculate the bounding box.
+*/
 void CalcSurfaceInfo (struct surface_s *surf);
+
+/**	Partition the surfaces, creating a nice bsp.
+
+	\param surfhead	The surfaces to partition.
+	\param midsplit	If true, use the volume balancing heuristic rather than
+					the split balancing heuristic (false).
+*/
 struct node_s *SolidBSP (struct surface_s *surfhead, qboolean midsplit);
 
 #endif//qfbsp_solidbsp_h

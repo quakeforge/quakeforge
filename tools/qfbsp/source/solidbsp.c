@@ -48,10 +48,18 @@ int         c_solid, c_empty, c_water;
 qboolean    usemidsplit;
 
 
-/*
-	FaceSide
+/**	Determine on which side of the plane a face is.
 
-	For BSP hueristic
+	\param in		The face.
+	\param split	The plane.
+	\return			<dl>
+						<dt>SIDE_FRONT</dt>
+							<dd>The face is in front of or on the plane.</dd>
+						<dt>SIDE_BACK</dt>
+							<dd>The face is behind or on the plane.</dd>
+						<dt>SIDE_ON</dt>
+							<dd>The face is on or cut by the plane.</dd>
+					</dl>
 */
 static int
 FaceSide (face_t *in, plane_t *split)
@@ -102,10 +110,16 @@ FaceSide (face_t *in, plane_t *split)
 	return SIDE_ON;
 }
 
-/*
-	ChooseMidPlaneFromList
+/**	Chose the best plane for dividing the bsp.
 
-	The clipping hull BSP doesn't worry about avoiding splits
+	The clipping hull BSP doesn't worry about avoiding splits, so this
+	function tries to find the plane that gives the most even split of the
+	bounding volume.
+
+	\param surfaces	The surface chain of the bsp.
+	\param mins		The minimum coordinate of the boundiing box.
+	\param maxs		The maximum coordinate of the boundiing box.
+	\return			The chosen surface.
 */
 static surface_t *
 ChooseMidPlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs)
@@ -160,10 +174,16 @@ ChooseMidPlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs)
 	return bestsurface;
 }
 
-/*
-	ChoosePlaneFromList
+/**	Choose the best plane that produces the fewest splits.
 
-	The real BSP hueristic
+	\param surfaces	The surface chain of the bsp.
+	\param mins		The minimum coordinate of the boundiing box.
+	\param maxs		The maximum coordinate of the boundiing box.
+	\param usefloors If false, floors will not be chosen.
+	\param usedetail If true, the plain must have structure faces, else
+					the plain must not have structure faces.
+	\return			The chosen surface, or NULL if a suitable surface could
+					not be found.
 */
 static surface_t *
 ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
@@ -257,11 +277,12 @@ ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
 	return bestsurface;
 }
 
-/*
-	SelectPartition
+/**	Select a surface on which to split the group of surfaces.
 
-	Selects a surface from a linked list of surfaces to split the group on
-	returns NULL if the surface list can not be divided any more (a leaf)
+	\param surfaces	The group of surfaces.
+	\param detail	Set to 1 if the selected surface has detail.
+	\return			The selected surface or NULL if the list can no longer
+					be defined (ie, a leaf).
 */
 static surface_t *
 SelectPartition (surface_t *surfaces, int *detail)
@@ -322,13 +343,6 @@ SelectPartition (surface_t *surfaces, int *detail)
 	return ChoosePlaneFromList (surfaces, mins, maxs, true, true);
 }
 
-//============================================================================
-
-/*
-	CalcSurfaceInfo
-
-	Calculates the bounding box
-*/
 void
 CalcSurfaceInfo (surface_t *surf)
 {
@@ -359,6 +373,13 @@ CalcSurfaceInfo (surface_t *surf)
 	}
 }
 
+/**	Divide a surface by the plane.
+
+	\param in		The surface to divide.
+	\param split	The plane by which to divide the surface.
+	\param front	Tne part of the surface in front of the plane.
+	\param back		The part of the surface behind the plane.
+*/
 static void
 DividePlane (surface_t *in, plane_t *split, surface_t **front,
 			 surface_t **back)
@@ -483,11 +504,11 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 	CalcSurfaceInfo (in);
 }
 
-/*
-	LinkConvexFaces
-
-	Determines the contents of the leaf and creates the final list of
+/**	Determine the contents of the leaf and create the final list of
 	original faces that have some fragment inside this leaf
+
+	\param planelist surfaces bounding the leaf.
+	\param leafnode	The leaf.
 */
 static void
 LinkConvexFaces (surface_t *planelist, node_t *leafnode)
@@ -552,10 +573,10 @@ LinkConvexFaces (surface_t *planelist, node_t *leafnode)
 	leafnode->markfaces[i] = NULL;		// sentinal
 }
 
-/*
-	LinkNodeFaces
+/**	Return a duplicated list of all faces on surface
 
-	Returns a duplicated list of all faces on surface
+	\param surface	The surface of which to duplicate the faces.
+	\return			The duplicated list.
 */
 static face_t *
 LinkNodeFaces (surface_t *surface)
@@ -589,6 +610,11 @@ LinkNodeFaces (surface_t *surface)
 	return list;
 }
 
+/**	Partition the surfaces, creating a nice bsp.
+
+	\param surfaces	The surfaces to partition.
+	\param node		The current node.
+*/
 static void
 PartitionSurfaces (surface_t *surfaces, node_t *node)
 {
