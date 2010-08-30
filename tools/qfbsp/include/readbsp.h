@@ -23,10 +23,24 @@
 #ifndef qfbsp_readbsp_h
 #define qfbsp_readbsp_h
 
+/**	Load the bspfile into memory.
+*/
 void LoadBSP (void);
+
+/**	Recreate the map's portals and write the portal file.
+*/
 void bsp2prt (void);
+
+/**	Write a wad file containing the textures in the bsp file.
+*/
 void extract_textures (void);
+
+/**	Write the map's entities string to a file.
+*/
 void extract_entities (void);
+
+/**	Write a hull from the map's bsp to a C file.
+*/
 void extract_hull (void);
 
 #endif//qfbsp_readbsp_h
