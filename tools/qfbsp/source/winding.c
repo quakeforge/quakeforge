@@ -135,17 +135,6 @@ CopyWindingReverse (winding_t *w)
 	return c;
 }
 
-/*
-	ClipWinding
-
-	Clips the winding to the plane, returning the new winding on the positive
-	side.
-
-	Frees the input winding.
-
-	If keepon is true, an exactly on-plane winding will be saved, otherwise
-	it will be clipped away.
-*/
 winding_t *
 ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 {
@@ -244,14 +233,6 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 	return neww;
 }
 
-/*
-	DivideWinding
-
-	Divides a winding by a plane, producing one or two windings.  The
-	original winding is not damaged or freed.  If on only one side, the
-	returned winding will be the input winding.  If on both sides, two
-	new windings will be created.
-*/
 void
 DivideWinding (winding_t *in, plane_t *split, winding_t **front,
 			   winding_t **back)
