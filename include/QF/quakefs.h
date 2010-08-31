@@ -344,7 +344,7 @@ const char *QFS_FileExtension (const char *in);
 	\param func		The function to call every time the gamedir changes via
 					QFS_Gamedir().
 */
-void QFS_GamedirCallback (gamedir_callback_t *);
+void QFS_GamedirCallback (gamedir_callback_t *func);
 
 /**	Create a new file list.
 
