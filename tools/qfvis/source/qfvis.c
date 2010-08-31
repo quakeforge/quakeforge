@@ -126,21 +126,21 @@ NewWinding (int points)
 }
 
 void
-FreeWinding (winding_t *winding)
+FreeWinding (winding_t *w)
 {
-	if (!winding->original)
-		free (winding);
+	if (!w->original)
+		free (w);
 }
 
 winding_t *
-CopyWinding (winding_t *winding)
+CopyWinding (winding_t *w)
 {
 	size_t      size;
 	winding_t  *copy;
 
-	size = (size_t) (uintptr_t) ((winding_t *) 0)->points[winding->numpoints];
+	size = (size_t) (uintptr_t) ((winding_t *) 0)->points[w->numpoints];
 	copy = malloc (size);
-	memcpy (copy, winding, size);
+	memcpy (copy, w, size);
 	copy->original = false;
 	return copy;
 }
