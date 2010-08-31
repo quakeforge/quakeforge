@@ -65,11 +65,7 @@ FindFinalPlane (dplane_t *p)
 			continue;
 		if (p->dist != dplane->dist)
 			continue;
-		if (p->normal[0] != dplane->normal[0])
-			continue;
-		if (p->normal[1] != dplane->normal[1])
-			continue;
-		if (p->normal[2] != dplane->normal[2])
+		if (!VectorCompare (p->normal, dplane->normal))
 			continue;
 		return i;
 	}
@@ -97,9 +93,7 @@ WriteNodePlanes_r (node_t *node)
 
 		plane = &planes[node->planenum];
 
-		dplane.normal[0] = plane->normal[0];
-		dplane.normal[1] = plane->normal[1];
-		dplane.normal[2] = plane->normal[2];
+		VectorCopy (plane->normal, dplane.normal);
 		dplane.dist = plane->dist;
 		dplane.type = plane->type;
 		BSP_AddPlane (bsp, &dplane);
