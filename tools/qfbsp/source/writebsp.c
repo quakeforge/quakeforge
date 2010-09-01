@@ -436,8 +436,6 @@ WriteMiptex (void)
 		if (res == -1)
 			Sys_Error ("couldn't open %s[.gz]", wad);
 
-		AddAnimatingTextures ();
-
 		wad = w;
 		if (!wad || !*wad)
 			break;
@@ -447,6 +445,8 @@ WriteMiptex (void)
 	}
 	free (wad_list);
 	dstring_delete (fullpath);
+
+	AddAnimatingTextures ();
 
 	data = dstring_new ();
 	data->size = sizeof (dmiptexlump_t);
