@@ -53,11 +53,6 @@ int         headclipnode;
 int         firstface;
 
 
-/*
-	FindFinalPlane
-
-	Used to find plane index numbers for clip nodes read from child processes
-*/
 int
 FindFinalPlane (dplane_t *p)
 {
@@ -84,6 +79,13 @@ FindFinalPlane (dplane_t *p)
 
 int         planemapping[MAX_MAP_PLANES];
 
+/**	Recursively write the nodes' planes to the bsp file.
+
+	If the plane has already been written, do not write it again. Set the
+	node's output plane number.
+
+	\param node		The current node of which to write the plane.
+*/
 static void
 WriteNodePlanes_r (node_t *node)
 {
@@ -116,6 +118,12 @@ WriteNodePlanes (node_t *nodes)
 	WriteNodePlanes_r (nodes);
 }
 
+/**	Recursively write clip nodes to the bsp file.
+
+	\note The node will be freed.
+
+	\param node		The node to be written to the bsp file.
+*/
 static int
 WriteClipNodes_r (node_t *node)
 {
@@ -140,12 +148,6 @@ WriteClipNodes_r (node_t *node)
 	return c;
 }
 
-/*
-	WriteClipNodes
-
-	Called after the clipping hull is completed.  Generates a disk format
-	representation and frees the original memory.
-*/
 void
 WriteClipNodes (node_t *nodes)
 {
@@ -153,6 +155,10 @@ WriteClipNodes (node_t *nodes)
 	WriteClipNodes_r (nodes);
 }
 
+/**	Write a leaf node to the bsp file.
+
+	\param node		The leaf node to be written to the bsp file.
+*/
 static void
 WriteLeaf (node_t *node)
 {
@@ -190,6 +196,10 @@ WriteLeaf (node_t *node)
 	BSP_AddLeaf (bsp, &leaf_p);
 }
 
+/**	Recursively write the draw nodes of the map bsp.
+
+	\param node		The current node to be written.
+*/
 static void
 WriteDrawNodes_r (node_t *node)
 {
@@ -267,11 +277,6 @@ WriteDrawNodes (node_t *headnode)
 	// FIXME: are all the children decendant of padded nodes?
 }
 
-/*
-	BumpModel
-
-	Used by the clipping hull processes that need to store only headclipnode
-*/
 void
 BumpModel (int hullnum)
 {
@@ -290,6 +295,9 @@ typedef struct wadlist_s {
 
 wadlist_t  *wadlist;
 
+/**	Load a texture wad file.
+	\param path		The path to the wad file.
+*/
 static int
 TEX_InitFromWad (char *path)
 {
@@ -315,6 +323,16 @@ TEX_InitFromWad (char *path)
 	return 0;
 }
 
+/**	Read a lump's data.
+
+	Searches all loaded wad files for the lump.
+
+	\param name		The name of the lump for which to search.
+	\param dest		The destination buffer to which the lump's data will be
+					written.
+	\return			The size of the lump's data or 0 if the lump was not
+					found.
+*/
 static int
 LoadLump (char *name, dstring_t *dest)
 {
@@ -355,6 +373,8 @@ LoadLump (char *name, dstring_t *dest)
 	return 0;
 }
 
+/**	Search loaded miptex for animated textures and load their animations.
+*/
 static void
 AddAnimatingTextures (void)
 {
@@ -391,6 +411,13 @@ AddAnimatingTextures (void)
 		printf ("added %i texture frames\n", nummiptex - base);
 }
 
+/**	Write the miptex data to the bsp file.
+
+	The miptex data is read from the wad files specified by the \c wad or
+	\c _wad key of the world entity. The files are a semi-colon separated list
+	(this is a QuakeForge extension). The \c wadpath is used to search for the
+	files.
+*/
 static void
 WriteMiptex (void)
 {

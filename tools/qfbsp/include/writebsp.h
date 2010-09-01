@@ -32,14 +32,51 @@
 
 struct node_s;
 
+/**	Write the planes of the map bsp to the bsp file.
+
+	\param headnode	The root of the map bsp.
+*/
 void WriteNodePlanes (struct node_s *headnode);
+
+/**	Write the clip nodes to the bsp file.
+
+	\param headnode	The root of the map bsp.
+*/
 void WriteClipNodes (struct node_s *headnode);
+
+/**	Write the draw nodes and the model information to the bsp file.
+
+	\param headnode	The root of the map bsp.
+*/
 void WriteDrawNodes (struct node_s *headnode);
 
+/**	Write the model information for the clipping hull.
+
+	\param hullnum	The number of this clipping hull.
+*/
 void BumpModel (int hullnum);
+
+/**	Add a plane to the bsp.
+
+	If the plane already exists in the bsp, return the number of the existing
+	plane rather than adding a new one.
+
+	\param p		The plane to add to the bsp.
+	\return			The plane number within the bsp.
+*/
 int FindFinalPlane (dplane_t *p);
 
+/**	Prepare the bsp file for writing.
+
+	Write a null edge and leaf for edge 0 and leaf 0.
+*/
 void BeginBSPFile (void);
+
+/**	Finalize the bsp file.
+
+	Writes the miptex data to the bsp file and then writes the bsp file to
+	the file system.
+*/
 void FinishBSPFile (void);
 
 //@}
