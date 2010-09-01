@@ -39,6 +39,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "surfaces.h"
 #include "winding.h"
 
+/**	\addtogroup qfbsp_csg4
+*/
+//@{
+
 /*
 	NOTES
 
@@ -382,3 +386,5 @@ CSGFaces (brushset_t *bs)
 
 	return surfhead;
 }
+
+//@}

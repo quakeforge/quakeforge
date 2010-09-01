@@ -26,6 +26,10 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "draw.h"
 
+/**	\addtogroup qfbsp_draw
+*/
+//@{
+
 
 void
 Draw_ClearBounds (void)
@@ -91,3 +95,5 @@ void
 DrawPortal (struct portal_s *portal)
 {
 }
+
+//@}

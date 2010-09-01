@@ -38,6 +38,10 @@
 #include "surfaces.h"
 #include "winding.h"
 
+/**	\addtogroup qfbsp_brush
+*/
+//@{
+
 int         numbrushplanes;
 plane_t     planes[MAX_MAP_PLANES];
 
@@ -798,3 +802,5 @@ Brush_LoadEntity (entity_t *ent, int hullnum)
 
 	return bset;
 }
+
+//@}

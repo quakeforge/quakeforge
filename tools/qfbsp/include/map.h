@@ -25,6 +25,11 @@
 
 #include "bsp5.h"
 
+/**	\defgroup qfbsp_map Map Parser
+	\ingroup qfbsp
+*/
+//@{
+
 #define MAX_FACES 256
 typedef struct mface_s {
 	struct mface_s *next;
@@ -117,5 +122,7 @@ void GetVectorForKey (entity_t *ent, const char *key, vec3_t vec);
 	Only the key=value pairs are written: any brush data is left out.
 */
 void WriteEntitiesToString (void);
+
+//@}
 
 #endif//qfbsp_map_h

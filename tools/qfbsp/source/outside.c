@@ -33,6 +33,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "outside.h"
 #include "winding.h"
 
+/**	\addtogroup qfbsp_outside
+*/
+//@{
+
 int         outleafs;
 
 /**	Find the leaf node in which the point is.
@@ -365,3 +369,5 @@ FillOutside (node_t *node)
 	qprintf ("%4i outleafs\n", outleafs);
 	return true;
 }
+
+//@}

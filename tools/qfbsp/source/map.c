@@ -44,6 +44,10 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "map.h"
 
+/**	\addtogroup qfbsp_map
+*/
+//@{
+
 int         nummapbrushfaces;
 int         nummapbrushes;
 mbrush_t    mapbrushes[MAX_MAP_BRUSHES];
@@ -589,3 +593,5 @@ WriteEntitiesToString (void)
 	}
 	BSP_AddEntities (bsp, buf->str, buf->size);
 }
+
+//@}

@@ -38,6 +38,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "winding.h"
 #include "tjunc.h"
 
+/**	\addtogroup qfbsp_tjunc
+*/
+//@{
+
 typedef struct wvert_s {
 	vec_t       t;
 	struct wvert_s *prev, *next;
@@ -427,3 +431,5 @@ tjunc (node_t *headnode)
 	qprintf ("%i edges added by tjunctions\n", tjuncs);
 	qprintf ("%i faces added by tjunctions\n", tjuncfaces);
 }
+
+//@}

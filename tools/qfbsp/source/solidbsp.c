@@ -39,6 +39,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "surfaces.h"
 #include "winding.h"
 
+/**	\addtogroup qfbsp_solidbsp
+*/
+//@{
+
 int         leaffaces;
 int         nodefaces;
 int         splitnodes;
@@ -707,3 +711,5 @@ SolidBSP (surface_t *surfhead, qboolean midsplit)
 
 	return headnode;
 }
+
+//@}

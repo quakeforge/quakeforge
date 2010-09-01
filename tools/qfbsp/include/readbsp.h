@@ -23,6 +23,11 @@
 #ifndef qfbsp_readbsp_h
 #define qfbsp_readbsp_h
 
+/**	\defgroup qfbsp_readbsp BSP Reading Functions
+	\ingroup qfbsp
+*/
+//@{
+
 /**	Load the bspfile into memory.
 */
 void LoadBSP (void);
@@ -42,5 +47,7 @@ void extract_entities (void);
 /**	Write a hull from the map's bsp to a C file.
 */
 void extract_hull (void);
+
+//@}
 
 #endif//qfbsp_readbsp_h

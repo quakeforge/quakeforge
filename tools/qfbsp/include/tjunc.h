@@ -23,6 +23,11 @@
 #ifndef qfbsp_tjunc_h
 #define qfbsp_tjunc_h
 
+/**	\defgroup qfbsp_tjunc T-Junction Repair
+	\ingroup qfbsp
+*/
+//@{
+
 struct node_s;
 
 /**	Add the edges from the faces in the bsp tree.
@@ -30,5 +35,7 @@ struct node_s;
 	\param headnode	The current node in the bsp tree.
 */
 void tjunc (struct node_s *headnode);
+
+//@}
 
 #endif//qfbsp_tjunc_h

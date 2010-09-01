@@ -31,6 +31,11 @@
 
 #include "QF/qtypes.h"
 
+/**	\defgroup qfbsp_options Command-line Options Parsing
+	\ingroup qfbsp
+*/
+//@{
+
 typedef struct {
 	int         verbosity;		// 0=silent
 	qboolean    drawflag;
@@ -60,4 +65,7 @@ typedef struct {
 extern options_t options;
 int DecodeArgs (int argc, char **argv);
 extern const char *this_program;
+
+//@}
+
 #endif//qfbsp_options_h

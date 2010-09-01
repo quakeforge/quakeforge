@@ -23,6 +23,11 @@
 #ifndef qfbsp_outside_h
 #define qfbsp_outside_h
 
+/**	\defgroup qfbsp_outside Outside Functions
+	\ingroup qfbsp
+*/
+//@{
+
 struct node_s;
 
 /**	Make the outside of the map solid.
@@ -36,5 +41,7 @@ struct node_s;
 					\c false.
 */
 qboolean FillOutside (struct node_s *node);
+
+//@}
 
 #endif//qfbsp_outside_h

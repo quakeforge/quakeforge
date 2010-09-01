@@ -59,6 +59,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "writebsp.h"
 #include "tjunc.h"
 
+/**	\addtogroup qfbsp
+*/
+//@{
+
 options_t   options;
 
 bsp_t      *bsp;
@@ -486,3 +490,5 @@ qprintf (const char *fmt, ...)
 	vprintf (fmt, argptr);
 	va_end (argptr);
 }
+
+//@}

@@ -23,8 +23,16 @@
 #ifndef qfbsp_bsp5_h
 #define qfbsp_bsp5_h
 
+/**	\defgroup qfbsp QuakeForge BSP Compiler
+*/
+
 #include "QF/mathlib.h"
 #include "QF/bspfile.h"
+
+/**	\defgroup qfbsp_general General functions
+	\ingroup qfbsp
+*/
+//@{
 
 typedef struct plane_s {
 	vec3_t      normal;
@@ -127,5 +135,7 @@ node_t *AllocNode (void);
 //=============================================================================
 
 extern bsp_t *bsp;
+
+//@}
 
 #endif//qfbsp_bsp5_h

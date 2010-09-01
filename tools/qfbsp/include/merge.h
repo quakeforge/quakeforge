@@ -23,6 +23,11 @@
 #ifndef qfbsp_merge_h
 #define qfbsp_merge_h
 
+/**	\defgroup qfbsp_merge Merge Functions
+	\ingroup qfbsp
+*/
+//@{
+
 /**	Add a face to the list of faces, doing any possible merging.
 
 	\param face		The face to add to the list.
@@ -58,5 +63,7 @@ void MergePlaneFaces (surface_t *plane);
 	\param surfhead	The list of surfaces.
 */
 void MergeAll (surface_t *surfhead);
+
+//@}
 
 #endif//qfbsp_merge_h

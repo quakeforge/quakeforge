@@ -45,6 +45,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "options.h"
 #include "writebsp.h"
 
+/**	\addtogroup qfbsp_writebsp
+*/
+//@{
+
 int         headclipnode;
 int         firstface;
 
@@ -497,3 +501,5 @@ FinishBSPFile (void)
 	WriteBSPFile (bsp, f);
 	Qclose (f);
 }
+
+//@}

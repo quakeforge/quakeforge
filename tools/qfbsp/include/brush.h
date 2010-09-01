@@ -28,6 +28,11 @@
 #include "bsp5.h"
 #include "map.h"
 
+/**	\defgroup qfbsp_brush Brush Functions
+	\ingroup qfbsp
+*/
+//@{
+
 #define	NUM_HULLS		2				// normal and +16
 
 #define	NUM_CONTENTS	2				// solid and water
@@ -73,5 +78,7 @@ int	PlaneTypeForNormal (const vec3_t normal);
 	\return			global plane number.
 */
 int	FindPlane (plane_t *dplane, int *side);
+
+//@}
 
 #endif//qfbsp_brush_h

@@ -23,6 +23,11 @@
 #ifndef qfbsp_portals_h
 #define qfbsp_portals_h
 
+/**	\defgroup qfbsp_portals Portal Functions
+	\ingroup qfbsp
+*/
+//@{
+
 struct node_s;
 
 typedef struct portal_s {
@@ -78,5 +83,7 @@ void FreeAllPortals (struct node_s *node);
 	\param headnode	The root of the map's bsp.
 */
 void WritePortalfile (struct node_s *headnode);
+
+//@}
 
 #endif//qfbsp_portals_h

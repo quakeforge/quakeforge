@@ -45,6 +45,10 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "options.h"
 
+/**	\addtogroup qfbsp_options
+*/
+//@{
+
 const char *this_program;
 
 static struct option const long_options[] = {
@@ -242,3 +246,5 @@ DecodeArgs (int argc, char **argv)
 
 	return optind;
 }
+
+//@}

@@ -23,6 +23,11 @@
 #ifndef qfbsp_region_h
 #define qfbsp_region_h
 
+/**	\defgroup qfbsp_region Region Functions
+	\ingroup qfbsp
+*/
+//@{
+
 struct node_s;
 
 /**	Write the faces and edges to the bsp file.
@@ -30,5 +35,7 @@ struct node_s;
 	\param headnode	The root of the map's bsp.
 */
 void GrowNodeRegions (struct node_s *headnode);
+
+//@}
 
 #endif//qfbsp_region_h

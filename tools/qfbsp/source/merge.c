@@ -34,6 +34,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "surfaces.h"
 #include "winding.h"
 
+/**	\addtogroup qfbsp_merge
+*/
+//@{
+
 #define CONTINUOUS_EPSILON	0.001
 
 
@@ -236,3 +240,5 @@ MergeAll (surface_t * surfhead)
 
 	printf ("%i mergefaces\n", mergefaces);
 }
+
+//@}

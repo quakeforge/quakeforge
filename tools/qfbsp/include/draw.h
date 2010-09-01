@@ -25,6 +25,11 @@
 
 #include "QF/mathlib.h"
 
+/**	\defgroup qfbsp_draw Debug Drawing Functions
+	\ingroup qfbsp
+*/
+//@{
+
 struct visfacet_s;
 struct portal_s;
 struct node_s;
@@ -48,5 +53,7 @@ void DrawBrush (struct brush_s *b);
 
 void DrawWinding (struct winding_s *w);
 void DrawTri (vec3_t p1, vec3_t p2, vec3_t p3);
+
+//@}
 
 #endif//qfbsp_draw_h

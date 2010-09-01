@@ -25,6 +25,11 @@
 
 #include "QF/bspfile.h"
 
+/**	\defgroup qfbsp_writebsp BSP Writing Functions
+	\ingroup qfbsp
+*/
+//@{
+
 struct node_s;
 
 void WriteNodePlanes (struct node_s *headnode);
@@ -36,5 +41,7 @@ int FindFinalPlane (dplane_t *p);
 
 void BeginBSPFile (void);
 void FinishBSPFile (void);
+
+//@}
 
 #endif//qfbsp_writebsp_h

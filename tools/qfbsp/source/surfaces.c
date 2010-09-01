@@ -38,6 +38,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "surfaces.h"
 #include "winding.h"
 
+/**	\addtogroup qfbsp_surface
+*/
+//@{
+
 /*
 	a surface has all of the faces that could be drawn on a given plane
 
@@ -431,3 +435,5 @@ MakeFaceEdges (node_t *headnode)
 	firstmodeledge = bsp->numedges;
 	firstmodelface = bsp->numfaces;
 }
+
+//@}

@@ -38,6 +38,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "portals.h"
 #include "winding.h"
 
+/**	\addtogroup qfbsp_portals
+*/
+//@{
+
 int         c_activeportals, c_peakportals;
 
 node_t      outside_node;				// portals outside the world face this
@@ -448,7 +452,7 @@ ShareContents (node_t *n1, node_t *n2)
 
 /**	Check if two nodes have the same non-solid, non-sky contents.
 
-	\node Affected by watervis.
+	\note Affected by watervis.
 
 	\param n1		The first node to check.
 	\param n2		The second node to check.
@@ -636,3 +640,5 @@ WritePortalfile (node_t *headnode)
 
 	fclose (pf);
 }
+
+//@}

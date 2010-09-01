@@ -37,6 +37,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "surfaces.h"
 #include "winding.h"
 
+/**	\addtogroup qfbsp_region
+*/
+//@{
+
 /*
 input
 -----
@@ -273,3 +277,5 @@ GrowNodeRegions (node_t *headnode)
 				if overlap
 					split
 */
+
+//@}

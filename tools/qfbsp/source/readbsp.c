@@ -58,6 +58,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "readbsp.h"
 #include "winding.h"
 
+/**	\addtogroup qfbsp_readbsp
+*/
+//@{
+
 dmodel_t   *models;
 face_t     *mfaces;
 node_t     *nodes;
@@ -474,3 +478,5 @@ extract_hull (void)
 	}
 	Qprintf (hf, "};\n");
 }
+
+//@}

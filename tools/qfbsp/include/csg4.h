@@ -25,6 +25,11 @@
 
 #include "QF/bspfile.h"
 
+/**	\defgroup qfbsp_csg4 CSG Functions
+	\ingroup qfbsp
+*/
+//@{
+
 struct plane_s;
 struct visfacet_s;
 struct brushset_s;
@@ -79,5 +84,7 @@ struct surface_s *CSGFaces (struct brushset_s *bs);
 */
 void SplitFace (struct visfacet_s *in, struct plane_s *split,
 				struct visfacet_s **front, struct visfacet_s **back);
+
+//@}
 
 #endif//qfbsp_csg4_h
