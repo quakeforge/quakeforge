@@ -1,3 +1,6 @@
+#ifndef CameraView_h
+#define CameraView_h
+
 #include <AppKit/AppKit.h>
 #include "mathlib.h"
 #include "SetBrush.h"
@@ -59,3 +62,4 @@ extern	BOOL	timedrawing;
 
 @end
 
+#endif//CameraView_h

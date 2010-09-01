@@ -1,4 +1,5 @@
-
+#ifndef TextureView_h
+#define TextureView_h
 
 @interface TextureView:NSView
 {
@@ -10,3 +11,5 @@
 - deselect;
 
 @end
+
+#endif//TextureView_h

@@ -1,3 +1,5 @@
+#ifndef render_h
+#define render_h
 
 extern	int			r_width, r_height;
 extern	unsigned	*r_picbuffer;
@@ -11,3 +13,5 @@ void REN_DrawCameraFace (face_t *idpol);
 void REN_DrawXYFace (face_t *idpol);
 void REN_BeginCamera (void);
 void REN_BeginXY (void);
+
+#endif//render_h

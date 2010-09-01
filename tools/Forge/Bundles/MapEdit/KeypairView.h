@@ -1,3 +1,5 @@
+#ifndef KeypairView_h
+#define KeypairView_h
 
 extern	id	keypairview_i;
 
@@ -14,3 +16,5 @@ extern	id	keypairview_i;
 #define	LINEHEIGHT	16
 
 @end
+
+#endif//KeypairView_h

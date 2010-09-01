@@ -1,3 +1,5 @@
+#ifndef ZView_h
+#define ZView_h
 
 #include <AppKit/AppKit.h>
 #include "mathlib.h"
@@ -40,3 +42,4 @@ extern	float	zplanedir;
 
 @end
 
+#endif//ZView_h

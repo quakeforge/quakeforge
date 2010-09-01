@@ -1,3 +1,5 @@
+#ifndef Preferences_h
+#define Preferences_h
 
 extern	id	preferences_i;
 
@@ -6,7 +8,7 @@ extern	float		lightaxis[3];
 // these are personal preferences saved in NeXT defaults, not project
 // parameters saved in the quake.qe_project file
 
-@interface Preferences:Object
+@interface Preferences:NSObject
 {
 	id		bspSound_i;			// actual sound object
 
@@ -76,3 +78,5 @@ extern	float		lightaxis[3];
 
 
 @end
+
+#endif//Preferences_h

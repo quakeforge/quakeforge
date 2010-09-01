@@ -1,3 +1,5 @@
+#ifndef Entity_h
+#define Entity_h
 
 #define	MAX_KEY		64
 #define	MAX_VALUE	128
@@ -37,4 +39,4 @@ typedef struct epair_s
 
 @end
 
-
+#endif//Entity_h

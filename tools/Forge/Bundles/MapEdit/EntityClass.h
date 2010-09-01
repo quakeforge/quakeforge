@@ -1,3 +1,6 @@
+#ifndef EntityClass_h
+#define EntityClass_h
+
 #include <AppKit/AppKit.h>
 #include "mathlib.h"
 
@@ -5,7 +8,7 @@ typedef enum {esize_model, esize_fixed} esize_t;
 
 #define	MAX_FLAGS	8
 
-@interface EntityClass : Object
+@interface EntityClass : NSObject
 {
 	char	*name;
 	esize_t	esize;
@@ -40,3 +43,4 @@ extern	id	entity_classes_i;
 
 @end
 
+#endif//EntityClass_h

@@ -1,3 +1,5 @@
+#ifndef QuakeEd_h
+#define QuakeEd_h
 
 extern	id	quakeed_i;
 
@@ -96,3 +98,4 @@ void qprintf (char *fmt, ...);		// prints text to cmd_out_i
 
 @end
 
+#endif//QuakeEd_h
