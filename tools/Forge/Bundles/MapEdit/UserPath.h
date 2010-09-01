@@ -30,6 +30,9 @@
  * which reference objective C methods. 
  */
 
+#ifndef UserPath_h
+#define UserPath_h
+
 #include <objc/objc.h>
 #include <AppKit/NSGraphicsContext.h>
 
@@ -70,3 +73,5 @@ void addPts(UserPath *up, float x, float y);
 void addOp(UserPath *up, int op);
 void add(UserPath *up, int op, float x, float y);
 void checkBBox(UserPath *up, float x, float y);
+
+#endif//UserPath_h

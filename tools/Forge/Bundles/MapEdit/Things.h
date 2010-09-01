@@ -1,3 +1,5 @@
+#ifndef Things_h
+#define Things_h
 
 #include <AppKit/AppKit.h>
 
@@ -5,7 +7,7 @@ extern	id	things_i;
 
 #define	ENTITYNAMEKEY	"spawn"
 
-@interface Things:Object
+@interface Things:NSObject
 {
 	id	entity_browser_i;	// browser
 	id	entity_comment_i;	// scrolling text window
@@ -40,3 +42,5 @@ extern	id	things_i;
 
 
 @end
+
+#endif//Things_h

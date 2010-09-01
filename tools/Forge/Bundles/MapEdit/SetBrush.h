@@ -1,4 +1,5 @@
-
+#ifndef SetBrush_h
+#define SetBrush_h
 
 #define		MAX_FACES		16
 
@@ -45,7 +46,7 @@ winding_t	*CopyWinding (winding_t *w);
 winding_t *NewWinding (int points);
 
 
-@interface SetBrush : Object
+@interface SetBrush : NSObject
 {
 	BOOL		regioned;		// not active
 	BOOL		selected;
@@ -156,3 +157,4 @@ extern	float	sb_floor_dir, sb_floor_dist;
 
 @end
 
+#endif//SetBrush_h

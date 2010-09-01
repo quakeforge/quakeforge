@@ -1,3 +1,6 @@
+#ifndef PopScrollView_h
+#define PopScrollView_h
+
 #include <AppKit/AppKit.h>
 
 @interface PopScrollView : NSScrollView
@@ -9,3 +12,5 @@
 - tile;
 
 @end
+
+#endif//PopScrollView_h

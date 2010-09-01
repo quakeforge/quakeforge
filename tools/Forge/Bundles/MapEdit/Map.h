@@ -1,3 +1,5 @@
+#ifndef Map_h
+#define Map_h
 
 // Map is a list of Entity objects
 
@@ -66,3 +68,5 @@ extern	id	map_i;
 - selectCompleteEntity: sender;
 
 @end
+
+#endif//Map_h

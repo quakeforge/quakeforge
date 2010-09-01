@@ -1,3 +1,5 @@
+#ifndef qedefs_h
+#define qedefs_h
 
 #include <AppKit/AppKit.h>
 #include <ctype.h>
@@ -55,3 +57,4 @@ void UngetToken ();
 #define	FN_CRASHSAVE	"/qcache/ErrorSaveMap.map"
 #define	FN_DEVLOG		"/qcache/devlog"
 
+#endif//qedefs_h

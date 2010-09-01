@@ -1,3 +1,5 @@
+#ifndef Dict_h
+#define Dict_h
 
 #include <AppKit/AppKit.h>
 
@@ -45,3 +47,5 @@ int FindNonwhitespc(FILE *fp);
 
 char *FindWhitespcInBuffer(char *buffer);
 char *FindNonwhitespcInBuffer(char *buffer);
+
+#endif//Dict_h

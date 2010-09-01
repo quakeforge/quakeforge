@@ -1,3 +1,5 @@
+#ifndef InspectorControl_h
+#define InspectorControl_h
 
 #include <AppKit/AppKit.h>
 
@@ -17,7 +19,7 @@ typedef enum
 
 extern	id		inspcontrol_i;
 
-@interface InspectorControl:Object
+@interface InspectorControl:NSObject
 {
 	id	inspectorView_i;	// inspector view
 	id	inspectorSubview_i;	// inspector view's current subview (gets replaced)
@@ -69,3 +71,5 @@ extern	id		inspcontrol_i;
 @protocol InspectorControl
 - windowResized;
 @end
+
+#endif//InspectorControl_h

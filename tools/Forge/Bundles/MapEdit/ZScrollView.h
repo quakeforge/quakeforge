@@ -1,3 +1,6 @@
+#ifndef ZScrollView_h
+#define ZScrollView_h
+
 #include <AppKit/AppKit.h>
 
 @interface ZScrollView : NSScrollView
@@ -9,3 +12,5 @@
 - tile;
 
 @end
+
+#endif//ZScrollView_h

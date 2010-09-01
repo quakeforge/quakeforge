@@ -1,3 +1,5 @@
+#ifndef TexturePalette_h
+#define TexturePalette_h
 
 typedef union
 {
@@ -49,7 +51,7 @@ typedef struct
 
 extern	id texturepalette_i;
 
-@interface TexturePalette:Object
+@interface TexturePalette:NSObject
 {
 	char	currentwad[1024];
 	id	textureList_i;
@@ -111,3 +113,5 @@ extern	id texturepalette_i;
 - setDisplayFlag:(int)index to:(int)value;
 
 @end
+
+#endif//TexturePalette_h

@@ -1,3 +1,5 @@
+#ifndef Project_h
+#define Project_h
 
 #include <AppKit/AppKit.h>
 #include <sys/stat.h>
@@ -19,7 +21,7 @@
 
 extern	id project_i;
 
-@interface Project:Object
+@interface Project:NSObject
 {
 	id	projectInfo;		// dictionary storage of project info
 
@@ -106,3 +108,5 @@ extern	id project_i;
 
 void changeString(char cf,char ct,char *string);
 
+
+#endif//Project_h

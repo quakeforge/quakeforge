@@ -1,3 +1,5 @@
+#ifndef XYView_h
+#define XYView_h
 
 #include <AppKit/AppKit.h>
 #include "mathlib.h"
@@ -64,3 +66,5 @@ typedef enum {dr_wire, dr_flat, dr_texture} drawmode_t;
 - (float)snapToGrid: (float)f;
 
 @end
+
+#endif//XYView_h
