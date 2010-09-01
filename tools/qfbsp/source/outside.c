@@ -55,10 +55,8 @@ PointInLeaf (node_t *node, vec3_t point)
 
 /**	Set the distance to a node from all reachable nodes.
 
-	Purpose unknown: not in the id code and the information is not used
-	anywhere. Probably a bad port from either hqbsp or oq.
-
-	\todo Find the port source and either fix qfbsp or nuke this function.
+	\param n		The current node.
+	\param dist		The distance to the original node.
 */
 static void
 FloodEntDist_r (node_t *n, int dist)
@@ -161,6 +159,10 @@ MarkLeakTrail (portal_t *n2)
 	}
 }
 
+/**	Mark the trail from outside to the entity.
+
+	Try to use the shortest path from the outside node to the entity.
+*/
 static void
 MarkLeakTrail2 (void)
 {
