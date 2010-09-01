@@ -161,6 +161,52 @@ MarkLeakTrail (portal_t *n2)
 	}
 }
 
+static void
+MarkLeakTrail2 (void)
+{
+	int         i;
+	int         next, side;
+	node_t     *n, *nextnode;
+	portal_t   *p, *p2;
+	vec3_t      wc;
+	vec_t      *v;
+
+	leakfile = fopen (options.pointfile, "w");
+	if (!leakfile)
+		Sys_Error ("Couldn't open %s\n", options.pointfile);
+
+	n = &outside_node;
+	next = -1;
+
+	while ((n->o_dist > 1) || (next == -1)) {
+		nextnode = 0;
+		p2 = 0;
+		for (p = n->portals; p; p = p->next[side]) {
+			side = (p->nodes[1] == n);
+			if ((next == -1)
+				|| ((p->nodes[!side]->o_dist < next)
+					&& p->nodes[!side]->o_dist)) {
+				nextnode = p->nodes[!side];
+				next = nextnode->o_dist;
+				p2 = p;
+			}
+		}
+		if (!nextnode)
+			break;
+		n = nextnode;
+
+		VectorZero (wc);
+		for (i = 0; i < p2->winding->numpoints; i++)
+			VectorAdd (wc, p2->winding->points[i], wc);
+		VectorScale (wc, 1.0 / i, wc);
+		fprintf (leakfile, "%g %g %g", wc[0], wc[1], wc[2]);
+	}
+	v = entities[n->occupied].origin;
+	fprintf (leakfile, "%g %g %g\n", v[0], v[1], v[2]);
+
+	fclose (leakfile);
+}
+
 int         hit_occupied;
 
 /**	Recurse through the map setting the outside nodes to solid.
@@ -206,6 +252,8 @@ RecursiveFillOutside (node_t *l, qboolean fill)
 
 		if (RecursiveFillOutside (p->nodes[s], fill)) {
 			// leaked, so stop filling
+			if (options.smart_leak)
+				return true;
 			if (!options.hullnum) {
 				MarkLeakTrail (p);
 				DrawLeaf (l, 2);
@@ -297,6 +345,9 @@ FillOutside (node_t *node)
 			printf ("leak file written to %s\n", options.pointfile);
 			printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 		}
+		if (options.smart_leak)
+			MarkLeakTrail2 ();
+
 		// remove faces from filled in leafs
 		ClearOutFaces (node);
 		return false;

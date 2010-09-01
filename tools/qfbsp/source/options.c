@@ -61,6 +61,7 @@ static struct option const long_options[] = {
 	{"extract-textures",	no_argument,		0, 256},
 	{"extract-entities",	no_argument,		0, 257},
 	{"extract-hull",		no_argument,		0, 258},
+	{"smart-leak",			no_argument,		0, 259},
 	{"usehulls",			no_argument,		0, 'u'},
 	{"hullnum",				required_argument,	0, 'H'},
 	{"subdivide",			required_argument,	0, 's'},
@@ -175,6 +176,9 @@ DecodeArgs (int argc, char **argv)
 			case 258:					// extract-hull
 				options.extract = true;
 				options.extract_hull = true;
+				break;
+			case 259:					// smart-leak
+				options.smart_leak = true;
 				break;
 			case 'u':					// usehulls
 				options.usehulls = true;

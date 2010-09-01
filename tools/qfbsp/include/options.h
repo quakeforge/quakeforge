@@ -43,6 +43,7 @@ typedef struct {
 	qboolean    extract_textures;
 	qboolean    extract_entities;
 	qboolean    extract_hull;
+	qboolean    smart_leak;
 	qboolean    usehulls;
 	qboolean    watervis;
 	int         hullnum;
