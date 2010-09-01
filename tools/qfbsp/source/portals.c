@@ -278,7 +278,7 @@ CutNodePortals_r (node_t *node)
 
 	// create the new portal by taking the full plane winding for the cutting
 	// plane and clipping it by all of the planes from the other portals
-	w = BaseWindingForPlane (&planes[node->planenum]);
+	w = BaseWindingForPlane (plane);
 	side = 0;
 	for (p = node->portals; p; p = p->next[side]) {
 		clipplane = planes[p->planenum];
@@ -315,11 +315,12 @@ CutNodePortals_r (node_t *node)
 			side = 1;
 		else
 			Sys_Error ("CutNodePortals_r: mislinked portal");
-		next_portal = p->next[side];
 
+		next_portal = p->next[side];
 		other_node = p->nodes[!side];
-		RemovePortalFromNode (p, p->nodes[0]);
-		RemovePortalFromNode (p, p->nodes[1]);
+
+		RemovePortalFromNode (p, node);
+		RemovePortalFromNode (p, other_node);
 
 		// cut the portal into two portals, one on each side of the cut plane
 		DivideWinding (p->winding, plane, &frontwinding, &backwinding);
