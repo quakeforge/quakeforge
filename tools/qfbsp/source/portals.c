@@ -251,6 +251,10 @@ PlaneFromWinding (winding_t *w, plane_t *plane)
 
 static int cutnode_detail;
 
+/**	Separate the node's portals into its children.
+
+	\param node		The current node.
+*/
 static void
 CutNodePortals_r (node_t *node)
 {
@@ -264,24 +268,28 @@ CutNodePortals_r (node_t *node)
 
 	CalcNodeBounds (node);
 
-	// seperate the portals on node into it's children
-	if (node->contents)
-		return;							// at a leaf, no more dividing
-
-	if (node->detail && cutnode_detail)
+	if (node->contents) {
+		// at a leaf, no more dividing
 		return;
+	}
+
+	if (node->detail && cutnode_detail) {
+		// detail nodes are fake leaf nodes
+		return;
+	}
 
 	plane = &planes[node->planenum];
 
 	f = node->children[0];
 	b = node->children[1];
 
-	// create the new portal by taking the full plane winding for the cutting
-	// plane and clipping it by all of the planes from the other portals
+	/// Create a new portal by taking the full plane winding for the node's
+	/// cutting plane and clipping it by all of the planes from the other
+	/// portals on the node.
 	w = BaseWindingForPlane (plane);
 	side = 0;
 	for (p = node->portals; p; p = p->next[side]) {
-		clipplane = planes[p->planenum];
+		clipplane = planes[p->planenum];	// COPY the plane
 		if (p->nodes[0] == node)
 			side = 0;
 		else if (p->nodes[1] == node) {
@@ -299,7 +307,7 @@ CutNodePortals_r (node_t *node)
 	}
 
 	if (w) {
-		// if the plane was not clipped on all sides, there was an error
+		/// Add the new portal to the node's children.
 		new_portal = AllocPortal ();
 		new_portal->planenum = node->planenum;
 
@@ -307,7 +315,8 @@ CutNodePortals_r (node_t *node)
 		AddPortalToNodes (new_portal, f, b);
 	}
 
-	// partition the portals
+	/// Partition the node's portals by the node's plane, adding each portal's
+	/// fragments to the node's children.
 	for (p = node->portals; p; p = next_portal) {
 		if (p->nodes[0] == node)
 			side = 0;
@@ -319,7 +328,10 @@ CutNodePortals_r (node_t *node)
 		next_portal = p->next[side];
 		other_node = p->nodes[!side];
 
+		/// Remove each portal from the node. When finished, the node will
+		/// have no portals on it.
 		RemovePortalFromNode (p, node);
+		// The fragments will be added back to the other node.
 		RemovePortalFromNode (p, other_node);
 
 		// cut the portal into two portals, one on each side of the cut plane

@@ -25,6 +25,12 @@
 
 /**	\defgroup qfbsp_portals Portal Functions
 	\ingroup qfbsp
+
+	A portal is the polygonal interface between two leaf nodes, regardless
+	of the contents of the two leaf nodes.
+
+	Decision nodes will not have portals on them, though as part of the
+	portal building process, they will temporarily have portals.
 */
 //@{
 
