@@ -304,14 +304,10 @@ ReadClipHull (int hullnum)
 					&c1, &c2) != 7)
 			Sys_Error ("Error parsing %s", options.hullfile);
 
-		p.normal[0] = f1;
-		p.normal[1] = f2;
-		p.normal[2] = f3;
+		VectorSet (f1, f2, f3, p.normal);
 		p.dist = f4;
 
-		norm[0] = f1;
-		norm[1] = f2;
-		norm[2] = f3;					// vec_t precision
+		VectorSet (f1, f2, f3, norm);
 		p.type = PlaneTypeForNormal (norm);
 
 		d.children[0] = c1 >= 0 ? c1 + firstclipnode : c1;
