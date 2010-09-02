@@ -66,12 +66,12 @@ qboolean    usemidsplit;
 					</dl>
 */
 static int
-FaceSide (face_t *in, plane_t *split)
+FaceSide (const face_t *in, const plane_t *split)
 {
 	int         frontcount, backcount, i;
 	vec_t       dot;
-	vec_t      *p;
-	winding_t  *inp = in->points;
+	const vec_t *p;
+	const winding_t *inp = in->points;
 
 	frontcount = backcount = 0;
 
@@ -126,7 +126,8 @@ FaceSide (face_t *in, plane_t *split)
 	\return			The chosen surface.
 */
 static surface_t *
-ChooseMidPlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs)
+ChooseMidPlaneFromList (surface_t *surfaces,
+						const vec3_t mins, const vec3_t maxs)
 {
 	int         j, l;
 	plane_t    *plane;
@@ -190,7 +191,7 @@ ChooseMidPlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs)
 					not be found.
 */
 static surface_t *
-ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
+ChoosePlaneFromList (surface_t *surfaces, const vec3_t mins, const vec3_t maxs,
 					 qboolean usefloors, qboolean usedetail)
 {
 	face_t     *f;

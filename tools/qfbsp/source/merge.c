@@ -220,7 +220,7 @@ MergePlaneFaces (surface_t *plane)
 }
 
 void
-MergeAll (surface_t * surfhead)
+MergeAll (surface_t *surfhead)
 {
 	face_t     *f;
 	int         mergefaces;

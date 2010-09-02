@@ -89,7 +89,7 @@ int FindMiptex (const char *name);
 
 	\param ent		The entity to dump.
 */
-void PrintEntity (entity_t *ent);
+void PrintEntity (const entity_t *ent);
 
 /**	Get the value for the specified key from an entity.
 
@@ -98,7 +98,7 @@ void PrintEntity (entity_t *ent);
 	\return			The value for the key, or the empty string if the key
 					does not exist in this entity.
 */
-const char *ValueForKey (entity_t *ent, const char *key);
+const char *ValueForKey (const entity_t *ent, const char *key);
 
 /**	Set the value of the entity's key.
 	If the key does not exist, one will be added.
@@ -114,7 +114,7 @@ void SetKeyValue (entity_t *ent, const char *key, const char *value);
 	\param key		The key of wich to parse the vector value.
 	\param vec		The destination of the vector value.
 */
-void GetVectorForKey (entity_t *ent, const char *key, vec3_t vec);
+void GetVectorForKey (const entity_t *ent, const char *key, vec3_t vec);
 
 /**	Write all valid entities to the bsp file.
 

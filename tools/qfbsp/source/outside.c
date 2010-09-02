@@ -46,7 +46,7 @@ int         outleafs;
 	\return			The leaf node in which the point is.
 */
 static node_t *
-PointInLeaf (node_t *node, vec3_t point)
+PointInLeaf (node_t *node, const vec3_t point)
 {
 	vec_t       d;
 
@@ -98,7 +98,7 @@ FloodEntDist_r (node_t *n, int dist)
 	\return			true if the entity could be placed, false otherwise.
 */
 static qboolean
-PlaceOccupant (int num, vec3_t point, node_t *headnode)
+PlaceOccupant (int num, const vec3_t point, node_t *headnode)
 {
 	node_t     *n;
 
@@ -112,7 +112,7 @@ PlaceOccupant (int num, vec3_t point, node_t *headnode)
 	return true;
 }
 
-portal_t   *prevleaknode;
+const portal_t *prevleaknode;
 FILE       *leakfile;
 
 /**	Write the coords for points joining two portals to the point file.
@@ -121,11 +121,11 @@ FILE       *leakfile;
 	\note The first portal is set by the preceeding call.
 */
 static void
-MarkLeakTrail (portal_t *n2)
+MarkLeakTrail (const portal_t *n2)
 {
 	float       len;
 	int         i, j;
-	portal_t   *n1;
+	const portal_t *n1;
 	vec3_t      p1, p2, dir;
 
 	n1 = prevleaknode;
@@ -172,10 +172,10 @@ MarkLeakTrail2 (void)
 {
 	int         i;
 	int         next, side;
-	node_t     *n, *nextnode;
-	portal_t   *p, *p2;
+	const node_t *n, *nextnode;
+	const portal_t *p, *p2;
 	vec3_t      wc;
-	vec_t      *v;
+	const vec_t *v;
 
 	leakfile = fopen (options.pointfile, "w");
 	if (!leakfile)
@@ -238,7 +238,7 @@ RecursiveFillOutside (node_t *l, qboolean fill)
 		return false;
 
 	if (l->occupied) {
-		vec_t      *v;
+		const vec_t *v;
 		hit_occupied = l->occupied;
 		v = entities[hit_occupied].origin;
 		qprintf ("reached occupant at: (%4.0f,%4.0f,%4.0f) %s\n", v[0], v[1],

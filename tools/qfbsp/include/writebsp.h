@@ -48,7 +48,7 @@ void WriteClipNodes (struct node_s *headnode);
 
 	\param headnode	The root of the map bsp.
 */
-void WriteDrawNodes (struct node_s *headnode);
+void WriteDrawNodes (const struct node_s *headnode);
 
 /**	Write the model information for the clipping hull.
 
@@ -64,7 +64,7 @@ void BumpModel (int hullnum);
 	\param p		The plane to add to the bsp.
 	\return			The plane number within the bsp.
 */
-int FindFinalPlane (dplane_t *p);
+int FindFinalPlane (const dplane_t *p);
 
 /**	Prepare the bsp file for writing.
 

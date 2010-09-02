@@ -516,9 +516,9 @@ LoadMapFile (const char *filename)
 }
 
 void
-PrintEntity (entity_t *ent)
+PrintEntity (const entity_t *ent)
 {
-	epair_t    *ep;
+	const epair_t *ep;
 
 	for (ep = ent->epairs; ep; ep = ep->next)
 		printf ("%20s : %s\n", ep->key, ep->value);
@@ -526,9 +526,9 @@ PrintEntity (entity_t *ent)
 
 
 const char *
-ValueForKey (entity_t *ent, const char *key)
+ValueForKey (const entity_t *ent, const char *key)
 {
-	epair_t    *ep;
+	const epair_t *ep;
 
 	for (ep = ent->epairs; ep; ep = ep->next)
 		if (!strcmp (ep->key, key))
@@ -555,7 +555,7 @@ SetKeyValue (entity_t *ent, const char *key, const char *value)
 }
 
 void
-GetVectorForKey (entity_t *ent, const char *key, vec3_t vec)
+GetVectorForKey (const entity_t *ent, const char *key, vec3_t vec)
 {
 	const char *k;
 	double      v1, v2, v3;
@@ -573,7 +573,7 @@ void
 WriteEntitiesToString (void)
 {
 	dstring_t  *buf;
-	epair_t    *ep;
+	const epair_t *ep;
 	int         i;
 
 	buf = dstring_newstr ();

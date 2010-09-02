@@ -104,7 +104,7 @@ load_edges (void)
 static void
 load_planes (void)
 {
-	dplane_t   *p;
+	const dplane_t *p;
 	int         i;
 
 	memset (planes, 0, sizeof (planes));
@@ -126,7 +126,7 @@ load_marksurfaces (void)
 static void
 load_faces (void)
 {
-	dface_t    *f;
+	const dface_t *f;
 	int         i, j;
 	winding_t  *points;
 
@@ -164,7 +164,7 @@ load_vertices (void)
 static void
 load_leafs (void)
 {
-	dleaf_t    *l;
+	const dleaf_t *l;
 	int         i, j;
 
 	leafs = calloc (bsp->numleafs, sizeof (node_t));
@@ -186,7 +186,7 @@ load_leafs (void)
 static void
 load_nodes (void)
 {
-	dnode_t    *n;
+	const dnode_t *n;
 	face_t     *f;
 	int         i, j;
 
@@ -373,10 +373,10 @@ unique_name (wad_t *wad, const char *name)
 void
 extract_textures (void)
 {
-	dmiptexlump_t *miptexlump = (dmiptexlump_t *) bsp->texdata;
+	const dmiptexlump_t *miptexlump = (dmiptexlump_t *) bsp->texdata;
 	miptex_t   *miptex;
 	int         i, mtsize, pixels;
-	char       *wadfile;
+	const char *wadfile;
 	wad_t      *wad;
 	const char *uname;
 
@@ -409,7 +409,7 @@ extract_textures (void)
 void
 extract_entities (void)
 {
-	char       *entfile;
+	const char *entfile;
 	int         i;
 	QFile      *ef;
 
@@ -431,7 +431,7 @@ void
 extract_hull (void)
 {
 //	hullfile = output_file (".c");
-	char       *hullfile;
+	const char *hullfile;
 	int         i, j;
 	QFile      *hf;
 

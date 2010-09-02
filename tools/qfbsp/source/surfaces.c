@@ -252,7 +252,7 @@ InitHash (void)
 	\return			The hash value of the vector.
 */
 static unsigned
-HashVec (vec3_t vec)
+HashVec (const vec3_t vec)
 {
 	unsigned    h;
 
@@ -269,7 +269,7 @@ HashVec (vec3_t vec)
 	\param planenum The plane on which this vertex is.
 */
 static int
-GetVertex (vec3_t in, int planenum)
+GetVertex (const vec3_t in, int planenum)
 {
 	hashvert_t *hv;
 	int         h, i;
@@ -343,7 +343,7 @@ int         c_tryedges;
 					be negative, indicating the ends of the edge are reversed.
 */
 static int
-GetEdge (vec3_t p1, vec3_t p2, face_t *f)
+GetEdge (const vec3_t p1, const vec3_t p2, face_t *f)
 {
 	dedge_t     edge;
 	int         v1, v2, i;

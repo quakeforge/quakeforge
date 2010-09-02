@@ -54,9 +54,9 @@ int         firstface;
 
 
 int
-FindFinalPlane (dplane_t *p)
+FindFinalPlane (const dplane_t *p)
 {
-	dplane_t   *dplane;
+	const dplane_t *dplane;
 	int         i;
 
 	for (i = 0, dplane = bsp->planes; i < bsp->numplanes; i++, dplane++) {
@@ -160,7 +160,7 @@ WriteClipNodes (node_t *nodes)
 	\param node		The leaf node to be written to the bsp file.
 */
 static void
-WriteLeaf (node_t *node)
+WriteLeaf (const node_t *node)
 {
 	dleaf_t     leaf_p;
 	face_t    **fp, *f;
@@ -201,7 +201,7 @@ WriteLeaf (node_t *node)
 	\param node		The current node to be written.
 */
 static void
-WriteDrawNodes_r (node_t *node)
+WriteDrawNodes_r (const node_t *node)
 {
 	static dnode_t dummy;
 	dnode_t    *n;
@@ -239,7 +239,7 @@ WriteDrawNodes_r (node_t *node)
 }
 
 void
-WriteDrawNodes (node_t *headnode)
+WriteDrawNodes (const node_t *headnode)
 {
 	dmodel_t    bm;
 	int         start, i;
@@ -299,7 +299,7 @@ wadlist_t  *wadlist;
 	\param path		The path to the wad file.
 */
 static int
-TEX_InitFromWad (char *path)
+TEX_InitFromWad (const char *path)
 {
 	wadlist_t  *wl;
 	wad_t      *wad;
@@ -334,7 +334,7 @@ TEX_InitFromWad (char *path)
 					found.
 */
 static int
-LoadLump (char *name, dstring_t *dest)
+LoadLump (const char *name, dstring_t *dest)
 {
 	int         r;
 	int         ofs = dest->size;

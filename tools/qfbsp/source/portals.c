@@ -237,7 +237,7 @@ MakeHeadnodePortals (node_t *node)
 	\param plane	The plane to set.
 */
 static void
-PlaneFromWinding (winding_t *w, plane_t *plane)
+PlaneFromWinding (const winding_t *w, plane_t *plane)
 {
 	vec3_t      v1, v2;
 
@@ -432,7 +432,7 @@ int         num_realleafs;
 	\return			1 if the node has the specified contents, otherwise 0.
 */
 static int
-HasContents (node_t *n, int cont)
+HasContents (const node_t *n, int cont)
 {
 	if (n->contents == cont)
 		return 1;
@@ -449,7 +449,7 @@ HasContents (node_t *n, int cont)
 	\param n2		The second node to check.
 */
 static int
-ShareContents (node_t *n1, node_t *n2)
+ShareContents (const node_t *n1, const node_t *n2)
 {
 	if (n1->contents) {
 		if (n1->contents == CONTENTS_SOLID)
@@ -471,7 +471,7 @@ ShareContents (node_t *n1, node_t *n2)
 	\param n2		The second node to check.
 */
 static int
-SameContents (node_t *n1, node_t *n2)
+SameContents (const node_t *n1, const node_t *n2)
 {
 	if (n1->contents == CONTENTS_SOLID || n2->contents == CONTENTS_SOLID)
 		return 0;
@@ -494,12 +494,13 @@ SameContents (node_t *n1, node_t *n2)
 	\param node		The current node of the bsp. Call with the root node.
 */
 static void
-WritePortalFile_r (node_t *node)
+WritePortalFile_r (const node_t *node)
 {
 	int         i;
-	plane_t    *pl, plane2;
-	portal_t   *p;
-	winding_t  *w;
+	const plane_t *pl;
+	plane_t     plane2;
+	const portal_t *p;
+	const winding_t *w;
 
 	if (!node->contents && !node->detail) {
 		WritePortalFile_r (node->children[0]);
@@ -547,7 +548,7 @@ WritePortalFile_r (node_t *node)
 	\param n		The current node of the bsp. Call with the root node.
 */
 static void
-WritePortalLeafs_r (node_t *n)
+WritePortalLeafs_r (const node_t *n)
 {
 	if (!n->contents) {
 		WritePortalLeafs_r (n->children[0]);

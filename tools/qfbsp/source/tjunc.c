@@ -77,7 +77,7 @@ static vec3_t hash_min, hash_scale;
 	\param maxs		The maximum of the bounding box in which the edges reside.
 */
 static void
-InitHash (vec3_t mins, vec3_t maxs)
+InitHash (const vec3_t mins, const vec3_t maxs)
 {
 	int         newsize[2];
 	vec3_t      size;
@@ -106,7 +106,7 @@ InitHash (vec3_t mins, vec3_t maxs)
 	\return			The hash value of the vector.
 */
 static unsigned
-HashVec (vec3_t vec)
+HashVec (const vec3_t vec)
 {
 	unsigned    h;
 
@@ -178,7 +178,7 @@ CanonicalVector (vec3_t vec)
 	point is represented by t1 and t2.
 */
 static wedge_t *
-FindEdge (vec3_t p1, vec3_t p2, vec_t *t1, vec_t *t2)
+FindEdge (const vec3_t p1, const vec3_t p2, vec_t *t1, vec_t *t2)
 {
 	int         h;
 	vec3_t      dir, origin;
@@ -276,7 +276,7 @@ AddVert (wedge_t *w, vec_t t)
 	\param p2		The second point of the face's edge.
 */
 static void
-AddEdge (vec3_t p1, vec3_t p2)
+AddEdge (const vec3_t p1, const vec3_t p2)
 {
 	wedge_t    *w;
 	vec_t       t1, t2;
@@ -292,7 +292,7 @@ AddEdge (vec3_t p1, vec3_t p2)
 	\param f		The face from which to add the faces.
 */
 static void
-AddFaceEdges (face_t *f)
+AddFaceEdges (const face_t *f)
 {
 	int         i, j;
 

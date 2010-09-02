@@ -402,49 +402,49 @@ BSP_Free (bsp_t *bsp)
 	} while (0)
 
 VISIBLE void
-BSP_AddPlane (bsp_t *bsp, dplane_t *plane)
+BSP_AddPlane (bsp_t *bsp, const dplane_t *plane)
 {
 	REALLOC (planes);
 	bsp->planes[bsp->numplanes++] = *plane;
 }
 
 VISIBLE void
-BSP_AddLeaf (bsp_t *bsp, dleaf_t *leaf)
+BSP_AddLeaf (bsp_t *bsp, const dleaf_t *leaf)
 {
 	REALLOC (leafs);
 	bsp->leafs[bsp->numleafs++] = *leaf;
 }
 
 VISIBLE void
-BSP_AddVertex (bsp_t *bsp, dvertex_t *vertex)
+BSP_AddVertex (bsp_t *bsp, const dvertex_t *vertex)
 {
 	REALLOC (vertexes);
 	bsp->vertexes[bsp->numvertexes++] = *vertex;
 }
 
 VISIBLE void
-BSP_AddNode (bsp_t *bsp, dnode_t *node)
+BSP_AddNode (bsp_t *bsp, const dnode_t *node)
 {
 	REALLOC (nodes);
 	bsp->nodes[bsp->numnodes++] = *node;
 }
 
 VISIBLE void
-BSP_AddTexinfo (bsp_t *bsp, texinfo_t *texinfo)
+BSP_AddTexinfo (bsp_t *bsp, const texinfo_t *texinfo)
 {
 	REALLOC (texinfo);
 	bsp->texinfo[bsp->numtexinfo++] = *texinfo;
 }
 
 VISIBLE void
-BSP_AddFace (bsp_t *bsp, dface_t *face)
+BSP_AddFace (bsp_t *bsp, const dface_t *face)
 {
 	REALLOC (faces);
 	bsp->faces[bsp->numfaces++] = *face;
 }
 
 VISIBLE void
-BSP_AddClipnode (bsp_t *bsp, dclipnode_t *clipnode)
+BSP_AddClipnode (bsp_t *bsp, const dclipnode_t *clipnode)
 {
 	REALLOC (clipnodes);
 	bsp->clipnodes[bsp->numclipnodes++] = *clipnode;
@@ -465,14 +465,14 @@ BSP_AddSurfEdge (bsp_t *bsp, int surfedge)
 }
 
 VISIBLE void
-BSP_AddEdge (bsp_t *bsp, dedge_t *edge)
+BSP_AddEdge (bsp_t *bsp, const dedge_t *edge)
 {
 	REALLOC (edges);
 	bsp->edges[bsp->numedges++] = *edge;
 }
 
 VISIBLE void
-BSP_AddModel (bsp_t *bsp, dmodel_t *model)
+BSP_AddModel (bsp_t *bsp, const dmodel_t *model)
 {
 	REALLOC (models);
 	bsp->models[bsp->nummodels++] = *model;
@@ -485,7 +485,7 @@ BSP_AddModel (bsp_t *bsp, dmodel_t *model)
 	} while (0)
 
 VISIBLE void
-BSP_AddLighting (bsp_t *bsp, byte *lightdata, size_t lightdatasize)
+BSP_AddLighting (bsp_t *bsp, const byte *lightdata, size_t lightdatasize)
 {
 	OWN (lightdata);
 	bsp->lightdatasize = lightdatasize;
@@ -494,7 +494,7 @@ BSP_AddLighting (bsp_t *bsp, byte *lightdata, size_t lightdatasize)
 }
 
 VISIBLE void
-BSP_AddVisibility (bsp_t *bsp, byte *visdata, size_t visdatasize)
+BSP_AddVisibility (bsp_t *bsp, const byte *visdata, size_t visdatasize)
 {
 	OWN (visdata);
 	bsp->visdatasize = visdatasize;
@@ -503,7 +503,7 @@ BSP_AddVisibility (bsp_t *bsp, byte *visdata, size_t visdatasize)
 }
 
 VISIBLE void
-BSP_AddEntities (bsp_t *bsp, char *entdata, size_t entdatasize)
+BSP_AddEntities (bsp_t *bsp, const char *entdata, size_t entdatasize)
 {
 	OWN (entdata);
 	bsp->entdatasize = entdatasize;
@@ -512,7 +512,7 @@ BSP_AddEntities (bsp_t *bsp, char *entdata, size_t entdatasize)
 }
 
 VISIBLE void
-BSP_AddTextures (bsp_t *bsp, byte *texdata, size_t texdatasize)
+BSP_AddTextures (bsp_t *bsp, const byte *texdata, size_t texdatasize)
 {
 	OWN (texdata);
 	bsp->texdatasize = texdatasize;

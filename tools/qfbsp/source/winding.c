@@ -47,7 +47,7 @@ static __attribute__ ((used)) const char rcsid[] =
 int         c_activewindings, c_peakwindings;
 
 winding_t *
-BaseWindingForPlane (plane_t *p)
+BaseWindingForPlane (const plane_t *p)
 {
 	int         i, x;
 	vec_t       max, v;
@@ -111,7 +111,7 @@ BaseWindingForPlane (plane_t *p)
 }
 
 winding_t *
-CopyWinding (winding_t *w)
+CopyWinding (const winding_t *w)
 {
 	size_t      size;
 	winding_t  *c;
@@ -123,7 +123,7 @@ CopyWinding (winding_t *w)
 }
 
 winding_t *
-CopyWindingReverse (winding_t *w)
+CopyWindingReverse (const winding_t *w)
 {
 	int         i;
 	size_t      size;

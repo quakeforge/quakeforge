@@ -77,7 +77,7 @@ int	PlaneTypeForNormal (const vec3_t normal);
 	\param side		The side of the plane that will be front.
 	\return			global plane number.
 */
-int	FindPlane (plane_t *dplane, int *side);
+int	FindPlane (const plane_t *dplane, int *side);
 
 //@}
 

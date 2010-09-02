@@ -67,7 +67,7 @@ AllocBrush (void)
 	Note: this will not catch 0 area polygons
 */
 static void
-CheckFace (face_t *f)
+CheckFace (const face_t *f)
 {
 	int		 i, j;
 	vec_t	*p1, *p2;
@@ -91,8 +91,7 @@ CheckFace (face_t *f)
 		j = i + 1 == f->points->numpoints ? 0 : i + 1;
 
 		// check the point is on the face plane
-		d = DotProduct (p1, planes[f->planenum].normal)
-			- planes[f->planenum].dist;
+		d = PlaneDiff (p1, &planes[f->planenum]);
 
 		// point off plane autofix
 		if (d < -ON_EPSILON || d > ON_EPSILON)
@@ -137,7 +136,7 @@ ClearBounds (brushset_t *bs)
 }
 
 static void
-AddToBounds (brushset_t *bs, vec3_t v)
+AddToBounds (brushset_t *bs, const vec3_t v)
 {
 	int		i;
 
@@ -245,7 +244,7 @@ NormalizePlane (plane_t *dp)
 }
 
 int
-FindPlane (plane_t *dplane, int *side)
+FindPlane (const plane_t *dplane, int *side)
 {
 	int		 i;
 	plane_t	*dp, pl;
@@ -437,7 +436,7 @@ int         num_hull_edges;
 int         hull_edges[MAX_HULL_EDGES][2];
 
 static void
-AddBrushPlane (plane_t *plane)
+AddBrushPlane (const plane_t *plane)
 {
 	float       l;
 	int         i;
@@ -467,7 +466,7 @@ AddBrushPlane (plane_t *plane)
 	vertexes can be put on the front side
 */
 static void
-TestAddPlane (plane_t *plane)
+TestAddPlane (const plane_t *plane)
 {
 	int         c, i;
 	int         counts[3];
@@ -523,7 +522,7 @@ TestAddPlane (plane_t *plane)
 	Doesn't add if duplicated
 */
 static int
-AddHullPoint (vec3_t p, int hullnum)
+AddHullPoint (const vec3_t p, int hullnum)
 {
 	int			i, x, y, z;
 	vec_t	   *c;
@@ -559,7 +558,7 @@ AddHullPoint (vec3_t p, int hullnum)
 	Creates all of the hull planes around the given edge, if not done already
 */
 static void
-AddHullEdge (vec3_t p1, vec3_t p2, int hullnum)
+AddHullEdge (const vec3_t p1, const vec3_t p2, int hullnum)
 {
 	int         pt1, pt2, a, b, c, d, e, i;
 	plane_t     plane;
@@ -662,12 +661,12 @@ ExpandBrush (int hullnum)
 	Converts a mapbrush to a bsp brush
 */
 static brush_t *
-LoadBrush (mbrush_t *mb, int hullnum)
+LoadBrush (const mbrush_t *mb, int hullnum)
 {
 	brush_t    *b;
-	char       *name;
+	const char *name;
 	int         contents;
-	mface_t    *f;
+	const mface_t *f;
 
 	// check texture name for attributes
 	if (mb->faces->texinfo < 0) {
@@ -738,7 +737,7 @@ LoadBrush (mbrush_t *mb, int hullnum)
 }
 
 static void
-Brush_DrawAll (brushset_t *bs)
+Brush_DrawAll (const brushset_t *bs)
 {
 	brush_t    *b;
 	face_t     *f;

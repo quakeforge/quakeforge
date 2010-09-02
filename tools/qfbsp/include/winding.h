@@ -45,7 +45,7 @@ typedef struct winding_s {
 	\return			The new winding.
 	\note It is the caller's responsibiltiy to free the new winding.
 */
-winding_t *BaseWindingForPlane (struct plane_s *p);
+winding_t *BaseWindingForPlane (const struct plane_s *p);
 
 /**	Create a new, empty winding with.
 
@@ -67,7 +67,7 @@ void FreeWinding (winding_t *w);
 	\return			The new winding.
 	\note It is the caller's responsibiltiy to free the new winding.
 */
-winding_t *CopyWinding (winding_t *w);
+winding_t *CopyWinding (const winding_t *w);
 
 /**	Create a new winding with the reverse points of the given winding.
 
@@ -75,7 +75,7 @@ winding_t *CopyWinding (winding_t *w);
 	\return			The new winding.
 	\note It is the caller's responsibiltiy to free the new winding.
 */
-winding_t *CopyWindingReverse (winding_t *w);
+winding_t *CopyWindingReverse (const winding_t *w);
 
 /**	Clip the winding to the plain.
 
