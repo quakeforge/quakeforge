@@ -157,9 +157,16 @@ Script_GetToken (script_t *script, qboolean crossline)
 		dstring_copysubstr (script->token, token_p, script->p - token_p);
 		script->p++;
 	} else {
+		const char *single = "{}()':";
+
 		token_p = script->p;
-		while (*script->p && !isspace ((unsigned char) *script->p))
+		if (strchr (single, *script->p)) {
 			script->p++;
+		} else {
+			while (*script->p && !isspace ((unsigned char) *script->p)
+				   && !strchr (single, *script->p))
+				script->p++;
+		}
 		dstring_copysubstr (script->token, token_p, script->p - token_p);
 	}
 
