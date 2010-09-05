@@ -834,7 +834,8 @@ progs_src_compile (void)
 			else
 				dsprintf (qc_filename, "%s", script->token->str);
 			if (options.verbosity >= 2)
-				printf ("%s:%d: compiling %s\n", script->file, script->line, qc_filename->str);
+				printf ("%s:%d: compiling %s\n", script->file, script->line,
+						qc_filename->str);
 
 			if (single) {
 				fprintf (single, "$frame_reset\n");

@@ -186,7 +186,7 @@ LoadEntities (void)
 	// go through all the entities
 	while (Script_GetToken (script, 1)) {
 		// parse the opening brace      
-		if (script->token->str[0] != '{')
+		if (!strcmp (script->token->str, "{"))
 			fprintf (stderr, "LoadEntities: found %s when expecting {",
 					 script->token->str);
 
@@ -220,7 +220,7 @@ LoadEntities (void)
 			// FIXME shouldn't cross line
 			if (!Script_GetToken (script, 1))
 				fprintf (stderr, "LoadEntities: EOF without closing brace");
-			if (script->token->str[0] == '}')
+			if (!strcmp (script->token->str, "}"))
 				fprintf (stderr, "LoadEntities: closing brace without data");
 
 			epair = calloc (1, sizeof (epair_t));
