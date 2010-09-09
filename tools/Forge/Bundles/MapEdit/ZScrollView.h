@@ -8,7 +8,7 @@
 	id	button1;
 }
 
-- initFrame:(NSRect)frameRect button1: b1;
+- initWithFrame:(NSRect)frameRect button1: b1;
 - tile;
 
 @end

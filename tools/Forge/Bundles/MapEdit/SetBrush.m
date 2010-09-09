@@ -1,4 +1,11 @@
-#include "qedefs.h"
+#include "QF/script.h"
+#include "QF/sys.h"
+
+#include "SetBrush.h"
+#include "Entity.h"
+#include "EntityClass.h"
+#include "Map.h"
+#include "Preferences.h"
 
 @implementation SetBrush
 
@@ -74,10 +81,10 @@ void CheckFace (face_t *f)
 	
 	w = f->w;
 	if (!w)
-		Error ("CheckFace: no winding");
+		Sys_Error ("CheckFace: no winding");
 		
 	if (w->numpoints < 3)
-		Error ("CheckFace: %i points",w->numpoints);
+		Sys_Error ("CheckFace: %i points",w->numpoints);
 	
 	for (i=0 ; i<w->numpoints ; i++)
 	{
@@ -85,21 +92,21 @@ void CheckFace (face_t *f)
 
 		for (j=0 ; j<3 ; j++)
 			if (p1[j] > BOGUS_RANGE || p1[j] < -BOGUS_RANGE)
-				Error ("CheckFace: BUGUS_RANGE: %f",p1[j]);
+				Sys_Error ("CheckFace: BUGUS_RANGE: %f",p1[j]);
 
 		j = i+1 == w->numpoints ? 0 : i+1;
 		
 	// check the point is on the face plane
 		d = DotProduct (p1, f->plane.normal) - f->plane.dist;
 		if (d < -ON_EPSILON || d > ON_EPSILON)
-			Error ("CheckFace: point off plane");
+			Sys_Error ("CheckFace: point off plane");
 	
 	// check the edge isn't degenerate
 		p2 = w->points[j];
 		VectorSubtract (p2, p1, dir);
 		
 		if (VectorLength (dir) < ON_EPSILON)
-			Error ("CheckFace: degenerate edge");
+			Sys_Error ("CheckFace: degenerate edge");
 			
 		CrossProduct (f->plane.normal, dir, edgenormal);
 		VectorNormalize (edgenormal);
@@ -113,7 +120,7 @@ void CheckFace (face_t *f)
 				continue;
 			d = DotProduct (w->points[j], edgenormal);
 			if (d > edgedist)
-				Error ("CheckFace: non-convex");
+				Sys_Error ("CheckFace: non-convex");
 		}
 	}
 }
@@ -136,12 +143,12 @@ NewWinding
 winding_t *NewWinding (int points)
 {
 	winding_t	*w;
-	int			size;
+	size_t			size;
 	
 	if (points > MAX_POINTS_ON_WINDING)
-		Error ("NewWinding: %i points", points);
+		Sys_Error ("NewWinding: %i points", points);
 	
-	size = (int)((winding_t *)0)->points[points];
+	size = (size_t)((winding_t *)0)->points[points];
 	w = malloc (size);
 	memset (w, 0, size);
 	
@@ -156,10 +163,10 @@ CopyWinding
 */
 winding_t	*CopyWinding (winding_t *w)
 {
-	int			size;
+	size_t			size;
 	winding_t	*c;
 	
-	size = (int)((winding_t *)0)->points[w->numpoints];
+	size = (size_t)((winding_t *)0)->points[w->numpoints];
 	c = malloc (size);
 	memcpy (c, w, size);
 	return c;
@@ -263,7 +270,7 @@ winding_t *ClipWinding (winding_t *in, plane_t *split)
 	}
 
 	if (neww->numpoints > maxpts)
-		Error ("ClipWinding: points exceeded estimate");
+		Sys_Error ("ClipWinding: points exceeded estimate");
 
 // free the original winding
 	free (in);
@@ -306,7 +313,7 @@ winding_t *BasePolyForPlane (face_t *f)
 		}
 	}
 	if (x==-1)
-		Error ("BasePolyForPlane: no axis found");
+		Sys_Error ("BasePolyForPlane: no axis found");
 		
 	VectorCopy (vec3_origin, vup);	
 	switch (x)
@@ -321,7 +328,7 @@ winding_t *BasePolyForPlane (face_t *f)
 	}
 
 	v = DotProduct (vup, p->normal);
-	VectorMA (vup, -v, p->normal, vup);
+	VectorMultAdd (vup, -v, p->normal, vup);
 	VectorNormalize (vup);
 		
 	VectorScale (p->normal, p->dist, org);
@@ -621,23 +628,10 @@ initOwner:::
 	return self;
 }
 
-- copyFromZone:(NSZone *)zone
-{
-	id	new;
-	
-	[self freeWindings];
-	new = [super copyFromZone: zone];
-	
-	[self calcWindings];
-	[new calcWindings];
-	
-	return new;
-}
-
-- free
+- (void)dealloc
 {
 	[self freeWindings];
-	return [super free];
+	return [super dealloc];
 }
 
 /*
@@ -646,7 +640,7 @@ initOwner: fromTokens
 ===========
 */
 int		numsb;
-- initFromTokens: own
+- initFromScript: (script_t *) script owner: own
 {
 	face_t	*f;
 	int		i,j;
@@ -659,44 +653,44 @@ int		numsb;
 	numfaces = 0;
 	do
 	{
-		if (!GetToken (true))
+		if (!Script_GetToken (script, true))
 			break;
-		if (!strcmp (token, "}") )
+		if (!strcmp (Script_Token (script), "}") )
 			break;
 			
 		for (i=0 ; i<3 ; i++)
 		{
 			if (i != 0)
-				GetToken (true);
-			if (strcmp (token, "(") )
-				Error ("parsing map file");
+				Script_GetToken (script, true);
+			if (strcmp (Script_Token (script), "(") )
+				Sys_Error ("parsing map file");
 			
 			for (j=0 ; j<3 ; j++)
 			{
-				GetToken (false);
-				f->planepts[i][j] = atoi(token);
+				Script_GetToken (script, false);
+				f->planepts[i][j] = atoi(Script_Token (script));
 			}
 			
-			GetToken (false);
-			if (strcmp (token, ")") )
-				Error ("parsing map file");
+			Script_GetToken (script, false);
+			if (strcmp (Script_Token (script), ")") )
+				Sys_Error ("parsing map file");
 		}
 
-		GetToken (false);
-		strcpy (f->texture.texture, token);
-		GetToken (false);
-		f->texture.shift[0] = atof(token);
-		GetToken (false);
-		f->texture.shift[1] = atof(token);
-		GetToken (false);
-		f->texture.rotate = atof(token);
-		GetToken (false);
-		f->texture.scale[0] = atof(token);
-		GetToken (false);
-		f->texture.scale[1] = atof(token);
+		Script_GetToken (script, false);
+		strcpy (f->texture.texture, Script_Token (script));
+		Script_GetToken (script, false);
+		f->texture.shift[0] = atof(Script_Token (script));
+		Script_GetToken (script, false);
+		f->texture.shift[1] = atof(Script_Token (script));
+		Script_GetToken (script, false);
+		f->texture.rotate = atof(Script_Token (script));
+		Script_GetToken (script, false);
+		f->texture.scale[0] = atof(Script_Token (script));
+		Script_GetToken (script, false);
+		f->texture.scale[1] = atof(Script_Token (script));
 		
 #if 0
-		flags = atoi(token);
+		flags = atoi(Script_Token (script));
 		
 		flags &= 7;
 
@@ -827,7 +821,7 @@ setTexturedef
 - setTexturedef: (texturedef_t *)tex forFace:(int)f
 {
 	if ( (unsigned)f > numfaces)
-		Error ("setTexturedef:forFace: bad face number %i",f);
+		Sys_Error ("setTexturedef:forFace: bad face number %i",f);
 		
 	faces[f].texture = *tex;
 	faces[f].qtexture = NULL;	// recache next render
@@ -1000,7 +994,7 @@ hitByRay
 	*time = DotProduct (frontpoint, dir);
 
 	if (*time < 0)
-		Error ("hitByRay: negative t");
+		Sys_Error ("hitByRay: negative t");
 
 	*face = frontface;
 		
@@ -1027,9 +1021,9 @@ BOOL	fakebrush;
 	vec3_t	forward, right;
 	char	*targname;	
 	vec3_t	min, max, temp;
-	char	targ[64];
+	char       *targ;
 	
-	strcpy (targ, [parent valueForQKey: "target"]);
+	targ = [parent valueForQKey: "target"];
 
 	if (!targ || !targ[0])
 		return self;
@@ -1040,12 +1034,12 @@ BOOL	fakebrush;
 	c = [map_i count];
 	for (i=0 ; i<c ; i++)
 	{
-		obj = [map_i objectAt: i];
+		obj = [map_i objectAtIndex: i];
 		targname = [obj valueForQKey: "targetname"];
 		if (strcmp (targ, targname))
 			continue;
 			
-		[[obj objectAt:0] getMins: min  maxs: max];
+		[[obj objectAtIndex:0] getMins: min  maxs: max];
 		dest[0] = (min[0] + max[0]) /2;
 		dest[1] = (min[1] + max[1]) /2;
 		
@@ -1098,7 +1092,7 @@ BOOL	fakebrush;
 	if (copy)
 	{
 		[copy perform:call];
-		[copy free];
+		[copy dealloc];
 	}
 	fakebrush = NO;
 	return YES;
@@ -1125,10 +1119,10 @@ XYDrawSelf
 	[xyview_i addToScrollRange: bmins[0] : bmins[1]];
 	[xyview_i addToScrollRange: bmaxs[0] : bmaxs[1]];
 
-	worldent = [map_i objectAt: 0];
+	worldent = [map_i objectAtIndex: 0];
 	currentent = [map_i currentEntity];
 	
-	if (parent != worldent && self == [parent objectAt: 0])
+	if (parent != worldent && self == [parent objectAtIndex: 0])
 		keybrush = YES;
 	else
 		keybrush = NO;
@@ -1283,7 +1277,7 @@ CameraDrawSelf
 	if ([self fakeBrush: @selector(CameraDrawSelf)])
 		return self;
 	
-	worldent = [map_i objectAt: 0];
+	worldent = [map_i objectAtIndex: 0];
 	currentent = [map_i currentEntity];
 
 	if (parent != worldent && worldent == currentent)
@@ -1587,7 +1581,7 @@ float	*controlpoints[MAX_FACES*3];
 			
 		if (k != 3)
 		{
-//			Error ("getXYShearPoints: didn't get three points on plane");
+//			Sys_Error ("getXYShearPoints: didn't get three points on plane");
 			numcontrolpoints = 0;
 			return self;
 		}
@@ -1623,7 +1617,7 @@ Set the regioned flag based on if the object is containted in region_min/max
 	char	*name;
 	
 // filter away entities
-	if (parent != [map_i objectAt: 0])
+	if (parent != [map_i objectAtIndex: 0])
 	{
 		if (filter_entities)
 		{
@@ -1816,7 +1810,7 @@ vec3_t	sb_mins, sb_maxs;
 	}
 
 	[parent removeObject: self];
-	[self free];
+	[self dealloc];
 
 	return nil;
 }
@@ -1940,7 +1934,7 @@ id		carve_in, carve_out;
 - addFace: (face_t *)f
 {
 	if (numfaces == MAX_FACES)
-		Error ("addFace: numfaces == MAX_FACES");
+		Sys_Error ("addFace: numfaces == MAX_FACES");
 		
 	faces[numfaces] = *f;
 	faces[numfaces].texture = faces[0].texture;
@@ -1980,7 +1974,7 @@ id		carve_in, carve_out;
 		
 #if 0
 	if ( (i = NSMallocCheck()) )
-		Error ("MallocCheck failure");
+		Sys_Error ("MallocCheck failure");
 #endif
 		
 // check bboxes

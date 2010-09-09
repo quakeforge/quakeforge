@@ -1,5 +1,6 @@
+#include "QF/qendian.h"
 
-#include "qedefs.h"
+#include "TexturePalette.h"
 
 id	texturepalette_i;
 
@@ -55,7 +56,7 @@ unsigned badtex_d[] =
 0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff
 };
 
-qtexture_t	badtex = {"notexture",16,16,NULL, badtex_d, {0,0,255,255}};
+qtexture_t	badtex = {"notexture",16,16,NULL, badtex_d, {{0,0,255,255}}};
 
 /*
 ==============

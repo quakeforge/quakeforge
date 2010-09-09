@@ -1,5 +1,8 @@
 
-#include "qedefs.h"
+#include "KeypairView.h"
+#include "Map.h"
+#include "Entity.h"
+#include "Things.h"
 
 id	keypairview_i;
 

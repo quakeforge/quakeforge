@@ -1,12 +1,12 @@
 #ifndef QuakeEd_h
 #define QuakeEd_h
 
+#include <AppKit/AppKit.h>
+
 extern	id	quakeed_i;
 
 extern	BOOL	filter_light, filter_path, filter_entities;
 extern	BOOL	filter_clip_brushes, filter_water_brushes, filter_world;
-
-extern	UserPath	*upath;
 
 extern	id	g_cmd_out_i;
 

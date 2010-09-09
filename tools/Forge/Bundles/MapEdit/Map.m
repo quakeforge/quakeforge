@@ -1,8 +1,21 @@
 
-#include "qedefs.h"
-
 #include <sys/time.h>
 #include <time.h>
+
+#include "QF/quakeio.h"
+#include "QF/script.h"
+#include "QF/sys.h"
+
+#include "Map.h"
+#include "Entity.h"
+#include "TexturePalette.h"
+#include "SetBrush.h"
+#include "XYView.h"
+#include "CameraView.h"
+#include "QuakeEd.h"
+#include "Things.h"
+#include "InspectorControl.h"
+#include "Project.h"
 
 
 id	map_i;
@@ -46,7 +59,7 @@ FILE METHODS
 		else
 		{
 			[w removeObjectAtIndex: 0];
-			[o free];
+			[o release];
 		}
 	}
 	
@@ -55,8 +68,8 @@ FILE METHODS
 	{
 		o = [self objectAtIndex: 0];
 		[self removeObjectAtIndex: 0];
-		[o freeObjects];
-		[o free];
+		[o removeAllObjects];
+		[o release];
 	}
 
 	return self;
@@ -169,6 +182,7 @@ FILE METHODS
 
 - writeStats
 {
+/*XXX
 	FILE	*f;
 	extern	int	c_updateall;
 	struct timeval tp;
@@ -180,6 +194,7 @@ FILE METHODS
 	fprintf (f,"%i %i\n", (int)tp.tv_sec, c_updateall);
 	c_updateall = 0;
 	fclose (f);
+*/
 	return self;
 }
 
@@ -223,17 +238,26 @@ readMapFile
 	int		i, c;
 	vec3_t	org;
 	float	angle;
+	QFile      *file;
+	script_t   *script;
+	size_t      size;
 	
 	[self saveSelected];
 	
-	qprintf ("loading %s\n", fname);
+	Sys_Printf ("loading %s\n", fname);
 
-	LoadFile (fname, (void **)&dat);
-	StartTokenParsing (dat);
+	file = Qopen (fname, "rt");
+	size = Qfilesize (file);
+	dat = malloc (size + 1);
+	size = Qread (file, dat, size);
+	Qclose (file);
+	dat[size] = 0;
 
-	do
-	{
-		new = [[Entity alloc] initFromTokens];
+	script = Script_New ();
+	Script_Start (script, fname, dat);
+
+	do {
+		new = [[Entity alloc] initFromScript: script];
 		if (!new)
 			break;
 		[self addObject: new];		
@@ -288,11 +312,11 @@ writeMapFile
 	FILE	*f;
 	int		i;
 	
-	qprintf ("writeMapFile: %s", fname);
+	Sys_Printf ("writeMapFile: %s", fname);
 	
 	f = fopen (fname,"w");
 	if (!f)
-		Error ("couldn't write %s", fname);
+		Sys_Error ("couldn't write %s", fname);
 	
 	for (i=0 ; i<[self count] ; i++)
 		[[self objectAtIndex: i] writeToFILE: f region: reg];
@@ -353,7 +377,7 @@ make a target connection from the original entity.
 	oldent = [self currentEntity];
 	if (oldent == [self objectAtIndex: 0])
 	{
-		qprintf ("Must have a non-world entity selected to connect");
+		Sys_Printf ("Must have a non-world entity selected to connect");
 		return self;
 	}
 
@@ -361,13 +385,13 @@ make a target connection from the original entity.
 	ent = [self currentEntity];
 	if (ent == oldent)
 	{
-		qprintf ("Must click on a different entity to connect");
+		Sys_Printf ("Must click on a different entity to connect");
 		return self;
 	}
 	
 	if (ent == [self objectAtIndex: 0])
 	{
-		qprintf ("Must click on a non-world entity to connect");
+		Sys_Printf ("Must click on a non-world entity to connect");
 		return self;
 	}
 	
@@ -422,13 +446,13 @@ to intervening world brushes
 	
 	if (besttime == 99999)
 	{
-		qprintf ("trace missed");
+		Sys_Printf ("trace missed");
 		return self;
 	}
 
 	if ( [bestbrush regioned] )
 	{
-		qprintf ("WANRING: clicked on regioned brush");
+		Sys_Printf ("WANRING: clicked on regioned brush");
 		return self;
 	}
 	
@@ -448,12 +472,12 @@ to intervening world brushes
 		}
 
 		[bestbrush setSelected: YES];
-		qprintf ("selected entity %i brush %i face %i", [self indexOfObject:bestent], [bestent indexOfObject: bestbrush], bestface);
+		Sys_Printf ("selected entity %i brush %i face %i", (int) [self indexOfObject:bestent], (int) [bestent indexOfObject: bestbrush], bestface);
 	}
 	else 
 	{
 		[bestbrush setSelected: NO];
-		qprintf ("deselected entity %i brush %i face %i", [self indexOfObject:bestent], [bestent indexOfObject: bestbrush], bestface);
+		Sys_Printf ("deselected entity %i brush %i face %i", (int) [self indexOfObject:bestent], (int) [bestent indexOfObject: bestbrush], bestface);
 	}
 
 	[quakeed_i enableFlushWindow];
@@ -548,14 +572,14 @@ getTextureRay
 
 	if ( ![bestent modifiable])
 	{
-		qprintf ("can't modify spawned entities");
+		Sys_Printf ("can't modify spawned entities");
 		return self;
 	}
 	
 	td = [bestbrush texturedefForFace: bestface];
 	[texturepalette_i setTextureDef: td];
 	
-	qprintf ("grabbed texturedef and sizes");
+	Sys_Printf ("grabbed texturedef and sizes");
 	
 	[bestbrush getMins: mins maxs: maxs];
 	
@@ -604,19 +628,19 @@ setTextureRay
 	
 	if (besttime == 99999)
 	{
-		qprintf ("trace missed");
+		Sys_Printf ("trace missed");
 		return self;
 	}
 
 	if ( ![bestent modifiable])
 	{
-		qprintf ("can't modify spawned entities");
+		Sys_Printf ("can't modify spawned entities");
 		return self;
 	}
 	
 	if ( [bestbrush regioned] )
 	{
-		qprintf ("WANRING: clicked on regioned brush");
+		Sys_Printf ("WANRING: clicked on regioned brush");
 		return self;
 	}
 	
@@ -626,12 +650,12 @@ setTextureRay
 	if (allsides)
 	{
 		[bestbrush setTexturedef: &td];
-		qprintf ("textured entity %i brush %i", [self indexOfObject:bestent], [bestent indexOfObject: bestbrush]);
+		Sys_Printf ("textured entity %i brush %i", (int) [self indexOfObject:bestent], (int) [bestent indexOfObject: bestbrush]);
 	}
 	else 
 	{
 		[bestbrush setTexturedef: &td forFace: bestface];
-		qprintf ("deselected entity %i brush %i face %i", [self indexOfObject:bestent], [bestent indexOfObject: bestbrush], bestface);
+		Sys_Printf ("deselected entity %i brush %i face %i", (int) [self indexOfObject:bestent], (int) [bestent indexOfObject: bestbrush], bestface);
 	}
 	[quakeed_i enableFlushWindow];
 		
@@ -669,12 +693,12 @@ OPERATIONS ON SELECTIONS
 			if ([brush regioned])
 				continue;
 			total++;
-			[brush perform:sel];
+			[brush performSelector:sel];
 		}
 	}
 
 //	if (!total)
-//		qprintf ("nothing selected");
+//		Sys_Printf ("nothing selected");
 		
 	return self;	
 }
@@ -696,7 +720,7 @@ OPERATIONS ON SELECTIONS
 				continue;
 			if ([brush regioned])
 				continue;
-			[brush perform:sel];
+			[brush performSelector:sel];
 		}
 	}
 
@@ -718,7 +742,7 @@ OPERATIONS ON SELECTIONS
 			brush = [ent objectAtIndex: j];
 			if ([brush regioned])
 				continue;
-			[brush perform:sel];
+			[brush performSelector:sel];
 		}
 	}
 
@@ -738,7 +762,7 @@ OPERATIONS ON SELECTIONS
 		for (j = c2-1 ; j >=0 ; j--)
 		{
 			brush = [ent objectAtIndex: j];
-			[brush perform:sel];
+			[brush performSelector:sel];
 		}
 	}
 
@@ -757,7 +781,7 @@ void sel_identity (void)
 {
 	if ( ![currentEntity modifiable])
 	{
-		qprintf ("can't modify spawned entities");
+		Sys_Printf ("can't modify spawned entities");
 		return self;
 	}
 
@@ -912,14 +936,14 @@ UI operations
 	o = [self selectedBrush];
 	if (!o)
 	{
-		qprintf ("nothing selected");
+		Sys_Printf ("nothing selected");
 		return self;
 	}
 	o = [o parent];
 	c = [o count];
 	for (i=0 ; i<c ; i++)
 		[[o objectAtIndex: i] setSelected: YES];	
-	qprintf ("%i brushes selected", c);
+	Sys_Printf ("%i brushes selected", c);
 
 	[quakeed_i updateAll];
 
@@ -930,14 +954,14 @@ UI operations
 {
 	if (currentEntity != [self objectAtIndex: 0])
 	{
-		qprintf ("ERROR: can't makeEntity inside an entity");
+		Sys_Printf ("ERROR: can't makeEntity inside an entity");
 		NSBeep ();
 		return self;
 	}
 	
 	if ( [self numSelected] == 0)
 	{
-		qprintf ("ERROR: must have a seed brush to make an entity");
+		Sys_Printf ("ERROR: must have a seed brush to make an entity");
 		NSBeep ();
 		return self;
 	}
@@ -967,7 +991,7 @@ UI operations
 	
 	if ([self numSelected] != 1)
 	{
-		qprintf ("must have a single brush selected");
+		Sys_Printf ("must have a single brush selected");
 		return self;
 	} 
 
@@ -977,7 +1001,7 @@ UI operations
 	
 	[self makeUnselectedPerform: selector];
 	
-	qprintf ("identified contents");
+	Sys_Printf ("identified contents");
 	[quakeed_i updateAll];
 	
 	return self;
@@ -1002,7 +1026,7 @@ UI operations
 	
 	if ([self numSelected] != 1)
 	{
-		qprintf ("must have a single brush selected");
+		Sys_Printf ("must have a single brush selected");
 		return self;
 	} 
 
@@ -1030,7 +1054,7 @@ UI operations
 	
 	if ([self numSelected] != 1)
 	{
-		qprintf ("must have a single brush selected");
+		Sys_Printf ("must have a single brush selected");
 		return self;
 	} 
 
@@ -1061,7 +1085,7 @@ subtractSelection
 	id		o, o2;
 	id		sellist, sourcelist;
 	
-	qprintf ("performing brush subtraction...");
+	Sys_Printf ("performing brush subtraction...");
 
 	sourcelist = [[NSMutableArray alloc] init];
 	sellist = [[NSMutableArray alloc] init];
@@ -1090,32 +1114,32 @@ subtractSelection
 		{
 			o2 = [sourcelist objectAtIndex: j];
 			[o2 carve];
-			[carve_in freeObjects];
+			[carve_in removeAllObjects];
 		}
 
-		[sourcelist free];	// the individual have been moved/freed
+		[sourcelist release];	// the individual have been moved/freed
 		sourcelist = carve_out;
 		carve_out = [[NSMutableArray alloc] init];
 	}
 
 // add the selection back to the remnants
 	[currentEntity removeAllObjects];
-	[currentEntity appendList: sourcelist];
-	[currentEntity appendList: sellist];
+	[currentEntity addObjectsFromArray: sourcelist];
+	[currentEntity addObjectsFromArray: sellist];
 
-	[sourcelist free];
-	[sellist free];
-	[carve_in free];
-	[carve_out free];
+	[sourcelist release];
+	[sellist release];
+	[carve_in release];
+	[carve_out release];
 	
 	if (![currentEntity count])
 	{
 		o = currentEntity;
 		[self removeObject: o];
-		[o free];
+		[o release];
 	}
 
-	qprintf ("subtracted selection");
+	Sys_Printf ("subtracted selection");
 	[quakeed_i updateAll];
 	
 	return self;

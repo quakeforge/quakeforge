@@ -1,6 +1,7 @@
 
-#include "qedefs.h"
+#include "render.h"
 
+extern vec3_t          xy_viewnormal;
 
 //define	NOLIGHT
 
@@ -511,7 +512,7 @@ REN_BeginCamera
 ===================
 */
 float	r_width_2, r_height_3;
-plane_t	frustum[5];
+plane_t	rfrustum[5];
 
 void REN_BeginCamera (void)
 {
@@ -520,58 +521,58 @@ void REN_BeginCamera (void)
 	
 	
 // clip to right side
-	frustum[0].normal[0] = -1;
-	frustum[0].normal[1] = 0;
-	frustum[0].normal[2] = 1;
-	frustum[0].dist = 0;
+	rfrustum[0].normal[0] = -1;
+	rfrustum[0].normal[1] = 0;
+	rfrustum[0].normal[2] = 1;
+	rfrustum[0].dist = 0;
 
 // clip to left side
-	frustum[1].normal[0] = 1;
-	frustum[1].normal[1] = 0;
-	frustum[1].normal[2] = 1;
-	frustum[1].dist = 0;
+	rfrustum[1].normal[0] = 1;
+	rfrustum[1].normal[1] = 0;
+	rfrustum[1].normal[2] = 1;
+	rfrustum[1].dist = 0;
 
 // clip to top side
-	frustum[2].normal[0] = 0;
-	frustum[2].normal[1] = -1;
-	frustum[2].normal[2] = r_height_3 / r_width_2;
-	frustum[2].dist = 0;
+	rfrustum[2].normal[0] = 0;
+	rfrustum[2].normal[1] = -1;
+	rfrustum[2].normal[2] = r_height_3 / r_width_2;
+	rfrustum[2].dist = 0;
 
 // clip to bottom side
-	frustum[3].normal[0] = 0;
-	frustum[3].normal[1] = 1;
-	frustum[3].normal[2] = 2*r_height_3 / r_width_2;	
-	frustum[3].dist = 0;
+	rfrustum[3].normal[0] = 0;
+	rfrustum[3].normal[1] = 1;
+	rfrustum[3].normal[2] = 2*r_height_3 / r_width_2;	
+	rfrustum[3].dist = 0;
 
 // near Z
-	frustum[4].normal[0] = 0;
-	frustum[4].normal[1] = 0;
-	frustum[4].normal[2] = 1;
-	frustum[4].dist = 1;
+	rfrustum[4].normal[0] = 0;
+	rfrustum[4].normal[1] = 0;
+	rfrustum[4].normal[2] = 1;
+	rfrustum[4].dist = 1;
 }
 
 
 void REN_BeginXY (void)
 {
-	frustum[0].normal[0] = 1;
-	frustum[0].normal[1] = 0;
-	frustum[0].normal[2] = 0;
-	frustum[0].dist = 0;
+	rfrustum[0].normal[0] = 1;
+	rfrustum[0].normal[1] = 0;
+	rfrustum[0].normal[2] = 0;
+	rfrustum[0].dist = 0;
 		
-	frustum[1].normal[0] = -1;
-	frustum[1].normal[1] = 0;
-	frustum[1].normal[2] = 0;
-	frustum[1].dist = -r_width;
+	rfrustum[1].normal[0] = -1;
+	rfrustum[1].normal[1] = 0;
+	rfrustum[1].normal[2] = 0;
+	rfrustum[1].dist = -r_width;
 
-	frustum[2].normal[0] = 0;
-	frustum[2].normal[1] = 1;
-	frustum[2].normal[2] = 0;
-	frustum[2].dist = 0;
+	rfrustum[2].normal[0] = 0;
+	rfrustum[2].normal[1] = 1;
+	rfrustum[2].normal[2] = 0;
+	rfrustum[2].dist = 0;
 
-	frustum[3].normal[0] = 0;
-	frustum[3].normal[1] = -1;
-	frustum[3].normal[2] = 0;
-	frustum[3].dist = -r_height;
+	rfrustum[3].normal[0] = 0;
+	rfrustum[3].normal[1] = -1;
+	rfrustum[3].normal[2] = 0;
+	rfrustum[3].dist = -r_height;
 }
 
 /*
@@ -623,7 +624,7 @@ void REN_DrawCameraFace (face_t *idpol)
 //
 	for (i=0 ; i<4 ; i++)
 	{
-		w = ClipWinding (w, &frustum[i]);
+		w = ClipWinding (w, &rfrustum[i]);
 		if (!w)
 			return;
 	}
@@ -698,7 +699,7 @@ void REN_DrawXYFace (face_t *idpol)
 //
 	for (i=0 ; i<4 ; i++)
 	{
-		w = ClipWinding (w, &frustum[i]);
+		w = ClipWinding (w, &rfrustum[i]);
 		if (!w)
 			return;
 	}

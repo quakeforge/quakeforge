@@ -1,6 +1,13 @@
-#include "qedefs.h"
+#include "QF/sys.h"
+
+#include "CameraView.h"
+#include "Map.h"
+#include "QuakeEd.h"
+#include "XYView.h"
+#include "ZView.h"
 
 id cameraview_i;
+extern NSBezierPath *path;
 
 BOOL	timedrawing = 0;
 
@@ -75,10 +82,10 @@ initWithFrame:
 	[map_i makeAllPerform: @selector(feetToFloor)];
 	if (sb_floor_dist == 99999)
 	{
-		qprintf ("already on top floor");
+		Sys_Printf ("already on top floor");
 		return self;
 	}
-	qprintf ("up floor");
+	Sys_Printf ("up floor");
 	origin[2] += sb_floor_dist;
 	[quakeed_i updateCamera];
 	return self;
@@ -91,10 +98,10 @@ initWithFrame:
 	[map_i makeAllPerform: @selector(feetToFloor)];
 	if (sb_floor_dist == -99999)
 	{
-		qprintf ("already on bottom floor");
+		Sys_Printf ("already on bottom floor");
 		return self;
 	}
-	qprintf ("down floor");
+	Sys_Printf ("down floor");
 	origin[2] += sb_floor_dist;
 	[quakeed_i updateCamera];
 	return self;
@@ -121,7 +128,7 @@ homeView
 
 	[quakeed_i updateAll];
 
-	qprintf ("homed view angle");
+	Sys_Printf ("homed view angle");
 	
 	return self;
 }
@@ -223,7 +230,7 @@ float	mid_x, mid_y;
 float	topscale = (240.0/3)/160;
 float	bottomscale = (240.0*2/3)/160;
 
-extern	plane_t	frustum[5];
+extern	plane_t	rfrustum[5];
 
 void MakeCampt (vec3_t in, campt_t *pt)
 {
@@ -267,15 +274,16 @@ void CameraMoveto(vec3_t p)
 {
 	campt_t	*pt;
 	
-	if (upath->numberOfPoints > 2048)
+	if ([path elementCount] > 2048)
 		lineflush ();
 		
 	pt = &campts[cam_cur];
 	cam_cur ^= 1;
 	MakeCampt (p,pt);
-	if (!pt->clipflags)
-	{	// onscreen, so move there immediately
-		UPmoveto (upath, pt->screen[0], pt->screen[1]);
+	if (!pt->clipflags) {
+		// onscreen, so move there immediately
+		NSPoint point = {pt->screen[0], pt->screen[1]};
+		[path moveToPoint: point];
 	}
 }
 
@@ -285,22 +293,23 @@ void ClipLine (vec3_t p1, vec3_t p2, int planenum)
 	vec3_t	new;
 	plane_t	*pl;
 	float	scale;
+	NSPoint point;
 	
-	if (planenum == 5)
-	{	// draw it!
+	if (planenum == 5) {
+		// draw it!
 		scale = mid_x/p1[2];
-		new[0] = mid_x + p1[0]*scale;
-		new[1] = mid_y + p1[1]*scale;
-		UPmoveto (upath, new[0], new[1]);
+		point.x = mid_x + p1[0]*scale;
+		point.y = mid_y + p1[1]*scale;
+		[path moveToPoint: point];
 		
 		scale = mid_x/p2[2];
-		new[0] = mid_x + p2[0]*scale;
-		new[1] = mid_y + p2[1]*scale;
-		UPlineto (upath, new[0], new[1]);
+		point.x = mid_x + p2[0]*scale;
+		point.y = mid_y + p2[1]*scale;
+		[path lineToPoint: point];
 		return;
 	}
 
-	pl = &frustum[planenum];
+	pl = &rfrustum[planenum];
 	
 	d = DotProduct (p1, pl->normal) - pl->dist;	
 	d2 = DotProduct (p2, pl->normal) - pl->dist;
@@ -348,9 +357,11 @@ void CameraLineto(vec3_t p)
 	
 	if (! bits )
 	{
+		NSPoint point1 = {p1->screen[0], p1->screen[1]};
+		NSPoint point2 = {p2->screen[0], p2->screen[1]};
 		c_on++;
-	UPmoveto (upath, p1->screen[0], p1->screen[1]);
-		UPlineto (upath, p2->screen[0], p2->screen[1]);
+	[path moveToPoint: point1];
+		[path lineToPoint: point2];
 		return;		// entirely on screen
 	}
 	
@@ -463,10 +474,10 @@ drawSelf
 */
 - drawSelf:(NSRect)rects :(int)rectCount
 {
-	static float	drawtime;	// static to shut up compiler warning
+	float       drawtime = 0;
 
 	if (timedrawing)
-		drawtime = I_FloatTime ();
+		drawtime = Sys_DoubleTime  ();
 
 	if (drawmode == dr_texture || drawmode == dr_flat)
 		[self drawSolid];
@@ -476,7 +487,7 @@ drawSelf
 	if (timedrawing)
 	{
 		//XXX NSPing ();
-		drawtime = I_FloatTime() - drawtime;
+		drawtime = Sys_DoubleTime () - drawtime;
 		printf ("CameraView drawtime: %5.3f\n", drawtime);
 	}
 
@@ -564,7 +575,7 @@ modalMoveLoop
 	int			i;
 //	vec3_t		temp;
 	
-	qprintf ("moving camera position");
+	Sys_Printf ("moving camera position");
 
 	VectorCopy (origin, originbase);	
 		
@@ -810,7 +821,7 @@ mouseDown
 	{
 		if (drawmode != dr_texture)
 		{
-			qprintf ("No texture setting except in texture mode!\n");
+			Sys_Printf ("No texture setting except in texture mode!\n");
 			NopSound ();
 			return;
 		}		
@@ -826,7 +837,7 @@ mouseDown
 	{
 		if (drawmode != dr_texture)
 		{
-			qprintf ("No texture setting except in texture mode!\n");
+			Sys_Printf ("No texture setting except in texture mode!\n");
 			NopSound ();
 			return;
 		}
@@ -836,7 +847,7 @@ mouseDown
 	}
 		
 
-	qprintf ("bad flags for click");
+	Sys_Printf ("bad flags for click");
 	NopSound ();
 	
 	return;
@@ -863,13 +874,13 @@ rightMouseDown
 //
 	if (flags == 0)
 	{
-		qprintf ("looking");
+		Sys_Printf ("looking");
 		[self viewDrag: &pt];
-		qprintf ("");
+		Sys_Printf ("%s", "");
 		return;
 	}		
 
-	qprintf ("bad flags for click");
+	Sys_Printf ("bad flags for click");
 	NopSound ();
 	
 	return;

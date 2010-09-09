@@ -1,6 +1,8 @@
 #ifndef KeypairView_h
 #define KeypairView_h
 
+#include <AppKit/AppKit.h>
+
 extern	id	keypairview_i;
 
 @interface KeypairView:NSView

@@ -1,6 +1,12 @@
 #ifndef Clipper_h
 #define Clipper_h
 
+#include <AppKit/AppKit.h>
+
+#include "QF/mathlib.h"
+
+#include "SetBrush.h"
+
 extern	id	clipper_i;
 
 @interface Clipper : NSObject

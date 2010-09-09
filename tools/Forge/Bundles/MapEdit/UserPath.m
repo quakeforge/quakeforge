@@ -8,9 +8,9 @@
  */
 
 #include "UserPath.h"
-#include <mach/mach_init.h>
-#include <appkit/graphics.h>
-#include <appkit/errors.h>
+//#include <mach/mach_init.h>
+//#include <appkit/graphics.h>
+//#include <appkit/errors.h>
 #include <math.h>
 #include <libc.h>
 
@@ -137,16 +137,16 @@ int sendUserPath(UserPath *up)
 
     exception.code = 0;
     if (up->opForUserPath != 0) {
-      NS_DURING
+      //NS_DURING
 	DPSDoUserPath(up->points, up->numberOfPoints, dps_float, up->ops,
 		      up->numberOfOps, up->bbox, up->opForUserPath);
 	if (up->ping) {
 	    NSPing();
 	}
 	
-      NS_HANDLER
-	exception = NSLocalHandler;
-      NS_ENDHANDLER
+      //NS_HANDLER
+//	exception = NSLocalHandler;
+      //NS_ENDHANDLER
 	if (exception.code) {
 	    NSReportError(&exception);
 	    if (exception.code == dps_err_ps) {

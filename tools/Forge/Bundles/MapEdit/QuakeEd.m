@@ -1,5 +1,5 @@
 
-#include "qedefs.h"
+#include "QuakeEd.h"
 
 id	quakeed_i;
 id	entclasses_i;
@@ -28,8 +28,6 @@ void NopSound (void)
 {
 	NSBeep ();
 }
-
-UserPath	*upath;
 
 
 void My_Malloc_Error (int code)

@@ -1,8 +1,14 @@
 
-#include "qedefs.h"
-
 #include <AppKit/NSGraphics.h>
 #include <AppKit/DPSOperators.h>
+
+#include "QF/sys.h"
+
+#include "Clipper.h"
+#include "Map.h"
+#include "XYView.h"
+#include "CameraView.h"
+#include "QuakeEd.h"
 
 id	clipper_i;
 
@@ -42,7 +48,7 @@ id	clipper_i;
 	}	
 	else
 	{
-		qprintf ("no clipplane");
+		Sys_Printf ("no clipplane");
 		NSBeep ();
 	}
 	

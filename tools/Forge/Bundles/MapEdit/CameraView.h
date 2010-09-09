@@ -2,8 +2,12 @@
 #define CameraView_h
 
 #include <AppKit/AppKit.h>
-#include "mathlib.h"
+
+#include "QF/mathlib.h"
+
 #include "SetBrush.h"
+
+#include "render.h"
 
 extern id cameraview_i;
 

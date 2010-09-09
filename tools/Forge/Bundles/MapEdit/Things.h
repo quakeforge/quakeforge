@@ -3,6 +3,8 @@
 
 #include <AppKit/AppKit.h>
 
+#include "Entity.h"
+
 extern	id	things_i;
 
 #define	ENTITYNAMEKEY	"spawn"
