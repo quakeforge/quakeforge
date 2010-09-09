@@ -178,3 +178,9 @@ Script_UngetToken (script_t *script)
 {
 	script->unget = true;
 }
+
+VISIBLE const char *
+Script_Token (script_t *script)
+{
+	return script->token->str;
+}
