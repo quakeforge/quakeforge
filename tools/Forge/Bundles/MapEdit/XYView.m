@@ -1,8 +1,15 @@
-#include "qedefs.h"
+#include "XYView.h"
+#include "ZView.h"
+#include "CameraView.h"
+#include "Clipper.h"
+#include "QuakeEd.h"
+#include "Map.h"
+#include "Entity.h"
+#include "PopScrollView.h"
 
 id xyview_i;
 
-id	scalemenu_i, gridmenu_i, scrollview_i, gridbutton_i, scalebutton_i;
+id	scrollview_i, gridbutton_i, scalebutton_i;
 
 vec3_t		xy_viewnormal;		// v_forward for xy view
 float		xy_viewdist;		// clip behind this plane
@@ -14,12 +21,12 @@ float		xy_viewdist;		// clip behind this plane
 initWithFrame:
 ==================
 */
-- initWithFrame:(const NSRect *)frameRect
+- initWithFrame:(NSRect)frameRect
 {
 	[super initWithFrame:frameRect];
 	[self allocateGState];
 	
-	NSSetRect (&realbounds, 0,0,0,0);
+	realbounds = NSMakeRect (0,0,0,0);
 	
 	gridsize = 16;
 	scale = 1.0;
@@ -31,50 +38,45 @@ initWithFrame:
 //		
 // initialize the pop up menus
 //
-	scalemenu_i = [[PopUpList alloc] init];
-	[scalemenu_i setTarget: self];
-	[scalemenu_i setAction: @selector(scaleMenuTarget:)];
+	scalebutton_i = [[NSPopUpButton alloc] init];
+	[scalebutton_i setTarget: self];
+	[scalebutton_i setAction: @selector(scaleMenuTarget:)];
+	[scalebutton_i addItemWithTitle: @"12.5%"];
+	[scalebutton_i addItemWithTitle: @"25%"];
+	[scalebutton_i addItemWithTitle: @"50%"];
+	[scalebutton_i addItemWithTitle: @"75%"];
+	[scalebutton_i addItemWithTitle: @"100%"];
+	[scalebutton_i addItemWithTitle: @"200%"];
+	[scalebutton_i addItemWithTitle: @"300%"];
+	[scalebutton_i selectItemAtIndex: 4];
 
-	[scalemenu_i addItem: "12.5%"];
-	[scalemenu_i addItem: "25%"];
-	[scalemenu_i addItem: "50%"];
-	[scalemenu_i addItem: "75%"];
-	[scalemenu_i addItem: "100%"];
-	[scalemenu_i addItem: "200%"];
-	[scalemenu_i addItem: "300%"];
-	[[scalemenu_i itemList] selectCellAt: 4 : 0];
+
+	gridbutton_i = [[NSPopUpButton alloc] init];
+	[gridbutton_i setTarget: self];
+	[gridbutton_i setAction: @selector(gridMenuTarget:)];
+
+	[gridbutton_i addItemWithTitle: @"grid 1"];
+	[gridbutton_i addItemWithTitle: @"grid 2"];
+	[gridbutton_i addItemWithTitle: @"grid 4"];
+	[gridbutton_i addItemWithTitle: @"grid 8"];
+	[gridbutton_i addItemWithTitle: @"grid 16"];
+	[gridbutton_i addItemWithTitle: @"grid 32"];
+	[gridbutton_i addItemWithTitle: @"grid 64"];
 	
-	scalebutton_i = NSCreatePopUpListButton(scalemenu_i);
-
-
-	gridmenu_i = [[PopUpList alloc] init];
-	[gridmenu_i setTarget: self];
-	[gridmenu_i setAction: @selector(gridMenuTarget:)];
-
-	[gridmenu_i addItem: "grid 1"];
-	[gridmenu_i addItem: "grid 2"];
-	[gridmenu_i addItem: "grid 4"];
-	[gridmenu_i addItem: "grid 8"];
-	[gridmenu_i addItem: "grid 16"];
-	[gridmenu_i addItem: "grid 32"];
-	[gridmenu_i addItem: "grid 64"];
+	[gridbutton_i selectItemAtIndex: 4];
 	
-	[[gridmenu_i itemList] selectCellAt: 4 : 0];
-	
-	gridbutton_i = NSCreatePopUpListButton(gridmenu_i);
-
 // initialize the scroll view
 	scrollview_i = [[PopScrollView alloc] 
-		initWithFrame: 		frameRect 
-		button1: 		scalebutton_i
-		button2:		gridbutton_i
+		initWithFrame:  frameRect 
+		button1:        scalebutton_i
+		button2:        gridbutton_i
 	];
 	[scrollview_i setLineScroll: 64];
-	[scrollview_i setAutosizing: NS_WIDTHSIZABLE | NS_HEIGHTSIZABLE];
+	[scrollview_i setAutoresizingMask: (NSViewWidthSizable | NSViewHeightSizable)];
 	
 // link objects together
-	[[scrollview_i setDocView: self] free];
-	
+	[scrollview_i setDocumentView: self];
+	RELEASE (scrollview_i);
 	return scrollview_i;
 
 }
@@ -95,7 +97,7 @@ initWithFrame:
 
 - drawMode: sender
 {
-	drawmode = [sender selectedCol];
+	drawmode = [sender selectedColumn];
 	[quakeed_i updateXY];
 	return self;
 }
@@ -103,7 +105,7 @@ initWithFrame:
 - setDrawMode: (drawmode_t)mode
 {
 	drawmode = mode;
-	[mode_radio_i selectCellAt:0: mode];
+	[mode_radio_i selectCellAtRow:0 column: mode];
 	[quakeed_i updateXY];
 	return self;
 }
@@ -115,9 +117,7 @@ initWithFrame:
 }
 
 /*
-===================
-setOrigin:scale:
-===================
+	v
 */
 - setOrigin: (NSPoint *)pt scale: (float)sc
 {
@@ -129,38 +129,38 @@ setOrigin:scale:
 //
 	scale = sc;
 	
-	[superview getFrame: &sframe];
-	[superview getFrame: &newbounds];
+	sframe = [[self superview] frame];
+	newbounds = [[self superview] frame];
 	newbounds.origin = *pt;
 	newbounds.size.width /= scale; 
 	newbounds.size.height /= scale; 
+	sframe.size.width /= scale; 
+	sframe.size.height /= scale; 
 	
 //
 // union with the realbounds
 //
-	NSUnionRect (&realbounds, &newbounds);
+	newbounds = NSUnionRect (realbounds, newbounds);
 
 //
 // redisplay everything
 //
-	[quakeed_i disableDisplay];
+	//XXX[quakeed_i disableDisplay];
 
 //
 // size this view
 //
-	[self sizeTo: newbounds.size.width : newbounds.size.height];
-	[self setDrawOrigin: newbounds.origin.x : newbounds.origin.y];
-	[self moveTo: newbounds.origin.x : newbounds.origin.y];
+	[self setBoundsSize: newbounds.size];
+	[self setBoundsOrigin: newbounds.origin];
+	//XXX[self moveTo: newbounds.origin.x : newbounds.origin.y];
 	
 //
 // scroll and scale the clip view
 //
-	[superview setDrawSize
-		: sframe.size.width/scale 
-		: sframe.size.height/scale];
-	[superview setDrawOrigin: pt->x : pt->y];
+	[[self superview] setBoundsSize: sframe.size];
+	[[self superview] setBoundsOrigin: *pt];
 
-	[quakeed_i reenableDisplay];
+	//XXX[quakeed_i reenableDisplay];
 	[scrollview_i display];
 	
 	return self;
@@ -171,7 +171,7 @@ setOrigin:scale:
 	NSRect	sbounds;
 	NSPoint	mid, delta;
 	
-	[[xyview_i superview] getBounds: &sbounds];
+	sbounds = [[xyview_i superview] bounds];
 	
 	mid.x = sbounds.origin.x + sbounds.size.width/2;
 	mid.y = sbounds.origin.y + sbounds.size.height/2;
@@ -197,7 +197,7 @@ When superview is resized
 {
 	NSRect	r;
 	
-	[superview getBounds: &r];
+	r = [[self superview] bounds];
 	[self newRealBounds: &r];
 	
 	return self;
@@ -221,25 +221,25 @@ If realbounds has shrunk, nothing will change.
 //
 // calculate the area visible in the cliprect
 //
-	[superview getBounds: &sbounds];
-	NSUnionRect (nb, &sbounds);
+	sbounds = [[self superview] bounds];
+	sbounds = NSUnionRect (*nb, sbounds);
 
 //
 // size this view
 //
-	[quakeed_i disableDisplay];
+	//XXX[quakeed_i disableDisplay];
 
-	[self suspendNotifyAncestorWhenFrameChanged:YES];
-	[self sizeTo: sbounds.size.width : sbounds.size.height];
-	[self setDrawOrigin: sbounds.origin.x : sbounds.origin.y];
-	[self moveTo: sbounds.origin.x : sbounds.origin.y];
-	[self suspendNotifyAncestorWhenFrameChanged:NO];
+	[self setPostsBoundsChangedNotifications:NO];
+	[self setBoundsSize: sbounds.size];
+	[self setBoundsOrigin: sbounds.origin];
+	//XXX[self moveTo: sbounds.origin.x : sbounds.origin.y];
+	[self setPostsBoundsChangedNotifications:YES];
 
-	[scrollview_i reflectScroll: superview];
-	[quakeed_i reenableDisplay];
+	[scrollview_i reflectScrolledClipView: [scrollview_i contentView]];
+	//XXX[quakeed_i reenableDisplay];
 	
-	[[scrollview_i horizScroller] display];
-	[[scrollview_i vertScroller] display];
+	[[scrollview_i horizontalScroller] display];
+	[[scrollview_i verticalScroller] display];
 	
 	return self;
 }
@@ -259,7 +259,7 @@ Called when the scaler popup on the window is used
 	NSRect		visrect, sframe;
 	float		nscale;
 	
-	item = [[sender selectedCell] title];
+	item = [[[sender selectedCell] title] cString];
 	sscanf (item,"%f",&nscale);
 	nscale /= 100;
 	
@@ -267,8 +267,8 @@ Called when the scaler popup on the window is used
 		return NULL;
 		
 // keep the center of the view constant
-	[superview getBounds: &visrect];
-	[superview getFrame: &sframe];
+	visrect = [[self superview] bounds];
+	sframe = [[self superview] frame];
 	visrect.origin.x += visrect.size.width/2;
 	visrect.origin.y += visrect.size.height/2;
 	
@@ -287,8 +287,8 @@ zoomIn
 */
 - zoomIn: (NSPoint *)constant
 {
-	id			itemlist;
-	int			selected, numrows, numcollumns;
+	id			itemlist, selectedItem;
+	int			selected, numrows;
 
 	NSRect		visrect;
 	NSPoint		ofs, new;
@@ -296,20 +296,20 @@ zoomIn
 //
 // set the popup
 //
-	itemlist = [scalemenu_i itemList];
-	[itemlist getNumRows: &numrows numCols:&numcollumns];
-	
-	selected = [itemlist selectedRow] + 1;
+	itemlist = [scalebutton_i itemArray];
+	numrows = [itemlist count];
+
+	selectedItem = [scalebutton_i selectedItem];
+	selected = [itemlist indexOfObject: selectedItem] + 1;
 	if (selected >= numrows)
 		return NULL;
 		
-	[itemlist selectCellAt: selected : 0];
-	[scalebutton_i setTitle: [[itemlist selectedCell] title]];
+	[scalebutton_i selectItemAtIndex: selected];
 
 //
 // zoom the view
 //
-	[superview getBounds: &visrect];
+	visrect = [[self superview] bounds];
 	ofs.x = constant->x - visrect.origin.x;
 	ofs.y = constant->y - visrect.origin.y;
 	
@@ -329,29 +329,28 @@ zoomOut
 */
 - zoomOut: (NSPoint *)constant
 {
-	id			itemlist;
-	int			selected, numrows, numcollumns;
+	id			itemlist, selectedItem;
+	int			selected;
 
 	NSRect		visrect;
 	NSPoint		ofs, new;
-	
+
 //
 // set the popup
 //
-	itemlist = [scalemenu_i itemList];
-	[itemlist getNumRows: &numrows numCols:&numcollumns];
-	
-	selected = [itemlist selectedRow] - 1;
+	itemlist = [scalebutton_i itemArray];
+
+	selectedItem = [scalebutton_i selectedItem];
+	selected = [itemlist indexOfObject: selectedItem] - 1;
 	if (selected < 0)
 		return NULL;
 		
-	[itemlist selectCellAt: selected : 0];
-	[scalebutton_i setTitle: [[itemlist selectedCell] title]];
+	[scalebutton_i selectItemAtIndex: selected];
 
 //
 // zoom the view
 //
-	[superview getBounds: &visrect];
+	visrect = [[self superview] bounds];
 	ofs.x = constant->x - visrect.origin.x;
 	ofs.y = constant->y - visrect.origin.y;
 	
@@ -377,7 +376,7 @@ Called when the scaler popup on the window is used
 	char	const	*item;
 	int			grid;
 	
-	item = [[sender selectedCell] title];
+	item = [[[sender selectedCell] title] cString];
 	sscanf (item,"grid %d",&grid);
 
 	if (grid == gridsize)
@@ -460,24 +459,23 @@ superviewChanged
 ===============================================================================
 */
 
-vec3_t	cur_linecolor;
+vec3_t cur_linecolor;
+NSBezierPath *path;
 
 void linestart (float r, float g, float b)
 {
-	beginUserPath (upath,NO);
-	cur_linecolor[0] = r;
-	cur_linecolor[1] = g;
-	cur_linecolor[2] = b;
+	[path removeAllPoints];
+	VectorSet (r, g, b, cur_linecolor);
 }
 
 void lineflush (void)
 {
-	if (!upath->numberOfPoints)
+	if ([path isEmpty])
 		return;
-	endUserPath (upath, dps_ustroke);
+	//endUserPath (upath, dps_ustroke);
 	PSsetrgbcolor (cur_linecolor[0], cur_linecolor[1], cur_linecolor[2]);
-	sendUserPath (upath);
-	beginUserPath (upath,NO);
+	[path stroke];
+	[path removeAllPoints];
 }
 
 void linecolor (float r, float g, float b)
@@ -485,21 +483,21 @@ void linecolor (float r, float g, float b)
 	if (cur_linecolor[0] == r && cur_linecolor[1] == g && cur_linecolor[2] == b)
 		return;	// do nothing
 	lineflush ();
-	cur_linecolor[0] = r;
-	cur_linecolor[1] = g;
-	cur_linecolor[2] = b;
+	VectorSet (r, g, b, cur_linecolor);
 }
 
 void XYmoveto (vec3_t pt)
 {
-	if (upath->numberOfPoints > 2048)
+	NSPoint point = {pt[0], pt[1]};
+	if ([path elementCount] > 2048)
 		lineflush ();
-	UPmoveto (upath, pt[0], pt[1]);
+	[path moveToPoint: point];
 }
 
 void XYlineto (vec3_t pt)
 {
-	UPlineto (upath, pt[0], pt[1]);
+	NSPoint point = {pt[0], pt[1]};
+	[path lineToPoint: point];
 }
 
 /*
@@ -513,19 +511,20 @@ Rect is in global world (unscaled) coordinates
 ============
 */
 
-- drawGrid: (const NSRect *)rect
+- drawGrid: (NSRect)rect
 {
 	int	x,y, stopx, stopy;
 	float	top,bottom,right,left;
 	char	text[10];
 	BOOL	showcoords;
+	NSPoint point;
 	
 	showcoords = [quakeed_i showCoordinates];
 
-	left = rect->origin.x-1;
-	bottom = rect->origin.y-1;
-	right = rect->origin.x+rect->size.width+2;
-	top = rect->origin.y+rect->size.height+2;
+	left = rect.origin.x-1;
+	bottom = rect.origin.y-1;
+	right = rect.origin.x+rect.size.width+2;
+	top = rect.origin.y+rect.size.height+2;
 
 	PSsetlinewidth (0.15);
 
@@ -555,24 +554,30 @@ Rect is in global world (unscaled) coordinates
 		if (stopy >= top)
 			stopy -= gridsize;
 			
-		beginUserPath (upath,NO);
+		[path removeAllPoints];
 		
 		for ( ; y<=stopy ; y+= gridsize)
 			if (y&63)
 			{
-				UPmoveto (upath, left, y);
-				UPlineto (upath, right, y);
+				point.x = left;
+				point.y = y;
+				[path moveToPoint: point];
+				point.x = right;
+				[path lineToPoint: point];
 			}
 	
 		for ( ; x<=stopx ; x+= gridsize)
 			if (x&63)
 			{
-				UPmoveto (upath, x, top);
-				UPlineto (upath, x, bottom);
+				point.x = x;
+				point.y = top;
+				[path moveToPoint: point];
+				point.y = bottom;
+				[path lineToPoint: point];
 			}
-		endUserPath (upath, dps_ustroke);
+		//endUserPath (upath, dps_ustroke);
 PSsetrgbcolor (0.8,0.8,1.0);	// thin grid color
-		sendUserPath (upath);
+		[path stroke];
 	
 	}
 
@@ -601,18 +606,19 @@ PSsetrgbcolor (0.8,0.8,1.0);	// thin grid color
 		if (stopy >= top)
 			stopy -= 64;
 			
-		beginUserPath (upath,NO);
+		[path removeAllPoints];
 		
 		for ( ; y<=stopy ; y+= 64)
 		{
 			if (showcoords)
 			{
 				sprintf (text, "%i",y);
-				PSmoveto(left,y);
-				PSshow(text);
+				PSmoveto (left, y);
+				PSshow (text);
 			}
-			UPmoveto (upath, left, y);
-			UPlineto (upath, right, y);
+			[path moveToPoint: point];
+			point.x = right;
+			[path lineToPoint: point];
 		}
 	
 		for ( ; x<=stopx ; x+= 64)
@@ -620,16 +626,19 @@ PSsetrgbcolor (0.8,0.8,1.0);	// thin grid color
 			if (showcoords)
 			{
 				sprintf (text, "%i",x);
-				PSmoveto(x,bottom+2);
-				PSshow(text);
+				PSmoveto (x, bottom + 2);
+				PSshow (text);
 			}
-			UPmoveto (upath, x, top);
-			UPlineto (upath, x, bottom);
+			point.x = x;
+			point.y = top;
+			[path moveToPoint: point];
+			point.y = bottom;
+			[path lineToPoint: point];
 		}
 	
-		endUserPath (upath, dps_ustroke);
+		//endUserPath (upath, dps_ustroke);
 		PSsetgray (12.0/16);
-		sendUserPath (upath);
+		[path stroke];
 	}
 
 	return self;
@@ -640,7 +649,7 @@ PSsetrgbcolor (0.8,0.8,1.0);	// thin grid color
 drawWire
 ==================
 */
-- drawWire: (const NSRect *)rects
+- drawWire: (NSRect)rects
 {
 	NSRect	visRect;
 	int	i,j, c, c2;
@@ -652,9 +661,9 @@ drawWire
 	
 	if ([quakeed_i showCoordinates])	// if coords are showing, update everything
 	{
-		[self getVisibleRect:&visRect];
-		rects = &visRect;
-		xy_draw_rect = *rects;
+		visRect = [self visibleRect];
+		rects = visRect;
+		xy_draw_rect = rects;
 	}
 
 	
@@ -672,11 +681,11 @@ drawWire
 	c = [map_i count];
 	for (i=0 ; i<c ; i++)
 	{
-		ent = [map_i objectAt: i];
+		ent = [map_i objectAtIndex: i];
 		c2 = [ent count];
 		for (j = c2-1 ; j >=0 ; j--)
 		{
-			brush = [ent objectAt: j];
+			brush = [ent objectAtIndex: j];
 			if ( [brush selected] )
 				continue;
 			if ([brush regioned])
@@ -685,7 +694,7 @@ drawWire
 		}
 		if (i > 0 && drawnames)
 		{	// draw entity names
-			brush = [ent objectAt: 0];
+			brush = [ent objectAtIndex: 0];
 			if (![brush regioned])
 			{
 				[brush getMins: mins maxs: maxs];
@@ -703,7 +712,7 @@ drawWire
 	newrect.origin.y -= gridsize;
 	newrect.size.width += 2*gridsize;
 	newrect.size.height += 2*gridsize;
-	if (!NSEqualRect (&newrect, &realbounds))
+	if (!NSEqualRects (newrect, realbounds))
 		[self newRealBounds: &newrect];
 
 	return self;
@@ -717,10 +726,10 @@ drawSolid
 */
 - drawSolid
 {
-	unsigned char	*planes[5];
+	const unsigned char	*planes[5];
 	NSRect	visRect;
 
-	[self getVisibleRect:&visRect];
+	visRect = [self visibleRect];
 
 //
 // draw the image into imagebuffer
@@ -762,11 +771,11 @@ drawSolid
 // display the output
 //
 	[self lockFocus];
-	[[self window] setBackingType:NS_RETAINED];
+	[[self window] setBackingType:NSBackingStoreRetained];
 
 	planes[0] = (unsigned char *)r_picbuffer;
 	NSDrawBitmap(
-		&visRect,  
+		visRect,  
 		r_width, 
 		r_height,
 		8,
@@ -775,12 +784,12 @@ drawSolid
 		r_width*4,
 		NO,
 		NO,
-		NS_RGBColorSpace,
+		NSCalibratedRGBColorSpace,
 		planes
 	);
 	
-	NSPing ();
-	[[self window] setBackingType:NS_BUFFERED];
+	//NSPing ();
+	[[self window] setBackingType:NSBackingStoreBuffered];
 	[self unlockFocus];
 	
 	return self;
@@ -792,19 +801,20 @@ drawSelf
 ===================
 */
 NSRect	xy_draw_rect;
-- drawSelf:(const NSRect *)rects :(int)rectCount
+- drawSelf:(NSRect)rects :(int)rectCount
 {
 	static float	drawtime;	// static to shut up compiler warning
 
 	if (timedrawing)
 		drawtime = I_FloatTime ();
 
-	xy_draw_rect = *rects;
+	xy_draw_rect = rects;
 	newrect.origin.x = newrect.origin.y = 99999;
 	newrect.size.width = newrect.size.height = -2*99999;
 
 // setup for text
-	PSselectfont("Helvetica-Medium",10/scale);
+	//PSselectfont("Helvetica-Medium",10/scale);
+	GSSetFont (DEFCTXT, [NSFont fontWithName:@"Helvetica-Medium" size: 10/scale]);
 	PSrotate(0);
 
 	if (drawmode == dr_texture || drawmode == dr_flat)
@@ -814,7 +824,7 @@ NSRect	xy_draw_rect;
 	
 	if (timedrawing)
 	{
-		NSPing ();
+		//NSPing ();
 		drawtime = I_FloatTime() - drawtime;
 		printf ("CameraView drawtime: %5.3f\n", drawtime);
 	}
@@ -846,8 +856,8 @@ static	NSPoint		oldreletive;
 	NSPoint		startpt, newpt;
 	NSPoint		reletive, delta;
 
-	startpt = startevent->location;
-	[self convertPoint:&startpt  fromView:NULL];
+	startpt = [startevent locationInWindow];
+	startpt = [self convertPoint:startpt  fromView:NULL];
 	
 	oldreletive.x = oldreletive.y = 0;
 	
@@ -859,19 +869,25 @@ static	NSPoint		oldreletive;
 	
 	while (1)
 	{
-		event = [NSApp getNextEvent: NS_LMOUSEUPMASK | NS_LMOUSEDRAGGEDMASK
-			| NS_RMOUSEUPMASK | NS_RMOUSEDRAGGEDMASK | NS_APPDEFINEDMASK];
+		unsigned    eventMask = NSLeftMouseUpMask | NSLeftMouseDraggedMask
+								| NSRightMouseUpMask | NSRightMouseDraggedMask
+								| NSApplicationDefinedMask;
+		event = [NSApp nextEventMatchingMask: eventMask
+						 untilDate: [NSDate distantFuture]
+								  inMode: NSEventTrackingRunLoopMode
+									   dequeue: YES];
 
-		if (event->type == NS_LMOUSEUP || event->type == NS_RMOUSEUP)
+
+		if ([event type] == NSLeftMouseUp || [event type] == NSRightMouseUp)
 			break;
-		if (event->type == NS_APPDEFINED)
+		if ([event type] == NSApplicationDefined)
 		{	// doesn't work.  grrr.
-			[quakeed_i applicationDefined:event];
+			//[quakeed_i applicationDefined:event];
 			continue;
 		}
 		
-		newpt = event->location;
-		[self convertPoint:&newpt  fromView:NULL];
+		newpt = [event locationInWindow];
+		newpt = [self convertPoint:newpt  fromView:NULL];
 
 		if (ug)
 		{
@@ -929,8 +945,8 @@ void ScrollCallback (float dx, float dy)
 	NSPoint		neworg;
 	float		scale;
 	
-	[ [xyview_i superview] getBounds: &basebounds];
-	[xyview_i convertRectFromSuperview: &basebounds];
+	basebounds = [[xyview_i superview] bounds];
+	[xyview_i convertRect: basebounds fromView: [xyview_i superview]];
 
 	neworg.x = basebounds.origin.x - dx;
 	neworg.y = basebounds.origin.y - dy;
@@ -983,8 +999,8 @@ void DirectionCallback (float dx, float dy)
 
 	qprintf ("changing camera direction");
 
-	pt= theEvent->location;
-	[self convertPoint:&pt  fromView:NULL];
+	pt= [theEvent locationInWindow];
+	pt = [self convertPoint:pt  fromView:NULL];
 
 	direction[0] = pt.x;
 	direction[1] = pt.y;
@@ -1038,8 +1054,8 @@ void NewCallback (float dx, float dy)
 
 	qprintf ("sizing new brush");
 	
-	pt= theEvent->location;
-	[self convertPoint:&pt  fromView:NULL];
+	pt= [theEvent locationInWindow];
+	pt = [self convertPoint:pt  fromView:NULL];
 
 	neworg[0] = [self snapToGrid: pt.x];
 	neworg[1] = [self snapToGrid: pt.y];
@@ -1095,8 +1111,8 @@ void ControlCallback (float dx, float dy)
 	if ([map_i numSelected] != 1)
 		return NO;
 		
-	pt= theEvent->location;
-	[self convertPoint:&pt  fromView:NULL];
+	pt= [theEvent locationInWindow];
+	pt = [self convertPoint:pt  fromView:NULL];
 
 	dragpoint[0] = pt.x;
 	dragpoint[1] = pt.y;
@@ -1108,8 +1124,8 @@ void ControlCallback (float dx, float dy)
 	
 	qprintf ("dragging brush plane");
 	
-	pt= theEvent->location;
-	[self convertPoint:&pt  fromView:NULL];
+	pt= [theEvent locationInWindow];
+	pt = [self convertPoint:pt  fromView:NULL];
 
 	[self	dragFrom:	theEvent 
 			useGrid:	YES
@@ -1136,8 +1152,8 @@ void ControlCallback (float dx, float dy)
 		return NO;
 	br = [map_i selectedBrush];
 	
-	pt= theEvent->location;
-	[self convertPoint:&pt  fromView:NULL];
+	pt= [theEvent locationInWindow];
+	pt = [self convertPoint:pt  fromView:NULL];
 
 // if the XY point is inside the brush, make the point on top
 	p1[0] = pt.x;
@@ -1167,8 +1183,8 @@ void ControlCallback (float dx, float dy)
 	
 	qprintf ("dragging brush plane");
 	
-	pt= theEvent->location;
-	[self convertPoint:&pt  fromView:NULL];
+	pt= [theEvent locationInWindow];
+	pt = [self convertPoint:pt  fromView:NULL];
 
 	[self	dragFrom:	theEvent 
 			useGrid:	YES
@@ -1203,20 +1219,20 @@ mouseDown
 	vec3_t	p1, p2;
 	int		flags;
 	
-	pt= theEvent->location;
-	[self convertPoint:&pt  fromView:NULL];
+	pt= [theEvent locationInWindow];
+	pt = [self convertPoint:pt  fromView:NULL];
 
 	p1[0] = p2[0] = pt.x;
 	p1[1] = p2[1] = pt.y;
 	p1[2] = xy_viewnormal[2] * -4096;
 	p2[2] = xy_viewnormal[2] * 4096;
 
-	flags = theEvent->flags & (NS_SHIFTMASK | NS_CONTROLMASK | NS_ALTERNATEMASK | NS_COMMANDMASK);
+	flags = [theEvent modifierFlags] & (NSShiftKeyMask | NSControlKeyMask | NSAlternateKeyMask | NSCommandKeyMask);
 	
 //
 // shift click to select / deselect a brush from the world
 //
-	if (flags == NS_SHIFTMASK)
+	if (flags == NSShiftKeyMask)
 	{		
 		[map_i selectRay: p1 : p2 : YES];
 		return self;
@@ -1225,7 +1241,7 @@ mouseDown
 //
 // cmd-shift click to set a target/targetname entity connection
 //
-	if (flags == (NS_SHIFTMASK|NS_COMMANDMASK) )
+	if (flags == (NSShiftKeyMask|NSCommandKeyMask) )
 	{
 		[map_i entityConnect: p1 : p2];
 		return self;
@@ -1237,7 +1253,7 @@ mouseDown
 	if ( flags == 0 )
 	{
 	// if double click, position Z checker
-		if (theEvent->data.mouse.click > 1)
+		if ([theEvent clickCount] > 1)
 		{
 			qprintf ("positioned Z checker");
 			[zview_i setPoint: &pt];
@@ -1247,7 +1263,7 @@ mouseDown
 		}
 		
 	// check eye
-		if ( [cameraview_i XYmouseDown: &pt flags: theEvent->flags] )
+		if ( [cameraview_i XYmouseDown: &pt flags: [theEvent modifierFlags]] )
 			return self;		// camera move
 			
 	// check z post
@@ -1279,12 +1295,12 @@ mouseDown
 //
 // control click = position and drag camera 
 //
-	if (flags == NS_CONTROLMASK)
+	if (flags == NSControlKeyMask)
 	{
 		[cameraview_i setXYOrigin: &pt];
 		[quakeed_i newinstance];
 		[cameraview_i display];
-		[cameraview_i XYmouseDown: &pt flags: theEvent->flags];
+		[cameraview_i XYmouseDown: &pt flags: [theEvent modifierFlags]];
 		qprintf ("");
 		return self;
 	}
@@ -1292,7 +1308,7 @@ mouseDown
 //
 // command click = drag Z checker
 //
-	if (flags == NS_COMMANDMASK)
+	if (flags == NSCommandKeyMask)
 	{
 // check single plane dragging
 [self shearDragFrom: theEvent];
@@ -1309,7 +1325,7 @@ return self;
 //
 // alt click = set entire brush texture
 //
-	if (flags == NS_ALTERNATEMASK)
+	if (flags == NSAlternateKeyMask)
 	{
 		if (drawmode != dr_texture)
 		{
@@ -1325,7 +1341,7 @@ return self;
 //
 // ctrl-alt click = set single face texture
 //
-	if (flags == (NS_CONTROLMASK | NS_ALTERNATEMASK) )
+	if (flags == (NSControlKeyMask | NSAlternateKeyMask) )
 	{
 		if (drawmode != dr_texture)
 		{
@@ -1353,22 +1369,22 @@ rightMouseDown
 	NSPoint	pt;
 	int		flags;
 		
-	pt= theEvent->location;
-	[self convertPoint:&pt  fromView:NULL];
+	pt= [theEvent locationInWindow];
+	pt = [self convertPoint:pt  fromView:NULL];
 
-	flags = theEvent->flags & (NS_SHIFTMASK | NS_CONTROLMASK | NS_ALTERNATEMASK | NS_COMMANDMASK);
+	flags = [theEvent modifierFlags] & (NSShiftKeyMask | NSControlKeyMask | NSAlternateKeyMask | NSCommandKeyMask);
 
-	if (flags == NS_COMMANDMASK)
+	if (flags == NSCommandKeyMask)
 	{
 		return [self scrollDragFrom: theEvent];		
 	}
 
-	if (flags == NS_ALTERNATEMASK)
+	if (flags == NSAlternateKeyMask)
 	{
 		return [clipper_i XYClick: pt];
 	}
 	
-	if (flags == 0 || flags == NS_CONTROLMASK)
+	if (flags == 0 || flags == NSControlKeyMask)
 	{
 		return [self directionDragFrom: theEvent];
 	}

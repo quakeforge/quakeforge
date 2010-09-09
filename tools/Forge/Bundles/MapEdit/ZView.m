@@ -1,5 +1,10 @@
 
-#include "qedefs.h"
+#include "ZView.h"
+#include "ZScrollView.h"
+#include "QuakeEd.h"
+#include "Map.h"
+#include "XYView.h"
+#include "CameraView.h"
 
 id zview_i;
 
@@ -7,6 +12,8 @@ id zscrollview_i, zscalemenu_i, zscalebutton_i;
 
 float	zplane;
 float	zplanedir;
+
+extern NSBezierPath *path;
 
 @implementation ZView 
 
@@ -48,7 +55,7 @@ initWithFrame:
 
 // initialize the scroll view
 	zscrollview_i = [[ZScrollView alloc] 
-		initFrame: 		frameRect 
+		initWithFrame: 		frameRect 
 		button1: 		zscalebutton_i
 	];
 	[zscrollview_i setAutoresizingMask: NSViewWidthSizable | NSViewHeightSizable];
@@ -335,18 +342,18 @@ Rect is in global world (unscaled) coordinates
 		if (y<bottom)
 			y+= gridsize;
 			
-		beginUserPath (upath,NO);
+		[path removeAllPoints];
 		
 		for ( ; y<=stopy ; y+= gridsize)
 			if (y&31)
 			{
-				UPmoveto (upath, left, y);
-				UPlineto (upath, right, y);
+				[path moveToPoint: NSMakePoint (left, y)];
+				[path lineToPoint: NSMakePoint (right, y)];
 			}
 	
-		endUserPath (upath, dps_ustroke);
+		//endUserPath (upath, dps_ustroke);
 		PSsetrgbcolor (0.8,0.8,1.0);	// thin grid color
-		sendUserPath (upath);
+		[path stroke];
 	}
 
 //
@@ -362,17 +369,17 @@ Rect is in global world (unscaled) coordinates
 	if (stopy >= top)
 		stopy -= 32;
 	
-	beginUserPath (upath,NO);
+	[path removeAllPoints];
 	
 	for ( ; y<=stopy ; y+= 64)
 	{
-		UPmoveto (upath, left, y);
-		UPlineto (upath, right, y);
+		[path moveToPoint: NSMakePoint (left, y)];
+		[path lineToPoint: NSMakePoint (right, y)];
 	}
 
-	endUserPath (upath, dps_ustroke);
+	//endUserPath (upath, dps_ustroke);
 	PSsetgray (12.0/16.0);
-	sendUserPath (upath);
+	[path stroke];
 
 //
 // tiles
@@ -387,9 +394,9 @@ Rect is in global world (unscaled) coordinates
 	if (stopy >= top)
 		stopy -= 64;
 		
-	beginUserPath (upath,NO);
+	[path removeAllPoints];
 	PSsetgray (0);		// for text
-	PSselectfont("Helvetica-Medium",10/scale);
+	GSSetFont (DEFCTXT, [NSFont fontWithName:@"Helvetica-Medium" size: 10/scale]);
 	PSrotate(0);
 	
 	for ( ; y<=stopy ; y+= 64)
@@ -400,17 +407,17 @@ Rect is in global world (unscaled) coordinates
 			PSmoveto(left,y);
 			PSshow(text);
 		}
-		UPmoveto (upath, left+24, y);
-		UPlineto (upath, right, y);
+		[path moveToPoint: NSMakePoint (left + 24, y)];
+		[path lineToPoint: NSMakePoint (right, y)];
 	}
 
 // divider
-	UPmoveto (upath, 0, _bounds.origin.y);
-	UPlineto (upath, 0, _bounds.origin.y + _bounds.size.height);
+	[path moveToPoint: NSMakePoint (0, _bounds.origin.y)];
+	[path lineToPoint: NSMakePoint (0, _bounds.origin.y + _bounds.size.height)];
 	
-	endUserPath (upath, dps_ustroke);
+	//endUserPath (upath, dps_ustroke);
 	PSsetgray (10.0/16.0);
-	sendUserPath (upath);
+	[path stroke];
 
 //
 // origin
@@ -448,11 +455,11 @@ drawSelf
 	maxheight = -999999;
 
 // allways draw the entire bar	
-	[self getVisibleRect:&visRect];
+	visRect = [self visibleRect];
 	rects = &visRect;
 
 // erase window
-	NSEraseRect (&rects[0]);
+	NSEraseRect (rects[0]);
 	
 // draw grid
 	[self drawGrid: &rects[0]];
@@ -534,21 +541,27 @@ static	NSPoint		oldreletive;
 
 	gridsize = [xyview_i gridsize];
 	
-	startpt = startevent->location;
-	[self convertPoint:&startpt  fromView:NULL];
+	startpt = [startevent locationInWindow];
+	startpt = [self convertPoint:startpt  fromView:NULL];
 	
 	oldreletive.x = oldreletive.y = 0;
+	reletive.x = 0;
 	
 	while (1)
 	{
-		event = [NSApp getNextEvent: 
-			NSLeftMouseUpMask | NSLeftMouseDraggedMask
-			| NSRightMouseUpMask | NSRightMouseDraggedMask];
-		if (event->type == NSLeftMouseUp || event->type == NSRightMouseUp)
+		unsigned    eventMask = NSLeftMouseUpMask | NSLeftMouseDraggedMask
+								| NSRightMouseUpMask | NSRightMouseDraggedMask
+								| NSApplicationDefinedMask;
+		event = [NSApp nextEventMatchingMask: eventMask
+					 untilDate: [NSDate distantFuture]
+					   inMode: NSEventTrackingRunLoopMode
+						  dequeue: YES];
+
+		if ([event type] == NSLeftMouseUp || [event type] == NSRightMouseUp)
 			break;
 			
-		newpt = event->location;
-		[self convertPoint:&newpt  fromView:NULL];
+		newpt = [event locationInWindow];
+		newpt = [self convertPoint:newpt  fromView:NULL];
 
 		reletive.y = newpt.y - startpt.y;
 		
@@ -602,8 +615,8 @@ void ZScrollCallback (float dy)
 	NSPoint		neworg;
 	float		scale;
 	
-	[ [zview_i _super_view] getBounds: &basebounds];
-	[zview_i convertRectFromSuperview: &basebounds];
+	basebounds = [[zview_i superview] bounds];
+	basebounds = [zview_i convertRect: basebounds fromView: [zview_i superview]];
 
 	neworg.y = basebounds.origin.y - dy;
 	
@@ -644,8 +657,8 @@ void ZControlCallback (float dy)
 	if ([map_i numSelected] != 1)
 		return NO;
 
-	pt= theEvent->location;
-	[self convertPoint:&pt  fromView:NULL];
+	pt= [theEvent locationInWindow];
+	pt = [self convertPoint:pt  fromView:NULL];
 
 	dragpoint[0] = origin[0];
 	dragpoint[1] = origin[1];
@@ -657,8 +670,8 @@ void ZControlCallback (float dy)
 	
 	qprintf ("dragging brush plane");
 	
-	pt= theEvent->location;
-	[self convertPoint:&pt  fromView:NULL];
+	pt= [theEvent locationInWindow];
+	pt = [self convertPoint:pt  fromView:NULL];
 
 	[self	dragFrom:	theEvent 
 			useGrid:	YES
@@ -685,14 +698,14 @@ mouseDown
 	int		flags;
 	vec3_t	p1;
 	
-	pt= theEvent->location;
-	[self convertPoint:&pt  fromView:NULL];
+	pt= [theEvent locationInWindow];
+	pt = [self convertPoint:pt  fromView:NULL];
 
 	p1[0] = origin[0];
 	p1[1] = origin[1];
 	p1[2] = pt.y;
 	
-	flags = theEvent->flags & (NSShiftKeyMask | NSControlKeyMask | NSAlternateKeyMask | NSCommandKeyMask);
+	flags = [theEvent modifierFlags] & (NSShiftKeyMask | NSControlKeyMask | NSAlternateKeyMask | NSCommandKeyMask);
 
 //
 // shift click to select / deselect a brush from the world
@@ -719,7 +732,7 @@ mouseDown
 	{
 		[cameraview_i setZOrigin: pt.y];
 		[quakeed_i updateAll];
-		[cameraview_i ZmouseDown: &pt flags:theEvent->flags];
+		[cameraview_i ZmouseDown: &pt flags:[theEvent modifierFlags]];
 		return;
 	}
 
@@ -729,7 +742,7 @@ mouseDown
 	if ( flags == 0 )
 	{
 // check eye
-		if ( [cameraview_i ZmouseDown: &pt flags:theEvent->flags] )
+		if ( [cameraview_i ZmouseDown: &pt flags:[theEvent modifierFlags]] )
 			return;
 			
 		if ([map_i numSelected])
@@ -760,10 +773,10 @@ rightMouseDown
 	NSPoint	pt;
 	int		flags;
 		
-	pt= theEvent->location;
-	[self convertPoint:&pt  fromView:NULL];
+	pt= [theEvent locationInWindow];
+	pt = [self convertPoint:pt  fromView:NULL];
 
-	flags = theEvent->flags & (NSShiftKeyMask | NSControlKeyMask | NSAlternateKeyMask | NSCommandKeyMask);
+	flags = [theEvent modifierFlags] & (NSShiftKeyMask | NSControlKeyMask | NSAlternateKeyMask | NSCommandKeyMask);
 
 	
 //
@@ -808,13 +821,13 @@ modalMoveLoop
 //
 	goto drawentry;
 
-	while (event->type != NSLeftMouseUp)
+	while ([event type] != NSLeftMouseUp)
 	{
 		//
 		// calculate new point
 		//
-		newpt = event->location;
-		[converter convertPoint:&newpt  fromView:NULL];
+		newpt = [event locationInWindow];
+		newpt = [converter convertPoint:newpt  fromView:NULL];
 				
 		delta[0] = newpt.x-basept->x;
 		delta[1] = newpt.y-basept->y;
@@ -830,10 +843,12 @@ drawentry:
 		//
 		[quakeed_i newinstance];
 		[self display];
-		NSPing ();
 				
-		event = [NSApp getNextEvent: 
-			NSLeftMouseUpMask | NSLeftMouseDraggedMask];		
+		unsigned    eventMask = NSLeftMouseUpMask | NSLeftMouseDraggedMask;
+		event = [NSApp nextEventMatchingMask: eventMask
+					 untilDate: [NSDate distantFuture]
+					   inMode: NSEventTrackingRunLoopMode
+						  dequeue: YES];
 	}
 
 //

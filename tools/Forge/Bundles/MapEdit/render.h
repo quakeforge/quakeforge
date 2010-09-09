@@ -1,6 +1,10 @@
 #ifndef render_h
 #define render_h
 
+#include "SetBrush.h"
+
+typedef enum {dr_wire, dr_flat, dr_texture} drawmode_t;
+
 extern	int			r_width, r_height;
 extern	unsigned	*r_picbuffer;
 extern	float		*r_zbuffer;

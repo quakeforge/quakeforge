@@ -1,27 +1,28 @@
 #ifndef Entity_h
 #define Entity_h
 
-#define	MAX_KEY		64
-#define	MAX_VALUE	128
-typedef struct epair_s
-{
-	struct epair_s	*next;
-	char	key[MAX_KEY];
-	char	value[MAX_VALUE];
+#include <AppKit/AppKit.h>
+
+#include "QF/mathlib.h"
+
+typedef struct epair_s {
+	struct epair_s *next;
+	char       *key;
+	char       *value;
 } epair_t;
 
 // an Entity is a list of brush objects, with additional key / value info
 
-@interface Entity : NSObject <NSCopying, NSMutableCopying>
+@interface Entity : NSMutableArray
 {
 	epair_t	*epairs;
 	BOOL	modifiable;
 }
 
 - initClass: (char *)classname;
-- initFromTokens;
+- initFromScript: (struct script_s *) script;
 
-- free;
+- (void)dealloc;
 
 - (BOOL)modifiable;
 - setModifiable: (BOOL)m;
@@ -32,7 +33,7 @@ typedef struct epair_s
 
 - (char *)valueForQKey: (char *)k;
 - getVector: (vec3_t)v forKey: (char *)k;
-- setKey:(char *)k toValue:(char *)v;
+- setKey:(const char *)k toValue:(const char *)v;
 - (int)numPairs;
 - (epair_t *)epairs;
 - removeKeyPair: (char *)key;

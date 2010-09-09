@@ -1,6 +1,10 @@
 #ifndef Map_h
 #define Map_h
 
+#include <AppKit/AppKit.h>
+
+#include "QF/mathlib.h"
+
 // Map is a list of Entity objects
 
 extern	id	map_i;

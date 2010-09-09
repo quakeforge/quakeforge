@@ -1,6 +1,10 @@
 #ifndef TexturePalette_h
 #define TexturePalette_h
 
+#include <AppKit/AppKit.h>
+
+#include "QF/qtypes.h"
+
 typedef union
 {
 	byte		chan[4];

@@ -1,5 +1,4 @@
 
-#include "qedefs.h"
 
 
 char	token[MAXTOKEN];

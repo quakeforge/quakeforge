@@ -1,5 +1,14 @@
 
-#include "qedefs.h"
+#include "QF/dstring.h"
+#include "QF/script.h"
+#include "QF/sys.h"
+
+#include "Entity.h"
+#include "EntityClass.h"
+#include "TexturePalette.h"
+#include "SetBrush.h"
+#include "Map.h"
+#include "CameraView.h"
 
 @implementation Entity
 
@@ -15,13 +24,10 @@ vec3_t bad_maxs = {8, 8, 8};
 	
 // get class
 	new = [entity_classes_i classForName: [self valueForQKey: "classname"]];
-	if (new)
-	{
+	if (new) {
 		v = [new mins];
 		v2 = [new maxs];
-	}
-	else
-	{
+	} else {
 		v = bad_mins;
 		v2 = bad_maxs;
 	}
@@ -41,31 +47,6 @@ vec3_t bad_maxs = {8, 8, 8};
 	[self addObject: new];
 	
 	return self;
-}
-
-- copyWithZone:(NSZone *)zone
-{
-	id	new, nb;
-	epair_t	*e;
-	int	i;
-		
-	new = [[Entity alloc] init];
-	[new setModifiable: modifiable];
-	
-	for (e=epairs ; e ; e=e->next)
-	{	// don't copy target and targetname fields
-		if (strncmp(e->key,"target",6))
-			[new setKey: e->key toValue: e->value];
-	}
-
-	for (i=0 ; i<numElements ; i++)
-	{
-		nb = [[self objectAt: i] copy];
-		[nb setParent: new];
-		[new addObject: nb];
-	}
-	
-	return new;
 }
 
 - initClass: (char *)classname
@@ -108,16 +89,18 @@ vec3_t bad_maxs = {8, 8, 8};
 }
 
 
-- free
+- (void)dealloc
 {
 	epair_t	*e, *n;
 	
 	for (e=epairs ; e ; e=n)
 	{
 		n = e->next;
+		free (e->key);
+		free (e->value);
 		free (e);
 	}
-	return [super free];
+	[super dealloc];
 }
 
 - (BOOL)modifiable
@@ -131,19 +114,17 @@ vec3_t bad_maxs = {8, 8, 8};
 	return self;
 }
 
-- removeObject: o
+- (void)removeObject: o
 {
-	o = [super removeObject: o];
-	if (numElements)
-		return o;
+	[super removeObject: o];
+	if ([self count])
+		return;
 // the entity is empty, so remove the entire thing
-	if ( self == [map_i objectAt: 0])
-		return o;	// never remove the world
+	if ( self == [map_i objectAtIndex: 0])
+		return;	// never remove the world
 		
 	[map_i removeObject: self];
-	[self free];
-
-	return o;
+	[self release];
 }
 
 
@@ -184,33 +165,27 @@ vec3_t bad_maxs = {8, 8, 8};
 	return self;
 }
 
-- setKey:(char *)k toValue:(char *)v
+- setKey:(const char *)k toValue:(const char *)v
 {
 	epair_t	*e;
 
-	if (strlen(k) > MAX_KEY)
-		Error ("setKey: %s > MAX_KEY", k);
-	if (strlen(v) > MAX_VALUE)
-		Error ("setKey: %s > MAX_VALUE", v);
-		
 	while (*k && *k <= ' ')
 		k++;
 	if (!*k)
 		return self;	// don't set NULL values
 		
-	for (e=epairs ; e ; e=e->next)
-		if (!strcmp(k,e->key))
-		{
-			memset (e->value, 0, sizeof(e->value));
-			strcpy (e->value, v);
+	for (e=epairs ; e ; e=e->next) {
+		if (!strcmp (k, e->key)) {
+			free (e->value);
+			e->value = strdup (v);
 			return self;
 		}
+	}
 
 	e = malloc (sizeof(epair_t));
-	memset (e, 0, sizeof(epair_t));
-	
-	strcpy (e->key, k);
-	strcpy (e->value, v);
+
+	e->key = strdup (k);
+	e->value = strdup (v);
 	e->next = epairs;
 	epairs = e;
 	
@@ -287,7 +262,7 @@ If the entity does not have a "targetname" key, a unique one is generated
 	maxt = 0;
 	for (i=1 ; i<count ; i++)
 	{
-		ent = [map_i objectAt: i];
+		ent = [map_i objectAtIndex: i];
 		t = [ent valueForQKey: "targetname"];
 		if (!t || t[0] != 't')
 			continue;
@@ -313,9 +288,9 @@ FILE METHODS
 
 int	nument;
 
-- initFromTokens
+- initFromScript: (script_t *) script
 {
-	char	key[MAXTOKEN];
+	char        *key;
 	id		eclass, brush;
 	char	*spawn;
 	vec3_t	emins, emaxs;
@@ -327,31 +302,30 @@ int	nument;
 	
 	[self init];
 
-	if (!GetToken (true))
+	if (!Script_GetToken (script, true))
 	{
-		[self free];
+		[self dealloc];
 		return nil;
 	}
 
-	if (strcmp (token, "{") )
-		Error ("initFromFileP: { not found");
+	if (strcmp (Script_Token (script), "{") )
+		Sys_Error ("initFromFileP: { not found");
 		
-	do
-	{
-		if (!GetToken (true))
+	do {
+		if (!Script_GetToken (script, true))
 			break;
-		if (!strcmp (token, "}") )
+		if (!strcmp (Script_Token (script), "}") )
 			break;
-		if (!strcmp (token, "{") )
-		{	// read a brush
-			brush = [[SetBrush alloc] initFromTokens: self];
+		if (!strcmp (Script_Token (script), "{") ) {
+			// read a brush
+			brush = [[SetBrush alloc] initFromScript: script owner:self];
 			[self addObject: brush];
-		}
-		else
-		{	// read a key / value pair
-			strcpy (key, token);
-			GetToken (false);
-			[self setKey: key toValue:token];
+		} else {
+			// read a key / value pair
+			key = strdup (Script_Token (script));
+			Script_GetToken (script, false);
+			[self setKey: key toValue:Script_Token (script)];
+			free (key);
 		}
 	} while (1);
 	
@@ -368,7 +342,7 @@ int	nument;
 	if ([self count] && esize != esize_model)
 	{
 		printf ("WARNING:Entity with brushes and wrong model type\n"); 
-		[self empty];
+		[self removeAllObjects];
 	}
 	
 	if (![self count] && esize == esize_model)
@@ -397,7 +371,7 @@ int	nument;
 	c = [self count];
 	for (i=0 ; i<c ; i++)
 	{
-		brush = [self objectAt: i];
+		brush = [self objectAtIndex: i];
 		[brush setEntityColor: color];
 	}
 	
@@ -412,7 +386,7 @@ int	nument;
 	id		new;
 	char	value[80];
 	vec3_t	mins, maxs, org;
-	float	*v;
+	const vec_t *v;
 	BOOL	temporg;
 	char	oldang[80];
 	
@@ -426,8 +400,8 @@ int	nument;
 			sprintf (value, "%i", (int)([cameraview_i yawAngle]*180/M_PI));
 			[self setKey: "angle" toValue: value];
 		}
-		else if ( self != [map_i objectAt: 0] 
-		&& [[self objectAt: 0] regioned] )
+		else if ( self != [map_i objectAtIndex: 0] 
+		&& [[self objectAtIndex: 0] regioned] )
 			return self;	// skip the entire entity definition
 	}
 	
@@ -436,7 +410,7 @@ int	nument;
 // set an origin epair
 	if (!modifiable)
 	{
-		[[self objectAt: 0] getMins: mins maxs: maxs];
+		[[self objectAtIndex: 0] getMins: mins maxs: maxs];
 		if (temporg)
 		{
 			[cameraview_i getOrigin: mins];
@@ -462,8 +436,8 @@ int	nument;
 // fixed size entities don't save out brushes
 	if ( modifiable )
 	{
-		for (i=0 ; i<numElements ; i++)
-			[[self objectAt: i] writeToFILE: f region: reg];
+		for (i = 0 ; i < [self count]; i++)
+			[[self objectAtIndex: i] writeToFILE: f region: reg];
 	}
 	
 	fprintf (f,"}\n");

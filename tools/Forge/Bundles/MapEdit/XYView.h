@@ -2,8 +2,12 @@
 #define XYView_h
 
 #include <AppKit/AppKit.h>
-#include "mathlib.h"
+
+#include "QF/mathlib.h"
+
 #include "SetBrush.h"
+
+#include "render.h"
 
 extern	id xyview_i;
 
@@ -23,7 +27,6 @@ void linecolor (float r, float g, float b);
 void XYmoveto (vec3_t pt);
 void XYlineto (vec3_t pt);
 
-typedef enum {dr_wire, dr_flat, dr_texture} drawmode_t;
 
 
 @interface XYView :  NSView

@@ -12,7 +12,7 @@ MapEdit_RESOURCE_FILES= \
 	MapEdit.gorm
 
 MapEdit_OBJC_FILES=	\
-	CameraView.m Clipper.m EntityClass.m KeypairView.m PopScrollView.m ZView.m misc.m render.m
+	CameraView.m Clipper.m EntityClass.m KeypairView.m PopScrollView.m ZView.m render.m
 
 MapEdit_HEADERS= \
 	EntityClass.h

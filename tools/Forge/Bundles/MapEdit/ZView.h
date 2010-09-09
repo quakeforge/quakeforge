@@ -2,7 +2,10 @@
 #define ZView_h
 
 #include <AppKit/AppKit.h>
-#include "mathlib.h"
+
+#include "QF/mathlib.h"
+
+#include "render.h"
 
 extern	id zview_i;
 

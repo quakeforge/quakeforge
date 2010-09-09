@@ -1,7 +1,35 @@
+#include <dirent.h>
 
-#include "qedefs.h"
+#include "QF/dstring.h"
+#include "QF/quakeio.h"
+#include "QF/script.h"
+#include "QF/sys.h"
+#include "QF/va.h"
+
+#include "EntityClass.h"
 
 @implementation EntityClass
+
+static int
+parse_vector (script_t *script, vec3_t vec)
+{
+	int         r;
+
+	if (!Script_GetToken (script, 0))
+		return 0;
+	if (strcmp (script->token->str, "("))
+		return 0;
+
+	r = sscanf (script->p, "%f %f %f)", &vec[0], &vec[1], &vec[2]);
+	if (r != 3)
+		return 0;
+	
+	while (strcmp (script->token->str, ")")) {
+		if (!Script_GetToken (script, 0))
+			return 0;
+	}
+	return 1;
+}
 
 // the classname, color triple, and bounding box are parsed out of comments
 // A ? size means take the exact brush size.
@@ -13,89 +41,64 @@
 //
 // /*QUAKED func_door (0 .5 .8) ? START_OPEN STONE_SOUND DOOR_DONT_LINK GOLD_KEY SILVER_KEY
 
-char	*debugname;
-- initFromText: (char *)text
+- initFromText: (const char *)text source: (const char *)filename
 {
-	char	*t;
-	int		len;
-	int		r, i;
-	char	parms[256], *p;
+	const char *t;
+	size_t      len;
+	int         i;
+	script_t   *script;
 	
 	[super init];
 	
 	text += strlen("/*QUAKED ");
+
+	script = Script_New ();
+	Script_Start (script, filename, text);
+
+	// grab the name
+	if (!Script_GetToken (script, 0))
+		return 0;
+	if (!strcmp (script->token->str, "*/"))
+		return 0;
+	name = strdup (script->token->str);
+
+	// grab the color
+	if (!parse_vector (script, color))
+		return 0;
 	
-// grab the name
-	text = COM_Parse (text);
-	name = malloc (strlen(com_token)+1);
-	strcpy (name, com_token);
-	debugname = name;
-	
-// grab the color
-	r = sscanf (text," (%f %f %f)", &color[0], &color[1], &color[2]);
-	if (r != 3)
-		return NULL;
-	
-	while (*text != ')')
-	{
-		if (!*text)
-			return NULL;
-		text++;
-	}
-	text++;
-	
-// get the size	
-	text = COM_Parse (text);
-	if (com_token[0] == '(')
-	{	// parse the size as two vectors
+	// get the size	
+	if (!strcmp (script->token->str, "(")) {
+		Script_UngetToken (script);
+		if (!parse_vector (script, mins))
+			return 0;
+		if (!parse_vector (script, maxs))
+			return 0;
 		esize = esize_fixed;
-		r = sscanf (text,"%f %f %f) (%f %f %f)", &mins[0], &mins[1], &mins[2], &maxs[0], &maxs[1], &maxs[2]);
-		if (r != 6)
-			return NULL;
-
-		for (i=0 ; i<2 ; i++)
-		{
-			while (*text != ')')
-			{
-				if (!*text)
-					return NULL;
-				text++;
-			}
-			text++;
-		}
-	}
-	else
-	{	// use the brushes
+	} else if (!strcmp (script->token->str, "?")) {
+		// use the brushes
 		esize = esize_model;
+	} else {
+		return 0;
 	}
 	
-// get the flags
-	
-
-// copy to the first /n
-	p = parms;
-	while (*text && *text != '\n')
-		*p++ = *text++;
-	*p = 0;
-	text++;
-	
-// any remaining words are parm flags
-	p = parms;
-	for (i=0 ; i<8 ; i++)
-	{
-		p = COM_Parse (p);
-		if (!p)
+	// get the flags
+	// any remaining words on the line are parm flags
+	for (i = 0; i < MAX_FLAGS; i++) {
+		if (!Script_TokenAvailable (script, 0))
 			break;
-		strcpy (flagnames[i], com_token);
-	} 
+		Script_GetToken (script, 0);
+		flagnames[i] = strdup (script->token->str);
+	}
+	while (Script_TokenAvailable (script, 0))
+		Script_GetToken (script, 0);
 
 // find the length until close comment
-	for (t=text ; t[0] && !(t[0]=='*' && t[1]=='/') ; t++)
-	;
+	for (t = script->p; t[0] && !(t[0] == '*' && t[1] == '/'); t++)
+		;
 	
 // copy the comment block out
-	len = t-text;
-	comments = malloc (len+1);
+	len = t - text;
+	comments = malloc (len + 1);
 	memcpy (comments, text, len);
 	comments[len] = 0;
 	
@@ -136,7 +139,7 @@ char	*debugname;
 - (char *)flagName: (unsigned)flagnum
 {
 	if (flagnum >= MAX_FLAGS)
-		Error ("EntityClass flagName: bad number");
+		Sys_Error ("EntityClass flagName: bad number");
 	return flagnames[flagnum];
 }
 
@@ -176,26 +179,36 @@ scanFile
 */
 - (void)scanFile: (char *)filename
 {
-	int		size;
+	int		size, line;
 	char	*data;
 	id		cl;
 	int		i;
 	char	path[1024];
-	
+	QFile  *file;
+
 	sprintf (path,"%s/%s", source_path, filename);
-	
-	size = LoadFile (path, (void *)&data);
-	
-	for (i=0 ; i<size ; i++)
-		if (!strncmp(data+i, "/*QUAKED",8))
-		{
-			cl = [[EntityClass alloc] initFromText: data+i];
+
+	file = Qopen (path, "rt");
+	if (!file)
+		return;
+	size = Qfilesize (file);
+	data = malloc (size + 1);
+	size = Qread (file, data, size);
+	data[size] = 0;
+	Qclose (file);
+
+	line = 1;
+	for (i=0 ; i<size ; i++) {
+		if (!strncmp(data+i, "/*QUAKED",8)) {
+			cl = [[EntityClass alloc] initFromText: (data + i)
+					source: va ("%s:%d", filename, line)];
 			if (cl)
 				[self insertEC: cl];
-			else
-				printf ("Error parsing: %s in %s\n",debugname, filename);
+		} else if (data[i] == '\n') {
+			line++;
 		}
-		
+	}
+
 	free (data);
 }
 
@@ -208,7 +221,7 @@ scanDirectory
 - (void)scanDirectory
 {
 	int		count, i;
-	struct direct **namelist, *ent;
+	struct dirent **namelist, *ent;
 	
 	[self removeAllObjects];
 	
@@ -239,8 +252,9 @@ id	entity_classes_i;
 	
 	entity_classes_i = self;
 	
-	nullclass = [[EntityClass alloc] initFromText:
-"/*QUAKED UNKNOWN_CLASS (0 0.5 0) ?"];
+	nullclass = [[EntityClass alloc]
+				 initFromText: "/*QUAKED UNKNOWN_CLASS (0 0.5 0) ?*/"
+				 source: va ("%s:%d", __FILE__, __LINE__ - 1)];
 
 	return self;
 }

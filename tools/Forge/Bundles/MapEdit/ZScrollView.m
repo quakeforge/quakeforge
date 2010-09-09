@@ -1,4 +1,4 @@
-#include "qedefs.h"
+#include "ZScrollView.h"
 
 @implementation ZScrollView
 
@@ -10,7 +10,7 @@ Initizes a scroll view with a button at it's lower right corner
 ====================
 */
 
-- initWithFrame:(const NSRect *)frameRect button1:b1
+- initWithFrame:(NSRect)frameRect button1:b1
 {
 	[super  initWithFrame: frameRect];	
 
@@ -18,10 +18,10 @@ Initizes a scroll view with a button at it's lower right corner
 
 	button1 = b1;
 
-	[self setHorizScrollerRequired: YES];
-	[self setVertScrollerRequired: YES];
+	[self setHasHorizontalScroller: YES];
+	[self setHasVerticalScroller: YES];
 
-	[self setBorderType: NS_BEZEL];
+	[self setBorderType: NSBezelBorder];
 		
 	return self;
 }
@@ -40,11 +40,11 @@ Adjust the size for the pop up scale menu
 	NSRect	scrollerframe;
 	
 	[super tile];
-	[_horizScroller getFrame: &scrollerframe];
-	[button1 setFrame: &scrollerframe];
+	scrollerframe = [_horizScroller frame];
+	[button1 setFrame: scrollerframe];
 	
 	scrollerframe.size.width = 0;
-	[_horizScroller setFrame: &scrollerframe];
+	[_horizScroller setFrame: scrollerframe];
 
 	return self;
 }
@@ -55,16 +55,16 @@ Adjust the size for the pop up scale menu
 {
     return YES;
 }
-
+/*
 - superviewSizeChanged:(const NSSize *)oldSize
 {
 	[super superviewSizeChanged: oldSize];
 	
-	[[self docView] newSuperBounds];
+	[[self documentView] newSuperBounds];
 	
 	return self;
 }
-
+*/
 
 
 @end

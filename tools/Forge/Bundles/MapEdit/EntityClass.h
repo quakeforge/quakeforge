@@ -2,7 +2,8 @@
 #define EntityClass_h
 
 #include <AppKit/AppKit.h>
-#include "mathlib.h"
+
+#include "QF/mathlib.h"
 
 typedef enum {esize_model, esize_fixed} esize_t;
 
@@ -15,10 +16,10 @@ typedef enum {esize_model, esize_fixed} esize_t;
 	vec3_t	mins, maxs;
 	vec3_t	color;
 	char	*comments;
-	char	flagnames[MAX_FLAGS][32];
+	char	*flagnames[MAX_FLAGS];
 }
 
-- initFromText: (char *)text;
+- initFromText: (const char *)text source: (const char *)filename;
 - (char *)classname;
 - (esize_t)esize;
 - (float *)mins;		// only for esize_fixed

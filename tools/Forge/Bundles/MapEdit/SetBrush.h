@@ -1,9 +1,13 @@
 #ifndef SetBrush_h
 #define SetBrush_h
 
-#define		MAX_FACES		16
+#include <AppKit/AppKit.h>
 
-typedef float	vec5_t[5];
+#include "QF/mathlib.h"
+
+#include "TexturePalette.h"
+
+#define		MAX_FACES		16
 
 typedef struct
 {
@@ -61,7 +65,7 @@ winding_t *NewWinding (int points);
 }
 
 - initOwner: own mins:(float *)mins maxs:(float *)maxs texture:(texturedef_t *)tex;
-- initFromTokens: own;
+- initFromScript: (struct script_s *) script owner: own;
 - setMins:(float *)mins maxs:(float *)maxs;
 
 - parent;

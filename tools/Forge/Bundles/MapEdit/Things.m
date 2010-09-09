@@ -1,5 +1,10 @@
 
-#include "qedefs.h"
+#include "Things.h"
+#include "QuakeEd.h"
+#include "Map.h"
+#include "EntityClass.h"
+#include "KeypairView.h"
+#include "Project.h"
 
 id	things_i;
 
@@ -21,7 +26,7 @@ id	things_i;
 - loadEntityComment:(id)obj
 {
 	[entity_comment_i selectAll:self];
-	[entity_comment_i replaceSel:[obj comments]];
+	[entity_comment_i replaceCharactersInRange:[entity_comment_i selectedRange] withString:[NSString stringWithCString:[obj comments]]];
 
 	return self;
 }
@@ -33,13 +38,13 @@ id	things_i;
 
 	path = [project_i getProgDirectory];
 
-	[prog_path_i setStringValue: path];
+	[prog_path_i setStringValue: [NSString stringWithCString:path]];
 	
 	[[EntityClassList alloc] initForSourceDirectory: path];
 
-	[self loadEntityComment:[entity_classes_i objectAt:lastSelected]];
+	[self loadEntityComment:[entity_classes_i objectAtIndex:lastSelected]];
 	[entity_browser_i loadColumnZero];
-	[[entity_browser_i matrixInColumn:0] selectCellAt:lastSelected :0];
+	[[entity_browser_i matrixInColumn:0] selectCellAtRow:lastSelected column:0];
 
 	[entity_browser_i setDoubleAction: @selector(doubleClickEntity:)];
 	
@@ -52,7 +57,7 @@ id	things_i;
 	
 	matr = [sender matrixInColumn: 0];
 	lastSelected = [matr selectedRow];
-	[self loadEntityComment:[entity_classes_i objectAt:lastSelected]];
+	[self loadEntityComment:[entity_classes_i objectAtIndex:lastSelected]];
 	[quakeed_i makeFirstResponder: quakeed_i];
 	
 	return self;
@@ -67,7 +72,7 @@ id	things_i;
 
 - (char *)spawnName
 {
-	return [[entity_classes_i objectAt:lastSelected] classname];
+	return [[entity_classes_i objectAtIndex:lastSelected] classname];
 }
 
 
@@ -83,22 +88,22 @@ id	things_i;
 	if (!path || !path[0])
 	{
 		path = [project_i getProgDirectory];
-		[prog_path_i setStringValue: path];
+		[prog_path_i setStringValue: [NSString stringWithCString:path]];
 	}
 	
 	//	Free all entity info in memory...
-	[entity_classes_i freeObjects];
-	[entity_classes_i free];
+	[entity_classes_i removeAllObjects];
+	[entity_classes_i release];
 	
 	//	Now, RELOAD!
 	[[EntityClassList alloc] initForSourceDirectory: path];
 
 	lastSelected = 0;
-	ent = [entity_classes_i objectAt:lastSelected];
-	[self loadEntityComment:[entity_classes_i objectAt:lastSelected]];
+	ent = [entity_classes_i objectAtIndex:lastSelected];
+	[self loadEntityComment:[entity_classes_i objectAtIndex:lastSelected]];
 
 	[entity_browser_i loadColumnZero];
-	[[entity_browser_i matrixInColumn:0] selectCellAt:lastSelected :0];
+	[[entity_browser_i matrixInColumn:0] selectCellAtRow:lastSelected column:0];
 
 	[self newCurrentEntity];	// in case flags changed
 	
@@ -113,14 +118,14 @@ id	things_i;
 	classent = [entity_classes_i classForName:class];
 	if (!classent)
 		return self;
-	lastSelected = [entity_classes_i indexOf: classent];
+	lastSelected = [entity_classes_i indexOfObject: classent];
 	
 	if (lastSelected < 0)
 		lastSelected = 0;
 		
 	[self loadEntityComment:classent];
-	[[entity_browser_i matrixInColumn:0] selectCellAt:lastSelected :0];
-	[[entity_browser_i matrixInColumn:0] scrollCellToVisible:lastSelected :0];
+	[[entity_browser_i matrixInColumn:0] selectCellAtRow:lastSelected column:0];
+	[[entity_browser_i matrixInColumn:0] scrollCellToVisibleAtRow:lastSelected column:0];
 
 	return self;
 }
@@ -136,7 +141,7 @@ id	things_i;
 	
 	ent = [map_i currentEntity];
 	classname = [ent valueForQKey: "classname"];
-	if (ent != [map_i objectAt: 0])
+	if (ent != [map_i objectAtIndex: 0])
 		[self selectClass: classname];	// don't reset for world
 	classent = [entity_classes_i classForName:classname];
 	flagname = [ent valueForQKey: "spawnflags"];
@@ -149,11 +154,11 @@ id	things_i;
 	for (r=0 ; r<4 ; r++)
 		for (c=0 ; c<3 ; c++)
 		{
-			cell = [flags_i cellAt: r : c];
+			cell = [flags_i cellAtRow: r column: c];
 			if (c < 2)
 			{
 				flagname = [classent flagName: c*4 + r];
-				[cell setTitle: flagname];
+				[cell setTitle: [NSString stringWithCString:flagname]];
 			}
 			[cell setIntValue: (flags & (1<< ((c*4)+r)) ) > 0];
 		}
@@ -175,8 +180,8 @@ id	things_i;
 //
 - setSelectedKey:(epair_t *)ep;
 {
-	[keyInput_i setStringValue:ep->key];
-	[valueInput_i setStringValue:ep->value];
+	[keyInput_i setStringValue:[NSString stringWithCString:ep->key]];
+	[valueInput_i setStringValue:[NSString stringWithCString:ep->value]];
 	[valueInput_i	selectText:self];
 	return self;
 }
@@ -237,7 +242,7 @@ id	things_i;
 	const char *title;
 	char	value[10];
 	
-	title = [[sender selectedCell] title];
+	title = [[[sender selectedCell] title] cString];
 	if (!strcmp(title,"Up"))
 		strcpy (value, "-1");
 	else if (!strcmp(title,"Dn"))
@@ -245,8 +250,8 @@ id	things_i;
 	else
 		strcpy (value, title);
 	
-	[keyInput_i setStringValue:"angle"];
-	[valueInput_i setStringValue:value];
+	[keyInput_i setStringValue:@"angle"];
+	[valueInput_i setStringValue:[NSString stringWithCString:value]];
 	[self addPair:NULL];
 	
 	[self clearInputs];
@@ -269,7 +274,7 @@ id	things_i;
 	for (r=0 ; r<4 ; r++)
 		for (c=0 ; c<3 ; c++)
 		{
-			cell = [flags_i cellAt: r : c];
+			cell = [flags_i cellAtRow: r column: c];
 			i = ([cell intValue] > 0);
 			flags |= (i<< ((c*4)+r));
 		}
@@ -304,10 +309,10 @@ id	things_i;
 	i = 0;
 	while(max--)
 	{
-		object = [entity_classes_i objectAt:i];
+		object = [entity_classes_i objectAtIndex:i];
 		[matrix addRow];
-		cell = [matrix cellAt:i++ :0];
-		[cell setStringValue:[object classname]];
+		cell = [matrix cellAtRow:i++ column:0];
+		[cell setStringValue:[NSString stringWithCString:[object classname]]];
 		[cell setLeaf:YES];
 		[cell setLoaded:YES];
 	}
