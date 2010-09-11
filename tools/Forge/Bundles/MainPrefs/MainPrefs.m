@@ -38,6 +38,7 @@ static const char rcsid[] =
 #include <Foundation/NSPathUtilities.h>
 #include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSValue.h>
+#include <Foundation/NSDictionary.h>
 
 #include <AppKit/NSButton.h>
 #include <AppKit/NSImage.h>
