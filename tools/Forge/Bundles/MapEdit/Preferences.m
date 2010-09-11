@@ -1,3 +1,4 @@
+#include "QF/sys.h"
 
 #include "Preferences.h"
 #include "Map.h"
@@ -341,7 +342,7 @@ Grab all the current UI state
 */
 -UIChanged:sender
 {
-	qprintf ("defaults updated");
+	Sys_Printf ("defaults updated");
 
 	[self setProjectPath:(char *)[startproject_i stringValue]];
 	[self setBspSoundPath:(char *)[bspSoundField_i stringValue]];
