@@ -3,15 +3,13 @@
 
 #include <AppKit/AppKit.h>
 
-@interface TextureView:NSView
-{
-	id	parent_i;
-	int	deselectIndex;
+@ interface TextureView:NSView {
+	id          parent_i;
+	int         deselectIndex;
 }
 
-- setParent:(id)from;
-- deselect;
+-setParent:(id) from;
+-deselect;
 
 @end
-
-#endif//TextureView_h
+#endif // TextureView_h

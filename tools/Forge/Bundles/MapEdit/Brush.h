@@ -5,54 +5,52 @@
 #include "SetBrush.h"
 #include "EditWindow.h"
 
-extern	id	brush_i;
+extern id   brush_i;
 
-extern	BOOL	brushdraw;			// YES when drawing cutbrushes and ents
+extern BOOL brushdraw;					// YES when drawing cutbrushes and ents
 
-@interface Brush : SetBrush
-{
-	id			cutbrushes_i;
-	id			cutentities_i;
-	boolean		updatemask[MAXBRUSHVERTEX];
-	BOOL		dontdraw;				// for modal instance loops	
-	BOOL		deleted;				// when not visible at all	
+@interface Brush:SetBrush {
+	id          cutbrushes_i;
+	id          cutentities_i;
+	boolean     updatemask[MAXBRUSHVERTEX];
+	BOOL        dontdraw;				// for modal instance loops 
+	BOOL        deleted;				// when not visible at all 
 }
 
-- init;
+-init;
 
-- initFromSetBrush: br;
+-initFromSetBrush:br;
 
-- deselect;
-- (BOOL)isSelected;
+-deselect;
+-(BOOL) isSelected;
 
-- (BOOL)XYmouseDown: (NSPoint *)pt;		// return YES if brush handled
-- (BOOL)ZmouseDown: (NSPoint *)pt;		// return YES if brush handled
+-(BOOL) XYmouseDown:(NSPoint *) pt;	// return YES if brush handled
+-(BOOL) ZmouseDown:(NSPoint *) pt;		// return YES if brush handled
 
-- _keyDown:(NSEvent *)theEvent;
+-_keyDown:(NSEvent *) theEvent;
 
-- (NSPoint)centerPoint;						// for camera flyby mode
+-(NSPoint) centerPoint;					// for camera flyby mode
 
-- InstanceSize;
-- XYDrawSelf;
-- ZDrawSelf;
-- CameraDrawSelf;
+-InstanceSize;
+-XYDrawSelf;
+-ZDrawSelf;
+-CameraDrawSelf;
 
-- flipHorizontal: sender;
-- flipVertical: sender;
-- rotate90: sender;
+-flipHorizontal:sender;
+-flipVertical:sender;
+-rotate90:sender;
 
-- makeTall: sender;
-- makeShort: sender;
-- makeWide: sender;
-- makeNarrow: sender;
+-makeTall:sender;
+-makeShort:sender;
+-makeWide:sender;
+-makeNarrow:sender;
 
-- placeEntity: sender;
+-placeEntity:sender;
 
-- cut: sender;
-- copy: sender;
+-cut:sender;
+-copy:sender;
 
-- addBrush;
+-addBrush;
 
 @end
-
 #define Brush_h

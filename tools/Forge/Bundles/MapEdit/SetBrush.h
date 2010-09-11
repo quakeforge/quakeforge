@@ -9,31 +9,28 @@
 
 #define		MAX_FACES		16
 
-typedef struct
-{
-	int		numpoints;
-	vec5_t	points[8];			// variable sized
+typedef struct {
+	int         numpoints;
+	vec5_t      points[8];				// variable sized
 } winding_t;
 
 #define MAX_POINTS_ON_WINDING	64
 
-typedef struct
-{
-	vec3_t		normal;
-	float		dist;
+typedef struct {
+	vec3_t      normal;
+	float       dist;
 } plane_t;
 
-typedef struct
-{
+typedef struct {
 // implicit rep
-	vec3_t			planepts[3];
-	texturedef_t	texture;
+	vec3_t      planepts[3];
+	texturedef_t texture;
 
 // cached rep
-	plane_t			plane;
-	qtexture_t		*qtexture;
-	float			light;		// 0 - 1.0
-	winding_t		*w;
+	plane_t     plane;
+	qtexture_t *qtexture;
+	float       light;					// 0 - 1.0
+	winding_t  *w;
 } face_t;
 
 #define	ON_EPSILON		0.1
@@ -45,120 +42,167 @@ typedef struct
 #define	SIDE_ON			2
 
 
-winding_t *ClipWinding (winding_t *in, plane_t *split);
-winding_t	*CopyWinding (winding_t *w);
-winding_t *NewWinding (int points);
+winding_t  *ClipWinding (winding_t * in, plane_t *split);
+winding_t  *CopyWinding (winding_t * w);
+winding_t  *NewWinding (int points);
 
 
-@interface SetBrush : NSObject
-{
-	BOOL		regioned;		// not active
-	BOOL		selected;
+@interface SetBrush:NSObject {
+	BOOL        regioned;				// not active
+	BOOL        selected;
 
-	BOOL		invalid;		// not a proper polyhedron
+	BOOL        invalid;				// not a proper polyhedron
 
-	id			parent;			// the entity this brush is in
-	vec3_t		bmins, bmaxs;
-	vec3_t		entitycolor;
-	int			numfaces;
-	face_t		faces[MAX_FACES];
+	id          parent;					// the entity this brush is in
+	vec3_t      bmins, bmaxs;
+	vec3_t      entitycolor;
+	int         numfaces;
+	face_t      faces[MAX_FACES];
 }
 
-- initOwner: own mins:(float *)mins maxs:(float *)maxs texture:(texturedef_t *)tex;
-- initFromScript: (struct script_s *) script owner: own;
-- setMins:(float *)mins maxs:(float *)maxs;
+-initOwner: own mins:(float *)
+mins
+maxs:(float *)
+maxs
+texture:(texturedef_t *)
+	tex;
 
-- parent;
-- setParent: (id)p;
+-initFromScript:(struct script_s *)
+script
+	owner:
+	own;
 
-- setEntityColor: (vec3_t)color;
+-setMins:(float *)
+mins
+maxs:(float *)
+	maxs;
 
-- calcWindings;
+-parent;
+-setParent:(id) p;
 
-- writeToFILE: (FILE *)f region: (BOOL)reg;
+-setEntityColor:(vec3_t) color;
 
-- (BOOL)selected;
-- (BOOL)regioned;
-- setSelected: (BOOL)s;
-- setRegioned: (BOOL)s;
+-calcWindings;
 
-- getMins: (vec3_t)mins maxs: (vec3_t)maxs;
+-writeToFILE:(FILE *)
+f
+region:(BOOL)
+	reg;
 
-- (BOOL)containsPoint: (vec3_t)pt;
+-(BOOL) selected;
+-(BOOL) regioned;
+-setSelected:(BOOL) s;
+-setRegioned:(BOOL) s;
 
-- freeWindings;
-- removeIfInvalid;
+-getMins:(vec3_t)
+mins
+maxs:(vec3_t)
+	maxs;
 
-extern	vec3_t	region_min, region_max;
-- newRegion;
+-(BOOL) containsPoint:(vec3_t) pt;
 
-- (texturedef_t *)texturedef;
-- (texturedef_t *)texturedefForFace: (int)f;
-- setTexturedef: (texturedef_t *)tex;
-- setTexturedef: (texturedef_t *)tex forFace:(int)f;
+-freeWindings;
+-removeIfInvalid;
 
-- XYDrawSelf;
-- ZDrawSelf;
-- CameraDrawSelf;
-- XYRenderSelf;
-- CameraRenderSelf;
+extern vec3_t
+	region_min,
+	region_max;
 
-- hitByRay: (vec3_t)p1 : (vec3_t) p2 : (float *)time : (int *)face;
+-newRegion;
+
+-(texturedef_t *) texturedef;
+-(texturedef_t *) texturedefForFace:(int) f;
+-setTexturedef:(texturedef_t *) tex;
+-setTexturedef:(texturedef_t *)
+tex
+forFace:(int)
+	f;
+
+-XYDrawSelf;
+-ZDrawSelf;
+-CameraDrawSelf;
+-XYRenderSelf;
+-CameraRenderSelf;
+
+-hitByRay: (vec3_t) p1: (vec3_t) p2: (float *) time:(int *) face;
 
 //
 // single brush actions
 //
-extern	int		numcontrolpoints;
-extern	float	*controlpoints[MAX_FACES*3];
-- getZdragface: (vec3_t)dragpoint;
-- getXYdragface: (vec3_t)dragpoint;
-- getXYShearPoints: (vec3_t)dragpoint;
+extern int
+	numcontrolpoints;
+extern float *
+	controlpoints[MAX_FACES * 3];
 
-- addFace: (face_t *)f;
+-getZdragface:(vec3_t) dragpoint;
+-getXYdragface:(vec3_t) dragpoint;
+-getXYShearPoints:(vec3_t) dragpoint;
+
+-addFace:(face_t *) f;
 
 //
 // multiple brush actions
 //
-- carveByClipper;
+-carveByClipper;
 
-extern	vec3_t	sb_translate;
-- translate;
+extern vec3_t
+	sb_translate;
 
-extern	id		carve_in, carve_out;
-- select;
-- deselect;
-- remove;
-- flushTextures;
+-translate;
 
-extern	vec3_t	sb_mins, sb_maxs;
-- addToBBox;
+extern id
+	carve_in,
+	carve_out;
 
-extern	vec3_t	sel_x, sel_y, sel_z;
-extern	vec3_t	sel_org;
-- transform;
+-select;
+-deselect;
+-remove;
+-flushTextures;
 
-- flipNormals;
+extern vec3_t
+	sb_mins,
+	sb_maxs;
 
-- carve;
-- setCarveVars;
+-addToBBox;
 
-extern	id	sb_newowner;
-- moveToEntity;
+extern vec3_t
+	sel_x,
+	sel_y,
+	sel_z;
+extern vec3_t
+	sel_org;
 
-- takeCurrentTexture;
+-transform;
 
-extern	vec3_t	select_min, select_max;
-- selectPartial;
-- selectComplete;
-- regionPartial;
-- regionComplete;
+-flipNormals;
 
-extern	float	sb_floor_dir, sb_floor_dist;
-- feetToFloor;
+-carve;
+-setCarveVars;
 
-- (int) getNumBrushFaces;
-- (face_t *)getBrushFace: (int)which;
+extern id
+	sb_newowner;
+
+-moveToEntity;
+
+-takeCurrentTexture;
+
+extern vec3_t
+	select_min,
+	select_max;
+
+-selectPartial;
+-selectComplete;
+-regionPartial;
+-regionComplete;
+
+extern float
+	sb_floor_dir,
+	sb_floor_dist;
+
+-feetToFloor;
+
+-(int) getNumBrushFaces;
+-(face_t *) getBrushFace:(int) which;
 
 @end
-
-#endif//SetBrush_h
+#endif // SetBrush_h

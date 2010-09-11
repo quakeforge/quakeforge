@@ -13,31 +13,34 @@ typedef struct epair_s {
 
 // an Entity is a list of brush objects, with additional key / value info
 
-@interface Entity : NSMutableArray
-{
-	epair_t	*epairs;
-	BOOL	modifiable;
+@interface Entity:NSMutableArray {
+	epair_t    *epairs;
+	BOOL        modifiable;
 }
 
-- initClass: (char *)classname;
-- initFromScript: (struct script_s *) script;
+-initClass:(char *) classname;
+-initFromScript:(struct script_s *) script;
 
-- (void)dealloc;
+-(void) dealloc;
 
-- (BOOL)modifiable;
-- setModifiable: (BOOL)m;
+-(BOOL) modifiable;
+-setModifiable:(BOOL) m;
 
-- (char *)targetname;
+-(char *) targetname;
 
-- writeToFILE: (FILE *)f region:(BOOL)reg;
+-writeToFILE:(FILE *)
+f           region:(BOOL) reg;
 
-- (char *)valueForQKey: (char *)k;
-- getVector: (vec3_t)v forKey: (char *)k;
-- setKey:(const char *)k toValue:(const char *)v;
-- (int)numPairs;
-- (epair_t *)epairs;
-- removeKeyPair: (char *)key;
+-(char *) valueForQKey:(char *) k;
+-getVector:(vec3_t)
+v           forKey:(char *) k;
+
+-setKey:(const char *)
+k           toValue:(const char *) v;
+
+-(int) numPairs;
+-(epair_t *) epairs;
+-removeKeyPair:(char *) key;
 
 @end
-
-#endif//Entity_h
+#endif // Entity_h

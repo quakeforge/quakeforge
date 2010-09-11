@@ -7,42 +7,41 @@
 
 #include "render.h"
 
-extern	id zview_i;
+extern id   zview_i;
 
 // zplane controls the objects displayed in the xyview
-extern	float	zplane;
-extern	float	zplanedir;
+extern float zplane;
+extern float zplanedir;
 
-@interface ZView :  NSView
-{
-	float		minheight, maxheight;
-	float		oldminheight, oldmaxheight;
-	float		topbound, bottombound;		// for floor clipping
-	
-	float		scale;
-	
-	vec3_t		origin;
+@interface ZView:NSView {
+	float       minheight, maxheight;
+	float       oldminheight, oldmaxheight;
+	float       topbound, bottombound;	// for floor clipping
+
+	float       scale;
+
+	vec3_t      origin;
 }
 
-- clearBounds;
-- getBounds: (float *)top :(float *)bottom;
+-clearBounds;
+-getBounds: (float *) top:(float *) bottom;
 
-- getPoint: (NSPoint *)pt;
-- setPoint: (NSPoint *)pt;
+-getPoint:(NSPoint *) pt;
+-setPoint:(NSPoint *) pt;
 
-- addToHeightRange: (float)height;
+-addToHeightRange:(float) height;
 
-- newRealBounds;
-- newSuperBounds;
+-newRealBounds;
+-newSuperBounds;
 
-- XYDrawSelf;
+-XYDrawSelf;
 
-- (BOOL)XYmouseDown: (NSPoint *)pt;
+-(BOOL) XYmouseDown:(NSPoint *) pt;
 
-- setXYOrigin: (NSPoint *)pt;
+-setXYOrigin:(NSPoint *) pt;
 
-- setOrigin: (NSPoint *)pt scale: (float)sc;
+-setOrigin:(NSPoint *)
+pt          scale:(float) sc;
 
 @end
-
-#endif//ZView_h
+#endif // ZView_h
