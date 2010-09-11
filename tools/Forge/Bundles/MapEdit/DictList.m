@@ -1,5 +1,6 @@
 
-#include "qedefs.h"
+#include "DictList.h"
+#include "Dict.h"
 
 @implementation DictList
 
@@ -17,7 +18,7 @@
 		if (d != NULL)
 			[self addObject:d];
 	} while(d != NULL);
-	[d free];
+	[d release];
 	
 	return self;
 }
@@ -37,9 +38,9 @@
 		
 	fprintf(fp,"// Object List written by QuakeEd\n");
 
-	for (i = 0;i < maxElements;i++)
+	for (i = 0;i < [self count];i++)
 	{
-		obj = [self objectAt:i];
+		obj = [self objectAtIndex:i];
 		[obj writeBlockTo:fp];
 	}
 	fclose(fp);
@@ -56,9 +57,9 @@
 	dict_t	*d;
 	id		dict;
 
-	for (i = 0;i < maxElements;i++)
+	for (i = 0;i < [self count];i++)
 	{
-		dict = [self objectAt:i];
+		dict = [self objectAtIndex:i];
 		d = [(Dict *)dict findKeyword:key];
 		if (d != NULL)
 			return dict;

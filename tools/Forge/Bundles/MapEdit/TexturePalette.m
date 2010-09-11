@@ -1,6 +1,17 @@
+#include <unistd.h>
+
 #include "QF/qendian.h"
+#include "QF/quakeio.h"
+#include "QF/sys.h"
 
 #include "TexturePalette.h"
+#include "Preferences.h"
+#include "Map.h"
+#include "Entity.h"
+#include "QuakeEd.h"
+#include "SetBrush.h"
+
+#include "Storage.h"
 
 id	texturepalette_i;
 
@@ -101,18 +112,18 @@ void TEX_ImageFromMiptex (miptex_t *qtex)
 	height = LittleLong(qtex->height);
 
 	bm = [[NSBitmapImageRep alloc]	
-			initData:		NULL 
+			initWithBitmapDataPlanes:		NULL 
 			pixelsWide:		width 
 			pixelsHigh:		height 
 			bitsPerSample:	8 
 			samplesPerPixel:3 
 			hasAlpha:		NO
 			isPlanar:		NO 
-			colorSpace:		NS_RGBColorSpace 
+			colorSpaceName:	NSCalibratedRGBColorSpace 
 			bytesPerRow:	width*4 
 			bitsPerPixel:	32];
 	
-	dest = (unsigned *)[bm data];
+	dest = (unsigned *)[bm bitmapData];
 	count = width*height;
 	source = (byte *)qtex + LittleLong(qtex->offsets[0]);
 	
@@ -176,6 +187,8 @@ void	TEX_InitFromWad (char *path)
 	lumpinfo_t	*lumpinfo;
 	int			numlumps;
 	float		start, stop;
+	QFile      *file;
+	size_t      size;
 	
 	start = I_FloatTime ();
 	
@@ -185,21 +198,25 @@ void	TEX_InitFromWad (char *path)
 	
 // free any textures
 	for (i=0 ; i<tex_count ; i++)
-		[qtextures[i].rep free];
+		[qtextures[i].rep release];
 	tex_count = 0;
 
 // try and use the cached wadfile	
 	sprintf (local, "/qcache%s", newpath);	
 
-	Sys_UpdateFile (local, newpath);
-	
-	LoadFile (local, (void **)&wadfile);
+	//Sys_UpdateFile (local, newpath);
+	//FIXME use wad functions
+	file = Qopen (local, "rb");
+	size = Qfilesize (file);
+	wadfile = malloc (size);
+	Qread (file, wadfile, size);
+	Qclose (file);
 	wadinfo = (wadinfo_t *)wadfile;
 	
-	if (strncmp (wadfile, "WAD2", 4))
+	if (strncmp ((char *)wadfile, "WAD2", 4))
 	{
 		unlink (local);
-		Error ("TEX_InitFromWad: %s isn't a wadfile", newpath);
+		Sys_Error ("TEX_InitFromWad: %s isn't a wadfile", newpath);
 	}
 	
 	numlumps = LittleLong (wadinfo->numlumps);
@@ -208,7 +225,7 @@ void	TEX_InitFromWad (char *path)
 	if (strcmp (lumpinfo->name, "PALETTE"))
 	{
 		unlink (local);
-		Error ("TEX_InitFromWad: %s doesn't have palette as 0",path);
+		Sys_Error ("TEX_InitFromWad: %s doesn't have palette as 0",path);
 	}
 	
 	TEX_InitPalette (wadfile + LittleLong(lumpinfo->filepos));
@@ -217,8 +234,8 @@ void	TEX_InitFromWad (char *path)
 	for (i=1 ; i<numlumps ; i++, lumpinfo++)
 	{
 		if (lumpinfo->type != TYP_MIPTEX)
-			Error ("TEX_InitFromWad: %s is not a miptex!",lumpinfo->name);
-		CleanupName (lumpinfo->name,qtextures[tex_count].name);
+			Sys_Error ("TEX_InitFromWad: %s is not a miptex!",lumpinfo->name);
+		//XXX CleanupName (lumpinfo->name,qtextures[tex_count].name);
 		TEX_ImageFromMiptex ( (miptex_t *)(wadfile + 
 			LittleLong(lumpinfo->filepos) ));
 	}
@@ -237,11 +254,11 @@ TEX_NumForName
 */
 qtexture_t *TEX_ForName (char *name)
 {
-	char	newname[16];
+	//XXX char	newname[16];
 	int		i;
 	qtexture_t	*q;
 	
-	CleanupName (name, newname);
+	//XXX CleanupName (name, newname);
 	
 	for (i=0,q = qtextures ; i< tex_count ; i++, q++)
 	{
@@ -266,10 +283,9 @@ qtexture_t *TEX_ForName (char *name)
 	return self;
 }
 
-- display
+- (void)display
 {
 	[[textureView_i superview] display];
-	return self;
 }
 
 
@@ -384,7 +400,7 @@ qtexture_t *TEX_ForName (char *name)
 	x = TEX_INDENT;
 
 	view = [textureView_i superview];
-	[view getBounds:&b];
+	b = [view bounds];
 	maxwidth = b.size.width;
 
 	for (i = 0;i < max; i++)
@@ -407,9 +423,9 @@ qtexture_t *TEX_ForName (char *name)
 
 	viewWidth = maxwidth;
 	viewHeight = y + TEX_SPACING;
-	[textureView_i sizeTo:viewWidth :viewHeight];
+	[textureView_i setBoundsSize:NSMakeSize (viewWidth, viewHeight)];
 	pt.x = pt.y = 0;
-	[textureView_i scrollPoint:&pt];
+	[textureView_i scrollPoint:pt];
 
 	return self;
 }
@@ -471,11 +487,11 @@ qtexture_t *TEX_ForName (char *name)
 		r.size.height += TEX_INDENT*2;
 		r.origin.x -= TEX_INDENT;
 		r.origin.y -= TEX_INDENT;
-		[textureView_i scrollRectToVisible:&r];
+		[textureView_i scrollRectToVisible:r];
 		[textureView_i display];
 		sprintf(string,"%d x %d",(int)t->r.size.width,
 			(int)t->r.size.height - TEX_SPACING);
-		[sizeField_i setStringValue:string];
+		[sizeField_i setStringValue:[NSString stringWithCString:string]];
 	}
 
 	[self texturedefChanged:self];
@@ -528,7 +544,7 @@ qtexture_t *TEX_ForName (char *name)
 	int		max;
 	
 	max = [textureList_i count];
-	CleanupName(name,name);
+	//XXX CleanupName(name,name);
 	for (i = 0;i < max;i++)
 	{
 		t = [textureList_i elementAt:i];
@@ -556,7 +572,7 @@ qtexture_t *TEX_ForName (char *name)
 	int		i;
 	int		max;
 	int		len;
-	char	name[32];
+	char	name[32], *n;
 	texpal_t	*t;
 	
 	if (selectedTexture == -1)
@@ -564,7 +580,9 @@ qtexture_t *TEX_ForName (char *name)
 
 	max = [textureList_i count];
 	strcpy(name,(const char *)[sender stringValue]);
-	[sender setStringValue:strupr(name)];
+	for (n = name; *n; n++)
+		*n = toupper (*n);
+	[sender setStringValue:[NSString stringWithCString:name]];
 	len = strlen(name);
 	
 	for (i = selectedTexture-1;i >= 0; i--)
@@ -779,11 +797,11 @@ qtexture_t *TEX_ForName (char *name)
 		for (i = 0;i < max; i++)
 			[self setDisplayFlag:i to:0];
 
-		brushes = [map_i objectAt:0];
+		brushes = [map_i objectAtIndex:0];
 		max = [brushes count];
 		for (i = 0;i < max; i++)
 		{
-			b = (SetBrush *)[brushes objectAt:i];
+			b = (SetBrush *)[brushes objectAtIndex:i];
 			numfaces = [b getNumBrushFaces];
 			for (j = 0; j < numfaces; j++)
 			{

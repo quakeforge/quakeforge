@@ -1,5 +1,9 @@
 
-#include "qedefs.h"
+#include "KeypairView.h"
+#include "TextureView.h"
+#include "TexturePalette.h"
+
+#include "Storage.h"
 
 /*
 
@@ -40,10 +44,10 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 	
 	selected = [parent_i getSelectedTexture];
 	list_i = [parent_i getList];
-	PSselectfont("Helvetica-Medium",FONTSIZE);
+	GSSetFont (DEFCTXT, [NSFont fontWithName:@"Helvetica-Medium" size:FONTSIZE]);
 	PSrotate(0);
 	
-	PSsetgray(NS_LTGRAY);
+	PSsetgray(NSLightGray);
 	PSrectfill(rects->origin.x, rects->origin.y, 
 		rects->size.width, rects->size.height);
 
@@ -59,12 +63,12 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 		r.size.width += TEX_INDENT*2;
 		r.size.height += TEX_INDENT*2;
 		
-		PSsetgray(NSGrayComponent(NS_COLORLTGRAY));
+		//XXX PSsetgray(NSGrayComponent(NS_COLORLTGRAY));
 		PSrectfill(r.origin.x, r.origin.y,
 			r.size.width, r.size.height);
 		p = t->r.origin;
 		p.y += TEX_SPACING;
-		[t->image drawAt:&p];
+		[t->image drawAtPoint:p fromRect:r operation:NSCompositeCopy fraction:1.0];
 		PSsetgray(0);
 		x = t->r.origin.x;
 		y = t->r.origin.y + 7;
@@ -84,7 +88,7 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 		r.origin.x -= TEX_INDENT/2;
 		r.size.width += TEX_INDENT;
 		r.origin.y += 4;
-		if (NSIntersectsRect(&rects[0],&r) == YES &&
+		if (NSIntersectsRect(rects[0],r) == YES &&
 			t->display)
 		{
 			if (selected == i)
@@ -100,7 +104,7 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 			
 			p = t->r.origin;
 			p.y += TEX_SPACING;
-			[t->image drawAt:&p];
+			[t->image drawAtPoint:p fromRect:r operation:NSCompositeCopy fraction:1.0];
 			x = t->r.origin.x;
 			y = t->r.origin.y + 7;
 			PSmoveto(x,y);
@@ -122,14 +126,14 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 	NSPoint	loc;
 	int		i;
 	int		max;
-	int		oldwindowmask;
+	//int		oldwindowmask;
 	texpal_t *t;
 	id		list;
 	NSRect	r;
 
-	oldwindowmask = [window addToEventMask:NS_LMOUSEDRAGGEDMASK];
-	loc = theEvent->location;
-	[self convertPoint:&loc	fromView:NULL];
+	//oldwindowmask = [window addToEventMask:NSLeftMouseDraggedMask];
+	loc = [theEvent locationInWindow];
+	[self convertPoint:loc	fromView:NULL];
 	
 	list = [parent_i getList];
 	max = [list count];
@@ -137,7 +141,7 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 	{
 		t = [list elementAt:i];
 		r = t->r;
-		if (NSPointInRect(&loc,&r) == YES)
+		if (NSPointInRect(loc,r) == YES)
 		{
 			[self deselect]; 
 			[parent_i	setSelectedTexture:i];
@@ -145,7 +149,7 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 		}
 	}
 	
-	[window	setEventMask:oldwindowmask];
+	//[window	setEventMask:oldwindowmask];
 	return self;
 }
 

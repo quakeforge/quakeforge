@@ -1,9 +1,9 @@
 #ifndef DictList_h
-#endif DictList_h
+#define DictList_h
 
 #include <AppKit/AppKit.h>
 
-@interface DictList:List
+@interface DictList:NSMutableArray
 {
 }
 

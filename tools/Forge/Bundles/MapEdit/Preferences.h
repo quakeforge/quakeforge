@@ -1,6 +1,8 @@
 #ifndef Preferences_h
 #define Preferences_h
 
+#include <AppKit/AppKit.h>
+
 extern	id	preferences_i;
 
 extern	float		lightaxis[3];

@@ -3,6 +3,8 @@
 
 #include <AppKit/AppKit.h>
 
+#include "Storage.h"
+
 typedef struct
 {
 	char	*key;

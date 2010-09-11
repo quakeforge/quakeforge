@@ -1,5 +1,5 @@
 
-#include "qedefs.h"
+#include "Dict.h"
 
 @implementation Dict
 
@@ -31,14 +31,14 @@ copyFromZone
 JDC
 ===========
 */
-- copyFromZone:(NSZone *)zone
+- copy
 {
 	id	new;
 	int	i;
 	dict_t	*d;
 	char	*old;
 	
-	new = [super copyFromZone: zone];
+	new = [super copy];
 	for (i=0 ; i<numElements ; i++)
 	{
 		d = [self elementAt: i];
@@ -202,7 +202,7 @@ JDC
 	
 	temp = [self parseMultipleFrom:key];
 	count = [temp count];
-	[temp free];
+	[temp release];
 	
 	return count;
 }
@@ -270,7 +270,7 @@ JDC
 			[temp removeElementAt:i];
 			free(d->value);
 			d->value = [self convertListToString:temp];
-			[temp free];
+			[temp release];
 			
 			break;
 		}

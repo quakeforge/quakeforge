@@ -1,6 +1,8 @@
 #ifndef TextureView_h
 #define TextureView_h
 
+#include <AppKit/AppKit.h>
+
 @interface TextureView:NSView
 {
 	id	parent_i;

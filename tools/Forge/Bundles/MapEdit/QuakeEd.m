@@ -1,9 +1,25 @@
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
+
+#include "QF/quakeio.h"
 
 #include "QuakeEd.h"
+#include "Clipper.h"
+#include "XYView.h"
+#include "Map.h"
+#include "CameraView.h"
+#include "ZView.h"
+#include "Preferences.h"
+#include "InspectorControl.h"
+#include "Project.h"
 
 id	quakeed_i;
 id	entclasses_i;
 
+extern NSBezierPath *path;
 id	g_cmd_out_i;
 
 BOOL	autodirty;
@@ -36,30 +52,18 @@ void My_Malloc_Error (int code)
 	write (1, "malloc error!\n", strlen("malloc error!\n")+1);
 }
 
-/*
-===============
-AutoSave
-
-Every five minutes, save a modified map
-===============
-*/
-void AutoSave(DPSTimedEntry tag, double now, void *userData)
-{
-// automatic backup
-	if (autodirty)
-	{
-		autodirty = NO;
-		[map_i writeMapFile: FN_AUTOSAVE useRegion: NO];
-	}
-	[map_i writeStats];
-}
-
-
+#define        FN_CMDOUT               "/tmp/QuakeEdCmd.txt"
 void DisplayCmdOutput (void)
 {
 	char	*buffer;
+	QFile      *file;
+	int         size;
 
-	LoadFile (FN_CMDOUT, (void **)&buffer);
+	file = Qopen (FN_CMDOUT, "rt");
+	size = Qfilesize (file);
+	buffer = malloc (size + 1);
+	size = Qread (file, buffer, size);
+	Qclose (file);
 	unlink (FN_CMDOUT);
 	[project_i addToOutput:buffer];
 	free (buffer);
@@ -69,7 +73,6 @@ void DisplayCmdOutput (void)
 
 	[preferences_i playBspSound];		
 	
-	NSPing ();
 }
 
 /*
@@ -79,8 +82,8 @@ CheckCmdDone
 See if the BSP is done
 ===============
 */
-DPSTimedEntry	cmdte;
-void CheckCmdDone(DPSTimedEntry tag, double now, void *userData)
+//DPSTimedEntry	cmdte;
+void CheckCmdDone(/*DPSTimedEntry tag,*/ double now, void *userData)
 {
     union wait statusp;
     struct rusage rusage;
@@ -89,7 +92,7 @@ void CheckCmdDone(DPSTimedEntry tag, double now, void *userData)
 		return;
 	DisplayCmdOutput ();
 	bsppid = 0;
-	DPSRemoveTimedEntry( cmdte );	
+//	DPSRemoveTimedEntry( cmdte );	
 }
 
 //============================================================================
@@ -98,40 +101,62 @@ void CheckCmdDone(DPSTimedEntry tag, double now, void *userData)
 
 /*
 ===============
+AutoSave
+
+Every five minutes, save a modified map
+===============
+*/
+-(void) AutoSave
+{
+// automatic backup
+	if (autodirty)
+	{
+		autodirty = NO;
+		#define FN_AUTOSAVE "/qcache/AutoSaveMap.map"
+		[map_i writeMapFile: FN_AUTOSAVE useRegion: NO];
+	}
+	[map_i writeStats];
+}
+
+/*
+===============
 init
 ===============
 */
-- initContent:(const NSRect *)contentRect
+- initContent:(NSRect)contentRect
 style:(int)aStyle
 backing:(int)backingType
 buttonMask:(int)mask
 defer:(BOOL)flag
 {
-	[super initContent:contentRect
-		style:aStyle
+	[super initWithContentRect:contentRect
+		styleMask:aStyle
 		backing:backingType
-		buttonMask:mask
 		defer:flag];
 
-	[self addToEventMask:
-		NS_RMOUSEDRAGGEDMASK|NS_LMOUSEDRAGGEDMASK];	
+	//XXX [self addToEventMask:
+	//XXX 	NSRightMouseDragged|NSLeftMouseDragged];	
 	
-    malloc_error(My_Malloc_Error);
+    //XXX malloc_error(My_Malloc_Error);
 	
 	quakeed_i = self;
 	dirty = autodirty = NO;
 
-	DPSAddTimedEntry(5*60, AutoSave, self, NS_BASETHRESHOLD);
+	[NSTimer timerWithTimeInterval: 5 * 60
+			target: self
+			selector: @selector(AutoSave)
+			userInfo: nil
+			repeats: YES];
 
-	upath = newUserPath ();
+	path = [NSBezierPath new];
 
 	return self;
 }
-
+#define FN_TEMPSAVE "/qcache/temp.map"
 - setDefaultFilename
 {	
 	strcpy (filename, FN_TEMPSAVE);
-	[self setTitleAsFilename:filename];
+	[self setTitleWithRepresentedFilename:[NSString stringWithCString:filename]];
 	
 	return self;
 }
@@ -160,15 +185,22 @@ BOOL	updatecamera;
 
 void postappdefined (void)
 {
-	NSEvent ev;
+	NSEvent *ev;
 
 	if (updateinflight)
 		return;
 			
 // post an event at the end of the que
-	ev.type = NS_APPDEFINED;
-	if (DPSPostEvent(&ev, 0) == -1)
-		printf ("WARNING: DPSPostEvent: full\n");
+	ev = [NSEvent otherEventWithType: NSApplicationDefined
+			location: NSZeroPoint
+			modifierFlags: 0
+			timestamp: [[NSDate date] timeIntervalSinceReferenceDate]
+			windowNumber: 0
+			context: [NSApp context]
+			subtype: 0
+			data1: 0
+			data2: 0];	
+	[NSApp postEvent: ev atStart: NO];
 //printf ("posted\n");
 	updateinflight = YES;
 }
@@ -237,44 +269,44 @@ instance draw the brush after each flush
 {
 	[super flushWindow];
 	
-	if (!running || in_error)
+	if (!running)
 		return self;		// don't lock focus before nib is finished loading
 		
-	if (_flushDisabled)
-		return self;
+	//if (_flushDisabled)
+	//	return self;
 		
 	[cameraview_i lockFocus];	
 	if (clearinstance)
 	{
-		PSnewinstance ();
+		//XXX PSnewinstance ();
 		clearinstance = NO;
 	}
 
-	PSsetinstance (1);
+	//XXX PSsetinstance (1);
 	linestart (0,0,0);
 	[map_i makeSelectedPerform: @selector(CameraDrawSelf)];
 	[clipper_i cameraDrawSelf];
 	lineflush ();
-	PSsetinstance (0);
+	//XXX PSsetinstance (0);
 	[cameraview_i unlockFocus];	
 
 	[xyview_i lockFocus];
-	PSsetinstance (1);
+	//XXX PSsetinstance (1);
 	linestart (0,0,0);
 	[map_i makeSelectedPerform: @selector(XYDrawSelf)];
 	lineflush ();
 	[cameraview_i XYDrawSelf];
 	[zview_i XYDrawSelf];
 	[clipper_i XYDrawSelf];
-	PSsetinstance (0);
+	//XXX PSsetinstance (0);
 	[xyview_i unlockFocus];
 
 	[zview_i lockFocus];
-	PSsetinstance (1);
+	//XXX PSsetinstance (1);
 	[map_i makeSelectedPerform: @selector(ZDrawSelf)];
 	[cameraview_i ZDrawSelf];
 	[clipper_i ZDrawSelf];
-	PSsetinstance (0);
+	//XXX PSsetinstance (0);
 	[zview_i unlockFocus];
 
 	return self;
@@ -291,14 +323,17 @@ App delegate methods
 
 - applicationDefined:(NSEvent *)theEvent
 {
-	NSEvent		ev, *evp;
+	NSEvent    *evp;
 	
 	updateinflight = NO;
 
 //printf ("serviced\n");
 	
 // update screen	
-	evp = [NSApp peekNextEvent:-1 into:&ev];
+	evp = [NSApp nextEventMatchingMask: NSAnyEventMask
+							 untilDate: [NSDate distantPast]
+								inMode: NSEventTrackingRunLoopMode
+							   dequeue: NO];
 	if (evp)
 	{
 		postappdefined();
@@ -322,7 +357,7 @@ App delegate methods
 
 	updatecamera = updatexy = updatez = NO;
 
-	[self reenableFlushWindow];
+	[self enableFlushWindow];
 	[self flushWindow];
 	
 //	NSPing ();
@@ -332,8 +367,8 @@ App delegate methods
 
 - appDidInit:sender
 {
-	NSScreen	const *screens;
-	int			screencount;
+	NSArray    *screens;
+	NSScreen   *scrn;
 	
 	running = YES;
 	g_cmd_out_i = cmd_out_i;	// for qprintf
@@ -345,14 +380,16 @@ App delegate methods
 											// scrollview and can't be
 											// connected directly in IB
 	
-	[self setFrameAutosaveName:"EditorWinFrame"];
+	[self setFrameAutosaveName:@"EditorWinFrame"];
 	[self clear: self];
 
 // go to my second monitor
-	[NSApp getScreens:&screens count:&screencount];
-	if (screencount == 2)
-		[self moveTopLeftTo:0 : screens[1].screenBounds.size.height
-		screen:screens+1];
+	screens = [NSScreen screens];
+	if ([screens count] == 2) {
+		scrn = [screens objectAtIndex: 1];
+		//XXX [self moveTopLeftTo:0 : [scrn frame].size.height
+		//XXX screen:scrn];
+	}
 	
 	[self makeKeyAndOrderFront: self];
 
@@ -379,7 +416,7 @@ App delegate methods
 {
 	char	const *t;
 	
-	t = [sender stringValue];
+	t = [[sender stringValue] cString];
 	
 	if (!strcmp (t, "texname"))
 	{
@@ -425,7 +462,7 @@ App delegate methods
 {
 	NSRect	sbounds;
 	
-	[[xyview_i _super_view] getBounds: &sbounds];
+	sbounds = [[xyview_i superview] bounds];
 	
 	sbounds.origin.x += sbounds.size.width/2;
 	sbounds.origin.y += sbounds.size.height/2;
@@ -440,7 +477,7 @@ App delegate methods
 {
 	NSRect	sbounds;
 	
-	[[xyview_i _super_view] getBounds: &sbounds];
+	sbounds = [[xyview_i superview] bounds];
 	
 	sbounds.origin.x += sbounds.size.width/2;
 	sbounds.origin.y += sbounds.size.height/2;
@@ -529,7 +566,7 @@ applyRegion:
 	NSRect	bounds;
 	
 // get xy size
-	[[xyview_i _super_view] getBounds: &bounds];
+	bounds = [[xyview_i superview] bounds];
 
 	region_min[0] = bounds.origin.x;
 	region_min[1] = bounds.origin.y;
@@ -624,7 +661,7 @@ saveBSP
 	if ([regionbutton_i intValue])
 	{
 		strcpy (mappath, filename);
-		StripExtension (mappath);
+		//XXX StripExtension (mappath);
 		strcat (mappath, ".reg");
 		[map_i writeMapFile: mappath useRegion: YES];
 		wt = YES;		// allways pop the dialog on region ops
@@ -646,7 +683,7 @@ saveBSP
 
 	strcpy (bsppath, destdir);
 	strcat (bsppath, "/");
-	ExtractFileBase (mappath, bsppath + strlen(bsppath));
+	//XXX ExtractFileBase (mappath, bsppath + strlen(bsppath));
 	strcat (bsppath, ".bsp");
 	
 	ExpandCommand (cmdline, expandedcmd, mappath, bsppath);
@@ -666,16 +703,16 @@ saveBSP
 	{
 		id		panel;
 		
-		panel = NSGetAlertPanel("BSP In Progress",expandedcmd,NULL,NULL,NULL);
+		panel = NSGetAlertPanel(@"BSP In Progress",[NSString stringWithCString:expandedcmd],NULL,NULL,NULL);
 		[panel makeKeyAndOrderFront:NULL];
 		system(expandedcmd);
-		NSFreeAlertPanel(panel);
+		[panel release];
 		[self makeKeyAndOrderFront:NULL];
 		DisplayCmdOutput ();
 	}
 	else
 	{
-		cmdte = DPSAddTimedEntry(1, CheckCmdDone, self, NS_BASETHRESHOLD);
+		//cmdte = DPSAddTimedEntry(1, CheckCmdDone, self, NS_BASETHRESHOLD);
 		if (! (bsppid = fork ()) )
 		{
 			system (expandedcmd);
@@ -726,7 +763,7 @@ saveBSP
 	}
 	
 	kill (bsppid, 9);
-	CheckCmdDone (cmdte, 0, NULL);
+	//CheckCmdDone (cmdte, 0, NULL);
 	[project_i addToOutput: "\n\n========= STOPPED =========\n\n"];
 	
 	return self;
@@ -748,7 +785,7 @@ Called by open or the project panel
 	[map_i readMapFile:filename];
 	
 	[regionbutton_i setIntValue: 0];
-	[self setTitleAsFilename:fname];
+	[self setTitleWithRepresentedFilename:[NSString stringWithCString:fname]];
 	[self updateAll];
 
 	qprintf ("%s loaded\n", fname);
@@ -765,17 +802,17 @@ open
 - open: sender;
 {
 	id			openpanel;
-	static char	*suffixlist[] = {"map", 0};
+	NSString   *suffixlist[] = {@"map"};
 
-	openpanel = [OpenPanel new];
+	openpanel = [NSOpenPanel new];
 
 	if ( [openpanel 
-			runModalForDirectory: [project_i getMapDirectory] 
-			file: ""
-			types: suffixlist] != NS_OKTAG)
+			runModalForDirectory: [NSString stringWithCString:[project_i getMapDirectory]]
+			file: @""
+			types: [NSArray arrayWithObjects:suffixlist count:1]] != NSOKButton)
 		return self;
 
-	[self doOpen: (char *)[openpanel filename]];
+	[self doOpen: (char *)[[openpanel filename] cString]];
 	
 	return self;
 }
@@ -797,7 +834,7 @@ save:
 	dirty = autodirty = NO;
 
 	strcpy (backup, filename);
-	StripExtension (backup);
+	//XXX StripExtension (backup);
 	strcat (backup, ".bak");
 	rename (filename, backup);		// copy old to .bak
 
@@ -817,15 +854,15 @@ saveAs
 	id		panel_i;
 	char	dir[1024];
 	
-	panel_i = [SavePanel new];
-	ExtractFileBase (filename, dir);
-	[panel_i setRequiredFileType: "map"];
-	if ( [panel_i runModalForDirectory:[project_i getMapDirectory] file: dir] != NS_OKTAG)
+	panel_i = [NSSavePanel new];
+	//XXX ExtractFileBase (filename, dir);
+	[panel_i setRequiredFileType: @"map"];
+	if ( [panel_i runModalForDirectory:[NSString stringWithCString:[project_i getMapDirectory]] file: [NSString stringWithCString:dir]] != NSOKButton)
 		return self;
 	
-	strcpy (filename, [panel_i filename]);
+	strcpy (filename, [[panel_i filename] cString]);
 	
-	[self setTitleAsFilename:filename];
+	[self setTitleWithRepresentedFilename:[NSString stringWithCString:filename]];
 	
 	[self save: self];	
 	
@@ -855,7 +892,7 @@ saveAs
 	if ([clipper_i hide])	// first click hides only the clipper
 		return [self updateAll];
 
-	[map_i setCurrentEntity: [map_i objectAt: 0]];	// make world selected
+	[map_i setCurrentEntity: [map_i objectAtIndex: 0]];	// make world selected
 	[map_i makeSelectedPerform: @selector(deselect)];
 	[self updateAll];
 	
@@ -879,7 +916,7 @@ keyDown
     int		ch;
 	
 // function keys
-	switch (theEvent->data.key.keyCode)
+	switch ([theEvent keyCode])
 	{
 	case 60:	// F2
 		[cameraview_i setDrawMode: dr_wire];
@@ -924,7 +961,7 @@ keyDown
 	}
 
 // portable things
-    ch = tolower(theEvent->data.key.charCode);
+    ch = tolower([[theEvent characters] cString][0]);
 		
 	switch (ch)
 	{
