@@ -3,12 +3,12 @@
 
 #include <AppKit/AppKit.h>
 
-@ interface ZScrollView:NSScrollView {
+@interface ZScrollView:NSScrollView
+{
 	id          button1;
 }
 
--initWithFrame:(NSRect)
-frameRect   button1:b1;
+-initWithFrame:(NSRect) frameRect   button1:b1;
 
 -tile;
 

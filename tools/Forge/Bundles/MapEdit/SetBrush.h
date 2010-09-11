@@ -60,22 +60,12 @@ winding_t  *NewWinding (int points);
 	face_t      faces[MAX_FACES];
 }
 
--initOwner: own mins:(float *)
-mins
-maxs:(float *)
-maxs
-texture:(texturedef_t *)
-	tex;
+-initOwner:own mins:(float *)mins maxs:(float *)maxs
+			texture:(texturedef_t *)tex;
 
--initFromScript:(struct script_s *)
-script
-	owner:
-	own;
+-initFromScript:(struct script_s *)script owner:own;
 
--setMins:(float *)
-mins
-maxs:(float *)
-	maxs;
+-setMins:(float *)mins maxs:(float *)maxs;
 
 -parent;
 -setParent:(id) p;
@@ -84,39 +74,28 @@ maxs:(float *)
 
 -calcWindings;
 
--writeToFILE:(FILE *)
-f
-region:(BOOL)
-	reg;
+-writeToFILE:(FILE *)f region:(BOOL)reg;
 
 -(BOOL) selected;
 -(BOOL) regioned;
 -setSelected:(BOOL) s;
 -setRegioned:(BOOL) s;
 
--getMins:(vec3_t)
-mins
-maxs:(vec3_t)
-	maxs;
+-getMins:(vec3_t)mins maxs:(vec3_t)maxs;
 
 -(BOOL) containsPoint:(vec3_t) pt;
 
 -freeWindings;
 -removeIfInvalid;
 
-extern vec3_t
-	region_min,
-	region_max;
+extern vec3_t region_min, region_max;
 
 -newRegion;
 
 -(texturedef_t *) texturedef;
 -(texturedef_t *) texturedefForFace:(int) f;
 -setTexturedef:(texturedef_t *) tex;
--setTexturedef:(texturedef_t *)
-tex
-forFace:(int)
-	f;
+-setTexturedef:(texturedef_t *) tex forFace:(int) f;
 
 -XYDrawSelf;
 -ZDrawSelf;
@@ -129,10 +108,8 @@ forFace:(int)
 //
 // single brush actions
 //
-extern int
-	numcontrolpoints;
-extern float *
-	controlpoints[MAX_FACES * 3];
+extern int numcontrolpoints;
+extern float *controlpoints[MAX_FACES * 3];
 
 -getZdragface:(vec3_t) dragpoint;
 -getXYdragface:(vec3_t) dragpoint;
@@ -145,32 +122,23 @@ extern float *
 //
 -carveByClipper;
 
-extern vec3_t
-	sb_translate;
+extern vec3_t sb_translate;
 
 -translate;
 
-extern id
-	carve_in,
-	carve_out;
+extern id carve_in, carve_out;
 
 -select;
 -deselect;
 -remove;
 -flushTextures;
 
-extern vec3_t
-	sb_mins,
-	sb_maxs;
+extern vec3_t sb_mins, sb_maxs;
 
 -addToBBox;
 
-extern vec3_t
-	sel_x,
-	sel_y,
-	sel_z;
-extern vec3_t
-	sel_org;
+extern vec3_t sel_x, sel_y, sel_z;
+extern vec3_t sel_org;
 
 -transform;
 
@@ -179,25 +147,20 @@ extern vec3_t
 -carve;
 -setCarveVars;
 
-extern id
-	sb_newowner;
+extern id sb_newowner;
 
 -moveToEntity;
 
 -takeCurrentTexture;
 
-extern vec3_t
-	select_min,
-	select_max;
+extern vec3_t select_min, select_max;
 
 -selectPartial;
 -selectComplete;
 -regionPartial;
 -regionComplete;
 
-extern float
-	sb_floor_dir,
-	sb_floor_dist;
+extern float sb_floor_dir, sb_floor_dist;
 
 -feetToFloor;
 

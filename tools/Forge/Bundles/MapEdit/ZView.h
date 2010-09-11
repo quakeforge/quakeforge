@@ -13,7 +13,8 @@ extern id   zview_i;
 extern float zplane;
 extern float zplanedir;
 
-@interface ZView:NSView {
+@interface ZView:NSView
+{
 	float       minheight, maxheight;
 	float       oldminheight, oldmaxheight;
 	float       topbound, bottombound;	// for floor clipping

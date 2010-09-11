@@ -20,8 +20,7 @@ extern id   map_i;
 -writeStats;
 
 -readMapFile:(char *) fname;
--writeMapFile:(char *)
-fname       useRegion:(BOOL) reg;
+-writeMapFile:(char *)fname useRegion:(BOOL) reg;
 
 -entityConnect: (vec3_t) p1:(vec3_t) p2;
 
@@ -72,4 +71,5 @@ fname       useRegion:(BOOL) reg;
 -selectCompleteEntity:sender;
 
 @end
+
 #endif // Map_h

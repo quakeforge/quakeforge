@@ -9,7 +9,8 @@ typedef enum { esize_model, esize_fixed } esize_t;
 
 #define	MAX_FLAGS	8
 
-@interface EntityClass:NSObject {
+@interface EntityClass:NSObject
+{
 	char       *name;
 	esize_t     esize;
 	vec3_t      mins, maxs;
@@ -18,8 +19,7 @@ typedef enum { esize_model, esize_fixed } esize_t;
 	char       *flagnames[MAX_FLAGS];
 }
 
--initFromText:(const char *)
-text        source:(const char *) filename;
+-initFromText:(const char *)text source:(const char *) filename;
 
 -(char *) classname;
 -(esize_t) esize;

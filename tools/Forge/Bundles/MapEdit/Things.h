@@ -9,7 +9,8 @@ extern id   things_i;
 
 #define	ENTITYNAMEKEY	"spawn"
 
-@interface Things:NSObject {
+@interface Things:NSObject
+{
 	id          entity_browser_i;		// browser
 	id          entity_comment_i;		// scrolling text window
 

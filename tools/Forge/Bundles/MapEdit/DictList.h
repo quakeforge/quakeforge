@@ -3,7 +3,8 @@
 
 #include <AppKit/AppKit.h>
 
-@ interface DictList:NSMutableArray {
+@ interface DictList:NSMutableArray
+{
 }
 
 -initListFromFile:(FILE *) fp;

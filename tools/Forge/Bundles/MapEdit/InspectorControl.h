@@ -24,11 +24,10 @@ extern id   inspcontrol_i;
 										// (gets replaced)
 
 	id          contentList;			// List of contentviews (corresponds to
+										// insp_e enum order)
 
-	// insp_e enum order)
 	id          windowList;				// List of Windows (corresponds to
-
-	// insp_e enum order)
+										// insp_e enum order)
 
 	id          obj_textures_i;			// TexturePalette object (for
 										// delegating)
@@ -69,6 +68,10 @@ extern id   inspcontrol_i;
 -changeInspectorTo:(insp_e) which;
 -(insp_e) getCurrentInspector;
 
-@end @ protocol InspectorControl - windowResized;
 @end
+
+@protocol InspectorControl
+-windowResized;
+@end
+
 #endif // InspectorControl_h
