@@ -204,7 +204,8 @@ static const char rcsid[] =
 		return;
 	}
 
-	[[(id <ForgeBundle>) [aBundle principalClass] alloc] initWithOwner: self];
+	//[[(id <ForgeBundle>) [aBundle principalClass] alloc] initWithOwner: self];
+	[[(id ) [aBundle principalClass] alloc] initWithOwner: self];
 }
 
 - (PrefsController *) prefsController;
