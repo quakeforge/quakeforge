@@ -39,6 +39,8 @@ extern float lightaxis[3];
 	id          xlight_i;				// X-side lighting
 	id          ylight_i;				// Y-side lighting
 	id          zlight_i;				// Z-side lighting 
+
+	NSUserDefaults *prefs;
 }
 
 -readDefaults;
@@ -46,8 +48,8 @@ extern float lightaxis[3];
 //
 // validate and set methods called by UI or defaults
 //
--setProjectPath:(char *) path;
--setBspSoundPath:(char *) path;		// set the path of the soundfile
+-setProjectPath:(const char *) path;
+-setBspSoundPath:(const char *) path;	// set the path of the soundfile
 										// externally
 -setShowBSP:(int) state;				// set the state of ShowBSP
 -setBrushOffset:(int) state;			// set the state of BrushOffset
