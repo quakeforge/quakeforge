@@ -30,9 +30,9 @@ initWithFrame:
 	ent =[map_i currentEntity];
 	count =[ent numPairs];
 
-	// XXX[_super_view setFlipped: YES];
+	//XXX[[self superview] setFlipped: YES];
 
-	b =[_super_view bounds];
+	b =[[self superview] bounds];
 	b.size.height = LINEHEIGHT * count + SPACING;
 	[self setBounds:b];
 	pt.x = pt.y = 0;
@@ -45,10 +45,11 @@ initWithFrame:
 	epair_t    *pair;
 	int         y;
 
-	// XXX PSsetgray(NSGrayComponent(NS_COLORLTGRAY));
+	PSsetgray(NSLightGray);
 	PSrectfill (0, 0, _bounds.size.width, _bounds.size.height);
 
-	// XXX PSselectfont("Helvetica-Bold",FONTSIZE);
+	GSSetFont (DEFCTXT, [NSFont fontWithName: @"Helvetica-Medium"
+										size: FONTSIZE]);
 	PSrotate (0);
 	PSsetgray (0);
 

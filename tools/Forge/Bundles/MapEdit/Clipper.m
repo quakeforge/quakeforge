@@ -7,6 +7,7 @@
 #include "Clipper.h"
 #include "Map.h"
 #include "XYView.h"
+#include "ZView.h"
 #include "CameraView.h"
 #include "QuakeEd.h"
 
@@ -187,7 +188,8 @@ XYDrag
 	char        text[8];
 
 	PSsetrgbcolor (1, 0.5, 0);
-	// XXX PSselectfont("Helvetica-Medium",10/[xyview_i currentScale]);
+	GSSetFont (DEFCTXT, [NSFont fontWithName: @"Helvetica-Medium"
+	                                    size: 10 / [xyview_i currentScale]]);
 	PSrotate (0);
 
 	for (i = 0; i < num; i++) {
@@ -207,7 +209,8 @@ XYDrag
 	char        text[8];
 
 	PSsetrgbcolor (1, 0.5, 0);
-	// XXX PSselectfont("Helvetica-Medium",10/[zview_i currentScale]);
+	GSSetFont (DEFCTXT, [NSFont fontWithName: @"Helvetica-Medium"
+	                                    size: 10 / [zview_i currentScale]]);
 	PSrotate (0);
 
 	for (i = 0; i < num; i++) {
