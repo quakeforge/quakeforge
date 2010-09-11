@@ -6,19 +6,18 @@
 #include	"TexturePalette.h"
 #include	"Preferences.h"
 
-id		inspcontrol_i;
+id          inspcontrol_i;
 
 @implementation InspectorControl
 
-- awakeFromNib
-{
+-awakeFromNib {
 	inspcontrol_i = self;
-		
+
 	currentInspectorType = -1;
 
-	contentList = [[NSArray alloc] init];
-	windowList = [[NSArray alloc] init];
-	itemList = [[NSArray alloc] init];
+	contentList =[[NSArray alloc] init];
+	windowList =[[NSArray alloc] init];
+	itemList =[[NSArray alloc] init];
 
 	// ADD NEW INSPECTORS HERE...
 
@@ -36,7 +35,7 @@ id		inspcontrol_i;
 	[contentList addObject:[win_things_i contentView]];
 	[itemThings_i setKeyEquivalent:@"3"];
 	[itemList addObject:itemThings_i];
-	
+
 	[windowList addObject:win_prefs_i];
 	[contentList addObject:[win_prefs_i contentView]];
 	[itemPrefs_i setKeyEquivalent:@"4"];
@@ -61,7 +60,7 @@ id		inspcontrol_i;
 
 	[inspectorView_i setAutoresizesSubviews:YES];
 
-	inspectorSubview_i = [contentList objectAtIndex:i_project];
+	inspectorSubview_i =[contentList objectAtIndex:i_project];
 	[inspectorView_i addSubview:inspectorSubview_i];
 
 	currentInspectorType = -1;
@@ -72,56 +71,57 @@ id		inspcontrol_i;
 
 
 //
-//	Sent by the PopUpList in the Inspector
-//	Each cell in the PopUpList must have the correct tag
+//  Sent by the PopUpList in the Inspector
+//  Each cell in the PopUpList must have the correct tag
 //
-- changeInspector:sender
+-changeInspector:sender
 {
-	id	cell;
+	id          cell;
 
-	cell = [sender selectedCell];
+	cell =[sender selectedCell];
 	[self changeInspectorTo:[cell tag]];
 	return self;
 }
 
 //
-//	Change to specific Inspector
+//  Change to specific Inspector
 //
-- changeInspectorTo:(insp_e)which
+-changeInspectorTo:(insp_e) which
 {
-	id		newView;
-	NSRect	r;
-	id		cell;
-	NSRect	f;
-	
+	id          newView;
+	NSRect      r;
+	id          cell;
+	NSRect      f;
+
 	if (which == currentInspectorType)
 		return self;
-	
+
 	currentInspectorType = which;
-	newView = [contentList objectAtIndex:which];
-	
-	cell = [itemList objectAtIndex:which];	// set PopUpButton title
+	newView =[contentList objectAtIndex:which];
+
+	cell =[itemList objectAtIndex:which];// set PopUpButton title
 	[popUpButton_i setTitle:[cell title]];
-	
-	[inspectorView_i replaceSubview:inspectorSubview_i with:newView];
-	r = [inspectorView_i frame];
+
+	[inspectorView_i replaceSubview: inspectorSubview_i with:newView];
+	r =[inspectorView_i frame];
 	inspectorSubview_i = newView;
-	[inspectorSubview_i setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+	[inspectorSubview_i setAutoresizingMask:NSViewWidthSizable |
+	 NSViewHeightSizable];
 	r.size.width -= 4;
 	r.size.height -= 4;
 	[inspectorSubview_i setFrameSize:r.size];
-	
+
 	[inspectorSubview_i lockFocus];
-	f = [inspectorSubview_i bounds];
-	PSsetgray(NSLightGray);
-	NSRectFill(f);
+	f =[inspectorSubview_i bounds];
+	PSsetgray (NSLightGray);
+	NSRectFill (f);
 	[inspectorSubview_i unlockFocus];
 	[inspectorView_i display];
-	
+
 	return self;
 }
 
-- (insp_e)getCurrentInspector
+-(insp_e) getCurrentInspector
 {
 	return currentInspectorType;
 }

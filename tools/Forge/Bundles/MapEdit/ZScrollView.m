@@ -1,7 +1,6 @@
 #include "ZScrollView.h"
 
 @implementation ZScrollView
-
 /*
 ====================
 initWithFrame: button:
@@ -9,42 +8,37 @@ initWithFrame: button:
 Initizes a scroll view with a button at it's lower right corner
 ====================
 */
+- initWithFrame:(NSRect)
+frameRect   button1:b1 {
+	[super initWithFrame:frameRect];
 
-- initWithFrame:(NSRect)frameRect button1:b1
-{
-	[super  initWithFrame: frameRect];	
-
-	[self addSubview: b1];
+	[self addSubview:b1];
 
 	button1 = b1;
 
-	[self setHasHorizontalScroller: YES];
-	[self setHasVerticalScroller: YES];
+	[self setHasHorizontalScroller:YES];
+	[self setHasVerticalScroller:YES];
 
-	[self setBorderType: NSBezelBorder];
-		
+	[self setBorderType:NSBezelBorder];
+
 	return self;
 }
-
-
 /*
 ================
 tile
 
 Adjust the size for the pop up scale menu
 =================
-*/
-
-- tile
+*/ -tile
 {
-	NSRect	scrollerframe;
-	
+	NSRect      scrollerframe;
+
 	[super tile];
-	scrollerframe = [_horizScroller frame];
-	[button1 setFrame: scrollerframe];
-	
+	scrollerframe =[_horizScroller frame];
+	[button1 setFrame:scrollerframe];
+
 	scrollerframe.size.width = 0;
-	[_horizScroller setFrame: scrollerframe];
+	[_horizScroller setFrame:scrollerframe];
 
 	return self;
 }
@@ -53,8 +47,9 @@ Adjust the size for the pop up scale menu
 
 -(BOOL) acceptsFirstResponder
 {
-    return YES;
+	return YES;
 }
+
 /*
 - superviewSizeChanged:(const NSSize *)oldSize
 {
@@ -68,4 +63,3 @@ Adjust the size for the pop up scale menu
 
 
 @end
-

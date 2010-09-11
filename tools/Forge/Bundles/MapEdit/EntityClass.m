@@ -11,7 +11,7 @@
 @implementation EntityClass
 
 static int
-parse_vector (script_t *script, vec3_t vec)
+parse_vector (script_t * script, vec3_t vec)
 {
 	int         r;
 
@@ -23,7 +23,7 @@ parse_vector (script_t *script, vec3_t vec)
 	r = sscanf (script->p, "%f %f %f)", &vec[0], &vec[1], &vec[2]);
 	if (r != 3)
 		return 0;
-	
+
 	while (strcmp (script->token->str, ")")) {
 		if (!Script_GetToken (script, 0))
 			return 0;
@@ -41,16 +41,17 @@ parse_vector (script_t *script, vec3_t vec)
 //
 // /*QUAKED func_door (0 .5 .8) ? START_OPEN STONE_SOUND DOOR_DONT_LINK GOLD_KEY SILVER_KEY
 
-- initFromText: (const char *)text source: (const char *)filename
+-initFromText:(const char *)
+text        source:(const char *) filename
 {
 	const char *t;
 	size_t      len;
 	int         i;
 	script_t   *script;
-	
+
 	[super init];
-	
-	text += strlen("/*QUAKED ");
+
+	text += strlen ("/*QUAKED ");
 
 	script = Script_New ();
 	Script_Start (script, filename, text);
@@ -65,8 +66,8 @@ parse_vector (script_t *script, vec3_t vec)
 	// grab the color
 	if (!parse_vector (script, color))
 		return 0;
-	
-	// get the size	
+
+	// get the size 
 	if (!strcmp (script->token->str, "(")) {
 		Script_UngetToken (script);
 		if (!parse_vector (script, mins))
@@ -80,7 +81,7 @@ parse_vector (script_t *script, vec3_t vec)
 	} else {
 		return 0;
 	}
-	
+
 	// get the flags
 	// any remaining words on the line are parm flags
 	for (i = 0; i < MAX_FLAGS; i++) {
@@ -93,50 +94,49 @@ parse_vector (script_t *script, vec3_t vec)
 		Script_GetToken (script, 0);
 
 // find the length until close comment
-	for (t = script->p; t[0] && !(t[0] == '*' && t[1] == '/'); t++)
-		;
-	
+	for (t = script->p; t[0] && !(t[0] == '*' && t[1] == '/'); t++);
+
 // copy the comment block out
 	len = t - text;
 	comments = malloc (len + 1);
 	memcpy (comments, text, len);
 	comments[len] = 0;
-	
+
 	return self;
 }
 
-- (esize_t)esize
+-(esize_t) esize
 {
 	return esize;
 }
 
-- (char *)classname
+-(char *) classname
 {
 	return name;
 }
 
-- (float *)mins
+-(float *) mins
 {
 	return mins;
 }
 
-- (float *)maxs
+-(float *) maxs
 {
 	return maxs;
 }
 
-- (float *)drawColor
+-(float *) drawColor
 {
 	return color;
 }
 
-- (char *)comments
+-(char *) comments
 {
 	return comments;
 }
 
 
-- (char *)flagName: (unsigned)flagnum
+-(char *) flagName:(unsigned) flagnum
 {
 	if (flagnum >= MAX_FLAGS)
 		Sys_Error ("EntityClass flagName: bad number");
@@ -144,31 +144,27 @@ parse_vector (script_t *script, vec3_t vec)
 }
 
 @end
-
 //===========================================================================
 
 @implementation EntityClassList
-
 /*
 =================
 insertEC:
 =================
 */
-- (void)insertEC: ec
+- (void) insertEC:ec
 {
-	char	*name;
-	int		i;
-	
-	name = [ec classname];
-	for (i=0 ; i<[self count] ; i++)
-	{
-		if (strcasecmp (name, [[self objectAtIndex: i] classname]) < 0)
-		{
+	char       *name;
+	int         i;
+
+	name =[ec classname];
+	for (i = 0; i <[self count]; i++) {
+		if (strcasecmp (name,[[self objectAtIndex:i] classname]) < 0) {
 			[self insertObject: ec atIndex:i];
 			return;
 		}
 	}
-	[self addObject: ec];
+	[self addObject:ec];
 }
 
 
@@ -177,16 +173,16 @@ insertEC:
 scanFile
 =================
 */
-- (void)scanFile: (char *)filename
+-(void) scanFile:(char *) filename
 {
-	int		size, line;
-	char	*data;
-	id		cl;
-	int		i;
-	char	path[1024];
-	QFile  *file;
+	int         size, line;
+	char       *data;
+	id          cl;
+	int         i;
+	char        path[1024];
+	QFile      *file;
 
-	sprintf (path,"%s/%s", source_path, filename);
+	sprintf (path, "%s/%s", source_path, filename);
 
 	file = Qopen (path, "rt");
 	if (!file)
@@ -198,12 +194,12 @@ scanFile
 	Qclose (file);
 
 	line = 1;
-	for (i=0 ; i<size ; i++) {
-		if (!strncmp(data+i, "/*QUAKED",8)) {
-			cl = [[EntityClass alloc] initFromText: (data + i)
-					source: va ("%s:%d", filename, line)];
+	for (i = 0; i < size; i++) {
+		if (!strncmp (data + i, "/*QUAKED", 8)) {
+			cl =[[EntityClass alloc] initFromText:(data + i)
+			source:va ("%s:%d", filename, line)];
 			if (cl)
-				[self insertEC: cl];
+				[self insertEC:cl];
 		} else if (data[i] == '\n') {
 			line++;
 		}
@@ -218,62 +214,61 @@ scanFile
 scanDirectory
 =================
 */
-- (void)scanDirectory
+-(void) scanDirectory
 {
-	int		count, i;
+	int         count, i;
 	struct dirent **namelist, *ent;
-	
+
 	[self removeAllObjects];
-	
-     count = scandir(source_path, &namelist, NULL, NULL);
-	
-	for (i=0 ; i<count ; i++)
-	{
-		int len;
+
+	count = scandir (source_path, &namelist, NULL, NULL);
+
+	for (i = 0; i < count; i++) {
+		int         len;
+
 		ent = namelist[i];
 		len = strlen (ent->d_name);
 		if (len <= 3)
 			continue;
-		if (!strcmp (ent->d_name+len-3,".qc"))
-			[self scanFile: ent->d_name];
+		if (!strcmp (ent->d_name + len - 3, ".qc"))
+			[self scanFile:ent->d_name];
 	}
 }
 
 
-id	entity_classes_i;
+id          entity_classes_i;
 
 
-- initForSourceDirectory: (char *)path
+-initForSourceDirectory:(char *) path
 {
 	[super init];
-	
-	source_path = path;	
+
+	source_path = path;
 	[self scanDirectory];
-	
+
 	entity_classes_i = self;
-	
-	nullclass = [[EntityClass alloc]
-				 initFromText: "/*QUAKED UNKNOWN_CLASS (0 0.5 0) ?*/"
-				 source: va ("%s:%d", __FILE__, __LINE__ - 1)];
+
+	nullclass =[[EntityClass alloc]
+	initFromText: "/*QUAKED UNKNOWN_CLASS (0 0.5 0) ?*/" source:va ("%s:%d", __FILE__,
+					__LINE__ -
+					1)];
 
 	return self;
 }
 
-- (id)classForName: (char *)name
+-(id) classForName:(char *) name
 {
-	int		i;
-	id		o;
-	
-	for (i=0 ; i<[self count] ; i++)
-	{
-		o = [self objectAtIndex: i];
-		if (!strcmp (name,[o classname]) )
+	int         i;
+	id          o;
+
+	for (i = 0; i <[self count]; i++) {
+		o =[self objectAtIndex:i];
+		if (!strcmp (name,[o classname]))
 			return o;
 	}
-	
+
 	return nullclass;
 }
 
 
 @end
-
