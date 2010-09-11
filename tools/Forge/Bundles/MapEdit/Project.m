@@ -4,7 +4,17 @@
 //
 //======================================
 
-#include "qedefs.h"
+#include <unistd.h>
+
+#include "QF/sys.h"
+
+#include "Project.h"
+#include "Map.h"
+#include "QuakeEd.h"
+#include "Preferences.h"
+#include "Dict.h"
+#include "Things.h"
+#include "TexturePalette.h"
 
 
 id	project_i;
@@ -28,7 +38,7 @@ id	project_i;
 	char		*s;
 	
 	s = [preferences_i getProjectPath];
-	StripFilename(s);
+	//XXX StripFilename(s);
 	strcpy(path_basepath,s);
 	
 	strcpy(path_progdir,s);
@@ -40,7 +50,7 @@ id	project_i;
 	strcpy(path_finalmapdir,s);
 	strcat(path_finalmapdir,"/"SUBDIR_MAPS);	// dest dir
 	
-	[basepathinfo_i	setStringValue:s];		// in Project Inspector
+	[basepathinfo_i	setStringValue:[NSString stringWithCString:s]];		// in Project Inspector
 	
 	#if 0
 	if ((s = [projectInfo getStringFor:BASEPATHKEY]))
@@ -114,12 +124,12 @@ id	project_i;
 //
 - initProjSettings
 {
-	[pis_basepath_i	setStringValue:path_basepath];
-	[pis_fullvis_i	setStringValue:string_fullvis];
-	[pis_fastvis_i	setStringValue:string_fastvis];
-	[pis_novis_i	setStringValue:string_novis];
-	[pis_relight_i	setStringValue:string_relight];
-	[pis_leaktest_i	setStringValue:string_leaktest];
+	[pis_basepath_i	setStringValue:[NSString stringWithCString:path_basepath]];
+	[pis_fullvis_i	setStringValue:[NSString stringWithCString:string_fullvis]];
+	[pis_fastvis_i	setStringValue:[NSString stringWithCString:string_fastvis]];
+	[pis_novis_i	setStringValue:[NSString stringWithCString:string_novis]];
+	[pis_relight_i	setStringValue:[NSString stringWithCString:string_relight]];
+	[pis_leaktest_i	setStringValue:[NSString stringWithCString:string_leaktest]];
 	
 	return self;
 }
@@ -132,27 +142,28 @@ id	project_i;
 	int	end;
 	
 	end = [BSPoutput_i textLength];
-	[BSPoutput_i setSel:end :end];
-	[BSPoutput_i replaceSel:string];
+	[BSPoutput_i replaceCharactersInRange:NSMakeRange (end, 0) withString:[NSString stringWithCString:string]];
 	
 	end = [BSPoutput_i textLength];
-	[BSPoutput_i setSel:end :end];
-	[BSPoutput_i scrollSelToVisible];
+	[BSPoutput_i setSelectedRange:NSMakeRange (end, 0)];
+	//XXX [BSPoutput_i scrollSelToVisible];
 	
 	return self;
 }
 
 - clearBspOutput:sender
 {
-	[BSPoutput_i	selectAll:self];
-	[BSPoutput_i	replaceSel:"\0"];
+	int	end;
+	
+	end = [BSPoutput_i textLength];
+	[BSPoutput_i	replaceCharactersInRange:NSMakeRange (0, end) withString:@""];
 	
 	return self;
 }
 
 - print
 {
-	[BSPoutput_i	printPSCode:self];
+	//XXX [BSPoutput_i	printPSCode:self];
 	return self;
 }
 
@@ -163,9 +174,9 @@ id	project_i;
 	if (projectInfo == NULL)
 		return self;
 	[self initVars];
-	[mapbrowse_i reuseColumns:YES];
+	[mapbrowse_i setReusesColumns:YES];
 	[mapbrowse_i loadColumnZero];
-	[pis_wads_i reuseColumns:YES];
+	[pis_wads_i setReusesColumns:YES];
 	[pis_wads_i loadColumnZero];
 
 	[things_i		initEntities];
@@ -209,7 +220,7 @@ id	project_i;
 	else
 	{
 		list = nil;
-		Error ("Project: unknown browser to fill");
+		Sys_Error ("Project: unknown browser to fill");
 	}
 	
 	max = [list count];
@@ -217,8 +228,8 @@ id	project_i;
 	{
 		name = [list elementAt:i];
 		[matrix addRow];
-		cell = [matrix cellAt:i :0];
-		[cell setStringValue:name];
+		cell = [matrix cellAtRow:i column:0];
+		[cell setStringValue:[NSString stringWithCString:name]];
 		[cell setLeaf:YES];
 		[cell setLoaded:YES];
 	}
@@ -240,14 +251,14 @@ id	project_i;
 	sprintf(fname,"%s/%s.map",path_mapdirectory,
 		(char *)[mapList elementAt:row]);
 	
-	panel = NSGetAlertPanel("Loading...",
-		"Loading map. Please wait.",NULL,NULL,NULL);
+	panel = NSGetAlertPanel(@"Loading...",
+		@"Loading map. Please wait.",NULL,NULL,NULL);
 	[panel orderFront:NULL];
 
 	[quakeed_i doOpen:fname];
 
 	[panel performClose:NULL];
-	NSFreeAlertPanel(panel);
+	//NSFreeAlertPanel(panel);
 	return self;
 }
 
@@ -266,14 +277,14 @@ id	project_i;
 		name = (char *)[wadList elementAt:i];
 		if (!strcmp(name, wf))
 		{
-			[[pis_wads_i matrixInColumn:0] selectCellAt: i : 0];
+			[[pis_wads_i matrixInColumn:0] selectCellAtRow: i column: 0];
 			break;
 		}
 	}
 
 // update the texture inspector
 	[texturepalette_i initPaletteFromWadfile:wf ];
-	[[map_i objectAt: 0] setKey:"wad" toValue: wf];
+	[[map_i objectAtIndex: 0] setKey:"wad" toValue: wf];
 //	[inspcontrol_i changeInspectorTo:i_textures];
 
 	[quakeed_i updateAll];
@@ -311,9 +322,9 @@ id	project_i;
 	path = [preferences_i getProjectPath];
 	if (!path || !path[0] || access(path,0))
 	{
-		rtn = NSRunAlertPanel("Project Error!",
-			"A default project has not been found.\n"
-			, "Open Project", NULL, NULL);
+		rtn = NSRunAlertPanel(@"Project Error!",
+			@"A default project has not been found.\n"
+			, @"Open Project", NULL, NULL);
 		if ([self openProject] == nil)
 			while (1)		// can't run without a project
 				[NSApp terminate: self];
@@ -361,19 +372,19 @@ id	project_i;
 	char	path[128];
 	id		openpanel;
 	int		rtn;
-	char	*projtypes[2] = {"qpr",NULL};
-	char	**filenames;
-	char	*dir;
+	NSString   *projtypes[] ={ @"qpr"};
+	NSArray    *filenames;
+	const char *dir;
 	
-	openpanel = [OpenPanel new];
-	[openpanel allowMultipleFiles:NO];
-	[openpanel chooseDirectories:NO];
-	rtn = [openpanel runModalForTypes:projtypes];
-	if (rtn == NS_OKTAG)
+	openpanel = [NSOpenPanel new];
+	//[openpanel allowMultipleFiles:NO];
+	//[openpanel chooseDirectories:NO];
+	rtn = [openpanel runModalForTypes:[NSArray arrayWithObjects: projtypes count:1]];
+	if (rtn == NSOKButton)
 	{
-		 (const char *const *)filenames = [openpanel filenames];
-		 dir = (char *)[openpanel directory];
-		 sprintf(path,"%s/%s",dir,filenames[0]);
+		 filenames = [openpanel filenames];
+		 dir = [[openpanel directory] cString];
+		 sprintf (path, "%s/%s", dir, [[filenames objectAtIndex:0] cString]);
 		 strcpy(path_projectinfo,path);
 		 [self openProjectFile:path];
 		 return self;

@@ -1,5 +1,8 @@
 
-#include "qedefs.h"
+#include "Preferences.h"
+#include "Map.h"
+#include "QuakeEd.h"
+#include "Project.h"
 
 id	preferences_i;
 
@@ -35,11 +38,11 @@ void WriteNumericDefault (char *name, float value)
 	char	str[128];
 	
 	sprintf (str,"%f", value);
-	NSWriteDefault (DEFOWNER, name, str);
+	//XXX NSWriteDefault (DEFOWNER, name, str);
 }
 void WriteStringDefault (char *name, char *value)
 {
-	NSWriteDefault (DEFOWNER, name, value);
+	//XXX NSWriteDefault (DEFOWNER, name, value);
 }
 
 //
@@ -47,31 +50,31 @@ void WriteStringDefault (char *name, char *value)
 //
 - readDefaults
 {
-	char *string;
-	float	value;
+	char *string = "";
+	float	value = 0;
 	
-	string = (char *)NSGetDefaultValue(DEFOWNER,"ProjectPath");
+	//XXX string = (char *)NSGetDefaultValue(DEFOWNER,"ProjectPath");
 	[self setProjectPath: string];
 	
-	string = (char *)NSGetDefaultValue(DEFOWNER,"BspSoundPath");
+	//XXX string = (char *)NSGetDefaultValue(DEFOWNER,"BspSoundPath");
 	[self setBspSoundPath:string];
 
-	value = _atoi((char *)NSGetDefaultValue(DEFOWNER,"ShowBSPOutput"));
+	//XXX value = _atoi((char *)NSGetDefaultValue(DEFOWNER,"ShowBSPOutput"));
 	[self setShowBSP:value];
 
-	value = _atoi((char *)NSGetDefaultValue(DEFOWNER,"OffsetBrushCopy"));
+	//XXX value = _atoi((char *)NSGetDefaultValue(DEFOWNER,"OffsetBrushCopy"));
 	[self setBrushOffset:value];
 
-	value = _atoi((char *)NSGetDefaultValue(DEFOWNER,"StartWad"));
+	//XXX value = _atoi((char *)NSGetDefaultValue(DEFOWNER,"StartWad"));
 	[self setStartWad:value];
 
-	value = _atof((char *)NSGetDefaultValue(DEFOWNER,"Xlight"));
+	//XXX value = _atof((char *)NSGetDefaultValue(DEFOWNER,"Xlight"));
 	[self setXlight:value];
 
-	value = _atof((char *)NSGetDefaultValue(DEFOWNER,"Ylight"));
+	//XXX value = _atof((char *)NSGetDefaultValue(DEFOWNER,"Ylight"));
 	[self setYlight:value];
 
-	value = _atof((char *)NSGetDefaultValue(DEFOWNER,"Zlight"));
+	//XXX value = _atof((char *)NSGetDefaultValue(DEFOWNER,"Zlight"));
 	[self setZlight:value];
 
 	return self;
@@ -83,14 +86,14 @@ void WriteStringDefault (char *name, char *value)
 	if (!path)
 		path = "";
 	strcpy (projectpath, path);
-	[startproject_i setStringValue: path];
+	[startproject_i setStringValue: [NSString stringWithCString:path]];
 	WriteStringDefault ("ProjectPath", path);
 	return self;
 }
 
 - setCurrentProject:sender
 {
-	[startproject_i setStringValue: [project_i currentProjectFile]];
+	[startproject_i setStringValue: [NSString stringWithCString:[project_i currentProjectFile]]];
 	[self UIChanged: self];
 	return self;
 }
@@ -111,27 +114,27 @@ void WriteStringDefault (char *name, char *value)
 - setBspSound:sender
 {
 	id	panel;
-	char	*types[]={"snd",NULL};
+	NSString   *types[] = {@"snd"};
 	int	rtn;
-	char	**filename;
+	NSArray    *filenames;
 	char	path[1024], file[64];
 	
-	panel = [OpenPanel new];
+	panel = [NSOpenPanel new];
 
-	ExtractFilePath (bspSound, path);
-	ExtractFileBase (bspSound, file);
+	//XXX ExtractFilePath (bspSound, path);
+	//XXX ExtractFileBase (bspSound, file);
 	
 	rtn = [panel 
-			runModalForDirectory:path 
-			file: file
-			types: types];
+			runModalForDirectory:[NSString stringWithCString:path]
+			file: [NSString stringWithCString:file]
+			types: [NSArray arrayWithObjects:types count:1]];
 
 	if (rtn)
 	{
-		filename = (char **)[panel filenames];
-		strcpy(bspSound,[panel directory]);
+		filenames = [panel filenames];
+		strcpy(bspSound,[[panel directory] cString]);
 		strcat(bspSound,"/");
-		strcat(bspSound,filename[0]);
+		strcat(bspSound, [[filenames objectAtIndex:0] cString]);
 		[self setBspSoundPath:bspSound];
 		[self playBspSound];
 	}
@@ -160,15 +163,15 @@ void WriteStringDefault (char *name, char *value)
 	strcpy(bspSound,path);
 
 	if (bspSound_i)
-		[bspSound_i free];
-	bspSound_i = [[Sound alloc] initFromSoundfile:bspSound];
+		[bspSound_i release];
+	bspSound_i = [[NSSound alloc] initWithContentsOfFile:[NSString stringWithCString:bspSound]];
 	if (!bspSound_i)
 	{
 		strcpy (bspSound, "/NextLibrary/Sounds/Funk.snd");
-		bspSound_i = [[Sound alloc] initFromSoundfile:bspSound];
+		bspSound_i = [[NSSound alloc] initWithContentsOfFile:[NSString stringWithCString:bspSound]];
 	}
 
-	[bspSoundField_i setStringValue:bspSound];
+	[bspSoundField_i setStringValue:[NSString stringWithCString:bspSound]];
 	
 	WriteStringDefault ("BspSoundPath", bspSound);
 	
@@ -233,7 +236,7 @@ void WriteStringDefault (char *name, char *value)
 	if (startwad<0 || startwad>2)
 		startwad = 0;
 	
-	[startwad_i selectCellAt:startwad : 0];
+	[startwad_i selectCellAtRow:startwad column: 0];
 
 	WriteNumericDefault ("StartWad", value);
 	return self;

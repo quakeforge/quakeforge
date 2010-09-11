@@ -6,6 +6,11 @@
 #include "EntityClass.h"
 #include "Map.h"
 #include "Preferences.h"
+#include "XYView.h"
+#include "ZView.h"
+#include "CameraView.h"
+#include "Clipper.h"
+#include "QuakeEd.h"
 
 @implementation SetBrush
 
@@ -1091,7 +1096,7 @@ BOOL	fakebrush;
 	copy = [copy addFace: &face];
 	if (copy)
 	{
-		[copy perform:call];
+		[copy performSelector:call];
 		[copy dealloc];
 	}
 	fakebrush = NO;
@@ -1720,7 +1725,7 @@ id	sb_newowner;
 	parent = sb_newowner;
 	
 // hack to allow them to be copied to another map
-	if ( [parent respondsTo:@selector(valueForQKey:)])
+	if ( [parent respondsToSelector:@selector(valueForQKey:)])
 	{
 		eclass = [entity_classes_i classForName: [parent valueForQKey: "classname"]];
 		c = [eclass drawColor];
