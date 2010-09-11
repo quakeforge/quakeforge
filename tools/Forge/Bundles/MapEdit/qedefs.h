@@ -35,20 +35,20 @@
 #include "Clipper.h"
 
 
-void PrintRect (NSRect *r);
-int	FileTime (char *path);
-void Sys_UpdateFile (char *path, char *netpath);
-void CleanupName (char *in, char *out);
+void        PrintRect (NSRect * r);
+int         FileTime (char *path);
+void        Sys_UpdateFile (char *path, char *netpath);
+void        CleanupName (char *in, char *out);
 
-extern	BOOL	in_error;
-void Error (char *error, ...);
+extern BOOL in_error;
+void        Error (char *error, ...);
 
 #define	MAXTOKEN	128
-extern	char	token[MAXTOKEN];
-extern	int		scriptline;
-void	StartTokenParsing (char *data);
-boolean GetToken (boolean crossline);	// returns false at eof
-void UngetToken ();
+extern char token[MAXTOKEN];
+extern int  scriptline;
+void        StartTokenParsing (char *data);
+boolean     GetToken (boolean crossline);	// returns false at eof
+void        UngetToken ();
 
 
 #define	FN_CMDOUT		"/tmp/QuakeEdCmd.txt"
@@ -57,4 +57,4 @@ void UngetToken ();
 #define	FN_CRASHSAVE	"/qcache/ErrorSaveMap.map"
 #define	FN_DEVLOG		"/qcache/devlog"
 
-#endif//qedefs_h
+#endif // qedefs_h

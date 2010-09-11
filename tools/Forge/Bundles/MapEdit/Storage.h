@@ -19,7 +19,7 @@
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-*/ 
+*/
 
 /******************************************************************
   TODO:
@@ -31,55 +31,57 @@
 
 #include <AppKit/AppKit.h>
 
-@interface Storage : NSObject
-{
-@public
-    void 	*dataPtr;	/* data of the Storage object */
-    const char  *description;	/* Element description */
-    NSUInteger 	numElements;	/* Actual number of elements */
-    NSUInteger 	maxElements;	/* Total allocated elements */
-    NSUInteger    elementSize;	/* Element size */
+@ interface Storage:NSObject {
+	@public void *dataPtr;				/* data of the Storage object */
+	const char *description;			/* Element description */
+	NSUInteger  numElements;			/* Actual number of elements */
+	NSUInteger  maxElements;			/* Total allocated elements */
+	NSUInteger  elementSize;			/* Element size */
 }
 
 /* Creating, freeing, initializing, and emptying */
 
-- init;
-- initCount:(NSUInteger)numSlots elementSize:(NSUInteger)sizeInBytes
-  description:(const char*)elemDesc;
-- (void)dealloc;
-- empty;
-- copy;
+-init;
+-initCount:(NSUInteger)
+numSlots    elementSize:(NSUInteger) sizeInBytes
+	description:(const char *) elemDesc;
+-(void) dealloc;
+-empty;
+-copy;
 
 /* Manipulating the elements */
 
-- (BOOL)isEqual: anObject;
-- (const char *)description; 
-- (NSUInteger)count; 
-- (void *)elementAt:(NSUInteger)index; 
-- replaceElementAt:(NSUInteger)index with:(void *)anElement;
-- setNumSlots:(NSUInteger)numSlots; 
-- setAvailableCapacity:(NSUInteger)numSlots;
-- addElement:(void *)anElement; 
-- removeLastElement; 
-- insertElement:(void *)anElement at:(NSUInteger)index; 
-- removeElementAt:(NSUInteger)index; 
+-(BOOL) isEqual:anObject;
+-(const char *) description;
+-(NSUInteger) count;
+-(void *) elementAt:(NSUInteger) index;
+-replaceElementAt:(NSUInteger)
+index       with:(void *) anElement;
+
+-setNumSlots:(NSUInteger) numSlots;
+-setAvailableCapacity:(NSUInteger) numSlots;
+-addElement:(void *) anElement;
+-removeLastElement;
+-insertElement:(void *)
+anElement   at:(NSUInteger) index;
+
+-removeElementAt:(NSUInteger) index;
 
 /* Archiving */
 
-- write:(TypedStream *)stream;
-- read:(TypedStream *)stream;
+-write:(TypedStream *) stream;
+-read:(TypedStream *) stream;
 
 /* old-style creation */
 
-+ new; 
-+ newCount:(NSUInteger)count elementSize:(NSUInteger)sizeInBytes 
- description:(const char *)descriptor; 
++new;
++newCount:(NSUInteger)
+count       elementSize:(NSUInteger) sizeInBytes
+	description:(const char *) descriptor;
 
-@end
-
-typedef struct {
-    @defs(Storage)
-  } NXStorageId;
+@end typedef struct {
+	@defs (Storage)
+} NXStorageId;
 
 
 #endif /* __Storage_h_INCLUDE_GNU */

@@ -37,41 +37,44 @@
 #include <AppKit/NSGraphicsContext.h>
 
 typedef struct _UP {
-    float          *points;
-    int             numberOfPoints;
-    char           *ops;
-    NSPoint         cp;
-    int             numberOfOps;
-    int             max;
-    float           bbox[4];
-    int             opForUserPath;
-    BOOL            ping;
+	float      *points;
+	int         numberOfPoints;
+	char       *ops;
+	NSPoint     cp;
+	int         numberOfOps;
+	int         max;
+	float       bbox[4];
+	int         opForUserPath;
+	BOOL        ping;
 } UserPath;
 
 /* UserPath functions */
-NSZone *userPathZone();
-UserPath *newUserPath();
-void freeUserPath(UserPath *up);
-void debugUserPath(UserPath *up, BOOL shouldPing);
-void growUserPath(UserPath *up);
-void beginUserPath(UserPath *up, BOOL cache);
-void endUserPath(UserPath *up, int op);
-int sendUserPath(UserPath *up);
-void UPmoveto(UserPath *up, float x, float y);
-void UPrmoveto(UserPath *up, float x, float y);
-void UPlineto(UserPath *up, float x, float y);
-void UPrlineto(UserPath *up, float x, float y);
-void UPcurveto(UserPath *up, float x1, float y1, float x2, float y2, float x3,
-	       float y3);
-void UPrcurveto(UserPath *up, float dx1, float dy1, float dx2, float dy2,
-		float dx3, float dy3);
-void UParc(UserPath *up, float x, float y, float r, float ang1, float ang2);
-void UParcn(UserPath *up, float x, float y, float r, float ang1, float ang2);
-void UParct(UserPath *up, float x1, float y1, float x2, float y2, float r);
-void closePath(UserPath *up);
-void addPts(UserPath *up, float x, float y);
-void addOp(UserPath *up, int op);
-void add(UserPath *up, int op, float x, float y);
-void checkBBox(UserPath *up, float x, float y);
+NSZone     *userPathZone ();
+UserPath   *newUserPath ();
+void        freeUserPath (UserPath * up);
+void        debugUserPath (UserPath * up, BOOL shouldPing);
+void        growUserPath (UserPath * up);
+void        beginUserPath (UserPath * up, BOOL cache);
+void        endUserPath (UserPath * up, int op);
+int         sendUserPath (UserPath * up);
+void        UPmoveto (UserPath * up, float x, float y);
+void        UPrmoveto (UserPath * up, float x, float y);
+void        UPlineto (UserPath * up, float x, float y);
+void        UPrlineto (UserPath * up, float x, float y);
+void        UPcurveto (UserPath * up, float x1, float y1, float x2, float y2,
+					   float x3, float y3);
+void        UPrcurveto (UserPath * up, float dx1, float dy1, float dx2,
+						float dy2, float dx3, float dy3);
+void        UParc (UserPath * up, float x, float y, float r, float ang1,
+				   float ang2);
+void        UParcn (UserPath * up, float x, float y, float r, float ang1,
+					float ang2);
+void        UParct (UserPath * up, float x1, float y1, float x2, float y2,
+					float r);
+void        closePath (UserPath * up);
+void        addPts (UserPath * up, float x, float y);
+void        addOp (UserPath * up, int op);
+void        add (UserPath * up, int op, float x, float y);
+void        checkBBox (UserPath * up, float x, float y);
 
-#endif//UserPath_h
+#endif // UserPath_h

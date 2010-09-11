@@ -3,14 +3,12 @@
 
 #include <AppKit/AppKit.h>
 
-@interface DictList:NSMutableArray
-{
+@ interface DictList:NSMutableArray {
 }
 
-- initListFromFile:(FILE *)fp;
-- writeListFile:(char *)filename;
-- (id) findDictKeyword:(char *)key;
+-initListFromFile:(FILE *) fp;
+-writeListFile:(char *) filename;
+-(id) findDictKeyword:(char *) key;
 
 @end
-
-#endif//DictList_h
+#endif // DictList_h
