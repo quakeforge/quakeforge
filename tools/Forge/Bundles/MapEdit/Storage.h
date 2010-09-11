@@ -31,7 +31,8 @@
 
 #include <AppKit/AppKit.h>
 
-@ interface Storage:NSObject {
+@interface Storage:NSObject
+{
 	@public void *dataPtr;				/* data of the Storage object */
 	const char *description;			/* Element description */
 	NSUInteger  numElements;			/* Actual number of elements */

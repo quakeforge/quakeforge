@@ -18,7 +18,8 @@ void        CameraLineto (vec3_t p);
 
 extern BOOL timedrawing;
 
-@interface CameraView:NSView {
+@interface CameraView:NSView
+{
 	float       xa, ya, za;
 	float       move;
 

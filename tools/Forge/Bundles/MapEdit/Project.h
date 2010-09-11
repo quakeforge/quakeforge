@@ -21,7 +21,8 @@
 
 extern id   project_i;
 
-@interface Project:NSObject {
+@interface Project:NSObject
+{
 	id          projectInfo;			// dictionary storage of project info
 
 	id          basepathinfo_i;			// outlet to base path info textfield

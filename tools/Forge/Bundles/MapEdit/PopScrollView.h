@@ -3,7 +3,8 @@
 
 #include <AppKit/AppKit.h>
 
-@ interface PopScrollView:NSScrollView {
+@interface PopScrollView:NSScrollView
+{
 	id          button1, button2;
 }
 
