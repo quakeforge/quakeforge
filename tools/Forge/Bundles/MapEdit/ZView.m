@@ -277,7 +277,8 @@ If realbounds has shrunk, nothing will change.
 
 	// XXX[self suspendNotifyAncestorWhenFrameChanged:YES];
 	[self setBoundsSize:sbounds.size];
-	// XXX[self setDrawOrigin: -sbounds.size.width/2 : sbounds.origin.y];
+	[self setBoundsOrigin: NSMakePoint (-sbounds.size.width / 2,
+										sbounds.origin.y)];
 	// XXX[self moveTo: -sbounds.size.width/2 : sbounds.origin.y];
 	// XXX[self suspendNotifyAncestorWhenFrameChanged:NO];
 	// XXX[[_super_view _super_view] reflectScroll: _super_view];

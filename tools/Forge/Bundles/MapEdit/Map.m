@@ -171,9 +171,9 @@ FILE METHODS
 	return;
 }
 
+#define FN_DEVLOG "/qcache/devlog"
 -writeStats
 {
-/*XXX
 	FILE	*f;
 	extern	int	c_updateall;
 	struct timeval tp;
@@ -185,7 +185,6 @@ FILE METHODS
 	fprintf (f,"%i %i\n", (int)tp.tv_sec, c_updateall);
 	c_updateall = 0;
 	fclose (f);
-*/
 	return self;
 }
 

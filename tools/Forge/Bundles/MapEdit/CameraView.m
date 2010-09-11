@@ -406,14 +406,10 @@ drawSolid
 	[[self window] setBackingType: NSBackingStoreRetained];
 
 	planes[0] = (unsigned char *) imagebuffer;
-	NSDrawBitmap (_bounds, r_width, r_height, 8, 3, 32, r_width * 4, NO, NO, @"RGB",	// FIXME 
-																						// what 
-																						// should 
-																						// this 
-																						// be?
-					(const unsigned char **const) planes);
+	NSDrawBitmap (_bounds, r_width, r_height, 8, 3, 32, r_width * 4, NO, NO,
+				  NSCalibratedRGBColorSpace,
+					(const unsigned char **) planes);
 
-	// XXX NSPing ();
 	[[self window] setBackingType: NSBackingStoreBuffered];
 
 
@@ -474,7 +470,6 @@ drawSelf
 		[self drawWire: rects];
 
 	if (timedrawing) {
-		// XXX NSPing ();
 		drawtime = Sys_DoubleTime () - drawtime;
 		printf ("CameraView drawtime: %5.3f\n", drawtime);
 	}
@@ -555,7 +550,7 @@ modalMoveLoop
 -modalMoveLoop:(NSPoint *)basept :(vec3_t)movemod :converter
 {
 	vec3_t      originbase;
-	NSEvent    *event = 0;				// XXX
+	NSEvent    *event = 0;
 	NSPoint     newpt;
 
 //  NSPoint     brushpt;
@@ -589,7 +584,7 @@ modalMoveLoop
 		for (i = 0; i < 3; i++)
 			origin[i] = originbase[i] + movemod[i] * delta[i];
 
-#if 0									// FIXME
+#if 0	// FIXME
 		// 
 		// if command is down, look towards brush or entity
 		// 
@@ -695,7 +690,7 @@ viewDrag:
 -viewDrag:(NSPoint *)pt
 {
 	float       dx, dy;
-	NSEvent    *event = 0;				// XXX
+	NSEvent    *event = 0;
 	NSPoint     newpt;
 
 //
