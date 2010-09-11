@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 
 #include "QF/quakeio.h"
+#include "QF/sys.h"
 
 #include "QuakeEd.h"
 #include "Clipper.h"
@@ -387,7 +388,7 @@ App delegate methods
 //[self doOpen: "/raid/quake/id1_/maps/amlev1.map"];    // DEBUG
 	[map_i newMap];
 
-	qprintf ("ready.");
+	Sys_Printf ("ready.");
 
 //malloc_debug(-1);     // DEBUG
 
@@ -415,14 +416,14 @@ App delegate methods
 
 		b =[map_i selectedBrush];
 		if (!b) {
-			qprintf ("nothing selected");
+			Sys_Printf ("nothing selected");
 			return self;
 		}
 		td =[b texturedef];
-		qprintf (td->texture);
+		Sys_Printf (td->texture);
 		return self;
 	} else
-		qprintf ("Unknown command\n");
+		Sys_Printf ("Unknown command\n");
 	return self;
 }
 
@@ -529,7 +530,7 @@ applyRegion:
 // get the bounds of the current selection
 
 	if ([map_i numSelected] != 1) {
-		qprintf ("must have a single brush selected");
+		Sys_Printf ("must have a single brush selected");
 		return self;
 	}
 
@@ -759,7 +760,7 @@ Called by open or the project panel
 	[self setTitleWithRepresentedFilename: [NSString stringWithCString:fname]];
 	[self updateAll];
 
-	qprintf ("%s loaded\n", fname);
+	Sys_Printf ("%s loaded\n", fname);
 
 	return self;
 }
@@ -892,23 +893,23 @@ keyDown
 	switch ([theEvent keyCode]) {
 		case 60:						// F2
 			[cameraview_i setDrawMode:dr_wire];
-			qprintf ("wire draw mode");
+			Sys_Printf ("wire draw mode");
 			return self;
 		case 61:						// F3
 			[cameraview_i setDrawMode:dr_flat];
-			qprintf ("flat draw mode");
+			Sys_Printf ("flat draw mode");
 			return self;
 		case 62:						// F4
 			[cameraview_i setDrawMode:dr_texture];
-			qprintf ("texture draw mode");
+			Sys_Printf ("texture draw mode");
 			return self;
 
 		case 63:						// F5
 			[xyview_i setDrawMode:dr_wire];
-			qprintf ("wire draw mode");
+			Sys_Printf ("wire draw mode");
 			return self;
 		case 64:						// F6
-			qprintf ("texture draw mode");
+			Sys_Printf ("texture draw mode");
 			return self;
 
 		case 66:						// F8
@@ -969,7 +970,7 @@ keyDown
 		case 13:						// enter
 			[clipper_i carve];
 			[self updateAll];
-			qprintf ("carved brush");
+			Sys_Printf ("carved brush");
 			break;
 
 		case ' ':
@@ -1020,7 +1021,7 @@ keyDown
 			break;
 
 		default:
-			qprintf ("undefined keypress");
+			Sys_Printf ("undefined keypress");
 			NopSound ();
 			break;
 	}

@@ -1,3 +1,4 @@
+#include "QF/sys.h"
 
 #include "ZView.h"
 #include "ZScrollView.h"
@@ -587,10 +588,9 @@ ZDragCallback (float dy)
 
 -selectionDragFrom:(NSEvent *) theEvent
 {
-	qprintf ("dragging selection");
+	Sys_Printf ("dragging selection");
 	[self dragFrom: theEvent useGrid: YES callback:ZDragCallback];
 	[quakeed_i updateCamera];
-	qprintf ("");
 	return self;
 
 }
@@ -618,9 +618,8 @@ ZScrollCallback (float dy)
 
 -scrollDragFrom:(NSEvent *) theEvent
 {
-	qprintf ("scrolling view");
+	Sys_Printf ("scrolling view");
 	[self dragFrom: theEvent useGrid: YES callback:ZScrollCallback];
-	qprintf ("");
 	return self;
 }
 
@@ -657,7 +656,7 @@ ZControlCallback (float dy)
 	if (!numcontrolpoints)
 		return NO;
 
-	qprintf ("dragging brush plane");
+	Sys_Printf ("dragging brush plane");
 
 	pt =[theEvent locationInWindow];
 	pt =[self convertPoint: pt fromView:NULL];
@@ -667,7 +666,6 @@ ZControlCallback (float dy)
 	[[map_i selectedBrush] removeIfInvalid];
 
 	[quakeed_i updateCamera];
-	qprintf ("");
 	return YES;
 }
 
@@ -739,7 +737,7 @@ mouseDown
 
 	}
 
-	qprintf ("bad flags for click");
+	Sys_Printf ("bad flags for click");
 	NopSound ();
 	return;
 }
@@ -769,7 +767,7 @@ rightMouseDown
 		[self scrollDragFrom:theEvent];
 	}
 
-	qprintf ("bad flags for click");
+	Sys_Printf ("bad flags for click");
 	NopSound ();
 }
 

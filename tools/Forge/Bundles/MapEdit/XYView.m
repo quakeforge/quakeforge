@@ -1,3 +1,5 @@
+#include "QF/sys.h"
+
 #include "XYView.h"
 #include "ZView.h"
 #include "CameraView.h"
@@ -790,7 +792,7 @@ NSRect      xy_draw_rect;
 	static float drawtime;				// static to shut up compiler warning
 
 	if (timedrawing)
-		drawtime = I_FloatTime ();
+		drawtime = Sys_DoubleTime ();
 
 	xy_draw_rect = rects;
 	newrect.origin.x = newrect.origin.y = 99999;
@@ -808,7 +810,7 @@ NSRect      xy_draw_rect;
 
 	if (timedrawing) {
 		// NSPing ();
-		drawtime = I_FloatTime () - drawtime;
+		drawtime = Sys_DoubleTime () - drawtime;
 		printf ("CameraView drawtime: %5.3f\n", drawtime);
 	}
 
@@ -905,10 +907,9 @@ DragCallback (float dx, float dy)
 
 -selectionDragFrom:(NSEvent *) theEvent
 {
-	qprintf ("dragging selection");
+	Sys_Printf ("dragging selection");
 	[self dragFrom: theEvent useGrid: YES callback:DragCallback];
 	[quakeed_i updateAll];
-	qprintf ("");
 	return self;
 
 }
@@ -937,9 +938,8 @@ ScrollCallback (float dx, float dy)
 
 -scrollDragFrom:(NSEvent *) theEvent
 {
-	qprintf ("scrolling view");
+	Sys_Printf ("scrolling view");
 	[self dragFrom: theEvent useGrid: YES callback:ScrollCallback];
-	qprintf ("");
 	return self;
 
 }
@@ -973,7 +973,7 @@ DirectionCallback (float dx, float dy)
 {
 	NSPoint     pt;
 
-	qprintf ("changing camera direction");
+	Sys_Printf ("changing camera direction");
 
 	pt =[theEvent locationInWindow];
 	pt =[self convertPoint: pt fromView:NULL];
@@ -984,7 +984,6 @@ DirectionCallback (float dx, float dy)
 	DirectionCallback (0, 0);
 
 	[self dragFrom: theEvent useGrid: NO callback:DirectionCallback];
-	qprintf ("");
 	return self;
 }
 
@@ -1023,7 +1022,7 @@ NewCallback (float dx, float dy)
 	texturedef_t td;
 	NSPoint     pt;
 
-	qprintf ("sizing new brush");
+	Sys_Printf ("sizing new brush");
 
 	pt =[theEvent locationInWindow];
 	pt =[self convertPoint: pt fromView:NULL];
@@ -1050,7 +1049,6 @@ NewCallback (float dx, float dy)
 	[newbrush removeIfInvalid];
 
 	[quakeed_i updateCamera];
-	qprintf ("");
 	return self;
 
 }
@@ -1090,7 +1088,7 @@ ControlCallback (float dx, float dy)
 	if (!numcontrolpoints)
 		return NO;
 
-	qprintf ("dragging brush plane");
+	Sys_Printf ("dragging brush plane");
 
 	pt =[theEvent locationInWindow];
 	pt =[self convertPoint: pt fromView:NULL];
@@ -1101,7 +1099,6 @@ ControlCallback (float dx, float dy)
 
 	[quakeed_i updateAll];
 
-	qprintf ("");
 	return YES;
 }
 
@@ -1144,7 +1141,7 @@ ControlCallback (float dx, float dy)
 	if (!numcontrolpoints)
 		return NO;
 
-	qprintf ("dragging brush plane");
+	Sys_Printf ("dragging brush plane");
 
 	pt =[theEvent locationInWindow];
 	pt =[self convertPoint: pt fromView:NULL];
@@ -1154,7 +1151,6 @@ ControlCallback (float dx, float dy)
 	[br removeIfInvalid];
 
 	[quakeed_i updateAll];
-	qprintf ("");
 	return YES;
 }
 
@@ -1212,7 +1208,7 @@ mouseDown
 	if (flags == 0) {
 		// if double click, position Z checker
 		if ([theEvent clickCount] > 1) {
-			qprintf ("positioned Z checker");
+			Sys_Printf ("positioned Z checker");
 			[zview_i setPoint:&pt];
 			[quakeed_i newinstance];
 			[quakeed_i updateZ];
@@ -1241,7 +1237,7 @@ mouseDown
 			return[self selectionDragFrom:theEvent];
 
 		if ([map_i numSelected]) {
-			qprintf ("missed");
+			Sys_Printf ("missed");
 			return self;
 		}
 
@@ -1255,7 +1251,6 @@ mouseDown
 		[quakeed_i newinstance];
 		[cameraview_i display];
 		[cameraview_i XYmouseDown: &pt flags:[theEvent modifierFlags]];
-		qprintf ("");
 		return self;
 	}
 //
@@ -1266,11 +1261,10 @@ mouseDown
 		[self shearDragFrom:theEvent];
 		return self;
 
-		qprintf ("moving Z checker");
+		Sys_Printf ("moving Z checker");
 		[zview_i setXYOrigin:&pt];
 		[quakeed_i updateAll];
 		[zview_i XYmouseDown:&pt];
-		qprintf ("");
 		return self;
 	}
 //
@@ -1278,7 +1272,7 @@ mouseDown
 //
 	if (flags == NSAlternateKeyMask) {
 		if (drawmode != dr_texture) {
-			qprintf ("No texture setting except in texture mode!\n");
+			Sys_Printf ("No texture setting except in texture mode!\n");
 			NopSound ();
 			return self;
 		}
@@ -1291,7 +1285,7 @@ mouseDown
 //
 	if (flags == (NSControlKeyMask | NSAlternateKeyMask)) {
 		if (drawmode != dr_texture) {
-			qprintf ("No texture setting except in texture mode!\n");
+			Sys_Printf ("No texture setting except in texture mode!\n");
 			NopSound ();
 			return self;
 		}
@@ -1300,7 +1294,7 @@ mouseDown
 		return self;
 	}
 
-	qprintf ("bad flags for click");
+	Sys_Printf ("bad flags for click");
 	NopSound ();
 	return self;
 }
@@ -1334,7 +1328,7 @@ rightMouseDown
 		return[self directionDragFrom:theEvent];
 	}
 
-	qprintf ("bad flags for click");
+	Sys_Printf ("bad flags for click");
 	NopSound ();
 
 	return self;

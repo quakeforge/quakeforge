@@ -179,7 +179,7 @@ TEX_InitFromWad (char *path)
 	QFile      *file;
 	size_t      size;
 
-	start = I_FloatTime ();
+	start = Sys_DoubleTime ();
 
 	strcpy (newpath,[preferences_i getProjectPath]);
 	strcat (newpath, "/");
@@ -228,9 +228,9 @@ TEX_InitFromWad (char *path)
 
 	free (wadfile);
 
-	stop = I_FloatTime ();
+	stop = Sys_DoubleTime ();
 
-	qprintf ("loaded %s (%5.1f)", local, stop - start);
+	Sys_Printf ("loaded %s (%5.1f)", local, stop - start);
 }
 
 /*
@@ -422,7 +422,7 @@ TEX_ForName (char *name)
 			 (takeCurrentTexture)];
 			[quakeed_i updateAll];
 		} else
-			qprintf ("can't modify spawned entities");
+			Sys_Printf ("can't modify spawned entities");
 	}
 	[quakeed_i makeFirstResponder:quakeed_i];
 	return self;
