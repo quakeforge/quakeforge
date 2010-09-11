@@ -9,7 +9,8 @@
 
 extern id   clipper_i;
 
-@interface Clipper:NSObject {
+@interface Clipper:NSObject
+{
 	int         num;
 	vec3_t      pos[3];
 	plane_t     plane;

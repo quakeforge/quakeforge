@@ -18,7 +18,8 @@ typedef enum {
 
 extern id   inspcontrol_i;
 
-@interface InspectorControl:NSObject {
+@interface InspectorControl:NSObject
+{
 	id          inspectorView_i;		// inspector view
 	id          inspectorSubview_i;		// inspector view's current subview
 										// (gets replaced)

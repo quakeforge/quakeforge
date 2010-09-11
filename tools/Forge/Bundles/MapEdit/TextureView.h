@@ -3,7 +3,8 @@
 
 #include <AppKit/AppKit.h>
 
-@ interface TextureView:NSView {
+@interface TextureView:NSView
+{
 	id          parent_i;
 	int         deselectIndex;
 }

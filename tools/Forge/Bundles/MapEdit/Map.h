@@ -9,7 +9,8 @@
 
 extern id   map_i;
 
-@interface Map:NSMutableArray {
+@interface Map:NSMutableArray
+{
 	id          currentEntity;
 	id          oldselection;			// temp when loading a new map
 	float       minz, maxz;
