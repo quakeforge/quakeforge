@@ -1,0 +1,106 @@
+{
+    "## Comment" = "Do NOT change this file, Gorm maintains it";
+    CameraView = {
+	Actions = (
+	    "drawMode:",
+	    "homeView:",
+	    "upFloor:",
+	    "downFloor:"
+	);
+	Outlets = (
+	    mode_radio_i
+	);
+	Super = NSView;
+    };
+    FirstResponder = {
+	Actions = (
+	    "BSP_FastVis:",
+	    "BSP_Full:",
+	    "BSP_NoVis:",
+	    "BSP_entities:",
+	    "BSP_relight:",
+	    "BSP_stop:",
+	    "appDidInit:",
+	    "appWillTerminate:",
+	    "applyRegion:",
+	    "centerCamera:",
+	    "centerZChecker:",
+	    "changeInspector:",
+	    "changeXYLookUp:",
+	    "clear:",
+	    "downFloor:",
+	    "drawMode:",
+	    "homeView:",
+	    "openProject:",
+	    "save:",
+	    "saveAs:",
+	    "setBrushRegion:",
+	    "setModeRadio:",
+	    "setXYRegion:",
+	    "textCommand:",
+	    "upFloor:",
+	    "updateAll:"
+	);
+	Super = NSObject;
+    };
+    QuakeEd = {
+	Actions = (
+	    "updateAll:",
+	    "appDidInit:",
+	    "appWillTerminate:",
+	    "openProject:",
+	    "textCommand:",
+	    "applyRegion:",
+	    "clear:",
+	    "centerCamera:",
+	    "centerZChecker:",
+	    "changeXYLookUp:",
+	    "setBrushRegion:",
+	    "setXYRegion:",
+	    "open:",
+	    "save:",
+	    "saveAs:",
+	    "BSP_Full:",
+	    "BSP_FastVis:",
+	    "BSP_NoVis:",
+	    "BSP_relight:",
+	    "BSP_stop:",
+	    "BSP_entities:"
+	);
+	Outlets = (
+	    brushcount_i,
+	    entitycount_i,
+	    regionbutton_i,
+	    show_coordinates_i,
+	    show_names_i,
+	    filter_light_i,
+	    filter_path_i,
+	    filter_entities_i,
+	    filter_clip_i,
+	    filter_water_i,
+	    filter_world_i,
+	    cmd_in_i,
+	    cmd_out_i,
+	    xy_drawmode_i
+	);
+	Super = NSWindow;
+    };
+    XYView = {
+	Actions = (
+	    "setModeRadio:",
+	    "drawMode:",
+	    "drawMode:"
+	);
+	Outlets = (
+	    mode_radio_i
+	);
+	Super = NSView;
+    };
+    ZView = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSView;
+    };
+}
