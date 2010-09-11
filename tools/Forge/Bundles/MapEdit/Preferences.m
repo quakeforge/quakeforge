@@ -12,15 +12,46 @@ float       lightaxis[3] = { 1, 0.6, 0.75 };
 
 @implementation Preferences
 
+void
+WriteStringDefault (id prefs, const char *name, const char *value)
+{
+	NSString   *key = [NSString stringWithCString: name];
+	NSString   *val = [NSString stringWithCString: value];
+	[prefs setObject:val forKey:key];
+}
+
+void
+WriteNumericDefault (id prefs, const char *name, float value)
+{
+	char        str[128];
+
+	sprintf (str, "%f", value);
+	WriteStringDefault (prefs, name, str);
+}
+
 -init
 {
 	[super init];
 	preferences_i = self;
+
+	NSMutableDictionary *defaults = [NSMutableDictionary dictionary];
+
+	WriteStringDefault (defaults, "ProjectPath", "");
+	WriteStringDefault (defaults, "BspSoundPath", "");
+	WriteNumericDefault (defaults, "ShowBSPOutput", NO);
+	WriteNumericDefault (defaults, "OffsetBrushCopy", NO);
+	WriteNumericDefault (defaults, "StartWad", 0);
+	WriteNumericDefault (defaults, "Xlight", 0);
+	WriteNumericDefault (defaults, "Ylight", 0);
+	WriteNumericDefault (defaults, "Zlight", 0);
+
+	prefs = [[NSUserDefaults standardUserDefaults] retain];
+	[prefs registerDefaults:defaults];
 	return self;
 }
 
 int
-_atoi (char *c)
+_atoi (const char *c)
 {
 	if (!c)
 		return 0;
@@ -28,26 +59,11 @@ _atoi (char *c)
 }
 
 int
-_atof (char *c)
+_atof (const char *c)
 {
 	if (!c)
 		return 0;
 	return atof (c);
-}
-
-void
-WriteNumericDefault (char *name, float value)
-{
-	char        str[128];
-
-	sprintf (str, "%f", value);
-	// XXX NSWriteDefault (DEFOWNER, name, str);
-}
-
-void
-WriteStringDefault (char *name, char *value)
-{
-	// XXX NSWriteDefault (DEFOWNER, name, value);
 }
 
 //
@@ -55,45 +71,50 @@ WriteStringDefault (char *name, char *value)
 //
 -readDefaults
 {
-	char       *string = "";
+	const char *string;
 	float       value = 0;
 
-	// XXX string = (char *)NSGetDefaultValue(DEFOWNER,"ProjectPath");
+	string = [[prefs stringForKey: @"ProjectPath"] cString];
 	[self setProjectPath:string];
 
-	// XXX string = (char *)NSGetDefaultValue(DEFOWNER,"BspSoundPath");
+	string = [[prefs stringForKey: @"BspSoundPath"] cString];
 	[self setBspSoundPath:string];
 
-	// XXX value = _atoi((char *)NSGetDefaultValue(DEFOWNER,"ShowBSPOutput"));
+	string = [[prefs stringForKey: @"ShowBSPOutput"] cString];
+	value = _atoi (string);
 	[self setShowBSP:value];
 
-	// XXX value = _atoi((char
-	// *)NSGetDefaultValue(DEFOWNER,"OffsetBrushCopy"));
+	string = [[prefs stringForKey: @"OffsetBrushCopy"] cString];
+	value = _atoi (string);
 	[self setBrushOffset:value];
 
-	// XXX value = _atoi((char *)NSGetDefaultValue(DEFOWNER,"StartWad"));
+	string = [[prefs stringForKey: @"StartWad"] cString];
+	value = _atoi (string);
 	[self setStartWad:value];
 
-	// XXX value = _atof((char *)NSGetDefaultValue(DEFOWNER,"Xlight"));
+	string = [[prefs stringForKey: @"Xlight"] cString];
+	value = _atof (string);
 	[self setXlight:value];
 
-	// XXX value = _atof((char *)NSGetDefaultValue(DEFOWNER,"Ylight"));
+	string = [[prefs stringForKey: @"Ylight"] cString];
+	value = _atof (string);
 	[self setYlight:value];
 
-	// XXX value = _atof((char *)NSGetDefaultValue(DEFOWNER,"Zlight"));
+	string = [[prefs stringForKey: @"Zlight"] cString];
+	value = _atof (string);
 	[self setZlight:value];
 
 	return self;
 }
 
 
--setProjectPath:(char *) path
+-setProjectPath:(const char *) path
 {
 	if (!path)
 		path = "";
 	strcpy (projectpath, path);
 	[startproject_i setStringValue: [NSString stringWithCString:path]];
-	WriteStringDefault ("ProjectPath", path);
+	WriteStringDefault (prefs, "ProjectPath", path);
 	return self;
 }
 
@@ -126,7 +147,7 @@ WriteStringDefault (char *name, char *value)
 	NSArray    *filenames;
 	char        path[1024], file[64];
 
-	panel =[NSOpenPanel new];
+	panel = [NSOpenPanel new];
 
 	// XXX ExtractFilePath (bspSound, path);
 	// XXX ExtractFileBase (bspSound, file);
@@ -161,7 +182,7 @@ WriteStringDefault (char *name, char *value)
 //
 //  Set the bspSound path
 //
--setBspSoundPath:(char *) path
+-setBspSoundPath:(const char *) path
 {
 	if (!path)
 		path = "";
@@ -177,7 +198,7 @@ WriteStringDefault (char *name, char *value)
 
 	[bspSoundField_i setStringValue: [NSString stringWithCString:bspSound]];
 
-	WriteStringDefault ("BspSoundPath", bspSound);
+	WriteStringDefault (prefs, "BspSoundPath", bspSound);
 
 	return self;
 }
@@ -193,7 +214,7 @@ WriteStringDefault (char *name, char *value)
 {
 	showBSP = state;
 	[showBSP_i setIntValue:state];
-	WriteNumericDefault ("ShowBSPOutput", showBSP);
+	WriteNumericDefault (prefs, "ShowBSPOutput", showBSP);
 
 	return self;
 }
@@ -218,7 +239,7 @@ WriteStringDefault (char *name, char *value)
 {
 	brushOffset = state;
 	[brushOffset_i setIntValue:state];
-	WriteNumericDefault ("OffsetBrushCopy", state);
+	WriteNumericDefault (prefs, "OffsetBrushCopy", state);
 	return self;
 }
 
@@ -242,7 +263,7 @@ WriteStringDefault (char *name, char *value)
 
 	[startwad_i selectCellAtRow: startwad column:0];
 
-	WriteNumericDefault ("StartWad", value);
+	WriteNumericDefault (prefs, "StartWad", value);
 	return self;
 }
 
@@ -265,7 +286,7 @@ WriteStringDefault (char *name, char *value)
 		xlight = 0.6;
 	lightaxis[1] = xlight;
 	[xlight_i setFloatValue:xlight];
-	WriteNumericDefault ("Xlight", xlight);
+	WriteNumericDefault (prefs, "Xlight", xlight);
 	return self;
 }
 
@@ -276,7 +297,7 @@ WriteStringDefault (char *name, char *value)
 		ylight = 0.75;
 	lightaxis[2] = ylight;
 	[ylight_i setFloatValue:ylight];
-	WriteNumericDefault ("Ylight", ylight);
+	WriteNumericDefault (prefs, "Ylight", ylight);
 	return self;
 }
 
@@ -287,7 +308,7 @@ WriteStringDefault (char *name, char *value)
 		zlight = 1;
 	lightaxis[0] = zlight;
 	[zlight_i setFloatValue:zlight];
-	WriteNumericDefault ("Zlight", zlight);
+	WriteNumericDefault (prefs, "Zlight", zlight);
 	return self;
 }
 
