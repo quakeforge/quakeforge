@@ -11,7 +11,7 @@ ADDITIONAL_CFLAGS += -Wall -Werror
 ADDITIONAL_INCLUDE_DIRS += -I ../.. -I ../../../../include
 
 # Additional LDFLAGS to pass to the linker
-ADDITIONAL_LDFLAGS += 
+ADDITIONAL_LDFLAGS += -lQFutil
 
 # Additional library directories the linker should search
 ADDITIONAL_LIB_DIRS +=
