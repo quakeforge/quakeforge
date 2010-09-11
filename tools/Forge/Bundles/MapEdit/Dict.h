@@ -10,25 +10,23 @@ typedef struct {
 	char       *value;
 } dict_t;
 
-@interface Dict:Storage {
+@interface Dict:Storage
+{
 }
 
 -initFromFile:(FILE *) fp;
 
 -(id) parseMultipleFrom:(char *) value;
 -(int) getValueUnits:(char *) key;
--delString:(char *)
-string      fromValue:(char *) key;
+-delString:(char *)string fromValue:(char *) key;
 
--addString:(char *)
-string      toValue:(char *) key;
+-addString:(char *)string toValue:(char *) key;
 
 -(char *) convertListToString:(id) list;
 -(char *) getStringFor:(char *) name;
 -removeKeyword:(char *) key;
 -(unsigned int) getValueFor:(char *) name;
--changeStringFor:(char *)
-key         to:(char *) value;
+-changeStringFor:(char *)key to:(char *) value;
 
 -(dict_t *) findKeyword:(char *) key;
 
@@ -41,24 +39,17 @@ key         to:(char *) value;
 -setupMultiple:(char *) value;
 -(char *) getNextParameter;
 
-@end int
-GetNextChar (FILE * fp);
-void
-CopyUntilWhitespc (FILE * fp, char *buffer);
-void
-CopyUntilQuote (FILE * fp, char *buffer);
-int
-FindBrace (FILE * fp);
-int
-FindQuote (FILE * fp);
-int
-FindWhitespc (FILE * fp);
-int
-FindNonwhitespc (FILE * fp);
+@end
 
-char       *
-FindWhitespcInBuffer (char *buffer);
-char       *
-FindNonwhitespcInBuffer (char *buffer);
+int GetNextChar (FILE * fp);
+void CopyUntilWhitespc (FILE * fp, char *buffer);
+void CopyUntilQuote (FILE * fp, char *buffer);
+int FindBrace (FILE * fp);
+int FindQuote (FILE * fp);
+int FindWhitespc (FILE * fp);
+int FindNonwhitespc (FILE * fp);
+
+char *FindWhitespcInBuffer (char *buffer);
+char *FindNonwhitespcInBuffer (char *buffer);
 
 #endif // Dict_h

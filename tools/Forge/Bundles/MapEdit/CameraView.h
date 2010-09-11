@@ -44,15 +44,14 @@ extern BOOL timedrawing;
 
 -setOrigin:(vec3_t)
 org
-angle:(float)
-	angle;
+angle:(float)angle;
 
--getOrigin:(vec3_t) org;
+-getOrigin:(vec3_t)org;
 
 -(float) yawAngle;
 
 -matrixFromAngles;
--_keyDown:(NSEvent *) theEvent;
+-_keyDown:(NSEvent *)theEvent;
 
 -drawMode:sender;
 -setDrawMode:(drawmode_t) mode;
@@ -61,15 +60,9 @@ angle:(float)
 
 -XYDrawSelf;							// for drawing viewpoint in XY view
 -ZDrawSelf;								// for drawing viewpoint in XY view
--(BOOL) XYmouseDown:(NSPoint *)
-pt
-flags:(int)
-	flags;								// return YES if brush handled
+-(BOOL) XYmouseDown:(NSPoint *)pt flags:(int)flags;// return YES if brush handled
 
--(BOOL) ZmouseDown:(NSPoint *)
-pt
-flags:(int)
-	flags;								// return YES if brush handled
+-(BOOL) ZmouseDown:(NSPoint *)pt flags:(int)flags;// return YES if brush handled
 
 -upFloor:sender;
 -downFloor:sender;

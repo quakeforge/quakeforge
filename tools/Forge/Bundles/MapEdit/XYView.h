@@ -29,7 +29,8 @@ void        XYlineto (vec3_t pt);
 
 
 
-@interface XYView:NSView {
+@interface XYView:NSView
+{
 	NSRect      realbounds, newrect, combinedrect;
 	NSPoint     midpoint;
 	int         gridsize;
@@ -57,10 +58,7 @@ void        XYlineto (vec3_t pt);
 -newRealBounds:(NSRect *) nb;
 
 -addToScrollRange: (float) x:(float) y;
--setOrigin:(NSPoint *)
-pt
-scale:(float)
-	sc;
+-setOrigin:(NSPoint *) pt scale:(float) sc;
 
 -centerOn:(vec3_t) org;
 

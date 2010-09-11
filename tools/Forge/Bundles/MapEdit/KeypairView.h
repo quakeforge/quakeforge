@@ -5,7 +5,8 @@
 
 extern id   keypairview_i;
 
-@interface KeypairView:NSView {
+@interface KeypairView:NSView
+{
 }
 
 -calcViewSize;
@@ -17,4 +18,5 @@ extern id   keypairview_i;
 #define	LINEHEIGHT	16
 
 @end
+
 #endif // KeypairView_h

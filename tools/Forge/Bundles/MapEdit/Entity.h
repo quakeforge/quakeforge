@@ -13,7 +13,8 @@ typedef struct epair_s {
 
 // an Entity is a list of brush objects, with additional key / value info
 
-@interface Entity:NSMutableArray {
+@interface Entity:NSMutableArray
+{
 	epair_t    *epairs;
 	BOOL        modifiable;
 }
@@ -28,12 +29,10 @@ typedef struct epair_s {
 
 -(char *) targetname;
 
--writeToFILE:(FILE *)
-f           region:(BOOL) reg;
+-writeToFILE:(FILE *)f region:(BOOL) reg;
 
 -(char *) valueForQKey:(char *) k;
--getVector:(vec3_t)
-v           forKey:(char *) k;
+-getVector:(vec3_t)v forKey:(char *) k;
 
 -setKey:(const char *)
 k           toValue:(const char *) v;

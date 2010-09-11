@@ -51,7 +51,8 @@ typedef struct {
 
 extern id   texturepalette_i;
 
-@interface TexturePalette:NSObject {
+@interface TexturePalette:NSObject
+{
 	char        currentwad[1024];
 	id          textureList_i;
 	id          textureView_i;
