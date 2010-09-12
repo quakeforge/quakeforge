@@ -3,6 +3,7 @@
 #include "QF/qendian.h"
 #include "QF/quakeio.h"
 #include "QF/sys.h"
+#include "QF/wadfile.h"
 
 #include "TexturePalette.h"
 #include "Preferences.h"
@@ -15,8 +16,6 @@
 
 id          texturepalette_i;
 
-
-#define	TYP_MIPTEX	67
 
 int         tex_count;
 qtexture_t  qtextures[MAX_TEXTURES];
@@ -74,10 +73,15 @@ TEX_InitPalette
 ==============
 */
 void
-TEX_InitPalette (byte * pal)
+TEX_InitPalette (wad_t *wad, lumpinfo_t *pallump)
 {
+	byte       *pal, *opal;
 	int         r, g, b, v;
 	int         i;
+
+	opal = pal = malloc (pallump->size);
+	Qseek (wad->handle, pallump->filepos, SEEK_SET);
+	Qread (wad->handle, pal, pallump->size);
 
 	for (i = 0; i < 256; i++) {
 		r = pal[0];
@@ -90,6 +94,7 @@ TEX_InitPalette (byte * pal)
 
 		tex_palette[i] = v;
 	}
+	free (opal);
 }
 
 
@@ -99,14 +104,19 @@ TEX_ImageFromMiptex
 =================
 */
 void
-TEX_ImageFromMiptex (miptex_t *qtex)
+TEX_ImageFromMiptex (wad_t *wad, lumpinfo_t *qtexlump)
 {
+	miptex_t *qtex;
 	NSBitmapImageRep *bm;
 	byte       *source;
 	unsigned   *dest;
 	int         width, height, i, count;
 	qtexture_t *q;
 	int         tr, tg, tb;
+
+	qtex = malloc (qtexlump->size);
+	Qseek (wad->handle, qtexlump->filepos, SEEK_SET);
+	Qread (wad->handle, qtex, qtexlump->size);
 
 	width = LittleLong (qtex->width);
 	height = LittleLong (qtex->height);
@@ -139,26 +149,10 @@ TEX_ImageFromMiptex (miptex_t *qtex)
 	q->flatcolor.chan[1] = tg / count;
 	q->flatcolor.chan[2] = tb / count;
 	q->flatcolor.chan[3] = 0xff;
+	free (qtex);
 }
 
 //=============================================================================
-
-typedef struct {
-	char        identification[4];		// should be WAD2 or 2DAW
-	int         numlumps;
-	int         infotableofs;
-} wadinfo_t;
-
-
-typedef struct {
-	int         filepos;
-	int         disksize;
-	int         size;					// uncompressed
-	char        type;
-	char        compression;
-	char        pad1, pad2;
-	char        name[16];				// must be null terminated
-} lumpinfo_t;
 
 /*
 =================
@@ -171,18 +165,15 @@ TEX_InitFromWad (char *path)
 	int         i;
 	char        local[1024];
 	char        newpath[1024];
-	byte       *wadfile;
-	wadinfo_t  *wadinfo;
-	lumpinfo_t *lumpinfo;
-	int         numlumps;
 	float       start, stop;
-	QFile      *file;
-	size_t      size;
+	wad_t      *wad;
+	lumpinfo_t *lumpinfo;
 
 	start = Sys_DoubleTime ();
 
 	strcpy (newpath,[preferences_i getProjectPath]);
-	strcat (newpath, "/");
+	if (newpath[0])
+		strcat (newpath, "/");
 	strcat (newpath, path);
 
 // free any textures
@@ -191,42 +182,28 @@ TEX_InitFromWad (char *path)
 	tex_count = 0;
 
 // try and use the cached wadfile   
-	sprintf (local, "/qcache%s", newpath);
 
-	// Sys_UpdateFile (local, newpath);
-	// FIXME use wad functions
-	file = Qopen (local, "rb");
-	size = Qfilesize (file);
-	wadfile = malloc (size);
-	Qread (file, wadfile, size);
-	Qclose (file);
-	wadinfo = (wadinfo_t *) wadfile;
+	Sys_Printf ("TEX_InitFromWad %s\n", newpath);
+	wad = wad_open (newpath);
 
-	if (strncmp ((char *) wadfile, "WAD2", 4)) {
-		unlink (local);
-		Sys_Error ("TEX_InitFromWad: %s isn't a wadfile", newpath);
-	}
-
-	numlumps = LittleLong (wadinfo->numlumps);
-	lumpinfo = (lumpinfo_t *) (wadfile + LittleLong (wadinfo->infotableofs));
+	lumpinfo = wad->lumps;
 
 	if (strcmp (lumpinfo->name, "PALETTE")) {
 		unlink (local);
 		Sys_Error ("TEX_InitFromWad: %s doesn't have palette as 0", path);
 	}
 
-	TEX_InitPalette (wadfile + LittleLong (lumpinfo->filepos));
+	TEX_InitPalette (wad, lumpinfo);
 
 	lumpinfo++;
-	for (i = 1; i < numlumps; i++, lumpinfo++) {
+	for (i = 1; i < wad->numlumps; i++, lumpinfo++) {
 		if (lumpinfo->type != TYP_MIPTEX)
 			Sys_Error ("TEX_InitFromWad: %s is not a miptex!", lumpinfo->name);
 		// XXX CleanupName (lumpinfo->name,qtextures[tex_count].name);
-		TEX_ImageFromMiptex ((miptex_t *) (wadfile +
-											 LittleLong (lumpinfo->filepos)));
+		TEX_ImageFromMiptex (wad, lumpinfo);
 	}
 
-	free (wadfile);
+	wad_close (wad);
 
 	stop = Sys_DoubleTime ();
 
