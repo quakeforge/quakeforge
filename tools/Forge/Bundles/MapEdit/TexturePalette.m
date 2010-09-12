@@ -163,7 +163,6 @@ void
 TEX_InitFromWad (char *path)
 {
 	int         i;
-	char        local[1024];
 	char        newpath[1024];
 	float       start, stop;
 	wad_t      *wad;
@@ -189,7 +188,6 @@ TEX_InitFromWad (char *path)
 	lumpinfo = wad->lumps;
 
 	if (strcmp (lumpinfo->name, "PALETTE")) {
-		unlink (local);
 		Sys_Error ("TEX_InitFromWad: %s doesn't have palette as 0", path);
 	}
 
@@ -207,7 +205,7 @@ TEX_InitFromWad (char *path)
 
 	stop = Sys_DoubleTime ();
 
-	Sys_Printf ("loaded %s (%5.1f)\n", local, stop - start);
+	Sys_Printf ("loaded %s (%5.1f)\n", newpath, stop - start);
 }
 
 /*
@@ -273,9 +271,9 @@ TEX_ForName (char *name)
 	if (textureList_i)
 		[textureList_i empty];
 	else
-		textureList_i =[[Storage alloc]
-		initCount: 0 elementSize:sizeof (texpal_t)
-		description:		NULL];
+		textureList_i = [[Storage alloc] initCount: 0
+									   elementSize: sizeof (texpal_t)
+									   description: NULL];
 
 	// Init STORAGE
 
