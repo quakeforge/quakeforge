@@ -786,7 +786,7 @@ drawSelf
 */
 NSRect      xy_draw_rect;
 
--drawSelf: (NSRect) rects:(int) rectCount
+-drawRect: (NSRect) rects
 {
 	static float drawtime;				// static to shut up compiler warning
 
@@ -799,7 +799,8 @@ NSRect      xy_draw_rect;
 
 // setup for text
 	// PSselectfont("Helvetica-Medium",10/scale);
-	GSSetFont (DEFCTXT,[NSFont fontWithName: @"Helvetica-Medium" size:10 / scale]);
+	//GSSetFont (DEFCTXT,[NSFont fontWithName: @"Helvetica-Medium" size:10 / scale]);
+	[[NSFont systemFontOfSize: 10] set];
 	PSrotate (0);
 
 	if (drawmode == dr_texture || drawmode == dr_flat)

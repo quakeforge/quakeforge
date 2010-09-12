@@ -10,7 +10,7 @@ SUBPROJECTS=
 #
 PACKAGE_NAME=		QuakeEd
 APP_NAME=		QuakeEd
-QuakeEd_PRINCIPAL_CLASS=	NSApplication
+QuakeEd_PRINCIPAL_CLASS=	QuakeEdApp
 QuakeEd_APPLICATION_ICON=	
 
 #

@@ -457,7 +457,7 @@ drawWire
 drawSelf
 ===================
 */
--drawSelf:(NSRect)rects :(int)rectCount
+-drawRect:(NSRect)rects
 {
 	float       drawtime = 0;
 

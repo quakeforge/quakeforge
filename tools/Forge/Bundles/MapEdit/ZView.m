@@ -303,7 +303,7 @@ Rect is in global world (unscaled) coordinates
 ============
 */
 
--drawGrid:(const NSRect *) rect
+-drawGrid:(NSRect) rect
 {
 	int         y, stopy;
 	float       top, bottom;
@@ -321,8 +321,8 @@ Rect is in global world (unscaled) coordinates
 	left = _bounds.origin.x;
 	right = 24;
 
-	bottom = rect->origin.y - 1;
-	top = rect->origin.y + rect->size.height + 2;
+	bottom = rect.origin.y - 1;
+	top = rect.origin.y + rect.size.height + 2;
 
 //
 // grid
@@ -389,7 +389,8 @@ Rect is in global world (unscaled) coordinates
 
 	[path removeAllPoints];
 	PSsetgray (0);						// for text
-	GSSetFont (DEFCTXT,[NSFont fontWithName: @"Helvetica-Medium" size:10 / scale]);
+	//GSSetFont (DEFCTXT,[NSFont fontWithName: @"Helvetica-Medium" size:10 / scale]);
+	[[NSFont systemFontOfSize: 10] set];
 	PSrotate (0);
 
 	for (; y <= stopy; y += 64) {
@@ -439,7 +440,7 @@ drawSelf
 ===============================================================================
 */
 
--drawSelf: (const NSRect *) rects:(int) rectCount
+-drawRect: (NSRect) rects
 {
 	NSRect      visRect;
 
@@ -448,13 +449,13 @@ drawSelf
 
 // allways draw the entire bar  
 	visRect =[self visibleRect];
-	rects = &visRect;
+	rects = visRect;
 
 // erase window
-	NSEraseRect (rects[0]);
+	NSEraseRect (rects);
 
 // draw grid
-	[self drawGrid:&rects[0]];
+	[self drawGrid:rects];
 
 // draw zplane
 //  [self drawZplane];
