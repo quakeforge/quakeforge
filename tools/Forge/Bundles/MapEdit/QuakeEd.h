@@ -56,7 +56,6 @@ void        qprintf (char *fmt, ...);	// prints text to cmd_out_i
 										// instance drawing
 -redrawInstance;						// erase and redraw all instance now
 
--appDidInit:sender;
 -appWillTerminate:sender;
 
 -openProject:sender;
@@ -82,10 +81,7 @@ void        qprintf (char *fmt, ...);	// prints text to cmd_out_i
 
 -doOpen:(char *) fname;
 
--saveBSP:(char *)
-cmdline
-dialog:(BOOL)
-	wt;
+-saveBSP:(char *)cmdline dialog:(BOOL)wt;
 
 -BSP_Full:sender;
 -BSP_FastVis:sender;
@@ -93,6 +89,8 @@ dialog:(BOOL)
 -BSP_relight:sender;
 -BSP_stop:sender;
 -BSP_entities:sender;
+
+-applicationDefined:(NSEvent *) theEvent;
 
 //
 // UI querie for other objects

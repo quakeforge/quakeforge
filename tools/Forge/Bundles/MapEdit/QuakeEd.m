@@ -123,31 +123,6 @@ Every five minutes, save a modified map
 	[map_i writeStats];
 }
 
-/*
-===============
-init
-===============
-*/
--initContent: (NSRect) contentRect style: (int) aStyle backing: (int) backingType buttonMask: (int) mask defer:(BOOL) flag
-{
-	[super initWithContentRect: contentRect styleMask: aStyle backing: backingType defer:flag];
-
-	// XXX [self addToEventMask:
-	// XXX NSRightMouseDragged|NSLeftMouseDragged]; 
-
-	// XXX malloc_error(My_Malloc_Error);
-
-	quakeed_i = self;
-	dirty = autodirty = NO;
-
-	[NSTimer timerWithTimeInterval: 5 * 60 target: self selector:@selector
-	 (AutoSave)
-	userInfo: nil repeats:YES];
-
-	path =[NSBezierPath new];
-
-	return self;
-}
 
 #define FN_TEMPSAVE "/qcache/temp.map"
 -setDefaultFilename
@@ -194,7 +169,7 @@ postappdefined (void)
 	windowNumber: 0 context:[NSApp context]
 	subtype: 0 data1: 0 data2:0];
 	[NSApp postEvent: ev atStart:NO];
-//printf ("posted\n");
+	Sys_Printf ("posted\n");
 	updateinflight = YES;
 }
 
@@ -320,23 +295,25 @@ App delegate methods
 
 	updateinflight = NO;
 
-//printf ("serviced\n");
+	Sys_Printf ("serviced\n");
 
 // update screen    
-	evp =[NSApp nextEventMatchingMask: NSAnyEventMask untilDate:[NSDate
-	 distantPast]
-	inMode: NSEventTrackingRunLoopMode dequeue:NO];
+	evp = [NSApp nextEventMatchingMask: NSAnyEventMask
+							 untilDate: [NSDate distantPast]
+								inMode: NSEventTrackingRunLoopMode
+							   dequeue: NO];
 	if (evp) {
 		postappdefined ();
 		return self;
 	}
+	Sys_Printf ("updating %d %d\n", (int)[map_i count], (int)[[map_i currentEntity] count]);
 
 
 	[self disableFlushWindow];
 
-	if ([map_i count] !=[entitycount_i intValue])
+	if ([map_i count] != [entitycount_i intValue])
 		[entitycount_i setIntValue:[map_i count]];
-	if ([[map_i currentEntity] count] !=[brushcount_i intValue])
+	if ([[map_i currentEntity] count] != [brushcount_i intValue])
 		[brushcount_i setIntValue:[[map_i currentEntity] count]];
 
 	if (updatecamera)
@@ -356,7 +333,24 @@ App delegate methods
 	return self;
 }
 
--appDidInit:sender
+-(void)awakeFromNib
+{
+	// XXX [self addToEventMask:
+	// XXX NSRightMouseDragged|NSLeftMouseDragged]; 
+
+	// XXX malloc_error(My_Malloc_Error);
+
+	quakeed_i = self;
+	dirty = autodirty = NO;
+
+	[NSTimer timerWithTimeInterval: 5 * 60 target: self selector:@selector
+	 (AutoSave)
+	userInfo: nil repeats:YES];
+
+	path =[NSBezierPath new];
+}
+
+-(void)applicationDidFinishLaunching:(NSNotification *) notification
 {
 	NSArray    *screens;
 	NSScreen   *scrn;
@@ -368,7 +362,7 @@ App delegate methods
 	[project_i initProject];
 
 	[xyview_i setModeRadio:xy_drawmode_i];
-										// because xy view is inside
+	// because xy view is inside
 	// scrollview and can't be
 	// connected directly in IB
 
@@ -391,8 +385,6 @@ App delegate methods
 	Sys_Printf ("ready.\n");
 
 //malloc_debug(-1);     // DEBUG
-
-	return self;
 }
 
 -appWillTerminate:sender
@@ -888,6 +880,7 @@ keyDown
 -keyDown:(NSEvent *) theEvent
 {
 	int         ch;
+	const char *chars;
 
 // function keys
 	switch ([theEvent keyCode]) {
@@ -934,7 +927,8 @@ keyDown
 	}
 
 // portable things
-	ch = tolower ([[theEvent characters] cString][0]);
+	chars = [[theEvent characters] cString];
+	ch = chars ? tolower (chars[0]) : 0;
 
 	switch (ch) {
 		case KEY_RIGHTARROW:
