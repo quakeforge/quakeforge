@@ -75,7 +75,6 @@ initWithFrame:
 
 // link objects together
 	[scrollview_i setDocumentView:self];
-	RELEASE (scrollview_i);
 	return scrollview_i;
 
 }

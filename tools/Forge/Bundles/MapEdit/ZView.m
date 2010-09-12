@@ -60,7 +60,6 @@ initWithFrame:
 	 NSViewHeightSizable];
 
 	[zscrollview_i setDocumentView:self];
-	RELEASE (zscrollview_i);
 
 //  [_super_view setDrawOrigin: 0 : 0];
 
