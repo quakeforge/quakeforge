@@ -15,6 +15,7 @@ typedef struct epair_s {
 
 @interface Entity:NSMutableArray
 {
+	NSMutableArray *array;
 	epair_t    *epairs;
 	BOOL        modifiable;
 }

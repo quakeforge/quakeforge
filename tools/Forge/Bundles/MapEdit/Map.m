@@ -17,6 +17,8 @@
 #include "InspectorControl.h"
 #include "Project.h"
 
+#define THING Map
+#include "THING+NSArray.m"
 
 id          map_i;
 
@@ -28,8 +30,10 @@ FILE METHODS
 
 ===============================================================================
 */
-	- init {
-	[super init];
+- init
+{
+	self = [super init];
+	array = [[NSMutableArray alloc] init];
 	map_i = self;
 	minz = 0;
 	maxz = 80;
@@ -54,7 +58,6 @@ FILE METHODS
 			[o moveToEntity];
 		else {
 			[w removeObjectAtIndex:0];
-			[o release];
 		}
 	}
 
@@ -63,7 +66,6 @@ FILE METHODS
 		o =[self objectAtIndex:0];
 		[self removeObjectAtIndex:0];
 		[o removeAllObjects];
-		[o release];
 	}
 
 	return self;
@@ -1084,7 +1086,6 @@ subtractSelection
 	if (![currentEntity count]) {
 		o = currentEntity;
 		[self removeObject:o];
-		[o release];
 	}
 
 	Sys_Printf ("subtracted selection\n");

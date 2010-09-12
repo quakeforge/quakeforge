@@ -37,7 +37,9 @@ QuakeEd_HEADERS= \
 	CameraView.h Clipper.h Dict.h DictList.h Entity.h EntityClass.h \
 	InspectorControl.h KeypairView.h Map.h PopScrollView.h Preferences.h \
 	Project.h QuakeEd.h SetBrush.h Storage.h TexturePalette.h TextureView.h \
-	Things.h XYView.h ZScrollView.h ZView.h render.h
+	Things.h XYView.h ZScrollView.h ZView.h render.h \
+	\
+	THING+NSArray.m
 
 #
 # Class files

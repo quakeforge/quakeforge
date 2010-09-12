@@ -33,6 +33,7 @@ typedef enum { esize_model, esize_fixed } esize_t;
 
 @interface EntityClassList:NSMutableArray
 {
+	NSMutableArray *array;
 	id          nullclass;
 	char       *source_path;
 }

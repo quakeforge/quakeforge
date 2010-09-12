@@ -113,7 +113,7 @@ AutoSave
 Every five minutes, save a modified map
 ===============
 */
-	- (void) AutoSave {
+- (void) AutoSave {
 // automatic backup
 	if (autodirty) {
 		autodirty = NO;
@@ -348,6 +348,8 @@ App delegate methods
 	userInfo: nil repeats:YES];
 
 	path =[NSBezierPath new];
+
+	[[Map alloc] init];
 }
 
 -(void)applicationDidFinishLaunching:(NSNotification *) notification
