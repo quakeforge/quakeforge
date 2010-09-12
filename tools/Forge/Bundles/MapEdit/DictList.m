@@ -2,6 +2,9 @@
 #include "DictList.h"
 #include "Dict.h"
 
+#define THING DictList
+#include "THING+NSArray.m"
+
 @implementation DictList
 //
 //  Read in variable # of objects from FILE *
@@ -10,7 +13,8 @@
 {
 	id          d;
 
-	[super init];
+	self = [super init];
+	array = [[NSMutableArray alloc] init];
 	do {
 		d =[(Dict *)[Dict alloc] initFromFile:fp];
 		if (d != NULL)

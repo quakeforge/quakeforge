@@ -5,6 +5,7 @@
 
 @interface DictList:NSMutableArray
 {
+	NSMutableArray *array;
 }
 
 -initListFromFile:(FILE *) fp;

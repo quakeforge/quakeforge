@@ -146,6 +146,9 @@ text        source:(const char *) filename
 @end
 //===========================================================================
 
+#define THING EntityClassList
+#include "THING+NSArray.m"
+
 @implementation EntityClassList
 /*
 =================
@@ -241,7 +244,8 @@ id          entity_classes_i;
 
 -initForSourceDirectory:(char *) path
 {
-	[super init];
+	self = [super init];
+	array = [[NSMutableArray alloc] init];
 
 	source_path = path;
 	[self scanDirectory];

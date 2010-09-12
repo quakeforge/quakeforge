@@ -10,6 +10,9 @@
 #include "Map.h"
 #include "CameraView.h"
 
+#define THING Entity
+#include "THING+NSArray.m"
+
 @implementation Entity
 
 vec3_t      bad_mins = { -8, -8, -8 };
@@ -56,7 +59,8 @@ vec3_t      bad_maxs = { 8, 8, 8 };
 	vec3_t      min, max;
 	float      *v;
 
-	[super init];
+	self = [super init];
+	array = [[NSMutableArray alloc] init];
 
 	modifiable = YES;
 
@@ -294,7 +298,7 @@ int         nument;
 	int         i, c;
 	float      *color;
 
-	[self init];
+	self = [self init];
 
 	if (!Script_GetToken (script, true)) {
 		[self dealloc];
