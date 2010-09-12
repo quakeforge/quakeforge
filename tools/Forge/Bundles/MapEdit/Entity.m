@@ -100,6 +100,7 @@ vec3_t      bad_maxs = { 8, 8, 8 };
 		free (e->value);
 		free (e);
 	}
+	[array release];
 	[super dealloc];
 }
 
@@ -298,7 +299,8 @@ int         nument;
 	int         i, c;
 	float      *color;
 
-	self = [self init];
+	self = [super init];
+	array = [[NSMutableArray alloc] init];
 
 	if (!Script_GetToken (script, true)) {
 		[self dealloc];
@@ -342,7 +344,7 @@ int         nument;
 	}
 
 	if (![self count] && esize == esize_model) {
-		printf ("WARNING:Entity with no brushes and esize_model\n");
+		printf ("WARNING:Entity with no brushes and esize_model: %s\n", [self valueForQKey:"classname"]);
 		[texturepalette_i getTextureDef:&td];
 		for (i = 0; i < 3; i++) {
 			emins[i] = org[i] - 8;
