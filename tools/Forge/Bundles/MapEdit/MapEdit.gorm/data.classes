@@ -20,6 +20,8 @@
 	    "BSP_entities:",
 	    "BSP_relight:",
 	    "BSP_stop:",
+	    "UIChanged:",
+	    "addPair:",
 	    "appDidInit:",
 	    "appWillTerminate:",
 	    "applyRegion:",
@@ -28,13 +30,18 @@
 	    "changeInspector:",
 	    "changeXYLookUp:",
 	    "clear:",
+	    "clearBspOutput:",
 	    "clearTexinfo:",
+	    "clickedOnMap:",
+	    "clickedOnWad:",
 	    "cloneSelection:",
 	    "decRotate:",
 	    "decXScale:",
 	    "decXShift:",
 	    "decYScale:",
 	    "decYShift:",
+	    "delPair:",
+	    "doubleClickEntity:",
 	    "downFloor:",
 	    "drawMode:",
 	    "flip_x:",
@@ -49,6 +56,7 @@
 	    "makeEntity:",
 	    "onlyShowMapTextures:",
 	    "openProject:",
+	    "reloadEntityClasses:",
 	    "rotate_x:",
 	    "rotate_y:",
 	    "rotate_z:",
@@ -57,9 +65,14 @@
 	    "searchForTexture:",
 	    "selectCompleteEntity:",
 	    "selectCompletelyInside:",
+	    "selectEntity:",
 	    "selectPartiallyInside:",
+	    "setAngle:",
 	    "setBrushRegion:",
+	    "setBspSound:",
 	    "setCurrentEntity:",
+	    "setCurrentProject:",
+	    "setFlags:",
 	    "setModeRadio:",
 	    "setXYRegion:",
 	    "shortBrush:",
@@ -95,6 +108,51 @@
 	    oldselection
 	);
 	Super = NSMutableArray;
+    };
+    Preferences = {
+	Actions = (
+	    "setBspSound:",
+	    "setCurrentProject:",
+	    "UIChanged:"
+	);
+	Outlets = (
+	    bspSound_i,
+	    startproject_i,
+	    bspSoundField_i,
+	    brushOffset_i,
+	    showBSP_i,
+	    startwad_i,
+	    xlight_i,
+	    ylight_i,
+	    zlight_i
+	);
+	Super = NSObject;
+    };
+    Project = {
+	Actions = (
+	    "clearBspOutput:",
+	    "clickedOnMap:",
+	    "clickedOnWad:"
+	);
+	Outlets = (
+	    projectInfo,
+	    basepathinfo_i,
+	    mapbrowse_i,
+	    currentmap_i,
+	    mapList,
+	    descList,
+	    wadList,
+	    pis_panel_i,
+	    pis_basepath_i,
+	    pis_wads_i,
+	    pis_fullvis_i,
+	    pis_fastvis_i,
+	    pis_novis_i,
+	    pis_relight_i,
+	    pis_leaktest_i,
+	    BSPoutput_i
+	);
+	Super = NSObject;
     };
     QuakeEd = {
 	Actions = (
@@ -165,6 +223,26 @@
 	    field_Xscale_i,
 	    field_Yscale_i,
 	    field_Rotate_i
+	);
+	Super = NSObject;
+    };
+    Things = {
+	Actions = (
+	    "reloadEntityClasses:",
+	    "selectEntity:",
+	    "doubleClickEntity:",
+	    "addPair:",
+	    "delPair:",
+	    "setAngle:",
+	    "setFlags:"
+	);
+	Outlets = (
+	    entity_browser_i,
+	    entity_comment_i,
+	    prog_path_i,
+	    keyInput_i,
+	    valueInput_i,
+	    flags_i
 	);
 	Super = NSObject;
     };

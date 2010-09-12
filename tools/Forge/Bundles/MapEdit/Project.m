@@ -6,6 +6,7 @@
 
 #include <unistd.h>
 
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 
 #include "Project.h"
@@ -36,19 +37,21 @@ id          project_i;
 -initVars
 {
 	char       *s;
+	const char *pe;
 
 	s =[preferences_i getProjectPath];
-	// XXX StripFilename(s);
+	pe = QFS_SkipPath (s);
+	s[pe - s] = 0;
 	strcpy (path_basepath, s);
 
 	strcpy (path_progdir, s);
-	strcat (path_progdir, "/" SUBDIR_ENT);
+	strcat (path_progdir, SUBDIR_ENT);
 
 	strcpy (path_mapdirectory, s);
-	strcat (path_mapdirectory, "/" SUBDIR_MAPS);	// source dir
+	strcat (path_mapdirectory, SUBDIR_MAPS);	// source dir
 
 	strcpy (path_finalmapdir, s);
-	strcat (path_finalmapdir, "/" SUBDIR_MAPS);	// dest dir
+	strcat (path_finalmapdir, SUBDIR_MAPS);	// dest dir
 
 	[basepathinfo_i setStringValue: [NSString stringWithCString:s]];
 										// in Project Inspector
@@ -165,6 +168,7 @@ id          project_i;
 -initProject
 {
 	[self parseProjectFile];
+	Sys_Printf ("%p\n", projectInfo);
 	if (projectInfo == NULL)
 		return self;
 	[self initVars];
@@ -331,7 +335,7 @@ t           in:(id) obj
 {
 	FILE       *fp;
 	struct stat s;
-
+Sys_Printf ("openProjectFile: %s\n", path);
 	strcpy (path_projectinfo, path);
 
 	projectInfo = NULL;
@@ -372,6 +376,7 @@ t           in:(id) obj
 	if (rtn == NSOKButton) {
 		filenames =[openpanel filenames];
 		dir =[[openpanel directory] cString];
+		dir = "";
 		sprintf (path, "%s/%s", dir,[[filenames objectAtIndex:0] cString]);
 		strcpy (path_projectinfo, path);
 		[self openProjectFile:path];

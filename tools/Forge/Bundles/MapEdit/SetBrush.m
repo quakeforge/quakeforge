@@ -622,80 +622,79 @@ initOwner: fromTokens
 */
 int         numsb;
 
--initFromScript:(script_t *)
-script      owner:own {
+-initFromScript:(script_t *)script owner:own
+{
 	face_t     *f;
 	int         i, j;
 
 	[self init];
 
-		          parent = own;
+	parent = own;
 
-		          f = faces;
-		          numfaces = 0;
-	do
-{
-if (!Script_GetToken (script, true))
-	break;
-if (!strcmp (Script_Token (script), "}"))
-	break;
+	f = faces;
+	numfaces = 0;
+	do {
+		if (!Script_GetToken (script, true))
+			break;
+		if (!strcmp (Script_Token (script), "}"))
+			break;
 
-for (i = 0; i < 3; i++) {
-	if (i != 0)
-		Script_GetToken (script, true);
-	if (strcmp (Script_Token (script), "("))
-		Sys_Error ("parsing map file");
+		for (i = 0; i < 3; i++) {
+			if (i != 0)
+				Script_GetToken (script, true);
+			if (strcmp (Script_Token (script), "("))
+				Sys_Error ("parsing map file");
 
-	for (j = 0; j < 3; j++) {
+			for (j = 0; j < 3; j++) {
+				Script_GetToken (script, false);
+				f->planepts[i][j] = atoi (Script_Token (script));
+			} Script_GetToken (script, false);
+
+			if (strcmp (Script_Token (script), ")"))
+				Sys_Error ("parsing map file");
+		}
+
 		Script_GetToken (script, false);
-		f->planepts[i][j] = atoi (Script_Token (script));
-	} Script_GetToken (script, false);
-
-	if (strcmp (Script_Token (script), ")"))
-		Sys_Error ("parsing map file");
-}
-
-Script_GetToken (script, false);
-strcpy (f->texture.texture, Script_Token (script));
-Script_GetToken (script, false);
-f->texture.shift[0] = atof (Script_Token (script));
-Script_GetToken (script, false);
-f->texture.shift[1] = atof (Script_Token (script));
-Script_GetToken (script, false);
-f->texture.rotate = atof (Script_Token (script));
-Script_GetToken (script, false);
-f->texture.scale[0] = atof (Script_Token (script));
-Script_GetToken (script, false);
-f->texture.scale[1] = atof (Script_Token (script));
+		strcpy (f->texture.texture, Script_Token (script));
+		Script_GetToken (script, false);
+		f->texture.shift[0] = atof (Script_Token (script));
+		Script_GetToken (script, false);
+		f->texture.shift[1] = atof (Script_Token (script));
+		Script_GetToken (script, false);
+		f->texture.rotate = atof (Script_Token (script));
+		Script_GetToken (script, false);
+		f->texture.scale[0] = atof (Script_Token (script));
+		Script_GetToken (script, false);
+		f->texture.scale[1] = atof (Script_Token (script));
 
 #if 0
-flags = atoi (Script_Token (script));
+		flags = atoi (Script_Token (script));
 
-flags &= 7;
+		flags &= 7;
 
-f->texture.rotate = 0;
-f->texture.scale[0] = 1;
-f->texture.scale[1] = 1;
+		f->texture.rotate = 0;
+		f->texture.scale[0] = 1;
+		f->texture.scale[1] = 1;
 
-#define	TEX_FLIPAXIS	1
-#define	TEX_FLIPS		2
-#define	TEX_FLIPT		4
+		#define	TEX_FLIPAXIS	1
+		#define	TEX_FLIPS		2
+		#define	TEX_FLIPT		4
 
-if (flags & TEX_FLIPAXIS) {
-	f->texture.rotate = 90;
-	if (!(flags & TEX_FLIPT))
-		f->texture.scale[0] = -1;
-	if (flags & TEX_FLIPS)
-		f->texture.scale[1] = -1;
-} else {
-	if (flags & TEX_FLIPS)
-		f->texture.scale[0] = -1;
-	if (flags & TEX_FLIPT)
-		f->texture.scale[1] = -1;
-}
+		if (flags & TEX_FLIPAXIS) {
+			f->texture.rotate = 90;
+			if (!(flags & TEX_FLIPT))
+				f->texture.scale[0] = -1;
+			if (flags & TEX_FLIPS)
+				f->texture.scale[1] = -1;
+		} else {
+			if (flags & TEX_FLIPS)
+				f->texture.scale[0] = -1;
+			if (flags & TEX_FLIPT)
+				f->texture.scale[1] = -1;
+		}
 #endif
-f++;
-numfaces++;
+		f++;
+		numfaces++;
 	} while (1);
 
 	numsb++;
