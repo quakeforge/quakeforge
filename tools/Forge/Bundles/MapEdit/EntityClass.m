@@ -41,8 +41,7 @@ parse_vector (script_t * script, vec3_t vec)
 //
 // /*QUAKED func_door (0 .5 .8) ? START_OPEN STONE_SOUND DOOR_DONT_LINK GOLD_KEY SILVER_KEY
 
--initFromText:(const char *)
-text        source:(const char *) filename
+-initFromText:(const char *) text source:(const char *) filename
 {
 	const char *t;
 	size_t      len;

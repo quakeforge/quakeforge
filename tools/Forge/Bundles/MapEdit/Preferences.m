@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include "QF/sys.h"
 
 #include "Preferences.h"
@@ -189,12 +191,14 @@ _atof (const char *c)
 		path = "";
 	strcpy (bspSound, path);
 
-	if (bspSound_i)
+	if (bspSound_i) {
 		[bspSound_i release];
-	bspSound_i =[[NSSound alloc] initWithContentsOfFile: [NSString stringWithCString:bspSound]];
+		bspSound_i = nil;
+	}
+	if (path[0] && access (path, R_OK))
+		bspSound_i =[[NSSound alloc] initWithContentsOfFile: [NSString stringWithCString:bspSound] byReference: YES];
 	if (!bspSound_i) {
-		strcpy (bspSound, "/NextLibrary/Sounds/Funk.snd");
-		bspSound_i =[[NSSound alloc] initWithContentsOfFile: [NSString stringWithCString:bspSound]];
+		return self;
 	}
 
 	[bspSoundField_i setStringValue: [NSString stringWithCString:bspSound]];

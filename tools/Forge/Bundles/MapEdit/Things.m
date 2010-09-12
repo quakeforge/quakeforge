@@ -1,3 +1,4 @@
+#include "QF/sys.h"
 
 #include "Things.h"
 #include "QuakeEd.h"
