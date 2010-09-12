@@ -28,20 +28,73 @@
 	    "changeInspector:",
 	    "changeXYLookUp:",
 	    "clear:",
+	    "clearTexinfo:",
+	    "cloneSelection:",
+	    "decRotate:",
+	    "decXScale:",
+	    "decXShift:",
+	    "decYScale:",
+	    "decYShift:",
 	    "downFloor:",
 	    "drawMode:",
+	    "flip_x:",
+	    "flip_y:",
+	    "flip_z:",
 	    "homeView:",
+	    "incRotate:",
+	    "incXScale:",
+	    "incXShift:",
+	    "incYScale:",
+	    "incYShift:",
+	    "makeEntity:",
+	    "onlyShowMapTextures:",
 	    "openProject:",
+	    "rotate_x:",
+	    "rotate_y:",
+	    "rotate_z:",
 	    "save:",
 	    "saveAs:",
+	    "searchForTexture:",
+	    "selectCompleteEntity:",
+	    "selectCompletelyInside:",
+	    "selectPartiallyInside:",
 	    "setBrushRegion:",
+	    "setCurrentEntity:",
 	    "setModeRadio:",
 	    "setXYRegion:",
+	    "shortBrush:",
+	    "subtractSelection:",
+	    "tallBrush:",
 	    "textCommand:",
+	    "texturedefChanged:",
 	    "upFloor:",
 	    "updateAll:"
 	);
 	Super = NSObject;
+    };
+    Map = {
+	Actions = (
+	    "setCurrentEntity:",
+	    "cloneSelection:",
+	    "makeEntity:",
+	    "subtractSelection:",
+	    "selectCompletelyInside:",
+	    "selectPartiallyInside:",
+	    "tallBrush:",
+	    "shortBrush:",
+	    "rotate_x:",
+	    "rotate_y:",
+	    "rotate_z:",
+	    "flip_x:",
+	    "flip_y:",
+	    "flip_z:",
+	    "selectCompleteEntity:"
+	);
+	Outlets = (
+	    currentEntity,
+	    oldselection
+	);
+	Super = NSMutableArray;
     };
     QuakeEd = {
 	Actions = (
@@ -84,6 +137,36 @@
 	    xy_drawmode_i
 	);
 	Super = NSWindow;
+    };
+    TexturePalette = {
+	Actions = (
+	    "searchForTexture:",
+	    "clearTexinfo:",
+	    "incXShift:",
+	    "decXShift:",
+	    "incYShift:",
+	    "decYShift:",
+	    "incRotate:",
+	    "decRotate:",
+	    "incXScale:",
+	    "decXScale:",
+	    "incYScale:",
+	    "decYScale:",
+	    "texturedefChanged:",
+	    "onlyShowMapTextures:"
+	);
+	Outlets = (
+	    textureList_i,
+	    textureView_i,
+	    searchField_i,
+	    sizeField_i,
+	    field_Xshift_i,
+	    field_Yshift_i,
+	    field_Xscale_i,
+	    field_Yscale_i,
+	    field_Rotate_i
+	);
+	Super = NSObject;
     };
     XYView = {
 	Actions = (
