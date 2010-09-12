@@ -80,10 +80,10 @@ initWithFrame:
 	sb_floor_dist = 99999;
 	[map_i makeAllPerform: @selector (feetToFloor)];
 	if (sb_floor_dist == 99999) {
-		Sys_Printf ("already on top floor");
+		Sys_Printf ("already on top floor\n");
 		return self;
 	}
-	Sys_Printf ("up floor");
+	Sys_Printf ("up floor\n");
 	origin[2] += sb_floor_dist;
 	[quakeed_i updateCamera];
 	return self;
@@ -95,10 +95,10 @@ initWithFrame:
 	sb_floor_dist = -99999;
 	[map_i makeAllPerform: @selector (feetToFloor)];
 	if (sb_floor_dist == -99999) {
-		Sys_Printf ("already on bottom floor");
+		Sys_Printf ("already on bottom floor\n");
 		return self;
 	}
-	Sys_Printf ("down floor");
+	Sys_Printf ("down floor\n");
 	origin[2] += sb_floor_dist;
 	[quakeed_i updateCamera];
 	return self;
@@ -125,7 +125,7 @@ homeView
 
 	[quakeed_i updateAll];
 
-	Sys_Printf ("homed view angle");
+	Sys_Printf ("homed view angle\n");
 
 	return self;
 }
@@ -561,7 +561,7 @@ modalMoveLoop
 
 //  vec3_t      temp;
 
-	Sys_Printf ("moving camera position");
+	Sys_Printf ("moving camera position\n");
 
 	VectorCopy (origin, originbase);
 
@@ -816,7 +816,7 @@ mouseDown
 	}
 
 
-	Sys_Printf ("bad flags for click");
+	Sys_Printf ("bad flags for click %x\n", flags);
 	NopSound ();
 
 	return;
@@ -844,13 +844,12 @@ rightMouseDown
 // click = drag camera
 //
 	if (flags == 0) {
-		Sys_Printf ("looking");
+		Sys_Printf ("looking\n");
 		[self viewDrag: &pt];
-		Sys_Printf ("%s", "");
 		return;
 	}
 
-	Sys_Printf ("bad flags for click");
+	Sys_Printf ("bad flags for click\n");
 	NopSound ();
 
 	return;

@@ -342,7 +342,7 @@ Grab all the current UI state
 */
 -UIChanged:sender
 {
-	Sys_Printf ("defaults updated");
+	Sys_Printf ("defaults updated\n");
 
 	[self setProjectPath:(char *)[startproject_i stringValue]];
 	[self setBspSoundPath:(char *)[bspSoundField_i stringValue]];

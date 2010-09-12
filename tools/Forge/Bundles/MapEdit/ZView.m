@@ -587,7 +587,7 @@ ZDragCallback (float dy)
 
 -selectionDragFrom:(NSEvent *) theEvent
 {
-	Sys_Printf ("dragging selection");
+	Sys_Printf ("dragging selection\n");
 	[self dragFrom: theEvent useGrid: YES callback:ZDragCallback];
 	[quakeed_i updateCamera];
 	return self;
@@ -617,7 +617,7 @@ ZScrollCallback (float dy)
 
 -scrollDragFrom:(NSEvent *) theEvent
 {
-	Sys_Printf ("scrolling view");
+	Sys_Printf ("scrolling view\n");
 	[self dragFrom: theEvent useGrid: YES callback:ZScrollCallback];
 	return self;
 }
@@ -655,7 +655,7 @@ ZControlCallback (float dy)
 	if (!numcontrolpoints)
 		return NO;
 
-	Sys_Printf ("dragging brush plane");
+	Sys_Printf ("dragging brush plane\n");
 
 	pt =[theEvent locationInWindow];
 	pt =[self convertPoint: pt fromView:NULL];
@@ -721,8 +721,7 @@ mouseDown
 //
 	if (flags == 0) {
 // check eye
-		if ([cameraview_i ZmouseDown: &pt flags:[theEvent
-		 modifierFlags]])
+		if ([cameraview_i ZmouseDown: &pt flags:[theEvent modifierFlags]])
 			return;
 
 		if ([map_i numSelected]) {
@@ -736,7 +735,7 @@ mouseDown
 
 	}
 
-	Sys_Printf ("bad flags for click");
+	Sys_Printf ("bad flags for click %x\n", flags);
 	NopSound ();
 	return;
 }
@@ -766,7 +765,7 @@ rightMouseDown
 		[self scrollDragFrom:theEvent];
 	}
 
-	Sys_Printf ("bad flags for click");
+	Sys_Printf ("bad flags for click\n");
 	NopSound ();
 }
 
