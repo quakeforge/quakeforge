@@ -37,6 +37,7 @@ ADDITIONAL_WO_LIBS +=
 
 # Additional directories to be created during installation
 ADDITIONAL_INSTALL_DIRS += \
-	$(GNUSTEP_LOCAL_DIR)/Library/Forge \
-	$(GNUSTEP_NETWORK_DIR)/Library/Forge \
-	$(GNUSTEP_SYSTEM_DIR)/Library/Forge
+	$(GNUSTEP_USER_DIR)/$(GNUSTEP_USER_DIR_LIBRARY)/Forge \
+	$(GNUSTEP_LOCAL_LIBRARY)/Forge \
+	$(GNUSTEP_NETWORK_LIBRARY)/Forge \
+	$(GNUSTEP_SYSTEM_LIBRARY)/Forge
