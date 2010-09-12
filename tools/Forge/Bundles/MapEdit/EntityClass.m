@@ -1,6 +1,5 @@
 #include <dirent.h>
 
-#include "QF/dstring.h"
 #include "QF/quakeio.h"
 #include "QF/script.h"
 #include "QF/sys.h"
@@ -17,14 +16,14 @@ parse_vector (script_t * script, vec3_t vec)
 
 	if (!Script_GetToken (script, 0))
 		return 0;
-	if (strcmp (script->token->str, "("))
+	if (strcmp (Script_Token (script), "("))
 		return 0;
 
 	r = sscanf (script->p, "%f %f %f)", &vec[0], &vec[1], &vec[2]);
 	if (r != 3)
 		return 0;
 
-	while (strcmp (script->token->str, ")")) {
+	while (strcmp (Script_Token (script), ")")) {
 		if (!Script_GetToken (script, 0))
 			return 0;
 	}
@@ -58,23 +57,24 @@ parse_vector (script_t * script, vec3_t vec)
 	// grab the name
 	if (!Script_GetToken (script, 0))
 		return 0;
-	if (!strcmp (script->token->str, "*/"))
+	if (!strcmp (Script_Token (script), "*/"))
 		return 0;
-	name = strdup (script->token->str);
+	name = strdup (Script_Token (script));
 
 	// grab the color
 	if (!parse_vector (script, color))
 		return 0;
-
 	// get the size 
-	if (!strcmp (script->token->str, "(")) {
+	if (!Script_GetToken (script, 0))
+		return 0;
+	if (!strcmp (Script_Token (script), "(")) {
 		Script_UngetToken (script);
 		if (!parse_vector (script, mins))
 			return 0;
 		if (!parse_vector (script, maxs))
 			return 0;
 		esize = esize_fixed;
-	} else if (!strcmp (script->token->str, "?")) {
+	} else if (!strcmp (Script_Token (script), "?")) {
 		// use the brushes
 		esize = esize_model;
 	} else {
@@ -87,13 +87,14 @@ parse_vector (script_t * script, vec3_t vec)
 		if (!Script_TokenAvailable (script, 0))
 			break;
 		Script_GetToken (script, 0);
-		flagnames[i] = strdup (script->token->str);
+		flagnames[i] = strdup (Script_Token (script));
 	}
 	while (Script_TokenAvailable (script, 0))
 		Script_GetToken (script, 0);
 
 // find the length until close comment
-	for (t = script->p; t[0] && !(t[0] == '*' && t[1] == '/'); t++);
+	for (t = script->p; t[0] && !(t[0] == '*' && t[1] == '/'); t++)
+		;
 
 // copy the comment block out
 	len = t - text;
