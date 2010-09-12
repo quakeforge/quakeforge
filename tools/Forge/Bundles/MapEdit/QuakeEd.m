@@ -306,7 +306,11 @@ App delegate methods
 		postappdefined ();
 		return self;
 	}
-	Sys_Printf ("updating %d %d\n", (int)[map_i count], (int)[[map_i currentEntity] count]);
+	Sys_Printf ("updating %d %d %p %d %p %d\n",
+				(int)[map_i count],
+				(int)[[map_i currentEntity] count],
+				entitycount_i, [entitycount_i intValue],
+				brushcount_i, [brushcount_i intValue]);
 
 
 	[self disableFlushWindow];

@@ -74,6 +74,7 @@
 	    "setCurrentProject:",
 	    "setFlags:",
 	    "setModeRadio:",
+	    "setParent:",
 	    "setXYRegion:",
 	    "shortBrush:",
 	    "subtractSelection:",
@@ -225,6 +226,15 @@
 	    field_Rotate_i
 	);
 	Super = NSObject;
+    };
+    TextureView = {
+	Actions = (
+	    "setParent:"
+	);
+	Outlets = (
+	    parent_i
+	);
+	Super = NSView;
     };
     Things = {
 	Actions = (
