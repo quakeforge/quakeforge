@@ -316,6 +316,7 @@ Makefile.in
 /tools/Forge/Bundles/MapEdit/shared_profile_obj
 /tools/Forge/Bundles/MapEdit/obj
 /tools/Forge/Bundles/MapEdit/*.forgeb
+/tools/Forge/Bundles/MapEdit/*.app
 
 # /tools/bsp2img/
 /tools/bsp2img/bsp2img
