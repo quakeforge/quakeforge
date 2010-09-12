@@ -388,7 +388,7 @@ App delegate methods
 //[self doOpen: "/raid/quake/id1_/maps/amlev1.map"];    // DEBUG
 	[map_i newMap];
 
-	Sys_Printf ("ready.");
+	Sys_Printf ("ready.\n");
 
 //malloc_debug(-1);     // DEBUG
 
@@ -416,11 +416,11 @@ App delegate methods
 
 		b =[map_i selectedBrush];
 		if (!b) {
-			Sys_Printf ("nothing selected");
+			Sys_Printf ("nothing selected\n");
 			return self;
 		}
 		td =[b texturedef];
-		Sys_Printf (td->texture);
+		Sys_Printf ("%s\n", td->texture);
 		return self;
 	} else
 		Sys_Printf ("Unknown command\n");
@@ -530,7 +530,7 @@ applyRegion:
 // get the bounds of the current selection
 
 	if ([map_i numSelected] != 1) {
-		Sys_Printf ("must have a single brush selected");
+		Sys_Printf ("must have a single brush selected\n");
 		return self;
 	}
 
@@ -893,23 +893,23 @@ keyDown
 	switch ([theEvent keyCode]) {
 		case 60:						// F2
 			[cameraview_i setDrawMode:dr_wire];
-			Sys_Printf ("wire draw mode");
+			Sys_Printf ("wire draw mode\n");
 			return self;
 		case 61:						// F3
 			[cameraview_i setDrawMode:dr_flat];
-			Sys_Printf ("flat draw mode");
+			Sys_Printf ("flat draw mode\n");
 			return self;
 		case 62:						// F4
 			[cameraview_i setDrawMode:dr_texture];
-			Sys_Printf ("texture draw mode");
+			Sys_Printf ("texture draw mode\n");
 			return self;
 
 		case 63:						// F5
 			[xyview_i setDrawMode:dr_wire];
-			Sys_Printf ("wire draw mode");
+			Sys_Printf ("wire draw mode\n");
 			return self;
 		case 64:						// F6
-			Sys_Printf ("texture draw mode");
+			Sys_Printf ("texture draw mode\n");
 			return self;
 
 		case 66:						// F8
@@ -970,7 +970,7 @@ keyDown
 		case 13:						// enter
 			[clipper_i carve];
 			[self updateAll];
-			Sys_Printf ("carved brush");
+			Sys_Printf ("carved brush\n");
 			break;
 
 		case ' ':
@@ -1021,7 +1021,7 @@ keyDown
 			break;
 
 		default:
-			Sys_Printf ("undefined keypress");
+			Sys_Printf ("undefined keypress\n");
 			NopSound ();
 			break;
 	}

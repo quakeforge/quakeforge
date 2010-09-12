@@ -230,7 +230,7 @@ TEX_InitFromWad (char *path)
 
 	stop = Sys_DoubleTime ();
 
-	Sys_Printf ("loaded %s (%5.1f)", local, stop - start);
+	Sys_Printf ("loaded %s (%5.1f)\n", local, stop - start);
 }
 
 /*
@@ -422,7 +422,7 @@ TEX_ForName (char *name)
 			 (takeCurrentTexture)];
 			[quakeed_i updateAll];
 		} else
-			Sys_Printf ("can't modify spawned entities");
+			Sys_Printf ("can't modify spawned entities\n");
 	}
 	[quakeed_i makeFirstResponder:quakeed_i];
 	return self;

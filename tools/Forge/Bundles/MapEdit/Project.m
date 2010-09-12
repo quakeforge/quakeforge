@@ -260,7 +260,7 @@ t           in:(id) obj
 	int         i, c;
 	char       *name;
 
-	Sys_Printf ("loading %s", wf);
+	Sys_Printf ("loading %s\n", wf);
 
 // set the row in the settings inspector wad browser
 	c =[wadList count];

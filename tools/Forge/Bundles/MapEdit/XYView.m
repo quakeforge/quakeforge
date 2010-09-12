@@ -906,7 +906,7 @@ DragCallback (float dx, float dy)
 
 -selectionDragFrom:(NSEvent *) theEvent
 {
-	Sys_Printf ("dragging selection");
+	Sys_Printf ("dragging selection\n");
 	[self dragFrom: theEvent useGrid: YES callback:DragCallback];
 	[quakeed_i updateAll];
 	return self;
@@ -937,7 +937,7 @@ ScrollCallback (float dx, float dy)
 
 -scrollDragFrom:(NSEvent *) theEvent
 {
-	Sys_Printf ("scrolling view");
+	Sys_Printf ("scrolling view\n");
 	[self dragFrom: theEvent useGrid: YES callback:ScrollCallback];
 	return self;
 
@@ -972,7 +972,7 @@ DirectionCallback (float dx, float dy)
 {
 	NSPoint     pt;
 
-	Sys_Printf ("changing camera direction");
+	Sys_Printf ("changing camera direction\n");
 
 	pt =[theEvent locationInWindow];
 	pt =[self convertPoint: pt fromView:NULL];
@@ -1021,7 +1021,7 @@ NewCallback (float dx, float dy)
 	texturedef_t td;
 	NSPoint     pt;
 
-	Sys_Printf ("sizing new brush");
+	Sys_Printf ("sizing new brush\n");
 
 	pt =[theEvent locationInWindow];
 	pt =[self convertPoint: pt fromView:NULL];
@@ -1087,7 +1087,7 @@ ControlCallback (float dx, float dy)
 	if (!numcontrolpoints)
 		return NO;
 
-	Sys_Printf ("dragging brush plane");
+	Sys_Printf ("dragging brush plane\n");
 
 	pt =[theEvent locationInWindow];
 	pt =[self convertPoint: pt fromView:NULL];
@@ -1140,7 +1140,7 @@ ControlCallback (float dx, float dy)
 	if (!numcontrolpoints)
 		return NO;
 
-	Sys_Printf ("dragging brush plane");
+	Sys_Printf ("dragging brush plane\n");
 
 	pt =[theEvent locationInWindow];
 	pt =[self convertPoint: pt fromView:NULL];
@@ -1207,7 +1207,7 @@ mouseDown
 	if (flags == 0) {
 		// if double click, position Z checker
 		if ([theEvent clickCount] > 1) {
-			Sys_Printf ("positioned Z checker");
+			Sys_Printf ("positioned Z checker\n");
 			[zview_i setPoint:&pt];
 			[quakeed_i newinstance];
 			[quakeed_i updateZ];
@@ -1236,7 +1236,7 @@ mouseDown
 			return[self selectionDragFrom:theEvent];
 
 		if ([map_i numSelected]) {
-			Sys_Printf ("missed");
+			Sys_Printf ("missed\n");
 			return self;
 		}
 
@@ -1260,7 +1260,7 @@ mouseDown
 		[self shearDragFrom:theEvent];
 		return self;
 
-		Sys_Printf ("moving Z checker");
+		Sys_Printf ("moving Z checker\n");
 		[zview_i setXYOrigin:&pt];
 		[quakeed_i updateAll];
 		[zview_i XYmouseDown:&pt];
@@ -1293,7 +1293,7 @@ mouseDown
 		return self;
 	}
 
-	Sys_Printf ("bad flags for click");
+	Sys_Printf ("bad flags for click %x\n", flags);
 	NopSound ();
 	return self;
 }
@@ -1327,7 +1327,7 @@ rightMouseDown
 		return[self directionDragFrom:theEvent];
 	}
 
-	Sys_Printf ("bad flags for click");
+	Sys_Printf ("bad flags for click\n");
 	NopSound ();
 
 	return self;

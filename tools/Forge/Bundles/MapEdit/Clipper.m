@@ -44,7 +44,7 @@ id          clipper_i;
 		VectorCopy (pos[2], pos[0]);
 		VectorCopy (temp, pos[2]);
 	} else {
-		Sys_Printf ("no clipplane");
+		Sys_Printf ("no clipplane\n");
 		NSBeep ();
 	}
 

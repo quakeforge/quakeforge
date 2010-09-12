@@ -298,7 +298,7 @@ fname       useRegion:(BOOL) reg
 	FILE       *f;
 	int         i;
 
-	Sys_Printf ("writeMapFile: %s", fname);
+	Sys_Printf ("writeMapFile: %s\n", fname);
 
 	f = fopen (fname, "w");
 	if (!f)
@@ -362,19 +362,19 @@ make a target connection from the original entity.
 
 	oldent =[self currentEntity];
 	if (oldent ==[self objectAtIndex:0]) {
-		Sys_Printf ("Must have a non-world entity selected to connect");
+		Sys_Printf ("Must have a non-world entity selected to connect\n");
 		return self;
 	}
 
 	[self selectRay: p1: p2:YES];
 	ent =[self currentEntity];
 	if (ent == oldent) {
-		Sys_Printf ("Must click on a different entity to connect");
+		Sys_Printf ("Must click on a different entity to connect\n");
 		return self;
 	}
 
 	if (ent ==[self objectAtIndex:0]) {
-		Sys_Printf ("Must click on a non-world entity to connect");
+		Sys_Printf ("Must click on a non-world entity to connect\n");
 		return self;
 	}
 
@@ -427,12 +427,12 @@ to intervening world brushes
 	}
 
 	if (besttime == 99999) {
-		Sys_Printf ("trace missed");
+		Sys_Printf ("trace missed\n");
 		return self;
 	}
 
 	if ([bestbrush regioned]) {
-		Sys_Printf ("WANRING: clicked on regioned brush");
+		Sys_Printf ("WANRING: clicked on regioned brush\n");
 		return self;
 	}
 
@@ -450,10 +450,10 @@ to intervening world brushes
 		}
 
 		[bestbrush setSelected:YES];
-		Sys_Printf ("selected entity %i brush %i face %i", (int)[self indexOfObject: bestent], (int)[bestent indexOfObject:bestbrush], bestface);
+		Sys_Printf ("selected entity %i brush %i face %i\n", (int)[self indexOfObject: bestent], (int)[bestent indexOfObject:bestbrush], bestface);
 	} else {
 		[bestbrush setSelected:NO];
-		Sys_Printf ("deselected entity %i brush %i face %i", (int)[self indexOfObject: bestent], (int)[bestent indexOfObject:bestbrush], bestface);
+		Sys_Printf ("deselected entity %i brush %i face %i\n", (int)[self indexOfObject: bestent], (int)[bestent indexOfObject:bestbrush], bestface);
 	}
 
 	[quakeed_i enableFlushWindow];
@@ -543,14 +543,14 @@ getTextureRay
 		return nil;
 
 	if (![bestent modifiable]) {
-		Sys_Printf ("can't modify spawned entities");
+		Sys_Printf ("can't modify spawned entities\n");
 		return self;
 	}
 
 	td =[bestbrush texturedefForFace:bestface];
 	[texturepalette_i setTextureDef:td];
 
-	Sys_Printf ("grabbed texturedef and sizes");
+	Sys_Printf ("grabbed texturedef and sizes\n");
 
 	[bestbrush getMins: mins maxs:maxs];
 
@@ -596,17 +596,17 @@ setTextureRay
 	}
 
 	if (besttime == 99999) {
-		Sys_Printf ("trace missed");
+		Sys_Printf ("trace missed\n");
 		return self;
 	}
 
 	if (![bestent modifiable]) {
-		Sys_Printf ("can't modify spawned entities");
+		Sys_Printf ("can't modify spawned entities\n");
 		return self;
 	}
 
 	if ([bestbrush regioned]) {
-		Sys_Printf ("WANRING: clicked on regioned brush");
+		Sys_Printf ("WANRING: clicked on regioned brush\n");
 		return self;
 	}
 
@@ -615,10 +615,10 @@ setTextureRay
 	[quakeed_i disableFlushWindow];
 	if (allsides) {
 		[bestbrush setTexturedef:&td];
-		Sys_Printf ("textured entity %i brush %i", (int)[self indexOfObject: bestent], (int)[bestent indexOfObject:bestbrush]);
+		Sys_Printf ("textured entity %i brush %i\n", (int)[self indexOfObject: bestent], (int)[bestent indexOfObject:bestbrush]);
 	} else {
 		[bestbrush setTexturedef: &td forFace:bestface];
-		Sys_Printf ("deselected entity %i brush %i face %i", (int)[self indexOfObject: bestent], (int)[bestent indexOfObject:bestbrush], bestface);
+		Sys_Printf ("deselected entity %i brush %i face %i\n", (int)[self indexOfObject: bestent], (int)[bestent indexOfObject:bestbrush], bestface);
 	}
 	[quakeed_i enableFlushWindow];
 
@@ -659,7 +659,7 @@ OPERATIONS ON SELECTIONS
 	}
 
 //  if (!total)
-//      Sys_Printf ("nothing selected");
+//      Sys_Printf ("nothing selected\n");
 
 	return self;
 }
@@ -742,7 +742,7 @@ sel_identity (void)
 -transformSelection
 {
 	if (![currentEntity modifiable]) {
-		Sys_Printf ("can't modify spawned entities");
+		Sys_Printf ("can't modify spawned entities\n");
 		return self;
 	}
 // find an origin to apply the transformation to
@@ -893,14 +893,14 @@ UI operations
 
 	o =[self selectedBrush];
 	if (!o) {
-		Sys_Printf ("nothing selected");
+		Sys_Printf ("nothing selected\n");
 		return self;
 	}
 	o =[o parent];
 	c =[o count];
 	for (i = 0; i < c; i++)
 		[[o objectAtIndex: i] setSelected:YES];
-	Sys_Printf ("%i brushes selected", c);
+	Sys_Printf ("%i brushes selected\n", c);
 
 	[quakeed_i updateAll];
 
@@ -910,13 +910,13 @@ UI operations
 -makeEntity:sender
 {
 	if (currentEntity !=[self objectAtIndex:0]) {
-		Sys_Printf ("ERROR: can't makeEntity inside an entity");
+		Sys_Printf ("ERROR: can't makeEntity inside an entity\n");
 		NSBeep ();
 		return self;
 	}
 
 	if ([self numSelected] == 0) {
-		Sys_Printf ("ERROR: must have a seed brush to make an entity");
+		Sys_Printf ("ERROR: must have a seed brush to make an entity\n");
 		NSBeep ();
 		return self;
 	}
@@ -945,7 +945,7 @@ UI operations
 	id          b;
 
 	if ([self numSelected] != 1) {
-		Sys_Printf ("must have a single brush selected");
+		Sys_Printf ("must have a single brush selected\n");
 		return self;
 	}
 
@@ -955,7 +955,7 @@ UI operations
 
 	[self makeUnselectedPerform:selector];
 
-	Sys_Printf ("identified contents");
+	Sys_Printf ("identified contents\n");
 	[quakeed_i updateAll];
 
 	return self;
@@ -979,7 +979,7 @@ UI operations
 	texturedef_t td;
 
 	if ([self numSelected] != 1) {
-		Sys_Printf ("must have a single brush selected");
+		Sys_Printf ("must have a single brush selected\n");
 		return self;
 	}
 
@@ -1006,7 +1006,7 @@ UI operations
 	texturedef_t td;
 
 	if ([self numSelected] != 1) {
-		Sys_Printf ("must have a single brush selected");
+		Sys_Printf ("must have a single brush selected\n");
 		return self;
 	}
 
@@ -1037,7 +1037,7 @@ subtractSelection
 	id          o, o2;
 	id          sellist, sourcelist;
 
-	Sys_Printf ("performing brush subtraction...");
+	Sys_Printf ("performing brush subtraction...\n");
 
 	sourcelist =[[NSMutableArray alloc] init];
 	sellist =[[NSMutableArray alloc] init];
@@ -1087,7 +1087,7 @@ subtractSelection
 		[o release];
 	}
 
-	Sys_Printf ("subtracted selection");
+	Sys_Printf ("subtracted selection\n");
 	[quakeed_i updateAll];
 
 	return self;
