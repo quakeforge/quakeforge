@@ -150,7 +150,7 @@ id          things_i;
 	else
 		flags = atoi (flagname);
 
-	[flags_i setAutodisplay:NO];
+	//[flags_i setAutodisplay:NO];
 	for (r = 0; r < 4; r++)
 		for (c = 0; c < 3; c++) {
 			cell =[flags_i cellAtRow: r column:c];
@@ -160,7 +160,7 @@ id          things_i;
 			}
 			[cell setIntValue:(flags & (1 << ((c * 4) + r))) > 0];
 		}
-	[flags_i setAutodisplay:YES];
+	//[flags_i setAutodisplay:YES];
 	[flags_i display];
 
 //  [keyInput_i setStringValue: ""];
@@ -294,7 +294,7 @@ id          things_i;
 //  Fill the Entity browser
 //  (Delegate method - delegated in Interface Builder)
 //
--(int) browser: sender fillMatrix: matrix inColumn:(int) column
+-(void) browser: sender createRowsForColumn:(int) column inMatrix: matrix
 {
 	id          cell;
 	int         max;
@@ -312,7 +312,6 @@ id          things_i;
 		[cell setLeaf:YES];
 		[cell setLoaded:YES];
 	}
-	return i;
 }
 
 @end

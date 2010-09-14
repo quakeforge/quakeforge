@@ -205,7 +205,7 @@ t           in:(id) obj
 //  Fill the QuakeEd Maps or wads browser
 //  (Delegate method - delegated in Interface Builder)
 //
--(int) browser: sender fillMatrix: matrix inColumn:(int) column
+-(void) browser: sender createRowsForColumn:(int) column inMatrix: matrix
 {
 	id          cell, list;
 	int         max;
@@ -230,7 +230,6 @@ t           in:(id) obj
 		[cell setLeaf:YES];
 		[cell setLoaded:YES];
 	}
-	return i;
 }
 
 //

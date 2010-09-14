@@ -8,6 +8,11 @@
 
 id          inspcontrol_i;
 
+@interface CustomView:NSView
+@end
+@implementation CustomView
+@end
+
 @implementation InspectorControl
 
 -awakeFromNib {
@@ -15,9 +20,9 @@ id          inspcontrol_i;
 
 	currentInspectorType = -1;
 
-	contentList =[[NSArray alloc] init];
-	windowList =[[NSArray alloc] init];
-	itemList =[[NSArray alloc] init];
+	contentList =[[NSMutableArray alloc] init];
+	windowList =[[NSMutableArray alloc] init];
+	itemList =[[NSMutableArray alloc] init];
 
 	// ADD NEW INSPECTORS HERE...
 

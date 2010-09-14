@@ -48,8 +48,7 @@ initWithFrame:
 	PSsetgray(NSLightGray);
 	PSrectfill (0, 0, _bounds.size.width, _bounds.size.height);
 
-	GSSetFont (DEFCTXT, [NSFont fontWithName: @"Helvetica-Medium"
-										size: FONTSIZE]);
+	[[NSFont systemFontOfSize: FONTSIZE] set];
 	PSrotate (0);
 	PSsetgray (0);
 
