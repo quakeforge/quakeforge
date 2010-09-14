@@ -389,8 +389,7 @@ Rect is in global world (unscaled) coordinates
 
 	[path removeAllPoints];
 	PSsetgray (0);						// for text
-	//GSSetFont (DEFCTXT,[NSFont fontWithName: @"Helvetica-Medium" size:10 / scale]);
-	[[NSFont systemFontOfSize: 10] set];
+	[[NSFont systemFontOfSize: 10 / scale] set];
 	PSrotate (0);
 
 	for (; y <= stopy; y += 64) {

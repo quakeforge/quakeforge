@@ -44,7 +44,7 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 
 	selected =[parent_i getSelectedTexture];
 	list_i =[parent_i getList];
-	GSSetFont (DEFCTXT,[NSFont fontWithName: @"Helvetica-Medium" size:FONTSIZE]);
+	[[NSFont systemFontOfSize: FONTSIZE] set];
 	PSrotate (0);
 
 	PSsetgray (NSLightGray);

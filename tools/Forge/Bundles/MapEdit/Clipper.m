@@ -188,8 +188,8 @@ XYDrag
 	char        text[8];
 
 	PSsetrgbcolor (1, 0.5, 0);
-	GSSetFont (DEFCTXT, [NSFont fontWithName: @"Helvetica-Medium"
-	                                    size: 10 / [xyview_i currentScale]]);
+
+	[[NSFont systemFontOfSize: 10 / [xyview_i currentScale]] set];
 	PSrotate (0);
 
 	for (i = 0; i < num; i++) {
@@ -209,8 +209,7 @@ XYDrag
 	char        text[8];
 
 	PSsetrgbcolor (1, 0.5, 0);
-	GSSetFont (DEFCTXT, [NSFont fontWithName: @"Helvetica-Medium"
-	                                    size: 10 / [zview_i currentScale]]);
+	[[NSFont systemFontOfSize: 10 / [zview_i currentScale]] set];
 	PSrotate (0);
 
 	for (i = 0; i < num; i++) {

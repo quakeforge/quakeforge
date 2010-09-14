@@ -12,6 +12,13 @@
 	);
 	Super = NSView;
     };
+    Clipper = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSObject;
+    };
     FirstResponder = {
 	Actions = (
 	    "BSP_FastVis:",
@@ -83,6 +90,37 @@
 	    "texturedefChanged:",
 	    "upFloor:",
 	    "updateAll:"
+	);
+	Super = NSObject;
+    };
+    InspectorControl = {
+	Actions = (
+	    "changeInspector:"
+	);
+	Outlets = (
+	    inspectorView_i,
+	    inspectorSubview_i,
+	    contentList,
+	    windowList,
+	    obj_textures_i,
+	    obj_genkeypair_i,
+	    popUpButton_i,
+	    popUpMatrix_i,
+	    itemList,
+	    win_project_i,
+	    win_textures_i,
+	    win_things_i,
+	    win_prefs_i,
+	    win_settings_i,
+	    win_output_i,
+	    win_help_i,
+	    itemProject_i,
+	    itemTextures_i,
+	    itemThings_i,
+	    itemPrefs_i,
+	    itemSettings_i,
+	    itemOutput_i,
+	    itemHelp_i
 	);
 	Super = NSObject;
     };
