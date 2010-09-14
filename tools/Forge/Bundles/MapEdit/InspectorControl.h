@@ -64,7 +64,6 @@ extern id   inspcontrol_i;
 	id          itemHelp_i;				// docs
 }
 
--awakeFromNib;
 -changeInspector:sender;
 -changeInspectorTo:(insp_e) which;
 -(insp_e) getCurrentInspector;
