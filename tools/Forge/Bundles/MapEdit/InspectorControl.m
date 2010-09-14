@@ -1,3 +1,4 @@
+#include "QF/sys.h"
 
 #include "InspectorControl.h"
 
@@ -15,7 +16,8 @@ id          inspcontrol_i;
 
 @implementation InspectorControl
 
--awakeFromNib {
+-(void)awakeFromNib
+{
 	inspcontrol_i = self;
 
 	currentInspectorType = -1;
@@ -66,12 +68,11 @@ id          inspcontrol_i;
 	[inspectorView_i setAutoresizesSubviews:YES];
 
 	inspectorSubview_i =[contentList objectAtIndex:i_project];
+
 	[inspectorView_i addSubview:inspectorSubview_i];
 
 	currentInspectorType = -1;
 	[self changeInspectorTo:i_project];
-
-	return self;
 }
 
 
@@ -84,6 +85,7 @@ id          inspcontrol_i;
 	id          cell;
 
 	cell =[sender selectedCell];
+	Sys_Printf ("%p %d", cell, (int)[cell tag]);
 	[self changeInspectorTo:[cell tag]];
 	return self;
 }
