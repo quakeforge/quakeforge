@@ -85,7 +85,7 @@ id          inspcontrol_i;
 	id          cell;
 
 	cell =[sender selectedCell];
-	Sys_Printf ("%p %d", cell, (int)[cell tag]);
+	Sys_Printf ("%p %d\n", cell, (int)[cell tag]);
 	[self changeInspectorTo:[cell tag]];
 	return self;
 }
