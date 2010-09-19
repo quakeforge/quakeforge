@@ -241,6 +241,7 @@ t           in:(id) obj
 	int         row;
 	char        fname[1024];
 	id          panel;
+	NSModalSession session;
 
 	matrix =[sender matrixInColumn:0];
 	row =[matrix selectedRow];
@@ -248,12 +249,15 @@ t           in:(id) obj
 
 	panel = NSGetAlertPanel (@"Loading...",
 							 @"Loading map. Please wait.", NULL, NULL, NULL);
-	[panel orderFront:NULL];
+
+	session = [NSApp beginModalSessionForWindow: panel];
+	[NSApp runModalSession: session];
 
 	[quakeed_i doOpen:fname];
 
-	[panel performClose:NULL];
-	// NSFreeAlertPanel(panel);
+	[NSApp endModalSession: session];
+	[panel close];
+	NSReleaseAlertPanel (panel);
 	return self;
 }
 

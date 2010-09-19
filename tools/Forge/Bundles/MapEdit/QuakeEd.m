@@ -676,12 +676,14 @@ cmdline     dialog:(BOOL) wt
 
 	if (wt) {
 		id          panel;
+		NSModalSession session;
 
 		panel = NSGetAlertPanel (@"BSP In Progress",[NSString stringWithCString:expandedcmd], NULL, NULL, NULL);
-		[panel makeKeyAndOrderFront:NULL];
+		session = [NSApp beginModalSessionForWindow: panel];
 		system (expandedcmd);
-		[panel release];
-		[self makeKeyAndOrderFront:NULL];
+		[NSApp endModalSession: session];
+		[panel close];
+		NSReleaseAlertPanel (panel);
 		DisplayCmdOutput ();
 	} else {
 		// cmdte = DPSAddTimedEntry(1, CheckCmdDone, self, NS_BASETHRESHOLD);
