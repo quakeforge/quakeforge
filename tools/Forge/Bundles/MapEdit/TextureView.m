@@ -30,7 +30,7 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 	return YES;
 }
 
--drawSelf: (const NSRect *) rects:(int) rectCount
+-drawRect: (NSRect) rects
 {
 	int         i;
 	int         max;
@@ -48,8 +48,8 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 	PSrotate (0);
 
 	PSsetgray (NSLightGray);
-	PSrectfill (rects->origin.x, rects->origin.y,
-				rects->size.width, rects->size.height);
+	PSrectfill (rects.origin.x, rects.origin.y,
+				rects.size.width, rects.size.height);
 
 	if (!list_i)						// WADfile didn't init
 		return self;
@@ -85,7 +85,7 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 		r.origin.x -= TEX_INDENT / 2;
 		r.size.width += TEX_INDENT;
 		r.origin.y += 4;
-		if (NSIntersectsRect (rects[0], r) == YES && t->display) {
+		if (NSIntersectsRect (rects, r) == YES && t->display) {
 			if (selected == i) {
 				PSsetgray (1);
 				PSrectfill (r.origin.x, r.origin.y,
@@ -98,7 +98,9 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 
 			p = t->r.origin;
 			p.y += TEX_SPACING;
-			[t->image drawAtPoint: p fromRect: r operation: NSCompositeCopy fraction:1.0];
+			//[t->image drawAtPoint: p fromRect: r operation: NSCompositeCopy fraction:1.0];
+			//[t->image drawAtPoint: p];
+			[t->image drawInRect: t->r];
 			x = t->r.origin.x;
 			y = t->r.origin.y + 7;
 			PSmoveto (x, y);
