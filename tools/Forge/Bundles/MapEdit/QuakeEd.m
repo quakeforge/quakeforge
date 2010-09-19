@@ -67,6 +67,8 @@ DisplayCmdOutput (void)
 	int         size;
 
 	file = Qopen (FN_CMDOUT, "rt");
+	if (!file)
+		return;
 	size = Qfilesize (file);
 	buffer = malloc (size + 1);
 	size = Qread (file, buffer, size);

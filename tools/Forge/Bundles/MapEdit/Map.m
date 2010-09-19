@@ -239,6 +239,8 @@ readMapFile
 	Sys_Printf ("loading %s\n", fname);
 
 	file = Qopen (fname, "rt");
+	if (!file)
+		return self;
 	size = Qfilesize (file);
 	dat = malloc (size + 1);
 	size = Qread (file, dat, size);
