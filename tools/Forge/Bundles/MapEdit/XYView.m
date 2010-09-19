@@ -49,6 +49,7 @@ initWithFrame:
 	[scalebutton_i addItemWithTitle:@"100%"];
 	[scalebutton_i addItemWithTitle:@"200%"];
 	[scalebutton_i addItemWithTitle:@"300%"];
+	[scalebutton_i sizeToFit];
 	[scalebutton_i selectItemAtIndex:4];
 
 
@@ -63,15 +64,16 @@ initWithFrame:
 	[gridbutton_i addItemWithTitle:@"grid 16"];
 	[gridbutton_i addItemWithTitle:@"grid 32"];
 	[gridbutton_i addItemWithTitle:@"grid 64"];
-
+	[gridbutton_i sizeToFit];
 	[gridbutton_i selectItemAtIndex:4];
 
 // initialize the scroll view
-	scrollview_i =[[PopScrollView alloc]
-	initWithFrame: frameRect button1: scalebutton_i button2:gridbutton_i];
+	scrollview_i = [[PopScrollView alloc] initWithFrame: frameRect
+												button1: scalebutton_i
+												button2: gridbutton_i];
 	[scrollview_i setLineScroll:64];
 	[scrollview_i setAutoresizingMask:(NSViewWidthSizable |
-	 NSViewHeightSizable)];
+									   NSViewHeightSizable)];
 
 // link objects together
 	[scrollview_i setDocumentView:self];
@@ -85,10 +87,9 @@ initWithFrame:
 }
 
 -setModeRadio:m
-{						// this should be set from IB, but
-										// because I toss myself in a
-										// popscrollview
-// the connection gets lost
+{
+	// this should be set from IB, but because I toss myself in a
+	// popscrollview the connection gets lost
 	mode_radio_i = m;
 	[mode_radio_i setTarget:self];
 	[mode_radio_i setAction: @selector (drawMode:)];
@@ -119,20 +120,20 @@ initWithFrame:
 /*
 	v
 */
--setOrigin:(NSPoint *)
-pt          scale:(float) sc
+-setOrigin:(NSPoint)pt scale:(float) sc
 {
 	NSRect      sframe;
 	NSRect      newbounds;
+	NSClipView *cv = (NSClipView *) _super_view;
 
 //
 // calculate the area visible in the cliprect
 //
 	scale = sc;
 
-	sframe =[[self superview] frame];
-	newbounds =[[self superview] frame];
-	newbounds.origin = *pt;
+	sframe = [_super_view frame];
+	newbounds = [_super_view frame];
+	newbounds.origin = pt;
 	newbounds.size.width /= scale;
 	newbounds.size.height /= scale;
 	sframe.size.width /= scale;
@@ -151,18 +152,19 @@ pt          scale:(float) sc
 //
 // size this view
 //
-	[self setBoundsSize:newbounds.size];
-	[self setBoundsOrigin:newbounds.origin];
+	[self setFrameSize:newbounds.size];
+	[self setFrameOrigin:newbounds.origin];
 	// XXX[self moveTo: newbounds.origin.x : newbounds.origin.y];
 
 //
 // scroll and scale the clip view
 //
-	[[self superview] setBoundsSize:sframe.size];
-	[[self superview] setBoundsOrigin:*pt];
+	[cv setBoundsSize:sframe.size];
+	[cv scrollToPoint:pt];
 
 	// XXX[quakeed_i reenableDisplay];
 	[scrollview_i display];
+	[[_super_view superview] reflectScrolledClipView: cv];
 
 	return self;
 }
@@ -183,7 +185,7 @@ pt          scale:(float) sc
 	sbounds.origin.x += delta.x;
 	sbounds.origin.y += delta.y;
 
-	[self setOrigin: &sbounds.origin scale:scale];
+	[self setOrigin: sbounds.origin scale:scale];
 	return self;
 }
 
@@ -199,7 +201,7 @@ When superview is resized
 	NSRect      r;
 
 	r =[[self superview] bounds];
-	[self newRealBounds:&r];
+	[self newRealBounds:r];
 
 	return self;
 }
@@ -213,17 +215,23 @@ Should only change the scroll bars, not cause any redraws.
 If realbounds has shrunk, nothing will change.
 ===================
 */
--newRealBounds:(NSRect *) nb
+-newRealBounds:(NSRect) nb
 {
 	NSRect      sbounds;
 
-	realbounds = *nb;
+	realbounds = nb;
+Sys_Printf ("realbounds: %g %g %g %g\n",
+			realbounds.origin.x, realbounds.origin.y,
+			realbounds.size.width, realbounds.size.height);
 
 //
 // calculate the area visible in the cliprect
 //
-	sbounds =[[self superview] bounds];
-	sbounds = NSUnionRect (*nb, sbounds);
+	sbounds = [[self superview] bounds];
+Sys_Printf ("sbounds: %g %g %g %g\n",
+			sbounds.origin.x, sbounds.origin.y,
+			sbounds.size.width, sbounds.size.height);
+	sbounds = NSUnionRect (nb, sbounds);
 
 //
 // size this view
@@ -231,16 +239,16 @@ If realbounds has shrunk, nothing will change.
 	// XXX[quakeed_i disableDisplay];
 
 	[self setPostsBoundsChangedNotifications:NO];
-	[self setBoundsSize:sbounds.size];
-	[self setBoundsOrigin:sbounds.origin];
+	[self setFrameSize:sbounds.size];
+	[self setFrameOrigin:sbounds.origin];
 	// XXX[self moveTo: sbounds.origin.x : sbounds.origin.y];
 	[self setPostsBoundsChangedNotifications:YES];
 
 	[scrollview_i reflectScrolledClipView:[scrollview_i contentView]];
 	// XXX[quakeed_i reenableDisplay];
 
-	[[scrollview_i horizontalScroller] display];
-	[[scrollview_i verticalScroller] display];
+	//[[scrollview_i horizontalScroller] display];
+	//[[scrollview_i verticalScroller] display];
 
 	return self;
 }
@@ -276,7 +284,7 @@ Called when the scaler popup on the window is used
 	visrect.origin.x -= sframe.size.width / 2 / nscale;
 	visrect.origin.y -= sframe.size.height / 2 / nscale;
 
-	[self setOrigin: &visrect.origin scale:nscale];
+	[self setOrigin: visrect.origin scale:nscale];
 
 	return self;
 }
@@ -317,7 +325,7 @@ zoomIn
 	new.x = constant->x - ofs.x / 2;
 	new.y = constant->y - ofs.y / 2;
 
-	[self setOrigin: &new scale:scale * 2];
+	[self setOrigin: new scale:scale * 2];
 
 	return self;
 }
@@ -358,7 +366,7 @@ zoomOut
 	new.x = constant->x - ofs.x * 2;
 	new.y = constant->y - ofs.y * 2;
 
-	[self setOrigin: &new scale:scale / 2];
+	[self setOrigin: new scale:scale / 2];
 
 	return self;
 }
@@ -444,7 +452,7 @@ superviewChanged
 */
 -superviewChanged
 {
-	[self newRealBounds:&realbounds];
+	[self newRealBounds:realbounds];
 
 	return self;
 }
@@ -705,7 +713,7 @@ drawWire
 	newrect.size.width += 2 * gridsize;
 	newrect.size.height += 2 * gridsize;
 	if (!NSEqualRects (newrect, realbounds))
-		[self newRealBounds:&newrect];
+		[self newRealBounds:newrect];
 
 	return self;
 }
@@ -788,7 +796,7 @@ NSRect      xy_draw_rect;
 
 -drawRect: (NSRect) rects
 {
-	static float drawtime;				// static to shut up compiler warning
+	float drawtime = 0;
 
 	if (timedrawing)
 		drawtime = Sys_DoubleTime ();
@@ -932,7 +940,7 @@ ScrollCallback (float dx, float dy)
 
 	oldreletive.x -= dx;
 	oldreletive.y -= dy;
-	[xyview_i setOrigin: &neworg scale:scale];
+	[xyview_i setOrigin: neworg scale:scale];
 }
 
 -scrollDragFrom:(NSEvent *) theEvent

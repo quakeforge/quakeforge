@@ -32,7 +32,8 @@ tile
 
 Adjust the size for the pop up scale menu
 =================
-*/ -tile
+*/
+-tile
 {
 	NSRect      scrollerframe;
 	NSRect      buttonframe, buttonframe2;
@@ -44,7 +45,7 @@ Adjust the size for the pop up scale menu
 	scrollerframe =[_horizScroller frame];
 
 	newframe.origin.y = scrollerframe.origin.y;
-	newframe.origin.x = scrollerframe.size.width - buttonframe.size.width;
+	newframe.origin.x = scrollerframe.origin.x + scrollerframe.size.width - buttonframe.size.width;
 	newframe.size.width = buttonframe.size.width;
 	newframe.size.height = scrollerframe.size.height;
 	scrollerframe.size.width -= newframe.size.width;

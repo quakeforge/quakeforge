@@ -8,8 +8,8 @@ initWithFrame: button:
 Initizes a scroll view with a button at it's lower right corner
 ====================
 */
-- initWithFrame:(NSRect)
-frameRect   button1:b1 {
+- initWithFrame:(NSRect) frameRect button1:b1
+{
 	[super initWithFrame:frameRect];
 
 	[self addSubview:b1];
@@ -29,7 +29,8 @@ tile
 
 Adjust the size for the pop up scale menu
 =================
-*/ -tile
+*/
+-tile
 {
 	NSRect      scrollerframe;
 
@@ -39,6 +40,7 @@ Adjust the size for the pop up scale menu
 
 	scrollerframe.size.width = 0;
 	[_horizScroller setFrame:scrollerframe];
+	[_horizScroller setHidden:YES];
 
 	return self;
 }
