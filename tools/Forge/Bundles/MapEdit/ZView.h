@@ -41,8 +41,7 @@ extern float zplanedir;
 
 -setXYOrigin:(NSPoint *) pt;
 
--setOrigin:(NSPoint *)
-pt          scale:(float) sc;
+-setOrigin:(NSPoint) pt scale:(float) sc;
 
 @end
 #endif // ZView_h

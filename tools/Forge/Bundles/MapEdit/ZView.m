@@ -52,16 +52,15 @@ initWithFrame:
 	[zscalebutton_i addItemWithTitle:@"300%"];
 	[zscalebutton_i selectItemAtIndex:4];
 
-
 // initialize the scroll view
-	zscrollview_i =[[ZScrollView alloc]
-	initWithFrame: frameRect button1:zscalebutton_i];
+	zscrollview_i =[[ZScrollView alloc] initWithFrame: frameRect
+											  button1: zscalebutton_i];
 	[zscrollview_i setAutoresizingMask:NSViewWidthSizable |
-	 NSViewHeightSizable];
+									   NSViewHeightSizable];
 
 	[zscrollview_i setDocumentView:self];
 
-//  [_super_view setDrawOrigin: 0 : 0];
+	//[_super_view setBoundsOrigin: NSMakePoint (0, 0)];
 
 	minheight = 0;
 	maxheight = 64;
@@ -71,7 +70,7 @@ initWithFrame:
 
 	[self newRealBounds];
 
-	[self setOrigin: &pt scale:1];
+	[self setOrigin: pt scale:1];
 
 	return zscrollview_i;
 }
@@ -93,8 +92,7 @@ initWithFrame:
 setOrigin:scale:
 ===================
 */
--setOrigin:(NSPoint *)
-pt          scale:(float) sc
+-setOrigin:(NSPoint) pt scale:(float) sc
 {
 	NSRect      sframe;
 	NSRect      newbounds;
@@ -104,9 +102,9 @@ pt          scale:(float) sc
 //
 	scale = sc;
 
-	sframe =[_super_view frame];
-	newbounds =[_super_view frame];
-	newbounds.origin = *pt;
+	sframe =[self frame];
+	newbounds =[self frame];
+	newbounds.origin = pt;
 	newbounds.size.width /= scale;
 	newbounds.size.height /= scale;
 
@@ -130,7 +128,8 @@ pt          scale:(float) sc
 // size this view
 //
 	[self setBoundsSize:newbounds.size];
-	// XXX[self setDrawOrigin: -newbounds.size.width/2 : newbounds.origin.y];
+	[self setBoundsOrigin: NSMakePoint (-newbounds.size.width/2,
+										newbounds.origin.y)];
 	// XXX[self moveTo: -newbounds.size.width/2 : newbounds.origin.y];
 
 //
@@ -169,15 +168,15 @@ Called when the scaler popup on the window is used
 		return NULL;
 
 // keep the center of the view constant
-	visrect =[_super_view bounds];
-	sframe =[_super_view frame];
+	visrect =[self bounds];
+	sframe =[self frame];
 	visrect.origin.x += visrect.size.width / 2;
 	visrect.origin.y += visrect.size.height / 2;
 
 	visrect.origin.x -= sframe.size.width / 2 / nscale;
 	visrect.origin.y -= sframe.size.height / 2 / nscale;
 
-	[self setOrigin: &visrect.origin scale:nscale];
+	[self setOrigin: visrect.origin scale:nscale];
 
 	return self;
 }
@@ -242,6 +241,7 @@ If realbounds has shrunk, nothing will change.
 {
 	NSRect      sbounds;
 	float       vistop, visbottom;
+	NSClipView *cv = (NSClipView *) _super_view;
 
 	if (minheight == oldminheight && maxheight == oldmaxheight)
 		return self;
@@ -274,18 +274,18 @@ If realbounds has shrunk, nothing will change.
 // size this view
 //
 	// XXX[quakeed_i disableDisplay];
-
+//Sys_Printf ("sbounds: %g %g %g %g\n", -sbounds.size.width / 2, sbounds.origin.y, sbounds.size.width, sbounds.size.height);
 	// XXX[self suspendNotifyAncestorWhenFrameChanged:YES];
-	[self setBoundsSize:sbounds.size];
-	[self setBoundsOrigin: NSMakePoint (-sbounds.size.width / 2,
+	[self setFrameSize:sbounds.size];
+	[self setFrameOrigin: NSMakePoint (-sbounds.size.width / 2,
 										sbounds.origin.y)];
-	// XXX[self moveTo: -sbounds.size.width/2 : sbounds.origin.y];
+	[cv scrollToPoint: NSMakePoint (-sbounds.size.width/2, sbounds.origin.y)];
 	// XXX[self suspendNotifyAncestorWhenFrameChanged:NO];
-	// XXX[[_super_view _super_view] reflectScroll: _super_view];
+	[[_super_view superview] reflectScrolledClipView: cv];
 
 	// XXX[quakeed_i reenableDisplay];
 
-	// XXX[[[[self _super_view] _super_view] vertScroller] display];
+	[[zscrollview_i verticalScroller] display];
 
 	return self;
 }
@@ -320,7 +320,7 @@ Rect is in global world (unscaled) coordinates
 
 	left = _bounds.origin.x;
 	right = 24;
-
+//Sys_Printf ("gridsize: %d left: %d right: %d\n", gridsize, left, right);
 	bottom = rect.origin.y - 1;
 	top = rect.origin.y + rect.size.height + 2;
 
@@ -441,14 +441,14 @@ drawSelf
 
 -drawRect: (NSRect) rects
 {
-	NSRect      visRect;
-
+	//NSRect      visRect;
+//Sys_Printf("ZView:drawRect\n");
 	minheight = 999999;
 	maxheight = -999999;
 
 // allways draw the entire bar  
-	visRect =[self visibleRect];
-	rects = visRect;
+	//visRect =[self visibleRect];
+	rects = [self bounds];
 
 // erase window
 	NSEraseRect (rects);
@@ -612,7 +612,7 @@ ZScrollCallback (float dy)
 	scale =[zview_i currentScale];
 
 	oldreletive.y -= dy;
-	[zview_i setOrigin: &neworg scale:scale];
+	[zview_i setOrigin: neworg scale:scale];
 }
 
 -scrollDragFrom:(NSEvent *) theEvent

@@ -55,10 +55,10 @@ void        XYlineto (vec3_t pt);
 -setDrawMode:(drawmode_t) mode;
 
 -newSuperBounds;
--newRealBounds:(NSRect *) nb;
+-newRealBounds:(NSRect) nb;
 
 -addToScrollRange: (float) x:(float) y;
--setOrigin:(NSPoint *) pt scale:(float) sc;
+-setOrigin:(NSPoint) pt scale:(float) sc;
 
 -centerOn:(vec3_t) org;
 
