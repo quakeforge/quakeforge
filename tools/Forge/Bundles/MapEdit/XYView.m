@@ -117,75 +117,77 @@ initWithFrame:
 	return scale;
 }
 
-/*
-	v
-*/
+- (NSRect) adjustScroll: (NSRect)newVisible
+{
+	Sys_Printf ("newVisible: %g %g %g %g\n",
+				newVisible.origin.x, newVisible.origin.y,
+				newVisible.size.width, newVisible.size.height);
+	return newVisible;
+}
+
 -setOrigin:(NSPoint)pt scale:(float) sc
 {
 	NSRect      sframe;
-	NSRect      newbounds;
+	NSRect      bounds;
 	NSClipView *cv = (NSClipView *) _super_view;
 
-//
-// calculate the area visible in the cliprect
-//
+	// calculate the area visible in the cliprect
 	scale = sc;
 
-	sframe = [_super_view frame];
-	newbounds = [_super_view frame];
-	newbounds.origin = pt;
-	newbounds.size.width /= scale;
-	newbounds.size.height /= scale;
-	sframe.size.width /= scale;
-	sframe.size.height /= scale;
+	bounds = [_super_view bounds];
+	bounds.origin = pt;
+	bounds.size.width /= scale;
+	bounds.size.height /= scale;
 
-//
-// union with the realbounds
-//
-	newbounds = NSUnionRect (realbounds, newbounds);
+	// union with the realbounds
+	bounds = NSUnionRect (realbounds, bounds);
+	sframe = bounds;
+	sframe.origin.x *= scale;
+	sframe.origin.y *= scale;
+	sframe.size.width *= scale;
+	sframe.size.height *= scale;
 
-//
-// redisplay everything
-//
-	// XXX[quakeed_i disableDisplay];
+	// redisplay everything
+	//[self setPostsFrameChangedNotifications:NO];
+	//[self setPostsBoundsChangedNotifications:NO];
 
-//
-// size this view
-//
-	[self setFrameSize:newbounds.size];
-	[self setFrameOrigin:newbounds.origin];
-	// XXX[self moveTo: newbounds.origin.x : newbounds.origin.y];
+	// size this view
+	[self setFrame: sframe];
+	if (_boundsMatrix) {
+		//FIXME workaround for a bug in GNUstep
+		NSAffineTransformStruct t = [_boundsMatrix transformStruct];
+		t.m11 = t.m22 = 1;
+		[_boundsMatrix setTransformStruct: t];
+	}
+	[self setBounds: bounds];
 
-//
-// scroll and scale the clip view
-//
-	[cv setBoundsSize:sframe.size];
-	[cv scrollToPoint:pt];
+	//[self setPostsFrameChangedNotifications:YES];
+	//[self setPostsBoundsChangedNotifications:YES];
 
-	// XXX[quakeed_i reenableDisplay];
+	// scroll and scale the clip view
+	pt.x *= scale;
+	pt.y *= scale;
+	[cv setBoundsOrigin:pt];
+
+	[scrollview_i reflectScrolledClipView: cv];
 	[scrollview_i display];
-	[[_super_view superview] reflectScrolledClipView: cv];
-
 	return self;
 }
 
 -centerOn:(vec3_t) org
 {
 	NSRect      sbounds;
-	NSPoint     mid, delta;
+	NSPoint     mid, origin;
 
-	sbounds =[[xyview_i superview] bounds];
+	sbounds = [_super_view bounds];
 
-	mid.x = sbounds.origin.x + sbounds.size.width / 2;
-	mid.y = sbounds.origin.y + sbounds.size.height / 2;
+	mid.x = sbounds.size.width / 2;
+	mid.y = sbounds.size.height / 2;
 
-	delta.x = org[0] - mid.x;
-	delta.y = org[1] - mid.y;
+	origin.x = org[0] - mid.x / scale;
+	origin.y = org[1] - mid.y / scale;
 
-	sbounds.origin.x += delta.x;
-	sbounds.origin.y += delta.y;
-
-	[self setOrigin: sbounds.origin scale:scale];
+	[self setOrigin: origin scale:scale];
 	return self;
 }
 
@@ -217,39 +219,41 @@ If realbounds has shrunk, nothing will change.
 */
 -newRealBounds:(NSRect) nb
 {
-	NSRect      sbounds;
+	NSRect      bounds;
+	NSRect      sframe;
 
 	realbounds = nb;
-Sys_Printf ("realbounds: %g %g %g %g\n",
-			realbounds.origin.x, realbounds.origin.y,
-			realbounds.size.width, realbounds.size.height);
 
-//
-// calculate the area visible in the cliprect
-//
-	sbounds = [[self superview] bounds];
-Sys_Printf ("sbounds: %g %g %g %g\n",
-			sbounds.origin.x, sbounds.origin.y,
-			sbounds.size.width, sbounds.size.height);
-	sbounds = NSUnionRect (nb, sbounds);
+	// calculate the area visible in the cliprect
+	bounds = [_super_view bounds];
+	bounds.origin.x /= scale;
+	bounds.origin.y /= scale;
+	bounds.size.width /= scale;
+	bounds.size.height /= scale;
+	bounds = NSUnionRect (realbounds, bounds);
+	sframe = bounds;
+	sframe.origin.x *= scale;
+	sframe.origin.y *= scale;
+	sframe.size.width *= scale;
+	sframe.size.height *= scale;
 
-//
-// size this view
-//
-	// XXX[quakeed_i disableDisplay];
+	// size this view
+	//[self setPostsFrameChangedNotifications:NO];
+	//[self setPostsBoundsChangedNotifications:NO];
 
-	[self setPostsBoundsChangedNotifications:NO];
-	[self setFrameSize:sbounds.size];
-	[self setFrameOrigin:sbounds.origin];
-	// XXX[self moveTo: sbounds.origin.x : sbounds.origin.y];
-	[self setPostsBoundsChangedNotifications:YES];
+	[self setFrame: sframe];
+	if (_boundsMatrix) {
+		//FIXME workaround for a bug in GNUstep
+		NSAffineTransformStruct t = [_boundsMatrix transformStruct];
+		t.m11 = t.m22 = 1;
+		[_boundsMatrix setTransformStruct: t];
+	}
+	[self setBounds: bounds];
+
+	//[self setPostsBoundsChangedNotifications:YES];
+	//[self setPostsFrameChangedNotifications:YES];
 
 	[scrollview_i reflectScrolledClipView:[scrollview_i contentView]];
-	// XXX[quakeed_i reenableDisplay];
-
-	//[[scrollview_i horizontalScroller] display];
-	//[[scrollview_i verticalScroller] display];
-
 	return self;
 }
 
@@ -265,7 +269,8 @@ Called when the scaler popup on the window is used
 -scaleMenuTarget:sender
 {
 	char const *item;
-	NSRect      visrect, sframe;
+	NSRect      rect;
+	NSPoint     mid, org, origin;
 	float       nscale;
 
 	item =[[[sender selectedCell] title] cString];
@@ -275,16 +280,18 @@ Called when the scaler popup on the window is used
 	if (nscale == scale)
 		return NULL;
 
-// keep the center of the view constant
-	visrect =[[self superview] bounds];
-	sframe =[[self superview] frame];
-	visrect.origin.x += visrect.size.width / 2;
-	visrect.origin.y += visrect.size.height / 2;
+	// keep the center of the view constant
+	rect = [_super_view bounds];
+	mid.x = rect.size.width / 2;
+	mid.y = rect.size.height / 2;
 
-	visrect.origin.x -= sframe.size.width / 2 / nscale;
-	visrect.origin.y -= sframe.size.height / 2 / nscale;
+	org.x = (rect.origin.x + mid.x) / scale;
+	org.y = (rect.origin.y + mid.y) / scale;
 
-	[self setOrigin: visrect.origin scale:nscale];
+	origin.x = org.x - mid.x / nscale;
+	origin.y = org.y - mid.y / nscale;
+
+	[self setOrigin: origin scale:nscale];
 
 	return self;
 }
@@ -807,7 +814,7 @@ NSRect      xy_draw_rect;
 
 // setup for text
 	// PSselectfont("Helvetica-Medium",10/scale);
-	[[NSFont systemFontOfSize: 10 / scale] set];
+	[[NSFont systemFontOfSize: 10 * scale] set];
 	PSrotate (0);
 
 	if (drawmode == dr_texture || drawmode == dr_flat)
