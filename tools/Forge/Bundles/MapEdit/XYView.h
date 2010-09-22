@@ -70,4 +70,8 @@ void        XYlineto (vec3_t pt);
 -(float) snapToGrid:(float) f;
 
 @end
+
+@interface NSView(XYView)
+-(void) setFrame:(NSRect) frame bounds:(NSRect) bounds scale:(NSSize) scale;
+@end
 #endif // XYView_h

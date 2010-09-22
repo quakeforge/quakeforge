@@ -16,6 +16,34 @@ id          scrollview_i, gridbutton_i, scalebutton_i;
 vec3_t      xy_viewnormal;				// v_forward for xy view
 float       xy_viewdist;				// clip behind this plane
 
+@implementation NSView(XYView)
+-(void) setFrame:(NSRect) frame bounds:(NSRect) bounds scale:(NSSize) scale
+{
+	// XXX[quakeed_i disableDisplay];
+	//[self setPostsFrameChangedNotifications:NO];
+	//[self setPostsBoundsChangedNotifications:NO];
+	[self setFrame: frame];
+	if (_boundsMatrix) {
+		//FIXME workaround for a bug (?) in GNUstep
+		NSAffineTransformStruct t = [_boundsMatrix transformStruct];
+		t.m11 = t.m22 = 1;
+		t.m12 = t.m21 = 0;
+		[_boundsMatrix setTransformStruct: t];
+	}
+	[self setBounds: bounds];
+	if (_boundsMatrix) {
+		//FIXME workaround for a bug (?) in GNUstep
+		NSAffineTransformStruct t = [_boundsMatrix transformStruct];
+		t.tX *= scale.width;
+		t.tY *= scale.height;
+		[_boundsMatrix setTransformStruct: t];
+	}
+	//[self setPostsFrameChangedNotifications:YES];
+	//[self setPostsBoundsChangedNotifications:YES];
+	// XXX[quakeed_i reenableDisplay];
+}
+@end
+
 @implementation XYView
 /*
 ==================
@@ -141,31 +169,11 @@ initWithFrame:
 	sframe.size.height *= scale;
 
 	// redisplay everything
-	//[self setPostsFrameChangedNotifications:NO];
-	//[self setPostsBoundsChangedNotifications:NO];
 
 	// size this view
-	[self setFrame: sframe];
-	if (_boundsMatrix) {
-		//FIXME workaround for a bug (?) in GNUstep
-		NSAffineTransformStruct t = [_boundsMatrix transformStruct];
-		t.m11 = t.m22 = 1;
-		t.m12 = t.m21 = 0;
-		[_boundsMatrix setTransformStruct: t];
-	}
-	[self setBounds: bounds];
-	if (_boundsMatrix) {
-		//FIXME workaround for a bug (?) in GNUstep
-		NSAffineTransformStruct t = [_boundsMatrix transformStruct];
-		t.tX *= scale;
-		t.tY *= scale;
-		[_boundsMatrix setTransformStruct: t];
-	}
+	[self setFrame:sframe bounds:bounds scale:NSMakeSize (scale, scale)];
 
-	//[self setPostsFrameChangedNotifications:YES];
-	//[self setPostsBoundsChangedNotifications:YES];
-
-	// scroll and scale the clip view
+	// scroll the clip view
 	pt.x *= scale;
 	pt.y *= scale;
 	[cv setBoundsOrigin:pt];
@@ -231,6 +239,7 @@ If realbounds has shrunk, nothing will change.
 	bounds.origin.y /= scale;
 	bounds.size.width /= scale;
 	bounds.size.height /= scale;
+
 	bounds = NSUnionRect (realbounds, bounds);
 	sframe = bounds;
 	sframe.origin.x *= scale;
@@ -239,20 +248,7 @@ If realbounds has shrunk, nothing will change.
 	sframe.size.height *= scale;
 
 	// size this view
-	//[self setPostsFrameChangedNotifications:NO];
-	//[self setPostsBoundsChangedNotifications:NO];
-
-	[self setFrame: sframe];
-	if (_boundsMatrix) {
-		//FIXME workaround for a bug in GNUstep
-		NSAffineTransformStruct t = [_boundsMatrix transformStruct];
-		t.m11 = t.m22 = 1;
-		[_boundsMatrix setTransformStruct: t];
-	}
-	[self setBounds: bounds];
-
-	//[self setPostsBoundsChangedNotifications:YES];
-	//[self setPostsFrameChangedNotifications:YES];
+	[self setFrame:sframe bounds:bounds scale:NSMakeSize (scale, scale)];
 
 	[scrollview_i reflectScrolledClipView:[scrollview_i contentView]];
 	return self;
@@ -1230,8 +1226,7 @@ mouseDown
 			return self;
 		}
 		// check eye
-		if ([cameraview_i XYmouseDown: &pt flags:[theEvent
-		 modifierFlags]])
+		if ([cameraview_i XYmouseDown: &pt flags:[theEvent modifierFlags]])
 			return self;				// camera move
 
 		// check z post
