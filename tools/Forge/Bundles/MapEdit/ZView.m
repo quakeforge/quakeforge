@@ -60,12 +60,12 @@ initWithFrame:
 
 	[zscrollview_i setDocumentView:self];
 
-	//[_super_view setBoundsOrigin: NSMakePoint (0, 0)];
+	[_super_view setBoundsOrigin: NSMakePoint (0, 0)];
 
 	minheight = 0;
 	maxheight = 64;
 
-	pt.x = -_bounds.size.width;
+	pt.x = -[_super_view bounds].size.width / 2;
 	pt.y = -128;
 
 	[self newRealBounds];
@@ -95,52 +95,36 @@ setOrigin:scale:
 -setOrigin:(NSPoint) pt scale:(float) sc
 {
 	NSRect      sframe;
-	NSRect      newbounds;
+	NSRect      bounds;
+	NSRect      size;
 
-//
-// calculate the area visible in the cliprect
-//
+	// calculate the area visible in the cliprect
 	scale = sc;
 
-	sframe =[self frame];
-	newbounds =[self frame];
-	newbounds.origin = pt;
-	newbounds.size.width /= scale;
-	newbounds.size.height /= scale;
+	bounds =[_super_view bounds];
+	bounds.origin = pt;
+	bounds.size.width /= 1;
+	bounds.size.height /= scale;
 
-//
-// union with the realbounds
-//
-	if (newbounds.origin.y > oldminheight) {
-		newbounds.size.height += newbounds.origin.y - oldminheight;
-		newbounds.origin.y = oldminheight;
-	}
-	if (newbounds.origin.y + newbounds.size.height < oldmaxheight) {
-		newbounds.size.height += oldmaxheight
-			- (newbounds.origin.y + newbounds.size.height);
-	}
-//
-// redisplay everything
-//
-	// XXX[quakeed_i disableDisplay];
+	size = NSMakeRect (0, oldminheight, 1, oldmaxheight - oldminheight);
+	// union with the realbounds
+	bounds = NSUnionRect (size, bounds);
+	// redisplay everything
+	bounds.origin = NSMakePoint (-bounds.size.width/2, bounds.origin.y);
+	sframe = bounds;
+	sframe.origin.x *= 1;
+	sframe.origin.y *= scale;
+	sframe.size.width *= 1;
+	sframe.size.height *= scale;
 
-//
-// size this view
-//
-	[self setBoundsSize:newbounds.size];
-	[self setBoundsOrigin: NSMakePoint (-newbounds.size.width/2,
-										newbounds.origin.y)];
-	// XXX[self moveTo: -newbounds.size.width/2 : newbounds.origin.y];
+	// size this view
+	[self setFrame:sframe bounds:bounds scale:NSMakeSize (1, scale)];
 
-//
-// scroll and scale the clip view
-//
-	// XXX[_super_view setDrawSize
-	// XXX : sframe.size.width/scale 
-	// XXX : sframe.size.height/scale];
-	// XXX[_super_view setDrawOrigin: pt->x : pt->y];
+	// scroll and scale the clip view
+	pt.x *= 1;
+	pt.y *= scale;
+	[_super_view setBoundsOrigin: pt];
 
-	// XXX[quakeed_i reenableDisplay];
 	[zscrollview_i display];
 
 	return self;
@@ -157,7 +141,8 @@ Called when the scaler popup on the window is used
 -scaleMenuTarget:sender
 {
 	char const *item;
-	NSRect      visrect, sframe;
+	NSRect      rect;
+	NSPoint     mid, org, orig;
 	float       nscale;
 
 	item =[[sender titleOfSelectedItem] cString];
@@ -168,15 +153,17 @@ Called when the scaler popup on the window is used
 		return NULL;
 
 // keep the center of the view constant
-	visrect =[self bounds];
-	sframe =[self frame];
-	visrect.origin.x += visrect.size.width / 2;
-	visrect.origin.y += visrect.size.height / 2;
+	rect =[_super_view bounds];
+	mid.x = rect.size.width / 2;
+	mid.y = rect.size.height / 2;
 
-	visrect.origin.x -= sframe.size.width / 2 / nscale;
-	visrect.origin.y -= sframe.size.height / 2 / nscale;
+	org.x = (rect.origin.x + mid.x) / 1;
+	org.y = (rect.origin.y + mid.y) / scale;
 
-	[self setOrigin: visrect.origin scale:nscale];
+	orig.x = org.x - mid.x / 1;
+	orig.y = org.y - mid.y / nscale;
+
+	[self setOrigin: orig scale:nscale];
 
 	return self;
 }
@@ -239,8 +226,10 @@ If realbounds has shrunk, nothing will change.
 */
 -newRealBounds
 {
-	NSRect      sbounds;
-	float       vistop, visbottom;
+	NSRect      bounds;
+	NSRect      sframe;
+	NSRect      size;
+
 	NSClipView *cv = (NSClipView *) _super_view;
 
 	if (minheight == oldminheight && maxheight == oldmaxheight)
@@ -252,38 +241,23 @@ If realbounds has shrunk, nothing will change.
 	minheight -= 16;
 	maxheight += 16;
 
-//
-// calculate the area visible in the cliprect
-//
-	sbounds =[_super_view bounds];
-	visbottom = sbounds.origin.y;
-	vistop = visbottom + sbounds.size.height;
+	// calculate the area visible in the cliprect
+	bounds =[cv bounds];
+	bounds.size.width /= 1;
+	bounds.size.height /= scale;
 
-	if (vistop > maxheight)
-		maxheight = vistop;
-	if (visbottom < minheight)
-		minheight = visbottom;
-	if (minheight == _bounds.origin.y
-		&& maxheight - minheight == _bounds.size.height)
-		return self;
+	size = NSMakeRect (0, minheight, 1, maxheight - minheight);
 
-	sbounds.origin.y = minheight;
-	sbounds.size.height = maxheight - minheight;
+	bounds = NSUnionRect (size, bounds);
 
-//
-// size this view
-//
-	// XXX[quakeed_i disableDisplay];
-//Sys_Printf ("sbounds: %g %g %g %g\n", -sbounds.size.width / 2, sbounds.origin.y, sbounds.size.width, sbounds.size.height);
-	// XXX[self suspendNotifyAncestorWhenFrameChanged:YES];
-	[self setFrameSize:sbounds.size];
-	[self setFrameOrigin: NSMakePoint (-sbounds.size.width / 2,
-										sbounds.origin.y)];
-	[cv scrollToPoint: NSMakePoint (-sbounds.size.width/2, sbounds.origin.y)];
-	// XXX[self suspendNotifyAncestorWhenFrameChanged:NO];
+	sframe = bounds;
+	sframe.size.width *= 1;
+	sframe.size.height *= scale;
+
+	// size this view
+	[self setFrame:sframe bounds:bounds scale:NSMakeSize (1, scale)];
+
 	[[_super_view superview] reflectScrolledClipView: cv];
-
-	// XXX[quakeed_i reenableDisplay];
 
 	[[zscrollview_i verticalScroller] display];
 
@@ -735,7 +709,7 @@ mouseDown
 
 	}
 
-	Sys_Printf ("bad flags for click %x\n", flags);
+	Sys_Printf ("bad flags for click %x %g %g\n", flags, pt.x, pt.y);
 	NopSound ();
 	return;
 }
