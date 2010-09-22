@@ -117,13 +117,6 @@ initWithFrame:
 	return scale;
 }
 
-- (NSRect) adjustScroll: (NSRect)newVisible
-{
-	Sys_Printf ("newVisible: %g %g %g %g\n",
-				newVisible.origin.x, newVisible.origin.y,
-				newVisible.size.width, newVisible.size.height);
-	return newVisible;
-}
 
 -setOrigin:(NSPoint)pt scale:(float) sc
 {
@@ -154,12 +147,20 @@ initWithFrame:
 	// size this view
 	[self setFrame: sframe];
 	if (_boundsMatrix) {
-		//FIXME workaround for a bug in GNUstep
+		//FIXME workaround for a bug (?) in GNUstep
 		NSAffineTransformStruct t = [_boundsMatrix transformStruct];
 		t.m11 = t.m22 = 1;
+		t.m12 = t.m21 = 0;
 		[_boundsMatrix setTransformStruct: t];
 	}
 	[self setBounds: bounds];
+	if (_boundsMatrix) {
+		//FIXME workaround for a bug (?) in GNUstep
+		NSAffineTransformStruct t = [_boundsMatrix transformStruct];
+		t.tX *= scale;
+		t.tY *= scale;
+		[_boundsMatrix setTransformStruct: t];
+	}
 
 	//[self setPostsFrameChangedNotifications:YES];
 	//[self setPostsBoundsChangedNotifications:YES];
