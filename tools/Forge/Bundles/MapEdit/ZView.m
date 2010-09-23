@@ -363,8 +363,8 @@ Rect is in global world (unscaled) coordinates
 
 	[path removeAllPoints];
 	PSsetgray (0);						// for text
-	[[NSFont systemFontOfSize: 10 / scale] set];
 	PSrotate (0);
+	[[NSFont systemFontOfSize: 10] set];
 
 	for (; y <= stopy; y += 64) {
 		if (showcoords) {
