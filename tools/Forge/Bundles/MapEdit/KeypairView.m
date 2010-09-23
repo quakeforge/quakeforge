@@ -19,6 +19,11 @@ initWithFrame:
 	return self;
 }
 
+-(BOOL) isFlipped
+{
+	return YES;
+}
+
 
 -calcViewSize
 {
@@ -27,41 +32,38 @@ initWithFrame:
 	int         count;
 	id          ent;
 
-	ent =[map_i currentEntity];
-	count =[ent numPairs];
+	ent = [map_i currentEntity];
+	count = [ent numPairs];
 
-	//XXX[[self superview] setFlipped: YES];
-
-	b =[[self superview] bounds];
+	b = [[self superview] bounds];
 	b.size.height = LINEHEIGHT * count + SPACING;
-	[self setBounds:b];
+	[self setFrameSize:b.size];
 	pt.x = pt.y = 0;
 	[self scrollPoint:pt];
 	return self;
 }
 
--drawSelf: (const NSRect *) rects:(int) rectCount
+-drawRect: (NSRect) rects
 {
 	epair_t    *pair;
 	int         y;
+	NSMutableDictionary *attribs = [NSMutableDictionary dictionary];
 
-	PSsetgray(NSLightGray);
-	PSrectfill (0, 0, _bounds.size.width, _bounds.size.height);
+	[[NSColor lightGrayColor] set];
+	NSRectFill (NSMakeRect (0, 0, _bounds.size.width, _bounds.size.height));
 
 	[[NSFont systemFontOfSize: FONTSIZE] set];
-	PSrotate (0);
-	PSsetgray (0);
+	[[NSColor blackColor] set];
 
 	pair =[[map_i currentEntity] epairs];
 	y = _bounds.size.height - LINEHEIGHT;
 	for (; pair; pair = pair->next) {
-		PSmoveto (SPACING, y);
-		PSshow (pair->key);
-		PSmoveto (100, y);
-		PSshow (pair->value);
+		NSString *key = [NSString stringWithCString: pair->key];
+		NSString *value = [NSString stringWithCString: pair->value];
+		[key drawAtPoint: NSMakePoint (SPACING, y) withAttributes: attribs];
+		[value drawAtPoint: NSMakePoint (100, y) withAttributes: attribs];
 		y -= LINEHEIGHT;
 	}
-	PSstroke ();
 
 	return self;
 }
