@@ -1166,6 +1166,7 @@ ZDrawSelf
 -ZDrawSelf
 {
 	int         i;
+	NSPoint     p;
 	vec3_t      p1, p2;
 	vec3_t      frontpoint, backpoint;
 	int         frontface, backface;
@@ -1178,17 +1179,13 @@ ZDrawSelf
 	[zview_i addToHeightRange:bmaxs[2]];
 
 	if (selected) {
-		PSmoveto (1, bmaxs[2]);
-		PSlineto (23, bmaxs[2]);
-		PSlineto (23, bmins[2]);
-		PSlineto (1, bmins[2]);
-		PSlineto (1, bmaxs[2]);
-		PSsetrgbcolor (1, 0, 0);
-		PSstroke ();
+		[[NSColor redColor] set];
+		NSFrameRect (NSMakeRect (1, bmins[2], 24, bmaxs[2] - bmins[2] + 1));
 	}
 
-	[zview_i getPoint:(NSPoint *) p1];
-
+	[zview_i getPoint: &p];
+	p1[0] = p.x;
+	p1[1] = p.y;
 	for (i = 0; i < 2; i++)
 		if (bmins[i] >= p1[i] || bmaxs[i] <= p1[i])
 			return self;
@@ -1205,24 +1202,15 @@ ZDrawSelf
 
 	q = TEX_ForName (faces[frontface].texture.texture);
 
-	PSmoveto (-8, frontpoint[2]);
-	PSlineto (8, frontpoint[2]);
-	PSlineto (8, backpoint[2]);
-	PSlineto (-8, backpoint[2]);
-	PSlineto (-8, frontpoint[2]);
-
-	PSsetrgbcolor (q->flatcolor.chan[0] / 255.0, q->flatcolor.chan[1] / 255.0,
-					 q->flatcolor.chan[2] / 255.0);
-	PSfill ();
-
-	PSmoveto (-12, frontpoint[2]);
-	PSlineto (12, frontpoint[2]);
-	PSlineto (12, backpoint[2]);
-	PSlineto (-12, backpoint[2]);
-	PSlineto (-12, frontpoint[2]);
-
-	PSsetrgbcolor (0, 0, 0);
-	PSstroke ();
+	[[NSColor colorWithCalibratedRed: q->flatcolor.chan[0] / 255.0
+							   green: q->flatcolor.chan[1] / 255.0
+								blue: q->flatcolor.chan[2] / 255.0
+							   alpha: 1.0] set];
+	NSRectFill (NSMakeRect (-8, backpoint[2],
+							17, frontpoint[2] - backpoint[2] + 1));
+	[[NSColor blackColor] set];
+	NSFrameRect (NSMakeRect (-12, backpoint[2],
+							 25, frontpoint[2] - backpoint[2] + 1));
 
 	return self;
 }
