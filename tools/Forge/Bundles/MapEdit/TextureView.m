@@ -1,3 +1,4 @@
+#include "QF/sys.h"
 
 #include "KeypairView.h"
 #include "TextureView.h"
@@ -41,19 +42,18 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 	NSPoint     p;
 	NSRect      r;
 	int         selected;
+	NSMutableDictionary *attribs = [NSMutableDictionary dictionary];
 
 	selected =[parent_i getSelectedTexture];
 	list_i =[parent_i getList];
 	[[NSFont systemFontOfSize: FONTSIZE] set];
-	PSrotate (0);
 
-	PSsetgray (NSLightGray);
-	PSrectfill (rects.origin.x, rects.origin.y,
-				rects.size.width, rects.size.height);
-
+	[[NSColor lightGrayColor] set];
+	NSRectFill (rects);
+Sys_Printf ("TextureView drawRect\n");
 	if (!list_i)						// WADfile didn't init
 		return self;
-
+Sys_Printf (" ok\n");
 	if (deselectIndex != -1) {
 		t =[list_i elementAt:deselectIndex];
 		r = t->r;
@@ -62,22 +62,21 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 		r.size.width += TEX_INDENT * 2;
 		r.size.height += TEX_INDENT * 2;
 
-		PSsetgray(NSLightGray);
-		PSrectfill (r.origin.x, r.origin.y, r.size.width, r.size.height);
+		[[NSColor lightGrayColor] set];
+		NSRectFill (r);
 		p = t->r.origin;
 		p.y += TEX_SPACING;
-		[t->image drawAtPoint: p fromRect: r operation: NSCompositeCopy fraction:1.0];
-		PSsetgray (0);
+		[t->image drawAtPoint: p];
+		[[NSColor blackColor] set];
 		x = t->r.origin.x;
 		y = t->r.origin.y + 7;
-		PSmoveto (x, y);
-		PSshow (t->name);
-		PSstroke ();
+		[[NSString stringWithCString: t->name]
+			drawAtPoint: NSMakePoint (x, y) withAttributes: attribs];
 		deselectIndex = -1;
 	}
 
 	max =[list_i count];
-	PSsetgray (0);
+	[[NSColor blackColor] set];
 
 	for (i = 0; i < max; i++) {
 		t =[list_i elementAt:i];
@@ -87,27 +86,24 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 		r.origin.y += 4;
 		if (NSIntersectsRect (rects, r) == YES && t->display) {
 			if (selected == i) {
-				PSsetgray (1);
-				PSrectfill (r.origin.x, r.origin.y,
-							r.size.width, r.size.height);
-				PSsetrgbcolor (1, 0, 0);
-				PSrectstroke (r.origin.x, r.origin.y,
-								r.size.width, r.size.height);
-				PSsetgray (0);
+				[[NSColor whiteColor] set];
+				NSRectFill (r);
+				[[NSColor redColor] set];
+				NSFrameRect(r);
+				[[NSColor blackColor] set];
 			}
 
 			p = t->r.origin;
 			p.y += TEX_SPACING;
-			//[t->image drawAtPoint: p fromRect: r operation: NSCompositeCopy fraction:1.0];
-			//[t->image drawAtPoint: p];
-			[t->image drawInRect: t->r];
+			Sys_Printf ("tex %4d '%s' %p\n", t->index, t->name, t->image);
+			[t->image drawAtPoint: p];
+			Sys_Printf ("  ok\n");
 			x = t->r.origin.x;
 			y = t->r.origin.y + 7;
-			PSmoveto (x, y);
-			PSshow (t->name);
+			[[NSString stringWithCString: t->name]
+				drawAtPoint: NSMakePoint (x, y) withAttributes: attribs];
 		}
 	}
-	PSstroke ();
 	return self;
 }
 
