@@ -894,19 +894,13 @@ keyDown
 ===============
 */
 
-#define	KEY_RIGHTARROW		0xae
-#define	KEY_LEFTARROW		0xac
-#define	KEY_UPARROW			0xad
-#define	KEY_DOWNARROW		0xaf
-
 
 -_keyDown:(NSEvent *)theEvent
 {
-	int         ch;
+	NSString *chars = [theEvent characters];
+	unichar c = [chars length] == 1 ? [chars characterAtIndex: 0] : '\0';
 
-	ch = tolower ([[theEvent characters] characterAtIndex: 0]);
-
-	switch (ch) {
+	switch (c) {
 		case 13:
 			return self;
 
@@ -924,25 +918,25 @@ keyDown
 			[quakeed_i updateCamera];
 			return self;
 
-		case KEY_RIGHTARROW:
+		case NSRightArrowFunctionKey:
 			ya -= M_PI * move / (64 * 2);
 			[self matrixFromAngles];
 			[quakeed_i updateCamera];
 			break;
 
-		case KEY_LEFTARROW:
+		case NSLeftArrowFunctionKey:
 			ya += M_PI * move / (64 * 2);
 			[self matrixFromAngles];
 			[quakeed_i updateCamera];
 			break;
 
-		case KEY_UPARROW:
+		case NSUpArrowFunctionKey:
 			origin[0] += move * cos (ya);
 			origin[1] += move * sin (ya);
 			[quakeed_i updateCamera];
 			break;
 
-		case KEY_DOWNARROW:
+		case NSDownArrowFunctionKey:
 			origin[0] -= move * cos (ya);
 			origin[1] -= move * sin (ya);
 			[quakeed_i updateCamera];

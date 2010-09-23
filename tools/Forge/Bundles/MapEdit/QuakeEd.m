@@ -880,73 +880,66 @@ keyDown
 ===============
 */
 
-#define	KEY_RIGHTARROW		0xae
-#define	KEY_LEFTARROW		0xac
-#define	KEY_UPARROW			0xad
-#define	KEY_DOWNARROW		0xaf
-
 -keyDown:(NSEvent *) theEvent
 {
-	int         ch;
-	const char *chars;
+	NSString *chars = [theEvent characters];
+	unichar c = [chars length] == 1 ? [chars characterAtIndex: 0] : '\0';
 
 // function keys
-	switch ([theEvent keyCode]) {
-		case 60:						// F2
+	switch (c) {
+		case NSF2FunctionKey:
 			[cameraview_i setDrawMode:dr_wire];
 			Sys_Printf ("wire draw mode\n");
 			return self;
-		case 61:						// F3
+		case NSF3FunctionKey:
 			[cameraview_i setDrawMode:dr_flat];
 			Sys_Printf ("flat draw mode\n");
 			return self;
-		case 62:						// F4
+		case NSF4FunctionKey:
 			[cameraview_i setDrawMode:dr_texture];
 			Sys_Printf ("texture draw mode\n");
 			return self;
 
-		case 63:						// F5
+		case NSF5FunctionKey:
 			[xyview_i setDrawMode:dr_wire];
 			Sys_Printf ("wire draw mode\n");
 			return self;
-		case 64:						// F6
+		case NSF6FunctionKey:
 			Sys_Printf ("texture draw mode\n");
 			return self;
 
-		case 66:						// F8
+		case NSF8FunctionKey:
 			[cameraview_i homeView:self];
 			return self;
 
-		case 88:						// F12
+		case NSF12FunctionKey:
 			[map_i subtractSelection:self];
 			return self;
 
-		case 106:						// page up
+		case NSPageUpFunctionKey:
 			[cameraview_i upFloor:self];
 			return self;
 
-		case 107:						// page down
+		case NSPageDownFunctionKey:
 			[cameraview_i downFloor:self];
 			return self;
 
-		case 109:						// end
+		case NSEndFunctionKey:
 			[self deselect:self];
 			return self;
-	}
 
-// portable things
-	chars = [[theEvent characters] cString];
-	ch = chars ? tolower (chars[0]) : 0;
-
-	switch (ch) {
-		case KEY_RIGHTARROW:
-		case KEY_LEFTARROW:
-		case KEY_UPARROW:
-		case KEY_DOWNARROW:
+		case NSRightArrowFunctionKey:
+		case NSLeftArrowFunctionKey:
+		case NSUpArrowFunctionKey:
+		case NSDownArrowFunctionKey:
 		case 'a':
+		case 'A':
 		case 'z':
+		case 'Z':
 		case 'd':
+		case 'D':
 		case 'c':
+		case 'C':
 		case '.':
 		case ',':
 			[cameraview_i _keyDown:theEvent];
