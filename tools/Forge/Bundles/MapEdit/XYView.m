@@ -811,7 +811,7 @@ NSRect      xy_draw_rect;
 
 // setup for text
 	// PSselectfont("Helvetica-Medium",10/scale);
-	[[NSFont systemFontOfSize: 10 * scale] set];
+	[[NSFont systemFontOfSize: 10] set];
 	PSrotate (0);
 
 	if (drawmode == dr_texture || drawmode == dr_flat)
