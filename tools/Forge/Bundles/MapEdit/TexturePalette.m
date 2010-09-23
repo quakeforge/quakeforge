@@ -376,7 +376,7 @@ TEX_ForName (char *name)
 
 	viewWidth = maxwidth;
 	viewHeight = y + TEX_SPACING;
-	[textureView_i setBoundsSize:NSMakeSize (viewWidth, viewHeight)];
+	[textureView_i setFrameSize:NSMakeSize (viewWidth, viewHeight)];
 	pt.x = pt.y = 0;
 	[textureView_i scrollPoint:pt];
 
