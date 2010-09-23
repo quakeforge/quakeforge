@@ -42,6 +42,41 @@ initWithFrame:
 	return self;
 }
 
+-(void)awakeFromNib
+{
+	NSBezierPath *path;
+
+	path = zcamera = [NSBezierPath new];
+	[path setLineWidth: 0.3];
+	[path moveToPoint: NSMakePoint (-16, 0)];
+	[path relativeLineToPoint: NSMakePoint (16, 8)];
+	[path relativeLineToPoint: NSMakePoint (16, -8)];
+	[path relativeLineToPoint: NSMakePoint (-16, -8)];
+	[path relativeLineToPoint: NSMakePoint (-16, 8)];
+	[path relativeLineToPoint: NSMakePoint (32, 0)];
+	[path moveToPoint: NSMakePoint (-15, -47)];
+	[path relativeLineToPoint: NSMakePoint (29, 0)];
+	[path relativeLineToPoint: NSMakePoint (0, 54)];
+	[path relativeLineToPoint: NSMakePoint (-29, 0)];
+	[path relativeLineToPoint: NSMakePoint (0, -54)];
+
+	path = xycamera = [NSBezierPath new];
+	[path setLineWidth: 0.3];
+	[path moveToPoint: NSMakePoint (-16, 0)];
+	[path relativeLineToPoint: NSMakePoint (16, 8)];
+	[path relativeLineToPoint: NSMakePoint (16, -8)];
+	[path relativeLineToPoint: NSMakePoint (-16, -8)];
+	[path relativeLineToPoint: NSMakePoint (-16, 8)];
+	[path relativeLineToPoint: NSMakePoint (32, 0)];
+
+	path = xycamera_aim = [NSBezierPath new];
+	[path setLineWidth: 0.3];
+	[path moveToPoint: NSMakePoint (0, 0)];
+	[path relativeLineToPoint: NSMakePoint (45, 45)];
+	[path moveToPoint: NSMakePoint (0, 0)];
+	[path relativeLineToPoint: NSMakePoint (45, -45)];
+}
+
 -setXYOrigin:(NSPoint *)pt
 {
 	origin[0] = pt->x;
@@ -485,22 +520,25 @@ XYDrawSelf
 */
 -XYDrawSelf
 {
+	NSBezierPath *path;
+	NSAffineTransform *trans;
 
-	PSsetrgbcolor (0, 0, 1.0);
-	PSsetlinewidth (0.15);
-	PSmoveto (origin[0] - 16, origin[1]);
-	PSrlineto (16, 8);
-	PSrlineto (16, -8);
-	PSrlineto (-16, -8);
-	PSrlineto (-16, 8);
-	PSrlineto (32, 0);
+	[[NSColor blueColor] set];
 
-	PSmoveto (origin[0], origin[1]);
-	PSrlineto (64 * cos (ya + M_PI / 4), 64 * sin (ya + M_PI / 4));
-	PSmoveto (origin[0], origin[1]);
-	PSrlineto (64 * cos (ya - M_PI / 4), 64 * sin (ya - M_PI / 4));
+	trans = [NSAffineTransform transform];
+	[trans translateXBy: origin[0] yBy: origin[1]];
 
-	PSstroke ();
+	path = [xycamera copy];
+	[path transformUsingAffineTransform: trans];
+	[path stroke];
+	[path release];
+
+	[trans rotateByRadians: ya];
+
+	path = [xycamera_aim copy];
+	[path transformUsingAffineTransform: trans];
+	[path stroke];
+	[path release];
 
 	return self;
 }
@@ -512,23 +550,18 @@ ZDrawSelf
 */
 -ZDrawSelf
 {
-	PSsetrgbcolor (0, 0, 1.0);
-	PSsetlinewidth (0.15);
+	NSBezierPath *path;
+	NSAffineTransform *trans;
 
-	PSmoveto (-16, origin[2]);
-	PSrlineto (16, 8);
-	PSrlineto (16, -8);
-	PSrlineto (-16, -8);
-	PSrlineto (-16, 8);
-	PSrlineto (32, 0);
+	[[NSColor blueColor] set];
 
-	PSmoveto (-15, origin[2] - 47);
-	PSrlineto (29, 0);
-	PSrlineto (0, 54);
-	PSrlineto (-29, 0);
-	PSrlineto (0, -54);
+	trans = [NSAffineTransform transform];
+	[trans translateXBy: 0 yBy: origin[2]];
 
-	PSstroke ();
+	path = [zcamera copy];
+	[path transformUsingAffineTransform: trans];
+	[path stroke];
+	[path release];
 
 	return self;
 }

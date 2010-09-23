@@ -35,6 +35,10 @@ extern BOOL timedrawing;
 
 	drawmode_t  drawmode;
 
+	NSBezierPath *xycamera;
+	NSBezierPath *xycamera_aim;
+	NSBezierPath *zcamera;
+
 // UI links
 	id          mode_radio_i;
 
