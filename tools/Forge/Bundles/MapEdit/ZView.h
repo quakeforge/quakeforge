@@ -22,6 +22,8 @@ extern float zplanedir;
 	float       scale;
 
 	vec3_t      origin;
+
+	NSBezierPath *checker;
 }
 
 -clearBounds;

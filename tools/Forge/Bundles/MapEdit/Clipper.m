@@ -1,7 +1,3 @@
-
-#include <AppKit/NSGraphics.h>
-#include <AppKit/DPSOperators.h>
-
 #include "QF/sys.h"
 
 #include "Clipper.h"
@@ -12,6 +8,7 @@
 #include "QuakeEd.h"
 
 id          clipper_i;
+extern NSBezierPath *path;
 
 @implementation Clipper
 
@@ -185,41 +182,52 @@ XYDrag
 -XYDrawSelf
 {
 	int         i;
-	char        text[8];
+	NSMutableDictionary *attribs = [NSMutableDictionary dictionary];
 
-	PSsetrgbcolor (1, 0.5, 0);
+	[[NSColor colorWithCalibratedRed: 1.0 green: 0.5 blue: 0.0 alpha: 1.0]
+	 set];
 
 	[[NSFont systemFontOfSize: 10 / [xyview_i currentScale]] set];
-	PSrotate (0);
 
+	[path removeAllPoints];
 	for (i = 0; i < num; i++) {
-		PSmoveto (pos[i][0] - 4, pos[i][1] - 4);
-		sprintf (text, "%i", i);
-		PSshow (text);
-		PSstroke ();
-		PSarc (pos[i][0], pos[i][1], 10, 0, 360);
-		PSstroke ();
+		NSString *s = [NSString stringWithFormat: @"%i", i];
+		[s drawAtPoint: NSMakePoint (pos[i][0] - 4, pos[i][1] - 4)
+			withAttributes: attribs];
+		//[path moveToPoint: NSMakePoint (pos[i][0] - 4, pos[i][1] - 4)];
+		[path appendBezierPathWithArcWithCenter: NSMakePoint (pos[i][0],
+															  pos[i][1])
+										 radius: 10
+									 startAngle: 0
+									   endAngle: 360];
 	}
+	[path stroke];
 	return self;
 }
 
 -ZDrawSelf
 {
 	int         i;
-	char        text[8];
+	NSMutableDictionary *attribs = [NSMutableDictionary dictionary];
 
-	PSsetrgbcolor (1, 0.5, 0);
-	[[NSFont systemFontOfSize: 10 / [zview_i currentScale]] set];
-	PSrotate (0);
+	[[NSColor colorWithCalibratedRed: 1.0 green: 0.5 blue: 0.0 alpha: 1.0]
+	 set];
 
+	[[NSFont systemFontOfSize: 10 / [xyview_i currentScale]] set];
+
+	[path removeAllPoints];
 	for (i = 0; i < num; i++) {
-		PSmoveto (-28 + i * 8 - 4, pos[i][2] - 4);
-		sprintf (text, "%i", i);
-		PSshow (text);
-		PSstroke ();
-		PSarc (-28 + i * 8, pos[i][2], 10, 0, 360);
-		PSstroke ();
+		NSString *s = [NSString stringWithFormat: @"%i", i];
+		[s drawAtPoint: NSMakePoint (-28 + i * 8 - 4, pos[i][2] - 4)
+			withAttributes: attribs];
+		//[path moveToPoint: NSMakePoint (pos[i][0] - 4, pos[i][1] - 4)];
+		[path appendBezierPathWithArcWithCenter: NSMakePoint (-28 + i * 8,
+															  pos[i][2])
+										 radius: 10
+									 startAngle: 0
+									   endAngle: 360];
 	}
+	[path stroke];
 	return self;
 }
 

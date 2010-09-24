@@ -25,6 +25,14 @@ initWithFrame:
 - (id) initWithFrame:(NSRect) frameRect
 {
 	NSPoint     pt;
+	NSBezierPath *path;
+
+	path = checker = [NSBezierPath new];
+	[path setLineWidth: 0.3];
+	[path moveToPoint: NSMakePoint (-16, -16)];
+	[path relativeLineToPoint: NSMakePoint (32, 32)];
+	[path moveToPoint: NSMakePoint (-16, 16)];
+	[path relativeLineToPoint: NSMakePoint (32, -32)];
 
 	origin[0] = 0.333;
 	origin[1] = 0.333;
@@ -283,21 +291,17 @@ Rect is in global world (unscaled) coordinates
 	float       top, bottom;
 	int         left, right;
 	int         gridsize;
-	char        text[10];
 	BOOL        showcoords;
+	NSMutableDictionary *attribs = [NSMutableDictionary dictionary];
 
 	showcoords =[quakeed_i showCoordinates];
-
-	PSsetlinewidth (0);
 
 	gridsize =[xyview_i gridsize];
 
 	left = _bounds.origin.x;
 	right = 24;
-//Sys_Printf ("gridsize: %d left: %d right: %d\n", gridsize, left, right);
 	bottom = rect.origin.y - 1;
 	top = rect.origin.y + rect.size.height + 2;
-
 //
 // grid
 //
@@ -321,7 +325,8 @@ Rect is in global world (unscaled) coordinates
 				[path lineToPoint:NSMakePoint (right, y)];
 			}
 		// endUserPath (upath, dps_ustroke);
-		PSsetrgbcolor (0.8, 0.8, 1.0);	// thin grid color
+		[[NSColor colorWithCalibratedRed: 0.8 green: 0.8 blue: 1.0 alpha: 1.0]
+		 set];	// thin grid color
 		[path stroke];
 	}
 //
@@ -345,7 +350,8 @@ Rect is in global world (unscaled) coordinates
 	}
 
 	// endUserPath (upath, dps_ustroke);
-	PSsetgray (12.0 / 16.0);
+	[[NSColor colorWithCalibratedWhite: 12.0 / 16.0 alpha: 1.0]
+	 set];
 	[path stroke];
 
 //
@@ -362,15 +368,14 @@ Rect is in global world (unscaled) coordinates
 		stopy -= 64;
 
 	[path removeAllPoints];
-	PSsetgray (0);						// for text
-	PSrotate (0);
+	[[NSColor colorWithCalibratedWhite: 0.0 / 16.0 alpha: 1.0]
+	 set];						// for text
 	[[NSFont systemFontOfSize: 10] set];
 
 	for (; y <= stopy; y += 64) {
 		if (showcoords) {
-			sprintf (text, "%i", y);
-			PSmoveto (left, y);
-			PSshow (text);
+			NSString *s = [NSString stringWithFormat: @"%i", y];
+			[s drawAtPoint: NSMakePoint (left, y) withAttributes: attribs];
 		}
 		[path moveToPoint:NSMakePoint (left + 24, y)];
 		[path lineToPoint:NSMakePoint (right, y)];
@@ -382,18 +387,21 @@ Rect is in global world (unscaled) coordinates
 				 _bounds.origin.y + _bounds.size.height)];
 
 	// endUserPath (upath, dps_ustroke);
-	PSsetgray (10.0 / 16.0);
+	[[NSColor colorWithCalibratedWhite: 10.0 / 16.0 alpha: 1.0]
+	 set];
 	[path stroke];
 
 //
 // origin
 //
-	PSsetlinewidth (5);
-	PSsetgray (4.0 / 16.0);
-	PSmoveto (right, 0);
-	PSlineto (left, 0);
-	PSstroke ();
-	PSsetlinewidth (0.15);
+	[[NSColor colorWithCalibratedWhite: 4.0 / 16.0 alpha: 1.0]
+	 set];
+	[path removeAllPoints];
+	[path setLineWidth: 5];
+	[path moveToPoint: NSMakePoint (right, 0)];
+	[path lineToPoint: NSMakePoint (left, 0)];
+	[path stroke];
+	[path setLineWidth: 1];
 
 	return self;
 }
@@ -401,9 +409,13 @@ Rect is in global world (unscaled) coordinates
 
 -drawZplane
 {
-	PSsetrgbcolor (0.2, 0.2, 0);
-	PSarc (0, zplane, 4, 0, M_PI * 2);
-	PSfill ();
+	[[NSColor colorWithCalibratedRed: 0.2 green: 0.2 blue: 0.0 alpha: 1.0]
+	 set];
+	[path appendBezierPathWithArcWithCenter: NSMakePoint (0, zplane)
+									 radius: 4
+								 startAngle: 0
+								   endAngle: 180];
+	[path fill];
 	return self;
 }
 
@@ -422,7 +434,7 @@ drawSelf
 
 // allways draw the entire bar  
 	//visRect =[self visibleRect];
-	rects = [self bounds];
+	rects = [self visibleRect];
 
 // erase window
 	NSEraseRect (rects);
@@ -431,7 +443,7 @@ drawSelf
 	[self drawGrid:rects];
 
 // draw zplane
-//  [self drawZplane];
+//	[self drawZplane]; FIXME zplane doesn't do anything yet
 
 // draw all entities
 	[map_i makeUnselectedPerform:@selector (ZDrawSelf)];
@@ -449,13 +461,18 @@ XYDrawSelf
 */
 -XYDrawSelf
 {
-	PSsetrgbcolor (0, 0.5, 1.0);
-	PSsetlinewidth (0.15);
-	PSmoveto (origin[0] - 16, origin[1] - 16);
-	PSrlineto (32, 32);
-	PSmoveto (origin[0] - 16, origin[1] + 16);
-	PSrlineto (32, -32);
-	PSstroke ();
+	NSBezierPath *path;
+	NSAffineTransform *trans;
+
+	[[NSColor colorWithCalibratedRed: 0 green: 0.5 blue: 1.0 alpha: 1.0] set];
+
+	trans = [NSAffineTransform transform];
+	[trans translateXBy: origin[0] yBy: origin[1]];
+
+	path = [checker copy];
+	[path transformUsingAffineTransform: trans];
+	[path stroke];
+	[path release];
 
 	return self;
 }
