@@ -50,10 +50,10 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 
 	[[NSColor lightGrayColor] set];
 	NSRectFill (rects);
-Sys_Printf ("TextureView drawRect\n");
+
 	if (!list_i)						// WADfile didn't init
 		return self;
-Sys_Printf (" ok\n");
+
 	if (deselectIndex != -1) {
 		t =[list_i elementAt:deselectIndex];
 		r = t->r;
@@ -95,9 +95,7 @@ Sys_Printf (" ok\n");
 
 			p = t->r.origin;
 			p.y += TEX_SPACING;
-			Sys_Printf ("tex %4d '%s' %p\n", t->index, t->name, t->image);
 			[t->image drawAtPoint: p];
-			Sys_Printf ("  ok\n");
 			x = t->r.origin.x;
 			y = t->r.origin.y + 7;
 			[[NSString stringWithCString: t->name]
