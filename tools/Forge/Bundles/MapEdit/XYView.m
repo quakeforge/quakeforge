@@ -486,7 +486,10 @@ lineflush (void)
 	if ([path isEmpty])
 		return;
 	// endUserPath (upath, dps_ustroke);
-	PSsetrgbcolor (cur_linecolor[0], cur_linecolor[1], cur_linecolor[2]);
+	[[NSColor colorWithCalibratedRed: cur_linecolor[0]
+							   green: cur_linecolor[1]
+								blue: cur_linecolor[2]
+							   alpha: 1.0] set];
 	[path stroke];
 	[path removeAllPoints];
 }
@@ -531,7 +534,7 @@ Rect is in global world (unscaled) coordinates
 {
 	int         x, y, stopx, stopy;
 	float       top, bottom, right, left;
-	char        text[10];
+	NSMutableDictionary *attribs = [NSMutableDictionary dictionary];
 	BOOL        showcoords;
 	NSPoint     point;
 
@@ -542,7 +545,8 @@ Rect is in global world (unscaled) coordinates
 	right = rect.origin.x + rect.size.width + 2;
 	top = rect.origin.y + rect.size.height + 2;
 
-	PSsetlinewidth (0.15);
+	[path removeAllPoints];
+	[path setLineWidth: 0.15];
 
 //
 // grid
@@ -589,14 +593,18 @@ Rect is in global world (unscaled) coordinates
 				[path lineToPoint:point];
 			}
 		// endUserPath (upath, dps_ustroke);
-		PSsetrgbcolor (0.8, 0.8, 1.0);	// thin grid color
+		[[NSColor colorWithCalibratedRed: 0.8
+								   green: 0.8
+									blue: 1.0
+								   alpha: 1.0] set];	// thin grid color
 		[path stroke];
 
 	}
 //
 // tiles
 //
-	PSsetgray (0);						// for text
+	[[NSColor colorWithCalibratedWhite: 0.0 / 16.0 alpha: 1.0]
+	     set];					// for text
 
 	if (scale > 4.0 / 64) {
 		y = floor (bottom / 64);
@@ -621,9 +629,8 @@ Rect is in global world (unscaled) coordinates
 
 		for (; y <= stopy; y += 64) {
 			if (showcoords) {
-				sprintf (text, "%i", y);
-				PSmoveto (left, y);
-				PSshow (text);
+				NSString *s = [NSString stringWithFormat: @"%i", y];
+				[s drawAtPoint: NSMakePoint (left, y) withAttributes: attribs];
 			}
 			[path moveToPoint:point];
 			point.x = right;
@@ -632,9 +639,9 @@ Rect is in global world (unscaled) coordinates
 
 		for (; x <= stopx; x += 64) {
 			if (showcoords) {
-				sprintf (text, "%i", x);
-				PSmoveto (x, bottom + 2);
-				PSshow (text);
+				NSString *s = [NSString stringWithFormat: @"%i", x];
+				[s drawAtPoint: NSMakePoint (x, bottom + 2)
+					withAttributes: attribs];
 			}
 			point.x = x;
 			point.y = top;
@@ -644,9 +651,11 @@ Rect is in global world (unscaled) coordinates
 		}
 
 		// endUserPath (upath, dps_ustroke);
-		PSsetgray (12.0 / 16);
+		[[NSColor colorWithCalibratedWhite: 12.0 / 16.0 alpha: 1.0]
+			 set];
 		[path stroke];
 	}
+	[path setLineWidth: 1];
 
 	return self;
 }
@@ -663,6 +672,7 @@ drawWire
 	id          ent, brush;
 	vec3_t      mins, maxs;
 	BOOL        drawnames;
+	NSMutableDictionary *attribs = [NSMutableDictionary dictionary];
 
 	drawnames =[quakeed_i showNames];
 
@@ -701,10 +711,13 @@ drawWire
 		if (i > 0 && drawnames) {		// draw entity names
 			brush =[ent objectAtIndex:0];
 			if (![brush regioned]) {
+				const char *classname = [ent valueForQKey:"classname"];
+				NSString *s = [NSString stringWithCString: classname];
+				[[NSColor colorWithCalibratedWhite: 0.0 / 16.0 alpha: 1.0]
+					 set];
 				[brush getMins: mins maxs:maxs];
-				PSmoveto (mins[0], mins[1]);
-				PSsetrgbcolor (0, 0, 0);
-				PSshow ([ent valueForQKey:"classname"]);
+				[s drawAtPoint: NSMakePoint (mins[0], mins[1])
+					withAttributes: attribs];
 			}
 		}
 	}
@@ -810,9 +823,7 @@ NSRect      xy_draw_rect;
 	newrect.size.width = newrect.size.height = -2 * 99999;
 
 // setup for text
-	// PSselectfont("Helvetica-Medium",10/scale);
 	[[NSFont systemFontOfSize: 10] set];
-	PSrotate (0);
 
 	if (drawmode == dr_texture || drawmode == dr_flat)
 		[self drawSolid];
