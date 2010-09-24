@@ -38,6 +38,8 @@ extern id   inspcontrol_i;
 	id          popUpMatrix_i;			// PopUpList matrix
 	id          itemList;				// List of popUp buttons
 
+	id          helpView;
+
 	insp_e      currentInspectorType;	// keep track of current inspector
 
 	// 

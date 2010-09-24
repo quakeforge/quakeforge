@@ -22,7 +22,7 @@ ADDITIONAL_GUI_LIBS +=
 # Resource files
 #
 QuakeEd_MAIN_MODEL_FILE=	MapEdit.gorm
-QuakeEd_RESOURCE_FILES= MapEdit.gorm
+QuakeEd_RESOURCE_FILES= MapEdit.gorm help.txt
 
 QuakeEd_LOCALIZED_RESOURCE_FILES=
 

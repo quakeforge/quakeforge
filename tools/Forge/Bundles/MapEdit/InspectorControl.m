@@ -18,6 +18,13 @@ id          inspcontrol_i;
 
 -(void)awakeFromNib
 {
+	NSBundle *mainBundle = [NSBundle mainBundle];
+	NSString *path = [mainBundle pathForResource:@"help" ofType:@"txt"
+									 inDirectory:nil];
+	NSString *help = [NSString stringWithContentsOfFile: path];
+
+	[helpView setString: help];
+
 	inspcontrol_i = self;
 
 	currentInspectorType = -1;
@@ -120,7 +127,7 @@ id          inspcontrol_i;
 
 	[inspectorSubview_i lockFocus];
 	f =[inspectorSubview_i bounds];
-	PSsetgray (NSLightGray);
+	[[NSColor lightGrayColor] set];
 	NSRectFill (f);
 	[inspectorSubview_i unlockFocus];
 	[inspectorView_i display];
