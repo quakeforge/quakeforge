@@ -244,8 +244,8 @@ instance draw the brush after each flush
 		return self;					// don't lock focus before nib is
 										// finished loading
 
-	// if (_flushDisabled)
-	// return self;
+	if (_disableFlushWindow)
+		return self;
 
 	[cameraview_i lockFocus];
 	if (clearinstance) {
@@ -378,9 +378,11 @@ App delegate methods
 // go to my second monitor
 	screens =[NSScreen screens];
 	if ([screens count] == 2) {
+		NSRect frm;
 		scrn =[screens objectAtIndex:1];
-		// XXX [self moveTopLeftTo:0 : [scrn frame].size.height
-		// XXX screen:scrn];
+		frm = [scrn frame];
+		[self setFrameTopLeftPoint: NSMakePoint (frm.origin.x,
+												 frm.size.height)];
 	}
 
 	[self makeKeyAndOrderFront:self];

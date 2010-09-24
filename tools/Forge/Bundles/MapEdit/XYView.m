@@ -171,6 +171,7 @@ initWithFrame:
 	// redisplay everything
 
 	// size this view
+	[quakeed_i disableFlushWindow];
 	[self setFrame:sframe bounds:bounds scale:NSMakeSize (scale, scale)];
 
 	// scroll the clip view
@@ -179,6 +180,7 @@ initWithFrame:
 	[cv setBoundsOrigin:pt];
 
 	[scrollview_i reflectScrolledClipView: cv];
+	[quakeed_i enableFlushWindow];
 	[scrollview_i display];
 	return self;
 }
@@ -248,8 +250,10 @@ If realbounds has shrunk, nothing will change.
 	sframe.size.height *= scale;
 
 	// size this view
+	[quakeed_i disableFlushWindow];
 	[self setFrame:sframe bounds:bounds scale:NSMakeSize (scale, scale)];
 
+	[quakeed_i enableFlushWindow];
 	[scrollview_i reflectScrolledClipView:[scrollview_i contentView]];
 	return self;
 }
