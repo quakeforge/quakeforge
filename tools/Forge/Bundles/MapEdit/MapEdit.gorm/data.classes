@@ -107,6 +107,7 @@
 	    popUpButton_i,
 	    popUpMatrix_i,
 	    itemList,
+	    helpView,
 	    win_project_i,
 	    win_textures_i,
 	    win_things_i,
