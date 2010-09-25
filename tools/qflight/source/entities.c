@@ -186,8 +186,8 @@ LoadEntities (void)
 	// go through all the entities
 	while (Script_GetToken (script, 1)) {
 		// parse the opening brace      
-		if (!strcmp (script->token->str, "{"))
-			fprintf (stderr, "LoadEntities: found %s when expecting {",
+		if (strcmp (script->token->str, "{"))
+			fprintf (stderr, "LoadEntities: found %s when expecting {\n",
 					 script->token->str);
 
 		if (num_entities == max_entities) {
@@ -248,8 +248,9 @@ LoadEntities (void)
 			}
 		}
 
-		if (entity->targetname)
-			printf ("%s %d %d\n", entity->targetname, entity->light, entity->style);
+		if (options.verbosity > 1 && entity->targetname)
+			printf ("%s %d %d\n", entity->targetname, entity->light,
+					entity->style);
 
 		// all fields have been parsed
 		if (entity->classname && !strncmp (entity->classname, "light", 5)) {
