@@ -73,8 +73,8 @@ SurfaceBBox (dface_t *s, vec3_t mins, vec3_t maxs)
 	int		vi, e, i, j;
 	float  *v;
 
-	mins[0] = mins[1] = 999999;
-	maxs[0] = maxs[1] = -99999;
+	mins[0] = mins[1] = mins[2] = 999999;
+	maxs[0] = maxs[1] = maxs[2] = -99999;
 
 	for (i = 0; i < s->numedges; i++) {
 		e = bsp->surfedges[s->firstedge + i];
