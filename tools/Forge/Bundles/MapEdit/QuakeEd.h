@@ -21,6 +21,9 @@ void        qprintf (char *fmt, ...);	// prints text to cmd_out_i
 	BOOL        dirty;
 	char        filename[1024];			// full path with .map extension
 
+	NSBitmapImageRep *cache[3];
+	NSRect      cache_rect[3];
+
 // UI objects
 	id          brushcount_i;
 	id          entitycount_i;
