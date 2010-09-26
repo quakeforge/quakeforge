@@ -250,50 +250,74 @@ flushWindow
 instance draw the brush after each flush
 ===============
 */
--flushWindow
+- (void) flushWindow
 {
+	NSRect      rect;
+	int         i;
+	NSView     *cv;
+
 	[super flushWindow];
 
 	if (!running)
-		return self;					// don't lock focus before nib is
+		return;							// don't lock focus before nib is
 										// finished loading
 
 	if (_disableFlushWindow)
-		return self;
+		return;
+
+	cv = [self contentView];
+	[cv lockFocus];
+	for (i = 3; i >= 0; i--) {
+		if (cache[i]) {
+			if (clearinstance) {
+				rect = cache_rect[i];
+				[cache[i] drawAtPoint: rect.origin];
+			}
+			[cache[i] release];
+			cache[i] = 0;
+		}
+	}
+	rect = [cameraview_i frame];
+	//rect = [cv convertRect: rect fromView: cameraview_i];
+	cache_rect[0] = rect = NSIntegralRect (rect);
+	cache[0] = [[NSBitmapImageRep alloc] initWithFocusedViewRect: rect];
+
+	rect = [[xyview_i superview] frame];
+	rect = [cv convertRect: rect fromView: [[xyview_i superview] superview]];
+	cache_rect[1] = rect = NSIntegralRect (rect);
+	cache[1] = [[NSBitmapImageRep alloc] initWithFocusedViewRect: rect];
+
+	rect = [[zview_i superview] frame];
+	rect = [cv convertRect: rect fromView: [[zview_i superview] superview]];
+	cache_rect[2] = rect = NSIntegralRect (rect);
+	cache[2] = [[NSBitmapImageRep alloc] initWithFocusedViewRect: rect];
+	[[self contentView] unlockFocus];
 
 	[cameraview_i lockFocus];
-	if (clearinstance) {
-		// XXX PSnewinstance ();
-		clearinstance = NO;
-	}
-	// XXX PSsetinstance (1);
 	linestart (0, 0, 0);
 	[map_i makeSelectedPerform:@selector (CameraDrawSelf)];
 	[clipper_i cameraDrawSelf];
 	lineflush ();
-	// XXX PSsetinstance (0);
 	[cameraview_i unlockFocus];
 
 	[xyview_i lockFocus];
-	// XXX PSsetinstance (1);
 	linestart (0, 0, 0);
 	[map_i makeSelectedPerform:@selector (XYDrawSelf)];
 	lineflush ();
 	[cameraview_i XYDrawSelf];
 	[zview_i XYDrawSelf];
 	[clipper_i XYDrawSelf];
-	// XXX PSsetinstance (0);
 	[xyview_i unlockFocus];
 
 	[zview_i lockFocus];
-	// XXX PSsetinstance (1);
 	[map_i makeSelectedPerform:@selector (ZDrawSelf)];
 	[cameraview_i ZDrawSelf];
 	[clipper_i ZDrawSelf];
-	// XXX PSsetinstance (0);
 	[zview_i unlockFocus];
 
-	return self;
+	clearinstance = NO;
+
+	[super flushWindow];
 }
 
 
