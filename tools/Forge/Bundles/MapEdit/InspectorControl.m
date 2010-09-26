@@ -87,20 +87,15 @@ id          inspcontrol_i;
 //  Sent by the PopUpList in the Inspector
 //  Each cell in the PopUpList must have the correct tag
 //
--changeInspector:sender
+- (void) changeInspector:sender
 {
-	id          cell;
-
-	cell =[sender selectedCell];
-	Sys_Printf ("%p %d\n", cell, (int)[cell tag]);
-	[self changeInspectorTo:[cell tag]];
-	return self;
+	[self changeInspectorTo:[sender selectedTag]];
 }
 
 //
 //  Change to specific Inspector
 //
--changeInspectorTo:(insp_e) which
+- (void) changeInspectorTo:(insp_e) which
 {
 	id          newView;
 	NSRect      r;
@@ -108,7 +103,7 @@ id          inspcontrol_i;
 	NSRect      f;
 
 	if (which == currentInspectorType)
-		return self;
+		return;
 
 	currentInspectorType = which;
 	newView =[contentList objectAtIndex:which];
@@ -131,8 +126,6 @@ id          inspcontrol_i;
 	NSRectFill (f);
 	[inspectorSubview_i unlockFocus];
 	[inspectorView_i display];
-
-	return self;
 }
 
 -(insp_e) getCurrentInspector

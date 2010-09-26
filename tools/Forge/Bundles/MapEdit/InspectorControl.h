@@ -66,8 +66,8 @@ extern id   inspcontrol_i;
 	id          itemHelp_i;				// docs
 }
 
--changeInspector:sender;
--changeInspectorTo:(insp_e) which;
+- (void) changeInspector:sender;
+- (void) changeInspectorTo:(insp_e) which;
 -(insp_e) getCurrentInspector;
 
 @end
