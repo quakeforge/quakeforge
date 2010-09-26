@@ -1180,7 +1180,7 @@ ZDrawSelf
 
 	if (selected) {
 		[[NSColor redColor] set];
-		NSFrameRect (NSMakeRect (1, bmins[2], 24, bmaxs[2] - bmins[2] + 1));
+		NSFrameRect (NSMakeRect (1, bmins[2], 24, bmaxs[2] - bmins[2]));
 	}
 
 	[zview_i getPoint: &p];

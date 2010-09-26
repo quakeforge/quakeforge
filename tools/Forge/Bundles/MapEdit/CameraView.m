@@ -585,28 +585,18 @@ modalMoveLoop
 	vec3_t      originbase;
 	NSEvent    *event = 0;
 	NSPoint     newpt;
-
-//  NSPoint     brushpt;
 	vec3_t      delta;
-
-//  id          ent;
 	int         i;
-
-//  vec3_t      temp;
 
 	Sys_Printf ("moving camera position\n");
 
 	VectorCopy (origin, originbase);
 
-//
-// modal event loop using instance drawing
-//
+	// modal event loop using instance drawing
 	goto drawentry;
 
 	while ([event type] != NSLeftMouseUp &&[event type] != NSRightMouseUp) {
-		// 
 		// calculate new point
-		// 
 		newpt =[event locationInWindow];
 		newpt =[converter convertPoint: newpt fromView: NULL];
 
@@ -618,10 +608,12 @@ modalMoveLoop
 			origin[i] = originbase[i] + movemod[i] * delta[i];
 
 #if 0	// FIXME
-		// 
 		// if command is down, look towards brush or entity
-		// 
 		if (event->flags & NS_SHIFTMASK) {
+			NSPoint     brushpt;
+			id          ent;
+			vec3_t      temp;
+
 			ent =[quakemap_i selectedEntity];
 			if (ent) {
 				[ent origin: temp];
@@ -635,9 +627,7 @@ modalMoveLoop
 #endif
 
 	  drawentry:
-		// 
 		// instance draw new frame
-		// 
 		[quakeed_i newinstance];
 		[self display];
 		event = [NSApp nextEventMatchingMask: NSLeftMouseUpMask

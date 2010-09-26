@@ -13,7 +13,6 @@
 -(void)sendEvent:(NSEvent *) evt;
 {
 	if ([evt type] == NSApplicationDefined) {
-		Sys_Printf ("QuakeEdApp sendEvent\n");
 		[quakeed_i applicationDefined: evt];
 	} else {
 		[super sendEvent:evt];

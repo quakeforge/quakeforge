@@ -1214,23 +1214,20 @@ mouseDown
 		[theEvent modifierFlags] & (NSShiftKeyMask | NSControlKeyMask |
 									NSAlternateKeyMask | NSCommandKeyMask);
 
-//
-// shift click to select / deselect a brush from the world
-//
+
+	// shift click to select / deselect a brush from the world
 	if (flags == NSShiftKeyMask) {
 		[map_i selectRay: p1: p2:YES];
 		return self;
 	}
-//
-// cmd-shift click to set a target/targetname entity connection
-//
+
+	// cmd-shift click to set a target/targetname entity connection
 	if (flags == (NSShiftKeyMask | NSCommandKeyMask)) {
 		[map_i entityConnect: p1:p2];
 		return self;
 	}
-//
-// bare click to either drag selection, or rubber band a new brush
-//
+
+	// bare click to either drag selection, or rubber band a new brush
 	if (flags == 0) {
 		// if double click, position Z checker
 		if ([theEvent clickCount] > 1) {
@@ -1268,9 +1265,8 @@ mouseDown
 
 		return[self newBrushDragFrom:theEvent];
 	}
-//
-// control click = position and drag camera 
-//
+
+	// control click = position and drag camera 
 	if (flags == NSControlKeyMask) {
 		[cameraview_i setXYOrigin:&pt];
 		[quakeed_i newinstance];
@@ -1278,11 +1274,10 @@ mouseDown
 		[cameraview_i XYmouseDown: &pt flags:[theEvent modifierFlags]];
 		return self;
 	}
-//
-// command click = drag Z checker
-//
+
+	// command click = drag Z checker
 	if (flags == NSCommandKeyMask) {
-// check single plane dragging
+		// check single plane dragging
 		[self shearDragFrom:theEvent];
 		return self;
 
@@ -1292,9 +1287,8 @@ mouseDown
 		[zview_i XYmouseDown:&pt];
 		return self;
 	}
-//
-// alt click = set entire brush texture
-//
+
+	// alt click = set entire brush texture
 	if (flags == NSAlternateKeyMask) {
 		if (drawmode != dr_texture) {
 			Sys_Printf ("No texture setting except in texture mode!\n");
@@ -1305,9 +1299,8 @@ mouseDown
 		[quakeed_i updateAll];
 		return self;
 	}
-//
-// ctrl-alt click = set single face texture
-//
+
+	// ctrl-alt click = set single face texture
 	if (flags == (NSControlKeyMask | NSAlternateKeyMask)) {
 		if (drawmode != dr_texture) {
 			Sys_Printf ("No texture setting except in texture mode!\n");
