@@ -789,15 +789,11 @@ modalMoveLoop
 
 	VectorCopy (origin, originbase);
 
-//
-// modal event loop using instance drawing
-//
+	// modal event loop using instance drawing
 	goto drawentry;
 
 	while ([event type] != NSLeftMouseUp) {
-		// 
 		// calculate new point
-		// 
 		newpt =[event locationInWindow];
 		newpt =[converter convertPoint: newpt fromView:NULL];
 
@@ -809,10 +805,8 @@ modalMoveLoop
 			origin[i] = originbase[i] + movemod[i] * delta[i];
 
 
-		drawentry:
-		// 
+	drawentry:
 		// instance draw new frame
-		// 
 		[quakeed_i newinstance];
 		[self display];
 
@@ -823,10 +817,8 @@ modalMoveLoop
 		inMode: NSEventTrackingRunLoopMode dequeue:YES];
 	}
 
-//
-// draw the brush back into the window buffer
-//
-//  [xyview_i display];
+	// draw the brush back into the window buffer
+//	[xyview_i display];
 
 	return self;
 }

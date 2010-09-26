@@ -168,7 +168,6 @@ id          project_i;
 -initProject
 {
 	[self parseProjectFile];
-	Sys_Printf ("%p\n", projectInfo);
 	if (projectInfo == NULL)
 		return self;
 	[self initVars];
