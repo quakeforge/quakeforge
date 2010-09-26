@@ -4,6 +4,7 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 
+#include "QF/dstring.h"
 #include "QF/quakeio.h"
 #include "QF/sys.h"
 
@@ -105,6 +106,20 @@ CheckCmdDone ( /* DPSTimedEntry tag, */ double now, void *userData)
 //  DPSRemoveTimedEntry( cmdte );   
 }
 
+void
+QuakeEd_print (const char *fmt, va_list args)
+{
+	static dstring_t *output;
+	NSString   *string;
+
+	if (!output)
+		output = dstring_new ();
+
+	dvsprintf (output, fmt, args);
+	string = [NSString stringWithCString: output->str];
+	[g_cmd_out_i setStringValue: string];
+}
+
 //============================================================================
 
 @implementation QuakeEd
@@ -171,7 +186,6 @@ postappdefined (void)
 	windowNumber: 0 context:[NSApp context]
 	subtype: 0 data1: 0 data2:0];
 	[NSApp postEvent: ev atStart:NO];
-	Sys_Printf ("posted\n");
 	updateinflight = YES;
 }
 
@@ -297,8 +311,6 @@ App delegate methods
 
 	updateinflight = NO;
 
-	Sys_Printf ("serviced\n");
-
 // update screen    
 	evp = [NSApp nextEventMatchingMask: NSAnyEventMask
 							 untilDate: [NSDate distantPast]
@@ -308,12 +320,6 @@ App delegate methods
 		postappdefined ();
 		return self;
 	}
-	Sys_Printf ("updating %d %d %p %d %p %d\n",
-				(int)[map_i count],
-				(int)[[map_i currentEntity] count],
-				entitycount_i, [entitycount_i intValue],
-				brushcount_i, [brushcount_i intValue]);
-
 
 	[self disableFlushWindow];
 
@@ -363,6 +369,7 @@ App delegate methods
 
 	running = YES;
 	g_cmd_out_i = cmd_out_i;			// for qprintf
+	Sys_SetStdPrintf (QuakeEd_print);
 
 	[preferences_i readDefaults];
 	[project_i initProject];
