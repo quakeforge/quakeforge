@@ -492,17 +492,20 @@ drawWire
 drawSelf
 ===================
 */
--drawRect:(NSRect)rects
+-drawRect:(NSRect)rect
 {
 	float       drawtime = 0;
 
 	if (timedrawing)
 		drawtime = Sys_DoubleTime ();
 
-	if (drawmode == dr_texture || drawmode == dr_flat)
+	if (drawmode == dr_texture || drawmode == dr_flat) {
+		[quakeed_i cameraNoRestore: _bounds];
 		[self drawSolid];
-	else
-		[self drawWire: rects];
+	} else {
+		[quakeed_i cameraNoRestore: rect];
+		[self drawWire: rect];
+	}
 
 	if (timedrawing) {
 		drawtime = Sys_DoubleTime () - drawtime;

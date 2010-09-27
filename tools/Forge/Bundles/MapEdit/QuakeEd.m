@@ -229,6 +229,20 @@ int         c_updateall;
 	return self;
 }
 
+-(void)cameraNoRestore: (NSRect) rect
+{
+	no_restore[0] = YES;
+}
+
+-(void)xyNoRestore: (NSRect) rect
+{
+	no_restore[1] = YES;
+}
+
+-(void)zNoRestore: (NSRect) rect
+{
+	no_restore[2] = YES;
+}
 
 -newinstance
 {
@@ -269,10 +283,11 @@ instance draw the brush after each flush
 	[cv lockFocus];
 	for (i = 3; i >= 0; i--) {
 		if (cache[i]) {
-			if (clearinstance) {
+			if (!no_restore[i]) {
 				rect = cache_rect[i];
 				[cache[i] drawAtPoint: rect.origin];
 			}
+			no_restore[i] = NO;
 			[cache[i] release];
 			cache[i] = 0;
 		}

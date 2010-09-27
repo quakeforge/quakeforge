@@ -669,7 +669,7 @@ Rect is in global world (unscaled) coordinates
 drawWire
 ==================
 */
--drawWire:(NSRect) rects
+-drawWire:(NSRect) rect
 {
 	NSRect      visRect;
 	int         i, j, c, c2;
@@ -684,18 +684,18 @@ drawWire
 										// everything
 	{
 		visRect =[self visibleRect];
-		rects = visRect;
-		xy_draw_rect = rects;
+		rect = visRect;
+		xy_draw_rect = rect;
 	}
 
 
-	NSRectClip (rects);
+	NSRectClip (rect);
 
 // erase window
-	NSEraseRect (rects);
+	NSEraseRect (rect);
 
 // draw grid
-	[self drawGrid:rects];
+	[self drawGrid:rect];
 
 // draw all entities, world first so entities take priority
 	linestart (0, 0, 0);
@@ -815,24 +815,27 @@ drawSelf
 */
 NSRect      xy_draw_rect;
 
--drawRect: (NSRect) rects
+-drawRect: (NSRect) rect
 {
 	float drawtime = 0;
 
 	if (timedrawing)
 		drawtime = Sys_DoubleTime ();
 
-	xy_draw_rect = rects;
+	xy_draw_rect = rect;
 	newrect.origin.x = newrect.origin.y = 99999;
 	newrect.size.width = newrect.size.height = -2 * 99999;
 
 // setup for text
 	[[NSFont systemFontOfSize: 10] set];
 
-	if (drawmode == dr_texture || drawmode == dr_flat)
+	if (drawmode == dr_texture || drawmode == dr_flat) {
+		[quakeed_i xyNoRestore: [self visibleRect]];
 		[self drawSolid];
-	else
-		[self drawWire:rects];
+	} else {
+		[quakeed_i xyNoRestore: rect];
+		[self drawWire:rect];
+	}
 
 	if (timedrawing) {
 		// NSPing ();

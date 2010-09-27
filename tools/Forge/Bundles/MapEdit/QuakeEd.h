@@ -23,6 +23,7 @@ void        qprintf (char *fmt, ...);	// prints text to cmd_out_i
 
 	NSBitmapImageRep *cache[3];
 	NSRect      cache_rect[3];
+	BOOL		no_restore[3];
 
 // UI objects
 	id          brushcount_i;
@@ -54,6 +55,10 @@ void        qprintf (char *fmt, ...);	// prints text to cmd_out_i
 -updateZ;
 
 -updateAll:sender;
+
+-(void)cameraNoRestore: (NSRect) rect;
+-(void)xyNoRestore: (NSRect) rect;
+-(void)zNoRestore: (NSRect) rect;
 
 -newinstance;							// force next flushwindow to clear all
 										// instance drawing
