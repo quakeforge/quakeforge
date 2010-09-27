@@ -23,7 +23,7 @@ typedef struct {
 -addString:(const char *)string toValue:(const char *) key;
 
 -(char *) convertListToString:(id) list;
--(const char *) getStringFor:(const char *) name;
+- (const char *) getStringFor:(const char *) name;
 -removeKeyword:(const char *) key;
 -(unsigned int) getValueFor:(const char *) name;
 -changeStringFor:(const char *)key to:(const char *) value;

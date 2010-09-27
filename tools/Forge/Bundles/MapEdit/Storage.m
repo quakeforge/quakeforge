@@ -175,7 +175,7 @@ _shrinkIfDesired (Storage * self)
 -insertElement:(void *)
 anElement   at:(NSUInteger) index
 {
-	int         i;
+	NSUInteger	i;
 
 	CHECK_INDEX (index);
 	_makeRoomForAnotherIfNecessary (self);
@@ -193,7 +193,7 @@ anElement   at:(NSUInteger) index
 
 -removeElementAt:(NSUInteger) index
 {
-	int         i;
+	NSUInteger i;
 
 	CHECK_INDEX (index);
 	numElements--;
@@ -239,7 +239,7 @@ index       with:(void *) newElement
 
 -write:(TypedStream *) aStream
 {
-	int         i;
+	NSUInteger i;
 
 	[super write:aStream];
 	objc_write_types (aStream, "III*",
@@ -251,7 +251,7 @@ index       with:(void *) newElement
 
 -read:(TypedStream *) aStream
 {
-	int         i;
+	NSUInteger i;
 
 	[super read:aStream];
 	objc_read_types (aStream, "III*",

@@ -14,7 +14,7 @@
 
 -print
 {
-	int         i;
+	NSUInteger	i;
 	dict_t     *d;
 
 	for (i = 0; i < numElements; i++) {
@@ -34,7 +34,7 @@ JDC
 -copy
 {
 	id          new;
-	int         i;
+	NSUInteger  i;
 	dict_t     *d;
 	char       *old;
 
@@ -166,7 +166,7 @@ JDC
 	if (d != NULL)
 		return d->value;
 
-	return "";
+	return (char *) "";
 }
 
 //

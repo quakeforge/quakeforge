@@ -521,7 +521,7 @@ Sys_Printf ("openProjectFile: %s\n", path);
 	void
 changeString (char cf, char ct, char *string)
 {
-	int         j;
+	unsigned int  j;
 
 	for (j = 0; j < strlen (string); j++)
 		if (string[j] == cf)

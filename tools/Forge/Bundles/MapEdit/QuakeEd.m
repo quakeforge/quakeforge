@@ -136,7 +136,7 @@ Every five minutes, save a modified map
 	if (autodirty) {
 		autodirty = NO;
 #define FN_AUTOSAVE "/qcache/AutoSaveMap.map"
-		[map_i writeMapFile: FN_AUTOSAVE useRegion:NO];
+		[map_i writeMapFile: (char *) FN_AUTOSAVE useRegion:NO];
 	}
 	[map_i writeStats];
 }
@@ -363,9 +363,9 @@ App delegate methods
 
 	[self disableFlushWindow];
 
-	if ([map_i count] != [entitycount_i intValue])
+	if ([map_i count] != (unsigned) [entitycount_i intValue])
 		[entitycount_i setIntValue:[map_i count]];
-	if ([[map_i currentEntity] count] != [brushcount_i intValue])
+	if ([[map_i currentEntity] count] != (unsigned) [brushcount_i intValue])
 		[brushcount_i setIntValue:[[map_i currentEntity] count]];
 
 	if (updatecamera)
@@ -716,7 +716,7 @@ saveBSP
 	strcat (expandedcmd, "\n");
 	printf ("system: %s", expandedcmd);
 
-	[project_i addToOutput:"\n\n========= BUSY =========\n\n"];
+	[project_i addToOutput: (char *) "\n\n========= BUSY =========\n\n"];
 	[project_i addToOutput:expandedcmd];
 
 	if ([preferences_i getShowBSP])
@@ -784,7 +784,7 @@ saveBSP
 
 	kill (bsppid, 9);
 	// CheckCmdDone (cmdte, 0, NULL);
-	[project_i addToOutput:"\n\n========= STOPPED =========\n\n"];
+	[project_i addToOutput: (char *) "\n\n========= STOPPED =========\n\n"];
 
 	return self;
 }

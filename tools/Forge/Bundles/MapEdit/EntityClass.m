@@ -157,8 +157,8 @@ insertEC:
 */
 - (void) insertEC:ec
 {
-	const char *name;
-	int         i;
+	const char  *name;
+	unsigned int i;
 
 	name =[ec classname];
 	for (i = 0; i <[self count]; i++) {
@@ -262,7 +262,7 @@ id          entity_classes_i;
 
 -(id) classForName:(const char *) name
 {
-	int         i;
+	unsigned int i;
 	id          o;
 
 	for (i = 0; i <[self count]; i++) {

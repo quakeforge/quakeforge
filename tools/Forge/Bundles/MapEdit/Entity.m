@@ -368,7 +368,8 @@ int         nument;
 f           region:(BOOL) reg;
 {
 	epair_t    *e;
-	int         i, ang;
+	int         ang;
+	unsigned int i;
 	id          new;
 	vec3_t      mins, maxs;
 	int         org[3];
