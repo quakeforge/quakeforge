@@ -67,6 +67,20 @@ unsigned    badtex_d[] = {
 qtexture_t  badtex =
 	{ "notexture", 16, 16, NULL, badtex_d, {{0, 0, 255, 255}} };
 
+void
+CleanupName (const char *in, char *out)
+{
+	int         i;
+
+	for (i = 0; i < 16; i++) {
+		if (!in[i])
+			break;
+		out[i] = toupper (in[i]);
+	}
+	for ( ; i < 16; i++)
+		out[i] = 0;
+}
+
 /*
 ==============
 TEX_InitPalette
@@ -197,7 +211,7 @@ TEX_InitFromWad (char *path)
 	for (i = 1; i < wad->numlumps; i++, lumpinfo++) {
 		if (lumpinfo->type != TYP_MIPTEX)
 			Sys_Error ("TEX_InitFromWad: %s is not a miptex!", lumpinfo->name);
-		// XXX CleanupName (lumpinfo->name,qtextures[tex_count].name);
+		CleanupName (lumpinfo->name,qtextures[tex_count].name);
 		TEX_ImageFromMiptex (wad, lumpinfo);
 	}
 
@@ -216,14 +230,14 @@ TEX_NumForName
 qtexture_t *
 TEX_ForName (char *name)
 {
-	// XXX char newname[16];
+	char        newname[16];
 	int         i;
 	qtexture_t *q;
 
-	// XXX CleanupName (name, newname);
+	CleanupName (name, newname);
 
 	for (i = 0, q = qtextures; i < tex_count; i++, q++) {
-		if (!strcmp (name, q->name))
+		if (!strcmp (newname, q->name))
 			return q;
 	}
 
@@ -494,7 +508,7 @@ TEX_ForName (char *name)
 	int         max;
 
 	max =[textureList_i count];
-	// XXX CleanupName(name,name);
+	CleanupName(name,name);
 	for (i = 0; i < max; i++) {
 		t =[textureList_i elementAt:i];
 		if (!strcmp (t->name, name)) {
