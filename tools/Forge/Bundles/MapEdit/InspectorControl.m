@@ -99,7 +99,6 @@ id          inspcontrol_i;
 {
 	id          newView;
 	NSRect      r;
-	id          cell;
 	NSRect      f;
 
 	if (which == currentInspectorType)
@@ -108,8 +107,7 @@ id          inspcontrol_i;
 	currentInspectorType = which;
 	newView =[contentList objectAtIndex:which];
 
-	cell =[itemList objectAtIndex:which];// set PopUpButton title
-	[popUpButton_i setTitle:[cell title]];
+	[popUpButton_i selectItemAtIndex:which];
 
 	[inspectorView_i replaceSubview: inspectorSubview_i with:newView];
 	r =[inspectorView_i frame];
