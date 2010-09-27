@@ -58,7 +58,7 @@ id          project_i;
 	[basepathinfo_i setStringValue: [NSString stringWithCString:ts]];
 										// in Project Inspector
 
-#if 0
+#if 0	// FIXME: for "out-of-tree" projects
 	if ((s =[projectInfo getStringFor:BASEPATHKEY])) {
 		strcpy (path_basepath, s);
 
