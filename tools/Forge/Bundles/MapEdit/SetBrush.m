@@ -799,7 +799,7 @@ setTexturedef
 -setTexturedef:(texturedef_t *)
 tex         forFace:(int) f
 {
-	if ((unsigned) f > numfaces)
+	if (f > numfaces)
 		Sys_Error ("setTexturedef:forFace: bad face number %i", f);
 
 	faces[f].texture = *tex;
