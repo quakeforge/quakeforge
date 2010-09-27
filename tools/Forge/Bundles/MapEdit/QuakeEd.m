@@ -118,6 +118,7 @@ QuakeEd_print (const char *fmt, va_list args)
 	dvsprintf (output, fmt, args);
 	string = [NSString stringWithCString: output->str];
 	[g_cmd_out_i setStringValue: string];
+	fputs (output->str, stdout);
 }
 
 //============================================================================
