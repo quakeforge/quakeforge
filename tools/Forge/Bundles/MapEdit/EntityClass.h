@@ -39,7 +39,7 @@ typedef enum { esize_model, esize_fixed } esize_t;
 }
 
 -initForSourceDirectory:(char *) path;
--(id) classForName:(char *) name;
+-(id) classForName:(const char *) name;
 -(void) scanDirectory;
 
 @end

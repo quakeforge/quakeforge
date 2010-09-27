@@ -74,7 +74,7 @@ extern id   project_i;
 
 -(char *) currentProjectFile;
 
--setTextureWad:(char *) wf;
+-setTextureWad:(const char *) wf;
 
 -addToOutput:(char *) string;
 -clearBspOutput:sender;

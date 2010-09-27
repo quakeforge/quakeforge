@@ -174,7 +174,7 @@ TEX_InitFromWad
 =================
 */
 void
-TEX_InitFromWad (char *path)
+TEX_InitFromWad (const char *path)
 {
 	int         i;
 	char        newpath[1024];
@@ -268,7 +268,7 @@ TEX_ForName (char *name)
 	return currentwad;
 }
 
--initPaletteFromWadfile:(char *) wf
+-initPaletteFromWadfile:(const char *) wf
 {
 	int         i;
 	texpal_t    t;

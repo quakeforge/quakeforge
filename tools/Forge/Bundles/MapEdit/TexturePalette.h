@@ -34,7 +34,7 @@ typedef struct {
 extern int  tex_count;
 extern qtexture_t qtextures[MAX_TEXTURES];
 
-void        TEX_InitFromWad (char *path);
+void        TEX_InitFromWad (const char *path);
 qtexture_t *TEX_ForName (char *name);
 
 
@@ -71,7 +71,7 @@ extern id   texturepalette_i;
 }
 
 -(char *) currentWad;
--initPaletteFromWadfile:(char *) wf;
+-initPaletteFromWadfile:(const char *) wf;
 -computeTextureViewSize;
 -alphabetize;
 -getList;
