@@ -129,23 +129,20 @@ vec3_t      bad_maxs = { 8, 8, 8 };
 }
 
 
--(char *) valueForQKey:(char *) k
+-(const char *) valueForQKey:(const char *) k
 {
 	epair_t    *e;
-	static char ret[64];
 
 	for (e = epairs; e; e = e->next)
-		if (!strcmp (k, e->key)) {
-			strcpy (ret, e->value);
-			return ret;
-		}
+		if (!strcmp (k, e->key))
+			return e->value;
 	return "";
 }
 
 -getVector:(vec3_t)
 v           forKey:(char *) k
 {
-	char       *c;
+	const char *c;
 
 	c =[self valueForQKey:k];
 
@@ -244,9 +241,9 @@ targetname
 If the entity does not have a "targetname" key, a unique one is generated
 =============
 */
--(char *) targetname
+-(const char *) targetname
 {
-	char       *t;
+	const char *t;
 	int         i, count;
 	id          ent;
 	int         tval, maxt;
@@ -291,7 +288,7 @@ int         nument;
 {
 	char       *key;
 	id          eclass, brush;
-	char       *spawn;
+	const char *spawn;
 	vec3_t      emins, emaxs;
 	vec3_t      org;
 	texturedef_t td;

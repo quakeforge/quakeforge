@@ -118,7 +118,7 @@ id          things_i;
 }
 
 
--selectClass:(char *) class
+-selectClass:(const char *) class
 {
 	id          classent;
 
@@ -141,9 +141,9 @@ id          things_i;
 -newCurrentEntity
 {
 	id          ent, classent, cell;
-	char       *classname;
+	const char *classname;
 	int         r, c;
-	char       *flagname;
+	const char *flagname;
 	int         flags;
 
 	ent =[map_i currentEntity];

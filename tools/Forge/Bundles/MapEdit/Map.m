@@ -224,7 +224,8 @@ readMapFile
 */
 -readMapFile:(char *) fname
 {
-	char       *dat, *cl;
+	char       *dat;
+	const char *wad, *cl;
 	id          new;
 	id          ent;
 	int         i, c;
@@ -264,13 +265,13 @@ readMapFile
 	[self addSelected];
 
 // load the apropriate texture wad
-	dat =[currentEntity valueForQKey:"wad"];
-	if (dat && dat[0]) {
-		if (dat[0] == '/')				// remove old style fullpaths
+	wad =[currentEntity valueForQKey:"wad"];
+	if (wad && wad[0]) {
+		if (wad[0] == '/')				// remove old style fullpaths
 			[currentEntity removeKeyPair:"wad"];
 		else {
-			if (strcmp ([texturepalette_i currentWad], dat))
-				[project_i setTextureWad:dat];
+			if (strcmp ([texturepalette_i currentWad], wad))
+				[project_i setTextureWad:wad];
 		}
 	}
 // center the camera and XY view on the playerstart

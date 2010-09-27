@@ -260,7 +260,7 @@ id          entity_classes_i;
 	return self;
 }
 
--(id) classForName:(char *) name
+-(id) classForName:(const char *) name
 {
 	int         i;
 	id          o;

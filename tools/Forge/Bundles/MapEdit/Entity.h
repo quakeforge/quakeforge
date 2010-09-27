@@ -28,11 +28,11 @@ typedef struct epair_s {
 -(BOOL) modifiable;
 -setModifiable:(BOOL) m;
 
--(char *) targetname;
+-(const char *) targetname;
 
 -writeToFILE:(FILE *)f region:(BOOL) reg;
 
--(char *) valueForQKey:(char *) k;
+-(const char *) valueForQKey:(const char *) k;
 -getVector:(vec3_t)v forKey:(char *) k;
 
 -setKey:(const char *)

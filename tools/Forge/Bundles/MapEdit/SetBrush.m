@@ -990,9 +990,9 @@ BOOL        fakebrush;
 	vec3_t      dest, origin;
 	vec3_t      mid;
 	vec3_t      forward, right;
-	char       *targname;
+	const char *targname;
 	vec3_t      min, max, temp;
-	char       *targ;
+	const char *targ;
 
 	targ =[parent valueForQKey:"target"];
 
@@ -1077,7 +1077,7 @@ XYDrawSelf
 	int         i, j;
 	winding_t  *w;
 	vec3_t      mid, end, s1, s2;
-	char       *val;
+	const char *val;
 	float       ang;
 	id          worldent, currentent;
 	BOOL        keybrush;
@@ -1546,7 +1546,7 @@ Set the regioned flag based on if the object is containted in region_min/max
 -newRegion
 {
 	int         i;
-	char       *name;
+	const char *name;
 
 // filter away entities
 	if (parent !=[map_i objectAtIndex:0]) {

@@ -261,7 +261,7 @@ t           in:(id) obj
 }
 
 
--setTextureWad:(char *) wf
+-setTextureWad:(const char *) wf
 {
 	int         i, c;
 	char       *name;
