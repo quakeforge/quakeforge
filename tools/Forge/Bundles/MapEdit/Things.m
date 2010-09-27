@@ -21,6 +21,13 @@ id          things_i;
 	return self;
 }
 
+-(void)awakeFromNib
+{
+	//FIXME this should not be needed (bug in gnustep?)
+	[flags_i selectAll: self];
+	[flags_i deselectAllCells];
+}
+
 //
 //  Load the TEXT object with the entity comment
 //
