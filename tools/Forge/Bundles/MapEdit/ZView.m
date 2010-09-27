@@ -429,7 +429,7 @@ drawSelf
 ===============================================================================
 */
 
--drawRect: (NSRect) rects
+-drawRect: (NSRect) rect
 {
 	//NSRect      visRect;
 //Sys_Printf("ZView:drawRect\n");
@@ -438,13 +438,15 @@ drawSelf
 
 // allways draw the entire bar  
 	//visRect =[self visibleRect];
-	rects = [self visibleRect];
+	rect = [self visibleRect];
+
+	[quakeed_i zNoRestore: rect];
 
 // erase window
-	NSEraseRect (rects);
+	NSEraseRect (rect);
 
 // draw grid
-	[self drawGrid:rects];
+	[self drawGrid:rect];
 
 // draw zplane
 //	[self drawZplane]; FIXME zplane doesn't do anything yet
