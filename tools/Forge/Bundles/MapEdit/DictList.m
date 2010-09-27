@@ -31,7 +31,7 @@
 -writeListFile:(const char *) filename
 {
 	FILE       *fp;
-	int         i;
+	NSUInteger  i;
 	id          obj;
 
 	fp = fopen (filename, "w+t");
@@ -54,7 +54,7 @@
 //
 -(id) findDictKeyword:(const char *) key
 {
-	int         i;
+	NSUInteger  i;
 	dict_t     *d;
 	id          dict;
 

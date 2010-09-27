@@ -301,7 +301,7 @@ writeMapFile
 fname       useRegion:(BOOL) reg
 {
 	FILE       *f;
-	int         i;
+	unsigned int i;
 
 	Sys_Printf ("writeMapFile: %s\n", fname);
 
