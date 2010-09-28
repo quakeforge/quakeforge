@@ -8,6 +8,7 @@
 
 #include "QF/quakefs.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "Project.h"
 #include "Map.h"
@@ -237,13 +238,14 @@ id          project_i;
 {
 	id          matrix;
 	int         row;
-	char        fname[1024];
+	const char *fname;
 	id          panel;
 	NSModalSession session;
 
 	matrix =[sender matrixInColumn:0];
 	row =[matrix selectedRow];
-	sprintf (fname, "%s/%s.map", path_mapdirectory, (char *)[mapList elementAt:row]);
+	fname = va ("%s/%s.map", path_mapdirectory,
+				(const char *) [mapList elementAt:row]); //XXX Storage
 
 	panel = NSGetAlertPanel (@"Loading...",
 							 @"Loading map. Please wait.", NULL, NULL, NULL);
@@ -263,14 +265,14 @@ id          project_i;
 -setTextureWad:(const char *) wf
 {
 	int         i, c;
-	char       *name;
+	const char *name;
 
 	Sys_Printf ("loading %s\n", wf);
 
 // set the row in the settings inspector wad browser
 	c =[wadList count];
 	for (i = 0; i < c; i++) {
-		name = (char *)[wadList elementAt:i];
+		name = (const char *)[wadList elementAt:i]; // XXX Storage
 		if (!strcmp (name, wf)) {
 			[[pis_wads_i matrixInColumn: 0] selectCellAtRow: i column:0];
 			break;
@@ -299,7 +301,7 @@ id          project_i;
 	matrix =[sender matrixInColumn:0];
 	row =[matrix selectedRow];
 
-	name = (char *)[wadList elementAt:row];
+	name = (char *)[wadList elementAt:row]; // XXX Storage
 	[self setTextureWad:name];
 
 	return self;
@@ -363,7 +365,7 @@ Sys_Printf ("openProjectFile: %s\n", path);
 //
 -openProject
 {
-	char        path[128];
+	const char *path;
 	id          openpanel;
 	int         rtn;
 	NSString   *projtypes[] = { @"qpr" };
@@ -378,7 +380,7 @@ Sys_Printf ("openProjectFile: %s\n", path);
 		filenames =[openpanel filenames];
 		dir =[[openpanel directory] cString];
 		dir = "";
-		sprintf (path, "%s/%s", dir,[[filenames objectAtIndex:0] cString]);
+		path = va ("%s/%s", dir,[[filenames objectAtIndex:0] cString]);
 		strcpy (path_projectinfo, path);
 		[self openProjectFile:path];
 		return self;
@@ -395,11 +397,11 @@ Sys_Printf ("openProjectFile: %s\n", path);
 {
 	int         i;
 	int         max;
-	char       *s;
+	const char *s;
 
 	max =[obj count];
 	for (i = 0; i < max; i++) {
-		s = (char *)[obj elementAt:i];
+		s = (const char *)[obj elementAt:i];	// XXX Storage?
 		if (!strcmp (s, str))
 			return 1;
 	}

@@ -1,7 +1,7 @@
-
 #include "QF/dstring.h"
 #include "QF/script.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "Entity.h"
 #include "EntityClass.h"
@@ -55,8 +55,8 @@ vec3_t      bad_maxs = { 8, 8, 8 };
 {
 	id          new;
 	esize_t     esize;
-	char        value[80];
 	vec3_t      min, max;
+	int         org[3];
 	float      *v;
 
 	self = [super init];
@@ -78,9 +78,9 @@ vec3_t      bad_maxs = { 8, 8, 8 };
 		v =[new mins];
 		[[map_i selectedBrush] getMins: min maxs:max];
 		VectorSubtract (min, v, min);
+		VectorCopy (min, org);	// convert to integer
 
-		sprintf (value, "%i %i %i", (int) min[0], (int) min[1], (int) min[2]);
-		[self setKey: "origin" toValue:value];
+		[self setKey:"origin" toValue:va ("%i %i %i", org[0], org[1], org[2])];
 
 		[self createFixedBrush:min];
 	} else
@@ -246,7 +246,6 @@ If the entity does not have a "targetname" key, a unique one is generated
 	int         i, count;
 	id          ent;
 	int         tval, maxt;
-	char        name[20];
 
 	t =[self valueForQKey:"targetname"];
 	if (t && t[0])
@@ -265,12 +264,9 @@ If the entity does not have a "targetname" key, a unique one is generated
 			maxt = tval;
 	}
 
-	sprintf (name, "t%i", maxt + 1);
+	[self setKey: "targetname" toValue:va ("t%i", maxt + 1)];
 
-	[self setKey: "targetname" toValue:name];
-
-	return[self valueForQKey:"targetname"];
-										// so it's not on the stack
+	return [self valueForQKey:"targetname"];
 }
 
 /*
@@ -372,27 +368,23 @@ int         nument;
 f           region:(BOOL) reg;
 {
 	epair_t    *e;
-	int         i;
+	int         i, ang;
 	id          new;
-	char        value[80];
-	vec3_t      mins, maxs, org;
+	vec3_t      mins, maxs;
+	int         org[3];
 	const vec_t *v;
-	BOOL        temporg;
-	char        oldang[80];
+	char       *oldang = 0;
 
-	temporg = NO;
 	if (reg) {
 		if (!strcmp ([self valueForQKey:"classname"], "info_player_start")) {
-												// move the playerstart
-												// temporarily to the camera
-												// position
-			temporg = YES;
-			strcpy (oldang,[self valueForQKey:"angle"]);
-			sprintf (value, "%i", (int) ([cameraview_i yawAngle] * 180 / M_PI));
-			[self setKey: "angle" toValue:value];
-		} else if (self !=[map_i objectAtIndex:0]
-		&&[[self objectAtIndex:0] regioned])
+			// move the playerstart temporarily to the camera position
+			oldang = strdup ([self valueForQKey:"angle"]);
+			ang = (int) ([cameraview_i yawAngle] * 180 / M_PI);
+			[self setKey: "angle" toValue: va ("%i", ang)];
+		} else if (self != [map_i objectAtIndex:0]
+				   && [[self objectAtIndex:0] regioned]) {
 			return self;				// skip the entire entity definition
+		}
 	}
 
 	fprintf (f, "{\n");
@@ -400,7 +392,7 @@ f           region:(BOOL) reg;
 // set an origin epair
 	if (!modifiable) {
 		[[self objectAtIndex: 0] getMins: mins maxs:maxs];
-		if (temporg) {
+		if (oldang) {
 			[cameraview_i getOrigin:mins];
 			mins[0] -= 16;
 			mins[1] -= 16;
@@ -414,8 +406,8 @@ f           region:(BOOL) reg;
 			v = vec3_origin;
 
 		VectorSubtract (mins, v, org);
-		sprintf (value, "%i %i %i", (int) org[0], (int) org[1], (int) org[2]);
-		[self setKey: "origin" toValue:value];
+		[self setKey: "origin"
+			 toValue: va ("%i %i %i", org[0], org[1], org[2])];
 	}
 
 	for (e = epairs; e; e = e->next)
@@ -429,8 +421,10 @@ f           region:(BOOL) reg;
 
 	fprintf (f, "}\n");
 
-	if (temporg)
+	if (oldang) {
 		[self setKey: "angle" toValue:oldang];
+		free (oldang);
+	}
 
 	return self;
 }

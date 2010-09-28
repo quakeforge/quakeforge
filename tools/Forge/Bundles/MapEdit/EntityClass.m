@@ -182,10 +182,10 @@ scanFile
 	char       *data;
 	id          cl;
 	int         i;
-	char        path[1024];
+	const char *path;
 	QFile      *file;
 
-	sprintf (path, "%s/%s", source_path, filename);
+	path = va ("%s/%s", source_path, filename);
 
 	file = Qopen (path, "rt");
 	if (!file)
