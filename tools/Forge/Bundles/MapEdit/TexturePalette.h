@@ -34,9 +34,7 @@ typedef struct {
 extern int  tex_count;
 extern qtexture_t qtextures[MAX_TEXTURES];
 
-void        TEX_InitFromWad (const char *path);
 qtexture_t *TEX_ForName (const char *name);
-
 
 typedef struct {
 	NSImageRep *image;
