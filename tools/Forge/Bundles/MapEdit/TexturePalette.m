@@ -174,7 +174,7 @@ TEX_ImageFromMiptex (wad_t *wad, lumpinfo_t *qtexlump)
 TEX_InitFromWad
 =================
 */
-void
+int
 TEX_InitFromWad (const char *path)
 {
 	int         i;
@@ -186,7 +186,7 @@ TEX_InitFromWad (const char *path)
 	start = Sys_DoubleTime ();
 
 	newpath = [preferences_i getProjectPath];
-	newpath = va ("%s%s%s", newpath, newpath[0] ? "/" : "", path); //XXX safe?
+	newpath = va ("%s%s%s", newpath, newpath[0] ? "/" : "", path);
 
 	// free any textures
 	for (i = 0; i < tex_count; i++)
@@ -196,7 +196,14 @@ TEX_InitFromWad (const char *path)
 	// try to use the cached wadfile   
 
 	Sys_Printf ("TEX_InitFromWad %s\n", newpath);
-	wad = wad_open (newpath);	//FIXME error checking
+	wad = wad_open (newpath);
+	if (!wad) {
+		NSRunAlertPanel (@"Wad Error!",
+						 [NSString stringWithFormat:@"Failed to open '%s'",
+						 	newpath],
+						 @"OK", nil, nil);
+		return 0;
+	}
 
 	lumpinfo = wad->lumps;
 
@@ -219,6 +226,7 @@ TEX_InitFromWad (const char *path)
 	stop = Sys_DoubleTime ();
 
 	Sys_Printf ("loaded %s (%5.1f)\n", newpath, stop - start);
+	return 1;
 }
 
 /*
@@ -278,7 +286,8 @@ TEX_ForName (const char *name)
 	selectedTexture = -1;
 
 	// Init textures WAD
-	TEX_InitFromWad (wf);
+	if (!TEX_InitFromWad (wf))
+		return self;
 
 	// Create STORAGE
 	if (textureList_i)
