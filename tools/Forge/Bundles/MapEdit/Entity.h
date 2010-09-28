@@ -20,26 +20,27 @@ typedef struct epair_s {
 	BOOL        modifiable;
 }
 
--initClass:(const char *) classname;
--initFromScript:(struct script_s *) script;
+- (Entity *) initClass:(const char *) classname;
+- (Entity *) initFromScript: (struct script_s *) script;
 
--(void) dealloc;
+- (oneway void) dealloc;
 
 -(BOOL) modifiable;
--setModifiable:(BOOL) m;
+- (void) setModifiable:(BOOL) m;
 
 -(const char *) targetname;
 
--writeToFILE:(FILE *)f region:(BOOL) reg;
+- (void) writeToFILE:(FILE *)f region:(BOOL) reg;
 
 -(const char *) valueForQKey:(const char *) k;
--getVector:(vec3_t)v forKey:(const char *) k;
+- (void) getVector:(vec3_t)v forKey:(const char *) k;
 
--setKey:(const char *) k toValue:(const char *) v;
+- (void) setKey:(const char *)k
+        toValue:(const char *)v;
 
 -(int) numPairs;
 -(epair_t *) epairs;
--removeKeyPair:(const char *) key;
+- (void) removeKeyPair:(const char *) key;
 
 @end
 #endif // Entity_h

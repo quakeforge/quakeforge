@@ -119,7 +119,7 @@ FILE METHODS
 	currentEntity = ent;
 	if (old != ent) {
 		[things_i newCurrentEntity];	// update inspector
-		[inspcontrol_i changeInspectorTo:i_things];
+		[inspcontrol_i setCurrentInspector: i_things];
 	}
 
 	return self;
@@ -325,7 +325,7 @@ DRAWING
 ==============================================================================
 */
 
--ZDrawSelf
+-(void)ZDrawSelf
 {
 	int         i, count;
 
@@ -333,11 +333,9 @@ DRAWING
 
 	for (i = 0; i < count; i++)
 		[[self objectAtIndex:i] ZDrawSelf];
-
-	return self;
 }
 
--RenderSelf:(void (*)(face_t *)) callback
+-(void)RenderSelf:(void (*)(face_t *)) callback
 {
 	int         i, count;
 
@@ -345,8 +343,6 @@ DRAWING
 
 	for (i = 0; i < count; i++)
 		[[self objectAtIndex: i] RenderSelf:callback];
-
-	return self;
 }
 
 

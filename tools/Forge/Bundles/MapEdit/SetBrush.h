@@ -75,18 +75,18 @@ winding_t  *NewWinding (int points);
 
 -calcWindings;
 
--writeToFILE:(FILE *)f region:(BOOL)reg;
+- (void) writeToFILE:(FILE *)f region:(BOOL)reg;
 
 -(BOOL) selected;
 -(BOOL) regioned;
--setSelected:(BOOL) s;
--setRegioned:(BOOL) s;
+- (void) setSelected: (BOOL)s;
+- (void) setRegioned: (BOOL)s;
 
--getMins:(vec3_t)mins maxs:(vec3_t)maxs;
+- (void) getMins: (vec3_t)mins maxs: (vec3_t)maxs;
 
 -(BOOL) containsPoint:(vec3_t) pt;
 
--freeWindings;
+- (void) freeWindings;
 -removeIfInvalid;
 
 extern vec3_t region_min, region_max;
@@ -95,16 +95,16 @@ extern vec3_t region_min, region_max;
 
 -(texturedef_t *) texturedef;
 -(texturedef_t *) texturedefForFace:(int) f;
--setTexturedef:(texturedef_t *) tex;
--setTexturedef:(texturedef_t *) tex forFace:(int) f;
+- (void) setTexturedef:(texturedef_t *) tex;
+- (void) setTexturedef:(texturedef_t *) tex forFace:(int) f;
 
--XYDrawSelf;
--ZDrawSelf;
--CameraDrawSelf;
--XYRenderSelf;
--CameraRenderSelf;
+- (void) XYDrawSelf;
+- (void) ZDrawSelf;
+- (void) CameraDrawSelf;
+- (void) XYRenderSelf;
+- (void) CameraRenderSelf;
 
--hitByRay: (vec3_t) p1: (vec3_t) p2: (float *) time:(int *) face;
+- (void) hitByRay: (vec3_t)p1: (vec3_t)p2: (float *)time: (int *)face;
 
 //
 // single brush actions
@@ -112,61 +112,61 @@ extern vec3_t region_min, region_max;
 extern int numcontrolpoints;
 extern float *controlpoints[MAX_FACES * 3];
 
--getZdragface:(vec3_t) dragpoint;
--getXYdragface:(vec3_t) dragpoint;
--getXYShearPoints:(vec3_t) dragpoint;
+- (void) getZdragface: (vec3_t)dragpoint;
+- (void) getXYdragface: (vec3_t)dragpoint;
+- (void) getXYShearPoints: (vec3_t)dragpoint;
 
 -addFace:(face_t *) f;
 
 //
 // multiple brush actions
 //
--carveByClipper;
+- (void) carveByClipper;
 
 extern vec3_t sb_translate;
 
--translate;
+- (void) translate;
 
 extern id carve_in, carve_out;
 
--select;
--deselect;
--remove;
--flushTextures;
+- (void) select;
+- (void) deselect;
+- (void) remove;
+- (void) flushTextures;
 
 extern vec3_t sb_mins, sb_maxs;
 
--addToBBox;
+- (void) addToBBox;
 
 extern vec3_t sel_x, sel_y, sel_z;
 extern vec3_t sel_org;
 
--transform;
+- (void) transform;
 
--flipNormals;
+- (void) flipNormals;
 
 -carve;
--setCarveVars;
+- (void) setCarveVars;
 
 extern id sb_newowner;
 
--moveToEntity;
+- (void) moveToEntity;
 
--takeCurrentTexture;
+- (void) takeCurrentTexture;
 
 extern vec3_t select_min, select_max;
 
--selectPartial;
--selectComplete;
--regionPartial;
--regionComplete;
+- (void) selectPartial;
+- (void) selectComplete;
+- (void) regionPartial;
+- (void) regionComplete;
 
 extern float sb_floor_dir, sb_floor_dist;
 
--feetToFloor;
+- (void) feetToFloor;
 
--(int) getNumBrushFaces;
--(face_t *) getBrushFace:(int) which;
+- (int) getNumBrushFaces;
+- (face_t *) getBrushFace: (int)which;
 
 @end
 #endif // SetBrush_h

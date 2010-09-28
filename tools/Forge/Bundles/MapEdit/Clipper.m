@@ -28,7 +28,7 @@ extern NSBezierPath *path;
 	return (oldnum > 0);
 }
 
--flipNormal
+- (void) flipNormal
 {
 	vec3_t      temp;
 
@@ -44,8 +44,6 @@ extern NSBezierPath *path;
 		Sys_Printf ("no clipplane\n");
 		NSBeep ();
 	}
-
-	return self;
 }
 
 -(BOOL) getFace:(face_t *) f
@@ -143,7 +141,7 @@ XYDrag
 
 //=============================================================================
 
--carve
+- (id) carve
 {
 	[map_i makeSelectedPerform:@selector (carveByClipper)];
 	num = 0;
@@ -151,7 +149,7 @@ XYDrag
 }
 
 
--cameraDrawSelf
+- (void) cameraDrawSelf
 {
 	vec3_t      mid;
 	int         i;
@@ -175,11 +173,9 @@ XYDrag
 		mid[1] -= 16;
 		CameraLineto (mid);
 	}
-
-	return self;
 }
 
--XYDrawSelf
+- (void) XYDrawSelf
 {
 	int         i;
 	NSMutableDictionary *attribs = [NSMutableDictionary dictionary];
@@ -202,10 +198,9 @@ XYDrag
 									   endAngle: 360];
 	}
 	[path stroke];
-	return self;
 }
 
--ZDrawSelf
+- (void) ZDrawSelf
 {
 	int         i;
 	NSMutableDictionary *attribs = [NSMutableDictionary dictionary];
@@ -228,7 +223,6 @@ XYDrag
 									   endAngle: 360];
 	}
 	[path stroke];
-	return self;
 }
 
 @end

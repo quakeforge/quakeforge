@@ -429,7 +429,7 @@ drawSelf
 ===============================================================================
 */
 
--drawRect: (NSRect) rect
+- (void) drawRect: (NSRect) rect
 {
 	//NSRect      visRect;
 //Sys_Printf("ZView:drawRect\n");
@@ -456,8 +456,6 @@ drawSelf
 
 // possibly resize the view
 	[self newRealBounds];
-
-	return self;
 }
 
 /*
@@ -465,7 +463,7 @@ drawSelf
 XYDrawSelf
 ==============
 */
--XYDrawSelf
+- (void) XYDrawSelf
 {
 	NSBezierPath *path;
 	NSAffineTransform *trans;
@@ -479,8 +477,6 @@ XYDrawSelf
 	[path transformUsingAffineTransform: trans];
 	[path stroke];
 	[path release];
-
-	return self;
 }
 
 

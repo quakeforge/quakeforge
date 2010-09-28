@@ -63,8 +63,8 @@ angle:(float)angle;
 
 -homeView:sender;
 
--XYDrawSelf;							// for drawing viewpoint in XY view
--ZDrawSelf;								// for drawing viewpoint in XY view
+- (void) XYDrawSelf;                // for drawing viewpoint in XY view
+- (void) ZDrawSelf;                 // for drawing viewpoint in XY view
 -(BOOL) XYmouseDown:(NSPoint *)pt flags:(int)flags;// return YES if brush handled
 
 -(BOOL) ZmouseDown:(NSPoint *)pt flags:(int)flags;// return YES if brush handled

@@ -21,12 +21,12 @@ extern id   clipper_i;
 -(BOOL) XYDrag:(NSPoint *) pt;
 -ZClick:(NSPoint) pt;
 -carve;
--flipNormal;
+- (void) flipNormal;
 -(BOOL) getFace:(face_t *) pl;
 
--cameraDrawSelf;
--XYDrawSelf;
--ZDrawSelf;
+- (void) cameraDrawSelf;
+- (void) XYDrawSelf;
+- (void) ZDrawSelf;
 
 @end
 #endif // Clipper_h
