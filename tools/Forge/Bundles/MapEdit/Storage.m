@@ -235,33 +235,6 @@ index       with:(void *) newElement
 	return self;
 }
 
-/* Archiving */
-
--write:(TypedStream *) aStream
-{
-	NSUInteger i;
-
-	[super write:aStream];
-	objc_write_types (aStream, "III*",
-						&numElements, &maxElements, &elementSize, &description);
-	for (i = 0; i < numElements; i++)
-		objc_write_type (aStream, description, STORAGE_NTH (i));
-	return self;
-}
-
--read:(TypedStream *) aStream
-{
-	NSUInteger i;
-
-	[super read:aStream];
-	objc_read_types (aStream, "III*",
-					 &numElements, &maxElements, &elementSize, &description);
-	dataPtr = (void *) objc_malloc (maxElements * elementSize);
-	for (i = 0; i < numElements; i++)
-		objc_read_type (aStream, description, STORAGE_NTH (i));
-	return self;
-}
-
 +new
 {
 	return[[self alloc] init];
