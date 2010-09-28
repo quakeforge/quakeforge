@@ -28,7 +28,7 @@
 //
 //  Write out list file
 //
--writeListFile:(char *) filename
+-writeListFile:(const char *) filename
 {
 	FILE       *fp;
 	int         i;
@@ -52,7 +52,7 @@
 //
 //  Find the keyword in all the Dict objects
 //
--(id) findDictKeyword:(char *) key
+-(id) findDictKeyword:(const char *) key
 {
 	int         i;
 	dict_t     *d;

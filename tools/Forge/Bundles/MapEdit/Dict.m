@@ -86,7 +86,7 @@ JDC
 //
 //  Write a single { } block out
 //
--writeFile:(char *) path
+-writeFile:(const char *) path
 {
 	FILE       *fp;
 
@@ -114,7 +114,7 @@ JDC
 //  Find a keyword in storage
 //  Returns * to dict_t, otherwise NULL
 //
--(dict_t *) findKeyword:(char *) key
+-(dict_t *) findKeyword:(const char *) key
 {
 	int         max;
 	int         i;
@@ -133,8 +133,7 @@ JDC
 //
 //  Change a keyword's string
 //
--changeStringFor:(char *)
-key         to:(char *) value
+-changeStringFor:(const char *) key to:(const char *) value
 {
 	dict_t     *d;
 	dict_t      newd;
@@ -157,7 +156,7 @@ key         to:(char *) value
 //
 //  Search for keyword, return the string *
 //
--(char *) getStringFor:(char *) name
+-(const char *) getStringFor:(const char *) name
 {
 	dict_t     *d;
 
@@ -171,7 +170,7 @@ key         to:(char *) value
 //
 //  Search for keyword, return the value
 //
--(unsigned int) getValueFor:(char *) name
+-(unsigned int) getValueFor:(const char *) name
 {
 	dict_t     *d;
 
@@ -185,7 +184,7 @@ key         to:(char *) value
 //
 //  Return # of units in keyword's value
 //
--(int) getValueUnits:(char *) key
+-(int) getValueUnits:(const char *) key
 {
 	id          temp;
 	int         count;
@@ -224,7 +223,7 @@ key         to:(char *) value
 //
 // JDC: I wrote this to simplify removing vectors
 //
--removeKeyword:(char *) key
+-removeKeyword:(const char *) key
 {
 	dict_t     *d;
 
@@ -238,8 +237,7 @@ key         to:(char *) value
 //
 //  Delete string from keyword's value
 //
--delString:(char *)
-string      fromValue:(char *) key
+-delString:(const char *) string fromValue:(const char *) key
 {
 	id          temp;
 	int         count;
@@ -269,8 +267,7 @@ string      fromValue:(char *) key
 //
 //  Add string to keyword's value
 //
--addString:(char *)
-string      toValue:(char *) key
+-addString:(const char *) string toValue:(const char *) key
 {
 	char       *newstr;
 	char        spacing[] = "\t";
@@ -295,10 +292,10 @@ string      toValue:(char *) key
 //  Use these for multiple parameters in a keyword value
 //
 //===============================================
-char       *searchStr;
+const char *searchStr;
 char        item[4096];
 
--setupMultiple:(char *) value
+-setupMultiple:(const char *) value
 {
 	searchStr = value;
 	return self;
@@ -324,12 +321,12 @@ char        item[4096];
 //
 //  Parses a keyvalue string & returns a Storage full of those items
 //
--(id) parseMultipleFrom:(char *) key
+-(id) parseMultipleFrom:(const char *) key
 {
 #define	ITEMSIZE	128
 	id          stuff;
 	char        string[ITEMSIZE];
-	char       *s;
+	const char *s;
 
 	s =[self getStringFor:key];
 	if (s == NULL)

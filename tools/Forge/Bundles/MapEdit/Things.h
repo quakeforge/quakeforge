@@ -29,7 +29,7 @@ extern id   things_i;
 -setSelectedKey:(epair_t *) ep;
 
 -clearInputs;
--(char *) spawnName;
+-(const char *) spawnName;
 
 // UI targets
 -reloadEntityClasses:sender;

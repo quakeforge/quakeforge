@@ -9,8 +9,8 @@
 }
 
 -initListFromFile:(FILE *) fp;
--writeListFile:(char *) filename;
--(id) findDictKeyword:(char *) key;
+-writeListFile:(const char *) filename;
+-(id) findDictKeyword:(const char *) key;
 
 @end
 #endif // DictList_h

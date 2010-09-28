@@ -35,7 +35,7 @@ extern int  tex_count;
 extern qtexture_t qtextures[MAX_TEXTURES];
 
 void        TEX_InitFromWad (const char *path);
-qtexture_t *TEX_ForName (char *name);
+qtexture_t *TEX_ForName (const char *name);
 
 
 typedef struct {
@@ -70,7 +70,7 @@ extern id   texturepalette_i;
 	int         selectedTexture;
 }
 
--(char *) currentWad;
+-(const char *) currentWad;
 -initPaletteFromWadfile:(const char *) wf;
 -computeTextureViewSize;
 -alphabetize;
@@ -80,8 +80,8 @@ extern id   texturepalette_i;
 -(int) getSelectedTexIndex;
 
 // Called externally
--(char *) getSelTextureName;
--setTextureByName:(char *) name;
+-(const char *) getSelTextureName;
+-setTextureByName:(const char *) name;
 
 // New methods to replace the 2 above ones
 -setTextureDef:(texturedef_t *) td;
@@ -109,11 +109,8 @@ extern id   texturepalette_i;
 
 -texturedefChanged:sender;
 -onlyShowMapTextures:sender;
--(int) searchForTextureInPalette:(char *) texture;
--setDisplayFlag:(int)
-index
-to:(int)
-	value;
+-(int) searchForTextureInPalette:(const char *) texture;
+-setDisplayFlag:(int) index to:(int) value;
 
 @end
 #endif // TexturePalette_h

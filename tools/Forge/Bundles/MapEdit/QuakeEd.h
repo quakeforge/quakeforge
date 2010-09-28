@@ -14,8 +14,6 @@ double      I_FloatTime (void);
 
 void        NopSound (void);
 
-void        qprintf (char *fmt, ...);	// prints text to cmd_out_i
-
 @interface QuakeEd:NSWindow
 {
 	BOOL        dirty;
@@ -47,7 +45,7 @@ void        qprintf (char *fmt, ...);	// prints text to cmd_out_i
 }
 
 -setDefaultFilename;
--(char *) currentFilename;
+-(const char *) currentFilename;
 
 -updateAll;								// when a model has been changed
 -updateCamera;							// when the camera has moved
@@ -87,9 +85,9 @@ void        qprintf (char *fmt, ...);	// prints text to cmd_out_i
 -save:sender;
 -saveAs:sender;
 
--doOpen:(char *) fname;
+-doOpen:(const char *) fname;
 
--saveBSP:(char *)cmdline dialog:(BOOL)wt;
+-saveBSP:(const char *)cmdline dialog:(BOOL)wt;
 
 -BSP_Full:sender;
 -BSP_FastVis:sender;
