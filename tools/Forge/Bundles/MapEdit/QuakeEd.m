@@ -832,7 +832,7 @@ open
 		NSOKButton)
 		return self;
 
-	[self doOpen:(char *)[[openpanel filename] cString]];
+	[self doOpen: [[openpanel filename] cString]];
 
 	return self;
 }

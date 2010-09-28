@@ -1,3 +1,5 @@
+#include "QF/dstring.h"
+#include "QF/va.h"
 
 #include "Dict.h"
 
@@ -203,21 +205,18 @@ JDC
 {
 	int         i;
 	int         max;
-	char        tempstr[4096];
+	dstring_t  *tempstr;
 	char       *s;
-	char       *newstr;
 
 	max =[list count];
-	tempstr[0] = 0;
+	tempstr = dstring_newstr ();
 	for (i = 0; i < max; i++) {
 		s =[list elementAt:i];
-		strcat (tempstr, s);
-		strcat (tempstr, "  ");
+		dstring_appendstr (tempstr, s);
+		dstring_appendstr (tempstr, "  ");
 	}
-	newstr = malloc (strlen (tempstr) + 1);
-	strcpy (newstr, tempstr);
 
-	return newstr;
+	return dstring_freeze (tempstr);
 }
 
 //
@@ -270,17 +269,12 @@ JDC
 -addString:(const char *) string toValue:(const char *) key
 {
 	char       *newstr;
-	char        spacing[] = "\t";
 	dict_t     *d;
 
 	d =[self findKeyword:key];
 	if (d == NULL)
 		return NULL;
-	newstr =
-		malloc (strlen (string) + strlen (d->value) + strlen (spacing) + 1);
-	strcpy (newstr, d->value);
-	strcat (newstr, spacing);
-	strcat (newstr, string);
+	newstr = nva ("%s\t%s", d->value, string);
 	free (d->value);
 	d->value = newstr;
 

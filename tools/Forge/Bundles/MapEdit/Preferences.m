@@ -1,6 +1,7 @@
 #include <unistd.h>
 
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "Preferences.h"
 #include "Map.h"
@@ -26,10 +27,7 @@ WriteStringDefault (id prefs, const char *name, const char *value)
 void
 WriteNumericDefault (id prefs, const char *name, float value)
 {
-	char        str[128];
-
-	sprintf (str, "%f", value);
-	WriteStringDefault (prefs, name, str);
+	WriteStringDefault (prefs, name, va ("%f", value));
 }
 
 -init
@@ -155,7 +153,7 @@ _atof (const char *c)
 	// XXX ExtractFilePath (bspSound, path);
 	// XXX ExtractFileBase (bspSound, file);
 
-	rtn =[panel runModalForDirectory: [NSString stringWithCString:path]
+	rtn = [panel runModalForDirectory: [NSString stringWithCString:path]
 	file: [NSString stringWithCString:file]
 	types: [NSArray arrayWithObjects: types count:1]];
 
@@ -348,8 +346,8 @@ Grab all the current UI state
 {
 	Sys_Printf ("defaults updated\n");
 
-	[self setProjectPath:(char *)[startproject_i stringValue]];
-	[self setBspSoundPath:(char *)[bspSoundField_i stringValue]];
+	[self setProjectPath:[[startproject_i stringValue] cString]];
+	[self setBspSoundPath:[[bspSoundField_i stringValue] cString]];
 	[self setShowBSP:[showBSP_i intValue]];
 	[self setBrushOffset:[brushOffset_i intValue]];
 	[self setStartWad:[startwad_i selectedRow]];

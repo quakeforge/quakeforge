@@ -1,4 +1,5 @@
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "Things.h"
 #include "QuakeEd.h"
@@ -93,7 +94,7 @@ id          things_i;
 	EntityClass *ent;
 	const char *path;
 
-	path = (char *)[prog_path_i stringValue];
+	path = [[prog_path_i stringValue] cString];
 	if (!path || !path[0]) {
 		path =[project_i getProgDirectory];
 		[prog_path_i setStringValue: [NSString stringWithCString:path]];
@@ -206,10 +207,10 @@ id          things_i;
 
 -addPair:sender
 {
-	char       *key, *value;
+	const char *key, *value;
 
-	key = (char *)[keyInput_i stringValue];
-	value = (char *)[valueInput_i stringValue];
+	key = [[keyInput_i stringValue] cString];
+	value = [[valueInput_i stringValue] cString];
 
 	[[map_i currentEntity] setKey: key toValue:value];
 
@@ -226,7 +227,7 @@ id          things_i;
 {
 	[quakeed_i makeFirstResponder:quakeed_i];
 
-	[[map_i currentEntity] removeKeyPair:(char *)[keyInput_i stringValue]];
+	[[map_i currentEntity] removeKeyPair:[[keyInput_i stringValue] cString]];
 
 	[keypairview_i calcViewSize];
 	[keypairview_i display];
@@ -244,19 +245,16 @@ id          things_i;
 //
 -setAngle:sender
 {
-	const char *title;
-	char        value[10];
+	NSString   *value;
 
-	title =[[[sender selectedCell] title] cString];
-	if (!strcmp (title, "Up"))
-		strcpy (value, "-1");
-	else if (!strcmp (title, "Dn"))
-		strcpy (value, "-2");
-	else
-		strcpy (value, title);
+	value = [[sender selectedCell] title];
+	if (![value compare:@"Up"])
+		value = @"-1";
+	else if (![value compare:@"Dn"])
+		value = @"-2";
 
 	[keyInput_i setStringValue:@"angle"];
-	[valueInput_i setStringValue: [NSString stringWithCString:value]];
+	[valueInput_i setStringValue: value];
 	[self addPair:NULL];
 
 	[self clearInputs];
@@ -271,7 +269,6 @@ id          things_i;
 	int         flags;
 	int         r, c, i;
 	id          cell;
-	char        str[20];
 
 	[self clearInputs];
 	flags = 0;
@@ -285,10 +282,8 @@ id          things_i;
 
 	if (!flags)
 		[[map_i currentEntity] removeKeyPair:"spawnflags"];
-	else {
-		sprintf (str, "%i", flags);
-		[[map_i currentEntity] setKey: "spawnflags" toValue:str];
-	}
+	else
+		[[map_i currentEntity] setKey: "spawnflags" toValue:va ("%i", flags)];
 
 	[keypairview_i calcViewSize];
 	[keypairview_i display];

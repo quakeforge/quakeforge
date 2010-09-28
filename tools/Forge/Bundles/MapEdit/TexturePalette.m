@@ -4,6 +4,7 @@
 #include "QF/quakeio.h"
 #include "QF/sys.h"
 #include "QF/wadfile.h"
+#include "QF/va.h"
 
 #include "TexturePalette.h"
 #include "Preferences.h"
@@ -177,27 +178,25 @@ void
 TEX_InitFromWad (const char *path)
 {
 	int         i;
-	char        newpath[1024];
+	const char *newpath;
 	float       start, stop;
 	wad_t      *wad;
 	lumpinfo_t *lumpinfo;
 
 	start = Sys_DoubleTime ();
 
-	strcpy (newpath,[preferences_i getProjectPath]);
-	if (newpath[0])
-		strcat (newpath, "/");
-	strcat (newpath, path);
+	newpath = [preferences_i getProjectPath];
+	newpath = va ("%s%s%s", newpath, newpath[0] ? "/" : "", path); //XXX safe?
 
-// free any textures
+	// free any textures
 	for (i = 0; i < tex_count; i++)
 		[qtextures[i].rep release];
 	tex_count = 0;
 
-// try and use the cached wadfile   
+	// try to use the cached wadfile   
 
 	Sys_Printf ("TEX_InitFromWad %s\n", newpath);
-	wad = wad_open (newpath);
+	wad = wad_open (newpath);	//FIXME error checking
 
 	lumpinfo = wad->lumps;
 
@@ -437,7 +436,6 @@ TEX_ForName (const char *name)
 {
 	texpal_t   *t;
 	NSRect      r;
-	char        string[16];
 
 // wipe the fields
 	[self clearTexinfo:self];
@@ -453,9 +451,10 @@ TEX_ForName (const char *name)
 		r.origin.y -= TEX_INDENT;
 		[textureView_i scrollRectToVisible:r];
 		[textureView_i display];
-		sprintf (string, "%d x %d", (int) t->r.size.width,
-				 (int) t->r.size.height - TEX_SPACING);
-		[sizeField_i setStringValue: [NSString stringWithCString:string]];
+		[sizeField_i setStringValue:
+			[NSString stringWithFormat:@"%d x %d",
+				(int) t->r.size.width,
+				(int) t->r.size.height - TEX_SPACING]];
 	}
 
 	[self texturedefChanged:self];
@@ -537,17 +536,18 @@ TEX_ForName (const char *name)
 	int         i;
 	int         max;
 	int         len;
-	char        name[32], *n;
+	NSMutableString *strname;
+	const char *name;
 	texpal_t   *t;
 
 	if (selectedTexture == -1)
 		return self;
 
-	max =[textureList_i count];
-	strcpy (name, (const char *)[sender stringValue]);
-	for (n = name; *n; n++)
-		*n = toupper (*n);
-	[sender setStringValue: [NSString stringWithCString:name]];
+	max = [textureList_i count];
+	strname = [[sender stringValue] mutableCopy];
+	[strname uppercaseString];
+	[sender setStringValue: strname];
+	name = [strname cString];
 	len = strlen (name);
 
 	for (i = selectedTexture - 1; i >= 0; i--) {
@@ -724,18 +724,16 @@ field       by:(int) amount
 {
 	int         i;
 	int         max;
-	char        name[32];
 	texpal_t   *t;
 
 	if (selectedTexture == -1)
 		return -1;
 
 	max =[textureList_i count];
-	strcpy (name, texture);
 
 	for (i = 0; i < max; i++) {
 		t =[textureList_i elementAt:i];
-		if (!strcmp (t->name, name))
+		if (!strcmp (t->name, texture))
 			return i;
 	}
 	return -1;
