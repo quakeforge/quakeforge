@@ -492,7 +492,7 @@ drawWire
 drawSelf
 ===================
 */
--drawRect:(NSRect)rect
+- (void) drawRect:(NSRect)rect
 {
 	float       drawtime = 0;
 
@@ -511,8 +511,6 @@ drawSelf
 		drawtime = Sys_DoubleTime () - drawtime;
 		printf ("CameraView drawtime: %5.3f\n", drawtime);
 	}
-
-	return self;
 }
 
 
@@ -521,7 +519,7 @@ drawSelf
 XYDrawSelf
 =============
 */
--XYDrawSelf
+- (void) XYDrawSelf
 {
 	NSBezierPath *path;
 	NSAffineTransform *trans;
@@ -542,8 +540,6 @@ XYDrawSelf
 	[path transformUsingAffineTransform: trans];
 	[path stroke];
 	[path release];
-
-	return self;
 }
 
 /*
@@ -551,7 +547,7 @@ XYDrawSelf
 ZDrawSelf
 =============
 */
--ZDrawSelf
+- (void) ZDrawSelf
 {
 	NSBezierPath *path;
 	NSAffineTransform *trans;
@@ -565,8 +561,6 @@ ZDrawSelf
 	[path transformUsingAffineTransform: trans];
 	[path stroke];
 	[path release];
-
-	return self;
 }
 
 

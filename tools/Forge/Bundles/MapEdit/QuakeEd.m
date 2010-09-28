@@ -79,7 +79,7 @@ DisplayCmdOutput (void)
 	free (buffer);
 
 	if ([preferences_i getShowBSP])
-		[inspcontrol_i changeInspectorTo:i_output];
+		[inspcontrol_i setCurrentInspector:i_output];
 
 	[preferences_i playBspSound];
 
@@ -720,7 +720,7 @@ saveBSP
 	[project_i addToOutput:expandedcmd];
 
 	if ([preferences_i getShowBSP])
-		[inspcontrol_i changeInspectorTo:i_output];
+		[inspcontrol_i setCurrentInspector:i_output];
 
 	if (wt) {
 		id          panel;

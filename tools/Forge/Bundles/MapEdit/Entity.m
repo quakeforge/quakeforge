@@ -51,7 +51,7 @@ vec3_t      bad_maxs = { 8, 8, 8 };
 	return self;
 }
 
--initClass:(const char *) classname
+- (Entity *) initClass: (const char *)classname
 {
 	id          new;
 	esize_t     esize;
@@ -64,33 +64,32 @@ vec3_t      bad_maxs = { 8, 8, 8 };
 
 	modifiable = YES;
 
-	[self setKey: "classname" toValue:classname];
+	[self setKey: "classname" toValue: classname];
 
-// get class
-	new =[entity_classes_i classForName: [self valueForQKey:"classname"]];
+	// get class
+	new = [entity_classes_i classForName: [self valueForQKey:"classname"]];
 	if (!new)
 		esize = esize_model;
 	else
-		esize =[new esize];
+		esize = [new esize];
 
-// create a brush if needed
+	// create a brush if needed
 	if (esize == esize_fixed) {
-		v =[new mins];
+		v = [new mins];
 		[[map_i selectedBrush] getMins: min maxs:max];
 		VectorSubtract (min, v, min);
 		VectorCopy (min, org);	// convert to integer
 
 		[self setKey:"origin" toValue:va ("%i %i %i", org[0], org[1], org[2])];
 
-		[self createFixedBrush:min];
+		[self createFixedBrush: min];
 	} else
 		modifiable = YES;
 
 	return self;
 }
 
-
--(void) dealloc
+- (oneway void) dealloc
 {
 	epair_t    *e, *n;
 
@@ -109,13 +108,13 @@ vec3_t      bad_maxs = { 8, 8, 8 };
 	return modifiable;
 }
 
--setModifiable:(BOOL) m
+- (void) setModifiable: (BOOL)m
 {
 	modifiable = m;
-	return self;
+	return;
 }
 
--(void) removeObject:o
+-(void) removeObject: (id)o
 {
 	[super removeObject:o];
 	if ([self count])
@@ -139,7 +138,8 @@ vec3_t      bad_maxs = { 8, 8, 8 };
 	return "";
 }
 
--getVector:(vec3_t) v forKey:(const char *) k
+- (void) getVector: (vec3_t)v
+            forKey: (const char *)k
 {
 	const char *c;
 
@@ -148,8 +148,6 @@ vec3_t      bad_maxs = { 8, 8, 8 };
 	v[0] = v[1] = v[2] = 0;
 
 	sscanf (c, "%f %f %f", &v[0], &v[1], &v[2]);
-
-	return self;
 }
 
 -print
@@ -162,21 +160,20 @@ vec3_t      bad_maxs = { 8, 8, 8 };
 	return self;
 }
 
--setKey:(const char *)
-k           toValue:(const char *) v
+- (void) setKey:(const char *)k
+        toValue:(const char *) v
 {
 	epair_t    *e;
 
 	while (*k && *k <= ' ')
 		k++;
 	if (!*k)
-		return self;					// don't set NULL values
+		return;					// don't set NULL values
 
 	for (e = epairs; e; e = e->next) {
 		if (!strcmp (k, e->key)) {
 			free (e->value);
 			e->value = strdup (v);
-			return self;
 		}
 	}
 
@@ -186,8 +183,6 @@ k           toValue:(const char *) v
 	e->value = strdup (v);
 	e->next = epairs;
 	epairs = e;
-
-	return self;
 }
 
 -(int) numPairs
@@ -206,17 +201,18 @@ k           toValue:(const char *) v
 	return epairs;
 }
 
--removeKeyPair:(char *) key
+- (void) removeKeyPair:(char *) key
 {
 	epair_t    *e, *e2;
 
 	if (!epairs)
-		return self;
+		return;
+
 	e = epairs;
 	if (!strcmp (e->key, key)) {
 		epairs = e->next;
 		free (e);
-		return self;
+		return;
 	}
 
 	for (; e; e = e->next) {
@@ -224,12 +220,12 @@ k           toValue:(const char *) v
 			e2 = e->next;
 			e->next = e2->next;
 			free (e2);
-			return self;
+			return;
 		}
 	}
 
 	printf ("WARNING: removeKeyPair: %s not found\n", key);
-	return self;
+	return;
 }
 
 
@@ -279,7 +275,7 @@ FILE METHODS
 
 int         nument;
 
--initFromScript:(script_t *) script
+- (Entity *) initFromScript:(script_t *) script
 {
 	char       *key;
 	id          eclass, brush;
@@ -364,8 +360,8 @@ int         nument;
 }
 
 
--writeToFILE:(FILE *)
-f           region:(BOOL) reg;
+- (void) writeToFILE:(FILE *)f
+              region:(BOOL) reg;
 {
 	epair_t    *e;
 	int         ang;
@@ -384,7 +380,7 @@ f           region:(BOOL) reg;
 			[self setKey: "angle" toValue: va ("%i", ang)];
 		} else if (self != [map_i objectAtIndex:0]
 				   && [[self objectAtIndex:0] regioned]) {
-			return self;				// skip the entire entity definition
+			return;				// skip the entire entity definition
 		}
 	}
 
@@ -427,7 +423,7 @@ f           region:(BOOL) reg;
 		free (oldang);
 	}
 
-	return self;
+	return;
 }
 
 /*
