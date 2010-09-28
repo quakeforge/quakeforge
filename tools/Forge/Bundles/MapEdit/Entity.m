@@ -51,7 +51,7 @@ vec3_t      bad_maxs = { 8, 8, 8 };
 	return self;
 }
 
--initClass:(char *) classname
+-initClass:(const char *) classname
 {
 	id          new;
 	esize_t     esize;
@@ -139,8 +139,7 @@ vec3_t      bad_maxs = { 8, 8, 8 };
 	return "";
 }
 
--getVector:(vec3_t)
-v           forKey:(char *) k
+-getVector:(vec3_t) v forKey:(const char *) k
 {
 	const char *c;
 

@@ -636,7 +636,7 @@ BSP PROCESSING
 */
 
 void
-ExpandCommand (char *in, char *out, char *src, char *dest)
+ExpandCommand (const char *in, char *out, char *src, char *dest)
 {
 	while (*in) {
 		if (in[0] == '$') {
@@ -661,15 +661,14 @@ ExpandCommand (char *in, char *out, char *src, char *dest)
 saveBSP
 =============
 */
--saveBSP:(char *)
-cmdline     dialog:(BOOL) wt
+-saveBSP:(const char *) cmdline dialog:(BOOL) wt
 {
 	char        expandedcmd[1024];
 	char        mappath[1024];
 	char        bsppath[1024];
 	int         oldLightFilter;
 	int         oldPathFilter;
-	char       *destdir;
+	const char *destdir;
 
 	if (bsppid) {
 		NSBeep ();
@@ -799,7 +798,7 @@ doOpen:
 Called by open or the project panel
 ==============
 */
--doOpen:(char *) fname;
+-doOpen:(const char *) fname;
 {
 	strcpy (filename, fname);
 
@@ -904,7 +903,7 @@ saveAs
 //
 //  AJR - added this for Project info
 //
--(char *) currentFilename
+-(const char *) currentFilename
 {
 	return filename;
 }

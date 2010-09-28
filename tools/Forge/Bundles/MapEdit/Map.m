@@ -222,7 +222,7 @@ FILE METHODS
 readMapFile
 =================
 */
--readMapFile:(char *) fname
+-readMapFile:(const char *) fname
 {
 	char       *dat;
 	const char *wad, *cl;
@@ -297,7 +297,7 @@ readMapFile
 writeMapFile
 =================
 */
--writeMapFile:(char *)
+-writeMapFile:(const char *)
 fname       useRegion:(BOOL) reg
 {
 	FILE       *f;

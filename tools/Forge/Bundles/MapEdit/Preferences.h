@@ -71,7 +71,7 @@ extern float lightaxis[3];
 //
 -playBspSound;
 
--(char *) getProjectPath;
+-(const char *) getProjectPath;
 -(int) getBrushOffset;					// get the state
 -(int) getShowBSP;						// get the state
 

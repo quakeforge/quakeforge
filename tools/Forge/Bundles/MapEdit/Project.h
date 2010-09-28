@@ -72,43 +72,40 @@ extern id   project_i;
 -initProject;
 -initVars;
 
--(char *) currentProjectFile;
+-(const char *) currentProjectFile;
 
 -setTextureWad:(const char *) wf;
 
--addToOutput:(char *) string;
+-addToOutput:(const char *) string;
 -clearBspOutput:sender;
 -initProjSettings;
--changeChar:(char)
-f           to:(char)
-t           in:(id) obj;
+-changeChar:(char) f to:(char) t in:(id) obj;
 
--(int) searchForString:(char *)
-str         in:(id) obj;
+-(int) searchForString:(const char *) str in:(id) obj;
 
 -parseProjectFile;						// read defaultsdatabase for project
 										// path
--openProjectFile:(char *) path;		// called by openProject and newProject
+-openProjectFile:(const char *) path;	// called by openProject and newProject
 -openProject;
 -clickedOnMap:sender;					// called if clicked on map in browser
 -clickedOnWad:sender;					// called if clicked on wad in browser
 
 //  methods to querie the project file
 
--(char *) getMapDirectory;
--(char *) getFinalMapDirectory;
--(char *) getProgDirectory;
+-(const char *) getMapDirectory;
+-(const char *) getFinalMapDirectory;
+-(const char *) getProgDirectory;
 
--(char *) getWAD8;
--(char *) getWAD9;
--(char *) getWAD0;
+-(const char *) getWAD8;
+-(const char *) getWAD9;
+-(const char *) getWAD0;
 
--(char *) getFullVisCmd;
--(char *) getFastVisCmd;
--(char *) getNoVisCmd;
--(char *) getRelightCmd;
--(char *) getLeaktestCmd;
--(char *) getEntitiesCmd;
+-(const char *) getFullVisCmd;
+-(const char *) getFastVisCmd;
+-(const char *) getNoVisCmd;
+-(const char *) getRelightCmd;
+-(const char *) getLeaktestCmd;
+-(const char *) getEntitiesCmd;
 
 @end void
 changeString (char cf, char ct, char *string);

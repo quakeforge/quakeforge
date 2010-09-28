@@ -43,8 +43,7 @@
 /* Creating, freeing, initializing, and emptying */
 
 -init;
--initCount:(NSUInteger)
-numSlots    elementSize:(NSUInteger) sizeInBytes
+-initCount:(NSUInteger) numSlots elementSize:(NSUInteger) sizeInBytes
 	description:(const char *) elemDesc;
 -(void) dealloc;
 -empty;
@@ -56,15 +55,13 @@ numSlots    elementSize:(NSUInteger) sizeInBytes
 -(const char *) description;
 -(NSUInteger) count;
 -(void *) elementAt:(NSUInteger) index;
--replaceElementAt:(NSUInteger)
-index       with:(void *) anElement;
+-replaceElementAt:(NSUInteger) index with:(void *) anElement;
 
 -setNumSlots:(NSUInteger) numSlots;
 -setAvailableCapacity:(NSUInteger) numSlots;
 -addElement:(void *) anElement;
 -removeLastElement;
--insertElement:(void *)
-anElement   at:(NSUInteger) index;
+-insertElement:(void *) anElement at:(NSUInteger) index;
 
 -removeElementAt:(NSUInteger) index;
 
@@ -76,11 +73,12 @@ anElement   at:(NSUInteger) index;
 /* old-style creation */
 
 +new;
-+newCount:(NSUInteger)
-count       elementSize:(NSUInteger) sizeInBytes
++newCount:(NSUInteger) count elementSize:(NSUInteger) sizeInBytes
 	description:(const char *) descriptor;
 
-@end typedef struct {
+@end
+
+typedef struct {
 	@defs (Storage)
 } NXStorageId;
 

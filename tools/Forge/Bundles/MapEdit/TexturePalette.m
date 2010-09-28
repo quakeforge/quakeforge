@@ -228,7 +228,7 @@ TEX_NumForName
 =================
 */
 qtexture_t *
-TEX_ForName (char *name)
+TEX_ForName (const char *name)
 {
 	char        newname[16];
 	int         i;
@@ -263,7 +263,7 @@ TEX_ForName (char *name)
 }
 
 
--(char *) currentWad
+-(const char *) currentWad
 {
 	return currentwad;
 }
@@ -488,7 +488,7 @@ TEX_ForName (char *name)
 //
 //  Return the name of the selected texture
 //
--(char *) getSelTextureName
+-(const char *) getSelTextureName
 {
 	texpal_t   *t;
 
@@ -501,21 +501,24 @@ TEX_ForName (char *name)
 //
 //  Set selected texture by texture name
 //
--setTextureByName:(char *) name
+-setTextureByName:(const char *) name
 {
 	texpal_t   *t;
 	int         i;
 	int         max;
+	char       *nm = strdup (name);
 
 	max =[textureList_i count];
-	CleanupName(name,name);
+	CleanupName(nm,nm);
 	for (i = 0; i < max; i++) {
 		t =[textureList_i elementAt:i];
-		if (!strcmp (t->name, name)) {
+		if (!strcmp (t->name, nm)) {
+			free (nm);
 			[self setSelectedTexture:i];
 			return self;
 		}
 	}
+	free (nm);
 	return self;
 }
 
@@ -717,7 +720,7 @@ field       by:(int) amount
 //  Search for texture in entire palette
 //  Return index of texturedef, or -1 if unsuccessful
 //
--(int) searchForTextureInPalette:(char *) texture
+-(int) searchForTextureInPalette:(const char *) texture
 {
 	int         i;
 	int         max;

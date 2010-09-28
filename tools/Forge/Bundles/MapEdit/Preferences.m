@@ -129,7 +129,7 @@ _atof (const char *c)
 	return self;
 }
 
--(char *) getProjectPath
+-(const char *) getProjectPath
 {
 	return projectpath;
 }

@@ -43,7 +43,7 @@ id          things_i;
 
 -initEntities
 {
-	char       *path;
+	const char *path;
 
 	path =[project_i getProgDirectory];
 
@@ -79,7 +79,7 @@ id          things_i;
 	return self;
 }
 
--(char *) spawnName
+-(const char *) spawnName
 {
 	return[[entity_classes_i objectAtIndex:lastSelected] classname];
 }
@@ -91,7 +91,7 @@ id          things_i;
 -reloadEntityClasses:sender
 {
 	EntityClass *ent;
-	char       *path;
+	const char *path;
 
 	path = (char *)[prog_path_i stringValue];
 	if (!path || !path[0]) {

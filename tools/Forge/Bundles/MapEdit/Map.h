@@ -21,8 +21,8 @@ extern id   map_i;
 
 -writeStats;
 
--readMapFile:(char *) fname;
--writeMapFile:(char *)fname useRegion:(BOOL) reg;
+-readMapFile:(const char *) fname;
+-writeMapFile:(const char *)fname useRegion:(BOOL) reg;
 
 -entityConnect: (vec3_t) p1:(vec3_t) p2;
 

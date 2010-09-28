@@ -21,13 +21,13 @@ typedef enum { esize_model, esize_fixed } esize_t;
 
 -initFromText:(const char *)text source:(const char *) filename;
 
--(char *) classname;
+-(const char *) classname;
 -(esize_t) esize;
 -(float *) mins;						// only for esize_fixed
 -(float *) maxs;						// only for esize_fixed
 -(float *) drawColor;
--(char *) comments;
--(char *) flagName:(unsigned) flagnum;
+-(const char *) comments;
+-(const char *) flagName:(unsigned) flagnum;
 
 @end extern id entity_classes_i;
 
@@ -38,7 +38,7 @@ typedef enum { esize_model, esize_fixed } esize_t;
 	char       *source_path;
 }
 
--initForSourceDirectory:(char *) path;
+-initForSourceDirectory:(const char *) path;
 -(id) classForName:(const char *) name;
 -(void) scanDirectory;
 

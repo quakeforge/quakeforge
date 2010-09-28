@@ -36,24 +36,25 @@ id          project_i;
 //===========================================================
 -initVars
 {
-	char       *s;
+	const char *s;
 	const char *pe;
+	char       *ts;
 
-	s =[preferences_i getProjectPath];
-	pe = QFS_SkipPath (s);
-	s[pe - s] = 0;
-	strcpy (path_basepath, s);
+	ts = strdup ([preferences_i getProjectPath]);
+	pe = QFS_SkipPath (ts);
+	ts[pe - ts] = 0;
+	strcpy (path_basepath, ts);
 
-	strcpy (path_progdir, s);
+	strcpy (path_progdir, ts);
 	strcat (path_progdir, SUBDIR_ENT);
 
-	strcpy (path_mapdirectory, s);
+	strcpy (path_mapdirectory, ts);
 	strcat (path_mapdirectory, SUBDIR_MAPS);	// source dir
 
-	strcpy (path_finalmapdir, s);
+	strcpy (path_finalmapdir, ts);
 	strcat (path_finalmapdir, SUBDIR_MAPS);	// dest dir
 
-	[basepathinfo_i setStringValue: [NSString stringWithCString:s]];
+	[basepathinfo_i setStringValue: [NSString stringWithCString:ts]];
 										// in Project Inspector
 
 #if 0
@@ -134,7 +135,7 @@ id          project_i;
 //
 //  Add text to the BSP Output window
 //
--addToOutput:(char *) string
+-addToOutput:(const char *) string
 {
 	int         end;
 
@@ -184,9 +185,7 @@ id          project_i;
 //
 //  Change a character to another in a Storage list of strings
 //
--changeChar:(char)
-f           to:(char)
-t           in:(id) obj
+-changeChar:(char) f to:(char) t in:(id) obj
 {
 	int         i;
 	int         max;
@@ -312,7 +311,7 @@ t           in:(id) obj
 //
 -parseProjectFile
 {
-	char       *path;
+	const char *path;
 	int         rtn;
 
 	path =[preferences_i getProjectPath];
@@ -333,7 +332,7 @@ t           in:(id) obj
 //
 //  Loads and parses a project file
 //
--openProjectFile:(char *) path
+-openProjectFile:(const char *) path
 {
 	FILE       *fp;
 	struct stat s;
@@ -354,7 +353,7 @@ Sys_Printf ("openProjectFile: %s\n", path);
 	return self;
 }
 
--(char *) currentProjectFile
+-(const char *) currentProjectFile
 {
 	return path_projectinfo;
 }
@@ -392,8 +391,7 @@ Sys_Printf ("openProjectFile: %s\n", path);
 //
 //  Search for a string in a List of strings
 //
--(int) searchForString:(char *)
-str         in:(id) obj
+-(int) searchForString:(const char *) str in:(id) obj
 {
 	int         i;
 	int         max;
@@ -408,17 +406,17 @@ str         in:(id) obj
 	return 0;
 }
 
--(char *) getMapDirectory
+-(const char *) getMapDirectory
 {
 	return path_mapdirectory;
 }
 
--(char *) getFinalMapDirectory
+-(const char *) getFinalMapDirectory
 {
 	return path_finalmapdir;
 }
 
--(char *) getProgDirectory
+-(const char *) getProgDirectory
 {
 	return path_progdir;
 }
@@ -427,7 +425,7 @@ str         in:(id) obj
 //
 //  Return the WAD name for cmd-8
 //
--(char *) getWAD8
+-(const char *) getWAD8
 {
 	if (!path_wad8[0])
 		return NULL;
@@ -437,7 +435,7 @@ str         in:(id) obj
 //
 //  Return the WAD name for cmd-9
 //
--(char *) getWAD9
+-(const char *) getWAD9
 {
 	if (!path_wad9[0])
 		return NULL;
@@ -447,7 +445,7 @@ str         in:(id) obj
 //
 //  Return the WAD name for cmd-0
 //
--(char *) getWAD0
+-(const char *) getWAD0
 {
 	if (!path_wad0[0])
 		return NULL;
@@ -457,7 +455,7 @@ str         in:(id) obj
 //
 //  Return the FULLVIS cmd string
 //
--(char *) getFullVisCmd
+-(const char *) getFullVisCmd
 {
 	if (!string_fullvis[0])
 		return NULL;
@@ -467,7 +465,7 @@ str         in:(id) obj
 //
 //  Return the FASTVIS cmd string
 //
--(char *) getFastVisCmd
+-(const char *) getFastVisCmd
 {
 	if (!string_fastvis[0])
 		return NULL;
@@ -477,7 +475,7 @@ str         in:(id) obj
 //
 //  Return the NOVIS cmd string
 //
--(char *) getNoVisCmd
+-(const char *) getNoVisCmd
 {
 	if (!string_novis[0])
 		return NULL;
@@ -487,7 +485,7 @@ str         in:(id) obj
 //
 //  Return the RELIGHT cmd string
 //
--(char *) getRelightCmd
+-(const char *) getRelightCmd
 {
 	if (!string_relight[0])
 		return NULL;
@@ -497,14 +495,14 @@ str         in:(id) obj
 //
 //  Return the LEAKTEST cmd string
 //
--(char *) getLeaktestCmd
+-(const char *) getLeaktestCmd
 {
 	if (!string_leaktest[0])
 		return NULL;
 	return string_leaktest;
 }
 
--(char *) getEntitiesCmd
+-(const char *) getEntitiesCmd
 {
 	if (!string_entities[0])
 		return NULL;

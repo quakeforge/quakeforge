@@ -110,7 +110,7 @@ parse_vector (script_t * script, vec3_t vec)
 	return esize;
 }
 
--(char *) classname
+-(const char *) classname
 {
 	return name;
 }
@@ -130,13 +130,13 @@ parse_vector (script_t * script, vec3_t vec)
 	return color;
 }
 
--(char *) comments
+-(const char *) comments
 {
 	return comments;
 }
 
 
--(char *) flagName:(unsigned) flagnum
+-(const char *) flagName:(unsigned) flagnum
 {
 	if (flagnum >= MAX_FLAGS)
 		Sys_Error ("EntityClass flagName: bad number");
@@ -157,7 +157,7 @@ insertEC:
 */
 - (void) insertEC:ec
 {
-	char       *name;
+	const char *name;
 	int         i;
 
 	name =[ec classname];
@@ -176,7 +176,7 @@ insertEC:
 scanFile
 =================
 */
--(void) scanFile:(char *) filename
+-(void) scanFile:(const char *) filename
 {
 	int         size, line;
 	char       *data;
@@ -242,12 +242,12 @@ scanDirectory
 id          entity_classes_i;
 
 
--initForSourceDirectory:(char *) path
+-initForSourceDirectory:(const char *) path
 {
 	self = [super init];
 	array = [[NSMutableArray alloc] init];
 
-	source_path = path;
+	source_path = strdup (path);	//FIXME leak?
 	[self scanDirectory];
 
 	entity_classes_i = self;

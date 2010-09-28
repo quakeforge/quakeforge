@@ -16,27 +16,27 @@ typedef struct {
 
 -initFromFile:(FILE *) fp;
 
--(id) parseMultipleFrom:(char *) value;
--(int) getValueUnits:(char *) key;
--delString:(char *)string fromValue:(char *) key;
+-(id) parseMultipleFrom:(const char *) value;
+-(int) getValueUnits:(const char *) key;
+-delString:(const char *)string fromValue:(const char *) key;
 
--addString:(char *)string toValue:(char *) key;
+-addString:(const char *)string toValue:(const char *) key;
 
 -(char *) convertListToString:(id) list;
--(char *) getStringFor:(char *) name;
--removeKeyword:(char *) key;
--(unsigned int) getValueFor:(char *) name;
--changeStringFor:(char *)key to:(char *) value;
+-(const char *) getStringFor:(const char *) name;
+-removeKeyword:(const char *) key;
+-(unsigned int) getValueFor:(const char *) name;
+-changeStringFor:(const char *)key to:(const char *) value;
 
--(dict_t *) findKeyword:(char *) key;
+-(dict_t *) findKeyword:(const char *) key;
 
 -writeBlockTo:(FILE *) fp;
--writeFile:(char *) path;
+-writeFile:(const char *) path;
 
 // INTERNAL
 -init;
 -(id) parseBraceBlock:(FILE *) fp;
--setupMultiple:(char *) value;
+-setupMultiple:(const char *) value;
 -(char *) getNextParameter;
 
 @end
