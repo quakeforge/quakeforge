@@ -65,10 +65,7 @@
 
 -removeElementAt:(NSUInteger) index;
 
-/* Archiving */
 
--write:(TypedStream *) stream;
--read:(TypedStream *) stream;
 
 /* old-style creation */
 
