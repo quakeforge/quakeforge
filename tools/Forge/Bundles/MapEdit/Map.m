@@ -260,8 +260,6 @@ readMapFile
 
 	free (dat);
 
-	[self setCurrentEntity: [self objectAtIndex:0]];
-
 	[self addSelected];
 
 // load the apropriate texture wad
@@ -274,6 +272,8 @@ readMapFile
 				[project_i setTextureWad:wad];
 		}
 	}
+
+	[self setCurrentEntity: [self objectAtIndex:0]];
 // center the camera and XY view on the playerstart
 	c =[self count];
 	for (i = 1; i < c; i++) {
@@ -455,10 +455,14 @@ to intervening world brushes
 		}
 
 		[bestbrush setSelected:YES];
-		Sys_Printf ("selected entity %i brush %i face %i\n", (int)[self indexOfObject: bestent], (int)[bestent indexOfObject:bestbrush], bestface);
+		Sys_Printf ("selected entity %i brush %i face %i\n",
+				    (int)[self indexOfObject: bestent],
+					(int)[bestent indexOfObject:bestbrush], bestface);
 	} else {
 		[bestbrush setSelected:NO];
-		Sys_Printf ("deselected entity %i brush %i face %i\n", (int)[self indexOfObject: bestent], (int)[bestent indexOfObject:bestbrush], bestface);
+		Sys_Printf ("deselected entity %i brush %i face %i\n",
+					(int)[self indexOfObject: bestent],
+					(int)[bestent indexOfObject:bestbrush], bestface);
 	}
 
 	[quakeed_i enableFlushWindow];
