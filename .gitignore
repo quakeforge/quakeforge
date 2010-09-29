@@ -12,6 +12,7 @@ autom4te.cache/
 ChangeLog
 Makefile
 Makefile.in
+core
 
 # /
 /aclocal.m4
