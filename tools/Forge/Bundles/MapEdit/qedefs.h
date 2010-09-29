@@ -14,7 +14,7 @@
 #include "mathlib.h"
 
 #include "EntityClass.h"
-#include	"Project.h"
+#include "Project.h"
 #include "QuakeEd.h"
 #include "Map.h"
 #include "TexturePalette.h"
@@ -26,35 +26,34 @@
 #include "CameraView.h"
 #include "ZView.h"
 #include "ZScrollView.h"
-#include	"Preferences.h"
-#include	"InspectorControl.h"
+#include "Preferences.h"
+#include "InspectorControl.h"
 #include "PopScrollView.h"
 #include "KeypairView.h"
 #include "Things.h"
 #include "TextureView.h"
 #include "Clipper.h"
 
+void PrintRect (NSRect * r);
+int FileTime (char *path);
+void Sys_UpdateFile (char *path, char *netpath);
+void CleanupName (char *in, char *out);
 
-void        PrintRect (NSRect * r);
-int         FileTime (char *path);
-void        Sys_UpdateFile (char *path, char *netpath);
-void        CleanupName (char *in, char *out);
+extern BOOL  in_error;
+void Error (char *error, ...);
 
-extern BOOL in_error;
-void        Error (char *error, ...);
+#define MAXTOKEN 128
+extern char     token[MAXTOKEN];
+extern int      scriptline;
 
-#define	MAXTOKEN	128
-extern char token[MAXTOKEN];
-extern int  scriptline;
-void        StartTokenParsing (char *data);
-boolean     GetToken (boolean crossline);	// returns false at eof
-void        UngetToken ();
+void StartTokenParsing (char *data);
+boolean GetToken (boolean crossline);   // returns false at eof
+void UngetToken ();
 
-
-#define	FN_CMDOUT		"/tmp/QuakeEdCmd.txt"
-#define	FN_TEMPSAVE		"/qcache/temp.map"
-#define	FN_AUTOSAVE		"/qcache/AutoSaveMap.map"
-#define	FN_CRASHSAVE	"/qcache/ErrorSaveMap.map"
-#define	FN_DEVLOG		"/qcache/devlog"
+#define FN_CMDOUT       "/tmp/QuakeEdCmd.txt"
+#define FN_TEMPSAVE     "/qcache/temp.map"
+#define FN_AUTOSAVE     "/qcache/AutoSaveMap.map"
+#define FN_CRASHSAVE    "/qcache/ErrorSaveMap.map"
+#define FN_DEVLOG       "/qcache/devlog"
 
 #endif // qedefs_h

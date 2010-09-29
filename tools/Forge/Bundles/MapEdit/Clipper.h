@@ -7,22 +7,22 @@
 
 #include "SetBrush.h"
 
-extern id   clipper_i;
+extern id  clipper_i;
 
-@interface Clipper:NSObject
+@interface Clipper: NSObject
 {
 	int         num;
 	vec3_t      pos[3];
 	plane_t     plane;
 }
 
--(BOOL) hide;
--XYClick:(NSPoint) pt;
--(BOOL) XYDrag:(NSPoint *) pt;
--ZClick:(NSPoint) pt;
--carve;
+- (BOOL) hide;
+- (id) XYClick: (NSPoint)pt;
+- (BOOL) XYDrag: (NSPoint *)pt;
+- (id) ZClick: (NSPoint)pt;
+- (id) carve;
 - (void) flipNormal;
--(BOOL) getFace:(face_t *) pl;
+- (BOOL) getFace: (face_t *)pl;
 
 - (void) cameraDrawSelf;
 - (void) XYDrawSelf;

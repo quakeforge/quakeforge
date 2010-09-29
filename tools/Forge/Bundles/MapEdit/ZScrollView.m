@@ -8,21 +8,23 @@ initWithFrame: button:
 Initizes a scroll view with a button at it's lower right corner
 ====================
 */
-- initWithFrame:(NSRect) frameRect button1:b1
+- (id) initWithFrame: (NSRect)frameRect
+   button1: b1
 {
-	[super initWithFrame:frameRect];
+	[super initWithFrame: frameRect];
 
-	[self addSubview:b1];
+	[self addSubview: b1];
 
 	button1 = b1;
 
-	[self setHasHorizontalScroller:YES];
-	[self setHasVerticalScroller:YES];
+	[self setHasHorizontalScroller: YES];
+	[self setHasVerticalScroller: YES];
 
-	[self setBorderType:NSBezelBorder];
+	[self setBorderType: NSBezelBorder];
 
 	return self;
 }
+
 /*
 ================
 tile
@@ -30,38 +32,36 @@ tile
 Adjust the size for the pop up scale menu
 =================
 */
--tile
+- (id) tile
 {
-	NSRect      scrollerframe;
+	NSRect  scrollerframe;
 
 	[super tile];
-	scrollerframe =[_horizScroller frame];
-	[button1 setFrame:scrollerframe];
+	scrollerframe = [_horizScroller frame];
+	[button1 setFrame: scrollerframe];
 
 	scrollerframe.size.width = 0;
-	[_horizScroller setFrame:scrollerframe];
-	[_horizScroller setHidden:YES];
+	[_horizScroller setFrame: scrollerframe];
+	[_horizScroller setHidden: YES];
 
 	return self;
 }
 
-
-
--(BOOL) acceptsFirstResponder
+- (BOOL) acceptsFirstResponder
 {
 	return YES;
 }
 
-/*
-- superviewSizeChanged:(const NSSize *)oldSize
+#if 0
+- (id) superviewSizeChanged: (const NSSize *)oldSize
 {
 	[super superviewSizeChanged: oldSize];
-	
+
 	[[self documentView] newSuperBounds];
-	
+
 	return self;
 }
-*/
 
+#endif
 
 @end

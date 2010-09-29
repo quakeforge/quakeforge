@@ -12,17 +12,15 @@
 static int
 parse_vector (script_t * script, vec3_t vec)
 {
-	int         r;
+	int  r;
 
 	if (!Script_GetToken (script, 0))
 		return 0;
 	if (strcmp (Script_Token (script), "("))
 		return 0;
-
 	r = sscanf (script->p, "%f %f %f)", &vec[0], &vec[1], &vec[2]);
 	if (r != 3)
 		return 0;
-
 	while (strcmp (Script_Token (script), ")")) {
 		if (!Script_GetToken (script, 0))
 			return 0;
@@ -38,14 +36,15 @@ parse_vector (script_t * script, vec3_t vec)
 //
 // Flag names can follow the size description:
 //
-// /*QUAKED func_door (0 .5 .8) ? START_OPEN STONE_SOUND DOOR_DONT_LINK GOLD_KEY SILVER_KEY
+// /*QUAKED func_door (0 .5 .8) ? START_OPEN STONE_SOUND DOOR_DONT_LINK GOLD_KEY
+// SILVER_KEY
 
--initFromText:(const char *) text source:(const char *) filename
+- (id) initFromText: (const char *)text source: (const char *)filename
 {
-	const char *t;
+	const char  *t;
 	size_t      len;
 	int         i;
-	script_t   *script;
+	script_t    *script;
 
 	[super init];
 
@@ -64,7 +63,7 @@ parse_vector (script_t * script, vec3_t vec)
 	// grab the color
 	if (!parse_vector (script, color))
 		return 0;
-	// get the size 
+	// get the size
 	if (!Script_GetToken (script, 0))
 		return 0;
 	if (!strcmp (Script_Token (script), "(")) {
@@ -80,7 +79,6 @@ parse_vector (script_t * script, vec3_t vec)
 	} else {
 		return 0;
 	}
-
 	// get the flags
 	// any remaining words on the line are parm flags
 	for (i = 0; i < MAX_FLAGS; i++) {
@@ -105,38 +103,37 @@ parse_vector (script_t * script, vec3_t vec)
 	return self;
 }
 
--(esize_t) esize
+- (esize_t) esize
 {
 	return esize;
 }
 
--(const char *) classname
+- (const char *) classname
 {
 	return name;
 }
 
--(float *) mins
+- (float *) mins
 {
 	return mins;
 }
 
--(float *) maxs
+- (float *) maxs
 {
 	return maxs;
 }
 
--(float *) drawColor
+- (float *) drawColor
 {
 	return color;
 }
 
--(const char *) comments
+- (const char *) comments
 {
 	return comments;
 }
 
-
--(const char *) flagName:(unsigned) flagnum
+- (const char *) flagName: (unsigned)flagnum
 {
 	if (flagnum >= MAX_FLAGS)
 		Sys_Error ("EntityClass flagName: bad number");
@@ -144,7 +141,7 @@ parse_vector (script_t * script, vec3_t vec)
 }
 
 @end
-//===========================================================================
+// ===========================================================================
 
 #define THING EntityClassList
 #include "THING+NSArray.m"
@@ -155,35 +152,34 @@ parse_vector (script_t * script, vec3_t vec)
 insertEC:
 =================
 */
-- (void) insertEC:ec
+- (void) insertEC: ec
 {
-	const char  *name;
-	unsigned int i;
+	const char      *name;
+	unsigned int    i;
 
-	name =[ec classname];
-	for (i = 0; i <[self count]; i++) {
-		if (strcasecmp (name,[[self objectAtIndex:i] classname]) < 0) {
-			[self insertObject: ec atIndex:i];
+	name = [ec classname];
+	for (i = 0; i < [self count]; i++) {
+		if (strcasecmp (name, [[self objectAtIndex: i] classname]) < 0) {
+			[self insertObject: ec atIndex: i];
 			return;
 		}
 	}
-	[self addObject:ec];
+	[self addObject: ec];
 }
-
 
 /*
 =================
 scanFile
 =================
 */
--(void) scanFile:(const char *) filename
+- (void) scanFile: (const char *)filename
 {
 	int         size, line;
-	char       *data;
+	char        *data;
 	id          cl;
 	int         i;
-	const char *path;
-	QFile      *file;
+	const char  *path;
+	QFile       *file;
 
 	path = va ("%s/%s", source_path, filename);
 
@@ -199,10 +195,11 @@ scanFile
 	line = 1;
 	for (i = 0; i < size; i++) {
 		if (!strncmp (data + i, "/*QUAKED", 8)) {
-			cl =[[EntityClass alloc] initFromText:(data + i)
-			source:va ("%s:%d", filename, line)];
+			cl = [[EntityClass alloc]
+			        initFromText: (data + i)
+			              source: va ("%s:%d", filename, line)];
 			if (cl)
-				[self insertEC:cl];
+				[self insertEC: cl];
 		} else if (data[i] == '\n') {
 			line++;
 		}
@@ -211,68 +208,63 @@ scanFile
 	free (data);
 }
 
-
 /*
 =================
 scanDirectory
 =================
 */
--(void) scanDirectory
+- (void) scanDirectory
 {
-	int         count, i;
-	struct dirent **namelist, *ent;
+	int  count, i;
+	struct dirent  **namelist, *ent;
 
 	[self removeAllObjects];
 
 	count = scandir (source_path, &namelist, NULL, NULL);
 
 	for (i = 0; i < count; i++) {
-		int         len;
+		int  len;
 
 		ent = namelist[i];
 		len = strlen (ent->d_name);
 		if (len <= 3)
 			continue;
 		if (!strcmp (ent->d_name + len - 3, ".qc"))
-			[self scanFile:ent->d_name];
+			[self scanFile: ent->d_name];
 	}
 }
 
+id  entity_classes_i;
 
-id          entity_classes_i;
-
-
--initForSourceDirectory:(const char *) path
+- (id) initForSourceDirectory: (const char *)path
 {
 	self = [super init];
 	array = [[NSMutableArray alloc] init];
 
-	source_path = strdup (path);	//FIXME leak?
+	source_path = strdup (path);    // FIXME leak?
 	[self scanDirectory];
 
 	entity_classes_i = self;
 
-	nullclass =[[EntityClass alloc]
-	initFromText: "/*QUAKED UNKNOWN_CLASS (0 0.5 0) ?*/" source:va ("%s:%d", __FILE__,
-					__LINE__ -
-					1)];
+	nullclass = [[EntityClass alloc]
+	                initFromText: "/*QUAKED UNKNOWN_CLASS (0 0.5 0) ?*/"
+	                      source: va ("%s:%d", __FILE__, __LINE__ - 1)];
 
 	return self;
 }
 
--(id) classForName:(const char *) name
+- (id) classForName: (const char *)name
 {
-	unsigned int i;
-	id          o;
+	unsigned int    i;
+	id              o;
 
-	for (i = 0; i <[self count]; i++) {
-		o =[self objectAtIndex:i];
-		if (!strcmp (name,[o classname]))
+	for (i = 0; i < [self count]; i++) {
+		o = [self objectAtIndex: i];
+		if (!strcmp (name, [o classname]))
 			return o;
 	}
 
 	return nullclass;
 }
-
 
 @end

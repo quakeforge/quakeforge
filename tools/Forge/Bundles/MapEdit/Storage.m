@@ -1,24 +1,24 @@
 /* Implementation of Objective C NeXT-compatible Storage object
-	 Copyright (C) 1993,1994, 1996 Free Software Foundation, Inc.
+     Copyright (C) 1993,1994, 1996 Free Software Foundation, Inc.
 
-	 Written by:  Kresten Krab Thorup <krab@iesd.auc.dk>
-	 Dept. of Mathematics and Computer Science, Aalborg U., Denmark
+     Written by:  Kresten Krab Thorup <krab@iesd.auc.dk>
+     Dept. of Mathematics and Computer Science, Aalborg U., Denmark
 
-	 This file is part of the GNUstep Base Library.
+     This file is part of the GNUstep Base Library.
 
-	 This library is free software; you can redistribute it and/or
-	 modify it under the terms of the GNU Library General Public
-	 License as published by the Free Software Foundation; either
-	 version 2 of the License, or (at your option) any later version.
-	 
-	 This library is distributed in the hope that it will be useful,
-	 but WITHOUT ANY WARRANTY; without even the implied warranty of
-	 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-	 Library General Public License for more details.
+     This library is free software; you can redistribute it and/or
+     modify it under the terms of the GNU Library General Public
+     License as published by the Free Software Foundation; either
+     version 2 of the License, or (at your option) any later version.
 
-	 You should have received a copy of the GNU Library General Public
-	 License along with this library; if not, write to the Free
-	 Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+     This library is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     Library General Public License for more details.
+
+     You should have received a copy of the GNU Library General Public
+     License along with this library; if not, write to the Free
+     Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 /* #include <config.h> */
@@ -26,29 +26,29 @@
 #include <string.h>
 #include <strings.h>
 
-
-#define GNU_STORAGE_NTH(x,N)                          \
-	({ GNUStorageId* __s=(GNUStorageId*)(x);            \
-	   (void*)(((char*)__s->dataPtr)+(__s->elementSize*(N))); })
+#define GNU_STORAGE_NTH(x, N)                  \
+    ({GNUStorageId* __s = (GNUStorageId*) (x); \
+      (void*) (((char*) __s->dataPtr) + (__s->elementSize * (N))); })
 #define STORAGE_NTH(N) GNU_STORAGE_NTH (self, N)
 
-typedef struct {
+typedef  struct {
 	@defs (Storage)
 } GNUStorageId;
 
 @implementation Storage
 
-+initialize
++ (id) initialize
 {
-	if (self ==[Storage class])
-		[self setVersion:0];				/* beta release */
+	if (self == [Storage class])
+		[self setVersion: 0];       /* beta release */
 	return self;
 }
 
 // INITIALIZING, FREEING;
 
--initCount: (NSUInteger) numSlots elementSize: (NSUInteger) sizeInBytes description:(const char *)
-	elemDesc;
+- (id) initCount: (NSUInteger)numSlots elementSize: (NSUInteger)sizeInBytes
+   description: (const char *)
+   elemDesc;
 {
 	[super init];
 	numElements = numSlots;
@@ -60,31 +60,29 @@ typedef struct {
 	return self;
 }
 
--init
+- (id) init
 {
-	return[self initCount: 1 elementSize:sizeof (id)
-	description:@encode (id)];
+	return [self   initCount: 1 elementSize: sizeof (id)
+	             description: @encode (id)];
 }
 
-
--(void) dealloc
+- (void) dealloc
 {
 	if (dataPtr)
 		free (dataPtr);
 	[super dealloc];
 }
 
--(const char *) description
+- (const char *) description
 {
 	return description;
 }
 
-
 // COPYING;
 
--copy
+- (id) copy
 {
-	Storage    *c =[super copy];
+	Storage  *c = [super copy];
 
 	c->dataPtr = (void *) objc_malloc (maxElements * elementSize);
 	memcpy (c->dataPtr, dataPtr, numElements * elementSize);
@@ -93,12 +91,12 @@ typedef struct {
 
 // COMPARING TWO STORAGES;
 
--(BOOL) isEqual:anObject
+- (BOOL) isEqual: anObject
 {
-	if ([anObject isKindOfClass:[Storage class]]
-		&&[anObject count] ==[self count]
-		&& !memcmp (((GNUStorageId *) anObject)->dataPtr,
-					dataPtr, numElements * elementSize))
+	if ([anObject isKindOfClass: [Storage class]]
+	    && [anObject count] == [self count]
+	    && !memcmp (((GNUStorageId *) anObject)->dataPtr,
+	                dataPtr, numElements * elementSize))
 		return YES;
 	else
 		return NO;
@@ -112,7 +110,8 @@ _makeRoomForAnotherIfNecessary (Storage * self)
 	if (self->numElements == self->maxElements) {
 		self->maxElements *= 2;
 		self->dataPtr = (void *)
-			objc_realloc (self->dataPtr, self->maxElements * self->elementSize);
+		                objc_realloc (self->dataPtr,
+		                              self->maxElements * self->elementSize);
 	}
 }
 
@@ -122,11 +121,12 @@ _shrinkIfDesired (Storage * self)
 	if (self->numElements < (self->maxElements / 2)) {
 		self->maxElements /= 2;
 		self->dataPtr = (void *)
-			objc_realloc (self->dataPtr, self->maxElements * self->elementSize);
+		                objc_realloc (self->dataPtr,
+		                              self->maxElements * self->elementSize);
 	}
 }
 
--setAvailableCapacity:(NSUInteger) numSlots
+- (id) setAvailableCapacity: (NSUInteger)numSlots
 {
 	if (numSlots > numElements) {
 		maxElements = numSlots;
@@ -135,13 +135,13 @@ _shrinkIfDesired (Storage * self)
 	return self;
 }
 
--setNumSlots:(NSUInteger) numSlots
+- (id) setNumSlots: (NSUInteger)numSlots
 {
 	if (numSlots > numElements) {
 		maxElements = numSlots;
 		dataPtr = (void *) objc_realloc (dataPtr, maxElements * elementSize);
 		bzero (STORAGE_NTH (numElements),
-				 (maxElements - numElements) * elementSize);
+		       (maxElements - numElements) * elementSize);
 	} else if (numSlots < numElements) {
 		numElements = numSlots;
 		_shrinkIfDesired (self);
@@ -151,20 +151,20 @@ _shrinkIfDesired (Storage * self)
 
 /* Manipulating objects by index */
 
-#define CHECK_INDEX(IND)  if (IND >= numElements) return 0
+#define CHECK_INDEX(IND) if (IND >= numElements) return 0
 
--(NSUInteger) count
+- (NSUInteger) count
 {
 	return numElements;
 }
 
--(void *) elementAt:(NSUInteger) index
+- (void *) elementAt: (NSUInteger)index
 {
 	CHECK_INDEX (index);
 	return STORAGE_NTH (index);
 }
 
--addElement:(void *) anElement
+- (id) addElement: (void *)anElement
 {
 	_makeRoomForAnotherIfNecessary (self);
 	memcpy (STORAGE_NTH (numElements), anElement, elementSize);
@@ -172,43 +172,45 @@ _shrinkIfDesired (Storage * self)
 	return self;
 }
 
--insertElement:(void *)
-anElement   at:(NSUInteger) index
+- (id) insertElement: (void *)
+   anElement at: (NSUInteger)index
 {
-	NSUInteger	i;
+	NSUInteger  i;
 
 	CHECK_INDEX (index);
 	_makeRoomForAnotherIfNecessary (self);
 #ifndef STABLE_MEMCPY
 	for (i = numElements; i >= index; i--)
 		memcpy (STORAGE_NTH (i + 1), STORAGE_NTH (i), elementSize);
+
 #else
 	memcpy (STORAGE_NTH (index + 1),
-			STORAGE_NTH (index), elementSize * (numElements - index));
+	        STORAGE_NTH (index), elementSize * (numElements - index));
 #endif
 	memcpy (STORAGE_NTH (i), anElement, elementSize);
 	numElements++;
 	return self;
 }
 
--removeElementAt:(NSUInteger) index
+- (id) removeElementAt: (NSUInteger)index
 {
-	NSUInteger i;
+	NSUInteger  i;
 
 	CHECK_INDEX (index);
 	numElements--;
 #ifndef STABLE_MEMCPY
 	for (i = index; i < numElements; i++)
 		memcpy (STORAGE_NTH (i), STORAGE_NTH (i + 1), elementSize);
+
 #else
 	memcpy (STORAGE_NTH (index),
-			STORAGE_NTH (index + 1), elementSize * (numElements - index - 1));
+	        STORAGE_NTH (index + 1), elementSize * (numElements - index - 1));
 #endif
 	_shrinkIfDesired (self);
 	return self;
 }
 
--removeLastElement
+- (id) removeLastElement
 {
 	if (numElements) {
 		numElements--;
@@ -217,8 +219,8 @@ anElement   at:(NSUInteger) index
 	return self;
 }
 
--replaceElementAt:(NSUInteger)
-index       with:(void *) newElement
+- (id) replaceElementAt: (NSUInteger)
+   index with: (void *)newElement
 {
 	CHECK_INDEX (index);
 	memcpy (STORAGE_NTH (index), newElement, elementSize);
@@ -227,7 +229,7 @@ index       with:(void *) newElement
 
 /* Emptying the Storage */
 
--empty
+- (id) empty
 {
 	numElements = 0;
 	maxElements = 1;
@@ -235,16 +237,17 @@ index       with:(void *) newElement
 	return self;
 }
 
-+new
++ (id) new
 {
-	return[[self alloc] init];
+	return [[self alloc] init];
 }
 
-+newCount:(NSUInteger)
-count       elementSize:(NSUInteger) sizeInBytes
-	description:(const char *) descriptor
++ (id) newCount: (NSUInteger)
+   count elementSize: (NSUInteger)sizeInBytes
+   description: (const char *)descriptor
 {
-	return[[self alloc] initCount: count elementSize: sizeInBytes description:descriptor];
+	return [[self alloc] initCount: count elementSize: sizeInBytes description:
+	        descriptor];
 }
 
 @end

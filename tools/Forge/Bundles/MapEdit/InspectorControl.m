@@ -7,7 +7,7 @@
 #include "TexturePalette.h"
 #include "Preferences.h"
 
-InspectorControl	*inspcontrol_i;
+InspectorControl  *inspcontrol_i;
 
 @interface CustomView: NSView
 @end
@@ -100,10 +100,8 @@ InspectorControl	*inspcontrol_i;
 	NSRect  r;
 	NSRect  f;
 
-	if (which == currentInspectorType) {
+	if (which == currentInspectorType)
 		return;
-	}
-
 	currentInspectorType = which;
 	newView = [contentList objectAtIndex: which];
 

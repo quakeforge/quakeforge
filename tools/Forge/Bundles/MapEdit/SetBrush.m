@@ -19,32 +19,31 @@ textureAxisFromPlane
 ==================
 */
 #if 1
-vec3_t      baseaxis[18] = {
-	{0, 0, 1}, {1, 0, 0}, {0, -1, 0},	// floor
-	{0, 0, -1}, {1, 0, 0}, {0, -1, 0},	// ceiling
-	{1, 0, 0}, {0, 1, 0}, {0, 0, -1},	// west wall
-	{-1, 0, 0}, {0, 1, 0}, {0, 0, -1},	// east wall
-	{0, 1, 0}, {1, 0, 0}, {0, 0, -1},	// south wall
-	{0, -1, 0}, {1, 0, 0}, {0, 0, -1}	// north wall
+vec3_t baseaxis[18] = {
+	{ 0,  0,  1}, {1, 0, 0}, {0, -1,  0}, // floor
+	{ 0,  0, -1}, {1, 0, 0}, {0, -1,  0}, // ceiling
+	{ 1,  0,  0}, {0, 1, 0}, {0,  0, -1}, // west wall
+	{-1,  0,  0}, {0, 1, 0}, {0,  0, -1}, // east wall
+	{ 0,  1,  0}, {1, 0, 0}, {0,  0, -1}, // south wall
+	{ 0, -1,  0}, {1, 0, 0}, {0,  0, -1} // north wall
 };
 #else
-vec3_t      baseaxis[18] = {
-	{0, 0, 1}, {1, 0, 0}, {0, -1, 0},	// floor
-	{0, 0, -1}, {1, 0, 0}, {0, 1, 0},	// ceiling
-	{1, 0, 0}, {0, 1, 0}, {0, 0, -1},	// west wall
-	{-1, 0, 0}, {0, -1, 0}, {0, 0, -1},	// east wall
-	{0, 1, 0}, {-1, 0, 0}, {0, 0, -1},	// south wall
-	{0, -1, 0}, {1, 0, 0}, {0, 0, -1}	// north wall
+vec3_t baseaxis[18] = {
+	{ 0,  0,  1}, { 1,  0, 0}, {0, -1,  0}, // floor
+	{ 0,  0, -1}, { 1,  0, 0}, {0,  1,  0}, // ceiling
+	{ 1,  0,  0}, { 0,  1, 0}, {0,  0, -1}, // west wall
+	{-1,  0,  0}, { 0, -1, 0}, {0,  0, -1}, // east wall
+	{ 0,  1,  0}, {-1,  0, 0}, {0,  0, -1}, // south wall
+	{ 0, -1,  0}, { 1,  0, 0}, {0,  0, -1} // north wall
 };
 #endif
-
 
 float
 TextureAxisFromPlane (plane_t *pln, float *xv, float *yv)
 {
-	int         bestaxis;
-	float       dot, best;
-	int         i;
+	int     bestaxis;
+	float   dot, best;
+	int     i;
 
 	best = 0;
 	bestaxis = 0;
@@ -63,7 +62,7 @@ TextureAxisFromPlane (plane_t *pln, float *xv, float *yv)
 	return lightaxis[bestaxis >> 1];
 }
 
-#define	BOGUS_RANGE	18000
+#define BOGUS_RANGE 18000
 
 /*
 =================
@@ -76,10 +75,10 @@ void
 CheckFace (face_t * f)
 {
 	int         i, j;
-	float      *p1, *p2;
+	float       *p1, *p2;
 	float       d, edgedist;
 	vec3_t      dir, edgenormal;
-	winding_t  *w;
+	winding_t   *w;
 
 	w = f->w;
 	if (!w)
@@ -91,9 +90,10 @@ CheckFace (face_t * f)
 	for (i = 0; i < w->numpoints; i++) {
 		p1 = w->points[i];
 
-		for (j = 0; j < 3; j++)
+		for (j = 0; j < 3; j++) {
 			if (p1[j] > BOGUS_RANGE || p1[j] < -BOGUS_RANGE)
 				Sys_Error ("CheckFace: BUGUS_RANGE: %f", p1[j]);
+		}
 
 		j = i + 1 == w->numpoints ? 0 : i + 1;
 
@@ -125,25 +125,23 @@ CheckFace (face_t * f)
 	}
 }
 
-
 /*
 =============================================================================
 
-			TURN PLANES INTO GROUPS OF FACES
+            TURN PLANES INTO GROUPS OF FACES
 
 =============================================================================
 */
-
 
 /*
 ==================
 NewWinding
 ==================
 */
-winding_t  *
+winding_t *
 NewWinding (int points)
 {
-	winding_t  *w;
+	winding_t   *w;
 	size_t      size;
 
 	if (points > MAX_POINTS_ON_WINDING)
@@ -156,24 +154,22 @@ NewWinding (int points)
 	return w;
 }
 
-
 /*
 ==================
 CopyWinding
 ==================
 */
-winding_t  *
+winding_t *
 CopyWinding (winding_t * w)
 {
 	size_t      size;
-	winding_t  *c;
+	winding_t   *c;
 
 	size = (size_t) ((winding_t *) 0)->points[w->numpoints];
 	c = malloc (size);
 	memcpy (c, w, size);
 	return c;
 }
-
 
 /*
 ==================
@@ -183,7 +179,7 @@ Clips the winding to the plane, returning the new winding on the positive side
 Frees the input winding.
 ==================
 */
-winding_t  *
+winding_t *
 ClipWinding (winding_t * in, plane_t *split)
 {
 	float       dists[MAX_POINTS_ON_WINDING];
@@ -191,13 +187,13 @@ ClipWinding (winding_t * in, plane_t *split)
 	int         counts[3];
 	float       dot;
 	int         i, j;
-	float      *p1, *p2, *mid;
-	winding_t  *neww;
+	float       *p1, *p2, *mid;
+	winding_t   *neww;
 	int         maxpts;
 
 	counts[0] = counts[1] = counts[2] = 0;
 
-// determine sides for each point
+	// determine sides for each point
 	for (i = 0; i < in->numpoints; i++) {
 		dot = DotProduct (in->points[i], split->normal);
 		dot -= split->dist;
@@ -206,9 +202,8 @@ ClipWinding (winding_t * in, plane_t *split)
 			sides[i] = SIDE_FRONT;
 		else if (dot < -ON_EPSILON)
 			sides[i] = SIDE_BACK;
-		else {
+		else
 			sides[i] = SIDE_ON;
-		}
 		counts[sides[i]]++;
 	}
 	sides[i] = sides[0];
@@ -216,7 +211,6 @@ ClipWinding (winding_t * in, plane_t *split)
 
 	if (!counts[0] && !counts[1])
 		return in;
-
 	if (!counts[0]) {
 		free (in);
 		return NULL;
@@ -224,8 +218,8 @@ ClipWinding (winding_t * in, plane_t *split)
 	if (!counts[1])
 		return in;
 
-	maxpts = in->numpoints + 4;			// can't use counts[0]+2 because
-	// of fp grouping errors
+	// can't use counts[0]+2 because of fp grouping errors
+	maxpts = in->numpoints + 4;
 	neww = NewWinding (maxpts);
 
 	for (i = 0; i < in->numpoints; i++) {
@@ -255,7 +249,7 @@ ClipWinding (winding_t * in, plane_t *split)
 		neww->numpoints++;
 
 		dot = dists[i] / (dists[i] - dists[i + 1]);
-		for (j = 0; j < 3; j++) {		// avoid round off error when possible
+		for (j = 0; j < 3; j++) {   // avoid round off error when possible
 			if (split->normal[j] == 1)
 				mid[j] = split->dist;
 			else if (split->normal[j] == -1)
@@ -269,7 +263,7 @@ ClipWinding (winding_t * in, plane_t *split)
 	if (neww->numpoints > maxpts)
 		Sys_Error ("ClipWinding: points exceeded estimate");
 
-// free the original winding
+	// free the original winding
 	free (in);
 
 	return neww;
@@ -282,23 +276,22 @@ BasePolyForPlane
 There has GOT to be a better way of doing this...
 =================
 */
-winding_t  *
+winding_t *
 BasePolyForPlane (face_t * f)
 {
-	int         i, x;
-	float       max, v;
-	vec3_t      org, vright, vup;
-	vec3_t      xaxis, yaxis;
-	winding_t  *w;
-	texturedef_t *td;
-	plane_t    *p;
-	float       ang, sinv, cosv;
-	float       s, t, ns, nt;
+	int             i, x;
+	float           max, v;
+	vec3_t          org, vright, vup;
+	vec3_t          xaxis, yaxis;
+	winding_t       *w;
+	texturedef_t    *td;
+	plane_t         *p;
+	float           ang, sinv, cosv;
+	float           s, t, ns, nt;
 
 	p = &f->plane;
 
-// find the major axis
-
+	// find the major axis
 	max = -BOGUS_RANGE;
 	x = -1;
 	for (i = 0; i < 3; i++) {
@@ -308,6 +301,7 @@ BasePolyForPlane (face_t * f)
 			max = v;
 		}
 	}
+
 	if (x == -1)
 		Sys_Error ("BasePolyForPlane: no axis found");
 
@@ -317,6 +311,7 @@ BasePolyForPlane (face_t * f)
 		case 1:
 			vup[2] = 1;
 			break;
+
 		case 2:
 			vup[0] = 1;
 			break;
@@ -333,7 +328,7 @@ BasePolyForPlane (face_t * f)
 	VectorScale (vup, 8192, vup);
 	VectorScale (vright, 8192, vright);
 
-// project a really big axis aligned box onto the plane
+	// project a really big axis-aligned box onto the plane
 	w = NewWinding (4);
 	w->numpoints = 4;
 
@@ -349,18 +344,19 @@ BasePolyForPlane (face_t * f)
 	VectorSubtract (org, vright, w->points[3]);
 	VectorSubtract (w->points[3], vup, w->points[3]);
 
-// set texture values
+	// set texture values
 	f->light = TextureAxisFromPlane (&f->plane, xaxis, yaxis);
 	td = &f->texture;
 
-// rotate axis
+	// rotate axis
 	ang = td->rotate / 180 * M_PI;
 	sinv = sin (ang);
 	cosv = cos (ang);
 
-	if (!td->scale[0])
+	if (!(td->scale[0]))
 		td->scale[0] = 1;
-	if (!td->scale[1])
+
+	if (!(td->scale[1]))
 		td->scale[1] = 1;
 
 	for (i = 0; i < 4; i++) {
@@ -386,12 +382,12 @@ If a face has a NULL winding, it is an overconstraining plane and
 can be removed.
 ===========
 */
--calcWindings
+- (id) calcWindings
 {
 	int         i, j, k;
 	float       v;
-	face_t     *f;
-	winding_t  *w;
+	face_t      *f;
+	winding_t   *w;
 	plane_t     plane;
 	vec3_t      t1, t2, t3;
 	BOOL        useplane[MAX_FACES];
@@ -425,19 +421,18 @@ can be removed.
 		useplane[i] = YES;
 		for (j = 0; j < i; j++) {
 			if (f->plane.normal[0] == faces[j].plane.normal[0]
-				&& f->plane.normal[1] == faces[j].plane.normal[1]
-				&& f->plane.normal[2] == faces[j].plane.normal[2]
-				&& f->plane.dist == faces[j].plane.dist) {
+			    && f->plane.normal[1] == faces[j].plane.normal[1]
+			    && f->plane.normal[2] == faces[j].plane.normal[2]
+			    && f->plane.dist == faces[j].plane.dist) {
 				useplane[i] = NO;
 				break;
 			}
 		}
-
 	}
 
 	for (i = 0; i < numfaces; i++) {
-		if (!useplane[i])
-			continue;					// duplicate plane
+		if (!useplane[i])           // duplicate plane
+			continue;
 
 		f = &faces[i];
 
@@ -479,31 +474,32 @@ can be removed.
 	return self;
 }
 
-//============================================================================
+// ============================================================================
 
 /*
 ===========
 initOwner:::
 ===========
 */
-- (SetBrush *)initOwner: own mins:(float *)mins
-        maxs:(float *)maxs
-        texture:(texturedef_t *) tex
+- (SetBrush *) initOwner: own
+   mins: (float *)mins
+   maxs: (float *)maxs
+   texture: (texturedef_t *)tex
 {
 	[super init];
 
 	parent = own;
 
-	[self setTexturedef:tex];
-	[self setMins: mins maxs:maxs];
+	[self setTexturedef: tex];
+	[self setMins: mins maxs: maxs];
 	return self;
 }
 
--setMins:(float *)
-mins        maxs:(float *) maxs
+- (id) setMins: (float *)
+   mins maxs: (float *)maxs
 {
-	int         i, j;
-	vec3_t      pts[4][2];
+	int     i, j;
+	vec3_t  pts[4][2];
 
 	for (i = 0; i < 3; i++) {
 		if (maxs[i] - mins[i] <= 0) {
@@ -562,7 +558,6 @@ mins        maxs:(float *) maxs
 	faces[4].planepts[2][1] = pts[2][1][1];
 	faces[4].planepts[2][2] = pts[2][1][2];
 
-
 	faces[5].planepts[0][0] = pts[2][0][0];
 	faces[5].planepts[0][1] = pts[2][0][1];
 	faces[5].planepts[0][2] = pts[2][0][2];
@@ -575,43 +570,43 @@ mins        maxs:(float *) maxs
 	faces[5].planepts[2][1] = pts[0][0][1];
 	faces[5].planepts[2][2] = pts[0][0][2];
 
-
 	[self calcWindings];
 	return self;
 }
 
--parent
+- (id) parent
 {
 	return parent;
 }
 
--setParent:(id) p
+- (id) setParent: (id)p
 {
 	parent = p;
 	return self;
 }
 
--setEntityColor:(vec3_t) color
+- (id) setEntityColor: (vec3_t)color
 {
 	VectorCopy (color, entitycolor);
 	return self;
 }
 
--(void)freeWindings
+- (void) freeWindings
 {
-	int         i;
+	int  i;
 
-	for (i = 0; i < MAX_FACES; i++)
+	for (i = 0; i < MAX_FACES; i++) {
 		if (faces[i].w) {
 			free (faces[i].w);
 			faces[i].w = NULL;
 		}
+	}
 }
 
--(void) dealloc
+- (void) dealloc
 {
 	[self freeWindings];
-	return[super dealloc];
+	return [super dealloc];
 }
 
 /*
@@ -619,12 +614,12 @@ mins        maxs:(float *) maxs
 initOwner: fromTokens
 ===========
 */
-int         numsb;
+int  numsb;
 
--initFromScript:(script_t *)script owner:own
+- (id) initFromScript: (script_t *)script owner: own
 {
-	face_t     *f;
-	int         i, j;
+	face_t  *f;
+	int     i, j;
 
 	[self init];
 
@@ -647,7 +642,8 @@ int         numsb;
 			for (j = 0; j < 3; j++) {
 				Script_GetToken (script, false);
 				f->planepts[i][j] = atoi (Script_Token (script));
-			} Script_GetToken (script, false);
+			}
+			Script_GetToken (script, false);
 
 			if (strcmp (Script_Token (script), ")"))
 				Sys_Error ("parsing map file");
@@ -675,9 +671,9 @@ int         numsb;
 		f->texture.scale[0] = 1;
 		f->texture.scale[1] = 1;
 
-		#define	TEX_FLIPAXIS	1
-		#define	TEX_FLIPS		2
-		#define	TEX_FLIPT		4
+# define TEX_FLIPAXIS   1
+# define TEX_FLIPS      2
+# define TEX_FLIPT      4
 
 		if (flags & TEX_FLIPAXIS) {
 			f->texture.rotate = 90;
@@ -691,7 +687,7 @@ int         numsb;
 			if (flags & TEX_FLIPT)
 				f->texture.scale[1] = -1;
 		}
-#endif
+#endif /* if 0 */
 		f++;
 		numfaces++;
 	} while (1);
@@ -708,34 +704,31 @@ int         numsb;
 writeToFILE
 ===========
 */
-- (void) writeToFILE:(FILE *)f
-              region:(BOOL) reg
+- (void) writeToFILE: (FILE *)f
+   region: (BOOL)reg
 {
-	int         i, j;
-	face_t     *fa;
-	texturedef_t *td;
-
+	int  i, j;
+	face_t          *fa;
+	texturedef_t    *td;
 
 	if (reg && regioned)
 		return;
-
 	fprintf (f, "{\n");
 	for (i = 0; i < numfaces; i++) {
 		fa = &faces[i];
-		for (j = 0; j < 3; j++)
+		for (j = 0; j < 3; j++) {
 			fprintf (f, "( %d %d %d ) ", (int) fa->planepts[j][0],
-					 (int) fa->planepts[j][1], (int) fa->planepts[j][2]);
+			         (int) fa->planepts[j][1], (int) fa->planepts[j][2]);
+		}
 		td = &fa->texture;
 		fprintf (f, "%s %d %d %d %f %f\n", td->texture, (int) td->shift[0],
-				 (int) td->shift[1], (int) td->rotate, td->scale[0],
-				 td->scale[1]);
+		         (int) td->shift[1], (int) td->rotate, td->scale[0],
+		         td->scale[1]);
 	}
 	fprintf (f, "}\n");
 
 	return;
 }
-
-
 
 /*
 ==============================================================================
@@ -745,34 +738,32 @@ INTERACTION
 ==============================================================================
 */
 
-- (void)getMins:(vec3_t)
-mins        maxs:(vec3_t) maxs
+- (void) getMins: (vec3_t)mins
+   maxs: (vec3_t)maxs
 {
 	VectorCopy (bmins, mins);
 	VectorCopy (bmaxs, maxs);
 }
 
-
--(BOOL) selected
+- (BOOL) selected
 {
 	return selected;
 }
 
-- (void) setSelected:(BOOL) s
+- (void) setSelected: (BOOL)s
 {
 	selected = s;
 }
 
--(BOOL) regioned
+- (BOOL) regioned
 {
 	return regioned;
 }
 
-- (void)setRegioned:(BOOL) s
+- (void) setRegioned: (BOOL)s
 {
 	regioned = s;
 }
-
 
 /*
 ===========
@@ -781,25 +772,25 @@ setTexturedef
 */
 - (void) setTexturedef: (texturedef_t *)tex
 {
-	int         i;
+	int  i;
 
 	for (i = 0; i < MAX_FACES; i++) {
 		faces[i].texture = *tex;
-		faces[i].qtexture = NULL;		// recache next render
+		faces[i].qtexture = NULL;   // recache next render
 	}
 
-	[self calcWindings];				// in case texture coords changed
+	[self calcWindings];            // in case texture coords changed
 }
 
-- (void) setTexturedef: (texturedef_t *)tex forFace: (int)f
+- (void) setTexturedef: (texturedef_t *)tex
+   forFace: (int)f
 {
 	if (f > numfaces)
 		Sys_Error ("setTexturedef:forFace: bad face number %i", f);
-
 	faces[f].texture = *tex;
-	faces[f].qtexture = NULL;			// recache next render
+	faces[f].qtexture = NULL;       // recache next render
 
-	[self calcWindings];				// in case texture coords changed
+	[self calcWindings];            // in case texture coords changed
 }
 
 /*
@@ -807,16 +798,15 @@ setTexturedef
 texturedef
 ===========
 */
--(texturedef_t *) texturedef
+- (texturedef_t *) texturedef
 {
 	return &faces[0].texture;
 }
 
--(texturedef_t *) texturedefForFace:(int) f
+- (texturedef_t *) texturedefForFace: (int)f
 {
 	return &faces[f].texture;
 }
-
 
 /*
 ===========
@@ -825,19 +815,20 @@ removeIfInvalid
 So created veneers don't stay around
 ===========
 */
--removeIfInvalid
+- (id) removeIfInvalid
 {
-	int         i, j;
+	int  i, j;
 
 	for (i = 0; i < numfaces; i++) {
 		if (faces[i].w)
 			continue;
 		for (j = i + 1; j < numfaces; j++)
 			faces[j - 1] = faces[j];
+
 		i--;
 		numfaces--;
 	}
-	for (; i < MAX_FACES; i++)
+	for ( ; i < MAX_FACES; i++)
 		faces[i].w = NULL;
 
 	if (numfaces < 4) {
@@ -854,29 +845,35 @@ containsPoint
 
 ===========
 */
--(BOOL) containsPoint:(vec3_t) pt
+- (BOOL) containsPoint: (vec3_t)pt
 {
-	int         i;
+	int  i;
 
-	for (i = 0; i < numfaces; i++)
+	for (i = 0; i < numfaces; i++) {
 		if (DotProduct (faces[i].plane.normal, pt) >= faces[i].plane.dist)
 			return NO;
+	}
 	return YES;
 }
 
 /*
 ===========
-clipRay
+clipRay::::::
 
 ===========
 */
--clipRay: (vec3_t) p1: (vec3_t) p2: (vec3_t) frontpoint: (int *) f_face: (vec3_t) backpoint:(int *) b_face
+- (id) clipRay: (vec3_t)p1
+   : (vec3_t)p2
+   : (vec3_t)frontpoint
+   : (int *)f_face
+   : (vec3_t)backpoint
+   : (int *)b_face
 {
-	int         frontface, backface;
-	int         i, j;
-	face_t     *f;
-	float       d1, d2, m;
-	float      *start;
+	int     frontface, backface;
+	int     i, j;
+	face_t  *f;
+	float   d1, d2, m;
+	float   *start;
 
 	start = p1;
 
@@ -886,27 +883,28 @@ clipRay
 	f = faces;
 	for (i = 0; i < numfaces; i++, f++) {
 		if (!f->w)
-			continue;					// clipped off plane
+			continue;               // clipped off plane
 		d1 = DotProduct (p1, f->plane.normal) - f->plane.dist;
 		d2 = DotProduct (p2, f->plane.normal) - f->plane.dist;
-		if (d1 >= 0 && d2 >= 0) {		// the entire ray is in front of the
-										// polytope
+		if (d1 >= 0 && d2 >= 0) {   // the whole ray is in front of the polytope
 			*f_face = -1;
 			*b_face = -1;
 			return self;
 		}
-		if (d1 > 0 && d2 < 0) {			// new front plane
+		if (d1 > 0 && d2 < 0) {     // new front plane
 			frontface = i;
 			m = d1 / (d1 - d2);
 			for (j = 0; j < 3; j++)
 				frontpoint[j] = p1[j] + m * (p2[j] - p1[j]);
+
 			p1 = frontpoint;
 		}
-		if (d1 < 0 && d2 > 0) {			// new back plane
+		if (d1 < 0 && d2 > 0) {     // new back plane
 			backface = i;
 			m = d1 / (d1 - d2);
 			for (j = 0; j < 3; j++)
 				backpoint[j] = p1[j] + m * (p2[j] - p1[j]);
+
 			p2 = backpoint;
 		}
 	}
@@ -917,34 +915,34 @@ clipRay
 	return self;
 }
 
-
 /*
 ===========
-hitByRay
+hitByRay::::
 
 ===========
 */
-- (void) hitByRay: (vec3_t) p1: (vec3_t) p2: (float *) time:(int *) face
+- (void) hitByRay: (vec3_t)p1
+   : (vec3_t)p2
+   : (float *)time
+   : (int *)face
 {
-	vec3_t      frontpoint, backpoint, dir;
-	int         frontface, backface;
+	vec3_t  frontpoint, backpoint, dir;
+	int     frontface, backface;
 
 	if (regioned) {
 		*time = -1;
 		*face = -1;
 	}
 
-	[self clipRay: p1: p2: frontpoint: &frontface: backpoint:&backface];
+	[self clipRay: p1 : p2 : frontpoint : &frontface : backpoint : &backface];
 
-	if (frontface == -2 && backface == -2) {	// entire ray is inside the
-												// brush, select first face
+	if (frontface == -2 && backface == -2) {
+		// entire ray is inside the brush, select first face
 		*time = 0;
 		*face = 0;
 	}
 
-
-	if (frontface < 0) {				// ray started inside the polytope,
-										// don't select it
+	if (frontface < 0) {    // ray started inside the polytope, don't select it
 		*time = -1;
 		*face = -1;
 	}
@@ -960,7 +958,6 @@ hitByRay
 	*face = frontface;
 }
 
-
 /*
 ==============================================================================
 
@@ -969,20 +966,20 @@ DRAWING ROUTINES
 ==============================================================================
 */
 
-BOOL        fakebrush;
+BOOL  fakebrush;
 
--drawConnections
+- (id) drawConnections
 {
 	id          obj;
 	int         c, i;
 	vec3_t      dest, origin;
 	vec3_t      mid;
 	vec3_t      forward, right;
-	const char *targname;
+	const char  *targname;
 	vec3_t      min, max, temp;
-	const char *targ;
+	const char  *targ;
 
-	targ =[parent valueForQKey:"target"];
+	targ = [parent valueForQKey: "target"];
 
 	if (!targ || !targ[0])
 		return self;
@@ -990,14 +987,14 @@ BOOL        fakebrush;
 	origin[0] = (bmins[0] + bmaxs[0]) / 2;
 	origin[1] = (bmins[1] + bmaxs[1]) / 2;
 
-	c =[map_i count];
+	c = [map_i count];
 	for (i = 0; i < c; i++) {
-		obj =[map_i objectAtIndex:i];
-		targname =[obj valueForQKey:"targetname"];
+		obj = [map_i objectAtIndex: i];
+		targname = [obj valueForQKey: "targetname"];
 		if (strcmp (targ, targname))
 			continue;
 
-		[[obj objectAtIndex: 0] getMins: min maxs:max];
+		[[obj objectAtIndex: 0] getMins: min maxs: max];
 		dest[0] = (min[0] + max[0]) / 2;
 		dest[1] = (min[1] + max[1]) / 2;
 
@@ -1010,7 +1007,6 @@ BOOL        fakebrush;
 
 		if (!forward[0] && !forward[1])
 			continue;
-
 		VectorNormalize (forward);
 		forward[0] = 8 * forward[0];
 		forward[1] = 8 * forward[1];
@@ -1027,28 +1023,27 @@ BOOL        fakebrush;
 		temp[0] = mid[0] - right[0] - forward[0];
 		temp[1] = mid[1] - right[1] - forward[1];
 		XYlineto (temp);
-
 	}
 
 	return self;
 }
 
--(BOOL) fakeBrush:(SEL) call
+- (BOOL) fakeBrush: (SEL)call
 {
-	id          copy;
-	face_t      face;
+	id      copy;
+	face_t  face;
 
 	if (!selected || fakebrush)
 		return NO;
 
-	if (![clipper_i getFace:&face])
+	if (![clipper_i getFace: &face])
 		return NO;
 
 	fakebrush = YES;
-	copy =[self copy];
-	copy =[copy addFace:&face];
+	copy = [self copy];
+	copy = [copy addFace: &face];
 	if (copy) {
-		[copy performSelector:call];
+		[copy performSelector: call];
 		[copy dealloc];
 	}
 	fakebrush = NO;
@@ -1063,45 +1058,45 @@ XYDrawSelf
 - (void) XYDrawSelf
 {
 	int         i, j;
-	winding_t  *w;
+	winding_t   *w;
 	vec3_t      mid, end, s1, s2;
-	const char *val;
+	const char  *val;
 	float       ang;
 	id          worldent, currentent;
 	BOOL        keybrush;
 
-	if ([self fakeBrush:@selector (XYDrawSelf)])
+	if ([self fakeBrush: @selector (XYDrawSelf)])
 		return;
 
-	[xyview_i addToScrollRange: bmins[0]:bmins[1]];
-	[xyview_i addToScrollRange: bmaxs[0]:bmaxs[1]];
+	[xyview_i addToScrollRange: bmins[0] : bmins[1]];
+	[xyview_i addToScrollRange: bmaxs[0] : bmaxs[1]];
 
-	worldent =[map_i objectAtIndex:0];
-	currentent =[map_i currentEntity];
+	worldent = [map_i objectAtIndex: 0];
+	currentent = [map_i currentEntity];
 
-	if (parent != worldent && self ==[parent objectAtIndex:0])
+	if (parent != worldent && self == [parent objectAtIndex: 0])
 		keybrush = YES;
 	else
 		keybrush = NO;
 
 	if (parent != worldent && worldent == currentent)
 		linecolor (entitycolor[0], entitycolor[1], entitycolor[2]);
-	else if (selected)
-		linecolor (1, 0, 0);			// selected
-	else if (parent == currentent)
-		linecolor (0, 0, 0);			// unselected, but in same entity
-	else
-		linecolor (0, 0.5, 0);			// other entity green
+	else if (selected)              // selected
+		linecolor (1, 0, 0);
+	else if (parent == currentent)  // unselected, but in same entity
+		linecolor (0, 0, 0);
+	else                            // other entity green
+		linecolor (0, 0.5, 0);
 
 	if (keybrush)
-		[self drawConnections];			// target line
+		[self drawConnections];     // target line
 
 	if (!selected &&
-		(bmaxs[0] < xy_draw_rect.origin.x
-		 || bmaxs[1] < xy_draw_rect.origin.y
-		 || bmins[0] > xy_draw_rect.origin.x + xy_draw_rect.size.width
-		 || bmins[1] > xy_draw_rect.origin.y + xy_draw_rect.size.height))
-		return;					// off view, don't bother
+	    (bmaxs[0] < xy_draw_rect.origin.x
+	     || bmaxs[1] < xy_draw_rect.origin.y
+	     || bmins[0] > xy_draw_rect.origin.x + xy_draw_rect.size.width
+	     || bmins[1] > xy_draw_rect.origin.y + xy_draw_rect.size.height))
+		return;                     // off view, don't bother
 
 	for (i = 0; i < numfaces; i++) {
 		w = faces[i].w;
@@ -1116,12 +1111,10 @@ XYDrawSelf
 	}
 
 	if (keybrush) {
-// angle arrow
-		val =[parent valueForQKey:"angle"];
+		val = [parent valueForQKey: "angle"];   // angle arrow
 		if (val && val[0]) {
 			ang = atof (val) * M_PI / 180;
-			if (ang > 0)				// negative values are up/down flags
-			{
+			if (ang > 0) {          // negative values are up/down flags
 				mid[0] = (bmins[0] + bmaxs[0]) / 2;
 				mid[1] = (bmins[1] + bmaxs[1]) / 2;
 
@@ -1158,13 +1151,13 @@ ZDrawSelf
 	vec3_t      p1, p2;
 	vec3_t      frontpoint, backpoint;
 	int         frontface, backface;
-	qtexture_t *q;
+	qtexture_t  *q;
 
-	if ([self fakeBrush:@selector (ZDrawSelf)])
+	if ([self fakeBrush: @selector (ZDrawSelf)])
 		return;
 
-	[zview_i addToHeightRange:bmins[2]];
-	[zview_i addToHeightRange:bmaxs[2]];
+	[zview_i addToHeightRange: bmins[2]];
+	[zview_i addToHeightRange: bmaxs[2]];
 
 	if (selected) {
 		[[NSColor redColor] set];
@@ -1174,16 +1167,17 @@ ZDrawSelf
 	[zview_i getPoint: &p];
 	p1[0] = p.x;
 	p1[1] = p.y;
-	for (i = 0; i < 2; i++)
+	for (i = 0; i < 2; i++) {
 		if (bmins[i] >= p1[i] || bmaxs[i] <= p1[i])
 			return;
+	}
 
 	p1[2] = 4096;
 	p2[0] = p1[0];
 	p2[1] = p1[1];
 	p2[2] = -4096;
 
-	[self clipRay: p1: p2: frontpoint: &frontface: backpoint:&backface];
+	[self clipRay: p1 : p2 : frontpoint : &frontface : backpoint : &backface];
 
 	if (frontface == -1 || backface == -1)
 		return;
@@ -1191,14 +1185,14 @@ ZDrawSelf
 	q = TEX_ForName (faces[frontface].texture.texture);
 
 	[[NSColor colorWithCalibratedRed: q->flatcolor.chan[0] / 255.0
-							   green: q->flatcolor.chan[1] / 255.0
-								blue: q->flatcolor.chan[2] / 255.0
-							   alpha: 1.0] set];
+	                           green: q->flatcolor.chan[1] / 255.0
+	                            blue: q->flatcolor.chan[2] / 255.0
+	                           alpha: 1.0] set];
 	NSRectFill (NSMakeRect (-8, backpoint[2],
-							17, frontpoint[2] - backpoint[2] + 1));
+	                        17, frontpoint[2] - backpoint[2] + 1));
 	[[NSColor blackColor] set];
 	NSFrameRect (NSMakeRect (-12, backpoint[2],
-							 25, frontpoint[2] - backpoint[2] + 1));
+	                         25, frontpoint[2] - backpoint[2] + 1));
 
 	return;
 }
@@ -1211,20 +1205,20 @@ CameraDrawSelf
 - (void) CameraDrawSelf
 {
 	int         i, j;
-	winding_t  *w;
+	winding_t   *w;
 	id          worldent, currentent;
 
-	if ([self fakeBrush:@selector (CameraDrawSelf)])
+	if ([self fakeBrush: @selector (CameraDrawSelf)])
 		return;
 
-	worldent =[map_i objectAtIndex:0];
-	currentent =[map_i currentEntity];
+	worldent = [map_i objectAtIndex: 0];
+	currentent = [map_i currentEntity];
 
 	if (parent != worldent && worldent == currentent)
 		linecolor (entitycolor[0], entitycolor[1], entitycolor[2]);
 	else if (selected)
 		linecolor (1, 0, 0);
-	else if (parent ==[map_i currentEntity])
+	else if (parent == [map_i currentEntity])
 		linecolor (0, 0, 0);
 	else
 		linecolor (0, 0.5, 0);
@@ -1240,7 +1234,6 @@ CameraDrawSelf
 	return;
 }
 
-
 /*
 ===========
 XYRenderSelf
@@ -1248,9 +1241,9 @@ XYRenderSelf
 */
 - (void) XYRenderSelf
 {
-	int         i;
+	int  i;
 
-	if ([self fakeBrush:@selector (XYRenderSelf)])
+	if ([self fakeBrush: @selector (XYRenderSelf)])
 		return;
 
 	for (i = 0; i < numfaces; i++)
@@ -1264,16 +1257,17 @@ XYRenderSelf
 CameraRenderSelf
 ===========
 */
--(void)CameraRenderSelf
+- (void) CameraRenderSelf
 {
-	int         i;
-	BOOL        olddraw;
-	extern qtexture_t badtex;
-	pixel32_t   p;
+	int     i;
+	BOOL    olddraw;
+	extern qtexture_t   badtex;
+	pixel32_t           p;
 
-	if ([self fakeBrush:@selector (CameraRenderSelf)])
+	if ([self fakeBrush: @selector (CameraRenderSelf)])
 		return;
-// hack to draw entity boxes as single flat color
+
+	// hack to draw entity boxes as single flat color
 	if (![parent modifiable]) {
 		olddraw = r_drawflat;
 		r_drawflat = YES;
@@ -1305,33 +1299,33 @@ SINGLE BRUSH ACTIONS
 ==============================================================================
 */
 
-face_t     *dragface, *dragface2;
+face_t  *dragface, *dragface2;
 
-int         numcontrolpoints;
-float      *controlpoints[MAX_FACES * 3];
+int     numcontrolpoints;
+float   *controlpoints[MAX_FACES * 3];
 
--(BOOL) checkModifiable
+- (BOOL) checkModifiable
 {
 //  int     i;
 
 	if ([parent modifiable])
 		return YES;
 
-// don't stretch spawned entities, move all points
+	// don't stretch spawned entities, move all points
 #if 0
 	numcontrolpoints = numfaces * 3;
 
 	for (i = 0; i < numcontrolpoints; i++)
 		controlpoints[i] = faces[i / 3].planepts[i % 3];
 #endif
+
 	return NO;
 }
 
-- (void) getZdragface:(vec3_t) dragpoint
+- (void) getZdragface: (vec3_t)dragpoint
 {
-	int         i, j;
-	float       d;
-
+	int     i, j;
+	float   d;
 
 	if (![self checkModifiable])
 		return;
@@ -1341,6 +1335,7 @@ float      *controlpoints[MAX_FACES * 3];
 	for (i = 0; i < numfaces; i++) {
 		if (!faces[i].w)
 			continue;
+
 		if (faces[i].plane.normal[2] == 1)
 			d = dragpoint[2] - faces[i].plane.dist;
 		else if (faces[i].plane.normal[2] == -1)
@@ -1358,10 +1353,10 @@ float      *controlpoints[MAX_FACES * 3];
 	}
 }
 
-- (void) getXYdragface:(vec3_t) dragpoint
+- (void) getXYdragface: (vec3_t)dragpoint
 {
-	int         i, j;
-	float       d;
+	int     i, j;
+	float   d;
 
 	numcontrolpoints = 0;
 
@@ -1371,6 +1366,7 @@ float      *controlpoints[MAX_FACES * 3];
 	for (i = 0; i < numfaces; i++) {
 		if (!faces[i].w)
 			continue;
+
 		if (faces[i].plane.normal[2])
 			continue;
 
@@ -1385,44 +1381,42 @@ float      *controlpoints[MAX_FACES * 3];
 	}
 }
 
-- (void) getXYShearPoints:(vec3_t) dragpoint
+- (void) getXYShearPoints: (vec3_t)dragpoint
 {
 	int         i, j, k;
 	int         facectl;
 	float       d;
 	int         numdragplanes;
 	BOOL        dragplane[MAX_FACES];
-	winding_t  *w;
-	face_t     *f;
+	winding_t   *w;
+	face_t      *f;
 	BOOL        onplane[MAX_POINTS_ON_WINDING];
-
 
 	if (![self checkModifiable])
 		return;
-
 	numcontrolpoints = 0;
 	numdragplanes = 0;
 	for (i = 0; i < numfaces; i++) {
 		dragplane[i] = NO;
 		if (!faces[i].w)
 			continue;
-//      if (faces[i].plane.normal[2])
-//          continue;
+//		if (faces[i].plane.normal[2])
+//			continue;
 
 		d = DotProduct (faces[i].plane.normal, dragpoint) - faces[i].plane.dist;
 		if (d <= -ON_EPSILON)
 			continue;
-
 		dragplane[i] = YES;
 		numdragplanes++;
 	}
 
-// find faces that just share an edge with a drag plane
+	// find faces that just share an edge with a drag plane
 	for (i = 0; i < numfaces; i++) {
 		f = &faces[i];
 		w = f->w;
 		if (!w)
 			continue;
+
 		if (dragplane[i] && numdragplanes == 1) {
 			for (j = 0; j < 3; j++) {
 				controlpoints[numcontrolpoints] = faces[i].planepts[j];
@@ -1430,6 +1424,7 @@ float      *controlpoints[MAX_FACES * 3];
 			}
 			continue;
 		}
+
 		if (!dragplane[i] && numdragplanes > 1)
 			continue;
 
@@ -1442,7 +1437,7 @@ float      *controlpoints[MAX_FACES * 3];
 				if (k == i)
 					continue;
 				d = DotProduct (w->points[j], faces[k].plane.normal)
-					- faces[k].plane.dist;
+				    - faces[k].plane.dist;
 				if (fabs (d) > ON_EPSILON)
 					continue;
 				onplane[j] = YES;
@@ -1450,6 +1445,7 @@ float      *controlpoints[MAX_FACES * 3];
 				break;
 			}
 		}
+
 		if (facectl == 0)
 			continue;
 
@@ -1463,7 +1459,6 @@ float      *controlpoints[MAX_FACES * 3];
 				continue;
 			if (facectl == 3 && !onplane[(j + 2) % w->numpoints])
 				continue;
-
 			VectorCopy (w->points[j], f->planepts[k]);
 			controlpoints[numcontrolpoints] = f->planepts[k];
 			numcontrolpoints++;
@@ -1484,17 +1479,19 @@ float      *controlpoints[MAX_FACES * 3];
 			break;
 		}
 
-		for (; j < w->numpoints && k != 3; j++)
+		for ( ; j < w->numpoints && k != 3; j++) {
 			if (!onplane[j]) {
 				VectorCopy (w->points[j], f->planepts[k]);
 				k++;
 			}
+		}
 
-		for (j = 0; j < w->numpoints && k != 3; j++)
+		for (j = 0; j < w->numpoints && k != 3; j++) {
 			if (!onplane[j]) {
 				VectorCopy (w->points[j], f->planepts[k]);
 				k++;
 			}
+		}
 
 		if (k != 3) {
 //          Sys_Error ("getXYShearPoints: didn't get three points on plane");
@@ -1502,9 +1499,10 @@ float      *controlpoints[MAX_FACES * 3];
 			return;
 		}
 
-		for (j = 0; j < 3; j++)
+		for (j = 0; j < 3; j++) {
 			for (k = 0; k < 3; k++)
 				f->planepts[j][k] = rint (f->planepts[j][k]);
+		}
 	}
 }
 
@@ -1516,7 +1514,7 @@ MULTIPLE BRUSH ACTIONS
 ==============================================================================
 */
 
-vec3_t      region_min, region_max;
+vec3_t  region_min, region_max;
 
 /*
 ===========
@@ -1525,22 +1523,22 @@ newRegion
 Set the regioned flag based on if the object is containted in region_min/max
 ===========
 */
--newRegion
+- (id) newRegion
 {
 	int         i;
-	const char *name;
+	const char  *name;
 
 // filter away entities
-	if (parent !=[map_i objectAtIndex:0]) {
+	if (parent != [map_i objectAtIndex: 0]) {
 		if (filter_entities) {
 			regioned = YES;
 			return self;
 		}
 
-		name =[parent valueForQKey:"classname"];
+		name = [parent valueForQKey: "classname"];
 
 		if ((filter_light && !strncmp (name, "light", 5))
-			|| (filter_path && !strncmp (name, "path", 4))) {
+		    || (filter_path && !strncmp (name, "path", 4))) {
 			regioned = YES;
 			return self;
 		}
@@ -1572,91 +1570,92 @@ Set the regioned flag based on if the object is containted in region_min/max
 	return self;
 }
 
-vec3_t      select_min, select_max;
+vec3_t  select_min, select_max;
 
 - (void) selectPartial
 {
-	int         i;
+	int  i;
 
-	for (i = 0; i < 3; i++)
+	for (i = 0; i < 3; i++) {
 		if (select_min[i] >= bmaxs[i] || select_max[i] <= bmins[i])
 			return;
+	}
 	selected = YES;
 }
 
--(void)selectComplete
+- (void) selectComplete
 {
-	int         i;
+	int  i;
 
-	for (i = 0; i < 3; i++)
+	for (i = 0; i < 3; i++) {
 		if (select_min[i] > bmins[i] || select_max[i] < bmaxs[i])
 			return;
+	}
 	selected = YES;
 }
 
-
--(void)regionPartial
+- (void) regionPartial
 {
-	int         i;
+	int  i;
 
-	for (i = 0; i < 3; i++)
+	for (i = 0; i < 3; i++) {
 		if (select_min[i] >= bmaxs[i] || select_max[i] <= bmins[i])
-			return self;
+			return;
+	}
 	selected = YES;
 }
 
--(void)regionComplete
+- (void) regionComplete
 {
-	int         i;
+	int  i;
 
-	for (i = 0; i < 3; i++)
+	for (i = 0; i < 3; i++) {
 		if (select_min[i] > bmins[i] || select_max[i] < bmaxs[i])
 			return;
+	}
 	selected = YES;
 }
 
-
-id          sb_newowner;
+id  sb_newowner;
 
 - (void) moveToEntity
 {
-	id          eclass;
-	float      *c;
+	id      eclass;
+	float   *c;
 
-	[parent removeObject:self];
+	[parent removeObject: self];
 	parent = sb_newowner;
 
 // hack to allow them to be copied to another map
 	if ([parent respondsToSelector: @selector (valueForQKey:)]) {
-		eclass =[entity_classes_i classForName: [parent valueForQKey:"classname"]];
-		c =[eclass drawColor];
-		[self setEntityColor:c];
+		eclass = [entity_classes_i classForName: [parent valueForQKey: "classname"]];
+		c = [eclass drawColor];
+		[self setEntityColor: c];
 	}
 
-	[parent addObject:self];
+	[parent addObject: self];
 }
 
-vec3_t      sb_translate;
+vec3_t  sb_translate;
 
 - (void) translate
 {
-	int         i, j;
+	int  i, j;
 
 // move the planes
-	for (i = 0; i < numfaces; i++)
-		for (j = 0; j < 3; j++) {
-			VectorAdd (faces[i].planepts[j], sb_translate,
-						 faces[i].planepts[j]);
-		}
+	for (i = 0; i < numfaces; i++) {
+		for (j = 0; j < 3; j++)
+			VectorAdd (faces[i].planepts[j], sb_translate, faces[i].planepts[j]);
+	}
 
 	[self calcWindings];
 }
 
-vec3_t      sb_mins, sb_maxs;
+vec3_t  sb_mins, sb_maxs;
 
 - (void) addToBBox
 {
-	int         k;
+	int  k;
 
 	if (numfaces < 4)
 		return;
@@ -1669,9 +1668,9 @@ vec3_t      sb_mins, sb_maxs;
 	}
 }
 
--(void)flushTextures
-{						// call when texture palette changes
-	int         i;
+- (void) flushTextures
+{                                   // call when texture palette changes
+	int  i;
 
 	for (i = 0; i < MAX_FACES; i++)
 		faces[i].qtexture = NULL;
@@ -1679,46 +1678,45 @@ vec3_t      sb_mins, sb_maxs;
 	[self calcWindings];
 }
 
--(void)select
+- (void) select
 {
-	[map_i setCurrentEntity:parent];
+	[map_i setCurrentEntity: parent];
 	selected = YES;
 }
 
--(void)deselect
+- (void) deselect
 {
 	selected = NO;
 
-// the last selected brush determines 
+// the last selected brush determines
 	if (invalid)
 		printf ("WARNING: deselected invalid brush\n");
-	[map_i setCurrentMinZ:bmins[2]];
-	[map_i setCurrentMaxZ:bmaxs[2]];
+	[map_i setCurrentMinZ: bmins[2]];
+	[map_i setCurrentMaxZ: bmaxs[2]];
 }
 
--(void)remove
+- (void) remove
 {
-// the last selected brush determines 
+// the last selected brush determines
 	if (!invalid) {
-		[map_i setCurrentMinZ:bmins[2]];
-		[map_i setCurrentMaxZ:bmaxs[2]];
+		[map_i setCurrentMinZ: bmins[2]];
+		[map_i setCurrentMaxZ: bmaxs[2]];
 	}
 
-	[parent removeObject:self];
+	[parent removeObject: self];
 	[self release];
 }
 
-
-vec3_t      sel_x, sel_y, sel_z;
-vec3_t      sel_org;
+vec3_t  sel_x, sel_y, sel_z;
+vec3_t  sel_org;
 
 - (void) transform
 {
-	int         i, j;
-	vec3_t      old;
-	float      *p;
+	int     i, j;
+	vec3_t  old;
+	float   *p;
 
-	for (i = 0; i < numfaces; i++)
+	for (i = 0; i < numfaces; i++) {
 		for (j = 0; j < 3; j++) {
 			p = faces[i].planepts[j];
 			VectorCopy (p, old);
@@ -1728,15 +1726,16 @@ vec3_t      sel_org;
 			p[2] = DotProduct (old, sel_z);
 			VectorAdd (p, sel_org, p);
 		}
+	}
 
 	[self calcWindings];
 }
 
--(void)flipNormals						// used after an inside-out transform
-										// (flip x/y/z)
+- (void) flipNormals                // used after an inside-out transform
+                                    // (flip x/y/z)
 {
-	int         i;
-	vec3_t      temp;
+	int     i;
+	vec3_t  temp;
 
 	for (i = 0; i < numfaces; i++) {
 		VectorCopy (faces[i].planepts[0], temp);
@@ -1748,41 +1747,40 @@ vec3_t      sel_org;
 
 - (void) carveByClipper
 {
-	face_t      face;
+	face_t  face;
 
-	if (![clipper_i getFace:&face])
+	if (![clipper_i getFace: &face])
 		return;
 
-	[self addFace:&face];
+	[self addFace: &face];
 }
 
 - (void) takeCurrentTexture
 {
-	texturedef_t td;
+	texturedef_t  td;
 
-	[texturepalette_i getTextureDef:&td];
-	[self setTexturedef:&td];
+	[texturepalette_i getTextureDef: &td];
+	[self setTexturedef: &td];
 }
 
-
-float       sb_floor_dir, sb_floor_dist;
+float  sb_floor_dir, sb_floor_dist;
 
 - (void) feetToFloor
 {
-	float       oldz;
-	vec3_t      p1, p2;
-	int         frontface, backface;
-	vec3_t      frontpoint, backpoint;
-	float       dist;
+	float   oldz;
+	vec3_t  p1, p2;
+	int     frontface, backface;
+	vec3_t  frontpoint, backpoint;
+	float   dist;
 
-	[cameraview_i getOrigin:p1];
+	[cameraview_i getOrigin: p1];
 	VectorCopy (p1, p2);
 	oldz = p1[2] - 48;
 
 	p1[2] = 4096;
 	p2[2] = -4096;
 
-	[self clipRay: p1: p2: frontpoint: &frontface: backpoint:&backface];
+	[self clipRay: p1 : p2 : frontpoint : &frontface : backpoint : &backface];
 	if (frontface == -1)
 		return;
 
@@ -1791,12 +1789,10 @@ float       sb_floor_dir, sb_floor_dist;
 	if (sb_floor_dir == 1) {
 		if (dist > 0 && dist < sb_floor_dist)
 			sb_floor_dist = dist;
-	} else {
-		if (dist < 0 && dist > sb_floor_dist)
+		else if (dist < 0 && dist > sb_floor_dist)
 			sb_floor_dist = dist;
 	}
 }
-
 
 /*
 ===============================================================================
@@ -1806,18 +1802,17 @@ BRUSH SUBTRACTION
 ===============================================================================
 */
 
-vec3_t      carvemin, carvemax;
-int         numcarvefaces;
-face_t     *carvefaces;
-id          carve_in, carve_out;
+vec3_t  carvemin, carvemax;
+int     numcarvefaces;
+face_t  *carvefaces;
+id      carve_in, carve_out;
 
 // returns the new brush formed after the addition of the given plane
 // nil is returned if it faced all of the original setbrush
--addFace:(face_t *) f
+- (id) addFace: (face_t *)f
 {
 	if (numfaces == MAX_FACES)
 		Sys_Error ("addFace: numfaces == MAX_FACES");
-
 	faces[numfaces] = *f;
 	faces[numfaces].texture = faces[0].texture;
 	faces[numfaces].qtexture = NULL;
@@ -1826,56 +1821,58 @@ id          carve_in, carve_out;
 	[self calcWindings];
 
 // remove any degenerate faces
-	return[self removeIfInvalid];
+	return [self removeIfInvalid];
 }
 
-- (void) clipByFace:(face_t *) fa
-          front:(id *)f
-           back:(id *) b
+- (void) clipByFace: (face_t *)fa
+   front: (id *)f
+   back: (id *)b
 {
-	id          front, back;
-	face_t      fb;
-	vec3_t      temp;
+	id      front, back;
+	face_t  fb;
+	vec3_t  temp;
 
 	fb = *fa;
 	VectorCopy (fb.planepts[0], temp);
 	VectorCopy (fb.planepts[2], fb.planepts[0]);
 	VectorCopy (temp, fb.planepts[2]);
 
-	front =[self copy];
-	back =[self copy];
+	front = [self copy];
+	back = [self copy];
 
-	*b =[back addFace:fa];
-	*f =[front addFace:&fb];
+	*b = [back addFace: fa];
+	*f = [front addFace: &fb];
 }
 
--carve
+- (id) carve
 {
-	int         i;
-	id          front, back;
+	int     i;
+	id      front, back;
 
 #if 0
 	if ((i = NSMallocCheck ()))
 		Sys_Error ("MallocCheck failure");
 #endif
 
-// check bboxes
-	for (i = 0; i < 3; i++)
+	// check bboxes
+	for (i = 0; i < 3; i++) {
 		if (bmins[i] >= carvemax[i] || bmaxs[i] <= carvemin[i]) {
-			[carve_out addObject:self];
+			[carve_out addObject: self];
 			return self;
 		}
-// carve by the planes
-	back = self;
-	for (i = 0; i < numcarvefaces; i++) {
-		[back clipByFace: &carvefaces[i] front: &front back:&back];
-		if (front)
-			[carve_out addObject:front];
-		if (!back)
-			return nil;					// nothing completely inside
 	}
 
-	[carve_in addObject:back];
+	// carve by the planes
+	back = self;
+	for (i = 0; i < numcarvefaces; i++) {
+		[back clipByFace: &carvefaces[i] front: &front back: &back];
+		if (front)
+			[carve_out addObject: front];
+		if (!back)
+			return nil;             // nothing completely inside
+	}
+
+	[carve_in addObject: back];
 	return self;
 }
 
@@ -1892,12 +1889,12 @@ setCarveVars
 	carvefaces = faces;
 }
 
--(int) getNumBrushFaces
+- (int) getNumBrushFaces
 {
 	return numfaces;
 }
 
--(face_t *) getBrushFace:(int) which
+- (face_t *) getBrushFace: (int)which
 {
 	return &faces[which];
 }

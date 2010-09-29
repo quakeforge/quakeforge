@@ -24,25 +24,25 @@ extern InspectorControl  *inspcontrol_i;
 {
 	IBOutlet NSView     *inspectorView_i;   // inspector view
 	IBOutlet NSView     *inspectorSubview_i; // inspector view's current subview
-	                                    // (gets replaced)
+	// (gets replaced)
 
-	id  contentList;                    // List of contentviews (corresponds to
-	                                    // insp_e enum order)
+	id  contentList;                // List of contentviews (corresponds to
+	                                // insp_e enum order)
 
-	id  windowList;                     // List of Windows (corresponds to
-	                                    // insp_e enum order)
+	id  windowList;                 // List of Windows (corresponds to
+	                                // insp_e enum order)
 
-	id  obj_textures_i;                 // TexturePalette object (for
-	                                    // delegating)
-	id  obj_genkeypair_i;               // GenKeyPair object
+	id  obj_textures_i;             // TexturePalette object (for
+	                                // delegating)
+	id  obj_genkeypair_i;           // GenKeyPair object
 
-	NSPopUpButton   *popUpButton_i;     // PopUpList title button
-	NSMatrix        *popUpMatrix_i;     // PopUpList matrix
-	NSMutableArray  *itemList;          // List of popUp buttons
+	NSPopUpButton   *popUpButton_i; // PopUpList title button
+	NSMatrix        *popUpMatrix_i; // PopUpList matrix
+	NSMutableArray  *itemList;      // List of popUp buttons
 
 	IBOutlet NSTextView  *helpView;
 
-	insp_e  currentInspectorType;       // keep track of current inspector
+	insp_e  currentInspectorType;   // keep track of current inspector
 
 	//
 	// Add id's here for new inspectors
@@ -65,7 +65,7 @@ extern InspectorControl  *inspcontrol_i;
 	IBOutlet id <NSMenuItem>    itemPrefs_i;    // preferences
 	IBOutlet id <NSMenuItem>    itemSettings_i; // project settings
 	IBOutlet id <NSMenuItem>    itemOutput_i;   // bsp output
-	IBOutlet id <NSMenuItem>    itemHelp_i;     // docs
+	IBOutlet id <NSMenuItem>    itemHelp_i; // docs
 }
 
 - (IBAction) changeInspector: (id)sender;

@@ -3,19 +3,19 @@
 
 #include <AppKit/AppKit.h>
 
-extern id   keypairview_i;
+extern id  keypairview_i;
 
-@interface KeypairView:NSView
+@interface KeypairView: NSView
 {
 }
 
--calcViewSize;
+- (id) calcViewSize;
 
-#define	SPACING		4
-#define	FONTSIZE	12
-#define	EXTRASPC	2
+#define SPACING     4
+#define FONTSIZE    12
+#define EXTRASPC    2
 
-#define	LINEHEIGHT	16
+#define LINEHEIGHT  16
 
 @end
 
