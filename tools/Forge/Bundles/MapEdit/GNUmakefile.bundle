@@ -1,3 +1,5 @@
+include GNUmakefile.find-makefiles
+
 include $(GNUSTEP_MAKEFILES)/common.make
 
 BUNDLE_NAME=		MapEdit
