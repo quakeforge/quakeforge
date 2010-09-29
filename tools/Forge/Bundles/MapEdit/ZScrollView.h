@@ -3,14 +3,15 @@
 
 #include <AppKit/AppKit.h>
 
-@interface ZScrollView:NSScrollView
+@interface ZScrollView: NSScrollView
 {
-	id          button1;
+	id  button1;
 }
 
--initWithFrame:(NSRect) frameRect   button1:b1;
+- (id) initWithFrame: (NSRect)frameRect
+   button1: b1;
 
--tile;
+- (id) tile;
 
 @end
 #endif // ZScrollView_h

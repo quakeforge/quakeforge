@@ -1,4 +1,3 @@
-
 #include "DictList.h"
 #include "Dict.h"
 
@@ -9,16 +8,16 @@
 //
 //  Read in variable # of objects from FILE *
 //
-- initListFromFile:(FILE *) fp
+- (id) initListFromFile: (FILE *)fp
 {
-	id          d;
+	id  d;
 
 	self = [super init];
 	array = [[NSMutableArray alloc] init];
 	do {
-		d =[(Dict *)[Dict alloc] initFromFile:fp];
+		d = [(Dict *)[Dict alloc] initFromFile: fp];
 		if (d != NULL)
-			[self addObject:d];
+			[self addObject: d];
 	} while (d != NULL);
 	[d release];
 
@@ -28,21 +27,20 @@
 //
 //  Write out list file
 //
--writeListFile:(const char *) filename
+- (id) writeListFile: (const char *)filename
 {
-	FILE       *fp;
+	FILE        *fp;
 	NSUInteger  i;
 	id          obj;
 
 	fp = fopen (filename, "w+t");
 	if (fp == NULL)
 		return NULL;
-
 	fprintf (fp, "// Object List written by QuakeEd\n");
 
-	for (i = 0; i <[self count]; i++) {
-		obj =[self objectAtIndex:i];
-		[obj writeBlockTo:fp];
+	for (i = 0; i < [self count]; i++) {
+		obj = [self objectAtIndex: i];
+		[obj writeBlockTo: fp];
 	}
 	fclose (fp);
 
@@ -52,15 +50,15 @@
 //
 //  Find the keyword in all the Dict objects
 //
--(id) findDictKeyword:(const char *) key
+- (id) findDictKeyword: (const char *)key
 {
 	NSUInteger  i;
-	dict_t     *d;
+	dict_t      *d;
 	id          dict;
 
-	for (i = 0; i <[self count]; i++) {
-		dict =[self objectAtIndex:i];
-		d =[(Dict *) dict findKeyword:key];
+	for (i = 0; i < [self count]; i++) {
+		dict = [self objectAtIndex: i];
+		d = [(Dict *) dict findKeyword: key];
 		if (d != NULL)
 			return dict;
 	}

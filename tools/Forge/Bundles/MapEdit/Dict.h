@@ -5,39 +5,39 @@
 
 #include "Storage.h"
 
-typedef struct {
-	char       *key;
-	char       *value;
+typedef  struct {
+	char    *key;
+	char    *value;
 } dict_t;
 
-@interface Dict:Storage
+@interface Dict: Storage
 {
 }
 
--initFromFile:(FILE *) fp;
+- (id) initFromFile: (FILE *)fp;
 
--(id) parseMultipleFrom:(const char *) value;
--(int) getValueUnits:(const char *) key;
--delString:(const char *)string fromValue:(const char *) key;
+- (id) parseMultipleFrom: (const char *)value;
+- (int) getValueUnits: (const char *)key;
+- (id) delString: (const char *)string fromValue: (const char *)key;
 
--addString:(const char *)string toValue:(const char *) key;
+- (id) addString: (const char *)string toValue: (const char *)key;
 
--(char *) convertListToString:(id) list;
-- (const char *) getStringFor:(const char *) name;
--removeKeyword:(const char *) key;
--(unsigned int) getValueFor:(const char *) name;
--changeStringFor:(const char *)key to:(const char *) value;
+- (char *) convertListToString: (id)list;
+- (const char *) getStringFor: (const char *)name;
+- (id) removeKeyword: (const char *)key;
+- (unsigned int) getValueFor: (const char *)name;
+- (id) changeStringFor: (const char *)key to: (const char *)value;
 
--(dict_t *) findKeyword:(const char *) key;
+- (dict_t *) findKeyword: (const char *)key;
 
--writeBlockTo:(FILE *) fp;
--writeFile:(const char *) path;
+- (id) writeBlockTo: (FILE *)fp;
+- (id) writeFile: (const char *)path;
 
 // INTERNAL
--init;
--(id) parseBraceBlock:(FILE *) fp;
--setupMultiple:(const char *) value;
--(char *) getNextParameter;
+- (id) init;
+- (id) parseBraceBlock: (FILE *)fp;
+- (id) setupMultiple: (const char *)value;
+- (char *) getNextParameter;
 
 @end
 

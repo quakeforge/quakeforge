@@ -4,19 +4,18 @@
 
 #include "QuakeEd.h"
 
-@interface QuakeEdApp:NSApplication
--(void)sendEvent:(NSEvent *) evt;
+@interface QuakeEdApp: NSApplication
+- (void) sendEvent: (NSEvent *)evt;
 @end
 
 @implementation QuakeEdApp
 
--(void)sendEvent:(NSEvent *) evt;
+- (void) sendEvent: (NSEvent *)evt;
 {
-	if ([evt type] == NSApplicationDefined) {
+	if ([evt type] == NSApplicationDefined)
 		[quakeed_i applicationDefined: evt];
-	} else {
-		[super sendEvent:evt];
-	}
+	else
+		[super sendEvent: evt];
 }
 
 @end

@@ -14,48 +14,47 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 
 @implementation TextureView
 
--init
+- (id) init
 {
 	deselectIndex = -1;
 	return self;
 }
 
--setParent:(id) from
+- (id) setParent: (id)from
 {
 	parent_i = from;
 	return self;
 }
 
--(BOOL) acceptsFirstMouse
+- (BOOL) acceptsFirstMouse
 {
 	return YES;
 }
 
--drawRect: (NSRect) rects
+- (id) drawRect: (NSRect)rects
 {
 	int         i;
 	int         max;
 	id          list_i;
-	texpal_t   *t;
+	texpal_t    *t;
 	int         x;
 	int         y;
 	NSPoint     p;
 	NSRect      r;
 	int         selected;
-	NSMutableDictionary *attribs = [NSMutableDictionary dictionary];
+	NSMutableDictionary  *attribs = [NSMutableDictionary dictionary];
 
-	selected =[parent_i getSelectedTexture];
-	list_i =[parent_i getList];
+	selected = [parent_i getSelectedTexture];
+	list_i = [parent_i getList];
 	[[NSFont systemFontOfSize: FONTSIZE] set];
 
 	[[NSColor lightGrayColor] set];
 	NSRectFill (rects);
 
-	if (!list_i)						// WADfile didn't init
+	if (!list_i)                    // WADfile didn't init
 		return self;
-
 	if (deselectIndex != -1) {
-		t =[list_i elementAt:deselectIndex];
+		t = [list_i elementAt: deselectIndex];
 		r = t->r;
 		r.origin.x -= TEX_INDENT;
 		r.origin.y -= TEX_INDENT;
@@ -71,15 +70,15 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 		x = t->r.origin.x;
 		y = t->r.origin.y + 7;
 		[[NSString stringWithCString: t->name]
-			drawAtPoint: NSMakePoint (x, y) withAttributes: attribs];
+		 drawAtPoint: NSMakePoint (x, y) withAttributes: attribs];
 		deselectIndex = -1;
 	}
 
-	max =[list_i count];
+	max = [list_i count];
 	[[NSColor blackColor] set];
 
 	for (i = 0; i < max; i++) {
-		t =[list_i elementAt:i];
+		t = [list_i elementAt: i];
 		r = t->r;
 		r.origin.x -= TEX_INDENT / 2;
 		r.size.width += TEX_INDENT;
@@ -89,7 +88,7 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 				[[NSColor whiteColor] set];
 				NSRectFill (r);
 				[[NSColor redColor] set];
-				NSFrameRect(r);
+				NSFrameRect (r);
 				[[NSColor blackColor] set];
 			}
 
@@ -99,41 +98,41 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 			x = t->r.origin.x;
 			y = t->r.origin.y + 7;
 			[[NSString stringWithCString: t->name]
-				drawAtPoint: NSMakePoint (x, y) withAttributes: attribs];
+			 drawAtPoint: NSMakePoint (x, y) withAttributes: attribs];
 		}
 	}
 	return self;
 }
 
--deselect
+- (id) deselect
 {
-	deselectIndex =[parent_i getSelectedTexture];
+	deselectIndex = [parent_i getSelectedTexture];
 	return self;
 }
 
--mouseDown:(NSEvent *) theEvent
+- (id) mouseDown: (NSEvent *)theEvent
 {
 	NSPoint     loc;
 	int         i;
 	int         max;
 
 	// int oldwindowmask;
-	texpal_t   *t;
+	texpal_t    *t;
 	id          list;
 	NSRect      r;
 
 	// oldwindowmask = [window addToEventMask:NSLeftMouseDraggedMask];
-	loc =[theEvent locationInWindow];
-	[self convertPoint: loc fromView:NULL];
+	loc = [theEvent locationInWindow];
+	[self convertPoint: loc fromView: NULL];
 
-	list =[parent_i getList];
-	max =[list count];
+	list = [parent_i getList];
+	max = [list count];
 	for (i = 0; i < max; i++) {
-		t =[list elementAt:i];
+		t = [list elementAt: i];
 		r = t->r;
 		if (NSPointInRect (loc, r) == YES) {
 			[self deselect];
-			[parent_i setSelectedTexture:i];
+			[parent_i setSelectedTexture: i];
 			break;
 		}
 	}

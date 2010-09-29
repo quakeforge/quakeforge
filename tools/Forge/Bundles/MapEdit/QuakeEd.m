@@ -18,31 +18,31 @@
 #include "InspectorControl.h"
 #include "Project.h"
 
-id          quakeed_i;
-id          entclasses_i;
+id  quakeed_i;
+id  entclasses_i;
 
-extern NSBezierPath *path;
-id          g_cmd_out_i;
+extern NSBezierPath  *path;
+id  g_cmd_out_i;
 
-BOOL        autodirty;
-BOOL        filter_light, filter_path, filter_entities;
-BOOL        filter_clip_brushes, filter_water_brushes, filter_world;
+BOOL    autodirty;
+BOOL    filter_light, filter_path, filter_entities;
+BOOL    filter_clip_brushes, filter_water_brushes, filter_world;
 
-BOOL        running;
+BOOL  running;
 
-int         bsppid;
+int  bsppid;
 
 #if 0
 // example command strings
 
-char       *fullviscmd =
-	"rsh satan \"/LocalApps/qbsp $1 $2 ; /LocalApps/light $2 ; /LocalApps/vis $2\"";
-char       *fastviscmd =
-	"rsh satan \"/LocalApps/qbsp $1 $2 ; /LocalApps/light $2 ; /LocalApps/vis -fast $2\"";
-char       *noviscmd =
-	"rsh satan \"/LocalApps/qbsp $1 $2 ; /LocalApps/light $2\"";
-char       *relightcmd = "rsh satan \"/LocalApps/light $2\"";
-char       *leakcmd = "rsh satan \"/LocalApps/qbsp -mark -notjunc $1 $2\"";
+char  *fullviscmd =
+    "rsh satan \"/LocalApps/qbsp $1 $2 ; /LocalApps/light $2 ; /LocalApps/vis $2\"";
+char  *fastviscmd =
+    "rsh satan \"/LocalApps/qbsp $1 $2 ; /LocalApps/light $2 ; /LocalApps/vis -fast $2\"";
+char  *noviscmd =
+    "rsh satan \"/LocalApps/qbsp $1 $2 ; /LocalApps/light $2\"";
+char    *relightcmd = "rsh satan \"/LocalApps/light $2\"";
+char    *leakcmd = "rsh satan \"/LocalApps/qbsp -mark -notjunc $1 $2\"";
 #endif
 
 void
@@ -51,7 +51,6 @@ NopSound (void)
 	NSBeep ();
 }
 
-
 void
 My_Malloc_Error (int code)
 {
@@ -59,13 +58,13 @@ My_Malloc_Error (int code)
 	write (1, "malloc error!\n", strlen ("malloc error!\n") + 1);
 }
 
-#define        FN_CMDOUT               "/tmp/QuakeEdCmd.txt"
+#define        FN_CMDOUT "/tmp/QuakeEdCmd.txt"
 void
 DisplayCmdOutput (void)
 {
-	char       *buffer;
-	QFile      *file;
-	int         size;
+	char    *buffer;
+	QFile   *file;
+	int     size;
 
 	file = Qopen (FN_CMDOUT, "rt");
 	if (!file)
@@ -75,14 +74,13 @@ DisplayCmdOutput (void)
 	size = Qread (file, buffer, size);
 	Qclose (file);
 	unlink (FN_CMDOUT);
-	[project_i addToOutput:buffer];
+	[project_i addToOutput: buffer];
 	free (buffer);
 
 	if ([preferences_i getShowBSP])
-		[inspcontrol_i setCurrentInspector:i_output];
+		[inspcontrol_i setCurrentInspector: i_output];
 
 	[preferences_i playBspSound];
-
 }
 
 /*
@@ -92,36 +90,35 @@ CheckCmdDone
 See if the BSP is done
 ===============
 */
-//DPSTimedEntry cmdte;
+// DPSTimedEntry cmdte;
 void
-CheckCmdDone ( /* DPSTimedEntry tag, */ double now, void *userData)
+CheckCmdDone (/* DPSTimedEntry tag, */ double now, void *userData)
 {
-	union wait  statusp;
-	struct rusage rusage;
+	union wait      statusp;
+	struct rusage   rusage;
 
 	if (!wait4 (bsppid, &statusp, WNOHANG, &rusage))
 		return;
 	DisplayCmdOutput ();
 	bsppid = 0;
-//  DPSRemoveTimedEntry( cmdte );   
+//  DPSRemoveTimedEntry( cmdte );
 }
 
 void
 QuakeEd_print (const char *fmt, va_list args)
 {
-	static dstring_t *output;
-	NSString   *string;
+	static dstring_t    *output;
+	NSString            *string;
 
 	if (!output)
 		output = dstring_new ();
-
 	dvsprintf (output, fmt, args);
 	string = [NSString stringWithCString: output->str];
 	[g_cmd_out_i setStringValue: string];
 	fputs (output->str, stdout);
 }
 
-//============================================================================
+// ============================================================================
 
 @implementation QuakeEd
 /*
@@ -131,28 +128,27 @@ AutoSave
 Every five minutes, save a modified map
 ===============
 */
-- (void) AutoSave {
+- (void) AutoSave
+{
 // automatic backup
 	if (autodirty) {
 		autodirty = NO;
 #define FN_AUTOSAVE "/qcache/AutoSaveMap.map"
-		[map_i writeMapFile: (char *) FN_AUTOSAVE useRegion:NO];
+		[map_i writeMapFile: (char *) FN_AUTOSAVE useRegion: NO];
 	}
 	[map_i writeStats];
 }
 
-
 #define FN_TEMPSAVE "/qcache/temp.map"
--setDefaultFilename
+- (id) setDefaultFilename
 {
 	strcpy (filename, FN_TEMPSAVE);
-	[self setTitleWithRepresentedFilename: [NSString stringWithCString:filename]];
+	[self setTitleWithRepresentedFilename: [NSString stringWithCString: filename]];
 
 	return self;
 }
 
-
--(BOOL) dirty
+- (BOOL) dirty
 {
 	return dirty;
 }
@@ -160,98 +156,106 @@ Every five minutes, save a modified map
 /*
 ===============================================================================
 
-				DISPLAY UPDATING (handles both camera and XYView)
+                DISPLAY UPDATING (handles both camera and XYView)
 
 ===============================================================================
 */
 
-BOOL        updateinflight;
+BOOL  updateinflight;
 
-BOOL        clearinstance;
+BOOL  clearinstance;
 
-BOOL        updatexy;
-BOOL        updatez;
-BOOL        updatecamera;
+BOOL    updatexy;
+BOOL    updatez;
+BOOL    updatecamera;
 
 void
 postappdefined (void)
 {
-	NSEvent    *ev;
+	NSEvent  *ev;
 
 	if (updateinflight)
 		return;
-
-// post an event at the end of the que
-	ev =[NSEvent otherEventWithType: NSApplicationDefined location: NSZeroPoint modifierFlags: 0 timestamp:[[NSDate date]
-	 timeIntervalSinceReferenceDate]
-	windowNumber: 0 context:[NSApp context]
-	subtype: 0 data1: 0 data2:0];
-	[NSApp postEvent: ev atStart:NO];
+	// post an event at the end of the que
+	ev = [NSEvent otherEventWithType: NSApplicationDefined
+	                        location: NSZeroPoint
+	                   modifierFlags: 0
+	                       timestamp: [[NSDate date] timeIntervalSinceReferenceDate]
+	                    windowNumber: 0
+	                         context: [NSApp context]
+	                         subtype: 0
+	                           data1: 0
+	                           data2: 0];
+	[NSApp postEvent: ev atStart: NO];
 	updateinflight = YES;
 }
 
+int  c_updateall;
 
-int         c_updateall;
-
--updateAll								// when a model has been changed
+- (id) updateAll                    // when a model has been changed
 {
 	updatecamera = updatexy = updatez = YES;
 	c_updateall++;
 	postappdefined ();
+
 	return self;
 }
 
--updateAll:sender
+- (id) updateAll: sender
 {
 	[self updateAll];
+
 	return self;
 }
 
--updateCamera							// when the camera has moved
+- (id) updateCamera                 // when the camera has moved
 {
 	updatecamera = YES;
 	clearinstance = YES;
 
 	postappdefined ();
+
 	return self;
 }
 
--updateXY
+- (id) updateXY
 {
 	updatexy = YES;
 	postappdefined ();
+
 	return self;
 }
 
--updateZ
+- (id) updateZ
 {
 	updatez = YES;
 	postappdefined ();
+
 	return self;
 }
 
--(void)cameraNoRestore: (NSRect) rect
+- (void) cameraNoRestore: (NSRect)rect
 {
 	no_restore[0] = YES;
 }
 
--(void)xyNoRestore: (NSRect) rect
+- (void) xyNoRestore: (NSRect)rect
 {
 	no_restore[1] = YES;
 }
 
--(void)zNoRestore: (NSRect) rect
+- (void) zNoRestore: (NSRect)rect
 {
 	no_restore[2] = YES;
 }
 
--newinstance
+- (id) newinstance
 {
 	clearinstance = YES;
 	return self;
 }
 
--redrawInstance
+- (id) redrawInstance
 {
 	clearinstance = YES;
 	[self flushWindow];
@@ -267,15 +271,15 @@ instance draw the brush after each flush
 */
 - (void) flushWindow
 {
-	NSRect      rect;
-	int         i;
-	NSView     *cv;
+	NSRect  rect;
+	int     i;
+	NSView  *cv;
 
 	[super flushWindow];
 
+	// don't lock focus before nib is finished loading
 	if (!running)
-		return;							// don't lock focus before nib is
-										// finished loading
+		return;
 
 	if (_disableFlushWindow)
 		return;
@@ -294,7 +298,7 @@ instance draw the brush after each flush
 		}
 	}
 	rect = [cameraview_i frame];
-	//rect = [cv convertRect: rect fromView: cameraview_i];
+//	rect = [cv convertRect: rect fromView: cameraview_i];
 	cache_rect[0] = rect = NSIntegralRect (rect);
 	cache[0] = [[NSBitmapImageRep alloc] initWithFocusedViewRect: rect];
 
@@ -311,14 +315,14 @@ instance draw the brush after each flush
 
 	[cameraview_i lockFocus];
 	linestart (0, 0, 0);
-	[map_i makeSelectedPerform:@selector (CameraDrawSelf)];
+	[map_i makeSelectedPerform: @selector (CameraDrawSelf)];
 	[clipper_i cameraDrawSelf];
 	lineflush ();
 	[cameraview_i unlockFocus];
 
 	[xyview_i lockFocus];
 	linestart (0, 0, 0);
-	[map_i makeSelectedPerform:@selector (XYDrawSelf)];
+	[map_i makeSelectedPerform: @selector (XYDrawSelf)];
 	lineflush ();
 	[cameraview_i XYDrawSelf];
 	[zview_i XYDrawSelf];
@@ -326,7 +330,7 @@ instance draw the brush after each flush
 	[xyview_i unlockFocus];
 
 	[zview_i lockFocus];
-	[map_i makeSelectedPerform:@selector (ZDrawSelf)];
+	[map_i makeSelectedPerform: @selector (ZDrawSelf)];
 	[cameraview_i ZDrawSelf];
 	[clipper_i ZDrawSelf];
 	[zview_i unlockFocus];
@@ -336,7 +340,6 @@ instance draw the brush after each flush
 	[super flushWindow];
 }
 
-
 /*
 ==============================================================================
 
@@ -345,17 +348,17 @@ App delegate methods
 ==============================================================================
 */
 
--applicationDefined:(NSEvent *) theEvent
+- (id) applicationDefined: (NSEvent *)theEvent
 {
-	NSEvent    *evp;
+	NSEvent  *evp;
 
 	updateinflight = NO;
 
-// update screen    
-	evp = [NSApp nextEventMatchingMask: NSAnyEventMask
-							 untilDate: [NSDate distantPast]
-								inMode: NSEventTrackingRunLoopMode
-							   dequeue: NO];
+	// update screen
+	evp = [NSApp   nextEventMatchingMask: NSAnyEventMask
+	                           untilDate: [NSDate distantPast]
+	                              inMode: NSEventTrackingRunLoopMode
+	                             dequeue: NO];
 	if (evp) {
 		postappdefined ();
 		return self;
@@ -364,14 +367,17 @@ App delegate methods
 	[self disableFlushWindow];
 
 	if ([map_i count] != (unsigned) [entitycount_i intValue])
-		[entitycount_i setIntValue:[map_i count]];
+		[entitycount_i setIntValue: [map_i count]];
+
 	if ([[map_i currentEntity] count] != (unsigned) [brushcount_i intValue])
-		[brushcount_i setIntValue:[[map_i currentEntity] count]];
+		[brushcount_i setIntValue: [[map_i currentEntity] count]];
 
 	if (updatecamera)
 		[cameraview_i display];
+
 	if (updatexy)
 		[xyview_i display];
+
 	if (updatez)
 		[zview_i display];
 
@@ -385,152 +391,147 @@ App delegate methods
 	return self;
 }
 
--(void)awakeFromNib
+- (void) awakeFromNib
 {
 	// XXX [self addToEventMask:
-	// XXX NSRightMouseDragged|NSLeftMouseDragged]; 
+	// XXX NSRightMouseDragged|NSLeftMouseDragged];
 
 	// XXX malloc_error(My_Malloc_Error);
 
 	quakeed_i = self;
 	dirty = autodirty = NO;
 
-	[NSTimer timerWithTimeInterval: 5 * 60 target: self selector:@selector
-	 (AutoSave)
-	userInfo: nil repeats:YES];
+	[NSTimer   timerWithTimeInterval: 5 * 60
+	                          target: self
+	                        selector: @selector (AutoSave)
+	                        userInfo: nil
+	                         repeats: YES];
 
-	path =[NSBezierPath new];
+	path = [NSBezierPath new];
 }
 
--(void)applicationDidFinishLaunching:(NSNotification *) notification
+- (void) applicationDidFinishLaunching: (NSNotification *)notification
 {
-	NSArray    *screens;
-	NSScreen   *scrn;
+	NSArray     *screens;
+	NSScreen    *scrn;
 
 	running = YES;
-	g_cmd_out_i = cmd_out_i;			// for qprintf
+	g_cmd_out_i = cmd_out_i;        // for qprintf
 	Sys_SetStdPrintf (QuakeEd_print);
 
 	[preferences_i readDefaults];
 	[project_i initProject];
 
-	[xyview_i setModeRadio:xy_drawmode_i];
+	[xyview_i setModeRadio: xy_drawmode_i];
 	// because xy view is inside
 	// scrollview and can't be
 	// connected directly in IB
 
-	[self setFrameAutosaveName:@"EditorWinFrame"];
-	[self clear:self];
+	[self setFrameAutosaveName: @"EditorWinFrame"];
+	[self clear: self];
 
-// go to my second monitor
-	screens =[NSScreen screens];
+	// go to my second monitor
+	screens = [NSScreen screens];
 	if ([screens count] == 2) {
-		NSRect frm;
-		scrn =[screens objectAtIndex:1];
+		NSRect  frm;
+		scrn = [screens objectAtIndex: 1];
 		frm = [scrn frame];
-		[self setFrameTopLeftPoint: NSMakePoint (frm.origin.x,
-												 frm.size.height)];
+		[self setFrameTopLeftPoint: NSMakePoint (frm.origin.x, frm.size.height)];
 	}
 
-	[self makeKeyAndOrderFront:self];
+	[self makeKeyAndOrderFront: self];
 
-//[self doOpen: "/raid/quake/id1_/maps/amlev1.map"];    // DEBUG
+//	[self doOpen: "/raid/quake/id1_/maps/amlev1.map"];    // DEBUG
 	[map_i newMap];
 
 	Sys_Printf ("ready.\n");
-
-//malloc_debug(-1);     // DEBUG
+//	malloc_debug(-1);     // DEBUG
 }
 
--appWillTerminate:sender
+- (id) appWillTerminate: sender
 {
-// FIXME: save dialog if dirty
+	// FIXME: save dialog if dirty
 	return self;
 }
 
+// ===========================================================================
 
-//===========================================================================
-
--textCommand:sender
+- (id) textCommand: sender
 {
-	char const *t;
+	char const  *t;
 
-	t =[[sender stringValue] cString];
+	t = [[sender stringValue] cString];
 
 	if (!strcmp (t, "texname")) {
-		texturedef_t *td;
-		id          b;
+		texturedef_t    *td;
+		id              b;
 
-		b =[map_i selectedBrush];
+		b = [map_i selectedBrush];
 		if (!b) {
 			Sys_Printf ("nothing selected\n");
 			return self;
 		}
-		td =[b texturedef];
+		td = [b texturedef];
 		Sys_Printf ("%s\n", td->texture);
 		return self;
-	} else
+	} else {
 		Sys_Printf ("Unknown command\n");
-	return self;
+	} return self;
 }
 
-
--openProject:sender
+- (id) openProject: sender
 {
 	[project_i openProject];
 	return self;
 }
 
-
--clear:sender
+- (id) clear: sender
 {
 	[map_i newMap];
 
 	[self updateAll];
-	[regionbutton_i setIntValue:0];
+	[regionbutton_i setIntValue: 0];
 	[self setDefaultFilename];
 
 	return self;
 }
 
-
--centerCamera:sender
+- (id) centerCamera: sender
 {
-	NSRect      sbounds;
+	NSRect  sbounds;
 
-	sbounds =[[xyview_i superview] bounds];
+	sbounds = [[xyview_i superview] bounds];
 
 	sbounds.origin.x += sbounds.size.width / 2;
 	sbounds.origin.y += sbounds.size.height / 2;
 
-	[cameraview_i setXYOrigin:&sbounds.origin];
+	[cameraview_i setXYOrigin: &sbounds.origin];
 	[self updateAll];
 
 	return self;
 }
 
--centerZChecker:sender
+- (id) centerZChecker: sender
 {
-	NSRect      sbounds;
+	NSRect  sbounds;
 
-	sbounds =[[xyview_i superview] bounds];
+	sbounds = [[xyview_i superview] bounds];
 
 	sbounds.origin.x += sbounds.size.width / 2;
 	sbounds.origin.y += sbounds.size.height / 2;
 
-	[zview_i setPoint:&sbounds.origin];
+	[zview_i setPoint: &sbounds.origin];
 	[self updateAll];
 
 	return self;
 }
 
--changeXYLookUp:sender
+- (id) changeXYLookUp: sender
 {
-	if ([sender intValue]) {
+	if ([sender intValue])
 		xy_viewnormal[2] = 1;
-	} else {
+	else
 		xy_viewnormal[2] = -1;
-	}
 	[self updateAll];
 	return self;
 }
@@ -543,36 +544,35 @@ REGION MODIFICATION
 ==============================================================================
 */
 
-
 /*
 ==================
 applyRegion:
 ==================
 */
--applyRegion:sender
+- (id) applyRegion: sender
 {
-	filter_clip_brushes =[filter_clip_i intValue];
-	filter_water_brushes =[filter_water_i intValue];
-	filter_light =[filter_light_i intValue];
-	filter_path =[filter_path_i intValue];
-	filter_entities =[filter_entities_i intValue];
-	filter_world =[filter_world_i intValue];
+	filter_clip_brushes = [filter_clip_i intValue];
+	filter_water_brushes = [filter_water_i intValue];
+	filter_light = [filter_light_i intValue];
+	filter_path = [filter_path_i intValue];
+	filter_entities = [filter_entities_i intValue];
+	filter_world = [filter_world_i intValue];
 
 	if (![regionbutton_i intValue]) {
 		region_min[0] = region_min[1] = region_min[2] = -9999;
 		region_max[0] = region_max[1] = region_max[2] = 9999;
 	}
 
-	[map_i makeGlobalPerform:@selector (newRegion)];
+	[map_i makeGlobalPerform: @selector (newRegion)];
 
 	[self updateAll];
 
 	return self;
 }
 
--setBrushRegion:sender
+- (id) setBrushRegion: sender
 {
-	id          b;
+	id  b;
 
 // get the bounds of the current selection
 
@@ -581,23 +581,23 @@ applyRegion:
 		return self;
 	}
 
-	b =[map_i selectedBrush];
-	[b getMins: region_min maxs:region_max];
+	b = [map_i selectedBrush];
+	[b getMins: region_min maxs: region_max];
 	[b remove];
 
 // turn region on
-	[regionbutton_i setIntValue:1];
-	[self applyRegion:self];
+	[regionbutton_i setIntValue: 1];
+	[self applyRegion: self];
 
 	return self;
 }
 
--setXYRegion:sender
+- (id) setXYRegion: sender
 {
-	NSRect      bounds;
+	NSRect  bounds;
 
 // get xy size
-	bounds =[[xyview_i superview] bounds];
+	bounds = [[xyview_i superview] bounds];
 
 	region_min[0] = bounds.origin.x;
 	region_min[1] = bounds.origin.y;
@@ -607,8 +607,8 @@ applyRegion:
 	region_max[2] = 99999;
 
 // turn region on
-	[regionbutton_i setIntValue:1];
-	[self applyRegion:self];
+	[regionbutton_i setIntValue: 1];
+	[self applyRegion: self];
 
 	return self;
 }
@@ -616,16 +616,15 @@ applyRegion:
 //
 // UI querie for other objects
 //
--(BOOL) showCoordinates
+- (BOOL) showCoordinates
 {
-	return[show_coordinates_i intValue];
+	return [show_coordinates_i intValue];
 }
 
--(BOOL) showNames
+- (BOOL) showNames
 {
-	return[show_names_i intValue];
+	return [show_names_i intValue];
 }
-
 
 /*
 ==============================================================================
@@ -634,7 +633,6 @@ BSP PROCESSING
 
 ==============================================================================
 */
-
 void
 ExpandCommand (const char *in, char *out, char *src, char *dest)
 {
@@ -655,20 +653,19 @@ ExpandCommand (const char *in, char *out, char *src, char *dest)
 	*out = 0;
 }
 
-
 /*
 =============
 saveBSP
 =============
 */
--saveBSP:(const char *) cmdline dialog:(BOOL) wt
+- (id) saveBSP: (const char *)cmdline dialog: (BOOL)wt
 {
 	char        expandedcmd[1024];
 	char        mappath[1024];
 	char        bsppath[1024];
 	int         oldLightFilter;
 	int         oldPathFilter;
-	const char *destdir;
+	const char  *destdir;
 
 	if (bsppid) {
 		NSBeep ();
@@ -677,32 +674,32 @@ saveBSP
 //
 // turn off the filters so all entities get saved
 //
-	oldLightFilter =[filter_light_i intValue];
-	oldPathFilter =[filter_path_i intValue];
-	[filter_light_i setIntValue:0];
-	[filter_path_i setIntValue:0];
-	[self applyRegion:self];
+	oldLightFilter = [filter_light_i intValue];
+	oldPathFilter = [filter_path_i intValue];
+	[filter_light_i setIntValue: 0];
+	[filter_path_i setIntValue: 0];
+	[self applyRegion: self];
 
 	if ([regionbutton_i intValue]) {
 		strcpy (mappath, filename);
 		// XXX StripExtension (mappath);
 		strcat (mappath, ".reg");
-		[map_i writeMapFile: mappath useRegion:YES];
-		wt = YES;						// allways pop the dialog on region ops
-	} else
+		[map_i writeMapFile: mappath useRegion: YES];
+		wt = YES;   // allways pop the dialog on region ops
+	} else {
 		strcpy (mappath, filename);
+	}
+	// save the entire thing, just in case there is a problem
+	[self save: self];
 
-// save the entire thing, just in case there is a problem
-	[self save:self];
-
-	[filter_light_i setIntValue:oldLightFilter];
-	[filter_path_i setIntValue:oldPathFilter];
-	[self applyRegion:self];
+	[filter_light_i setIntValue: oldLightFilter];
+	[filter_path_i setIntValue: oldPathFilter];
+	[self applyRegion: self];
 
 //
 // write the command to the bsp host
-//  
-	destdir =[project_i getFinalMapDirectory];
+//
+	destdir = [project_i getFinalMapDirectory];
 
 	strcpy (bsppath, destdir);
 	strcat (bsppath, "/");
@@ -717,16 +714,17 @@ saveBSP
 	printf ("system: %s", expandedcmd);
 
 	[project_i addToOutput: (char *) "\n\n========= BUSY =========\n\n"];
-	[project_i addToOutput:expandedcmd];
+	[project_i addToOutput: expandedcmd];
 
 	if ([preferences_i getShowBSP])
-		[inspcontrol_i setCurrentInspector:i_output];
-
+		[inspcontrol_i setCurrentInspector: i_output];
 	if (wt) {
-		id          panel;
-		NSModalSession session;
+		id  panel;
+		NSModalSession  session;
 
-		panel = NSGetAlertPanel (@"BSP In Progress",[NSString stringWithCString:expandedcmd], NULL, NULL, NULL);
+		panel = NSGetAlertPanel (@"BSP In Progress",
+		                         [NSString stringWithCString: expandedcmd],
+		                         NULL, NULL, NULL);
 		session = [NSApp beginModalSessionForWindow: panel];
 		system (expandedcmd);
 		[NSApp endModalSession: session];
@@ -734,7 +732,7 @@ saveBSP
 		NSReleaseAlertPanel (panel);
 		DisplayCmdOutput ();
 	} else {
-		// cmdte = DPSAddTimedEntry(1, CheckCmdDone, self, NS_BASETHRESHOLD);
+//		cmdte = DPSAddTimedEntry(1, CheckCmdDone, self, NS_BASETHRESHOLD);
 		if (!(bsppid = fork ())) {
 			system (expandedcmd);
 			exit (0);
@@ -744,38 +742,37 @@ saveBSP
 	return self;
 }
 
-
--BSP_Full:sender
+- (id) BSP_Full: sender
 {
-	[self saveBSP: [project_i getFullVisCmd] dialog:NO];
+	[self saveBSP: [project_i getFullVisCmd] dialog: NO];
 	return self;
 }
 
--BSP_FastVis:sender
+- (id) BSP_FastVis: sender
 {
-	[self saveBSP: [project_i getFastVisCmd] dialog:NO];
+	[self saveBSP: [project_i getFastVisCmd] dialog: NO];
 	return self;
 }
 
--BSP_NoVis:sender
+- (id) BSP_NoVis: sender
 {
-	[self saveBSP: [project_i getNoVisCmd] dialog:NO];
+	[self saveBSP: [project_i getNoVisCmd] dialog: NO];
 	return self;
 }
 
--BSP_relight:sender
+- (id) BSP_relight: sender
 {
-	[self saveBSP: [project_i getRelightCmd] dialog:NO];
+	[self saveBSP: [project_i getRelightCmd] dialog: NO];
 	return self;
 }
 
--BSP_entities:sender
+- (id) BSP_entities: sender
 {
-	[self saveBSP: [project_i getEntitiesCmd] dialog:NO];
+	[self saveBSP: [project_i getEntitiesCmd] dialog: NO];
 	return self;
 }
 
--BSP_stop:sender
+- (id) BSP_stop: sender
 {
 	if (!bsppid) {
 		NSBeep ();
@@ -783,13 +780,11 @@ saveBSP
 	}
 
 	kill (bsppid, 9);
-	// CheckCmdDone (cmdte, 0, NULL);
+//	CheckCmdDone (cmdte, 0, NULL);
 	[project_i addToOutput: (char *) "\n\n========= STOPPED =========\n\n"];
 
 	return self;
 }
-
-
 
 /*
 ==============
@@ -798,14 +793,14 @@ doOpen:
 Called by open or the project panel
 ==============
 */
--doOpen:(const char *) fname;
+- (id) doOpen: (const char *)fname;
 {
 	strcpy (filename, fname);
 
-	[map_i readMapFile:filename];
+	[map_i readMapFile: filename];
 
-	[regionbutton_i setIntValue:0];
-	[self setTitleWithRepresentedFilename: [NSString stringWithCString:fname]];
+	[regionbutton_i setIntValue: 0];
+	[self setTitleWithRepresentedFilename: [NSString stringWithCString: fname]];
 	[self updateAll];
 
 	Sys_Printf ("%s loaded\n", fname);
@@ -813,114 +808,111 @@ Called by open or the project panel
 	return self;
 }
 
-
 /*
 ==============
 open
 ==============
 */
--open:sender;
+- (id) open: sender;
 {
 	id          openpanel;
-	NSString   *suffixlist[] = { @"map" };
+	NSString    *suffixlist[] = {@"map"};
 
-	openpanel =[NSOpenPanel new];
+	openpanel = [NSOpenPanel new];
 
-	if ([openpanel runModalForDirectory: [NSString stringWithCString:[project_i
-	 getMapDirectory]]
-	file: @"" types: [NSArray arrayWithObjects: suffixlist count:1]] !=
-		NSOKButton)
+	if ([openpanel
+	        runModalForDirectory: [NSString stringWithCString: [project_i
+	                                                         getMapDirectory]]
+	                        file: @""
+	                       types: [NSArray arrayWithObjects: suffixlist count: 1]]
+	    != NSOKButton)
 		return self;
-
 	[self doOpen: [[openpanel filename] cString]];
 
 	return self;
 }
-
 
 /*
 ==============
 save:
 ==============
 */
--save:sender;
+- (id) save: sender;
 {
-	char        backup[1024];
+	char  backup[1024];
 
 // force a name change if using tempname
 	if (!strcmp (filename, FN_TEMPSAVE))
-		return[self saveAs:self];
-
+		return [self saveAs: self];
 	dirty = autodirty = NO;
 
 	strcpy (backup, filename);
 	// XXX StripExtension (backup);
 	strcat (backup, ".bak");
-	rename (filename, backup);			// copy old to .bak
+	rename (filename, backup);      // copy old to .bak
 
-	[map_i writeMapFile: filename useRegion:NO];
+	[map_i writeMapFile: filename useRegion: NO];
 
 	return self;
 }
-
 
 /*
 ==============
 saveAs
 ==============
 */
--saveAs:sender;
+- (id) saveAs: sender;
 {
-	id          panel_i;
-	char        dir[1024];
+	id      panel_i;
+	char    dir[1024];
 
-	panel_i =[NSSavePanel new];
+	panel_i = [NSSavePanel new];
 	// XXX ExtractFileBase (filename, dir);
-	[panel_i setRequiredFileType:@"map"];
-	if ([panel_i runModalForDirectory: [NSString stringWithCString: [project_i getMapDirectory]] file: [NSString stringWithCString:dir]] !=
-		NSOKButton)
+	[panel_i setRequiredFileType: @"map"];
+	if ([panel_i
+	        runModalForDirectory: [NSString stringWithCString: [project_i
+	                                                         getMapDirectory]]
+	                        file: [NSString stringWithCString: dir]]
+	    != NSOKButton)
 		return self;
+	strcpy (filename, [[panel_i filename] cString]);
 
-	strcpy (filename,[[panel_i filename] cString]);
+	[self setTitleWithRepresentedFilename: [NSString stringWithCString: filename]];
 
-	[self setTitleWithRepresentedFilename: [NSString stringWithCString:filename]];
-
-	[self save:self];
+	[self save: self];
 
 	return self;
 }
-
 
 /*
 ===============================================================================
 
-						OTHER METHODS
+                        OTHER METHODS
 
 ===============================================================================
 */
 
-
 //
 //  AJR - added this for Project info
 //
--(const char *) currentFilename
+- (const char *) currentFilename
 {
 	return filename;
 }
 
--deselect:sender
+- (id) deselect: sender
 {
-	if ([clipper_i hide])				// first click hides only the clipper
-		return[self updateAll];
+	if ([clipper_i hide])           // first click hides only the clipper
+		return [self updateAll];
 
-	[map_i setCurrentEntity: [map_i objectAtIndex:0]];
-										// make world selected
-	[map_i makeSelectedPerform:@selector (deselect)];
+	[map_i setCurrentEntity: [map_i objectAtIndex: 0]];
+
+	// make world selected
+	[map_i makeSelectedPerform: @selector (deselect)];
 	[self updateAll];
 
 	return self;
 }
-
 
 /*
 ===============
@@ -928,52 +920,57 @@ keyDown
 ===============
 */
 
--keyDown:(NSEvent *) theEvent
+- (id) keyDown: (NSEvent *)theEvent
 {
-	NSString *chars = [theEvent characters];
-	unichar c = [chars length] == 1 ? [chars characterAtIndex: 0] : '\0';
+	NSString    *chars = [theEvent characters];
+	unichar     c = ([chars length] == 1) ? [chars characterAtIndex: 0] : '\0';
 
+//
 // function keys
+//
 	switch (c) {
 		case NSF2FunctionKey:
-			[cameraview_i setDrawMode:dr_wire];
+			[cameraview_i setDrawMode: dr_wire];
 			Sys_Printf ("wire draw mode\n");
 			return self;
+
 		case NSF3FunctionKey:
-			[cameraview_i setDrawMode:dr_flat];
+			[cameraview_i setDrawMode: dr_flat];
 			Sys_Printf ("flat draw mode\n");
 			return self;
+
 		case NSF4FunctionKey:
-			[cameraview_i setDrawMode:dr_texture];
+			[cameraview_i setDrawMode: dr_texture];
 			Sys_Printf ("texture draw mode\n");
 			return self;
 
 		case NSF5FunctionKey:
-			[xyview_i setDrawMode:dr_wire];
+			[xyview_i setDrawMode: dr_wire];
 			Sys_Printf ("wire draw mode\n");
 			return self;
+
 		case NSF6FunctionKey:
 			Sys_Printf ("texture draw mode\n");
 			return self;
 
 		case NSF8FunctionKey:
-			[cameraview_i homeView:self];
+			[cameraview_i homeView: self];
 			return self;
 
 		case NSF12FunctionKey:
-			[map_i subtractSelection:self];
+			[map_i subtractSelection: self];
 			return self;
 
 		case NSPageUpFunctionKey:
-			[cameraview_i upFloor:self];
+			[cameraview_i upFloor: self];
 			return self;
 
 		case NSPageDownFunctionKey:
-			[cameraview_i downFloor:self];
+			[cameraview_i downFloor: self];
 			return self;
 
 		case NSEndFunctionKey:
-			[self deselect:self];
+			[self deselect: self];
 			return self;
 
 		case NSRightArrowFunctionKey:
@@ -990,17 +987,17 @@ keyDown
 		case 'C':
 		case '.':
 		case ',':
-			[cameraview_i _keyDown:theEvent];
+			[cameraview_i _keyDown: theEvent];
 			break;
 
-		case 27:						// escape
+		case 27:    // escape
 			autodirty = dirty = YES;
-			[self deselect:self];
+			[self deselect: self];
 			return self;
 
-		case 127:						// delete
+		case 127:   // delete
 			autodirty = dirty = YES;
-			[map_i makeSelectedPerform:@selector (remove)];
+			[map_i makeSelectedPerform: @selector (remove)];
 			[clipper_i hide];
 			[self updateAll];
 			break;
@@ -1010,56 +1007,58 @@ keyDown
 			[self updateAll];
 			break;
 
-		case 13:						// enter
+		case 13:    // enter
 			[clipper_i carve];
 			[self updateAll];
 			Sys_Printf ("carved brush\n");
 			break;
 
 		case ' ':
-			[map_i cloneSelection:self];
+			[map_i cloneSelection: self];
 			break;
-
 
 //
 // move selection keys
-//      
+//
 		case '2':
 			VectorCopy (vec3_origin, sb_translate);
 			sb_translate[1] = -[xyview_i gridsize];
-			[map_i makeSelectedPerform:@selector (translate)];
+			[map_i makeSelectedPerform: @selector (translate)];
 			[self updateAll];
 			break;
+
 		case '8':
 			VectorCopy (vec3_origin, sb_translate);
-			sb_translate[1] =[xyview_i gridsize];
-			[map_i makeSelectedPerform:@selector (translate)];
+			sb_translate[1] = [xyview_i gridsize];
+			[map_i makeSelectedPerform: @selector (translate)];
 			[self updateAll];
 			break;
 
 		case '4':
 			VectorCopy (vec3_origin, sb_translate);
 			sb_translate[0] = -[xyview_i gridsize];
-			[map_i makeSelectedPerform:@selector (translate)];
+			[map_i makeSelectedPerform: @selector (translate)];
 			[self updateAll];
 			break;
+
 		case '6':
 			VectorCopy (vec3_origin, sb_translate);
-			sb_translate[0] =[xyview_i gridsize];
-			[map_i makeSelectedPerform:@selector (translate)];
+			sb_translate[0] = [xyview_i gridsize];
+			[map_i makeSelectedPerform: @selector (translate)];
 			[self updateAll];
 			break;
 
 		case '-':
 			VectorCopy (vec3_origin, sb_translate);
 			sb_translate[2] = -[xyview_i gridsize];
-			[map_i makeSelectedPerform:@selector (translate)];
+			[map_i makeSelectedPerform: @selector (translate)];
 			[self updateAll];
 			break;
+
 		case '+':
 			VectorCopy (vec3_origin, sb_translate);
-			sb_translate[2] =[xyview_i gridsize];
-			[map_i makeSelectedPerform:@selector (translate)];
+			sb_translate[2] = [xyview_i gridsize];
+			[map_i makeSelectedPerform: @selector (translate)];
 			[self updateAll];
 			break;
 
@@ -1067,10 +1066,9 @@ keyDown
 			Sys_Printf ("undefined keypress\n");
 			NopSound ();
 			break;
-	}
+	} /* switch */
 
 	return self;
 }
-
 
 @end

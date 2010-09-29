@@ -8,20 +8,21 @@
 #include "QuakeEd.h"
 #include "Project.h"
 
-id          preferences_i;
+id  preferences_i;
 
-#define	DEFOWNER	"QuakeEd2"
+#define DEFOWNER "QuakeEd2"
 
-float       lightaxis[3] = { 1, 0.6, 0.75 };
+float  lightaxis[3] = {1, 0.6, 0.75};
 
 @implementation Preferences
 
 void
 WriteStringDefault (id prefs, const char *name, const char *value)
 {
-	NSString   *key = [NSString stringWithCString: name];
-	NSString   *val = [NSString stringWithCString: value];
-	[prefs setObject:val forKey:key];
+	NSString    *key = [NSString stringWithCString: name];
+	NSString    *val = [NSString stringWithCString: value];
+
+	[prefs setObject: val forKey: key];
 }
 
 void
@@ -30,12 +31,12 @@ WriteNumericDefault (id prefs, const char *name, float value)
 	WriteStringDefault (prefs, name, va ("%f", value));
 }
 
--init
+- (id) init
 {
 	[super init];
 	preferences_i = self;
 
-	NSMutableDictionary *defaults = [NSMutableDictionary dictionary];
+	NSMutableDictionary  *defaults = [NSMutableDictionary dictionary];
 
 	WriteStringDefault (defaults, "ProjectPath", "");
 	WriteStringDefault (defaults, "BspSoundPath", "");
@@ -47,7 +48,7 @@ WriteNumericDefault (id prefs, const char *name, float value)
 	WriteNumericDefault (defaults, "Zlight", 0);
 
 	prefs = [[NSUserDefaults standardUserDefaults] retain];
-	[prefs registerDefaults:defaults];
+	[prefs registerDefaults: defaults];
 	return self;
 }
 
@@ -56,6 +57,7 @@ _atoi (const char *c)
 {
 	if (!c)
 		return 0;
+
 	return atoi (c);
 }
 
@@ -64,88 +66,89 @@ _atof (const char *c)
 {
 	if (!c)
 		return 0;
+
 	return atof (c);
 }
 
 //
 //  Read in at start of program
 //
--readDefaults
+- (id) readDefaults
 {
-	const char *string;
+	const char  *string;
 	float       value = 0;
 
 	string = [[prefs stringForKey: @"ProjectPath"] cString];
-	[self setProjectPath:string];
+	[self setProjectPath: string];
 
 	string = [[prefs stringForKey: @"BspSoundPath"] cString];
-	[self setBspSoundPath:string];
+	[self setBspSoundPath: string];
 
 	string = [[prefs stringForKey: @"ShowBSPOutput"] cString];
 	value = _atoi (string);
-	[self setShowBSP:value];
+	[self setShowBSP: value];
 
 	string = [[prefs stringForKey: @"OffsetBrushCopy"] cString];
 	value = _atoi (string);
-	[self setBrushOffset:value];
+	[self setBrushOffset: value];
 
 	string = [[prefs stringForKey: @"StartWad"] cString];
 	value = _atoi (string);
-	[self setStartWad:value];
+	[self setStartWad: value];
 
 	string = [[prefs stringForKey: @"Xlight"] cString];
 	value = _atof (string);
-	[self setXlight:value];
+	[self setXlight: value];
 
 	string = [[prefs stringForKey: @"Ylight"] cString];
 	value = _atof (string);
-	[self setYlight:value];
+	[self setYlight: value];
 
 	string = [[prefs stringForKey: @"Zlight"] cString];
 	value = _atof (string);
-	[self setZlight:value];
+	[self setZlight: value];
 
 	return self;
 }
 
-
--setProjectPath:(const char *) path
+- (id) setProjectPath: (const char *)path
 {
 	if (!path)
 		path = "";
+
 	strcpy (projectpath, path);
-	[startproject_i setStringValue: [NSString stringWithCString:path]];
+	[startproject_i setStringValue: [NSString stringWithCString: path]];
 	WriteStringDefault (prefs, "ProjectPath", path);
 	return self;
 }
 
--setCurrentProject:sender
+- (id) setCurrentProject: sender
 {
-	[startproject_i setStringValue: [NSString stringWithCString:[project_i
-	 currentProjectFile]]];
-	[self UIChanged:self];
+	[startproject_i setStringValue: [NSString stringWithCString: [project_i
+	                                                              currentProjectFile
+	                                 ]]];
+	[self UIChanged: self];
 	return self;
 }
 
--(const char *) getProjectPath
+- (const char *) getProjectPath
 {
 	return projectpath;
 }
 
-
 //
-//===============================================
+// ===============================================
 //  BSP sound stuff
-//===============================================
+// ===============================================
 //
 //  Set the BSP sound using an OpenPanel
 //
--setBspSound:sender
+- (id) setBspSound: sender
 {
 	id          panel;
-	NSString   *types[] = { @"snd" };
+	NSString    *types[] = {@"snd"};
 	int         rtn;
-	NSArray    *filenames;
+	NSArray     *filenames;
 	char        path[1024], file[64];
 
 	panel = [NSOpenPanel new];
@@ -153,37 +156,36 @@ _atof (const char *c)
 	// XXX ExtractFilePath (bspSound, path);
 	// XXX ExtractFileBase (bspSound, file);
 
-	rtn = [panel runModalForDirectory: [NSString stringWithCString:path]
-	file: [NSString stringWithCString:file]
-	types: [NSArray arrayWithObjects: types count:1]];
+	rtn = [panel    runModalForDirectory: [NSString stringWithCString: path]
+	                                file: [NSString stringWithCString: file]
+	                               types: [NSArray arrayWithObjects: types count: 1]
+	      ];
 
 	if (rtn) {
-		filenames =[panel filenames];
-		strcpy (bspSound,[[panel directory] cString]);
+		filenames = [panel filenames];
+		strcpy (bspSound, [[panel directory] cString]);
 		strcat (bspSound, "/");
-		strcat (bspSound,[[filenames objectAtIndex:0] cString]);
-		[self setBspSoundPath:bspSound];
+		strcat (bspSound, [[filenames objectAtIndex: 0] cString]);
+		[self setBspSoundPath: bspSound];
 		[self playBspSound];
 	}
 
 	return self;
 }
 
-
 //
 //  Play the BSP sound
 //
--playBspSound
+- (id) playBspSound
 {
 	[bspSound_i play];
 	return self;
 }
 
-
 //
 //  Set the bspSound path
 //
--setBspSoundPath:(const char *) path
+- (id) setBspSoundPath: (const char *)path
 {
 	if (!path)
 		path = "";
@@ -193,30 +195,32 @@ _atof (const char *c)
 		[bspSound_i release];
 		bspSound_i = nil;
 	}
-	if (path[0] && access (path, R_OK))
-		bspSound_i =[[NSSound alloc] initWithContentsOfFile: [NSString stringWithCString:bspSound] byReference: YES];
-	if (!bspSound_i) {
-		return self;
+	if (path[0] && access (path, R_OK)) {
+		bspSound_i =
+		    [[NSSound alloc] initWithContentsOfFile: [NSString stringWithCString:
+		                                              bspSound] byReference: YES];
 	}
+	if (!bspSound_i)
+		return self;
 
-	[bspSoundField_i setStringValue: [NSString stringWithCString:bspSound]];
+	[bspSoundField_i setStringValue: [NSString stringWithCString: bspSound]];
 
 	WriteStringDefault (prefs, "BspSoundPath", bspSound);
 
 	return self;
 }
 
-//===============================================
+// ===============================================
 //  Show BSP Output management
-//===============================================
+// ===============================================
 
 //
 //  Set the state
 //
--setShowBSP:(int) state
+- (id) setShowBSP: (int)state
 {
 	showBSP = state;
-	[showBSP_i setIntValue:state];
+	[showBSP_i setIntValue: state];
 	WriteNumericDefault (prefs, "ShowBSPOutput", showBSP);
 
 	return self;
@@ -225,23 +229,22 @@ _atof (const char *c)
 //
 //  Get the state
 //
--(int) getShowBSP
+- (int) getShowBSP
 {
 	return showBSP;
 }
 
-
-//===============================================
+// ===============================================
 //  "Offset Brush ..." management
-//===============================================
+// ===============================================
 
 //
 //  Set the state
 //
--setBrushOffset:(int) state
+- (id) setBrushOffset: (int)state
 {
 	brushOffset = state;
-	[brushOffset_i setIntValue:state];
+	[brushOffset_i setIntValue: state];
 	WriteNumericDefault (prefs, "OffsetBrushCopy", state);
 	return self;
 }
@@ -249,68 +252,67 @@ _atof (const char *c)
 //
 //  Get the state
 //
--(int) getBrushOffset
+- (int) getBrushOffset
 {
 	return brushOffset;
 }
 
-//===============================================
+// ===============================================
 //  StartWad
-//===============================================
+// ===============================================
 
--setStartWad:(int) value				// set start wad (0-2)
+- (id) setStartWad: (int)value      // set start wad (0-2)
 {
 	startwad = value;
 	if (startwad < 0 || startwad > 2)
 		startwad = 0;
 
-	[startwad_i selectCellAtRow: startwad column:0];
+	[startwad_i selectCellAtRow: startwad column: 0];
 
 	WriteNumericDefault (prefs, "StartWad", value);
 	return self;
 }
 
--(int) getStartWad
+- (int) getStartWad
 {
 	return startwad;
 }
 
-
-//===============================================
+// ===============================================
 //  X,Y,Z light values
-//===============================================
+// ===============================================
 //
 //  Set the state
 //
--setXlight:(float) value
+- (id) setXlight: (float)value
 {
 	xlight = value;
 	if (xlight < 0.25 || xlight > 1)
 		xlight = 0.6;
 	lightaxis[1] = xlight;
-	[xlight_i setFloatValue:xlight];
+	[xlight_i setFloatValue: xlight];
 	WriteNumericDefault (prefs, "Xlight", xlight);
 	return self;
 }
 
--setYlight:(float) value
+- (id) setYlight: (float)value
 {
 	ylight = value;
 	if (ylight < 0.25 || ylight > 1)
 		ylight = 0.75;
 	lightaxis[2] = ylight;
-	[ylight_i setFloatValue:ylight];
+	[ylight_i setFloatValue: ylight];
 	WriteNumericDefault (prefs, "Ylight", ylight);
 	return self;
 }
 
--setZlight:(float) value
+- (id) setZlight: (float)value
 {
 	zlight = value;
 	if (zlight < 0.25 || zlight > 1)
 		zlight = 1;
 	lightaxis[0] = zlight;
-	[zlight_i setFloatValue:zlight];
+	[zlight_i setFloatValue: zlight];
 	WriteNumericDefault (prefs, "Zlight", zlight);
 	return self;
 }
@@ -318,22 +320,20 @@ _atof (const char *c)
 //
 //  Get the state
 //
--(float) getXlight
+- (float) getXlight
 {
-	return[xlight_i floatValue];
+	return [xlight_i floatValue];
 }
 
--(float) getYlight
+- (float) getYlight
 {
-	return[ylight_i floatValue];
+	return [ylight_i floatValue];
 }
 
--(float) getZlight
+- (float) getZlight
 {
-	return[zlight_i floatValue];
+	return [zlight_i floatValue];
 }
-
-
 
 /*
 ============
@@ -342,24 +342,23 @@ UIChanged
 Grab all the current UI state
 ============
 */
--UIChanged:sender
+- (id) UIChanged: sender
 {
 	Sys_Printf ("defaults updated\n");
 
-	[self setProjectPath:[[startproject_i stringValue] cString]];
-	[self setBspSoundPath:[[bspSoundField_i stringValue] cString]];
-	[self setShowBSP:[showBSP_i intValue]];
-	[self setBrushOffset:[brushOffset_i intValue]];
-	[self setStartWad:[startwad_i selectedRow]];
-	[self setXlight:[xlight_i floatValue]];
-	[self setYlight:[ylight_i floatValue]];
-	[self setZlight:[zlight_i floatValue]];
+	[self setProjectPath: [[startproject_i stringValue] cString]];
+	[self setBspSoundPath: [[bspSoundField_i stringValue] cString]];
+	[self setShowBSP: [showBSP_i intValue]];
+	[self setBrushOffset: [brushOffset_i intValue]];
+	[self setStartWad: [startwad_i selectedRow]];
+	[self setXlight: [xlight_i floatValue]];
+	[self setYlight: [ylight_i floatValue]];
+	[self setZlight: [zlight_i floatValue]];
 
-	[map_i makeGlobalPerform:@selector (flushTextures)];
+	[map_i makeGlobalPerform: @selector (flushTextures)];
 	[quakeed_i updateAll];
 
 	return self;
 }
-
 
 @end

@@ -1,30 +1,29 @@
-
 #include "render.h"
 
-extern vec3_t xy_viewnormal;
+extern vec3_t  xy_viewnormal;
 
-//define    NOLIGHT
+// define    NOLIGHT
 
-vec3_t      r_origin, r_matrix[3];
+vec3_t  r_origin, r_matrix[3];
 
 int         t_width, t_height;
-unsigned   *t_data;
+unsigned    *t_data;
 int         t_widthmask, t_heightmask, t_widthshift;
 float       t_widthadd, t_heightadd;
 
 int         r_width, r_height;
-float      *r_zbuffer;
-unsigned   *r_picbuffer;
+float       *r_zbuffer;
+unsigned    *r_picbuffer;
 
-vec5_t      rightside, leftside, rightstep, leftstep;
+vec5_t  rightside, leftside, rightstep, leftstep;
 
-face_t     *r_face;
+face_t  *r_face;
 
-BOOL        r_drawflat;
+BOOL  r_drawflat;
 
-pixel32_t   r_flatcolor;
+pixel32_t  r_flatcolor;
 
-int         sy[20];
+int  sy[20];
 
 /*
 ====================
@@ -34,7 +33,7 @@ REN_ClearBuffers
 void
 REN_ClearBuffers (void)
 {
-	int         size;
+	int  size;
 
 	size = r_width * r_height * 4;
 
@@ -42,22 +41,20 @@ REN_ClearBuffers (void)
 	memset (r_picbuffer, 0, size);
 }
 
-
 /*
 ====================
 REN_SetTexture
 ====================
 */
-
 void
 REN_SetTexture (face_t * face)
 {
 	int         i;
 	int         t_heightshift;
-	qtexture_t *q;
+	qtexture_t  *q;
 
 	if (!face->qtexture)
-		face->qtexture = TEX_ForName (face->texture.texture);	// try to load
+		face->qtexture = TEX_ForName (face->texture.texture);   // try to load
 	q = face->qtexture;
 
 	t_width = q->width;
@@ -90,7 +87,7 @@ REN_SetTexture (face_t * face)
 	}
 
 	if ((1 << t_widthshift) != t_width || (1 << t_heightshift) != t_height)
-		t_widthshift = t_heightshift = 0;	// non power of two
+		t_widthshift = t_heightshift = 0;   // non power of two
 }
 
 /*
@@ -106,7 +103,7 @@ REN_DrawSpan (int y)
 	int         tx, ty;
 	int         x1, x2;
 	float       ufrac, vfrac, zfrac, lightfrac, ustep, vstep, zstep;
-	pixel32_t  *in, *out;
+	pixel32_t   *in, *out;
 	float       scale;
 
 	if (y < 0 || y >= r_height)
@@ -142,7 +139,6 @@ REN_DrawSpan (int y)
 
 	if (x2 > r_width)
 		x2 = r_width;
-
 	ofs = y * r_width + x1;
 
 // this should be specialized for 1.0 / 0.5 / 0.75 light levels
@@ -155,14 +151,14 @@ REN_DrawSpan (int y)
 			if (t_widthshift) {
 				tx = (int) ((ufrac * scale)) & t_widthmask;
 				ty = (int) ((vfrac * scale)) & t_heightmask;
-				in = (pixel32_t *) & t_data[(ty << t_widthshift) + tx];
+				in = (pixel32_t *) &t_data[(ty << t_widthshift) + tx];
 			} else {
 				tx = (int) ((ufrac * scale) + t_widthadd) % t_width;
 				ty = (int) ((vfrac * scale) + t_heightadd) % t_height;
-				in = (pixel32_t *) & t_data[ty * t_width + tx];
+				in = (pixel32_t *) &t_data[ty * t_width + tx];
 			}
 
-			out = (pixel32_t *) & r_picbuffer[ofs];
+			out = (pixel32_t *) &r_picbuffer[ofs];
 #ifdef NOLIGHT
 			*out = *in;
 #else
@@ -177,7 +173,6 @@ REN_DrawSpan (int y)
 		zfrac += zstep;
 		ofs++;
 	}
-
 }
 
 /*
@@ -188,11 +183,11 @@ REN_DrawFlatSpan
 void
 REN_DrawFlatSpan (int y)
 {
-	int         x, count;
-	int         ofs;
-	int         x1, x2;
-	float       zfrac, zstep;
-	int        *out;
+	int     x, count;
+	int     ofs;
+	int     x1, x2;
+	float   zfrac, zstep;
+	int     *out;
 
 	if (y < 0 || y >= r_height)
 		return;
@@ -228,7 +223,6 @@ REN_DrawFlatSpan (int y)
 		zfrac += zstep;
 		ofs++;
 	}
-
 }
 
 /*
@@ -240,12 +234,12 @@ REN_RasterizeFace
 void
 REN_RasterizeFace (winding_t * w)
 {
-	int         y;
-	int         i;
-	int         top, bot;
-	int         leftv, rightv;
-	int         count;
-	int         numvertex;
+	int     y;
+	int     i;
+	int     top, bot;
+	int     leftv, rightv;
+	int     count;
+	int     numvertex;
 
 //
 // find top vertex
@@ -271,7 +265,7 @@ REN_RasterizeFace (winding_t * w)
 	rightv = leftv;
 
 	if (top < 0 || bot > r_height || top > bot)
-		return;							// shouldn't have to have this...
+		return;                     // shouldn't have to have this...
 
 //
 // render a trapezoid
@@ -283,6 +277,7 @@ REN_RasterizeFace (winding_t * w)
 			do {
 				for (i = 0; i < 5; i++)
 					leftside[i] = w->points[leftv][i];
+
 				leftv--;
 				if (leftv == -1)
 					leftv = numvertex - 1;
@@ -295,6 +290,7 @@ REN_RasterizeFace (winding_t * w)
 			do {
 				for (i = 0; i < 5; i++)
 					rightside[i] = w->points[rightv][i];
+
 				rightv++;
 				if (rightv == numvertex)
 					rightv = 0;
@@ -318,7 +314,7 @@ REN_RasterizeFace (winding_t * w)
 	}
 }
 
-//=============================================================================
+// =============================================================================
 
 /*
 ==================
@@ -333,7 +329,7 @@ REN_DrawSpanLinear (int y)
 	int         tx, ty;
 	int         x1, x2;
 	float       ufrac, vfrac, zfrac, ustep, vstep, zstep;
-	pixel32_t  *in, *out;
+	pixel32_t   *in, *out;
 	float       scale;
 
 	if (y < 0 || y >= r_height)
@@ -359,7 +355,6 @@ REN_DrawSpanLinear (int y)
 	ustep = (rightside[3] - ufrac) * scale;
 	vstep = (rightside[4] - vfrac) * scale;
 
-
 	if (x1 < 0) {
 		ufrac -= x1 * ustep;
 		vfrac -= x1 * vstep;
@@ -379,14 +374,14 @@ REN_DrawSpanLinear (int y)
 			if (t_widthshift) {
 				tx = (int) ufrac & t_widthmask;
 				ty = (int) vfrac & t_heightmask;
-				in = (pixel32_t *) & t_data[(ty << t_widthshift) + tx];
+				in = (pixel32_t *) &t_data[(ty << t_widthshift) + tx];
 			} else {
 				tx = (int) (ufrac + t_widthadd) % t_width;
 				ty = (int) (vfrac + t_heightadd) % t_height;
-				in = (pixel32_t *) & t_data[ty * t_width + tx];
+				in = (pixel32_t *) &t_data[ty * t_width + tx];
 			}
 
-			out = (pixel32_t *) & r_picbuffer[ofs];
+			out = (pixel32_t *) &r_picbuffer[ofs];
 			*out = *in;
 		}
 		ufrac += ustep;
@@ -394,7 +389,6 @@ REN_DrawSpanLinear (int y)
 		zfrac += zstep;
 		ofs++;
 	}
-
 }
 
 /*
@@ -406,12 +400,12 @@ REN_RasterizeFaceLinear
 void
 REN_RasterizeFaceLinear (winding_t * w)
 {
-	int         y;
-	int         i;
-	int         top, bot;
-	int         leftv, rightv;
-	int         count;
-	int         numvertex;
+	int     y;
+	int     i;
+	int     top, bot;
+	int     leftv, rightv;
+	int     count;
+	int     numvertex;
 
 //
 // find top vertex
@@ -434,7 +428,7 @@ REN_RasterizeFaceLinear (winding_t * w)
 	rightv = leftv;
 
 	if (top < 0 || bot > r_height || top > bot)
-		return;							// shouldn't have to have this...
+		return;                     // shouldn't have to have this...
 
 //
 // render a trapezoid
@@ -446,6 +440,7 @@ REN_RasterizeFaceLinear (winding_t * w)
 			do {
 				for (i = 0; i < 5; i++)
 					leftside[i] = w->points[leftv][i];
+
 				leftv--;
 				if (leftv == -1)
 					leftv = numvertex - 1;
@@ -458,6 +453,7 @@ REN_RasterizeFaceLinear (winding_t * w)
 			do {
 				for (i = 0; i < 5; i++)
 					rightside[i] = w->points[rightv][i];
+
 				rightv++;
 				if (rightv == numvertex)
 					rightv = 0;
@@ -478,7 +474,7 @@ REN_RasterizeFaceLinear (winding_t * w)
 	}
 }
 
-//============================================================================
+// ============================================================================
 
 /*
 ==================
@@ -494,38 +490,36 @@ REN_BeginCamera (void)
 	r_width_2 = (float) r_width / 2;
 	r_height_3 = (float) r_height / 3;
 
-
-// clip to right side
+	// clip to right side
 	rfrustum[0].normal[0] = -1;
 	rfrustum[0].normal[1] = 0;
 	rfrustum[0].normal[2] = 1;
 	rfrustum[0].dist = 0;
 
-// clip to left side
+	// clip to left side
 	rfrustum[1].normal[0] = 1;
 	rfrustum[1].normal[1] = 0;
 	rfrustum[1].normal[2] = 1;
 	rfrustum[1].dist = 0;
 
-// clip to top side
+	// clip to top side
 	rfrustum[2].normal[0] = 0;
 	rfrustum[2].normal[1] = -1;
 	rfrustum[2].normal[2] = r_height_3 / r_width_2;
 	rfrustum[2].dist = 0;
 
-// clip to bottom side
+	// clip to bottom side
 	rfrustum[3].normal[0] = 0;
 	rfrustum[3].normal[1] = 1;
 	rfrustum[3].normal[2] = 2 * r_height_3 / r_width_2;
 	rfrustum[3].dist = 0;
 
-// near Z
+	// near Z
 	rfrustum[4].normal[0] = 0;
 	rfrustum[4].normal[1] = 0;
 	rfrustum[4].normal[2] = 1;
 	rfrustum[4].dist = 1;
 }
-
 
 void
 REN_BeginXY (void)
@@ -562,11 +556,11 @@ REN_DrawCameraFace (face_t * idpol)
 	int         i;
 	float       scale;
 	int         numvertex;
-	winding_t  *w, *in;
+	winding_t   *w, *in;
 	vec3_t      temp;
 
 	if (!idpol->w)
-		return;							// overconstrained plane
+		return;                     // overconstrained plane
 
 	r_face = idpol;
 
@@ -614,7 +608,6 @@ REN_DrawCameraFace (face_t * idpol)
 		w->points[i][2] = scale;
 	}
 
-
 //
 // draw it
 //
@@ -623,7 +616,6 @@ REN_DrawCameraFace (face_t * idpol)
 	REN_RasterizeFace (w);
 	free (w);
 }
-
 
 /*
 =====================
@@ -634,14 +626,14 @@ void
 REN_DrawXYFace (face_t * idpol)
 {
 	int         i, j, numvertex;
-	winding_t  *w, *in;
-	float      *dest, *source;
+	winding_t   *w, *in;
+	float       *dest, *source;
 	float       temp;
 
 	if (!idpol->w)
-		return;							// overconstrained plane
-	w = idpol->w;
+		return;                     // overconstrained plane
 
+	w = idpol->w;
 	r_face = idpol;
 
 //
@@ -663,7 +655,7 @@ REN_DrawXYFace (face_t * idpol)
 		// using Z as a scale for the 2D projection
 		w->points[i][0] = (in->points[i][0] - r_origin[0]) * r_origin[2];
 		w->points[i][1] =
-			r_height - (in->points[i][1] - r_origin[1]) * r_origin[2];
+		    r_height - (in->points[i][1] - r_origin[1]) * r_origin[2];
 		w->points[i][2] = in->points[i][2] + 3000;
 		w->points[i][3] = in->points[i][3];
 		w->points[i][4] = in->points[i][4];
@@ -695,7 +687,7 @@ REN_DrawXYFace (face_t * idpol)
 			dest[2] = 4096 - dest[2];
 	}
 
-	if (xy_viewnormal[2] > 0) {			// flip order when upside down
+	if (xy_viewnormal[2] > 0) {     // flip order when upside down
 		for (i = 0; i < w->numpoints / 2; i++) {
 			dest = w->points[i];
 			source = w->points[w->numpoints - 1 - i];
@@ -708,7 +700,6 @@ REN_DrawXYFace (face_t * idpol)
 	}
 
 	REN_SetTexture (idpol);
-
 
 //
 // draw it

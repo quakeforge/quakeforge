@@ -5,43 +5,42 @@
 
 #include "Entity.h"
 
-extern id   things_i;
+extern id  things_i;
 
-#define	ENTITYNAMEKEY	"spawn"
+#define ENTITYNAMEKEY "spawn"
 
-@interface Things:NSObject
+@interface Things: NSObject
 {
-	id          entity_browser_i;		// browser
-	id          entity_comment_i;		// scrolling text window
+	id  entity_browser_i;           // browser
+	id  entity_comment_i;           // scrolling text window
 
-	id          prog_path_i;
+	id  prog_path_i;
 
-	int         lastSelected;			// last row selected in browser
+	int  lastSelected;              // last row selected in browser
 
-	id          keyInput_i;
-	id          valueInput_i;
-	id          flags_i;
+	id  keyInput_i;
+	id  valueInput_i;
+	id  flags_i;
 }
 
--initEntities;
+- (id) initEntities;
 
--newCurrentEntity;
--setSelectedKey:(epair_t *) ep;
+- (id) newCurrentEntity;
+- (id) setSelectedKey: (epair_t *)ep;
 
--clearInputs;
--(const char *) spawnName;
+- (id) clearInputs;
+- (const char *) spawnName;
 
 // UI targets
--reloadEntityClasses:sender;
--selectEntity:sender;
--doubleClickEntity:sender;
+- (id) reloadEntityClasses: sender;
+- (id) selectEntity: sender;
+- (id) doubleClickEntity: sender;
 
 // Action methods
--addPair:sender;
--delPair:sender;
--setAngle:sender;
--setFlags:sender;
-
+- (id) addPair: sender;
+- (id) delPair: sender;
+- (id) setAngle: sender;
+- (id) setFlags: sender;
 
 @end
 #endif // Things_h

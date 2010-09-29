@@ -7,14 +7,14 @@
 #include "XYView.h"
 #include "CameraView.h"
 
-id          zview_i;
+id  zview_i;
 
-id          zscrollview_i, zscalemenu_i, zscalebutton_i;
+id  zscrollview_i, zscalemenu_i, zscalebutton_i;
 
-float       zplane;
-float       zplanedir;
+float   zplane;
+float   zplanedir;
 
-extern NSBezierPath *path;
+extern NSBezierPath  *path;
 
 @implementation ZView
 /*
@@ -22,10 +22,10 @@ extern NSBezierPath *path;
 initWithFrame:
 ==================
 */
-- (id) initWithFrame:(NSRect) frameRect
+- (id) initWithFrame: (NSRect)frameRect
 {
-	NSPoint     pt;
-	NSBezierPath *path;
+	NSPoint         pt;
+	NSBezierPath    *path;
 
 	path = checker = [NSBezierPath new];
 	[path setLineWidth: 0.3];
@@ -37,36 +37,37 @@ initWithFrame:
 	origin[0] = 0.333;
 	origin[1] = 0.333;
 
-	[super initWithFrame:frameRect];
+	[super initWithFrame: frameRect];
 	[self allocateGState];
 	[self clearBounds];
 
 	zview_i = self;
 	scale = 1;
 
-//      
+//
 // initialize the pop up menus
 //
-	zscalebutton_i =[[NSPopUpButton alloc] init];
-	[zscalebutton_i setTarget:self];
+	zscalebutton_i = [[NSPopUpButton alloc] init];
+	[zscalebutton_i setTarget: self];
 	[zscalebutton_i setAction: @selector (scaleMenuTarget:)];
 
-	[zscalebutton_i addItemWithTitle:@"12.5%"];
-	[zscalebutton_i addItemWithTitle:@"25%"];
-	[zscalebutton_i addItemWithTitle:@"50%"];
-	[zscalebutton_i addItemWithTitle:@"75%"];
-	[zscalebutton_i addItemWithTitle:@"100%"];
-	[zscalebutton_i addItemWithTitle:@"200%"];
-	[zscalebutton_i addItemWithTitle:@"300%"];
-	[zscalebutton_i selectItemAtIndex:4];
+	[zscalebutton_i addItemWithTitle: @"12.5%"];
+	[zscalebutton_i addItemWithTitle: @"25%"];
+	[zscalebutton_i addItemWithTitle: @"50%"];
+	[zscalebutton_i addItemWithTitle: @"75%"];
+	[zscalebutton_i addItemWithTitle: @"100%"];
+	[zscalebutton_i addItemWithTitle: @"200%"];
+	[zscalebutton_i addItemWithTitle: @"300%"];
+	[zscalebutton_i selectItemAtIndex: 4];
 
 // initialize the scroll view
-	zscrollview_i =[[ZScrollView alloc] initWithFrame: frameRect
-											  button1: zscalebutton_i];
-	[zscrollview_i setAutoresizingMask:NSViewWidthSizable |
-									   NSViewHeightSizable];
+	zscrollview_i = [[ZScrollView alloc]
+	                   initWithFrame: frameRect
+	                         button1: zscalebutton_i];
+	[zscrollview_i setAutoresizingMask: NSViewWidthSizable |
+	 NSViewHeightSizable];
 
-	[zscrollview_i setDocumentView:self];
+	[zscrollview_i setDocumentView: self];
 
 	[_super_view setBoundsOrigin: NSMakePoint (0, 0)];
 
@@ -78,19 +79,19 @@ initWithFrame:
 
 	[self newRealBounds];
 
-	[self setOrigin: pt scale:1];
+	[self setOrigin: pt scale: 1];
 
 	return zscrollview_i;
 }
 
--setXYOrigin:(NSPoint *) pt
+- (id) setXYOrigin: (NSPoint *)pt
 {
 	origin[0] = pt->x + 0.333;
 	origin[1] = pt->y + 0.333;
 	return self;
 }
 
--(float) currentScale
+- (float) currentScale
 {
 	return scale;
 }
@@ -100,16 +101,16 @@ initWithFrame:
 setOrigin:scale:
 ===================
 */
--setOrigin:(NSPoint) pt scale:(float) sc
+- (id) setOrigin: (NSPoint)pt scale: (float)sc
 {
-	NSRect      sframe;
-	NSRect      bounds;
-	NSRect      size;
+	NSRect  sframe;
+	NSRect  bounds;
+	NSRect  size;
 
 	// calculate the area visible in the cliprect
 	scale = sc;
 
-	bounds =[_super_view bounds];
+	bounds = [_super_view bounds];
 	bounds.origin = pt;
 	bounds.size.width /= 1;
 	bounds.size.height /= scale;
@@ -118,7 +119,7 @@ setOrigin:scale:
 	// union with the realbounds
 	bounds = NSUnionRect (size, bounds);
 	// redisplay everything
-	bounds.origin = NSMakePoint (-bounds.size.width/2, bounds.origin.y);
+	bounds.origin = NSMakePoint (-bounds.size.width / 2, bounds.origin.y);
 	sframe = bounds;
 	sframe.origin.x *= 1;
 	sframe.origin.y *= scale;
@@ -127,7 +128,7 @@ setOrigin:scale:
 
 	// size this view
 	[quakeed_i disableFlushWindow];
-	[self setFrame:sframe bounds:bounds scale:NSMakeSize (1, scale)];
+	[self setFrame: sframe bounds: bounds scale: NSMakeSize (1, scale)];
 
 	// scroll and scale the clip view
 	pt.x *= 1;
@@ -140,7 +141,6 @@ setOrigin:scale:
 	return self;
 }
 
-
 /*
 ====================
 scaleMenuTarget:
@@ -148,22 +148,21 @@ scaleMenuTarget:
 Called when the scaler popup on the window is used
 ====================
 */
--scaleMenuTarget:sender
+- (id) scaleMenuTarget: sender
 {
-	char const *item;
+	char const  *item;
 	NSRect      rect;
 	NSPoint     mid, org, orig;
 	float       nscale;
 
-	item =[[sender titleOfSelectedItem] cString];
+	item = [[sender titleOfSelectedItem] cString];
 	sscanf (item, "%f", &nscale);
 	nscale /= 100;
 
 	if (nscale == scale)
 		return NULL;
-
-// keep the center of the view constant
-	rect =[_super_view bounds];
+	// keep the center of the view constant
+	rect = [_super_view bounds];
 	mid.x = rect.size.width / 2;
 	mid.y = rect.size.height / 2;
 
@@ -173,13 +172,12 @@ Called when the scaler popup on the window is used
 	orig.x = org.x - mid.x / 1;
 	orig.y = org.y - mid.y / nscale;
 
-	[self setOrigin: orig scale:nscale];
+	[self setOrigin: orig scale: nscale];
 
 	return self;
 }
 
-
--clearBounds
+- (id) clearBounds
 {
 	topbound = 999999;
 	bottombound = -999999;
@@ -187,20 +185,19 @@ Called when the scaler popup on the window is used
 	return self;
 }
 
--getBounds: (float *) top:(float *) bottom;
+- (id) getBounds: (float *)top: (float *)bottom;
 {
 	*top = topbound;
 	*bottom = bottombound;
 	return self;
 }
 
-
 /*
 ==================
 addToHeightRange:
 ==================
 */
--addToHeightRange:(float) height
+- (id) addToHeightRange: (float)height
 {
 	if (height < minheight)
 		minheight = height;
@@ -209,7 +206,6 @@ addToHeightRange:
 	return self;
 }
 
-
 /*
 ==================
 newSuperBounds
@@ -217,14 +213,13 @@ newSuperBounds
 When _super_view is resized
 ==================
 */
--newSuperBounds
+- (id) newSuperBounds
 {
 	oldminheight++;
 	[self newRealBounds];
 
 	return self;
 }
-
 
 /*
 ===================
@@ -234,17 +229,16 @@ Should only change the scroll bars, not cause any redraws.
 If realbounds has shrunk, nothing will change.
 ===================
 */
--newRealBounds
+- (id) newRealBounds
 {
-	NSRect      bounds;
-	NSRect      sframe;
-	NSRect      size;
+	NSRect  bounds;
+	NSRect  sframe;
+	NSRect  size;
 
-	NSClipView *cv = (NSClipView *) _super_view;
+	NSClipView  *cv = (NSClipView *) _super_view;
 
 	if (minheight == oldminheight && maxheight == oldmaxheight)
 		return self;
-
 	oldminheight = minheight;
 	oldmaxheight = maxheight;
 
@@ -252,7 +246,7 @@ If realbounds has shrunk, nothing will change.
 	maxheight += 16;
 
 	// calculate the area visible in the cliprect
-	bounds =[cv bounds];
+	bounds = [cv bounds];
 	bounds.size.width /= 1;
 	bounds.size.height /= scale;
 
@@ -266,7 +260,7 @@ If realbounds has shrunk, nothing will change.
 
 	// size this view
 	[quakeed_i disableFlushWindow];
-	[self setFrame:sframe bounds:bounds scale:NSMakeSize (1, scale)];
+	[self setFrame: sframe bounds: bounds scale: NSMakeSize (1, scale)];
 
 	[[_super_view superview] reflectScrolledClipView: cv];
 
@@ -275,8 +269,6 @@ If realbounds has shrunk, nothing will change.
 
 	return self;
 }
-
-
 
 /*
 ============
@@ -289,29 +281,30 @@ Rect is in global world (unscaled) coordinates
 ============
 */
 
--drawGrid:(NSRect) rect
+- (id) drawGrid: (NSRect)rect
 {
-	int         y, stopy;
-	float       top, bottom;
-	int         left, right;
-	int         gridsize;
-	BOOL        showcoords;
-	NSMutableDictionary *attribs = [NSMutableDictionary dictionary];
+	int     y, stopy;
+	float   top, bottom;
+	int     left, right;
+	int     gridsize;
+	BOOL    showcoords;
+	NSMutableDictionary  *attribs = [NSMutableDictionary dictionary];
 
-	showcoords =[quakeed_i showCoordinates];
+	showcoords = [quakeed_i showCoordinates];
 
-	gridsize =[xyview_i gridsize];
+	gridsize = [xyview_i gridsize];
 
 	left = _bounds.origin.x;
 	right = 24;
 	bottom = rect.origin.y - 1;
 	top = rect.origin.y + rect.size.height + 2;
+
 //
 // grid
 //
-// can't just divide by grid size because of negetive coordinate
-// truncating direction
-//
+
+	// can't just divide by grid size because of negetive coordinate
+	// truncating direction
 	if (gridsize >= 4 / scale) {
 		y = floor (bottom / gridsize);
 		stopy = floor (top / gridsize);
@@ -320,19 +313,23 @@ Rect is in global world (unscaled) coordinates
 		stopy *= gridsize;
 		if (y < bottom)
 			y += gridsize;
-
 		[path removeAllPoints];
 
-		for (; y <= stopy; y += gridsize)
+		for ( ; y <= stopy; y += gridsize) {
 			if (y & 31) {
-				[path moveToPoint:NSMakePoint (left, y)];
-				[path lineToPoint:NSMakePoint (right, y)];
+				[path moveToPoint: NSMakePoint (left, y)];
+				[path lineToPoint: NSMakePoint (right, y)];
 			}
-		// endUserPath (upath, dps_ustroke);
-		[[NSColor colorWithCalibratedRed: 0.8 green: 0.8 blue: 1.0 alpha: 1.0]
-		 set];	// thin grid color
+		}
+
+//		endUserPath (upath, dps_ustroke);
+		[[NSColor colorWithCalibratedRed: 0.8
+		                           green: 0.8
+		                            blue: 1.0
+		                           alpha: 1.0] set];    // thin grid color
 		[path stroke];
 	}
+
 //
 // half tiles
 //
@@ -345,12 +342,11 @@ Rect is in global world (unscaled) coordinates
 	stopy *= 32;
 	if (stopy >= top)
 		stopy -= 32;
-
 	[path removeAllPoints];
 
-	for (; y <= stopy; y += 64) {
-		[path moveToPoint:NSMakePoint (left, y)];
-		[path lineToPoint:NSMakePoint (right, y)];
+	for ( ; y <= stopy; y += 64) {
+		[path moveToPoint: NSMakePoint (left, y)];
+		[path lineToPoint: NSMakePoint (right, y)];
 	}
 
 	// endUserPath (upath, dps_ustroke);
@@ -370,36 +366,32 @@ Rect is in global world (unscaled) coordinates
 		y += 64;
 	if (stopy >= top)
 		stopy -= 64;
-
 	[path removeAllPoints];
-	[[NSColor colorWithCalibratedWhite: 0.0 / 16.0 alpha: 1.0]
-	 set];						// for text
+
+	[[NSColor colorWithCalibratedWhite: 0.0 / 16.0 alpha: 1.0] set]; // for text
 	[[NSFont systemFontOfSize: 10] set];
 
-	for (; y <= stopy; y += 64) {
+	for ( ; y <= stopy; y += 64) {
 		if (showcoords) {
-			NSString *s = [NSString stringWithFormat: @"%i", y];
+			NSString  *s = [NSString stringWithFormat: @"%i", y];
 			[s drawAtPoint: NSMakePoint (left, y) withAttributes: attribs];
 		}
-		[path moveToPoint:NSMakePoint (left + 24, y)];
-		[path lineToPoint:NSMakePoint (right, y)];
+		[path moveToPoint: NSMakePoint (left + 24, y)];
+		[path lineToPoint: NSMakePoint (right, y)];
 	}
 
-// divider
-	[path moveToPoint:NSMakePoint (0, _bounds.origin.y)];
-	[path lineToPoint:NSMakePoint (0,
-				 _bounds.origin.y + _bounds.size.height)];
+	// divider
+	[path moveToPoint: NSMakePoint (0, _bounds.origin.y)];
+	[path lineToPoint: NSMakePoint (0, _bounds.origin.y + _bounds.size.height)];
 
-	// endUserPath (upath, dps_ustroke);
-	[[NSColor colorWithCalibratedWhite: 10.0 / 16.0 alpha: 1.0]
-	 set];
+//	endUserPath (upath, dps_ustroke);
+	[[NSColor colorWithCalibratedWhite: 10.0 / 16.0 alpha: 1.0] set];
 	[path stroke];
 
 //
 // origin
 //
-	[[NSColor colorWithCalibratedWhite: 4.0 / 16.0 alpha: 1.0]
-	 set];
+	[[NSColor colorWithCalibratedWhite: 4.0 / 16.0 alpha: 1.0] set];
 	[path removeAllPoints];
 	[path setLineWidth: 5];
 	[path moveToPoint: NSMakePoint (right, 0)];
@@ -410,15 +402,13 @@ Rect is in global world (unscaled) coordinates
 	return self;
 }
 
-
--drawZplane
+- (id) drawZplane
 {
-	[[NSColor colorWithCalibratedRed: 0.2 green: 0.2 blue: 0.0 alpha: 1.0]
-	 set];
-	[path appendBezierPathWithArcWithCenter: NSMakePoint (0, zplane)
-									 radius: 4
-								 startAngle: 0
-								   endAngle: 180];
+	[[NSColor colorWithCalibratedRed: 0.2 green: 0.2 blue: 0.0 alpha: 1.0] set];
+	[path  appendBezierPathWithArcWithCenter: NSMakePoint (0, zplane)
+	                                  radius: 4
+	                              startAngle: 0
+	                                endAngle: 180];
 	[path fill];
 	return self;
 }
@@ -429,15 +419,15 @@ drawSelf
 ===============================================================================
 */
 
-- (void) drawRect: (NSRect) rect
+- (void) drawRect: (NSRect)rect
 {
-	//NSRect      visRect;
-//Sys_Printf("ZView:drawRect\n");
+	// NSRect      visRect;
+// Sys_Printf("ZView:drawRect\n");
 	minheight = 999999;
 	maxheight = -999999;
 
-// allways draw the entire bar  
-	//visRect =[self visibleRect];
+// allways draw the entire bar
+	// visRect =[self visibleRect];
 	rect = [self visibleRect];
 
 	[quakeed_i zNoRestore: rect];
@@ -446,13 +436,13 @@ drawSelf
 	NSEraseRect (rect);
 
 // draw grid
-	[self drawGrid:rect];
+	[self drawGrid: rect];
 
 // draw zplane
 //	[self drawZplane]; FIXME zplane doesn't do anything yet
 
 // draw all entities
-	[map_i makeUnselectedPerform:@selector (ZDrawSelf)];
+	[map_i makeUnselectedPerform: @selector (ZDrawSelf)];
 
 // possibly resize the view
 	[self newRealBounds];
@@ -465,8 +455,8 @@ XYDrawSelf
 */
 - (void) XYDrawSelf
 {
-	NSBezierPath *path;
-	NSAffineTransform *trans;
+	NSBezierPath        *path;
+	NSAffineTransform   *trans;
 
 	[[NSColor colorWithCalibratedRed: 0 green: 0.5 blue: 1.0 alpha: 1.0] set];
 
@@ -479,26 +469,24 @@ XYDrawSelf
 	[path release];
 }
 
-
 /*
 ==============
 getPoint: (NSPoint *)pt
 ==============
 */
--getPoint:(NSPoint *) pt
+- (id) getPoint: (NSPoint *)pt
 {
-	pt->x = origin[0] + 0.333;			// offset a bit to avoid edge cases
+	pt->x = origin[0] + 0.333;      // offset a bit to avoid edge cases
 	pt->y = origin[1] + 0.333;
 	return self;
 }
 
--setPoint:(NSPoint *) pt
+- (id) setPoint: (NSPoint *)pt
 {
 	origin[0] = pt->x;
 	origin[1] = pt->y;
 	return self;
 }
-
 
 /*
 ==============================================================================
@@ -508,53 +496,51 @@ MOUSE CLICKING
 ==============================================================================
 */
 
-
 /*
 ================
 dragLoop:
 ================
 */
-static NSPoint oldreletive;
+static NSPoint  oldreletive;
 
--dragFrom: (NSEvent *) startevent useGrid: (BOOL) ug callback:(void (*)(float dy)) callback
+- (id) dragFrom: (NSEvent *)startevent
+   useGrid: (BOOL)ug
+   callback: (void (*)(float dy))callback
 {
-	NSEvent    *event;
+	NSEvent     *event;
 	NSPoint     startpt, newpt;
 	NSPoint     reletive, delta;
 	int         gridsize;
 
-	gridsize =[xyview_i gridsize];
+	gridsize = [xyview_i gridsize];
 
-	startpt =[startevent locationInWindow];
-	startpt =[self convertPoint: startpt fromView:NULL];
+	startpt = [startevent locationInWindow];
+	startpt = [self convertPoint: startpt fromView: NULL];
 
 	oldreletive.x = oldreletive.y = 0;
 	reletive.x = 0;
 
 	while (1) {
-		unsigned    eventMask = NSLeftMouseUpMask | NSLeftMouseDraggedMask
-			| NSRightMouseUpMask | NSRightMouseDraggedMask
-			| NSApplicationDefinedMask;
-		event =[NSApp nextEventMatchingMask: eventMask untilDate:[NSDate
-		 distantFuture]
-		inMode: NSEventTrackingRunLoopMode dequeue:YES];
+		unsigned  eventMask = NSLeftMouseUpMask | NSLeftMouseDraggedMask
+		                      | NSRightMouseUpMask | NSRightMouseDraggedMask
+		                      | NSApplicationDefinedMask;
+		event = [NSApp nextEventMatchingMask: eventMask untilDate: [NSDate
+		                                                            distantFuture]
+		                              inMode: NSEventTrackingRunLoopMode dequeue:
+		         YES];
 
-		if ([event type] == NSLeftMouseUp ||[event type] == NSRightMouseUp)
+		if ([event type] == NSLeftMouseUp || [event type] == NSRightMouseUp)
 			break;
-
-		newpt =[event locationInWindow];
-		newpt =[self convertPoint: newpt fromView:NULL];
+		newpt = [event locationInWindow];
+		newpt = [self convertPoint: newpt fromView: NULL];
 
 		reletive.y = newpt.y - startpt.y;
 
-		if (ug) {						// we want truncate towards 0 behavior
-										// here
+		if (ug)                     // we want truncate-towards-0 behavior here
 			reletive.y = gridsize * (int) (reletive.y / gridsize);
-		}
 
 		if (reletive.y == oldreletive.y)
 			continue;
-
 		delta.y = reletive.y - oldreletive.y;
 		oldreletive = reletive;
 		callback (delta.y);
@@ -563,8 +549,7 @@ static NSPoint oldreletive;
 	return self;
 }
 
-//============================================================================
-
+// ============================================================================
 
 void
 ZDragCallback (float dy)
@@ -573,21 +558,20 @@ ZDragCallback (float dy)
 	sb_translate[1] = 0;
 	sb_translate[2] = dy;
 
-	[map_i makeSelectedPerform:@selector (translate)];
+	[map_i makeSelectedPerform: @selector (translate)];
 
 	[quakeed_i redrawInstance];
 }
 
--selectionDragFrom:(NSEvent *) theEvent
+- (id) selectionDragFrom: (NSEvent *)theEvent
 {
 	Sys_Printf ("dragging selection\n");
-	[self dragFrom: theEvent useGrid: YES callback:ZDragCallback];
+	[self dragFrom: theEvent useGrid: YES callback: ZDragCallback];
 	[quakeed_i updateCamera];
 	return self;
-
 }
 
-//============================================================================
+// ============================================================================
 
 void
 ZScrollCallback (float dy)
@@ -596,31 +580,31 @@ ZScrollCallback (float dy)
 	NSPoint     neworg;
 	float       scale;
 
-	basebounds =[[zview_i superview] bounds];
-	basebounds =[zview_i convertRect: basebounds fromView:[zview_i
-	 superview]];
+	basebounds = [[zview_i superview] bounds];
+	basebounds = [zview_i convertRect: basebounds fromView: [zview_i
+	                                                         superview]];
 
 	neworg.y = basebounds.origin.y - dy;
 
-	scale =[zview_i currentScale];
+	scale = [zview_i currentScale];
 
 	oldreletive.y -= dy;
-	[zview_i setOrigin: neworg scale:scale];
+	[zview_i setOrigin: neworg scale: scale];
 }
 
--scrollDragFrom:(NSEvent *) theEvent
+- (id) scrollDragFrom: (NSEvent *)theEvent
 {
 	Sys_Printf ("scrolling view\n");
-	[self dragFrom: theEvent useGrid: YES callback:ZScrollCallback];
+	[self dragFrom: theEvent useGrid: YES callback: ZScrollCallback];
 	return self;
 }
 
-//============================================================================
+// ============================================================================
 
 void
 ZControlCallback (float dy)
 {
-	int         i;
+	int  i;
 
 	for (i = 0; i < numcontrolpoints; i++)
 		controlpoints[i][2] += dy;
@@ -629,31 +613,29 @@ ZControlCallback (float dy)
 	[quakeed_i redrawInstance];
 }
 
--(BOOL) planeDragFrom:(NSEvent *) theEvent
+- (BOOL) planeDragFrom: (NSEvent *)theEvent
 {
 	NSPoint     pt;
 	vec3_t      dragpoint;
 
 	if ([map_i numSelected] != 1)
 		return NO;
-
-	pt =[theEvent locationInWindow];
-	pt =[self convertPoint: pt fromView:NULL];
+	pt = [theEvent locationInWindow];
+	pt = [self convertPoint: pt fromView: NULL];
 
 	dragpoint[0] = origin[0];
 	dragpoint[1] = origin[1];
 	dragpoint[2] = pt.y;
 
-	[[map_i selectedBrush] getZdragface:dragpoint];
+	[[map_i selectedBrush] getZdragface: dragpoint];
 	if (!numcontrolpoints)
 		return NO;
-
 	Sys_Printf ("dragging brush plane\n");
 
-	pt =[theEvent locationInWindow];
-	pt =[self convertPoint: pt fromView:NULL];
+	pt = [theEvent locationInWindow];
+	pt = [self convertPoint: pt fromView: NULL];
 
-	[self dragFrom: theEvent useGrid: YES callback:ZControlCallback];
+	[self dragFrom: theEvent useGrid: YES callback: ZControlCallback];
 
 	[[map_i selectedBrush] removeIfInvalid];
 
@@ -661,52 +643,51 @@ ZControlCallback (float dy)
 	return YES;
 }
 
-
-//============================================================================
+// ============================================================================
 
 /*
 ===================
 mouseDown
 ===================
 */
--(void) mouseDown:(NSEvent *) theEvent
+- (void) mouseDown: (NSEvent *)theEvent
 {
 	NSPoint     pt;
 	int         flags;
 	vec3_t      p1;
 
-	pt =[theEvent locationInWindow];
-	pt =[self convertPoint: pt fromView:NULL];
+	pt = [theEvent locationInWindow];
+	pt = [self convertPoint: pt fromView: NULL];
 
 	p1[0] = origin[0];
 	p1[1] = origin[1];
 	p1[2] = pt.y;
 
 	flags =
-		[theEvent modifierFlags] & (NSShiftKeyMask | NSControlKeyMask |
-									NSAlternateKeyMask | NSCommandKeyMask);
+	    [theEvent modifierFlags] & (NSShiftKeyMask | NSControlKeyMask |
+	                                NSAlternateKeyMask | NSCommandKeyMask);
 
 //
 // shift click to select / deselect a brush from the world
 //
 	if (flags == NSShiftKeyMask) {
-		[map_i selectRay: p1: p1:NO];
+		[map_i selectRay: p1: p1: NO];
 		return;
 	}
 //
 // alt click = set entire brush texture
 //
 	if (flags == NSAlternateKeyMask) {
-		[map_i setTextureRay: p1: p1:YES];
+		[map_i setTextureRay: p1: p1: YES];
 		return;
 	}
 //
 // control click = position view
 //
 	if (flags == NSControlKeyMask) {
-		[cameraview_i setZOrigin:pt.y];
+		[cameraview_i setZOrigin: pt.y];
 		[quakeed_i updateAll];
-		[cameraview_i ZmouseDown: &pt flags:[theEvent modifierFlags]];
+		[cameraview_i ZmouseDown: &pt flags: [theEvent modifierFlags]];
 		return;
 	}
 //
@@ -714,18 +695,16 @@ mouseDown
 //
 	if (flags == 0) {
 // check eye
-		if ([cameraview_i ZmouseDown: &pt flags:[theEvent modifierFlags]])
+		if ([cameraview_i ZmouseDown: &pt flags: [theEvent modifierFlags]])
 			return;
-
 		if ([map_i numSelected]) {
 			if (pt.x > 0) {
-				if ([self planeDragFrom:theEvent])
+				if ([self planeDragFrom: theEvent])
 					return;
 			}
-			[self selectionDragFrom:theEvent];
+			[self selectionDragFrom: theEvent];
 			return;
 		}
-
 	}
 
 	Sys_Printf ("bad flags for click %x %g %g\n", flags, pt.x, pt.y);
@@ -738,35 +717,31 @@ mouseDown
 rightMouseDown
 ===================
 */
--(void) rightMouseDown:(NSEvent *) theEvent
+- (void) rightMouseDown: (NSEvent *)theEvent
 {
 	NSPoint     pt;
 	int         flags;
 
-	pt =[theEvent locationInWindow];
-	pt =[self convertPoint: pt fromView:NULL];
+	pt = [theEvent locationInWindow];
+	pt = [self convertPoint: pt fromView: NULL];
 
 	flags =
-		[theEvent modifierFlags] & (NSShiftKeyMask | NSControlKeyMask |
-									NSAlternateKeyMask | NSCommandKeyMask);
-
+	    [theEvent modifierFlags] & (NSShiftKeyMask | NSControlKeyMask |
+	                                NSAlternateKeyMask | NSCommandKeyMask);
 
 //
 // click = scroll view
 //
-	if (flags == 0) {
-		[self scrollDragFrom:theEvent];
-	}
-
+	if (flags == 0)
+		[self scrollDragFrom: theEvent];
 	Sys_Printf ("bad flags for click\n");
 	NopSound ();
 }
 
-
 /*
 ===============================================================================
 
-						XY mouse view methods
+                        XY mouse view methods
 
 ===============================================================================
 */
@@ -776,14 +751,16 @@ rightMouseDown
 modalMoveLoop
 ================
 */
--modalMoveLoop: (NSPoint *) basept: (vec3_t) movemod:converter
+- (id) modalMoveLoop: (NSPoint *)basept
+   : (vec3_t)movemod
+   : converter
 {
 	vec3_t      originbase;
-	NSEvent    *event;
+	NSEvent     *event;
 	NSPoint     newpt;
 	vec3_t      delta;
 
-	int         i;
+	int  i;
 
 	VectorCopy (origin, originbase);
 
@@ -792,27 +769,27 @@ modalMoveLoop
 
 	while ([event type] != NSLeftMouseUp) {
 		// calculate new point
-		newpt =[event locationInWindow];
-		newpt =[converter convertPoint: newpt fromView:NULL];
+		newpt = [event locationInWindow];
+		newpt = [converter convertPoint: newpt fromView: NULL];
 
 		delta[0] = newpt.x - basept->x;
 		delta[1] = newpt.y - basept->y;
-		delta[2] = delta[1];			// height change
+		delta[2] = delta[1];        // height change
 
 		for (i = 0; i < 3; i++)
 			origin[i] = originbase[i] + movemod[i] * delta[i];
-
 
 	drawentry:
 		// instance draw new frame
 		[quakeed_i newinstance];
 		[self display];
 
-		unsigned    eventMask = NSLeftMouseUpMask | NSLeftMouseDraggedMask;
+		unsigned  eventMask = NSLeftMouseUpMask | NSLeftMouseDraggedMask;
 
-		event =[NSApp nextEventMatchingMask: eventMask untilDate:[NSDate
-		 distantFuture]
-		inMode: NSEventTrackingRunLoopMode dequeue:YES];
+		event = [NSApp nextEventMatchingMask: eventMask untilDate: [NSDate
+		                                                            distantFuture]
+		                              inMode: NSEventTrackingRunLoopMode dequeue:
+		         YES];
 	}
 
 	// draw the brush back into the window buffer
@@ -826,18 +803,17 @@ modalMoveLoop
 XYmouseDown
 ===============
 */
--(BOOL) XYmouseDown:(NSPoint *) pt
+- (BOOL) XYmouseDown: (NSPoint *)pt
 {
-	vec3_t      movemod;
+	vec3_t  movemod;
 
 	if (fabs (pt->x - origin[0]) > 16 || fabs (pt->y - origin[1]) > 16)
 		return NO;
-
 	movemod[0] = 1;
 	movemod[1] = 1;
 	movemod[2] = 0;
 
-	[self modalMoveLoop: pt: movemod:xyview_i];
+	[self modalMoveLoop: pt: movemod: xyview_i];
 
 	return YES;
 }
