@@ -24,7 +24,20 @@ ADDITIONAL_GUI_LIBS +=
 # Resource files
 #
 QuakeEd_MAIN_MODEL_FILE=	MapEdit.gorm
-QuakeEd_RESOURCE_FILES= MapEdit.gorm help.txt
+QuakeEd_RESOURCE_FILES= \
+	MapEdit.gorm \
+	help.txt \
+	../../Images/DownArrow.tiff \
+	../../Images/UpArrow.tiff \
+	../../Images/i_90d.tiff \
+	../../Images/i_add.tiff \
+	../../Images/i_brushes.tiff \
+	../../Images/i_fliph.tiff \
+	../../Images/i_flipv.tiff \
+	../../Images/i_quakeed.tiff \
+	../../Images/i_sub.tiff \
+	../../Images/short.tiff \
+	../../Images/tall.tiff	
 
 QuakeEd_LOCALIZED_RESOURCE_FILES=
 
@@ -64,3 +77,4 @@ include $(GNUSTEP_MAKEFILES)/aggregate.make
 include $(GNUSTEP_MAKEFILES)/application.make
 
 -include GNUmakefile.postamble
+
