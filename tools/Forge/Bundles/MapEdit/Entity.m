@@ -299,7 +299,7 @@ int  nument;
 	}
 
 	if (strcmp (Script_Token (script), "{"))
-		Sys_Error ("initFromFileP: { not found");
+		Sys_Error ("initFromScript: { not found");
 
 	do {
 		if (!Script_GetToken (script, true))
