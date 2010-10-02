@@ -10,6 +10,8 @@ typedef  struct {
 	char    *value;
 } dict_t;
 
+struct script_s;
+
 @interface Dict: Storage
 {
 }
@@ -35,9 +37,7 @@ typedef  struct {
 
 // INTERNAL
 - (id) init;
-- (id) parseBraceBlock: (FILE *)fp;
-- (id) setupMultiple: (const char *)value;
-- (char *) getNextParameter;
+- (id) parseBraceBlock: (struct script_s *)script;
 
 @end
 
