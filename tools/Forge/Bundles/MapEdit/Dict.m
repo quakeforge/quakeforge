@@ -1,4 +1,5 @@
 #include "QF/dstring.h"
+#include "QF/script.h"
 #include "QF/va.h"
 
 #include "Dict.h"
@@ -55,8 +56,27 @@ JDC
 
 - (id) initFromFile: (FILE *)fp
 {
+	dstring_t   *text = dstring_newstr ();
+	char        *str;
+	size_t      read;
+	const size_t readsize = 1024;
+	script_t    *script;
+
 	[self init];
-	return [self parseBraceBlock: fp];
+
+	do {
+		str = dstring_reservestr (text, readsize);
+		read = fread (str, 1, readsize, fp);
+		if (read)
+			str[read] = 0;
+	} while (read == readsize);
+
+	script = Script_New ();
+	Script_Start (script, "project file", text->str);
+
+	self = [self parseBraceBlock: script];
+	Script_Delete (script);
+	return self;
 }
 
 // ===============================================
@@ -345,49 +365,36 @@ char        item[4096];
 //
 //  parse all keyword/value pairs within { } 's
 //
-- (id) parseBraceBlock: (FILE *)fp
+- (id) parseBraceBlock: (script_t *)script
 {
-	int     c;
 	dict_t  pair;
-	char    string[1024];
 
-	c = FindBrace (fp);
-	if (c == -1)
+	if (!Script_GetToken (script, YES))
 		return NULL;
-	while ((c = FindBrace (fp)) != '}') {
-		if (c == -1)
+	if (strcmp (Script_Token (script), "{"))
+		return NULL;
+	do {
+		if (!Script_GetToken (script, YES))
+			return NULL;
+		if (!strcmp (Script_Token (script), "}"))
+			break;
+		if (strcmp (Script_Token (script), "{"))
 			return NULL;
 
-#if 0
-		c = FindNonwhitespc (fp);
-		if (c == -1)
+		if (!Script_GetToken (script, YES))
 			return NULL;
-		CopyUntilWhitespc (fp, string);
-#endif
+		pair.key = strdup (Script_Token (script));
 
-// JDC: fixed to allow quoted keys
-		c = FindNonwhitespc (fp);
-		if (c == -1)
+		if (!Script_GetToken (script, YES))
 			return NULL;
-		c = fgetc (fp);
-		if (c == '\"') {
-			CopyUntilQuote (fp, string);
-		} else {
-			ungetc (c, fp);
-			CopyUntilWhitespc (fp, string);
-		}
+		pair.value = strdup (Script_Token (script));
 
-		pair.key = malloc (strlen (string) + 1);
-		strcpy (pair.key, string);
-
-		c = FindQuote (fp);
-		CopyUntilQuote (fp, string);
-		pair.value = malloc (strlen (string) + 1);
-		strcpy (pair.value, string);
-
+		if (!Script_GetToken (script, YES))
+			return NULL;
+		if (strcmp (Script_Token (script), "}"))
+			return NULL;
 		[super addElement: &pair];
-		c = FindBrace (fp);
-	}
+	} while (1);
 
 	return self;
 }
@@ -497,43 +504,7 @@ FindQuote (FILE * fp)
 	return -1;
 }
 
-int
-FindWhitespc (FILE * fp)
-{
-	int     count = 800;
-	int     c;
-
-	while (count--) {
-		c = GetNextChar (fp);
-		if (c == EOF)
-			return -1;
-		if (c <= ' ') {
-			ungetc (c, fp);
-			return c;
-		}
-	}
-	return -1;
-}
-
-int
-FindNonwhitespc (FILE * fp)
-{
-	int     count = 800;
-	int     c;
-
-	while (count--) {
-		c = GetNextChar (fp);
-		if (c == EOF)
-			return -1;
-		if (c > ' ') {
-			ungetc (c, fp);
-			return c;
-		}
-	}
-	return -1;
-}
-
-char       *
+char *
 FindWhitespcInBuffer (char *buffer)
 {
 	int     count = 1000;
@@ -548,7 +519,7 @@ FindWhitespcInBuffer (char *buffer)
 	return NULL;
 }
 
-char       *
+char *
 FindNonwhitespcInBuffer (char *buffer)
 {
 	int     count = 1000;
