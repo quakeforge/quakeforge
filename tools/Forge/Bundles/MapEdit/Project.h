@@ -28,9 +28,9 @@ extern id  project_i;
 	id  basepathinfo_i;             // outlet to base path info textfield
 	id  mapbrowse_i;                // outlet to QuakeEd Maps browser
 	id  currentmap_i;               // outlet to current map textfield
-	id  mapList;                    // list of map names (Storage)
-	id  descList;                   // list of map descriptions (Storage)
-	id  wadList;                    // list of wad names (Storage)
+	struct plitem_s *mapList;       // list of map names (Storage)
+	struct plitem_s *descList;      // list of map descriptions (Storage)
+	struct plitem_s *wadList;       // list of wad names (Storage)
 
 	id  pis_panel_i;                // outlet to Project Info Settings (PIS)
 	                                // panel

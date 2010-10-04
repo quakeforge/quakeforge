@@ -5,39 +5,24 @@
 
 #include "Storage.h"
 
-typedef  struct {
-	char    *key;
-	char    *value;
-} dict_t;
-
 struct script_s;
 
-@interface Dict: Storage
+@interface Dict: NSObject
 {
+	struct plitem_s *plist;
 }
 
 - (id) initFromFile: (FILE *)fp;
 
-- (id) parseMultipleFrom: (const char *)value;
 - (int) getValueUnits: (const char *)key;
-- (id) delString: (const char *)string fromValue: (const char *)key;
 
-- (id) addString: (const char *)string toValue: (const char *)key;
-
-- (char *) convertListToString: (id)list;
+- (struct plitem_s *) getArrayFor: (const char *)name;
 - (const char *) getStringFor: (const char *)name;
-- (id) removeKeyword: (const char *)key;
 - (unsigned int) getValueFor: (const char *)name;
 - (id) changeStringFor: (const char *)key to: (const char *)value;
 
-- (dict_t *) findKeyword: (const char *)key;
-
 - (id) writeBlockTo: (FILE *)fp;
 - (id) writeFile: (const char *)path;
-
-// INTERNAL
-- (id) init;
-- (id) parseBraceBlock: (struct script_s *)script;
 
 @end
 
