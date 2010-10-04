@@ -6,6 +6,7 @@
 
 #include <unistd.h>
 
+#include "QF/qfplist.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -104,12 +105,11 @@ id  project_i;
 		changeString ('@', '\"', string_entities);
 	}
 	// Build list of wads
-	wadList = [projectInfo parseMultipleFrom: WADSKEY];
+	wadList = [projectInfo getArrayFor: WADSKEY];
 
 	// Build list of maps & descriptions
-	mapList = [projectInfo parseMultipleFrom: MAPNAMESKEY];
-	descList = [projectInfo parseMultipleFrom: DESCKEY];
-	[self changeChar: '_' to: ' ' in: descList];
+	mapList = [projectInfo getArrayFor: MAPNAMESKEY];
+	descList = [projectInfo getArrayFor: DESCKEY];
 
 	[self initProjSettings];
 
@@ -204,23 +204,24 @@ id  project_i;
 //
 - (void) browser: sender createRowsForColumn: (int)column inMatrix: matrix
 {
-	id      cell, list;
-	int     max;
-	char    *name;
-	int     i;
+	id          cell;
+	plitem_t   *list;
+	int         max;
+	const char *name;
+	int         i;
 
 	if (sender == mapbrowse_i) {
 		list = mapList;
 	} else if (sender == pis_wads_i) {
 		list = wadList;
 	} else {
-		list = nil;
+		list = 0;
 		Sys_Error ("Project: unknown browser to fill");
 	}
 
-	max = [list count];
+	max = list ? PL_A_NumObjects (list) : 0;
 	for (i = 0; i < max; i++) {
-		name = [list elementAt: i];
+		name = PL_String (PL_ObjectAtIndex (list, i));
 		[matrix addRow];
 		cell = [matrix cellAtRow: i column: 0];
 		[cell setStringValue: [NSString stringWithCString: name]];
@@ -243,7 +244,7 @@ id  project_i;
 	matrix = [sender matrixInColumn: 0];
 	row = [matrix selectedRow];
 	fname = va ("%s/%s.map", path_mapdirectory,
-	            (const char *) [mapList elementAt: row]); // XXX Storage
+				PL_String (PL_ObjectAtIndex (mapList, row)));
 
 	panel = NSGetAlertPanel (@"Loading...",
 	                         @"Loading map. Please wait.", NULL, NULL, NULL);
@@ -267,9 +268,9 @@ id  project_i;
 	Sys_Printf ("loading %s\n", wf);
 
 // set the row in the settings inspector wad browser
-	c = [wadList count];
+	c = PL_A_NumObjects (wadList);
 	for (i = 0; i < c; i++) {
-		name = (const char *) [wadList elementAt: i]; // XXX Storage
+		name = PL_String (PL_ObjectAtIndex (wadList, i));
 		if (!strcmp (name, wf)) {
 			[[pis_wads_i matrixInColumn: 0] selectCellAtRow: i column: 0];
 			break;
@@ -291,14 +292,14 @@ id  project_i;
 //
 - (id) clickedOnWad: sender
 {
-	id      matrix;
-	int     row;
-	char    *name;
+	id          matrix;
+	int         row;
+	const char *name;
 
 	matrix = [sender matrixInColumn: 0];
 	row = [matrix selectedRow];
 
-	name = (char *) [wadList elementAt: row]; // XXX Storage
+	name = PL_String (PL_ObjectAtIndex (wadList, row));
 	[self setTextureWad: name];
 
 	return self;

@@ -49,7 +49,7 @@ QuakeEd_LANGUAGES= \
 # Header files
 #
 QuakeEd_HEADERS= \
-	CameraView.h Clipper.h Dict.h DictList.h Entity.h EntityClass.h \
+	CameraView.h Clipper.h Dict.h Entity.h EntityClass.h \
 	InspectorControl.h KeypairView.h Map.h PopScrollView.h Preferences.h \
 	Project.h QuakeEd.h SetBrush.h Storage.h TexturePalette.h TextureView.h \
 	Things.h XYView.h ZScrollView.h ZView.h render.h \
@@ -60,7 +60,7 @@ QuakeEd_HEADERS= \
 # Class files
 #
 QuakeEd_OBJC_FILES= \
-	CameraView.m Clipper.m Dict.m DictList.m Entity.m EntityClass.m \
+	CameraView.m Clipper.m Dict.m Entity.m EntityClass.m \
 	InspectorControl.m KeypairView.m Map.m PopScrollView.m Preferences.m \
 	Project.m QuakeEd.m QuakeEd_main.m SetBrush.m Storage.m TexturePalette.m \
 	TextureView.m Things.m XYView.m ZScrollView.m ZView.m render.m
