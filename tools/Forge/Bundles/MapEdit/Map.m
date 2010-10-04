@@ -264,17 +264,18 @@ readMapFile
 
 	[self addSelected];
 
+	ent = [self objectAtIndex: 0];
 	// load the apropriate texture wad
-	wad = [currentEntity valueForQKey: "wad"];
+	wad = [ent valueForQKey: "wad"];
 	if (wad && wad[0]) {
 		// remove old style fullpaths
 		if (wad[0] == '/')
-			[currentEntity removeKeyPair: "wad"];
+			[ent removeKeyPair: "wad"];
 		else if (strcmp ([texturepalette_i currentWad], wad))
 			[project_i setTextureWad: wad];
 	}
 
-	[self setCurrentEntity: [self objectAtIndex: 0]];
+	[self setCurrentEntity: ent];
 
 	// center the camera and XY view on the playerstart
 	c = [self count];
