@@ -28,9 +28,9 @@ extern id  project_i;
 	id  basepathinfo_i;             // outlet to base path info textfield
 	id  mapbrowse_i;                // outlet to QuakeEd Maps browser
 	id  currentmap_i;               // outlet to current map textfield
-	struct plitem_s *mapList;       // list of map names (Storage)
-	struct plitem_s *descList;      // list of map descriptions (Storage)
-	struct plitem_s *wadList;       // list of wad names (Storage)
+	struct plitem_s *mapList;       // list of map names
+	struct plitem_s *descList;      // list of map descriptions
+	struct plitem_s *wadList;       // list of wad names
 
 	id  pis_panel_i;                // outlet to Project Info Settings (PIS)
 	                                // panel
@@ -57,12 +57,12 @@ extern id  project_i;
 	char    path_wad9[128];         // path of texture WAD for cmd-9 key
 	char    path_wad0[128];         // path of texture WAD for cmd-0 key
 
-	char    string_fullvis[1024];   // cmd-line parm
-	char    string_fastvis[1024];   // cmd-line parm
-	char    string_novis[1024];     // cmd-line parm
-	char    string_relight[1024];   // cmd-line parm
-	char    string_leaktest[1024];  // cmd-line parm
-	char    string_entities[1024];  // cmd-line parm
+	const char *string_fullvis;     // cmd-line parm
+	const char *string_fastvis;     // cmd-line parm
+	const char *string_novis;       // cmd-line parm
+	const char *string_relight;     // cmd-line parm
+	const char *string_leaktest;    // cmd-line parm
+	const char *string_entities;    // cmd-line parm
 
 	int  showDescriptions;          // 1 = show map descs in browser
 
@@ -79,12 +79,6 @@ extern id  project_i;
 - (id) addToOutput: (const char *)string;
 - (id) clearBspOutput: (id)sender;
 - (id) initProjSettings;
-- (id) changeChar: (char)f
-   to: (char)t
-   in: (id)obj;
-
-- (int) searchForString: (const char *)str
-   in: (id)obj;
 
 - (id) parseProjectFile;            // read defaultsdatabase for project path
 - (id) openProjectFile: (const char *)path; // called by openProject, newProject
@@ -111,7 +105,5 @@ extern id  project_i;
 - (const char *) getEntitiesCmd;
 
 @end
-
-void changeString (char cf, char ct, char *string);
 
 #endif // Project_h
