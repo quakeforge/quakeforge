@@ -285,27 +285,29 @@ id  project_i;
 		return self;
 	}
 
-	[self openProjectFile: path];
+	[self openProjectFile: [NSString stringWithCString: path]];
 	return self;
 }
 
 //
 //  Loads and parses a project file
 //
-- (id) openProjectFile: (const char *)path
+- (id) openProjectFile: (NSString *)path
 {
 	FILE            *fp;
 	struct stat     s;
 
-	Sys_Printf ("openProjectFile: %s\n", path);
-	strcpy (path_projectinfo, path);
+	Sys_Printf ("openProjectFile: %s\n", [path cString]);
+	[path retain];
+	[path_projectinfo release];
+	path_projectinfo = path;
 
 	projectInfo = NULL;
-	fp = fopen (path, "r+t");
+	fp = fopen ([path cString], "r+t");
 	if (fp == NULL)
 		return self;
 
-	stat (path, &s);
+	stat ([path cString], &s);
 	lastModified = s.st_mtime;
 
 	projectInfo = [(Dict *)[Dict alloc] initFromFile: fp];
@@ -314,7 +316,7 @@ id  project_i;
 	return self;
 }
 
-- (const char *) currentProjectFile
+- (NSString *) currentProjectFile
 {
 	return path_projectinfo;
 }
@@ -324,24 +326,21 @@ id  project_i;
 //
 - (id) openProject
 {
-	const char  *path;
 	id          openpanel;
 	int         rtn;
 	NSString    *projtypes[] = {@"qpr"};
+	NSArray     *projtypes_array;
 	NSArray     *filenames;
-	const char  *dir;
+	NSString    *path;
 
 	openpanel = [NSOpenPanel new];
-//	[openpanel allowMultipleFiles:NO];
-//	[openpanel chooseDirectories:NO];
-	rtn = [openpanel runModalForTypes: [NSArray arrayWithObjects: projtypes
-	                                                       count: 1]];
+	[openpanel setAllowsMultipleSelection:NO];
+	[openpanel setCanChooseDirectories:NO];
+	projtypes_array = [NSArray arrayWithObjects: projtypes count: 1];
+	rtn = [openpanel runModalForTypes: projtypes_array];
 	if (rtn == NSOKButton) {
 		filenames = [openpanel filenames];
-		dir = [[openpanel directory] cString];
-		dir = "";
-		path = va ("%s/%s", dir, [[filenames objectAtIndex: 0] cString]);
-		strcpy (path_projectinfo, path);
+		path = [filenames objectAtIndex: 0];
 		[self openProjectFile: path];
 		return self;
 	}

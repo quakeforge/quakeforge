@@ -45,7 +45,7 @@ extern id  project_i;
 
 	id  BSPoutput_i;                // outlet to Text
 
-	char  path_projectinfo[128];    // path of QE_Project file
+	NSString *path_projectinfo;     // path of QE_Project file
 
 	char  path_basepath[128];       // base path of heirarchy
 
@@ -72,7 +72,7 @@ extern id  project_i;
 - (id) initProject;
 - (id) initVars;
 
-- (const char *) currentProjectFile;
+- (NSString *) currentProjectFile;
 
 - (id) setTextureWad: (const char *)wf;
 
@@ -81,7 +81,7 @@ extern id  project_i;
 - (id) initProjSettings;
 
 - (id) parseProjectFile;            // read defaultsdatabase for project path
-- (id) openProjectFile: (const char *)path; // called by openProject, newProject
+- (id) openProjectFile: (NSString *)path; // called by openProject, newProject
 - (id) openProject;
 - (id) clickedOnMap: sender;        // called if clicked on map in browser
 - (id) clickedOnWad: sender;        // called if clicked on wad in browser
