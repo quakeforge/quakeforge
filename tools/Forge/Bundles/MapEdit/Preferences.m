@@ -124,9 +124,7 @@ _atof (const char *c)
 
 - (id) setCurrentProject: sender
 {
-	[startproject_i setStringValue: [NSString stringWithCString: [project_i
-	                                                              currentProjectFile
-	                                 ]]];
+	[startproject_i setStringValue: [project_i currentProjectFile]];
 	[self UIChanged: self];
 	return self;
 }
