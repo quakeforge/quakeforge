@@ -37,7 +37,6 @@ id  project_i;
 // ===========================================================
 - (id) initVars
 {
-	const char  *s;
 	const char  *pe;
 	char        *ts;
 
@@ -75,35 +74,13 @@ id  project_i;
 	}
 #endif
 
-	if ((s = [projectInfo getStringFor: BSPFULLVIS])) {
-		strcpy (string_fullvis, s);
-		changeString ('@', '\"', string_fullvis);
-	}
+	string_fullvis = [projectInfo getStringFor: BSPFULLVIS];
+	string_fastvis = [projectInfo getStringFor: BSPFASTVIS];
+	string_novis = [projectInfo getStringFor: BSPNOVIS];
+	string_relight = [projectInfo getStringFor: BSPRELIGHT];
+	string_leaktest = [projectInfo getStringFor: BSPLEAKTEST];
+	string_entities = [projectInfo getStringFor: BSPENTITIES];
 
-	if ((s = [projectInfo getStringFor: BSPFASTVIS])) {
-		strcpy (string_fastvis, s);
-		changeString ('@', '\"', string_fastvis);
-	}
-
-	if ((s = [projectInfo getStringFor: BSPNOVIS])) {
-		strcpy (string_novis, s);
-		changeString ('@', '\"', string_novis);
-	}
-
-	if ((s = [projectInfo getStringFor: BSPRELIGHT])) {
-		strcpy (string_relight, s);
-		changeString ('@', '\"', string_relight);
-	}
-
-	if ((s = [projectInfo getStringFor: BSPLEAKTEST])) {
-		strcpy (string_leaktest, s);
-		changeString ('@', '\"', string_leaktest);
-	}
-
-	if ((s = [projectInfo getStringFor: BSPENTITIES])) {
-		strcpy (string_entities, s);
-		changeString ('@', '\"', string_entities);
-	}
 	// Build list of wads
 	wadList = [projectInfo getArrayFor: WADSKEY];
 
@@ -178,23 +155,6 @@ id  project_i;
 
 	[things_i initEntities];
 
-	return self;
-}
-
-//
-//  Change a character to another in a Storage list of strings
-//
-- (id) changeChar: (char)f to: (char)t in: (id)obj
-{
-	int     i;
-	int     max;
-	char    *string;
-
-	max = [obj count];
-	for (i = 0; i < max; i++) {
-		string = [obj elementAt: i];
-		changeString (f, t, string);
-	}
 	return self;
 }
 
@@ -389,24 +349,6 @@ id  project_i;
 	return nil;
 }
 
-//
-//  Search for a string in a List of strings
-//
-- (int) searchForString: (const char *)str in: (id)obj
-{
-	int         i;
-	int         max;
-	const char  *s;
-
-	max = [obj count];
-	for (i = 0; i < max; i++) {
-		s = (const char *) [obj elementAt: i];  // XXX Storage?
-		if (!strcmp (s, str))
-			return 1;
-	}
-	return 0;
-}
-
 - (const char *) getMapDirectory
 {
 	return path_mapdirectory;
@@ -519,20 +461,3 @@ id  project_i;
 }
 
 @end
-
-// ====================================================
-// C Functions
-// ====================================================
-//
-// Change a character to a different char in a string
-//
-void
-changeString (char cf, char ct, char *string)
-{
-	unsigned int  j;
-
-	for (j = 0; j < strlen (string); j++) {
-		if (string[j] == cf)
-			string[j] = ct;
-	}
-}
