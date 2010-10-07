@@ -139,11 +139,12 @@ Every five minutes, save a modified map
 	[map_i writeStats];
 }
 
-#define FN_TEMPSAVE "/qcache/temp.map"
+#define FN_TEMPSAVE @"/qcache/temp.map"
 - (id) setDefaultFilename
 {
-	strcpy (filename, FN_TEMPSAVE);
-	[self setTitleWithRepresentedFilename: [NSString stringWithCString: filename]];
+	filename = FN_TEMPSAVE;
+	[filename retain];
+	[self setTitleWithRepresentedFilename: filename];
 
 	return self;
 }
@@ -634,7 +635,7 @@ BSP PROCESSING
 ==============================================================================
 */
 void
-ExpandCommand (const char *in, char *out, char *src, char *dest)
+ExpandCommand (const char *in, char *out, const char *src, const char *dest)
 {
 	while (*in) {
 		if (in[0] == '$') {
@@ -661,11 +662,11 @@ saveBSP
 - (id) saveBSP: (const char *)cmdline dialog: (BOOL)wt
 {
 	char        expandedcmd[1024];
-	char        mappath[1024];
-	char        bsppath[1024];
+	NSString    *mappath;
+	NSString    *bsppath;
 	int         oldLightFilter;
 	int         oldPathFilter;
-	const char  *destdir;
+	NSString    *destdir;
 
 	if (bsppid) {
 		NSBeep ();
@@ -681,13 +682,12 @@ saveBSP
 	[self applyRegion: self];
 
 	if ([regionbutton_i intValue]) {
-		strcpy (mappath, filename);
-		// XXX StripExtension (mappath);
-		strcat (mappath, ".reg");
-		[map_i writeMapFile: mappath useRegion: YES];
+		mappath = [[filename stringByDeletingPathExtension]
+					stringByAppendingPathExtension: @"reg"];
+		[map_i writeMapFile: [mappath cString] useRegion: YES];
 		wt = YES;   // allways pop the dialog on region ops
 	} else {
-		strcpy (mappath, filename);
+		mappath = filename;
 	}
 	// save the entire thing, just in case there is a problem
 	[self save: self];
@@ -701,12 +701,11 @@ saveBSP
 //
 	destdir = [project_i getFinalMapDirectory];
 
-	strcpy (bsppath, destdir);
-	strcat (bsppath, "/");
-	// XXX ExtractFileBase (mappath, bsppath + strlen(bsppath));
-	strcat (bsppath, ".bsp");
+	bsppath = [destdir stringByAppendingPathComponent:
+				[[[mappath lastPathComponent] stringByDeletingPathExtension]
+					stringByAppendingPathExtension: @"bsp"]];
 
-	ExpandCommand (cmdline, expandedcmd, mappath, bsppath);
+	ExpandCommand (cmdline, expandedcmd, [mappath cString], [bsppath cString]);
 
 	strcat (expandedcmd, " > ");
 	strcat (expandedcmd, FN_CMDOUT);
@@ -793,17 +792,19 @@ doOpen:
 Called by open or the project panel
 ==============
 */
-- (id) doOpen: (const char *)fname;
+- (id) doOpen: (NSString *)fname;
 {
-	strcpy (filename, fname);
+	[fname retain];
+	[filename release];
+	filename = fname;
 
-	[map_i readMapFile: filename];
+	[map_i readMapFile: [filename cString]];
 
 	[regionbutton_i setIntValue: 0];
-	[self setTitleWithRepresentedFilename: [NSString stringWithCString: fname]];
+	[self setTitleWithRepresentedFilename: fname];
 	[self updateAll];
 
-	Sys_Printf ("%s loaded\n", fname);
+	Sys_Printf ("%s loaded\n", [fname cString]);
 
 	return self;
 }
@@ -817,17 +818,16 @@ open
 {
 	id          openpanel;
 	NSString    *suffixlist[] = {@"map"};
+	NSArray     *types = [NSArray arrayWithObjects: suffixlist count: 1];
 
 	openpanel = [NSOpenPanel new];
 
 	if ([openpanel
-	        runModalForDirectory: [NSString stringWithCString: [project_i
-	                                                         getMapDirectory]]
+	        runModalForDirectory: [project_i getMapDirectory]
 	                        file: @""
-	                       types: [NSArray arrayWithObjects: suffixlist count: 1]]
-	    != NSOKButton)
+	                       types: types] != NSOKButton)
 		return self;
-	[self doOpen: [[openpanel filename] cString]];
+	[self doOpen: [openpanel filename]];
 
 	return self;
 }
@@ -839,19 +839,18 @@ save:
 */
 - (id) save: sender;
 {
-	char  backup[1024];
+	NSString    *backup;
 
 // force a name change if using tempname
-	if (!strcmp (filename, FN_TEMPSAVE))
+	if (![filename compare: FN_TEMPSAVE])
 		return [self saveAs: self];
 	dirty = autodirty = NO;
 
-	strcpy (backup, filename);
-	// XXX StripExtension (backup);
-	strcat (backup, ".bak");
-	rename (filename, backup);      // copy old to .bak
+	backup = [[filename stringByDeletingPathExtension]
+				stringByAppendingPathExtension: @"bak"];
+	rename ([filename cString], [backup cString]);      // copy old to .bak
 
-	[map_i writeMapFile: filename useRegion: NO];
+	[map_i writeMapFile: [filename cString] useRegion: NO];
 
 	return self;
 }
@@ -864,20 +863,20 @@ saveAs
 - (id) saveAs: sender;
 {
 	id      panel_i;
-	char    dir[1024];
+	NSString    *dir;
+	NSString    *fname;
 
 	panel_i = [NSSavePanel new];
-	// XXX ExtractFileBase (filename, dir);
+	dir = [filename stringByDeletingLastPathComponent];
 	[panel_i setRequiredFileType: @"map"];
-	if ([panel_i
-	        runModalForDirectory: [NSString stringWithCString: [project_i
-	                                                         getMapDirectory]]
-	                        file: [NSString stringWithCString: dir]]
+	if ([panel_i runModalForDirectory: [project_i getMapDirectory] file: dir]
 	    != NSOKButton)
 		return self;
-	strcpy (filename, [[panel_i filename] cString]);
+	fname = [[panel_i filename] retain];
+	[filename release];
+	filename = fname;
 
-	[self setTitleWithRepresentedFilename: [NSString stringWithCString: filename]];
+	[self setTitleWithRepresentedFilename: filename];
 
 	[self save: self];
 
@@ -895,7 +894,7 @@ saveAs
 //
 //  AJR - added this for Project info
 //
-- (const char *) currentFilename
+- (NSString *) currentFilename
 {
 	return filename;
 }

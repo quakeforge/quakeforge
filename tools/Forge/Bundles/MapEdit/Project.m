@@ -37,25 +37,18 @@ id  project_i;
 // ===========================================================
 - (id) initVars
 {
-	const char  *pe;
-	char        *ts;
+	NSString    *ts;
 
-	ts = strdup ([preferences_i getProjectPath]);
-	pe = QFS_SkipPath (ts);
-	ts[pe - ts] = 0;
-	strcpy (path_basepath, ts);
+	ts = [NSString stringWithCString: [preferences_i getProjectPath]];
+	ts = path_basepath = [[ts stringByDeletingLastPathComponent] retain];
 
-	strcpy (path_progdir, ts);
-	strcat (path_progdir, SUBDIR_ENT);
+	path_progdir = [[ts stringByAppendingPathComponent: SUBDIR_ENT] retain];
 
-	strcpy (path_mapdirectory, ts);
-	strcat (path_mapdirectory, SUBDIR_MAPS); // source dir
-
-	strcpy (path_finalmapdir, ts);
-	strcat (path_finalmapdir, SUBDIR_MAPS); // dest dir
+	path_mapdirectory = [[ts stringByAppendingPathComponent: SUBDIR_MAPS] retain];
+	path_finalmapdir = [[ts stringByAppendingPathComponent: SUBDIR_MAPS] retain];
 
 	// in Project Inspector
-	[basepathinfo_i setStringValue: [NSString stringWithCString: ts]];
+	[basepathinfo_i setStringValue: ts];
 
 #if 0  // FIXME: for "out-of-tree" projects ?
 	if ((s = [projectInfo getStringFor: BASEPATHKEY])) {
@@ -98,7 +91,7 @@ id  project_i;
 //
 - (id) initProjSettings
 {
-	[pis_basepath_i setStringValue: [NSString stringWithCString: path_basepath]];
+	[pis_basepath_i setStringValue: path_basepath];
 	[pis_fullvis_i setStringValue: [NSString stringWithCString: string_fullvis]];
 	[pis_fastvis_i setStringValue: [NSString stringWithCString: string_fastvis]];
 	[pis_novis_i setStringValue: [NSString stringWithCString: string_novis]];
@@ -197,14 +190,17 @@ id  project_i;
 {
 	id      matrix;
 	int     row;
-	const char      *fname;
+	NSString    *mapname;
+	NSString    *fname;
 	id              panel;
 	NSModalSession  session;
 
 	matrix = [sender matrixInColumn: 0];
 	row = [matrix selectedRow];
-	fname = va ("%s/%s.map", path_mapdirectory,
-				PL_String (PL_ObjectAtIndex (mapList, row)));
+	mapname = [NSString stringWithCString:
+				PL_String (PL_ObjectAtIndex (mapList, row))];
+	fname = [[path_mapdirectory stringByAppendingPathComponent: mapname]
+				stringByAppendingPathExtension: @"map"];
 
 	panel = NSGetAlertPanel (@"Loading...",
 	                         @"Loading map. Please wait.", NULL, NULL, NULL);
@@ -348,17 +344,17 @@ id  project_i;
 	return nil;
 }
 
-- (const char *) getMapDirectory
+- (NSString *) getMapDirectory
 {
 	return path_mapdirectory;
 }
 
-- (const char *) getFinalMapDirectory
+- (NSString *) getFinalMapDirectory
 {
 	return path_finalmapdir;
 }
 
-- (const char *) getProgDirectory
+- (NSString *) getProgDirectory
 {
 	return path_progdir;
 }
