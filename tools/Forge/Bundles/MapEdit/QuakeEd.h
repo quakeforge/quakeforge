@@ -17,7 +17,7 @@ void        NopSound (void);
 @interface QuakeEd: NSWindow
 {
 	BOOL    dirty;
-	char    filename[1024];         // full path with .map extension
+	NSString    *filename;          // full path with .map extension
 
 	NSBitmapImageRep    *cache[3];
 	NSRect              cache_rect[3];
@@ -47,7 +47,7 @@ void        NopSound (void);
 }
 
 - (id) setDefaultFilename;
-- (const char *) currentFilename;
+- (NSString *) currentFilename;
 
 - (id) updateAll;                   // when a model has been changed
 - (id) updateCamera;                // when the camera has moved
@@ -87,7 +87,7 @@ void        NopSound (void);
 - (id) save: sender;
 - (id) saveAs: sender;
 
-- (id) doOpen: (const char *)fname;
+- (id) doOpen: (NSString *)fname;
 
 - (id) saveBSP: (const char *)cmdline dialog: (BOOL)wt;
 

@@ -15,9 +15,9 @@
 #define BSPLEAKTEST "bspleaktest"
 #define BSPENTITIES "bspentities"
 
-#define SUBDIR_ENT  "progs"         // subdir names in heirarchy
-#define SUBDIR_MAPS "maps"
-#define SUBDIR_GFX  "gfx"
+#define SUBDIR_ENT  @"progs"         // subdir names in heirarchy
+#define SUBDIR_MAPS @"maps"
+#define SUBDIR_GFX  @"gfx"
 
 extern id  project_i;
 
@@ -47,11 +47,11 @@ extern id  project_i;
 
 	NSString *path_projectinfo;     // path of QE_Project file
 
-	char  path_basepath[128];       // base path of heirarchy
+	NSString *path_basepath;        // base path of heirarchy
 
-	char    path_progdir[128];      // derived from basepath
-	char    path_mapdirectory[128]; // derived from basepath
-	char    path_finalmapdir[128];  // derived from basepath
+	NSString *path_progdir;         // derived from basepath
+	NSString *path_mapdirectory;    // derived from basepath
+	NSString *path_finalmapdir;     // derived from basepath
 
 	char    path_wad8[128];         // path of texture WAD for cmd-8 key
 	char    path_wad9[128];         // path of texture WAD for cmd-9 key
@@ -89,9 +89,9 @@ extern id  project_i;
 //
 //  methods to query the project file
 //
-- (const char *) getMapDirectory;
-- (const char *) getFinalMapDirectory;
-- (const char *) getProgDirectory;
+- (NSString *) getMapDirectory;
+- (NSString *) getFinalMapDirectory;
+- (NSString *) getProgDirectory;
 
 - (const char *) getWAD8;
 - (const char *) getWAD9;

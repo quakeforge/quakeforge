@@ -44,13 +44,13 @@ id  things_i;
 
 - (id) initEntities
 {
-	const char  *path;
+	NSString    *path;
 
 	path = [project_i getProgDirectory];
 
-	[prog_path_i setStringValue: [NSString stringWithCString: path]];
+	[prog_path_i setStringValue: path];
 
-	[[EntityClassList alloc] initForSourceDirectory: path];
+	[[EntityClassList alloc] initForSourceDirectory: [path cString]];
 
 	[self loadEntityComment: [entity_classes_i objectAtIndex: lastSelected]];
 	[entity_browser_i loadColumnZero];
@@ -91,19 +91,19 @@ id  things_i;
 - (id) reloadEntityClasses: sender
 {
 	EntityClass     *ent;
-	const char      *path;
+	NSString        *path;
 
-	path = [[prog_path_i stringValue] cString];
-	if (!path || !path[0]) {
+	path = [prog_path_i stringValue];
+	if (!path || ![path length]) {
 		path = [project_i getProgDirectory];
-		[prog_path_i setStringValue: [NSString stringWithCString: path]];
+		[prog_path_i setStringValue: path];
 	}
 	// Free all entity info in memory...
 	[entity_classes_i removeAllObjects];
 	[entity_classes_i release];
 
 	// Now, RELOAD!
-	[[EntityClassList alloc] initForSourceDirectory: path];
+	[[EntityClassList alloc] initForSourceDirectory: [path cString]];
 
 	lastSelected = 0;
 	ent = [entity_classes_i objectAtIndex: lastSelected];
