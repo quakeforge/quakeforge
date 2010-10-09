@@ -15,8 +15,8 @@ extern float  lightaxis[3];
 	id  bspSound_i;                 // actual sound object
 
 // internal state
-	char    projectpath[1024];
-	char    bspSound[1024];
+	NSString *projectpath;
+	NSString *bspSound;
 
 	BOOL    brushOffset;
 	BOOL    showBSP;
@@ -50,7 +50,7 @@ extern float  lightaxis[3];
 // validate and set methods called by UI or defaults
 //
 - (id) setProjectPath: (const char *)path;
-- (id) setBspSoundPath: (const char *)path; // set the path of the soundfile
+- (id) setBspSoundPath: (NSString *)path; // set the path of the soundfile
 - (id) setShowBSP: (int)state;      // set the state of ShowBSP
 - (id) setBrushOffset: (int)state;  // set the state of BrushOffset
 - (id) setStartWad: (int)value;     // set start wad (0-2)
@@ -70,7 +70,7 @@ extern float  lightaxis[3];
 //
 - (id) playBspSound;
 
-- (const char *) getProjectPath;
+- (NSString *) getProjectPath;
 - (int) getBrushOffset;             // get the state
 - (int) getShowBSP;                 // get the state
 

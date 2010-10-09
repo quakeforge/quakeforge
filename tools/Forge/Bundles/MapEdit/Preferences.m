@@ -81,8 +81,7 @@ _atof (const char *c)
 	string = [[prefs stringForKey: @"ProjectPath"] cString];
 	[self setProjectPath: string];
 
-	string = [[prefs stringForKey: @"BspSoundPath"] cString];
-	[self setBspSoundPath: string];
+	[self setBspSoundPath: [prefs stringForKey: @"BspSoundPath"]];
 
 	string = [[prefs stringForKey: @"ShowBSPOutput"] cString];
 	value = _atoi (string);
@@ -116,8 +115,8 @@ _atof (const char *c)
 	if (!path)
 		path = "";
 
-	strcpy (projectpath, path);
-	[startproject_i setStringValue: [NSString stringWithCString: path]];
+	projectpath = [NSString stringWithCString: path];
+	[startproject_i setStringValue: projectpath];
 	WriteStringDefault (prefs, "ProjectPath", path);
 	return self;
 }
@@ -129,7 +128,7 @@ _atof (const char *c)
 	return self;
 }
 
-- (const char *) getProjectPath
+- (NSString *) getProjectPath
 {
 	return projectpath;
 }
@@ -147,24 +146,21 @@ _atof (const char *c)
 	NSString    *types[] = {@"snd"};
 	int         rtn;
 	NSArray     *filenames;
-	char        path[1024], file[64];
+	NSString    *path, *file;
 
 	panel = [NSOpenPanel new];
 
-	// XXX ExtractFilePath (bspSound, path);
-	// XXX ExtractFileBase (bspSound, file);
+	path = [bspSound stringByDeletingLastPathComponent];
+	file = [bspSound lastPathComponent];
 
-	rtn = [panel    runModalForDirectory: [NSString stringWithCString: path]
-	                                file: [NSString stringWithCString: file]
-	                               types: [NSArray arrayWithObjects: types count: 1]
+	rtn = [panel    runModalForDirectory: path file: file
+	                               types: [NSArray arrayWithObjects: types
+								                              count: 1]
 	      ];
 
 	if (rtn) {
 		filenames = [panel filenames];
-		strcpy (bspSound, [[panel directory] cString]);
-		strcat (bspSound, "/");
-		strcat (bspSound, [[filenames objectAtIndex: 0] cString]);
-		[self setBspSoundPath: bspSound];
+		[self setBspSoundPath: [filenames objectAtIndex: 0]];
 		[self playBspSound];
 	}
 
@@ -183,27 +179,27 @@ _atof (const char *c)
 //
 //  Set the bspSound path
 //
-- (id) setBspSoundPath: (const char *)path
+- (id) setBspSoundPath: (NSString *)path
 {
-	if (!path)
-		path = "";
-	strcpy (bspSound, path);
+	
+	[path retain];
+	[bspSound release];
+	bspSound = path;
 
 	if (bspSound_i) {
 		[bspSound_i release];
 		bspSound_i = nil;
 	}
-	if (path[0] && access (path, R_OK)) {
-		bspSound_i =
-		    [[NSSound alloc] initWithContentsOfFile: [NSString stringWithCString:
-		                                              bspSound] byReference: YES];
+	if (access ([path cString], R_OK)) {
+		bspSound_i = [[NSSound alloc] initWithContentsOfFile: bspSound
+		                                         byReference: YES];
 	}
 	if (!bspSound_i)
 		return self;
 
-	[bspSoundField_i setStringValue: [NSString stringWithCString: bspSound]];
+	[bspSoundField_i setStringValue: bspSound];
 
-	WriteStringDefault (prefs, "BspSoundPath", bspSound);
+	WriteStringDefault (prefs, "BspSoundPath", [bspSound cString]);
 
 	return self;
 }
@@ -345,7 +341,7 @@ Grab all the current UI state
 	Sys_Printf ("defaults updated\n");
 
 	[self setProjectPath: [[startproject_i stringValue] cString]];
-	[self setBspSoundPath: [[bspSoundField_i stringValue] cString]];
+	[self setBspSoundPath: [bspSoundField_i stringValue]];
 	[self setShowBSP: [showBSP_i intValue]];
 	[self setBrushOffset: [brushOffset_i intValue]];
 	[self setStartWad: [startwad_i selectedRow]];
