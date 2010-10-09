@@ -215,8 +215,20 @@ TEX_InitFromWad (const char *path)
 
 	lumpinfo = wad->lumps;
 
-	if (strcmp (lumpinfo->name, "PALETTE"))
-		Sys_Error ("TEX_InitFromWad: %s doesn't have palette as 0", path);
+	if (strcmp (lumpinfo->name, "PALETTE")) {
+		lumpinfo_t  tlump;
+
+		Sys_Printf ("TEX_InitFromWad: %s doesn't have palette as 0", path);
+		lumpinfo = wad_find_lump (wad, "PALETTE");
+		if (!lumpinfo)
+			Sys_Printf ("TEX_InitFromWad: %s doesn't have a palette", path);
+
+		// move the palette lump to the first entry
+		tlump = *lumpinfo;
+		*lumpinfo = wad->lumps[0];
+		wad->lumps[0] = tlump;
+		lumpinfo = wad->lumps;
+	}
 
 	TEX_InitPalette (wad, lumpinfo);
 
