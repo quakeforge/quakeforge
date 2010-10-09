@@ -19,7 +19,7 @@ float  lightaxis[3] = {1, 0.6, 0.75};
 void
 WriteStringDefault (id prefs, NSString *name, NSString *value)
 {
-	[prefs setObject: name forKey: value];
+	[prefs setObject: value forKey: name];
 }
 
 void
