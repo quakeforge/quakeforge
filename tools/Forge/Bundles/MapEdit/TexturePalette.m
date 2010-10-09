@@ -191,7 +191,7 @@ TEX_InitFromWad (const char *path)
 
 	start = Sys_DoubleTime ();
 
-	newpath = [preferences_i getProjectPath];
+	newpath = [[preferences_i getProjectPath] cString];
 	newpath = va ("%s%s%s", newpath, newpath[0] ? "/" : "", path);
 
 	// free any textures

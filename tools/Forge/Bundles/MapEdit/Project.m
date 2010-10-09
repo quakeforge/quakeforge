@@ -39,7 +39,7 @@ id  project_i;
 {
 	NSString    *ts;
 
-	ts = [NSString stringWithCString: [preferences_i getProjectPath]];
+	ts = [preferences_i getProjectPath];
 	ts = path_basepath = [[ts stringByDeletingLastPathComponent] retain];
 
 	path_progdir = [[ts stringByAppendingPathComponent: SUBDIR_ENT] retain];
@@ -266,11 +266,11 @@ id  project_i;
 //
 - (id) parseProjectFile
 {
-	const char  *path;
+	NSString    *path;
 	int         rtn;
 
 	path = [preferences_i getProjectPath];
-	if (!path || !path[0] || access (path, 0)) {
+	if (![path length] || access ([path cString], 0)) {
 		rtn = NSRunAlertPanel (@"Project Error!",
 		                       @"A default project has not been found.\n",
 		                       @"Open Project", NULL, NULL);
@@ -281,7 +281,7 @@ id  project_i;
 		return self;
 	}
 
-	[self openProjectFile: [NSString stringWithCString: path]];
+	[self openProjectFile: path];
 	return self;
 }
 
