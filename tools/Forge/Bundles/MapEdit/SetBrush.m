@@ -616,9 +616,34 @@ initOwner: fromTokens
 */
 int  numsb;
 
+static vec3_t *
+ParseVerts (script_t *script, int *n_verts)
+{
+	vec3_t     *verts;
+	int         i;
+
+	if (strcmp (Script_Token (script), ":"))
+		Sys_Error ("parsing map file");
+	Script_GetToken (script, false);
+	*n_verts = atoi (Script_Token (script));
+	verts = malloc (sizeof (vec3_t) * *n_verts);
+
+	for (i = 0; i < *n_verts; i++) {
+		Script_GetToken (script, true);
+		verts[i][0] = atof (Script_Token (script));
+		Script_GetToken (script, true);
+		verts[i][1] = atof (Script_Token (script));
+		Script_GetToken (script, true);
+		verts[i][2] = atof (Script_Token (script));
+	}
+	return verts;
+}
+
 - (id) initFromScript: (script_t *)script owner: own
 {
 	face_t  *f;
+	vec3_t  *verts = 0;
+	int     n_verts = 0;
 	int     i, j;
 
 	[self init];
@@ -627,26 +652,50 @@ int  numsb;
 
 	f = faces;
 	numfaces = 0;
+
+	if (!Script_GetToken (script, true))
+		return self;
+
+	if (strcmp (Script_Token (script), "(")) {
+		verts = ParseVerts (script, &n_verts);
+	} else {
+		Script_UngetToken (script);
+	}
+
 	do {
 		if (!Script_GetToken (script, true))
 			break;
 		if (!strcmp (Script_Token (script), "}"))
 			break;
 
-		for (i = 0; i < 3; i++) {
-			if (i != 0)
-				Script_GetToken (script, true);
-			if (strcmp (Script_Token (script), "("))
-				Sys_Error ("parsing map file");
-
-			for (j = 0; j < 3; j++) {
-				Script_GetToken (script, false);
-				f->planepts[i][j] = atoi (Script_Token (script));
-			}
+		if (verts) {
+			int     n_v, v;
+			n_v = atoi (Script_Token (script));
 			Script_GetToken (script, false);
+			for (i = 0; i < n_v; i++) {
+				Script_GetToken (script, false);
+				v = atoi (Script_Token (script));
+				if (i < 3)
+					VectorCopy (verts[v], f->planepts[i]);
+			}
+			printf ("\n");
+			Script_GetToken (script, false);
+		} else {
+			for (i = 0; i < 3; i++) {
+				if (i != 0)
+					Script_GetToken (script, true);
+				if (strcmp (Script_Token (script), "("))
+					Sys_Error ("parsing map file");
 
-			if (strcmp (Script_Token (script), ")"))
-				Sys_Error ("parsing map file");
+				for (j = 0; j < 3; j++) {
+					Script_GetToken (script, false);
+					f->planepts[i][j] = atoi (Script_Token (script));
+				}
+				Script_GetToken (script, false);
+
+				if (strcmp (Script_Token (script), ")"))
+					Sys_Error ("parsing map file");
+			}
 		}
 
 		Script_GetToken (script, false);
@@ -661,6 +710,14 @@ int  numsb;
 		f->texture.scale[0] = atof (Script_Token (script));
 		Script_GetToken (script, false);
 		f->texture.scale[1] = atof (Script_Token (script));
+
+		while (Script_TokenAvailable (script, false)) {
+			Script_GetToken (script, false);
+			if (!strcmp (Script_Token (script), "detail"))
+				; // XXX implement
+			else
+				Sys_Error ("parsing map file");
+		}
 
 #if 0
 		flags = atoi (Script_Token (script));
