@@ -305,7 +305,7 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 			width = LittleLong (miptex->width);
 			height = LittleLong (miptex->height);
 			if (width > (unsigned) pf->size || height > (unsigned) pf->size
-				|| (width * height * 3 / 2
+				|| (width * height * 85 / 64
 					+ sizeof (miptex_t)) > (unsigned) pf->size) {
 				if (options.verbosity)
 					fprintf (stderr, "bogus MIPTEX. treating as raw data\n");
