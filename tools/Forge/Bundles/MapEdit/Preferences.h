@@ -49,7 +49,7 @@ extern float  lightaxis[3];
 //
 // validate and set methods called by UI or defaults
 //
-- (id) setProjectPath: (const char *)path;
+- (id) setProjectPath: (NSString *)path;
 - (id) setBspSoundPath: (NSString *)path; // set the path of the soundfile
 - (id) setShowBSP: (int)state;      // set the state of ShowBSP
 - (id) setBrushOffset: (int)state;  // set the state of BrushOffset
