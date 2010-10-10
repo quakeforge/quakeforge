@@ -73,8 +73,8 @@ wad_get_hash (void *l, void *unused)
 static int
 wad_compare (void *la, void *lb, void *unused)
 {
-	return strcasecmp (((lumpinfo_t *) la)->name,
-					   ((lumpinfo_t *) lb)->name) == 0;
+	return strncasecmp (((lumpinfo_t *) la)->name,
+						((lumpinfo_t *) lb)->name, 16) == 0;
 }
 
 VISIBLE wad_t *
