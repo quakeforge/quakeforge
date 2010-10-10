@@ -175,8 +175,11 @@ vec3_t  bad_maxs = {8, 8, 8};
 
 	for (e = epairs; e; e = e->next) {
 		if (!strcmp (k, e->key)) {
+			if (e->value == v)
+				return;
 			free (e->value);
 			e->value = strdup (v);
+			return;
 		}
 	}
 
