@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.67)
+AC_PREREQ(2.65)
 
 dnl This is the only place where the package name and version appear
 AC_INIT([QuakeForge], [git-master])

@@ -72,8 +72,8 @@ if test -n "$ac" ; then
 			errors="Autoconf 2.67 or greater needed to build configure.\n$errors"
 		fi
 
-		if test "$AC_VER_MAJOR" -eq "2" -a "$AC_VER_MINOR" -lt "67" ; then
-			errors="Autoconf 2.67 or greater needed to build configure.\n$errors"
+		if test "$AC_VER_MAJOR" -eq "2" -a "$AC_VER_MINOR" -lt "65" ; then
+			errors="Autoconf 2.65 or greater needed to build configure.\n$errors"
 		fi
 	fi
 else
