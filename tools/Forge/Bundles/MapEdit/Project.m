@@ -346,7 +346,7 @@ id  project_i;
 
 - (NSString *) baseDirectoryPath
 {
-	return basepathinfo_i;
+	return path_basepath;
 }
 
 - (NSString *) getMapDirectory
