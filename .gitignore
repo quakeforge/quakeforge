@@ -3,6 +3,7 @@
 *.la
 *.lo
 *.obj
+*.a
 *.o
 *~
 autom4te.cache/
@@ -109,6 +110,7 @@ core
 # /libs/
 
 # /libs/audio/
+/libs/audio/testsound
 
 # /libs/audio/cd/
 
@@ -186,7 +188,6 @@ core
 /nq/include/stamp-h
 
 # /nq/source/
-/nq/source/*.a
 /nq/source/*.d
 /nq/source/fbset_modes_l.c
 /nq/source/fbset_modes_y.c
@@ -213,7 +214,6 @@ core
 /qtv/include/config.h
 
 # /qtv/source/
-/qtv/source/*.a
 /qtv/source/*.d
 /qtv/source/*.i
 /qtv/source/*.s
@@ -228,7 +228,6 @@ core
 /qw/include/config.h
 
 # /qw/source/
-/qw/source/*.a
 /qw/source/*.d
 /qw/source/*.i
 /qw/source/*.s
