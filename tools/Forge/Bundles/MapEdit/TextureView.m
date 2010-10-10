@@ -123,7 +123,7 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 
 	// oldwindowmask = [window addToEventMask:NSLeftMouseDraggedMask];
 	loc = [theEvent locationInWindow];
-	[self convertPoint: loc fromView: NULL];
+	loc = [self convertPoint: loc fromView: NULL];
 
 	list = [parent_i getList];
 	max = [list count];
