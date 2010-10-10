@@ -89,6 +89,7 @@ extern id  project_i;
 //
 //  methods to query the project file
 //
+- (NSString *) baseDirectoryPath;
 - (NSString *) getMapDirectory;
 - (NSString *) getFinalMapDirectory;
 - (NSString *) getProgDirectory;

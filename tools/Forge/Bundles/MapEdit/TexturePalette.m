@@ -8,6 +8,7 @@
 
 #include "TexturePalette.h"
 #include "Preferences.h"
+#include "Project.h"
 #include "Map.h"
 #include "Entity.h"
 #include "QuakeEd.h"
@@ -191,7 +192,7 @@ TEX_InitFromWad (const char *path)
 
 	start = Sys_DoubleTime ();
 
-	newpath = [[preferences_i getProjectPath] cString];
+	newpath = [[project_i baseDirectoryPath] cString];
 	newpath = va ("%s%s%s", newpath, (newpath[0] ? "/" : ""), path);
 
 	// free any textures
