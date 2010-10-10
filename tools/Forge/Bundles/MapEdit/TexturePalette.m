@@ -155,6 +155,8 @@ TEX_ImageFromMiptex (wad_t *wad, lumpinfo_t *qtexlump)
 
 	q->width = width;
 	q->height = height;
+	if (q->rep)
+		[q->rep release];
 	q->rep = bm;
 	q->data = dest;
 
@@ -189,38 +191,33 @@ TEX_InitFromWad (const char *path)
 	float       start, stop;
 	wad_t       *wad;
 	lumpinfo_t  *lumpinfo;
+	NSString    *errmsg;
+	int			old_tex_count;
 
 	start = Sys_DoubleTime ();
 
 	newpath = [[project_i baseDirectoryPath] cString];
 	newpath = va ("%s%s%s", newpath, (newpath[0] ? "/" : ""), path);
-
-	// free any textures
-	for (i = 0; i < tex_count; i++)
-		[qtextures[i].rep release];
-
-	tex_count = 0;
+	errmsg = [NSString stringWithFormat: @"Failed to open '%s'", newpath];
 
 	Sys_Printf ("TEX_InitFromWad: loading %s\n", newpath);
 	wad = wad_open (newpath);
 	if (!wad) {
-		NSRunAlertPanel (@"Wad Error!",
-		                 [NSString stringWithFormat: @"Failed to open '%s'",
-		                  newpath],
-		                 @"OK", nil,
-		                 nil);
-		return 0;
+		Sys_Printf ("TEX_InitFromWad: wad_open(%s) failed\n", path);
+		goto cleanup;
 	}
 
 	lumpinfo = wad->lumps;
 
-	if (strcmp (lumpinfo->name, "PALETTE")) {
+	if (strcasecmp (lumpinfo->name, "PALETTE")) {
 		lumpinfo_t  tlump;
 
 		Sys_Printf ("TEX_InitFromWad: %s doesn't have palette at index 0\n", path);
 		lumpinfo = wad_find_lump (wad, "PALETTE");
-		if (!lumpinfo)
-			Sys_Error ("TEX_InitFromWad: %s doesn't have a palette", path);
+		if (!lumpinfo) {
+			Sys_Printf ("TEX_InitFromWad: %s doesn't have a palette\n", path);
+			goto cleanup;
+		}
 
 		// move the palette lump to the first entry
 		tlump = *lumpinfo;
@@ -231,20 +228,41 @@ TEX_InitFromWad (const char *path)
 
 	TEX_InitPalette (wad, lumpinfo);
 
+	old_tex_count = tex_count;
+	tex_count = 0;
+
 	lumpinfo++;
 	for (i = 1; i < wad->numlumps; i++, lumpinfo++) {
-		if (lumpinfo->type != TYP_MIPTEX)
-			Sys_Error ("TEX_InitFromWad: %s is not a miptex!", lumpinfo->name);
+		if (lumpinfo->type != TYP_MIPTEX) {
+			Sys_Printf ("TEX_InitFromWad: %s is not a miptex!\n", lumpinfo->name);
+			continue;
+		}
 		CleanupName (lumpinfo->name, qtextures[tex_count].name);
 		TEX_ImageFromMiptex (wad, lumpinfo);
+	}
+	if (tex_count) {
+		for (i = tex_count; i < old_tex_count; i++) {
+			[qtextures[i].rep release];
+			qtextures[i].rep = nil;
+		}
+	} else {
+		goto cleanup;
 	}
 
 	wad_close (wad);
 
 	stop = Sys_DoubleTime ();
 
-	Sys_Printf ("loaded %s (%5.1f)\n", newpath, stop - start);
+	Sys_Printf ("loaded %s (%.3f seconds)\n", newpath, stop - start);
 	return 1;
+
+cleanup:
+	if (wad)
+		wad_close (wad);
+
+	NSRunAlertPanel (@"Wad Error", errmsg, @"OK", nil, nil);
+
+	return 0;
 }
 
 /*
