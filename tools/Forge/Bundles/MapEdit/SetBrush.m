@@ -989,6 +989,7 @@ hitByRay::::
 	if (regioned) {
 		*time = -1;
 		*face = -1;
+		return;
 	}
 
 	[self clipRay: p1 : p2 : frontpoint : &frontface : backpoint : &backface];
@@ -997,11 +998,13 @@ hitByRay::::
 		// entire ray is inside the brush, select first face
 		*time = 0;
 		*face = 0;
+		return;
 	}
 
 	if (frontface < 0) {    // ray started inside the polytope, don't select it
 		*time = -1;
 		*face = -1;
+		return;
 	}
 
 	VectorSubtract (p2, p1, dir);
