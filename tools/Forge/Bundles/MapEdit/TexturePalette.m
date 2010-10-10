@@ -192,7 +192,7 @@ TEX_InitFromWad (const char *path)
 	start = Sys_DoubleTime ();
 
 	newpath = [[preferences_i getProjectPath] cString];
-	newpath = va ("%s%s%s", newpath, newpath[0] ? "/" : "", path);
+	newpath = va ("%s%s%s", newpath, (newpath[0] ? "/" : ""), path);
 
 	// free any textures
 	for (i = 0; i < tex_count; i++)
@@ -200,9 +200,7 @@ TEX_InitFromWad (const char *path)
 
 	tex_count = 0;
 
-	// try to use the cached wadfile
-
-	Sys_Printf ("TEX_InitFromWad %s\n", newpath);
+	Sys_Printf ("TEX_InitFromWad: loading %s\n", newpath);
 	wad = wad_open (newpath);
 	if (!wad) {
 		NSRunAlertPanel (@"Wad Error!",
@@ -218,10 +216,10 @@ TEX_InitFromWad (const char *path)
 	if (strcmp (lumpinfo->name, "PALETTE")) {
 		lumpinfo_t  tlump;
 
-		Sys_Printf ("TEX_InitFromWad: %s doesn't have palette as 0", path);
+		Sys_Printf ("TEX_InitFromWad: %s doesn't have palette at index 0\n", path);
 		lumpinfo = wad_find_lump (wad, "PALETTE");
 		if (!lumpinfo)
-			Sys_Printf ("TEX_InitFromWad: %s doesn't have a palette", path);
+			Sys_Error ("TEX_InitFromWad: %s doesn't have a palette", path);
 
 		// move the palette lump to the first entry
 		tlump = *lumpinfo;
