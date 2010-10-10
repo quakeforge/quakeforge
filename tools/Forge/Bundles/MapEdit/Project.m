@@ -344,6 +344,11 @@ id  project_i;
 	return nil;
 }
 
+- (NSString *) baseDirectoryPath
+{
+	return basepathinfo_i;
+}
+
 - (NSString *) getMapDirectory
 {
 	return path_mapdirectory;
