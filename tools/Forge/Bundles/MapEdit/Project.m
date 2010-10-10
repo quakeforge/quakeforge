@@ -39,7 +39,7 @@ id  project_i;
 {
 	NSString    *ts;
 
-	ts = [preferences_i getProjectPath];
+	ts = path_projectinfo;
 	ts = path_basepath = [[ts stringByDeletingLastPathComponent] retain];
 
 	path_progdir = [[ts stringByAppendingPathComponent: SUBDIR_ENT] retain];
