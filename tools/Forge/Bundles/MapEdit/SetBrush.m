@@ -603,6 +603,28 @@ initOwner:::
 	}
 }
 
+- (id) copyWithZone: (NSZone *) zone
+{
+	SetBrush    *new;
+
+	[self freeWindings];
+
+	new = [[SetBrush allocWithZone: zone] init];
+	new->regioned = regioned;
+	new->selected = selected;
+	new->invalid = invalid;
+	new->parent = parent;
+	VectorCopy (bmins, new->bmins);
+	VectorCopy (bmaxs, new->bmaxs);
+	VectorCopy (entitycolor, new->entitycolor);
+	new->numfaces = numfaces;
+	memcpy (new->faces, faces, sizeof (new->faces));
+
+	[self calcWindings];
+	[new calcWindings];
+	return new;
+}
+
 - (void) dealloc
 {
 	[self freeWindings];
