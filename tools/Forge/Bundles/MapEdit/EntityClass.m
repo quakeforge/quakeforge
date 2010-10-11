@@ -90,11 +90,11 @@ parse_vector (script_t * script, vec3_t vec)
 	while (Script_TokenAvailable (script, 0))
 		Script_GetToken (script, 0);
 
-// find the length until close comment
+	// find the length until close comment
 	for (t = script->p; t[0] && !(t[0] == '*' && t[1] == '/'); t++)
 		;
 
-// copy the comment block out
+	// copy the comment block out
 	len = t - text;
 	comments = malloc (len + 1);
 	memcpy (comments, text, len);

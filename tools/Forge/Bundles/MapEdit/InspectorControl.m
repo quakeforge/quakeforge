@@ -82,18 +82,14 @@ InspectorControl  *inspcontrol_i;
 	[self setCurrentInspector: i_project];
 }
 
-//
 //  Sent by the PopUpList in the Inspector
 //  Each cell in the PopUpList must have the correct tag
-//
 - (IBAction) changeInspector: sender
 {
 	[self setCurrentInspector: [sender selectedTag]];
 }
 
-//
 //  Change to specific Inspector
-//
 - (void) setCurrentInspector: (insp_e)which
 {
 	id      newView;

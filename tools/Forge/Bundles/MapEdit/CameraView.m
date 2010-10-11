@@ -271,14 +271,14 @@ MakeCampt (vec3_t in, campt_t * pt)
 	vec3_t  temp;
 	float   scale;
 
-// transform the points
+	// transform the points
 	VectorSubtract (in, r_origin, temp);
 
 	pt->trans[0] = DotProduct (temp, r_matrix[0]);
 	pt->trans[1] = DotProduct (temp, r_matrix[1]);
 	pt->trans[2] = DotProduct (temp, r_matrix[2]);
 
-// check clip flags
+	// check clip flags
 	if (pt->trans[2] < 1)
 		pt->clipflags = CLIP_FRONT;
 	else
@@ -409,9 +409,7 @@ drawSolid
 {
 	unsigned char  *planes[5];
 
-//
-// draw it
-//
+	// draw it
 	VectorCopy (origin, r_origin);
 	VectorCopy (matrix[0], r_matrix[0]);
 	VectorCopy (matrix[1], r_matrix[1]);
@@ -427,14 +425,10 @@ drawSolid
 	REN_BeginCamera ();
 	REN_ClearBuffers ();
 
-//
-// render the setbrushes
-//
+	// render the setbrushes
 	[map_i makeAllPerform: @selector (CameraRenderSelf)];
 
-//
-// display the output
-//
+	// display the output
 	[[self window] setBackingType: NSBackingStoreRetained];
 
 	planes[0] = (unsigned char *) imagebuffer;
@@ -707,15 +701,11 @@ viewDrag:
 	NSEvent     *event = 0;
 	NSPoint     newpt;
 
-//
-// modal event loop using instance drawing
-//
+	// modal event loop using instance drawing
 	goto drawentry;
 
 	while ([event type] != NSRightMouseUp) {
-		//
 		// calculate new point
-		//
 		newpt = [event locationInWindow];
 		newpt = [self convertPoint: newpt fromView: NULL];
 
@@ -780,31 +770,24 @@ mouseDown
 	    [theEvent modifierFlags] & (NSShiftKeyMask | NSControlKeyMask |
 	                                NSAlternateKeyMask | NSCommandKeyMask);
 
-//
-// bare click to select a texture
-//
+	// bare click to select a texture
 	if (flags == 0) {
 		[map_i getTextureRay: p1 : p2];
 		return;
 	}
-//
-// shift click to select / deselect a brush from the world
-//
+	// shift click to select / deselect a brush from the world
 	if (flags == NSShiftKeyMask) {
 		[map_i selectRay: p1 : p2 : NO];
 		return;
 	}
 
-//
-// cmd-shift click to set a target/targetname entity connection
-//
+	// cmd-shift click to set a target/targetname entity connection
 	if (flags == (NSShiftKeyMask | NSCommandKeyMask)) {
 		[map_i entityConnect: p1 : p2];
 		return;
 	}
-//
-// alt click = set entire brush texture
-//
+
+	// alt click = set entire brush texture
 	if (flags == NSAlternateKeyMask) {
 		if (drawmode != dr_texture) {
 			Sys_Printf ("No texture setting except in texture mode!\n");
@@ -815,9 +798,8 @@ mouseDown
 		[quakeed_i updateAll];
 		return;
 	}
-//
-// ctrl-alt click = set single face texture
-//
+
+	// ctrl-alt click = set single face texture
 	if (flags == (NSControlKeyMask | NSAlternateKeyMask)) {
 		if (drawmode != dr_texture) {
 			Sys_Printf ("No texture setting except in texture mode!\n");
@@ -853,9 +835,7 @@ rightMouseDown
 	        & (NSShiftKeyMask | NSControlKeyMask | NSAlternateKeyMask
 	           | NSCommandKeyMask);
 
-//
-// click = drag camera
-//
+	// click = drag camera
 	if (flags == 0) {
 		Sys_Printf ("looking\n");
 		[self viewDrag: &pt];

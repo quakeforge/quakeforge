@@ -25,7 +25,7 @@ vec3_t  bad_maxs = {8, 8, 8};
 	id              new;
 	texturedef_t    td;
 
-// get class
+	// get class
 	new = [entity_classes_i classForName: [self valueForQKey: "classname"]];
 	if (new) {
 		v = [new mins];
@@ -349,7 +349,7 @@ int  nument;
 
 	nument++;
 
-// get class
+	// get class
 	spawn = [self valueForQKey: "classname"];
 	eclass = [entity_classes_i classForName: spawn];
 

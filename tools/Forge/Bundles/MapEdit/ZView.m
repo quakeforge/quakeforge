@@ -44,9 +44,7 @@ initWithFrame:
 	zview_i = self;
 	scale = 1;
 
-//
-// initialize the pop up menus
-//
+	// initialize the pop up menus
 	zscalebutton_i = [[NSPopUpButton alloc] init];
 	[zscalebutton_i setTarget: self];
 	[zscalebutton_i setAction: @selector (scaleMenuTarget:)];
@@ -60,7 +58,7 @@ initWithFrame:
 	[zscalebutton_i addItemWithTitle: @"300%"];
 	[zscalebutton_i selectItemAtIndex: 4];
 
-// initialize the scroll view
+	// initialize the scroll view
 	zscrollview_i = [[ZScrollView alloc]
 	                   initWithFrame: frameRect
 	                         button1: zscalebutton_i];
@@ -299,9 +297,7 @@ Rect is in global world (unscaled) coordinates
 	bottom = rect.origin.y - 1;
 	top = rect.origin.y + rect.size.height + 2;
 
-//
-// grid
-//
+	// grid
 
 	// can't just divide by grid size because of negetive coordinate
 	// truncating direction
@@ -330,9 +326,7 @@ Rect is in global world (unscaled) coordinates
 		[path stroke];
 	}
 
-//
-// half tiles
-//
+	// half tiles
 	y = floor (bottom / 32);
 	stopy = floor (top / 32);
 
@@ -354,9 +348,7 @@ Rect is in global world (unscaled) coordinates
 	 set];
 	[path stroke];
 
-//
-// tiles
-//
+	// tiles
 	y = floor (bottom / 64);
 	stopy = floor (top / 64);
 
@@ -388,9 +380,7 @@ Rect is in global world (unscaled) coordinates
 	[[NSColor colorWithCalibratedWhite: 10.0 / 16.0 alpha: 1.0] set];
 	[path stroke];
 
-//
-// origin
-//
+	// origin
 	[[NSColor colorWithCalibratedWhite: 4.0 / 16.0 alpha: 1.0] set];
 	[path removeAllPoints];
 	[path setLineWidth: 5];
@@ -426,25 +416,25 @@ drawSelf
 	minheight = 999999;
 	maxheight = -999999;
 
-// allways draw the entire bar
+	// allways draw the entire bar
 	// visRect =[self visibleRect];
 	rect = [self visibleRect];
 
 	[quakeed_i zNoRestore: rect];
 
-// erase window
+	// erase window
 	NSEraseRect (rect);
 
-// draw grid
+	// draw grid
 	[self drawGrid: rect];
 
-// draw zplane
+	// draw zplane
 //	[self drawZplane]; FIXME zplane doesn't do anything yet
 
-// draw all entities
+	// draw all entities
 	[map_i makeUnselectedPerform: @selector (ZDrawSelf)];
 
-// possibly resize the view
+	// possibly resize the view
 	[self newRealBounds];
 }
 
@@ -667,34 +657,29 @@ mouseDown
 	    [theEvent modifierFlags] & (NSShiftKeyMask | NSControlKeyMask |
 	                                NSAlternateKeyMask | NSCommandKeyMask);
 
-//
-// shift click to select / deselect a brush from the world
-//
+	// shift click to select / deselect a brush from the world
 	if (flags == NSShiftKeyMask) {
 		[map_i selectRay: p1: p1: NO];
 		return;
 	}
-//
-// alt click = set entire brush texture
-//
+
+	// alt click = set entire brush texture
 	if (flags == NSAlternateKeyMask) {
 		[map_i setTextureRay: p1: p1: YES];
 		return;
 	}
-//
-// control click = position view
-//
+
+	// control click = position view
 	if (flags == NSControlKeyMask) {
 		[cameraview_i setZOrigin: pt.y];
 		[quakeed_i updateAll];
 		[cameraview_i ZmouseDown: &pt flags: [theEvent modifierFlags]];
 		return;
 	}
-//
-// bare click to drag icons or new brush drag
-//
+
+	// bare click to drag icons or new brush drag
 	if (flags == 0) {
-// check eye
+		// check eye
 		if ([cameraview_i ZmouseDown: &pt flags: [theEvent modifierFlags]])
 			return;
 		if ([map_i numSelected]) {
@@ -729,9 +714,7 @@ rightMouseDown
 	    [theEvent modifierFlags] & (NSShiftKeyMask | NSControlKeyMask |
 	                                NSAlternateKeyMask | NSCommandKeyMask);
 
-//
-// click = scroll view
-//
+	// click = scroll view
 	if (flags == 0)
 		[self scrollDragFrom: theEvent];
 	Sys_Printf ("bad flags for click\n");

@@ -1610,7 +1610,7 @@ Set the regioned flag based on if the object is containted in region_min/max
 	int         i;
 	const char  *name;
 
-// filter away entities
+	// filter away entities
 	if (parent != [map_i objectAtIndex: 0]) {
 		if (filter_entities) {
 			regioned = YES;
@@ -1708,7 +1708,7 @@ id  sb_newowner;
 	[parent removeObject: self];
 	parent = sb_newowner;
 
-// hack to allow them to be copied to another map
+	// hack to allow them to be copied to another map
 	if ([parent respondsToSelector: @selector (valueForQKey:)]) {
 		eclass = [entity_classes_i classForName: [parent valueForQKey: "classname"]];
 		c = [eclass drawColor];
@@ -1724,7 +1724,7 @@ vec3_t  sb_translate;
 {
 	int  i, j;
 
-// move the planes
+	// move the planes
 	for (i = 0; i < numfaces; i++) {
 		for (j = 0; j < 3; j++)
 			VectorAdd (faces[i].planepts[j], sb_translate, faces[i].planepts[j]);
@@ -1770,7 +1770,7 @@ vec3_t  sb_mins, sb_maxs;
 {
 	selected = NO;
 
-// the last selected brush determines
+	// the last selected brush determines
 	if (invalid)
 		printf ("WARNING: deselected invalid brush\n");
 	[map_i setCurrentMinZ: bmins[2]];
@@ -1779,7 +1779,7 @@ vec3_t  sb_mins, sb_maxs;
 
 - (void) remove
 {
-// the last selected brush determines
+	// the last selected brush determines
 	if (!invalid) {
 		[map_i setCurrentMinZ: bmins[2]];
 		[map_i setCurrentMaxZ: bmaxs[2]];
@@ -1902,7 +1902,7 @@ id      carve_in, carve_out;
 	numfaces++;
 	[self calcWindings];
 
-// remove any degenerate faces
+	// remove any degenerate faces
 	return [self removeIfInvalid];
 }
 

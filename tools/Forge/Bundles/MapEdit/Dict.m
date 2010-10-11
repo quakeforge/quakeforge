@@ -71,9 +71,6 @@ JDC
 //
 // ===============================================
 
-//
-//  Write a { } block out to a FILE*
-//
 - (id) writeBlockTo: (FILE *)fp
 {
 	char   *data;
@@ -85,9 +82,6 @@ JDC
 	return self;
 }
 
-//
-//  Write a single { } block out
-//
 - (id) writeFile: (const char *)path
 {
 	FILE  *fp;
@@ -112,9 +106,7 @@ JDC
 //
 // ===============================================
 
-//
 //  Change a keyword's string
-//
 - (id) changeStringFor: (const char *)key to: (const char *)value
 {
 	PL_D_AddObject (plist, key, PL_NewString (value));
@@ -130,9 +122,7 @@ JDC
 	return 0;
 }
 
-//
 //  Search for keyword, return the string *
-//
 - (const char *) getStringFor: (const char *)name
 {
 	plitem_t    *item;
@@ -144,17 +134,13 @@ JDC
 	return "";
 }
 
-//
 //  Search for keyword, return the value
-//
 - (unsigned int) getValueFor: (const char *)name
 {
 	return atol ([self getStringFor: name]);
 }
 
-//
 //  Return # of units in keyword's value
-//
 - (int) getValueUnits: (const char *)key
 {
 	plitem_t    *item;

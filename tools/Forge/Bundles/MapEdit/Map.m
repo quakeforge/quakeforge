@@ -756,7 +756,7 @@ sel_identity (void)
 		Sys_Printf ("can't modify spawned entities\n");
 		return self;
 	}
-// find an origin to apply the transformation to
+	// find an origin to apply the transformation to
 	sb_mins[0] = sb_mins[1] = sb_mins[2] = 99999;
 	sb_maxs[0] = sb_maxs[1] = sb_maxs[2] = -99999;
 	[self makeSelectedPerform: @selector (addToBBox)];
@@ -764,7 +764,7 @@ sel_identity (void)
 	sel_org[1] = [xyview_i snapToGrid: (sb_mins[1] + sb_maxs[1]) / 2];
 	sel_org[2] = [xyview_i snapToGrid: (sb_mins[2] + sb_maxs[2]) / 2];
 
-// do it!
+	// do it!
 	[self makeSelectedPerform: @selector (transform)];
 
 	[quakeed_i updateAll];

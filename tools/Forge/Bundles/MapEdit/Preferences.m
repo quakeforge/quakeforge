@@ -49,9 +49,7 @@ WriteNumericDefault (id prefs, NSString *name, float value)
 	return self;
 }
 
-//
 //  Read in at start of program
-//
 - (id) readDefaults
 {
 	[self setProjectPath: [prefs stringForKey: @"ProjectPath"]];
@@ -90,13 +88,11 @@ WriteNumericDefault (id prefs, NSString *name, float value)
 	return projectpath;
 }
 
-//
 // ===============================================
 //  BSP sound stuff
 // ===============================================
 //
 //  Set the BSP sound using an OpenPanel
-//
 - (id) setBspSound: sender
 {
 	id          panel;
@@ -124,18 +120,14 @@ WriteNumericDefault (id prefs, NSString *name, float value)
 	return self;
 }
 
-//
 //  Play the BSP sound
-//
 - (id) playBspSound
 {
 	[bspSound_i play];
 	return self;
 }
 
-//
 //  Set the bspSound path
-//
 - (id) setBspSoundPath: (NSString *)path
 {
 	
@@ -165,9 +157,7 @@ WriteNumericDefault (id prefs, NSString *name, float value)
 //  Show BSP Output management
 // ===============================================
 
-//
 //  Set the state
-//
 - (id) setShowBSP: (int)state
 {
 	showBSP = state;
@@ -177,9 +167,7 @@ WriteNumericDefault (id prefs, NSString *name, float value)
 	return self;
 }
 
-//
 //  Get the state
-//
 - (int) getShowBSP
 {
 	return showBSP;
@@ -189,9 +177,7 @@ WriteNumericDefault (id prefs, NSString *name, float value)
 //  "Offset Brush ..." management
 // ===============================================
 
-//
 //  Set the state
-//
 - (id) setBrushOffset: (int)state
 {
 	brushOffset = state;
@@ -200,9 +186,7 @@ WriteNumericDefault (id prefs, NSString *name, float value)
 	return self;
 }
 
-//
 //  Get the state
-//
 - (int) getBrushOffset
 {
 	return brushOffset;
@@ -234,7 +218,6 @@ WriteNumericDefault (id prefs, NSString *name, float value)
 // ===============================================
 //
 //  Set the state
-//
 - (id) setXlight: (float)value
 {
 	xlight = value;
@@ -268,9 +251,7 @@ WriteNumericDefault (id prefs, NSString *name, float value)
 	return self;
 }
 
-//
 //  Get the state
-//
 - (float) getXlight
 {
 	return [xlight_i floatValue];
