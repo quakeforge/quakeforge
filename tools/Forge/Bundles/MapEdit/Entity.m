@@ -51,6 +51,31 @@ vec3_t  bad_maxs = {8, 8, 8};
 	return self;
 }
 
+- (id) copyWithZone: (NSZone *) zone
+{
+	id          new, nb;
+	epair_t     *e;
+	int         i, c;
+
+	new = [[Entity allocWithZone: zone] init];
+	[new setModifiable: modifiable];
+
+	for (e = epairs; e; e = e->next) {
+		// don't copy target and targetname fields
+		if (strncmp (e->key, "target", 6))
+			[new setKey: e->key toValue: e->value];
+	}
+
+	c = [self count];
+	for (i = 0; i < c; i++) {
+		nb = [[self objectAtIndex: i] copy];
+		[nb setParent: new];
+		[new addObject: nb];
+	}
+
+	return new;
+}
+
 - (Entity *) initClass: (const char *)classname
 {
 	id          new;
