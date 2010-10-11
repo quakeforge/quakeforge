@@ -91,7 +91,7 @@ XYClick
 	new[1] = [xyview_i snapToGrid: pt.y];
 	new[2] = [map_i currentMinZ];
 
-// see if a point is allready there
+	// see if a point is allready there
 	for (i = 0; i < num; i++) {
 		if (new[0] == pos[i][0] && new[1] == pos[i][1]) {
 			if (pos[i][2] == [map_i currentMinZ])

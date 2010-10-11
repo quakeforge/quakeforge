@@ -29,9 +29,7 @@ id  things_i;
 	[flags_i deselectAllCells];
 }
 
-//
 //  Load the TEXT object with the entity comment
-//
 - (id) loadEntityComment: (id)obj
 {
 	[entity_comment_i selectAll: self];
@@ -85,9 +83,7 @@ id  things_i;
 	return [[entity_classes_i objectAtIndex: lastSelected] classname];
 }
 
-//
 //  Flush entity classes & reload them!
-//
 - (id) reloadEntityClasses: sender
 {
 	EntityClass     *ent;
@@ -179,9 +175,7 @@ id  things_i;
 	return self;
 }
 
-//
 //  Clicked in the Keypair view - set as selected
-//
 - (id) setSelectedKey: (epair_t *)ep;
 {
 	[keyInput_i setStringValue: [NSString stringWithCString: ep->key]];
@@ -199,9 +193,7 @@ id  things_i;
 	return self;
 }
 
-//
 //  Action methods
-//
 
 - (id) addPair: sender
 {
@@ -237,9 +229,7 @@ id  things_i;
 	return self;
 }
 
-//
 //  Set the key/value fields to "angle <button value>"
-//
 - (id) setAngle: sender
 {
 	NSString  *value;
@@ -289,10 +279,8 @@ id  things_i;
 	return self;
 }
 
-//
 //  Fill the Entity browser
 //  (Delegate method - delegated in Interface Builder)
-//
 - (void) browser: sender
    createRowsForColumn: (int)column
    inMatrix: matrix

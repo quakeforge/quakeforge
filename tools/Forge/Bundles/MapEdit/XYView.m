@@ -67,9 +67,7 @@ initWithFrame:
 	xy_viewnormal[2] = -1;
 	xy_viewdist = -1024;
 
-//
-// initialize the pop up menus
-//
+	// initialize the pop up menus
 	scalebutton_i = [[NSPopUpButton alloc] init];
 	[scalebutton_i setTarget: self];
 	[scalebutton_i setAction: @selector (scaleMenuTarget:)];
@@ -97,9 +95,7 @@ initWithFrame:
 	[gridbutton_i sizeToFit];
 	[gridbutton_i selectItemAtIndex: 4];
 
-//
-// initialize the scroll view
-//
+	// initialize the scroll view
 	scrollview_i = [[PopScrollView alloc]  initWithFrame: frameRect
 	                                             button1: scalebutton_i
 	                                             button2: gridbutton_i];
@@ -107,9 +103,7 @@ initWithFrame:
 	[scrollview_i setAutoresizingMask: (NSViewWidthSizable |
 	                                    NSViewHeightSizable)];
 
-//
-// link objects together
-//
+	// link objects together
 	[scrollview_i setDocumentView: self];
 	return scrollview_i;
 }
@@ -313,9 +307,7 @@ zoomIn
 	NSRect      visrect;
 	NSPoint     ofs, new;
 
-//
-// set the popup
-//
+	// set the popup
 	itemlist = [scalebutton_i itemArray];
 	numrows = [itemlist count];
 
@@ -325,9 +317,7 @@ zoomIn
 		return NULL;
 	[scalebutton_i selectItemAtIndex: selected];
 
-//
-// zoom the view
-//
+	// zoom the view
 	visrect = [[self superview] bounds];
 	ofs.x = constant->x - visrect.origin.x;
 	ofs.y = constant->y - visrect.origin.y;
@@ -353,9 +343,7 @@ zoomOut
 	NSRect      visrect;
 	NSPoint     ofs, new;
 
-//
-// set the popup
-//
+	// set the popup
 	itemlist = [scalebutton_i itemArray];
 
 	selectedItem = [scalebutton_i selectedItem];
@@ -365,9 +353,7 @@ zoomOut
 
 	[scalebutton_i selectItemAtIndex: selected];
 
-//
-// zoom the view
-//
+	// zoom the view
 	visrect = [[self superview] bounds];
 	ofs.x = constant->x - visrect.origin.x;
 	ofs.y = constant->y - visrect.origin.y;
@@ -549,12 +535,10 @@ Rect is in global world (unscaled) coordinates
 	[path removeAllPoints];
 	[path setLineWidth: 0.15];
 
-//
-// grid
-//
-// can't just divide by grid size because of negetive coordinate
-// truncating direction
-//
+	// grid
+	//
+	// can't just divide by grid size because of negetive coordinate
+	// truncating direction
 	if (gridsize >= 4 / scale) {
 		y = floor (bottom / gridsize);
 		stopy = floor (top / gridsize);
@@ -607,9 +591,7 @@ Rect is in global world (unscaled) coordinates
 		[path stroke];
 	}
 
-//
-// tiles
-//
+	// tiles
 	// for text
 	[[NSColor colorWithCalibratedWhite: 0.0 / 16.0 alpha: 1.0] set];
 
@@ -798,7 +780,6 @@ drawSolid
 	NSDrawBitmap (visRect, r_width, r_height, 8, 3, 32, r_width * 4, NO, NO,
 	              NSCalibratedRGBColorSpace, planes);
 
-//	NSPing ();
 	[[self window] setBackingType: NSBackingStoreBuffered];
 	[self unlockFocus];
 
@@ -1140,7 +1121,7 @@ ControlCallback (float dx, float dy)
 	pt = [theEvent locationInWindow];
 	pt = [self convertPoint: pt fromView: NULL];
 
-// if the XY point is inside the brush, make the point on top
+	// if the XY point is inside the brush, make the point on top
 	p1[0] = pt.x;
 	p1[1] = pt.y;
 	VectorCopy (p1, p2);

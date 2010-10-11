@@ -141,7 +141,7 @@ REN_DrawSpan (int y)
 		x2 = r_width;
 	ofs = y * r_width + x1;
 
-// this should be specialized for 1.0 / 0.5 / 0.75 light levels
+	// this should be specialized for 1.0 / 0.5 / 0.75 light levels
 	for (x = x1; x < x2; x++) {
 		if (r_zbuffer[ofs] <= zfrac) {
 			scale = 1 / zfrac;
@@ -213,7 +213,7 @@ REN_DrawFlatSpan (int y)
 
 	ofs = y * r_width + x1;
 
-// this should be specialized for 1.0 / 0.5 / 0.75 light levels
+	// this should be specialized for 1.0 / 0.5 / 0.75 light levels
 	for (x = x1; x < x2; x++) {
 		if (r_zbuffer[ofs] <= zfrac) {
 			r_zbuffer[ofs] = zfrac;
@@ -241,9 +241,7 @@ REN_RasterizeFace (winding_t * w)
 	int     count;
 	int     numvertex;
 
-//
-// find top vertex
-//
+	// find top vertex
 	numvertex = w->numpoints;
 	top = 0x7fffffff;
 	bot = 0x80000000;
@@ -267,9 +265,7 @@ REN_RasterizeFace (winding_t * w)
 	if (top < 0 || bot > r_height || top > bot)
 		return;                     // shouldn't have to have this...
 
-//
-// render a trapezoid
-//
+	// render a trapezoid
 	y = top;
 
 	while (y < bot) {
@@ -407,9 +403,7 @@ REN_RasterizeFaceLinear (winding_t * w)
 	int     count;
 	int     numvertex;
 
-//
-// find top vertex
-//
+	// find top vertex
 	numvertex = w->numpoints;
 	top = 0x7fffffff;
 	bot = 0x80000000;
@@ -430,9 +424,7 @@ REN_RasterizeFaceLinear (winding_t * w)
 	if (top < 0 || bot > r_height || top > bot)
 		return;                     // shouldn't have to have this...
 
-//
-// render a trapezoid
-//
+	// render a trapezoid
 	y = top;
 
 	while (y < bot) {
@@ -564,15 +556,11 @@ REN_DrawCameraFace (face_t * idpol)
 
 	r_face = idpol;
 
-//
-// back face cull
-//
+	// back face cull
 	if (DotProduct (r_origin, idpol->plane.normal) <= idpol->plane.dist)
 		return;
 
-//
-// transform in 3D (FIXME: clip first, then transform)
-//
+	// transform in 3D (FIXME: clip first, then transform)
 	in = idpol->w;
 	numvertex = in->numpoints;
 
@@ -589,18 +577,14 @@ REN_DrawCameraFace (face_t * idpol)
 		w->points[i][4] = in->points[i][4];
 	}
 
-//
-// 3D clip
-//
+	// 3D clip
 	for (i = 0; i < 4; i++) {
 		w = ClipWinding (w, &rfrustum[i]);
 		if (!w)
 			return;
 	}
 
-//
-// project to 2D
-//
+	// project to 2D
 	for (i = 0; i < w->numpoints; i++) {
 		scale = r_width_2 / w->points[i][2];
 		w->points[i][0] = r_width_2 + scale * w->points[i][0];
@@ -608,9 +592,7 @@ REN_DrawCameraFace (face_t * idpol)
 		w->points[i][2] = scale;
 	}
 
-//
-// draw it
-//
+	// draw it
 	REN_SetTexture (idpol);
 
 	REN_RasterizeFace (w);
@@ -636,15 +618,11 @@ REN_DrawXYFace (face_t * idpol)
 	w = idpol->w;
 	r_face = idpol;
 
-//
-// back (and side) face cull
-//
+	// back (and side) face cull
 	if (DotProduct (idpol->plane.normal, xy_viewnormal) > -VECTOR_EPSILON)
 		return;
 
-//
-// transform
-//
+	// transform
 	in = idpol->w;
 	numvertex = in->numpoints;
 
@@ -661,18 +639,14 @@ REN_DrawXYFace (face_t * idpol)
 		w->points[i][4] = in->points[i][4];
 	}
 
-//
-// clip
-//
+	// clip
 	for (i = 0; i < 4; i++) {
 		w = ClipWinding (w, &rfrustum[i]);
 		if (!w)
 			return;
 	}
 
-//
-// project to 2D
-//
+	// project to 2D
 	for (i = 0; i < w->numpoints; i++) {
 		dest = w->points[i];
 		if (dest[0] < 0)
@@ -701,9 +675,7 @@ REN_DrawXYFace (face_t * idpol)
 
 	REN_SetTexture (idpol);
 
-//
-// draw it
-//
+	// draw it
 	REN_RasterizeFaceLinear (w);
 	free (w);
 }

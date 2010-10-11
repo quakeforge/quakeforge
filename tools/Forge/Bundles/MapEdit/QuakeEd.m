@@ -130,7 +130,7 @@ Every five minutes, save a modified map
 */
 - (void) AutoSave
 {
-// automatic backup
+	// automatic backup
 	if (autodirty) {
 		autodirty = NO;
 #define FN_AUTOSAVE "/qcache/AutoSaveMap.map"
@@ -317,8 +317,8 @@ instance draw the brush after each flush
 	[cameraview_i lockFocus];
 	linestart (0, 0, 0);
 	[map_i makeSelectedPerform: @selector (CameraDrawSelf)];
-	[clipper_i cameraDrawSelf];
 	lineflush ();
+	[clipper_i cameraDrawSelf];
 	[cameraview_i unlockFocus];
 
 	[xyview_i lockFocus];
@@ -387,8 +387,6 @@ App delegate methods
 	[self enableFlushWindow];
 	[self flushWindow];
 
-//  NSPing ();
-
 	return self;
 }
 
@@ -442,11 +440,9 @@ App delegate methods
 
 	[self makeKeyAndOrderFront: self];
 
-//	[self doOpen: "/raid/quake/id1_/maps/amlev1.map"];    // DEBUG
 	[map_i newMap];
 
 	Sys_Printf ("ready.\n");
-//	malloc_debug(-1);     // DEBUG
 }
 
 - (id) appWillTerminate: sender
@@ -575,8 +571,7 @@ applyRegion:
 {
 	id  b;
 
-// get the bounds of the current selection
-
+	// get the bounds of the current selection
 	if ([map_i numSelected] != 1) {
 		Sys_Printf ("must have a single brush selected\n");
 		return self;
@@ -586,7 +581,7 @@ applyRegion:
 	[b getMins: region_min maxs: region_max];
 	[b remove];
 
-// turn region on
+	// turn region on
 	[regionbutton_i setIntValue: 1];
 	[self applyRegion: self];
 
@@ -597,7 +592,7 @@ applyRegion:
 {
 	NSRect  bounds;
 
-// get xy size
+	// get xy size
 	bounds = [[xyview_i superview] bounds];
 
 	region_min[0] = bounds.origin.x;
@@ -607,16 +602,14 @@ applyRegion:
 	region_max[1] = bounds.origin.y + bounds.size.height;
 	region_max[2] = 99999;
 
-// turn region on
+	// turn region on
 	[regionbutton_i setIntValue: 1];
 	[self applyRegion: self];
 
 	return self;
 }
 
-//
 // UI querie for other objects
-//
 - (BOOL) showCoordinates
 {
 	return [show_coordinates_i intValue];
@@ -672,9 +665,8 @@ saveBSP
 		NSBeep ();
 		return self;
 	}
-//
-// turn off the filters so all entities get saved
-//
+
+	// turn off the filters so all entities get saved
 	oldLightFilter = [filter_light_i intValue];
 	oldPathFilter = [filter_path_i intValue];
 	[filter_light_i setIntValue: 0];
@@ -696,9 +688,7 @@ saveBSP
 	[filter_path_i setIntValue: oldPathFilter];
 	[self applyRegion: self];
 
-//
-// write the command to the bsp host
-//
+	// write the command to the bsp host
 	destdir = [project_i getFinalMapDirectory];
 
 	bsppath = [destdir stringByAppendingPathComponent:
@@ -841,7 +831,7 @@ save:
 {
 	NSString    *backup;
 
-// force a name change if using tempname
+	// force a name change if using tempname
 	if (![filename compare: FN_TEMPSAVE])
 		return [self saveAs: self];
 	dirty = autodirty = NO;
@@ -891,9 +881,7 @@ saveAs
 ===============================================================================
 */
 
-//
 //  AJR - added this for Project info
-//
 - (NSString *) currentFilename
 {
 	return filename;
@@ -924,9 +912,7 @@ keyDown
 	NSString    *chars = [theEvent characters];
 	unichar     c = ([chars length] == 1) ? [chars characterAtIndex: 0] : '\0';
 
-//
-// function keys
-//
+	// function keys
 	switch (c) {
 		case NSF2FunctionKey:
 			[cameraview_i setDrawMode: dr_wire];
@@ -1016,9 +1002,7 @@ keyDown
 			[map_i cloneSelection: self];
 			break;
 
-//
-// move selection keys
-//
+		// move selection keys
 		case '2':
 			VectorCopy (vec3_origin, sb_translate);
 			sb_translate[1] = -[xyview_i gridsize];

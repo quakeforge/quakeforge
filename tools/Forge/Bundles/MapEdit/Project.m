@@ -86,9 +86,7 @@ id  project_i;
 	return self;
 }
 
-//
 //  Init Project Settings fields
-//
 - (id) initProjSettings
 {
 	[pis_basepath_i setStringValue: path_basepath];
@@ -101,9 +99,7 @@ id  project_i;
 	return self;
 }
 
-//
 //  Add text to the BSP Output window
-//
 - (id) addToOutput: (const char *)string
 {
 	int  end;
@@ -151,10 +147,8 @@ id  project_i;
 	return self;
 }
 
-//
 //  Fill the QuakeEd Maps or wads browser
 //  (Delegate method - delegated in Interface Builder)
-//
 - (void) browser: sender createRowsForColumn: (int)column inMatrix: matrix
 {
 	id          cell;
@@ -183,9 +177,7 @@ id  project_i;
 	}
 }
 
-//
 //  Clicked on a map name or description!
-//
 - (id) clickedOnMap: sender
 {
 	id      matrix;
@@ -223,7 +215,7 @@ id  project_i;
 
 	Sys_Printf ("loading %s\n", wf);
 
-// set the row in the settings inspector wad browser
+	// set the row in the settings inspector wad browser
 	c = PL_A_NumObjects (wadList);
 	for (i = 0; i < c; i++) {
 		name = PL_String (PL_ObjectAtIndex (wadList, i));
@@ -233,7 +225,7 @@ id  project_i;
 		}
 	}
 
-// update the texture inspector
+	// update the texture inspector
 	[texturepalette_i initPaletteFromWadfile: wf];
 	[[map_i objectAtIndex: 0] setKey: "wad" toValue: wf];
 //  [inspcontrol_i changeInspectorTo:i_textures];
@@ -243,9 +235,7 @@ id  project_i;
 	return self;
 }
 
-//
 //  Clicked on a wad name
-//
 - (id) clickedOnWad: sender
 {
 	id          matrix;
@@ -261,9 +251,7 @@ id  project_i;
 	return self;
 }
 
-//
 //  Read in the <name>.QE_Project file
-//
 - (id) parseProjectFile
 {
 	NSString    *path;
@@ -285,9 +273,7 @@ id  project_i;
 	return self;
 }
 
-//
 //  Loads and parses a project file
-//
 - (id) openProjectFile: (NSString *)path
 {
 	FILE            *fp;
@@ -317,9 +303,7 @@ id  project_i;
 	return path_projectinfo;
 }
 
-//
 //  Open a project file
-//
 - (id) openProject
 {
 	id          openpanel;
@@ -364,9 +348,7 @@ id  project_i;
 	return path_progdir;
 }
 
-//
 //  Return the WAD name for cmd-8
-//
 - (const char *) getWAD8
 {
 	if (!path_wad8[0])
@@ -375,9 +357,7 @@ id  project_i;
 	return path_wad8;
 }
 
-//
 //  Return the WAD name for cmd-9
-//
 - (const char *) getWAD9
 {
 	if (!path_wad9[0])
@@ -386,9 +366,7 @@ id  project_i;
 	return path_wad9;
 }
 
-//
 //  Return the WAD name for cmd-0
-//
 - (const char *) getWAD0
 {
 	if (!path_wad0[0])
@@ -397,9 +375,7 @@ id  project_i;
 	return path_wad0;
 }
 
-//
 //  Return the FULLVIS cmd string
-//
 - (const char *) getFullVisCmd
 {
 	if (!string_fullvis[0])
@@ -408,9 +384,7 @@ id  project_i;
 	return string_fullvis;
 }
 
-//
 //  Return the FASTVIS cmd string
-//
 - (const char *) getFastVisCmd
 {
 	if (!string_fastvis[0])
@@ -419,9 +393,7 @@ id  project_i;
 	return string_fastvis;
 }
 
-//
 //  Return the NOVIS cmd string
-//
 - (const char *) getNoVisCmd
 {
 	if (!string_novis[0])
@@ -430,9 +402,7 @@ id  project_i;
 	return string_novis;
 }
 
-//
 //  Return the RELIGHT cmd string
-//
 - (const char *) getRelightCmd
 {
 	if (!string_relight[0])
@@ -441,9 +411,7 @@ id  project_i;
 	return string_relight;
 }
 
-//
 //  Return the LEAKTEST cmd string
-//
 - (const char *) getLeaktestCmd
 {
 	if (!string_leaktest[0])

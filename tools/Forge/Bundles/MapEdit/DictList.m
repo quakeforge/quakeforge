@@ -5,9 +5,8 @@
 #include "THING+NSArray.m"
 
 @implementation DictList
-//
+
 //  Read in variable # of objects from FILE *
-//
 - (id) initListFromFile: (FILE *)fp
 {
 	id  d;
@@ -24,9 +23,7 @@
 	return self;
 }
 
-//
 //  Write out list file
-//
 - (id) writeListFile: (const char *)filename
 {
 	FILE        *fp;
@@ -47,9 +44,7 @@
 	return self;
 }
 
-//
 //  Find the keyword in all the Dict objects
-//
 - (id) findDictKeyword: (const char *)key
 {
 	NSUInteger  i;

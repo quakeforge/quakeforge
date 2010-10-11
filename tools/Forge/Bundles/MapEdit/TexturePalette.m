@@ -470,15 +470,13 @@ TEX_ForName (const char *name)
 	return self;
 }
 
-//
 //  Set the selected texture
-//
 - (id) setSelectedTexture: (int)which
 {
 	texpal_t    *t;
 	NSRect      r;
 
-// wipe the fields
+	// wipe the fields
 	[self clearTexinfo: self];
 
 	if (which != selectedTexture) {
@@ -503,18 +501,14 @@ TEX_ForName (const char *name)
 	return self;
 }
 
-//
 //  Return the selected texture index
-//
 - (int) getSelectedTexture
 {
 	return selectedTexture;
 }
 
-//
 //  Return the original tex_ index of the selected texture
 //  so the texture info can be indexed from tex_images, etc.
-//
 - (int) getSelectedTexIndex
 {
 	texpal_t  *t;
@@ -525,9 +519,7 @@ TEX_ForName (const char *name)
 	return t->index;
 }
 
-//
 //  Return the name of the selected texture
-//
 - (const char *) getSelTextureName
 {
 	texpal_t  *t;
@@ -538,9 +530,7 @@ TEX_ForName (const char *name)
 	return t->name;
 }
 
-//
 //  Set selected texture by texture name
-//
 - (id) setTextureByName: (const char *)name
 {
 	texpal_t    *t;
@@ -568,9 +558,7 @@ TEX_ForName (const char *name)
 //
 // ===================================================
 
-//
 //  Search for texture named in searchField
-//
 - (id) searchForTexture: sender
 {
 	int     i;
@@ -614,9 +602,7 @@ TEX_ForName (const char *name)
 	return self;
 }
 
-//
 //  Set texture def from outside TexturePalette
-//
 - (id) setTextureDef: (texturedef_t *)td
 {
 	[self setTextureByName: td->texture];
@@ -632,9 +618,7 @@ TEX_ForName (const char *name)
 	return self;
 }
 
-//
 //  Return the current texture def to passed *
-//
 - (id) getTextureDef: (texturedef_t *)td
 {
 	if (selectedTexture == -1) {
@@ -656,9 +640,7 @@ TEX_ForName (const char *name)
 
 // ============================================================================
 
-//
 //  Change value in a field
-//
 - (id) changeField: (id)
    field by: (int)amount
 {
@@ -673,9 +655,7 @@ TEX_ForName (const char *name)
 	return self;
 }
 
-//
 //  Inc/Dec the XShift field
-//
 - (id) incXShift: sender
 {
 	[self changeField: field_Xshift_i by: 8];
@@ -688,9 +668,7 @@ TEX_ForName (const char *name)
 	return self;
 }
 
-//
 //  Inc/Dec the YShift field
-//
 - (id) incYShift: sender
 {
 	[self changeField: field_Yshift_i by: 8];
@@ -703,9 +681,7 @@ TEX_ForName (const char *name)
 	return self;
 }
 
-//
 //  Inc/Dec the Rotate field
-//
 - (id) incRotate: sender
 {
 	[self changeField: field_Rotate_i by: 90];
@@ -718,9 +694,7 @@ TEX_ForName (const char *name)
 	return self;
 }
 
-//
 //  Inc/Dec the Xscale field
-//
 - (id) incXScale: sender
 {
 	[field_Xscale_i setIntValue: 1];
@@ -735,9 +709,7 @@ TEX_ForName (const char *name)
 	return self;
 }
 
-//
 //  Inc/Dec the Yscale field
-//
 - (id) incYScale: sender
 {
 	[field_Yscale_i setIntValue: 1];
@@ -754,10 +726,8 @@ TEX_ForName (const char *name)
 
 // ============================================================================
 
-//
 //  Search for texture in entire palette
 //  Return index of texturedef, or -1 if unsuccessful
-//
 - (int) searchForTextureInPalette: (const char *)texture
 {
 	int         i;
@@ -777,9 +747,7 @@ TEX_ForName (const char *name)
 	return -1;
 };
 
-//
 // Scan thru map & display only textures that are in map
-//
 - (id) onlyShowMapTextures: sender
 {
 	int         max;
