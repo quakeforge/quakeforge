@@ -25,6 +25,11 @@ Initizes a scroll view with a button at it's lower right corner
 	return self;
 }
 
+- (BOOL) isOpaque
+{
+	return YES;
+}
+
 /*
 ================
 tile

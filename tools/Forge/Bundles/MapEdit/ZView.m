@@ -82,6 +82,11 @@ initWithFrame:
 	return zscrollview_i;
 }
 
+- (BOOL) isOpaque
+{
+	return YES;
+}
+
 - (id) setXYOrigin: (NSPoint *)pt
 {
 	origin[0] = pt->x + 0.333;
