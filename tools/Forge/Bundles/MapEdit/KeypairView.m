@@ -23,6 +23,11 @@ initWithFrame:
 	return YES;
 }
 
+- (BOOL) isOpaque
+{
+	return YES;
+}
+
 - (id) calcViewSize
 {
 	NSRect      b;

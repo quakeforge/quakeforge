@@ -43,6 +43,11 @@ initWithFrame:
 	return self;
 }
 
+- (BOOL) isOpaque
+{
+	return YES;
+}
+
 - (void) awakeFromNib
 {
 	NSBezierPath  *path;

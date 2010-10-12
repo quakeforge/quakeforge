@@ -113,6 +113,11 @@ initWithFrame:
 	return YES;
 }
 
+- (BOOL) isOpaque
+{
+	return YES;
+}
+
 - (id) setModeRadio: m
 {
 	// this should be set from IB, but because I toss myself in a

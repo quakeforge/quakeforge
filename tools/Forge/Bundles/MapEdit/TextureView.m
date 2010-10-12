@@ -20,6 +20,11 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 	return self;
 }
 
+- (BOOL) isOpaque
+{
+	return YES;
+}
+
 - (id) setParent: (id)from
 {
 	parent_i = from;
