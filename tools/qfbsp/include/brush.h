@@ -58,6 +58,12 @@ extern plane_t  planes[MAX_MAP_PLANES];
 */
 brush_t *AllocBrush (void);
 
+/**	Load the brushes from the entity.
+
+	\param ent		The entity from which to load the brushes.
+	\param hullnum	The number of the hull for which to load the brushes.
+	\return			The brush set holding the brushes loaded from the entity.
+*/
 brushset_t *Brush_LoadEntity (entity_t *ent, int hullnum);
 
 /**	Determine the primary axis of the normal.

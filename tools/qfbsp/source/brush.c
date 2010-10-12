@@ -61,10 +61,11 @@ AllocBrush (void)
 	return b;
 }
 
-/*
-	CheckFace
+/**	Check the face for validity.
 
-	Note: this will not catch 0 area polygons
+	\param f		The face to check.
+
+	\note Does not catch 0 area polygons.
 */
 static void
 CheckFace (const face_t *f)
@@ -123,18 +124,28 @@ CheckFace (const face_t *f)
 	}
 }
 
+/**	Initialize the bounding box of the brush set.
+
+	\param bs		The brush set of which to initialize the bounding box.
+*/
 static void
 ClearBounds (brushset_t *bs)
 {
 	int		i, j;
 
-	for (j = 0; j < NUM_HULLS; j++)
+	for (j = 0; j < NUM_HULLS; j++) {
 		for (i = 0; i < 3; i++) {
 			bs->mins[i] = BOGUS_RANGE;
 			bs->maxs[i] = -BOGUS_RANGE;
 		}
+	}
 }
 
+/**	Grow the bounding box of the brush set to include the vector.
+
+	\param bs		The brush set of which to grown the bounding box.
+	\param v		The vector to be included in the bounding box.
+*/
 static void
 AddToBounds (brushset_t *bs, const vec3_t v)
 {
@@ -289,6 +300,11 @@ FindPlane (const plane_t *dplane, int *side)
 vec3_t      brush_mins, brush_maxs;
 face_t     *brush_faces;
 
+/**	Find the entity with the matching target name.
+
+	\param targetname The target name for which to search.
+	\return			The matching entity or NULL if not found.
+*/
 static entity_t *
 FindTargetEntity (const char *targetname)
 {
@@ -302,6 +318,9 @@ FindTargetEntity (const char *targetname)
 }
 
 #define	ZERO_EPSILON	0.001
+
+/**	Create the faces of the active brush.
+*/
 static void
 CreateBrushFaces (void)
 {
