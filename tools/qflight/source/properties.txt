@@ -1,0 +1,37 @@
+light/_light *
+	halflife: "r g b i", r/g/b 0-255, i is id "light"
+	rgb: "r g b"
+	id: "intensity"
+style *
+	light style: 0-254
+angle *
+	spotlight cone angle in degrees. defaults to 20
+wait
+	light "falloff". defaults to 1.0
+_lightradius
+	size of light. interacts with falloff for distance clipping (?)
+	defaults to 0
+color/_color
+	"r g b", r/g/b 0-1.0
+_attenuation
+	attenuation style:
+		linear		id style. level falls off linearly from "light" at 0 to
+					0 at distance "light".
+		radius		similar to linear, but the cutoff distance is at "radius"
+		inverse		1/r attenuation
+		realistic	1/(r*r) (inverse-square) attenuation
+		none		no attenuation, level is always "light"
+		havoc		like realistic, but with a cutoff.
+_radius
+	the range of the light.
+_noise
+	noise intensity (?)
+_noisetype
+	noise type:
+		random
+		smooth
+		perlin
+_persistence
+	noise parameter
+_resolution
+	noise parameter
