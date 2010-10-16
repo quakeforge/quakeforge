@@ -110,6 +110,7 @@ usage (int status)
 		"    -c, --noclip\n"
 		"    -e, --onlyents\n"
 		"    -p, --portal\n"
+		"        --extract-hull\n"
 		"        --extract-textures\n"
 		"        --extract-entities\n"
 		"    -u, --usehulls            Use the existing hull files\n"
