@@ -312,6 +312,10 @@ LoadEntities (void)
 							entity->radius = cutoff_range;
 					}
 					break;
+				case LIGHT_NO_ATTEN:
+					break;
+				case LIGHT_LH:
+					break;
 			}
 		}
 
