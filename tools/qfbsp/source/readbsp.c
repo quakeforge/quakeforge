@@ -263,6 +263,7 @@ output_file (const char *ext)
 	} else {
 		dstring_copystr (name, options.bspfile);
 		QFS_StripExtension (name->str, name->str);
+		QFS_DefaultExtension (name, ext);
 	}
 	return dstring_freeze (name);
 }
