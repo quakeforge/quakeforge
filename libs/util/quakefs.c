@@ -630,7 +630,8 @@ qfs_contains_updir (const char *path, int levels)
 }
 
 static int
-qfs_expand_path (dstring_t *full_path, const char *base, const char *path)
+qfs_expand_path (dstring_t *full_path, const char *base, const char *path,
+				 int levels)
 {
 	const char *separator = "/";
 	char       *cpath;
@@ -641,7 +642,7 @@ qfs_expand_path (dstring_t *full_path, const char *base, const char *path)
 		return -1;
 	}
 	cpath = QFS_CompressPath (path);
-	if (qfs_contains_updir (cpath, 0)) {
+	if (qfs_contains_updir (cpath, levels)) {
 		free (cpath);
 		errno = EACCES;
 		return -1;
@@ -659,7 +660,7 @@ qfs_expand_path (dstring_t *full_path, const char *base, const char *path)
 static int
 qfs_expand_userpath (dstring_t *full_path, const char *path)
 {
-	return qfs_expand_path (full_path, qfs_userpath, path);
+	return qfs_expand_path (full_path, qfs_userpath, path, 0);
 }
 
 VISIBLE char *
@@ -841,7 +842,7 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 		// check a file in the directory tree
 		dstring_t  *netpath = dstring_new ();
 
-		if (qfs_expand_path (netpath, search->filename, filename) == 0) {
+		if (qfs_expand_path (netpath, search->filename, filename, 1) == 0) {
 			if (foundname) {
 				dstring_clearstr (foundname);
 				dstring_appendstr (foundname, filename);
@@ -1180,7 +1181,7 @@ qfs_add_gamedir (const char *dir)
 		if (s != e) {
 			dsprintf (s_dir, "%.*s", (int) (e - s), s);
 			if (strcmp (s_dir->str, fs_userpath->string) != 0) {
-				if (qfs_expand_path (f_dir, s_dir->str, dir) != 0) {
+				if (qfs_expand_path (f_dir, s_dir->str, dir, 0) != 0) {
 					Sys_Printf ("dropping bad directory %s\n", dir);
 					break;
 				}
