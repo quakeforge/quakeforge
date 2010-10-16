@@ -340,16 +340,20 @@ SingleLightFace (entity_t *light, lightinfo_t *l)
 
 		switch (light->attenuation) {
 			case LIGHT_LINEAR:
-				add = light->light - dist;
+				add = fabs (light->light) - dist;
 				break;
 			case LIGHT_RADIUS:
-				add = light->light * (light->radius - dist) / light->radius;
+				add = fabs (light->light) * (light->radius - dist);
+				add /= light->radius;
 				break;
 			case LIGHT_INVERSE:
-				add = light->light / dist;
+				add = fabs (light->light) / dist;
 				break;
 			case LIGHT_REALISTIC:
-				add = light->light / (dist * dist);
+				add = fabs (light->light) / (dist * dist);
+				break;
+			case LIGHT_NO_ATTEN:
+				add = fabs (light->light);
 				break;
 			case LIGHT_LH:
 				add = 1 / (dist * dist * lightfalloff + LIGHTDISTBIAS);
