@@ -251,6 +251,8 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 void QuatMult (const quat_t q1, const quat_t q2, quat_t out);
 void QuatInverse (const quat_t in, quat_t out);
 
+void QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical);
+
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)				\
 	(((p)->type < 3)?									\
 	(													\

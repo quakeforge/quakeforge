@@ -195,6 +195,49 @@ QuatInverse (const quat_t in, quat_t out)
 	QuatScale (q, 1 / m, out);
 }
 
+VISIBLE void
+QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical)
+{
+	vec_t       aa, ab, ac, ad, bb, bc, bd, cc, cd, dd;
+	vec_t       *_m[4] = {
+		m + homogenous ? 0 : 0,
+		m + homogenous ? 4 : 3,
+		m + homogenous ? 8 : 6,
+		m + homogenous ? 12 : 9,
+	};
+
+	aa = q[0] * q[0];
+	ab = q[0] * q[1];
+	ac = q[0] * q[2];
+	ad = q[0] * q[3];
+
+	bb = q[1] * q[1];
+	bc = q[1] * q[2];
+	bd = q[1] * q[3];
+
+	cc = q[2] * q[2];
+	cd = q[2] * q[3];
+
+	dd = q[3] * q[3];
+
+	if (vertical) {
+		VectorSet (aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac), _m[0]);
+		VectorSet (2 * (bc - ad), aa - bb + cc - dd, 2 * (cd + ab), _m[1]);
+		VectorSet (2 * (bd + ac), 2 * (cd - ab), aa - bb - cc + dd, _m[2]);
+	} else {
+		VectorSet (aa + bb - cc - dd, 2 * (bc - ad), 2 * (bd + ac), _m[0]);
+		VectorSet (2 * (bc + ad), aa - bb + cc - dd, 2 * (cd - ab), _m[1]);
+		VectorSet (2 * (bd - ac), 2 * (cd + ab), aa - bb - cc + dd, _m[2]);
+	}
+	if (homogenous) {
+		_m[0][3] = 0;
+		_m[1][3] = 0;
+		_m[2][3] = 0;
+		VectorZero (_m[3]);
+		_m[3][3] = 1;
+	}
+}
+
 #if defined(_WIN32) && !defined(__GNUC__)
 # pragma optimize( "", on )
 #endif
