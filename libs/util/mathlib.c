@@ -200,10 +200,10 @@ QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical)
 {
 	vec_t       aa, ab, ac, ad, bb, bc, bd, cc, cd, dd;
 	vec_t       *_m[4] = {
-		m + homogenous ? 0 : 0,
-		m + homogenous ? 4 : 3,
-		m + homogenous ? 8 : 6,
-		m + homogenous ? 12 : 9,
+		m + (homogenous ? 0 : 0),
+		m + (homogenous ? 4 : 3),
+		m + (homogenous ? 8 : 6),
+		m + (homogenous ? 12 : 9),
 	};
 
 	aa = q[0] * q[0];
