@@ -127,7 +127,7 @@ pr_debug_expression_error (script_t *script, const char *msg)
 }
 
 static pr_type_t *
-parse_expression (progs_t *pr, const char *expr)
+parse_expression (progs_t *pr, const char *expr, int conditional)
 {
 	script_t   *es;
 	char       *e;
@@ -165,18 +165,21 @@ parse_expression (progs_t *pr, const char *expr)
 				goto error;
 			expr_ptr = PR_GetPointer (pr, global->ofs);
 		}
-		pr->wp_conditional = 0;
-		if (Script_TokenAvailable (es, 1)) {
-			if (!Script_GetToken (es, 1) && !strequal (es->token->str, "==" ))
-				goto error;
-			if (!Script_GetToken (es, 1))
-				goto error;
-			pr->wp_val.integer_var = strtol (es->token->str, &e, 0);
-			if (e == es->token->str)
-				goto error;
-			if (*e == '.' || *e == 'e' || *e == 'E')
-				pr->wp_val.float_var = strtod (es->token->str, &e);
-			pr->wp_conditional = 1;
+		if (conditional) {
+			pr->wp_conditional = 0;
+			if (Script_TokenAvailable (es, 1)) {
+				if (!Script_GetToken (es, 1)
+					&& !strequal (es->token->str, "==" ))
+					goto error;
+				if (!Script_GetToken (es, 1))
+					goto error;
+				pr->wp_val.integer_var = strtol (es->token->str, &e, 0);
+				if (e == es->token->str)
+					goto error;
+				if (*e == '.' || *e == 'e' || *e == 'E')
+					pr->wp_val.float_var = strtod (es->token->str, &e);
+				pr->wp_conditional = 1;
+			}
 		}
 		if (Script_TokenAvailable (es, 1))
 			Sys_Printf ("ignoring tail\n");
@@ -724,7 +727,7 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 		return;
 	}
 
-	pr->watch = parse_expression (pr, expr);
+	pr->watch = parse_expression (pr, expr, 1);
 	if (pr->watch) {
 		Sys_Printf ("watchpoint set to [%d]\n", PR_SetPointer (pr, pr->watch));
 		if (pr->wp_conditional)
@@ -744,7 +747,7 @@ PR_Debug_Print (progs_t *pr, const char *expr)
 		return;
 	}
 
-	print = parse_expression (pr, expr);
+	print = parse_expression (pr, expr, 0);
 	if (print) {
 		pr_int_t    ofs = PR_SetPointer (pr, print);
 		const char *s = global_string (pr, ofs, ev_void, 1);
