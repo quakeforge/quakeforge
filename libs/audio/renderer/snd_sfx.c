@@ -120,6 +120,11 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	int         frames;
 	int         size;
 
+	// if the speed is 0, there is no sound driver (probably failed to connect
+	// to jackd)
+	if (!snd_shm->speed)
+		return 0;
+
 	sfx_t      *new_sfx = calloc (1, sizeof (sfx_t));
 
 	new_sfx->name = sfx->name;
