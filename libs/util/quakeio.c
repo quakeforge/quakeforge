@@ -216,12 +216,13 @@ Qdopen (int fd, const char *mode)
 	QFile      *file;
 	char       *m, *p;
 	int         zip = 0;
+	int         len = strlen (mode);
 
-	m = alloca (strlen (mode) + 1);
+	m = alloca (len + 1);
 #ifdef _WIN32
 	setmode (fd, O_BINARY);
 #endif
-	for (p = m; *mode && p - m < ((int) sizeof (m) - 1); mode++) {
+	for (p = m; *mode && p - m < len; mode++) {
 		if (*mode == 'z') {
 			zip = 1;
 			continue;
