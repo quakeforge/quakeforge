@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.65)
+AC_PREREQ(2.61)
 
 dnl This is the only place where the package name and version appear
 AC_INIT([QuakeForge], [git-master])
@@ -10,7 +10,8 @@ if test "x${CFLAGS-unset}" = xunset; then
 	CFLAGS=""
 fi
 saved_CFLAGS="$CFLAGS"
-LT_INIT([win32-dll])
+dnl LT_INIT([win32-dll])
+AM_PROG_LIBTOOL
 CFLAGS="$saved_CFLAGS"
 
 AC_REVISION([$Revision$]) dnl
