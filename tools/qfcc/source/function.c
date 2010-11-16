@@ -146,6 +146,10 @@ parse_params (type_t *type, param_t *parms)
 			}
 			new.num_parms = -(new.num_parms + 1);
 		} else if (p->type) {
+			if (type_size (p->type) > type_size (&type_param)) {
+				error (0, "param too large to be passed by value");
+				return type;
+			}
 			new.parm_types[new.num_parms] = p->type;
 			new.num_parms++;
 		}
