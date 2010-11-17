@@ -230,10 +230,18 @@ def
 	| storage_class simple_def	{ current_storage = st_global; }
 	| storage_class '{' simple_defs '}' ';'
 	  { current_storage = st_global; }
-	| STRUCT identifier
-	  { current_struct = new_struct ($2); } '{' struct_defs '}' ';' { }
-	| UNION identifier
-	  { current_struct = new_union ($2); } '{' struct_defs '}' ';' { }
+	| STRUCT identifier { current_struct = new_struct ($2); }
+	  '{' struct_defs '}' ';'
+		{
+			if (!current_struct->struct_head)
+				new_struct_field (current_struct, &type_void, 0, vis_private);
+		}
+	| UNION identifier { current_struct = new_union ($2); }
+	  '{' struct_defs '}' ';'
+		{
+			if (!current_struct->struct_head)
+				new_struct_field (current_struct, &type_void, 0, vis_private);
+		}
 	| STRUCT identifier ';'		{ decl_struct ($2); }
 	| UNION identifier ';'		{ decl_union ($2); }
 	| ENUM '{' enum_list opt_comma '}' ';'
