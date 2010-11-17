@@ -17,9 +17,9 @@
 	[super dealloc];
 }
 
-- (Point) size
+- (Size) size
 {
-	return [[Point alloc] initWithComponents :[picture width] :[picture height]];
+	return makeSize ([picture width], [picture height]);
 }
 
 - (float) duration

@@ -97,7 +97,7 @@ void () servlist_filter_menu =
 
 void () server_list_menu =
 {
-	serv_maxping = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:206 :40 :8 :4] promptCharacter:' '];
+	serv_maxping = [[InputLine alloc] initWithBounds:makeRect (206, 40, 8, 4) promptCharacter:' '];
 	[serv_maxping setWidth:5];
 	
 	Menu_Begin (54, 52, "");

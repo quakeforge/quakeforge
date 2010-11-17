@@ -2,10 +2,7 @@
 #define __ruamoko_gui_View_h
 
 #include "Object.h"
-
-@class Point;
-@class Size;
-@class Rect;
+#include "gui/Rect.h"
 
 @interface View: Object
 {

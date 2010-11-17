@@ -1,4 +1,4 @@
-#include "gui/Point.h"
+#include "gui/Size.h"
 #include "draw.h"
 
 @interface Frame : Object
@@ -8,7 +8,7 @@
 }
 - (id) initWithFile: (string) file duration: (float) time;
 - (void) dealloc;
-- (Point) size;
+- (Size) size;
 - (float) duration;
 - (void) draw: (integer) x :(integer) y;
 @end

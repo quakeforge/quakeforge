@@ -3,87 +3,21 @@
 #include "gui/Size.h"
 #include "gui/Rect.h"
 
-@implementation Rect
-
-- (id) initWithComponents: (integer)x : (integer)y : (integer)w : (integer)h
+Rect makeRect (integer x, integer y, integer w, integer h)
 {
-	self = [self init];
-	origin = [[Size alloc] initWithComponents: x : y];
-	size = [[Size alloc] initWithComponents: w : h];
-	return self;
+	//FIXME Rect r = {{x, y}, {w, h}};
+	Rect r;
+	r.origin = makePoint (x, y);
+	r.size = makeSize (w, h);
+	return r;
 }
 
-- (id) initWithOrigin: (Point)anOrigin size: (Size)aSize
+Rect makeRectFromOriginSize (Point origin, Size size)
 {
-	self = [self init];
+	Rect r;
 
-	if (!self || !anOrigin || !aSize)
-		return NIL;
+	r.origin = origin;
+	r.size = size;
 
-	origin = [anOrigin retain];
-	size = [aSize retain];
-
-	return self;
+	return r;
 }
-
-- (id) initWithRect: (Rect)aRect
-{
-	self = [self init];
-
-	if (!self || !aRect)
-		return NIL;
-
-	[self setRect: aRect];
-
-	return self;
-}
-
-- (id) copy
-{
-	local id	myCopy = [super copy];
-
-	if (!myCopy)
-		myCopy = [[self class] alloc];
-
-	return [myCopy initWithOrigin: origin size: size];
-}
-
-- (Point) origin
-{
-	return origin;
-}
-
-- (Size) size
-{
-	return size;
-}
-
-- (void) setOrigin: (Point)aPoint
-{
-	if (!aPoint)
-		return;
-
-	if (origin)
-		[origin release];
-
-	origin = [aPoint retain];
-}
-
-- (void) setSize: (Size)aSize
-{
-	if (!aSize)
-		return;
-
-	if (size)
-		[size release];
-
-	size = [aSize retain];
-}
-
-- (void) setRect: (Rect)aRect
-{
-	[self setOrigin: [aRect origin]];
-	[self setSize: [aRect size]];
-}
-
-@end

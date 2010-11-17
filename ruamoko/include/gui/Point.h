@@ -1,26 +1,15 @@
 #ifndef __ruamoko_gui_Point_h
 #define __ruamoko_gui_Point_h
 
-#include "Object.h"
+struct Point {
+	integer x;
+	integer y;
+};
 
-@interface Point: Object
-{
-@public
-	integer	x;
-	integer	y;
-}
+typedef struct Point Point;
 
-- (id) initWithComponents: (integer)_x : (integer)_y;
-- (id) initWithPoint: (Point)aPoint;
-- (id) copy;
-
-- (void) addPoint: (Point)aPoint;
-- (void) subtractPoint: (Point)aPoint;
-
-- (integer) x;
-- (integer) y;
-
-- (void) setPoint: (Point)aPoint;
-@end
+@extern Point makePoint (integer x, integer y);
+@extern Point addPoint (Point a, Point b);
+@extern Point subtractPoint (Point a, Point b);
 
 #endif //__ruamoko_gui_Point_h

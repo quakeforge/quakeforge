@@ -179,7 +179,7 @@
 
 	toggle = _toggle;
 	
-	rect = [[Rect alloc] initWithComponents:0 :0 :strlen (_title) * 8 :8];
+	rect = makeRect (0, 0, strlen (_title) * 8, 8);
 	title = [[Text alloc] initWithBounds:rect text:_title];
 
 	rect.size.width = 3 * 8;
@@ -338,7 +338,7 @@
 
 	range = _range;
 	
-	rect = [[Rect alloc] initWithComponents:0 :0 :strlen (_title) * 8 :8];
+	rect = makeRect (0, 0, strlen (_title) * 8, 8);
 	title = [[Text alloc] initWithBounds:rect text:_title];
 
 	rect.origin.x += rect.size.width + 8;
@@ -465,10 +465,9 @@ void traceon () = #0;
 - (void) setBasePos: (Point) pos
 {
     [super setBasePos:pos];
-	local Point point = [[Point alloc] initWithComponents:xabs :yabs];
+	local Point point = {xabs, yabs};
 	[title setBasePos:point];
 	[view setBasePos:point];
-	[point release];
 }
 
 @end

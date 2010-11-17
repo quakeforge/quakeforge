@@ -40,9 +40,8 @@
 - (void) setBasePos: (Point) pos
 {
 	[super setBasePos:pos];
-	local Point point = [[Point alloc] initWithComponents:xabs :yabs];
+	local Point point = {xabs, yabs};
 	[views makeObjectsPerformSelector:@selector (setBasePos:) withObject:point];
-	[point release];
 }
 
 - (void) draw

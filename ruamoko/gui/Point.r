@@ -1,64 +1,19 @@
 #include "gui/Point.h"
 
-@implementation Point
-
-- (id) initWithComponents: (integer)_x : (integer)_y
+Point makePoint (integer x, integer y)
 {
-	self = [self init];
-	x = _x;
-	y = _y;
-	return self;
+	Point p = {x, y};
+	return p;
 }
 
-- (id) initWithPoint: (Point) aPoint
+Point addPoint (Point a, Point b)
 {
-	self = [self init];
-
-	if (!self || !aPoint)
-		return NIL;
-
-	x = [aPoint x];
-	y = [aPoint y];
-
-	return self;
+	Point c = {a.x + b.x, a.y + b.y};
+	return c;
 }
 
-- (id) copy
+Point subtractPoint (Point a, Point b)
 {
-	local id	myCopy = [super copy];
-
-	if (!myCopy)
-		myCopy = [[self class] alloc];
-
-	return [myCopy initWithComponents: x : y];
+	Point c = {a.x - b.x, a.y - b.y};
+	return c;
 }
-
-- (integer) x
-{
-	return x;
-}
-
-- (integer) y
-{
-	return y;
-}
-
-- (void) setPoint: (Point)aPoint
-{
-	x = [aPoint x];
-	y = [aPoint y];
-}
-
-- (void) addPoint: (Point) aPoint
-{
-	x += [aPoint x];
-	y += [aPoint y];
-}
-
-- (void) subtractPoint: (Point) aPoint
-{
-	x -= [aPoint x];
-	y -= [aPoint y];
-}
-
-@end

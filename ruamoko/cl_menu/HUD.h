@@ -1,7 +1,8 @@
 #include "Frame.h"
 #include "Array.h"
 
-@class Point;
+#include "gui/Point.h"
+#include "gui/Size.h"
 
 @interface HUDObject : Object
 {
@@ -14,7 +15,7 @@
 - (void) dealloc;
 - (integer) handle;
 - (Point) origin;
-- (Point) size;
+- (Size) size;
 - (void) setOrigin: (Point) newPoint;
 - (void) translate: (Point) addPoint;
 - (BOOL) isVisible;
@@ -28,7 +29,7 @@
 }
 
 - (id) initWithComponents: (integer) x :(integer) y :(string) _text;
-- (Point) size;
+- (Size) size;
 - (string) text;
 - (void) setText: (string) _text;
 - (void) display;
@@ -41,7 +42,7 @@
 
 - (id) initWithComponents: (integer)x :(integer)y :(string) _file;
 - (void) dealloc;
-- (Point) size;
+- (Size) size;
 - (void) setFile: (string) _file;
 - (void) display;
 @end
@@ -58,7 +59,7 @@
 }
 - (id) initWithComponents: (integer) x :(integer) y;
 - (void) dealloc;
-- (Point) size;
+- (Size) size;
 - (void) addFrame: (Frame) frame;
 - (void) changeFrame;
 - (void) display;

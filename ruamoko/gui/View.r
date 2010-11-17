@@ -40,9 +40,8 @@
 
 - (void) setBasePos: (integer) x y: (integer) y
 {
-	local Point point = [[Point alloc] initWithComponents:x :y];
+	local Point point = {x, y};
 	[self setBasePos:point];
-	[point release];
 }
 
 - (void) setBasePos: (Point)pos

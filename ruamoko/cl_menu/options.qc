@@ -170,8 +170,8 @@ array_from_plist (PLArray plarray)
 	return array;
 }
 
-id
-string_from_plist (PLString plstring)
+Rect
+rect_from_plist (PLString plstring)
 {
 	local string str = [plstring string];
 	local string tmp;
@@ -185,8 +185,14 @@ string_from_plist (PLString plstring)
 		yp = stoi ([(PLString) [item getObjectAtIndex:1] string]);
 		xl = stoi ([(PLString) [item getObjectAtIndex:2] string]);
 		yl = stoi ([(PLString) [item getObjectAtIndex:3] string]);
-		return [[Rect alloc] initWithComponents:xp :yp :xl :yl];
+		return makeRect (xp, yp, xl, yl);
 	}
+	return makeRect (0, 0, 0, 0);
+}
+
+id
+string_from_plist (PLString plstring)
+{
 	return NIL;
 }
 
@@ -403,7 +409,7 @@ MENU_control_options =
 	[view setText:"Bindings"];
 	[control_options addView:view];
 
-	rect = [[Rect alloc] initWithComponents:70 :70 :224 :8];
+	rect = makeRect (70, 70, 224, 8);
 	grab_mouse_view = [[CvarToggleView alloc] initWithBounds:rect title:"Grab mouse" :[[CvarToggle alloc] initWithCvar:"in_grab"]];
 	[control_options addView:grab_mouse_view];
 
@@ -432,8 +438,6 @@ MENU_control_options =
 	rect.origin.y += 10;
 	lookstrafe_view = [[CvarToggleView alloc] initWithBounds:rect title:"Lookstrafe" :[[CvarToggle alloc] initWithCvar:"lookstrafe"]];
 	[control_options addView:lookstrafe_view];
-
-	[rect release];
 
 	MENU_control_binding ();
 
@@ -523,15 +527,13 @@ MENU_feature_options =
 	[view setText:"--------"];
 	[feature_options addView:view];
 
-	rect = [[Rect alloc] initWithComponents:70 :60 :224 :8];
+	rect = makeRect (70, 60, 224, 8);
 	autorecord_view = [[CvarToggleView alloc] initWithBounds:rect title:"Autorecord" :[[CvarToggle alloc] initWithCvar:"cl_autorecord"]];
 	[feature_options addView:autorecord_view];
 
 	rect.origin.y += 10;
 	fraglog_view = [[CvarToggleView alloc] initWithBounds:rect title:"Frag Logging" :[[CvarToggle alloc] initWithCvar:"cl_fraglog"]];
 	[feature_options addView:fraglog_view];
-
-	[rect release];
 
 	Menu_Item (54, 70, "cl_autorecord", CB_feature_options, 0);
 	Menu_Item (54, 80, "cl_fraglog", CB_feature_options, 0);
@@ -720,25 +722,23 @@ MENU_player_options =
 	[view setText:"Pants color"];
 	[player_options addView:view];
 
-	player_config_plname_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD :18 :4] promptCharacter:' '];
+	player_config_plname_il = [[InputLineBox alloc] initWithBounds:makeRect (120, PLAYER_CONF_Y_PAD, 18, 4) promptCharacter:' '];
 	[player_config_plname_il setWidth:18];
 	[player_options addView:player_config_plname_il];
 
-	player_config_tname_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD + 20 :7 :4] promptCharacter:' '];
+	player_config_tname_il = [[InputLineBox alloc] initWithBounds:makeRect (120, PLAYER_CONF_Y_PAD + 20, 7, 4) promptCharacter:' '];
 	[player_config_tname_il setWidth:7];
 	[player_options addView:player_config_tname_il];
 
 	player_config_iactive = NIL;
 
-	rect = [[Rect alloc] initWithComponents:192 :PLAYER_CONF_Y_PAD + 37 :24 :24];
+	rect = makeRect (192, PLAYER_CONF_Y_PAD + 37, 24, 24);
 	topcolor_view = [[CvarColorView alloc] initWithBounds:rect :[[CvarColor alloc] initWithCvar:"topcolor"]];
 	[player_options addView:topcolor_view];
 
 	rect.origin.y = PLAYER_CONF_Y_PAD + 52;
 	bottomcolor_view = [[CvarColorView alloc] initWithBounds:rect :[[CvarColor alloc] initWithCvar:"bottomcolor"]];
 	[player_options addView:bottomcolor_view];
-
-	[rect release];
 
 	Menu_Begin (54, 80, "Player");
 	Menu_FadeScreen (1);
@@ -879,7 +879,7 @@ MENU_network_options =
 	[view setText:"Rate..:"];
 	[network_options addView:view];
 
-	network_config_rate_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents: 120 :NETWORK_CONF_Y_PAD :9 :4] promptCharacter:' '];
+	network_config_rate_il = [[InputLineBox alloc] initWithBounds:makeRect (120, NETWORK_CONF_Y_PAD, 9, 4) promptCharacter:' '];
 	[network_config_rate_il setWidth:9];
 	[network_options addView:network_config_rate_il];
 
