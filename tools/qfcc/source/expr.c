@@ -76,9 +76,9 @@ etype_t     qc_types[] = {
 	ev_void,							// ex_uexpr
 	ev_void,							// ex_def
 	ev_void,							// ex_temp
-	ev_void,							// ex_nil
 	ev_void,							// ex_name
 
+	ev_void,							// ex_nil
 	ev_string,							// ex_string
 	ev_float,							// ex_float
 	ev_vector,							// ex_vector
@@ -141,6 +141,10 @@ convert_name (expr_t *e)
 		expr_t     *new;
 		class_t    *class;
 
+		new = get_enum (name);
+		if (new)
+			goto convert;
+
 		class = get_class (name, 0);
 		if (class) {
 			e->type = ex_def;
@@ -159,9 +163,6 @@ convert_name (expr_t *e)
 			return;
 		}
 		new = class_ivar_expr (current_class, name);
-		if (new)
-			goto convert;
-		new = get_enum (name);
 		if (new)
 			goto convert;
 		error (e, "Undeclared variable \"%s\".", name);
@@ -604,7 +605,7 @@ new_short_expr (short short_val)
 int
 is_constant (expr_t *e)
 {
-	if (e->type >= ex_string
+	if (e->type >= ex_nil
 		|| (e->type == ex_def && e->e.def->constant))
 		return 1;
 	return 0;
@@ -614,6 +615,8 @@ expr_t *
 constant_expr (expr_t *var)
 {
 	def_t      *def;
+
+	convert_name (var);
 
 	if (var->type != ex_def || !var->e.def->constant)
 		return var;
@@ -818,7 +821,7 @@ print_expr (expr_t *e)
 					e->e.temp.users);
 			break;
 		case ex_nil:
-			printf ("NULL");
+			printf ("NIL");
 			break;
 		case ex_string:
 		case ex_name:
@@ -1365,7 +1368,7 @@ convert_short_uint (expr_t *e)
 	e->e.uinteger_val = e->e.short_val;
 }
 
-static void
+void
 convert_nil (expr_t *e, type_t *t)
 {
 	e->type = expr_types[t->type];
@@ -1696,7 +1699,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				{
 					expr_t     *tmp1, *tmp2;
 					e = new_block_expr ();
-					if (e2->type < ex_string)
+					if (e2->type < ex_nil)
 						tmp1 = new_temp_def_expr (&type_float);
 					else
 						tmp1 = e2;
@@ -2519,7 +2522,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 					 && POINTER_VAL (e->e.pointer) < 65536)) {
 				if (e->type == ex_expr && e->e.expr.op == '&'
 					&& e->e.expr.type->type == ev_pointer
-					&& e->e.expr.e1->type < ex_string) {
+					&& e->e.expr.e1->type < ex_nil) {
 					e2 = e;
 					e2->e.expr.op = '.';
 					e2->e.expr.type = t2;
@@ -2640,7 +2643,7 @@ init_elements (def_t *def, expr_t *eles)
 			}
 			init_elements (&elements[i], c);
 			continue;
-		} else if (c->type >= ex_string) {
+		} else if (c->type >= ex_nil) {
 			if (c->type == ex_integer
 				&& elements[i].type->type == ev_float)
 				convert_int (c);

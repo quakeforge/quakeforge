@@ -373,7 +373,7 @@ enum
 		{
 			$$ = 0;
 			$3 = constant_expr ($3);
-			if ($3->type < ex_string) {
+			if ($3->type < ex_nil) {
 				error ($3, "non-constant initializer");
 			} else if ($3->type != ex_integer) {
 				error ($3, "invalid initializer type");
@@ -600,15 +600,14 @@ var_initializer
 				def_initialized ($$);
 			} else {
 				$2 = constant_expr ($2);
-				if ($2->type >= ex_string) {
-					if ($$->constant) {
+				if ($2->type >= ex_nil) {
+					if ($2->type != ex_nil
+						&& !type_assignable ($$->type, get_type ($2))) {
+						error ($2, "incompatible types in initialization");
+					} else if ($$->constant) {
 						error ($2, "%s re-initialized", $$->name);
 					} else {
-						if ($$->type->type == ev_func) {
-							PARSE_ERROR;
-						} else {
-							ReuseConstant ($2,  $$);
-						}
+						ReuseConstant ($2,  $$);
 					}
 				} else {
 					error ($2, "non-constant expression used for initializer");
