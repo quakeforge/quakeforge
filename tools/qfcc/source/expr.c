@@ -1977,6 +1977,12 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 	for (i = arg_count - 1, e = params; i >= 0; i--, e = e->next) {
 		type_t     *t = get_type (e);
  
+		if (!type_size (t))
+			err = error (e, "type of formal parameter %d is incomplete",
+						 i + 1);
+		if (type_size (t) > type_size (&type_param))
+			err = error (e, "formal parameter %d is too large to be passed by"
+						 " value", i + 1);
 		check_initialized (e);
 		if (ftype->parm_types[i] == &type_float && e->type == ex_integer) {
 			convert_int (e);
@@ -2005,7 +2011,7 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 				&& options.code.progsversion == PROG_ID_VERSION)
 				convert_int (e);
 			if (e->type == ex_integer && options.warnings.vararg_integer)
-				warning (e, "passing integer consant into ... function");
+				warning (e, "passing integer constant into ... function");
 		}
 		arg_types[arg_count - 1 - i] = t;
 	}

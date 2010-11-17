@@ -146,10 +146,6 @@ parse_params (type_t *type, param_t *parms)
 			}
 			new.num_parms = -(new.num_parms + 1);
 		} else if (p->type) {
-			if (type_size (p->type) > type_size (&type_param)) {
-				error (0, "param too large to be passed by value");
-				return type;
-			}
 			new.parm_types[new.num_parms] = p->type;
 			new.num_parms++;
 		}
@@ -350,6 +346,34 @@ find_function (expr_t *fexpr, expr_t *params)
 	return fexpr;
 }
 
+static void
+check_function (def_t *func, param_t *params)
+{
+	param_t    *p;
+	int         i;
+
+	if (!type_size (func->type->aux_type)) {
+		error (0, "return type is an incomplete type");
+		func->type->aux_type = &type_void;//FIXME
+	}
+	if (type_size (func->type->aux_type) > type_size (&type_param)) {
+		error (0, "return value too large to be passed by value");
+		func->type->aux_type = &type_void;//FIXME
+	}
+	for (p = params, i = 0; p; p = p->next, i++) {
+		if (!p->selector && !p->type && !p->name)
+			continue;					// ellipsis marker
+		if (!p->type)
+			continue;					// non-param selector
+		if (!type_size (p->type))
+			error (0, "parameter %d (‘%s’) has incomplete type",
+				   i + 1, p->name);
+		if (type_size (p->type) > type_size (&type_param))
+			error (0, "param %d (‘%s’) is too large to be passed by value",
+				   i + 1, p->name);
+	}
+}
+
 void
 build_scope (function_t *f, def_t *func, param_t *params)
 {
@@ -358,6 +382,8 @@ build_scope (function_t *f, def_t *func, param_t *params)
 	param_t    *p;
 	def_t      *args = 0;
 	int         parm_ofs[MAX_PARMS];
+
+	check_function (func, params);
 
 	f->scope = new_scope (sc_params, new_defspace (), pr.scope);
 
