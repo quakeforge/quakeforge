@@ -41,7 +41,8 @@
 {
 	[super setBasePos:pos];
 	local Point point = {xabs, yabs};
-	[views makeObjectsPerformSelector:@selector (setBasePos:) withObject:point];
+	local SEL sel = @selector (setBasePosFromView:);
+	[views makeObjectsPerformSelector:sel withObject:self];
 }
 
 - (void) draw

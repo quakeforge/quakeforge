@@ -20,7 +20,7 @@
 - (id) canFocus: (integer)cf;
 - (integer) canFocus;
 - (void) setBasePos: (integer)x y: (integer)y;
-- (void) setBasePos: (Point)pos;
+- (void) setBasePosFromView: (View)view;
 - (void) draw;
 
 - (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down;
