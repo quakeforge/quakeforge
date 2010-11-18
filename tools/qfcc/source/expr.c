@@ -2138,6 +2138,8 @@ return_expr (function_t *f, expr_t *e)
 		if (e->type == ex_nil) {
 			t = f->def->type->aux_type;
 			e->type = expr_types[t->type];
+			if (e->type == ex_nil)
+				return error (e, "invalid return type for NIL");
 		} else {
 			if (!options.traditional)
 				return error (e, "void value not ignored as it ought to be");
