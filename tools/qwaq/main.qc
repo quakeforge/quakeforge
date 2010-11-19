@@ -21,13 +21,21 @@ string read_file (string filename)
 void test_plist (void)
 {
 	local string data, l;
-	local plitem_t pl;
+	local plitem_t pl, item, i;
 
 	data = read_file ("/home/bill/.quakeforge.dir");
 	pl = PL_GetPropertyList ("{" + data + "}");
 	l = PL_WritePropertyList (pl);
 	printf ("%s", data);
 	printf ("%s", l);
+	i = PL_ObjectForKey (pl, "QF");
+	item = PL_RemoveObjectForKey (pl, "QF");
+	l = PL_WritePropertyList (item);
+	printf ("%s", l);
+	PL_Free (item);
+	//Because i and item both point to the same plitem, and item has been,
+	//freed, freeing i will generate an error
+	//l = PL_WritePropertyList (i);
 	PL_Free (pl);
 	str_free (data);
 }
