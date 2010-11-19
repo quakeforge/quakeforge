@@ -882,6 +882,24 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 					case 'O':
 						str = va ("%04x", addr + (short) opval);
 						break;
+					case 'E':
+						{
+							edict_t    *ed;
+							opval = pr->pr_globals[s->a].entity_var;
+							parm_ind = pr->pr_globals[s->b].uinteger_var;
+							if (parm_ind < pr->progs->entityfields
+								&& opval >= 0
+								&& opval < pr->pr_edictareasize) {
+								ed = PROG_TO_EDICT (pr, opval);
+								opval = &ed->v[parm_ind] - pr->pr_globals;
+							} else {
+								str = "bad entity.field";
+								break;
+							}
+							str = global_string (pr, opval, optype, contents & 1);
+							str = va ("%d %d %s", s->a, s->b, str);
+						}
+						break;
 					default:
 						goto err;
 				}
