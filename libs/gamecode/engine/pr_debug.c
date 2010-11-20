@@ -539,6 +539,8 @@ PR_DumpState (progs_t *pr)
 	PR_StackTrace (pr);
 }
 
+#define ISDENORM(x) ((x) && !((x) & 0x7f800000))
+
 static const char *
 value_string (progs_t *pr, etype_t type, pr_type_t *val)
 {
@@ -611,7 +613,10 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 		case ev_void:
 			return "void";
 		case ev_float:
-			dsprintf (line, "%g", val->float_var);
+			if (ISDENORM (val->integer_var) && val->uinteger_var != 0x80000000)
+				dsprintf (line, "<%08x>", val->integer_var);
+			else
+				dsprintf (line, "%g", val->float_var);
 			break;
 		case ev_vector:
 			dsprintf (line, "'%g %g %g'",
