@@ -74,6 +74,7 @@ static vec3_t   listener_up;
 
 static cvar_t  *snd_phasesep;
 static cvar_t  *snd_volumesep;
+static cvar_t  *snd_swapchannelside;
 static cvar_t  *ambient_fade;
 static cvar_t  *ambient_level;
 
@@ -307,6 +308,9 @@ SND_Channels_Init (void)
 							 "20cm head");
 	snd_volumesep = Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE, NULL,
 							  "max stereo volume separation. 1.0 is max");
+	snd_swapchannelside = Cvar_Get ("snd_swapchannelside", "0", CVAR_ARCHIVE,
+									NULL, "Toggle swapping of left and right "
+									"channels");
 	ambient_fade = Cvar_Get ("ambient_fade", "100", CVAR_NONE, NULL,
 							 "How quickly ambient sounds fade in or out");
 	ambient_level = Cvar_Get ("ambient_level", "0.3", CVAR_NONE, NULL,
@@ -476,6 +480,8 @@ s_spatialize (channel_t *ch)
 	dist = VectorNormalize (source_vec) * ch->dist_mult;
 
 	dot = DotProduct (listener_right, source_vec);
+	if (snd_swapchannelside->int_value)
+		dot = -dot;
 
 	if (snd_shm->channels == 1) {
 		rscale = 1.0;
