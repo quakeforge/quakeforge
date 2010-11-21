@@ -604,9 +604,14 @@ Sys_ConsoleInput (void)
 		}
 		text[len] = c;
 		len++;
-		text[len] = 0;
-		if (len == sizeof (text))
+		if (len < sizeof (text))
+			text[len] = 0;
+		else {
+		// buffer is full
 			len = 0;
+			text[sizeof (text) - 1] = 0;
+			return text;
+		}
 	}
 
 	return NULL;
