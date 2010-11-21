@@ -539,6 +539,8 @@ PR_DumpState (progs_t *pr)
 	PR_StackTrace (pr);
 }
 
+#define ISDENORM(x) ((x) && !((x) & 0x7f800000))
+
 static const char *
 value_string (progs_t *pr, etype_t type, pr_type_t *val)
 {
@@ -611,7 +613,10 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 		case ev_void:
 			return "void";
 		case ev_float:
-			dsprintf (line, "%g", val->float_var);
+			if (ISDENORM (val->integer_var) && val->uinteger_var != 0x80000000)
+				dsprintf (line, "<%08x>", val->integer_var);
+			else
+				dsprintf (line, "%g", val->float_var);
 			break;
 		case ev_vector:
 			dsprintf (line, "'%g %g %g'",
@@ -881,6 +886,24 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						break;
 					case 'O':
 						str = va ("%04x", addr + (short) opval);
+						break;
+					case 'E':
+						{
+							edict_t    *ed;
+							opval = pr->pr_globals[s->a].entity_var;
+							parm_ind = pr->pr_globals[s->b].uinteger_var;
+							if (parm_ind < pr->progs->entityfields
+								&& opval >= 0
+								&& opval < pr->pr_edictareasize) {
+								ed = PROG_TO_EDICT (pr, opval);
+								opval = &ed->v[parm_ind] - pr->pr_globals;
+							} else {
+								str = "bad entity.field";
+								break;
+							}
+							str = global_string (pr, opval, optype, contents & 1);
+							str = va ("%d %d %s", s->a, s->b, str);
+						}
 						break;
 					default:
 						goto err;

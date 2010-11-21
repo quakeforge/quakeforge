@@ -98,6 +98,7 @@ VISIBLE const char *pr_type_name[ev_type_count] = {
 // P  function parameter
 // F  function (must come before any P)
 // R  return value
+// E  entity + field (%Eab)
 //
 // a  operand a
 // b  operand b
@@ -266,52 +267,52 @@ VISIBLE opcode_t pr_opcodes[] = {
 	{".", "load.f", OP_LOAD_F, false,
 	 ev_entity, ev_field, ev_float,
 	 PROG_ID_VERSION,
-	 "%Ga.%Gb, %gc",
+	 "%Ga.%Gb(%Ec), %gc",//FIXME %E more flexible?
 	},
 	{".", "load.v", OP_LOAD_V, false,
 	 ev_entity, ev_field, ev_vector,
 	 PROG_ID_VERSION,
-	 "%Ga.%Gb, %gc",
+	 "%Ga.%Gb(%Ec), %gc",
 	},
 	{".", "load.q", OP_LOAD_Q, false,
 	 ev_entity, ev_field, ev_quat,
 	 PROG_ID_VERSION,
-	 "%Ga.%Gb, %gc",
+	 "%Ga.%Gb(%Ec), %gc",
 	},
 	{".", "load.s", OP_LOAD_S, false,
 	 ev_entity, ev_field, ev_string,
 	 PROG_ID_VERSION,
-	 "%Ga.%Gb, %gc",
+	 "%Ga.%Gb(%Ec), %gc",
 	},
 	{".", "load.ent", OP_LOAD_ENT, false,
 	 ev_entity, ev_field, ev_entity,
 	 PROG_ID_VERSION,
-	 "%Ga.%Gb, %gc",
+	 "%Ga.%Gb(%Ec), %gc",
 	},
 	{".", "load.fld", OP_LOAD_FLD, false,
 	 ev_entity, ev_field, ev_field,
 	 PROG_ID_VERSION,
-	 "%Ga.%Gb, %gc",
+	 "%Ga.%Gb(%Ec), %gc",
 	},
 	{".", "load.fn", OP_LOAD_FN, false,
 	 ev_entity, ev_field, ev_func,
 	 PROG_ID_VERSION,
-	 "%Ga.%Gb, %gc",
+	 "%Ga.%Gb(%Ec), %gc",
 	},
 	{".", "load.i", OP_LOAD_I, false,
 	 ev_entity, ev_field, ev_integer,
 	 PROG_VERSION,
-	 "%Ga.%Gb, %gc",
+	 "%Ga.%Gb(%Ec), %gc",
 	},
 	{".", "load.u", OP_LOAD_U, false,
 	 ev_entity, ev_field, ev_uinteger,
 	 PROG_VERSION,
-	 "%Ga.%Gb, %gc",
+	 "%Ga.%Gb(%Ec), %gc",
 	},
 	{".", "load.p", OP_LOAD_P, false,
 	 ev_entity, ev_field, ev_pointer,
 	 PROG_VERSION,
-	 "%Ga.%Gb, %gc",
+	 "%Ga.%Gb(%Ec), %gc",
 	},
 
 	{".", "loadb.f", OP_LOADB_F, false,
@@ -419,6 +420,7 @@ VISIBLE opcode_t pr_opcodes[] = {
 	{"&", "address", OP_ADDRESS, false,
 	 ev_entity, ev_field, ev_pointer,
 	 PROG_ID_VERSION,
+	 "%Ga.%Gb, %gc",
 	},
 
 	{"&", "address.f", OP_ADDRESS_F, false,
@@ -1202,9 +1204,10 @@ check_branch (progs_t *pr, dstatement_t *st, opcode_t *op, short offset)
 
 static inline void
 check_global (progs_t *pr, dstatement_t *st, opcode_t *op, etype_t type,
-			  unsigned short operand)
+			  unsigned short operand, int check_denorm)
 {
 	const char *msg;
+	ddef_t     *def;
 
 	switch (type) {
 		case ev_short:
@@ -1221,11 +1224,19 @@ check_global (progs_t *pr, dstatement_t *st, opcode_t *op, etype_t type,
 				msg = "out of bounds global index";
 				goto error;
 			}
-			if (type == ev_float)
-			if (ISDENORM (G_INT (pr, operand))
-				&& !pr->denorm_found) {
+			if (type != ev_float || !check_denorm)
+				break;
+			if (!ISDENORM (G_INT (pr, operand))
+				|| G_UINT(pr, operand) == 0x80000000)
+				break;
+			if ((def = PR_GlobalAtOfs (pr, operand))
+				&& (def->type & ~DEF_SAVEGLOBAL) != ev_float) {
+				// FTEqcc uses store.f parameters of most types :/
+				break;
+			}
+			if (!pr->denorm_found) {
 				pr->denorm_found = 1;
-				if (pr_boundscheck-> int_val) {
+				if (pr_boundscheck->int_val) {
 					Sys_Printf ("DENORMAL floats detected, these progs might "
 								"not work. Good luck.\n");
 					return;
@@ -1303,7 +1314,7 @@ PR_Check_Opcodes (progs_t *pr)
 			switch (st->op) {
 				case OP_IF:
 				case OP_IFNOT:
-					check_global (pr, st, op, op->type_a, st->a);
+					check_global (pr, st, op, op->type_a, st->a, 1);
 					check_branch (pr, st, op, st->b);
 					break;
 				case OP_GOTO:
@@ -1311,12 +1322,12 @@ PR_Check_Opcodes (progs_t *pr)
 					break;
 				case OP_DONE:
 				case OP_RETURN:
-					check_global (pr, st, op, ev_integer, st->a);
-					check_global (pr, st, op, ev_void, st->b);
-					check_global (pr, st, op, ev_void, st->c);
+					check_global (pr, st, op, ev_integer, st->a, 1);
+					check_global (pr, st, op, ev_void, st->b, 0);
+					check_global (pr, st, op, ev_void, st->c, 0);
 					break;
 				case OP_RCALL1:
-					check_global (pr, st, op, ev_void, st->c);
+					check_global (pr, st, op, ev_void, st->c, 1);
 				case OP_RCALL2:
 				case OP_RCALL3:
 				case OP_RCALL4:
@@ -1325,9 +1336,9 @@ PR_Check_Opcodes (progs_t *pr)
 				case OP_RCALL7:
 				case OP_RCALL8:
 					if (st->op > OP_RCALL1)
-						check_global (pr, st, op, ev_integer, st->c);
-					check_global (pr, st, op, ev_integer, st->b);
-					check_global (pr, st, op, ev_func, st->a);
+						check_global (pr, st, op, ev_integer, st->c, 1);
+					check_global (pr, st, op, ev_integer, st->b, 1);
+					check_global (pr, st, op, ev_func, st->a, 1);
 					break;
 				case OP_STATE:
 				case OP_STATE_F:
@@ -1335,18 +1346,19 @@ PR_Check_Opcodes (progs_t *pr)
 						PR_Error (pr, "PR_Check_Opcodes: %s used with missing "
 								  "fields or globals", op->opname);
 					}
-					check_global (pr, st, op, op->type_a, st->a);
-					check_global (pr, st, op, op->type_b, st->b);
-					check_global (pr, st, op, op->type_c, st->c);
+					check_global (pr, st, op, op->type_a, st->a, 1);
+					check_global (pr, st, op, op->type_b, st->b, 1);
+					check_global (pr, st, op, op->type_c, st->c, 1);
 					break;
 				case OP_MOVE:
 					check_global_size (pr, st, op, st->b, st->a);
 					check_global_size (pr, st, op, st->b, st->c);
 					break;
 				default:
-					check_global (pr, st, op, op->type_a, st->a);
-					check_global (pr, st, op, op->type_b, st->b);
-					check_global (pr, st, op, op->type_c, st->c);
+					check_global (pr, st, op, op->type_a, st->a, 1);
+					check_global (pr, st, op, op->type_b, st->b,
+								  op->opcode != OP_STORE_F);
+					check_global (pr, st, op, op->type_c, st->c, 0);
 					break;
 			}
 		}

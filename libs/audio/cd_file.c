@@ -302,6 +302,8 @@ I_OGGMus_Play (int track, qboolean looping)
 	if (playing)
 		I_OGGMus_Stop ();
 
+	if (!track)
+		return;
 	I_OGGMus_SetPlayList (track);
 	I_OGGMus_PlayNext (looping);
 }

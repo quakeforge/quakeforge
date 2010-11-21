@@ -1090,7 +1090,7 @@ Draw_FadeScreen (void)
 				((byte *) vid.buffer + vid.rowbytes * y);
 			pbuf = (unsigned short *) vid.buffer + (vid.rowbytes >> 1) * y;
 			for (x = 0; x < vid.conwidth; x++)
-				pbuf[x] = (pbuf[x] >>= 1) & 0x7BEF;
+				pbuf[x] = (pbuf[x] >> 1) & 0x7BEF;
 		}
 	}
 	break;
@@ -1100,7 +1100,7 @@ Draw_FadeScreen (void)
 			unsigned int *pbuf = (unsigned int *)
 				((byte *) vid.buffer + vid.rowbytes * y);
 			for (x = 0; x < vid.conwidth; x++)
-				pbuf[x] = (pbuf[x] >>= 1) & 0x7F7F7F7F;
+				pbuf[x] = (pbuf[x] >> 1) & 0x7F7F7F7F;
 		}
 	}
 	break;
