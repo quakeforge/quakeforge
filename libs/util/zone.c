@@ -238,6 +238,8 @@ Z_Realloc (memzone_t *zone, void *ptr, int size)
 		Sys_Error ("Z_Realloc: realloced a freed pointer");
 
 	old_size = block->size;
+	old_size -= sizeof (memblock_t);	// account for size of block header
+	old_size -= 4;						// space for memory trash tester
 	old_ptr = ptr;
 
 	Z_Free (zone, ptr);
