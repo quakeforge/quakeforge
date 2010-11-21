@@ -96,6 +96,8 @@ dstring_t  *visdata;
 byte       *uncompressed;		// [bitbytes * portalleafs]
 int        *leafcluster;	// leaf to cluster mappings as read from .prt file
 
+int        *working;		// per thread current portal #
+
 
 static void
 PlaneFromWinding (winding_t *winding, plane_t *plane)
@@ -281,15 +283,18 @@ GetNextPortal (void)
 }
 
 static void *
-LeafThread (void *thread)
+LeafThread (void *_thread)
 {
 	portal_t   *portal;
+	int         thread = (int) (intptr_t) _thread;
 
 	do {
 		portal = GetNextPortal ();
 		if (!portal)
 			break;
 
+		if (working)
+			working[thread] = (int) (portal - portals);
 		PortalFlow (portal);
 
 		if (options.verbosity > 0)
@@ -298,6 +303,29 @@ LeafThread (void *thread)
 						portal->nummightsee, 
 						portal->numcansee);
 	} while (1);
+
+	return NULL;
+}
+
+static void *
+WatchThread (void *_thread)
+{
+	int         thread = (intptr_t) _thread;
+	int        *local_work = malloc (thread * sizeof (int));
+	int         i;
+	const char *spinner = "|/-\\";
+	int         ind = 0;
+
+	while (1) {
+		sleep (1);
+
+		for (i = 0; i < thread; i ++)
+			local_work[i] = working[i];
+		for (i = 0; i < thread; i++)
+			printf ("%6d", local_work[i]);
+		printf (" %c\r", spinner[(ind++) % 4]);
+		fflush (stdout);
+	}
 
 	return NULL;
 }
@@ -412,11 +440,12 @@ CalcPortalVis (void)
 
 #ifdef HAVE_PTHREAD_H
 	{
-		pthread_t   work_threads[MAX_THREADS];
+		pthread_t   work_threads[MAX_THREADS + 1];
 		void *status;
 		pthread_attr_t attrib;
 
 		if (options.threads > 1) {
+			working = calloc (options.threads, sizeof (int));
 			my_mutex = malloc (sizeof (*my_mutex));
 			if (pthread_mutex_init (my_mutex, 0) == -1)
 				Sys_Error ("pthread_mutex_init failed");
@@ -429,11 +458,18 @@ CalcPortalVis (void)
 									(void *) i) == -1)
 					Sys_Error ("pthread_create failed");
 			}
+			if (pthread_create (&work_threads[i], &attrib, WatchThread,
+								(void *) i) == -1)
+				Sys_Error ("pthread_create failed");
 
 			for (i = 0; i < options.threads; i++) {
 				if (pthread_join (work_threads[i], &status) == -1)
 					Sys_Error ("pthread_join failed");
 			}
+			if (pthread_cancel (work_threads[i]) != 0)
+				Sys_Error ("pthread_cancel failed");
+			if (pthread_join (work_threads[i], &status) == -1)
+				Sys_Error ("pthread_join failed");
 
 			if (pthread_mutex_destroy (my_mutex) == -1)
 				Sys_Error ("pthread_mutex_destroy failed");
