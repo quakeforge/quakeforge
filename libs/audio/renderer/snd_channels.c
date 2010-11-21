@@ -480,7 +480,7 @@ s_spatialize (channel_t *ch)
 	dist = VectorNormalize (source_vec) * ch->dist_mult;
 
 	dot = DotProduct (listener_right, source_vec);
-	if (snd_swapchannelside->int_value)
+	if (snd_swapchannelside->int_val)
 		dot = -dot;
 
 	if (snd_shm->channels == 1) {
