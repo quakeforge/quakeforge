@@ -3,10 +3,11 @@
 
 #include "Object.h"
 
+@class Array;
+
 @interface AutoreleasePool: Object
 {
-	unsigned	count;
-	id []		array;
+	Array		array;
 }
 
 + (void) addObject: (id)anObject;

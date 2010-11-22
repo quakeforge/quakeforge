@@ -66,16 +66,19 @@ BOOL (id object) object_is_meta_class = #0;
 
 @end
 
+@static BOOL allocDebug;
+@static Class autoreleaseClass;
+@static SEL autoreleaseSelector;
+@static IMP autoreleaseIMP;
+
 @implementation Object
 
 + (void) initialize
 {
-#if 0
-	allocDebug = localinfo ("AllocDebug");
+	//allocDebug = localinfo ("AllocDebug");
 	autoreleaseClass = [AutoreleasePool class];
 	autoreleaseSelector = @selector(addObject:);
 	autoreleaseIMP = [autoreleaseClass methodForSelector: autoreleaseSelector];
-#endif
 	return;
 }
 
@@ -293,7 +296,7 @@ BOOL (id object) object_is_meta_class = #0;
 
 - (id) autorelease
 {
-	
+	autoreleaseIMP (autoreleaseClass, autoreleaseSelector, self);
 }
 
 - (unsigned) retainCount

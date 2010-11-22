@@ -1,3 +1,4 @@
+#include "AutoreleasePool.h"
 #include "menu.h"
 #include "file.h"
 #include "cmd.h"
@@ -588,3 +589,8 @@ void () menu_init =
 void () menu_draw_hud =
 {
 };
+
+void menu_post ()
+{
+	[AutoreleasePool release];
+}
