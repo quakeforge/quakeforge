@@ -224,7 +224,7 @@ PLItem read_plist (void)
 	}
 	plist_data = Qreadstring (file, Qfilesize (file));
 	Qclose (file);
-	plist = [PLItem newFromString:plist_data];
+	plist = [PLItem fromString:plist_data];
 	str_free (plist_data);
 	return plist;
 }

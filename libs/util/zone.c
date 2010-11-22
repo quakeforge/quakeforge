@@ -263,7 +263,7 @@ Z_Print (memzone_t *zone)
 
 	for (block = zone->blocklist.next ; ; block = block->next) {
 		Sys_Printf ("block:%p    size:%7i    tag:%3i ofs:%d\n",
-					block, block->size, block->tag,
+					block, block->size - sizeof (memblock_t) - 4, block->tag,
 					(int) ((byte *) block - (byte *) zone));
 
 		if (block->next == &zone->blocklist)
