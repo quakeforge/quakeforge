@@ -206,8 +206,9 @@ PR_RelocateBuiltins (progs_t *pr)
 			ind = pr->bi_map (pr, ind);
 		bi = PR_FindBuiltinNum (pr, ind);
 		if (!bi || !(proc = bi->proc)) {
-			Sys_DPrintf ("WARNING: Bad builtin call number: %s = #%d\n",
-						 bi_name, -desc->first_statement);
+			Sys_MaskPrintf (SYS_DEV,
+							"WARNING: Bad builtin call number: %s = #%d\n",
+							bi_name, -desc->first_statement);
 			proc = bi_no_function;
 		}
 		func->first_statement = desc->first_statement;

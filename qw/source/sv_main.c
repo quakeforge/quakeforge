@@ -633,8 +633,8 @@ SVC_Log (void)
 		return;
 	}
 
-	Sys_DPrintf ("sending log %i to %s\n", svs.logsequence - 1,
-				 NET_AdrToString (net_from));
+	Sys_MaskPrintf (SYS_DEV, "sending log %i to %s\n", svs.logsequence - 1,
+					NET_AdrToString (net_from));
 
 //	snprintf (data, sizeof (data), "stdlog %i\n", svs.logsequence - 1);
 //	strncat (data,  (char *) svs.log_buf[((svs.logsequence - 1) & 1)],
@@ -1794,7 +1794,8 @@ SV_ReadPackets (void)
 			if (cl->netchan.qport != qport)
 				continue;
 			if (cl->netchan.remote_address.port != net_from.port) {
-				Sys_DPrintf ("SV_ReadPackets: fixing up a translated port\n");
+				Sys_MaskPrintf (SYS_DEV, "SV_ReadPackets: fixing up a "
+								"translated port\n");
 				cl->netchan.remote_address.port = net_from.port;
 			}
 			if (Netchan_Process (&cl->netchan)) {

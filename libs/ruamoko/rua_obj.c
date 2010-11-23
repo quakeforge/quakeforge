@@ -376,8 +376,8 @@ finish_class (progs_t *pr, pr_class_t *class, pointer_t object_ptr)
 			ml = &G_STRUCT (pr, pr_method_list_t, *ml).method_next;
 		*ml = class->methods;
 	}
-	Sys_DPrintf ("    %d %d %d\n", meta->class_pointer, meta->super_class,
-				 class->super_class);
+	Sys_MaskPrintf (SYS_DEV, "    %d %d %d\n", meta->class_pointer,
+					meta->super_class, class->super_class);
 }
 
 //====================================================================

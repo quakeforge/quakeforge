@@ -592,7 +592,7 @@ Cache_Move (cache_system_t * c)
 	// we are clearing up space at the bottom, so allocate it late
 	new = Cache_TryAlloc (c->size, true);
 	if (new) {
-		Sys_DPrintf ("cache_move ok\n");
+		Sys_MaskPrintf (SYS_DEV, "cache_move ok\n");
 
 		memcpy (new + 1, c + 1, c->size - sizeof (cache_system_t));
 		new->user = c->user;
@@ -600,7 +600,7 @@ Cache_Move (cache_system_t * c)
 		Cache_Free (c->user);
 		new->user->data = (void *) (new + 1);
 	} else {
-		Sys_DPrintf ("cache_move failed\n");
+		Sys_MaskPrintf (SYS_DEV, "cache_move failed\n");
 
 		Cache_Free (c->user);			// tough luck...
 	}
@@ -856,7 +856,7 @@ Cache_Free (cache_user_t *c)
 	if (cs->readlock)
 		Sys_Error ("Cache_Free: attempt to free locked block");
 
-	Sys_DPrintf ("Cache_Free: freeing '%s' %p\n", cs->name, cs);
+	Sys_MaskPrintf (SYS_DEV, "Cache_Free: freeing '%s' %p\n", cs->name, cs);
 
 	Cache_UnlinkLRU (cs);
 
@@ -919,9 +919,9 @@ Cache_Alloc (cache_user_t *c, int size, const char *name)
 VISIBLE void
 Cache_Report (void)
 {
-	Sys_DPrintf ("%4.1f megabyte data cache\n",
-				 (hunk_size - hunk_high_used -
-				  hunk_low_used) / (float) (1024 * 1024));
+	Sys_MaskPrintf (SYS_DEV, "%4.1f megabyte data cache\n",
+					(hunk_size - hunk_high_used -
+					 hunk_low_used) / (float) (1024 * 1024));
 }
 
 VISIBLE void

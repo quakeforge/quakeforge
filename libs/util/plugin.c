@@ -341,7 +341,7 @@ PI_LoadPlugin (const char *type, const char *name)
 			// try to reopen
 			if (!(dlhand = pi_open_lib (realname, 1))) {
 				Sys_Printf ("Error reopening plugin \"%s\".\n", realname);
-				Sys_DPrintf ("Reason: \"%s\".\n", pi_error);
+				Sys_MaskPrintf (SYS_DEV, "Reason: \"%s\".\n", pi_error);
 				return NULL;
 			}
 			
@@ -387,8 +387,9 @@ PI_UnloadPlugin (plugin_t *plugin)
 			&& plugin->functions->general->p_Shutdown) {
 		plugin->functions->general->p_Shutdown ();
 	} else {
-		Sys_DPrintf ("Warning: No shutdown function for type %d plugin!\n",
-					 plugin->type);
+		Sys_MaskPrintf (SYS_DEV,
+						"Warning: No shutdown function for type %d plugin!\n",
+						plugin->type);
 	}
 	
 	// remove from the table of loaded plugins

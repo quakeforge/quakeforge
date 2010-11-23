@@ -97,11 +97,11 @@ VID_CheckDGA (Display * dpy, int *maj_ver, int *min_ver, int *hasvideo)
 	}
 
 	if ((!maj_ver) || (*maj_ver != XDGA_MAJOR_VERSION)) {
-		Sys_DPrintf ("VID: Incorrect DGA version: %d.%d, \n", *maj_ver,
-					*min_ver);
+		Sys_MaskPrintf (SYS_DEV, "VID: Incorrect DGA version: %d.%d, \n",
+						*maj_ver, *min_ver);
 		return false;
 	}
-	Sys_DPrintf ("VID: DGA version: %d.%d\n", *maj_ver, *min_ver);
+	Sys_MaskPrintf (SYS_DEV, "VID: DGA version: %d.%d\n", *maj_ver, *min_ver);
 
 	if (!hasvideo)
 		hasvideo = &dummy_video;
@@ -151,12 +151,13 @@ VID_CheckVMode (Display * dpy, int *maj_ver, int *min_ver)
 		return false;
 
 	if ((!maj_ver) || (*maj_ver != XF86VIDMODE_MAJOR_VERSION)) {
-		Sys_DPrintf ("VID: Incorrect VidMode version: %d.%d\n", *maj_ver,
-					*min_ver);
+		Sys_MaskPrintf (SYS_DEV, "VID: Incorrect VidMode version: %d.%d\n",
+						*maj_ver, *min_ver);
 		return false;
 	}
 
-	Sys_DPrintf ("VID: VidMode version: %d.%d\n", *maj_ver, *min_ver);
+	Sys_MaskPrintf (SYS_DEV, "VID: VidMode version: %d.%d\n",
+					*maj_ver, *min_ver);
 	return true;
 #else
 	return false;

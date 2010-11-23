@@ -202,7 +202,7 @@ WINS_Init (void)
 
 	// determine my name
 	if (pgethostname (buff, MAXHOSTNAMELEN) == SOCKET_ERROR) {
-		Sys_DPrintf ("Winsock TCP/IP Initialization failed.\n");
+		Sys_MaskPrintf (SYS_DEV, "Winsock TCP/IP Initialization failed.\n");
 		if (--winsock_initialized == 0)
 			pWSACleanup ();
 		return -1;

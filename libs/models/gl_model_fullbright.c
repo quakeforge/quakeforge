@@ -76,7 +76,7 @@ Mod_Fullbright (byte *skin, int width, int height, char *name)
 
 	// Check for fullbright pixels
 	if (Mod_CalcFullbright (skin, ptexels, pixels)) {
-		Sys_DPrintf ("FB Model ID: '%s'\n", name);
+		Sys_MaskPrintf (SYS_DEV, "FB Model ID: '%s'\n", name);
 		texnum = GL_LoadTexture (name, width, height, ptexels, true, true, 1);
 	}
 

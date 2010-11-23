@@ -74,7 +74,7 @@ R_GetSpriteFrame (entity_t *currententity)
 	frame = currententity->frame;
 
 	if ((frame >= psprite->numframes) || (frame < 0)) {
-		Sys_DPrintf ("R_DrawSprite: no such frame %d\n", frame);
+		Sys_MaskPrintf (SYS_DEV, "R_DrawSprite: no such frame %d\n", frame);
 		frame = 0;
 	}
 
@@ -260,7 +260,8 @@ R_InitSprites (void)
 #else
 			sVAsize = 4;
 #endif
-			Sys_DPrintf ("Sprites: %i maximum vertex elements.\n", sVAsize);
+			Sys_MaskPrintf (SYS_DEV, "Sprites: %i maximum vertex elements.\n",
+							sVAsize);
 
 			if (spriteVertexArray)
 				free (spriteVertexArray);

@@ -266,11 +266,11 @@ Sys_Printf (const char *fmt, ...)
 }
 
 VISIBLE void
-Sys_DPrintf (const char *fmt, ...)
+Sys_MaskPrintf (int mask, const char *fmt, ...)
 {
 	va_list     args;
 
-	if (!developer || !developer->int_val)
+	if (!developer || !(developer->int_val & mask))
 		return;
 	va_start (args, fmt);
 	sys_std_printf_function (fmt, args);

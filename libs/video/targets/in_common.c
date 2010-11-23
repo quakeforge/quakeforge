@@ -135,7 +135,7 @@ IN_Shutdown (void)
 {
 	JOY_Shutdown ();
 
-	Sys_DPrintf ("IN_Shutdown\n");
+	Sys_MaskPrintf (SYS_DEV, "IN_Shutdown\n");
 	IN_LL_Shutdown ();
 
 	IE_Shutdown ();

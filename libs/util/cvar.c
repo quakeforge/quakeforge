@@ -237,7 +237,8 @@ Cvar_Set (cvar_t *var, const char *value)
 		return;
 
 	if (var->flags & CVAR_ROM) {
-		Sys_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n", var->name);
+		Sys_MaskPrintf (SYS_DEV, "Cvar \"%s\" is read-only, cannot modify\n",
+						var->name);
 		return;
 	}
 
@@ -352,8 +353,9 @@ set_cvar (const char *cmd, int orflags)
 
 	if (var) {
 		if (var->flags & CVAR_ROM) {
-			Sys_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n",
-						 var_name);
+			Sys_MaskPrintf (SYS_DEV,
+							"Cvar \"%s\" is read-only, cannot modify\n",
+							var_name);
 		} else {
 			Cvar_Set (var, value);
 			Cvar_SetFlags (var, var->flags | orflags);

@@ -203,13 +203,13 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 	vid.recalc_refdef = 1;				// force a surface cache flush
 
 	if (vid_gamma_avail && vid_system_gamma->int_val) {	// Have system, use it
-		Sys_DPrintf ("Setting hardware gamma to %g\n", gamma);
+		Sys_MaskPrintf (SYS_DEV, "Setting hardware gamma to %g\n", gamma);
 		VID_BuildGammaTable (1.0);	// hardware gamma wants a linear palette
 		VID_SetGamma (gamma);
 		memcpy (vid.palette, vid.basepal, 256 * 3);
 	} else {	// We have to hack the palette
 		int i;
-		Sys_DPrintf ("Setting software gamma to %g\n", gamma);
+		Sys_MaskPrintf (SYS_DEV, "Setting software gamma to %g\n", gamma);
 		VID_BuildGammaTable (gamma);
 		for (i = 0; i < 256 * 3; i++)
 			vid.palette[i] = gammatable[vid.basepal[i]];

@@ -322,8 +322,8 @@ BuildTris (void)
 
 	add_command (0);					// end of list marker
 
-	Sys_DPrintf ("%3i tri %3i vert %3i cmd\n", pheader->mdl.numtris, numorder,
-				 numcommands);
+	Sys_MaskPrintf (SYS_DEV, "%3i tri %3i vert %3i cmd\n",
+					pheader->mdl.numtris, numorder, numcommands);
 
 	allverts += numorder;
 	alltris += pheader->mdl.numtris;
@@ -434,7 +434,7 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 		}
 		if (remesh) {
 			// build it from scratch
-			Sys_DPrintf ("meshing %s...\n", m->name);
+			Sys_MaskPrintf (SYS_DEV, "meshing %s...\n", m->name);
 
 			BuildTris ();					// trifans or lists
 

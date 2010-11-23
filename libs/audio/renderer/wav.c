@@ -280,10 +280,10 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 	}
 
 	if (info.frames / info.rate < 3) {
-		Sys_DPrintf ("cache %s\n", realname);
+		Sys_MaskPrintf (SYS_DEV, "cache %s\n", realname);
 		wav_cache (sfx, realname, file, info);
 	} else {
-		Sys_DPrintf ("stream %s\n", realname);
+		Sys_MaskPrintf (SYS_DEV, "stream %s\n", realname);
 		wav_stream (sfx, realname, file, info);
 	}
 	return 0;

@@ -103,7 +103,7 @@ vorbis_get_info (OggVorbis_File *vf)
 	samples = ov_pcm_total (vf, -1);
 
 	for (ptr = ov_comment (vf, -1)->user_comments; *ptr; ptr++) {
-		Sys_DPrintf ("%s\n", *ptr);
+		Sys_MaskPrintf (SYS_DEV, "%s\n", *ptr);
 		if (strncmp ("CUEPOINT=", *ptr, 9) == 0) {
 			sscanf (*ptr + 9, "%d %d", &sample_start, &sample_count);
 		}
@@ -304,10 +304,10 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 		return -1;
 	}
 	if (info.frames / info.rate < 3) {
-		Sys_DPrintf ("cache %s\n", realname);
+		Sys_MaskPrintf (SYS_DEV, "cache %s\n", realname);
 		vorbis_cache (sfx, realname, &vf, info);
 	} else {
-		Sys_DPrintf ("stream %s\n", realname);
+		Sys_MaskPrintf (SYS_DEV, "stream %s\n", realname);
 		vorbis_stream (sfx, realname, &vf, info);
 	}
 	return 0;

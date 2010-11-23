@@ -134,7 +134,8 @@ Draw_InitText (void)
 		tVAsize = 0;
 
 	if (tVAsize) {
-		Sys_DPrintf ("Text: %i maximum vertex elements.\n", tVAsize);
+		Sys_MaskPrintf (SYS_DEV, "Text: %i maximum vertex elements.\n",
+						tVAsize);
 
 		if (textVertices)
 			free (textVertices);
@@ -152,7 +153,7 @@ Draw_InitText (void)
 		for (i = 0; i < tVAsize; i++)
 			tVAindices[i] = i;
 	} else {
-		Sys_DPrintf ("Text: Vertex Array use disabled.\n");
+		Sys_MaskPrintf (SYS_DEV, "Text: Vertex Array use disabled.\n");
 	}
 }
 

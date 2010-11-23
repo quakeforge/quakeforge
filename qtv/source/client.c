@@ -581,11 +581,12 @@ client_parse_message (client_t *cl)
 											  MSG_GetReadCount (net_message) -
 											  checksumIndex - 1, seq_hash);
 				if (calculatedChecksum != checksum) {
-					Sys_DPrintf
-						("Failed command checksum for %s(%d) (%d != %d)\n",
-						 Info_ValueForKey (cl->userinfo, "name"),
-						 cl->netchan.incoming_sequence, checksum,
-						 calculatedChecksum);
+					Sys_MaskPrintf (SYS_DEV,
+									"Failed command checksum for %s(%d) "
+									"(%d != %d)\n",
+									Info_ValueForKey (cl->userinfo, "name"),
+									cl->netchan.incoming_sequence, checksum,
+									calculatedChecksum);
 					return;
 				}
 //				if (!sv.paused) {

@@ -157,13 +157,14 @@ Mod_LoadLighting (bsp_t *bsp)
 				&& data[3] == 'T') {
 				ver = LittleLong (((int32_t *) data)[1]);
 				if (ver == 1) {
-					Sys_DPrintf ("%s loaded", litfilename->str);
+					Sys_MaskPrintf (SYS_DEV, "%s loaded", litfilename->str);
 					loadmodel->lightdata = data + 8;
 					return;
 				} else
-					Sys_DPrintf ("Unknown .lit file version (%d)\n", ver);
+					Sys_MaskPrintf (SYS_DEV,
+									"Unknown .lit file version (%d)\n", ver);
 			} else
-				Sys_DPrintf ("Corrupt .lit file (old version?), ignoring\n");
+				Sys_MaskPrintf (SYS_DEV, "Corrupt .lit file (old version?)\n");
 		}
 	}
 	// LordHavoc: oh well, expand the white lighting data

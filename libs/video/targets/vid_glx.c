@@ -154,7 +154,7 @@ QFGL_LoadLibrary (void)
 void
 VID_Shutdown (void)
 {
-	Sys_DPrintf ("VID_Shutdown\n");
+	Sys_MaskPrintf (SYS_DEV, "VID_Shutdown\n");
 	X11_CloseDisplay ();
 }
 
@@ -242,7 +242,8 @@ VID_Init (unsigned char *palette)
 	VID_Init8bitPalette ();
 	VID_SetPalette (vid.palette);
 
-	Sys_DPrintf ("Video mode %dx%d initialized.\n", vid.width, vid.height);
+	Sys_MaskPrintf (SYS_DEV, "Video mode %dx%d initialized.\n",
+					vid.width, vid.height);
 
 	vid.initialized = true;
 

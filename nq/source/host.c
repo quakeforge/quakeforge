@@ -146,7 +146,7 @@ Host_EndGame (const char *message, ...)
 	va_start (argptr, message);
 	dvsprintf (str, message, argptr);
 	va_end (argptr);
-	Sys_DPrintf ("Host_EndGame: %s\n", str->str);
+	Sys_MaskPrintf (SYS_DEV, "Host_EndGame: %s\n", str->str);
 
 	if (sv.active)
 		Host_ShutdownServer (false);
@@ -512,7 +512,7 @@ Host_ShutdownServer (qboolean crash)
 void
 Host_ClearMemory (void)
 {
-	Sys_DPrintf ("Clearing memory\n");
+	Sys_MaskPrintf (SYS_DEV, "Clearing memory\n");
 	D_FlushCaches ();
 	Mod_ClearAll ();
 	if (host_hunklevel)

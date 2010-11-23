@@ -84,7 +84,7 @@ bi_Draw_CachePic (progs_t *pr)
 	qpic_res_t *rpic = Hash_Find (res->pic_hash, path);
 
 	if (!pic) {
-		Sys_DPrintf ("can't load %s\n", path);
+		Sys_MaskPrintf (SYS_DEV, "can't load %s\n", path);
 		R_INT (pr) = 0;
 		return;
 	}

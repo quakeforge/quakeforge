@@ -346,8 +346,8 @@ ResetSharedFrameBuffers (void)
 		// attach to the shared memory segment
 		x_shminfo[frm].shmaddr = (void *) shmat (x_shminfo[frm].shmid, 0, 0);
 
-		Sys_DPrintf ("VID: shared memory id=%d, addr=0x%lx\n",
-					 x_shminfo[frm].shmid, (long) x_shminfo[frm].shmaddr);
+		Sys_MaskPrintf (SYS_DEV, "VID: shared memory id=%d, addr=0x%lx\n",
+						x_shminfo[frm].shmid, (long) x_shminfo[frm].shmaddr);
 
 		x_framebuffer[frm]->data = x_shminfo[frm].shmaddr;
 
@@ -448,10 +448,12 @@ VID_Init (unsigned char *palette)
 	x_vis = x_visinfo->visual;
 
 	if (num_visuals > 1) {
-		Sys_DPrintf ("Found more than one visual id at depth %d:\n",
-				template.depth);
+		Sys_MaskPrintf (SYS_DEV,
+						"Found more than one visual id at depth %d:\n",
+						template.depth);
 		for (i = 0; i < num_visuals; i++)
-			Sys_DPrintf ("    -visualid %d\n", (int) x_visinfo[i].visualid);
+			Sys_MaskPrintf (SYS_DEV, "    -visualid %d\n",
+							(int) x_visinfo[i].visualid);
 	} else {
 		if (num_visuals == 0) {
 			if (template_mask == VisualIDMask) {
@@ -463,15 +465,21 @@ VID_Init (unsigned char *palette)
 	}
 
 	if (verbose) {
-		Sys_DPrintf ("Using visualid %d:\n", (int) x_visinfo->visualid);
-		Sys_DPrintf ("    class %d\n", x_visinfo->class);
-		Sys_DPrintf ("    screen %d\n", x_visinfo->screen);
-		Sys_DPrintf ("    depth %d\n", x_visinfo->depth);
-		Sys_DPrintf ("    red_mask 0x%x\n", (int) x_visinfo->red_mask);
-		Sys_DPrintf ("    green_mask 0x%x\n", (int) x_visinfo->green_mask);
-		Sys_DPrintf ("    blue_mask 0x%x\n", (int) x_visinfo->blue_mask);
-		Sys_DPrintf ("    colormap_size %d\n", x_visinfo->colormap_size);
-		Sys_DPrintf ("    bits_per_rgb %d\n", x_visinfo->bits_per_rgb);
+		Sys_MaskPrintf (SYS_DEV, "Using visualid %d:\n",
+						(int) x_visinfo->visualid);
+		Sys_MaskPrintf (SYS_DEV, "    class %d\n", x_visinfo->class);
+		Sys_MaskPrintf (SYS_DEV, "    screen %d\n", x_visinfo->screen);
+		Sys_MaskPrintf (SYS_DEV, "    depth %d\n", x_visinfo->depth);
+		Sys_MaskPrintf (SYS_DEV, "    red_mask 0x%x\n",
+						(int) x_visinfo->red_mask);
+		Sys_MaskPrintf (SYS_DEV, "    green_mask 0x%x\n",
+						(int) x_visinfo->green_mask);
+		Sys_MaskPrintf (SYS_DEV, "    blue_mask 0x%x\n",
+						(int) x_visinfo->blue_mask);
+		Sys_MaskPrintf (SYS_DEV, "    colormap_size %d\n",
+						x_visinfo->colormap_size);
+		Sys_MaskPrintf (SYS_DEV, "    bits_per_rgb %d\n",
+						x_visinfo->bits_per_rgb);
 	}
 
 	/* Setup attributes for main window */
@@ -575,7 +583,7 @@ VID_SetPalette (unsigned char *palette)
 void
 VID_Shutdown (void)
 {
-	Sys_DPrintf ("VID_Shutdown\n");
+	Sys_MaskPrintf (SYS_DEV, "VID_Shutdown\n");
 	X11_CloseDisplay ();
 }
 

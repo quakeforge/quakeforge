@@ -412,7 +412,7 @@ flac_get_info (flacfile_t *ff)
 		vc = &ff->vorbis_info->data.vorbis_comment;
 
 		for (i = 0, ve = vc->comments; i < vc->num_comments; ve++, i++) {
-			Sys_DPrintf ("%.*s\n", ve->length, ve->entry);
+			Sys_MaskPrintf (SYS_DEV, "%.*s\n", ve->length, ve->entry);
 			if (strncmp ("CUEPOINT=", (char *) ve->entry, 9) == 0) {
 				char       *str = alloca (ve->length + 1);
 				strncpy (str, (char *) ve->entry, ve->length);
@@ -463,10 +463,10 @@ SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname)
 		return -1;
 	}
 	if (info.frames / info.rate < 3) {
-		Sys_DPrintf ("cache %s\n", realname);
+		Sys_MaskPrintf (SYS_DEV, "cache %s\n", realname);
 		flac_cache (sfx, realname, ff, info);
 	} else {
-		Sys_DPrintf ("stream %s\n", realname);
+		Sys_MaskPrintf (SYS_DEV, "stream %s\n", realname);
 		flac_stream (sfx, realname, ff, info);
 	}
 	return 0;

@@ -69,13 +69,16 @@ void Sys_SetErrPrintf (sys_printf_t func);
 
 void Sys_Print (FILE *stream, const char *fmt, va_list args);
 void Sys_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
-void Sys_DPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void Sys_Error (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
 void Sys_Quit (void) __attribute__((noreturn));
 void Sys_Shutdown (void);
 void Sys_RegisterShutdown (void (*func) (void));
 double Sys_DoubleTime (void);
 void Sys_TimeOfDay(date_t *date);
+
+void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(printf,2,3)));
+#define SYS_DEV		1
+#define SYS_WARN	3	// bit 0 so developer 1 will pick it up
 
 int Sys_CheckInput (int idle, int net_socket);
 const char *Sys_ConsoleInput (void);

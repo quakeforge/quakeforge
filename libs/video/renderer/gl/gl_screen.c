@@ -263,9 +263,9 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	if (r_speeds->int_val) {
 //		qfglFinish ();
 		time2 = Sys_DoubleTime ();
-		Sys_DPrintf ("%3i ms  %4i wpoly %4i epoly %4i parts\n",
-					 (int) ((time2 - time1) * 1000), c_brush_polys,
-					 c_alias_polys, numparticles);
+		Sys_MaskPrintf (SYS_DEV, "%3i ms  %4i wpoly %4i epoly %4i parts\n",
+						(int) ((time2 - time1) * 1000), c_brush_polys,
+						c_alias_polys, numparticles);
 	}
 
 	GL_FlushText ();

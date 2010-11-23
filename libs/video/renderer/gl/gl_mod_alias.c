@@ -257,8 +257,9 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 
 	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
 		if (developer->int_val)
-			Sys_DPrintf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
-						 currententity->model->name);
+			Sys_MaskPrintf (SYS_DEV,
+							"R_AliasSetupFrame: no such frame %d %s\n", frame,
+							currententity->model->name);
 		frame = 0;
 	}
 
@@ -363,8 +364,9 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 
 	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
 		if (developer->int_val)
-			Sys_DPrintf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
-						 currententity->model->name);
+			Sys_MaskPrintf (SYS_DEV,
+							"R_AliasSetupFrame: no such frame %d %s\n", frame,
+							currententity->model->name);
 		frame = 0;
 	}
 
@@ -466,7 +468,8 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 	maliasskingroup_t *paliasskingroup;
 
 	if ((skinnum >= ahdr->mdl.numskins) || (skinnum < 0)) {
-		Sys_DPrintf ("R_AliasSetupSkin: no such skin # %d\n", skinnum);
+		Sys_MaskPrintf (SYS_DEV, "R_AliasSetupSkin: no such skin # %d\n",
+						skinnum);
 		skinnum = 0;
 	}
 

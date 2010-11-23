@@ -325,7 +325,7 @@ SV_PreSpawn_f (void *unused)
 		// should be three numbers following containing checksums
 		check = atoi (Cmd_Argv (3));
 
-//      Sys_DPrintf ("Client check = %d\n", check);
+//      Sys_MaskPrintf (SYS_DEV, , "Client check = %d\n", check);
 
 		if (sv_mapcheck->int_val && check != sv.worldmodel->checksum &&
 			check != sv.worldmodel->checksum2) {
@@ -678,7 +678,7 @@ SV_NextUpload (void)
 			net_message->readcount, size);
 	net_message->readcount += size;
 
-	Sys_DPrintf ("UPLOAD: %d received\n", size);
+	Sys_MaskPrintf (SYS_DEV, "UPLOAD: %d received\n", size);
 
 	if (percent != 100) {
 		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_stufftext, 8);
@@ -1925,10 +1925,11 @@ SV_ExecuteClientMessage (client_t *cl)
 											  checksumIndex - 1, seq_hash);
 
 				if (calculatedChecksum != checksum) {
-					Sys_DPrintf
-						("Failed command checksum for %s(%d) (%d != %d)\n",
-						 cl->name, cl->netchan.incoming_sequence, checksum,
-						 calculatedChecksum);
+					Sys_MaskPrintf (SYS_DEV,
+									"Failed command checksum for %s(%d) "
+									"(%d != %d)\n",
+									cl->name, cl->netchan.incoming_sequence,
+									checksum, calculatedChecksum);
 					return;
 				}
 

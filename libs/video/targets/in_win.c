@@ -680,8 +680,9 @@ MapKey (unsigned int keycode, int press, int *k, int *u)
 			break;
 	}
 
-	Sys_DPrintf ("%08x %d %02x %02lx %04x %c\n", keycode, press, scan, shifts,
-				 key, uc > 32 && uc < 127 ? uc : '#');
+	Sys_MaskPrintf (SYS_DEV, "%08x %d %02x %02lx %04x %c\n",
+					keycode, press, scan, shifts,
+					key, uc > 32 && uc < 127 ? uc : '#');
 	*k = key;
 	*u = uc;
 }

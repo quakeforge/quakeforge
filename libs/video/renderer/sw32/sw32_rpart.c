@@ -842,7 +842,8 @@ R_DrawParticles (void)
 					p->vel[2] -= grav;
 					break;
 				default:
-					Sys_DPrintf ("unhandled particle type %d\n", p->type);
+					Sys_MaskPrintf (SYS_DEV, "unhandled particle type %d\n",
+									p->type);
 					break;
 			}
 		}

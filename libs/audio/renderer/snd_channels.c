@@ -149,7 +149,7 @@ SND_ScanChannels (int wait)
 		return;
 
 	if (wait) {
-		Sys_DPrintf ("scanning channels...\n");
+		Sys_MaskPrintf (SYS_DEV, "scanning channels...\n");
 		do {
 			count = 0;
 			for (i = 0; i < MAX_CHANNELS; i++) {
@@ -159,12 +159,12 @@ SND_ScanChannels (int wait)
 				ch->stop = 1;
 				count++;
 			}
-			Sys_DPrintf ("count = %d\n", count);
+			Sys_MaskPrintf (SYS_DEV, "count = %d\n", count);
 #ifdef HAVE_USLEEP
 			usleep (1000);
 #endif
 		} while (count);
-		Sys_DPrintf ("scanning done.\n");
+		Sys_MaskPrintf (SYS_DEV, "scanning done.\n");
 	} else {
 		for (i = 0; i < MAX_CHANNELS; i++) {
 			ch = &snd_channels[i];

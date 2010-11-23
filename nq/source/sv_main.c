@@ -247,7 +247,8 @@ SV_ConnectClient (int clientnum)
 
 	client = svs.clients + clientnum;
 
-	Sys_DPrintf ("Client %s connected\n", client->netconnection->address);
+	Sys_MaskPrintf (SYS_DEV, "Client %s connected\n",
+					client->netconnection->address);
 
 	edictnum = clientnum + 1;
 
@@ -908,7 +909,7 @@ SV_SpawnServer (const char *server)
 	if (hostname->string[0] == 0)
 		Cvar_Set (hostname, "UNNAMED");
 
-	Sys_DPrintf ("SpawnServer: %s\n", server);
+	Sys_MaskPrintf (SYS_DEV, "SpawnServer: %s\n", server);
 	svs.changelevel_issued = false;		// now safe to issue another
 
 	// tell all connected clients that we are going to a new level
@@ -1039,6 +1040,6 @@ SV_SpawnServer (const char *server)
 		if (host_client->active)
 			SV_SendServerinfo (host_client);
 
-	Sys_DPrintf ("Server spawned.\n");
+	Sys_MaskPrintf (SYS_DEV, "Server spawned.\n");
 	S_UnblockSound ();
 }

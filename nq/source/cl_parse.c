@@ -265,7 +265,7 @@ CL_ParseServerInfo (void)
 	const char *str;
 	int         nummodels, numsounds, i;
 
-	Sys_DPrintf ("Serverinfo packet received.\n");
+	Sys_MaskPrintf (SYS_DEV, "Serverinfo packet received.\n");
 
 	S_BlockSound ();
 	S_StopAllSounds ();

@@ -161,7 +161,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int edicts, int zone)
 
 	// size of progs themselves
 	pr->progs_size = size + offset_tweak;
-	Sys_DPrintf ("Programs occupy %iK.\n", size / 1024);
+	Sys_MaskPrintf (SYS_DEV, "Programs occupy %iK.\n", size / 1024);
 	// round off to next highest whole word address (esp for Alpha)
 	// this ensures that pointers in the engine data area are always
 	// properly aligned

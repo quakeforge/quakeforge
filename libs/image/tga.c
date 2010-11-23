@@ -235,7 +235,7 @@ skip_colormap (TargaHeader *targa, byte *data)
 	int         bpe;
 	if (!targa->colormap_type)
 		return data;
-	Sys_DPrintf ("LoadTGA: skipping colormap\n");
+	Sys_MaskPrintf (SYS_DEV, "LoadTGA: skipping colormap\n");
 	bpe = (targa->pixel_size +7) / 8;
 	return data + bpe * targa->colormap_length;
 }
