@@ -52,9 +52,10 @@ static __attribute__ ((used)) const char rcsid[] =
 model_t    *loadmodel;
 char       *loadname;					// for hunk tags
 
-#define	MAX_MOD_KNOWN	512
-model_t     mod_known[MAX_MOD_KNOWN];
+#define	MOD_BLOCK	16					// allocate 16 models at a time
+model_t   **mod_known;
 int         mod_numknown;
+int         mod_maxknown;
 
 VISIBLE texture_t  *r_notexture_mip;
 
@@ -116,13 +117,13 @@ VISIBLE void
 Mod_ClearAll (void)
 {
 	int         i;
-	model_t    *mod;
+	model_t   **mod;
 
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
-		if (mod->type != mod_alias)
-			mod->needload = true;
-		if (mod->type == mod_sprite)
-			mod->cache.data = 0;
+		if ((*mod)->type != mod_alias)
+			(*mod)->needload = true;
+		if ((*mod)->type == mod_sprite)
+			(*mod)->cache.data = 0;
 	}
 }
 
@@ -130,26 +131,32 @@ model_t *
 Mod_FindName (const char *name)
 {
 	int         i;
-	model_t    *mod;
+	model_t   **mod;
 
 	if (!name[0])
 		Sys_Error ("Mod_FindName: empty name");
 
 	// search the currently loaded models
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
-		if (!strcmp (mod->name, name))
+		if (!strcmp ((*mod)->name, name))
 			break;
 
 	if (i == mod_numknown) {
-		if (mod_numknown == MAX_MOD_KNOWN)
-			Sys_Error ("mod_numknown == MAX_MOD_KNOWN");
-		strcpy (mod->name, name);
-		mod->needload = true;
+		if (mod_numknown == mod_maxknown) {
+			mod_maxknown += MOD_BLOCK;
+			mod_known = realloc (mod_known, mod_maxknown * sizeof (model_t *));
+			mod = mod_known + mod_numknown;
+			*mod = calloc (MOD_BLOCK, sizeof (model_t));
+			for (i = 1; i < MOD_BLOCK; i++)
+				mod[i] = mod[0] + i;
+		}
+		strcpy ((*mod)->name, name);
+		(*mod)->needload = true;
 		mod_numknown++;
-		Cache_Add (&mod->cache, mod, Mod_CallbackLoad);
+		Cache_Add (&(*mod)->cache, *mod, Mod_CallbackLoad);
 	}
 
-	return mod;
+	return *mod;
 }
 
 static model_t *
@@ -286,11 +293,11 @@ VISIBLE void
 Mod_Print (void)
 {
 	int			i;
-	model_t	   *mod;
+	model_t	  **mod;
 
 	Sys_Printf ("Cached models:\n");
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
-		Sys_Printf ("%8p : %s\n", mod->cache.data, mod->name);
+		Sys_Printf ("%8p : %s\n", (*mod)->cache.data, (*mod)->name);
 	}
 }
 
