@@ -155,6 +155,7 @@ CL_ClearState (void)
 	r_force_fullscreen = 0;
 
 	CL_Init_Entity (&cl.viewent);
+	r_view_model = &cl.viewent;
 
 	SZ_Clear (&cls.message);
 

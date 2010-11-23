@@ -62,8 +62,6 @@ typedef struct tent_s {
 #define TEMP_BATCH 64
 static tent_t *temp_entities = 0;
 
-#define	MAX_BEAMS 8
-
 typedef struct {
 	int         entity;
 	struct model_s *model;
@@ -91,19 +89,19 @@ static tent_obj_t *tent_objects;
 static tent_obj_t *cl_beams;
 static tent_obj_t *cl_explosions;
 
-static sfx_t      *cl_sfx_wizhit;
-static sfx_t      *cl_sfx_knighthit;
-static sfx_t      *cl_sfx_tink1;
-static sfx_t      *cl_sfx_ric1;
-static sfx_t      *cl_sfx_ric2;
-static sfx_t      *cl_sfx_ric3;
-static sfx_t      *cl_sfx_r_exp3;
+static sfx_t *cl_sfx_wizhit;
+static sfx_t *cl_sfx_knighthit;
+static sfx_t *cl_sfx_tink1;
+static sfx_t *cl_sfx_ric1;
+static sfx_t *cl_sfx_ric2;
+static sfx_t *cl_sfx_ric3;
+static sfx_t *cl_sfx_r_exp3;
 
-static model_t	   *cl_mod_beam;
-static model_t    *cl_mod_bolt;
-static model_t    *cl_mod_bolt2;
-static model_t    *cl_mod_bolt3;
-static model_t    *cl_spr_explod;
+static model_t *cl_mod_beam;
+static model_t *cl_mod_bolt;
+static model_t *cl_mod_bolt2;
+static model_t *cl_mod_bolt3;
+static model_t *cl_spr_explod;
 
 static void
 CL_TEnts_Precache (int phase)
@@ -325,14 +323,14 @@ CL_ParseBeam (model_t *m)
 void
 CL_ParseTEnt (void)
 {
-	byte         type;
-	dlight_t    *dl;
+	byte        type;
+	dlight_t   *dl;
 	tent_obj_t *to;
 	explosion_t *ex;
-	int          colorStart, colorLength;
-	int          cnt = -1;
-	vec3_t       pos;
-	sfx_t *	 	 spike_sound[] = {
+	int         colorStart, colorLength;
+	int         cnt = -1;
+	vec3_t      pos;
+	sfx_t      *spike_sound[] = {
 		cl_sfx_ric3, cl_sfx_ric3, cl_sfx_ric2, cl_sfx_ric1,
 	};
 
@@ -556,13 +554,13 @@ CL_UpdateBeams (void)
 static void
 CL_UpdateExplosions (void)
 {
-	int          f;
+	int         f;
 	tent_obj_t **to;
 	explosion_t *ex;
+	entity_t   *ent;
 
 	for (to = &cl_explosions; *to; ) {
 		ex = &(*to)->to.ex;
-		entity_t   *ent;
 		ent = &ex->tent->ent;
 		f = 10 * (cl.time - ex->start);
 		if (f >= ent->model->numframes) {
