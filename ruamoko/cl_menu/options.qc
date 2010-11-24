@@ -392,10 +392,14 @@ DRAW_control_options =
 	[control_options setBasePos:x y:y];
 	[control_options draw];
 
-	opt_cursor (x + 62, y + (Menu_GetIndex () * 10) + 60);
-
 	return 1;
 };
+
+integer (integer key, integer unicode, integer down)
+KEY_control_options =
+{
+	return [control_options keyEvent:key unicode:unicode down:down];
+}
 
 /*
 	MENU_control_options
@@ -405,78 +409,19 @@ DRAW_control_options =
 void () 
 MENU_control_options =
 {
-	local Rect rect;
-	local id view;
-
+	local @param ret;
 	Menu_Begin (54, 40, "Controls");
 	Menu_FadeScreen (1);
-	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
-
 	Menu_Draw (DRAW_control_options);
+	Menu_KeyEvent (KEY_control_options);
 
-	control_options = [[Group alloc] initWithComponents:0 :0 :320 :200];
-
-	view = [[Pic alloc] initWithComponents:16 :4 :0 :0];
-	[view setPic:"gfx/qplaque.lmp"];
-	[control_options addView:view];
-
-	view = [[CenterPic alloc] initWithComponents:160 :4 :0 :0];
-	[view setPic:"gfx/p_option.lmp"];
-	[control_options addView:view];
-
-	view = [[Text alloc] initWithComponents:54 :40 :64 :8];
-	[view setText:"Controls"];
-	[control_options addView:view];
-
-	view = [[Text alloc] initWithComponents:54 :50 :64 :8];
-	[view setText:"--------"];
-	[control_options addView:view];
-
-	view = [[Text alloc] initWithComponents:70 :60 :64 :8];
-	[view setText:"Bindings"];
-	[control_options addView:view];
-
-	rect = makeRect (70, 70, 224, 8);
-	grab_mouse_view = [[CvarToggleView alloc] initWithBounds:rect title:"Grab mouse" :[[CvarToggle alloc] initWithCvar:"in_grab"]];
-	[control_options addView:grab_mouse_view];
-
-	rect.origin.y += 10;
-	autorun_view = [[CvarToggleView alloc] initWithBounds:rect title:"Auto run" :[[RunToggle alloc] init]];
-	[control_options addView:autorun_view];
-
-	rect.origin.y += 10;
-	invert_mouse_view = [[CvarToggleView alloc] initWithBounds:rect title:"Mouse Invert" :[[MouseToggle alloc] init]];
-	[control_options addView:invert_mouse_view];
-
-	rect.origin.y += 10;
-	rect.size.width += 8;
-	mouse_amp_view = [[CvarRangeView alloc] initWithBounds:rect title:"Mouse amp:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"in_mouse_amp" min:MIN_MOUSE_AMP max:MAX_MOUSE_AMP step:MOUSE_AMP_STEP]];
-	rect.size.width -= 8;
-	[control_options addView:mouse_amp_view];
-
-	rect.origin.y += 10;
-	freelook_view = [[CvarToggleView alloc] initWithBounds:rect title:"Freelook" :[[CvarToggle alloc] initWithCvar:"freelook"]];
-	[control_options addView:freelook_view];
-
-	rect.origin.y += 10;
-	lookspring_view = [[CvarToggleView alloc] initWithBounds:rect title:"Lookspring" :[[CvarToggle alloc] initWithCvar:"lookspring"]];
-	[control_options addView:lookspring_view];
-
-	rect.origin.y += 10;
-	lookstrafe_view = [[CvarToggleView alloc] initWithBounds:rect title:"Lookstrafe" :[[CvarToggle alloc] initWithCvar:"lookstrafe"]];
-	[control_options addView:lookstrafe_view];
-
-	MENU_control_binding ();
-
-	Menu_Item (54, 70, "in_grab", CB_control_options, 0);
-	Menu_Item (54, 80, "autorun", CB_control_options, 0);
-	Menu_Item (54, 90, "m_pitch", CB_control_options, 0);
-	Menu_Item (54, 100, "mouseamp", CB_control_options, 1);
-	Menu_Item (54, 110, "freelook", CB_control_options, 0);
-	Menu_Item (54, 120, "lookspring", CB_control_options, 0);
-	Menu_Item (54, 130, "lookstrafe", CB_control_options, 0);
+	if (menu_plist) {
+		ret = object_from_plist ([menu_plist getObjectForKey:"control_options"]);
+		control_options = ret.pointer_val;
+	}
 
 	Menu_End ();
+	//MENU_control_binding (); FIXME how to hook in the bindings menu?
 };
 
 /***********************************************
