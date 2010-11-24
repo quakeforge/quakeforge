@@ -28,7 +28,7 @@ EXTRA_DATA= $(menu_data)
 
 menu_src= \
 	client_menu.qc controls_o.qc options.qc options_util.qc servlist.qc \
-	Frame.r menu.r HUD.r ../lib/debug.r
+	Frame.r menu.r HUD.r plistmenu.r ../lib/debug.r
 
 %.qfo: %.r
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<

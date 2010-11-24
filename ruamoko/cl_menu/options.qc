@@ -37,7 +37,7 @@
 #include "options_util.h"
 #include "qfs.h"
 
-#include "PropertyList.h"
+#include "plistmenu.h"
 
 #include "gui/InputLine.h"
 #include "gui/Pic.h"
@@ -99,151 +99,6 @@ InputLine network_config_iactive;
  * VIDEO OPTIONS 
  * Video settings menu code
  ****************************/
-
-@param object_from_plist (PLItem plist);
-
-@param
-class_from_plist (PLDictionary pldict)
-{
-	local @param [8]params;
-	local @param ret;
-	local @va_list va_list = { 0, params };
-	local string classname, selname, paramstr;
-	local Class class;
-	local id obj;
-	local PLArray messages, msg;
-	local integer message_count, i, j;
-	local SEL sel;
-	local PLItem item;
-
-	classname = [(PLString) [pldict getObjectForKey:"Class"] string];
-	class = obj_lookup_class (classname);
-	if (!class) {
-		dprint ("could not find " + classname + "\n");
-		ret.pointer_val = NIL;
-		return ret;
-	}
-	obj = [class alloc];
-
-	messages = (PLArray) [pldict getObjectForKey:"Messages"];
-	message_count = [messages count];
-	for (i = 0; i < message_count; i++) {
-		msg = (PLArray) [messages getObjectAtIndex:i];
-		selname = [(PLString) [msg getObjectAtIndex:0] string];
-		sel = sel_get_uid (selname);
-		va_list.count = [msg count] - 1;
-		for (j = 0; j < va_list.count; j++) {
-			paramstr = [(PLString) [msg getObjectAtIndex:j + 1] string];
-			switch (str_mid (paramstr, 0, 1)) {
-				case "\"":
-					va_list.list[j].string_val = str_mid (paramstr, 1, -1);
-					break;
-				case "$":
-					item = [pldict getObjectForKey:str_mid (paramstr, 1)];
-					va_list.list[j] = object_from_plist (item);
-					break;
-				case "0": case "1": case "2": case "3": case "4":
-				case "5": case "6": case "7": case "8": case "9":
-					if (str_str (paramstr, "."))
-						va_list.list[j].float_val = stof (paramstr);
-					else
-						va_list.list[j].integer_val = stoi (paramstr);
-					break;
-			}
-		}
-		obj_msg_sendv (obj, sel, va_list);
-	}
-	ret.pointer_val = obj;
-	return ret;
-}
-
-@param
-array_from_plist (PLArray plarray)
-{
-	local Array array;
-	local integer i, count;
-	local @param ret;
-
-	array = [[Array alloc] init];
-	count = [plarray count];
-	for (i = 0; i < count; i++)
-		[array addItem: object_from_plist ([plarray getObjectAtIndex:i])];
-	ret.pointer_val = array;
-	return ret;
-}
-
-union ParamRect {
-	@param p;
-	Rect r;
-};
-
-@param
-rect_from_plist (PLString plstring)
-{
-	local string str = [plstring string];
-	local string tmp;
-	local integer xp, yp, xl, yl;
-	local PLItem item;
-	local union ParamRect pr;
-
-	pr.r = makeRect (0, 0, 0, 0);
-	if (str_mid (str, 0, 1) == "[") {
-		tmp = "(" + str_mid (str, 1, -1) + ")";
-		item = [PLItem fromString:tmp];
-		xp = stoi ([(PLString) [item getObjectAtIndex:0] string]);
-		yp = stoi ([(PLString) [item getObjectAtIndex:1] string]);
-		xl = stoi ([(PLString) [item getObjectAtIndex:2] string]);
-		yl = stoi ([(PLString) [item getObjectAtIndex:3] string]);
-		pr.r = makeRect (xp, yp, xl, yl);
-	}
-	return pr.p;
-}
-
-@param
-string_from_plist (PLString plstring)
-{
-	local @param ret;
-	local string str = [plstring string];
-
-	if (str_mid (str, 0, 1) == "[")
-		return rect_from_plist (plstring);
-
-	ret.string_val = NIL;
-	return ret;
-}
-
-@param
-object_from_plist (PLItem plist)
-{
-	local @param ret;
-
-	switch ([plist type]) {
-		case QFDictionary:
-			return class_from_plist ((PLDictionary) plist);
-		case QFArray:
-			return array_from_plist ((PLArray) plist);
-		case QFBinary:
-			ret.pointer_val = NIL;
-			return ret;
-		case QFString:
-			return string_from_plist ((PLString) plist);
-	}
-}
-
-PLItem read_plist (void)
-{
-	local QFile file;
-	local PLItem plist;
-
-	file = QFS_OpenFile ("menu.plist");
-	if (!file) {
-		dprint ("could not load menu.plist\n");
-		return NIL;
-	}
-	plist = [PLItem fromFile:file];
-	Qclose (file);
-	return plist;
-}
 
 /*
 	DRAW_video_options
@@ -882,7 +737,7 @@ MENU_options =
 	local integer	spacing = 120;
 	local PLItem    plist;
 
-	plist = read_plist ();
+	plist = read_plist ("menu.plist");
 
 	Menu_Begin (54, 72, "");
 	Menu_FadeScreen (1);
