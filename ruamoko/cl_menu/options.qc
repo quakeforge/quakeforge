@@ -45,8 +45,6 @@
 #include "gui/Slider.h"
 #include "gui/Text.h"
 
-PLItem menu_plist;
-
 Group video_options;
 Group audio_options;
 
@@ -234,7 +232,6 @@ object_from_plist (PLItem plist)
 
 PLItem read_plist (void)
 {
-	local string plist_data;
 	local QFile file;
 	local PLItem plist;
 
@@ -243,10 +240,8 @@ PLItem read_plist (void)
 		dprint ("could not load menu.plist\n");
 		return NIL;
 	}
-	plist_data = Qreadstring (file, Qfilesize (file));
+	plist = [PLItem fromFile:file];
 	Qclose (file);
-	plist = [PLItem fromString:plist_data];
-	str_free (plist_data);
 	return plist;
 }
 
@@ -275,7 +270,7 @@ KEY_video_options =
 
 	Menu function for the video options menu.
 */
-void () 
+void (PLItem plist) 
 MENU_video_options =
 {
 	local @param ret;
@@ -284,8 +279,8 @@ MENU_video_options =
 	Menu_Draw (DRAW_video_options);
 	Menu_KeyEvent (KEY_video_options);
 
-	if (menu_plist) {
-		ret = object_from_plist ([menu_plist getObjectForKey:"video_options"]);
+	if (plist) {
+		ret = object_from_plist ([plist getObjectForKey:"video_options"]);
 		video_options = ret.pointer_val;
 	}
 
@@ -322,7 +317,7 @@ KEY_audio_options =
 
 	Makes the audio menu
 */
-void () 
+void (PLItem plist) 
 MENU_audio_options =
 {
 	local @param ret;
@@ -331,8 +326,8 @@ MENU_audio_options =
 	Menu_Draw (DRAW_audio_options);
 	Menu_KeyEvent (KEY_audio_options);
 
-	if (menu_plist) {
-		ret = object_from_plist ([menu_plist getObjectForKey:"audio_options"]);
+	if (plist) {
+		ret = object_from_plist ([plist getObjectForKey:"audio_options"]);
 		audio_options = ret.pointer_val;
 	}
 
@@ -406,7 +401,7 @@ KEY_control_options =
 
 	Menu make function for control options
 */
-void () 
+void (PLItem plist) 
 MENU_control_options =
 {
 	local @param ret;
@@ -415,8 +410,8 @@ MENU_control_options =
 	Menu_Draw (DRAW_control_options);
 	Menu_KeyEvent (KEY_control_options);
 
-	if (menu_plist) {
-		ret = object_from_plist ([menu_plist getObjectForKey:"control_options"]);
+	if (plist) {
+		ret = object_from_plist ([plist getObjectForKey:"control_options"]);
 		control_options = ret.pointer_val;
 	}
 
@@ -470,7 +465,7 @@ DRAW_feature_options =
 
 	Makes the feature option menu
 */
-void () 
+void (PLItem plist) 
 MENU_feature_options =
 {
 	local Rect rect;
@@ -654,7 +649,7 @@ CB_ME_player_options =
 
 	Makes the player option menu
 */
-void () 
+void (PLItem plist) 
 MENU_player_options =
 {
 	local Rect rect;
@@ -824,7 +819,7 @@ CB_ME_network_options =
 
 	Makes the network option menu
 */
-void () 
+void (PLItem plist) 
 MENU_network_options =
 {
 	local id view;
@@ -885,8 +880,9 @@ void ()
 MENU_options =
 {
 	local integer	spacing = 120;
+	local PLItem    plist;
 
-	menu_plist = read_plist ();
+	plist = read_plist ();
 
 	Menu_Begin (54, 72, "");
 	Menu_FadeScreen (1);
@@ -894,12 +890,12 @@ MENU_options =
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 
 	Menu_Item (54, 32, "Go to Console", op_goto_console, 0);
-	MENU_control_options ();
-	MENU_video_options ();
-	MENU_audio_options ();
-	MENU_feature_options ();
-	MENU_player_options ();
-	MENU_network_options ();
+	MENU_control_options (plist);
+	MENU_video_options (plist);
+	MENU_audio_options (plist);
+	MENU_feature_options (plist);
+	MENU_player_options (plist);
+	MENU_network_options (plist);
 
 	Menu_End ();
 };
