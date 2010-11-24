@@ -24,6 +24,7 @@
         Boston, MA  02111-1307, USA
 */
 
+#include "debug.h"
 #include "options.h"
 #include "cbuf.h"
 #include "menu.h"
@@ -101,14 +102,13 @@ InputLine network_config_iactive;
  * Video settings menu code
  ****************************/
 
-void dprint (string str) = #0;
+@param object_from_plist (PLItem plist);
 
-id object_from_plist (PLItem plist);
-
-id
+@param
 class_from_plist (PLDictionary pldict)
 {
 	local @param [8]params;
+	local @param ret;
 	local @va_list va_list = { 0, params };
 	local string classname, selname, paramstr;
 	local Class class;
@@ -122,7 +122,8 @@ class_from_plist (PLDictionary pldict)
 	class = obj_lookup_class (classname);
 	if (!class) {
 		dprint ("could not find " + classname + "\n");
-		return NIL;
+		ret.pointer_val = NIL;
+		return ret;
 	}
 	obj = [class alloc];
 
@@ -141,7 +142,7 @@ class_from_plist (PLDictionary pldict)
 					break;
 				case "$":
 					item = [pldict getObjectForKey:str_mid (paramstr, 1)];
-					va_list.list[j].pointer_val = object_from_plist (item);
+					va_list.list[j] = object_from_plist (item);
 					break;
 				case "0": case "1": case "2": case "3": case "4":
 				case "5": case "6": case "7": case "8": case "9":
@@ -154,58 +155,78 @@ class_from_plist (PLDictionary pldict)
 		}
 		obj_msg_sendv (obj, sel, va_list);
 	}
-	return obj;
+	ret.pointer_val = obj;
+	return ret;
 }
 
-id
+@param
 array_from_plist (PLArray plarray)
 {
 	local Array array;
 	local integer i, count;
+	local @param ret;
 
 	array = [[Array alloc] init];
 	count = [plarray count];
 	for (i = 0; i < count; i++)
 		[array addItem: object_from_plist ([plarray getObjectAtIndex:i])];
-	return array;
+	ret.pointer_val = array;
+	return ret;
 }
 
-Rect
+union ParamRect {
+	@param p;
+	Rect r;
+};
+
+@param
 rect_from_plist (PLString plstring)
 {
 	local string str = [plstring string];
 	local string tmp;
 	local integer xp, yp, xl, yl;
 	local PLItem item;
+	local union ParamRect pr;
 
+	pr.r = makeRect (0, 0, 0, 0);
 	if (str_mid (str, 0, 1) == "[") {
 		tmp = "(" + str_mid (str, 1, -1) + ")";
-		item = [PLItem newFromString:tmp];
+		item = [PLItem fromString:tmp];
 		xp = stoi ([(PLString) [item getObjectAtIndex:0] string]);
 		yp = stoi ([(PLString) [item getObjectAtIndex:1] string]);
 		xl = stoi ([(PLString) [item getObjectAtIndex:2] string]);
 		yl = stoi ([(PLString) [item getObjectAtIndex:3] string]);
-		return makeRect (xp, yp, xl, yl);
+		pr.r = makeRect (xp, yp, xl, yl);
 	}
-	return makeRect (0, 0, 0, 0);
+	return pr.p;
 }
 
-id
+@param
 string_from_plist (PLString plstring)
 {
-	return NIL;
+	local @param ret;
+	local string str = [plstring string];
+
+	if (str_mid (str, 0, 1) == "[")
+		return rect_from_plist (plstring);
+
+	ret.string_val = NIL;
+	return ret;
 }
 
-id
+@param
 object_from_plist (PLItem plist)
 {
+	local @param ret;
+
 	switch ([plist type]) {
 		case QFDictionary:
 			return class_from_plist ((PLDictionary) plist);
 		case QFArray:
 			return array_from_plist ((PLArray) plist);
 		case QFBinary:
-			return NIL;
+			ret.pointer_val = NIL;
+			return ret;
 		case QFString:
 			return string_from_plist ((PLString) plist);
 	}
@@ -257,13 +278,16 @@ KEY_video_options =
 void () 
 MENU_video_options =
 {
+	local @param ret;
 	Menu_Begin (54, 50, "Video");
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_video_options);
 	Menu_KeyEvent (KEY_video_options);
 
-	if (menu_plist)
-		video_options = object_from_plist ([menu_plist getObjectForKey:"video_options"]);
+	if (menu_plist) {
+		ret = object_from_plist ([menu_plist getObjectForKey:"video_options"]);
+		video_options = ret.pointer_val;
+	}
 
 	Menu_End ();
 };
@@ -301,13 +325,16 @@ KEY_audio_options =
 void () 
 MENU_audio_options =
 {
+	local @param ret;
 	Menu_Begin (54, 60, "Audio");
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_audio_options);
 	Menu_KeyEvent (KEY_audio_options);
 
-	if (menu_plist)
-		audio_options = object_from_plist ([menu_plist getObjectForKey:"audio_options"]);
+	if (menu_plist) {
+		ret = object_from_plist ([menu_plist getObjectForKey:"audio_options"]);
+		audio_options = ret.pointer_val;
+	}
 
 	Menu_End ();
 };
