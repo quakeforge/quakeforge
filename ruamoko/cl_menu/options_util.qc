@@ -24,6 +24,7 @@
         Boston, MA  02111-1307, USA
 */
 
+#include "debug.h"
 #include "cvar.h"
 #include "draw.h"
 #include "system.h"
@@ -437,7 +438,7 @@
 	}
 }
 @end
-void traceon () = #0;
+
 @implementation ProxyView
 
 -(id)initWithBounds:(Rect)aRect title:(View)aTitle view:(View)aView
@@ -462,12 +463,11 @@ void traceon () = #0;
 	[view draw];
 }
 
-- (void) setBasePos: (Point) pos
+- (void) setBasePosFromView: (View) aview
 {
-    [super setBasePos:pos];
-	local Point point = {xabs, yabs};
-	[title setBasePos:point];
-	[view setBasePos:point];
+    [super setBasePosFromView:aview];
+	[title setBasePosFromView:self];
+	[view setBasePosFromView:self];
 }
 
 @end

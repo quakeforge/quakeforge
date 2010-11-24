@@ -37,10 +37,16 @@
 	[self setBasePos: x y:y];
 }
 
-- (void) setBasePos: (Point) pos
+- (void) setBasePos: (integer) x y: (integer) y
 {
-	[super setBasePos:pos];
-	local Point point = {xabs, yabs};
+	[super setBasePos: x y:y];
+	local SEL sel = @selector (setBasePosFromView:);
+	[views makeObjectsPerformSelector:sel withObject:self];
+}
+
+- (void) setBasePosFromView: (View) view
+{
+	[super setBasePosFromView:view];
 	local SEL sel = @selector (setBasePosFromView:);
 	[views makeObjectsPerformSelector:sel withObject:self];
 }
