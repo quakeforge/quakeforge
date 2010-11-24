@@ -1,11 +1,14 @@
 #ifndef __ruamoko_plist_h
 #define __ruamoko_plist_h
 
+#include "qfile.h"
+
 struct plitem_s {integer dummy;};
 #define PL_TEST(item) (item.dummy)
 typedef struct plitem_s plitem_t;
 typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;	// possible types
 
+@extern plitem_t (QFile file) PL_GetFromFile;
 @extern plitem_t (string str) PL_GetPropertyList;
 @extern string (plitem_t pl) PL_WritePropertyList;
 @extern pltype_t (plitem_t str) PL_Type;

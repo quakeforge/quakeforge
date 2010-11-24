@@ -176,6 +176,29 @@ plist_retain (plist_resources_t *res, plitem_t *plitem)
 }
 
 static void
+bi_PL_GetFromFile (progs_t *pr)
+{
+	plist_resources_t *res = PR_Resources_Find (pr, "plist");
+	QFile      *file = QFile_GetFile (pr, P_INT (pr, 0));
+	plitem_t   *plitem;
+	long        offset;
+	long        size;
+	long		len;
+	char       *buf;
+
+	offset = Qtell (file);
+	size = Qfilesize (file);
+	len = size - offset;
+	buf = malloc (len + 1);
+	Qread (file, buf, len);
+	buf[len] = 0;
+
+	plitem = PL_GetPropertyList (buf);	
+	
+	R_INT (pr) = plist_retain (res, plitem);
+}
+
+static void
 bi_PL_GetPropertyList (progs_t *pr)
 {
 	plist_resources_t *res = PR_Resources_Find (pr, "plist");
@@ -403,6 +426,7 @@ plist_compare (void *k1, void *k2, void *unused)
 }
 
 static builtin_t builtins[] = {
+	{"PL_GetFromFile",				bi_PL_GetFromFile,				-1},
 	{"PL_GetPropertyList",			bi_PL_GetPropertyList,			-1},
 	{"PL_WritePropertyList",		bi_PL_WritePropertyList,		-1},
 	{"PL_Type",						bi_PL_Type,						-1},

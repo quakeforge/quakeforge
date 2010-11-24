@@ -27,6 +27,11 @@
 	return [[PLItem itemClass: PL_GetPropertyList (str)] autorelease];
 }
 
++ (PLItem) fromFile:(QFile) file
+{
+	return [[PLItem itemClass: PL_GetFromFile (file)] autorelease];
+}
+
 + itemClass:(plitem_t) item
 {
 	local string classname = NIL;

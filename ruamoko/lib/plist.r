@@ -1,5 +1,6 @@
 #include "plist.h"
 
+plitem_t (QFile file) PL_GetFromFile = #0;
 plitem_t (string str) PL_GetPropertyList = #0;
 string (plitem_t pl) PL_WritePropertyList = #0;
 pltype_t (plitem_t str) PL_Type = #0;
