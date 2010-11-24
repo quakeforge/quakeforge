@@ -174,6 +174,14 @@ get_handle (progs_t *pr, const char *name, int handle)
 	return h;
 }
 
+QFile *
+QFile_GetFile (progs_t *pr, int handle)
+{
+	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+
+	return h->file;
+}
+
 static void
 bi_Qclose (progs_t *pr)
 {
