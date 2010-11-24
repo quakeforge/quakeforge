@@ -297,6 +297,7 @@ BOOL (id object) object_is_meta_class = #0;
 - (id) autorelease
 {
 	autoreleaseIMP (autoreleaseClass, autoreleaseSelector, self);
+	return self;
 }
 
 - (unsigned) retainCount
