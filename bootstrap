@@ -10,8 +10,8 @@ if test "$1" = "clean"; then
 	fi
 
 	find . -name Makefile.in -print0 | xargs $ARGS rm -f
-	find . -name config.h.in -print0 | xargs $ARGS rm -f
-	find . -name config.h -print0 | xargs $ARGS rm -f
+	find . -path ./tools/texpaint -prune -o -name config.h.in -print0 | xargs $ARGS rm -f
+	find . \( -path ./vc2005 -o -path ./vc2008 \) -prune -o -name config.h -print0 | xargs $ARGS rm -f
 	find . -name stamp-h1 -print0 | xargs $ARGS rm -f
 	find . -name '*~' -type f -print0 | xargs $ARGS rm -f
 	find . -name '*.rej' -type f -print0 | xargs $ARGS rm -f
@@ -23,7 +23,7 @@ if test "$1" = "clean"; then
 	rm -rf autom4te.cache
 
 	cd -
-	find . -name Makefile -print0 | xargs $ARGS rm -f
+	find . \( -path ./tools/gas2masm -o -path ./tools/quaketoascii \) -name Makefile -print0 | xargs $ARGS rm -f
 	find . -name core -print0 | xargs $ARGS rm -f
 	rm -f RPM/build_rpm RPM/quakeforge.conf RPM/quakeforge.spec RPM/rpmmacros
 	find . -name '*.o' -type f -print0 | xargs $ARGS rm -f
