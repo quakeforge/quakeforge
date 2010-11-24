@@ -207,7 +207,7 @@ PR_Debug_Init_Cvars (void)
 static file_t *
 PR_Load_Source_File (progs_t *pr, const char *fname)
 {
-	char       *path = 0, *l, *p, **dir;
+	char       *l, *p, **dir;
 	file_t     *f = Hash_Find (file_hash, fname);
 
 	if (f)
@@ -220,37 +220,39 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 										 fname));
 	}
 	if (!f->text) {
-		pr->file_error (pr, path);
-		free (f);
-		return 0;
+		pr->file_error (pr, fname);
+	} else {
+		for (f->num_lines = 1, l = f->text; *l; l++)
+			if (*l == '\n')
+				f->num_lines++;
 	}
-	for (f->num_lines = 1, l = f->text; *l; l++)
-		if (*l == '\n')
-			f->num_lines++;
 	f->name = strdup (fname);
 	if (!f->name) {
 		pr->free_progs_mem (pr, f->text);
 		free (f);
 		return 0;
 	}
-	f->lines = malloc (f->num_lines * sizeof (line_t));
-	if (!f->lines) {
-		free (f->name);
-		pr->free_progs_mem (pr, f->text);
-		free (f);
-		return 0;
-	}
-	f->lines[0].text = f->text;
-	for (f->num_lines = 0, l = f->text; *l; l++) {
-		if (*l == '\n') {
-			for (p = l; p > f->lines[f->num_lines].text && isspace(p[-1]); p--)
-				;
-			f->lines[f->num_lines].len = p - f->lines[f->num_lines].text;
-			f->lines[++f->num_lines].text = l + 1;
+	if (f->num_lines) {
+		f->lines = malloc (f->num_lines * sizeof (line_t));
+		if (!f->lines) {
+			free (f->name);
+			pr->free_progs_mem (pr, f->text);
+			free (f);
+			return 0;
 		}
+		f->lines[0].text = f->text;
+		for (f->num_lines = 0, l = f->text; *l; l++) {
+			if (*l == '\n') {
+				for (p = l; p > f->lines[f->num_lines].text && isspace(p[-1]);
+					 p--)
+					;
+				f->lines[f->num_lines].len = p - f->lines[f->num_lines].text;
+				f->lines[++f->num_lines].text = l + 1;
+			}
+		}
+		f->lines[f->num_lines].len = l - f->lines[f->num_lines].text;
+		f->num_lines++;
 	}
-	f->lines[f->num_lines].len = l - f->lines[f->num_lines].text;
-	f->num_lines++;
 	f->pr = pr;
 	Hash_Add (file_hash, f);
 	return f;
