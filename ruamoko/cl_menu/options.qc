@@ -39,11 +39,16 @@
 
 #include "plistmenu.h"
 
+#include "gui/Group.h"
 #include "gui/InputLine.h"
 #include "gui/Pic.h"
 #include "gui/Rect.h"
 #include "gui/Slider.h"
 #include "gui/Text.h"
+
+#include "CvarToggleView.h"
+#include "CvarRangeView.h"
+#include "CvarColorView.h"
 
 Group video_options;
 Group audio_options;
