@@ -239,7 +239,7 @@ SV_SendServerinfo (client_t *client)
 	int         i;
 
 	MSG_WriteByte (&client->message, svc_print);
-	snprintf (message, sizeof (message), "%c\nVersion %s server (%i CRC)", 2,
+	snprintf (message, sizeof (message), "%c\nVersion %s server (%i CRC)\n", 2,
 			  NQ_VERSION, sv_pr_state.crc);
 	MSG_WriteString (&client->message, message);
 

@@ -304,7 +304,7 @@ CL_ParseServerInfo (void)
 	// parse protocol version number
 	i = MSG_ReadLong (net_message);
 	if (i != PROTOCOL_NETQUAKE && i!= PROTOCOL_FITZQUAKE) {
-		Sys_Printf ("Server returned version %i, not %i or %i\n", i,
+		Host_Error ("Server returned version %i, not %i or %i\n", i,
 					PROTOCOL_NETQUAKE, PROTOCOL_FITZQUAKE);
 		goto done;
 	}
