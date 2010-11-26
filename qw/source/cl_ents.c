@@ -510,7 +510,7 @@ CL_LinkPacketEntities (void)
 		(*ent)->frame = s1->frame;
 
 		if ((*ent)->visframe != r_framecount - 1) {
-			(*ent)->pose1 = (*ent)->pose2 = -1;
+			(*ent)->lerpflags |= LERP_RESETMOVE|LERP_RESETANIM;
 
 			// No trail if new this frame
 			VectorCopy (s1->origin, (*ent)->origin);

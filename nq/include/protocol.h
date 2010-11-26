@@ -234,10 +234,6 @@ typedef struct entity_state_s
 	byte	colormap;
 	byte	skin;
 	byte	alpha;
-	byte	scale;
-	byte	glow_size;
-	byte	glow_color;
-	byte	colormod;
 } entity_state_t;
 
 #endif // __protocol_h

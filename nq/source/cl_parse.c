@@ -137,6 +137,8 @@ CL_EntityNum (int num)
 			cl_baselines[cl.num_entities].ent =
 				&cl_entities[cl.num_entities];
 			cl_entities[cl.num_entities].colormap = vid.colormap8;
+			cl_entities[cl.num_entities].lerpflags |= (LERP_RESETMOVE
+													   | LERP_RESETANIM);
 			cl.num_entities++;
 		}
 	}
@@ -450,6 +452,13 @@ CL_ParseUpdate (int bits)
 	else
 		forcelink = false;
 
+	if (state->msgtime + 0.2 < cl.mtime[0]) {
+		//more than 0.2 seconds since the last message (most entities think
+		//every 0.1 sec)
+		//if we missed a think, we'd be lerping from the wrong frame
+		ent->lerpflags |= LERP_RESETANIM;
+	}
+
 	if (forcelink) {		// FIXME: do this right (ie, protocol support)
 		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] =
 			ent->colormod[3] = 1.0;
@@ -532,8 +541,12 @@ CL_ParseUpdate (int bits)
 	else
 		state->msg_angles[0][2] = state->baseline.angles[2];
 
-	if (bits & U_STEP)	//FIXME lerping (see fitzquake)
+	if (bits & U_STEP) {
+		ent->lerpflags |= LERP_MOVESTEP;
 		forcelink = true;
+	} else {
+		ent->lerpflags &= ~LERP_MOVESTEP;
+	}
 
 	if (cl.protocol == PROTOCOL_FITZQUAKE) {
 		if (bits & U_ALPHA)
@@ -545,14 +558,14 @@ CL_ParseUpdate (int bits)
 		if (bits & U_MODEL2)
 			modnum |= MSG_ReadByte(net_message) << 8;
 		if (bits & U_LERPFINISH) {
-			MSG_ReadByte (net_message); //FIXME ignored for now. see fitzquake
+			float       finish_time = MSG_ReadByte (net_message);
+			ent->lerpfinish = state->msgtime + finish_time / 255;
+			ent->lerpflags |= LERP_FINISH;
+		} else {
+			ent->lerpflags &= ~LERP_FINISH;
 		}
 	} else {
 		state->alpha = state->baseline.alpha;
-		state->scale = state->baseline.scale;
-		state->glow_size = state->baseline.glow_size;
-		state->glow_color = state->baseline.glow_color;
-		state->colormod = state->baseline.colormod;
 	}
 
 	model = cl.model_precache[modnum];
@@ -573,6 +586,8 @@ CL_ParseUpdate (int bits)
 			if (ent->skin)
 				CL_NewTranslation (num - 1, ent->skin);
 		}
+		//johnfitz -- don't lerp animation across model changes
+		ent->lerpflags |= LERP_RESETANIM;
 	}
 
 	if (forcelink) {					// didn't have an update last message
@@ -611,11 +626,7 @@ CL_ParseBaseline (cl_entity_state_t *state, int version)
 	if (bits & B_ALPHA)
 		state->baseline.alpha = MSG_ReadByte (net_message);
 	else
-		state->baseline.alpha = 255;//FIXME alpha
-	state->baseline.scale = 16;
-	state->baseline.glow_size = 0;
-	state->baseline.glow_color = 254;
-	state->baseline.colormod = 255;
+		state->baseline.alpha = ENTALPHA_DEFAULT;
 }
 
 /*
@@ -699,6 +710,9 @@ CL_ParseClientdata (void)
 	if (cl.stats[STAT_WEAPON] != i) {
 		cl.stats[STAT_WEAPON] = i;
 		Sbar_Changed ();
+		//johnfitz -- lerping
+		if (cl.viewent.model != cl.model_precache[cl.stats[STAT_WEAPON]])
+			cl.viewent.lerpflags |= LERP_RESETANIM;
 	}
 
 	i = MSG_ReadShort (net_message);
@@ -774,26 +788,18 @@ CL_ParseStatic (int version)
 	CL_ParseBaseline (&state, version);
 
 	// copy it to the current state
-	VectorCopy (state.baseline.origin, ent->origin);
-	VectorCopy (state.baseline.angles, ent->angles);
-	//FIXME alpha & lerp
 	ent->model = cl.model_precache[state.baseline.modelindex];
+	ent->lerpflags |= LERP_RESETANIM;
 	ent->frame = state.baseline.frame;
+
 	ent->colormap = vid.colormap8;
 	ent->skinnum = state.baseline.skin;
-	if (state.baseline.colormod == 255) {
-		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
-	} else {
-		ent->colormod[0] = ((float) ((state.baseline.colormod >> 5) & 7)) *
-			(1.0 / 7.0);
-		ent->colormod[1] = ((float) ((state.baseline.colormod >> 2) & 7)) *
-			(1.0 / 7.0);
-		ent->colormod[2] = ((float) (state.baseline.colormod & 3)) *
-			(1.0 / 3.0);
-	}
+	VectorSet (1.0, 1.0, 1.0, ent->colormod);
 	ent->colormod[3] = ENTALPHA_DECODE (state.baseline.alpha);
-	ent->scale = state.baseline.scale / 16.0;
+	ent->scale = 1.0;
 
+	VectorCopy (state.baseline.origin, ent->origin);
+	VectorCopy (state.baseline.angles, ent->angles);
 	R_AddEfrags (ent);
 }
 

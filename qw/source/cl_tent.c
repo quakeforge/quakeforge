@@ -141,7 +141,7 @@ CL_Init_Entity (entity_t *ent)
 	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] =
 		ent->colormod[3] = 1.0;
 	ent->scale = 1.0;
-	ent->pose1 = ent->pose2 = -1;
+	ent->lerpflags |= LERP_RESETMOVE|LERP_RESETANIM;
 }
 
 static tent_t *
