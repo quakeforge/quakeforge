@@ -245,7 +245,7 @@ get_mode (int width, int height, int depth)
 void
 VID_Shutdown (void)
 {
-	Sys_MaskPrintf (SYS_DEV, "VID_Shutdown\n");
+	Sys_MaskPrintf (SYS_VID, "VID_Shutdown\n");
 
 	if (!svgalib_inited)
 		return;

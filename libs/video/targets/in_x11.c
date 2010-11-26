@@ -712,7 +712,7 @@ IN_LL_ProcessEvents (void)
 void
 IN_LL_Shutdown (void)
 {
-	Sys_MaskPrintf (SYS_DEV, "IN_LL_Shutdown\n");
+	Sys_MaskPrintf (SYS_VID, "IN_LL_Shutdown\n");
 	in_mouse_avail = 0;
 	if (x_disp) {
 		XAutoRepeatOn (x_disp);

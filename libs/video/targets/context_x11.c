@@ -128,7 +128,7 @@ configure_notify (XEvent *event)
 	if (vidmode_active)
 		X11_ForceViewPort ();
 #endif
-	Sys_MaskPrintf (SYS_DEV,
+	Sys_MaskPrintf (SYS_VID,
 					"ConfigureNotify: %ld %d %ld %ld %d,%d (%d,%d) "
 					"%d %ld %d\n",
 					c->serial, c->send_event, c->event, c->window, c->x, c->y,
@@ -140,7 +140,7 @@ qboolean
 X11_AddEvent (int event, void (*event_handler) (XEvent *))
 {
 	if (event >= LASTEvent) {
-		Sys_MaskPrintf (SYS_DEV, "event: %d, LASTEvent: %d\n", event,
+		Sys_MaskPrintf (SYS_VID, "event: %d, LASTEvent: %d\n", event,
 						LASTEvent);
 		return false;
 	}
@@ -431,7 +431,7 @@ X11_SetVidMode (int width, int height)
 			}
 
 			if (found_mode) {
-				Sys_MaskPrintf (SYS_DEV, "VID: Chose video mode: %dx%d\n",
+				Sys_MaskPrintf (SYS_VID, "VID: Chose video mode: %dx%d\n",
 								vid.width, vid.height);
 
 				XF86VidModeSwitchToMode (x_disp, x_screen,

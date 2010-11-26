@@ -176,20 +176,20 @@ GL_Init (void)
 	if (!(dither_select = QFGL_ExtensionAddress ("gl3DfxSetDitherModeEXT")))
 		return;
 
-	Sys_MaskPrintf (SYS_DEV, "Dithering: ");
+	Sys_MaskPrintf (SYS_VID, "Dithering: ");
 
 	if ((p = COM_CheckParm ("-dither")) && p < com_argc) {
 		if (strequal (com_argv[p+1], "2x2")) {
 			dither_select (GR_DITHER_2x2);
-			Sys_MaskPrintf (SYS_DEV, "2x2.\n");
+			Sys_MaskPrintf (SYS_VID, "2x2.\n");
 		}
 		if (strequal (com_argv[p+1], "4x4")) {
 			dither_select (GR_DITHER_4x4);
-			Sys_MaskPrintf (SYS_DEV, "4x4.\n");
+			Sys_MaskPrintf (SYS_VID, "4x4.\n");
 		}
 	} else {
 		qfglDisable (GL_DITHER);
-		Sys_MaskPrintf (SYS_DEV, "disabled.\n");
+		Sys_MaskPrintf (SYS_VID, "disabled.\n");
 	}
 }
 
@@ -326,7 +326,7 @@ VID_Init (unsigned char *palette)
 
 	vid.initialized = true;
 
-	Sys_MaskPrintf (SYS_DEV, "Video mode %dx%d initialized.\n",
+	Sys_MaskPrintf (SYS_VID, "Video mode %dx%d initialized.\n",
 					vid.width, vid.height);
 
 	vid.recalc_refdef = 1;				// force a surface cache flush

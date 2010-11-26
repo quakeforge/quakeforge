@@ -215,7 +215,7 @@ static struct fb_var_screeninfo orig_var;
 void
 VID_Shutdown (void)
 {
-	Sys_MaskPrintf (SYS_DEV, "VID_Shutdown\n");
+	Sys_MaskPrintf (SYS_VID, "VID_Shutdown\n");
 
 	if (!fbdev_inited)
 		return;
