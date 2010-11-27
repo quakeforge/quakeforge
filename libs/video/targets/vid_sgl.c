@@ -165,8 +165,6 @@ VID_Init (unsigned char *palette)
 	SDL_Quit ();
 
 success:
-	Con_CheckResize (); // Now that we have a window size, fix console
-
 	vid.numpages = 2;
 
 	GL_Init ();

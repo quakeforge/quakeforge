@@ -303,8 +303,6 @@ VID_Init (unsigned char *palette)
 	attribs[4] = 1;
 	attribs[5] = FXMESA_NONE;
 
-	Con_CheckResize (); // Now that we have a window size, fix console
-
 	fc = qf_fxMesaCreateContext (0, findres (&vid.width, &vid.height),
 							  GR_REFRESH_75Hz, attribs);
 	if (!fc)

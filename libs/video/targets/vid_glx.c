@@ -55,7 +55,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/qargs.h"
@@ -150,6 +149,21 @@ QFGL_LoadLibrary (void)
 }
 #endif	// HAVE_DLOPEN
 
+static void
+glx_get_functions (void)
+{
+	GLF_Init ();
+
+	qfglXSwapBuffers = QFGL_ProcAddress (libgl_handle, "glXSwapBuffers", true);
+	qfglXChooseVisual = QFGL_ProcAddress (libgl_handle, "glXChooseVisual",
+										  true);
+	qfglXCreateContext = QFGL_ProcAddress (libgl_handle, "glXCreateContext",
+										 true);
+	qfglXMakeCurrent = QFGL_ProcAddress (libgl_handle, "glXMakeCurrent", true);
+
+	use_gl_procaddress = 1;
+}
+
 
 void
 VID_Shutdown (void)
@@ -172,12 +186,6 @@ GL_EndRendering (void)
 	Sbar_Changed ();
 }
 
-static void
-VID_Center_f (void)
-{
-	X11_ForceViewPort ();
-}
-
 void
 VID_Init (unsigned char *palette)
 {
@@ -191,19 +199,7 @@ VID_Init (unsigned char *palette)
 		None
 	};
 
-	GLF_Init ();
-
-	qfglXSwapBuffers = QFGL_ProcAddress (libgl_handle, "glXSwapBuffers", true);
-	qfglXChooseVisual = QFGL_ProcAddress (libgl_handle, "glXChooseVisual",
-										  true);
-	qfglXCreateContext = QFGL_ProcAddress (libgl_handle, "glXCreateContext",
-										 true);
-	qfglXMakeCurrent = QFGL_ProcAddress (libgl_handle, "glXMakeCurrent", true);
-
-	use_gl_procaddress = 1;
-
-	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the "
-					"quake window in a virtual desktop.\n");
+	glx_get_functions ();
 
 	VID_GetWindowSize (640, 480);
 
@@ -211,8 +207,6 @@ VID_Init (unsigned char *palette)
 	vid.maxwarpheight = WARP_HEIGHT;
 	vid.colormap8 = vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
-
-	Con_CheckResize ();		// Now that we have a window size, fix console
 
 	X11_OpenDisplay ();
 

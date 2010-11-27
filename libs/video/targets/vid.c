@@ -39,6 +39,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 #include <math.h>
 
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
@@ -165,6 +166,8 @@ VID_GetWindowSize (int def_w, int def_h)
 	Cvar_Set (con_height, va ("%d", max (con_height->int_val, 200)));
 	Cvar_SetFlags (con_height, con_height->flags | CVAR_ROM);
 	vid.conheight = con_height->int_val;
+
+	Con_CheckResize ();     // Now that we have a window size, fix console
 }
 
 /* GAMMA FUNCTIONS */

@@ -455,7 +455,6 @@ VID_Init (unsigned char *palette)
 	current_mode = *vmode;
 	ioctl(tty_fd, KDSETMODE, KD_GRAPHICS);
 	VID_SetMode (current_mode.name, palette);
-	Con_CheckResize (); // Now that we have a window size, fix console
 
 	VID_InitGamma (palette);
 	VID_SetPalette (vid.palette);

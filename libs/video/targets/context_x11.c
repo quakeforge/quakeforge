@@ -63,6 +63,7 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <X11/extensions/xf86vmode.h>
 #endif
 
+#include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/qargs.h"
@@ -482,9 +483,18 @@ X11_UpdateFullscreen (cvar_t *fullscreen)
 	}
 }
 
+static void
+VID_Center_f (void)
+{
+	X11_ForceViewPort ();
+}
+
+
 void
 X11_Init_Cvars (void)
 {
+	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the "
+					"quake window in a virtual desktop.\n");
 	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ARCHIVE, 
 							   &X11_UpdateFullscreen,
 							   "Toggles fullscreen game mode");
