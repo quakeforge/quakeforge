@@ -120,13 +120,12 @@ vorbis_get_info (OggVorbis_File *vf)
 	info.dataofs = 0;
 	info.datalen = samples * info.channels * info.width;
 
-	if (developer->int_val) {
-		Sys_Printf ("\nBitstream is %d channel, %dHz\n",
+	Sys_MaskPrintf (SYS_DEV, "\nBitstream is %d channel, %dHz\n",
 					info.channels, info.rate);
-		Sys_Printf ("\nDecoded length: %d samples (%d bytes)\n",
+	Sys_MaskPrintf (SYS_DEV, "\nDecoded length: %d samples (%d bytes)\n",
 					info.frames, info.width);
-		Sys_Printf ("Encoded by: %s\n\n", ov_comment (vf, -1)->vendor);
-	}
+	Sys_MaskPrintf (SYS_DEV, "Encoded by: %s\n\n",
+					ov_comment (vf, -1)->vendor);
 
 	return info;
 }

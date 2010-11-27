@@ -74,7 +74,8 @@ GIB_Exec_Override_f (void)
 		return;
 	}
 	if (!Cvar_Command ()
-		&& (cmd_warncmd->int_val || (developer && developer->int_val)))
+		&& (cmd_warncmd->int_val
+			|| (developer && developer->int_val & SYS_DEV)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 	if ((strlen (Cmd_Argv (1)) >= 4
 	     && !strcmp (Cmd_Argv (1) + strlen (Cmd_Argv (1)) - 4, ".gib"))

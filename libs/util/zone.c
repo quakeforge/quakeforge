@@ -155,7 +155,7 @@ Z_Malloc (memzone_t *zone, int size)
 {
 	void	*buf;
 
-	if (!developer || developer->int_val)
+	if (!developer || developer->int_val & SYS_DEV)
 		Z_CheckHeap (zone);	// DEBUG
 	buf = Z_TagMalloc (zone, size, 1);
 	if (!buf)

@@ -131,7 +131,7 @@ Cmd_Command (cbuf_args_t *args)
 		return 0;
 	if (cbuf_active->strict)
 		return -1;
-	else if (cmd_warncmd->int_val || developer->int_val)
+	else if (cmd_warncmd->int_val || developer->int_val & SYS_DEV)
 		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
 	return 0;
 }
@@ -499,7 +499,8 @@ Cmd_Exec_f (void)
 		return;
 	}
 	if (!Cvar_Command ()
-		&& (cmd_warncmd->int_val || (developer && developer->int_val)))
+		&& (cmd_warncmd->int_val
+			|| (developer && developer->int_val & SYS_DEV)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 	Cbuf_InsertText (cbuf_active, f);
 	Hunk_FreeToLowMark (mark);

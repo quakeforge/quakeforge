@@ -433,15 +433,13 @@ flac_get_info (flacfile_t *ff)
 	info.dataofs = 0;
 	info.datalen = samples * info.channels * sizeof (float);
 
-	if (developer->int_val) {
-		Sys_Printf ("\nBitstream is %d channel, %dHz\n",
+	Sys_MaskPrintf (SYS_DEV, "\nBitstream is %d channel, %dHz\n",
 					info.channels, info.rate);
-		Sys_Printf ("\nDecoded length: %d samples (%d bytes)\n",
+	Sys_MaskPrintf (SYS_DEV, "\nDecoded length: %d samples (%d bytes)\n",
 					info.frames, info.width);
-		if (vc) {
-			Sys_Printf ("Encoded by: %.*s\n\n",
+	if (vc) {
+		Sys_MaskPrintf (SYS_DEV, "Encoded by: %.*s\n\n",
 						vc->vendor_string.length, vc->vendor_string.entry);
-		}
 	}
 
 	return info;
