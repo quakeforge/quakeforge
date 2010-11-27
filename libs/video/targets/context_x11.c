@@ -104,7 +104,6 @@ static qboolean	vidmode_avail = false;
 static qboolean	vidmode_active = false;
 
 static qboolean    vid_context_created = false;
-static int  window_x, window_y, window_saved;
 static int      pos_x, pos_y;
 
 #ifdef HAVE_VIDMODE
@@ -118,6 +117,37 @@ static qboolean	accel_saved = false;
 static int	accel_numerator;
 static int	accel_denominator;
 static int	accel_threshold;
+
+#define _NET_WM_STATE_REMOVE 0
+#define _NET_WM_STATE_ADD 1
+#define _NET_WM_STATE_TOGGLE 2
+static Atom x_net_state;
+static Atom x_net_fullscreen;
+
+static void
+set_fullscreen (int full)
+{
+	XEvent      xev;
+
+	xev.xclient.type = ClientMessage;
+	xev.xclient.serial = 0;
+	xev.xclient.send_event = True;
+	xev.xclient.window = x_win;
+	xev.xclient.message_type = x_net_state;
+	xev.xclient.format = 32;
+
+	if (full)
+		xev.xclient.data.l[0] = _NET_WM_STATE_ADD;
+	else
+		xev.xclient.data.l[0] = _NET_WM_STATE_REMOVE;
+
+	xev.xclient.data.l[1] = x_net_fullscreen;
+	xev.xclient.data.l[2] = 0;
+	xev.xclient.data.l[3] = 0;
+	xev.xclient.data.l[4] = 0;
+	XSendEvent (x_disp, x_root, False,
+				SubstructureRedirectMask | SubstructureNotifyMask, &xev);
+}
 
 static void
 configure_notify (XEvent *event)
@@ -236,6 +266,10 @@ X11_OpenDisplay (void)
 					   XDisplayName (NULL));
 		}
 
+		x_net_state = XInternAtom (x_disp, "_NET_WM_STATE", False);
+		x_net_fullscreen = XInternAtom (x_disp, "_NET_WM_STATE_FULLSCREEN",
+										False);
+
 		x_screen = DefaultScreen (x_disp);
 		x_root = RootWindow (x_disp, x_screen);
 
@@ -296,28 +330,6 @@ X11_CreateNullCursor (void)
 	XFreePixmap (x_disp, cursormask);
 	XFreeGC (x_disp, gc);
 	XDefineCursor (x_disp, x_win, nullcursor);
-}
-
-static void
-X11_ForceMove (int x, int y)
-{
-	int		nx, ny;
-
-	if (!vid_context_created)
-		return;
-
-	XMoveWindow (x_disp, x_win, x, y);
-	X11_WaitForEvent (ConfigureNotify);
-	nx = pos_x - x;
-	ny = pos_y - y;
-	if (nx == 0 || ny == 0) {
-		return;
-	}
-	x -= nx;
-	y -= ny;
-
-	XMoveWindow (x_disp, x_win, x, y);
-	X11_WaitForEvent (ConfigureNotify);
 }
 
 static Bool
@@ -457,27 +469,13 @@ X11_UpdateFullscreen (cvar_t *fullscreen)
 
 	if (!fullscreen->int_val) {
 		X11_RestoreVidMode ();
-		if (window_saved) {
-			X11_ForceMove (window_x, window_y);
-			window_saved = 0;
-		}
+		set_fullscreen (0);
 		IN_UpdateGrab (in_grab);
 		X11_SetMouse ();
 		return;
 	} else {
-
-		window_x = pos_x;
-		window_y = pos_y;
-		window_saved = 1;
-
+		set_fullscreen (1);
 		X11_SetVidMode (vid.width, vid.height);
-
-		if (!vidmode_active) {
-			window_saved = 0;
-			return;
-		}
-
-		X11_ForceMove (0, 0);
 		X11_SetMouse ();
 		IN_UpdateGrab (in_grab);
 	}
