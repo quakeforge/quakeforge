@@ -87,15 +87,19 @@ static qboolean dga_avail;
 static qboolean dga_active;
 static keydest_t old_key_dest = key_none;
 static int  p_mouse_x, p_mouse_y;
+static int input_grabbed = 0;
 
 static void
 dga_on (void)
 {
 #ifdef HAVE_DGA
 	if (dga_avail && !dga_active) {
-		XF86DGADirectVideo (x_disp, DefaultScreen (x_disp),
+		int ret;
+		ret = XF86DGADirectVideo (x_disp, DefaultScreen (x_disp),
 							XF86DGADirectMouse);
-		dga_active = true;
+		Sys_MaskPrintf (SYS_VID, "XF86DGADirectVideo returned %d\n", ret);
+		if (ret)
+			dga_active = true;
 	}
 #endif
 }
@@ -105,8 +109,11 @@ dga_off (void)
 {
 #ifdef HAVE_DGA
 	if (dga_avail && dga_active) {
-		XF86DGADirectVideo (x_disp, DefaultScreen (x_disp), 0);
-		dga_active = false;
+		int ret;
+		ret = XF86DGADirectVideo (x_disp, DefaultScreen (x_disp), 0);
+		Sys_MaskPrintf (SYS_VID, "XF86DGADirectVideo returned %d\n", ret);
+		if (ret)
+			dga_active = false;
 	}
 #endif
 }
@@ -114,12 +121,12 @@ dga_off (void)
 static void
 in_dga_f (cvar_t *var)
 {
-	if (in_grab && in_grab->int_val) {
-		if (var->int_val) {
-			dga_on ();
-		} else {
-			dga_off ();
-		}
+	if (var->int_val && input_grabbed) {
+		Sys_MaskPrintf (SYS_VID, "VID: in_dga_f on\n");
+		dga_on ();
+	} else {
+		Sys_MaskPrintf (SYS_VID, "VID: in_dga_f off\n");
+		dga_off ();
 	}
 }
 
@@ -617,7 +624,7 @@ event_motion (XEvent *event)
 		in_mouse_x += event->xmotion.x_root;
 		in_mouse_y += event->xmotion.y_root;
 	} else {
-		if (vid_fullscreen->int_val || in_grab->int_val) {
+		if (vid_fullscreen->int_val || input_grabbed) {
 			if (!event->xmotion.send_event) {
 				unsigned dist_x = abs (vid.width / 2 - event->xmotion.x);
 				unsigned dist_y = abs (vid.height / 2 - event->xmotion.y);
@@ -664,8 +671,6 @@ grab_error (int code, const char *device)
 void
 IN_LL_Grab_Input (int grab)
 {
-	static int input_grabbed = 0;
-
 	if (!x_disp || !x_win)
 		return;
 
@@ -692,14 +697,12 @@ IN_LL_Grab_Input (int grab)
 			return;
 		}
 		input_grabbed = 1;
-		if (in_dga->int_val)
-			dga_on ();
+		in_dga_f (in_dga);
 	} else {
 		XUngrabPointer (x_disp, CurrentTime);
 		XUngrabKeyboard (x_disp, CurrentTime);
 		input_grabbed = 0;
-		if (in_dga->int_val)
-			dga_off ();
+		in_dga_f (in_dga);
 	}
 }
 
@@ -756,6 +759,7 @@ IN_LL_Init (void)
 
 	if (!COM_CheckParm ("-nomouse")) {
 		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
+		Sys_MaskPrintf (SYS_VID, "VID_CheckDGA returned %d\n", dga_avail);
 
 		X11_AddEvent (ButtonPress, &event_button);
 		X11_AddEvent (ButtonRelease, &event_button);
