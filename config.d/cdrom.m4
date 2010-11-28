@@ -4,9 +4,9 @@ dnl ==================================================================
 
 dnl XMMS Checks
 AC_ARG_ENABLE(xmms,
-[  --disable-xmms          disable checking for XMMS],
+[  --enable-xmms           enable checking for XMMS],
 )
-if test "x$mingw" != xyes -a "x$enable_xmms" != xno; then
+if test "x$mingw" != xyes -a "x$enable_xmms" == xyes; then
 	AM_PATH_XMMS(0.9.5.1,
 		HAVE_XMMS=yes,
 		HAVE_XMMS=no)
