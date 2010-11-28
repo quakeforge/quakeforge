@@ -431,7 +431,6 @@ SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 
 /* POINT TESTING IN HULLS */
 
-#ifndef USE_INTEL_ASM
 int
 SV_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
@@ -440,8 +439,8 @@ SV_HullPointContents (hull_t *hull, int num, const vec3_t p)
 	mplane_t    *plane;
 
 	while (num >= 0) {
-		if (num < hull->firstclipnode || num > hull->lastclipnode)
-			Sys_Error ("SV_HullPointContents: bad node number");
+		//if (num < hull->firstclipnode || num > hull->lastclipnode)
+		//	Sys_Error ("SV_HullPointContents: bad node number");
 
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
@@ -458,7 +457,6 @@ SV_HullPointContents (hull_t *hull, int num, const vec3_t p)
 
 	return num;
 }
-#endif // !USE_INTEL_ASM
 
 int
 SV_PointContents (const vec3_t p)

@@ -67,14 +67,4 @@
 #define	hu_clip_maxs		28
 #define hu_size  			40
 
-// dnode_t structure
-// !!! if this is changed, it must be changed in bspfile.h too !!!
-#define	nd_planenum		0
-#define	nd_children		4
-#define	nd_mins			8
-#define	nd_maxs			20
-#define	nd_firstface	32
-#define	nd_numfaces		36
-#define nd_size			40
-
 #endif

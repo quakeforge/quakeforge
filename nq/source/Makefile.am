@@ -44,17 +44,9 @@ bin_PROGRAMS=	@NQ_TARGETS@
 EXTRA_PROGRAMS= nq-fbdev nq-glx nq-mgl nq-sdl nq-sdl32 nq-sgl nq-svga nq-3dfx \
 		nq-wgl nq-x11 nq-server
 
-if ASM_ARCH
-asm= libasm.a
-else
-asm= 
-endif
+noinst_LIBRARIES= @nq_libs@
+EXTRA_LIBRARIES=libnq_client.a libnq_common.a libnq_sdl.a libnq_server.a
 
-noinst_LIBRARIES= @nq_libs@ $(asm)
-EXTRA_LIBRARIES=libasm.a libnq_client.a libnq_common.a libnq_sdl.a libnq_server.a
-
-libasm_a_SOURCES=	worlda.S
-libasm_la_CCASFLAGS=@PREFER_NON_PIC@
 libnq_common_a_SOURCES=game.c world.c com.c
 libnq_sdl_a_SOURCES=	sys_sdl.c
 libnq_sdl_a_CFLAGS=	$(SDL_CFLAGS)
@@ -75,7 +67,6 @@ server_LIBFILES= \
 		$(top_builddir)/libs/models/libQFmodels.la
 
 common_LIBFILES= \
-		$(asm) \
 		$(top_builddir)/libs/net/libnet_main.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \

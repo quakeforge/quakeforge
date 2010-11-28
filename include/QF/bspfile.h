@@ -157,7 +157,6 @@ typedef struct dplane_s {
 #define CONTENTS_CURRENT_DOWN	-14
 
 
-// !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct dnode_s {
 	int32_t     planenum;
 	int16_t     children[2];	// negative numbers are -(leafs+1), not nodes
