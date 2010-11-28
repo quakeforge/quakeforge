@@ -1,42 +1,50 @@
+#ifndef ZView_h
+#define ZView_h
 
 #include <AppKit/AppKit.h>
-#include "mathlib.h"
 
-extern	id zview_i;
+#include "QF/mathlib.h"
+
+#include "render.h"
+
+extern id  zview_i;
 
 // zplane controls the objects displayed in the xyview
-extern	float	zplane;
-extern	float	zplanedir;
+extern float    zplane;
+extern float    zplanedir;
 
-@interface ZView :  NSView
+@interface ZView: NSView
 {
-	float		minheight, maxheight;
-	float		oldminheight, oldmaxheight;
-	float		topbound, bottombound;		// for floor clipping
-	
-	float		scale;
-	
-	vec3_t		origin;
+	float   minheight, maxheight;
+	float   oldminheight, oldmaxheight;
+	float   topbound, bottombound;  // for floor clipping
+
+	float  scale;
+
+	vec3_t  origin;
+
+	NSBezierPath  *checker;
 }
 
-- clearBounds;
-- getBounds: (float *)top :(float *)bottom;
+- (id) clearBounds;
+- (id) getBounds: (float *)top
+   : (float *)bottom;
 
-- getPoint: (NSPoint *)pt;
-- setPoint: (NSPoint *)pt;
+- (id) getPoint: (NSPoint *)pt;
+- (id) setPoint: (NSPoint *)pt;
 
-- addToHeightRange: (float)height;
+- (id) addToHeightRange: (float)height;
 
-- newRealBounds;
-- newSuperBounds;
+- (id) newRealBounds;
+- (id) newSuperBounds;
 
-- XYDrawSelf;
+- (void) XYDrawSelf;
 
-- (BOOL)XYmouseDown: (NSPoint *)pt;
+- (BOOL) XYmouseDown: (NSPoint *)pt;
 
-- setXYOrigin: (NSPoint *)pt;
+- (id) setXYOrigin: (NSPoint *)pt;
 
-- setOrigin: (NSPoint *)pt scale: (float)sc;
+- (id) setOrigin: (NSPoint)pt scale: (float)sc;
 
 @end
-
+#endif // ZView_h

@@ -1,47 +1,40 @@
+#ifndef Dict_h
+#define Dict_h
 
 #include <AppKit/AppKit.h>
 
-typedef struct
-{
-	char	*key;
-	char	*value;
-} dict_t;
+#include "Storage.h"
 
-@interface Dict:Storage
+struct script_s;
+
+@interface Dict: NSObject
 {
+	struct plitem_s *plist;
 }
 
-- initFromFile:(FILE *)fp;
+- (id) initFromFile: (FILE *)fp;
 
-- (id) parseMultipleFrom:(char *)value;
-- (int) getValueUnits:(char *)key;
-- delString:(char *)string fromValue:(char *)key;
-- addString:(char *)string toValue:(char *)key;
-- (char *)convertListToString:(id)list;
-- (char *)getStringFor:(char *)name;
-- removeKeyword:(char *)key;
-- (unsigned int)getValueFor:(char *)name;
-- changeStringFor:(char *)key to:(char *)value;
-- (dict_t *) findKeyword:(char *)key;
+- (int) getValueUnits: (const char *)key;
 
-- writeBlockTo:(FILE *)fp;
-- writeFile:(char *)path;
+- (struct plitem_s *) getArrayFor: (const char *)name;
+- (const char *) getStringFor: (const char *)name;
+- (unsigned int) getValueFor: (const char *)name;
+- (id) changeStringFor: (const char *)key to: (const char *)value;
 
-// INTERNAL
-- init;
-- (id) parseBraceBlock:(FILE *)fp;
-- setupMultiple:(char *)value;
-- (char *)getNextParameter;
+- (id) writeBlockTo: (FILE *)fp;
+- (id) writeFile: (const char *)path;
 
 @end
 
-int	GetNextChar(FILE *fp);
-void CopyUntilWhitespc(FILE *fp,char *buffer);
-void CopyUntilQuote(FILE *fp,char *buffer);
-int FindBrace(FILE *fp);
-int FindQuote(FILE *fp);
-int FindWhitespc(FILE *fp);
-int FindNonwhitespc(FILE *fp);
+int GetNextChar (FILE * fp);
+void CopyUntilWhitespc (FILE * fp, char *buffer);
+void CopyUntilQuote (FILE * fp, char *buffer);
+int FindBrace (FILE * fp);
+int FindQuote (FILE * fp);
+int FindWhitespc (FILE * fp);
+int FindNonwhitespc (FILE * fp);
 
-char *FindWhitespcInBuffer(char *buffer);
-char *FindNonwhitespcInBuffer(char *buffer);
+char *FindWhitespcInBuffer (char *buffer);
+char *FindNonwhitespcInBuffer (char *buffer);
+
+#endif // Dict_h

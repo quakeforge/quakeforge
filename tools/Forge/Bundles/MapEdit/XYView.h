@@ -1,66 +1,82 @@
+#ifndef XYView_h
+#define XYView_h
 
 #include <AppKit/AppKit.h>
-#include "mathlib.h"
+
+#include "QF/mathlib.h"
+
 #include "SetBrush.h"
 
-extern	id xyview_i;
+#include "render.h"
 
-#define	MINSCALE	0.125
-#define	MAXSCALE	2.0
+extern id  xyview_i;
 
+#define MINSCALE    0.125
+#define MAXSCALE    2.0
 
-extern	vec3_t		xy_viewnormal;		// v_forward for xy view
-extern	float		xy_viewdist;		// clip behind this plane
+extern vec3_t   xy_viewnormal;      // v_forward for xy view
+extern float    xy_viewdist;        // clip behind this plane
 
-extern	NSRect	xy_draw_rect;
+extern NSRect  xy_draw_rect;
 
-void linestart (float r, float g, float b);
-void lineflush (void);
-void linecolor (float r, float g, float b);
+void        linestart (float r, float g, float b);
+void        lineflush (void);
+void        linecolor (float r, float g, float b);
 
-void XYmoveto (vec3_t pt);
-void XYlineto (vec3_t pt);
+void        XYmoveto (vec3_t pt);
+void        XYlineto (vec3_t pt);
 
-typedef enum {dr_wire, dr_flat, dr_texture} drawmode_t;
-
-
-@interface XYView :  NSView
+@interface XYView: NSView
 {
-	NSRect		realbounds, newrect, combinedrect;
-	NSPoint		midpoint;
-	int			gridsize;
-	float		scale;
+	NSRect      realbounds, newrect, combinedrect;
+	NSPoint     midpoint;
+	int         gridsize;
+	float       scale;
 
+//
 // for textured view
-	int			xywidth, xyheight;
-	float		*xyzbuffer;
-	unsigned	*xypicbuffer;
+//
+	int         xywidth, xyheight;
+	float       *xyzbuffer;
+	unsigned    *xypicbuffer;
 
-	drawmode_t	drawmode;
+	drawmode_t  drawmode;
 
+//
 // UI links
-	id			mode_radio_i;	
+//
+	id  mode_radio_i;
 }
 
-- (float)currentScale;
+- (float) currentScale;
 
-- setModeRadio: m;
+- (id) setModeRadio: m;
 
-- drawMode: sender;
-- setDrawMode: (drawmode_t)mode;
+- (id) drawMode: sender;
+- (id) setDrawMode: (drawmode_t)mode;
 
-- newSuperBounds;
-- newRealBounds: (NSRect *)nb;
+- (id) newSuperBounds;
+- (id) newRealBounds: (NSRect)nb;
 
-- addToScrollRange: (float)x :(float)y;
-- setOrigin: (NSPoint *)pt scale: (float)sc;
-- centerOn: (vec3_t)org;
+- (id) addToScrollRange: (float)x
+   : (float)y;
 
-- drawMode: sender;
+- (id) setOrigin: (NSPoint)pt scale: (float)sc;
 
-- superviewChanged;
+- (id) centerOn: (vec3_t)org;
 
-- (int)gridsize;
-- (float)snapToGrid: (float)f;
+- (id) drawMode: sender;
+
+- (id) superviewChanged;
+
+- (int) gridsize;
+- (float) snapToGrid: (float)f;
 
 @end
+
+@interface NSView (XYView)
+- (void) setFrame: (NSRect)frame
+   bounds: (NSRect)bounds
+   scale: (NSSize)scale;
+@end
+#endif // XYView_h

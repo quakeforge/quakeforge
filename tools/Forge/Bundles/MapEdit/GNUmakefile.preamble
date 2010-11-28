@@ -2,16 +2,16 @@
 ADDITIONAL_CPPFLAGS += 
 
 # Additional flags to pass to the Objective-C compiler
-ADDITIONAL_OBJCFLAGS += -DUSING_NIBS -Wall -Werror
+ADDITIONAL_OBJCFLAGS += -DUSING_NIBS -Wall -Werror -Wsign-compare -Wwrite-strings #-Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations
 
 # Additional flags to pass to the C compiler
-ADDITIONAL_CFLAGS += -Wall -Werror
+ADDITIONAL_CFLAGS += -Wall -Werror -Wsign-compare -Wwrite-strings #-Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations
 
 # Additional include directories the compiler should search
-ADDITIONAL_INCLUDE_DIRS += -I ../..
+ADDITIONAL_INCLUDE_DIRS += -I ../.. -I ../../../../include
 
 # Additional LDFLAGS to pass to the linker
-ADDITIONAL_LDFLAGS += 
+ADDITIONAL_LDFLAGS += -lQFutil
 
 # Additional library directories the linker should search
 ADDITIONAL_LIB_DIRS +=

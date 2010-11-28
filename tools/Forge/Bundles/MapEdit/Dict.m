@@ -1,29 +1,26 @@
+#include "QF/dstring.h"
+#include "QF/qfplist.h"
+#include "QF/script.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 
-#include "qedefs.h"
+#include "Dict.h"
 
 @implementation Dict
 
-- init
+/*
+- (id) print
 {
-	[super	initCount:0
-		elementSize:sizeof(dict_t)
-		description:NULL];
-	return self;	
-}
+	NSUInteger  i;
+	dict_t      *d;
 
-- print
-{
-	int	i;
-	dict_t	*d;
-	
-	for (i=0 ; i<numElements ; i++)
-	{
+	for (i = 0; i < numElements; i++) {
 		d = [self elementAt: i];
-		printf ("%s : %s\n",d->key, d->value);
+		printf ("%s : %s\n", d->key, d->value);
 	}
 	return self;
 }
-
+*/
 /*
 ===========
 copyFromZone
@@ -31,553 +28,128 @@ copyFromZone
 JDC
 ===========
 */
-- copyFromZone:(NSZone *)zone
+- (id) copy
 {
-	id	new;
-	int	i;
-	dict_t	*d;
-	char	*old;
-	
-	new = [super copyFromZone: zone];
-	for (i=0 ; i<numElements ; i++)
-	{
-		d = [self elementAt: i];
-		old = d->key;
-		d->key = malloc(strlen(old)+1);	
-		strcpy (d->key, old);
-		
-		old = d->value;
-		d->value = malloc(strlen(old)+1);	
-		strcpy (d->value, old);
-	}
-	
-	return new;
-}
-
-- initFromFile:(FILE *)fp
-{
-	[self init];
-	return [self parseBraceBlock:fp];
-}
-
-//===============================================
-//
-//	Dictionary pair functions
-//
-//===============================================
-
-//
-//	Write a { } block out to a FILE*
-//
-- writeBlockTo:(FILE *)fp
-{
-	int		max;
-	int		i;
-	dict_t	*d;
-	
-	fprintf(fp,"{\n");
-	max = [super count];
-	for (i = 0;i < max;i++)
-	{
-		d = [super elementAt:i];
-		fprintf(fp,"\t{\"%s\"\t\"%s\"}\n",d->key,d->value);
-	}
-	fprintf(fp,"}\n");
-	
-	return self;
-}
-
-//
-//	Write a single { } block out
-//
-- writeFile:(char *)path
-{
-	FILE	*fp;
-	
-	fp = fopen(path,"w+t");
-	if (fp != NULL)
-	{
-		printf("Writing dictionary file %s.\n",path);
-		fprintf(fp,"// QE_Project file %s\n",path);
-		[self writeBlockTo:fp];
-		fclose(fp);
-	}
-	else
-	{
-		printf("Error writing %s!\n",path);
-		return NULL;
-	}
-
-	return self;
-}
-
-//===============================================
-//
-//	Utility methods
-//
-//===============================================
-
-//
-//	Find a keyword in storage
-//	Returns * to dict_t, otherwise NULL
-//
-- (dict_t *) findKeyword:(char *)key
-{	
-	int		max;
-	int		i;
-	dict_t	*d;
-	
-	max = [super count];
-	for (i = 0;i < max;i++)
-	{
-		d = [super elementAt:i];
-		if (!strcmp(d->key,key))
-			return d;
-	}
-	
-	return NULL;
-}
-
-//
-//	Change a keyword's string
-//
-- changeStringFor:(char *)key to:(char *)value
-{
-	dict_t	*d;
-	dict_t	newd;
-	
-	d = [self findKeyword:key];
-	if (d != NULL)
-	{
-		free(d->value);
-		d->value = malloc(strlen(value)+1);
-		strcpy(d->value,value);
-	}
-	else
-	{
-		newd.key = malloc(strlen(key)+1);
-		strcpy(newd.key,key);
-		newd.value = malloc(strlen(value)+1);
-		strcpy(newd.value,value);
-		[self addElement:&newd];
-	}
-	return self;
-}
-
-//
-//	Search for keyword, return the string *
-//
-- (char *)getStringFor:(char *)name
-{
-	dict_t	*d;
-	
-	d = [self findKeyword:name];
-	if (d != NULL)
-		return d->value;
-	
-	return "";
-}
-
-//
-//	Search for keyword, return the value
-//
-- (unsigned int)getValueFor:(char *)name
-{
-	dict_t	*d;
-	
-	d = [self findKeyword:name];
-	if (d != NULL)
-		return atol(d->value);
-	
+	Sys_Printf ("Dict copy: not implemented\n");
 	return 0;
 }
 
-//
-//	Return # of units in keyword's value
-//
-- (int) getValueUnits:(char *)key
+- (id) initFromFile: (FILE *)fp
 {
-	id		temp;
-	int		count;
-	
-	temp = [self parseMultipleFrom:key];
-	count = [temp count];
-	[temp free];
-	
-	return count;
-}
+	dstring_t   *text = dstring_newstr ();
+	char        *str;
+	size_t      read;
+	const size_t readsize = 1024;
 
-//
-//	Convert List to string
-//
-- (char *)convertListToString:(id)list
-{
-	int		i;
-	int		max;
-	char	tempstr[4096];
-	char	*s;
-	char	*newstr;
-	
-	max = [list count];
-	tempstr[0] = 0;
-	for (i = 0;i < max;i++)
-	{
-		s = [list elementAt:i];
-		strcat(tempstr,s);
-		strcat(tempstr,"  ");
-	}
-	newstr = malloc(strlen(tempstr)+1);
-	strcpy(newstr,tempstr);
-	
-	return newstr;
-}
+	[self init];
 
-//
-// JDC: I wrote this to simplify removing vectors
-//
-- removeKeyword:(char *)key
-{
-	dict_t	*d;
+	do {
+		str = dstring_reservestr (text, readsize);
+		read = fread (str, 1, readsize, fp);
+		if (read)
+			str[read] = 0;
+	} while (read == readsize);
 
-	d = [self findKeyword:key];
-	if (d == NULL)
-		return self;
-	[self removeElementAt:d - (dict_t*)dataPtr];
+
+	plist = PL_GetPropertyList (text->str);
+	dstring_delete (text);
+	if (!plist)
+		return 0;
 	return self;
 }
 
-//
-//	Delete string from keyword's value
-//
-- delString:(char *)string fromValue:(char *)key
+- (void) dealloc
 {
-	id		temp;
-	int		count;
-	int		i;
-	char	*s;
-	dict_t	*d;
-	
-	d = [self findKeyword:key];
-	if (d == NULL)
-		return NULL;
-	temp = [self parseMultipleFrom:key];
-	count = [temp count];
-	for (i = 0;i < count;i++)
-	{
-		s = [temp elementAt:i];
-		if (!strcmp(s,string))
-		{
-			[temp removeElementAt:i];
-			free(d->value);
-			d->value = [self convertListToString:temp];
-			[temp free];
-			
-			break;
-		}
-	}
+	if (plist)
+		PL_Free (plist);
+	[super dealloc];
+}
+
+// ===============================================
+//
+//  Dictionary pair functions
+//
+// ===============================================
+
+- (id) writeBlockTo: (FILE *)fp
+{
+	char   *data;
+
+	data = PL_WritePropertyList (plist);
+	fputs (data, fp);
+	free (data);
+
 	return self;
 }
 
-//
-//	Add string to keyword's value
-//
-- addString:(char *)string toValue:(char *)key
+- (id) writeFile: (const char *)path
 {
-	char	*newstr;
-	char	spacing[] = "\t";
-	dict_t	*d;
-	
-	d = [self findKeyword:key];
-	if (d == NULL)
+	FILE  *fp;
+
+	fp = fopen (path, "w+t");
+	if (fp != NULL) {
+		printf ("Writing dictionary file %s.\n", path);
+		fprintf (fp, "// QE_Project file %s\n", path);
+		[self writeBlockTo: fp];
+		fclose (fp);
+	} else {
+		printf ("Error writing %s!\n", path);
 		return NULL;
-	newstr = malloc(strlen(string) + strlen(d->value) + strlen(spacing) + 1);
-	strcpy(newstr,d->value);
-	strcat(newstr,spacing);
-	strcat(newstr,string);
-	free(d->value);
-	d->value = newstr;
-	
+	}
+
 	return self;
 }
 
-//===============================================
+// ===============================================
 //
-//	Use these for multiple parameters in a keyword value
+//  Utility methods
 //
-//===============================================
-char	*searchStr;
-char	item[4096];
+// ===============================================
 
-- setupMultiple:(char *)value
+//  Change a keyword's string
+- (id) changeStringFor: (const char *)key to: (const char *)value
 {
-	searchStr = value;
+	PL_D_AddObject (plist, key, PL_NewString (value));
 	return self;
 }
 
-- (char *)getNextParameter
+- (plitem_t *) getArrayFor: (const char *)name
 {
-	char	*s;
-	
-	if (!searchStr)
-		return NULL;
-	strcpy(item,searchStr);
-	s = FindWhitespcInBuffer(item);	
-	if (!*s)
-		searchStr = NULL;
-	else
-	{
-		*s = 0;
-		searchStr = FindNonwhitespcInBuffer(s+1);
-	}
-	return item;
+	plitem_t    *item;
+	item = PL_ObjectForKey (plist, name);
+	if (item && PL_Type (item) == QFArray)
+		return item;
+	return 0;
 }
 
-//
-//	Parses a keyvalue string & returns a Storage full of those items
-//
-- (id) parseMultipleFrom:(char *)key
+//  Search for keyword, return the string *
+- (const char *) getStringFor: (const char *)name
 {
-	#define	ITEMSIZE	128
-	id		stuff;
-	char	string[ITEMSIZE];
-	char	*s;
-	
-	s = [self getStringFor:key];
-	if (s == NULL)
-		return NULL;
-		
-	stuff = [[Storage alloc]
-			initCount:0
-			elementSize:ITEMSIZE
-			description:NULL];
-			
-	[self setupMultiple:s];
-	while((s = [self getNextParameter]))
-	{
-		bzero(string,ITEMSIZE);
-		strcpy(string,s);
-		[stuff addElement:string];
-	}
-	
-	return stuff;
+	plitem_t    *item;
+	const char  *str;
+
+	item = PL_ObjectForKey (plist, name);
+	if (item && (str = PL_String (item)))
+		return str;
+	return "";
 }
 
-//===============================================
-//
-//	Dictionary pair parsing
-//
-//===============================================
-
-//
-//	parse all keyword/value pairs within { } 's
-//
-- (id) parseBraceBlock:(FILE *)fp
+//  Search for keyword, return the value
+- (unsigned int) getValueFor: (const char *)name
 {
-	int		c;
-	dict_t	pair;
-	char	string[1024];
-	
-	c = FindBrace(fp);
-	if (c == -1)
-		return NULL;
-		
-	while((c = FindBrace(fp)) != '}')
-	{
-		if (c == -1)
-			return NULL;
-//		c = FindNonwhitespc(fp);
-//		if (c == -1)
-//			return NULL;
-//		CopyUntilWhitespc(fp,string);
+	return atol ([self getStringFor: name]);
+}
 
-// JDC: fixed to allow quoted keys
-		c = FindNonwhitespc(fp);
-		if (c == -1)
-			return NULL;
-		c = fgetc(fp);
-		if ( c == '\"')		
-			CopyUntilQuote(fp,string);
-		else
-		{
-			ungetc (c,fp);
-			CopyUntilWhitespc(fp,string);
-		}
+//  Return # of units in keyword's value
+- (int) getValueUnits: (const char *)key
+{
+	plitem_t    *item;
 
-		pair.key = malloc(strlen(string)+1);
-		strcpy(pair.key,string);
-		
-		c = FindQuote(fp);
-		CopyUntilQuote(fp,string);
-		pair.value = malloc(strlen(string)+1);
-		strcpy(pair.value,string);
-		
-		[super addElement:&pair];
-		c = FindBrace(fp);
-	}
-	
-	return self;
+	item = PL_ObjectForKey (plist, key);
+	if (!item || PL_Type (item) != QFArray)
+		return 0;
+
+	return PL_A_NumObjects (item);
 }
 
 @end
-
-//===============================================
-//
-//	C routines for string parsing
-//
-//===============================================
-int	GetNextChar(FILE *fp)
-{
-	int		c;
-	int		c2;
-	
-	c = getc(fp);
-	if (c == EOF)
-		return -1;
-	if (c == '/')		// parse comments
-	{
-		c2 = getc(fp);
-		if (c2 == '/')
-		{
-			while((c2 = getc(fp)) != '\n');
-			c = getc(fp);
-		}
-		else
-			ungetc(c2,fp);
-	}
-	return c;
-}
-
-void CopyUntilWhitespc(FILE *fp,char *buffer)
-{
-	int	count = 800;
-	int	c;
-	
-	while(count--)
-	{
-		c = GetNextChar(fp);
-		if (c == EOF)
-			return;
-		if (c <= ' ')
-		{
-			*buffer = 0;
-			return;
-		}
-		*buffer++ = c;
-	}
-}
-
-void CopyUntilQuote(FILE *fp,char *buffer)
-{
-	int	count = 800;
-	int	c;
-	
-	while(count--)
-	{
-		c = GetNextChar(fp);
-		if (c == EOF)
-			return;
-		if (c == '\"')
-		{
-			*buffer = 0;
-			return;
-		}
-		*buffer++ = c;
-	}
-}
-
-int FindBrace(FILE *fp)
-{
-	int	count = 800;
-	int	c;
-	
-	while(count--)
-	{
-		c = GetNextChar(fp);
-		if (c == EOF)
-			return -1;
-		if (c == '{' ||
-			c == '}')
-			return c;
-	}
-	return -1;
-}
-
-int FindQuote(FILE *fp)
-{
-	int	count = 800;
-	int	c;
-	
-	while(count--)
-	{
-		c = GetNextChar(fp);
-		if (c == EOF)
-			return -1;
-		if (c == '\"')
-			return c;
-	}
-	return -1;
-}
-
-int FindWhitespc(FILE *fp)
-{
-	int	count = 800;
-	int	c;
-		
-	while(count--)
-	{
-		c = GetNextChar(fp);
-		if (c == EOF)
-			return -1;
-		if (c <= ' ')
-		{
-			ungetc(c,fp);
-			return c;
-		}
-	}
-	return -1;		
-}
-
-int FindNonwhitespc(FILE *fp)
-{
-	int	count = 800;
-	int	c;
-		
-	while(count--)
-	{
-		c = GetNextChar(fp);
-		if (c == EOF)
-			return -1;
-		if (c > ' ')
-		{
-			ungetc(c,fp);
-			return c;
-		}
-	}
-	return -1;
-}
-
-char *FindWhitespcInBuffer(char *buffer)
-{
-	int	count = 1000;
-	char	*b = buffer;
-	
-	while(count--)
-		if (*b <= ' ')
-			return b;
-		else
-			b++;
-	return NULL;		
-}
-
-char *FindNonwhitespcInBuffer(char *buffer)
-{
-	int	count = 1000;
-	char	*b = buffer;
-	
-	while(count--)
-		if (*b > ' ')
-			return b;
-		else
-			b++;
-	return NULL;
-}

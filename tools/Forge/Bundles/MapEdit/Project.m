@@ -1,526 +1,431 @@
-//======================================
+// ======================================
 //
 // QuakeEd Project Management
 //
-//======================================
+// ======================================
 
-#include "qedefs.h"
+#include <unistd.h>
 
+#include "QF/qfplist.h"
+#include "QF/quakefs.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 
-id	project_i;
+#include "Project.h"
+#include "Map.h"
+#include "QuakeEd.h"
+#include "Preferences.h"
+#include "Dict.h"
+#include "Things.h"
+#include "TexturePalette.h"
+
+id  project_i;
 
 @implementation Project
 
-- init
+- (id) init
 {
 	project_i = self;
 
 	return self;
 }
 
-//===========================================================
+// ===========================================================
 //
-//	Project code
+//  Project code
 //
-//===========================================================
-- initVars
+// ===========================================================
+- (id) initVars
 {
-	char		*s;
-	
-	s = [preferences_i getProjectPath];
-	StripFilename(s);
-	strcpy(path_basepath,s);
-	
-	strcpy(path_progdir,s);
-	strcat(path_progdir,"/"SUBDIR_ENT);
-	
-	strcpy(path_mapdirectory,s);
-	strcat(path_mapdirectory,"/"SUBDIR_MAPS);	// source dir
+	NSString    *ts;
 
-	strcpy(path_finalmapdir,s);
-	strcat(path_finalmapdir,"/"SUBDIR_MAPS);	// dest dir
-	
-	[basepathinfo_i	setStringValue:s];		// in Project Inspector
-	
-	#if 0
-	if ((s = [projectInfo getStringFor:BASEPATHKEY]))
-	{
-		strcpy(path_basepath,s);
-		
-		strcpy(path_progdir,s);
-		strcat(path_progdir,"/"SUBDIR_ENT);
-		
-		strcpy(path_mapdirectory,s);
-		strcat(path_mapdirectory,"/"SUBDIR_MAPS);	// source dir
+	ts = path_projectinfo;
+	ts = path_basepath = [[ts stringByDeletingLastPathComponent] retain];
 
-		strcpy(path_finalmapdir,s);
-		strcat(path_finalmapdir,"/"SUBDIR_MAPS);	// dest dir
-		
-		[basepathinfo_i	setStringValue:s];		// in Project Inspector
-	}
-	#endif
-		
-	if ((s = [projectInfo getStringFor:BSPFULLVIS]))
-	{
-		strcpy(string_fullvis,s);
-		changeString('@','\"',string_fullvis);
-	}
-		
-	if ((s = [projectInfo getStringFor:BSPFASTVIS]))
-	{
-		strcpy(string_fastvis,s);
-		changeString('@','\"',string_fastvis);
-	}
-		
-	if ((s = [projectInfo getStringFor:BSPNOVIS]))
-	{
-		strcpy(string_novis,s);
-		changeString('@','\"',string_novis);
-	}
-		
-	if ((s = [projectInfo getStringFor:BSPRELIGHT]))
-	{
-		strcpy(string_relight,s);
-		changeString('@','\"',string_relight);
-	}
-		
-	if ((s = [projectInfo getStringFor:BSPLEAKTEST]))
-	{
-		strcpy(string_leaktest,s);
-		changeString('@','\"',string_leaktest);
-	}
+	path_progdir = [[ts stringByAppendingPathComponent: SUBDIR_ENT] retain];
 
-	if ((s = [projectInfo getStringFor:BSPENTITIES]))
-	{
-		strcpy(string_entities,s);
-		changeString('@','\"', string_entities);
+	path_mapdirectory = [[ts stringByAppendingPathComponent: SUBDIR_MAPS] retain];
+	path_finalmapdir = [[ts stringByAppendingPathComponent: SUBDIR_MAPS] retain];
+
+	// in Project Inspector
+	[basepathinfo_i setStringValue: ts];
+
+#if 0  // FIXME: for "out-of-tree" projects ?
+	if ((s = [projectInfo getStringFor: BASEPATHKEY])) {
+		strcpy (path_basepath, s);
+
+		strcpy (path_progdir, s);
+		strcat (path_progdir, "/" SUBDIR_ENT);
+
+		strcpy (path_mapdirectory, s);
+		strcat (path_mapdirectory, "/" SUBDIR_MAPS); // source dir
+
+		strcpy (path_finalmapdir, s);
+		strcat (path_finalmapdir, "/" SUBDIR_MAPS); // dest dir
+
+		[basepathinfo_i setStringValue: s];  // in Project Inspector
 	}
+#endif
 
-	// Build list of wads	
-	wadList = [projectInfo parseMultipleFrom:WADSKEY];
+	string_fullvis = [projectInfo getStringFor: BSPFULLVIS];
+	string_fastvis = [projectInfo getStringFor: BSPFASTVIS];
+	string_novis = [projectInfo getStringFor: BSPNOVIS];
+	string_relight = [projectInfo getStringFor: BSPRELIGHT];
+	string_leaktest = [projectInfo getStringFor: BSPLEAKTEST];
+	string_entities = [projectInfo getStringFor: BSPENTITIES];
 
-	//	Build list of maps & descriptions
-	mapList = [projectInfo parseMultipleFrom:MAPNAMESKEY];
-	descList = [projectInfo parseMultipleFrom:DESCKEY];
-	[self changeChar:'_' to:' ' in:descList];
-	
+	// Build list of wads
+	wadList = [projectInfo getArrayFor: WADSKEY];
+
+	// Build list of maps & descriptions
+	mapList = [projectInfo getArrayFor: MAPNAMESKEY];
+	descList = [projectInfo getArrayFor: DESCKEY];
+
 	[self initProjSettings];
 
 	return self;
 }
 
-//
-//	Init Project Settings fields
-//
-- initProjSettings
+//  Init Project Settings fields
+- (id) initProjSettings
 {
-	[pis_basepath_i	setStringValue:path_basepath];
-	[pis_fullvis_i	setStringValue:string_fullvis];
-	[pis_fastvis_i	setStringValue:string_fastvis];
-	[pis_novis_i	setStringValue:string_novis];
-	[pis_relight_i	setStringValue:string_relight];
-	[pis_leaktest_i	setStringValue:string_leaktest];
-	
+	[pis_basepath_i setStringValue: path_basepath];
+	[pis_fullvis_i setStringValue: [NSString stringWithCString: string_fullvis]];
+	[pis_fastvis_i setStringValue: [NSString stringWithCString: string_fastvis]];
+	[pis_novis_i setStringValue: [NSString stringWithCString: string_novis]];
+	[pis_relight_i setStringValue: [NSString stringWithCString: string_relight]];
+	[pis_leaktest_i setStringValue: [NSString stringWithCString: string_leaktest]];
+
 	return self;
 }
 
-//
-//	Add text to the BSP Output window
-//
-- addToOutput:(char *)string
+//  Add text to the BSP Output window
+- (id) addToOutput: (const char *)string
 {
-	int	end;
-	
+	int  end;
+
 	end = [BSPoutput_i textLength];
-	[BSPoutput_i setSel:end :end];
-	[BSPoutput_i replaceSel:string];
-	
+	[BSPoutput_i    replaceCharactersInRange: NSMakeRange (end, 0)
+	                              withString: [NSString stringWithCString: string]];
+
 	end = [BSPoutput_i textLength];
-	[BSPoutput_i setSel:end :end];
-	[BSPoutput_i scrollSelToVisible];
-	
+	[BSPoutput_i setSelectedRange: NSMakeRange (end, 0)];
+	// XXX [BSPoutput_i scrollSelToVisible];
+
 	return self;
 }
 
-- clearBspOutput:sender
+- (id) clearBspOutput: sender
 {
-	[BSPoutput_i	selectAll:self];
-	[BSPoutput_i	replaceSel:"\0"];
-	
+	int  end;
+
+	end = [BSPoutput_i textLength];
+	[BSPoutput_i replaceCharactersInRange: NSMakeRange (0, end) withString: @""];
+
 	return self;
 }
 
-- print
+- (id) print
 {
-	[BSPoutput_i	printPSCode:self];
+	// XXX [BSPoutput_i printPSCode:self];
 	return self;
 }
 
-
-- initProject
+- (id) initProject
 {
 	[self parseProjectFile];
 	if (projectInfo == NULL)
 		return self;
 	[self initVars];
-	[mapbrowse_i reuseColumns:YES];
+	[mapbrowse_i setReusesColumns: YES];
 	[mapbrowse_i loadColumnZero];
-	[pis_wads_i reuseColumns:YES];
+	[pis_wads_i setReusesColumns: YES];
 	[pis_wads_i loadColumnZero];
 
-	[things_i		initEntities];
-	
+	[things_i initEntities];
+
 	return self;
 }
 
-//
-//	Change a character to another in a Storage list of strings
-//
-- changeChar:(char)f to:(char)t in:(id)obj
+//  Fill the QuakeEd Maps or wads browser
+//  (Delegate method - delegated in Interface Builder)
+- (void) browser: sender createRowsForColumn: (int)column inMatrix: matrix
 {
-	int	i;
-	int	max;
-	char	*string;
+	id          cell;
+	plitem_t   *list;
+	int         max;
+	const char *name;
+	int         i;
 
-	max = [obj count];
-	for (i = 0;i < max;i++)
-	{
-		string = [obj elementAt:i];
-		changeString(f,t,string);
-	}
-	return self;
-}
-
-//
-//	Fill the QuakeEd Maps or wads browser
-//	(Delegate method - delegated in Interface Builder)
-//
-- (int)browser:sender fillMatrix:matrix inColumn:(int)column
-{
-	id		cell, list;
-	int		max;
-	char	*name;
-	int		i;
-
-	if (sender == mapbrowse_i)
+	if (sender == mapbrowse_i) {
 		list = mapList;
-	else if (sender == pis_wads_i)
+	} else if (sender == pis_wads_i) {
 		list = wadList;
-	else
-	{
-		list = nil;
-		Error ("Project: unknown browser to fill");
+	} else {
+		list = 0;
+		Sys_Error ("Project: unknown browser to fill");
 	}
-	
-	max = [list count];
-	for (i = 0 ; i<max ; i++)
-	{
-		name = [list elementAt:i];
+
+	max = list ? PL_A_NumObjects (list) : 0;
+	for (i = 0; i < max; i++) {
+		name = PL_String (PL_ObjectAtIndex (list, i));
 		[matrix addRow];
-		cell = [matrix cellAt:i :0];
-		[cell setStringValue:name];
-		[cell setLeaf:YES];
-		[cell setLoaded:YES];
+		cell = [matrix cellAtRow: i column: 0];
+		[cell setStringValue: [NSString stringWithCString: name]];
+		[cell setLeaf: YES];
+		[cell setLoaded: YES];
 	}
-	return i;
 }
 
-//
-//	Clicked on a map name or description!
-//
-- clickedOnMap:sender
+//  Clicked on a map name or description!
+- (id) clickedOnMap: sender
 {
-	id	matrix;
-	int	row;
-	char	fname[1024];
-	id	panel;
-	
-	matrix = [sender matrixInColumn:0];
+	id      matrix;
+	int     row;
+	NSString    *mapname;
+	NSString    *fname;
+	id              panel;
+	NSModalSession  session;
+
+	matrix = [sender matrixInColumn: 0];
 	row = [matrix selectedRow];
-	sprintf(fname,"%s/%s.map",path_mapdirectory,
-		(char *)[mapList elementAt:row]);
-	
-	panel = NSGetAlertPanel("Loading...",
-		"Loading map. Please wait.",NULL,NULL,NULL);
-	[panel orderFront:NULL];
+	mapname = [NSString stringWithCString:
+				PL_String (PL_ObjectAtIndex (mapList, row))];
+	fname = [[path_mapdirectory stringByAppendingPathComponent: mapname]
+				stringByAppendingPathExtension: @"map"];
 
-	[quakeed_i doOpen:fname];
+	panel = NSGetAlertPanel (@"Loading...",
+	                         @"Loading map. Please wait.", NULL, NULL, NULL);
 
-	[panel performClose:NULL];
-	NSFreeAlertPanel(panel);
+	session = [NSApp beginModalSessionForWindow: panel];
+	[NSApp runModalSession: session];
+
+	[quakeed_i doOpen: fname];
+
+	[NSApp endModalSession: session];
+	[panel close];
+	NSReleaseAlertPanel (panel);
 	return self;
 }
 
-
-- setTextureWad: (char *)wf
+- (id) setTextureWad: (const char *)wf
 {
-	int		i, c;
-	char	*name;
-	
-	qprintf ("loading %s", wf);
+	int         i, c;
+	const char  *name;
 
-// set the row in the settings inspector wad browser
-	c = [wadList count];
-	for (i=0 ; i<c ; i++)
-	{
-		name = (char *)[wadList elementAt:i];
-		if (!strcmp(name, wf))
-		{
-			[[pis_wads_i matrixInColumn:0] selectCellAt: i : 0];
+	Sys_Printf ("loading %s\n", wf);
+
+	// set the row in the settings inspector wad browser
+	c = PL_A_NumObjects (wadList);
+	for (i = 0; i < c; i++) {
+		name = PL_String (PL_ObjectAtIndex (wadList, i));
+		if (!strcmp (name, wf)) {
+			[[pis_wads_i matrixInColumn: 0] selectCellAtRow: i column: 0];
 			break;
 		}
 	}
 
-// update the texture inspector
-	[texturepalette_i initPaletteFromWadfile:wf ];
-	[[map_i objectAt: 0] setKey:"wad" toValue: wf];
-//	[inspcontrol_i changeInspectorTo:i_textures];
+	// update the texture inspector
+	[texturepalette_i initPaletteFromWadfile: wf];
+	[[map_i objectAtIndex: 0] setKey: "wad" toValue: wf];
+//  [inspcontrol_i changeInspectorTo:i_textures];
 
 	[quakeed_i updateAll];
 
 	return self;
 }
 
-//
-//	Clicked on a wad name
-//
-- clickedOnWad:sender
+//  Clicked on a wad name
+- (id) clickedOnWad: sender
 {
-	id		matrix;
-	int		row;
-	char	*name;
-	
-	matrix = [sender matrixInColumn:0];
+	id          matrix;
+	int         row;
+	const char *name;
+
+	matrix = [sender matrixInColumn: 0];
 	row = [matrix selectedRow];
 
-	name = (char *)[wadList elementAt:row];
+	name = PL_String (PL_ObjectAtIndex (wadList, row));
 	[self setTextureWad: name];
-	
+
 	return self;
 }
 
-
-//
-//	Read in the <name>.QE_Project file
-//
-- parseProjectFile
+//  Read in the <name>.QE_Project file
+- (id) parseProjectFile
 {
-	char	*path;
-	int		rtn;
-	
+	NSString    *path;
+	int         rtn;
+
 	path = [preferences_i getProjectPath];
-	if (!path || !path[0] || access(path,0))
-	{
-		rtn = NSRunAlertPanel("Project Error!",
-			"A default project has not been found.\n"
-			, "Open Project", NULL, NULL);
-		if ([self openProject] == nil)
-			while (1)		// can't run without a project
-				[NSApp terminate: self];
-		return self;	
+	if (![path length] || access ([path cString], 0)) {
+		rtn = NSRunAlertPanel (@"Project Error!",
+		                       @"A default project has not been found.\n",
+		                       @"Open Project", NULL, NULL);
+		if ([self openProject] == nil) {
+			while (1)
+				[NSApp terminate: self];    // can't run without a project
+		}
+		return self;
 	}
 
-	[self openProjectFile:path];
+	[self openProjectFile: path];
 	return self;
 }
 
-//
-//	Loads and parses a project file
-//
-- openProjectFile:(char *)path
-{		
-	FILE	*fp;
-	struct	stat s;
+//  Loads and parses a project file
+- (id) openProjectFile: (NSString *)path
+{
+	FILE            *fp;
+	struct stat     s;
 
-	strcpy(path_projectinfo,path);
+	Sys_Printf ("openProjectFile: %s\n", [path cString]);
+	[path retain];
+	[path_projectinfo release];
+	path_projectinfo = path;
 
 	projectInfo = NULL;
-	fp = fopen(path,"r+t");
+	fp = fopen ([path cString], "r+t");
 	if (fp == NULL)
 		return self;
 
-	stat(path,&s);
+	stat ([path cString], &s);
 	lastModified = s.st_mtime;
 
-	projectInfo = [(Dict *)[Dict alloc] initFromFile:fp];
-	fclose(fp);
-	
+	projectInfo = [(Dict *)[Dict alloc] initFromFile: fp];
+	fclose (fp);
+
 	return self;
 }
 
-- (char *)currentProjectFile
+- (NSString *) currentProjectFile
 {
 	return path_projectinfo;
 }
 
-//
-//	Open a project file
-//
-- openProject
+//  Open a project file
+- (id) openProject
 {
-	char	path[128];
-	id		openpanel;
-	int		rtn;
-	char	*projtypes[2] = {"qpr",NULL};
-	char	**filenames;
-	char	*dir;
-	
-	openpanel = [OpenPanel new];
-	[openpanel allowMultipleFiles:NO];
-	[openpanel chooseDirectories:NO];
-	rtn = [openpanel runModalForTypes:projtypes];
-	if (rtn == NS_OKTAG)
-	{
-		 (const char *const *)filenames = [openpanel filenames];
-		 dir = (char *)[openpanel directory];
-		 sprintf(path,"%s/%s",dir,filenames[0]);
-		 strcpy(path_projectinfo,path);
-		 [self openProjectFile:path];
-		 return self;
+	id          openpanel;
+	int         rtn;
+	NSString    *projtypes[] = {@"qpr"};
+	NSArray     *projtypes_array;
+	NSArray     *filenames;
+	NSString    *path;
+
+	openpanel = [NSOpenPanel new];
+	[openpanel setAllowsMultipleSelection:NO];
+	[openpanel setCanChooseDirectories:NO];
+	projtypes_array = [NSArray arrayWithObjects: projtypes count: 1];
+	rtn = [openpanel runModalForTypes: projtypes_array];
+	if (rtn == NSOKButton) {
+		filenames = [openpanel filenames];
+		path = [filenames objectAtIndex: 0];
+		[self openProjectFile: path];
+		return self;
 	}
-	
+
 	return nil;
 }
 
-
-//
-//	Search for a string in a List of strings
-//
-- (int)searchForString:(char *)str in:(id)obj
+- (NSString *) baseDirectoryPath
 {
-	int	i;
-	int	max;
-	char	*s;
-
-	max = [obj count];
-	for (i = 0;i < max; i++)
-	{
-		s = (char *)[obj elementAt:i];
-		if (!strcmp(s,str))
-			return 1;
-	}
-	return 0;
+	return path_basepath;
 }
 
-- (char *)getMapDirectory
+- (NSString *) getMapDirectory
 {
 	return path_mapdirectory;
 }
 
-- (char *)getFinalMapDirectory
+- (NSString *) getFinalMapDirectory
 {
 	return path_finalmapdir;
 }
 
-- (char *)getProgDirectory
+- (NSString *) getProgDirectory
 {
 	return path_progdir;
 }
 
-
-//
-//	Return the WAD name for cmd-8
-//
-- (char *)getWAD8
+//  Return the WAD name for cmd-8
+- (const char *) getWAD8
 {
 	if (!path_wad8[0])
 		return NULL;
+
 	return path_wad8;
 }
 
-//
-//	Return the WAD name for cmd-9
-//
-- (char *)getWAD9
+//  Return the WAD name for cmd-9
+- (const char *) getWAD9
 {
 	if (!path_wad9[0])
 		return NULL;
+
 	return path_wad9;
 }
 
-//
-//	Return the WAD name for cmd-0
-//
-- (char *)getWAD0
+//  Return the WAD name for cmd-0
+- (const char *) getWAD0
 {
 	if (!path_wad0[0])
 		return NULL;
+
 	return path_wad0;
 }
 
-//
-//	Return the FULLVIS cmd string
-//
-- (char *)getFullVisCmd
+//  Return the FULLVIS cmd string
+- (const char *) getFullVisCmd
 {
 	if (!string_fullvis[0])
 		return NULL;
+
 	return string_fullvis;
 }
 
-//
-//	Return the FASTVIS cmd string
-//
-- (char *)getFastVisCmd
+//  Return the FASTVIS cmd string
+- (const char *) getFastVisCmd
 {
 	if (!string_fastvis[0])
 		return NULL;
+
 	return string_fastvis;
 }
 
-//
-//	Return the NOVIS cmd string
-//
-- (char *)getNoVisCmd
+//  Return the NOVIS cmd string
+- (const char *) getNoVisCmd
 {
 	if (!string_novis[0])
 		return NULL;
+
 	return string_novis;
 }
 
-//
-//	Return the RELIGHT cmd string
-//
-- (char *)getRelightCmd
+//  Return the RELIGHT cmd string
+- (const char *) getRelightCmd
 {
 	if (!string_relight[0])
 		return NULL;
+
 	return string_relight;
 }
 
-//
-//	Return the LEAKTEST cmd string
-//
-- (char *)getLeaktestCmd
+//  Return the LEAKTEST cmd string
+- (const char *) getLeaktestCmd
 {
 	if (!string_leaktest[0])
 		return NULL;
+
 	return string_leaktest;
 }
 
-- (char *)getEntitiesCmd
+- (const char *) getEntitiesCmd
 {
 	if (!string_entities[0])
 		return NULL;
+
 	return string_entities;
 }
 
 @end
-
-//====================================================
-// C Functions
-//====================================================
-
-//
-// Change a character to a different char in a string
-//
-void changeString(char cf,char ct,char *string)
-{
-	int	j;
-
-	for (j = 0;j < strlen(string);j++)
-		if (string[j] == cf)
-			string[j] = ct;
-}
-
-

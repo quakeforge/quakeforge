@@ -1,0 +1,316 @@
+{
+    "## Comment" = "Do NOT change this file, Gorm maintains it";
+    CameraView = {
+	Actions = (
+	    "drawMode:",
+	    "homeView:",
+	    "upFloor:",
+	    "downFloor:"
+	);
+	Outlets = (
+	    mode_radio_i
+	);
+	Super = NSView;
+    };
+    Clipper = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSObject;
+    };
+    FirstResponder = {
+	Actions = (
+	    "BSP_FastVis:",
+	    "BSP_Full:",
+	    "BSP_NoVis:",
+	    "BSP_entities:",
+	    "BSP_relight:",
+	    "BSP_stop:",
+	    "UIChanged:",
+	    "addPair:",
+	    "appDidInit:",
+	    "appWillTerminate:",
+	    "applyRegion:",
+	    "centerCamera:",
+	    "centerZChecker:",
+	    "changeInspector:",
+	    "changeXYLookUp:",
+	    "clear:",
+	    "clearBspOutput:",
+	    "clearTexinfo:",
+	    "clickedOnMap:",
+	    "clickedOnWad:",
+	    "cloneSelection:",
+	    "decRotate:",
+	    "decXScale:",
+	    "decXShift:",
+	    "decYScale:",
+	    "decYShift:",
+	    "delPair:",
+	    "doubleClickEntity:",
+	    "downFloor:",
+	    "drawMode:",
+	    "flip_x:",
+	    "flip_y:",
+	    "flip_z:",
+	    "homeView:",
+	    "incRotate:",
+	    "incXScale:",
+	    "incXShift:",
+	    "incYScale:",
+	    "incYShift:",
+	    "makeEntity:",
+	    "onlyShowMapTextures:",
+	    "openProject:",
+	    "reloadEntityClasses:",
+	    "rotate_x:",
+	    "rotate_y:",
+	    "rotate_z:",
+	    "save:",
+	    "saveAs:",
+	    "searchForTexture:",
+	    "selectCompleteEntity:",
+	    "selectCompletelyInside:",
+	    "selectEntity:",
+	    "selectPartiallyInside:",
+	    "setAngle:",
+	    "setBrushRegion:",
+	    "setBspSound:",
+	    "setCurrentEntity:",
+	    "setCurrentProject:",
+	    "setFlags:",
+	    "setModeRadio:",
+	    "setParent:",
+	    "setXYRegion:",
+	    "shortBrush:",
+	    "subtractSelection:",
+	    "tallBrush:",
+	    "textCommand:",
+	    "texturedefChanged:",
+	    "upFloor:",
+	    "updateAll:"
+	);
+	Super = NSObject;
+    };
+    InspectorControl = {
+	Actions = (
+	    "changeInspector:"
+	);
+	Outlets = (
+	    inspectorView_i,
+	    inspectorSubview_i,
+	    contentList,
+	    windowList,
+	    obj_textures_i,
+	    obj_genkeypair_i,
+	    popUpButton_i,
+	    popUpMatrix_i,
+	    itemList,
+	    helpView,
+	    win_project_i,
+	    win_textures_i,
+	    win_things_i,
+	    win_prefs_i,
+	    win_settings_i,
+	    win_output_i,
+	    win_help_i,
+	    itemProject_i,
+	    itemTextures_i,
+	    itemThings_i,
+	    itemPrefs_i,
+	    itemSettings_i,
+	    itemOutput_i,
+	    itemHelp_i
+	);
+	Super = NSObject;
+    };
+    Map = {
+	Actions = (
+	    "setCurrentEntity:",
+	    "cloneSelection:",
+	    "makeEntity:",
+	    "subtractSelection:",
+	    "selectCompletelyInside:",
+	    "selectPartiallyInside:",
+	    "tallBrush:",
+	    "shortBrush:",
+	    "rotate_x:",
+	    "rotate_y:",
+	    "rotate_z:",
+	    "flip_x:",
+	    "flip_y:",
+	    "flip_z:",
+	    "selectCompleteEntity:"
+	);
+	Outlets = (
+	    currentEntity,
+	    oldselection
+	);
+	Super = NSMutableArray;
+    };
+    Preferences = {
+	Actions = (
+	    "setBspSound:",
+	    "setCurrentProject:",
+	    "UIChanged:"
+	);
+	Outlets = (
+	    bspSound_i,
+	    startproject_i,
+	    bspSoundField_i,
+	    brushOffset_i,
+	    showBSP_i,
+	    startwad_i,
+	    xlight_i,
+	    ylight_i,
+	    zlight_i
+	);
+	Super = NSObject;
+    };
+    Project = {
+	Actions = (
+	    "clearBspOutput:",
+	    "clickedOnMap:",
+	    "clickedOnWad:"
+	);
+	Outlets = (
+	    projectInfo,
+	    basepathinfo_i,
+	    mapbrowse_i,
+	    currentmap_i,
+	    mapList,
+	    descList,
+	    wadList,
+	    pis_panel_i,
+	    pis_basepath_i,
+	    pis_wads_i,
+	    pis_fullvis_i,
+	    pis_fastvis_i,
+	    pis_novis_i,
+	    pis_relight_i,
+	    pis_leaktest_i,
+	    BSPoutput_i
+	);
+	Super = NSObject;
+    };
+    QuakeEd = {
+	Actions = (
+	    "updateAll:",
+	    "appDidInit:",
+	    "appWillTerminate:",
+	    "openProject:",
+	    "textCommand:",
+	    "applyRegion:",
+	    "clear:",
+	    "centerCamera:",
+	    "centerZChecker:",
+	    "changeXYLookUp:",
+	    "setBrushRegion:",
+	    "setXYRegion:",
+	    "open:",
+	    "save:",
+	    "saveAs:",
+	    "BSP_Full:",
+	    "BSP_FastVis:",
+	    "BSP_NoVis:",
+	    "BSP_relight:",
+	    "BSP_stop:",
+	    "BSP_entities:"
+	);
+	Outlets = (
+	    brushcount_i,
+	    entitycount_i,
+	    regionbutton_i,
+	    show_coordinates_i,
+	    show_names_i,
+	    filter_light_i,
+	    filter_path_i,
+	    filter_entities_i,
+	    filter_clip_i,
+	    filter_water_i,
+	    filter_world_i,
+	    cmd_in_i,
+	    cmd_out_i,
+	    xy_drawmode_i
+	);
+	Super = NSWindow;
+    };
+    TexturePalette = {
+	Actions = (
+	    "searchForTexture:",
+	    "clearTexinfo:",
+	    "incXShift:",
+	    "decXShift:",
+	    "incYShift:",
+	    "decYShift:",
+	    "incRotate:",
+	    "decRotate:",
+	    "incXScale:",
+	    "decXScale:",
+	    "incYScale:",
+	    "decYScale:",
+	    "texturedefChanged:",
+	    "onlyShowMapTextures:"
+	);
+	Outlets = (
+	    textureList_i,
+	    textureView_i,
+	    searchField_i,
+	    sizeField_i,
+	    field_Xshift_i,
+	    field_Yshift_i,
+	    field_Xscale_i,
+	    field_Yscale_i,
+	    field_Rotate_i
+	);
+	Super = NSObject;
+    };
+    TextureView = {
+	Actions = (
+	    "setParent:"
+	);
+	Outlets = (
+	    parent_i
+	);
+	Super = NSView;
+    };
+    Things = {
+	Actions = (
+	    "reloadEntityClasses:",
+	    "selectEntity:",
+	    "doubleClickEntity:",
+	    "addPair:",
+	    "delPair:",
+	    "setAngle:",
+	    "setFlags:"
+	);
+	Outlets = (
+	    entity_browser_i,
+	    entity_comment_i,
+	    prog_path_i,
+	    keyInput_i,
+	    valueInput_i,
+	    flags_i
+	);
+	Super = NSObject;
+    };
+    XYView = {
+	Actions = (
+	    "setModeRadio:",
+	    "drawMode:",
+	    "drawMode:"
+	);
+	Outlets = (
+	    mode_radio_i
+	);
+	Super = NSView;
+    };
+    ZView = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSView;
+    };
+}

@@ -61,19 +61,20 @@ static __attribute__ ((used)) const char rcsid[] =
 static uintptr_t
 wad_get_hash (void *l, void *unused)
 {
-	char        name[16];
+	char        name[17];
 	int         i;
 
 	for (i = 0; i < 16; i++)
 		name[i] = tolower (((lumpinfo_t *) l)->name[i]);
+	name[16] = 0;
 	return Hash_String (name);
 }
 
 static int
 wad_compare (void *la, void *lb, void *unused)
 {
-	return strcasecmp (((lumpinfo_t *) la)->name,
-					   ((lumpinfo_t *) lb)->name) == 0;
+	return strncasecmp (((lumpinfo_t *) la)->name,
+						((lumpinfo_t *) lb)->name, 16) == 0;
 }
 
 VISIBLE wad_t *

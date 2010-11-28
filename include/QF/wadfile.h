@@ -56,20 +56,20 @@
 #define	TYP_MIPTEX		68
 
 typedef struct qpic_s {
-	int			width, height;
+	int32_t		width, height;
 	byte		data[];			// variably sized
 } qpic_t;
 
 typedef struct wadinfo_s {
 	char		id[4];					// should be WAD2 or 2DAW
-	int			numlumps;
-	int			infotableofs;
+	int32_t		numlumps;
+	int32_t		infotableofs;
 } wadinfo_t;
 
 typedef struct lumpinfo_s {
-	int			filepos;
-	int			disksize;
-	int			size;					// uncompressed
+	int32_t		filepos;
+	int32_t		disksize;
+	int32_t		size;					// uncompressed
 	byte		type;
 	byte		compression;
 	byte		pad1, pad2;

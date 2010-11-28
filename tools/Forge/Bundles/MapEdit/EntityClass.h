@@ -1,42 +1,46 @@
+#ifndef EntityClass_h
+#define EntityClass_h
+
 #include <AppKit/AppKit.h>
-#include "mathlib.h"
 
-typedef enum {esize_model, esize_fixed} esize_t;
+#include "QF/mathlib.h"
 
-#define	MAX_FLAGS	8
+typedef enum {esize_model, esize_fixed}  esize_t;
 
-@interface EntityClass : Object
+#define MAX_FLAGS 8
+
+@interface EntityClass: NSObject
 {
-	char	*name;
-	esize_t	esize;
-	vec3_t	mins, maxs;
-	vec3_t	color;
-	char	*comments;
-	char	flagnames[MAX_FLAGS][32];
+	char        *name;
+	esize_t     esize;
+	vec3_t      mins, maxs;
+	vec3_t      color;
+	char        *comments;
+	char        *flagnames[MAX_FLAGS];
 }
 
-- initFromText: (char *)text;
-- (char *)classname;
-- (esize_t)esize;
-- (float *)mins;		// only for esize_fixed
-- (float *)maxs;		// only for esize_fixed
-- (float *)drawColor;
-- (char *)comments;
-- (char *)flagName: (unsigned)flagnum;
+- (id) initFromText: (const char *)text source: (const char *)filename;
 
-@end
+- (const char *) classname;
+- (esize_t) esize;
+- (float *) mins;                   // only for esize_fixed
+- (float *) maxs;                   // only for esize_fixed
+- (float *) drawColor;
+- (const char *) comments;
+- (const char *) flagName: (unsigned)flagnum;
 
-extern	id	entity_classes_i;
+@end extern id entity_classes_i;
 
-@interface EntityClassList : NSMutableArray
+@interface EntityClassList: NSMutableArray
 {
-	id		nullclass;
-	char	*source_path;
+	NSMutableArray  *array;
+	id              nullclass;
+	char            *source_path;
 }
 
-- initForSourceDirectory: (char *)path;
-- (id)classForName: (char *)name;
-- (void)scanDirectory;
+- (id) initForSourceDirectory: (const char *)path;
+- (id) classForName: (const char *)name;
+- (void) scanDirectory;
 
 @end
-
+#endif // EntityClass_h

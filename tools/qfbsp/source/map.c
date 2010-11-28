@@ -191,7 +191,8 @@ ParseVerts (int *n_verts)
 
 	if (map_script->token->str[0] != ':')
 		map_error ("parsing brush");
-	*n_verts = atoi (map_script->token->str + 1);
+	Script_GetToken (map_script, false);
+	*n_verts = atoi (map_script->token->str);
 	verts = malloc (sizeof (vec3_t) * *n_verts);
 
 	for (i = 0; i < *n_verts; i++) {

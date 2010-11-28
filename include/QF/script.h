@@ -88,6 +88,11 @@ qboolean Script_GetToken (script_t *script, qboolean crossline);
 */
 void Script_UngetToken (script_t *script);
 
+/** Return a pointer to the current token.
+	\param script The script_t object being parsed
+*/
+const char *Script_Token (script_t *token);
+
 //@}
 
 #endif//__QF_script_h

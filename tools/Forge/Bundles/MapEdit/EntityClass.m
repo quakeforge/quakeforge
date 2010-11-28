@@ -1,7 +1,32 @@
+#include <dirent.h>
 
-#include "qedefs.h"
+#include "QF/quakeio.h"
+#include "QF/script.h"
+#include "QF/sys.h"
+#include "QF/va.h"
+
+#include "EntityClass.h"
 
 @implementation EntityClass
+
+static int
+parse_vector (script_t * script, vec3_t vec)
+{
+	int  r;
+
+	if (!Script_GetToken (script, 0))
+		return 0;
+	if (strcmp (Script_Token (script), "("))
+		return 0;
+	r = sscanf (script->p, "%f %f %f)", &vec[0], &vec[1], &vec[2]);
+	if (r != 3)
+		return 0;
+	while (strcmp (Script_Token (script), ")")) {
+		if (!Script_GetToken (script, 0))
+			return 0;
+	}
+	return 1;
+}
 
 // the classname, color triple, and bounding box are parsed out of comments
 // A ? size means take the exact brush size.
@@ -11,255 +36,235 @@
 //
 // Flag names can follow the size description:
 //
-// /*QUAKED func_door (0 .5 .8) ? START_OPEN STONE_SOUND DOOR_DONT_LINK GOLD_KEY SILVER_KEY
+// /*QUAKED func_door (0 .5 .8) ? START_OPEN STONE_SOUND DOOR_DONT_LINK GOLD_KEY
+// SILVER_KEY
 
-char	*debugname;
-- initFromText: (char *)text
+- (id) initFromText: (const char *)text source: (const char *)filename
 {
-	char	*t;
-	int		len;
-	int		r, i;
-	char	parms[256], *p;
-	
+	const char  *t;
+	size_t      len;
+	int         i;
+	script_t    *script;
+
 	[super init];
-	
-	text += strlen("/*QUAKED ");
-	
-// grab the name
-	text = COM_Parse (text);
-	name = malloc (strlen(com_token)+1);
-	strcpy (name, com_token);
-	debugname = name;
-	
-// grab the color
-	r = sscanf (text," (%f %f %f)", &color[0], &color[1], &color[2]);
-	if (r != 3)
-		return NULL;
-	
-	while (*text != ')')
-	{
-		if (!*text)
-			return NULL;
-		text++;
-	}
-	text++;
-	
-// get the size	
-	text = COM_Parse (text);
-	if (com_token[0] == '(')
-	{	// parse the size as two vectors
+
+	text += strlen ("/*QUAKED ");
+
+	script = Script_New ();
+	Script_Start (script, filename, text);
+
+	// grab the name
+	if (!Script_GetToken (script, 0))
+		return 0;
+	if (!strcmp (Script_Token (script), "*/"))
+		return 0;
+	name = strdup (Script_Token (script));
+
+	// grab the color
+	if (!parse_vector (script, color))
+		return 0;
+	// get the size
+	if (!Script_GetToken (script, 0))
+		return 0;
+	if (!strcmp (Script_Token (script), "(")) {
+		Script_UngetToken (script);
+		if (!parse_vector (script, mins))
+			return 0;
+		if (!parse_vector (script, maxs))
+			return 0;
 		esize = esize_fixed;
-		r = sscanf (text,"%f %f %f) (%f %f %f)", &mins[0], &mins[1], &mins[2], &maxs[0], &maxs[1], &maxs[2]);
-		if (r != 6)
-			return NULL;
-
-		for (i=0 ; i<2 ; i++)
-		{
-			while (*text != ')')
-			{
-				if (!*text)
-					return NULL;
-				text++;
-			}
-			text++;
-		}
-	}
-	else
-	{	// use the brushes
+	} else if (!strcmp (Script_Token (script), "?")) {
+		// use the brushes
 		esize = esize_model;
+	} else {
+		return 0;
 	}
-	
-// get the flags
-	
-
-// copy to the first /n
-	p = parms;
-	while (*text && *text != '\n')
-		*p++ = *text++;
-	*p = 0;
-	text++;
-	
-// any remaining words are parm flags
-	p = parms;
-	for (i=0 ; i<8 ; i++)
-	{
-		p = COM_Parse (p);
-		if (!p)
+	// get the flags
+	// any remaining words on the line are parm flags
+	for (i = 0; i < MAX_FLAGS; i++) {
+		if (!Script_TokenAvailable (script, 0))
 			break;
-		strcpy (flagnames[i], com_token);
-	} 
+		Script_GetToken (script, 0);
+		flagnames[i] = strdup (Script_Token (script));
+	}
+	while (Script_TokenAvailable (script, 0))
+		Script_GetToken (script, 0);
 
-// find the length until close comment
-	for (t=text ; t[0] && !(t[0]=='*' && t[1]=='/') ; t++)
-	;
-	
-// copy the comment block out
-	len = t-text;
-	comments = malloc (len+1);
+	// find the length until close comment
+	for (t = script->p; t[0] && !(t[0] == '*' && t[1] == '/'); t++)
+		;
+
+	// copy the comment block out
+	len = t - text;
+	comments = malloc (len + 1);
 	memcpy (comments, text, len);
 	comments[len] = 0;
-	
+
 	return self;
 }
 
-- (esize_t)esize
+- (esize_t) esize
 {
 	return esize;
 }
 
-- (char *)classname
+- (const char *) classname
 {
 	return name;
 }
 
-- (float *)mins
+- (float *) mins
 {
 	return mins;
 }
 
-- (float *)maxs
+- (float *) maxs
 {
 	return maxs;
 }
 
-- (float *)drawColor
+- (float *) drawColor
 {
 	return color;
 }
 
-- (char *)comments
+- (const char *) comments
 {
 	return comments;
 }
 
-
-- (char *)flagName: (unsigned)flagnum
+- (const char *) flagName: (unsigned)flagnum
 {
 	if (flagnum >= MAX_FLAGS)
-		Error ("EntityClass flagName: bad number");
+		Sys_Error ("EntityClass flagName: bad number");
 	return flagnames[flagnum];
 }
 
 @end
+// ===========================================================================
 
-//===========================================================================
+#define THING EntityClassList
+#include "THING+NSArray.m"
 
 @implementation EntityClassList
-
 /*
 =================
 insertEC:
 =================
 */
-- (void)insertEC: ec
+- (void) insertEC: ec
 {
-	char	*name;
-	int		i;
-	
+	const char      *name;
+	unsigned int    i;
+
 	name = [ec classname];
-	for (i=0 ; i<[self count] ; i++)
-	{
-		if (strcasecmp (name, [[self objectAtIndex: i] classname]) < 0)
-		{
-			[self insertObject: ec atIndex:i];
+	for (i = 0; i < [self count]; i++) {
+		if (strcasecmp (name, [[self objectAtIndex: i] classname]) < 0) {
+			[self insertObject: ec atIndex: i];
 			return;
 		}
 	}
 	[self addObject: ec];
 }
 
-
 /*
 =================
 scanFile
 =================
 */
-- (void)scanFile: (char *)filename
+- (void) scanFile: (const char *)filename
 {
-	int		size;
-	char	*data;
-	id		cl;
-	int		i;
-	char	path[1024];
-	
-	sprintf (path,"%s/%s", source_path, filename);
-	
-	size = LoadFile (path, (void *)&data);
-	
-	for (i=0 ; i<size ; i++)
-		if (!strncmp(data+i, "/*QUAKED",8))
-		{
-			cl = [[EntityClass alloc] initFromText: data+i];
+	int         size, line;
+	char        *data;
+	id          cl;
+	int         i;
+	const char  *path;
+	QFile       *file;
+
+	path = va ("%s/%s", source_path, filename);
+
+	file = Qopen (path, "rt");
+	if (!file)
+		return;
+	size = Qfilesize (file);
+	data = malloc (size + 1);
+	size = Qread (file, data, size);
+	data[size] = 0;
+	Qclose (file);
+
+	line = 1;
+	for (i = 0; i < size; i++) {
+		if (!strncmp (data + i, "/*QUAKED", 8)) {
+			cl = [[EntityClass alloc]
+			        initFromText: (data + i)
+			              source: va ("%s:%d", filename, line)];
 			if (cl)
 				[self insertEC: cl];
-			else
-				printf ("Error parsing: %s in %s\n",debugname, filename);
+		} else if (data[i] == '\n') {
+			line++;
 		}
-		
+	}
+
 	free (data);
 }
-
 
 /*
 =================
 scanDirectory
 =================
 */
-- (void)scanDirectory
+- (void) scanDirectory
 {
-	int		count, i;
-	struct direct **namelist, *ent;
-	
+	int  count, i;
+	struct dirent  **namelist, *ent;
+
 	[self removeAllObjects];
-	
-     count = scandir(source_path, &namelist, NULL, NULL);
-	
-	for (i=0 ; i<count ; i++)
-	{
-		int len;
+
+	count = scandir (source_path, &namelist, NULL, NULL);
+
+	for (i = 0; i < count; i++) {
+		int  len;
+
 		ent = namelist[i];
 		len = strlen (ent->d_name);
 		if (len <= 3)
 			continue;
-		if (!strcmp (ent->d_name+len-3,".qc"))
+		if (!strcmp (ent->d_name + len - 3, ".qc"))
 			[self scanFile: ent->d_name];
 	}
 }
 
+id  entity_classes_i;
 
-id	entity_classes_i;
-
-
-- initForSourceDirectory: (char *)path
+- (id) initForSourceDirectory: (const char *)path
 {
-	[super init];
-	
-	source_path = path;	
+	self = [super init];
+	array = [[NSMutableArray alloc] init];
+
+	source_path = strdup (path);    // FIXME leak?
 	[self scanDirectory];
-	
+
 	entity_classes_i = self;
-	
-	nullclass = [[EntityClass alloc] initFromText:
-"/*QUAKED UNKNOWN_CLASS (0 0.5 0) ?"];
+
+	nullclass = [[EntityClass alloc]
+	                initFromText: "/*QUAKED UNKNOWN_CLASS (0 0.5 0) ?*/"
+	                      source: va ("%s:%d", __FILE__, __LINE__ - 1)];
 
 	return self;
 }
 
-- (id)classForName: (char *)name
+- (id) classForName: (const char *)name
 {
-	int		i;
-	id		o;
-	
-	for (i=0 ; i<[self count] ; i++)
-	{
+	unsigned int    i;
+	id              o;
+
+	for (i = 0; i < [self count]; i++) {
 		o = [self objectAtIndex: i];
-		if (!strcmp (name,[o classname]) )
+		if (!strcmp (name, [o classname]))
 			return o;
 	}
-	
+
 	return nullclass;
 }
 
-
 @end
-

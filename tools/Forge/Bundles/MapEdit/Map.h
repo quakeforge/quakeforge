@@ -1,68 +1,77 @@
+#ifndef Map_h
+#define Map_h
+
+#include <AppKit/AppKit.h>
+
+#include "QF/mathlib.h"
 
 // Map is a list of Entity objects
 
-extern	id	map_i;
+extern id  map_i;
 
-@interface Map : NSMutableArray
+@interface Map: NSMutableArray
 {
-	id		currentEntity;
-	id		oldselection;	// temp when loading a new map
-	float	minz, maxz;
+	NSMutableArray  *array;
+	id              currentEntity;
+	id              oldselection;   // temp when loading a new map
+	float           minz, maxz;
 }
 
-- newMap;
+- (id) newMap;
 
-- writeStats;
+- (id) writeStats;
 
-- readMapFile: (char *)fname;
-- writeMapFile: (char *)fname useRegion: (BOOL)reg;
+- (id) readMapFile: (const char *)fname;
+- (id) writeMapFile: (const char *)fname useRegion: (BOOL)reg;
 
-- entityConnect: (vec3_t)p1 : (vec3_t)p2;
+- (id) entityConnect: (vec3_t)p1: (vec3_t)p2;
 
-- selectRay: (vec3_t)p1 : (vec3_t)p2 : (BOOL)ef;
-- grabRay: (vec3_t)p1 : (vec3_t)p2;
-- setTextureRay: (vec3_t)p1 : (vec3_t)p2 : (BOOL)allsides;
-- getTextureRay: (vec3_t)p1 : (vec3_t)p2;
+- (id) selectRay: (vec3_t)p1: (vec3_t)p2: (BOOL)ef;
+- (id) grabRay: (vec3_t)p1: (vec3_t)p2;
+- (id) setTextureRay: (vec3_t)p1: (vec3_t)p2: (BOOL)allsides;
+- (id) getTextureRay: (vec3_t)p1: (vec3_t)p2;
 
-- currentEntity;
-- setCurrentEntity: ent;
+- (id) currentEntity;
+- (id) setCurrentEntity: ent;
 
-- (float)currentMinZ;
-- setCurrentMinZ: (float)m;
-- (float)currentMaxZ;
-- setCurrentMaxZ: (float)m;
+- (float) currentMinZ;
+- (id) setCurrentMinZ: (float)m;
+- (float) currentMaxZ;
+- (id) setCurrentMaxZ: (float)m;
 
-- (int)numSelected;
-- selectedBrush;			// returns the first selected brush
+- (int) numSelected;
+- (id) selectedBrush;               // returns the first selected brush
 
 //
 // operations on current selection
 //
-- makeSelectedPerform: (SEL)sel;
-- makeUnselectedPerform: (SEL)sel;
-- makeAllPerform: (SEL)sel;
-- makeGlobalPerform: (SEL)sel;	// in and out of region
+- (id) makeSelectedPerform: (SEL)sel;
+- (id) makeUnselectedPerform: (SEL)sel;
+- (id) makeAllPerform: (SEL)sel;
+- (id) makeGlobalPerform: (SEL)sel; // in and out of region
 
-- cloneSelection: sender;
+- (id) cloneSelection: sender;
 
-- makeEntity: sender;
+- (id) makeEntity: sender;
 
-- subtractSelection: sender;
+- (id) subtractSelection: sender;
 
-- selectCompletelyInside: sender;
-- selectPartiallyInside: sender;
+- (id) selectCompletelyInside: sender;
+- (id) selectPartiallyInside: sender;
 
-- tallBrush: sender;
-- shortBrush: sender;
+- (id) tallBrush: sender;
+- (id) shortBrush: sender;
 
-- rotate_x: sender;
-- rotate_y: sender;
-- rotate_z: sender;
+- (id) rotate_x: sender;
+- (id) rotate_y: sender;
+- (id) rotate_z: sender;
 
-- flip_x: sender;
-- flip_y: sender;
-- flip_z: sender;
+- (id) flip_x: sender;
+- (id) flip_y: sender;
+- (id) flip_z: sender;
 
-- selectCompleteEntity: sender;
+- (id) selectCompleteEntity: sender;
 
 @end
+
+#endif // Map_h

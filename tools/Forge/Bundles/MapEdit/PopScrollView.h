@@ -1,11 +1,18 @@
+#ifndef PopScrollView_h
+#define PopScrollView_h
+
 #include <AppKit/AppKit.h>
 
-@interface PopScrollView : NSScrollView
+@interface PopScrollView: NSScrollView
 {
-	id	button1, button2;
+	id  button1, button2;
 }
 
-- initWithFrame:(NSRect)frameRect button1: b1 button2: b2;
-- tile;
+- (id) initWithFrame: (NSRect)frameRect
+   button1: b1
+   button2: b2;
+
+- (id) tile;
 
 @end
+#endif // PopScrollView_h

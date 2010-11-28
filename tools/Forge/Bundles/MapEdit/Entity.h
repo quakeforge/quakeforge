@@ -1,40 +1,46 @@
+#ifndef Entity_h
+#define Entity_h
 
-#define	MAX_KEY		64
-#define	MAX_VALUE	128
-typedef struct epair_s
-{
-	struct epair_s	*next;
-	char	key[MAX_KEY];
-	char	value[MAX_VALUE];
+#include <AppKit/AppKit.h>
+
+#include "QF/mathlib.h"
+
+typedef struct  epair_s {
+	struct epair_s  *next;
+	char            *key;
+	char            *value;
 } epair_t;
 
 // an Entity is a list of brush objects, with additional key / value info
 
-@interface Entity : NSObject <NSCopying, NSMutableCopying>
+@interface Entity: NSMutableArray
 {
-	epair_t	*epairs;
-	BOOL	modifiable;
+	NSMutableArray  *array;
+	epair_t         *epairs;
+	BOOL            modifiable;
 }
 
-- initClass: (char *)classname;
-- initFromTokens;
+- (Entity *) initClass: (const char *)classname;
+- (Entity *) initFromScript: (struct script_s *)script;
 
-- free;
+- (oneway void) dealloc;
 
-- (BOOL)modifiable;
-- setModifiable: (BOOL)m;
+- (BOOL) modifiable;
+- (void) setModifiable: (BOOL)m;
 
-- (char *)targetname;
+- (const char *) targetname;
 
-- writeToFILE: (FILE *)f region:(BOOL)reg;
+- (void) writeToFILE: (FILE *)f region: (BOOL)reg;
 
-- (char *)valueForQKey: (char *)k;
-- getVector: (vec3_t)v forKey: (char *)k;
-- setKey:(char *)k toValue:(char *)v;
-- (int)numPairs;
-- (epair_t *)epairs;
-- removeKeyPair: (char *)key;
+- (const char *) valueForQKey: (const char *)k;
+- (void) getVector: (vec3_t)v forKey: (const char *)k;
+
+- (void) setKey: (const char *)k
+   toValue: (const char *)v;
+
+- (int) numPairs;
+- (epair_t *) epairs;
+- (void) removeKeyPair: (const char *)key;
 
 @end
-
-
+#endif // Entity_h
