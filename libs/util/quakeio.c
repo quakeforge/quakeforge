@@ -386,25 +386,22 @@ Qputs (QFile *file, const char *buf)
 VISIBLE char *
 Qgets (QFile *file, char *buf, int count)
 {
-	char        *ret = buf;
+	char       *ret = buf;
+	char        c;
 
-	if (file->c != -1) {
-		*buf++ = file->c;
-		count--;
-		file->c = -1;
-		if (!count)
-			return ret;
+	while (buf - ret < count - 1) {
+		c = Qgetc (file);
+		if (c < 0)
+			break;
+		*buf++ = c;
+		if (c == '\n')
+			break;
 	}
-	if (file->file)
-		buf = fgets (buf, count, file->file);
-	else {
-#ifdef HAVE_ZLIB
-		buf = gzgets (file->gzfile, buf, count);
-#else
+	if (buf == ret)
 		return 0;
-#endif
-	}
-	return buf ? ret : 0;
+
+	*buf++ = 0;
+	return ret;
 }
 
 VISIBLE int
@@ -537,7 +534,7 @@ Qeof (QFile *file)
 /*
 	Qgetline
 
-	Dynamic length version of Qgets. DO NOT free the buffer.
+	Dynamic length version of Qgets. Do NOT free the buffer.
 */
 VISIBLE const char *
 Qgetline (QFile *file)
