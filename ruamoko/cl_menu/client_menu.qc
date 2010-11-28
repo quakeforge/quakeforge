@@ -125,7 +125,7 @@ string (QFile f) get_comment =
 	local string line;
 	local PLItem plist;
 
-	plist = [PLItem newFromFile:f];
+	plist = [PLItem fromFile:f];
 	line = [(PLString) [plist getObjectForKey:"comment"] string];
 	return line;
 }
