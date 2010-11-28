@@ -84,7 +84,9 @@ struct QFile_s {
 #endif
 	off_t size;
 	off_t start;
+	off_t pos;
 	int   c;
+	int   sub;
 };
 
 
@@ -289,6 +291,7 @@ Qsubopen (const char *path, int offs, int len, int zip)
 	file = Qdopen (fd, zip ? "rbz" : "rb");
 	file->size = len;
 	file->start = offs;
+	file->sub = 1;
 	return file;
 }
 
@@ -317,6 +320,19 @@ Qread (QFile *file, void *buf, int count)
 		offs = 1;
 		file->c = -1;
 		count--;
+		if (!count)
+			return 1;
+	}
+	if (file->sub) {
+		// sub-files are always opened in binary mode, so we don't need to
+		// worry about character translation messing up count/pos. Normal
+		// files can be left to the operating system to take care of EOF.
+		if (file->pos + count > file->size)
+			count = file->size - file->pos;
+		if (count < 0)
+			return -1;
+		if (!count)
+			return 0;
 	}
 	if (file->file)
 		ret = fread (buf, 1, count, file->file);
@@ -326,12 +342,16 @@ Qread (QFile *file, void *buf, int count)
 #else
 		return -1;
 #endif
+	if (file->sub)
+		file->pos += ret;
 	return ret == -1 ? ret : ret + offs;
 }
 
 VISIBLE int
 Qwrite (QFile *file, const void *buf, int count)
 {
+	if (file->sub)		// can't write to a sub-file
+		return -1;
 	if (file->file)
 		return fwrite (buf, 1, count, file->file);
 #ifdef HAVE_ZLIB
@@ -348,6 +368,8 @@ Qprintf (QFile *file, const char *fmt, ...)
 	va_list     args;
 	int         ret = -1;
 
+	if (file->sub)		// can't write to a sub-file
+		return -1;
 	va_start (args, fmt);
 	if (file->file)
 		ret = vfprintf (file->file, fmt, args);
@@ -373,6 +395,8 @@ Qprintf (QFile *file, const char *fmt, ...)
 VISIBLE int
 Qputs (QFile *file, const char *buf)
 {
+	if (file->sub)		// can't write to a sub-file
+		return -1;
 	if (file->file)
 		return fputs (buf, file->file);
 #ifdef HAVE_ZLIB
@@ -412,6 +436,11 @@ Qgetc (QFile *file)
 		file->c = -1;
 		return c;
 	}
+	if (file->sub) {
+		if (file->pos >= file->size)
+			return EOF;
+		file->pos++;
+	}
 	if (file->file)
 		return fgetc (file->file);
 #ifdef HAVE_ZLIB
@@ -425,6 +454,8 @@ Qgetc (QFile *file)
 VISIBLE int
 Qputc (QFile *file, int c)
 {
+	if (file->sub)		// can't write to a sub-file
+		return -1;
 	if (file->file)
 		return fputc (c, file->file);
 #ifdef HAVE_ZLIB
@@ -446,9 +477,10 @@ Qungetc (QFile *file, int c)
 VISIBLE int
 Qseek (QFile *file, long offset, int whence)
 {
+	int         res;
+
 	file->c = -1;
 	if (file->file) {
-		int         res;
 		switch (whence) {
 			case SEEK_SET:
 				res = fseek (file->file, file->start + offset, whence);
@@ -472,13 +504,18 @@ Qseek (QFile *file, long offset, int whence)
 		}
 		if (res != -1)
 			res = ftell (file->file) - file->start;
+		if (file->sub)
+			file->pos = res;
 		return res;
 	}
 #ifdef HAVE_ZLIB
 	else {
 		// libz seems to keep track of the true start position itself
 		// doesn't support SEEK_END, though
-		return gzseek (file->gzfile, offset, whence);
+		res = gzseek (file->gzfile, offset, whence);
+		if (file->sub)
+			file->pos = res;
+		return res;
 	}
 #else
 	return -1;
@@ -500,6 +537,8 @@ Qtell (QFile *file)
 #else
 		return -1;
 #endif
+	if (file->sub)
+		file->pos = ret;
 	return ret == -1 ? ret : ret - offs;
 }
 
@@ -521,6 +560,8 @@ Qeof (QFile *file)
 {
 	if (file->c != -1)
 		return 0;
+	if (file->sub)
+		return file->pos >= file->size;
 	if (file->file)
 		return feof (file->file);
 #ifdef HAVE_ZLIB
