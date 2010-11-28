@@ -1,3 +1,4 @@
+#include "AutoreleasePool.h"
 #include "menu.h"
 #include "file.h"
 #include "cmd.h"
@@ -122,15 +123,10 @@ integer save_cursor;
 string (QFile f) get_comment =
 {
 	local string line;
-	local string plist_data;
 	local PLItem plist;
-	local integer pos = Qtell (f);
 
-	plist_data = Qreadstring (f, Qfilesize (f) - pos);
-	plist = [PLItem newFromString:plist_data];
-	str_free (plist_data);
+	plist = [PLItem fromFile:f];
 	line = [(PLString) [plist getObjectForKey:"comment"] string];
-	[plist release];
 	return line;
 }
 
@@ -561,9 +557,9 @@ void () main_menu =
 
 void () menu_init =
 {
-	lanConfig_port_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents:126 :lanConfig_cursor_table[0] - 8 :8 :4] promptCharacter:' '];
+	lanConfig_port_il = [[InputLineBox alloc] initWithBounds:makeRect (126, lanConfig_cursor_table[0] - 8, 8, 4) promptCharacter:' '];
 	[lanConfig_port_il setWidth:10];
-	lanConfig_join_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :lanConfig_cursor_table[2] - 8 :24 :4] promptCharacter:' '];
+	lanConfig_join_il = [[InputLineBox alloc] initWithBounds:makeRect (70, lanConfig_cursor_table[2] - 8, 24, 4) promptCharacter:' '];
 	[lanConfig_join_il setWidth:26];
 	switch (gametype ()) {
 	case "netquake":
@@ -588,3 +584,8 @@ void () menu_init =
 void () menu_draw_hud =
 {
 };
+
+void menu_post ()
+{
+	[AutoreleasePool release];
+}

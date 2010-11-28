@@ -165,8 +165,6 @@ VID_Init (unsigned char *palette)
 	SDL_Quit ();
 
 success:
-	Con_CheckResize (); // Now that we have a window size, fix console
-
 	vid.numpages = 2;
 
 	GL_Init ();
@@ -176,7 +174,8 @@ success:
 	VID_SetPalette (vid.palette);
 	VID_Init8bitPalette ();	// Check for 3DFX Extensions and initialize them.
 
-	Sys_DPrintf ("Video mode %dx%d initialized.\n", vid.width, vid.height);
+	Sys_MaskPrintf (SYS_VID, "Video mode %dx%d initialized.\n",
+					vid.width, vid.height);
 
 	vid.initialized = true;
 

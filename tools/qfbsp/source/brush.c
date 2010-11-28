@@ -35,7 +35,12 @@
 #include "bsp5.h"
 #include "draw.h"
 #include "options.h"
+#include "surfaces.h"
 #include "winding.h"
+
+/**	\addtogroup qfbsp_brush
+*/
+//@{
 
 int         numbrushplanes;
 plane_t     planes[MAX_MAP_PLANES];
@@ -45,13 +50,25 @@ mface_t     faces[MAX_FACES];	// beveled clipping hull can generate many extra
 
 static entity_t *CurrentEntity;
 
-/*
-	CheckFace
+brush_t *
+AllocBrush (void)
+{
+	brush_t    *b;
 
-	Note: this will not catch 0 area polygons
+	b = malloc (sizeof (brush_t));
+	memset (b, 0, sizeof (brush_t));
+
+	return b;
+}
+
+/**	Check the face for validity.
+
+	\param f		The face to check.
+
+	\note Does not catch 0 area polygons.
 */
 static void
-CheckFace (face_t *f)
+CheckFace (const face_t *f)
 {
 	int		 i, j;
 	vec_t	*p1, *p2;
@@ -75,8 +92,7 @@ CheckFace (face_t *f)
 		j = i + 1 == f->points->numpoints ? 0 : i + 1;
 
 		// check the point is on the face plane
-		d = DotProduct (p1, planes[f->planenum].normal)
-			- planes[f->planenum].dist;
+		d = PlaneDiff (p1, &planes[f->planenum]);
 
 		// point off plane autofix
 		if (d < -ON_EPSILON || d > ON_EPSILON)
@@ -108,20 +124,30 @@ CheckFace (face_t *f)
 	}
 }
 
+/**	Initialize the bounding box of the brush set.
+
+	\param bs		The brush set of which to initialize the bounding box.
+*/
 static void
 ClearBounds (brushset_t *bs)
 {
 	int		i, j;
 
-	for (j = 0; j < NUM_HULLS; j++)
+	for (j = 0; j < NUM_HULLS; j++) {
 		for (i = 0; i < 3; i++) {
 			bs->mins[i] = BOGUS_RANGE;
 			bs->maxs[i] = -BOGUS_RANGE;
 		}
+	}
 }
 
+/**	Grow the bounding box of the brush set to include the vector.
+
+	\param bs		The brush set of which to grown the bounding box.
+	\param v		The vector to be included in the bounding box.
+*/
 static void
-AddToBounds (brushset_t *bs, vec3_t v)
+AddToBounds (brushset_t *bs, const vec3_t v)
 {
 	int		i;
 
@@ -134,9 +160,10 @@ AddToBounds (brushset_t *bs, vec3_t v)
 }
 
 int
-PlaneTypeForNormal (vec3_t normal)
+PlaneTypeForNormal (const vec3_t normal)
 {
 	float	ax, ay, az;
+	int     type;
 
 	// NOTE: should these have an epsilon around 1.0?
 	if (normal[0] == 1.0)
@@ -153,20 +180,33 @@ PlaneTypeForNormal (vec3_t normal)
 	az = fabs(normal[2]);
 
 	if (ax >= ay && ax >= az)
-		return PLANE_ANYX;
-	if (ay >= ax && ay >= az)
-		return PLANE_ANYY;
-	return PLANE_ANYZ;
+		type = PLANE_ANYX;
+	else if (ay >= ax && ay >= az)
+		type = PLANE_ANYY;
+	else
+		type = PLANE_ANYZ;
+	if (normal[type - PLANE_ANYX] < 0)
+		Sys_Error ("PlaneTypeForNormal: not a canonical vector");
+	return type;
 }
 
 #define	DISTEPSILON		0.01
 #define	ANGLEEPSILON	0.00001
 
+/**	Make the plane canonical.
+
+	A cononical plane is one whose normal points towards +inf on its primary
+	axis. The primary axis is that which has the largest magnitude of the
+	vector's components.
+
+	\param dp		The plane to make canonical.
+*/
 static void
 NormalizePlane (plane_t *dp)
 {
 	vec_t	ax, ay, az;
 
+	// Make axis aligned planes point to +inf.
 	if (dp->normal[0] == -1.0) {
 		dp->normal[0] = 1.0;
 		dp->dist = -dp->dist;
@@ -178,6 +218,8 @@ NormalizePlane (plane_t *dp)
 		dp->dist = -dp->dist;
 	}
 
+	// For axis aligned planes, set the plane type and ensure the normal
+	// vector is mathematically correct.
 	if (dp->normal[0] == 1.0) {
 		dp->type = PLANE_X;
 		dp->normal[1] = dp->normal[2] = 0.0;
@@ -194,6 +236,7 @@ NormalizePlane (plane_t *dp)
 		return;
 	}
 
+	// Find out with which axis the plane is most aligned.
 	ax = fabs (dp->normal[0]);
 	ay = fabs (dp->normal[1]);
 	az = fabs (dp->normal[2]);
@@ -204,19 +247,15 @@ NormalizePlane (plane_t *dp)
 		dp->type = PLANE_ANYY;
 	else
 		dp->type = PLANE_ANYZ;
+	// Make the plane's normal point towards +inf along its primary axis.
 	if (dp->normal[dp->type - PLANE_ANYX] < 0) {
 		VectorNegate (dp->normal, dp->normal);
 		dp->dist = -dp->dist;
 	}
 }
 
-/*
-	FindPlane
-
-	Returns a global plane number and the side that will be the front
-*/
 int
-FindPlane (plane_t *dplane, int *side)
+FindPlane (const plane_t *dplane, int *side)
 {
 	int		 i;
 	plane_t	*dp, pl;
@@ -238,7 +277,7 @@ FindPlane (plane_t *dplane, int *side)
 		vec3_t t;
 		VectorSubtract (dp->normal, pl.normal, t);
 		dot = DotProduct (dp->normal, pl.normal);
-		if (dot > 1.0 - ANGLEEPSILON 
+		if (dot > 1.0 - ANGLEEPSILON
 			&& fabs(dp->dist - pl.dist) < DISTEPSILON) {	// regular match
 			return i;
 		}
@@ -261,6 +300,11 @@ FindPlane (plane_t *dplane, int *side)
 vec3_t      brush_mins, brush_maxs;
 face_t     *brush_faces;
 
+/**	Find the entity with the matching target name.
+
+	\param targetname The target name for which to search.
+	\return			The matching entity or NULL if not found.
+*/
 static entity_t *
 FindTargetEntity (const char *targetname)
 {
@@ -274,6 +318,9 @@ FindTargetEntity (const char *targetname)
 }
 
 #define	ZERO_EPSILON	0.001
+
+/**	Create the faces of the active brush.
+*/
 static void
 CreateBrushFaces (void)
 {
@@ -369,9 +416,9 @@ CreateBrushFaces (void)
 			min = brush_mins[2];
 
 		max = brush_maxs[0];
-		if (max > brush_maxs[1])
+		if (max < brush_maxs[1])
 			max = brush_maxs[1];
-		if (max > brush_maxs[2])
+		if (max < brush_maxs[2])
 			max = brush_maxs[2];
 
 		delta = fabs(max);
@@ -408,7 +455,7 @@ int         num_hull_edges;
 int         hull_edges[MAX_HULL_EDGES][2];
 
 static void
-AddBrushPlane (plane_t *plane)
+AddBrushPlane (const plane_t *plane)
 {
 	float       l;
 	int         i;
@@ -438,7 +485,7 @@ AddBrushPlane (plane_t *plane)
 	vertexes can be put on the front side
 */
 static void
-TestAddPlane (plane_t *plane)
+TestAddPlane (const plane_t *plane)
 {
 	int         c, i;
 	int         counts[3];
@@ -494,7 +541,7 @@ TestAddPlane (plane_t *plane)
 	Doesn't add if duplicated
 */
 static int
-AddHullPoint (vec3_t p, int hullnum)
+AddHullPoint (const vec3_t p, int hullnum)
 {
 	int			i, x, y, z;
 	vec_t	   *c;
@@ -530,7 +577,7 @@ AddHullPoint (vec3_t p, int hullnum)
 	Creates all of the hull planes around the given edge, if not done already
 */
 static void
-AddHullEdge (vec3_t p1, vec3_t p2, int hullnum)
+AddHullEdge (const vec3_t p1, const vec3_t p2, int hullnum)
 {
 	int         pt1, pt2, a, b, c, d, e, i;
 	plane_t     plane;
@@ -632,13 +679,13 @@ ExpandBrush (int hullnum)
 
 	Converts a mapbrush to a bsp brush
 */
-static brush_t    *
-LoadBrush (mbrush_t *mb, int hullnum)
+static brush_t *
+LoadBrush (const mbrush_t *mb, int hullnum)
 {
 	brush_t    *b;
-	char       *name;
+	const char *name;
 	int         contents;
-	mface_t    *f;
+	const mface_t *f;
 
 	// check texture name for attributes
 	if (mb->faces->texinfo < 0) {
@@ -709,7 +756,7 @@ LoadBrush (mbrush_t *mb, int hullnum)
 }
 
 static void
-Brush_DrawAll (brushset_t *bs)
+Brush_DrawAll (const brushset_t *bs)
 {
 	brush_t    *b;
 	face_t     *f;
@@ -773,3 +820,5 @@ Brush_LoadEntity (entity_t *ent, int hullnum)
 
 	return bset;
 }
+
+//@}

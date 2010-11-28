@@ -25,7 +25,7 @@ static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
-# include "string.h"
+# include <string.h>
 #endif
 
 #include "QF/sys.h"
@@ -36,7 +36,12 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "draw.h"
 #include "merge.h"
 #include "solidbsp.h"
+#include "surfaces.h"
 #include "winding.h"
+
+/**	\addtogroup qfbsp_csg4
+*/
+//@{
 
 /*
 	NOTES
@@ -51,15 +56,8 @@ int         brushfaces;
 int         csgfaces;
 int         csgmergefaces;
 
-
-/*
-	NewFaceFromFace
-
-	Duplicates the non point information of a face, used by SplitFace and
-	MergeFace.
-*/
-face_t     *
-NewFaceFromFace (face_t *in)
+face_t *
+NewFaceFromFace (const face_t *in)
 {
 	face_t     *newf;
 
@@ -123,15 +121,15 @@ SplitFace (face_t *in, plane_t *split, face_t **front, face_t **back)
 	FreeFace (in);
 }
 
-/*
-	ClipInside
+/**	Clips all of the faces in the ::inside list.
 
-	Clips all of the faces in the inside list, possibly moving them to the
-	outside list or spliting it into a piece in each list.
+	Faces will be moved to the ::outside list or split into a piece in each
+	list.  Faces exactly on the plane will stay inside unless overdrawn by
+	a later brush
 
-	Faces exactly on the plane will stay inside unless overdrawn by later brush
-
-	frontside is the side of the plane that holds the outside list
+	\param splitplane	Index of the plane by which faces will be clipped.
+	\param frontside	The side of the plane that holds the outside list.
+	\param precedence	XXX
 */
 static void
 ClipInside (int splitplane, int frontside, qboolean precedence)
@@ -144,18 +142,22 @@ ClipInside (int splitplane, int frontside, qboolean precedence)
 
 	insidelist = NULL;
 	for (f = inside; f; f = next) {
-		next = f->next;
+		next = f->next;			// f->next will get mashed by SplitFace
 
-		if (f->planenum == splitplane) {	// exactly on, handle special
-			if (frontside != f->planeside || precedence) {	// always clip off
-															// opposite faceing
+		if (f->planenum == splitplane) {
+			// exactly on, handle special
+
+			// always clip off opposite facing
+			if (frontside != f->planeside || precedence) {
 				frags[frontside] = NULL;
 				frags[!frontside] = f;
-			} else {					// leave it on the outside
+			} else {
+				// leave it on the outside
 				frags[frontside] = f;
 				frags[!frontside] = NULL;
 			}
-		} else {						// proper split
+		} else {
+			// proper split
 			SplitFace (f, split, &frags[0], &frags[1]);
 		}
 
@@ -172,10 +174,10 @@ ClipInside (int splitplane, int frontside, qboolean precedence)
 	inside = insidelist;
 }
 
-/*
-	SaveOutside
+/**	Saves all of the faces in the ::outside list to the bsp plane list
+	(::validfaces).
 
-	Saves all of the faces in the outside list to the bsp plane list
+	\param mirror	If true, add extra faces that face the opposite direction.
 */
 static void
 SaveOutside (qboolean mirror)
@@ -206,10 +208,13 @@ SaveOutside (qboolean mirror)
 	}
 }
 
-/*
-	FreeInside
+/**	Free the faces that are inside the clipping brush.
 
-	Free all the faces that got clipped out
+	If the clipping brush is non-solid, then the faces will be moved to
+	::outside rather than being freed, thus allowing the faces to continue
+	to exist.
+
+	\param contents	The contents of the clipping brush.
 */
 static void
 FreeInside (int contents)
@@ -228,13 +233,7 @@ FreeInside (int contents)
 	}
 }
 
-/*
-	BuildSurfaces
-
-	Returns a chain of all the external surfaces with one or more visible
-	faces.
-*/
-surface_t  *
+surface_t *
 BuildSurfaces (void)
 {
 	face_t     *count;
@@ -268,6 +267,14 @@ BuildSurfaces (void)
 	return surfhead;
 }
 
+/**	Create faces using the faces of the provided brush.
+
+	The ::outside list will be set to the list of created faces. The faces
+	will be such that their front is empty and their back is the contents of
+	the brush.
+
+	\param b		The brush from which to create the faces.
+*/
 static void
 CopyFacesToOutside (brush_t *b)
 {
@@ -290,12 +297,7 @@ CopyFacesToOutside (brush_t *b)
 	}
 }
 
-/*
-	CSGFaces
-
-	Returns a list of surfaces containing all of the faces
-*/
-surface_t  *
+surface_t *
 CSGFaces (brushset_t *bs)
 {
 	brush_t    *b1, *b2;
@@ -323,15 +325,17 @@ CSGFaces (brushset_t *bs)
 			continue;
 		}
 
+		// earlier brushes do NOT overwrite
 		overwrite = false;
 
 		for (b2 = bs->brushes; b2; b2 = b2->next) {
+			// see if b2 needs to clip a chunk out of b1
 			if (b2->faces->texturenum < 0)
 				continue;
-			// see if b2 needs to clip a chunk out of b1
 
 			if (b1 == b2) {
-				overwrite = true;		// later brushes now overwrite
+				// later brushes DO overwrite
+				overwrite = true;
 				continue;
 			}
 			// check bounding box first
@@ -349,19 +353,24 @@ CSGFaces (brushset_t *bs)
 			for (f = b2->faces; f; f = f->next)
 				ClipInside (f->planenum, f->planeside, overwrite);
 
-			// these faces are continued in another brush, so get rid of them
+			// these faces are contained in another brush, so get rid of them
 			if (b1->contents == CONTENTS_SOLID
-				&& b2->contents <= CONTENTS_WATER)
+				&& b2->contents <= CONTENTS_WATER) {
+				// Faces from a solid brush are allowed to exist inside a
+				// non-solid brush. This forms an intrusion into the clipping
+				// brush.
 				FreeInside (b2->contents);
-			else
+			} else {
+				// Unconditionally treat the clipping brush as solid to force
+				// contents merging, or to make an empty clipping brush clip
+				// away parts of other brushes.
 				FreeInside (CONTENTS_SOLID);
+			}
 		}
 
 		// all of the faces left in outside are real surface faces
-		if (b1->contents != CONTENTS_SOLID)
-			SaveOutside (true);			// mirror faces for inside view
-		else
-			SaveOutside (false);
+		// if the brush is not solid, mirror the faces for the inside view
+		SaveOutside (b1->contents != CONTENTS_SOLID);
 	}
 
 #if 0
@@ -377,3 +386,5 @@ CSGFaces (brushset_t *bs)
 
 	return surfhead;
 }
+
+//@}

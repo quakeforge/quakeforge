@@ -1,21 +1,17 @@
 #ifndef __ruamoko_gui_Rect_h
 #define __ruamoko_gui_Rect_h
 
-#include "Object.h"
 #include "gui/Point.h"
 #include "gui/Size.h"
 
-@interface Rect: Object
-{
-@public
+struct Rect {
 	Point	origin;
 	Size	size;
-}
+};
+typedef struct Rect Rect;
 
-- (id) initWithComponents: (integer)x : (integer)y : (integer)w : (integer)h;
-- (id) initWithOrigin: (Point)anOrigin size: (Size)aSize;
-- (id) initWithRect: (Rect)aRect;
-- (id) copy;
+@extern Rect makeRect (integer x, integer y, integer w, integer h);
+@extern Rect makeRectFromOriginSize (Point origin, Size size);
 
 #if 0
 - (BOOL) intersectsRect: (Rect)aRect;
@@ -30,14 +26,5 @@
 - (Rect) insetBySize: (Size)aSize;
 - (Rect) offsetBySize: (Size)aSize;
 #endif
-
-- (Point) origin;
-- (Size) size;
-
-- (void) setOrigin: (Point)aPoint;
-- (void) setSize: (Size)aSize;
-- (void) setRect: (Rect)aRect;
-
-@end
 
 #endif //__ruamoko_gui_Rect_h

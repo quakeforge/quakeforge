@@ -71,14 +71,14 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 {
 	void	*glfunc = NULL;
 
-	Sys_DPrintf ("DEBUG: Finding symbol %s ... ", name);
+	Sys_MaskPrintf (SYS_VID, "DEBUG: Finding symbol %s ... ", name);
 
 	glfunc = QFGL_GetProcAddress (handle, name);
 	if (glfunc) {
-		Sys_DPrintf ("found [%p]\n", glfunc);
+		Sys_MaskPrintf (SYS_VID, "found [%p]\n", glfunc);
 		return glfunc;
 	}
-	Sys_DPrintf ("not found\n");
+	Sys_MaskPrintf (SYS_VID, "not found\n");
 
 	if (crit) {
 		if (strncmp ("fxMesa", name, 6) == 0) {

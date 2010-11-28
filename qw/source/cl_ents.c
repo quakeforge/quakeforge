@@ -262,7 +262,7 @@ FlushEntityPacket (void)
 	entity_state_t	olde, newe;
 	int				word;
 
-	Sys_DPrintf ("FlushEntityPacket\n");
+	Sys_MaskPrintf (SYS_DEV, "FlushEntityPacket\n");
 
 	memset (&olde, 0, sizeof (olde));
 
@@ -303,7 +303,7 @@ CL_ParsePacketEntities (qboolean delta)
 		if (cls.demoplayback2)
 			from = oldpacket = (cls.netchan.incoming_sequence - 1);
 		if ((from & UPDATE_MASK) != (oldpacket & UPDATE_MASK))
-			Sys_DPrintf ("WARNING: from mismatch\n");
+			Sys_MaskPrintf (SYS_DEV, "WARNING: from mismatch\n");
 	} else
 		oldpacket = -1;
 
@@ -510,7 +510,7 @@ CL_LinkPacketEntities (void)
 		(*ent)->frame = s1->frame;
 
 		if ((*ent)->visframe != r_framecount - 1) {
-			(*ent)->pose1 = (*ent)->pose2 = -1;
+			(*ent)->lerpflags |= LERP_RESETMOVE|LERP_RESETANIM;
 
 			// No trail if new this frame
 			VectorCopy (s1->origin, (*ent)->origin);
@@ -1078,11 +1078,11 @@ CL_SetUpPlayerPrediction (qboolean dopred)
 			msec = 500 * (playertime - state->state_time);
 			if (msec <= 0 || !dopred) {
 				VectorCopy (state->pls.origin, pplayer->origin);
-//				Sys_DPrintf ("nopredict\n");
+//				Sys_MaskPrintf (SYS_DEV, "nopredict\n");
 			} else {
 				// predict players movement
 				state->pls.cmd.msec = msec = min (msec, 255);
-//				Sys_DPrintf ("predict: %i\n", msec);
+//				Sys_MaskPrintf (SYS_DEV, "predict: %i\n", msec);
 
 				CL_PredictUsercmd (state, &exact, &state->pls.cmd, false);
 				VectorCopy (exact.pls.origin, pplayer->origin);

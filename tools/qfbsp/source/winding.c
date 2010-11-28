@@ -40,10 +40,14 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "bsp5.h"
 #include "winding.h"
 
+/**	\addtogroup qfbsp_winding
+*/
+//@{
+
 int         c_activewindings, c_peakwindings;
 
 winding_t *
-BaseWindingForPlane (plane_t *p)
+BaseWindingForPlane (const plane_t *p)
 {
 	int         i, x;
 	vec_t       max, v;
@@ -107,7 +111,7 @@ BaseWindingForPlane (plane_t *p)
 }
 
 winding_t *
-CopyWinding (winding_t *w)
+CopyWinding (const winding_t *w)
 {
 	size_t      size;
 	winding_t  *c;
@@ -119,7 +123,7 @@ CopyWinding (winding_t *w)
 }
 
 winding_t *
-CopyWindingReverse (winding_t *w)
+CopyWindingReverse (const winding_t *w)
 {
 	int         i;
 	size_t      size;
@@ -135,17 +139,6 @@ CopyWindingReverse (winding_t *w)
 	return c;
 }
 
-/*
-	ClipWinding
-
-	Clips the winding to the plane, returning the new winding on the positive
-	side.
-
-	Frees the input winding.
-
-	If keepon is true, an exactly on-plane winding will be saved, otherwise
-	it will be clipped away.
-*/
 winding_t *
 ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 {
@@ -244,14 +237,6 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 	return neww;
 }
 
-/*
-	DivideWinding
-
-	Divides a winding by a plane, producing one or two windings.  The
-	original winding is not damaged or freed.  If on only one side, the
-	returned winding will be the input winding.  If on both sides, two
-	new windings will be created.
-*/
 void
 DivideWinding (winding_t *in, plane_t *split, winding_t **front,
 			   winding_t **back)
@@ -320,3 +305,5 @@ FreeWinding (winding_t *w)
 	c_activewindings--;
 	free (w);
 }
+
+//@}

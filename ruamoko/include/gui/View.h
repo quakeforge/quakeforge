@@ -2,10 +2,7 @@
 #define __ruamoko_gui_View_h
 
 #include "Object.h"
-
-@class Point;
-@class Size;
-@class Rect;
+#include "gui/Rect.h"
 
 @interface View: Object
 {
@@ -23,7 +20,7 @@
 - (id) canFocus: (integer)cf;
 - (integer) canFocus;
 - (void) setBasePos: (integer)x y: (integer)y;
-- (void) setBasePos: (Point)pos;
+- (void) setBasePosFromView: (View)view;
 - (void) draw;
 
 - (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down;

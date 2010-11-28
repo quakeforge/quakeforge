@@ -76,6 +76,14 @@ typedef struct {
 	int         count;
 } vert_order_t;
 
+typedef struct {
+	short       pose1;
+	short       pose2;
+	float       blend;
+	vec3_t      origin;
+	vec3_t      angles;
+} lerpdata_t;
+
 float		r_avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "anorms.h"
 };
@@ -246,27 +254,102 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, vert_order_t *vo)
 	}
 }
 
-static inline vert_order_t *
-GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
+static inline void
+gl_calc_blend16 (byte *posedata, lerpdata_t *lerpdata, vert_order_t *vo,
+				int count)
 {
-	float         interval;
-	int           count, numposes, pose, i;
-	trivertx16_t *verts;
-	vert_order_t *vo;
 	blended_vert_t *vo_v;
+	trivertx16_t *verts;
+	trivertx16_t *verts1, *verts2;
+	int         i;
 
-	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
-		if (developer->int_val)
-			Sys_DPrintf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
-						 currententity->model->name);
-		frame = 0;
+	verts = (trivertx16_t *) posedata;
+	if (lerpdata->blend == 0.0) {
+		verts = verts + lerpdata->pose1 * count;
+	} else if (lerpdata->blend == 1.0) {
+		verts = verts + lerpdata->pose2 * count;
+	} else {
+		verts1 = verts + lerpdata->pose1 * count;
+		verts2 = verts + lerpdata->pose2 * count;
+
+		for (i = 0, vo_v = vo->verts; i < count;
+			 i++, vo_v++, verts1++, verts2++) {
+			float      *n1, *n2;
+
+			VectorBlend (verts1->v, verts2->v, lerpdata->blend, vo_v->vert);
+			n1 = r_avertexnormals[verts1->lightnormalindex];
+			n2 = r_avertexnormals[verts2->lightnormalindex];
+			VectorBlend (n1, n2, lerpdata->blend, vo_v->normal);
+			if (VectorIsZero (vo_v->normal)) {
+				if (lerpdata->blend < 0.5) {
+					VectorCopy (n1, vo_v->normal);
+				} else {
+					VectorCopy (n2, vo_v->normal);
+				}
+			}
+		}
+		return;
 	}
 
-	pose = paliashdr->frames[frame].firstpose;
-	numposes = paliashdr->frames[frame].numposes;
-	verts = (trivertx16_t *) ((byte *) paliashdr + paliashdr->posedata);
+	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
+		VectorCopy (verts->v, vo_v->vert);
+		VectorCopy (r_avertexnormals[verts->lightnormalindex], vo_v->normal);
+	}
+}
 
+static inline void
+gl_calc_blend8 (byte *posedata, lerpdata_t *lerpdata, vert_order_t *vo,
+				int count)
+{
+	blended_vert_t *vo_v;
+	trivertx_t *verts;
+	trivertx_t *verts1, *verts2;
+	int         i;
+
+	verts = (trivertx_t *) posedata;
+	if (lerpdata->blend == 0.0) {
+		verts = verts + lerpdata->pose1 * count;
+	} else if (lerpdata->blend == 1.0) {
+		verts = verts + lerpdata->pose2 * count;
+	} else {
+		verts1 = verts + lerpdata->pose1 * count;
+		verts2 = verts + lerpdata->pose2 * count;
+
+		for (i = 0, vo_v = vo->verts; i < count;
+			 i++, vo_v++, verts1++, verts2++) {
+			float      *n1, *n2;
+
+			VectorBlend (verts1->v, verts2->v, lerpdata->blend, vo_v->vert);
+			n1 = r_avertexnormals[verts1->lightnormalindex];
+			n2 = r_avertexnormals[verts2->lightnormalindex];
+			VectorBlend (n1, n2, lerpdata->blend, vo_v->normal);
+			if (VectorIsZero (vo_v->normal)) {
+				if (lerpdata->blend < 0.5) {
+					VectorCopy (n1, vo_v->normal);
+				} else {
+					VectorCopy (n2, vo_v->normal);
+				}
+			}
+		}
+		return;
+	}
+
+	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
+		VectorCopy (verts->v, vo_v->vert);
+		VectorCopy (r_avertexnormals[verts->lightnormalindex], vo_v->normal);
+	}
+}
+
+static inline vert_order_t *
+GL_GetAliasFrameVerts (aliashdr_t *paliashdr, lerpdata_t *lerpdata)
+{
+	int         count;
+	vert_order_t *vo;
+	byte       *posedata;
+
+	posedata = (byte *) paliashdr + paliashdr->posedata;
 	count = paliashdr->poseverts;
+
 	vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (blended_vert_t));
 	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
 	vo->verts = (blended_vert_t *) &vo[1];
@@ -277,185 +360,12 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 		vo->tex_coord = NULL;
 	}
 	vo->count = count;
-	if (numposes > 1) {
-		interval = paliashdr->frames[frame].interval;
-		pose += (int) (r_realtime / interval) % numposes;
-	} else {
-		/*
-			One tenth of a second is good for most Quake animations. If
-			the nextthink is longer then the animation is usually meant
-			to pause (e.g. check out the shambler magic animation in
-			shambler.qc).  If its shorter then things will still be
-			smoothed partly, and the jumps will be less noticable
-			because of the shorter time.  So, this is probably a good
-			assumption.
-		*/
-		interval = 0.1;
-	}
 
-	if (gl_lerp_anim->int_val) {
-		trivertx16_t *verts1, *verts2;
-		float       blend;
+	if (paliashdr->mdl.ident == HEADER_MDL16)
+		gl_calc_blend16 (posedata, lerpdata, vo, count);
+	else
+		gl_calc_blend8 (posedata, lerpdata, vo, count);
 
-		e->frame_interval = interval;
-
-		if (e->pose2 != pose) {
-			e->frame_start_time = r_realtime;
-			if (e->pose2 == -1) {
-				e->pose1 = pose;
-			} else {
-				e->pose1 = e->pose2;
-			}
-			e->pose2 = pose;
-			blend = 0.0;
-		} else if (r_paused) {
-			blend = 1.0;
-		} else {
-			blend = (r_realtime - e->frame_start_time) / e->frame_interval;
-			blend = min (blend, 1.0);
-		}
-
-		if (blend == 0.0) {
-			verts = verts + e->pose1 * count;
-		} else if (blend == 1.0) {
-			verts = verts + e->pose2 * count;
-		} else {
-			verts1 = verts + e->pose1 * count;
-			verts2 = verts + e->pose2 * count;
-
-			for (i = 0, vo_v = vo->verts; i < count;
-				 i++, vo_v++, verts1++, verts2++) {
-				float      *n1, *n2;
-
-				VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
-				n1 = r_avertexnormals[verts1->lightnormalindex];
-				n2 = r_avertexnormals[verts2->lightnormalindex];
-				VectorBlend (n1, n2, blend, vo_v->normal);
-				if (VectorIsZero (vo_v->normal)) {
-					if (blend < 0.5) {
-						VectorCopy (n1, vo_v->normal);
-					} else {
-						VectorCopy (n2, vo_v->normal);
-					}
-				}
-			}
-			return vo;
-		}
-	} else {
-		verts += pose * count;
-	}
-
-	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
-		VectorCopy (verts->v, vo_v->vert);
-		VectorCopy (r_avertexnormals[verts->lightnormalindex], vo_v->normal);
-	}
-	return vo;
-}
-
-static inline vert_order_t *
-GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
-{
-	float       interval;
-	int         count, numposes, pose, i;
-	trivertx_t *verts;
-	vert_order_t *vo;
-	blended_vert_t *vo_v;
-
-	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
-		if (developer->int_val)
-			Sys_DPrintf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
-						 currententity->model->name);
-		frame = 0;
-	}
-
-	pose = paliashdr->frames[frame].firstpose;
-	numposes = paliashdr->frames[frame].numposes;
-
-	verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
-
-	count = paliashdr->poseverts;
-	vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (blended_vert_t));
-	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
-	vo->verts = (blended_vert_t *) &vo[1];
-	if (paliashdr->tex_coord) {
-		vo->tex_coord = (tex_coord_t *) ((byte *) paliashdr + paliashdr->tex_coord);
-	} else {
-		vo->tex_coord = NULL;
-	}
-	vo->count = count;
-
-	if (numposes > 1) {
-		interval = paliashdr->frames[frame].interval;
-		pose += (int) (r_realtime / interval) % numposes;
-	} else {
-		/*
-			One tenth of a second is good for most Quake animations. If
-			the nextthink is longer then the animation is usually meant
-			to pause (e.g. check out the shambler magic animation in
-			shambler.qc).  If its shorter then things will still be
-			smoothed partly, and the jumps will be less noticable
-			because of the shorter time.  So, this is probably a good
-			assumption.
-		*/
-		interval = 0.1;
-	}
-
-	if (gl_lerp_anim->int_val) {
-		trivertx_t *verts1, *verts2;
-		float       blend;
-
-		e->frame_interval = interval;
-
-		if (e->pose2 != pose) {
-			e->frame_start_time = r_realtime;
-			if (e->pose2 == -1) {
-				e->pose1 = pose;
-			} else {
-				e->pose1 = e->pose2;
-			}
-			e->pose2 = pose;
-			blend = 0.0;
-		} else if (r_paused) {
-			blend = 1.0;
-		} else {
-			blend = (r_realtime - e->frame_start_time) / e->frame_interval;
-			blend = min (blend, 1.0);
-		}
-
-		if (blend == 0.0) {
-			verts = verts + e->pose1 * count;
-		} else if (blend == 1.0) {
-			verts = verts + e->pose2 * count;
-		} else {
-			verts1 = verts + e->pose1 * count;
-			verts2 = verts + e->pose2 * count;
-
-			for (i = 0, vo_v = vo->verts; i < count;
-				 i++, vo_v++, verts1++, verts2++) {
-				float      *n1, *n2;
-
-				VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
-				n1 = r_avertexnormals[verts1->lightnormalindex];
-				n2 = r_avertexnormals[verts2->lightnormalindex];
-				VectorBlend (n1, n2, blend, vo_v->normal);
-				if (VectorIsZero (vo_v->normal)) {
-					if (blend < 0.5) {
-						VectorCopy (n1, vo_v->normal);
-					} else {
-						VectorCopy (n2, vo_v->normal);
-					}
-				}
-			}
-			return vo;
-		}
-	} else {
-		verts += pose * count;
-	}
-
-	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
-		VectorCopy (verts->v, vo_v->vert);
-		VectorCopy (r_avertexnormals[verts->lightnormalindex], vo_v->normal);
-	}
 	return vo;
 }
 
@@ -466,7 +376,8 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 	maliasskingroup_t *paliasskingroup;
 
 	if ((skinnum >= ahdr->mdl.numskins) || (skinnum < 0)) {
-		Sys_DPrintf ("R_AliasSetupSkin: no such skin # %d\n", skinnum);
+		Sys_MaskPrintf (SYS_DEV, "R_AliasGetSkindesc: no such skin # %d\n",
+						skinnum);
 		skinnum = 0;
 	}
 
@@ -499,6 +410,118 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 	return pskindesc;
 }
 
+static void
+r_alais_setup_lerp (aliashdr_t *paliashdr, entity_t *e, lerpdata_t *lerpdata)
+{
+	int         frame = e->frame;
+	int         posenum, numposes;
+
+	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
+		Sys_MaskPrintf (SYS_DEV, "r_alais_setup_lerp: no such frame %d %s\n",
+						frame, currententity->model->name);
+		frame = 0;
+	}
+
+	posenum = paliashdr->frames[frame].firstpose;
+	numposes = paliashdr->frames[frame].numposes;
+
+	if (numposes > 1) {
+		e->lerptime = paliashdr->frames[frame].interval;
+		posenum += (int) (r_realtime / e->lerptime) % numposes;
+	} else {
+		e->lerptime = 0.1;
+	}
+
+	if (e->lerpflags & LERP_RESETANIM) {
+		//kill any lerp in progress
+		e->lerpstart = 0;
+		e->previouspose = posenum;
+		e->currentpose = posenum;
+		e->lerpflags &= ~LERP_RESETANIM;
+	} else if (e->currentpose != posenum) {
+		// pose changed, start new lerp
+		if (e->lerpflags & LERP_RESETANIM2) {
+			//defer lerping one more time
+			e->lerpstart = 0;
+			e->previouspose = posenum;
+			e->currentpose = posenum;
+			e->lerpflags &= ~LERP_RESETANIM2;
+		} else {
+			e->lerpstart = r_realtime;
+			e->previouspose = e->currentpose;
+			e->currentpose = posenum;
+		}
+	}
+	if (gl_lerp_anim->int_val
+		/*&& !(e->model->flags & MOD_NOLERP && gl_lerp_anim->int_val != 2)*/) {
+		float       interval = e->lerpfinish - e->lerpstart;
+		float       time = r_realtime - e->lerpstart;
+		if (e->lerpflags & LERP_FINISH && numposes == 1)
+			lerpdata->blend = bound (0, (time) / (interval), 1);
+		else
+			lerpdata->blend = bound (0, (time) / e->lerptime, 1);
+		lerpdata->pose1 = e->previouspose;
+		lerpdata->pose2 = e->currentpose;
+	} else {
+		lerpdata->blend = 1;
+		lerpdata->pose1 = posenum;
+		lerpdata->pose2 = posenum;
+	}
+}
+
+static void
+r_alias_lerp_transform (entity_t *e, lerpdata_t *lerpdata)
+{
+	float       blend;
+	vec3_t      d;
+	int         i;
+
+	if (e->lerpflags & LERP_RESETMOVE) {
+		// kill any lerps in progress
+		e->movelerpstart = 0;
+		VectorCopy (e->origin, e->previousorigin);
+		VectorCopy (e->origin, e->currentorigin);
+		VectorCopy (e->angles, e->previousangles);
+		VectorCopy (e->angles, e->currentangles);
+		e->lerpflags &= ~LERP_RESETMOVE;
+	} else if (!VectorCompare (e->origin, e->currentorigin)
+			   || !VectorCompare (e->angles, e->currentangles)) {
+		// origin/angles changed, start new lerp
+		e->movelerpstart = r_realtime;
+		VectorCopy (e->currentorigin, e->previousorigin);
+		VectorCopy (e->origin,  e->currentorigin);
+		VectorCopy (e->currentangles, e->previousangles);
+		VectorCopy (e->angles,  e->currentangles);
+	}
+
+	if (gl_lerp_anim->int_val /* && e != &cl.viewent */
+		&& e->lerpflags & LERP_MOVESTEP) {
+		float       interval = e->lerpfinish - e->lerpstart;
+		float       time = r_realtime - e->movelerpstart;
+		if (e->lerpflags & LERP_FINISH)
+			blend = bound (0, (time) / (interval), 1);
+		else
+			blend = bound (0, (time) / 0.1, 1);
+
+		VectorBlend (e->previousorigin, e->currentorigin, blend,
+					 lerpdata->origin);
+
+		//FIXME use quaternions?
+		VectorSubtract (e->currentangles, e->previousangles, d);
+		for (i = 0; i < 3; i++) {
+			if (d[i] > 180)
+				d[i] -= 360;
+			if (d[i] < -180)
+				d[i] += 360;
+		}
+		VectorMultAdd (e->previousangles, blend, d, lerpdata->angles);
+	} else {
+		//don't lerp
+		VectorCopy (e->origin, lerpdata->origin);
+		VectorCopy (e->angles, lerpdata->angles);
+	}
+}
+
 void
 R_DrawAliasModel (entity_t *e)
 {
@@ -516,14 +539,21 @@ R_DrawAliasModel (entity_t *e)
 	model_t    *model;
 	vec3_t      dist, scale;
 	vert_order_t *vo;
+	lerpdata_t  lerpdata;
+
+	paliashdr = Cache_Get (&e->model->cache);
+	r_alais_setup_lerp (paliashdr, e, &lerpdata);
+	r_alias_lerp_transform (e, &lerpdata);
 
 	model = e->model;
 
 	radius = model->radius;
 	if (e->scale != 1.0)
 		radius *= e->scale;
-	if (R_CullSphere (e->origin, radius))
+	if (R_CullSphere (e->origin, radius)) {
+		Cache_Release (&e->model->cache);
 		return;
+	}
 
 	VectorSubtract (r_origin, e->origin, modelorg);
 
@@ -642,7 +672,6 @@ R_DrawAliasModel (entity_t *e)
 	}
 
 	// locate the proper data
-	paliashdr = Cache_Get (&e->model->cache);
 	c_alias_polys += paliashdr->mdl.numtris;
 
 	// if the model has a colorised/external skin, use it, otherwise use
@@ -665,11 +694,10 @@ R_DrawAliasModel (entity_t *e)
 
 	if (paliashdr->mdl.ident == HEADER_MDL16) {
 		VectorScale (paliashdr->mdl.scale, e->scale / 256.0, scale);
-		vo = GL_GetAliasFrameVerts16 (e->frame, paliashdr, e);
 	} else {
 		VectorScale (paliashdr->mdl.scale, e->scale, scale);
-		vo = GL_GetAliasFrameVerts (e->frame, paliashdr, e);
 	}
+	vo = GL_GetAliasFrameVerts (paliashdr, &lerpdata);
 
 	// setup the transform
 	qfglPushMatrix ();

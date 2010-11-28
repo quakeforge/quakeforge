@@ -76,9 +76,9 @@ etype_t     qc_types[] = {
 	ev_void,							// ex_uexpr
 	ev_void,							// ex_def
 	ev_void,							// ex_temp
-	ev_void,							// ex_nil
 	ev_void,							// ex_name
 
+	ev_void,							// ex_nil
 	ev_string,							// ex_string
 	ev_float,							// ex_float
 	ev_vector,							// ex_vector
@@ -141,6 +141,10 @@ convert_name (expr_t *e)
 		expr_t     *new;
 		class_t    *class;
 
+		new = get_enum (name);
+		if (new)
+			goto convert;
+
 		class = get_class (name, 0);
 		if (class) {
 			e->type = ex_def;
@@ -159,9 +163,6 @@ convert_name (expr_t *e)
 			return;
 		}
 		new = class_ivar_expr (current_class, name);
-		if (new)
-			goto convert;
-		new = get_enum (name);
 		if (new)
 			goto convert;
 		error (e, "Undeclared variable \"%s\".", name);
@@ -604,7 +605,7 @@ new_short_expr (short short_val)
 int
 is_constant (expr_t *e)
 {
-	if (e->type >= ex_string
+	if (e->type >= ex_nil
 		|| (e->type == ex_def && e->e.def->constant))
 		return 1;
 	return 0;
@@ -614,6 +615,8 @@ expr_t *
 constant_expr (expr_t *var)
 {
 	def_t      *def;
+
+	convert_name (var);
 
 	if (var->type != ex_def || !var->e.def->constant)
 		return var;
@@ -818,7 +821,7 @@ print_expr (expr_t *e)
 					e->e.temp.users);
 			break;
 		case ex_nil:
-			printf ("NULL");
+			printf ("NIL");
 			break;
 		case ex_string:
 		case ex_name:
@@ -1365,7 +1368,7 @@ convert_short_uint (expr_t *e)
 	e->e.uinteger_val = e->e.short_val;
 }
 
-static void
+void
 convert_nil (expr_t *e, type_t *t)
 {
 	e->type = expr_types[t->type];
@@ -1696,7 +1699,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				{
 					expr_t     *tmp1, *tmp2;
 					e = new_block_expr ();
-					if (e2->type < ex_string)
+					if (e2->type < ex_nil)
 						tmp1 = new_temp_def_expr (&type_float);
 					else
 						tmp1 = e2;
@@ -1977,6 +1980,12 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 	for (i = arg_count - 1, e = params; i >= 0; i--, e = e->next) {
 		type_t     *t = get_type (e);
  
+		if (!type_size (t))
+			err = error (e, "type of formal parameter %d is incomplete",
+						 i + 1);
+		if (type_size (t) > type_size (&type_param))
+			err = error (e, "formal parameter %d is too large to be passed by"
+						 " value", i + 1);
 		check_initialized (e);
 		if (ftype->parm_types[i] == &type_float && e->type == ex_integer) {
 			convert_int (e);
@@ -2005,7 +2014,7 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 				&& options.code.progsversion == PROG_ID_VERSION)
 				convert_int (e);
 			if (e->type == ex_integer && options.warnings.vararg_integer)
-				warning (e, "passing integer consant into ... function");
+				warning (e, "passing integer constant into ... function");
 		}
 		arg_types[arg_count - 1 - i] = t;
 	}
@@ -2129,6 +2138,8 @@ return_expr (function_t *f, expr_t *e)
 		if (e->type == ex_nil) {
 			t = f->def->type->aux_type;
 			e->type = expr_types[t->type];
+			if (e->type == ex_nil)
+				return error (e, "invalid return type for NIL");
 		} else {
 			if (!options.traditional)
 				return error (e, "void value not ignored as it ought to be");
@@ -2513,7 +2524,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 					 && POINTER_VAL (e->e.pointer) < 65536)) {
 				if (e->type == ex_expr && e->e.expr.op == '&'
 					&& e->e.expr.type->type == ev_pointer
-					&& e->e.expr.e1->type < ex_string) {
+					&& e->e.expr.e1->type < ex_nil) {
 					e2 = e;
 					e2->e.expr.op = '.';
 					e2->e.expr.type = t2;
@@ -2634,7 +2645,7 @@ init_elements (def_t *def, expr_t *eles)
 			}
 			init_elements (&elements[i], c);
 			continue;
-		} else if (c->type >= ex_string) {
+		} else if (c->type >= ex_nil) {
 			if (c->type == ex_integer
 				&& elements[i].type->type == ev_float)
 				convert_int (c);

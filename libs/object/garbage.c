@@ -51,9 +51,10 @@ Garbage_Do_Mark (Object *root)
 	if (!root->marked) {
 		ObjRefs_t *allrefs;
 		root->marked = true;
-		Sys_DPrintf ("GC: Marked %s@%p.\n", root->cl->name, root);
+		Sys_MaskPrintf (SYS_DEV, "GC: Marked %s@%p.\n", root->cl->name, root);
 		if (root->allRefs)
-			for (allrefs = methodCall(root, allRefs); allrefs; allrefs = allrefs->next) {
+			for (allrefs = methodCall(root, allRefs); allrefs;
+				 allrefs = allrefs->next) {
 				unsigned int i;
 				for (i = 0; i < allrefs->count; i++)
 					Garbage_Do_Mark (allrefs->objs[i]);
@@ -81,7 +82,9 @@ Garbage_Do_Sweep (Object **allobjs)
 				obj->next = junk;
 				junk = obj;
 				junked++;
-				Sys_DPrintf ("GC: %s@%p is ready for disposal...\n", obj->cl->name, obj);
+				Sys_MaskPrintf (SYS_DEV,
+								"GC: %s@%p is ready for disposal...\n",
+								obj->cl->name, obj);
 			}
 		} else
 			*prevNext = obj->next;
@@ -108,7 +111,8 @@ Garbage_Dispose (Object **allobjs, unsigned int amount)
 			junk->next = *allobjs;
 			*allobjs = junk;
 		} else {
-			Sys_DPrintf ("GC: Disposing of %s@%p...\n", junk->cl->name, junk);
+			Sys_MaskPrintf (SYS_DEV, "GC: Disposing of %s@%p...\n",
+							junk->cl->name, junk);
 			Object_Delete (junk);
 			junked--;
 		}

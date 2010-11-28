@@ -31,32 +31,41 @@
 
 #include "QF/qtypes.h"
 
+/**	\defgroup qfbsp_options Command-line Options Parsing
+	\ingroup qfbsp
+*/
+//@{
+
 typedef struct {
-	int			verbosity;		// 0=silent
-	qboolean	drawflag;
-	qboolean	notjunc;
-	qboolean	nofill;
-	qboolean	noclip;
-	qboolean	onlyents;
-	qboolean	portal;
+	int         verbosity;		// 0=silent
+	qboolean    drawflag;
+	qboolean    notjunc;
+	qboolean    nofill;
+	qboolean    noclip;
+	qboolean    onlyents;
+	qboolean    portal;
 	qboolean    extract;
 	qboolean    extract_textures;
 	qboolean    extract_entities;
 	qboolean    extract_hull;
-	qboolean	usehulls;
-	qboolean	watervis;
-	int			hullnum;
-	int			subdivide_size;
-	char		*mapfile;
-	char		*bspfile;
-	char		*portfile;
-	char		*pointfile;
-	char		*hullfile;
-	char		*output_file;
-	const char	*wadpath;
+	qboolean    smart_leak;
+	qboolean    usehulls;
+	qboolean    watervis;
+	int         hullnum;
+	int         subdivide_size;
+	char       *mapfile;
+	char       *bspfile;
+	char       *portfile;
+	char       *pointfile;
+	char       *hullfile;
+	char       *output_file;
+	const char *wadpath;
 } options_t;
 
 extern options_t options;
 int DecodeArgs (int argc, char **argv);
 extern const char *this_program;
+
+//@}
+
 #endif//qfbsp_options_h

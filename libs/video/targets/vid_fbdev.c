@@ -215,7 +215,7 @@ static struct fb_var_screeninfo orig_var;
 void
 VID_Shutdown (void)
 {
-	Sys_DPrintf ("VID_Shutdown\n");
+	Sys_MaskPrintf (SYS_VID, "VID_Shutdown\n");
 
 	if (!fbdev_inited)
 		return;
@@ -455,7 +455,6 @@ VID_Init (unsigned char *palette)
 	current_mode = *vmode;
 	ioctl(tty_fd, KDSETMODE, KD_GRAPHICS);
 	VID_SetMode (current_mode.name, palette);
-	Con_CheckResize (); // Now that we have a window size, fix console
 
 	VID_InitGamma (palette);
 	VID_SetPalette (vid.palette);

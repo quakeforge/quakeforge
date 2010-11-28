@@ -90,9 +90,8 @@ string (inputline_t il) InputLine_GetText = #0;
 	yp = 8;
 	xl = aRect.size.width;
 	yl = aRect.size.height;
-	r = [[Rect alloc] initWithComponents:xp :yp :xl :yl];
+	r = makeRect (xp, yp, xl, yl);
 	input_line = [[InputLine alloc] initWithBounds:r promptCharacter:char];
-	[r release];
 	return self;
 }
 

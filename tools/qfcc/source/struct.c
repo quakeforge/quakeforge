@@ -225,7 +225,6 @@ check_struct (const char *name, struct_type stype)
 struct_t *
 decl_struct (const char *name)
 {
-
 	return check_struct (name, str_struct);
 }
 

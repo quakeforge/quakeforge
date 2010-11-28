@@ -328,7 +328,7 @@ emit_assign_expr (int oper, expr_t *e)
 		if (e->rvalue && def_b->managed)
 			def_b->users++;
 		if (e1->type == ex_expr && extract_type (e1->e.expr.e1) == ev_pointer
-			&& e1->e.expr.e1->type < ex_string) {
+			&& e1->e.expr.e1->type < ex_nil) {
 			def_a = emit_sub_expr (e1->e.expr.e1, 0);
 			def_c = emit_sub_expr (e1->e.expr.e2, 0);
 			op = opcode_find (operator, def_b->type, def_a->type, def_c->type);
@@ -470,7 +470,7 @@ emit_deref_expr (expr_t *e, def_t *dest)
 
 	if (e->type == ex_expr
 		&& e->e.expr.op == '&'
-		&& e->e.expr.e1->type < ex_string)
+		&& e->e.expr.e1->type < ex_nil)
 		e->e.expr.op = '.';
 	if (e->type == ex_uexpr && e->e.expr.op == '.')
 		d = emit_sub_expr (e, 0);

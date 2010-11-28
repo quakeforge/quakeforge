@@ -41,6 +41,14 @@
 				rect = "[54, 50, 64, 8]";
 			},
 			{
+				Class = Text;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setText:, "\"Bindings\"")
+				);
+				rect = "[70, 60, 64, 8]";
+			},
+			{
 				Class = CvarToggleView;
 				Messages = (
 					(initWithBounds:title::, $rect, "\"Grab mouse\"", $toggle),

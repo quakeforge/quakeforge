@@ -167,6 +167,8 @@ ReuseConstant (expr_t *expr, def_t *def)
 		clear_immediates ();
 	}
 	cn = 0;
+	if (e.type == ex_nil)
+		convert_nil (&e, def->type);
 	switch (e.type) {
 		case ex_entity:
 			tab = entity_imm_defs;

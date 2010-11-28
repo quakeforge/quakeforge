@@ -38,7 +38,7 @@ configure: configure-stamp
 configure-stamp:
 	dh_testdir
 	# Add here commands to configure the package.
-	if test -d CVS; then ./bootstrap; fi
+	if test -d .git; then ./bootstrap; fi
 	./configure --prefix=/usr $(RETARGET) --bindir=/usr/games \
 		    --without-fbdev \
 		    --disable-xmms \
@@ -60,7 +60,7 @@ build-stamp:
 changelog-stamp:
 	dh_testdir
 	# Add here commands to build the changelog
-	if test -d CVS; then $(MAKE) changelog; fi
+	if test -d .git; then $(MAKE) changelog; fi
 	touch $@
 	
 clean:

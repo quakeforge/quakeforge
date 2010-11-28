@@ -44,9 +44,9 @@ typedef enum {
 	ex_uexpr,	// unary expression
 	ex_def,
 	ex_temp,	// temporary variable
-	ex_nil,		// umm, nil, null. nuff said
 	ex_name,
 
+	ex_nil,		// umm, nil, null. nuff said
 	ex_string,
 	ex_float,
 	ex_vector,
@@ -206,6 +206,7 @@ void convert_uint_int (expr_t *e);
 void convert_int_uint (expr_t *e);
 void convert_short_int (expr_t *e);
 void convert_short_uint (expr_t *e);
+void convert_nil (expr_t *e, struct type_s *t);
 
 expr_t *test_expr (expr_t *e, int test);
 void backpatch (ex_list_t *list, expr_t *label);

@@ -343,14 +343,14 @@ Datagram_GetMessage (qsocket_t * sock)
 
 		if (flags & NETFLAG_UNRELIABLE) {
 			if (sequence < sock->unreliableReceiveSequence) {
-				Sys_DPrintf ("Got a stale datagram\n");
+				Sys_MaskPrintf (SYS_DEV, "Got a stale datagram\n");
 				ret = 0;
 				break;
 			}
 			if (sequence != sock->unreliableReceiveSequence) {
 				count = sequence - sock->unreliableReceiveSequence;
 				droppedDatagrams += count;
-				Sys_DPrintf ("Dropped %u datagram(s)\n", count);
+				Sys_MaskPrintf (SYS_DEV, "Dropped %u datagram(s)\n", count);
 			}
 			sock->unreliableReceiveSequence = sequence + 1;
 
@@ -365,15 +365,15 @@ Datagram_GetMessage (qsocket_t * sock)
 
 		if (flags & NETFLAG_ACK) {
 			if (sequence != (sock->sendSequence - 1)) {
-				Sys_DPrintf ("Stale ACK received\n");
+				Sys_MaskPrintf (SYS_DEV, "Stale ACK received\n");
 				continue;
 			}
 			if (sequence == sock->ackSequence) {
 				sock->ackSequence++;
 				if (sock->ackSequence != sock->sendSequence)
-					Sys_DPrintf ("ack sequencing error\n");
+					Sys_MaskPrintf (SYS_DEV, "ack sequencing error\n");
 			} else {
-				Sys_DPrintf ("Duplicate ACK received\n");
+				Sys_MaskPrintf (SYS_DEV, "Duplicate ACK received\n");
 				continue;
 			}
 			sock->sendMessageLength -= MAX_DATAGRAM;

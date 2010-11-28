@@ -55,7 +55,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 #ifdef HAVE_VIDMODE
 # include <X11/extensions/xf86vmode.h>
-# include <X11/extensions/xf86vmproto.h>
+# ifdef DGA_OLD_HEADERS
+#  include <X11/extensions/xf86vmstr.h>
+# else
+#  include <X11/extensions/xf86vmproto.h>
+# endif
 #endif
 
 #include "QF/sys.h"
@@ -93,11 +97,11 @@ VID_CheckDGA (Display * dpy, int *maj_ver, int *min_ver, int *hasvideo)
 	}
 
 	if ((!maj_ver) || (*maj_ver != XDGA_MAJOR_VERSION)) {
-		Sys_DPrintf ("VID: Incorrect DGA version: %d.%d, \n", *maj_ver,
-					*min_ver);
+		Sys_MaskPrintf (SYS_VID, "VID: Incorrect DGA version: %d.%d, \n",
+						*maj_ver, *min_ver);
 		return false;
 	}
-	Sys_DPrintf ("VID: DGA version: %d.%d\n", *maj_ver, *min_ver);
+	Sys_MaskPrintf (SYS_VID, "VID: DGA version: %d.%d\n", *maj_ver, *min_ver);
 
 	if (!hasvideo)
 		hasvideo = &dummy_video;
@@ -147,12 +151,13 @@ VID_CheckVMode (Display * dpy, int *maj_ver, int *min_ver)
 		return false;
 
 	if ((!maj_ver) || (*maj_ver != XF86VIDMODE_MAJOR_VERSION)) {
-		Sys_DPrintf ("VID: Incorrect VidMode version: %d.%d\n", *maj_ver,
-					*min_ver);
+		Sys_MaskPrintf (SYS_VID, "VID: Incorrect VidMode version: %d.%d\n",
+						*maj_ver, *min_ver);
 		return false;
 	}
 
-	Sys_DPrintf ("VID: VidMode version: %d.%d\n", *maj_ver, *min_ver);
+	Sys_MaskPrintf (SYS_VID, "VID: VidMode version: %d.%d\n",
+					*maj_ver, *min_ver);
 	return true;
 #else
 	return false;

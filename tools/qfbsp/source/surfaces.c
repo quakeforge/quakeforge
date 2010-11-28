@@ -38,6 +38,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "surfaces.h"
 #include "winding.h"
 
+/**	\addtogroup qfbsp_surface
+*/
+//@{
+
 /*
 	a surface has all of the faces that could be drawn on a given plane
 
@@ -46,14 +50,55 @@ static __attribute__ ((used)) const char rcsid[] =
 */
 surface_t   newcopy_t;
 int         subdivides;
+int         c_activefaces, c_peakfaces;
+int         c_activesurfaces, c_peaksurfaces;
 
 
-/*
-	SubdivideFace
+face_t *
+AllocFace (void)
+{
+	face_t     *f;
 
-	If the face is >256 in either texture direction, carve a valid sized
-	piece off and insert the remainder in the next link
-*/
+	c_activefaces++;
+	if (c_activefaces > c_peakfaces)
+		c_peakfaces = c_activefaces;
+
+	f = malloc (sizeof (face_t));
+	memset (f, 0, sizeof (face_t));
+	f->planenum = -1;
+
+	return f;
+}
+
+void
+FreeFace (face_t *f)
+{
+	c_activefaces--;
+	free (f);
+}
+
+surface_t *
+AllocSurface (void)
+{
+	surface_t  *s;
+
+	s = malloc (sizeof (surface_t));
+	memset (s, 0, sizeof (surface_t));
+
+	c_activesurfaces++;
+	if (c_activesurfaces > c_peaksurfaces)
+		c_peaksurfaces = c_activesurfaces;
+
+	return s;
+}
+
+void
+FreeSurface (surface_t *s)
+{
+	c_activesurfaces--;
+	free (s);
+}
+
 void
 SubdivideFace (face_t *f, face_t **prevptr)
 {
@@ -109,12 +154,6 @@ SubdivideFace (face_t *f, face_t **prevptr)
 	}
 }
 
-/*
-	GatherNodeFaces
-
-	Frees the current node tree and returns a new chain of the surfaces that
-	have inside faces.
-*/
 static void
 GatherNodeFaces_r (node_t *node)
 {
@@ -142,15 +181,13 @@ GatherNodeFaces_r (node_t *node)
 	}
 }
 
-surface_t  *
+surface_t *
 GatherNodeFaces (node_t *headnode)
 {
 	memset (validfaces, 0, sizeof (validfaces));
 	GatherNodeFaces_r (headnode);
 	return BuildSurfaces ();
 }
-
-//===========================================================================
 
 typedef struct hashvert_s {
 	struct hashvert_s *next;
@@ -172,14 +209,14 @@ face_t     *edgefaces[MAX_MAP_EDGES][2];
 int         firstmodeledge = 1;
 int         firstmodelface;
 
-//============================================================================
-
 #define	NUM_HASH	4096
 
 hashvert_t *hashverts[NUM_HASH];
 
 static vec3_t hash_min, hash_scale;
 
+/**	Initialize the vertex hash table.
+*/
 static void
 InitHash (void)
 {
@@ -209,8 +246,13 @@ InitHash (void)
 	hvert_p = hvertex;
 }
 
+/**	Calulate the hash value of a vector.
+
+	\param vec		The vector for which to calculate the hash value.
+	\return			The hash value of the vector.
+*/
 static unsigned
-HashVec (vec3_t vec)
+HashVec (const vec3_t vec)
 {
 	unsigned    h;
 
@@ -221,8 +263,13 @@ HashVec (vec3_t vec)
 	return h;
 }
 
+/**	Get the vertex number for the vertex.
+
+	\param in		The vertex for which to get the number.
+	\param planenum The plane on which this vertex is.
+*/
 static int
-GetVertex (vec3_t in, int planenum)
+GetVertex (const vec3_t in, int planenum)
 {
 	hashvert_t *hv;
 	int         h, i;
@@ -282,17 +329,21 @@ GetVertex (vec3_t in, int planenum)
 	return hv->num;
 }
 
-//===========================================================================
-
 int         c_tryedges;
 
-/*
-	GetEdge
+/**	Find an edge for the two vertices.
 
-	Don't allow four way edges
+	If an edge can not be found, create a new one.  Will not create a three
+	(or more) face edge.
+
+	\param p1		The first vertex.
+	\param p2		The second vertex.
+	\param f		The face of which the two vertices form an edge.
+	\return			The edge number. For a re-used edge, the edge number will
+					be negative, indicating the ends of the edge are reversed.
 */
 static int
-GetEdge (vec3_t p1, vec3_t p2, face_t *f)
+GetEdge (const vec3_t p1, const vec3_t p2, face_t *f)
 {
 	dedge_t     edge;
 	int         v1, v2, i;
@@ -301,8 +352,12 @@ GetEdge (vec3_t p1, vec3_t p2, face_t *f)
 		Sys_Error ("GetEdge: 0 contents");
 
 	c_tryedges++;
+	// get the vertex numbers for the two vertices
 	v1 = GetVertex (p1, f->planenum);
 	v2 = GetVertex (p2, f->planenum);
+
+	// search for an edge that uses the two vertices in the opposite direction
+	// but does not yet have a second face.
 	for (i = firstmodeledge; i < bsp->numedges; i++) {
 		if (v1 == bsp->edges[i].v[1] && v2 == bsp->edges[i].v[0]
 			&& !edgefaces[i][1]
@@ -312,7 +367,7 @@ GetEdge (vec3_t p1, vec3_t p2, face_t *f)
 		}
 	}
 
-	// emit an edge
+	// Create a new edge.
 	if (bsp->numedges == MAX_MAP_EDGES)
 		Sys_Error ("numedges == MAX_MAP_EDGES");
 	edge.v[0] = v1;
@@ -323,6 +378,10 @@ GetEdge (vec3_t p1, vec3_t p2, face_t *f)
 	return i;
 }
 
+/**	Give the face edges.
+
+	\param face		The face to which edges will be given.
+*/
 static void
 FindFaceEdges (face_t *face)
 {
@@ -338,6 +397,10 @@ FindFaceEdges (face_t *face)
 								  face);
 }
 
+/**	Recurse through the bsp tree, adding edges to the faces.
+
+	\param node		bsp tree node.
+*/
 static void
 MakeFaceEdges_r (node_t *node)
 {
@@ -372,3 +435,5 @@ MakeFaceEdges (node_t *headnode)
 	firstmodeledge = bsp->numedges;
 	firstmodelface = bsp->numfaces;
 }
+
+//@}

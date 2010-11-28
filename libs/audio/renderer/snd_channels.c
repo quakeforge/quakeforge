@@ -74,6 +74,7 @@ static vec3_t   listener_up;
 
 static cvar_t  *snd_phasesep;
 static cvar_t  *snd_volumesep;
+static cvar_t  *snd_swapchannelside;
 static cvar_t  *ambient_fade;
 static cvar_t  *ambient_level;
 
@@ -148,7 +149,7 @@ SND_ScanChannels (int wait)
 		return;
 
 	if (wait) {
-		Sys_DPrintf ("scanning channels...\n");
+		Sys_MaskPrintf (SYS_DEV, "scanning channels...\n");
 		do {
 			count = 0;
 			for (i = 0; i < MAX_CHANNELS; i++) {
@@ -158,12 +159,12 @@ SND_ScanChannels (int wait)
 				ch->stop = 1;
 				count++;
 			}
-			Sys_DPrintf ("count = %d\n", count);
+			Sys_MaskPrintf (SYS_DEV, "count = %d\n", count);
 #ifdef HAVE_USLEEP
 			usleep (1000);
 #endif
 		} while (count);
-		Sys_DPrintf ("scanning done.\n");
+		Sys_MaskPrintf (SYS_DEV, "scanning done.\n");
 	} else {
 		for (i = 0; i < MAX_CHANNELS; i++) {
 			ch = &snd_channels[i];
@@ -307,6 +308,9 @@ SND_Channels_Init (void)
 							 "20cm head");
 	snd_volumesep = Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE, NULL,
 							  "max stereo volume separation. 1.0 is max");
+	snd_swapchannelside = Cvar_Get ("snd_swapchannelside", "0", CVAR_ARCHIVE,
+									NULL, "Toggle swapping of left and right "
+									"channels");
 	ambient_fade = Cvar_Get ("ambient_fade", "100", CVAR_NONE, NULL,
 							 "How quickly ambient sounds fade in or out");
 	ambient_level = Cvar_Get ("ambient_level", "0.3", CVAR_NONE, NULL,
@@ -476,6 +480,8 @@ s_spatialize (channel_t *ch)
 	dist = VectorNormalize (source_vec) * ch->dist_mult;
 
 	dot = DotProduct (listener_right, source_vec);
+	if (snd_swapchannelside->int_val)
+		dot = -dot;
 
 	if (snd_shm->channels == 1) {
 		rscale = 1.0;

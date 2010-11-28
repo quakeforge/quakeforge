@@ -39,6 +39,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "surfaces.h"
 #include "winding.h"
 
+/**	\addtogroup qfbsp_solidbsp
+*/
+//@{
+
 int         leaffaces;
 int         nodefaces;
 int         splitnodes;
@@ -48,23 +52,31 @@ int         c_solid, c_empty, c_water;
 qboolean    usemidsplit;
 
 
-/*
-	FaceSide
+/**	Determine on which side of the plane a face is.
 
-	For BSP hueristic
+	\param in		The face.
+	\param split	The plane.
+	\return			<dl>
+						<dt>SIDE_FRONT</dt>
+							<dd>The face is in front of or on the plane.</dd>
+						<dt>SIDE_BACK</dt>
+							<dd>The face is behind or on the plane.</dd>
+						<dt>SIDE_ON</dt>
+							<dd>The face is on or cut by the plane.</dd>
+					</dl>
 */
 static int
-FaceSide (face_t *in, plane_t *split)
+FaceSide (const face_t *in, const plane_t *split)
 {
 	int         frontcount, backcount, i;
 	vec_t       dot;
-	vec_t      *p;
-	winding_t  *inp = in->points;
+	const vec_t *p;
+	const winding_t *inp = in->points;
 
 	frontcount = backcount = 0;
 
 	// axial planes are fast
-	if (split->type < 3)
+	if (split->type < 3) {
 		for (i = 0, p = inp->points[0] + split->type; i < inp->numpoints;
 			 i++, p += 3) {
 			if (*p > split->dist + ON_EPSILON) {
@@ -76,7 +88,8 @@ FaceSide (face_t *in, plane_t *split)
 					return SIDE_ON;
 				backcount = 1;
 			}
-	} else
+		}
+	} else {
 		// sloping planes take longer
 		for (i = 0, p = inp->points[0]; i < inp->numpoints; i++, p += 3) {
 			dot = DotProduct (p, split->normal);
@@ -91,6 +104,7 @@ FaceSide (face_t *in, plane_t *split)
 				backcount = 1;
 			}
 		}
+	}
 
 	if (!frontcount)
 		return SIDE_BACK;
@@ -100,13 +114,20 @@ FaceSide (face_t *in, plane_t *split)
 	return SIDE_ON;
 }
 
-/*
-	ChooseMidPlaneFromList
+/**	Chose the best plane for dividing the bsp.
 
-	The clipping hull BSP doesn't worry about avoiding splits
+	The clipping hull BSP doesn't worry about avoiding splits, so this
+	function tries to find the plane that gives the most even split of the
+	bounding volume.
+
+	\param surfaces	The surface chain of the bsp.
+	\param mins		The minimum coordinate of the boundiing box.
+	\param maxs		The maximum coordinate of the boundiing box.
+	\return			The chosen surface.
 */
-static surface_t  *
-ChooseMidPlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs)
+static surface_t *
+ChooseMidPlaneFromList (surface_t *surfaces,
+						const vec3_t mins, const vec3_t maxs)
 {
 	int         j, l;
 	plane_t    *plane;
@@ -158,13 +179,19 @@ ChooseMidPlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs)
 	return bestsurface;
 }
 
-/*
-	ChoosePlaneFromList
+/**	Choose the best plane that produces the fewest splits.
 
-	The real BSP hueristic
+	\param surfaces	The surface chain of the bsp.
+	\param mins		The minimum coordinate of the boundiing box.
+	\param maxs		The maximum coordinate of the boundiing box.
+	\param usefloors If false, floors will not be chosen.
+	\param usedetail If true, the plain must have structure faces, else
+					the plain must not have structure faces.
+	\return			The chosen surface, or NULL if a suitable surface could
+					not be found.
 */
-static surface_t  *
-ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
+static surface_t *
+ChoosePlaneFromList (surface_t *surfaces, const vec3_t mins, const vec3_t maxs,
 					 qboolean usefloors, qboolean usedetail)
 {
 	face_t     *f;
@@ -255,13 +282,14 @@ ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
 	return bestsurface;
 }
 
-/*
-	SelectPartition
+/**	Select a surface on which to split the group of surfaces.
 
-	Selects a surface from a linked list of surfaces to split the group on
-	returns NULL if the surface list can not be divided any more (a leaf)
+	\param surfaces	The group of surfaces.
+	\param detail	Set to 1 if the selected surface has detail.
+	\return			The selected surface or NULL if the list can no longer
+					be defined (ie, a leaf).
 */
-static surface_t  *
+static surface_t *
 SelectPartition (surface_t *surfaces, int *detail)
 {
 	int         i, j;
@@ -273,11 +301,12 @@ SelectPartition (surface_t *surfaces, int *detail)
 	// count onnode surfaces
 	i = 0;
 	bestsurface = NULL;
-	for (p = surfaces; p; p = p->next)
+	for (p = surfaces; p; p = p->next) {
 		if (!p->onnode) {
 			i++;
 			bestsurface = p;
 		}
+	}
 
 	if (i == 0)
 		return NULL;
@@ -294,13 +323,14 @@ SelectPartition (surface_t *surfaces, int *detail)
 		maxs[i] = -BOGUS_RANGE;
 	}
 
-	for (p = surfaces; p; p = p->next)
+	for (p = surfaces; p; p = p->next) {
 		for (j = 0; j < 3; j++) {
 			if (p->mins[j] < mins[j])
 				mins[j] = p->mins[j];
 			if (p->maxs[j] > maxs[j])
 				maxs[j] = p->maxs[j];
 		}
+	}
 
 	if (usemidsplit)					// do fast way for clipping hull
 		return ChooseMidPlaneFromList (surfaces, mins, maxs);
@@ -318,15 +348,8 @@ SelectPartition (surface_t *surfaces, int *detail)
 	return ChoosePlaneFromList (surfaces, mins, maxs, true, true);
 }
 
-//============================================================================
-
-/*
-	CalcSurfaceInfo
-
-	Calculates the bounding box
-*/
 void
-CalcSurfaceInfo (surface_t * surf)
+CalcSurfaceInfo (surface_t *surf)
 {
 	face_t     *f;
 	int         i, j;
@@ -344,16 +367,24 @@ CalcSurfaceInfo (surface_t * surf)
 		winding_t  *fp = f->points;
 		if (f->contents[0] >= 0 || f->contents[1] >= 0)
 			Sys_Error ("Bad contents");
-		for (i = 0; i < fp->numpoints; i++)
+		for (i = 0; i < fp->numpoints; i++) {
 			for (j = 0; j < 3; j++) {
 				if (fp->points[i][j] < surf->mins[j])
 					surf->mins[j] = fp->points[i][j];
 				if (fp->points[i][j] > surf->maxs[j])
 					surf->maxs[j] = fp->points[i][j];
 			}
+		}
 	}
 }
 
+/**	Divide a surface by the plane.
+
+	\param in		The surface to divide.
+	\param split	The plane by which to divide the surface.
+	\param front	Tne part of the surface in front of the plane.
+	\param back		The part of the surface behind the plane.
+*/
 static void
 DividePlane (surface_t *in, plane_t *split, surface_t **front,
 			 surface_t **back)
@@ -478,11 +509,11 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 	CalcSurfaceInfo (in);
 }
 
-/*
-	LinkConvexFaces
-
-	Determines the contents of the leaf and creates the final list of
+/**	Determine the contents of the leaf and create the final list of
 	original faces that have some fragment inside this leaf
+
+	\param planelist surfaces bounding the leaf.
+	\param leafnode	The leaf.
 */
 static void
 LinkConvexFaces (surface_t *planelist, node_t *leafnode)
@@ -547,12 +578,12 @@ LinkConvexFaces (surface_t *planelist, node_t *leafnode)
 	leafnode->markfaces[i] = NULL;		// sentinal
 }
 
-/*
-	LinkNodeFaces
+/**	Return a duplicated list of all faces on surface
 
-	Returns a duplicated list of all faces on surface
+	\param surface	The surface of which to duplicate the faces.
+	\return			The duplicated list.
 */
-static face_t     *
+static face_t *
 LinkNodeFaces (surface_t *surface)
 {
 	face_t     *list, *new, **prevptr, *f;
@@ -584,6 +615,11 @@ LinkNodeFaces (surface_t *surface)
 	return list;
 }
 
+/**	Partition the surfaces, creating a nice bsp.
+
+	\param surfaces	The surfaces to partition.
+	\param node		The current node.
+*/
 static void
 PartitionSurfaces (surface_t *surfaces, node_t *node)
 {
@@ -641,7 +677,7 @@ PartitionSurfaces (surface_t *surfaces, node_t *node)
 	PartitionSurfaces (backlist, node->children[1]);
 }
 
-node_t     *
+node_t *
 SolidBSP (surface_t *surfhead, qboolean midsplit)
 {
 	int         i;
@@ -676,3 +712,5 @@ SolidBSP (surface_t *surfhead, qboolean midsplit)
 
 	return headnode;
 }
+
+//@}

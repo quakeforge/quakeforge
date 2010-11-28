@@ -45,19 +45,18 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "options.h"
 #include "writebsp.h"
 
+/**	\addtogroup qfbsp_writebsp
+*/
+//@{
+
 int         headclipnode;
 int         firstface;
 
 
-/*
-	FindFinalPlane
-
-	Used to find plane index numbers for clip nodes read from child processes
-*/
 int
-FindFinalPlane (dplane_t *p)
+FindFinalPlane (const dplane_t *p)
 {
-	dplane_t   *dplane;
+	const dplane_t *dplane;
 	int         i;
 
 	for (i = 0, dplane = bsp->planes; i < bsp->numplanes; i++, dplane++) {
@@ -65,11 +64,7 @@ FindFinalPlane (dplane_t *p)
 			continue;
 		if (p->dist != dplane->dist)
 			continue;
-		if (p->normal[0] != dplane->normal[0])
-			continue;
-		if (p->normal[1] != dplane->normal[1])
-			continue;
-		if (p->normal[2] != dplane->normal[2])
+		if (!VectorCompare (p->normal, dplane->normal))
 			continue;
 		return i;
 	}
@@ -84,6 +79,13 @@ FindFinalPlane (dplane_t *p)
 
 int         planemapping[MAX_MAP_PLANES];
 
+/**	Recursively write the nodes' planes to the bsp file.
+
+	If the plane has already been written, do not write it again. Set the
+	node's output plane number.
+
+	\param node		The current node of which to write the plane.
+*/
 static void
 WriteNodePlanes_r (node_t *node)
 {
@@ -97,9 +99,7 @@ WriteNodePlanes_r (node_t *node)
 
 		plane = &planes[node->planenum];
 
-		dplane.normal[0] = plane->normal[0];
-		dplane.normal[1] = plane->normal[1];
-		dplane.normal[2] = plane->normal[2];
+		VectorCopy (plane->normal, dplane.normal);
 		dplane.dist = plane->dist;
 		dplane.type = plane->type;
 		BSP_AddPlane (bsp, &dplane);
@@ -118,13 +118,19 @@ WriteNodePlanes (node_t *nodes)
 	WriteNodePlanes_r (nodes);
 }
 
+/**	Recursively write clip nodes to the bsp file.
+
+	\note The node will be freed.
+
+	\param node		The node to be written to the bsp file.
+*/
 static int
 WriteClipNodes_r (node_t *node)
 {
 	dclipnode_t cn;
 	int         num, c, i;
 
-	// FIXME: free more stuff?  
+	// FIXME: free more stuff?
 	if (node->planenum == -1) {
 		num = node->contents;
 		free (node);
@@ -142,12 +148,6 @@ WriteClipNodes_r (node_t *node)
 	return c;
 }
 
-/*
-	WriteClipNodes
-
-	Called after the clipping hull is completed.  Generates a disk format
-	representation and frees the original memory.
-*/
 void
 WriteClipNodes (node_t *nodes)
 {
@@ -155,8 +155,12 @@ WriteClipNodes (node_t *nodes)
 	WriteClipNodes_r (nodes);
 }
 
+/**	Write a leaf node to the bsp file.
+
+	\param node		The leaf node to be written to the bsp file.
+*/
 static void
-WriteLeaf (node_t *node)
+WriteLeaf (const node_t *node)
 {
 	dleaf_t     leaf_p;
 	face_t    **fp, *f;
@@ -187,18 +191,24 @@ WriteLeaf (node_t *node)
 	}
 
 	leaf_p.nummarksurfaces = bsp->nummarksurfaces - leaf_p.firstmarksurface;
+
+	memset (leaf_p.ambient_level, 0, sizeof (leaf_p.ambient_level));
 	BSP_AddLeaf (bsp, &leaf_p);
 }
 
+/**	Recursively write the draw nodes of the map bsp.
+
+	\param node		The current node to be written.
+*/
 static void
-WriteDrawNodes_r (node_t *node)
+WriteDrawNodes_r (const node_t *node)
 {
 	static dnode_t dummy;
 	dnode_t    *n;
 	int         i;
 	int         nodenum = bsp->numnodes;
 
-	// emit a node  
+	// emit a node
 	if (bsp->numnodes == MAX_MAP_NODES)
 		Sys_Error ("numnodes == MAX_MAP_NODES");
 	BSP_AddNode (bsp, &dummy);
@@ -229,7 +239,7 @@ WriteDrawNodes_r (node_t *node)
 }
 
 void
-WriteDrawNodes (node_t *headnode)
+WriteDrawNodes (const node_t *headnode)
 {
 	dmodel_t    bm;
 	int         start, i;
@@ -244,6 +254,8 @@ WriteDrawNodes (node_t *headnode)
 		Sys_Error ("nummodels == MAX_MAP_MODELS");
 
 	bm.headnode[0] = bsp->numnodes;
+	for (i = 1; i < MAX_MAP_HULLS; i++)
+		bm.headnode[i] = 0;
 	bm.firstface = firstface;
 	bm.numfaces = bsp->numfaces - firstface;
 	firstface = bsp->numfaces;
@@ -260,15 +272,11 @@ WriteDrawNodes (node_t *headnode)
 		bm.mins[i] = headnode->mins[i] + SIDESPACE + 1;   // remove the padding
 		bm.maxs[i] = headnode->maxs[i] - SIDESPACE - 1;
 	}
+	VectorZero (bm.origin);
 	BSP_AddModel (bsp, &bm);
 	// FIXME: are all the children decendant of padded nodes?
 }
 
-/*
-	BumpModel
-
-	Used by the clipping hull processes that need to store only headclipnode
-*/
 void
 BumpModel (int hullnum)
 {
@@ -287,8 +295,11 @@ typedef struct wadlist_s {
 
 wadlist_t  *wadlist;
 
+/**	Load a texture wad file.
+	\param path		The path to the wad file.
+*/
 static int
-TEX_InitFromWad (char *path)
+TEX_InitFromWad (const char *path)
 {
 	wadlist_t  *wl;
 	wad_t      *wad;
@@ -312,8 +323,18 @@ TEX_InitFromWad (char *path)
 	return 0;
 }
 
+/**	Read a lump's data.
+
+	Searches all loaded wad files for the lump.
+
+	\param name		The name of the lump for which to search.
+	\param dest		The destination buffer to which the lump's data will be
+					written.
+	\return			The size of the lump's data or 0 if the lump was not
+					found.
+*/
 static int
-LoadLump (char *name, dstring_t *dest)
+LoadLump (const char *name, dstring_t *dest)
 {
 	int         r;
 	int         ofs = dest->size;
@@ -352,6 +373,8 @@ LoadLump (char *name, dstring_t *dest)
 	return 0;
 }
 
+/**	Search loaded miptex for animated textures and load their animations.
+*/
 static void
 AddAnimatingTextures (void)
 {
@@ -388,6 +411,13 @@ AddAnimatingTextures (void)
 		printf ("added %i texture frames\n", nummiptex - base);
 }
 
+/**	Write the miptex data to the bsp file.
+
+	The miptex data is read from the wad files specified by the \c wad or
+	\c _wad key of the world entity. The files are a semi-colon separated list
+	(this is a QuakeForge extension). The \c wadpath is used to search for the
+	files.
+*/
 static void
 WriteMiptex (void)
 {
@@ -433,8 +463,6 @@ WriteMiptex (void)
 		if (res == -1)
 			Sys_Error ("couldn't open %s[.gz]", wad);
 
-		AddAnimatingTextures ();
-
 		wad = w;
 		if (!wad || !*wad)
 			break;
@@ -444,6 +472,8 @@ WriteMiptex (void)
 	}
 	free (wad_list);
 	dstring_delete (fullpath);
+
+	AddAnimatingTextures ();
 
 	data = dstring_new ();
 	data->size = sizeof (dmiptexlump_t);
@@ -498,3 +528,5 @@ FinishBSPFile (void)
 	WriteBSPFile (bsp, f);
 	Qclose (f);
 }
+
+//@}

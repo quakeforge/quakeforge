@@ -736,19 +736,17 @@ NET_CanSendMessage (qsocket_t * sock)
 
 
 int
-NET_SendToAll (sizebuf_t *data, int blocktime)
+NET_SendToAll (sizebuf_t *data, double blocktime)
 {
 	double      start;
 	int         i;
 	int         count = 0;
-	qboolean    state1[MAX_SCOREBOARD];
-	qboolean    state2[MAX_SCOREBOARD];
+	qboolean    state1[MAX_SCOREBOARD];	/* can we send */
+	qboolean    state2[MAX_SCOREBOARD];	/* did we send */
 
 	for (i = 0, host_client = svs.clients; i < svs.maxclients;
 		 i++, host_client++) {
-		if (!host_client->netconnection)
-			continue;
-		if (host_client->active) {
+		if (host_client->netconnection && host_client->active) {
 			if (host_client->netconnection->driver == 0) {
 				NET_SendMessage (host_client->netconnection, data);
 				state1[i] = true;
@@ -890,9 +888,9 @@ NET_Init (void)
 	}
 
 	if (*my_ipx_address)
-		Sys_DPrintf ("IPX address %s\n", my_ipx_address);
+		Sys_MaskPrintf (SYS_DEV, "IPX address %s\n", my_ipx_address);
 	if (*my_tcpip_address)
-		Sys_DPrintf ("TCP/IP address %s\n", my_tcpip_address);
+		Sys_MaskPrintf (SYS_DEV, "TCP/IP address %s\n", my_tcpip_address);
 }
 
 /*

@@ -115,7 +115,7 @@ keyhandler (int scancode, int state)
 		default:
 			break;
 	}
-	//Sys_DPrintf ("%d %02x %02lx %04x %c\n", sc, press, shifts,
+	//Sys_MaskPrintf (SYS_VID, "%d %02x %02lx %04x %c\n", sc, press, shifts,
 	//			 key, ascii > 32 && ascii < 127 ? ascii : '#');
 	Key_Event (key, ascii, press);
 }
@@ -386,16 +386,17 @@ IN_InitMouse (void)
 		mouserate = atoi (com_argv[COM_CheckParm ("-mrate") + 1]);
 	}
 #if 0
-	Sys_DPrintf ("Mouse: dev=%s,type=%s,speed=%d\n",
+	Sys_MaskPrintf (SYS_VID, "Mouse: dev=%s,type=%s,speed=%d\n",
 			mousedev, mice[mtype].name, mouserate);
 #endif
 	//FIXME: vga_init() opens the mouse automoatically
 	//       closing it to ensure its opened how we want it
 	mouse_close();
 	if (mouse_init ((char *)mousedev, mtype, mouserate)) {
-		Sys_DPrintf ("No mouse found. Check your libvga.conf mouse settings"
-					 " and that the mouse\n"
-					 "device has appropriate permission settings.\n");
+		Sys_MaskPrintf (SYS_VID,
+						"No mouse found. Check your libvga.conf mouse settings"
+						" and that the mouse\n"
+						"device has appropriate permission settings.\n");
 		UseMouse = 0;
 	} else {
 		mouse_seteventhandler ((void *) mousehandler);
@@ -406,7 +407,7 @@ IN_InitMouse (void)
 void
 IN_LL_Shutdown (void)
 {
-	Sys_DPrintf ("IN_LL_Shutdown\n");
+	Sys_MaskPrintf (SYS_VID, "IN_LL_Shutdown\n");
 
 	if (UseMouse)
 		mouse_close ();

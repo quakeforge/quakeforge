@@ -38,7 +38,7 @@ static __attribute__ ((used)) const char rcsid[] =
 int         mod_lightmap_bytes = 1;
 
 void
-Mod_LoadLighting (lump_t *l)
+Mod_LoadLighting (bsp_t *bsp)
 {
 }
 

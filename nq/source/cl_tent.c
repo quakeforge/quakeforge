@@ -50,47 +50,60 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "r_dynamic.h"
 
-#define	MAX_BEAMS	8
-#define MAX_BEAM_ENTS 20
+typedef struct tent_s {
+	struct tent_s *next;
+	entity_t    ent;
+} tent_t;
+
+#define TEMP_BATCH 64
+static tent_t *temp_entities = 0;
 
 typedef struct {
 	int         entity;
 	struct model_s *model;
 	float       endtime;
 	vec3_t      start, end;
-	entity_t    ent_list[MAX_BEAM_ENTS];
-	int         ent_count;
-	int			seed;
+	tent_t     *tents;
+	int         seed;
 } beam_t;
 
-beam_t      cl_beams[MAX_BEAMS];
-
-#define	MAX_EXPLOSIONS	8
 
 typedef struct {
 	float       start;
-	entity_t    ent;
+	tent_t     *tent;
 } explosion_t;
 
-explosion_t cl_explosions[MAX_EXPLOSIONS];
+typedef struct tent_obj_s {
+	struct tent_obj_s *next;
+	union {
+		beam_t      beam;
+		explosion_t ex;
+	} to;
+} tent_obj_t;
 
-sfx_t      *cl_sfx_wizhit;
-sfx_t      *cl_sfx_knighthit;
-sfx_t      *cl_sfx_tink1;
-sfx_t      *cl_sfx_ric1;
-sfx_t      *cl_sfx_ric2;
-sfx_t      *cl_sfx_ric3;
-sfx_t      *cl_sfx_r_exp3;
+static tent_obj_t *tent_objects;
+static tent_obj_t *cl_beams;
+static tent_obj_t *cl_explosions;
 
-model_t    *cl_mod_beam;
-model_t    *cl_mod_bolt;
-model_t    *cl_mod_bolt2;
-model_t    *cl_mod_bolt3;
-model_t    *cl_spr_explod;
+static sfx_t *cl_sfx_wizhit;
+static sfx_t *cl_sfx_knighthit;
+static sfx_t *cl_sfx_tink1;
+static sfx_t *cl_sfx_ric1;
+static sfx_t *cl_sfx_ric2;
+static sfx_t *cl_sfx_ric3;
+static sfx_t *cl_sfx_r_exp3;
 
-void
-CL_TEnts_Init (void)
+static model_t *cl_mod_beam;
+static model_t *cl_mod_bolt;
+static model_t *cl_mod_bolt2;
+static model_t *cl_mod_bolt3;
+static model_t *cl_spr_explod;
+
+static void
+CL_TEnts_Precache (int phase)
 {
+	if (!phase)
+		return;
 	cl_sfx_wizhit = S_PrecacheSound ("wizard/hit.wav");
 	cl_sfx_knighthit = S_PrecacheSound ("hknight/hit.wav");
 	cl_sfx_tink1 = S_PrecacheSound ("weapons/tink1.wav");
@@ -109,6 +122,13 @@ CL_TEnts_Init (void)
 }
 
 void
+CL_TEnts_Init (void)
+{
+	QFS_GamedirCallback (CL_TEnts_Precache);
+	CL_TEnts_Precache (1);
+}
+
+void
 CL_Init_Entity (entity_t *ent)
 {
 	memset (ent, 0, sizeof (*ent));
@@ -117,84 +137,109 @@ CL_Init_Entity (entity_t *ent)
 	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] =
 		ent->colormod[3] = 1.0;
 	ent->scale = 1.0;
-	ent->pose1 = ent->pose2 = -1;
+	ent->lerpflags |= LERP_RESETMOVE|LERP_RESETANIM;
+}
+
+static tent_t *
+new_temp_entity (void)
+{
+	tent_t     *tent;
+	if (!temp_entities) {
+		int         i;
+
+		temp_entities = malloc (TEMP_BATCH * sizeof (tent_t));
+		for (i = 0; i < TEMP_BATCH - 1; i++) {
+			temp_entities[i].next = &temp_entities[i + 1];
+		}
+		temp_entities[i].next = 0;
+	}
+	tent = temp_entities;
+	temp_entities = tent->next;
+	tent->next = 0;
+	CL_Init_Entity (&tent->ent);
+	return tent;
+}
+
+static void
+free_temp_entities (tent_t *tents)
+{
+	tent_t    **t = &tents;
+
+	while (*t)
+		t = &(*t)->next;
+	*t = temp_entities;
+	temp_entities = tents;
+}
+
+static tent_obj_t *
+new_tent_object (void)
+{
+	tent_obj_t *tobj;
+	if (!tent_objects) {
+		int         i;
+
+		tent_objects = malloc (TEMP_BATCH * sizeof (tent_t));
+		for (i = 0; i < TEMP_BATCH - 1; i++)
+			tent_objects[i].next = &tent_objects[i + 1];
+		tent_objects[i].next = 0;
+	}
+	tobj = tent_objects;
+	tent_objects = tobj->next;
+	tobj->next = 0;
+	return tobj;
+}
+
+static void
+free_tent_objects (tent_obj_t *tobjs)
+{
+	tent_obj_t **t = &tobjs;
+
+	while (*t)
+		t = &(*t)->next;
+	*t = tent_objects;
+	tent_objects = tobjs;
 }
 
 void
 CL_ClearTEnts (void)
 {
-	int i;
+	tent_t     *t;
+	tent_obj_t *to;
 
-	memset (&cl_beams, 0, sizeof (cl_beams));
-	memset (&cl_explosions, 0, sizeof (cl_explosions));
-	for (i = 0; i < MAX_BEAMS; i++) {
-		int j;
-
-		for (j = 0; j < MAX_BEAM_ENTS; j++) {
-			CL_Init_Entity (&cl_beams[i].ent_list[j]);
-		}
+	for (to = cl_beams; to; to = to->next) {
+		for (t = to->to.beam.tents; t; t = t->next)
+			t->ent.efrag = 0;
+		free_temp_entities (to->to.beam.tents);
 	}
-	for (i = 0; i < MAX_EXPLOSIONS; i++) {
-		CL_Init_Entity (&cl_explosions[i].ent);
+	free_tent_objects (cl_beams);
+	cl_beams = 0;
+
+	for (to = cl_explosions; to; to = to->next) {
+		for (t = to->to.ex.tent; t; t = t->next)
+			t->ent.efrag = 0;
+		free_temp_entities (to->to.ex.tent);
 	}
-	r_view_model = &cl.viewent;
-}
-
-static explosion_t *
-CL_AllocExplosion (void)
-{
-	float       time;
-	int         index, i;
-
-	for (i = 0; i < MAX_EXPLOSIONS; i++)
-		if (!cl_explosions[i].ent.model)
-			return &cl_explosions[i];
-	// find the oldest explosion
-	time = cl.time;
-	index = 0;
-
-	for (i = 0; i < MAX_EXPLOSIONS; i++)
-		if (cl_explosions[i].start < time) {
-			time = cl_explosions[i].start;
-			index = i;
-		}
-	return &cl_explosions[index];
-}
-
-static beam_t *
-beam_alloc (int ent)
-{
-	int         i;
-	beam_t     *b;
-
-	// override any beam with the same entity
-	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
-		if (b->entity == ent)
-			return b;
-	// find a free beam
-	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
-		if (!b->model || b->endtime < cl.time)
-			return b;
-	Sys_Printf ("beam list overflow!\n");
-	return 0;
 }
 
 static inline void
 beam_clear (beam_t *b)
 {
-	if (b->ent_count) {
-		entity_t   *e = b->ent_list + b->ent_count;
+	if (b->tents) {
+		tent_t     *t;
 
-		while (e != b->ent_list)
-			R_RemoveEfrags (e-- - 1);
-		b->ent_count = 0;
+		for (t = b->tents; t; t = t->next) {
+			R_RemoveEfrags (&t->ent);
+			t->ent.efrag = 0;
+		}
+		free_temp_entities (b->tents);
+		b->tents = 0;
 	}
 }
 
 static inline void
 beam_setup (beam_t *b)
 {
-	entity_t   *ent;
+	tent_t     *tent;
 	float       forward, pitch, yaw, d;
 	int         ent_count;
 	vec3_t      dist, org;
@@ -224,24 +269,25 @@ beam_setup (beam_t *b)
 	d = VectorNormalize (dist);
 	VectorScale (dist, 30, dist);
 	ent_count = ceil (d / 30);
-	ent_count = min (ent_count, MAX_BEAM_ENTS);
-	b->ent_count = ent_count;
 	d = 0;
 	while (ent_count--) {
-		ent = &b->ent_list[ent_count];
-		VectorMultAdd (org, d, dist, ent->origin);
+		tent = new_temp_entity ();
+		tent->next = b->tents;
+		b->tents = tent;
+
+		VectorMultAdd (org, d, dist, tent->ent.origin);
 		d += 1.0;
-		ent->model = b->model;
-		ent->angles[0] = pitch;
-		ent->angles[1] = yaw;
-		if (!ent->efrag)
-			R_AddEfrags (ent);
+		tent->ent.model = b->model;
+		tent->ent.angles[0] = pitch;
+		tent->ent.angles[1] = yaw;
+		R_AddEfrags (&tent->ent);
 	}
 }
 
 static void
 CL_ParseBeam (model_t *m)
 {
+	tent_obj_t *to;
 	beam_t     *b;
 	int         ent;
 	vec3_t      start, end;
@@ -251,30 +297,35 @@ CL_ParseBeam (model_t *m)
 	MSG_ReadCoordV (net_message, start);
 	MSG_ReadCoordV (net_message, end);
 
-	if ((b = beam_alloc (ent))) {
-		beam_clear (b);
-		b->entity = ent;
-		b->model = m;
-		b->endtime = cl.time + 0.2;
-		b->seed = rand ();
-		VectorCopy (end, b->end);
-		if (b->entity != cl.viewentity) {
-			// this will be done in CL_UpdateBeams
-			VectorCopy (start, b->start);
-			beam_setup (b);
-		}
+	to = new_tent_object ();
+	to->next = cl_beams;
+	cl_beams = to;
+	b = &to->to.beam;
+	b->tents = 0;
+
+	beam_clear (b);
+	b->entity = ent;
+	b->model = m;
+	b->endtime = cl.time + 0.2;
+	b->seed = rand ();
+	VectorCopy (end, b->end);
+	if (b->entity != cl.viewentity) {
+		// this will be done in CL_UpdateBeams
+		VectorCopy (start, b->start);
+		beam_setup (b);
 	}
 }
 
 void
 CL_ParseTEnt (void)
 {
-	byte         type;
+	byte        type;
 	dlight_t   *dl;
-	int          colorStart, colorLength;
+	tent_obj_t *to;
 	explosion_t *ex;
-	vec3_t       col, pos;
-	sfx_t *		 spike_sound[] = {
+	int         colorStart, colorLength;
+	vec3_t      col, pos;
+	sfx_t      *spike_sound[] = {
 		cl_sfx_ric3, cl_sfx_ric3, cl_sfx_ric2, cl_sfx_ric1,
 	};
 
@@ -346,18 +397,24 @@ CL_ParseTEnt (void)
 			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 
 			// sprite
-			ex = CL_AllocExplosion ();
-			VectorCopy (pos, ex->ent.origin);
+			to = new_tent_object ();
+			to->next = cl_explosions;
+			cl_explosions = to;
+			ex = &to->to.ex;
+			ex->tent = new_temp_entity ();
+
+			VectorCopy (pos, ex->tent->ent.origin);
 			ex->start = cl.time;
 			//FIXME need better model management
 			if (!cl_spr_explod->cache.data)
 				cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
-			ex->ent.model = cl_spr_explod;
+			ex->tent->ent.model = cl_spr_explod;
 			break;
 
 		case TE_TAREXPLOSION:			// tarbaby explosion
 			MSG_ReadCoordV (net_message, pos);
 			R_BlobExplosion (pos);
+
 			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 			break;
 
@@ -439,24 +496,33 @@ CL_ParseTEnt (void)
 	}
 }
 
+#define BEAM_SEED_INTERVAL 72
+#define BEAM_SEED_PRIME 3191
+
 static void
 CL_UpdateBeams (void)
 {
+	tent_obj_t **to;
 	beam_t     *b;
-	entity_t  **ent;
-	float       forward, pitch, yaw, d;
-	int         i;
-	vec3_t      dist, org;
+	unsigned    seed;
+	tent_t     *t;
 
 	// update lightning
-	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++) {
+	for (to = &cl_beams; *to; ) {
+		b = &(*to)->to.beam;
 		if (!b->endtime)
 			continue;
 		if (!b->model || b->endtime < cl.time) {
+			tent_obj_t *_to;
 			b->endtime = 0;
 			beam_clear (b);
+			_to = *to;
+			*to = _to->next;
+			_to->next = tent_objects;
+			tent_objects = _to;
 			continue;
 		}
+		to = &(*to)->next;
 
 		// if coming from the player, update the start position
 		if (b->entity == cl.viewentity) {
@@ -465,43 +531,13 @@ CL_UpdateBeams (void)
 			beam_setup (b);
 		}
 
-		// calculate pitch and yaw
-		VectorSubtract (b->end, b->start, dist);
-
-		if (dist[1] == 0 && dist[0] == 0) {
-			yaw = 0;
-			if (dist[2] > 0)
-				pitch = 90;
-			else
-				pitch = 270;
-		} else {
-			yaw = (int) (atan2 (dist[1], dist[0]) * 180 / M_PI);
-			if (yaw < 0)
-				yaw += 360;
-
-			forward = sqrt (dist[0] * dist[0] + dist[1] * dist[1]);
-			pitch = (int) (atan2 (dist[2], forward) * 180 / M_PI);
-			if (pitch < 0)
-				pitch += 360;
-		}
+		seed = b->seed + ((int) (cl.time * BEAM_SEED_INTERVAL) %
+						  BEAM_SEED_INTERVAL);
 
 		// add new entities for the lightning
-		VectorCopy (b->start, org);
-		d = VectorNormalize (dist);
-		b->ent_count = 0;
-		while (d > 0 && b->ent_count < MAX_BEAM_ENTS) {
-			ent = R_NewEntity ();
-			if (!ent)
-				return;
-			*ent = &b->ent_list[b->ent_count++];
-			VectorCopy (org, (*ent)->origin);
-			(*ent)->model = b->model;
-			(*ent)->angles[0] = pitch;
-			(*ent)->angles[1] = yaw;
-			(*ent)->angles[2] = rand () % 360;
-
-			VectorMultAdd(org, 30, dist, org);
-			d -= 30;
+		for (t = b->tents; t; t = t->next) {
+			seed = seed * BEAM_SEED_PRIME;
+			t->ent.angles[2] = seed % 360;
 		}
 	}
 }
@@ -509,24 +545,31 @@ CL_UpdateBeams (void)
 static void
 CL_UpdateExplosions (void)
 {
-	entity_t   **ent;
+	int         f;
+	tent_obj_t **to;
 	explosion_t *ex;
-	int         f, i;
+	entity_t   *ent;
 
-	for (i = 0, ex = cl_explosions; i < MAX_EXPLOSIONS; i++, ex++) {
-		if (!ex->ent.model)
-			continue;
+	for (to = &cl_explosions; *to; ) {
+		ex = &(*to)->to.ex;
+		ent = &ex->tent->ent;
 		f = 10 * (cl.time - ex->start);
-		if (f >= ex->ent.model->numframes) {
-			ex->ent.model = NULL;
+		if (f >= ent->model->numframes) {
+			tent_obj_t *_to;
+			R_RemoveEfrags (ent);
+			ent->efrag = 0;
+			free_temp_entities (ex->tent);
+			_to = *to;
+			*to = _to->next;
+			_to->next = tent_objects;
+			tent_objects = _to;
 			continue;
 		}
+		to = &(*to)->next;
 
-		ent = R_NewEntity ();
-		if (!ent)
-			return;
-		ex->ent.frame = f;
-		*ent = &ex->ent;
+		ent->frame = f;
+		if (!ent->efrag)
+			R_AddEfrags (ent);
 	}
 }
 

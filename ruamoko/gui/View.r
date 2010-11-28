@@ -38,15 +38,21 @@
 	return flags & 1;
 }
 
-- (void) setBasePos: (integer) x y: (integer) y
+- (Point) basePos
 {
-	local Point point = [[Point alloc] initWithComponents:x :y];
-	[self setBasePos:point];
-	[point release];
+	return makePoint (xabs, yabs);
 }
 
-- (void) setBasePos: (Point)pos
+- (void) setBasePos: (integer) x y: (integer) y
 {
+	local Point point = {x, y};
+	xabs = xpos + x;
+	yabs = ypos + y;
+}
+
+- (void) setBasePosFromView: (View) view
+{
+	Point pos = [view basePos];
 	xabs = xpos + pos.x;
 	yabs = ypos + pos.y;
 }

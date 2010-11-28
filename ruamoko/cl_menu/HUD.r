@@ -11,7 +11,7 @@ integer HUDHandleClass;
 - (id) initWithComponents: (integer) x : (integer) y
 {
 	self = [super init];
-	origin = [[Point alloc] initWithComponents: x :y];
+	origin = makePoint (x, y);
 	visible = YES;
 
 	return self;
@@ -19,7 +19,6 @@ integer HUDHandleClass;
 
 - (void) dealloc
 {
-	[origin release];
 	[super dealloc];
 }
 
@@ -33,19 +32,19 @@ integer HUDHandleClass;
 	return origin;
 }
 
-- (Point) size
+- (Size) size
 {
-	return NIL;
+	return makeSize (0, 0);
 }
 
 - (void) setOrigin: (Point) newPoint
 {
-	[origin setPoint :newPoint];
+	origin = newPoint;
 }
 
-- (void) translate: (Point) addPoint
+- (void) translate: (Point) offset
 {
-	[origin addPoint :addPoint];
+	origin = addPoint(origin, offset);
 }
 
 - (BOOL) isVisible
@@ -72,9 +71,9 @@ integer HUDHandleClass;
 	return self;
 }
 
-- (Point) size
+- (Size) size
 {
-	return [[Point alloc] initWithComponents :8*(integer) strlen (text) :8];
+	return makeSize (8*(integer) strlen (text), 8);
 }
 
 - (string) text
@@ -90,7 +89,7 @@ integer HUDHandleClass;
 - (void) display
 {
 	if (visible)
-		Draw_String ([origin x], [origin y], text);
+		Draw_String (origin.x, origin.y, text);
 }
 @end
 
@@ -109,9 +108,9 @@ integer HUDHandleClass;
 	[super dealloc];
 }
 
-- (Point) size
+- (Size) size
 {
-	return [[Point alloc] initWithComponents :[picture width] :[picture height]];
+	return makeSize ([picture width], [picture height]);
 }
 
 - (void) setFile: (string) _file
@@ -123,7 +122,7 @@ integer HUDHandleClass;
 - (void) display
 {
 	if (visible)
-		[picture draw :[origin x] :[origin y]];
+		[picture draw :origin.x :origin.y];
 }
 @end
 
@@ -146,7 +145,7 @@ integer HUDHandleClass;
 	[super dealloc];
 }
 
-- (Point) size
+- (Size) size
 {
 	local Frame frame;
 
@@ -188,7 +187,7 @@ integer HUDHandleClass;
 		[self changeFrame];
 
 	f = [frames getItemAt :currentFrame];
-	[f draw :[origin x] :[origin y]];
+	[f draw :origin.x :origin.y];
 }
 
 - (void) start

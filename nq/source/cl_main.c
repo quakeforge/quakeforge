@@ -155,6 +155,7 @@ CL_ClearState (void)
 	r_force_fullscreen = 0;
 
 	CL_Init_Entity (&cl.viewent);
+	r_view_model = &cl.viewent;
 
 	SZ_Clear (&cls.message);
 
@@ -218,7 +219,7 @@ CL_Disconnect (void)
 		if (cls.demorecording)
 			CL_Stop_f ();
 
-		Sys_DPrintf ("Sending clc_disconnect\n");
+		Sys_MaskPrintf (SYS_DEV, "Sending clc_disconnect\n");
 		SZ_Clear (&cls.message);
 		MSG_WriteByte (&cls.message, clc_disconnect);
 		NET_SendUnreliableMessage (cls.netcon, &cls.message);
@@ -261,7 +262,8 @@ CL_EstablishConnection (const char *host)
 	cls.netcon = NET_Connect (host);
 	if (!cls.netcon)
 		Host_Error ("CL_Connect: connect failed\n");
-	Sys_DPrintf ("CL_EstablishConnection: connected to %s\n", host);
+	Sys_MaskPrintf (SYS_DEV, "CL_EstablishConnection: connected to %s\n",
+					host);
 
 	cls.demonum = -1;					// not in the demo loop now
 	CL_SetState (ca_connected);
@@ -281,7 +283,7 @@ CL_SignonReply (void)
 {
 	char        str[8192];
 
-	Sys_DPrintf ("CL_SignonReply: %i\n", cls.signon);
+	Sys_MaskPrintf (SYS_DEV, "CL_SignonReply: %i\n", cls.signon);
 
 	switch (cls.signon) {
 	case 1:
@@ -528,7 +530,9 @@ CL_RelinkEntities (void)
 		// if the object wasn't included in the last packet, remove it
 		if (state->msgtime != cl.mtime[0]) {
 			ent->model = NULL;
-			ent->pose1 = ent->pose2 = -1;
+			//johnfitz -- next time this entity slot is reused, the lerp will
+			//need to be reset
+			ent->lerpflags |= LERP_RESETMOVE|LERP_RESETANIM;
 			if (ent->efrag)
 				R_RemoveEfrags (ent);	// just became empty
 			continue;
@@ -539,6 +543,8 @@ CL_RelinkEntities (void)
 		if (state->forcelink) {
 			// The entity was not updated in the last message so move to the
 			// final spot
+			VectorCopy (state->msg_origins[0], ent->origin);
+			VectorCopy (state->msg_angles[0], ent->angles);
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->efrag)
 					R_RemoveEfrags (ent);
@@ -554,10 +560,13 @@ CL_RelinkEntities (void)
 				// assume a teleportation, not a motion
 				VectorCopy (state->msg_origins[0], ent->origin);
 				VectorCopy (state->msg_angles[0], ent->angles);
-				ent->pose1 = ent->pose2 = -1;
+				ent->lerpflags |= LERP_RESETMOVE;
 			} else {
-				VectorMultAdd (state->msg_origins[1], f, delta, ent->origin);
 				// interpolate the origin and angles
+				// FIXME r_lerpmove.value &&
+				if (ent->lerpflags & LERP_MOVESTEP)
+					f = 1;
+				VectorMultAdd (state->msg_origins[1], f, delta, ent->origin);
 				for (j = 0; j < 3; j++) {
 					d = state->msg_angles[0][j] - state->msg_angles[1][j];
 					if (d > 180)
@@ -602,11 +611,19 @@ CL_RelinkEntities (void)
 				dl->color[2] = 0.05;
 				dl->color[3] = 0.7;
 			}
+#if 0		//FIXME how much do we want this?
+			//johnfitz -- assume muzzle flash accompanied by muzzle flare,
+			//which looks bad when lerped
+			if (ent == &cl_entities[cl.viewentity])
+				cl.viewent.lerpflags |= LERP_RESETANIM | LERP_RESETANIM2;
+			else
+				ent->lerpflags |= LERP_RESETANIM | LERP_RESETANIM2;
+#endif
 		}
 		CL_NewDlight (i, ent->origin, state->effects);
 		if (VectorDistance_fast (state->msg_origins[1], ent->origin)
 			> (256 * 256))
-			VectorCopy (ent ->origin, state->msg_origins[1]);
+			VectorCopy (ent->origin, state->msg_origins[1]);
 		if (ent->model->flags & EF_ROCKET) {
 			dl = R_AllocDlight (i);
 			if (dl) {
@@ -697,7 +714,7 @@ CL_SendCmd (void)
 		return;							// no message at all
 
 	if (!NET_CanSendMessage (cls.netcon)) {
-		Sys_DPrintf ("CL_WriteToServer: can't send\n");
+		Sys_MaskPrintf (SYS_DEV, "CL_WriteToServer: can't send\n");
 		return;
 	}
 
@@ -727,6 +744,10 @@ CL_SetState (cactive_t state)
 			key_dest = key_console;
 			VID_SetCaption ("Disconnected");
 		}
+		if (state == ca_connected)
+			S_AmbientOn ();
+		else
+			S_AmbientOff ();
 	}
 	if (con_module)
 		con_module->data->console->force_commandline = (state != ca_active);

@@ -358,9 +358,11 @@ type_or_name (char *token)
 		yylval.typename = typename;
 		return TYPE_NAME;
 	}
-	if ((class = get_class (token, 0))) {
-		yylval.string_val = save_string (token);
-		return CLASS_NAME;
+	if (!get_enum (token)) {
+		if ((class = get_class (token, 0))) {
+			yylval.string_val = save_string (token);
+			return CLASS_NAME;
+		}
 	}
 	yylval.string_val = save_string (token);
 	return NAME;

@@ -436,7 +436,8 @@ SV_qtvPacket (int qport)
 		if (proxies[i].netchan.qport != qport)
 			continue;
 		if (proxies[i].netchan.remote_address.port != net_from.port) {
-			Sys_DPrintf ("SV_ReadPackets: fixing up a translated port\n");
+			Sys_MaskPrintf (SYS_DEV,
+							"SV_ReadPackets: fixing up a translated port\n");
 			proxies[i].netchan.remote_address.port = net_from.port;
 		}
 		if (Netchan_Process (&proxies[i].netchan)) {

@@ -1,0 +1,52 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+/**
+\page filesystem QuakeForge Directory Trees
+
+The QuakeForge directory trees resemble that of Quake, but have been made
+more suitable for multi-user systems. The directory trees have been split
+into "shared data" and "user data".
+
+The shared data tree is intended to be in a read-only location that is
+accessible by permitted users of the system. The contents of the shared
+data will usually be the game data as extracted from the Quake or mission
+pack CDs, or mod data downloaded from the internet.
+
+The user data tree is intended to be private to the individual user and will
+usually be in the user's home directory. The user data tree usually starts
+out empty as it is created by QuakeForge when needed, but user configs,
+saved games, recorded demos, screen-shots, quakeworld downloads etc will be
+written to the user data tree. Also, QuakeC/Ruamoko file access is
+generally restricted to the user data tree. Files in the user data tree
+take precedence over files in the shared data tree.
+
+Except for the system configuration file, the user configuration file, and
+the directory configuration file, QuakeForge will not read any file outside
+of the shared or user data trees.
+
+The shared data tree is specified by the \c fs_sharepath cvar. The default
+value varies depending on the system, but will generally be either \c
+/usr/local/share/games/quakeforge or \c /usr/share/games/quakeforge on
+Linux or other UNIX like systems, and \c . (the current directory) on
+Windows systems.
+
+The user data tree is specified by the \c fs_userpath cvar. The default
+value varies depending on the system, but will generally be \c
+~/.quakeforge or \c ~/.local/share/quakeforge on Linux or other UNIX like
+systems, and \c . (the current directory) on Windows systems.
+
+The user data tree and the shared data tree being in the same place is
+quite valid, and QuakeForge is smart enough to not search twice for files
+when the trees are in the same place.
+
+Once QuakeForge is running, \c fs_sharepath and \c fs_userpath cannot be
+altered. However, they may be altered by setting them in the system
+configuration file, the user configuration file, or on the command line.
+
+The internal layout of the shared and user data trees are, by default, the
+same as Quake (an \c id1 directory tree, plus other mod directories), but
+with the addition of a \c QF directory which holds QuakeForge specific data
+(such as the menus). The structure of the data trees and, more importantly,
+the relationship between the mod directories can be configured with the
+directory configurtion file (see \ref dirconf).
+
+*/

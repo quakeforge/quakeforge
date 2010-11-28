@@ -436,7 +436,7 @@ model_t	*Mod_FindName (const char *name);
 void	Mod_ProcessTexture(miptex_t *mt, texture_t *tx);
 void	Mod_LoadExternalSkins (model_t * mod);
 void	Mod_LoadExternalTextures (model_t * mod);
-void	Mod_LoadLighting (lump_t *l);
+void	Mod_LoadLighting (bsp_t *bsp);
 int     Mod_CalcFullbright (byte *in, byte *out, int pixels);
 int     Mod_Fullbright (byte * skin, int width, int height, char *name);
 

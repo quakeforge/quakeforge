@@ -33,10 +33,20 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "outside.h"
 #include "winding.h"
 
+/**	\addtogroup qfbsp_outside
+*/
+//@{
+
 int         outleafs;
 
+/**	Find the leaf node in which the point is.
+
+	\param node		The root of the bsp tree.
+	\param point	The point's location.
+	\return			The leaf node in which the point is.
+*/
 static node_t *
-PointInLeaf (node_t *node, vec3_t point)
+PointInLeaf (node_t *node, const vec3_t point)
 {
 	vec_t       d;
 
@@ -47,6 +57,11 @@ PointInLeaf (node_t *node, vec3_t point)
 	return node;
 }
 
+/**	Set the distance to a node from all reachable nodes.
+
+	\param n		The current node.
+	\param dist		The distance to the original node.
+*/
 static void
 FloodEntDist_r (node_t *n, int dist)
 {
@@ -73,8 +88,17 @@ FloodEntDist_r (node_t *n, int dist)
 	}
 }
 
+/**	Try to place an entity in the map.
+
+	The entity must be in open space.
+
+	\param num		The entity number.
+	\param point	The entity's origin.
+	\param headnode	The root of the map's bsp tree.
+	\return			true if the entity could be placed, false otherwise.
+*/
 static qboolean
-PlaceOccupant (int num, vec3_t point, node_t *headnode)
+PlaceOccupant (int num, const vec3_t point, node_t *headnode)
 {
 	node_t     *n;
 
@@ -88,15 +112,20 @@ PlaceOccupant (int num, vec3_t point, node_t *headnode)
 	return true;
 }
 
-portal_t   *prevleaknode;
+const portal_t *prevleaknode;
 FILE       *leakfile;
 
+/**	Write the coords for points joining two portals to the point file.
+
+	\param n2		The second portal.
+	\note The first portal is set by the preceeding call.
+*/
 static void
-MarkLeakTrail (portal_t *n2)
+MarkLeakTrail (const portal_t *n2)
 {
 	float       len;
 	int         i, j;
-	portal_t   *n1;
+	const portal_t *n1;
 	vec3_t      p1, p2, dir;
 
 	n1 = prevleaknode;
@@ -134,13 +163,66 @@ MarkLeakTrail (portal_t *n2)
 	}
 }
 
+/**	Mark the trail from outside to the entity.
+
+	Try to use the shortest path from the outside node to the entity.
+*/
+static void
+MarkLeakTrail2 (void)
+{
+	int         i;
+	int         next, side;
+	const node_t *n, *nextnode;
+	const portal_t *p, *p2;
+	vec3_t      wc;
+	const vec_t *v;
+
+	leakfile = fopen (options.pointfile, "w");
+	if (!leakfile)
+		Sys_Error ("Couldn't open %s\n", options.pointfile);
+
+	n = &outside_node;
+	next = -1;
+
+	while ((n->o_dist > 1) || (next == -1)) {
+		nextnode = 0;
+		p2 = 0;
+		for (p = n->portals; p; p = p->next[side]) {
+			side = (p->nodes[1] == n);
+			if ((next == -1)
+				|| ((p->nodes[!side]->o_dist < next)
+					&& p->nodes[!side]->o_dist)) {
+				nextnode = p->nodes[!side];
+				next = nextnode->o_dist;
+				p2 = p;
+			}
+		}
+		if (!nextnode)
+			break;
+		n = nextnode;
+
+		VectorZero (wc);
+		for (i = 0; i < p2->winding->numpoints; i++)
+			VectorAdd (wc, p2->winding->points[i], wc);
+		VectorScale (wc, 1.0 / i, wc);
+		fprintf (leakfile, "%g %g %g", wc[0], wc[1], wc[2]);
+	}
+	v = entities[n->occupied].origin;
+	fprintf (leakfile, "%g %g %g\n", v[0], v[1], v[2]);
+
+	fclose (leakfile);
+}
+
 int         hit_occupied;
 
-/*
-	RecursiveFillOutside
+/**	Recurse through the map setting the outside nodes to solid.
 
-	If fill is false, just check, don't fill
-	Returns true if an occupied leaf is reached
+	Recursively traverses the portals of the start node.
+
+	\param l		The start node.
+	\param fill		If false, just check, don't fill
+	\return			\c true if an occupied leaf is reached, otherwise
+					\c false.
 */
 static qboolean
 RecursiveFillOutside (node_t *l, qboolean fill)
@@ -156,7 +238,7 @@ RecursiveFillOutside (node_t *l, qboolean fill)
 		return false;
 
 	if (l->occupied) {
-		vec_t      *v;
+		const vec_t *v;
 		hit_occupied = l->occupied;
 		v = entities[hit_occupied].origin;
 		qprintf ("reached occupant at: (%4.0f,%4.0f,%4.0f) %s\n", v[0], v[1],
@@ -176,6 +258,8 @@ RecursiveFillOutside (node_t *l, qboolean fill)
 
 		if (RecursiveFillOutside (p->nodes[s], fill)) {
 			// leaked, so stop filling
+			if (options.smart_leak)
+				return true;
 			if (!options.hullnum) {
 				MarkLeakTrail (p);
 				DrawLeaf (l, 2);
@@ -188,6 +272,12 @@ RecursiveFillOutside (node_t *l, qboolean fill)
 	return res;
 }
 
+/**	Remove faces from filled in leafs.
+
+	Recursively traverses the portals of the start node.
+
+	\param node		Start node.
+*/
 static void
 ClearOutFaces (node_t *node)
 {
@@ -223,6 +313,8 @@ FillOutside (node_t *node)
 		return false;
 	}
 
+	// Place the map's entities in the map. inside will be true if at least
+	// one entitie could be placed.
 	inside = false;
 	for (i = 1; i < num_entities; i++) {
 		if (!_VectorCompare (entities[i].origin, vec3_origin)) {
@@ -259,6 +351,9 @@ FillOutside (node_t *node)
 			printf ("leak file written to %s\n", options.pointfile);
 			printf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 		}
+		if (options.smart_leak)
+			MarkLeakTrail2 ();
+
 		// remove faces from filled in leafs
 		ClearOutFaces (node);
 		return false;
@@ -268,9 +363,11 @@ FillOutside (node_t *node)
 	valid++;
 	RecursiveFillOutside (outside_node.portals->nodes[s], true);
 
-	// remove faces from filled in leafs    
+	// remove faces from filled in leafs
 	ClearOutFaces (node);
 
 	qprintf ("%4i outleafs\n", outleafs);
 	return true;
 }
+
+//@}

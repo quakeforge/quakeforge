@@ -538,8 +538,6 @@ VID_Init (unsigned char *palette)
 	vid.colormap8 = vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 
-	Con_CheckResize ();
-
 #ifdef SPLASH_SCREEN
 	if(hwnd_dialog)
 		DestroyWindow (hwnd_dialog);

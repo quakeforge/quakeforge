@@ -100,11 +100,13 @@ free_progs_mem (progs_t *pr, void *mem)
 }
 
 VISIBLE void
-PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
+PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int edicts, int zone)
 {
 	size_t      i;
 	int         mem_size;
+	int         offset_tweak;
 	dprograms_t progs;
+	byte       *base;
 
 	if (!pr->file_error)
 		pr->file_error = file_error;
@@ -152,9 +154,14 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 		}
 	}
 
+	// Some compilers (eg, FTE) put extra data between the header and the
+	// strings section. What's worse, they de-align the data.
+	offset_tweak = progs.ofs_strings % sizeof (pr_int_t);
+	offset_tweak = (sizeof (pr_int_t) - offset_tweak) % sizeof (pr_int_t);
+
 	// size of progs themselves
-	pr->progs_size = size;
-	Sys_DPrintf ("Programs occupy %iK.\n", size / 1024);
+	pr->progs_size = size + offset_tweak;
+	Sys_MaskPrintf (SYS_DEV, "Programs occupy %iK.\n", size / 1024);
 	// round off to next highest whole word address (esp for Alpha)
 	// this ensures that pointers in the engine data area are always
 	// properly aligned
@@ -187,9 +194,10 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 	((byte *) pr->progs)[mem_size] = 0;
 
 	memcpy (pr->progs, &progs, sizeof (progs));
-	Qread (file, pr->progs + 1, size - sizeof (progs));
-	CRC_ProcessBlock ((byte *)(pr->progs + 1), &pr->crc,
-					  size - sizeof (progs));
+	base = (byte *) (pr->progs + 1) + offset_tweak;
+	Qread (file, base, size - sizeof (progs));
+	CRC_ProcessBlock (base, &pr->crc, size - sizeof (progs));
+	base -= sizeof (progs);	// offsets are from file start
 
 	if (pr->edicts)
 		*pr->edicts = (edict_t *)((byte *) pr->progs + pr->progs_size);
@@ -199,18 +207,14 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 		PR_Zone_Init (pr);
 
 	pr->pr_functions =
-		(dfunction_t *) ((byte *) pr->progs + pr->progs->ofs_functions);
-	pr->pr_strings = (char *) pr->progs + pr->progs->ofs_strings;
-	pr->pr_stringsize = (char *) pr->zone + pr->zone_size - (char *) pr->progs;
-	pr->pr_globaldefs =
-		(ddef_t *) ((byte *) pr->progs + pr->progs->ofs_globaldefs);
-	pr->pr_fielddefs =
-		(ddef_t *) ((byte *) pr->progs + pr->progs->ofs_fielddefs);
-	pr->pr_statements =
-		(dstatement_t *) ((byte *) pr->progs + pr->progs->ofs_statements);
+		(dfunction_t *) (base + pr->progs->ofs_functions);
+	pr->pr_strings = (char *) base + pr->progs->ofs_strings;
+	pr->pr_stringsize = (char *) pr->zone + pr->zone_size - (char *) base;
+	pr->pr_globaldefs = (ddef_t *) (base + pr->progs->ofs_globaldefs);
+	pr->pr_fielddefs = (ddef_t *) (base + pr->progs->ofs_fielddefs);
+	pr->pr_statements = (dstatement_t *) (base + pr->progs->ofs_statements);
 
-	pr->pr_globals =
-		(pr_type_t *) ((byte *) pr->progs + pr->progs->ofs_globals);
+	pr->pr_globals = (pr_type_t *) (base + pr->progs->ofs_globals);
 
 	pr->globals_size = (pr_type_t*)((byte *) pr->zone + pr->zone_size)
 						- pr->pr_globals;

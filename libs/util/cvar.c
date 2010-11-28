@@ -237,7 +237,8 @@ Cvar_Set (cvar_t *var, const char *value)
 		return;
 
 	if (var->flags & CVAR_ROM) {
-		Sys_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n", var->name);
+		Sys_MaskPrintf (SYS_DEV, "Cvar \"%s\" is read-only, cannot modify\n",
+						var->name);
 		return;
 	}
 
@@ -352,8 +353,9 @@ set_cvar (const char *cmd, int orflags)
 
 	if (var) {
 		if (var->flags & CVAR_ROM) {
-			Sys_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n",
-						 var_name);
+			Sys_MaskPrintf (SYS_DEV,
+							"Cvar \"%s\" is read-only, cannot modify\n",
+							var_name);
 		} else {
 			Cvar_Set (var, value);
 			Cvar_SetFlags (var, var->flags | orflags);
@@ -383,6 +385,30 @@ Cvar_Seta_f (void)
 }
 
 static void
+Cvar_Inc_f (void)
+{
+	cvar_t     *var;
+	float       inc = 1;
+	const char *name;
+
+	switch (Cmd_Argc ()) {
+		default:
+		case 1:
+			Sys_Printf ("inc <cvar> [amount] : increment cvar\n");
+			return;
+		case 3:
+			inc = atof (Cmd_Argv (2));
+		case 2:
+			name = Cmd_Argv (1);
+			var = Cvar_FindVar (name);
+			if (!var)
+				Sys_Printf ("Unknown variable \"%s\"\n", name);
+			break;
+	}
+	Cvar_SetValue (var, var->value + inc);
+}
+
+static void
 Cvar_Toggle_f (void)
 {
 	cvar_t     *var;
@@ -401,6 +427,84 @@ Cvar_Toggle_f (void)
 	}
 
 	Cvar_Set (var, var->int_val ? "0" : "1");
+}
+
+static void
+Cvar_Cycle_f (void)
+{
+	int         i;
+	const char *name;
+	cvar_t     *var;
+
+	if (Cmd_Argc () < 3) {
+		Sys_Printf ("cycle <cvar> <value list>: cycle cvar through a list of "
+					"values\n");
+		return;
+	}
+
+	name = Cmd_Argv (1);
+	var = Cvar_FindVar (name);
+	if (!var) {
+		var = Cvar_Get (name, Cmd_Argv (Cmd_Argc () - 1), CVAR_USER_CREATED,
+						0, USER_CVAR);
+	}
+
+	// loop through the args until you find one that matches the current cvar
+	// value. yes, this will get stuck on a list that contains the same value
+	// twice. it's not worth dealing with, and i'm not even sure it can be
+	// dealt with -- johnfitz
+	for (i = 2; i < Cmd_Argc (); i++) {
+		// zero is assumed to be a string, even though it could actually be
+		// zero. The worst case is that the first time you call this command,
+		// it won't match on zero when it should, but after that, it will be
+		// comparing string that all had the same source (the user) so it will
+		// work.
+		if (atof (Cmd_Argv (i)) == 0) {
+			if (!strcmp (Cmd_Argv (i), var->string))
+				break;
+		} else {
+			if (atof (Cmd_Argv (i)) == var->value)
+				break;
+		}
+	}
+
+	if (i == Cmd_Argc ())
+		Cvar_Set (var, Cmd_Argv (2));	// no match
+	else if (i + 1 == Cmd_Argc ())
+		Cvar_Set (var, Cmd_Argv (2));	// matched last value in list
+	else
+		Cvar_Set (var, Cmd_Argv (i + 1));	// matched earlier in list
+}
+
+static void
+Cvar_Reset_f (void)
+{
+	cvar_t     *var;
+	const char *name;
+
+	switch (Cmd_Argc ()) {
+		default:
+		case 1:
+			Sys_Printf ("reset <cvar> : reset cvar to default\n");
+			break;
+		case 2:
+			name = Cmd_Argv (1);
+			var = Cvar_FindVar (name);
+			if (!var)
+				Sys_Printf ("Unknown variable \"%s\"\n", name);
+			else
+				Cvar_Reset (var);
+			break;
+	}
+}
+
+static void Cvar_ResetAll_f (void)
+{
+	cvar_t     *var;
+
+	for (var = cvar_vars; var; var = var->next)
+		if (!(var->flags & CVAR_ROM))
+			Cvar_Reset (var);
 }
 
 static void
@@ -488,6 +592,11 @@ Cvar_Init (void)
 					"variablename setting)");
 	Cmd_AddCommand ("toggle", Cvar_Toggle_f, "Toggle a cvar on or off");
 	Cmd_AddCommand ("cvarlist", Cvar_CvarList_f, "List all cvars");
+	Cmd_AddCommand ("cycle", Cvar_Cycle_f,
+					"Cycle a cvar through a list of values");
+	Cmd_AddCommand ("inc", Cvar_Inc_f, "Increment a cvar");
+	Cmd_AddCommand ("reset", Cvar_Reset_f, "Reset a cvar");
+	Cmd_AddCommand ("resetall", Cvar_ResetAll_f, "Reset all cvars");
 }
 
 void
@@ -534,6 +643,7 @@ Cvar_Get (const char *name, const char *string, int cvarflags,
 		// Cvar doesn't exist, so we create it
 		var->name = strdup (name);
 		var->string = strdup (string);
+		var->default_string = strdup (string);
 		var->flags = cvarflags;
 		var->callback = callback;
 		var->description = description;
@@ -577,4 +687,10 @@ Cvar_SetFlags (cvar_t *var, int cvarflags)
 		return;
 
 	var->flags = cvarflags;
+}
+
+VISIBLE void
+Cvar_Reset (cvar_t *var)
+{
+	Cvar_Set (var, var->default_string);
 }

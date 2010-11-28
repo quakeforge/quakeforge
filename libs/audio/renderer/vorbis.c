@@ -103,7 +103,7 @@ vorbis_get_info (OggVorbis_File *vf)
 	samples = ov_pcm_total (vf, -1);
 
 	for (ptr = ov_comment (vf, -1)->user_comments; *ptr; ptr++) {
-		Sys_DPrintf ("%s\n", *ptr);
+		Sys_MaskPrintf (SYS_DEV, "%s\n", *ptr);
 		if (strncmp ("CUEPOINT=", *ptr, 9) == 0) {
 			sscanf (*ptr + 9, "%d %d", &sample_start, &sample_count);
 		}
@@ -120,13 +120,12 @@ vorbis_get_info (OggVorbis_File *vf)
 	info.dataofs = 0;
 	info.datalen = samples * info.channels * info.width;
 
-	if (developer->int_val) {
-		Sys_Printf ("\nBitstream is %d channel, %dHz\n",
+	Sys_MaskPrintf (SYS_DEV, "\nBitstream is %d channel, %dHz\n",
 					info.channels, info.rate);
-		Sys_Printf ("\nDecoded length: %d samples (%d bytes)\n",
+	Sys_MaskPrintf (SYS_DEV, "\nDecoded length: %d samples (%d bytes)\n",
 					info.frames, info.width);
-		Sys_Printf ("Encoded by: %s\n\n", ov_comment (vf, -1)->vendor);
-	}
+	Sys_MaskPrintf (SYS_DEV, "Encoded by: %s\n\n",
+					ov_comment (vf, -1)->vendor);
 
 	return info;
 }
@@ -304,10 +303,10 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 		return -1;
 	}
 	if (info.frames / info.rate < 3) {
-		Sys_DPrintf ("cache %s\n", realname);
+		Sys_MaskPrintf (SYS_DEV, "cache %s\n", realname);
 		vorbis_cache (sfx, realname, &vf, info);
 	} else {
-		Sys_DPrintf ("stream %s\n", realname);
+		Sys_MaskPrintf (SYS_DEV, "stream %s\n", realname);
 		vorbis_stream (sfx, realname, &vf, info);
 	}
 	return 0;

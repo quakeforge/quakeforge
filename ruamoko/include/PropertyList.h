@@ -13,7 +13,8 @@
 + (PLItem) newArray;
 + (PLItem) newData:(void[]) data size:(integer) len;
 + (PLItem) newString:(string) str;
-+ (PLItem) newFromString:(string) str;
++ (PLItem) fromString:(string) str;
++ (PLItem) fromFile:(QFile) file;
 
 - initWithItem:(plitem_t) item;
 - initWithOwnItem:(plitem_t) item;

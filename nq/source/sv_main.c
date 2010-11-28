@@ -49,8 +49,36 @@ server_static_t svs;
 
 char        localmodels[MAX_MODELS][5];	// inline model names for precache
 
+int sv_protocol = PROTOCOL_FITZQUAKE;
+
 entity_state_t baselines[MAX_EDICTS];
 
+static void
+SV_Protocol_f (void)
+{
+	int         i;
+
+	switch (Cmd_Argc ()) {
+		case 1:
+			Sys_Printf ("\"sv_protocol\" is \"%i\"\n", sv_protocol);
+			break;
+		case 2:
+			i = atoi (Cmd_Argv (1));
+			if (i != PROTOCOL_NETQUAKE && i != PROTOCOL_FITZQUAKE) {
+				Sys_Printf ("sv_protocol must be %i or %i\n",
+							PROTOCOL_NETQUAKE, PROTOCOL_FITZQUAKE);
+			} else {
+				sv_protocol = i;
+				if (sv.active)
+					Sys_Printf ("changes will not take effect until the next "
+								"level load.\n");
+			}
+			break;
+		default:
+			Sys_Printf ("usage: sv_protocol <protocol>\n");
+			break;
+	}
+}
 
 void
 SV_Init (void)
@@ -72,6 +100,9 @@ SV_Init (void)
 								   NULL, "None");
 	sv_aim = Cvar_Get ("sv_aim", "0.93", CVAR_NONE, NULL, "None");
 	sv_nostep = Cvar_Get ("sv_nostep", "0", CVAR_NONE, NULL, "None");
+
+	Cmd_AddCommand ("sv_protocol", SV_Protocol_f, "set the protocol to be "
+					"used after the next map load");
 
 	for (i = 0; i < MAX_MODELS; i++)
 		snprintf (localmodels[i], sizeof (localmodels[i]), "*%i", i);
@@ -149,13 +180,24 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 
 	ent = NUM_FOR_EDICT (&sv_pr_state, entity);
 
-	channel = (ent << 3) | channel;
-
 	field_mask = 0;
 	if (volume != DEFAULT_SOUND_PACKET_VOLUME)
 		field_mask |= SND_VOLUME;
 	if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION)
 		field_mask |= SND_ATTENUATION;
+
+	if (ent >= 8192) {
+		if (sv.protocol == PROTOCOL_NETQUAKE)
+			return; //don't send any info protocol can't support
+		else
+			field_mask |= SND_LARGEENTITY;
+	}
+	if (sound_num >= 256 || channel >= 8) {
+		if (sv.protocol == PROTOCOL_NETQUAKE)
+			return; //don't send any info protocol can't support
+		else
+			field_mask |= SND_LARGESOUND;
+	}
 
 	// directed messages go to only the entity on which they are targeted
 	MSG_WriteByte (&sv.datagram, svc_sound);
@@ -164,8 +206,18 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 		MSG_WriteByte (&sv.datagram, volume);
 	if (field_mask & SND_ATTENUATION)
 		MSG_WriteByte (&sv.datagram, attenuation * 64);
-	MSG_WriteShort (&sv.datagram, channel);
-	MSG_WriteByte (&sv.datagram, sound_num);
+
+	if (field_mask & SND_LARGEENTITY) {
+		MSG_WriteShort (&sv.datagram, ent);
+		MSG_WriteByte (&sv.datagram, channel);
+	} else {
+		MSG_WriteShort (&sv.datagram, (ent << 3 | channel));
+	}
+	if (field_mask & SND_LARGESOUND)
+		MSG_WriteShort (&sv.datagram, sound_num);
+	else
+		MSG_WriteByte (&sv.datagram, sound_num);
+
 	VectorBlend (SVvector (entity, mins), SVvector (entity, maxs), 0.5, v);
 	VectorAdd (v, SVvector (entity, origin), v);
 	MSG_WriteCoordV (&sv.datagram, v);
@@ -184,14 +236,15 @@ SV_SendServerinfo (client_t *client)
 {
 	const char **s;
 	char        message[2048];
+	int         i;
 
 	MSG_WriteByte (&client->message, svc_print);
-	snprintf (message, sizeof (message), "%c\nVersion %s server (%i CRC)", 2,
+	snprintf (message, sizeof (message), "%c\nVersion %s server (%i CRC)\n", 2,
 			  NQ_VERSION, sv_pr_state.crc);
 	MSG_WriteString (&client->message, message);
 
 	MSG_WriteByte (&client->message, svc_serverinfo);
-	MSG_WriteLong (&client->message, PROTOCOL_VERSION);
+	MSG_WriteLong (&client->message, sv.protocol);
 	MSG_WriteByte (&client->message, svs.maxclients);
 
 	if (!coop->int_val && deathmatch->int_val)
@@ -201,15 +254,19 @@ SV_SendServerinfo (client_t *client)
 
 	snprintf (message, sizeof (message), "%s", 
 			  PR_GetString (&sv_pr_state, SVstring (sv.edicts, message)));
+	message[sizeof (message) - 1] = 0;
 
 	MSG_WriteString (&client->message, message);
 
-	for (s = sv.model_precache + 1; *s; s++)
-		MSG_WriteString (&client->message, *s);
+	// send only the first 256 model and sound precaches if protocol 15
+	for (i = 0, s = sv.model_precache + 1; *s; s++, i++)
+		if (sv.protocol != PROTOCOL_NETQUAKE || i < 256)
+			MSG_WriteString (&client->message, *s);
 	MSG_WriteByte (&client->message, 0);
 
-	for (s = sv.sound_precache + 1; *s; s++)
-		MSG_WriteString (&client->message, *s);
+	for (i = 0, s = sv.sound_precache + 1; *s; s++, i++)
+		if (sv.protocol != PROTOCOL_NETQUAKE || i < 256)
+			MSG_WriteString (&client->message, *s);
 	MSG_WriteByte (&client->message, 0);
 
 	// send music
@@ -247,7 +304,8 @@ SV_ConnectClient (int clientnum)
 
 	client = svs.clients + clientnum;
 
-	Sys_DPrintf ("Client %s connected\n", client->netconnection->address);
+	Sys_MaskPrintf (SYS_DEV, "Client %s connected\n",
+					client->netconnection->address);
 
 	edictnum = clientnum + 1;
 
@@ -384,6 +442,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 	float       miss;
 	vec3_t      org;
 	edict_t    *ent;
+	entity_state_t *baseline;
 
 	// find the client's PVS
 	VectorAdd (SVvector (clent, origin), SVvector (clent, view_ofs), org);
@@ -392,11 +451,18 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 	// send over all entities (excpet the client) that touch the pvs
 	ent = NEXT_EDICT (&sv_pr_state, sv.edicts);
 	for (e = 1; e < sv.num_edicts; e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
+		baseline = (entity_state_t*) ent->data;
+
 		// ignore if not touching a PV leaf
 		if (ent != clent) {				// clent is ALWAYS sent
 			// ignore ents without visible models
 			if (!SVfloat (ent, modelindex) ||
 				!*PR_GetString (&sv_pr_state, SVstring (ent, model)))
+				continue;
+
+			// don't send model > 255 for protocol 15
+			if (sv.protocol == PROTOCOL_NETQUAKE
+				&& (int) SVfloat (ent, modelindex) & 0xFF00)
 				continue;
 
 			for (i = 0; i < ent->num_leafs; i++)
@@ -407,50 +473,78 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 				continue;				// not visible
 		}
 
-		if (msg->maxsize - msg->cursize < 16) {
+		if (msg->cursize + 24 > msg->maxsize) {
 			Sys_Printf ("packet overflow\n");
 			return;
 		}
 		// send an update
 		bits = 0;
 
+
 		for (i = 0; i < 3; i++) {
-			miss = SVvector (ent, origin)[i] -
-				((entity_state_t*)ent->data)->origin[i];
+			miss = SVvector (ent, origin)[i] - baseline->origin[i];
 			if (miss < -0.1 || miss > 0.1)
 				bits |= U_ORIGIN1 << i;
 		}
 
-		if (SVvector (ent, angles)[0] !=
-			((entity_state_t*)ent->data)->angles[0])
+		if (SVvector (ent, angles)[0] != baseline->angles[0])
 			bits |= U_ANGLE1;
 
-		if (SVvector (ent, angles)[1] !=
-			((entity_state_t*)ent->data)->angles[1])
+		if (SVvector (ent, angles)[1] != baseline->angles[1])
 			bits |= U_ANGLE2;
 
-		if (SVvector (ent, angles)[2] !=
-			((entity_state_t*)ent->data)->angles[2])
+		if (SVvector (ent, angles)[2] != baseline->angles[2])
 			bits |= U_ANGLE3;
 
 		if (SVfloat (ent, movetype) == MOVETYPE_STEP)
-			bits |= U_NOLERP;			// don't mess up the step animation
+			bits |= U_STEP;			// don't mess up the step animation
 
-		if (((entity_state_t*)ent->data)->colormap != SVfloat (ent, colormap))
+		if (baseline->colormap != SVfloat (ent, colormap))
 			bits |= U_COLORMAP;
 
-		if (((entity_state_t*)ent->data)->skin != SVfloat (ent, skin))
+		if (baseline->skin != SVfloat (ent, skin))
 			bits |= U_SKIN;
 
-		if (((entity_state_t*)ent->data)->frame != SVfloat (ent, frame))
+		if (baseline->frame != SVfloat (ent, frame))
 			bits |= U_FRAME;
 
-		if (((entity_state_t*)ent->data)->effects != SVfloat (ent, effects))
+		if (baseline->effects != SVfloat (ent, effects))
 			bits |= U_EFFECTS;
 
-		if (((entity_state_t*)ent->data)->modelindex != SVfloat (ent,
-																 modelindex))
+		if (baseline->modelindex != SVfloat (ent, modelindex))
 			bits |= U_MODEL;
+
+#if 0
+		//FIXME finish porting to QF
+		if (pr_alpha_supported) {
+			// TODO: find a cleaner place to put this code
+			eval_t  *val;
+			val = GetEdictFieldValue(ent, "alpha");
+			if (val)
+				ent->alpha = ENTALPHA_ENCODE(val->_float);
+		}
+
+		//don't send invisible entities unless they have effects
+		if (ent->alpha == ENTALPHA_ZERO && !ent->v.effects)
+			continue;
+#endif
+
+		if (sv.protocol != PROTOCOL_NETQUAKE) {
+			//FIXME
+			//if (ent->baseline.alpha != ent->alpha)
+			//	bits |= U_ALPHA;
+			if (bits & U_FRAME && (int) SVfloat (ent, frame) & 0xFF00)
+				bits |= U_FRAME2;
+			if (bits & U_MODEL && (int) SVfloat (ent, modelindex) & 0xFF00)
+				bits |= U_MODEL2;
+			//if (ent->sendinterval) FIXME
+			//	bits |= U_LERPFINISH;
+			if (bits >= 65536)
+				bits |= U_EXTEND1;
+			if (bits >= 16777216)
+				bits |= U_EXTEND2;
+		}
+
 
 		if (e >= 256)
 			bits |= U_LONGENTITY;
@@ -463,6 +557,11 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 
 		if (bits & U_MOREBITS)
 			MSG_WriteByte (msg, bits >> 8);
+		if (bits & U_EXTEND1)
+			MSG_WriteByte (msg, bits >> 16);
+		if (bits & U_EXTEND2)
+			MSG_WriteByte (msg, bits >> 24);
+
 		if (bits & U_LONGENTITY)
 			MSG_WriteShort (msg, e);
 		else
@@ -490,6 +589,16 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 			MSG_WriteCoord (msg, SVvector (ent, origin)[2]);
 		if (bits & U_ANGLE3)
 			MSG_WriteAngle (msg, SVvector (ent, angles)[2]);
+
+		//FIXME
+		//if (bits & U_ALPHA)
+		//	MSG_WriteByte(msg, ent->alpha);
+		if (bits & U_FRAME2)
+			MSG_WriteByte(msg, (int) SVfloat (ent, frame) >> 8);
+		if (bits & U_MODEL2)
+			MSG_WriteByte(msg, (int) SVfloat (ent, modelindex) >> 8);
+		if (bits & U_LERPFINISH)
+			MSG_WriteByte(msg, rint ((SVfloat (ent, nextthink) - sv.time) * 255));
 	}
 }
 
@@ -511,6 +620,9 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	int         bits, items, i;
 	vec3_t      v;
 	edict_t    *other;
+	const char *weaponmodel;
+
+	weaponmodel = PR_GetString (&sv_pr_state, SVstring (ent, weaponmodel));
 
 	// send a damage message
 	if (SVfloat (ent, dmg_take) || SVfloat (ent, dmg_save)) {
@@ -576,10 +688,41 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 //	if (SVfloat (ent, weapon))
 	bits |= SU_WEAPON;
 
+	if (sv.protocol != PROTOCOL_NETQUAKE) {
+		if (bits & SU_WEAPON && SV_ModelIndex(weaponmodel) & 0xFF00)
+			bits |= SU_WEAPON2;
+		if ((int) SVfloat (ent, armorvalue) & 0xFF00)
+			bits |= SU_ARMOR2;
+		if ((int) SVfloat (ent, currentammo) & 0xFF00)
+			bits |= SU_AMMO2;
+		if ((int) SVfloat (ent, ammo_shells) & 0xFF00)
+			bits |= SU_SHELLS2;
+		if ((int) SVfloat (ent, ammo_nails) & 0xFF00)
+			bits |= SU_NAILS2;
+		if ((int) SVfloat (ent, ammo_rockets) & 0xFF00)
+			bits |= SU_ROCKETS2;
+		if ((int) SVfloat (ent, ammo_cells) & 0xFF00)
+			bits |= SU_CELLS2;
+		if (bits & SU_WEAPONFRAME && (int) SVfloat (ent, weaponframe) & 0xFF00)
+			bits |= SU_WEAPONFRAME2;
+		//FIXME
+		//if (bits & SU_WEAPON && ent->alpha != ENTALPHA_DEFAULT)
+		//	bits |= SU_WEAPONALPHA; //for now, weaponalpha = client entity alpha
+		if (bits >= 65536)
+			bits |= SU_EXTEND1;
+		if (bits >= 16777216)
+			bits |= SU_EXTEND2;
+	}
+
 	// send the data
 
 	MSG_WriteByte (msg, svc_clientdata);
 	MSG_WriteShort (msg, bits);
+
+	if (bits & SU_EXTEND1)
+		MSG_WriteByte(msg, bits>>16);
+	if (bits & SU_EXTEND2)
+		MSG_WriteByte(msg, bits>>24);
 
 	if (bits & SU_VIEWHEIGHT)
 		MSG_WriteByte (msg, SVvector (ent, view_ofs)[2]);
@@ -602,8 +745,7 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	if (bits & SU_ARMOR)
 		MSG_WriteByte (msg, SVfloat (ent, armorvalue));
 	if (bits & SU_WEAPON)
-		MSG_WriteByte (msg, SV_ModelIndex (PR_GetString (&sv_pr_state, SVstring
-														 (ent, weaponmodel))));
+		MSG_WriteByte (msg, SV_ModelIndex (weaponmodel));
 
 	MSG_WriteShort (msg, SVfloat (ent, health));
 	MSG_WriteByte (msg, SVfloat (ent, currentammo));
@@ -622,6 +764,26 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 			}
 		}
 	}
+
+	if (bits & SU_WEAPON2)
+		MSG_WriteByte (msg, SV_ModelIndex(weaponmodel) >> 8);
+	if (bits & SU_ARMOR2)
+		MSG_WriteByte (msg, (int) SVfloat (ent, armorvalue) >> 8);
+	if (bits & SU_AMMO2)
+		MSG_WriteByte (msg, (int) SVfloat (ent, currentammo) >> 8);
+	if (bits & SU_SHELLS2)
+		MSG_WriteByte (msg, (int) SVfloat (ent, ammo_shells) >> 8);
+	if (bits & SU_NAILS2)
+		MSG_WriteByte (msg, (int) SVfloat (ent, ammo_nails) >> 8);
+	if (bits & SU_ROCKETS2)
+		MSG_WriteByte (msg, (int) SVfloat (ent, ammo_rockets) >> 8);
+	if (bits & SU_CELLS2)
+		MSG_WriteByte (msg, (int) SVfloat (ent, ammo_cells) >> 8);
+	if (bits & SU_WEAPONFRAME2)
+		MSG_WriteByte (msg, (int) SVfloat (ent, weaponframe) >> 8);
+	// FIXME
+	//if (bits & SU_WEAPONALPHA)
+	//	MSG_WriteByte (msg, ent->alpha); //for now, weaponalpha = client entity alpha
 }
 
 static qboolean
@@ -633,6 +795,9 @@ SV_SendClientDatagram (client_t *client)
 	msg.data = buf;
 	msg.maxsize = sizeof (buf);
 	msg.cursize = 0;
+
+	if (strcmp (client->netconnection->address, "LOCAL") != 0)
+		msg.maxsize = DATAGRAM_MTU;
 
 	MSG_WriteByte (&msg, svc_time);
 	MSG_WriteFloat (&msg, sv.time);
@@ -798,46 +963,81 @@ SV_CreateBaseline (void)
 {
 	int         entnum;
 	edict_t    *svent;
+	entity_state_t *baseline;
+	int         bits;
 
 	for (entnum = 0; entnum < sv.num_edicts; entnum++) {
 		// get the current server version
 		svent = EDICT_NUM (&sv_pr_state, entnum);
+		baseline = (entity_state_t *) svent->data;
+
 		if (svent->free)
 			continue;
 		if (entnum > svs.maxclients && !SVfloat (svent, modelindex))
 			continue;
 
 		// create entity baseline
-		VectorCopy (SVvector (svent, origin),
-					((entity_state_t *) svent->data)->origin);
-		VectorCopy (SVvector (svent, angles),
-					((entity_state_t *) svent->data)->angles);
-		((entity_state_t *) svent->data)->frame = SVfloat (svent, frame);
-		((entity_state_t *) svent->data)->skin = SVfloat (svent, skin);
+		VectorCopy (SVvector (svent, origin), baseline->origin);
+		VectorCopy (SVvector (svent, angles), baseline->angles);
+		baseline->frame = SVfloat (svent, frame);
+		baseline->skin = SVfloat (svent, skin);
 		if (entnum > 0 && entnum <= svs.maxclients) {
-			((entity_state_t *) svent->data)->colormap = entnum;
-			((entity_state_t *) svent->data)->modelindex = SV_ModelIndex
-				("progs/player.mdl");
+			baseline->colormap = entnum;
+			baseline->modelindex = SV_ModelIndex ("progs/player.mdl");
+			baseline->alpha = ENTALPHA_DEFAULT;
 		} else {
-			((entity_state_t *) svent->data)->colormap = 0;
-			((entity_state_t *) svent->data)->modelindex =
-				SV_ModelIndex (PR_GetString (&sv_pr_state, SVstring (svent,
-																	 model)));
+			const char *model;
+			model = PR_GetString (&sv_pr_state, SVstring (svent, model));
+			baseline->colormap = 0;
+			baseline->modelindex = SV_ModelIndex (model);
+			baseline->alpha = ENTALPHA_DEFAULT;
+		}
+
+		bits = 0;
+		if (sv.protocol == PROTOCOL_NETQUAKE) {
+			//still want to send baseline in PROTOCOL_NETQUAKE, so reset
+			//these values
+			if (baseline->modelindex & 0xFF00)
+				baseline->modelindex = 0;
+			if (baseline->frame & 0xFF00)
+				baseline->frame = 0;
+			baseline->alpha = ENTALPHA_DEFAULT;
+		} else {
+			if (baseline->modelindex & 0xFF00)
+				bits |= B_LARGEMODEL;
+			if (baseline->frame & 0xFF00)
+				bits |= B_LARGEFRAME;
+			if (baseline->alpha != ENTALPHA_DEFAULT)
+				bits |= B_ALPHA;
 		}
 
 		// add to the message
-		MSG_WriteByte (&sv.signon, svc_spawnbaseline);
+		if (bits)
+			MSG_WriteByte (&sv.signon, svc_spawnbaseline2);
+		else
+			MSG_WriteByte (&sv.signon, svc_spawnbaseline);
+
 		MSG_WriteShort (&sv.signon, entnum);
 
-		MSG_WriteByte (&sv.signon,
-					   ((entity_state_t *) svent->data)->modelindex);
-		MSG_WriteByte (&sv.signon, ((entity_state_t *) svent->data)->frame);
-		MSG_WriteByte (&sv.signon, ((entity_state_t *) svent->data)->colormap);
-		MSG_WriteByte (&sv.signon, ((entity_state_t *) svent->data)->skin);
+		if (bits)
+			MSG_WriteByte (&sv.signon, bits);
 
-		MSG_WriteCoordAngleV (&sv.signon,
-							  ((entity_state_t *) svent->data)->origin,
-							  ((entity_state_t *) svent->data)->angles);
+		if (bits & B_LARGEMODEL)
+			MSG_WriteShort (&sv.signon, baseline->modelindex);
+		else
+			MSG_WriteByte (&sv.signon, baseline->modelindex);
+
+		if (bits & B_LARGEFRAME)
+			MSG_WriteShort (&sv.signon, baseline->frame);
+		else
+			MSG_WriteByte (&sv.signon, baseline->frame);
+		MSG_WriteByte (&sv.signon, baseline->colormap);
+		MSG_WriteByte (&sv.signon, baseline->skin);
+
+		MSG_WriteCoordAngleV (&sv.signon, baseline->origin, baseline->angles);
+
+		if (bits & B_ALPHA)
+			MSG_WriteByte (&sv.signon, baseline->alpha);
 	}
 }
 
@@ -858,7 +1058,7 @@ SV_SendReconnect (void)
 
 	MSG_WriteByte (&msg, svc_stufftext);
 	MSG_WriteString (&msg, "reconnect\n");
-	NET_SendToAll (&msg, 5);
+	NET_SendToAll (&msg, 5.0);
 
 	if (cls.state != ca_dedicated)
 		Cmd_ExecuteString ("reconnect\n", src_command);
@@ -908,7 +1108,7 @@ SV_SpawnServer (const char *server)
 	if (hostname->string[0] == 0)
 		Cvar_Set (hostname, "UNNAMED");
 
-	Sys_DPrintf ("SpawnServer: %s\n", server);
+	Sys_MaskPrintf (SYS_DEV, "SpawnServer: %s\n", server);
 	svs.changelevel_issued = false;		// now safe to issue another
 
 	// tell all connected clients that we are going to a new level
@@ -934,12 +1134,14 @@ SV_SpawnServer (const char *server)
 
 	strcpy (sv.name, server);
 
+	sv.protocol = sv_protocol;
+
 	// load progs to get entity field count
-	sv.max_edicts = MAX_EDICTS;
+	sv.max_edicts = bound (MIN_EDICTS, max_edicts->int_val, MAX_EDICTS);
 	SV_LoadProgs ();
 
 	// init the data field of the edicts
-	for (i = 0; i < MAX_EDICTS; i++) {
+	for (i = 0; i < sv.max_edicts; i++) {
 		ent = EDICT_NUM (&sv_pr_state, i);
 		ent->data = &baselines[i];
 	}
@@ -1033,12 +1235,16 @@ SV_SpawnServer (const char *server)
 	// create a baseline for more efficient communications
 	SV_CreateBaseline ();
 
+	if (sv.signon.cursize > 8000-2)
+		Sys_Printf ("%i byte signon buffer exceeds standard limit of 7998.\n",
+					sv.signon.cursize);
+
 	// send serverinfo to all connected clients
 	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++,
 			 host_client++)
 		if (host_client->active)
 			SV_SendServerinfo (host_client);
 
-	Sys_DPrintf ("Server spawned.\n");
+	Sys_MaskPrintf (SYS_DEV, "Server spawned.\n");
 	S_UnblockSound ();
 }

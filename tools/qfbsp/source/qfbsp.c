@@ -59,15 +59,16 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "writebsp.h"
 #include "tjunc.h"
 
+/**	\addtogroup qfbsp
+*/
+//@{
+
 options_t   options;
 
 bsp_t      *bsp;
 
 brushset_t *brushset;
 
-int         c_activefaces, c_peakfaces;
-int         c_activesurfaces, c_peaksurfaces;
-int         c_activeportals, c_peakportals;
 int         valid;
 
 char       *argv0;						// changed after fork();
@@ -76,73 +77,6 @@ qboolean    worldmodel;
 
 int         hullnum;
 
-
-face_t *
-AllocFace (void)
-{
-	face_t     *f;
-
-	c_activefaces++;
-	if (c_activefaces > c_peakfaces)
-		c_peakfaces = c_activefaces;
-
-	f = malloc (sizeof (face_t));
-	memset (f, 0, sizeof (face_t));
-	f->planenum = -1;
-
-	return f;
-}
-
-void
-FreeFace (face_t *f)
-{
-	c_activefaces--;
-	free (f);
-}
-
-surface_t *
-AllocSurface (void)
-{
-	surface_t  *s;
-
-	s = malloc (sizeof (surface_t));
-	memset (s, 0, sizeof (surface_t));
-
-	c_activesurfaces++;
-	if (c_activesurfaces > c_peaksurfaces)
-		c_peaksurfaces = c_activesurfaces;
-
-	return s;
-}
-
-void
-FreeSurface (surface_t *s)
-{
-	c_activesurfaces--;
-	free (s);
-}
-
-portal_t *
-AllocPortal (void)
-{
-	portal_t   *p;
-
-	c_activeportals++;
-	if (c_activeportals > c_peakportals)
-		c_peakportals = c_activeportals;
-
-	p = malloc (sizeof (portal_t));
-	memset (p, 0, sizeof (portal_t));
-
-	return p;
-}
-
-void
-FreePortal (portal_t *p)
-{
-	c_activeportals--;
-	free (p);
-}
 
 node_t *
 AllocNode (void)
@@ -153,17 +87,6 @@ AllocNode (void)
 	memset (n, 0, sizeof (node_t));
 
 	return n;
-}
-
-brush_t *
-AllocBrush (void)
-{
-	brush_t    *b;
-
-	b = malloc (sizeof (brush_t));
-	memset (b, 0, sizeof (brush_t));
-
-	return b;
 }
 
 static void
@@ -221,7 +144,7 @@ ProcessEntity (int entnum)
 		BumpModel (hullnum);
 	} else {
 		// SolidBSP generates a node tree
-		// 
+		//
 		// if not the world, make a good tree first
 		// the world is just going to make a bad tree
 		// because the outside filling will force a regeneration later
@@ -290,6 +213,7 @@ UpdateEntLump (void)
 	if (!f)
 		Sys_Error ("couldn't open %s. %s", options.bspfile, strerror(errno));
 	WriteBSPFile (bsp, f);
+	BSP_Free (bsp);
 	Qclose (f);
 }
 
@@ -380,14 +304,10 @@ ReadClipHull (int hullnum)
 					&c1, &c2) != 7)
 			Sys_Error ("Error parsing %s", options.hullfile);
 
-		p.normal[0] = f1;
-		p.normal[1] = f2;
-		p.normal[2] = f3;
+		VectorSet (f1, f2, f3, p.normal);
 		p.dist = f4;
 
-		norm[0] = f1;
-		norm[1] = f2;
-		norm[2] = f3;					// vec_t precision
+		VectorSet (f1, f2, f3, norm);
 		p.type = PlaneTypeForNormal (norm);
 
 		d.children[0] = c1 >= 0 ? c1 + firstclipnode : c1;
@@ -495,6 +415,7 @@ ProcessFile (void)
 			extract_entities ();
 		if (options.extract_hull)
 			extract_hull ();
+		BSP_Free (bsp);
 		return;
 	}
 
@@ -503,6 +424,7 @@ ProcessFile (void)
 
 	if (options.onlyents) {
 		UpdateEntLump ();
+		BSP_Free (bsp);
 		return;
 	}
 
@@ -527,6 +449,7 @@ ProcessFile (void)
 
 	WriteEntitiesToString ();
 	FinishBSPFile ();
+	BSP_Free (bsp);
 }
 
 int
@@ -563,3 +486,5 @@ qprintf (const char *fmt, ...)
 	vprintf (fmt, argptr);
 	va_end (argptr);
 }
+
+//@}

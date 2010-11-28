@@ -367,6 +367,27 @@ riff_read (QFile *f)
 					chunk = &data->ck;
 				}
 				break;
+			case RIFF_CASE ('w','a','v','l'):
+				// FIXME: Convert wavl to data ?
+			case RIFF_CASE ('s','l','n','t'):
+				// FIXME: Add silence to data
+			case RIFF_CASE ('l','i','s','t'):
+			case RIFF_CASE ('l','a','b','l'):
+			case RIFF_CASE ('n','o','t','e'):
+			case RIFF_CASE ('l','t','x','t'):
+			case RIFF_CASE ('p','l','s','t'):
+			case RIFF_CASE ('i','n','s','t'):
+			case RIFF_CASE ('f','a','c','t'):
+			case RIFF_CASE ('s','m','p','l'):
+				{	// Unused chunk, still present in a lot of wav files.
+					int c;
+
+					Qseek(f, ck.len, SEEK_CUR);
+					if ((c = Qgetc (f)) && c != -1)
+						Qungetc (f, c);
+					continue; // Skip those blocks.
+				}
+				break;
 			default:
 				// unknown chunk. bail (could be corrupted file)
 				chunk = 0;

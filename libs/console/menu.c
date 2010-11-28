@@ -86,7 +86,14 @@ static hashtab_t *menu_hash;
 static func_t   menu_init;
 static func_t   menu_quit;
 static func_t   menu_draw_hud;
+static func_t   menu_post;
 static const char *top_menu;
+
+static void
+run_menu_post (void)
+{
+	PR_ExecuteProgram (&menu_pr_state, menu_post);
+}
 
 static int
 menu_resolve_globals (progs_t *pr)
@@ -101,6 +108,9 @@ menu_resolve_globals (progs_t *pr)
 	if (!(f = PR_FindFunction (pr, sym = "menu_draw_hud")))
 		goto error;
 	menu_draw_hud = (func_t) (f - pr->pr_functions);
+	if (!(f = PR_FindFunction (pr, sym = "menu_post")))
+		goto error;
+	menu_post = (func_t) (f - pr->pr_functions);
 	if (!(def = PR_FindGlobal (pr, sym = "time")))
 		goto error;
 	menu_pr_state.globals.time = &G_FLOAT (pr, def->ofs);
@@ -342,6 +352,7 @@ bi_Menu_SelectMenu (progs_t *pr)
 		game_target = IMT_CONSOLE;
 		if (menu->enter_hook) {
 			PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
+			run_menu_post ();
 		}
 	} else {
 		if (name && *name)
@@ -394,9 +405,13 @@ togglemenu_f (void)
 static void
 quit_f (void)
 {
+	int         ret;
+
 	if (confirm_quit->int_val && menu_quit) {
 		PR_ExecuteProgram (&menu_pr_state, menu_quit);
-		if (!R_INT (&menu_pr_state))
+		ret = R_INT (&menu_pr_state);
+		run_menu_post ();
+		if (!ret)
 			return;
 	}
 	bi_Menu_Quit (&menu_pr_state);
@@ -503,6 +518,7 @@ Menu_Load (void)
 	RUA_Cbuf_SetCbuf (&menu_pr_state, con_data.cbuf);
 	InputLine_Progs_SetDraw (&menu_pr_state, C_DrawInputLine);
 	PR_ExecuteProgram (&menu_pr_state, menu_init);
+	run_menu_post ();
 }
 
 void
@@ -524,11 +540,15 @@ Menu_Draw (view_t *view)
 	*menu_pr_state.globals.time = *con_data.realtime;
 
 	if (menu->draw) {
+		int         ret;
+
 		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = x;
 		P_INT (&menu_pr_state, 1) = y;
 		PR_ExecuteProgram (&menu_pr_state, menu->draw);
-		if (R_INT (&menu_pr_state))
+		ret = R_INT (&menu_pr_state);
+		run_menu_post ();
+		if (!ret)
 			return;
 	}
 
@@ -558,6 +578,7 @@ Menu_Draw (view_t *view)
 		P_INT (&menu_pr_state, 0) = x + item->x;
 		P_INT (&menu_pr_state, 1) = y + item->y;
 		PR_ExecuteProgram (&menu_pr_state, menu->cursor);
+		run_menu_post ();
 	} else {
 		Draw_Character (x + item->x, y + item->y,
 						12 + ((int) (*con_data.realtime * 4) & 1));
@@ -570,12 +591,14 @@ Menu_Draw_Hud (view_t *view)
 	*menu_pr_state.globals.time = *con_data.realtime;
 
 	PR_ExecuteProgram (&menu_pr_state, menu_draw_hud);
+	run_menu_post ();
 }
 
 void
 Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 {
 	menu_item_t *item;
+	int         ret;
 
 	if (!menu)
 		return;
@@ -585,7 +608,9 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		P_INT (&menu_pr_state, 1) = unicode;
 		P_INT (&menu_pr_state, 2) = down;
 		PR_ExecuteProgram (&menu_pr_state, menu->keyevent);
-		if (R_INT (&menu_pr_state))
+		ret = R_INT (&menu_pr_state);
+		run_menu_post ();
+		if (ret)
 			return;
 	} else if (menu->items && menu->items[menu->cur_item]->func
 			   && menu->items[menu->cur_item]->allkeys) {
@@ -597,7 +622,9 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		P_INT (&menu_pr_state, 1) = key;
 		PR_ExecuteProgram (&menu_pr_state, item->func);
 		PR_PopFrame (&menu_pr_state);
-		if (R_INT (&menu_pr_state))
+		ret = R_INT (&menu_pr_state);
+		run_menu_post ();
+		if (ret)
 			return;
 	}
 	if (!menu || !menu->items)
@@ -625,10 +652,12 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 					P_INT (&menu_pr_state, 1) = key;
 					PR_ExecuteProgram (&menu_pr_state, item->func);
 					PR_PopFrame (&menu_pr_state);
+					run_menu_post ();
 				} else {
 					menu = item;
 					if (menu->enter_hook) {
 						PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
+						run_menu_post ();
 					}
 				}
 			}
@@ -651,6 +680,7 @@ Menu_Enter ()
 	menu = Hash_Find (menu_hash, top_menu);
 	if (menu && menu->enter_hook) {
 		PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
+		run_menu_post ();
 	}
 }
 
@@ -660,6 +690,7 @@ Menu_Leave ()
 	if (menu) {
 		if (menu->leave_hook) {
 			PR_ExecuteProgram (&menu_pr_state, menu->leave_hook);
+			run_menu_post ();
 		}
 		menu = menu->parent;
 		if (!menu) {

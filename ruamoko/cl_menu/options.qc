@@ -24,6 +24,7 @@
         Boston, MA  02111-1307, USA
 */
 
+#include "debug.h"
 #include "options.h"
 #include "cbuf.h"
 #include "menu.h"
@@ -36,15 +37,18 @@
 #include "options_util.h"
 #include "qfs.h"
 
-#include "PropertyList.h"
+#include "plistmenu.h"
 
+#include "gui/Group.h"
 #include "gui/InputLine.h"
 #include "gui/Pic.h"
 #include "gui/Rect.h"
 #include "gui/Slider.h"
 #include "gui/Text.h"
 
-PLItem menu_plist;
+#include "CvarToggleView.h"
+#include "CvarRangeView.h"
+#include "CvarColorView.h"
 
 Group video_options;
 Group audio_options;
@@ -101,128 +105,6 @@ InputLine network_config_iactive;
  * Video settings menu code
  ****************************/
 
-void dprint (string str) = #0;
-
-id object_from_plist (PLItem plist);
-
-id
-class_from_plist (PLDictionary pldict)
-{
-	local @param [8]params;
-	local @va_list va_list = { 0, params };
-	local string classname, selname, paramstr;
-	local Class class;
-	local id obj;
-	local PLArray messages, msg;
-	local integer message_count, i, j;
-	local SEL sel;
-	local PLItem item;
-
-	classname = [(PLString) [pldict getObjectForKey:"Class"] string];
-	class = obj_lookup_class (classname);
-	if (!class) {
-		dprint ("could not find " + classname + "\n");
-		return NIL;
-	}
-	obj = [class alloc];
-
-	messages = (PLArray) [pldict getObjectForKey:"Messages"];
-	message_count = [messages count];
-	for (i = 0; i < message_count; i++) {
-		msg = (PLArray) [messages getObjectAtIndex:i];
-		selname = [(PLString) [msg getObjectAtIndex:0] string];
-		sel = sel_get_uid (selname);
-		va_list.count = [msg count] - 1;
-		for (j = 0; j < va_list.count; j++) {
-			paramstr = [(PLString) [msg getObjectAtIndex:j + 1] string];
-			switch (str_mid (paramstr, 0, 1)) {
-				case "\"":
-					va_list.list[j].string_val = str_mid (paramstr, 1, -1);
-					break;
-				case "$":
-					item = [pldict getObjectForKey:str_mid (paramstr, 1)];
-					va_list.list[j].pointer_val = object_from_plist (item);
-					break;
-				case "0": case "1": case "2": case "3": case "4":
-				case "5": case "6": case "7": case "8": case "9":
-					if (str_str (paramstr, "."))
-						va_list.list[j].float_val = stof (paramstr);
-					else
-						va_list.list[j].integer_val = stoi (paramstr);
-					break;
-			}
-		}
-		obj_msg_sendv (obj, sel, va_list);
-	}
-	return obj;
-}
-
-id
-array_from_plist (PLArray plarray)
-{
-	local Array array;
-	local integer i, count;
-
-	array = [[Array alloc] init];
-	count = [plarray count];
-	for (i = 0; i < count; i++)
-		[array addItem: object_from_plist ([plarray getObjectAtIndex:i])];
-	return array;
-}
-
-id
-string_from_plist (PLString plstring)
-{
-	local string str = [plstring string];
-	local string tmp;
-	local integer xp, yp, xl, yl;
-	local PLItem item;
-
-	if (str_mid (str, 0, 1) == "[") {
-		tmp = "(" + str_mid (str, 1, -1) + ")";
-		item = [PLItem newFromString:tmp];
-		xp = stoi ([(PLString) [item getObjectAtIndex:0] string]);
-		yp = stoi ([(PLString) [item getObjectAtIndex:1] string]);
-		xl = stoi ([(PLString) [item getObjectAtIndex:2] string]);
-		yl = stoi ([(PLString) [item getObjectAtIndex:3] string]);
-		return [[Rect alloc] initWithComponents:xp :yp :xl :yl];
-	}
-	return NIL;
-}
-
-id
-object_from_plist (PLItem plist)
-{
-	switch ([plist type]) {
-		case QFDictionary:
-			return class_from_plist ((PLDictionary) plist);
-		case QFArray:
-			return array_from_plist ((PLArray) plist);
-		case QFBinary:
-			return NIL;
-		case QFString:
-			return string_from_plist ((PLString) plist);
-	}
-}
-
-PLItem read_plist (void)
-{
-	local string plist_data;
-	local QFile file;
-	local PLItem plist;
-
-	file = QFS_OpenFile ("menu.plist");
-	if (!file) {
-		dprint ("could not load menu.plist\n");
-		return NIL;
-	}
-	plist_data = Qreadstring (file, Qfilesize (file));
-	Qclose (file);
-	plist = [PLItem newFromString:plist_data];
-	str_free (plist_data);
-	return plist;
-}
-
 /*
 	DRAW_video_options
 
@@ -248,16 +130,19 @@ KEY_video_options =
 
 	Menu function for the video options menu.
 */
-void () 
+void (PLItem plist) 
 MENU_video_options =
 {
+	local @param ret;
 	Menu_Begin (54, 50, "Video");
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_video_options);
 	Menu_KeyEvent (KEY_video_options);
 
-	if (menu_plist)
-		video_options = object_from_plist ([menu_plist getObjectForKey:"video_options"]);
+	if (plist) {
+		ret = object_from_plist ([plist getObjectForKey:"video_options"]);
+		video_options = ret.pointer_val;
+	}
 
 	Menu_End ();
 };
@@ -292,16 +177,19 @@ KEY_audio_options =
 
 	Makes the audio menu
 */
-void () 
+void (PLItem plist) 
 MENU_audio_options =
 {
+	local @param ret;
 	Menu_Begin (54, 60, "Audio");
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_audio_options);
 	Menu_KeyEvent (KEY_audio_options);
 
-	if (menu_plist)
-		audio_options = object_from_plist ([menu_plist getObjectForKey:"audio_options"]);
+	if (plist) {
+		ret = object_from_plist ([plist getObjectForKey:"audio_options"]);
+		audio_options = ret.pointer_val;
+	}
 
 	Menu_End ();
 };
@@ -359,93 +247,36 @@ DRAW_control_options =
 	[control_options setBasePos:x y:y];
 	[control_options draw];
 
-	opt_cursor (x + 62, y + (Menu_GetIndex () * 10) + 60);
-
 	return 1;
 };
+
+integer (integer key, integer unicode, integer down)
+KEY_control_options =
+{
+	return [control_options keyEvent:key unicode:unicode down:down];
+}
 
 /*
 	MENU_control_options
 
 	Menu make function for control options
 */
-void () 
+void (PLItem plist) 
 MENU_control_options =
 {
-	local Rect rect;
-	local id view;
-
+	local @param ret;
 	Menu_Begin (54, 40, "Controls");
 	Menu_FadeScreen (1);
-	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
-
 	Menu_Draw (DRAW_control_options);
+	Menu_KeyEvent (KEY_control_options);
 
-	control_options = [[Group alloc] initWithComponents:0 :0 :320 :200];
-
-	view = [[Pic alloc] initWithComponents:16 :4 :0 :0];
-	[view setPic:"gfx/qplaque.lmp"];
-	[control_options addView:view];
-
-	view = [[CenterPic alloc] initWithComponents:160 :4 :0 :0];
-	[view setPic:"gfx/p_option.lmp"];
-	[control_options addView:view];
-
-	view = [[Text alloc] initWithComponents:54 :40 :64 :8];
-	[view setText:"Controls"];
-	[control_options addView:view];
-
-	view = [[Text alloc] initWithComponents:54 :50 :64 :8];
-	[view setText:"--------"];
-	[control_options addView:view];
-
-	view = [[Text alloc] initWithComponents:70 :60 :64 :8];
-	[view setText:"Bindings"];
-	[control_options addView:view];
-
-	rect = [[Rect alloc] initWithComponents:70 :70 :224 :8];
-	grab_mouse_view = [[CvarToggleView alloc] initWithBounds:rect title:"Grab mouse" :[[CvarToggle alloc] initWithCvar:"in_grab"]];
-	[control_options addView:grab_mouse_view];
-
-	rect.origin.y += 10;
-	autorun_view = [[CvarToggleView alloc] initWithBounds:rect title:"Auto run" :[[RunToggle alloc] init]];
-	[control_options addView:autorun_view];
-
-	rect.origin.y += 10;
-	invert_mouse_view = [[CvarToggleView alloc] initWithBounds:rect title:"Mouse Invert" :[[MouseToggle alloc] init]];
-	[control_options addView:invert_mouse_view];
-
-	rect.origin.y += 10;
-	rect.size.width += 8;
-	mouse_amp_view = [[CvarRangeView alloc] initWithBounds:rect title:"Mouse amp:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"in_mouse_amp" min:MIN_MOUSE_AMP max:MAX_MOUSE_AMP step:MOUSE_AMP_STEP]];
-	rect.size.width -= 8;
-	[control_options addView:mouse_amp_view];
-
-	rect.origin.y += 10;
-	freelook_view = [[CvarToggleView alloc] initWithBounds:rect title:"Freelook" :[[CvarToggle alloc] initWithCvar:"freelook"]];
-	[control_options addView:freelook_view];
-
-	rect.origin.y += 10;
-	lookspring_view = [[CvarToggleView alloc] initWithBounds:rect title:"Lookspring" :[[CvarToggle alloc] initWithCvar:"lookspring"]];
-	[control_options addView:lookspring_view];
-
-	rect.origin.y += 10;
-	lookstrafe_view = [[CvarToggleView alloc] initWithBounds:rect title:"Lookstrafe" :[[CvarToggle alloc] initWithCvar:"lookstrafe"]];
-	[control_options addView:lookstrafe_view];
-
-	[rect release];
-
-	MENU_control_binding ();
-
-	Menu_Item (54, 70, "in_grab", CB_control_options, 0);
-	Menu_Item (54, 80, "autorun", CB_control_options, 0);
-	Menu_Item (54, 90, "m_pitch", CB_control_options, 0);
-	Menu_Item (54, 100, "mouseamp", CB_control_options, 1);
-	Menu_Item (54, 110, "freelook", CB_control_options, 0);
-	Menu_Item (54, 120, "lookspring", CB_control_options, 0);
-	Menu_Item (54, 130, "lookstrafe", CB_control_options, 0);
+	if (plist) {
+		ret = object_from_plist ([plist getObjectForKey:"control_options"]);
+		control_options = ret.pointer_val;
+	}
 
 	Menu_End ();
+	//MENU_control_binding (); FIXME how to hook in the bindings menu?
 };
 
 /***********************************************
@@ -494,7 +325,7 @@ DRAW_feature_options =
 
 	Makes the feature option menu
 */
-void () 
+void (PLItem plist) 
 MENU_feature_options =
 {
 	local Rect rect;
@@ -523,15 +354,13 @@ MENU_feature_options =
 	[view setText:"--------"];
 	[feature_options addView:view];
 
-	rect = [[Rect alloc] initWithComponents:70 :60 :224 :8];
+	rect = makeRect (70, 60, 224, 8);
 	autorecord_view = [[CvarToggleView alloc] initWithBounds:rect title:"Autorecord" :[[CvarToggle alloc] initWithCvar:"cl_autorecord"]];
 	[feature_options addView:autorecord_view];
 
 	rect.origin.y += 10;
 	fraglog_view = [[CvarToggleView alloc] initWithBounds:rect title:"Frag Logging" :[[CvarToggle alloc] initWithCvar:"cl_fraglog"]];
 	[feature_options addView:fraglog_view];
-
-	[rect release];
 
 	Menu_Item (54, 70, "cl_autorecord", CB_feature_options, 0);
 	Menu_Item (54, 80, "cl_fraglog", CB_feature_options, 0);
@@ -680,7 +509,7 @@ CB_ME_player_options =
 
 	Makes the player option menu
 */
-void () 
+void (PLItem plist) 
 MENU_player_options =
 {
 	local Rect rect;
@@ -720,25 +549,23 @@ MENU_player_options =
 	[view setText:"Pants color"];
 	[player_options addView:view];
 
-	player_config_plname_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD :18 :4] promptCharacter:' '];
+	player_config_plname_il = [[InputLineBox alloc] initWithBounds:makeRect (120, PLAYER_CONF_Y_PAD, 18, 4) promptCharacter:' '];
 	[player_config_plname_il setWidth:18];
 	[player_options addView:player_config_plname_il];
 
-	player_config_tname_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD + 20 :7 :4] promptCharacter:' '];
+	player_config_tname_il = [[InputLineBox alloc] initWithBounds:makeRect (120, PLAYER_CONF_Y_PAD + 20, 7, 4) promptCharacter:' '];
 	[player_config_tname_il setWidth:7];
 	[player_options addView:player_config_tname_il];
 
 	player_config_iactive = NIL;
 
-	rect = [[Rect alloc] initWithComponents:192 :PLAYER_CONF_Y_PAD + 37 :24 :24];
+	rect = makeRect (192, PLAYER_CONF_Y_PAD + 37, 24, 24);
 	topcolor_view = [[CvarColorView alloc] initWithBounds:rect :[[CvarColor alloc] initWithCvar:"topcolor"]];
 	[player_options addView:topcolor_view];
 
 	rect.origin.y = PLAYER_CONF_Y_PAD + 52;
 	bottomcolor_view = [[CvarColorView alloc] initWithBounds:rect :[[CvarColor alloc] initWithCvar:"bottomcolor"]];
 	[player_options addView:bottomcolor_view];
-
-	[rect release];
 
 	Menu_Begin (54, 80, "Player");
 	Menu_FadeScreen (1);
@@ -852,7 +679,7 @@ CB_ME_network_options =
 
 	Makes the network option menu
 */
-void () 
+void (PLItem plist) 
 MENU_network_options =
 {
 	local id view;
@@ -879,7 +706,7 @@ MENU_network_options =
 	[view setText:"Rate..:"];
 	[network_options addView:view];
 
-	network_config_rate_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents: 120 :NETWORK_CONF_Y_PAD :9 :4] promptCharacter:' '];
+	network_config_rate_il = [[InputLineBox alloc] initWithBounds:makeRect (120, NETWORK_CONF_Y_PAD, 9, 4) promptCharacter:' '];
 	[network_config_rate_il setWidth:9];
 	[network_options addView:network_config_rate_il];
 
@@ -913,8 +740,9 @@ void ()
 MENU_options =
 {
 	local integer	spacing = 120;
+	local PLItem    plist;
 
-	menu_plist = read_plist ();
+	plist = read_plist ("menu.plist");
 
 	Menu_Begin (54, 72, "");
 	Menu_FadeScreen (1);
@@ -922,12 +750,12 @@ MENU_options =
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 
 	Menu_Item (54, 32, "Go to Console", op_goto_console, 0);
-	MENU_control_options ();
-	MENU_video_options ();
-	MENU_audio_options ();
-	MENU_feature_options ();
-	MENU_player_options ();
-	MENU_network_options ();
+	MENU_control_options (plist);
+	MENU_video_options (plist);
+	MENU_audio_options (plist);
+	MENU_feature_options (plist);
+	MENU_player_options (plist);
+	MENU_network_options (plist);
 
 	Menu_End ();
 };

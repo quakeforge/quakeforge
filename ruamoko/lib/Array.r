@@ -47,9 +47,9 @@
 		index = count - 1;
 	if (index < 0 || index >= count)
 		return;
+	[item retain];
 	[array[index] release];
 	array[index] = item;
-	[item retain];
 }
 
 - (void) addItem: (id) item
@@ -58,8 +58,8 @@
 		size += incr;
 		array = (id [])obj_realloc (array, size * @sizeof (id));
 	}
-	array[count++] = item;
 	[item retain];
+	array[count++] = item;
 }
 
 - (void) removeItem: (id) item
@@ -106,9 +106,9 @@
 	}
 	for (i = count; i > index; i--)
 		array[i] = array[i - 1];
+	[item retain];
 	array[index] = item;
 	count++;
-	[item retain];
 	return item;
 }
 

@@ -88,7 +88,7 @@ typedef struct plitem_s plitem_t;
 	\param string	the saved plist, as read from a file.
 
 	\return Returns an object equivalent to the passed-in string.
-	\note You are responsible for freeing the object returned.
+	\note You are responsible for freeing the returned object.
 */
 plitem_t *PL_GetPropertyList (const char *string);
 
@@ -96,7 +96,7 @@ plitem_t *PL_GetPropertyList (const char *string);
 
 	\param pl the in-memory representation
 	\return the text representation of the property list
-	\note You are responsible for freeing the string returned.
+	\note You are responsible for freeing the returned string.
 */
 char *PL_WritePropertyList (plitem_t *pl);
 
@@ -167,7 +167,7 @@ int PL_D_NumKeys (plitem_t *dict);
 
 /** Add a key/value pair to a dictionary.
 
-	\param dict The dictionary to add the key/value pair to
+	\param dict The dictionary to which the key/value pair will be added
 	\param key The key of the key/value pair to be added to the dictionary
 	\param value The value of the key/value pair to be added to the dictionary
 
@@ -179,7 +179,7 @@ qboolean PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value);
 
 /** Add an item to an array.
 
-	\param array The array to add the item to
+	\param array The array to which the item will be added
 	\param item The item to be added to the array
 
 	\return true on success, false on failure
@@ -190,7 +190,7 @@ qboolean PL_A_AddObject (plitem_t *array, plitem_t *item);
 
 /** Retrieve the number of items in an array.
 
-	\param array The array to get the number of objects in
+	\param array The array from which to get the number of objects
 
 	\return number of objects in the array
 */
@@ -198,7 +198,7 @@ int PL_A_NumObjects (plitem_t *array);
 
 /** Insert an item into an array before the specified location.
 
-	\param array The array to add the item to
+	\param array The array to which the item will be added
 	\param item The item to be added to the array
 	\param index The location at which to insert the item into the array
 
@@ -211,7 +211,7 @@ qboolean PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index);
 /** Remove a value from an array object.
 	The array items will be shuffled to fill the resulting hole.
 
-	\param array	The array to get the value from
+	\param array	The array from which to remove the value
 	\param index	The index within the array to remove
 	\return the value associated with the index, or NULL if not found or array
 	isn't an array.

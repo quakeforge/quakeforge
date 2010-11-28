@@ -47,13 +47,26 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 static void
-swap_bsp (bsp_t *bsp, int todisk)
+swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
+		  void *cbdata)
 {
-	int				 c, i, j;
-	dmiptexlump_t	*mtl;
-	dmodel_t		*d;
+	int             c, i, j;
+	dmiptexlump_t  *mtl;
+	dmodel_t       *d;
 
-	// models	
+	if (bsp->header) {
+		bsp->header->version = LittleLong (bsp->header->version);
+		for (i = 0; i < HEADER_LUMPS; i++) {
+			bsp->header->lumps[i].fileofs =
+				LittleLong (bsp->header->lumps[i].fileofs);
+			bsp->header->lumps[i].filelen =
+				LittleLong (bsp->header->lumps[i].filelen);
+		}
+		if (cb)
+			cb (bsp, cbdata);
+	}
+
+	// models
 	for (i=0 ; i<bsp->nummodels ; i++) {
 		d = &bsp->models[i];
 
@@ -157,13 +170,13 @@ swap_bsp (bsp_t *bsp, int todisk)
 	
 	// marksurfaces
 	for (i=0 ; i<bsp->nummarksurfaces ; i++) {
-		unsigned short *marksurface = &bsp->marksurfaces[i];
+		uint16_t   *marksurface = &bsp->marksurfaces[i];
 		*marksurface = LittleShort (*marksurface);
 	}
 
 	// surfedges
 	for (i=0 ; i<bsp->numsurfedges ; i++) {
-		int        *surfedge = &bsp->surfedges[i];
+		int32_t    *surfedge = &bsp->surfedges[i];
 		*surfedge = LittleLong (*surfedge);
 	}
 
@@ -176,29 +189,35 @@ swap_bsp (bsp_t *bsp, int todisk)
 }
 
 bsp_t *
-LoadBSPMem (void *mem, int size)
+LoadBSPMem (void *mem, size_t mem_size, void (*cb) (const bsp_t *, void *),
+			void *cbdata)
 {
-	dheader_t  *header = mem;
 	bsp_t      *bsp;
 
-	if (LittleLong (header->version) != BSPVERSION)
-		Sys_Error ("version %i, not %i", LittleLong (header->version),
+	bsp = calloc (sizeof (bsp_t), 1);
+
+	bsp->header = mem;
+
+	if (LittleLong (bsp->header->version) != BSPVERSION)
+		Sys_Error ("version %i, not %i", LittleLong (bsp->header->version),
 				   BSPVERSION);
 
 #undef SET_LUMP
 #define SET_LUMP(l,n) \
 do { \
-	bsp->num##n = LittleLong (header->lumps[l].filelen); \
-	if (bsp->num##n) { \
-		bsp->n = malloc (bsp->num##n); \
-		memcpy (bsp->n, \
-				(byte *) header + LittleLong (header->lumps[l].fileofs), \
-				bsp->num##n); \
-	} \
-	bsp->num##n /= sizeof (bsp->n[0]); \
+	size_t      size = LittleLong (bsp->header->lumps[l].filelen); \
+	size_t      offs = LittleLong (bsp->header->lumps[l].fileofs); \
+	void       *data = (byte *) mem + offs; \
+	if (offs >= mem_size || (offs + size) > mem_size) \
+		Sys_Error ("invalid lump"); \
+	if (size % sizeof (bsp->n[0])) \
+		Sys_Error ("funny lump size"); \
+	bsp->n = 0; \
+	if (size) \
+		bsp->n = (void *) data; \
+	bsp->num##n = size / sizeof (bsp->n[0]); \
 } while (0)
 
-	bsp = malloc (sizeof (bsp_t));
 	SET_LUMP (LUMP_PLANES, planes);
 	SET_LUMP (LUMP_LEAFS, leafs);
 	SET_LUMP (LUMP_VERTEXES, vertexes);
@@ -214,14 +233,15 @@ do { \
 #undef SET_LUMP
 #define SET_LUMP(l,n) \
 do { \
-	bsp->n##size = LittleLong (header->lumps[l].filelen); \
-	if (bsp->n##size) { \
-		bsp->n = malloc (bsp->n##size); \
-		memcpy (bsp->n, \
-				(byte *) header + LittleLong (header->lumps[l].fileofs), \
-				bsp->n##size); \
-	} \
-	bsp->n##size /= sizeof (bsp->n[0]); \
+	size_t      size = LittleLong (bsp->header->lumps[l].filelen); \
+	size_t      offs = LittleLong (bsp->header->lumps[l].fileofs); \
+	void       *data = (byte *) mem + offs; \
+	if (offs >= mem_size || (offs + size) > mem_size) \
+		Sys_Error ("invalid lump"); \
+	bsp->n = 0; \
+	if (size) \
+		bsp->n = (void *) data; \
+	bsp->n##size = size; \
 } while (0)
 
 	SET_LUMP (LUMP_LIGHTING, lightdata);
@@ -229,35 +249,32 @@ do { \
 	SET_LUMP (LUMP_ENTITIES, entdata);
 	SET_LUMP (LUMP_TEXTURES, texdata);
 
-
-	swap_bsp (bsp, 0);
+	swap_bsp (bsp, 0, cb, cbdata);
 	return bsp;
 }
 
 VISIBLE bsp_t *
-LoadBSPFile (QFile *file, int size)
+LoadBSPFile (QFile *file, size_t size)
 {
 	void       *buf;
 	bsp_t      *bsp;
 
 	buf = malloc (size);
 	Qread (file, buf, size);
-	bsp = LoadBSPMem (buf, size);
-	free (buf);
+	bsp = LoadBSPMem (buf, size, 0, 0);
+	bsp->own_header = 1;
 	return bsp;
 }
 
 /*
 	WriteBSPFile
-
-	Swaps the bsp file in place, so it should not be referenced again
 */
 VISIBLE void
-WriteBSPFile (bsp_t *bsp, QFile *file)
-{		
-	int         size;
-	dheader_t  *header;
+WriteBSPFile (const bsp_t *bsp, QFile *file)
+{
+	size_t      size;
 	byte       *data;
+	bsp_t       tbsp;
 
 #define ROUND(x) (((x) + 3) & ~3)
 
@@ -275,27 +292,31 @@ WriteBSPFile (bsp_t *bsp, QFile *file)
 	size += ROUND (bsp->numfaces * sizeof (dface_t));
 	size += ROUND (bsp->numclipnodes * sizeof (dclipnode_t));
 	size += ROUND (bsp->numedges * sizeof (dedge_t));
-	size += ROUND (bsp->nummarksurfaces * sizeof (unsigned short));
-	size += ROUND (bsp->numsurfedges * sizeof (int));
+	size += ROUND (bsp->nummarksurfaces * sizeof (uint16_t));
+	size += ROUND (bsp->numsurfedges * sizeof (uint32_t));
 
-	header = malloc (size);
-	memset (header, 0, size);
-
-	swap_bsp (bsp, 1);
+	tbsp.header = calloc (size, 1);
 
 #undef SET_LUMP
 #define SET_LUMP(l,n) \
 do { \
-	bsp->num##n *= sizeof (bsp->n[0]); \
-	header->lumps[l].fileofs = LittleLong (data - (byte *) header); \
-	header->lumps[l].filelen = LittleLong (bsp->num##n); \
-	memcpy (data, bsp->n, bsp->num##n); \
-	data += ROUND (bsp->num##n); \
+	tbsp.num##n = bsp->num##n; \
+	if (tbsp.num##n) {\
+		tbsp.n = (void *) data; \
+		tbsp.header->lumps[l].fileofs = data - (byte *) tbsp.header; \
+		tbsp.header->lumps[l].filelen = tbsp.num##n * sizeof (bsp->n[0]); \
+		memcpy (data, bsp->n, tbsp.header->lumps[l].filelen); \
+		data += ROUND (tbsp.header->lumps[l].filelen); \
+	} else {\
+		tbsp.n = 0; \
+		tbsp.header->lumps[l].fileofs = 0; \
+		tbsp.header->lumps[l].filelen = 0; \
+	} \
 } while (0)
 
-	header->version = LittleLong (BSPVERSION);
+	tbsp.header->version = BSPVERSION;
 
-	data = (byte *) &header[1];
+	data = (byte *) &tbsp.header[1];
 	SET_LUMP (LUMP_PLANES, planes);
 	SET_LUMP (LUMP_LEAFS, leafs);
 	SET_LUMP (LUMP_VERTEXES, vertexes);
@@ -311,11 +332,18 @@ do { \
 #undef SET_LUMP
 #define SET_LUMP(l,n) \
 do { \
-	bsp->n##size *= sizeof (bsp->n[0]); \
-	header->lumps[l].fileofs = LittleLong (data - (byte *) header); \
-	header->lumps[l].filelen = LittleLong (bsp->n##size); \
-	memcpy (data, bsp->n, bsp->n##size); \
-	data += ROUND (bsp->n##size); \
+	tbsp.n##size = bsp->n##size; \
+	if (tbsp.n##size) { \
+		tbsp.n = (void *) data; \
+		tbsp.header->lumps[l].fileofs = data - (byte *) tbsp.header; \
+		tbsp.header->lumps[l].filelen = tbsp.n##size; \
+		memcpy (data, bsp->n, bsp->n##size); \
+		data += ROUND (tbsp.header->lumps[l].filelen); \
+	} else {\
+		tbsp.n = 0; \
+		tbsp.header->lumps[l].fileofs = 0; \
+		tbsp.header->lumps[l].filelen = 0; \
+	} \
 } while (0)
 
 	SET_LUMP (LUMP_LIGHTING, lightdata);
@@ -323,8 +351,10 @@ do { \
 	SET_LUMP (LUMP_ENTITIES, entdata);
 	SET_LUMP (LUMP_TEXTURES, texdata);
 
-	Qwrite (file, header, size);
-	free (header);
+	swap_bsp (&tbsp, 1, 0, 0);
+
+	Qwrite (file, tbsp.header, size);
+	free (tbsp.header);
 }
 
 VISIBLE bsp_t *
@@ -334,121 +364,157 @@ BSP_New (void)
 }
 
 VISIBLE void
-BSP_AddPlane (bsp_t *bsp, dplane_t *plane)
+BSP_Free (bsp_t *bsp)
 {
-	bsp->planes = realloc (bsp->planes,
-						   (bsp->numplanes + 1) * sizeof (dplane_t));
+#define FREE(X) \
+	do { \
+		if (bsp->own_##X && bsp->X) \
+			free (bsp->X); \
+	} while (0)
+
+	FREE (models);
+	FREE (visdata);
+	FREE (lightdata);
+	FREE (texdata);
+	FREE (entdata);
+	FREE (leafs);
+	FREE (planes);
+	FREE (vertexes);
+	FREE (nodes);
+	FREE (texinfo);
+	FREE (faces);
+	FREE (clipnodes);
+	FREE (edges);
+	FREE (marksurfaces);
+	FREE (surfedges);
+	FREE (header);
+
+	free (bsp);
+}
+
+#define REALLOC(X) \
+	do { \
+		if (!bsp->own_##X) { \
+			bsp->own_##X = 1; \
+			bsp->X = 0; \
+		} \
+		bsp->X = realloc (bsp->X, (bsp->num##X + 1) * sizeof (bsp->X[0])); \
+	} while (0)
+
+VISIBLE void
+BSP_AddPlane (bsp_t *bsp, const dplane_t *plane)
+{
+	REALLOC (planes);
 	bsp->planes[bsp->numplanes++] = *plane;
 }
 
 VISIBLE void
-BSP_AddLeaf (bsp_t *bsp, dleaf_t *leaf)
+BSP_AddLeaf (bsp_t *bsp, const dleaf_t *leaf)
 {
-	bsp->leafs = realloc (bsp->leafs,
-						  (bsp->numleafs + 1) * sizeof (dleaf_t));
+	REALLOC (leafs);
 	bsp->leafs[bsp->numleafs++] = *leaf;
 }
 
 VISIBLE void
-BSP_AddVertex (bsp_t *bsp, dvertex_t *vertex)
+BSP_AddVertex (bsp_t *bsp, const dvertex_t *vertex)
 {
-	bsp->vertexes = realloc (bsp->vertexes,
-							 (bsp->numvertexes + 1) * sizeof (dvertex_t));
+	REALLOC (vertexes);
 	bsp->vertexes[bsp->numvertexes++] = *vertex;
 }
 
 VISIBLE void
-BSP_AddNode (bsp_t *bsp, dnode_t *node)
+BSP_AddNode (bsp_t *bsp, const dnode_t *node)
 {
-	bsp->nodes = realloc (bsp->nodes,
-						  (bsp->numnodes + 1) * sizeof (dnode_t));
+	REALLOC (nodes);
 	bsp->nodes[bsp->numnodes++] = *node;
 }
 
 VISIBLE void
-BSP_AddTexinfo (bsp_t *bsp, texinfo_t *texinfo)
+BSP_AddTexinfo (bsp_t *bsp, const texinfo_t *texinfo)
 {
-	bsp->texinfo = realloc (bsp->texinfo,
-							(bsp->numtexinfo + 1) * sizeof (texinfo_t));
+	REALLOC (texinfo);
 	bsp->texinfo[bsp->numtexinfo++] = *texinfo;
 }
 
 VISIBLE void
-BSP_AddFace (bsp_t *bsp, dface_t *face)
+BSP_AddFace (bsp_t *bsp, const dface_t *face)
 {
-	bsp->faces = realloc (bsp->faces,
-						  (bsp->numfaces + 1) * sizeof (dface_t));
+	REALLOC (faces);
 	bsp->faces[bsp->numfaces++] = *face;
 }
 
 VISIBLE void
-BSP_AddClipnode (bsp_t *bsp, dclipnode_t *clipnode)
+BSP_AddClipnode (bsp_t *bsp, const dclipnode_t *clipnode)
 {
-	bsp->clipnodes = realloc (bsp->clipnodes,
-							  (bsp->numclipnodes + 1) * sizeof (dclipnode_t));
+	REALLOC (clipnodes);
 	bsp->clipnodes[bsp->numclipnodes++] = *clipnode;
 }
 
 VISIBLE void
-BSP_AddMarkSurface (bsp_t *bsp, unsigned short marksurface)
+BSP_AddMarkSurface (bsp_t *bsp, int marksurface)
 {
-	bsp->marksurfaces = realloc (bsp->marksurfaces,
-								 (bsp->nummarksurfaces + 1)
-								 * sizeof (unsigned short));
+	REALLOC (marksurfaces);
 	bsp->marksurfaces[bsp->nummarksurfaces++] = marksurface;
 }
 
 VISIBLE void
 BSP_AddSurfEdge (bsp_t *bsp, int surfedge)
 {
-	bsp->surfedges = realloc (bsp->surfedges,
-							  (bsp->numsurfedges + 1) * sizeof (int));
+	REALLOC (surfedges);
 	bsp->surfedges[bsp->numsurfedges++] = surfedge;
 }
 
 VISIBLE void
-BSP_AddEdge (bsp_t *bsp, dedge_t *edge)
+BSP_AddEdge (bsp_t *bsp, const dedge_t *edge)
 {
-	bsp->edges = realloc (bsp->edges,
-						  (bsp->numedges + 1) * sizeof (dedge_t));
+	REALLOC (edges);
 	bsp->edges[bsp->numedges++] = *edge;
 }
 
 VISIBLE void
-BSP_AddModel (bsp_t *bsp, dmodel_t *model)
+BSP_AddModel (bsp_t *bsp, const dmodel_t *model)
 {
-	bsp->models = realloc (bsp->models,
-						   (bsp->nummodels + 1) * sizeof (dmodel_t));
+	REALLOC (models);
 	bsp->models[bsp->nummodels++] = *model;
 }
 
+#define OWN(X) \
+	do { \
+		FREE(X); \
+		bsp->own_##X = 1; \
+	} while (0)
+
 VISIBLE void
-BSP_AddLighting (bsp_t *bsp, byte *lightdata, int lightdatasize)
+BSP_AddLighting (bsp_t *bsp, const byte *lightdata, size_t lightdatasize)
 {
+	OWN (lightdata);
 	bsp->lightdatasize = lightdatasize;
 	bsp->lightdata = malloc (lightdatasize);
 	memcpy (bsp->lightdata, lightdata, lightdatasize);
 }
 
 VISIBLE void
-BSP_AddVisibility (bsp_t *bsp, byte *visdata, int visdatasize)
+BSP_AddVisibility (bsp_t *bsp, const byte *visdata, size_t visdatasize)
 {
+	OWN (visdata);
 	bsp->visdatasize = visdatasize;
 	bsp->visdata = malloc (visdatasize);
 	memcpy (bsp->visdata, visdata, visdatasize);
 }
 
 VISIBLE void
-BSP_AddEntities (bsp_t *bsp, char *entdata, int entdatasize)
+BSP_AddEntities (bsp_t *bsp, const char *entdata, size_t entdatasize)
 {
+	OWN (entdata);
 	bsp->entdatasize = entdatasize;
 	bsp->entdata = malloc (entdatasize);
 	memcpy (bsp->entdata, entdata, entdatasize);
 }
 
 VISIBLE void
-BSP_AddTextures (bsp_t *bsp, byte *texdata, int texdatasize)
+BSP_AddTextures (bsp_t *bsp, const byte *texdata, size_t texdatasize)
 {
+	OWN (texdata);
 	bsp->texdatasize = texdatasize;
 	bsp->texdata = malloc (texdatasize);
 	memcpy (bsp->texdata, texdata, texdatasize);

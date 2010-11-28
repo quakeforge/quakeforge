@@ -23,20 +23,73 @@
 #ifndef qfbsp_portals_h
 #define qfbsp_portals_h
 
+/**	\defgroup qfbsp_portals Portal Functions
+	\ingroup qfbsp
+
+	A portal is the polygonal interface between two leaf nodes, regardless
+	of the contents of the two leaf nodes.
+
+	Decision nodes will not have portals on them, though as part of the
+	portal building process, they will temporarily have portals.
+*/
+//@{
+
 struct node_s;
 
 typedef struct portal_s {
-	int			planenum;
-	struct node_s *nodes[2];		// [0] = front side of planenum
-	struct portal_s	*next[2];	
-	struct winding_s *winding;
+	int         planenum;			///< plane holding this portal
+	struct node_s *nodes[2];		///< [0] = front side of plane
+	struct portal_s *next[2];		///< [0] = front side of plane
+	struct winding_s *winding;		///< this portal's polygon
 } portal_t;
 
-extern struct node_s outside_node;		// portals outside the world face this
+extern struct node_s outside_node;	// portals outside the world face this
 
+/**	Allocate a new portal.
+
+	Increases \c c_activeportals by one.
+
+	\return			Pointer to the new portal.
+*/
+portal_t *AllocPortal (void);
+
+/**	Free a portal.
+
+	Only the first portal will be freed. If the portal is linked to other
+	portals, those portals will have to be freed seperately.
+
+	Reduces \c c_activeportals by one.
+
+	\param p		The portal to free.
+*/
+void FreePortal (portal_t *p);
+
+/**	Builds the exact polyhedrons for the nodes and leafs.
+
+	\param headnode	The root of the world bsp.
+*/
 void PortalizeWorld (struct node_s *headnode);
+
+/**	Builds the exact polyhedrons for the nodes and leafs.
+
+	Like PortalizeWorld, but stop at detail nodes - Alexander Malmberg.
+
+	\param headnode	The root of the world bsp.
+*/
 void PortalizeWorldDetail (struct node_s *headnode);	// stop at detail nodes
-void WritePortalfile (struct node_s *headnode);
+
+/**	Free all portals from a node and its decendents.
+
+	\param node		The node from which to remove and free portals.
+*/
 void FreeAllPortals (struct node_s *node);
+
+/**	Write the map's portals to the portal file.
+
+	\param headnode	The root of the map's bsp.
+*/
+void WritePortalfile (struct node_s *headnode);
+
+//@}
 
 #endif//qfbsp_portals_h

@@ -174,6 +174,14 @@ get_handle (progs_t *pr, const char *name, int handle)
 	return h;
 }
 
+QFile *
+QFile_GetFile (progs_t *pr, int handle)
+{
+	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
+
+	return h->file;
+}
+
 static void
 bi_Qclose (progs_t *pr)
 {
@@ -182,7 +190,7 @@ bi_Qclose (progs_t *pr)
 	qfile_t    *h = handle_get (res, handle);
 
 	if (!h)
-		PR_RunError (pr, "invalid file handle pass to Qclose");
+		PR_RunError (pr, "invalid file handle passed to Qclose");
 	Qclose (h->file);
 	*h->prev = h->next;
 	handle_free (res, h);

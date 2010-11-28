@@ -106,7 +106,7 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 		convert_name (value);
 		value = constant_expr (value);
 	}
-	if (value && value->type < ex_string) {
+	if (value && value->type < ex_nil) {
 		error (value, "non-constant case value");
 		free (cl);
 		return 0;

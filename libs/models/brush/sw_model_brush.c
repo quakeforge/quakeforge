@@ -62,13 +62,13 @@ Mod_LoadExternalTextures (model_t *mod)
 }
 
 void
-Mod_LoadLighting (lump_t *l)
+Mod_LoadLighting (bsp_t *bsp)
 {
 	mod_lightmap_bytes = 1;
-	if (!l->filelen) {
+	if (!bsp->lightdatasize) {
 		loadmodel->lightdata = NULL;
 		return;
 	}
-	loadmodel->lightdata = Hunk_AllocName (l->filelen, loadname);
-	memcpy (loadmodel->lightdata, mod_base + l->fileofs, l->filelen);
+	loadmodel->lightdata = Hunk_AllocName (bsp->lightdatasize, loadname);
+	memcpy (loadmodel->lightdata, bsp->lightdata, bsp->lightdatasize);
 }

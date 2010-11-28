@@ -215,12 +215,10 @@ R_SetSkyFrame (void)
 
 
 /*
-   R_LoadSkys
-
    Stub function for loading a skybox.  Currently we have support for
    skyboxes only in GL targets, so we just do nothing here.  --KB
 */
-void
+VISIBLE void
 R_LoadSkys (const char *name)
 {
 }

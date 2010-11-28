@@ -155,7 +155,7 @@ Z_Malloc (memzone_t *zone, int size)
 {
 	void	*buf;
 
-	if (!developer || developer->int_val)
+	if (!developer || developer->int_val & SYS_DEV)
 		Z_CheckHeap (zone);	// DEBUG
 	buf = Z_TagMalloc (zone, size, 1);
 	if (!buf)
@@ -238,6 +238,8 @@ Z_Realloc (memzone_t *zone, void *ptr, int size)
 		Sys_Error ("Z_Realloc: realloced a freed pointer");
 
 	old_size = block->size;
+	old_size -= sizeof (memblock_t);	// account for size of block header
+	old_size -= 4;						// space for memory trash tester
 	old_ptr = ptr;
 
 	Z_Free (zone, ptr);
@@ -261,8 +263,8 @@ Z_Print (memzone_t *zone)
 
 	for (block = zone->blocklist.next ; ; block = block->next) {
 		Sys_Printf ("block:%p    size:%7i    tag:%3i ofs:%d\n",
-					block, block->size, block->tag,
-					(int) ((byte *) block - (byte *) zone));
+					block, block->size - (int) sizeof (memblock_t) - 4,
+					block->tag, (int) ((byte *) block - (byte *) zone));
 
 		if (block->next == &zone->blocklist)
 			break;			// all blocks have been hit	
@@ -590,7 +592,7 @@ Cache_Move (cache_system_t * c)
 	// we are clearing up space at the bottom, so allocate it late
 	new = Cache_TryAlloc (c->size, true);
 	if (new) {
-		Sys_DPrintf ("cache_move ok\n");
+		Sys_MaskPrintf (SYS_DEV, "cache_move ok\n");
 
 		memcpy (new + 1, c + 1, c->size - sizeof (cache_system_t));
 		new->user = c->user;
@@ -598,7 +600,7 @@ Cache_Move (cache_system_t * c)
 		Cache_Free (c->user);
 		new->user->data = (void *) (new + 1);
 	} else {
-		Sys_DPrintf ("cache_move failed\n");
+		Sys_MaskPrintf (SYS_DEV, "cache_move failed\n");
 
 		Cache_Free (c->user);			// tough luck...
 	}
@@ -854,7 +856,7 @@ Cache_Free (cache_user_t *c)
 	if (cs->readlock)
 		Sys_Error ("Cache_Free: attempt to free locked block");
 
-	Sys_DPrintf ("Cache_Free: freeing '%s' %p\n", cs->name, cs);
+	Sys_MaskPrintf (SYS_DEV, "Cache_Free: freeing '%s' %p\n", cs->name, cs);
 
 	Cache_UnlinkLRU (cs);
 
@@ -917,9 +919,9 @@ Cache_Alloc (cache_user_t *c, int size, const char *name)
 VISIBLE void
 Cache_Report (void)
 {
-	Sys_DPrintf ("%4.1f megabyte data cache\n",
-				 (hunk_size - hunk_high_used -
-				  hunk_low_used) / (float) (1024 * 1024));
+	Sys_MaskPrintf (SYS_DEV, "%4.1f megabyte data cache\n",
+					(hunk_size - hunk_high_used -
+					 hunk_low_used) / (float) (1024 * 1024));
 }
 
 VISIBLE void

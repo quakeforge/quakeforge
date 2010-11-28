@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\include;..\..\include;..\..\include\win32;..\..\nq\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;HAVE_CONFIG_H"
 				StringPooling="true"
 				MinimalRebuild="true"
 				ExceptionHandling="0"

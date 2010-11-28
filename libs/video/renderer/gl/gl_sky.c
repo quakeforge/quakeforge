@@ -110,7 +110,7 @@ vec5_t      skyvec[6][4] = {
 	}
 };
 
-void
+VISIBLE void
 R_LoadSkys (const char *skyname)
 {
 	const char *name;
@@ -129,11 +129,11 @@ R_LoadSkys (const char *skyname)
 
 		targa = LoadImage (name = va ("env/%s%s", skyname, suf[i]));
 		if (!targa || targa->format < 3) {	// FIXME Can't do PCX right now
-			Sys_DPrintf ("Couldn't load %s\n", name);
+			Sys_MaskPrintf (SYS_DEV, "Couldn't load %s\n", name);
 			// also look in gfx/env, where Darkplaces looks for skies
 			targa = LoadImage (name = va ("gfx/env/%s%s", skyname, suf[i]));
 			if (!targa) {
-				Sys_DPrintf ("Couldn't load %s\n", name);
+				Sys_MaskPrintf (SYS_DEV, "Couldn't load %s\n", name);
 				skyloaded = false;
 				continue;
 			}

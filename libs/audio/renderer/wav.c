@@ -235,16 +235,16 @@ wav_get_info (QFile *file)
 		Sys_Printf ("missing format chunk\n");
 		goto bail;
 	}
-	if (!data) {
-		Sys_Printf ("missing data chunk\n");
-		goto bail;
-	}
 	if (dfmt->format_tag != 1) {
-		Sys_Printf ("not Microsfot PCM\n");
+		Sys_Printf ("not Microsoft PCM\n");
 		goto bail;
 	}
 	if (dfmt->channels < 1 || dfmt->channels > 8) {
 		Sys_Printf ("unsupported channel count\n");
+		goto bail;
+	}
+	if (!data) {
+		Sys_Printf ("missing data chunk\n");
 		goto bail;
 	}
 	
@@ -280,10 +280,10 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 	}
 
 	if (info.frames / info.rate < 3) {
-		Sys_DPrintf ("cache %s\n", realname);
+		Sys_MaskPrintf (SYS_DEV, "cache %s\n", realname);
 		wav_cache (sfx, realname, file, info);
 	} else {
-		Sys_DPrintf ("stream %s\n", realname);
+		Sys_MaskPrintf (SYS_DEV, "stream %s\n", realname);
 		wav_stream (sfx, realname, file, info);
 	}
 	return 0;

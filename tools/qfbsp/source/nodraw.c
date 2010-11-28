@@ -26,6 +26,10 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "draw.h"
 
+/**	\addtogroup qfbsp_draw
+*/
+//@{
+
 
 void
 Draw_ClearBounds (void)
@@ -33,12 +37,12 @@ Draw_ClearBounds (void)
 }
 
 void
-Draw_AddToBounds (vec3_t v)
+Draw_AddToBounds (const vec3_t v)
 {
 }
 
 void
-Draw_DrawFace (struct visfacet_s *f)
+Draw_DrawFace (const struct visfacet_s *f)
 {
 }
 
@@ -63,31 +67,33 @@ Draw_SetBlack (void)
 }
 
 void
-DrawPoint (vec3_t v)
+DrawPoint (const vec3_t v)
 {
 }
 
 void
-DrawLeaf (struct node_s *l, int color)
+DrawLeaf (const struct node_s *l, int color)
 {
 }
 
 void
-DrawBrush (struct brush_s *b)
+DrawBrush (const struct brush_s *b)
 {
 }
 
 void
-DrawWinding (struct winding_s *w)
+DrawWinding (const struct winding_s *w)
 {
 }
 
 void
-DrawTri (vec3_t p1, vec3_t p2, vec3_t p3)
+DrawTri (const vec3_t p1, const vec3_t p2, const vec3_t p3)
 {
 }
 
 void
-DrawPortal (struct portal_s *portal)
+DrawPortal (const struct portal_s *portal)
 {
 }
+
+//@}

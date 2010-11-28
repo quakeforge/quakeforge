@@ -751,7 +751,7 @@ do_precache (progs_t *pr, const char **cache, int max, const char *name,
 			char *c = Hunk_Alloc (strlen (s) + 1);
 			strcpy (c, s);
 			cache[i] = c; // blah, const
-			Sys_DPrintf ("%s: %3d %s\n", func, i, s);
+			Sys_MaskPrintf (SYS_DEV, "%s: %3d %s\n", func, i, s);
 			return;
 		}
 		if (!strcmp (cache[i], s))

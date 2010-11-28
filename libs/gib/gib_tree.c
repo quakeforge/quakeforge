@@ -75,13 +75,13 @@ void
 GIB_Tree_Ref (gib_tree_t ** tp)
 {
 	(*tp)->refs++;
-//	Sys_DPrintf ("Ref: %p %u\n", *tp, (*tp)->refs);
+//	Sys_MaskPrintf (SYS_DEV, "Ref: %p %u\n", *tp, (*tp)->refs);
 }
 
 void
 GIB_Tree_Unref (gib_tree_t ** tp)
 {
-//	Sys_DPrintf ("Unref: %p %u\n", *tp, (*tp)->refs - 1);
+//	Sys_MaskPrintf (SYS_DEV, "Unref: %p %u\n", *tp, (*tp)->refs - 1);
 	if (!(--(*tp)->refs)) {
 		GIB_Tree_Free_Recursive (*tp);
 		*tp = 0;

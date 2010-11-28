@@ -28,27 +28,63 @@
 #include "bsp5.h"
 #include "map.h"
 
+/**	\defgroup qfbsp_brush Brush Functions
+	\ingroup qfbsp
+*/
+//@{
+
 #define	NUM_HULLS		2				// normal and +16
 
 #define	NUM_CONTENTS	2				// solid and water
 
 typedef struct brush_s {
-	struct brush_s	*next;
-	vec3_t			mins, maxs;
+	struct brush_s *next;
+	vec3_t      mins, maxs;
 	struct visfacet_s *faces;
-	int				contents;
+	int         contents;
 } brush_t;
 
 typedef struct brushset_s {
-	vec3_t		mins, maxs;
-	brush_t		*brushes;		// NULL terminated list
+	vec3_t      mins, maxs;
+	brush_t    *brushes;			// NULL terminated list
 } brushset_t;
 
-extern	int			numbrushplanes;
-extern	plane_t		planes[MAX_MAP_PLANES];
+extern int      numbrushplanes;
+extern plane_t  planes[MAX_MAP_PLANES];
 
+/**	Allocate a new brush.
+
+	\return			Pointer to the new brush.
+*/
+brush_t *AllocBrush (void);
+
+/**	Load the brushes from the entity.
+
+	\param ent		The entity from which to load the brushes.
+	\param hullnum	The number of the hull for which to load the brushes.
+	\return			The brush set holding the brushes loaded from the entity.
+*/
 brushset_t *Brush_LoadEntity (entity_t *ent, int hullnum);
-int	PlaneTypeForNormal (vec3_t normal);
-int	FindPlane (plane_t *dplane, int *side);
+
+/**	Determine the primary axis of the normal.
+
+	\param normal	Must be canonical.
+*/
+int	PlaneTypeForNormal (const vec3_t normal);
+
+/**	Add a plane to the global list of planes.
+
+	Make the plane canonical, and add it to the global list of planes if it
+	does not duplicate a plane that is already in the list. If the plane is
+	flipped while being made canonical, side will be set to 1, otherwise side
+	will be 0.
+
+	\param dplane	The plane to add.
+	\param side		The side of the plane that will be front.
+	\return			global plane number.
+*/
+int	FindPlane (const plane_t *dplane, int *side);
+
+//@}
 
 #endif//qfbsp_brush_h

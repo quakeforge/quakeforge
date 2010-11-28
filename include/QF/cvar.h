@@ -37,23 +37,22 @@
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
 
-typedef struct cvar_s
-{
-	const char    *name;
-	const char    *string;
-	int	flags;
-	void	(*callback)(struct cvar_s *var);
-	const char 	*description;	// for "help" command
-	float	value;
-	int		int_val;
-	vec3_t	vec;
+typedef struct cvar_s {
+	const char *name;
+	const char *string;
+	const char *default_string;
+	int	        flags;
+	void      (*callback)(struct cvar_s *var);
+	const char *description;	// for "help" command
+	float       value;
+	int         int_val;
+	vec3_t      vec;
 	struct cvar_s *next;
 } cvar_t;
 
-typedef struct cvar_alias_s
-{
-	char	*name;
-	cvar_t	*cvar;
+typedef struct cvar_alias_s {
+	char       *name;
+	cvar_t     *cvar;
 	struct cvar_alias_s	*next;
 } cvar_alias_t;
 
@@ -95,6 +94,9 @@ void	Cvar_SetROM (cvar_t *var, const char *value);
 
 // allows you to change a Cvar's flags without a full Cvar_Get
 void	Cvar_SetFlags (cvar_t *var, int cvarflags);
+
+// reset a Cvar to its default setting
+void	Cvar_Reset (cvar_t *var);
 
 // returns 0 if not defined or non numeric
 float	Cvar_VariableValue (const char *var_name);

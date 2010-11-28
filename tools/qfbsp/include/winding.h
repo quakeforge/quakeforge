@@ -25,20 +25,99 @@
 
 #include "QF/mathlib.h"
 
+/**	\defgroup qfbsp_winding Winding Manipulation
+	\ingroup qfbsp
+*/
+//@{
+
 struct plane_s;
 
 typedef struct winding_s {
-	int		numpoints;
-	vec3_t	points[8];			// variable sized
+	int         numpoints;
+	vec3_t      points[8];			// variable sized
 } winding_t;
 
-winding_t *BaseWindingForPlane (struct plane_s *p);
+/**	Create a very large four-point winding with all point on the plane.
+
+	The winding will be a box with aligned with the axes of the plane.
+
+	\param p		The plane for which to create the winding.
+	\return			The new winding.
+	\note It is the caller's responsibiltiy to free the new winding.
+*/
+winding_t *BaseWindingForPlane (const struct plane_s *p);
+
+/**	Create a new, empty winding with.
+
+	\param points	The number of points for which to leave space.
+	\return			The new winding.
+	\note It is the caller's responsibiltiy to free the new winding.
+*/
 winding_t *NewWinding (int points);
+
+/**	Free the winding.
+
+	\param w		The winding to be freed.
+*/
 void FreeWinding (winding_t *w);
-winding_t *CopyWinding (winding_t *w);
-winding_t *CopyWindingReverse (winding_t *w);
+
+/**	Create a new winding with the same points as the given winding.
+
+	\param w		The winding to copy.
+	\return			The new winding.
+	\note It is the caller's responsibiltiy to free the new winding.
+*/
+winding_t *CopyWinding (const winding_t *w);
+
+/**	Create a new winding with the reverse points of the given winding.
+
+	\param w		The winding to copy.
+	\return			The new winding.
+	\note It is the caller's responsibiltiy to free the new winding.
+*/
+winding_t *CopyWindingReverse (const winding_t *w);
+
+/**	Clip the winding to the plain.
+
+	The new winding will be the part of the input winding that is on the
+	front side of the plane.
+
+	\note It is the caller's responsibiltiy to free the new winding.
+
+	\note The input winding will be freed.
+
+	\param in		The winding to be clipped.
+	\param split	The plane by which the winding will be clipped.
+	\param keepon	If true, an exactly on-plane winding will be saved,
+					otherwise it will be clipped away.
+	\return			The new winding representing the part of the input winding
+					on the font side of the plane, or NULL if the winding has
+					been clipped away.
+*/
 winding_t *ClipWinding (winding_t *in, struct plane_s *split, qboolean keepon);
+
+/**	Divide a winding by a plane, producing one or two windings.
+
+	\note The original winding is not damaged or freed.
+
+	\note If one of \a front or \a back is NULL, the other will point to
+	the input winding.
+
+	\note If neither \a front nor \a back are NULL, then both will be new
+	windings and the caller will be responsible for freeing them.
+
+	\param in		The winding to be divided.
+	\param split	The plane by which the winding will be divided.
+	\param front	Set to the part of the input winding that is in front of
+					the plane, or NULL if no part of the winding is in front
+					of the plane.
+	\param back		Set to the part of the input winding that is behind the
+					plane, or NULL if no part of the winding is behind the
+					plane.
+*/
 void DivideWinding (winding_t *in, struct plane_s *split,
 					winding_t **front, winding_t **back);
+
+//@}
 
 #endif//qfbsp_winding_h

@@ -10,8 +10,8 @@ if test "$1" = "clean"; then
 	fi
 
 	find . -name Makefile.in -print0 | xargs $ARGS rm -f
-	find . -name config.h.in -print0 | xargs $ARGS rm -f
-	find . -name config.h -print0 | xargs $ARGS rm -f
+	find . -path ./tools/texpaint -prune -o -name config.h.in -print0 | xargs $ARGS rm -f
+	find . \( -path ./vc2005 -o -path ./vc2008 \) -prune -o -name config.h -print0 | xargs $ARGS rm -f
 	find . -name stamp-h1 -print0 | xargs $ARGS rm -f
 	find . -name '*~' -type f -print0 | xargs $ARGS rm -f
 	find . -name '*.rej' -type f -print0 | xargs $ARGS rm -f
@@ -23,7 +23,7 @@ if test "$1" = "clean"; then
 	rm -rf autom4te.cache
 
 	cd -
-	find . -name Makefile -print0 | xargs $ARGS rm -f
+	find . \( -path ./tools/gas2masm -o -path ./tools/quaketoascii \) -name Makefile -print0 | xargs $ARGS rm -f
 	find . -name core -print0 | xargs $ARGS rm -f
 	rm -f RPM/build_rpm RPM/quakeforge.conf RPM/quakeforge.spec RPM/rpmmacros
 	find . -name '*.o' -type f -print0 | xargs $ARGS rm -f
@@ -49,15 +49,15 @@ if test -n "$lt" ; then
 		LTIZE_VER_MAJOR=`echo $LTIZE_VER | cut -f1 -d'.'`
 		LTIZE_VER_MINOR=`echo $LTIZE_VER | cut -f2 -d'.' | sed -e 's/[^0-9]//g'`
 
-		if test "$LTIZE_VER_MAJOR" -lt "2"; then
-			errors="Libtool 1.4 or greater needed to build configure.\n$errors"
+		if test "$LTIZE_VER_MAJOR" -lt "1"; then
+			errors="Libtool 1.5 or greater needed to build configure.\n$errors"
 		fi
-		if test "$LTIZE_VER_MAJOR" -eq "2" -a "$LTIZE_VER_MINOR" -lt "2" ; then
-			errors="Libtool 1.4 or greater needed to build configure.\n$errors"
+		if test "$LTIZE_VER_MAJOR" -eq "1" -a "$LTIZE_VER_MINOR" -lt "5" ; then
+			errors="Libtool 1.5 or greater needed to build configure.\n$errors"
 		fi
 	fi
 else
-	errors="Libtool not found. QuakeForge CVS requires libtool to bootstrap itself.\n$errors"
+	errors="Libtool not found. QuakeForge git requires libtool to bootstrap itself.\n$errors"
 fi
 
 # Check Autoconf version
@@ -69,15 +69,15 @@ if test -n "$ac" ; then
 		AC_VER_MINOR=`echo $AC_VER | cut -f2 -d'.' | sed 's/[^0-9]*$//'`
 
 		if test "$AC_VER_MAJOR" -lt "2" ; then
-			errors="Autoconf 2.67 or greater needed to build configure.\n$errors"
+			errors="Autoconf 2.61 or greater needed to build configure.\n$errors"
 		fi
 
-		if test "$AC_VER_MAJOR" -eq "2" -a "$AC_VER_MINOR" -lt "67" ; then
-			errors="Autoconf 2.67 or greater needed to build configure.\n$errors"
+		if test "$AC_VER_MAJOR" -eq "2" -a "$AC_VER_MINOR" -lt "61" ; then
+			errors="Autoconf 2.61 or greater needed to build configure.\n$errors"
 		fi
 	fi
 else
-	errors="Autoconf not found. QuakeForge CVS requires autoconf to bootstrap itself.\n$errors"
+	errors="Autoconf not found. QuakeForge git requires autoconf to bootstrap itself.\n$errors"
 fi
 
 am=`which automake`
@@ -87,14 +87,14 @@ if test -n "$am" ; then
 		AM_VER_MAJOR=`echo $AM_VER | cut -f1 -d.`
 		AM_VER_MINOR=`echo $AM_VER | cut -f2 -d.`
 		if test "$AM_VER_MAJOR" -lt "1"; then
-			errors="Automake 1.6 or greater needed to build makefiles.\n$errors"
+			errors="Automake 1.10 or greater needed to build makefiles.\n$errors"
 		fi
-		if test "$AM_VER_MAJOR" -eq "1" -a "$AM_VER_MINOR" -lt "11"; then
-			errors="Automake 1.11 or greater needed to build makefiles.\n$errors"
+		if test "$AM_VER_MAJOR" -eq "1" -a "$AM_VER_MINOR" -lt "10"; then
+			errors="Automake 1.10 or greater needed to build makefiles.\n$errors"
 		fi
 	fi
 else
-	errors="Automake not found. QuakeForge CVS requires automake to bootstrap itself.\n$errors"
+	errors="Automake not found. QuakeForge git requires automake to bootstrap itself.\n$errors"
 fi
 
 if test -n "$errors" ; then

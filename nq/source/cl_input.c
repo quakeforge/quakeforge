@@ -75,6 +75,7 @@ kbutton_t   in_up, in_down;
 
 int         in_impulse;
 
+void (*write_angles) (sizebuf_t *sb, const vec3_t angles);
 
 static void
 KeyPress (kbutton_t *b)
@@ -555,7 +556,7 @@ CL_SendMove (usercmd_t *cmd)
 
 	MSG_WriteFloat (&buf, cl.mtime[0]);		// so server can get ping times
 
-	MSG_WriteAngleV (&buf, cl.viewangles);
+	write_angles (&buf, cl.viewangles);
 
 	MSG_WriteShort (&buf, cmd->forwardmove);
 	MSG_WriteShort (&buf, cmd->sidemove);

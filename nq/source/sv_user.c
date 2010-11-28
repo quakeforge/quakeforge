@@ -427,7 +427,10 @@ SV_ReadClientMove (usercmd_t *move)
 	host_client->num_pings++;
 
 	// read current angles  
-	MSG_ReadAngleV (net_message, angle);
+	if (sv.protocol == PROTOCOL_NETQUAKE)
+		MSG_ReadAngleV (net_message, angle);
+	else
+		MSG_ReadAngle16V (net_message, angle);
 
 	VectorCopy (angle, SVvector (host_client->edict, v_angle));
 
@@ -540,7 +543,8 @@ SV_ReadClientMessage (void)
 				else if (ret == 1)
 					Cmd_ExecuteString (s, src_client);
 				else
-					Sys_DPrintf ("%s tried to %s\n", host_client->name, s);
+					Sys_MaskPrintf (SYS_DEV, "%s tried to %s\n",
+									host_client->name, s);
 				break;
 
 			case clc_disconnect:

@@ -83,7 +83,7 @@ int         c_vistest;
 int         numportals;
 int         portalclusters;
 int         numrealleafs;
-int         originalvismapsize;
+size_t      originalvismapsize;
 int         totalvis;
 int         count_sep;
 int         bitbytes;	// (portalleafs + 63)>>3
@@ -95,6 +95,8 @@ cluster_t  *clusters;
 dstring_t  *visdata;
 byte       *uncompressed;		// [bitbytes * portalleafs]
 int        *leafcluster;	// leaf to cluster mappings as read from .prt file
+
+int        *working;		// per thread current portal #
 
 
 static void
@@ -126,21 +128,21 @@ NewWinding (int points)
 }
 
 void
-FreeWinding (winding_t *winding)
+FreeWinding (winding_t *w)
 {
-	if (!winding->original)
-		free (winding);
+	if (!w->original)
+		free (w);
 }
 
 winding_t *
-CopyWinding (winding_t *winding)
+CopyWinding (winding_t *w)
 {
 	size_t      size;
 	winding_t  *copy;
 
-	size = (size_t) (uintptr_t) ((winding_t *) 0)->points[winding->numpoints];
+	size = (size_t) (uintptr_t) ((winding_t *) 0)->points[w->numpoints];
 	copy = malloc (size);
-	memcpy (copy, winding, size);
+	memcpy (copy, w, size);
 	copy->original = false;
 	return copy;
 }
@@ -281,15 +283,18 @@ GetNextPortal (void)
 }
 
 static void *
-LeafThread (void *thread)
+LeafThread (void *_thread)
 {
 	portal_t   *portal;
+	int         thread = (int) (intptr_t) _thread;
 
 	do {
 		portal = GetNextPortal ();
 		if (!portal)
 			break;
 
+		if (working)
+			working[thread] = (int) (portal - portals);
 		PortalFlow (portal);
 
 		if (options.verbosity > 0)
@@ -298,6 +303,29 @@ LeafThread (void *thread)
 						portal->nummightsee, 
 						portal->numcansee);
 	} while (1);
+
+	return NULL;
+}
+
+static void *
+WatchThread (void *_thread)
+{
+	int         thread = (intptr_t) _thread;
+	int        *local_work = malloc (thread * sizeof (int));
+	int         i;
+	const char *spinner = "|/-\\";
+	int         ind = 0;
+
+	while (1) {
+		sleep (1);
+
+		for (i = 0; i < thread; i ++)
+			local_work[i] = working[i];
+		for (i = 0; i < thread; i++)
+			printf ("%6d", local_work[i]);
+		printf (" %c\r", spinner[(ind++) % 4]);
+		fflush (stdout);
+	}
 
 	return NULL;
 }
@@ -412,11 +440,12 @@ CalcPortalVis (void)
 
 #ifdef HAVE_PTHREAD_H
 	{
-		pthread_t   work_threads[MAX_THREADS];
+		pthread_t   work_threads[MAX_THREADS + 1];
 		void *status;
 		pthread_attr_t attrib;
 
 		if (options.threads > 1) {
+			working = calloc (options.threads, sizeof (int));
 			my_mutex = malloc (sizeof (*my_mutex));
 			if (pthread_mutex_init (my_mutex, 0) == -1)
 				Sys_Error ("pthread_mutex_init failed");
@@ -429,11 +458,18 @@ CalcPortalVis (void)
 									(void *) i) == -1)
 					Sys_Error ("pthread_create failed");
 			}
+			if (pthread_create (&work_threads[i], &attrib, WatchThread,
+								(void *) i) == -1)
+				Sys_Error ("pthread_create failed");
 
 			for (i = 0; i < options.threads; i++) {
 				if (pthread_join (work_threads[i], &status) == -1)
 					Sys_Error ("pthread_join failed");
 			}
+			if (pthread_cancel (work_threads[i]) != 0)
+				Sys_Error ("pthread_cancel failed");
+			if (pthread_join (work_threads[i], &status) == -1)
+				Sys_Error ("pthread_join failed");
 
 			if (pthread_mutex_destroy (my_mutex) == -1)
 				Sys_Error ("pthread_mutex_destroy failed");
@@ -848,7 +884,7 @@ main (int argc, char **argv)
 
 	BSP_AddVisibility (bsp, (byte *) visdata->str, visdata->size);
 	if (options.verbosity >= 0)
-		printf ("visdatasize:%i  compressed from %i\n", bsp->visdatasize,
+		printf ("visdatasize:%zi  compressed from %zi\n", bsp->visdatasize,
 				originalvismapsize);
 
 	CalcAmbientSounds ();

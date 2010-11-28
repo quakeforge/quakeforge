@@ -101,6 +101,16 @@ static byte cs_data[8 * 8 * 4] = {
 		0xff, 0xfe, 0xff, 0xff, 0xff, 0xfe, 0xff, 0xff,
 		0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe, 0xff,
 		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+
+		//From FitzQuake
+		255,255,255,255,255,255,255,255,
+		255,255,255,  8,  9,255,255,255,
+		255,255,255,  6,  8,  2,255,255,
+		255,  6,  8,  8,  6,  8,  8,255,
+		255,255,  2,  8,  8,  2,  2,  2,
+		255,255,255,  7,  8,  2,255,255,
+		255,255,255,255,  2,  2,255,255,
+		255,255,255,255,255,255,255,255,
 };
 
 typedef struct {
@@ -134,7 +144,8 @@ Draw_InitText (void)
 		tVAsize = 0;
 
 	if (tVAsize) {
-		Sys_DPrintf ("Text: %i maximum vertex elements.\n", tVAsize);
+		Sys_MaskPrintf (SYS_DEV, "Text: %i maximum vertex elements.\n",
+						tVAsize);
 
 		if (textVertices)
 			free (textVertices);
@@ -152,7 +163,7 @@ Draw_InitText (void)
 		for (i = 0; i < tVAsize; i++)
 			tVAindices[i] = i;
 	} else {
-		Sys_DPrintf ("Text: Vertex Array use disabled.\n");
+		Sys_MaskPrintf (SYS_DEV, "Text: Vertex Array use disabled.\n");
 	}
 }
 
@@ -567,10 +578,60 @@ crosshair_3 (int x, int y)
 	qfglColor3ubv (color_white);
 }
 
+static void
+crosshair_4 (int x, int y)
+{
+	unsigned char *pColor;
+
+	pColor = (unsigned char *) &d_8to24table[crosshaircolor->int_val];
+	qfglColor4ubv (pColor);
+	qfglBindTexture (GL_TEXTURE_2D, cs_texture);
+
+	qfglBegin (GL_QUADS);
+
+	qfglTexCoord2f (0, 0.5);
+	qfglVertex2f (x - 7, y - 7);
+	qfglTexCoord2f (0.5, 0.5);
+	qfglVertex2f (x + 9, y - 7);
+	qfglTexCoord2f (0.5, 1);
+	qfglVertex2f (x + 9, y + 9);
+	qfglTexCoord2f (0, 1);
+	qfglVertex2f (x - 7, y + 9);
+
+	qfglEnd ();
+	qfglColor3ubv (color_white);
+}
+
+static void
+crosshair_5 (int x, int y)	//FIXME don't use until the data is filled in
+{
+	unsigned char *pColor;
+
+	pColor = (unsigned char *) &d_8to24table[crosshaircolor->int_val];
+	qfglColor4ubv (pColor);
+	qfglBindTexture (GL_TEXTURE_2D, cs_texture);
+
+	qfglBegin (GL_QUADS);
+
+	qfglTexCoord2f (0.5, 0.5);
+	qfglVertex2f (x - 7, y - 7);
+	qfglTexCoord2f (1, 0.5);
+	qfglVertex2f (x + 9, y - 7);
+	qfglTexCoord2f (1, 1);
+	qfglVertex2f (x + 9, y + 9);
+	qfglTexCoord2f (0.5, 1);
+	qfglVertex2f (x - 7, y + 9);
+
+	qfglEnd ();
+	qfglColor3ubv (color_white);
+}
+
 static void (*crosshair_func[]) (int x, int y) = {
 	crosshair_1,
 	crosshair_2,
 	crosshair_3,
+	crosshair_4,
+	crosshair_5,
 };
 
 VISIBLE void

@@ -266,11 +266,11 @@ Sys_Printf (const char *fmt, ...)
 }
 
 VISIBLE void
-Sys_DPrintf (const char *fmt, ...)
+Sys_MaskPrintf (int mask, const char *fmt, ...)
 {
 	va_list     args;
 
-	if (!developer || !developer->int_val)
+	if (!developer || !(developer->int_val & mask))
 		return;
 	va_start (args, fmt);
 	sys_std_printf_function (fmt, args);
@@ -604,9 +604,14 @@ Sys_ConsoleInput (void)
 		}
 		text[len] = c;
 		len++;
-		text[len] = 0;
-		if (len == sizeof (text))
+		if (len < sizeof (text))
+			text[len] = 0;
+		else {
+		// buffer is full
 			len = 0;
+			text[sizeof (text) - 1] = 0;
+			return text;
+		}
 	}
 
 	return NULL;

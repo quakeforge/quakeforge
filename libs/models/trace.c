@@ -205,7 +205,7 @@ MOD_TraceLine (hull_t *hull, int num,
 			frac = (start_dist + offset) / (start_dist - end_dist);
 		} else {
 			// get here only when offset is non-zero
-			Sys_DPrintf ("foo\n");
+			Sys_MaskPrintf (SYS_DEV, "foo\n");
 			frac = 1;
 			side = start_dist < end_dist;
 		}

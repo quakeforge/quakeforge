@@ -245,7 +245,7 @@ get_mode (int width, int height, int depth)
 void
 VID_Shutdown (void)
 {
-	Sys_DPrintf ("VID_Shutdown\n");
+	Sys_MaskPrintf (SYS_VID, "VID_Shutdown\n");
 
 	if (!svgalib_inited)
 		return;
@@ -383,7 +383,6 @@ VID_Init (unsigned char *palette)
 
 	/* Set vid parameters */
 	VID_SetMode (current_mode, palette);
-	Con_CheckResize (); // Now that we have a window size, fix console
 
 	VID_InitGamma (palette);
 	VID_SetPalette (vid.palette);

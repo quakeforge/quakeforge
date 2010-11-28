@@ -25,7 +25,7 @@ static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
-# include "string.h"
+# include <string.h>
 #endif
 
 #include "QF/sys.h"
@@ -37,6 +37,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "options.h"
 #include "winding.h"
 #include "tjunc.h"
+
+/**	\addtogroup qfbsp_tjunc
+*/
+//@{
 
 typedef struct wvert_s {
 	vec_t       t;
@@ -67,8 +71,13 @@ wedge_t    *wedge_hash[NUM_HASH];
 
 static vec3_t hash_min, hash_scale;
 
+/**	Initialize the edge hash table.
+
+	\param mins		The minimum of the bounding box in which the edges reside.
+	\param maxs		The maximum of the bounding box in which the edges reside.
+*/
 static void
-InitHash (vec3_t mins, vec3_t maxs)
+InitHash (const vec3_t mins, const vec3_t maxs)
 {
 	int         newsize[2];
 	vec3_t      size;
@@ -91,8 +100,13 @@ InitHash (vec3_t mins, vec3_t maxs)
 	hash_scale[2] = newsize[1];
 }
 
+/**	Calulate the hash value of a vector.
+
+	\param vec		The vector for which to calculate the hash value.
+	\return			The hash value of the vector.
+*/
 static unsigned
-HashVec (vec3_t vec)
+HashVec (const vec3_t vec)
 {
 	unsigned    h;
 
@@ -103,6 +117,14 @@ HashVec (vec3_t vec)
 	return h;
 }
 
+/**	Make the vector canonical.
+
+	A canonical vector is a unit vector with the first non-zero axis
+	positive.
+
+	\param vec		The vector to make canonical.
+	\return			false is the vector is (0, 0, 0), otherwise true.
+*/
 static qboolean
 CanonicalVector (vec3_t vec)
 {
@@ -111,34 +133,52 @@ CanonicalVector (vec3_t vec)
 	if (len < EQUAL_EPSILON)
 		return false;
 
-	if (vec[0] > EQUAL_EPSILON)
+	if (vec[0] > EQUAL_EPSILON) {
 		return true;
-	else if (vec[0] < -EQUAL_EPSILON) {
+	} else if (vec[0] < -EQUAL_EPSILON) {
 		VectorNegate (vec, vec);
 		return true;
-	} else
+	} else {
 		vec[0] = 0;
+	}
 
-	if (vec[1] > EQUAL_EPSILON)
+	if (vec[1] > EQUAL_EPSILON) {
 		return true;
-	else if (vec[1] < -EQUAL_EPSILON) {
+	} else if (vec[1] < -EQUAL_EPSILON) {
 		VectorNegate (vec, vec);
 		return true;
-	} else
+	} else {
 		vec[1] = 0;
+	}
 
-	if (vec[2] > EQUAL_EPSILON)
+	if (vec[2] > EQUAL_EPSILON) {
 		return true;
-	else if (vec[2] < -EQUAL_EPSILON) {
+	} else if (vec[2] < -EQUAL_EPSILON) {
 		VectorNegate (vec, vec);
 		return true;
-	} else
+	} else {
 		vec[2] = 0;
+	}
 	return false;
 }
 
-static wedge_t    *
-FindEdge (vec3_t p1, vec3_t p2, vec_t *t1, vec_t *t2)
+/**	Find a wedge for the two points.
+
+	A wedge is an infinitely long line passing through the two points with
+	an "origin" at t=0.
+
+	\param p1		The first point.
+	\param p2		The second point.
+	\param t1		The "time" of one of the points.
+	\param t2		The "time" of the other point.
+	\return			Pointer to the wedge, or NULL for a degenerate edge
+					(zero length).
+
+	\note t2 will always be greater than t1, so there's no guarantee which
+	point is represented by t1 and t2.
+*/
+static wedge_t *
+FindEdge (const vec3_t p1, const vec3_t p2, vec_t *t1, vec_t *t2)
 {
 	int         h;
 	vec3_t      dir, origin;
@@ -158,6 +198,7 @@ FindEdge (vec3_t p1, vec3_t p2, vec_t *t1, vec_t *t2)
 	VectorMultSub (p1, *t1, dir, origin);
 
 	if (*t1 > *t2) {
+		// swap t1 and t2
 		temp = *t1;
 		*t1 = *t2;
 		*t2 = temp;
@@ -166,29 +207,14 @@ FindEdge (vec3_t p1, vec3_t p2, vec_t *t1, vec_t *t2)
 	h = HashVec (origin);
 
 	for (w = wedge_hash[h]; w; w = w->next) {
-		temp = w->origin[0] - origin[0];
-		if (temp < -EQUAL_EPSILON || temp > EQUAL_EPSILON)
+		if (!_VectorCompare (w->origin, origin))
 			continue;
-		temp = w->origin[1] - origin[1];
-		if (temp < -EQUAL_EPSILON || temp > EQUAL_EPSILON)
+		if (!_VectorCompare (w->dir, dir))
 			continue;
-		temp = w->origin[2] - origin[2];
-		if (temp < -EQUAL_EPSILON || temp > EQUAL_EPSILON)
-			continue;
-
-		temp = w->dir[0] - dir[0];
-		if (temp < -EQUAL_EPSILON || temp > EQUAL_EPSILON)
-			continue;
-		temp = w->dir[1] - dir[1];
-		if (temp < -EQUAL_EPSILON || temp > EQUAL_EPSILON)
-			continue;
-		temp = w->dir[2] - dir[2];
-		if (temp < -EQUAL_EPSILON || temp > EQUAL_EPSILON)
-			continue;
-
 		return w;
 	}
 
+	// create a new wedge
 	if (numwedges == MAXWEDGES)
 		Sys_Error ("FindEdge: numwedges == MAXWEDGES");
 	w = &wedges[numwedges];
@@ -206,6 +232,16 @@ FindEdge (vec3_t p1, vec3_t p2, vec_t *t1, vec_t *t2)
 
 #define	T_EPSILON	0.01
 
+/**	Add a wvert to the wedge.
+
+	A wvert is a vertex on the wedge and is specified by the time along the
+	wedge from the wedge's origin.
+
+	If a wvert with the same time already exists, a new one will not be added.
+
+	\param w		The wedge to which the wvert will be added.
+	\param t		The "time" of the wvert.
+*/
 static void
 AddVert (wedge_t *w, vec_t t)
 {
@@ -234,8 +270,13 @@ AddVert (wedge_t *w, vec_t t)
 	v->prev = newv;
 }
 
+/**	Add a faces edge to the wedge system.
+
+	\param p1		The first point of the face's edge.
+	\param p2		The second point of the face's edge.
+*/
 static void
-AddEdge (vec3_t p1, vec3_t p2)
+AddEdge (const vec3_t p1, const vec3_t p2)
 {
 	wedge_t    *w;
 	vec_t       t1, t2;
@@ -246,8 +287,12 @@ AddEdge (vec3_t p1, vec3_t p2)
 	}
 }
 
+/**	Add the edges from the face.
+
+	\param f		The face from which to add the faces.
+*/
 static void
-AddFaceEdges (face_t *f)
+AddFaceEdges (const face_t *f)
 {
 	int         i, j;
 
@@ -259,6 +304,13 @@ AddFaceEdges (face_t *f)
 
 face_t     *newlist;
 
+/**	Check and fix the edges of the face.
+
+	If any vertices from other faces lie on an edge of the face between the
+	edge's end points, add matching vertices along that edge.
+
+	\param f		The face of which the edges will be checked.
+*/
 static void
 FixFaceEdges (face_t *f)
 {
@@ -297,8 +349,6 @@ FixFaceEdges (face_t *f)
 	newlist = f;
 }
 
-//============================================================================
-
 static void
 tjunc_find_r (node_t *node)
 {
@@ -315,6 +365,10 @@ tjunc_find_r (node_t *node)
 	tjunc_find_r (node->children[1]);
 }
 
+/**	Check and fix the edges from the faces in the bsp tree.
+
+	\param node		The current node in the bsp tree.
+*/
 static void
 tjunc_fix_r (node_t *node)
 {
@@ -349,9 +403,7 @@ tjunc (node_t *headnode)
 	if (options.notjunc)
 		return;
 
-	// identify all points on common edges
-
-	// origin points won't allways be inside the map, so extend the hash area 
+	// origin points won't allways be inside the map, so extend the hash area
 	for (i = 0; i < 3; i++) {
 		if (fabs (brushset->maxs[i]) > fabs (brushset->mins[i]))
 			maxs[i] = fabs (brushset->maxs[i]);
@@ -364,6 +416,7 @@ tjunc (node_t *headnode)
 
 	numwedges = numwverts = 0;
 
+	// identify all points on common edges
 	tjunc_find_r (headnode);
 
 	qprintf ("%i world edges  %i edge points\n", numwedges, numwverts);
@@ -378,3 +431,5 @@ tjunc (node_t *headnode)
 	qprintf ("%i edges added by tjunctions\n", tjuncs);
 	qprintf ("%i faces added by tjunctions\n", tjuncfaces);
 }
+
+//@}

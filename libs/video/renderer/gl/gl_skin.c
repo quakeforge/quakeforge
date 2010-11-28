@@ -221,8 +221,8 @@ Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 	paliashdr = Cache_Get (&model->cache);
 	if (skinnum < 0
 		|| skinnum >= paliashdr->mdl.numskins) {
-		Sys_DPrintf ("(%d): Invalid player skin #%d\n", slot,
-					 skinnum);
+		Sys_MaskPrintf (SYS_DEV, "(%d): Invalid player skin #%d\n", slot,
+						skinnum);
 		skinnum = 0;
 	}
 	pskindesc = ((maliasskindesc_t *)

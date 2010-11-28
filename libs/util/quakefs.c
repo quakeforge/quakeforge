@@ -549,15 +549,15 @@ qfs_build_gamedir (const char **list)
 		gamedir->dir.maps = nva ("%s/maps", gamedir->dir.def);
 
 	qfs_gamedir = gamedir;
-	Sys_DPrintf ("%s\n", qfs_gamedir->name);
-	Sys_DPrintf ("    gamedir : %s\n", qfs_gamedir->gamedir);
-	Sys_DPrintf ("    path    : %s\n", qfs_gamedir->path);
-	Sys_DPrintf ("    gamecode: %s\n", qfs_gamedir->gamecode);
-	Sys_DPrintf ("    def     : %s\n", qfs_gamedir->dir.def);
-	Sys_DPrintf ("    skins   : %s\n", qfs_gamedir->dir.skins);
-	Sys_DPrintf ("    models  : %s\n", qfs_gamedir->dir.models);
-	Sys_DPrintf ("    sound   : %s\n", qfs_gamedir->dir.sound);
-	Sys_DPrintf ("    maps    : %s\n", qfs_gamedir->dir.maps);
+	Sys_MaskPrintf (SYS_DEV, "%s\n", qfs_gamedir->name);
+	Sys_MaskPrintf (SYS_DEV, "    gamedir : %s\n", qfs_gamedir->gamedir);
+	Sys_MaskPrintf (SYS_DEV, "    path    : %s\n", qfs_gamedir->path);
+	Sys_MaskPrintf (SYS_DEV, "    gamecode: %s\n", qfs_gamedir->gamecode);
+	Sys_MaskPrintf (SYS_DEV, "    def     : %s\n", qfs_gamedir->dir.def);
+	Sys_MaskPrintf (SYS_DEV, "    skins   : %s\n", qfs_gamedir->dir.skins);
+	Sys_MaskPrintf (SYS_DEV, "    models  : %s\n", qfs_gamedir->dir.models);
+	Sys_MaskPrintf (SYS_DEV, "    sound   : %s\n", qfs_gamedir->dir.sound);
+	Sys_MaskPrintf (SYS_DEV, "    maps    : %s\n", qfs_gamedir->dir.maps);
 	qfs_process_path (qfs_gamedir->path, dir);
 	free (path);
 	Hash_DelTable (dirs);
@@ -575,8 +575,9 @@ qfs_load_config (void)
 	if (*fs_dirconf->string) {
 		dirconf = Sys_ExpandSquiggle (fs_dirconf->string);
 		if (!(f = Qopen (dirconf, "rt")))
-			Sys_DPrintf ("Could not load `%s', using builtin defaults\n",
-						 dirconf);
+			Sys_MaskPrintf (SYS_DEV,
+							"Could not load `%s', using builtin defaults\n",
+							dirconf);
 		free (dirconf);
 	}
 	if (!f)
@@ -630,7 +631,8 @@ qfs_contains_updir (const char *path, int levels)
 }
 
 static int
-qfs_expand_path (dstring_t *full_path, const char *base, const char *path)
+qfs_expand_path (dstring_t *full_path, const char *base, const char *path,
+				 int levels)
 {
 	const char *separator = "/";
 	char       *cpath;
@@ -641,7 +643,7 @@ qfs_expand_path (dstring_t *full_path, const char *base, const char *path)
 		return -1;
 	}
 	cpath = QFS_CompressPath (path);
-	if (qfs_contains_updir (cpath, 0)) {
+	if (qfs_contains_updir (cpath, levels)) {
 		free (cpath);
 		errno = EACCES;
 		return -1;
@@ -659,7 +661,7 @@ qfs_expand_path (dstring_t *full_path, const char *base, const char *path)
 static int
 qfs_expand_userpath (dstring_t *full_path, const char *path)
 {
-	return qfs_expand_path (full_path, qfs_userpath, path);
+	return qfs_expand_path (full_path, qfs_userpath, path, 0);
 }
 
 VISIBLE char *
@@ -825,8 +827,8 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 
 		packfile = pack_find_file (search->pack, filename);
 		if (packfile) {
-			Sys_DPrintf ("PackFile: %s : %s\n", search->pack->filename,
-						 packfile->name);
+			Sys_MaskPrintf (SYS_DEV, "PackFile: %s : %s\n",
+							search->pack->filename, packfile->name);
 			// open a new file on the pakfile
 			if (foundname) {
 				dstring_clearstr (foundname);
@@ -841,7 +843,7 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 		// check a file in the directory tree
 		dstring_t  *netpath = dstring_new ();
 
-		if (qfs_expand_path (netpath, search->filename, filename) == 0) {
+		if (qfs_expand_path (netpath, search->filename, filename, 1) == 0) {
 			if (foundname) {
 				dstring_clearstr (foundname);
 				dstring_appendstr (foundname, filename);
@@ -851,7 +853,7 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 				return -1;
 			}
 
-			Sys_DPrintf ("FindFile: %s\n", netpath->str);
+			Sys_MaskPrintf (SYS_DEV, "FindFile: %s\n", netpath->str);
 
 			*gzfile = qfs_openread (netpath->str, -1, -1, zip);
 			dstring_delete (netpath);
@@ -880,7 +882,9 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 	// make sure they're not trying to do weird stuff with our private files
 	path = QFS_CompressPath (filename);
 	if (qfs_contains_updir(path, 1)) {
-		Sys_DPrintf ("FindFile: %s: attempt to escape directory tree!\n", path);
+		Sys_MaskPrintf (SYS_DEV,
+						"FindFile: %s: attempt to escape directory tree!\n",
+						path);
 		goto error;
 	}
 
@@ -915,7 +919,7 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 			goto ok;
 	}
 
-	Sys_DPrintf ("FindFile: can't find %s\n", filename);
+	Sys_MaskPrintf (SYS_DEV, "FindFile: can't find %s\n", filename);
 error:
 	*gzfile = NULL;
 	qfs_filesize = -1;
@@ -1026,7 +1030,7 @@ qfs_load_pakfile (char *packfile)
 	pack_t     *pack = pack_open (packfile);
 
 	if (pack)
-		Sys_DPrintf ("Added packfile %s (%i files)\n",
+		Sys_MaskPrintf (SYS_DEV, "Added packfile %s (%i files)\n",
 					packfile, pack->numfiles);
 	return pack;
 }
@@ -1076,7 +1080,7 @@ qfs_load_gamedir (const char *dir)
 	char      **pakfiles = NULL;
 	int         i = 0, bufsize = 0, count = 0;
 
-	Sys_DPrintf ("qfs_load_gamedir (\"%s\")\n", dir);
+	Sys_MaskPrintf (SYS_DEV, "qfs_load_gamedir (\"%s\")\n", dir);
 
 	pakfiles = calloc (1, FBLOCK_SIZE * sizeof (char *));
 
@@ -1180,11 +1184,12 @@ qfs_add_gamedir (const char *dir)
 		if (s != e) {
 			dsprintf (s_dir, "%.*s", (int) (e - s), s);
 			if (strcmp (s_dir->str, fs_userpath->string) != 0) {
-				if (qfs_expand_path (f_dir, s_dir->str, dir) != 0) {
+				if (qfs_expand_path (f_dir, s_dir->str, dir, 0) != 0) {
 					Sys_Printf ("dropping bad directory %s\n", dir);
 					break;
 				}
-				Sys_DPrintf ("qfs_add_gamedir (\"%s\")\n", f_dir->str);
+				Sys_MaskPrintf (SYS_DEV, "qfs_add_gamedir (\"%s\")\n",
+								f_dir->str);
 
 				qfs_add_dir (f_dir->str);
 			}
@@ -1193,7 +1198,7 @@ qfs_add_gamedir (const char *dir)
 	}
 
 	qfs_expand_userpath (f_dir, dir);
-	Sys_DPrintf ("qfs_add_gamedir (\"%s\")\n", f_dir->str);
+	Sys_MaskPrintf (SYS_DEV, "qfs_add_gamedir (\"%s\")\n", f_dir->str);
 	qfs_add_dir (f_dir->str);
 
 	dstring_delete (f_dir);
@@ -1408,7 +1413,7 @@ QFS_Open (const char *path, const char *mode)
 	int         write = 0;
 
 	if (qfs_expand_userpath (full_path, path) == 0) {
-		Sys_DPrintf ("QFS_Open: %s %s\n", full_path->str, mode);
+		Sys_MaskPrintf (SYS_DEV, "QFS_Open: %s %s\n", full_path->str, mode);
 		for (m = mode; *m; m++)
 			if (*m == 'w' || *m == '+' || *m == 'a')
 				write = 1;

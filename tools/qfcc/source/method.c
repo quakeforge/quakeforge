@@ -216,8 +216,7 @@ method_compare (method_t *m1, method_t *m2)
 {
 	if (m1->instance != m2->instance)
 		return 0;
-	return strcmp (m1->name, m2->name) == 0
-			&& strcmp (m1->types, m2->types) == 0;
+	return strcmp (m1->name, m2->name) == 0 && m1->type == m2->type;
 }
 
 keywordarg_t *

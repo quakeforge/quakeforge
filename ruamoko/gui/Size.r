@@ -1,74 +1,19 @@
 #include "gui/Size.h"
 
-@implementation Size
-
-- (id) initWithComponents: (integer)w : (integer)h
+Size makeSize (integer width, integer height)
 {
-	self = [self init];
-	width = w;
-	height = h;
-	return self;
+	Size s = {width, height};
+	return s;
 }
 
-- (id) initWithSize: (Size)aSize
+Size addSize (Size a, Size b)
 {
-	self = [self init];
-
-	if (!self || !aSize)
-		return NIL;
-
-	width = [aSize width];
-	height = [aSize height];
-
-	return self;
+	Size c = {a.width + b.width, a.height + b.height};
+	return c;
 }
 
-- (id) copy
+Size subtractSize (Size a, Size b)
 {
-	local id	myCopy = [super copy];
-
-	if (!myCopy)
-		myCopy = [[self class] alloc];
-
-	return [myCopy initWithComponents: width : height];
+	Size c = {a.width - b.width, a.height - b.height};
+	return c;
 }
-
-- (integer) width
-{
-	return width;
-}
-
-- (integer) height
-{
-	return height;
-}
-
-- (void) setSize: (Size)aSize
-{
-	width = [aSize width];
-	height = [aSize height];
-}
-
-- (void) setWidth: (integer) w
-{
-	width = w;
-}
-
-- (void) setHeight: (integer) h
-{
-	height = h;
-}
-
-- (void) addSize: (Size)aSize
-{
-	width += [aSize width];
-	height += [aSize height];
-}
-
-- (void) subtractSize: (Size)aSize
-{
-	width += [aSize width];
-	height += [aSize height];
-}
-
-@end

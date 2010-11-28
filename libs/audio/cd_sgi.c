@@ -73,7 +73,7 @@ I_SGI_Eject (void)
 		return;							// no cd init'd
 
 	if (CDeject (cdp) == 0)
-		Sys_DPrintf ("I_SGI_Eject: CDeject failed\n");
+		Sys_MaskPrintf (SYS_DEV, "I_SGI_Eject: CDeject failed\n");
 }
 
 static int
@@ -85,7 +85,7 @@ I_SGI_GetState (void)
 		return -1;						// no cd init'd
 
 	if (CDgetstatus (cdp, &cds) == 0) {
-		Sys_DPrintf ("CDAudio_GetStatus: CDgetstatus failed\n");
+		Sys_MaskPrintf (SYS_DEV, "CDAudio_GetStatus: CDgetstatus failed\n");
 		return -1;
 	}
 
@@ -101,7 +101,7 @@ I_SGI_MaxTrack (void)
 		return -1;						// no cd init'd
 
 	if (CDgetstatus (cdp, &cds) == 0) {
-		Sys_DPrintf ("I_SGI_MaxTrack: CDgetstatus failed\n");
+		Sys_MaskPrintf (SYS_DEV, "I_SGI_MaxTrack: CDgetstatus failed\n");
 		return -1;
 	}
 
@@ -115,7 +115,7 @@ I_SGI_Pause (void)
 		return;
 
 	if (CDtogglepause (cdp) == 0)
-		Sys_DPrintf ("CDAudio_PAUSE: CDtogglepause failed (%d)\n", errno);
+		Sys_MaskPrintf (SYS_DEV, "CDAudio_PAUSE: CDtogglepause failed (%d)\n", errno);
 }
 
 void
@@ -133,7 +133,8 @@ I_SGI_Play (int track, qboolean looping)
 	}
 
 	if (maxtrack < 0) {
-		Sys_DPrintf ("CDAudio_Play: Error getting maximum track number\n");
+		Sys_MaskPrintf (SYS_DEV,
+						"CDAudio_Play: Error getting maximum track number\n");
 		return;
 	}
 
@@ -172,7 +173,7 @@ I_SGI_Play (int track, qboolean looping)
 	}
 
 	if (CDplaytrack (cdp, track, cdvolume == 0.0 ? 0 : 1) == 0) {
-		Sys_DPrintf ("CDAudio_Play: CDplay failed (%d)\n", errno);
+		Sys_MaskPrintf (SYS_DEV, "CDAudio_Play: CDplay failed (%d)\n", errno);
 		return;
 	}
 
@@ -187,7 +188,8 @@ I_SGI_Resume (void)
 		return;
 
 	if (CDtogglepause (cdp) == 0)
-		Sys_DPrintf ("CDAudio_Resume: CDtogglepause failed (%d)\n", errno);
+		Sys_MaskPrintf (SYS_DEV, "CDAudio_Resume: CDtogglepause failed (%d)\n",
+						errno);
 }
 
 void
@@ -209,7 +211,7 @@ I_SGI_Stop (void)
 		return;
 
 	if (CDstop (cdp) == 0)
-		Sys_DPrintf ("I_SGI_Stop: CDStop failed (%d)\n", errno);
+		Sys_MaskPrintf (SYS_DEV, "I_SGI_Stop: CDStop failed (%d)\n", errno);
 }
 
 void

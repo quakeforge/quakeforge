@@ -45,6 +45,10 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "options.h"
 
+/**	\addtogroup qfbsp_options
+*/
+//@{
+
 const char *this_program;
 
 static struct option const long_options[] = {
@@ -61,9 +65,10 @@ static struct option const long_options[] = {
 	{"extract-textures",	no_argument,		0, 256},
 	{"extract-entities",	no_argument,		0, 257},
 	{"extract-hull",		no_argument,		0, 258},
+	{"smart-leak",			no_argument,		0, 259},
 	{"usehulls",			no_argument,		0, 'u'},
 	{"hullnum",				required_argument,	0, 'H'},
-	{"subdivide",			required_argument,	0, 's'},	
+	{"subdivide",			required_argument,	0, 's'},
 	{"wadpath",				required_argument,	0, 'w'},
 	{"watervis",			no_argument,		0, 'W'},
 	{NULL, 0, NULL, 0}
@@ -105,6 +110,7 @@ usage (int status)
 		"    -c, --noclip\n"
 		"    -e, --onlyents\n"
 		"    -p, --portal\n"
+		"        --extract-hull\n"
 		"        --extract-textures\n"
 		"        --extract-entities\n"
 		"    -u, --usehulls            Use the existing hull files\n"
@@ -134,7 +140,7 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'v':					// verbose
 				options.verbosity += 1;
-				break;			
+				break;
 			case 'h':					// help
 				usage (0);
 				break;
@@ -176,6 +182,9 @@ DecodeArgs (int argc, char **argv)
 				options.extract = true;
 				options.extract_hull = true;
 				break;
+			case 259:					// smart-leak
+				options.smart_leak = true;
+				break;
 			case 'u':					// usehulls
 				options.usehulls = true;
 				break;
@@ -195,7 +204,7 @@ DecodeArgs (int argc, char **argv)
 				usage (1);
 		}
 	}
-	
+
 	if (options.extract) {
 		options.bspfile = strdup (argv[optind++]);
 	} else {
@@ -238,3 +247,5 @@ DecodeArgs (int argc, char **argv)
 
 	return optind;
 }
+
+//@}

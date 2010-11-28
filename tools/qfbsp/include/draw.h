@@ -25,6 +25,11 @@
 
 #include "QF/mathlib.h"
 
+/**	\defgroup qfbsp_draw Debug Drawing Functions
+	\ingroup qfbsp
+*/
+//@{
+
 struct visfacet_s;
 struct portal_s;
 struct node_s;
@@ -32,21 +37,23 @@ struct brush_s;
 struct winding_s;
 
 void Draw_ClearBounds (void);
-void Draw_AddToBounds (vec3_t v);
-void Draw_DrawFace (struct visfacet_s *f);
+void Draw_AddToBounds (const vec3_t v);
+void Draw_DrawFace (const struct visfacet_s *f);
 void Draw_ClearWindow (void);
 void Draw_SetRed (void);
 void Draw_SetGrey (void);
 void Draw_SetBlack (void);
-void DrawPoint (vec3_t v);
+void DrawPoint (const vec3_t v);
 
 void Draw_SetColor (int c);
 void SetColor (int c);
-void DrawPortal (struct portal_s *p);
-void DrawLeaf (struct node_s *l, int color);
-void DrawBrush (struct brush_s *b);
+void DrawPortal (const struct portal_s *p);
+void DrawLeaf (const struct node_s *l, int color);
+void DrawBrush (const struct brush_s *b);
 
-void DrawWinding (struct winding_s *w);
-void DrawTri (vec3_t p1, vec3_t p2, vec3_t p3);
+void DrawWinding (const struct winding_s *w);
+void DrawTri (const vec3_t p1, const vec3_t p2, const vec3_t p3);
+
+//@}
 
 #endif//qfbsp_draw_h

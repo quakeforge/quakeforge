@@ -34,11 +34,14 @@
 #include "QF/qtypes.h"
 #include "QF/qdefs.h"
 
-#undef MAX_DATAGRAM
-#define	MAX_DATAGRAM	1024		// max length of unreliable message
-
-#undef MAX_MSGLEN
-#define	MAX_MSGLEN		8000		// max length of a reliable message
+#define MIN_EDICTS		256			// lowest allowed value for max_edicts
+#define MAX_EDICTS		32000		// highest allowed value for max_edicts
+#define	MAX_DATAGRAM	32000		// max length of unreliable message
+#define	MAX_MSGLEN		32000		// max length of a reliable message
+#define DATAGRAM_MTU	1400		// actual limit for unreliable messages
+									// to nonlocal clients
+#define MAX_MODELS		2048
+#define MAX_SOUNDS		2048
 
 #include <math.h>
 #include <string.h>

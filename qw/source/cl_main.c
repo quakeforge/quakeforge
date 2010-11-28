@@ -416,7 +416,7 @@ CL_ClearState (void)
 
 	CL_Init_Entity (&cl.viewent);
 
-	Sys_DPrintf ("Clearing memory\n");
+	Sys_MaskPrintf (SYS_DEV, "Clearing memory\n");
 	D_FlushCaches ();
 	Mod_ClearAll ();
 	if (host_hunklevel)					// FIXME: check this...
@@ -603,10 +603,11 @@ CL_FullServerinfo_f (void)
 		return;
 	}
 
-	Sys_DPrintf ("Cmd_Argv (1): '%s'\n", Cmd_Argv (1));
+	Sys_MaskPrintf (SYS_DEV, "Cmd_Argv (1): '%s'\n", Cmd_Argv (1));
 	Info_Destroy (cl.serverinfo);
 	cl.serverinfo = Info_ParseString (Cmd_Argv (1), MAX_SERVERINFO_STRING, 0);
-	Sys_DPrintf ("cl.serverinfo: '%s'\n", Info_MakeString (cl.serverinfo, 0));
+	Sys_MaskPrintf (SYS_DEV, "cl.serverinfo: '%s'\n",
+					Info_MakeString (cl.serverinfo, 0));
 
 	if ((p = Info_ValueForKey (cl.serverinfo, "*qf_version")) && *p) {
 		if (server_version == NULL)
@@ -1046,8 +1047,9 @@ CL_ReadPackets (void)
 		// packet from server
 		if (!cls.demoplayback &&
 			!NET_CompareAdr (net_from, cls.netchan.remote_address)) {
-			Sys_DPrintf ("%s:sequenced packet without connection\n",
-						 NET_AdrToString (net_from));
+			Sys_MaskPrintf (SYS_DEV,
+							"%s:sequenced packet without connection\n",
+							NET_AdrToString (net_from));
 			continue;
 		}
 		if (!cls.demoplayback2) {
@@ -1143,7 +1145,7 @@ CL_SetState (cactive_t state)
 	};
 	cactive_t   old_state = cls.state;
 
-	Sys_DPrintf ("CL_SetState (%s)\n", state_names[state]);
+	Sys_MaskPrintf (SYS_DEV, "CL_SetState (%s)\n", state_names[state]);
 	cls.state = state;
 	if (old_state != state) {
 		if (old_state == ca_active) {

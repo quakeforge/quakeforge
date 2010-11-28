@@ -232,7 +232,7 @@ R_TimeRefresh_f (void)
 
 	stop = Sys_DoubleTime ();
 	time = stop - start;
-	Sys_DPrintf ("%f seconds (%f fps)\n", time, 128 / time);
+	Sys_MaskPrintf (SYS_DEV, "%f seconds (%f fps)\n", time, 128 / time);
 }
 
 VISIBLE void

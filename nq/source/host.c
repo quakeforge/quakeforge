@@ -112,6 +112,7 @@ cvar_t     *host_mem_size;
 
 cvar_t     *host_framerate;
 cvar_t     *host_speeds;
+cvar_t     *max_edicts;
 
 cvar_t     *sys_ticrate;
 cvar_t     *serverprofile;
@@ -146,7 +147,7 @@ Host_EndGame (const char *message, ...)
 	va_start (argptr, message);
 	dvsprintf (str, message, argptr);
 	va_end (argptr);
-	Sys_DPrintf ("Host_EndGame: %s\n", str->str);
+	Sys_MaskPrintf (SYS_DEV, "Host_EndGame: %s\n", str->str);
 
 	if (sv.active)
 		Host_ShutdownServer (false);
@@ -258,6 +259,8 @@ Host_InitLocal (void)
 	host_speeds =
 		Cvar_Get ("host_speeds", "0", CVAR_NONE, NULL,
 				"set for running times");
+	max_edicts = Cvar_Get ("max_edicts", "1024", CVAR_NONE, NULL,
+						   "maximum server edicts");
 
 	sys_ticrate = Cvar_Get ("sys_ticrate", "0.05", CVAR_NONE, NULL, "None");
 	serverprofile = Cvar_Get ("serverprofile", "0", CVAR_NONE, NULL, "None");
@@ -487,7 +490,7 @@ Host_ShutdownServer (qboolean crash)
 	buf.maxsize = 4;
 	buf.cursize = 0;
 	MSG_WriteByte (&buf, svc_disconnect);
-	count = NET_SendToAll (&buf, 5);
+	count = NET_SendToAll (&buf, 5.0);
 	if (count)
 		Sys_Printf
 			("Host_ShutdownServer: NET_SendToAll failed for %u clients\n",
@@ -512,7 +515,7 @@ Host_ShutdownServer (qboolean crash)
 void
 Host_ClearMemory (void)
 {
-	Sys_DPrintf ("Clearing memory\n");
+	Sys_MaskPrintf (SYS_DEV, "Clearing memory\n");
 	D_FlushCaches ();
 	Mod_ClearAll ();
 	if (host_hunklevel)

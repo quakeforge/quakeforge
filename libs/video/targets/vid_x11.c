@@ -92,8 +92,6 @@ static XShmSegmentInfo x_shminfo[2];
 static int	current_framebuffer;
 static XImage *x_framebuffer[2] = { 0, 0 };
 
-static int	verbose = 0;
-
 int 		VID_options_items = 1;
 
 static byte current_palette[768];
@@ -346,8 +344,8 @@ ResetSharedFrameBuffers (void)
 		// attach to the shared memory segment
 		x_shminfo[frm].shmaddr = (void *) shmat (x_shminfo[frm].shmid, 0, 0);
 
-		Sys_DPrintf ("VID: shared memory id=%d, addr=0x%lx\n",
-					 x_shminfo[frm].shmid, (long) x_shminfo[frm].shmaddr);
+		Sys_MaskPrintf (SYS_VID, "VID: shared memory id=%d, addr=0x%lx\n",
+						x_shminfo[frm].shmid, (long) x_shminfo[frm].shmaddr);
 
 		x_framebuffer[frm]->data = x_shminfo[frm].shmaddr;
 
@@ -384,13 +382,6 @@ x11_init_buffers (void)
 	vid.conbuffer = vid.buffer;
 
 	vid.conrowbytes = vid.rowbytes;
-	Con_CheckResize (); // Now that we have a window size, fix console
-}
-
-static void
-VID_Center_f (void)
-{
-	X11_ForceViewPort ();
 }
 
 /*
@@ -408,21 +399,13 @@ VID_Init (unsigned char *palette)
 	int         num_visuals;
 	int         template_mask;
 
-	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the "
-					"quake window in a virtual desktop.\n");
-
 	VID_GetWindowSize (320, 200);
-
-	vid.width = vid_width->int_val;
-	vid.height = vid_height->int_val;
 
 	vid.numpages = 2;
 	vid.colormap8 = vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 
 	srandom (getpid ());
-
-	verbose = COM_CheckParm ("-verbose");
 
 	// open the display
 	X11_OpenDisplay ();
@@ -448,10 +431,12 @@ VID_Init (unsigned char *palette)
 	x_vis = x_visinfo->visual;
 
 	if (num_visuals > 1) {
-		Sys_DPrintf ("Found more than one visual id at depth %d:\n",
-				template.depth);
+		Sys_MaskPrintf (SYS_VID,
+						"Found more than one visual id at depth %d:\n",
+						template.depth);
 		for (i = 0; i < num_visuals; i++)
-			Sys_DPrintf ("    -visualid %d\n", (int) x_visinfo[i].visualid);
+			Sys_MaskPrintf (SYS_VID, "    -visualid %d\n",
+							(int) x_visinfo[i].visualid);
 	} else {
 		if (num_visuals == 0) {
 			if (template_mask == VisualIDMask) {
@@ -462,17 +447,21 @@ VID_Init (unsigned char *palette)
 		}
 	}
 
-	if (verbose) {
-		Sys_DPrintf ("Using visualid %d:\n", (int) x_visinfo->visualid);
-		Sys_DPrintf ("    class %d\n", x_visinfo->class);
-		Sys_DPrintf ("    screen %d\n", x_visinfo->screen);
-		Sys_DPrintf ("    depth %d\n", x_visinfo->depth);
-		Sys_DPrintf ("    red_mask 0x%x\n", (int) x_visinfo->red_mask);
-		Sys_DPrintf ("    green_mask 0x%x\n", (int) x_visinfo->green_mask);
-		Sys_DPrintf ("    blue_mask 0x%x\n", (int) x_visinfo->blue_mask);
-		Sys_DPrintf ("    colormap_size %d\n", x_visinfo->colormap_size);
-		Sys_DPrintf ("    bits_per_rgb %d\n", x_visinfo->bits_per_rgb);
-	}
+	Sys_MaskPrintf (SYS_VID, "Using visualid %d:\n",
+					(int) x_visinfo->visualid);
+	Sys_MaskPrintf (SYS_VID, "    class %d\n", x_visinfo->class);
+	Sys_MaskPrintf (SYS_VID, "    screen %d\n", x_visinfo->screen);
+	Sys_MaskPrintf (SYS_VID, "    depth %d\n", x_visinfo->depth);
+	Sys_MaskPrintf (SYS_VID, "    red_mask 0x%x\n",
+					(int) x_visinfo->red_mask);
+	Sys_MaskPrintf (SYS_VID, "    green_mask 0x%x\n",
+					(int) x_visinfo->green_mask);
+	Sys_MaskPrintf (SYS_VID, "    blue_mask 0x%x\n",
+					(int) x_visinfo->blue_mask);
+	Sys_MaskPrintf (SYS_VID, "    colormap_size %d\n",
+					x_visinfo->colormap_size);
+	Sys_MaskPrintf (SYS_VID, "    bits_per_rgb %d\n",
+					x_visinfo->bits_per_rgb);
 
 	/* Setup attributes for main window */
 	X11_SetVidMode (vid.width, vid.height);
@@ -575,7 +564,7 @@ VID_SetPalette (unsigned char *palette)
 void
 VID_Shutdown (void)
 {
-	Sys_DPrintf ("VID_Shutdown\n");
+	Sys_MaskPrintf (SYS_VID, "VID_Shutdown\n");
 	X11_CloseDisplay ();
 }
 

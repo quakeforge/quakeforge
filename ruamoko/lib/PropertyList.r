@@ -22,9 +22,14 @@
 	return [PLString new:str];
 }
 
-+ (PLItem) newFromString:(string) str
++ (PLItem) fromString:(string) str
 {
-	return [PLItem itemClass: PL_GetPropertyList (str)];
+	return [[PLItem itemClass: PL_GetPropertyList (str)] autorelease];
+}
+
++ (PLItem) fromFile:(QFile) file
+{
+	return [[PLItem itemClass: PL_GetFromFile (file)] autorelease];
 }
 
 + itemClass:(plitem_t) item
@@ -111,12 +116,12 @@
 
 - (PLItem) getObjectForKey:(string) key
 {
-	return [PLItem itemClass: PL_ObjectForKey (item, key)];
+	return [[PLItem itemClass: PL_ObjectForKey (item, key)] autorelease];
 }
 
 - (PLItem) allKeys
 {
-	return [PLItem itemClass: PL_D_AllKeys (item)];
+	return [[PLItem itemClass: PL_D_AllKeys (item)] autorelease];
 }
 
 - addKey:(string) key value:(PLItem) value
@@ -152,7 +157,7 @@
 
 - (PLItem) getObjectAtIndex:(integer) index
 {
-	return [PLItem itemClass: PL_ObjectAtIndex (item, index)];
+	return [[PLItem itemClass: PL_ObjectAtIndex (item, index)] autorelease];
 }
 
 - addObject:(PLItem) object

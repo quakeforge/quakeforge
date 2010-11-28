@@ -39,6 +39,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 #include <math.h>
 
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
@@ -165,6 +166,8 @@ VID_GetWindowSize (int def_w, int def_h)
 	Cvar_Set (con_height, va ("%d", max (con_height->int_val, 200)));
 	Cvar_SetFlags (con_height, con_height->flags | CVAR_ROM);
 	vid.conheight = con_height->int_val;
+
+	Con_CheckResize ();     // Now that we have a window size, fix console
 }
 
 /* GAMMA FUNCTIONS */
@@ -203,13 +206,13 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 	vid.recalc_refdef = 1;				// force a surface cache flush
 
 	if (vid_gamma_avail && vid_system_gamma->int_val) {	// Have system, use it
-		Sys_DPrintf ("Setting hardware gamma to %g\n", gamma);
+		Sys_MaskPrintf (SYS_VID, "Setting hardware gamma to %g\n", gamma);
 		VID_BuildGammaTable (1.0);	// hardware gamma wants a linear palette
 		VID_SetGamma (gamma);
 		memcpy (vid.palette, vid.basepal, 256 * 3);
 	} else {	// We have to hack the palette
 		int i;
-		Sys_DPrintf ("Setting software gamma to %g\n", gamma);
+		Sys_MaskPrintf (SYS_VID, "Setting software gamma to %g\n", gamma);
 		VID_BuildGammaTable (gamma);
 		for (i = 0; i < 256 * 3; i++)
 			vid.palette[i] = gammatable[vid.basepal[i]];

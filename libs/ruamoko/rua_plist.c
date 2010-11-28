@@ -48,55 +48,172 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "rua_internal.h"
 
+typedef struct bi_plist_s {
+	struct bi_plist_s *next;
+	struct bi_plist_s **prev;
+	plitem_t   *plitem;
+	int         own;
+} bi_plist_t;
+
 typedef struct {
-	hashtab_t  *items;
+	PR_RESMAP (bi_plist_t) plist_map;
+	bi_plist_t *plists;
+	hashtab_t  *plist_tab;
 } plist_resources_t;
 
-static inline void
-return_plitem (progs_t *pr, plitem_t *plitem)
+static bi_plist_t *
+plist_new (plist_resources_t *res)
 {
-	memset (&R_INT (pr), 0, 8);
-	memcpy (&R_INT (pr), &plitem, sizeof (plitem));
+	PR_RESNEW (bi_plist_t, res->plist_map);
 }
 
-static inline plitem_t *
-p_plitem (progs_t *pr, int n)
+static void
+plist_free (plist_resources_t *res, bi_plist_t *plist)
 {
-	plitem_t   *plitem;
-	memcpy (&plitem, &P_INT (pr, n), sizeof (plitem));
-	return plitem;
+	PR_RESFREE (bi_plist_t, res->plist_map, plist);
 }
 
-static inline plitem_t *
-record_plitem (progs_t *pr, plitem_t *plitem)
+static void
+plist_reset (plist_resources_t *res)
 {
-	plist_resources_t *res = PR_Resources_Find (pr, "plist");
-	if (plitem)
-		Hash_AddElement (res->items, plitem);
-	return plitem;
+	PR_RESRESET (bi_plist_t, res->plist_map);
 }
 
-static inline plitem_t *
-remove_plitem (progs_t *pr, plitem_t *plitem)
+static inline bi_plist_t *
+plist_get (plist_resources_t *res, unsigned index)
 {
-	plist_resources_t *res = PR_Resources_Find (pr, "plist");
+	PR_RESGET(res->plist_map, index);
+}
+
+static inline int
+plist_index (plist_resources_t *res, bi_plist_t *plist)
+{
+	PR_RESINDEX(res->plist_map, plist);
+}
+
+static void
+bi_plist_clear (progs_t *pr, void *data)
+{
+	plist_resources_t *res = (plist_resources_t *) data;
+	bi_plist_t *plist;
+
+	for (plist = res->plists; plist; plist = plist->next) {
+		if (plist->own)
+			PL_Free (plist->plitem);
+	}
+
+	Hash_FlushTable (res->plist_tab);
+	plist_reset (res);
+}
+
+static inline int
+plist_handle (plist_resources_t *res, plitem_t *plitem)
+{
+	bi_plist_t  dummy = {0, 0, plitem, 0};
+	bi_plist_t *plist = Hash_FindElement (res->plist_tab, &dummy);
 	
-	Hash_DelElement (res->items, plitem);
-	return plitem;
+	if (plist)
+		return plist_index (res, plist);
+
+	plist = plist_new (res);
+
+	if (!plist)
+		return 0;
+
+	plist->next = res->plists;
+	plist->prev = &res->plists;
+	if (res->plists)
+		res->plists->prev = &plist->next;
+	res->plists = plist;
+
+	plist->plitem = plitem;
+
+	Hash_AddElement (res->plist_tab, plist);
+	return plist_index (res, plist);
+}
+
+static inline void
+plist_free_handle (plist_resources_t *res, bi_plist_t *plist)
+{
+	Hash_DelElement (res->plist_tab, plist);
+	*plist->prev = plist->next;
+	plist_free (res, plist);
+}
+
+static inline bi_plist_t *
+get_plist (progs_t *pr, const char *name, int handle)
+{
+	plist_resources_t *res = PR_Resources_Find (pr, "plist");
+	bi_plist_t *plist = plist_get (res, handle);
+
+	// plist->prev will be null if the handle is unallocated
+	if (!plist || !plist->prev)
+		PR_RunError (pr, "invalid plist passed to %s", name + 3);
+	return plist;
+}
+
+static inline int
+plist_retain (plist_resources_t *res, plitem_t *plitem)
+{
+	int         handle;
+	bi_plist_t *plist;
+
+	if (!plitem)
+		return 0;
+
+	handle = plist_handle (res, plitem);
+	if (!handle) {
+		// we're taking ownership of the plitem, but we have nowhere to store
+		// it, so we have to lose it. However, in this situation, we have worse
+		// things to worry about.
+		PL_Free (plitem);
+		return 0;
+	}
+
+	plist = plist_get (res, handle);
+	plist->own = 1;
+	return handle;
+}
+
+static void
+bi_PL_GetFromFile (progs_t *pr)
+{
+	plist_resources_t *res = PR_Resources_Find (pr, "plist");
+	QFile      *file = QFile_GetFile (pr, P_INT (pr, 0));
+	plitem_t   *plitem;
+	long        offset;
+	long        size;
+	long		len;
+	char       *buf;
+
+	offset = Qtell (file);
+	size = Qfilesize (file);
+	len = size - offset;
+	buf = malloc (len + 1);
+	Qread (file, buf, len);
+	buf[len] = 0;
+
+	plitem = PL_GetPropertyList (buf);	
+	
+	R_INT (pr) = plist_retain (res, plitem);
 }
 
 static void
 bi_PL_GetPropertyList (progs_t *pr)
 {
+	plist_resources_t *res = PR_Resources_Find (pr, "plist");
 	plitem_t   *plitem = PL_GetPropertyList (P_GSTRING (pr, 0));	
-
-	return_plitem (pr, record_plitem (pr, plitem));
+	
+	R_INT (pr) = plist_retain (res, plitem);
 }
 
 static void
 bi_PL_WritePropertyList (progs_t *pr)
 {
-	char       *pl = PL_WritePropertyList (p_plitem (pr, 0));
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
+	char       *pl = PL_WritePropertyList (plist->plitem);
+
 	R_STRING (pr) = PR_SetDynamicString (pr, pl);
 	free (pl);
 }
@@ -104,125 +221,218 @@ bi_PL_WritePropertyList (progs_t *pr)
 static void
 bi_PL_Type (progs_t *pr)
 {
-	R_INT (pr) = PL_Type (p_plitem (pr, 0));
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
+
+	R_INT (pr) = PL_Type (plist->plitem);
 }
 
 static void
 bi_PL_String (progs_t *pr)
 {
-	const char *str = PL_String (p_plitem (pr, 0));
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
+	const char *str = PL_String (plist->plitem);
+
 	RETURN_STRING (pr, str);
 }
 
 static void
 bi_PL_ObjectForKey (progs_t *pr)
 {
-	return_plitem (pr, PL_ObjectForKey (p_plitem (pr, 0), P_GSTRING (pr, 1)));
+	plist_resources_t *res = PR_Resources_Find (pr, "plist");
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
+	const char *key = P_GSTRING (pr, 1);
+	plitem_t   *plitem = PL_ObjectForKey (plist->plitem, key);
+
+	R_INT (pr) = 0;
+	if (!plitem)
+		return;
+	R_INT (pr) = plist_handle (res, plitem);
+}
+
+static void
+bi_PL_RemoveObjectForKey (progs_t *pr)
+{
+	plist_resources_t *res = PR_Resources_Find (pr, "plist");
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
+	const char *key = P_GSTRING (pr, 1);
+	plitem_t   *plitem = PL_RemoveObjectForKey (plist->plitem, key);
+
+	R_INT (pr) = plist_retain (res, plitem);
 }
 
 static void
 bi_PL_ObjectAtIndex (progs_t *pr)
 {
-	return_plitem (pr, PL_ObjectAtIndex (p_plitem (pr, 0), P_INT (pr, 1)));
+	plist_resources_t *res = PR_Resources_Find (pr, "plist");
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
+	int         ind = P_INT (pr, 1);
+	plitem_t   *plitem = PL_ObjectAtIndex (plist->plitem, ind);
+
+	R_INT (pr) = 0;
+	if (!plitem)
+		return;
+	R_INT (pr) = plist_handle (res, plitem);
 }
 
 static void
 bi_PL_D_AllKeys (progs_t *pr)
 {
-	return_plitem (pr, PL_D_AllKeys (p_plitem (pr, 0)));
+	plist_resources_t *res = PR_Resources_Find (pr, "plist");
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
+	plitem_t   *plitem = PL_D_AllKeys (plist->plitem);
+
+	R_INT (pr) = plist_retain (res, plitem);
 }
 
 static void
 bi_PL_D_NumKeys (progs_t *pr)
 {
-	R_INT (pr) = PL_D_NumKeys (p_plitem (pr, 0));
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
+
+	R_INT (pr) = PL_D_NumKeys (plist->plitem);
 }
 
 static void
 bi_PL_D_AddObject (progs_t *pr)
 {
-	R_INT (pr) = PL_D_AddObject (p_plitem (pr, 0), P_GSTRING (pr, 1),
-								 remove_plitem (pr, p_plitem (pr, 2)));
+	int         dict_handle = P_INT (pr, 0);
+	int         obj_handle = P_INT (pr, 2);
+	bi_plist_t *dict = get_plist (pr, __FUNCTION__, dict_handle);
+	const char *key = P_GSTRING (pr, 1);
+	bi_plist_t *obj = get_plist (pr, __FUNCTION__, obj_handle);
+
+	obj->own = 0;
+	R_INT (pr) = PL_D_AddObject (dict->plitem, key, obj->plitem);
 }
 
 static void
 bi_PL_A_AddObject (progs_t *pr)
 {
-	R_INT (pr) = PL_A_AddObject (p_plitem (pr, 0),
-								 remove_plitem (pr, p_plitem (pr, 1)));
+	int         arr_handle = P_INT (pr, 0);
+	int         obj_handle = P_INT (pr, 1);
+	bi_plist_t *arr = get_plist (pr, __FUNCTION__, arr_handle);
+	bi_plist_t *obj = get_plist (pr, __FUNCTION__, obj_handle);
+
+	obj->own = 0;
+	R_INT (pr) = PL_A_AddObject (arr->plitem, obj->plitem);
 }
 
 static void
 bi_PL_A_NumObjects (progs_t *pr)
 {
-	R_INT (pr) = PL_A_NumObjects (p_plitem (pr, 0));
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
+
+	R_INT (pr) = PL_A_NumObjects (plist->plitem);
 }
 
 static void
 bi_PL_A_InsertObjectAtIndex (progs_t *pr)
 {
-	R_INT (pr) = PL_A_InsertObjectAtIndex (p_plitem (pr, 0),
-									   remove_plitem (pr, p_plitem (pr, 1)),
-									   P_INT (pr, 2));
+	int         dict_handle = P_INT (pr, 0);
+	int         obj_handle = P_INT (pr, 1);
+	bi_plist_t *arr = get_plist (pr, __FUNCTION__, dict_handle);
+	bi_plist_t *obj = get_plist (pr, __FUNCTION__, obj_handle);
+	int         ind = P_INT (pr, 2);
+
+	obj->own = 0;
+	R_INT (pr) = PL_A_InsertObjectAtIndex (arr->plitem, obj->plitem, ind);
 }
 
 static void
-bi_PL_Free (progs_t *pr)
+bi_PL_RemoveObjectAtIndex (progs_t *pr)
 {
-	PL_Free (remove_plitem (pr, p_plitem (pr, 0)));
-}
+	plist_resources_t *res = PR_Resources_Find (pr, "plist");
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
+	int         ind = P_INT (pr, 1);
+	plitem_t   *plitem = PL_RemoveObjectAtIndex (plist->plitem, ind);
 
-static void
-bi_PL_NewArray (progs_t *pr)
-{
-	return_plitem (pr, record_plitem (pr, PL_NewArray ()));
-}
-
-static void
-bi_PL_NewData (progs_t *pr)
-{
-	return_plitem (pr, record_plitem (pr, PL_NewData (P_GPOINTER (pr, 0),
-													  P_INT (pr, 1))));
-}
-
-static void
-bi_PL_NewString (progs_t *pr)
-{
-	return_plitem (pr, record_plitem (pr, PL_NewString (P_GSTRING (pr, 0))));
+	R_INT (pr) = plist_retain (res, plitem);
 }
 
 static void
 bi_PL_NewDictionary (progs_t *pr)
 {
-	return_plitem (pr, record_plitem (pr, PL_NewDictionary ()));
+	plist_resources_t *res = PR_Resources_Find (pr, "plist");
+	plitem_t   *plitem = PL_NewDictionary ();
+	
+	R_INT (pr) = plist_retain (res, plitem);
 }
 
 static void
-bi_plist_clear (progs_t *pr, void *data)
+bi_PL_NewArray (progs_t *pr)
 {
-	plist_resources_t *res = (plist_resources_t *) data;
+	plist_resources_t *res = PR_Resources_Find (pr, "plist");
+	plitem_t   *plitem = PL_NewArray ();
+	
+	R_INT (pr) = plist_retain (res, plitem);
+}
 
-	Hash_FlushTable (res->items);
+static void
+bi_PL_NewData (progs_t *pr)
+{
+	//FIXME not safe
+	plist_resources_t *res = PR_Resources_Find (pr, "plist");
+	plitem_t   *plitem = PL_NewData (P_GPOINTER (pr, 0), P_INT (pr, 1));
+	
+	R_INT (pr) = plist_retain (res, plitem);
+}
+
+static void
+bi_PL_NewString (progs_t *pr)
+{
+	plist_resources_t *res = PR_Resources_Find (pr, "plist");
+	plitem_t   *plitem = PL_NewString (P_GSTRING (pr, 0));
+	
+	R_INT (pr) = plist_retain (res, plitem);
+}
+
+static void
+bi_PL_Free (progs_t *pr)
+{
+	plist_resources_t *res = PR_Resources_Find (pr, "plist");
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
+
+	if (!plist->own)
+		PR_RunError (pr, "attempt to free unowned plist");
+
+	PL_Free (plist->plitem);
+
+	plist_free_handle (res, plist);
 }
 
 static uintptr_t
 plist_get_hash (void *key, void *unused)
 {
-	return (uintptr_t) key;
+	bi_plist_t *plist = (bi_plist_t *) key;
+	return (uintptr_t) plist->plitem;
 }
 
 static int
 plist_compare (void *k1, void *k2, void *unused)
 {
-	return k1 == k2;
+	bi_plist_t *pl1 = (bi_plist_t *) k1;
+	bi_plist_t *pl2 = (bi_plist_t *) k2;
+	return pl1->plitem == pl2->plitem;
 }
 
 static builtin_t builtins[] = {
+	{"PL_GetFromFile",				bi_PL_GetFromFile,				-1},
 	{"PL_GetPropertyList",			bi_PL_GetPropertyList,			-1},
 	{"PL_WritePropertyList",		bi_PL_WritePropertyList,		-1},
 	{"PL_Type",						bi_PL_Type,						-1},
 	{"PL_String",					bi_PL_String,					-1},
 	{"PL_ObjectForKey",				bi_PL_ObjectForKey,				-1},
+	{"PL_RemoveObjectForKey",		bi_PL_RemoveObjectForKey,		-1},
 	{"PL_ObjectAtIndex",			bi_PL_ObjectAtIndex,			-1},
 	{"PL_D_AllKeys",				bi_PL_D_AllKeys,				-1},
 	{"PL_D_NumKeys",				bi_PL_D_NumKeys,				-1},
@@ -230,6 +440,7 @@ static builtin_t builtins[] = {
 	{"PL_A_AddObject",				bi_PL_A_AddObject,				-1},
 	{"PL_A_NumObjects",				bi_PL_A_NumObjects,				-1},
 	{"PL_A_InsertObjectAtIndex",	bi_PL_A_InsertObjectAtIndex,	-1},
+	{"PL_RemoveObjectAtIndex",		bi_PL_RemoveObjectAtIndex,		-1},
 	{"PL_NewDictionary",			bi_PL_NewDictionary,			-1},
 	{"PL_NewArray",					bi_PL_NewArray,					-1},
 	{"PL_NewData",					bi_PL_NewData,					-1},
@@ -242,8 +453,8 @@ void
 RUA_Plist_Init (progs_t *pr, int secure)
 {
 	plist_resources_t *res = calloc (1, sizeof (plist_resources_t));
-	res->items = Hash_NewTable (1021, 0, 0, 0);
-	Hash_SetHashCompare (res->items, plist_get_hash, plist_compare);
+	res->plist_tab = Hash_NewTable (1021, 0, 0, 0);
+	Hash_SetHashCompare (res->plist_tab, plist_get_hash, plist_compare);
 
 	PR_Resources_Register (pr, "plist", res, bi_plist_clear);
 	PR_RegisterBuiltins (pr, builtins);

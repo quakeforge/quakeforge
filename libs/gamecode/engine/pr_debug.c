@@ -127,7 +127,7 @@ pr_debug_expression_error (script_t *script, const char *msg)
 }
 
 static pr_type_t *
-parse_expression (progs_t *pr, const char *expr)
+parse_expression (progs_t *pr, const char *expr, int conditional)
 {
 	script_t   *es;
 	char       *e;
@@ -165,18 +165,21 @@ parse_expression (progs_t *pr, const char *expr)
 				goto error;
 			expr_ptr = PR_GetPointer (pr, global->ofs);
 		}
-		pr->wp_conditional = 0;
-		if (Script_TokenAvailable (es, 1)) {
-			if (!Script_GetToken (es, 1) && !strequal (es->token->str, "==" ))
-				goto error;
-			if (!Script_GetToken (es, 1))
-				goto error;
-			pr->wp_val.integer_var = strtol (es->token->str, &e, 0);
-			if (e == es->token->str)
-				goto error;
-			if (*e == '.' || *e == 'e' || *e == 'E')
-				pr->wp_val.float_var = strtod (es->token->str, &e);
-			pr->wp_conditional = 1;
+		if (conditional) {
+			pr->wp_conditional = 0;
+			if (Script_TokenAvailable (es, 1)) {
+				if (!Script_GetToken (es, 1)
+					&& !strequal (es->token->str, "==" ))
+					goto error;
+				if (!Script_GetToken (es, 1))
+					goto error;
+				pr->wp_val.integer_var = strtol (es->token->str, &e, 0);
+				if (e == es->token->str)
+					goto error;
+				if (*e == '.' || *e == 'e' || *e == 'E')
+					pr->wp_val.float_var = strtod (es->token->str, &e);
+				pr->wp_conditional = 1;
+			}
 		}
 		if (Script_TokenAvailable (es, 1))
 			Sys_Printf ("ignoring tail\n");
@@ -204,7 +207,7 @@ PR_Debug_Init_Cvars (void)
 static file_t *
 PR_Load_Source_File (progs_t *pr, const char *fname)
 {
-	char       *path = 0, *l, *p, **dir;
+	char       *l, *p, **dir;
 	file_t     *f = Hash_Find (file_hash, fname);
 
 	if (f)
@@ -217,37 +220,39 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 										 fname));
 	}
 	if (!f->text) {
-		pr->file_error (pr, path);
-		free (f);
-		return 0;
+		pr->file_error (pr, fname);
+	} else {
+		for (f->num_lines = 1, l = f->text; *l; l++)
+			if (*l == '\n')
+				f->num_lines++;
 	}
-	for (f->num_lines = 1, l = f->text; *l; l++)
-		if (*l == '\n')
-			f->num_lines++;
 	f->name = strdup (fname);
 	if (!f->name) {
 		pr->free_progs_mem (pr, f->text);
 		free (f);
 		return 0;
 	}
-	f->lines = malloc (f->num_lines * sizeof (line_t));
-	if (!f->lines) {
-		free (f->name);
-		pr->free_progs_mem (pr, f->text);
-		free (f);
-		return 0;
-	}
-	f->lines[0].text = f->text;
-	for (f->num_lines = 0, l = f->text; *l; l++) {
-		if (*l == '\n') {
-			for (p = l; p > f->lines[f->num_lines].text && isspace(p[-1]); p--)
-				;
-			f->lines[f->num_lines].len = p - f->lines[f->num_lines].text;
-			f->lines[++f->num_lines].text = l + 1;
+	if (f->num_lines) {
+		f->lines = malloc (f->num_lines * sizeof (line_t));
+		if (!f->lines) {
+			free (f->name);
+			pr->free_progs_mem (pr, f->text);
+			free (f);
+			return 0;
 		}
+		f->lines[0].text = f->text;
+		for (f->num_lines = 0, l = f->text; *l; l++) {
+			if (*l == '\n') {
+				for (p = l; p > f->lines[f->num_lines].text && isspace(p[-1]);
+					 p--)
+					;
+				f->lines[f->num_lines].len = p - f->lines[f->num_lines].text;
+				f->lines[++f->num_lines].text = l + 1;
+			}
+		}
+		f->lines[f->num_lines].len = l - f->lines[f->num_lines].text;
+		f->num_lines++;
 	}
-	f->lines[f->num_lines].len = l - f->lines[f->num_lines].text;
-	f->num_lines++;
 	f->pr = pr;
 	Hash_Add (file_hash, f);
 	return f;
@@ -536,6 +541,8 @@ PR_DumpState (progs_t *pr)
 	PR_StackTrace (pr);
 }
 
+#define ISDENORM(x) ((x) && !((x) & 0x7f800000))
+
 static const char *
 value_string (progs_t *pr, etype_t type, pr_type_t *val)
 {
@@ -608,7 +615,10 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 		case ev_void:
 			return "void";
 		case ev_float:
-			dsprintf (line, "%g", val->float_var);
+			if (ISDENORM (val->integer_var) && val->uinteger_var != 0x80000000)
+				dsprintf (line, "<%08x>", val->integer_var);
+			else
+				dsprintf (line, "%g", val->float_var);
 			break;
 		case ev_vector:
 			dsprintf (line, "'%g %g %g'",
@@ -724,7 +734,7 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 		return;
 	}
 
-	pr->watch = parse_expression (pr, expr);
+	pr->watch = parse_expression (pr, expr, 1);
 	if (pr->watch) {
 		Sys_Printf ("watchpoint set to [%d]\n", PR_SetPointer (pr, pr->watch));
 		if (pr->wp_conditional)
@@ -744,7 +754,7 @@ PR_Debug_Print (progs_t *pr, const char *expr)
 		return;
 	}
 
-	print = parse_expression (pr, expr);
+	print = parse_expression (pr, expr, 0);
 	if (print) {
 		pr_int_t    ofs = PR_SetPointer (pr, print);
 		const char *s = global_string (pr, ofs, ev_void, 1);
@@ -878,6 +888,24 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						break;
 					case 'O':
 						str = va ("%04x", addr + (short) opval);
+						break;
+					case 'E':
+						{
+							edict_t    *ed;
+							opval = pr->pr_globals[s->a].entity_var;
+							parm_ind = pr->pr_globals[s->b].uinteger_var;
+							if (parm_ind < pr->progs->entityfields
+								&& opval >= 0
+								&& opval < pr->pr_edictareasize) {
+								ed = PROG_TO_EDICT (pr, opval);
+								opval = &ed->v[parm_ind] - pr->pr_globals;
+							} else {
+								str = "bad entity.field";
+								break;
+							}
+							str = global_string (pr, opval, optype, contents & 1);
+							str = va ("%d %d %s", s->a, s->b, str);
+						}
 						break;
 					default:
 						goto err;

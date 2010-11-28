@@ -122,8 +122,6 @@ VID_Init (unsigned char *palette)
 
 	VID_InitBuffers ();		// allocate z buffer and surface cache
 
-	Con_CheckResize ();		// Now that we have a window size, fix console
-
 	SDL_ShowCursor (0);		// hide the mouse pointer
 
 #ifdef _WIN32

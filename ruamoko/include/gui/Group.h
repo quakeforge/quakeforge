@@ -13,7 +13,6 @@
 - (View) addView: (View)aView;
 - (id) addViews: (Array)viewlist;
 - (void) moveTo: (integer)x y:(integer)y;
-- (void) setBasePos: (Point)pos;
 - (void) draw;
 @end
 

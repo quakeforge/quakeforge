@@ -22,9 +22,6 @@ struct il_data_t {
 	BOOL		cursor;
 };
 
-@class Rect;
-@class Point;
-
 @interface InputLine: View
 {
 	struct il_data_t   control;

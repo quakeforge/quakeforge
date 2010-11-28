@@ -231,8 +231,6 @@ PR_LoadStrings (progs_t *pr)
 		}
 		str += strlen (str) + 1;
 	}
-	pr->static_strings = realloc (pr->static_strings,
-								  count * sizeof (strref_t));
 	pr->num_strings = count;
 	return 1;
 }

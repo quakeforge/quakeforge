@@ -1,29 +1,15 @@
 #ifndef __ruamoko_gui_Size_h
 #define __ruamoko_gui_Size_h
 
-#include "Object.h"
+struct Size {
+	integer width;
+	integer height;
+};
 
-@interface Size: Object
-{
-@public
-	integer	width;
-	integer	height;
-}
+typedef struct Size Size;
 
-- (id) initWithComponents: (integer)w : (integer)h;
-- (id) initWithSize: (Size)aSize;
-- (id) copy;
-
-- (integer) width;
-- (integer) height;
-
-- (void) setSize: (Size)aSize;
-- (void) setWidth: (integer)w;
-- (void) setHeight: (integer)h;
-
-- (void) addSize: (Size)aSize;
-- (void) subtractSize: (Size)aSize;
-
-@end
+@extern Size makeSize (integer width, integer height);
+@extern Size addSize (Size a, Size b);
+@extern Size subtractSize (Size a, Size b);
 
 #endif //__ruamoko_gui_Size_h

@@ -215,6 +215,8 @@ typedef struct
 
 // frag scoreboard
 	scoreboard_t	*scores;		// [cl.maxclients]
+
+	unsigned	protocol;
 } client_state_t;
 
 
@@ -278,8 +280,7 @@ extern struct cvar_s	*cl_cshift_powerup;
 
 extern struct cvar_s	*noskins;
 
-#define	MAX_TEMP_ENTITIES	64			// lightning bolts, etc
-#define	MAX_STATIC_ENTITIES	128			// torches, etc
+#define	MAX_STATIC_ENTITIES	512			// torches, etc
 
 extern	client_state_t	cl;
 
@@ -290,6 +291,7 @@ extern	entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 
 extern int fps_count;
 
+extern void (*write_angles) (sizebuf_t *sb, const vec3_t angles);
 
 // cl_main
 void CL_Init (void);

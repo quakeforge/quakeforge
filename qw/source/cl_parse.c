@@ -414,7 +414,7 @@ CL_RequestNextDownload (void)
 			break;
 		case dl_none:
 		default:
-			Sys_DPrintf ("Unknown download type.\n");
+			Sys_MaskPrintf (SYS_DEV, "Unknown download type.\n");
 	}
 }
 
@@ -650,7 +650,7 @@ CL_NextUpload (void)
 	MSG_WriteByte (&cls.netchan.message, percent);
 	SZ_Write (&cls.netchan.message, buffer, r);
 
-	Sys_DPrintf ("UPLOAD: %6d: %d written\n", upload_pos - r, r);
+	Sys_MaskPrintf (SYS_DEV, "UPLOAD: %6d: %d written\n", upload_pos - r, r);
 
 	if (upload_pos != upload_size)
 		return;
@@ -672,7 +672,7 @@ CL_StartUpload (byte * data, int size)
 	if (upload_data)
 		free (upload_data);
 
-	Sys_DPrintf ("Upload starting of %d...\n", size);
+	Sys_MaskPrintf (SYS_DEV, "Upload starting of %d...\n", size);
 
 	upload_data = malloc (size);
 	memcpy (upload_data, data, size);
@@ -723,7 +723,7 @@ CL_ParseServerData (void)
 	int			protover;
 	qboolean	cflag = false;
 
-	Sys_DPrintf ("Serverdata packet received.\n");
+	Sys_MaskPrintf (SYS_DEV, "Serverdata packet received.\n");
 
 	// wipe the client_state_t struct
 	CL_ClearState ();
@@ -1116,7 +1116,7 @@ CL_SetInfo (void)
 	strncpy (value, MSG_ReadString (net_message), sizeof (value) - 1);
 	key[sizeof (value) - 1] = 0;
 
-	Sys_DPrintf ("SETINFO %s: %s=%s\n", player->name, key, value);
+	Sys_MaskPrintf (SYS_DEV, "SETINFO %s: %s=%s\n", player->name, key, value);
 
 	if (!player->userinfo)
 		player->userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
@@ -1138,7 +1138,7 @@ CL_ServerInfo (void)
 	strncpy (value, MSG_ReadString (net_message), sizeof (value) - 1);
 	key[sizeof (value) - 1] = 0;
 
-	Sys_DPrintf ("SERVERINFO: %s=%s\n", key, value);
+	Sys_MaskPrintf (SYS_DEV, "SERVERINFO: %s=%s\n", key, value);
 
 	Info_SetValueForKey (cl.serverinfo, key, value, 0);
 	if (strequal (key, "chase")) {
@@ -1333,15 +1333,16 @@ CL_ParseServerMessage (void)
 				s = MSG_ReadString (net_message);
 				if (s[strlen (s) - 1] == '\n') {
 					if (stuffbuf && stuffbuf->str[0]) {
-						Sys_DPrintf ("stufftext: %s%s\n", stuffbuf->str, s);
+						Sys_MaskPrintf (SYS_DEV, "stufftext: %s%s\n",
+										stuffbuf->str, s);
 						Cbuf_AddText (cl_stbuf, stuffbuf->str);
 						dstring_clearstr (stuffbuf);
 					} else {
-						Sys_DPrintf ("stufftext: %s\n", s);
+						Sys_MaskPrintf (SYS_DEV, "stufftext: %s\n", s);
 					}
 					Cbuf_AddText (cl_stbuf, s);
 				} else {
-					Sys_DPrintf ("partial stufftext: %s\n", s);
+					Sys_MaskPrintf (SYS_DEV, "partial stufftext: %s\n", s);
 					if (!stuffbuf)
 						stuffbuf = dstring_newstr ();
 					dstring_appendstr (stuffbuf, s);
@@ -1471,21 +1472,21 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_intermission:
-				Sys_DPrintf ("svc_intermission\n");
+				Sys_MaskPrintf (SYS_DEV, "svc_intermission\n");
 
 				cl.intermission = 1;
 				r_force_fullscreen = 1;
 				cl.completed_time = realtime;
 				vid.recalc_refdef = true;	// go to full screen
-				Sys_DPrintf ("intermission simorg: ");
+				Sys_MaskPrintf (SYS_DEV, "intermission simorg: ");
 				MSG_ReadCoordV (net_message, cl.simorg);
 				for (i = 0; i < 3; i++)
-					Sys_DPrintf ("%f ", cl.simorg[i]);
-				Sys_DPrintf ("\nintermission simangles: ");
+					Sys_MaskPrintf (SYS_DEV, "%f ", cl.simorg[i]);
+				Sys_MaskPrintf (SYS_DEV, "\nintermission simangles: ");
 				MSG_ReadAngleV (net_message, cl.simangles);
 				for (i = 0; i < 3; i++)
-					Sys_DPrintf ("%f ", cl.simangles[i]);
-				Sys_DPrintf ("\n");
+					Sys_MaskPrintf (SYS_DEV, "%f ", cl.simangles[i]);
+				Sys_MaskPrintf (SYS_DEV, "\n");
 				VectorZero (cl.simvel);
 
 				// automatic fraglogging (by elmex)
