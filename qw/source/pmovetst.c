@@ -48,7 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "world.h"
 
 static hull_t box_hull;
-static dclipnode_t box_clipnodes[6];
+static mclipnode_t box_clipnodes[6];
 static mplane_t box_planes[6];
 
 
@@ -108,7 +108,7 @@ inline int
 PM_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
 	float		 d;
-	dclipnode_t *node;
+	mclipnode_t *node;
 	mplane_t	*plane;
 
 	while (num >= 0) {
@@ -133,7 +133,7 @@ PM_PointContents (const vec3_t p)
 {
 	float       d;
 	int         num;
-	dclipnode_t *node;
+	mclipnode_t *node;
 	hull_t     *hull;
 	mplane_t   *plane;
 

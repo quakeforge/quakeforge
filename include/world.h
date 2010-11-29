@@ -71,7 +71,7 @@ typedef struct areanode_s {
 
 extern	areanode_t	sv_areanodes[AREA_NODES];
 
-void SV_InitHull (hull_t *hull, dclipnode_t *clipnodes, mplane_t *planes);
+void SV_InitHull (hull_t *hull, mclipnode_t *clipnodes, mplane_t *planes);
 
 void SV_ClearWorld (void);
 // called after the world model has been loaded, before linking any entities

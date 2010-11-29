@@ -53,8 +53,7 @@
 
 // BRUSH MODELS ===============================================================
 
-typedef struct efrag_s
-{
+typedef struct efrag_s {
 	struct mleaf_s		*leaf;
 	struct efrag_s		*leafnext;
 	struct entity_s		*entity;
@@ -65,13 +64,11 @@ typedef struct efrag_s
 // in memory representation ===================================================
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
-typedef struct
-{
+typedef struct {
 	vec3_t		position;
 } mvertex_t;
 
-typedef struct texture_s
-{
+typedef struct texture_s {
 	char		name[16];
 	unsigned int	width, height;
 	int			gl_texturenum;
@@ -99,14 +96,12 @@ typedef struct texture_s
 #define SURF_LIGHTBOTHSIDES 0x800
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
-typedef struct
-{
+typedef struct {
 	unsigned short	v[2];
 	unsigned int	cachededgeoffset;
 } medge_t;
 
-typedef struct
-{
+typedef struct {
 	float		vecs[2][4];
 	float		mipadjust;
 	texture_t	*texture;
@@ -115,8 +110,7 @@ typedef struct
 
 #define	VERTEXSIZE	7
 
-typedef struct glpoly_s
-{
+typedef struct glpoly_s {
 	struct	glpoly_s	*next;
 	struct	glpoly_s	*chain;
 	struct	glpoly_s	*fb_chain;
@@ -125,8 +119,7 @@ typedef struct glpoly_s
 	float	verts[4][VERTEXSIZE];	// variable sized (xyz s1t1 s2t2)
 } glpoly_t;
 
-typedef struct msurface_s
-{
+typedef struct msurface_s {
 	int			visframe;		// should be drawn when node is crossed
 
 	mplane_t	*plane;
@@ -159,8 +152,7 @@ typedef struct msurface_s
 	byte		*samples;		// [numstyles*surfsize]
 } msurface_t;
 
-typedef struct mnode_s
-{
+typedef struct mnode_s {
 // common with leaf
 	int			contents;		// 0, to differentiate from leafs
 	int			visframe;		// node needs to be traversed if current
@@ -177,8 +169,7 @@ typedef struct mnode_s
 	unsigned short		numsurfaces;
 } mnode_t;
 
-typedef struct mleaf_s
-{
+typedef struct mleaf_s {
 // common with node
 	int			contents;		// wil be a negative contents number
 	int			visframe;		// node needs to be traversed if current
@@ -199,10 +190,13 @@ typedef struct mleaf_s
 	byte		ambient_sound_level[NUM_AMBIENTS];
 } mleaf_t;
 
-// !!! if this is changed, it must be changed in asm_i386.h too !!!
-typedef struct hull_s
-{
-	dclipnode_t	*clipnodes;
+typedef struct mclipnode_s {
+	int         planenum;
+	int         children[2];
+} mclipnode_t;
+
+typedef struct hull_s {
+	mclipnode_t	*clipnodes;
 	mplane_t	*planes;
 	int			firstclipnode;
 	int			lastclipnode;
@@ -213,8 +207,7 @@ typedef struct hull_s
 // SPRITE MODELS ==============================================================
 
 // FIXME: shorten these?
-typedef struct mspriteframe_s
-{
+typedef struct mspriteframe_s {
 	int		width;
 	int		height;
 	float	up, down, left, right;
@@ -222,21 +215,18 @@ typedef struct mspriteframe_s
 	int		gl_texturenum;
 } mspriteframe_t;
 
-typedef struct
-{
+typedef struct {
 	int				numframes;
 	float			*intervals;
 	mspriteframe_t	*frames[1];
 } mspritegroup_t;
 
-typedef struct
-{
+typedef struct {
 	spriteframetype_t	type;
 	mspriteframe_t		*frameptr;
 } mspriteframedesc_t;
 
-typedef struct
-{
+typedef struct {
 	int					type;
 	int					maxwidth;
 	int					maxheight;
@@ -251,8 +241,7 @@ typedef struct
 // Alias models are position independent, so the cache manager can move them.
 
 // NOTE: the first three lines must match maliasgroupframedesc_t
-typedef struct
-{
+typedef struct {
 	trivertx_t			bboxmin;
 	trivertx_t			bboxmax;
 	int					frame;
@@ -263,30 +252,26 @@ typedef struct
 	char				name[16];
 } maliasframedesc_t;
 
-typedef struct
-{
+typedef struct {
 	aliasskintype_t		type;
 	int					skin;
 	int					texnum;
 	int					fb_texnum;
 } maliasskindesc_t;
 
-typedef struct
-{
+typedef struct {
 	trivertx_t			bboxmin;
 	trivertx_t			bboxmax;
 	int					frame;
 } maliasgroupframedesc_t;
 
-typedef struct
-{
+typedef struct {
 	int						numframes;
 	int						intervals;
 	maliasgroupframedesc_t	frames[1];
 } maliasgroup_t;
 
-typedef struct
-{
+typedef struct {
 	int					numskins;
 	int					intervals;
 	maliasskindesc_t	skindescs[1];
@@ -340,8 +325,7 @@ typedef enum {mod_brush, mod_sprite, mod_alias} modtype_t;
 #define	EF_TRACER3		128			// purple trail
 #define EF_GLOWTRAIL	4096		// glowcolor particle trail
 
-typedef struct model_s
-{
+typedef struct model_s {
 	char		 name[MAX_QPATH];
 	qboolean	 needload;		// bmodels and sprites don't cache normally
 	qboolean	 hasfullbrights;
@@ -397,7 +381,7 @@ typedef struct model_s
 	int			*surfedges;
 
 	int			 numclipnodes;
-	dclipnode_t	*clipnodes;
+	mclipnode_t	*clipnodes;
 
 	int			 nummarksurfaces;
 	msurface_t	**marksurfaces;

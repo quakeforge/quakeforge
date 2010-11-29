@@ -33,30 +33,16 @@ AUTOMAKE_OPTIONS=	foreign
 INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include
 SDL_LIBS = @SDL_LIBS@
 
-# Desktop files
-if HAVE_XDG
-desktopdir=$(datarootdir)/applications
-desktop_DATA= @QW_DESKTOP_DATA@
-endif
-
 bin_PROGRAMS=	@QW_TARGETS@
 
 EXTRA_PROGRAMS= qw-client-fbdev qw-client-glx qw-client-mgl qw-client-sdl \
 		qw-client-sdl32 qw-client-sgl qw-client-svga qw-client-3dfx \
 		qw-client-wgl qw-client-x11 qw-server qw-master
 
-if ASM_ARCH
-asm= libasm.a
-else
-asm=
-endif
-
-noinst_LIBRARIES= @qw_libs@ $(asm)
-EXTRA_LIBRARIES=libasm.a libqw_client.a libqw_common.a libqw_sdl.a libqw_server.a
+noinst_LIBRARIES= @qw_libs@
+EXTRA_LIBRARIES=libqw_client.a libqw_common.a libqw_sdl.a libqw_server.a
 
 
-libasm_a_SOURCES= worlda.S
-libasm_la_CCASFLAGS=@PREFER_NON_PIC@
 libqw_common_a_SOURCES=\
 	com.c game.c map_cfg.c pmove.c pmovetst.c net_packetlog.c
 libqw_sdl_a_SOURCES=cl_sys_sdl.c
@@ -93,9 +79,9 @@ qw_server_LIBS= \
 		$(top_builddir)/libs/util/libQFutil.la
 
 qw_server_SOURCES=	
-qw_server_LDADD=	libqw_server.a libqw_common.a $(asm) $(qw_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
+qw_server_LDADD=	libqw_server.a libqw_common.a $(qw_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
 qw_server_LDFLAGS=	$(common_ldflags)
-qw_server_DEPENDENCIES=	libqw_common.a libqw_server.a $(asm) $(qw_server_LIBS)
+qw_server_DEPENDENCIES=	libqw_common.a libqw_server.a $(qw_server_LIBS)
 
 qw_master_SOURCES=	master.c
 qw_master_LDADD=	$(top_builddir)/libs/util/libQFutil.la $(NET_LIBS)
@@ -118,7 +104,7 @@ qw_client_LIBS= \
 		$(top_builddir)/libs/util/libQFutil.la \
 		$(top_builddir)/libs/gib/libQFgib.la
 
-client_LIBS= $(asm) $(qw_client_LIBS)
+client_LIBS= $(qw_client_LIBS)
 client_libs= libqw_client.a libqw_common.a
 
 libqw_client_a_SOURCES= \
