@@ -89,3 +89,4 @@
 	doc/man/Makefile
 
 	debian/Makefile
+	desktop/Makefile
