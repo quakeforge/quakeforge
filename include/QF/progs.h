@@ -328,7 +328,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define G_FLOAT(p,o)	G_var (p, o, float)
 
-/** Access a integer global. Can be assigned to.
+/** Access an integer global. Can be assigned to.
 
 	\par QC type:
 		\c integer
@@ -340,7 +340,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define G_INT(p,o)		G_var (p, o, integer)
 
-/** Access a unsigned integer global. Can be assigned to.
+/** Access an unsigned integer global. Can be assigned to.
 
 	\par QC type:
 		\c uinteger
@@ -505,7 +505,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define P_FLOAT(p,n)	P_var (p, n, float)
 
-/** Access a integer parameter. Can be assigned to.
+/** Access an integer parameter. Can be assigned to.
 
 	\par QC type:
 		\c integer
@@ -517,7 +517,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define P_INT(p,n)		P_var (p, n, integer)
 
-/** Access a unsigned integer parameter. Can be assigned to.
+/** Access an unsigned integer parameter. Can be assigned to.
 
 	\par QC type:
 		\c uinteger
@@ -590,7 +590,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define P_EDICT(p,n)	((edict_t *)(PR_edicts (p) + P_INT (p, n)))
 
-/** Access a entity parameter.
+/** Access an entity parameter.
 
 	\par QC type:
 		\c entity
@@ -825,7 +825,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define E_FLOAT(e,o)	E_var (e, o, float)
 
-/** Access a integer entity field. Can be assigned to.
+/** Access an integer entity field. Can be assigned to.
 
 	\par QC type:
 		\c integer
@@ -837,7 +837,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define E_INT(e,o)		E_var (e, o, integer)
 
-/** Access a unsigned integer entity field. Can be assigned to.
+/** Access an unsigned integer entity field. Can be assigned to.
 
 	\par QC type:
 		\c uinteger
