@@ -199,7 +199,6 @@ typedef struct mleaf_s
 	byte		ambient_sound_level[NUM_AMBIENTS];
 } mleaf_t;
 
-// !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct hull_s
 {
 	dclipnode_t	*clipnodes;
