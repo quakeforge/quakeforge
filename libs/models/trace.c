@@ -101,7 +101,7 @@ MOD_TraceLine (hull_t *hull, int num,
 	int         side, empty, solid;
 	tracestack_t *tstack;
 	tracestack_t tracestack[256];
-	dclipnode_t *node;
+	mclipnode_t *node;
 	mplane_t   *plane, *split_plane;
 
 	VectorCopy (start_point, start);

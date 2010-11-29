@@ -685,7 +685,8 @@ Mod_LoadLeafs (bsp_t *bsp)
 static void
 Mod_LoadClipnodes (bsp_t *bsp)
 {
-	dclipnode_t *in, *out;
+	dclipnode_t *in;
+	mclipnode_t *out;
 	hull_t		*hull;
 	int			 count, i;
 
@@ -756,7 +757,7 @@ Mod_LoadClipnodes (bsp_t *bsp)
 static void
 Mod_MakeHull0 (void)
 {
-	dclipnode_t *out;
+	mclipnode_t *out;
 	hull_t		*hull;
 	int			 count, i, j;
 	mnode_t		*in, *child;

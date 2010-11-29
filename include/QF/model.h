@@ -190,8 +190,13 @@ typedef struct mleaf_s {
 	byte		ambient_sound_level[NUM_AMBIENTS];
 } mleaf_t;
 
+typedef struct mclipnode_s {
+	int         planenum;
+	int         children[2];
+} mclipnode_t;
+
 typedef struct hull_s {
-	dclipnode_t	*clipnodes;
+	mclipnode_t	*clipnodes;
 	mplane_t	*planes;
 	int			firstclipnode;
 	int			lastclipnode;
@@ -376,7 +381,7 @@ typedef struct model_s {
 	int			*surfedges;
 
 	int			 numclipnodes;
-	dclipnode_t	*clipnodes;
+	mclipnode_t	*clipnodes;
 
 	int			 nummarksurfaces;
 	msurface_t	**marksurfaces;
