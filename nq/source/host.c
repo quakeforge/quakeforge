@@ -31,6 +31,10 @@
 static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
+#ifdef HAVE_UNISTD_H
+# include "unistd.h"
+#endif
+
 #include "QF/cbuf.h"
 #include "QF/idparse.h"
 #include "QF/cdaudio.h"
@@ -132,7 +136,15 @@ cvar_t     *deathmatch;
 cvar_t     *pausable;
 
 cvar_t     *temp1;
+cvar_t     *cl_usleep;
 
+static int  cl_usleep_cache;
+
+static void
+cl_usleep_f (cvar_t *var)
+{
+	cl_usleep_cache = var->int_val;
+}
 
 
 void
@@ -280,6 +292,10 @@ Host_InitLocal (void)
 	coop = Cvar_Get ("coop", "0", CVAR_NONE, NULL, "0 or 1");
 	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, NULL, "None");
 	temp1 = Cvar_Get ("temp1", "0", CVAR_NONE, NULL, "None");
+	cl_usleep = Cvar_Get ("cl_usleep", "0", CVAR_ARCHIVE, cl_usleep_f,
+						  "Turn this on to save cpu when fps limited. "
+						  "May affect frame rate adversely depending on "
+						  "local machine/os conditions");
 
 	Host_FindMaxClients ();
 
@@ -532,7 +548,7 @@ Host_ClearMemory (void)
 
 	Returns false if the time is too short to run a frame
 */
-static qboolean
+static float
 Host_FilterTime (float time)
 {
 	float       timedifference;
@@ -551,7 +567,7 @@ Host_FilterTime (float time)
 	timedifference = (timescale / 72.0) - (realtime - oldrealtime);
 
 	if (!cls.timedemo && (timedifference > 0))
-		return false;                   // framerate is too high
+		return timedifference;                   // framerate is too high
 
 	host_frametime = realtime - oldrealtime;
 	oldrealtime = realtime;
@@ -564,7 +580,7 @@ Host_FilterTime (float time)
 	else	// don't allow really long or short frames
 		host_frametime = bound (0.001, host_frametime, 0.1);
 
-	return true;
+	return 0;
 }
 
 void
@@ -650,6 +666,7 @@ static void
 _Host_Frame (float time)
 {
 	static int  first = 1;
+	float       sleeptime;
 
 	if (setjmp (host_abortserver))
 		return;							// something bad happened, or the
@@ -658,9 +675,14 @@ _Host_Frame (float time)
 	rand ();							// keep the random time dependent
 
 	// decide the simulation time
-	if (!Host_FilterTime (time))
-		return;							// don't run too fast, or packets
-										// will flood out
+	if ((sleeptime = Host_FilterTime (time)) != 0) {
+		// don't run too fast, or packet will flood outs
+#ifdef HAVE_USLEEP
+		if (cl_usleep_cache && sleeptime > 0.002) // minimum sleep time
+			usleep ((unsigned long) (sleeptime * 1000000 / 2));
+#endif
+		return;					
+	}
 
 	if (cls.state != ca_dedicated)
 		IN_ProcessEvents ();
