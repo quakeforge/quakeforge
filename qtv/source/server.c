@@ -458,6 +458,7 @@ sv_new_f (void)
 	Hash_Add (server_hash, sv);
 
 	sv->con = Connection_Add (&adr, sv, server_challenge);
+	Netchan_Setup (&sv->netchan, sv->con->address, sv->qport, NC_SEND_QPORT);
 
 	server_getchallenge (sv->con, sv);
 }
