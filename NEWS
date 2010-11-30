@@ -3,13 +3,22 @@ NEWS for the QuakeForge project
 
 Changes from 0.5.5
 	o General enhancements
-		* more fullscreen toggle fixes
+		* protocol 666 support from fitzquake (nq)
+		* large map support from fitzquake
+		* fullscreen mode is now compliant with modern window managers
+		* wide screens supported. Use the vid_aspect cvar to specify the
+		  screen's aspect ratio (eg, 4:3, 16:9, 800:480 etc).
 		* lighting tweaks
 		* don't lose sound when switching workplaces in X
+		* correct resampling of sound effects for 48kHz sound output (or any
+		  other rate, for that matter).
+		* support up to 7.1 channel sound files. However, output is still
+		  limited to two channels.
 		* "lagged dlights" in mvds fixed
 		* flac sound file support
 		* support multiple directories in fs_sharepath
-		* new savegame format
+		* new savegame format (property list)
+		* map entities can use property lists
 		* JACK audio output
 		* http download support
 		* CPQW support
@@ -17,12 +26,21 @@ Changes from 0.5.5
 		* support for very big maps (eg marcher.bsp)
 		* beams (lightning etc) can be any length
 		* unlimited beams
+		* unlimited loaded models
+		* unlimited efrags
 		* support for Japanese keyboards
-	o Ruamoko
+		* particle improvements
+		* nq can now release the CPU when it is not needed (cl_usleep 1)
+	o Ruamoko (QuakeC)
 		* plist access
 		* entity parsing support
 		* quake script parsing support
+		* dynamic strings
+		* mutable strings
+		* progs can provide their own entity parsing function. A sample
+		  implementation is available.
 	o qfcc
+		* man page documentation
 		* function overloading
 		* allow entity.vector.x (etc) instead of entity.vector_x
 		* many ObjectiveQuakeC fixes
@@ -33,9 +51,15 @@ Changes from 0.5.5
 		* static local vars
 		* more pointer support
 		* better compatibility with qcc
+		* preprocess progs.src
+		* one-pass compilation of progs.src based code when using cpp
+		* qccx escape codes supported. As there are conflicts with qfcc's
+		  escape codes, --qccx-escapes can be used to select qccx instead of
+		  qfcc.
 	o Tools
 		* filter for displaying item information from a map (itemslist.py)
 		* wad tool improvements
+		* qfbsp can extract the entities data from bsp files.
 
 Changes from 0.5.4
     o General enhancements
