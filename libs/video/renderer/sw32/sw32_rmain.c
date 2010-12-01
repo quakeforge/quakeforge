@@ -677,19 +677,10 @@ R_DrawBEntitiesOnList (void)
 					if (r_drawpolys | r_drawculledpolys) {
 						R_ZDrawSubmodelPolys (clmodel);
 					} else {
-						r_pefragtopnode = NULL;
+						if (currententity->topnode) {
+							mnode_t    *topnode = currententity->topnode;
 
-						for (j = 0; j < 3; j++) {
-							r_emins[j] = minmaxs[j];
-							r_emaxs[j] = minmaxs[3 + j];
-						}
-
-						R_SplitEntityOnNode2 (r_worldentity.model->nodes);
-
-						if (r_pefragtopnode) {
-							currententity->topnode = r_pefragtopnode;
-
-							if (r_pefragtopnode->contents >= 0) {
+							if (topnode->contents >= 0) {
 								// not a leaf; has to be clipped to the world 
 								// BSP
 								r_clipflags = clipflags;
@@ -700,8 +691,6 @@ R_DrawBEntitiesOnList (void)
 								// sorting handle drawing order
 								R_DrawSubmodelPolygons (clmodel, clipflags);
 							}
-
-							currententity->topnode = NULL;
 						}
 					}
 

@@ -302,8 +302,6 @@ extern qboolean	r_dowarpold, r_viewchanged;
 
 extern mleaf_t	*r_viewleaf, *r_oldviewleaf;
 
-extern vec3_t	r_emins, r_emaxs;
-extern mnode_t	*r_pefragtopnode;
 extern int		r_clipflags;
 extern int		r_dlightframecount;
 extern qboolean	r_fov_greater_than_90;
@@ -325,7 +323,6 @@ void R_SetupFrame (void);
 void R_cshift_f (void);
 void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);
 void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip);
-void R_SplitEntityOnNode2 (mnode_t *node);
 void R_RecursiveMarkLights (const vec3_t lightorigin, struct dlight_s *light,
 							int bit, mnode_t *node);
 void R_MarkLights (const vec3_t lightorigin, struct dlight_s *light, int bit,

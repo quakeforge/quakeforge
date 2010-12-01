@@ -38,8 +38,8 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "r_local.h"
 
-mnode_t    *r_pefragtopnode;
-vec3_t      r_emins, r_emaxs;
+static mnode_t    *r_pefragtopnode;
+static vec3_t      r_emins, r_emaxs;
 
 typedef struct s_efrag_list {
 	struct s_efrag_list *next;
@@ -190,42 +190,9 @@ R_SplitEntityOnNode (mnode_t *node)
 }
 
 void
-R_SplitEntityOnNode2 (mnode_t *node)
-{
-	mplane_t   *splitplane;
-	int         sides;
-
-	if (node->visframe != r_visframecount)
-		return;
-
-	if (node->contents < 0) {
-		if (node->contents != CONTENTS_SOLID)
-			r_pefragtopnode = node;		// we've reached a non-solid leaf, so 
-										// it's visible and not BSP clipped
-		return;
-	}
-
-	splitplane = node->plane;
-	sides = BOX_ON_PLANE_SIDE (r_emins, r_emaxs, splitplane);
-
-	if (sides == 3) {
-		// remember first splitter
-		r_pefragtopnode = node;
-		return;
-	}
-
-	// not split yet; recurse down the contacted side
-	if (sides & 1)
-		R_SplitEntityOnNode2 (node->children[0]);
-	else
-		R_SplitEntityOnNode2 (node->children[1]);
-}
-
-void
 R_AddEfrags (entity_t *ent)
 {
 	model_t    *entmodel;
-	int         i;
 
 	if (!ent->model)
 		return;
@@ -240,10 +207,8 @@ R_AddEfrags (entity_t *ent)
 
 	entmodel = ent->model;
 
-	for (i = 0; i < 3; i++) {
-		r_emins[i] = ent->origin[i] + entmodel->mins[i];
-		r_emaxs[i] = ent->origin[i] + entmodel->maxs[i];
-	}
+	VectorAdd (ent->origin, entmodel->mins, r_emins);
+	VectorAdd (ent->origin, entmodel->maxs, r_emaxs);
 
 	R_SplitEntityOnNode (r_worldentity.model->nodes);
 
