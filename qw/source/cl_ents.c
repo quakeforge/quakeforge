@@ -69,12 +69,8 @@ static struct predicted_player {
 } predicted_players[MAX_CLIENTS];
 
 
-#define	MAX_PROJECTILES	32
-int          cl_num_projectiles;
-
 entity_t    cl_player_ents[MAX_CLIENTS];
 entity_t    cl_flag_ents[MAX_CLIENTS];
-entity_t    cl_projectiles[MAX_PROJECTILES];
 entity_t    cl_packet_ents[512];	// FIXME: magic number
 
 
@@ -557,79 +553,6 @@ CL_LinkPacketEntities (void)
 			R_VoorTrail (*ent);
 		else if (model->flags & EF_GLOWTRAIL)
 			R_GlowTrail (*ent, s1->glow_color);
-	}
-}
-
-// PROJECTILE PARSING / LINKING ===============================================
-
-void
-CL_ClearProjectiles (void)
-{
-	cl_num_projectiles = 0;
-}
-
-/*
-	CL_ParseProjectiles
-
-	Nails are passed as efficient temporary entities
-*/
-void
-CL_ParseProjectiles (qboolean nail2)
-{
-	byte		bits[6];
-	int			i, c, d, j, num;
-	entity_t   *pr;
-
-	c = MSG_ReadByte (net_message);
-
-	if ((cl_num_projectiles + c) >= MAX_PROJECTILES)
-		d = MAX_PROJECTILES - cl_num_projectiles;
-	else
-		d = c;
-
-	for (i = 0; i < d; i++) {
-		if (nail2)
-			num = MSG_ReadByte (net_message);
-		else
-			num = 0;
-
-		for (j = 0; j < 6; j++)
-			bits[j] = MSG_ReadByte (net_message);
-
-		pr = &cl_projectiles[cl_num_projectiles];
-		cl_num_projectiles++;
-
-		pr->model = cl.model_precache[cl_spikeindex];
-		pr->colormap = vid.colormap8;
-		pr->origin[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
-		pr->origin[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
-		pr->origin[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;
-		pr->angles[0] = (bits[4] >> 4) * (360.0 / 16.0);
-		pr->angles[1] = bits[5] * (360.0 / 256.0);
-	}
-
-	if (d < c) {
-		c = (c - d) * (nail2 ? 7 : 6);
-		for (i = 0; i < c; i++)
-			MSG_ReadByte (net_message);
-	}
-}
-
-static void
-CL_LinkProjectiles (void)
-{
-	int			i;
-	entity_t  **ent;
-	entity_t   *pr;
-
-	for (i = 0, pr = cl_projectiles; i < cl_num_projectiles; i++, pr++) {
-		if (!pr->model)
-			continue;
-		// grab an entity to fill in
-		ent = R_NewEntity ();
-		if (!ent)
-			break;						// object list is full
-		*ent = pr;
 	}
 }
 
@@ -1157,7 +1080,6 @@ CL_EmitEntities (void)
 
 	CL_LinkPlayers ();
 	CL_LinkPacketEntities ();
-	CL_LinkProjectiles ();
 	CL_UpdateTEnts ();
 
 	if (!r_drawentities->int_val) {
@@ -1193,9 +1115,5 @@ CL_EmitEntities (void)
 void
 CL_Ents_Init (void)
 {
-	int         i;
-
-	for (i = 0; i < MAX_PROJECTILES; i++)
-		CL_Init_Entity (&cl_projectiles[i]);
 	r_view_model = &cl.viewent;
 }

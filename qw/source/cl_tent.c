@@ -49,6 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "cl_ents.h"
 #include "cl_main.h"
+#include "cl_parse.h"
 #include "cl_tent.h"
 #include "client.h"
 #include "compat.h"
@@ -88,6 +89,7 @@ typedef struct tent_obj_s {
 static tent_obj_t *tent_objects;
 static tent_obj_t *cl_beams;
 static tent_obj_t *cl_explosions;
+static tent_t *cl_projectiles;
 
 static sfx_t *cl_sfx_wizhit;
 static sfx_t *cl_sfx_knighthit;
@@ -138,10 +140,10 @@ CL_Init_Entity (entity_t *ent)
 	memset (ent, 0, sizeof (*ent));
 
 	ent->colormap = vid.colormap8;
-	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] =
-		ent->colormod[3] = 1.0;
+	VectorSet (1.0, 1.0, 1.0, ent->colormod);
+	ent->colormod[3] = 1.0;
 	ent->scale = 1.0;
-	ent->lerpflags |= LERP_RESETMOVE|LERP_RESETANIM;
+	ent->lerpflags |= LERP_RESETMOVE | LERP_RESETANIM;
 }
 
 static tent_t *
@@ -587,4 +589,61 @@ CL_UpdateTEnts (void)
 {
 	CL_UpdateBeams ();
 	CL_UpdateExplosions ();
+}
+
+void
+CL_ClearProjectiles (void)
+{
+	tent_t     *tent;
+
+	for (tent = cl_projectiles; tent; tent = tent->next) {
+		R_RemoveEfrags (&tent->ent);
+		tent->ent.efrag = 0;
+	}
+	free_temp_entities (cl_projectiles);
+	cl_projectiles = 0;
+}
+
+/*
+	Nails are passed as efficient temporary entities
+*/
+void
+CL_ParseProjectiles (qboolean nail2)
+{
+	tent_t     *tent;
+	tent_t     *head = 0, **tail = &head;
+	byte		bits[6];
+	int			i, c, j, num;
+	entity_t   *pr;
+
+	c = MSG_ReadByte (net_message);
+
+	for (i = 0; i < c; i++) {
+		if (nail2)
+			num = MSG_ReadByte (net_message);
+		else
+			num = 0;
+
+		for (j = 0; j < 6; j++)
+			bits[j] = MSG_ReadByte (net_message);
+
+		tent = new_temp_entity ();
+		*tail = tent;
+		tail = &tent->next;
+
+		pr = &tent->ent;
+		pr->model = cl.model_precache[cl_spikeindex];
+		pr->colormap = vid.colormap8;
+		pr->origin[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
+		pr->origin[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
+		pr->origin[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;
+		pr->angles[0] = (bits[4] >> 4) * (360.0 / 16.0);
+		pr->angles[1] = bits[5] * (360.0 / 256.0);
+		pr->angles[2] = 0;
+
+		R_AddEfrags (&tent->ent);
+	}
+
+	*tail = cl_projectiles;
+	cl_projectiles = head;
 }
