@@ -16,21 +16,21 @@
 
 	Set v_forward, v_up, v_right global vectors from the vector ang
 */
-@extern void (vector ang) makevectors;
-@extern void (vector v1, vector v2, float nomonsters, entity forent) traceline;
-@extern entity () checkclient;
-@extern float (float yaw, float dist) walkmove;
-@extern float () droptofloor;
-@extern void (float style, string value) lightstyle;
-@extern float (entity e) checkbottom;
-@extern float (vector v) pointcontents;
-@extern vector (entity e, float speed) aim;
-@extern void () ChangeYaw;
-@extern void (float step) movetogoal;
-@extern integer (entity ent, vector point) hullpointcontents;
-@extern vector (integer hull, integer max) getboxbounds;
-@extern integer () getboxhull;
-@extern void (integer hull) freeboxhull;
-@extern void (integer hull, vector right, vector forward, vector up, vector mins, vector maxs) rotate_bbox;
+@extern void makevectors (vector ang);
+@extern void traceline (vector v1, vector v2, float nomonsters, entity forent);
+@extern entity checkclient ();
+@extern float walkmove (float yaw, float dist);
+@extern float droptofloor ();
+@extern void lightstyle (float style, string value);
+@extern float checkbottom (entity e);
+@extern float pointcontents (vector v);
+@extern vector aim (entity e, float speed);
+@extern void ChangeYaw (void);
+@extern void movetogoal (float step);
+@extern integer hullpointcontents (entity ent, vector point);
+@extern vector getboxbounds (integer hull, integer max);
+@extern integer getboxhull (void);
+@extern void freeboxhull (integer hull);
+@extern void rotate_bbox (integer hull, vector right, vector forward, vector up, vector mins, vector maxs);
 
 #endif//__ruamoko_physics_h

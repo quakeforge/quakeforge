@@ -1,15 +1,15 @@
 #ifndef __ruamoko_server_h
 #define __ruamoko_server_h
 
-@extern void (string s) precache_sound;
-@extern void (string s) precache_model;
-@extern void (entity client, string s) stuffcmd;
-@extern void (string s) localcmd;
-@extern void (string s) changelevel;
-@extern string (string s) precache_file;
-@extern string (string s) precache_model2;
-@extern string (string s) precache_sound2;
-@extern string (string s) precache_file2;
-@extern float () checkextension;
+@extern void precache_sound (string s);
+@extern void precache_model (string s);
+@extern void stuffcmd (entity client, string s);
+@extern void localcmd (string s);
+@extern void changelevel (string s);
+@extern string precache_file (string s);
+@extern string precache_model2 (string s);
+@extern string precache_sound2 (string s);
+@extern string precache_file2 (string s);
+@extern float checkextension (void);
 
 #endif//__ruamoko_server_h

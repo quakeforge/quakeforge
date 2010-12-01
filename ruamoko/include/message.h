@@ -34,19 +34,19 @@
 #define MULTICAST_PHS_R 4
 #define MULTICAST_PVS_R 5
 
-@extern void (...) bprint;
-@extern void (entity client, string s) sprint;
-@extern void (float to, ...) WriteBytes;
-@extern void (float to, float f) WriteByte;
-@extern void (float to, float f) WriteChar;
-@extern void (float to, float f) WriteShort;
-@extern void (float to, float f) WriteLong;
-@extern void (float to, float f) WriteCoord;
-@extern void (float to, float f) WriteAngle;
-@extern void (float to, vector v) WriteCoordV;
-@extern void (float to, vector v) WriteAngleV;
-@extern void (float to, string s) WriteString;
-@extern void (float to, entity s) WriteEntity;
-@extern void (...) centerprint;
+@extern void bprint (...);
+@extern void sprint (entity client, string s);
+@extern void WriteBytes (float to, ...);
+@extern void WriteByte (float to, float f);
+@extern void WriteChar (float to, float f);
+@extern void WriteShort (float to, float f);
+@extern void WriteLong (float to, float f);
+@extern void WriteCoord (float to, float f);
+@extern void WriteAngle (float to, float f);
+@extern void WriteCoordV (float to, vector v);
+@extern void WriteAngleV (float to, vector v);
+@extern void WriteString (float to, string s);
+@extern void WriteEntity (float to, entity s);
+@extern void centerprint (...);
 
 #endif//__ruamoko_message_h

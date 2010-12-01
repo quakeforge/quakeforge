@@ -3,6 +3,6 @@
 
 #include "message.h"
 
-@extern void (vector where, float set) multicast;
+@extern void multicast (vector where, float set);
 
 #endif//__ruamoko_qw_message_h

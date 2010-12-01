@@ -36,21 +36,21 @@
 
 	Generate a random number such that 0 <= num <= 1 (0 to 1 inclusive)
 */
-@extern float () random;
+@extern float random (void);
 
 /*
 	ftoi
 
 	Returns the integer component of f
 */
-@extern integer (float f) ftoi;
+@extern integer ftoi (float f);
 
 /*
 	itof
 
 	Returns the float representation of i
 */
-@extern float (integer i) itof;
+@extern float itof (integer i);
 
 /*
 	rint
@@ -58,28 +58,28 @@
 	Rounds v to the nearest integer value and returns it.
 	rint() does not change the type.
 */
-@extern float (float v) rint;
+@extern float rint (float v);
 
 /*
 	floor
 
 	Returns v, rounded down to the next lower integer
 */
-@extern float (float v) floor;
+@extern float floor (float v);
 
 /*
 	ceil
 
 	Returns v, rounded up to the next highest integer
 */
-@extern float (float v) ceil;
+@extern float ceil (float v);
 
 /*
 	fabs
 
 	Returns the absolute value of v
 */
-@extern float (float f) fabs;
+@extern float fabs (float f);
 
 /****************************************************************************
  *									VECTORS									*
@@ -93,44 +93,44 @@
 	Transform vector v into a unit vector (a vector with a length of 1).
 	The direction is not changed, except for (possible) roundoff errors.
 */
-@extern vector (vector v) normalize;
+@extern vector normalize (vector v);
 
 /*
 	vlen
 
 	Return the length of vector v
 */
-@extern float (vector v) vlen;
+@extern float vlen (vector v);
 
 /*
 	vectoyaw
 
 	Returns the yaw angle ("bearing"), in degrees, associated with vector v.
 */
-@extern float (vector v) vectoyaw;
+@extern float vectoyaw (vector v);
 
 /*
 	vectoangles
 
 	Returns a vector 'pitch yaw 0' corresponding to vector v.
 */
-@extern vector (vector v) vectoangles;
+@extern vector vectoangles (vector v);
 
-@extern float (float x) sin;
-@extern float (float x) cos;
-@extern float (float x) tan;
-@extern float (float x) asin;
-@extern float (float x) acos;
-@extern float (float x) atan;
-@extern float (float y, float x) atan2;
-@extern float (float x) log;
-@extern float (float x) log10;
-@extern float (float x, float y) pow;
-@extern float (float x) sinh;
-@extern float (float x) cosh;
-@extern float (float x) tanh;
-@extern float (float x) asinh;
-@extern float (float x) acosh;
-@extern float (float x) atanh;
+@extern float sin (float x);
+@extern float cos (float x);
+@extern float tan (float x);
+@extern float asin (float x);
+@extern float acos (float x);
+@extern float atan (float x);
+@extern float atan2 (float y, float x);
+@extern float log (float x);
+@extern float log10 (float x);
+@extern float pow (float x, float y);
+@extern float sinh (float x);
+@extern float cosh (float x);
+@extern float tanh (float x);
+@extern float asinh (float x);
+@extern float acosh (float x);
+@extern float atanh (float x);
 
 #endif //__ruamoko_math_h

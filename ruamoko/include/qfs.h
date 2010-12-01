@@ -9,13 +9,13 @@ struct _qfslist_t {
 };
 typedef struct _qfslist_t [] QFSlist;
 
-@extern QFile (string path, string mode) QFS_Open;
-@extern QFile (string path, integer zip) QFS_WOpen;
-@extern integer (string old, string new) QFS_Rename;
-@extern (void []) (string filename) QFS_LoadFile;
-@extern QFile (string filename) QFS_OpenFile;
-@extern integer (string filename, void [] buf, integer count) QFS_WriteFile;
-@extern QFSlist (string path, string ext, integer strip) QFS_Filelist;
-@extern void  (QFSlist list) QFS_FilelistFree;
+@extern QFile QFS_Open (string path, string mode);
+@extern QFile QFS_WOpen (string path, integer zip);
+@extern integer QFS_Rename (string old, string new);
+@extern (void []) QFS_LoadFile (string filename);
+@extern QFile QFS_OpenFile (string filename);
+@extern integer QFS_WriteFile (string filename, void [] buf, integer count);
+@extern QFSlist QFS_Filelist (string path, string ext, integer strip);
+@extern void  QFS_FilelistFree (QFSlist list);
 
 #endif//__ruamoko_qfs_h

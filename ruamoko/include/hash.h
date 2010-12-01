@@ -4,22 +4,22 @@
 struct _hashtab_t {};
 typedef struct _hashtab_t [] hashtab_t;
 
-@extern hashtab_t (integer size, string (void []ele, void []data) gk, void (void []ele, void []data) f, void [] ud) Hash_NewTable;
-@extern void (hashtab_t tab, unsigned (void []ele, void []data) gh, integer (void [] ele1, void [] ele2, void [] data) cmp) Hash_SetHashCompare;
-@extern void (hashtab_t tab) Hash_DelTable;
-@extern void (hashtab_t tab) Hash_FlushTable;
-@extern integer (hashtab_t tab, void [] ele) Hash_Add;
-@extern integer (hashtab_t tab, void [] ele) Hash_AddElement;
-@extern (void []) (hashtab_t tab, string key) Hash_Find;
-@extern (void []) (hashtab_t tab, void [] ele) Hash_FindElement;
-@extern (void [][]) (hashtab_t tab, string key) Hash_FindList;
-@extern (void [][]) (hashtab_t tab, void [] ele) Hash_FindElementList;
-@extern (void []) (hashtab_t tab, string key) Hash_Del;
-@extern (void []) (hashtab_t tab, void [] ele) Hash_DelElement;
-@extern void (hashtab_t tab, void [] ele) Hash_Free;
-@extern integer (string str) Hash_String;
-@extern integer (void [] buf, integer len) Hash_Buffer;
-@extern (void [][]) (hashtab_t tab) Hash_GetList;
-@extern void (hashtab_t tab) Hash_Stats;
+@extern hashtab_t Hash_NewTable (integer size, string (void []ele, void []data) gk, void (void []ele, void []data) f, void [] ud);
+@extern void Hash_SetHashCompare (hashtab_t tab, unsigned (void []ele, void []data) gh, integer (void [] ele1, void [] ele2, void [] data) cmp);
+@extern void Hash_DelTable (hashtab_t tab);
+@extern void Hash_FlushTable (hashtab_t tab);
+@extern integer Hash_Add (hashtab_t tab, void [] ele);
+@extern integer Hash_AddElement (hashtab_t tab, void [] ele);
+@extern (void []) Hash_Find (hashtab_t tab, string key);
+@extern (void []) Hash_FindElement (hashtab_t tab, void [] ele);
+@extern (void [][]) Hash_FindList (hashtab_t tab, string key);
+@extern (void [][]) Hash_FindElementList (hashtab_t tab, void [] ele);
+@extern (void []) Hash_Del (hashtab_t tab, string key);
+@extern (void []) Hash_DelElement (hashtab_t tab, void [] ele);
+@extern void Hash_Free (hashtab_t tab, void [] ele);
+@extern integer Hash_String (string str);
+@extern integer Hash_Buffer (void [] buf, integer len);
+@extern (void [][]) Hash_GetList (hashtab_t tab);
+@extern void Hash_Stats (hashtab_t tab);
 
 #endif	// __ruamoko_hash_h

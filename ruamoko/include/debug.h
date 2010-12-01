@@ -1,8 +1,10 @@
-/*
-	debug.h
+/**
+	\file debug.h
 
 	Debugging function definitions
+*/
 
+/*
 	Copyright (C) 2002 Bill Currie <taniwha@quakeforge.net>
 	Copyright (C) 2002 Jeff Teunissen <deek@quakeforge.net>
 
@@ -25,82 +27,53 @@
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
-
-	$Id$
 */
+
 #ifndef __ruamoko_debug_h
 #define __ruamoko_debug_h
 
-#ifdef __RUA_INTERNAL_IMPLEMENT
-# undef BUILTIN
-# define BUILTIN(name, number, rettype, ...) \
-	rettype (__VA_ARGS__) name = number
-#else
-# undef BUILTIN
-# define BUILTIN(name, number, rettype, ...) \
-	rettype (__VA_ARGS__) name
-@extern {
-#endif	// __RUA_INTERNAL_IMPLEMENT
+/**
+	Tell the engine to abort (stop) code processing.
+	\note In QuakeC, this was break().
+*/
+@extern void abort (void);
 
-	/*
-		abort (in QuakeC, this was break)
+/**
+	Tell the engine to print all edicts (entities)
+*/
+@extern void coredump (void);
 
-		Tell the engine to abort (stop) code processing.
-	*/
-	BUILTIN (abort, #6, void, void);
+/**
+	Enable instruction trace in the interpreter
+*/
+@extern void traceon (void);
 
-	/*
-		coredump
+/**
+	traceoff
 
-		Tell the engine to print all edicts (entities)
-	*/
-	BUILTIN (coredump, #28, void, void);
+	Disable instruction trace in the interpreter
+*/
+@extern void traceoff (void);
 
-	/*
-		traceon
+/**
+	Print all information on an entity to the console
+*/
+@extern void eprint (entity e);
 
-		Enable instruction trace in the interpreter
-	*/
-	BUILTIN (traceon, #29, void, void);
+/**
+	Print a string to the console if the "developer" Cvar is nonzero.
+*/
+@extern void dprint (string str);
 
-	/*
-		traceoff
+/**
+	Abort (crash) the server. "str" is the message the server crashes with.
+*/
+@extern void error (string str);
 
-		Disable instruction trace in the interpreter
-	*/
-	BUILTIN (traceoff, #30, void, void);
-
-	/*
-		eprint
-
-		Print all information on an entity to the console
-	*/
-	BUILTIN (eprint, #31, void, entity e);
-
-	/*
-		dprint
-
-		Print a string to the console if the "developer" Cvar is nonzero.
-	*/
-	BUILTIN (dprint, #25, void, string str);
-
-	/*
-		error
-
-		Abort (crash) the server. "str" is the message the server crashes with.
-	*/
-	BUILTIN (error, #10, void, string str);
-
-	/*
-		objerror
-
-		Prints info on the "self" ENTITY (not object), and error message "e".
-		The entity is freed.
-	*/
-	BUILTIN (objerror, #10, void, string e);
-
-#ifndef __RUA_INTERNAL_IMPLEMENT
-};
-#endif	// __RUA_INTERNAL_IMPLEMENT
+/**
+	Prints info on the "self" ENTITY (not object), and error message "e".
+	The entity is freed.
+*/
+@extern void objerror (string e);
 
 #endif //__ruamoko_debug_h

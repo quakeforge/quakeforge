@@ -3,6 +3,6 @@
 
 #include "qfile.h"
 
-@extern QFile (string path, string mode) File_Open;
+@extern QFile File_Open (string path, string mode);
 
 #endif//__ruamoko_file_h

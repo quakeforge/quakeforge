@@ -9,19 +9,19 @@ struct _qpic_t {
 };
 typedef struct _qpic_t [] qpic_t;
 
-@extern qpic_t (string name, integer alpha) Draw_CachePic;
+@extern qpic_t Draw_CachePic (string name, integer alpha);
 
-@extern void (integer x, integer y, qpic_t pic) Draw_Pic;
-@extern void (integer x, integer y, qpic_t pic, integer srcx, integer srcy, integer width, integer height) Draw_SubPic;
-@extern void (integer x, integer y, qpic_t pic) Draw_CenterPic;
+@extern void Draw_Pic (integer x, integer y, qpic_t pic);
+@extern void Draw_SubPic (integer x, integer y, qpic_t pic, integer srcx, integer srcy, integer width, integer height);
+@extern void Draw_CenterPic (integer x, integer y, qpic_t pic);
 
-@extern void (integer x, integer y, integer chr) Draw_Character;
-@extern void (integer x, integer y, string text) Draw_String;
-@extern void (integer x, integer y, string text, integer n) Draw_nString;
-@extern void (integer x, integer y, string text) Draw_AltString;
-@extern void (integer x, integer y, integer w, integer h, integer c) Draw_Fill;
-@extern void (integer ch, integer x, integer y) Draw_Crosshair;
-@extern void (integer x, integer y, integer width, integer lines) text_box;
+@extern void Draw_Character (integer x, integer y, integer chr);
+@extern void Draw_String (integer x, integer y, string text);
+@extern void Draw_nString (integer x, integer y, string text, integer n);
+@extern void Draw_AltString (integer x, integer y, string text);
+@extern void Draw_Fill (integer x, integer y, integer w, integer h, integer c);
+@extern void Draw_Crosshair (integer ch, integer x, integer y);
+@extern void text_box (integer x, integer y, integer width, integer lines);
 
 @interface QPic : Object
 {

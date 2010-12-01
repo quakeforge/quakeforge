@@ -1,9 +1,9 @@
 #ifndef __ruamoko_cmd_h
 #define __ruamoko_cmd_h
 
-@extern void (string name, void () func) Cmd_AddCommand;
-@extern integer () Cmd_Argc;
-@extern string (integer arg) Cmd_Argv;
-@extern string (integer arg) Cmd_Args;
+@extern void Cmd_AddCommand (string name, void () func);
+@extern integer Cmd_Argc (void);
+@extern string Cmd_Argv (integer arg);
+@extern string Cmd_Args (integer arg);
 
 #endif//__ruamoko_cmd_h
