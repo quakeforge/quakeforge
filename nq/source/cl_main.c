@@ -493,6 +493,7 @@ CL_RelinkEntities (void)
 	dlight_t   *dl;
 	float       bobjrotate, frac, f, d;
 	int         i, j;
+	int         add_efrags;
 	vec3_t      delta;
 	
 	r_player_entity = &cl_entities[cl.viewentity];
@@ -538,6 +539,8 @@ CL_RelinkEntities (void)
 			continue;
 		}
 
+		add_efrags = (i != cl.viewentity || chase_active->int_val);
+
 		VectorCopy (ent->origin, ent->old_origin);
 
 		if (state->forcelink) {
@@ -545,11 +548,6 @@ CL_RelinkEntities (void)
 			// final spot
 			VectorCopy (state->msg_origins[0], ent->origin);
 			VectorCopy (state->msg_angles[0], ent->angles);
-			if (i != cl.viewentity || chase_active->int_val) {
-				if (ent->efrag)
-					R_RemoveEfrags (ent);
-				R_AddEfrags (ent);
-			}
 		} else {
 			// If the delta is large, assume a teleport and don't lerp
 			f = frac;
@@ -576,17 +574,13 @@ CL_RelinkEntities (void)
 					ent->angles[j] = state->msg_angles[1][j] + f * d;
 				}
 			}
-			if (i != cl.viewentity || chase_active->int_val) {
-				if (ent->efrag) {
-					if (!VectorCompare (ent->origin, ent->old_origin)) {
-						R_RemoveEfrags (ent);
-						R_AddEfrags (ent);
-					}
-				} else {
-					R_AddEfrags (ent);
-				}
-			}
 		}
+		if (ent->efrag) {
+			if (!VectorCompare (ent->origin, ent->old_origin))
+				R_RemoveEfrags (ent);
+		}
+		if (add_efrags && !ent->efrag)
+			R_AddEfrags (ent);
 
 		// rotate binary objects locally
 		if (ent->model->flags & EF_ROTATE)
