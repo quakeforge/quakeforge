@@ -577,67 +577,82 @@ TranslateFlags (int src)
 	return dst;
 }
 
-void
-CL_ParsePlayerinfo (void)
+static void
+CL_ParseDemoPlayerinfo (int num)
 {
-	int            flags, msec, num, i;
+	int            flags, i;
 	player_info_t *info;
 	player_state_t *state, *prevstate;
 	static player_state_t dummy;
-
-	num = MSG_ReadByte (net_message);
-	if (num > MAX_CLIENTS)
-		Host_Error ("CL_ParsePlayerinfo: bad num");
 
 	info = &cl.players[num];
 	state = &cl.frames[parsecountmod].playerstate[num];
 
 	state->pls.number = num;
 
-	if (cls.demoplayback2) {
-		if (info->prevcount > cl.parsecount || !cl.parsecount) {
+	if (info->prevcount > cl.parsecount || !cl.parsecount) {
+		prevstate = &dummy;
+	} else {
+		if (cl.parsecount - info->prevcount >= UPDATE_BACKUP-1)
 			prevstate = &dummy;
-		} else {
-			if (cl.parsecount - info->prevcount >= UPDATE_BACKUP-1)
-				prevstate = &dummy;
-			else
-				prevstate = &cl.frames[info->prevcount
-									   & UPDATE_MASK].playerstate[num];
-		}
-		info->prevcount = cl.parsecount;
+		else
+			prevstate = &cl.frames[info->prevcount
+								   & UPDATE_MASK].playerstate[num];
+	}
+	info->prevcount = cl.parsecount;
 
-		if (cls.findtrack && info->stats[STAT_HEALTH] != 0) {
-			autocam = CAM_TRACK;
-			Cam_Lock (num);
-			ideal_track = num;
-			cls.findtrack = false;
-		}
+	if (cls.findtrack && info->stats[STAT_HEALTH] != 0) {
+		autocam = CAM_TRACK;
+		Cam_Lock (num);
+		ideal_track = num;
+		cls.findtrack = false;
+	}
 
-		memcpy (state, prevstate, sizeof (player_state_t));
+	memcpy (state, prevstate, sizeof (player_state_t));
 
-		flags = MSG_ReadShort (net_message);
-		state->pls.flags = TranslateFlags (flags);
-		state->messagenum = cl.parsecount;
-		state->pls.cmd.msec = 0;
-		state->pls.frame = MSG_ReadByte (net_message);
-		state->state_time = parsecounttime;
-		for (i=0; i <3; i++)
-			if (flags & (DF_ORIGIN << i))
-				state->pls.origin[i] = MSG_ReadCoord (net_message);
-		for (i=0; i <3; i++)
-			if (flags & (DF_ANGLES << i))
-				state->pls.cmd.angles[i] = MSG_ReadAngle16 (net_message);
-		if (flags & DF_MODEL)
-			state->pls.modelindex = MSG_ReadByte (net_message);
-		if (flags & DF_SKINNUM)
-			state->pls.skinnum = MSG_ReadByte (net_message);
-		if (flags & DF_EFFECTS)
-			state->pls.effects = MSG_ReadByte (net_message);
-		if (flags & DF_WEAPONFRAME)
-			state->pls.weaponframe = MSG_ReadByte (net_message);
-		VectorCopy (state->pls.cmd.angles, state->viewangles);
+	flags = MSG_ReadShort (net_message);
+	state->pls.flags = TranslateFlags (flags);
+	state->messagenum = cl.parsecount;
+	state->pls.cmd.msec = 0;
+	state->pls.frame = MSG_ReadByte (net_message);
+	state->state_time = parsecounttime;
+	for (i=0; i <3; i++)
+		if (flags & (DF_ORIGIN << i))
+			state->pls.origin[i] = MSG_ReadCoord (net_message);
+	for (i=0; i <3; i++)
+		if (flags & (DF_ANGLES << i))
+			state->pls.cmd.angles[i] = MSG_ReadAngle16 (net_message);
+	if (flags & DF_MODEL)
+		state->pls.modelindex = MSG_ReadByte (net_message);
+	if (flags & DF_SKINNUM)
+		state->pls.skinnum = MSG_ReadByte (net_message);
+	if (flags & DF_EFFECTS)
+		state->pls.effects = MSG_ReadByte (net_message);
+	if (flags & DF_WEAPONFRAME)
+		state->pls.weaponframe = MSG_ReadByte (net_message);
+	VectorCopy (state->pls.cmd.angles, state->viewangles);
+}
+
+void
+CL_ParsePlayerinfo (void)
+{
+	int            flags, msec, num, i;
+	player_info_t *info;
+	player_state_t *state;
+
+	num = MSG_ReadByte (net_message);
+	if (num > MAX_CLIENTS)
+		Host_Error ("CL_ParsePlayerinfo: bad num");
+
+	if (cls.demoplayback2) {
+		CL_ParseDemoPlayerinfo (num);
 		return;
 	}
+
+	info = &cl.players[num];
+	state = &cl.frames[parsecountmod].playerstate[num];
+
+	state->pls.number = num;
 
 	flags = state->pls.flags = MSG_ReadShort (net_message);
 
@@ -713,14 +728,14 @@ CL_ParsePlayerinfo (void)
 			state->pls.glow_color = MSG_ReadByte (net_message);
 		}
 		if (bits & PF_COLORMOD) {
+			float       r = 1.0, g = 1.0, b = 1.0;
 			val = MSG_ReadByte (net_message);
-			if (val == 255) {
-				ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
-			} else {
-				ent->colormod[0] = (float) ((val >> 5) & 7) * (1.0 / 7.0);
-				ent->colormod[1] = (float) ((val >> 2) & 7) * (1.0 / 7.0);
-				ent->colormod[2] = (float) (val & 3) * (1.0 / 3.0);
+			if (val != 255) {
+				r = (float) ((val >> 5) & 7) * (1.0 / 7.0);
+				g = (float) ((val >> 2) & 7) * (1.0 / 7.0);
+				b = (float) (val & 3) * (1.0 / 3.0);
 			}
+			VectorSet (r, g, b, ent->colormod);
 		}
 		if (bits & PF_FRAME2) {
 			state->pls.frame |= MSG_ReadByte (net_message) << 8;
@@ -731,7 +746,7 @@ CL_ParsePlayerinfo (void)
 /*
 	CL_AddFlagModels
 
-	Called when the CTF flags are set
+	Called when the CTF flags are set. Flags are effectively temp entities.
 */
 static void
 CL_AddFlagModels (entity_t *ent, int team, int key)
