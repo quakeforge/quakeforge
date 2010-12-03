@@ -403,12 +403,34 @@ CL_ParsePacketEntities (qboolean delta)
 	newp->num_entities = newindex;
 }
 
+// Hack hack hack
+static inline int
+is_dead_body (entity_state_t *s1)
+{
+	int         i = s1->frame;
+
+	if (s1->modelindex == cl_playerindex
+		&& (i == 49 || i == 60 || i == 69 || i == 84 || i == 93 || i == 102))
+		return 1;
+	return 0;
+}
+
+// Hack hack hack
+static inline int
+is_gib (entity_state_t *s1)
+{
+	if (s1->modelindex == cl_h_playerindex || s1->modelindex == cl_gib1index
+		|| s1->modelindex == cl_gib2index || s1->modelindex == cl_gib3index)
+		return 1;
+	return 0;
+}
+
 static void
 CL_LinkPacketEntities (void)
 {
 	int				pnum, i;
 	dlight_t	   *dl;
-	entity_t	  **ent;
+	entity_t	   *ent;
 	entity_state_t *s1;
 	model_t		   *model;
 	packet_entities_t *pack;
@@ -424,61 +446,49 @@ CL_LinkPacketEntities (void)
 		CL_NewDlight (s1->number, s1->origin, s1->effects, s1->glow_size,
 					  s1->glow_color);
 
+		ent = &cl_packet_ents[s1->number];
+
 		// if set to invisible, skip
-		if (!s1->modelindex)
+		if (!s1->modelindex
+			|| (cl_deadbodyfilter->int_val && is_dead_body (s1))
+			|| (cl_gibfilter->int_val && is_gib (s1))) {
+			if (ent->efrag)
+				R_RemoveEfrags (ent);
 			continue;
+		}
 
-		// Hack hack hack
-		if (cl_deadbodyfilter->int_val && s1->modelindex == cl_playerindex &&
-			((i = s1->frame) == 49 || i == 60 || i == 69 || i == 84 ||
-			 i == 93 || i == 102))
-			continue;
+		ent->model = model = cl.model_precache[s1->modelindex];
 
-		if (cl_gibfilter->int_val &&
-			(s1->modelindex == cl_h_playerindex || s1->modelindex ==
-			 cl_gib1index || s1->modelindex == cl_gib2index ||
-			 s1->modelindex == cl_gib3index))
-			continue;
-
-		// create a new entity
-		ent = R_NewEntity ();
-		if (!ent)
-			break;						// object list is full
-
-		*ent = &cl_packet_ents[s1->number];
-
-		(*ent)->model = model = cl.model_precache[s1->modelindex];
-
-		(*ent)->min_light = 0;
-		(*ent)->fullbright = 0;
+		ent->min_light = 0;
+		ent->fullbright = 0;
 
 		if (s1->modelindex == cl_playerindex) {
-			(*ent)->min_light = min (cl.fbskins, cl_fb_players->value);
-			if ((*ent)->min_light >= 1.0)
-				(*ent)->fullbright = 1;
+			ent->min_light = min (cl.fbskins, cl_fb_players->value);
+			if (ent->min_light >= 1.0)
+				ent->fullbright = 1;
 		}
 
 		// set colormap
 		if (s1->colormap && (s1->colormap <= MAX_CLIENTS)
 			&& cl.players[s1->colormap - 1].name[0]
-			&& !strcmp ((*ent)->model->name, "progs/player.mdl")) {
-			(*ent)->colormap = cl.players[s1->colormap - 1].translations;
+			&& !strcmp (ent->model->name, "progs/player.mdl")) {
+			ent->colormap = cl.players[s1->colormap - 1].translations;
 			info = &cl.players[s1->colormap - 1];
 		} else {
-			(*ent)->colormap = vid.colormap8;
+			ent->colormap = vid.colormap8;
 			info = NULL;
 		}
 
 		if (info && info->skinname && !info->skin)
 			Skin_Find (info);
 		if (info && info->skin) {
-			(*ent)->skin = Skin_NewTempSkin ();
-			if ((*ent)->skin) {
+			ent->skin = Skin_NewTempSkin ();
+			if (ent->skin) {
 				i = s1->colormap - 1;
-				CL_NewTranslation (i, (*ent)->skin);
+				CL_NewTranslation (i, ent->skin);
 			}
 		} else {
-			(*ent)->skin = NULL;
+			ent->skin = NULL;
 		}
 
 		// LordHavoc: cleaned up Endy's coding style, and fixed Endy's bugs
@@ -486,43 +496,46 @@ CL_LinkPacketEntities (void)
 		// N.B: All messy code below is the sole fault of LordHavoc and
 		// his futile attempts to save bandwidth. :)
 		if (s1->colormod == 255) {
-			(*ent)->colormod[0] = (*ent)->colormod[1] =
-				(*ent)->colormod[2] = 1.0;
+			ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
 		} else {
-			(*ent)->colormod[0] = (float) ((s1->colormod >> 5) & 7) *
-				(1.0 / 7.0);
-			(*ent)->colormod[1] = (float) ((s1->colormod >> 2) & 7) *
-				(1.0 / 7.0);
-			(*ent)->colormod[2] = (float) (s1->colormod & 3) * (1.0 / 3.0);
+			ent->colormod[0] = (float) ((s1->colormod >> 5) & 7) * (1.0 / 7.0);
+			ent->colormod[1] = (float) ((s1->colormod >> 2) & 7) * (1.0 / 7.0);
+			ent->colormod[2] = (float) (s1->colormod & 3) * (1.0 / 3.0);
 		}
-		(*ent)->colormod[3] = s1->alpha / 255.0;
-		(*ent)->scale = s1->scale / 16.0;
+		ent->colormod[3] = s1->alpha / 255.0;
+		ent->scale = s1->scale / 16.0;
 		// Ender: Extend (Colormod) [QSG - End]
 
 		// set skin
-		(*ent)->skinnum = s1->skinnum;
+		ent->skinnum = s1->skinnum;
 
 		// set frame
-		(*ent)->frame = s1->frame;
+		ent->frame = s1->frame;
 
-		if ((*ent)->visframe != r_framecount - 1) {
-			(*ent)->lerpflags |= LERP_RESETMOVE|LERP_RESETANIM;
+		if (ent->visframe != r_framecount - 1) {
+			ent->lerpflags |= LERP_RESETMOVE|LERP_RESETANIM;
 
 			// No trail if new this frame
-			VectorCopy (s1->origin, (*ent)->origin);
-			VectorCopy ((*ent)->origin, (*ent)->old_origin);
+			VectorCopy (s1->origin, ent->origin);
+			VectorCopy (ent->origin, ent->old_origin);
 		} else {
-			VectorCopy ((*ent)->origin, (*ent)->old_origin);
-			VectorCopy (s1->origin, (*ent)->origin);
+			VectorCopy (ent->origin, ent->old_origin);
+			VectorCopy (s1->origin, ent->origin);
+			if (!VectorCompare (ent->origin, ent->old_origin)) {
+				// the entity moved, it must be relinked
+				R_RemoveEfrags (ent);
+			}
 		}
-		(*ent)->visframe = r_framecount;
+		if (!ent->efrag)
+			R_AddEfrags (ent);
+		ent->visframe = r_framecount;
 
 		if (model->flags & EF_ROTATE) {		// rotate binary objects locally
-			(*ent)->angles[0] = 0;
-			(*ent)->angles[1] = anglemod (100 * cl.time);
-			(*ent)->angles[2] = 0;
+			ent->angles[0] = 0;
+			ent->angles[1] = anglemod (100 * cl.time);
+			ent->angles[2] = 0;
 		} else {
-			VectorCopy (s1->angles, (*ent)->angles);
+			VectorCopy (s1->angles, ent->angles);
 		}
 
 		// add automatic particle trails
@@ -532,27 +545,27 @@ CL_LinkPacketEntities (void)
 		if (model->flags & EF_ROCKET) {
 			dl = R_AllocDlight (-s1->number);
 			if (dl) {
-				VectorCopy ((*ent)->origin, dl->origin);
+				VectorCopy (ent->origin, dl->origin);
 				dl->radius = 200.0;
 				dl->die = cl.time + 0.1;
 				VectorCopy (r_firecolor->vec, dl->color);
 				dl->color[3] = 0.7;
 			}
-			R_RocketTrail (*ent);
+			R_RocketTrail (ent);
 		} else if (model->flags & EF_GRENADE)
-			R_GrenadeTrail (*ent);
+			R_GrenadeTrail (ent);
 		else if (model->flags & EF_GIB)
-			R_BloodTrail (*ent);
+			R_BloodTrail (ent);
 		else if (model->flags & EF_ZOMGIB)
-			R_SlightBloodTrail (*ent);
+			R_SlightBloodTrail (ent);
 		else if (model->flags & EF_TRACER)
-			R_WizTrail (*ent);
+			R_WizTrail (ent);
 		else if (model->flags & EF_TRACER2)
-			R_FlameTrail (*ent);
+			R_FlameTrail (ent);
 		else if (model->flags & EF_TRACER3)
-			R_VoorTrail (*ent);
+			R_VoorTrail (ent);
 		else if (model->flags & EF_GLOWTRAIL)
-			R_GlowTrail (*ent, s1->glow_color);
+			R_GlowTrail (ent, s1->glow_color);
 	}
 }
 
