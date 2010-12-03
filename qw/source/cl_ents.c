@@ -514,7 +514,7 @@ CL_LinkPacketEntities (void)
 		// set frame
 		ent->frame = s1->frame;
 
-		if (ent->visframe != r_framecount - 1) {
+		if (!ent->efrag) {
 			ent->lerpflags |= LERP_RESETMOVE|LERP_RESETANIM;
 
 			// No trail if new this frame
@@ -530,7 +530,6 @@ CL_LinkPacketEntities (void)
 		}
 		if (!ent->efrag)
 			R_AddEfrags (ent);
-		ent->visframe = r_framecount;
 
 		if (model->flags & EF_ROTATE) {		// rotate binary objects locally
 			ent->angles[0] = 0;
