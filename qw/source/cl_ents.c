@@ -389,6 +389,8 @@ CL_ParsePacketEntities (qboolean delta)
 			}
 			if (word & U_REMOVE) {				// Clear the entity
 				entity_t	*ent = &cl_packet_ents[newnum];
+				if (ent->efrag)
+					R_RemoveEfrags (ent);
 				memset (ent, 0, sizeof (entity_t));
 				oldindex++;
 				continue;
