@@ -232,11 +232,7 @@ R_StoreEfrags (const efrag_t *pefrag)
 				pent = pefrag->entity;
 
 				if (pent->visframe != r_framecount) {
-					entity_t **ent = R_NewEntity ();
-					if (!ent)
-						return;
-					*ent = pent;
-
+					R_EnqueueEntity (pent);
 					// mark that we've recorded this entity for this frame
 					pent->visframe = r_framecount;
 				}

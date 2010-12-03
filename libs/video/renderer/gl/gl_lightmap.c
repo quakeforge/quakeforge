@@ -533,6 +533,7 @@ gl_overbright_f (cvar_t *var)
 	int			 num, i, j;
 	model_t		*m;
 	msurface_t  *fa;
+	entity_t    *ent;
 
 	if (!var)
 		return;
@@ -578,8 +579,8 @@ gl_overbright_f (cvar_t *var)
 	if (!R_BuildLightMap)
 		return;
 
-	for (i = 0; i < r_numvisedicts; i++) {
-		m = r_visedicts[i]->model;
+	for (ent = r_ent_queue; ent; ent = ent->next) {
+		m = ent->model;
 
 		if (m->type != mod_brush)
 			continue;

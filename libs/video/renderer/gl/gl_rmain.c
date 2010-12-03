@@ -219,16 +219,16 @@ R_RotateForEntity (entity_t *e)
 static void
 R_DrawEntitiesOnList (void)
 {
-	int		i;
+	entity_t   *ent;
 
 	if (!r_drawentities->int_val)
 		return;
 
 	// LordHavoc: split into 3 loops to simplify state changes
-	for (i = 0; i < r_numvisedicts; i++) {
-		if (r_visedicts[i]->model->type != mod_brush)
+	for (ent = r_ent_queue; ent; ent = ent->next) {
+		if (ent->model->type != mod_brush)
 			continue;
-		currententity = r_visedicts[i];
+		currententity = ent;
 
 		R_DrawBrushModel (currententity);
 	}
@@ -253,10 +253,10 @@ R_DrawEntitiesOnList (void)
 		qfglEnable (GL_NORMALIZE);
 	}
 	
-	for (i = 0; i < r_numvisedicts; i++) {
-		if (r_visedicts[i]->model->type != mod_alias)
+	for (ent = r_ent_queue; ent; ent = ent->next) {
+		if (ent->model->type != mod_alias)
 			continue;
-		currententity = r_visedicts[i];
+		currententity = ent;
 
 		R_DrawAliasModel (currententity);
 	}
@@ -289,10 +289,10 @@ R_DrawEntitiesOnList (void)
 	qfglEnable (GL_ALPHA_TEST);
 	if (gl_va_capable)
 		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, spriteVertexArray);
-	for (i = 0; i < r_numvisedicts; i++) {
-		if (r_visedicts[i]->model->type != mod_sprite)
+	for (ent = r_ent_queue; ent; ent = ent->next) {
+		if (ent->model->type != mod_sprite)
 			continue;
-		currententity = r_visedicts[i];
+		currententity = ent;
 
 		R_DrawSpriteModel (currententity);
 	}
@@ -540,7 +540,6 @@ static void
 R_Mirror (void)
 {
 	float		d;
-	entity_t  **ent;
 	msurface_t *s;
 
 //	if (!mirror) // FIXME: Broken
@@ -560,9 +559,7 @@ R_Mirror (void)
 	r_refdef.viewangles[1] = atan2 (vpn[1], vpn[0]) / M_PI * 180;
 	r_refdef.viewangles[2] = -r_refdef.viewangles[2];
 
-	ent = R_NewEntity();
-	if (ent)
-		*ent = r_player_entity;
+	R_EnqueueEntity (r_player_entity);
 
 	gldepthmin = 0.5;
 	gldepthmax = 1;

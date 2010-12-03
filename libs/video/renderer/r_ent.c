@@ -49,22 +49,20 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "r_dynamic.h"
 
-#define     MAX_VISEDICTS   256
-int         r_numvisedicts;
-entity_t   *r_visedicts[MAX_VISEDICTS];
-
+entity_t   *r_ent_queue;
+static entity_t **vis_tail = &r_ent_queue;
 
 void
 R_ClearEnts (void)
 {
-	r_numvisedicts = 0;
+	r_ent_queue = 0;
+	vis_tail = &r_ent_queue;
 }
 
-entity_t **
-R_NewEntity (void)
+void
+R_EnqueueEntity (entity_t *ent)
 {
-
-	if (r_numvisedicts == MAX_VISEDICTS)
-		return NULL;
-	return &r_visedicts[r_numvisedicts++];
+	ent->next = 0;
+	*vis_tail = ent;
+	vis_tail = &ent->next;
 }

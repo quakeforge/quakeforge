@@ -74,6 +74,8 @@ extern  lightstyle_t    r_lightstyle[MAX_LIGHTSTYLES];
 
 
 typedef struct entity_s {
+	struct entity_s *next;
+
 	vec3_t					origin;
 	vec3_t					old_origin;
 	vec3_t					angles;
@@ -199,7 +201,7 @@ void R_LoadSkys (const char *);
 
 void R_ClearEfrags (void);
 void R_ClearEnts (void);
-struct entity_s **R_NewEntity (void);
+void R_EnqueueEntity (struct entity_s *ent);
 
 dlight_t *R_AllocDlight (int key);
 void R_DecayLights (double frametime);

@@ -769,8 +769,7 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 		16.0, 24.0, 24.0, 22.0, 18.0, 16.0,					// 35-40 pain
 	};
 	float		f;
-	int			i;
-	entity_t  **newent;
+	entity_t   *fent;
 	vec3_t		v_forward, v_right, v_up;
 
 	if (cl_flagindex == -1)
@@ -786,21 +785,22 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 			f = 21.0;									// 112-118 shotattack
 	}
 
-	newent = R_NewEntity ();
-	if (!newent)
-		return;
-	*newent = &cl_flag_ents[key];
-	(*newent)->model = cl.model_precache[cl_flagindex];
-	(*newent)->skinnum = team;
+	fent = &cl_flag_ents[key];
+	fent->model = cl.model_precache[cl_flagindex];
+	fent->skinnum = team;
 
 	AngleVectors (ent->angles, v_forward, v_right, v_up);
 	v_forward[2] = -v_forward[2];		// reverse z component
-	for (i = 0; i < 3; i++)
-		(*newent)->origin[i] = ent->origin[i] - f * v_forward[i] +
-			22.0 * v_right[i];
-	(*newent)->origin[2] -= 16.0;
-	VectorCopy (ent->angles, (*newent)->angles);
-	(*newent)->angles[2] -= 45.0;
+
+	VectorMultAdd (ent->origin, -f, v_forward, fent->origin);
+	VectorMultAdd (fent->origin, 22, v_right, fent->origin);
+	fent->origin[2] -= 16.0;
+
+	VectorCopy (ent->angles, fent->angles);
+	fent->angles[2] -= 45.0;
+
+	R_EnqueueEntity (fent);	//FIXME should use efrag (needs smarter handling
+							//in the player code)
 }
 
 /*

@@ -409,9 +409,10 @@ R_MarkLeaves (void)
 static void
 R_DrawEntitiesOnList (void)
 {
-	int         i, j;
+	int         j;
 	unsigned int lnum;
 	alight_t    lighting;
+	entity_t   *ent;
 
 	// FIXME: remove and do real lighting
 	float       lightvec[3] = { -1, 0, 0 };
@@ -422,8 +423,8 @@ R_DrawEntitiesOnList (void)
 	if (!r_drawentities->int_val)
 		return;
 
-	for (i = 0; i < r_numvisedicts; i++) {
-		currententity = r_visedicts[i];
+	for (ent = r_ent_queue; ent; ent = ent->next) {
+		currententity = ent;
 
 		switch (currententity->model->type) {
 			case mod_sprite:
@@ -595,11 +596,12 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 static void
 R_DrawBEntitiesOnList (void)
 {
-	int         i, j, clipflags;
+	int         j, clipflags;
 	unsigned int k;
 	vec3_t      oldorigin;
 	model_t    *clmodel;
 	float       minmaxs[6];
+	entity_t   *ent;
 
 	if (!r_drawentities->int_val)
 		return;
@@ -607,8 +609,8 @@ R_DrawBEntitiesOnList (void)
 	VectorCopy (modelorg, oldorigin);
 	insubmodel = true;
 
-	for (i = 0; i < r_numvisedicts; i++) {
-		currententity = r_visedicts[i];
+	for (ent = r_ent_queue; ent; ent = ent->next) {
+		currententity = ent;
 
 		switch (currententity->model->type) {
 			case mod_brush:

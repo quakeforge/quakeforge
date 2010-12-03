@@ -306,8 +306,7 @@ extern int		r_clipflags;
 extern int		r_dlightframecount;
 extern qboolean	r_fov_greater_than_90;
 
-extern int r_numvisedicts;
-extern struct entity_s *r_visedicts[];
+extern struct entity_s *r_ent_queue;
 struct dlight_s;
 
 void R_StoreEfrags (const efrag_t *ppefrag);
