@@ -49,8 +49,60 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "r_dynamic.h"
 
+#define ENT_POOL_SIZE 32
+
+typedef struct entity_pool_s {
+	struct entity_pool_s *next;
+	entity_t    entities[ENT_POOL_SIZE];
+} entity_pool_t;
+
 entity_t   *r_ent_queue;
 static entity_t **vis_tail = &r_ent_queue;
+
+static entity_pool_t *entity_pools = 0;
+static entity_pool_t **entpool_tail = &entity_pools;
+static entity_t *free_entities;
+
+entity_t *
+R_AllocEntity (void)
+{
+	entity_pool_t *pool;
+	entity_t   *ent;
+	int         i;
+
+	if ((ent = free_entities)) {
+		free_entities = ent->next;
+		ent->next = 0;
+		return ent;
+	}
+
+	pool = malloc (sizeof (entity_pool_t));
+	pool->next = 0;
+	*entpool_tail = pool;
+	entpool_tail = &pool->next;
+
+	for (ent = pool->entities, i = 0; i < ENT_POOL_SIZE - 1; i++, ent++)
+		ent->next = ent + 1;
+	ent->next = 0;
+	free_entities = entity_pools->entities;
+
+	return R_AllocEntity ();
+}
+
+void
+R_FreeAllEntities (void)
+{
+	entity_pool_t *pool;
+	entity_t   *ent;
+	int         i;
+
+	for (pool = entity_pools; pool; pool = pool->next) {
+		for (ent = pool->entities, i = 0; i < ENT_POOL_SIZE - 1; i++, ent++)
+			ent->next = ent + 1;
+		ent->next = pool->next ? pool->entities : 0;
+	}
+	free_entities = entity_pools ? entity_pools->entities : 0;
+}
 
 void
 R_ClearEnts (void)

@@ -195,7 +195,6 @@ entity_state_t cl_entities[UPDATE_BACKUP][MAX_DEMO_PACKET_ENTITIES];
 
 entity_state_t cl_baselines[MAX_EDICTS];
 efrag_t     cl_efrags[MAX_EFRAGS];
-entity_t    cl_static_entities[MAX_STATIC_ENTITIES];
 
 double      connect_time = -1;			// for connection retransmits
 

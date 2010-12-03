@@ -168,6 +168,8 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
 	r_worldentity.model = worldmodel;
 
+	R_FreeAllEntities ();
+
 	// clear out efrags in case the level hasn't been reloaded
 	for (i = 0; i < r_worldentity.model->numleafs; i++)
 		r_worldentity.model->leafs[i].efrags = NULL;

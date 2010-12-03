@@ -293,7 +293,6 @@ typedef struct
 // refresh related state
 	struct model_s	*worldmodel;	// cl_entitites[0].model
 	int			num_entities;	// stored bottom up in cl_entities array
-	int			num_statics;	// stored top down in cl_entitiers
 
 	int			cdtrack;		// cd audio
 
@@ -345,13 +344,11 @@ extern	struct cvar_s	*skin;
 
 extern	struct cvar_s	*cl_fb_players;
 
-#define	MAX_STATIC_ENTITIES	128			// torches, etc
-
 extern	client_state_t	cl;
 
 // FIXME, allocate dynamically
 extern	entity_state_t	cl_baselines[MAX_EDICTS];
-extern	entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
+extern	entity_t		*cl_static_entities;
 
 extern	qboolean	nomaster;
 extern char	*server_version;	// version of server we connected to

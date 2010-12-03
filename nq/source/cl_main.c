@@ -87,7 +87,6 @@ client_state_t cl;
 // FIXME: put these on hunk?
 entity_t    cl_entities[MAX_EDICTS];
 cl_entity_state_t    cl_baselines[MAX_EDICTS];
-entity_t    cl_static_entities[MAX_STATIC_ENTITIES];
 
 
 void

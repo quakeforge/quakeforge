@@ -175,6 +175,9 @@ float		r_gravity;
 
 extern cvar_t *hud_scoreboard_uid;
 
+entity_t *cl_static_entities;
+static entity_t **cl_static_tail;
+
 
 int
 CL_CalcNet (void)
@@ -262,6 +265,8 @@ CL_CheckOrDownloadFile (const char *filename)
 static void
 CL_NewMap (const char *mapname)
 {
+	cl_static_entities = 0;
+	cl_static_tail = &cl_static_entities;
 	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
 	Team_NewMap ();
 	Con_NewMap ();
@@ -920,10 +925,11 @@ CL_ParseStatic (void)
 
 	CL_ParseBaseline (&es);
 
-	if (cl.num_statics >= MAX_STATIC_ENTITIES) //FIXME nuke!!!
-		Host_Error ("Too many static entities");
-	ent = &cl_static_entities[cl.num_statics++];
+	ent = R_AllocEntity ();
 	CL_Init_Entity (ent);
+
+	*cl_static_tail = ent;
+	cl_static_tail = &ent->next;
 
 	// copy it to the current state
 	ent->model = cl.model_precache[es.modelindex];

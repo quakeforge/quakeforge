@@ -202,6 +202,8 @@ void R_LoadSkys (const char *);
 void R_ClearEfrags (void);
 void R_ClearEnts (void);
 void R_EnqueueEntity (struct entity_s *ent);
+struct entity_s *R_AllocEntity (void);
+void R_FreeAllEntities (void);
 
 dlight_t *R_AllocDlight (int key);
 void R_DecayLights (double frametime);

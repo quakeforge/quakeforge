@@ -778,13 +778,10 @@ CL_ParseStatic (int version)
 {
 	cl_entity_state_t state;
 	entity_t   *ent;
-	int         i;
 
-	i = cl.num_statics;
-	if (i >= MAX_STATIC_ENTITIES)
-		Host_Error ("Too many static entities");
-	ent = &cl_static_entities[i];
-	cl.num_statics++;
+	ent = R_AllocEntity ();
+	CL_Init_Entity (ent);
+
 	CL_ParseBaseline (&state, version);
 
 	// copy it to the current state

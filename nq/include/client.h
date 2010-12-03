@@ -208,7 +208,6 @@ typedef struct
 // refresh related state
 	struct model_s	*worldmodel;	// cl_entitites[0].model
 	int			num_entities;	// held in cl_entities array
-	int			num_statics;	// held in cl_staticentities array
 	entity_t	viewent;			// the gun model
 
 	int			cdtrack, looptrack;	// cd audio
@@ -280,14 +279,11 @@ extern struct cvar_s	*cl_cshift_powerup;
 
 extern struct cvar_s	*noskins;
 
-#define	MAX_STATIC_ENTITIES	512			// torches, etc
-
 extern	client_state_t	cl;
 
 // FIXME, allocate dynamically
 extern	entity_t		cl_entities[MAX_EDICTS];
 extern	cl_entity_state_t	cl_baselines[MAX_EDICTS];
-extern	entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 
 extern int fps_count;
 
