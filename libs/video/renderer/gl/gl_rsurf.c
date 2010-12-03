@@ -564,7 +564,7 @@ visit_leaf (mleaf_t *leaf)
 {
 	// deal with model fragments in this leaf
 	if (leaf->efrags)
-		R_StoreEfrags (&leaf->efrags);
+		R_StoreEfrags (leaf->efrags);
 }
 
 static inline int

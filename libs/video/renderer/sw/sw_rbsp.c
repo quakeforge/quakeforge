@@ -400,7 +400,7 @@ visit_leaf (mleaf_t *leaf)
 {
 	// deal with model fragments in this leaf
 	if (leaf->efrags)
-		R_StoreEfrags (&leaf->efrags);
+		R_StoreEfrags (leaf->efrags);
 	leaf->key = r_currentkey;
 	r_currentkey++;				// all bmodels in a leaf share the same key
 }
@@ -611,7 +611,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 		pleaf = (mleaf_t *) node;
 		// deal with model fragments in this leaf
 		if (pleaf->efrags) {
-			R_StoreEfrags (&pleaf->efrags);
+			R_StoreEfrags (pleaf->efrags);
 		}
 
 		pleaf->key = r_currentkey;

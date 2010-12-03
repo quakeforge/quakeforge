@@ -215,20 +215,13 @@ R_AddEfrags (entity_t *ent)
 	ent->topnode = r_pefragtopnode;
 }
 
-/*
-	R_StoreEfrags
-
-	FIXME: a lot of this goes away with edge-based
-*/
 void
-R_StoreEfrags (efrag_t **ppefrag)
+R_StoreEfrags (const efrag_t *pefrag)
 {
 	entity_t   *pent;
 	model_t    *model;
-	efrag_t    *pefrag;
 
-
-	while ((pefrag = *ppefrag) != NULL) {
+	while (pefrag) {
 		pent = pefrag->entity;
 		model = pent->model;
 
@@ -248,7 +241,7 @@ R_StoreEfrags (efrag_t **ppefrag)
 					pent->visframe = r_framecount;
 				}
 
-				ppefrag = &pefrag->leafnext;
+				pefrag = pefrag->leafnext;
 				break;
 
 			default:

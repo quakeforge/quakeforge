@@ -310,7 +310,7 @@ extern int r_numvisedicts;
 extern struct entity_s *r_visedicts[];
 struct dlight_s;
 
-void R_StoreEfrags (efrag_t **ppefrag);
+void R_StoreEfrags (const efrag_t *ppefrag);
 void R_TimeRefresh_f (void);
 void R_TimeGraph (void);
 void R_ZGraph (void);
