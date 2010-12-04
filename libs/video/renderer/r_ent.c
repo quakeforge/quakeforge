@@ -84,7 +84,7 @@ R_AllocEntity (void)
 	for (ent = pool->entities, i = 0; i < ENT_POOL_SIZE - 1; i++, ent++)
 		ent->next = ent + 1;
 	ent->next = 0;
-	free_entities = entity_pools->entities;
+	free_entities = pool->entities;
 
 	return R_AllocEntity ();
 }
@@ -99,7 +99,7 @@ R_FreeAllEntities (void)
 	for (pool = entity_pools; pool; pool = pool->next) {
 		for (ent = pool->entities, i = 0; i < ENT_POOL_SIZE - 1; i++, ent++)
 			ent->next = ent + 1;
-		ent->next = pool->next ? pool->entities : 0;
+		ent->next = pool->next ? pool->next->entities : 0;
 	}
 	free_entities = entity_pools ? entity_pools->entities : 0;
 }
