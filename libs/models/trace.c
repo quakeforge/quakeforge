@@ -49,32 +49,30 @@ static __attribute__ ((used)) const char rcsid[] =
 
 /* LINE TESTING IN HULLS */
 
+typedef struct {
+	vec3_t     end;
+	int        side;
+	int        num;
+	mplane_t   *plane;
+} tracestack_t;
+
 static inline void
 calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 			 mplane_t *plane)
 {
-	vec_t       t1, t2, frac, offset;
+	vec_t       t1, t2, frac;
 	vec3_t      dist;
 
 	t1 = PlaneDiff (start, plane);
 	t2 = PlaneDiff (end, plane);
-	offset = 0;
-	if (trace->isbox) {
-		if (plane->type < 3)
-			offset = trace->extents[plane->type];
-		else
-			offset = (fabs (trace->extents[0] * plane->normal[0])
-					  + fabs (trace->extents[1] * plane->normal[1])
-					  + fabs (trace->extents[2] * plane->normal[2]));
-	}
 
 	if (t1 < 0) {
-		frac = (t1 + offset + DIST_EPSILON) / (t1 - t2);
+		frac = (t1 + DIST_EPSILON) / (t1 - t2);
 		// invert plane paramterers
 		VectorNegate (plane->normal, trace->plane.normal);
 		trace->plane.dist = -plane->dist;
 	} else {
-		frac = (t1 - offset - DIST_EPSILON) / (t1 - t2);
+		frac = (t1 - DIST_EPSILON) / (t1 - t2);
 		VectorCopy (plane->normal, trace->plane.normal);
 		trace->plane.dist = plane->dist;
 	}
@@ -84,19 +82,12 @@ calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 	VectorMultAdd (start, frac, dist, trace->endpos);
 }
 
-typedef struct {
-	vec3_t     end;
-	int        side;
-	int        num;
-	mplane_t   *plane;
-} tracestack_t;
-
 VISIBLE void
 MOD_TraceLine (hull_t *hull, int num,
 			   const vec3_t start_point, const vec3_t end_point,
 			   trace_t *trace)
 {
-	vec_t       start_dist, end_dist, offset, frac;
+	vec_t       start_dist, end_dist, frac;
 	vec3_t      start, end, dist;
 	int         side, empty, solid;
 	tracestack_t *tstack;
@@ -143,6 +134,7 @@ MOD_TraceLine (hull_t *hull, int num,
 
 			// pop up the stack for a back side
 			if (tstack-- == tracestack) {
+				// we've finished.
 				trace->allsolid = solid & (num == CONTENTS_SOLID);
 				trace->startsolid = solid;
 				return;
@@ -162,53 +154,22 @@ MOD_TraceLine (hull_t *hull, int num,
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
 
-		offset = 0;
 		start_dist = PlaneDiff (start, plane);
 		end_dist = PlaneDiff (end, plane);
-		if (trace->isbox) {
-			if (plane->type < 3)
-				offset = trace->extents[plane->type];
-			else
-				offset = (fabs (trace->extents[0] * plane->normal[0])
-						  + fabs (trace->extents[1] * plane->normal[1])
-						  + fabs (trace->extents[2] * plane->normal[2]));
-		}
 
-		/*	when offset is 0, the following is equivalent to:
-				if (start_dist >= 0 && end_dist >= 0) ...
-				if (start_dist < 0 && end_dist < 0) ...
-			due to the order of operations
-			however, when (start_dist == offset && end_dist == offset) or
-			(start_dist == -offset && end_dist == -offset), the trace will go
-			down the /correct/ side of the plane: ie, the side the box is
-			actually on
-		*/
-		if (start_dist >= offset && end_dist >= offset) {
+		if (start_dist >= 0 && end_dist >= 0) {
 			// entirely in front of the plane
 			num = node->children[0];
 			continue;
 		}
-		//if (start_dist <= -offset && end_dist <= -offset) {
-		//XXX not so equivalent, it seems.
-		if (start_dist < -offset && end_dist < -offset) {
+		if (start_dist < 0 && end_dist < 0) {
 			// entirely behind the plane
 			num = node->children[1];
 			continue;
 		}
-		// when offset is 0, equvalent to (start_dist >= 0 && end_dist < 0) and
-		// (start_dist < 0 && end_dist >= 0) due to the above tests.
-		if (start_dist >= offset && end_dist <= -offset) {
-			side = 0;
-			frac = (start_dist - offset) / (start_dist - end_dist);
-		} else if (start_dist <= offset && end_dist >= offset) {
-			side = 1;
-			frac = (start_dist + offset) / (start_dist - end_dist);
-		} else {
-			// get here only when offset is non-zero
-			Sys_MaskPrintf (SYS_DEV, "foo\n");
-			frac = 1;
-			side = start_dist < end_dist;
-		}
+
+		side = start_dist < 0;
+		frac = start_dist / (start_dist - end_dist);
 		frac = bound (0, frac, 1);
 
 		tstack->num = num;
