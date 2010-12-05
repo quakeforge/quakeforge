@@ -849,23 +849,15 @@ PF_droptofloor (progs_t *pr)
 	trace = SV_Move (SVvector (ent, origin), SVvector (ent, mins),
 					 SVvector (ent, maxs), end, false, ent);
 
-	R_FLOAT (pr) = 0;
-	if (trace.fraction == 1 || trace.allsolid)
-		return;
-	if (trace.startsolid) {
-		vec3_t      org;
-		VectorCopy (trace.endpos, org);
-		org[2] -= 2 * DIST_EPSILON;
-		trace = SV_Move (org, SVvector (ent, mins), SVvector (ent, maxs), end,
-						 false, ent);
-		if (trace.fraction == 1 || trace.allsolid)
-			return;
+	if (trace.fraction == 1 || trace.allsolid) {
+		R_FLOAT (pr) = 0;
+	} else {
+		VectorCopy (trace.endpos, SVvector (ent, origin));
+		SV_LinkEdict (ent, false);
+		SVfloat (ent, flags) = (int) SVfloat (ent, flags) | FL_ONGROUND;
+		SVentity (ent, groundentity) = EDICT_TO_PROG (pr, trace.ent);
+		R_FLOAT (pr) = 1;
 	}
-	VectorCopy (trace.endpos, SVvector (ent, origin));
-	SV_LinkEdict (ent, false);
-	SVfloat (ent, flags) = (int) SVfloat (ent, flags) | FL_ONGROUND;
-	SVentity (ent, groundentity) = EDICT_TO_PROG (pr, trace.ent);
-	R_FLOAT (pr) = 1;
 }
 
 /*
