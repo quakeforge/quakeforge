@@ -131,6 +131,7 @@ core
 # /libs/image/
 
 # /libs/models/
+/libs/models/testclip
 
 # /libs/models/alias/
 

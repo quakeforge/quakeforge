@@ -50,7 +50,9 @@ static __attribute__ ((used)) const char rcsid[] =
 /* LINE TESTING IN HULLS */
 
 // 1/32 epsilon to keep floating point happy
+#ifndef DIST_EPSILON
 #define	DIST_EPSILON	(0.03125)
+#endif
 
 typedef struct {
 	vec3_t     end;
@@ -92,7 +94,8 @@ MOD_TraceLine (hull_t *hull, int num,
 {
 	vec_t       start_dist, end_dist, frac;
 	vec3_t      start, end, dist;
-	int         side, empty, solid;
+	int         side;
+	qboolean    empty, solid;
 	tracestack_t *tstack;
 	tracestack_t tracestack[256];
 	mclipnode_t *node;
@@ -106,40 +109,41 @@ MOD_TraceLine (hull_t *hull, int num,
 	solid = 0;
 	split_plane = 0;
 
+	trace->allsolid = false;
+	trace->startsolid = false;
+	trace->inopen = false;
+	trace->inwater = false;
+	trace->fraction = 1.0;
+
 	while (1) {
 		while (num < 0) {
-			if (!solid && num != CONTENTS_SOLID) {
-				empty = 1;
+			if (num == CONTENTS_SOLID) {
+				if (!empty && !solid) {
+					// this is the first leaf visited, thus the start leaf
+					trace->startsolid = solid = true;
+				} else if (solid) {
+					// if crossing from one solid leaf to another, treat the
+					// whole trace as solid (this is what id does)
+					trace->allsolid = true;
+					return;
+				} else if (empty) {
+					// crossing from an empty leaf to a solid leaf: the trace
+					// has collided.
+					calc_impact (trace, start_point, end_point, split_plane);
+					return;
+				}
+			} else {
+				empty = true;
+				solid = false;
 				if (num == CONTENTS_EMPTY)
 					trace->inopen = true;
 				else
 					trace->inwater = true;
-			} else if (!empty && num == CONTENTS_SOLID) {
-				solid = 1;
-			} else if (solid && num != CONTENTS_SOLID) {
-				//FIXME not sure what I want
-				//made it out of the solid and into open space, continue
-				//on as if we were always in empty space
-				empty = 1;
-				solid = 0;
-				trace->startsolid = 1;
-				if (num == CONTENTS_EMPTY)
-					trace->inopen = true;
-				else
-					trace->inwater = true;
-			} else if (empty/* || solid*/) {//FIXME not sure what I want
-				// DONE!
-				trace->allsolid = solid & (num == CONTENTS_SOLID);
-				trace->startsolid = solid;
-				calc_impact (trace, start_point, end_point, split_plane);
-				return;
 			}
 
 			// pop up the stack for a back side
 			if (tstack-- == tracestack) {
 				// we've finished.
-				trace->allsolid = solid & (num == CONTENTS_SOLID);
-				trace->startsolid = solid;
 				return;
 			}
 
@@ -170,6 +174,8 @@ MOD_TraceLine (hull_t *hull, int num,
 			num = node->children[1];
 			continue;
 		}
+
+		// cross the plane
 
 		side = start_dist < 0;
 		frac = start_dist / (start_dist - end_dist);
