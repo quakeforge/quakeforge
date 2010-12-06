@@ -47,9 +47,9 @@ menu.dat$(GZ): $(menu_obj) $(QFCC_DEP) ../lib/libcsqc.a ../lib/libr.a ../gui/lib
 	$(GZIP)
 
 EXTRA_DIST= $(menu_src) \
-	Frame.h HUD.h \
-	client_menu.h controls_o.h \
-	menu.h options.h \
-	options_util.h servlist.h \
+	CrosshairCvar.h CrosshairView.h CvarColor.h CvarColorView.h CvarObject.h \
+	CvarRange.h CvarRangeView.h CvarToggle.h CvarToggleView.h Frame.h HUD.h \
+	MenuGroup.h MouseToggle.h ProxyView.h RunToggle.h client_menu.h \
+	controls_o.h menu.h options.h options_util.h plistmenu.h servlist.h \
 	menu.plist
 CLEANFILES= *.dat *.sym *.gz *.qfo

@@ -15,8 +15,7 @@ EXTRA_DIST = asm_i386.h alsa_funcs_list.h adivtab.h anorm_dots.h anorms.h \
 	\
 	qw/bothdefs.h qw/msg_backbuf.h qw/msg_ucmd.h qw/pmove.h qw/protocol.h \
 	\
-	win32/fnmatch.h \
+	win32/dirent.h win32/fnmatch.h win32/stdint.h \
 	\
-	win32/resources/icon1.ico win32/resources/quakeforge.rc \
-	win32/resources/resource.h
-
+	win32/resources/icon1Vista.ico win32/resources/icon1XP.ico \
+	win32/resources/quakeforge.rc win32/resources/resource.h

@@ -90,3 +90,6 @@
 
 	debian/Makefile
 	desktop/Makefile
+
+	vc2005/Makefile
+	vc2008/Makefile
