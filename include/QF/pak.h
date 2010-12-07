@@ -36,6 +36,9 @@
 */
 //@{
 
+// little-endian PACK
+#define IDPAKHEADER		(('K'<<24)+('C'<<16)+('A'<<8)+'P')
+
 #define PAK_PATH_LENGTH 56
 
 typedef struct {

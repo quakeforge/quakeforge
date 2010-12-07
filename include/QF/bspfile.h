@@ -65,9 +65,6 @@
 
 //=============================================================================
 
-// little-endian PACK
-#define IDPAKHEADER		(('K'<<24)+('C'<<16)+('A'<<8)+'P')
-
 #define BSPVERSION		29
 #define Q2BSPVERSION	38
 #define TOOLVERSION		2
