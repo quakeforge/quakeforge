@@ -553,12 +553,13 @@ write_player (delta_t *delta, plent_state_t *from, plent_state_t *to,
 static void
 SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 {
-	int			i, j, k;
+	int			j, k;
 	client_t   *cl;
 	edict_t    *clent = 0;
 	int         spec_track = 0;
 	int         stdver = 2, full = stdver;
 	edict_t	   *ent;
+	edict_leaf_t *el;
 	packet_players_t *pack;
 	client_frame_t *frame = &delta->frames[delta->in_frame];
 	packet_players_t *from_pack = 0;
@@ -614,11 +615,12 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 
 			if (pvs) {
 				// ignore if not touching a PV leaf
-				for (i = 0; i < ent->num_leafs; i++)
-					if (pvs[ent->leafnums[i] >> 3]
-						& (1 << (ent->leafnums[i] & 7)))
+				for (el = ent->leafs; el; el = el->next) {
+					unsigned    leafnum = el->leaf - sv.worldmodel->leafs - 1;
+					if (pvs[leafnum >> 3] & (1 << (leafnum & 7)))
 						break;
-				if (i == ent->num_leafs)
+				}
+				if (!el)
 					continue;				// not visible
 			}
 		}
@@ -759,11 +761,12 @@ void
 SV_WriteEntitiesToClient (delta_t *delta, sizebuf_t *msg)
 {
 	byte	   *pvs = 0;
-	int			e, i, num_edicts;
+	int			e, num_edicts;
 	int         max_packet_entities = MAX_DEMO_PACKET_ENTITIES;
 	int         stdver = 1;
 	client_frame_t *frame;
 	edict_t	   *ent;
+	edict_leaf_t *el;
 	entity_state_t *state;
 	packet_entities_t *pack;
 
@@ -801,12 +804,13 @@ SV_WriteEntitiesToClient (delta_t *delta, sizebuf_t *msg)
 
 		if (pvs) {
 			// ignore if not touching a PV leaf
-			for (i = 0; i < ent->num_leafs; i++)
-				if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)))
+			for (el = ent->leafs; el; el = el->next) {
+				unsigned    leafnum = el->leaf - sv.worldmodel->leafs - 1;
+				if (pvs[leafnum >> 3] & (1 << (leafnum & 7)))
 					break;
-
-			if (i == ent->num_leafs)
-				continue;					// not visible
+			}
+			if (!el)
+				continue;				// not visible
 		}
 
 		if (SV_AddNailUpdate (ent))

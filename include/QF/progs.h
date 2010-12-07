@@ -214,13 +214,16 @@ void PR_BoundsCheck (progs_t *pr, int addr, etype_t type);
 */
 //@{
 
-#define MAX_ENT_LEAFS	16
+typedef struct edict_leaf_s {
+	struct edict_leaf_s *next;
+	struct mleaf_s *leaf;
+} edict_leaf_t;
+
 struct edict_s {
 	qboolean    free;
 	link_t      area;			///< linked to a division node or leaf
 
-	int         num_leafs;
-	short       leafnums[MAX_ENT_LEAFS];
+	edict_leaf_t *leafs;
 
 	float       freetime;		///< sv.time when the object was freed
 	void       *data;			///< external per-edict data

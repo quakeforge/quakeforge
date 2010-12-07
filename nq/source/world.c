@@ -50,6 +50,39 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "sv_progs.h"
 #include "world.h"
 
+#define EDICT_LEAFS 32
+static edict_leaf_t *free_edict_leaf_list;
+
+static edict_leaf_t *
+alloc_edict_leaf (void)
+{
+	int         i;
+	edict_leaf_t *edict_leaf;
+
+	if (!free_edict_leaf_list) {
+		free_edict_leaf_list = malloc (EDICT_LEAFS * sizeof (edict_leaf_t));
+		for (i = 0; i < EDICT_LEAFS - 1; i++)
+			free_edict_leaf_list[i].next = &free_edict_leaf_list[i + 1];
+		free_edict_leaf_list[i].next = 0;
+	}
+	edict_leaf = free_edict_leaf_list;
+	free_edict_leaf_list = free_edict_leaf_list->next;
+	edict_leaf->next = 0;
+	return edict_leaf;
+}
+
+static void
+free_edict_leafs (edict_leaf_t **edict_leafs)
+{
+	edict_leaf_t **el;
+
+	for (el = edict_leafs; *el; el = &(*el)->next)
+		;
+	*el = free_edict_leaf_list;
+	free_edict_leaf_list = *edict_leafs;
+	*edict_leafs = 0;
+}
+
 /*
 	entities never clip against themselves, or their owner
 	line of sight checks trace->crosscontent, but bullets don't
@@ -328,23 +361,22 @@ SV_TouchLinks (edict_t *ent, areanode_t *node)
 static void
 SV_FindTouchedLeafs (edict_t *ent, mnode_t *node)
 {
-	int			leafnum, sides;
+	int			sides;
 	mleaf_t    *leaf;
 	mplane_t   *splitplane;
+	edict_leaf_t *edict_leaf;
 
 	if (node->contents == CONTENTS_SOLID)
 		return;
 
 	// add an efrag if the node is a leaf
 	if (node->contents < 0) {
-		if (ent->num_leafs == MAX_ENT_LEAFS)
-			return;
-
 		leaf = (mleaf_t *) node;
-		leafnum = leaf - sv.worldmodel->leafs - 1;
 
-		ent->leafnums[ent->num_leafs] = leafnum;
-		ent->num_leafs++;
+		edict_leaf = alloc_edict_leaf ();
+		edict_leaf->leaf = leaf;
+		edict_leaf->next = ent->leafs;
+		ent->leafs = edict_leaf;
 		return;
 	}
 
@@ -398,7 +430,7 @@ SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 	}
 
 	// link to PVS leafs
-	ent->num_leafs = 0;
+	free_edict_leafs (&ent->leafs);
 	if (SVfloat (ent, modelindex))
 		SV_FindTouchedLeafs (ent, sv.worldmodel->nodes);
 

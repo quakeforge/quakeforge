@@ -443,6 +443,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 	vec3_t      org;
 	edict_t    *ent;
 	entity_state_t *baseline;
+	edict_leaf_t *el;
 
 	// find the client's PVS
 	VectorAdd (SVvector (clent, origin), SVvector (clent, view_ofs), org);
@@ -465,11 +466,13 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 				&& (int) SVfloat (ent, modelindex) & 0xFF00)
 				continue;
 
-			for (i = 0; i < ent->num_leafs; i++)
-				if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)))
+			for (el = ent->leafs; el; el = el->next) {
+				unsigned    leafnum = el->leaf - sv.worldmodel->leafs - 1;
+				if (pvs[leafnum >> 3] & (1 << (leafnum & 7)))
 					break;
+			}
 
-			if (i == ent->num_leafs)
+			if (!el)
 				continue;				// not visible
 		}
 
