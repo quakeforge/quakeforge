@@ -35,6 +35,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <ctype.h>
 
 #include "QF/dstring.h"
+#include "QF/hash.h"
 #include "QF/quakefs.h"
 #include "QF/script.h"
 #include "QF/sys.h"
@@ -50,13 +51,17 @@ static __attribute__ ((used)) const char rcsid[] =
 
 int         nummapbrushfaces;
 int         nummapbrushes;
-mbrush_t    mapbrushes[MAX_MAP_BRUSHES];
 
+#define ENTITIES_CHUNK 16
 int         num_entities;
-entity_t    entities[MAX_MAP_ENTITIES];
+int         max_entities;
+entity_t   *entities;
 
-int         nummiptex;
-char        miptex[MAX_MAP_TEXINFO][16];
+#define MIPTEXNAME_CHUNK 16
+int         nummiptexnames;
+int         maxmiptexnames;
+const char **miptexnames;
+hashtab_t  *miptex_hash;
 
 int         numdetailbrushes;
 
@@ -75,24 +80,41 @@ map_error (const char *fmt, ...)
 	exit (1);
 }
 
+static const char *
+miptex_getkey (void *key, void *unused)
+{
+	intptr_t    index = (intptr_t) key;
+	return miptexnames[index - 1];
+}
+
 int
 FindMiptex (const char *name)
 {
-	int         i;
+	intptr_t    index;
+	char        mpname[MIPTEXNAME];
 
+	strncpy (mpname, name, MIPTEXNAME - 1);
+	mpname[MIPTEXNAME - 1] = 0;
 	if (strcmp (name, "hint") == 0)
 		return TEX_HINT;
 	if (strcmp (name, "skip") == 0)
 		return TEX_SKIP;
-	for (i = 0; i < nummiptex; i++) {
-		if (!strcmp (name, miptex[i]))
-			return i;
+	if (!miptex_hash)
+		miptex_hash = Hash_NewTable (1023, miptex_getkey, 0, 0);
+	if (miptexnames) {
+		index = (intptr_t) Hash_Find (miptex_hash, mpname);
+		if (index)
+			return index - 1;
 	}
-	if (nummiptex == MAX_MAP_TEXINFO)
-		map_error ("nummiptex == MAX_MAP_TEXINFO");
-	strcpy (miptex[i], name);
-	nummiptex++;
-	return i;
+	if (nummiptexnames == maxmiptexnames) {
+		maxmiptexnames += MIPTEXNAME_CHUNK;
+		miptexnames = realloc (miptexnames,
+							   maxmiptexnames * sizeof (const char *));
+	}
+	index = nummiptexnames++;
+	miptexnames[index] = strdup (mpname);
+	Hash_Add (miptex_hash, (void *) (index + 1));
+	return index;
 }
 
 /*
@@ -110,8 +132,8 @@ FindTexinfo (texinfo_t *t)
 		return t->miptex;		// it's HINT or SKIP
 
 	// set the special flag
-	if (miptex[t->miptex][0] == '*'
-		|| !strncasecmp (miptex[t->miptex], "sky", 3))
+	if (miptexnames[t->miptex][0] == '*'
+		|| !strncasecmp (miptexnames[t->miptex], "sky", 3))
 		t->flags |= TEX_SPECIAL;
 
 	tex = bsp->texinfo;
@@ -222,8 +244,8 @@ ParseBrush (void)
 	vec3_t      t1, t2, *verts = 0;
 	vec_t       d, vecs[2][4];
 
-	b = &mapbrushes[nummapbrushes];
 	nummapbrushes++;
+	b = calloc (1, sizeof (mbrush_t));
 	b->next = mapent->brushes;
 	mapent->brushes = b;
 
@@ -430,11 +452,14 @@ ParseEntity (void)
 	if (strcmp (map_script->token->str, "{"))
 		map_error ("ParseEntity: { not found");
 
-	if (num_entities == MAX_MAP_ENTITIES)
-		map_error ("num_entities == MAX_MAP_ENTITIES");
+	if (num_entities == max_entities) {
+		max_entities += ENTITIES_CHUNK;
+		entities = realloc (entities, max_entities * sizeof (entity_t));
+	}
 
 	mapent = &entities[num_entities];
 	num_entities++;
+	memset (mapent, 0, sizeof (entity_t));
 
 	do {
 		if (!Script_GetToken (map_script, true))
@@ -512,7 +537,7 @@ LoadMapFile (const char *filename)
 	qprintf ("%5i faces\n", nummapbrushfaces);
 	qprintf ("%5i brushes (%i detail)\n", nummapbrushes, numdetailbrushes);
 	qprintf ("%5i entities\n", num_entities);
-	qprintf ("%5i textures\n", nummiptex);
+	qprintf ("%5i textures\n", nummiptexnames);
 	qprintf ("%5i texinfo\n", bsp->numtexinfo);
 }
 

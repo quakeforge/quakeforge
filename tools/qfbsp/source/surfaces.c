@@ -205,7 +205,9 @@ int         c_cornerverts;
 hashvert_t  hvertex[MAX_MAP_VERTS];
 hashvert_t *hvert_p;
 
-face_t     *edgefaces[MAX_MAP_EDGES][2];
+#define EDGEFACE_CHUNK 4096
+int         numedgefaces = 0;
+edgeface_t *edgefaces = 0;
 int         firstmodeledge = 1;
 int         firstmodelface;
 
@@ -360,20 +362,23 @@ GetEdge (const vec3_t p1, const vec3_t p2, face_t *f)
 	// but does not yet have a second face.
 	for (i = firstmodeledge; i < bsp->numedges; i++) {
 		if (v1 == bsp->edges[i].v[1] && v2 == bsp->edges[i].v[0]
-			&& !edgefaces[i][1]
-			&& edgefaces[i][0]->contents[0] == f->contents[0]) {
-			edgefaces[i][1] = f;
+			&& !edgefaces[i].f[1]
+			&& edgefaces[i].f[0]->contents[0] == f->contents[0]) {
+			edgefaces[i].f[1] = f;
 			return -i;
 		}
 	}
 
 	// Create a new edge.
-	if (bsp->numedges == MAX_MAP_EDGES)
-		Sys_Error ("numedges == MAX_MAP_EDGES");
+	while (bsp->numedges >= numedgefaces) {
+		numedgefaces += EDGEFACE_CHUNK;
+		edgefaces = realloc (edgefaces, numedgefaces * sizeof (edgeface_t));
+	}
 	edge.v[0] = v1;
 	edge.v[1] = v2;
 	BSP_AddEdge (bsp, &edge);
-	edgefaces[i][0] = f;
+	edgefaces[i].f[0] = f;
+	edgefaces[i].f[1] = 0;
 
 	return i;
 }

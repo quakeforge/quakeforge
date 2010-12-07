@@ -250,9 +250,6 @@ WriteDrawNodes (const node_t *headnode)
 #endif
 
 	// emit a model
-	if (bsp->nummodels == MAX_MAP_MODELS)
-		Sys_Error ("nummodels == MAX_MAP_MODELS");
-
 	bm.headnode[0] = bsp->numnodes;
 	for (i = 1; i < MAX_MAP_HULLS; i++)
 		bm.headnode[i] = 0;
@@ -382,14 +379,14 @@ AddAnimatingTextures (void)
 	char        name[32];
 	wadlist_t  *wl;
 
-	base = nummiptex;
+	base = nummiptexnames;
 
 	name[sizeof (name) - 1] = 0;
 
 	for (i = 0; i < base; i++) {
-		if (miptex[i][0] != '+')
+		if (miptexnames[i][0] != '+')
 			continue;
-		strncpy (name, miptex[i], sizeof (name) - 1);
+		strncpy (name, miptexnames[i], sizeof (name) - 1);
 
 		for (j = 0; j < 20; j++) {
 			if (j < 10)
@@ -407,8 +404,8 @@ AddAnimatingTextures (void)
 		}
 	}
 
-	if (nummiptex - base)
-		printf ("added %i texture frames\n", nummiptex - base);
+	if (nummiptexnames - base)
+		printf ("added %i texture frames\n", nummiptexnames - base);
 }
 
 /**	Write the miptex data to the bsp file.
@@ -480,14 +477,14 @@ WriteMiptex (void)
 	dstring_adjust (data);
 
 	l = (dmiptexlump_t *) data->str;
-	l->nummiptex = nummiptex;
-	data->size = (char *) &l->dataofs[nummiptex] - data->str;
+	l->nummiptex = nummiptexnames;
+	data->size = (char *) &l->dataofs[nummiptexnames] - data->str;
 	dstring_adjust (data);
 
-	for (i = 0; i < nummiptex; i++) {
+	for (i = 0; i < nummiptexnames; i++) {
 		l = (dmiptexlump_t *) data->str;
 		l->dataofs[i] = data->size;
-		len = LoadLump (miptex[i], data);
+		len = LoadLump (miptexnames[i], data);
 		l = (dmiptexlump_t *) data->str;
 		if (!len)
 			l->dataofs[i] = -1;			// didn't find the texture

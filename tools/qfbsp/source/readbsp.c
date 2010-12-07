@@ -352,20 +352,20 @@ static byte default_palette[] = {
 static const char *
 unique_name (wad_t *wad, const char *name)
 {
-	char        uname[16];
+	char        uname[MIPTEXNAME];
 	int         i = 0;
 	const char *tag;
 
 	if (!wad_find_lump (wad, name))
 		return name;
 	do {
-		strncpy (uname, name, 16);
-		uname[15] = 0;
+		strncpy (uname, name, MIPTEXNAME);
+		uname[(MIPTEXNAME - 1)] = 0;
 		tag = va ("~%x", i++);
-		if (strlen (uname) + strlen (tag) <= 15)
+		if (strlen (uname) + strlen (tag) <= (MIPTEXNAME - 1))
 			strcat (uname, tag);
 		else
-			strcpy (uname + 15 - strlen (tag), tag);
+			strcpy (uname + (MIPTEXNAME - 1) - strlen (tag), tag);
 	} while (wad_find_lump (wad, uname));
 	return va ("%s", uname);	// just to make a safe returnable that doesn't
 								// need to be freed

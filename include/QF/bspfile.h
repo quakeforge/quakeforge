@@ -33,35 +33,15 @@
 
 // upper design bounds
 
-#define MAX_MAP_HULLS			4
+#define MAX_MAP_HULLS			4		// format limit (array)
 
-#define MAX_MAP_MODELS			256
-#define MAX_MAP_BRUSHES			4096
-#define MAX_MAP_ENTITIES		1024
-#define MAX_MAP_ENTSTRING		65536
-
-#define MAX_MAP_PLANES			32767
-#define MAX_MAP_NODES			32767	// because negative shorts are contents
-#define MAX_MAP_CLIPNODES		32767	//
-#define MAX_MAP_LEAFS			32767	//
-#define MAX_MAP_VERTS			65535
-#define MAX_MAP_FACES			65535
-#define MAX_MAP_MARKSURFACES	65535
-#define MAX_MAP_TEXINFO			4096
-#define MAX_MAP_EDGES			256000
-#define MAX_MAP_SURFEDGES		512000
-#define MAX_MAP_TEXTURES		512
-#define MAX_MAP_MIPTEX			0x200000
-#define MAX_MAP_LIGHTING		0x100000
-#define MAX_MAP_VISIBILITY		0x100000
-
-#define MAX_MAP_PORTALS			65536
-
-// key / value pair sizes
-
-#define MAX_KEY		32
-#define MAX_VALUE	1024
-
+#define MAX_MAP_PLANES			32767	// format limit (s16) FIXME u16 ok?
+#define MAX_MAP_NODES			65520	// because negative shorts are contents
+#define MAX_MAP_CLIPNODES		65520	// but contents "max" is -15, so
+#define MAX_MAP_LEAFS			65520	// -32768 to -17 are available
+#define MAX_MAP_VERTS			65535	// format limit (u16)
+#define MAX_MAP_FACES			65535	// format limit (u16)
+#define MAX_MAP_MARKSURFACES	65535	// format limit (u16)
 
 //=============================================================================
 
@@ -109,9 +89,10 @@ typedef struct dmiptexlump_s {
 	int32_t     dataofs[4];				// [nummiptex]
 } dmiptexlump_t;
 
+#define MIPTEXNAME  16
 #define MIPLEVELS   4
 typedef struct miptex_s {
-	char        name[16];
+	char        name[MIPTEXNAME];
 	uint32_t    width, height;
 	uint32_t    offsets[MIPLEVELS];		// four mip maps stored
 } miptex_t;

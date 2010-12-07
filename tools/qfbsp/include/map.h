@@ -57,18 +57,15 @@ typedef struct {
 	epair_t    *epairs;			///< Nul terminated list of key=value pairs.
 } entity_t;
 
-extern int      nummapbrushes;
-extern mbrush_t mapbrushes[MAX_MAP_BRUSHES];
-
 extern int      num_entities;
-extern entity_t entities[MAX_MAP_ENTITIES];
+extern entity_t *entities;
 
-extern int      nummiptex;
-extern char     miptex[MAX_MAP_TEXINFO][16];
+extern int      nummiptexnames;
+extern const char **miptexnames;
 
 /**	Load and parse the map script.
 
-	Fills in the ::mapbrushes, ::entities and ::miptex arrays.
+	Fills in the ::entities and ::miptexnames arrays.
 
 	\param filename	Path of the map script to parse.
 */

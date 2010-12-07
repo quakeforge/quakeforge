@@ -34,9 +34,13 @@ struct visfacet_s;
 struct node_s;
 struct surface_s;
 
+typedef struct edgeface_s {
+	struct visfacet_s *f[2];
+} edgeface_t;
+
 extern int c_cornerverts;
 extern int c_tryedges;
-extern struct visfacet_s *edgefaces[MAX_MAP_EDGES][2];
+extern edgeface_t *edgefaces;
 
 extern int firstmodeledge;
 extern int firstmodelface;

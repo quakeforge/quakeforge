@@ -694,7 +694,7 @@ LoadBrush (const mbrush_t *mb, int hullnum)
 			return NULL;
 		contents = CONTENTS_EMPTY;
 	} else {
-		name = miptex[bsp->texinfo[mb->faces->texinfo].miptex];
+		name = miptexnames[bsp->texinfo[mb->faces->texinfo].miptex];
 
 		if (!strcasecmp (name, "clip") && hullnum == 0)
 			return NULL;		// "clip" brushes don't show up in the draw hull

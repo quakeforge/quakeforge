@@ -139,33 +139,30 @@ RecursiveGrowRegion (dface_t *r, face_t *f)
 	// add edges
 	for (i = 0; i < f->points->numpoints; i++) {
 		e = f->edges[i];
-		if (!edgefaces[abs (e)][0])
+		if (!edgefaces[abs (e)].f[0])
 			continue;					// edge has allready been removed
 		if (e > 0)
-			f2 = edgefaces[e][1];
+			f2 = edgefaces[e].f[1];
 		else
-			f2 = edgefaces[-e][0];
+			f2 = edgefaces[-e].f[0];
 		if (f2 && f2->outputnumber == bsp->numfaces) {
-			edgefaces[abs (e)][0] = NULL;
-			edgefaces[abs (e)][1] = NULL;
+			edgefaces[abs (e)].f[0] = NULL;
+			edgefaces[abs (e)].f[1] = NULL;
 			continue;					// allready merged
 		}
 		if (f2 && CanJoinFaces (f, f2)) {	// remove the edge and merge the
 											// faces
-			edgefaces[abs (e)][0] = NULL;
-			edgefaces[abs (e)][1] = NULL;
+			edgefaces[abs (e)].f[0] = NULL;
+			edgefaces[abs (e)].f[1] = NULL;
 			RecursiveGrowRegion (r, f2);
 		} else {
 			// emit a surfedge
-			if (bsp->numsurfedges == MAX_MAP_SURFEDGES)
-				Sys_Error ("numsurfedges == MAX_MAP_SURFEDGES");
 			BSP_AddSurfEdge (bsp, e);
 		}
 	}
 
 }
 */
-int         edgemapping[MAX_MAP_EDGES];
 
 typedef struct {
 	int         numedges;
@@ -188,7 +185,7 @@ CountRealNumbers (void)
 
 	c = 0;
 	for (i = firstmodeledge; i < bsp->numedges; i++)
-		if (edgefaces[i][0])
+		if (edgefaces[i].f[0])
 			c++;						// not removed
 
 	qprintf ("%5i real edges\n", c);
@@ -233,8 +230,6 @@ GrowNodeRegion_r (node_t * node)
 #endif
 		r.firstedge = firstedge = bsp->numsurfedges;
 		for (i = 0; i < f->points->numpoints; i++) {
-			if (bsp->numsurfedges == MAX_MAP_SURFEDGES)
-				Sys_Error ("numsurfedges == MAX_MAP_SURFEDGES");
 			BSP_AddSurfEdge (bsp, f->edges[i]);
 		}
 
