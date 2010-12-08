@@ -69,6 +69,8 @@ typedef struct areanode_s {
 
 extern	areanode_t	sv_areanodes[AREA_NODES];
 
+void SV_FreeAllEdictLeafs (void);
+
 void SV_InitHull (hull_t *hull, mclipnode_t *clipnodes, mplane_t *planes);
 
 void SV_ClearWorld (void);

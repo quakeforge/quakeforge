@@ -350,6 +350,7 @@ SV_SpawnServer (const char *server)
 	// load progs to get entity field count which determines how big each
 	// edict is
 	SV_LoadProgs ();
+	SV_FreeAllEdictLeafs ();
 	SV_SetupUserCommands ();
 	Info_SetValueForStarKey (svs.info, "*progs", va ("%i", sv_pr_state.crc),
 							 !sv_highchars->int_val);

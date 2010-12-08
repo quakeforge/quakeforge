@@ -1142,6 +1142,7 @@ SV_SpawnServer (const char *server)
 	// load progs to get entity field count
 	sv.max_edicts = bound (MIN_EDICTS, max_edicts->int_val, MAX_EDICTS);
 	SV_LoadProgs ();
+	SV_FreeAllEdictLeafs ();
 
 	// init the data field of the edicts
 	for (i = 0; i < sv.max_edicts; i++) {

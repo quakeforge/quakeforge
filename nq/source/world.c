@@ -51,24 +51,39 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "world.h"
 
 #define EDICT_LEAFS 32
+typedef struct edict_leaf_bucket_s {
+	struct edict_leaf_bucket_s *next;
+	edict_leaf_t edict_leafs[EDICT_LEAFS];
+} edict_leaf_bucket_t;
+
+static edict_leaf_bucket_t *edict_leaf_buckets;
+static edict_leaf_bucket_t **edict_leaf_bucket_tail = &edict_leaf_buckets;
 static edict_leaf_t *free_edict_leaf_list;
 
 static edict_leaf_t *
 alloc_edict_leaf (void)
 {
+	edict_leaf_bucket_t *bucket;
+	edict_leaf_t *el;
 	int         i;
-	edict_leaf_t *edict_leaf;
 
-	if (!free_edict_leaf_list) {
-		free_edict_leaf_list = malloc (EDICT_LEAFS * sizeof (edict_leaf_t));
-		for (i = 0; i < EDICT_LEAFS - 1; i++)
-			free_edict_leaf_list[i].next = &free_edict_leaf_list[i + 1];
-		free_edict_leaf_list[i].next = 0;
+	if ((el = free_edict_leaf_list)) {
+		free_edict_leaf_list = el->next;
+		el->next = 0;
+		return el;
 	}
-	edict_leaf = free_edict_leaf_list;
-	free_edict_leaf_list = free_edict_leaf_list->next;
-	edict_leaf->next = 0;
-	return edict_leaf;
+
+	bucket = malloc (sizeof (edict_leaf_bucket_t));
+	bucket->next = 0;
+	*edict_leaf_bucket_tail = bucket;
+	edict_leaf_bucket_tail = &bucket->next;
+
+	for (el = bucket->edict_leafs, i = 0; i < EDICT_LEAFS - 1; i++, el++)
+		el->next = el + 1;
+	el->next = 0;
+	free_edict_leaf_list = bucket->edict_leafs;
+
+	return alloc_edict_leaf ();
 }
 
 static void
@@ -81,6 +96,23 @@ free_edict_leafs (edict_leaf_t **edict_leafs)
 	*el = free_edict_leaf_list;
 	free_edict_leaf_list = *edict_leafs;
 	*edict_leafs = 0;
+}
+
+void
+SV_FreeAllEdictLeafs (void)
+{
+	edict_leaf_bucket_t *bucket;
+	edict_leaf_t *el;
+	int         i;
+
+	for (bucket = edict_leaf_buckets; bucket; bucket = bucket->next) {
+		for (el = bucket->edict_leafs, i = 0; i < EDICT_LEAFS - 1; i++, el++)
+			el->next = el + 1;
+		el->next = bucket->next ? bucket->next->edict_leafs : 0;
+	}
+	free_edict_leaf_list = 0;
+	if (edict_leaf_buckets)
+		free_edict_leaf_list = edict_leaf_buckets->edict_leafs;
 }
 
 /*
