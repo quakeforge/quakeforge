@@ -805,11 +805,11 @@ SV_Physics (void)
 	if (*sv_globals.force_retouch)
 		(*sv_globals.force_retouch)--;
 
-	if (EndFrame) {
+	if (sv_funcs.EndFrame) {
 		// let the progs know that the frame has ended
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
 		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
 		*sv_globals.time = sv.time;
-		PR_ExecuteProgram (&sv_pr_state, EndFrame);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.EndFrame);
 	}
 }

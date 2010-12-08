@@ -84,6 +84,8 @@ typedef struct {
 	func_t      ClientDisconnect;
 	func_t      SetNewParms;
 	func_t      SetChangeParms;
+
+	func_t      EndFrame;
 } sv_funcs_t;
 
 extern sv_funcs_t sv_funcs;
@@ -203,7 +205,6 @@ extern sv_fields_t sv_fields;
 #define SVvector(e,f)	SVFIELD (e, f, vector)
 #define SVinteger(e,f)	SVFIELD (e, f, integer)
 
-extern func_t EndFrame;
 extern progs_t sv_pr_state;
 
 static inline void

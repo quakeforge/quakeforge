@@ -71,8 +71,6 @@ cvar_t     *saved2;
 cvar_t     *saved3;
 cvar_t     *saved4;
 
-func_t      EndFrame;
-
 static int sv_range;
 
 static unsigned
@@ -316,7 +314,7 @@ static sv_def_t nq_opt_defs[] = {
 };
 
 static sv_def_t nq_opt_funcs[] = {
-	{ev_func,	0,	"EndFrame",				&EndFrame},
+	{ev_func,	0,	"EndFrame",				&sv_funcs.EndFrame},
 	{ev_void,	0,	0},
 };
 
