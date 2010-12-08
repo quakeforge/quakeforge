@@ -36,6 +36,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "host.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "world.h"
 
 #define sv_frametime host_frametime
@@ -715,7 +716,7 @@ SV_Physics_Step (edict_t *ent)
 	SV_CheckWaterTransition (ent);
 }
 
-static void
+void
 SV_ProgStartFrame (void)
 {
 	// let the progs know that a new frame has started
@@ -759,7 +760,7 @@ SV_RunEntity (edict_t *ent)
 	}
 }
 
-static void
+void
 SV_RunNewmis (void)
 {
 	edict_t    *ent;

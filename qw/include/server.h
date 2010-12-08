@@ -534,8 +534,10 @@ void SV_AddGravity (struct edict_s *ent);
 qboolean SV_RunThink (struct edict_s *ent);
 void SV_Physics_Toss (struct edict_s *ent);
 void SV_RunNewmis (void);
-void SV_Impact (struct edict_s *e1, struct edict_s *e2);
 void SV_SetMoveVars(void);
+struct trace_s;
+int SV_FlyMove (struct edict_s *ent, float time, struct trace_s *steptrace);
+struct trace_s SV_PushEntity (struct edict_s *ent, vec3_t push);
 
 //
 // sv_send.c

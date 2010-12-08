@@ -160,7 +160,7 @@ SV_RunThink (edict_t *ent)
 
 	Two entities have touched, so run their touch functions
 */
-void
+static void
 SV_Impact (edict_t *e1, edict_t *e2)
 {
 	int         old_self, old_other;
@@ -223,7 +223,7 @@ ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
 	4 = dead stop
 	If steptrace is not NULL, the trace of any vertical wall hit will be stored
 */
-static int
+int
 SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 {
 	float       d, time_left;
@@ -354,7 +354,7 @@ SV_AddGravity (edict_t *ent)
 
 	Does not change the entities velocity at all
 */
-static trace_t
+trace_t
 SV_PushEntity (edict_t *ent, vec3_t push)
 {
 	trace_t     trace;

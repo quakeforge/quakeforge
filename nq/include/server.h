@@ -271,6 +271,8 @@ void SV_AddGravity (edict_t *ent);
 void SV_Physics_Toss (edict_t *ent);
 void SV_Physics_Client (edict_t *ent, int num);
 void SV_Physics (void);
+void SV_ProgStartFrame (void);
+void SV_RunNewmis (void);
 
 qboolean SV_CheckBottom (edict_t *ent);
 qboolean SV_movestep (edict_t *ent, const vec3_t move, qboolean relink);
