@@ -455,7 +455,8 @@ draw_solo (view_t *view)
 
 	// draw level name
 	l = strlen (cl.levelname);
-	draw_string (view, 232 - l * 4, 12, cl.levelname);
+	l = 232 - l * 4;
+	draw_string (view, max (l, 152), 12, cl.levelname);
 }
 
 static void
