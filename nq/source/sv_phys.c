@@ -91,11 +91,12 @@ SV_CheckAllEnts (void)
 void
 SV_CheckVelocity (edict_t *ent)
 {
-	int         i;
+	float       wishspeed;
+//	int         i;
 
 	// bound velocity
-	for (i = 0; i < 3; i++) {
 #if 0
+	for (i = 0; i < 3; i++) {
 		if (IS_NAN (SVvector (ent, velocity)[i])) {
 			Sys_Printf ("Got a NaN velocity on %s\n",
 						PR_GetString (&sv_pr_state, SVstring (ent,
@@ -108,11 +109,12 @@ SV_CheckVelocity (edict_t *ent)
 															  classname)));
 			SVvector (ent, origin)[i] = 0;
 		}
+	}
 #endif
-		if (SVvector (ent, velocity)[i] > sv_maxvelocity->value)
-			SVvector (ent, velocity)[i] = sv_maxvelocity->value;
-		else if (SVvector (ent, velocity)[i] < -sv_maxvelocity->value)
-			SVvector (ent, velocity)[i] = -sv_maxvelocity->value;
+	wishspeed = VectorLength (SVvector (ent, velocity));
+	if (wishspeed > sv_maxvelocity->value) {
+		VectorScale (SVvector (ent, velocity), sv_maxvelocity->value /
+					 wishspeed, SVvector (ent, velocity));
 	}
 }
 
@@ -486,9 +488,9 @@ SV_Push (edict_t *pusher, vec3_t move)
 
 		// if the pusher has a "blocked" function, call it
 		// otherwise, just stay in place until the obstacle is gone
-		if (SVfunc (pusher, blocked)) {
+		if (SVfunc (pusher, blocked))
 			sv_pr_blocked (pusher, check);
-		}
+
 		// move back any entities we already moved
 		for (i = 0; i < num_moved; i++) {
 			VectorCopy (moved_from[i], SVvector (moved_edict[i], origin));
@@ -754,7 +756,6 @@ SV_RunEntity (edict_t *ent)
 		default:
 			Sys_Error ("SV_Physics: bad movetype %i",
 					   (int) SVfloat (ent, movetype));
-			break;
 	}
 }
 

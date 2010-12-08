@@ -123,12 +123,12 @@ SV_CheckVelocity (edict_t *ent)
 }
 
 /*
-  SV_RunThink
+	SV_RunThink
 
-  Runs thinking code if time.  There is some play in the exact time the think
-  function will be called, because it is called before any movement is done
-  in a frame.  Not used for pushmove objects, because they must be exact.
-  Returns false if the entity removed itself.
+	Runs thinking code if time.  There is some play in the exact time the think
+	function will be called, because it is called before any movement is done
+	in a frame.  Not used for pushmove objects, because they must be exact.
+	Returns false if the entity removed itself.
 */
 qboolean
 SV_RunThink (edict_t *ent)
@@ -182,10 +182,10 @@ SV_Impact (edict_t *e1, edict_t *e2)
 }
 
 /*
-  ClipVelocity
+	ClipVelocity
 
-  Slide off of the impacting object
-  returns the blocked flags (1 = floor, 2 = step / wall)
+	Slide off of the impacting object
+	returns the blocked flags (1 = floor, 2 = step / wall)
 */
 static int
 ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
@@ -389,9 +389,10 @@ SV_Push (edict_t *pusher, vec3_t move)
 	float       solid_save;
 	int         num_moved, i, e;
 	edict_t    *check, *block;
-	edict_t    *moved_edict[MAX_EDICTS];
+	edict_t   **moved_edict;
 	vec3_t      mins, maxs, pushorig;
-	vec3_t      moved_from[MAX_EDICTS];
+	vec3_t     *moved_from;
+	int         mark;
 
 	VectorAdd (SVvector (pusher, absmin), move, mins);
 	VectorAdd (SVvector (pusher, absmax), move, maxs);
@@ -401,6 +402,10 @@ SV_Push (edict_t *pusher, vec3_t move)
 	// move the pusher to it's final position
 	VectorAdd (SVvector (pusher, origin), move, SVvector (pusher, origin));
 	SV_LinkEdict (pusher, false);
+
+	mark = Hunk_LowMark ();
+	moved_edict = Hunk_Alloc (sv.num_edicts * sizeof (edict_t *));
+	moved_from = Hunk_Alloc (sv.num_edicts * sizeof (vec_t));
 
 	// see if any solid entities are inside the final position
 	num_moved = 0;
@@ -484,8 +489,10 @@ SV_Push (edict_t *pusher, vec3_t move)
 			VectorCopy (moved_from[i], SVvector (moved_edict[i], origin));
 			SV_LinkEdict (moved_edict[i], false);
 		}
+		Hunk_FreeToLowMark (mark);
 		return false;
 	}
+	Hunk_FreeToLowMark (mark);
 	return true;
 }
 
