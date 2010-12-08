@@ -213,6 +213,17 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 	model_t    *model;
 	vec3_t      hullmins, hullmaxs, size;
 
+	if ((sv_fields.rotated_bbox != -1
+		 && SVinteger (ent, rotated_bbox))
+		|| SVfloat (ent, solid) == SOLID_BSP) {
+		VectorSubtract (maxs, mins, size);
+		if (size[0] < 3)
+			hull_index = 0;
+		else if (size[0] <= 32)
+			hull_index = 1;
+		else
+			hull_index = 2;
+	}
 	if (sv_fields.rotated_bbox != -1
 		&& SVinteger (ent, rotated_bbox)) {
 		int h = SVinteger (ent, rotated_bbox) - 1;
@@ -220,12 +231,18 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 	} if (SVfloat (ent, solid) == SOLID_BSP) {
 		// explicit hulls in the BSP model
 		if (SVfloat (ent, movetype) != MOVETYPE_PUSH)
-			Sys_Error ("SOLID_BSP without MOVETYPE_PUSH");
+			Sys_Error ("SOLID_BSP without MOVETYPE_PUSH: %d %s",
+					   NUM_FOR_EDICT (&sv_pr_state, ent),
+					   PR_GetString (&sv_pr_state,
+						   			 SVstring (ent, classname)));
 
 		model = sv.models[(int) SVfloat (ent, modelindex)];
 
 		if (!model || model->type != mod_brush)
-			Sys_Error ("SOLID_BSP with a non bsp model");
+			Sys_Error ("SOLID_BSP with a non bsp model: %d %s",
+					   NUM_FOR_EDICT (&sv_pr_state, ent),
+					   PR_GetString (&sv_pr_state,
+						   			 SVstring (ent, classname)));
 
 		hull_list = model->hull_list;
 	}
@@ -347,8 +364,8 @@ SV_UnlinkEdict (edict_t *ent)
 static void
 SV_TouchLinks (edict_t *ent, areanode_t *node)
 {
-	edict_t    *touch;
 	int         old_self, old_other;
+	edict_t    *touch;
 	link_t     *l, *next;
 
 	// touch linked edicts
@@ -558,7 +575,6 @@ SV_TestEntityPosition (edict_t *ent)
 
 	if (trace.startsolid)
 		return sv.edicts;
-
 	return NULL;
 }
 
@@ -569,7 +585,7 @@ SV_TestEntityPosition (edict_t *ent)
 	eventually rotation) of the end points
 */
 static trace_t
-SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, const vec3_t start,
+SV_ClipMoveToEntity (edict_t *touched, const vec3_t start,
 					 const vec3_t mins, const vec3_t maxs, const vec3_t end)
 {
 	hull_t     *hull;
@@ -605,73 +621,149 @@ SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, const vec3_t start,
 	return trace;
 }
 
+static inline int
+ctl_pretest_everything (edict_t *touch, moveclip_t *clip)
+{
+	if (touch->free)
+		return 0;
+	if (!((int) SVfloat (touch, flags) & FL_FINDABLE_NONSOLID)) {
+		if (SVfloat (touch, solid) == SOLID_NOT)
+			return 0;
+		if (SVfloat (touch, solid) == SOLID_TRIGGER)
+			return 0;
+	}
+	if (touch == clip->passedict)
+		return 0;
+	return 1;
+}
+
+static inline int
+ctl_pretest_triggers (edict_t *touch, moveclip_t *clip)
+{
+	if (SVfloat (touch, solid) != SOLID_TRIGGER)
+		return 0;
+	if (!((int) SVfloat (touch, flags) & FL_FINDABLE_NONSOLID))
+		return 0;
+	if (touch == clip->passedict)
+		return 0;
+	return 1;
+}
+
+static inline int
+ctl_pretest_other (edict_t *touch, moveclip_t *clip)
+{
+	if (SVfloat (touch, solid) == SOLID_NOT)
+		return 0;
+	if (touch == clip->passedict)
+		return 0;
+	if (SVfloat (touch, solid) == SOLID_TRIGGER)
+		Sys_Error ("Trigger in clipping list");
+
+	if (clip->type == MOVE_NOMONSTERS && SVfloat (touch, solid) != SOLID_BSP)
+		return 0;
+	return 1;
+}
+
+static inline int
+ctl_touch_test (edict_t *touch, moveclip_t *clip)
+{
+	if (clip->boxmins[0] > SVvector (touch, absmax)[0]
+		|| clip->boxmins[1] > SVvector (touch, absmax)[1]
+		|| clip->boxmins[2] > SVvector (touch, absmax)[2]
+		|| clip->boxmaxs[0] < SVvector (touch, absmin)[0]
+		|| clip->boxmaxs[1] < SVvector (touch, absmin)[1]
+		|| clip->boxmaxs[2] < SVvector (touch, absmin)[2])
+		return 0;
+
+	if (clip->passedict && SVvector (clip->passedict, size)[0]
+		&& !SVvector (touch, size)[0])
+		return 0;						// points never interact
+
+	// might intersect, so do an exact clip
+	if (clip->passedict) {
+		if (PROG_TO_EDICT (&sv_pr_state, SVentity (touch, owner))
+			== clip->passedict)
+			return 0;					// don't clip against own missiles
+		if (PROG_TO_EDICT (&sv_pr_state,
+						   SVentity (clip->passedict, owner)) == touch)
+			return 0;					// don't clip against owner
+	}
+	return 1;
+}
+
+static void
+ctl_do_clip (edict_t *touch, moveclip_t *clip, trace_t *trace)
+{
+	if ((int) SVfloat (touch, flags) & FL_MONSTER)
+		*trace = SV_ClipMoveToEntity (touch, clip->start,
+									  clip->mins2, clip->maxs2, clip->end);
+	else
+		*trace = SV_ClipMoveToEntity (touch, clip->start,
+									  clip->mins, clip->maxs, clip->end);
+	if (trace->allsolid || trace->startsolid
+		|| trace->fraction < clip->trace.fraction) {
+		trace->ent = touch;
+		if (clip->trace.startsolid) {
+			clip->trace = *trace;
+			clip->trace.startsolid = true;
+		} else
+			clip->trace = *trace;
+	} else if (trace->startsolid)
+		clip->trace.startsolid = true;
+}
+
 /*
 	SV_ClipToLinks
 
 	Mins and maxs enclose the entire area swept by the move
 */
 static void
-SV_ClipToLinks (areanode_t *node, moveclip_t * clip)
+SV_ClipToLinks (areanode_t *node, moveclip_t *clip)
 {
 	edict_t    *touch;
 	link_t     *l, *next;
 	trace_t		trace;
+	int         i;
 
-	// touch linked edicts
-	for (l = node->solid_edicts.next; l != &node->solid_edicts; l = next) {
-		next = l->next;
-		touch = EDICT_FROM_AREA (l);
-		if (SVfloat (touch, solid) == SOLID_NOT)
-			continue;
-		if (touch == clip->passedict)
-			continue;
-		if (SVfloat (touch, solid) == SOLID_TRIGGER)
-			Sys_Error ("Trigger in clipping list");
-
-		if (clip->type == MOVE_NOMONSTERS
-			&& SVfloat (touch, solid) != SOLID_BSP)
-			continue;
-
-		if (clip->boxmins[0] > SVvector (touch, absmax)[0]
-			|| clip->boxmins[1] > SVvector (touch, absmax)[1]
-			|| clip->boxmins[2] > SVvector (touch, absmax)[2]
-			|| clip->boxmaxs[0] < SVvector (touch, absmin)[0]
-			|| clip->boxmaxs[1] < SVvector (touch, absmin)[1]
-			|| clip->boxmaxs[2] < SVvector (touch, absmin)[2])
-			continue;
-
-		if (clip->passedict != 0 && SVvector (clip->passedict, size)[0]
-			&& !SVvector (touch, size)[0])
-			continue;					// points never interact
-
-		// might intersect, so do an exact clip
-		if (clip->trace.allsolid)
-			return;
-		if (clip->passedict) {
-			if (PROG_TO_EDICT (&sv_pr_state, SVentity (touch, owner))
-				== clip->passedict)
-				continue;				// don't clip against own missiles
-			if (PROG_TO_EDICT (&sv_pr_state,
-							   SVentity (clip->passedict, owner)) == touch)
-				continue;				// don't clip against owner
+	if (clip->type == TL_EVERYTHING) {
+		touch = NEXT_EDICT (&sv_pr_state, sv.edicts);
+		for (i = 1; i < sv.num_edicts; i++,
+			 touch = NEXT_EDICT (&sv_pr_state, touch)) {
+			if (clip->trace.allsolid)
+				return;
+			if (!ctl_pretest_everything (touch, clip))
+				continue;
+			if (!ctl_touch_test (touch, clip))
+				continue;
+			ctl_do_clip (touch, clip, &trace);
 		}
+	} else if (clip->type == TL_TRIGGERS) {
+		for (l = node->solid_edicts.next; l != &node->solid_edicts; l = next) {
+			next = l->next;
+			touch = EDICT_FROM_AREA (l);
 
-		if ((int) SVfloat (touch, flags) & FL_MONSTER)
-			trace = SV_ClipMoveToEntity (touch, clip->passedict, clip->start,
-										 clip->mins2, clip->maxs2, clip->end);
-		else
-			trace = SV_ClipMoveToEntity (touch, clip->passedict, clip->start,
-										 clip->mins, clip->maxs, clip->end);
-		if (trace.allsolid || trace.startsolid
-			|| trace.fraction < clip->trace.fraction) {
-			trace.ent = touch;
-			if (clip->trace.startsolid) {
-				clip->trace = trace;
-				clip->trace.startsolid = true;
-			} else
-				clip->trace = trace;
-		} else if (trace.startsolid)
-			clip->trace.startsolid = true;
+			if (clip->trace.allsolid)
+				return;
+			if (!ctl_pretest_triggers (touch, clip))
+				continue;
+			if (!ctl_touch_test (touch, clip))
+				continue;
+			ctl_do_clip (touch, clip, &trace);
+		}
+	} else {
+		// touch linked edicts
+		for (l = node->solid_edicts.next; l != &node->solid_edicts; l = next) {
+			next = l->next;
+			touch = EDICT_FROM_AREA (l);
+
+			if (clip->trace.allsolid)
+				return;
+			if (!ctl_pretest_other (touch, clip))
+				continue;
+			if (!ctl_touch_test (touch, clip))
+				continue;
+			ctl_do_clip (touch, clip, &trace);
+		}
 	}
 
 	// recurse down both sides
@@ -717,8 +809,7 @@ SV_Move (const vec3_t start, const vec3_t mins, const vec3_t maxs,
 	memset (&clip, 0, sizeof (moveclip_t));
 
 	// clip to world
-	clip.trace = SV_ClipMoveToEntity (sv.edicts, passedict, start,
-									  mins, maxs, end);
+	clip.trace = SV_ClipMoveToEntity (sv.edicts, start, mins, maxs, end);
 	clip.start = start;
 	clip.end = end;
 	clip.mins = mins;

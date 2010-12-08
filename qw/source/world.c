@@ -28,7 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
@@ -129,7 +129,7 @@ typedef struct {
 	const float *start, *end;
 	trace_t      trace;
 	int          type;
-	edict_t    *passedict;
+	edict_t     *passedict;
 } moveclip_t;
 
 /* HULL BOXES */
@@ -208,10 +208,10 @@ hull_t *
 SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 				  vec3_t extents, vec3_t offset)
 {
-	hull_t     *hull = 0;
 	int         hull_index = 0;
+	hull_t     *hull = 0, **hull_list = 0;
 	model_t    *model;
-	vec3_t		hullmins, hullmaxs, size;
+	vec3_t      hullmins, hullmaxs, size;
 
 	if ((sv_fields.rotated_bbox != -1
 		 && SVinteger (ent, rotated_bbox))
@@ -224,11 +224,10 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 		else
 			hull_index = 2;
 	}
-	// decide which clipping hull to use, based on the size
 	if (sv_fields.rotated_bbox != -1
 		&& SVinteger (ent, rotated_bbox)) {
 		int h = SVinteger (ent, rotated_bbox) - 1;
-		hull = pf_hull_list[h]->hulls[hull_index];
+		hull_list = pf_hull_list[h]->hulls;
 	} if (SVfloat (ent, solid) == SOLID_BSP) {
 		// explicit hulls in the BSP model
 		if (SVfloat (ent, movetype) != MOVETYPE_PUSH)
@@ -245,19 +244,49 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 					   PR_GetString (&sv_pr_state,
 						   			 SVstring (ent, classname)));
 
-		hull = &model->hulls[hull_index];
+		hull_list = model->hull_list;
+	}
+	if (hull_list) {
+		// decide which clipping hull to use, based on the size
+		VectorSubtract (maxs, mins, size);
+		if (extents) {
+			VectorScale (size, 0.5, extents);
+		} else {
+			if (size[0] < 3)
+				hull_index = 0;
+			else if (size[0] <= 32)
+				hull_index = 1;
+			else
+				hull_index = 2;
+		}
+		hull = hull_list[hull_index];
 	}
 
 	if (hull) {
 		// calculate an offset value to center the origin
-		VectorSubtract (hull->clip_mins, mins, offset);
-		VectorAdd (offset, SVvector (ent, origin), offset);
-	} else {					// create a temp hull from bounding box sizes
-		VectorSubtract (SVvector (ent, mins), maxs, hullmins);
-		VectorSubtract (SVvector (ent, maxs), mins, hullmaxs);
-		hull = SV_HullForBox (hullmins, hullmaxs);
+		if (extents) {
+			VectorAdd (extents, mins, offset);
+			VectorSubtract (SVvector (ent, origin), offset, offset);
+		} else {
+			VectorSubtract (hull->clip_mins, mins, offset);
+			VectorAdd (offset, SVvector (ent, origin), offset);
+		}
+	} else {
+		// create a temp hull from bounding box sizes
+		if (extents) {
+			VectorCopy (SVvector (ent, mins), hullmins);
+			VectorCopy (SVvector (ent, maxs), hullmaxs);
 
-		VectorCopy (SVvector (ent, origin), offset);
+			//FIXME broken for map models (ie, origin always 0, 0, 0)
+			VectorAdd (extents, mins, offset);
+			VectorSubtract (SVvector (ent, origin), offset, offset);
+		} else {
+			VectorSubtract (SVvector (ent, mins), maxs, hullmins);
+			VectorSubtract (SVvector (ent, maxs), mins, hullmaxs);
+
+			VectorCopy (SVvector (ent, origin), offset);
+		}
+		hull = SV_HullForBox (hullmins, hullmaxs);
 	}
 
 	return hull;
@@ -568,10 +597,12 @@ SV_ClipMoveToEntity (edict_t *touched, const vec3_t start,
 
 	trace.fraction = 1;
 	trace.allsolid = true;
+	trace.isbox = 0;
 	VectorCopy (end, trace.endpos);
 
 	// get the clipping hull
-	hull = SV_HullForEntity (touched, mins, maxs, 0, offset);
+	hull = SV_HullForEntity (touched, mins, maxs,
+							 trace.isbox ? trace.extents : 0, offset);
 
 	VectorSubtract (start, offset, start_l);
 	VectorSubtract (end, offset, end_l);
@@ -690,7 +721,7 @@ static void
 SV_ClipToLinks (areanode_t *node, moveclip_t *clip)
 {
 	edict_t    *touch;
-	link_t     *l;
+	link_t     *l, *next;
 	trace_t		trace;
 	int         i;
 
@@ -707,8 +738,8 @@ SV_ClipToLinks (areanode_t *node, moveclip_t *clip)
 			ctl_do_clip (touch, clip, &trace);
 		}
 	} else if (clip->type == TL_TRIGGERS) {
-		for (l = node->solid_edicts.next;
-			 l != &node->solid_edicts; l = l->next) {
+		for (l = node->solid_edicts.next; l != &node->solid_edicts; l = next) {
+			next = l->next;
 			touch = EDICT_FROM_AREA (l);
 
 			if (clip->trace.allsolid)
@@ -721,8 +752,8 @@ SV_ClipToLinks (areanode_t *node, moveclip_t *clip)
 		}
 	} else {
 		// touch linked edicts
-		for (l = node->solid_edicts.next;
-			 l != &node->solid_edicts; l = l->next) {
+		for (l = node->solid_edicts.next; l != &node->solid_edicts; l = next) {
+			next = l->next;
 			touch = EDICT_FROM_AREA (l);
 
 			if (clip->trace.allsolid)
@@ -745,7 +776,7 @@ SV_ClipToLinks (areanode_t *node, moveclip_t *clip)
 		SV_ClipToLinks (node->children[1], clip);
 }
 
-static void
+static inline void
 SV_MoveBounds (const vec3_t start, const vec3_t mins, const vec3_t maxs,
 			   const vec3_t end, vec3_t boxmins, vec3_t boxmaxs)
 {
@@ -778,9 +809,7 @@ SV_Move (const vec3_t start, const vec3_t mins, const vec3_t maxs,
 	memset (&clip, 0, sizeof (moveclip_t));
 
 	// clip to world
-	clip.trace = SV_ClipMoveToEntity (sv.edicts, start,
-									  mins, maxs, end);
-
+	clip.trace = SV_ClipMoveToEntity (sv.edicts, start, mins, maxs, end);
 	clip.start = start;
 	clip.end = end;
 	clip.mins = mins;
@@ -811,9 +840,9 @@ SV_Move (const vec3_t start, const vec3_t mins, const vec3_t maxs,
 edict_t *
 SV_TestPlayerPosition (edict_t *ent, const vec3_t origin)
 {
+	int         e;
 	edict_t    *check;
 	hull_t     *hull;
-	int         e;
 	vec3_t      boxmins, boxmaxs, offset;
 
 	// check world first
