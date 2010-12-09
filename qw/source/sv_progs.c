@@ -523,6 +523,8 @@ SV_LoadProgs (void)
 	if (!sv_pr_state.progs)
 		Sys_Error ("SV_LoadProgs: couldn't load %s", progs_name);
 
+	memset (sv_data, 0, sizeof (sv_data));
+
 	// init the data field of the edicts
 	for (i = 0; i < MAX_EDICTS; i++) {
 		edict_t    *ent = EDICT_NUM (&sv_pr_state, i);
