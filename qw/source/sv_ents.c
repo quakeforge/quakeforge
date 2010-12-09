@@ -377,8 +377,8 @@ SV_EmitPacketEntities (delta_t *delta, packet_entities_t *to, sizebuf_t *msg,
 			}
 			ent = EDICT_NUM (&sv_pr_state, newnum);
 //			SV_Printf ("baseline %i\n", newnum);
-			SV_WriteDelta (ent->data, &to->entities[newindex], msg, true,
-						   stdver);
+			SV_WriteDelta (&SVdata (ent)->state, &to->entities[newindex], msg,
+						   true, stdver);
 			newindex++;
 			continue;
 		}
@@ -615,7 +615,7 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 
 			if (pvs) {
 				// ignore if not touching a PV leaf
-				for (el = ent->leafs; el; el = el->next) {
+				for (el = SVdata (ent)->leafs; el; el = el->next) {
 					unsigned    leafnum = el->leaf - sv.worldmodel->leafs - 1;
 					if (pvs[leafnum >> 3] & (1 << (leafnum & 7)))
 						break;
@@ -804,7 +804,7 @@ SV_WriteEntitiesToClient (delta_t *delta, sizebuf_t *msg)
 
 		if (pvs) {
 			// ignore if not touching a PV leaf
-			for (el = ent->leafs; el; el = el->next) {
+			for (el = SVdata (ent)->leafs; el; el = el->next) {
 				unsigned    leafnum = el->leaf - sv.worldmodel->leafs - 1;
 				if (pvs[leafnum >> 3] & (1 << (leafnum & 7)))
 					break;

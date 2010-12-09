@@ -51,8 +51,6 @@ char        localmodels[MAX_MODELS][5];	// inline model names for precache
 
 int sv_protocol = PROTOCOL_FITZQUAKE;
 
-entity_state_t baselines[MAX_EDICTS];
-
 static void
 SV_Protocol_f (void)
 {
@@ -452,7 +450,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 	// send over all entities (excpet the client) that touch the pvs
 	ent = NEXT_EDICT (&sv_pr_state, sv.edicts);
 	for (e = 1; e < sv.num_edicts; e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
-		baseline = (entity_state_t*) ent->data;
+		baseline = &SVdata (ent)->state;
 
 		// ignore if not touching a PV leaf
 		if (ent != clent) {				// clent is ALWAYS sent
@@ -466,7 +464,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 				&& (int) SVfloat (ent, modelindex) & 0xFF00)
 				continue;
 
-			for (el = ent->leafs; el; el = el->next) {
+			for (el = SVdata (ent)->leafs; el; el = el->next) {
 				unsigned    leafnum = el->leaf - sv.worldmodel->leafs - 1;
 				if (pvs[leafnum >> 3] & (1 << (leafnum & 7)))
 					break;
@@ -972,7 +970,7 @@ SV_CreateBaseline (void)
 	for (entnum = 0; entnum < sv.num_edicts; entnum++) {
 		// get the current server version
 		svent = EDICT_NUM (&sv_pr_state, entnum);
-		baseline = (entity_state_t *) svent->data;
+		baseline = &SVdata (svent)->state;
 
 		if (svent->free)
 			continue;
@@ -1143,12 +1141,6 @@ SV_SpawnServer (const char *server)
 	sv.max_edicts = bound (MIN_EDICTS, max_edicts->int_val, MAX_EDICTS);
 	SV_LoadProgs ();
 	SV_FreeAllEdictLeafs ();
-
-	// init the data field of the edicts
-	for (i = 0; i < sv.max_edicts; i++) {
-		ent = EDICT_NUM (&sv_pr_state, i);
-		ent->data = &baselines[i];
-	}
 
 	sv.datagram.maxsize = sizeof (sv.datagram_buf);
 	sv.datagram.cursize = 0;

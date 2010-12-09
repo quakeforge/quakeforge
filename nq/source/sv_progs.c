@@ -54,6 +54,8 @@ sv_globals_t sv_globals;
 sv_funcs_t sv_funcs;
 sv_fields_t sv_fields;
 
+sv_data_t sv_data[MAX_EDICTS];
+
 cvar_t     *sv_progs;
 cvar_t     *sv_progs_zone;
 cvar_t     *sv_progs_ext;
@@ -473,6 +475,7 @@ SV_LoadProgs (void)
 {
 	const char *progs_name = "progs.dat";
 	const char *range;
+	int         i;
 
 	if (strequal (sv_progs_ext->string, "qf")) {
 		sv_range = PR_RANGE_QF;
@@ -498,6 +501,13 @@ SV_LoadProgs (void)
 				  sv_progs_zone->int_val * 1024);
 	if (!sv_pr_state.progs)
 		Host_Error ("SV_LoadProgs: couldn't load %s", progs_name);
+
+	// init the data field of the edicts
+	for (i = 0; i < sv.max_edicts; i++) {
+		edict_t    *ent = EDICT_NUM (&sv_pr_state, i);
+		ent->edata = &sv_data[i];
+		SVdata (ent)->edict = ent;
+	}
 }
 
 void

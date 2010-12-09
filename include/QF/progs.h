@@ -34,10 +34,10 @@
 	\image latex vm-mem.eps "VM memory map"
 */
 
-#include "QF/link.h"
 #include "QF/pr_comp.h"
 #include "QF/pr_debug.h"
-#include "QF/quakeio.h"
+
+struct QFile_s;
 
 /** \ingroup progs */
 //@{
@@ -154,7 +154,7 @@ typedef int pr_load_func_t (progs_t *pr);
 	So far, 1MB has proven more than sufficient for Quakeword, even when using
 	Ruamoko objects.
 */
-void PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int edicts,
+void PR_LoadProgsFile (progs_t *pr, struct QFile_s *file, int size, int edicts,
 					   int zone);
 
 /** Convenience wrapper for PR_LoadProgsFile() and PR_RunLoadFuncs().
@@ -215,22 +215,12 @@ void PR_BoundsCheck (progs_t *pr, int addr, etype_t type);
 */
 //@{
 
-typedef struct edict_leaf_s {
-	struct edict_leaf_s *next;
-	struct mleaf_s *leaf;
-} edict_leaf_t;
-
 struct edict_s {
 	qboolean    free;
-	link_t      area;			///< linked to a division node or leaf
-
-	edict_leaf_t *leafs;
-
 	float       freetime;		///< sv.time when the object was freed
-	void       *data;			///< external per-edict data
+	void       *edata;			///< external per-edict data
 	pr_type_t   v[1];			///< fields from progs
 };
-#define EDICT_FROM_AREA(l) STRUCT_FROM_LINK(l,edict_t,area)
 
 // pr_edict.c
 void ED_ClearEdict (progs_t *pr, edict_t *e, int val);

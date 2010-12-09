@@ -27,6 +27,10 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+static __attribute__ ((used)) const char rcsid[] = 
+	"$Id$";
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -51,6 +55,8 @@ progs_t     sv_pr_state;
 sv_globals_t sv_globals;
 sv_funcs_t sv_funcs;
 sv_fields_t sv_fields;
+
+sv_data_t sv_data[MAX_EDICTS];
 
 cvar_t     *r_skyname;
 cvar_t     *sv_progs;
@@ -480,6 +486,7 @@ SV_LoadProgs (void)
 {
 	const char *progs_name = "qwprogs.dat";
 	const char *range;
+	int         i;
 
 	if (strequal (sv_progs_ext->string, "qf")) {
 		sv_range = PR_RANGE_QF;
@@ -515,6 +522,13 @@ SV_LoadProgs (void)
 				  sv_progs_zone->int_val * 1024);
 	if (!sv_pr_state.progs)
 		Sys_Error ("SV_LoadProgs: couldn't load %s", progs_name);
+
+	// init the data field of the edicts
+	for (i = 0; i < MAX_EDICTS; i++) {
+		edict_t    *ent = EDICT_NUM (&sv_pr_state, i);
+		ent->edata = &sv_data[i];
+		SVdata (ent)->edict = ent;
+	}
 }
 
 void

@@ -351,14 +351,14 @@ link_t        **sv_link_prev;
 void
 SV_UnlinkEdict (edict_t *ent)
 {
-	if (!ent->area.prev)
+	if (!SVdata (ent)->area.prev)
 		return;							// not linked in anywhere
-	RemoveLink (&ent->area);
-	if (sv_link_next && *sv_link_next == &ent->area)
-		*sv_link_next = ent->area.next;
-	if (sv_link_prev && *sv_link_prev == &ent->area)
-		*sv_link_prev = ent->area.prev;
-	ent->area.prev = ent->area.next = NULL;
+	RemoveLink (&SVdata (ent)->area);
+	if (sv_link_next && *sv_link_next == &SVdata (ent)->area)
+		*sv_link_next = SVdata (ent)->area.next;
+	if (sv_link_prev && *sv_link_prev == &SVdata (ent)->area)
+		*sv_link_prev = SVdata (ent)->area.prev;
+	SVdata (ent)->area.prev = SVdata (ent)->area.next = NULL;
 }
 
 static void
@@ -424,8 +424,8 @@ SV_FindTouchedLeafs (edict_t *ent, mnode_t *node)
 
 		edict_leaf = alloc_edict_leaf ();
 		edict_leaf->leaf = leaf;
-		edict_leaf->next = ent->leafs;
-		ent->leafs = edict_leaf;
+		edict_leaf->next = SVdata (ent)->leafs;
+		SVdata (ent)->leafs = edict_leaf;
 		return;
 	}
 
@@ -447,7 +447,7 @@ SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 {
 	areanode_t *node;
 
-	if (ent->area.prev)
+	if (SVdata (ent)->area.prev)
 		SV_UnlinkEdict (ent);			// unlink from old position
 
 	if (ent == sv.edicts)
@@ -479,7 +479,7 @@ SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 	}
 
 	// link to PVS leafs
-	free_edict_leafs (&ent->leafs);
+	free_edict_leafs (&SVdata (ent)->leafs);
 	if (SVfloat (ent, modelindex))
 		SV_FindTouchedLeafs (ent, sv.worldmodel->nodes);
 
@@ -501,9 +501,9 @@ SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 
 	// link it in
 	if (SVfloat (ent, solid) == SOLID_TRIGGER)
-		InsertLinkBefore (&ent->area, &node->trigger_edicts);
+		InsertLinkBefore (&SVdata (ent)->area, &node->trigger_edicts);
 	else
-		InsertLinkBefore (&ent->area, &node->solid_edicts);
+		InsertLinkBefore (&SVdata (ent)->area, &node->solid_edicts);
 
 	// if touch_triggers, touch all entities at this node and descend for more
 	if (touch_triggers)

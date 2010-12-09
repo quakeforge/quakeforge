@@ -58,8 +58,6 @@ static __attribute__ ((used)) const char rcsid[] =
 info_t     *localinfo;	// local game info
 char        localmodels[MAX_MODELS][5];	// inline model names for precache
 
-entity_state_t baselines[MAX_EDICTS];
-
 server_t    sv;							// local server
 
 
@@ -122,28 +120,26 @@ SV_CreateBaseline (void)
 			continue;
 
 		// create entity baseline
-		VectorCopy (SVvector (svent, origin),
-					((entity_state_t*)svent->data)->origin);
-		VectorCopy (SVvector (svent, angles),
-					((entity_state_t*)svent->data)->angles);
-		((entity_state_t*)svent->data)->frame = SVfloat (svent, frame);
-		((entity_state_t*)svent->data)->skinnum = SVfloat (svent, skin);
+		VectorCopy (SVvector (svent, origin), SVdata (svent)->state.origin);
+		VectorCopy (SVvector (svent, angles), SVdata (svent)->state.angles);
+		SVdata (svent)->state.frame = SVfloat (svent, frame);
+		SVdata (svent)->state.skinnum = SVfloat (svent, skin);
 		if (entnum > 0 && entnum <= MAX_CLIENTS) {
-			((entity_state_t*)svent->data)->colormap = entnum;
-			((entity_state_t*)svent->data)->modelindex = SV_ModelIndex
+			SVdata (svent)->state.colormap = entnum;
+			SVdata (svent)->state.modelindex = SV_ModelIndex
 				("progs/player.mdl");
 		} else {
-			((entity_state_t*)svent->data)->colormap = 0;
-			((entity_state_t*)svent->data)->modelindex =
+			SVdata (svent)->state.colormap = 0;
+			SVdata (svent)->state.modelindex =
 				SV_ModelIndex (PR_GetString (&sv_pr_state,
 											 SVstring (svent, model)));
 		}
 		// LordHavoc: setup baseline to include new effects
-		((entity_state_t*)svent->data)->alpha = 255;
-		((entity_state_t*)svent->data)->scale = 16;
-		((entity_state_t*)svent->data)->glow_size = 0;
-		((entity_state_t*)svent->data)->glow_color = 254;
-		((entity_state_t*)svent->data)->colormod = 255;
+		SVdata (svent)->state.alpha = 255;
+		SVdata (svent)->state.scale = 16;
+		SVdata (svent)->state.glow_size = 0;
+		SVdata (svent)->state.glow_color = 254;
+		SVdata (svent)->state.colormod = 255;
 
 		// flush the signon message out to a separate buffer if nearly full
 		SV_FlushSignon ();
@@ -152,14 +148,13 @@ SV_CreateBaseline (void)
 		MSG_WriteByte (&sv.signon, svc_spawnbaseline);
 		MSG_WriteShort (&sv.signon, entnum);
 
-		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->modelindex);
-		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->frame);
-		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->colormap);
-		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->skinnum);
+		MSG_WriteByte (&sv.signon, SVdata (svent)->state.modelindex);
+		MSG_WriteByte (&sv.signon, SVdata (svent)->state.frame);
+		MSG_WriteByte (&sv.signon, SVdata (svent)->state.colormap);
+		MSG_WriteByte (&sv.signon, SVdata (svent)->state.skinnum);
 
-		MSG_WriteCoordAngleV (&sv.signon,
-							  ((entity_state_t*)svent->data)->origin,
-							  ((entity_state_t*)svent->data)->angles);
+		MSG_WriteCoordAngleV (&sv.signon, SVdata (svent)->state.origin,
+							  SVdata (svent)->state.angles);
 	}
 }
 
@@ -354,12 +349,6 @@ SV_SpawnServer (const char *server)
 	SV_SetupUserCommands ();
 	Info_SetValueForStarKey (svs.info, "*progs", va ("%i", sv_pr_state.crc),
 							 !sv_highchars->int_val);
-
-	// init the data field of the edicts
-	for (i = 0; i < MAX_EDICTS; i++) {
-		ent = EDICT_NUM (&sv_pr_state, i);
-		ent->data = &baselines[i];
-	}
 
 	// leave slots at start for only clients
 	sv.num_edicts = MAX_CLIENTS + 1;

@@ -32,7 +32,10 @@
 #ifndef __sv_progs_h
 #define __sv_progs_h
 
+#include "QF/link.h"
 #include "QF/progs.h"
+
+#include "protocol.h"
 #include "sv_pr_cmds.h"
 
 typedef struct {
@@ -189,6 +192,8 @@ typedef struct
 
 extern sv_fields_t sv_fields;
 
+extern progs_t sv_pr_state;
+
 #define PR_RANGE_ID		0x0000
 #define PR_RANGE_ID_MAX	82
 
@@ -205,7 +210,20 @@ extern sv_fields_t sv_fields;
 #define SVvector(e,f)	SVFIELD (e, f, vector)
 #define SVinteger(e,f)	SVFIELD (e, f, integer)
 
-extern progs_t sv_pr_state;
+typedef struct edict_leaf_s {
+	struct edict_leaf_s *next;
+	struct mleaf_s *leaf;
+} edict_leaf_t;
+
+typedef struct sv_data_s {
+	edict_t    *edict;
+	link_t      area;			///< linked to a division node or leaf
+	edict_leaf_t *leafs;
+	entity_state_t state;
+} sv_data_t;
+
+#define SVdata(e)		((sv_data_t *) ((e)->edata))
+#define EDICT_FROM_AREA(l) (STRUCT_FROM_LINK(l,sv_data_t,area)->edict)
 
 static inline void
 sv_pr_touch (edict_t *self, edict_t *other)
