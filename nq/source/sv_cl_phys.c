@@ -334,8 +334,8 @@ SV_Physics_Client (edict_t *ent, int num)
 	case MOVETYPE_WALK:
 		if (!SV_RunThink (ent))
 			return;
-		if (!SV_CheckWater (ent) && !((int) SVfloat (ent, flags) &
-									  FL_WATERJUMP))
+		if (!SV_CheckWater (ent)
+			&& !((int) SVfloat (ent, flags) & FL_WATERJUMP))
 			SV_AddGravity (ent);
 		SV_CheckStuck (ent);
 		SV_WalkMove (ent);
@@ -364,9 +364,9 @@ SV_Physics_Client (edict_t *ent, int num)
 				   (int) SVfloat (ent, movetype));
 	}
 
-	// call standard player post-think
 	SV_LinkEdict (ent, true);
 
+	// call standard player post-think
 	*sv_globals.time = sv.time;
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
 	PR_ExecuteProgram (&sv_pr_state, sv_funcs.PlayerPostThink);
