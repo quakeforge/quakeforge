@@ -39,129 +39,129 @@
 #include "sv_pr_cmds.h"
 
 typedef struct {
-    pr_int_t   *self;
-    pr_int_t   *other;
-    pr_int_t   *world;
-    float      *time;
-    float      *frametime;
-    pr_int_t   *newmis;
-    float      *force_retouch;
-    string_t   *mapname;
-    float      *serverflags;
-    float      *total_secrets;
-    float      *total_monsters;
-    float      *found_secrets;
-    float      *killed_monsters;
-    float      *parms;			// an actual array
-    vec3_t     *v_forward;
-    vec3_t     *v_up;
-    vec3_t     *v_right;
-    float      *trace_allsolid;
-    float      *trace_startsolid;
-    float      *trace_fraction;
-    vec3_t     *trace_endpos;
-    vec3_t     *trace_plane_normal;
-    float      *trace_plane_dist;
-    pr_int_t   *trace_ent;
-    float      *trace_inopen;
-    float      *trace_inwater;
-    pr_int_t   *msg_entity;
-    float      *skill;
+	pr_int_t   *self;
+	pr_int_t   *other;
+	pr_int_t   *world;
+	float      *time;
+	float      *frametime;
+	pr_int_t   *newmis;
+	float      *force_retouch;
+	string_t   *mapname;
+	float      *serverflags;
+	float      *total_secrets;
+	float      *total_monsters;
+	float      *found_secrets;
+	float      *killed_monsters;
+	float      *parms;			// an actual array
+	vec3_t     *v_forward;
+	vec3_t     *v_up;
+	vec3_t     *v_right;
+	float      *trace_allsolid;
+	float      *trace_startsolid;
+	float      *trace_fraction;
+	vec3_t     *trace_endpos;
+	vec3_t     *trace_plane_normal;
+	float      *trace_plane_dist;
+	pr_int_t   *trace_ent;
+	float      *trace_inopen;
+	float      *trace_inwater;
+	pr_int_t   *msg_entity;
+	float      *skill;
 } sv_globals_t;
 
 extern sv_globals_t sv_globals;
 
 typedef struct {
-    func_t     main;
-    func_t     StartFrame;
-    func_t     PlayerPreThink;
-    func_t     PlayerPostThink;
-    func_t     ClientKill;
-    func_t     ClientConnect;
-    func_t     PutClientInServer;
-    func_t     ClientDisconnect;
-    func_t     SetNewParms;
-    func_t     SetChangeParms;
+	func_t      main;
+	func_t      StartFrame;
+	func_t      PlayerPreThink;
+	func_t      PlayerPostThink;
+	func_t      ClientKill;
+	func_t      ClientConnect;
+	func_t      PutClientInServer;
+	func_t      ClientDisconnect;
+	func_t      SetNewParms;
+	func_t      SetChangeParms;
 
-	func_t     EndFrame;
-	func_t     SpectatorConnect;
-	func_t     SpectatorThink;
-	func_t     SpectatorDisconnect;
-	func_t     UserInfoCallback;
-	func_t     UserInfoChanged;
-	func_t     ChatMessage;
-	func_t     LocalinfoChanged;
+	func_t      EndFrame;
+	func_t      SpectatorConnect;
+	func_t      SpectatorThink;
+	func_t      SpectatorDisconnect;
+	func_t      UserInfoCallback;
+	func_t      UserInfoChanged;
+	func_t      ChatMessage;
+	func_t      LocalinfoChanged;
 } sv_funcs_t;
 
 extern sv_funcs_t sv_funcs;
 
 typedef struct
 {
-	pr_int_t    modelindex;		//float
-	pr_int_t    absmin;			//vec3_t
-	pr_int_t    absmax;			//vec3_t
-	pr_int_t    ltime;			//float
-	pr_int_t    lastruntime;	//float
-	pr_int_t    movetype;		//float
-	pr_int_t    solid;			//float
-	pr_int_t    origin;			//vec3_t
-	pr_int_t    oldorigin;		//vec3_t
-	pr_int_t    velocity;		//vec3_t
-	pr_int_t    angles;			//vec3_t
-	pr_int_t    avelocity;		//vec3_t
-	pr_int_t    classname;		//string_t
-	pr_int_t    model;			//string_t
-	pr_int_t    frame;			//float
-	pr_int_t    skin;			//float
-	pr_int_t    effects;		//float
-	pr_int_t    mins;			//vec3_t
-	pr_int_t    maxs;			//vec3_t
-	pr_int_t    size;			//vec3_t
-	pr_int_t    touch;			//func_t
-	pr_int_t    think;			//func_t
-	pr_int_t    blocked;		//func_t
-	pr_int_t    nextthink;		//float
-	pr_int_t    groundentity;	//int
-	pr_int_t    health;			//float
-	pr_int_t    frags;			//float
-	pr_int_t    weapon;			//float
-	pr_int_t    weaponmodel;	//string_t
-	pr_int_t    weaponframe;	//float
-	pr_int_t    currentammo;	//float
-	pr_int_t    ammo_shells;	//float
-	pr_int_t    ammo_nails;		//float
-	pr_int_t    ammo_rockets;	//float
-	pr_int_t    ammo_cells;		//float
-	pr_int_t    items;			//float
-	pr_int_t    takedamage;		//float
-	pr_int_t    chain;			//int
-	pr_int_t    view_ofs;		//vec3_t
-	pr_int_t    button0;		//float
-	pr_int_t    button1;		//float
-	pr_int_t    button2;		//float
-	pr_int_t    impulse;		//float
-	pr_int_t    fixangle;		//float
-	pr_int_t    v_angle;		//vec3_t
-	pr_int_t    netname;		//string_t
-	pr_int_t    enemy;			//int
-	pr_int_t    flags;			//float
-	pr_int_t    colormap;		//float
-	pr_int_t    team;			//float
-	pr_int_t    teleport_time;	//float
-	pr_int_t    armorvalue;		//float
-	pr_int_t    waterlevel;		//float
-	pr_int_t    watertype;		//float
-	pr_int_t    ideal_yaw;		//float
-	pr_int_t    yaw_speed;		//float
-	pr_int_t    goalentity;		//int
-	pr_int_t    spawnflags;		//float
-	pr_int_t    dmg_take;		//float
-	pr_int_t    dmg_save;		//float
-	pr_int_t    dmg_inflictor;	//int
-	pr_int_t    owner;			//int
-	pr_int_t    message;		//string_t
-	pr_int_t    sounds;			//float
-	pr_int_t    rotated_bbox;	//int
+	pr_int_t    modelindex;			//float
+	pr_int_t    absmin;				//vec3_t
+	pr_int_t    absmax;				//vec3_t
+	pr_int_t    ltime;				//float
+	pr_int_t    lastruntime;		//float
+	pr_int_t    movetype;			//float
+	pr_int_t    solid;				//float
+	pr_int_t    origin;				//vec3_t
+	pr_int_t    oldorigin;			//vec3_t
+	pr_int_t    velocity;			//vec3_t
+	pr_int_t    angles;				//vec3_t
+	pr_int_t    avelocity;			//vec3_t
+	pr_int_t    classname;			//string_t
+	pr_int_t    model;				//string_t
+	pr_int_t    frame;				//float
+	pr_int_t    skin;				//float
+	pr_int_t    effects;			//float
+	pr_int_t    mins;				//vec3_t
+	pr_int_t    maxs;				//vec3_t
+	pr_int_t    size;				//vec3_t
+	pr_int_t    touch;				//func_t
+	pr_int_t    think;				//func_t
+	pr_int_t    blocked;			//func_t
+	pr_int_t    nextthink;			//float
+	pr_int_t    groundentity;		//int
+	pr_int_t    health;				//float
+	pr_int_t    frags;				//float
+	pr_int_t    weapon;				//float
+	pr_int_t    weaponmodel;		//string_t
+	pr_int_t    weaponframe;		//float
+	pr_int_t    currentammo;		//float
+	pr_int_t    ammo_shells;		//float
+	pr_int_t    ammo_nails;			//float
+	pr_int_t    ammo_rockets;		//float
+	pr_int_t    ammo_cells;			//float
+	pr_int_t    items;				//float
+	pr_int_t    takedamage;			//float
+	pr_int_t    chain;				//int
+	pr_int_t    view_ofs;			//vec3_t
+	pr_int_t    button0;			//float
+	pr_int_t    button1;			//float
+	pr_int_t    button2;			//float
+	pr_int_t    impulse;			//float
+	pr_int_t    fixangle;			//float
+	pr_int_t    v_angle;			//vec3_t
+	pr_int_t    netname;			//string_t
+	pr_int_t    enemy;				//int
+	pr_int_t    flags;				//float
+	pr_int_t    colormap;			//float
+	pr_int_t    team;				//float
+	pr_int_t    teleport_time;		//float
+	pr_int_t    armorvalue;			//float
+	pr_int_t    waterlevel;			//float
+	pr_int_t    watertype;			//float
+	pr_int_t    ideal_yaw;			//float
+	pr_int_t    yaw_speed;			//float
+	pr_int_t    goalentity;			//int
+	pr_int_t    spawnflags;			//float
+	pr_int_t    dmg_take;			//float
+	pr_int_t    dmg_save;			//float
+	pr_int_t    dmg_inflictor;		//int
+	pr_int_t    owner;				//int
+	pr_int_t    message;			//string_t
+	pr_int_t    sounds;				//float
+	pr_int_t    rotated_bbox;		//int
 
 	pr_int_t    alpha;
 	pr_int_t    scale;
