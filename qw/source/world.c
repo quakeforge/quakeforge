@@ -423,7 +423,7 @@ SV_FindTouchedLeafs (edict_t *ent, mnode_t *node)
 		leaf = (mleaf_t *) node;
 
 		edict_leaf = alloc_edict_leaf ();
-		edict_leaf->leaf = leaf;
+		edict_leaf->leafnum = leaf - sv.worldmodel->leafs - 1;
 		edict_leaf->next = SVdata (ent)->leafs;
 		SVdata (ent)->leafs = edict_leaf;
 		return;

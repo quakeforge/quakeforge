@@ -199,7 +199,7 @@ extern progs_t sv_pr_state;
 
 typedef struct edict_leaf_s {
 	struct edict_leaf_s *next;
-	struct mleaf_s *leaf;
+	unsigned    leafnum;
 } edict_leaf_t;
 
 typedef struct sv_data_s {

@@ -616,8 +616,7 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 			if (pvs) {
 				// ignore if not touching a PV leaf
 				for (el = SVdata (ent)->leafs; el; el = el->next) {
-					unsigned    leafnum = el->leaf - sv.worldmodel->leafs - 1;
-					if (pvs[leafnum >> 3] & (1 << (leafnum & 7)))
+					if (pvs[el->leafnum >> 3] & (1 << (el->leafnum & 7)))
 						break;
 				}
 				if (!el)
@@ -805,8 +804,7 @@ SV_WriteEntitiesToClient (delta_t *delta, sizebuf_t *msg)
 		if (pvs) {
 			// ignore if not touching a PV leaf
 			for (el = SVdata (ent)->leafs; el; el = el->next) {
-				unsigned    leafnum = el->leaf - sv.worldmodel->leafs - 1;
-				if (pvs[leafnum >> 3] & (1 << (leafnum & 7)))
+				if (pvs[el->leafnum >> 3] & (1 << (el->leafnum & 7)))
 					break;
 			}
 			if (!el)

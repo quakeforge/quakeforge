@@ -465,8 +465,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 				continue;
 
 			for (el = SVdata (ent)->leafs; el; el = el->next) {
-				unsigned    leafnum = el->leaf - sv.worldmodel->leafs - 1;
-				if (pvs[leafnum >> 3] & (1 << (leafnum & 7)))
+				if (pvs[el->leafnum >> 3] & (1 << (el->leafnum & 7)))
 					break;
 			}
 
