@@ -11,7 +11,7 @@ UNIX users: because of the diversity of machines QuakeForge runs on, we do not p
     * GNU flex
     * GNU make (BSD make doesn't like some constructs used)
     * C compiler and preprocessor (gcc and cpp recommended)
-	* libsamplerate
+    * libsamplerate
 The following are recommended:
     * git (highly recommended for staying up to date with current changes)
     * zlib devel (highly recommended for compressed file and download support)
@@ -19,6 +19,35 @@ The following are recommended:
     * X11 devel (for X11-based clients: software and OpenGL)
     * glide and mesa or other GL compatible lib
     * svgalib (for console-based clients: software and 3dfx)
+
+Relevant packages (debian):
+    * build-essential
+    * autoconf
+    * automake
+    * libtool
+    * flex
+    * bison
+    * git
+
+    * libasound2-dev
+    * libjack-dev
+
+    * libsamplerate0-dev
+
+    * libflac-dev
+    * libogg-dev
+    * libvorbis-dev
+    * libpng12-dev
+    * zlib1g-dev
+
+    * libcurl4-openssl-dev (or libcurl4-gnutls-dev)
+    * libncurses5-dev
+
+    * libsdl1.2-dev
+    * libsvga1-dev
+    * libxxf86dga-dev
+    * libxxf86vm-dev
+
 
 Basic process to build and install QuakeForge:
 	./bootstrap
@@ -32,11 +61,12 @@ To build and install only the quakeworld server:
 	./configure --without-clients --without-tools --with-servers=qw
 	make install
 
-To build documentation (doxygen, graphviz and mscgen are required, as is an
-already configured source tree):
+To build documentation (doxygen, graphviz and mscgen are required), in an
+already configured source tree:
 	cd doc
 	make doc
 
 Then either point your webbrowser to doxygen/html/index.html, or copy/move
-doxygen/html to a webserver and point your browser to that. The documentation
-is currently grossly inadequate, but hopefully it is of some help.
+doxygen/html to a webserver and point your browser to that. The
+documentation is currently grossly inadequate, but hopefully it is of some
+help.
