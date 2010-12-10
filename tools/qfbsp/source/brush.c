@@ -195,21 +195,25 @@ PlaneTypeForNormal (const vec3_t normal)
 #define	DISTEPSILON		0.01
 #define	ANGLEEPSILON	0.00001
 
-void
+int
 NormalizePlane (plane_t *dp)
 {
-	vec_t	ax, ay, az;
+	vec_t       ax, ay, az;
+	int         flip = 0;
 
 	// Make axis aligned planes point to +inf.
 	if (dp->normal[0] == -1.0) {
 		dp->normal[0] = 1.0;
 		dp->dist = -dp->dist;
+		flip = 1;
 	} else if (dp->normal[1] == -1.0) {
 		dp->normal[1] = 1.0;
 		dp->dist = -dp->dist;
+		flip = 1;
 	} else if (dp->normal[2] == -1.0) {
 		dp->normal[2] = 1.0;
 		dp->dist = -dp->dist;
+		flip = 1;
 	}
 
 	// For axis aligned planes, set the plane type and ensure the normal
@@ -217,17 +221,17 @@ NormalizePlane (plane_t *dp)
 	if (dp->normal[0] == 1.0) {
 		dp->type = PLANE_X;
 		dp->normal[1] = dp->normal[2] = 0.0;
-		return;
+		return flip;
 	}
 	if (dp->normal[1] == 1.0) {
 		dp->type = PLANE_Y;
 		dp->normal[0] = dp->normal[2] = 0.0;
-		return;
+		return flip;
 	}
 	if (dp->normal[2] == 1.0) {
 		dp->type = PLANE_Z;
 		dp->normal[0] = dp->normal[1] = 0.0;
-		return;
+		return flip;
 	}
 
 	// Find out with which axis the plane is most aligned.
@@ -245,7 +249,9 @@ NormalizePlane (plane_t *dp)
 	if (dp->normal[dp->type - PLANE_ANYX] < 0) {
 		VectorNegate (dp->normal, dp->normal);
 		dp->dist = -dp->dist;
+		flip = 1;
 	}
+	return flip;
 }
 
 int

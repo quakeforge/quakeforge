@@ -79,8 +79,9 @@ int	PlaneTypeForNormal (const vec3_t normal);
 	vector's components.
 
 	\param dp		The plane to make canonical.
+	\return			1 if the plane was flipped, otherwise 0.
 */
-void NormalizePlane (plane_t *dp);
+int NormalizePlane (plane_t *dp);
 
 /**	Add a plane to the global list of planes.
 
