@@ -164,6 +164,11 @@ print_f (void)
 static int
 parse_field (progs_t *pr, const char *key, const char *value)
 {
+	if (strequal (key, "sky")
+		|| strequal (key, "skyname")
+		|| strequal (key, "qlsky")
+		|| strequal (key, "fog"))
+		return 1;
 	if (*key == '_')						// ignore _fields
 		return 1;
 	return 0;
