@@ -180,12 +180,12 @@ PlaneTypeForNormal (const vec3_t normal)
 	ay = fabs(normal[1]);
 	az = fabs(normal[2]);
 
-	if (ax >= ay && ax >= az)
-		type = PLANE_ANYX;
+	if (az >= ax && az >= ay)
+		type = PLANE_ANYZ;
 	else if (ay >= ax && ay >= az)
 		type = PLANE_ANYY;
 	else
-		type = PLANE_ANYZ;
+		type = PLANE_ANYX;
 	if (normal[type - PLANE_ANYX] < 0)
 		Sys_Error ("PlaneTypeForNormal: not a canonical vector (%g %g %g) %d",
 				   normal[0], normal[1], normal[2], type);
@@ -235,12 +235,12 @@ NormalizePlane (plane_t *dp)
 	ay = fabs (dp->normal[1]);
 	az = fabs (dp->normal[2]);
 
-	if (ax >= ay && ax >= az)
-		dp->type = PLANE_ANYX;
+	if (az >= ax && az >= ay)
+		dp->type = PLANE_ANYZ;
 	else if (ay >= ax && ay >= az)
 		dp->type = PLANE_ANYY;
 	else
-		dp->type = PLANE_ANYZ;
+		dp->type = PLANE_ANYX;
 	// Make the plane's normal point towards +inf along its primary axis.
 	if (dp->normal[dp->type - PLANE_ANYX] < 0) {
 		VectorNegate (dp->normal, dp->normal);
