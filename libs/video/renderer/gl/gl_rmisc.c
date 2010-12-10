@@ -158,7 +158,6 @@ R_Init (void)
 VISIBLE void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
-	cvar_t     *r_skyname;
 	int         i;
 	texture_t  *tex;
 
@@ -198,12 +197,6 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	tex = r_notexture_mip;
 	tex->texturechain = NULL;
 	tex->texturechain_tail = &tex->texturechain;
-
-	r_skyname = Cvar_FindVar ("r_skyname");
-	if (r_skyname != NULL)
-		R_LoadSkys (r_skyname->string);
-	else
-		R_LoadSkys ("none");
 }
 
 void

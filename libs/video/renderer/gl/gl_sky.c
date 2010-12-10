@@ -116,6 +116,9 @@ R_LoadSkys (const char *skyname)
 	const char *name;
 	int         i;	// j
 
+	if (!skyname || !*skyname)
+		skyname = r_skyname->string;
+
 	if (strcasecmp (skyname, "none") == 0) {
 		skyloaded = false;
 		return;
