@@ -173,7 +173,8 @@ PlaneTypeForNormal (const vec3_t normal)
 	if (normal[2] == 1.0)
 		return PLANE_Z;
 	if (normal[0] == -1.0 || normal[1] == -1.0 || normal[2] == -1.0)
-		Sys_Error ("PlaneTypeForNormal: not a canonical vector");
+		Sys_Error ("PlaneTypeForNormal: not a canonical vector (%g %g %g)",
+				   normal[0], normal[1], normal[2]);
 
 	ax = fabs(normal[0]);
 	ay = fabs(normal[1]);
@@ -186,22 +187,15 @@ PlaneTypeForNormal (const vec3_t normal)
 	else
 		type = PLANE_ANYZ;
 	if (normal[type - PLANE_ANYX] < 0)
-		Sys_Error ("PlaneTypeForNormal: not a canonical vector");
+		Sys_Error ("PlaneTypeForNormal: not a canonical vector (%g %g %g) %d",
+				   normal[0], normal[1], normal[2], type);
 	return type;
 }
 
 #define	DISTEPSILON		0.01
 #define	ANGLEEPSILON	0.00001
 
-/**	Make the plane canonical.
-
-	A cononical plane is one whose normal points towards +inf on its primary
-	axis. The primary axis is that which has the largest magnitude of the
-	vector's components.
-
-	\param dp		The plane to make canonical.
-*/
-static void
+void
 NormalizePlane (plane_t *dp)
 {
 	vec_t	ax, ay, az;

@@ -268,10 +268,10 @@ ReadClipHull (int hullnum)
 {
 	FILE        *f;
 	dclipnode_t  d;
-	dplane_t     p;
+	plane_t      p;
+	dplane_t     dp;
 	float        f1, f2, f3, f4;
 	int          firstclipnode, junk, c1, c2, i, j, n;
-	vec3_t       norm;
 
 	options.hullfile[strlen (options.hullfile) - 1] = '0' + hullnum;
 
@@ -306,13 +306,16 @@ ReadClipHull (int hullnum)
 
 		VectorSet (f1, f2, f3, p.normal);
 		p.dist = f4;
+		NormalizePlane (&p);
 
-		VectorSet (f1, f2, f3, norm);
-		p.type = PlaneTypeForNormal (norm);
+		VectorCopy (p.normal, dp.normal);
+		dp.dist = p.dist;
+		dp.type = p.type;
 
 		d.children[0] = c1 >= 0 ? c1 + firstclipnode : c1;
 		d.children[1] = c2 >= 0 ? c2 + firstclipnode : c2;
-		d.planenum = FindFinalPlane (&p);
+
+		d.planenum = FindFinalPlane (&dp);
 		BSP_AddClipnode (bsp, &d);
 	}
 

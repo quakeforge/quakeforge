@@ -72,6 +72,16 @@ brushset_t *Brush_LoadEntity (entity_t *ent, int hullnum);
 */
 int	PlaneTypeForNormal (const vec3_t normal);
 
+/**	Make the plane canonical.
+
+	A cononical plane is one whose normal points towards +inf on its primary
+	axis. The primary axis is that which has the largest magnitude of the
+	vector's components.
+
+	\param dp		The plane to make canonical.
+*/
+void NormalizePlane (plane_t *dp);
+
 /**	Add a plane to the global list of planes.
 
 	Make the plane canonical, and add it to the global list of planes if it
