@@ -447,20 +447,11 @@ ED_SpawnEntities (progs_t *pr, plitem_t *entity_list)
 	}
 }
 
-VISIBLE void
-ED_LoadFromFile (progs_t *pr, const char *data)
+VISIBLE plitem_t *
+ED_Parse (progs_t *pr, const char *data)
 {
 	script_t	*script;
-	plitem_t    *entity_list;
-
-	if (pr->edict_parse) {
-		PR_PushFrame (pr);
-		PR_RESET_PARAMS (pr);
-		P_INT (pr, 0) = PR_SetTempString (pr, data);
-		PR_ExecuteProgram (pr, pr->edict_parse);
-		PR_PopFrame (pr);
-		return;
-	}
+	plitem_t    *entity_list = 0;
 
 	script = Script_New ();
 	Script_Start (script, "ent data", data);
@@ -474,9 +465,29 @@ ED_LoadFromFile (progs_t *pr, const char *data)
 			Script_UngetToken (script);
 			entity_list = ED_ConvertToPlist (pr, script);
 		}
-		ED_SpawnEntities (pr, entity_list);
 	}
 	Script_Delete (script);
+	return entity_list;
+}
+
+VISIBLE void
+ED_LoadFromFile (progs_t *pr, const char *data)
+{
+	plitem_t    *entity_list;
+
+	if (pr->edict_parse) {
+		PR_PushFrame (pr);
+		PR_RESET_PARAMS (pr);
+		P_INT (pr, 0) = PR_SetTempString (pr, data);
+		PR_ExecuteProgram (pr, pr->edict_parse);
+		PR_PopFrame (pr);
+		return;
+	}
+	entity_list = ED_Parse (pr, data);
+	if (entity_list) {
+		ED_SpawnEntities (pr, entity_list);
+		PL_Free (entity_list);
+	}
 }
 
 VISIBLE void

@@ -246,6 +246,7 @@ struct plitem_s *ED_GlobalsDict (progs_t *pr);
 void ED_InitGlobals (progs_t *pr, struct plitem_s *globals);
 void ED_InitEntity (progs_t *pr, struct plitem_s *entity, edict_t *ent);
 struct plitem_s *ED_ConvertToPlist (progs_t *pr, struct script_s *script);
+struct plitem_s *ED_Parse (progs_t *pr, const char *data);
 void ED_LoadFromFile (progs_t *pr, const char *data);
 void ED_EntityParseFunction (progs_t *pr);
 
