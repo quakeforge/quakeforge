@@ -638,10 +638,11 @@ test_node (mnode_t *node)
 static void
 R_RecursiveWorldNode (mnode_t *node)
 {
+#define NODE_STACK 1024
 	struct {
 		mnode_t    *node;
 		int         side;
-	}          *node_ptr, node_stack[1024];
+	}          *node_ptr, node_stack[NODE_STACK];
 	mnode_t    *front;
 	int         side;
 
@@ -652,8 +653,7 @@ R_RecursiveWorldNode (mnode_t *node)
 			side = get_side (node);
 			front = node->children[side];
 			if (test_node (front)) {
-				if (node_ptr - node_stack
-					== sizeof (node_stack) / sizeof (node_stack[0]))
+				if (node_ptr - node_stack == NODE_STACK)
 					Sys_Error ("node_stack overflow");
 				node_ptr->node = node;
 				node_ptr->side = side;

@@ -769,8 +769,10 @@ R_DrawAliasModel (entity_t *e)
 
 				qfglColor4fv (e->colormod);
 
-				qfglBindTexture (GL_TEXTURE_2D, fb_texture);								
+				qfglBindTexture (GL_TEXTURE_2D, fb_texture);
+				Fog_StartAdditive ();
 				GL_DrawAliasFrameTri (vo);
+				Fog_StopAdditive ();
 				
 				if (gl_vector_light->int_val) {
 					qfglEnable (GL_LIGHTING);
@@ -790,7 +792,9 @@ R_DrawAliasModel (entity_t *e)
 				qfglColor4fv (e->colormod);
 				
 				qfglBindTexture (GL_TEXTURE_2D, fb_texture);
+				Fog_StartAdditive ();
 				GL_DrawAliasFrame (vo);
+				Fog_StopAdditive ();
 				
 				if (gl_vector_light->int_val) {
 					qfglEnable (GL_LIGHTING);

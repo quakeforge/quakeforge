@@ -407,6 +407,8 @@ R_SetupFrame (void)
 
 	r_framecount++;
 
+	Fog_SetupFrame ();
+
 	// build the transformation matrix for the given view angles
 	VectorCopy (r_refdef.vieworg, r_origin);
 
@@ -524,12 +526,20 @@ R_RenderScene (void)
 
 	R_SetupFrame ();
 	R_SetupGL ();
+	Fog_EnableGFog ();
 	R_MarkLeaves ();			// done here so we know if we're in water
 	R_PushDlights (vec3_origin);
 	R_DrawWorld ();				// adds static entities to the list
 	S_ExtraUpdate ();			// don't let sound get messed up if going slow
 	R_DrawEntitiesOnList ();
 	R_RenderDlights ();
+
+	R_DrawWaterSurfaces ();
+	R_DrawParticles ();
+
+	Fog_DisableGFog ();
+
+	R_DrawViewModel ();
 
 	if (R_TestErrors (0))
 		R_DisplayErrors ();
@@ -628,9 +638,6 @@ R_RenderView_ (void)
 
 	// render normal view
 	R_RenderScene ();
-	R_DrawViewModel ();
-	R_DrawWaterSurfaces ();
-	R_DrawParticles ();
 
 	// render mirror view
 	R_Mirror ();

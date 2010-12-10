@@ -153,6 +153,7 @@ R_Init (void)
 	r_init = 1;
 	R_InitParticles ();
 	R_InitSprites ();
+	Fog_Init ();
 }
 
 VISIBLE void
