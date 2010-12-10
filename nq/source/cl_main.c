@@ -39,6 +39,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/keys.h"
 #include "QF/msg.h"
 #include "QF/plugin.h"
+#include "QF/qfplist.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
@@ -148,6 +149,9 @@ CL_ClearState (void)
 
 	if (!sv.active)
 		Host_ClearMemory ();
+
+	if (cl.edicts)
+		PL_Free (cl.edicts);
 
 	// wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));

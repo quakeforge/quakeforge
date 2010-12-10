@@ -200,6 +200,9 @@ typedef struct
 	struct model_s		*model_precache[MAX_MODELS];
 	struct sfx_s		*sound_precache[MAX_SOUNDS];
 
+	struct plitem_s *edicts;
+	struct plitem_s *worldspawn;
+
 	char		levelname[40];	// for display on solo scoreboard
 	int			viewentity;		// cl_entitites[cl.viewentity] = player
 	int			maxclients;

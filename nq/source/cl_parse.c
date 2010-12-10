@@ -47,6 +47,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/idparse.h"
 #include "QF/input.h"
 #include "QF/msg.h"
+#include "QF/qfplist.h"
 #include "QF/sys.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
@@ -121,6 +122,24 @@ const char *svc_strings[] = {
 
 float r_gravity;
 dstring_t  *centerprint;
+
+static void
+CL_LoadSky (void)
+{
+	plitem_t   *item;
+	const char *name = 0;
+
+	if (!cl.worldspawn) {
+		R_LoadSkys (0);
+		return;
+	}
+	if ((item = PL_ObjectForKey (cl.worldspawn, "sky")) 
+		|| (item = PL_ObjectForKey (cl.worldspawn, "skyname"))
+		|| (item = PL_ObjectForKey (cl.worldspawn, "skyname"))) {
+		name = PL_String (item);
+	}
+	R_LoadSkys (name);
+}
 
 /*
 	CL_EntityNum
@@ -281,6 +300,16 @@ CL_NewMap (const char *mapname)
 	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
 	Con_NewMap ();
 	Sbar_CenterPrint (0);
+
+	if (cl.model_precache[1] && cl.model_precache[1]->entities) {
+		static progs_t edpr;
+
+		cl.edicts = ED_Parse (&edpr, cl.model_precache[1]->entities);
+		if (cl.edicts) {
+			cl.worldspawn = PL_ObjectAtIndex (cl.edicts, 0);
+			CL_LoadSky ();
+		}
+	}
 
 	map_cfg (mapname, 1);
 }
