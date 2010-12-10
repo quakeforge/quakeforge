@@ -308,6 +308,7 @@ CL_NewMap (const char *mapname)
 		if (cl.edicts) {
 			cl.worldspawn = PL_ObjectAtIndex (cl.edicts, 0);
 			CL_LoadSky ();
+			Fog_ParseWorldspawn (cl.worldspawn);
 		}
 	}
 
@@ -1117,7 +1118,7 @@ CL_ParseServerMessage (void)
 				Cmd_ExecuteString ("bf", src_command);
 				break;
 			case svc_fog:
-				{	//FIXME implement
+				{
 					float density, red, green, blue, time;
 					density = MSG_ReadByte (net_message) / 255.0;
 					red = MSG_ReadByte (net_message) / 255.0;
@@ -1125,6 +1126,7 @@ CL_ParseServerMessage (void)
 					blue = MSG_ReadByte (net_message) / 255.0;
 					time = MSG_ReadShort (net_message) / 100.0;
 					time = max (0.0, time);
+					Fog_Update (density, red, green, blue, time);
 				}
 				break;
 			case svc_spawnbaseline2:

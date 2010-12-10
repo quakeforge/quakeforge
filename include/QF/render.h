@@ -179,6 +179,19 @@ void R_NewMap (model_t *worldmodel, struct model_s **models, int num_models);
 void R_PushDlights (const vec3_t entorigin);
 void R_DrawWaterSurfaces (void);
 
+void Fog_Update (float density, float red, float green, float blue,
+				 float time);
+struct plitem_s;
+void Fog_ParseWorldspawn (struct plitem_s *worldspawn);
+float *Fog_GetColor (void);
+float Fog_GetDensity (void);
+void Fog_SetupFrame (void);
+void Fog_EnableGFog (void);
+void Fog_DisableGFog (void);
+void Fog_StartAdditive (void);
+void Fog_StopAdditive (void);
+void Fog_Init (void);
+
 //  Surface cache related ==========
 extern	int		reinit_surfcache;	// if 1, surface cache is currently empty
 extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
