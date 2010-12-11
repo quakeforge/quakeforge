@@ -21,6 +21,8 @@ if test "$1" = "clean"; then
 		  mkinstalldirs quakeforge-config quakeforge.lsm
 	rm -f compile config.guess config.sub depcomp ltmain.sh ylwrap
 	rm -rf autom4te.cache
+	rm -f m4/libtool.m4 m4/ltoptions.m4 m4/ltsugar.m4 m4/ltversion.m4 \
+		  m4/lt~obsolete.m4
 
 	cd -
 	find . \( -path ./tools/gas2masm -o -path ./tools/quaketoascii \) -name Makefile -print0 | xargs $ARGS rm -f

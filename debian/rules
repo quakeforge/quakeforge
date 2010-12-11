@@ -70,6 +70,8 @@ clean:
 
 	# Add here commands to clean up after the build process.
 	-$(MAKE) distclean
+	# VERY clean
+	./bootstrap clean
 
 	dh_clean
 
