@@ -28,8 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -66,6 +65,16 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "sbar.h"
 #include "varrays.h"
 
+
+#define CELL_SIZE (1.0 / 16.0)	// conchars is 16x16
+#define CELL_INSET (1.0 / 4.0)	// of a pixel
+typedef struct {
+	float       tlx, tly;
+	float       trx, try;
+	float       brx, bry;
+	float       blx, bly;
+} cc_cell_t;
+
 byte	   *draw_chars;						// 8*8 graphic characters
 
 int			tVAsize;
@@ -76,6 +85,7 @@ float	   *textCoords, *tC;
 
 qpic_t	   *draw_backtile;
 
+static cc_cell_t char_cells[256];
 static int	translate_texture;
 static int	char_texture;
 static int	cs_texture;					// crosshair texturea
@@ -326,6 +336,7 @@ Draw_Init (void)
 	int	     i;
 	tex_t	*image;
 	byte    *cs_tmp_data;
+	float    width, height;
 
 	Cmd_AddCommand ("gl_texturemode", &GL_TextureMode_f,
 					"Texture mipmap quality.");
@@ -346,6 +357,8 @@ Draw_Init (void)
 			char_texture = GL_LoadTexture ("charset", image->width,
 										   image->height, image->data, false,
 										   true, 4);
+		width = image->width;
+		height = image->height;
 	} else {
 		draw_chars = W_GetLumpName ("conchars");
 		for (i = 0; i < 256 * 64; i++)
@@ -354,6 +367,25 @@ Draw_Init (void)
 		
 		char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false,
 									   true, 1);
+		width = 128;
+		height = 128;
+	}
+
+	// initialize the character cell texture coordinates.
+	for (i = 0; i < 256; i++) {
+		float       fcol, frow;
+
+		fcol = (i & 15) * CELL_SIZE;
+		frow = (i >> 4) * CELL_SIZE;
+
+		char_cells[i].tlx = fcol + CELL_INSET / width;
+		char_cells[i].tly = frow + CELL_INSET / height;
+		char_cells[i].trx = fcol - CELL_INSET / width  + CELL_SIZE;
+		char_cells[i].try = frow + CELL_INSET / height;
+		char_cells[i].brx = fcol - CELL_INSET / width  + CELL_SIZE;
+		char_cells[i].bry = frow - CELL_INSET / height + CELL_SIZE;
+		char_cells[i].blx = fcol + CELL_INSET / width;
+		char_cells[i].bly = frow - CELL_INSET / height + CELL_SIZE;
 	}
 
 	// re-arrange the cs_data bytes so they're layed out properly for
@@ -388,8 +420,6 @@ Draw_Init (void)
 	Draw_InitText ();
 }
 
-#define CELL_SIZE 0.0625
-
 static inline void
 flush_text (void)
 {
@@ -403,11 +433,7 @@ flush_text (void)
 static inline void
 queue_character (float x, float y, int chr)
 {
-	float		frow, fcol;
-
-	frow = (chr >> 4) * CELL_SIZE;
-	fcol = (chr & 15) * CELL_SIZE;
-
+	float      *coord = &char_cells[chr & 255].tlx;
 	*tV++ = x;
 	*tV++ = y;
 	*tV++ = x + 8.0;
@@ -416,14 +442,14 @@ queue_character (float x, float y, int chr)
 	*tV++ = y + 8.0;
 	*tV++ = x;
 	*tV++ = y + 8.0;
-	*tC++ = fcol;
-	*tC++ = frow;
-	*tC++ = fcol + CELL_SIZE;
-	*tC++ = frow;
-	*tC++ = fcol + CELL_SIZE;
-	*tC++ = frow + CELL_SIZE;
-	*tC++ = fcol;
-	*tC++ = frow + CELL_SIZE;
+	*tC++ = *coord++;
+	*tC++ = *coord++;
+	*tC++ = *coord++;
+	*tC++ = *coord++;
+	*tC++ = *coord++;
+	*tC++ = *coord++;
+	*tC++ = *coord++;
+	*tC++ = *coord++;
 }
 
 static inline void
