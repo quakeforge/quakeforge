@@ -181,7 +181,8 @@
 		capacity += granularity;
 		_objs = (id [])obj_realloc (_objs, capacity * @sizeof (id));
 	}
-	_objs[count++] = [anObject retain];
+	_objs[count] = [anObject retain];
+	count++;
 }
 
 - (void) addObjectsFromArray: (Array)array
