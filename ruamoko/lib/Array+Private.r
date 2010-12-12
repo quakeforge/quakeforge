@@ -1,5 +1,6 @@
 #include "Array+Private.h"
 
+#if 0
 @implementation Array (Private)
 
 /**
@@ -31,3 +32,4 @@
 }
 
 @end
+#endif
