@@ -177,7 +177,7 @@ get_hash_keys =
 	
 	hlen = [list count];
 	for(i = 0; i < hlen; i++) {
-		binding = [list getItemAt: i];
+		binding = [list objectAtIndex: i];
 		desc1 = get_keyname (binding.command, 1);	// first key bound to
 		desc2 = get_keyname (binding.command, 2);	// second key bound to
 
@@ -270,7 +270,7 @@ CB_MAIN_control_binding =
 integer (string text, integer key) 
 CB_basic_control_binding = 
 {
-	local Binding binding = [movement_bindings getItemAt: stoi (text)];
+	local Binding binding = [movement_bindings objectAtIndex: stoi (text)];
 	local integer ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
@@ -307,7 +307,7 @@ DRAW_basic_control_binding =
 
 	hl = [movement_bindings count];	
 	for(i = 0; i < hl; i++) {
-		local Binding binding = [movement_bindings getItemAt: i];
+		local Binding binding = [movement_bindings objectAtIndex: i];
 		draw_val_item   (x + 20, y + 40 + ( i * 10), bind_desc_pad, 
 			binding.text, binding.keys);
 	}
@@ -347,7 +347,7 @@ MENU_basic_control_binding =
 integer (string text, integer key) 
 CB_misc_control_binding = 
 {
-	local Binding binding = [misc_bindings getItemAt: stoi (text)];
+	local Binding binding = [misc_bindings objectAtIndex: stoi (text)];
 	local integer ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
@@ -384,7 +384,7 @@ DRAW_misc_control_binding =
 
 	hl = [misc_bindings count];	
 	for(i=0;i < hl; i++) {
-		local Binding binding = [misc_bindings getItemAt: i];
+		local Binding binding = [misc_bindings objectAtIndex: i];
 		draw_val_item   (x + 20, y + 40+(i*10), bind_desc_pad, 
 			binding.text, binding.keys);
 	}
@@ -423,7 +423,7 @@ MENU_misc_control_binding =
 integer (string text, integer key)
 CB_weapon_control_binding = 
 {
-	local Binding binding = [weapon_bindings getItemAt: stoi (text)];
+	local Binding binding = [weapon_bindings objectAtIndex: stoi (text)];
 	local integer ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
@@ -460,7 +460,7 @@ DRAW_weapon_control_binding =
 
 	hl = [weapon_bindings count];	
 	for(i = 0; i < hl; i++) {
-		local Binding binding = [weapon_bindings getItemAt: i];
+		local Binding binding = [weapon_bindings objectAtIndex: i];
 		draw_val_item (x + 20, y + 40 + (i * 10), bind_desc_pad, 
 			binding.text, binding.keys);
 	}

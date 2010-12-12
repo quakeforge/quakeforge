@@ -34,10 +34,10 @@
 			[self prev];
 			return 1;
 		default:
-			return [[views getItemAt:current]
-						keyEvent:key
-						unicode:unicode
-						down:down];
+			return [[views objectAtIndex: current]
+						keyEvent: key
+						unicode: unicode
+						down: down];
 	}
 }
 

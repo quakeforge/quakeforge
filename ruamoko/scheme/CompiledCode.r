@@ -47,10 +47,10 @@
     code = obj_malloc (@sizeof(instruction_t) * [instructions count]);
     lineinfo = obj_malloc(@sizeof(lineinfo_t) * [instructions count]);
     for (index = 0; index < [constants count]; index++) {
-            [literals set: index to: (SchemeObject) [constants getItemAt: index]];
+            [literals set: index to: (SchemeObject) [constants objectAtIndex: index]];
     }
     for (index = 0; index < [instructions count]; index++) {
-            inst = [instructions getItemAt: index];
+            inst = [instructions objectAtIndex: index];
             [inst emitStruct: code];
             lineinfo[index].linenumber = [inst line];
             lineinfo[index].sourcefile = symbol([inst source]);

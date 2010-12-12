@@ -149,7 +149,7 @@ integer HUDHandleClass;
 {
 	local Frame frame;
 
-	frame = [frames getItemAt :currentFrame];
+	frame = [frames objectAtIndex: currentFrame];
 	return [frame size];
 }
 
@@ -171,7 +171,7 @@ integer HUDHandleClass;
 				return;
 			}
 		}
-		f = [frames getItemAt :currentFrame];
+		f = [frames objectAtIndex: currentFrame];
 		nextFrameTime += [f duration];
 	}
 }
@@ -186,7 +186,7 @@ integer HUDHandleClass;
 	if (nextFrameTime)
 		[self changeFrame];
 
-	f = [frames getItemAt :currentFrame];
+	f = [frames objectAtIndex: currentFrame];
 	[f draw :origin.x :origin.y];
 }
 
@@ -195,7 +195,7 @@ integer HUDHandleClass;
 	local Frame f;
 
 	currentFrame = 0;
-	f = [frames getItemAt :0];
+	f = [frames objectAtIndex: 0];
 	nextFrameTime = time + [f duration];
 }
 
