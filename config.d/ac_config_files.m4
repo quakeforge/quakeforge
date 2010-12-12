@@ -73,6 +73,7 @@
 	tools/wav/Makefile
 
 	ruamoko/Makefile
+	ruamoko/Doxyfile
 	ruamoko/include/Makefile
 	ruamoko/lib/Makefile
 	ruamoko/game/Makefile
