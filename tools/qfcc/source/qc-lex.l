@@ -306,6 +306,7 @@ static keyword_t keywords[] = {
 	{"@protected",	PROTECTED, 0,				0, PROG_VERSION},
 	{"@protocol",	PROTOCOL, 0,				0, PROG_VERSION},
 	{"@public",		PUBLIC,	0,					0, PROG_VERSION},
+	{"@reference",	REFERENCE, 0,				0, PROG_VERSION},
 	{"@selector",	SELECTOR, 0,				0, PROG_VERSION},
 	{"@self",		SELF,	0,					0, PROG_VERSION},
 	{"@this",		THIS,	0,					0, PROG_VERSION},

@@ -162,7 +162,7 @@ expr_t *argv_expr (void);
 %token	<type> TYPE
 %token	<typename> TYPE_NAME
 %token	CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE PROTECTED
-%token	PROTOCOL PUBLIC SELECTOR
+%token	PROTOCOL PUBLIC SELECTOR REFERENCE
 
 %type	<type>	type non_field_type type_name def simple_def struct_def
 %type	<type>	struct_def_item ivar_decl ivar_declarator def_item def_list
@@ -1307,6 +1307,21 @@ new_category_name
 		}
 	;
 
+class_reference
+	: identifier
+		{
+			emit_class_ref ($1);
+		}
+	;
+
+category_reference
+	: identifier '(' identifier ')'
+		{
+			emit_category_ref ($1, $3);
+		}
+	;
+
+
 protocol_name
 	: identifier
 		{
@@ -1404,6 +1419,8 @@ classdef
 		}
 	| IMPLEMENTATION class_with_super	{ class_begin (&$2->class_type); }
 	| IMPLEMENTATION category_name		{ class_begin (&$2->class_type); }
+	| REFERENCE class_reference ';'		{ }
+	| REFERENCE category_reference ';'	{ }
 	;
 
 protocoldef

@@ -250,7 +250,7 @@ class_begin (class_type_t *class_type)
 	}
 }
 
-static void
+void
 emit_class_ref (const char *class_name)
 {
 	def_t      *def;
@@ -281,6 +281,27 @@ emit_class_name (const char *class_name)
 	def->initialized = def->constant = 1;
 	def->nosave = 1;
 	G_INT (def->ofs) = 0;
+}
+
+void
+emit_category_ref (const char *class_name, const char *category_name)
+{
+	def_t      *def;
+	def_t      *ref;
+
+	def = get_def (&type_pointer,
+			va (".obj_category_ref_%s_%s", class_name, category_name),
+			pr.scope, st_static);
+	if (def->initialized)
+		return;
+	def->initialized = def->constant = 1;
+	def->nosave = 1;
+	ref = get_def (&type_integer,
+			va (".obj_category_name_%s_%s", class_name, category_name),
+			pr.scope, st_extern);
+	if (!ref->external)
+		G_INT (def->ofs) = ref->ofs;
+	reloc_def_def (ref, def->ofs);
 }
 
 static void

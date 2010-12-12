@@ -111,6 +111,8 @@ void category_add_protocols (category_t *category, protocollist_t *protocols);
 void class_finish_module (void);
 
 void class_to_struct (class_t *class, struct struct_s *strct);
+void emit_class_ref (const char *class_name);
+void emit_category_ref (const char *class_name, const char *category_name);
 
 protocol_t *get_protocol (const char *name, int create);
 void protocol_add_methods (protocol_t *protocol, struct methodlist_s *methods);
