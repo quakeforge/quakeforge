@@ -65,7 +65,7 @@
 	objects.
 */
 + (id) arrayWithObjects: (id [])objs
-                     count: (unsigned)cnt;
+                  count: (unsigned)cnt;
 //\}
 
 ///\name Initializing arrays
@@ -108,7 +108,7 @@
 //\{
 /**
 	Returns #YES if the receiver contains \a anObject.
-	
+
 	The #isEqual: method is used to determine this, so that (for example) a 
 	newly-created string object can be compared to one already in the array.
 */
@@ -166,8 +166,17 @@
 
 ///\name Replacing Objects
 //\{
+/**
+	Removes object at \a index, replacing it with \a anObject.
+*/
 - (void) replaceObjectAtIndex: (unsigned)index
                    withObject: (id)anObject;
+
+/**
+	Replaces the object currently in the receiver with those from \a array.
+
+	\note If \a array and self are the same object, this method has no effect.
+*/
 - (void) setArray: (Array)array;
 //\}
 
@@ -180,7 +189,9 @@
 */
 - (void) removeAllObjects;
 
-
+/**
+	Removes from the receiver the contained object with the highest index.
+*/
 - (void) removeLastObject;
 
 /**
@@ -200,12 +211,24 @@
 	to \a anObject, using a direct address comparison.
 */
 - (void) removeObjectIdenticalTo: (id)anObject;
+
+/**
+	Removes the object located at index \a index, moving each object with a 
+	higher index down one position.
+*/
 - (void) removeObjectAtIndex: (unsigned)index;
 //\}
 
 ///\name Sending Messages to Elements
 //\{
+/**
+	Iteratively sends #performSelector: to each contained object.
+*/
 - (void) makeObjectsPerformSelector: (SEL)selector;
+
+/**
+	Iteratively sends #performSelector:withObject: to each contained object.
+*/
 - (void) makeObjectsPerformSelector: (SEL)selector
                          withObject: (id)arg;
 //\}

@@ -8,6 +8,8 @@
 */
 @interface Array (Private)
 
+///\name Private methods
+//\{
 /**
 	Adds an object to the receiver, but without retaining it.
 
@@ -26,6 +28,7 @@
 	implement the autorelease system.
 */
 - (void) removeObjectNoRelease: (id)anObject;
+//\}
 
 @end
 
