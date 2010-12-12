@@ -3,7 +3,7 @@
 @implementation Array (Private)
 
 /**
-	This is a somewhat dangerous thing to do, and it's only done so that we can 
+	This is a somewhat dangerous thing to do, and it's done only so that we can 
 	use an Array to implement AutoreleasePool.
 */
 - (void) addObjectNoRetain: (id)anObject
