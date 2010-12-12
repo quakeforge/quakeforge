@@ -3,25 +3,213 @@
 
 #include "Object.h"
 
-@interface Array: Object
+/**
+	A general ordered collection class
+
+	The %Array class manages an ordered collection of objects.
+	If you want to subclass Array, you need to override these methods:
+
+	\li #count()
+	\li #objectAtIndex:
+	\li #addObject:
+	\li #insertObject:atIndex:
+	\li #removeObjectAtIndex:
+	\li #removeLastObject
+	\li #replaceObjectAtIndex:withObject:
+*/
+@interface Array: Object //<Copying>
 {
-	integer count, size;
-	integer incr;
-	id [] array;
+	unsigned	count;			///< The number of objects currently contained
+	unsigned	capacity;		///< The number of objects that can be held right now
+	unsigned	granularity;	///< The number of pointers allocated at a time (based on initial capacity)
+	id			[] _objs;		///< A primitive array of pointers to objects
 }
-- (id) init;
-- (id) initWithIncrement: (integer) inc;
-- (void) dealloc;
-- (id) getItemAt: (integer) index;
-- (void) setItemAt: (integer) index item:(id) item;
-- (void) addItem: (id) item;
-- (void) removeItem: (id) item;
-- (id) removeItemAt: (integer) index;
-- (id) insertItemAt: (integer) index item:(id) item;
-- (integer) count;
-- (integer) findItem: (id) item;
--(void)makeObjectsPerformSelector:(SEL)selector;
--(void)makeObjectsPerformSelector:(SEL)selector withObject:(id)arg;
+
+///\name Creating arrays
+//\{
+/**
+	Create and return an empty array with the default initial capacity.
+*/
++ (id) array;
+
+/** 
+	Creates and returns an empty array with initial capacity \a cap.
+
+	\param	cap	The initial capacity of the array.
+*/
++ (id) arrayWithCapacity: (unsigned)cap;
+
+/** 
+	Returns a copy of \a array, retaining its contents.
+*/
++ (id) arrayWithArray: (Array)array;
+
+/**
+	Create an array containing only \a anObject .
+*/
++ (id) arrayWithObject: (id)anObject;
+
+/**
+	Create an array from a list of objects.
+
+	\warning Due to the nature of the Ruamoko/QuakeC language, do not supply
+	more than 6 objects to this method.
+*/
++ (id) arrayWithObjects: (id)firstObj, ...;
+
+/**
+	Create and return an array containing the first \a count objects from 
+	primitive array \a objs.
+
+	\warning Do not supply a primitive array containing fewer than \a count
+	objects.
+*/
++ (id) arrayWithObjects: (id [])objs
+                     count: (unsigned)cnt;
+//\}
+
+///\name Initializing arrays
+//\{
+/**
+	Initialize the receiver with capacity \a cap
+*/
+- (id) initWithCapacity: (unsigned)cap;
+
+/**
+	Initialize the receiver with objects from \a array.
+*/
+- (id) initWithArray: (Array)array;
+
+/**
+	Initialize the receiver with objects from \a array.
+
+	\param	array	The array to duplicate
+	\param	flag 	if #YES, copies the contents instead of retaining them.
+*/
+- (id) initWithArray: (Array)array
+           copyItems: (BOOL)flag;
+
+/**
+	Initialize the receiver with a list of objects.
+
+	\warning Due to the nature of the Ruamoko/QuakeC language, do not supply 
+	more than 6 objects to this method.
+*/
+- (id) initWithObjects: (id)firstObj, ...;
+
+/**
+	Initialize the receiver with a primitive array of objects.
+*/
+- (id) initWithObjects: (id [])objs
+                 count: (unsigned)count;
+//\}
+
+///\name Querying an array
+//\{
+/**
+	Returns #YES if the receiver contains \a anObject.
+	
+	The #isEqual: method is used to determine this, so that (for example) a 
+	newly-created string object can be compared to one already in the array.
+*/
+- (BOOL) containsObject: (id)anObject;
+
+/**
+	Returns the number of objects contained in the receiver.
+*/
+- (unsigned) count;
+
+/**
+	Returns the object contained at index \a index.
+*/
+- (id) objectAtIndex: (unsigned)index;
+
+/**
+	Returns the contained object with the highest index.
+*/
+- (id) lastObject;
+//- (Enumerator) objectEnumerator;
+//- (Enumerator) reverseObjectEnumerator;
+
+#if 0
+/**
+	Copies all object references in the receiver to \a aBuffer.
+
+	\warning The destination buffer must be large enough to hold all contents.
+*/
+- (BOOL) getObjects: (id [])aBuffer;
+#endif
+//\}
+
+///\name Adding objects
+//\{
+
+/**
+	Adds a single object to an array
+*/
+- (void) addObject: (id)anObject;
+
+/**
+	Adds each object in \a array to the receiver, retaining it.
+*/
+- (void) addObjectsFromArray: (Array)array;
+
+/**
+	Adds a single object to an array
+
+	Adds \a anObject to the receiver at index \a index, pushing any objects 
+	with a higher index to the next higher slot.
+*/
+- (void) insertObject: (id)anObject
+              atIndex: (unsigned)index;
+//\}
+
+///\name Replacing Objects
+//\{
+- (void) replaceObjectAtIndex: (unsigned)index
+                   withObject: (id)anObject;
+- (void) setArray: (Array)array;
+//\}
+
+///\name Removing Objects
+//\{
+
+/**
+	Recursively removes all objects from the receiver by sending 
+	#removeLastObject to \a self, until #count() returns zero.
+*/
+- (void) removeAllObjects;
+
+
+- (void) removeLastObject;
+
+/**
+	Finds and removes all objects from the receiver that are equal to 
+	\a anObject, by sending each #isEqual: with \a anObject as the argument.
+*/
+- (void) removeObject: (id)anObject;
+
+/**
+	Finds and removes all objects from the receiver that are equal to any 
+	objects in array \a anArray.
+*/
+- (void) removeObjectsInArray: (Array)anArray;
+
+/**
+	Finds and removes all objects from the receiver that are \b exactly equal
+	to \a anObject, using a direct address comparison.
+*/
+- (void) removeObjectIdenticalTo: (id)anObject;
+- (void) removeObjectAtIndex: (unsigned)index;
+//\}
+
+///\name Sending Messages to Elements
+//\{
+- (void) makeObjectsPerformSelector: (SEL)selector;
+- (void) makeObjectsPerformSelector: (SEL)selector
+                         withObject: (id)arg;
+//\}
+
 @end
 
 #endif//__ruamoko_Array_h

@@ -1,12 +1,10 @@
 #include "AutoreleasePool.h"
 //#include "Stack.h"
 
-@static AutoreleasePool	sharedInstance;
-//@static Stack			poolStack;
+//@static AutoreleasePool	sharedInstance;
+@static Array			poolStack;
 
-@interface AutoreleasePool (Private)
-- (void) addItem: (id)anItem;
-@end
+//@static Stack			poolStack;
 
 @implementation AutoreleasePool
 
@@ -15,28 +13,26 @@
 	if (!(self = [super init]))
 		return NIL;
 
-	//if (!poolStack)
-	//	poolStack = [Stack new];
+	if (!poolStack)
+		poolStack = [[Array alloc] initWithCapacity: 1];
 
-	if (!sharedInstance)
-		sharedInstance = self;
+	[poolStack addObjectNoRetain: self];
 
-	array = [[Array alloc] init];
+	array = [Array new];
 	return self;
 }
 
 + (void) addObject: (id)anObject
 {
-	if (!sharedInstance)
+	if (!poolStack || [poolStack count])
 		[[AutoreleasePool alloc] init];
-	[sharedInstance addObject: anObject];
+
+	[[poolStack lastObject] addObject: anObject];
 }
 
 - (void) addObject: (id)anObject
 {
-	[array addItem: anObject];
-	[anObject release];		// the array retains the item, and releases when
-							// dealloced
+	[array addObjectNoRetain: anObject];
 }
 
 - (id) retain
@@ -44,33 +40,27 @@
 	[self error: "Don't send -retain to an autorelease pool."];
 }
 
-+ (void) release
+- (id) autorelease
 {
-	[sharedInstance release];
-	sharedInstance = NIL;
-}
-
-- (/*oneway*/ void) release
-{
-	[self dealloc];
+	[self error: "Don't send -autorelease to an autorelease pool."];
 }
 
 - (void) dealloc
 {
-	//local id		tmp;
-
 	[array release];
-
-	/*
-		This may be wrong.
-		Releasing an autorelease pool should keep popping pools off the stack
-		until it gets to itself.
-	*/
-	//do {
-	//	tmp = [poolStack pop];
-	//} while (tmp != self);
-
-	sharedInstance = NIL;
+	[poolStack removeObjectNoRelease: self];
 	[super dealloc];
 }
+
+- (/*oneway*/ void) release
+{
+	
+}
+
 @end
+
+void
+ARP_FreeAllPools (void)
+{
+	[poolStack removeAllObjects];
+}

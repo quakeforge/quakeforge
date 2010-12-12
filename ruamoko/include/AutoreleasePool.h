@@ -15,4 +15,6 @@
 
 @end
 
+void ARP_FreeAllPools (void);
+
 #endif	// __ruamoko_AutoreleasePool_h

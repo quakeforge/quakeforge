@@ -251,6 +251,7 @@ core
 /ruamoko/*.dat
 /ruamoko/*.qfo
 /ruamoko/*.sym
+/ruamoko/doxygen/
 
 # /ruamoko/cl_menu/
 /ruamoko/cl_menu/*.dat
