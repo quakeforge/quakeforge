@@ -19,7 +19,7 @@
 
 - (View) addView: (View)aView
 {
-	[views addItem:aView];
+	[views addObject:aView];
 	return aView;
 }
 

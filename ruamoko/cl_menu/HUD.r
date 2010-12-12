@@ -155,7 +155,7 @@ integer HUDHandleClass;
 
 - (void) addFrame: (Frame) frame
 {
-	[frames addItem :frame];
+	[frames addObject: frame];
 }
 
 - (void) changeFrame

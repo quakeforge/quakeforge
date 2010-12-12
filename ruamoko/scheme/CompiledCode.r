@@ -28,14 +28,14 @@
     [inst source: [self source]];
     [inst offset: [instructions count]];
     if ([inst opcode] != LABEL) {
-            [instructions addItem: inst];
+            [instructions addObject: inst];
     }
 }
 
 - (integer) addConstant: (SchemeObject) c
 {
     local integer number = [constants count];
-    [constants addItem: c];
+    [constants addObject: c];
     return number;
 }
     

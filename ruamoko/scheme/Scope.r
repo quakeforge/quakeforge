@@ -66,7 +66,7 @@
 
 - (void) addName: (Symbol) sym
 {
-    [names addItem: sym];
+    [names addObject: sym];
 }
 
 - (void) dealloc
