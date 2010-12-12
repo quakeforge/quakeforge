@@ -1,5 +1,4 @@
 #include "AutoreleasePool.h"
-//#include "Stack.h"
 
 //@static AutoreleasePool	sharedInstance;
 @static Array			poolStack;
@@ -50,11 +49,6 @@
 	[array release];
 	[poolStack removeObjectNoRelease: self];
 	[super dealloc];
-}
-
-- (/*oneway*/ void) release
-{
-	
 }
 
 @end
