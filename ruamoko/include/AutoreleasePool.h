@@ -46,7 +46,7 @@
 /**
 	Generates an error. Never send this message to an instance of this class.
 */
-- (void) release;
+- (id) retain;
 
 /**
 	Generates an error. Never send this message to an instance of this class.
