@@ -58,6 +58,19 @@ internal_error (expr_t *e)
 	abort ();
 }
 
+static expr_t *
+cf_cast_expr (type_t *type, expr_t *e)
+{
+	e = cast_expr (type, e);
+	// The expression of which this is a sub-expression has already 
+	// incremented users, so we don't need cast_expr to do so again,
+	// however, since cast_expr does so unconditionally, we must undo
+	// the increment.
+	if (e && e->type == ex_uexpr && e->e.expr.op == 'C')
+		dec_users (e->e.expr.e1);
+	return e;
+}
+
 static int
 valid_op (int op, int *valid_ops)
 {
@@ -151,13 +164,7 @@ convert_to_float (expr_t *e)
 		case ex_uexpr:
 		case ex_temp:
 		case ex_block:
-			e = cast_expr (&type_float, e);
-			// The expression of which this is a sub-expression has already 
-			// incremented users, so we don't need cast_expr to do so again,
-			// however, since cast_expr does so unconditionally, we must undo
-			// the increment.
-			if (e && e->type == ex_uexpr && e->e.expr.op == 'C')
-				dec_users (e->e.expr.e1);
+			e = cf_cast_expr (&type_float, e);
 			return e;
 		default:
 			internal_error (e);
@@ -182,14 +189,14 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		// bind is backwards to assign (why did I do that? :P)
 		if ((type = get_type (e2)) != &type_float) {
 			//FIXME optimize casting a constant
-			e->e.expr.e1 = e1 = cast_expr (type, e1);
+			e->e.expr.e1 = e1 = cf_cast_expr (type, e1);
 		} else if ((conv = convert_to_float (e1)) != e1) {
 			e->e.expr.e1 = e1 = conv;
 		}
 	} else if (op == '=' || op == PAS) {
 		if ((type = get_type (e1)) != &type_float) {
 			//FIXME optimize casting a constant
-			e->e.expr.e2 = e2 = cast_expr (type, e2);
+			e->e.expr.e2 = e2 = cf_cast_expr (type, e2);
 		} else if ((conv = convert_to_float (e2)) != e2) {
 			e->e.expr.e2 = e2 = conv;
 		}
@@ -444,7 +451,7 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		return type_mismatch (e1, e2, op);
 	if ((op == '.' || op == '&') && get_type (e2) == &type_uinteger) {
 		//FIXME should implement unsigned addressing
-		e->e.expr.e2 = cast_expr (&type_integer, e2);
+		e->e.expr.e2 = cf_cast_expr (&type_integer, e2);
 	}
 	return e;
 }
@@ -643,7 +650,7 @@ convert_to_uinteger (expr_t *e)
 		case ex_uexpr:
 		case ex_temp:
 		case ex_block:
-			return cast_expr (&type_uinteger, e);
+			return cf_cast_expr (&type_uinteger, e);
 		default:
 			internal_error (e);
 	}
@@ -670,26 +677,26 @@ do_op_uinteger (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == 'b') {
 		// bind is backwards to assign (why did I do that? :P)
 		if ((type = get_type (e2)) != &type_uinteger) {
-			e->e.expr.e1 = e1 = cast_expr (type, e1);
+			e->e.expr.e1 = e1 = cf_cast_expr (type, e1);
 		} else if ((conv = convert_to_uinteger (e1)) != e1) {
 			e->e.expr.e1 = e1 = conv;
 		}
 	} else if (op == '=' || op == PAS) {
 		if ((type = get_type (e1)) != &type_uinteger) {
-			e->e.expr.e2 = e2 = cast_expr (type, e2);
+			e->e.expr.e2 = e2 = cf_cast_expr (type, e2);
 		} else if ((conv = convert_to_uinteger (e2)) != e2) {
 			e->e.expr.e2 = e2 = conv;
 		}
 	} else {
 		if (get_type (e1) != &type_uinteger) {
-			e->e.expr.e1 = e1 = cast_expr (&type_uinteger, e1);
+			e->e.expr.e1 = e1 = cf_cast_expr (&type_uinteger, e1);
 		}
 		if (e2->type == ex_short)
 			convert_short_uint (e2);
 		if (e2->type == ex_integer)
 			convert_int_uint (e2);
 		if (get_type (e2) != &type_uinteger) {
-			e->e.expr.e2 = e2 = cast_expr (&type_uinteger, e2);
+			e->e.expr.e2 = e2 = cf_cast_expr (&type_uinteger, e2);
 		}
 		if ((conv = convert_to_uinteger (e2)) != e2) {
 			e->e.expr.e2 = e2 = conv;
