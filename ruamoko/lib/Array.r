@@ -370,3 +370,5 @@
 }
 
 @end
+
+@reference Array (Private);
