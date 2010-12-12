@@ -161,9 +161,9 @@
 
 - (id) objectAtIndex: (unsigned)index
 {
-	if (index >= count) {
-		return NIL; // FIXME: need exceptions
-	}
+	if (index >= count) // FIXME: need exceptions
+		[self error: "-replaceObjectAtIndex:withObject: index out of range"];
+
 	return _objs[index];
 }
 
@@ -190,8 +190,11 @@
 {
 	local unsigned	i;
 
-	if (!array || array == self)
-		return; // FIXME: need exceptions
+	if (!array) // FIXME: need exceptions
+		[self error: "-addObjectsFromArray: passed nil argument"];
+
+	if (array == self)	// FIXME: need exceptions
+		[self error: "-addObjectsFromArray: tried to add objects from self"]; // FIXME: need exceptions
 
 	for (i = 0; i < [array count]; i++) {
 		[self addObject: [array objectAtIndex: i]];
@@ -201,10 +204,10 @@
 - (void) insertObject: (id)anObject
               atIndex: (unsigned)index
 {
-	local integer i;
+	local unsigned	i;
 
-	if (index >= count)
-		return; // FIXME: need exceptions
+	if (index >= count) // FIXME: need exceptions
+		[self error: "-insertObject:atIndex: index out of range"];
 
 	if (count == capacity) {	// at capacity, expand
 		_objs = (id [])obj_realloc (_objs, capacity * @sizeof (id));
@@ -230,9 +233,10 @@
 {
 	local id tmp;
 
-	if (!anObject || index >= count) {
-		return; // FIXME: need exceptions
-	}
+	if (!anObject)	// FIXME: need exceptions
+		[self error: "-replaceObjectAtIndex:withObject: passed nil object"];
+	if (index >= count) // FIXME: need exceptions
+		[self error: "-replaceObjectAtIndex:withObject: index out of range"];
 
 	// retain before release
 	tmp = _objs[index];
@@ -299,8 +303,8 @@
 	local integer	i;
 	local id		temp;
 
-	if (index >= count)
-		return; // FIXME: need exceptions
+	if (index >= count) // FIXME: need exceptions
+		[self error: "-removeObjectAtIndex: index out of range"];
 
 	temp = _objs[index];
 	count--;
