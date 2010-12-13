@@ -225,6 +225,8 @@ CL_ClearTEnts (void)
 			t->ent.efrag = 0;
 		free_temp_entities (to->to.ex.tent);
 	}
+	free_tent_objects (cl_explosions);
+	cl_explosions = 0;
 }
 
 static inline void
