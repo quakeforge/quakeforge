@@ -28,8 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -51,13 +50,23 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "host.h"
 
+typedef struct {
+	int         frames;
+	double      time;
+	double      fps;
+} td_stats_t;
+
 char        demoname[1024];
+
 int         timedemo_count;
+int         timedemo_runs;
+td_stats_t *timedemo_data;
 
 static void        CL_FinishTimeDemo (void);
 
 cvar_t     *demo_gzip;
 cvar_t     *demo_speed;
+cvar_t     *demo_quit;
 
 /*
 DEMO CODE
@@ -128,8 +137,7 @@ CL_GetMessage (void)
 
 	if (cls.demoplayback) {
 		// decide if it is time to grab the next message        
-		if (cls.signon == SIGNONS)		// always grab until fully connected
-		{
+		if (cls.signon == SIGNONS) {	// always grab until fully connected
 			if (cls.timedemo) {
 				if (host_framecount == cls.td_lastframe)
 					return 0;			// already read this frame's message
@@ -154,8 +162,7 @@ CL_GetMessage (void)
 			LittleLong (net_message->message->cursize);
 		if (net_message->message->cursize > MAX_MSGLEN)
 			Sys_Error ("Demo message > MAX_MSGLEN");
-		r =
-			Qread (cls.demofile, net_message->message->data,
+		r = Qread (cls.demofile, net_message->message->data,
 				   net_message->message->cursize);
 		if (r != net_message->message->cursize) {
 			CL_StopPlayback ();
@@ -342,6 +349,7 @@ CL_PlayDemo_f (void)
 		Sys_Printf ("play <demoname> : plays a demo\n");
 		return;
 	}
+	timedemo_runs = timedemo_count = 1; // make sure looped timedemos stop
 	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
 	CL_StartDemo ();
 }
@@ -355,8 +363,15 @@ CL_StartTimeDemo (void)
 	// all the loading time doesn't get counted
 
 	cls.timedemo = true;
+	cls.td_starttime = 0;
 	cls.td_startframe = host_framecount;
 	cls.td_lastframe = -1;				// get a new message this frame
+}
+
+static inline double
+sqr (double x)
+{
+	return x * x;
 }
 
 static void
@@ -374,8 +389,40 @@ CL_FinishTimeDemo (void)
 		time = 1;
 	Sys_Printf ("%i frame%s %.4g seconds %.4g fps\n", frames,
 				frames == 1 ? "" : "s", time, frames / time);
-	if (--timedemo_count > 0)
+
+	timedemo_count--;
+	timedemo_data[timedemo_count].frames = frames;
+	timedemo_data[timedemo_count].time = time;
+	timedemo_data[timedemo_count].fps = frames / time;
+	if (timedemo_count > 0) {
 		CL_StartTimeDemo ();
+	} else {
+		if (--timedemo_runs > 0) {
+			double      average = 0;
+			double      variance = 0;
+			double      min, max;
+			int         i;
+
+			min = max = timedemo_data[0].fps;
+			for (i = 0; i < timedemo_runs; i++) {
+				average += timedemo_data[i].fps;
+				min = min (min, timedemo_data[i].fps);
+				max = max (max, timedemo_data[i].fps);
+			}
+			average /= timedemo_runs;
+			for (i = 0; i < timedemo_runs; i++)
+				variance += sqr (timedemo_data[i].fps - average);
+			variance /= timedemo_runs;
+			Sys_Printf ("timedemo stats for %d runs:\n", timedemo_runs);
+			Sys_Printf ("  average fps: %.3f\n", average);
+			Sys_Printf ("  min/max fps: %.3f/%.3f\n", min, max);
+			Sys_Printf ("std deviation: %.3f fps\n", sqrt (variance));
+		}
+		free (timedemo_data);
+		timedemo_data = 0;
+		if (demo_quit->int_val)
+			Cbuf_InsertText (host_cbuf, "quit\n");
+	}
 }
 
 
@@ -394,11 +441,17 @@ CL_TimeDemo_f (void)
 		Sys_Printf ("timedemo <demoname> [count]: gets demo speeds\n");
 		return;
 	}
+	timedemo_runs = timedemo_count = 1; // make sure looped timedemos stop
+
 	if (Cmd_Argc () == 3) {
 		timedemo_count = atoi (Cmd_Argv (2));
 	} else {
 		timedemo_count = 1;
 	}
+	timedemo_runs = timedemo_count = max (timedemo_count, 1);
+	if (timedemo_data)
+		free (timedemo_data);
+	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
 	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
 	CL_StartTimeDemo ();
 }
@@ -413,4 +466,6 @@ CL_Demo_Init (void)
 	demo_speed = Cvar_Get ("demo_speed", "1.0", CVAR_NONE, NULL,
 						   "adjust demo playback speed. 1.0 = normal, "
 						   "< 1 slow-mo, > 1 timelapse");
+	demo_quit = Cvar_Get ("demo_quit", "0", CVAR_NONE, NULL,
+						  "automaticly quit after a timedemo has finished");
 }

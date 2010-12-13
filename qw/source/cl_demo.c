@@ -983,7 +983,7 @@ CL_FinishTimeDemo (void)
 	demo_timeframes_isactive = 0;
 
 	timedemo_count--;
-	timedemo_data[timedemo_count].frames = time;
+	timedemo_data[timedemo_count].frames = frames;
 	timedemo_data[timedemo_count].time = time;
 	timedemo_data[timedemo_count].fps = frames / time;
 	if (timedemo_count > 0) {
