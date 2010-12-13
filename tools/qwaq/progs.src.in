@@ -9,6 +9,7 @@ qwaq.dat
 @top_srcdir@/ruamoko/lib/Object.r
 @top_srcdir@/ruamoko/lib/Protocol.r
 @top_srcdir@/ruamoko/lib/Array.r
+@top_srcdir@/ruamoko/lib/Array+Private.r
 @top_srcdir@/ruamoko/lib/AutoreleasePool.r
 @srcdir@/test.r
 @srcdir@/main.qc
