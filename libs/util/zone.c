@@ -451,10 +451,13 @@ Hunk_AllocName (int size, const char *name)
 		Cache_FreeLRU ();
 	}
 	if (hunk_size - hunk_low_used - hunk_high_used < size) {
+		int         mem = hunk_size / (1024 * 1024);
+		mem += 8;
+		mem &= ~7;
 		Cache_Profile ();
 		Sys_Error
-			("Not enough RAM allocated.  Try starting using \"-mem 16\" on "
-			 "the %s command line. (%d -  %d - %d < %d)",
+			("Not enough RAM allocated.  Try starting using \"-mem %d\" on "
+			 "the %s command line. (%d -  %d - %d < %d)", mem,
 			 PACKAGE_NAME, hunk_size, hunk_low_used, hunk_high_used, size);
 	}
 
