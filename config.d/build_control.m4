@@ -290,18 +290,12 @@ AC_SUBST(HAVE_FBDEV)
 AC_SUBST(HAVE_SDL)
 AC_SUBST(HAVE_SVGA)
 
-ALSA_PLUGIN="alsa"
-if test "`echo $SOUND_TYPES | grep ALSA0_9`"; then
-	ALSA_PLUGIN="alsa0_9"
-fi
-
 if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libQFcd.la"
 	SND_TARGETS="libQFsound.la"
 	JOY_TARGETS="libQFjs.la"
-	# the following will catch both ALSA and ALSA0_9
 	if test "`echo $SOUND_TYPES | grep ALSA`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_$ALSA_PLUGIN.la"
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_alsa.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep MME`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_mme.la"
@@ -356,7 +350,7 @@ if test -n "$CL_TARGETS"; then
 		SND_OUTPUT_DEFAULT="oss"
 	fi
 	if test "`echo $SOUND_TYPES | grep ALSA`"; then
-		SND_OUTPUT_DEFAULT="$ALSA_PLUGIN"
+		SND_OUTPUT_DEFAULT="alsa"
 	fi
 	AC_DEFINE_UNQUOTED(SND_OUTPUT_DEFAULT, "$SND_OUTPUT_DEFAULT", [Define this to the default sound output driver.])
 else

@@ -7,7 +7,7 @@ AC_HEADER_STDC
 AC_HEADER_MAJOR
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(
-	alloca.h alsa/asoundlib.h arpa/inet.h asm/io.h assert.h conio.h \
+	alloca.h arpa/inet.h asm/io.h assert.h conio.h \
 	ctype.h ddraw.h dinput.h direct.h dirent.h dlfcn.h dmedia/audio.h \
 	dmedia/cdaudio.h dpmi.h dsound.h errno.h execinfo.h fcntl.h io.h \
 	libc.h limits.h linux/cdrom.h linux/joystick.h linux/soundcard.h \

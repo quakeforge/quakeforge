@@ -51,41 +51,6 @@ QF_maGiC_VALUE
 	    )
 	fi
 fi
-if  test "x$HAVE_ALSA" = "xno"; then
-    if test "x$enable_alsa" != "xno"; then
-	if test "x$ac_cv_header_sys_asoundlib_h" = "xyes" -o \
-		"x$ac_cv_header_alsa_asoundlib_h" = "xyes"; then
-			AC_EGREP_CPP([QF_maGiC_VALUE],
-			[
-#include <alsa/asoundlib.h>
-#if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR) && \
-    defined(SND_LIB_SUBMINOR)
-#if SND_LIB_MAJOR == 0 && SND_LIB_MINOR >= 9 && SND_LIB_SUBMINOR < 8
-QF_maGiC_VALUE
-#endif
-#endif
-			],
-			SOUND_TYPES="$SOUND_TYPES ALSA0_9"
-			ALSA_LIBS="-lasound"
-			HAVE_ALSA=yes,
-			AC_EGREP_CPP([QF_maGiC_VALUE],
-				[
-#include <sys/asoundlib.h>
-#if (defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR) && \
-     defined(SND_LIB_SUBMINOR)
-#if SND_LIB_MAJOR == 0 && SND_LIB_MINOR >= 9 && SND_LIB_SUBMINOR < 8
-QF_maGiC_VALUE
-#endif
-#endif
-				],
-				SOUND_TYPES="$SOUND_TYPES ALSA0_9"
-				ALSA_LIBS="-lasound"
-				HAVE_ALSA=yes
-			)
-		)
-	fi
-    fi
-fi
 AC_SUBST(ALSA_LIBS)
 AC_SUBST(HAVE_ALSA)
 
