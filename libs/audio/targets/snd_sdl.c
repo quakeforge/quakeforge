@@ -44,6 +44,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/cmd.h"
+#include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
@@ -51,11 +52,12 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "snd_render.h"
 
 static dma_t sn;
-static int  snd_inited;
+static int snd_inited;
 static int snd_blocked = 0;
 
-static int desired_speed = 11025;
-static int desired_bits = 16;
+static cvar_t *snd_bits;
+static cvar_t *snd_rate;
+static cvar_t *snd_stereo;
 
 static plugin_t           plugin_info;
 static plugin_data_t      plugin_info_data;
@@ -93,6 +95,13 @@ paint_audio (void *unused, Uint8 * stream, int len)
 static void
 SNDDMA_Init_Cvars (void)
 {
+	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
+						   "sound stereo output");
+	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM, NULL,
+						 "sound playback rate. 0 is system default");
+	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, NULL,
+						 "sound sample depth. 0 is system default");
+
 }
 
 static volatile dma_t *
@@ -108,11 +117,14 @@ SNDDMA_Init (void)
 	};
 
 	/* Set up the desired format */
-	desired.freq = desired_speed;
-	switch (desired_bits) {
+	desired.freq = 22050;
+	if (snd_rate->int_val)
+		desired.freq = snd_rate->int_val;
+	switch (snd_bits->int_val) {
 		case 8:
 			desired.format = AUDIO_U8;
 			break;
+		case 0:		// default is 16 bits per sample
 		case 16:
 			if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
 				desired.format = AUDIO_S16MSB;
@@ -120,10 +132,11 @@ SNDDMA_Init (void)
 				desired.format = AUDIO_S16LSB;
 			break;
 		default:
-			Sys_Printf ("Unknown number of audio bits: %d\n", desired_bits);
+			Sys_Printf ("Unknown number of audio bits: %d\n",
+						snd_bits->int_val);
 			return 0;
 	}
-	desired.channels = 2;
+	desired.channels = snd_stereo->int_val ? 2 : 1;
 	desired.samples = 1024;
 	desired.callback = paint_audio;
 
@@ -158,8 +171,6 @@ SNDDMA_Init (void)
 			memcpy (&obtained, &desired, sizeof (desired));
 			break;
 	}
-	SDL_LockAudio();
-	SDL_PauseAudio (0);
 
 	/* Fill the audio DMA information block */
 	sn.samplebits = (obtained.format & 0xFF);
@@ -170,9 +181,10 @@ SNDDMA_Init (void)
 	sn.submission_chunk = 1;
 	sn.buffer = calloc(sn.frames * sn.channels * (sn.samplebits / 8), 1);
 	if (!sn.buffer)
-	{
 		Sys_Error ("Failed to allocate buffer for sound!");
-	}
+
+	SDL_LockAudio();
+	SDL_PauseAudio (0);
 
 	snd_inited = 1;
 	return &sn;
