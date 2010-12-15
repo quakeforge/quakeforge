@@ -146,13 +146,8 @@ SNDDMA_Init (void)
 			return 0;
 		}
 	}
-	if (snd_rate->int_val) {
+	if (snd_rate->int_val)
 		rate = snd_rate->int_val;
-		if (rate != 44100 && rate != 22050 && rate != 11025) {
-			Sys_Printf ("Error: invalid sample rate: %d\n", rate);
-			return 0;
-		}
-	}
 	stereo = snd_stereo->int_val;
 	if (!pcmname)
 		pcmname = "default";
@@ -268,17 +263,15 @@ SNDDMA_Init (void)
 		case 11025:
 		case 22050:
 		case 44100:
+		default:
 			err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate, 0);
 			if (0 > err) {
 				Sys_Printf ("ALSA: desired rate %i not supported. %s\n", rate,
 							qfsnd_strerror (err));
 				goto error;
 			}
-			frag_size = 8 * bps * rate / 11025;
+			frag_size = 8 * bps * (rate / 11025);
 			break;
-		default:
-			Sys_Printf ("ALSA: desired rate %i not supported.\n", rate);
-			goto error;
 	}
 
 	err = qfsnd_pcm_hw_params_set_period_size_near (pcm, hw, &frag_size, 0);
