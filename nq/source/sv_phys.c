@@ -758,9 +758,9 @@ static void
 SV_RunEntity (edict_t *ent)
 {
 	if (sv_fields.lastruntime != -1) {
-		if (SVfloat (ent, lastruntime) == (float) realtime)
+		if (SVfloat (ent, lastruntime) == (float) sv.time)
 			return;
-		SVfloat (ent, lastruntime) = (float) realtime;
+		SVfloat (ent, lastruntime) = (float) sv.time;
 	}
 
 	switch ((int) SVfloat (ent, movetype)) {

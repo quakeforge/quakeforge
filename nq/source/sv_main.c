@@ -875,7 +875,7 @@ SV_SendNop (client_t *client)
 
 	if (NET_SendUnreliableMessage (client->netconnection, &msg) == -1)
 		SV_DropClient (true);		// if the message couldn't send, kick off
-	client->last_message = realtime;
+	client->last_message = sv.time;
 }
 
 void
@@ -902,7 +902,7 @@ SV_SendClientMessages (void)
 			// requested; some other message data (name changes, etc) may
 			// accumulate between signon stages
 			if (!host_client->sendsignon) {
-				if (realtime - host_client->last_message > 5)
+				if (sv.time - host_client->last_message > 5)
 					SV_SendNop (host_client);
 				continue;				// don't send out non-signon messages
 			}
@@ -930,7 +930,7 @@ SV_SendClientMessages (void)
 					SV_DropClient (true);	// if the message couldn't send,
 											// kick off
 				SZ_Clear (&host_client->message);
-				host_client->last_message = realtime;
+				host_client->last_message = sv.time;
 				host_client->sendsignon = false;
 			}
 		}
