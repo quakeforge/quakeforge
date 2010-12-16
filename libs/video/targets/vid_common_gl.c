@@ -288,7 +288,7 @@ GL_Common_Init_Cvars (void)
 							"wait for rendering to finish");
 	gl_max_size = Cvar_Get ("gl_max_size", "0", CVAR_NONE, gl_max_size_f,
 							"Texture dimension");
-	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE,
+	gl_multitexture = Cvar_Get ("gl_multitexture", "1", CVAR_ARCHIVE,
 								gl_multitexture_f, "Use multitexture when "
 								"available.");
 	gl_screenshot_byte_swap =

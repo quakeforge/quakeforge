@@ -777,7 +777,7 @@ IN_LL_Init_Cvars (void)
 {
 	in_snd_block = Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
 							 "block sound output on window focus loss");
-	in_dga = Cvar_Get ("in_dga", "1", CVAR_ARCHIVE, in_dga_f,
+	in_dga = Cvar_Get ("in_dga", "0", CVAR_ARCHIVE, in_dga_f, //FIXME 0 until X fixed
 					   "DGA Input support");
 	in_mouse_accel = Cvar_Get ("in_mouse_accel", "1", CVAR_ARCHIVE,
 							   in_mouse_accel_f,

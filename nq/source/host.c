@@ -292,7 +292,7 @@ Host_InitLocal (void)
 	coop = Cvar_Get ("coop", "0", CVAR_NONE, NULL, "0 or 1");
 	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, NULL, "None");
 	temp1 = Cvar_Get ("temp1", "0", CVAR_NONE, NULL, "None");
-	cl_usleep = Cvar_Get ("cl_usleep", "0", CVAR_ARCHIVE, cl_usleep_f,
+	cl_usleep = Cvar_Get ("cl_usleep", "1", CVAR_ARCHIVE, cl_usleep_f,
 						  "Turn this on to save cpu when fps limited. "
 						  "May affect frame rate adversely depending on "
 						  "local machine/os conditions");
@@ -861,7 +861,7 @@ CL_Init_Memory (void)
 	else
 		minimum_memory = MINIMUM_MEMORY_LEVELPAK;
 
-	host_mem_size = Cvar_Get ("host_mem_size", "32", CVAR_NONE, NULL,
+	host_mem_size = Cvar_Get ("host_mem_size", "40", CVAR_NONE, NULL,
 							  "Amount of memory (in MB) to allocate for the "
 							  PACKAGE_NAME " heap");
 	if (mem_parm)

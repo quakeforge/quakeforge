@@ -1373,7 +1373,7 @@ CL_Init_Cvars (void)
 						  "Set to 1 before connecting to become a spectator");
 	team = Cvar_Get ("team", "", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
 					 "Team player is on.");
-	rate = Cvar_Get ("rate", "2500", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
+	rate = Cvar_Get ("rate", "10000", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
 					 "Amount of bytes per second server will send/download "
 					 "to you");
 	msg = Cvar_Get ("msg", "1", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
@@ -1383,7 +1383,7 @@ CL_Init_Cvars (void)
 					  "Auto aim off switch. Set to 1 to turn off.");
 	cl_port = Cvar_Get ("cl_port", PORT_CLIENT, CVAR_NONE, Cvar_Info,
 						"UDP Port for client to use.");
-	cl_usleep = Cvar_Get ("cl_usleep", "0", CVAR_ARCHIVE, cl_usleep_f,
+	cl_usleep = Cvar_Get ("cl_usleep", "1", CVAR_ARCHIVE, cl_usleep_f,
 						  "Turn this on to save cpu when fps limited. "
 						  "May affect frame rate adversely depending on "
 						  "local machine/os conditions");
@@ -1672,7 +1672,7 @@ CL_Init_Memory (void)
 	int         mem_size;
 	void       *mem_base;
 
-	cl_mem_size = Cvar_Get ("cl_mem_size", "16", CVAR_NONE, NULL,
+	cl_mem_size = Cvar_Get ("cl_mem_size", "32", CVAR_NONE, NULL,
 							"Amount of memory (in MB) to allocate for the "
 							PACKAGE_NAME " heap");
 	if (mem_parm)
