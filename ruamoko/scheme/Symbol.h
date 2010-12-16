@@ -10,6 +10,7 @@
 + (Symbol) rightParen;
 + (Symbol) dot;
 + (Symbol) forString: (string) s;
++ (Symbol) quote;
 @end
 
 @extern Symbol symbol (string str);

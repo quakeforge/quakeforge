@@ -52,7 +52,7 @@ Symbol beginSym;
 
     scope = [Scope newWithOuter: scope];
     count = 0;
-    for (cur = arguments; [cur isKindOfClass: [Cons class]]; cur = [cur cdr]) {
+    for (cur = arguments; [cur isKindOfClass: [Cons class]]; cur = [(Cons) cur cdr]) {
             count++;
     }
     [code minimumArguments: count];
@@ -62,9 +62,9 @@ Symbol beginSym;
     [code addInstruction: [Instruction opcode: MAKEENV operand: count]];
     [code addInstruction: [Instruction opcode: LOADENV]];
     cur = arguments;
-    for (index = 0; index < count; cur = [cur cdr]) {
+    for (index = 0; index < count; cur = [(Cons) cur cdr]) {
             if ([cur isKindOfClass: [Cons class]]) {
-                    [scope addName: (Symbol) [cur car]];
+                    [scope addName: (Symbol) [(Cons) cur car]];
                     [code addInstruction: [Instruction opcode: SET operand: index]];
             } else if ([cur isKindOfClass: [Symbol class]]) {
                     [scope addName: (Symbol) cur];
@@ -85,11 +85,11 @@ Symbol beginSym;
 {
     local SchemeObject cur;
 
-    for (cur = expressions; cur != [Nil nil]; cur = [cur cdr]) {
-            if ([cur cdr] == [Nil nil] && (fl & TAIL)) {
-                    [self emitExpression: [cur car] flags: fl];
+    for (cur = expressions; cur != [Nil nil]; cur = [(Cons) cur cdr]) {
+            if ([(Cons) cur cdr] == [Nil nil] && (fl & TAIL)) {
+                    [self emitExpression: [(Cons) cur car] flags: fl];
             } else {
-                    [self emitExpression: [cur car] flags: fl & ~TAIL];
+                    [self emitExpression: [(Cons) cur car] flags: fl & ~TAIL];
             }
             if (err) return;
     }
@@ -119,22 +119,22 @@ Symbol beginSym;
     local integer index = 0;
     
     if (![expression isKindOfClass: [Cons class]] ||
-        ![[expression cdr] isKindOfClass: [Cons class]]) {
+        ![[(Cons) expression cdr] isKindOfClass: [Cons class]]) {
             err = [Error type: "syntax"
                          message: "Malformed define statement"
                          by: expression];
             return;
     }
 
-    if ([[expression car] isKindOfClass: [Cons class]]) {
-            index = [code addConstant: [[expression car] car]];
+    if ([[(Cons) expression car] isKindOfClass: [Cons class]]) {
+            index = [code addConstant: [(Cons) [(Cons) expression car] car]];
             [self emitLambda: cons(lambdaSym,
-                                   cons([[expression car] cdr],
-                                        [expression cdr]))];
+                                   cons([(Cons) [(Cons) expression car] cdr],
+                                        [(Cons) expression cdr]))];
             if (err) return;
-    } else if ([[expression car] isKindOfClass: [Symbol class]]) {
-            index = [code addConstant: [expression car]];
-            [self emitExpression: [[expression cdr] car] flags: 0];
+    } else if ([[(Cons) expression car] isKindOfClass: [Symbol class]]) {
+            index = [code addConstant: [(Cons) expression car]];
+            [self emitExpression: [(Cons) [(Cons) expression cdr] car] flags: 0];
             if (err) return;
     } else {
             err = [Error type: "syntax"
@@ -153,7 +153,7 @@ Symbol beginSym;
     local Instruction falseLabel, endLabel;
     local integer index;
     if (![expression isKindOfClass: [Cons class]] ||
-        ![[expression cdr] isKindOfClass: [Cons class]]) {
+        ![[(Cons) expression cdr] isKindOfClass: [Cons class]]) {
             err = [Error type: "syntax"
                          message: "Malformed if expression"
                          by: expression];
@@ -162,19 +162,19 @@ Symbol beginSym;
     falseLabel = [Instruction opcode: LABEL];
     endLabel = [Instruction opcode: LABEL];
 
-    [self emitExpression: [expression car] flags: fl & ~TAIL];
+    [self emitExpression: [(Cons) expression car] flags: fl & ~TAIL];
     if (err) return;
     [code addInstruction: [Instruction opcode: IFFALSE label: falseLabel]];
-    [self emitExpression: [[expression cdr] car] flags: fl];
+    [self emitExpression: [(Cons) [(Cons) expression cdr] car] flags: fl];
     if (err) return;
     [code addInstruction: [Instruction opcode: GOTO label: endLabel]];
     [code addInstruction: falseLabel];
-    if ([[expression cdr] cdr] == [Nil nil]) {
+    if ([(Cons) [(Cons) expression cdr] cdr] == [Nil nil]) {
             index = [code addConstant: [Void voidConstant]];
             [code addInstruction: [Instruction opcode: LOADLITS]];
             [code addInstruction: [Instruction opcode: GET operand: index]];
     } else {
-            [self emitExpression: [[[expression cdr] cdr] car] flags: fl];
+            [self emitExpression: [(Cons) [(Cons) [(Cons) expression cdr] cdr] car] flags: fl];
             if (err) return;
     }
     [code addInstruction: endLabel];
@@ -190,8 +190,8 @@ Symbol beginSym;
     local integer count;
 
     if (!isList(expression) ||
-        !isList([expression car]) ||
-        ![[expression cdr] isKindOfClass: [Cons class]]) {
+        !isList([(Cons) expression car]) ||
+        ![[(Cons) expression cdr] isKindOfClass: [Cons class]]) {
             err = [Error type: "syntax"
                          message: "Malformed letrec expression"
                          by: expression];
@@ -201,8 +201,8 @@ Symbol beginSym;
     
     count = 0;
     
-    for (bindings = [expression car]; bindings != [Nil nil]; bindings = [bindings cdr]) {
-            [scope addName: (Symbol) [[bindings car] car]];
+    for (bindings = [(Cons) expression car]; bindings != [Nil nil]; bindings = [(Cons) bindings cdr]) {
+            [scope addName: (Symbol) [(Cons) [(Cons) bindings car] car]];
             count++;
     }
 
@@ -210,15 +210,15 @@ Symbol beginSym;
 
     count = 0;
     
-    for (bindings = [expression car]; bindings != [Nil nil]; bindings = [bindings cdr]) {
-            [self emitSequence: [[bindings car] cdr] flags: fl & ~TAIL];
+    for (bindings = [(Cons) expression car]; bindings != [Nil nil]; bindings = [(Cons) bindings cdr]) {
+            [self emitSequence: [(Cons) [(Cons) bindings car] cdr] flags: fl & ~TAIL];
             [code addInstruction: [Instruction opcode: PUSH]];
             [code addInstruction: [Instruction opcode: LOADENV]];
             [code addInstruction: [Instruction opcode: SET operand: count]];
             count++;
     }
 
-    [self emitSequence: [expression cdr] flags: fl];
+    [self emitSequence: [(Cons) expression cdr] flags: fl];
     [code addInstruction: [Instruction opcode: POPENV]];
     scope = [scope outer];
 }
@@ -229,18 +229,18 @@ Symbol beginSym;
             [code source: [expression source]];
             [code line: [expression line]];
             
-            if ([expression car] == lambdaSym) {
+            if ([(Cons) expression car] == lambdaSym) {
                     [self emitLambda: expression];
-            } else if ([expression car] == quoteSym) {
-                    [self emitConstant: [[expression cdr] car]];
-            } else if ([expression car] == defineSym) {
-                    [self emitDefine: [expression cdr]];
-            } else if ([expression car] == ifSym) {
-                    [self emitIf: [expression cdr] flags: fl];
-            } else if ([expression car] == letrecSym) {
-                    [self emitLetrec: [expression cdr] flags: fl];
-            } else if ([expression car] == beginSym) {
-                    [self emitSequence: [expression cdr] flags: fl];
+            } else if ([(Cons) expression car] == quoteSym) {
+                    [self emitConstant: [(Cons) [(Cons) expression cdr] car]];
+            } else if ([(Cons) expression car] == defineSym) {
+                    [self emitDefine: [(Cons) expression cdr]];
+            } else if ([(Cons) expression car] == ifSym) {
+                    [self emitIf: [(Cons) expression cdr] flags: fl];
+            } else if ([(Cons) expression car] == letrecSym) {
+                    [self emitLetrec: [(Cons) expression cdr] flags: fl];
+            } else if ([(Cons) expression car] == beginSym) {
+                    [self emitSequence: [(Cons) expression cdr] flags: fl];
             } else {
                     [self emitApply: expression flags: fl];
             }
@@ -256,9 +256,9 @@ Symbol beginSym;
     if (expression == [Nil nil]) {
             return;
     } else {
-            [self emitArguments: [expression cdr]];
+            [self emitArguments: [(Cons) expression cdr]];
             if (err) return;
-            [self emitExpression: [expression car] flags: 0];
+            [self emitExpression: [(Cons) expression car] flags: 0];
             if (err) return;
             [code addInstruction: [Instruction opcode: PUSH]];
     }
@@ -270,9 +270,9 @@ Symbol beginSym;
     if (!(fl & TAIL)) {
             [code addInstruction: [Instruction opcode: MAKECONT label: label]];
     }
-    [self emitArguments: [expression cdr]];
+    [self emitArguments: [(Cons) expression cdr]];
     if (err) return;
-    [self emitExpression: [expression car] flags: fl & ~TAIL];
+    [self emitExpression: [(Cons) expression car] flags: fl & ~TAIL];
     if (err) return;
     [code addInstruction: [Instruction opcode: CALL]];
     [code addInstruction: label];
@@ -307,9 +307,9 @@ Symbol beginSym;
 - (void) checkLambdaSyntax: (SchemeObject) expression
 {
     if (![expression isKindOfClass: [Cons class]] ||
-        [expression car] != lambdaSym ||
-        [expression cdr] == [Nil nil] ||
-        [[expression cdr] cdr] == [Nil nil]) {
+        [(Cons) expression car] != lambdaSym ||
+        [(Cons) expression cdr] == [Nil nil] ||
+        [(Cons) [(Cons) expression cdr] cdr] == [Nil nil]) {
             err = [Error type: "syntax"
                          message: "malformed lambda expression"
                          by: expression];
@@ -322,11 +322,11 @@ Symbol beginSym;
     if (err) {
             return err;
     }
-    [self emitBuildEnvironment: [[sexpr cdr] car]];
+    [self emitBuildEnvironment: [(Cons) [(Cons) sexpr cdr] car]];
     if (err) {
             return err;
     }
-    [self emitSequence: [[sexpr cdr] cdr] flags: TAIL];
+    [self emitSequence: [(Cons) [(Cons) sexpr cdr] cdr] flags: TAIL];
     if (err) {
             return err;
     }

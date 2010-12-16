@@ -35,6 +35,12 @@ function PR_FindFunction (string func) = #0;
 	return self;
 }
 
+- (id) initWithEntity: (entity)e fromPlist: (plitem_t) dict
+{
+	self = [self initWithEntity: e];
+	return self;
+}
+
 - (void) dealloc
 {
 	if (own && ent)
@@ -55,7 +61,7 @@ function PR_FindFunction (string func) = #0;
 + createFromPlist:(plitem_t) dict
 {
 	local string classname;
-	local Class class;
+	local id class;
 	local entity ent;
 	local integer count;
 	local string field, value;

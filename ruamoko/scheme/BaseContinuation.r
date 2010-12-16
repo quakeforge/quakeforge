@@ -1,4 +1,5 @@
 #include "BaseContinuation.h"
+#include "Cons.h"
 
 instruction_t returninst;
 BaseContinuation base;
@@ -21,7 +22,7 @@ BaseContinuation base;
 
 - (void) invokeOnMachine: (Machine) m
 {
-    [m value: [[m stack] car]];
+    [m value: [(Cons) [m stack] car]];
     [m state].program = &returninst;
 }
 

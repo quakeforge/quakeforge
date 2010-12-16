@@ -60,7 +60,7 @@
 	local View cur;
 
 	[super draw];
-	cur = (View) [views getItemAt:current];
+	cur = (View) [views objectAtIndex:current];
 	opt_cursor  (cur.xabs - 8, cur.yabs);
 }
 @end

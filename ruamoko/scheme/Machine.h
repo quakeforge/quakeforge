@@ -26,6 +26,7 @@
 - (state_t []) state;
 - (void) state: (state_t []) st;
 - (void) reset;
+- (void) procedure: (Procedure) pr;
 @end
 
 #endif //__Machine_h

@@ -12,7 +12,7 @@
 
 BOOL num_args (SchemeObject list, integer num)
 {
-    for (; [list isKindOfClass: [Cons class]]; list = [list cdr]) {
+    for (; [list isKindOfClass: [Cons class]]; list = [(Cons) list cdr]) {
             num--;
     }
     return num == 0;
@@ -25,7 +25,7 @@ SchemeObject bi_display (SchemeObject args, Machine m)
                           message: "expected 1 argument"
                           by: m];
     }
-    print([[args car] printForm]);
+    print([[(Cons) args car] printForm]);
     return [Void voidConstant];
 }
 
@@ -45,14 +45,14 @@ SchemeObject bi_add (SchemeObject args, Machine m)
     local integer sum = 0;
     local SchemeObject cur;
 
-    for (cur = args; cur != [Nil nil]; cur = [cur cdr]) {
-            if (![[cur car] isKindOfClass: [Number class]]) {
+    for (cur = args; cur != [Nil nil]; cur = [(Cons) cur cdr]) {
+            if (![[(Cons) cur car] isKindOfClass: [Number class]]) {
                     return [Error type: "+"
                                   message: sprintf("non-number argument: %s\n",
-                                                   [[cur car] printForm])
+                                                   [[(Cons) cur car] printForm])
                                   by: m];
             }                     
-            sum += [(Number) [cur car] intValue];
+            sum += [(Number) [(Cons) cur car] intValue];
     }
 
     return [Number newFromInt: sum];
@@ -69,7 +69,7 @@ SchemeObject bi_sub (SchemeObject args, Machine m)
                           by: m];
     }
 
-    cur = [args car];
+    cur = [(Cons) args car];
     
     if (![cur isKindOfClass: [Number class]]) {
             return [Error type: "-"
@@ -80,18 +80,18 @@ SchemeObject bi_sub (SchemeObject args, Machine m)
 
     diff = [(Number) cur intValue];
     
-    if ([args cdr] == [Nil nil]) {
+    if ([(Cons) args cdr] == [Nil nil]) {
             return [Number newFromInt: -diff];
     }
     
-    for (cur = [args cdr]; cur != [Nil nil]; cur = [cur cdr]) {
-            if (![[cur car] isKindOfClass: [Number class]]) {
+    for (cur = [(Cons) args cdr]; cur != [Nil nil]; cur = [(Cons) cur cdr]) {
+            if (![[(Cons) cur car] isKindOfClass: [Number class]]) {
                     return [Error type: "-"
                                   message: sprintf("non-number argument: %s\n",
-                                                   [[cur car] printForm])
+                                                   [[(Cons) cur car] printForm])
                                   by: m];
             }                     
-            diff -= [(Number) [cur car] intValue];
+            diff -= [(Number) [(Cons) cur car] intValue];
     }
 
     return [Number newFromInt: diff];
@@ -102,14 +102,14 @@ SchemeObject bi_mult (SchemeObject args, Machine m)
     local integer prod = 1;
     local SchemeObject cur;
 
-    for (cur = args; cur != [Nil nil]; cur = [cur cdr]) {
-            if (![[cur car] isKindOfClass: [Number class]]) {
+    for (cur = args; cur != [Nil nil]; cur = [(Cons) cur cdr]) {
+            if (![[(Cons) cur car] isKindOfClass: [Number class]]) {
                     return [Error type: "*"
                                   message: sprintf("non-number argument: %s\n",
-                                                   [[cur car] printForm])
+                                                   [[(Cons) cur car] printForm])
                                   by: m];
             }                     
-            prod *= [(Number) [cur car] intValue];
+            prod *= [(Number) [(Cons) cur car] intValue];
     }
 
     return [Number newFromInt: prod];
@@ -126,7 +126,7 @@ SchemeObject bi_div (SchemeObject args, Machine m)
                           by: m];
     }
 
-    cur = [args car];
+    cur = [(Cons) args car];
     
     if (![cur isKindOfClass: [Number class]]) {
             return [Error type: "/"
@@ -137,18 +137,18 @@ SchemeObject bi_div (SchemeObject args, Machine m)
 
     frac = [(Number) cur intValue];
     
-    if ([args cdr] == [Nil nil]) {
+    if ([(Cons) args cdr] == [Nil nil]) {
             return [Number newFromInt: 1/frac];
     }
     
-    for (cur = [args cdr]; cur != [Nil nil]; cur = [cur cdr]) {
-            if (![[cur car] isKindOfClass: [Number class]]) {
+    for (cur = [(Cons) args cdr]; cur != [Nil nil]; cur = [(Cons) cur cdr]) {
+            if (![[(Cons) cur car] isKindOfClass: [Number class]]) {
                     return [Error type: "/"
                                   message: sprintf("non-number argument: %s\n",
-                                                   [[cur car] printForm])
+                                                   [[(Cons) cur car] printForm])
                                   by: m];
             }                     
-            frac /= [(Number) [cur car] intValue];
+            frac /= [(Number) [(Cons) cur car] intValue];
     }
 
     return [Number newFromInt: frac];
@@ -161,7 +161,7 @@ SchemeObject bi_cons (SchemeObject args, Machine m)
                           message: "expected 2 arguments"
                           by: m];
     }
-    [args cdr: [[args cdr] car]];
+    [(Cons) args cdr: [(Cons) [(Cons) args cdr] car]];
     return args;
 }
 
@@ -172,7 +172,7 @@ SchemeObject bi_null (SchemeObject args, Machine m)
                           message: "expected 1 argument"
                           by: m];
     }
-    return [args car] == [Nil nil]
+    return [(Cons) args car] == [Nil nil]
         ?
         [Boolean trueConstant] :
         [Boolean falseConstant];
@@ -185,14 +185,14 @@ SchemeObject bi_car (SchemeObject args, Machine m)
                           message: "expected 1 argument"
                           by: m];
     }
-    if (![[args car] isKindOfClass: [Cons class]]) {
+    if (![[(Cons) args car] isKindOfClass: [Cons class]]) {
             return [Error type: "car"
                           message: sprintf("expected pair, got: %s",
-                                           [[args car] printForm])
+                                           [[(Cons) args car] printForm])
                           by: m];
     }
                 
-    return [[args car] car];
+    return [(Cons) [(Cons) args car] car];
 }
 
 SchemeObject bi_cdr (SchemeObject args, Machine m)
@@ -202,13 +202,13 @@ SchemeObject bi_cdr (SchemeObject args, Machine m)
                           message: "expected 1 argument"
                           by: m];
     }
-    if (![[args car] isKindOfClass: [Cons class]]) {
+    if (![[(Cons) args car] isKindOfClass: [Cons class]]) {
             return [Error type: "cdr"
                           message: sprintf("expected pair, got: %s",
-                                           [[args car] printForm])
+                                           [[(Cons) args car] printForm])
                           by: m];
     }
-    return [[args car] cdr];
+    return [(Cons) [(Cons) args car] cdr];
 }
 
 SchemeObject bi_apply (SchemeObject args, Machine m)
@@ -218,26 +218,26 @@ SchemeObject bi_apply (SchemeObject args, Machine m)
             return [Error type: "apply"
                           message: "expected at least 1 argument"
                           by: m];
-    } else if (![[args car] isKindOfClass: [Procedure class]]) {
+    } else if (![[(Cons) args car] isKindOfClass: [Procedure class]]) {
             return [Error type: "apply"
                           message:
                               sprintf("expected procedure as 1st argument, got: %s",
-                                      [[args car] printForm])
+                                      [[(Cons) args car] printForm])
                           by: m];
     }
 
     prev = NIL;
     
-    for (cur = args; [cur cdr] != [Nil nil]; cur = [cur cdr]) {
+    for (cur = args; [(Cons) cur cdr] != [Nil nil]; cur = [(Cons) cur cdr]) {
             prev = cur;
     }
 
     if (prev) {
-            [prev cdr: [cur car]];
+            [(Cons) prev cdr: [(Cons) cur car]];
     }
     
-    [m stack: [args cdr]];
-    [[args car] invokeOnMachine: m];
+    [m stack: [(Cons) args cdr]];
+    [(Procedure) [(Cons) args car] invokeOnMachine: m];
     return NIL;
 }
 
@@ -247,11 +247,11 @@ SchemeObject bi_callcc (SchemeObject args, Machine m)
             return [Error type: "call-with-current-continuation"
                           message: "expected at least 1 argument"
                           by: m];
-    } else if (![[args car] isKindOfClass: [Procedure class]]) {
+    } else if (![[(Cons) args car] isKindOfClass: [Procedure class]]) {
             return [Error type: "call-with-current-continuation"
                           message:
                               sprintf("expected procedure as 1st argument, got: %s",
-                                      [[args car] printForm])
+                                      [[(Cons) args car] printForm])
                           by: m];
     }
     if ([m continuation]) {
@@ -260,7 +260,7 @@ SchemeObject bi_callcc (SchemeObject args, Machine m)
             [m stack: cons([BaseContinuation baseContinuation],
                            [Nil nil])];
     }
-    [[args car] invokeOnMachine: m];
+    [(Procedure) [(Cons) args car] invokeOnMachine: m];
     return NIL;
 }
 
@@ -272,7 +272,7 @@ SchemeObject bi_eq (SchemeObject args, Machine m)
                           by: m];
     }
     return
-        [args car] == [[args cdr] car] ?
+        [(Cons) args car] == [(Cons) [(Cons) args cdr] car] ?
         [Boolean trueConstant] :
         [Boolean falseConstant];
 }
@@ -285,22 +285,22 @@ SchemeObject bi_numeq (SchemeObject args, Machine m)
                           message: "expected 2 arguments"
                           by: m];
     }
-    num1 = [args car];
-    num2 = [[args cdr] car];
+    num1 = [(Cons) args car];
+    num2 = [(Cons) [(Cons) args cdr] car];
     if (![num1 isKindOfClass: [Number class]]) {
             return [Error type: "="
                           message: sprintf("expected number argument, got: %s",
-                                           [num1 printform])
+                                           [num1 printForm])
                           by: m];
     } else if (![num2 isKindOfClass: [Number class]]) {
             return [Error type: "="
                           message: sprintf("expected number argument, got: %s",
-                                           [num2 printform])
+                                           [num2 printForm])
                           by: m];
     }
 
     return
-        [num1 intValue] == [num2 intValue] ?
+        [(Number) num1 intValue] == [(Number) num2 intValue] ?
         [Boolean trueConstant] :
         [Boolean falseConstant];
 }
@@ -328,7 +328,7 @@ SchemeObject bi_ispair (SchemeObject args, Machine m)
     }
 
     return
-        [[args car] isKindOfClass: [Cons class]] ?
+        [[(Cons) args car] isKindOfClass: [Cons class]] ?
         [Boolean trueConstant] :
         [Boolean falseConstant];
 }

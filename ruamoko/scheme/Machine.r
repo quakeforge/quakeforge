@@ -134,13 +134,13 @@ void GlobalFree (void []ele, void []data)
                     state.stack = cons(value, state.stack);
                     break;
                 case POP:
-                    value = [state.stack car];
+                    value = [(Cons) state.stack car];
                     if (value) {
                             dprintf("Pop: %s\n", [value printForm]);
                     } else {
                             dprintf("Pop: NULL!!!!\n");
                     }
-                    state.stack = [state.stack cdr];
+                    state.stack = [(Cons) state.stack cdr];
                     break;
                 case MAKECLOSURE:
                     dprintf("Makeclosure\n");
@@ -169,16 +169,16 @@ void GlobalFree (void []ele, void []data)
                     dprintf("Popenv\n");
                     state.env = [state.env getLink];
                 case GET:
-                    value = [value get: operand];
+                    value = [(Frame) value get: operand];
                     dprintf("Get: %i --> %s\n", operand, [value printForm]);
                     break;
                 case SET:
-                    [value set: operand to: [state.stack car]];
-                    dprintf("Set: %i --> %s\n", operand, [[state.stack car] printForm]);
-                    state.stack = [state.stack cdr];
+                    [(Frame) value set: operand to: [(Cons) state.stack car]];
+                    dprintf("Set: %i --> %s\n", operand, [[(Cons) state.stack car] printForm]);
+                    state.stack = [(Cons) state.stack cdr];
                     break;
                 case SETREST:
-                    [value set: operand to: state.stack];
+                    [(Frame) value set: operand to: state.stack];
                     dprintf("Setrest: %i --> %s\n", operand, [state.stack printForm]);
                     state.stack = [Nil nil];
                     break;
@@ -188,7 +188,7 @@ void GlobalFree (void []ele, void []data)
                     break;
                 case GETLINK:
                     dprintf("Getlink\n");
-                    value = [value getLink];
+                    value = [(Frame) value getLink];
                     break;
                 case GETGLOBAL:
                     dprintf("Getglobal: %s\n", [value printForm]);
@@ -204,8 +204,8 @@ void GlobalFree (void []ele, void []data)
                     break;
                 case SETGLOBAL:
                     dprintf("Setglobal: %s\n", [value printForm]);
-                    [self addGlobal: (Symbol) value value: [state.stack car]];
-                    state.stack = [state.stack cdr];
+                    [self addGlobal: (Symbol) value value: [(Cons) state.stack car]];
+                    state.stack = [(Cons) state.stack cdr];
                     break;
                 case CALL:
                     dprintf("Call\n");
@@ -217,7 +217,7 @@ void GlobalFree (void []ele, void []data)
                                                       [value printForm], [state.stack printForm])
                                           by: self];
                     }
-                    [value invokeOnMachine: self];
+                    [(Procedure) value invokeOnMachine: self];
                     break;
                 case RETURN:
                     dprintf("Return: %s\n", [value printForm]);

@@ -4,6 +4,7 @@
 
 #include "gui/Text.h"
 #include "CvarToggleView.h"
+#include "CvarToggle.h"
 
 @implementation CvarToggleView
 

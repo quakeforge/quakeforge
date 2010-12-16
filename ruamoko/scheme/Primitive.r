@@ -1,5 +1,6 @@
 #include "Primitive.h"
 #include "Machine.h"
+#include "Continuation.h"
 
 @implementation Primitive
 + (id) newFromFunc: (primfunc_t) f

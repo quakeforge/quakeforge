@@ -50,6 +50,9 @@
 #include "CvarRangeView.h"
 #include "CvarColorView.h"
 
+#include "CvarColor.h"
+#include "CvarToggle.h"
+
 Group video_options;
 Group audio_options;
 
@@ -140,7 +143,7 @@ MENU_video_options =
 	Menu_KeyEvent (KEY_video_options);
 
 	if (plist) {
-		ret = object_from_plist ([plist getObjectForKey:"video_options"]);
+		ret = object_from_plist ([(PLDictionary) plist getObjectForKey:"video_options"]);
 		video_options = ret.pointer_val;
 	}
 
@@ -187,7 +190,7 @@ MENU_audio_options =
 	Menu_KeyEvent (KEY_audio_options);
 
 	if (plist) {
-		ret = object_from_plist ([plist getObjectForKey:"audio_options"]);
+		ret = object_from_plist ([(PLDictionary) plist getObjectForKey:"audio_options"]);
 		audio_options = ret.pointer_val;
 	}
 
@@ -271,7 +274,7 @@ MENU_control_options =
 	Menu_KeyEvent (KEY_control_options);
 
 	if (plist) {
-		ret = object_from_plist ([plist getObjectForKey:"control_options"]);
+		ret = object_from_plist ([(PLDictionary) plist getObjectForKey:"control_options"]);
 		control_options = ret.pointer_val;
 	}
 

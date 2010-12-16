@@ -13,7 +13,7 @@ integer length (SchemeObject foo)
 {
     local integer len;
 
-    for (len = 0; [foo isKindOfClass: [Cons class]]; foo = [foo cdr]) {
+    for (len = 0; [foo isKindOfClass: [Cons class]]; foo = [(Cons) foo cdr]) {
             len++;
     }
 
@@ -24,7 +24,7 @@ BOOL isList (SchemeObject ls)
 {
     return ls == [Nil nil] ||
         ([ls isKindOfClass: [Cons class]] &&
-         isList([ls cdr]));
+         isList([(Cons) ls cdr]));
 }
 
 @implementation Cons

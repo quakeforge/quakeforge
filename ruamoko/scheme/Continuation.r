@@ -1,4 +1,6 @@
 #include "Continuation.h"
+#include "Machine.h"
+#include "Cons.h"
 #include "defs.h"
 
 @implementation Continuation
@@ -28,7 +30,7 @@
 
 - (void) invokeOnMachine: (Machine) m
 {
-    [m value: [[m stack] car]];
+    [m value: [(Cons) [m stack] car]];
     [m state: &state];
     return;
 }

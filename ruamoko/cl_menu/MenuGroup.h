@@ -9,6 +9,8 @@
 	integer current;
 }
 -(void)setBase:(integer)b;
+-(void) next;
+-(void) prev;
 @end
 
 #endif//__MenuGroup_h

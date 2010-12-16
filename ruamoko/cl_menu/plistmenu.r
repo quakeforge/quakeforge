@@ -39,7 +39,7 @@ class_from_plist (PLDictionary pldict)
 	local @param ret;
 	local @va_list va_list = { 0, params };
 	local string classname, selname, paramstr;
-	local Class class;
+	local id class;
 	local id obj;
 	local PLArray messages, msg;
 	local integer message_count, i, j;
@@ -122,10 +122,10 @@ rect_from_plist (PLString plstring)
 	if (str_mid (str, 0, 1) == "[") {
 		tmp = "(" + str_mid (str, 1, -1) + ")";
 		item = [PLItem fromString:tmp];
-		xp = stoi ([(PLString) [item getObjectAtIndex:0] string]);
-		yp = stoi ([(PLString) [item getObjectAtIndex:1] string]);
-		xl = stoi ([(PLString) [item getObjectAtIndex:2] string]);
-		yl = stoi ([(PLString) [item getObjectAtIndex:3] string]);
+		xp = stoi ([(PLString) [(PLArray) item getObjectAtIndex:0] string]);
+		yp = stoi ([(PLString) [(PLArray) item getObjectAtIndex:1] string]);
+		xl = stoi ([(PLString) [(PLArray) item getObjectAtIndex:2] string]);
+		yl = stoi ([(PLString) [(PLArray) item getObjectAtIndex:3] string]);
 		pr.r = makeRect (xp, yp, xl, yl);
 	}
 	return pr.p;

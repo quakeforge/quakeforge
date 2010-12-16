@@ -9,6 +9,7 @@
 + (id) newFromInt: (integer) i;
 - (id) initWithInt: (integer) i;
 - (integer) intValue;
+- (string) printForm;
 @end
 
 #endif //__Number_h

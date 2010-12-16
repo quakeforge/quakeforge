@@ -22,20 +22,10 @@
 	return [PLString new:str];
 }
 
-+ (PLItem) fromString:(string) str
-{
-	return [[PLItem itemClass: PL_GetPropertyList (str)] autorelease];
-}
-
-+ (PLItem) fromFile:(QFile) file
-{
-	return [[PLItem itemClass: PL_GetFromFile (file)] autorelease];
-}
-
 + itemClass:(plitem_t) item
 {
 	local string classname = NIL;
-	local Class class;
+	local id class;
 
 	if (!PL_TEST (item))
 		return NIL;
@@ -57,6 +47,16 @@
 	}
 	class = obj_lookup_class (classname);
 	return [[class alloc] initWithItem: item];
+}
+
++ (PLItem) fromString:(string) str
+{
+	return [[PLItem itemClass: PL_GetPropertyList (str)] autorelease];
+}
+
++ (PLItem) fromFile:(QFile) file
+{
+	return [[PLItem itemClass: PL_GetFromFile (file)] autorelease];
 }
 
 - initWithItem:(plitem_t) item

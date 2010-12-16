@@ -26,11 +26,6 @@ integer checkpoint;
     checkpoint = 0;
 }
 
-+ (id) dummyObject
-{
-    return [[SchemeObject alloc] initDummy];
-}
-
 - (id) initDummy
 {
     self = [super init];
@@ -40,13 +35,9 @@ integer checkpoint;
     return self;
 }
 
-+ (void) collectCheckPoint
++ (id) dummyObject
 {
-    if (checkpoint >= GC_AMOUNT)
-    {
-            [self collect];
-            checkpoint = 0;
-    }
+    return [[SchemeObject alloc] initDummy];
 }
 
 + (void) collect
@@ -102,6 +93,15 @@ integer checkpoint;
             not_garbage = NIL;
             markstate = !markstate;
             gc_state = GC_IDLE;
+    }
+}
+
++ (void) collectCheckPoint
+{
+    if (checkpoint >= GC_AMOUNT)
+    {
+            [self collect];
+            checkpoint = 0;
     }
 }
 

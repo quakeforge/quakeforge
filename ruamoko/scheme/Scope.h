@@ -14,7 +14,7 @@
 - (integer) depthOf: (Symbol) sym;
 - (integer) indexOf: (Symbol) sym;
 - (void) addName: (Symbol) sym;
-
+- (Scope) outer;
 @end
 
 #endif //__Scope_h

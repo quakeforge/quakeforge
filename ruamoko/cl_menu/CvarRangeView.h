@@ -14,6 +14,7 @@
 	Slider slider;
 	CvarRange range;
 }
+-(void)update;
 -(id)initWithBounds:(Rect)aRect title:(string)_title sliderWidth:(integer)width :(CvarRange)_range;
 -(void)inc;
 -(void)dec;

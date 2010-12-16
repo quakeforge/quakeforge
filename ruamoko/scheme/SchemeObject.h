@@ -14,6 +14,7 @@
     integer line;
     string source;
 }
++ (void) collectCheckPoint;
 - (void) mark;
 - (void) markReachable;
 - (void) makeRootCell;

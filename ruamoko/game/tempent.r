@@ -3,7 +3,7 @@
 
 void(vector org, float damage) SpawnBlood =
 {
-	WriteBytes (MSG_MULTICAST, SVC_TEMPENTITY, TE_BLOOD, 1.0);
+	WriteBytes (MSG_MULTICAST, (float) SVC_TEMPENTITY, (float) TE_BLOOD, 1.0);
 	WriteCoordV (MSG_MULTICAST, org);
 	multicast (org, MULTICAST_PVS);
 };

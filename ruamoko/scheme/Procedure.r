@@ -1,4 +1,5 @@
 #include "Procedure.h"
+#include "Machine.h"
 
 @implementation Procedure
 - (void) invokeOnMachine: (Machine) m

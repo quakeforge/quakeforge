@@ -21,7 +21,7 @@
     local integer index;
 
     for (index = 0; index < [names count]; index++) {
-            if (sym == [names getItemAt: index]) {
+            if (sym == [names objectAtIndex: index]) {
                     return index;
             }
     }

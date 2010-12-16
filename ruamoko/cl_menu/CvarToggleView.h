@@ -12,6 +12,7 @@
 	Text value;
 	CvarToggle toggle;
 }
+-(void)update;
 -(id)initWithBounds:(Rect)aRect title:(string)_title :(CvarToggle)_toggle;
 -(void)toggle;
 @end
