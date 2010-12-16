@@ -9,7 +9,7 @@ nobase_pkginclude_HEADERS= \
 	\
 	cbuf.h cmd.h cvar.h file.h gib.h hash.h plist.h \
 	AutoreleasePool.h Array.h Entity.h List.h ListNode.h Object.h \
-	PropertyList.h Protocol.h Stack.h \
+	PropertyList.h Protocol.h Runtime.h Stack.h \
 	\
 	gui/Group.h gui/InputLine.h gui/Pic.h gui/Point.h gui/Rect.h gui/Size.h \
 	gui/Slider.h gui/Text.h gui/View.h

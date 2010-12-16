@@ -1,6 +1,7 @@
 #include "math.h"
 
 #include "Array.h"
+#include "Runtime.h"
 
 #define STANDARD_CAPACITY 16
 #define ARRAY_MAX_GRANULARITY 100

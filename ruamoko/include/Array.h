@@ -2,6 +2,7 @@
 #define __ruamoko_Array_h
 
 #include "Object.h"
+#include "Runtime.h"
 
 /**
 	The %Array class is a general ordered collection class.
