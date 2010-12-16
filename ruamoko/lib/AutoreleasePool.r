@@ -1,10 +1,10 @@
 #include "AutoreleasePool.h"
 #include "Array+Private.h"
 
-//@static AutoreleasePool	sharedInstance;
-@static Array			poolStack;
+#include "Array.h"
+#include "Array+Private.h"
 
-//@static Stack			poolStack;
+@static Array	poolStack;
 
 @implementation AutoreleasePool
 
