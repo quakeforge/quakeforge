@@ -4,7 +4,7 @@
 #include "Object.h"
 
 /**
-	A general ordered collection class
+	The %Array class is a general ordered collection class.
 
 	The %Array class manages an ordered collection of objects.
 	If you want to subclass Array, you need to override these methods:
@@ -133,11 +133,12 @@
 
 #if 0
 /**
-	Copies all object references in the receiver to \a aBuffer.
+	Copies all object references in the range \a aRange to \a aBuffer.
 
 	\warning The destination buffer must be large enough to hold all contents.
 */
-- (BOOL) getObjects: (id [])aBuffer;
+- (BOOL) getObjects: (id [])aBuffer
+              range: (Range)aRange;
 #endif
 //\}
 

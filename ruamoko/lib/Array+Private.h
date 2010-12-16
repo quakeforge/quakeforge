@@ -9,6 +9,7 @@
 @interface Array (Private)
 
 ///\name Private methods
+///Don't use these unless you know what you're doing.
 //\{
 /**
 	Adds an object to the receiver, but without retaining it.
@@ -31,5 +32,11 @@
 //\}
 
 @end
+
+/*
+	By including this header, we tell the compiler that we make use of Array's
+	private methods.
+*/
+@reference Array (Private);
 
 #endif //__ruamoko_Array_Private_h
