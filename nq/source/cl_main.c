@@ -138,6 +138,7 @@ CL_InitCvars (void)
 					   "mouse strafe speed");
 	hud_fps = Cvar_Get ("hud_fps", "0", CVAR_ARCHIVE, NULL,
 						"display realtime frames per second");
+	Cvar_Alias_Get ("show_fps", hud_fps);
 	hud_time = Cvar_Get ("hud_time", "0", CVAR_ARCHIVE, NULL,
 						 "display the current time");
 }
