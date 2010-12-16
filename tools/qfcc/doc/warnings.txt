@@ -1,0 +1,38 @@
+`-Wno-protocol'
+     If a class is declared to implement a protocol, a warning is
+     issued for every method in the protocol that is not implemented by
+     the class.  The default behavior is to issue a warning for every
+     method not explicitly implemented in the class, even if a method
+     implementation is inherited from the superclass.  If you use the
+     `-Wno-protocol' option, then methods inherited from the superclass
+     are considered to be implemented, and no warning is issued for
+     them.
+`-Wselector'
+     Warn if multiple methods of different types for the same selector
+     are found during compilation.  The check is performed on the list
+     of methods in the final stage of compilation.  Additionally, a
+     check is performed for each selector appearing in a
+     `@selector(...)'  expression, and a corresponding method for that
+     selector has been found during compilation.  Because these checks
+     scan the method table only at the end of compilation, these
+     warnings are not produced if the final stage of compilation is not
+     reached, for example because an error is found during compilation,
+     or because the `-fsyntax-only' option is being used.
+`-Wstrict-selector-match'
+     Warn if multiple methods with differing argument and/or return
+     types are found for a given selector when attempting to send a
+     message using this selector to a receiver of type `id' or `Class'.
+     When this flag is off (which is the default behavior), the
+     compiler will omit such warnings if any differences found are
+     confined to types which share the same size and alignment.
+`-Wundeclared-selector'
+     Warn if a `@selector(...)' expression referring to an undeclared
+     selector is found.  A selector is considered undeclared if no
+     method with that name has been declared before the
+     `@selector(...)' expression, either explicitly in an `@interface'
+     or `@protocol' declaration, or implicitly in an `@implementation'
+     section.  This option always performs its checks as soon as a
+     `@selector(...)' expression is found, while `-Wselector' only
+     performs its checks in the final stage of compilation.  This also
+     enforces the coding style convention that methods and selectors
+     must be declared before being used.
