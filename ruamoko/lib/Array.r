@@ -148,14 +148,14 @@
 	return self;
 }
 
-- (unsigned) count
-{
-	return count;
-}
-
 - (BOOL) containsObject: (id)anObject
 {
 	return [self indexOfObject: anObject] ? YES : NO;
+}
+
+- (unsigned) count
+{
+	return count;
 }
 
 - (id) objectAtIndex: (unsigned)index
@@ -170,6 +170,61 @@
 {
 	return [self objectAtIndex: [self count] - 1];
 }
+
+/*
+	Finding Objects
+*/
+- (unsigned) indexOfObject: (id)anObject
+{
+	local unsigned	i;
+
+	for (i = 0; i < [self count]; i++) {
+		if ([[self objectAtIndex: i] isEqual: anObject])
+			return i;
+	}
+	return NotFound;
+}
+
+#if 0
+- (unsigned) indexOfObject: (id)anObject
+                   inRange: (Range)range;
+{
+	local unsigned	i;
+	local unsigned	end = range.location + range.length;
+
+	for (i = range.location; i < end && i < [self count]; i++) {
+		if ([[self objectAtIndex: i] isEqual: anObject])
+			return i;
+	}
+	return NotFound;
+}
+#endif
+
+- (unsigned) indexOfObjectIdenticalTo: (id)anObject
+{
+	local unsigned	i;
+
+	for (i = 0; i < [self count]; i++) {
+		if ([self objectAtIndex: i] == anObject)
+			return i;
+	}
+	return NotFound;
+}
+
+#if 0
+- (unsigned) indexOfObjectIdenticalTo: (id)anObject
+                              inRange: (Range)range;
+{
+	local unsigned	i;
+	local unsigned	end = range.location + range.length;
+
+	for (i = range.location; i < end && i < [self count]; i++) {
+		if ([self objectAtIndex: i] == anObject)
+			return i;
+	}
+	return NotFound;
+}
+#endif
 
 /*
 	Adding objects

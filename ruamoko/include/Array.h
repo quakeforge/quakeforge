@@ -142,6 +142,45 @@
 #endif
 //\}
 
+///\name Finding objects
+//\{
+/**
+	Returns the lowest index of an object equal to \a anObject.
+
+	If no object is equal, returns #NotFound.
+*/
+- (unsigned) indexOfObject: (id)anObject;
+
+#if 0
+/**
+	Returns the lowest index, within the range \a aRange, of an object equal 
+	to \a anObject.
+
+	If no object is equal, returns #NotFound.
+*/
+- (unsigned) indexOfObject: (id)anObject
+                   inRange: (Range)aRange;
+#endif
+
+/**
+	Returns the lowest index of an object with the same address as \a anObject.
+
+	Returns #NotFound if \a anObject is not found within the array.
+*/
+- (unsigned) indexOfObjectIdenticalTo: (id)anObject;
+
+#if 0
+/**
+	Returns the lowest index, within the range \a aRange, of an object with 
+	the same address as \a anObject.
+
+	Returns #NotFound if \a anObject is not found within the range.
+*/
+- (unsigned) indexOfObjectIdenticalTo: (id)anObject
+                              inRange: (Range)aRange;
+#endif
+//\}
+
 ///\name Adding objects
 //\{
 
