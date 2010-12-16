@@ -63,7 +63,7 @@ h3.version {
 }
 
 div.qindex, div.navtab{
-	background-color: #262633;
+	background-color: #262833;
 	border: 1px solid #9BA3C4;
 	text-align: center;
 	margin: 2px;
@@ -144,9 +144,9 @@ dl.el {
 }
 
 pre.fragment {
-	border: 1px solid #BEC3D9;
-	background-color: #ccc;
-	color: #660066;
+	border: 1px solid #737b9c;
+	background-color: #dedfe5;
+	color: #4b5166;
 	padding: 4px 6px;
 	margin: 4px 8px 4px 2px;
 	overflow: auto;
@@ -196,8 +196,13 @@ div.contents {
 	margin-right: 10px;
 }
 
+/* inline MSC graphs? */
+.contents div img {
+	border: 2px solid #737b9c;
+}
+
 td.indexkey {
-	background-color: #262633;
+	background-color: #262833;
 	font-weight: bold;
 	border: 1px solid #737b9c;
 	margin: 2px 0px 2px 0;
@@ -205,14 +210,14 @@ td.indexkey {
 }
 
 td.indexvalue {
-	background-color: #262633;
+	background-color: #262833;
 	border: 1px solid #737b9c;
 	padding: 2px 10px;
 	margin: 2px 0px;
 }
 
 tr.memlist {
-	background-color: #262633;
+	background-color: #262833;
 }
 
 p.formulaDsp {
@@ -235,7 +240,8 @@ div.center {
 }
 
 div.center img {
-	border: 0px;
+	border: 2px solid #737b9c;
+	margin: 10px 2px;
 	background-color: #bec3d9;
 }
 
@@ -252,17 +258,17 @@ img.footer {
 /* @group Code Colorization */
 
 span.keyword {
-	color: #000;
+	color: #262833;
 	font-weight: bold;
 }
 
 span.keywordtype {
-	color: #000;
+	color: #262833;
 	font-weight: bold;
 }
 
 span.keywordflow {
-	color: #000;
+	color: #000000;
 	font-weight: bold;
 }
 
@@ -332,14 +338,14 @@ td.tiny {
 }
 
 th.dirtab {
-	background: #E9EBF2;
+	background: #bdcaff;
 	font-weight: bold;
 }
 
 hr {
 	height: 0px;
 	border: none;
-	border-top: 1px solid #4b4f66;
+	border-top: 1px solid #4b5166
 }
 
 hr.footer {
@@ -356,7 +362,7 @@ table.memberdecls {
 .mdescLeft, .mdescRight,
 .memItemLeft, .memItemRight,
 .memTemplItemLeft, .memTemplItemRight, .memTemplParams {
-	background-color: #262633;
+	background-color: #262833;
 	border: none;
 	margin: 4px;
 	padding: 1px 0 0 8px;
@@ -368,7 +374,7 @@ table.memberdecls {
 }
 
 .memItemLeft, .memItemRight, .memTemplParams {
-	border-top: 1px solid #BEC3D9;
+	border-top: 1px solid #bdcaff;
 }
 
 .memItemLeft, .memTemplItemLeft {
@@ -388,13 +394,13 @@ table.memberdecls {
 
 .memtemplate {
 	font-size: 80%;
-	color: #4b4f66;
+	color: #4b5166;
 	font-weight: normal;
 	margin-left: 3px;
 }
 
 .memnav {
-	background-color: #E9EBF2;
+	background-color: #bdcaff;
 	border: 1px solid #9BA3C4;
 	text-align: center;
 	margin: 2px;
@@ -411,6 +417,9 @@ table.memberdecls {
         white-space: nowrap;
         font-weight: bold;
         margin-left: 6px;
+}
+.memname a {
+	color: #ccccff;
 }
 
 .memproto {
@@ -440,7 +449,7 @@ table.memberdecls {
         border-left: 1px solid #737b9c;
         border-right: 1px solid #737b9c;
         padding: 2px 5px;
-        background-color: #262633;
+        background-color: #262833;
         border-top-width: 0;
         /* firefox specific markup */
         -moz-border-radius-bottomleft: 8px;
@@ -460,6 +469,9 @@ table.memberdecls {
 
 .paramtype {
 	white-space: nowrap;
+}
+.paramtype a {
+	color: #ccccff;
 }
 
 .paramname {
@@ -571,7 +583,7 @@ div.dynheader {
 
 address {
 	font-style: normal;
-	color: #4b4f66;
+	color: #4b5166
 }
 
 table.doxtable {
@@ -579,7 +591,7 @@ table.doxtable {
 }
 
 table.doxtable td, table.doxtable th {
-	border: 1px solid #262633;
+	border: 1px solid #262833;
 	padding: 3px 7px 2px;
 }
 
@@ -598,7 +610,7 @@ table.doxtable th {
 	height: 36px;
 /*	background-image: url('tab_b.png');*/
 	background-color: #737b9c;
-	border-bottom: 2px solid #BEC3D9;
+	border-bottom: 2px solid #bdcaff;
 	z-index: 101;
 	overflow: hidden;
 	font-size: 13px;
@@ -612,7 +624,7 @@ table.doxtable th {
 	height:30px;
 	line-height:30px;
 	color:#808BB5;
-	border:solid 1px #BCC1D7;
+	border:solid 1px #bdcaff;
 	overflow:hidden;
 	margin:0px;
 	padding:0px;
@@ -627,7 +639,7 @@ table.doxtable th {
 	background-image:url('bc_s.png');
 	background-repeat:no-repeat;
 	background-position:right;
-	color:#4b4f66;
+	color:#4b5166
 }
 
 .navpath a
@@ -640,7 +652,7 @@ table.doxtable th {
 
 .navpath a:hover
 {
-	color:#4b4f66;
+	color:#4b5166
 }
 
 div.summary
@@ -663,7 +675,7 @@ div.header
         background-repeat:repeat-x;*/
 	background-color: #737b9c;
 	margin:  0px;
-	border-bottom: 2px solid #BEC3D9;
+	border-bottom: 2px solid #bdcaff;
 }
 
 div.headertitle

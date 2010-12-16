@@ -23,6 +23,9 @@ EXTRA_DIST= qf.ico \
 	@mkdir -p `dirname $@`
 	fig2dev -L ps $< $@
 
+clean-local:
+	-rm -fr doxygen
+
 progs/vm-mem.png: progs/vm-mem.fig
 progs/vm-mem.eps: progs/vm-mem.fig
 
