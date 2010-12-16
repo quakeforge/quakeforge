@@ -514,31 +514,22 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 		if (baseline->modelindex != SVfloat (ent, modelindex))
 			bits |= U_MODEL;
 
-#if 0
-		//FIXME finish porting to QF
-		if (pr_alpha_supported) {
-			// TODO: find a cleaner place to put this code
-			eval_t  *val;
-			val = GetEdictFieldValue(ent, "alpha");
-			if (val)
-				ent->alpha = ENTALPHA_ENCODE(val->_float);
-		}
+		if (sv_fields.alpha != -1)
+			SVdata (ent)->alpha = ENTALPHA_ENCODE(SVfloat (ent, alpha));
 
 		//don't send invisible entities unless they have effects
-		if (ent->alpha == ENTALPHA_ZERO && !ent->v.effects)
+		if (SVdata (ent)->alpha == ENTALPHA_ZERO && !SVfloat (ent, effects))
 			continue;
-#endif
 
 		if (sv.protocol != PROTOCOL_NETQUAKE) {
-			//FIXME
-			//if (ent->baseline.alpha != ent->alpha)
-			//	bits |= U_ALPHA;
+			if (SVdata (ent)->state.alpha != SVdata (ent)->alpha)
+				bits |= U_ALPHA;
 			if (bits & U_FRAME && (int) SVfloat (ent, frame) & 0xFF00)
 				bits |= U_FRAME2;
 			if (bits & U_MODEL && (int) SVfloat (ent, modelindex) & 0xFF00)
 				bits |= U_MODEL2;
-			//if (ent->sendinterval) FIXME
-			//	bits |= U_LERPFINISH;
+			if (SVdata (ent)->sendinterval)
+				bits |= U_LERPFINISH;
 			if (bits >= 65536)
 				bits |= U_EXTEND1;
 			if (bits >= 16777216)
@@ -590,9 +581,8 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 		if (bits & U_ANGLE3)
 			MSG_WriteAngle (msg, SVvector (ent, angles)[2]);
 
-		//FIXME
-		//if (bits & U_ALPHA)
-		//	MSG_WriteByte(msg, ent->alpha);
+		if (bits & U_ALPHA)
+			MSG_WriteByte(msg, SVdata (ent)->alpha);
 		if (bits & U_FRAME2)
 			MSG_WriteByte(msg, (int) SVfloat (ent, frame) >> 8);
 		if (bits & U_MODEL2)
@@ -705,9 +695,8 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 			bits |= SU_CELLS2;
 		if (bits & SU_WEAPONFRAME && (int) SVfloat (ent, weaponframe) & 0xFF00)
 			bits |= SU_WEAPONFRAME2;
-		//FIXME
-		//if (bits & SU_WEAPON && ent->alpha != ENTALPHA_DEFAULT)
-		//	bits |= SU_WEAPONALPHA; //for now, weaponalpha = client entity alpha
+		if (bits & SU_WEAPON && SVdata (ent)->alpha != ENTALPHA_DEFAULT)
+			bits |= SU_WEAPONALPHA; //for now, weaponalpha = client entity alpha
 		if (bits >= 65536)
 			bits |= SU_EXTEND1;
 		if (bits >= 16777216)
@@ -781,9 +770,8 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 		MSG_WriteByte (msg, (int) SVfloat (ent, ammo_cells) >> 8);
 	if (bits & SU_WEAPONFRAME2)
 		MSG_WriteByte (msg, (int) SVfloat (ent, weaponframe) >> 8);
-	// FIXME
-	//if (bits & SU_WEAPONALPHA)
-	//	MSG_WriteByte (msg, ent->alpha); //for now, weaponalpha = client entity alpha
+	if (bits & SU_WEAPONALPHA)
+		MSG_WriteByte (msg, SVdata (ent)->alpha); //for now, weaponalpha = client entity alpha
 }
 
 static qboolean

@@ -1160,10 +1160,10 @@ PF_makestatic (progs_t *pr)
 	int         bits = 0;
 
 	ent = P_EDICT (pr, 0);
-	//if (ent->alpha == ENTALPHA_ZERO) { //FIXME
-	//	//johnfitz -- don't send invisible static entities
-	//	goto nosend;
-	//}
+	if (SVdata (ent)->alpha == ENTALPHA_ZERO) {
+		//johnfitz -- don't send invisible static entities
+		goto nosend;
+	}
 
 	model = PR_GetString (pr, SVstring (ent, model));
 	if (sv.protocol == PROTOCOL_NETQUAKE) {
@@ -1175,9 +1175,8 @@ PF_makestatic (progs_t *pr)
 			bits |= B_LARGEMODEL;
 		if ((int) SVfloat (ent, frame) & 0xff00)
 			bits |= B_LARGEFRAME;
-		//FIXME
-		//if (ent->alpha != ENTALPHA_DEFAULT)
-		//	bits |= B_ALPHA;
+		if (SVdata (ent)->alpha != ENTALPHA_DEFAULT)
+			bits |= B_ALPHA;
 	}
 
 	if (bits) {
@@ -1203,9 +1202,8 @@ PF_makestatic (progs_t *pr)
 	MSG_WriteCoordAngleV (&sv.signon, SVvector (ent, origin),
 						  SVvector (ent, angles));
 
-	//FIXME
-	//if (bits & B_ALPHA)
-	//	MSG_WriteByte (&sv.signon, ent->alpha);
+	if (bits & B_ALPHA)
+		MSG_WriteByte (&sv.signon, SVdata (ent)->alpha);
 	// throw the entity away now
 nosend:
 	ED_Free (pr, ent);

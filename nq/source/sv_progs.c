@@ -169,6 +169,8 @@ parse_field (progs_t *pr, const char *key, const char *value)
 		|| strequal (key, "qlsky")
 		|| strequal (key, "fog"))
 		return 1;
+	if (strequal (key, "mapversion"))		// ignore HL(?) version field
+		return 1;
 	if (*key == '_')						// ignore _fields
 		return 1;
 	return 0;
@@ -327,6 +329,7 @@ static sv_def_t nq_opt_funcs[] = {
 
 static sv_def_t nq_opt_fields[] = {
 	{ev_integer,	0,	"rotated_bbox",		&sv_fields.rotated_bbox},
+	{ev_float,		0,	"alpha",			&sv_fields.alpha},
 	{ev_float,		0,	"gravity",			&sv_fields.gravity},
 	// Quake 2 fields?
 	{ev_float,		0,	"dmg",				&sv_fields.dmg},

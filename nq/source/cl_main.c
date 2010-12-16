@@ -541,6 +541,8 @@ CL_RelinkEntities (void)
 			continue;
 		}
 
+		ent->colormod[3] = ENTALPHA_DECODE (state->alpha);
+
 		VectorCopy (ent->origin, ent->old_origin);
 
 		if (state->forcelink) {

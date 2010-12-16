@@ -187,6 +187,8 @@ typedef struct
 	pr_int_t    speed;				//float
 
 	pr_int_t    rotated_bbox;		//int
+	pr_int_t    alpha;				//float
+
 	pr_int_t    lastruntime;		//float
 } sv_fields_t;
 
@@ -220,6 +222,8 @@ typedef struct sv_data_s {
 	link_t      area;			///< linked to a division node or leaf
 	edict_leaf_t *leafs;
 	entity_state_t state;
+	byte        alpha;
+	qboolean    sendinterval;
 } sv_data_t;
 
 #define SVdata(e)		((sv_data_t *) ((e)->edata))
