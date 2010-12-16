@@ -507,19 +507,23 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 		while (c) {
 			for (cat = c->categories; cat; cat = cat->next) {
 				for (m = cat->methods->head; m; m = m->next) {
-					if (strcmp (selector->name, m->name) == 0)
+					if (((!c->super_class && class_msg)
+						 || class_msg != m->instance)
+						&& strcmp (selector->name, m->name) == 0)
 						return m;
 				}
 			}
 			for (m = c->methods->head; m; m = m->next) {
-				if (strcmp (selector->name, m->name) == 0)
+				if (((!c->super_class && class_msg)
+					 || class_msg != m->instance)
+					&& strcmp (selector->name, m->name) == 0)
 					return m;
 			}
 			c = c->super_class;
 		}
 		//FIXME right option?
 		if (options.warnings.interface_check)
-			warning (sel, "%s does not respond to %c%s", class->name,
+			warning (sel, "%s may not respond to %c%s", class->name,
 					 class_msg ? '+' : '-', selector->name);
 	}
 	return 0;

@@ -2774,7 +2774,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	expr_t     *selector = selector_expr (message);
 	expr_t     *call;
 	keywordarg_t *m;
-	int         super = 0, class_msg = 0;
+	int         self = 0, super = 0, class_msg = 0;
 	type_t     *rec_type;
 	class_t    *class;
 	method_t   *method;
@@ -2793,8 +2793,12 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 			class = current_class->c.category->class;
 		rec_type = class->type;
 	} else {
-		if (receiver->type == ex_name && get_class (receiver->e.string_val, 0))
-			class_msg = 1;
+		if (receiver->type == ex_name) {
+			if (strcmp (receiver->e.string_val, "self") == 0)
+				self = 1;
+			if (get_class (receiver->e.string_val, 0))
+				class_msg = 1;
+		}
 		rec_type = get_type (receiver);
 
 		if (receiver->type == ex_error)
@@ -2804,7 +2808,16 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 			|| (rec_type->aux_type->type != ev_object
 				&& rec_type->aux_type->type != ev_class))
 			return error (receiver, "not a class/object");
-		class = rec_type->aux_type->s.class;
+		if (self) {
+			if (current_class->is_class)
+				class = current_class->c.class;
+			else
+				class = current_class->c.category->class;
+			if (rec_type == &type_Class)
+				class_msg = 1;
+		} else {
+			class = rec_type->aux_type->s.class;
+		}
 	}
 
 	method = class_message_response (class, class_msg, selector);
