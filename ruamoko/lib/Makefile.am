@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS=	foreign
 pkglibdir=$(libdir)/ruamoko
 
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
-QCFLAGS=-qq -g -Werror
+QCFLAGS=-qq -g -Wall -Wno-integer-divide -Werror
 QCPPFLAGS=$(INCLUDES)
 PAK=$(top_builddir)/tools/pak/pak$(EXEEXT)
 RANLIB=touch
