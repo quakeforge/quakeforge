@@ -1697,22 +1697,27 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		switch (op) {
 			case '%':
 				{
-					expr_t     *tmp1, *tmp2, *tmp3;
+					expr_t     *tmp1, *tmp2, *tmp3, *t1, *t2;
 					e = new_block_expr ();
+					t1 = new_temp_def_expr (&type_float);
+					t2 = new_temp_def_expr (&type_float);
 					tmp1 = new_temp_def_expr (&type_float);
 					tmp2 = new_temp_def_expr (&type_float);
 					tmp3 = new_temp_def_expr (&type_float);
-					e1 = binary_expr ('&', e1, new_float_expr (-1.0));
-					e2 = binary_expr ('&', e2, new_float_expr (-1.0));
-					append_expr (e, assign_expr (tmp1, e1));
-					append_expr (e, assign_expr (tmp2, e2));
+					append_expr (e, new_bind_expr (e1, t1));
+					append_expr (e, new_bind_expr (e2, t2));
+					e1 = binary_expr ('&', t1, t1);
+					e2 = binary_expr ('&', t2, t2);
+					append_expr (e, new_bind_expr (e1, tmp1));
+					append_expr (e, new_bind_expr (e2, tmp2));
 					e1 = binary_expr ('/', tmp1, tmp2);
 					append_expr (e, assign_expr (tmp3, e1));
-					e2 = binary_expr ('&', tmp3, new_float_expr (-1.0));
-					e->e.block.result = binary_expr ('*', tmp2, e2);
-					e2 = e;
-					e1 = tmp1;
-					op = '-';
+					e2 = binary_expr ('&', tmp3, tmp3);
+					append_expr (e, new_bind_expr (e2, tmp3));
+					e1 = binary_expr ('*', tmp2, tmp3);
+					e2 = binary_expr ('-', tmp1, e1);
+					e->e.block.result = e2;
+					return e;
 				}
 				break;
 		}
