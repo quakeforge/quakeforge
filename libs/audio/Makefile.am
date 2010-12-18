@@ -13,7 +13,7 @@ EXEEXT=
 noinst_PROGRAMS= testsound
 
 testsound_SOURCES= testsound.c
-testsound_LDADD= libQFsound.la
+testsound_LDADD= libQFsound.la $(top_builddir)/libs/util/libQFutil.la
 testsound_DEPENDENCIES= libQFsound.la $(top_builddir)/libs/util/libQFutil.la
 
 plugin_LTLIBRARIES=	@CD_PLUGIN_TARGETS@
