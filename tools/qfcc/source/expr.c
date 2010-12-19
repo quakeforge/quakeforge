@@ -1704,16 +1704,21 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 					tmp1 = new_temp_def_expr (&type_float);
 					tmp2 = new_temp_def_expr (&type_float);
 					tmp3 = new_temp_def_expr (&type_float);
+
 					append_expr (e, new_bind_expr (e1, t1));
-					append_expr (e, new_bind_expr (e2, t2));
 					e1 = binary_expr ('&', t1, t1);
-					e2 = binary_expr ('&', t2, t2);
 					append_expr (e, new_bind_expr (e1, tmp1));
+
+					append_expr (e, new_bind_expr (e2, t2));
+					e2 = binary_expr ('&', t2, t2);
 					append_expr (e, new_bind_expr (e2, tmp2));
+
 					e1 = binary_expr ('/', tmp1, tmp2);
 					append_expr (e, assign_expr (tmp3, e1));
+
 					e2 = binary_expr ('&', tmp3, tmp3);
 					append_expr (e, new_bind_expr (e2, tmp3));
+
 					e1 = binary_expr ('*', tmp2, tmp3);
 					e2 = binary_expr ('-', tmp1, e1);
 					e->e.block.result = e2;
