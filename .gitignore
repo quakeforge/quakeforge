@@ -378,6 +378,10 @@ core
 /tools/qfcc/source/qfcc
 /tools/qfcc/source/qfprogs
 
+# /tools/qfcc/test/
+/tools/qfcc/test/*.dat
+/tools/qfcc/test/*.sym
+
 # /tools/qflight/
 
 # /tools/qflight/include/
