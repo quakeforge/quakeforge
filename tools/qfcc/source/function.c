@@ -514,7 +514,10 @@ finish_function (function_t *f)
 void
 emit_function (function_t *f, expr_t *e)
 {
-	//printf (" %s =\n", f->def->name);
+//#define DUMP_EXPR
+#ifdef DUMP_EXPR
+	printf (" %s =\n", f->def->name);
+#endif
 
 	if (f->aux)
 		lineno_base = f->aux->source_line;
@@ -526,9 +529,11 @@ emit_function (function_t *f, expr_t *e)
 
 	current_scope = f->scope;
 	while (e) {
-		//printf ("%d ", pr.source_line);
-		//print_expr (e);
-		//puts("");
+#ifdef DUMP_EXPR
+		printf ("%d ", pr.source_line);
+		print_expr (e);
+		puts("");
+#endif
 
 		emit_expr (e);
 		e = e->next;
@@ -538,7 +543,9 @@ emit_function (function_t *f, expr_t *e)
 	current_scope = pr.scope;
 	reset_tempdefs ();
 
-	//puts ("");
+#ifdef DUMP_EXPR
+	puts ("");
+#endif
 }
 
 int
