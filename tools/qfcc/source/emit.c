@@ -160,10 +160,10 @@ emit_statement (expr_t *e, opcode_t *op, def_t *var_a, def_t *var_b,
 		ret = var_c;
 	}
 #if 0
-	printf ("%s %s(%d) %s(%d) %s(%d)\n", op->opname,
-			var_a ? var_a->name : "", statement->a,
-			var_b ? var_b->name : "", statement->b,
-			var_c ? var_c->name : "", statement->c);
+	printf ("%s %s(%d:%d) %s(%d:%d) %s(%d:%d)\n", op->opname,
+			var_a ? var_a->name : "", var_a ? var_a->users : 99, statement->a,
+			var_b ? var_b->name : "", var_b ? var_b->users : 99, statement->b,
+			var_c ? var_c->name : "", var_c ? var_c->users : 99, statement->c);
 #endif
 
 	add_statement_ref (var_a, statement, 0);
