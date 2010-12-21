@@ -32,12 +32,22 @@
 #ifndef __qtv_h
 #define __qtv_h
 
-#define PORT_QTV 27501
+/**	\defgroup qtv QuakeForge QTV Proxy
+	\image html qwtv.png
+	\image latex qwtv.eps "VM memory map"
+*/
+
+/**	\defgroup qtv_general General Functions
+	\ingroup qtv
+*/
+//@{
+
+#define PORT_QTV 27501	///< Default port to listen for connecting clients.
 
 typedef enum {
-	RD_NONE,
-	RD_CLIENT,
-	RD_PACKET,
+	RD_NONE,			///< No redirection. Default state.
+	RD_CLIENT,			///< Output is sent to a specific client connection.
+	RD_PACKET,			///< Output is sent as a connectionless packet.
 } redirect_t;
 
 extern double realtime;
@@ -48,8 +58,36 @@ extern struct cvar_s *sv_timeout;
 
 struct client_s;
 
+/**	Formatted console printing with possible redirection.
+
+	Parameters are as per printf.
+
+	Calling qtv_begin_redirect() before, and qtv_end_redirect() after a series
+	of calls will redirect output.
+*/
 void qtv_printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
+
+/**	Begin redirection of console printing.
+
+	All calls to qtv_printf() between a call to this and qtv_end_redirect()
+	will be redirected.
+
+	\param rd		Redirection type.
+	\param cl		Destination client of redirected output. Ignored for
+					RD_PACKET redirection, required for RD_CLIENT.
+*/
 void qtv_begin_redirect (redirect_t rd, struct client_s *cl);
+
+/**	End redirection of console printing.
+
+	All calls to qtv_printf() between a call to qtv_begin_redirect() and this
+	will be redirected.
+
+	Causes the redirected output to be flushed to the destination set by
+	qtv_begin_redirect ();
+*/
 void qtv_end_redirect (void);
+
+//@}
 
 #endif//__qtv_h

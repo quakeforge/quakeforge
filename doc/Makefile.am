@@ -13,7 +13,8 @@ EXTRA_DIST= qf.ico \
 	config/gib/adjustvolume.gib config/gib/infobot.gib config/gib/ln.gib \
 	config/gib/qfadmin.gib config/gib/sshot.gib config/gib/zoom.gib \
 	\
-	progs/vm-exec.c progs/vm-mem.fig
+	progs/vm-exec.c progs/vm-mem.fig \
+	qtv/qwtv.fig
 
 %.png: %.fig
 	@mkdir -p `dirname $@`
@@ -28,6 +29,8 @@ clean-local:
 
 progs/vm-mem.png: progs/vm-mem.fig
 progs/vm-mem.eps: progs/vm-mem.fig
+qtv/qwtv.png: qtv/qwtv.fig
+qtv/qwtv.eps: qtv/qwtv.fig
 
-doc: quakeforge.dox progs/vm-mem.png progs/vm-mem.eps
+doc: quakeforge.dox progs/vm-mem.png progs/vm-mem.eps qtv/qwtv.png qtv/qwtv.eps
 	doxygen quakeforge.dox
