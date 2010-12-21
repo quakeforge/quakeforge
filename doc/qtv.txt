@@ -24,8 +24,15 @@ qtv server, and more importantly, to be packet-loss tolerant (QF uses mvd
 over udp).
 
 Currently, the qtv proxy can connect to any number of servers (if you use
-more than one or two, I hope you have a beefy system/connection). The proxy
-supports any number of connecting clients. Connecting clients use
+more than one or two, I hope you have a beefy system/connection). Use
+<code>sv_new \<name\> [address]</code> to connect to a server. \c address
+is optional if \c name is a resolvable internet address, otherwise \c name
+can be a simple "nick-name" while \c address is the resolvable address of
+the quakeworld server. \c sv_list lists the current servers and
+<code>sv_del \<name\></code> (\c name is the same as used in \c sv_new and
+as shown by \c sv_list) is used to disconnect from and remove a server.
+
+The proxy supports any number of connecting clients. Connecting clients use
 <code>cmd list</code> to get a list of available servers and
 <code>cmd connect [SERVERNAME]</code> to finalize the connection to a
 server. Clients can use <code>cmd disconnect</code> to "leave" a server in
