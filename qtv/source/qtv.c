@@ -134,7 +134,7 @@ qtv_printf (const char *fmt, ...)
 	va_end (argptr);
 }
 
-void
+static void
 qtv_flush_redirect (void)
 {
 	char        send[8000 + 6];
@@ -326,7 +326,7 @@ qtv_status (void)
 	qtv_end_redirect ();
 }
 
-void
+static void
 qtv_connectionless_packet (void)
 {
 	const char *cmd, *str;
