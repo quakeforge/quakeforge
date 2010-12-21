@@ -1,0 +1,45 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+/**
+\page qtv_overview QF QTV overview/status.
+OVERVIEW:
+\image html qwtv.png
+\image latex qwtv.eps ""
+
+The server is "reserved" for playing clients. Any spectators would be
+referees and/or admins (however, this is up to the server admin).
+
+A qtv proxy connects to the server. The proxy may have spectating clients
+and other even other proxies connecting to it. The proxies can chain to any
+depth as an upstream proxy will pass on its information to any downstream
+proxies. With just a few levels of proxies, it should be possible to have
+very large spectator groups.
+
+STATUS:
+
+qw-server supports up to two qtv proxy connections: the idea being there
+will be only one, with the second in case the proxy drops off and needs to
+reconnect before the timeout. The qw-server sends a modified mvd stream to
+the qtv proxy. The mvd stream is modified for both easy manipulation by the
+qtv server, and more importantly, to be packet-loss tolerant (QF uses mvd
+over udp).
+
+Currently, the qtv proxy can connect to any number of servers (if you use
+more than one or two, I hope you have a beefy system/connection). The proxy
+supports any number of connecting clients. Connecting clients use
+<code>cmd list</code> to get a list of available servers and
+<code>cmd connect [SERVERNAME]</code> to finalize the connection to a
+server. Clients can use <code>cmd disconnect</code> to "leave" a server in
+order to "connect" to a different one without disconnecting from the proxy.
+
+The proxy and connected clients ride over a server map change.
+
+TODO:
+\li Implement a delay (configurable) between the qw server and the proxy.
+\li Add proxy chaining, possibly with configurable delay (redundant?).
+\li Demo recording (mvd/enhanced mvd) on the proxy.
+\li VOIP with recording to enhanced mvd (mvd and voip streams encapsulated
+    together). Probably based on FTE.
+\li Other? According to community needs.
+
+\ref qtv
+*/

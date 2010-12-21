@@ -34,7 +34,8 @@
 
 /**	\defgroup qtv QuakeForge QTV Proxy
 	\image html qwtv.png
-	\image latex qwtv.eps "VM memory map"
+	\image latex qwtv.eps ""
+	\ref qtv_overview
 */
 
 /**	\defgroup qtv_general General Functions
