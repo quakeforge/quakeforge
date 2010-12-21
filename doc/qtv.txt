@@ -41,6 +41,7 @@ order to "connect" to a different one without disconnecting from the proxy.
 The proxy and connected clients ride over a server map change.
 
 TODO:
+\li Get client delta compression working (if it's not already).
 \li Implement a delay (configurable) between the qw server and the proxy.
 \li Add proxy chaining, possibly with configurable delay (redundant?).
 \li Demo recording (mvd/enhanced mvd) on the proxy.
