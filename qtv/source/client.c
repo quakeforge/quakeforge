@@ -63,6 +63,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "qtv.h"
 #include "server.h"
 
+int client_count;
 static client_t *clients;
 
 typedef struct ucmd_s {
@@ -1146,6 +1147,7 @@ client_connect (connection_t *con, void *object)
 	}
 
 	cl = calloc (1, sizeof (client_t));
+	client_count++;
 	Netchan_Setup (&cl->netchan, con->address, qport, NC_READ_QPORT);
 	cl->clnext = clients;
 	clients = cl;
@@ -1245,6 +1247,7 @@ delete_client (client_t *cl)
 		Server_Disconnect (cl);
 	Connection_Del (cl->con);
 	Info_Destroy (cl->userinfo);
+	client_count--;
 	free (cl);
 }
 

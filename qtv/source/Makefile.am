@@ -44,7 +44,7 @@ qtv_LIBS= \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
-qtv_SOURCES=	client.c connection.c qtv.c server.c sv_parse.c
+qtv_SOURCES=	client.c connection.c qtv.c sbar.c server.c sv_parse.c
 qtv_LDADD=	$(qtv_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
 qtv_LDFLAGS=	$(common_ldflags)
 qtv_DEPENDENCIES=	$(qtv_LIBS)

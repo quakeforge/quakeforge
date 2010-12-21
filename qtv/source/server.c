@@ -62,6 +62,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "qtv.h"
 #include "server.h"
 
+int server_count;
 static hashtab_t *server_hash;
 static server_t *servers;
 
@@ -108,6 +109,7 @@ server_free (void *_sv, void *unused)
 		cl->server = 0;
 		cl->connected = 0;
 	}
+	server_count--;
 	free (sv);
 }
 
@@ -444,6 +446,7 @@ sv_new_f (void)
 		adr.port = BigShort (27500);
 
 	sv = calloc (1, sizeof (server_t));
+	server_count++;
 	sv->next = servers;
 	servers = sv;
 	sv->name = strdup (name);

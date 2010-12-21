@@ -89,6 +89,9 @@ void qtv_begin_redirect (redirect_t rd, struct client_s *cl);
 */
 void qtv_end_redirect (void);
 
+
+void qtv_sbar_init (void);
+
 //@}
 
 #endif//__qtv_h

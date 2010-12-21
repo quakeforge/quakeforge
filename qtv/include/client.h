@@ -77,4 +77,6 @@ void Client_SendMessages (client_t *cl);
 void Client_New (client_t *cl);
 void Client_Frame (void);
 
+extern int client_count;
+
 #endif//__client_h

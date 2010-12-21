@@ -119,4 +119,6 @@ struct qmsg_s;
 void sv_parse (server_t *sv, struct msg_s *msg, int reliable);
 void sv_stringcmd (server_t *sv, struct msg_s *msg);
 
+extern int server_count;
+
 #endif//__server_h

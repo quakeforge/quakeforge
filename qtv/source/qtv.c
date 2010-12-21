@@ -296,6 +296,8 @@ qtv_init (void)
 		con_module->data->console->cbuf = qtv_cbuf;
 	Sys_SetStdPrintf (qtv_print);
 
+	qtv_sbar_init ();
+
 	Netchan_Init_Cvars ();
 
 	Cmd_StuffCmds (qtv_cbuf);
@@ -380,6 +382,8 @@ qtv_read_packets (void)
 int
 main (int argc, const char *argv[])
 {
+	int         frame = 0;
+
 	COM_InitArgv (argc, argv);
 
 	qtv_init ();
@@ -398,6 +402,11 @@ main (int argc, const char *argv[])
 
 		Server_Frame ();
 		Client_Frame ();
+
+		if (++frame == 100) {
+			frame = 0;
+			Con_DrawConsole ();
+		}
 	}
 	return 0;
 }
