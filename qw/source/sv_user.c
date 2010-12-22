@@ -1848,19 +1848,22 @@ SV_ExecuteClientMessage (client_t *cl)
 	qboolean    move_issued = false;	// allow only one move command
 	vec3_t      o;
 
-	// calc ping time
-	cl->delta.cur_frame = cl->netchan.incoming_acknowledged & UPDATE_MASK;
-	cl->delta.out_frame = cl->netchan.outgoing_sequence & UPDATE_MASK;
-	cl->delta.in_frame = cl->netchan.incoming_sequence & UPDATE_MASK;
-	frame = &cl->delta.frames[cl->delta.cur_frame];
-	frame->ping_time = realtime - frame->senttime;
-
 	// make sure the reply sequence number matches the incoming
 	// sequence number 
 	if (cl->netchan.incoming_sequence >= cl->netchan.outgoing_sequence)
 		cl->netchan.outgoing_sequence = cl->netchan.incoming_sequence;
 	else
 		cl->send_message = false;		// don't reply, sequences have slipped
+
+	// setup delta information
+	cl->delta.cur_frame = cl->netchan.incoming_acknowledged & UPDATE_MASK;
+	cl->delta.out_frame = cl->netchan.outgoing_sequence & UPDATE_MASK;
+	cl->delta.in_frame = cl->netchan.incoming_sequence & UPDATE_MASK;
+
+	// calc ping time
+	frame = &cl->delta.frames[cl->delta.cur_frame];
+	frame->ping_time = realtime - frame->senttime;
+
 	// save time for ping calculations
 	cl->delta.frames[cl->delta.out_frame].senttime = realtime;
 	cl->delta.frames[cl->delta.out_frame].ping_time = -1;
