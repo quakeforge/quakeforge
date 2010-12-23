@@ -327,18 +327,18 @@
 # define UINT32_MAX (0xffffffffUL)
 #endif
 #ifndef uint32_t
-#if (ULONG_MAX == UINT32_MAX) || defined (S_SPLINT_S)
-  typedef unsigned long uint32_t;
-# define UINT32_C(v) v ## UL
-# ifndef PRINTF_INT32_MODIFIER
-#  define PRINTF_INT32_MODIFIER "l"
-# endif
-#elif (UINT_MAX == UINT32_MAX)
+#if (UINT_MAX == UINT32_MAX)
   typedef unsigned int uint32_t;
 # ifndef PRINTF_INT32_MODIFIER
 #  define PRINTF_INT32_MODIFIER ""
 # endif
 # define UINT32_C(v) v ## U
+#elif (ULONG_MAX == UINT32_MAX) || defined (S_SPLINT_S)
+  typedef unsigned long uint32_t;
+# define UINT32_C(v) v ## UL
+# ifndef PRINTF_INT32_MODIFIER
+#  define PRINTF_INT32_MODIFIER "l"
+# endif
 #elif (USHRT_MAX == UINT32_MAX)
   typedef unsigned short uint32_t;
 # define UINT32_C(v) ((unsigned short) (v))
@@ -357,17 +357,17 @@
 # define INT32_MIN INT32_C(0x80000000)
 #endif
 #ifndef int32_t
-#if (LONG_MAX == INT32_MAX) || defined (S_SPLINT_S)
-  typedef signed long int32_t;
-# define INT32_C(v) v ## L
-# ifndef PRINTF_INT32_MODIFIER
-#  define PRINTF_INT32_MODIFIER "l"
-# endif
-#elif (INT_MAX == INT32_MAX)
+#if (INT_MAX == INT32_MAX)
   typedef signed int int32_t;
 # define INT32_C(v) v
 # ifndef PRINTF_INT32_MODIFIER
 #  define PRINTF_INT32_MODIFIER ""
+# endif
+#elif (LONG_MAX == INT32_MAX) || defined (S_SPLINT_S)
+  typedef signed long int32_t;
+# define INT32_C(v) v ## L
+# ifndef PRINTF_INT32_MODIFIER
+#  define PRINTF_INT32_MODIFIER "l"
 # endif
 #elif (SHRT_MAX == INT32_MAX)
   typedef signed short int32_t;
@@ -596,7 +596,7 @@ typedef uint_least32_t uint_fast32_t;
  *  Whatever piecemeal, per compiler thing we can do about the wchar_t
  *  type limits.
  */
-
+#if 0
 #if defined(__WATCOMC__) || defined(_MSC_VER) || defined (__GNUC__)
 # include <wchar.h>
 # ifndef WCHAR_MIN
@@ -606,7 +606,7 @@ typedef uint_least32_t uint_fast32_t;
 #  define WCHAR_MAX ((wchar_t)-1)
 # endif
 #endif
-
+#endif
 /*
  *  Whatever piecemeal, per compiler/platform thing we can do about the
  *  (u)intptr_t types and limits.
