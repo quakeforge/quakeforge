@@ -107,6 +107,7 @@ expr_t *argv_expr (void);
 	struct typedef_s *typename;
 	struct expr_s	*expr;
 	int			integer_val;
+	unsigned	uinteger_val;
 	float		float_val;
 	const char *string_val;
 	float		vector_val[3];
@@ -151,6 +152,7 @@ expr_t *argv_expr (void);
 
 %token	<string_val> CLASS_NAME NAME STRING_VAL
 %token	<integer_val> INT_VAL
+%token	<uinteger_val> UINT_VAL
 %token	<float_val> FLOAT_VAL
 %token	<vector_val> VECTOR_VAL
 %token	<quaternion_val> QUATERNION_VAL
@@ -1189,6 +1191,7 @@ const
 	| VECTOR_VAL				{ $$ = new_vector_expr ($1); }
 	| QUATERNION_VAL			{ $$ = new_quaternion_expr ($1); }
 	| INT_VAL					{ $$ = new_integer_expr ($1); }
+	| UINT_VAL					{ $$ = new_uinteger_expr ($1); }
 	| NIL						{ $$ = new_nil_expr (); }
 	;
 

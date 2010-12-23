@@ -117,24 +117,33 @@ FRAMEID {ID}(\.{ID})*
 
 ^{s}*#{s}*pragma.*$	/* skip */
 
-{DIGIT}+			{
+{DIGIT}+[uU]?		{
+						const char *c = yytext + yyleng - 1;
+						int         uint = 0;
 						yylval.integer_val = atoi (yytext);
-						return INT_VAL;
+						if (*c == 'u' || *c == 'U')
+							uint = 1;
+						return uint ? UINT_VAL : INT_VAL;
 					}
 
-0[xX]{XDIGIT}+		{
+0[xX]{XDIGIT}+[uU]?	{
 						const char *c = yytext + 2;
-						yylval.integer_val = 0;
+						int         uint = 0;
+						yylval.uinteger_val = 0;
 						while (*c) {
-							yylval.integer_val *= 16;
-							yylval.integer_val += *c - '0';
+							if (*c == 'u' || *c == 'U') {
+								uint = 1;
+								break;
+							}
+							yylval.uinteger_val *= 16;
+							yylval.uinteger_val += *c - '0';
 							if (*c > '9')
-								yylval.integer_val -= 'A' - '9' - 1;
+								yylval.uinteger_val -= 'A' - '9' - 1;
 							if (*c > 'F')
-								yylval.integer_val -= 'a' - 'A';
+								yylval.uinteger_val -= 'a' - 'A';
 							c++;
 						}
-						return INT_VAL;
+						return uint ? UINT_VAL : INT_VAL;
 					}
 
 {FLOAT}*			{
