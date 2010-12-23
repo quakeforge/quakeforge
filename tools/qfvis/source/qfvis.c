@@ -317,7 +317,7 @@ WatchThread (void *_thread)
 	int         ind = 0;
 
 	while (1) {
-		sleep (1);
+		usleep (1000000);
 
 		for (i = 0; i < thread; i ++)
 			local_work[i] = working[i];
@@ -884,8 +884,8 @@ main (int argc, char **argv)
 
 	BSP_AddVisibility (bsp, (byte *) visdata->str, visdata->size);
 	if (options.verbosity >= 0)
-		printf ("visdatasize:%zi  compressed from %zi\n", bsp->visdatasize,
-				originalvismapsize);
+		printf ("visdatasize:%ld  compressed from %ld\n",
+				(long) bsp->visdatasize, (long) originalvismapsize);
 
 	CalcAmbientSounds ();
 

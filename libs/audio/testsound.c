@@ -50,6 +50,11 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/sound.h"
 
+#ifdef _WIN32
+# include "winquake.h"
+HWND mainwindow;
+#endif
+
 #define MEMSIZE (32 * 1024 * 1024)
 
 cbuf_t     *testsound_cbuf;

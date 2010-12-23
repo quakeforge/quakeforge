@@ -421,7 +421,7 @@ extern	struct cvar_s	*sv_highchars;
 extern	struct cvar_s	*sv_mintic, *sv_maxtic;
 extern	struct cvar_s	*sv_maxspeed;
 
-extern	struct cvar_s	*timeout;
+extern	struct cvar_s	*sv_timeout;
 
 extern	netadr_t	master_adr[MAX_MASTERS];	// address of the master server
 

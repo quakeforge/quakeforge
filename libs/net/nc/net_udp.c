@@ -88,10 +88,14 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #ifndef HAVE_SOCKLEN_T
-# ifdef HAVE_SIZE
-   typedef size_t socklen_t;
+# ifdef _WIN32
+	typedef int socklen_t;
 # else
+#  ifdef HAVE_SIZE
+   typedef size_t socklen_t;
+#  else
    typedef unsigned int socklen_t;
+#  endif
 # endif
 #endif
 

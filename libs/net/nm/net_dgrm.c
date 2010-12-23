@@ -59,7 +59,8 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #ifdef BAN_TEST
 #if defined(_WIN32)
-#include <windows.h>
+#include "winquake.h"
+	typedef uint32_t in_addr_t;
 #else
 # include <sys/socket.h>
 # include <netinet/in.h>

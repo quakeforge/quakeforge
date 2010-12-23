@@ -334,10 +334,10 @@ SNDDMA_InitDirect (void)
 										   &dwWrite);
 	IDirectSoundBuffer_Play (pDSBuf, 0, 0, DSBPLAY_LOOPING);
 
-	sn.samples = gSndBufSize / (sn.samplebits / 8);
-	sn.samplepos = 0;
+	sn.frames = gSndBufSize / (sn.samplebits / 8) / sn.channels;
+	sn.framepos = 0;
 	sn.submission_chunk = 1;
-	sn.buffer = lpData;
+	sn.buffer = (byte *) lpData;
 	sample16 = (sn.samplebits / 8) - 1;
 
 	dsound_init = true;
@@ -403,8 +403,9 @@ SNDDMA_GetDMAPos (void)
 	s = mmtime.u.sample - mmstarttime.u.sample;
 
 	s >>= sample16;
+	s /= sn.channels;
 
-	s &= (sn.samples - 1);
+	s %= sn.frames;
 
 	return s;
 }
@@ -483,7 +484,7 @@ DSOUND_ClearBuffer (int clear)
 
 // FIXME: this should be called with 2nd pbuf2 = NULL, dwsize =0
 	pData = DSOUND_LockBuffer (true);
-	memset (pData, clear, sn.samples * sn.samplebits / 8);
+	memset (pData, clear, sn.frames * sn.channels * sn.samplebits / 8);
 	DSOUND_LockBuffer (false);
 }
 

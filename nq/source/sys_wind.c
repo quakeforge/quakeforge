@@ -70,7 +70,7 @@ main (int argc, const char **argv)
 		if (!strcmp (argv[i], "-dedicated"))
 			break;
 	if (i == argc) {
-		char      **newargv;
+		const char **newargv;
 
 		newargv = malloc ((argc + 2) * sizeof (*newargv));
 		memcpy (newargv, argv, argc * 4);

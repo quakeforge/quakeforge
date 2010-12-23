@@ -77,10 +77,6 @@ extern LPDIRECTDRAWSURFACE	lpBackBuffer;
 extern LPDIRECTDRAWPALETTE	lpDDPal;
 #endif
 
-#ifdef HAVE_DSOUND_H
-extern LPDIRECTSOUND pDS;
-extern LPDIRECTSOUNDBUFFER pDSBuf;
-#endif
 void	VID_LockBuffer (void);
 void	VID_UnlockBuffer (void);
 void	VID_UpdateWindowStatus (int window_x, int window_y);
@@ -99,8 +95,6 @@ extern qboolean	winsock_lib_initialized;
 
 extern int		window_center_x, window_center_y;
 extern RECT		window_rect;
-
-extern qboolean	mouseinitialized;
 
 #ifdef SPLASH_SCREEN
 extern HWND		hwnd_dialog;

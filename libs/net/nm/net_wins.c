@@ -413,12 +413,13 @@ WINS_CheckNewConnections (void)
 //=============================================================================
 
 int
-WINS_Read (int socket, byte * buf, int len, struct qsockaddr *addr)
+WINS_Read (int socket, byte *buf, int len, struct qsockaddr *addr)
 {
 	int         addrlen = sizeof (struct qsockaddr);
 	int         ret;
 
-	ret = precvfrom (socket, buf, len, 0, (struct sockaddr *) addr, &addrlen);
+	ret = precvfrom (socket, (char *) buf, len, 0, (struct sockaddr *) addr,
+					 &addrlen);
 	if (ret == -1) {
 		int         err = pWSAGetLastError ();
 
@@ -469,13 +470,13 @@ WINS_Broadcast (int socket, byte * buf, int len)
 //=============================================================================
 
 int
-WINS_Write (int socket, byte * buf, int len, struct qsockaddr *addr)
+WINS_Write (int socket, byte *buf, int len, struct qsockaddr *addr)
 {
 	int         ret;
 
 	ret =
 
-		psendto (socket, buf, len, 0, (struct sockaddr *) addr,
+		psendto (socket, (char *) buf, len, 0, (struct sockaddr *) addr,
 				 sizeof (struct qsockaddr));
 	if (ret == -1)
 		if (pWSAGetLastError () == WSAEWOULDBLOCK)

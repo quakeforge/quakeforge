@@ -157,7 +157,7 @@ VID_SetWindowedMode ( void )
 	height = rect.bottom - rect.top;
 
 	// Create the window
-	mainwindow = CreateWindow ("QuakeForge", PROGRAM,
+	mainwindow = CreateWindow ("QuakeForge", PACKAGE_NAME,
 							   WindowStyle, rect.left, rect.top, width, height,
 							   NULL, NULL, global_hInstance, NULL);
 
@@ -382,7 +382,8 @@ VID_Shutdown (void)
 {
 	HGLRC		hRC;
 	HDC			hDC;
-	int			i, temp[8192];
+	int			i;
+	GLuint      temp[8192];
 
 #ifdef SPLASH_SCREEN
 	if(hwnd_dialog)

@@ -193,14 +193,15 @@ LoadBSPMem (void *mem, size_t mem_size, void (*cb) (const bsp_t *, void *),
 			void *cbdata)
 {
 	bsp_t      *bsp;
+	int         version;
 
 	bsp = calloc (sizeof (bsp_t), 1);
 
 	bsp->header = mem;
 
-	if (LittleLong (bsp->header->version) != BSPVERSION)
-		Sys_Error ("version %i, not %i", LittleLong (bsp->header->version),
-				   BSPVERSION);
+	version = LittleLong (bsp->header->version);
+	if (version != BSPVERSION)
+		Sys_Error ("version %i, not %i", version, BSPVERSION);
 
 #undef SET_LUMP
 #define SET_LUMP(l,n) \

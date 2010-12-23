@@ -113,7 +113,11 @@ qtv_print (const char *fmt, va_list args)
 		} else {
 			mytime = time (NULL);
 			local = localtime (&mytime);
+#ifdef _WIN32
+			strftime (stamp, sizeof (stamp), "[%b %d %X] ", local);
+#else
 			strftime (stamp, sizeof (stamp), "[%b %e %X] ", local);
+#endif
 			Con_Printf ("%s%s", stamp, msg->str);
 		}
 		if (msg->str[0] && msg->str[strlen (msg->str) - 1] != '\n') {

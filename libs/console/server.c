@@ -336,17 +336,18 @@ setgeometry_status (view_t *view)
 	sb->text = realloc (sb->text, sb->width);
 	memset (sb->text, 0, sb->width);	// force an update
 }
-
+#ifdef SIGWINCH
 static void
 sigwinch (int sig)
 {
 	interrupted = 1;
 	signal (SIGWINCH, sigwinch);
 }
-
+#endif
 static void
 get_size (int *xlen, int *ylen)
 {
+#if 0
 	struct winsize size;
 
 	*xlen = *ylen = 0;
@@ -354,6 +355,8 @@ get_size (int *xlen, int *ylen)
 		return;
 	*xlen = size.ws_col;
 	*ylen = size.ws_row;
+#endif
+	getmaxyx (stdscr, *ylen, *xlen);
 }
 
 static void
@@ -363,12 +366,14 @@ process_input (void)
 	int         escape = 0;
 
 	if (interrupted) {
+#ifdef SIGWINCH
 		interrupted = 0;
 		get_size (&screen_x, &screen_y);
 		resizeterm (screen_y, screen_x);
 		con_linewidth = screen_x;
 		view_resize (sv_con_data.view, screen_x, screen_y);
 		sv_con_data.view->draw (sv_con_data.view);
+#endif
 	}
 
 	for (ch = 1; ch; ) {
@@ -557,7 +562,9 @@ create_input_line (int width)
 static void
 init (void)
 {
+#ifdef SIGWINCH
 	signal (SIGWINCH, sigwinch);
+#endif
 
 	initscr ();
 	start_color ();

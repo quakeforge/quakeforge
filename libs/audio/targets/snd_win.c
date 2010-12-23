@@ -250,8 +250,8 @@ SNDDMA_InitWav (void)
 		}
 	}
 
-	sn.samples = gSndBufSize / (sn.samplebits / 8);
-	sn.samplepos = 0;
+	sn.frames = gSndBufSize / (sn.samplebits / 8) / sn.channels;
+	sn.framepos = 0;
 	sn.submission_chunk = 1;
 	sn.buffer = (unsigned char *) lpData;
 	sample16 = (sn.samplebits / 8) - 1;
@@ -295,8 +295,9 @@ SNDDMA_GetDMAPos (void)
 	s = snd_sent * WAV_BUFFER_SIZE;
 	
 	s >>= sample16;
+	s /= sn.channels;
 
-	s &= (sn.samples - 1);
+	s %= sn.frames;
 
 	return s;
 }

@@ -141,7 +141,7 @@ cvar_t     *sv_maxtic;					// physics time tic
 
 cvar_t     *sv_netdosprotect;			// tone down DoS from quake servers
 
-cvar_t     *timeout;					// seconds without any message
+cvar_t     *sv_timeout;					// seconds without any message
 cvar_t     *zombietime;					// seconds to sink messages after
 										// disconnect
 
@@ -1839,7 +1839,7 @@ SV_CheckTimeouts (void)
 	float       droptime;
 	int         nclients, i;
 
-	droptime = realtime - timeout->value;
+	droptime = realtime - sv_timeout->value;
 	nclients = 0;
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
@@ -2104,8 +2104,8 @@ SV_InitLocal (void)
 					  "Spawn the player entity");
 	watervis = Cvar_Get ("watervis", "0", CVAR_SERVERINFO, Cvar_Info,
 						 "Set nonzero to enable r_wateralpha on clients");
-	timeout = Cvar_Get ("timeout", "65", CVAR_NONE, NULL, "Sets the amount of "
-						"time in seconds before a client is considered "
+	sv_timeout = Cvar_Get ("timeout", "65", CVAR_NONE, NULL, "Sets the amount "
+						"of time in seconds before a client is considered "
 						"disconnected if the server does not receive a "
 						"packet");
 	zombietime = Cvar_Get ("zombietime", "2", CVAR_NONE, NULL, "The number of "

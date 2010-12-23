@@ -104,7 +104,7 @@ startup (void)
 
 	if ((vinfo.dwMajorVersion < 4) ||
 		(vinfo.dwPlatformId == VER_PLATFORM_WIN32s)) {
-		Sys_Error ("This version of " PROGRAM
+		Sys_Error ("This version of " PACKAGE_NAME
 				   " requires a full Win32 implementation.");
 	}
 

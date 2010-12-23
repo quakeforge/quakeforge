@@ -505,7 +505,11 @@ ma_log (const char *fmt, ...)
 
 	mytime = time (NULL);
 	local = localtime (&mytime);
+#ifdef _WIN32
+	strftime (stamp, sizeof (stamp), "[%b %d %X] ", local);
+#else
 	strftime (stamp, sizeof (stamp), "[%b %e %X] ", local);
+#endif
 	fprintf (stdout, "%s", stamp);
 	va_start (args, fmt);
 	vfprintf (stdout, fmt, args);
