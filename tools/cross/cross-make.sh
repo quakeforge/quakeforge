@@ -1,7 +1,8 @@
 #!/bin/sh -x
 HOST_CC=gcc
-PATH=/usr/i586-mingw32msvc/bin:$PATH
 export HOST_CC
-export PATH
-make $*
+MINGW=/home/bill/src/mingw/mingw-cross-env-2.18
+export PATH=$MINGW/usr/bin:$PATH
+
+make PAK=pak QFCC=qfcc $*
 
