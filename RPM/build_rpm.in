@@ -9,17 +9,16 @@ top_srcdir=@top_srcdir@
 top_builddir=..
 
 mkdir -p RPMS/{noarch,i386,i686}
-test -d $top_srcdir/CVS && make -C $top_builddir changelog
+touch $top_builddir/ChangeLog
 make -C $top_builddir dist
-cat > rpmmacros <<EOF
-%_topdir    $PWD
-%_rpmdir    $PWD/RPMS
-%_sourcedir $top_builddir
-%_specdir   $PWD
-%_srcrpmdir $PWD
-%_builddir  $PWD
-EOF
-rpmbuild -ba quakeforge.spec --rcfile $srcdir/rpmrc
+rpmbuild \
+	--define="_topdir $PWD" \
+	--define="_rpmdir $PWD/RPMS" \
+	--define="_sourcedir $top_builddir" \
+	--define="_specdir $PWD" \
+	--define="_srcrpmdir $PWD" \
+	--define="_builddir $PWD" \
+	-ba quakeforge.spec
 find . -maxdepth 1 -type d -name 'quakeforge-*' -exec rm -rf {} \;
 find RPMS -name '*.rpm' -exec mv {} . \;
 rm -rf RPMS

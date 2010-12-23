@@ -292,11 +292,7 @@ This sub-package provides the quake-game pseudo package.
 
 %build
 CFLAGS="$RPM_OPT_FLAGS" ./configure --prefix=%{_prefix}
-if test -f /proc/cpuinfo; then
-	make -j`grep processor /proc/cpuinfo | wc -l`
-else
-	make
-fi
+make $QFSMP
 
 %install
 if [ -d $RPM_BUILD_ROOT ]; then rm -rf $RPM_BUILD_ROOT; fi
@@ -305,14 +301,17 @@ mkdir -p $RPM_BUILD_ROOT/etc
 make install DESTDIR=$RPM_BUILD_ROOT
 cp RPM/quakeforge.conf $RPM_BUILD_ROOT/etc
 mkdir -p $RPM_BUILD_ROOT/%{fs_sharepath}/id1
-rm $RPM_BUILD_ROOT/usr/lib/quakeforge/*.{a,la}
+find $RPM_BUILD_ROOT/usr/lib/quakeforge -name '*.a' -exec rm {} \;
+find $RPM_BUILD_ROOT/usr/lib/quakeforge -name '*.la' -exec rm {} \;
 rm $RPM_BUILD_ROOT/usr/bin/hw-master
 rm $RPM_BUILD_ROOT/usr/bin/nq-fbdev
 rm $RPM_BUILD_ROOT/usr/bin/nq-sdl32
-rm $RPM_BUILD_ROOT/usr/bin/qtv
 rm $RPM_BUILD_ROOT/usr/bin/qw-client-fbdev
 rm $RPM_BUILD_ROOT/usr/bin/qw-client-sdl32
-rm $RPM_BUILD_ROOT/usr/lib/libQFrenderer_sw32.*
+find $RPM_BUILD_ROOT/usr/lib -name 'libQFrenderer_sw32.*' -exec rm {} \;
+#FIXME until I feel like making packages
+rm $RPM_BUILD_ROOT/usr/bin/qtv
+find $RPM_BUILD_ROOT/usr/lib/quakeforge -name 'snd_render_jack*' -exec rm {} \;
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -406,8 +405,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %if "%{HAVE_SDL}"=="'yes'"
 %files sdl-common
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/cd_sdl.so
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/snd_output_sdl.so
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/cd_sdl.so*
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/snd_output_sdl.so*
 
 %files sdl
 %attr(-,root,root)	%{_prefix}/bin/qw-client-sdl
@@ -437,7 +436,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %if "%{HAVE_ALSA}"=="'yes'"
 %files alsa
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/%{ALSA_PLUGIN}.so*
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/snd_output_alsa.so*
 %endif
 
 %if "%{HAVE_OSS}"=="'yes'"
@@ -450,6 +449,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/bin/qfpreqcc
 %attr(-,root,root)	%{_prefix}/share/man/man1/qfcc.1.gz
 %attr(-,root,root)	%{_prefix}/include/QF/ruamoko/*
+%attr(-,root,root)	%{_prefix}/lib/pkgconfig/qfcc.pc
 %attr(-,root,root)	%{_prefix}/lib/ruamoko/*
 
 %files utils
