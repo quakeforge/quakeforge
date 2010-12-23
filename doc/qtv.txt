@@ -47,6 +47,7 @@ TODO:
 \li Demo recording (mvd/enhanced mvd) on the proxy.
 \li VOIP with recording to enhanced mvd (mvd and voip streams encapsulated
     together). Probably based on FTE.
+\li Demo playback.
 \li Other? According to community needs.
 
 \ref qtv
