@@ -290,6 +290,7 @@ AC_SUBST(HAVE_FBDEV)
 AC_SUBST(HAVE_SDL)
 AC_SUBST(HAVE_SVGA)
 
+SND_OUTPUT_DEFAULT=""
 if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libQFcd.la"
 	SND_TARGETS="libQFsound.la"
@@ -327,7 +328,6 @@ if test -n "$CL_TARGETS"; then
 
 	# priority sorted list for default sound driver in order of increasing
 	# priority. default is no driver.
-	SND_OUTPUT_DEFAULT=""
 	if test "`echo $SOUND_TYPES | grep SDL`"; then
 		SND_OUTPUT_DEFAULT="sdl"
 	fi
@@ -352,7 +352,6 @@ if test -n "$CL_TARGETS"; then
 	if test "`echo $SOUND_TYPES | grep ALSA`"; then
 		SND_OUTPUT_DEFAULT="alsa"
 	fi
-	AC_DEFINE_UNQUOTED(SND_OUTPUT_DEFAULT, "$SND_OUTPUT_DEFAULT", [Define this to the default sound output driver.])
 else
 	unset CDTYPE
 	CD_PLUGIN_TARGETS=""
@@ -363,7 +362,7 @@ else
 	SND_TARGETS=""
 	unset SOUND_TYPES
 fi
-AC_SUBST(ALSA_PLUGIN)
+AC_DEFINE_UNQUOTED(SND_OUTPUT_DEFAULT, "$SND_OUTPUT_DEFAULT", [Define this to the default sound output driver.])
 
 SERVER_PLUGIN_TARGETS=""
 if test x$console_need_server = xyes; then
