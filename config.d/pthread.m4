@@ -1,9 +1,9 @@
 if test "x$ac_cv_header_pthread_h" = "xyes"; then
-	save_ldflags="$LDFLAGS"
+	save_LIBS="$LIBS"
 	case "$host_os" in
 		*qnx*)  dnl qnx have all pthread* functions in the libc.
 			;;
-		*)  LDFLAGS="$LDFLAGS -lpthread"
+		*)  LIBS="$LIBS -lpthread"
 			AC_TRY_LINK(
 				[#include <pthread.h>],
 				[pthread_attr_t type;
@@ -13,7 +13,7 @@ if test "x$ac_cv_header_pthread_h" = "xyes"; then
 			)
 			;;
 	esac
-	LDFLAGS="$save_ldflags"
+	LIBS="$save_LIBS"
 	PTHREAD_CFLAGS=-D_REENTRANT
 fi
 AC_SUBST(PTHREAD_LDFLAGS)
