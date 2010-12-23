@@ -14,7 +14,8 @@ EXTRA_DIST=	ChangeLog configure.ac bootstrap \
 		tools/gas2masm/gas2masm.dsp tools/gas2masm/gas2masm.dsw \
 		tools/gas2masm/gas2masm.mak tools/gas2masm/gas2masm.mdp
 
-NOCONV_DIST=	$(distdir)/include/win32/resources/icon1.ico
+NOCONV_DIST=	$(distdir)/include/win32/resources/icon1Vista.ico \
+	$(distdir)/include/win32/resources/icon1XP.ico
 
 changelog: ChangeLog
 ChangeLog: FORCE
@@ -32,7 +33,8 @@ ChangeLog: FORCE
 dist-zip: distdir
 	-chmod -R a+r $(distdir)
 	ZIP="-r9q" zip $(distdir).zip $(NOCONV_DIST)
-	ZIP="-r9ql" zip $(distdir).zip $(distdir) -x $(NOCONV_DIST)
+	-rm -f $(NOCONV_DIST)
+	ZIP="-r9ql" zip $(distdir).zip $(distdir)
 	-rm -rf $(distdir)
 
 dist-bz2: distdir
@@ -45,7 +47,8 @@ dist-all-local: distdir
 	GZIP=$(GZIP_ENV) $(AMTAR) chozf $(distdir).tar.gz $(distdir)
 	$(AMTAR) -cho $(distdir) | bzip2 -9 > $(distdir).tar.bz2
 	ZIP="-r9q" zip $(distdir).zip $(NOCONV_DIST)
-	ZIP="-r9ql" zip $(distdir).zip $(distdir) -x $(NOCONV_DIST)
+	-rm -f $(NOCONV_DIST)
+	ZIP="-r9ql" zip $(distdir).zip $(distdir)
 	-rm -rf $(distdir)
 
 FORCE:
