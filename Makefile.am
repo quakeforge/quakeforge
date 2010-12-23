@@ -7,7 +7,7 @@ SUBDIRS=RPM debian desktop doc include libs hw nq qtv qw tools ruamoko \
 		pkg-config vc2005 vc2008
 
 ## configure.ac needs to be listed here for older autoconfs
-EXTRA_DIST=	ChangeLog configure.ac \
+EXTRA_DIST=	ChangeLog configure.ac bootstrap \
 		tools/cross/cross-configure.sh tools/cross/cross-make.sh \
 		tools/cross/cross.sh \
 		tools/gas2masm/Makefile tools/gas2masm/gas2masm.c \

@@ -38,7 +38,7 @@ configure: configure-stamp
 configure-stamp:
 	dh_testdir
 	# Add here commands to configure the package.
-	if test -d .git; then ./bootstrap; fi
+	./bootstrap
 	./configure --prefix=/usr $(RETARGET) --bindir=/usr/games \
 		    --without-fbdev \
 		    --disable-xmms \
