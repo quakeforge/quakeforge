@@ -9,12 +9,6 @@ case "$host_os" in
 					CFLAGS="$CFLAGS -mno-cygwin -mconsole"
 					CPPFLAGS="$CPPFLAGS $CFLAGS"
 					;;
-				*)
-					CC="$host_cpu-$host_os-gcc"
-					AS="$CC"
-					AR="$host_cpu-$host_os-ar"
-					RANLIB="$host_cpu-$host_os-ranlib"
-					;;
 			esac
 		fi
 		endian="little"
