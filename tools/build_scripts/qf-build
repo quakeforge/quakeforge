@@ -1,18 +1,23 @@
-#!/bin/bash
+#!/bin/bash -x
 
 . ~/.bash_profile
 
 set -e
 
 PATH=/usr/local/bin:$PATH
+QF=~/src/qf
+MINGW=~/src/mingw/mingw-cross-env-2.18/usr/i686-pc-mingw32
+WEBDEST=~/public_html/qf-files
+export QFSMP=-j4
 
-cd ~/src/quakeforge
-cvs up
+cd $QF/quakeforge
+git pull
 ./bootstrap
 #begin linux
 	cd linux.o
 	rm -f quakeforge-*.tar.gz
 	../configure -C --without-clients --with-servers=master
+	make $QFSMP
 	make install
 	#begin rpm
 		cd RPM
@@ -26,8 +31,9 @@ cvs up
 		tar zxvf ../${DIR}.tar.gz
 		cd $DIR
 		dpkg-buildpackage -rfakeroot -us -uc
-		rm -rf $DIR
-		cd ../..
+		cd ..
+		#rm -rf $DIR
+		cd ..
 	#end deb
 	cd ..
 #end linux
@@ -35,31 +41,33 @@ cvs up
 	cd qf-win32.o
 	qf_win32=`pwd`/qf-win32
 	rm -rf qf-win32 qf-win32*.zip
-	./cross-configure.sh -C --with-sdl-prefix=/usr/local/cross-tools/i386-mingw32msvc --disable-debug --disable-shared --program-prefix= --disable-debug
-	../tools/cross/cross-make.sh prefix=${qf_win32} exec_prefix=${qf_win32} pkgdatadir=${qf_win32} PAK=pak QFCC=qfcc install
-	/usr/local/cross-tools/bin/i386-mingw32msvc-strip --strip-unneeded qf-win32/bin/*.exe
-	python ~/bin/qf-win32.py
+	cp ../tools/cross/cross-configure.sh .
+	./cross-configure.sh --disable-debug --disable-shared --program-prefix= 
+	../tools/cross/cross-make.sh prefix=${qf_win32} exec_prefix=${qf_win32} pkgdatadir=${qf_win32} $QFSMP
+	../tools/cross/cross-make.sh prefix=${qf_win32} exec_prefix=${qf_win32} pkgdatadir=${qf_win32} install
+	$MINGW/bin/strip --strip-unneeded qf-win32/bin/*.exe
+	python ../tools/build_scripts/qf-win32.py
 	for p in {client-{sdl,sdl32,sgl,wgl},devel,server,tools}; do
-		cp qf-win32-$p.zip /project/website/htdocs/files/qf-win32-$p.zip-
-		mv /project/website/htdocs/files/qf-win32-$p.zip- /project/website/htdocs/files/qf-win32-$p.zip
+		cp qf-win32-$p.zip $WEBDEST/qf-win32-$p.zip-
+		mv $WEBDEST/qf-win32-$p.zip- $WEBDEST/qf-win32-$p.zip
 	done
-	touch /project/website/htdocs/files/qf-win32-*.zip
+	touch $WEBDEST/qf-win32-*.zip
 	#zip -r9 qf-win32.zip qf-win32
 	#cp qf-win32.zip /project/website/htdocs/files/qf-win32.zip-
 	#mv /project/website/htdocs/files/qf-win32.zip- /project/website/htdocs/files/qf-win32.zip
 	cd ..
 #end win32
-cd ~/src/game-source
-cvs up
+cd $QF/game-source
+git pull
 for f in `find . -name 'Makefile'`; do make -C `dirname $f` clean all; done
 cd ..
 zip -r9 game-source.zip game-source
 tar zcf game-source.tar.gz game-source
 tar jcf game-source.tar.bz2 game-source
-if cmp game-source.zip /project/website/htdocs/files/game-source.zip; then
+if cmp game-source.zip $WEBDEST/game-source.zip; then
 	echo no change
 else
-	cp game-source.* /project/website/htdocs/files/
+	cp game-source.* $WEBDEST
 fi
-#cd ~/src/quakeforge/linux.o/doc
+#cd $QF/quakeforge/linux.o/doc
 #make doc
