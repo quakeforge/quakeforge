@@ -96,6 +96,7 @@ static const struct option long_options[] = {
 	{"fields", no_argument, 0, 'f'},
 	{"functions", no_argument, 0, 'F'},
 	{"globals", no_argument, 0, 'g'},
+	{"help", no_argument, 0, 'h'},
 	{"lines", no_argument, 0, 'l'},
 	{"modules", no_argument, 0, 'M'},
 	{"numeric", no_argument, 0, 'n'},
@@ -107,17 +108,18 @@ static const struct option long_options[] = {
 };
 
 static const char *short_options =
-	"d"
-	"F"
-	"f"
-	"g"
-	"l"
-	"M"
-	"n"
-	"P:"
-	"r"
-	"s"
-	"v"
+	"d"		// disassemble
+	"F"		// functions
+	"f"		// fields
+	"g"		// globals
+	"h"		// help
+	"l"		// lines
+	"M"		// modules
+	"n"		// numeric
+	"P:"	// path
+	"r"		// relocs
+	"s"		// strings
+	"v"		// verbose
 	;
 
 static edict_t *edicts;
@@ -132,6 +134,28 @@ static dprograms_t progs;
 static const char *source_path = "";
 
 static hashtab_t *func_tab;
+
+static void __attribute__((noreturn))
+usage (int status)
+{
+	printf ("%s - QuakeForge progs utility\n", "qfprogs");
+	printf ("Usage: %s [options] [files]\n", "qfprogs");
+	printf (
+"    -d, --disassemble   Dump code disassembly.\n"
+"    -F, --fields        Dump entity fields.\n"
+"    -f, --functions     Dump functions.\n"
+"    -g, --globals       Dump global variables.\n"
+"    -h, --help          Display this help and exit\n"
+"    -l, --lines         Dump line number information.\n"
+"    -M, --modules       Dump Objective-QuakeC data.\n"
+"    -n, --numeric       Sort globals by address.\n"
+"    -P, --path DIR      Source path.\n"
+"    -r, --relocs        Dump reloc information.\n"
+"    -s, --strings       Dump static strings.\n"
+"    -v, --verbose       Display more output than usual.\n"
+    );
+	exit (status);
+}
 
 static QFile *
 open_file (const char *path, int *len)
@@ -516,6 +540,8 @@ main (int argc, char **argv)
 			case 'g':
 				func = &operations[1];
 				break;
+			case 'h':
+				usage (0);
 			case 's':
 				func = &operations[2];
 				break;
@@ -544,7 +570,7 @@ main (int argc, char **argv)
 				sorted = 1;
 				break;
 			default:
-				return 1;
+				usage (1);
 		}
 	}
 	init_qf ();
