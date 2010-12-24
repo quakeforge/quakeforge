@@ -448,9 +448,9 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/bin/qfcc
 %attr(-,root,root)	%{_prefix}/bin/qfpreqcc
 %attr(-,root,root)	%{_prefix}/share/man/man1/qfcc.1.gz
-%attr(-,root,root)	%{_prefix}/include/QF/ruamoko/*
 %attr(-,root,root)	%{_prefix}/lib/pkgconfig/qfcc.pc
-%attr(-,root,root)	%{_prefix}/lib/ruamoko/*
+%attr(-,root,root)	%{_prefix}/lib/qfcc/include/*
+%attr(-,root,root)	%{_prefix}/lib/qfcc/lib/*
 
 %files utils
 %attr(-,root,root)	%{_prefix}/bin/pak

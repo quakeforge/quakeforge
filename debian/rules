@@ -215,7 +215,7 @@ binary-arch: build install
 	dh_installman -p$(maptools)
 	dh_installman -p$(utils)
 	dh_undocumented
-	dh_strip -Xruamoko
+	dh_strip -Xqfcc
 	dh_link
 	dh_compress
 	dh_fixperms

@@ -86,8 +86,7 @@ qfcc = [
 	dir + "qfcc.pc",
 ]
 qfcc_r = [
-	dir + "include/QF/ruamoko",
-	dir + "lib/ruamoko",
+	dir + "lib/qfcc",
 ]
 
 devel = [
