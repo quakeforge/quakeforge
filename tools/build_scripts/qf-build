@@ -43,8 +43,13 @@ git pull
 	rm -rf qf-win32 qf-win32*.zip
 	cp ../tools/cross/cross-configure.sh .
 	./cross-configure.sh --disable-debug --disable-shared --program-prefix= 
-	../tools/cross/cross-make.sh prefix=${qf_win32} exec_prefix=${qf_win32} pkgdatadir=${qf_win32} $QFSMP
-	../tools/cross/cross-make.sh prefix=${qf_win32} exec_prefix=${qf_win32} pkgdatadir=${qf_win32} install
+	../tools/cross/cross-make.sh $QFSMP
+	../tools/cross/cross-make.sh \
+		prefix=${qf_win32} \
+		exec_prefix=${qf_win32} \
+		pkgdatadir=${qf_win32} \
+		man1dir=${qf_win32_dir} \
+		install
 	$MINGW/bin/strip --strip-unneeded qf-win32/bin/*.exe
 	python ../tools/build_scripts/qf-win32.py
 	for p in {client-{sdl,sdl32,sgl,wgl},devel,server,tools}; do
