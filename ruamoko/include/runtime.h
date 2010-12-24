@@ -4,7 +4,7 @@
 #define INT_MAX		2147483648
 #define INT_MIN		(-INT_MAX - 1)
 
-#define UINT_MAX 	4294967295
+#define UINT_MAX 	4294967295U
 
 enum {
 	NotFound = INT_MAX	///< A value indicating a requested item can't be found.
