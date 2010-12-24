@@ -93,18 +93,32 @@ int         verbosity = 0;
 
 static const struct option long_options[] = {
 	{"disassemble", no_argument, 0, 'd'},
-	{"globals", no_argument, 0, 'g'},
-	{"strings", no_argument, 0, 's'},
 	{"fields", no_argument, 0, 'f'},
 	{"functions", no_argument, 0, 'F'},
+	{"globals", no_argument, 0, 'g'},
 	{"lines", no_argument, 0, 'l'},
 	{"modules", no_argument, 0, 'M'},
-	{"relocs", no_argument, 0, 'r'},
-	{"path", required_argument, 0, 'P'},
-	{"verbose", no_argument, 0, 'v'},
 	{"numeric", no_argument, 0, 'n'},
+	{"path", required_argument, 0, 'P'},
+	{"relocs", no_argument, 0, 'r'},
+	{"strings", no_argument, 0, 's'},
+	{"verbose", no_argument, 0, 'v'},
 	{NULL, 0, NULL, 0},
 };
+
+static const char *short_options =
+	"d"
+	"F"
+	"f"
+	"g"
+	"l"
+	"M"
+	"n"
+	"P:"
+	"r"
+	"s"
+	"v"
+	;
 
 static edict_t *edicts;
 static int      num_edicts;
@@ -493,8 +507,8 @@ main (int argc, char **argv)
 	int         c;
 	operation_t *func = &operations[0];
 
-	while ((c = getopt_long (argc, argv,
-							 "rdgsfFlMP:vn", long_options, 0)) != EOF) {
+	while ((c = getopt_long (argc, argv, short_options,
+							 long_options, 0)) != EOF) {
 		switch (c) {
 			case 'd':
 				func = &operations[0];
