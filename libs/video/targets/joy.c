@@ -190,7 +190,7 @@ JOY_Init_Cvars (void)
 {
 	int         i;
 
-	joy_device = Cvar_Get ("joy_device", "/dev/js0", CVAR_NONE | CVAR_ROM, 0,
+	joy_device = Cvar_Get ("joy_device", "/dev/input/js0", CVAR_NONE | CVAR_ROM, 0,
 						   "Joystick device");
 	joy_enable = Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
 						   "Joystick enable flag");

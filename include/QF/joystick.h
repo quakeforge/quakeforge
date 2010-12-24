@@ -32,7 +32,7 @@
 #include <QF/qtypes.h>
 
 #define JOY_MAX_AXES    8
-#define JOY_MAX_BUTTONS 16
+#define JOY_MAX_BUTTONS 18
 
 extern struct cvar_s	*joy_device;		// Joystick device name
 extern struct cvar_s	*joy_enable;		// Joystick enabling flag
