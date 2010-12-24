@@ -32,9 +32,9 @@ AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/',
 	[Define this to your operating system path separator character])
 AC_DEFINE_UNQUOTED(CPP_NAME, "$CPP_NAME",
 	[Define this to the command line for the C preprocessor])
-AC_DEFINE_UNQUOTED(QFCC_INCLUDE_PATH, "${prefix}/include/QF/ruamoko",
-	[Define this to where qfcc should look for header files])
-eval expanded_libdir="${libdir}/ruamoko"
+eval expanded_libdir="${libdir}"
 eval expanded_libdir="${expanded_libdir}"
-AC_DEFINE_UNQUOTED(QFCC_LIB_PATH, "${expanded_libdir}",
+AC_DEFINE_UNQUOTED(QFCC_INCLUDE_PATH, "${expanded_libdir}/qfcc/include",
+	[Define this to where qfcc should look for header files])
+AC_DEFINE_UNQUOTED(QFCC_LIB_PATH, "${expanded_libdir}/qfcc/lib",
 	[Define this to where qfcc should look for lib files])

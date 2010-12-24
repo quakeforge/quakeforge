@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS=	foreign
 
-pkglibdir=$(libdir)/ruamoko
+pkglibdir=$(libdir)/qfcc/lib
 
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QCFLAGS=-qq -g -Wall -Wno-integer-divide -Werror

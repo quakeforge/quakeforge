@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS=	foreign
 
-pkglibdir=$(libdir)/ruamoko
+pkglibdir=$(libdir)/qfcc/lib
 
 QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QFCC=$(QFCC_DEP)

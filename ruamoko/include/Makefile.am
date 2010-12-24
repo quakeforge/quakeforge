@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS=	foreign
-pkgincludedir=	$(includedir)/QF/ruamoko
+pkgincludedir=	$(libdir)/qfcc/include
 nobase_pkginclude_HEADERS= \
 	crudefile.h debug.h entities.h infokey.h math.h message.h nq_message.h \
 	physics.h qfile.h qfs.h qw_message.h qw_physics.h qw_sys.h server.h \
