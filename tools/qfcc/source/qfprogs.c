@@ -537,37 +537,37 @@ main (int argc, char **argv)
 			case 'd':
 				func = &operations[0];
 				break;
+			case 'F':
+				func = &operations[4];
+				break;
+			case 'f':
+				func = &operations[3];
+				break;
 			case 'g':
 				func = &operations[1];
 				break;
 			case 'h':
 				usage (0);
-			case 's':
-				func = &operations[2];
-				break;
-			case 'f':
-				func = &operations[3];
-				break;
-			case 'F':
-				func = &operations[4];
-				break;
 			case 'l':
 				func = &operations[5];
 				break;
 			case 'M':
 				func = &operations[6];
 				break;
-			case 'r':
-				func = &operations[7];
+			case 'n':
+				sorted = 1;
 				break;
 			case 'P':
 				source_path = strdup (optarg);
 				break;
+			case 'r':
+				func = &operations[7];
+				break;
+			case 's':
+				func = &operations[2];
+				break;
 			case 'v':
 				verbosity++;
-				break;
-			case 'n':
-				sorted = 1;
 				break;
 			default:
 				usage (1);
