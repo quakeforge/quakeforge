@@ -92,7 +92,7 @@ qfcc_r = [
 
 devel = [
 	dir,
-	dir "quakeforge.pc",
+	dir + "quakeforge.pc",
 ]
 
 devel_r = [
@@ -102,10 +102,10 @@ devel_r = [
 
 packages = [
 	(prefix + "-" + "server", server),
-	(prefix + "-" + "client-wgl", client-wgl),
-	(prefix + "-" + "client-sgl", client-sgl),
-	(prefix + "-" + "client-sdl", client-sdl),
-	(prefix + "-" + "client-sdl32", client-sdl32),
+	(prefix + "-" + "client-wgl", client_wgl),
+	(prefix + "-" + "client-sgl", client_sgl),
+	(prefix + "-" + "client-sdl", client_sdl),
+	(prefix + "-" + "client-sdl32", client_sdl32),
 	(prefix + "-" + "tools", tools),
 	(prefix + "-" + "devel", devel),
 	(prefix + "-" + "devel", devel_r, "-r"),
@@ -116,7 +116,7 @@ packages = [
 for p in packages:
 	opt = ""
 	if len (p) >= 3:
-		opt = p[3] + " "
+		opt = p[2] + " "
 	cmd = "zip -9 " + opt + p[0] + version + ".zip " + " ".join (p[1])
 	print cmd
 	system (cmd)
