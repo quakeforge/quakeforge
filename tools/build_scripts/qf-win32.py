@@ -23,6 +23,7 @@ server = [
 	dir + "bin/nq-server.exe",
 	dir + "bin/qw-master.exe",
 	dir + "bin/qw-server.exe",
+	dir + "bin/qtv.exe",
 ]
 
 client_wgl = [
@@ -31,6 +32,7 @@ client_wgl = [
 	dir + "bin/nq-wgl.exe",
 	dir + "bin/qw-client-wgl.exe",
 	dir + "menu.dat.gz",
+	dir + "menu.plist",
 ]
 
 client_sgl = [
@@ -39,6 +41,7 @@ client_sgl = [
 	dir + "bin/nq-sgl.exe",
 	dir + "bin/qw-client-sgl.exe",
 	dir + "menu.dat.gz",
+	dir + "menu.plist",
 ]
 
 client_sdl = [
@@ -47,6 +50,7 @@ client_sdl = [
 	dir + "bin/nq-sdl.exe",
 	dir + "bin/qw-client-sdl.exe",
 	dir + "menu.dat.gz",
+	dir + "menu.plist",
 ]
 
 client_sdl32 = [
@@ -55,6 +59,7 @@ client_sdl32 = [
 	dir + "bin/nq-sdl32.exe",
 	dir + "bin/qw-client-sdl32.exe",
 	dir + "menu.dat.gz",
+	dir + "menu.plist",
 ]
 
 tools = [
@@ -63,7 +68,6 @@ tools = [
 	dir + "bin/bsp2img.exe",
 	dir + "bin/pak.exe",
 	dir + "bin/qfbsp.exe",
-	dir + "bin/qfcc.exe",
 	dir + "bin/qflight.exe",
 	dir + "bin/qfmodelgen.exe",
 	dir + "bin/qfprogs.exe",
@@ -73,25 +77,46 @@ tools = [
 	dir + "bin/zpak",
 ]
 
+qfcc = [
+	dir,
+	dir + "bin",
+	dir + "bin/qfcc.exe",
+	dir + "bin/qfpreqcc",
+	dir + "qfcc.1",
+	dir + "qfcc.pc",
+]
+qfcc_r = [
+	dir + "include/QF/ruamoko",
+	dir + "lib/ruamoko",
+]
+
 devel = [
+	dir,
+	dir "quakeforge.pc",
+]
+
+devel_r = [
 	dir + "include",
 	dir + "lib",
 ]
 
-print "zip -9 " + prefix + "-server" + version + ".zip " + " ".join (server)
-system ("zip -9 " + prefix + "-server" + version + ".zip " + " ".join (server))
-print "zip -9 " + prefix + "-client-wgl" + version + ".zip " + " ".join (client_wgl)
-system ("zip -9 " + prefix + "-client-wgl" + version + ".zip " + " ".join (client_wgl))
-print "zip -9 " + prefix + "-client-sgl" + version + ".zip " + " ".join (client_sgl)
-system ("zip -9 " + prefix + "-client-sgl" + version + ".zip " + " ".join (client_sgl))
-print "zip -9 " + prefix + "-client-sdl" + version + ".zip " + " ".join (client_sdl)
-system ("zip -9 " + prefix + "-client-sdl" + version + ".zip " + " ".join (client_sdl))
-print "zip -9 " + prefix + "-client-sdl32" + version + ".zip " + " ".join (client_sdl32)
-system ("zip -9 " + prefix + "-client-sdl32" + version + ".zip " + " ".join (client_sdl32))
-print "zip -9 " + prefix + "-tools" + version + ".zip " + " ".join (tools)
-system ("zip -9 " + prefix + "-tools" + version + ".zip " + " ".join (tools))
-if dir:
-	print "zip -9 " + prefix + "-devel" + version + ".zip " + dir
-	system ("zip -9 " + prefix + "-devel" + version + ".zip " + dir)
-print "zip -r9 " + prefix + "-devel" + version + ".zip " + " ".join (devel)
-system ("zip -r9 " + prefix + "-devel" + version + ".zip " + " ".join (devel))
+packages = [
+	(prefix + "-" + "server", server),
+	(prefix + "-" + "client-wgl", client-wgl),
+	(prefix + "-" + "client-sgl", client-sgl),
+	(prefix + "-" + "client-sdl", client-sdl),
+	(prefix + "-" + "client-sdl32", client-sdl32),
+	(prefix + "-" + "tools", tools),
+	(prefix + "-" + "devel", devel),
+	(prefix + "-" + "devel", devel_r, "-r"),
+	("qfcc", qfcc),
+	("qfcc", qfcc_r, "-r"),
+]
+
+for p in packages:
+	opt = ""
+	if len (p) >= 3:
+		opt = p[3] + " "
+	cmd = "zip -9 " + opt + p[0] + version + ".zip " + " ".join (p[1])
+	print cmd
+	system (cmd)

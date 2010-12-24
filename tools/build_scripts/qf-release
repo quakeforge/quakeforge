@@ -7,6 +7,7 @@ set -e
 PATH=/usr/local/bin:$PATH
 MINGW=~/src/mingw/mingw-cross-env-2.18/usr/i686-pc-mingw32
 RELEASE=~/release
+export QFSMP=${QFSMP--j4}
 
 pref=`dirname $0`
 if test $# -lt 1; then
@@ -87,7 +88,7 @@ mkdir -p linux.o qf-win32.o
 		rm -rf $DIR
 		tar zxvf ../${DIR}.tar.gz
 		cd $DIR
-		QFSMP=-j3 dpkg-buildpackage -rfakeroot -us -uc
+		dpkg-buildpackage -rfakeroot -us -uc
 		rm -rf $DIR
 		cd ..
 		mv q*.[a-z]* $RELEASE
@@ -109,10 +110,11 @@ if test $do_win32 -eq 1; then
 	./cross-configure.sh \
 		--disable-debug --disable-shared \
 		--program-prefix=
-	../tools/cross/cross-make.sh -j3 \
+	../tools/cross/cross-make.sh $QFSMP \
 		prefix=${qf_win32_dir} \
 		exec_prefix=${qf_win32_dir} \
 		pkgdatadir=${qf_win32_dir} \
+		man1dir=${qf_win32_dir} \
 		install
 	$MINGW/bin/strip --strip-unneeded "$qf_win32"/bin/*.exe
 	../tools/build_scripts/qf-win32.py "$ver-win32" quakeforge "$qf_win32"
