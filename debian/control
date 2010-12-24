@@ -3,7 +3,7 @@ Section: contrib/games
 Priority: optional
 Maintainer: Jeff Teunissen <deek@debian.org>
 Standards-Version: 3.1.1
-Build-Depends: automake (>= 1.8) | automake1.8, autoconf, libtool, bison, flex, debhelper, libsdl1.2-dev, zlib1g-dev, libncurses5-dev, xorg-dev | xlibs-dev (>= 4), libasound2-dev, libogg-dev, libvorbis-dev, libflac-dev, libwildmidi-dev, libjack-dev, libpng12-dev, libsamplerate0-dev, git-core, x11proto-xf86vidmode-dev
+Build-Depends: automake (>= 1.8) | automake1.8, autoconf, libtool, bison, flex, debhelper, libsdl1.2-dev, zlib1g-dev, libncurses5-dev, libx11-dev, libxext-dev, libasound2-dev, libvorbis-dev, libflac-dev, libjack-dev, libpng12-dev, libsamplerate0-dev, git-core, x11proto-xf86vidmode-dev
 
 Package: quakeforge
 Architecture: any
@@ -19,7 +19,7 @@ Description: QuakeForge 3D game engine - Fake package
 
 Package: quakeforge-common
 Architecture: any
-Depends: quake-game, ${shlibs:Depends}
+Depends: quake-game, ${misc:Depends}, ${shlibs:Depends}
 Description: QuakeForge 3D game engine - common files
  QuakeForge is a source port of Quake and QuakeWorld, the successors to id
  Software's very popular DOOM series. Its primary development goal is to
@@ -55,7 +55,7 @@ Description: QuakeForge 3D game engine - development files
 Package: quakeforge-sdl
 Architecture: any
 Conflicts: quake-sdl
-Depends: quake-game, ${shlibs:Depends}
+Depends: quake-game, ${misc:Depends}, ${shlibs:Depends}
 Provides: quakeforge-client
 Suggests: joystick
 Description: QuakeForge 3D game engine - SDL client
@@ -71,7 +71,7 @@ Description: QuakeForge 3D game engine - SDL client
 Package: quakeforge-x11
 Architecture: any
 Conflicts: quake-x11
-Depends: quake-game, ${shlibs:Depends}
+Depends: quake-game, ${misc:Depends}, ${shlibs:Depends}
 Provides: quakeforge-client
 Suggests: joystick
 Description: QuakeForge 3D game engine - X11 client
@@ -86,7 +86,7 @@ Description: QuakeForge 3D game engine - X11 client
 Package: quakeforge-glx
 Architecture: any
 Conflicts: quake-gl
-Depends: quake-game, libgl1, ${shlibs:Depends}
+Depends: quake-game, libgl1, ${misc:Depends}, ${shlibs:Depends}
 Provides: quakeforge-client
 Suggests: joystick
 Description: QuakeForge 3D game engine - GLX Client
@@ -101,7 +101,7 @@ Description: QuakeForge 3D game engine - GLX Client
 Package: quakeforge-sgl
 Architecture: any
 Conflicts: quake-sdl
-Depends: quake-game, libgl1, ${shlibs:Depends}
+Depends: quake-game, libgl1, ${misc:Depends}, ${shlibs:Depends}
 Provides: quakeforge-client
 Suggests: joystick
 Description: QuakeForge 3D game engine - SDL-GL client
@@ -115,7 +115,7 @@ Description: QuakeForge 3D game engine - SDL-GL client
 
 Package: quakeforge-servers
 Architecture: any
-Depends: quake-game, ${shlibs:Depends}
+Depends: quake-game, ${misc:Depends}, ${shlibs:Depends}
 Provides: quakeforge-server
 Description: QuakeForge 3D game engine - Servers
  QuakeForge is a source port of Quake and QuakeWorld, the successors to id
@@ -129,7 +129,7 @@ Description: QuakeForge 3D game engine - Servers
 
 Package: quakeforge-libs-sw
 Architecture: any
-Depends: quakeforge-common, ${shlibs:Depends}
+Depends: quakeforge-common, ${misc:Depends}, ${shlibs:Depends}
 Section: contrib/libs
 Description: QuakeForge 3D game engine - Software renderer libraries
  QuakeForge is a source port of Quake and QuakeWorld, the successors to id
@@ -142,7 +142,7 @@ Description: QuakeForge 3D game engine - Software renderer libraries
 
 Package: quakeforge-libs-gl
 Architecture: any
-Depends: quakeforge-common, ${shlibs:Depends}
+Depends: quakeforge-common, ${misc:Depends}, ${shlibs:Depends}
 Section: contrib/libs
 Description: QuakeForge 3D game engine - OpenGL renderer libraries
  QuakeForge is a source port of Quake and QuakeWorld, the successors to id
@@ -155,7 +155,7 @@ Description: QuakeForge 3D game engine - OpenGL renderer libraries
 
 Package: quakeforge-oss
 Architecture: any
-Depends: quakeforge-common, ${shlibs:Depends}
+Depends: quakeforge-common, ${misc:Depends}, ${shlibs:Depends}
 Description: OSS digital audio output plugin for QuakeForge
  The OSS plugin for QuakeForge provides digital audio output (using OSS/Linux,
  OSS/Free, or kernel sound) for QuakeForge targets that contain clients.
@@ -166,14 +166,21 @@ Description: OSS digital audio output plugin for QuakeForge
 
 Package: quakeforge-alsa
 Architecture: any
-Depends: quakeforge-common, ${shlibs:Depends}
+Depends: quakeforge-common, ${misc:Depends}, ${shlibs:Depends}
 Description: ALSA 0.9 digital audio output plugin for QuakeForge
  The ALSA 0.9 plugin for QuakeForge provides digital audio output for
  QuakeForge targets that contain clients.
 
+Package: quakeforge-jack
+Architecture: any
+Depends: quakeforge-common, ${misc:Depends}, ${shlibs:Depends}
+Description: JACK digital audio output plugin for QuakeForge
+ The JACK plugin for QuakeForge provides digital audio output for
+ QuakeForge targets that contain clients.
+
 Package: quakeforge-utils
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: QuakeForge utility programs
  This package contains several tools for use with QuakeForge:
  .
@@ -185,7 +192,7 @@ Description: QuakeForge utility programs
 
 Package: quakeforge-maptools
 Architecture: any
-Depends: qfcc, ${shlibs:Depends}
+Depends: qfcc, ${misc:Depends}, ${shlibs:Depends}
 Description: Quake mapping tools from the QuakeForge Project
  This package contains QuakeForge's versions of the tools Id Software used
  to create maps for the Quake engine. Included are:
@@ -198,7 +205,7 @@ Description: Quake mapping tools from the QuakeForge Project
 
 Package: qfcc
 Architecture: any
-Depends: cpp, ${shlibs:Depends}
+Depends: cpp, ${misc:Depends}, ${shlibs:Depends}
 Description: The QuakeForge Code Compiler
  QFCC is an optimizing byte-code compiler for the Ruamoko language, a language
  based strongly on Id Software's QuakeC. The bytecode interpreter for QuakeC

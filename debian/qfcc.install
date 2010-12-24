@@ -1,0 +1,7 @@
+usr/bin/qfcc
+usr/bin/qfpreqcc
+usr/bin/qfprogs
+usr/include/QF/ruamoko
+usr/lib/pkgconfig/qfcc.pc
+usr/lib/ruamoko
+usr/share/man/man1/qfcc.1

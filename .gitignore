@@ -44,6 +44,8 @@ core
 
 # /debian/
 /debian/*.debhelper
+/debian/debhelper.log
+/debian/*.debhelper.log
 /debian/*.substvars
 /debian/files
 /debian/qfcc
@@ -53,6 +55,7 @@ core
 /debian/quakeforge-common.conffiles
 /debian/quakeforge-dev
 /debian/quakeforge-glx
+/debian/quakeforge-jack
 /debian/quakeforge-libs-gl
 /debian/quakeforge-libs-sw
 /debian/quakeforge-maptools

@@ -5,7 +5,7 @@
 #export DH_VERBOSE=1
 
 # This is the debhelper compatibility version to use.
-export DH_COMPAT=2
+export DH_COMPAT=7
 
 PACKAGE 	:= quakeforge
 QFCC		:= qfcc
@@ -17,6 +17,7 @@ dev		:= $(PACKAGE)-dev
 alsa		:= $(PACKAGE)-alsa
 gllib		:= $(PACKAGE)-libs-gl
 glx		:= $(PACKAGE)-glx
+jack		:= $(PACKAGE)-jack
 oss		:= $(PACKAGE)-oss
 sdl		:= $(PACKAGE)-sdl
 servers		:= $(PACKAGE)-servers
@@ -79,166 +80,30 @@ install: DH_OPTIONS=
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k
+	dh_prep
 
 	# Add here commands to install the package into debian/tmp.
 	$(MAKE) DESTDIR=$(build) install
 	install -m644 -D debian/quakeforge.conf $(build)/etc/quakeforge.conf
 	mkdir $(build)/usr/share/games/quake/id1
 
-	# quakeforge-common
-	find $(tmp)/etc ! -type d | sed -e "s:^$(tmp)::" > debian/$(common).conffiles
-	install -D -m755 debian/$(common).shlibs debian/$(common)/DEBIAN/shlibs
-	dh_movefiles -p$(common) --sourcedir=$(tmp) \
-		etc/quakeforge.conf \
-		usr/lib/libQFcd.so.* \
-		usr/lib/libQFconsole.so.* \
-		usr/lib/libQFruamoko.so.* \
-		usr/lib/libQFgamecode.so.* \
-		usr/lib/libQFgamecode_builtins.so.* \
-		usr/lib/libQFgib.so.* \
-		usr/lib/libQFimage.so.* \
-		usr/lib/libQFjs.so.* \
-		usr/lib/libQFmodels.so.* \
-		usr/lib/libQFsound.so.* \
-		usr/lib/libQFutil.so.* \
-		usr/lib/quakeforge/plugins/cd_file.so* \
-		usr/lib/quakeforge/plugins/cd_linux.so* \
-		usr/lib/quakeforge/plugins/console_client.so* \
-		usr/lib/quakeforge/plugins/snd_output_disk.so* \
-		usr/lib/quakeforge/plugins/snd_render_default.so* \
-		usr/share/games/quake/QF/menu.dat*
-	dh_installdocs -p$(common) NEWS TODO
-	dh_installchangelogs -p$(common) ChangeLog
-
-	# quakeforge-stub
-	install -d -m755 debian/$(stub)/usr/share/games/quake/id1
-
-	# quakeforge-dev
-	dh_movefiles -p$(dev) --sourcedir=$(tmp) \
-		usr/lib/libQFcd.*a \
-		usr/lib/libQFcd.so \
-		usr/lib/libQFconsole.*a \
-		usr/lib/libQFconsole.so \
-		usr/lib/libQFruamoko.*a \
-		usr/lib/libQFruamoko.so \
-		usr/lib/libQFgamecode.*a \
-		usr/lib/libQFgamecode.so \
-		usr/lib/libQFgamecode_builtins.*a \
-		usr/lib/libQFgamecode_builtins.so \
-		usr/lib/libQFgib.a \
-		usr/lib/libQFgib.so \
-		usr/lib/libQFimage.*a \
-		usr/lib/libQFimage.so \
-		usr/lib/libQFjs.*a \
-		usr/lib/libQFjs.so \
-		usr/lib/libQFmodels.*a \
-		usr/lib/libQFmodels.so \
-		usr/lib/libQFsound.*a \
-		usr/lib/libQFsound.so \
-		usr/lib/libQFutil.*a \
-		usr/lib/libQFutil.so \
-		usr/include/QF/GL/*.h \
-		usr/include/QF/plugin/*.h \
-		usr/include/QF/*.h
-	install -d -m755 debian/$(dev)/usr/share/doc
-	ln -s $(common) debian/$(dev)/usr/share/doc/$(dev)
-
-	# quakeforge-libs-gl
-	dh_movefiles -p$(gllib) --sourcedir=$(tmp) \
-		usr/lib/libQFmodels_gl.so.* \
-		usr/lib/libQFrenderer_gl.so.*
-	install -D -m755 debian/$(gllib).shlibs debian/$(gllib)/DEBIAN/shlibs
-	install -d -m755 debian/$(gllib)/usr/share/doc
-	ln -s $(common) debian/$(gllib)/usr/share/doc/$(gllib)
-
-	# quakeforge-libs-sw
-	dh_movefiles -p$(swlib) --sourcedir=$(tmp) \
-		usr/lib/libQFmodels_sw.so.*
-	install -D -m755 debian/$(swlib).shlibs debian/$(swlib)/DEBIAN/shlibs
-	install -d -m755 debian/$(swlib)/usr/share/doc
-	ln -s $(common) debian/$(swlib)/usr/share/doc/$(swlib)
-
-	# quakeforge-servers
-	dh_movefiles -p$(servers) --sourcedir=$(tmp) \
-		usr/games/qw-master \
-		usr/games/qw-server \
-		usr/games/nq-server \
-		usr/lib/quakeforge/plugins/console_server.so*
-	install -d -m755 debian/$(servers)/usr/share/doc
-	ln -s $(common) debian/$(servers)/usr/share/doc/$(servers)
-
-	# quakeforge-glx
-	dh_movefiles -p$(glx) --sourcedir=$(tmp) \
-		usr/games/nq-glx \
-		usr/games/qw-client-glx
-	install -d -m755 debian/$(glx)/usr/share/doc
-	ln -s $(common) debian/$(glx)/usr/share/doc/$(glx)
-
-	# quakeforge-sdl
-	dh_movefiles -p$(sdl) --sourcedir=$(tmp) \
-		usr/games/nq-sdl \
-		usr/games/qw-client-sdl \
-		usr/lib/quakeforge/plugins/cd_sdl.so \
-		usr/lib/quakeforge/plugins/snd_output_sdl.so
-	install -d -m755 debian/$(sdl)/usr/share/doc
-	ln -s $(common) debian/$(sdl)/usr/share/doc/$(sdl)
-
-	# quakeforge-sgl
-	dh_movefiles -p$(sgl) --sourcedir=$(tmp) \
-		usr/games/nq-sgl \
-		usr/games/qw-client-sgl
-	install -d -m755 debian/$(sgl)/usr/share/doc
-	ln -s $(common) debian/$(sgl)/usr/share/doc/$(sgl)
-
-	# quakeforge-x11
-	dh_movefiles -p$(x11) --sourcedir=$(tmp) \
-		usr/games/nq-x11 \
-		usr/games/qw-client-x11
-	install -d -m755 debian/$(x11)/usr/share/doc
-	ln -s $(common) debian/$(x11)/usr/share/doc/$(x11)
-
-	# quakeforge-alsa
-	dh_movefiles -p$(alsa) --sourcedir=$(tmp) \
-		usr/lib/quakeforge/plugins/snd_output_alsa.so*
-	install -d -m755 debian/$(alsa)/usr/share/doc
-	ln -s $(common) debian/$(alsa)/usr/share/doc/$(alsa)
-
-	# quakeforge-oss
-	dh_movefiles -p$(oss) --sourcedir=$(tmp) \
-		usr/lib/quakeforge/plugins/snd_output_oss.so*
-	install -d -m755 debian/$(oss)/usr/share/doc
-	ln -s $(common) debian/$(oss)/usr/share/doc/$(oss)
-
+# Moving files to their right locations
 	# qfcc
 	install -D -m755 $(tmp)/usr/games/qfcc $(tmp)/usr/bin/qfcc
 	rm -f $(tmp)/usr/games/qfcc
-	dh_movefiles -p$(QFCC) --sourcedir=$(tmp) \
-		usr/bin/qfcc \
-		usr/share/man/man1/qfcc.1 \
-		usr/include/QF/ruamoko/* \
-		usr/lib/ruamoko/*
-	install -d -m755 debian/$(QFCC)/usr/share/doc
-	ln -s $(common) debian/$(QFCC)/usr/share/doc/$(QFCC)
-
+	install -D -m755 $(tmp)/usr/games/qfpreqcc $(tmp)/usr/bin/qfpreqcc
+	rm -f $(tmp)/usr/games/qfpreqcc
 	# quakeforge-utils
 	install -D -m755 $(tmp)/usr/games/pak $(tmp)/usr/bin/pak
+	install -D -m755 $(tmp)/usr/games/wad $(tmp)/usr/bin/wad
 	install -D -m755 $(tmp)/usr/games/zpak $(tmp)/usr/bin/zpak
 	install -D -m755 $(tmp)/usr/games/qfprogs $(tmp)/usr/bin/qfprogs
 	install -D -m755 $(tmp)/usr/games/qfwavinfo $(tmp)/usr/bin/qfwavinfo
 	rm -f $(tmp)/usr/games/pak \
+		$(tmp)/usr/games/wad \
 		$(tmp)/usr/games/zpak \
 		$(tmp)/usr/games/qfprogs \
 		$(tmp)/usr/games/qfwavinfo
-	dh_movefiles -p$(utils) --sourcedir=$(tmp) \
-		usr/bin/pak \
-		usr/bin/zpak \
-		usr/bin/qfprogs \
-		usr/bin/qfwavinfo \
-		usr/share/man/man1/pak.1
-	install -d -m755 debian/$(utils)/usr/share/doc
-	ln -s $(common) debian/$(utils)/usr/share/doc/$(utils)
-
 	# quakeforge-maptools
 	install -D -m755 $(tmp)/usr/games/qfbsp $(tmp)/usr/bin/qfbsp
 	install -D -m755 $(tmp)/usr/games/qflight $(tmp)/usr/bin/qflight
@@ -246,18 +111,89 @@ install: build
 	rm -f $(tmp)/usr/games/qfbsp \
 		$(tmp)/usr/games/qflight \
 		$(tmp)/usr/games/qfvis
-	dh_movefiles -p$(maptools) --sourcedir=$(tmp) \
-		usr/bin/qfbsp \
-		usr/bin/qflight \
-		usr/bin/qfvis \
-		usr/share/man/man1/qflight.1 \
-		usr/share/man/man1/qfvis.1
+
+	# quakeforge-common
+	find $(tmp)/etc ! -type d | sed -e "s:^$(tmp)::" > debian/$(common).conffiles
+	dh_install -p$(common) --sourcedir=$(tmp)
+	dh_installdocs -p$(common) NEWS TODO
+	dh_installchangelogs -p$(common) ChangeLog
+
+	# quakeforge-stub
+	install -d -m755 debian/$(stub)/usr/share/games/quake/id1
+
+	# quakeforge-dev
+	dh_install -p$(dev) --sourcedir=$(tmp)
+	install -d -m755 debian/$(dev)/usr/share/doc
+	ln -s $(common) debian/$(dev)/usr/share/doc/$(dev)
+
+	# quakeforge-libs-gl
+	dh_install -p$(gllib) --sourcedir=$(tmp)
+	install -d -m755 debian/$(gllib)/usr/share/doc
+	ln -s $(common) debian/$(gllib)/usr/share/doc/$(gllib)
+
+	# quakeforge-libs-sw
+	dh_install -p$(swlib) --sourcedir=$(tmp)
+	install -d -m755 debian/$(swlib)/usr/share/doc
+	ln -s $(common) debian/$(swlib)/usr/share/doc/$(swlib)
+
+	# quakeforge-servers
+	dh_install -p$(servers) --sourcedir=$(tmp)
+	install -d -m755 debian/$(servers)/usr/share/doc
+	ln -s $(common) debian/$(servers)/usr/share/doc/$(servers)
+
+	# quakeforge-glx
+	dh_install -p$(glx) --sourcedir=$(tmp)
+	install -d -m755 debian/$(glx)/usr/share/doc
+	ln -s $(common) debian/$(glx)/usr/share/doc/$(glx)
+
+	# quakeforge-sdl
+	dh_install -p$(sdl) --sourcedir=$(tmp)
+	install -d -m755 debian/$(sdl)/usr/share/doc
+	ln -s $(common) debian/$(sdl)/usr/share/doc/$(sdl)
+
+	# quakeforge-sgl
+	dh_install -p$(sgl) --sourcedir=$(tmp)
+	install -d -m755 debian/$(sgl)/usr/share/doc
+	ln -s $(common) debian/$(sgl)/usr/share/doc/$(sgl)
+
+	# quakeforge-x11
+	dh_install -p$(x11) --sourcedir=$(tmp)
+	install -d -m755 debian/$(x11)/usr/share/doc
+	ln -s $(common) debian/$(x11)/usr/share/doc/$(x11)
+
+	# quakeforge-alsa
+	dh_install -p$(alsa) --sourcedir=$(tmp)
+	install -d -m755 debian/$(alsa)/usr/share/doc
+	ln -s $(common) debian/$(alsa)/usr/share/doc/$(alsa)
+
+	# quakeforge-oss
+	dh_install -p$(oss) --sourcedir=$(tmp)
+	install -d -m755 debian/$(oss)/usr/share/doc
+	ln -s $(common) debian/$(oss)/usr/share/doc/$(oss)
+
+	# quakeforge-jack
+	dh_install -p$(jack) --sourcedir=$(tmp)
+	install -d -m755 debian/$(jack)/usr/share/doc
+	ln -s $(common) debian/$(jack)/usr/share/doc/$(jack)
+
+	# qfcc
+	dh_install -p$(QFCC) --sourcedir=$(tmp)
+	install -d -m755 debian/$(QFCC)/usr/share/doc
+	ln -s $(common) debian/$(QFCC)/usr/share/doc/$(QFCC)
+
+	# quakeforge-utils
+	dh_install -p$(utils) --sourcedir=$(tmp)
+	install -d -m755 debian/$(utils)/usr/share/doc
+	ln -s $(common) debian/$(utils)/usr/share/doc/$(utils)
+
+	# quakeforge-maptools
+	dh_install -p$(maptools) --sourcedir=$(tmp)
 	install -d -m755 debian/$(maptools)/usr/share/doc
 	ln -s $(common) debian/$(maptools)/usr/share/doc/$(maptools)
 	
 	# quakeforge
 	find $(tmp) -type d -empty -print | xargs -r rmdir -p --ignore-fail-on-non-empty
-	dh_movefiles -p$(PACKAGE) --sourcedir=$(tmp)
+	dh_install -p$(PACKAGE) --sourcedir=$(tmp)
 	install -d -m755 debian/$(PACKAGE)/usr/share/doc
 	ln -s $(common) debian/$(PACKAGE)/usr/share/doc/$(PACKAGE)
 
@@ -283,7 +219,7 @@ binary-arch: build install
 	dh_link
 	dh_compress
 	dh_fixperms
-	dh_makeshlibs
+	dh_makeshlibs -V
 	# You may want to make some executables suid here.
 	dh_installdeb
 	dh_shlibdeps
