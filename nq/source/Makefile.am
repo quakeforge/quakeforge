@@ -165,7 +165,7 @@ nq_x11_libs=  \
 			$(client_LIBS)
 nq_x11_SOURCES= 	sys_unix.c
 nq_x11_LDADD=		$(nq_x11_libs) \
-			$(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
+			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
 			$(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS)
 nq_x11_LDFLAGS= 	$(common_ldflags)
 nq_x11_DEPENDENCIES=	$(nq_x11_libs)
@@ -197,7 +197,7 @@ nq_glx_libs=  \
 			$(client_LIBS)
 nq_glx_SOURCES= 	sys_unix.c
 nq_glx_LDADD=		$(nq_glx_libs) \
-			$(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
+			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
 			-lXext $(X_EXTRA_LIBS) $(DL_LIBS) $(NET_LIBS)
 nq_glx_LDFLAGS= 	$(common_ldflags)
 nq_glx_DEPENDENCIES=	$(nq_glx_libs)

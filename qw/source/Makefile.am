@@ -191,7 +191,7 @@ qw_client_x11_libs= \
 			$(client_LIBS)
 qw_client_x11_SOURCES=	cl_sys_unix.c
 qw_client_x11_LDADD= $(qw_client_x11_libs) \
-			$(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
+			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
 			$(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS) $(LIBCURL)
 qw_client_x11_LDFLAGS=	$(common_ldflags)
 qw_client_x11_DEPENDENCIES= $(qw_client_x11_libs)
@@ -210,7 +210,7 @@ qw_client_glx_libs= \
 			$(client_LIBS)
 qw_client_glx_SOURCES=	cl_sys_unix.c
 qw_client_glx_LDADD= $(qw_client_glx_libs) \
-			$(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
+			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
 			-lXext $(X_EXTRA_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL)
 qw_client_glx_LDFLAGS=  $(common_ldflags)
 qw_client_glx_DEPENDENCIES= $(qw_client_glx_libs)
