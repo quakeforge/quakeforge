@@ -42,6 +42,7 @@ configure-stamp:
 	./bootstrap
 	./configure --prefix=/usr $(RETARGET) --bindir=/usr/games \
 		    --without-fbdev \
+		    --disable-Werror \
 		    --disable-xmms \
 		    --mandir=/usr/share/man \
 		    --infodir=/usr/share/info \
@@ -215,7 +216,7 @@ binary-arch: build install
 	dh_installman -p$(maptools)
 	dh_installman -p$(utils)
 	dh_undocumented
-	dh_strip -Xqfcc
+	dh_strip -Xlib/qfcc
 	dh_link
 	dh_compress
 	dh_fixperms
