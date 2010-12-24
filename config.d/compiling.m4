@@ -6,6 +6,14 @@ else
 	cvs_def_disabled="!= xno"
 fi
 
+AC_MSG_CHECKING(for CFLAGS pre-set)
+leave_cflags_alone=no
+if test "x$CFLAGS" != "x"; then
+	leave_cflags_alone=yes
+	BUILD_TYPE="$BUILD_TYPE Custom"
+fi
+AC_MSG_RESULT([$leave_cflags_alone])
+
 if test "x$GCC" = xyes; then
 	set $CC
 	shift
@@ -27,8 +35,9 @@ AC_ARG_ENABLE(debug,
 	[  --disable-debug         compile without debugging],
 	debug=$enable_debug
 )
+
 AC_MSG_CHECKING(for debugging)
-if test "x$debug" != xno; then
+if test "x$debug" != xno -a "x$leave_cflags_alone" != xyes; then
 	AC_MSG_RESULT(yes)
 	BUILD_TYPE="$BUILD_TYPE Debug"
 	CFLAGS="$CFLAGS -g"
@@ -41,8 +50,9 @@ AC_ARG_ENABLE(optimize,
 	optimize=$enable_optimize,
 	optimize=yes
 )
+
 AC_MSG_CHECKING(for optimization)
-if test "x$optimize" = xyes; then
+if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 	AC_MSG_RESULT(yes)
 	BUILD_TYPE="$BUILD_TYPE Optimize"
 	if test "x$GCC" = xyes; then
