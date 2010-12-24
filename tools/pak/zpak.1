@@ -1,0 +1,57 @@
+.\"                              hey, Emacs:   -*- nroff -*-
+.\" zpak is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\" See the GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; see the file COPYING.  If not, write to:
+.\"
+.\"		Free Software Foundation, Inc.
+.\"		59 Temple Place, Suite 330
+.\"		Boston, MA 02111-1307, USA
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins (default)
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.\"
+.TH ZPAK 1 "December 24, 2010" QuakeForge "QuakeForge User's Manual"
+.\" Please update the above date whenever this man page is modified.
+.SH NAME
+zpak \- create pak files with gzipped internals
+.SH SYNOPSIS
+.B zpak
+<\fIFILE\fP>...
+.SH DESCRIPTION
+\fBzpak\fP is a small utility for compressing the contents of Quake/Quake II
+pak files, which allows QuakeForge servers to send compressed downloads to
+clients.
+.SH OPTIONS
+\fBzpak\fP has no options.
+.SH "EXIT STATUS"
+\fBzpak\fP returns a zero exit status when it has completed a command
+successfully (without error). Otherwise, it returns a non-zero exit status.
+.SH BUGS
+.PP
+This program sucks, and should not be necessary -- \fBpak\fP(1) should be able 
+to do the job.
+.SH AUTHORS
+Bill Currie (taniwha@quakeforge.net) wrote the program.
+.PP
+Jeff Teunissen (deek@quakeforge.net) wrote the documentation.
+.SH "SEE ALSO"
+.BR quakeforge (1),
+.BR pak (1)

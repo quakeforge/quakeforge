@@ -458,6 +458,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/bin/qfprogs
 %attr(-,root,root)	%{_prefix}/bin/qfwavinfo
 %attr(-,root,root)	%{_prefix}/share/man/man1/pak.1.gz
+%attr(-,root,root)	%{_prefix}/share/man/man1/zpak.1.gz
 #%attr(-,root,root)	%{_prefix}/share/man/man1/qfprogs.1.gz
 #%attr(-,root,root)	%{_prefix}/share/man/man1/qfwavinfo.1.gz
 

@@ -9,7 +9,7 @@ INCLUDES= -I$(top_srcdir)/include $(PAK_INCS)
 if BUILD_PAK
 pak=pak
 zpak=zpak
-mans=pak.1
+mans=pak.1 zpak.1
 else
 pak=
 zpak=
@@ -26,4 +26,4 @@ pak_SOURCES=	pak.c
 pak_LDADD=	$(PAK_LIBS)
 pak_DEPENDENCIES= $(PAK_DEPS)
 
-EXTRA_DIST=		pak.h pak.1 zpak
+EXTRA_DIST=		pak.h pak.1 zpak zpak.1
