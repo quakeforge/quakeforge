@@ -1,10 +1,12 @@
-#! /bin/bash
+#! /bin/bash -x
 
 . ~/.bash_profile
 
 set -e
 
 PATH=/usr/local/bin:$PATH
+MINGW=~/src/mingw/mingw-cross-env-2.18/usr/i686-pc-mingw32
+RELEASE=~/release
 
 pref=`dirname $0`
 if test $# -lt 1; then
@@ -13,10 +15,11 @@ if test $# -lt 1; then
 fi
 
 ver="$1"
+shift
 if test "$ver" = "current"; then
-	tag_path=trunk
+	tag_name=master
 else
-	tag_path=branches/release_`echo $ver | tr . _`
+	tag_name="$ver"
 fi
 
 do_rpm=0
@@ -24,7 +27,6 @@ do_deb=0
 do_win32=0
 no_rm=0
 
-shift
 if test $# -ne 0; then
 	while test $# -ne 0; do
 		case $1 in
@@ -53,16 +55,18 @@ else
 	do_win32=1
 fi
 
-svn_url=http://quake.svn.sourceforge.net/svnroot/quake
+git_url=${git_url:-git://git.quakeforge.net/gitroot/quake/quakeforge}
 
-mkdir -p ~/release
-cd ~/release
+mkdir -p $RELEASE
+cd $RELEASE
 if test $no_rm -ne 1; then
 	rm -rf NEWS quakeforge-* quakeforge_* qfcc_*
 fi
-svn co ${svn_url}/quakeforge/${tag_path} quakeforge-${ver}
+git clone $git_url || true
+mv quakeforge quakeforge-$ver
 cd quakeforge-$ver
-cp NEWS ~/release
+git checkout $tag_name
+cp NEWS $RELEASE
 mkdir -p linux.o qf-win32.o
 ./bootstrap
 #begin linux
@@ -74,7 +78,7 @@ mkdir -p linux.o qf-win32.o
 	if test $do_rpm -eq 1; then
 		cd RPM
 		make rpm
-		mv *.rpm ~/release
+		mv *.rpm $RELEASE
 		cd ..
 	fi
 	if test $do_deb -eq 1; then
@@ -86,11 +90,11 @@ mkdir -p linux.o qf-win32.o
 		QFSMP=-j3 dpkg-buildpackage -rfakeroot -us -uc
 		rm -rf $DIR
 		cd ..
-		mv q*.[a-z]* ~/release
+		mv q*.[a-z]* $RELEASE
 		cd ..
 	fi
 	#make dist-all-local
-	mv *.tar.gz *.tar.bz2 *.zip ~/release
+	mv *.tar.gz *.tar.bz2 *.zip $RELEASE
 	cd ..
 # end linux
 if test $do_win32 -eq 1; then
@@ -98,22 +102,20 @@ if test $do_win32 -eq 1; then
 	qf_win32="quakeforge-$ver-win32"
 	qf_win32_dir=`pwd`"/$qf_win32"
 	mingw32="/usr/local/cross-tools/i386-mingw32msvc"
-	sed -e 's@\./config@../config@' \
+	sed -e 's@^\./config@../config@' \
 		../tools/cross/cross-configure.sh > cross-configure.sh
 	chmod +x cross-configure.sh
 	rm -rf $qf_win32_dir *.zip
 	./cross-configure.sh \
-		CFLAGS=-I${mingw32}/include LDLAGS=-L${mingw32}/lib \
-		--with-sdl-prefix=${mingw32} \
-		--disable-debug --disable-shared --disable-jack \
+		--disable-debug --disable-shared \
 		--program-prefix=
 	../tools/cross/cross-make.sh -j3 \
 		prefix=${qf_win32_dir} \
 		exec_prefix=${qf_win32_dir} \
 		pkgdatadir=${qf_win32_dir} \
-		PAK=pak QFCC=qfcc install
-	i586-mingw32msvc-strip --strip-unneeded "$qf_win32"/bin/*.exe
-	qf-win32.py "$ver-win32" quakeforge "$qf_win32"
-	mv *.zip ~/release
+		install
+	$MINGW/bin/strip --strip-unneeded "$qf_win32"/bin/*.exe
+	../tools/build_scripts/qf-win32.py "$ver-win32" quakeforge "$qf_win32"
+	mv *.zip $RELEASE
 	cd ..
 fi
