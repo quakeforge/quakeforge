@@ -125,7 +125,7 @@ midi_stream_seek (sfxstream_t *stream, int pos)
 	pos += stream->wavinfo.dataofs;
 	new_pos = pos;
 	
-	return WildMidi_SampledSeek(stream->file, &new_pos);
+	return WildMidi_FastSeek(stream->file, &new_pos);
 }
 
 static void
