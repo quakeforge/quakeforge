@@ -1,5 +1,5 @@
-#ifndef __ruamoko_Runtime_h_
-#define __ruamoko_Runtime_h_
+#ifndef __ruamoko_runtime_h_
+#define __ruamoko_runtime_h_
 
 #define INT_MAX		2147483648
 #define INT_MIN		(-INT_MAX - 1)
@@ -74,4 +74,4 @@ typedef enum {
 @extern BOOL object_is_instance (id object);
 @extern BOOL object_is_meta_class (id object);
 
-#endif	//__ruamoko_Runtime_h_
+#endif	//__ruamoko_runtime_h_

@@ -2,10 +2,10 @@
 #define __ruamoko_Array_h
 
 #include "Object.h"
-#include "Runtime.h"
+#include "runtime.h"
 
 /**
-	The %Array class is a general ordered collection class.
+	The Array class is a general ordered collection class.
 
 	The %Array class manages an ordered collection of objects.
 	If you want to subclass Array, you need to override these methods:
