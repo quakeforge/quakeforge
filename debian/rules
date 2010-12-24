@@ -68,7 +68,7 @@ changelog-stamp:
 clean:
 	dh_testdir
 	dh_testroot
-	rm -f build-stamp configure-stamp changelog-stamp debian/quakeforge-common.conffiles
+	rm -f build-stamp configure-stamp changelog-stamp
 
 	# Add here commands to clean up after the build process.
 	-$(MAKE) distclean
@@ -114,7 +114,6 @@ install: build
 		$(tmp)/usr/games/qfvis
 
 	# quakeforge-common
-	find $(tmp)/etc ! -type d | sed -e "s:^$(tmp)::" > debian/$(common).conffiles
 	dh_install -p$(common) --sourcedir=$(tmp)
 	dh_installdocs -p$(common) NEWS TODO
 	dh_installchangelogs -p$(common) ChangeLog

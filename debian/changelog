@@ -1,3 +1,10 @@
+quakeforge (0.6.0~git20101223-1) frozen unstable; urgency=low
+
+  * The "No, really" release.
+  * Cleaned up lintian errors.
+
+ -- Jeff Teunissen <deek@d2dc.net>  Fri, 24 Dec 2010 16:49:21 -0500
+
 quakeforge (0.6.0~git20101223-0) frozen unstable; urgency=low
 
   * Getting ready for 0.6.0 release.
