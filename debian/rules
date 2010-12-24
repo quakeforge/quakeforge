@@ -220,7 +220,7 @@ binary-arch: build install
 	dh_link
 	dh_compress
 	dh_fixperms
-	dh_makeshlibs -V
+	dh_makeshlibs -V -Xplugins
 	# You may want to make some executables suid here.
 	dh_installdeb
 	dh_shlibdeps
