@@ -50,6 +50,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "snd_render.h"
 
+static int sound_started = 0;
 static int snd_blocked = 0;
 static int snd_shutdown = 0;
 static jack_client_t *jack_handle;
@@ -61,6 +62,8 @@ static cvar_t  *snd_jack_server;
 static void
 s_stop_all_sounds (void)
 {
+	if (!sound_started)
+		return;
 	SND_StopAllSounds ();
 	SND_ScanChannels (1);
 }
@@ -69,6 +72,8 @@ static void
 s_start_sound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 			   float fvol, float attenuation)
 {
+	if (!sound_started)
+		return;
 	if (!snd_shutdown)
 		SND_StartSound (entnum, entchannel, sfx, origin, fvol, attenuation);
 }
@@ -77,6 +82,8 @@ static void
 s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 		  const vec3_t up)
 {
+	if (!sound_started)
+		return;
 	if (snd_shutdown) {
 		if (snd_shutdown == 1) {
 			snd_shutdown++;
@@ -95,6 +102,8 @@ s_extra_update (void)
 static void
 s_local_sound (const char *sound)
 {
+	if (!sound_started)
+		return;
 	if (!snd_shutdown)
 		SND_LocalSound (sound);
 }
@@ -121,6 +130,8 @@ s_jack_activate (void)
 static void
 s_block_sound (void)
 {
+	if (!sound_started)
+		return;
 	if (++snd_blocked == 1) {
 		//Sys_Printf ("jack_deactivate: %d\n", jack_deactivate (jack_handle));
 	}
@@ -129,6 +140,8 @@ s_block_sound (void)
 static void
 s_unblock_sound (void)
 {
+	if (!sound_started)
+		return;
 	if (!snd_blocked)
 		return;
 
@@ -141,6 +154,8 @@ s_unblock_sound (void)
 static channel_t *
 s_alloc_channel (void)
 {
+	if (!sound_started)
+		return 0;
 	if (!snd_shutdown)
 		return SND_AllocChannel ();
 	return 0;
@@ -149,8 +164,67 @@ s_alloc_channel (void)
 static void
 s_snd_force_unblock (void)
 {
+	if (!sound_started)
+		return;
 	snd_blocked = 1;
 	s_unblock_sound ();
+}
+
+static void
+s_ambient_off (void)
+{
+	if (!sound_started)
+		return;
+	SND_AmbientOff ();
+}
+
+static void
+s_ambient_on (void)
+{
+	if (!sound_started)
+		return;
+	SND_AmbientOn ();
+}
+
+static void
+s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
+				float attenuation)
+{
+	if (!sound_started)
+		return;
+	SND_StaticSound (sfx, origin, vol, attenuation);
+}
+
+static void
+s_stop_sound (int entnum, int entchannel)
+{
+	if (!sound_started)
+		return;
+	SND_StopSound (entnum, entchannel);
+}
+
+static sfx_t *
+s_precache_sound (const char *name)
+{
+	if (!sound_started)
+		return 0;
+	return SND_PrecacheSound (name);
+}
+
+static sfx_t *
+s_load_sound (const char *name)
+{
+	if (!sound_started)
+		return 0;
+	return SND_LoadSound (name);
+}
+
+static void
+s_channel_stop (channel_t *chan)
+{
+	if (!sound_started)
+		return;
+	SND_ChannelStop (chan);
 }
 
 static void
@@ -231,6 +305,7 @@ s_init (void)
 										  JackPortIsOutput, 0);
 	snd_shm->speed = jack_get_sample_rate (jack_handle);
 	s_jack_activate ();
+	sound_started = 1;
 	Sys_Printf ("Connected to JACK: %d Sps\n", snd_shm->speed);
 }
 
@@ -252,21 +327,21 @@ static general_funcs_t plugin_info_general_funcs = {
 };
 
 static snd_render_funcs_t plugin_info_render_funcs = {
-	SND_AmbientOff,
-	SND_AmbientOn,
-	SND_StaticSound,
+	s_ambient_off,
+	s_ambient_on,
+	s_static_sound,
 	s_start_sound,
-	SND_StopSound,
-	SND_PrecacheSound,
+	s_stop_sound,
+	s_precache_sound,
 	s_update,
 	s_stop_all_sounds,
 	s_extra_update,
 	s_local_sound,
 	s_block_sound,
 	s_unblock_sound,
-	SND_LoadSound,
+	s_load_sound,
 	s_alloc_channel,
-	SND_ChannelStop,
+	s_channel_stop,
 };
 
 static general_data_t plugin_info_general_data;
