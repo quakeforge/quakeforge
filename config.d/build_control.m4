@@ -420,12 +420,12 @@ if test "x$static_plugins" = xyes; then
 	fi
 	plugin_ldflags="$plugin_ldflags"
 else
-	plugin_ldflags="$plugin_ldflags"' -version-info $(plugin_version) -rpath $(plugindir)'
+	plugin_ldflags="$plugin_ldflags"
 fi
 
 dnl Do not use -module here, it belongs in makefile.am due to automake
 dnl needing it there to work correctly
-plugin_ldflags="$plugin_ldflags -avoid-version"
+plugin_ldflags="$plugin_ldflags"
 SERVER_PLUGIN_STATIC_LIBS=""
 CLIENT_PLUGIN_STATIC_LIBS=""
 CD_PLUGIN_STATIC_LIBS=""
