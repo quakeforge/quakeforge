@@ -7,5 +7,4 @@ if test ! -f /usr/share/games/quake/id1/pak0.pak; then
 fi
 
 #DEBHELPER#
-
 exit 0

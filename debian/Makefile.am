@@ -1,19 +1,23 @@
 ## Process this file with automake to produce Makefile.in
 AUTOMAKE_OPTIONS=	foreign
 
-EXTRA_DIST= Makefile.am Makefile.in changelog control copyright \
-	qfcc.install quakeforge-alsa.install quakeforge-alsa.postinst \
-	quakeforge-alsa.prerm quakeforge-common.install \
-	quakeforge-common.postinst quakeforge-dev.install \
-	quakeforge-glx.install quakeforge-glx.undocumented \
-	quakeforge-jack.install quakeforge-libs-gl.install \
-	quakeforge-libs-gl.postinst quakeforge-libs-sw.install \
-	quakeforge-libs-sw.postinst quakeforge-maptools.install \
+# find -type f | sed -e 's:^\./::g' | grep -v Makefile | sort >> Makefile.am
+
+EXTRA_DIST= \
+	changelog control copyright quakeforge.conf rules source/format \
+	qfcc.install \
+	quakeforge-alsa.install quakeforge-alsa.postinst quakeforge-alsa.prerm \
+	quakeforge-common.install quakeforge-common.postinst \
+	quakeforge-dev.install \
+	quakeforge-glx.install \
+	quakeforge-jack.install \
+	quakeforge-libs-gl.install \
+	quakeforge-libs-sw.install \
+	quakeforge-maptools.install \
 	quakeforge-oss.install quakeforge-oss.postinst quakeforge-oss.prerm \
-	quakeforge-sdl.install quakeforge-sdl.undocumented \
-	quakeforge-servers.install quakeforge-servers.undocumented \
-	quakeforge-sgl.install quakeforge-sgl.undocumented \
-	quakeforge-stub.postinst quakeforge-svga.suid \
-	quakeforge-svga.undocumented quakeforge-utils.install \
-	quakeforge-x11.install quakeforge-x11.undocumented quakeforge.conf \
-	rules source/format
+	quakeforge-sdl.install \
+	quakeforge-servers.install \
+	quakeforge-sgl.install \
+	quakeforge-stub.postinst \
+	quakeforge-utils.install \
+	quakeforge-x11.install
