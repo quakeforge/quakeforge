@@ -229,14 +229,11 @@ R_StoreEfrags (const efrag_t *pefrag)
 			case mod_alias:
 			case mod_brush:
 			case mod_sprite:
-				pent = pefrag->entity;
-
 				if (pent->visframe != r_framecount) {
 					R_EnqueueEntity (pent);
 					// mark that we've recorded this entity for this frame
 					pent->visframe = r_framecount;
 				}
-
 				pefrag = pefrag->leafnext;
 				break;
 
