@@ -244,7 +244,7 @@ R_SetupFrame (void)
 	R_CheckVariables ();
 
 	R_AnimateLight ();
-
+	R_ClearEnts ();
 	r_framecount++;
 
 	numbtofpolys = 0;

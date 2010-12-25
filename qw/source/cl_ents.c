@@ -1104,7 +1104,6 @@ CL_EmitEntities (void)
 	if (!cl.validsequence)
 		return;
 
-	R_ClearEnts ();
 	Skin_ClearTempSkins ();
 
 	CL_LinkPlayers ();

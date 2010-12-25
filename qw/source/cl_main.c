@@ -1161,7 +1161,6 @@ CL_SetState (cactive_t state)
 			// entering active state
 			VID_SetCaption (cls.servername->str);
 			IN_ClearStates ();
-			R_ClearEnts ();
 			r_active = true;
 			game_target = IMT_0;
 			key_dest = key_game;

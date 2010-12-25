@@ -686,8 +686,6 @@ CL_ReadFromServer (void)
 	if (cl_shownet->int_val)
 		Sys_Printf ("\n");
 
-	R_ClearEnts ();
-
 	CL_RelinkEntities ();
 	CL_UpdateTEnts ();
 

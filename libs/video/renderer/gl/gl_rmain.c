@@ -404,7 +404,7 @@ void
 R_SetupFrame (void)
 {
 	R_AnimateLight ();
-
+	R_ClearEnts ();
 	r_framecount++;
 
 	Fog_SetupFrame ();
