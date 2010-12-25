@@ -929,7 +929,7 @@ CL_ParseStatic (void)
 	CL_Init_Entity (ent);
 
 	*cl_static_tail = ent;
-	cl_static_tail = &ent->next;
+	cl_static_tail = &ent->unext;
 
 	// copy it to the current state
 	ent->model = cl.model_precache[es.modelindex];

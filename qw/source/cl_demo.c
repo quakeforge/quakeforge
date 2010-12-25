@@ -672,7 +672,7 @@ CL_Record (const char *argv1)
 		SZ_Clear (&buf);
 	}
 	// spawnstatic
-	for (ent = cl_static_entities; ent; ent = ent->next) {
+	for (ent = cl_static_entities; ent; ent = ent->unext) {
 		MSG_WriteByte (&buf, svc_spawnstatic);
 
 		for (j = 1; j < MAX_MODELS; j++)

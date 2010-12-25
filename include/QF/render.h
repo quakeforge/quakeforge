@@ -75,6 +75,7 @@ extern  lightstyle_t    r_lightstyle[MAX_LIGHTSTYLES];
 
 typedef struct entity_s {
 	struct entity_s *next;
+	struct entity_s *unext;	//FIXME this shouldn't be here. for qw demos
 
 	vec3_t					origin;
 	vec3_t					old_origin;
