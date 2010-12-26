@@ -130,7 +130,7 @@ WriteNumericDefault (id prefs, NSString *name, float value)
 //  Set the bspSound path
 - (id) setBspSoundPath: (NSString *)path
 {
-	
+	NSFileManager *fm = [NSFileManager defaultManager];
 	[path retain];
 	[bspSound release];
 	bspSound = path;
@@ -139,7 +139,7 @@ WriteNumericDefault (id prefs, NSString *name, float value)
 		[bspSound_i release];
 		bspSound_i = nil;
 	}
-	if (access ([path cString], R_OK)) {
+	if ([fm isReadableFileAtPath: bspSound]) {
 		bspSound_i = [[NSSound alloc] initWithContentsOfFile: bspSound
 		                                         byReference: YES];
 	}

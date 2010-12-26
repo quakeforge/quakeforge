@@ -256,9 +256,10 @@ id  project_i;
 {
 	NSString    *path;
 	int         rtn;
+	NSFileManager *fm = [NSFileManager defaultManager];
 
 	path = [preferences_i getProjectPath];
-	if (![path length] || access ([path cString], 0)) {
+	if (![path length] || ![fm fileExistsAtPath: path]) {
 		rtn = NSRunAlertPanel (@"Project Error!",
 		                       @"A default project has not been found.\n",
 		                       @"Open Project", NULL, NULL);
