@@ -12,7 +12,7 @@ struct script_s;
 	struct plitem_s *plist;
 }
 
-- (id) initFromFile: (FILE *)fp;
+- (id) initFromData: (NSData *)data;
 
 - (int) getValueUnits: (const char *)key;
 

@@ -224,7 +224,7 @@ FILE METHODS
 readMapFile
 =================
 */
-- (id) readMapFile: (const char *)fname
+- (id) readMapFile: (NSString *)fname
 {
 	char        *dat;
 	const char  *wad, *cl;
@@ -233,25 +233,25 @@ readMapFile
 	int         i, c;
 	vec3_t      org;
 	float       angle;
-	QFile       *file;
 	script_t    *script;
 	size_t      size;
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSData      *contents;
 
 	[self saveSelected];
 
-	Sys_Printf ("loading %s\n", fname);
+	NSLog (@"loading %@\n", fname);
 
-	file = Qopen (fname, "rt");
-	if (!file)
+	contents = [fm contentsAtPath: fname];
+	if (!contents)
 		return self;
-	size = Qfilesize (file);
+	size = [contents length];
 	dat = malloc (size + 1);
-	size = Qread (file, dat, size);
-	Qclose (file);
+	[contents getBytes: dat];
 	dat[size] = 0;
 
 	script = Script_New ();
-	Script_Start (script, fname, dat);
+	Script_Start (script, [fname cString], dat);
 
 	do {
 		new = [[Entity alloc] initFromScript: script];
@@ -291,6 +291,7 @@ readMapFile
 			break;
 		}
 	}
+	NSLog (@"%@ loaded\n", fname);
 
 	return self;
 }

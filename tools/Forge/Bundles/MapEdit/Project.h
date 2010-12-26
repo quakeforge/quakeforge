@@ -65,8 +65,6 @@ extern id  project_i;
 	const char *string_entities;    // cmd-line parm
 
 	int  showDescriptions;          // 1 = show map descs in browser
-
-	time_t  lastModified;           // last time project file was modified
 }
 
 - (id) initProject;

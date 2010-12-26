@@ -455,11 +455,11 @@ App delegate methods
 
 - (id) textCommand: sender
 {
-	char const  *t;
+	NSString    *t;
 
-	t = [[sender stringValue] cString];
+	t = [sender stringValue];
 
-	if (!strcmp (t, "texname")) {
+	if (![t isEqualToString: @"texname"]) {
 		texturedef_t    *td;
 		id              b;
 
@@ -788,13 +788,11 @@ Called by open or the project panel
 	[filename release];
 	filename = fname;
 
-	[map_i readMapFile: [filename cString]];
+	[map_i readMapFile: filename];
 
 	[regionbutton_i setIntValue: 0];
 	[self setTitleWithRepresentedFilename: fname];
 	[self updateAll];
-
-	Sys_Printf ("%s loaded\n", [fname cString]);
 
 	return self;
 }

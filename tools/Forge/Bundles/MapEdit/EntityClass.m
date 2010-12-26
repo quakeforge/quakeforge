@@ -175,22 +175,20 @@ scanFile
 - (void) scanFile: (NSString *)filename
 {
 	int         size, line;
-	char        *data;
+	const char  *data;
 	id          cl;
 	int         i;
 	NSString    *path;
-	QFile       *file;
+	NSData      *contents;
+	NSFileManager *fm = [NSFileManager defaultManager];
 
 	path = [source_path stringByAppendingPathComponent: filename];
+	contents = [fm contentsAtPath: path];
 
-	file = Qopen ([path cString], "rt");
-	if (!file)
+	if (!contents)
 		return;
-	size = Qfilesize (file);
-	data = malloc (size + 1);
-	size = Qread (file, data, size);
-	data[size] = 0;
-	Qclose (file);
+	size = [contents length];
+	data = (const char *) [contents bytes];
 
 	line = 1;
 	for (i = 0; i < size; i++) {
@@ -204,8 +202,6 @@ scanFile
 			line++;
 		}
 	}
-
-	free (data);
 }
 
 /*

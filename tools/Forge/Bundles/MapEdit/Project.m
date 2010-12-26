@@ -277,24 +277,20 @@ id  project_i;
 //  Loads and parses a project file
 - (id) openProjectFile: (NSString *)path
 {
-	FILE            *fp;
-	struct stat     s;
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSData      *contents;
 
-	Sys_Printf ("openProjectFile: %s\n", [path cString]);
+	NSLog (@"openProjectFile: %@\n", path);
 	[path retain];
 	[path_projectinfo release];
 	path_projectinfo = path;
 
 	projectInfo = NULL;
-	fp = fopen ([path cString], "r+t");
-	if (fp == NULL)
+	contents = [fm contentsAtPath: path];
+	if (!contents)
 		return self;
 
-	stat ([path cString], &s);
-	lastModified = s.st_mtime;
-
-	projectInfo = [(Dict *)[Dict alloc] initFromFile: fp];
-	fclose (fp);
+	projectInfo = [[Dict alloc] initFromData: contents];
 
 	return self;
 }

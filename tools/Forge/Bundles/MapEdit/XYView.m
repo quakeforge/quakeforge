@@ -271,14 +271,11 @@ Called when the scaler popup on the window is used
 
 - (id) scaleMenuTarget: sender
 {
-	char const  *item;
 	NSRect      rect;
 	NSPoint     mid, org, origin;
 	float       nscale;
 
-	item = [[[sender selectedCell] title] cString];
-	sscanf (item, "%f", &nscale);
-	nscale /= 100;
+	nscale = [[[sender selectedCell] title] floatValue] / 100;
 
 	if (nscale == scale)
 		return NULL;
@@ -381,11 +378,9 @@ Called when the scaler popup on the window is used
 
 - (id) gridMenuTarget: sender
 {
-	char const  *item;
 	int         grid;
 
-	item = [[[sender selectedCell] title] cString];
-	sscanf (item, "grid %d", &grid);
+	grid = [[[sender selectedCell] title] intValue];
 
 	if (grid == gridsize)
 		return NULL;

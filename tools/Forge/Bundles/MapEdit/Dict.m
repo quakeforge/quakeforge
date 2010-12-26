@@ -34,25 +34,19 @@ JDC
 	return 0;
 }
 
-- (id) initFromFile: (FILE *)fp
+- (id) initFromData: (NSData *)data
 {
-	dstring_t   *text = dstring_newstr ();
 	char        *str;
-	size_t      read;
-	const size_t readsize = 1024;
+	size_t      len;
 
 	[self init];
 
-	do {
-		str = dstring_reservestr (text, readsize);
-		read = fread (str, 1, readsize, fp);
-		if (read)
-			str[read] = 0;
-	} while (read == readsize);
-
-
-	plist = PL_GetPropertyList (text->str);
-	dstring_delete (text);
+	len = [data length];
+	str = malloc (len + 1);
+	[data getBytes: str];
+	str[len] = 0;
+	plist = PL_GetPropertyList (str);
+	free (str);
 	if (!plist)
 		return 0;
 	return self;

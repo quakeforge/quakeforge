@@ -153,14 +153,11 @@ Called when the scaler popup on the window is used
 */
 - (id) scaleMenuTarget: sender
 {
-	char const  *item;
 	NSRect      rect;
 	NSPoint     mid, org, orig;
 	float       nscale;
 
-	item = [[sender titleOfSelectedItem] cString];
-	sscanf (item, "%f", &nscale);
-	nscale /= 100;
+	nscale = [[sender titleOfSelectedItem] floatValue] / 100;
 
 	if (nscale == scale)
 		return NULL;
