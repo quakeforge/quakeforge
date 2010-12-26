@@ -172,18 +172,18 @@ insertEC:
 scanFile
 =================
 */
-- (void) scanFile: (const char *)filename
+- (void) scanFile: (NSString *)filename
 {
 	int         size, line;
 	char        *data;
 	id          cl;
 	int         i;
-	const char  *path;
+	NSString    *path;
 	QFile       *file;
 
-	path = va ("%s/%s", source_path, filename);
+	path = [source_path stringByAppendingPathComponent: filename];
 
-	file = Qopen (path, "rt");
+	file = Qopen ([path cString], "rt");
 	if (!file)
 		return;
 	size = Qfilesize (file);
@@ -197,7 +197,7 @@ scanFile
 		if (!strncmp (data + i, "/*QUAKED", 8)) {
 			cl = [[EntityClass alloc]
 			        initFromText: (data + i)
-			              source: va ("%s:%d", filename, line)];
+			              source: va ("%s:%d", [filename cString], line)];
 			if (cl)
 				[self insertEC: cl];
 		} else if (data[i] == '\n') {
@@ -216,32 +216,36 @@ scanDirectory
 - (void) scanDirectory
 {
 	int  count, i;
-	struct dirent  **namelist, *ent;
+	NSFileManager *fm;
+	NSArray *file_list;
 
 	[self removeAllObjects];
 
-	count = scandir (source_path, &namelist, NULL, NULL);
+	fm = [NSFileManager defaultManager];
+	file_list = [fm directoryContentsAtPath: source_path];
+	if (!file_list)
+		return;
+
+	count = [file_list count];
 
 	for (i = 0; i < count; i++) {
-		int  len;
+		NSString   *file = [file_list objectAtIndex: i];
 
-		ent = namelist[i];
-		len = strlen (ent->d_name);
-		if (len <= 3)
-			continue;
-		if (!strcmp (ent->d_name + len - 3, ".qc"))
-			[self scanFile: ent->d_name];
+		if ([[file pathExtension] isEqualToString: @"qc"])
+			[self scanFile: file];
 	}
 }
 
 id  entity_classes_i;
 
-- (id) initForSourceDirectory: (const char *)path
+- (id) initForSourceDirectory: (NSString *)path
 {
 	self = [super init];
 	array = [[NSMutableArray alloc] init];
 
-	source_path = strdup (path);    // FIXME leak?
+	[path retain];
+	[source_path release];
+	source_path = path;
 	[self scanDirectory];
 
 	entity_classes_i = self;

@@ -48,7 +48,7 @@ id  things_i;
 
 	[prog_path_i setStringValue: path];
 
-	[[EntityClassList alloc] initForSourceDirectory: [path cString]];
+	[[EntityClassList alloc] initForSourceDirectory: path];
 
 	[self loadEntityComment: [entity_classes_i objectAtIndex: lastSelected]];
 	[entity_browser_i loadColumnZero];
@@ -99,7 +99,7 @@ id  things_i;
 	[entity_classes_i release];
 
 	// Now, RELOAD!
-	[[EntityClassList alloc] initForSourceDirectory: [path cString]];
+	[[EntityClassList alloc] initForSourceDirectory: path];
 
 	lastSelected = 0;
 	ent = [entity_classes_i objectAtIndex: lastSelected];

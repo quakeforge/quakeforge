@@ -35,10 +35,10 @@ typedef enum {esize_model, esize_fixed}  esize_t;
 {
 	NSMutableArray  *array;
 	id              nullclass;
-	char            *source_path;
+	NSString        *source_path;
 }
 
-- (id) initForSourceDirectory: (const char *)path;
+- (id) initForSourceDirectory: (NSString *)path;
 - (id) classForName: (const char *)name;
 - (void) scanDirectory;
 
