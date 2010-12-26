@@ -247,7 +247,7 @@ id  entity_classes_i;
 	entity_classes_i = self;
 
 	nullclass = [[EntityClass alloc]
-	                initFromText: "/*QUAKED UNKNOWN_CLASS (0 0.5 0) ?*/"
+	                initFromText: "/*QUAKED UNKNOWN_CLASS (0 0.5 0) ? */"
 	                      source: va ("%s:%d", __FILE__, __LINE__ - 1)];
 
 	return self;
