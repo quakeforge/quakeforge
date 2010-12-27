@@ -294,6 +294,26 @@ map_cfg (const char *mapname, int all)
 	Cbuf_Delete (cbuf);
 }
 
+static plitem_t *
+map_ent (const char *mapname)
+{
+	static progs_t edpr;
+	char       *name = malloc (strlen (mapname) + 4 + 1);
+	char       *buf;
+	plitem_t   *edicts = 0;
+
+	QFS_StripExtension (mapname, name);
+	strcat (name, ".ent");
+	if ((buf = (char *) QFS_LoadFile (name, 0))) {
+		edicts = ED_Parse (&edpr, buf);
+		free (buf);
+	} else {
+		edicts = ED_Parse (&edpr, cl.model_precache[1]->entities);
+	}
+	free (name);
+	return edicts;
+}
+
 static void
 CL_NewMap (const char *mapname)
 {
@@ -302,9 +322,7 @@ CL_NewMap (const char *mapname)
 	Sbar_CenterPrint (0);
 
 	if (cl.model_precache[1] && cl.model_precache[1]->entities) {
-		static progs_t edpr;
-
-		cl.edicts = ED_Parse (&edpr, cl.model_precache[1]->entities);
+		cl.edicts = map_ent (mapname);
 		if (cl.edicts) {
 			cl.worldspawn = PL_ObjectAtIndex (cl.edicts, 0);
 			CL_LoadSky ();
