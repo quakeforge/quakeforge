@@ -4,6 +4,7 @@
 #include <AppKit/AppKit.h>
 
 #include "QF/mathlib.h"
+#include "QF/quakeio.h"
 
 #include "TexturePalette.h"
 
@@ -75,7 +76,7 @@ winding_t  *NewWinding (int points);
 
 - (id) calcWindings;
 
-- (void) writeToFILE: (FILE *)f region: (BOOL)reg;
+- (void) writeToFile: (QFile *)file region: (BOOL)reg;
 
 - (BOOL) selected;
 - (BOOL) regioned;

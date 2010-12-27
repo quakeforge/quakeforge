@@ -133,8 +133,8 @@ Every five minutes, save a modified map
 	// automatic backup
 	if (autodirty) {
 		autodirty = NO;
-#define FN_AUTOSAVE "/qcache/AutoSaveMap.map"
-		[map_i writeMapFile: (char *) FN_AUTOSAVE useRegion: NO];
+#define FN_AUTOSAVE @"/qcache/AutoSaveMap.map"
+		[map_i writeMapFile: FN_AUTOSAVE useRegion: NO];
 	}
 	[map_i writeStats];
 }
@@ -676,7 +676,7 @@ saveBSP
 	if ([regionbutton_i intValue]) {
 		mappath = [[filename stringByDeletingPathExtension]
 					stringByAppendingPathExtension: @"reg"];
-		[map_i writeMapFile: [mappath cString] useRegion: YES];
+		[map_i writeMapFile: mappath useRegion: YES];
 		wt = YES;   // allways pop the dialog on region ops
 	} else {
 		mappath = filename;
@@ -838,7 +838,7 @@ save:
 				stringByAppendingPathExtension: @"bak"];
 	rename ([filename cString], [backup cString]);      // copy old to .bak
 
-	[map_i writeMapFile: [filename cString] useRegion: NO];
+	[map_i writeMapFile: filename useRegion: NO];
 
 	return self;
 }

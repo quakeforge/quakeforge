@@ -778,12 +778,7 @@ ParseVerts (script_t *script, int *n_verts)
 	return self;
 }
 
-/*
-===========
-writeToFILE
-===========
-*/
-- (void) writeToFILE: (FILE *)f
+- (void) writeToFile: (QFile *)file
    region: (BOOL)reg
 {
 	int  i, j;
@@ -792,19 +787,19 @@ writeToFILE
 
 	if (reg && regioned)
 		return;
-	fprintf (f, "{\n");
+	Qprintf (file, "{\n");
 	for (i = 0; i < numfaces; i++) {
 		fa = &faces[i];
 		for (j = 0; j < 3; j++) {
-			fprintf (f, "( %d %d %d ) ", (int) fa->planepts[j][0],
+			Qprintf (file, "( %d %d %d ) ", (int) fa->planepts[j][0],
 			         (int) fa->planepts[j][1], (int) fa->planepts[j][2]);
 		}
 		td = &fa->texture;
-		fprintf (f, "%s %d %d %d %f %f\n", td->texture, (int) td->shift[0],
+		Qprintf (file, "%s %d %d %d %f %f\n", td->texture, (int) td->shift[0],
 		         (int) td->shift[1], (int) td->rotate, td->scale[0],
 		         td->scale[1]);
 	}
-	fprintf (f, "}\n");
+	Qprintf (file, "}\n");
 
 	return;
 }

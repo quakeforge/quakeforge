@@ -1,5 +1,8 @@
 #include <sys/time.h>
 #include <time.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
 
 #include "QF/quakeio.h"
 #include "QF/script.h"
@@ -301,22 +304,23 @@ readMapFile
 writeMapFile
 =================
 */
-- (id) writeMapFile: (const char *)fname
+- (id) writeMapFile: (NSString *)fname
    useRegion: (BOOL)reg
 {
-	FILE            *f;
 	unsigned int    i;
+	QFile           *file = 0;
 
-	Sys_Printf ("writeMapFile: %s\n", fname);
+	NSLog (@"writeMapFile: %@\n", fname);
 
-	f = fopen (fname, "w");
-	if (!f)
-		Sys_Error ("couldn't write %s", fname);
+	file = Qopen ([fname fileSystemRepresentation], "wb");
+	if (!file) {
+		NSLog (@"couldn't write %@, %s", fname, strerror (errno));
+		return self;
+	}
 	for (i = 0; i < [self count]; i++)
-		[[self objectAtIndex: i] writeToFILE: f region: reg];
+		[[self objectAtIndex: i] writeToFile: file region: reg];
 
-	fclose (f);
-
+	Qclose (file);
 	return self;
 }
 

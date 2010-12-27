@@ -22,7 +22,7 @@ extern id  map_i;
 - (id) writeStats;
 
 - (id) readMapFile: (NSString *)fname;
-- (id) writeMapFile: (const char *)fname useRegion: (BOOL)reg;
+- (id) writeMapFile: (NSString *)fname useRegion: (BOOL)reg;
 
 - (id) entityConnect: (vec3_t)p1: (vec3_t)p2;
 

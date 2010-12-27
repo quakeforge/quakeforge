@@ -4,6 +4,7 @@
 #include <AppKit/AppKit.h>
 
 #include "QF/mathlib.h"
+#include "QF/quakeio.h"
 
 typedef struct  epair_s {
 	struct epair_s  *next;
@@ -30,7 +31,7 @@ typedef struct  epair_s {
 
 - (const char *) targetname;
 
-- (void) writeToFILE: (FILE *)f region: (BOOL)reg;
+- (void) writeToFile: (QFile *)file region: (BOOL)reg;
 
 - (const char *) valueForQKey: (const char *)k;
 - (void) getVector: (vec3_t)v forKey: (const char *)k;

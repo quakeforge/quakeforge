@@ -393,7 +393,7 @@ int  nument;
 	return self;
 }
 
-- (void) writeToFILE: (FILE *)f
+- (void) writeToFile: (QFile *)file
    region: (BOOL)reg;
 {
 	epair_t         *e;
@@ -417,7 +417,7 @@ int  nument;
 		}
 	}
 
-	fprintf (f, "{\n");
+	Qprintf (file, "{\n");
 
 	// set an origin epair
 	if (!modifiable) {
@@ -441,15 +441,15 @@ int  nument;
 	}
 
 	for (e = epairs; e; e = e->next)
-		fprintf (f, "\"%s\"\t\"%s\"\n", e->key, e->value);
+		Qprintf (file, "\"%s\"\t\"%s\"\n", e->key, e->value);
 
 	// fixed size entities don't save out brushes
 	if (modifiable) {
 		for (i = 0; i < [self count]; i++)
-			[[self objectAtIndex: i] writeToFILE: f region: reg];
+			[[self objectAtIndex: i] writeToFile: file region: reg];
 	}
 
-	fprintf (f, "}\n");
+	Qprintf (file, "}\n");
 
 	if (oldang) {
 		[self setKey: "angle" toValue: oldang];
