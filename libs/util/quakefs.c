@@ -1512,7 +1512,7 @@ QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 		return;
 
 	cp = cpath = QFS_CompressPath (path);
-	if (*cp == '/')
+	if (*cp && cp[strlen (cp) - 1] == '/')
 		separator = "";
 
 	for (search = qfs_searchpaths; search != NULL; search = search->next) {
@@ -1522,9 +1522,10 @@ QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 
 			for (i = 0; i < pak->numfiles; i++) {
 				char       *name = pak->files[i].name;
-
-				if (!fnmatch (va("%s*.%s", cp, ext), name, FNM_PATHNAME)
-					|| !fnmatch (va("%s*.%s.gz", cp, ext), name, FNM_PATHNAME))
+				if (!fnmatch (va("%s%s*.%s", cp, separator, ext), name,
+							  FNM_PATHNAME)
+					|| !fnmatch (va("%s%s*.%s.gz", cp, separator, ext), name,
+								 FNM_PATHNAME))
 					QFS_FilelistAdd (list, name, strip ? ext : 0);
 			}
 		} else {
