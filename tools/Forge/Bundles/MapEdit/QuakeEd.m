@@ -695,7 +695,9 @@ saveBSP
 				[[[mappath lastPathComponent] stringByDeletingPathExtension]
 					stringByAppendingPathExtension: @"bsp"]];
 
-	ExpandCommand (cmdline, expandedcmd, [mappath cString], [bsppath cString]);
+	ExpandCommand (cmdline, expandedcmd,
+				   [mappath fileSystemRepresentation],
+				   [bsppath fileSystemRepresentation]);
 
 	strcat (expandedcmd, " > ");
 	strcat (expandedcmd, FN_CMDOUT);
@@ -828,6 +830,7 @@ save:
 - (id) save: sender;
 {
 	NSString    *backup;
+	NSFileManager *fm = [NSFileManager defaultManager];
 
 	// force a name change if using tempname
 	if (![filename compare: FN_TEMPSAVE])
@@ -836,7 +839,7 @@ save:
 
 	backup = [[filename stringByDeletingPathExtension]
 				stringByAppendingPathExtension: @"bak"];
-	rename ([filename cString], [backup cString]);      // copy old to .bak
+	[fm copyPath: filename toPath: backup handler: nil];	// copy old to .bak
 
 	[map_i writeMapFile: filename useRegion: NO];
 

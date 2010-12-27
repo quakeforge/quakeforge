@@ -176,6 +176,7 @@ scanFile
 {
 	int         size, line;
 	const char  *data;
+	const char  *fname;
 	id          cl;
 	int         i;
 	NSString    *path;
@@ -184,6 +185,7 @@ scanFile
 
 	path = [source_path stringByAppendingPathComponent: filename];
 	contents = [fm contentsAtPath: path];
+	fname = [filename fileSystemRepresentation];
 
 	if (!contents)
 		return;
@@ -195,7 +197,7 @@ scanFile
 		if (!strncmp (data + i, "/*QUAKED", 8)) {
 			cl = [[EntityClass alloc]
 			        initFromText: (data + i)
-			              source: va ("%s:%d", [filename cString], line)];
+			              source: va ("%s:%d", fname, line)];
 			if (cl)
 				[self insertEC: cl];
 		} else if (data[i] == '\n') {

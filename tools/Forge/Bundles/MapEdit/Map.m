@@ -254,7 +254,7 @@ readMapFile
 	dat[size] = 0;
 
 	script = Script_New ();
-	Script_Start (script, [fname cString], dat);
+	Script_Start (script, [fname fileSystemRepresentation], dat);
 
 	do {
 		new = [[Entity alloc] initFromScript: script];
