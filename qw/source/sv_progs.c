@@ -190,8 +190,8 @@ parse_field (progs_t *pr, const char *key, const char *value)
 	if (strcaseequal (key, "skyname")		// QuakeForge
 		|| strcaseequal (key, "sky")		// Q2/DarkPlaces
 		|| strcaseequal (key, "qlsky")) {	// QuakeLives
-		Info_SetValueForKey (svs.info, "skybox", "1", !sv_highchars->int_val);
-		Cvar_Set (r_skyname, value);
+		Info_SetValueForKey (svs.info, "skybox", "1", 0);
+		Info_SetValueForKey (svs.info, "r_skyname", value, 0);
 		return 1;
 	}
 	if (*key == '_')						// ignore _fields
@@ -509,6 +509,10 @@ SV_LoadProgs (void)
 
 	memset (&sv_globals, 0, sizeof (sv_funcs));
 	memset (&sv_funcs, 0, sizeof (sv_funcs));
+	Info_RemoveKey (svs.info, "skybox");
+	Info_RemoveKey (svs.info, "r_skyname");
+	if (*r_skyname->string)
+		Info_SetValueForKey (svs.info, "r_skyname", r_skyname->string, 0);
 
 	sv_cbuf->unknown_command = 0;
 	ucmd_unknown = 0;
@@ -567,8 +571,8 @@ SV_Progs_Init (void)
 void
 SV_Progs_Init_Cvars (void)
 {
-	r_skyname = Cvar_Get ("r_skyname", "", CVAR_SERVERINFO, Cvar_Info,
-						 "name of skybox");
+	r_skyname = Cvar_Get ("r_skyname", "", CVAR_NONE, NULL,
+						 "Default name of skybox if none given by map");
 	sv_progs = Cvar_Get ("sv_progs", "", CVAR_NONE, NULL,
 						 "Override the default game progs.");
 	sv_progs_zone = Cvar_Get ("sv_progs_zone", "256", CVAR_NONE, NULL,
