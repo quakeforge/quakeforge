@@ -74,6 +74,8 @@ core
 /doc/man
 /doc/progs/vm-mem.eps
 /doc/progs/vm-mem.png
+/doc/qtv/qwtv.eps
+/doc/qtv/qwtv.png
 /doc/quakeforge.dox
 /doc/texinfo
 /doc/stamp-*
