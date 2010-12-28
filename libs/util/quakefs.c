@@ -1447,9 +1447,11 @@ QFS_Rename (const char *old_path, const char *new_path)
 	int         ret;
 
 	if ((ret = qfs_expand_userpath (full_old, old_path)) != -1)
-		if ((ret = qfs_expand_userpath (full_new, old_path)) != -1)
-			if ((ret = Sys_CreatePath (full_new->str)) != -1)
+		if ((ret = qfs_expand_userpath (full_new, new_path)) != -1)
+			if ((ret = Sys_CreatePath (full_new->str)) != -1) {
+				Sys_Printf ("QFS_Rename %s %s\n", full_old->str, full_new->str);
 				ret = Qrename (full_old->str, full_new->str);
+			}
 	dstring_delete (full_old);
 	dstring_delete (full_new);
 	return ret;
