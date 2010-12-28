@@ -183,15 +183,13 @@ static int
 parse_field (progs_t *pr, const char *key, const char *value)
 {
 	/*
-		If skyname is set, we want to allow skyboxes and set what the skybox
-		name should be.  "qlsky" is supported since at least one other map
-		uses it already.
+		If skyname is set, set what the map thinks the skybox name should 
+		be. "qlsky" is supported since at least one other map uses it.
 	*/
 	if (strcaseequal (key, "skyname")		// QuakeForge
 		|| strcaseequal (key, "sky")		// Q2/DarkPlaces
 		|| strcaseequal (key, "qlsky")) {	// QuakeLives
-		Info_SetValueForKey (svs.info, "skybox", "1", 0);
-		Info_SetValueForKey (svs.info, "r_skyname", value, 0);
+		Info_SetValueForKey (svs.info, "sky", value, 0);
 		return 1;
 	}
 	if (*key == '_')						// ignore _fields
@@ -509,10 +507,9 @@ SV_LoadProgs (void)
 
 	memset (&sv_globals, 0, sizeof (sv_funcs));
 	memset (&sv_funcs, 0, sizeof (sv_funcs));
-	Info_RemoveKey (svs.info, "skybox");
-	Info_RemoveKey (svs.info, "r_skyname");
+	Info_RemoveKey (svs.info, "sky");
 	if (*r_skyname->string)
-		Info_SetValueForKey (svs.info, "r_skyname", r_skyname->string, 0);
+		Info_SetValueForKey (svs.info, "sky", r_skyname->string, 0);
 
 	sv_cbuf->unknown_command = 0;
 	ucmd_unknown = 0;

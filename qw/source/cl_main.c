@@ -648,8 +648,9 @@ CL_FullServerinfo_f (void)
 	if ((p = Info_ValueForKey (cl.serverinfo, "fbskins")) && *p) {
 		cl.fbskins = atoi (p);
 	}
+
 	// R_LoadSkys does the right thing with null pointers.
-	R_LoadSkys (Info_ValueForKey (cl.serverinfo, "r_skyname"));
+	R_LoadSkys (Info_ValueForKey (cl.serverinfo, "sky"));
 }
 
 static void
