@@ -77,9 +77,12 @@ double Sys_DoubleTime (void);
 void Sys_TimeOfDay(date_t *date);
 
 void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(printf,2,3)));
-#define SYS_DEV		1
-#define SYS_WARN	3	// bit 0 so developer 1 will pick it up
-#define SYS_VID		5
+#define SYS_DEV		(1|0)
+#define SYS_WARN	(1|2)	// bit 0 so developer 1 will pick it up
+#define SYS_VID		(1|4)
+#define SYS_FS_NF   (1|8)
+#define SYS_FS_F    (1|16)
+#define SYS_FS      (1|32)
 
 int Sys_CheckInput (int idle, int net_socket);
 const char *Sys_ConsoleInput (void);
