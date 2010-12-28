@@ -133,9 +133,9 @@ CL_LoadSky (void)
 		R_LoadSkys (0);
 		return;
 	}
-	if ((item = PL_ObjectForKey (cl.worldspawn, "sky")) 
-		|| (item = PL_ObjectForKey (cl.worldspawn, "skyname"))
-		|| (item = PL_ObjectForKey (cl.worldspawn, "skyname"))) {
+	if ((item = PL_ObjectForKey (cl.worldspawn, "sky")) // Q2/DarkPlaces
+		|| (item = PL_ObjectForKey (cl.worldspawn, "skyname")) // old QF
+		|| (item = PL_ObjectForKey (cl.worldspawn, "qlsky"))) /* QuakeLives */ {
 		name = PL_String (item);
 	}
 	R_LoadSkys (name);
