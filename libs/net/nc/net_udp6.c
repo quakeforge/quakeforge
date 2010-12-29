@@ -111,10 +111,10 @@ static __attribute__ ((used)) const char rcsid[] =
 # define MAXHOSTNAMELEN	512
 #endif
 
-#ifdef __GLIBC__						// glibc macro
+#if defined(__GLIBC__) && !defined(s6_addr32)	// glibc macro
 # define s6_addr32 in6_u.u6_addr32
 # if ! __GLIBC_PREREQ (2,2)
-# define ss_family __ss_family
+#  define ss_family __ss_family
 # endif
 #endif
 
