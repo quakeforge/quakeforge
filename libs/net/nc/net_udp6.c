@@ -134,27 +134,72 @@ byte        net_message_buffer[MAX_UDP_PACKET];
  WSADATA     winsockdata;
 #endif
 
+typedef union address {
+	struct sockaddr_storage ss;
+	struct sockaddr			sa;
+	struct sockaddr_in		s4;
+	struct sockaddr_in6		s6;
+} AF_address_t;
+
+typedef union inaddr {
+	struct in_addr	a4;
+	byte			evil4[4];
+	struct in6_addr a6;
+	byte			evil6[16];
+} AF_inaddress_t;
 
 static void
-NetadrToSockadr (netadr_t *a, struct sockaddr_in6 *s)
+NetadrToSockadr (netadr_t *a, AF_address_t *s)
 {
 	memset (s, 0, sizeof (*s));
 
-	s->sin6_family = AF_INET6;
-	memcpy (&s->sin6_addr, a->ip, sizeof (s->sin6_addr));
-	s->sin6_port = a->port;
-#ifdef HAVE_SIN6_LEN
-	s->sin6_len = sizeof (struct sockaddr_in6);
+	s->ss.ss_family = a->family;
+	switch (a->family) {
+		case AF_INET: {
+			memcpy (&s->s4.sin_addr, &a->ip, sizeof (s->s4.sin_addr));
+			s->s4.sin_port = a->port;
+#ifdef HAVE_SS_LEN
+			s->ss.ss_len = sizeof (struct sockaddr_in);
 #endif
+			break;
+		}
+		case AF_INET6: {
+			memcpy (&s->s6.sin6_addr, &a->ip, sizeof (s->s6.sin6_addr));
+			s->s6.sin6_port = a->port;
+#ifdef HAVE_SS_LEN
+			s->ss.ss_len = sizeof (struct sockaddr_in6);
+#endif
+			break;
+		}
+		default:
+			Sys_Error ("%s: Unknown address family %d", __FUNCTION__, a->family);
+			break;
+	}
 }
 
 static void
-SockadrToNetadr (struct sockaddr_in6 *s, netadr_t *a)
+SockadrToNetadr (AF_address_t *s, netadr_t *a)
 {
-	memcpy (a->ip, &s->sin6_addr, sizeof (s->sin6_addr));
-	a->port = s->sin6_port;
-	a->family = s->sin6_family;
+	a->family = s->ss.ss_family;
+	switch (a->family) {
+		case 0:	// FIXME: where are these coming from?
+		case AF_INET: {
+			memcpy (a->ip, &(s->s4.sin_addr), sizeof (s->s4.sin_addr));
+			a->port = s->s4.sin_port;
+			break;
+		}
+		case AF_INET6: {
+			memcpy (a->ip, &(s->s6.sin6_addr), sizeof (s->s6.sin6_addr));
+			a->family = AF_INET6;
+			a->port = s->s6.sin6_port;
+			break;
+		}
+		default:	// FIXME: these are showing up too
+//			Sys_Printf ("%s: Unknown address family 0x%x\n", __FUNCTION__, s->ss.ss_family);
+			break;
+	}
 }
+
 /*
 static qboolean
 NET_AdrIsLoopback (netadr_t a)
@@ -508,7 +553,7 @@ NET_GetLocalAddress (void)
 {
 	char        buff[MAXHOSTNAMELEN];
 	unsigned int namelen;
-	struct sockaddr_in6 address;
+	AF_address_t address;
 
 	if (gethostname (buff, MAXHOSTNAMELEN) == -1)
 		Sys_Error ("Net_GetLocalAddress: gethostname: %s", strerror (errno));
@@ -519,7 +564,7 @@ NET_GetLocalAddress (void)
 	namelen = sizeof (address);
 	if (getsockname (net_socket, (struct sockaddr *) &address, &namelen) == -1)
 		Sys_Error ("NET_GetLocalAddress: getsockname: %s", strerror (errno));
-	net_local_adr.port = address.sin6_port;
+	net_local_adr.port = address.s6.sin6_port;
 
 	Sys_Printf ("IP address %s\n", NET_AdrToString (net_local_adr));
 }
