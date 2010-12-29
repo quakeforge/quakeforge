@@ -244,35 +244,16 @@ const char *
 NET_BaseAdrToString (netadr_t a)
 {
 	static char s[64];
-	struct sockaddr_storage ss;
+	AF_address_t ss;
 
-	// NetadrToSockadr(&a,&sa);
+	NetadrToSockadr(&a,&ss);
 
-	memset (&ss, 0, sizeof (ss));
-	if (IN6_IS_ADDR_V4MAPPED ((struct in6_addr *) a.ip)) {
 #ifdef HAVE_SS_LEN
-		ss.ss_len = sizeof (struct sockaddr_in);
-#endif
-		ss.ss_family = AF_INET;
-		memcpy (&((struct sockaddr_in *) &ss)->sin_addr,
-				&((struct in6_addr *) a.ip)->s6_addr[12],
-
-				sizeof (struct in_addr));
-	} else {
-#ifdef HAVE_SS_LEN
-		ss.ss_len = sizeof (struct sockaddr_in6);
-#endif
-		ss.ss_family = AF_INET6;
-		memcpy (&((struct sockaddr_in6 *) &ss)->sin6_addr,
-
-				a.ip, sizeof (struct in6_addr));
-	}
-#ifdef HAVE_SS_LEN
-	if (getnameinfo ((struct sockaddr *) &ss, ss.ss_len, s, sizeof (s),
+	if (getnameinfo (&ss.sa, ss.ss.ss_len, s, sizeof (s),
 					 NULL, 0, NI_NUMERICHOST)) strcpy (s, "<invalid>");
 #else
 	// maybe needs switch for AF_INET6 or AF_INET?
-	if (getnameinfo ((struct sockaddr *) &ss, sizeof (ss), s, sizeof (s),
+	if (getnameinfo (&ss.sa, sizeof (ss.ss), s, sizeof (s),
 					 NULL, 0, NI_NUMERICHOST))
 		strcpy (s, "<invalid>");
 #endif
@@ -296,9 +277,8 @@ NET_StringToAdr (const char *s, netadr_t *a)
 	int         err;
 	struct addrinfo hints;
 	struct addrinfo *resultp;
-	struct sockaddr_storage ss;
-	struct sockaddr_in6 *ss6;
-	struct sockaddr_in *ss4;
+	AF_address_t	addr;
+	AF_address_t	resadr;
 
 	if (!copy)
 		copy = dstring_new ();
@@ -336,20 +316,18 @@ NET_StringToAdr (const char *s, netadr_t *a)
 	switch (resultp->ai_family) {
 		case AF_INET:
 			// convert to ipv6 addr
-			memset (&ss, 0, sizeof (ss));
-			ss6 = (struct sockaddr_in6 *) &ss;
-			ss4 = (struct sockaddr_in *) resultp->ai_addr;
-			ss6->sin6_family = AF_INET6;
-
-			memset (&ss6->sin6_addr, 0, sizeof (ss6->sin6_addr));
-			ss6->sin6_addr.s6_addr[10] = ss6->sin6_addr.s6_addr[11] = 0xff;
-			memcpy (&ss6->sin6_addr.s6_addr[12], &ss4->sin_addr,
-					sizeof (ss4->sin_addr));
-
-			ss6->sin6_port = ss4->sin_port;
+			memset (&addr, 0, sizeof (addr));
+			memset (&resadr, 0, sizeof (resadr));
+			memcpy (&resadr.s4, resultp->ai_addr, sizeof (resadr.s4));
+			
+			addr.ss.ss_family = AF_INET6;
+			addr.s6.sin6_addr.s6_addr[10] = addr.s6.sin6_addr.s6_addr[11] = 0xff;
+			memcpy (&(addr.s6.sin6_addr.s6_addr[12]), &resadr.s4.sin_addr,
+					sizeof (resadr.s4.sin_addr));
+			addr.s6.sin6_port = resadr.s4.sin_port;
 			break;
 		case AF_INET6:
-			memcpy (&ss, resultp->ai_addr, sizeof (struct sockaddr_in6));
+			memcpy (&addr, resultp->ai_addr, sizeof (addr.s6));
 
 			break;
 		default:
@@ -358,7 +336,7 @@ NET_StringToAdr (const char *s, netadr_t *a)
 			return 0;
 	}
 
-	SockadrToNetadr ((struct sockaddr_in6 *) &ss, a);
+	SockadrToNetadr (&addr, a);
 
 	return true;
 }
@@ -399,12 +377,12 @@ NET_GetPacket (void)
 {
 	int          ret;
 	unsigned int fromlen;
-	struct sockaddr_in6 from;
+	AF_address_t from;
 
 	fromlen = sizeof (from);
 	ret =
 		recvfrom (net_socket, (void *) net_message_buffer,
-				  sizeof (net_message_buffer), 0, (struct sockaddr *) &from,
+				  sizeof (net_message_buffer), 0, &from.sa,
 				  &fromlen);
 	SockadrToNetadr (&from, &net_from);
 
@@ -442,12 +420,12 @@ void
 NET_SendPacket (int length, const void *data, netadr_t to)
 {
 	int         ret;
-	struct sockaddr_in6 addr;
+	AF_address_t addr;
 
 	NetadrToSockadr (&to, &addr);
 
 	ret =
-		sendto (net_socket, data, length, 0, (struct sockaddr *) &addr,
+		sendto (net_socket, data, length, 0, &addr.sa,
 				sizeof (addr));
 	if (ret == -1) {
 #ifdef _WIN32
