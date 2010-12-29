@@ -88,7 +88,7 @@ AC_ARG_WITH(plugin-path,
                           \${libdir}/quakeforge],
 plugindir=$withval, plugindir="auto")
 
-PLUGINDIR="\${libdir}/quakeforge"
+PLUGINDIR="\${libdir}/quakeforge/plugins"
 if test "x$plugindir" = "xauto" -o "x$plugindir" = "xyes" -o "x$plugindir" = "x"; then
 	plugindir="$PLUGINDIR"
 elif test "x$plugindir" = xno; then
