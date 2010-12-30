@@ -147,17 +147,19 @@ NetadrToSockadr (netadr_t *a, AF_address_t *s)
 {
 	memset (s, 0, sizeof (*s));
 
-	s->ss.ss_family = a->family;
 	switch (a->family) {
 		case AF_INET: {
-			memcpy (&s->s4.sin_addr, &a->ip, sizeof (s->s4.sin_addr));
+			s->ss.ss_family = AF_INET6;
+			s->s6.sin6_addr.s6_addr[10] = s->s6.sin6_addr.s6_addr[11] = 0xff;
+			memcpy (&s->s6.sin6_addr.s6_addr[12], &a->ip, sizeof (s->s4.sin_addr));
 			s->s4.sin_port = a->port;
 #ifdef HAVE_SS_LEN
-			s->ss.ss_len = sizeof (struct sockaddr_in);
+			s->ss.ss_len = sizeof (struct sockaddr_in6);
 #endif
 			break;
 		}
 		case AF_INET6: {
+			s->ss.ss_family = a->family;
 			memcpy (&s->s6.sin6_addr, &a->ip, sizeof (s->s6.sin6_addr));
 			s->s6.sin6_port = a->port;
 #ifdef HAVE_SS_LEN
@@ -227,10 +229,41 @@ const char *
 NET_AdrToString (netadr_t a)
 {
 	static char s[64];
-	const char *base;
+	char		base[64];
+	AF_address_t ss;
 
-	base = NET_BaseAdrToString (a);
-	sprintf (s, "[%s]:%d", base, ntohs (a.port));
+	/*
+		Yes, this duplication is lame, but we want to know the real address
+		family of the address so that we can know whether or not to put a
+		bracket around it, and this is less ugly than trying to check the 
+		string returned from NET_BaseAdrToString()
+	*/
+	memset (&ss, 0, sizeof (ss));
+	NetadrToSockadr(&a,&ss);
+
+	// Convert any "mapped" addresses back to v4
+	if (a.family == AF_INET6 && IN6_IS_ADDR_V4MAPPED (&(ss.s6.sin6_addr))) {
+#ifdef HAVE_SS_LEN
+		ss.ss.ss_len = sizeof (ss.s4);
+#endif
+		ss.ss.ss_family = AF_INET;
+		memcpy (&(ss.s4.sin_addr), &ss.s6.sin6_addr.s6_addr[12], sizeof (ss.s4.sin_addr));
+	}
+
+#ifdef HAVE_SS_LEN
+	if (getnameinfo (&ss.sa, ss.ss.ss_len, base, sizeof (base),
+					 NULL, 0, NI_NUMERICHOST)) strcpy (base, "<invalid>");
+#else
+	if (getnameinfo (&ss.sa, sizeof (ss.ss), base, sizeof (base),
+					 NULL, 0, NI_NUMERICHOST)) strcpy (base, "<invalid>");
+#endif
+
+	if (ss.ss.ss_family == AF_INET6) {
+		sprintf (s, "[%s]:%d", base, ntohs (a.port));
+	} else {
+		sprintf (s, "%s:%d", base, ntohs (a.port));
+	}
+
 	return s;
 }
 
@@ -240,7 +273,17 @@ NET_BaseAdrToString (netadr_t a)
 	static char s[64];
 	AF_address_t ss;
 
+	memset (&ss, 0, sizeof (ss));
 	NetadrToSockadr(&a,&ss);
+
+	// Convert any "mapped" addresses back to v4
+	if (a.family == AF_INET6 && IN6_IS_ADDR_V4MAPPED (&(ss.s6.sin6_addr))) {
+#ifdef HAVE_SS_LEN
+		ss.ss.ss_len = sizeof (ss.s4);
+#endif
+		ss.ss.ss_family = AF_INET;
+		memcpy (&(ss.s4.sin_addr), &ss.s6.sin6_addr.s6_addr[12], sizeof (ss.s4.sin_addr));
+	}
 
 #ifdef HAVE_SS_LEN
 	if (getnameinfo (&ss.sa, ss.ss.ss_len, s, sizeof (s),
