@@ -329,6 +329,7 @@ NET_StringToAdr (const char *s, netadr_t *a)
 						"supported\n", s, resultp->ai_family);
 			return 0;
 	}
+	freeaddrinfo (resultp);
 
 	SockadrToNetadr (&addr, a);
 
