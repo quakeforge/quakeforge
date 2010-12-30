@@ -169,7 +169,7 @@ NetadrToSockadr (netadr_t *a, AF_address_t *s)
 			break;
 		}
 		default:
-			Sys_Error ("%s: Unknown address family %d", __FUNCTION__, a->family);
+			Sys_MaskPrintf (SYS_NET, "%s: Unknown address family %d", __FUNCTION__, a->family);
 			break;
 	}
 }
@@ -190,8 +190,7 @@ SockadrToNetadr (AF_address_t *s, netadr_t *a)
 			a->port = s->s6.sin6_port;
 			break;
 		}
-		case 0:	// FIXME: where are these coming from?
-		default:	// FIXME: these are showing up too
+		default:
 			Sys_MaskPrintf (SYS_NET, "%s: Unknown address family 0x%x\n", __FUNCTION__, s->ss.ss_family);
 			break;
 	}
@@ -416,9 +415,9 @@ NET_GetPacket (void)
 	AF_address_t from;
 
 	fromlen = sizeof (from);
+	memset (&from, 0, sizeof (from));
 	ret = recvfrom (net_socket, (void *) net_message_buffer, 
 					sizeof (net_message_buffer), 0, &from.sa, &fromlen);
-	SockadrToNetadr (&from, &net_from);
 
 	if (ret == -1) {
 #ifdef _WIN32
@@ -440,6 +439,8 @@ NET_GetPacket (void)
 		Sys_Printf ("NET_GetPacket: %s\n", strerror (err));
 		return false;
 	}
+
+	SockadrToNetadr (&from, &net_from);
 
 	_net_message_message.cursize = ret;
 	if (ret == sizeof (net_message_buffer)) {
