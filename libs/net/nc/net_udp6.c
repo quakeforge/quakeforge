@@ -457,8 +457,8 @@ UDP_OpenSocket (int port)
 	struct sockaddr_in6 address;
 	struct addrinfo hints, *res;
 
-#ifdef IPV6_BINDV6ONLY
-	int         dummy;
+#ifdef IPV6_V6ONLY
+	int         off = 0;
 #endif
 #ifdef _WIN32
 #define ioctl ioctlsocket
@@ -511,11 +511,9 @@ UDP_OpenSocket (int port)
 #endif /* _WIN32 */
 		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO: %s", strerror (errno));
 
-#ifdef IPV6_BINDV6ONLY
-	if (setsockopt (newsocket, IPPROTO_IPV6, IPV6_BINDV6ONLY, &dummy,
-					sizeof (dummy)) < 0) {
-		/* I don't care */
-	}
+	// don't care about the result code
+#ifdef IPV6_V6ONLY
+	setsockopt (newsocket, IPPROTO_IPV6, IPV6_V6ONLY, &off,	sizeof (off));
 #endif
 
 	if (bind (newsocket, res->ai_addr, res->ai_addrlen) < 0)
