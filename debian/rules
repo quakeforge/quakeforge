@@ -42,6 +42,7 @@ configure-stamp:
 	./bootstrap
 	./configure --prefix=/usr $(RETARGET) --bindir=/usr/games \
 		    --without-fbdev \
+		    --with-ipv6 \
 		    --disable-Werror \
 		    --disable-xmms \
 		    --mandir=/usr/share/man \
