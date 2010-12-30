@@ -474,7 +474,6 @@ UDP_OpenSocket (int port)
 		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO: %s", strerror (errno));
 	memset (&address, 0, sizeof (address));
 	address.sin6_family = AF_INET6;
-// ZOID -- check for interface binding option
 
 	memset (&hints, 0, sizeof (hints));
 	hints.ai_family = PF_UNSPEC;
@@ -482,7 +481,8 @@ UDP_OpenSocket (int port)
 	hints.ai_protocol = IPPROTO_UDP;
 	hints.ai_flags = AI_PASSIVE;
 
-	if ((i = COM_CheckParm ("-ip")) != 0 && i < com_argc) {
+	// ZOID -- check for interface binding option
+	if ((i = COM_CheckParm ("-ip")) && i < com_argc) {
 		Host = com_argv[i + 1];
 	} else {
 		Host = "0::0";
