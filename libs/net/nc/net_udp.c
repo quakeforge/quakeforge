@@ -262,9 +262,6 @@ NET_GetPacket (void)
 				  sizeof (net_message_buffer), 0, (struct sockaddr *) &from,
 				  &fromlen);
 
-	SockadrToNetadr (&from, &net_from);
-
-
 	if (ret == -1) {
 #ifdef _WIN32
 		int         err = WSAGetLastError ();
@@ -290,6 +287,8 @@ NET_GetPacket (void)
 					strerror (err));
 		return false;
 	}
+
+	SockadrToNetadr (&from, &net_from);
 
 	// Check for malformed packets
 	if (ntohs (net_from.port) < 1024) {
