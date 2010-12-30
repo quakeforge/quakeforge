@@ -473,14 +473,79 @@ int is_logic (int op);
 */
 expr_t *constant_expr (expr_t *var);
 
+/**	Bind the result of an expression to a temporary variable.
+
+	If a temporary variable is not needed when emitting code, none will
+	be used.
+
+	\param e1		The expression which will be bound.
+	\param e2		The temporary variable to which the expression will be
+					bound. Must be a temporary expression (ex_temp).
+	\return			The new bind expression.
+*/
 expr_t *new_bind_expr (expr_t *e1, expr_t *e2);
+
+/**	Create a reference to the global <code>.self</code> entity variable.
+
+	This is used for <code>@self</code>.
+	\return			A new expression referencing the <code>.self</code> def.
+*/
 expr_t *new_self_expr (void);
+
+/**	Create a reference to the <code>.this</code> entity field.
+
+	This is used for <code>@this</code>.
+	\return			A new expression referencing the <code>.this</code> def.
+*/
 expr_t *new_this_expr (void);
+
+/**	Create an expression of the correct type that references the return slot.
+
+	\param type		The type of the reference to the return slot.
+	\return			A new expression referencing the return slot.
+*/
 expr_t *new_ret_expr (struct type_s *type);
+
+/**	Create an expression of the correct type that references the specified
+	parameter slot.
+
+	\param type		The type of the reference to the parameter slot.
+	\param num		The index of the parameter (0-7).
+	\return			A new expression referencing the parameter slot.
+*/
 expr_t *new_param_expr (struct type_s *type, int num);
+
+/**	Create an expression representing a block copy.
+
+	This is used for structure assignments.
+
+	\param e1		Destination of move.
+	\param e2		Source of move.
+	\param type		type giving size of move.
+	\return			A new expression representing the move.
+*/
 expr_t *new_move_expr (expr_t *e1, expr_t *e2, struct type_s *type);
 
+/**	Temporary variable reference counting.
+
+	Increment the users of the referenced temporary. Has no effect on
+	other expressions.
+
+	\param e		The expression referencing the temporary variable. If
+					a block expression, the result of the block will be
+					incremented.
+*/
 void inc_users (expr_t *e);
+
+/**	Temporary variable reference counting.
+
+	Decrement the users of the referenced temporary. Has no effect on
+	other expressions.
+
+	\param e		The expression referencing the temporary variable. If
+					a block expression, the result of the block will be
+					decremented.
+*/
 void dec_users (expr_t *e);
 void convert_name (expr_t *e);
 
