@@ -797,13 +797,9 @@ statements
 statement
 	: ';'						{ $$ = 0; }
 	| statement_block			{ $$ = $1; }
-	| RETURN fexpr ';'
+	| RETURN opt_expr ';'
 		{
 			$$ = return_expr (current_func, $2);
-		}
-	| RETURN ';'
-		{
-			$$ = return_expr (current_func, 0);
 		}
 	| BREAK ';'
 		{
