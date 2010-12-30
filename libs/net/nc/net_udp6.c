@@ -289,10 +289,8 @@ NET_BaseAdrToString (netadr_t a)
 	if (getnameinfo (&ss.sa, ss.ss.ss_len, s, sizeof (s),
 					 NULL, 0, NI_NUMERICHOST)) strcpy (s, "<invalid>");
 #else
-	// maybe needs switch for AF_INET6 or AF_INET?
 	if (getnameinfo (&ss.sa, sizeof (ss.ss), s, sizeof (s),
-					 NULL, 0, NI_NUMERICHOST))
-		strcpy (s, "<invalid>");
+					 NULL, 0, NI_NUMERICHOST)) strcpy (s, "<invalid>");
 #endif
 	return s;
 }
@@ -343,10 +341,8 @@ NET_StringToAdr (const char *s, netadr_t *a)
 		}
 	}
 
-	if ((err = getaddrinfo (addrs, ports, &hints, &resultp))) {
-		// Error
-		Sys_Printf ("NET_StringToAdr: string %s:\n%s\n", s,
-					gai_strerror (err));
+	if ((err = getaddrinfo (addrs, ports, &hints, &resultp))) {	// Error
+		Sys_Printf ("NET_StringToAdr: string %s:\n%s\n", s, gai_strerror (err));
 		return 0;
 	}
 
@@ -356,7 +352,7 @@ NET_StringToAdr (const char *s, netadr_t *a)
 			memset (&addr, 0, sizeof (addr));
 			memset (&resadr, 0, sizeof (resadr));
 			memcpy (&resadr.s4, resultp->ai_addr, sizeof (resadr.s4));
-			
+
 			addr.ss.ss_family = AF_INET6;
 			addr.s6.sin6_addr.s6_addr[10] = addr.s6.sin6_addr.s6_addr[11] = 0xff;
 			memcpy (&(addr.s6.sin6_addr.s6_addr[12]), &resadr.s4.sin_addr,
@@ -418,10 +414,8 @@ NET_GetPacket (void)
 	AF_address_t from;
 
 	fromlen = sizeof (from);
-	ret =
-		recvfrom (net_socket, (void *) net_message_buffer,
-				  sizeof (net_message_buffer), 0, &from.sa,
-				  &fromlen);
+	ret = recvfrom (net_socket, (void *) net_message_buffer, 
+					sizeof (net_message_buffer), 0, &from.sa, &fromlen);
 	SockadrToNetadr (&from, &net_from);
 
 	if (ret == -1) {
@@ -462,9 +456,7 @@ NET_SendPacket (int length, const void *data, netadr_t to)
 
 	NetadrToSockadr (&to, &addr);
 
-	ret =
-		sendto (net_socket, data, length, 0, &addr.sa,
-				sizeof (addr));
+	ret = sendto (net_socket, data, length, 0, &addr.sa, sizeof (addr));
 	if (ret == -1) {
 #ifdef _WIN32
 		int         err = WSAGetLastError ();
@@ -523,7 +515,7 @@ UDP_OpenSocket (int port)
 	if ((i = COM_CheckParm ("-ip")) && i < com_argc) {
 		Host = com_argv[i + 1];
 	} else {
-		Host = "0::0";
+		Host = "::0";
 	}
 	Sys_Printf ("Binding to IP Interface Address of %s\n", Host);
 
@@ -537,10 +529,11 @@ UDP_OpenSocket (int port)
 	if ((Error = getaddrinfo (Host, Service, &hints, &res)))
 		Sys_Error ("UDP_OpenSocket: getaddrinfo: %s", gai_strerror (Error));
 
-	if (
-		(newsocket =
-		 socket (res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
+	if ((newsocket = socket (res->ai_family,
+							 res->ai_socktype, 
+							 res->ai_protocol)) == -1)
 		Sys_Error ("UDP_OpenSocket: socket: %s", strerror (errno));
+
 	// FIONBIO sets non-blocking IO for this socket
 #ifdef _WIN32
 	if (ioctl (newsocket, FIONBIO, &_true) == -1)
