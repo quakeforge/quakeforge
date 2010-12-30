@@ -83,6 +83,7 @@ void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(print
 #define SYS_FS_NF   (1|8)
 #define SYS_FS_F    (1|16)
 #define SYS_FS      (1|32)
+#define SYS_NET     (1|64)
 
 int Sys_CheckInput (int idle, int net_socket);
 const char *Sys_ConsoleInput (void);

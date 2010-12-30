@@ -149,6 +149,7 @@ NetadrToSockadr (netadr_t *a, AF_address_t *s)
 
 	switch (a->family) {
 		case AF_INET: {
+			Sys_MaskPrintf (SYS_NET, "err, converting v4 to v6...\n");
 			s->ss.ss_family = AF_INET6;
 			s->s6.sin6_addr.s6_addr[10] = s->s6.sin6_addr.s6_addr[11] = 0xff;
 			memcpy (&s->s6.sin6_addr.s6_addr[12], &a->ip, sizeof (s->s4.sin_addr));
@@ -178,7 +179,6 @@ SockadrToNetadr (AF_address_t *s, netadr_t *a)
 {
 	a->family = s->ss.ss_family;
 	switch (a->family) {
-		case 0:	// FIXME: where are these coming from?
 		case AF_INET: {
 			memcpy (a->ip, &(s->s4.sin_addr), sizeof (s->s4.sin_addr));
 			a->port = s->s4.sin_port;
@@ -190,8 +190,9 @@ SockadrToNetadr (AF_address_t *s, netadr_t *a)
 			a->port = s->s6.sin6_port;
 			break;
 		}
+		case 0:	// FIXME: where are these coming from?
 		default:	// FIXME: these are showing up too
-//			Sys_Printf ("%s: Unknown address family 0x%x\n", __FUNCTION__, s->ss.ss_family);
+			Sys_MaskPrintf (SYS_NET, "%s: Unknown address family 0x%x\n", __FUNCTION__, s->ss.ss_family);
 			break;
 	}
 }
@@ -371,6 +372,7 @@ NET_StringToAdr (const char *s, netadr_t *a)
 	freeaddrinfo (resultp);
 
 	SockadrToNetadr (&addr, a);
+	Sys_MaskPrintf (SYS_NET, "Raw address: %s\n", NET_BaseAdrToString (*a));
 
 	return true;
 }
@@ -517,7 +519,7 @@ UDP_OpenSocket (int port)
 	} else {
 		Host = "::0";
 	}
-	Sys_Printf ("Binding to IP Interface Address of %s\n", Host);
+	Sys_MaskPrintf (SYS_NET, "Binding to IP address [%s]\n", Host);
 
 	if (port == PORT_ANY)
 		Service = NULL;
