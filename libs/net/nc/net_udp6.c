@@ -141,12 +141,6 @@ typedef union address {
 	struct sockaddr_in6		s6;
 } AF_address_t;
 
-typedef union inaddr {
-	struct in_addr	a4;
-	byte			evil4[4];
-	struct in6_addr a6;
-	byte			evil6[16];
-} AF_inaddress_t;
 
 static void
 NetadrToSockadr (netadr_t *a, AF_address_t *s)
