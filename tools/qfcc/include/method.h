@@ -71,6 +71,7 @@ struct dstring_s;
 
 method_t *new_method (struct type_s *ret_type, param_t *selector,
 					  param_t *opt_parms);
+const char *method_name (method_t *method);
 method_t *copy_method (method_t *method);
 void add_method (methodlist_t *methodlist, method_t *method);
 struct def_s *method_def (struct class_type_s *class_type, method_t *method);

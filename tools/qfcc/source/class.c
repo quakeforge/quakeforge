@@ -825,7 +825,7 @@ class_finish_module (void)
 			pr.scope, st_extern);
 
 	init_def = get_def (&type_function, ".ctor", pr.scope, st_static);
-	current_func = init_func = new_function (init_def);
+	current_func = init_func = new_function (init_def, 0);
 	add_function (init_func);
 	reloc_def_func (init_func, init_def->ofs);
 	init_func->code = pr.code->size;

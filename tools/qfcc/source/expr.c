@@ -2881,7 +2881,7 @@ report_function (expr_t *e)
 	if (current_func != last_func) {
 		if (current_func) {
 			fprintf (stderr, "%s: In function `%s':\n", G_GETSTR (file),
-					 current_func->def->name);
+					 current_func->name);
 		} else if (current_class) {
 			fprintf (stderr, "%s: In class `%s':\n", G_GETSTR (file),
 					 get_class_name (current_class, 1));

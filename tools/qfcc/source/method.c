@@ -116,6 +116,12 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
 	return meth;
 }
 
+const char *
+method_name (method_t *method)
+{
+	return nva ("%c%s", method->instance ? '-' : '+', method->name);
+}
+
 method_t *
 copy_method (method_t *method)
 {

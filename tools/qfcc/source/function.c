@@ -420,7 +420,7 @@ build_scope (function_t *f, def_t *func, param_t *params)
 }
 
 function_t *
-new_function (def_t *func)
+new_function (def_t *func, const char *nice_name)
 {
 	function_t	*f;
 
@@ -428,6 +428,8 @@ new_function (def_t *func)
 	f->s_name = ReuseString (func->name);
 	f->s_file = pr.source_file;
 	f->def = func;
+	if (!(f->name = nice_name))
+		f->name = f->def->name;
 	return f;
 }
 
@@ -474,7 +476,7 @@ build_builtin_function (def_t *def, expr_t *bi_val)
 		return 0;
 	}
 
-	f = new_function (def);
+	f = new_function (def, 0);
 	add_function (f);
 
 	f->builtin = bi_val->type == ex_integer ? bi_val->e.integer_val

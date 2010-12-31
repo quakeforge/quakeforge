@@ -290,13 +290,15 @@ cfunction
 		}
 	| cfunction_def opt_state_expr
 		{ $<op>$ = current_storage; }
+		{ $<string_val>$ = 0; }
 		{ $<def>$ = $1; }
 	  begin_function statement_block { $<op>$ = $<op>3; } end_function
 	    {
-			build_code_function ($5, $2, $6);
+			build_code_function ($6, $2, $7);
 			current_func = 0;
-			(void) ($<def>4);
-			(void) ($<op>7);
+			(void) ($<string_val>4);
+			(void) ($<def>5);
+			(void) ($<op>8);
 		}
 	;
 
@@ -559,13 +561,15 @@ non_code_func
 code_func
 	: '=' opt_state_expr
 		{ $<op>$ = current_storage; }
+		{ $<string_val>$ = 0; }
 		{ $<def>$ = $<def>0; }
 	  begin_function statement_block { $<op>$ = $<op>3; } end_function
 		{
-			build_code_function ($5, $2, $6);
+			build_code_function ($6, $2, $7);
 			current_func = 0;
-			(void) ($<def>4);
-			(void) ($<op>7);
+			(void) ($<string_val>4);
+			(void) ($<def>5);
+			(void) ($<op>8);
 		}
 	;
 
@@ -727,7 +731,7 @@ begin_function
 		{
 			if ($<def>0->constant)
 				error (0, "%s redefined", $<def>0->name);
-			$$ = current_func = new_function ($<def>0);
+			$$ = current_func = new_function ($<def>0, $<string_val>-1);
 			if (!$$->def->external) {
 				add_function ($$);
 				reloc_def_func ($$, $$->def->ofs);
@@ -1462,7 +1466,6 @@ ivar_decl_list
 		{
 			$$ = current_ivars;
 			current_ivars = 0;
-			(void) ($<class>1);
 		}
 	;
 
@@ -1506,16 +1509,18 @@ methoddef
 		}
 	  opt_state_expr
 		{ $<op>$ = current_storage; }
+		{ $<string_val>$ = method_name ($2); }
 		{
 			$<def>$ = $2->def = method_def (current_class, $2);
 			current_params = $2->params;
 		}
 	  begin_function statement_block { $<op>$ = $<op>5; } end_function
 		{
-			$2->func = build_code_function ($7, $4, $8);
+			$2->func = build_code_function ($8, $4, $9);
 			current_func = 0;
-			(void) ($<method>6);
-			(void) ($<op>9);
+			(void) ($<string_val>6);
+			(void) ($<def>7);
+			(void) ($<op>10);
 		}
 	| ci methoddecl
 		{
