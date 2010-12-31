@@ -81,6 +81,28 @@ protocol_get_key (void *protocol, void *unused)
 	return ((protocol_t *) protocol)->name;
 }
 
+const char *
+get_class_name (class_type_t *class_type, int pretty)
+{
+	switch (class_type->type) {
+		case ct_class:
+			if (pretty)
+				return class_type->c.class->name;
+			else
+				return va ("%s_", class_type->c.class->name);
+		case ct_category:
+			if (pretty)
+				return va ("%s (%s)", class_type->c.category->class->name,
+						   class_type->c.category->name);
+			else
+				return va ("%s_%s", class_type->c.category->class->name,
+						   class_type->c.category->name);
+		case ct_protocol:
+			return va ("<%s>", class_type->c.protocol->name);
+	}
+	return "???";
+}
+
 void
 class_init (void)
 {
@@ -91,17 +113,23 @@ class_init (void)
 def_t *
 class_def (class_type_t *class_type, int external)
 {
-	const char *name;
-	type_t     *type;
+	const char *name = 0;
+	type_t     *type = 0;
 	storage_class_t storage = external ? st_extern : st_global;
 
-	if (!class_type->is_class) {
-		name = va ("_OBJ_CATEGORY_%s_%s", class_type->c.category->class->name,
-				   class_type->c.category->name);
-		type = type_category;
-	} else {
-		name = va ("_OBJ_CLASS_%s", class_type->c.class->name);
-		type = type_Class.aux_type;
+	switch (class_type->type) {
+		case ct_category:
+			name = va ("_OBJ_CATEGORY_%s_%s",
+					   class_type->c.category->class->name,
+					   class_type->c.category->name);
+			type = type_category;
+			break;
+		case ct_class:
+			name = va ("_OBJ_CLASS_%s", class_type->c.class->name);
+			type = type_Class.aux_type;
+			break;
+		case ct_protocol:
+			return 0;		// probably in error recovery
 	}
 	return get_def (type, name, pr.scope, storage);
 }
@@ -132,7 +160,7 @@ get_class (const char *name, int create)
 	new.s.class = c;
 	c->type = pointer_type (find_type (&new));
 	c->methods = new_methodlist ();
-	c->class_type.is_class = 1;
+	c->class_type.type = ct_class;
 	c->class_type.c.class = c;
 	if (name)
 		Hash_Add (class_hash, c);
@@ -191,62 +219,77 @@ class_add_protocols (class_t *class, protocollist_t *protocols)
 	class->protocols = protocols;
 }
 
+static void
+begin_category (category_t *category)
+{
+	pr_category_t *pr_category;
+	class_t    *class = category->class;
+
+	current_class = &category->class_type;
+	category->def = class_def (current_class, 0);
+	category->def->initialized = category->def->constant = 1;
+	category->def->nosave = 1;
+	pr_category = &G_STRUCT (pr_category_t, category->def->ofs);
+	EMIT_STRING (pr_category->category_name, category->name);
+	EMIT_STRING (pr_category->class_name, class->name);
+	EMIT_DEF (pr_category->protocols,
+			  emit_protocol_list (category->protocols,
+								  va ("%s_%s", class->name, category->name)));
+}
+
+static void
+begin_class (class_t *class)
+{
+	def_t      *meta_def;
+	pr_class_t *meta;
+	pr_class_t *cls;
+
+	current_class = &class->class_type;
+	class->def = class_def (current_class, 0);
+	meta_def = get_def (type_Class.aux_type,
+			va ("_OBJ_METACLASS_%s", class->name),
+			pr.scope, st_static);
+	meta_def->initialized = meta_def->constant = 1;
+	meta_def->nosave = 1;
+	meta = &G_STRUCT (pr_class_t, meta_def->ofs);
+	EMIT_STRING (meta->class_pointer, class->name);
+	if (class->super_class)
+		EMIT_STRING (meta->super_class, class->super_class->name);
+	EMIT_STRING (meta->name, class->name);
+	meta->info = _PR_CLS_META;
+	meta->instance_size = type_size (type_Class.aux_type);
+	EMIT_DEF (meta->ivars,
+			  emit_struct (type_Class.aux_type->s.class->ivars,
+						   "Class"));
+
+	class->def->initialized = class->def->constant = 1;
+	class->def->nosave = 1;
+	cls = &G_STRUCT (pr_class_t, class->def->ofs);
+	EMIT_DEF (cls->class_pointer, meta_def);
+	if (class->super_class) {
+		class_type_t class_type = {ct_class, {0}};
+		class_type.c.class = class->super_class;
+		EMIT_STRING (cls->super_class, class->super_class->name);
+		class_def (&class_type, 1);
+	}
+	EMIT_STRING (cls->name, class->name);
+	cls->info = _PR_CLS_CLASS;
+	EMIT_DEF (cls->protocols,
+			  emit_protocol_list (class->protocols, class->name));
+}
+
 void
 class_begin (class_type_t *class_type)
 {
-	if (!class_type->is_class) {
-		pr_category_t *pr_category;
-		category_t *category = class_type->c.category;
-		class_t    *class = category->class;
-
-		current_class = &category->class_type;
-		category->def = class_def (class_type, 0);
-		category->def->initialized = category->def->constant = 1;
-		category->def->nosave = 1;
-		pr_category = &G_STRUCT (pr_category_t, category->def->ofs);
-		EMIT_STRING (pr_category->category_name, category->name);
-		EMIT_STRING (pr_category->class_name, class->name);
-		EMIT_DEF (pr_category->protocols,
-				  emit_protocol_list (category->protocols,
-									  va ("%s_%s", class->name,
-										  category->name)));
-	} else {
-		def_t      *meta_def;
-		pr_class_t *meta;
-		pr_class_t *cls;
-		class_t    *class = class_type->c.class;
-
-		current_class = &class->class_type;
-		class->def = class_def (class_type, 0);
-		meta_def = get_def (type_Class.aux_type,
-				va ("_OBJ_METACLASS_%s", class->name),
-				pr.scope, st_static);
-		meta_def->initialized = meta_def->constant = 1;
-		meta_def->nosave = 1;
-		meta = &G_STRUCT (pr_class_t, meta_def->ofs);
-		EMIT_STRING (meta->class_pointer, class->name);
-		if (class->super_class)
-			EMIT_STRING (meta->super_class, class->super_class->name);
-		EMIT_STRING (meta->name, class->name);
-		meta->info = _PR_CLS_META;
-		meta->instance_size = type_size (type_Class.aux_type);
-		EMIT_DEF (meta->ivars,
-				  emit_struct (type_Class.aux_type->s.class->ivars, "Class"));
-
-		class->def->initialized = class->def->constant = 1;
-		class->def->nosave = 1;
-		cls = &G_STRUCT (pr_class_t, class->def->ofs);
-		EMIT_DEF (cls->class_pointer, meta_def);
-		if (class->super_class) {
-			class_type_t class_type = {1, {0}};
-			class_type.c.class = class->super_class;
-			EMIT_STRING (cls->super_class, class->super_class->name);
-			class_def (&class_type, 1);
-		}
-		EMIT_STRING (cls->name, class->name);
-		cls->info = _PR_CLS_CLASS;
-		EMIT_DEF (cls->protocols,
-				  emit_protocol_list (class->protocols, class->name));
+	switch (class_type->type) {
+		case ct_category:
+			begin_category (class_type->c.category);
+			break;
+		case ct_class:
+			begin_class (class_type->c.class);
+			break;
+		case ct_protocol:
+			return;			// probably error recovery
 	}
 }
 
@@ -319,55 +362,87 @@ emit_category_name (const char *class_name, const char *category_name)
 	G_INT (def->ofs) = 0;
 }
 
+static void
+finish_category (category_t *category)
+{
+	pr_category_t *pr_category;
+	class_t    *class = category->class;
+	char       *name;
+
+	if (!category->def)	// probably in error recovery
+		return;
+	name = nva ("%s_%s", class->name, category->name);
+	pr_category = &G_STRUCT (pr_category_t, category->def->ofs);
+	EMIT_DEF (pr_category->instance_methods,
+			emit_methods (category->methods, name, 1));
+	EMIT_DEF (pr_category->class_methods,
+			emit_methods (category->methods, name, 0));
+	free (name);
+	emit_class_ref (class->name);
+	emit_category_name (class->name, category->name);
+}
+
+static void
+finish_class (class_t *class)
+{
+	pr_class_t *meta;
+	pr_class_t *cls;
+
+	if (!class->def)	// probably in error recovery
+		return;
+	cls = &G_STRUCT (pr_class_t, class->def->ofs);
+
+	meta = &G_STRUCT (pr_class_t, cls->class_pointer);
+
+	EMIT_DEF (meta->methods, emit_methods (class->methods,
+										   class->name, 0));
+
+	cls->instance_size = class->ivars ? type_size (class->ivars->type)
+									  : 0;
+	EMIT_DEF (cls->ivars, emit_struct (class->ivars, class->name));
+	EMIT_DEF (cls->methods, emit_methods (class->methods,
+										  class->name, 1));
+	if (class->super_class)
+		emit_class_ref (class->super_class->name);
+	emit_class_name (class->name);
+}
+
 void
 class_finish (class_type_t *class_type)
 {
-	if (!class_type->is_class) {
-		pr_category_t *pr_category;
-		category_t *category = class_type->c.category;
-		class_t    *class = category->class;
-		char       *name;
-
-		name = nva ("%s_%s", class->name, category->name);
-		pr_category = &G_STRUCT (pr_category_t, category->def->ofs);
-		EMIT_DEF (pr_category->instance_methods,
-				emit_methods (category->methods, name, 1));
-		EMIT_DEF (pr_category->class_methods,
-				emit_methods (category->methods, name, 0));
-		free (name);
-		emit_class_ref (class->name);
-		emit_category_name (class->name, category->name);
-	} else {
-		pr_class_t *meta;
-		pr_class_t *cls;
-		class_t    *class = class_type->c.class;
-
-		cls = &G_STRUCT (pr_class_t, class->def->ofs);
-
-		meta = &G_STRUCT (pr_class_t, cls->class_pointer);
-
-		EMIT_DEF (meta->methods, emit_methods (class->methods,
-											   class->name, 0));
-
-		cls->instance_size = class->ivars? type_size (class->ivars->type) : 0;
-		EMIT_DEF (cls->ivars, emit_struct (class->ivars, class->name));
-		EMIT_DEF (cls->methods, emit_methods (class->methods,
-											  class->name, 1));
-		if (class->super_class)
-			emit_class_ref (class->super_class->name);
-		emit_class_name (class->name);
+	switch (class_type->type) {
+		case ct_category:
+			finish_category (class_type->c.category);
+			break;
+		case ct_class:
+			finish_class (class_type->c.class);
+			break;
+		case ct_protocol:
+			return;			// probably in error recovery
 	}
 }
 
+class_t *
+extract_class (class_type_t *class_type)
+{
+	switch (class_type->type) {
+		case ct_class:
+			return current_class->c.class;
+		case ct_category:
+			return current_class->c.category->class;
+		case ct_protocol:
+			return 0;		// probably in error recovery
+	}
+	return 0;				// should not happen
+}
+
 int
-class_access (class_type_t *current_class, class_t *class)
+class_access (class_type_t *class_type, class_t *class)
 {
 	class_t    *cur;
-	if (current_class) {
-		if (current_class->is_class)
-			cur = current_class->c.class;
-		else
-			cur = current_class->c.category->class;
+	if (class_type) {
+		if (!(cur = extract_class (class_type)))
+			return vis_private;
 		if (cur == class)
 			return vis_private;
 		cur = cur->super_class;
@@ -407,14 +482,9 @@ class_ivar_expr (class_type_t *class_type, const char *name)
 	struct_field_t *ivar;
 	class_t    *c, *class;
 
-	if (!class_type)
+	if (!class_type || !(class = extract_class (class_type)))
 		return 0;
 
-	if (class_type->is_class) {
-		class = class_type->c.class;
-	} else {
-		class = class_type->c.category->class;
-	}
 	ivar = struct_find_field (class->ivars, name);
 	if (!ivar) {
 		for (c = class->super_class; c; c = c->super_class) {
@@ -431,20 +501,25 @@ class_ivar_expr (class_type_t *class_type, const char *name)
 method_t *
 class_find_method (class_type_t *class_type, method_t *method)
 {
-	methodlist_t *methods, *start_methods;
+	methodlist_t *methods = 0, *start_methods;
 	method_t   *m;
 	dstring_t  *sel;
-	class_t    *class, *start_class;
+	class_t    *class = 0, *start_class;
 	const char *class_name;
 	const char *category_name = 0;
 
-	if (!class_type->is_class) {
-		methods = class_type->c.category->methods;
-		category_name = class_type->c.category->name;
-		class = class_type->c.category->class;
-	} else {
-		class = class_type->c.class;
-		methods = class->methods;
+	switch (class_type->type) {
+		case ct_category:
+			methods = class_type->c.category->methods;
+			category_name = class_type->c.category->name;
+			class = class_type->c.category->class;
+			break;
+		case ct_class:
+			class = class_type->c.class;
+			methods = class->methods;
+			break;
+		case ct_protocol:
+			return 0;		// probably in error recovery
 	}
 	class_name = class->name;
 	start_methods = methods;
@@ -603,7 +678,7 @@ get_category (const char *class_name, const char *category_name, int create)
 	category->name = category_name;
 	category->class = class;
 	category->methods = new_methodlist ();
-	category->class_type.is_class = 0;
+	category->class_type.type = ct_category;
 	category->class_type.c.category = category;
 	if (class_name && category_name)
 		Hash_AddElement (category_hash, category);
@@ -647,7 +722,7 @@ def_t *
 class_pointer_def (class_t *class)
 {
 	def_t      *def;
-	class_type_t class_type = {1, {0}};
+	class_type_t class_type = {ct_class, {0}};
 
 	class_type.c.class = class;
 
@@ -785,6 +860,8 @@ get_protocol (const char *name, int create)
 	p = calloc (sizeof (protocol_t), 1);
 	p->name = name;
 	p->methods = new_methodlist ();
+	p->class_type.type = ct_protocol;
+	p->class_type.c.protocol = p;
 	if (name)
 		Hash_Add (protocol_hash, p);
 	return p;

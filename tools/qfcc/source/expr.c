@@ -2745,10 +2745,7 @@ super_expr (class_type_t *class_type)
 		return error (new_expr (),
 					  "`super' used outside of class implementation");
 
-	if (class_type->is_class)
-		class = class_type->c.class;
-	else
-		class = class_type->c.category->class;
+	class = extract_class (class_type);
 
 	if (!class->super_class)
 		return error (new_expr (), "%s has no super class", class->name);
@@ -2763,7 +2760,7 @@ super_expr (class_type_t *class_type)
 								  new_name_expr ("self"));
 	append_expr (super_block, e);
 
-	_class_type.is_class = 1;
+	_class_type.type = ct_class;
 	_class_type.c.class = class;
 	e = new_def_expr (class_def (&_class_type, 1));
 	e = assign_expr (binary_expr ('.', super, new_name_expr ("class")),
@@ -2795,10 +2792,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 
 		if (receiver->type == ex_error)
 			return receiver;
-		if (current_class->is_class)
-			class = current_class->c.class;
-		else
-			class = current_class->c.category->class;
+		class = extract_class (current_class);
 		rec_type = class->type;
 	} else {
 		if (receiver->type == ex_name) {
@@ -2817,10 +2811,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 				&& rec_type->aux_type->type != ev_class))
 			return error (receiver, "not a class/object");
 		if (self) {
-			if (current_class->is_class)
-				class = current_class->c.class;
-			else
-				class = current_class->c.category->class;
+			class = extract_class (current_class);
 			if (rec_type == &type_Class)
 				class_msg = 1;
 		} else {

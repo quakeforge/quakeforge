@@ -32,11 +32,18 @@
 #ifndef __class_h
 #define __class_h
 
+typedef enum {
+	ct_class,
+	ct_category,
+	ct_protocol,
+} ct_type_t;
+
 typedef struct class_type_s {
-	int is_class;
+	ct_type_t   type;
 	union {
 		struct category_s *category;
 		struct class_s    *class;
+		struct protocol_s *protocol;
 	} c;
 } class_type_t;
 
@@ -68,6 +75,7 @@ typedef struct protocol_s {
 	const char *name;
 	struct methodlist_s *methods;
 	struct protocollist_s *protocols;
+	class_type_t class_type;
 } protocol_t;
 
 typedef struct protocollist_s {
@@ -85,6 +93,8 @@ struct expr_s;
 struct method_s;
 struct protocol_s;
 
+class_t *extract_class (class_type_t *class_type);
+const char *get_class_name (class_type_t *class_type, int pretty);
 struct def_s *class_def (class_type_t *class_type, int external);
 void class_init (void);
 class_t *get_class (const char *name, int create);
