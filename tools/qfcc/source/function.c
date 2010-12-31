@@ -420,13 +420,14 @@ build_scope (function_t *f, def_t *func, param_t *params)
 }
 
 function_t *
-new_function (const char *name)
+new_function (def_t *func)
 {
 	function_t	*f;
 
 	ALLOC (1024, function_t, functions, f);
-	f->s_name = ReuseString (name);
+	f->s_name = ReuseString (func->name);
 	f->s_file = pr.source_file;
+	f->def = func;
 	return f;
 }
 
@@ -473,12 +474,11 @@ build_builtin_function (def_t *def, expr_t *bi_val)
 		return 0;
 	}
 
-	f = new_function (def->name);
+	f = new_function (def);
 	add_function (f);
 
 	f->builtin = bi_val->type == ex_integer ? bi_val->e.integer_val
 											: (int)bi_val->e.float_val;
-	f->def = def;
 	reloc_def_func (f, def->ofs);
 	build_function (f);
 	finish_function (f);

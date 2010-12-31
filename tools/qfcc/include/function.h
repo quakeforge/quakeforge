@@ -84,7 +84,7 @@ struct def_s *get_function_def (const char *name, struct type_s *type,
 								int overload, int create);
 struct expr_s *find_function (struct expr_s *fexpr, struct expr_s *params);
 void build_scope (function_t *f, struct def_s *func, param_t *params);
-function_t *new_function (const char *name);
+function_t *new_function (struct def_s *func);
 void add_function (function_t *f);
 function_t *build_code_function (function_t *f, struct expr_s *state_expr,
 								 struct expr_s *statements);

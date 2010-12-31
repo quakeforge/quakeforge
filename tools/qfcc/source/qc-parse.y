@@ -727,8 +727,7 @@ begin_function
 		{
 			if ($<def>0->constant)
 				error (0, "%s redefined", $<def>0->name);
-			$$ = current_func = new_function ($<def>0->name);
-			$$->def = $<def>0;
+			$$ = current_func = new_function ($<def>0);
 			if (!$$->def->external) {
 				add_function ($$);
 				reloc_def_func ($$, $$->def->ofs);
@@ -743,7 +742,7 @@ begin_function
 
 				lineno->fa.func = $$->aux - pr.auxfunctions;
 			}
-			build_scope ($$, $<def>0, current_params);
+			build_scope ($$, $$->def, current_params);
 			current_scope = $$->scope;
 			current_storage = st_local;
 		}
