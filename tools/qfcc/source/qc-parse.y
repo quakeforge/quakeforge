@@ -1264,6 +1264,7 @@ new_class_name
 				error (0, "redefinition of `%s'", $1);
 				$$ = get_class (0, 1);
 			}
+			current_class = &$$->class_type;
 		}
 	;
 
@@ -1303,6 +1304,7 @@ new_category_name
 				error (0, "redefinition of category `%s (%s)'", $1, $3);
 				$$ = get_category (0, 0, 1);
 			}
+			current_class = &$$->class_type;
 		}
 	;
 
@@ -1331,6 +1333,7 @@ protocol_name
 			} else {
 				$$ = get_protocol ($1, 1);
 			}
+			current_class = &$$->class_type;
 		}
 	;
 
@@ -1426,7 +1429,7 @@ protocoldef
 	: PROTOCOL protocol_name 
 	  protocolrefs			{ protocol_add_protocols ($2, $3); $<class>$ = 0; }
 	  methodprotolist			{ protocol_add_methods ($2, $5); }
-	  END						{ (void) ($<class>4); }
+	  END						{ current_class = 0; (void) ($<class>4); }
 	;
 
 protocolrefs

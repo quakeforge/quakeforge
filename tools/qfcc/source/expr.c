@@ -2882,6 +2882,9 @@ report_function (expr_t *e)
 		if (current_func) {
 			fprintf (stderr, "%s: In function `%s':\n", G_GETSTR (file),
 					 current_func->def->name);
+		} else if (current_class) {
+			fprintf (stderr, "%s: In class `%s':\n", G_GETSTR (file),
+					 get_class_name (current_class, 1));
 		} else {
 			fprintf (stderr, "%s: At top level:\n", G_GETSTR (file));
 		}
