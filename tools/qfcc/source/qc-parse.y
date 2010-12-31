@@ -225,6 +225,9 @@ defs
 	: /* empty */
 	| defs {if (current_class) PARSE_ERROR;} def
 	| defs obj_def
+	| error END { current_class = 0; yyerrok; }
+	| error ';' { yyerrok; }
+	| error '}' { yyerrok; }
 	;
 
 def
@@ -796,6 +799,7 @@ statements
 
 statement
 	: ';'						{ $$ = 0; }
+	| error ';'					{ $$ = 0; yyerrok; }
 	| statement_block			{ $$ = $1; }
 	| RETURN opt_expr ';'
 		{
