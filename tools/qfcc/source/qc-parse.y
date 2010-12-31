@@ -223,7 +223,7 @@ storage_class_t current_storage = st_global;
 
 defs
 	: /* empty */
-	| defs {if (current_class) PARSE_ERROR;} def
+	| defs def
 	| defs obj_def
 	| error END { current_class = 0; yyerrok; }
 	| error ';' { yyerrok; }
