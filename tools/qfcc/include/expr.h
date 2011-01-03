@@ -487,14 +487,14 @@ expr_t *new_bind_expr (expr_t *e1, expr_t *e2);
 
 /**	Create a reference to the global <code>.self</code> entity variable.
 
-	This is used for <code>@self</code>.
+	This is used for <code>\@self</code>.
 	\return			A new expression referencing the <code>.self</code> def.
 */
 expr_t *new_self_expr (void);
 
 /**	Create a reference to the <code>.this</code> entity field.
 
-	This is used for <code>@this</code>.
+	This is used for <code>\@this</code>.
 	\return			A new expression referencing the <code>.this</code> def.
 */
 expr_t *new_this_expr (void);
@@ -547,6 +547,14 @@ void inc_users (expr_t *e);
 					decremented.
 */
 void dec_users (expr_t *e);
+
+/**	Convert a name to an expression of the appropriate type.
+
+	Converts the expression in-place. If the exprssion is not a name
+	expression (ex_name), no converision takes place.
+
+	\param e		The expression to convert.
+*/
 void convert_name (expr_t *e);
 
 expr_t *append_expr (expr_t *block, expr_t *e);
@@ -584,9 +592,12 @@ expr_t *cast_expr (struct type_s *t, expr_t *e);
 
 void init_elements (struct def_s *def, expr_t *eles);
 
-expr_t *error (expr_t *e, const char *fmt, ...) __attribute__((format(printf, 2,3)));
-expr_t *warning (expr_t *e, const char *fmt, ...) __attribute__((format(printf, 2,3)));
-expr_t *notice (expr_t *e, const char *fmt, ...) __attribute__((format(printf, 2,3)));
+expr_t *error (expr_t *e, const char *fmt, ...)
+	__attribute__((format(printf, 2,3)));
+expr_t *warning (expr_t *e, const char *fmt, ...)
+	__attribute__((format(printf, 2,3)));
+expr_t *notice (expr_t *e, const char *fmt, ...)
+	__attribute__((format(printf, 2,3)));
 
 const char *get_op_string (int op);
 

@@ -141,16 +141,20 @@ convert_name (expr_t *e)
 		expr_t     *new;
 		class_t    *class;
 
+		/// Convert name to enum (integer constant).
 		new = get_enum (name);
 		if (new)
 			goto convert;
 
+		/// Convert name to class.
 		class = get_class (name, 0);
 		if (class) {
 			e->type = ex_def;
 			e->e.def = class_pointer_def (class);
 			return;
 		}
+
+		/// Convert name to def.
 		d = get_def (NULL, name, current_scope, st_none);
 		if (d) {
 			if (d->global) {
@@ -162,6 +166,8 @@ convert_name (expr_t *e)
 			e->e.def = d;
 			return;
 		}
+
+		/// Convert name to a class ivar in a message body.
 		new = class_ivar_expr (current_class, name);
 		if (new)
 			goto convert;
