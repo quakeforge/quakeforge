@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS= foreign
 
-SUBDIRS=	engine builtins
+SUBDIRS=	engine
 
 clean-local:
 	rm -f *.a

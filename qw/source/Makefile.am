@@ -72,7 +72,6 @@ qw_server_LIBS= \
 		$(top_builddir)/libs/net/libnet_chan.la \
 		$(top_builddir)/libs/ruamoko/libQFruamoko.la \
 		$(top_builddir)/libs/models/libQFmodels.la \
-		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/gib/libQFgib.la \
@@ -96,7 +95,6 @@ qw_client_LIBS= \
 		$(top_builddir)/libs/net/libnet_chan.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/video/targets/libQFjs.la \
-		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/audio/libQFcd.la \
 		$(top_builddir)/libs/audio/libQFsound.la \

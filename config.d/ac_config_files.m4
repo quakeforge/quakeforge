@@ -10,7 +10,6 @@
 	libs/console/Makefile
 	libs/gamecode/Makefile
 	libs/gamecode/engine/Makefile
-	libs/gamecode/builtins/Makefile
 	libs/gib/Makefile
 	libs/image/Makefile
 	libs/models/Makefile
