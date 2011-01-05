@@ -94,9 +94,6 @@ void free_local_inits (hashtab_t *def_list);
 static def_t *create_def (type_t *type, const char *name, scope_t *scope,
 						  storage_class_t storage);
 
-expr_t *argc_expr (void);
-expr_t *argv_expr (void);
-
 %}
 
 %union {
@@ -160,7 +157,7 @@ expr_t *argv_expr (void);
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS NIL
 %token	IFBE IFB IFAE IFA
 %token	SWITCH CASE DEFAULT STRUCT UNION ENUM TYPEDEF SUPER SELF THIS
-%token	ARGS ARGC ARGV EXTERN STATIC SYSTEM SIZEOF OVERLOAD
+%token	ARGS EXTERN STATIC SYSTEM SIZEOF OVERLOAD
 %token	<type> TYPE
 %token	<typename> TYPE_NAME
 %token	CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE PROTECTED
@@ -1122,8 +1119,6 @@ primary
 	: NAME      				{ $$ = new_name_expr ($1); }
 	| BREAK	%prec BREAK_PRIMARY { $$ = new_name_expr (save_string ("break")); }
 	| ARGS						{ $$ = new_name_expr (".args"); }
-	| ARGC						{ $$ = argc_expr (); }
-	| ARGV						{ $$ = argv_expr (); }
 	| SELF						{ $$ = new_self_expr (); }
 	| THIS						{ $$ = new_this_expr (); }
 	| const						{ $$ = $1; }
@@ -1826,18 +1821,4 @@ void
 free_local_inits (hashtab_t *def_list)
 {
 	Hash_DelTable (def_list);
-}
-
-expr_t *
-argc_expr (void)
-{
-	warning (0, "@argc deprecated: use @args.count");
-	return binary_expr ('.', new_name_expr (".args"), new_name_expr ("count"));
-}
-
-expr_t *
-argv_expr (void)
-{
-	warning (0, "@argv deprecated: use @args.list");
-	return binary_expr ('.', new_name_expr (".args"), new_name_expr ("list"));
 }

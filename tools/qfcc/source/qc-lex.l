@@ -320,8 +320,6 @@ static keyword_t keywords[] = {
 	{"@self",		SELF,	0,					0, PROG_VERSION},
 	{"@this",		THIS,	0,					0, PROG_VERSION},
 	{"@args",		ARGS,	0,					0, PROG_VERSION},
-	{"@argc",		ARGC,	0,					0, PROG_VERSION},
-	{"@argv",		ARGV,	0,					0, PROG_VERSION},
 	{"@va_list",	TYPE,	&type_va_list,		0, PROG_VERSION},
 	{"@param",		TYPE,	&type_param,		0, PROG_VERSION},
 	{"@extern",		EXTERN,	0,					1, PROG_ID_VERSION},
