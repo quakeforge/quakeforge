@@ -37,17 +37,19 @@ YFLAGS = -v -d
 
 if BUILD_QFCC
 qfcc=qfcc
+qfpc=qfpc
 qfpreqcc=qfpreqcc
 qfprogs=qfprogs
 else
 qfcc=
+qfpc=
 qfpreqcc=
 qfprogs=
 endif
 
-bin_PROGRAMS=	$(qfcc) $(qfprogs)
+bin_PROGRAMS=	$(qfcc) $(qfpc) $(qfprogs)
 bin_SCRIPTS=	$(qfpreqcc)
-EXTRA_PROGRAMS= qfcc qfprogs
+EXTRA_PROGRAMS= qfcc qfpc qfprogs
 
 common_src=\
 	class.c constfold.c cpp.c debug.c def.c emit.c expr.c function.c grab.c \
@@ -59,11 +61,16 @@ qfcc_SOURCES= qc-lex.l qc-parse.y $(common_src)
 qfcc_LDADD=			$(QFCC_LIBS)
 qfcc_DEPENDENCIES=	$(QFCC_DEPS)
 
+qfpc_SOURCES= qp-lex.l qp-parse.y $(common_src)
+qfpc_LDADD=			$(QFCC_LIBS)
+qfpc_DEPENDENCIES=	$(QFCC_DEPS)
+
 qfprogs_SOURCES= \
 	disassemble.c globals.c lines.c modules.c obj_file.c stub.c qfprogs.c strings.c
 qfprogs_LDADD=	$(QFCC_LIBS)
 qfprogs_DEPENDENCIES= $(QFCC_DEPS)
 
-BUILT_SOURCES=qc-parse.c qc-parse.h qc-lex.c
+BUILT_SOURCES=qc-parse.c qc-parse.h qc-lex.c qp-parse.c qp-parse.h qp-lex.c
 
-EXTRA_DIST=qc-lex.c qc-parse.c qc-parse.h qfpreqcc
+EXTRA_DIST=qc-lex.c qc-parse.c qc-parse.h qfpreqcc \
+			qp-parse.c qp-parse.h qp-lex.c
