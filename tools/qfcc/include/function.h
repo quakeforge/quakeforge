@@ -33,6 +33,9 @@
 #define __function_h
 
 #include "QF/pr_comp.h"
+#include "QF/pr_debug.h"
+
+#include "def.h"
 
 typedef struct overloaded_function_s {
 	struct overloaded_function_s *next;
