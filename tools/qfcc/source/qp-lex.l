@@ -82,12 +82,13 @@ ADDOP		[\-+]
 MULOP		[*/]
 ASSIGNOP	:=
 RANGE		\.\.
+FRAMEID		{ID}(\.{ID})*
 
 %x			GRAB_FRAME GRAB_OTHER COMMENT
 
 %%
-					grab_frame = -GRAB_FRAME;
-					grab_other = -GRAB_OTHER;
+					grab_frame = GRAB_FRAME;
+					grab_other = GRAB_OTHER;
 
 "{"					{ BEGIN (COMMENT); }
 <COMMENT>"{"		{ warning (0, "nested { in comment"); }
@@ -150,6 +151,19 @@ RANGE		\.\.
 {RANGE}				return RANGE;
 
 [!(){}.&|^~\[\];,#%?:]	return yytext[0];
+
+"$"{s}*{FRAMEID}	{
+						int ret = do_grab (yytext);
+						if (ret >= 0) {
+							yylval.integer_val = ret;
+							return INT_VAL;
+						} else {
+							BEGIN (-ret);
+						}
+					}
+
+<GRAB_FRAME>{FRAMEID}	add_frame_macro (yytext);
+<GRAB_OTHER>[^\r\n]*	/* skip */
 
 <*>\r*\n			{
 						pr.source_line++;
