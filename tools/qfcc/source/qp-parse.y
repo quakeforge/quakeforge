@@ -34,6 +34,13 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
 #include "class.h"
 #include "expr.h"
 #include "function.h"
@@ -114,13 +121,17 @@ int yylex (void);
 %token	WHILE DO RANGE ASSIGNOP NOT
 
 %type	<type>	standard_type type
-%type	<expr>	const num
+%type	<expr>	const num identifier_list
+%type	<param>	parameter_list arguments
+%type	<def>	subprogram_head
+%type	<function> subprogram_declaration
 
 %{
 function_t *current_func;
 class_type_t *current_class;
 expr_t  *local_expr;
 scope_t *current_scope;
+param_t *current_params;
 
 %}
 
@@ -130,6 +141,13 @@ program
 	: program_header
 	  declarations
 	  subprogram_declarations
+		{
+			type_t     *type = parse_params (&type_void, 0);
+			def_t      *def;
+			current_params = 0;
+			def = get_function_def (".main", type, current_scope, st_global, 0, 1);
+			current_func = begin_function (def, 0, 0);
+		}
 	  compound_statement
 	  '.'
 	;
@@ -140,11 +158,26 @@ program_header
 
 identifier_list
 	: ID
+		{
+			$$ = new_block_expr ();
+			append_expr ($$, new_name_expr ($1));
+		}
 	| identifier_list ',' ID
+		{
+			append_expr ($1, new_name_expr ($3));
+		}
 	;
 
 declarations
 	: declarations VAR identifier_list ':' type ';'
+		{
+			type_t     *type = $5;
+			expr_t     *id_list = $3;
+			expr_t     *e;
+
+			for (e = id_list->e.block.head; e; e = e->next)
+				get_def (type, e->e.string_val, current_scope, st_global);
+		}
 	| /* empty */
 	;
 
@@ -152,9 +185,9 @@ type
 	: standard_type				{ $$ = $1; }
 	| ARRAY '[' num RANGE num ']' OF standard_type
 		{
-			int top = $5->e.integer_val;
-			int bot = $3->e.integer_val;
-			$$ = array_type ($8, top - bot + 1);
+			if ($3->type != ex_integer || $5->type != ex_integer)
+				error (0, "array bounds must be integers");
+			$$ = based_array_type ($8, $3->e.integer_val, $5->e.integer_val);
 		}
 	;
 
@@ -168,23 +201,75 @@ subprogram_declarations
 	;
 
 subprogram_declaration
-	: subprogram_head ';' declarations compound_statement ';'
-	| subprogram_head '=' '#' const ';'
+	: subprogram_head ';'
+		{
+			current_func = begin_function ($1, 0, current_params);
+			current_scope = current_func->scope;
+			//current_storage = st_local;
+		}
+	  declarations compound_statement ';'
+		{
+			current_scope = current_scope->parent;
+			//current_storage = st_global;
+		}
+	| subprogram_head ASSIGNOP '#' const ';'
+		{
+			$$ = build_builtin_function ($1, $4);
+			build_scope ($$, $$->def, current_params);
+			flush_scope ($$->scope, 1);
+		}
 	;
 
 subprogram_head
 	: FUNCTION ID arguments ':' standard_type
+		{
+			type_t     *type = parse_params ($5, $3);
+			current_params = $3;
+			$$ = get_function_def ($2, type, current_scope, st_global, 0, 1);
+		}
 	| PROCEDURE ID arguments
+		{
+			type_t     *type = parse_params (&type_void, $3);
+			$$ = get_function_def ($2, type, current_scope, st_global, 0, 1);
+		}
 	;
 
 arguments
-	: '(' parameter_list ')'
-	| /* emtpy */
+	: '(' parameter_list ')'	{ $$ = $2; }
+	| /* emtpy */				{ $$ = 0; }
 	;
 
 parameter_list
 	: identifier_list ':' type
+		{
+			type_t     *type = $3;
+			expr_t     *id_list = $1;
+			expr_t     *e;
+			param_t   **p;
+
+			$$ = 0;
+			p = &$$;
+			for (e = id_list->e.block.head; e; e = e->next) {
+				*p = new_param (0, type, e->e.string_val);
+				p = &(*p)->next;
+			}
+		}
 	| parameter_list ';' identifier_list ':' type
+		{
+			type_t     *type = $5;
+			expr_t     *id_list = $3;
+			expr_t     *e;
+			param_t   **p;
+
+			$$ = $1;
+			p = &$$;
+			for ( ; *p; p = &(*p)->next)
+				;
+			for (e = id_list->e.block.head; e; e = e->next) {
+				*p = new_param (0, type, e->e.string_val);
+				p = &(*p)->next;
+			}
+		}
 	;
 
 compound_statement
