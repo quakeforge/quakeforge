@@ -187,7 +187,7 @@ static keyword_t keywords[] = {
 	{"array",		ARRAY,		0},
 	{"of",			OF,			0},
 	{"function",	FUNCTION,	0},
-	{"prodedure",	PROCEDURE,	0},
+	{"procedure",	PROCEDURE,	0},
 	{"begin",		PBEGIN,		0},
 	{"end",			END,		0},
 	{"if",			IF,			0},
