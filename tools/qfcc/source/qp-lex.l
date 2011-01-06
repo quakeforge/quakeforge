@@ -237,7 +237,7 @@ keyword_or_id (const char *token)
 	keyword = Hash_Find (keyword_tab, token);
 	if (keyword) {
 		if (keyword->value == ADDOP || keyword->value == MULOP) {
-			yylval.integer_val = yytext[0];
+			yylval.op = yytext[0];
 		} else {
 			yylval.type = keyword->type;
 		}

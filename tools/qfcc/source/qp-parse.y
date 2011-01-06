@@ -105,8 +105,8 @@ int yylex (void);
 %nonassoc ELSE
 
 %left	<string_val>	RELOP
-%left	<integer_val>	ADDOP
-%left	<integer_val>	MULOP
+%left	<op>			ADDOP
+%left	<op>			MULOP
 %right	UNARY
 
 %token	<type>				TYPE
