@@ -49,9 +49,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <QF/sys.h>
 
 #include "qfcc.h"
+#include "class.h"
 #include "debug.h"
 #include "expr.h"
-#include "class.h"
+#include "grab.h"
 #include "immediate.h"
 #include "options.h"
 #include "struct.h"
@@ -81,9 +82,7 @@ int yylex_destroy  (void);
 YY_DECL;
 
 
-int type_or_name (char *token);
-int do_grab (char *token);
-void add_frame_macro (char *token);
+static int type_or_name (char *token);
 
 extern YYSTYPE yylval;
 
@@ -98,16 +97,18 @@ s		[ \t]
 m		([\-+]?)
 FRAMEID {ID}(\.{ID})*
 
-%x		grab_frame grab_other comment
+%x		GRAB_FRAME GRAB_OTHER COMMENT
 
 %%
+					grab_frame = GRAB_FRAME;
+					grab_other = GRAB_OTHER;
 
-"/*"				{ BEGIN (comment); }
-<comment>"/*"		{ warning (0, "nested /* in comment"); }
-<comment>"*/"		{ BEGIN (INITIAL); }
-<comment>\r*\n		{ pr.source_line++; }
-<comment>.			/* nothing to do */
-<comment><<EOF>>	{ error (0, "EOF in comment"); return 0; }
+"/*"				{ BEGIN (COMMENT); }
+<COMMENT>"/*"		{ warning (0, "nested /* in comment"); }
+<COMMENT>"*/"		{ BEGIN (INITIAL); }
+<COMMENT>\r*\n		{ pr.source_line++; }
+<COMMENT>.			/* nothing to do */
+<COMMENT><<EOF>>	{ error (0, "EOF in comment"); return 0; }
 "//".*				/* nothing to do */
 
 ^#{s}+{DIGIT}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
@@ -233,14 +234,16 @@ FRAMEID {ID}(\.{ID})*
 
 "$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
-						if (ret > 0)
-							return ret;
-						else
+						if (ret >= 0) {
+							yylval.integer_val = ret;
+							return INT_VAL;
+						} else {
 							BEGIN (-ret);
+						}
 					}
 
-<grab_frame>{FRAMEID}	add_frame_macro (yytext);
-<grab_other>[^\r\n]*	/* skip */
+<GRAB_FRAME>{FRAMEID}	add_frame_macro (yytext);
+<GRAB_OTHER>[^\r\n]*	/* skip */
 
 <*>\r*\n			{
 						pr.source_line++;
@@ -333,7 +336,7 @@ keyword_get_key (void *kw, void *unused)
 	return ((keyword_t*)kw)->name;
 }
 
-int
+static int
 type_or_name (char *token)
 {
 	static hashtab_t *keyword_tab;
@@ -372,102 +375,6 @@ type_or_name (char *token)
 	}
 	yylval.string_val = save_string (token);
 	return NAME;
-}
-
-static hashtab_t *frame_tab;
-static hashtab_t *grab_tab;
-
-typedef struct frame_s {
-	struct frame_s *next;
-	const char *name;
-	int			num;
-} frame_t;
-
-static frame_t *free_frames;
-
-static frame_t grab_list[] = {
-	{0, "cd",		0},
-	{0, "origin",	0},
-	{0, "base",		0},
-	{0, "flags",	0},
-	{0, "scale",	0},
-	{0, "skin",		0},
-};
-
-static const char *
-frame_get_key (void *f, void *unused)
-{
-	return ((frame_t*)f)->name;
-}
-
-static void
-frame_free (void *_f, void *unused)
-{
-	frame_t    *f = (frame_t *)_f;
-	f->next = free_frames;
-	free_frames = f;
-}
-
-int
-do_grab (char *token)
-{
-	static int initialized;
-	frame_t *frame;
-
-	if (!initialized) {
-		size_t      i;
-
-		initialized = 1;
-		frame_tab = Hash_NewTable (1021, frame_get_key, frame_free, 0);
-		grab_tab = Hash_NewTable (1021, frame_get_key, 0, 0);
-		for (i = 0; i < sizeof (grab_list) / sizeof (grab_list[0]); i++)
-			Hash_Add (grab_tab, &grab_list[i]);
-	}
-	while (isspace ((unsigned char)*++token))
-		// advance over $ and leading space
-		;
-	if (!strcmp (token, "frame"))
-		return -grab_frame;
-	if (!strcmp (token, "frame_reset")) {
-		clear_frame_macros ();
-		return -grab_other;
-	}
-	if (Hash_Find (grab_tab, token))
-		return -grab_other;
-	frame = Hash_Find (frame_tab, token);
-	if (frame) {
-		yylval.integer_val = frame->num;
-		return INT_VAL;
-	}
-	return 0;
-}
-
-static int frame_number;
-
-void
-add_frame_macro (char *token)
-{
-	frame_t *frame;
-
-	if (Hash_Find (frame_tab, token)) {
-		warning (0, "duplicate frame macro `%s'", token);
-		if (options.traditional)
-			frame_number++;
-		return;
-	}
-	ALLOC (1024, frame_t, frames, frame);
-
-	frame->name = save_string (token);
-	frame->num = frame_number++;
-	Hash_Add (frame_tab, frame);
-}
-
-void
-clear_frame_macros (void)
-{
-	frame_number = 0;
-	if (frame_tab)
-		Hash_FlushTable (frame_tab);
 }
 
 #ifdef YY_FLEX_REALLOC_HACK
