@@ -45,6 +45,7 @@ typedef struct type_s {
 	union {
 		struct class_s	*class;		// for ev_class
 		struct struct_s *strct;		// for ev_struct
+		int         base;			// for arrays
 	} s;
 } type_t;
 
@@ -97,6 +98,7 @@ typedef_t *get_typedef (const char *name);
 type_t *field_type (type_t *aux);
 type_t *pointer_type (type_t *aux);
 type_t *array_type (type_t *aux, int size);
+type_t *based_array_type (type_t *aux, int base, int top);
 void print_type (type_t *type);
 const char *encode_params (type_t *type);
 void encode_type (struct dstring_s *encoding, type_t *type);

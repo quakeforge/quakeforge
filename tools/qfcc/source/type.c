@@ -229,6 +229,19 @@ array_type (type_t *aux, int size)
 	return find_type (&new);
 }
 
+type_t *
+based_array_type (type_t *aux, int base, int top)
+{
+	type_t      new;
+
+	memset (&new, 0, sizeof (new));
+	new.type = ev_array;
+	new.aux_type = aux;
+	new.num_parms = top - base + 1;
+	new.s.base = base;
+	return find_type (&new);
+}
+
 void
 print_type (type_t *type)
 {
