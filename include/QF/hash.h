@@ -30,6 +30,7 @@
 #define __hash_h
 
 #include <stdint.h>
+#include <stdlib.h>
 
 /** \defgroup hash Hash tables
 	\ingroup utils
