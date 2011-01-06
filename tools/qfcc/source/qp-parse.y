@@ -44,6 +44,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "class.h"
 #include "expr.h"
 #include "function.h"
+#include "qfcc.h"
 #include "type.h"
 
 #define YYDEBUG 1
@@ -101,8 +102,24 @@ int yylex (void);
 	struct struct_s *strct;
 }
 
+// these tokens are common with qc
 %nonassoc IFX
 %nonassoc ELSE
+%nonassoc BREAK_PRIMARY
+%nonassoc ';'
+%nonassoc CLASS_NOT_CATEGORY
+%nonassoc STORAGEX
+
+%right  <op> '=' ASX PAS /* pointer assign */
+%right  '?' ':'
+%left   OR
+%left   AND
+%left   '|'
+%left   '^'
+%left   '&'
+%left   EQ NE
+%left   LE GE LT GT
+// end of tokens common with qc
 
 %left	<string_val>	RELOP
 %left	<op>			ADDOP
@@ -121,10 +138,14 @@ int yylex (void);
 %token	WHILE DO RANGE ASSIGNOP NOT
 
 %type	<type>	standard_type type
-%type	<expr>	const num identifier_list
+%type	<expr>	const num identifier_list statement_list statement
+%type	<expr>	optional_statements compound_statement procedure_statement
+%type	<expr>	expression_list expression unary_expr primary variable
 %type	<param>	parameter_list arguments
-%type	<def>	subprogram_head
+%type	<def>	subprogram_head program_head
 %type	<function> subprogram_declaration
+%type	<op>	sign
+%type	<expr>	name
 
 %{
 function_t *current_func;
@@ -133,27 +154,36 @@ expr_t  *local_expr;
 scope_t *current_scope;
 param_t *current_params;
 
+static int convert_relop (const char *relop);
 %}
 
 %%
 
 program
-	: program_header
+	: program_head
 	  declarations
 	  subprogram_declarations
 		{
-			type_t     *type = parse_params (&type_void, 0);
-			def_t      *def;
-			current_params = 0;
-			def = get_function_def (".main", type, current_scope, st_global, 0, 1);
-			current_func = begin_function (def, 0, 0);
+			$1 = get_function_def ($1->name, $1->type, current_scope,
+								   st_global, 0, 1);
+			current_func = begin_function ($1, 0, 0);
 		}
-	  compound_statement
-	  '.'
+	  compound_statement '.'
+	  	{
+			current_scope = current_scope->parent;
+			//current_storage = st_global;
+			build_code_function (current_func, 0, $5);
+			current_func = 0;
+		}
 	;
 
-program_header
+program_head
 	: PROGRAM ID '(' identifier_list ')' ';'
+		{
+			type_t     *type = parse_params (&type_void, 0);
+			current_params = 0;
+			$$ = get_function_def ($2, type, current_scope, st_extern, 0, 1);
+		}
 	;
 
 identifier_list
@@ -211,6 +241,13 @@ subprogram_declaration
 		{
 			current_scope = current_scope->parent;
 			//current_storage = st_global;
+			//FIXME want a true void return
+			if ($1->type->aux_type->type != ev_void)
+				append_expr ($5,
+							 return_expr (current_func,
+							 			  new_ret_expr ($1->type->aux_type)));
+			build_code_function (current_func, 0, $5);
+			current_func = 0;
 		}
 	| subprogram_head ASSIGNOP '#' const ';'
 		{
@@ -273,61 +310,195 @@ parameter_list
 	;
 
 compound_statement
-	: PBEGIN optional_statements END
+	: PBEGIN optional_statements END	{ $$ = $2; }
 	;
 
 optional_statements
-	: statement_list
-	| /* emtpy */
+	: statement_list					{ $$ = $1; }
+	| /* emtpy */						{ $$ = 0; }
 	;
 
 statement_list
 	: statement
+		{
+			$$ = new_block_expr ();
+			append_expr ($$, $1);
+		}
 	| statement_list ';' statement
+		{
+			$$ = $1;
+			append_expr ($$, $3);
+		}
 	;
 
 statement
 	: variable ASSIGNOP expression
-	| procedure_statement
-	| compound_statement
+		{
+			convert_name ($1);
+			if ($1->type == ex_def && extract_type ($1) == ev_func)
+				$1 = new_ret_expr ($1->e.def->type->aux_type);
+			$$ = assign_expr ($1, $3);
+		}
+	| procedure_statement							{ $$ = $1; }
+	| compound_statement							{ $$ = $1; }
 	| IF expression THEN statement ELSE statement
+		{
+			int         line = pr.source_line;
+			string_t    file = pr.source_file;
+			expr_t     *tl = new_label_expr ();
+			expr_t     *fl = new_label_expr ();
+			expr_t     *nl = new_label_expr ();
+
+			pr.source_line = $2->line;
+			pr.source_file = $2->file;
+
+			$$ = new_block_expr ();
+
+			$2 = convert_bool ($2, 1);
+			if ($2->type != ex_error) {
+				backpatch ($2->e.bool.true_list, tl);
+				backpatch ($2->e.bool.false_list, fl);
+				append_expr ($2->e.bool.e, tl);
+				append_expr ($$, $2);
+			}
+			append_expr ($$, $4);
+			append_expr ($$, new_unary_expr ('g', nl));
+
+			append_expr ($$, fl);
+			append_expr ($$, $6);
+			append_expr ($$, nl);
+
+			pr.source_line = line;
+			pr.source_file = file;
+		}
 	| IF expression THEN statement %prec IFX
+		{
+			int         line = pr.source_line;
+			string_t    file = pr.source_file;
+			expr_t     *tl = new_label_expr ();
+			expr_t     *fl = new_label_expr ();
+
+			pr.source_line = $2->line;
+			pr.source_file = $2->file;
+
+			$$ = new_block_expr ();
+
+			$2 = convert_bool ($2, 1);
+			if ($2->type != ex_error) {
+				backpatch ($2->e.bool.true_list, tl);
+				backpatch ($2->e.bool.false_list, fl);
+				append_expr ($2->e.bool.e, tl);
+				append_expr ($$, $2);
+			}
+			append_expr ($$, $4);
+			append_expr ($$, fl);
+
+			pr.source_line = line;
+			pr.source_file = file;
+		}
 	| WHILE expression DO statement
+		{
+			int         line = pr.source_line;
+			string_t    file = pr.source_file;
+			expr_t     *l1 = new_label_expr ();
+			expr_t     *l2 = new_label_expr ();
+			expr_t     *cont = new_label_expr ();
+
+			pr.source_line = $2->line;
+			pr.source_file = $2->file;
+
+			$$ = new_block_expr ();
+
+			append_expr ($$, new_unary_expr ('g', cont));
+			append_expr ($$, l1);
+			append_expr ($$, $4);
+			append_expr ($$, cont);
+
+			$2 = convert_bool ($2, 1);
+			if ($2->type != ex_error) {
+				backpatch ($2->e.bool.true_list, l1);
+				backpatch ($2->e.bool.false_list, l2);
+				append_expr ($2->e.bool.e, l2);
+				append_expr ($$, $2);
+			}
+
+			pr.source_line = line;
+			pr.source_file = file;
+		}
 	;
 
 variable
-	: ID
-	| ID '[' expression ']'
+	: name							{ $$ = $1; }
+	| name '[' expression ']'		{ $$ = array_expr ($1, $3); }
 	;
 
 procedure_statement
-	: ID
-	| ID '(' expression_list ')'
+	: name							{ $$ = function_expr ($1, 0); }
+	| name '(' expression_list ')'	{ $$ = function_expr ($1, $3); }
 	;
 
 expression_list
 	: expression
 	| expression_list ',' expression
+		{
+			$3->next = $1;
+			$$ = $3;
+		}
 	;
 
 unary_expr
 	: primary
 	| sign unary_expr	%prec UNARY
+		{
+			if ($1 == '-')
+				$$ = unary_expr ('-', $2);
+			else
+				$$ = $2;
+		}
 	| NOT expression	%prec UNARY
+		{
+			$$ = unary_expr ('!', $2);
+		}
 	;
 
 primary
 	: variable
-	| const
-	| ID '(' expression_list ')'
-	| '(' expression ')'
+		{
+			convert_name ($1);
+			if ($1->type == ex_def && extract_type ($1) == ev_func)
+				$1 = function_expr ($1, 0);
+			$$ = $1;
+		}
+	| const							{ $$ = $1; }
+	| name '(' expression_list ')'	{ $$ = function_expr ($1, $3); }
+	| '(' expression ')'			{ $$ = $2; }
 	;
 
 expression
 	: unary_expr
 	| expression RELOP expression
+		{
+			int         op = convert_relop ($2);
+			$$ = binary_expr (op, $1, $3);
+		}
 	| expression ADDOP expression
+		{
+			if ($2 == 'o')
+				$$ = bool_expr (OR, new_label_expr (), $1, $3);
+			else
+				$$ = binary_expr ($2, $1, $3);
+		}
 	| expression MULOP expression
+		{
+			if ($2 == 'd')
+				$2 = '/';
+			else if ($2 == 'm')
+				$2 = '%';
+			if ($2 == 'a')
+				$$ = bool_expr (AND, new_label_expr (), $1, $3);
+			else
+				$$ = binary_expr ($2, $1, $3);
+		}
 	;
 
 sign
@@ -338,8 +509,12 @@ sign
 		}
 	;
 
+name
+	: ID						{ $$ = new_name_expr ($1); }
+	;
+
 const
-	: num
+	: num						{ $$ = $1; }
 	| STRING_VAL				{ $$ = new_string_expr ($1); }
 	;
 
@@ -351,3 +526,32 @@ num
 	;
 
 %%
+
+static int
+convert_relop (const char *relop)
+{
+	switch (relop[0]) {
+		case '=':
+			return EQ;
+		case '<':
+			switch (relop[1]) {
+				case 0:
+					return LT;
+				case '>':
+					return NE;
+				case '=':
+					return LE;
+			}
+			break;
+		case '>':
+			switch (relop[1]) {
+				case 0:
+					return GT;
+				case '=':
+					return GE;
+			}
+			break;
+	}
+	error (0, "internal: bad relop %s", relop);
+	return EQ;
+}
