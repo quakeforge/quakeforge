@@ -142,8 +142,8 @@ usage (int status)
 	printf ("Usage: %s [options] [files]\n", "qfprogs");
 	printf (
 "    -d, --disassemble   Dump code disassembly.\n"
-"    -F, --fields        Dump entity fields.\n"
-"    -f, --functions     Dump functions.\n"
+"    -f, --fields        Dump entity fields.\n"
+"    -F, --functions     Dump functions.\n"
 "    -g, --globals       Dump global variables.\n"
 "    -h, --help          Display this help and exit\n"
 "    -l, --lines         Dump line number information.\n"
