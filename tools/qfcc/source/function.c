@@ -444,6 +444,32 @@ add_function (function_t *f)
 }
 
 function_t *
+begin_function (def_t *def, const char *nicename, param_t *params)
+{
+	function_t *func;
+
+	if (def->constant)
+		error (0, "%s redefined", def->name);
+	func = new_function (def, nicename);
+	if (!def->external) {
+		add_function (func);
+		reloc_def_func (func, def->ofs);
+	}
+	func->code = pr.code->size;
+	if (options.code.debug && func->aux) {
+		pr_lineno_t *lineno = new_lineno ();
+		func->aux->source_line = def->line;
+		func->aux->line_info = lineno - pr.linenos;
+		func->aux->local_defs = pr.num_locals;
+		func->aux->return_type = def->type->aux_type->type;
+
+		lineno->fa.func = func->aux - pr.auxfunctions;
+	}
+	build_scope (func, def, params);
+	return func;
+}
+
+function_t *
 build_code_function (function_t *f, expr_t *state_expr, expr_t *statements)
 {
 	build_function (f);

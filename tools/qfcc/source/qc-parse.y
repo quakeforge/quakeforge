@@ -32,7 +32,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
@@ -300,13 +300,13 @@ cfunction
 	;
 
 cfunction_def
-	: OVERLOAD non_func_type identifier function_decl 
+	: OVERLOAD non_func_type identifier function_decl
 		{
 			type_t     *type = parse_params ($2, current_params = $4);
 			$$ = get_function_def ($3, type, current_scope,
 								   current_storage, 1, 1);
 		}
-	| non_func_type identifier function_decl 
+	| non_func_type identifier function_decl
 		{
 			type_t     *type = parse_params ($1, current_params = $3);
 			$$ = get_function_def ($2, type, current_scope,
@@ -726,24 +726,8 @@ opt_comma
 begin_function
 	: /*empty*/
 		{
-			if ($<def>0->constant)
-				error (0, "%s redefined", $<def>0->name);
-			$$ = current_func = new_function ($<def>0, $<string_val>-1);
-			if (!$$->def->external) {
-				add_function ($$);
-				reloc_def_func ($$, $$->def->ofs);
-			}
-			$$->code = pr.code->size;
-			if (options.code.debug && current_func->aux) {
-				pr_lineno_t *lineno = new_lineno ();
-				$$->aux->source_line = $$->def->line;
-				$$->aux->line_info = lineno - pr.linenos;
-				$$->aux->local_defs = pr.num_locals;
-				$$->aux->return_type = $$->def->type->aux_type->type;
-
-				lineno->fa.func = $$->aux - pr.auxfunctions;
-			}
-			build_scope ($$, $$->def, current_params);
+			$$ = begin_function ($<def>0, $<string_val>-1, current_params);
+			current_func = $$;
 			current_scope = $$->scope;
 			current_storage = st_local;
 		}
@@ -758,7 +742,7 @@ end_function
 	;
 
 statement_block
-	: '{' 
+	: '{'
 		{
 			if (!options.traditional) {
 				scope_t    *scope = new_scope (sc_local, current_scope->space,
@@ -1428,7 +1412,7 @@ classdef
 	;
 
 protocoldef
-	: PROTOCOL protocol_name 
+	: PROTOCOL protocol_name
 	  protocolrefs			{ protocol_add_protocols ($2, $3); $<class>$ = 0; }
 	  methodprotolist			{ protocol_add_methods ($2, $5); }
 	  END						{ current_class = 0; (void) ($<class>4); }

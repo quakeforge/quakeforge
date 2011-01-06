@@ -90,6 +90,8 @@ struct expr_s *find_function (struct expr_s *fexpr, struct expr_s *params);
 void build_scope (function_t *f, struct def_s *func, param_t *params);
 function_t *new_function (struct def_s *func, const char *nice_name);
 void add_function (function_t *f);
+function_t *begin_function (struct def_s *def, const char *nicename,
+							param_t *params);
 function_t *build_code_function (function_t *f, struct expr_s *state_expr,
 								 struct expr_s *statements);
 function_t *build_builtin_function (struct def_s *def, struct expr_s *bi_val);
