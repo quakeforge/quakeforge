@@ -169,24 +169,24 @@ symbol_t *symtab_add_class (symtab_t *symtab, const char *name,
 
 	\dot
 	digraph symtab_flat_copy {
-		layout=fdp;
-		parent;
+		layout=dot; rankdir=LR; compound=true; nodesep=1.0;
 		subgraph clusterI {
 			node [shape=record];
-			root [label="{<p>parent|integer\ x;|integer\ y;|float\ z;}"];
-			base [label="{<p>parent|float\ w;|float\ x;}"];
-			cur  [label="{<p>parent|float\ y;}"];
+			root [label="<p>parent|integer\ x;|integer\ y;|float\ z;"];
+			base [label="<p>parent|float\ w;|float\ x;"];
+			cur  [label="<p>parent|float\ y;"];
+			symtab [shape=ellipse];
 			cur:p -> base;
 			base:p -> root;
 		}
 		subgraph clusterO {
 			node [shape=record];
-			out [label="{<p>parent|float\ z;|float\ w;|float\ x;|float\ y;}"];
+			out [label="<p>parent|float\ z;|float\ w;|float\ x;|float\ y;"];
+			return [shape=ellipse];
+			parent [shape=ellipse];
 		}
-		symtab;
-		return;
 		symtab -> cur;
-		clusterI -> clusterO [len=1];
+		cur -> out [ltail=clusterI,lhead=clusterO];
 		out:p -> parent;
 		return -> out;
 	}
