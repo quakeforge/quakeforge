@@ -93,9 +93,13 @@ FRAMEID		{ID}(\.{ID})*
 "{"					{ BEGIN (COMMENT); }
 <COMMENT>"{"		{ warning (0, "nested { in comment"); }
 <COMMENT>"}"		{ BEGIN (INITIAL); }
+"(*"					{ BEGIN (COMMENT); }
+<COMMENT>"(*"		{ warning (0, "nested (* in comment"); }
+<COMMENT>"*)"		{ BEGIN (INITIAL); }
 <COMMENT>\r*\n		{ pr.source_line++; }
 <COMMENT>.			/* nothing to do, with people like you */
 <COMMENT><<EOF>>	{ error (0, "EOF in comment"); return 0; }
+"//".*				/* nothing to do, with people like you */
 
 ^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$		{ line_info (yytext + 1); }
 ^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$	{ line_info (yytext + 1); }
