@@ -34,6 +34,9 @@
 
 #include "QF/pr_debug.h"
 
+void push_source_file (void);
+void pop_source_file (void);
+void line_info (char *text);
 pr_auxfunction_t *new_auxfunction (void);
 pr_lineno_t *new_lineno (void);
 struct ddef_s *new_local (void);

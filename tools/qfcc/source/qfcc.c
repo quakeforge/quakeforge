@@ -56,6 +56,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <errno.h>
 
 #include <QF/cbuf.h>
@@ -125,6 +126,187 @@ save_string (const char *str)
 	s = strdup (str);
 	Hash_Add (saved_strings, s);
 	return s;
+}
+
+const char *
+make_string (char *token, char **end)
+{
+	char        s[2];
+	int         c;
+	int         i;
+	int         mask;
+	int         boldnext;
+	int         quote;
+	static dstring_t *str;
+
+	if (!str)
+		str = dstring_newstr ();
+	dstring_clearstr (str);
+
+	s[1] = 0;
+
+	mask = 0x00;
+	boldnext = 0;
+
+	quote = *token++;
+	do {
+		c = *token++;
+		if (!c)
+			error (0, "EOF inside quote");
+		if (c == '\n')
+			error (0, "newline inside quote");
+		if (c == '\\') {				// escape char
+			c = *token++;
+			if (!c)
+				error (0, "EOF inside quote");
+			switch (c) {
+				case '\\':
+					c = '\\';
+					break;
+				case 'n':
+					c = '\n';
+					break;
+				case '"':
+					c = '\"';
+					break;
+				case '\'':
+					c = '\'';
+					break;
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+					if (!options.qccx_escapes) {
+						for (i = c = 0; i < 3
+							 && *token >= '0'
+							 && *token <= '7'; i++, token++) {
+							c *= 8;
+							c += *token - '0';
+						}
+						if (!*token)
+							error (0, "EOF inside quote");
+						break;
+					}
+				case '8':
+				case '9':
+					c = 18 + c - '0';
+					break;
+				case 'x':
+					c = 0;
+					while (*token && isxdigit ((unsigned char)*token)) {
+						c *= 16;
+						if (*token <= '9')
+							c += *token - '0';
+						else if (*token <= 'F')
+							c += *token - 'A' + 10;
+						else
+							c += *token - 'a' + 10;
+						token++;
+					}
+					if (!*token)
+						error (0, "EOF inside quote");
+					break;
+				case 'a':
+					c = '\a';
+					break;
+				case 'b':
+					if (options.qccx_escapes)
+						mask ^= 0x80;
+					else
+						c = '\b';
+					break;
+				case 'e':
+					c = '\033';
+					break;
+				case 'f':
+					c = '\f';
+					break;
+				case 'r':
+					c = '\r';
+					break;
+				case 't':
+					c = '\t';
+					break;
+				case 'v':
+					c = '\v';
+					break;
+				case '^':
+					if (*token == '\"')
+						error (0, "Unexpected end of string after \\^");
+					boldnext = 1;
+					continue;
+				case '[':
+					c = 0x90;		// gold [
+					break;
+				case ']':
+					c = 0x91;		// gold ]
+					break;
+				case '.':
+					c = 28;			// center dot
+					break;
+				case '<':
+					if (options.qccx_escapes)
+						c = 29;			// brown left end
+					else
+						mask = 0x80;
+					continue;
+				case '-':
+					c = 30;			// brown center bit
+					break;
+				case '>':
+					if (options.qccx_escapes)
+						c = 31;			// broun right end
+					else
+						mask = 0x00;
+					continue;
+				case '(':
+					c = 128;		// left slider end
+					break;
+				case '=':
+					c = 129;		// slider center
+					break;
+				case ')':
+					c = 130;		// right slider end
+					break;
+				case '{':
+					c = 0;
+					while (*token && *token != '}'
+						   && isdigit ((unsigned char)*token)) {
+						c *= 10;
+						c += *token++ - '0';
+					}
+					if (!*token)
+						error (0, "EOF inside quote");
+					if (*token != '}')
+						error (0, "non-digit inside \\{}");
+					else
+						token++;
+					if (c > 255)
+						warning (0, "\\{%d} > 255", c);
+					break;
+				default:
+					error (0, "Unknown escape char");
+					break;
+			}
+		} else if (c == quote) {
+			break;
+		}
+		if (boldnext)
+			c = c ^ 0x80;
+		boldnext = 0;
+		c = c ^ mask;
+		s[0] = c;
+		dstring_appendstr (str, s);
+	} while (1);
+
+	if (end)
+		*end = token;
+
+	return save_string (str->str);
 }
 
 #ifdef _WIN32

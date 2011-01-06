@@ -41,11 +41,77 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "QF/pr_comp.h"
 
 #include "debug.h"
+#include "expr.h"
+#include "immediate.h"
 #include "qfcc.h"
+
+static srcline_t *free_srclines;
+
+void
+push_source_file (void)
+{
+	srcline_t  *srcline;
+	ALLOC (16, srcline_t, srclines, srcline);
+	srcline->source_file = pr.source_file;
+	srcline->source_line = pr.source_line;
+	srcline->next = pr.srcline_stack;
+	pr.srcline_stack = srcline;
+}
+
+void
+pop_source_file (void)
+{
+	srcline_t  *tmp;
+
+	if (!pr.srcline_stack) {
+		notice (0, "unbalanced #includes. bug in preprocessor?");
+		return;
+	}
+	tmp = pr.srcline_stack;
+	pr.srcline_stack = tmp->next;
+	tmp->next = free_srclines;
+	free_srclines = tmp;
+}
+
+void
+line_info (char *text)
+{
+	char *p;
+	char *s;
+	const char *str;
+	int line;
+	int flags;
+
+	p = text;
+	line = strtol (p, &s, 10);
+	p = s;
+	while (isspace ((unsigned char)*p))
+		p++;
+	if (!*p)
+		error (0, "Unexpected end of file");
+	str = make_string (p, &s);		// grab the filename
+	p = s;
+	while (isspace ((unsigned char) *p))
+		p++;
+	flags = strtol (p, &s, 10);
+	switch (flags) {
+		case 1:
+			push_source_file ();
+			break;
+		case 2:
+			pop_source_file ();
+			break;
+	}
+	while (*p && *p != '\n')	// ignore rest
+		p++;
+	pr.source_line = line - 1;
+	pr.source_file = ReuseString (strip_path (str));
+}
 
 pr_auxfunction_t *
 new_auxfunction (void)

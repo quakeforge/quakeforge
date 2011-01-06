@@ -120,6 +120,8 @@ const char *strip_path (const char *filename);
 */
 const char *save_string (const char *str);
 
+const char *make_string (char *token, char **end);
+
 void clear_frame_macros (void);
 extern FILE *yyin;
 int yyparse (void);
