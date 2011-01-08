@@ -252,8 +252,10 @@ subprogram_declaration
 	| subprogram_head ASSIGNOP '#' const ';'
 		{
 			$$ = build_builtin_function ($1, $4);
-			build_scope ($$, $$->def, current_params);
-			flush_scope ($$->scope, 1);
+			if ($$) {
+				build_scope ($$, $$->def, current_params);
+				flush_scope ($$->scope, 1);
+			}
 		}
 	;
 

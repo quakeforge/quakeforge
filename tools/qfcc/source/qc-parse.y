@@ -535,8 +535,10 @@ builtin_function
 			def_t *def = $<def>-1;
 			if (!def->external) {
 				$$ = build_builtin_function (def, $<expr>0);
-				build_scope ($$, $$->def, current_params);
-				flush_scope ($$->scope, 1);
+				if ($$) {
+					build_scope ($$, $$->def, current_params);
+					flush_scope ($$->scope, 1);
+				}
 			}
 		}
 	;
