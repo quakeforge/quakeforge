@@ -458,15 +458,20 @@ PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 	pr_uint_t    i;
 	pr_auxfunction_t *aux_func;
 	ddef_t      *ddef = 0;
+	int          num_params;
+	int          param_offs = 0;
 
 	if (!pr->debug)
 		return 0;
 	if (!func)
 		return 0;
 
-	if (func->numparms >= 0 && parm >= (unsigned) func->numparms)
-		return 0;
-	if (func->numparms < 0 && parm >= (unsigned) -func->numparms)
+	num_params = func->numparms;
+	if (num_params < 0) {
+		num_params = ~num_params;	// one's compliment
+		param_offs = 1;	// skip over @args def
+	}
+	if (parm >= (unsigned) num_params)
 		return 0;
 
 	aux_func = pr->auxfunction_map[func - pr->pr_functions];
@@ -474,7 +479,7 @@ PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 		return 0;
 
 	for (i = 0; i < aux_func->num_locals; i++) {
-		ddef = &pr->local_defs[aux_func->local_defs + i];
+		ddef = &pr->local_defs[aux_func->local_defs + param_offs + i];
 		if (!parm--)
 			break;
 		if (ddef->type == ev_vector)
