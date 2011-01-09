@@ -409,7 +409,7 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	new_struct_field (method_list, &type_pointer, "method_next", vis_public);
 	new_struct_field (method_list, &type_integer, "method_count", vis_public);
 	for (i = 0; i < count; i++)
-		new_struct_field (method_list, type_Method.t.fldptr.type, 0,
+		new_struct_field (method_list, &type_Method, 0,
 						  vis_public);
 	methods_def = get_def (method_list->type,
 						   va ("_OBJ_%s_METHODS_%s", type, name),

@@ -46,8 +46,8 @@ typedef enum {
 //@extern SEL sel_register_typed_name (string name, string type);
 @extern BOOL sel_is_mapped (SEL aSel);
 
-@extern Method class_get_class_method (Class class, SEL aSel);
-@extern Method class_get_instance_method (Class class, SEL aSel);
+@extern Method []class_get_class_method (Class class, SEL aSel);
+@extern Method []class_get_instance_method (Class class, SEL aSel);
 @extern Class class_pose_as (Class imposter, Class superclass);
 @extern id class_create_instance (Class class);
 @extern string class_get_class_name (Class class);
@@ -61,7 +61,7 @@ typedef enum {
 @extern (void []) class_get_gc_object_type (Class class);
 @extern void class_ivar_set_gcinvisible (Class class, string ivarname, BOOL gcInvisible);
 
-@extern IMP method_get_imp (Method method);
+@extern IMP method_get_imp (Method []method);
 @extern IMP get_imp (Class class, SEL sel);
 
 @extern id object_copy (id object);

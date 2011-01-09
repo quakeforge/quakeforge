@@ -32,8 +32,8 @@ SEL (string name) sel_register_name = #0;
 //SEL (string name, string type) sel_register_typed_name = #0;
 BOOL (SEL aSel) sel_is_mapped = #0;
 
-Method (Class class, SEL aSel) class_get_class_method = #0;
-Method (Class class, SEL aSel) class_get_instance_method = #0;
+Method [](Class class, SEL aSel) class_get_class_method = #0;
+Method [](Class class, SEL aSel) class_get_instance_method = #0;
 Class (Class imposter, Class superclass) class_pose_as = #0;
 id (Class class) class_create_instance = #0;
 string (Class class) class_get_class_name = #0;
@@ -47,7 +47,7 @@ void (Class class, integer version) class_set_version = #0;
 (void []) (Class class) class_get_gc_object_type = #0;
 void (Class class, string ivarname, BOOL gcInvisible) class_ivar_set_gcinvisible = #0;
 
-IMP (Method method) method_get_imp = #0;
+IMP (Method []method) method_get_imp = #0;
 IMP (Class class, SEL sel) get_imp = #0;
 
 id (id object) object_copy = #0;

@@ -83,7 +83,7 @@ type_t      type_supermsg = { ev_func, ".supermsg", ty_none,
 							  {{&type_id, -3, {0, &type_SEL}}}};
 type_t      type_obj_exec_class = { ev_func, "function", ty_none,
 									{{&type_void, 1, { 0 }}}};
-type_t      type_Method = { ev_pointer, "Method" };
+type_t      type_Method = { ev_invalid, "Method" };
 type_t      type_Super = { ev_invalid, "Super" };
 type_t      type_method_description = { ev_invalid, "obj_method_description",
 										ty_struct };
@@ -833,11 +833,10 @@ init_types (void)
 	type_SEL.t.fldptr.type = strct->type;
 
 	strct = get_struct (0, 1);
-	init_struct (strct, new_type (), str_struct, 0);
+	init_struct (strct, &type_Method, str_struct, 0);
 	new_struct_field (strct, &type_SEL, "method_name", vis_public);
 	new_struct_field (strct, &type_string, "method_types", vis_public);
 	new_struct_field (strct, &type_IMP, "method_imp", vis_public);
-	type_Method.t.fldptr.type = strct->type;
 
 	strct = get_struct (0, 1);
 	init_struct (strct, type = new_type (), str_struct, 0);
