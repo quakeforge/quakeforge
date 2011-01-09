@@ -177,14 +177,19 @@ EncodePCX (byte * data, int width, int height,
 		data += rowbytes * (height - 1);
 
 	for (i = 0; i < height; i++) {
-		for (j = 0; j < width; j++) {
-			if ((*data & 0xc0) != 0xc0)
-				*pack++ = *data++;
-			else {
-				*pack++ = 0xc1;
-				*pack++ = *data++;
-			}
+		// from darkplaces lmp2pcx
+		for (dataend = data + width; data < dataend; /* empty */) {
+			for (pix = *data++, run = 0xC1; 
+				 data < dataend && run < 0xFF && *data == pix;
+				 data++, run++)
+				/* empty */;
+			if (run > 0xC1 || pix >= 0xC0)
+				*pack++ = run;
+			*pack++ = pix;
 		}
+
+		if (width & 1)
+			*pack++ = 0;
 
 		data += rowbytes - width;
 		if (flip)
