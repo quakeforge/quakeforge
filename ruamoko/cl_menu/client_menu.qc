@@ -123,10 +123,10 @@ integer save_cursor;
 string (QFile f) get_comment =
 {
 	local string line;
-	local PLItem plist;
+	local PLItem []plist;
 
 	plist = [PLItem fromFile:f];
-	line = [(PLString) [(PLDictionary) plist getObjectForKey:"comment"] string];
+	line = [(PLString[]) [(PLDictionary[]) plist getObjectForKey:"comment"] string];
 	return line;
 }
 
@@ -368,9 +368,9 @@ string lanConfig_portname;
 string lanConfig_joinname;
 #define NUM_LANCONFIG_CMDS 3
 integer [NUM_LANCONFIG_CMDS] lanConfig_cursor_table = { 72, 92, 124 };
-InputLine lanConfig_port_il;
-InputLine lanConfig_join_il;
-InputLine input_active;
+InputLine []lanConfig_port_il;
+InputLine []lanConfig_join_il;
+InputLine []input_active;
 
 integer (integer x, integer y) join_draw =
 {

@@ -1,5 +1,5 @@
 /*
-	link.c
+	linker.c
 
 	qc object file linking
 
@@ -31,8 +31,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -56,6 +55,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/pakfile.h"
 #include "QF/va.h"
 
+#include "codespace.h"
 #include "def.h"
 #include "emit.h"
 #include "expr.h"

@@ -22,15 +22,15 @@
     return self;
 }
 
-- (void) restoreOnMachine: (Machine) m
+- (void) restoreOnMachine: (Machine []) m
 {
     [m state: &state];
     return;
 }
 
-- (void) invokeOnMachine: (Machine) m
+- (void) invokeOnMachine: (Machine []) m
 {
-    [m value: [(Cons) [m stack] car]];
+    [m value: [(Cons []) [m stack] car]];
     [m state: &state];
     return;
 }

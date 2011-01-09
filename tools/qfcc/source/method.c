@@ -80,7 +80,7 @@ method_free (void *_meth, void *unused)
 }
 
 method_t *
-new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
+new_method (type_t *ret_type, param_t *selector, param_t *opt_params)
 {
 	method_t   *meth = malloc (sizeof (method_t));
 	param_t    *cmd = new_param (0, &type_SEL, "_cmd");
@@ -88,8 +88,8 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
 	dstring_t  *name = dstring_newstr ();
 	dstring_t  *types = dstring_newstr ();
 
-	opt_parms = reverse_params (opt_parms);
-	selector = _reverse_params (selector, opt_parms);
+	opt_params = reverse_params (opt_params);
+	selector = _reverse_params (selector, opt_params);
 	cmd->next = selector;
 	self->next = cmd;
 
@@ -349,7 +349,7 @@ selector_t *
 get_selector (expr_t *sel)
 {
 	selector_t  _sel = {0, 0, sel->e.pointer.val};
-	_sel.index /= type_size (type_SEL.aux_type);
+	_sel.index /= type_size (type_SEL.t.fldptr.type);
 	return (selector_t *) Hash_FindElement (sel_index_hash, &_sel);
 }
 
@@ -364,8 +364,8 @@ emit_selectors (void)
 	if (!sel_index)
 		return 0;
 
-	sel_type = array_type (type_SEL.aux_type, sel_index);
-	sel_def = get_def (type_SEL.aux_type, "_OBJ_SELECTOR_TABLE", pr.scope,
+	sel_type = array_type (type_SEL.t.fldptr.type, sel_index);
+	sel_def = get_def (type_SEL.t.fldptr.type, "_OBJ_SELECTOR_TABLE", pr.scope,
 					   st_extern);
 	sel_def->type = sel_type;
 	sel_def->ofs = new_location (sel_type, pr.near_data);
@@ -409,7 +409,8 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	new_struct_field (method_list, &type_pointer, "method_next", vis_public);
 	new_struct_field (method_list, &type_integer, "method_count", vis_public);
 	for (i = 0; i < count; i++)
-		new_struct_field (method_list, type_Method.aux_type, 0, vis_public);
+		new_struct_field (method_list, type_Method.t.fldptr.type, 0,
+						  vis_public);
 	methods_def = get_def (method_list->type,
 						   va ("_OBJ_%s_METHODS_%s", type, name),
 						   pr.scope, st_static);
@@ -490,11 +491,11 @@ clear_selectors (void)
 expr_t *
 method_check_params (method_t *method, expr_t *args)
 {
-	int         i, count, parm_count;
+	int         i, count, param_count;
 	expr_t     *a, **arg_list, *err = 0;
 	type_t     *mtype = method->type;
 
-	if (mtype->num_parms == -1)
+	if (mtype->t.func.num_params == -1)
 		return 0;
 
 	for (count = 0, a = args; a; a = a->next)
@@ -503,14 +504,14 @@ method_check_params (method_t *method, expr_t *args)
 	if (count > MAX_PARMS)
 		return error (args, "more than %d parameters", MAX_PARMS);
 
-	if (mtype->num_parms >= 0)
-		parm_count = mtype->num_parms;
+	if (mtype->t.func.num_params >= 0)
+		param_count = mtype->t.func.num_params;
 	else
-		parm_count = -mtype->num_parms - 1;
+		param_count = -mtype->t.func.num_params - 1;
 
-	if (count < parm_count)
+	if (count < param_count)
 		return error (args, "too few arguments");
-	if (mtype->num_parms >= 0 && count > mtype->num_parms)
+	if (mtype->t.func.num_params >= 0 && count > mtype->t.func.num_params)
 		return error (args, "too many arguments");
 
 	arg_list = malloc (count * sizeof (expr_t *));
@@ -523,13 +524,11 @@ method_check_params (method_t *method, expr_t *args)
 		if (!t)
 			return e;
  
-		if (i < parm_count) {
+		if (i < param_count) {
 			if (e->type != ex_nil)
-				if (!type_assignable (mtype->parm_types[i], t)) {
-					print_type (mtype->parm_types[i]); puts ("");
-					print_type (t); puts ("");
-					err = error (e, "type mismatch for parameter %d of %s",
-								 i - 1, method->name);
+				if (!type_assignable (mtype->t.func.param_types[i], t)) {
+					err = param_mismatch (e, i - 1, method->name,
+										  mtype->t.func.param_types[i], t);
 				}
 		} else {
 			if (e->type == ex_integer && options.warnings.vararg_integer)

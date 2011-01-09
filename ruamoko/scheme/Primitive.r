@@ -13,9 +13,9 @@
     func = f;
     return self;
 }
-- (SchemeObject) invokeOnMachine: (Machine) m
+- (SchemeObject[]) invokeOnMachine: (Machine[]) m
 {
-    local SchemeObject value = func ([m stack], m);
+    local SchemeObject []value = func ([m stack], m);
     [super invokeOnMachine: m];
     if (value) {
             [m value: value];

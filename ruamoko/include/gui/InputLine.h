@@ -44,7 +44,7 @@ struct il_data_t {
 
 @interface InputLineBox: View
 {
-	InputLine input_line;
+	InputLine []input_line;
 }
 - (id) initWithBounds: (Rect)aRect promptCharacter: (integer)char;
 

@@ -88,11 +88,11 @@ etype_t     qc_types[] = {
 	ev_pointer,							// ex_pointer
 	ev_quat,							// ex_quaternion
 	ev_integer,							// ex_integer
-	ev_uinteger,						// ex_uinteger
+	ev_integer,							// ex_uinteger
 	ev_short,							// ex_short
 };
 
-type_t     *ev_types[] = {
+type_t     *ev_types[ev_type_count] = {
 	&type_void,
 	&type_string,
 	&type_float,
@@ -103,12 +103,7 @@ type_t     *ev_types[] = {
 	&type_pointer,
 	&type_quaternion,
 	&type_integer,
-	&type_uinteger,
 	&type_short,
-	&type_void,							// FIXME what type?
-	&type_void,							// FIXME what type?
-	&type_void,							// FIXME what type?
-	&type_SEL,
 	&type_void,							// FIXME what type?
 };
 
@@ -286,19 +281,60 @@ get_op_string (int op)
 expr_t *
 type_mismatch (expr_t *e1, expr_t *e2, int op)
 {
-	etype_t     t1, t2;
+	dstring_t  *t1 = dstring_newstr ();
+	dstring_t  *t2 = dstring_newstr ();
 
-	t1 = extract_type (e1);
-	t2 = extract_type (e2);
+	print_type_str (t1, get_type (e1));
+	print_type_str (t2, get_type (e2));
 
-	if (0) {
-		print_type (get_type (e1));
-		print_type (get_type (e2));
-		printf ("\n%p %p\n", get_type (e1), get_type (e2));
-	}
+	e1 = error (e1, "type mismatch: %s %s %s",
+				t1->str, get_op_string (op), t2->str);
+	dstring_delete (t1);
+	dstring_delete (t2);
+	return e1;
+}
 
-	return error (e1, "type mismatch: %s %s %s",
-				  pr_type_name[t1], get_op_string (op), pr_type_name[t2]);
+expr_t *
+param_mismatch (expr_t *e, int param, const char *fn, type_t *t1, type_t *t2)
+{
+	dstring_t  *s1 = dstring_newstr ();
+	dstring_t  *s2 = dstring_newstr ();
+
+	print_type_str (s1, t1);
+	print_type_str (s2, t2);
+
+	e = error (e, "type mismatch for parameter %d of %s: %s %s", param, fn,
+			   s1->str, s2->str);
+	dstring_delete (s1);
+	dstring_delete (s2);
+	return e;
+}
+
+expr_t *
+cast_error (expr_t *e, type_t *t1, type_t *t2)
+{
+	dstring_t  *s1 = dstring_newstr ();
+	dstring_t  *s2 = dstring_newstr ();
+
+	print_type_str (s1, t1);
+	print_type_str (s2, t2);
+
+	e =  error (e, "can not cast from %s to %s", s1->str, s2->str);
+	dstring_delete (s1);
+	dstring_delete (s2);
+	return e;
+}
+
+expr_t *
+test_error (expr_t *e, type_t *t)
+{
+	dstring_t  *s = dstring_newstr ();
+
+	print_type_str (s, t);
+
+	e =  error (e, "%s cannot be tested", s->str);
+	dstring_delete (s);
+	return e;
 }
 
 static void
@@ -309,7 +345,7 @@ check_initialized (expr_t *e)
 	if (e->type == ex_def
 		&& !(e->e.def->type->type == ev_func
 			 && !e->e.def->local)
-		&& !(e->e.def->type->type == ev_struct)
+		&& !is_struct (e->e.def->type)
 		&& !e->e.def->external
 		&& !e->e.def->initialized) {
 		name = e->e.def->name;
@@ -640,8 +676,8 @@ constant_expr (expr_t *var)
 			return new_field_expr (G_INT (def->ofs), def->type, def);
 		case ev_integer:
 			return new_integer_expr (G_INT (def->ofs));
-		case ev_uinteger:
-			return new_uinteger_expr (G_INT (def->ofs));
+//		case ev_uinteger:
+//			return new_uinteger_expr (G_INT (def->ofs));
 		default:
 			return var;
 	}
@@ -883,52 +919,54 @@ field_expr (expr_t *e1, expr_t *e2)
 		return e1;
 	t1 = get_type (e1);
 	switch (t1->type) {
-		case ev_struct:
-		case ev_class:
-			check_initialized (e1);
-			if (e2->type != ex_name)
-				return error (e2, "structure field name expected");
-			if (t1->type == ev_struct)
-				strct = t1->s.strct;
-			else
-				strct = t1->s.class->ivars;
-			field = struct_find_field (strct, e2->e.string_val);
-			if (!field)
-				return error (e2, "structure has no field %s",
-							  e2->e.string_val);
-			e2->type = ex_short;
-			e2->e.short_val = field->offset;
-			e = unary_expr ('.', address_expr (e1, e2, field->type));
-			return e;
+		case ev_invalid:
+			if (t1->ty == ty_struct || t1->ty == ty_class) {
+				check_initialized (e1);
+				if (e2->type != ex_name)
+					return error (e2, "structure field name expected");
+				if (t1->ty == ty_struct)
+					strct = t1->t.strct;
+				else
+					strct = t1->t.class->ivars;
+				field = struct_find_field (strct, e2->e.string_val);
+				if (!field)
+					return error (e2, "structure has no field %s",
+								  e2->e.string_val);
+				e2->type = ex_short;
+				e2->e.short_val = field->offset;
+				e = unary_expr ('.', address_expr (e1, e2, field->type));
+				return e;
+			}
+			break;
 		case ev_pointer:
 			check_initialized (e1);
-			switch (t1->aux_type->type) {
-				case ev_struct:
-					if (e2->type == ex_name) {
-						field = struct_find_field (t1->aux_type->s.strct,
-												   e2->e.string_val);
-						if (!field)
-							return error (e2, "structure has no field %s",
-										  e2->e.string_val);
-						e2->type = ex_short;
-						e2->e.short_val = field->offset;
-						t1 = pointer_type (field->type);
-					}
-					break;
-				case ev_object:
-				case ev_class:
-					if (e2->type == ex_name) {
-						int         protected;
+			switch (t1->t.fldptr.type->type) {
+				case ev_invalid:
+					if (t1->t.fldptr.type->ty == ty_struct) {
+						if (e2->type == ex_name) {
+							field = struct_find_field (t1->t.fldptr.type->t.strct,
+													   e2->e.string_val);
+							if (!field)
+								return error (e2, "structure has no field %s",
+											  e2->e.string_val);
+							e2->type = ex_short;
+							e2->e.short_val = field->offset;
+							t1 = pointer_type (field->type);
+						}
+					} else if (t1->t.fldptr.type->ty == ty_class) {
+						if (e2->type == ex_name) {
+							int         protected;
 
-						class = t1->aux_type->s.class;
-						protected = class_access (current_class, class);
-						field = class_find_ivar (class, protected,
-												 e2->e.string_val);
-						if (!field)
-							return new_error_expr ();
-						e2->type = ex_short;
-						e2->e.short_val = field->offset;
-						t1 = pointer_type (field->type);
+							class = t1->t.fldptr.type->t.class;
+							protected = class_access (current_class, class);
+							field = class_find_ivar (class, protected,
+													 e2->e.string_val);
+							if (!field)
+								return new_error_expr ();
+							e2->type = ex_short;
+							e2->e.short_val = field->offset;
+							t1 = pointer_type (field->type);
+						}
 					}
 					break;
 				default:
@@ -944,7 +982,7 @@ field_expr (expr_t *e1, expr_t *e2)
 				} else {
 					break;
 				}
-				e1->e.pointer.type = t1->aux_type;
+				e1->e.pointer.type = t1->t.fldptr.type;
 				return unary_expr ('.', e1);
 			} else {
 				e = new_binary_expr ('&', e1, e2);
@@ -966,7 +1004,7 @@ field_expr (expr_t *e1, expr_t *e2)
 				e2 = new_def_expr (d);
 				t2 = get_type (e2);
 				e = new_binary_expr ('.', e1, e2);
-				e->e.expr.type = t2->aux_type;
+				e->e.expr.type = t2->t.fldptr.type;
 				return e;
 			} else {
 				t2 = get_type (e2);
@@ -974,7 +1012,7 @@ field_expr (expr_t *e1, expr_t *e2)
 					return e2;
 				if (t2->type == ev_field) {
 					e = new_binary_expr ('.', e1, e2);
-					e->e.expr.type = t2->aux_type;
+					e->e.expr.type = t2->t.fldptr.type;
 					return e;
 				}
 			}
@@ -1116,7 +1154,7 @@ test_expr (expr_t *e, int test)
 		case ev_string:
 			new = new_string_expr (0);
 			break;
-		case ev_uinteger:
+//		case ev_uinteger:
 		case ev_integer:
 		case ev_short:
 			return e;
@@ -1144,12 +1182,8 @@ test_expr (expr_t *e, int test)
 		case ev_quat:
 			new = new_quaternion_expr (zero);
 			break;
-		case ev_struct:
-		case ev_object:
-		case ev_class:
-		case ev_sel:
-		case ev_array:
-			return error (e, "%s cannot be tested", pr_type_name[type]);
+		case ev_invalid:
+			return test_error (e, get_type (e));
 	}
 	new->line = e->line;
 	new->file = e->file;
@@ -1270,9 +1304,9 @@ convert_from_bool (expr_t *e, type_t *type)
 	} else if (type == &type_integer) {
 		one = new_integer_expr (1);
 		zero = new_integer_expr (0);
-	} else if (type == &type_uinteger) {
-		one = new_uinteger_expr (1);
-		zero = new_uinteger_expr (0);
+//	} else if (type == &type_uinteger) {
+//		one = new_uinteger_expr (1);
+//		zero = new_uinteger_expr (0);
 	} else {
 		return error (e, "can't convert from bool value");
 	}
@@ -1581,9 +1615,9 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		if (t2 == &type_integer) {
 			convert_short_int (e1);
 			t1 = &type_integer;
-		} else if (t2 == &type_uinteger) {
-			convert_short_uint (e1);
-			t1 = &type_uinteger;
+//		} else if (t2 == &type_uinteger) {
+//			convert_short_uint (e1);
+//			t1 = &type_uinteger;
 		}
 	}
 
@@ -1591,9 +1625,9 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		if (t1 == &type_integer) {
 			convert_short_int (e2);
 			t2 = &type_integer;
-		} else if (t1 == &type_uinteger) {
-			convert_short_uint (e2);
-			t2 = &type_uinteger;
+//		} else if (t1 == &type_uinteger) {
+//			convert_short_uint (e2);
+//			t2 = &type_uinteger;
 		}
 	}
 
@@ -1603,9 +1637,9 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 			|| t2 == &type_quaternion) {
 			convert_int (e1);
 			t1 = &type_float;
-		} else if (t2 == &type_uinteger) {
-			convert_int_uint (e1);
-			t1 = &type_uinteger;
+//		} else if (t2 == &type_uinteger) {
+//			convert_int_uint (e1);
+//			t1 = &type_uinteger;
 		}
 	} else if (e1->type == ex_uinteger) {
 		if (t2 == &type_float
@@ -1623,9 +1657,9 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 			|| t1 == &type_quaternion) {
 			convert_int (e2);
 			t2 = &type_float;
-		} else if (t1 == &type_uinteger) {
-			convert_int_uint (e2);
-			t2 = &type_uinteger;
+//		} else if (t1 == &type_uinteger) {
+//			convert_int_uint (e2);
+//			t2 = &type_uinteger;
 		}
 	} else if (e2->type == ex_uinteger) {
 		if (t1 == &type_float
@@ -1659,8 +1693,8 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				}
 				break;
 			case ev_field:
-				if (t1->aux_type == t2) {
-					type = t1->aux_type;
+				if (t1->t.fldptr.type == t2) {
+					type = t1->t.fldptr.type;
 				} else {
 					goto type_mismatch;
 				}
@@ -1943,7 +1977,7 @@ bitnot_expr:
 			if (extract_type (e) != ev_pointer)
 				return error (e, "invalid type for unary .");
 			e = new_unary_expr ('.', e);
-			e->e.expr.type = get_type (e->e.expr.e1)->aux_type;
+			e->e.expr.type = get_type (e->e.expr.e1)->t.fldptr.type;
 			return e;
 	}
 	error (e, "internal error");
@@ -1972,24 +2006,24 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 	if (arg_count > MAX_PARMS) {
 		return error (fexpr, "more than %d parameters", MAX_PARMS);
 	}
-	if (ftype->num_parms < -1) {
-		if (-arg_count > ftype->num_parms + 1) {
+	if (ftype->t.func.num_params < -1) {
+		if (-arg_count > ftype->t.func.num_params + 1) {
 			if (!options.traditional)
 				return error (fexpr, "too few arguments");
 			if (options.warnings.traditional)
 				warning (fexpr, "too few arguments");
 		}
-		parm_count = -ftype->num_parms - 1;
-	} else if (ftype->num_parms >= 0) {
-		if (arg_count > ftype->num_parms) {
+		parm_count = -ftype->t.func.num_params - 1;
+	} else if (ftype->t.func.num_params >= 0) {
+		if (arg_count > ftype->t.func.num_params) {
 			return error (fexpr, "too many arguments");
-		} else if (arg_count < ftype->num_parms) {
+		} else if (arg_count < ftype->t.func.num_params) {
 			if (!options.traditional)
 				return error (fexpr, "too few arguments");
 			if (options.warnings.traditional)
 				warning (fexpr, "too few arguments");
 		}
-		parm_count = ftype->num_parms;
+		parm_count = ftype->t.func.num_params;
 	}
 	for (i = arg_count - 1, e = params; i >= 0; i--, e = e->next) {
 		type_t     *t = get_type (e);
@@ -2001,24 +2035,22 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 			err = error (e, "formal parameter %d is too large to be passed by"
 						 " value", i + 1);
 		check_initialized (e);
-		if (ftype->parm_types[i] == &type_float && e->type == ex_integer) {
+		if (ftype->t.func.param_types[i] == &type_float && e->type == ex_integer) {
 			convert_int (e);
 			t = &type_float;
 		}
 		if (i < parm_count) {
 			if (e->type == ex_nil)
-				convert_nil (e, t = ftype->parm_types[i]);
+				convert_nil (e, t = ftype->t.func.param_types[i]);
 			if (e->type == ex_bool)
-				convert_from_bool (e, ftype->parm_types[i]);
+				convert_from_bool (e, ftype->t.func.param_types[i]);
 			if (e->type == ex_error)
 				return e;
-			if (!type_assignable (ftype->parm_types[i], t)) {
-				print_type (ftype->parm_types[i]); puts ("");
-				print_type (t); puts ("");
-				err = error (e, "type mismatch for parameter %d of %s",
-							 i + 1, fexpr->e.def->name);
+			if (!type_assignable (ftype->t.func.param_types[i], t)) {
+				err = param_mismatch (e, i + 1, fexpr->e.def->name,
+									  ftype->t.func.param_types[i], t);
 			}
-			t = ftype->parm_types[i];
+			t = ftype->t.func.param_types[i];
 		} else {
 			if (e->type == ex_nil)
 				convert_nil (e, t = &type_vector);	//XXX largest param size
@@ -2065,10 +2097,10 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 		append_expr (call, e);
 	}
 	e = new_binary_expr ('c', fexpr, args);
-	e->e.expr.type = ftype->aux_type;
+	e->e.expr.type = ftype->t.func.type;
 	append_expr (call, e);
-	if (ftype->aux_type != &type_void) {
-		call->e.block.result = new_ret_expr (ftype->aux_type);
+	if (ftype->t.func.type != &type_void) {
+		call->e.block.result = new_ret_expr (ftype->t.func.type);
 	} else if (options.traditional) {
 		call->e.block.result = new_ret_expr (&type_float);
 	}
@@ -2116,7 +2148,7 @@ return_expr (function_t *f, expr_t *e)
 	type_t     *t;
 
 	if (!e) {
-		if (f->def->type->aux_type != &type_void) {
+		if (f->def->type->t.func.type != &type_void) {
 			if (options.traditional) {
 				if (options.warnings.traditional)
 					warning (e,
@@ -2134,15 +2166,15 @@ return_expr (function_t *f, expr_t *e)
 
 	if (e->type == ex_error)
 		return e;
-	if (f->def->type->aux_type == &type_void) {
+	if (f->def->type->t.func.type == &type_void) {
 		if (!options.traditional)
 			return error (e, "returning a value for a void function");
 		if (options.warnings.traditional)
 			warning (e, "returning a value for a void function");
 	}
 	if (e->type == ex_bool)
-		e = convert_from_bool (e, f->def->type->aux_type);
-	if (f->def->type->aux_type == &type_float && e->type == ex_integer) {
+		e = convert_from_bool (e, f->def->type->t.func.type);
+	if (f->def->type->t.func.type == &type_float && e->type == ex_integer) {
 		e->type = ex_float;
 		e->e.float_val = e->e.integer_val;
 		t = &type_float;
@@ -2150,7 +2182,7 @@ return_expr (function_t *f, expr_t *e)
 	check_initialized (e);
 	if (t == &type_void) {
 		if (e->type == ex_nil) {
-			t = f->def->type->aux_type;
+			t = f->def->type->t.func.type;
 			e->type = expr_types[t->type];
 			if (e->type == ex_nil)
 				return error (e, "invalid return type for NIL");
@@ -2162,7 +2194,7 @@ return_expr (function_t *f, expr_t *e)
 			//FIXME does anything need to be done here?
 		}
 	}
-	if (!type_assignable (f->def->type->aux_type, t)) {
+	if (!type_assignable (f->def->type->t.func.type, t)) {
 		if (!options.traditional)
 			return error (e, "type mismatch for return value of %s",
 						  f->def->name);
@@ -2170,8 +2202,8 @@ return_expr (function_t *f, expr_t *e)
 			warning (e, "type mismatch for return value of %s",
 					 f->def->name);
 	} else {
-		if (f->def->type->aux_type != t)
-			e = cast_expr (f->def->type->aux_type, e);
+		if (f->def->type->t.func.type != t)
+			e = cast_expr (f->def->type->t.func.type, e);
 	}
 	return new_unary_expr ('r', e);
 }
@@ -2256,29 +2288,33 @@ array_expr (expr_t *array, expr_t *index)
 	if (index->type == ex_error)
 		return index;
 
-	if (array_type->type != ev_pointer && array_type->type != ev_array)
+	if (array_type->type != ev_pointer && !is_array (array_type))
 		return error (array, "not an array");
-	if (index_type != &type_integer && index_type != &type_uinteger)
+	if (index_type != &type_integer)
 		return error (index, "invalid array index type");
-	if (array_type->num_parms
+	if (array_type->t.func.num_params
 		&& index->type >= ex_integer
-		&& index->e.uinteger_val >= (unsigned int) array_type->num_parms)
+		&& (index->e.integer_val < array_type->t.array.base
+			|| index->e.integer_val - array_type->t.array.base
+				>= array_type->t.array.size))
 			return error (index, "array index out of bounds");
-	size = type_size (array_type->aux_type);
-	if (size > 1) {
-		scale = new_expr ();
-		scale->type = expr_types[index_type->type];
-		scale->e.integer_val = size;
-		index = binary_expr ('*', index, scale);
-	}
+	size = type_size (array_type->t.array.type);
+	scale = new_expr ();
+	scale->type = expr_types[index_type->type];
+	scale->e.integer_val = size;
+	index = binary_expr ('*', index, scale);
+	index = binary_expr ('-', index,
+				 binary_expr ('*', scale,
+							  new_integer_expr (array_type->t.array.base)));
+	index = fold_constants (index);
 	if ((index->type == ex_integer
 		 && index->e.integer_val < 32768 && index->e.integer_val >= -32768)
 		|| (index->type == ex_uinteger
 			&& index->e.uinteger_val < 32768)) {
 		index->type = ex_short;
 	}
-	if (array_type->type == ev_array) {
-		e = address_expr (array, index, array_type->aux_type);
+	if (is_array (array_type)) {
+		e = address_expr (array, index, array_type->t.array.type);
 	} else {
 		if (index->type != ex_short || index->e.integer_val) {
 			e = new_binary_expr ('&', array, index);
@@ -2322,11 +2358,11 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				def_t      *def = e1->e.def;
 				def->used = 1;
 				type = def->type;
-				if (type->type == ev_struct || type->type == ev_class) {
+				if (is_struct (type) || is_class (type)) {
 					e = new_pointer_expr (0, t, def);
 					e->line = e1->line;
 					e->file = e1->file;
-				} else if (type->type == ev_array) {
+				} else if (is_array (type)) {
 					e = e1;
 					e->type = ex_pointer;
 					e->e.pointer.val = 0;
@@ -2456,10 +2492,10 @@ assign_expr (expr_t *e1, expr_t *e2)
 		abort ();
 	}
 	//XXX func = func ???
-	if (t1->type != ev_pointer || t2->type != ev_array)
+	if (t1->type != ev_pointer || !is_array (t2))
 		check_initialized (e2);
 	else {
-		e2 = address_expr (e2, 0, t2->aux_type);
+		e2 = address_expr (e2, 0, t2->t.fldptr.type);	// FIXME
 		t2 = get_type (e2);
 	}
 	if (e2->type == ex_bool)
@@ -2491,7 +2527,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 	}
 	type = t1;
 	if (is_indirect (e1) && is_indirect (e2)) {
-		if (extract_type (e2) == ev_struct) {
+		if (is_struct (get_type (e2))) {
 			e1 = address_expr (e1, 0, 0);
 			e2 = address_expr (e2, 0, 0);
 			e = new_move_expr (e1, e2, get_type (e2));
@@ -2505,7 +2541,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 		}
 		return e;
 	} else if (is_indirect (e1)) {
-		if (extract_type (e1) == ev_struct) {
+		if (is_struct (get_type (e1))) {
 			e1 = address_expr (e1, 0, 0);
 			return new_move_expr (e1, e2, get_type (e2));
 		}
@@ -2526,7 +2562,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 			}
 		}
 	} else if (is_indirect (e2)) {
-		if (extract_type (e1) == ev_struct) {
+		if (is_struct (get_type (e1))) {
 			e2 = address_expr (e2, 0, 0);
 			e2->rvalue = 1;
 			return new_move_expr (e1, e2, get_type (e2));
@@ -2547,7 +2583,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 			}
 		}
 	}
-	if (extract_type (e1) == ev_struct) {
+	if (is_struct (get_type (e1))) {
 		return new_move_expr (e1, e2, get_type (e2));
 	}
 	if (!type)
@@ -2578,19 +2614,17 @@ cast_expr (type_t *type, expr_t *e)
 
 	if (!(type->type == ev_pointer
 		  && (e_type->type == ev_pointer
-			  || e_type == &type_integer || e_type == &type_uinteger
-			  || e_type->type == ev_array))
+			  || e_type == &type_integer //|| e_type == &type_uinteger
+			  || is_array (e_type)))
 		&& !(type->type == ev_func && e_type->type == ev_func)
-		&& !(((type == &type_integer || type == &type_uinteger)
+		&& !(((type == &type_integer)
 			  && (e_type == &type_float || e_type == &type_integer
-				  || e_type == &type_uinteger || e_type->type == ev_pointer))
+				  || e_type->type == ev_pointer))
 			 || (type == &type_float
-				 && (e_type == &type_integer || e_type == &type_uinteger)))) {
-		return  error (e, "can not cast from %s to %s",
-					   pr_type_name[extract_type (e)],
-					   pr_type_name[type->type]);
+				 && (e_type == &type_integer)))) {
+		return cast_error (e, get_type (e), type);
 	}
-	if (e_type ->type == ev_array) {
+	if (is_array (e_type)) {
 		return address_expr (e, 0, 0);
 	}
 	if (e->type == ex_uexpr && e->e.expr.op == '.') {
@@ -2614,21 +2648,21 @@ init_elements (def_t *def, expr_t *eles)
 	ofs = def->ofs;
 	if (def->local && local_expr)
 		ofs = 0;
-	if (def->type->type == ev_array) {
-		elements = calloc (def->type->num_parms, sizeof (def_t));
-		for (i = 0; i < def->type->num_parms; i++) {
-			elements[i].type = def->type->aux_type;
-			elements[i].ofs = ofs + i * type_size (def->type->aux_type);
+	if (is_array (def->type)) {
+		elements = calloc (def->type->t.array.size, sizeof (def_t));
+		for (i = 0; i < def->type->t.array.size; i++) {
+			elements[i].type = def->type->t.array.type;
+			elements[i].ofs = ofs + i * type_size (def->type->t.array.type);
 		}
 		num_params = i;
-	} else if (def->type->type == ev_struct) {
+	} else if (is_struct (def->type)) {
 		struct_field_t *field;
 
-		for (i = 0, field = def->type->s.strct->struct_head; field;
+		for (i = 0, field = def->type->t.strct->struct_head; field;
 			 i++, field = field->next)
 			;
 		elements = calloc (i, sizeof (def_t));
-		for (i = 0, field = def->type->s.strct->struct_head; field;
+		for (i = 0, field = def->type->t.strct->struct_head; field;
 			 i++, field = field->next) {
 			elements[i].type = field->type;
 			elements[i].ofs = ofs + field->offset;
@@ -2652,8 +2686,8 @@ init_elements (def_t *def, expr_t *eles)
 		g = G_POINTER (pr_type_t, elements[i].ofs);
 		c = constant_expr (e);
 		if (c->type == ex_block) {
-			if (elements[i].type->type != ev_array
-				&& elements[i].type->type != ev_struct) {
+			if (!is_array (elements[i].type)
+				&& !is_struct (elements[i].type)) {
 				error (e, "type mismatch in initializer");
 				continue;
 			}
@@ -2663,15 +2697,6 @@ init_elements (def_t *def, expr_t *eles)
 			if (c->type == ex_integer
 				&& elements[i].type->type == ev_float)
 				convert_int (c);
-			else if (c->type == ex_integer
-					 && elements[i].type->type == ev_uinteger)
-				convert_int_uint (c);
-			else if (c->type == ex_uinteger
-					 && elements[i].type->type == ev_float)
-				convert_uint (c);
-			else if (c->type == ex_uinteger
-					 && elements[i].type->type == ev_integer)
-				convert_uint_int (c);
 			if (get_type (c) != elements[i].type) {
 				error (e, "type mismatch in initializer");
 				continue;
@@ -2711,8 +2736,8 @@ selector_expr (keywordarg_t *selector)
 	selector = (keywordarg_t *) reverse_params ((param_t *) selector);
 	selector_name (sel_id, selector);
 	index = selector_index (sel_id->str);
-	index *= type_size (type_SEL.aux_type);
-	sel_def = get_def (type_SEL.aux_type, "_OBJ_SELECTOR_TABLE", pr.scope,
+	index *= type_size (type_SEL.t.fldptr.type);
+	sel_def = get_def (type_SEL.t.fldptr.type, "_OBJ_SELECTOR_TABLE", pr.scope,
 					   st_extern);
 	sel = new_def_expr (sel_def);
 	dstring_delete (sel_id);
@@ -2756,8 +2781,7 @@ super_expr (class_type_t *class_type)
 	if (!class->super_class)
 		return error (new_expr (), "%s has no super class", class->name);
 
-	super_d = get_def (type_Super.aux_type, ".super", current_func->scope,
-					   st_local);
+	super_d = get_def (&type_Super, ".super", current_func->scope, st_local);
 	def_initialized (super_d);
 	super = new_def_expr (super_d);
 	super_block = new_block_expr ();
@@ -2812,22 +2836,27 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		if (receiver->type == ex_error)
 			return receiver;
 
-		if (rec_type->type != ev_pointer
-			|| (rec_type->aux_type->type != ev_object
-				&& rec_type->aux_type->type != ev_class))
+		if (!(rec_type->type == ev_pointer
+			  && is_class (rec_type->t.fldptr.type))
+			&& !is_class (rec_type))
 			return error (receiver, "not a class/object");
 		if (self) {
 			class = extract_class (current_class);
 			if (rec_type == &type_Class)
 				class_msg = 1;
 		} else {
-			class = rec_type->aux_type->s.class;
+			if (is_class (rec_type)) {
+				class = rec_type->t.class;
+				receiver = address_expr (receiver, 0, 0);
+			} else {
+				class = rec_type->t.fldptr.type->t.class;
+			}
 		}
 	}
 
 	method = class_message_response (class, class_msg, selector);
 	if (method)
-		rec_type = method->type->aux_type;
+		rec_type = method->type->t.func.type;
 
 	for (m = message; m; m = m->next) {
 		*a = m->expr;

@@ -4,15 +4,15 @@
 
 @interface Frame: SchemeObject
 {
-    SchemeObject[] array;
+    SchemeObject[][] array;
     integer size;
-    Frame link;
+    Frame []link;
 }
-+ (id) newWithSize: (integer) sz link: (Frame) l;
-- (id) initWithSize: (integer) sz link: (Frame) l;
-- (void) set: (integer) index to: (SchemeObject) o;
-- (SchemeObject) get: (integer) index;
-- (Frame) getLink;
++ (id) newWithSize: (integer) sz link: (Frame []) l;
+- (id) initWithSize: (integer) sz link: (Frame []) l;
+- (void) set: (integer) index to: (SchemeObject []) o;
+- (SchemeObject []) get: (integer) index;
+- (Frame []) getLink;
 @end
 
 #endif //__FOO_h

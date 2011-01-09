@@ -1,7 +1,7 @@
 #include "Boolean.h"
 
-Boolean trueConstant;
-Boolean falseConstant;
+Boolean []trueConstant;
+Boolean []falseConstant;
 
 @implementation Boolean
 

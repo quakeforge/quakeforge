@@ -1,6 +1,6 @@
 #include "Void.h"
 
-Void voidConstant;
+Void []voidConstant;
 
 @implementation Void
 

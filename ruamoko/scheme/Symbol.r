@@ -4,25 +4,25 @@
 
 string SymbolGetKey (void [] ele, void [] data)
 {
-    local Symbol s = (Symbol) ele;
+    local Symbol []s = (Symbol[]) ele;
 
     return [s stringValue];
 }
 
 void SymbolFree (void [] ele, void [] data)
 {
-    local Symbol s = (Symbol) ele;
+    local Symbol []s = (Symbol[]) ele;
 
     [s release];
 }
     
 hashtab_t symbols;
-Symbol lparen;
-Symbol rparen;
-Symbol quote;
-Symbol dot;
+Symbol []lparen;
+Symbol []rparen;
+Symbol []quote;
+Symbol []dot;
 
-Symbol symbol (string str)
+Symbol []symbol (string str)
 {
     return [Symbol forString: str];
 }
@@ -41,35 +41,35 @@ Symbol symbol (string str)
     [dot retain];
 }
 
-+ (Symbol) forString: (string) s
++ (Symbol[]) forString: (string) s
 {
-    local Symbol res;
+    local Symbol []res;
 
     if ((res = Hash_Find (symbols, s))) {
             return res;
     } else {
-            res = (Symbol) [self newFromString: s];
+            res = (Symbol[]) [self newFromString: s];
             Hash_Add (symbols, res);
             return res;
     }
 }
 
-+ (Symbol) leftParen
++ (Symbol[]) leftParen
 {
     return lparen;
 }
 
-+ (Symbol) rightParen
++ (Symbol[]) rightParen
 {
     return rparen;
 }
 
-+ (Symbol) quote
++ (Symbol[]) quote
 {
     return quote;
 }
 
-+ (Symbol) dot
++ (Symbol[]) dot
 {
     return dot;
 }

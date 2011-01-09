@@ -5,7 +5,7 @@
 @class Machine;
 
 @interface Procedure: SchemeObject
-- (void) invokeOnMachine: (Machine) m;
+- (void) invokeOnMachine: (Machine []) m;
 @end
 
 #endif //__Procedure_h

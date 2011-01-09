@@ -6,7 +6,7 @@
 #include "CvarColor.h"
 
 @implementation CvarColorView
--(id)initWithBounds:(Rect)aRect :(CvarColor)_color
+-(id)initWithBounds:(Rect)aRect :(CvarColor [])_color
 {
 	self = [self initWithBounds:aRect];
 	color = _color;

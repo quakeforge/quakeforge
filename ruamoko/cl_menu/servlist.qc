@@ -25,8 +25,8 @@ integer (integer x, integer y) servlist_all_draw =
 
 integer serv_nfull; 
 integer serv_nempty;
-InputLine serv_maxping;
-InputLine serv_game;
+InputLine []serv_maxping;
+InputLine []serv_game;
 
 integer (integer x, integer y) servlist_filter_draw =
 {

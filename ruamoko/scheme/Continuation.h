@@ -10,7 +10,7 @@
 }
 + (id) newWithState: (state_t []) st pc: (integer) p;
 - (id) initWithState: (state_t []) st pc: (integer) p;
-- (void) restoreOnMachine: (Machine) m;
+- (void) restoreOnMachine: (Machine []) m;
 
 @end
 

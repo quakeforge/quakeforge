@@ -110,6 +110,7 @@ typedef enum {
 } storage_class_t;
 
 extern	def_t	def_void;
+extern	def_t	def_invalid;
 extern	def_t	def_function;
 
 scope_t *new_scope (scope_type type, defspace_t *space, scope_t *parent);

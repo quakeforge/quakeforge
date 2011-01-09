@@ -48,6 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "qfcc.h"
 
+#include "codespace.h"
 #include "debug.h"
 #include "def.h"
 #include "emit.h"
@@ -131,11 +132,11 @@ parse_params (type_t *type, param_t *parms)
 
 	memset (&new, 0, sizeof (new));
 	new.type = ev_func;
-	new.aux_type = type;
-	new.num_parms = 0;
+	new.t.func.type = type;
+	new.t.func.num_params = 0;
 
 	for (p = parms; p; p = p->next) {
-		if (new.num_parms > MAX_PARMS) {
+		if (new.t.func.num_params > MAX_PARMS) {
 			error (0, "too many params");
 			return type;
 		}
@@ -144,10 +145,10 @@ parse_params (type_t *type, param_t *parms)
 				error (0, "internal error");
 				abort ();
 			}
-			new.num_parms = -(new.num_parms + 1);
+			new.t.func.num_params = -(new.t.func.num_params + 1);
 		} else if (p->type) {
-			new.parm_types[new.num_parms] = p->type;
-			new.num_parms++;
+			new.t.func.param_types[new.t.func.num_params] = p->type;
+			new.t.func.num_params++;
 		}
 	}
 	//print_type (&new); puts("");
@@ -229,8 +230,8 @@ func_compare (const void *a, const void *b)
 	overloaded_function_t *fb = *(overloaded_function_t **) b;
 	type_t     *ta = fa->type;
 	type_t     *tb = fb->type;
-	int         na = ta->num_parms;
-	int         nb = tb->num_parms;
+	int         na = ta->t.func.num_params;
+	int         nb = tb->t.func.num_params;
 	int         ret, i;
 
 	if (na < 0)
@@ -239,11 +240,11 @@ func_compare (const void *a, const void *b)
 		nb = ~nb;
 	if (na != nb)
 		return nb - na;
-	if ((ret = (fb->type->num_parms - fa->type->num_parms)))
+	if ((ret = (fb->type->t.func.num_params - fa->type->t.func.num_params)))
 		return ret;
 	for (i = 0; i < na && i < nb; i++)
-		if (ta->parm_types[i] != tb->parm_types[i])
-			return (long)(tb->parm_types[i] - ta->parm_types[i]);
+		if (ta->t.func.param_types[i] != tb->t.func.param_types[i])
+			return (long)(tb->t.func.param_types[i] - ta->t.func.param_types[i]);
 	return 0;
 }
 
@@ -264,12 +265,12 @@ find_function (expr_t *fexpr, expr_t *params)
 	for (e = params; e; e = e->next) {
 		if (e->type == ex_error)
 			return e;
-		type.num_parms++;
+		type.t.func.num_params++;
 	}
-	if (type.num_parms > MAX_PARMS)
+	if (type.t.func.num_params > MAX_PARMS)
 		return fexpr;
 	for (i = 0, e = params; e; i++, e = e->next) {
-		type.parm_types[type.num_parms - 1 - i] = get_type (e);
+		type.t.func.param_types[type.t.func.num_params - 1 - i] = get_type (e);
 		if (e->type == ex_error)
 			return e;
 	}
@@ -282,7 +283,7 @@ find_function (expr_t *fexpr, expr_t *params)
 		free (funcs);
 		return fexpr;
 	}
-	type.aux_type = ((overloaded_function_t *) funcs[0])->type->aux_type;
+	type.t.func.type = ((overloaded_function_t *) funcs[0])->type->t.func.type;
 	dummy.type = find_type (&type);
 
 	qsort (funcs, func_count, sizeof (void *), func_compare);
@@ -299,17 +300,17 @@ find_function (expr_t *fexpr, expr_t *params)
 	}
 	for (i = 0; i < func_count; i++) {
 		f = (overloaded_function_t *) funcs[i];
-		parm_count = f->type->num_parms;
-		if ((parm_count >= 0 && parm_count != type.num_parms)
-			|| (parm_count < 0 && ~parm_count > type.num_parms)) {
+		parm_count = f->type->t.func.num_params;
+		if ((parm_count >= 0 && parm_count != type.t.func.num_params)
+			|| (parm_count < 0 && ~parm_count > type.t.func.num_params)) {
 			funcs[i] = 0;
 			continue;
 		}
 		if (parm_count < 0)
 			parm_count = ~parm_count;
 		for (j = 0; j < parm_count; j++) {
-			if (!type_assignable (f->type->parm_types[j],
-								  type.parm_types[j])) {
+			if (!type_assignable (f->type->t.func.param_types[j],
+								  type.t.func.param_types[j])) {
 				funcs[i] = 0;
 				break;
 			}
@@ -352,13 +353,13 @@ check_function (def_t *func, param_t *params)
 	param_t    *p;
 	int         i;
 
-	if (!type_size (func->type->aux_type)) {
+	if (!type_size (func->type->t.func.type)) {
 		error (0, "return type is an incomplete type");
-		func->type->aux_type = &type_void;//FIXME
+		func->type->t.func.type = &type_void;//FIXME
 	}
-	if (type_size (func->type->aux_type) > type_size (&type_param)) {
+	if (type_size (func->type->t.func.type) > type_size (&type_param)) {
 		error (0, "return value too large to be passed by value");
-		func->type->aux_type = &type_void;//FIXME
+		func->type->t.func.type = &type_void;//FIXME
 	}
 	for (p = params, i = 0; p; p = p->next, i++) {
 		if (!p->selector && !p->type && !p->name)
@@ -387,7 +388,7 @@ build_scope (function_t *f, def_t *func, param_t *params)
 
 	f->scope = new_scope (sc_params, new_defspace (), pr.scope);
 
-	if (func->type->num_parms < 0) {
+	if (func->type->t.func.num_params < 0) {
 		args = get_def (&type_va_list, ".args", f->scope, st_local);
 		args->used = 1;
 		def_initialized (args);
@@ -461,7 +462,7 @@ begin_function (def_t *def, const char *nicename, param_t *params)
 		func->aux->source_line = def->line;
 		func->aux->line_info = lineno - pr.linenos;
 		func->aux->local_defs = pr.num_locals;
-		func->aux->return_type = def->type->aux_type->type;
+		func->aux->return_type = def->type->t.func.type->type;
 
 		lineno->fa.func = func->aux - pr.auxfunctions;
 	}
@@ -581,12 +582,12 @@ function_parms (function_t *f, byte *parm_size)
 {
 	int         count, i;
 
-	if (f->def->type->num_parms >= 0)
-		count = f->def->type->num_parms;
+	if (f->def->type->t.func.num_params >= 0)
+		count = f->def->type->t.func.num_params;
 	else
-		count = -f->def->type->num_parms - 1;
+		count = -f->def->type->t.func.num_params - 1;
 
 	for (i = 0; i < count; i++)
-		parm_size[i] = type_size (f->def->type->parm_types[i]);
-	return f->def->type->num_parms;
+		parm_size[i] = type_size (f->def->type->t.func.param_types[i]);
+	return f->def->type->t.func.num_params;
 }

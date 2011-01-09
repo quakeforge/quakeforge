@@ -18,7 +18,7 @@
 	return self;
 }
 
-- (void) setOwner: (Entity) o
+- (void) setOwner: (Entity []) o
 {
 	owner = o;
 }

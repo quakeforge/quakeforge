@@ -12,12 +12,12 @@
     return [[self alloc] initWithOpcode: oc operand: op label: NIL];
 }
 
-+ (id) opcode: (opcode_e) oc label: (Instruction) l
++ (id) opcode: (opcode_e) oc label: (Instruction []) l
 {
     return [[self alloc] initWithOpcode: oc operand: 0 label: l];
 }
 
-- (id) initWithOpcode: (opcode_e) oc operand: (integer) op label: (Instruction) l
+- (id) initWithOpcode: (opcode_e) oc operand: (integer) op label: (Instruction []) l
 {
     self = [super init];
     opcode = oc;

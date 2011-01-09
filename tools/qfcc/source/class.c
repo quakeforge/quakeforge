@@ -49,6 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "qfcc.h"
 
+#include "codespace.h"
 #include "class.h"
 #include "def.h"
 #include "emit.h"
@@ -126,7 +127,7 @@ class_def (class_type_t *class_type, int external)
 			break;
 		case ct_class:
 			name = va ("_OBJ_CLASS_%s", class_type->c.class->name);
-			type = type_Class.aux_type;
+			type = type_Class.t.fldptr.type;
 			break;
 		case ct_protocol:
 			return 0;		// probably in error recovery
@@ -156,9 +157,9 @@ get_class (const char *name, int create)
 
 	c = calloc (sizeof (class_t), 1);
 	c->name = name;
-	new = *type_Class.aux_type;
-	new.s.class = c;
-	c->type = pointer_type (find_type (&new));
+	new = *type_Class.t.fldptr.type;
+	new.t.class = c;
+	c->type = find_type (&new);
 	c->methods = new_methodlist ();
 	c->class_type.type = ct_class;
 	c->class_type.c.class = c;
@@ -171,7 +172,7 @@ static void
 set_self_type (class_t *class, method_t *method)
 {
 	if (method->instance)
-		method->params->type = class->type;
+		method->params->type = pointer_type (class->type);
 	else
 		method->params->type = &type_Class;
 }
@@ -246,7 +247,7 @@ begin_class (class_t *class)
 
 	current_class = &class->class_type;
 	class->def = class_def (current_class, 0);
-	meta_def = get_def (type_Class.aux_type,
+	meta_def = get_def (type_Class.t.fldptr.type,
 			va ("_OBJ_METACLASS_%s", class->name),
 			pr.scope, st_static);
 	meta_def->initialized = meta_def->constant = 1;
@@ -257,9 +258,9 @@ begin_class (class_t *class)
 		EMIT_STRING (meta->super_class, class->super_class->name);
 	EMIT_STRING (meta->name, class->name);
 	meta->info = _PR_CLS_META;
-	meta->instance_size = type_size (type_Class.aux_type);
+	meta->instance_size = type_size (type_Class.t.fldptr.type);
 	EMIT_DEF (meta->ivars,
-			  emit_struct (type_Class.aux_type->s.class->ivars,
+			  emit_struct (type_Class.t.fldptr.type->t.class->ivars,
 						   "Class"));
 
 	class->def->initialized = class->def->constant = 1;
@@ -558,7 +559,8 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 	class_t    *c = class;
 	category_t *cat;
 
-	if (sel->type != ex_pointer && sel->e.pointer.type != type_SEL.aux_type) {
+	if (sel->type != ex_pointer
+		&& sel->e.pointer.type != type_SEL.t.fldptr.type) {
 		error (sel, "not a selector");
 		return 0;
 	}
@@ -790,7 +792,7 @@ class_finish_module (void)
 	symtab_def->nosave = 1;
 	symtab = &G_STRUCT (pr_symtab_t, symtab_def->ofs);
 	if (selector_table_def) {
-		symtab->sel_ref_cnt = selector_table_def->type->num_parms;
+		symtab->sel_ref_cnt = selector_table_def->type->t.func.num_params;
 		EMIT_DEF (symtab->refs, selector_table_def);
 	}
 	symtab->cls_def_cnt = num_classes;
@@ -920,14 +922,14 @@ emit_protocol (protocol_t *protocol)
 	def_t      *proto_def;
 	pr_protocol_t *proto;
 
-	proto_def = get_def (type_Protocol.aux_type,
-						   va ("_OBJ_PROTOCOL_%s", protocol->name),
-						   pr.scope, st_none);
+	proto_def = get_def (&type_Protocol,
+						 va ("_OBJ_PROTOCOL_%s", protocol->name),
+						 pr.scope, st_none);
 	if (proto_def)
 		return proto_def;
-	proto_def = get_def (type_Protocol.aux_type,
-						   va ("_OBJ_PROTOCOL_%s", protocol->name),
-						   pr.scope, st_static);
+	proto_def = get_def (&type_Protocol,
+						 va ("_OBJ_PROTOCOL_%s", protocol->name),
+						 pr.scope, st_static);
 	proto_def->initialized = proto_def->constant = 1;
 	proto_def->nosave = 1;
 	proto = &G_STRUCT (pr_protocol_t, proto_def->ofs);
@@ -960,9 +962,9 @@ emit_protocol_list (protocollist_t *protocols, const char *name)
 	new_struct_field (protocol_list, &type_integer, "count", vis_public);
 	for (i = 0; i < protocols->count; i++)
 		new_struct_field (protocol_list, &type_pointer, 0, vis_public);
-	proto_list_def = get_def (type_Protocol.aux_type,
-								va ("_OBJ_PROTOCOLS_%s", name),
-								pr.scope, st_static);
+	proto_list_def = get_def (&type_Protocol,
+							  va ("_OBJ_PROTOCOLS_%s", name),
+							  pr.scope, st_static);
 	proto_list_def->initialized = proto_list_def->constant = 1;
 	proto_list_def->nosave = 1;
 	proto_list = &G_STRUCT (pr_protocol_list_t, proto_list_def->ofs);

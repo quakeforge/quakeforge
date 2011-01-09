@@ -67,7 +67,7 @@ function PR_FindFunction (string func) = #0;
 	local string field, value;
 	local plitem_t keys;
 	local function func;
-	local Entity e;
+	local Entity [] e;
 
 	classname = PL_String (PL_ObjectForKey (dict, "classname"));
 	if (classname == "worldspawn")

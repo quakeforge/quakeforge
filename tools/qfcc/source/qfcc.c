@@ -30,8 +30,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
@@ -70,6 +69,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "qfcc.h"
 #include "class.h"
+#include "codespace.h"
 #include "cpp.h"
 #include "debug.h"
 #include "def.h"

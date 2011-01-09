@@ -278,7 +278,7 @@ static keyword_t keywords[] = {
 	{"entity",		TYPE,	&type_entity,		1, PROG_ID_VERSION},
 	{"quaternion",	TYPE,	&type_quaternion,	0, PROG_VERSION},
 	{"integer",		TYPE,	&type_integer,		0, PROG_VERSION},
-	{"unsigned",	TYPE,	&type_uinteger,		0, PROG_VERSION},
+	{"unsigned",	TYPE,	&type_integer,		0, PROG_VERSION},//FIXME
 	{"function",	TYPE,	&type_function,		0, PROG_VERSION},
 	{"id",			TYPE,	&type_id,			0, PROG_VERSION},
 	{"Class",		TYPE,	&type_Class,		0, PROG_VERSION},

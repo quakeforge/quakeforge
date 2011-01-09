@@ -1,12 +1,12 @@
 #include "Frame.h"
 
 @implementation Frame
-+ (id) newWithSize: (integer) sz link: (Frame) l
++ (id) newWithSize: (integer) sz link: (Frame []) l
 {
     return [[self alloc] initWithSize: sz link: l];
 }
 
-- (id) initWithSize: (integer) sz link: (Frame) l
+- (id) initWithSize: (integer) sz link: (Frame []) l
 {
     self = [super init];
     size = sz;
@@ -15,17 +15,17 @@
     return self;
 }
 
-- (void) set: (integer) index to: (SchemeObject) o
+- (void) set: (integer) index to: (SchemeObject []) o
 {
     array[index] = o;
 }
 
-- (SchemeObject) get: (integer) index
+- (SchemeObject []) get: (integer) index
 {
     return array[index];
 }
 
-- (Frame) getLink
+- (Frame []) getLink
 {
     return link;
 }

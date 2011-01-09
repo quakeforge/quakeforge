@@ -2,7 +2,7 @@
 #include "Cons.h"
 
 instruction_t returninst;
-BaseContinuation base;
+BaseContinuation []base;
 
 @implementation BaseContinuation
 + (void) initialize
@@ -15,14 +15,14 @@ BaseContinuation base;
     return base;
 }
 
-- (void) restoreOnMachine: (Machine) m
+- (void) restoreOnMachine: (Machine []) m
 {
     [m state].program = &returninst;
 }
 
-- (void) invokeOnMachine: (Machine) m
+- (void) invokeOnMachine: (Machine []) m
 {
-    [m value: [(Cons) [m stack] car]];
+    [m value: [(Cons []) [m stack] car]];
     [m state].program = &returninst;
 }
 

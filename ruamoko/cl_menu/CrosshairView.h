@@ -6,9 +6,9 @@
 
 @interface CrosshairView : View
 {
-	CrosshairCvar crosshair;
+	CrosshairCvar []crosshair;
 }
--(id)initWithBounds:(Rect)aRect :(CrosshairCvar)_crosshair;
+-(id)initWithBounds:(Rect)aRect :(CrosshairCvar[])_crosshair;
 -(void) next;
 @end
 

@@ -8,26 +8,26 @@
 
 struct lineinfo_s {
     integer linenumber;
-    String sourcefile;
+    String []sourcefile;
 };
     
 typedef struct lineinfo_s lineinfo_t;
 
 @interface CompiledCode: SchemeObject
 {
-    Frame literals;
-    Array instructions;
-    Array constants;
+    Frame []literals;
+    Array []instructions;
+    Array []constants;
     instruction_t [] code;
     lineinfo_t [] lineinfo;
     integer minargs, size;
 }
-- (void) addInstruction: (Instruction) inst;
-- (integer) addConstant: (SchemeObject) c;
+- (void) addInstruction: (Instruction []) inst;
+- (integer) addConstant: (SchemeObject []) c;
 - (void) compile;
 - (instruction_t []) code;
 - (lineinfo_t []) lineinfo;
-- (Frame) literals;
+- (Frame []) literals;
 - (integer) minimumArguments;
 - (void) minimumArguments: (integer) min;
     

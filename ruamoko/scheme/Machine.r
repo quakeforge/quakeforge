@@ -10,7 +10,7 @@
 
 string GlobalGetKey (void []ele, void []data)
 {
-    return [[((Cons) ele) car] printForm];
+    return [[((Cons[]) ele) car] printForm];
 }
 
 void GlobalFree (void []ele, void []data)
@@ -37,14 +37,14 @@ void GlobalFree (void []ele, void []data)
     return self;
 }
 
-- (void) addGlobal: (Symbol) sym value: (SchemeObject) val
+- (void) addGlobal: (Symbol[]) sym value: (SchemeObject[]) val
 {
-    local Cons c = cons(sym, val);
+    local Cons []c = cons(sym, val);
     Hash_Add(globals, c);
     all_globals = cons(c, all_globals);
 }
 
-- (void) loadCode: (CompiledCode) code
+- (void) loadCode: (CompiledCode[]) code
 {
     state.program = [code code];
     state.literals = [code literals];
@@ -52,37 +52,37 @@ void GlobalFree (void []ele, void []data)
     state.pc = 0;
 }
 
-- (void) environment: (Frame) e
+- (void) environment: (Frame[]) e
 {
     state.env = e;
 }
 
-- (void) continuation: (Continuation) c
+- (void) continuation: (Continuation[]) c
 {
     state.cont = c;
 }
 
-- (void) value: (SchemeObject) v
+- (void) value: (SchemeObject[]) v
 {
     value = v;
 }
 
-- (SchemeObject) value
+- (SchemeObject[]) value
 {
     return value;
 }
 
-- (Continuation) continuation
+- (Continuation[]) continuation
 {
     return state.cont;
 }
 
-- (SchemeObject) stack
+- (SchemeObject[]) stack
 {
     return state.stack;
 }
 
-- (void) stack: (SchemeObject) o
+- (void) stack: (SchemeObject[]) o
 {
     state.stack = o;
 }
@@ -94,26 +94,26 @@ void GlobalFree (void []ele, void []data)
 
 - (void) state: (state_t []) st
 {
-    state.program = st[0].program;
-    state.pc = st[0].pc;
-    state.literals = st[0].literals;
-    state.stack = st[0].stack;
-    state.cont = st[0].cont;
-    state.env = st[0].env;
-    state.proc = st[0].proc;
-    state.lineinfo = st[0].lineinfo;
+    state.program = st.program;
+    state.pc = st.pc;
+    state.literals = st.literals;
+    state.stack = st.stack;
+    state.cont = st.cont;
+    state.env = st.env;
+    state.proc = st.proc;
+    state.lineinfo = st.lineinfo;
 }
 
-- (void) procedure: (Procedure) pr
+- (void) procedure: (Procedure[]) pr
 {
     state.proc = pr;
 }
 
-- (SchemeObject) run
+- (SchemeObject[]) run
 {
     local integer opcode;
     local integer operand;
-    local SchemeObject res;
+    local SchemeObject []res;
     while (1) {
             if (value && [value isError]) {
                     dprintf("Error: %s[%s]\n", [value description], [value printForm]);
@@ -134,17 +134,17 @@ void GlobalFree (void []ele, void []data)
                     state.stack = cons(value, state.stack);
                     break;
                 case POP:
-                    value = [(Cons) state.stack car];
+                    value = [(Cons[]) state.stack car];
                     if (value) {
                             dprintf("Pop: %s\n", [value printForm]);
                     } else {
                             dprintf("Pop: NULL!!!!\n");
                     }
-                    state.stack = [(Cons) state.stack cdr];
+                    state.stack = [(Cons[]) state.stack cdr];
                     break;
                 case MAKECLOSURE:
                     dprintf("Makeclosure\n");
-                    value = [Lambda newWithCode: (CompiledCode) value
+                    value = [Lambda newWithCode: (CompiledCode[]) value
                                     environment: state.env];
                     break;
                 case MAKECONT:
@@ -169,16 +169,16 @@ void GlobalFree (void []ele, void []data)
                     dprintf("Popenv\n");
                     state.env = [state.env getLink];
                 case GET:
-                    value = [(Frame) value get: operand];
+                    value = [(Frame[]) value get: operand];
                     dprintf("Get: %i --> %s\n", operand, [value printForm]);
                     break;
                 case SET:
-                    [(Frame) value set: operand to: [(Cons) state.stack car]];
-                    dprintf("Set: %i --> %s\n", operand, [[(Cons) state.stack car] printForm]);
-                    state.stack = [(Cons) state.stack cdr];
+                    [(Frame[]) value set: operand to: [(Cons[]) state.stack car]];
+                    dprintf("Set: %i --> %s\n", operand, [[(Cons[]) state.stack car] printForm]);
+                    state.stack = [(Cons[]) state.stack cdr];
                     break;
                 case SETREST:
-                    [(Frame) value set: operand to: state.stack];
+                    [(Frame[]) value set: operand to: state.stack];
                     dprintf("Setrest: %i --> %s\n", operand, [state.stack printForm]);
                     state.stack = [Nil nil];
                     break;
@@ -188,11 +188,11 @@ void GlobalFree (void []ele, void []data)
                     break;
                 case GETLINK:
                     dprintf("Getlink\n");
-                    value = [(Frame) value getLink];
+                    value = [(Frame[]) value getLink];
                     break;
                 case GETGLOBAL:
                     dprintf("Getglobal: %s\n", [value printForm]);
-                    res = [((Cons) Hash_Find(globals, [value printForm])) cdr];
+                    res = [((Cons[]) Hash_Find(globals, [value printForm])) cdr];
                     if (!res) {
                             return [Error type: "binding"
                                           message: sprintf("Undefined binding: %s",
@@ -204,8 +204,8 @@ void GlobalFree (void []ele, void []data)
                     break;
                 case SETGLOBAL:
                     dprintf("Setglobal: %s\n", [value printForm]);
-                    [self addGlobal: (Symbol) value value: [(Cons) state.stack car]];
-                    state.stack = [(Cons) state.stack cdr];
+                    [self addGlobal: (Symbol[]) value value: [(Cons[]) state.stack car]];
+                    state.stack = [(Cons[]) state.stack cdr];
                     break;
                 case CALL:
                     dprintf("Call\n");
@@ -217,7 +217,7 @@ void GlobalFree (void []ele, void []data)
                                                       [value printForm], [state.stack printForm])
                                           by: self];
                     }
-                    [(Procedure) value invokeOnMachine: self];
+                    [(Procedure[]) value invokeOnMachine: self];
                     break;
                 case RETURN:
                     dprintf("Return: %s\n", [value printForm]);

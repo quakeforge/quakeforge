@@ -17,7 +17,7 @@ struct obj_method_description {
 }
 
 - (string) name;
-- (BOOL) conformsTo: (Protocol)aProtocolObject;
+- (BOOL) conformsTo: (Protocol [])aProtocolObject;
 - (struct obj_method_description []) descriptionForInstanceMethod: (SEL)aSel;
 - (struct obj_method_description []) descriptionForClassMethod: (SEL)aSel;
 @end

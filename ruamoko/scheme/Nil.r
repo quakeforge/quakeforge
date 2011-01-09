@@ -1,7 +1,7 @@
 #include "Nil.h"
 #include "defs.h"
 
-Nil one_nil_to_rule_them_all;
+Nil []one_nil_to_rule_them_all;
 
 @implementation Nil
 

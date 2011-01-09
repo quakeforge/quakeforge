@@ -2,7 +2,7 @@
 #include "defs.h"
 //#include "debug.h"
 
-SchemeObject maybe_garbage, not_garbage, not_garbage_end, wait_list, roots, queue_pos;
+SchemeObject []maybe_garbage, not_garbage, not_garbage_end, wait_list, roots, queue_pos;
 BOOL markstate;
 
 typedef enum {
@@ -42,7 +42,7 @@ integer checkpoint;
 
 + (void) collect
 {
-    local SchemeObject cur;
+    local SchemeObject []cur;
     local integer amount;
 
     switch (gc_state) {

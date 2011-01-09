@@ -356,6 +356,7 @@ set_address (sv_def_t *def, void *address)
 	switch (def->type) {
 		case ev_void:
 		case ev_short:
+		case ev_invalid:
 		case ev_type_count:
 			break;
 		case ev_float:
@@ -369,12 +370,6 @@ set_address (sv_def_t *def, void *address)
 		case ev_func:
 		case ev_pointer:
 		case ev_integer:
-		case ev_uinteger:
-		case ev_object:
-		case ev_class:
-		case ev_sel:
-		case ev_array:
-		case ev_struct:
 			*(int **)def->field = (int *) address;
 			break;
 	}

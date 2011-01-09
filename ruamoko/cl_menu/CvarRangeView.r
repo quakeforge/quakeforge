@@ -15,7 +15,7 @@
 	[value setText:ftos ([range value])];
 }
 
--(id)initWithBounds:(Rect)aRect title:(string)_title sliderWidth:(integer)width :(CvarRange)_range
+-(id)initWithBounds:(Rect)aRect title:(string)_title sliderWidth:(integer)width :(CvarRange [])_range
 {
 	local Rect rect;
 

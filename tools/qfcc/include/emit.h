@@ -32,18 +32,6 @@
 #ifndef __emit_h
 #define __emit_h
 
-typedef struct codespace_s {
-	struct statement_s *code;
-	int         size;
-	int         max_size;
-} codespace_t;
-
-codespace_t *codespace_new (void);
-void codespace_delete (codespace_t *codespace);
-void codespace_addcode (codespace_t *codespace, struct statement_s *code,
-						int size);
-struct statement_s *codespace_newstatement (codespace_t *codespace);
-
 struct expr_s;
 struct def_s *emit_statement (struct expr_s *e, opcode_t *op, struct def_s *var_a, struct def_s *var_b, struct def_s *var_c);
 struct def_s *emit_sub_expr (struct expr_s*e, struct def_s *dest);

@@ -268,7 +268,7 @@ WriteProgdefs (const char *filename)
 		if (!d->name || !d->ofs || d->type->type != ev_field)
 			continue;
 
-		switch (d->type->aux_type->type) {
+		switch (d->type->t.fldptr.type->type) {
 			case ev_float:
 				fprintf (f, "\tfloat\t%s;\n", d->name);
 				break;

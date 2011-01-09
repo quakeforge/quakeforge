@@ -8,7 +8,7 @@ void (id object, integer code, string fmt, @va_list args) obj_verror = #0;
 IMP (id receiver, SEL op) obj_msg_lookup = #0;
 IMP (Super class, SEL op) obj_msg_lookup_super = #0;
 id (id receiver, SEL op, ...) obj_msgSend = #0;
-id (Super class, SEL op, ...) obj_msgSend_super = #0;
+id (Super[] class, SEL op, ...) obj_msgSend_super = #0;
 @param (id receiver, SEL op, @va_list args) obj_msg_sendv = #0;
 (void []) (integer size) obj_malloc = #0;
 (void []) (integer size) obj_atomic_malloc = #0;
@@ -206,7 +206,7 @@ BOOL (id object) object_is_meta_class = #0;
 	return (class_get_instance_method ([self class], aSelector) != NIL);
 }
 
-- (BOOL) conformsToProtocol: (Protocol)aProtocol
+- (BOOL) conformsToProtocol: (Protocol [])aProtocol
 {
 	return [[self class] conformsToProtocol: aProtocol];
 }

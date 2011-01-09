@@ -275,8 +275,6 @@ get_auxtype (const char *type)
 				return ev_field;
 			case '(':
 				return ev_func;
-			case ':':
-				return ev_sel;
 			case '@':	// id
 			case '#':	// class
 			case '^':
@@ -285,14 +283,8 @@ get_auxtype (const char *type)
 				return ev_quat;
 			case 'i':
 				return ev_integer;
-			case 'I':
-				return ev_uinteger;
 			case 's':
 				return ev_short;
-			case '{':
-				return ev_struct;
-			case '[':
-				return ev_array;
 		}
 	}
 }

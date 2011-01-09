@@ -3,6 +3,7 @@
 #endif
 
 #include "class.h"
+#include "codespace.h"
 #include "debug.h"
 #include "def.h"
 #include "emit.h"

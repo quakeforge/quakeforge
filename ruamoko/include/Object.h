@@ -25,7 +25,7 @@
 			withObject: (id)anObject
 			withObject: (id)anotherObject;
 - (BOOL) respondsToSelector: (SEL)aSelector;
-- (BOOL) conformsToProtocol: (Protocol)aProtocol;
+- (BOOL) conformsToProtocol: (Protocol [])aProtocol;
 
 - (id) retain;
 - (id) autorelease;

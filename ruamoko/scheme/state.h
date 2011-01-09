@@ -11,10 +11,10 @@ struct state_s {
     instruction_t [] program;
     lineinfo_t [] lineinfo;
     integer pc;
-    Frame literals, env;
-    SchemeObject stack;
-    Continuation cont;
-    Procedure proc;
+    Frame []literals, env;
+    SchemeObject []stack;
+    Continuation []cont;
+    Procedure []proc;
 };
 
 typedef struct state_s state_t;

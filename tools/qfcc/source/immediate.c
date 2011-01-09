@@ -190,9 +190,10 @@ ReuseConstant (expr_t *expr, def_t *def)
 		case ex_uinteger:
 			if (!def || def->type != &type_float) {
 				tab = integer_imm_defs;
-				if (e.type == ex_uinteger)
-					type = &type_uinteger;
-				else
+				//FIXME
+				//if (e.type == ex_uinteger)
+				//	type = &type_uinteger;
+				//else
 					type = &type_integer;
 				break;
 			}

@@ -36,12 +36,12 @@ typedef struct instruction_s instruction_t;
 {
     opcode_e opcode;
     integer operand, offset;
-    Instruction label;
+    Instruction []label;
 }
 + (id) opcode: (opcode_e) oc;
 + (id) opcode: (opcode_e) oc operand: (integer) op;
-+ (id) opcode: (opcode_e) oc label: (Instruction) l;
-- (id) initWithOpcode: (opcode_e) oc operand: (integer) op label: (Instruction) l;
++ (id) opcode: (opcode_e) oc label: (Instruction []) l;
+- (id) initWithOpcode: (opcode_e) oc operand: (integer) op label: (Instruction []) l;
 - (void) offset: (integer) ofs;
 - (integer) offset;
 - (opcode_e) opcode;

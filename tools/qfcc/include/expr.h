@@ -209,6 +209,11 @@ extern expr_type expr_types[];
 */
 expr_t *type_mismatch (expr_t *e1, expr_t *e2, int op);
 
+expr_t *param_mismatch (expr_t *e, int param, const char *fn,
+					    struct type_s *t1, struct type_s *t2);
+expr_t *cast_error (expr_t *e, struct type_s *t1, struct type_s *t2);
+expr_t *test_error (expr_t *e, struct type_s *t);
+
 extern expr_t *local_expr;
 
 /**	Get the type descriptor of the expression result.

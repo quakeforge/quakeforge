@@ -42,14 +42,9 @@ typedef enum {
 	ev_pointer,			// end of v6 types
 	ev_quat,
 	ev_integer,
-	ev_uinteger,
 	ev_short,			// value is embedded in the opcode
-	ev_struct,
-	ev_object,
-	ev_class,
-	ev_sel,
-	ev_array,
-	
+
+	ev_invalid,			// invalid type. used for instruction checking
 	ev_type_count		// not a type, gives number of types
 } etype_t;
 
@@ -263,33 +258,8 @@ typedef enum {
 	OP_MOVE,
 	OP_MOVEP,
 
-	OP_ADD_U,
-	OP_SUB_U,
-	OP_MUL_U,
-	OP_DIV_U,
-	OP_BITAND_U,
-	OP_BITOR_U,
-	OP_BITXOR_U,
-	OP_BITNOT_U,
-	OP_AND_U,
-	OP_OR_U,
-	OP_NOT_U,
-	OP_EQ_U,
-	OP_NE_U,
-	OP_MOD_U,
 	OP_SHL_U,
 	OP_SHR_U,
-	OP_STORE_U,
-	OP_STOREB_U,
-	OP_STOREBI_U,
-	OP_STOREP_U,
-	OP_LOAD_U,
-	OP_LOADB_U,
-	OP_LOADBI_U,
-	OP_ADDRESS_U,
-
-	OP_CONV_IU,
-	OP_CONV_UI,
 
 	OP_STATE_F,
 
@@ -383,8 +353,12 @@ typedef struct pr_va_list_s {
 	pointer_t   list;			// pr_type_t
 } pr_va_list_t;
 
+#define PROG_VERSION_ENCODE(a,b,c)	\
+	( (((0x##a) & 0x0ff) << 24)		\
+	 |(((0x##b) & 0xfff) << 12)		\
+	 |(((0x##c) & 0xfff) <<  0) )
 #define	PROG_ID_VERSION	6
-#define	PROG_VERSION	0x00fff005	// MMmmmRRR 0.fff.005 (hex)
+#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,006)
 
 typedef struct dprograms_s {
 	pr_uint_t   version;

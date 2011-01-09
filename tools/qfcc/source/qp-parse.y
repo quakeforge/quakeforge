@@ -239,13 +239,13 @@ subprogram_declaration
 		}
 	  declarations compound_statement ';'
 		{
+			type_t     *ret_type = $1->type->t.func.type;
 			current_scope = current_scope->parent;
 			//current_storage = st_global;
 			//FIXME want a true void return
-			if ($1->type->aux_type->type != ev_void)
-				append_expr ($5,
-							 return_expr (current_func,
-							 			  new_ret_expr ($1->type->aux_type)));
+			if (ret_type)
+				append_expr ($5, return_expr (current_func,
+											  new_ret_expr (ret_type)));
 			build_code_function (current_func, 0, $5);
 			current_func = 0;
 		}
@@ -338,7 +338,7 @@ statement
 		{
 			convert_name ($1);
 			if ($1->type == ex_def && extract_type ($1) == ev_func)
-				$1 = new_ret_expr ($1->e.def->type->aux_type);
+				$1 = new_ret_expr ($1->e.def->type->t.func.type);
 			$$ = assign_expr ($1, $3);
 		}
 	| procedure_statement							{ $$ = $1; }

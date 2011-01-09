@@ -6,9 +6,9 @@
 {
     string type, message;
 }
-+ (id) type: (string) t message: (string) m by: (SchemeObject) o;
++ (id) type: (string) t message: (string) m by: (SchemeObject []) o;
 + (id) type: (string) t message: (string) m;
-- (id) initWithType: (string) t message: (string) m by: (SchemeObject) o;
+- (id) initWithType: (string) t message: (string) m by: (SchemeObject []) o;
 - (string) type;
 - (string) message;
 

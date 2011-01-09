@@ -31,8 +31,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -46,6 +45,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/qendian.h"
 #include "QF/quakeio.h"
 
+#include "codespace.h"
 #include "debug.h"
 #include "def.h"
 #include "emit.h"
@@ -573,7 +573,7 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		pf->aux->line_info = qf->line_info;
 		pf->aux->local_defs = 0;
 		pf->aux->num_locals = 0;
-		pf->aux->return_type = pf->def->type->aux_type->type;
+		pf->aux->return_type = pf->def->type->t.func.type->type;
 		pf->builtin = qf->builtin;
 		pf->code = qf->code;
 		pf->function_num = i + 1;

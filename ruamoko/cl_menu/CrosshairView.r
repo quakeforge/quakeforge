@@ -6,10 +6,10 @@
 
 @implementation CrosshairView
 {
-	CrosshairCvar crosshair;
+	CrosshairCvar []crosshair;
 }
 
--(id)initWithBounds:(Rect)aRect :(CrosshairCvar)_crosshair
+-(id)initWithBounds:(Rect)aRect :(CrosshairCvar[])_crosshair
 {
 	self = [self initWithBounds:aRect];
 	crosshair = _crosshair;

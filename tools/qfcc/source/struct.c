@@ -123,10 +123,11 @@ init_struct (struct_t *strct, type_t *type, struct_type stype,
 	if (name)
 		strct->name = save_string (name);
 	strct->type = type;
-	strct->type->type = ev_struct;
+	strct->type->type = ev_invalid;
+	strct->type->ty = ty_struct;
 	strct->struct_tail = &strct->struct_head;
 	strct->struct_fields = Hash_NewTable (61, struct_field_get_key, 0, 0);
-	strct->type->s.strct = strct;
+	strct->type->t.strct = strct;
 	strct->stype = stype;
 	if (name) {
 		strct->type->name = strct->name;

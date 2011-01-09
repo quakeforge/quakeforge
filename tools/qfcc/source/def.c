@@ -64,6 +64,7 @@ typedef struct locref_s {
 } locref_t;
 
 def_t       def_void = { &type_void, "def void" };
+def_t       def_invalid = { &type_invalid, "def invalid" };
 def_t       def_function = { &type_function, "def function" };
 
 static def_t *free_temps[4];			// indexted by type size
@@ -280,8 +281,8 @@ get_def (type_t *type, const char *name, scope_t *scope,
 	// not valid for st_static or st_extern
 	def->space = space;
 	if (space) {
-		if (type->type == ev_field && type->aux_type == &type_vector)
-			def->ofs = new_location (type->aux_type, space);
+		if (type->type == ev_field && type->t.fldptr.type == &type_vector)
+			def->ofs = new_location (type->t.fldptr.type, space);
 		else
 			def->ofs = new_location (type, space);
 	}
@@ -299,14 +300,14 @@ get_def (type_t *type, const char *name, scope_t *scope,
 
 		if (type->type == ev_field) {
 			if (storage == st_global || storage == st_static) {
-				G_INT (def->ofs) = new_location (type->aux_type,
+				G_INT (def->ofs) = new_location (type->t.fldptr.type,
 												 pr.entity_data);
 				reloc_def_field (def, def->ofs);
 				def->constant = 1;
 				def->nosave = 1;
 			}
 
-			if (type->aux_type->type == ev_vector) {
+			if (type->t.fldptr.type->type == ev_vector) {
 				vector_component (1, def, 0, scope, storage);
 				vector_component (1, def, 1, scope, storage);
 				vector_component (1, def, 2, scope, storage);
@@ -524,7 +525,8 @@ def_initialized (def_t *d)
 {
 	d->initialized = 1;
 	if (d->type == &type_vector
-		|| (d->type->type == ev_field && d->type->aux_type == &type_vector)) {
+		|| (d->type->type == ev_field
+			&& d->type->t.fldptr.type == &type_vector)) {
 		d = d->def_next;
 		d->initialized = 1;
 		d = d->def_next;
@@ -557,7 +559,7 @@ def_to_ddef (def_t *def, ddef_t *ddef, int aux)
 	type_t     *type = def->type;
 
 	if (aux)
-		type = type->aux_type;
+		type = type->t.fldptr.type;	// aux is true only for fields
 	ddef->type = type->type;
 	ddef->ofs = def->ofs;
 	ddef->s_name = ReuseString (def->name);

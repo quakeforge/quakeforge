@@ -8,6 +8,6 @@
 + (id) voidConstant;
 @end
 
-@extern Void voidConstant;
+@extern Void []voidConstant;
 
 #endif //__Void_h

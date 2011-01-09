@@ -26,14 +26,14 @@
 	return [[[self alloc] initWithCapacity: cap] autorelease];
 }
 
-+ (id) arrayWithArray: (Array)array
++ (id) arrayWithArray: (Array [])array
 {
 	return [[array copy] autorelease];
 }
 
 + (id) arrayWithObject: (id)anObject
 {
-	Array newArray = (Array)[self arrayWithCapacity: STANDARD_CAPACITY];
+	Array [] newArray = (Array [])[self arrayWithCapacity: STANDARD_CAPACITY];
 
 	[newArray addObject: anObject];
 	return newArray;
@@ -86,7 +86,7 @@
 	return self;
 }
 
-- (id) initWithArray: (Array)array
+- (id) initWithArray: (Array [])array
 {
 #if 0
 	local unsigned i;
@@ -104,7 +104,7 @@
 #endif
 }
 
-- (id) initWithArray: (Array)array
+- (id) initWithArray: (Array [])array
            copyItems: (BOOL)copy
 {
 	local unsigned i;
@@ -241,7 +241,7 @@
 	count++;
 }
 
-- (void) addObjectsFromArray: (Array)array
+- (void) addObjectsFromArray: (Array [])array
 {
 	local unsigned	i;
 
@@ -299,7 +299,7 @@
 	[tmp release];
 }
 
-- (void) setArray: (Array)array
+- (void) setArray: (Array [])array
 {
 	if (self == array)
 		return;
@@ -381,7 +381,7 @@
 	} while (i);
 }
 
-- (void) removeObjectsInArray: (Array)array
+- (void) removeObjectsInArray: (Array [])array
 {
 	local unsigned	i = [array count];
 

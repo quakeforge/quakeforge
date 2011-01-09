@@ -17,7 +17,7 @@ struct obj_method_description_list {
 	return protocol_name;
 }
 
-- (BOOL) conformsTo: (Protocol)aProtocolObject
+- (BOOL) conformsTo: (Protocol [])aProtocolObject
 {
 	local integer i;
 	local struct obj_protocol_list [] proto_list;

@@ -9,7 +9,7 @@
 
 @interface SchemeObject: Object
 {
-    @public SchemeObject prev, next;
+    @public SchemeObject []prev, next;
     BOOL marked, root;
     integer line;
     string source;

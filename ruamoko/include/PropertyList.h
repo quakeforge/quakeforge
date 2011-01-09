@@ -9,12 +9,12 @@
 	plitem_t    item;
 	integer     own;
 }
-+ (PLItem) newDictionary;
-+ (PLItem) newArray;
-+ (PLItem) newData:(void[]) data size:(integer) len;
-+ (PLItem) newString:(string) str;
-+ (PLItem) fromString:(string) str;
-+ (PLItem) fromFile:(QFile) file;
++ (PLItem []) newDictionary;
++ (PLItem []) newArray;
++ (PLItem []) newData:(void[]) data size:(integer) len;
++ (PLItem []) newString:(string) str;
++ (PLItem []) fromString:(string) str;
++ (PLItem []) fromFile:(QFile) file;
 
 - initWithItem:(plitem_t) item;
 - initWithOwnItem:(plitem_t) item;
@@ -23,31 +23,31 @@
 @end
 
 @interface PLDictionary: PLItem
-+ (PLDictionary) new;
++ (PLDictionary []) new;
 
 - (integer) count;
 - (integer) numKeys;
-- (PLItem) getObjectForKey:(string) key;
-- (PLItem) allKeys;
-- addKey:(string) key value:(PLItem) value;
+- (PLItem []) getObjectForKey:(string) key;
+- (PLItem []) allKeys;
+- addKey:(string) key value:(PLItem []) value;
 @end
 
 @interface PLArray: PLItem
-+ (PLArray) new;
++ (PLArray []) new;
 
 - (integer) count;
 - (integer) numObjects;
-- (PLItem) getObjectAtIndex:(integer) index;
-- addObject:(PLItem) object;
-- insertObject:(PLItem) object atIndex:(integer) index;
+- (PLItem []) getObjectAtIndex:(integer) index;
+- addObject:(PLItem []) object;
+- insertObject:(PLItem []) object atIndex:(integer) index;
 @end
 
 @interface PLData: PLItem
-+ (PLData) new:(void[]) data size:(integer) len;
++ (PLData []) new:(void[]) data size:(integer) len;
 @end
 
 @interface PLString: PLItem
-+ (PLString) new:(string) str;
++ (PLString []) new:(string) str;
 
 - (string) string;
 @end

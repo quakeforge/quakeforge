@@ -17,13 +17,13 @@
 	[super dealloc];
 }
 
-- (View) addView: (View)aView
+- (View []) addView: (View [])aView
 {
 	[views addObject:aView];
 	return aView;
 }
 
-- (id) addViews: (Array)viewlist
+- (id) addViews: (Array [])viewlist
 {
 	while ([viewlist count]) {
 		[self addView: [viewlist objectAtIndex: 0]];
@@ -44,7 +44,7 @@
 	[views makeObjectsPerformSelector:sel withObject:self];
 }
 
-- (void) setBasePosFromView: (View) view
+- (void) setBasePosFromView: (View []) view
 {
 	[super setBasePosFromView:view];
 	local SEL sel = @selector (setBasePosFromView:);

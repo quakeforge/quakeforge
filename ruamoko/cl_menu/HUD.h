@@ -37,7 +37,7 @@
 
 @interface HUDGraphic : HUDObject
 {
-	QPic picture;
+	QPic []picture;
 }
 
 - (id) initWithComponents: (integer)x :(integer)y :(string) _file;
@@ -52,7 +52,7 @@
 
 @interface HUDAnimation : HUDObject
 {
-	Array frames;
+	Array []frames;
 	integer currentFrame;
 	float nextFrameTime;
 	BOOL looping;
@@ -60,7 +60,7 @@
 - (id) initWithComponents: (integer) x :(integer) y;
 - (void) dealloc;
 - (Size) size;
-- (void) addFrame: (Frame) frame;
+- (void) addFrame: (Frame []) frame;
 - (void) changeFrame;
 - (void) display;
 - (void) start;

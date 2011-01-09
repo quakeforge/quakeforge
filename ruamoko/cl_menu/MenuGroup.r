@@ -57,10 +57,10 @@
 
 - (void) draw
 {
-	local View cur;
+	local View []cur;
 
 	[super draw];
-	cur = (View) [views objectAtIndex:current];
+	cur = [views objectAtIndex:current];
 	opt_cursor  (cur.xabs - 8, cur.yabs);
 }
 @end

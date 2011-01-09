@@ -34,7 +34,7 @@
 
 @interface ListNode: Object
 {
-	ListNode	nextNode;
+	ListNode[]	nextNode;
 	id			data;
 }
 

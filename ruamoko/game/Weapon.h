@@ -5,7 +5,7 @@
 
 @protocol Weapon
 
-- (void) setOwner: (Entity)o;
+- (void) setOwner: (Entity [])o;
 - (void) fire;
 
 @end
