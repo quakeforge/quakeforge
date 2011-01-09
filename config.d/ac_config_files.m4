@@ -60,6 +60,7 @@
 	tools/qflight/Makefile
 	tools/qflight/include/Makefile
 	tools/qflight/source/Makefile
+	tools/qflmp/Makefile
 	tools/qfmodelgen/Makefile
 	tools/qfmodelgen/include/Makefile
 	tools/qfmodelgen/source/Makefile
