@@ -627,13 +627,14 @@ LoadTGA (QFile *fin)
 {
 	byte       *dataByte;
 	decoder_t   decode;
-	int         numPixels, targa_mark;
+	int         fsize = Qfilesize (fin);
+	int			numPixels, targa_mark;
 	TargaHeader *targa;
 	tex_t      *tex;
 
 	targa_mark = Hunk_LowMark ();
-	targa = Hunk_AllocName (qfs_filesize, "TGA");
-	Qread (fin, targa, qfs_filesize);
+	targa = Hunk_AllocName (fsize, "TGA");
+	Qread (fin, targa, fsize);
 	
 	targa->colormap_index = LittleShort (targa->colormap_index);
 	targa->colormap_length = LittleShort (targa->colormap_length);
