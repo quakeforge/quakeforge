@@ -158,7 +158,7 @@ EncodePCX (byte * data, int width, int height,
 
 	pcx->manufacturer = 0x0a;			// PCX id
 	pcx->version = 5;					// 256 color
-	pcx->encoding = 1;					// uncompressed
+	pcx->encoding = 1;					// RLE
 	pcx->bits_per_pixel = 8;			// 256 color
 	pcx->xmin = 0;
 	pcx->ymin = 0;
