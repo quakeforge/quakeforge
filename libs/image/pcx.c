@@ -168,7 +168,7 @@ EncodePCX (byte * data, int width, int height,
 	pcx->vres = LittleShort ((short) height);
 	pcx->color_planes = 1;				// chunky image
 	pcx->bytes_per_line = LittleShort ((short) width);
-	pcx->palette_type = LittleShort (2);	// not a grey scale
+	pcx->palette_type = LittleShort (1);	// not a grey scale
 
 	// pack the image
 	pack = (byte *) &pcx[1];

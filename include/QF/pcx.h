@@ -43,7 +43,7 @@ typedef struct
     char	reserved;		///< should be 0
     char	color_planes;	///< Number of color planes
     unsigned short	bytes_per_line;	///< Number of bytes for a scan line (per plane). According to ZSoft, must be an even number.
-    unsigned short	palette_type;
+    unsigned short	palette_type;	///< Palette info: 1 = color, 2 = greyscale
     char	filler[58];
 } pcx_t;
 
