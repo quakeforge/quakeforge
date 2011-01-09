@@ -105,7 +105,7 @@ dump_globals (progs_t *pr)
 		if (def->type == ev_field)
 			comment = va (" %d", G_INT (pr, offset));
 
-		printf ("%d %d %s %s%s\n", offset, saveglobal, name, type, comment);
+		printf ("%x %d %s %s%s\n", offset, saveglobal, name, type, comment);
 	}
 }
 
@@ -148,7 +148,7 @@ dump_functions (progs_t *pr)
 
 		start = func->first_statement;
 		if (start > 0)
-			comment = va (" @ %d", start);
+			comment = va (" @ %x", start);
 		else
 			comment = va (" = #%d", -start);
 
@@ -306,6 +306,10 @@ qfo_functions (qfo_t *qfo)
 				QFO_GETSTR (qfo, def->name));
 		if (!(def->flags & QFOD_EXTERNAL))
 			printf (" %d", qfo->data[def->ofs].integer_var);
+		if (func->code)
+			printf (" @ %x", func->code);
+		else
+			printf (" = #%d", func->builtin);
 		puts ("");
 	}
 }
