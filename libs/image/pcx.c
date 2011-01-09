@@ -50,7 +50,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 
 VISIBLE tex_t *
-LoadPCX (QFile *f, int convert, byte *pal)
+LoadPCX (QFile *f, qboolean convert, byte *pal)
 {
 	pcx_t      *pcx;
 	int         pcx_mark;
