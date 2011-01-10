@@ -220,7 +220,15 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		return dec_users (e2);
 	if (op == '*' && is_constant (e2) && e2->e.float_val == 1)
 		return dec_users (e1);
+	if (op == '*' && is_constant (e1) && e1->e.float_val == 0)
+		return dec_users (e1);
+	if (op == '*' && is_constant (e2) && e2->e.float_val == 0)
+		return dec_users (e2);
 	if (op == '/' && is_constant (e2) && e2->e.float_val == 1)
+		return dec_users (e1);
+	if (op == '/' && is_constant (e2) && e2->e.float_val == 0)
+		return error (e, "division by zero");
+	if (op == '/' && is_constant (e1) && e1->e.float_val == 0)
 		return dec_users (e1);
 	if (op == '+' && is_constant (e1) && e1->e.float_val == 0)
 		return dec_users (e2);
@@ -347,9 +355,18 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '*' && is_constant (e2) && e2->type == ex_float
 		&& e2->e.float_val == 1)
 		return dec_users (e1);
+	if (op == '*' && is_constant (e1) && e1->type == ex_float
+		&& e1->e.float_val == 0)
+		return new_vector_expr (vec3_origin);
+	if (op == '*' && is_constant (e2) && e2->type == ex_float
+		&& e2->e.float_val == 0)
+		return new_vector_expr (vec3_origin);
 	if (op == '/' && is_constant (e2) && e2->type == ex_float
 		&& e2->e.float_val == 1)
 		return dec_users (e1);
+	if (op == '/' && is_constant (e2) && e2->type == ex_float
+		&& e2->e.float_val == 0)
+		return error (e, "division by zero");
 	if (op == '+' && is_constant (e1) && VectorIsZero (e1->e.vector_val))
 		return dec_users (e2);
 	if (op == '+' && is_constant (e2) && VectorIsZero (e2->e.vector_val))
@@ -524,9 +541,18 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '*' && is_constant (e2) && e2->type == ex_float
 		&& e2->e.float_val == 1)
 		return dec_users (e1);
+	if (op == '*' && is_constant (e1) && e1->type == ex_float
+		&& e1->e.float_val == 0)
+		return new_quaternion_expr (quat_origin);
+	if (op == '*' && is_constant (e2) && e2->type == ex_float
+		&& e2->e.float_val == 0)
+		return new_quaternion_expr (quat_origin);
 	if (op == '/' && is_constant (e2) && e2->type == ex_float
 		&& e2->e.float_val == 1)
 		return dec_users (e1);
+	if (op == '/' && is_constant (e2) && e2->type == ex_float
+		&& e2->e.float_val == 0)
+		return error (e, "division by zero");
 	if (op == '+' && is_constant (e1) && QuatIsZero (e1->e.quaternion_val))
 		return dec_users (e2);
 	if (op == '+' && is_constant (e2) && QuatIsZero (e2->e.quaternion_val))
@@ -606,7 +632,15 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		return dec_users (e2);
 	if (op == '*' && is_constant (e2) && e2->e.integer_val == 1)
 		return dec_users (e1);
+	if (op == '*' && is_constant (e1) && e1->e.integer_val == 0)
+		return dec_users (e1);
+	if (op == '*' && is_constant (e2) && e2->e.integer_val == 0)
+		return dec_users (e2);
 	if (op == '/' && is_constant (e2) && e2->e.integer_val == 1)
+		return dec_users (e1);
+	if (op == '/' && is_constant (e2) && e2->e.integer_val == 0)
+		return error (e, "division by zero");
+	if (op == '/' && is_constant (e1) && e1->e.integer_val == 0)
 		return dec_users (e1);
 	if (op == '+' && is_constant (e1) && e1->e.integer_val == 0)
 		return dec_users (e2);
