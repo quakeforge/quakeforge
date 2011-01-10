@@ -82,7 +82,7 @@ static const struct option long_options[] = {
 };
 
 
-char *
+static char *
 replaceExtension (const char *oldstr, const char *extension)
 {
 	char *tmp = strdup (oldstr);
@@ -120,7 +120,7 @@ usage (int status)
 }
 
 
-qboolean
+static qboolean
 exportFile (const char *inpath)
 {
 	char 		*outpath = replaceExtension (inpath, "pcx");
@@ -196,7 +196,7 @@ die:
 }
 
 
-qboolean
+static qboolean
 importFile (const char *inpath)
 {
 	char 		*outpath = replaceExtension (inpath, "lmp");
