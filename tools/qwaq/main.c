@@ -104,7 +104,7 @@ init_qf (void)
 {
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
-	Cvar_Get ("developer", "128", 0, 0, 0);
+	//Cvar_Get ("developer", "128", 0, 0, 0);
 	Cvar_Init ();
 	Sys_Init_Cvars ();
 	Cmd_Init ();

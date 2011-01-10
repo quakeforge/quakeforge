@@ -23,7 +23,7 @@ void test_plist (void)
 	local string data, l;
 	local plitem_t pl, item, i;
 
-	data = read_file ("/home/bill/.quakeforge.dir");
+	data = read_file ("/home/bill/.quakeforge/gamedir.conf");
 	pl = PL_GetPropertyList ("{" + data + "}");
 	l = PL_WritePropertyList (pl);
 	printf ("%s", data);
