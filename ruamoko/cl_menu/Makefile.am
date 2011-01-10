@@ -15,7 +15,7 @@ GZ=
 endif
 STRIP=$(shell echo `echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`)
 
-menu_data=menu.dat$(GZ) menu.plist
+menu_data=menu.dat$(GZ) menu.sym$(GZ) menu.plist
 
 if BUILD_RUAMOKO
 data=$(menu_data)
