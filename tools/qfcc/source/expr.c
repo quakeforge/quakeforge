@@ -2836,21 +2836,15 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		if (receiver->type == ex_error)
 			return receiver;
 
-		if (!(rec_type->type == ev_pointer
-			  && is_class (rec_type->t.fldptr.type))
-			&& !is_class (rec_type))
+		if (rec_type->type != ev_pointer
+			  || !is_class (rec_type->t.fldptr.type))
 			return error (receiver, "not a class/object");
 		if (self) {
 			class = extract_class (current_class);
 			if (rec_type == &type_Class)
 				class_msg = 1;
 		} else {
-			if (is_class (rec_type)) {
-				class = rec_type->t.class;
-				receiver = address_expr (receiver, 0, 0);
-			} else {
-				class = rec_type->t.fldptr.type->t.class;
-			}
+			class = rec_type->t.fldptr.type->t.class;
 		}
 	}
 

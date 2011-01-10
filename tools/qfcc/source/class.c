@@ -728,7 +728,7 @@ class_pointer_def (class_t *class)
 
 	class_type.c.class = class;
 
-	def = get_def (class->type,
+	def = get_def (pointer_type (class->type),
 			va ("_OBJ_CLASS_POINTER_%s", class->name),
 			pr.scope, st_static);
 	if (def->initialized)
@@ -792,7 +792,7 @@ class_finish_module (void)
 	symtab_def->nosave = 1;
 	symtab = &G_STRUCT (pr_symtab_t, symtab_def->ofs);
 	if (selector_table_def) {
-		symtab->sel_ref_cnt = selector_table_def->type->t.func.num_params;
+		symtab->sel_ref_cnt = selector_table_def->type->t.array.size;
 		EMIT_DEF (symtab->refs, selector_table_def);
 	}
 	symtab->cls_def_cnt = num_classes;
