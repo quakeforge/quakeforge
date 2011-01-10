@@ -2304,8 +2304,9 @@ array_expr (expr_t *array, expr_t *index)
 	scale->e.integer_val = size;
 	index = binary_expr ('*', index, scale);
 	index = binary_expr ('-', index,
-				 binary_expr ('*', scale,
-							  new_integer_expr (array_type->t.array.base)));
+				 binary_expr ('*',
+							  new_integer_expr (array_type->t.array.base),
+							  scale));
 	index = fold_constants (index);
 	if ((index->type == ex_integer
 		 && index->e.integer_val < 32768 && index->e.integer_val >= -32768)
