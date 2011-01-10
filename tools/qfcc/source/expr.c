@@ -560,7 +560,7 @@ new_float_expr (float float_val)
 }
 
 expr_t *
-new_vector_expr (float *vector_val)
+new_vector_expr (const float *vector_val)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_vector;
@@ -609,7 +609,7 @@ new_pointer_expr (int val, type_t *type, def_t *def)
 }
 
 expr_t *
-new_quaternion_expr (float *quaternion_val)
+new_quaternion_expr (const float *quaternion_val)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_quaternion;

@@ -371,7 +371,7 @@ expr_t *new_float_expr (float float_val);
 	\return			The new vector constant expression node
 					(expr_t::e::vector_val).
 */
-expr_t *new_vector_expr (float *vector_val);
+expr_t *new_vector_expr (const float *vector_val);
 
 /** Create a new entity constant expression node.
 
@@ -415,7 +415,7 @@ expr_t *new_pointer_expr (int val, struct type_s *type, struct def_s *def);
 	\return			The new quaternion constant expression node
 					(expr_t::e::quaternion_val).
 */
-expr_t *new_quaternion_expr (float *quaternion_val);
+expr_t *new_quaternion_expr (const float *quaternion_val);
 
 /** Create a new integer constant expression node.
 
