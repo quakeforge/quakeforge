@@ -43,6 +43,7 @@
 
 extern int		nanmask;
 extern const vec_t * const vec3_origin;
+extern const vec_t * const quat_origin;
 
 #define EQUAL_EPSILON 0.001
 #define RINT(x) (floor ((x) + 0.5))
