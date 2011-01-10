@@ -45,6 +45,7 @@ menu_obj=$(addsuffix .qfo,$(basename $(menu_src)))
 menu.dat$(GZ): $(menu_obj) $(QFCC_DEP) ../lib/libcsqc.a ../lib/libr.a ../gui/libgui.a
 	$(QFCC) $(QCFLAGS) -p $(STRIP) -o menu.dat $(menu_obj) ../gui/libgui.a ../lib/libcsqc.a ../lib/libr.a
 	$(GZIP)
+menu.sym$(GZ): menu.dat$(GZ)
 
 EXTRA_DIST= $(menu_src) \
 	CrosshairCvar.h CrosshairView.h CvarColor.h CvarColorView.h CvarObject.h \
