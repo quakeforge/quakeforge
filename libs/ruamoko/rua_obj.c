@@ -376,7 +376,7 @@ finish_class (progs_t *pr, pr_class_t *class, pointer_t object_ptr)
 			ml = &G_STRUCT (pr, pr_method_list_t, *ml).method_next;
 		*ml = class->methods;
 	}
-	Sys_MaskPrintf (SYS_DEV, "    %d %d %d\n", meta->class_pointer,
+	Sys_MaskPrintf (SYS_RUA_OBJ, "    %x %x %x\n", meta->class_pointer,
 					meta->super_class, class->super_class);
 }
 
@@ -412,6 +412,7 @@ sel_register_typed_name (progs_t *pr, const char *name, const char *types,
 	int			is_new = 0;
 	obj_list   *l;
 
+	Sys_MaskPrintf (SYS_RUA_OBJ, "    Registering SEL %s %s\n", name, types);
 	index = (intptr_t) Hash_Find (pr->selector_hash, name);
 	if (index) {
 		for (l = pr->selector_sels[index]; l; l = l->next) {
@@ -420,14 +421,14 @@ sel_register_typed_name (progs_t *pr, const char *name, const char *types,
 				if (!s->sel_types && !types) {
 					if (sel) {
 						sel->sel_id = index;
-						return sel;
+						goto done;
 					}
 					return s;
 				}
 			} else if (strcmp (PR_GetString (pr, s->sel_types), types) == 0) {
 				if (sel) {
 					sel->sel_id = index;
-					return sel;
+					goto done;
 				}
 				return s;
 			}
@@ -449,14 +450,16 @@ sel_register_typed_name (progs_t *pr, const char *name, const char *types,
 
 	if (is_new)
 		Hash_Add (pr->selector_hash, (void *) index);
-
+done:
+	Sys_MaskPrintf (SYS_RUA_OBJ, "        %d @ %x\n",
+					sel->sel_id, PR_SetPointer (pr, sel));
 	return sel;
 }
 
 static pr_sel_t *
 sel_register_name (progs_t *pr, const char *name)
 {
-	return sel_register_typed_name (pr, name, 0, 0);
+	return sel_register_typed_name (pr, name, "", 0);
 }
 
 static void
@@ -653,13 +656,33 @@ obj_find_message (progs_t *pr, pr_class_t *class, pr_sel_t *selector)
 	pr_method_t *method;
 	pr_sel_t   *sel;
 	int         i;
+	int         dev = developer->int_val;
+	string_t   *names;
 
+	if (dev & SYS_RUA_MSG) {
+		names = pr->selector_names;
+		Sys_Printf ("Searching for %s\n",
+					PR_GetString (pr, names[selector->sel_id]));
+	}
 	while (c) {
+		if (dev & SYS_RUA_MSG)
+			Sys_Printf ("Checking class %s @ %x\n",
+						PR_GetString (pr, c->name),
+						PR_SetPointer (pr, c));
 		method_list = &G_STRUCT (pr, pr_method_list_t, c->methods);
 		while (method_list) {
+			if (dev & SYS_RUA_MSG) {
+				Sys_Printf ("method list %x\n",
+							PR_SetPointer (pr, method_list));
+			}
 			for (i = 0, method = method_list->method_list;
 				 i < method_list->method_count; i++, method++) {
 				sel = &G_STRUCT (pr, pr_sel_t, method->method_name);
+				if (developer->int_val & SYS_RUA_MSG) {
+					names = pr->selector_names;
+					Sys_Printf ("  %s\n",
+								PR_GetString (pr, names[sel->sel_id]));
+				}
 				if (sel->sel_id == selector->sel_id)
 					return method;
 			}
@@ -765,6 +788,23 @@ obj_verror (progs_t *pr, pr_id_t *object, int code, const char *fmt, int count,
 }
 
 static void
+dump_ivars (progs_t *pr, pointer_t _ivars)
+{
+	pr_ivar_list_t *ivars;
+	int         i;
+
+	if (!_ivars)
+		return;
+	ivars = &G_STRUCT (pr, pr_ivar_list_t, _ivars);
+	for (i = 0; i < ivars->ivar_count; i++) {
+		Sys_Printf ("        %s %s %d\n",
+					PR_GetString (pr, ivars->ivar_list[i].ivar_name),
+					PR_GetString (pr, ivars->ivar_list[i].ivar_type),
+					ivars->ivar_list[i].ivar_offset);
+	}
+}
+
+static void
 rua___obj_exec_class (progs_t *pr)
 {
 	pr_module_t *module = &P_STRUCT (pr, pr_module_t, 0);
@@ -779,6 +819,15 @@ rua___obj_exec_class (progs_t *pr)
 	symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
 	if (!symtab)
 		return;
+	Sys_MaskPrintf (SYS_RUA_OBJ, "Initializing %s module\n"
+					"symtab @ %x : %d selector%s @ %x, "
+					"%d class%s and %d categor%s\n",
+					PR_GetString (pr, module->name), module->symtab,
+					symtab->sel_ref_cnt, symtab->sel_ref_cnt == 1 ? "" : "s",
+					symtab->refs,
+					symtab->cls_def_cnt, symtab->cls_def_cnt == 1 ? "" : "es",
+					symtab->cat_def_cnt,
+					symtab->cat_def_cnt == 1 ? "y" : "ies");
 
 	pr->module_list = list_cons (module, pr->module_list);
 
@@ -796,6 +845,28 @@ rua___obj_exec_class (progs_t *pr)
 		pr_class_t *class = &G_STRUCT (pr, pr_class_t, *ptr);
 		pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
 		const char *super_class = PR_GetString (pr, class->super_class);
+
+		Sys_MaskPrintf (SYS_RUA_OBJ, "Class %s @ %x\n",
+						PR_GetString (pr, class->name), *ptr);
+		Sys_MaskPrintf (SYS_RUA_OBJ, "    class pointer: %x\n",
+						class->class_pointer);
+		Sys_MaskPrintf (SYS_RUA_OBJ, "    super class: %s\n",
+						PR_GetString (pr, class->super_class));
+		Sys_MaskPrintf (SYS_RUA_OBJ, "    instance variables: %d @ %x\n",
+						class->instance_size,
+						class->ivars);
+		if (developer->int_val & SYS_RUA_OBJ)
+			dump_ivars (pr, class->ivars);
+		Sys_MaskPrintf (SYS_RUA_OBJ, "    instance methods: %x\n",
+						class->methods);
+		Sys_MaskPrintf (SYS_RUA_OBJ, "    protocols: %x\n", class->protocols);
+
+		Sys_MaskPrintf (SYS_RUA_OBJ, "    class methods: %x\n", meta->methods);
+		Sys_MaskPrintf (SYS_RUA_OBJ, "    instance variables: %d @ %x\n",
+						meta->instance_size,
+						meta->ivars);
+		if (developer->int_val & SYS_RUA_OBJ)
+			dump_ivars (pr, meta->ivars);
 
 		class->subclass_list = 0;
 
@@ -819,6 +890,16 @@ rua___obj_exec_class (progs_t *pr)
 		pr_category_t *category = &G_STRUCT (pr, pr_category_t, *ptr);
 		const char *class_name = PR_GetString (pr, category->class_name);
 		pr_class_t *class = Hash_Find (pr->classes, class_name);
+
+		Sys_MaskPrintf (SYS_RUA_OBJ, "Category %s (%s) @ %x\n",
+						PR_GetString (pr, category->class_name),
+						PR_GetString (pr, category->category_name), *ptr);
+		Sys_MaskPrintf (SYS_RUA_OBJ, "    instance methods: %x\n",
+						category->instance_methods);
+		Sys_MaskPrintf (SYS_RUA_OBJ, "    class methods: %x\n",
+						category->class_methods);
+		Sys_MaskPrintf (SYS_RUA_OBJ, "    protocols: %x\n",
+						category->protocols);
 
 		if (class) {
 			finish_category (pr, category, class);
@@ -848,7 +929,11 @@ rua___obj_exec_class (progs_t *pr)
 		}
 	}
 
+	Sys_MaskPrintf (SYS_RUA_OBJ, "Finished initializing %s module\n",
+					PR_GetString (pr, module->name));
 	obj_send_load (pr);
+	Sys_MaskPrintf (SYS_RUA_OBJ, "Leaving %s module init\n",
+					PR_GetString (pr, module->name));
 }
 
 static void
@@ -1082,7 +1167,7 @@ rua_sel_get_uid (progs_t *pr)
 {
 	const char *name = P_GSTRING (pr, 0);
 
-	RETURN_POINTER (pr, sel_register_typed_name (pr, name, 0, 0));
+	RETURN_POINTER (pr, sel_register_typed_name (pr, name, "", 0));
 }
 
 static void
@@ -1090,7 +1175,7 @@ rua_sel_register_name (progs_t *pr)
 {
 	const char *name = P_GSTRING (pr, 0);
 
-	RETURN_POINTER (pr, sel_register_typed_name (pr, name, 0, 0));
+	RETURN_POINTER (pr, sel_register_typed_name (pr, name, "", 0));
 }
 
 static void
