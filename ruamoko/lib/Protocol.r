@@ -3,7 +3,7 @@
 struct obj_protocol_list {
 	struct obj_protocol_list [] next;
 	integer count;
-	Protocol [1] list;
+	Protocol[] [1] list;
 };
 
 struct obj_method_description_list {
