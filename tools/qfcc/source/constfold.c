@@ -527,11 +527,11 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '/' && is_constant (e2) && e2->type == ex_float
 		&& e2->e.float_val == 1)
 		return e1;
-	if (op == '+' && is_constant (e1) && QuatIsZero (e1->e.vector_val))
+	if (op == '+' && is_constant (e1) && QuatIsZero (e1->e.quaternion_val))
 		return e2;
-	if (op == '+' && is_constant (e2) && QuatIsZero (e2->e.vector_val))
+	if (op == '+' && is_constant (e2) && QuatIsZero (e2->e.quaternion_val))
 		return e1;
-	if (op == '-' && is_constant (e2) && QuatIsZero (e2->e.vector_val))
+	if (op == '-' && is_constant (e2) && QuatIsZero (e2->e.quaternion_val))
 		return e1;
 
 	if (op == '=' || op == 'b' || !is_constant (e1) || !is_constant (e2))
