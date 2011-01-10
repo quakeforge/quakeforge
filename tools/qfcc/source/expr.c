@@ -370,22 +370,24 @@ check_initialized (expr_t *e)
 	}
 }
 
-void
+expr_t *
 inc_users (expr_t *e)
 {
 	if (e && e->type == ex_temp)
 		e->e.temp.users++;
 	else if (e && e->type == ex_block)
 		inc_users (e->e.block.result);
+	return e;
 }
 
-void
+expr_t *
 dec_users (expr_t *e)
 {
 	if (e && e->type == ex_temp)
 		e->e.temp.users--;
 	else if (e && e->type == ex_block)
 		dec_users (e->e.block.result);
+	return e;
 }
 
 expr_t *

@@ -539,8 +539,9 @@ expr_t *new_move_expr (expr_t *e1, expr_t *e2, struct type_s *type);
 	\param e		The expression referencing the temporary variable. If
 					a block expression, the result of the block will be
 					incremented.
+	\return			\a e
 */
-void inc_users (expr_t *e);
+expr_t *inc_users (expr_t *e);
 
 /**	Temporary variable reference counting.
 
@@ -550,8 +551,9 @@ void inc_users (expr_t *e);
 	\param e		The expression referencing the temporary variable. If
 					a block expression, the result of the block will be
 					decremented.
+	\return			\a e
 */
-void dec_users (expr_t *e);
+expr_t *dec_users (expr_t *e);
 
 /**	Convert a name to an expression of the appropriate type.
 
