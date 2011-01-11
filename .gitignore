@@ -381,7 +381,12 @@ core
 /tools/qfcc/source/qc-parse.h
 /tools/qfcc/source/qc-parse.output
 /tools/qfcc/source/qfcc
+/tools/qfcc/source/qfpc
 /tools/qfcc/source/qfprogs
+/tools/qfcc/source/qp-lex.c
+/tools/qfcc/source/qp-parse.c
+/tools/qfcc/source/qp-parse.h
+/tools/qfcc/source/qp-parse.output
 
 # /tools/qfcc/test/
 /tools/qfcc/test/*.dat
@@ -393,6 +398,9 @@ core
 
 # /tools/qflight/source/
 /tools/qflight/source/qflight
+
+# /tools/qflmp/
+/tools/qflmp/qflmp
 
 # /tools/qfmodelgen/
 
