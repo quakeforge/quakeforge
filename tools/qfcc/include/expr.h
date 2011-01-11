@@ -241,6 +241,13 @@ etype_t extract_type (expr_t *e);
 */
 expr_t *new_expr (void);
 
+/**	Create a deep copy of an expression tree.
+
+	\param e		The root of the expression tree to copy.
+	\return			A new expression tree giving the same expression.
+*/
+expr_t *copy_expr (expr_t *e);
+
 /**	Create a new label name.
 
 	The label name is guaranteed to to the compilation. It is made up of the

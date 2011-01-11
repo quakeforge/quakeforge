@@ -402,6 +402,103 @@ new_expr (void)
 	return e;
 }
 
+expr_t *
+copy_expr (expr_t *e)
+{
+	expr_t     *n;
+	expr_t     *t;
+
+	if (!e)
+		return 0;
+	switch (e->type) {
+		case ex_error:
+		case ex_def:
+		case ex_name:
+		case ex_nil:
+		case ex_string:
+		case ex_float:
+		case ex_vector:
+		case ex_entity:
+		case ex_field:
+		case ex_func:
+		case ex_pointer:
+		case ex_quaternion:
+		case ex_integer:
+		case ex_uinteger:
+		case ex_short:
+			// nothing to do here
+			n = new_expr ();
+			*n = *e;
+			return n;
+		case ex_state:
+			return new_state_expr (copy_expr (e->e.state.frame),
+								   copy_expr (e->e.state.think),
+								   copy_expr (e->e.state.step));
+		case ex_bool:
+			n = new_expr ();
+			*n = *e;
+			if (e->e.bool.true_list) {
+				int         count = e->e.bool.true_list->size;
+				size_t      size = (size_t)&((ex_list_t *) 0)->e[count];
+				n->e.bool.true_list = malloc (size);
+				while (count--)
+					n->e.bool.true_list->e[count] =
+						copy_expr ( e->e.bool.true_list->e[count]);
+			}
+			if (e->e.bool.false_list) {
+				int         count = e->e.bool.false_list->size;
+				size_t      size = (size_t)&((ex_list_t *) 0)->e[count];
+				n->e.bool.false_list = malloc (size);
+				while (count--)
+					n->e.bool.false_list->e[count] =
+						copy_expr ( e->e.bool.false_list->e[count]);
+			}
+			n->e.bool.e = copy_expr (e->e.bool.e);
+			return n;
+		case ex_label:
+			/// Create a fresh label
+			return new_label_expr ();
+		case ex_block:
+			n = new_expr ();
+			*n = *e;
+			n->e.block.head = 0;
+			n->e.block.tail = &n->e.block.head;
+			n->e.block.result = 0;
+			for (t = e->e.block.head; t; t = t->next) {
+				if (t == e->e.block.result) {
+					n->e.block.result = copy_expr (t);
+					append_expr (n, n->e.block.result);
+				} else {
+					append_expr (n, copy_expr (t));
+				}
+			}
+			if (e->e.block.result && !n->e.block.result) {
+				error (e, "internal: bogus block result?");
+				abort ();
+			}
+			break;
+		case ex_expr:
+			n = new_expr ();
+			*n = *e;
+			n->e.expr.e1 = copy_expr (e->e.expr.e1);
+			n->e.expr.e2 = copy_expr (e->e.expr.e2);
+			return n;
+		case ex_uexpr:
+			n = new_expr ();
+			*n = *e;
+			n->e.expr.e1 = copy_expr (e->e.expr.e1);
+			return n;
+		case ex_temp:
+			n = new_expr ();
+			*n = *e;
+			n->e.temp.expr = copy_expr (e->e.temp.expr);
+			e->e.temp.users = 0;	//FIXME?
+			return n;
+	}
+	error (e, "internal: invalid expression");
+	abort ();
+}
+
 const char *
 new_label_name (void)
 {
