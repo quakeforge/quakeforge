@@ -2352,25 +2352,31 @@ expr_t *
 incop_expr (int op, expr_t *e, int postop)
 {
 	expr_t     *one;
-	expr_t     *incop;
 
 	if (e->type == ex_error)
 		return e;
 
 	one = new_integer_expr (1);		// integer constants get auto-cast to float
-	incop = asx_expr (op, e, one);
 	if (postop) {
-		expr_t     *temp;
+		expr_t     *t1, *t2;
 		type_t     *type = get_type (e);
 		expr_t     *block = new_block_expr ();
+		expr_t     *res = new_expr ();
 
-		temp = new_temp_def_expr (type);
-		append_expr (block, assign_expr (temp, e));
-		append_expr (block, incop);
-		block->e.block.result = temp;
+		t1 = new_temp_def_expr (type);
+		t2 = new_temp_def_expr (type);
+		append_expr (block, assign_expr (t1, e));
+		append_expr (block, assign_expr (t2, binary_expr (op, t1, one)));
+		res = copy_expr (e);
+		if (res->type == ex_uexpr && res->e.expr.op == '.')
+			res = pointer_expr (address_expr (res, 0, 0));
+		append_expr (block, assign_expr (res, t2));
+		block->e.block.result = t1;
+		print_expr (block); puts("");
 		return block;
+	} else {
+		return asx_expr (op, e, one);
 	}
-	return incop;
 }
 
 expr_t *
