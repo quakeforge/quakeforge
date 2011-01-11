@@ -2372,7 +2372,6 @@ incop_expr (int op, expr_t *e, int postop)
 			res = pointer_expr (address_expr (res, 0, 0));
 		append_expr (block, assign_expr (res, t2));
 		block->e.block.result = t1;
-		print_expr (block); puts("");
 		return block;
 	} else {
 		return asx_expr (op, e, one);
