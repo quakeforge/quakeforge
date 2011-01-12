@@ -41,9 +41,11 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 # include <strings.h>
 #endif
 
+#include "codespace.h"
 #include "expr.h"
 #include "function.h"
 #include "qfcc.h"
+#include "reloc.h"
 #include "type.h"
 
 #define YYDEBUG 1
@@ -169,9 +171,27 @@ program
 		}
 	  compound_statement '.'
 	  	{
+			def_t      *main_def;
+			function_t *main_func;
+			expr_t     *main_expr;
+
 			current_scope = current_scope->parent;
 			//current_storage = st_global;
 			build_code_function (current_func, 0, $5);
+			current_func = 0;
+
+			main_def = get_def (&type_function, ".main", pr.scope, st_static);
+			current_func = main_func = new_function (main_def, 0);
+			add_function (main_func);
+			reloc_def_func (main_func, main_def->ofs);
+			main_func->code = pr.code->size;
+			build_scope (main_func, main_def, 0);
+			build_function (main_func);
+			main_expr = new_block_expr ();
+			append_expr (main_expr,
+					build_function_call (new_def_expr ($1), $1->type, 0));
+			emit_function (main_func, main_expr);
+			finish_function (main_func);
 			current_func = 0;
 		}
 	;

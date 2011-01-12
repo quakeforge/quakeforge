@@ -173,7 +173,8 @@ main (int argc, char **argv)
 		pr_argv[i] = PR_SetTempString (&pr, argv[1 + i]);
 	pr_argv[i] = 0;
 
-	if ((dfunc = PR_FindFunction (&pr, "main")))
+	if ((dfunc = PR_FindFunction (&pr, ".main"))
+		|| (dfunc = PR_FindFunction (&pr, "main")))
 		main_func = dfunc - pr.pr_functions;
 	else
 		PR_Undefined (&pr, "function", "main");
