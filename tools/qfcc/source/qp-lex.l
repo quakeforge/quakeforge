@@ -82,6 +82,7 @@ ADDOP		[\-+]
 MULOP		[*/]
 ASSIGNOP	:=
 RANGE		\.\.
+ELLIPSIS	\.\.\.
 FRAMEID		{ID}(\.{ID})*
 
 %x			GRAB_FRAME GRAB_OTHER COMMENT
@@ -153,6 +154,7 @@ FRAMEID		{ID}(\.{ID})*
 {ASSIGNOP}			return ASSIGNOP;
 
 {RANGE}				return RANGE;
+{ELLIPSIS}			return ELLIPSIS;
 
 [!(){}.&|^~\[\];,#%?:]	return yytext[0];
 

@@ -136,7 +136,7 @@ int yylex (void);
 %token	<float_val>			FLOAT_VAL
 
 %token	PROGRAM VAR ARRAY OF FUNCTION PROCEDURE PBEGIN END IF THEN ELSE
-%token	WHILE DO RANGE ASSIGNOP NOT
+%token	WHILE DO RANGE ASSIGNOP NOT ELLIPSIS
 
 %type	<type>	standard_type type
 %type	<expr>	const num identifier_list statement_list statement
@@ -294,6 +294,17 @@ subprogram_head
 
 arguments
 	: '(' parameter_list ')'	{ $$ = $2; }
+	| '(' parameter_list ';' ELLIPSIS ')'
+		{
+			param_t   **p;
+
+			$$ = $2;
+			p = &$$;
+			for ( ; *p; p = &(*p)->next)
+				;
+			*p = new_param (0, 0, 0);
+		}
+	| '(' ELLIPSIS ')'			{ $$ = new_param (0, 0, 0); }
 	| /* emtpy */				{ $$ = 0; }
 	;
 
