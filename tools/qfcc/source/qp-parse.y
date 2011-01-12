@@ -41,7 +41,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 # include <strings.h>
 #endif
 
-#include "class.h"
 #include "expr.h"
 #include "function.h"
 #include "qfcc.h"
@@ -149,9 +148,9 @@ int yylex (void);
 
 %{
 function_t *current_func;
-class_type_t *current_class;
+struct class_type_s *current_class;
 expr_t  *local_expr;
-scope_t *current_scope;
+struct scope_s *current_scope;
 param_t *current_params;
 
 static int convert_relop (const char *relop);
