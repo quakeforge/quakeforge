@@ -253,7 +253,7 @@ emit_function_call (expr_t *e, def_t *dest)
 static def_t *
 emit_assign_expr (int oper, expr_t *e)
 {
-	def_t      *def_a, *def_b, *def_c;
+	def_t      *def_a, *def_b, *def_c, *a, *b;
 	opcode_t   *op;
 	expr_t     *e1 = e->e.expr.e1;
 	expr_t     *e2 = e->e.expr.e2;
@@ -288,7 +288,13 @@ emit_assign_expr (int oper, expr_t *e)
 			}
 		}
 		def_b = emit_sub_expr (e2, def_a);
-		if (def_b != def_a) {
+		a = def_a;
+		if (a->alias)
+			a = a->alias;
+		b = def_b;
+		if (b->alias)
+			b = b->alias;
+		if (b != a) {
 			op = opcode_find (operator, def_b->type, def_a->type,
 							  &type_invalid);
 			emit_statement (e, op, def_b, def_a, 0);
