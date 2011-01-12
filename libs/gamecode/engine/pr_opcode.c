@@ -655,6 +655,12 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 "%Ra",
 	},
 
+	{"<RETURN_V>", "return", OP_RETURN_V, false,
+	 ev_invalid, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "",
+	},
+
 	{"!", "not.f", OP_NOT_F, false,
 	 ev_float, ev_invalid, ev_integer,
 	 PROG_ID_VERSION,

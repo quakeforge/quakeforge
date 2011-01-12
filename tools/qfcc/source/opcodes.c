@@ -55,6 +55,7 @@ hashtab_t  *opcode_type_table_abc;
 
 opcode_t   *op_done;
 opcode_t   *op_return;
+opcode_t   *op_return_v;
 opcode_t   *op_if;
 opcode_t   *op_ifnot;
 opcode_t   *op_ifbe;
@@ -152,6 +153,8 @@ opcode_init (void)
 			op_done = op;
 		} else if (!strcmp (op->name, "<RETURN>")) {
 			op_return = op;
+		} else if (!strcmp (op->name, "<RETURN_V>")) {
+			op_return_v = op;
 		} else if (!strcmp (op->name, "<IF>")) {
 			op_if = op;
 		} else if (!strcmp (op->name, "<IFNOT>")) {

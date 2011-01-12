@@ -290,6 +290,8 @@ typedef enum {
 	OP_RCALL6,
 	OP_RCALL7,
 	OP_RCALL8,
+
+	OP_RETURN_V,
 } pr_opcode_e;
 
 typedef struct opcode_s {
@@ -358,7 +360,7 @@ typedef struct pr_va_list_s {
 	 |(((0x##b) & 0xfff) << 12)		\
 	 |(((0x##c) & 0xfff) <<  0) )
 #define	PROG_ID_VERSION	6
-#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,006)
+#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,007)
 
 typedef struct dprograms_s {
 	pr_uint_t   version;

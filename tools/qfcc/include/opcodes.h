@@ -34,6 +34,7 @@
 
 extern struct opcode_s *op_done;
 extern struct opcode_s *op_return;
+extern struct opcode_s *op_return_v;
 extern struct opcode_s *op_if;
 extern struct opcode_s *op_ifnot;
 extern struct opcode_s *op_ifbe;

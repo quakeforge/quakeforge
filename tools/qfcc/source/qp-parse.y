@@ -258,13 +258,12 @@ subprogram_declaration
 		}
 	  declarations compound_statement ';'
 		{
-			type_t     *ret_type = $1->type->t.func.type;
 			current_scope = current_scope->parent;
 			//current_storage = st_global;
-			//FIXME want a true void return
-			if (ret_type)
-				append_expr ($5, return_expr (current_func,
-											  new_ret_expr (ret_type)));
+			// functions in pascal are always effectively void
+			// but their type is needed for checking func := retval
+			// so bypass the checks
+			append_expr ($5, new_unary_expr ('r', 0));
 			build_code_function (current_func, 0, $5);
 			current_func = 0;
 		}

@@ -923,6 +923,8 @@ op_call:
 				else if (&R_INT (pr) != &OPA.integer_var)
 					memcpy (&R_INT (pr), &OPA,
 							pr->pr_param_size * sizeof (OPA));
+				// fallthrough
+			case OP_RETURN_V:
 				pr->pr_xfunction->profile += profile - startprofile;
 				startprofile = profile;
 				PR_LeaveFunction (pr);

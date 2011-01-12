@@ -877,7 +877,10 @@ emit_expr (expr_t *e)
 					def = 0;
 					if (e->e.expr.e1)
 						def = emit_sub_expr (e->e.expr.e1, 0);
-					emit_statement (e, op_return, def, 0, 0);
+					if (!def && op_return_v)
+						emit_statement (e, op_return_v, 0, 0, 0);
+					else
+						emit_statement (e, op_return, def, 0, 0);
 					break;
 				case 'g':
 					emit_branch (e, op_goto, 0, e->e.expr.e1);
