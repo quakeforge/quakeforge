@@ -543,6 +543,8 @@ finish_function (function_t *f)
 void
 emit_function (function_t *f, expr_t *e)
 {
+	int         last_is_label = 0;
+	dstatement_t *s;
 //#define DUMP_EXPR
 #ifdef DUMP_EXPR
 	printf (" %s =\n", f->def->name);
@@ -563,11 +565,19 @@ emit_function (function_t *f, expr_t *e)
 		print_expr (e);
 		puts("");
 #endif
-
+		last_is_label = (e->type == ex_label);
 		emit_expr (e);
 		e = e->next;
 	}
-	emit_statement (0, op_done, 0, 0, 0);
+	s = &pr.code->code[pr.code->size - 1];
+	if (last_is_label
+		|| !(s->op == op_return->opcode
+			 || (op_return_v && s->op == op_return_v->opcode))) {
+		if (!options.traditional && op_return_v)
+			emit_statement (0, op_return_v, 0, 0, 0);
+		else
+			emit_statement (0, op_done, 0, 0, 0);
+	}
 	flush_scope (current_scope, 0);
 	current_scope = pr.scope;
 	reset_tempdefs ();
