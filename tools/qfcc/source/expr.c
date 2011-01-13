@@ -60,6 +60,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "reloc.h"
 #include "strpool.h"
 #include "struct.h"
+#include "symtab.h"
 #include "type.h"
 #include "qc-parse.h"
 
@@ -75,6 +76,7 @@ etype_t     qc_types[] = {
 	ev_void,							// ex_expr
 	ev_void,							// ex_uexpr
 	ev_void,							// ex_def
+	ev_void,							// ex_symbol
 	ev_void,							// ex_temp
 	ev_void,							// ex_name
 
@@ -199,6 +201,8 @@ get_type (expr_t *e)
 			return e->e.expr.type;
 		case ex_def:
 			return e->e.def->type;
+		case ex_symbol:
+			return e->e.symbol->type;
 		case ex_temp:
 			return e->e.temp.type;
 		case ex_pointer:
@@ -413,6 +417,7 @@ copy_expr (expr_t *e)
 	switch (e->type) {
 		case ex_error:
 		case ex_def:
+		case ex_symbol:
 		case ex_name:
 		case ex_nil:
 		case ex_string:
@@ -610,6 +615,15 @@ new_def_expr (def_t *def)
 	expr_t     *e = new_expr ();
 	e->type = ex_def;
 	e->e.def = def;
+	return e;
+}
+
+expr_t *
+new_symbol_expr (symbol_t *symbol)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_symbol;
+	e->e.symbol = symbol;
 	return e;
 }
 
@@ -944,6 +958,9 @@ print_expr (expr_t *e)
 			} else {
 				printf ("[%d]", e->e.def->ofs);
 			}
+			break;
+		case ex_symbol:
+			printf ("%s", e->e.symbol->name);
 			break;
 		case ex_temp:
 			printf ("(");
@@ -1920,6 +1937,13 @@ unary_expr (int op, expr_t *e)
 							? e->e.def->type : e->e.expr.type;
 						return n;
 					}
+				case ex_symbol:
+					{
+						expr_t     *n = new_unary_expr (op, e);
+
+						n->e.expr.type = e->e.symbol->type;
+						return n;
+					}
 				case ex_short:
 					e->e.short_val *= -1;
 					return e;
@@ -1967,6 +1991,7 @@ unary_expr (int op, expr_t *e)
 				case ex_uexpr:
 				case ex_expr:
 				case ex_def:
+				case ex_symbol:
 				case ex_temp:
 					{
 						expr_t     *n = new_unary_expr (op, e);
@@ -2034,6 +2059,7 @@ unary_expr (int op, expr_t *e)
 				case ex_expr:
 				case ex_bool:
 				case ex_def:
+				case ex_symbol:
 				case ex_temp:
 bitnot_expr:
 					if (options.code.progsversion == PROG_ID_VERSION) {
@@ -2078,6 +2104,8 @@ bitnot_expr:
 			e = new_unary_expr ('.', e);
 			e->e.expr.type = get_type (e->e.expr.e1)->t.fldptr.type;
 			return e;
+		case '+':
+			return e;			// FIXME typechecking
 	}
 	error (e, "internal error");
 	abort ();

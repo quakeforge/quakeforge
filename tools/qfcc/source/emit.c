@@ -56,6 +56,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "options.h"
 #include "qfcc.h"
 #include "reloc.h"
+#include "symtab.h"
 #include "type.h"
 #include "qc-parse.h"
 
@@ -748,6 +749,10 @@ emit_sub_expr (expr_t *e, def_t *dest)
 		case ex_def:
 			d = e->e.def;
 			break;
+		case ex_symbol:
+			d = get_def (e->e.symbol->type, e->e.symbol->name, pr.scope,
+						 st_extern);	//FIXME
+			break;
 		case ex_temp:
 			if (!e->e.temp.def) {
 				if (dest)
@@ -896,6 +901,7 @@ emit_expr (expr_t *e)
 					break;
 			}
 			break;
+		case ex_symbol:
 		case ex_def:
 		case ex_temp:
 		case ex_string:
