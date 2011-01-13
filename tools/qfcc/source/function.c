@@ -58,6 +58,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "opcodes.h"
 #include "options.h"
 #include "reloc.h"
+#include "symtab.h"
 #include "type.h"
 
 static param_t *free_params;
@@ -91,6 +92,27 @@ new_param (const char *selector, type_t *type, const char *name)
 	param->name = name;
 
 	return param;
+}
+
+param_t *
+param_append_identifiers (param_t *params, symbol_t *idents, type_t *type)
+{
+	param_t   **p = &params;
+
+	while (*p)
+		p = &(*p)->next;
+	if (!idents) {
+		*p = new_param (0, 0, 0);
+		p = &(*p)->next;
+	}
+	while (idents) {
+		idents->type = type;
+		*p = new_param (0, type, idents->name);
+		(*p)->symbol = idents;
+		p = &(*p)->next;
+		idents = idents->next;
+	}
+	return params;
 }
 
 param_t *
