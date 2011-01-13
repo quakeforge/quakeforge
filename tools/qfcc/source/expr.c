@@ -2526,6 +2526,46 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 	return e;
 }
 
+expr_t *
+build_if_statement (expr_t *test, expr_t *s1, expr_t *s2)
+{
+	int         line = pr.source_line;
+	string_t    file = pr.source_file;
+	expr_t     *if_expr;
+	expr_t     *tl = new_label_expr ();
+	expr_t     *fl = new_label_expr ();
+
+	pr.source_line = test->line;
+	pr.source_file = test->file;
+
+	if_expr = new_block_expr ();
+
+	test = convert_bool (test, 1);
+	if (test->type != ex_error) {
+		backpatch (test->e.bool.true_list, tl);
+		backpatch (test->e.bool.false_list, fl);
+		append_expr (test->e.bool.e, tl);
+		append_expr (if_expr, test);
+	}
+	append_expr (if_expr, s1);
+
+	if (s2) {
+		expr_t     *nl = new_label_expr ();
+		append_expr (if_expr, new_unary_expr ('g', nl));
+
+		append_expr (if_expr, fl);
+		append_expr (if_expr, s2);
+		append_expr (if_expr, nl);
+	} else {
+		append_expr (if_expr, fl);
+	}
+
+	pr.source_line = line;
+	pr.source_file = file;
+
+	return if_expr;
+}
+
 static int
 is_indirect (expr_t *e)
 {
