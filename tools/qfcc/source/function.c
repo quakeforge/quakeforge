@@ -430,8 +430,17 @@ new_function (def_t *func, const char *nice_name)
 	f->s_name = ReuseString (func->name);
 	f->s_file = pr.source_file;
 	f->def = func;
-	if (!(f->name = nice_name))
+	if (!(f->name = nice_name)) {
+		const char *s;
 		f->name = f->def->name;
+		if ((s = strchr (f->name, '|'))) {
+			int         l = (intptr_t) (s - f->name);
+			dstring_t  *str = dstring_newstr ();
+			print_type_str (str, f->def->type);
+			f->name = save_string (va ("%s %.*s", str->str, l, f->name));
+			dstring_delete (str);
+		}
+	}
 	return f;
 }
 
