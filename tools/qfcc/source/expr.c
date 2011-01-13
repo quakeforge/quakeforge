@@ -136,6 +136,25 @@ convert_name (expr_t *e)
 		expr_t     *new;
 		class_t    *class;
 
+		if (!strcmp (name, "__PRETTY_FUNCTION__")
+			&& current_func) {
+			new = new_string_expr (current_func->name);
+			goto convert;
+		}
+		if (!strcmp (name, "__FUNCTION__")
+			&& current_func) {
+			new = new_string_expr (current_func->def->name);
+			goto convert;
+		}
+		if (!strcmp (name, "__LINE__")) {
+			new = new_integer_expr (e->line);
+			goto convert;
+		}
+		if (!strcmp (name, "__FILE__")) {
+			new = new_string_expr (G_GETSTR (e->file));
+			goto convert;
+		}
+
 		/// Convert name to enum (integer constant).
 		new = get_enum (name);
 		if (new)
