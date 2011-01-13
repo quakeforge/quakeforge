@@ -41,11 +41,14 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 # include <strings.h>
 #endif
 
+#include "QF/dstring.h"
+
 #include "codespace.h"
 #include "expr.h"
 #include "function.h"
 #include "qfcc.h"
 #include "reloc.h"
+#include "symtab.h"
 #include "type.h"
 
 #define YYDEBUG 1
@@ -83,24 +86,12 @@ int yylex (void);
 	struct type_s	*type;
 	struct typedef_s *typename;
 	struct expr_s	*expr;
-	int			integer_val;
-	unsigned	uinteger_val;
-	float		float_val;
-	const char *string_val;
-	float		vector_val[3];
-	float		quaternion_val[4];
 	struct function_s *function;
 	struct switch_block_s *switch_block;
 	struct param_s	*param;
-	struct method_s	*method;
-	struct class_s	*class;
-	struct category_s *category;
-	struct class_type_s	*class_type;
-	struct protocol_s *protocol;
-	struct protocollist_s *protocol_list;
-	struct keywordarg_s *keywordarg;
-	struct methodlist_s *methodlist;
 	struct struct_s *strct;
+	struct symtab_s *symtab;
+	struct symbol_s *symbol;
 }
 
 // these tokens are common with qc
@@ -122,40 +113,33 @@ int yylex (void);
 %left   LE GE LT GT
 // end of tokens common with qc
 
-%left	<string_val>	RELOP
-%left	<op>			ADDOP
-%left	<op>			MULOP
+%left	<op>		RELOP
+%left	<op>		ADDOP
+%left	<op>		MULOP
 %right	UNARY
 
-%token	<type>				TYPE
-%token	<string_val>		ID
-%token	<integer_val>		INT_VAL
-%token	<string_val>		STRING_VAL
-%token	<quaternion_val>	QUATERNION_VAL
-%token	<vector_val>		VECTOR_VAL
-%token	<float_val>			FLOAT_VAL
+%token	<type>		TYPE TYPE_NAME
+%token	<symbol>	ID
+%token	<expr>		CONST
 
 %token	PROGRAM VAR ARRAY OF FUNCTION PROCEDURE PBEGIN END IF THEN ELSE
 %token	WHILE DO RANGE ASSIGNOP NOT ELLIPSIS
 
-%type	<type>	standard_type type
-%type	<expr>	const num identifier_list statement_list statement
-%type	<expr>	optional_statements compound_statement procedure_statement
-%type	<expr>	expression_list expression unary_expr primary variable
-%type	<param>	parameter_list arguments
-%type	<def>	subprogram_head program_head
-%type	<function> subprogram_declaration
-%type	<op>	sign
-%type	<expr>	name
+%type	<type>		type standard_type
+%type	<symbol>	program_head identifier_list subprogram_head
+%type	<param>		arguments parameter_list
+%type	<expr>		compound_statement optional_statements statement_list
+%type	<expr>		statement procedure_statement
+%type	<expr>		expression_list expression unary_expr primary variable name
+%type	<op>		sign
 
 %{
+symtab_t       *current_symtab;
 function_t *current_func;
 struct class_type_s *current_class;
 expr_t  *local_expr;
 struct scope_s *current_scope;
 param_t *current_params;
-
-static int convert_relop (const char *relop);
 %}
 
 %%
@@ -164,84 +148,82 @@ program
 	: program_head
 	  declarations
 	  subprogram_declarations
-		{
-			$1 = get_function_def ($1->name, $1->type, current_scope,
-								   st_global, 0, 1);
-			current_func = begin_function ($1, 0, 0);
-		}
 	  compound_statement '.'
 	  	{
-			def_t      *main_def;
-			function_t *main_func;
-			expr_t     *main_expr;
+			dstring_t  *str = dstring_newstr ();
+			symbol_t   *s;
 
-			current_scope = current_scope->parent;
-			//current_storage = st_global;
-			build_code_function (current_func, 0, $5);
-			current_func = 0;
+			// move the symbol for the program name to the end of the list
+			symtab_removesymbol (current_symtab, $1);
+			symtab_addsymbol (current_symtab, $1);
 
-			main_def = get_def (&type_function, ".main", pr.scope, st_static);
-			current_func = main_func = new_function (main_def, 0);
-			add_function (main_func);
-			reloc_def_func (main_func, main_def->ofs);
-			main_func->code = pr.code->size;
-			build_scope (main_func, main_def, 0);
-			build_function (main_func);
-			main_expr = new_block_expr ();
-			append_expr (main_expr,
-					build_function_call (new_def_expr ($1), $1->type, 0));
-			emit_function (main_func, main_expr);
-			finish_function (main_func);
-			current_func = 0;
+			for  (s = current_symtab->symbols; s; s = s->next) {
+				dstring_clearstr (str);
+				print_type_str (str, s->type);
+				printf ("%s %s\n", s->name, str->str);
+			}
+			dstring_delete (str);
 		}
 	;
 
 program_head
-	: PROGRAM ID '(' identifier_list ')' ';'
+	: PROGRAM ID '(' opt_identifier_list ')' ';'
 		{
-			type_t     *type = parse_params (&type_void, 0);
-			current_params = 0;
-			$$ = get_function_def ($2, type, current_scope, st_extern, 0, 1);
+
+			$$ = $2;
+			current_symtab = new_symtab (0, stab_global);
+			$$->type = parse_params (&type_void, 0);
+			symtab_addsymbol (current_symtab, $2);
 		}
+	;
+
+opt_identifier_list
+	: /* empty */
+	| identifier_list
 	;
 
 identifier_list
 	: ID
-		{
-			$$ = new_block_expr ();
-			append_expr ($$, new_name_expr ($1));
-		}
 	| identifier_list ',' ID
 		{
-			append_expr ($1, new_name_expr ($3));
+			symbol_t  **s;
+			$$ = $1;
+			for (s = &$$; *s; s = &(*s)->next)
+				;
+			*s = $3;
 		}
 	;
 
 declarations
 	: declarations VAR identifier_list ':' type ';'
 		{
-			type_t     *type = $5;
-			expr_t     *id_list = $3;
-			expr_t     *e;
-
-			for (e = id_list->e.block.head; e; e = e->next)
-				get_def (type, e->e.string_val, current_scope, st_global);
+			while ($3) {
+				symbol_t   *next = $3->next;
+				if ($3->table == current_symtab) {
+					error (0, "%s redefined", $3->name);
+				} else {
+					if ($3->table)
+						$3 = new_symbol ($3->name);
+					$3->type = $5;
+					symtab_addsymbol (current_symtab, $3);
+				}
+				$3 = next;
+			}
 		}
 	| /* empty */
 	;
 
 type
-	: standard_type				{ $$ = $1; }
-	| ARRAY '[' num RANGE num ']' OF standard_type
+	: standard_type
+	| ARRAY '[' CONST RANGE CONST ']' OF standard_type
 		{
-			if ($3->type != ex_integer || $5->type != ex_integer)
-				error (0, "array bounds must be integers");
 			$$ = based_array_type ($8, $3->e.integer_val, $5->e.integer_val);
 		}
 	;
 
 standard_type
-	: TYPE						{ $$ = $1; }
+	: TYPE
+	| TYPE_NAME
 	;
 
 subprogram_declarations
@@ -252,101 +234,88 @@ subprogram_declarations
 subprogram_declaration
 	: subprogram_head ';'
 		{
-			current_func = begin_function ($1, 0, current_params);
-			current_scope = current_func->scope;
-			//current_storage = st_local;
+			param_t    *p;
+
+			$<symtab>$ = current_symtab;
+			current_symtab = new_symtab (current_symtab, stab_local);
+
+			for (p = $1->params; p; p = p->next)
+				symtab_addsymbol (current_symtab, copy_symbol (p->symbol));
 		}
 	  declarations compound_statement ';'
 		{
-			current_scope = current_scope->parent;
-			//current_storage = st_global;
-			// functions in pascal are always effectively void
-			// but their type is needed for checking func := retval
-			// so bypass the checks
-			append_expr ($5, new_unary_expr ('r', 0));
-			build_code_function (current_func, 0, $5);
-			current_func = 0;
-		}
-	| subprogram_head ASSIGNOP '#' const ';'
-		{
-			$$ = build_builtin_function ($1, $4);
-			if ($$) {
-				build_scope ($$, $$->def, current_params);
-				flush_scope ($$->scope, 1);
+			dstring_t  *str = dstring_newstr ();
+			symbol_t   *s;
+
+			for  (s = current_symtab->symbols; s; s = s->next) {
+				dstring_clearstr (str);
+				print_type_str (str, s->type);
+				printf ("    %s %s\n", s->name, str->str);
 			}
+			current_symtab = current_symtab->parent;
+			dstring_delete (str);
 		}
+	| subprogram_head ASSIGNOP '#' CONST ';'
 	;
 
 subprogram_head
 	: FUNCTION ID arguments ':' standard_type
 		{
-			type_t     *type = parse_params ($5, $3);
-			current_params = $3;
-			$$ = get_function_def ($2, type, current_scope, st_global, 0, 1);
+			$$ = $2;
+			if ($$->table == current_symtab) {
+				error (0, "%s redefined", $$->name);
+			} else {
+				$$->params = $3;
+				$$->type = parse_params ($5, $3);
+				symtab_addsymbol (current_symtab, $$);
+			}
 		}
 	| PROCEDURE ID arguments
 		{
-			type_t     *type = parse_params (&type_void, $3);
-			$$ = get_function_def ($2, type, current_scope, st_global, 0, 1);
+			$$ = $2;
+			if ($$->table == current_symtab) {
+				error (0, "%s redefined", $$->name);
+			} else {
+				$$->params = $3;
+				$$->type = parse_params (&type_void, $3);
+				symtab_addsymbol (current_symtab, $$);
+			}
 		}
 	;
 
 arguments
-	: '(' parameter_list ')'	{ $$ = $2; }
+	: '(' parameter_list ')'				{ $$ = $2; }
 	| '(' parameter_list ';' ELLIPSIS ')'
 		{
-			param_t   **p;
-
-			$$ = $2;
-			p = &$$;
-			for ( ; *p; p = &(*p)->next)
-				;
-			*p = new_param (0, 0, 0);
+			$$ = param_append_identifiers ($2, 0, 0);
 		}
-	| '(' ELLIPSIS ')'			{ $$ = new_param (0, 0, 0); }
-	| /* emtpy */				{ $$ = 0; }
+	| '(' ELLIPSIS ')'						{ $$ = new_param (0, 0, 0); }
+	| /* emtpy */							{ $$ = 0; }
 	;
 
 parameter_list
 	: identifier_list ':' type
 		{
-			type_t     *type = $3;
-			expr_t     *id_list = $1;
-			expr_t     *e;
-			param_t   **p;
-
-			$$ = 0;
-			p = &$$;
-			for (e = id_list->e.block.head; e; e = e->next) {
-				*p = new_param (0, type, e->e.string_val);
-				p = &(*p)->next;
-			}
+			$$ = param_append_identifiers (0, $1, $3);
 		}
 	| parameter_list ';' identifier_list ':' type
 		{
-			type_t     *type = $5;
-			expr_t     *id_list = $3;
-			expr_t     *e;
-			param_t   **p;
-
-			$$ = $1;
-			p = &$$;
-			for ( ; *p; p = &(*p)->next)
-				;
-			for (e = id_list->e.block.head; e; e = e->next) {
-				*p = new_param (0, type, e->e.string_val);
-				p = &(*p)->next;
-			}
+			$$ = param_append_identifiers ($1, $3, $5);
 		}
 	;
 
 compound_statement
-	: PBEGIN optional_statements END	{ $$ = $2; }
+	: PBEGIN optional_statements END		{ $$ = $2; }
 	;
 
 optional_statements
-	: statement_list					{ $$ = $1; }
-	| /* emtpy */						{ $$ = 0; }
+	: statement_list opt_semi
+	| /* emtpy */							{ $$ = 0; }
+	;
+
+opt_semi
+	:	';'
+	| /* empty */
 	;
 
 statement_list
@@ -365,67 +334,20 @@ statement_list
 statement
 	: variable ASSIGNOP expression
 		{
-			convert_name ($1);
-			if ($1->type == ex_def && extract_type ($1) == ev_func)
-				$1 = new_ret_expr ($1->e.def->type->t.func.type);
-			$$ = assign_expr ($1, $3);
+			$$ = $1;
+			if ($$->type == ex_symbol && extract_type ($$) == ev_func)
+				$$ = new_ret_expr ($$->e.symbol->type->t.func.type);
+			$$ = assign_expr ($$, $3);
 		}
-	| procedure_statement							{ $$ = $1; }
-	| compound_statement							{ $$ = $1; }
+	| procedure_statement
+	| compound_statement
 	| IF expression THEN statement ELSE statement
 		{
-			int         line = pr.source_line;
-			string_t    file = pr.source_file;
-			expr_t     *tl = new_label_expr ();
-			expr_t     *fl = new_label_expr ();
-			expr_t     *nl = new_label_expr ();
-
-			pr.source_line = $2->line;
-			pr.source_file = $2->file;
-
-			$$ = new_block_expr ();
-
-			$2 = convert_bool ($2, 1);
-			if ($2->type != ex_error) {
-				backpatch ($2->e.bool.true_list, tl);
-				backpatch ($2->e.bool.false_list, fl);
-				append_expr ($2->e.bool.e, tl);
-				append_expr ($$, $2);
-			}
-			append_expr ($$, $4);
-			append_expr ($$, new_unary_expr ('g', nl));
-
-			append_expr ($$, fl);
-			append_expr ($$, $6);
-			append_expr ($$, nl);
-
-			pr.source_line = line;
-			pr.source_file = file;
+			$$ = build_if_statement ($2, $4, $6);
 		}
 	| IF expression THEN statement %prec IFX
 		{
-			int         line = pr.source_line;
-			string_t    file = pr.source_file;
-			expr_t     *tl = new_label_expr ();
-			expr_t     *fl = new_label_expr ();
-
-			pr.source_line = $2->line;
-			pr.source_file = $2->file;
-
-			$$ = new_block_expr ();
-
-			$2 = convert_bool ($2, 1);
-			if ($2->type != ex_error) {
-				backpatch ($2->e.bool.true_list, tl);
-				backpatch ($2->e.bool.false_list, fl);
-				append_expr ($2->e.bool.e, tl);
-				append_expr ($$, $2);
-			}
-			append_expr ($$, $4);
-			append_expr ($$, fl);
-
-			pr.source_line = line;
-			pr.source_file = file;
+			$$ = build_if_statement ($2, $4, 0);
 		}
 	| WHILE expression DO statement
 		{
@@ -459,59 +381,45 @@ statement
 	;
 
 variable
-	: name							{ $$ = $1; }
-	| name '[' expression ']'		{ $$ = array_expr ($1, $3); }
+	: name
+	| name '[' expression ']'				{ $$ = array_expr ($1, $3); }
 	;
 
 procedure_statement
-	: name							{ $$ = function_expr ($1, 0); }
-	| name '(' expression_list ')'	{ $$ = function_expr ($1, $3); }
+	: name									{ $$ = function_expr ($1, 0); }
+	| name '(' expression_list ')'			{ $$ = function_expr ($1, $3); }
 	;
 
 expression_list
 	: expression
 	| expression_list ',' expression
 		{
-			$3->next = $1;
 			$$ = $3;
+			$$->next = $1;
 		}
 	;
 
 unary_expr
 	: primary
-	| sign unary_expr	%prec UNARY
-		{
-			if ($1 == '-')
-				$$ = unary_expr ('-', $2);
-			else
-				$$ = $2;
-		}
-	| NOT expression	%prec UNARY
-		{
-			$$ = unary_expr ('!', $2);
-		}
+	| sign unary_expr	%prec UNARY			{ $$ = unary_expr ($1, $2); }
+	| NOT expression	%prec UNARY			{ $$ = unary_expr ('!', $2); }
 	;
 
 primary
 	: variable
 		{
-			convert_name ($1);
-			if ($1->type == ex_def && extract_type ($1) == ev_func)
-				$1 = function_expr ($1, 0);
 			$$ = $1;
+			if ($$->type == ex_symbol && extract_type ($$) == ev_func)
+				$$ = function_expr ($$, 0);
 		}
-	| const							{ $$ = $1; }
-	| name '(' expression_list ')'	{ $$ = function_expr ($1, $3); }
-	| '(' expression ')'			{ $$ = $2; }
+	| CONST
+	| name '(' expression_list ')'			{ $$ = function_expr ($1, $3); }
+	| '(' expression ')'					{ $$ = $2; }
 	;
 
 expression
 	: unary_expr
-	| expression RELOP expression
-		{
-			int         op = convert_relop ($2);
-			$$ = binary_expr (op, $1, $3);
-		}
+	| expression RELOP expression			{ $$ = binary_expr ($2, $1, $3); }
 	| expression ADDOP expression
 		{
 			if ($2 == 'o')
@@ -535,54 +443,13 @@ expression
 sign
 	: ADDOP
 		{
-			if ($1 == 'o')
+			if ($$ == 'o')
 				PARSE_ERROR;
 		}
 	;
 
 name
-	: ID						{ $$ = new_name_expr ($1); }
-	;
-
-const
-	: num						{ $$ = $1; }
-	| STRING_VAL				{ $$ = new_string_expr ($1); }
-	;
-
-num
-	: INT_VAL					{ $$ = new_integer_expr ($1); }
-	| FLOAT_VAL					{ $$ = new_float_expr ($1); }
-	| VECTOR_VAL				{ $$ = new_vector_expr ($1); }
-	| QUATERNION_VAL			{ $$ = new_quaternion_expr ($1); }
+	: ID									{ $$ = new_symbol_expr ($1); }
 	;
 
 %%
-
-static int
-convert_relop (const char *relop)
-{
-	switch (relop[0]) {
-		case '=':
-			return EQ;
-		case '<':
-			switch (relop[1]) {
-				case 0:
-					return LT;
-				case '>':
-					return NE;
-				case '=':
-					return LE;
-			}
-			break;
-		case '>':
-			switch (relop[1]) {
-				case 0:
-					return GT;
-				case '=':
-					return GE;
-			}
-			break;
-	}
-	error (0, "internal: bad relop %s", relop);
-	return EQ;
-}

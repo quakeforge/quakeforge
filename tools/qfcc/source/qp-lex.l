@@ -40,6 +40,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "expr.h"
 #include "grab.h"
 #include "qfcc.h"
+#include "symtab.h"
 #include "type.h"
 
 #include "qp-parse.h"
@@ -67,6 +68,7 @@ YY_DECL;
 
 
 static int keyword_or_id (const char *token);
+static int convert_relop (const char *relop);
 
 %}
 
@@ -106,48 +108,51 @@ FRAMEID		{ID}(\.{ID})*
 ^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$	{ line_info (yytext + 1); }
 
 {INTEGER}			{
-						yylval.integer_val = strtol (yytext, 0, 0);
-						return INT_VAL;
+						int         i = strtol (yytext, 0, 0);
+						yylval.expr = new_integer_expr (i);
+						return CONST;
 					}
 
 {FLOAT}				{
-						yylval.float_val = strtof (yytext, 0);
-						return FLOAT_VAL;
+						float       f = strtof (yytext, 0);
+						yylval.expr = new_float_expr (f);
+						return CONST;
 					}
 
 {ID}				return keyword_or_id (yytext);
 
 \"(\\.|[^"\\])*\"	{
-						yylval.string_val = make_string (yytext, 0);
-						return STRING_VAL;
+						const char *s = make_string (yytext, 0);
+						yylval.expr = new_string_expr (s);
+						return CONST;
 					}
 
 '{s}*{m}{FLOAT}{s}+{m}{FLOAT}{s}+{m}{FLOAT}{s}*'  {
+						vec3_t      v;
 						sscanf (yytext, "' %f %f %f '",
-								&yylval.vector_val[0], &yylval.vector_val[1],
-								&yylval.vector_val[2]);
-						return VECTOR_VAL;
+								&v[0], &v[1], &v[2]);
+						yylval.expr = new_vector_expr (v);
+						return CONST;
 					}
 
 '{s}*{m}{FLOAT}{s}+{m}{FLOAT}{s}+{m}{FLOAT}{s}+{m}{FLOAT}{s}*'  {
-						sscanf (yytext, "' %f %f %f %f '",
-								&yylval.quaternion_val[0],
-								&yylval.quaternion_val[1],
-								&yylval.quaternion_val[2],
-								&yylval.quaternion_val[3]);
-						return QUATERNION_VAL;
+						quat_t      q;
+						sscanf (yytext, "' %f %f %f %f'",
+								&q[0], &q[1], &q[2], &q[3]);
+						yylval.expr = new_quaternion_expr (q);
+						return CONST;
 					}
 
 {RELOP}				{
-						yylval.string_val = save_string (yytext);
+						yylval.op = convert_relop (yytext);
 						return RELOP;
 					}
 {ADDOP}				{
-						yylval.integer_val = yytext[0];
+						yylval.op = yytext[0];
 						return ADDOP;
 					}
 {MULOP}				{
-						yylval.integer_val = yytext[0];
+						yylval.op = yytext[0];
 						return MULOP;
 					}
 
@@ -161,8 +166,8 @@ FRAMEID		{ID}(\.{ID})*
 "$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
-							yylval.integer_val = ret;
-							return INT_VAL;
+							yylval.expr = new_integer_expr (ret);
+							return CONST;
 						} else {
 							BEGIN (-ret);
 						}
@@ -233,6 +238,7 @@ keyword_or_id (const char *token)
 {
 	static hashtab_t *keyword_tab;
 	keyword_t  *keyword;
+	symbol_t   *sym;
 
 	if (!keyword_tab) {
 		size_t      i;
@@ -243,14 +249,48 @@ keyword_or_id (const char *token)
 	keyword = Hash_Find (keyword_tab, token);
 	if (keyword) {
 		if (keyword->value == ADDOP || keyword->value == MULOP) {
-			yylval.op = yytext[0];
+			yylval.op = token[0];
 		} else {
 			yylval.type = keyword->type;
 		}
 		return keyword->value;
 	}
-	yylval.string_val = save_string (token);
+	sym = symtab_lookup (current_symtab, token);
+	if (!sym)
+		sym = new_symbol (token);
+	yylval.symbol = sym;
+	if (sym->is_typedef)
+		return TYPE_NAME;
 	return ID;
+}
+
+static int
+convert_relop (const char *relop)
+{
+	switch (relop[0]) {
+		case '=':
+			return EQ;
+		case '<':
+			switch (relop[1]) {
+				case 0:
+					return LT;
+				case '>':
+					return NE;
+				case '=':
+					return LE;
+			}
+			break;
+		case '>':
+			switch (relop[1]) {
+				case 0:
+					return GT;
+				case '=':
+					return GE;
+			}
+			break;
+	}
+	error (0, "internal: bad relop %s", relop);
+	return EQ;
 }
 
 #ifdef YY_FLEX_REALLOC_HACK
