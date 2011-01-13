@@ -5,12 +5,22 @@
 
 #include "class.h"
 #include "def.h"
+#include "function.h"
 #include "qfcc.h"
 #include "symtab.h"
 #include "type.h"
 
 static symtab_t *free_symtabs;
 static symbol_t *free_symbols;
+
+symbol_t *
+new_symbol (const char *name)
+{
+	symbol_t   *symbol;
+	ALLOC (256, symbol_t, symbols, symbol);
+	symbol->name = save_string (name);
+	return symbol;
+}
 
 static const char *
 sym_getkey (void *k, void *unused)
@@ -47,81 +57,50 @@ symtab_lookup (symtab_t *symtab, const char *name)
 	return 0;
 }
 
-static symbol_t *
-new_symbol (void)
+symbol_t *
+symtab_addsymbol (symtab_t *symtab, symbol_t *symbol)
 {
-	symbol_t   *symbol;
-	ALLOC (256, symbol_t, symbols, symbol);
-	return symbol;
-}
-
-static void
-add_symbol (symtab_t *symtab, symbol_t *symbol)
-{
+	symbol_t   *s;
+	if ((s = Hash_Find (symtab->tab, symbol->name)))
+		return s;
 	Hash_Add (symtab->tab, symbol);
+
 	symbol->next = *symtab->symtail;
 	*symtab->symtail = symbol;
 	symtab->symtail = &symbol->next;
-}
 
-symbol_t *
-symtab_add_type (symtab_t *symtab, const char *name, type_t *type)
-{
-	symbol_t   *symbol;
-	if ((symbol = Hash_Find (symtab->tab, name))) {
-		// duplicate symbol
-	}
-	symbol = new_symbol ();
-	symbol->name = name;
-	symbol->type = sym_type;
-	symbol->s.type = type;
-	add_symbol (symtab, symbol);
+	symbol->table = symtab;
+
 	return symbol;
 }
 
 symbol_t *
-symtab_add_def (symtab_t *symtab, const char *name, def_t *def)
+symtab_removesymbol (symtab_t *symtab, symbol_t *symbol)
 {
-	symbol_t   *symbol;
-	if ((symbol = Hash_Find (symtab->tab, name))) {
-		// duplicate symbol
-	}
-	symbol = new_symbol ();
-	symbol->name = name;
-	symbol->type = sym_def;
-	symbol->s.def = def;
-	add_symbol (symtab, symbol);
+	symbol_t  **s;
+
+	if (!(symbol = Hash_Del (symtab->tab, symbol->name)))
+		return 0;
+	for (s = &symtab->symbols; *s && *s != symbol; s = & (*s)->next)
+		;
+	if (!*s)
+		abort ();
+	*s = (*s)->next;
+	if (symtab->symtail == &symbol->next)
+		symtab->symtail = s;
+	symbol->next = 0;
+	symbol->table = 0;
 	return symbol;
 }
 
 symbol_t *
-symtab_add_enum (symtab_t *symtab, const char *name, struct enumval_s *enm)
+copy_symbol (symbol_t *symbol)
 {
-	symbol_t   *symbol;
-	if ((symbol = Hash_Find (symtab->tab, name))) {
-		// duplicate symbol
-	}
-	symbol = new_symbol ();
-	symbol->name = name;
-	symbol->type = sym_enum;
-	symbol->s.enm = enm;
-	add_symbol (symtab, symbol);
-	return symbol;
-}
-
-symbol_t *
-symtab_add_class (symtab_t *symtab, const char *name, class_t *class)
-{
-	symbol_t   *symbol;
-	if ((symbol = Hash_Find (symtab->tab, name))) {
-		// duplicate symbol
-	}
-	symbol = new_symbol ();
-	symbol->name = name;
-	symbol->type = sym_class;
-	symbol->s.class = class;
-	add_symbol (symtab, symbol);
-	return symbol;
+	symbol_t   *sym = new_symbol (symbol->name);
+	sym->type = symbol->type;
+	sym->params = copy_params (symbol->params);
+	sym->is_typedef = symbol->is_typedef;
+	return sym;
 }
 
 symtab_t *
@@ -136,9 +115,8 @@ symtab_flat_copy (symtab_t *symtab, symtab_t *parent)
 		for (symbol = symtab->symbols; symbol; symbol = symbol->next) {
 			if (Hash_Find (newtab->tab, symbol->name))
 				continue;
-			newsym = new_symbol ();
-			*newsym = *symbol;
-			add_symbol (newtab, newsym);
+			newsym = copy_symbol (symbol);
+			symtab_addsymbol (newtab, newsym);
 		}
 		symtab = symtab->parent;
 		// Set the tail pointer so symbols in ancestor tables come before

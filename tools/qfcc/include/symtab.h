@@ -37,23 +37,13 @@
 */
 //@{
 //
-typedef enum {
-	sym_type,
-	sym_def,
-	sym_enum,
-	sym_class,
-} sym_type_e;
-
 typedef struct symbol_s {
 	struct symbol_s *next;		///< chain of symbols in symbol table
+	struct symtab_s *table;		///< symbol table that owns this symbol
 	const char *name;			///< symbol name
-	sym_type_e  type;			///< symbol type (typedef, var, struct...)
-	union {
-		struct type_s *type;
-		struct def_s *def;
-		struct enumval_s *enm;
-		struct class_s *class;
-	} s;
+	struct type_s *type;		///< symbol type
+	struct param_s *params;		///< the parameters if a function
+	int         is_typedef;		///< true if symbol is a typedef
 } symbol_t;
 
 typedef enum {
@@ -70,6 +60,16 @@ typedef struct symtab_s {
 	symbol_t   *symbols;		///< chain of symbols in this table
 	symbol_t  **symtail;		///< keep chain in declaration order
 } symtab_t;
+
+/**	Create a new, empty named symbol.
+
+	Only the symbol name field will be filled in. \a name will be copied
+	using save_string().
+
+	\param name		The name of the symbol.
+	\return			The new symbol.
+*/
+symbol_t *new_symbol (const char *name);
 
 /**	Create a new, empty symbol table.
 
@@ -95,61 +95,36 @@ symtab_t *new_symtab (symtab_t *parent, stab_type_e type);
 */
 symbol_t *symtab_lookup (symtab_t *symtab, const char *name);
 
-/**	Add a named type (\c typedef) to the symbol table.
+/**	Add a symbol to the symbol table.
 
-	Duplicate names will not be inserted (an error), but only the given
-	symbol table is checked for duplicate names, not the ancestor chain.
+	If there is already a symbol with the same name in the symbol table,
+	the symbol will not be added to the table, and the symbol that was
+	found in the table witll be returned.
 
-	\param symtab	The symbol table to which the named type will be added.
-	\param name		The name of the type to be added to the symbol table.
-	\param type		The type to be added to the symbol table.
-	\return			The new symbol representing the named type or null if
-					an error occurred.
+	\param symtab	The symol table to which the symbol will be added.
+	\param symbol	The symbol to be added to the symbol table.
+	\return			The symbol as in the table, either \a symbol if no
+					symbol with the same name is already in the symbol
+					table, or the symbol that was found in the table.
 */
-symbol_t *symtab_add_type (symtab_t *symtab, const char *name,
-						   struct type_s *type);
+symbol_t *symtab_addsymbol (symtab_t *symtab, symbol_t *symbol);
 
-/**	Add a def to the symbol table.
+/**	Remove a symbol from the symbol table.
 
-	Duplicate names will not be inserted (an error), but only the given
-	symbol table is checked for duplicate names, not the ancestor chain.
-
-	\param symtab	The symbol table to which the def will be added.
-	\param name		The name of the def to be added to the symbol table.
-	\param def		The def to be added to the symbol table.
-	\return			The new symbol representing the def or null if an
-					error occurred.
+	\param symtab	The symol table from which the symbol will be removed.
+	\param symbol	The symbol to be removed from the symbol table.
+	\return			The symbol as was in the table, or NULL if not found.
 */
-symbol_t *symtab_add_def (symtab_t *symtab, const char *name,
-						  struct def_s *def);
+symbol_t *symtab_removesymbol (symtab_t *symtab, symbol_t *symbol);
 
-/**	Add an enum to the symbol table.
+/**	Make a copy of a symbol.
 
-	Duplicate names will not be inserted (an error), but only the given
-	symbol table is checked for duplicate names, not the ancestor chain.
+	The new symbol will not be associated with any table.
 
-	\param symtab	The symbol table to which the enum will be added.
-	\param name		The name of the enum to be added to the symbol table.
-	\param enm		The enum to be added to the symbol table.
-	\return			The new symbol representing the enum or null if an
-					error occurred.
+	\param symbol	The symbol to be copied.
+	\return			The new symbol.
 */
-symbol_t *symtab_add_enum (symtab_t *symtab, const char *name,
-						   struct enumval_s *enm);
-
-/**	Add a class to the symbol table.
-
-	Duplicate names will not be inserted (an error), but only the given
-	symbol table is checked for duplicate names, not the ancestor chain.
-
-	\param symtab	The symbol table to which the class will be added.
-	\param name		The name of the class to be added to the symbol table.
-	\param class	The class to be added to the symbol table.
-	\return			The new symbol representing the class or null if an
-					error occurred.
-*/
-symbol_t *symtab_add_class (symtab_t *symtab, const char *name,
-							struct class_s *class);
+symbol_t *copy_symbol (symbol_t *symbol);
 
 /**	Create a new single symbol table from the given symbol table chain.
 
