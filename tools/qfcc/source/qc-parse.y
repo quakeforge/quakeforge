@@ -148,11 +148,7 @@ static def_t *create_def (type_t *type, const char *name, scope_t *scope,
 %left	'.' '(' '['
 
 %token	<string_val> CLASS_NAME NAME STRING_VAL
-%token	<integer_val> INT_VAL
-%token	<uinteger_val> UINT_VAL
-%token	<float_val> FLOAT_VAL
-%token	<vector_val> VECTOR_VAL
-%token	<quaternion_val> QUATERNION_VAL
+%token	<expr>	CONST
 
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS NIL
 %token	IFBE IFB IFAE IFA
@@ -172,7 +168,7 @@ static def_t *create_def (type_t *type, const char *name, scope_t *scope,
 %type	<param>	param param_list
 %type	<def>	opt_initializer methoddef var_initializer
 %type	<expr>	const opt_expr fexpr expr element_list element_list1 element
-%type	<expr>	string_val opt_state_expr think opt_step array_decl texpr
+%type	<expr>	opt_state_expr think opt_step array_decl texpr
 %type	<expr>	statement statements statement_block
 %type	<expr>	label break_label continue_label enum_list enum
 %type	<expr>	unary_expr primary cast_expr opt_arg_list arg_list
@@ -532,14 +528,7 @@ func_init
 builtin_function
 	: /* emtpy */
 		{
-			def_t *def = $<def>-1;
-			if (!def->external) {
-				$$ = build_builtin_function (def, $<expr>0);
-				if ($$) {
-					build_scope ($$, $$->def, current_params);
-					flush_scope ($$->scope, 1);
-				}
-			}
+			$$ = build_builtin_function ($<def>-1, $<expr>0, current_params);
 		}
 	;
 
@@ -1170,20 +1159,13 @@ arg_list
 	;
 
 const
-	: FLOAT_VAL					{ $$ = new_float_expr ($1); }
-	| string_val				{ $$ = $1; }
-	| VECTOR_VAL				{ $$ = new_vector_expr ($1); }
-	| QUATERNION_VAL			{ $$ = new_quaternion_expr ($1); }
-	| INT_VAL					{ $$ = new_integer_expr ($1); }
-	| UINT_VAL					{ $$ = new_uinteger_expr ($1); }
+	: CONST
 	| NIL						{ $$ = new_nil_expr (); }
-	;
-
-string_val
-	: STRING_VAL				{ $$ = new_string_expr ($1); }
-	| string_val STRING_VAL
+	| const CONST
 		{
-			$$ = binary_expr ('+', $1, new_string_expr ($2));
+			if ($1->type != ex_string || $2->type != ex_string)
+				PARSE_ERROR;
+			$$ = binary_expr ('+', $1, $2);
 		}
 	;
 

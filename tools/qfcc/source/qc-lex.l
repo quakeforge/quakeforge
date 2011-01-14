@@ -82,20 +82,22 @@ int yylex_destroy  (void);
 YY_DECL;
 
 
-static int type_or_name (char *token);
+static int keyword_or_id (char *token);
 
 extern YYSTYPE yylval;
 
 %}
 
-DIGIT	[0-9]
-XDIGIT	[0-9a-fA-F]
-ID		[a-zA-Z_][a-zA-Z_0-9]*
-FLOAT	{DIGIT}+"."{DIGIT}*
-NUM		({DIGIT}+("."{DIGIT}*)?)
-s		[ \t]
-m		([\-+]?)
-FRAMEID {ID}(\.{ID})*
+s			[ \t]
+m			[\-+]
+D			[0-9]
+X			[0-9a-fA-F]
+ID			[a-zA-Z_][a-zA-Z_0-9]*
+FLOAT		({D}+|{D}*\.{D}+|{D}+\.{D}*)([eE]{m}?{D}+)?
+INT			({D}+|0[xX]{X}+)
+RANGE		\.\.
+ELLIPSIS	\.\.\.
+FRAMEID		{ID}(\.{ID})*
 
 %x		GRAB_FRAME GRAB_OTHER COMMENT
 
@@ -111,48 +113,33 @@ FRAMEID {ID}(\.{ID})*
 <COMMENT><<EOF>>	{ error (0, "EOF in comment"); return 0; }
 "//".*				/* nothing to do */
 
-^#{s}+{DIGIT}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
-^#line{s}+{DIGIT}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 5); }
+^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
+^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 5); }
 
 ^{s}*#{s}*pragma.*$	/* skip */
 
-{DIGIT}+[uU]?		{
+{INT}+[uU]?			{
 						const char *c = yytext + yyleng - 1;
-						int         uint = 0;
-						yylval.integer_val = atoi (yytext);
+						int         i = strtol (yytext, 0, 0);
 						if (*c == 'u' || *c == 'U')
-							uint = 1;
-						return uint ? UINT_VAL : INT_VAL;
+							yylval.expr = new_uinteger_expr (i);
+						else
+							yylval.expr = new_integer_expr (i);
+						return CONST;
 					}
 
-0[xX]{XDIGIT}+[uU]?	{
-						const char *c = yytext + 2;
-						int         uint = 0;
-						yylval.uinteger_val = 0;
-						while (*c) {
-							if (*c == 'u' || *c == 'U') {
-								uint = 1;
-								break;
-							}
-							yylval.uinteger_val *= 16;
-							yylval.uinteger_val += *c - '0';
-							if (*c > '9')
-								yylval.uinteger_val -= 'A' - '9' - 1;
-							if (*c > 'F')
-								yylval.uinteger_val -= 'a' - 'A';
-							c++;
-						}
-						return uint ? UINT_VAL : INT_VAL;
+{FLOAT}				{
+						float       f = strtof (yytext, 0);
+						yylval.expr = new_float_expr (f);
+						return CONST;
 					}
 
-{FLOAT}*			{
-						yylval.float_val = atof (yytext);
-						return FLOAT_VAL;
+{ID}				{
+						int         tok = keyword_or_id(yytext);
+						return tok;
 					}
-
-{ID}				return type_or_name(yytext);
 @{ID}				{
-						int         tok = type_or_name(yytext);
+						int         tok = keyword_or_id(yytext);
 						if (tok == '@')
 							REJECT;
 						return tok;
@@ -160,24 +147,25 @@ FRAMEID {ID}(\.{ID})*
 @					return '@';
 
 \"(\\.|[^"\\])*\"	{
-						yylval.string_val = make_string (yytext, 0);
-						return STRING_VAL;
+						const char *s = make_string (yytext, 0);
+						yylval.expr = new_string_expr (s);
+						return CONST;
 					}
 
-'{s}*{m}{NUM}{s}+{m}{NUM}{s}+{m}{NUM}{s}*'	{
+'{s}*{m}?{FLOAT}{s}+{m}?{FLOAT}{s}+{m}?{FLOAT}{s}*'	{
+						vec3_t      v;
 						sscanf (yytext, "' %f %f %f '",
-								&yylval.vector_val[0], &yylval.vector_val[1],
-								&yylval.vector_val[2]);
-						return VECTOR_VAL;
+								&v[0], &v[1], &v[2]);
+						yylval.expr = new_vector_expr (v);
+						return CONST;
 					}
 
-'{s}*{m}{NUM}{s}+{m}{NUM}{s}+{m}{NUM}{s}+{m}{NUM}{s}*'	{
-						sscanf (yytext, "' %f %f %f %f '",
-								&yylval.quaternion_val[0],
-								&yylval.quaternion_val[1],
-								&yylval.quaternion_val[2],
-								&yylval.quaternion_val[3]);
-						return QUATERNION_VAL;
+'{s}*{m}?{FLOAT}{s}+{m}?{FLOAT}{s}+{m}?{FLOAT}{s}+{m}?{FLOAT}{s}*'	{
+						quat_t      q;
+						sscanf (yytext, "' %f %f %f %f'",
+								&q[0], &q[1], &q[2], &q[3]);
+						yylval.expr = new_quaternion_expr (q);
+						return CONST;
 					}
 
 '(\\[^xX0-7\r\n]|[^'\r\n]|\\[xX][0-9A-Fa-f]+|\\[0-7]+)*'	{
@@ -185,8 +173,8 @@ FRAMEID {ID}(\.{ID})*
 
 						if (str[1])
 							warning (0, "multibyte char constant");
-						yylval.integer_val = *str;
-						return INT_VAL;
+						yylval.expr = new_integer_expr (*str);
+						return CONST;
 					}
 
 [+\-*/&|^%]=		{
@@ -205,22 +193,23 @@ FRAMEID {ID}(\.{ID})*
 					}
 
 [!(){}.*/&|^~+\-=\[\];,#%?:] {
+						yylval.op = yytext[0];
 						return yytext[0];
 					}
 
-"..."	return ELLIPSIS;
+{ELLIPSIS}			return ELLIPSIS;
 
-"<<"	return SHL;
-">>"	return SHR;
+"<<"				return SHL;
+">>"				return SHR;
 
-"&&"	return AND;
-"||"	return OR;
-"=="	return EQ;
-"!="	return NE;
-"<="	return LE;
-">="	return GE;
-"<"		return LT;
-">"		return GT;
+"&&"				return AND;
+"||"				return OR;
+"=="				return EQ;
+"!="				return NE;
+"<="				return LE;
+">="				return GE;
+"<"					return LT;
+">"					return GT;
 
 "++"				{
 						yylval.op = '+';
@@ -235,8 +224,8 @@ FRAMEID {ID}(\.{ID})*
 "$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
-							yylval.integer_val = ret;
-							return INT_VAL;
+							yylval.expr = new_integer_expr (ret);
+							return CONST;
 						} else {
 							BEGIN (-ret);
 						}
@@ -337,7 +326,7 @@ keyword_get_key (void *kw, void *unused)
 }
 
 static int
-type_or_name (char *token)
+keyword_or_id (char *token)
 {
 	static hashtab_t *keyword_tab;
 	keyword_t  *keyword;
