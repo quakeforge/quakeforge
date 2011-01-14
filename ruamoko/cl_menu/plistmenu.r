@@ -50,7 +50,7 @@ class_from_plist (PLDictionary []pldict)
 	class = obj_lookup_class (classname);
 	if (!class) {
 		dprint ("could not find " + classname + "\n");
-		ret.pointer_val = NIL;
+		ret.pointer_val = nil;
 		return ret;
 	}
 	obj = [class alloc];
@@ -140,7 +140,7 @@ string_from_plist (PLString []plstring)
 	if (str_mid (str, 0, 1) == "[")
 		return rect_from_plist (plstring);
 
-	ret.string_val = NIL;
+	ret.string_val = nil;
 	return ret;
 }
 
@@ -155,7 +155,7 @@ object_from_plist (PLItem []plist)
 		case QFArray:
 			return array_from_plist ((PLArray []) plist);
 		case QFBinary:
-			ret.pointer_val = NIL;
+			ret.pointer_val = nil;
 			return ret;
 		case QFString:
 			return string_from_plist ((PLString []) plist);
@@ -171,7 +171,7 @@ read_plist (string fname)
 	file = QFS_OpenFile (fname);
 	if (!file) {
 		dprint ("could not load menu.plist\n");
-		return NIL;
+		return nil;
 	}
 	plist = [PLItem fromFile:file];
 	Qclose (file);

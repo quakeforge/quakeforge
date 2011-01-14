@@ -4,12 +4,12 @@
 @implementation Instruction
 + (id) opcode: (opcode_e) oc
 {
-    return [[self alloc] initWithOpcode: oc operand: 0 label: NIL];
+    return [[self alloc] initWithOpcode: oc operand: 0 label: nil];
 }
 
 + (id) opcode: (opcode_e) oc operand: (integer) op
 {
-    return [[self alloc] initWithOpcode: oc operand: op label: NIL];
+    return [[self alloc] initWithOpcode: oc operand: op label: nil];
 }
 
 + (id) opcode: (opcode_e) oc label: (Instruction []) l

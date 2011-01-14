@@ -53,14 +53,14 @@ integer main (integer argc, string []argv)
             comp = [Compiler newWithLambda: cons ([Symbol forString: "lambda"],
                                                   cons ([Nil nil],
                                                         cons(stuff, [Nil nil])))
-                             scope: NIL];
+                             scope: nil];
             code = (CompiledCode) [comp compile];
             if ([code isError]) {
                     printf(">> %s: %i\n", [code source], [code line]);
                     printf(">> Error (%s): %s\n", [code type], [code message]);
                     return -1;
             }
-            lm = [Lambda newWithCode: code environment: NIL];
+            lm = [Lambda newWithCode: code environment: nil];
             [lm invokeOnMachine: vm];
             res = [vm run];
             if ([res isError]) {

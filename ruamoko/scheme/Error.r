@@ -9,7 +9,7 @@
 
 + (id) type: (string) t message: (string) m
 {
-    return [[self alloc] initWithType: t message: m by: NIL];
+    return [[self alloc] initWithType: t message: m by: nil];
 }
 
 - (id) initWithType: (string) t message: (string) m by: (SchemeObject []) o

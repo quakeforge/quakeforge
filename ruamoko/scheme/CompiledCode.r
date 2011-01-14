@@ -43,7 +43,7 @@
 {
     local integer index;
     local Instruction []inst;
-    literals = [Frame newWithSize: [constants count] link: NIL];
+    literals = [Frame newWithSize: [constants count] link: nil];
     code = obj_malloc (@sizeof(instruction_t) * [instructions count]);
     lineinfo = obj_malloc(@sizeof(lineinfo_t) * [instructions count]);
     for (index = 0; index < [constants count]; index++) {
@@ -59,7 +59,7 @@
     size = [instructions count];
     [instructions release];
     [constants release];
-    instructions = constants = NIL;
+    instructions = constants = nil;
 }
 
 - (instruction_t []) code
@@ -83,12 +83,12 @@
     
     if (instructions) {
             temp = instructions;
-            instructions = NIL;
+            instructions = nil;
             [temp release];
     }
     if (constants) {
             temp = constants;
-            constants = NIL;
+            constants = nil;
             [temp release];
     }
        

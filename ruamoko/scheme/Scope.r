@@ -74,7 +74,7 @@
     if (names) {
             [names release];
     }
-    names = NIL;
+    names = nil;
     [super dealloc];
 }
 

@@ -30,7 +30,7 @@ Symbol []symbol (string str)
 @implementation Symbol
 + (void) initialize
 {
-    symbols = Hash_NewTable (1024, SymbolGetKey, SymbolFree, NIL);
+    symbols = Hash_NewTable (1024, SymbolGetKey, SymbolFree, nil);
     lparen = [Symbol forString: "("];
     rparen = [Symbol forString: ")"];
     quote = [Symbol forString: "'"];

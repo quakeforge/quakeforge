@@ -23,16 +23,16 @@ void GlobalFree (void []ele, void []data)
 - (id) init
 {
     self = [super init];
-    state.program = NIL;
+    state.program = nil;
     state.pc = 0;
-    value = NIL;
-    state.cont = NIL;
-    state.env = NIL;
-    state.literals = NIL;
-    state.proc = NIL;
+    value = nil;
+    state.cont = nil;
+    state.env = nil;
+    state.literals = nil;
+    state.proc = nil;
     state.stack = [Nil nil];
-    state.lineinfo = NIL;
-    globals = Hash_NewTable(1024, GlobalGetKey, GlobalFree, NIL);
+    state.lineinfo = nil;
+    globals = Hash_NewTable(1024, GlobalGetKey, GlobalFree, nil);
     all_globals = [Nil nil];
     return self;
 }

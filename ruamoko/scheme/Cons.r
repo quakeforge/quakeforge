@@ -40,9 +40,9 @@ BOOL isList (SchemeObject []ls)
     cdr = d;
 
     if (!car) {
-            print("Cons: WARNING: NIL car\n");
+            print("Cons: WARNING: nil car\n");
     } else if (!cdr) {
-            print("cons: WARNING: NIL cdr\n");
+            print("cons: WARNING: nil cdr\n");
     }
 
      return [super init];
@@ -77,16 +77,16 @@ BOOL isList (SchemeObject []ls)
 - (string) printForm
 {
     local string acc = "";
-    local id cur, next = NIL;
+    local id cur, next = nil;
 
     for (cur = self; cur; cur = next) {
             next = [cur cdr];
             acc = acc + [[cur car] printForm];
             if (next == [Nil nil]) {
-                    next = NIL;
+                    next = nil;
             } else  if (next && ![next isKindOfClass: [Cons class]]) {
                     acc = acc + " . " + [next printForm];
-                    next = NIL;
+                    next = nil;
             } else if (next) {
                     acc = acc + " ";
             }

@@ -221,7 +221,7 @@ integer (integer key, integer unicode, integer down) load_keyevent =
 		case QFM_BUTTON1:
 			if (loadable[load_cursor]) {
 				S_LocalSound ("misc/menu2.wav");
-				Menu_SelectMenu (NIL);
+				Menu_SelectMenu (nil);
 				Cbuf_AddText (sprintf ("load s%i.sav\n", load_cursor));
 			}
 			return 1;
@@ -246,7 +246,7 @@ integer (integer key, integer unicode, integer down) save_keyevent =
 			return 1;
 		case QFK_RETURN:
 		case QFM_BUTTON1:
-			Menu_SelectMenu (NIL);
+			Menu_SelectMenu (nil);
 			Cbuf_AddText (sprintf ("save s%i.sav\n", save_cursor));
 			return 1;
 	}
@@ -300,7 +300,7 @@ integer (integer key, integer unicode, integer down) quit_keyevent =
 		return 1;
 	}
 	if (key == 'n') {
-		Menu_SelectMenu (NIL);
+		Menu_SelectMenu (nil);
 		return 1;
 	}
 	return 0;
@@ -329,7 +329,7 @@ void () quit_menu =
 
 integer (string text, integer key) sp_start =
 {
-	Menu_SelectMenu (NIL);
+	Menu_SelectMenu (nil);
 	Cbuf_AddText ("disconnect\n");
 	Cbuf_AddText ("maxplayers 1\n");
 	Cbuf_AddText ("coop 0\n");
@@ -443,7 +443,7 @@ integer (integer key, integer unicode, integer down) lanconfig_keyevent =
 			break;
 		case QFK_RETURN:
 			if (input_active) {
-				input_active = NIL;
+				input_active = nil;
 			} else {
 				if (lanConfig_cursor == 0) {
 					input_active = lanConfig_port_il;

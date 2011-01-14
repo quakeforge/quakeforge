@@ -226,7 +226,7 @@ SchemeObject []bi_apply (SchemeObject []args, Machine []m)
                           by: m];
     }
 
-    prev = NIL;
+    prev = nil;
     
     for (cur = args; [(Cons[]) cur cdr] != [Nil nil]; cur = [(Cons[]) cur cdr]) {
             prev = cur;
@@ -238,7 +238,7 @@ SchemeObject []bi_apply (SchemeObject []args, Machine []m)
     
     [m stack: [(Cons[]) args cdr]];
     [(Procedure[]) [(Cons[]) args car] invokeOnMachine: m];
-    return NIL;
+    return nil;
 }
 
 SchemeObject []bi_callcc (SchemeObject []args, Machine []m)
@@ -261,7 +261,7 @@ SchemeObject []bi_callcc (SchemeObject []args, Machine []m)
                            [Nil nil])];
     }
     [(Procedure[]) [(Cons[]) args car] invokeOnMachine: m];
-    return NIL;
+    return nil;
 }
 
 SchemeObject []bi_eq (SchemeObject []args, Machine []m)

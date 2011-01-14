@@ -12,7 +12,7 @@
 	ypos = yabs = y;
 	xlen = w;
 	ylen = h;
-	parent = NIL;
+	parent = nil;
 	return self;
 }
 

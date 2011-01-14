@@ -69,7 +69,7 @@
 - (id) initWithCapacity: (unsigned)cap
 {
 	if (!(self = [super init]))
-		return NIL;
+		return nil;
 
 	count = 0;
 	if ((capacity = cap) < 1)
@@ -93,7 +93,7 @@
 	local unsigned max = [array count];
 
 	if (!(self = [self initWithCapacity: max]))
-		return NIL;
+		return nil;
 
 	for (i = 0; i < max; i++) {
 		_objs[i] = [[array objectAtIndex: i] retain];
@@ -111,7 +111,7 @@
 	local unsigned max = [array count];
 
 	if (!(self = [self initWithCapacity: max]))
-		return NIL;
+		return nil;
 
 	for (i = 0; i < max; i++) {
 		if (copy)
@@ -127,7 +127,7 @@
 	local integer i;
 
 	if (!(self = [self initWithCapacity: @args.count + 1]))
-		return NIL;
+		return nil;
 
 	[self addObject: firstObj];
 	for (i = 0; i < @args.count; i++) {
@@ -141,7 +141,7 @@
 	local integer i;
 
 	if (!(self = [self initWithCapacity: cnt]))
-		return NIL;
+		return nil;
 
 	for (i = 0; i < cnt; i++) {
 		[self addObject: (id) objs[i]];
@@ -323,7 +323,7 @@
 			cause something else to happen).
 		*/
 		tmp = _objs[--count];
-		_objs[i] = NIL;
+		_objs[i] = nil;
 		[tmp release];
 	}
 #else
@@ -338,7 +338,7 @@
 	local id	tmp;
 
 	tmp = _objs[--count];
-	_objs[count] = NIL;
+	_objs[count] = nil;
 	[tmp release];
 }
 

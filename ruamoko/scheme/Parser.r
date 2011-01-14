@@ -74,7 +74,7 @@
     }
     
     if (!token) {
-            return NIL;
+            return nil;
     }
 
     if (token == [Symbol leftParen]) {

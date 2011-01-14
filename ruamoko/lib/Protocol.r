@@ -55,7 +55,7 @@ struct obj_method_description_list {
 				return result;
 		}
 	}
-	return NIL;
+	return nil;
 }
 
 - (struct obj_method_description []) descriptionForClassMethod: (SEL)aSel
@@ -78,7 +78,7 @@ struct obj_method_description_list {
 				return result;
 		}
 	}
-	return NIL;
+	return nil;
 }
 
 @end

@@ -41,7 +41,7 @@ Symbol []beginSym;
     sexpr = xp;
     scope = sc;
     code = [CompiledCode new];
-    err = NIL;
+    err = nil;
     return self;
 }
 

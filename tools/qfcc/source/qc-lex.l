@@ -299,7 +299,7 @@ static keyword_t keywords[] = {
 	{"switch",		SWITCH,	0,					0, PROG_ID_VERSION},
 	{"case",		CASE,	0,					0, PROG_ID_VERSION},
 	{"default",		DEFAULT, 0,					0, PROG_ID_VERSION},
-	{"NIL",			NIL,	0,					0, PROG_ID_VERSION},
+	{"nil",			NIL,	0,					0, PROG_ID_VERSION},
 	{"struct",		STRUCT, 0,					0, PROG_VERSION},
 	{"union",		UNION,	0,					0, PROG_VERSION},
 	{"enum",		ENUM,	0,					0, PROG_ID_VERSION},

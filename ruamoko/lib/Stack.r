@@ -51,10 +51,10 @@
 - (id) pop
 {
 	local id	data;
-	local id	oldTop = NIL;
+	local id	oldTop = nil;
 
 	if (!top)
-		return NIL;
+		return nil;
 
 	oldTop = top;
 	top = [top nextNode];

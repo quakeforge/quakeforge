@@ -41,10 +41,10 @@
 - (id) initWithObject: (id)anObject
 {
 	if (!(self = [super init]))
-		return NIL;
+		return nil;
 
 	data = [anObject retain];
-	nextNode = NIL;
+	nextNode = nil;
 }
 
 - (void) dealloc

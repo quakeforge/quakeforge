@@ -11,7 +11,7 @@
 - (id) init
 {
 	if (!(self = [super init]))
-		return NIL;
+		return nil;
 
 	if (!poolStack)
 		poolStack = [[Array alloc] initWithCapacity: 1];

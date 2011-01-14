@@ -430,7 +430,7 @@ KEYEV_player_options =
 					Cvar_SetString (teamname_cvar,
 									[player_config_tname_il text]);
 				}
-				player_config_iactive = NIL;
+				player_config_iactive = nil;
 			} else {
 				if (player_config_cursor == 0) {
 					player_config_iactive = player_config_plname_il;
@@ -560,7 +560,7 @@ MENU_player_options =
 	[player_config_tname_il setWidth:7];
 	[player_options addView:player_config_tname_il];
 
-	player_config_iactive = NIL;
+	player_config_iactive = nil;
 
 	rect = makeRect (192, PLAYER_CONF_Y_PAD + 37, 24, 24);
 	topcolor_view = [[CvarColorView alloc] initWithBounds:rect :[[CvarColor alloc] initWithCvar:"topcolor"]];
@@ -626,7 +626,7 @@ KEYEV_network_options =
 					Cvar_SetString ("rate",
 									[network_config_rate_il text]);
 				}
-				network_config_iactive = NIL;
+				network_config_iactive = nil;
 			} else {
 				if (network_config_cursor == 0) {
 					network_config_iactive = network_config_rate_il;

@@ -71,7 +71,7 @@ function PR_FindFunction (string func) = #0;
 
 	classname = PL_String (PL_ObjectForKey (dict, "classname"));
 	if (classname == "worldspawn")
-		ent = NIL;
+		ent = nil;
 	else
 		ent = spawn ();
 	if ((class = obj_lookup_class (classname))) {

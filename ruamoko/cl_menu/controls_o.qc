@@ -186,7 +186,7 @@ get_hash_keys =
 		}
 		if (binding.keys) {
 			str_free (binding.keys);
-			binding.keys = NIL;
+			binding.keys = nil;
 		}
 		if (desc1) {
 			binding.keys = str_new ();

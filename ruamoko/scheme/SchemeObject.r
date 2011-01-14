@@ -20,7 +20,7 @@ integer checkpoint;
 
 + (void) initialize
 {
-    maybe_garbage = not_garbage = not_garbage_end = wait_list = roots = NIL;
+    maybe_garbage = not_garbage = not_garbage_end = wait_list = roots = nil;
     markstate = true;
     gc_state = GC_IDLE;
     checkpoint = 0;
@@ -29,7 +29,7 @@ integer checkpoint;
 - (id) initDummy
 {
     self = [super init];
-    prev = next = NIL;
+    prev = next = nil;
     marked = markstate;
     root = false;
     return self;
@@ -88,9 +88,9 @@ integer checkpoint;
             if (wait_list) {
                     wait_list.prev = not_garbage_end;
             }
-            wait_list = NIL;
-            not_garbage_end = NIL;
-            not_garbage = NIL;
+            wait_list = nil;
+            not_garbage_end = nil;
+            not_garbage = nil;
             markstate = !markstate;
             gc_state = GC_IDLE;
     }
@@ -134,7 +134,7 @@ integer checkpoint;
             dprintf("GC: Not during collect: %i\n", (integer) self);
     }
     
-    prev = NIL;
+    prev = nil;
     root = false;
     checkpoint++;
     return self;
@@ -157,7 +157,7 @@ integer checkpoint;
                     not_garbage.prev = self;
             }
             next = not_garbage;
-            prev = NIL;
+            prev = nil;
             not_garbage = self;
     }
 }
@@ -183,7 +183,7 @@ integer checkpoint;
             roots.prev = self;
     }
     next = roots;
-    prev = NIL;
+    prev = nil;
     roots = self;
     root = true;
 }

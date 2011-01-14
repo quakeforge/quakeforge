@@ -24,11 +24,11 @@
 
 + itemClass:(plitem_t) item
 {
-	local string classname = NIL;
+	local string classname = nil;
 	local id class;
 
 	if (!PL_TEST (item))
-		return NIL;
+		return nil;
 	switch (PL_Type (item)) {
 	case QFDictionary:
 		classname = "PLDictionary";
@@ -43,7 +43,7 @@
 		classname = "PLString";
 		break;
 	default:
-		return NIL;
+		return nil;
 	}
 	class = obj_lookup_class (classname);
 	return [[class alloc] initWithItem: item];

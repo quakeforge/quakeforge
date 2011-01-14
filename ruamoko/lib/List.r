@@ -12,14 +12,14 @@ typedef struct list_bucket_s list_bucket_t;
 - (id) init
 {
 	count = 0;
-	head = NIL;
+	head = nil;
 	tail = &head;
 	return self;
 }
 
 - (void) dealloc
 {
-	local list_bucket_t [] e, t = NIL; //FIXME t uninitialized
+	local list_bucket_t [] e, t = nil; //FIXME t uninitialized
 
 	for (e = head; e; e = t) {
 		t = e.next;
@@ -33,7 +33,7 @@ typedef struct list_bucket_s list_bucket_t;
 {
 	local list_bucket_t [] e;
 	if (index < 0 || index >= count)
-		return NIL;
+		return nil;
 	for (e = head; e && index; index--)
 		e = e.next;
 	return e.obj;
@@ -42,7 +42,7 @@ typedef struct list_bucket_s list_bucket_t;
 -(id) head
 {
 	if (!head)
-		return NIL;
+		return nil;
 	return head.obj;
 }
 
@@ -50,7 +50,7 @@ typedef struct list_bucket_s list_bucket_t;
 {
 	local list_bucket_t [] e = (list_bucket_t []) tail;
 	if (!e)
-		return NIL;
+		return nil;
 	return e.obj;
 }
 
@@ -70,7 +70,7 @@ typedef struct list_bucket_s list_bucket_t;
 {
 	local list_bucket_t [] e = obj_malloc (@sizeof (list_bucket_t));
 	e.obj = item;
-	e.next = NIL;
+	e.next = nil;
 	e.prev = tail;
 	tail[0] = e;
 	tail = &e.next;
@@ -91,7 +91,7 @@ typedef struct list_bucket_s list_bucket_t;
 			return item;
 		}
 	}
-	return NIL;
+	return nil;
 }
 
 - (id) removeItemAtHead
@@ -100,7 +100,7 @@ typedef struct list_bucket_s list_bucket_t;
 	local id obj;
 
 	if (!count)
-		return NIL;
+		return nil;
 	e = head;
 	obj = e.obj;
 	e.prev[0] = e.next;
@@ -119,7 +119,7 @@ typedef struct list_bucket_s list_bucket_t;
 	local id obj;
 
 	if (!count)
-		return NIL;
+		return nil;
 	e = (list_bucket_t []) tail;
 	obj = e.obj;
 	e.prev[0] = e.next;

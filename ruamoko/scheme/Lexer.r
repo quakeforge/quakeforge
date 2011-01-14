@@ -112,7 +112,7 @@ BOOL issymbol (string x)
                                   by: self];
             }
         case "":
-            return NIL;
+            return nil;
         default:
             for (len = 1; issymbol(str_mid(source, len, len+1)); len++);
             sym = [Symbol forString: str_mid (source, 0, len)];

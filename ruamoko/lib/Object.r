@@ -118,12 +118,12 @@ BOOL (id object) object_is_meta_class = #0;
 
 + (BOOL) instancesRespondToSelector: (SEL)aSelector
 {
-	return class_get_instance_method (self, aSelector) != NIL;
+	return class_get_instance_method (self, aSelector) != nil;
 }
 
 + (BOOL) respondsToSelector: (SEL)aSelector
 {
-	return (class_get_class_method (self, aSelector) != NIL);
+	return (class_get_class_method (self, aSelector) != nil);
 }
 
 /*
@@ -133,7 +133,7 @@ BOOL (id object) object_is_meta_class = #0;
 + (IMP) instanceMethodForSelector: (SEL)aSelector
 {
 	if (!aSelector)
-		return NIL;
+		return nil;
 
 	return method_get_imp (class_get_instance_method (self, aSelector));
 }
@@ -203,7 +203,7 @@ BOOL (id object) object_is_meta_class = #0;
 
 - (BOOL) respondsToSelector: (SEL)aSelector
 {
-	return (class_get_instance_method ([self class], aSelector) != NIL);
+	return (class_get_instance_method ([self class], aSelector) != nil);
 }
 
 - (BOOL) conformsToProtocol: (Protocol [])aProtocol
@@ -221,7 +221,7 @@ BOOL (id object) object_is_meta_class = #0;
 	local Class	myClass = [self class];
 
 	if (!aSelector)
-		return NIL;
+		return nil;
 
 	return method_get_imp (object_is_instance (self)
 						   ? class_get_instance_method (myClass, aSelector)
