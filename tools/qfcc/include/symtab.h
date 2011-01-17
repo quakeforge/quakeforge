@@ -71,6 +71,17 @@ typedef struct symtab_s {
 */
 symbol_t *new_symbol (const char *name);
 
+/**	Create a new, typed, named symbol.
+
+	Only the symbol name and type fields will be filled in. \a name will
+	be copied using save_string().
+
+	\param name		The name of the symbol.
+	\param type		The type of the symbol.
+	\return			The new symbol.
+*/
+symbol_t *new_symbol_type (const char *name, struct type_s *type);
+
 /**	Create a new, empty symbol table.
 
 	The symbol tables support scoping via their \c parent pointer. This

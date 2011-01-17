@@ -22,6 +22,15 @@ new_symbol (const char *name)
 	return symbol;
 }
 
+symbol_t *
+new_symbol_type (const char *name, type_t *type)
+{
+	symbol_t   *symbol;
+	symbol = new_symbol (name);
+	symbol->type = type;
+	return symbol;
+}
+
 static const char *
 sym_getkey (void *k, void *unused)
 {
