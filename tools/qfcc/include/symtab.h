@@ -36,26 +36,47 @@
 	\ingroup qfcc
 */
 //@{
-//
+
+typedef enum {
+	vis_public,
+	vis_protected,
+	vis_private,
+} vis_e;
+
+typedef enum {
+	sy_var,						///< symbol refers to a variable
+	sy_const,					///< symbol refers to a constant
+	sy_type,					///< symbol refers to a type
+	sy_expr,					///< symbol refers to an expression
+} sy_type_e;
+
 typedef struct symbol_s {
 	struct symbol_s *next;		///< chain of symbols in symbol table
 	struct symtab_s *table;		///< symbol table that owns this symbol
+	vis_e       visibility;		///< symbol visiblity. defaults to public
 	const char *name;			///< symbol name
-	struct type_s *type;		///< symbol type
+	sy_type_e   sy_type;		///< symbol type
+	struct type_s *type;		///< type of object to which symbol refers
 	struct param_s *params;		///< the parameters if a function
-	int         is_typedef;		///< true if symbol is a typedef
+	union {
+		int         value;
+		struct expr_s *expr;
+	} s;
 } symbol_t;
 
 typedef enum {
 	stab_global,				///< global (many symbols)
-	stab_local,					///< local (few symbols: func, struct)
-	stab_union,					///< offset always 0
+	stab_local,					///< local (few symbols: func)
+	stab_struct,
+	stab_union,
+	stab_enum,
 } stab_type_e;
 
 typedef struct symtab_s {
 	struct symtab_s *parent;	///< points to parent table
 	struct symtab_s *next;		///< next in global collection of symtabs
 	stab_type_e type;			///< type of symbol table
+	int         size;			///< size of structure represented by symtab
 	struct hashtab_s *tab;		///< symbols defined in this table
 	symbol_t   *symbols;		///< chain of symbols in this table
 	symbol_t  **symtail;		///< keep chain in declaration order

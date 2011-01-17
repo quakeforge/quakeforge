@@ -58,9 +58,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "struct.h"
 #include "type.h"
 
-def_t       def_void = { &type_void, "def void" };
-def_t       def_invalid = { &type_invalid, "def invalid" };
-def_t       def_function = { &type_function, "def function" };
+//FIXME
+//def_t       def_void = { type_void, "def void" };
+//def_t       def_invalid = { type_invalid, "def invalid" };
+//def_t       def_function = { type_function, "def function" };
 
 static def_t *free_temps[4];			// indexted by type size
 static int tempdef_counter;

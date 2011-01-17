@@ -32,63 +32,25 @@
 #ifndef __struct_h
 #define __struct_h
 
-typedef enum {
-	vis_private,
-	vis_protected,
-	vis_public,
-} visibility_type;
+struct symbol_s;
+struct symtab_s;
+struct type_s;
 
-typedef enum {
-	str_none,
-	str_struct,
-	str_union,
-} struct_type;
-
-typedef struct struct_field_s {
-	struct struct_field_s *next;
-	const char		*name;
-	struct type_s	*type;
-	int				offset;
-	visibility_type	visibility;
-} struct_field_t;
-
-typedef struct struct_s {
+typedef struct {
 	const char *name;
 	struct type_s *type;
-	struct_type stype;
-	struct hashtab_s *struct_fields;
-	struct_field_t *struct_head;
-	struct_field_t **struct_tail;
-	int         size;
-	void       *return_addr;		// who allocated this
-} struct_t;
+} struct_def_t;
 
-typedef struct enum_s {
-	const char *name;
-	int         value;
-} enum_t;
+struct symbol_s *find_struct (int su, struct symbol_s *tag,
+							  struct type_s *type);
+struct symbol_s *build_struct (int su, struct symbol_s *tag,
+							   struct symtab_s *symtab, struct type_s *type);
+struct symbol_s *find_enum (struct symbol_s *tag);
+struct symtab_s *start_enum (struct symbol_s *enm);
+void add_enum (struct symbol_s *enm, struct symbol_s *name,
+			   struct expr_s *val);
 
-struct_field_t *new_struct_field (struct_t *strct, struct type_s *type,
-								  const char *name,
-								  visibility_type visibility);
-struct_field_t *struct_find_field (struct_t *strct, const char *name);
-int struct_compare_fields (struct_t *s1, struct_t *s2);
-struct type_s *init_struct (struct_t *strct, struct type_s *type,
-							struct_type stype, const char *name);
-struct_t *get_struct (const char *name, int create);
-void copy_struct_fields (struct_t *dst, struct_t *src);
-
-struct def_s *emit_struct (struct_t *strct, const char *name);
-
-void process_enum (struct expr_s *enm);
-struct expr_s *get_enum (const char *name);
-
-void clear_structs (void);
-void clear_enums (void);
-
-struct_t *new_struct (const char *name);
-struct_t *new_union (const char *name);
-struct_t *decl_struct (const char *name);
-struct_t *decl_union (const char *name);
+struct symbol_s *make_structure (const char *name, int su, struct_def_t *defs,
+								 struct type_s *type);
 
 #endif//__struct_h

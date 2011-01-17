@@ -103,7 +103,6 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 	SYS_CHECKMEM (cl);
 
 	if (value) {
-		convert_name (value);
 		value = constant_expr (value);
 	}
 	if (value && value->type < ex_nil) {

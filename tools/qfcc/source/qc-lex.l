@@ -56,6 +56,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "immediate.h"
 #include "options.h"
 #include "struct.h"
+#include "symtab.h"
 #include "type.h"
 
 #include "qc-parse.h"
@@ -98,6 +99,7 @@ INT			({D}+|0[xX]{X}+)
 RANGE		\.\.
 ELLIPSIS	\.\.\.
 FRAMEID		{ID}(\.{ID})*
+STRING		\"(\\.|[^"\\])*\"
 
 %x		GRAB_FRAME GRAB_OTHER COMMENT
 
@@ -144,13 +146,13 @@ FRAMEID		{ID}(\.{ID})*
 							REJECT;
 						return tok;
 					}
-@					return '@';
 
-\"(\\.|[^"\\])*\"	{
+{STRING}			{
 						const char *s = make_string (yytext, 0);
 						yylval.expr = new_string_expr (s);
-						return CONST;
+						return STRING;
 					}
+@					return '@';
 
 '{s}*{m}?{FLOAT}{s}+{m}?{FLOAT}{s}+{m}?{FLOAT}{s}*'	{
 						vec3_t      v;
@@ -193,7 +195,7 @@ FRAMEID		{ID}(\.{ID})*
 					}
 
 [!(){}.*/&|^~+\-=\[\];,#%?:] {
-						yylval.op = yytext[0];
+						yylval.pointer = 0;	// ensure pointer values are null
 						return yytext[0];
 					}
 
@@ -252,9 +254,9 @@ yywrap (void)
 }
 
 typedef struct {
-	const char	*name;
-	int			value;
-	type_t		*type;
+	const char *name;
+	int         value;
+	type_t     *type;
 	unsigned int traditional;
 	unsigned int version;
 } keyword_t;
@@ -290,10 +292,9 @@ static keyword_t keywords[] = {
 	{"default",		DEFAULT, 0,					0, PROG_ID_VERSION},
 	{"nil",			NIL,	0,					0, PROG_ID_VERSION},
 	{"struct",		STRUCT, 0,					0, PROG_VERSION},
-	{"union",		UNION,	0,					0, PROG_VERSION},
+	{"union",		STRUCT,	0,					0, PROG_VERSION},
 	{"enum",		ENUM,	0,					0, PROG_ID_VERSION},
 	{"typedef",		TYPEDEF, 0,					0, PROG_ID_VERSION},
-	{"super",		SUPER,	0,					0, PROG_VERSION},
 
 	{"@class",		CLASS,	0,					0, PROG_VERSION},
 	{"@defs",		DEFS,	0,					0, PROG_VERSION},
@@ -330,8 +331,7 @@ keyword_or_id (char *token)
 {
 	static hashtab_t *keyword_tab;
 	keyword_t  *keyword;
-	typedef_t  *typename;
-	class_t    *class;
+	symbol_t   *sym;
 
 	if (!keyword_tab) {
 		size_t      i;
@@ -346,23 +346,25 @@ keyword_or_id (char *token)
 		if (!options.traditional && token[0] == '@'
 			&& !class_Class.super_class)
 			class_init ();
-		yylval.type = keyword->type;
+		if (keyword->value == STRUCT) {
+			yylval.op = token[0];
+		} else {
+			yylval.type = 0;
+			yylval.type = keyword->type;
+		}
 		return keyword->value;
 	}
 	if (token[0] == '@') {
 		return '@';
 	}
-	if ((typename = get_typedef (token))) {
-		yylval.typename = typename;
+	sym = symtab_lookup (current_symtab, token);
+	if (!sym)
+		sym = new_symbol (token);
+	yylval.symbol = sym;
+	if (sym->sy_type == sy_type)
 		return TYPE_NAME;
-	}
-	if (!get_enum (token)) {
-		if ((class = get_class (token, 0))) {
-			yylval.string_val = save_string (token);
-			return CLASS_NAME;
-		}
-	}
-	yylval.string_val = save_string (token);
+	if (is_class (sym->type))
+		return CLASS_NAME;
 	return NAME;
 }
 

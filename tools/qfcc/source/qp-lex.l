@@ -258,9 +258,11 @@ keyword_or_id (const char *token)
 	sym = symtab_lookup (current_symtab, token);
 	if (!sym)
 		sym = new_symbol (token);
-	yylval.symbol = sym;
-	if (sym->is_typedef)
+	if (sym->sy_type == sy_type) {
+		yylval.type = sym->type;
 		return TYPE_NAME;
+	}
+	yylval.symbol = sym;
 	return ID;
 }
 

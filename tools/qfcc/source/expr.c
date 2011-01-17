@@ -50,6 +50,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "qfcc.h"
 #include "class.h"
 #include "def.h"
+#include "defspace.h"
 #include "emit.h"
 #include "expr.h"
 #include "function.h"
@@ -78,7 +79,6 @@ etype_t     qc_types[] = {
 	ev_void,							// ex_def
 	ev_void,							// ex_symbol
 	ev_void,							// ex_temp
-	ev_void,							// ex_name
 
 	ev_void,							// ex_nil
 	ev_string,							// ex_string
@@ -129,60 +129,11 @@ expr_type   expr_types[] = {
 	ex_nil,								// ev_array
 };
 
-void
-convert_name (expr_t *e)
-{
-	if (e->type == ex_name) {
-		const char *name = e->e.string_val;
-		def_t      *d;
-		expr_t     *new;
-		class_t    *class;
-
-		/// Convert name to enum (integer constant).
-		new = get_enum (name);
-		if (new)
-			goto convert;
-
-		/// Convert name to class.
-		class = get_class (name, 0);
-		if (class) {
-			e->type = ex_def;
-			e->e.def = class_pointer_def (class);
-			return;
-		}
-
-		/// Convert name to def.
-		d = get_def (NULL, name, current_scope, st_none);
-		if (d) {
-			if (d->global) {
-				new = class_ivar_expr (current_class, name);
-				if (new)
-					goto convert;
-			}
-			e->type = ex_def;
-			e->e.def = d;
-			return;
-		}
-
-		/// Convert name to a class ivar in a message body.
-		new = class_ivar_expr (current_class, name);
-		if (new)
-			goto convert;
-		error (e, "Undeclared variable \"%s\".", name);
-		return;
-	  convert:
-		e->type = new->type;
-		e->e = new->e;
-	}
-}
-
 type_t *
 get_type (expr_t *e)
 {
-	convert_name (e);
 	switch (e->type) {
 		case ex_label:
-		case ex_name:
 		case ex_error:
 			return 0;					// something went very wrong
 		case ex_bool:
@@ -418,7 +369,6 @@ copy_expr (expr_t *e)
 		case ex_error:
 		case ex_def:
 		case ex_symbol:
-		case ex_name:
 		case ex_nil:
 		case ex_string:
 		case ex_float:
@@ -516,7 +466,7 @@ new_label_name (void)
 	SYS_CHECKMEM (lname);
 	return lname;
 }
-
+#if 0
 static expr_t *
 new_error_expr (void)
 {
@@ -524,7 +474,7 @@ new_error_expr (void)
 	e->type = ex_error;
 	return e;
 }
-
+#endif
 expr_t *
 new_state_expr (expr_t *frame, expr_t *think, expr_t *step)
 {
@@ -649,8 +599,13 @@ expr_t *
 new_name_expr (const char *name)
 {
 	expr_t     *e = new_expr ();
-	e->type = ex_name;
-	e->e.string_val = name;
+	symbol_t   *sym;
+
+	sym = symtab_lookup (current_symtab, name);
+	if (!sym)
+		return error (0, "undefined symbol %s", name);
+	e->type = ex_symbol;
+	e->e.symbol = sym;
 	return e;
 }
 
@@ -770,8 +725,6 @@ expr_t *
 constant_expr (expr_t *var)
 {
 	def_t      *def;
-
-	convert_name (var);
 
 	if (var->type != ex_def || !var->e.def->constant)
 		return var;
@@ -982,7 +935,6 @@ print_expr (expr_t *e)
 			printf ("NIL");
 			break;
 		case ex_string:
-		case ex_name:
 			printf ("\"%s\"", e->e.string_val);
 			break;
 		case ex_float:
@@ -1023,219 +975,6 @@ print_expr (expr_t *e)
 static expr_t *
 field_expr (expr_t *e1, expr_t *e2)
 {
-	type_t     *t1, *t2;
-	expr_t     *e;
-	def_t      *d;
-	int         i;
-	struct_field_t *field;
-	class_t    *class;
-	struct_t   *strct;
-
-	if (e1->type == ex_error)
-		return e1;
-	t1 = get_type (e1);
-	switch (t1->type) {
-		case ev_invalid:
-			if (t1->ty == ty_struct || t1->ty == ty_class) {
-				check_initialized (e1);
-				if (e2->type != ex_name)
-					return error (e2, "structure field name expected");
-				if (t1->ty == ty_struct)
-					strct = t1->t.strct;
-				else
-					strct = t1->t.class->ivars;
-				field = struct_find_field (strct, e2->e.string_val);
-				if (!field)
-					return error (e2, "structure has no field %s",
-								  e2->e.string_val);
-				e2->type = ex_short;
-				e2->e.short_val = field->offset;
-				e = unary_expr ('.', address_expr (e1, e2, field->type));
-				return e;
-			}
-			break;
-		case ev_pointer:
-			check_initialized (e1);
-			switch (t1->t.fldptr.type->type) {
-				case ev_invalid:
-					if (t1->t.fldptr.type->ty == ty_struct) {
-						if (e2->type == ex_name) {
-							field = struct_find_field (t1->t.fldptr.type->t.strct,
-													   e2->e.string_val);
-							if (!field)
-								return error (e2, "structure has no field %s",
-											  e2->e.string_val);
-							e2->type = ex_short;
-							e2->e.short_val = field->offset;
-							t1 = pointer_type (field->type);
-						}
-					} else if (t1->t.fldptr.type->ty == ty_class) {
-						if (e2->type == ex_name) {
-							int         protected;
-
-							class = t1->t.fldptr.type->t.class;
-							protected = class_access (current_class, class);
-							field = class_find_ivar (class, protected,
-													 e2->e.string_val);
-							if (!field)
-								return new_error_expr ();
-							e2->type = ex_short;
-							e2->e.short_val = field->offset;
-							t1 = pointer_type (field->type);
-						}
-					}
-					break;
-				default:
-					break;
-			}
-			if (e1->type == ex_pointer) {
-				if (e2->type == ex_short) {
-					e1->e.pointer.val += e2->e.short_val;
-				} else if (e2->type == ex_integer) {
-					e1->e.pointer.val += e2->e.integer_val;
-				} else if (e2->type == ex_uinteger) {
-					e1->e.pointer.val += e2->e.uinteger_val;
-				} else {
-					break;
-				}
-				e1->e.pointer.type = t1->t.fldptr.type;
-				return unary_expr ('.', e1);
-			} else {
-				e = new_binary_expr ('&', e1, e2);
-				e->e.expr.type = t1;
-				return unary_expr ('.', e);
-			}
-			break;
-		case ev_entity:
-			check_initialized (e1);
-			if (e2->type == ex_name) {
-				def_t      *d = field_def (e2->e.string_val);
-
-				if (!d) {
-					t2 = get_type (e2);
-					if (e2->type == ex_error)
-						return e2;
-					break;
-				}
-				e2 = new_def_expr (d);
-				t2 = get_type (e2);
-				e = new_binary_expr ('.', e1, e2);
-				e->e.expr.type = t2->t.fldptr.type;
-				return e;
-			} else {
-				t2 = get_type (e2);
-				if (e2->type == ex_error)
-					return e2;
-				if (t2->type == ev_field) {
-					e = new_binary_expr ('.', e1, e2);
-					e->e.expr.type = t2->t.fldptr.type;
-					return e;
-				}
-			}
-			break;
-		case ev_vector:
-		case ev_quat:
-			if (e2->type == ex_name) {
-				if (t1->type == ev_quat) {
-					field = struct_find_field (quaternion_struct,
-											   e2->e.string_val);
-					if (!field)
-						return error (e2, "quaternion has no field %s",
-									  e2->e.string_val);
-				} else {
-					field = struct_find_field (vector_struct,
-											   e2->e.string_val);
-					if (!field)
-						return error (e2, "vector has no field %s",
-									  e2->e.string_val);
-				}
-				switch (e1->type) {
-					case ex_expr:
-						if (e1->e.expr.op == '.'
-							&& extract_type (e1->e.expr.e1) == ev_entity) {
-							int         ofs;
-							def_t      *def;
-							type_t     *type;
-
-							if (e1->e.expr.e2->type == ex_def) {
-								ofs = 0;
-								def = e1->e.expr.e2->e.def;
-								type = def->type;
-							} else if (e1->e.expr.e2->type == ex_field) {
-								ofs = e1->e.expr.e2->e.pointer.val;
-								def = e1->e.expr.e2->e.pointer.def;
-								type = e1->e.expr.e2->e.pointer.type;
-							} else
-								break;
-							if (field->offset) {
-								e = new_field_expr (ofs + field->offset,
-													type, def);
-								e = new_binary_expr ('.', e1->e.expr.e1, e);
-							} else {
-								e = e1;
-							}
-							e->e.expr.type = field->type;
-							return e;
-						}
-						break;
-					case ex_uexpr:
-						if (e1->e.expr.op == '.') {
-							if (e1->e.expr.e1->type == ex_pointer) {
-								e = e1->e.expr.e1;
-								e->e.pointer.val += field->offset;
-								e->e.pointer.type = field->type;
-								e1->e.expr.type = field->type;
-								return e1;
-							} else if (extract_type (e1->e.expr.e1)
-									   == ev_pointer) {
-								e = new_integer_expr (field->offset);
-								e = address_expr (e1, e, field->type);
-								return unary_expr ('.', e);
-							}
-						}
-						break;
-					case ex_block:
-						print_expr (e1); puts ("");
-#if 0
-						e1 = new_bind_expr (e1, new_temp_def_expr (t1));
-						e2 = new_short_expr (field->offset);
-						e = address_expr (e1, e2, field->type);
-						e = unary_expr ('.', e);
-						return e;
-#endif
-						break;
-					case ex_def:
-						if (t1->type == ev_quat) {
-							e = new_pointer_expr (field->offset, field->type,
-												  e1->e.def);
-							e = unary_expr ('.', e);
-							return e;
-						} else {
-							d = e1->e.def->def_next;
-							for (i = field->offset; i; i--)
-								d = d->def_next;
-							e = new_def_expr (d);
-						}
-						return e;
-					case ex_vector:
-						e = new_float_expr (e1->e.vector_val[field->offset]);
-						return e;
-					case ex_quaternion:
-						if (field->type == &type_float)
-							e = new_float_expr (*(e1->e.quaternion_val
-												  + field->offset));
-						else
-							e = new_vector_expr (e1->e.quaternion_val
-												 + field->offset);
-						return e;
-					default:
-						break;
-				}
-			}
-			break;
-		default:
-			break;
-	}
 	return type_mismatch (e1, e2, '.');
 }
 
@@ -1678,8 +1417,6 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (e2->type == ex_error)
 		return e2;
 
-	convert_name (e1);
-
 	if (e1->type == ex_block && e1->e.block.is_call
 		&& has_function_call (e2) && e1->e.block.result) {
 		e = new_temp_def_expr (get_type (e1->e.block.result));
@@ -1691,7 +1428,6 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		return field_expr (e1, e2);
 	check_initialized (e1);
 
-	convert_name (e2);
 	check_initialized (e2);
 
 	if (op == OR || op == AND) {
@@ -1907,7 +1643,6 @@ asx_expr (int op, expr_t *e1, expr_t *e2)
 expr_t *
 unary_expr (int op, expr_t *e)
 {
-	convert_name (e);
 	check_initialized (e);
 	if (e->type == ex_error)
 		return e;
@@ -1916,7 +1651,6 @@ unary_expr (int op, expr_t *e)
 			switch (e->type) {
 				case ex_error:
 				case ex_label:
-				case ex_name:
 				case ex_state:
 					error (e, "internal error");
 					abort ();
@@ -1978,7 +1712,6 @@ unary_expr (int op, expr_t *e)
 			switch (e->type) {
 				case ex_error:
 				case ex_label:
-				case ex_name:
 				case ex_state:
 					error (e, "internal error");
 					abort ();
@@ -2044,7 +1777,6 @@ unary_expr (int op, expr_t *e)
 			switch (e->type) {
 				case ex_error:
 				case ex_label:
-				case ex_name:
 				case ex_state:
 					error (e, "internal error");
 					abort ();
@@ -2594,6 +2326,149 @@ build_if_statement (expr_t *test, expr_t *s1, expr_t *s2)
 	return if_expr;
 }
 
+expr_t *
+build_while_statement (expr_t *test, expr_t *statement,
+					   expr_t *break_label, expr_t *continue_label)
+{
+	int         line = pr.source_line;
+	string_t    file = pr.source_file;
+	expr_t     *l1 = new_label_expr ();
+	expr_t     *l2 = break_label;
+	expr_t     *while_expr;
+
+	pr.source_line = test->line;
+	pr.source_file = test->file;
+
+	while_expr = new_block_expr ();
+
+	append_expr (while_expr, new_unary_expr ('g', continue_label));
+	append_expr (while_expr, l1);
+	append_expr (while_expr, statement);
+	append_expr (while_expr, continue_label);
+
+	test = convert_bool (test, 1);
+	if (test->type != ex_error) {
+		backpatch (test->e.bool.true_list, l1);
+		backpatch (test->e.bool.false_list, l2);
+		append_expr (test->e.bool.e, l2);
+		append_expr (while_expr, test);
+	}
+
+	pr.source_line = line;
+	pr.source_file = file;
+
+	return while_expr;
+}
+
+expr_t *
+build_do_while_statement (expr_t *statement, expr_t *test,
+						  expr_t *break_label, expr_t *continue_label)
+{
+	expr_t *l1 = new_label_expr ();
+	int         line = pr.source_line;
+	string_t    file = pr.source_file;
+	expr_t     *do_while_expr;
+
+	pr.source_line = test->line;
+	pr.source_file = test->file;
+
+	do_while_expr = new_block_expr ();
+
+	append_expr (do_while_expr, l1);
+	append_expr (do_while_expr, statement);
+	append_expr (do_while_expr, continue_label);
+
+	test = convert_bool (test, 1);
+	if (test->type != ex_error) {
+		backpatch (test->e.bool.true_list, l1);
+		backpatch (test->e.bool.false_list, break_label);
+		append_expr (test->e.bool.e, break_label);
+		append_expr (do_while_expr, test);
+	}
+
+	pr.source_line = line;
+	pr.source_file = file;
+
+	return do_while_expr;
+}
+
+expr_t *
+build_for_statement (expr_t *init, expr_t *test, expr_t *next,
+					 expr_t *statement,
+					 expr_t *break_label, expr_t *continue_label)
+{
+	expr_t     *tl = new_label_expr ();
+	expr_t     *fl = break_label;
+	expr_t     *l1 = 0;
+	expr_t     *t;
+	int         line = pr.source_line;
+	string_t    file = pr.source_file;
+	expr_t     *for_expr;
+
+	if (next)
+		t = next;
+	else if (test)
+		t = test;
+	else if (init)
+		t = init;
+	else
+		t = continue_label;
+	pr.source_line = t->line;
+	pr.source_file = t->file;
+
+	for_expr = new_block_expr ();
+
+	append_expr (for_expr, init);
+	if (test) {
+		l1 = new_label_expr ();
+		append_expr (for_expr, new_unary_expr ('g', l1));
+	}
+	append_expr (for_expr, tl);
+	append_expr (for_expr, statement);
+	append_expr (for_expr, continue_label);
+	append_expr (for_expr, next);
+	if (test) {
+		append_expr (for_expr, l1);
+		test = convert_bool (test, 1);
+		if (test->type != ex_error) {
+			backpatch (test->e.bool.true_list, tl);
+			backpatch (test->e.bool.false_list, fl);
+			append_expr (test->e.bool.e, fl);
+			append_expr (for_expr, test);
+		}
+	} else {
+		append_expr (for_expr, new_unary_expr ('g', tl));
+		append_expr (for_expr, fl);
+	}
+
+	pr.source_line = line;
+	pr.source_file = file;
+
+	return for_expr;
+}
+
+expr_t *
+build_state_expr (expr_t *frame, expr_t *think, expr_t *step)
+{
+	if (frame->type == ex_integer)
+		convert_int (frame);
+	else if (frame->type == ex_uinteger)
+		convert_uint (frame);
+	if (!type_assignable (&type_float, get_type (frame)))
+		return error (frame, "invalid type for frame number");
+	if (extract_type (think) != ev_func)
+		return error (think, "invalid type for think");
+	if (step) {
+		if (step->type == ex_integer)
+			convert_int (step);
+		else if (step->type == ex_uinteger)
+			convert_uint (step);
+		if (!type_assignable (&type_float, get_type (step)))
+			return error (step, "invalid type for frame number");
+	}
+	return new_state_expr (frame, think, step);
+}
+
 static int
 is_indirect (expr_t *e)
 {
@@ -2628,9 +2503,6 @@ assign_expr (expr_t *e1, expr_t *e2)
 	int         op = '=';
 	type_t     *t1, *t2, *type;
 	expr_t     *e;
-
-	convert_name (e1);
-	convert_name (e2);
 
 	if (e1->type == ex_error)
 		return e1;
@@ -2773,8 +2645,6 @@ cast_expr (type_t *type, expr_t *e)
 	expr_t    *c;
 	type_t    *e_type;
 
-	convert_name (e);
-
 	if (e->type == ex_error)
 		return e;
 
@@ -2813,88 +2683,6 @@ cast_expr (type_t *type, expr_t *e)
 void
 init_elements (def_t *def, expr_t *eles)
 {
-	expr_t     *e, *c;
-	int         count, i, num_params, ofs;
-	pr_type_t  *g;
-	def_t      *elements;
-
-	ofs = def->ofs;
-	if (def->local && local_expr)
-		ofs = 0;
-	if (is_array (def->type)) {
-		elements = calloc (def->type->t.array.size, sizeof (def_t));
-		for (i = 0; i < def->type->t.array.size; i++) {
-			elements[i].type = def->type->t.array.type;
-			elements[i].ofs = ofs + i * type_size (def->type->t.array.type);
-		}
-		num_params = i;
-	} else if (is_struct (def->type)) {
-		struct_field_t *field;
-
-		for (i = 0, field = def->type->t.strct->struct_head; field;
-			 i++, field = field->next)
-			;
-		elements = calloc (i, sizeof (def_t));
-		for (i = 0, field = def->type->t.strct->struct_head; field;
-			 i++, field = field->next) {
-			elements[i].type = field->type;
-			elements[i].ofs = ofs + field->offset;
-		}
-		num_params = i;
-	} else {
-		error (eles, "invalid initializer");
-		return;
-	}
-	for (count = 0, e = eles->e.block.head; e; count++, e = e->next)
-		if (e->type == ex_error) {
-			free (elements);
-			return;
-		}
-	if (count > num_params) {
-		if (options.warnings.initializer)
-			warning (eles, "excessive elements in initializer");
-		count = num_params;
-	}
-	for (i = 0, e = eles->e.block.head; i < count; i++, e = e->next) {
-		g = G_POINTER (pr_type_t, elements[i].ofs);
-		c = constant_expr (e);
-		if (c->type == ex_block) {
-			if (!is_array (elements[i].type)
-				&& !is_struct (elements[i].type)) {
-				error (e, "type mismatch in initializer");
-				continue;
-			}
-			init_elements (&elements[i], c);
-			continue;
-		} else if (c->type >= ex_nil) {
-			if (c->type == ex_integer
-				&& elements[i].type->type == ev_float)
-				convert_int (c);
-			if (get_type (c) != elements[i].type) {
-				error (e, "type mismatch in initializer");
-				continue;
-			}
-		} else {
-			if (!def->local || !local_expr) {
-				error (e, "non-constant initializer");
-				continue;
-			}
-		}
-		if (def->local && local_expr) {
-			int         ofs = elements[i].ofs;
-			type_t     *type = elements[i].type;
-			expr_t     *ptr = new_pointer_expr (ofs, type, def);
-
-			append_expr (local_expr, assign_expr (unary_expr ('.', ptr), c));
-		} else {
-			if (c->type == ex_string) {
-				EMIT_STRING (g->string_var, c->e.string_val);
-			} else {
-				memcpy (g, &c->e, type_size (get_type (c)) * 4);
-			}
-		}
-	}
-	free (elements);
 }
 
 expr_t *
@@ -2946,13 +2734,12 @@ super_expr (class_type_t *class_type)
 	class_type_t _class_type;
 
 	if (!class_type)
-		return error (new_expr (),
-					  "`super' used outside of class implementation");
+		return error (0, "`super' used outside of class implementation");
 
 	class = extract_class (class_type);
 
 	if (!class->super_class)
-		return error (new_expr (), "%s has no super class", class->name);
+		return error (0, "%s has no super class", class->name);
 
 	super_d = get_def (&type_Super, ".super", current_func->scope, st_local);
 	def_initialized (super_d);
@@ -2987,8 +2774,8 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	class_t    *class;
 	method_t   *method;
 
-	if (receiver->type == ex_name
-		&& strcmp (receiver->e.string_val, "super") == 0) {
+	if (receiver->type == ex_symbol
+		&& strcmp (receiver->e.symbol->name, "super") == 0) {
 		super = 1;
 
 		receiver = super_expr (current_class);
@@ -2998,10 +2785,10 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		class = extract_class (current_class);
 		rec_type = class->type;
 	} else {
-		if (receiver->type == ex_name) {
-			if (strcmp (receiver->e.string_val, "self") == 0)
+		if (receiver->type == ex_symbol) {
+			if (strcmp (receiver->e.symbol->name, "self") == 0)
 				self = 1;
-			if (get_class (receiver->e.string_val, 0))
+			if (get_class (receiver->e.symbol, 0))
 				class_msg = 1;
 		}
 		rec_type = get_type (receiver);

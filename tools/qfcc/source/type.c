@@ -55,6 +55,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "options.h"
 #include "qfcc.h"
 #include "struct.h"
+#include "symtab.h"
 #include "type.h"
 
 // simple types.  function types are dynamically allocated
@@ -87,15 +88,12 @@ type_t      type_Method = { ev_invalid, "Method" };
 type_t      type_Super = { ev_invalid, "Super" };
 type_t      type_method_description = { ev_invalid, "obj_method_description",
 										ty_struct };
-type_t     *type_category;
-type_t     *type_ivar;
-type_t     *type_module;
+type_t      type_category;
+type_t      type_ivar;
+type_t      type_module;
 type_t      type_va_list = { ev_invalid, "@va_list", ty_struct };
-type_t      type_param = { ev_invalid, "@param", ty_struct };
+type_t      type_param;
 type_t      type_zero;
-
-struct_t   *vector_struct;
-struct_t   *quaternion_struct;
 
 type_t      type_floatfield = { ev_field, ".float", ty_none, {{&type_float}} };
 
@@ -148,7 +146,9 @@ types_same (type_t *a, type_t *b)
 			}
 			break;
 		case ty_struct:
-			if (a->t.strct != b->t.strct)
+		case ty_union:
+		case ty_enum:
+			if (a->t.symtab != b->t.symtab)
 				return 0;
 			return 1;
 		case ty_array:
@@ -189,41 +189,6 @@ find_type (type_t *type)
 	chain_type (check);
 
 	return check;
-}
-
-static hashtab_t *typedef_hash;
-static typedef_t *free_typedefs;
-
-static const char *
-typedef_get_key (void *t, void *unused)
-{
-	return ((typedef_t *)t)->name;
-}
-
-void
-new_typedef (const char *name, type_t *type)
-{
-	typedef_t  *td;
-
-	if (!typedef_hash)
-		typedef_hash = Hash_NewTable (1023, typedef_get_key, 0, 0);
-	td = Hash_Find (typedef_hash, name);
-	if (td) {
-		error (0, "%s redefined", name);
-		return;
-	}
-	ALLOC (1024, typedef_t, typedefs, td);
-	td->name = name;
-	td->type = type;
-	Hash_Add (typedef_hash, td);
-}
-
-typedef_t *
-get_typedef (const char *name)
-{
-	if (!typedef_hash)
-		return 0;
-	return Hash_Find (typedef_hash, name);
 }
 
 type_t *
@@ -325,13 +290,17 @@ print_type_str (dstring_t *str, type_t *type)
 				case ty_class:
 					dasprintf (str, " %s", type->t.class->name);
 					break;
+				case ty_enum:
 				case ty_struct:
+				case ty_union:
 					{
 						const char *tag = "struct";
 
-						if (type->t.strct->stype == str_union)
+						if (type->t.symtab->type == stab_union)
 							tag = "union";
-						dasprintf (str, " %s %s", tag, type->t.strct->name);
+						else if (type->t.symtab->type == stab_union)
+							tag = "enum";
+						dasprintf (str, " %s %s", tag, type->name);//FIXME
 					}
 					break;
 				case ty_array:
@@ -386,12 +355,15 @@ encode_params (type_t *type)
 static void _encode_type (dstring_t *encoding, type_t *type, int level);
 
 static void
-encode_struct_fields (dstring_t *encoding, struct_t *strct, int level)
+encode_struct_fields (dstring_t *encoding, symtab_t *strct, int level)
 {
-	struct_field_t *field;
+	symbol_t   *field;
 
-	for (field = strct->struct_head; field; field = field->next)
+	for (field = strct->symbols; field; field = field->next) {
+		if (field->sy_type != sy_var)
+			continue;
 		_encode_type (encoding, field->type, level + 1);
+	}
 }
 
 static void
@@ -402,26 +374,42 @@ encode_class (dstring_t *encoding, type_t *type, int level)
 
 	if (class->name)
 		name = class->name;
-	dasprintf (encoding, "{%s=", name);	//FIXME loses info about being a class
-	if (level < 2 && class->ivars)
-		encode_struct_fields (encoding, class->ivars, level);
-	dasprintf (encoding, "}");
+	dasprintf (encoding, "{%s@}", name);
 }
 
 static void
 encode_struct (dstring_t *encoding, type_t *type, int level)
 {
-	struct_t   *strct = type->t.strct;
+	symtab_t   *strct = type->t.symtab;
 	const char *name ="?";
 	char        su = '=';
 
-	if (strct->name)
-		name = strct->name;
-	if (strct->stype == str_union)
+	if (type->name)		// FIXME
+		name = type->name;
+	if (strct->type == stab_union)
 		su = '-';
 	dasprintf (encoding, "{%s%c", name, su);
 	if (level < 2)
 		encode_struct_fields (encoding, strct, level);
+	dasprintf (encoding, "}");
+}
+
+static void
+encode_enum (dstring_t *encoding, type_t *type, int level)
+{
+	symtab_t   *enm = type->t.symtab;
+	symbol_t   *e;
+	const char *name ="?";
+
+	if (type->name)		// FIXME
+		name = type->name;
+	dasprintf (encoding, "{%s#", name);
+	if (level < 2) {
+		for (e = enm->symbols; e; e = e->next) {
+			dasprintf (encoding, "%s=%d%s", e->name, e->s.value,
+					   e->next ? "," : "");
+		}
+	}
 	dasprintf (encoding, "}");
 }
 
@@ -486,7 +474,11 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 				case ty_class:
 					encode_class (encoding, type, level);
 					break;
+				case ty_enum:
+					encode_enum (encoding, type, level);
+					break;
 				case ty_struct:
+				case ty_union:
 					encode_struct (encoding, type, level);
 					break;
 				case ty_array:
@@ -516,12 +508,36 @@ encode_type (dstring_t *encoding, type_t *type)
 }
 
 static type_t *
+parse_struct (const char **str)
+{
+	//FIXME
+	dstring_t  *name;
+	const char *s;
+
+	name = dstring_newstr ();
+	for (s = *str; *s && strchr ("=-@#}", *s); s++)
+		;
+	if (!*s)
+		return 0;
+	dstring_appendsubstr (name, *str, s - *str);
+	*str = s;
+	switch (*(*str)++) {
+		case '=':
+			break;
+		case '-':
+			break;
+		case '@':
+			break;
+		case '#':
+			break;
+	}
+	return 0;
+}
+
+static type_t *
 _parse_type (const char **str)
 {
 	type_t      new;
-	struct_t   *strct;
-	dstring_t  *name;
-	const char *s;
 
 	memset (&new, 0, sizeof (new));
 	switch (*(*str)++) {
@@ -567,57 +583,7 @@ _parse_type (const char **str)
 		case 's':
 			return &type_short;
 		case '{':
-			new.type = ev_invalid;
-			new.ty = ty_struct;
-			name = dstring_newstr ();
-			for (s = *str;
-				 *s && *s != '='  && *s != '-' && *s != '#' && *s != '}'; s++)
-				;
-			if (!*s)
-				return 0;
-			dstring_appendsubstr (name, *str, s - *str);
-			*str = s;
-			strct = 0;
-			if (name->str[0])
-				strct = get_struct (name->str, 0);
-			if (strct && strct->struct_head) {
-				dstring_delete (name);
-				if (**str == '=' || **str == '-') {
-					(*str)++;
-					while (**str && **str != '}')
-						_parse_type (str);
-				}
-				if (**str != '}')
-					return 0;
-				(*str)++;
-				return strct->type;
-			}
-			if (**str != '=' && **str != '-' && **str != '}') {
-				if (( s = strchr (*str, '}')))
-					*str = s + 1;
-				dstring_delete (name);
-				return 0;
-			}
-			if (!strct) {
-				strct = get_struct (*name->str ? name->str : 0, 1);
-				init_struct (strct, new_type (), str_none, 0);
-			}
-			dstring_delete (name);
-			if (**str == '}') {
-				(*str)++;
-				return strct->type;
-			}
-			if (**str == '-')
-				strct->stype = str_union;
-			else
-				strct->stype = str_struct;
-			(*str)++;
-			while (**str && **str != '}')
-				new_struct_field (strct, _parse_type (str), 0, vis_public);
-			if (**str != '}')
-				return 0;
-			(*str)++;
-			return strct->type;
+			return parse_struct (str);
 		case '[':
 			{
 				type_t     *type;
@@ -674,7 +640,8 @@ is_scalar (type_t *type)
 int
 is_struct (type_t *type)
 {
-	if (type->type == ev_invalid && type->ty == ty_struct)
+	if (type->type == ev_invalid
+		&& (type->ty == ty_struct || type->type == ty_union))
 		return 1;
 	return 0;
 }
@@ -756,8 +723,11 @@ type_size (type_t *type)
 			return pr_type_size[type->type];
 		case ev_invalid:
 			switch (type->ty) {
+				case ty_enum:
+					return type_size (&type_integer);
 				case ty_struct:
-					return type->t.strct->size;
+				case ty_union:
+					return type->t.symtab->size;
 				case ty_class:
 					if (!type->t.class->ivars)
 						return 0;
@@ -776,138 +746,170 @@ void
 init_types (void)
 {
 	type_t     *type;
-	struct_t   *strct;
+	static struct_def_t zero_struct[] = {
+		{"string_val",       &type_string},
+		{"float_val",        &type_float},
+		{"entity_val",       &type_entity},
+		{"field_val",        &type_field},
+		{"func_val",         &type_function},
+		{"pointer_val",      &type_pointer},
+		{"integer_val",      &type_integer},
+		{"vector_val",       &type_vector},
+		{"quaternion_val",   &type_quaternion},
+		{0, 0}
+	};
+	static struct_def_t param_struct[] = {
+		{"string_val",       &type_string},
+		{"float_val",        &type_float},
+		{"vector_val",       &type_vector},
+		{"entity_val",       &type_entity},
+		{"field_val",        &type_field},
+		{"func_val",         &type_function},
+		{"pointer_val",      &type_pointer},
+		{"integer_val",      &type_integer},
+		{"quaternion_val",   &type_quaternion},
+		{0, 0}
+	};
+	static struct_def_t vector_struct[] = {
+		{"x", &type_float},
+		{"y", &type_float},
+		{"z", &type_float},
+		{0, 0}
+	};
+	static struct_def_t quaternion_struct[] = {
+		{"s", &type_float},
+		{"v", &type_vector},
+		{0, 0}
+	};
+	static struct_def_t sel_struct[] = {
+		{"sel_id",    &type_string},
+		{"sel_types", &type_string},
+		{0, 0}
+	};
+	static struct_def_t method_struct[] = {
+		{"method_name",  &type_SEL},
+		{"method_types", &type_string},
+		{"method_imp",   &type_IMP},
+		{0, 0}
+	};
+	static struct_def_t class_struct[] = {
+		{"class_pointer",  &type_Class},
+		{"super_class",    &type_Class},
+		{"name",           &type_string},
+		{"version",        &type_integer},
+		{"info",           &type_integer},
+		{"instance_size",  &type_integer},
+		{"ivars",          &type_pointer},
+		{"methods",        &type_pointer},
+		{"dtable",         &type_pointer},
+		{"subclass_list",  &type_pointer},
+		{"sibling_class",  &type_pointer},
+		{"protocols",      &type_pointer},
+		{"gc_object_type", &type_pointer},
+	};
+	static struct_def_t protocol_struct[] = {
+		{"class_pointer",    &type_Class},
+		{"protocol_name",    &type_string},
+		{"protocol_list",    &type_pointer},
+		{"instance_methods", &type_pointer},
+		{"class_methods",    &type_pointer},
+		{0, 0}
+	};
+	static struct_def_t id_struct[] = {
+		{"class_pointer", &type_Class},
+		{0, 0}
+	};
+	static struct_def_t method_desc_struct[] = {
+		{"name",  &type_string},
+		{"types", &type_string},
+		{0, 0}
+	};
+	static struct_def_t category_struct[] = {
+		{"category_name",    &type_string},
+		{"class_name",       &type_string},
+		{"instance_methods", &type_pointer},
+		{"class_methods",    &type_pointer},
+		{"protocols",        &type_pointer},
+		{0, 0}
+	};
+	static struct_def_t ivar_struct[] = {
+		{"ivar_name",   &type_string},
+		{"ivar_type",   &type_string},
+		{"ivar_offset", &type_integer},
+		{0, 0}
+	};
+	static struct_def_t super_struct[] = {
+		{"self", &type_id},
+		{"class", &type_Class},
+		{0, 0}
+	};
 
-	strct = calloc (sizeof (struct_t), 1);
-	init_struct (strct, &type_zero, str_union, 0);
-	new_struct_field (strct, &type_string,   "string_val",   vis_public);
-	new_struct_field (strct, &type_float,    "float_val",    vis_public);
-	new_struct_field (strct, &type_entity,   "entity_val",   vis_public);
-	new_struct_field (strct, &type_field,    "field_val",    vis_public);
-	new_struct_field (strct, &type_function, "func_val",     vis_public);
-	new_struct_field (strct, &type_pointer,  "pointer_val",  vis_public);
-	new_struct_field (strct, &type_integer,  "integer_val",  vis_public);
+	if (options.code.progsversion == PROG_ID_VERSION) {
+		// vector can't be part of .zero for v6 progs because for v6 progs,
+		// .zero is only one word wide.
+		zero_struct[7].name = 0;
+		// v6 progs don't have quaternions
+		zero_struct[8].name = 0;
+		param_struct[8].name = 0;
+	}
 
-	strct = calloc (sizeof (struct_t), 1);
-	init_struct (strct, &type_param, str_union, 0);
-	new_struct_field (strct, &type_string,   "string_val",   vis_public);
-	new_struct_field (strct, &type_float,    "float_val",    vis_public);
-	new_struct_field (strct, &type_vector,   "vector_val",   vis_public);
-	new_struct_field (strct, &type_entity,   "entity_val",   vis_public);
-	new_struct_field (strct, &type_field,    "field_val",    vis_public);
-	new_struct_field (strct, &type_function, "func_val",     vis_public);
-	new_struct_field (strct, &type_pointer,  "pointer_val",  vis_public);
-	new_struct_field (strct, &type_integer,  "integer_val",  vis_public);
-
-	strct = vector_struct = get_struct (0, 1);
-	init_struct (strct, new_type (), str_struct, 0);
-	new_struct_field (strct, &type_float, "x", vis_public);
-	new_struct_field (strct, &type_float, "y", vis_public);
-	new_struct_field (strct, &type_float, "z", vis_public);
+	make_structure (0, 'u', zero_struct, &type_zero);
+	make_structure (0, 'u', param_struct, &type_param);
+	make_structure (0, 's', vector_struct, &type_vector);
+	type_vector.type = ev_vector;
 
 	if (options.traditional)
 		return;
 
-	if (options.code.progsversion != PROG_ID_VERSION) {
-		strct = type_zero.t.strct;
-		// vector can't be part of .zero for v6 progs because for v6 progs,
-		// .zero is only one word wide.
-		new_struct_field (strct, &type_vector, "vector_val", vis_public);
-		new_struct_field (strct, &type_quaternion, "quaternion_val",
-						  vis_public);
+	make_structure (0, 's', quaternion_struct, &type_quaternion);
+	type_quaternion.type = ev_vector;
 
-		strct = type_param.t.strct;
-		new_struct_field (strct, &type_quaternion, "quaternion_val",
-						  vis_public);
-	}
+	type_SEL.t.fldptr.type = make_structure (0, 's', sel_struct, 0)->type;
 
-	strct = quaternion_struct = get_struct (0, 1);
-	init_struct (strct, new_type (), str_struct, 0);
-	new_struct_field (strct, &type_float,  "s", vis_public);
-	new_struct_field (strct, &type_vector, "v", vis_public);
+	make_structure (0, 's', method_struct, &type_Method);
 
-	strct = get_struct (0, 1);
-	init_struct (strct, new_type (), str_struct, 0);
-	new_struct_field (strct, &type_string, "sel_id", vis_public);
-	new_struct_field (strct, &type_string, "sel_types", vis_public);
-	type_SEL.t.fldptr.type = strct->type;
+	type = make_structure (0, 's', class_struct, 0)->type;
+	type_Class.t.fldptr.type = type;
+	class_Class.ivars = type->t.symtab;
 
-	strct = get_struct (0, 1);
-	init_struct (strct, &type_Method, str_struct, 0);
-	new_struct_field (strct, &type_SEL, "method_name", vis_public);
-	new_struct_field (strct, &type_string, "method_types", vis_public);
-	new_struct_field (strct, &type_IMP, "method_imp", vis_public);
-
-	strct = get_struct (0, 1);
-	init_struct (strct, type = new_type (), str_struct, 0);
-	type->ty = ty_class;
-	type->t.class = &class_Class;
-	new_struct_field (strct, &type_Class, "class_pointer", vis_public);
-	new_struct_field (strct, &type_Class, "super_class", vis_public);
-	new_struct_field (strct, &type_string, "name", vis_public);
-	new_struct_field (strct, &type_integer, "version", vis_public);
-	new_struct_field (strct, &type_integer, "info", vis_public);
-	new_struct_field (strct, &type_integer, "instance_size", vis_public);
-	new_struct_field (strct, &type_pointer, "ivars", vis_public);
-	new_struct_field (strct, &type_pointer, "methods", vis_public);
-	new_struct_field (strct, &type_pointer, "dtable", vis_public);
-	new_struct_field (strct, &type_pointer, "subclass_list", vis_public);
-	new_struct_field (strct, &type_pointer, "sibling_class", vis_public);
-	new_struct_field (strct, &type_pointer, "protocols", vis_public);
-	new_struct_field (strct, &type_pointer, "gc_object_type", vis_public);
-	type_Class.t.fldptr.type = strct->type;
-	class_Class.ivars = strct;
-
+	make_structure (0, 's', protocol_struct, &type_Protocol);
+	/*FIXME
 	strct = get_struct (0, 1);
 	init_struct (strct, type = &type_Protocol, str_struct, 0);
 	type->ty = ty_class;
 	type->t.class = &class_Protocol;
-	new_struct_field (strct, &type_Class, "class_pointer", vis_public);
-	new_struct_field (strct, &type_string, "protocol_name", vis_public);
-	new_struct_field (strct, &type_pointer, "protocol_list", vis_public);
-	new_struct_field (strct, &type_pointer, "instance_methods", vis_public);
-	new_struct_field (strct, &type_pointer, "class_methods", vis_public);
-	class_Protocol.ivars = strct;
+	class_Protocol.ivars = strct;*/
 
-	strct = get_struct (0, 1);
-	init_struct (strct, type = new_type (), str_struct, 0);
-	type->ty = ty_class;
-	type->t.class = &class_id;
-	new_struct_field (strct, &type_Class, "class_pointer", vis_public);
-	type_id.t.fldptr.type = strct->type;
-	class_id.ivars = strct;
+	type = make_structure (0, 's', id_struct, 0)->type;
+	//FIXME type->ty = ty_class;
+	//type->t.class = &class_id;
+	//type_id.t.fldptr.type = strct->type;
+	class_id.ivars = type->t.symtab;
 
-	strct = get_struct (0, 1);
-	init_struct (strct, &type_method_description, str_struct, 0);
-	new_struct_field (strct, &type_string, "name", vis_public);
-	new_struct_field (strct, &type_string, "types", vis_public);
+	make_structure (0, 's', method_desc_struct, &type_method_description);
 
-	strct = get_struct (0, 1);
-	init_struct (strct, new_type (), str_struct, 0);
-	new_struct_field (strct, &type_string, "category_name", vis_public);
-	new_struct_field (strct, &type_string, "class_name", vis_public);
-	new_struct_field (strct, &type_pointer, "instance_methods", vis_public);
-	new_struct_field (strct, &type_pointer, "class_methods", vis_public);
-	new_struct_field (strct, &type_pointer, "protocols", vis_public);
-	type_category = strct->type;
+	make_structure (0, 's', category_struct, &type_category);
 
-	strct = get_struct (0, 1);
-	init_struct (strct, new_type (), str_struct, 0);
-	new_struct_field (strct, &type_string, "ivar_name", vis_public);
-	new_struct_field (strct, &type_string, "ivar_type", vis_public);
-	new_struct_field (strct, &type_integer, "ivar_offset", vis_public);
-	type_ivar = strct->type;
+	make_structure (0, 's', ivar_struct, &type_ivar);
 
-	strct = get_struct ("Super", 1);
-	init_struct (strct, &type_Super, str_struct, 0);
-	new_struct_field (strct, &type_id, "self", vis_public);
-	new_struct_field (strct, &type_Class, "class", vis_public);
+	make_structure (0, 's', super_struct, &type_Super);
 }
 
 void
 chain_initial_types (void)
 {
-	struct_t   *strct;
+	static struct_def_t va_list_struct[] = {
+		{"count", &type_integer},
+		{"list",  0},				// type will be filled in at runtime
+		{0, 0}
+	};
+	static struct_def_t module_struct[] = {
+		{"version", &type_integer},
+		{"size",    &type_integer},
+		{"name",    &type_string},
+		{"symtab",  &type_pointer},
+		{0, 0}
+	};
 
 	chain_type (&type_void);
 	chain_type (&type_string);
@@ -922,10 +924,8 @@ chain_initial_types (void)
 	chain_type (&type_param);
 	chain_type (&type_zero);
 
-	strct = calloc (sizeof (struct_t), 1);
-	init_struct (strct, &type_va_list, str_struct, 0);
-	new_struct_field (strct, &type_integer, "count", vis_public);
-	new_struct_field (strct, pointer_type (&type_param), "list", vis_public);
+	va_list_struct[1].type = pointer_type (&type_param);
+	make_structure (0, 's', va_list_struct, &type_va_list);
 
 	if (options.traditional)
 		return;
@@ -942,29 +942,16 @@ chain_initial_types (void)
 	chain_type (&type_Protocol);
 	chain_type (&type_id);
 	chain_type (&type_method_description);
-	chain_type (type_category);
-	chain_type (type_ivar);
+	chain_type (&type_category);
+	chain_type (&type_ivar);
 
 	type_supermsg.t.func.param_types[0] = pointer_type (&type_Super);
 	chain_type (&type_supermsg);
 
-	strct = get_struct ("obj_module_s", 1);
-	init_struct (strct, new_type (), str_struct, 0);
-	new_struct_field (strct, &type_integer, "version", vis_public);
-	new_struct_field (strct, &type_integer, "size", vis_public);
-	new_struct_field (strct, &type_string, "name", vis_public);
-	new_struct_field (strct, &type_pointer, "symtab", vis_public);
-	type_module = strct->type;
-	new_typedef ("obj_module_t", type_module);
-	chain_type (type_module);
+	make_structure ("obj_module_s", 's', module_struct, &type_module);
+	//new_typedef ("obj_module_t", type_module);
+	chain_type (&type_module);
 
-	type_obj_exec_class.t.func.param_types[0] = pointer_type (type_module);
+	type_obj_exec_class.t.func.param_types[0] = pointer_type (&type_module);
 	chain_type (&type_obj_exec_class);
-}
-
-void
-clear_typedefs (void)
-{
-	if (typedef_hash)
-		Hash_FlushTable (typedef_hash);
 }

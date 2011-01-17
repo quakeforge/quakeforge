@@ -59,6 +59,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "reloc.h"
 #include "struct.h"
 #include "switch.h"
+#include "symtab.h"
 #include "type.h"
 
 #define YYDEBUG 1
@@ -87,28 +88,16 @@ parse_error (void)
 
 int yylex (void);
 
-hashtab_t *save_local_inits (scope_t *scope);
-hashtab_t *merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2);
-void restore_local_inits (hashtab_t *def_list);
-void free_local_inits (hashtab_t *def_list);
-static def_t *create_def (type_t *type, const char *name, scope_t *scope,
-						  storage_class_t storage);
-
 %}
 
 %union {
 	int			op;
+	void       *pointer;			// for ensuring pointer values are null
 	struct def_s *def;
 	struct hashtab_s *def_list;
 	struct type_s	*type;
 	struct typedef_s *typename;
 	struct expr_s	*expr;
-	int			integer_val;
-	unsigned	uinteger_val;
-	float		float_val;
-	const char *string_val;
-	float		vector_val[3];
-	float		quaternion_val[4];
 	struct function_s *function;
 	struct switch_block_s *switch_block;
 	struct param_s	*param;
@@ -120,7 +109,8 @@ static def_t *create_def (type_t *type, const char *name, scope_t *scope,
 	struct protocollist_s *protocol_list;
 	struct keywordarg_s *keywordarg;
 	struct methodlist_s *methodlist;
-	struct struct_s *strct;
+	struct symbol_s *symbol;
+	struct symtab_s *symtab;
 }
 
 %nonassoc IFX
@@ -131,82 +121,117 @@ static def_t *create_def (type_t *type, const char *name, scope_t *scope,
 
 %nonassoc STORAGEX
 
-%right	<op> '=' ASX PAS /* pointer assign */
-%right	'?' ':'
-%left	OR
-%left	AND
-%left	'|'
-%left	'^'
-%left	'&'
-%left	EQ NE
-%left	LE GE LT GT
-%left	SHL SHR
-%left	'+' '-'
-%left	'*' '/' '%'
-%right	<op> UNARY INCOP
-%left	HYPERUNARY
-%left	'.' '(' '['
+%right	<op>	'=' ASX PAS /* pointer assign */
+%right			'?' ':'
+%left			OR
+%left			AND
+%left			'|'
+%left			'^'
+%left			'&'
+%left			EQ NE
+%left			LE GE LT GT
+%left			SHL SHR
+%left			'+' '-'
+%left			'*' '/' '%'
+%right	<op>	UNARY INCOP
+%left			HYPERUNARY
+%left			'.' '(' '['
 
-%token	<string_val> CLASS_NAME NAME STRING_VAL
-%token	<expr>	CONST
+%token	<symbol>	CLASS_NAME NAME
+%token	<expr>		CONST STRING
 
-%token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS NIL
-%token	IFBE IFB IFAE IFA
-%token	SWITCH CASE DEFAULT STRUCT UNION ENUM TYPEDEF SUPER SELF THIS
-%token	ARGS EXTERN STATIC SYSTEM SIZEOF OVERLOAD
-%token	<type> TYPE
-%token	<typename> TYPE_NAME
-%token	CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE PROTECTED
-%token	PROTOCOL PUBLIC SELECTOR REFERENCE
+%token				LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS
+%token				NIL IFBE IFB IFAE IFA SWITCH CASE DEFAULT ENUM TYPEDEF
+%token				ARGS EXTERN STATIC SYSTEM SIZEOF OVERLOAD
+%token	<op>		STRUCT
+%token	<type>		TYPE
+%token	<symbol>	TYPE_NAME
+%token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
+%token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
 
-%type	<type>	type non_field_type type_name def simple_def struct_def
-%type	<type>	struct_def_item ivar_decl ivar_declarator def_item def_list
-%type	<type>	struct_def_list ivars func_type non_func_type
-%type	<type>	non_code_func code_func func_init func_defs func_def_list
-%type	<def>	fdef_name cfunction_def func_def
-%type	<param> function_decl
-%type	<param>	param param_list
-%type	<def>	opt_initializer methoddef var_initializer
-%type	<expr>	const opt_expr fexpr expr element_list element_list1 element
-%type	<expr>	opt_state_expr think opt_step array_decl texpr
-%type	<expr>	statement statements statement_block
-%type	<expr>	label break_label continue_label enum_list enum
-%type	<expr>	unary_expr primary cast_expr opt_arg_list arg_list
-%type	<function> begin_function builtin_function
-%type	<def_list> save_inits
+%type	<symbol>	tag opt_tag
+%type	<type>		struct_def struct_def_item struct_def_list struct_spec
+%type	<type>		enum_spec
+%type	<symbol>	opt_enum_list enum_list enum enum_init
+
+%type	<expr>		const string
+
+%type	<type>		type non_field_type type_name def simple_def
+%type	<type>		ivar_decl ivar_declarator def_item def_list
+%type	<type>		ivars func_type non_func_type
+%type	<type>		code_func func_defs func_def_list
+%type	<def>		fdef_name cfunction_def func_def
+%type	<param>		function_decl
+%type	<param>		param param_list
+%type	<def>		opt_initializer methoddef var_initializer
+%type	<expr>		opt_expr fexpr expr element_list element_list1 element
+%type	<expr>		opt_state_expr think opt_step array_decl texpr
+%type	<expr>		statement statements statement_block
+%type	<expr>		label break_label continue_label
+%type	<expr>		unary_expr primary cast_expr opt_arg_list arg_list
 %type	<switch_block> switch_block
-%type	<string_val> def_name identifier
+%type	<symbol>	def_name identifier
 
-%type	<string_val> selector reserved_word
-%type	<param>	optparmlist unaryselector keyworddecl keywordselector
-%type	<method> methodproto methoddecl
-%type	<expr>	obj_expr identifier_list obj_messageexpr obj_string receiver
+%type	<expr>		identifier_list
+%type	<symbol>	selector reserved_word
+%type	<param>		optparmlist unaryselector keyworddecl keywordselector
+%type	<method>	methodproto methoddecl
+%type	<expr>		obj_expr obj_messageexpr obj_string receiver
 %type	<protocol_list>	protocolrefs protocol_list
 %type	<keywordarg> messageargs keywordarg keywordarglist selectorarg
 %type	<keywordarg> keywordnamelist keywordname
-%type	<class> class_name new_class_name class_with_super new_class_with_super
-%type	<class> classdef
-%type	<category> category_name new_category_name
-%type	<protocol> protocol_name
+%type	<class>		class_name new_class_name class_with_super
+%type	<class>		classdef new_class_with_super
+%type	<category>	category_name new_category_name
+%type	<protocol>	protocol_name
 %type	<methodlist> methodprotolist methodprotolist2
-%type	<strct>	ivar_decl_list
-%type	<op>	ci
+%type	<symtab>	ivar_decl_list
+%type	<op>		ci
 
 %{
 
 function_t *current_func;
-param_t *current_params;
-expr_t	*current_init;
+param_t    *current_params;
+expr_t     *current_init;
 class_type_t *current_class;
-expr_t	*local_expr;
-expr_t	*break_label;
-expr_t	*continue_label;
-switch_block_t *switch_block;
-struct_t *current_struct;
-visibility_type current_visibility;
-struct_t *current_ivars;
-scope_t *current_scope;
+expr_t     *local_expr;
+vis_e       current_visibility;
 storage_class_t current_storage = st_global;
+symtab_t   *current_symtab;
+
+static switch_block_t *switch_block;
+static expr_t *break_label;
+static expr_t *continue_label;
+
+/*	When defining a new symbol, already existing symbols must be in a
+	different scope. However, when they are in a different scope, we want a
+	truly new symbol.
+*/
+static symbol_t *
+check_redefined (symbol_t *sym)
+{
+	if (sym->table == current_symtab)
+		error (0, "%s redefined", sym->name);
+	if (sym->table)		// truly new symbols are not in any symbol table
+		sym = new_symbol (sym->name);
+	return sym;
+}
+
+/*	Check for undefined symbols. If the symbol is undefined, default its type
+	to float or int, depending on compiler mode.
+*/
+static symbol_t *
+check_undefined (symbol_t *sym)
+{
+	if (!sym->table) {	// truly new symbols are not in any symbol table
+		error (0, "%s undefined", sym->name);
+		if (options.code.progsversion == PROG_ID_VERSION)
+			sym->type = &type_float;
+		else
+			sym->type = &type_integer;
+	}
+	return sym;
+}
 
 %}
 
@@ -228,28 +253,12 @@ def
 	| storage_class simple_def	{ current_storage = st_global; }
 	| storage_class '{' simple_defs '}' ';'
 	  { current_storage = st_global; }
-	| STRUCT identifier { current_struct = new_struct ($2); }
-	  '{' struct_defs '}' ';'
-		{
-			if (!current_struct->struct_head)
-				new_struct_field (current_struct, &type_void, 0, vis_private);
-		}
-	| UNION identifier { current_struct = new_union ($2); }
-	  '{' struct_defs '}' ';'
-		{
-			if (!current_struct->struct_head)
-				new_struct_field (current_struct, &type_void, 0, vis_private);
-		}
-	| STRUCT identifier ';'		{ decl_struct ($2); }
-	| UNION identifier ';'		{ decl_union ($2); }
-	| ENUM '{' enum_list opt_comma '}' ';'
-	  { process_enum ($3); }
 	| TYPEDEF type identifier ';'
-	  { new_typedef ($3, $2); }
-	| TYPEDEF ENUM '{' enum_list opt_comma '}' identifier ';'
 		{
-			process_enum ($4);
-			new_typedef ($7, &type_integer);
+			$3 = check_redefined ($3);
+			$3->type = $2;
+			$3->sy_type = sy_type;
+			symtab_addsymbol (current_symtab, $3);
 		}
 	;
 
@@ -264,49 +273,23 @@ simple_defs
 	;
 
 simple_def
-	: non_func_type def_list ';' { }
-	| func_type func_defs		{ }
-	| cfunction	{ }
+	: non_func_type def_list ';'
+	| func_type func_defs
+	| cfunction								{}
 	;
 
 cfunction
 	: cfunction_def ';'
-		{
-		}
-	| cfunction_def '=' '#' fexpr
-		{ $<def>$ = $1; }
-		{ $<expr>$ = constant_expr ($4); }
-	  builtin_function ';'
-		{
-			(void) ($<def>5);
-			(void) ($<expr>6);
-		}
-	| cfunction_def opt_state_expr
-		{ $<op>$ = current_storage; }
-		{ $<string_val>$ = 0; }
-		{ $<def>$ = $1; }
-	  begin_function statement_block { $<op>$ = $<op>3; } end_function
-	    {
-			build_code_function ($6, $2, $7);
-			current_func = 0;
-			(void) ($<string_val>4);
-			(void) ($<def>5);
-			(void) ($<op>8);
-		}
+	| cfunction_def '=' '#' fexpr ';'
+	| cfunction_def opt_state_expr statement_block
 	;
 
 cfunction_def
 	: OVERLOAD non_func_type identifier function_decl
 		{
-			type_t     *type = parse_params ($2, current_params = $4);
-			$$ = get_function_def ($3, type, current_scope,
-								   current_storage, 1, 1);
 		}
 	| non_func_type identifier function_decl
 		{
-			type_t     *type = parse_params ($1, current_params = $3);
-			$$ = get_function_def ($2, type, current_scope,
-								   current_storage, 0, 1);
 		}
 	;
 
@@ -327,12 +310,15 @@ struct_defs
 	| struct_defs struct_def ';'
 	| DEFS '(' identifier ')'
 		{
-			class_t    *class = get_class ($3, 0);
-
-			if (class) {
-				class_to_struct (class, current_struct);
+			$3 = check_undefined ($3);
+			if (!$3->type || !is_class ($3->type)) {
+				error (0, "`%s' is not a class", $3->name);
 			} else {
-				error (0, "undefined symbol `%s'", $3);
+				// replace the struct symbol table with one built from
+				// the class ivars and the current struct fields. ivars
+				// will replace any fields of the same name.
+				current_symtab = class_to_struct ($3->type->t.class,
+												  current_symtab);
 			}
 		}
 	;
@@ -350,36 +336,9 @@ struct_def_list
 struct_def_item
 	: identifier
 		{
-			new_struct_field (current_struct, $<type>0, $1, vis_public);
-		}
-	;
-
-enum_list
-	: enum
-	| enum_list ',' enum
-		{
-			if ($3) {
-				$3->next = $1;
-				$$ = $3;
-			} else {
-				$$ = $1;
-			}
-		}
-	;
-
-enum
-	: identifier				{ $$ = new_name_expr ($1); }
-	| identifier '=' fexpr
-		{
-			$$ = 0;
-			$3 = constant_expr ($3);
-			if ($3->type < ex_nil) {
-				error ($3, "non-constant initializer");
-			} else if ($3->type != ex_integer) {
-				error ($3, "invalid initializer type");
-			} else {
-				$$ = new_binary_expr ('=', new_name_expr ($1), $3);
-			}
+			$1 = check_redefined ($1);
+			$1->type = $<type>0;
+			symtab_addsymbol (current_symtab, $1);
 		}
 	;
 
@@ -411,31 +370,74 @@ non_field_type
 				$$ = pointer_type ($1);
 		}
 	| type_name					{ $$ = $1; }
+	| struct_spec
+	| enum_spec
 	;
 
 type_name
 	: TYPE						{ $$ = $1; }
 	| TYPE_NAME					{ $$ = $1->type; }
-	| CLASS_NAME
+	| CLASS_NAME				{ $$ = $1->type; }
+	;
+
+opt_tag
+	: tag
+	| /* empty */				{ $$ = 0; }
+	;
+
+tag : NAME ;
+
+struct_spec
+	: STRUCT opt_tag '{'
 		{
-			class_t    *class = get_class ($1, 0);
-			if (!class) {
-				error (0, "undefined symbol `%s'", $1);
-				class = get_class (0, 1);
-			}
-			$$ = class->type;
+			current_symtab = new_symtab (current_symtab, stab_local);
 		}
-	| STRUCT identifier			{ $$ = decl_struct ($2)->type; }
-	| UNION identifier			{ $$ = decl_union ($2)->type; }
+	  struct_defs '}'
+		{
+			symtab_t   *symtab = current_symtab;
+			current_symtab = symtab->parent;
+
+			$$ = build_struct ($1, $2, symtab, 0)->type;
+		}
+	| STRUCT tag ';'
+		{
+			$$ = find_struct ($1, $2, 0)->type;
+		}
+	;
+
+enum_spec
+	: ENUM tag opt_enum_list	{ $$ = $3->type; }
+	| ENUM '{' enum_init enum_list opt_comma '}'	{ $$ = $4->type; }
+	;
+
+opt_enum_list
+	: '{' enum_init enum_list opt_comma '}'	{ $$ = $2; }
+	| /* empty */				{ $$ = find_enum ($<symbol>0); }
+	;
+
+enum_init
+	: /* empty */
+		{
+			$$ = find_enum ($<symbol>-1);
+			start_enum ($$);
+		}
+	;
+
+enum_list
+	: enum						{ $$ = $<symbol>0; }
+	| enum_list ',' { $<symbol>$ = $<symbol>0; } enum { $$ = $<symbol>0; }
+	;
+
+enum
+	: identifier				{ add_enum ($<symbol>0, $1, 0); }
+	| identifier '=' fexpr		{ add_enum ($<symbol>0, $1, $3); }
 	;
 
 function_decl
-	: '(' param_list ')'		{ $$ = reverse_params ($2); }
+	: '(' param_list ')'		{ $$ = $2; }
 	| '(' param_list ',' ELLIPSIS ')'
 		{
-			$$ = new_param (0, 0, 0);
-			$$->next = $2;
-			$$ = reverse_params ($$);
+			$$ = param_append_identifiers ($2, 0, 0);
 		}
 	| '(' ELLIPSIS ')'			{ $$ = new_param (0, 0, 0); }
 	| '(' TYPE ')'
@@ -448,16 +450,15 @@ function_decl
 	;
 
 param_list
-	: param
-	| param_list ',' param
-		{
-			$3->next = $1;
-			$$ = $3;
-		}
+	: param						{ $$ = $<param>0; }
+	| param_list ',' { $<param>$ = $<param>0; } param	{ $$ = $<param>0; }
 	;
 
 param
-	: type identifier			{ $$ = new_param (0, $1, $2); }
+	: type identifier
+		{
+			$$ = param_append_identifiers ($<param>0, $2, $1);
+		}
 	;
 
 array_decl
@@ -510,13 +511,9 @@ fdef_name
 func_def
 	: identifier
 		{
-			$$ = get_function_def ($1, $<type>0, current_scope,
-								   current_storage, 0, 1);
 		}
 	| OVERLOAD identifier
 		{
-			$$ = get_function_def ($2, $<type>0, current_scope,
-								   current_storage, 1, 1);
 		}
 	;
 
@@ -525,40 +522,13 @@ func_init
 	| code_func
 	;
 
-builtin_function
-	: /* emtpy */
-		{
-			$$ = build_builtin_function ($<def>-1, $<expr>0, current_params);
-		}
-	;
-
 non_code_func
 	: '=' '#' fexpr
-		{ $<def>$ = $<def>0; }
-		{ $<expr>$ = constant_expr ($3); }
-	  builtin_function
-		{
-			(void) ($<def>4);
-			(void) ($<expr>5);
-		}
 	| /* emtpy */
-		{
-		}
 	;
 
 code_func
-	: '=' opt_state_expr
-		{ $<op>$ = current_storage; }
-		{ $<string_val>$ = 0; }
-		{ $<def>$ = $<def>0; }
-	  begin_function statement_block { $<op>$ = $<op>3; } end_function
-		{
-			build_code_function ($6, $2, $7);
-			current_func = 0;
-			(void) ($<string_val>4);
-			(void) ($<def>5);
-			(void) ($<op>8);
-		}
+	: '=' opt_state_expr statement_block	{}
 	;
 
 def_name
@@ -568,8 +538,6 @@ def_name
 opt_initializer
 	: /*empty*/
 		{
-			$$ = create_def ($<type>-1, $<string_val>0, current_scope,
-							 current_storage);
 		}
 	| var_initializer			{ $$ = $1; }
 	;
@@ -577,46 +545,9 @@ opt_initializer
 var_initializer
 	: '=' expr	// don't bother folding twice
 		{
-			int         local = 0;
-			const char *name = $<string_val>0;
-			type_t     *type = $<type>-1;
-
-			if (current_scope->type == sc_params) {
-				// In traditional mode, this is the only scope that functions
-				// have.
-				local = 0;
-				$$ = create_def (type, name, current_scope, st_static);
-			} else {
-				local = current_scope->type == sc_local;
-				$$ = create_def (type, name, current_scope, current_storage);
-			}
-			if (local) {
-				expr_t     *expr = assign_expr (new_def_expr ($$), $2);
-				expr = fold_constants (expr);
-				append_expr (local_expr, expr);
-				def_initialized ($$);
-			} else {
-				$2 = constant_expr ($2);
-				if ($2->type >= ex_nil) {
-					if ($2->type != ex_nil
-						&& !type_assignable ($$->type, get_type ($2))) {
-						error ($2, "incompatible types in initialization");
-					} else if ($$->constant) {
-						error ($2, "%s re-initialized", $$->name);
-					} else {
-						ReuseConstant ($2,  $$);
-					}
-				} else {
-					error ($2, "non-constant expression used for initializer");
-				}
-			}
 		}
-	| '=' '{' { current_init = new_block_expr (); } element_list '}'
+	| '=' '{' { } element_list '}'
 		{
-			$$ = create_def ($<type>-1, $<string_val>0, current_scope,
-							 current_storage);
-			init_elements ($$, $4);
-			current_init = 0;
 		}
 	;
 
@@ -627,34 +558,13 @@ opt_state_expr
 		}
 	| '[' fexpr ',' think opt_step ']'
 		{
-			if ($2->type == ex_integer)
-				convert_int ($2);
-			else if ($2->type == ex_uinteger)
-				convert_uint ($2);
-			if (!type_assignable (&type_float, get_type ($2)))
-				error ($2, "invalid type for frame number");
-			$2 = cast_expr (&type_float, $2);
-			if (extract_type ($4) != ev_func)
-				error ($2, "invalid type for think");
-			if ($5) {
-				if ($5->type == ex_integer)
-					convert_int ($5);
-				else if ($5->type == ex_uinteger)
-					convert_uint ($5);
-				if (!type_assignable (&type_float, get_type ($5)))
-					error ($5, "invalid type for time step");
-			}
-
-			$$ = new_state_expr ($2, $4, $5);
+			$$ = build_state_expr ($2, $4, $5);
 		}
 	;
 
 think
 	: def_name
 		{
-			$$ = new_def_expr (create_def (&type_function, $1, current_scope,
-										   current_storage));
-			(void) ($<type>1);
 		}
 	| '(' fexpr ')'
 		{
@@ -714,49 +624,16 @@ opt_comma
 	| ','
 	;
 
-begin_function
-	: /*empty*/
-		{
-			$$ = begin_function ($<def>0, $<string_val>-1, current_params);
-			current_func = $$;
-			current_scope = $$->scope;
-			current_storage = st_local;
-		}
-	;
-
-end_function
-	: /*empty*/
-		{
-			current_scope = current_scope->parent;
-			current_storage = $<op>0;
-		}
-	;
-
 statement_block
 	: '{'
 		{
-			if (!options.traditional) {
-				scope_t    *scope = new_scope (sc_local, current_scope->space,
-											   current_scope);
-				current_scope = scope;
-			}
+			if (!options.traditional)
+				current_symtab = new_symtab (current_symtab, stab_local);
 		}
 	  statements '}'
 		{
-			if (!options.traditional) {
-				def_t      *defs = current_scope->head;
-				int         num_defs = current_scope->num_defs;
-
-				flush_scope (current_scope, 1);
-
-				current_scope = current_scope->parent;
-				current_scope->num_defs += num_defs;
-				*current_scope->tail = defs;
-				while (*current_scope->tail) {
-					(*current_scope->tail)->scope = current_scope;
-					current_scope->tail = &(*current_scope->tail)->def_next;
-				}
-			}
+			if (!options.traditional)
+				current_symtab = current_symtab->parent;
 			$$ = $3;
 		}
 	;
@@ -776,6 +653,18 @@ statement
 	: ';'						{ $$ = 0; }
 	| error ';'					{ $$ = 0; yyerrok; }
 	| statement_block			{ $$ = $1; }
+	| local_storage_class type
+		{
+			$<type>$ = $2;
+			local_expr = new_block_expr ();
+		}
+	  def_list ';'
+		{
+			$$ = local_expr;
+			local_expr = 0;
+			(void) ($<type>3);
+			current_storage = st_local;
+		}
 	| RETURN opt_expr ';'
 		{
 			$$ = return_expr (current_func, $2);
@@ -804,227 +693,41 @@ statement
 		{
 			$$ = case_label_expr (switch_block, 0);
 		}
-	| SWITCH break_label switch_block '(' fexpr ')'
+	| SWITCH break_label switch_block '(' fexpr ')' statement_block
 		{
 			switch_block->test = $5;
-		}
-	  save_inits statement_block
-		{
-			restore_local_inits ($8);
-			free_local_inits ($8);
-			$$ = switch_expr (switch_block, break_label, $9);
+			$$ = switch_expr (switch_block, break_label, $7);
 			switch_block = $3;
 			break_label = $2;
 		}
-	| WHILE break_label continue_label '(' texpr ')' save_inits statement
+	| IF '(' texpr ')' statement %prec IFX
 		{
-			expr_t *l1 = new_label_expr ();
-			expr_t *l2 = break_label;
-			int         line = pr.source_line;
-			string_t    file = pr.source_file;
-
-			pr.source_line = $5->line;
-			pr.source_file = $5->file;
-
-			restore_local_inits ($7);
-			free_local_inits ($7);
-
-			$$ = new_block_expr ();
-
-			append_expr ($$, new_unary_expr ('g', continue_label));
-			append_expr ($$, l1);
-			append_expr ($$, $8);
-			append_expr ($$, continue_label);
-
-			$5 = convert_bool ($5, 1);
-			if ($5->type != ex_error) {
-				backpatch ($5->e.bool.true_list, l1);
-				backpatch ($5->e.bool.false_list, l2);
-				append_expr ($5->e.bool.e, l2);
-				append_expr ($$, $5);
-			}
-
+			$$ = build_if_statement ($3, $5, 0);
+		}
+	| IF '(' texpr ')' statement ELSE statement
+		{
+			$$ = build_if_statement ($3, $5, $7);
+		}
+	| FOR break_label continue_label
+			'(' opt_expr ';' opt_expr ';' opt_expr ')' statement
+		{
+			$$ = build_for_statement ($5, $7, $9, $11,
+									  break_label, continue_label);
 			break_label = $2;
 			continue_label = $3;
-
-			pr.source_line = line;
-			pr.source_file = file;
+		}
+	| WHILE break_label continue_label '(' texpr ')' statement
+		{
+			$$ = build_while_statement ($5, $7, break_label, continue_label);
+			break_label = $2;
+			continue_label = $3;
 		}
 	| DO break_label continue_label statement WHILE '(' texpr ')' ';'
 		{
-			expr_t *l1 = new_label_expr ();
-			int         line = pr.source_line;
-			string_t    file = pr.source_file;
-
-			pr.source_line = $7->line;
-			pr.source_file = $7->file;
-
-			$$ = new_block_expr ();
-
-			append_expr ($$, l1);
-			append_expr ($$, $4);
-			append_expr ($$, continue_label);
-
-			$7 = convert_bool ($7, 1);
-			if ($7->type != ex_error) {
-				backpatch ($7->e.bool.true_list, l1);
-				backpatch ($7->e.bool.false_list, break_label);
-				append_expr ($7->e.bool.e, break_label);
-				append_expr ($$, $7);
-			}
-
+			$$ = build_do_while_statement ($4, $7,
+										   break_label, continue_label);
 			break_label = $2;
 			continue_label = $3;
-
-			pr.source_line = line;
-			pr.source_file = file;
-		}
-	| local_storage_class type
-		{
-			$<type>$ = $2;
-			local_expr = new_block_expr ();
-		}
-	  def_list ';'
-		{
-			$$ = local_expr;
-			local_expr = 0;
-			(void) ($<type>3);
-			current_storage = st_local;
-		}
-	| IF '(' texpr ')' save_inits statement %prec IFX
-		{
-			expr_t *tl = new_label_expr ();
-			expr_t *fl = new_label_expr ();
-			int         line = pr.source_line;
-			string_t    file = pr.source_file;
-
-			pr.source_line = $3->line;
-			pr.source_file = $3->file;
-
-			$$ = new_block_expr ();
-
-			restore_local_inits ($5);
-			free_local_inits ($5);
-
-			$3 = convert_bool ($3, 1);
-			if ($3->type != ex_error) {
-				backpatch ($3->e.bool.true_list, tl);
-				backpatch ($3->e.bool.false_list, fl);
-				append_expr ($3->e.bool.e, tl);
-				append_expr ($$, $3);
-			}
-
-			append_expr ($$, $6);
-			append_expr ($$, fl);
-
-			pr.source_line = line;
-			pr.source_file = file;
-		}
-	| IF '(' texpr ')' save_inits statement ELSE
-		{
-			$<def_list>$ = save_local_inits (current_scope);
-			restore_local_inits ($5);
-		}
-	  statement
-		{
-			expr_t     *tl = new_label_expr ();
-			expr_t     *fl = new_label_expr ();
-			expr_t     *nl = new_label_expr ();
-			expr_t     *e;
-			hashtab_t  *merged;
-			hashtab_t  *else_ini;
-			int         line = pr.source_line;
-			string_t    file = pr.source_file;
-
-			pr.source_line = $3->line;
-			pr.source_file = $3->file;
-
-			$$ = new_block_expr ();
-
-			else_ini = save_local_inits (current_scope);
-
-			restore_local_inits ($5);
-			free_local_inits ($5);
-
-			$3 = convert_bool ($3, 1);
-			if ($3->type != ex_error) {
-				backpatch ($3->e.bool.true_list, tl);
-				backpatch ($3->e.bool.false_list, fl);
-				append_expr ($3->e.bool.e, tl);
-				append_expr ($$, $3);
-			}
-
-			append_expr ($$, $6);
-
-			e = new_unary_expr ('g', nl);
-			append_expr ($$, e);
-
-			append_expr ($$, fl);
-			append_expr ($$, $9);
-			append_expr ($$, nl);
-
-			merged = merge_local_inits ($<def_list>8, else_ini);
-			restore_local_inits (merged);
-			free_local_inits (merged);
-			free_local_inits (else_ini);
-			free_local_inits ($<def_list>8);
-
-			pr.source_line = line;
-			pr.source_file = file;
-		}
-	| FOR break_label continue_label
-			'(' opt_expr ';' opt_expr ';' opt_expr ')' save_inits statement
-		{
-			expr_t     *tl = new_label_expr ();
-			expr_t     *fl = break_label;
-			expr_t     *l1 = 0;
-			expr_t     *t;
-			int         line = pr.source_line;
-			string_t    file = pr.source_file;
-
-			if ($9)
-				t = $9;
-			else if ($7)
-				t = $7;
-			else if ($5)
-				t = $5;
-			else
-				t = continue_label;
-			pr.source_line = t->line;
-			pr.source_file = t->file;
-
-			restore_local_inits ($11);
-			free_local_inits ($11);
-
-			$$ = new_block_expr ();
-
-			append_expr ($$, $5);
-			if ($7) {
-				l1 = new_label_expr ();
-				append_expr ($$, new_unary_expr ('g', l1));
-			}
-			append_expr ($$, tl);
-			append_expr ($$, $12);
-			append_expr ($$, continue_label);
-			append_expr ($$, $9);
-			if ($7) {
-				append_expr ($$, l1);
-				$7 = convert_bool ($7, 1);
-				if ($7->type != ex_error) {
-					backpatch ($7->e.bool.true_list, tl);
-					backpatch ($7->e.bool.false_list, fl);
-					append_expr ($7->e.bool.e, fl);
-					append_expr ($$, $7);
-				}
-			} else {
-				append_expr ($$, new_unary_expr ('g', tl));
-				append_expr ($$, fl);
-			}
-			break_label = $2;
-			continue_label = $3;
-
-			pr.source_line = line;
-			pr.source_file = file;
 		}
 	| fexpr ';'
 		{
@@ -1063,13 +766,6 @@ switch_block
 		}
 	;
 
-save_inits
-	: /* empty */
-		{
-			$$ = save_local_inits (current_scope);
-		}
-	;
-
 opt_expr
 	: fexpr
 	| /* empty */
@@ -1091,7 +787,7 @@ unary_expr
 	;
 
 primary
-	: NAME      				{ $$ = new_name_expr ($1); }
+	: NAME      				{ $$ = new_symbol_expr ($1); }
 	| BREAK	%prec BREAK_PRIMARY { $$ = new_name_expr (save_string ("break")); }
 	| ARGS						{ $$ = new_name_expr (".args"); }
 	| SELF						{ $$ = new_self_expr (); }
@@ -1161,19 +857,23 @@ arg_list
 const
 	: CONST
 	| NIL						{ $$ = new_nil_expr (); }
-	| const CONST
-		{
-			if ($1->type != ex_string || $2->type != ex_string)
-				PARSE_ERROR;
-			$$ = binary_expr ('+', $1, $2);
-		}
+	| string
+	;
+
+string
+	: STRING
+	| string STRING				{ $$ = binary_expr ('+', $1, $2); }
 	;
 
 identifier
 	: NAME
-	| BREAK						{ $$ = save_string ("break"); }
+	| BREAK
+		{
+			if (!($$ = symtab_lookup (current_symtab, "break")))
+				$$ = new_symbol ("break");
+		}
 	| CLASS_NAME
-	| TYPE_NAME					{ $$ = $1->name; }
+	| TYPE_NAME
 	;
 
 // Objective-QC stuff
@@ -1196,13 +896,11 @@ obj_def
 identifier_list
 	: identifier
 		{
-			$$ = new_block_expr ();
-			append_expr ($$, new_name_expr ($1));
+			$$ = append_expr (new_block_expr (), new_symbol_expr ($1));
 		}
 	| identifier_list ',' identifier
 		{
-			append_expr ($1, new_name_expr ($3));
-			$$ = $1;
+			$$ = append_expr ($1, new_symbol_expr ($3));
 		}
 	;
 
@@ -1211,17 +909,19 @@ classdecl
 		{
 			expr_t     *e;
 			for (e = $2->e.block.head; e; e = e->next)
-				get_class (e->e.string_val, 1);
+				get_class (e->e.symbol, 1);
 		}
 	;
 
 class_name
 	: identifier %prec CLASS_NOT_CATEGORY
 		{
-			$$ = get_class ($1, 0);
-			if (!$$) {
-				error (0, "undefined symbol `%s'", $1);
+			$1 = check_undefined ($1);
+			if (!is_class ($1->type)) {
+				error (0, "`%s' is not a class", $1->name);
 				$$ = get_class (0, 1);
+			} else {
+				$$ = $1->type->t.class;
 			}
 		}
 	;
@@ -1229,9 +929,9 @@ class_name
 new_class_name
 	: identifier
 		{
-			$$ = get_class ($1, 1);
-			if ($$->defined) {
-				error (0, "redefinition of `%s'", $1);
+			$$ = get_class ($1, 0);
+			if (!$$) {
+				$1 = check_redefined ($1);
 				$$ = get_class (0, 1);
 			}
 			current_class = &$$->class_type;
@@ -1258,9 +958,9 @@ new_class_with_super
 category_name
 	: identifier '(' identifier ')'
 		{
-			$$ = get_category ($1, $3, 0);
+			$$ = get_category ($1, $3->name, 0);
 			if (!$$) {
-				error (0, "undefined category `%s (%s)'", $1, $3);
+				error (0, "undefined category `%s (%s)'", $1->name, $3->name);
 				$$ = get_category (0, 0, 1);
 			}
 		}
@@ -1269,9 +969,10 @@ category_name
 new_category_name
 	: identifier '(' identifier ')'
 		{
-			$$ = get_category ($1, $3, 1);
+			$$ = get_category ($1, $3->name, 1);
 			if ($$->defined) {
-				error (0, "redefinition of category `%s (%s)'", $1, $3);
+				error (0, "redefinition of category `%s (%s)'",
+					   $1->name, $3->name);
 				$$ = get_category (0, 0, 1);
 			}
 			current_class = &$$->class_type;
@@ -1281,14 +982,14 @@ new_category_name
 class_reference
 	: identifier
 		{
-			emit_class_ref ($1);
+			emit_class_ref ($1->name);
 		}
 	;
 
 category_reference
 	: identifier '(' identifier ')'
 		{
-			emit_category_ref ($1, $3);
+			emit_category_ref ($1->name, $3->name);
 		}
 	;
 
@@ -1296,12 +997,12 @@ category_reference
 protocol_name
 	: identifier
 		{
-			$$ = get_protocol ($1, 0);
+			$$ = get_protocol ($1->name, 0);
 			if ($$) {
-				error (0, "redefinition of %s", $1);
+				error (0, "redefinition of %s", $1->name);
 				$$ = get_protocol (0, 1);
 			} else {
-				$$ = get_protocol ($1, 1);
+				$$ = get_protocol ($1->name, 1);
 			}
 			current_class = &$$->class_type;
 		}
@@ -1411,11 +1112,11 @@ protocolrefs
 protocol_list
 	: identifier
 		{
-			$$ = add_protocol ($<protocol_list>0, $1);
+			$$ = add_protocol ($<protocol_list>0, $1->name);
 		}
 	| protocol_list ',' identifier
 		{
-			$$ = add_protocol ($1, $3);
+			$$ = add_protocol ($1, $3->name);
 		}
 	;
 
@@ -1423,12 +1124,14 @@ ivar_decl_list
 	:	/* */
 		{
 			current_visibility = vis_protected;
-			current_ivars = class_new_ivars ($<class>0);
+			current_symtab = class_new_ivars ($<class>0);
 		}
 	  ivar_decl_list_2
 		{
-			$$ = current_ivars;
-			current_ivars = 0;
+			$$ = current_symtab;
+			current_symtab = $$->parent;
+
+			build_struct ('s', 0, $$, 0);
 		}
 	;
 
@@ -1460,46 +1163,16 @@ ivars
 ivar_declarator
 	: identifier
 		{
-			new_struct_field (current_ivars, $<type>0, $1, current_visibility);
+			$1 = check_redefined ($1);
+			$1->type = $<type>0;
+			$1->visibility = current_visibility;
+			symtab_addsymbol (current_symtab, $1);
 		}
 	;
 
 methoddef
-	: ci methoddecl
-		{
-			$2->instance = $1;
-			$2 = class_find_method (current_class, $2);
-		}
-	  opt_state_expr
-		{ $<op>$ = current_storage; }
-		{ $<string_val>$ = method_name ($2); }
-		{
-			$<def>$ = $2->def = method_def (current_class, $2);
-			current_params = $2->params;
-		}
-	  begin_function statement_block { $<op>$ = $<op>5; } end_function
-		{
-			$2->func = build_code_function ($8, $4, $9);
-			current_func = 0;
-			(void) ($<string_val>6);
-			(void) ($<def>7);
-			(void) ($<op>10);
-		}
-	| ci methoddecl
-		{
-			$2->instance = $1;
-			$2 = class_find_method (current_class, $2);
-		}
-	  '=' '#' const
-		{ $<def>$ = $2->def = method_def (current_class, $2); }
-		{ $<expr>$ = $6; }
-	  builtin_function ';'
-		{
-			$2->func = $9;
-
-			(void) ($<def>7);
-			(void) ($<expr>8);
-		}
+	: ci methoddecl opt_state_expr statement_block	{}
+	| ci methoddecl '=' '#' const ';'				{}
 	;
 
 ci
@@ -1561,7 +1234,7 @@ optparmlist
 	;
 
 unaryselector
-	: selector					{ $$ = new_param ($1, 0, 0); }
+	: selector					{ $$ = new_param ($1->name, 0, 0); }
 	;
 
 keywordselector
@@ -1570,49 +1243,47 @@ keywordselector
 	;
 
 selector
-	: NAME						{ $$ = save_string ($1); }
-	| CLASS_NAME				{ $$ = save_string ($1); }
-	| TYPE						{ $$ = save_string (yytext); }
-	| TYPE_NAME					{ $$ = save_string ($1->name); }
+	: NAME						{ $$ = $1; }
+	| CLASS_NAME				{ $$ = $1; }
+	| TYPE						{ $$ = new_symbol (yytext); }
+	| TYPE_NAME					{ $$ = $1; }
 	| reserved_word
 	;
 
 reserved_word
-	: LOCAL						{ $$ = save_string (yytext); }
-	| RETURN					{ $$ = save_string (yytext); }
-	| WHILE						{ $$ = save_string (yytext); }
-	| DO						{ $$ = save_string (yytext); }
-	| IF						{ $$ = save_string (yytext); }
-	| ELSE						{ $$ = save_string (yytext); }
-	| FOR						{ $$ = save_string (yytext); }
-	| BREAK						{ $$ = save_string (yytext); }
-	| CONTINUE					{ $$ = save_string (yytext); }
-	| SWITCH					{ $$ = save_string (yytext); }
-	| CASE						{ $$ = save_string (yytext); }
-	| DEFAULT					{ $$ = save_string (yytext); }
-	| NIL						{ $$ = save_string (yytext); }
-	| STRUCT					{ $$ = save_string (yytext); }
-	| UNION						{ $$ = save_string (yytext); }
-	| ENUM						{ $$ = save_string (yytext); }
-	| TYPEDEF					{ $$ = save_string (yytext); }
-	| SUPER						{ $$ = save_string (yytext); }
+	: LOCAL						{ $$ = new_symbol (yytext); }
+	| RETURN					{ $$ = new_symbol (yytext); }
+	| WHILE						{ $$ = new_symbol (yytext); }
+	| DO						{ $$ = new_symbol (yytext); }
+	| IF						{ $$ = new_symbol (yytext); }
+	| ELSE						{ $$ = new_symbol (yytext); }
+	| FOR						{ $$ = new_symbol (yytext); }
+	| BREAK						{ $$ = new_symbol (yytext); }
+	| CONTINUE					{ $$ = new_symbol (yytext); }
+	| SWITCH					{ $$ = new_symbol (yytext); }
+	| CASE						{ $$ = new_symbol (yytext); }
+	| DEFAULT					{ $$ = new_symbol (yytext); }
+	| NIL						{ $$ = new_symbol (yytext); }
+	| STRUCT					{ $$ = new_symbol (yytext); }
+	| ENUM						{ $$ = new_symbol (yytext); }
+	| TYPEDEF					{ $$ = new_symbol (yytext); }
 	;
 
 keyworddecl
 	: selector ':' '(' type ')' identifier
-		{ $$ = new_param ($1, $4, $6); }
+		{ $$ = new_param ($1->name, $4, $6->name); }
 	| selector ':' identifier
-		{ $$ = new_param ($1, &type_id, $3); }
+		{ $$ = new_param ($1->name, &type_id, $3->name); }
 	| ':' '(' type ')' identifier
-		{ $$ = new_param ("", $3, $5); }
+		{ $$ = new_param ("", $3, $5->name); }
 	| ':' identifier
-		{ $$ = new_param ("", &type_id, $2); }
+		{ $$ = new_param ("", &type_id, $2->name); }
 	;
 
 obj_expr
 	: obj_messageexpr
 	| SELECTOR '(' selectorarg ')'	{ $$ = selector_expr ($3); }
-	| PROTOCOL '(' identifier ')'	{ $$ = protocol_expr ($3); }
+	| PROTOCOL '(' identifier ')'	{ $$ = protocol_expr ($3->name); }
 	| ENCODE '(' type ')'			{ $$ = encode_expr ($3); }
 	| obj_string /* FIXME string object? */
 	;
@@ -1623,12 +1294,11 @@ obj_messageexpr
 
 receiver
 	: fexpr
-	| CLASS_NAME				{ $$ = new_name_expr ($1); }
-	| SUPER						{ $$ = new_name_expr ("super"); }
+	| CLASS_NAME				{ $$ = new_symbol_expr ($1); }
 	;
 
 messageargs
-	: selector					{ $$ = new_keywordarg ($1, 0); }
+	: selector					{ $$ = new_keywordarg ($1->name, 0); }
 	| keywordarglist
 	;
 
@@ -1642,12 +1312,12 @@ keywordarglist
 	;
 
 keywordarg
-	: selector ':' arg_list		{ $$ = new_keywordarg ($1, $3); }
+	: selector ':' arg_list		{ $$ = new_keywordarg ($1->name, $3); }
 	| ':' arg_list				{ $$ = new_keywordarg ("", $2); }
 	;
 
 selectorarg
-	: selector					{ $$ = new_keywordarg ($1, 0); }
+	: selector					{ $$ = new_keywordarg ($1->name, 0); }
 	| keywordnamelist
 	;
 
@@ -1661,132 +1331,16 @@ keywordnamelist
 	;
 
 keywordname
-	: selector ':'				{ $$ = new_keywordarg ($1, new_nil_expr ()); }
-	| ':'						{ $$ = new_keywordarg ("", new_nil_expr ()); }
+	: selector ':'		{ $$ = new_keywordarg ($1->name, new_nil_expr ()); }
+	| ':'				{ $$ = new_keywordarg ("", new_nil_expr ()); }
 	;
 
 obj_string
-	: '@' STRING_VAL			{ $$ = new_string_expr ($2); }
-	| obj_string '@' STRING_VAL
+	: '@' STRING
 		{
-			$$ = binary_expr ('+', $1, new_string_expr ($3));
+			//FIXME string object
+			$$ = $2;
 		}
 	;
 
 %%
-
-typedef struct def_state_s {
-	struct def_state_s *next;
-	def_t		*def;
-	int			state;
-} def_state_t;
-
-static def_state_t *free_def_states;
-
-static const char *
-ds_get_key (void *_d, void *unused)
-{
-	return ((def_state_t *)_d)->def->name;
-}
-
-static void
-ds_free_key (void *_d, void *unused)
-{
-	def_state_t *d = (def_state_t *)_d;
-	d->next = free_def_states;
-	free_def_states = d;
-}
-
-static void
-scan_scope (hashtab_t *tab, scope_t *scope)
-{
-	def_t      *def;
-	if (scope->type == sc_local)
-		scan_scope (tab, scope->parent);
-	for (def = scope->head; def; def = def->def_next) {
-		if  (def->name && !def->removed) {
-			def_state_t *ds;
-			ALLOC (1024, def_state_t, def_states, ds);
-			ds->def = def;
-			ds->state = def->initialized;
-			Hash_Add (tab, ds);
-		}
-	}
-}
-
-static def_t *
-create_def (type_t *type, const char *name, scope_t *scope,
-			storage_class_t storage)
-{
-	scope_type  st = scope->type;
-	// traditional functions have only the one scope
-	//FIXME should the scope be set to local when the params scope
-	//is created in traditional mode?
-	if (options.traditional && st == sc_params)
-		st = sc_local;
-	if (st == sc_local) {
-		def_t      *def = get_def (0, name, scope, st_none);
-		if (def) {
-			if (def->scope->type == sc_params
-				&& scope->parent->type == sc_params) {
-				warning (0, "local %s shadows param %s", name,
-						 def->name);
-			}
-			if (def->scope == scope && options.warnings.redeclared) {
-				expr_t      e;
-				warning (0, "local %s redeclared", name);
-				e.file = def->file;
-				e.line = def->line;
-				warning (&e, "previously declared here");
-			}
-		}
-	}
-	return get_def (type, name, scope, storage);
-}
-
-hashtab_t *
-save_local_inits (scope_t *scope)
-{
-	hashtab_t  *tab = Hash_NewTable (61, ds_get_key, ds_free_key, 0);
-	scan_scope (tab, scope);
-	return tab;
-}
-
-hashtab_t *
-merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2)
-{
-	hashtab_t  *tab = Hash_NewTable (61, ds_get_key, ds_free_key, 0);
-	def_state_t **ds_list = (def_state_t **)Hash_GetList (dl_1);
-	def_state_t **ds;
-	def_state_t *d;
-	def_state_t *nds;
-
-	for (ds = ds_list; *ds; ds++) {
-		d = Hash_Find (dl_2, (*ds)->def->name);
-		(*ds)->def->initialized = (*ds)->state;
-
-		ALLOC (1024, def_state_t, def_states, nds);
-		nds->def = (*ds)->def;
-		nds->state = (*ds)->state && d->state;
-		Hash_Add (tab, nds);
-	}
-	free (ds_list);
-	return tab;
-}
-
-void
-restore_local_inits (hashtab_t *def_list)
-{
-	def_state_t **ds_list = (def_state_t **)Hash_GetList (def_list);
-	def_state_t **ds;
-
-	for (ds = ds_list; *ds; ds++)
-		(*ds)->def->initialized = (*ds)->state;
-	free (ds_list);
-}
-
-void
-free_local_inits (hashtab_t *def_list)
-{
-	Hash_DelTable (def_list);
-}

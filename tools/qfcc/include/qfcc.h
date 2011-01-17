@@ -94,7 +94,6 @@ extern	pr_info_t	pr;
 
 extern	char		destfile[];
 
-extern	struct scope_s *current_scope;
 extern	struct symtab_s *current_symtab;
 
 #define G_GETSTR(s)		(pr.strings->strings + (s))

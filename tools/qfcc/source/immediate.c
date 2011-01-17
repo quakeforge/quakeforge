@@ -49,6 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "qfcc.h"
 #include "def.h"
+#include "defspace.h"
 #include "emit.h"
 #include "expr.h"
 #include "immediate.h"
@@ -237,7 +238,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 	if (imm) {
 		cn = imm->def;
 		if (def) {
-			free_location (def);
+			defsapce_free_loc (def->space, def->ofs, type_size (def->type));
 			def->ofs = cn->ofs;
 			def->initialized = def->constant = 1;
 			def->nosave = 1;
@@ -263,7 +264,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 		}
 	} else {
 		cn = new_def (type, ".imm", pr.scope);
-		cn->ofs = new_location (type, pr.near_data);
+		cn->ofs = defspace_new_loc (pr.near_data, type_size (type));
 	}
 	cn->initialized = cn->constant = 1;
 	cn->nosave = 1;

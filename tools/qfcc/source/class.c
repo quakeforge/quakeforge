@@ -52,6 +52,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "codespace.h"
 #include "class.h"
 #include "def.h"
+#include "defspace.h"
 #include "emit.h"
 #include "expr.h"
 #include "immediate.h"
@@ -60,15 +61,16 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "reloc.h"
 #include "strpool.h"
 #include "struct.h"
+#include "symtab.h"
 #include "type.h"
 
 static hashtab_t *class_hash;
 static hashtab_t *category_hash;
 static hashtab_t *protocol_hash;
 
-class_t     class_id = {1, "id", 0, 0, 0, 0, 0, 0, &type_id};
-class_t     class_Class = {1, "Class", 0, 0, 0, 0, 0, 0, &type_Class};
-class_t     class_Protocol = {1, "Protocl", 0, 0, 0, 0, 0, 0, &type_Protocol};
+class_t     class_id = {1, "id"};
+class_t     class_Class = {1, "Class"};
+class_t     class_Protocol = {1, "Protocl"};
 
 static const char *
 class_get_key (void *class, void *unused)
@@ -107,7 +109,11 @@ get_class_name (class_type_t *class_type, int pretty)
 void
 class_init (void)
 {
-	class_Class.super_class = get_class ("Object", 1);
+	class_id.type = &type_id;
+	class_Class.type = &type_Class;
+	class_Protocol.type = &type_Protocol;
+
+	class_Class.super_class = get_class (new_symbol ("Object"), 1);
 	class_Class.methods = new_methodlist ();
 }
 
@@ -123,7 +129,7 @@ class_def (class_type_t *class_type, int external)
 			name = va ("_OBJ_CATEGORY_%s_%s",
 					   class_type->c.category->class->name,
 					   class_type->c.category->name);
-			type = type_category;
+			type = &type_category;
 			break;
 		case ct_class:
 			name = va ("_OBJ_CLASS_%s", class_type->c.class->name);
@@ -136,34 +142,29 @@ class_def (class_type_t *class_type, int external)
 }
 
 class_t *
-get_class (const char *name, int create)
+get_class (symbol_t *sym, int create)
 {
 	class_t    *c;
 	type_t      new;
 
 	if (!class_hash)
 		class_hash = Hash_NewTable (1021, class_get_key, 0, 0);
-	if (name) {
-		if (get_def (0, name, current_scope, st_none)
-			|| get_enum (name)) {
-			if (create)
-				error (0, "redefinition of %s", name);
-			return 0;
-		}
-		c = Hash_Find (class_hash, name);
+	if (sym) {
+		c = Hash_Find (class_hash, sym->name);
 		if (c || !create)
 			return c;
 	}
 
 	c = calloc (sizeof (class_t), 1);
-	c->name = name;
+	if (sym)
+		c->name = sym->name;
 	new = *type_Class.t.fldptr.type;
 	new.t.class = c;
 	c->type = find_type (&new);
 	c->methods = new_methodlist ();
 	c->class_type.type = ct_class;
 	c->class_type.c.class = c;
-	if (name)
+	if (sym)
 		Hash_Add (class_hash, c);
 	return c;
 }
@@ -259,10 +260,11 @@ begin_class (class_t *class)
 	EMIT_STRING (meta->name, class->name);
 	meta->info = _PR_CLS_META;
 	meta->instance_size = type_size (type_Class.t.fldptr.type);
+#if 0  //FIXME
 	EMIT_DEF (meta->ivars,
 			  emit_struct (type_Class.t.fldptr.type->t.class->ivars,
 						   "Class"));
-
+#endif
 	class->def->initialized = class->def->constant = 1;
 	class->def->nosave = 1;
 	cls = &G_STRUCT (pr_class_t, class->def->ofs);
@@ -398,9 +400,10 @@ finish_class (class_t *class)
 	EMIT_DEF (meta->methods, emit_methods (class->methods,
 										   class->name, 0));
 
-	cls->instance_size = class->ivars ? type_size (class->ivars->type)
-									  : 0;
+	cls->instance_size = class->ivars ? class->ivars->size : 0;
+#if 0 // FIXME
 	EMIT_DEF (cls->ivars, emit_struct (class->ivars, class->name));
+#endif
 	EMIT_DEF (cls->methods, emit_methods (class->methods,
 										  class->name, 1));
 	if (class->super_class)
@@ -456,19 +459,16 @@ class_access (class_type_t *class_type, class_t *class)
 	return vis_public;
 }
 
-struct_field_t *
+symbol_t *
 class_find_ivar (class_t *class, int vis, const char *name)
 {
-	struct_field_t *ivar;
-	class_t    *c;
+	symbol_t   *ivar;
 
-	for (c = class; c; c = c->super_class) {
-		ivar = struct_find_field (c->ivars, name);
-		if (ivar) {
-			if (ivar->visibility < (visibility_type) vis)
-				goto access_error;
-			return ivar;
-		}
+	ivar = symtab_lookup (class->ivars, name);
+	if (ivar) {
+		if (ivar->visibility > (vis_e) vis)
+			goto access_error;
+		return ivar;
 	}
 	error (0, "%s.%s does not exist", class->name, name);
 	return 0;
@@ -480,20 +480,13 @@ access_error:
 expr_t *
 class_ivar_expr (class_type_t *class_type, const char *name)
 {
-	struct_field_t *ivar;
-	class_t    *c, *class;
+	symbol_t   *ivar;
+	class_t    *class;
 
 	if (!class_type || !(class = extract_class (class_type)))
 		return 0;
 
-	ivar = struct_find_field (class->ivars, name);
-	if (!ivar) {
-		for (c = class->super_class; c; c = c->super_class) {
-			ivar = struct_find_field (c->ivars, name);
-			if (ivar)
-				break;
-		}
-	}
+	ivar = symtab_lookup (class->ivars, name);
 	if (!ivar)
 		return 0;
 	return binary_expr ('.', new_name_expr ("self"), new_name_expr (name));
@@ -616,42 +609,39 @@ category_compare (void *_c1, void *_c2, void *unused)
 		&& strcmp (c1->class->name, c2->class->name) == 0;
 }
 
-struct_t *
+symtab_t *
 class_new_ivars (class_t *class)
 {
-	struct_t   *ivars = new_struct (0);
-	if (class->super_class) {
-		if (!class->super_class->ivars) {
-			error (0, "cannot find interface declaration for `%s', "
-				  "superclass of `%s'", class->super_class->name,
-				  class->name);
-		} else {
-			new_struct_field (ivars, class->super_class->ivars->type, 0,
-							  vis_private);
-		}
-	}
+	symtab_t   *ivars;
+	symtab_t   *super_ivars = 0;
+	
+	if (class->super_class)
+		super_ivars = class->super_class->ivars;
+	ivars = new_symtab (super_ivars, stab_local);
 	return ivars;
 }
 
 void
-class_add_ivars (class_t *class, struct_t *ivars)
+class_add_ivars (class_t *class, symtab_t *ivars)
 {
 	class->ivars = ivars;
 }
 
 void
-class_check_ivars (class_t *class, struct_t *ivars)
+class_check_ivars (class_t *class, symtab_t *ivars)
 {
+#if 0 //FIXME
 	if (!struct_compare_fields (class->ivars, ivars)) {
 		//FIXME right option?
 		if (options.warnings.interface_check)
 			warning (0, "instance variable missmatch for %s", class->name);
 	}
+#endif
 	class->ivars = ivars;
 }
 
 category_t *
-get_category (const char *class_name, const char *category_name, int create)
+get_category (symbol_t *class_name, const char *category_name, int create)
 {
 	category_t *category;
 	class_t    *class;
@@ -663,7 +653,7 @@ get_category (const char *class_name, const char *category_name, int create)
 	}
 	class = get_class (class_name, 0);
 	if (!class) {
-		error (0, "undefined class %s", class_name);
+		error (0, "undefined class %s", class_name->name);
 		return 0;
 	}
 	if (class_name && category_name) {
@@ -746,13 +736,21 @@ class_pointer_def (class_t *class)
 void
 class_finish_module (void)
 {
+	static struct_def_t symtab_struct[] = {
+		{"sel_ref_cnt",	&type_integer},
+		{"refs",		&type_SEL},
+		{"cls_def_cnt",	&type_integer},
+		{"cat_def_cnt",	&type_integer},
+		{"defs",		0},				// type will be filled in at run time
+		{0, 0}
+	};
 	class_t   **classes = 0, **cl;
 	category_t **categories = 0, **ca;
 	int         num_classes = 0;
 	int         num_categories = 0;
-	int         i;
 	def_t      *selector_table_def;
-	struct_t   *symtab_type;
+	type_t     *symtab_type;
+	//symbol_t   *symtab_sym;
 	def_t      *symtab_def;
 	pr_symtab_t *symtab;
 	pointer_t   *def_ptr;
@@ -778,16 +776,10 @@ class_finish_module (void)
 	}
 	if (!selector_table_def && !num_classes && !num_categories)
 		return;
-	symtab_type = get_struct (0, 1);
-	init_struct (symtab_type, new_type (), str_struct, 0);
-	new_struct_field (symtab_type, &type_integer, "sel_ref_cnt", vis_public);
-	new_struct_field (symtab_type, &type_SEL, "refs", vis_public);
-	new_struct_field (symtab_type, &type_integer, "cls_def_cnt", vis_public);
-	new_struct_field (symtab_type, &type_integer, "cat_def_cnt", vis_public);
-	for (i = 0; i < num_classes + num_categories; i++)
-		new_struct_field (symtab_type, &type_pointer, 0, vis_public);
-	symtab_def = get_def (symtab_type->type, "_OBJ_SYMTAB", pr.scope,
-						  st_static);
+	symtab_struct[4].type = array_type (&type_pointer,
+										num_classes + num_categories);
+	symtab_type = make_structure (0, 's', symtab_struct, 0)->type;
+	symtab_def = get_def (symtab_type, "_OBJ_SYMTAB", pr.scope, st_static);
 	symtab_def->initialized = symtab_def->constant = 1;
 	symtab_def->nosave = 1;
 	symtab = &G_STRUCT (pr_symtab_t, symtab_def->ofs);
@@ -815,11 +807,11 @@ class_finish_module (void)
 		}
 	}
 
-	module_def = get_def (type_module, "_OBJ_MODULE", pr.scope, st_static);
+	module_def = get_def (&type_module, "_OBJ_MODULE", pr.scope, st_static);
 	module_def->initialized = module_def->constant = 1;
 	module_def->nosave = 1;
 	module = &G_STRUCT (pr_module_t, module_def->ofs);
-	module->size = type_size (type_module);
+	module->size = type_size (&type_module);
 	EMIT_STRING (module->name, G_GETSTR (pr.source_file));
 	EMIT_DEF (module->symtab, symtab_def);
 
@@ -949,20 +941,23 @@ emit_protocol (protocol_t *protocol)
 def_t *
 emit_protocol_list (protocollist_t *protocols, const char *name)
 {
+	static struct_def_t proto_list_struct[] = {
+		{"next",	&type_pointer},
+		{"count",	&type_integer},
+		{"list",	0},				// type will be filled in at run time
+		{0, 0},
+	};
+	type_t     *proto_list_type;
 	def_t      *proto_list_def;
-	struct_t   *protocol_list;
+	//symbol_t   *proto_list_sym;
 	pr_protocol_list_t *proto_list;
 	int         i;
 
 	if (!protocols)
 		return 0;
-	protocol_list = get_struct (0, 1);
-	init_struct (protocol_list, new_type (), str_struct, 0);
-	new_struct_field (protocol_list, &type_pointer, "next", vis_public);
-	new_struct_field (protocol_list, &type_integer, "count", vis_public);
-	for (i = 0; i < protocols->count; i++)
-		new_struct_field (protocol_list, &type_pointer, 0, vis_public);
-	proto_list_def = get_def (&type_Protocol,
+	proto_list_struct[2].type = array_type (&type_pointer, protocols->count);
+	proto_list_type = make_structure (0, 's', proto_list_struct, 0)->type;
+	proto_list_def = get_def (proto_list_type,
 							  va ("_OBJ_PROTOCOLS_%s", name),
 							  pr.scope, st_static);
 	proto_list_def->initialized = proto_list_def->constant = 1;
@@ -985,19 +980,31 @@ clear_classes (void)
 	if (category_hash)
 		Hash_FlushTable (category_hash);
 	if (class_hash)
-		class_Class.super_class = get_class ("Object", 1);
+		class_Class.super_class = get_class (new_symbol ("Object"), 1);
 }
 
-void
-class_to_struct (class_t *class, struct_t *strct)
+symtab_t *
+class_to_struct (class_t *class, symtab_t *symtab)
 {
+	symtab_t   *parent = symtab->parent;
+	symtab_t   *ivars = class->ivars;
+	symtab_t   *ancestor;
 
-	struct_field_t *s = class->ivars->struct_head;
+	if (!ivars)
+		return symtab;
 
-	if (class->super_class) {
-		class_to_struct (class->super_class, strct);
-		s = s->next;
-	}
-	for (; s; s = s->next)
-		new_struct_field (strct, s->type, s->name, vis_public);
+	// disconnect the struct symbol table from the scope
+	symtab->parent = 0;
+	// find the ancestor of the ivars symbol table chain
+	for (ancestor = ivars; ancestor->parent; ancestor = ancestor->parent)
+		;
+	// connect the ivars symbol table chain to the struct symbol table
+	ancestor->parent = symtab;
+	// create a new struct symbol table from the ivars symbol table chain
+	symtab = symtab_flat_copy (ivars, 0);
+	// disconnect the ivars symbol table chain
+	ancestor->parent = 0;
+	// connect the new struct symbol table to the scope
+	symtab->parent = parent;
+	return symtab;
 }

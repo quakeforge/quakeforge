@@ -52,7 +52,6 @@ typedef enum {
 	ex_def,			///< non-temporary variable (::def_t)
 	ex_symbol,		///< non-temporary variable (::symbol_t)
 	ex_temp,		///< temporary variable (::ex_temp_t)
-	ex_name,		///< unresolved name (expr_t::e::string_val)
 
 	ex_nil,			///< umm, nil, null. nuff said (0 of any type)
 	ex_string,		///< string constant (expr_t::e::string_val)
@@ -355,12 +354,10 @@ expr_t *new_temp_def_expr (struct type_s *type);
 */
 expr_t *new_nil_expr (void);
 
-/** Create a new name expression node.
+/**	Create a new symbol expression node from a name.
 
-	Name expression nodes represent as yet unresolved names.
-
-	\param name		The name being represented.
-	\return			The new name expression node (expr_t::e::string_val).
+	\param name		The name for the symbol.
+	\return			The new symbol expression.
 */
 expr_t *new_name_expr (const char *name);
 
@@ -570,15 +567,6 @@ expr_t *inc_users (expr_t *e);
 */
 expr_t *dec_users (expr_t *e);
 
-/**	Convert a name to an expression of the appropriate type.
-
-	Converts the expression in-place. If the exprssion is not a name
-	expression (ex_name), no converision takes place.
-
-	\param e		The expression to convert.
-*/
-void convert_name (expr_t *e);
-
 expr_t *append_expr (expr_t *block, expr_t *e);
 
 void print_expr (expr_t *e);
@@ -610,6 +598,14 @@ expr_t *array_expr (expr_t *array, expr_t *index);
 expr_t *pointer_expr (expr_t *pointer);
 expr_t *address_expr (expr_t *e1, expr_t *e2, struct type_s *t);
 expr_t *build_if_statement (expr_t *test, expr_t *s1, expr_t *s2);
+expr_t *build_while_statement (expr_t *test, expr_t *statement,
+							   expr_t *break_label, expr_t *continue_label);
+expr_t *build_do_while_statement (expr_t *statement, expr_t *test,
+								  expr_t *break_label, expr_t *continue_label);
+expr_t *build_for_statement (expr_t *init, expr_t *test, expr_t *next,
+							 expr_t *statement,
+							 expr_t *break_label, expr_t *continue_label);
+expr_t *build_state_expr (expr_t *frame, expr_t *think, expr_t *step);
 expr_t *assign_expr (expr_t *e1, expr_t *e2);
 expr_t *cast_expr (struct type_s *t, expr_t *e);
 

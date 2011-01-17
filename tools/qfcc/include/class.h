@@ -52,7 +52,7 @@ typedef struct class_s {
 	const char *name;
 	struct class_s *super_class;
 	struct category_s *categories;
-	struct struct_s *ivars;
+	struct symtab_s *ivars;
 	struct methodlist_s *methods;
 	struct protocollist_s *protocols;
 	struct def_s *def;
@@ -92,35 +92,35 @@ extern class_type_t *current_class;
 struct expr_s;
 struct method_s;
 struct protocol_s;
+struct symbol_s;
 
 class_t *extract_class (class_type_t *class_type);
 const char *get_class_name (class_type_t *class_type, int pretty);
 struct def_s *class_def (class_type_t *class_type, int external);
 void class_init (void);
-class_t *get_class (const char *name, int create);
+class_t *get_class (struct symbol_s *sym, int create);
 void class_add_methods (class_t *class, struct methodlist_s *methods);
 void class_add_protocols (class_t *class, protocollist_t *protocols);
-struct struct_s *class_new_ivars (class_t *class);
-void class_add_ivars (class_t *class, struct struct_s *ivars);
-void class_check_ivars (class_t *class, struct struct_s *ivars);
+struct symtab_s *class_new_ivars (class_t *class);
+void class_add_ivars (class_t *class, struct symtab_s *ivars);
+void class_check_ivars (class_t *class, struct symtab_s *ivars);
 void class_begin (class_type_t *class_type);
 void class_finish (class_type_t *class_type);
 int class_access (class_type_t *current_class, class_t *class);
-struct struct_field_s *class_find_ivar (class_t *class, int vis,
-										const char *name);
+struct symbol_s *class_find_ivar (class_t *class, int vis, const char *name);
 struct expr_s *class_ivar_expr (class_type_t *class_type, const char *name);
 struct method_s *class_find_method (class_type_t *class_type,
 									struct method_s *method);
 struct method_s *class_message_response (class_t *class, int class_msg,
 										 struct expr_s *sel);
 struct def_s *class_pointer_def (class_t *class_type);
-category_t *get_category (const char *class_name, const char *category_name,
-						  int create);
+category_t *get_category (struct symbol_s *class_name,
+						  const char *category_name, int create);
 void category_add_methods (category_t *category, struct methodlist_s *methods);
 void category_add_protocols (category_t *category, protocollist_t *protocols);
 void class_finish_module (void);
 
-void class_to_struct (class_t *class, struct struct_s *strct);
+struct symtab_s *class_to_struct (class_t *class, struct symtab_s *symtab);
 void emit_class_ref (const char *class_name);
 void emit_category_ref (const char *class_name, const char *category_name);
 

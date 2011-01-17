@@ -6,6 +6,7 @@
 #include "codespace.h"
 #include "debug.h"
 #include "def.h"
+#include "defspace.h"
 #include "emit.h"
 #include "function.h"
 #include "immediate.h"

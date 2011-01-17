@@ -53,6 +53,8 @@ typedef struct ty_array_s {
 typedef enum {
 	ty_none,				///< func/field/pointer or not used
 	ty_struct,
+	ty_union,
+	ty_enum,
 	ty_array,
 	ty_class,
 } ty_type_e;
@@ -66,17 +68,11 @@ typedef struct type_s {
 		ty_func_t   func;
 		ty_fldptr_t fldptr;
 		ty_array_t  array;
-		struct struct_s *strct;
+		struct symtab_s *symtab;
 		struct class_s *class;
 	} t;
 	struct type_s *next;
 } type_t;
-
-typedef struct typedef_s {
-	struct typedef_s *next;
-	const char *name;
-	type_t     *type;
-} typedef_t;
 
 extern	type_t	type_invalid;
 extern	type_t	type_void;
@@ -101,23 +97,22 @@ extern  type_t  type_supermsg;
 extern	type_t	type_obj_exec_class;
 extern	type_t	type_Method;
 extern	type_t	type_method_description;
-extern	type_t	*type_category;
-extern	type_t	*type_ivar;
-extern	type_t	*type_module;
+extern	type_t	type_category;
+extern	type_t	type_ivar;
+extern	type_t	type_module;
 extern	type_t	type_Super;
 extern	type_t	type_va_list;
 extern	type_t	type_param;
 extern	type_t	type_zero;
 
-extern struct struct_s *vector_struct;
-extern struct struct_s *quaternion_struct;
+extern struct symtab_s *vector_struct;
+extern struct symtab_s *quaternion_struct;
 
 struct dstring_s;
 
 type_t *new_type (void);
 type_t *find_type (type_t *new);
 void new_typedef (const char *name, type_t *type);
-typedef_t *get_typedef (const char *name);
 type_t *field_type (type_t *aux);
 type_t *pointer_type (type_t *aux);
 type_t *array_type (type_t *aux, int size);

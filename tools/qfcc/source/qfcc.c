@@ -73,6 +73,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "cpp.h"
 #include "debug.h"
 #include "def.h"
+#include "defspace.h"
 #include "emit.h"
 #include "expr.h"
 #include "function.h"
@@ -342,7 +343,6 @@ InitData (void)
 	pr.near_data->max_size = 65536;
 	pr.near_data->grow = 0;
 	pr.scope = new_scope (sc_global, pr.near_data, 0);
-	current_scope = pr.scope;
 
 	pr.entity_data = new_defspace ();
 
@@ -647,8 +647,8 @@ finish_compilation (void)
 			}
 			df->parm_start = pr.near_data->size;
 		} else {
-			df->parm_start = new_location_size (f->scope->space->size,
-												pr.near_data);
+			df->parm_start = defspace_new_loc (pr.near_data,
+											   f->scope->space->size);
 			num_localdefs += f->scope->space->size;
 		}
 		for (def = f->scope->head; def; def = def->def_next) {
@@ -660,7 +660,7 @@ finish_compilation (void)
 	}
 	if (options.code.local_merging) {
 		int         ofs;
-		for (ofs = new_location_size (num_localdefs, pr.near_data);
+		for (ofs = defspace_new_loc (pr.near_data, num_localdefs);
 			 ofs < pr.near_data->size; ofs++)
 			G_INT (ofs) = 0;
 	}
@@ -726,9 +726,6 @@ compile_to_obj (const char *file, const char *obj)
 	clear_defs ();
 	clear_immediates ();
 	clear_selectors ();
-	clear_structs ();
-	clear_enums ();
-	clear_typedefs ();
 	chain_initial_types ();
 	begin_compilation ();
 	pr.source_file = ReuseString (strip_path (file));

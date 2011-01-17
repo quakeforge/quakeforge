@@ -108,7 +108,8 @@ copy_symbol (symbol_t *symbol)
 	symbol_t   *sym = new_symbol (symbol->name);
 	sym->type = symbol->type;
 	sym->params = copy_params (symbol->params);
-	sym->is_typedef = symbol->is_typedef;
+	sym->sy_type = symbol->sy_type;
+	sym->s = symbol->s;
 	return sym;
 }
 

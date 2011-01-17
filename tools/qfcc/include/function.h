@@ -39,27 +39,28 @@
 
 typedef struct overloaded_function_s {
 	struct overloaded_function_s *next;
-	const char *name;
-	const char *full_name;
-	struct type_s *type;
-	int         overloaded;
-	string_t    file;
-	int         line;
+	const char *name;				///< source level name of function
+	const char *full_name;			///< progs name of function, with type
+									///< encoding
+	struct type_s *type;			///< type of this function
+	int         overloaded;			///< is this function overloaded
+	string_t    file;				///< source file of the function
+	int         line;				///< source line of this function
 } overloaded_function_t;
 
 typedef struct function_s {
 	struct function_s  *next;
-	pr_auxfunction_t   *aux;		// debug info;
-	int                 builtin;	// if non 0, call an internal function
-	int                 code;		// first statement
+	pr_auxfunction_t   *aux;		///< debug info;
+	int                 builtin;	///< if non 0, call an internal function
+	int                 code;		///< first statement
 	int                 function_num;
-	string_t            s_file;		// source file with definition
+	string_t            s_file;		///< source file with definition
 	string_t            s_name;
 	struct def_s       *def;
 	struct scope_s     *scope;
 	struct reloc_s     *refs;
 	struct expr_s      *var_init;
-	const char         *name;
+	const char         *name;		///< nice name for __PRETTY_FUNCTION__
 } function_t;
 
 extern function_t *current_func;
@@ -98,7 +99,8 @@ function_t *begin_function (struct def_s *def, const char *nicename,
 							param_t *params);
 function_t *build_code_function (function_t *f, struct expr_s *state_expr,
 								 struct expr_s *statements);
-function_t *build_builtin_function (struct def_s *def, struct expr_s *bi_val);
+function_t *build_builtin_function (struct def_s *def, struct expr_s *bi_val,
+									param_t *params);
 void build_function (function_t *f);
 void finish_function (function_t *f);
 void emit_function (function_t *f, struct expr_s *e);

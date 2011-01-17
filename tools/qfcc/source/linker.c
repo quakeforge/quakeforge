@@ -57,6 +57,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "codespace.h"
 #include "def.h"
+#include "defspace.h"
 #include "emit.h"
 #include "expr.h"
 #include "immediate.h"
@@ -666,7 +667,7 @@ define_def (const char *name, etype_t basic_type, const char *full_type,
 	}
 	d.flags = QFOD_GLOBAL | flags;
 
-	defspace_adddata (data, val, size);
+	defspace_add_data (data, val, size);
 	defgroup_add_defs (&global_defs, &d, 1);
 	process_def (global_defs.defs + global_defs.num_defs - 1);
 
@@ -725,9 +726,9 @@ linker_add_qfo (qfo_t *qfo)
 	entity_base = entity->size;
 
 	codespace_addcode (code, qfo->code, qfo->code_size);
-	defspace_adddata (data, qfo->data, qfo->data_size);
-	defspace_adddata (far_data, qfo->far_data, qfo->far_data_size);
-	defspace_adddata (entity, 0, qfo->entity_fields);
+	defspace_add_data (data, qfo->data, qfo->data_size);
+	defspace_add_data (far_data, qfo->far_data, qfo->far_data_size);
+	defspace_add_data (entity, 0, qfo->entity_fields);
 	add_strings (qfo);
 	add_relocs (qfo);
 	add_funcs (qfo);
@@ -898,7 +899,7 @@ linker_finish (void)
 				entity_base = 0;
 				define_def (".this", ev_field, "F@", QFOD_NOSAVE, 1,
 							entity->size);
-				defspace_adddata (entity, 0, 1);
+				defspace_add_data (entity, 0, 1);
 				did_this = 1;
 			}
 		}

@@ -44,6 +44,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "codespace.h"
 #include "def.h"
+#include "defspace.h"
 #include "emit.h"
 #include "expr.h"
 #include "function.h"

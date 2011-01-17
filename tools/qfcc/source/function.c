@@ -51,6 +51,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "codespace.h"
 #include "debug.h"
 #include "def.h"
+#include "defspace.h"
 #include "emit.h"
 #include "expr.h"
 #include "function.h"
@@ -279,7 +280,7 @@ find_function (expr_t *fexpr, expr_t *params)
 	type_t      type;
 	void      **funcs, *dummy_p = &dummy;
 
-	if (fexpr->type != ex_name)
+	if (fexpr->type != ex_symbol)
 		return fexpr;
 
 	memset (&type, 0, sizeof (type));
@@ -296,7 +297,7 @@ find_function (expr_t *fexpr, expr_t *params)
 		if (e->type == ex_error)
 			return e;
 	}
-	funcs = Hash_FindList (function_map, fexpr->e.string_val);
+	funcs = Hash_FindList (function_map, fexpr->e.symbol->name);
 	if (!funcs)
 		return fexpr;
 	for (func_count = 0; funcs[func_count]; func_count++)
@@ -309,14 +310,14 @@ find_function (expr_t *fexpr, expr_t *params)
 	dummy.type = find_type (&type);
 
 	qsort (funcs, func_count, sizeof (void *), func_compare);
-	dummy.full_name = save_string (va ("%s|%s", fexpr->e.string_val,
+	dummy.full_name = save_string (va ("%s|%s", fexpr->e.symbol->name,
 									   encode_params (&type)));
 	dummy_p = bsearch (&dummy_p, funcs, func_count, sizeof (void *),
 					   func_compare);
 	if (dummy_p) {
 		f = (overloaded_function_t *) *(void **) dummy_p;
 		if (f->overloaded)
-			fexpr->e.string_val = f->full_name;
+			fexpr->e.symbol->name = f->full_name;
 		free (funcs);
 		return fexpr;
 	}
@@ -360,7 +361,7 @@ find_function (expr_t *fexpr, expr_t *params)
 		return fexpr;
 	if (best) {
 		if (best->overloaded)
-			fexpr->e.string_val = best->full_name;
+			fexpr->e.symbol->name = best->full_name;
 		free (funcs);
 		return fexpr;
 	}
@@ -507,7 +508,7 @@ build_code_function (function_t *f, expr_t *state_expr, expr_t *statements)
 }
 
 function_t *
-build_builtin_function (def_t *def, expr_t *bi_val)
+build_builtin_function (def_t *def, expr_t *bi_val, param_t *params)
 {
 	function_t *f;
 
@@ -519,11 +520,12 @@ build_builtin_function (def_t *def, expr_t *bi_val)
 		error (bi_val, "%s redefined", def->name);
 		return 0;
 	}
-
 	if (bi_val->type != ex_integer && bi_val->type != ex_float) {
 		error (bi_val, "invalid constant for = #");
 		return 0;
 	}
+	if (def->external)
+		return 0;
 
 	f = new_function (def, 0);
 	add_function (f);
@@ -533,6 +535,10 @@ build_builtin_function (def_t *def, expr_t *bi_val)
 	reloc_def_func (f, def->ofs);
 	build_function (f);
 	finish_function (f);
+
+	// for debug info
+	build_scope (f, f->def, params);
+	flush_scope (f->scope, 1);
 	return f;
 }
 
@@ -580,7 +586,7 @@ emit_function (function_t *f, expr_t *e)
 		f->var_init = f->var_init->next;
 	}
 
-	current_scope = f->scope;
+	//FIXME current_scope = f->scope;
 	while (e) {
 #ifdef DUMP_EXPR
 		printf ("%d ", pr.source_line);
@@ -600,8 +606,8 @@ emit_function (function_t *f, expr_t *e)
 		else
 			emit_statement (0, op_done, 0, 0, 0);
 	}
-	flush_scope (current_scope, 0);
-	current_scope = pr.scope;
+	//FIXME flush_scope (current_scope, 0);
+	//FIXME current_scope = pr.scope;
 	reset_tempdefs ();
 
 #ifdef DUMP_EXPR

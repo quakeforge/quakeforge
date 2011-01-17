@@ -54,298 +54,142 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "immediate.h"
 #include "qfcc.h"
 #include "reloc.h"
+#include "strpool.h"
 #include "struct.h"
+#include "symtab.h"
 #include "type.h"
 
-static hashtab_t *structs;
-static hashtab_t *enums;
-
-static const char *
-structs_get_key (void *s, void *unused)
+static symbol_t *
+find_tag (ty_type_e ty, symbol_t *tag, type_t *type)
 {
-	return ((struct_t *) s)->name;
-}
+	const char *tag_name;
+	symbol_t   *sym;
+	static int  tag_num;
 
-static const char *
-struct_field_get_key (void *f, void *unused)
-{
-	return ((struct_field_t *) f)->name;
-}
-
-static const char *
-enums_get_key (void *e, void *unused)
-{
-	return ((enum_t *) e)->name;
-}
-
-struct_field_t *
-new_struct_field (struct_t *strct, type_t *type, const char *name,
-				  visibility_type visibility)
-{
-	struct_field_t *field;
-
-	if (!strct)
-		return 0;
-	field = calloc (sizeof (struct_field_t), 1);
-	field->visibility = visibility;
-	if (name)
-		field->name = save_string (name);
-	field->type = type;
-	if (strct->stype == str_union) {
-		int         size = type_size (type);
-		field->offset = 0;
-		if (size > strct->size)
-			strct->size = size;
-	} else {
-		field->offset = strct->size;
-		strct->size += type_size (type);
+	if (tag)
+		tag_name = va ("tag %s", tag->name);
+	else
+		tag_name = va ("tag .%s.%d.%d",
+					   G_GETSTR (pr.source_file), pr.source_line, tag_num++);
+	sym = symtab_lookup (current_symtab, tag_name);
+	if (sym) {
+		if (sym->table == current_symtab && sym->type->ty != ty)
+			error (0, "%s defined as wrong kind of tag", tag->name);
+		if (sym->type->ty == ty)
+			return sym;
 	}
-	field->next = 0;
-	*strct->struct_tail = field;
-	strct->struct_tail = &field->next;
-	if (name)
-		Hash_Add (strct->struct_fields, field);
-	return field;
+	if (!type)
+		type = new_type ();
+	sym = new_symbol (tag_name);
+	sym->type = type;
+	sym->type->type = ev_invalid;
+	sym->type->ty = ty;
+	return sym;
 }
 
-struct_field_t *
-struct_find_field (struct_t *strct, const char *name)
+symbol_t *
+find_struct (int su, symbol_t *tag, type_t *type)
 {
-	if (!structs || !strct)
-		return 0;
-	return Hash_Find (strct->struct_fields, name);
+	ty_type_e   ty = ty_struct;
+
+	if (su == 'u')
+		ty = ty_union;
+
+	return find_tag (ty, tag, type);
 }
 
-type_t *
-init_struct (struct_t *strct, type_t *type, struct_type stype,
-			 const char *name)
+symbol_t *
+build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 {
-	if (name)
-		strct->name = save_string (name);
-	strct->type = type;
-	strct->type->type = ev_invalid;
-	strct->type->ty = ty_struct;
-	strct->struct_tail = &strct->struct_head;
-	strct->struct_fields = Hash_NewTable (61, struct_field_get_key, 0, 0);
-	strct->type->t.strct = strct;
-	strct->stype = stype;
-	if (name) {
-		strct->type->name = strct->name;
-		Hash_Add (structs, strct);
+	symbol_t   *sym = find_struct (su, tag, type);
+
+	symtab->parent = 0;		// disconnect struct's symtab from parent scope
+
+	if (sym->table == current_symtab && sym->type->t.symtab) {
+		error (0, "%s defined as wrong kind of tag", tag->name);
+		return sym;
 	}
-	return strct->type;
-}
-
-struct_t *
-get_struct (const char *name, int create)
-{
-	struct_t   *s;
-
-	if (!structs)
-		structs = Hash_NewTable (16381, structs_get_key, 0, 0);
-	if (name) {
-		s = Hash_Find (structs, name);
-		if (s || !create)
-			return s;
-	}
-	s = calloc (sizeof (struct_t), 1);
-	if (name)
-		s->name = save_string (name);
-	s->return_addr = __builtin_return_address (0);
-	if (name)
-		Hash_Add (structs, s);
-	return s;
-}
-
-int
-struct_compare_fields (struct_t *s1, struct_t *s2)
-{
-	struct_field_t *f1 = s1->struct_head;
-	struct_field_t *f2 = s2->struct_head;
-
-	while (f1 && f2) {
-		if (f1->name != f2->name)
-			if (!f1->name || !f2->name
-				|| strcmp (f1->name, f2->name)
-				|| f1->type != f2->type)
-				return 0;
-		f1 = f1->next;
-		f2 = f2->next;
-	}
-	return !((!f1) ^ !(f2));
-}
-
-static struct_t *
-start_struct (const char *name, struct_type stype)
-{
-	struct_t   *strct = get_struct (name, 1);
-	if (strct->struct_head) {
-		error (0, "%s redeclared", name);
-		goto err;
-	}
-	if (strct->stype != str_none && strct->stype != stype) {
-		error (0, "%s defined as wrong kind of tag", name);
-		goto err;
-	}
-	if (!strct->type)
-		init_struct (strct, new_type (), stype, 0);
-	return strct;
-err:
-	strct = get_struct (0, 0);
-	init_struct (strct, new_type (), stype, 0);
-	return strct;
-}
-
-struct_t *
-new_struct (const char *name)
-{
-	return start_struct (name, str_struct);
-}
-
-struct_t *
-new_union (const char *name)
-{
-	return start_struct (name, str_union);
-}
-
-static struct_t *
-check_struct (const char *name, struct_type stype)
-{
-	struct_t   *strct = get_struct (name, 0);
-
-	if (!strct)
-		return start_struct (name, stype);
-	if (strct->stype != stype) {
-		error (0, "%s defined as wrong kind of tag", name);
-		strct = get_struct (0, 0);
-		init_struct (strct, new_type (), stype, 0);
-	}
-	return strct;
-}
-
-struct_t *
-decl_struct (const char *name)
-{
-	return check_struct (name, str_struct);
-}
-
-struct_t *
-decl_union (const char *name)
-{
-	return check_struct (name, str_union);
-}
-
-def_t *
-emit_struct(struct_t *strct, const char *name)
-{
-	struct_field_t *field;
-	int         i, count;
-	def_t      *ivars_def;
-	pr_ivar_list_t *ivars;
-	struct_t   *ivar_list;
-	dstring_t  *encoding = dstring_newstr ();
-	dstring_t  *ivars_name = dstring_newstr ();
-
-	if (!strct)
-		return 0;
-	for (count = 0, field = strct->struct_head; field; field = field->next)
-		if (field->name)
-			count++;
-	ivar_list = new_struct (0);
-	new_struct_field (ivar_list, &type_integer, "ivar_count", vis_public);
-	for (i = 0; i < count; i++)
-		new_struct_field (ivar_list, type_ivar, 0, vis_public);
-	dsprintf (ivars_name, "_OBJ_INSTANCE_VARIABLES_%s", name);
-	ivars_def = get_def (ivar_list->type, ivars_name->str, pr.scope, st_none);
-	if (ivars_def)
-		goto done;
-	ivars_def = get_def (ivar_list->type, ivars_name->str, pr.scope,
-						 st_static);
-	ivars_def->initialized = ivars_def->constant = 1;
-	ivars_def->nosave = 1;
-	ivars = &G_STRUCT (pr_ivar_list_t, ivars_def->ofs);
-	ivars->ivar_count = count;
-	for (i = 0, field = strct->struct_head; field; field = field->next) {
-		if (!field->name)
+	for (sym = symtab->symbols; sym; sym = sym->next) {
+		if (sym->sy_type != sy_var)
 			continue;
-		encode_type (encoding, field->type);
-		EMIT_STRING (ivars->ivar_list[i].ivar_name, field->name);
-		EMIT_STRING (ivars->ivar_list[i].ivar_type, encoding->str);
-		ivars->ivar_list[i].ivar_offset = field->offset;
-		dstring_clearstr (encoding);
-		i++;
-	}
-  done:
-	dstring_delete (encoding);
-	dstring_delete (ivars_name);
-	return ivars_def;
-}
-
-void
-clear_structs (void)
-{
-	if (structs)
-		Hash_FlushTable (structs);
-}
-
-void
-process_enum (expr_t *enm)
-{
-	expr_t     *e = enm;
-	expr_t     *c_enum = 0;
-	int         enum_val = 0;
-
-	if (!enums) {
-		enums = Hash_NewTable (16381, enums_get_key, 0, 0);
-	}
-	while (e) {
-		expr_t     *t = e->next;
-		e->next = c_enum;
-		c_enum = e;
-		e = t;
-	}
-	for (e = c_enum; e; e = e->next) {
-		expr_t     *name = e;
-		expr_t     *val = 0;
-		enum_t     *new_enum;
-
-		if (name->type == ex_expr) {
-			val = name->e.expr.e2;
-			name = name->e.expr.e1;
+		if (su == 's') {
+			sym->s.value = symtab->size;
+			symtab->size += type_size (sym->type);
+		} else {
+			int         size = type_size (sym->type);
+			if (size > symtab->size)
+				symtab->size = size;
 		}
-		if (get_enum (name->e.string_val)
-			|| get_def (NULL, name->e.string_val, pr.scope, st_none)) {
-			error (name, "%s redeclared", name->e.string_val);
-			continue;
-		}
-		if (val)
-			enum_val = val->e.integer_val;
-		new_enum = malloc (sizeof (enum_t));
-		if (!new_enum)
-			Sys_Error ("out of memory");
-		new_enum->name = name->e.string_val;
-		new_enum->value = enum_val++;
-		Hash_Add (enums, new_enum);
-		//printf ("%s = %d\n", new_enum->name, new_enum->value.e.integer_val);
 	}
+	sym->sy_type = sy_type;
+	sym->type->t.symtab = symtab;
+	return sym;
 }
 
-expr_t *
-get_enum (const char *name)
+symbol_t *
+find_enum (symbol_t *tag)
 {
-	enum_t     *e;
+	return find_tag (ty_enum, tag, 0);
+}
 
-	if (!enums)
-		return 0;
-	e = (enum_t *) Hash_Find (enums, name);
-	if (!e)
-		return 0;
-	return new_integer_expr (e->value);
+symtab_t *
+start_enum (symbol_t *sym)
+{
+	if (sym->table == current_symtab && sym->type->t.symtab) {
+		error (0, "%s defined as wrong kind of tag", sym->name);
+		sym = find_enum (0);
+	}
+	sym->type->t.symtab = new_symtab (current_symtab, stab_local);
+	return sym->type->t.symtab;
 }
 
 void
-clear_enums (void)
+add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 {
-	if (enums)
-		Hash_FlushTable (enums);
+	type_t     *enum_type = enm->type;
+	symtab_t   *enum_tab;
+	int         value;
+
+	if (name->table == current_symtab)
+		error (0, "%s redefined", name->name);
+	if (name->table)
+		name = new_symbol (name->name);
+	name->sy_type = sy_const;
+	name->type = enum_type;
+	enum_tab = enum_type->t.symtab;
+	value = 0;
+	if (*enum_tab->symtail)
+		value = ((symbol_t *)(*enum_tab->symtail))->s.value + 1;
+	if (val) {
+		val = constant_expr (val);
+		if (val->type < ex_nil)
+			error (val, "non-constant initializer");
+		else if (val->type != ex_integer)
+			error (val, "invalid initializer type");
+		else
+			value = val->e.integer_val;
+	}
+	name->s.value = value;
+	symtab_addsymbol (enum_tab, name);
+}
+
+symbol_t *
+make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
+{
+	symtab_t   *strct;
+	symbol_t   *field;
+	symbol_t   *sym;
+	
+	if (su == 'u')
+		strct = new_symtab (0, stab_union);
+	else
+		strct = new_symtab (0, stab_struct);
+	while (defs->name) {
+		field = new_symbol_type (defs->name, defs->type);
+		if (!symtab_addsymbol (strct, field))
+			internal_error (0, "duplicate symbol: %s", defs->name);
+		defs++;
+	}
+	sym = build_struct (su, new_symbol (name), strct, type);
+	return sym;
 }

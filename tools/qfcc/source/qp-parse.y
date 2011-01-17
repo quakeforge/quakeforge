@@ -150,19 +150,9 @@ program
 	  subprogram_declarations
 	  compound_statement '.'
 	  	{
-			dstring_t  *str = dstring_newstr ();
-			symbol_t   *s;
-
 			// move the symbol for the program name to the end of the list
 			symtab_removesymbol (current_symtab, $1);
 			symtab_addsymbol (current_symtab, $1);
-
-			for  (s = current_symtab->symbols; s; s = s->next) {
-				dstring_clearstr (str);
-				print_type_str (str, s->type);
-				printf ("%s %s\n", s->name, str->str);
-			}
-			dstring_delete (str);
 		}
 	;
 
@@ -256,6 +246,9 @@ subprogram_declaration
 			dstring_delete (str);
 		}
 	| subprogram_head ASSIGNOP '#' CONST ';'
+		{
+			//build_builtin_function ($1, $4, $1->params);
+		}
 	;
 
 subprogram_head
@@ -351,32 +344,9 @@ statement
 		}
 	| WHILE expression DO statement
 		{
-			int         line = pr.source_line;
-			string_t    file = pr.source_file;
-			expr_t     *l1 = new_label_expr ();
-			expr_t     *l2 = new_label_expr ();
-			expr_t     *cont = new_label_expr ();
-
-			pr.source_line = $2->line;
-			pr.source_file = $2->file;
-
-			$$ = new_block_expr ();
-
-			append_expr ($$, new_unary_expr ('g', cont));
-			append_expr ($$, l1);
-			append_expr ($$, $4);
-			append_expr ($$, cont);
-
-			$2 = convert_bool ($2, 1);
-			if ($2->type != ex_error) {
-				backpatch ($2->e.bool.true_list, l1);
-				backpatch ($2->e.bool.false_list, l2);
-				append_expr ($2->e.bool.e, l2);
-				append_expr ($$, $2);
-			}
-
-			pr.source_line = line;
-			pr.source_file = file;
+			$$ = build_while_statement ($2, $4,
+										new_label_expr (),
+										new_label_expr ());
 		}
 	;
 
@@ -449,7 +419,15 @@ sign
 	;
 
 name
-	: ID									{ $$ = new_symbol_expr ($1); }
+	: ID
+		{
+			if (!$1->table) {
+				error (0, "%s undefined", $1->name);
+				$1->type = &type_integer;
+				symtab_addsymbol (current_symtab, $1);
+			}
+			$$ = new_symbol_expr ($1);
+		}
 	;
 
 %%

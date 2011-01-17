@@ -52,6 +52,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "expr.h"
 #include "class.h"
 #include "def.h"
+#include "defspace.h"
 #include "emit.h"
 #include "immediate.h"
 #include "method.h"
@@ -59,6 +60,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "reloc.h"
 #include "strpool.h"
 #include "struct.h"
+#include "symtab.h"
 #include "type.h"
 
 static hashtab_t *known_methods;
@@ -368,7 +370,7 @@ emit_selectors (void)
 	sel_def = get_def (type_SEL.t.fldptr.type, "_OBJ_SELECTOR_TABLE", pr.scope,
 					   st_extern);
 	sel_def->type = sel_type;
-	sel_def->ofs = new_location (sel_type, pr.near_data);
+	sel_def->ofs = defspace_new_loc (pr.near_data, type_size (sel_type));
 	set_storage_bits (sel_def, st_static);
 	sel = G_POINTER (pr_sel_t, sel_def->ofs);
 	selectors = (selector_t **) Hash_GetList (sel_hash);
@@ -384,12 +386,18 @@ emit_selectors (void)
 def_t *
 emit_methods (methodlist_t *_methods, const char *name, int instance)
 {
+	static struct_def_t methods_struct[] = {
+		{"method_next",		&type_pointer},
+		{"method_count",	&type_integer},
+		{"method_list",		0},			// type will be filled in at run time
+		{0, 0}
+	};
 	const char *type = instance ? "INSTANCE" : "CLASS";
 	method_t   *method;
 	int         i, count;
 	def_t      *methods_def;
+	type_t     *methods_type;
 	pr_method_list_t *methods;
-	struct_t     *method_list;
 
 	if (!_methods)
 		return 0;
@@ -404,14 +412,9 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 		}
 	if (!count)
 		return 0;
-	method_list = get_struct (0, 1);
-	init_struct (method_list, new_type (), str_struct, 0);
-	new_struct_field (method_list, &type_pointer, "method_next", vis_public);
-	new_struct_field (method_list, &type_integer, "method_count", vis_public);
-	for (i = 0; i < count; i++)
-		new_struct_field (method_list, &type_Method, 0,
-						  vis_public);
-	methods_def = get_def (method_list->type,
+	methods_struct[2].type = array_type (&type_integer, count);
+	methods_type = make_structure (0, 's', methods_struct, 0)->type;
+	methods_def = get_def (methods_type,
 						   va ("_OBJ_%s_METHODS_%s", type, name),
 						   pr.scope, st_static);
 	methods_def->initialized = methods_def->constant = 1;
@@ -443,7 +446,8 @@ emit_method_descriptions (methodlist_t *_methods, const char *name,
 	int         i, count;
 	def_t      *methods_def;
 	pr_method_description_list_t *methods;
-	struct_t     *method_list;
+	symtab_t   *method_list;
+	symbol_t   *method_list_sym;
 
 	if (!_methods)
 		return 0;
@@ -453,13 +457,12 @@ emit_method_descriptions (methodlist_t *_methods, const char *name,
 			count++;
 	if (!count)
 		return 0;
-	method_list = get_struct (0, 1);
-	init_struct (method_list, new_type (), str_struct, 0);
-	new_struct_field (method_list, &type_integer, "count", vis_public);
-	for (i = 0; i < count; i++)
-		new_struct_field (method_list, &type_method_description, 0,
-						  vis_public);
-	methods_def = get_def (method_list->type,
+	method_list = new_symtab (0, stab_local);
+	symtab_addsymbol (method_list, new_symbol_type ("count", &type_integer));
+	symtab_addsymbol (method_list, new_symbol_type ("method_list",
+								array_type (&type_method_description, count)));
+	method_list_sym = build_struct ('s', 0, method_list, 0);
+	methods_def = get_def (method_list_sym->type,
 						   va ("_OBJ_%s_METHODS_%s", type, name),
 						   pr.scope, st_static);
 	methods_def->initialized = methods_def->constant = 1;

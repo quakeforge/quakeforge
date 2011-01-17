@@ -46,6 +46,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <QF/dstring.h>
 
 #include "def.h"
+#include "defspace.h"
 #include "qfcc.h"
 #include "expr.h"
 #include "idstuff.h"
