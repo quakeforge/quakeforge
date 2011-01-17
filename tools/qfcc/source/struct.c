@@ -178,7 +178,7 @@ make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
 {
 	symtab_t   *strct;
 	symbol_t   *field;
-	symbol_t   *sym;
+	symbol_t   *sym = 0;
 	
 	if (su == 'u')
 		strct = new_symtab (0, stab_union);
@@ -190,6 +190,8 @@ make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
 			internal_error (0, "duplicate symbol: %s", defs->name);
 		defs++;
 	}
-	sym = build_struct (su, new_symbol (name), strct, type);
+	if (name)
+		sym = new_symbol (name);
+	sym = build_struct (su, sym, strct, type);
 	return sym;
 }
