@@ -75,15 +75,6 @@ typedef struct def_s {
 	void			*return_addr;	///< who allocated this
 } def_t;
 
-typedef struct defspace_s {
-	struct defspace_s *next;
-	struct locref_s *free_locs;
-	pr_type_t  *data;
-	int         size;
-	int         max_size;
-	int       (*grow) (struct defspace_s *space);
-} defspace_t;
-
 typedef enum {
 	sc_global,
 	sc_params,
@@ -93,7 +84,7 @@ typedef enum {
 typedef struct scope_s {
 	struct scope_s *next;
 	scope_type  type;
-	defspace_t *space;
+	struct defspace_s *space;
 	def_t      *head;
 	def_t     **tail;
 	int         num_defs;
@@ -113,17 +104,13 @@ extern	def_t	def_void;
 extern	def_t	def_invalid;
 extern	def_t	def_function;
 
-scope_t *new_scope (scope_type type, defspace_t *space, scope_t *parent);
-defspace_t *new_defspace (void);
-void defspace_adddata (defspace_t *space, pr_type_t *data, int size);
+scope_t *new_scope (scope_type type, struct defspace_s *space, scope_t *parent);
 
 def_t *field_def (const char *name);
 def_t *get_def (struct type_s *type, const char *name, scope_t *scope,
 				storage_class_t storage);
 def_t *new_def (struct type_s *type, const char *name, scope_t *scope);
 void set_storage_bits (def_t *def, storage_class_t storage);
-int new_location_size (int size, defspace_t *space);
-int new_location (struct type_s *type, defspace_t *space);
 void free_location (def_t *def);
 def_t *get_tempdef (struct type_s *type, scope_t *scope);
 void free_tempdefs (void);

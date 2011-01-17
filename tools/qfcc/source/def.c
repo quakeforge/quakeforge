@@ -49,6 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "qfcc.h"
 #include "def.h"
+#include "defspace.h"
 #include "expr.h"
 #include "immediate.h"
 #include "options.h"
@@ -56,12 +57,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "strpool.h"
 #include "struct.h"
 #include "type.h"
-
-typedef struct locref_s {
-	struct locref_s *next;
-	int         ofs;
-	int         size;
-} locref_t;
 
 def_t       def_void = { &type_void, "def void" };
 def_t       def_invalid = { &type_invalid, "def invalid" };
@@ -71,9 +66,7 @@ static def_t *free_temps[4];			// indexted by type size
 static int tempdef_counter;
 static def_t temp_scope;
 static def_t *free_defs;
-static defspace_t *free_spaces;
 static scope_t *free_scopes;
-static locref_t *free_free_locs;
 
 static hashtab_t *defs_by_name;
 static hashtab_t *field_defs;
@@ -97,10 +90,6 @@ check_for_name (type_t *type, const char *name, scope_t *scope,
 	}
 	if (!name)
 		return 0;
-	if (scope->type == sc_global && get_enum (name)) {
-		error (0, "%s redeclared", name);
-		return 0;
-	}
 	// see if the name is already in use
 	def = (def_t *) Hash_Find (defs_by_name, name);
 	if (def) {
@@ -116,36 +105,6 @@ check_for_name (type_t *type, const char *name, scope_t *scope,
 			return def;
 	}
 	return 0;
-}
-
-static int
-grow_space (defspace_t *space)
-{
-	space->max_size += 1024;
-	return 1;
-}
-
-defspace_t *
-new_defspace (void)
-{
-	defspace_t *space;
-
-	ALLOC (1024, defspace_t, spaces, space);
-	space->grow = grow_space;
-	return space;
-}
-
-void
-defspace_adddata (defspace_t *space, pr_type_t *data, int size)
-{
-	if (space->size + size > space->max_size) {
-		space->max_size = (space->size + size + 1023) & ~1023;
-		space->data = realloc (space->data,
-							   space->max_size * sizeof (pr_type_t));
-	}
-	if (data)
-		memcpy (space->data + space->size, data, size * sizeof (pr_type_t));
-	space->size += size;
 }
 
 scope_t *
@@ -282,9 +241,10 @@ get_def (type_t *type, const char *name, scope_t *scope,
 	def->space = space;
 	if (space) {
 		if (type->type == ev_field && type->t.fldptr.type == &type_vector)
-			def->ofs = new_location (type->t.fldptr.type, space);
+			def->ofs = defspace_new_loc (space,
+										 type_size (type->t.fldptr.type));
 		else
-			def->ofs = new_location (type, space);
+			def->ofs = defspace_new_loc (space, type_size (type));
 	}
 
 	set_storage_bits (def, storage);
@@ -300,8 +260,8 @@ get_def (type_t *type, const char *name, scope_t *scope,
 
 		if (type->type == ev_field) {
 			if (storage == st_global || storage == st_static) {
-				G_INT (def->ofs) = new_location (type->t.fldptr.type,
-												 pr.entity_data);
+				G_INT (def->ofs) = defspace_new_loc (pr.entity_data,
+											type_size (type->t.fldptr.type));
 				reloc_def_field (def, def->ofs);
 				def->constant = 1;
 				def->nosave = 1;
@@ -348,70 +308,6 @@ new_def (type_t *type, const char *name, scope_t *scope)
 	return def;
 }
 
-int
-new_location_size (int size, defspace_t *space)
-{
-	int         ofs;
-	locref_t   *loc;
-	locref_t  **l = &space->free_locs;
-
-	while (*l && (*l)->size < size)
-		l = &(*l)->next;
-	if ((loc = *l)) {
-		ofs = loc->ofs;
-		if (loc->size == size) {
-			*l = loc->next;
-		} else {
-			loc->ofs += size;
-			loc->size -= size;
-		}
-		return ofs;
-	}
-	ofs = space->size;
-	space->size += size;
-	if (space->size > space->max_size) {
-		if (!space->grow) {
-			error (0, "unable to allocate %d globals", size);
-			exit (1);
-		}
-		space->grow (space);
-	}
-	return ofs;
-}
-
-int
-new_location (type_t *type, defspace_t *space)
-{
-	return new_location_size (type_size (type), space);
-}
-
-void
-free_location (def_t *def)
-{
-	int         size = type_size (def->type);
-	locref_t   *loc;
-
-	for (loc = def->space->free_locs; loc; loc = loc->next) {
-		if (def->ofs + size == loc->ofs) {
-			loc->size += size;
-			loc->ofs = def->ofs;
-			return;
-		} else if (loc->ofs + loc->size == def->ofs) {
-			loc->size += size;
-			if (loc->next && loc->next->ofs == loc->ofs + loc->size) {
-				loc->size += loc->next->size;
-				loc->next = loc->next->next;
-			}
-			return;
-		}
-	}
-	ALLOC (1024, locref_t, free_locs, loc);
-	loc->ofs = def->ofs;
-	loc->size = size;
-	loc->next = def->space->free_locs;
-	def->space->free_locs = loc;
-}
-
 def_t *
 get_tempdef (type_t *type, scope_t *scope)
 {
@@ -424,7 +320,7 @@ get_tempdef (type_t *type, scope_t *scope)
 		def->type = type;
 	} else {
 		def = new_def (type, va (".tmp%d", tempdef_counter++), scope);
-		def->ofs = new_location (type, scope->space);
+		def->ofs = defspace_new_loc (scope->space, type_size (type));
 	}
 	def->return_addr = __builtin_return_address (0);
 	def->freed = def->removed = def->users = 0;
