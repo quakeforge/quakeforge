@@ -3155,27 +3155,48 @@ warning (expr_t *e, const char *fmt, ...)
 	return e;
 }
 
-expr_t *
-error (expr_t *e, const char *fmt, ...)
+static void
+_error (expr_t *e, const char *err, const char *fmt, va_list args)
 {
-	va_list     args;
 	string_t    file = pr.source_file;
 	int         line = pr.source_line;
 
 	report_function (e);
-	va_start (args, fmt);
+
 	if (e) {
 		file = e->file;
 		line = e->line;
 	}
-	fprintf (stderr, "%s:%d: error: ", G_GETSTR (file), line);
-	vfprintf (stderr, fmt, args);
+	fprintf (stderr, "%s:%d: %s%s", G_GETSTR (file), line, err,
+			 fmt ? ": " : "");
+	if (fmt)
+		vfprintf (stderr, fmt, args);
 	fputs ("\n", stderr);
-	va_end (args);
 	pr.error_count++;
+}
 
-	if (e) {
-		e->type = ex_error;
-	}
+void
+internal_error (expr_t *e, const char *fmt, ...)
+{
+	va_list     args;
+
+	va_start (args, fmt);
+	_error (e, "internal error", fmt, args);
+	va_end (args);
+	abort ();
+}
+
+expr_t *
+error (expr_t *e, const char *fmt, ...)
+{
+	va_list     args;
+
+	va_start (args, fmt);
+	_error (e, "error", fmt, args);
+	va_end (args);
+
+	if (!e)
+		e = new_expr ();
+	e->type = ex_error;
 	return e;
 }

@@ -51,13 +51,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "qfcc.h"
 #include "type.h"
 
-static __attribute__ ((noreturn)) void
-internal_error (expr_t *e)
-{
-	error (e, "internal error");
-	abort ();
-}
-
 static expr_t *
 cf_cast_expr (type_t *type, expr_t *e)
 {
@@ -138,7 +131,7 @@ do_op_string (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e1->e.integer_val = strcmp (s1, s2) != 0;
 			break;
 		default:
-			internal_error (e1);
+			internal_error (e1, 0);
 	}
 	return e1;
 }
@@ -167,7 +160,7 @@ convert_to_float (expr_t *e)
 			e = cf_cast_expr (&type_float, e);
 			return e;
 		default:
-			internal_error (e);
+			internal_error (e, 0);
 	}
 }
 
@@ -309,7 +302,7 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e1->e.integer_val = f1 != f2;
 			break;
 		default:
-			internal_error (e1);
+			internal_error (e1, 0);
 	}
 	return e1;
 }
@@ -409,7 +402,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e1->e.integer_val = !VectorCompare (v1, v2);
 			break;
 		default:
-			internal_error (e1);
+			internal_error (e1, 0);
 	}
 	return e1;
 }
@@ -483,7 +476,7 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		ass->file = e2->file;
 		ass = fold_constants (ass);
 		if (e->e.expr.e2 == tmp)
-			internal_error (e2);
+			internal_error (e2, 0);
 		e->e.expr.e2 = ass->e.expr.e2;
 	}
 	if (op == EQ || op == NE) {
@@ -596,7 +589,7 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e1->e.integer_val = !QuatCompare (q1, q2);
 			break;
 		default:
-			internal_error (e1);
+			internal_error (e1, 0);
 	}
 	return e1;
 }
@@ -719,7 +712,7 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e1->e.integer_val = i1 != i2;
 			break;
 		default:
-			internal_error (e1);
+			internal_error (e1, 0);
 	}
 	return e1;
 }
@@ -815,7 +808,7 @@ do_op_short (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e1->e.integer_val = i1 != i2;
 			break;
 		default:
-			internal_error (e1);
+			internal_error (e1, 0);
 	}
 	return e1;
 }
@@ -1095,6 +1088,6 @@ fold_constants (expr_t *e)
 		return do_op_struct (op, e, e1, e2);
 
 	if (!do_op[t1] || !do_op[t1][t2])
-		internal_error (e);
+		internal_error (e, 0);
 	return do_op[t1][t2] (op, e, e1, e2);
 }
