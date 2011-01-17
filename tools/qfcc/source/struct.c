@@ -102,6 +102,7 @@ symbol_t *
 build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 {
 	symbol_t   *sym = find_struct (su, tag, type);
+	symbol_t   *s;
 
 	symtab->parent = 0;		// disconnect struct's symtab from parent scope
 
@@ -109,14 +110,14 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 		error (0, "%s defined as wrong kind of tag", tag->name);
 		return sym;
 	}
-	for (sym = symtab->symbols; sym; sym = sym->next) {
-		if (sym->sy_type != sy_var)
+	for (s = symtab->symbols; s; s = s->next) {
+		if (s->sy_type != sy_var)
 			continue;
 		if (su == 's') {
-			sym->s.value = symtab->size;
-			symtab->size += type_size (sym->type);
+			s->s.value = symtab->size;
+			symtab->size += type_size (s->type);
 		} else {
-			int         size = type_size (sym->type);
+			int         size = type_size (s->type);
 			if (size > symtab->size)
 				symtab->size = size;
 		}
