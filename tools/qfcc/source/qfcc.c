@@ -1099,8 +1099,8 @@ main (int argc, char **argv)
 	parse_cpp_name ();
 
 	opcode_init ();
-	init_types ();
 	InitData ();
+	init_types ();
 	clear_immediates ();
 
 	if (source_files) {
