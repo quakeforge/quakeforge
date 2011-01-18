@@ -172,16 +172,27 @@ RotatePointAroundVector (vec3_t dst, const vec3_t axis, const vec3_t point,
 }
 
 VISIBLE void
-QuatMult (const quat_t v1, const quat_t v2, quat_t out)
+QuatMult (const quat_t q1, const quat_t q2, quat_t out)
 {
 	vec_t      s;
 	vec3_t     v;
 
-	s = v1[0] * v2[0] - DotProduct (v1 + 1, v2 + 1);
-	CrossProduct (v1 + 1, v2 + 1, v);
-	VectorMultAdd (v, v1[0], v2 + 1, v);
-	VectorMultAdd (v, v2[0], v1 + 1, out + 1);
+	s = q1[0] * q2[0] - DotProduct (q1 + 1, q2 + 1);
+	CrossProduct (q1 + 1, q2 + 1, v);
+	VectorMultAdd (v, q1[0], q2 + 1, v);
+	VectorMultAdd (v, q2[0], q1 + 1, out + 1);
 	out[0] = s;
+}
+
+VISIBLE void
+QuatInverse (const quat_t in, quat_t out)
+{
+	quat_t      q;
+	vec_t       m;
+
+	m = QDotProduct (in, in);	// in * in*
+	QuatConj (in, q);
+	QuatScale (q, 1 / m, out);
 }
 
 #if defined(_WIN32) && !defined(__GNUC__)

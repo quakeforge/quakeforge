@@ -241,7 +241,8 @@ float anglemod (float a);
 void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 							  const vec3_t point, float degrees);
 
-void QuatMult (const quat_t v1, const quat_t v2, quat_t out);
+void QuatMult (const quat_t q1, const quat_t q2, quat_t out);
+void QuatInverse (const quat_t in, quat_t out);
 
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)				\
 	(((p)->type < 3)?									\
