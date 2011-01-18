@@ -350,7 +350,7 @@ selector_index (const char *sel_id)
 selector_t *
 get_selector (expr_t *sel)
 {
-	selector_t  _sel = {0, 0, sel->e.pointer.val};
+	selector_t  _sel = {0, 0, sel->e.value.v.pointer.val};
 	_sel.index /= type_size (type_SEL.t.fldptr.type);
 	return (selector_t *) Hash_FindElement (sel_index_hash, &_sel);
 }
@@ -534,7 +534,7 @@ method_check_params (method_t *method, expr_t *args)
 										  mtype->t.func.param_types[i], t);
 				}
 		} else {
-			if (e->type == ex_integer && options.warnings.vararg_integer)
+			if (is_integer_val (e) && options.warnings.vararg_integer)
 				warning (e, "passing integer consant into ... function");
 		}
 	}

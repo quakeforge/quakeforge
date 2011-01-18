@@ -163,12 +163,12 @@ add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 		value = ((symbol_t *)(*enum_tab->symtail))->s.value + 1;
 	if (val) {
 		val = constant_expr (val);
-		if (val->type < ex_nil)
+		if (!is_constant (val))
 			error (val, "non-constant initializer");
-		else if (val->type != ex_integer)
+		else if (!is_integer_val (val))
 			error (val, "invalid initializer type");
 		else
-			value = val->e.integer_val;
+			value = expr_integer (val);
 	}
 	name->s.value = value;
 	symtab_addsymbol (enum_tab, name);

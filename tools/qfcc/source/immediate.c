@@ -170,53 +170,48 @@ ReuseConstant (expr_t *expr, def_t *def)
 	cn = 0;
 	if (e.type == ex_nil)
 		convert_nil (&e, def->type);
-	switch (e.type) {
-		case ex_entity:
+	if (!is_constant (&e))
+		abort ();
+	switch (extract_type (&e)) {
+		case ev_entity:
 			tab = entity_imm_defs;
 			type = &type_entity;
 			break;
-		case ex_field:
+		case ev_field:
 			tab = field_imm_defs;
 			type = &type_field;
 			break;
-		case ex_func:
+		case ev_func:
 			tab = func_imm_defs;
 			type = &type_function;
 			break;
-		case ex_pointer:
+		case ev_pointer:
 			tab = pointer_imm_defs;
 			type = &type_pointer;
 			break;
-		case ex_integer:
-		case ex_uinteger:
+		case ev_integer:
 			if (!def || def->type != &type_float) {
 				tab = integer_imm_defs;
-				//FIXME
-				//if (e.type == ex_uinteger)
-				//	type = &type_uinteger;
-				//else
-					type = &type_integer;
+				type = &type_integer;
 				break;
 			}
-			if (e.type == ex_uinteger)
-				e.e.float_val = e.e.uinteger_val;
-			else
-				e.e.float_val = e.e.integer_val;
-			e.type = ex_float;
-		case ex_float:
+			e.e.value.v.float_val = expr_integer (&e);
+			e.e.value.type = ev_float;
+			e.type = ex_value;
+		case ev_float:
 			tab = float_imm_defs;
 			type = &type_float;
 			break;
-		case ex_string:
-			e.e.integer_val = ReuseString (e.e.string_val);
+		case ev_string:
+			e.e.value.v.integer_val = ReuseString (expr_string (&e));
 			tab = string_imm_defs;
 			type = &type_string;
 			break;
-		case ex_vector:
+		case ev_vector:
 			tab = vector_imm_defs;
 			type = &type_vector;
 			break;
-		case ex_quaternion:
+		case ev_quat:
 			tab = quaternion_imm_defs;
 			type = &type_quaternion;
 			break;
@@ -269,22 +264,22 @@ ReuseConstant (expr_t *expr, def_t *def)
 	cn->initialized = cn->constant = 1;
 	cn->nosave = 1;
 	// copy the immediate to the global area
-	switch (e.type) {
-		case ex_string:
+	switch (e.e.value.type) {
+		case ev_string:
 			reloc = new_reloc (cn->ofs, rel_def_string);
 			break;
-		case ex_func:
-			if (e.e.func_val)
+		case ev_func:
+			if (e.e.value.v.func_val)
 				reloc = new_reloc (cn->ofs, rel_def_func);
 			break;
-		case ex_field:
-			if (e.e.pointer.def)
-				reloc_def_field_ofs (e.e.pointer.def, cn->ofs);
+		case ev_field:
+			if (e.e.value.v.pointer.def)
+				reloc_def_field_ofs (e.e.value.v.pointer.def, cn->ofs);
 			break;
-		case ex_pointer:
-			if (e.e.pointer.def) {
-				EMIT_DEF_OFS (G_INT (cn->ofs), e.e.pointer.def);
-				e.e.pointer.def->users--;
+		case ev_pointer:
+			if (e.e.value.v.pointer.def) {
+				EMIT_DEF_OFS (G_INT (cn->ofs), e.e.value.v.pointer.def);
+				e.e.value.v.pointer.def->users--;
 			}
 			break;
 		default:

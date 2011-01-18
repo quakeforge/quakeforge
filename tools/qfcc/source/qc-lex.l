@@ -124,7 +124,7 @@ STRING		\"(\\.|[^"\\])*\"
 						const char *c = yytext + yyleng - 1;
 						int         i = strtol (yytext, 0, 0);
 						if (*c == 'u' || *c == 'U')
-							yylval.expr = new_uinteger_expr (i);
+							yylval.expr = new_integer_expr (i);//FIXME
 						else
 							yylval.expr = new_integer_expr (i);
 						return CONST;

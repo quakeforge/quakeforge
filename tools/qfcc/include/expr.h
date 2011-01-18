@@ -54,17 +54,7 @@ typedef enum {
 	ex_temp,		///< temporary variable (::ex_temp_t)
 
 	ex_nil,			///< umm, nil, null. nuff said (0 of any type)
-	ex_string,		///< string constant (expr_t::e::string_val)
-	ex_float,		///< float constant (expr_t::e::float_val)
-	ex_vector,		///< vector constant (expr_t::e::vector_val)
-	ex_entity,		///< entity constant (expr_t::e::entity_val)
-	ex_field,		///< field constant
-	ex_func,		///< function constant (expr_t::e::func_val)
-	ex_pointer,		///< pointer constant (expr_t::e::pointer)
-	ex_quaternion,	///< quaternion constant (expr_t::e::quaternion_val)
-	ex_integer,		///< integer constant (expr_t::e::integer_val)
-	ex_uinteger,	///< unsigned integer constant (expr_t::e::uinteger_val)
-	ex_short,		///< short constant (expr_t::e::short_val)
+	ex_value,		///< constant value (::ex_value_t)
 } expr_type;
 
 /**	Binary and unary expressions.
@@ -163,6 +153,22 @@ typedef struct {
 	struct expr_s *step;		///< time step until the next state
 } ex_state_t;
 
+typedef struct ex_value_s {
+	etype_t     type;
+	union {
+		const char *string_val;			///< string constant
+		float       float_val;			///< float constant
+		float       vector_val[3];		///< vector constant
+		int         entity_val;			///< entity constant
+		int         func_val;			///< function constant
+		ex_pointer_t pointer;			///< pointer constant
+		float       quaternion_val[4];	///< quaternion constant
+		int         integer_val;		///< integer constant
+		unsigned    uinteger_val;		///< unsigned integer constant
+		short       short_val;			///< short constant
+	} v;
+} ex_value_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->ofs : 0) + (p).val)
 
 typedef struct expr_s {
@@ -181,23 +187,11 @@ typedef struct expr_s {
 		struct def_s *def;				///< def reference expression
 		struct symbol_s *symbol;		///< symbol reference expression
 		ex_temp_t   temp;				///< temporary variable expression
-
-		const char *string_val;			///< string constant
-		float       float_val;			///< float constant
-		float       vector_val[3];		///< vector constant
-		int         entity_val;			///< entity constant
-		int         func_val;			///< function constant
-		ex_pointer_t pointer;			///< pointer constant
-		float       quaternion_val[4];	///< quaternion constant
-		int         integer_val;		///< integer constant
-		unsigned    uinteger_val;		///< unsigned integer constant
-		short       short_val;			///< short constant
+		ex_value_t  value;				///< constant value
 	} e;
 } expr_t;
 
-extern etype_t qc_types[];
 extern struct type_s *ev_types[];
-extern expr_type expr_types[];
 
 /**	Report a type mismatch error.
 
@@ -368,6 +362,7 @@ expr_t *new_name_expr (const char *name);
 					(expr_t::e::string_val).
 */
 expr_t *new_string_expr (const char *string_val);
+const char *expr_string (expr_t *e);
 
 /** Create a new float constant expression node.
 
@@ -376,6 +371,7 @@ expr_t *new_string_expr (const char *string_val);
 					(expr_t::e::float_val).
 */
 expr_t *new_float_expr (float float_val);
+float expr_float (expr_t *e);
 
 /** Create a new vector constant expression node.
 
@@ -384,6 +380,7 @@ expr_t *new_float_expr (float float_val);
 					(expr_t::e::vector_val).
 */
 expr_t *new_vector_expr (const float *vector_val);
+const float *expr_vector (expr_t *e);
 
 /** Create a new entity constant expression node.
 
@@ -428,6 +425,7 @@ expr_t *new_pointer_expr (int val, struct type_s *type, struct def_s *def);
 					(expr_t::e::quaternion_val).
 */
 expr_t *new_quaternion_expr (const float *quaternion_val);
+const float *expr_quaternion (expr_t *e);
 
 /** Create a new integer constant expression node.
 
@@ -436,14 +434,7 @@ expr_t *new_quaternion_expr (const float *quaternion_val);
 					(expr_t::e::integer_val).
 */
 expr_t *new_integer_expr (int integer_val);
-
-/** Create a new unsigned integer constant expression node.
-
-	\param uinteger_val	The unsigned integer constant being represented.
-	\return			The new unsigned integer constant expression node
-					(expr_t::e::uinteger_val).
-*/
-expr_t *new_uinteger_expr (unsigned int uinteger_val);
+int expr_integer (expr_t *e);
 
 /** Create a new short constant expression node.
 
@@ -452,6 +443,7 @@ expr_t *new_uinteger_expr (unsigned int uinteger_val);
 					(expr_t::e::short_val).
 */
 expr_t *new_short_expr (short short_val);
+short expr_short (expr_t *e);
 
 /**	Check of the expression refers to a constant value.
 
@@ -480,6 +472,13 @@ int is_math (int op);
 	\return			True if the op-code is a logic operator.
 */
 int is_logic (int op);
+
+int is_string_val (expr_t *e);
+int is_float_val (expr_t *e);
+int is_vector_val (expr_t *e);
+int is_quaternion_val (expr_t *e);
+int is_integer_val (expr_t *e);
+int is_short_val (expr_t *e);
 
 /**	Convert a constant def to a constant expression.
 
@@ -572,12 +571,8 @@ expr_t *append_expr (expr_t *block, expr_t *e);
 void print_expr (expr_t *e);
 
 void convert_int (expr_t *e);
-void convert_uint (expr_t *e);
 void convert_short (expr_t *e);
-void convert_uint_int (expr_t *e);
-void convert_int_uint (expr_t *e);
 void convert_short_int (expr_t *e);
-void convert_short_uint (expr_t *e);
 void convert_nil (expr_t *e, struct type_s *t);
 
 expr_t *test_expr (expr_t *e, int test);

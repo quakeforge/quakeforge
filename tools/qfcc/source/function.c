@@ -543,7 +543,7 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val)
 		error (bi_val, "%s redefined", sym->name);
 		return 0;
 	}
-	if (bi_val->type != ex_integer && bi_val->type != ex_float) {
+	if (!is_integer_val (bi_val) && !is_float_val (bi_val)) {
 		error (bi_val, "invalid constant for = #");
 		return 0;
 	}
@@ -554,9 +554,10 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val)
 	sym->s.func->sym = sym;
 	add_function (sym->s.func);
 
-	bi = bi_val->e.integer_val;
-	if (bi_val->type == ex_integer)
-		bi = (int)bi_val->e.float_val;
+	if (is_integer_val (bi_val))
+		bi = expr_integer (bi_val);
+	else
+		bi = expr_float (bi_val);
 	sym->s.func->builtin = bi;
 	//reloc_def_func (sym->s.func, def->ofs);
 	build_function (sym->s.func);

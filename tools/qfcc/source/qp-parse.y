@@ -220,7 +220,7 @@ type
 	: standard_type
 	| ARRAY '[' CONST RANGE CONST ']' OF standard_type
 		{
-			$$ = based_array_type ($8, $3->e.integer_val, $5->e.integer_val);
+			$$ = based_array_type ($8, expr_integer ($3), expr_integer ($5));
 		}
 	;
 

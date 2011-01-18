@@ -94,8 +94,12 @@ do_op_string (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '=' || op == 'b' || !is_constant (e1) || !is_constant (e2))
 		return e;
 
-	s1 = e1->e.string_val ? e1->e.string_val : "";
-	s2 = e2->e.string_val ? e2->e.string_val : "";
+	s1 = expr_string (e1);
+	s2 = expr_string (e2);
+	if (!s1)
+		s1 = "";
+	if (!s2)
+		s2 = "";
 
 	switch (op) {
 		case '+':
@@ -104,36 +108,32 @@ do_op_string (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			dstring_clearstr (temp_str);
 			dstring_appendstr (temp_str, s1);
 			dstring_appendstr (temp_str, s2);
-			e1->e.string_val = save_string (temp_str->str);
+			e = new_string_expr (save_string (temp_str->str));
 			break;
 		case LT:
-			e1->type = ex_integer;
-			e1->e.integer_val = strcmp (s1, s2) < 0;
+			e = new_integer_expr (strcmp (s1, s2) < 0);
 			break;
 		case GT:
-			e1->type = ex_integer;
-			e1->e.integer_val = strcmp (s1, s2) > 0;
+			e = new_integer_expr (strcmp (s1, s2) > 0);
 			break;
 		case LE:
-			e1->type = ex_integer;
-			e1->e.integer_val = strcmp (s1, s2) <= 0;
+			e = new_integer_expr (strcmp (s1, s2) <= 0);
 			break;
 		case GE:
-			e1->type = ex_integer;
-			e1->e.integer_val = strcmp (s1, s2) >= 0;
+			e = new_integer_expr (strcmp (s1, s2) >= 0);
 			break;
 		case EQ:
-			e1->type = ex_integer;
-			e1->e.integer_val = strcmp (s1, s2) == 0;
+			e = new_integer_expr (strcmp (s1, s2) == 0);
 			break;
 		case NE:
-			e1->type = ex_integer;
-			e1->e.integer_val = strcmp (s1, s2) != 0;
+			e = new_integer_expr (strcmp (s1, s2));
 			break;
 		default:
 			internal_error (e1, 0);
 	}
-	return e1;
+	e->file = e1->file;
+	e->line = e1->line;
+	return e;
 }
 
 static expr_t *
@@ -143,15 +143,18 @@ convert_to_float (expr_t *e)
 		return e;
 
 	switch (e->type) {
-		case ex_integer:
-			convert_int (e);
-			return e;
-		case ex_uinteger:
-			convert_uint (e);
-			return e;
-		case ex_short:
-			convert_short (e);
-			return e;
+		case ex_value:
+			switch (e->e.value.type) {
+				case ev_integer:
+					convert_int (e);
+					return e;
+				case ev_short:
+					convert_short (e);
+					return e;
+				default:
+					internal_error (e, 0);
+			}
+			break;
 		case ex_def:
 		case ex_expr:
 		case ex_uexpr:
@@ -209,108 +212,103 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	}
 	e->e.expr.type = type;
 
-	if (op == '*' && is_constant (e1) && e1->e.float_val == 1)
+	if (op == '*' && is_constant (e1) && expr_float (e1) == 1)
 		return e2;
-	if (op == '*' && is_constant (e2) && e2->e.float_val == 1)
+	if (op == '*' && is_constant (e2) && expr_float (e2) == 1)
 		return e1;
-	if (op == '*' && is_constant (e1) && e1->e.float_val == 0)
+	if (op == '*' && is_constant (e1) && expr_float (e1) == 0)
 		return e1;
-	if (op == '*' && is_constant (e2) && e2->e.float_val == 0)
+	if (op == '*' && is_constant (e2) && expr_float (e2) == 0)
 		return e2;
-	if (op == '/' && is_constant (e2) && e2->e.float_val == 1)
+	if (op == '/' && is_constant (e2) && expr_float (e2) == 1)
 		return e1;
-	if (op == '/' && is_constant (e2) && e2->e.float_val == 0)
+	if (op == '/' && is_constant (e2) && expr_float (e2) == 0)
 		return error (e, "division by zero");
-	if (op == '/' && is_constant (e1) && e1->e.float_val == 0)
+	if (op == '/' && is_constant (e1) && expr_float (e1) == 0)
 		return e1;
-	if (op == '+' && is_constant (e1) && e1->e.float_val == 0)
+	if (op == '+' && is_constant (e1) && expr_float (e1) == 0)
 		return e2;
-	if (op == '+' && is_constant (e2) && e2->e.float_val == 0)
+	if (op == '+' && is_constant (e2) && expr_float (e2) == 0)
 		return e1;
-	if (op == '-' && is_constant (e2) && e2->e.float_val == 0)
+	if (op == '-' && is_constant (e2) && expr_float (e2) == 0)
 		return e1;
 
 	if (op == '=' || op == 'b' || !is_constant (e1) || !is_constant (e2))
 		return e;
 
-	f1 = e1->e.float_val;
-	f2 = e2->e.float_val;
+	f1 = expr_float (e1);
+	f2 = expr_float (e2);
 
 	switch (op) {
 		case '+':
-			e1->e.float_val += f2;
+			e = new_float_expr (f1 + f2);
 			break;
 		case '-':
-			e1->e.float_val -= f2;
+			e = new_float_expr (f1 - f2);
 			break;
 		case '*':
-			e1->e.float_val *= f2;
+			e = new_float_expr (f1 * f2);
 			break;
 		case '/':
 			if (!f2)
 				return error (e1, "divide by zero");
-			e1->e.float_val /= f2;
+			e = new_float_expr (f1 / f2);
 			break;
 		case '&':
-			e1->e.float_val = (int) f1 & (int) f2;
+			e = new_float_expr ((int)f1 & (int)f2);
 			break;
 		case '|':
-			e1->e.float_val = (int) f1 | (int) f2;
+			e = new_float_expr ((int)f1 | (int)f2);
 			break;
 		case '^':
-			e1->e.float_val = (int) f1 ^ (int) f2;
+			e = new_float_expr ((int)f1 ^ (int)f2);
 			break;
 		case '%':
-			e1->e.float_val = (int) f1 % (int) f2;
+			e = new_float_expr ((int)f1 % (int)f2);
 			break;
 		case SHL:
-			e1->e.float_val = (int) f1 << (int) f2;
+			e = new_float_expr ((int)f1 << (int)f2);
 			break;
 		case SHR:
-			e1->e.float_val = (int) f1 >> (int) f2;
+			e = new_float_expr ((int)f1 >> (int)f2);
 			break;
 		case AND:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 && f2;
+			e = new_integer_expr (f1 && f2);
 			break;
 		case OR:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 || f2;
+			e = new_integer_expr (f1 || f2);
 			break;
 		case LT:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 < f2;
+			e = new_integer_expr (f1 < f2);
 			break;
 		case GT:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 > f2;
+			e = new_integer_expr (f1 > f2);
 			break;
 		case LE:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 <= f2;
+			e = new_integer_expr (f1 <= f2);
 			break;
 		case GE:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 >= f2;
+			e = new_integer_expr (f1 >= f2);
 			break;
 		case EQ:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 == f2;
+			e = new_integer_expr (f1 == f2);
 			break;
 		case NE:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 != f2;
+			e = new_integer_expr (f1 != f2);
 			break;
 		default:
 			internal_error (e1, 0);
 	}
-	return e1;
+	e->file = e1->file;
+	e->line = e1->line;
+	return e;
 }
 
 static expr_t *
 do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
-	float      *v1, *v2;
+	const float *v1, *v2;
+	vec3_t      v;
 	static int  valid[] = {'=', 'b', '+', '-', '*', EQ, NE, 0};
 	expr_t     *t;
 
@@ -342,69 +340,69 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		e->e.expr.type = &type_vector;
 	}
 
-	if (op == '*' && is_constant (e1) && e1->type == ex_float
-		&& e1->e.float_val == 1)
-		return e2;
-	if (op == '*' && is_constant (e2) && e2->type == ex_float
-		&& e2->e.float_val == 1)
+	if (op == '*' && is_float_val (e2) && expr_float (e2) == 1)
 		return e1;
-	if (op == '*' && is_constant (e1) && e1->type == ex_float
-		&& e1->e.float_val == 0)
+	if (op == '*' && is_float_val (e2) && expr_float (e2) == 0)
 		return new_vector_expr (vec3_origin);
-	if (op == '*' && is_constant (e2) && e2->type == ex_float
-		&& e2->e.float_val == 0)
-		return new_vector_expr (vec3_origin);
-	if (op == '/' && is_constant (e2) && e2->type == ex_float
-		&& e2->e.float_val == 1)
+	if (op == '/' && is_float_val (e2) && expr_float (e2) == 1)
 		return e1;
-	if (op == '/' && is_constant (e2) && e2->type == ex_float
-		&& e2->e.float_val == 0)
+	if (op == '/' && is_float_val (e2) && expr_float (e2) == 0)
 		return error (e, "division by zero");
-	if (op == '+' && is_constant (e1) && VectorIsZero (e1->e.vector_val))
+	if (op == '+' && is_constant (e1) && VectorIsZero (expr_vector (e1)))
 		return e2;
-	if (op == '+' && is_constant (e2) && VectorIsZero (e2->e.vector_val))
+	if (op == '+' && is_constant (e2) && VectorIsZero (expr_vector (e2)))
 		return e1;
-	if (op == '-' && is_constant (e2) && VectorIsZero (e2->e.vector_val))
+	if (op == '-' && is_constant (e1) && VectorIsZero (expr_vector (e1))) {
+		vec3_t      v;
+		VectorNegate (expr_vector (e2), v);
+		e = new_vector_expr (v);
+		e->file = e2->file;
+		e->line = e2->line;
+		return e;
+	}
+	if (op == '-' && is_constant (e2) && VectorIsZero (expr_vector (e2)))
 		return e1;
 
 	if (op == '=' || op == 'b' || !is_constant (e1) || !is_constant (e2))
 		return e;
 
-	v1 = e1->e.vector_val;
-	v2 = e2->e.vector_val;
+	v1 = expr_vector (e1);
+	v2 = expr_vector (e2);
 
 	switch (op) {
 		case '+':
-			VectorAdd (v1, v2, v1);
+			VectorAdd (v1, v2, v);
+			e = new_vector_expr (v);
 			break;
 		case '-':
-			VectorSubtract (v1, v2, v1);
+			VectorSubtract (v1, v2, v);
+			e = new_vector_expr (v);
 			break;
 		case '/':
 			if (!v2[0])
 				return error (e1, "divide by zero");
-			VectorScale (v1, 1 / v2[0], v1);
+			VectorScale (v1, 1 / v2[0], v);
 			break;
 		case '*':
 			if (get_type (e2) == &type_vector) {
-				e1->type = ex_float;
-				e1->e.float_val = DotProduct (v1, v2);
+				e = new_float_expr (DotProduct (v1, v2));
 			} else {
-				VectorScale (v1, v2[0], v1);
+				VectorScale (v1, v2[0], v);
+				e = new_vector_expr (v);
 			}
 			break;
 		case EQ:
-			e1->type = ex_integer;
-			e1->e.integer_val = VectorCompare (v1, v2);
+			e = new_integer_expr (VectorCompare (v1, v2));
 			break;
 		case NE:
-			e1->type = ex_integer;
-			e1->e.integer_val = !VectorCompare (v1, v2);
+			e = new_integer_expr (!VectorCompare (v1, v2));
 			break;
 		default:
 			internal_error (e1, 0);
 	}
-	return e1;
+	e->file = e1->file;
+	e->line = e1->line;
+	return e;
 }
 
 static expr_t *
@@ -498,18 +496,21 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 static expr_t *
 do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
-	float      *q1, *q2;
+	const float *q1, *q2;
+	quat_t      q;
 	static int  valid[] = {'=', 'b', '+', '-', '*', EQ, NE, 0};
 	expr_t     *t;
 
 	if (get_type (e1) != &type_quaternion) {
 
-		if (op != '*')
+		if (op != '*' || op != '/')
 			return error (e1, "invalid operand for quaternion");
 
-		t = e1;
-		e->e.expr.e1 = e1 = e2;
-		e2 = t;
+		if (op == '*') {
+			t = e1;
+			e->e.expr.e1 = e1 = e2;
+			e2 = t;
+		}
 	}
 	if (get_type (e2) != &type_quaternion) {
 		e->e.expr.e2 = e2 = convert_to_float (e2);
@@ -528,70 +529,65 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		e->e.expr.type = &type_quaternion;
 	}
 
-	if (op == '*' && is_constant (e1) && e1->type == ex_float
-		&& e1->e.float_val == 1)
-		return e2;
-	if (op == '*' && is_constant (e2) && e2->type == ex_float
-		&& e2->e.float_val == 1)
+	if (op == '*' && is_float_val (e2) && expr_float (e2) == 1)
 		return e1;
-	if (op == '*' && is_constant (e1) && e1->type == ex_float
-		&& e1->e.float_val == 0)
+	if (op == '*' && is_float_val (e2) && expr_float (e2) == 0)
 		return new_quaternion_expr (quat_origin);
-	if (op == '*' && is_constant (e2) && e2->type == ex_float
-		&& e2->e.float_val == 0)
-		return new_quaternion_expr (quat_origin);
-	if (op == '/' && is_constant (e2) && e2->type == ex_float
-		&& e2->e.float_val == 1)
+	if (op == '/' && is_float_val (e2) && expr_float (e2) == 1)
 		return e1;
-	if (op == '/' && is_constant (e2) && e2->type == ex_float
-		&& e2->e.float_val == 0)
+	if (op == '/' && is_float_val (e2) && expr_float (e2) == 0)
 		return error (e, "division by zero");
-	if (op == '+' && is_constant (e1) && QuatIsZero (e1->e.quaternion_val))
+	if (op == '+' && is_constant (e1) && QuatIsZero (expr_quaternion (e1)))
 		return e2;
-	if (op == '+' && is_constant (e2) && QuatIsZero (e2->e.quaternion_val))
+	if (op == '+' && is_constant (e2) && QuatIsZero (expr_quaternion (e2)))
 		return e1;
-	if (op == '-' && is_constant (e2) && QuatIsZero (e2->e.quaternion_val))
+	if (op == '-' && is_constant (e2) && QuatIsZero (expr_quaternion (e2)))
 		return e1;
 
 	if (op == '=' || op == 'b' || !is_constant (e1) || !is_constant (e2))
 		return e;
 
-	q1 = e1->e.quaternion_val;
-	q2 = e2->e.quaternion_val;
+	q1 = expr_quaternion (e1);
+	q2 = expr_quaternion (e2);
 
 	switch (op) {
 		case '+':
-			QuatAdd (q1, q2, q1);
+			QuatAdd (q1, q2, q);
+			e = new_quaternion_expr (q);
 			break;
 		case '-':
-			QuatSubtract (q1, q2, q1);
+			QuatSubtract (q1, q2, q);
+			e = new_quaternion_expr (q);
 			break;
 		case '/':
-			if (!q2[0])
-				return error (e1, "divide by zero");
-			QuatScale (q1, 1 / q2[0], q1);
-			q1[3] /= q2[0];
+			if (is_float_val (e2)) {
+				QuatScale (q1, 1 / expr_float (e2), q);
+			} else {
+				QuatInverse (q2, q);
+				QuatScale (q2, expr_float (e1), q);
+			}
+			e = new_quaternion_expr (q);
 			break;
 		case '*':
 			if (get_type (e2) == &type_quaternion) {
-				QuatMult (q1, q2, q1);
+				QuatMult (q1, q2, q);
 			} else {
-				QuatScale (q1, q2[0], q1);
-				q1[3] *= q2[0];
+				QuatScale (q1, q2[0], q);
 			}
+			e = new_quaternion_expr (q);
 			break;
 		case EQ:
-			e1->type = ex_integer;
-			e1->e.integer_val = QuatCompare (q1, q2);
+			e = new_integer_expr (QuatCompare (q1, q2));
 			break;
 		case NE:
-			e1->type = ex_integer;
-			e1->e.integer_val = !QuatCompare (q1, q2);
+			e = new_integer_expr (!QuatCompare (q1, q2));
 			break;
 		default:
 			internal_error (e1, 0);
 	}
-	return e1;
+	e->file = e1->file;
+	e->line = e1->line;
+	return e;
 }
 
 static expr_t *
@@ -606,10 +602,10 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operand for integer");
 
-	if (e1->type == ex_short)
+	if (is_short_val (e1))
 		convert_short_int (e1);
 
-	if (e2->type == ex_short)
+	if (is_short_val (e2))
 		convert_short_int (e2);
 
 	if (is_compare (op) || is_logic (op)) {
@@ -621,100 +617,96 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		e->e.expr.type = &type_integer;
 	}
 
-	if (op == '*' && is_constant (e1) && e1->e.integer_val == 1)
+	if (op == '*' && is_constant (e1) && expr_integer (e1) == 1)
 		return e2;
-	if (op == '*' && is_constant (e2) && e2->e.integer_val == 1)
+	if (op == '*' && is_constant (e2) && expr_integer (e2) == 1)
 		return e1;
-	if (op == '*' && is_constant (e1) && e1->e.integer_val == 0)
+	if (op == '*' && is_constant (e1) && expr_integer (e1) == 0)
 		return e1;
-	if (op == '*' && is_constant (e2) && e2->e.integer_val == 0)
+	if (op == '*' && is_constant (e2) && expr_integer (e2) == 0)
 		return e2;
-	if (op == '/' && is_constant (e2) && e2->e.integer_val == 1)
+	if (op == '/' && is_constant (e2) && expr_integer (e2) == 1)
 		return e1;
-	if (op == '/' && is_constant (e2) && e2->e.integer_val == 0)
+	if (op == '/' && is_constant (e2) && expr_integer (e2) == 0)
 		return error (e, "division by zero");
-	if (op == '/' && is_constant (e1) && e1->e.integer_val == 0)
+	if (op == '/' && is_constant (e1) && expr_integer (e1) == 0)
 		return e1;
-	if (op == '+' && is_constant (e1) && e1->e.integer_val == 0)
+	if (op == '+' && is_constant (e1) && expr_integer (e1) == 0)
 		return e2;
-	if (op == '+' && is_constant (e2) && e2->e.integer_val == 0)
+	if (op == '+' && is_constant (e2) && expr_integer (e2) == 0)
 		return e1;
-	if (op == '-' && is_constant (e2) && e2->e.integer_val == 0)
+	if (op == '-' && is_constant (e2) && expr_integer (e2) == 0)
 		return e1;
 
 	if (op == '=' || op == 'b' || !is_constant (e1) || !is_constant (e2))
 		return e;
 
-	i1 = e1->e.integer_val;
-	i2 = e2->e.integer_val;
+	i1 = expr_integer (e1);
+	i2 = expr_integer (e2);
 
 	switch (op) {
 		case '+':
-			e1->e.integer_val += i2;
+			e = new_integer_expr (i1 + i2);
 			break;
 		case '-':
-			e1->e.integer_val -= i2;
+			e = new_integer_expr (i1 - i2);
 			break;
 		case '*':
-			e1->e.integer_val *= i2;
+			e = new_integer_expr (i1 * i2);
 			break;
 		case '/':
 			if (options.warnings.integer_divide)
 				warning (e2, "%d / %d == %d", i1, i2, i1 / i2);
-			e1->e.integer_val /= i2;
+			e = new_integer_expr (i1 / i2);
 			break;
 		case '&':
-			e1->e.integer_val = i1 & i2;
+			e = new_integer_expr (i1 & i2);
 			break;
 		case '|':
-			e1->e.integer_val = i1 | i2;
+			e = new_integer_expr (i1 | i2);
 			break;
 		case '^':
-			e1->e.integer_val = i1 ^ i2;
+			e = new_integer_expr (i1 ^ i2);
 			break;
 		case '%':
-			e1->e.integer_val = i1 % i2;
+			e = new_integer_expr (i1 % i2);
 			break;
 		case SHL:
-			e1->e.integer_val = i1 << i2;
+			e = new_integer_expr (i1 << i2);
 			break;
 		case SHR:
-			e1->e.integer_val = i1 >> i2;
+			e = new_integer_expr (i1 >> i2);
 			break;
 		case AND:
-			e1->e.integer_val = i1 && i2;
+			e = new_integer_expr (i1 && i2);
 			break;
 		case OR:
-			e1->e.integer_val = i1 || i2;
+			e = new_integer_expr (i1 || i2);
 			break;
 		case LT:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 < i2;
+			e = new_integer_expr (i1 < i2);
 			break;
 		case GT:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 > i2;
+			e = new_integer_expr (i1 > i2);
 			break;
 		case LE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 <= i2;
+			e = new_integer_expr (i1 <= i2);
 			break;
 		case GE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 >= i2;
+			e = new_integer_expr (i1 >= i2);
 			break;
 		case EQ:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 == i2;
+			e = new_integer_expr (i1 == i2);
 			break;
 		case NE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 != i2;
+			e = new_integer_expr (i1 != i2);
 			break;
 		default:
 			internal_error (e1, 0);
 	}
-	return e1;
+	e->file = e1->file;
+	e->line = e1->line;
+	return e;
 }
 
 static expr_t *
@@ -741,76 +733,72 @@ do_op_short (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '=' || op == 'b' || !is_constant (e1) || !is_constant (e2))
 		return e;
 
-	i1 = e1->e.short_val;
-	i2 = e2->e.short_val;
+	i1 = expr_short (e1);
+	i2 = expr_short (e2);
 
 	switch (op) {
 		case '+':
-			e1->e.short_val += i2;
+			e = new_short_expr (i1 + i2);
 			break;
 		case '-':
-			e1->e.short_val -= i2;
+			e = new_short_expr (i1 - i2);
 			break;
 		case '*':
-			e1->e.short_val *= i2;
+			e = new_short_expr (i1 * i2);
 			break;
 		case '/':
 			if (options.warnings.integer_divide)
 				warning (e2, "%d / %d == %d", i1, i2, i1 / i2);
-			e1->e.short_val /= i2;
+			e = new_short_expr (i1 / i2);
 			break;
 		case '&':
-			e1->e.short_val = i1 & i2;
+			e = new_short_expr (i1 & i2);
 			break;
 		case '|':
-			e1->e.short_val = i1 | i2;
+			e = new_short_expr (i1 | i2);
 			break;
 		case '^':
-			e1->e.short_val = i1 ^ i2;
+			e = new_short_expr (i1 ^ i2);
 			break;
 		case '%':
-			e1->e.short_val = i1 % i2;
+			e = new_short_expr (i1 % i2);
 			break;
 		case SHL:
-			e1->e.short_val = i1 << i2;
+			e = new_short_expr (i1 << i2);
 			break;
 		case SHR:
-			e1->e.short_val = i1 >> i2;
+			e = new_short_expr (i1 >> i2);
 			break;
 		case AND:
-			e1->e.short_val = i1 && i2;
+			e = new_short_expr (i1 && i2);
 			break;
 		case OR:
-			e1->e.short_val = i1 || i2;
+			e = new_short_expr (i1 || i2);
 			break;
 		case LT:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 < i2;
+			e = new_integer_expr (i1 < i2);
 			break;
 		case GT:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 > i2;
+			e = new_integer_expr (i1 > i2);
 			break;
 		case LE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 <= i2;
+			e = new_integer_expr (i1 <= i2);
 			break;
 		case GE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 >= i2;
+			e = new_integer_expr (i1 >= i2);
 			break;
 		case EQ:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 == i2;
+			e = new_integer_expr (i1 == i2);
 			break;
 		case NE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 != i2;
+			e = new_integer_expr (i1 != i2);
 			break;
 		default:
 			internal_error (e1, 0);
 	}
-	return e1;
+	e->file = e1->file;
+	e->line = e1->line;
+	return e;
 }
 
 static expr_t *

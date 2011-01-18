@@ -52,6 +52,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "qfcc.h"
 #include "reloc.h"
 #include "switch.h"
+#include "symtab.h"
 #include "type.h"
 
 #include "qc-parse.h"
@@ -65,15 +66,21 @@ typedef struct case_node_s {
 } case_node_t;
 
 static uintptr_t
+get_value (expr_t *e)
+{
+	if (e->type == ex_symbol)
+		return e->e.symbol->s.value;
+	return e->e.value.v.integer_val;
+}
+
+static uintptr_t
 get_hash (void *_cl, void *unused)
 {
 	case_label_t *cl = (case_label_t *) _cl;
 
 	if (!cl->value)
 		return 0;
-	if (cl->value->type == ex_string)
-		return (uintptr_t) cl->value->e.string_val;
-	return cl->value->e.integer_val;
+	return get_value (cl->value);
 }
 
 static int
@@ -83,16 +90,17 @@ compare (void *_cla, void *_clb, void *unused)
 	case_label_t *clb = (case_label_t *) _clb;
 	expr_t     *v1 = cla->value;
 	expr_t     *v2 = clb->value;
+	uintptr_t   val1, val2;
 
 	if (v1 == v2)
 		return 1;
 	if ((v1 && !v2) || (!v1 && v2))
 		return 0;
-	if (v1->type != v2->type)
+	if (extract_type (v1) != extract_type (v2))
 		return 0;
-	if (v1->type == ex_string)
-		return v1->e.string_val == v2->e.string_val;
-	return v1->e.integer_val == v2->e.integer_val;
+	val1 = get_value (v1);
+	val2 = get_value (v1);
+	return val1 == val2;
 }
 
 struct expr_s *
@@ -145,22 +153,20 @@ label_compare (const void *_a, const void *_b)
 	const case_label_t **b = (const case_label_t **) _b;
 	const char *s1, *s2;
 
-	switch ((*a)->value->type) {
-		case ex_string:
-			s1 = (*a)->value->e.string_val ? (*a)->value->e.string_val : "";
-			s2 = (*b)->value->e.string_val ? (*b)->value->e.string_val : "";
-			return strcmp (s1, s2);
-			break;
-		case ex_float:
-			return (*a)->value->e.float_val - (*b)->value->e.float_val;
-			break;
-		case ex_integer:
-			return (*a)->value->e.integer_val - (*b)->value->e.integer_val;
-			break;
-		default:
-			error (0, "internal compiler error in switch");
-			abort ();
+	if (is_string_val ((*a)->value)) {
+		s1 = expr_string ((*a)->value);
+		if (!s1)
+			s1 = "";
+		s2 = expr_string ((*b)->value);
+		if (!s2)
+			s2 = "";
+		return strcmp (s1, s2);
+	} else if (is_float_val ((*a)->value)) {
+		return expr_float ((*a)->value) - expr_float ((*b)->value);
+	} else if (is_integer_val ((*a)->value)) {
+		return expr_integer ((*a)->value) - expr_integer ((*b)->value);
 	}
+	internal_error (0, "in switch");
 }
 
 static case_node_t *
@@ -178,11 +184,11 @@ new_case_node (expr_t *low, expr_t *high)
 	} else {
 		int         size;
 
-		if (low->type != ex_integer) {
+		if (!is_integer_val (low)) {
 			error (low, "switch: internal error");
 			abort ();
 		}
-		size = high->e.integer_val - low->e.integer_val + 1;
+		size = expr_integer (high) - expr_integer (low) + 1;
 		node->labels = calloc (size, sizeof (case_node_t *));
 	}
 	node->left = node->right = 0;
@@ -223,18 +229,18 @@ build_case_tree (case_label_t **labels, int count, int range)
 	if (!nodes)
 		Sys_Error ("out of memory");
 
-	if (range && labels[0]->value->type == ex_integer) {
+	if (range && is_integer_val (labels[0]->value)) {
 		for (i = 0; i < count - 1; i = j, num_nodes++) {
 			for (j = i + 1; j < count; j++) {
-				if (labels[j]->value->e.integer_val
-					- labels[j - 1]->value->e.integer_val > 1)
+				if (expr_integer (labels[j]->value)
+					- expr_integer (labels[j - 1]->value) > 1)
 					break;
 			}
 			nodes[num_nodes] = new_case_node (labels[i]->value,
 											  labels[j - 1]->value);
 			for (k = i; k < j; k++)
-				nodes[num_nodes]->labels[labels[k]->value->e.integer_val
-										 - labels[i]->value->e.integer_val]
+				nodes[num_nodes]->labels[expr_integer (labels[k]->value)
+										 - expr_integer (labels[i]->value)]
 					= labels[k]->label;
 		}
 		if (i < count) {
@@ -297,15 +303,15 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			build_switch (sw, tree->right, op, sw_val, temp, default_label);
 		}
 	} else {
-		int         low = tree->low->e.integer_val;
-		int         high = tree->high->e.integer_val;
+		int         low = expr_integer (tree->low);
+		int         high = expr_integer (tree->high);
 		def_t      *def;
 		expr_t     *table;
 		const char *name = new_label_name ();
 		int         i;
 		expr_t     *range = binary_expr ('-', tree->high, tree->low);
 
-		range->type = ex_uinteger;
+		range = fold_constants (range);
 
 		//FIXME unsigned int better?
 		def = get_def (array_type (&type_integer, high - low + 1), name,

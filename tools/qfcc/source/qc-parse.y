@@ -365,7 +365,7 @@ non_field_type
 	| non_field_type array_decl
 		{
 			if ($2)
-				$$ = array_type ($1, $2->e.integer_val);
+				$$ = array_type ($1, $2->e.value.v.integer_val);
 			else
 				$$ = pointer_type ($1);
 		}
@@ -465,7 +465,8 @@ array_decl
 	: '[' fexpr ']'
 		{
 			$2 = constant_expr ($2);
-			if ($2->type != ex_integer || $2->e.integer_val < 1) {
+			if (($2->type != ex_value && $2->e.value.type != ev_integer)
+				|| $2->e.value.v.integer_val < 1) {
 				error (0, "invalid array size");
 				$$ = 0;
 			} else {

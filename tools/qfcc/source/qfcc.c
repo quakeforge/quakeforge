@@ -610,15 +610,13 @@ finish_compilation (void)
 		return !errors;
 
 	if (options.code.progsversion != PROG_ID_VERSION) {
-		e.type = ex_integer;
-		e.e.integer_val = type_size (&type_param);
+		e = *new_integer_expr (type_size (&type_param));
 		ReuseConstant (&e, get_def (&type_integer, ".param_size", pr.scope,
 					   st_global));
 	}
 
 	if (options.code.debug) {
-		e.type = ex_string;
-		e.e.string_val = debugfile;
+		e = *new_string_expr (debugfile);
 		ReuseConstant (&e, get_def (&type_string, ".debug_file", pr.scope,
 					   st_global));
 	}
