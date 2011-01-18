@@ -48,6 +48,7 @@ typedef enum {
 	sy_const,					///< symbol refers to a constant
 	sy_type,					///< symbol refers to a type
 	sy_expr,					///< symbol refers to an expression
+	sy_func,					///< symbol refers to a function
 } sy_type_e;
 
 typedef struct symbol_s {
@@ -61,6 +62,7 @@ typedef struct symbol_s {
 	union {
 		int         value;
 		struct expr_s *expr;
+		struct function_s *func;
 	} s;
 } symbol_t;
 
