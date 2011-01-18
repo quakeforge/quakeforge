@@ -518,17 +518,16 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent)
 }
 
 function_t *
-build_code_function (function_t *f, expr_t *state_expr, expr_t *statements)
+build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 {
-	build_function (f);
+	build_function (fsym->s.func);
 	if (state_expr) {
 		state_expr->next = statements;
-		emit_function (f, state_expr);
-	} else {
-		emit_function (f, statements);
+		statements = state_expr;
 	}
-	finish_function (f);
-	return f;
+	emit_function (fsym->s.func, statements);
+	finish_function (fsym->s.func);
+	return fsym->s.func;
 }
 
 function_t *
@@ -602,9 +601,9 @@ emit_function (function_t *f, expr_t *e)
 {
 	int         last_is_label = 0;
 	dstatement_t *s;
-//#define DUMP_EXPR
+#define DUMP_EXPR
 #ifdef DUMP_EXPR
-	printf (" %s =\n", f->def->name);
+	printf (" %s =\n", f->sym->name);
 #endif
 
 	if (f->aux)

@@ -154,9 +154,18 @@ program
 			symtab_removesymbol (current_symtab, $1);
 			symtab_addsymbol (current_symtab, $1);
 
-			$<symtab>$ = current_symtab;
 			current_func = begin_function ($1, 0, current_symtab);
 			current_symtab = current_func->symtab;
+			build_code_function ($1, 0, $4);
+
+			$4 = function_expr (new_symbol_expr ($1), 0);
+			$1 = new_symbol (".main");
+			$1->params = 0;
+			$1->type = parse_params (&type_void, 0);
+			$1 = function_symbol ($1, 0, 1);
+			current_func = begin_function ($1, 0, current_symtab);
+			current_symtab = current_func->symtab;
+			build_code_function ($1, 0, $4);
 		}
 	;
 
@@ -234,16 +243,8 @@ subprogram_declaration
 		}
 	  declarations compound_statement ';'
 		{
-			dstring_t  *str = dstring_newstr ();
-			symbol_t   *s;
-
-			for  (s = current_symtab->symbols; s; s = s->next) {
-				dstring_clearstr (str);
-				print_type_str (str, s->type);
-				printf ("    %s %s\n", s->name, str->str);
-			}
+			build_code_function ($1, 0, $5);
 			current_symtab = $<symtab>3;
-			dstring_delete (str);
 		}
 	| subprogram_head ASSIGNOP '#' CONST ';'
 		{

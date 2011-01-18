@@ -97,7 +97,8 @@ function_t *new_function (const char *name, const char *nice_name);
 void add_function (function_t *f);
 function_t *begin_function (struct symbol_s *sym, const char *nicename,
 							struct symtab_s *parent);
-function_t *build_code_function (function_t *f, struct expr_s *state_expr,
+function_t *build_code_function (struct symbol_s *fsym,
+								 struct expr_s *state_expr,
 								 struct expr_s *statements);
 function_t *build_builtin_function (struct symbol_s *sym,
 									struct expr_s *bi_val);
