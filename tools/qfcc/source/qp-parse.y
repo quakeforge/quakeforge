@@ -153,17 +153,21 @@ program
 			// move the symbol for the program name to the end of the list
 			symtab_removesymbol (current_symtab, $1);
 			symtab_addsymbol (current_symtab, $1);
+
+			$<symtab>$ = current_symtab;
+			current_func = begin_function ($1, 0, current_symtab);
+			current_symtab = current_func->symtab;
 		}
 	;
 
 program_head
 	: PROGRAM ID '(' opt_identifier_list ')' ';'
 		{
-
 			$$ = $2;
 			current_symtab = new_symtab (0, stab_global);
+
 			$$->type = parse_params (&type_void, 0);
-			symtab_addsymbol (current_symtab, $2);
+			$$ = function_symbol ($$, 0, 1);
 		}
 	;
 
@@ -224,13 +228,9 @@ subprogram_declarations
 subprogram_declaration
 	: subprogram_head ';'
 		{
-			param_t    *p;
-
 			$<symtab>$ = current_symtab;
-			current_symtab = new_symtab (current_symtab, stab_local);
-
-			for (p = $1->params; p; p = p->next)
-				symtab_addsymbol (current_symtab, copy_symbol (p->symbol));
+			current_func = begin_function ($1, 0, current_symtab);
+			current_symtab = current_func->symtab;
 		}
 	  declarations compound_statement ';'
 		{
@@ -242,12 +242,12 @@ subprogram_declaration
 				print_type_str (str, s->type);
 				printf ("    %s %s\n", s->name, str->str);
 			}
-			current_symtab = current_symtab->parent;
+			current_symtab = $<symtab>3;
 			dstring_delete (str);
 		}
 	| subprogram_head ASSIGNOP '#' CONST ';'
 		{
-			//build_builtin_function ($1, $4, $1->params);
+			build_builtin_function ($1, $4);
 		}
 	;
 
@@ -260,7 +260,7 @@ subprogram_head
 			} else {
 				$$->params = $3;
 				$$->type = parse_params ($5, $3);
-				symtab_addsymbol (current_symtab, $$);
+				$$ = function_symbol ($$, 0, 1);
 			}
 		}
 	| PROCEDURE ID arguments
@@ -271,7 +271,7 @@ subprogram_head
 			} else {
 				$$->params = $3;
 				$$->type = parse_params (&type_void, $3);
-				symtab_addsymbol (current_symtab, $$);
+				$$ = function_symbol ($$, 0, 1);
 			}
 		}
 	;

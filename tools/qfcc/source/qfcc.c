@@ -631,8 +631,8 @@ finish_compilation (void)
 		df->s_name = f->s_name;
 		df->s_file = f->s_file;
 		df->numparms = function_parms (f, df->parm_size);
-		if (f->scope)
-			df->locals = f->scope->space->size;
+		//FIXME if (f->scope)
+		//FIXME 	df->locals = f->scope->space->size;
 		if (f->builtin) {
 			df->first_statement = -f->builtin;
 			continue;
@@ -641,22 +641,22 @@ finish_compilation (void)
 			continue;
 		df->first_statement = f->code;
 		if (options.code.local_merging) {
-			if (f->scope->space->size > num_localdefs) {
-				num_localdefs = f->scope->space->size;
-				big_function = f->def->name;
-			}
+			//FIXME if (f->scope->space->size > num_localdefs) {
+			//FIXME 	num_localdefs = f->scope->space->size;
+			//FIXME 	big_function = f->def->name;
+			//FIXME }
 			df->parm_start = pr.near_data->size;
 		} else {
-			df->parm_start = defspace_new_loc (pr.near_data,
-											   f->scope->space->size);
-			num_localdefs += f->scope->space->size;
+			//FIXME df->parm_start = defspace_new_loc (pr.near_data,
+			//FIXME 								   f->scope->space->size);
+			//FIXME num_localdefs += f->scope->space->size;
 		}
-		for (def = f->scope->head; def; def = def->def_next) {
-			if (!def->local)
-				continue;
-			def->ofs += df->parm_start;
-			relocate_refs (def->refs, def->ofs);
-		}
+		//FIXME for (def = f->scope->head; def; def = def->def_next) {
+		//FIXME 	if (!def->local)
+		//FIXME 		continue;
+		//FIXME 	def->ofs += df->parm_start;
+		//FIXME 	relocate_refs (def->refs, def->ofs);
+		//FIXME }
 	}
 	if (options.code.local_merging) {
 		int         ofs;

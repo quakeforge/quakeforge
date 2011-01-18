@@ -459,7 +459,7 @@ new_label_name (void)
 {
 	static int  label = 0;
 	int         lnum = ++label;
-	const char *fname = current_func->def->name;
+	const char *fname = current_func->sym->name;
 	char       *lname;
 
 	lname = nva ("$%s_%d", fname, lnum);
@@ -2007,7 +2007,7 @@ return_expr (function_t *f, expr_t *e)
 	type_t     *t;
 
 	if (!e) {
-		if (f->def->type->t.func.type != &type_void) {
+		if (f->sym->type->t.func.type != &type_void) {
 			if (options.traditional) {
 				if (options.warnings.traditional)
 					warning (e,
@@ -2025,15 +2025,15 @@ return_expr (function_t *f, expr_t *e)
 
 	if (e->type == ex_error)
 		return e;
-	if (f->def->type->t.func.type == &type_void) {
+	if (f->sym->type->t.func.type == &type_void) {
 		if (!options.traditional)
 			return error (e, "returning a value for a void function");
 		if (options.warnings.traditional)
 			warning (e, "returning a value for a void function");
 	}
 	if (e->type == ex_bool)
-		e = convert_from_bool (e, f->def->type->t.func.type);
-	if (f->def->type->t.func.type == &type_float && e->type == ex_integer) {
+		e = convert_from_bool (e, f->sym->type->t.func.type);
+	if (f->sym->type->t.func.type == &type_float && e->type == ex_integer) {
 		e->type = ex_float;
 		e->e.float_val = e->e.integer_val;
 		t = &type_float;
@@ -2041,7 +2041,7 @@ return_expr (function_t *f, expr_t *e)
 	check_initialized (e);
 	if (t == &type_void) {
 		if (e->type == ex_nil) {
-			t = f->def->type->t.func.type;
+			t = f->sym->type->t.func.type;
 			e->type = expr_types[t->type];
 			if (e->type == ex_nil)
 				return error (e, "invalid return type for NIL");
@@ -2053,16 +2053,16 @@ return_expr (function_t *f, expr_t *e)
 			//FIXME does anything need to be done here?
 		}
 	}
-	if (!type_assignable (f->def->type->t.func.type, t)) {
+	if (!type_assignable (f->sym->type->t.func.type, t)) {
 		if (!options.traditional)
 			return error (e, "type mismatch for return value of %s",
-						  f->def->name);
+						  f->sym->name);
 		if (options.warnings.traditional)
 			warning (e, "type mismatch for return value of %s",
-					 f->def->name);
+					 f->sym->name);
 	} else {
-		if (f->def->type->t.func.type != t)
-			e = cast_expr (f->def->type->t.func.type, e);
+		if (f->sym->type->t.func.type != t)
+			e = cast_expr (f->sym->type->t.func.type, e);
 	}
 	return new_unary_expr ('r', e);
 }
@@ -2741,7 +2741,7 @@ super_expr (class_type_t *class_type)
 	if (!class->super_class)
 		return error (0, "%s has no super class", class->name);
 
-	super_d = get_def (&type_Super, ".super", current_func->scope, st_local);
+	super_d = 0;//FIXME get_def (&type_Super, ".super", current_func->scope, st_local);
 	def_initialized (super_d);
 	super = new_def_expr (super_d);
 	super_block = new_block_expr ();

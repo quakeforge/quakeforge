@@ -178,7 +178,7 @@ parse_params (type_t *type, param_t *parms)
 	return find_type (&new);
 }
 
-overloaded_function_t *
+static overloaded_function_t *
 get_function (const char *name, type_t *type, int overload, int create)
 {
 	const char *full_name;
@@ -229,6 +229,29 @@ get_function (const char *name, type_t *type, int overload, int create)
 	Hash_Add (overloaded_functions, func);
 	Hash_Add (function_map, func);
 	return func;
+}
+
+symbol_t *
+function_symbol (symbol_t *sym, int overload, int create)
+{
+	const char *name = sym->name;
+	overloaded_function_t *func;
+	symbol_t   *s;
+	
+	func = get_function (name, sym->type, overload, create);
+
+	if (func && func->overloaded)
+		name = func->full_name;
+	s = symtab_lookup (current_symtab, name);
+	if ((!s || s->table != current_symtab) && create) {
+		s = new_symbol (name);
+		s->sy_type = sy_func;
+		s->type = sym->type;
+		s->params = sym->params;
+		s->s.func = 0;				// function not yet defined
+		symtab_addsymbol (current_symtab, s);
+	}
+	return s;
 }
 
 def_t *
@@ -371,18 +394,19 @@ find_function (expr_t *fexpr, expr_t *params)
 }
 
 static void
-check_function (def_t *func, param_t *params)
+check_function (symbol_t *fsym)
 {
+	param_t    *params = fsym->params;
 	param_t    *p;
 	int         i;
 
-	if (!type_size (func->type->t.func.type)) {
+	if (!type_size (fsym->type->t.func.type)) {
 		error (0, "return type is an incomplete type");
-		func->type->t.func.type = &type_void;//FIXME
+		fsym->type->t.func.type = &type_void;//FIXME
 	}
-	if (type_size (func->type->t.func.type) > type_size (&type_param)) {
+	if (type_size (fsym->type->t.func.type) > type_size (&type_param)) {
 		error (0, "return value too large to be passed by value");
-		func->type->t.func.type = &type_void;//FIXME
+		fsym->type->t.func.type = &type_void;//FIXME
 	}
 	for (p = params, i = 0; p; p = p->next, i++) {
 		if (!p->selector && !p->type && !p->name)
@@ -398,62 +422,54 @@ check_function (def_t *func, param_t *params)
 	}
 }
 
-void
-build_scope (function_t *f, def_t *func, param_t *params)
+static void
+build_scope (symbol_t *fsym, symtab_t *parent)
 {
 	int         i;
-	def_t      *def;
 	param_t    *p;
-	def_t      *args = 0;
-	int         parm_ofs[MAX_PARMS];
+	symbol_t   *args = 0;
+	symbol_t   *param;
+	symtab_t   *symtab;
 
-	check_function (func, params);
+	check_function (fsym);
 
-	f->scope = new_scope (sc_params, new_defspace (), pr.scope);
+	symtab = new_symtab (parent, stab_local);
+	fsym->s.func->symtab = symtab;
 
-	if (func->type->t.func.num_params < 0) {
-		args = get_def (&type_va_list, ".args", f->scope, st_local);
-		args->used = 1;
-		def_initialized (args);
+	if (fsym->type->t.func.num_params < 0) {
+		args = new_symbol_type (".args", &type_va_list);
+		symtab_addsymbol (symtab, args);
 	}
 
-	for (p = params, i = 0; p; p = p->next) {
+	for (p = fsym->params, i = 0; p; p = p->next) {
 		if (!p->selector && !p->type && !p->name)
 			continue;					// ellipsis marker
 		if (!p->type)
 			continue;					// non-param selector
-		def = get_def (p->type, p->name, f->scope, st_local);
-		parm_ofs[i] = def->ofs;
-		if (i > 0 && parm_ofs[i] < parm_ofs[i - 1]) {
-			error (0, "bad parm order");
-			abort ();
-		}
-		//printf ("%s%s %d\n", p == params ? "" : "    ", p->name, def->ofs);
-		def->used = 1;				// don't warn for unused params
-		def_initialized (def);	// params are assumed to be initialized
+		param = new_symbol_type (p->name, p->type);
+		symtab_addsymbol (symtab, param);
 		i++;
 	}
 
 	if (args) {
 		while (i < MAX_PARMS) {
-			def = get_def (&type_vector, 0, f->scope, st_local);//XXX param
-			def->used = 1;
+			param = new_symbol_type (va (".par%d", i), &type_param);
+			symtab_addsymbol (symtab, param);
 			i++;
 		}
 	}
 }
 
 function_t *
-new_function (def_t *func, const char *nice_name)
+new_function (const char *name, const char *nice_name)
 {
 	function_t	*f;
 
 	ALLOC (1024, function_t, functions, f);
-	f->s_name = ReuseString (func->name);
+	f->s_name = ReuseString (name);
 	f->s_file = pr.source_file;
-	f->def = func;
 	if (!(f->name = nice_name))
-		f->name = f->def->name;
+		f->name = name;
 	return f;
 }
 
@@ -468,18 +484,25 @@ add_function (function_t *f)
 }
 
 function_t *
-begin_function (def_t *def, const char *nicename, param_t *params)
+begin_function (symbol_t *sym, const char *nicename, symtab_t *parent)
 {
-	function_t *func;
-
-	if (def->constant)
-		error (0, "%s redefined", def->name);
-	func = new_function (def, nicename);
-	if (!def->external) {
-		add_function (func);
-		reloc_def_func (func, def->ofs);
+	if (sym->sy_type != sy_func) {
+		error (0, "%s is not a function", sym->name);
+		return 0;
 	}
-	func->code = pr.code->size;
+	if (sym->s.func) {
+		error (0, "%s redefined", sym->name);
+		return 0;
+	}
+	sym->s.func = new_function (sym->name, nicename);
+	sym->s.func->sym = sym;
+	//FIXME
+	//if (!def->external) {
+		add_function (sym->s.func);
+		//reloc_def_func (func, def->ofs);
+	//}
+	sym->s.func->code = pr.code->size;
+#if 0 //FIXME
 	if (options.code.debug && func->aux) {
 		pr_lineno_t *lineno = new_lineno ();
 		func->aux->source_line = def->line;
@@ -489,8 +512,9 @@ begin_function (def_t *def, const char *nicename, param_t *params)
 
 		lineno->fa.func = func->aux - pr.auxfunctions;
 	}
-	build_scope (func, def, params);
-	return func;
+#endif
+	build_scope (sym, parent);
+	return sym->s.func;
 }
 
 function_t *
@@ -508,64 +532,69 @@ build_code_function (function_t *f, expr_t *state_expr, expr_t *statements)
 }
 
 function_t *
-build_builtin_function (def_t *def, expr_t *bi_val, param_t *params)
+build_builtin_function (symbol_t *sym, expr_t *bi_val)
 {
-	function_t *f;
+	int         bi;
 
-	if (def->type->type != ev_func) {
-		error (bi_val, "%s is not a function", def->name);
+	if (sym->sy_type != sy_func) {
+		error (bi_val, "%s is not a function", sym->name);
 		return 0;
 	}
-	if (def->constant) {
-		error (bi_val, "%s redefined", def->name);
+	if (sym->s.func) {
+		error (bi_val, "%s redefined", sym->name);
 		return 0;
 	}
 	if (bi_val->type != ex_integer && bi_val->type != ex_float) {
 		error (bi_val, "invalid constant for = #");
 		return 0;
 	}
-	if (def->external)
-		return 0;
+	//if (sym->external)
+	//	return 0;
 
-	f = new_function (def, 0);
-	add_function (f);
+	sym->s.func = new_function (sym->name, 0);
+	sym->s.func->sym = sym;
+	add_function (sym->s.func);
 
-	f->builtin = bi_val->type == ex_integer ? bi_val->e.integer_val
-											: (int)bi_val->e.float_val;
-	reloc_def_func (f, def->ofs);
-	build_function (f);
-	finish_function (f);
+	bi = bi_val->e.integer_val;
+	if (bi_val->type == ex_integer)
+		bi = (int)bi_val->e.float_val;
+	sym->s.func->builtin = bi;
+	//reloc_def_func (sym->s.func, def->ofs);
+	build_function (sym->s.func);
+	finish_function (sym->s.func);
 
 	// for debug info
-	build_scope (f, f->def, params);
-	flush_scope (f->scope, 1);
-	return f;
+	//build_scope (f, f->def, sym->params);
+	//flush_scope (f->scope, 1);
+	return sym->s.func;
 }
 
 void
 build_function (function_t *f)
 {
-	f->def->constant = 1;
-	f->def->nosave = 1;
-	f->def->initialized = 1;
-	G_FUNCTION (f->def->ofs) = f->function_num;
+	//	FIXME
+//	f->def->constant = 1;
+//	f->def->nosave = 1;
+//	f->def->initialized = 1;
+//	G_FUNCTION (f->def->ofs) = f->function_num;
 }
 
 void
 finish_function (function_t *f)
 {
-	if (f->aux) {
-		def_t *def;
-		f->aux->function = f->function_num;
-		if (f->scope) {
-			for (def = f->scope->head; def; def = def->def_next) {
-				if (def->name) {
-					def_to_ddef (def, new_local (), 0);
-					f->aux->num_locals++;
-				}
-			}
-		}
-	}
+	//	FIXME
+//	if (f->aux) {
+//		def_t *def;
+//		f->aux->function = f->function_num;
+//		if (f->scope) {
+//			for (def = f->scope->head; def; def = def->def_next) {
+//				if (def->name) {
+//					def_to_ddef (def, new_local (), 0);
+//					f->aux->num_locals++;
+//				}
+//			}
+//		}
+//	}
 }
 
 void
@@ -618,14 +647,15 @@ emit_function (function_t *f, expr_t *e)
 int
 function_parms (function_t *f, byte *parm_size)
 {
+	//FIXME this is icky
 	int         count, i;
 
-	if (f->def->type->t.func.num_params >= 0)
-		count = f->def->type->t.func.num_params;
+	if (f->sym->type->t.func.num_params >= 0)
+		count = f->sym->type->t.func.num_params;
 	else
-		count = -f->def->type->t.func.num_params - 1;
+		count = -f->sym->type->t.func.num_params - 1;
 
 	for (i = 0; i < count; i++)
-		parm_size[i] = type_size (f->def->type->t.func.param_types[i]);
-	return f->def->type->t.func.num_params;
+		parm_size[i] = type_size (f->sym->type->t.func.param_types[i]);
+	return f->sym->type->t.func.num_params;
 }

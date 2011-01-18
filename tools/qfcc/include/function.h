@@ -56,8 +56,8 @@ typedef struct function_s {
 	int                 function_num;
 	string_t            s_file;		///< source file with definition
 	string_t            s_name;
-	struct def_s       *def;
-	struct scope_s     *scope;
+	struct symbol_s    *sym;
+	struct symtab_s    *symtab;
 	struct reloc_s     *refs;
 	struct expr_s      *var_init;
 	const char         *name;		///< nice name for __PRETTY_FUNCTION__
@@ -77,6 +77,7 @@ typedef struct param_s {
 
 struct expr_s;
 struct symbol_s;
+struct symtab_s;
 
 param_t *new_param (const char *selector, struct type_s *type,
 					const char *name);
@@ -86,21 +87,20 @@ param_t *_reverse_params (param_t *params, param_t *next);
 param_t *reverse_params (param_t *params);
 param_t *copy_params (param_t *params);
 struct type_s *parse_params (struct type_s *type, param_t *params);
-overloaded_function_t *get_function (const char *name, struct type_s *type,
-									 int overload, int create);
+struct symbol_s *function_symbol (struct symbol_s *sym,
+								  int overload, int create);
 struct def_s *get_function_def (const char *name, struct type_s *type,
 								struct scope_s *scope, storage_class_t storage,
 								int overload, int create);
 struct expr_s *find_function (struct expr_s *fexpr, struct expr_s *params);
-void build_scope (function_t *f, struct def_s *func, param_t *params);
-function_t *new_function (struct def_s *func, const char *nice_name);
+function_t *new_function (const char *name, const char *nice_name);
 void add_function (function_t *f);
-function_t *begin_function (struct def_s *def, const char *nicename,
-							param_t *params);
+function_t *begin_function (struct symbol_s *sym, const char *nicename,
+							struct symtab_s *parent);
 function_t *build_code_function (function_t *f, struct expr_s *state_expr,
 								 struct expr_s *statements);
-function_t *build_builtin_function (struct def_s *def, struct expr_s *bi_val,
-									param_t *params);
+function_t *build_builtin_function (struct symbol_s *sym,
+									struct expr_s *bi_val);
 void build_function (function_t *f);
 void finish_function (function_t *f);
 void emit_function (function_t *f, struct expr_s *e);
