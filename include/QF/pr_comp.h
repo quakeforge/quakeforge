@@ -308,7 +308,7 @@ extern opcode_t pr_opcodes[];
 opcode_t *PR_Opcode (pr_short_t opcode);
 void PR_Opcode_Init (void);
 
-typedef struct statement_s {
+typedef struct dstatement_s {
 	pr_opcode_e op:16;
 	pr_ushort_t a,b,c;
 } dstatement_t;

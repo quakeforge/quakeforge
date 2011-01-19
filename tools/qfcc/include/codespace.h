@@ -33,15 +33,15 @@
 #define __codespace_h
 
 typedef struct codespace_s {
-	struct statement_s *code;
+	struct dstatement_s *code;
 	int         size;
 	int         max_size;
 } codespace_t;
 
 codespace_t *codespace_new (void);
 void codespace_delete (codespace_t *codespace);
-void codespace_addcode (codespace_t *codespace, struct statement_s *code,
+void codespace_addcode (codespace_t *codespace, struct dstatement_s *code,
 						int size);
-struct statement_s *codespace_newstatement (codespace_t *codespace);
+struct dstatement_s *codespace_newstatement (codespace_t *codespace);
 
 #endif//__codespace_h
