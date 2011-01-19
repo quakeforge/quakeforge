@@ -406,7 +406,7 @@ encode_enum (dstring_t *encoding, type_t *type, int level)
 	dasprintf (encoding, "{%s#", name);
 	if (level < 2) {
 		for (e = enm->symbols; e; e = e->next) {
-			dasprintf (encoding, "%s=%d%s", e->name, e->s.value,
+			dasprintf (encoding, "%s=%d%s", e->name, e->s.value.v.integer_val,
 					   e->next ? "," : "");
 		}
 	}

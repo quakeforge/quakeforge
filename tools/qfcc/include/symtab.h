@@ -32,6 +32,8 @@
 #ifndef __symtab_h
 #define __symtab_h
 
+#include "expr.h"
+
 /**	\defgroup qfcc_symtab Symbol Table Management
 	\ingroup qfcc
 */
@@ -60,7 +62,8 @@ typedef struct symbol_s {
 	struct type_s *type;		///< type of object to which symbol refers
 	struct param_s *params;		///< the parameters if a function
 	union {
-		int         value;
+		int         offset;
+		struct ex_value_s value;
 		struct expr_s *expr;
 		struct function_s *func;
 	} s;

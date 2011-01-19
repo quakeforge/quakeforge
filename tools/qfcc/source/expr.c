@@ -705,7 +705,7 @@ expr_float (expr_t *e)
 		return e->e.value.v.float_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_float)
-		return e->e.symbol->s.value;
+		return e->e.symbol->s.value.v.float_val;
 	internal_error (e, "not a float constant");
 }
 
@@ -729,9 +729,9 @@ expr_vector (expr_t *e)
 		return vec3_origin;
 	if (e->type == ex_value && e->e.value.type == ev_vector)
 		return e->e.value.v.vector_val;
-	//if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-	//	&& e->e.symbol->type->type == ev_vector)
-	//	return e->e.symbol->s.value;
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
+		&& e->e.symbol->type->type == ev_vector)
+		return e->e.symbol->s.value.v.vector_val;
 	internal_error (e, "not a vector constant");
 }
 
@@ -755,9 +755,9 @@ expr_quaternion (expr_t *e)
 		return quat_origin;
 	if (e->type == ex_value && e->e.value.type == ev_quat)
 		return e->e.value.v.quaternion_val;
-	//if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-	//	&& e->e.symbol->type->type == ev_quat)
-	//	return e->e.symbol->s.value;
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
+		&& e->e.symbol->type->type == ev_quat)
+		return e->e.symbol->s.value.v.quaternion_val;
 	internal_error (e, "not a quaternion constant");
 }
 
@@ -783,7 +783,7 @@ expr_integer (expr_t *e)
 		return e->e.value.v.integer_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_integer)
-		return e->e.symbol->s.value;
+		return e->e.symbol->s.value.v.integer_val;
 	internal_error (e, "not an integer constant");
 }
 
@@ -809,7 +809,7 @@ expr_short (expr_t *e)
 		return e->e.value.v.short_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_short)
-		return e->e.symbol->s.value;
+		return e->e.symbol->s.value.v.short_val;
 	internal_error (e, "not a short constant");
 }
 

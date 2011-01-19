@@ -114,7 +114,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 		if (s->sy_type != sy_var)
 			continue;
 		if (su == 's') {
-			s->s.value = symtab->size;
+			s->s.offset = symtab->size;
 			symtab->size += type_size (s->type);
 		} else {
 			int         size = type_size (s->type);
@@ -160,7 +160,7 @@ add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 	enum_tab = enum_type->t.symtab;
 	value = 0;
 	if (*enum_tab->symtail)
-		value = ((symbol_t *)(*enum_tab->symtail))->s.value + 1;
+		value = ((symbol_t *)(*enum_tab->symtail))->s.value.v.integer_val + 1;
 	if (val) {
 		val = constant_expr (val);
 		if (!is_constant (val))
@@ -170,7 +170,7 @@ add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 		else
 			value = expr_integer (val);
 	}
-	name->s.value = value;
+	name->s.value.v.integer_val = value;
 	symtab_addsymbol (enum_tab, name);
 }
 

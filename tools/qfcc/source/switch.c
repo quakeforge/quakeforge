@@ -69,7 +69,7 @@ static uintptr_t
 get_value (expr_t *e)
 {
 	if (e->type == ex_symbol)
-		return e->e.symbol->s.value;
+		return e->e.symbol->s.value.v.integer_val;	//FIXME pointer
 	return e->e.value.v.integer_val;
 }
 
