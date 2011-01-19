@@ -164,7 +164,7 @@ statement_branch (sblock_t *sblock, expr_t *e)
 	if (e->type == ex_uexpr && e->e.expr.op == 'g') {
 		s = new_statement ("<GOTO>");
 		s->opa = new_operand (op_label);
-		s->opa->o.label = &e->e.label;
+		s->opa->o.label = &e->e.expr.e1->e.label;
 	}
 
 	sblock_add_statement (sblock, s);
