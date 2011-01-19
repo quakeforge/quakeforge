@@ -59,6 +59,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "opcodes.h"
 #include "options.h"
 #include "reloc.h"
+#include "statements.h"
 #include "symtab.h"
 #include "type.h"
 
@@ -600,48 +601,18 @@ finish_function (function_t *f)
 void
 emit_function (function_t *f, expr_t *e)
 {
-	int         last_is_label = 0;
-	dstatement_t *s;
-#define DUMP_EXPR
-#ifdef DUMP_EXPR
-	printf (" %s =\n", f->sym->name);
-#endif
+	sblock_t   *sblock;
+	statement_t *s;
 
-	if (f->aux)
-		lineno_base = f->aux->source_line;
-
-	while (f->var_init) {
-		emit_expr (f->var_init);
-		f->var_init = f->var_init->next;
+	printf ("%s\n", f->name);
+	sblock = make_statements (e);
+	for (/**/; sblock; sblock = sblock->next) {
+		printf ("block %p\n", sblock);
+		for (s = sblock->statements; s; s = s->next) {
+			printf ("    ");
+			print_statement (s);
+		}
 	}
-
-	//FIXME current_scope = f->scope;
-	while (e) {
-#ifdef DUMP_EXPR
-		printf ("%d ", pr.source_line);
-		print_expr (e);
-		puts("");
-#endif
-		last_is_label = (e->type == ex_label);
-		emit_expr (e);
-		e = e->next;
-	}
-	s = &pr.code->code[pr.code->size - 1];
-	if (last_is_label
-		|| !(s->op == op_return->opcode
-			 || (op_return_v && s->op == op_return_v->opcode))) {
-		if (!options.traditional && op_return_v)
-			emit_statement (0, op_return_v, 0, 0, 0);
-		else
-			emit_statement (0, op_done, 0, 0, 0);
-	}
-	//FIXME flush_scope (current_scope, 0);
-	//FIXME current_scope = pr.scope;
-	reset_tempdefs ();
-
-#ifdef DUMP_EXPR
-	puts ("");
-#endif
 }
 
 int

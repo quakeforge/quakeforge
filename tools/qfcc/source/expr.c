@@ -2446,6 +2446,20 @@ is_indirect (expr_t *e)
 static inline int
 is_lvalue (expr_t *e)
 {
+	if (e->type == ex_symbol) {
+		switch (e->e.symbol->sy_type) {
+			case sy_var:
+				return 1;
+			case sy_const:
+				return 0;
+			case sy_type:
+				return 0;
+			case sy_expr:
+				return 0;
+			case sy_func:
+				return 0;
+		}
+	}
 	if (e->type == ex_def || e->type == ex_temp)
 		return 1;
 	if (e->type == ex_expr && e->e.expr.op == '.')

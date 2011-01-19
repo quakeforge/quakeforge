@@ -227,9 +227,9 @@ setup_data (pr_info_t *pr)
 		//FIXME 		write_def (d, def++, &reloc);
 	}
 	for (r = pr->relocs; r; r = r->next)
-		if (r->type == rel_def_op)
-			write_one_reloc (r, &reloc, r->label->ofs);
-		else
+		//FIXME if (r->type == rel_def_op)
+		//FIXME 	write_one_reloc (r, &reloc, r->label->ofs);
+		//FIXME else
 			write_one_reloc (r, &reloc, 0);
 	for (st = pr->code->code; st - pr->code->code < pr->code->size; st++) {
 		st->op = LittleLong (st->op);

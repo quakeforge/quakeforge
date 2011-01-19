@@ -577,7 +577,7 @@ finish_compilation (void)
 	function_t *f;
 	def_t      *def;
 	expr_t      e;
-	ex_label_t *l;
+	//FIXME ex_label_t *l;
 	dfunction_t *df;
 
 	// check to make sure all functions prototyped have code
@@ -663,8 +663,8 @@ finish_compilation (void)
 			G_INT (ofs) = 0;
 	}
 
-	for (l = pr.labels; l; l = l->next)
-		relocate_refs (l->refs, l->ofs);
+	//FIXME for (l = pr.labels; l; l = l->next)
+	//FIXME 	relocate_refs (l->refs, l->ofs);
 
 	return !errors;
 }

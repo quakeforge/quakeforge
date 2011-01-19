@@ -71,9 +71,9 @@ typedef struct ex_expr_s {
 } ex_expr_t;
 
 typedef struct ex_label_s {
-	struct ex_label_s *next;	///< next lable in global list of labels
+	struct ex_label_s *next;	///< next label in global list of labels
 	struct reloc_s *refs;		///< relocations associated with this label
-	int         ofs;			///< the location of this label if known
+	struct sblock_s *dest;		///< the location of this label if known
 	const char *name;			///< the name of this label
 } ex_label_t;
 
