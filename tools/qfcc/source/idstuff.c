@@ -72,15 +72,9 @@ static int  precache_files_block[MAX_SOUNDS];
 static int  numfiles;
 
 void
-PrecacheSound (def_t *e, int ch)
+PrecacheSound (const char *n, int ch)
 {
-	char       *n;
 	int         i;
-
-	if (!e->ofs)
-		return;
-
-	n = G_STRING (e->ofs);
 
 	for (i = 0; i < numsounds; i++) {
 		if (!strcmp (n, precache_sounds[i])) {
@@ -103,15 +97,9 @@ PrecacheSound (def_t *e, int ch)
 }
 
 void
-PrecacheModel (def_t *e, int ch)
+PrecacheModel (const char *n, int ch)
 {
-	char       *n;
 	int         i;
-
-	if (!e->ofs)
-		return;
-
-	n = G_STRING (e->ofs);
 
 	for (i = 0; i < nummodels; i++) {
 		if (!strcmp (n, precache_models[i])) {
@@ -134,15 +122,9 @@ PrecacheModel (def_t *e, int ch)
 }
 
 void
-PrecacheFile (def_t *e, int ch)
+PrecacheFile (const char *n, int ch)
 {
-	char       *n;
 	int         i;
-
-	if (!e->ofs)
-		return;
-
-	n = G_STRING (e->ofs);
 
 	for (i = 0; i < numfiles; i++) {
 		if (!strcmp (n, precache_files[i])) {

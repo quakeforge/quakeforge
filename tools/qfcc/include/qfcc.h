@@ -69,6 +69,8 @@ typedef struct pr_info_s {
 	struct defspace_s *entity_data;
 	struct scope_s *scope;
 
+	struct symtab_s *symtab;
+
 	srcline_t      *srcline_stack;
 	string_t        source_file;
 	int             source_line;

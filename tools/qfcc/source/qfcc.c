@@ -87,6 +87,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "reloc.h"
 #include "strpool.h"
 #include "struct.h"
+#include "symtab.h"
 #include "type.h"
 
 options_t   options;
@@ -544,12 +545,7 @@ begin_compilation (void)
 static void
 setup_param_block (void)
 {
-	size_t      i;
-	def_t      *def;
-	static struct {
-		const char *name;
-		type_t     *type;
-	} defs[] = {
+	static struct_def_t defs[] = {
 		{".zero",		&type_zero},
 		{".return",		&type_param},
 		{".param_0",	&type_param},
@@ -561,11 +557,13 @@ setup_param_block (void)
 		{".param_6",	&type_param},
 		{".param_7",	&type_param},
 	};
+	size_t      i;
+	symbol_t   *sym;
 
+	pr.symtab = new_symtab (0, stab_global);
 	for (i = 0; i < sizeof (defs) / sizeof (defs[0]); i++) {
-		def = get_def (defs[i].type, defs[i].name, pr.scope, st_global);
-		def->nosave = 1;
-		def_initialized (def);
+		sym = new_symbol_type (defs[i].name, defs[i].type);
+		symtab_addsymbol (pr.symtab, sym);
 	}
 }
 

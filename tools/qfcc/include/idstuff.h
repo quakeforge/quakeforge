@@ -32,12 +32,10 @@
 #ifndef __idstuff_h
 #define __idstuff_h
 
-struct def_s;
-
 //XXX eww :/
-void PrecacheSound (struct def_s *e, int ch);
-void PrecacheModel (struct def_s *e, int ch);
-void PrecacheFile (struct def_s *e, int ch);
+void PrecacheSound (const char *, int ch);
+void PrecacheModel (const char *, int ch);
+void PrecacheFile (const char *, int ch);
 int  WriteFiles (const char *sourcedir);
 int  WriteProgdefs (const char *filename);
 

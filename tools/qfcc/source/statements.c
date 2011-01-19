@@ -210,7 +210,6 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 			break;
 		case ex_uexpr:
 			break;
-		case ex_def:
 		case ex_symbol:
 			*op = new_operand (op_symbol);
 			(*op)->o.symbol = e->e.symbol;
@@ -312,7 +311,6 @@ statement_expr (sblock_t *sblock, expr_t *e)
 						goto non_executable;
 				}
 				break;
-			case ex_def:
 			case ex_symbol:
 			case ex_temp:
 			case ex_nil:

@@ -464,7 +464,7 @@ param
 array_decl
 	: '[' fexpr ']'
 		{
-			$2 = constant_expr ($2);
+			$2 = fold_constants ($2);
 			if (($2->type != ex_value && $2->e.value.type != ev_integer)
 				|| $2->e.value.v.integer_val < 1) {
 				error (0, "invalid array size");

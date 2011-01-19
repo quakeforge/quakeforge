@@ -155,7 +155,7 @@ convert_to_float (expr_t *e)
 					internal_error (e, 0);
 			}
 			break;
-		case ex_def:
+		case ex_symbol:
 		case ex_expr:
 		case ex_uexpr:
 		case ex_temp:

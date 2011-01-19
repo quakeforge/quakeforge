@@ -110,10 +110,7 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 
 	SYS_CHECKMEM (cl);
 
-	if (value) {
-		value = constant_expr (value);
-	}
-	if (value && value->type < ex_nil) {
+	if (value && !is_constant (value)) {
 		error (value, "non-constant case value");
 		free (cl);
 		return 0;
@@ -316,7 +313,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		//FIXME unsigned int better?
 		def = get_def (array_type (&type_integer, high - low + 1), name,
 					   pr.scope, st_static);
-		table = new_def_expr (def);
+		table = 0;//FIXME new_def_expr (def);
 
 		if (tree->left) {
 			branch = new_binary_expr (IFB, temp, low_label);

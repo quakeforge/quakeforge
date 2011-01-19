@@ -247,12 +247,15 @@ copy_keywordargs (const keywordarg_t *kwargs)
 expr_t *
 send_message (int super)
 {
+	return 0;
+#if 0 //FIXME
 	if (super)
 		return new_def_expr (get_def (&type_supermsg, "obj_msgSend_super",
 									  pr.scope, st_extern));
 	else
 		return new_def_expr (get_def (&type_IMP, "obj_msgSend", pr.scope,
 									  st_extern));
+#endif
 }
 
 method_t *

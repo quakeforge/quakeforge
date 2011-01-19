@@ -104,8 +104,6 @@ get_type (expr_t *e)
 		case ex_expr:
 		case ex_uexpr:
 			return e->e.expr.type;
-		case ex_def:
-			return e->e.def->type;
 		case ex_symbol:
 			return e->e.symbol->type;
 		case ex_temp:
@@ -237,39 +235,6 @@ test_error (expr_t *e, type_t *t)
 	return e;
 }
 
-static void
-check_initialized (expr_t *e)
-{
-	const char *name;
-
-	if (e->type == ex_def
-		&& !(e->e.def->type->type == ev_func
-			 && !e->e.def->local)
-		&& !is_struct (e->e.def->type)
-		&& !e->e.def->external
-		&& !e->e.def->initialized) {
-		name = e->e.def->name;
-		if (options.warnings.uninited_variable && !e->e.def->suppress) {
-			if (options.code.local_merging)
-				warning (e, "%s may be used uninitialized", name);
-			else
-				notice (e, "%s may be used uninitialized", name);
-		}
-		e->e.def->suppress = 1;	// warn only once
-		if (options.traditional && options.code.local_merging
-			&& !e->e.def->set) {
-			def_t      *def = e->e.def;
-			e->e.def->set = 1;	// auto-init only once
-			e = assign_expr (e, new_nil_expr ());
-			e->file = def->file;
-			e->line = def->line;
-			e->next = current_func->var_init;
-			current_func->var_init = e;
-			notice (e, "auto-initializing %s", name);
-		}
-	}
-}
-
 expr_t *
 inc_users (expr_t *e)
 {
@@ -312,7 +277,6 @@ copy_expr (expr_t *e)
 		return 0;
 	switch (e->type) {
 		case ex_error:
-		case ex_def:
 		case ex_symbol:
 		case ex_nil:
 		case ex_value:
@@ -491,15 +455,6 @@ new_unary_expr (int op, expr_t *e1)
 	e->type = ex_uexpr;
 	e->e.expr.op = op;
 	e->e.expr.e1 = e1;
-	return e;
-}
-
-expr_t *
-new_def_expr (def_t *def)
-{
-	expr_t     *e = new_expr ();
-	e->type = ex_def;
-	e->e.def = def;
 	return e;
 }
 
@@ -814,34 +769,6 @@ expr_short (expr_t *e)
 }
 
 expr_t *
-constant_expr (expr_t *var)
-{
-	def_t      *def;
-
-	if (var->type != ex_def || !var->e.def->constant)
-		return var;
-
-	def = var->e.def;
-	def->used = 1;
-	switch (def->type->type) {
-		case ev_string:
-			return new_string_expr (G_GETSTR (def->ofs));
-		case ev_float:
-			return new_float_expr (G_FLOAT (def->ofs));
-		case ev_vector:
-			return new_vector_expr (G_VECTOR (def->ofs));
-		case ev_field:
-			return new_field_expr (G_INT (def->ofs), def->type, def);
-		case ev_integer:
-			return new_integer_expr (G_INT (def->ofs));
-//		case ev_uinteger:
-//			return new_uinteger_expr (G_INT (def->ofs));
-		default:
-			return var;
-	}
-}
-
-expr_t *
 new_bind_expr (expr_t *e1, expr_t *e2)
 {
 	expr_t     *e;
@@ -861,33 +788,35 @@ new_bind_expr (expr_t *e1, expr_t *e2)
 expr_t *
 new_self_expr (void)
 {
-	def_t      *def = get_def (&type_entity, ".self", pr.scope, st_extern);
-
-	def_initialized (def);
-	return new_def_expr (def);
+	symbol_t   *sym = symtab_lookup (pr.symtab, ".self");
+	
+	if (!sym) {
+		sym = new_symbol_type (".self", &type_entity);
+		symtab_addsymbol (pr.symtab, sym);
+	}
+	return new_symbol_expr (sym);
 }
 
 expr_t *
 new_this_expr (void)
 {
-	type_t     *type = field_type (&type_id);
-	def_t      *def = get_def (type, ".this", pr.scope, st_extern);
-
-	def_initialized (def);
-	def->nosave = 1;
-	return new_def_expr (def);
+	symbol_t   *sym = symtab_lookup (pr.symtab, ".this");
+	
+	if (!sym) {
+		sym = new_symbol_type (".this", field_type (&type_id));
+		symtab_addsymbol (pr.symtab, sym);
+	}
+	return new_symbol_expr (sym);
 }
 
 static expr_t *
 param_expr (const char *name, type_t *type)
 {
-	def_t      *def = get_def (&type_param, name, pr.scope, st_extern);
-	expr_t     *def_expr;
+	symbol_t   *sym = symtab_lookup (pr.symtab, name);
+	expr_t     *sym_expr;
 
-	def_initialized (def);
-	def->nosave = 1;
-	def_expr = new_def_expr (def);
-	return unary_expr ('.', address_expr (def_expr, 0, type));
+	sym_expr = new_symbol_expr (sym);
+	return unary_expr ('.', address_expr (sym_expr, 0, type));
 }
 
 expr_t *
@@ -994,15 +923,6 @@ print_expr (expr_t *e)
 			print_expr (e->e.expr.e1);
 			printf (" u%s", get_op_string (e->e.expr.op));
 			break;
-		case ex_def:
-			if (e->e.def->name)
-				printf ("%s", e->e.def->name);
-			if (!e->e.def->global) {
-				printf ("<%d>", e->e.def->ofs);
-			} else {
-				printf ("[%d]", e->e.def->ofs);
-			}
-			break;
 		case ex_symbol:
 			printf ("%s", e->e.symbol->name);
 			break;
@@ -1088,7 +1008,6 @@ test_expr (expr_t *e, int test)
 		return unary_expr ('!', e);
 
 	type = extract_type (e);
-	check_initialized (e);
 	if (e->type == ex_error)
 		return e;
 	switch (type) {
@@ -1492,9 +1411,6 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 
 	if (op == '.')
 		return field_expr (e1, e2);
-	check_initialized (e1);
-
-	check_initialized (e2);
 
 	if (op == OR || op == AND) {
 		e1 = test_expr (e1, true);
@@ -1505,8 +1421,6 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		return e1;
 	if (e2->type == ex_error)
 		return e2;
-	e1 = constant_expr (e1);
-	e2 = constant_expr (e2);
 	t1 = get_type (e1);
 	t2 = get_type (e2);
 	if (!t1 || !t2) {
@@ -1606,7 +1520,6 @@ unary_expr (int op, expr_t *e)
 	quat_t      q;
 	const char *s;
 
-	check_initialized (e);
 	if (e->type == ex_error)
 		return e;
 	switch (op) {
@@ -1652,13 +1565,11 @@ unary_expr (int op, expr_t *e)
 						return error (e, "invalid type for unary -");
 				case ex_expr:
 				case ex_bool:
-				case ex_def:
 				case ex_temp:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
-						n->e.expr.type = (e->type == ex_def)
-							? e->e.def->type : e->e.expr.type;
+						n->e.expr.type = e->e.expr.type;
 						return n;
 					}
 				case ex_symbol:
@@ -1714,7 +1625,6 @@ unary_expr (int op, expr_t *e)
 						return error (e, "invalid type for unary !");
 				case ex_uexpr:
 				case ex_expr:
-				case ex_def:
 				case ex_symbol:
 				case ex_temp:
 					{
@@ -1772,7 +1682,6 @@ unary_expr (int op, expr_t *e)
 					goto bitnot_expr;
 				case ex_expr:
 				case ex_bool:
-				case ex_def:
 				case ex_symbol:
 				case ex_temp:
 bitnot_expr:
@@ -1855,7 +1764,6 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 		if (type_size (t) > type_size (&type_param))
 			err = error (e, "formal parameter %d is too large to be passed by"
 						 " value", i + 1);
-		check_initialized (e);
 		if (ftype->t.func.param_types[i] == &type_float
 			&& is_integer_val (e)) {
 			convert_int (e);
@@ -1869,7 +1777,7 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 			if (e->type == ex_error)
 				return e;
 			if (!type_assignable (ftype->t.func.param_types[i], t)) {
-				err = param_mismatch (e, i + 1, fexpr->e.def->name,
+				err = param_mismatch (e, i + 1, fexpr->e.symbol->name,
 									  ftype->t.func.param_types[i], t);
 			}
 			t = ftype->t.func.param_types[i];
@@ -1940,25 +1848,22 @@ function_expr (expr_t *fexpr, expr_t *params)
 	if (fexpr->type == ex_error)
 		return fexpr;
 	if (ftype->type != ev_func) {
-		if (fexpr->type == ex_def)
+		if (fexpr->type == ex_symbol)
 			return error (fexpr, "Called object \"%s\" is not a function",
-						  fexpr->e.def->name);
+						  fexpr->e.symbol->name);
 		else
 			return error (fexpr, "Called object is not a function");
 	}
 
-	if (fexpr->type == ex_def && params && is_string_val (params)) {
+	if (fexpr->type == ex_symbol && params && is_string_val (params)) {
 		// FIXME eww, I hate this, but it's needed :(
 		// FIXME make a qc hook? :)
-		def_t      *func = fexpr->e.def;
-		def_t      *e = ReuseConstant (params, 0);
-
-		if (strncmp (func->name, "precache_sound", 14) == 0)
-			PrecacheSound (e, func->name[14]);
-		else if (strncmp (func->name, "precache_model", 14) == 0)
-			PrecacheModel (e, func->name[14]);
-		else if (strncmp (func->name, "precache_file", 13) == 0)
-			PrecacheFile (e, func->name[13]);
+		if (strncmp (fexpr->e.symbol->name, "precache_sound", 14) == 0)
+			PrecacheSound (expr_string (params), fexpr->e.symbol->name[14]);
+		else if (strncmp (fexpr->e.symbol->name, "precache_model", 14) == 0)
+			PrecacheModel (expr_string (params), fexpr->e.symbol->name[14]);
+		else if (strncmp (fexpr->e.symbol->name, "precache_file", 13) == 0)
+			PrecacheFile (expr_string (params), fexpr->e.symbol->name[13]);
 	}
 
 	return build_function_call (fexpr, ftype, params);
@@ -2000,7 +1905,6 @@ return_expr (function_t *f, expr_t *e)
 		convert_int (e);
 		t = &type_float;
 	}
-	check_initialized (e);
 	if (t == &type_void) {
 		if (e->type == ex_nil) {
 			t = f->sym->type->t.func.type;
@@ -2171,7 +2075,6 @@ expr_t *
 address_expr (expr_t *e1, expr_t *e2, type_t *t)
 {
 	expr_t     *e;
-	type_t     *type;
 
 	if (e1->type == ex_error)
 		return e1;
@@ -2180,26 +2083,13 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 		t = get_type (e1);
 
 	switch (e1->type) {
-		case ex_def:
-			{
-				def_t      *def = e1->e.def;
-				def->used = 1;
-				type = def->type;
-				if (is_struct (type) || is_class (type)) {
-					e = new_pointer_expr (0, t, def);
-					e->line = e1->line;
-					e->file = e1->file;
-				} else if (is_array (type)) {
-					e = e1;
-					e = new_pointer_expr (0, t, def);
-					e->file = e1->file;
-					e->line = e1->line;
-				} else {
-					e = new_unary_expr ('&', e1);
-					e->e.expr.type = pointer_type (t);
-				}
+		case ex_symbol:
+			if (e1->e.symbol->sy_type == sy_var) {
+				e = new_unary_expr ('&', e1);
+				e->e.expr.type = pointer_type (t);
 				break;
 			}
+			return error (e1, "invalid type for unary &");
 		case ex_expr:
 			if (e1->e.expr.op == '.') {
 				e = e1;
@@ -2460,7 +2350,7 @@ is_lvalue (expr_t *e)
 				return 0;
 		}
 	}
-	if (e->type == ex_def || e->type == ex_temp)
+	if (e->type == ex_temp)
 		return 1;
 	if (e->type == ex_expr && e->e.expr.op == '.')
 		return 1;
@@ -2493,9 +2383,6 @@ assign_expr (expr_t *e1, expr_t *e2)
 		}
 	}
 
-	if (e1->type == ex_def)
-		def_initialized (e1->e.def);
-
 	if (!is_lvalue (e1)) {
 		if (options.traditional)
 			warning (e1, "invalid lvalue in assignment");
@@ -2509,7 +2396,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 	}
 	//XXX func = func ???
 	if (t1->type != ev_pointer || !is_array (t2))
-		check_initialized (e2);
+		;//FIXME check_initialized (e2);
 	else {
 		e2 = address_expr (e2, 0, t2->t.fldptr.type);	// FIXME
 		t2 = get_type (e2);
@@ -2590,7 +2477,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 					 && POINTER_VAL (e->e.value.v.pointer) < 65536)) {
 				if (e->type == ex_expr && e->e.expr.op == '&'
 					&& e->e.expr.type->type == ev_pointer
-					&& e->e.expr.e1->type < ex_nil) {
+					&& !is_constant (e)) {
 					e2 = e;
 					e2->e.expr.op = '.';
 					e2->e.expr.type = t2;
@@ -2618,8 +2505,6 @@ cast_expr (type_t *type, expr_t *e)
 
 	if (e->type == ex_error)
 		return e;
-
-	check_initialized (e);
 
 	e_type = get_type (e);
 
@@ -2671,7 +2556,7 @@ selector_expr (keywordarg_t *selector)
 	index *= type_size (type_SEL.t.fldptr.type);
 	sel_def = get_def (type_SEL.t.fldptr.type, "_OBJ_SELECTOR_TABLE", pr.scope,
 					   st_extern);
-	sel = new_def_expr (sel_def);
+	sel = 0; //FIXME new_def_expr (sel_def);
 	dstring_delete (sel_id);
 	return address_expr (sel, new_short_expr (index), 0);
 }
@@ -2714,7 +2599,7 @@ super_expr (class_type_t *class_type)
 
 	super_d = 0;//FIXME get_def (&type_Super, ".super", current_func->scope, st_local);
 	def_initialized (super_d);
-	super = new_def_expr (super_d);
+	super = 0; //FIXME new_def_expr (super_d);
 	super_block = new_block_expr ();
 
 	e = assign_expr (binary_expr ('.', super, new_name_expr ("self")),
@@ -2723,7 +2608,7 @@ super_expr (class_type_t *class_type)
 
 	_class_type.type = ct_class;
 	_class_type.c.class = class;
-	e = new_def_expr (class_def (&_class_type, 1));
+	e = 0; //FIXME new_def_expr (class_def (&_class_type, 1));
 	e = assign_expr (binary_expr ('.', super, new_name_expr ("class")),
 					 binary_expr ('.', e, new_name_expr ("super_class")));
 	append_expr (super_block, e);

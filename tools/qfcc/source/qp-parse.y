@@ -150,6 +150,7 @@ program
 	  subprogram_declarations
 	  compound_statement '.'
 	  	{
+			symtab_t   *st = current_symtab;
 			// move the symbol for the program name to the end of the list
 			symtab_removesymbol (current_symtab, $1);
 			symtab_addsymbol (current_symtab, $1);
@@ -157,6 +158,7 @@ program
 			current_func = begin_function ($1, 0, current_symtab);
 			current_symtab = current_func->symtab;
 			build_code_function ($1, 0, $4);
+			current_symtab = st;
 
 			$4 = function_expr (new_symbol_expr ($1), 0);
 			$1 = new_symbol (".main");
@@ -166,6 +168,7 @@ program
 			current_func = begin_function ($1, 0, current_symtab);
 			current_symtab = current_func->symtab;
 			build_code_function ($1, 0, $4);
+			current_symtab = st;
 		}
 	;
 
@@ -173,7 +176,7 @@ program_head
 	: PROGRAM ID '(' opt_identifier_list ')' ';'
 		{
 			$$ = $2;
-			current_symtab = new_symtab (0, stab_global);
+			current_symtab = pr.symtab;
 
 			$$->type = parse_params (&type_void, 0);
 			$$ = function_symbol ($$, 0, 1);

@@ -754,10 +754,10 @@ class_finish_module (void)
 	def_t      *symtab_def;
 	pr_symtab_t *symtab;
 	pointer_t   *def_ptr;
-	def_t      *module_def;
-	pr_module_t *module;
-	def_t      *exec_class_def;
-	def_t      *init_def;
+	symbol_t   *module_sym;
+	//FIXME pr_module_t *module;
+	symbol_t   *exec_class_sym;
+	symbol_t   *init_sym;
 	function_t *init_func;
 	expr_t     *init_expr;
 
@@ -807,32 +807,26 @@ class_finish_module (void)
 		}
 	}
 
-	module_def = get_def (&type_module, "_OBJ_MODULE", pr.scope, st_static);
-	module_def->initialized = module_def->constant = 1;
-	module_def->nosave = 1;
-	module = &G_STRUCT (pr_module_t, module_def->ofs);
-	module->size = type_size (&type_module);
-	EMIT_STRING (module->name, G_GETSTR (pr.source_file));
-	EMIT_DEF (module->symtab, symtab_def);
+	module_sym = new_symbol_type ("_OBJ_MODULE", &type_module);
+	//FIXME module = &G_STRUCT (pr_module_t, module_def->ofs);
+	//FIXME module->size = type_size (&type_module);
+	//FIXME EMIT_STRING (module->name, G_GETSTR (pr.source_file));
+	//FIXME EMIT_DEF (module->symtab, symtab_def);
 
-	exec_class_def = get_def (&type_obj_exec_class, "__obj_exec_class",
-			pr.scope, st_extern);
+	exec_class_sym = new_symbol_type ("__obj_exec_class",
+									  &type_obj_exec_class);
+	symtab_addsymbol (current_symtab, exec_class_sym);
 
-	init_def = get_def (&type_function, ".ctor", pr.scope, st_static);
-	current_func = init_func = new_function (init_def->name, 0);
-	add_function (init_func);
-	reloc_def_func (init_func, init_def->ofs);
-	init_func->code = pr.code->size;
-	//FIXME build_scope (init_func, init_def, 0);
-	build_function (init_func);
+	init_sym = new_symbol_type (".ctor", &type_function);
+	symtab_addsymbol (current_symtab, init_sym);
 	init_expr = new_block_expr ();
 	append_expr (init_expr,
-			build_function_call (new_def_expr (exec_class_def),
-								 exec_class_def->type,
-								 address_expr (new_def_expr (module_def),
+			build_function_call (new_symbol_expr (exec_class_sym),
+								 exec_class_sym->type,
+								 address_expr (new_symbol_expr (module_sym),
 									 		   0, 0)));
-	emit_function (init_func, init_expr);
-	finish_function (init_func);
+	current_func = init_func = begin_function (init_sym, 0, current_symtab);
+	build_code_function (init_sym, 0, init_expr);;
 	current_func = 0;
 }
 
