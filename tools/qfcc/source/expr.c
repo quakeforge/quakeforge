@@ -901,7 +901,7 @@ _print_expr (expr_t *e, int level, int id)
 				se = (expr_t *) e->e.bool.e->e.block.tail;
 				if (se && se->type == ex_label && e->next)
 					printf ("%*se_%p -> e_%p "
-							"[constraint=true,style=dashed];\n", indent, "",
+							"[constraint=false,style=dashed];\n", indent, "",
 							se, e->next);
 			} else {
 				printf ("%*se_%p -> e_%p;\n", indent, "", e, e->e.bool.e);
@@ -911,7 +911,7 @@ _print_expr (expr_t *e, int level, int id)
 		case ex_label:
 			if (e->next)
 				printf ("%*se_%p -> e_%p "
-						"[constraint=true,style=dashed];\n", indent, "",
+						"[constraint=false,style=dashed];\n", indent, "",
 						e, e->next);
 			label = e->e.label.name;
 			break;
@@ -937,12 +937,12 @@ _print_expr (expr_t *e, int level, int id)
 						|| se->type == ex_label)
 						continue;
 					printf ("%*se_%p -> e_%p "
-							"[constraint=true,style=dashed];\n", indent, "",
+							"[constraint=false,style=dashed];\n", indent, "",
 							se, se->next);
 				}
 				if (se && se->type == ex_label && e->next)
 					printf ("%*se_%p -> e_%p "
-							"[constraint=true,style=dashed];\n", indent, "",
+							"[constraint=false,style=dashed];\n", indent, "",
 							se, e->next);
 				printf ("%*s}\n", indent, "");
 			}
