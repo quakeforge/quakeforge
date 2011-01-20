@@ -51,6 +51,78 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+static void
+print_operand (operand_t *op)
+{
+	switch (op->type) {
+		case op_symbol:
+			printf ("%s", op->o.symbol->name);
+			break;
+		case op_value:
+			switch (op->o.value->type) {
+				case ev_string:
+					printf ("\"%s\"", op->o.value->v.string_val);
+					break;
+				case ev_float:
+					printf ("%g", op->o.value->v.float_val);
+					break;
+				case ev_vector:
+					printf ("'%g", op->o.value->v.vector_val[0]);
+					printf (" %g", op->o.value->v.vector_val[1]);
+					printf (" %g'", op->o.value->v.vector_val[2]);
+					break;
+				case ev_quat:
+					printf ("'%g", op->o.value->v.quaternion_val[0]);
+					printf (" %g", op->o.value->v.quaternion_val[1]);
+					printf (" %g", op->o.value->v.quaternion_val[2]);
+					printf (" %g'", op->o.value->v.quaternion_val[3]);
+					break;
+				case ev_pointer:
+					printf ("(%s)[%d]",
+							pr_type_name[op->o.value->v.pointer.type->type],
+							op->o.value->v.pointer.val);
+					break;
+				case ev_field:
+					printf ("%d", op->o.value->v.pointer.val);
+					break;
+				case ev_entity:
+				case ev_func:
+				case ev_integer:
+					printf ("%d", op->o.value->v.integer_val);
+					break;
+				case ev_short:
+					printf ("%d", op->o.value->v.short_val);
+					break;
+				case ev_void:
+				case ev_invalid:
+				case ev_type_count:
+					internal_error (0, "weird value type");
+			}
+			break;
+		case op_label:
+			printf ("%p", op->o.label->dest);
+			break;
+		case op_temp:
+			printf ("%p", op);
+			break;
+	}
+}
+
+void
+print_statement (statement_t *s)
+{
+	printf ("(%s, ", s->opcode);
+	if (s->opa)
+		print_operand (s->opa);
+	printf (", ");
+	if (s->opb)
+		print_operand (s->opb);
+	printf (", ");
+	if (s->opc)
+		print_operand (s->opc);
+	printf (")\n");
+}
+
 static sblock_t *free_sblocks;
 static statement_t *free_statements;
 static operand_t *free_operands;
@@ -329,76 +401,4 @@ sblock_t *
 make_statements (expr_t *e)
 {
 	return statement_expr (new_sblock (), e);
-}
-
-static void
-print_operand (operand_t *op)
-{
-	switch (op->type) {
-		case op_symbol:
-			printf ("%s", op->o.symbol->name);
-			break;
-		case op_value:
-			switch (op->o.value->type) {
-				case ev_string:
-					printf ("\"%s\"", op->o.value->v.string_val);
-					break;
-				case ev_float:
-					printf ("%g", op->o.value->v.float_val);
-					break;
-				case ev_vector:
-					printf ("'%g", op->o.value->v.vector_val[0]);
-					printf (" %g", op->o.value->v.vector_val[1]);
-					printf (" %g'", op->o.value->v.vector_val[2]);
-					break;
-				case ev_quat:
-					printf ("'%g", op->o.value->v.quaternion_val[0]);
-					printf (" %g", op->o.value->v.quaternion_val[1]);
-					printf (" %g", op->o.value->v.quaternion_val[2]);
-					printf (" %g'", op->o.value->v.quaternion_val[3]);
-					break;
-				case ev_pointer:
-					printf ("(%s)[%d]",
-							pr_type_name[op->o.value->v.pointer.type->type],
-							op->o.value->v.pointer.val);
-					break;
-				case ev_field:
-					printf ("%d", op->o.value->v.pointer.val);
-					break;
-				case ev_entity:
-				case ev_func:
-				case ev_integer:
-					printf ("%d", op->o.value->v.integer_val);
-					break;
-				case ev_short:
-					printf ("%d", op->o.value->v.short_val);
-					break;
-				case ev_void:
-				case ev_invalid:
-				case ev_type_count:
-					internal_error (0, "weird value type");
-			}
-			break;
-		case op_label:
-			printf ("%p", op->o.label->dest);
-			break;
-		case op_temp:
-			printf ("%p", op);
-			break;
-	}
-}
-
-void
-print_statement (statement_t *s)
-{
-	printf ("(%s, ", s->opcode);
-	if (s->opa)
-		print_operand (s->opa);
-	printf (", ");
-	if (s->opb)
-		print_operand (s->opb);
-	printf (", ");
-	if (s->opc)
-		print_operand (s->opc);
-	printf (")\n");
 }
