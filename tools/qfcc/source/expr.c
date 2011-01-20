@@ -962,6 +962,14 @@ _print_expr (expr_t *e, int level, int id)
 				}
 				printf ("%*se_%p -> e_%p;\n", indent, "", e, e->e.expr.e1);
 				printf ("%*se_%p -> p_%p;\n", indent, "", e, e);
+			} else if (e->e.expr.op == 'i' || e->e.expr.op == 'n'
+					   || e->e.expr.op == IFB || e->e.expr.op ==IFBE
+					   || e->e.expr.op == IFA || e->e.expr.op ==IFAE) {
+				_print_expr (e->e.expr.e1, level, id);
+				printf ("%*se_%p -> e_%p [label=\"t\"];\n", indent, "",
+						e, e->e.expr.e1);
+				printf ("%*se_%p -> e_%p [label=\"g\"];\n", indent, "",
+						e, e->e.expr.e2);
 			} else {
 				_print_expr (e->e.expr.e1, level, id);
 				_print_expr (e->e.expr.e2, level, id);
@@ -973,7 +981,8 @@ _print_expr (expr_t *e, int level, int id)
 			label = get_op_string (e->e.expr.op);
 			break;
 		case ex_uexpr:
-			_print_expr (e->e.expr.e1, level, id);
+			if (e->e.expr.op != 'g')
+				_print_expr (e->e.expr.e1, level, id);
 			printf ("%*se_%p -> e_%p;\n", indent, "", e, e->e.expr.e1);
 			label = get_op_string (e->e.expr.op);
 			break;
