@@ -202,8 +202,13 @@ convert_op (int op)
 			return 0;
 	}
 }
+
+typedef sblock_t *(*statement_f) (sblock_t *, expr_t *);
+typedef sblock_t *(*expr_f) (sblock_t *, expr_t *, operand_t **);
+
 static sblock_t *statement_subexpr (sblock_t *sblock, expr_t *e,
 									operand_t **op);
+static sblock_t *statement_slist (sblock_t *sblock, expr_t *e);
 
 static sblock_t *
 statement_call (sblock_t *sblock, expr_t *call)
@@ -232,11 +237,18 @@ static sblock_t *
 statement_branch (sblock_t *sblock, expr_t *e)
 {
 	statement_t *s = 0;
+	const char *opcode;
 
 	if (e->type == ex_uexpr && e->e.expr.op == 'g') {
 		s = new_statement ("<GOTO>");
 		s->opa = new_operand (op_label);
 		s->opa->o.label = &e->e.expr.e1->e.label;
+	} else {
+		opcode = convert_op (e->e.expr.op);
+		s = new_statement (opcode);
+		sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+		s->opb = new_operand (op_label);
+		s->opb->o.label = &e->e.expr.e2->e.label;
 	}
 
 	sblock_add_statement (sblock, s);
@@ -245,160 +257,365 @@ statement_branch (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
-statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
+statement_assign (sblock_t *sblock, expr_t *e)
 {
 	statement_t *s;
-	const char *opcode;
+	operand_t  *dst;
+	operand_t  *src;
+	const char *opcode = convert_op (e->e.expr.op);
 
-	if (!e) {
-		*op = 0;
-		return sblock;
+	if (e->e.expr.op == '=') {
+		sblock = statement_subexpr (sblock, e->e.expr.e1, &dst);
+		sblock = statement_subexpr (sblock, e->e.expr.e2, &src);
+		s = new_statement (opcode);
+		s->opa = src;
+		s->opb = dst;
+		sblock_add_statement (sblock, s);
+	} else {
 	}
+	return sblock;
+}
 
-	switch (e->type) {
-		case ex_error:
-		case ex_state:
-		case ex_bool:
-		case ex_label:
-		case ex_block:
-		case ex_nil:
-			internal_error (e, 0);
-		case ex_expr:
-			switch (e->e.expr.op) {
-				case 'c':
-					sblock = statement_call (sblock, e);
-					break;
-				default:
-					opcode = convert_op (e->e.expr.op);
-					if (!opcode)
-						internal_error (e, "ice ice baby");
-					s = new_statement (opcode);
-					sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
-					sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
-					*op = s->opc = new_operand (op_temp);
-					sblock_add_statement (sblock, s);
-					break;
-			}
+static sblock_t *
+expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	const char *opcode;
+	statement_t *s;
+
+	switch (e->e.expr.op) {
+		case 'c':
+			sblock = statement_call (sblock, e);
 			break;
-		case ex_uexpr:
-			break;
-		case ex_symbol:
-			*op = new_operand (op_symbol);
-			(*op)->o.symbol = e->e.symbol;
-			break;
-		case ex_temp:
-			*op = new_operand (op_temp);
-			break;
-		case ex_value:
-			*op = new_operand (op_value);
-			(*op)->o.value = &e->e.value;
+		default:
+			opcode = convert_op (e->e.expr.op);
+			if (!opcode)
+				internal_error (e, "ice ice baby");
+			s = new_statement (opcode);
+			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+			sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
+			*op = s->opc = new_operand (op_temp);
+			sblock_add_statement (sblock, s);
 			break;
 	}
 	return sblock;
 }
 
 static sblock_t *
-statement_expr (sblock_t *sblock, expr_t *e)
+expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	sblock_t   *start = sblock;
-	statement_t *s;
-	expr_t     *se;
-	const char *opcode;
+	return sblock;
+}
 
-	for (/**/; e && e->type == ex_label; e = e->next)
-		e->e.label.dest = sblock;
-	for (/**/; e; e = e->next) {
-		switch (e->type) {
-			case ex_error:
-				break;
-			case ex_state:
-				s = new_statement ("<STATE>");
-				sblock = statement_subexpr (sblock, e->e.state.frame, &s->opa);
-				sblock = statement_subexpr (sblock, e->e.state.think, &s->opb);
-				sblock = statement_subexpr (sblock, e->e.state.step, &s->opc);
-				sblock_add_statement (sblock, s);
-				break;
-			case ex_bool:
-				break;
-			case ex_label:
-				sblock->next = new_sblock ();
-				sblock = sblock->next;
-				e->e.label.dest = sblock;
-				for (/**/; e->next && e->next->type == ex_label; e = e->next)
-					e->e.label.dest = sblock;
-				break;
-			case ex_block:
-				sblock->next = new_sblock ();
-				sblock = sblock->next;
-				for (se = e->e.block.head; se; se = se->next)
-					sblock = statement_expr (sblock, se);
-				break;
-			case ex_expr:
-				switch (e->e.expr.op) {
-					case 'c':
-						sblock = statement_call (sblock, e);
-						break;
-					case 'i':
-					case 'n':
-					case IFBE:
-					case IFB:
-					case IFAE:
-					case IFA:
-						opcode = convert_op (e->e.expr.op);
-						s = new_statement (opcode);
-						sblock = statement_subexpr (sblock, e->e.expr.e1,
-													&s->opa);
-						s->opb = new_operand (op_label);
-						s->opb->o.label = &e->e.label;
-						sblock_add_statement (sblock, s);
-						sblock->next = new_sblock ();
-						sblock = sblock->next;
-						break;
-					default:
-						if (e->e.expr.op < 256)
-							notice (e, "e e %c", e->e.expr.op);
-						else
-							notice (e, "e e %d", e->e.expr.op);
-						goto non_executable;
+static sblock_t *
+expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	*op = new_operand (op_symbol);
+	(*op)->o.symbol = e->e.symbol;
+	return sblock;
+}
+
+static sblock_t *
+expr_temp (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	*op = new_operand (op_temp);
+	return sblock;
+}
+
+static sblock_t *
+expr_value (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	*op = new_operand (op_value);
+	(*op)->o.value = &e->e.value;
+	return sblock;
+}
+
+static sblock_t *
+statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	static expr_f sfuncs[] = {
+		0,					// ex_error
+		0,					// ex_state
+		0,					// ex_bool
+		0,					// ex_label
+		0,					// ex_block
+		expr_expr,
+		expr_uexpr,
+		expr_symbol,
+		expr_temp,
+		0,					// ex_nil
+		expr_value,
+	};
+	if (!e) {
+		*op = 0;
+		return sblock;
+	}
+
+	if (e->type < 0 || e->type > ex_value)
+		internal_error (e, "bad expression type");
+	if (!sfuncs[e->type])
+		internal_error (e, "unexpected expression type");
+
+	sblock = sfuncs[e->type] (sblock, e, op);
+	return sblock;
+}
+
+static sblock_t *
+statement_ignore (sblock_t *sblock, expr_t *e)
+{
+	return sblock;
+}
+
+static sblock_t *
+statement_state (sblock_t *sblock, expr_t *e)
+{
+	statement_t *s;
+
+	s = new_statement ("<STATE>");
+	sblock = statement_subexpr (sblock, e->e.state.frame, &s->opa);
+	sblock = statement_subexpr (sblock, e->e.state.think, &s->opb);
+	sblock = statement_subexpr (sblock, e->e.state.step, &s->opc);
+	sblock_add_statement (sblock, s);
+	return sblock;
+}
+
+static void
+build_bool_block (expr_t *block, expr_t *e)
+{
+	switch (e->type) {
+		case ex_bool:
+			build_bool_block (block, e->e.bool.e);
+			return;
+		case ex_label:
+			e->next = 0;
+			append_expr (block, e);
+			return;
+		case ex_expr:
+			if (e->e.expr.op == OR || e->e.expr.op == AND) {
+				build_bool_block (block, e->e.expr.e1);
+				build_bool_block (block, e->e.expr.e2);
+			} else if (e->e.expr.op == 'i') {
+				e->next = 0;
+				append_expr (block, e);
+			} else if (e->e.expr.op == 'n') {
+				e->next = 0;
+				append_expr (block, e);
+			}
+			return;
+		case ex_uexpr:
+			if (e->e.expr.op == 'g') {
+				e->next = 0;
+				append_expr (block, e);
+				return;
+			}
+			break;
+		case ex_block:
+			if (!e->e.block.result) {
+				expr_t     *t;
+				for (e = e->e.block.head; e; e = t) {
+					t = e->next;
+					build_bool_block (block, e);
 				}
-				break;
-			case ex_uexpr:
-				switch (e->e.expr.op) {
-					case 'r':
-						notice (e, "RETURN");
-						opcode = "<RETURN>";
-						if (!e->e.expr.e1 && !options.traditional)
-							opcode = "<RETURN_V>";
-						s = new_statement (opcode);
-						sblock = statement_subexpr (sblock, e->e.expr.e1,
-													&s->opa);
-						sblock_add_statement (sblock, s);
-						sblock->next = new_sblock ();
-						sblock = sblock->next;
-					case 'g':
-						sblock = statement_branch (sblock, e);
-						break;
-					default:
-						notice (e, "e ue %d", e->e.expr.op);
-						goto non_executable;
+				return;
+			}
+			break;
+		default:
+			;
+	}
+	internal_error (e, "bad boolean");
+}
+
+static int
+is_goto (expr_t *e)
+{
+	return e && e->type == ex_uexpr && e->e.expr.op == 'g';
+}
+
+static int
+is_if (expr_t *e)
+{
+	return e && e->type == ex_expr && e->e.expr.op == 'i';
+}
+
+static int
+is_ifnot (expr_t *e)
+{
+	return e && e->type == ex_expr && e->e.expr.op == 'n';
+}
+
+static sblock_t *
+statement_bool (sblock_t *sblock, expr_t *e)
+{
+	expr_t    **s;
+	expr_t     *l;
+	expr_t     *block = new_block_expr ();
+
+	build_bool_block (block, e);
+
+	s = &block->e.block.head;
+	while (*s) {
+		if (is_if (*s) && is_goto ((*s)->next)) {
+			l = (*s)->e.expr.e2;
+			for (e = (*s)->next->next; e && e->type == ex_label; e = e->next) {
+				if (e == l) {
+					e = *s;
+					e->e.expr.op = 'n';
+					e->e.expr.e2 = e->next->e.expr.e1;
+					e->next = e->next->next;
+					break;
 				}
-				break;
-			case ex_symbol:
-			case ex_temp:
-			case ex_nil:
-			case ex_value:
-				notice (e, "e %d", e->type);
-non_executable:
-				warning (e, "Non-executable statement;"
-						 " executing programmer instead.");
-				break;
+			}
+			s = &(*s)->next;
+		} else if (is_ifnot (*s) && is_goto ((*s)->next)) {
+			l = (*s)->e.expr.e2;
+			for (e = (*s)->next->next; e && e->type == ex_label; e = e->next) {
+				if (e == l) {
+					e = *s;
+					e->e.expr.op = 'i';
+					e->e.expr.e2 = e->next->e.expr.e1;
+					e->next = e->next->next;
+					break;
+				}
+			}
+			s = &(*s)->next;
+		} else if (is_goto (*s)) {
+			l = (*s)->e.expr.e1;
+			for (e = (*s)->next; e && e->type == ex_label; e = e->next) {
+				if (e == l) {
+					*s = (*s)->next;
+					l = 0;
+					break;
+				}
+			}
+			if (l)
+				s = &(*s)->next;
+		} else {
+			s = &(*s)->next;
 		}
 	}
-	return start;
+	sblock = statement_slist (sblock, block->e.block.head);
+	return sblock;
+}
+
+static sblock_t *
+statement_label (sblock_t *sblock, expr_t *e)
+{
+	if (sblock->statements) {
+		sblock->next = new_sblock ();
+		sblock = sblock->next;
+	}
+	e->e.label.dest = sblock;
+	return sblock;
+}
+
+static sblock_t *
+statement_block (sblock_t *sblock, expr_t *e)
+{
+	if (sblock->statements) {
+		sblock->next = new_sblock ();
+		sblock = sblock->next;
+	}
+	sblock = statement_slist (sblock, e->e.block.head);
+	return sblock;
+}
+
+static sblock_t *
+statement_expr (sblock_t *sblock, expr_t *e)
+{
+	switch (e->e.expr.op) {
+		case 'c':
+			sblock = statement_call (sblock, e);
+			break;
+		case 'i':
+		case 'n':
+		case IFBE:
+		case IFB:
+		case IFAE:
+		case IFA:
+			sblock = statement_branch (sblock, e);
+			break;
+		case '=':
+		case PAS:
+			sblock = statement_assign (sblock, e);
+			break;
+		default:
+			if (e->e.expr.op < 256)
+				notice (e, "e %c", e->e.expr.op);
+			else
+				notice (e, "e %d", e->e.expr.op);
+			if (options.warnings.executable)
+				warning (e, "Non-executable statement;"
+						 " executing programmer instead.");
+	}
+	return sblock;
+}
+
+static sblock_t *
+statement_uexpr (sblock_t *sblock, expr_t *e)
+{
+	const char *opcode;
+	statement_t *s;
+
+	switch (e->e.expr.op) {
+		case 'r':
+			notice (e, "RETURN");
+			opcode = "<RETURN>";
+			if (!e->e.expr.e1 && !options.traditional)
+				opcode = "<RETURN_V>";
+			s = new_statement (opcode);
+			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+			sblock_add_statement (sblock, s);
+			sblock->next = new_sblock ();
+			sblock = sblock->next;
+		case 'g':
+			sblock = statement_branch (sblock, e);
+			break;
+		default:
+			notice (e, "e ue %d", e->e.expr.op);
+			if (options.warnings.executable)
+				warning (e, "Non-executable statement;"
+						 " executing programmer instead.");
+	}
+	return sblock;
+}
+
+static sblock_t *
+statement_nonexec (sblock_t *sblock, expr_t *e)
+{
+	if (options.warnings.executable)
+		warning (e, "Non-executable statement; executing programmer instead.");
+	return sblock;
+}
+
+static sblock_t *
+statement_slist (sblock_t *sblock, expr_t *e)
+{
+	static statement_f sfuncs[] = {
+		statement_ignore,	// ex_error
+		statement_state,
+		statement_bool,
+		statement_label,
+		statement_block,
+		statement_expr,
+		statement_uexpr,
+		statement_nonexec,	// ex_symbol
+		statement_nonexec,	// ex_temp
+		statement_nonexec,	// ex_nil
+		statement_nonexec,	// ex_value
+	};
+
+	for (/**/; e; e = e->next) {
+		if (e->type < 0 || e->type > ex_value)
+			internal_error (e, "bad expression type");
+		sblock = sfuncs[e->type] (sblock, e);
+	}
+	return sblock;
 }
 
 sblock_t *
 make_statements (expr_t *e)
 {
-	return statement_expr (new_sblock (), e);
+	sblock_t   *sblock = new_sblock ();
+//	print_expr (e);
+	statement_slist (sblock, e);
+	return sblock;
 }
