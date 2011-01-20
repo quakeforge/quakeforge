@@ -859,126 +859,173 @@ append_expr (expr_t *block, expr_t *e)
 	return block;
 }
 
-void
-print_expr (expr_t *e)
+static void
+_print_expr (expr_t *e, int level, int id)
 {
-	printf (" ");
+	const char *label = "???";
+	const char *shape = "ellipse";
+	int         indent = level * 2 + 2;
 	if (!e) {
-		printf ("(nil)");
+		printf ("%*se_%p [label=\"(null)\"];\n", indent, "", e);
 		return;
 	}
+	if (e->printid == id)		// already printed this expression
+		return;
+	e->printid = id;
 	switch (e->type) {
 		case ex_error:
-			printf ("(error)");
+			label = "(error)";
 			break;
 		case ex_state:
-			printf ("[");
-			print_expr (e->e.state.frame);
-			printf (",");
-			print_expr (e->e.state.think);
-			printf (",");
-			print_expr (e->e.state.step);
-			printf ("]");
+			_print_expr (e->e.state.frame, level, id);
+			_print_expr (e->e.state.think, level, id);
+			if (e->e.state.step)
+				_print_expr (e->e.state.step, level, id);
+			printf ("%*se_%p:f -> e_%p;\n", indent, "", e, e->e.state.frame);
+			printf ("%*se_%p:t -> e_%p;\n", indent, "", e, e->e.state.think);
+			if (e->e.state.step)
+				printf ("%*se_%p:s -> e_%p;\n", indent, "",
+						e, e->e.state.step);
+			shape = "record";
+			label = va ("<f>state|<t>think|<s>step;");
 			break;
 		case ex_bool:
-			printf ("bool");	//FIXME
+			_print_expr (e->e.bool.e, level, id);
+			if (e->e.bool.e->type == ex_block && e->e.bool.e->e.block.head) {
+				expr_t     *se;
+
+				//FIXME should the bool node point too the block node, or
+				//the first expression of the block (current)?
+				printf ("%*se_%p -> e_%p;\n", indent, "",
+						e, e->e.bool.e->e.block.head);
+				se = (expr_t *) e->e.bool.e->e.block.tail;
+				if (se && se->type == ex_label && e->next)
+					printf ("%*se_%p -> e_%p "
+							"[constraint=true,style=dashed];\n", indent, "",
+							se, e->next);
+			} else {
+				printf ("%*se_%p -> e_%p;\n", indent, "", e, e->e.bool.e);
+			}
+			label = "<bool>";
 			break;
 		case ex_label:
-			printf ("%s", e->e.label.name);
+			if (e->next)
+				printf ("%*se_%p -> e_%p "
+						"[constraint=true,style=dashed];\n", indent, "",
+						e, e->next);
+			label = e->e.label.name;
 			break;
 		case ex_block:
-			if (e->e.block.result) {
-				print_expr (e->e.block.result);
-				printf ("=");
+			{
+				expr_t     *se;
+
+				label = "<block>";
+				if (e->e.block.result) {
+					_print_expr (e->e.block.result, level + 1, id);
+					printf ("%*se_%p -> e_%p;\n", indent, "",
+							e, e->e.block.result);
+				}
+				printf ("%*se_%p -> e_%p "
+						"[style=dotted,lhead=cluster_%p];\n", indent, "",
+						e, e->e.block.head, e);
+				printf ("%*ssubgraph cluster_%p {\n", indent, "", e);
+				for (se = e->e.block.head; se; se = se->next) {
+					_print_expr (se, level + 1, id);
+				}
+				for (se = e->e.block.head; se && se->next; se = se->next) {
+					if ((se->type == ex_uexpr && se->e.expr.op == 'g')
+						|| se->type == ex_label)
+						continue;
+					printf ("%*se_%p -> e_%p "
+							"[constraint=true,style=dashed];\n", indent, "",
+							se, se->next);
+				}
+				if (se && se->type == ex_label && e->next)
+					printf ("%*se_%p -> e_%p "
+							"[constraint=true,style=dashed];\n", indent, "",
+							se, e->next);
+				printf ("%*s}\n", indent, "");
 			}
-			printf ("{\n");
-			for (e = e->e.block.head; e; e = e->next) {
-				print_expr (e);
-				puts ("");
-			}
-			printf ("}");
 			break;
 		case ex_expr:
-			print_expr (e->e.expr.e1);
 			if (e->e.expr.op == 'c') {
-				expr_t     *p = e->e.expr.e2;
-
-				printf ("(");
-				while (p) {
-					print_expr (p);
-					if (p->next)
-						printf (",");
-					p = p->next;
+				expr_t     *p;
+				int         i;
+				_print_expr (e->e.expr.e1, level, id);
+				printf ("%*sp_%p [label=\"", indent, "", e);
+				for (p = e->e.expr.e2, i = 0; p; p = p->next, i++)
+					printf ("<p%d>p%d%s", i, i, p->next ? "|" : "");
+				printf ("\",shape=record];\n");
+				for (p = e->e.expr.e2, i = 0; p; p = p->next, i++) {
+					_print_expr (p, level + 1, id);
+					printf ("%*sp_%p:p%d -> e_%p;\n", indent + 2, "", e, i, p);
 				}
-				printf (")");
-			} else if (e->e.expr.op == 'b') {
-				printf (" <-->");
-				print_expr (e->e.expr.e2);
+				printf ("%*se_%p -> e_%p;\n", indent, "", e, e->e.expr.e1);
+				printf ("%*se_%p -> p_%p;\n", indent, "", e, e);
 			} else {
-				print_expr (e->e.expr.e2);
-				printf (" %s", get_op_string (e->e.expr.op));
+				_print_expr (e->e.expr.e1, level, id);
+				_print_expr (e->e.expr.e2, level, id);
+				printf ("%*se_%p -> e_%p [label=\"l\"];\n", indent, "",
+						e, e->e.expr.e1);
+				printf ("%*se_%p -> e_%p [label=\"r\"];\n", indent, "",
+						e, e->e.expr.e2);
 			}
+			label = get_op_string (e->e.expr.op);
 			break;
 		case ex_uexpr:
-			print_expr (e->e.expr.e1);
-			printf (" u%s", get_op_string (e->e.expr.op));
+			_print_expr (e->e.expr.e1, level, id);
+			printf ("%*se_%p -> e_%p;\n", indent, "", e, e->e.expr.e1);
+			label = get_op_string (e->e.expr.op);
 			break;
 		case ex_symbol:
-			printf ("%s", e->e.symbol->name);
+			label = e->e.symbol->name;
 			break;
 		case ex_temp:
-			printf ("(");
-			print_expr (e->e.temp.expr);
-			printf (":");
-			if (e->e.temp.def) {
-				if (e->e.temp.def->name) {
-					printf ("%s", e->e.temp.def->name);
-				} else {
-					printf ("<%d>", e->e.temp.def->ofs);
-				}
-			} else {
-				printf ("<>");
-			}
-			printf (":%s:%d)@", pr_type_name[e->e.temp.type->type],
-					e->e.temp.users);
+			label = va ("tmp_%p", e);
 			break;
 		case ex_nil:
-			printf ("NIL");
+			label = "nil";
 			break;
 		case ex_value:
 			switch (e->e.value.type) {
 				case ev_string:
-					printf ("\"%s\"", e->e.value.v.string_val);
+					label = va ("\\\"%s\\\"", e->e.value.v.string_val);
 					break;
 				case ev_float:
-					printf ("%g", e->e.value.v.float_val);
+					label = va ("%g", e->e.value.v.float_val);
 					break;
 				case ev_vector:
-					printf ("'%g", e->e.value.v.vector_val[0]);
-					printf (" %g", e->e.value.v.vector_val[1]);
-					printf (" %g'", e->e.value.v.vector_val[2]);
+					label = va ("'%g %g %g'",
+								e->e.value.v.vector_val[0],
+								e->e.value.v.vector_val[1],
+								e->e.value.v.vector_val[2]);
 					break;
 				case ev_quat:
-					printf ("'%g", e->e.value.v.quaternion_val[0]);
-					printf (" %g", e->e.value.v.quaternion_val[1]);
-					printf (" %g", e->e.value.v.quaternion_val[2]);
-					printf (" %g'", e->e.value.v.quaternion_val[3]);
+					label = va ("'%g %g %g %g'",
+								e->e.value.v.quaternion_val[0],
+								e->e.value.v.quaternion_val[1],
+								e->e.value.v.quaternion_val[2],
+								e->e.value.v.quaternion_val[3]);
 					break;
 				case ev_pointer:
-					printf ("(%s)[%d]",
+					label = va ("(%s)[%d]",
 							pr_type_name[e->e.value.v.pointer.type->type],
 							e->e.value.v.pointer.val);
 					break;
 				case ev_field:
-					printf ("%d", e->e.value.v.pointer.val);
+					label = va ("field %d", e->e.value.v.pointer.val);
 					break;
 				case ev_entity:
+					label = va ("ent %d", e->e.value.v.integer_val);
+					break;
 				case ev_func:
+					label = va ("func %d", e->e.value.v.integer_val);
+					break;
 				case ev_integer:
-					printf ("%d", e->e.value.v.integer_val);
+					label = va ("%d", e->e.value.v.integer_val);
 					break;
 				case ev_short:
-					printf ("%d", e->e.value.v.short_val);
+					label = va ("%d", e->e.value.v.short_val);
 					break;
 				case ev_void:
 				case ev_invalid:
@@ -986,6 +1033,19 @@ print_expr (expr_t *e)
 					internal_error (e, "weird expression type");
 			}
 	}
+	if (label)
+		printf ("%*se_%p [label=\"%s\",shape=%s];\n", indent, "",
+				e, label, shape);
+}
+
+void
+print_expr (expr_t *e)
+{
+	static int id = 0;
+	printf ("digraph expr_%p {\n", e);
+	printf ("  layout=dot; rankdir=TB; compound=true;\n");
+	_print_expr (e, 0, ++id);
+	printf ("}\n");
 }
 
 static expr_t *

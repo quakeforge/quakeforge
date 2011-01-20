@@ -823,7 +823,7 @@ do_op_invalid (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	print_type_str (t1, get_type (e1));
 	print_type_str (t2, get_type (e2));
 
-	//print_expr (e),puts("");
+	//print_expr (e);
 	e1 = error (e1, "invalid operands for binary %s: %s %s",
 				get_op_string (op), t1->str, t2->str);
 	dstring_delete (t1);
