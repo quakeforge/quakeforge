@@ -277,6 +277,16 @@ statement_assign (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
+expr_block (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	if (!e->e.block.result)
+		internal_error (e, "block sub-expression without result");
+	sblock = statement_slist (sblock, e->e.block.head);
+	sblock = statement_subexpr (sblock, e->e.block.result, op);
+	return sblock;
+}
+
+static sblock_t *
 expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	const char *opcode;
@@ -341,7 +351,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		0,					// ex_state
 		0,					// ex_bool
 		0,					// ex_label
-		0,					// ex_block
+		expr_block,			// ex_block
 		expr_expr,
 		expr_uexpr,
 		expr_symbol,
