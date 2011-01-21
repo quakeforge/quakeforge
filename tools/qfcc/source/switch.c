@@ -367,7 +367,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	}
 	default_expr = new_unary_expr ('g', default_label->label);
 
-	append_expr (sw, new_bind_expr (switch_block->test, sw_val));
+	append_expr (sw, assign_expr (sw_val, switch_block->test));
 
 	for (l = labels; *l; l++)
 		num_labels++;

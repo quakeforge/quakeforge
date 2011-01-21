@@ -77,7 +77,7 @@ do_op_string (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	const char *s1, *s2;
 	static dstring_t *temp_str;
-	static int  valid[] = {'=', 'b', '+', LT, GT, LE, GE, EQ, NE, 0};
+	static int  valid[] = {'=', '+', LT, GT, LE, GE, EQ, NE, 0};
 
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operand for string");
@@ -91,7 +91,7 @@ do_op_string (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		e->e.expr.type = &type_string;
 	}
 
-	if (op == '=' || op == 'b' || !is_constant (e1) || !is_constant (e2))
+	if (op == '=' || !is_constant (e1) || !is_constant (e2))
 		return e;
 
 	s1 = expr_string (e1);
@@ -174,22 +174,14 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	expr_t     *conv;
 	type_t     *type = &type_float;
 	static int  valid[] = {
-		'=', 'b', '+', '-', '*', '/', '&', '|', '^', '%',
+		'=', '+', '-', '*', '/', '&', '|', '^', '%',
 		SHL, SHR, AND, OR, LT, GT, LE, GE, EQ, NE, 0
 	};
 
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operand for float");
 
-	if (op == 'b') {
-		// bind is backwards to assign (why did I do that? :P)
-		if ((type = get_type (e2)) != &type_float) {
-			//FIXME optimize casting a constant
-			e->e.expr.e1 = e1 = cf_cast_expr (type, e1);
-		} else if ((conv = convert_to_float (e1)) != e1) {
-			e->e.expr.e1 = e1 = conv;
-		}
-	} else if (op == '=' || op == PAS) {
+	if (op == '=' || op == PAS) {
 		if ((type = get_type (e1)) != &type_float) {
 			//FIXME optimize casting a constant
 			e->e.expr.e2 = e2 = cf_cast_expr (type, e2);
@@ -233,7 +225,7 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '-' && is_constant (e2) && expr_float (e2) == 0)
 		return e1;
 
-	if (op == '=' || op == 'b' || !is_constant (e1) || !is_constant (e2))
+	if (op == '=' || !is_constant (e1) || !is_constant (e2))
 		return e;
 
 	f1 = expr_float (e1);
@@ -309,7 +301,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	const float *v1, *v2;
 	vec3_t      v;
-	static int  valid[] = {'=', 'b', '+', '-', '*', EQ, NE, 0};
+	static int  valid[] = {'=', '+', '-', '*', EQ, NE, 0};
 	expr_t     *t;
 
 	if (get_type (e1) != &type_vector) {
@@ -363,7 +355,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '-' && is_constant (e2) && VectorIsZero (expr_vector (e2)))
 		return e1;
 
-	if (op == '=' || op == 'b' || !is_constant (e1) || !is_constant (e2))
+	if (op == '=' || !is_constant (e1) || !is_constant (e2))
 		return e;
 
 	v1 = expr_vector (e1);
@@ -420,7 +412,7 @@ do_op_entity (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e->e.expr.type = &type_float;
 		return e;
 	}
-	if ((op != '=' && op != 'b') || type != &type_entity)
+	if (op != '=' || type != &type_entity)
 		return error (e1, "invalid operand for entity");
 	e->e.expr.type = &type_entity;
 	return e;
@@ -429,7 +421,7 @@ do_op_entity (int op, expr_t *e, expr_t *e1, expr_t *e2)
 static expr_t *
 do_op_field (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
-	if (op != '=' && op != 'b')
+	if (op != '=')
 		return error (e1, "invalid operand for field");
 	e->e.expr.type = &type_field;
 	return e;
@@ -449,7 +441,7 @@ do_op_func (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e->e.expr.type = &type_float;
 		return e;
 	}
-	if (op != '=' && op != 'b')
+	if (op != '=')
 		return error (e1, "invalid operand for func");
 	e->e.expr.type = &type_function;
 	return e;
@@ -459,7 +451,7 @@ static expr_t *
 do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	type_t     *type;
-	static int  valid[] = {'=', 'b', PAS, '&', 'M', '.', EQ, NE, 0};
+	static int  valid[] = {'=', PAS, '&', 'M', '.', EQ, NE, 0};
 
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operand for pointer");
@@ -498,7 +490,7 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	const float *q1, *q2;
 	quat_t      q;
-	static int  valid[] = {'=', 'b', '+', '-', '*', EQ, NE, 0};
+	static int  valid[] = {'=', '+', '-', '*', EQ, NE, 0};
 	expr_t     *t;
 
 	if (get_type (e1) != &type_quaternion) {
@@ -544,7 +536,7 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '-' && is_constant (e2) && QuatIsZero (expr_quaternion (e2)))
 		return e1;
 
-	if (op == '=' || op == 'b' || !is_constant (e1) || !is_constant (e2))
+	if (op == '=' || !is_constant (e1) || !is_constant (e2))
 		return e;
 
 	q1 = expr_quaternion (e1);
@@ -595,7 +587,7 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	int         i1, i2;
 	static int  valid[] = {
-		'=', 'b', '+', '-', '*', '/', '&', '|', '^', '%',
+		'=', '+', '-', '*', '/', '&', '|', '^', '%',
 		SHL, SHR, AND, OR, LT, GT, LE, GE, EQ, NE, 0
 	};
 
@@ -638,7 +630,7 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '-' && is_constant (e2) && expr_integer (e2) == 0)
 		return e1;
 
-	if (op == '=' || op == 'b' || !is_constant (e1) || !is_constant (e2))
+	if (op == '=' || !is_constant (e1) || !is_constant (e2))
 		return e;
 
 	i1 = expr_integer (e1);
@@ -714,7 +706,7 @@ do_op_short (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	short       i1, i2;
 	static int  valid[] = {
-		'=', 'b', '+', '-', '*', '/', '&', '|', '^', '%',
+		'=', '+', '-', '*', '/', '&', '|', '^', '%',
 		SHL, SHR, AND, OR, LT, GT, LE, GE, EQ, NE, 0
 	};
 
@@ -730,7 +722,7 @@ do_op_short (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		e->e.expr.type = &type_short;
 	}
 
-	if (op == '=' || op == 'b' || !is_constant (e1) || !is_constant (e2))
+	if (op == '=' || !is_constant (e1) || !is_constant (e2))
 		return e;
 
 	i1 = expr_short (e1);
@@ -806,7 +798,7 @@ do_op_struct (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	type_t     *type;
 
-	if (op != '=' && op != 'b' && op != 'M')
+	if (op != '=' && op != 'M')
 		return error (e1, "invalid operand for struct");
 	if ((type = get_type (e1)) != get_type (e2))
 		return type_mismatch (e1, e2, op);

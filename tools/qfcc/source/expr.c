@@ -166,7 +166,6 @@ get_op_string (int op)
 		case IFA:	return "<ifa>";
 		case 'g':	return "<goto>";
 		case 'r':	return "<return>";
-		case 'b':	return "<bind>";
 		case 's':	return "<state>";
 		case 'c':	return "<call>";
 		case 'C':	return "<cast>";
@@ -766,23 +765,6 @@ expr_short (expr_t *e)
 		&& e->e.symbol->type->type == ev_short)
 		return e->e.symbol->s.value.v.short_val;
 	internal_error (e, "not a short constant");
-}
-
-expr_t *
-new_bind_expr (expr_t *e1, expr_t *e2)
-{
-	expr_t     *e;
-
-	if (!e2 || e2->type != ex_temp) {
-		internal_error (e1, 0);
-	}
-	e = new_expr ();
-	e->type = ex_expr;
-	e->e.expr.op = 'b';
-	e->e.expr.e1 = e1;
-	e->e.expr.e2 = e2;
-	e->e.expr.type = get_type (e2);
-	return e;
 }
 
 expr_t *
@@ -1535,19 +1517,19 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 					tmp2 = new_temp_def_expr (&type_float);
 					tmp3 = new_temp_def_expr (&type_float);
 
-					append_expr (e, new_bind_expr (e1, t1));
+					append_expr (e, assign_expr (t1, e1));
 					e1 = binary_expr ('&', t1, t1);
-					append_expr (e, new_bind_expr (e1, tmp1));
+					append_expr (e, assign_expr (tmp1, e1));
 
-					append_expr (e, new_bind_expr (e2, t2));
+					append_expr (e, assign_expr (t2, e2));
 					e2 = binary_expr ('&', t2, t2);
-					append_expr (e, new_bind_expr (e2, tmp2));
+					append_expr (e, assign_expr (tmp2, e2));
 
 					e1 = binary_expr ('/', tmp1, tmp2);
 					append_expr (e, assign_expr (tmp3, e1));
 
 					e2 = binary_expr ('&', tmp3, tmp3);
-					append_expr (e, new_bind_expr (e2, tmp3));
+					append_expr (e, assign_expr (tmp3, e2));
 
 					e1 = binary_expr ('*', tmp2, tmp3);
 					e2 = binary_expr ('-', tmp1, e1);
@@ -1885,8 +1867,8 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 		append_expr (call, assign_expr (arg_exprs[i][1], arg_exprs[i][0]));
 	}
 	if (arg_expr_count) {
-		e = new_bind_expr (arg_exprs[arg_expr_count - 1][0],
-						   arg_exprs[arg_expr_count - 1][1]);
+		e = assign_expr (arg_exprs[arg_expr_count - 1][1],
+						 arg_exprs[arg_expr_count - 1][0]);
 		inc_users (arg_exprs[arg_expr_count - 1][0]);
 		inc_users (arg_exprs[arg_expr_count - 1][1]);
 		append_expr (call, e);
@@ -2160,10 +2142,6 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				e = e1;
 				e->e.expr.op = '&';
 				e->e.expr.type = pointer_type (e->e.expr.type);
-				break;
-			} else if (e1->e.expr.op == 'b') {
-				e = new_unary_expr ('&', e1);
-				e->e.expr.type = pointer_type (e1->e.expr.type);
 				break;
 			}
 			return error (e1, "invalid type for unary &");

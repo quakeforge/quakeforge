@@ -473,18 +473,6 @@ int is_quaternion_val (expr_t *e);
 int is_integer_val (expr_t *e);
 int is_short_val (expr_t *e);
 
-/**	Bind the result of an expression to a temporary variable.
-
-	If a temporary variable is not needed when emitting code, none will
-	be used.
-
-	\param e1		The expression which will be bound.
-	\param e2		The temporary variable to which the expression will be
-					bound. Must be a temporary expression (ex_temp).
-	\return			The new bind expression.
-*/
-expr_t *new_bind_expr (expr_t *e1, expr_t *e2);
-
 /**	Create a reference to the global <code>.self</code> entity variable.
 
 	This is used for <code>\@self</code>.
