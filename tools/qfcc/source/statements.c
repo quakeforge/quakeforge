@@ -100,10 +100,10 @@ print_operand (operand_t *op)
 			}
 			break;
 		case op_label:
-			printf ("%p", op->o.label->dest);
+			printf ("block %p", op->o.label->dest);
 			break;
 		case op_temp:
-			printf ("%p", op);
+			printf ("tmp %p", op);
 			break;
 	}
 }
@@ -211,29 +211,6 @@ static sblock_t *statement_subexpr (sblock_t *sblock, expr_t *e,
 static sblock_t *statement_slist (sblock_t *sblock, expr_t *e);
 
 static sblock_t *
-statement_call (sblock_t *sblock, expr_t *call)
-{
-	expr_t     *func = call->e.expr.e1;
-	expr_t     *args = call->e.expr.e2;
-	expr_t     *a;
-	int         count = 0;
-	const char *opcode;
-	const char *pref = "";
-	statement_t *s;
-
-	for (a = args; a; a = a->next)
-		count++;
-	if (count && options.code.progsversion != PROG_ID_VERSION)
-		pref = "R";
-	opcode = va ("<%sCALL%d>", pref, count);
-	s = new_statement (opcode);
-	sblock = statement_subexpr (sblock, func, &s->opa);
-	sblock_add_statement (sblock, s);
-	sblock->next = new_sblock ();
-	return sblock->next;
-}
-
-static sblock_t *
 statement_branch (sblock_t *sblock, expr_t *e)
 {
 	statement_t *s = 0;
@@ -289,6 +266,64 @@ statement_assign (sblock_t *sblock, expr_t *e)
 	s->opc = ofs;
 	sblock_add_statement (sblock, s);
 	return sblock;
+}
+
+static sblock_t *
+expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
+{
+	expr_t     *func = call->e.expr.e1;
+	expr_t     *args = call->e.expr.e2;
+	expr_t     *a;
+	expr_t     *param;
+	operand_t  *arguments[2] = {0, 0};
+	int         count = 0;
+	int         ind;
+	const char *opcode;
+	const char *pref = "";
+	statement_t *s;
+
+	for (a = args; a; a = a->next)
+		count++;
+	ind = count;
+	for (a = args; a; a = a->next) {
+		ind--;
+		param = new_param_expr (get_type (a), ind);
+		if (count && options.code.progsversion != PROG_ID_VERSION && ind < 2) {
+			pref = "R";
+			sblock = statement_subexpr (sblock, param, &arguments[ind]);
+			//if (options.code.vector_calls && is_vector_val (a)) FIXME
+			//	sblock = vector_call (sblock, a, param, ind, &arguments[ind]);
+			//else
+				sblock = statement_subexpr (sblock, a, &arguments[ind]);
+			continue;
+		}
+		if (is_struct (get_type (param))) {
+			expr_t     *mov = assign_expr (param, a);
+			mov->line = a->line;
+			mov->file = a->file;
+			sblock = statement_slist (sblock, mov);
+		} else {
+			operand_t  *p;
+			operand_t  *arg;
+			sblock = statement_subexpr (sblock, param, &p);
+			arg = p;
+			sblock = statement_subexpr (sblock, a, &arg);
+			if (arg != p) {
+				s = new_statement ("=");
+				s->opa = arg;
+				s->opb = p;
+				sblock_add_statement (sblock, s);
+			}
+		}
+	}
+	opcode = va ("<%sCALL%d>", pref, count);
+	s = new_statement (opcode);
+	sblock = statement_subexpr (sblock, func, &s->opa);
+	s->opb = arguments[0];
+	s->opc = arguments[1];
+	sblock_add_statement (sblock, s);
+	sblock->next = new_sblock ();
+	return sblock->next;
 }
 
 static sblock_t *
@@ -353,7 +388,7 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 			sblock = expr_bind (sblock, e, op);
 			break;
 		case 'c':
-			sblock = statement_call (sblock, e);
+			sblock = expr_call (sblock, e, op);
 			break;
 		default:
 			opcode = convert_op (e->e.expr.op);
@@ -362,8 +397,11 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 			s = new_statement (opcode);
 			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
 			sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
-			*op = s->opc = new_operand (op_temp);
-			s->opc->type = e->e.expr.type->type;
+			if (!*op) {
+				*op = new_operand (op_temp);
+				(*op)->type = e->e.expr.type->type;
+			}
+			s->opc = *op;
 			sblock_add_statement (sblock, s);
 			break;
 	}
@@ -379,6 +417,10 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 			break;
 		case '.':
 			sblock = expr_deref (sblock, e, op);
+			break;
+		case 'C':
+			//FIXME
+			sblock = statement_subexpr (sblock, e->e.expr.e1, op);
 			break;
 		default:
 			;
@@ -612,7 +654,7 @@ statement_expr (sblock_t *sblock, expr_t *e)
 			sblock = expr_bind (sblock, e, 0);
 			break;
 		case 'c':
-			sblock = statement_call (sblock, e);
+			sblock = expr_call (sblock, e, 0);
 			break;
 		case 'i':
 		case 'n':
