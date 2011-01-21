@@ -273,6 +273,28 @@ statement_assign (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
+vector_call (sblock_t *sblock, expr_t *earg, expr_t *param, int ind,
+			 operand_t **op)
+{
+	expr_t     *a, *v, *n;
+	int         i;
+	static const char *names[] = {"x", "y", "z"};
+
+	for (i = 0; i < 3; i++) {
+		n = new_name_expr (names[i]);
+		v = new_float_expr (earg->e.value.v.vector_val[i]);
+		a = assign_expr (binary_expr ('.', param, n), v);
+		param = new_param_expr (get_type (earg), ind);
+		a->line = earg->line;
+		a->file = earg->file;
+		sblock = statement_slist (sblock, a);
+	}
+	sblock = statement_subexpr (sblock, param, op);
+	return sblock;
+}
+
+
+static sblock_t *
 expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 {
 	expr_t     *func = call->e.expr.e1;
@@ -295,9 +317,10 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		if (count && options.code.progsversion != PROG_ID_VERSION && ind < 2) {
 			pref = "R";
 			sblock = statement_subexpr (sblock, param, &arguments[ind]);
-			//if (options.code.vector_calls && is_vector_val (a)) FIXME
-			//	sblock = vector_call (sblock, a, param, ind, &arguments[ind]);
-			//else
+			if (options.code.vector_calls && a->type == ex_value
+				&& a->e.value.type == ev_vector)
+				sblock = vector_call (sblock, a, param, ind, &arguments[ind]);
+			else
 				sblock = statement_subexpr (sblock, a, &arguments[ind]);
 			continue;
 		}
@@ -307,16 +330,21 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 			mov->file = a->file;
 			sblock = statement_slist (sblock, mov);
 		} else {
-			operand_t  *p;
-			operand_t  *arg;
-			sblock = statement_subexpr (sblock, param, &p);
-			arg = p;
-			sblock = statement_subexpr (sblock, a, &arg);
-			if (arg != p) {
-				s = new_statement ("=");
-				s->opa = arg;
-				s->opb = p;
-				sblock_add_statement (sblock, s);
+			if (options.code.vector_calls && a->type == ex_value 
+				&& a->e.value.type == ev_vector) {
+				sblock = vector_call (sblock, a, param, ind, 0);
+			} else {
+				operand_t  *p;
+				operand_t  *arg;
+				sblock = statement_subexpr (sblock, param, &p);
+				arg = p;
+				sblock = statement_subexpr (sblock, a, &arg);
+				if (arg != p) {
+					s = new_statement ("=");
+					s->opa = arg;
+					s->opb = p;
+					sblock_add_statement (sblock, s);
+				}
 			}
 		}
 	}
