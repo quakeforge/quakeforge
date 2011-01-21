@@ -40,7 +40,8 @@ typedef enum {
 
 typedef struct operand_s {
 	struct operand_s *next;
-	op_type_e   type;
+	op_type_e   op_type;
+	etype_t     type;			///< possibly override symbol's type
 	union {
 		struct symbol_s *symbol;
 		struct ex_value_s *value;

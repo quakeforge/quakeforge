@@ -54,7 +54,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 static void
 print_operand (operand_t *op)
 {
-	switch (op->type) {
+	switch (op->op_type) {
 		case op_symbol:
 			printf ("%s", op->o.symbol->name);
 			break;
@@ -159,7 +159,7 @@ new_operand (op_type_e op)
 {
 	operand_t *operand;
 	ALLOC (256, operand_t, operands, operand);
-	operand->type = op;
+	operand->op_type = op;
 	return operand;
 }
 
@@ -294,6 +294,7 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
 			sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
 			*op = s->opc = new_operand (op_temp);
+			s->opc->type = e->e.expr.type->type;
 			sblock_add_statement (sblock, s);
 			break;
 	}
@@ -310,6 +311,7 @@ static sblock_t *
 expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	*op = new_operand (op_symbol);
+	(*op)->type = e->e.symbol->type->type;
 	(*op)->o.symbol = e->e.symbol;
 	return sblock;
 }
@@ -318,6 +320,7 @@ static sblock_t *
 expr_temp (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	*op = new_operand (op_temp);
+	(*op)->type = e->e.temp.type->type;
 	return sblock;
 }
 
@@ -325,6 +328,7 @@ static sblock_t *
 expr_value (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	*op = new_operand (op_value);
+	(*op)->type = e->e.value.type;
 	(*op)->o.value = &e->e.value;
 	return sblock;
 }
