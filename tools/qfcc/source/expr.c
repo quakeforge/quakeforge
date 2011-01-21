@@ -894,8 +894,6 @@ _print_expr (expr_t *e, int level, int id)
 			if (e->e.bool.e->type == ex_block && e->e.bool.e->e.block.head) {
 				expr_t     *se;
 
-				//FIXME should the bool node point too the block node, or
-				//the first expression of the block (current)?
 				printf ("%*se_%p -> e_%p;\n", indent, "",
 						e, e->e.bool.e->e.block.head);
 				se = (expr_t *) e->e.bool.e->e.block.tail;
@@ -925,16 +923,15 @@ _print_expr (expr_t *e, int level, int id)
 					printf ("%*se_%p -> e_%p;\n", indent, "",
 							e, e->e.block.result);
 				}
-				printf ("%*se_%p -> e_%p "
-						"[style=dotted,lhead=cluster_%p];\n", indent, "",
-						e, e->e.block.head, e);
+				printf ("%*se_%p -> e_%p [style=dashed];\n", indent, "",
+						e, e->e.block.head);
 				printf ("%*ssubgraph cluster_%p {\n", indent, "", e);
 				for (se = e->e.block.head; se; se = se->next) {
 					_print_expr (se, level + 1, id);
 				}
 				for (se = e->e.block.head; se && se->next; se = se->next) {
 					if ((se->type == ex_uexpr && se->e.expr.op == 'g')
-						|| se->type == ex_label)
+						|| se->type == ex_label || se->type == ex_bool)
 						continue;
 					printf ("%*se_%p -> e_%p "
 							"[constraint=false,style=dashed];\n", indent, "",
