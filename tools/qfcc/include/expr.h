@@ -85,7 +85,7 @@ typedef struct {
 
 typedef struct {
 	struct expr_s *expr;
-	struct def_s *def;		///< The def for the temporary variable, if
+	struct operand_s *op;	///< The operand for the temporary variable, if
 							///< allocated
 	struct type_s *type;	///< The type of the temporary variable.
 	int         users;		///< Reference count. Source of much hair loss.

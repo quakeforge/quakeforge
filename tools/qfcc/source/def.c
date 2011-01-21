@@ -354,8 +354,8 @@ free_tempdefs (void)
 						d->name);
 			}
 			size = type_size (d->type) - 1;
-			if (d->expr)
-				d->expr->e.temp.def = 0;
+			//if (d->expr)
+			//	d->expr->e.temp.def = 0;
 
 			if (!d->freed) {
 				d->next = free_temps[size];

@@ -379,8 +379,11 @@ expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 expr_temp (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	*op = new_operand (op_temp);
-	(*op)->type = e->e.temp.type->type;
+	if (!e->e.temp.op) {
+		e->e.temp.op = new_operand (op_temp);
+		e->e.temp.op->type = e->e.temp.type->type;
+	}
+	*op = e->e.temp.op;
 	return sblock;
 }
 
