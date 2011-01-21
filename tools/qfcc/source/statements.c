@@ -327,12 +327,31 @@ expr_block (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_bind (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	expr_t     *src_expr = e->e.expr.e1;
+	expr_t     *dst_expr = e->e.expr.e2;
+	type_t     *dst_type;
+	operand_t  *tmp = 0;
+
+	if (!dst_expr || dst_expr->type != ex_temp)
+		internal_error (e, "bad bind expression");
+	dst_type = get_type (dst_expr);
+	sblock = statement_subexpr (sblock, src_expr, &tmp);
+	tmp->type = dst_type->type;
+	return sblock;
+}
+
+static sblock_t *
 expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	const char *opcode;
 	statement_t *s;
 
 	switch (e->e.expr.op) {
+		case 'b':
+			sblock = expr_bind (sblock, e, op);
+			break;
 		case 'c':
 			sblock = statement_call (sblock, e);
 			break;
@@ -589,6 +608,9 @@ static sblock_t *
 statement_expr (sblock_t *sblock, expr_t *e)
 {
 	switch (e->e.expr.op) {
+		case 'b':
+			sblock = expr_bind (sblock, e, 0);
+			break;
 		case 'c':
 			sblock = statement_call (sblock, e);
 			break;
