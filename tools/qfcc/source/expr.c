@@ -894,8 +894,7 @@ _print_expr (expr_t *e, int level, int id)
 			if (e->e.bool.e->type == ex_block && e->e.bool.e->e.block.head) {
 				expr_t     *se;
 
-				printf ("%*se_%p -> e_%p;\n", indent, "",
-						e, e->e.bool.e->e.block.head);
+				printf ("%*se_%p -> e_%p;\n", indent, "", e, e->e.bool.e);
 				se = (expr_t *) e->e.bool.e->e.block.tail;
 				if (se && se->type == ex_label && e->next)
 					printf ("%*se_%p -> e_%p "
