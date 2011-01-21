@@ -88,7 +88,6 @@ typedef struct {
 	struct operand_s *op;	///< The operand for the temporary variable, if
 							///< allocated
 	struct type_s *type;	///< The type of the temporary variable.
-	int         users;		///< Reference count. Source of much hair loss.
 } ex_temp_t;
 
 /**	Pointer constant expression.
@@ -287,9 +286,6 @@ expr_t *new_block_expr (void);
 
 /**	Create a new binary expression node node.
 
-	If \a e1 or \a e2 represent temporary variables, their ex_temp_t::users
-	field will be incremented.
-
 	If either \a e1 or \a e2 are error expressions, then that expression will
 	be returned instead of a new binary expression.
 
@@ -303,9 +299,6 @@ expr_t *new_block_expr (void);
 expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);
 
 /**	Create a new unary expression node node.
-
-	If \a e1 represents a temporary variable, its ex_temp_t::users field
-	will be incremented.
 
 	If \a e1 is an error expression, then it will be returned instead of a
 	new binary expression.
@@ -513,30 +506,6 @@ expr_t *new_param_expr (struct type_s *type, int num);
 	\return			A new expression representing the move.
 */
 expr_t *new_move_expr (expr_t *e1, expr_t *e2, struct type_s *type);
-
-/**	Temporary variable reference counting.
-
-	Increment the users of the referenced temporary. Has no effect on
-	other expressions.
-
-	\param e		The expression referencing the temporary variable. If
-					a block expression, the result of the block will be
-					incremented.
-	\return			\a e
-*/
-expr_t *inc_users (expr_t *e);
-
-/**	Temporary variable reference counting.
-
-	Decrement the users of the referenced temporary. Has no effect on
-	other expressions.
-
-	\param e		The expression referencing the temporary variable. If
-					a block expression, the result of the block will be
-					decremented.
-	\return			\a e
-*/
-expr_t *dec_users (expr_t *e);
 
 expr_t *append_expr (expr_t *block, expr_t *e);
 

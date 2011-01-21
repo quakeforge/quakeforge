@@ -55,12 +55,6 @@ static expr_t *
 cf_cast_expr (type_t *type, expr_t *e)
 {
 	e = cast_expr (type, e);
-	// The expression of which this is a sub-expression has already 
-	// incremented users, so we don't need cast_expr to do so again,
-	// however, since cast_expr does so unconditionally, we must undo
-	// the increment.
-	if (e && e->type == ex_uexpr && e->e.expr.op == 'C')
-		dec_users (e->e.expr.e1);
 	return e;
 }
 

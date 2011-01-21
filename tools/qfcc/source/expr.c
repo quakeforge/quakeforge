@@ -191,26 +191,6 @@ test_error (expr_t *e, type_t *t)
 }
 
 expr_t *
-inc_users (expr_t *e)
-{
-	if (e && e->type == ex_temp)
-		e->e.temp.users++;
-	else if (e && e->type == ex_block)
-		inc_users (e->e.block.result);
-	return e;
-}
-
-expr_t *
-dec_users (expr_t *e)
-{
-	if (e && e->type == ex_temp)
-		e->e.temp.users--;
-	else if (e && e->type == ex_block)
-		dec_users (e->e.block.result);
-	return e;
-}
-
-expr_t *
 new_expr (void)
 {
 	expr_t     *e;
@@ -301,7 +281,6 @@ copy_expr (expr_t *e)
 			n = new_expr ();
 			*n = *e;
 			n->e.temp.expr = copy_expr (e->e.temp.expr);
-			e->e.temp.users = 0;	//FIXME?
 			return n;
 	}
 	error (e, "internal: invalid expression");
@@ -387,9 +366,6 @@ new_binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (e2 && e2->type == ex_error)
 		return e2;
 
-	inc_users (e1);
-	inc_users (e2);
-
 	e->type = ex_expr;
 	e->e.expr.op = op;
 	e->e.expr.e1 = e1;
@@ -404,8 +380,6 @@ new_unary_expr (int op, expr_t *e1)
 
 	if (e1 && e1->type == ex_error)
 		return e1;
-
-	inc_users (e1);
 
 	e->type = ex_uexpr;
 	e->e.expr.op = op;
@@ -1214,7 +1188,6 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (e1->type == ex_block && e1->e.block.is_call
 		&& has_function_call (e2) && e1->e.block.result) {
 		e = new_temp_def_expr (get_type (e1->e.block.result));
-		inc_users (e);					// for the block itself
 		e1 = assign_expr (e, e1);
 	}
 
@@ -1617,12 +1590,6 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 		} else {
 			*a = cast_expr (arg_types[i], e);
 		}
-		// new_binary_expr calls inc_users for both args, but inc_users doesn't
-		// walk expression chains so only the first arg expression in the chain
-		// (the last arg in the call) gets its user count incremented, thus
-		// ensure all other arg expressions get their user counts incremented.
-		if (a != &args)
-			inc_users (*a);
 		a = &(*a)->next;
 	}
 	for (i = 0; i < arg_expr_count - 1; i++) {
@@ -1631,8 +1598,6 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 	if (arg_expr_count) {
 		e = assign_expr (arg_exprs[arg_expr_count - 1][1],
 						 arg_exprs[arg_expr_count - 1][0]);
-		inc_users (arg_exprs[arg_expr_count - 1][0]);
-		inc_users (arg_exprs[arg_expr_count - 1][1]);
 		append_expr (call, e);
 	}
 	e = new_binary_expr ('c', fexpr, args);
