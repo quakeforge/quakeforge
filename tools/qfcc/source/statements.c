@@ -260,18 +260,58 @@ static sblock_t *
 statement_assign (sblock_t *sblock, expr_t *e)
 {
 	statement_t *s;
-	operand_t  *dst;
-	operand_t  *src;
+	expr_t     *src_expr = e->e.expr.e2;
+	expr_t     *dst_expr = e->e.expr.e1;
+	operand_t  *src = 0;
+	operand_t  *dst = 0;
+	operand_t  *ofs = 0;
 	const char *opcode = convert_op (e->e.expr.op);
 
+	s = new_statement (opcode);
 	if (e->e.expr.op == '=') {
-		sblock = statement_subexpr (sblock, e->e.expr.e1, &dst);
-		sblock = statement_subexpr (sblock, e->e.expr.e2, &src);
-		s = new_statement (opcode);
-		s->opa = src;
-		s->opb = dst;
-		sblock_add_statement (sblock, s);
+		sblock = statement_subexpr (sblock, dst_expr, &dst);
+		sblock = statement_subexpr (sblock, src_expr, &src);
+		ofs = 0;
 	} else {
+		sblock = statement_subexpr (sblock, src_expr, &src);
+		if (dst_expr->type == ex_expr
+			&& extract_type (dst_expr->e.expr.e1) == ev_pointer
+			&& !is_constant (dst_expr->e.expr.e1)) {
+			sblock = statement_subexpr (sblock, dst_expr->e.expr.e1, &dst);
+			sblock = statement_subexpr (sblock, dst_expr->e.expr.e2, &ofs);
+		} else {
+			sblock = statement_subexpr (sblock, dst_expr, &dst);
+			ofs = 0;
+		}
+	}
+	s->opa = src;
+	s->opb = dst;
+	s->opc = ofs;
+	sblock_add_statement (sblock, s);
+	return sblock;
+}
+
+static sblock_t *
+expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	if (e->type == ex_uexpr) {
+		sblock = statement_subexpr (sblock, e->e.expr.e1, op);
+		(*op)->type = ev_void;
+	}
+	return sblock;
+}
+
+static sblock_t *
+expr_deref (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	type_t     *type = e->e.expr.type;
+
+	e = e->e.expr.e1;
+	if (e->type == ex_uexpr && e->e.expr.op == '&'
+		&& e->e.expr.e1->type == ex_symbol) {
+		*op = new_operand (op_symbol);
+		(*op)->type = type->type;
+		(*op)->o.symbol = e->e.expr.e1->e.symbol;
 	}
 	return sblock;
 }
@@ -314,6 +354,16 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 {
+	switch (e->e.expr.op) {
+		case '&':
+			sblock = expr_address (sblock, e, op);
+			break;
+		case '.':
+			sblock = expr_deref (sblock, e, op);
+			break;
+		default:
+			;
+	}
 	return sblock;
 }
 
