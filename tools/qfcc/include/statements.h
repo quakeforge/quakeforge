@@ -68,5 +68,6 @@ struct expr_s;
 
 sblock_t *make_statements (struct expr_s *expr);
 void print_statement (statement_t *s);
+void print_flow (sblock_t *sblock);
 
 #endif//statement_h

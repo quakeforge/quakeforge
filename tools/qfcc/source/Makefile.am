@@ -53,7 +53,7 @@ EXTRA_PROGRAMS= qfcc qfpc qfprogs
 
 common_src=\
 	class.c codespace.c constfold.c cpp.c debug.c def.c defspace.c dot_expr.c \
-	emit.c \
+	dot_flow.c emit.c \
 	expr.c function.c grab.c idstuff.c immediate.c linker.c method.c \
 	obj_file.c opcodes.c options.c qfcc.c reloc.c statements.c strpool.c \
 	struct.c switch.c symtab.c type.c

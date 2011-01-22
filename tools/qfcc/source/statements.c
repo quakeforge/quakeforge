@@ -758,5 +758,6 @@ make_statements (expr_t *e)
 	sblock_t   *sblock = new_sblock ();
 //	print_expr (e);
 	statement_slist (sblock, e);
+//	print_flow (sblock);
 	return sblock;
 }
