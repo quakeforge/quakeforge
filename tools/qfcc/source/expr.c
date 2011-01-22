@@ -1565,7 +1565,7 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 			t = ftype->t.func.param_types[i];
 		} else {
 			if (e->type == ex_nil)
-				convert_nil (e, t = &type_vector);	//FIXME largest param size
+				convert_nil (e, t = type_nil);
 			if (e->type == ex_bool)
 				convert_from_bool (e, get_type (e));
 			if (is_integer_val (e)

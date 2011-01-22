@@ -88,6 +88,8 @@ extern	type_t	type_quaternion;
 extern	type_t	type_integer;
 extern	type_t	type_short;
 
+extern	type_t	*type_nil;		// for passing nil into ...
+
 extern	type_t	type_id;
 extern	type_t	type_Class;
 extern	type_t	type_Protocol;
