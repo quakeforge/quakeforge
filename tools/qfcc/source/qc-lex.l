@@ -363,7 +363,7 @@ keyword_or_id (char *token)
 	yylval.symbol = sym;
 	if (sym->sy_type == sy_type)
 		return TYPE_NAME;
-	if (is_class (sym->type))
+	if (sym->type && is_class (sym->type))
 		return CLASS_NAME;
 	return NAME;
 }

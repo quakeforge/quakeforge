@@ -138,7 +138,6 @@ symtab_t       *current_symtab;
 function_t *current_func;
 struct class_type_s *current_class;
 expr_t  *local_expr;
-struct scope_s *current_scope;
 param_t *current_params;
 %}
 

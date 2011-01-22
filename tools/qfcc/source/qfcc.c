@@ -717,6 +717,7 @@ compile_to_obj (const char *file, const char *obj)
 		return !options.preprocess_only;
 
 	InitData ();
+	setup_param_block ();
 	clear_frame_macros ();
 	clear_classes ();
 	clear_defs ();

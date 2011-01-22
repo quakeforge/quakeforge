@@ -93,10 +93,8 @@ int yylex (void);
 %union {
 	int			op;
 	void       *pointer;			// for ensuring pointer values are null
-	struct def_s *def;
 	struct hashtab_s *def_list;
 	struct type_s	*type;
-	struct typedef_s *typename;
 	struct expr_s	*expr;
 	struct function_s *function;
 	struct switch_block_s *switch_block;
@@ -160,10 +158,10 @@ int yylex (void);
 %type	<type>		ivar_decl ivar_declarator def_item def_list
 %type	<type>		ivars func_type non_func_type
 %type	<type>		code_func func_defs func_def_list
-%type	<def>		fdef_name cfunction_def func_def
+%type	<symbol>	fdef_name cfunction_def func_def
 %type	<param>		function_decl
 %type	<param>		param param_list
-%type	<def>		opt_initializer methoddef var_initializer
+%type	<symbol>	opt_initializer methoddef var_initializer
 %type	<expr>		opt_expr fexpr expr element_list element_list1 element
 %type	<expr>		opt_state_expr think opt_step array_decl texpr
 %type	<expr>		statement statements statement_block
@@ -241,6 +239,9 @@ check_undefined (symbol_t *sym)
 
 defs
 	: /* empty */
+		{
+			current_symtab = pr.symtab;
+		}
 	| defs def
 	| defs obj_def
 	| error END { current_class = 0; yyerrok; }
@@ -450,8 +451,8 @@ function_decl
 	;
 
 param_list
-	: param						{ $$ = $<param>0; }
-	| param_list ',' { $<param>$ = $<param>0; } param	{ $$ = $<param>0; }
+	: param						{ $$ = $1; }
+	| param_list ',' { $<param>$ = $<param>1; } param	{ $$ = $4; }
 	;
 
 param
@@ -484,9 +485,6 @@ def_list
 def_item
 	: def_name opt_initializer
 		{
-			if ($2 && !$2->local
-				&& $2->type->type != ev_func)
-				def_initialized ($2);
 		}
 	;
 
@@ -512,9 +510,17 @@ fdef_name
 func_def
 	: identifier
 		{
+			$$ = $1;
+			$$->params = current_params;
+			$$->type = $<type>0;
+			$$ = function_symbol ($$, 0, 1);
 		}
 	| OVERLOAD identifier
 		{
+			$$ = $2;
+			$$->params = current_params;
+			$$->type = $<type>0;
+			$$ = function_symbol ($$, 1, 1);
 		}
 	;
 
@@ -525,11 +531,24 @@ func_init
 
 non_code_func
 	: '=' '#' fexpr
+		{
+			build_builtin_function ($<symbol>0, $3);
+		}
 	| /* emtpy */
 	;
 
 code_func
-	: '=' opt_state_expr statement_block	{}
+	: '='
+		{
+			$<symtab>$ = current_symtab;
+			current_func = begin_function ($<symbol>0, 0, current_symtab);
+			current_symtab = current_func->symtab;
+		}
+	  opt_state_expr statement_block
+		{
+			build_code_function ($<symbol>0, $3, $4);
+			current_symtab = $<symtab>2;
+		}
 	;
 
 def_name
@@ -788,7 +807,7 @@ unary_expr
 	;
 
 primary
-	: NAME      				{ $$ = new_symbol_expr ($1); }
+	: NAME      				{ $$ = new_symbol_expr (check_undefined ($1)); }
 	| BREAK	%prec BREAK_PRIMARY { $$ = new_name_expr (save_string ("break")); }
 	| ARGS						{ $$ = new_name_expr (".args"); }
 	| SELF						{ $$ = new_self_expr (); }
