@@ -707,6 +707,7 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 			sblock_add_statement (sblock, s);
 			sblock->next = new_sblock ();
 			sblock = sblock->next;
+			break;
 		case 'g':
 			sblock = statement_branch (sblock, e);
 			break;
