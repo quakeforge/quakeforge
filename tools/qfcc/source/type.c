@@ -73,6 +73,9 @@ type_t      type_pointer = { ev_pointer, "pointer", ty_none, {{&type_void}} };
 type_t      type_quaternion = { ev_quat, "quaternion" };
 type_t      type_integer = { ev_integer, "integer" };
 type_t      type_short = { ev_short, "short" };
+
+type_t     *type_nil;
+
 // these will be built up further
 type_t      type_id = { ev_pointer, "id" };
 type_t      type_Class = { ev_pointer, "Class" };
@@ -638,6 +641,14 @@ is_scalar (type_t *type)
 }
 
 int
+is_math (type_t *type)
+{
+	etype_t     t = type->type;
+
+	return t == ev_vector || t == ev_quat || is_scalar (type);
+}
+
+int
 is_struct (type_t *type)
 {
 	if (type->type == ev_invalid
@@ -844,6 +855,7 @@ init_types (void)
 		{0, 0}
 	};
 
+	type_nil = &type_quaternion;
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		// vector can't be part of .zero for v6 progs because for v6 progs,
 		// .zero is only one word wide.
@@ -851,6 +863,7 @@ init_types (void)
 		// v6 progs don't have quaternions
 		zero_struct[8].name = 0;
 		param_struct[8].name = 0;
+		type_nil = &type_vector;
 	}
 
 	make_structure (0, 'u', zero_struct, &type_zero);

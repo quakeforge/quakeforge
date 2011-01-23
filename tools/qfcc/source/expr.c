@@ -1308,6 +1308,8 @@ unary_expr (int op, expr_t *e)
 		return e;
 	switch (op) {
 		case '-':
+			if (!is_math (get_type (e)))
+				return error (e, "invalid type for unary +");
 			if (is_constant (e)) {
 				switch (extract_type (e)) {
 					case ev_string:
@@ -1315,7 +1317,7 @@ unary_expr (int op, expr_t *e)
 					case ev_field:
 					case ev_func:
 					case ev_pointer:
-						return error (e, "invalid type for unary -");
+						internal_error (e, "type check failed!");
 					case ev_float:
 						return new_float_expr (-expr_float (e));
 					case ev_vector:
@@ -1493,7 +1495,9 @@ bitnot_expr:
 			e->e.expr.type = get_type (e->e.expr.e1)->t.fldptr.type;
 			return e;
 		case '+':
-			return e;			// FIXME typechecking
+			if (!is_math (get_type (e)))
+				return error (e, "invalid type for unary +");
+			return e;
 	}
 	internal_error (e, 0);
 }
