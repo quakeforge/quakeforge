@@ -422,6 +422,17 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	if (!*op) {
+		(*op) = new_operand (op_temp);
+		(*op)->type = e->e.expr.type->type;
+	}
+	sblock = statement_subexpr (sblock, e->e.expr.e1, op);
+	return sblock;
+}
+
+static sblock_t *
 expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	switch (e->e.expr.op) {
@@ -432,8 +443,7 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 			sblock = expr_deref (sblock, e, op);
 			break;
 		case 'C':
-			//FIXME
-			sblock = statement_subexpr (sblock, e->e.expr.e1, op);
+			sblock = expr_cast (sblock, e, op);
 			break;
 		default:
 			;
