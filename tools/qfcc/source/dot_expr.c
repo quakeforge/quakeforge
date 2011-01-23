@@ -186,24 +186,39 @@ print_block (expr_t *e, int level, int id)
 }
 
 static void
+print_call (expr_t *e, int level, int id)
+{
+	int         indent = level * 2 + 2;
+	expr_t     *p;
+	int         i, count;
+	expr_t    **args;
+
+	for (count = 0, p = e->e.expr.e2; p; p = p->next)
+		count++;
+	args = alloca (count * sizeof (expr_t *));
+	for (i = 0, p = e->e.expr.e2; p; p = p->next, i++)
+		args[count - 1 - i] = p;
+
+	_print_expr (e->e.expr.e1, level, id);
+	printf ("%*se_%p [label=\"<c>call", indent, "", e);
+	for (i = 0; i < count; i++)
+		printf ("|<p%d>p%d", i, i);
+	printf ("\",shape=record];\n");
+	for (i = 0; i < count; i++) {
+		_print_expr (args[i], level + 1, id);
+		printf ("%*se_%p:p%d -> e_%p;\n", indent + 2, "", e, i, args[i]);
+	}
+	printf ("%*se_%p:c -> e_%p;\n", indent, "", e, e->e.expr.e1);
+}
+
+static void
 print_subexpr (expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 
 	if (e->e.expr.op == 'c') {
-		expr_t     *p;
-		int         i;
-		_print_expr (e->e.expr.e1, level, id);
-		printf ("%*sp_%p [label=\"", indent, "", e);
-		for (p = e->e.expr.e2, i = 0; p; p = p->next, i++)
-			printf ("<p%d>p%d%s", i, i, p->next ? "|" : "");
-		printf ("\",shape=record];\n");
-		for (p = e->e.expr.e2, i = 0; p; p = p->next, i++) {
-			_print_expr (p, level + 1, id);
-			printf ("%*sp_%p:p%d -> e_%p;\n", indent + 2, "", e, i, p);
-		}
-		printf ("%*se_%p -> e_%p;\n", indent, "", e, e->e.expr.e1);
-		printf ("%*se_%p -> p_%p;\n", indent, "", e, e);
+		print_call (e, level, id);
+		return;
 	} else if (e->e.expr.op == 'i' || e->e.expr.op == 'n'
 			   || e->e.expr.op == IFB || e->e.expr.op ==IFBE
 			   || e->e.expr.op == IFA || e->e.expr.op ==IFAE) {
