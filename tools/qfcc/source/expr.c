@@ -80,7 +80,7 @@ type_t     *ev_types[ev_type_count] = {
 	&type_quaternion,
 	&type_integer,
 	&type_short,
-	&type_void,							// FIXME what type?
+	&type_invalid,
 };
 
 type_t *
@@ -2171,10 +2171,8 @@ assign_expr (expr_t *e1, expr_t *e2)
 		internal_error (e1, 0);
 	}
 	//XXX func = func ???
-	if (t1->type != ev_pointer || !is_array (t2))
-		;//FIXME check_initialized (e2);
-	else {
-		e2 = address_expr (e2, 0, t2->t.fldptr.type);	// FIXME
+	if (t1->type == ev_pointer && is_array (t2)) {
+		e2 = address_expr (e2, 0, t2->t.fldptr.type);// FIXME (eh? why fixme?)
 		t2 = get_type (e2);
 	}
 	if (e2->type == ex_bool)
