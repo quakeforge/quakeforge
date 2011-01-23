@@ -450,7 +450,7 @@ int is_compare (int op);
 	\param op		The op-code to check.
 	\return			True if the op-code is a math operator.
 */
-int is_math (int op);
+int is_math_op (int op);
 
 /**	Check if the op-code is a logic operator.
 
