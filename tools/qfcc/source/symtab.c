@@ -6,6 +6,7 @@
 #include "class.h"
 #include "def.h"
 #include "defspace.h"
+#include "diagnostic.h"
 #include "function.h"
 #include "qfcc.h"
 #include "strpool.h"

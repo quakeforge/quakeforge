@@ -547,16 +547,6 @@ expr_t *cast_expr (struct type_s *t, expr_t *e);
 
 void init_elements (struct def_s *def, expr_t *eles);
 
-expr_t *error (expr_t *e, const char *fmt, ...)
-	__attribute__ ((format (printf, 2, 3)));
-void
-internal_error (expr_t *e, const char *fmt, ...)
-	__attribute__ ((format (printf, 2, 3), noreturn));
-expr_t *warning (expr_t *e, const char *fmt, ...)
-	__attribute__ ((format (printf, 2, 3)));
-expr_t *notice (expr_t *e, const char *fmt, ...)
-	__attribute__ ((format (printf, 2, 3)));
-
 const char *get_op_string (int op);
 
 extern int lineno_base;

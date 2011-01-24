@@ -50,6 +50,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "class.h"
 #include "def.h"
+#include "diagnostic.h"
 #include "expr.h"
 #include "function.h"
 #include "options.h"
@@ -166,8 +167,7 @@ types_same (type_t *a, type_t *b)
 				return 0;
 			return 1;
 	}
-	error (0, "we be broke");
-	abort ();
+	internal_error (0, "we be broke");
 }
 
 /*

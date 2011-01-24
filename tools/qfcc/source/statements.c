@@ -41,6 +41,7 @@
 
 #include "QF/va.h"
 
+#include "diagnostic.h"
 #include "expr.h"
 #include "options.h"
 #include "qc-parse.h"

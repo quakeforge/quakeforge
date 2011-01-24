@@ -47,6 +47,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "qfcc.h"
 #include "defspace.h"
+#include "diagnostic.h"
 #include "expr.h"
 #include "immediate.h"
 #include "options.h"

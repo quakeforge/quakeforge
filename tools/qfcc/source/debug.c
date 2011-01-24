@@ -46,6 +46,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/pr_comp.h"
 
 #include "debug.h"
+#include "diagnostic.h"
 #include "expr.h"
 #include "immediate.h"
 #include "qfcc.h"

@@ -50,6 +50,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "qfcc.h"
 #include "def.h"
 #include "defspace.h"
+#include "diagnostic.h"
 #include "expr.h"
 #include "immediate.h"
 #include "options.h"

@@ -37,6 +37,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/hash.h"
 
 #include "debug.h"
+#include "diagnostic.h"
 #include "expr.h"
 #include "grab.h"
 #include "qfcc.h"

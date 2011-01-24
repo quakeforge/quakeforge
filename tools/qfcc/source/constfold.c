@@ -45,6 +45,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <QF/dstring.h>
 #include <QF/mathlib.h>
 
+#include "diagnostic.h"
 #include "expr.h"
 #include "options.h"
 #include "qc-parse.h"
