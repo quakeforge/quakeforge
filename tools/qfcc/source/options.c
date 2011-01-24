@@ -52,6 +52,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "linker.h"
 #include "options.h"
 #include "qfcc.h"
+#include "strpool.h"
 
 const char *this_program;
 const char **source_files;

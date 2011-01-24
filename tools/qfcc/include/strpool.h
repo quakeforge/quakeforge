@@ -43,4 +43,16 @@ strpool_t *strpool_build (const char *strings, int size);
 void strpool_delete (strpool_t *strpool);
 int strpool_addstr (strpool_t *strpool, const char *str);
 
+/**	Smart strdup.
+
+	Create a unique copy of a string. If the same string has been seen
+	before, does not create a new copy but rather returns the previously
+	seen string.
+	\param str		The string to copy.
+	\return			The unique copy of the string.
+*/
+const char *save_string (const char *str);
+
+const char *make_string (char *token, char **end);
+
 #endif//__strpool_h

@@ -49,6 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "expr.h"
 #include "immediate.h"
 #include "qfcc.h"
+#include "strpool.h"
 
 static srcline_t *free_srclines;
 

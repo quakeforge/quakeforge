@@ -48,13 +48,14 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <QF/hash.h>
 #include <QF/sys.h>
 
-#include "qfcc.h"
 #include "class.h"
 #include "debug.h"
 #include "expr.h"
 #include "grab.h"
 #include "immediate.h"
 #include "options.h"
+#include "qfcc.h"
+#include "strpool.h"
 #include "struct.h"
 #include "symtab.h"
 #include "type.h"

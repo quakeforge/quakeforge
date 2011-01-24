@@ -40,6 +40,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "expr.h"
 #include "grab.h"
 #include "qfcc.h"
+#include "strpool.h"
 #include "symtab.h"
 #include "type.h"
 

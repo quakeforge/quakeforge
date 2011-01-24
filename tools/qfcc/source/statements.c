@@ -46,6 +46,7 @@
 #include "qc-parse.h"
 #include "qfcc.h"
 #include "statements.h"
+#include "strpool.h"
 #include "symtab.h"
 #include "type.h"
 

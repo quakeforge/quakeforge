@@ -49,6 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "options.h"
 #include "qc-parse.h"
 #include "qfcc.h"
+#include "strpool.h"
 #include "type.h"
 
 static expr_t *

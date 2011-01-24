@@ -8,6 +8,7 @@
 #include "defspace.h"
 #include "function.h"
 #include "qfcc.h"
+#include "strpool.h"
 #include "symtab.h"
 #include "type.h"
 

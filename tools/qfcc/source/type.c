@@ -54,6 +54,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "function.h"
 #include "options.h"
 #include "qfcc.h"
+#include "strpool.h"
 #include "struct.h"
 #include "symtab.h"
 #include "type.h"

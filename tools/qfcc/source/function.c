@@ -60,6 +60,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "options.h"
 #include "reloc.h"
 #include "statements.h"
+#include "strpool.h"
 #include "symtab.h"
 #include "type.h"
 

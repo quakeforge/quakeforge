@@ -115,18 +115,6 @@ extern	struct symtab_s *current_symtab;
 
 const char *strip_path (const char *filename);
 
-/**	Smart strdup.
-
-	Create a unique copy of a string. If the same string has been seen
-	before, does not create a new copy but rather returns the previously
-	seen string.
-	\param str		The string to copy.
-	\return			The unique copy of the string.
-*/
-const char *save_string (const char *str);
-
-const char *make_string (char *token, char **end);
-
 void clear_frame_macros (void);
 extern FILE *yyin;
 int yyparse (void);

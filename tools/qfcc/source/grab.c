@@ -48,6 +48,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "grab.h"
 #include "options.h"
 #include "qfcc.h"
+#include "strpool.h"
 
 int grab_frame;
 int grab_other;
