@@ -32,6 +32,8 @@
 #ifndef __struct_h
 #define __struct_h
 
+struct def_s;
+enum storage_class_e;
 struct symbol_s;
 struct symtab_s;
 struct type_s;
@@ -39,6 +41,7 @@ struct type_s;
 typedef struct {
 	const char *name;
 	struct type_s *type;
+	void (*emit) (struct def_s *def, void *data, int index);
 } struct_def_t;
 
 struct symbol_s *find_struct (int su, struct symbol_s *tag,
@@ -52,5 +55,8 @@ void add_enum (struct symbol_s *enm, struct symbol_s *name,
 
 struct symbol_s *make_structure (const char *name, int su, struct_def_t *defs,
 								 struct type_s *type);
+struct def_s * emit_structure (const char *name, int su, struct_def_t *defs,
+							   struct type_s *type, void *data,
+							   enum storage_class_e storage);
 
 #endif//__struct_h

@@ -255,20 +255,6 @@ function_symbol (symbol_t *sym, int overload, int create)
 	return s;
 }
 
-def_t *
-get_function_def (const char *name, struct type_s *type,
-							 scope_t *scope, storage_class_t storage,
-							 int overload, int create)
-{
-	overloaded_function_t *func;
-	
-	func = get_function (name, type, overload, create);
-
-	if (func && func->overloaded)
-		name = func->full_name;
-	return get_def (type, name, scope, storage);
-}
-
 // NOTE sorts the list in /reverse/ order
 static int
 func_compare (const void *a, const void *b)

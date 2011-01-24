@@ -38,6 +38,8 @@
 typedef struct defspace_s {
 	struct defspace_s *next;
 	struct locref_s *free_locs;
+	struct def_s *defs;
+	struct def_s **def_tail;
 	pr_type_t  *data;
 	int         size;
 	int         max_size;
@@ -46,7 +48,7 @@ typedef struct defspace_s {
 
 defspace_t *new_defspace (void);
 int defspace_new_loc (defspace_t *space, int size);
-void defsapce_free_loc (defspace_t *space, int ofs, int size);
+void defspace_free_loc (defspace_t *space, int ofs, int size);
 int defspace_add_data (defspace_t *space, pr_type_t *data, int size);
 
 #endif//__defspace_h

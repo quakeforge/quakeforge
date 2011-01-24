@@ -167,7 +167,7 @@ typedef struct ex_value_s {
 	} v;
 } ex_value_t;
 
-#define POINTER_VAL(p) (((p).def ? (p).def->ofs : 0) + (p).val)
+#define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
 	struct expr_s *next;		///< the next expression in a block expression

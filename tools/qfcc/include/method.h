@@ -55,6 +55,8 @@ typedef struct selector_s {
 typedef struct methodlist_s {
 	method_t   *head;
 	method_t  **tail;
+	int         count;		///< used only for emitting
+	int         instance;		///< used only for emitting
 } methodlist_t;
 
 typedef struct keywordarg_s {

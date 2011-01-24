@@ -98,17 +98,20 @@ extern	char		destfile[];
 
 extern	struct symtab_s *current_symtab;
 
-#define G_GETSTR(s)		(pr.strings->strings + (s))
-#define G_var(t, o)		(pr.near_data->data[o].t##_var)
-#define	G_FLOAT(o)		G_var (float, o)
-#define	G_INT(o)		G_var (integer, o)
-#define	G_VECTOR(o)		G_var (vector, o)
-#define	G_STRING(o)		G_GETSTR (G_var (string, o))
-#define	G_FUNCTION(o)	G_var (func, o)
-#define G_POINTER(t,o)	((t *)(pr.near_data->data + o))
-#define G_STRUCT(t,o)	(*G_POINTER (t, o))
+#define GETSTR(s)			(pr.strings->strings + (s))
+#define D_var(t, d)			((d)->space->data[(d)->offset].t##_var)
+#define	D_FLOAT(d)			D_var (float, d)
+#define	D_INT(d)			D_var (integer, d)
+#define	D_VECTOR(d)			D_var (vector, d)
+#define	D_STRING(d)			GETSTR (D_var (string, d))
+#define	D_FUNCTION(d)		D_var (func, d)
+#define D_POINTER(t,d)		((t *)((d)->space->data + (d)->offset))
+#define D_STRUCT(t,d)		(*D_POINTER (t, d))
 
-#define POINTER_OFS(p)	((pr_type_t *) (p) - pr.near_data->data)
+#define G_POINTER(s,t,o)	((t *)((s)->data + o))
+#define G_STRUCT(s,t,o)		(*G_POINTER (s, t, o))
+
+#define POINTER_OFS(s,p)	((pr_type_t *) (p) - (s)->data)
 
 const char *strip_path (const char *filename);
 

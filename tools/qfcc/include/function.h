@@ -89,9 +89,6 @@ param_t *copy_params (param_t *params);
 struct type_s *parse_params (struct type_s *type, param_t *params);
 struct symbol_s *function_symbol (struct symbol_s *sym,
 								  int overload, int create);
-struct def_s *get_function_def (const char *name, struct type_s *type,
-								struct scope_s *scope, storage_class_t storage,
-								int overload, int create);
 struct expr_s *find_function (struct expr_s *fexpr, struct expr_s *params);
 function_t *new_function (const char *name, const char *nice_name);
 void add_function (function_t *f);

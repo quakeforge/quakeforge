@@ -117,12 +117,11 @@ class_init (void)
 	class_Class.methods = new_methodlist ();
 }
 
-def_t *
-class_def (class_type_t *class_type, int external)
+symbol_t *
+class_symbol (class_type_t *class_type, int external)
 {
 	const char *name = 0;
 	type_t     *type = 0;
-	storage_class_t storage = external ? st_extern : st_global;
 
 	switch (class_type->type) {
 		case ct_category:
@@ -138,7 +137,8 @@ class_def (class_type_t *class_type, int external)
 		case ct_protocol:
 			return 0;		// probably in error recovery
 	}
-	return get_def (type, name, pr.scope, storage);
+	return make_symbol (name, type, pr.far_data,
+						external ? st_extern : st_global);
 }
 
 class_t *
@@ -226,17 +226,74 @@ begin_category (category_t *category)
 {
 	pr_category_t *pr_category;
 	class_t    *class = category->class;
+	symbol_t   *sym; 
+	def_t      *def;
+	defspace_t *space;
 
 	current_class = &category->class_type;
-	category->def = class_def (current_class, 0);
-	category->def->initialized = category->def->constant = 1;
-	category->def->nosave = 1;
-	pr_category = &G_STRUCT (pr_category_t, category->def->ofs);
-	EMIT_STRING (pr_category->category_name, category->name);
-	EMIT_STRING (pr_category->class_name, class->name);
-	EMIT_DEF (pr_category->protocols,
+	sym = class_symbol (current_class, 0);
+	category->def = def = sym->s.def;
+	def->initialized = def->constant = def->nosave = 1;
+	space = def->space;
+
+	pr_category = &D_STRUCT (pr_category_t, def);
+	EMIT_STRING (space, pr_category->category_name, category->name);
+	EMIT_STRING (space, pr_category->class_name, class->name);
+	EMIT_DEF (space, pr_category->protocols,
 			  emit_protocol_list (category->protocols,
 								  va ("%s_%s", class->name, category->name)));
+}
+
+static def_t *
+emit_ivars (symtab_t *ivars, const char *name)
+{
+	static struct_def_t ivar_list_struct[] = {
+		{"ivar_count", &type_integer},
+		{"ivar_list",  0},	// type filled in at runtime
+		{0, 0}
+	};
+	dstring_t  *encoding = dstring_newstr ();
+	symbol_t   *sym;
+	symbol_t   *s;
+	def_t      *def;
+	defspace_t *space;
+	int         count;
+	int         i;
+	type_t      new;
+	type_t     *type;
+	pr_ivar_list_t *pr_ivar_list;
+
+	for (s = ivars->symbols; s; s = s->next)
+		if (s->sy_type == sy_var)
+			count++;
+	ivar_list_struct[1].type = array_type (&type_ivar, count);
+	make_structure (0, 's', ivar_list_struct, &new);
+	type = find_type (&new);
+
+	sym = make_symbol (va ("_OBJ_INSTANCE_VARIABLES_%s", name), type,
+					   pr.far_data, st_global);
+	def = sym->s.def;
+	space = def->space;
+	if (def->initialized)
+		goto done;
+	def->initialized = def->constant = def->nosave = 1;
+
+	pr_ivar_list = &D_STRUCT (pr_ivar_list_t, def);
+	pr_ivar_list->ivar_count = count;
+	for (i = 0, s = ivars->symbols; s; s = s->next) {
+		if (s->sy_type != sy_var)
+			continue;
+		encode_type (encoding, s->type);
+		EMIT_STRING (space, pr_ivar_list->ivar_list[i].ivar_name, s->name);
+		EMIT_STRING (space, pr_ivar_list->ivar_list[i].ivar_type,
+					 encoding->str);
+		pr_ivar_list->ivar_list[i].ivar_offset = s->s.offset;
+		dstring_clearstr (encoding);
+		i++;
+	}
+done:
+	dstring_delete (encoding);
+	return def;
 }
 
 static void
@@ -244,40 +301,43 @@ begin_class (class_t *class)
 {
 	def_t      *meta_def;
 	pr_class_t *meta;
-	pr_class_t *cls;
+	pr_class_t *pr_class;
+	symbol_t   *sym; 
+	def_t      *def;
+	defspace_t *space;
 
-	current_class = &class->class_type;
-	class->def = class_def (current_class, 0);
-	meta_def = get_def (type_Class.t.fldptr.type,
-			va ("_OBJ_METACLASS_%s", class->name),
-			pr.scope, st_static);
-	meta_def->initialized = meta_def->constant = 1;
-	meta_def->nosave = 1;
-	meta = &G_STRUCT (pr_class_t, meta_def->ofs);
-	EMIT_STRING (meta->class_pointer, class->name);
+	sym = make_symbol (va ("_OBJ_METACLASS_%s", class->name),
+					   type_Class.t.fldptr.type, pr.far_data, st_static);
+	meta_def = sym->s.def;
+	meta_def->initialized = meta_def->constant = meta_def->nosave = 1;
+	space = meta_def->space;
+	meta = &D_STRUCT (pr_class_t, meta_def);
+	EMIT_STRING (space, meta->class_pointer, class->name);
 	if (class->super_class)
-		EMIT_STRING (meta->super_class, class->super_class->name);
-	EMIT_STRING (meta->name, class->name);
+		EMIT_STRING (space, meta->super_class, class->super_class->name);
+	EMIT_STRING (space, meta->name, class->name);
 	meta->info = _PR_CLS_META;
 	meta->instance_size = type_size (type_Class.t.fldptr.type);
-#if 0  //FIXME
-	EMIT_DEF (meta->ivars,
-			  emit_struct (type_Class.t.fldptr.type->t.class->ivars,
+	EMIT_DEF (space, meta->ivars,
+			  emit_ivars (type_Class.t.fldptr.type->t.class->ivars,
 						   "Class"));
-#endif
-	class->def->initialized = class->def->constant = 1;
-	class->def->nosave = 1;
-	cls = &G_STRUCT (pr_class_t, class->def->ofs);
-	EMIT_DEF (cls->class_pointer, meta_def);
+	current_class = &class->class_type;
+	sym = class_symbol (current_class, 0);
+	class->def = def = sym->s.def;
+	def->initialized = def->constant = def->nosave = 1;
+	space = def->space;
+
+	pr_class = &D_STRUCT (pr_class_t, def);
+	EMIT_DEF (space, pr_class->class_pointer, meta_def);
 	if (class->super_class) {
 		class_type_t class_type = {ct_class, {0}};
 		class_type.c.class = class->super_class;
-		EMIT_STRING (cls->super_class, class->super_class->name);
-		class_def (&class_type, 1);
+		EMIT_STRING (space, pr_class->super_class, class->super_class->name);
+		class_symbol (&class_type, 1);
 	}
-	EMIT_STRING (cls->name, class->name);
-	cls->info = _PR_CLS_CLASS;
-	EMIT_DEF (cls->protocols,
+	EMIT_STRING (space, pr_class->name, class->name);
+	pr_class->info = _PR_CLS_CLASS;
+	EMIT_DEF (space, pr_class->protocols,
 			  emit_protocol_list (class->protocols, class->name));
 }
 
@@ -302,17 +362,16 @@ emit_class_ref (const char *class_name)
 	def_t      *def;
 	def_t      *ref;
 
-	def = get_def (&type_pointer, va (".obj_class_ref_%s", class_name),
-			pr.scope, st_static);
+	def = make_symbol (va (".obj_class_ref_%s", class_name), &type_pointer,
+					   pr.far_data, st_static)->s.def;
 	if (def->initialized)
 		return;
-	def->initialized = def->constant = 1;
-	def->nosave = 1;
-	ref = get_def (&type_integer, va (".obj_class_name_%s", class_name),
-			pr.scope, st_extern);
+	def->initialized = def->constant = def->nosave = 1;
+	ref = make_symbol (va (".obj_class_name_%s", class_name), &type_pointer,
+					   pr.far_data, st_extern)->s.def;
 	if (!ref->external)
-		G_INT (def->ofs) = ref->ofs;
-	reloc_def_def (ref, def->ofs);
+		D_INT (def) = ref->offset;
+	reloc_def_def (ref, def->offset);
 }
 
 static void
@@ -320,13 +379,13 @@ emit_class_name (const char *class_name)
 {
 	def_t      *def;
 
-	def = get_def (&type_integer, va (".obj_class_name_%s", class_name),
-			pr.scope, st_global);
+	def = make_symbol (va (".obj_class_name_%s", class_name), &type_pointer,
+					   pr.far_data, st_global)->s.def;
 	if (def->initialized)
 		return;
 	def->initialized = def->constant = 1;
 	def->nosave = 1;
-	G_INT (def->ofs) = 0;
+	D_INT (def) = 0;
 }
 
 void
@@ -335,19 +394,19 @@ emit_category_ref (const char *class_name, const char *category_name)
 	def_t      *def;
 	def_t      *ref;
 
-	def = get_def (&type_pointer,
-			va (".obj_category_ref_%s_%s", class_name, category_name),
-			pr.scope, st_static);
+	def = make_symbol (va (".obj_category_ref_%s_%s",
+						   class_name, category_name),
+					   &type_pointer, pr.far_data, st_static)->s.def;
 	if (def->initialized)
 		return;
 	def->initialized = def->constant = 1;
 	def->nosave = 1;
-	ref = get_def (&type_integer,
-			va (".obj_category_name_%s_%s", class_name, category_name),
-			pr.scope, st_extern);
+	ref = make_symbol (va (".obj_category_name_%s_%s",
+						   class_name, category_name),
+					   &type_pointer, pr.far_data, st_extern)->s.def;
 	if (!ref->external)
-		G_INT (def->ofs) = ref->ofs;
-	reloc_def_def (ref, def->ofs);
+		D_INT (def) = ref->offset;
+	reloc_def_def (ref, def->offset);
 }
 
 static void
@@ -355,14 +414,14 @@ emit_category_name (const char *class_name, const char *category_name)
 {
 	def_t      *def;
 
-	def = get_def (&type_integer,
-			va (".obj_category_name_%s_%s", class_name, category_name),
-			pr.scope, st_global);
+	def = make_symbol (va (".obj_category_name_%s_%s",
+						   class_name, category_name),
+					   &type_pointer, pr.far_data, st_global)->s.def;
 	if (def->initialized)
 		return;
 	def->initialized = def->constant = 1;
 	def->nosave = 1;
-	G_INT (def->ofs) = 0;
+	D_INT (def) = 0;
 }
 
 static void
@@ -371,14 +430,16 @@ finish_category (category_t *category)
 	pr_category_t *pr_category;
 	class_t    *class = category->class;
 	char       *name;
+	defspace_t *space;
 
 	if (!category->def)	// probably in error recovery
 		return;
 	name = nva ("%s_%s", class->name, category->name);
-	pr_category = &G_STRUCT (pr_category_t, category->def->ofs);
-	EMIT_DEF (pr_category->instance_methods,
+	pr_category = &D_STRUCT (pr_category_t, category->def);
+	space = category->def->space;
+	EMIT_DEF (space, pr_category->instance_methods,
 			emit_methods (category->methods, name, 1));
-	EMIT_DEF (pr_category->class_methods,
+	EMIT_DEF (space, pr_category->class_methods,
 			emit_methods (category->methods, name, 0));
 	free (name);
 	emit_class_ref (class->name);
@@ -390,22 +451,22 @@ finish_class (class_t *class)
 {
 	pr_class_t *meta;
 	pr_class_t *cls;
+	defspace_t *space;
 
 	if (!class->def)	// probably in error recovery
 		return;
-	cls = &G_STRUCT (pr_class_t, class->def->ofs);
+	space = class->def->space;
+	cls = &D_STRUCT (pr_class_t, class->def);
 
-	meta = &G_STRUCT (pr_class_t, cls->class_pointer);
+	meta = &G_STRUCT (space, pr_class_t, cls->class_pointer);
 
-	EMIT_DEF (meta->methods, emit_methods (class->methods,
-										   class->name, 0));
+	EMIT_DEF (space, meta->methods, emit_methods (class->methods,
+												  class->name, 0));
 
 	cls->instance_size = class->ivars ? class->ivars->size : 0;
-#if 0 // FIXME
-	EMIT_DEF (cls->ivars, emit_struct (class->ivars, class->name));
-#endif
-	EMIT_DEF (cls->methods, emit_methods (class->methods,
-										  class->name, 1));
+	EMIT_DEF (space, cls->ivars, emit_ivars (class->ivars, class->name));
+	EMIT_DEF (space, cls->methods, emit_methods (class->methods,
+												 class->name, 1));
 	if (class->super_class)
 		emit_class_ref (class->super_class->name);
 	emit_class_name (class->name);
@@ -718,18 +779,18 @@ class_pointer_def (class_t *class)
 
 	class_type.c.class = class;
 
-	def = get_def (pointer_type (class->type),
-			va ("_OBJ_CLASS_POINTER_%s", class->name),
-			pr.scope, st_static);
+	def = make_symbol (va ("_OBJ_CLASS_POINTER_%s", class->name),
+					   pointer_type (class->type),
+					   pr.far_data, st_static)->s.def;
 	if (def->initialized)
 		return def;
 	def->initialized = def->constant = 1;
 	def->nosave = 1;
 	if (!class->def)
-		class->def = class_def (&class_type, 1);
+		class->def = class_symbol (&class_type, 1)->s.def;
 	if (!class->def->external)
-		G_INT (def->ofs) = class->def->ofs;
-	reloc_def_def (class->def, def->ofs);
+		D_INT (def) = class->def->offset;
+	reloc_def_def (class->def, def->offset);
 	return def;
 }
 
@@ -752,6 +813,7 @@ class_finish_module (void)
 	type_t     *symtab_type;
 	//symbol_t   *symtab_sym;
 	def_t      *symtab_def;
+	defspace_t *space;
 	pr_symtab_t *symtab;
 	pointer_t   *def_ptr;
 	symbol_t   *module_sym;
@@ -779,13 +841,15 @@ class_finish_module (void)
 	symtab_struct[4].type = array_type (&type_pointer,
 										num_classes + num_categories);
 	symtab_type = make_structure (0, 's', symtab_struct, 0)->type;
-	symtab_def = get_def (symtab_type, "_OBJ_SYMTAB", pr.scope, st_static);
+	symtab_def = make_symbol ("_OBJ_SYMTAB", symtab_type,
+							  pr.far_data, st_static)->s.def;
 	symtab_def->initialized = symtab_def->constant = 1;
 	symtab_def->nosave = 1;
-	symtab = &G_STRUCT (pr_symtab_t, symtab_def->ofs);
+	space = symtab_def->space;
+	symtab = &D_STRUCT (pr_symtab_t, symtab_def);
 	if (selector_table_def) {
 		symtab->sel_ref_cnt = selector_table_def->type->t.array.size;
-		EMIT_DEF (symtab->refs, selector_table_def);
+		EMIT_DEF (space, symtab->refs, selector_table_def);
 	}
 	symtab->cls_def_cnt = num_classes;
 	symtab->cat_def_cnt = num_categories;
@@ -793,16 +857,16 @@ class_finish_module (void)
 	if (classes) {
 		for (cl = classes; *cl; cl++) {
 			if ((*cl)->def && !(*cl)->def->external) {
-				reloc_def_def ((*cl)->def, POINTER_OFS (def_ptr));
-				*def_ptr++ = (*cl)->def->ofs;
+				reloc_def_def ((*cl)->def, POINTER_OFS (space, def_ptr));
+				*def_ptr++ = (*cl)->def->offset;
 			}
 		}
 	}
 	if (categories) {
 		for (ca = categories; *ca; ca++) {
 			if ((*ca)->def && !(*ca)->def->external) {
-				reloc_def_def ((*ca)->def, POINTER_OFS (def_ptr));
-				*def_ptr++ = (*ca)->def->ofs;
+				reloc_def_def ((*ca)->def, POINTER_OFS (space, def_ptr));
+				*def_ptr++ = (*ca)->def->offset;
 			}
 		}
 	}
@@ -873,7 +937,8 @@ protocol_add_protocols (protocol_t *protocol, protocollist_t *protocols)
 def_t *
 protocol_def (protocol_t *protocol)
 {
-	return get_def (&type_Protocol, protocol->name, pr.scope, st_static);
+	return make_symbol (protocol->name, &type_Protocol,
+						pr.far_data, st_static)->s.def;
 }
 
 protocollist_t *
@@ -907,26 +972,24 @@ emit_protocol (protocol_t *protocol)
 {
 	def_t      *proto_def;
 	pr_protocol_t *proto;
+	defspace_t *space;
 
-	proto_def = get_def (&type_Protocol,
-						 va ("_OBJ_PROTOCOL_%s", protocol->name),
-						 pr.scope, st_none);
-	if (proto_def)
+	proto_def = make_symbol (va ("_OBJ_PROTOCOL_%s", protocol->name),
+							 &type_Protocol, pr.far_data, st_static)->s.def;
+	if (proto_def->initialized)
 		return proto_def;
-	proto_def = get_def (&type_Protocol,
-						 va ("_OBJ_PROTOCOL_%s", protocol->name),
-						 pr.scope, st_static);
 	proto_def->initialized = proto_def->constant = 1;
 	proto_def->nosave = 1;
-	proto = &G_STRUCT (pr_protocol_t, proto_def->ofs);
+	space = proto_def->space;
+	proto = &D_STRUCT (pr_protocol_t, proto_def);
 	proto->class_pointer = 0;
-	EMIT_STRING (proto->protocol_name, protocol->name);
-	EMIT_DEF (proto->protocol_list,
+	EMIT_STRING (space, proto->protocol_name, protocol->name);
+	EMIT_DEF (space, proto->protocol_list,
 			  emit_protocol_list (protocol->protocols,
 								  va ("PROTOCOL_%s", protocol->name)));
-	EMIT_DEF (proto->instance_methods,
+	EMIT_DEF (space, proto->instance_methods,
 			  emit_method_descriptions (protocol->methods, protocol->name, 1));
-	EMIT_DEF (proto->class_methods,
+	EMIT_DEF (space, proto->class_methods,
 			  emit_method_descriptions (protocol->methods, protocol->name, 0));
 	emit_class_ref ("Protocol");
 	return proto_def;
@@ -943,7 +1006,7 @@ emit_protocol_list (protocollist_t *protocols, const char *name)
 	};
 	type_t     *proto_list_type;
 	def_t      *proto_list_def;
-	//symbol_t   *proto_list_sym;
+	defspace_t *space;
 	pr_protocol_list_t *proto_list;
 	int         i;
 
@@ -951,16 +1014,18 @@ emit_protocol_list (protocollist_t *protocols, const char *name)
 		return 0;
 	proto_list_struct[2].type = array_type (&type_pointer, protocols->count);
 	proto_list_type = make_structure (0, 's', proto_list_struct, 0)->type;
-	proto_list_def = get_def (proto_list_type,
-							  va ("_OBJ_PROTOCOLS_%s", name),
-							  pr.scope, st_static);
+	proto_list_def = make_symbol (va ("_OBJ_PROTOCOLS_%s", name),
+								  proto_list_type,
+								  pr.far_data, st_static)->s.def;
 	proto_list_def->initialized = proto_list_def->constant = 1;
 	proto_list_def->nosave = 1;
-	proto_list = &G_STRUCT (pr_protocol_list_t, proto_list_def->ofs);
+	space = proto_list_def->space;
+	proto_list = &D_STRUCT (pr_protocol_list_t, proto_list_def);
 	proto_list->next = 0;
 	proto_list->count = protocols->count;
 	for (i = 0; i < protocols->count; i++)
-		EMIT_DEF (proto_list->list[i], emit_protocol (protocols->list[i]));
+		EMIT_DEF (space, proto_list->list[i],
+				  emit_protocol (protocols->list[i]));
 	return proto_list_def;
 }
 

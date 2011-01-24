@@ -339,11 +339,13 @@ InitData (void)
 	pr.strings = strpool_new ();
 	pr.num_functions = 1;
 
+	pr.far_data = new_defspace ();
+
 	pr.near_data = new_defspace ();
 	pr.near_data->data = calloc (65536, sizeof (pr_type_t));
 	pr.near_data->max_size = 65536;
 	pr.near_data->grow = 0;
-	pr.scope = new_scope (sc_global, pr.near_data, 0);
+	//FIXME pr.scope = new_scope (sc_global, pr.near_data, 0);
 
 	pr.entity_data = new_defspace ();
 
@@ -355,6 +357,7 @@ InitData (void)
 static int
 WriteData (int crc)
 {
+#if 0 //FIXME
 	def_t      *def;
 	ddef_t     *dd;
 	dprograms_t progs;
@@ -531,6 +534,7 @@ WriteData (int crc)
 	Qseek (h, 0, SEEK_SET);
 	Qwrite (h, &debug, sizeof (debug));
 	Qclose (h);
+#endif
 	return 0;
 }
 
@@ -570,15 +574,16 @@ setup_param_block (void)
 static qboolean
 finish_compilation (void)
 {
-	def_t      *d;
+	//FIXME def_t      *d;
 	qboolean    errors = false;
 	function_t *f;
-	def_t      *def;
+	//FIXME def_t      *def;
 	expr_t      e;
 	//FIXME ex_label_t *l;
 	dfunction_t *df;
 
 	// check to make sure all functions prototyped have code
+#if 0 //FIXME
 	if (options.warnings.undefined_function)
 		for (d = pr.scope->head; d; d = d->def_next) {
 			if (d->type->type == ev_func && d->global) {
@@ -604,23 +609,24 @@ finish_compilation (void)
 			}
 		}
 	}
+#endif
 	if (errors)
 		return !errors;
 
 	if (options.code.progsversion != PROG_ID_VERSION) {
 		e = *new_integer_expr (type_size (&type_param));
-		ReuseConstant (&e, get_def (&type_integer, ".param_size", pr.scope,
-					   st_global));
+		//FIXME ReuseConstant (&e, get_def (&type_integer, ".param_size", pr.scope,
+		//FIXME 			   st_global));
 	}
 
 	if (options.code.debug) {
 		e = *new_string_expr (debugfile);
-		ReuseConstant (&e, get_def (&type_string, ".debug_file", pr.scope,
-					   st_global));
+		//FIXME ReuseConstant (&e, get_def (&type_string, ".debug_file", pr.scope,
+		//FIXME 			   st_global));
 	}
 
-	for (def = pr.scope->head; def; def = def->def_next)
-		relocate_refs (def->refs, def->ofs);
+	//FIXME for (def = pr.scope->head; def; def = def->def_next)
+	//FIXME 	relocate_refs (def->refs, def->ofs);
 
 	pr.functions = calloc (pr.num_functions + 1, sizeof (dfunction_t));
 	for (df = pr.functions + 1, f = pr.func_head; f; df++, f = f->next) {
@@ -658,7 +664,7 @@ finish_compilation (void)
 		int         ofs;
 		for (ofs = defspace_new_loc (pr.near_data, num_localdefs);
 			 ofs < pr.near_data->size; ofs++)
-			G_INT (ofs) = 0;
+			pr.near_data->data[ofs].integer_var = 0;
 	}
 
 	//FIXME for (l = pr.labels; l; l = l->next)
@@ -720,7 +726,6 @@ compile_to_obj (const char *file, const char *obj)
 	setup_param_block ();
 	clear_frame_macros ();
 	clear_classes ();
-	clear_defs ();
 	clear_immediates ();
 	clear_selectors ();
 	chain_initial_types ();

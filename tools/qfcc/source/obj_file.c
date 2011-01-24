@@ -89,19 +89,17 @@ allocate_stuff (pr_info_t *pr)
 	num_funcs = pr->num_functions - 1;
 	num_relocs = 0;
 	for (def = pr->scope->head; def; def = def->def_next) {
-		if (def->alias)
-			continue;
 		num_defs++;
-		num_relocs += count_relocs (def->refs);
+		num_relocs += count_relocs (def->relocs);
 	}
 	for (func = pr->func_head; func; func = func->next) {
 		num_relocs += count_relocs (func->refs);
-		//FIXME if (func->scope) {
-		//FIXME 	num_defs += func->scope->num_defs;
-		//FIXME 	for (def = func->scope->head; def; def = def->def_next) {
-		//FIXME 		num_relocs += count_relocs (def->refs);
-		//FIXME 	}
-		//FIXME }
+		if (func->scope) {
+			num_defs += func->scope->num_defs;
+			for (def = func->scope->head; def; def = def->def_next) {
+				num_relocs += count_relocs (def->relocs);
+			}
+		}
 	}
 	num_relocs += count_relocs (pr->relocs);
 	if (num_defs)
@@ -133,8 +131,6 @@ flags (def_t *d)
 		flags |= QFOD_INITIALIZED;
 	if (d->constant)
 		flags |= QFOD_CONSTANT;
-	if (d->absolute)
-		flags |= QFOD_ABSOLUTE;
 	if (d->global)
 		flags |= QFOD_GLOBAL;
 	if (d->external)
@@ -173,13 +169,13 @@ write_def (def_t *d, qfo_def_t *def, qfo_reloc_t **reloc)
 	def->basic_type = LittleLong (d->type->type);
 	def->full_type  = LittleLong (type_encoding (d->type));
 	def->name       = LittleLong (ReuseString (d->name));
-	def->ofs        = LittleLong (d->ofs);
+	def->ofs        = LittleLong (d->offset);
 	def->relocs     = LittleLong (*reloc - relocs);
-	def->num_relocs = LittleLong (count_relocs (d->refs));
+	def->num_relocs = LittleLong (count_relocs (d->relocs));
 	def->flags      = LittleLong (flags (d));
 	def->file       = LittleLong (d->file);
 	def->line       = LittleLong (d->line);
-	write_relocs (d->refs, reloc, d->obj_def);
+	write_relocs (d->relocs, reloc, d->obj_def);
 }
 
 static void
@@ -196,25 +192,24 @@ setup_data (pr_info_t *pr)
 	pr_lineno_t *line;
 
 	for (d = pr->scope->head; d; d = d->def_next)
-		if (!d->alias)
-			write_def (d, def++, &reloc);
+		write_def (d, def++, &reloc);
 	for (f = pr->func_head; f; f = f->next, func++) {
 		func->name           = LittleLong (f->s_name);
 		func->file           = LittleLong (f->s_file);
-		//FIXME func->line           = LittleLong (f->def->line);
+		func->line           = LittleLong (f->def->line);
 		func->builtin        = LittleLong (f->builtin);
 		func->code           = LittleLong (f->code);
-		//FIXME if (f->def->obj_def)
-		//FIXME	func->def        = LittleLong (f->def->obj_def);
-		//FIXMEelse {
-		//FIXME	func->def        = LittleLong (def - defs);
-		//FIXME	write_def (f->def, def++, &reloc);
-		//FIXME}
-		//FIXME if (f->scope) {
-		//FIXME 	func->locals_size    = LittleLong (f->scope->space->size);
-		//FIXME 	func->local_defs     = LittleLong (def - defs);
-		//FIXME 	func->num_local_defs = LittleLong (f->scope->num_defs);
-		//FIXME }
+		if (f->def->obj_def)
+		       = LittleLong (f->def->obj_def);
+		else {
+			func->def        = LittleLong (def - defs);
+			write_def (f->def, def++, &reloc);
+		}
+		if (f->scope) {
+			func->locals_size    = LittleLong (f->scope->space->size);
+			func->local_defs     = LittleLong (def - defs);
+			func->num_local_defs = LittleLong (f->scope->num_defs);
+		}
 		if (f->aux)
 			func->line_info  = LittleLong (f->aux->line_info);
 		func->num_parms      = LittleLong (function_parms (f, func->parm_size));
@@ -222,14 +217,14 @@ setup_data (pr_info_t *pr)
 		func->num_relocs     = LittleLong (count_relocs (f->refs));
 		write_relocs (f->refs, &reloc, func - funcs);
 
-		//FIXME if (f->scope)
-		//FIXME 	for (d = f->scope->head; d; d = d->def_next)
-		//FIXME 		write_def (d, def++, &reloc);
+		if (f->scope)
+			for (d = f->scope->head; d; d = d->def_next)
+				write_def (d, def++, &reloc);
 	}
 	for (r = pr->relocs; r; r = r->next)
-		//FIXME if (r->type == rel_def_op)
-		//FIXME 	write_one_reloc (r, &reloc, r->label->ofs);
-		//FIXME else
+		if (r->type == rel_def_op)
+			write_one_reloc (r, &reloc, r->label->ofs);
+		else
 			write_one_reloc (r, &reloc, 0);
 	for (st = pr->code->code; st - pr->code->code < pr->code->size; st++) {
 		st->op = LittleLong (st->op);
@@ -541,14 +536,13 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		pr->scope->tail = &pd->def_next;
 		pd->type = parse_type (qfo->types + qd->full_type);
 		pd->name = qd->name ? qfo->strings + qd->name : 0;
-		pd->ofs = qd->ofs;
+		pd->offset = qd->ofs;
 		if (qd->num_relocs) {
-			pd->refs = relocs + qd->relocs;
-			pd->refs[qd->num_relocs - 1].next = 0;
+			pd->relocs = relocs + qd->relocs;
+			pd->relocs[qd->num_relocs - 1].next = 0;
 		}
 		pd->initialized = (qd->flags & QFOD_INITIALIZED) != 0;
 		pd->constant    = (qd->flags & QFOD_CONSTANT)    != 0;
-		pd->absolute    = (qd->flags & QFOD_ABSOLUTE)    != 0;
 		pd->global      = (qd->flags & QFOD_GLOBAL)      != 0;
 		pd->external    = (qd->flags & QFOD_EXTERNAL)    != 0;
 		pd->local       = (qd->flags & QFOD_LOCAL)       != 0;
@@ -567,34 +561,34 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		 i < qfo->num_funcs; i++, pf++, qf++) {
 		*pr->func_tail = pf;
 		pr->func_tail = &pf->next;
-		//FIXME pf->def = pr->scope->head + qf->def;
+		pf->def = pr->scope->head + qf->def;
 		pf->aux = new_auxfunction ();
 		pf->aux->function = i + 1;
 		pf->aux->source_line = qf->line;
 		pf->aux->line_info = qf->line_info;
 		pf->aux->local_defs = 0;
 		pf->aux->num_locals = 0;
-		//FIXME pf->aux->return_type = pf->def->type->t.func.type->type;
+		pf->aux->return_type = pf->def->type->t.func.type->type;
 		pf->builtin = qf->builtin;
 		pf->code = qf->code;
 		pf->function_num = i + 1;
 		pf->s_file = qf->file;
 		pf->s_name = qf->name;
-		//FIXME pf->scope = new_scope (sc_params, init_space (qf->locals_size, 0),
-		//FIXME 					   pr->scope);
+		pf->scope = new_scope (sc_params, init_space (qf->locals_size, 0),
+							   pr->scope);
 		if (qf->num_local_defs) {
 			if (first_local > qf->local_defs)
 				first_local = qf->local_defs;
-			//FIXME pf->scope->head = pr->scope->head + qf->local_defs;
-			//FIXME pf->scope->tail = &pf->scope->head[qf->num_local_defs - 1].def_next;
-			//FIXME *pf->scope->tail = 0;
+			pf->scope->head = pr->scope->head + qf->local_defs;
+			pf->scope->tail = &pf->scope->head[qf->num_local_defs - 1].def_next;
+			*pf->scope->tail = 0;
 			pf->aux->local_defs = pr->num_locals;
-			//FIXME for (pd = pf->scope->head; pd; pd = pd->def_next) {
-			//FIXME 	if (pd->name) {
-			//FIXME 		def_to_ddef (pd, new_local (), 0);
-			//FIXME 		pf->aux->num_locals++;
-			//FIXME 	}
-			//FIXME }
+			for (pd = pf->scope->head; pd; pd = pd->def_next) {
+				if (pd->name) {
+					def_to_ddef (pd, new_local (), 0);
+					pf->aux->num_locals++;
+				}
+			}
 		}
 		if (qf->num_relocs) {
 			pf->refs = relocs + qf->relocs;

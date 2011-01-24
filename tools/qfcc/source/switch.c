@@ -311,8 +311,8 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		range = fold_constants (range);
 
 		//FIXME unsigned int better?
-		def = get_def (array_type (&type_integer, high - low + 1), name,
-					   pr.scope, st_static);
+		def = make_symbol (name, array_type (&type_integer, high - low + 1),
+						   pr.near_data, st_static)->s.def;
 		table = 0;//FIXME new_def_expr (def);
 
 		if (tree->left) {
@@ -334,7 +334,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			build_switch (sw, tree->right, op, sw_val, temp, default_label);
 		}
 		for (i = 0; i <= high - low; i++) {
-			reloc_def_op (&tree->labels[i]->e.label, def->ofs + i);
+			reloc_def_op (&tree->labels[i]->e.label, def->offset + i);
 		}
 	}
 }

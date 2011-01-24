@@ -96,7 +96,7 @@ struct symbol_s;
 
 class_t *extract_class (class_type_t *class_type);
 const char *get_class_name (class_type_t *class_type, int pretty);
-struct def_s *class_def (class_type_t *class_type, int external);
+struct symbol_s *class_symbol (class_type_t *class_type, int external);
 void class_init (void);
 class_t *get_class (struct symbol_s *sym, int create);
 void class_add_methods (class_t *class, struct methodlist_s *methods);

@@ -37,26 +37,26 @@ struct def_s *emit_statement (struct expr_s *e, opcode_t *op, struct def_s *var_
 struct def_s *emit_sub_expr (struct expr_s*e, struct def_s *dest);
 void emit_expr (struct expr_s *e);
 
-#define EMIT_STRING(dest,str)						\
+#define EMIT_STRING(s,dest,str)						\
 	do {											\
 		(dest) = ReuseString (str);					\
-		reloc_def_string (POINTER_OFS (&(dest)));	\
+		reloc_def_string (POINTER_OFS (s, &(dest)));\
 	} while (0)
 
-#define EMIT_DEF(dest,def)								\
+#define EMIT_DEF(s,dest,def)							\
 	do {												\
 		def_t      *d = (def);							\
-		(dest) = d ? d->ofs : 0;						\
+		(dest) = d ? d->offset : 0;						\
 		if (d)											\
-			reloc_def_def (d, POINTER_OFS (&(dest)));	\
+			reloc_def_def (d, POINTER_OFS (s, &(dest)));\
 	} while (0)
 
-#define EMIT_DEF_OFS(dest,def)								\
+#define EMIT_DEF_OFS(s,dest,def)							\
 	do {													\
 		def_t      *d = (def);								\
-		(dest) = d ? d->ofs : 0;							\
+		(dest) = d ? d->offset : 0;							\
 		if (d)												\
-			reloc_def_def_ofs (d, POINTER_OFS (&(dest)));	\
+			reloc_def_def_ofs (d, POINTER_OFS (s, &(dest)));\
 	} while (0)
 
 #endif//__emit_h

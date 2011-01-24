@@ -116,7 +116,7 @@ defspace_new_loc (defspace_t *space, int size)
 }
 
 void
-defsapce_free_loc (defspace_t *space, int ofs, int size)
+defspace_free_loc (defspace_t *space, int ofs, int size)
 {
 	locref_t  **l;
 	locref_t   *loc;

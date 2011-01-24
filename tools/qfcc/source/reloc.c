@@ -53,108 +53,110 @@ static __attribute__ ((used)) const char rcsid[] =
 
 static reloc_t *free_refs;
 
+#define G_INT(o) pr.near_data->data[o].integer_var
+
 void
-relocate_refs (reloc_t *refs, int ofs)
+relocate_refs (reloc_t *reloc, int offset)
 {
 	int         o;
 
-	while (refs) {
-		switch (refs->type) {
+	while (reloc) {
+		switch (reloc->type) {
 			case rel_none:
 				break;
 			case rel_op_a_def:
-				if (ofs > 65535)
+				if (offset > 65535)
 					error (0, "def offset too large");
 				else
-					pr.code->code[refs->ofs].a = ofs;
+					pr.code->code[reloc->offset].a = offset;
 				break;
 			case rel_op_b_def:
-				if (ofs > 65535)
+				if (offset > 65535)
 					error (0, "def offset too large");
 				else
-					pr.code->code[refs->ofs].b = ofs;
+					pr.code->code[reloc->offset].b = offset;
 				break;
 			case rel_op_c_def:
-				if (ofs > 65535)
+				if (offset > 65535)
 					error (0, "def offset too large");
 				else
-					pr.code->code[refs->ofs].c = ofs;
+					pr.code->code[reloc->offset].c = offset;
 				break;
 			case rel_op_a_op:
-				o = ofs - refs->ofs;
+				o = offset - reloc->offset;
 				if (o < -32768 || o > 32767)
 					error (0, "relative offset too large");
 				else
-					pr.code->code[refs->ofs].a = o;
+					pr.code->code[reloc->offset].a = o;
 				break;
 			case rel_op_b_op:
-				o = ofs - refs->ofs;
+				o = offset - reloc->offset;
 				if (o < -32768 || o > 32767)
 					error (0, "relative offset too large");
 				else
-					pr.code->code[refs->ofs].b = o;
+					pr.code->code[reloc->offset].b = o;
 				break;
 			case rel_op_c_op:
-				o = ofs - refs->ofs;
+				o = offset - reloc->offset;
 				if (o < -32768 || o > 32767)
 					error (0, "relative offset too large");
 				else
-					pr.code->code[refs->ofs].c = o;
+					pr.code->code[reloc->offset].c = o;
 				break;
 			case rel_def_op:
-				if (ofs > pr.code->size) {
+				if (offset > pr.code->size) {
 					error (0, "invalid statement offset: %d >= %d, %d",
-						   ofs, pr.code->size, refs->ofs);
+						   offset, pr.code->size, reloc->offset);
 				} else
-					G_INT (refs->ofs) = ofs;
+					G_INT (reloc->offset) = offset;
 				break;
 			case rel_def_def:
 			case rel_def_func:
-				G_INT (refs->ofs) = ofs;
+				G_INT (reloc->offset) = offset;
 				break;
 			case rel_def_string:
 				break;
 			case rel_def_field:
 				break;
 			case rel_op_a_def_ofs:
-				o = ofs + pr.code->code[refs->ofs].a;
+				o = offset + pr.code->code[reloc->offset].a;
 				if (o < 0 || o > 65535)
 					error (0, "def offset out of range");
 				else
-					pr.code->code[refs->ofs].a = o;
+					pr.code->code[reloc->offset].a = o;
 				break;
 			case rel_op_b_def_ofs:
-				o = ofs + pr.code->code[refs->ofs].b;
+				o = offset + pr.code->code[reloc->offset].b;
 				if (o < 0 || o > 65535)
 					error (0, "def offset out of range");
 				else
-					pr.code->code[refs->ofs].b = o;
+					pr.code->code[reloc->offset].b = o;
 				break;
 			case rel_op_c_def_ofs:
-				o = ofs + pr.code->code[refs->ofs].c;
+				o = offset + pr.code->code[reloc->offset].c;
 				if (o < 0 || o > 65535)
 					error (0, "def offset out of range");
 				else
-					pr.code->code[refs->ofs].c = o;
+					pr.code->code[reloc->offset].c = o;
 				break;
 			case rel_def_def_ofs:
-				G_INT (refs->ofs) += ofs;
+				G_INT (reloc->offset) += offset;
 				break;
 			case rel_def_field_ofs:
-				G_INT (refs->ofs) += G_INT (ofs);
+				G_INT (reloc->offset) += G_INT (offset);
 				break;
 		}
-		refs = refs->next;
+		reloc = reloc->next;
 	}
 }
 
 reloc_t *
-new_reloc (int ofs, reloc_type type)
+new_reloc (int offset, reloc_type type)
 {
 	reloc_t    *ref;
 
 	ALLOC (16384, reloc_t, refs, ref);
-	ref->ofs = ofs;
+	ref->offset = offset;
 	ref->type = type;
 	ref->line = pr.source_line;
 	ref->file = pr.source_file;
@@ -162,73 +164,73 @@ new_reloc (int ofs, reloc_type type)
 }
 
 void
-reloc_op_def (def_t *def, int ofs, int field)
+reloc_op_def (def_t *def, int offset, int field)
 {
-	reloc_t    *ref = new_reloc (ofs, rel_op_a_def + field);
-	ref->next = def->refs;
-	def->refs = ref;
+	reloc_t    *ref = new_reloc (offset, rel_op_a_def + field);
+	ref->next = def->relocs;
+	def->relocs = ref;
 }
 
 void
-reloc_op_def_ofs (def_t *def, int ofs, int field)
+reloc_op_def_ofs (def_t *def, int offset, int field)
 {
-	reloc_t    *ref = new_reloc (ofs, rel_op_a_def_ofs + field);
-	ref->next = def->refs;
-	def->refs = ref;
+	reloc_t    *ref = new_reloc (offset, rel_op_a_def_ofs + field);
+	ref->next = def->relocs;
+	def->relocs = ref;
 }
 
 void
-reloc_def_def (def_t *def, int ofs)
+reloc_def_def (def_t *def, int offset)
 {
-	reloc_t    *ref = new_reloc (ofs, rel_def_def);
-	ref->next = def->refs;
-	def->refs = ref;
+	reloc_t    *ref = new_reloc (offset, rel_def_def);
+	ref->next = def->relocs;
+	def->relocs = ref;
 }
 
 void
-reloc_def_def_ofs (def_t *def, int ofs)
+reloc_def_def_ofs (def_t *def, int offset)
 {
-	reloc_t    *ref = new_reloc (ofs, rel_def_def_ofs);
-	ref->next = def->refs;
-	def->refs = ref;
+	reloc_t    *ref = new_reloc (offset, rel_def_def_ofs);
+	ref->next = def->relocs;
+	def->relocs = ref;
 }
 
 void
-reloc_def_func (function_t *func, int ofs)
+reloc_def_func (function_t *func, int offset)
 {
-	reloc_t    *ref = new_reloc (ofs, rel_def_func);
+	reloc_t    *ref = new_reloc (offset, rel_def_func);
 	ref->next = func->refs;
 	func->refs = ref;
 }
 
 void
-reloc_def_string (int ofs)
+reloc_def_string (int offset)
 {
-	reloc_t    *ref = new_reloc (ofs, rel_def_string);
+	reloc_t    *ref = new_reloc (offset, rel_def_string);
 	ref->next = pr.relocs;
 	pr.relocs = ref;
 }
 
 void
-reloc_def_field (def_t *def, int ofs)
+reloc_def_field (def_t *def, int offset)
 {
-	reloc_t    *ref = new_reloc (ofs, rel_def_field);
-	ref->next = def->refs;
-	def->refs = ref;
+	reloc_t    *ref = new_reloc (offset, rel_def_field);
+	ref->next = def->relocs;
+	def->relocs = ref;
 }
 
 void
-reloc_def_field_ofs (def_t *def, int ofs)
+reloc_def_field_ofs (def_t *def, int offset)
 {
-	reloc_t    *ref = new_reloc (ofs, rel_def_field_ofs);
-	ref->next = def->refs;
-	def->refs = ref;
+	reloc_t    *ref = new_reloc (offset, rel_def_field_ofs);
+	ref->next = def->relocs;
+	def->relocs = ref;
 }
 
 void
-reloc_def_op (ex_label_t *label, int ofs)
+reloc_def_op (ex_label_t *label, int offset)
 {
-	reloc_t    *ref = new_reloc (ofs, rel_def_op);
+	reloc_t    *ref = new_reloc (offset, rel_def_op);
 	ref->next = pr.relocs;
 	ref->label = label;
 	pr.relocs = ref;

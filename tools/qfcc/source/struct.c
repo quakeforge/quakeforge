@@ -49,6 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <QF/va.h>
 
 #include "def.h"
+#include "defspace.h"
 #include "emit.h"
 #include "expr.h"
 #include "immediate.h"
@@ -70,7 +71,7 @@ find_tag (ty_type_e ty, symbol_t *tag, type_t *type)
 		tag_name = va ("tag %s", tag->name);
 	else
 		tag_name = va ("tag .%s.%d.%d",
-					   G_GETSTR (pr.source_file), pr.source_line, tag_num++);
+					   GETSTR (pr.source_file), pr.source_line, tag_num++);
 	sym = symtab_lookup (current_symtab, tag_name);
 	if (sym) {
 		if (sym->table == current_symtab && sym->type->ty != ty)
@@ -180,6 +181,8 @@ make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
 	symbol_t   *field;
 	symbol_t   *sym = 0;
 	
+	if (name)
+		sym = new_symbol (name);
 	if (su == 'u')
 		strct = new_symtab (0, stab_union);
 	else
@@ -190,8 +193,79 @@ make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
 			internal_error (0, "duplicate symbol: %s", defs->name);
 		defs++;
 	}
-	if (name)
-		sym = new_symbol (name);
 	sym = build_struct (su, sym, strct, type);
 	return sym;
+}
+
+def_t *
+emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
+				void *data, storage_class_t storage)
+{
+	type_t      new;
+	int         i, j;
+	int         saw_null = 0;
+	int         saw_func = 0;
+	symbol_t   *struct_sym;
+	symbol_t   *field_sym;
+	def_t      *struct_def;
+	def_t       field_def;
+
+	if (!type) {
+		type = &new;
+		make_structure (0, su, defs, type);
+	}
+	if (!is_struct (type) || (su == 's' && type->ty != ty_struct)
+		|| (su == 'u' && type->ty != ty_union))
+		internal_error (0, "structure %s type mismatch", name);
+	for (i = 0, field_sym = type->t.symtab->symbols; field_sym;
+		 i++, field_sym = field_sym->next) {
+		if (!defs[i].name)
+			internal_error (0, "structure %s unexpected end of defs", name);
+		if (field_sym->type != defs[i].type)
+			internal_error (0, "structure %s.%s field type mismatch", name,
+							defs[i].name);
+		if ((!defs[i].emit && saw_func) || (defs[i].emit && saw_null))
+			internal_error (0, "structure %s mixed emit/copy", name);
+		if (!defs[i].emit)
+			saw_null = 1;
+		if (defs[i].emit)
+			saw_func = 1;
+	}
+	if (defs[i].name)
+		internal_error (0, "structure %s too many defs", name);
+	if (storage != st_global && storage != st_static)
+		internal_error (0, "structure %s must be global or static", name);
+
+	struct_sym = make_symbol (name, type, pr.far_data, storage);
+
+	struct_def = struct_sym->s.def;
+	if (struct_def->initialized)
+		internal_error (0, "structure %s must be global or static", name);
+	struct_def->initialized = struct_def->constant = 1;
+	struct_def->nosave = 1;
+
+	for (i = 0, field_sym = type->t.symtab->symbols; field_sym;
+		 i++, field_sym = field_sym->next) {
+		field_def.type = field_sym->type;
+		field_def.name = save_string (va ("%s.%s", name, field_sym->name));
+		field_def.space = struct_def->space;
+		field_def.offset = struct_def->offset + field_sym->s.offset;
+		if (!defs[i].emit) {
+			//FIXME relocs? arrays? structs?
+			pr_type_t  *val = (pr_type_t *) data;
+			memcpy (D_POINTER (void, &field_def), val,
+					type_size (field_def.type) * sizeof (pr_type_t));
+			data = &val[type_size (field_def.type)];
+		} else {
+			if (is_array (field_def.type)) {
+				for (j = 0; j < field_def.type->t.array.size; j++) {
+					defs[i].emit (&field_def, data, 0);
+					field_def.offset+=type_size (field_def.type->t.array.type);
+				}
+			} else {
+				defs[i].emit (&field_def, data, 0);
+			}
+		}
+	}
+	return struct_def;
 }

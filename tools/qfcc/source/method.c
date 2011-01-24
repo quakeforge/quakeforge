@@ -169,8 +169,9 @@ method_def (class_type_t *class_type, method_t *method)
 	for (s = str->str; *s; s++)
 		if (*s == ':')
 			*s = '_';
-	//printf ("%s %s %s %ld\n", method->name, method->types, str->str, str->size);
-	def = get_def (method->type, str->str, pr.scope, st_static);
+	//printf ("%s %s %s %ld\n", method->name, method->types, str->str,
+	//		str->size);
+	def = make_symbol (str->str, method->type, pr.far_data, st_static)->s.def;
 	dstring_delete (str);
 	return def;
 }
@@ -370,116 +371,167 @@ emit_selectors (void)
 		return 0;
 
 	sel_type = array_type (type_SEL.t.fldptr.type, sel_index);
-	sel_def = get_def (type_SEL.t.fldptr.type, "_OBJ_SELECTOR_TABLE", pr.scope,
-					   st_extern);
-	sel_def->type = sel_type;
-	sel_def->ofs = defspace_new_loc (pr.near_data, type_size (sel_type));
-	set_storage_bits (sel_def, st_static);
-	sel = G_POINTER (pr_sel_t, sel_def->ofs);
+	sel_def = make_symbol ("_OBJ_SELECTOR_TABLE", type_SEL.t.fldptr.type,
+						   pr.far_data, st_static)->s.def;
+	sel_def->initialized = sel_def->constant = 1;
+	sel_def->nosave = 1;
+
+	sel = D_POINTER (pr_sel_t, sel_def);
+
 	selectors = (selector_t **) Hash_GetList (sel_hash);
 	
 	for (s = selectors; *s; s++) {
-		EMIT_STRING (sel[(*s)->index].sel_id, (*s)->name);
-		EMIT_STRING (sel[(*s)->index].sel_types, (*s)->types);
+		EMIT_STRING (sel_def->space,  sel[(*s)->index].sel_id, (*s)->name);
+		EMIT_STRING (sel_def->space,  sel[(*s)->index].sel_types, (*s)->types);
 	}
 	free (selectors);
 	return sel_def;
 }
 
+static void
+emit_methods_next (def_t *def, void *data, int index)
+{
+	if (def->type != &type_pointer)
+		internal_error (0, "%s: expected pointer def", __FUNCTION__);
+	D_INT (def) = 0;
+}
+
+static void
+emit_methods_count (def_t *def, void *data, int index)
+{
+	methodlist_t *methods = (methodlist_t *) data;
+
+	if (def->type != &type_integer)
+		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	D_INT (def) = methods->count;
+}
+
+static void
+emit_methods_list_item (def_t *def, void *data, int index)
+{
+	methodlist_t *methods = (methodlist_t *) data;
+	method_t   *m;
+	pr_method_t *meth;
+
+	if (def->type != &type_method_description)
+		internal_error (0, "%s: expected method_descripting def",
+						__FUNCTION__);
+	if (index < 0 || index >= methods->count)
+		internal_error (0, "%s: out of bounds index: %d %d",
+						__FUNCTION__, index, methods->count);
+
+	meth = D_POINTER (pr_method_t, def);
+
+	for (m = methods->head; m; m = m->next) {
+		if (!m->instance != !methods->instance || !m->def)
+			continue;
+		if (!index--)
+			break;
+	}
+	EMIT_STRING (def->space, meth->method_name, m->name);
+	EMIT_STRING (def->space, meth->method_types, m->types);
+	meth->method_imp = D_FUNCTION (m->def);
+	if (m->func)
+		reloc_def_func (m->func, POINTER_OFS (def->space, &meth->method_imp));
+}
+
 def_t *
-emit_methods (methodlist_t *_methods, const char *name, int instance)
+emit_methods (methodlist_t *methods, const char *name, int instance)
 {
 	static struct_def_t methods_struct[] = {
-		{"method_next",		&type_pointer},
-		{"method_count",	&type_integer},
-		{"method_list",		0},			// type will be filled in at run time
+		{"method_next",		&type_pointer, emit_methods_next},
+		{"method_count",	&type_integer, emit_methods_count},
+		{"method_list",		0,             emit_methods_list_item},
 		{0, 0}
 	};
 	const char *type = instance ? "INSTANCE" : "CLASS";
-	method_t   *method;
-	int         i, count;
-	def_t      *methods_def;
-	type_t     *methods_type;
-	pr_method_list_t *methods;
+	method_t   *m;
+	int         count;
 
-	if (!_methods)
+	if (!methods)
 		return 0;
 
-	for (count = 0, method = _methods->head; method; method = method->next)
-		if (!method->instance == !instance) {
-			if (!method->def && options.warnings.unimplemented) {
+	for (count = 0, m = methods->head; m; m = m->next)
+		if (!m->instance == !instance) {
+			if (!m->def && options.warnings.unimplemented) {
 				warning (0, "Method `%c%s' not implemented",
-						method->instance ? '-' : '+', method->name);
+						m->instance ? '-' : '+', m->name);
 			}
 			count++;
 		}
 	if (!count)
 		return 0;
+	methods->count = count;
+
 	methods_struct[2].type = array_type (&type_integer, count);
-	methods_type = make_structure (0, 's', methods_struct, 0)->type;
-	methods_def = get_def (methods_type,
-						   va ("_OBJ_%s_METHODS_%s", type, name),
-						   pr.scope, st_static);
-	methods_def->initialized = methods_def->constant = 1;
-	methods_def->nosave = 1;
-	methods = &G_STRUCT (pr_method_list_t, methods_def->ofs);
-	methods->method_next = 0;
-	methods->method_count = count;
-	for (i = 0, method = _methods->head; method; method = method->next) {
-		if (!method->instance != !instance || !method->def)
+	return emit_structure (va ("_OBJ_%s_METHODS_%s", type, name), 's',
+						   methods_struct, 0, methods, st_static);
+}
+
+static void
+emit_method_list_count (def_t *def, void *data, int index)
+{
+	methodlist_t *methods = (methodlist_t *) data;
+
+	if (def->type != &type_integer)
+		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	D_INT (def) = methods->count;
+}
+
+static void
+emit_method_list_item (def_t *def, void *data, int index)
+{
+	methodlist_t *methods = (methodlist_t *) data;
+	method_t   *m;
+	pr_method_description_t *desc;
+
+	if (def->type != &type_method_description)
+		internal_error (0, "%s: expected method_descripting def",
+						__FUNCTION__);
+	if (index < 0 || index >= methods->count)
+		internal_error (0, "%s: out of bounds index: %d %d",
+						__FUNCTION__, index, methods->count);
+
+	desc = D_POINTER (pr_method_description_t, def);
+
+	for (m = methods->head; m; m = m->next) {
+		if (!m->instance != !methods->instance || !m->def)
 			continue;
-		EMIT_STRING (methods->method_list[i].method_name, method->name);
-		EMIT_STRING (methods->method_list[i].method_types, method->types);
-		methods->method_list[i].method_imp = G_FUNCTION (method->def->ofs);
-		if (method->func) {
-			reloc_def_func (method->func,
-							POINTER_OFS (&methods->method_list[i].method_imp));
-		}
-		i++;
+		if (!index--)
+			break;
 	}
-	return methods_def;
+	EMIT_STRING (def->space, desc->name, m->name);
+	EMIT_STRING (def->space, desc->types, m->types);
 }
 
 def_t *
-emit_method_descriptions (methodlist_t *_methods, const char *name,
+emit_method_descriptions (methodlist_t *methods, const char *name,
 						  int instance)
 {
+	static struct_def_t method_list_struct[] = {
+		{"count",       &type_integer, emit_method_list_count},
+		{"method_list", 0,             emit_method_list_item},
+		{0, 0}
+	};
 	const char *type = instance ? "PROTOCOL_INSTANCE" : "PROTOCOL_CLASS";
-	method_t   *method;
-	int         i, count;
-	def_t      *methods_def;
-	pr_method_description_list_t *methods;
-	symtab_t   *method_list;
-	symbol_t   *method_list_sym;
+	method_t   *m;
+	int         count;
 
-	if (!_methods)
+	if (!methods)
 		return 0;
 
-	for (count = 0, method = _methods->head; method; method = method->next)
-		if (!method->instance == !instance)
+	for (count = 0, m = methods->head; m; m = m->next)
+		if (!m->instance == !instance && m->def)
 			count++;
 	if (!count)
 		return 0;
-	method_list = new_symtab (0, stab_local);
-	symtab_addsymbol (method_list, new_symbol_type ("count", &type_integer));
-	symtab_addsymbol (method_list, new_symbol_type ("method_list",
-								array_type (&type_method_description, count)));
-	method_list_sym = build_struct ('s', 0, method_list, 0);
-	methods_def = get_def (method_list_sym->type,
-						   va ("_OBJ_%s_METHODS_%s", type, name),
-						   pr.scope, st_static);
-	methods_def->initialized = methods_def->constant = 1;
-	methods_def->nosave = 1;
-	methods = &G_STRUCT (pr_method_description_list_t, methods_def->ofs);
+
 	methods->count = count;
-	for (i = 0, method = _methods->head; method; method = method->next) {
-		if (!method->instance != !instance || !method->def)
-			continue;
-		EMIT_STRING (methods->list[i].name, method->name);
-		EMIT_STRING (methods->list[i].types, method->types);
-		i++;
-	}
-	return methods_def;
+	methods->instance = instance;
+
+	method_list_struct[1].type = array_type (&type_method_description, count);
+	return emit_structure (va ("_OBJ_%s_METHODS_%s", type, name), 's',
+						   method_list_struct, 0, methods, st_static);
 }
 
 void

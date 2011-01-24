@@ -34,6 +34,9 @@
 
 #include "expr.h"
 
+struct defspace_s;
+enum storage_class_e;
+
 /**	\defgroup qfcc_symtab Symbol Table Management
 	\ingroup qfcc
 */
@@ -58,14 +61,15 @@ typedef struct symbol_s {
 	struct symtab_s *table;		///< symbol table that owns this symbol
 	vis_e       visibility;		///< symbol visiblity. defaults to public
 	const char *name;			///< symbol name
-	sy_type_e   sy_type;		///< symbol type
+	sy_type_e   sy_type;		///< symbol type (st_type)
 	struct type_s *type;		///< type of object to which symbol refers
 	struct param_s *params;		///< the parameters if a function
 	union {
-		int         offset;
-		struct ex_value_s value;
-		struct expr_s *expr;
-		struct function_s *func;
+		int         offset;			///< st_var (in a struct/union)
+		struct def_s *def;			///< st_var
+		struct ex_value_s value;	///< st_const
+		struct expr_s *expr;		///< st_expr
+		struct function_s *func;	///< st_func
 	} s;
 } symbol_t;
 
@@ -205,6 +209,9 @@ symbol_t *copy_symbol (symbol_t *symbol);
 	\enddot
 */
 symtab_t *symtab_flat_copy (symtab_t *symtab, symtab_t *parent);
+
+symbol_t *make_symbol (const char *name, struct type_s *type,
+					   struct defspace_s *space, enum storage_class_e storage);
 
 //@}
 

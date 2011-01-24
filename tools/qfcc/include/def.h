@@ -36,21 +36,17 @@
 #include "QF/pr_debug.h"
 
 typedef struct def_s {
+	struct def_s	*next;			///< general purpose linking
+
 	struct type_s	*type;
 	const char		*name;
-	int				ofs;
+	struct defspace_s *space;
+	int				offset;
 
-	struct reloc_s *refs;			///< for relocations
+	struct reloc_s *relocs;			///< for relocations
 
-	unsigned		initialized:1;	///< for uninit var detection
-	unsigned		suppress:1;	///< for uninit var detection suppression
-	unsigned		set:1;			///< uninit var auto-inited
-	unsigned		constant:1;	///< 1 when a declaration included "= immediate"
-	unsigned		freed:1;		///< already freed from the scope
-	unsigned		removed:1;		///< already removed from the symbol table
-	unsigned		used:1;			///< unused local detection
-	unsigned		absolute:1;		///< don't relocate (for temps for shorts)
-	unsigned		managed:1;		///< managed temp
+	unsigned		initialized:1;
+	unsigned		constant:1;		///< stores constant value
 	unsigned		global:1;		///< globally declared def
 	unsigned		external:1;		///< externally declared def
 	unsigned		local:1;		///< function local def
@@ -60,39 +56,12 @@ typedef struct def_s {
 	string_t		file;			///< source file
 	int				line;			///< source line
 
-	int				users;			///< ref counted temps
-	struct expr_s	*expr;			///< temp expr using this def
-
-	struct def_s	*def_next;		///< next def in scope
-	struct def_s	*next;			///< general purpose linking
-	struct scope_s	*scope;			///< scope the var was defined in
-	struct defspace_s *space;
-	struct def_s	*parent;		///< vector/quaternion member
-	struct def_s    *alias;			///< def for which this is an alias
-
 	int              obj_def;		///< index to def in qfo defs
 
 	void			*return_addr;	///< who allocated this
 } def_t;
 
-typedef enum {
-	sc_global,
-	sc_params,
-	sc_local,
-} scope_type;
-
-typedef struct scope_s {
-	struct scope_s *next;
-	scope_type  type;
-	struct defspace_s *space;
-	def_t      *head;
-	def_t     **tail;
-	int         num_defs;
-	struct scope_s *parent;
-} scope_t;
-
-typedef enum {
-	st_none,
+typedef enum storage_class_e {
 	st_global,
 	st_system,
 	st_extern,
@@ -100,24 +69,9 @@ typedef enum {
 	st_local
 } storage_class_t;
 
-extern	def_t	def_void;
-extern	def_t	def_invalid;
-extern	def_t	def_function;
-
-scope_t *new_scope (scope_type type, struct defspace_s *space, scope_t *parent);
-
-def_t *field_def (const char *name);
-def_t *get_def (struct type_s *type, const char *name, scope_t *scope,
-				storage_class_t storage);
-def_t *new_def (struct type_s *type, const char *name, scope_t *scope);
-void set_storage_bits (def_t *def, storage_class_t storage);
-def_t *get_tempdef (struct type_s *type, scope_t *scope);
-void free_tempdefs (void);
-void reset_tempdefs (void);
-void flush_scope (scope_t *scope, int force_used);
-void def_initialized (def_t *d);
-
-void clear_defs (void);
+def_t *new_def (const char *name, struct type_s *type,
+				struct defspace_s *scope, storage_class_t storage);
+void free_def (def_t *def);
 
 void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
 

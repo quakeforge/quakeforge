@@ -233,16 +233,16 @@ ReuseConstant (expr_t *expr, def_t *def)
 	if (imm) {
 		cn = imm->def;
 		if (def) {
-			defsapce_free_loc (def->space, def->ofs, type_size (def->type));
-			def->ofs = cn->ofs;
+			defspace_free_loc (def->space, def->offset, type_size (def->type));
+			def->offset = cn->offset;
 			def->initialized = def->constant = 1;
 			def->nosave = 1;
 			def->local = 0;
 			cn = def;
 		} else {
 			if (cn->type != type) {
-				def = new_def (type, ".imm", pr.scope);
-				def->ofs = cn->ofs;
+				def = new_def (".imm", type, pr.near_data, st_static);
+				def->offset = cn->offset;
 				cn = def;
 			}
 		}
@@ -252,34 +252,34 @@ ReuseConstant (expr_t *expr, def_t *def)
 	// always share immediates
 	if (def) {
 		if (def->type != type) {
-			cn = new_def (type, ".imm", pr.scope);
-			cn->ofs = def->ofs;
+			cn = new_def (".imm", type, pr.near_data, st_static);
+			cn->offset = def->offset;
 		} else {
 			cn = def;
 		}
 	} else {
-		cn = new_def (type, ".imm", pr.scope);
-		cn->ofs = defspace_new_loc (pr.near_data, type_size (type));
+		cn = new_def (".imm", type, pr.near_data, st_static);
+		cn->offset = defspace_new_loc (pr.near_data, type_size (type));
 	}
 	cn->initialized = cn->constant = 1;
 	cn->nosave = 1;
 	// copy the immediate to the global area
 	switch (e.e.value.type) {
 		case ev_string:
-			reloc = new_reloc (cn->ofs, rel_def_string);
+			reloc = new_reloc (cn->offset, rel_def_string);
 			break;
 		case ev_func:
 			if (e.e.value.v.func_val)
-				reloc = new_reloc (cn->ofs, rel_def_func);
+				reloc = new_reloc (cn->offset, rel_def_func);
 			break;
 		case ev_field:
 			if (e.e.value.v.pointer.def)
-				reloc_def_field_ofs (e.e.value.v.pointer.def, cn->ofs);
+				reloc_def_field_ofs (e.e.value.v.pointer.def, cn->offset);
 			break;
 		case ev_pointer:
 			if (e.e.value.v.pointer.def) {
-				EMIT_DEF_OFS (G_INT (cn->ofs), e.e.value.v.pointer.def);
-				e.e.value.v.pointer.def->users--;
+				EMIT_DEF_OFS (pr.near_data, D_INT (cn),
+							  e.e.value.v.pointer.def);
 			}
 			break;
 		default:
@@ -290,7 +290,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 		pr.relocs = reloc;
 	}
 
-	memcpy (G_POINTER (void, cn->ofs), &e.e, 4 * type_size (type));
+	memcpy (D_POINTER (void, cn), &e.e, 4 * type_size (type));
 
 	imm = malloc (sizeof (immediate_t));
 	imm->def = cn;
@@ -347,7 +347,7 @@ clear_immediates (void)
 	}
 
 	imm = calloc (1, sizeof (immediate_t));
-	imm->def = get_def (&type_zero, ".zero", pr.scope, st_extern);
+	imm->def = 0;//FIXME get_def (&type_zero, ".zero", pr.scope, st_extern);
 	imm->def->nosave = 1;
 
 	Hash_AddElement (string_imm_defs, imm);

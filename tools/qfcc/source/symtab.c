@@ -5,6 +5,7 @@
 
 #include "class.h"
 #include "def.h"
+#include "defspace.h"
 #include "function.h"
 #include "qfcc.h"
 #include "symtab.h"
@@ -140,4 +141,27 @@ symtab_flat_copy (symtab_t *symtab, symtab_t *parent)
 		;
 	newtab->symtail = symbol ? &symbol->next : &newtab->symbols;
 	return newtab;
+}
+
+symbol_t *
+make_symbol (const char *name, type_t *type, defspace_t *space,
+			 storage_class_t storage)
+{
+	symbol_t   *sym;
+
+	sym = symtab_lookup (pr.symtab, name);
+	if (!sym) {
+		sym = new_symbol_type (name, type);
+	}
+	if (sym->type != type) {
+		error (0, "%s redefined", name);
+		sym = new_symbol_type (name, type);
+	}
+	if (sym->s.def && sym->s.def->external && !storage != st_extern) {
+		free_def (sym->s.def);
+		sym->s.def = 0;
+	}
+	if (!sym->s.def)
+		sym->s.def = new_def (name, type, space, storage);
+	return sym;
 }
