@@ -1,13 +1,13 @@
 %{
 /*
-	qc-parse.y
+	qp-parse.y
 
-	parser for quakec
+	parser for quakepascal
 
-	Copyright (C) 2001 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2011 Bill Currie <bill@taniwha.org>
 
 	Author: Bill Currie <bill@taniwha.org>
-	Date: 2001/06/12
+	Date: 2011/01/06
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
