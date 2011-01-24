@@ -885,18 +885,15 @@ init_types (void)
 	type_Class.t.fldptr.type = type;
 	class_Class.ivars = type->t.symtab;
 
-	make_structure (0, 's', protocol_struct, &type_Protocol);
-	/*FIXME
-	strct = get_struct (0, 1);
-	init_struct (strct, type = &type_Protocol, str_struct, 0);
+	type = make_structure (0, 's', protocol_struct, &type_Protocol)->type;
 	type->ty = ty_class;
 	type->t.class = &class_Protocol;
-	class_Protocol.ivars = strct;*/
+	class_Protocol.ivars = type->t.symtab;
 
 	type = make_structure (0, 's', id_struct, 0)->type;
-	//FIXME type->ty = ty_class;
-	//type->t.class = &class_id;
-	//type_id.t.fldptr.type = strct->type;
+	type->ty = ty_class;
+	type->t.class = &class_id;
+	type_id.t.fldptr.type = type;
 	class_id.ivars = type->t.symtab;
 
 	make_structure (0, 's', method_desc_struct, &type_method_description);

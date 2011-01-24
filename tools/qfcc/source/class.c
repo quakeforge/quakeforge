@@ -247,6 +247,7 @@ begin_category (category_t *category)
 static def_t *
 emit_ivars (symtab_t *ivars, const char *name)
 {
+	//FIXME use emit_struct
 	static struct_def_t ivar_list_struct[] = {
 		{"ivar_count", &type_integer},
 		{"ivar_list",  0},	// type filled in at runtime
@@ -691,13 +692,23 @@ class_add_ivars (class_t *class, symtab_t *ivars)
 void
 class_check_ivars (class_t *class, symtab_t *ivars)
 {
-#if 0 //FIXME
-	if (!struct_compare_fields (class->ivars, ivars)) {
-		//FIXME right option?
-		if (options.warnings.interface_check)
-			warning (0, "instance variable missmatch for %s", class->name);
+	symbol_t   *civ, *iv;
+
+	if (!class->ivars != !ivars)
+		goto missmatch;
+	if (ivars) {
+		for (civ = class->ivars->symbols, iv = ivars->symbols;
+			 civ && iv; civ = civ->next, iv = iv->next) {
+			if (memcmp (civ, iv, sizeof (*civ))) //FIXME does this work?
+				goto missmatch;
+		}
 	}
-#endif
+	class->ivars = ivars;
+	return;
+missmatch:
+	//FIXME right option?
+	if (options.warnings.interface_check)
+		warning (0, "instance variable missmatch for %s", class->name);
 	class->ivars = ivars;
 }
 
@@ -794,88 +805,127 @@ class_pointer_def (class_t *class)
 	return def;
 }
 
+
+typedef struct {
+	def_t      *refs;
+	class_t   **classes;
+	int         cls_def_cnt;
+	category_t **categories;
+	int         cat_def_cnt;
+} obj_symtab_data_t;
+
+static void
+emit_symtab_ref_cnt (def_t *def, void *data, int index)
+{
+	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
+
+	if (def->type != &type_integer)
+		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	D_INT (def) = da->refs->type->t.array.size;
+}
+
+static void
+emit_symtab_refs (def_t *def, void *data, int index)
+{
+	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
+
+	if (def->type != &type_SEL)
+		internal_error (0, "%s: expected SEL def", __FUNCTION__);
+	EMIT_DEF (def->space, def->offset, da->refs);
+}
+
+static void
+emit_symtab_cls_def_cnt (def_t *def, void *data, int index)
+{
+	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
+
+	if (def->type != &type_integer)
+		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	D_INT (def) = da->cls_def_cnt;
+}
+
+static void
+emit_symtab_cat_def_cnt (def_t *def, void *data, int index)
+{
+	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
+
+	if (def->type != &type_integer)
+		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	D_INT (def) = da->cat_def_cnt;
+}
+
+static void
+emit_symtab_defs (def_t *def, void *data, int index)
+{
+	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
+
+	if (def->type != &type_pointer)
+		internal_error (0, "%s: expected pointer def", __FUNCTION__);
+	if (index < 0 || index >= da->cls_def_cnt + da->cat_def_cnt)
+		internal_error (0, "%s: out of bounds index: %d %d",
+						__FUNCTION__, index,
+						da->cls_def_cnt + da->cat_def_cnt);
+
+	if (index < da->cls_def_cnt) {
+		class_t    *cl = da->classes[index];
+		EMIT_DEF (def->space, def->offset, cl->def);
+	} else {
+		category_t *ca = da->categories[index - da->cls_def_cnt];
+		EMIT_DEF (def->space, def->offset, ca->def);
+	}
+}
+
 void
 class_finish_module (void)
 {
 	static struct_def_t symtab_struct[] = {
-		{"sel_ref_cnt",	&type_integer},
-		{"refs",		&type_SEL},
-		{"cls_def_cnt",	&type_integer},
-		{"cat_def_cnt",	&type_integer},
-		{"defs",		0},				// type will be filled in at run time
+		{"sel_ref_cnt",	&type_integer, emit_symtab_ref_cnt},
+		{"refs",		&type_SEL,     emit_symtab_refs},
+		{"cls_def_cnt",	&type_integer, emit_symtab_cls_def_cnt},
+		{"cat_def_cnt",	&type_integer, emit_symtab_cat_def_cnt},
+		{"defs",		0,             emit_symtab_defs},
 		{0, 0}
 	};
-	class_t   **classes = 0, **cl;
-	category_t **categories = 0, **ca;
-	int         num_classes = 0;
-	int         num_categories = 0;
-	def_t      *selector_table_def;
-	type_t     *symtab_type;
-	//symbol_t   *symtab_sym;
+
+	obj_symtab_data_t data = {0, 0, 0, 0, 0};
+
+	class_t   **cl;
+	category_t **ca;
 	def_t      *symtab_def;
-	defspace_t *space;
-	pr_symtab_t *symtab;
-	pointer_t   *def_ptr;
 	symbol_t   *module_sym;
-	//FIXME pr_module_t *module;
+	pr_module_t *module;
 	symbol_t   *exec_class_sym;
 	symbol_t   *init_sym;
 	function_t *init_func;
 	expr_t     *init_expr;
 
-	selector_table_def = emit_selectors ();
+	data.refs = emit_selectors ();
 	if (class_hash) {
-		classes = (class_t **) Hash_GetList (class_hash);
-		for (cl = classes; *cl; cl++)
+		data.classes = (class_t **) Hash_GetList (class_hash);
+		for (cl = data.classes; *cl; cl++)
 			if ((*cl)->def && !(*cl)->def->external)
-				num_classes++;
+				data.cls_def_cnt++;
 	}
 	if (category_hash) {
-		categories = (category_t **) Hash_GetList (category_hash);
-		for (ca = categories; *ca; ca++)
+		data.categories = (category_t **) Hash_GetList (category_hash);
+		for (ca = data.categories; *ca; ca++)
 			if ((*ca)->def && !(*ca)->def->external)
-				num_categories++;
+				data.cat_def_cnt++;
 	}
-	if (!selector_table_def && !num_classes && !num_categories)
+	if (!data.refs && !data.cls_def_cnt && !data.cat_def_cnt)
 		return;
 	symtab_struct[4].type = array_type (&type_pointer,
-										num_classes + num_categories);
-	symtab_type = make_structure (0, 's', symtab_struct, 0)->type;
-	symtab_def = make_symbol ("_OBJ_SYMTAB", symtab_type,
-							  pr.far_data, st_static)->s.def;
-	symtab_def->initialized = symtab_def->constant = 1;
-	symtab_def->nosave = 1;
-	space = symtab_def->space;
-	symtab = &D_STRUCT (pr_symtab_t, symtab_def);
-	if (selector_table_def) {
-		symtab->sel_ref_cnt = selector_table_def->type->t.array.size;
-		EMIT_DEF (space, symtab->refs, selector_table_def);
-	}
-	symtab->cls_def_cnt = num_classes;
-	symtab->cat_def_cnt = num_categories;
-	def_ptr = symtab->defs;
-	if (classes) {
-		for (cl = classes; *cl; cl++) {
-			if ((*cl)->def && !(*cl)->def->external) {
-				reloc_def_def ((*cl)->def, POINTER_OFS (space, def_ptr));
-				*def_ptr++ = (*cl)->def->offset;
-			}
-		}
-	}
-	if (categories) {
-		for (ca = categories; *ca; ca++) {
-			if ((*ca)->def && !(*ca)->def->external) {
-				reloc_def_def ((*ca)->def, POINTER_OFS (space, def_ptr));
-				*def_ptr++ = (*ca)->def->offset;
-			}
-		}
-	}
+										data.cls_def_cnt + data.cat_def_cnt);
+	symtab_def = emit_structure ("_OBJ_SYMTAB", 's', symtab_struct, 0, &data,
+								 st_static);
 
-	module_sym = new_symbol_type ("_OBJ_MODULE", &type_module);
-	//FIXME module = &G_STRUCT (pr_module_t, module_def->ofs);
-	//FIXME module->size = type_size (&type_module);
-	//FIXME EMIT_STRING (module->name, G_GETSTR (pr.source_file));
-	//FIXME EMIT_DEF (module->symtab, symtab_def);
+	module_sym = make_symbol ("_OBJ_MODULE", &type_module, pr.near_data,
+							  st_static);
+	module = &D_STRUCT (pr_module_t, module_sym->s.def);
+	module->size = type_size (&type_module);
+	EMIT_STRING (module_sym->s.def->space, module->name,
+				 GETSTR (pr.source_file));
+	EMIT_DEF (module_sym->s.def->space, module->symtab, symtab_def);
 
 	exec_class_sym = new_symbol_type ("__obj_exec_class",
 									  &type_obj_exec_class);
@@ -998,6 +1048,7 @@ emit_protocol (protocol_t *protocol)
 def_t *
 emit_protocol_list (protocollist_t *protocols, const char *name)
 {
+	//FIXME use emit_struct
 	static struct_def_t proto_list_struct[] = {
 		{"next",	&type_pointer},
 		{"count",	&type_integer},

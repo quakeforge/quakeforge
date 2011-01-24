@@ -68,8 +68,11 @@ typedef struct case_node_s {
 static uintptr_t
 get_value (expr_t *e)
 {
-	if (e->type == ex_symbol)
-		return e->e.symbol->s.value.v.integer_val;	//FIXME pointer
+	if (e->type == ex_symbol) {
+		if (e->e.symbol->s.value.type == ev_string)
+			return (uintptr_t) e->e.symbol->s.value.v.string_val;
+		return e->e.symbol->s.value.v.integer_val;
+	}
 	return e->e.value.v.integer_val;
 }
 
@@ -302,7 +305,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 	} else {
 		int         low = expr_integer (tree->low);
 		int         high = expr_integer (tree->high);
-		def_t      *def;
+		symbol_t   *sym;
 		expr_t     *table;
 		const char *name = new_label_name ();
 		int         i;
@@ -311,9 +314,9 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		range = fold_constants (range);
 
 		//FIXME unsigned int better?
-		def = make_symbol (name, array_type (&type_integer, high - low + 1),
-						   pr.near_data, st_static)->s.def;
-		table = 0;//FIXME new_def_expr (def);
+		sym = make_symbol (name, array_type (&type_integer, high - low + 1),
+						   pr.near_data, st_static);
+		table = new_symbol_expr (sym);
 
 		if (tree->left) {
 			branch = new_binary_expr (IFB, temp, low_label);
@@ -334,7 +337,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			build_switch (sw, tree->right, op, sw_val, temp, default_label);
 		}
 		for (i = 0; i <= high - low; i++) {
-			reloc_def_op (&tree->labels[i]->e.label, def->offset + i);
+			reloc_def_op (&tree->labels[i]->e.label, sym->s.def->offset + i);
 		}
 	}
 }

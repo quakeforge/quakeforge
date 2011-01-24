@@ -389,11 +389,11 @@ check_function (symbol_t *fsym)
 
 	if (!type_size (fsym->type->t.func.type)) {
 		error (0, "return type is an incomplete type");
-		fsym->type->t.func.type = &type_void;//FIXME
+		fsym->type->t.func.type = &type_void;//FIXME better type?
 	}
 	if (type_size (fsym->type->t.func.type) > type_size (&type_param)) {
 		error (0, "return value too large to be passed by value");
-		fsym->type->t.func.type = &type_void;//FIXME
+		fsym->type->t.func.type = &type_void;//FIXME better type?
 	}
 	for (p = params, i = 0; p; p = p->next, i++) {
 		if (!p->selector && !p->type && !p->name)

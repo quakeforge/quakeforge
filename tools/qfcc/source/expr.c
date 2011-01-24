@@ -2313,6 +2313,7 @@ cast_expr (type_t *type, expr_t *e)
 void
 init_elements (def_t *def, expr_t *eles)
 {
+	//FIXME
 }
 
 expr_t *
