@@ -210,6 +210,24 @@ symbol_t *copy_symbol (symbol_t *symbol);
 */
 symtab_t *symtab_flat_copy (symtab_t *symtab, symtab_t *parent);
 
+/**	Create a global symbol and allocate space for a variable.
+
+	If the symbol already exists, it must be of the correct type. If it
+	is external, it will be converted to the given storage class and
+	allocatged space from the given defspace, otherwise it will be
+	returned.
+
+	If the symbol is new, it will be allocated space from the given
+	defspace with the given storage class.
+
+	\param name		The name of the symbol.
+	\param type		The type of the symbol.
+	\param space	The defspace from which space will be allocated for the
+					symbol. Ignored for st_extern, must not be null for
+					others.
+	\param storage	The storage class for the symbol. Only st_extern,
+					st_global, and st_static are valid.
+*/
 symbol_t *make_symbol (const char *name, struct type_s *type,
 					   struct defspace_s *space, enum storage_class_e storage);
 

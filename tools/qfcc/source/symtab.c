@@ -151,6 +151,10 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 {
 	symbol_t   *sym;
 
+	if (storage != st_extern && storage != st_global && storage != st_static)
+		internal_error (0, "invalid storage class for %s", __FUNCTION__);
+	if (storage != st_extern && !space)
+		internal_error (0, "null space for non-external storage");
 	sym = symtab_lookup (pr.symtab, name);
 	if (!sym) {
 		sym = new_symbol_type (name, type);
