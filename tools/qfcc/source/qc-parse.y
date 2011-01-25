@@ -175,6 +175,7 @@ int yylex (void);
 
 %type	<expr>		identifier_list
 %type	<symbol>	selector reserved_word
+%type	<symtab>	param_scope
 %type	<param>		optparmlist unaryselector keyworddecl keywordselector
 %type	<method>	methodproto methoddecl
 %type	<expr>		obj_expr obj_messageexpr obj_string receiver
@@ -458,19 +459,41 @@ enum
 	;
 
 function_decl
-	: '(' param_list ')'		{ $$ = $2; }
-	| '(' param_list ',' ELLIPSIS ')'
+	: param_scope '(' param_list ')'
 		{
-			$$ = param_append_identifiers ($2, 0, 0);
+			$$ = $3;
+			current_symtab = $1;
 		}
-	| '(' ELLIPSIS ')'			{ $$ = new_param (0, 0, 0); }
-	| '(' TYPE ')'
+	| param_scope '(' param_list ',' ELLIPSIS ')'
 		{
-			if ($2 != &type_void)
+			$$ = param_append_identifiers ($3, 0, 0);
+			current_symtab = $1;
+		}
+	| param_scope '(' ELLIPSIS ')'
+		{
+			$$ = new_param (0, 0, 0);
+			current_symtab = $1;
+		}
+	| param_scope '(' TYPE ')'
+		{
+			if ($3 != &type_void)
 				PARSE_ERROR;
 			$$ = 0;
+			current_symtab = $1;
 		}
-	| '(' ')'					{ $$ = 0; }
+	| param_scope '(' ')'
+		{
+			$$ = 0;
+			current_symtab = $1;
+		}
+	;
+
+param_scope
+	: /* empty */
+		{
+			$$ = current_symtab;
+			current_symtab = new_symtab (current_symtab, stab_local);
+		}
 	;
 
 param_list
@@ -481,6 +504,7 @@ param_list
 param
 	: type identifier
 		{
+			$2 = check_redefined ($2);
 			$$ = param_append_identifiers ($<param>0, $2, $1);
 		}
 	;
