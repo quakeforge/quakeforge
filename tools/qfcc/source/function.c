@@ -424,6 +424,7 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 
 	symtab = new_symtab (parent, stab_local);
 	fsym->s.func->symtab = symtab;
+	symtab->space = new_defspace ();
 
 	if (fsym->type->t.func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);

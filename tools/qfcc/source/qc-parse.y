@@ -508,7 +508,7 @@ def_list
 def_item
 	: def_name opt_initializer
 		{
-			initialize_def ($1, $<type>0, $2, pr.near_data, //FIXME right space
+			initialize_def ($1, $<type>0, $2, current_symtab->space,
 							current_storage);
 		}
 	;
@@ -636,8 +636,10 @@ opt_comma
 statement_block
 	: '{'
 		{
-			if (!options.traditional)
+			if (!options.traditional) {
 				current_symtab = new_symtab (current_symtab, stab_local);
+				current_symtab->space = current_symtab->parent->space;
+			}
 		}
 	  statements '}'
 		{

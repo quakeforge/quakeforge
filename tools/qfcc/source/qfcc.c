@@ -141,7 +141,9 @@ InitData (void)
 	pr.near_data->data = calloc (65536, sizeof (pr_type_t));
 	pr.near_data->max_size = 65536;
 	pr.near_data->grow = 0;
-	//FIXME pr.scope = new_scope (sc_global, pr.near_data, 0);
+
+	pr.symtab = new_symtab (0, stab_global);
+	pr.symtab->space = pr.near_data;
 
 	pr.entity_data = new_defspace ();
 
@@ -360,7 +362,6 @@ setup_param_block (void)
 	size_t      i;
 	symbol_t   *sym;
 
-	pr.symtab = new_symtab (0, stab_global);
 	for (i = 0; i < sizeof (defs) / sizeof (defs[0]); i++) {
 		sym = new_symbol_type (defs[i].name, defs[i].type);
 		symtab_addsymbol (pr.symtab, sym);

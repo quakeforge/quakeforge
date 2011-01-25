@@ -89,6 +89,7 @@ typedef struct symtab_s {
 	struct hashtab_s *tab;		///< symbols defined in this table
 	symbol_t   *symbols;		///< chain of symbols in this table
 	symbol_t  **symtail;		///< keep chain in declaration order
+	struct defspace_s *space;	///< storage for vars in scope symtabs
 } symtab_t;
 
 /**	Create a new, empty named symbol.
