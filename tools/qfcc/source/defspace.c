@@ -65,10 +65,15 @@ typedef struct locref_s {
 static defspace_t *free_spaces;
 static locref_t *free_locrefs;
 
+#define GROW 1024
+
 static int
 grow_space (defspace_t *space)
 {
-	space->max_size += 1024;
+	int         size = space->max_size + GROW;
+	space->data = realloc (space->data, size * sizeof (pr_type_t));
+	memset (space->data + space->max_size, 0, GROW * sizeof (pr_type_t));
+	space->max_size = size;
 	return 1;
 }
 
