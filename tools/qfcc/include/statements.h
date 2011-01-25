@@ -60,6 +60,8 @@ typedef struct statement_s {
 
 typedef struct sblock_s {
 	struct sblock_s *next;
+	struct reloc_s *relocs;
+	int         offset;			///< offset of first statement of block
 	statement_t *statements;
 	statement_t **tail;
 } sblock_t;
