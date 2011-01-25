@@ -55,6 +55,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "immediate.h"
 #include "reloc.h"
 #include "strpool.h"
+#include "symtab.h"
 #include "type.h"
 
 typedef struct {
@@ -224,7 +225,9 @@ ReuseConstant (expr_t *expr, def_t *def)
 		if (def) {
 			imm = 0;	//FIXME do full def aliasing
 		} else {
-			expr_t     *e = 0;//FIXME new_def_expr (imm->def);
+			expr_t     *e;
+			e = new_symbol_expr (make_symbol (".zero", &type_zero, 0,
+											  st_extern));
 			e = address_expr (e, 0, type);
 			e = unary_expr ('.', e);
 			return emit_sub_expr (e, 0);
@@ -347,7 +350,8 @@ clear_immediates (void)
 	}
 
 	imm = calloc (1, sizeof (immediate_t));
-	imm->def = 0;//FIXME get_def (&type_zero, ".zero", pr.scope, st_extern);
+	imm->def = make_symbol (".zero", &type_zero, 0, st_extern)->s.def;
+	imm->def->initialized = imm->def->constant = 1;
 	imm->def->nosave = 1;
 
 	Hash_AddElement (string_imm_defs, imm);
