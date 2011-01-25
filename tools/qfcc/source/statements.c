@@ -726,6 +726,7 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 				opcode = "<RETURN_V>";
 			s = new_statement (opcode);
 			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+			s->opa->type = ev_void;
 			sblock_add_statement (sblock, s);
 			sblock->next = new_sblock ();
 			sblock = sblock->next;

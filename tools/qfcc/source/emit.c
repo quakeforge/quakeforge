@@ -31,8 +31,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -47,33 +46,103 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "codespace.h"
 #include "def.h"
+#include "defspace.h"
 #include "debug.h"
+#include "diagnostic.h"
 #include "emit.h"
-#include "expr.h"
 #include "function.h"
 #include "immediate.h"
 #include "opcodes.h"
 #include "options.h"
 #include "qfcc.h"
 #include "reloc.h"
+#include "statements.h"
 #include "symtab.h"
 #include "type.h"
-#include "qc-parse.h"
 
-def_t *
-emit_statement (expr_t *e, opcode_t *op, def_t *var_a, def_t *var_b,
-				def_t *var_c)
+static def_t zero_def;
+
+static def_t *
+get_operand_def (operand_t *op)
 {
+	def_t      *def;
+
+	if (!op)
+		return 0;
+	switch (op->op_type) {
+		case op_symbol:
+			if (op->type != op->o.symbol->type->type)
+				return alias_def (op->o.symbol->s.def, ev_types[op->type]);
+			return op->o.symbol->s.def;
+		case op_value:
+			//FIXME share immediates
+			def = new_def (".imm", ev_types[op->type], pr.near_data,
+						   st_static);
+			memcpy (D_POINTER (pr_type_t, def), &op->o.value,
+					pr_type_size[op->type]);
+			return def;
+		case op_label:
+			return &zero_def;	//FIXME
+		case op_temp:
+			if (!op->o.def)
+				op->o.def = new_def (".tmp", ev_types[op->type],
+									 current_func->symtab->space, st_local);
+			return op->o.def;
+	}
 	return 0;
 }
 
-def_t *
-emit_sub_expr (expr_t *e, def_t *dest)
+static void
+add_statement_ref (def_t *def, dstatement_t *st, int field)
 {
-	return 0;
+	if (def) {
+		int         st_ofs = st - pr.code->code;
+
+		if (def->alias) {
+			reloc_op_def (def->alias, st_ofs, field);
+			free_def (def);
+		} else {
+			reloc_op_def (def, st_ofs, field);
+		}
+	}
+}
+
+static void
+emit_statement (statement_t *statement)
+{
+	const char *opcode = statement->opcode;
+	def_t      *def_a = get_operand_def (statement->opa);
+	def_t      *def_b = get_operand_def (statement->opb);
+	def_t      *def_c = get_operand_def (statement->opc);
+	opcode_t   *op = opcode_find (opcode, def_a, def_b, def_c);
+	dstatement_t *s;
+
+	puts (opcode);
+	if (!op)
+		internal_error (0, "ice ice baby");
+	s = codespace_newstatement (pr.code);
+	s->op = op->opcode;
+	s->a = def_a ? def_a->offset : 0;
+	s->b = def_b ? def_b->offset : 0;
+	s->c = def_c ? def_c->offset : 0;
+
+	add_statement_ref (def_a, s, 0);
+	add_statement_ref (def_b, s, 0);
+	add_statement_ref (def_c, s, 0);
 }
 
 void
-emit_expr (expr_t *e)
+emit_statements (sblock_t *first_sblock)
 {
+	sblock_t   *sblock;
+	statement_t *s;
+
+	for (sblock = first_sblock; sblock; sblock = sblock->next) {
+		sblock->offset = pr.code->size;
+		for (s = sblock->statements; s; s = s->next)
+			emit_statement (s);
+	}
+
+	for (sblock = first_sblock; sblock; sblock = sblock->next)
+		relocate_refs (sblock->relocs, sblock->offset);
 }

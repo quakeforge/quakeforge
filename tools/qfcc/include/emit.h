@@ -3,10 +3,10 @@
 
 	statement emittion
 
-	Copyright (C) 2002 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2011 Bill Currie <bill@taniwha.org>
 
 	Author: Bill Currie <bill@taniwha.org>
-	Date: 2002/07/08
+	Date: 2011/01/25
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -32,10 +32,9 @@
 #ifndef __emit_h
 #define __emit_h
 
-struct expr_s;
-struct def_s *emit_statement (struct expr_s *e, opcode_t *op, struct def_s *var_a, struct def_s *var_b, struct def_s *var_c);
-struct def_s *emit_sub_expr (struct expr_s*e, struct def_s *dest);
-void emit_expr (struct expr_s *e);
+struct sblock_s;
+
+void emit_statements (struct sblock_s *first_sblock);
 
 #define EMIT_STRING(s,dest,str)						\
 	do {											\

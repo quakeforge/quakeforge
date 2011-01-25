@@ -230,7 +230,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 											  st_extern));
 			e = address_expr (e, 0, type);
 			e = unary_expr ('.', e);
-			return emit_sub_expr (e, 0);
+			return 0;//FIXME emit_sub_expr (e, 0);
 		}
 	}
 	if (imm) {

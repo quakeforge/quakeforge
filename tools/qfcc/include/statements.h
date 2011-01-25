@@ -46,7 +46,7 @@ typedef struct operand_s {
 		struct symbol_s *symbol;
 		struct ex_value_s *value;
 		struct ex_label_s *label;
-		int         id;
+		struct def_s   *def;
 	} o;
 } operand_t;
 

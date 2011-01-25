@@ -50,8 +50,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "qfcc.h"
 #include "type.h"
 
-hashtab_t  *opcode_type_table_ab;
-hashtab_t  *opcode_type_table_abc;
+hashtab_t  *opcode_type_table;
 
 opcode_t   *op_done;
 opcode_t   *op_return;
@@ -74,17 +73,10 @@ static uintptr_t
 get_hash (void *_op, void *_tab)
 {
 	opcode_t   *op = (opcode_t *) _op;
-	hashtab_t **tab = (hashtab_t **) _tab;
 	uintptr_t   hash;
 
-	if (tab == &opcode_type_table_ab) {
-		hash = ROTL (~op->type_a, 8) + ROTL (~op->type_b, 16);
-	} else if (tab == &opcode_type_table_abc) {
-		hash = ROTL (~op->type_a, 8) + ROTL (~op->type_b, 16)
-			+ ROTL (~op->type_c, 24);
-	} else {
-		abort ();
-	}
+	hash = ROTL (~op->type_a, 8) + ROTL (~op->type_b, 16)
+		+ ROTL (~op->type_c, 24);
 	return hash + Hash_String (op->name);
 }
 
@@ -93,42 +85,24 @@ compare (void *_opa, void *_opb, void *_tab)
 {
 	opcode_t   *opa = (opcode_t *) _opa;
 	opcode_t   *opb = (opcode_t *) _opb;
-	hashtab_t **tab = (hashtab_t **) _tab;
 	int         cmp;
 
-	if (tab == &opcode_type_table_ab) {
-		cmp = (opa->type_a == opb->type_a)
-			  && (opa->type_b == opb->type_b);
-	} else if (tab == &opcode_type_table_abc) {
-		cmp = (opa->type_a == opb->type_a)
-			  && (opa->type_b == opb->type_b)
-			  && (opa->type_c == opb->type_c);
-	} else {
-		abort ();
-	}
+	cmp = (opa->type_a == opb->type_a)
+		  && (opa->type_b == opb->type_b)
+		  && (opa->type_c == opb->type_c);
 	return cmp && !strcmp (opa->name, opb->name);
 }
 
 opcode_t *
-opcode_find (const char *name, type_t *type_a, type_t *type_b, type_t *type_c)
+opcode_find (const char *name, def_t *def_a, def_t *def_b, def_t *def_c)
 {
 	opcode_t    op;
-	hashtab_t **tab;
 
 	op.name = name;
-	if (type_a && type_b && type_c) {
-		op.type_a = type_a->type;
-		op.type_b = type_b->type;
-		op.type_c = type_c->type;
-		tab = &opcode_type_table_abc;
-	} else if (type_a && type_b) {
-		op.type_a = type_a->type;
-		op.type_b = type_b->type;
-		tab = &opcode_type_table_ab;
-	} else {
-		tab = 0;
-	}
-	return Hash_FindElement (*tab, &op);
+	op.type_a = def_a ? def_a->type->type : ev_invalid;
+	op.type_b = def_b ? def_b->type->type : ev_invalid;
+	op.type_c = def_c ? def_c->type->type : ev_invalid;
+	return Hash_FindElement (opcode_type_table, &op);
 }
 
 void
@@ -137,18 +111,15 @@ opcode_init (void)
 	opcode_t   *op;
 
 	PR_Opcode_Init ();
-	opcode_type_table_ab = Hash_NewTable (1021, 0, 0, &opcode_type_table_ab);
-	opcode_type_table_abc = Hash_NewTable (1021, 0, 0, &opcode_type_table_abc);
-	Hash_SetHashCompare (opcode_type_table_ab, get_hash, compare);
-	Hash_SetHashCompare (opcode_type_table_abc, get_hash, compare);
+	opcode_type_table = Hash_NewTable (1021, 0, 0, 0);
+	Hash_SetHashCompare (opcode_type_table, get_hash, compare);
 	for (op = pr_opcodes; op->name; op++) {
 		if (op->min_version > options.code.progsversion)
 			continue;
 		if (options.code.progsversion == PROG_ID_VERSION
 			&& op->type_c == ev_integer)
 			op->type_c = ev_float;
-		Hash_AddElement (opcode_type_table_ab, op);
-		Hash_AddElement (opcode_type_table_abc, op);
+		Hash_AddElement (opcode_type_table, op);
 		if (!strcmp (op->name, "<DONE>")) {
 			op_done = op;
 		} else if (!strcmp (op->name, "<RETURN>")) {
