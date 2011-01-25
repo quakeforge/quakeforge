@@ -163,8 +163,9 @@ int yylex (void);
 %type	<symbol>	fdef_name cfunction_def func_def
 %type	<param>		function_decl
 %type	<param>		param param_list
-%type	<symbol>	opt_initializer methoddef var_initializer
-%type	<expr>		opt_expr fexpr expr element_list element_list1 element
+%type	<symbol>	methoddef
+%type	<expr>		opt_initializer var_initializer
+%type	<expr>		opt_expr fexpr expr element_list element
 %type	<expr>		opt_state_expr think opt_step array_decl texpr
 %type	<expr>		statement statements statement_block
 %type	<expr>		label break_label continue_label
@@ -192,7 +193,6 @@ int yylex (void);
 
 function_t *current_func;
 param_t    *current_params;
-expr_t     *current_init;
 class_type_t *current_class;
 expr_t     *local_expr;
 vis_e       current_visibility;
@@ -508,10 +508,8 @@ def_list
 def_item
 	: def_name opt_initializer
 		{
-			$1 = check_redefined ($1);
-			$1->type = $<type>0;
-			$1->visibility = current_visibility;
-			symtab_addsymbol (current_symtab, $1);
+			initialize_def ($1, $<type>0, $2, pr.near_data, //FIXME right space
+							current_storage);
 		}
 	;
 
@@ -583,35 +581,24 @@ def_name
 	;
 
 opt_initializer
-	: /*empty*/
-		{
-		}
+	: /*empty*/					{ $$ = 0; }
 	| var_initializer			{ $$ = $1; }
 	;
 
 var_initializer
-	: '=' expr	// don't bother folding twice
-		{
-		}
-	| '=' '{' { } element_list '}'
-		{
-		}
+	: '=' fexpr								{ $$ = $2; }
+	| '=' '{' element_list opt_comma '}'	{ $$ = $3; }
 	;
 
 opt_state_expr
-	: /* emtpy */
-		{
-			$$ = 0;
-		}
-	| '[' fexpr ',' think opt_step ']'
-		{
-			$$ = build_state_expr ($2, $4, $5);
-		}
+	: /* emtpy */						{ $$ = 0; }
+	| '[' fexpr ',' think opt_step ']'	{ $$ = build_state_expr ($2, $4, $5); }
 	;
 
 think
 	: def_name
 		{
+			internal_error (0, "FIXME");
 		}
 	| '(' fexpr ')'
 		{
@@ -625,45 +612,20 @@ opt_step
 	;
 
 element_list
-	: /* empty */
-		{
-			$$ = new_block_expr ();
-		}
-	| element_list1 opt_comma
-		{
-			$$ = current_init;
-		}
-	;
-
-element_list1
 	: element
 		{
-			append_expr (current_init, $1);
+			$$ = new_block_expr ();
+			append_expr ($$, $1);
 		}
-	| element_list1 ',' element
+	| element_list ',' element
 		{
-			append_expr (current_init, $3);
+			append_expr ($$, $3);
 		}
 	;
 
 element
-	: '{'
-		{
-			$<expr>$ = current_init;
-			current_init = new_block_expr ();
-		}
-	  element_list
-		{
-			current_init = $<expr>2;
-		}
-	  '}'
-		{
-			$$ = $3;
-		}
-	| fexpr
-		{
-			$$ = $1;
-		}
+	: '{' element_list opt_comma '}'		{ $$ = $2; }
+	| fexpr									{ $$ = $1; }
 	;
 
 opt_comma

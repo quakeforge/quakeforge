@@ -70,9 +70,16 @@ typedef enum storage_class_e {
 } storage_class_t;
 
 def_t *new_def (const char *name, struct type_s *type,
-				struct defspace_s *scope, storage_class_t storage);
+				struct defspace_s *space, storage_class_t storage);
 void free_def (def_t *def);
 
 void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
+
+struct symbol_s;
+struct expr_s;
+
+void initialize_def (struct symbol_s *sym, struct type_s *type,
+					 struct expr_s *init, struct defspace_s *space,
+					 storage_class_t storage);
 
 #endif//__def_h

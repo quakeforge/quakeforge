@@ -57,6 +57,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "reloc.h"
 #include "strpool.h"
 #include "struct.h"
+#include "symtab.h"
 #include "type.h"
 
 static def_t *free_defs;
@@ -148,4 +149,70 @@ def_to_ddef (def_t *def, ddef_t *ddef, int aux)
 	ddef->type = type->type;
 	ddef->ofs = def->offset;
 	ddef->s_name = ReuseString (def->name);
+}
+
+void
+initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
+				storage_class_t storage)
+{
+	if (sym->table == current_symtab) {
+		if (sym->sy_type != sy_var || sym->type != type) {
+			error (0, "%s redefined", sym->name);
+			sym = new_symbol (sym->name);
+		} else {
+			// is var and same type
+			if (!sym->s.def)
+				internal_error (0, "half defined var");
+			if (storage == st_extern) {
+				if (init)
+					warning (0, "initializing external variable");
+				return;
+			}
+			if (init && sym->s.def->initialized) {
+				error (0, "%s redefined", sym->name);
+				return;
+			}
+		}
+	} else if (sym->table) {
+		sym = new_symbol (sym->name);
+	}
+	sym->type = type;
+	symtab_addsymbol (current_symtab, sym);
+	if (storage == st_global && init) {
+		sym->sy_type = sy_const;
+		memset (&sym->s.value, 0, sizeof (&sym->s.value));
+		if (init->type != ex_value) {	//FIXME arrays/structs
+			error (0, "non-constant initializier");
+		} else {
+			sym->s.value = init->e.value;
+		}
+		return;
+	}
+	if (sym->s.def && sym->s.def->external) {
+		free_def (sym->s.def);
+		sym->s.def = 0;
+	}
+	if (!sym->s.def)
+		sym->s.def = new_def (sym->name, type, space, storage);
+	if (storage == st_extern) {
+		if (init)
+			warning (0, "initializing external variable");
+		return;
+	}
+	if (!init)
+		return;
+	if (!type_assignable (type, get_type (init))) {
+		error (init, "type mismatch in initializer");
+		return;
+	}
+	if (local_expr) {
+		append_expr (local_expr, assign_expr (new_symbol_expr (sym), init));
+	} else {
+		if (init->type != ex_value) {	//FIXME arrays/structs
+			error (0, "non-constant initializier");
+			return;
+		}
+		memcpy (D_POINTER (void, sym->s.def), &init->e.value,
+				type_size (type) * sizeof (pr_type_t));
+	}
 }
