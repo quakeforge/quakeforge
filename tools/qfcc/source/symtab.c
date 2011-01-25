@@ -198,7 +198,7 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 		error (0, "%s redefined", name);
 		sym = new_symbol_type (name, type);
 	}
-	if (sym->s.def && sym->s.def->external && !storage != st_extern) {
+	if (sym->s.def && sym->s.def->external && storage != st_extern) {
 		free_def (sym->s.def);
 		sym->s.def = 0;
 	}
