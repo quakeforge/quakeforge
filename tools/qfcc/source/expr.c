@@ -725,9 +725,10 @@ new_this_expr (void)
 static expr_t *
 param_expr (const char *name, type_t *type)
 {
-	symbol_t   *sym = symtab_lookup (pr.symtab, name);
+	symbol_t   *sym;
 	expr_t     *sym_expr;
 
+	sym = make_symbol (name, &type_param, 0, st_extern);
 	sym_expr = new_symbol_expr (sym);
 	return unary_expr ('.', address_expr (sym_expr, 0, type));
 }

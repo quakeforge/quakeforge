@@ -225,12 +225,9 @@ ReuseConstant (expr_t *expr, def_t *def)
 		if (def) {
 			imm = 0;	//FIXME do full def aliasing
 		} else {
-			expr_t     *e;
-			e = new_symbol_expr (make_symbol (".zero", &type_zero, 0,
-											  st_extern));
-			e = address_expr (e, 0, type);
-			e = unary_expr ('.', e);
-			return 0;//FIXME emit_sub_expr (e, 0);
+			symbol_t   *sym;
+			sym = make_symbol (".zero", &type_zero, 0, st_extern);
+			return sym->s.def;
 		}
 	}
 	if (imm) {

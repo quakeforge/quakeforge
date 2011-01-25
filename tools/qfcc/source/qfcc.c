@@ -363,7 +363,8 @@ setup_param_block (void)
 	symbol_t   *sym;
 
 	for (i = 0; i < sizeof (defs) / sizeof (defs[0]); i++) {
-		sym = new_symbol_type (defs[i].name, defs[i].type);
+		sym = make_symbol (defs[i].name, defs[i].type, pr.symtab->space,
+						   st_global);
 		symtab_addsymbol (pr.symtab, sym);
 	}
 }
@@ -520,7 +521,6 @@ compile_to_obj (const char *file, const char *obj)
 		return !options.preprocess_only;
 
 	InitData ();
-	setup_param_block ();
 	clear_frame_macros ();
 	clear_classes ();
 	clear_immediates ();
