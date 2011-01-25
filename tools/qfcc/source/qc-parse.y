@@ -246,9 +246,9 @@ defs
 		}
 	| defs def
 	| defs obj_def
-	| error END { current_class = 0; yyerrok; }
-	| error ';' { yyerrok; }
-	| error '}' { yyerrok; }
+	| error END { current_class = 0; yyerrok; current_symtab = pr.symtab; }
+	| error ';' { yyerrok; current_symtab = pr.symtab; }
+	| error '}' { yyerrok; current_symtab = pr.symtab; }
 	;
 
 def
