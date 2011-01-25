@@ -284,15 +284,36 @@ simple_def
 cfunction
 	: cfunction_def ';'
 	| cfunction_def '=' '#' fexpr ';'
-	| cfunction_def opt_state_expr statement_block
+		{
+			build_builtin_function ($1, $4);
+		}
+	| cfunction_def
+		{
+			$<symtab>$ = current_symtab;
+			current_func = begin_function ($1, 0, current_symtab);
+			current_symtab = current_func->symtab;
+		}
+	  opt_state_expr statement_block
+		{
+			build_code_function ($1, $3, $4);
+			current_symtab = $<symtab>2;
+		}
 	;
 
 cfunction_def
 	: OVERLOAD non_func_type identifier function_decl
 		{
+			$$ = $3;
+			$$->params = current_params = $4;
+			$$->type = parse_params ($2, $4);
+			$$ = function_symbol ($$, 1, 1);
 		}
 	| non_func_type identifier function_decl
 		{
+			$$ = $2;
+			$$->params = current_params = $3;
+			$$->type = parse_params ($1, $3);
+			$$ = function_symbol ($$, 0, 1);
 		}
 	;
 
@@ -487,6 +508,10 @@ def_list
 def_item
 	: def_name opt_initializer
 		{
+			$1 = check_redefined ($1);
+			$1->type = $<type>0;
+			$1->visibility = current_visibility;
+			symtab_addsymbol (current_symtab, $1);
 		}
 	;
 

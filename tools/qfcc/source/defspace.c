@@ -78,6 +78,7 @@ new_defspace (void)
 	defspace_t *space;
 
 	ALLOC (1024, defspace_t, spaces, space);
+	space->def_tail = &space->defs;
 	space->grow = grow_space;
 	return space;
 }
