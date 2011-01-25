@@ -124,10 +124,22 @@ new_def (const char *name, type_t *type, defspace_t *space,
 	return def;
 }
 
+def_t *
+alias_def (def_t *def, type_t *type)
+{
+	def_t      *alias;
+
+	ALLOC (16384, def_t, defs, alias);
+	alias->offset = def->offset;
+	alias->type = type;
+	alias->alias = def;
+	return alias;
+}
+
 void
 free_def (def_t *def)
 {
-	if (def->space) {
+	if (!def->alias && def->space) {
 		def_t     **d;
 
 		for (d = &def->space->defs; *d && *d != def; d = &(*d)->next)

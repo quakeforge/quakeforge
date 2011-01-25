@@ -43,6 +43,7 @@ typedef struct def_s {
 	struct defspace_s *space;
 	int				offset;
 
+	struct def_s   *alias;
 	struct reloc_s *relocs;			///< for relocations
 
 	unsigned		initialized:1;
@@ -71,6 +72,7 @@ typedef enum storage_class_e {
 
 def_t *new_def (const char *name, struct type_s *type,
 				struct defspace_s *space, storage_class_t storage);
+def_t *alias_def (def_t *def, struct type_s *type);
 void free_def (def_t *def);
 
 void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
