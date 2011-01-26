@@ -516,7 +516,7 @@ void convert_short (expr_t *e);
 void convert_short_int (expr_t *e);
 void convert_nil (expr_t *e, struct type_s *t);
 
-expr_t *test_expr (expr_t *e, int test);
+expr_t *test_expr (expr_t *e);
 void backpatch (ex_list_t *list, expr_t *label);
 expr_t *convert_bool (expr_t *e, int block);
 expr_t *bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2);

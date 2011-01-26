@@ -382,7 +382,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		for (l = labels; *l; l++) {
 			expr_t     *cmp = binary_expr (EQ, sw_val, (*l)->value);
 			expr_t     *test = new_binary_expr ('i',
-												test_expr (cmp, 1),
+												test_expr (cmp),
 												(*l)->label);
 
 			append_expr (sw, test);

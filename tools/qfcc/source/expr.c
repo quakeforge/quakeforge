@@ -780,7 +780,7 @@ field_expr (expr_t *e1, expr_t *e2)
 }
 
 expr_t *
-test_expr (expr_t *e, int test)
+test_expr (expr_t *e)
 {
 	static float zero[4] = {0, 0, 0, 0};
 	expr_t     *new = 0;
@@ -788,9 +788,6 @@ test_expr (expr_t *e, int test)
 
 	if (e->type == ex_error)
 		return e;
-
-	if (!test)
-		return unary_expr ('!', e);
 
 	type = extract_type (e);
 	if (e->type == ex_error)
@@ -918,7 +915,7 @@ convert_bool (expr_t *e, int block)
 		e = unary_expr ('!', e);
 	}
 	if (e->type != ex_bool) {
-		e = test_expr (e, 1);
+		e = test_expr (e);
 		if (e->type == ex_error)
 			return e;
 		if (is_integer_val (e)) {
@@ -1199,8 +1196,8 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		return field_expr (e1, e2);
 
 	if (op == OR || op == AND) {
-		e1 = test_expr (e1, true);
-		e2 = test_expr (e2, true);
+		e1 = test_expr (e1);
+		e2 = test_expr (e2);
 	}
 
 	if (e1->type == ex_error)
