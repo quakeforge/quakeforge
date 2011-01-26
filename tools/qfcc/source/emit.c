@@ -94,6 +94,7 @@ get_operand_def (operand_t *op)
 					pr_type_size[op->type]);
 			return def;
 		case op_label:
+			zero_def.type = &type_short;
 			return &zero_def;	//FIXME
 		case op_temp:
 			if (!op->o.def)
