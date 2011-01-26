@@ -67,7 +67,7 @@ opcode_t   *op_goto;
 opcode_t   *op_jump;
 opcode_t   *op_jumpb;
 
-#define ROTL(x,n) (((x)<<(n))|(x)>>(32-n))
+#define ROTL(x,n) ((((unsigned)(x))<<(n))|((unsigned)(x))>>(32-n))
 
 static uintptr_t
 get_hash (void *_op, void *_tab)
