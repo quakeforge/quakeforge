@@ -284,6 +284,9 @@ simple_def
 
 cfunction
 	: cfunction_def ';'
+		{
+			make_function ($1, 0, st_extern);// FIME do I really want this?
+		}
 	| cfunction_def '=' '#' fexpr ';'
 		{
 			build_builtin_function ($1, $4);
@@ -584,6 +587,9 @@ non_code_func
 			build_builtin_function ($<symbol>0, $3);
 		}
 	| /* emtpy */
+		{
+			make_function ($<symbol>0, 0, current_storage);
+		}
 	;
 
 code_func

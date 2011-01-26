@@ -466,6 +466,27 @@ new_function (const char *name, const char *nice_name)
 }
 
 void
+make_function (symbol_t *sym, const char *nice_name, storage_class_t storage)
+{
+	if (sym->sy_type != sy_func)
+		internal_error (0, "%s is not a function", sym->name);
+	if (storage == st_extern && sym->s.func)
+		return;
+	if (!sym->s.func) {
+		sym->s.func = new_function (sym->name, nice_name);
+		sym->s.func->sym = sym;
+	}
+	if (sym->s.func->def && sym->s.func->def->external
+		&& storage != st_extern) {
+		free_def (sym->s.func->def);
+		sym->s.func->def = 0;
+	}
+	if (!sym->s.func->def)
+		sym->s.func->def = new_def (sym->name, sym->type, sym->table->space,
+									storage);
+}
+
+void
 add_function (function_t *f)
 {
 	*pr.func_tail = f;
@@ -482,29 +503,30 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent)
 		error (0, "%s is not a function", sym->name);
 		return 0;
 	}
-	if (sym->s.func) {
+	if (sym->s.func && sym->s.func->def && sym->s.func->def->initialized) {
 		error (0, "%s redefined", sym->name);
 		return 0;
 	}
-	sym->s.func = new_function (sym->name, nicename);
-	sym->s.func->sym = sym;
-	//FIXME
-	//if (!def->external) {
+	make_function (sym, nicename, current_storage);
+	if (!sym->s.func->def->external) {
+		sym->s.func->def->initialized = 1;
+		sym->s.func->def->constant = 1;
+		sym->s.func->def->nosave = 1;
 		add_function (sym->s.func);
-		//reloc_def_func (func, def->ofs);
-	//}
-	sym->s.func->code = pr.code->size;
-#if 0 //FIXME
-	if (options.code.debug && func->aux) {
-		pr_lineno_t *lineno = new_lineno ();
-		func->aux->source_line = def->line;
-		func->aux->line_info = lineno - pr.linenos;
-		func->aux->local_defs = pr.num_locals;
-		func->aux->return_type = def->type->t.func.type->type;
-
-		lineno->fa.func = func->aux - pr.auxfunctions;
+		reloc_def_func (sym->s.func, sym->s.func->def->offset);
 	}
-#endif
+	sym->s.func->code = pr.code->size;
+
+	if (options.code.debug && sym->s.func->aux) {
+		pr_lineno_t *lineno = new_lineno ();
+		sym->s.func->aux->source_line = sym->s.func->def->line;
+		sym->s.func->aux->line_info = lineno - pr.linenos;
+		sym->s.func->aux->local_defs = pr.num_locals;
+		sym->s.func->aux->return_type = sym->type->t.func.type->type;
+
+		lineno->fa.func = sym->s.func->aux - pr.auxfunctions;
+	}
+
 	build_scope (sym, parent);
 	return sym->s.func;
 }
@@ -531,7 +553,7 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val)
 		error (bi_val, "%s is not a function", sym->name);
 		return 0;
 	}
-	if (sym->s.func) {
+	if (sym->s.func && sym->s.func->def && sym->s.func->def->initialized) {
 		error (bi_val, "%s redefined", sym->name);
 		return 0;
 	}
@@ -539,11 +561,10 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val)
 		error (bi_val, "invalid constant for = #");
 		return 0;
 	}
-	//if (sym->external)
-	//	return 0;
+	make_function (sym, 0, current_storage);
+	if (sym->s.func->def->external)
+		return 0;
 
-	sym->s.func = new_function (sym->name, 0);
-	sym->s.func->sym = sym;
 	add_function (sym->s.func);
 
 	if (is_integer_val (bi_val))
@@ -551,7 +572,7 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val)
 	else
 		bi = expr_float (bi_val);
 	sym->s.func->builtin = bi;
-	//reloc_def_func (sym->s.func, def->ofs);
+	reloc_def_func (sym->s.func, sym->s.func->def->offset);
 	build_function (sym->s.func);
 	finish_function (sym->s.func);
 

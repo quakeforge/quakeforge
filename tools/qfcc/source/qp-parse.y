@@ -136,6 +136,7 @@ int yylex (void);
 
 %{
 symtab_t       *current_symtab;
+storage_class_t current_storage = st_global;
 function_t *current_func;
 struct class_type_s *current_class;
 expr_t  *local_expr;

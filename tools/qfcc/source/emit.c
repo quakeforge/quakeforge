@@ -71,9 +71,21 @@ get_operand_def (operand_t *op)
 		return 0;
 	switch (op->op_type) {
 		case op_symbol:
-			if (op->type != op->o.symbol->type->type)
-				return alias_def (op->o.symbol->s.def, ev_types[op->type]);
-			return op->o.symbol->s.def;
+			switch (op->o.symbol->sy_type) {
+				case sy_var:
+					if (op->type != op->o.symbol->type->type)
+						return alias_def (op->o.symbol->s.def,
+										  ev_types[op->type]);
+					return op->o.symbol->s.def;
+				case sy_func:
+					return op->o.symbol->s.func->def;
+				case sy_const:
+					//FIXME
+				case sy_type:
+				case sy_expr:
+					internal_error (0, "invalid operand type");
+			}
+			break;
 		case op_value:
 			//FIXME share immediates
 			def = new_def (".imm", ev_types[op->type], pr.near_data,

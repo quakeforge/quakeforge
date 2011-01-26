@@ -56,6 +56,7 @@ typedef struct function_s {
 	int                 function_num;
 	string_t            s_file;		///< source file with definition
 	string_t            s_name;
+	struct def_s       *def;
 	struct symbol_s    *sym;
 	struct symtab_s    *symtab;
 	struct reloc_s     *refs;
@@ -87,6 +88,10 @@ param_t *_reverse_params (param_t *params, param_t *next);
 param_t *reverse_params (param_t *params);
 param_t *copy_params (param_t *params);
 struct type_s *parse_params (struct type_s *type, param_t *params);
+
+enum storage_class_e; 
+void make_function (struct symbol_s *sym, const char *nice_name,
+					enum storage_class_e storage);
 struct symbol_s *function_symbol (struct symbol_s *sym,
 								  int overload, int create);
 struct expr_s *find_function (struct expr_s *fexpr, struct expr_s *params);

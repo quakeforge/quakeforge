@@ -70,6 +70,8 @@ typedef enum storage_class_e {
 	st_local
 } storage_class_t;
 
+extern storage_class_t current_storage;
+
 def_t *new_def (const char *name, struct type_s *type,
 				struct defspace_s *space, storage_class_t storage);
 def_t *alias_def (def_t *def, struct type_s *type);
