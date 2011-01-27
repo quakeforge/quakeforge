@@ -251,12 +251,13 @@ statement_assign (sblock_t *sblock, expr_t *e)
 	operand_t  *ofs = 0;
 	const char *opcode = convert_op (e->e.expr.op);
 
-	s = new_statement (opcode);
 	if (e->e.expr.op == '=') {
 		sblock = statement_subexpr (sblock, dst_expr, &dst);
 		sblock = statement_subexpr (sblock, src_expr, &src);
 		ofs = 0;
 	} else {
+		//FIXME this sucks. find a better way to handle both pointer
+		//dereferences and pointer assignements
 		sblock = statement_subexpr (sblock, src_expr, &src);
 		if (dst_expr->type == ex_expr
 			&& extract_type (dst_expr->e.expr.e1) == ev_pointer
@@ -264,10 +265,16 @@ statement_assign (sblock_t *sblock, expr_t *e)
 			sblock = statement_subexpr (sblock, dst_expr->e.expr.e1, &dst);
 			sblock = statement_subexpr (sblock, dst_expr->e.expr.e2, &ofs);
 		} else {
+			if (dst_expr->type == ex_uexpr
+				&& dst_expr->e.expr.op == '&') {
+				opcode = "=";
+				dst_expr = unary_expr ('.', dst_expr);
+			}
 			sblock = statement_subexpr (sblock, dst_expr, &dst);
 			ofs = 0;
 		}
 	}
+	s = new_statement (opcode);
 	s->opa = src;
 	s->opb = dst;
 	s->opc = ofs;
