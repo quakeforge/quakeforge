@@ -366,7 +366,7 @@ expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	if (e->type == ex_uexpr) {
 		sblock = statement_subexpr (sblock, e->e.expr.e1, op);
-		(*op)->type = ev_void;
+		(*op)->type = ev_pointer;
 	}
 	return sblock;
 }
