@@ -93,6 +93,7 @@ int yylex (void);
 	struct struct_s *strct;
 	struct symtab_s *symtab;
 	struct symbol_s *symbol;
+	int              storage;
 }
 
 // these tokens are common with qc
@@ -206,14 +207,8 @@ declarations
 		{
 			while ($3) {
 				symbol_t   *next = $3->next;
-				if ($3->table == current_symtab) {
-					error (0, "%s redefined", $3->name);
-				} else {
-					if ($3->table)
-						$3 = new_symbol ($3->name);
-					$3->type = $5;
-					symtab_addsymbol (current_symtab, $3);
-				}
+				initialize_def ($3, $5, 0, current_symtab->space,
+								current_storage);
 				$3 = next;
 			}
 		}
@@ -241,14 +236,15 @@ subprogram_declarations
 subprogram_declaration
 	: subprogram_head ';'
 		{
-			$<symtab>$ = current_symtab;
+			$<storage>$ = current_storage;
 			current_func = begin_function ($1, 0, current_symtab);
 			current_symtab = current_func->symtab;
 		}
 	  declarations compound_statement ';'
 		{
 			build_code_function ($1, 0, $5);
-			current_symtab = $<symtab>3;
+			current_symtab = current_symtab->parent;
+			current_storage = $<storage>3;
 		}
 	| subprogram_head ASSIGNOP '#' CONST ';'
 		{
