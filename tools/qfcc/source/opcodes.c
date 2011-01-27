@@ -51,21 +51,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "type.h"
 
 hashtab_t  *opcode_type_table;
-
-opcode_t   *op_done;
-opcode_t   *op_return;
-opcode_t   *op_return_v;
-opcode_t   *op_if;
-opcode_t   *op_ifnot;
-opcode_t   *op_ifbe;
-opcode_t   *op_ifb;
-opcode_t   *op_ifae;
-opcode_t   *op_ifa;
-opcode_t   *op_state;
-opcode_t   *op_state_f;
-opcode_t   *op_goto;
-opcode_t   *op_jump;
-opcode_t   *op_jumpb;
+hashtab_t  *opcode_void_table;
 
 #define ROTL(x,n) ((((unsigned)(x))<<(n))|((unsigned)(x))>>(32-n))
 
@@ -81,7 +67,7 @@ get_hash (void *_op, void *_tab)
 }
 
 static int
-compare (void *_opa, void *_opb, void *_tab)
+compare (void *_opa, void *_opb, void *unused)
 {
 	opcode_t   *opa = (opcode_t *) _opa;
 	opcode_t   *opb = (opcode_t *) _opb;
@@ -93,16 +79,49 @@ compare (void *_opa, void *_opb, void *_tab)
 	return cmp && !strcmp (opa->name, opb->name);
 }
 
+static const char *
+get_key (void *op, void *unused)
+{
+	return ((opcode_t *) op)->name;
+}
+
+static int
+check_operand_type (etype_t ot1, etype_t ot2)
+{
+	if ((ot1 == ev_void && ot2 != ev_invalid)
+		|| ot1 == ot2)
+		return 1;
+	return 0;
+}
+
 opcode_t *
 opcode_find (const char *name, def_t *def_a, def_t *def_b, def_t *def_c)
 {
-	opcode_t    op;
+	opcode_t    search_op;
+	opcode_t   *op;
+	opcode_t   *sop;
+	void      **op_list;
+	int         i;
 
-	op.name = name;
-	op.type_a = def_a ? def_a->type->type : ev_invalid;
-	op.type_b = def_b ? def_b->type->type : ev_invalid;
-	op.type_c = def_c ? def_c->type->type : ev_invalid;
-	return Hash_FindElement (opcode_type_table, &op);
+	search_op.name = name;
+	search_op.type_a = def_a ? def_a->type->type : ev_invalid;
+	search_op.type_b = def_b ? def_b->type->type : ev_invalid;
+	search_op.type_c = def_c ? def_c->type->type : ev_invalid;
+	op = Hash_FindElement (opcode_type_table, &search_op);
+	if (op)
+		return op;
+	op_list = Hash_FindList (opcode_void_table, name);
+	if (!op_list)
+		return op;
+	for (i = 0; !op && op_list[i]; i++) {
+		sop = op_list[i];
+		if (check_operand_type (sop->type_a, search_op.type_a)
+			&& check_operand_type (sop->type_b, search_op.type_b)
+			&& check_operand_type (sop->type_c, search_op.type_c))
+			op = sop;
+	}
+	free (op_list);
+	return op;
 }
 
 void
@@ -113,6 +132,7 @@ opcode_init (void)
 	PR_Opcode_Init ();
 	opcode_type_table = Hash_NewTable (1021, 0, 0, 0);
 	Hash_SetHashCompare (opcode_type_table, get_hash, compare);
+	opcode_void_table = Hash_NewTable (1021, get_key, 0, 0);
 	for (op = pr_opcodes; op->name; op++) {
 		if (op->min_version > options.code.progsversion)
 			continue;
@@ -129,35 +149,8 @@ opcode_init (void)
 				op->type_c = ev_float;
 		}
 		Hash_AddElement (opcode_type_table, op);
-		if (!strcmp (op->name, "<DONE>")) {
-			op_done = op;
-		} else if (!strcmp (op->name, "<RETURN>")) {
-			op_return = op;
-		} else if (!strcmp (op->name, "<RETURN_V>")) {
-			op_return_v = op;
-		} else if (!strcmp (op->name, "<IF>")) {
-			op_if = op;
-		} else if (!strcmp (op->name, "<IFNOT>")) {
-			op_ifnot = op;
-		} else if (!strcmp (op->name, "<IFBE>")) {
-			op_ifbe = op;
-		} else if (!strcmp (op->name, "<IFB>")) {
-			op_ifb = op;
-		} else if (!strcmp (op->name, "<IFAE>")) {
-			op_ifae = op;
-		} else if (!strcmp (op->name, "<IFA>")) {
-			op_ifa = op;
-		} else if (!strcmp (op->name, "<STATE>")) {
-			if (op->type_c == ev_float)
-				op_state_f = op;
-			else
-				op_state = op;
-		} else if (!strcmp (op->name, "<GOTO>")) {
-			op_goto = op;
-		} else if (!strcmp (op->name, "<JUMP>")) {
-			op_jump = op;
-		} else if (!strcmp (op->name, "<JUMPB>")) {
-			op_jumpb = op;
-		}
+		if (op->type_a == ev_void || op->type_b == ev_void
+			|| op->type_c == ev_void)
+			Hash_Add (opcode_void_table, op);
 	}
 }
