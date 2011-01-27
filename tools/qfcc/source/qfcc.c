@@ -73,6 +73,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "debug.h"
 #include "def.h"
 #include "defspace.h"
+#include "diagnostic.h"
 #include "emit.h"
 #include "expr.h"
 #include "function.h"
@@ -373,7 +374,7 @@ setup_param_block (void)
 static qboolean
 finish_compilation (void)
 {
-	//FIXME def_t      *d;
+	def_t      *d;
 	qboolean    errors = false;
 	function_t *f;
 	//FIXME def_t      *def;
@@ -382,22 +383,21 @@ finish_compilation (void)
 	dfunction_t *df;
 
 	// check to make sure all functions prototyped have code
-#if 0 //FIXME
 	if (options.warnings.undefined_function)
-		for (d = pr.scope->head; d; d = d->def_next) {
+		for (d = pr.near_data->defs; d; d = d->next) {
 			if (d->type->type == ev_func && d->global) {
 				// function args ok
-				if (d->used) {
+				//FIXME if (d->used) {
 					if (!d->initialized) {
 						warning (0, "function %s was called but not defined\n",
 								 d->name);
 					}
-				}
+				//FIXME }
 			}
 		}
-
-	for (d = pr.scope->head; d; d = d->def_next) {
-		if (d->external && d->refs) {
+#if 0 //FIXME
+	for (d = pr.near_data->defs; d; d = d->next) {
+		if (d->external && d->relocs) {
 			if (strcmp (d->name, ".self") == 0) {
 				get_def (d->type, ".self", pr.scope, st_global);
 			} else if (strcmp (d->name, ".this") == 0) {
@@ -413,9 +413,11 @@ finish_compilation (void)
 		return !errors;
 
 	if (options.code.progsversion != PROG_ID_VERSION) {
-		e = *new_integer_expr (type_size (&type_param));
-		//FIXME ReuseConstant (&e, get_def (&type_integer, ".param_size", pr.scope,
-		//FIXME 			   st_global));
+		//FIXME better init code
+		symbol_t   *sym = new_symbol (".param_size");
+		initialize_def (sym, &type_integer, 0,
+						pr.symtab->space, st_global);
+		D_INT (sym->s.def) = type_size (&type_param);
 	}
 
 	if (options.code.debug) {
