@@ -106,7 +106,7 @@ get_operand_def (operand_t *op)
 }
 
 static void
-add_statement_ref (def_t *def, dstatement_t *st, int field)
+add_statement_def_ref (def_t *def, dstatement_t *st, int field)
 {
 	if (def) {
 		int         st_ofs = st - pr.code->code;
@@ -138,9 +138,9 @@ emit_statement (statement_t *statement)
 	s->b = def_b ? def_b->offset : 0;
 	s->c = def_c ? def_c->offset : 0;
 
-	add_statement_ref (def_a, s, 0);
-	add_statement_ref (def_b, s, 0);
-	add_statement_ref (def_c, s, 0);
+	add_statement_def_ref (def_a, s, 0);
+	add_statement_def_ref (def_b, s, 1);
+	add_statement_def_ref (def_c, s, 2);
 }
 
 void
