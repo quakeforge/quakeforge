@@ -660,20 +660,11 @@ statement_bool (sblock_t *sblock, expr_t *e)
 static sblock_t *
 statement_label (sblock_t *sblock, expr_t *e)
 {
-	reloc_t    *r;
-
 	if (sblock->statements) {
 		sblock->next = new_sblock ();
 		sblock = sblock->next;
 	}
 	e->e.label.dest = sblock;
-	for (r = e->e.label.refs; r && r->next; r = r->next)
-		;
-	if (r) {
-		r->next = sblock->relocs;
-		sblock->relocs = e->e.label.refs;
-		e->e.label.refs = 0;
-	}
 	return sblock;
 }
 

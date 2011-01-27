@@ -121,6 +121,18 @@ add_statement_def_ref (def_t *def, dstatement_t *st, int field)
 }
 
 static void
+add_statement_op_ref (operand_t *op, dstatement_t *st, int field)
+{
+	if (op && op->op_type == op_label) {
+		int         st_ofs = st - pr.code->code;
+		reloc_t    *reloc = new_reloc (st_ofs, rel_op_a_op + field);
+
+		reloc->next = op->o.label->dest->relocs;
+		op->o.label->dest->relocs = reloc;
+	}
+}
+
+static void
 emit_statement (statement_t *statement)
 {
 	const char *opcode = statement->opcode;
@@ -141,6 +153,10 @@ emit_statement (statement_t *statement)
 	add_statement_def_ref (def_a, s, 0);
 	add_statement_def_ref (def_b, s, 1);
 	add_statement_def_ref (def_c, s, 2);
+
+	add_statement_op_ref (statement->opa, s, 0);
+	add_statement_op_ref (statement->opb, s, 1);
+	add_statement_op_ref (statement->opc, s, 2);
 }
 
 void
