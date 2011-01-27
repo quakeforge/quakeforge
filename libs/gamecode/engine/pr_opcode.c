@@ -902,7 +902,7 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 ev_integer, ev_integer, ev_integer,
 	 PROG_VERSION,
 	},
-	{"%", "mod_i", OP_MOD_I, false,
+	{"%", "mod.i", OP_MOD_I, false,
 	 ev_integer, ev_integer, ev_integer,
 	 PROG_VERSION,
 	},
