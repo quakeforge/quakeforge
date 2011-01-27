@@ -155,18 +155,20 @@ InitData (void)
 static int
 WriteData (int crc)
 {
-#if 0 //FIXME
 	def_t      *def;
 	ddef_t     *dd;
 	dprograms_t progs;
 	pr_debug_header_t debug;
 	QFile      *h;
 	int         i;
+	int         num_defs = 0;
 
-	globals = calloc (pr.scope->num_defs + 1, sizeof (ddef_t));
-	fields = calloc (pr.scope->num_defs + 1, sizeof (ddef_t));
+	for (def = pr.near_data->defs; def; def = def->next)
+		num_defs++;
+	globals = calloc (num_defs + 1, sizeof (ddef_t));
+	fields = calloc (num_defs + 1, sizeof (ddef_t));
 
-	for (def = pr.scope->head; def; def = def->def_next) {
+	for (def = pr.near_data->defs; def; def = def->next) {
 		if (def->local || !def->name)
 			continue;
 		if (options.code.progsversion == PROG_ID_VERSION && *def->name == '.'
@@ -178,7 +180,7 @@ WriteData (int crc)
 				   && strcmp (def->name, ".imm") != 0) {
 			dd = &fields[numfielddefs++];
 			def_to_ddef (def, dd, 1);
-			dd->ofs = G_INT (def->ofs);
+			dd->ofs = D_INT (def);
 		}
 
 		dd = &globals[numglobaldefs++];
@@ -261,7 +263,7 @@ WriteData (int crc)
 	progs.ofs_globals = Qtell (h);
 	progs.numglobals = pr.near_data->size;
 	for (i = 0; i < pr.near_data->size; i++)
-		G_INT (i) = LittleLong (G_INT (i));
+		pr.near_data->data[i] = LittleLong (pr.near_data->data[i]);
 	Qwrite (h, pr.near_data->data, pr.near_data->size * 4);
 
 	if (options.verbosity >= -1)
@@ -332,7 +334,6 @@ WriteData (int crc)
 	Qseek (h, 0, SEEK_SET);
 	Qwrite (h, &debug, sizeof (debug));
 	Qclose (h);
-#endif
 	return 0;
 }
 

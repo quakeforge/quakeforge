@@ -67,7 +67,6 @@ typedef struct pr_info_s {
 	struct defspace_s *near_data;
 	struct defspace_s *far_data;
 	struct defspace_s *entity_data;
-	struct scope_s *scope;
 
 	struct symtab_s *symtab;
 

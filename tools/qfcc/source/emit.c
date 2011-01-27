@@ -130,7 +130,6 @@ emit_statement (statement_t *statement)
 	opcode_t   *op = opcode_find (opcode, def_a, def_b, def_c);
 	dstatement_t *s;
 
-	puts (opcode);
 	if (!op)
 		internal_error (0, "ice ice baby");
 	s = codespace_newstatement (pr.code);
