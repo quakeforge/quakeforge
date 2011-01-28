@@ -89,22 +89,62 @@ dump_globals (progs_t *pr)
 
 		comment = "";
 
-		if (def->type == ev_func) {
-			func_t      func = G_FUNCTION (pr, offset);
-			int         start;
-			if (func >= 0 && func < pr->progs->numfunctions) {
-				start = pr->pr_functions[func].first_statement;
-				if (start > 0)
-					comment = va (" %d @ %x", func, start);
-				else
-					comment = va (" %d = #%d", func, -start);
-			} else {
-				comment = va (" %d = illegal function", func);
-			}
+		switch (def->type & ~DEF_SAVEGLOBAL) {
+			case ev_void:
+				break;
+			case ev_string:
+				comment = va (" %d \"%s\"", G_INT (pr, offset),
+							  pr->pr_strings + G_INT (pr, offset));
+				break;
+			case ev_float:
+				comment = va (" %g", G_FLOAT (pr, offset));
+				break;
+			case ev_vector:
+				comment = va (" '%g %g %g",
+							  G_VECTOR (pr, offset)[0],
+							  G_VECTOR (pr, offset)[1],
+							  G_VECTOR (pr, offset)[2]);
+				break;
+			case ev_entity:
+				break;
+			case ev_field:
+				comment = va (" %x", G_INT (pr, offset));
+				break;
+			case ev_func:
+				{
+					func_t      func = G_FUNCTION (pr, offset);
+					int         start;
+					if (func >= 0 && func < pr->progs->numfunctions) {
+						start = pr->pr_functions[func].first_statement;
+						if (start > 0)
+							comment = va (" %d @ %x", func, start);
+						else
+							comment = va (" %d = #%d", func, -start);
+					} else {
+						comment = va (" %d = illegal function", func);
+					}
+				}
+				break;
+			case ev_pointer:
+				break;
+			case ev_quat:
+				comment = va (" '%g %g %g %g",
+							  G_VECTOR (pr, offset)[0],//FIXME quat!!!
+							  G_VECTOR (pr, offset)[1],
+							  G_VECTOR (pr, offset)[2],
+							  G_VECTOR (pr, offset)[3]);
+				break;
+			case ev_integer:
+				comment = va (" %d", G_INT (pr, offset));
+				break;
+			case ev_short:
+				break;
+			case ev_invalid:
+				comment = " struct?";
+				break;
+			case ev_type_count:
+				break;
 		}
-		if (def->type == ev_field)
-			comment = va (" %x", G_INT (pr, offset));
-
 		printf ("%x %d %s %s%s\n", offset, saveglobal, name, type, comment);
 	}
 }
