@@ -876,7 +876,7 @@ init_types (void)
 		return;
 
 	make_structure (0, 's', quaternion_struct, &type_quaternion);
-	type_quaternion.type = ev_vector;
+	type_quaternion.type = ev_quat;
 
 	type_SEL.t.fldptr.type = make_structure (0, 's', sel_struct, 0)->type;
 
