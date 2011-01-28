@@ -90,8 +90,13 @@ get_operand_def (operand_t *op)
 			//FIXME share immediates
 			def = new_def (".imm", ev_types[op->type], pr.near_data,
 						   st_static);
-			memcpy (D_POINTER (pr_type_t, def), &op->o.value,
-					pr_type_size[op->type]);
+			if (op->type == ev_string) {
+				EMIT_STRING (def->space, D_STRUCT (string_t, def),
+							 op->o.value->v.string_val);
+			} else {
+				memcpy (D_POINTER (pr_type_t, def), &op->o.value->v,
+						pr_type_size[op->type]);
+			}
 			return def;
 		case op_label:
 			zero_def.type = &type_short;
