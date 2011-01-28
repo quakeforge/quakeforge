@@ -95,7 +95,7 @@ dump_globals (progs_t *pr)
 			if (func >= 0 && func < pr->progs->numfunctions) {
 				start = pr->pr_functions[func].first_statement;
 				if (start > 0)
-					comment = va (" %d @ %d", func, start);
+					comment = va (" %d @ %x", func, start);
 				else
 					comment = va (" %d = #%d", func, -start);
 			} else {
@@ -103,7 +103,7 @@ dump_globals (progs_t *pr)
 			}
 		}
 		if (def->type == ev_field)
-			comment = va (" %d", G_INT (pr, offset));
+			comment = va (" %x", G_INT (pr, offset));
 
 		printf ("%x %d %s %s%s\n", offset, saveglobal, name, type, comment);
 	}
@@ -159,7 +159,7 @@ dump_functions (progs_t *pr)
 			count = func->numparms;
 		for (j = 0; j < count; j++)
 			printf (" %d", func->parm_size[j]);
-		printf (") %d @ %d", func->locals, func->parm_start);
+		printf (") %d @ %x", func->locals, func->parm_start);
 		puts ("");
 	}
 }
