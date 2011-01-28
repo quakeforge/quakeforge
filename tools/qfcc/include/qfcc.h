@@ -53,7 +53,6 @@ struct srcline_s {
 */
 typedef struct pr_info_s {
 	struct type_s	*types;
-	struct ex_label_s *labels;
 	
 	struct strpool_s *strings;
 

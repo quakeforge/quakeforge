@@ -341,8 +341,6 @@ new_label_expr (void)
 
 	l->type = ex_label;
 	l->e.label.name = new_label_name ();
-	l->e.label.next = pr.labels;
-	pr.labels = &l->e.label;
 	return l;
 }
 

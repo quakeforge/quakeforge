@@ -468,9 +468,6 @@ finish_compilation (void)
 			pr.near_data->data[ofs].integer_var = 0;
 	}
 
-	//FIXME for (l = pr.labels; l; l = l->next)
-	//FIXME 	relocate_refs (l->refs, l->ofs);
-
 	return !errors;
 }
 
