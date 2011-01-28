@@ -776,12 +776,81 @@ statement_slist (sblock_t *sblock, expr_t *e)
 	return sblock;
 }
 
+static void
+remove_label_from_dest (ex_label_t *label)
+{
+	sblock_t   *sblock;
+	ex_label_t **l;
+
+	if (!label)
+		return;
+
+	sblock = label->dest;
+	for (l = &sblock->labels; *l; l = &(*l)->next) {
+		if (*l == label) {
+			*l = label->next;
+			label->next = 0;
+			break;
+		}
+	}
+}
+
+static void
+remove_dead_blocks (sblock_t *blocks)
+{
+	sblock_t   *sblock;
+	int         did_something;
+
+	if (!blocks)
+		return;
+
+	do {
+		did_something = 0;
+		blocks->reachable = 1;
+		for (sblock = blocks; sblock->next; sblock = sblock->next) {
+			sblock_t   *sb = sblock->next;
+			statement_t *s;
+
+			if (sb->labels) {
+				sb->reachable = 1;
+				continue;
+			}
+			s = (statement_t *) sblock->tail;
+			if (strcmp (s->opcode, "<GOTO>")
+				&& strncmp (s->opcode, "<RETURN", 7)) {
+				sb->reachable = 1;
+				continue;
+			}
+			sb->reachable = 0;
+		}
+		for (sblock = blocks; sblock; sblock = sblock->next) {
+			while (sblock->next && !sblock->next->reachable) {
+				sblock_t   *sb = sblock->next;
+				statement_t *s;
+				ex_label_t *label = 0;
+
+				notice (0, "removing dead block %p", sb);
+				sblock->next = sb->next;
+				s = (statement_t *) sblock->tail;
+				if (!strcmp (s->opcode, "<GOTO>"))
+					label = s->opa->o.label;
+				else if (!strncmp (s->opcode, "<IF", 3))
+					label = s->opb->o.label;
+				remove_label_from_dest (label);
+				did_something = 1;
+			}
+		}
+	} while (did_something);
+}
+
 sblock_t *
 make_statements (expr_t *e)
 {
 	sblock_t   *sblock = new_sblock ();
 //	print_expr (e);
 	statement_slist (sblock, e);
+//	print_flow (sblock);
+	remove_dead_blocks (sblock);
 //	print_flow (sblock);
 	return sblock;
 }
