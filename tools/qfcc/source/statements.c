@@ -171,6 +171,38 @@ new_operand (op_type_e op)
 	return operand;
 }
 
+static void
+free_operand (operand_t *op)
+{
+	op->next = free_operands;
+	free_operands = op;
+}
+
+static void
+free_statement (statement_t *s)
+{
+	if (s->opa)
+		free_operand (s->opa);
+	if (s->opb)
+		free_operand (s->opb);
+	if (s->opc)
+		free_operand (s->opc);
+	s->next = free_statements;
+	free_statements = s;
+}
+
+static void
+free_sblock (sblock_t *sblock)
+{
+	while (sblock->statements) {
+		statement_t *s = sblock->statements;
+		sblock->statements = s->next;
+		free_statement (s);
+	}
+	sblock->next = free_sblocks;
+	free_sblocks = sblock;
+}
+
 static const char *
 convert_op (int op)
 {
@@ -831,7 +863,10 @@ remove_dead_blocks (sblock_t *blocks)
 				ex_label_t *label = 0;
 
 				notice (0, "removing dead block %p", sb);
+
 				sblock->next = sb->next;
+				free_sblock (sb);
+
 				s = (statement_t *) sblock->tail;
 				if (!strcmp (s->opcode, "<GOTO>"))
 					label = s->opa->o.label;
