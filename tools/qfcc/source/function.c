@@ -617,7 +617,7 @@ emit_function (function_t *f, expr_t *e)
 	//statement_t *s;
 
 	f->code = pr.code->size;
-	printf ("%s %d\n", f->name, f->code);
+	//printf ("%s %d\n", f->name, f->code);
 	sblock = make_statements (e);
 	//for (/**/; sblock; sblock = sblock->next) {
 	//	printf ("block %p\n", sblock);

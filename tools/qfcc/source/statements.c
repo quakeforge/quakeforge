@@ -43,6 +43,7 @@
 
 #include "diagnostic.h"
 #include "expr.h"
+#include "function.h"
 #include "options.h"
 #include "qc-parse.h"
 #include "qfcc.h"
@@ -843,6 +844,40 @@ remove_dead_blocks (sblock_t *blocks)
 	} while (did_something);
 }
 
+static void
+check_final_block (sblock_t *sblock)
+{
+	statement_t *s;
+	symbol_t   *return_symbol = 0;
+	operand_t  *return_operand = 0;
+	const char *return_opcode = "<RETURN_V>";
+
+	if (!sblock)
+		return;
+	while (sblock->next)
+		sblock = sblock->next;
+	s = (statement_t *) sblock->tail;
+	if (!strcmp (s->opcode, "<GOTO>"))
+		return;					// the end of function is the end of a loop
+	if (!strncmp (s->opcode, "<RETURN", 7))
+		return;
+	if (current_func->sym->type->t.func.type != &type_void)
+		warning (0, "control reaches end of non-void function");
+	if (options.traditional || options.code.progsversion == PROG_ID_VERSION) {
+		expr_t     *e = new_ret_expr (current_func->sym->type->t.func.type);
+		return_symbol = e->e.expr.e1->e.expr.e1->e.symbol;//FIXME ick
+		return_opcode = "<RETURN>";
+	}
+	if (return_symbol) {
+		return_operand = new_operand (op_symbol);
+		return_operand->type = ev_void;
+		return_operand->o.symbol = return_symbol;
+	}
+	s = new_statement (return_opcode);
+	s->opa = return_operand;
+	sblock_add_statement (sblock, s);
+}
+
 sblock_t *
 make_statements (expr_t *e)
 {
@@ -851,6 +886,7 @@ make_statements (expr_t *e)
 	statement_slist (sblock, e);
 //	print_flow (sblock);
 	remove_dead_blocks (sblock);
+	check_final_block (sblock);
 //	print_flow (sblock);
 	return sblock;
 }
