@@ -665,6 +665,8 @@ statement_label (sblock_t *sblock, expr_t *e)
 		sblock = sblock->next;
 	}
 	e->e.label.dest = sblock;
+	e->e.label.next = sblock->labels;
+	sblock->labels = &e->e.label;
 	return sblock;
 }
 
