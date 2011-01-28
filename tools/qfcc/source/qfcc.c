@@ -377,13 +377,12 @@ finish_compilation (void)
 	def_t      *d;
 	qboolean    errors = false;
 	function_t *f;
-	//FIXME def_t      *def;
+	def_t      *def;
 	expr_t      e;
-	//FIXME ex_label_t *l;
 	dfunction_t *df;
 
 	// check to make sure all functions prototyped have code
-	if (options.warnings.undefined_function)
+	if (options.warnings.undefined_function) {
 		for (d = pr.near_data->defs; d; d = d->next) {
 			if (d->type->type == ev_func && d->global) {
 				// function args ok
@@ -395,20 +394,23 @@ finish_compilation (void)
 				//FIXME }
 			}
 		}
-#if 0 //FIXME
+	}
+
 	for (d = pr.near_data->defs; d; d = d->next) {
 		if (d->external && d->relocs) {
+#if 0 //FIXME
 			if (strcmp (d->name, ".self") == 0) {
 				get_def (d->type, ".self", pr.scope, st_global);
 			} else if (strcmp (d->name, ".this") == 0) {
 				get_def (d->type, ".this", pr.scope, st_global);
 			} else {
+#endif
 				errors = true;
 				error (0, "undefined global %s", d->name);
-			}
+//FIXME			}
 		}
 	}
-#endif
+
 	if (errors)
 		return !errors;
 
@@ -426,16 +428,17 @@ finish_compilation (void)
 		//FIXME 			   st_global));
 	}
 
-	//FIXME for (def = pr.scope->head; def; def = def->def_next)
-	//FIXME 	relocate_refs (def->refs, def->ofs);
+	for (def = pr.near_data->defs; def; def = def->next)
+		relocate_refs (def->relocs, def->offset);
 
 	pr.functions = calloc (pr.num_functions + 1, sizeof (dfunction_t));
 	for (df = pr.functions + 1, f = pr.func_head; f; df++, f = f->next) {
+		relocate_refs (f->refs, f->function_num);
 		df->s_name = f->s_name;
 		df->s_file = f->s_file;
 		df->numparms = function_parms (f, df->parm_size);
-		//FIXME if (f->scope)
-		//FIXME 	df->locals = f->scope->space->size;
+		if (f->symtab && f->symtab->space)
+			df->locals = f->symtab->space->size;
 		if (f->builtin) {
 			df->first_statement = -f->builtin;
 			continue;
@@ -444,28 +447,28 @@ finish_compilation (void)
 			continue;
 		df->first_statement = f->code;
 		if (options.code.local_merging) {
-			//FIXME if (f->scope->space->size > num_localdefs) {
-			//FIXME 	num_localdefs = f->scope->space->size;
-			//FIXME 	big_function = f->def->name;
-			//FIXME }
+			if (f->symtab->space->size > num_localdefs) {
+				num_localdefs = f->symtab->space->size;
+				big_function = f->def->name;
+			}
 			df->parm_start = pr.near_data->size;
 		} else {
-			//FIXME df->parm_start = defspace_new_loc (pr.near_data,
-			//FIXME 								   f->scope->space->size);
-			//FIXME num_localdefs += f->scope->space->size;
+			df->parm_start = defspace_new_loc (pr.near_data,
+											   f->symtab->space->size);
+			num_localdefs += f->symtab->space->size;
 		}
-		//FIXME for (def = f->scope->head; def; def = def->def_next) {
-		//FIXME 	if (!def->local)
-		//FIXME 		continue;
-		//FIXME 	def->ofs += df->parm_start;
-		//FIXME 	relocate_refs (def->refs, def->ofs);
-		//FIXME }
+		for (def = f->symtab->space->defs; def; def = def->next) {
+			if (!def->local)
+				continue;
+			def->offset += df->parm_start;
+			relocate_refs (def->relocs, def->offset);
+		}
 	}
 	if (options.code.local_merging) {
-		int         ofs;
-		for (ofs = defspace_new_loc (pr.near_data, num_localdefs);
-			 ofs < pr.near_data->size; ofs++)
-			pr.near_data->data[ofs].integer_var = 0;
+		int         offset;
+		for (offset = defspace_new_loc (pr.near_data, num_localdefs);
+			 offset < pr.near_data->size; offset++)
+			pr.near_data->data[offset].integer_var = 0;
 	}
 
 	return !errors;
