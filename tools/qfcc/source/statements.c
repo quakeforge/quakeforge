@@ -735,9 +735,9 @@ statement_expr (sblock_t *sblock, expr_t *e)
 			break;
 		default:
 			if (e->e.expr.op < 256)
-				notice (e, "e %c", e->e.expr.op);
+				debug (e, "e %c", e->e.expr.op);
 			else
-				notice (e, "e %d", e->e.expr.op);
+				debug (e, "e %d", e->e.expr.op);
 			if (options.warnings.executable)
 				warning (e, "Non-executable statement;"
 						 " executing programmer instead.");
@@ -753,7 +753,7 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 
 	switch (e->e.expr.op) {
 		case 'r':
-			notice (e, "RETURN");
+			debug (e, "RETURN");
 			opcode = "<RETURN>";
 			if (!e->e.expr.e1 && !options.traditional)
 				opcode = "<RETURN_V>";
@@ -768,7 +768,7 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 			sblock = statement_branch (sblock, e);
 			break;
 		default:
-			notice (e, "e ue %d", e->e.expr.op);
+			debug (e, "e ue %d", e->e.expr.op);
 			if (options.warnings.executable)
 				warning (e, "Non-executable statement;"
 						 " executing programmer instead.");
@@ -862,7 +862,7 @@ remove_dead_blocks (sblock_t *blocks)
 				statement_t *s;
 				ex_label_t *label = 0;
 
-				notice (0, "removing dead block %p", sb);
+				debug (0, "removing dead block %p", sb);
 
 				sblock->next = sb->next;
 				free_sblock (sb);

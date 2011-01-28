@@ -48,6 +48,8 @@ struct expr_s *warning (struct expr_s *e, const char *fmt, ...)
 	__attribute__ ((format (printf, 2, 3)));
 struct expr_s *notice (struct expr_s *e, const char *fmt, ...)
 	__attribute__ ((format (printf, 2, 3)));
+void debug (struct expr_s *e, const char *mft, ...)
+	__attribute__ ((format (printf, 2, 3)));
 
 //@}
 

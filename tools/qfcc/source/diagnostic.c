@@ -96,6 +96,33 @@ _warning (expr_t *e, const char *fmt, va_list args)
 	fputs ("\n", stderr);
 }
 
+void
+debug (expr_t *e, const char *fmt, ...)
+{
+	va_list     args;
+
+	if (options.verbosity < 1)
+		return;
+
+	va_start (args, fmt);
+	if (options.notices.promote) {
+		_warning (e, fmt, args);
+	} else {
+		string_t    file = pr.source_file;
+		int         line = pr.source_line;
+
+		report_function (e);
+		if (e) {
+			file = e->file;
+			line = e->line;
+		}
+		fprintf (stderr, "%s:%d: debug: ", GETSTR (file), line);
+		vfprintf (stderr, fmt, args);
+		fputs ("\n", stderr);
+	}
+	va_end (args);
+}
+
 expr_t *
 notice (expr_t *e, const char *fmt, ...)
 {
