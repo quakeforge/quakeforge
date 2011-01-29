@@ -414,9 +414,13 @@ emit_methods_list_item (def_t *def, void *data, int index)
 	method_t   *m;
 	pr_method_t *meth;
 
-	if (def->type != &type_method_description)
-		internal_error (0, "%s: expected method_descripting def",
+#if 0
+	//FIXME the type is dynamic, so need a way to pass it before it cn be
+	//checked
+	if (def->type != &XXX)
+		internal_error (0, "%s: expected XXX def",
 						__FUNCTION__);
+#endif
 	if (index < 0 || index >= methods->count)
 		internal_error (0, "%s: out of bounds index: %d %d",
 						__FUNCTION__, index, methods->count);
