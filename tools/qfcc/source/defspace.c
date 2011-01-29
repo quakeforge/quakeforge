@@ -133,7 +133,7 @@ defspace_free_loc (defspace_t *space, int ofs, int size)
 	if (ofs < 0 || ofs >= space->size || ofs + size > space->size)
 		internal_error (0, "defspace: freeing bogus location %d:%d",
 						ofs, size);
-	for (l = &space->free_locs; l; l = &(*l)->next) {
+	for (l = &space->free_locs; *l; l = &(*l)->next) {
 		loc = *l;
 		// location to be freed is below the free block
 		// need to create a new free block
