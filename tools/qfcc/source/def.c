@@ -108,9 +108,9 @@ new_def (const char *name, type_t *type, defspace_t *space,
 
 	def->name = name ? save_string (name) : 0;
 	def->type = type;
-	def->space = space;
 
 	if (storage != st_extern) {
+		def->space = space;
 		*space->def_tail = def;
 		space->def_tail = &def->next;
 		def->offset = defspace_new_loc (space, type_size (type));
