@@ -227,6 +227,8 @@ static keyword_t keywords[] = {
 	{"mod",			MULOP,		0},
 	{"and",			MULOP,		0},
 	{"not",			NOT,		0},
+
+	{"return",		RETURN,		0},
 };
 
 static const char *

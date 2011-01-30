@@ -126,6 +126,7 @@ int yylex (void);
 
 %token	PROGRAM VAR ARRAY OF FUNCTION PROCEDURE PBEGIN END IF THEN ELSE
 %token	WHILE DO RANGE ASSIGNOP NOT ELLIPSIS
+%token	RETURN
 
 %type	<type>		type standard_type
 %type	<symbol>	program_head identifier_list subprogram_head
@@ -378,6 +379,10 @@ statement
 			$$ = build_while_statement ($2, $4,
 										new_label_expr (),
 										new_label_expr ());
+		}
+	| RETURN
+		{
+			$$ = return_expr (current_func, 0);
 		}
 	;
 
