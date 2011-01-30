@@ -129,6 +129,7 @@ int yylex (void);
 
 %type	<type>		type standard_type
 %type	<symbol>	program_head identifier_list subprogram_head
+%type	<symtab>	param_scope
 %type	<param>		arguments parameter_list
 %type	<expr>		compound_statement optional_statements statement_list
 %type	<expr>		statement procedure_statement
@@ -142,6 +143,20 @@ function_t *current_func;
 struct class_type_s *current_class;
 expr_t  *local_expr;
 param_t *current_params;
+
+/*	When defining a new symbol, already existing symbols must be in a
+	different scope. However, when they are in a different scope, we want a
+	truly new symbol.
+*/
+static symbol_t *
+check_redefined (symbol_t *sym)
+{
+	if (sym->table == current_symtab)
+		error (0, "%s redefined", sym->name);
+	if (sym->table)		// truly new symbols are not in any symbol table
+		sym = new_symbol (sym->name);
+	return sym;
+}
 %}
 
 %%
@@ -175,10 +190,10 @@ program
 	;
 
 program_head
-	: PROGRAM ID '(' opt_identifier_list ')' ';'
+	: PROGRAM								{ current_symtab = pr.symtab; }
+	  ID '(' opt_identifier_list ')' ';'
 		{
-			$$ = $2;
-			current_symtab = pr.symtab;
+			$$ = $3;
 
 			$$->type = parse_params (&type_void, 0);
 			$$ = function_symbol ($$, 0, 1);
@@ -191,11 +206,12 @@ opt_identifier_list
 	;
 
 identifier_list
-	: ID
+	: ID									{ $$ = check_redefined ($1); }
 	| identifier_list ',' ID
 		{
 			symbol_t  **s;
 			$$ = $1;
+			$3 = check_redefined ($3);
 			for (s = &$$; *s; s = &(*s)->next)
 				;
 			*s = $3;
@@ -279,13 +295,26 @@ subprogram_head
 	;
 
 arguments
-	: '(' parameter_list ')'				{ $$ = $2; }
-	| '(' parameter_list ';' ELLIPSIS ')'
+	: '(' param_scope parameter_list ')'
 		{
-			$$ = param_append_identifiers ($2, 0, 0);
+			$$ = $3;
+			current_symtab = $2;
+		}
+	| '(' param_scope parameter_list ';' ELLIPSIS ')'
+		{
+			$$ = param_append_identifiers ($3, 0, 0);
+			current_symtab = $2;
 		}
 	| '(' ELLIPSIS ')'						{ $$ = new_param (0, 0, 0); }
 	| /* emtpy */							{ $$ = 0; }
+	;
+
+param_scope
+	: /* empty */
+		{
+			$$ = current_symtab;
+			current_symtab = new_symtab (current_symtab, stab_local);
+		}
 	;
 
 parameter_list
