@@ -77,6 +77,7 @@ type_t      type_integer = { ev_integer, "integer" };
 type_t      type_short = { ev_short, "short" };
 
 type_t     *type_nil;
+type_t     *type_default;
 
 // these will be built up further
 type_t      type_id = { ev_pointer, "id" };
@@ -857,6 +858,7 @@ init_types (void)
 	};
 
 	type_nil = &type_quaternion;
+	type_default = &type_integer;
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		// vector can't be part of .zero for v6 progs because for v6 progs,
 		// .zero is only one word wide.
@@ -865,6 +867,7 @@ init_types (void)
 		zero_struct[8].name = 0;
 		param_struct[8].name = 0;
 		type_nil = &type_vector;
+		type_default = &type_float;
 	}
 
 	make_structure (0, 'u', zero_struct, &type_zero);

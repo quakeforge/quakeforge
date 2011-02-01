@@ -89,6 +89,7 @@ extern	type_t	type_integer;
 extern	type_t	type_short;
 
 extern	type_t	*type_nil;		// for passing nil into ...
+extern	type_t	*type_default;	// default type (float or int)
 
 extern	type_t	type_id;
 extern	type_t	type_Class;
