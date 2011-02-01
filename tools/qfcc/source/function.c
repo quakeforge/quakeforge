@@ -181,6 +181,32 @@ parse_params (type_t *type, param_t *parms)
 	return find_type (&new);
 }
 
+param_t *
+check_params (param_t *params)
+{
+	int         num = 1;
+	param_t    *p = params;
+	if (!params)
+		return 0;
+	while (p) {
+		if (p->type == &type_void) {
+			if (p->name) {
+				error (0, "parameter %d ('%s') has incomplete type", num,
+					   p->name);
+				p->type = type_default;
+			} else if (num > 1 || p->next) {
+				error (0, "'void' must be the only parameter");
+				p->name = "void";
+			} else {
+				// this is a void function
+				return 0;
+			}
+		}
+		p = p->next;
+	}
+	return params;
+}
+
 static overloaded_function_t *
 get_function (const char *name, type_t *type, int overload, int create)
 {
