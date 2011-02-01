@@ -527,11 +527,12 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent)
 {
 	if (sym->sy_type != sy_func) {
 		error (0, "%s is not a function", sym->name);
-		return 0;
+		sym = new_symbol_type (sym->name, &type_function);
+		sym = function_symbol (sym, 1, 1);
 	}
 	if (sym->s.func && sym->s.func->def && sym->s.func->def->initialized) {
 		error (0, "%s redefined", sym->name);
-		return 0;
+		sym = function_symbol (new_symbol (sym->name), 1, 1);
 	}
 	make_function (sym, nicename, current_storage);
 	if (!sym->s.func->def->external) {
@@ -560,6 +561,8 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent)
 function_t *
 build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 {
+	if (fsym->sy_type != sy_func)	// probably in error recovery
+		return 0;
 	build_function (fsym->s.func);
 	if (state_expr) {
 		state_expr->next = statements;
