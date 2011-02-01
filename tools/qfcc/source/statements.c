@@ -45,13 +45,13 @@
 #include "expr.h"
 #include "function.h"
 #include "options.h"
-#include "qc-parse.h"
 #include "qfcc.h"
 #include "reloc.h"
 #include "statements.h"
 #include "strpool.h"
 #include "symtab.h"
 #include "type.h"
+#include "qc-parse.h"
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 

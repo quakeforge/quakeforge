@@ -48,10 +48,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "diagnostic.h"
 #include "expr.h"
 #include "options.h"
-#include "qc-parse.h"
 #include "qfcc.h"
 #include "strpool.h"
 #include "type.h"
+#include "qc-parse.h"
 
 static expr_t *
 cf_cast_expr (type_t *type, expr_t *e)

@@ -34,6 +34,8 @@
 
 #include "QF/pr_comp.h"
 
+#include "def.h"
+
 typedef struct ty_func_s {
 	struct type_s *type;
 	int         num_params;
@@ -73,6 +75,18 @@ typedef struct type_s {
 	} t;
 	struct type_s *next;
 } type_t;
+
+typedef struct {
+	type_t     *type;
+	storage_class_t storage;
+	unsigned    multi_type:1;
+	unsigned    multi_store:1;
+	unsigned    is_signed:1;
+	unsigned    is_unsigned:1;
+	unsigned    is_short:1;
+	unsigned    is_long:1;
+	unsigned    is_typedef:1;
+} specifier_t;
 
 extern	type_t	type_invalid;
 extern	type_t	type_void;
