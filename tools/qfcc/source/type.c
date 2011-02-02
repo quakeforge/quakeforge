@@ -120,6 +120,42 @@ new_type (void)
 	return type;
 }
 
+type_t *
+append_type (type_t *type, type_t *new)
+{
+	type_t    **t = &type;
+
+	while (*t) {
+		switch ((*t)->type) {
+			case ev_void:
+			case ev_string:
+			case ev_float:
+			case ev_vector:
+			case ev_entity:
+			case ev_type_count:
+			case ev_quat:
+			case ev_integer:
+			case ev_short:
+				internal_error (0, "append to basic type");
+			case ev_field:
+			case ev_pointer:
+				t = &(*t)->t.fldptr.type;
+				break;
+			case ev_func:
+				t = &(*t)->t.func.type;
+				break;
+			case ev_invalid:
+				if ((*t)->ty == ty_array)
+					t = &(*t)->t.array.type;
+				else
+					internal_error (0, "append to object type");
+				break;
+		}
+	}
+	*t = new;
+	return type;
+}
+
 static int
 types_same (type_t *a, type_t *b)
 {

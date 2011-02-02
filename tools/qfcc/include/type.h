@@ -128,6 +128,18 @@ extern struct symtab_s *quaternion_struct;
 struct dstring_s;
 
 type_t *new_type (void);
+
+/**	Append a type to the end of a type chain.
+
+	The type chain must be made up of only field, pointer, function and array
+	types, as other types do not have auxiliary type fields.
+
+	\param type		The type chain to which the type will be appended.
+	\param new		The type to be appended. May be any type.
+	\return			The type chain with the type appended at the deepest
+					level.
+*/
+type_t *append_type (type_t *type, type_t *new);
 type_t *find_type (type_t *new);
 void new_typedef (const char *name, type_t *type);
 type_t *field_type (type_t *aux);
