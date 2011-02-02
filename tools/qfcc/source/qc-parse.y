@@ -463,7 +463,7 @@ struct_specifier
 
 			$$ = make_spec (build_struct ($1, $2, symtab, 0)->type, 0, 0);
 		}
-	| STRUCT tag ';'
+	| STRUCT tag
 		{
 			$$ = make_spec (find_struct ($1, $2, 0)->type, 0, 0);
 		}
