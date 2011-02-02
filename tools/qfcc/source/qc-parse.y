@@ -158,7 +158,7 @@ int yylex (void);
 
 %type	<param>		function_params var_list param_declaration
 %type	<symbol>	var_decl function_decl
-%type	<spec>		abstract_decl abs_decl
+%type	<symbol>	abstract_decl abs_decl
 
 %type	<symbol>	tag optional_tag
 %type	<spec>		struct_specifier struct_def struct_decl
@@ -284,7 +284,7 @@ spec_merge (specifier_t spec, specifier_t new)
 
 %}
 
-//%expect 0
+%expect 0
 
 %%
 
@@ -317,8 +317,11 @@ external_def
 function_body
 	: optional_state_expr
 		{
+			symbol_t   *sym = $<symbol>0;
+
+			sym->type = append_type (sym->type, $<spec>-1.type);
 			$<symtab>$ = current_symtab;
-			current_func = begin_function ($<symbol>0, 0, current_symtab);
+			current_func = begin_function (sym, 0, current_symtab);
 			current_symtab = current_func->symtab;
 		}
 	  compound_statement
@@ -328,7 +331,10 @@ function_body
 		}
 	| '=' '#' expr ';'
 		{
-			build_builtin_function ($<symbol>0, $3);
+			symbol_t   *sym = $<symbol>0;
+
+			sym->type = append_type (sym->type, $<spec>-1.type);
+			build_builtin_function (sym, $3);
 		}
 	;
 
@@ -339,6 +345,10 @@ external_decl_list
 
 external_decl
 	: var_decl
+		{
+			$1->type = append_type ($1->type, $<spec>0.type);
+			print_type ($1->type); puts ("\n");
+		}
 	| var_decl '=' var_initializer
 	| function_decl
 	;
@@ -494,51 +504,54 @@ struct_decl
 	| ':' expr				%prec COMMA		{}
 	;
 
+//FIXME function overloading
 var_decl
 	: NAME			%prec COMMA
 		{
 			$$ = check_redefined ($1);
-			$$->type = $<spec>0.type;
+			$$->type = 0;
 		}
 	| var_decl function_params
 		{
-			$$->type = parse_params ($1->type, $2);
+			$$->type = append_type ($$->type, parse_params (0, $2));
+			print_type ($$->type);
 		}
 	| var_decl array_decl
 		{
-			$$->type = array_type ($1->type, $2);
+			$$->type = append_type ($$->type, array_type (0, $2));
 		}
-	| '*' cs var_decl	%prec UNARY
+	| '*' var_decl	%prec UNARY
 		{
-			$$ = $3;
-			$$->type = pointer_type ($3->type);
+			$$ = $2;
+			$$->type = append_type ($$->type, pointer_type (0));
 		}
-	| '(' cs var_decl ')'						{ $$ = $3; }
+	| '(' var_decl ')'						{ $$ = $2; }
 	;
 
+//FIXME function overloading
 function_decl
-	: '*' cs function_decl
+	: '*' function_decl
 		{
-			$$ = $3;
-			$$->type = pointer_type ($<spec>2.type);
+			$$ = $2;
+			$$->type = append_type ($$->type, pointer_type (0));
 		}
 	| function_decl array_decl
 		{
 			$$ = $1;
-			$$->type = array_type ($1->type, $2);
+			$$->type = append_type ($$->type, array_type (0, $2));
 		}
-	| '(' cs function_decl ')'					{ $$ = $3; }
+	| '(' function_decl ')'					{ $$ = $2; }
 	| function_decl function_params
 		{
 			$$ = $1;
 			$$->params = $2;
-			$$->type = parse_params ($<spec>0.type, $2);
+			$$->type = append_type ($$->type, parse_params (0, $2));
 		}
 	| NAME function_params
 		{
 			$$ = check_redefined ($1);
 			$$->params = $2;
-			$$->type = parse_params ($<spec>0.type, $2);
+			$$->type = parse_params (0, $2);
 			$$ = function_symbol ($$, 0, 1);
 		}
 	;
@@ -564,40 +577,51 @@ var_list
 	;
 
 param_declaration
-	: type var_decl			{ $$ = new_param (0, $2->type, $2->name); }
-	| abstract_decl			{ $$ = new_param (0, $1.type, 0); }
+	: type var_decl
+		{
+			$2->type = append_type ($2->type, $1.type);
+			$$ = new_param (0, $2->type, $2->name);
+		}
+	| abstract_decl			{ $$ = new_param (0, $1->type, 0); }
 	| ELLIPSIS				{ $$ = new_param (0, 0, 0); }
 	;
 
 abstract_decl
-	: type abs_decl			{ $$ = $2; }
-	| TYPE_NAME abs_decl	{ $$ = $2; }
+	: type abs_decl
+		{
+			$$ = $2;
+			$$->type = append_type ($$->type, $1.type);
+		}
+	| TYPE_NAME abs_decl
+		{
+			$$ = $2;
+			$$->type = append_type ($$->type, $1->type);
+		}
 	;
 
+//FIXME type construction is inside-out
 abs_decl
-	: /* empty */			{ $$ = $<spec>0; }
-	| '(' cs abs_decl ')' function_params
+	: /* empty */			{ $$ = new_symbol (""); }
+	| '(' abs_decl ')' function_params
 		{
-			$$ = $3;
-			$$.type = parse_params ($3.type, $5); 
+			$$ = $2;
+			$$->type = append_type ($$->type, parse_params (0, $4)); 
 		}
-	| '*' cs abs_decl
+	| '*' abs_decl
 		{
-			$$ = $3;
-			$$.type = pointer_type ($3.type);
+			$$ = $2;
+			$$->type = append_type ($$->type, pointer_type (0));
 		}
 	| abs_decl array_decl
 		{
 			$$ = $1;
-			$$.type = array_type ($1.type, $2);
+			$$->type = append_type ($$->type, array_type (0, $2));
 		}
-	| '(' cs abs_decl ')'
+	| '(' abs_decl ')'
 		{
-			$$ = $3;
+			$$ = $2;
 		}
 	;
-
-cs : { $<spec>$ = $<spec>0; } ;
 
 array_decl
 	: '[' fexpr ']'
