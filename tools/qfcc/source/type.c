@@ -117,7 +117,41 @@ new_type (void)
 {
 	type_t     *type;
 	ALLOC (1024, type_t, types, type);
+	type->freeable = 1;
 	return type;
+}
+
+void
+free_type (type_t *type)
+{
+	if (!type || !type->freeable)
+		return;
+	switch (type->type) {
+		case ev_void:
+		case ev_string:
+		case ev_float:
+		case ev_vector:
+		case ev_entity:
+		case ev_type_count:
+		case ev_quat:
+		case ev_integer:
+		case ev_short:
+			break;
+		case ev_field:
+		case ev_pointer:
+			free_type (type->t.fldptr.type);
+			break;
+		case ev_func:
+			free_type (type->t.func.type);
+			break;
+		case ev_invalid:
+			if (type->ty == ty_array)
+				free_type (type->t.array.type);
+			break;
+	}
+	memset (type, 0, sizeof (type));
+	type->next = free_types;
+	free_types = type;
 }
 
 type_t *
@@ -226,6 +260,7 @@ find_type (type_t *type)
 	// allocate a new one
 	check = new_type ();
 	*check = *type;
+	check->freeable = 0;
 
 	chain_type (check);
 

@@ -74,6 +74,7 @@ typedef struct type_s {
 		struct class_s *class;
 	} t;
 	struct type_s *next;
+	int         freeable;
 } type_t;
 
 typedef struct {
@@ -128,6 +129,7 @@ extern struct symtab_s *quaternion_struct;
 struct dstring_s;
 
 type_t *new_type (void);
+void free_type (type_t *type);
 
 /**	Append a type to the end of a type chain.
 
