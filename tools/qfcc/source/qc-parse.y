@@ -346,8 +346,14 @@ external_decl_list
 external_decl
 	: var_decl
 		{
+			specifier_t spec = $<spec>0;
+
 			$1->type = append_type ($1->type, $<spec>0.type);
-			print_type ($1->type); puts ("\n");
+			if (spec.is_typedef) {
+				$1->sy_type = sy_type;
+			} else {
+			}
+			symtab_addsymbol (current_symtab, $1);
 		}
 	| var_decl '=' var_initializer
 	| function_decl
