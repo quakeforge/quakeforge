@@ -588,6 +588,11 @@ param_declaration
 			$2->type = append_type ($2->type, $1.type);
 			$$ = new_param (0, $2->type, $2->name);
 		}
+	| type_name_or_class_name var_decl
+		{
+			$2->type = append_type ($2->type, $1->type);
+			$$ = new_param (0, $2->type, $2->name);
+		}
 	| abstract_decl			{ $$ = new_param (0, $1->type, 0); }
 	| ELLIPSIS				{ $$ = new_param (0, 0, 0); }
 	;
@@ -598,7 +603,7 @@ abstract_decl
 			$$ = $2;
 			$$->type = append_type ($$->type, $1.type);
 		}
-	| TYPE_NAME abs_decl
+	| type_name_or_class_name abs_decl
 		{
 			$$ = $2;
 			$$->type = append_type ($$->type, $1->type);
