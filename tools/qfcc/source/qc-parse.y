@@ -464,14 +464,23 @@ struct_specifier
 		}
 	  struct_defs '}'
 		{
+			symbol_t   *sym;
 			symtab_t   *symtab = current_symtab;
 			current_symtab = symtab->parent;
 
-			$$ = make_spec (build_struct ($1, $2, symtab, 0)->type, 0, 0);
+			sym = build_struct ($1, $2, symtab, 0);
+			$$ = make_spec (sym->type, 0, 0);
+			if (!sym->table)
+				symtab_addsymbol (current_symtab, sym);
 		}
 	| STRUCT tag
 		{
-			$$ = make_spec (find_struct ($1, $2, 0)->type, 0, 0);
+			symbol_t   *sym;
+
+			sym = find_struct ($1, $2, 0);
+			$$ = make_spec (sym->type, 0, 0);
+			if (!sym->table)
+				symtab_addsymbol (current_symtab, sym);
 		}
 	;
 
