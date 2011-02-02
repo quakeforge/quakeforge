@@ -391,6 +391,9 @@ type_name_or_class_name
 specifiers
 	: type_specifier_or_storage_class
 	| specifiers type_specifier_or_storage_class
+		{
+			$$ = spec_merge ($1, $2);
+		}
 	;
 
 type
