@@ -178,7 +178,12 @@ parse_params (type_t *type, param_t *parms)
 		}
 	}
 	//print_type (&new); puts("");
-	return find_type (&new);
+	//return find_type (&new);
+	{
+		type_t *n = new_type ();
+		*n = new;
+		return n;
+	}
 }
 
 param_t *
