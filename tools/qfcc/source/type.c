@@ -409,11 +409,13 @@ print_type_str (dstring_t *str, type_t *type)
 					{
 						const char *tag = "struct";
 
-						if (type->t.symtab->type == stab_union)
-							tag = "union";
-						else if (type->t.symtab->type == stab_union)
-							tag = "enum";
-						dasprintf (str, " %s %s", tag, type->name);//FIXME
+						if (type->t.symtab) {//FIXME
+							if (type->t.symtab->type == stab_union)
+								tag = "union";
+							else if (type->t.symtab->type == stab_union)
+								tag = "enum";
+						}
+						dasprintf (str, " %s %s", tag, type->name);
 					}
 					break;
 				case ty_array:
