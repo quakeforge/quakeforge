@@ -171,7 +171,7 @@ int yylex (void);
 
 %type	<expr>		const string
 
-%type	<spec>		ivar_decl ivar_declarator def_item def_list
+%type	<spec>		ivar_decl def_item def_list
 %type	<spec>		ivars
 %type	<param>		param param_list
 %type	<symbol>	methoddef
@@ -1401,18 +1401,8 @@ ivar_decl
 	;
 
 ivars
-	: ivar_declarator
-	| ivars ',' { $<spec>$ = $<spec>0; } ivar_declarator
-	;
-
-ivar_declarator
-	: identifier
-		{
-			$1 = check_redefined ($1);
-			$1->type = $<spec>0.type;
-			$1->visibility = current_visibility;
-			symtab_addsymbol (current_symtab, $1);
-		}
+	: struct_decl
+	| ivars ',' { $<spec>$ = $<spec>0; } struct_decl
 	;
 
 methoddef
