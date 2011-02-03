@@ -248,7 +248,8 @@ check_undefined (symbol_t *sym)
 }
 
 static specifier_t
-make_spec (type_t *type, storage_class_t storage, int is_typedef)
+make_spec (type_t *type, storage_class_t storage, int is_typedef,
+		   int is_overload)
 {
 	specifier_t spec;
 
@@ -256,6 +257,7 @@ make_spec (type_t *type, storage_class_t storage, int is_typedef)
 	spec.type = type;
 	spec.storage = storage;
 	spec.is_typedef = is_typedef;
+	spec.is_overload = is_overload;
 	if (spec.storage && spec.is_typedef)
 		internal_error (0, "setting both storage and is_typedef");
 	return spec;
@@ -279,6 +281,7 @@ spec_merge (specifier_t spec, specifier_t new)
 		spec.storage = new.storage;
 		spec.is_typedef = new.is_typedef;
 	}
+	spec.is_overload |= new.is_overload;
 	return spec;
 }
 
@@ -307,6 +310,7 @@ external_def
 	| optional_specifiers function_params
 		{
 			$<spec>$.type = parse_params ($1.type, $2), st_global, 0;
+			$<spec>$.type = find_type ($<spec>$.type);
 		}
 	  function_def_list
 	| optional_specifiers function_decl function_body
@@ -319,7 +323,8 @@ function_body
 		{
 			symbol_t   *sym = $<symbol>0;
 
-			sym->type = append_type (sym->type, $<spec>-1.type);
+			sym->type = find_type (append_type (sym->type, $<spec>-1.type));
+			sym = function_symbol (sym, $<spec>-1.is_overload, 1);
 			$<symtab>$ = current_symtab;
 			current_func = begin_function (sym, 0, current_symtab);
 			current_symtab = current_func->symtab;
@@ -333,7 +338,8 @@ function_body
 		{
 			symbol_t   *sym = $<symbol>0;
 
-			sym->type = append_type (sym->type, $<spec>-1.type);
+			sym->type = find_type (append_type (sym->type, $<spec>-1.type));
+			sym = function_symbol (sym, $<spec>-1.is_overload, 1);
 			build_builtin_function (sym, $3);
 		}
 	;
@@ -348,7 +354,7 @@ external_decl
 		{
 			specifier_t spec = $<spec>0;
 
-			$1->type = append_type ($1->type, $<spec>0.type);
+			$1->type = find_type (append_type ($1->type, $<spec>0.type));
 			if (spec.is_typedef) {
 				$1->sy_type = sy_type;
 			} else {
@@ -357,29 +363,36 @@ external_decl
 		}
 	| var_decl '=' var_initializer
 	| function_decl
+		{
+			specifier_t spec = $<spec>0;
+			$1->type = find_type (append_type ($1->type, spec.type));
+			$1 = function_symbol ($1, spec.is_overload, 1);
+			make_function ($1, 0, spec.storage);
+		}
 	;
 
 storage_class
-	: EXTERN					{ $$ = make_spec (0, st_extern, 0); }
-	| STATIC					{ $$ = make_spec (0, st_static, 0); }
-	| SYSTEM					{ $$ = make_spec (0, st_system, 0); }
-	| TYPEDEF					{ $$ = make_spec (0, st_global, 1); }
+	: EXTERN					{ $$ = make_spec (0, st_extern, 0, 0); }
+	| STATIC					{ $$ = make_spec (0, st_static, 0, 0); }
+	| SYSTEM					{ $$ = make_spec (0, st_system, 0, 0); }
+	| TYPEDEF					{ $$ = make_spec (0, st_global, 1, 0); }
+	| OVERLOAD					{ $$ = make_spec (0, current_storage, 0, 1); }
 	;
 
 optional_specifiers
 	: storage_class type_name_or_class_name
 		{
-			$$ = make_spec ($2->type, current_storage, 0);
+			$$ = make_spec ($2->type, current_storage, 0, 0);
 			$$ = spec_merge ($1, $$);
 		}
 	| type_name_or_class_name
 		{
-			$$ = make_spec ($1->type, current_storage, 0);
+			$$ = make_spec ($1->type, current_storage, 0, 0);
 		}
 	| specifiers
 	| /* empty */
 		{
-			$$ = make_spec (0, current_storage, 0);
+			$$ = make_spec (0, current_storage, 0, 0);
 		}
 	;
 
@@ -409,14 +422,14 @@ type_specifier_or_storage_class
 type_specifier
 	: TYPE
 		{
-			$$ = make_spec ($1, current_storage, 0);
+			$$ = make_spec ($1, current_storage, 0, 0);
 		}
 	| enum_specifier
 	| struct_specifier
 	// NOTE: fields don't parse the way they should
 	| '.' type_specifier
 		{
-			$$ = make_spec (field_type ($2.type), current_storage, 0);
+			$$ = make_spec (field_type ($2.type), current_storage, 0, 0);
 		}
 	;
 
@@ -428,8 +441,18 @@ optional_tag
 tag : NAME ;
 
 enum_specifier
-	: ENUM tag optional_enum_list		{ $$ = make_spec ($3->type, 0, 0); }
-	| ENUM enum_list					{ $$ = make_spec ($2->type, 0, 0); }
+	: ENUM tag optional_enum_list
+		{
+			$$ = make_spec ($3->type, 0, 0, 0);
+			if (!$3->table)
+				symtab_addsymbol (current_symtab, $3);
+		}
+	| ENUM enum_list
+		{
+			$$ = make_spec ($2->type, 0, 0, 0);
+			if (!$2->table)
+				symtab_addsymbol (current_symtab, $2);
+		}
 	;
 
 optional_enum_list
@@ -472,7 +495,7 @@ struct_specifier
 			current_symtab = symtab->parent;
 
 			sym = build_struct ($1, $2, symtab, 0);
-			$$ = make_spec (sym->type, 0, 0);
+			$$ = make_spec (sym->type, 0, 0, 0);
 			if (!sym->table)
 				symtab_addsymbol (current_symtab, sym);
 		}
@@ -481,7 +504,7 @@ struct_specifier
 			symbol_t   *sym;
 
 			sym = find_struct ($1, $2, 0);
-			$$ = make_spec (sym->type, 0, 0);
+			$$ = make_spec (sym->type, 0, 0, 0);
 			if (!sym->table)
 				symtab_addsymbol (current_symtab, sym);
 		}
@@ -567,10 +590,9 @@ function_decl
 		}
 	| NAME function_params
 		{
-			$$ = check_redefined ($1);
+			$$ = $1;
 			$$->params = $2;
 			$$->type = parse_params (0, $2);
-			$$ = function_symbol ($$, 0, 1);
 		}
 	;
 
@@ -597,12 +619,12 @@ var_list
 param_declaration
 	: type var_decl
 		{
-			$2->type = append_type ($2->type, $1.type);
+			$2->type = find_type (append_type ($2->type, $1.type));
 			$$ = new_param (0, $2->type, $2->name);
 		}
 	| type_name_or_class_name var_decl
 		{
-			$2->type = append_type ($2->type, $1->type);
+			$2->type = find_type (append_type ($2->type, $1->type));
 			$$ = new_param (0, $2->type, $2->name);
 		}
 	| abstract_decl			{ $$ = new_param (0, $1->type, 0); }
@@ -613,12 +635,12 @@ abstract_decl
 	: type abs_decl
 		{
 			$$ = $2;
-			$$->type = append_type ($$->type, $1.type);
+			$$->type = find_type (append_type ($$->type, $1.type));
 		}
 	| type_name_or_class_name abs_decl
 		{
 			$$ = $2;
-			$$->type = append_type ($$->type, $1->type);
+			$$->type = find_type (append_type ($$->type, $1->type));
 		}
 	;
 
@@ -660,67 +682,12 @@ array_decl
 	| '[' ']'					{ $$ = 0; }
 	;
 
-/*
-cfunction
-	: cfunction_def ';'
-		{
-			make_function ($1, 0, st_extern);// FIME do I really want this?
-		}
-	;
-
-cfunction_def
-	: OVERLOAD non_func_type identifier function_decl
-		{
-			$$ = $3;
-			$$->params = current_params = $4;
-			$$->type = parse_params ($2, $4);
-			$$ = function_symbol ($$, 1, 1);
-		}
-	| non_func_type identifier function_decl
-		{
-			$$ = $2;
-			$$->params = current_params = $3;
-			$$->type = parse_params ($1, $3);
-			$$ = function_symbol ($$, 0, 1);
-		}
-	;
-*/
 local_storage_class
 	: LOCAL						{ current_storage = st_local; }
 	| %prec STORAGEX			{ current_storage = st_local; }
 	| STATIC					{ current_storage = st_static; }
 	;
 /*
-function_decl
-	: param_scope '(' param_list ')'
-		{
-			$$ = $3;
-			current_symtab = $1;
-		}
-	| param_scope '(' param_list ',' ELLIPSIS ')'
-		{
-			$$ = param_append_identifiers ($3, 0, 0);
-			current_symtab = $1;
-		}
-	| param_scope '(' ELLIPSIS ')'
-		{
-			$$ = new_param (0, 0, 0);
-			current_symtab = $1;
-		}
-	| param_scope '(' TYPE ')'
-		{
-			if ($3 != &type_void)
-				PARSE_ERROR;
-			$$ = 0;
-			current_symtab = $1;
-		}
-	| param_scope '(' ')'
-		{
-			$$ = 0;
-			current_symtab = $1;
-		}
-	;
-
 param_scope
 	: / * empty * /
 		{
@@ -795,14 +762,7 @@ overloaded_identifier
 			$$ = $1;
 			$$->params = current_params;
 			$$->type = $<spec>0.type;
-			$$ = function_symbol ($$, 0, 1);
-		}
-	| OVERLOAD identifier
-		{
-			$$ = $2;
-			$$->params = current_params;
-			$$->type = $<spec>0.type;
-			$$ = function_symbol ($$, 1, 1);
+			$$ = function_symbol ($$, $<spec>0.is_overload, 1);
 		}
 	;
 

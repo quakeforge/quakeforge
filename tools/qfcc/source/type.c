@@ -211,7 +211,7 @@ types_same (type_t *a, type_t *b)
 						return 0;
 					count = a->t.func.num_params;
 					if (count < 0)
-						count = ~count;	// param count in one's complement
+						count = ~count;	// param count is one's complement
 					for (i = 0; i < count; i++)
 						if (a->t.func.param_types[i]
 							!= b->t.func.param_types[i])
@@ -251,6 +251,43 @@ type_t *
 find_type (type_t *type)
 {
 	type_t     *check;
+	int         i, count;
+
+	if (!type)
+		return 0;
+
+	if (type->freeable) {
+		switch (type->ty) {
+			case ty_none:
+				switch (type->type) {
+					case ev_field:
+					case ev_pointer:
+						type->t.fldptr.type = find_type (type->t.fldptr.type);
+						break;
+					case ev_func:
+						type->t.func.type = find_type (type->t.func.type);
+						count = type->t.func.num_params;
+						if (count < 0)
+							count = ~count;	// param count is one's complement
+						for (i = 0; i < count; i++)
+							type->t.func.param_types[i]
+								= find_type (type->t.func.param_types[i]);
+						break;
+					default:		// other types don't have aux data
+						break;
+				}
+				break;
+			case ty_struct:
+			case ty_union:
+			case ty_enum:
+				break;
+			case ty_array:
+				type->t.array.type = find_type (type->t.array.type);
+				break;
+			case ty_class:
+				break;
+		}
+	}
 
 	for (check = pr.types; check; check = check->next) {
 		if (types_same (check, type))

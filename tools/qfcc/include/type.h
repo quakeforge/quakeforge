@@ -87,6 +87,7 @@ typedef struct {
 	unsigned    is_short:1;
 	unsigned    is_long:1;
 	unsigned    is_typedef:1;
+	unsigned    is_overload:1;
 } specifier_t;
 
 extern	type_t	type_invalid;
