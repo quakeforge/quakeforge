@@ -495,14 +495,16 @@ encode_struct (dstring_t *encoding, type_t *type, int level)
 {
 	symtab_t   *strct = type->t.symtab;
 	const char *name ="?";
-	char        su = '=';
+	char        su = ' ';
 
 	if (type->name)		// FIXME
 		name = type->name;
-	if (strct->type == stab_union)
+	if (strct && strct->type == stab_union)
 		su = '-';
+	if (strct && strct->type != stab_union)
+		su = '=';
 	dasprintf (encoding, "{%s%c", name, su);
-	if (level < 2)
+	if (strct && level < 2)
 		encode_struct_fields (encoding, strct, level);
 	dasprintf (encoding, "}");
 }
