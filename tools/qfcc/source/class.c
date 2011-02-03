@@ -110,12 +110,14 @@ get_class_name (class_type_t *class_type, int pretty)
 void
 class_init (void)
 {
+	symbol_t   *sym;
 	class_id.type = &type_id;
 	class_Class.type = &type_Class;
 	class_Protocol.type = &type_Protocol;
 
-	class_Class.super_class = get_class (new_symbol ("Object"), 1);
+	class_Class.super_class = get_class (sym = new_symbol ("Object"), 1);
 	class_Class.methods = new_methodlist ();
+	symtab_addsymbol (pr.symtab, sym);
 }
 
 symbol_t *
@@ -165,8 +167,10 @@ get_class (symbol_t *sym, int create)
 	c->methods = new_methodlist ();
 	c->class_type.type = ct_class;
 	c->class_type.c.class = c;
-	if (sym)
+	if (sym) {
 		Hash_Add (class_hash, c);
+		sym->type = c->type;
+	}
 	return c;
 }
 

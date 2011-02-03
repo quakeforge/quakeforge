@@ -1135,8 +1135,11 @@ classdecl
 	: CLASS identifier_list ';'
 		{
 			expr_t     *e;
-			for (e = $2->e.block.head; e; e = e->next)
+			for (e = $2->e.block.head; e; e = e->next) {
 				get_class (e->e.symbol, 1);
+				if (!e->e.symbol->table)
+					symtab_addsymbol (current_symtab, e->e.symbol);
+			}
 		}
 	;
 
@@ -1144,8 +1147,8 @@ class_name
 	: identifier %prec CLASS_NOT_CATEGORY
 		{
 			$1 = check_undefined ($1);
-			if (!is_class ($1->type)) {
-				error (0, "`%s' is not a class", $1->name);
+			if (!$1->type || !is_class ($1->type)) {
+				error (0, "`%s' is not a class %p", $1->name, $1->type);
 				$$ = get_class (0, 1);
 			} else {
 				$$ = $1->type->t.class;
@@ -1159,9 +1162,11 @@ new_class_name
 			$$ = get_class ($1, 0);
 			if (!$$) {
 				$1 = check_redefined ($1);
-				$$ = get_class (0, 1);
+				$$ = get_class ($1, 1);
 			}
 			current_class = &$$->class_type;
+			if (!$1->table)
+				symtab_addsymbol (current_symtab, $1);
 		}
 	;
 
@@ -1252,7 +1257,7 @@ classdef
 			(void) ($<class>9);
 		}
 	| INTERFACE new_class_name
-	  protocolrefs					{ class_add_protocols ($2, $3); }
+	  protocolrefs						{ class_add_protocols ($2, $3); }
 		{
 			class_add_ivars ($2, class_new_ivars ($2));
 			$<class>$ = $2;

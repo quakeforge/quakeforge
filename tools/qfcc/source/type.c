@@ -996,6 +996,7 @@ init_types (void)
 	make_structure (0, 's', method_struct, &type_Method);
 
 	type = make_structure (0, 's', class_struct, 0)->type;
+	type->ty = ty_class;
 	type_Class.t.fldptr.type = type;
 	class_Class.ivars = type->t.symtab;
 
