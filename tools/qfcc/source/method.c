@@ -462,7 +462,8 @@ emit_methods (methodlist_t *methods, const char *name, int instance)
 				warning (0, "Method `%c%s' not implemented",
 						m->instance ? '-' : '+', m->name);
 			}
-			count++;
+			if (m->def)
+				count++;
 		}
 	if (!count)
 		return 0;
