@@ -1393,6 +1393,11 @@ ivar_decls
 
 ivar_decl
 	: type { $<spec>$ = $1; } ivars
+	| type_name_or_class_name
+		{
+			$<spec>$ = make_spec ($1->type, 0, 0, 0);
+		}
+	  ivars									{}
 	;
 
 ivars
