@@ -1004,9 +1004,9 @@ unary_expr
 	| '&' cast_expr %prec UNARY	{ $$ = address_expr ($2, 0, 0); }
 	| '*' cast_expr %prec UNARY	{ $$ = pointer_expr ($2); }
 	| SIZEOF unary_expr	%prec UNARY	{ $$ = sizeof_expr ($2, 0); }
-	| SIZEOF '(' type ')'	 %prec HYPERUNARY
+	| SIZEOF '(' abstract_decl ')'	%prec HYPERUNARY
 		{
-			$$ = sizeof_expr (0, $3.type);
+			$$ = sizeof_expr (0, $3->type);
 		}
 	;
 
@@ -1028,7 +1028,10 @@ primary
 
 cast_expr
 	: unary_expr
-	| '(' type ')' cast_expr %prec UNARY	{ $$ = cast_expr ($2.type, $4); }
+	| '(' abstract_decl ')' cast_expr %prec UNARY
+		{
+			$$ = cast_expr ($2->type, $4);
+		}
 	;
 
 expr
@@ -1436,12 +1439,12 @@ methodproto
 	;
 
 methoddecl
-	: '(' type ')' unaryselector
-		{ $$ = new_method ($2.type, $4, 0); }
+	: '(' abstract_decl ')' unaryselector
+		{ $$ = new_method ($2->type, $4, 0); }
 	| unaryselector
 		{ $$ = new_method (&type_id, $1, 0); }
-	| '(' type ')' keywordselector optional_param_list
-		{ $$ = new_method ($2.type, $4, $5); }
+	| '(' abstract_decl ')' keywordselector optional_param_list
+		{ $$ = new_method ($2->type, $4, $5); }
 	| keywordselector optional_param_list
 		{ $$ = new_method (&type_id, $1, $2); }
 	;
@@ -1494,12 +1497,12 @@ reserved_word
 	;
 
 keyworddecl
-	: selector ':' '(' type ')' identifier
-		{ $$ = new_param ($1->name, $4.type, $6->name); }
+	: selector ':' '(' abstract_decl ')' identifier
+		{ $$ = new_param ($1->name, $4->type, $6->name); }
 	| selector ':' identifier
 		{ $$ = new_param ($1->name, &type_id, $3->name); }
-	| ':' '(' type ')' identifier
-		{ $$ = new_param ("", $3.type, $5->name); }
+	| ':' '(' abstract_decl ')' identifier
+		{ $$ = new_param ("", $3->type, $5->name); }
 	| ':' identifier
 		{ $$ = new_param ("", &type_id, $2->name); }
 	;
@@ -1508,7 +1511,7 @@ obj_expr
 	: obj_messageexpr
 	| SELECTOR '(' selectorarg ')'	{ $$ = selector_expr ($3); }
 	| PROTOCOL '(' identifier ')'	{ $$ = protocol_expr ($3->name); }
-	| ENCODE '(' type ')'			{ $$ = encode_expr ($3.type); }
+	| ENCODE '(' abstract_decl ')'	{ $$ = encode_expr ($3->type); }
 	| obj_string /* FIXME string object? */
 	;
 
