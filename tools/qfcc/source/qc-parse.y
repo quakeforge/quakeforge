@@ -1353,15 +1353,23 @@ protocol_list
 	;
 
 ivar_decl_list
-	:	/* */
+	: /* empty */
 		{
+			symtab_t   *tab, *ivars;
+			ivars = class_new_ivars ($<class>0);
+			for (tab = ivars; tab->parent; tab = tab->parent)
+				;
+			$<symtab>$ = tab;
+			tab->parent = current_symtab;
+			current_symtab = ivars;
+
 			current_visibility = vis_protected;
-			current_symtab = class_new_ivars ($<class>0);
 		}
 	  ivar_decl_list_2
 		{
 			$$ = current_symtab;
-			current_symtab = $$->parent;
+			current_symtab = $<symtab>1->parent;
+			$<symtab>1->parent = 0;
 
 			build_struct ('s', 0, $$, 0);
 		}
