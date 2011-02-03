@@ -82,9 +82,11 @@ find_tag (ty_type_e ty, symbol_t *tag, type_t *type)
 		if (sym->type->ty == ty)
 			return sym;
 	}
-	if (!type)
-		type = new_type ();
 	sym = new_symbol (tag_name);
+	if (!type) {
+		type = new_type ();
+		type->name = sym->name + 4;
+	}
 	sym->type = type;
 	sym->type->type = ev_invalid;
 	sym->type->ty = ty;
