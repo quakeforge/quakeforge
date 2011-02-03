@@ -307,50 +307,74 @@ find_type (type_t *type)
 type_t *
 field_type (type_t *aux)
 {
-	type_t      new;
+	type_t      _new;
+	type_t     *new = &_new;
 
-	memset (&new, 0, sizeof (new));
-	new.type = ev_field;
-	new.t.fldptr.type = aux;
-	return find_type (&new);
+	if (aux)
+		memset (&_new, 0, sizeof (_new));
+	else
+		new = new_type ();
+	new->type = ev_field;
+	new->t.fldptr.type = aux;
+	if (aux)
+		new = find_type (new);
+	return new;
 }
 
 type_t *
 pointer_type (type_t *aux)
 {
-	type_t      new;
+	type_t      _new;
+	type_t     *new = &_new;
 
-	memset (&new, 0, sizeof (new));
-	new.type = ev_pointer;
-	new.t.fldptr.type = aux;
-	return find_type (&new);
+	if (aux)
+		memset (&_new, 0, sizeof (_new));
+	else
+		new = new_type ();
+	new->type = ev_pointer;
+	new->t.fldptr.type = aux;
+	if (aux)
+		new = find_type (new);
+	return new;
 }
 
 type_t *
 array_type (type_t *aux, int size)
 {
-	type_t      new;
+	type_t      _new;
+	type_t     *new = &_new;
 
-	memset (&new, 0, sizeof (new));
-	new.type = ev_invalid;
-	new.ty = ty_array;
-	new.t.array.type = aux;
-	new.t.array.size = size;
-	return find_type (&new);
+	if (aux)
+		memset (&_new, 0, sizeof (_new));
+	else
+		new = new_type ();
+	new->type = ev_invalid;
+	new->ty = ty_array;
+	new->t.array.type = aux;
+	new->t.array.size = size;
+	if (aux)
+		new = find_type (new);
+	return new;
 }
 
 type_t *
 based_array_type (type_t *aux, int base, int top)
 {
-	type_t      new;
+	type_t      _new;
+	type_t     *new = &_new;
 
-	memset (&new, 0, sizeof (new));
-	new.type = ev_invalid;
-	new.ty = ty_array;
-	new.t.array.type = aux;
-	new.t.array.base = base;
-	new.t.array.size = top - base + 1;
-	return find_type (&new);
+	if (aux)
+		memset (&_new, 0, sizeof (_new));
+	else
+		new = new_type ();
+	new->type = ev_invalid;
+	new->ty = ty_array;
+	new->t.array.type = aux;
+	new->t.array.base = base;
+	new->t.array.size = top - base + 1;
+	if (aux)
+		new = find_type (new);
+	return new;
 }
 
 void

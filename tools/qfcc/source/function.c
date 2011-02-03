@@ -154,15 +154,15 @@ type_t *
 parse_params (type_t *type, param_t *parms)
 {
 	param_t    *p;
-	type_t      new;
+	type_t     *new;
 
-	memset (&new, 0, sizeof (new));
-	new.type = ev_func;
-	new.t.func.type = type;
-	new.t.func.num_params = 0;
+	new = new_type ();
+	new->type = ev_func;
+	new->t.func.type = type;
+	new->t.func.num_params = 0;
 
 	for (p = parms; p; p = p->next) {
-		if (new.t.func.num_params > MAX_PARMS) {
+		if (new->t.func.num_params > MAX_PARMS) {
 			error (0, "too many params");
 			return type;
 		}
@@ -171,19 +171,13 @@ parse_params (type_t *type, param_t *parms)
 				error (0, "internal error");
 				abort ();
 			}
-			new.t.func.num_params = -(new.t.func.num_params + 1);
+			new->t.func.num_params = -(new->t.func.num_params + 1);
 		} else if (p->type) {
-			new.t.func.param_types[new.t.func.num_params] = p->type;
-			new.t.func.num_params++;
+			new->t.func.param_types[new->t.func.num_params] = p->type;
+			new->t.func.num_params++;
 		}
 	}
-	//print_type (&new); puts("");
-	//return find_type (&new);
-	{
-		type_t *n = new_type ();
-		*n = new;
-		return n;
-	}
+	return new;
 }
 
 param_t *
@@ -230,6 +224,8 @@ get_function (const char *name, type_t *type, int overload, int create)
 	func = Hash_Find (overloaded_functions, full_name);
 	if (func) {
 		if (func->type != type) {
+			print_type (func->type); printf (" %p\n", func->type);
+			print_type (type); printf (" %p\n", type);
 			error (0, "can't overload on return types");
 			return func;
 		}
