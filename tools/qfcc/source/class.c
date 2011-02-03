@@ -118,6 +118,10 @@ class_init (void)
 	class_Class.super_class = get_class (sym = new_symbol ("Object"), 1);
 	class_Class.methods = new_methodlist ();
 	symtab_addsymbol (pr.symtab, sym);
+
+	sym = new_symbol_type ("obj_module_t", &type_module);
+	sym->sy_type = sy_type;
+	symtab_addsymbol (pr.symtab, sym);
 }
 
 symbol_t *

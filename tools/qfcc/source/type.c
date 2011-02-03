@@ -1074,7 +1074,6 @@ chain_initial_types (void)
 	chain_type (&type_supermsg);
 
 	make_structure ("obj_module_s", 's', module_struct, &type_module);
-	//new_typedef ("obj_module_t", type_module);
 	chain_type (&type_module);
 
 	type_obj_exec_class.t.func.param_types[0] = pointer_type (&type_module);
