@@ -252,15 +252,22 @@ copy_keywordargs (const keywordarg_t *kwargs)
 expr_t *
 send_message (int super)
 {
-	return 0;
-#if 0 //FIXME
-	if (super)
-		return new_def_expr (get_def (&type_supermsg, "obj_msgSend_super",
-									  pr.scope, st_extern));
-	else
-		return new_def_expr (get_def (&type_IMP, "obj_msgSend", pr.scope,
-									  st_extern));
-#endif
+	symbol_t   *sym;
+	const char *sm_name = "obj_msgSend";
+	type_t     *sm_type = &type_IMP;
+
+	if (super) {
+		sm_name = "obj_msgSend_super";
+		sm_type = &type_IMP;
+	}
+	sym = symtab_lookup (pr.symtab, sm_name);
+	if (!sym) {
+		sym = new_symbol_type (sm_name, sm_type);
+		sym = function_symbol (sym, 0, 1);
+		make_function (sym, 0, st_extern);
+		symtab_addsymbol (pr.symtab, sym);
+	}
+	return new_symbol_expr (sym);
 }
 
 method_t *
