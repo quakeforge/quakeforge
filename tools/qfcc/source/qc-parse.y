@@ -309,6 +309,7 @@ external_def
 	| optional_specifiers ';' { }
 	| optional_specifiers function_params
 		{
+			$<spec>$ = $1;		// copy spec bits and storage
 			$<spec>$.type = parse_params ($1.type, $2), st_global, 0;
 			$<spec>$.type = find_type ($<spec>$.type);
 		}
