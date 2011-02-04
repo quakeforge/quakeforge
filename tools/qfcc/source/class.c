@@ -412,56 +412,81 @@ begin_category (category_t *category)
 								  va ("%s_%s", class->name, category->name)));
 }
 
+typedef struct {
+	int         count;
+	symbol_t   *ivars;
+	dstring_t  *encoding;
+} ivar_data_t;
+
+static void
+emit_ivar_count (def_t *def, void *data, int index)
+{
+	ivar_data_t *ivar_data = (ivar_data_t *) data;
+
+	if (def->type != &type_integer)
+		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	D_INT (def) = ivar_data->count;
+}
+
+static void
+emit_ivar_list_item (def_t *def, void *data, int index)
+{
+	ivar_data_t *ivar_data = (ivar_data_t *) data;
+	symbol_t   *ivar_sym;
+	pr_ivar_t  *ivar;
+	defspace_t *space;
+
+#if 0
+	//FIXME the type is dynamic, so need a way to pass it before it cn be
+	//checked
+	if (def->type != &XXX)
+		internal_error (0, "%s: expected XXX def",
+						__FUNCTION__);
+#endif
+	if (index < 0 || index >= ivar_data->count)
+		internal_error (0, "%s: out of bounds index: %d %d",
+						__FUNCTION__, index, ivar_data->count);
+
+	for (ivar_sym = ivar_data->ivars; ivar_sym; ivar_sym = ivar_sym->next) {
+		if (ivar_sym->sy_type != sy_var)
+			continue;
+		if (!index--)
+			break;
+	}
+
+	ivar = D_POINTER (pr_ivar_t, def);
+	space = def->space;
+	dstring_clearstr (ivar_data->encoding);
+
+	EMIT_STRING (space, ivar->ivar_name, ivar_sym->name);
+	encode_type (ivar_data->encoding, ivar_sym->type);
+	EMIT_STRING (space, ivar->ivar_type, ivar_data->encoding->str);
+	ivar->ivar_offset = ivar_sym->s.offset;
+}
+
 static def_t *
 emit_ivars (symtab_t *ivars, const char *name)
 {
-	//FIXME use emit_struct
 	static struct_def_t ivar_list_struct[] = {
-		{"ivar_count", &type_integer},
-		{"ivar_list",  0},	// type filled in at runtime
+		{"ivar_count", &type_integer, emit_ivar_count},
+		{"ivar_list",  0,             emit_ivar_list_item},
 		{0, 0}
 	};
-	dstring_t  *encoding = dstring_newstr ();
-	symbol_t   *sym;
+	ivar_data_t ivar_data = {0, 0};
 	symbol_t   *s;
 	def_t      *def;
-	defspace_t *space;
-	int         count;
-	int         i;
-	type_t      new;
-	type_t     *type;
-	pr_ivar_list_t *pr_ivar_list;
 
+	ivar_data.encoding = dstring_newstr ();
+	ivar_data.ivars = ivars->symbols;
 	for (s = ivars->symbols; s; s = s->next)
 		if (s->sy_type == sy_var)
-			count++;
-	ivar_list_struct[1].type = array_type (&type_ivar, count);
-	make_structure (0, 's', ivar_list_struct, &new);
-	type = find_type (&new);
+			ivar_data.count++;
+	ivar_list_struct[1].type = array_type (&type_ivar, ivar_data.count);
 
-	sym = make_symbol (va ("_OBJ_INSTANCE_VARIABLES_%s", name), type,
-					   pr.far_data, st_global);
-	def = sym->s.def;
-	space = def->space;
-	if (def->initialized)
-		goto done;
-	def->initialized = def->constant = def->nosave = 1;
+	def = emit_structure (va ("_OBJ_INSTANCE_VARIABLES_%s", name), 's',
+						  ivar_list_struct, 0, &ivar_data, st_static);
 
-	pr_ivar_list = &D_STRUCT (pr_ivar_list_t, def);
-	pr_ivar_list->ivar_count = count;
-	for (i = 0, s = ivars->symbols; s; s = s->next) {
-		if (s->sy_type != sy_var)
-			continue;
-		encode_type (encoding, s->type);
-		EMIT_STRING (space, pr_ivar_list->ivar_list[i].ivar_name, s->name);
-		EMIT_STRING (space, pr_ivar_list->ivar_list[i].ivar_type,
-					 encoding->str);
-		pr_ivar_list->ivar_list[i].ivar_offset = s->s.offset;
-		dstring_clearstr (encoding);
-		i++;
-	}
-done:
-	dstring_delete (encoding);
+	dstring_delete (ivar_data.encoding);
 	return def;
 }
 
