@@ -2415,6 +2415,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	keywordarg_t *m;
 	int         self = 0, super = 0, class_msg = 0;
 	type_t     *rec_type;
+	type_t     *return_type;
 	class_t    *class;
 	method_t   *method;
 
@@ -2440,21 +2441,24 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		if (receiver->type == ex_error)
 			return receiver;
 
-		if (rec_type->type != ev_pointer
-			  || !is_class (rec_type->t.fldptr.type))
+		if (rec_type->type == ev_pointer)
+			rec_type = rec_type->t.fldptr.type;
+		if (!is_class (rec_type))
 			return error (receiver, "not a class/object");
+
 		if (self) {
 			class = extract_class (current_class);
-			if (rec_type == &type_Class)
+			if (rec_type == class_Class.type)
 				class_msg = 1;
 		} else {
-			class = rec_type->t.fldptr.type->t.class;
+			class = rec_type->t.class;
 		}
 	}
 
+	return_type = &type_id;
 	method = class_message_response (class, class_msg, selector);
 	if (method)
-		rec_type = method->type->t.func.type;
+		return_type = method->type->t.func.type;
 
 	for (m = message; m; m = m->next) {
 		*a = m->expr;
@@ -2477,7 +2481,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	if (call->type == ex_error)
 		return receiver;
 
-	call->e.block.result = new_ret_expr (rec_type);
+	call->e.block.result = new_ret_expr (return_type);
 	return call;
 }
 
