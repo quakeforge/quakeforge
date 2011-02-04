@@ -861,9 +861,16 @@ type_size (type_t *type)
 				case ty_union:
 					return type->t.symtab->size;
 				case ty_class:
-					if (!type->t.class->ivars)
-						return 0;
-					return type->t.class->ivars->size;
+					{
+						class_t    *class = type->t.class;
+						int         size;
+						if (!class->ivars)
+							return 0;
+						size = class->ivars->size;
+						if (class->super_class)
+							size += type_size (class->super_class->type);
+						return size;
+					}
 				case ty_array:
 					return type->t.array.size * type_size (type->t.array.type);
 				case ty_none:
