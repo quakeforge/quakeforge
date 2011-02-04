@@ -69,9 +69,107 @@ static hashtab_t *class_hash;
 static hashtab_t *category_hash;
 static hashtab_t *protocol_hash;
 
+// these will be built up further
+type_t      type_id = { ev_pointer, "id" };
+type_t      type_Class = { ev_pointer, "Class" };
+type_t      type_Protocol = { ev_invalid, "Protocol" };
+type_t      type_SEL = { ev_pointer, "SEL" };
+type_t      type_IMP = { ev_func, "IMP", ty_none,
+						 {{&type_id, -3, {&type_id, &type_SEL}}}};
+type_t      type_supermsg = { ev_func, ".supermsg", ty_none,
+							  {{&type_id, -3, {0, &type_SEL}}}};
+type_t      type_obj_exec_class = { ev_func, "function", ty_none,
+									{{&type_void, 1, { 0 }}}};
+type_t      type_Method = { ev_invalid, "Method" };
+type_t      type_Super = { ev_invalid, "Super" };
+type_t      type_method_description = { ev_invalid, "obj_method_description",
+										ty_struct };
+type_t      type_category;
+type_t      type_ivar;
+type_t      type_module;
+
 class_t     class_id = {1, "id"};
 class_t     class_Class = {1, "Class"};
 class_t     class_Protocol = {1, "Protocl"};
+
+static struct_def_t sel_struct[] = {
+	{"sel_id",    &type_string},
+	{"sel_types", &type_string},
+	{0, 0}
+};
+
+static struct_def_t method_struct[] = {
+	{"method_name",  &type_SEL},
+	{"method_types", &type_string},
+	{"method_imp",   &type_IMP},
+	{0, 0}
+};
+
+static struct_def_t method_desc_struct[] = {
+	{"name",  &type_string},
+	{"types", &type_string},
+	{0, 0}
+};
+
+static struct_def_t category_struct[] = {
+	{"category_name",    &type_string},
+	{"class_name",       &type_string},
+	{"instance_methods", &type_pointer},
+	{"class_methods",    &type_pointer},
+	{"protocols",        &type_pointer},
+	{0, 0}
+};
+
+static struct_def_t ivar_struct[] = {
+	{"ivar_name",   &type_string},
+	{"ivar_type",   &type_string},
+	{"ivar_offset", &type_integer},
+	{0, 0}
+};
+
+static struct_def_t super_struct[] = {
+	{"self", &type_id},
+	{"class", &type_Class},
+	{0, 0}
+};
+
+static struct_def_t module_struct[] = {
+	{"version", &type_integer},
+	{"size",    &type_integer},
+	{"name",    &type_string},
+	{"symtab",  &type_pointer},
+	{0, 0}
+};
+
+static struct_def_t class_ivars[] = {
+	{"class_pointer",  &type_Class},
+	{"super_class",    &type_Class},
+	{"name",           &type_string},
+	{"version",        &type_integer},
+	{"info",           &type_integer},
+	{"instance_size",  &type_integer},
+	{"ivars",          &type_pointer},
+	{"methods",        &type_pointer},
+	{"dtable",         &type_pointer},
+	{"subclass_list",  &type_pointer},
+	{"sibling_class",  &type_pointer},
+	{"protocols",      &type_pointer},
+	{"gc_object_type", &type_pointer},
+};
+
+static struct_def_t protocol_ivars[] = {
+	{"class_pointer",    &type_Class},
+	{"protocol_name",    &type_string},
+	{"protocol_list",    &type_pointer},
+	{"instance_methods", &type_pointer},
+	{"class_methods",    &type_pointer},
+	{0, 0}
+};
+
+static struct_def_t id_ivars[] = {
+	{"class_pointer", &type_Class},
+	{0, 0}
+};
 
 static const char *
 class_get_key (void *class, void *unused)
@@ -110,6 +208,8 @@ get_class_name (class_type_t *class_type, int pretty)
 void
 class_init (void)
 {
+
+	type_t     *type;
 	symbol_t   *sym;
 	class_id.type = &type_id;
 	class_Class.type = &type_Class;
@@ -122,6 +222,54 @@ class_init (void)
 	sym = new_symbol_type ("obj_module_t", &type_module);
 	sym->sy_type = sy_type;
 	symtab_addsymbol (pr.symtab, sym);
+
+	type_SEL.t.fldptr.type = make_structure (0, 's', sel_struct, 0)->type;
+
+	make_structure (0, 's', method_struct, &type_Method);
+
+	type = make_structure (0, 's', class_ivars, 0)->type;
+	type->ty = ty_class;
+	type_Class.t.fldptr.type = type;
+	class_Class.ivars = type->t.symtab;
+
+	type = make_structure (0, 's', protocol_ivars, &type_Protocol)->type;
+	type->ty = ty_class;
+	type->t.class = &class_Protocol;
+	class_Protocol.ivars = type->t.symtab;
+
+	type = make_structure (0, 's', id_ivars, 0)->type;
+	type->ty = ty_class;
+	type->t.class = &class_id;
+	type_id.t.fldptr.type = type;
+	class_id.ivars = type->t.symtab;
+
+	make_structure (0, 's', method_desc_struct, &type_method_description);
+
+	make_structure (0, 's', category_struct, &type_category);
+
+	make_structure (0, 's', ivar_struct, &type_ivar);
+
+	make_structure (0, 's', super_struct, &type_Super);
+
+	chain_type (&type_IMP);
+	chain_type (&type_Super);
+	chain_type (&type_SEL);
+	chain_type (&type_Method);
+	chain_type (&type_Class);
+	chain_type (&type_Protocol);
+	chain_type (&type_id);
+	chain_type (&type_method_description);
+	chain_type (&type_category);
+	chain_type (&type_ivar);
+
+	type_supermsg.t.func.param_types[0] = pointer_type (&type_Super);
+	chain_type (&type_supermsg);
+
+	make_structure ("obj_module_s", 's', module_struct, &type_module);
+	chain_type (&type_module);
+
+	type_obj_exec_class.t.func.param_types[0] = pointer_type (&type_module);
+	chain_type (&type_obj_exec_class);
 }
 
 symbol_t *

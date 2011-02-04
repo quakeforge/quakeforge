@@ -83,6 +83,20 @@ typedef struct protocollist_s {
 	protocol_t **list;
 } protocollist_t;
 
+extern struct type_s type_id;
+extern struct type_s type_Class;
+extern struct type_s type_Protocol;
+extern struct type_s type_SEL;
+extern struct type_s type_IMP;
+extern struct type_s type_supermsg;
+extern struct type_s type_obj_exec_class;
+extern struct type_s type_Method;
+extern struct type_s type_Super;
+extern struct type_s type_method_description;
+extern struct type_s type_category;
+extern struct type_s type_ivar;
+extern struct type_s type_module;
+
 extern class_t  class_id;
 extern class_t  class_Class;
 extern class_t  class_Protocol;

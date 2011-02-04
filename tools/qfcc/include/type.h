@@ -107,19 +107,6 @@ extern	type_t	type_short;
 extern	type_t	*type_nil;		// for passing nil into ...
 extern	type_t	*type_default;	// default type (float or int)
 
-extern	type_t	type_id;
-extern	type_t	type_Class;
-extern	type_t	type_Protocol;
-extern	type_t	type_SEL;
-extern	type_t	type_IMP;
-extern  type_t  type_supermsg;
-extern	type_t	type_obj_exec_class;
-extern	type_t	type_Method;
-extern	type_t	type_method_description;
-extern	type_t	type_category;
-extern	type_t	type_ivar;
-extern	type_t	type_module;
-extern	type_t	type_Super;
 extern	type_t	type_va_list;
 extern	type_t	type_param;
 extern	type_t	type_zero;
@@ -131,6 +118,7 @@ struct dstring_s;
 
 type_t *new_type (void);
 void free_type (type_t *type);
+void chain_type (type_t *type);
 
 /**	Append a type to the end of a type chain.
 
