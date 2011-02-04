@@ -76,7 +76,8 @@ method_t *new_method (struct type_s *ret_type, param_t *selector,
 const char *method_name (method_t *method);
 method_t *copy_method (method_t *method);
 void add_method (methodlist_t *methodlist, method_t *method);
-struct def_s *method_def (struct class_type_s *class_type, method_t *method);
+struct symbol_s *method_symbol (struct class_type_s *class_type,
+								method_t *method);
 void method_set_param_names (method_t *dst, method_t *src);
 
 methodlist_t *new_methodlist (void);

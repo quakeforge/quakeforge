@@ -97,10 +97,12 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_params)
 	self->next = cmd;
 
 	meth->next = 0;
+	meth->func = 0;
 	meth->instance = 0;
 	meth->selector = selector;
 	meth->params = self;
 	meth->type = parse_params (ret_type, meth->params);
+	meth->type = find_type (meth->type);
 
 	selector_name (name, (keywordarg_t *)selector);
 	method_types (types, meth);
@@ -153,11 +155,11 @@ add_method (methodlist_t *methodlist, method_t *method)
 	methodlist->tail = &method->next;
 }
 
-def_t *
-method_def (class_type_t *class_type, method_t *method)
+symbol_t *
+method_symbol (class_type_t *class_type, method_t *method)
 {
 	dstring_t  *str = dstring_newstr ();
-	def_t      *def;
+	symbol_t   *sym;
 	char       *s;
 	const char *class_name;
 
@@ -172,9 +174,10 @@ method_def (class_type_t *class_type, method_t *method)
 			*s = '_';
 	//printf ("%s %s %s %ld\n", method->name, method->types, str->str,
 	//		str->size);
-	def = make_symbol (str->str, method->type, pr.far_data, st_static)->s.def;
+	sym = new_symbol_type (str->str, method->type);
+	sym = function_symbol (sym, 0, 1);//FIXME put in far data and make static
 	dstring_delete (str);
-	return def;
+	return sym;
 }
 
 void
@@ -468,6 +471,7 @@ emit_methods (methodlist_t *methods, const char *name, int instance)
 	if (!count)
 		return 0;
 	methods->count = count;
+	methods->instance = instance;
 
 	methods_struct[2].type = array_type (&type_integer, count);
 	return emit_structure (va ("_OBJ_%s_METHODS_%s", type, name), 's',
