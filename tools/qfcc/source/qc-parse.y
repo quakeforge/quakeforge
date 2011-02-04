@@ -540,8 +540,18 @@ struct_decl_list
 	;
 
 struct_decl
-	: function_decl							{}
-	| var_decl								{}
+	: function_decl
+		{
+			$1->type = append_type ($1->type, $<spec>0.type);
+			$1->type = find_type ($1->type);
+			symtab_addsymbol (current_symtab, $1);
+		}
+	| var_decl
+		{
+			$1->type = append_type ($1->type, $<spec>0.type);
+			$1->type = find_type ($1->type);
+			symtab_addsymbol (current_symtab, $1);
+		}
 	| var_decl ':' expr		%prec COMMA		{}
 	| ':' expr				%prec COMMA		{}
 	;
