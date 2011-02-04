@@ -1407,8 +1407,29 @@ ivars
 	;
 
 methoddef
-	: ci methoddecl optional_state_expr compound_statement	{}
-	| ci methoddecl '=' '#' const ';'					{}
+	: ci methoddecl optional_state_expr
+		{
+			method_t   *method = $2;
+
+			method->instance = $1;
+			$2 = method = class_find_method (current_class, method);
+			$<symbol>$ = method_symbol (current_class, method);
+		}
+		{
+			method_t   *method = $2;
+			const char *nicename = method_name (method);
+			symbol_t   *sym = $<symbol>4;
+			$<symtab>$ = current_symtab;
+			current_func = begin_function (sym, nicename, current_symtab);
+			method->def = sym->s.func->def;
+			current_symtab = current_func->symtab;
+		}
+	  compound_statement
+		{
+			build_code_function ($<symbol>4, $3, $6);
+			current_symtab = $<symtab>5;
+		}
+	| ci methoddecl '=' '#' const ';'
 		{
 			symbol_t   *sym;
 			method_t   *method = $2;
