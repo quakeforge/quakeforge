@@ -85,6 +85,7 @@ typedef struct protocollist_s {
 
 extern struct type_s type_id;
 extern struct type_s type_Class;
+extern struct type_s type_ClassPtr;
 extern struct type_s type_Protocol;
 extern struct type_s type_SEL;
 extern struct type_s type_IMP;

@@ -70,9 +70,6 @@ static hashtab_t *category_hash;
 static hashtab_t *protocol_hash;
 
 // these will be built up further
-type_t      type_id = { ev_pointer, "id" };
-type_t      type_Class = { ev_pointer, "Class" };
-type_t      type_Protocol = { ev_invalid, "Protocol" };
 type_t      type_SEL = { ev_pointer, "SEL" };
 type_t      type_IMP = { ev_func, "IMP", ty_none,
 						 {{&type_id, -3, {&type_id, &type_SEL}}}};
@@ -88,9 +85,13 @@ type_t      type_category;
 type_t      type_ivar;
 type_t      type_module;
 
+type_t      type_id = { ev_pointer, "id" };
+type_t      type_Class = { ev_invalid, "Class", ty_class};
+type_t      type_ClassPtr = { ev_pointer, 0, ty_none, {{&type_Class}}};
+type_t      type_Protocol = { ev_invalid, "Protocol", ty_class};
 class_t     class_id = {1, "id"};
 class_t     class_Class = {1, "Class"};
-class_t     class_Protocol = {1, "Protocl"};
+class_t     class_Protocol = {1, "Protocol"};
 
 static struct_def_t sel_struct[] = {
 	{"sel_id",    &type_string},
@@ -205,71 +206,81 @@ get_class_name (class_type_t *class_type, int pretty)
 	return "???";
 }
 
-void
-class_init (void)
+static void
+init_objective_structs (void)
 {
-
-	type_t     *type;
-	symbol_t   *sym;
-	class_id.type = &type_id;
-	class_Class.type = &type_Class;
-	class_Protocol.type = &type_Protocol;
-
-	class_Class.super_class = get_class (sym = new_symbol ("Object"), 1);
-	class_Class.methods = new_methodlist ();
-	symtab_addsymbol (pr.symtab, sym);
-
-	sym = new_symbol_type ("obj_module_t", &type_module);
-	sym->sy_type = sy_type;
-	symtab_addsymbol (pr.symtab, sym);
-
 	type_SEL.t.fldptr.type = make_structure (0, 's', sel_struct, 0)->type;
+	chain_type (&type_SEL);
+	chain_type (&type_IMP);
 
 	make_structure (0, 's', method_struct, &type_Method);
-
-	type = make_structure (0, 's', class_ivars, 0)->type;
-	type->ty = ty_class;
-	type_Class.t.fldptr.type = type;
-	class_Class.ivars = type->t.symtab;
-
-	type = make_structure (0, 's', protocol_ivars, &type_Protocol)->type;
-	type->ty = ty_class;
-	type->t.class = &class_Protocol;
-	class_Protocol.ivars = type->t.symtab;
-
-	type = make_structure (0, 's', id_ivars, 0)->type;
-	type->ty = ty_class;
-	type->t.class = &class_id;
-	type_id.t.fldptr.type = type;
-	class_id.ivars = type->t.symtab;
+	chain_type (&type_Method);
 
 	make_structure (0, 's', method_desc_struct, &type_method_description);
+	chain_type (&type_method_description);
 
 	make_structure (0, 's', category_struct, &type_category);
+	chain_type (&type_category);
 
 	make_structure (0, 's', ivar_struct, &type_ivar);
-
-	make_structure (0, 's', super_struct, &type_Super);
-
-	chain_type (&type_IMP);
-	chain_type (&type_Super);
-	chain_type (&type_SEL);
-	chain_type (&type_Method);
-	chain_type (&type_Class);
-	chain_type (&type_Protocol);
-	chain_type (&type_id);
-	chain_type (&type_method_description);
-	chain_type (&type_category);
 	chain_type (&type_ivar);
 
-	type_supermsg.t.func.param_types[0] = pointer_type (&type_Super);
-	chain_type (&type_supermsg);
+	make_structure (0, 's', super_struct, &type_Super);
+	chain_type (&type_Super);
 
 	make_structure ("obj_module_s", 's', module_struct, &type_module);
 	chain_type (&type_module);
 
+	type_supermsg.t.func.param_types[0] = pointer_type (&type_Super);
+	chain_type (&type_supermsg);
+
 	type_obj_exec_class.t.func.param_types[0] = pointer_type (&type_module);
 	chain_type (&type_obj_exec_class);
+}
+
+static void
+init_classes (void)
+{
+	symbol_t   *sym;
+
+	type_Class.ty = ty_class;
+	type_Class.t.class = &class_Class;
+	chain_type (&type_Class);
+	sym = make_structure (0, 's', class_ivars, 0);
+	class_Class.ivars = sym->type->t.symtab;
+	class_Class.type = &type_Class;
+	class_Class.super_class = get_class (sym = new_symbol ("Object"), 1);
+	class_Class.methods = new_methodlist ();
+	symtab_addsymbol (pr.symtab, sym);
+
+	chain_type (&type_ClassPtr);
+
+	type_Protocol.ty = ty_class;
+	type_Protocol.t.class = &class_Protocol;
+	chain_type (&type_Protocol);
+	sym = make_structure (0, 's', protocol_ivars, &type_Protocol);
+	class_Protocol.ivars = sym->type->t.symtab;
+	class_Protocol.type = &type_Protocol;
+
+	type_id.ty = ty_class;
+	type_id.t.class = &class_id;
+	chain_type (&type_id);
+	sym = make_structure (0, 's', id_ivars, 0);
+	class_id.ivars = sym->type->t.symtab;
+	class_id.type = &type_id;
+}
+
+void
+class_init (void)
+{
+	symbol_t   *sym;
+
+	init_classes ();
+	init_objective_structs ();
+
+	sym = new_symbol_type ("obj_module_t", &type_module);
+	sym->sy_type = sy_type;
+	symtab_addsymbol (pr.symtab, sym);
 }
 
 symbol_t *
@@ -287,7 +298,7 @@ class_symbol (class_type_t *class_type, int external)
 			break;
 		case ct_class:
 			name = va ("_OBJ_CLASS_%s", class_type->c.class->name);
-			type = type_Class.t.fldptr.type;
+			type = &type_Class;
 			break;
 		case ct_protocol:
 			return 0;		// probably in error recovery
@@ -313,7 +324,7 @@ get_class (symbol_t *sym, int create)
 	c = calloc (sizeof (class_t), 1);
 	if (sym)
 		c->name = sym->name;
-	new = *type_Class.t.fldptr.type;
+	new = type_Class;
 	new.t.class = c;
 	c->type = find_type (&new);
 	c->methods = new_methodlist ();
@@ -332,7 +343,7 @@ set_self_type (class_t *class, method_t *method)
 	if (method->instance)
 		method->params->type = pointer_type (class->type);
 	else
-		method->params->type = &type_Class;
+		method->params->type = &type_ClassPtr;
 }
 
 static void
@@ -465,7 +476,7 @@ begin_class (class_t *class)
 	defspace_t *space;
 
 	sym = make_symbol (va ("_OBJ_METACLASS_%s", class->name),
-					   type_Class.t.fldptr.type, pr.far_data, st_static);
+					   &type_Class, pr.far_data, st_static);
 	meta_def = sym->s.def;
 	meta_def->initialized = meta_def->constant = meta_def->nosave = 1;
 	space = meta_def->space;
@@ -475,10 +486,8 @@ begin_class (class_t *class)
 		EMIT_STRING (space, meta->super_class, class->super_class->name);
 	EMIT_STRING (space, meta->name, class->name);
 	meta->info = _PR_CLS_META;
-	meta->instance_size = type_size (type_Class.t.fldptr.type);
-	EMIT_DEF (space, meta->ivars,
-			  emit_ivars (type_Class.t.fldptr.type->t.class->ivars,
-						   "Class"));
+	meta->instance_size = type_size (&type_Class);
+	EMIT_DEF (space, meta->ivars, emit_ivars (class_Class.ivars, "Class"));
 	current_class = &class->class_type;
 	sym = class_symbol (current_class, 0);
 	class->def = def = sym->s.def;

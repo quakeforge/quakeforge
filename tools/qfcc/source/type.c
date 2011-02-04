@@ -576,7 +576,7 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 				dasprintf (encoding, ":");
 				break;
 			}
-			if (type == &type_Class) {
+			if (type == &type_ClassPtr) {
 				dasprintf (encoding, "#");
 				break;
 			}
@@ -695,7 +695,7 @@ _parse_type (const char **str)
 		case '@':
 			return &type_id;
 		case '#':
-			return &type_Class;
+			return &type_ClassPtr;
 		case ':':
 			return &type_SEL;
 		case '^':
