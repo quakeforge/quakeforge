@@ -1022,7 +1022,7 @@ unary_expr
 	;
 
 primary
-	: NAME      				{ $$ = new_symbol_expr (check_undefined ($1)); }
+	: NAME      				{ $$ = new_symbol_expr ($1); }
 	| BREAK	%prec BREAK_PRIMARY { $$ = new_name_expr (save_string ("break")); }
 	| ARGS						{ $$ = new_name_expr (".args"); }
 	| SELF						{ $$ = new_self_expr (); }

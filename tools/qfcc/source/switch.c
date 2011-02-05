@@ -114,6 +114,8 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 
 	SYS_CHECKMEM (cl);
 
+	if (value)
+		convert_name (value);
 	if (value && !is_constant (value)) {
 		error (value, "non-constant case value");
 		free (cl);

@@ -84,9 +84,60 @@ type_t     *ev_types[ev_type_count] = {
 	&type_invalid,
 };
 
+void
+convert_name (expr_t *e)
+{
+	symbol_t   *sym;
+	expr_t     *new;
+
+	if (e->type != ex_symbol)
+		return;
+
+	sym = e->e.symbol;
+
+	if (!strcmp (sym->name, "__PRETTY_FUNCTION__")
+		&& current_func) {
+		new = new_string_expr (current_func->name);
+		goto convert;
+	}
+	if (!strcmp (sym->name, "__FUNCTION__")
+		&& current_func) {
+		new = new_string_expr (current_func->def->name);
+		goto convert;
+	}
+	if (!strcmp (sym->name, "__LINE__")
+		&& current_func) {
+		new = new_integer_expr (e->line);
+		goto convert;
+	}
+	if (!strcmp (sym->name, "__FILE__")
+		&& current_func) {
+		new = new_string_expr (GETSTR (e->file));
+		goto convert;
+	}
+	if (!sym->table) {
+		error (e, "%s undefined", sym->name);
+		sym->type = type_default;
+		//FIXME need a def
+		return;
+	}
+	if (sym->sy_type == sy_expr) {
+		new = sym->s.expr;
+		goto convert;
+	}
+	if (sym->sy_type == sy_type)
+		internal_error (e, "unexpected typedef");
+	// var, const and func shouldn't need extra handling
+	return;
+convert:
+	e->type = new->type;
+	e->e = new->e;
+}
+
 type_t *
 get_type (expr_t *e)
 {
+	convert_name (e);
 	switch (e->type) {
 		case ex_label:
 		case ex_error:
@@ -1185,6 +1236,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (e2->type == ex_error)
 		return e2;
 
+	convert_name (e1);
 	if (e1->type == ex_block && e1->e.block.is_call
 		&& has_function_call (e2) && e1->e.block.result) {
 		e = new_temp_def_expr (get_type (e1->e.block.result));
@@ -1194,6 +1246,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (op == '.')
 		return field_expr (e1, e2);
 
+	convert_name (e2);
 	if (op == OR || op == AND) {
 		e1 = test_expr (e1);
 		e2 = test_expr (e2);
@@ -1302,6 +1355,7 @@ unary_expr (int op, expr_t *e)
 	quat_t      q;
 	const char *s;
 
+	convert_name (e);
 	if (e->type == ex_error)
 		return e;
 	switch (op) {
@@ -2156,6 +2210,9 @@ assign_expr (expr_t *e1, expr_t *e2)
 	type_t     *t1, *t2, *type;
 	expr_t     *e;
 
+	convert_name (e1);
+	convert_name (e2);
+
 	if (e1->type == ex_error)
 		return e1;
 	if (e2->type == ex_error)
@@ -2290,6 +2347,8 @@ cast_expr (type_t *type, expr_t *e)
 {
 	expr_t    *c;
 	type_t    *e_type;
+
+	convert_name (e);
 
 	if (e->type == ex_error)
 		return e;

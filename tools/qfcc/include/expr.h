@@ -507,6 +507,15 @@ expr_t *new_param_expr (struct type_s *type, int num);
 */
 expr_t *new_move_expr (expr_t *e1, expr_t *e2, struct type_s *type);
 
+/**	Convert a name to an expression of the appropriate type.
+
+	Converts the expression in-place. If the exprssion is not a name
+	expression (ex_name), no converision takes place.
+
+	\param e		The expression to convert.
+*/
+void convert_name (expr_t *e);
+
 expr_t *append_expr (expr_t *block, expr_t *e);
 
 void print_expr (expr_t *e);
