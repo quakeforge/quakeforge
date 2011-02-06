@@ -176,6 +176,7 @@ method_symbol (class_type_t *class_type, method_t *method)
 	//		str->size);
 	sym = new_symbol_type (str->str, method->type);
 	sym = function_symbol (sym, 0, 1);//FIXME put in far data and make static
+	sym->params = method->params;
 	dstring_delete (str);
 	return sym;
 }
