@@ -63,10 +63,24 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 static def_t zero_def;
 
 static def_t *
-get_operand_def (operand_t *op)
+get_value_def (ex_value_t *value, etype_t type)
 {
+	//FIXME share immediates
 	def_t      *def;
 
+	def = new_def (".imm", ev_types[type], pr.near_data, st_static);
+	if (type == ev_string) {
+		EMIT_STRING (def->space, D_STRUCT (string_t, def),
+					 value->v.string_val);
+	} else {
+		memcpy (D_POINTER (pr_type_t, def), &value->v, pr_type_size[type]);
+	}
+	return def;
+}
+
+static def_t *
+get_operand_def (operand_t *op)
+{
 	if (!op)
 		return 0;
 	switch (op->op_type) {
@@ -80,24 +94,14 @@ get_operand_def (operand_t *op)
 				case sy_func:
 					return op->o.symbol->s.func->def;
 				case sy_const:
-					//FIXME
+					return get_value_def (&op->o.symbol->s.value, op->type);
 				case sy_type:
 				case sy_expr:
 					internal_error (0, "invalid operand type");
 			}
 			break;
 		case op_value:
-			//FIXME share immediates
-			def = new_def (".imm", ev_types[op->type], pr.near_data,
-						   st_static);
-			if (op->type == ev_string) {
-				EMIT_STRING (def->space, D_STRUCT (string_t, def),
-							 op->o.value->v.string_val);
-			} else {
-				memcpy (D_POINTER (pr_type_t, def), &op->o.value->v,
-						pr_type_size[op->type]);
-			}
-			return def;
+			return get_value_def (op->o.value, op->type);
 		case op_label:
 			zero_def.type = &type_short;
 			return &zero_def;	//FIXME
