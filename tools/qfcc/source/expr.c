@@ -351,7 +351,7 @@ new_label_name (void)
 	SYS_CHECKMEM (lname);
 	return lname;
 }
-#if 0
+
 static expr_t *
 new_error_expr (void)
 {
@@ -359,7 +359,7 @@ new_error_expr (void)
 	e->type = ex_error;
 	return e;
 }
-#endif
+
 expr_t *
 new_state_expr (expr_t *frame, expr_t *think, expr_t *step)
 {
@@ -825,6 +825,41 @@ append_expr (expr_t *block, expr_t *e)
 static expr_t *
 field_expr (expr_t *e1, expr_t *e2)
 {
+	type_t     *t1, *t2;
+	expr_t     *e;
+	
+	if (e1->type == ex_error)
+		return e1;
+	t1 = get_type (e1);
+	if (t1->type == ev_entity) {
+		t2 = get_type (e2);
+		if (t2->type == ev_field) {
+			e = new_binary_expr ('.', e1, e2);
+			e->e.expr.type = t2->t.fldptr.type;
+			return e;
+		}
+	} else if (t1->type == ev_pointer) {
+		if (is_struct (t1->t.fldptr.type)) {
+		} else if (is_class (t1->t.fldptr.type)) {
+			class_t    *class = t1->t.fldptr.type->t.class;
+			symbol_t   *sym = e2->e.symbol;//FIXME need to check
+			symbol_t   *ivar;
+			
+			ivar = class_find_ivar (class, vis_protected, sym->name);
+			if (!ivar)
+				return new_error_expr ();
+			e2->type = ex_value;
+			e2->e.value.type = ev_short;
+			e2->e.value.v.short_val = ivar->s.offset;
+			e = new_binary_expr ('&', e1, e2);
+			e->e.expr.type = pointer_type (ivar->type);
+			return unary_expr ('.', e);
+		}
+	} else if (t1->type == ev_vector) {
+	} else if (t1->type == ev_quat) {
+	} else if (is_struct (t1)) {
+	} else if (is_class (t1)) {
+	}
 	return type_mismatch (e1, e2, '.');
 }
 
