@@ -799,8 +799,14 @@ type_assignable (type_t *dst, type_t *src)
 {
 	class_t    *dst_class, *src_class;
 
+	// same type
 	if (dst == src)
 		return 1;
+	// id = any class pointer
+	if (dst == &type_id && src->type == ev_pointer
+		&& is_class (src->t.fldptr.type))
+		return 1;
+	// pointer = array
 	if (dst->type == ev_pointer
 		&& src->type == ev_invalid && src->ty == ty_array) {
 		if (dst->t.fldptr.type == src->t.array.type)
@@ -809,6 +815,7 @@ type_assignable (type_t *dst, type_t *src)
 	}
 	if (dst->type != ev_pointer || src->type != ev_pointer)
 		return is_scalar (dst) && is_scalar (src);
+	// pointer = pointer
 	dst = dst->t.fldptr.type;
 	src = src->t.fldptr.type;
 	if (dst->type == ev_void)
@@ -817,6 +824,7 @@ type_assignable (type_t *dst, type_t *src)
 		return 1;
 	if (!is_class (dst) || !is_class (src))
 		return 0;
+	// check dst is a base class of src
 	dst_class = dst->t.class;
 	src_class = src->t.class;
 	//printf ("%s %s\n", dst_class->class_name, src_class->class_name);
