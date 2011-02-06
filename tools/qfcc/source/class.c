@@ -973,19 +973,21 @@ category_add_protocols (category_t *category, protocollist_t *protocols)
 	category->protocols = protocols;
 }
 
-def_t *
-class_pointer_def (class_t *class)
+symbol_t *
+class_pointer_symbol (class_t *class)
 {
 	def_t      *def;
+	symbol_t   *sym;
 	class_type_t class_type = {ct_class, {0}};
 
 	class_type.c.class = class;
 
-	def = make_symbol (va ("_OBJ_CLASS_POINTER_%s", class->name),
+	sym = make_symbol (va ("_OBJ_CLASS_POINTER_%s", class->name),
 					   pointer_type (class->type),
-					   pr.far_data, st_static)->s.def;
+					   pr.far_data, st_static);
+	def = sym->s.def;
 	if (def->initialized)
-		return def;
+		return sym;
 	def->initialized = def->constant = 1;
 	def->nosave = 1;
 	if (!class->def)
@@ -993,7 +995,7 @@ class_pointer_def (class_t *class)
 	if (!class->def->external)
 		D_INT (def) = class->def->offset;
 	reloc_def_def (class->def, def->offset);
-	return def;
+	return sym;
 }
 
 

@@ -1571,7 +1571,10 @@ obj_messageexpr
 
 receiver
 	: fexpr
-	| CLASS_NAME				{ $$ = new_symbol_expr ($1); }
+	| CLASS_NAME
+		{
+			$$ = new_symbol_expr (class_pointer_symbol ($1->type->t.class));
+		}
 	;
 
 messageargs

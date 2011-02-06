@@ -128,7 +128,7 @@ struct method_s *class_find_method (class_type_t *class_type,
 									struct method_s *method);
 struct method_s *class_message_response (class_t *class, int class_msg,
 										 struct expr_s *sel);
-struct def_s *class_pointer_def (class_t *class_type);
+struct symbol_s *class_pointer_symbol (class_t *class_type);
 category_t *get_category (struct symbol_s *class_name,
 						  const char *category_name, int create);
 void category_add_methods (category_t *category, struct methodlist_s *methods);
