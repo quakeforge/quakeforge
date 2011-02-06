@@ -153,6 +153,7 @@ start_enum (symbol_t *sym)
 void
 add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 {
+	symbol_t   *sym;
 	type_t     *enum_type = enm->type;
 	symtab_t   *enum_tab;
 	int         value;
@@ -175,8 +176,13 @@ add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 		else
 			value = expr_integer (val);
 	}
+	name->s.value.type = ev_integer;
 	name->s.value.v.integer_val = value;
 	symtab_addsymbol (enum_tab, name);
+	sym = new_symbol_type (name->name, name->type);
+	sym->sy_type = sy_const;
+	sym->s.value = name->s.value;
+	symtab_addsymbol (enum_tab->parent, sym);
 }
 
 symbol_t *
