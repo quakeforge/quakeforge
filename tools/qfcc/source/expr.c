@@ -2358,6 +2358,9 @@ cast_expr (type_t *type, expr_t *e)
 	if (type == e_type)
 		return e;
 
+	if ((type == type_default && is_enum (e_type))
+		|| (is_enum (type) && e_type == type_default))
+		return e;
 	if (!(type->type == ev_pointer
 		  && (e_type->type == ev_pointer
 			  || e_type == &type_integer //|| e_type == &type_uinteger

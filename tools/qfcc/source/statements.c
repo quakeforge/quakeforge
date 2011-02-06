@@ -498,7 +498,10 @@ static sblock_t *
 expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	*op = new_operand (op_symbol);
-	(*op)->type = e->e.symbol->type->type;
+	if (is_enum (e->e.symbol->type))
+		(*op)->type = type_default->type;
+	else
+		(*op)->type = e->e.symbol->type->type;
 	(*op)->o.symbol = e->e.symbol;
 	return sblock;
 }
