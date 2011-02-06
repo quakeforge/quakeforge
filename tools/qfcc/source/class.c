@@ -168,7 +168,7 @@ static struct_def_t protocol_ivars[] = {
 	{0, 0}
 };
 
-static struct_def_t id_ivars[] = {
+static struct_def_t object_ivars[] = {
 	{"class_pointer", &type_Class},
 	{0, 0}
 };
@@ -265,7 +265,7 @@ init_classes (void)
 
 	type_object.t.class = &class_object;
 	chain_type (&type_object);
-	sym = make_structure (0, 's', id_ivars, 0);
+	sym = make_structure (0, 's', object_ivars, 0);
 	class_object.ivars = sym->type->t.symtab;
 	class_object.type = &type_id;
 	chain_type (&type_id);
