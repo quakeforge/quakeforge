@@ -130,6 +130,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 	}
 	sym->sy_type = sy_type;
 	sym->type->t.symtab = symtab;
+	sym->type = find_type (sym->type);
 	return sym;
 }
 
@@ -147,6 +148,7 @@ start_enum (symbol_t *sym)
 		sym = find_enum (0);
 	}
 	sym->type->t.symtab = new_symtab (current_symtab, stab_local);
+	sym->type = find_type (sym->type);
 	return sym->type->t.symtab;
 }
 
