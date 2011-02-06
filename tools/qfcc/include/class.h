@@ -123,7 +123,11 @@ void class_begin (class_type_t *class_type);
 void class_finish (class_type_t *class_type);
 int class_access (class_type_t *current_class, class_t *class);
 struct symbol_s *class_find_ivar (class_t *class, int vis, const char *name);
-struct expr_s *class_ivar_expr (class_type_t *class_type, const char *name);
+struct symtab_s *class_ivar_scope (class_type_t *class_type,
+								   struct symtab_s *parent);
+void class_finish_ivar_scope (class_type_t *class_type,
+							  struct symtab_s *ivar_scope,
+							  struct symtab_s *param_scope);
 struct method_s *class_find_method (class_type_t *class_type,
 									struct method_s *method);
 struct method_s *class_message_response (class_t *class, int class_msg,

@@ -1433,8 +1433,14 @@ methoddef
 			method_t   *method = $2;
 			const char *nicename = method_name (method);
 			symbol_t   *sym = $<symbol>4;
+			symtab_t   *ivar_scope;
+
 			$<symtab>$ = current_symtab;
-			current_func = begin_function (sym, nicename, current_symtab);
+
+			ivar_scope = class_ivar_scope (current_class, current_symtab);
+			current_func = begin_function (sym, nicename, ivar_scope);
+			class_finish_ivar_scope (current_class, ivar_scope,
+									 current_func->symtab);
 			method->def = sym->s.func->def;
 			current_symtab = current_func->symtab;
 		}

@@ -731,21 +731,6 @@ access_error:
 	return 0;
 }
 
-expr_t *
-class_ivar_expr (class_type_t *class_type, const char *name)
-{
-	symbol_t   *ivar;
-	class_t    *class;
-
-	if (!class_type || !(class = extract_class (class_type)))
-		return 0;
-
-	ivar = symtab_lookup (class->ivars, name);
-	if (!ivar)
-		return 0;
-	return binary_expr ('.', new_name_expr ("self"), new_name_expr (name));
-}
-
 method_t *
 class_find_method (class_type_t *class_type, method_t *method)
 {
@@ -1313,4 +1298,39 @@ class_to_struct (class_t *class, symtab_t *symtab)
 	// connect the new struct symbol table to the scope
 	symtab->parent = parent;
 	return symtab;
+}
+
+symtab_t *
+class_ivar_scope (class_type_t *class_type, symtab_t *parent)
+{
+	class_t    *class = extract_class (class_type);
+	return symtab_flat_copy (class->ivars, parent);
+}
+
+void
+class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
+						 symtab_t *param_scope)
+{
+	class_t    *class = extract_class (class_type);
+	type_t     *class_ptr = pointer_type (class->type);
+	symbol_t   *sym;
+	symbol_t   *self;
+	expr_t     *self_expr;
+
+	self = symtab_lookup (param_scope, "self");
+	if (!self)
+		internal_error (0, "I've lost my self!");
+	self_expr = new_symbol_expr (self);
+	if (self->type != class_ptr) {
+		debug (0, "class method scope");
+		//FIXME should generate a warning on access
+		self_expr = cast_expr (class_ptr, self_expr);
+	}
+	for (sym = ivar_scope->symbols; sym; sym = sym->next) {
+		if (sym->sy_type != sy_var)
+			continue;
+		sym->sy_type = sy_expr;
+		sym->s.expr = binary_expr ('.', copy_expr (self_expr),
+								   new_symbol_expr (new_symbol (sym->name)));
+	}
 }
