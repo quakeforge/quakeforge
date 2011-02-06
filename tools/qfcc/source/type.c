@@ -411,6 +411,8 @@ print_type_str (dstring_t *str, type_t *type)
 					dasprintf (str, " %s", type->t.class->name);
 					break;
 				case ty_enum:
+					dasprintf (str, " enum %s", type->name);
+					break;
 				case ty_struct:
 				case ty_union:
 					{
@@ -419,8 +421,6 @@ print_type_str (dstring_t *str, type_t *type)
 						if (type->t.symtab) {//FIXME
 							if (type->t.symtab->type == stab_union)
 								tag = "union";
-							else if (type->t.symtab->type == stab_union)
-								tag = "enum";
 						}
 						dasprintf (str, " %s %s", tag, type->name);
 					}
@@ -752,13 +752,21 @@ parse_type (const char *str)
 }
 
 int
+is_enum (type_t *type)
+{
+	if (type->type == ev_invalid && type->ty == ty_enum)
+		return 1;
+	return 0;
+}
+
+int
 is_scalar (type_t *type)
 {
 	etype_t     t = type->type;
 
 	if (t == ev_float || t == ev_integer || t == ev_short)
 		return 1;
-	return 0;
+	return is_enum (type);
 }
 
 int
