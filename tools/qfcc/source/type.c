@@ -828,10 +828,6 @@ type_assignable (type_t *dst, type_t *src)
 	dst_class = dst->t.class;
 	src_class = src->t.class;
 	//printf ("%s %s\n", dst_class->class_name, src_class->class_name);
-	if (!dst_class || dst_class == &class_id)
-		return 1;
-	if (!src_class || src_class == &class_id)
-		return 1;
 	while (dst_class != src_class && src_class) {
 		src_class = src_class->super_class;
 		//if (src_class)

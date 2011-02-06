@@ -85,11 +85,12 @@ type_t      type_category;
 type_t      type_ivar;
 type_t      type_module;
 
-type_t      type_id = { ev_pointer, "id" };
+type_t      type_object = {ev_invalid, "object", ty_class};
+type_t      type_id = { ev_pointer, "id", ty_none, {{&type_object}}};
 type_t      type_Class = { ev_invalid, "Class", ty_class};
 type_t      type_ClassPtr = { ev_pointer, 0, ty_none, {{&type_Class}}};
 type_t      type_Protocol = { ev_invalid, "Protocol", ty_class};
-class_t     class_id = {1, "id"};
+class_t     class_object = {1, "id"};
 class_t     class_Class = {1, "Class"};
 class_t     class_Protocol = {1, "Protocol"};
 
@@ -262,12 +263,12 @@ init_classes (void)
 	class_Protocol.ivars = sym->type->t.symtab;
 	class_Protocol.type = &type_Protocol;
 
-	type_id.ty = ty_class;
-	type_id.t.class = &class_id;
-	chain_type (&type_id);
+	type_object.t.class = &class_object;
+	chain_type (&type_object);
 	sym = make_structure (0, 's', id_ivars, 0);
-	class_id.ivars = sym->type->t.symtab;
-	class_id.type = &type_id;
+	class_object.ivars = sym->type->t.symtab;
+	class_object.type = &type_id;
+	chain_type (&type_id);
 }
 
 void
