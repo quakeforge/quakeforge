@@ -446,12 +446,14 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	symbol_t   *args = 0;
 	symbol_t   *param;
 	symtab_t   *symtab;
+	symtab_t   *cs = current_symtab;
 
 	check_function (fsym);
 
 	symtab = new_symtab (parent, stab_local);
 	fsym->s.func->symtab = symtab;
 	symtab->space = new_defspace ();
+	current_symtab = symtab;
 
 	if (fsym->type->t.func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
@@ -466,7 +468,6 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 			continue;					// non-param selector
 		param = new_symbol_type (p->name, p->type);
 		initialize_def (param, param->type, 0, symtab->space, st_local);
-		symtab_addsymbol (symtab, param);
 		i++;
 	}
 
@@ -477,6 +478,7 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 			i++;
 		}
 	}
+	current_symtab = cs;
 }
 
 function_t *

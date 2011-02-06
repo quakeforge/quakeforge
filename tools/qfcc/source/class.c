@@ -986,6 +986,8 @@ class_pointer_symbol (class_t *class)
 	sym = make_symbol (va ("_OBJ_CLASS_POINTER_%s", class->name),
 					   pointer_type (class->type),
 					   pr.far_data, st_static);
+	if (!sym->table)
+		symtab_addsymbol (pr.symtab, sym);
 	def = sym->s.def;
 	if (def->initialized)
 		return sym;

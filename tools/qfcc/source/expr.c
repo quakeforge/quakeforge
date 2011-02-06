@@ -2404,6 +2404,8 @@ selector_expr (keywordarg_t *selector)
 	index *= type_size (type_SEL.t.fldptr.type);
 	sel_sym = make_symbol ("_OBJ_SELECTOR_TABLE", type_SEL.t.fldptr.type,
 						   0, st_extern);
+	if (!sel_sym->table)
+		symtab_addsymbol (pr.symtab, sel_sym);
 	sel = new_symbol_expr (sel_sym);
 	dstring_delete (sel_id);
 	return address_expr (sel, new_short_expr (index), 0);

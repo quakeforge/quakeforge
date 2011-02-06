@@ -108,6 +108,9 @@ symbol_t *
 symtab_addsymbol (symtab_t *symtab, symbol_t *symbol)
 {
 	symbol_t   *s;
+	if (symbol->table)
+		internal_error (0, "symbol '%s' is already in another symbol table",
+						symbol->name);
 	if ((s = Hash_Find (symtab->tab, symbol->name)))
 		return s;
 	Hash_Add (symtab->tab, symbol);
@@ -193,7 +196,6 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 	sym = symtab_lookup (pr.symtab, name);
 	if (!sym) {
 		sym = new_symbol_type (name, type);
-		symtab_addsymbol (pr.symtab, sym);
 	}
 	if (sym->type != type) {
 		error (0, "%s redefined", name);

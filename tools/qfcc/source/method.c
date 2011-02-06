@@ -374,6 +374,7 @@ get_selector (expr_t *sel)
 def_t *
 emit_selectors (void)
 {
+	symbol_t   *sel_sym;
 	def_t      *sel_def;
 	type_t     *sel_type;
 	pr_sel_t   *sel;
@@ -383,8 +384,11 @@ emit_selectors (void)
 		return 0;
 
 	sel_type = array_type (type_SEL.t.fldptr.type, sel_index);
-	sel_def = make_symbol ("_OBJ_SELECTOR_TABLE", type_SEL.t.fldptr.type,
-						   pr.far_data, st_static)->s.def;
+	sel_sym = make_symbol ("_OBJ_SELECTOR_TABLE", type_SEL.t.fldptr.type,
+						   pr.far_data, st_static);
+	if (!sel_sym->table)
+		symtab_addsymbol (pr.symtab, sel_sym);
+	sel_def = sel_sym->s.def;
 	sel_def->initialized = sel_def->constant = 1;
 	sel_def->nosave = 1;
 
