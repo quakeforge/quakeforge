@@ -88,6 +88,24 @@ type_t      type_floatfield = { ev_field, ".float", ty_none, {{&type_float}} };
 
 static type_t *free_types;
 
+etype_t
+low_level_type (type_t *type)
+{
+	if (type->type < 0 || type->type >= ev_type_count)
+		internal_error (0, "invalid type");
+	if (type->type == ev_type_count)
+		internal_error (0, "found 'type count' type");
+	if (type->type < ev_invalid)
+		return type->type;
+	if (is_enum (type))
+		return type_default->type;
+	if (is_struct (type) || is_class (type))
+		return ev_void;
+	if (is_array (type))
+		return ev_void;
+	internal_error (0, "invalid complex type");
+}
+
 void
 chain_type (type_t *type)
 {

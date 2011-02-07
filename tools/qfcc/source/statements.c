@@ -420,7 +420,7 @@ expr_deref (sblock_t *sblock, expr_t *e, operand_t **op)
 	if (e->type == ex_uexpr && e->e.expr.op == '&'
 		&& e->e.expr.e1->type == ex_symbol) {
 		*op = new_operand (op_symbol);
-		(*op)->type = type->type;
+		(*op)->type = low_level_type (type);
 		(*op)->o.symbol = e->e.expr.e1->e.symbol;
 	}
 	return sblock;
@@ -455,7 +455,7 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 			sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
 			if (!*op) {
 				*op = new_operand (op_temp);
-				(*op)->type = e->e.expr.type->type;
+				(*op)->type = low_level_type (e->e.expr.type);
 			}
 			s->opc = *op;
 			sblock_add_statement (sblock, s);
@@ -469,7 +469,7 @@ expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	if (!*op) {
 		(*op) = new_operand (op_temp);
-		(*op)->type = e->e.expr.type->type;
+		(*op)->type = low_level_type (e->e.expr.type);
 	}
 	sblock = statement_subexpr (sblock, e->e.expr.e1, op);
 	return sblock;
@@ -498,10 +498,7 @@ static sblock_t *
 expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	*op = new_operand (op_symbol);
-	if (is_enum (e->e.symbol->type))
-		(*op)->type = type_default->type;
-	else
-		(*op)->type = e->e.symbol->type->type;
+	(*op)->type = low_level_type (e->e.symbol->type);
 	(*op)->o.symbol = e->e.symbol;
 	return sblock;
 }
@@ -511,7 +508,7 @@ expr_temp (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	if (!e->e.temp.op) {
 		e->e.temp.op = new_operand (op_temp);
-		e->e.temp.op->type = e->e.temp.type->type;
+		e->e.temp.op->type = low_level_type (e->e.temp.type);
 	}
 	*op = e->e.temp.op;
 	return sblock;

@@ -116,6 +116,7 @@ extern struct symtab_s *quaternion_struct;
 
 struct dstring_s;
 
+etype_t low_level_type (type_t *type);
 type_t *new_type (void);
 void free_type (type_t *type);
 void chain_type (type_t *type);
