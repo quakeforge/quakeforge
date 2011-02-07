@@ -152,7 +152,7 @@ int yylex (void);
 %token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
 %token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
 
-%type	<symbol>	type_name_or_class_name
+%type	<spec>		type_name_or_class_name
 %type	<spec>		optional_specifiers specifiers storage_class type
 %type	<spec>		type_specifier type_specifier_or_storage_class
 
@@ -387,13 +387,10 @@ storage_class
 optional_specifiers
 	: storage_class type_name_or_class_name
 		{
-			$$ = make_spec ($2->type, current_storage, 0, 0);
+			$$ = make_spec ($2.type, current_storage, 0, 0);
 			$$ = spec_merge ($1, $$);
 		}
 	| type_name_or_class_name
-		{
-			$$ = make_spec ($1->type, current_storage, 0, 0);
-		}
 	| specifiers
 	| /* empty */
 		{
@@ -403,7 +400,13 @@ optional_specifiers
 
 type_name_or_class_name
 	: TYPE_NAME
+		{
+			$$ = make_spec ($1->type, current_storage, 0, 0);
+		}
 	| CLASS_NAME
+		{
+			$$ = make_spec ($1->type, current_storage, 0, 0);
+		}
 	;
 
 specifiers
@@ -639,7 +642,7 @@ param_declaration
 		}
 	| type_name_or_class_name var_decl
 		{
-			$2->type = find_type (append_type ($2->type, $1->type));
+			$2->type = find_type (append_type ($2->type, $1.type));
 			$$ = new_param (0, $2->type, $2->name);
 		}
 	| abstract_decl			{ $$ = new_param (0, $1->type, 0); }
@@ -655,7 +658,7 @@ abstract_decl
 	| type_name_or_class_name abs_decl
 		{
 			$$ = $2;
-			$$->type = find_type (append_type ($$->type, $1->type));
+			$$->type = find_type (append_type ($$->type, $1.type));
 		}
 	;
 
@@ -1407,12 +1410,8 @@ ivar_decls
 	;
 
 ivar_decl
-	: type { $<spec>$ = $1; } ivars
-	| type_name_or_class_name
-		{
-			$<spec>$ = make_spec ($1->type, 0, 0, 0);
-		}
-	  ivars									{}
+	: type ivars
+	| type_name_or_class_name ivars			{}
 	;
 
 ivars
