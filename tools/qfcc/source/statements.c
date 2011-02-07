@@ -426,6 +426,15 @@ expr_deref (sblock_t *sblock, expr_t *e, operand_t **op)
 		*op = new_operand (op_symbol);
 		(*op)->type = low_level_type (type);
 		(*op)->o.symbol = e->e.expr.e1->e.symbol;
+	} else if (e->type == ex_expr && e->e.expr.op == '&') {
+		statement_t *s = new_statement ("=");
+		sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+		sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
+		if (!*op) {
+			*op = new_operand (op_temp);
+			(*op)->type = low_level_type (e->e.expr.type);
+		}
+		s->opc = *op;
 	}
 	return sblock;
 }
