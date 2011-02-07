@@ -458,7 +458,6 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	if (fsym->type->t.func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
 		initialize_def (args, args->type, 0, symtab->space, st_local);
-		symtab_addsymbol (symtab, args);
 	}
 
 	for (p = fsym->params, i = 0; p; p = p->next) {
