@@ -154,7 +154,7 @@ int yylex (void);
 %type	<spec>		optional_specifiers specifiers local_specifiers
 %type	<spec>		storage_class
 %type	<spec>		type_specifier type_specifier_or_storage_class
-%type	<spec>		type_name_or_class_name type
+%type	<spec>		type
 
 %type	<param>		function_params var_list param_declaration
 %type	<symbol>	var_decl function_decl
@@ -388,27 +388,10 @@ storage_class
 	;
 
 optional_specifiers
-	: storage_class type_name_or_class_name
-		{
-			$$ = make_spec ($2.type, current_storage, 0, 0);
-			$$ = spec_merge ($1, $$);
-		}
-	| type_name_or_class_name
-	| specifiers
+	: specifiers
 	| /* empty */
 		{
 			$$ = make_spec (0, current_storage, 0, 0);
-		}
-	;
-
-type_name_or_class_name
-	: TYPE_NAME
-		{
-			$$ = make_spec ($1->type, current_storage, 0, 0);
-		}
-	| CLASS_NAME
-		{
-			$$ = make_spec ($1->type, current_storage, 0, 0);
 		}
 	;
 
@@ -437,6 +420,14 @@ type_specifier
 		}
 	| enum_specifier
 	| struct_specifier
+	| TYPE_NAME
+		{
+			$$ = make_spec ($1->type, current_storage, 0, 0);
+		}
+	| CLASS_NAME
+		{
+			$$ = make_spec ($1->type, current_storage, 0, 0);
+		}
 	// NOTE: fields don't parse the way they should
 	| '.' type_specifier
 		{
@@ -541,7 +532,6 @@ struct_defs
 
 struct_def
 	: type struct_decl_list
-	| type_name_or_class_name struct_decl_list
 	| type
 	;
 
@@ -644,22 +634,12 @@ param_declaration
 			$2->type = find_type (append_type ($2->type, $1.type));
 			$$ = new_param (0, $2->type, $2->name);
 		}
-	| type_name_or_class_name var_decl
-		{
-			$2->type = find_type (append_type ($2->type, $1.type));
-			$$ = new_param (0, $2->type, $2->name);
-		}
 	| abstract_decl			{ $$ = new_param (0, $1->type, 0); }
 	| ELLIPSIS				{ $$ = new_param (0, 0, 0); }
 	;
 
 abstract_decl
 	: type abs_decl
-		{
-			$$ = $2;
-			$$->type = find_type (append_type ($$->type, $1.type));
-		}
-	| type_name_or_class_name abs_decl
 		{
 			$$ = $2;
 			$$->type = find_type (append_type ($$->type, $1.type));
@@ -1415,7 +1395,6 @@ ivar_decls
 
 ivar_decl
 	: type ivars
-	| type_name_or_class_name ivars			{}
 	;
 
 ivars
