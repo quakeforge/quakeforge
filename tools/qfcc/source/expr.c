@@ -703,7 +703,8 @@ is_integer_val (expr_t *e)
 	if (e->type == ex_value && e->e.value.type == ev_integer)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-		&& e->e.symbol->type->type == ev_integer)
+		&& (e->e.symbol->type->type == ev_integer
+			|| is_enum (e->e.symbol->type)))
 		return 1;
 	return 0;
 }
@@ -716,7 +717,8 @@ expr_integer (expr_t *e)
 	if (e->type == ex_value && e->e.value.type == ev_integer)
 		return e->e.value.v.integer_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-		&& e->e.symbol->type->type == ev_integer)
+		&& (e->e.symbol->type->type == ev_integer
+			|| is_enum (e->e.symbol->type)))
 		return e->e.symbol->s.value.v.integer_val;
 	internal_error (e, "not an integer constant");
 }
@@ -868,15 +870,15 @@ test_expr (expr_t *e)
 {
 	static float zero[4] = {0, 0, 0, 0};
 	expr_t     *new = 0;
-	etype_t     type;
+	type_t     *type;
 
 	if (e->type == ex_error)
 		return e;
 
-	type = extract_type (e);
+	type = get_type (e);
 	if (e->type == ex_error)
 		return e;
-	switch (type) {
+	switch (type->type) {
 		case ev_type_count:
 			internal_error (e, 0);
 		case ev_void:
@@ -918,6 +920,10 @@ test_expr (expr_t *e)
 			new = new_quaternion_expr (zero);
 			break;
 		case ev_invalid:
+			if (is_enum (type)) {
+				new = new_nil_expr ();
+				break;
+			}
 			return test_error (e, get_type (e));
 	}
 	new->line = e->line;
@@ -1119,7 +1125,7 @@ void
 convert_nil (expr_t *e, type_t *t)
 {
 	memset (&e->e.value, 0, sizeof (e->e.value));
-	e->e.value.type = t->type;
+	e->e.value.type = low_level_type (t);
 	if (t->type == ev_pointer)
 		e->e.value.v.pointer.type = t->t.fldptr.type;
 	e->type = ex_value;
