@@ -81,15 +81,16 @@ type_t      type_Method = { ev_invalid, "Method" };
 type_t      type_Super = { ev_invalid, "Super" };
 type_t      type_method_description = { ev_invalid, "obj_method_description",
 										ty_struct };
-type_t      type_category;
-type_t      type_ivar;
-type_t      type_module;
+type_t      type_category = { ev_invalid, "category", ty_struct};
+type_t      type_ivar = { ev_invalid, "ivar", ty_struct};
+type_t      type_module = { ev_invalid, "module", ty_struct};
 
 type_t      type_object = {ev_invalid, "object", ty_class};
 type_t      type_id = { ev_pointer, "id", ty_none, {{&type_object}}};
 type_t      type_Class = { ev_invalid, "Class", ty_class};
 type_t      type_ClassPtr = { ev_pointer, 0, ty_none, {{&type_Class}}};
 type_t      type_Protocol = { ev_invalid, "Protocol", ty_class};
+
 class_t     class_object = {1, "id"};
 class_t     class_Class = {1, "Class"};
 class_t     class_Protocol = {1, "Protocol"};

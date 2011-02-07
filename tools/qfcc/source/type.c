@@ -81,8 +81,8 @@ type_t     *type_default;
 
 // these will be built up further
 type_t      type_va_list = { ev_invalid, "@va_list", ty_struct };
-type_t      type_param;
-type_t      type_zero;
+type_t      type_param = { ev_invalid, "@param", ty_struct };
+type_t      type_zero = { ev_invalid, "@zero", ty_struct };
 
 type_t      type_floatfield = { ev_field, ".float", ty_none, {{&type_float}} };
 
@@ -225,7 +225,7 @@ types_same (type_t *a, type_t *b)
 		case ty_struct:
 		case ty_union:
 		case ty_enum:
-			if (a->t.symtab != b->t.symtab)
+			if (strcmp (a->name, b->name))
 				return 0;
 			return 1;
 		case ty_array:

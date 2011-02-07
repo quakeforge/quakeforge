@@ -83,10 +83,10 @@ find_tag (ty_type_e ty, symbol_t *tag, type_t *type)
 			return sym;
 	}
 	sym = new_symbol (tag_name);
-	if (!type) {
+	if (!type)
 		type = new_type ();
-		type->name = sym->name + 4;
-	}
+	if (!type->name)
+		type->name = sym->name;
 	sym->type = type;
 	sym->type->type = ev_invalid;
 	sym->type->ty = ty;
@@ -224,6 +224,7 @@ emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 	def_t       field_def;
 
 	if (!type) {
+		memset (&new, 0, sizeof (new));
 		type = &new;
 		make_structure (0, su, defs, type);
 	}
