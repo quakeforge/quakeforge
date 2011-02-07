@@ -274,7 +274,7 @@ statement_branch (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
-statement_assign (sblock_t *sblock, expr_t *e)
+expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	statement_t *s;
 	expr_t     *src_expr = e->e.expr.e2;
@@ -288,6 +288,8 @@ statement_assign (sblock_t *sblock, expr_t *e)
 		sblock = statement_subexpr (sblock, dst_expr, &dst);
 		sblock = statement_subexpr (sblock, src_expr, &src);
 		ofs = 0;
+		if (op)
+			*op = dst;
 	} else {
 		//FIXME this sucks. find a better way to handle both pointer
 		//dereferences and pointer assignements
@@ -306,6 +308,8 @@ statement_assign (sblock_t *sblock, expr_t *e)
 			sblock = statement_subexpr (sblock, dst_expr, &dst);
 			ofs = 0;
 		}
+		if (op)
+			*op = src;
 	}
 	s = new_statement (opcode);
 	s->opa = src;
@@ -445,6 +449,10 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 	switch (e->e.expr.op) {
 		case 'c':
 			sblock = expr_call (sblock, e, op);
+			break;
+		case '=':
+		case PAS:
+			sblock = expr_assign (sblock, e, op);
 			break;
 		default:
 			opcode = convert_op (e->e.expr.op);
@@ -731,7 +739,7 @@ statement_expr (sblock_t *sblock, expr_t *e)
 			break;
 		case '=':
 		case PAS:
-			sblock = statement_assign (sblock, e);
+			sblock = expr_assign (sblock, e, 0);
 			break;
 		default:
 			if (e->e.expr.op < 256)
