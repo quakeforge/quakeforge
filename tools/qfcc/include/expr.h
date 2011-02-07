@@ -176,7 +176,7 @@ typedef struct expr_s {
 	string_t	file;			///< source file that generated this expression
 	int         printid;		///< avoid duplicate output when printing
 	unsigned	paren:1;		///< the expression is enclosed in ()
-	unsigned	rvalue:1;		///< the expression is on the left side of =
+	unsigned	rvalue:1;		///< the expression is on the right side of =
 	union {
 		ex_label_t  label;				///< label expression
 		ex_state_t  state;				///< state expression
