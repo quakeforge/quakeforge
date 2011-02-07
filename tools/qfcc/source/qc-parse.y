@@ -737,7 +737,11 @@ decl
 	: function_decl
 	| var_decl opt_initializer
 		{
-			initialize_def ($1, $<spec>0.type, $2, current_symtab->space,
+			specifier_t spec = $<spec>0;
+			type_t     *type;
+
+			type = find_type (append_type ($1->type, spec.type));
+			initialize_def ($1, type, $2, current_symtab->space,
 							$<spec>0.storage);
 		}
 	;
