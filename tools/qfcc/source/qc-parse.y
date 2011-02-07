@@ -538,6 +538,7 @@ struct_defs
 
 struct_def
 	: type struct_decl_list
+	| type_name_or_class_name struct_decl_list
 	| type
 	;
 
