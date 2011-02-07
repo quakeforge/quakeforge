@@ -761,10 +761,8 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 			if (!e->e.expr.e1 && !options.traditional)
 				opcode = "<RETURN_V>";
 			s = new_statement (opcode);
-			if (e->e.expr.e1) {
+			if (e->e.expr.e1)
 				sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
-				s->opa->type = ev_void;
-			}
 			sblock_add_statement (sblock, s);
 			sblock->next = new_sblock ();
 			sblock = sblock->next;
