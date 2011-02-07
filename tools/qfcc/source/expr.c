@@ -842,6 +842,19 @@ field_expr (expr_t *e1, expr_t *e2)
 		}
 	} else if (t1->type == ev_pointer) {
 		if (is_struct (t1->t.fldptr.type)) {
+			symtab_t   *strct = t1->t.fldptr.type->t.symtab;
+			symbol_t   *sym = e2->e.symbol;//FIXME need to check
+			symbol_t   *field;
+			
+			field = symtab_lookup (strct, sym->name);
+			if (!field)
+				return new_error_expr ();
+			e2->type = ex_value;
+			e2->e.value.type = ev_short;
+			e2->e.value.v.short_val = field->s.offset;
+			e = new_binary_expr ('&', e1, e2);
+			e->e.expr.type = pointer_type (field->type);
+			return unary_expr ('.', e);
 		} else if (is_class (t1->t.fldptr.type)) {
 			class_t    *class = t1->t.fldptr.type->t.class;
 			symbol_t   *sym = e2->e.symbol;//FIXME need to check
