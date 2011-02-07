@@ -467,7 +467,7 @@ print_type (type_t *type)
 {
 	dstring_t  *str = dstring_newstr ();
 	print_type_str (str, type);
-	printf ("%s", str->str);
+	printf ("%s\n", str->str);
 	dstring_delete (str);
 }
 
