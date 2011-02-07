@@ -330,11 +330,13 @@ function_body
 			$<symtab>$ = current_symtab;
 			current_func = begin_function (sym, 0, current_symtab);
 			current_symtab = current_func->symtab;
+			current_storage = st_local;
 		}
 	  compound_statement
 		{
 			build_code_function ($<symbol>0, $1, $3);
 			current_symtab = $<symtab>2;
+			current_storage = st_global;
 		}
 	| '=' '#' expr ';'
 		{
@@ -703,8 +705,8 @@ array_decl
 	;
 
 local_specifiers
-	: LOCAL specifiers			{ current_storage = st_local; $$ = $2; }
-	| specifiers				{ current_storage = st_local; $$ = $1; }
+	: LOCAL specifiers			{  $$ = $2; }
+	| specifiers				{  $$ = $1; }
 	;
 /*
 param_scope
@@ -802,16 +804,18 @@ non_code_func
 	;
 
 code_func
-	: '='
+	: '=' optional_state_expr
 		{
 			$<symtab>$ = current_symtab;
 			current_func = begin_function ($<symbol>0, 0, current_symtab);
 			current_symtab = current_func->symtab;
+			current_storage = st_local;
 		}
-	  optional_state_expr compound_statement
+	  compound_statement
 		{
-			build_code_function ($<symbol>0, $3, $4);
-			current_symtab = $<symtab>2;
+			build_code_function ($<symbol>0, $2, $4);
+			current_symtab = $<symtab>3;
+			current_storage = st_global;
 		}
 	;
 
@@ -905,7 +909,6 @@ local_def
 		{
 			$$ = local_expr;
 			local_expr = 0;
-			current_storage = st_local;
 		}
 
 statement
@@ -1451,11 +1454,13 @@ methoddef
 									 current_func->symtab);
 			method->def = sym->s.func->def;
 			current_symtab = current_func->symtab;
+			current_storage = st_local;
 		}
 	  compound_statement
 		{
 			build_code_function ($<symbol>4, $3, $6);
 			current_symtab = $<symtab>5;
+			current_storage = st_global;
 		}
 	| ci methoddecl '=' '#' const ';'
 		{
