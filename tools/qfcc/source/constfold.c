@@ -803,6 +803,28 @@ do_op_struct (int op, expr_t *e, expr_t *e1, expr_t *e2)
 }
 
 static expr_t *
+do_op_compound (int op, expr_t *e, expr_t *e1, expr_t *e2)
+{
+	type_t     *t1 = get_type (e1);
+	type_t     *t2 = get_type (e2);
+	if (is_struct (t1) && is_struct (t2))
+		return do_op_struct (op, e, e1, e2);
+	if (is_scalar (t1) && is_scalar (t2)) {
+		if (is_enum (t1)) {
+			if (t2->type == ev_float)
+				return do_op_float (op, e, e1, e2);
+			return do_op_integer (op, e, e1, e2);
+		}
+		if (is_enum (t2)) {
+			if (t1->type == ev_float)
+				return do_op_float (op, e, e1, e2);
+			return do_op_integer (op, e, e1, e2);
+		}
+	}
+	return error (e1, "invalid operand for compound");
+}
+
+static expr_t *
 do_op_invalid (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	dstring_t  *t1 = dstring_newstr ();
@@ -986,6 +1008,21 @@ static operation_t op_short[ev_type_count] = {
 	do_op_invalid,						// ev_invalid
 };
 
+static operation_t op_compound[ev_type_count] = {
+	do_op_invalid,						// ev_void
+	do_op_invalid,						// ev_string
+	do_op_compound,						// ev_float
+	do_op_invalid,						// ev_vector
+	do_op_invalid,						// ev_entity
+	do_op_invalid,						// ev_field
+	do_op_invalid,						// ev_func
+	do_op_invalid,						// ev_pointer
+	do_op_invalid,						// ev_quaternion
+	do_op_compound,						// ev_integer
+	do_op_compound,						// ev_short
+	do_op_compound,						// ev_invalid
+};
+
 static operation_t *do_op[ev_type_count] = {
 	op_void,							// ev_void
 	op_string,							// ev_string
@@ -998,7 +1035,7 @@ static operation_t *do_op[ev_type_count] = {
 	op_quaternion,						// ev_quaternion
 	op_integer,							// ev_integer
 	op_short,							// ev_short
-	op_void,							// ev_invalid
+	op_compound,						// ev_invalid
 };
 
 expr_t *
@@ -1060,10 +1097,8 @@ fold_constants (expr_t *e)
 	if (op == 's')
 		return e;
 
-	if (is_struct (get_type (e1)) && is_struct (get_type (e2)))
-		return do_op_struct (op, e, e1, e2);
-
-	if (!do_op[t1] || !do_op[t1][t2])
+	if (t1 < 0 || t1 >= ev_type_count || t2 < 0 || t2 >= ev_type_count
+		|| !do_op[t1] || !do_op[t1][t2])
 		internal_error (e, 0);
 	return do_op[t1][t2] (op, e, e1, e2);
 }
