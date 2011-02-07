@@ -708,15 +708,7 @@ local_specifiers
 	: LOCAL specifiers			{  $$ = $2; }
 	| specifiers				{  $$ = $1; }
 	;
-/*
-param_scope
-	: / * empty * /
-		{
-			$$ = current_symtab;
-			current_symtab = new_symtab (current_symtab, stab_local);
-		}
-	;
-*/
+
 param_list
 	: param						{ $$ = $1; }
 	| param_list ',' { $<param>$ = $<param>1; } param	{ $$ = $4; }
