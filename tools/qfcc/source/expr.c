@@ -1120,6 +1120,8 @@ convert_nil (expr_t *e, type_t *t)
 {
 	memset (&e->e.value, 0, sizeof (e->e.value));
 	e->e.value.type = t->type;
+	if (t->type == ev_pointer)
+		e->e.value.v.pointer.type = t->t.fldptr.type;
 	e->type = ex_value;
 }
 
