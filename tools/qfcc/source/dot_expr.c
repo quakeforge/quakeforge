@@ -279,6 +279,7 @@ static void
 print_value (expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
+	type_t     *type;
 	const char *label = "?!?";
 
 	switch (e->e.value.type) {
@@ -302,8 +303,9 @@ print_value (expr_t *e, int level, int id)
 						e->e.value.v.quaternion_val[3]);
 			break;
 		case ev_pointer:
+			type = e->e.value.v.pointer.type;
 			label = va ("(%s)[%d]",
-					pr_type_name[e->e.value.v.pointer.type->type],
+					type ? pr_type_name[type->type] : "???",
 					e->e.value.v.pointer.val);
 			break;
 		case ev_field:
