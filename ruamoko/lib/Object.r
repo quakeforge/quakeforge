@@ -1,26 +1,26 @@
 #include "Object.h"
 #include "AutoreleasePool.h"
 
-void (obj_module_t [] msg) __obj_exec_class = #0;
+void (obj_module_t *msg) __obj_exec_class = #0;
 void (id object, integer code, string fmt, ...) obj_error = #0;
 void (id object, integer code, string fmt, @va_list args) obj_verror = #0;
 //obj_error_handler (objc_error_handler func) obj_set_error_handler = #0;
 IMP (id receiver, SEL op) obj_msg_lookup = #0;
 IMP (Super class, SEL op) obj_msg_lookup_super = #0;
 id (id receiver, SEL op, ...) obj_msgSend = #0;
-id (Super[] class, SEL op, ...) obj_msgSend_super = #0;
+id (Super*class, SEL op, ...) obj_msgSend_super = #0;
 @param (id receiver, SEL op, @va_list args) obj_msg_sendv = #0;
-(void []) (integer size) obj_malloc = #0;
-(void []) (integer size) obj_atomic_malloc = #0;
-(void []) (integer size) obj_valloc = #0;
-(void []) (void [] mem, integer size) obj_realloc = #0;
-(void []) (integer nelem, integer size) obj_calloc = #0;
-void (void [] mem) obj_free = #0;
-//(void []) (void) obj_get_uninstalled_dtable = #0;
+void *obj_malloc (integer size) = #0;
+void *obj_atomic_malloc (integer size) = #0;
+void *obj_valloc (integer size) = #0;
+void *obj_realloc (void *mem, integer size) = #0;
+void *obj_calloc (integer nelem, integer size) = #0;
+void (void *mem) obj_free = #0;
+//(void *) (void) obj_get_uninstalled_dtable = #0;
 
 Class (string name) obj_get_class = #0;
 Class (string name) obj_lookup_class = #0;
-//Class (void [][] enum_stage) obj_next_class = #0;
+//Class (void **enum_stage) obj_next_class = #0;
 
 string (SEL selector) sel_get_name = #0;
 string (SEL selector) sel_get_type = #0;
@@ -32,8 +32,8 @@ SEL (string name) sel_register_name = #0;
 //SEL (string name, string type) sel_register_typed_name = #0;
 BOOL (SEL aSel) sel_is_mapped = #0;
 
-Method [](Class class, SEL aSel) class_get_class_method = #0;
-Method [](Class class, SEL aSel) class_get_instance_method = #0;
+Method *class_get_class_method (Class class, SEL aSel) = #0;
+Method *class_get_instance_method (Class class, SEL aSel) = #0;
 Class (Class imposter, Class superclass) class_pose_as = #0;
 id (Class class) class_create_instance = #0;
 string (Class class) class_get_class_name = #0;
@@ -44,10 +44,10 @@ integer (Class class) class_get_version = #0;
 BOOL (Class class) class_is_class = #0;
 BOOL (Class class) class_is_meta_class = #0;
 void (Class class, integer version) class_set_version = #0;
-(void []) (Class class) class_get_gc_object_type = #0;
+void *class_get_gc_object_type (Class class) = #0;
 void (Class class, string ivarname, BOOL gcInvisible) class_ivar_set_gcinvisible = #0;
 
-IMP (Method []method) method_get_imp = #0;
+IMP (Method *method) method_get_imp = #0;
 IMP (Class class, SEL sel) get_imp = #0;
 
 id (id object) object_copy = #0;
@@ -206,7 +206,7 @@ BOOL (id object) object_is_meta_class = #0;
 	return (class_get_instance_method ([self class], aSelector) != nil);
 }
 
-- (BOOL) conformsToProtocol: (Protocol [])aProtocol
+- (BOOL) conformsToProtocol: (Protocol *)aProtocol
 {
 	return [[self class] conformsToProtocol: aProtocol];
 }

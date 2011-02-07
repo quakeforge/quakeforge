@@ -1,7 +1,7 @@
 #ifndef __ruamoko_script_h
 #define __ruamoko_script_h
 
-typedef struct rua_script [] script_t;
+typedef struct rua_script *script_t;
 
 @extern script_t Script_New (void);
 @extern void Script_Delete (script_t script);

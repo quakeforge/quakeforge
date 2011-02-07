@@ -26,14 +26,14 @@
 	return [[[self alloc] initWithCapacity: cap] autorelease];
 }
 
-+ (id) arrayWithArray: (Array [])array
++ (id) arrayWithArray: (Array *)array
 {
 	return [[array copy] autorelease];
 }
 
 + (id) arrayWithObject: (id)anObject
 {
-	Array [] newArray = (Array [])[self arrayWithCapacity: STANDARD_CAPACITY];
+	Array *newArray = (Array *)[self arrayWithCapacity: STANDARD_CAPACITY];
 
 	[newArray addObject: anObject];
 	return newArray;
@@ -50,7 +50,7 @@
 	return [newArray autorelease];
 }
 
-+ (id) arrayWithObjects: (id []) objs count: (unsigned)cnt
++ (id) arrayWithObjects: (id *) objs count: (unsigned)cnt
 {
 	local integer i;
 	id	newArray = [self array];
@@ -82,11 +82,11 @@
 	if (granularity > ARRAY_MAX_GRANULARITY)
 		granularity = ARRAY_MAX_GRANULARITY;
 
-	_objs = (id []) obj_malloc (capacity * @sizeof (id));
+	_objs = (id *) obj_malloc (capacity * @sizeof (id));
 	return self;
 }
 
-- (id) initWithArray: (Array [])array
+- (id) initWithArray: (Array *)array
 {
 #if 0
 	local unsigned i;
@@ -104,7 +104,7 @@
 #endif
 }
 
-- (id) initWithArray: (Array [])array
+- (id) initWithArray: (Array *)array
            copyItems: (BOOL)copy
 {
 	local unsigned i;
@@ -136,7 +136,7 @@
 	return self;
 }
 
-- (id) initWithObjects: (id []) objs count: (unsigned)cnt
+- (id) initWithObjects: (id *) objs count: (unsigned)cnt
 {
 	local integer i;
 
@@ -235,13 +235,13 @@
 {
 	if (count == capacity) {
 		capacity += granularity;
-		_objs = (id [])obj_realloc (_objs, capacity * @sizeof (id));
+		_objs = (id *)obj_realloc (_objs, capacity * @sizeof (id));
 	}
 	_objs[count] = [anObject retain];
 	count++;
 }
 
-- (void) addObjectsFromArray: (Array [])array
+- (void) addObjectsFromArray: (Array *)array
 {
 	local unsigned	i;
 
@@ -265,7 +265,7 @@
 		[self error: "-insertObject:atIndex: index out of range"];
 
 	if (count == capacity) {	// at capacity, expand
-		_objs = (id [])obj_realloc (_objs, capacity * @sizeof (id));
+		_objs = (id *)obj_realloc (_objs, capacity * @sizeof (id));
 		capacity += granularity;
 	}
 
@@ -299,7 +299,7 @@
 	[tmp release];
 }
 
-- (void) setArray: (Array [])array
+- (void) setArray: (Array *)array
 {
 	if (self == array)
 		return;
@@ -381,7 +381,7 @@
 	} while (i);
 }
 
-- (void) removeObjectsInArray: (Array [])array
+- (void) removeObjectsInArray: (Array *)array
 {
 	local unsigned	i = [array count];
 

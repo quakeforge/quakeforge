@@ -17,6 +17,6 @@ integer PL_A_InsertObjectAtIndex (plitem_t array_item, plitem_t item, integer in
 plitem_t PL_RemoveObjectAtIndex (plitem_t array_item, integer index) = #0;
 plitem_t PL_NewDictionary (void) = #0;
 plitem_t PL_NewArray (void) = #0;
-plitem_t PL_NewData (void []data, integer len) = #0;
+plitem_t PL_NewData (void *data, integer len) = #0;
 plitem_t PL_NewString (string str) = #0;
 void PL_Free (plitem_t pl) = #0;

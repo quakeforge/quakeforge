@@ -10,7 +10,7 @@
 {
 	if (count == capacity) {
 		capacity += granularity;
-		_objs = (id [])obj_realloc (_objs, capacity * @sizeof (id));
+		_objs = (id *)obj_realloc (_objs, capacity * @sizeof (id));
 	}
 	_objs[count++] = anObject;
 }

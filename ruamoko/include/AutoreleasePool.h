@@ -22,7 +22,7 @@
 */
 @interface AutoreleasePool: Object
 {
-	Array[]	array;				///< a list of objects awaiting release
+	Array	*array;				///< a list of objects awaiting release
 }
 
 /**

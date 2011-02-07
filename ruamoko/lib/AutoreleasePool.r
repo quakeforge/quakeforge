@@ -4,7 +4,7 @@
 #include "Array.h"
 #include "Array+Private.h"
 
-@static Array[]	poolStack;
+@static Array	*poolStack;
 
 @implementation AutoreleasePool
 

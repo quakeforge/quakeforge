@@ -24,17 +24,17 @@ typedef enum {
 @extern IMP obj_msg_lookup (id receiver, SEL op);
 @extern IMP obj_msg_lookup_super (Super class, SEL op);
 @extern @param obj_msg_sendv (id receiver, SEL op, @va_list args);
-@extern (void []) obj_malloc (integer size);
-@extern (void []) obj_atomic_malloc (integer size);
-@extern (void []) obj_valloc (integer size);
-@extern (void []) obj_realloc (void [] mem, integer size);
-@extern (void []) obj_calloc (integer nelem, integer size);
-@extern void obj_free (void [] mem);
-//(void []) obj_get_uninstalled_dtable (void);
+@extern void *obj_malloc (integer size);
+@extern void *obj_atomic_malloc (integer size);
+@extern void *obj_valloc (integer size);
+@extern void *obj_realloc (void *mem, integer size);
+@extern void *obj_calloc (integer nelem, integer size);
+@extern void obj_free (void *mem);
+//(void *) obj_get_uninstalled_dtable (void);
 
 @extern Class obj_get_class (string name);
 @extern Class obj_lookup_class (string name);
-//Class obj_next_class (void [][] enum_stage);
+//Class obj_next_class (void **enum_stage);
 
 @extern string sel_get_name (SEL selector);
 @extern string sel_get_type (SEL selector);
@@ -46,8 +46,8 @@ typedef enum {
 //@extern SEL sel_register_typed_name (string name, string type);
 @extern BOOL sel_is_mapped (SEL aSel);
 
-@extern Method []class_get_class_method (Class class, SEL aSel);
-@extern Method []class_get_instance_method (Class class, SEL aSel);
+@extern Method *class_get_class_method (Class class, SEL aSel);
+@extern Method *class_get_instance_method (Class class, SEL aSel);
 @extern Class class_pose_as (Class imposter, Class superclass);
 @extern id class_create_instance (Class class);
 @extern string class_get_class_name (Class class);
@@ -58,10 +58,10 @@ typedef enum {
 @extern BOOL class_is_class (Class class);
 @extern BOOL class_is_meta_class (Class class);
 @extern void class_set_version (Class class, integer version);
-@extern (void []) class_get_gc_object_type (Class class);
+@extern void *class_get_gc_object_type (Class class);
 @extern void class_ivar_set_gcinvisible (Class class, string ivarname, BOOL gcInvisible);
 
-@extern IMP method_get_imp (Method []method);
+@extern IMP method_get_imp (Method *method);
 @extern IMP get_imp (Class class, SEL sel);
 
 @extern id object_copy (id object);

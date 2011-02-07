@@ -1,14 +1,14 @@
 #include "Protocol.h"
 
 struct obj_protocol_list {
-	struct obj_protocol_list [] next;
+	struct obj_protocol_list *next;
 	integer count;
-	Protocol[] [1] list;
+	Protocol *list[1];
 };
 
 struct obj_method_description_list {
 	integer count;
-	struct obj_method_description [1] list;
+	struct obj_method_description list[1];
 };
 
 @implementation Protocol
@@ -17,10 +17,10 @@ struct obj_method_description_list {
 	return protocol_name;
 }
 
-- (BOOL) conformsTo: (Protocol [])aProtocolObject
+- (BOOL) conformsTo: (Protocol *)aProtocolObject
 {
 	local integer i;
-	local struct obj_protocol_list [] proto_list;
+	local struct obj_protocol_list *proto_list;
 
 	if (aProtocolObject.protocol_name == protocol_name)
 		return YES;
@@ -35,12 +35,12 @@ struct obj_method_description_list {
 	return NO;
 }
 
-- (struct obj_method_description []) descriptionForInstanceMethod: (SEL)aSel
+- (struct obj_method_description *) descriptionForInstanceMethod: (SEL)aSel
 {
 	local integer i;
-	local struct obj_protocol_list [] proto_list;
+	local struct obj_protocol_list *proto_list;
 	local string name = sel_get_name (aSel);
-	local struct obj_method_description [] result;
+	local struct obj_method_description *result;
 
 	for (i = 0; i < instance_methods.count; i++) {
 		if (instance_methods.list[i].name == name)
@@ -58,12 +58,12 @@ struct obj_method_description_list {
 	return nil;
 }
 
-- (struct obj_method_description []) descriptionForClassMethod: (SEL)aSel
+- (struct obj_method_description *) descriptionForClassMethod: (SEL)aSel
 {
 	local integer i;
-	local struct obj_protocol_list [] proto_list;
+	local struct obj_protocol_list *proto_list;
 	local string name = sel_get_name (aSel);
-	local struct obj_method_description [] result;
+	local struct obj_method_description *result;
 
 	for (i = 0; i < class_methods.count; i++) {
 		if (class_methods.list[i].name == name)

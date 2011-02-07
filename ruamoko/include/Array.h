@@ -23,7 +23,7 @@
 	unsigned	count;			///< The number of objects currently contained
 	unsigned	capacity;		///< The number of objects that can be held right now
 	unsigned	granularity;	///< The number of pointers allocated at a time (based on initial capacity)
-	id			[] _objs;		///< A primitive array of pointers to objects
+	id			*_objs;		///< A primitive array of pointers to objects
 }
 
 ///\name Creating arrays
@@ -43,7 +43,7 @@
 /** 
 	Returns a copy of \a array, retaining its contents.
 */
-+ (id) arrayWithArray: (Array [])array;
++ (id) arrayWithArray: (Array *)array;
 
 /**
 	Create an array containing only \a anObject .
@@ -65,7 +65,7 @@
 	\warning Do not supply a primitive array containing fewer than \a count
 	objects.
 */
-+ (id) arrayWithObjects: (id [])objs
++ (id) arrayWithObjects: (id *)objs
                   count: (unsigned)cnt;
 //\}
 
@@ -79,7 +79,7 @@
 /**
 	Initialize the receiver with objects from \a array.
 */
-- (id) initWithArray: (Array [])array;
+- (id) initWithArray: (Array *)array;
 
 /**
 	Initialize the receiver with objects from \a array.
@@ -87,7 +87,7 @@
 	\param	array	The array to duplicate
 	\param	flag 	if #YES, copies the contents instead of retaining them.
 */
-- (id) initWithArray: (Array [])array
+- (id) initWithArray: (Array *)array
            copyItems: (BOOL)flag;
 
 /**
@@ -101,7 +101,7 @@
 /**
 	Initialize the receiver with a primitive array of objects.
 */
-- (id) initWithObjects: (id [])objs
+- (id) initWithObjects: (id *)objs
                  count: (unsigned)count;
 //\}
 
@@ -138,7 +138,7 @@
 
 	\warning The destination buffer must be large enough to hold all contents.
 */
-- (BOOL) getObjects: (id [])aBuffer
+- (BOOL) getObjects: (id *)aBuffer
               range: (Range)aRange;
 #endif
 //\}
@@ -193,7 +193,7 @@
 /**
 	Adds each object in \a array to the receiver, retaining it.
 */
-- (void) addObjectsFromArray: (Array [])array;
+- (void) addObjectsFromArray: (Array *)array;
 
 /**
 	Adds a single object to an array
@@ -218,7 +218,7 @@
 
 	\note If \a array and self are the same object, this method has no effect.
 */
-- (void) setArray: (Array [])array;
+- (void) setArray: (Array *)array;
 //\}
 
 ///\name Removing Objects
@@ -245,7 +245,7 @@
 	Finds and removes all objects from the receiver that are equal to any 
 	objects in array \a anArray.
 */
-- (void) removeObjectsInArray: (Array [])anArray;
+- (void) removeObjectsInArray: (Array *)anArray;
 
 /**
 	Finds and removes all objects from the receiver that are \b exactly equal
