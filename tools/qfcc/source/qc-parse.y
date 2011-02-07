@@ -708,7 +708,7 @@ decl_list
 	;
 
 decl
-	: function_decl
+	: function_decl							{}
 	| var_decl opt_initializer
 		{
 			specifier_t spec = $<spec>0;
