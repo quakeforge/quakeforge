@@ -90,6 +90,7 @@ find_tag (ty_type_e ty, symbol_t *tag, type_t *type)
 	sym->type = type;
 	sym->type->type = ev_invalid;
 	sym->type->ty = ty;
+	sym->sy_type = sy_type;
 	return sym;
 }
 
@@ -128,7 +129,6 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 				symtab->size = size;
 		}
 	}
-	sym->sy_type = sy_type;
 	sym->type->t.symtab = symtab;
 	sym->type = find_type (sym->type);
 	return sym;
