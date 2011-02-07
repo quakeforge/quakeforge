@@ -97,7 +97,6 @@ int yylex (void);
 	int         size;
 	specifier_t spec;
 	void       *pointer;			// for ensuring pointer values are null
-	struct hashtab_s *def_list;
 	struct type_s	*type;
 	struct expr_s	*expr;
 	struct function_s *function;
@@ -152,9 +151,10 @@ int yylex (void);
 %token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
 %token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
 
-%type	<spec>		type_name_or_class_name
-%type	<spec>		optional_specifiers specifiers storage_class type
+%type	<spec>		optional_specifiers specifiers local_specifiers
+%type	<spec>		storage_class
 %type	<spec>		type_specifier type_specifier_or_storage_class
+%type	<spec>		type_name_or_class_name type
 
 %type	<param>		function_params var_list param_declaration
 %type	<symbol>	var_decl function_decl
@@ -171,11 +171,12 @@ int yylex (void);
 
 %type	<expr>		const string
 
-%type	<spec>		ivar_decl def_item def_list
+%type	<spec>		ivar_decl decl decl_list
 %type	<spec>		ivars
 %type	<param>		param param_list
 %type	<symbol>	methoddef
-%type	<expr>		opt_initializer var_initializer
+%type	<expr>		opt_initializer var_initializer local_def
+
 %type	<expr>		opt_expr fexpr expr element_list element
 %type	<expr>		optional_state_expr think opt_step texpr
 %type	<expr>		statement statements compound_statement
@@ -701,10 +702,9 @@ array_decl
 	| '[' ']'					{ $$ = 0; }
 	;
 
-local_storage_class
-	: LOCAL						{ current_storage = st_local; }
-	| %prec STORAGEX			{ current_storage = st_local; }
-	| STATIC					{ current_storage = st_static; }
+local_specifiers
+	: LOCAL specifiers			{ current_storage = st_local; $$ = $2; }
+	| specifiers				{ current_storage = st_local; $$ = $1; }
 	;
 /*
 param_scope
@@ -728,13 +728,14 @@ param
 		}
 	;
 
-def_list
-	: def_list ',' { $<spec>$ = $<spec>0; } def_item
-	| def_item
+decl_list
+	: decl_list ',' { $<spec>$ = $<spec>0; } decl
+	| decl
 	;
 
-def_item
-	: identifier opt_initializer
+decl
+	: function_decl
+	| var_decl opt_initializer
 		{
 			initialize_def ($1, $<spec>0.type, $2, current_symtab->space,
 							$<spec>0.storage);
@@ -890,21 +891,24 @@ statements
 		}
 	;
 
-statement
-	: ';'						{ $$ = 0; }
-	| error ';'					{ $$ = 0; yyerrok; }
-	| compound_statement		{ $$ = $1; }
-	| local_storage_class type
+local_def
+	: local_specifiers
 		{
-			$<spec>$ = $2;
+			$<spec>$ = $1;
 			local_expr = new_block_expr ();
 		}
-	  def_list ';'
+	  decl_list ';'
 		{
 			$$ = local_expr;
 			local_expr = 0;
 			current_storage = st_local;
 		}
+
+statement
+	: ';'						{ $$ = 0; }
+	| error ';'					{ $$ = 0; yyerrok; }
+	| compound_statement		{ $$ = $1; }
+	| local_def					{ $$ = $1; }
 	| RETURN opt_expr ';'
 		{
 			$$ = return_expr (current_func, $2);
