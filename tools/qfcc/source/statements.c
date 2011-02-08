@@ -381,7 +381,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 				&& a->e.value.type == ev_vector) {
 				sblock = vector_call (sblock, a, param, ind, 0);
 			} else {
-				operand_t  *p;
+				operand_t  *p = 0;
 				operand_t  *arg;
 				sblock = statement_subexpr (sblock, param, &p);
 				arg = p;
