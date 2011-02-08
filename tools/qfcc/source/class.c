@@ -132,7 +132,7 @@ static struct_def_t ivar_struct[] = {
 
 static struct_def_t super_struct[] = {
 	{"self", &type_id},
-	{"class", &type_Class},
+	{"class", &type_ClassPtr},
 	{0, 0}
 };
 
@@ -145,8 +145,8 @@ static struct_def_t module_struct[] = {
 };
 
 static struct_def_t class_ivars[] = {
-	{"class_pointer",  &type_Class},
-	{"super_class",    &type_Class},
+	{"class_pointer",  &type_ClassPtr},
+	{"super_class",    &type_ClassPtr},
 	{"name",           &type_string},
 	{"version",        &type_integer},
 	{"info",           &type_integer},
@@ -161,7 +161,7 @@ static struct_def_t class_ivars[] = {
 };
 
 static struct_def_t protocol_ivars[] = {
-	{"class_pointer",    &type_Class},
+	{"class_pointer",    &type_ClassPtr},
 	{"protocol_name",    &type_string},
 	{"protocol_list",    &type_pointer},
 	{"instance_methods", &type_pointer},
@@ -170,7 +170,7 @@ static struct_def_t protocol_ivars[] = {
 };
 
 static struct_def_t object_ivars[] = {
-	{"class_pointer", &type_Class},
+	{"class_pointer", &type_ClassPtr},
 	{0, 0}
 };
 
