@@ -1,7 +1,7 @@
 @interface foo
 {
 	unsigned count;
-	id []_objs;
+	id *_objs;
 }
 @end
 
