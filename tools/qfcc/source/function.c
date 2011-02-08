@@ -626,19 +626,18 @@ build_function (function_t *f)
 void
 finish_function (function_t *f)
 {
-	//	FIXME
-//	if (f->aux) {
-//		def_t *def;
-//		f->aux->function = f->function_num;
-//		if (f->scope) {
-//			for (def = f->scope->head; def; def = def->def_next) {
-//				if (def->name) {
-//					def_to_ddef (def, new_local (), 0);
-//					f->aux->num_locals++;
-//				}
-//			}
-//		}
-//	}
+	if (f->aux) {
+		def_t *def;
+		f->aux->function = f->function_num;
+		if (f->symtab && f->symtab->space) {
+			for (def = f->symtab->space->defs; def; def = def->next) {
+				if (def->name) {
+					def_to_ddef (def, new_local (), 0);
+					f->aux->num_locals++;
+				}
+			}
+		}
+	}
 }
 
 void

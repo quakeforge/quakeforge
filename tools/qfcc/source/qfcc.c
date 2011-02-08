@@ -378,7 +378,6 @@ finish_compilation (void)
 	qboolean    errors = false;
 	function_t *f;
 	def_t      *def;
-	expr_t      e;
 	dfunction_t *df;
 
 	// check to make sure all functions prototyped have code
@@ -417,15 +416,16 @@ finish_compilation (void)
 	if (options.code.progsversion != PROG_ID_VERSION) {
 		//FIXME better init code
 		symbol_t   *sym = new_symbol (".param_size");
-		initialize_def (sym, &type_integer, 0,
-						pr.symtab->space, st_global);
+		initialize_def (sym, &type_integer, 0, pr.symtab->space, st_global);
 		D_INT (sym->s.def) = type_size (&type_param);
 	}
 
 	if (options.code.debug) {
-		e = *new_string_expr (debugfile);
-		//FIXME ReuseConstant (&e, get_def (&type_string, ".debug_file", pr.scope,
-		//FIXME 			   st_global));
+		//FIXME better init code
+		symbol_t   *sym = new_symbol (".debug_file");
+		initialize_def (sym, &type_string, 0, pr.symtab->space, st_global);
+		EMIT_STRING (sym->s.def->space, D_STRUCT (string_t, sym->s.def),
+					 debugfile);
 	}
 
 	for (def = pr.near_data->defs; def; def = def->next)
