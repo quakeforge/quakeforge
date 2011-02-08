@@ -1009,7 +1009,9 @@ emit_symtab_ref_cnt (def_t *def, void *data, int index)
 
 	if (def->type != &type_integer)
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
-	D_INT (def) = da->refs->type->t.array.size;
+	D_INT (def) = 0;
+	if (da->refs)
+		D_INT (def) = da->refs->type->t.array.size;
 }
 
 static void
@@ -1019,7 +1021,9 @@ emit_symtab_refs (def_t *def, void *data, int index)
 
 	if (def->type != &type_SEL)
 		internal_error (0, "%s: expected SEL def", __FUNCTION__);
-	EMIT_DEF (def->space, def->offset, da->refs);
+	D_INT (def) = 0;
+	if (da->refs)
+		EMIT_DEF (def->space, def->offset, da->refs);
 }
 
 static void
