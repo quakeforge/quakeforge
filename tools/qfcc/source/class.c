@@ -290,6 +290,7 @@ class_symbol (class_type_t *class_type, int external)
 {
 	const char *name = 0;
 	type_t     *type = 0;
+	symbol_t   *sym;
 
 	switch (class_type->type) {
 		case ct_category:
@@ -305,8 +306,11 @@ class_symbol (class_type_t *class_type, int external)
 		case ct_protocol:
 			return 0;		// probably in error recovery
 	}
-	return make_symbol (name, type, pr.far_data,
-						external ? st_extern : st_global);
+	sym = make_symbol (name, type, pr.far_data,
+					   external ? st_extern : st_global);
+	if (!sym->table)
+		symtab_addsymbol (pr.symtab, sym);
+	return sym;
 }
 
 class_t *
