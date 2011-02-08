@@ -277,6 +277,8 @@ class_init (void)
 {
 	symbol_t   *sym;
 
+	if (!current_symtab)
+		current_symtab = pr.symtab;
 	init_classes ();
 	init_objective_structs ();
 
