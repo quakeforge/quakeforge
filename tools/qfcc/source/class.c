@@ -1051,8 +1051,8 @@ emit_symtab_defs (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (def->type != &type_pointer)
-		internal_error (0, "%s: expected pointer def", __FUNCTION__);
+	if (!is_array (def->type) || def->type->t.array.type->type != ev_pointer)
+		internal_error (0, "%s: expected array of pointers def", __FUNCTION__);
 	if (index < 0 || index >= da->cls_def_cnt + da->cat_def_cnt)
 		internal_error (0, "%s: out of bounds index: %d %d",
 						__FUNCTION__, index,
