@@ -79,7 +79,7 @@ get_value_def (ex_value_t *value, etype_t type)
 }
 
 static def_t *
-get_operand_def (operand_t *op)
+get_operand_def (expr_t *expr, operand_t *op)
 {
 	def_t      *def;
 
@@ -99,7 +99,7 @@ get_operand_def (operand_t *op)
 					return get_value_def (&op->o.symbol->s.value, op->type);
 				case sy_type:
 				case sy_expr:
-					internal_error (0, "invalid operand type");
+					internal_error (expr, "invalid operand type");
 			}
 			break;
 		case op_value:
@@ -154,14 +154,14 @@ static void
 emit_statement (statement_t *statement)
 {
 	const char *opcode = statement->opcode;
-	def_t      *def_a = get_operand_def (statement->opa);
-	def_t      *def_b = get_operand_def (statement->opb);
-	def_t      *def_c = get_operand_def (statement->opc);
+	def_t      *def_a = get_operand_def (statement->expr, statement->opa);
+	def_t      *def_b = get_operand_def (statement->expr, statement->opb);
+	def_t      *def_c = get_operand_def (statement->expr, statement->opc);
 	opcode_t   *op = opcode_find (opcode, def_a, def_b, def_c);
 	dstatement_t *s;
 
 	if (!op)
-		internal_error (0, "ice ice baby");
+		internal_error (statement->expr, "ice ice baby");
 	s = codespace_newstatement (pr.code);
 	s->op = op->opcode;
 	s->a = def_a ? def_a->offset : 0;
