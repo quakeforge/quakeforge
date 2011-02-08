@@ -472,7 +472,7 @@ new_name_expr (const char *name)
 
 	sym = symtab_lookup (current_symtab, name);
 	if (!sym)
-		return error (0, "undefined symbol %s", name);
+		sym = new_symbol (name);
 	e->type = ex_symbol;
 	e->e.symbol = sym;
 	return e;
@@ -2503,12 +2503,11 @@ encode_expr (type_t *type)
 expr_t *
 super_expr (class_type_t *class_type)
 {
-	def_t      *super_d;
+	symbol_t   *sym;
 	expr_t     *super;
 	expr_t     *e;
 	expr_t     *super_block;
 	class_t    *class;
-	class_type_t _class_type;
 
 	if (!class_type)
 		return error (0, "`super' used outside of class implementation");
@@ -2518,17 +2517,20 @@ super_expr (class_type_t *class_type)
 	if (!class->super_class)
 		return error (0, "%s has no super class", class->name);
 
-	super_d = 0;//FIXME get_def (&type_Super, ".super", current_func->scope, st_local);
-	super = 0; //FIXME new_def_expr (super_d);
+	sym = symtab_lookup (current_symtab, ".super");
+	if (!sym || sym->table != current_symtab) {
+		sym = new_symbol (".super");
+		initialize_def (sym, &type_Super, 0, current_symtab->space, st_local);
+	}
+	super = new_symbol_expr (sym);
+
 	super_block = new_block_expr ();
 
 	e = assign_expr (binary_expr ('.', super, new_name_expr ("self")),
 								  new_name_expr ("self"));
 	append_expr (super_block, e);
 
-	_class_type.type = ct_class;
-	_class_type.c.class = class;
-	e = new_symbol_expr (class_symbol (&_class_type, 1));
+	e = new_symbol_expr (class_pointer_symbol (class));
 	e = assign_expr (binary_expr ('.', super, new_name_expr ("class")),
 					 binary_expr ('.', e, new_name_expr ("super_class")));
 	append_expr (super_block, e);
