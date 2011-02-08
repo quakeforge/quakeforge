@@ -1088,7 +1088,6 @@ class_finish_module (void)
 	pr_module_t *module;
 	symbol_t   *exec_class_sym;
 	symbol_t   *init_sym;
-	function_t *init_func;
 	expr_t     *init_expr;
 
 	data.refs = emit_selectors ();
@@ -1113,6 +1112,7 @@ class_finish_module (void)
 
 	module_sym = make_symbol ("_OBJ_MODULE", &type_module, pr.near_data,
 							  st_static);
+	symtab_addsymbol (current_symtab, module_sym);
 	module = &D_STRUCT (pr_module_t, module_sym->s.def);
 	module->size = type_size (&type_module);
 	EMIT_STRING (module_sym->s.def->space, module->name,
@@ -1121,17 +1121,20 @@ class_finish_module (void)
 
 	exec_class_sym = new_symbol_type ("__obj_exec_class",
 									  &type_obj_exec_class);
-	symtab_addsymbol (current_symtab, exec_class_sym);
+	exec_class_sym = function_symbol (exec_class_sym, 0, 1);
+	make_function (exec_class_sym, 0, st_extern);
 
 	init_sym = new_symbol_type (".ctor", &type_function);
-	symtab_addsymbol (current_symtab, init_sym);
+	init_sym = function_symbol (init_sym, 0, 1);
+
 	init_expr = new_block_expr ();
 	append_expr (init_expr,
 			build_function_call (new_symbol_expr (exec_class_sym),
 								 exec_class_sym->type,
 								 address_expr (new_symbol_expr (module_sym),
 									 		   0, 0)));
-	current_func = init_func = begin_function (init_sym, 0, current_symtab);
+
+	current_func = begin_function (init_sym, 0, current_symtab);
 	build_code_function (init_sym, 0, init_expr);;
 	current_func = 0;
 }
