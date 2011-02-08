@@ -799,7 +799,7 @@ int
 is_struct (type_t *type)
 {
 	if (type->type == ev_invalid
-		&& (type->ty == ty_struct || type->type == ty_union))
+		&& (type->ty == ty_struct || type->ty == ty_union))
 		return 1;
 	return 0;
 }
