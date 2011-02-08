@@ -113,6 +113,8 @@ print_operand (operand_t *op)
 		case op_temp:
 			printf ("tmp %p", op);
 			break;
+		case op_pointer:
+			printf ("ptr %p", op->o.pointer);
 	}
 }
 
@@ -435,6 +437,10 @@ expr_deref (sblock_t *sblock, expr_t *e, operand_t **op)
 			(*op)->type = low_level_type (e->e.expr.type);
 		}
 		s->opc = *op;
+	} else if (e->type == ex_value && e->e.value.type == ev_pointer) {
+		*op = new_operand (op_pointer);
+		(*op)->type = low_level_type (e->e.value.v.pointer.type);
+		(*op)->o.pointer = &e->e.value.v.pointer;
 	}
 	return sblock;
 }

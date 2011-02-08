@@ -81,6 +81,8 @@ get_value_def (ex_value_t *value, etype_t type)
 static def_t *
 get_operand_def (operand_t *op)
 {
+	def_t      *def;
+
 	if (!op)
 		return 0;
 	switch (op->op_type) {
@@ -110,6 +112,13 @@ get_operand_def (operand_t *op)
 				op->o.def = new_def (".tmp", ev_types[op->type],
 									 current_func->symtab->space, st_local);
 			return op->o.def;
+		case op_pointer:
+			def = op->o.pointer->def;
+			if (op->o.pointer->val || op->type != def->type->type) {
+				def = alias_def (def, ev_types[op->type]);
+				def->offset = op->o.pointer->val;
+			}
+			return def;
 	}
 	return 0;
 }

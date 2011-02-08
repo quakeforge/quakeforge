@@ -94,7 +94,7 @@ typedef struct {
 
 	Represent a pointer to an absolute address in data space.
 */
-typedef struct {
+typedef struct ex_pointer_s {
 	int         val;
 	struct type_s *type;
 	struct def_s *def;

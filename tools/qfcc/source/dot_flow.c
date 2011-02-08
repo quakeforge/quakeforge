@@ -47,6 +47,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "expr.h"
 #include "statements.h"
 #include "symtab.h"
+#include "type.h"
 
 static const char *
 quote_string (const char *str)
@@ -85,6 +86,8 @@ quote_string (const char *str)
 static const char *
 get_operand (operand_t *op)
 {
+	type_t     *type;
+
 	if (!op)
 		return "";
 	switch (op->op_type) {
@@ -131,6 +134,16 @@ get_operand (operand_t *op)
 			return op->o.label->name;
 		case op_temp:
 			return va ("tmp %p", op);
+		case op_pointer:
+			type = op->o.pointer->type;
+			if (op->o.pointer->def)
+				return va ("(%s)[%d]<%s>",
+						   type ? pr_type_name[type->type] : "???",
+						   op->o.pointer->val, op->o.pointer->def->name);
+			else
+				return va ("(%s)[%d]",
+						   type ? pr_type_name[type->type] : "???",
+						   op->o.pointer->val);
 	}
 	return ("??");
 }
