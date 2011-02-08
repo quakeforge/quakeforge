@@ -304,9 +304,15 @@ print_value (expr_t *e, int level, int id)
 			break;
 		case ev_pointer:
 			type = e->e.value.v.pointer.type;
-			label = va ("(%s)[%d]",
-					type ? pr_type_name[type->type] : "???",
-					e->e.value.v.pointer.val);
+			if (e->e.value.v.pointer.def)
+				label = va ("(%s)[%d]<%s>",
+							type ? pr_type_name[type->type] : "???",
+							e->e.value.v.pointer.val,
+							e->e.value.v.pointer.def->name);
+			else
+				label = va ("(%s)[%d]",
+							type ? pr_type_name[type->type] : "???",
+							e->e.value.v.pointer.val);
 			break;
 		case ev_field:
 			label = va ("field %d", e->e.value.v.pointer.val);
