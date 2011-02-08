@@ -339,6 +339,8 @@ PR_LoadDebug (progs_t *pr)
 
 	i = pr->progs->numfunctions * sizeof (pr_auxfunction_t *);
 	pr->auxfunction_map = pr->allocate_progs_mem (pr, i);
+	for (i = 0; (int) i < pr->progs->numfunctions; i++) //FIXME (cast)
+		pr->auxfunction_map[i] = 0;
 
 	for (i = 0; i < pr->debug->num_auxfunctions; i++) {
 		pr->auxfunctions[i].function = LittleLong
