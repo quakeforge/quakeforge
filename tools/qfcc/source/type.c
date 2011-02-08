@@ -832,6 +832,10 @@ type_assignable (type_t *dst, type_t *src)
 	if (dst == &type_id && src->type == ev_pointer
 		&& is_class (src->t.fldptr.type))
 		return 1;
+	// any class pointer = id
+	if (src == &type_id && dst->type == ev_pointer
+		&& is_class (dst->t.fldptr.type))
+		return 1;
 	// pointer = array
 	if (dst->type == ev_pointer
 		&& src->type == ev_invalid && src->ty == ty_array) {
