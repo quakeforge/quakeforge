@@ -108,9 +108,13 @@ get_operand_def (expr_t *expr, operand_t *op)
 			zero_def.type = &type_short;
 			return &zero_def;	//FIXME
 		case op_temp:
-			if (!op->o.def)
-				op->o.def = new_def (".tmp", ev_types[op->type],
+			if (!op->o.def) {
+				const char *temp_name;
+
+				temp_name = va (".tmp%d", current_func->temp_num++);
+				op->o.def = new_def (temp_name, ev_types[op->type],
 									 current_func->symtab->space, st_local);
+			}
 			return op->o.def;
 		case op_pointer:
 			def = op->o.pointer->def;

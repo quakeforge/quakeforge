@@ -56,6 +56,7 @@ typedef struct function_s {
 	int                 function_num;
 	string_t            s_file;		///< source file with definition
 	string_t            s_name;
+	int                 temp_num;	///< number for next temp var
 	struct def_s       *def;
 	struct symbol_s    *sym;
 	struct symtab_s    *symtab;
