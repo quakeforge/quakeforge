@@ -41,4 +41,6 @@ pr_auxfunction_t *new_auxfunction (void);
 pr_lineno_t *new_lineno (void);
 struct ddef_s *new_local (void);
 
+extern int lineno_base;
+
 #endif//__debug_h

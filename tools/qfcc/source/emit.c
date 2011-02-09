@@ -162,6 +162,17 @@ emit_statement (statement_t *statement)
 
 	if (!op)
 		internal_error (statement->expr, "ice ice baby");
+	if (options.code.debug && current_func->aux) {
+		expr_t     *e = statement->expr;
+		pr_uint_t   line = (e ? e->line : pr.source_line) - lineno_base;
+
+		if (line != pr.linenos[pr.num_linenos - 1].line) {
+			pr_lineno_t *lineno = new_lineno ();
+
+			lineno->line = line;
+			lineno->fa.addr = pr.code->size;
+		}
+	}
 	s = codespace_newstatement (pr.code);
 	s->op = op->opcode;
 	s->a = def_a ? def_a->offset : 0;

@@ -558,8 +558,6 @@ void init_elements (struct def_s *def, expr_t *eles);
 
 const char *get_op_string (int op);
 
-extern int lineno_base;
-
 struct keywordarg_s;
 struct class_type_s;
 expr_t *selector_expr (struct keywordarg_s *selector);

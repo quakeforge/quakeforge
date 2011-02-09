@@ -67,7 +67,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "qc-parse.h"
 
 static expr_t *free_exprs;
-int         lineno_base;
 
 type_t     *ev_types[ev_type_count] = {
 	&type_void,

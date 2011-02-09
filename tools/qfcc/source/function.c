@@ -646,6 +646,8 @@ emit_function (function_t *f, expr_t *e)
 	sblock_t   *sblock;
 
 	f->code = pr.code->size;
+	if (f->aux)
+		lineno_base = f->aux->source_line;
 	sblock = make_statements (e);
 	emit_statements (sblock);
 }

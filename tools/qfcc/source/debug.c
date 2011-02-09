@@ -52,6 +52,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "qfcc.h"
 #include "strpool.h"
 
+int         lineno_base;
+
 static srcline_t *free_srclines;
 
 void
