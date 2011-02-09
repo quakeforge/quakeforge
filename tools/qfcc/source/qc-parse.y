@@ -326,16 +326,18 @@ function_body
 			symbol_t   *sym = $<symbol>0;
 
 			sym->type = find_type (append_type (sym->type, $<spec>-1.type));
-			sym = function_symbol (sym, $<spec>-1.is_overload, 1);
+			$<symbol>$ = function_symbol (sym, $<spec>-1.is_overload, 1);
+		}
+		{
 			$<symtab>$ = current_symtab;
-			current_func = begin_function (sym, 0, current_symtab);
+			current_func = begin_function ($<symbol>2, 0, current_symtab);
 			current_symtab = current_func->symtab;
 			current_storage = st_local;
 		}
 	  compound_statement
 		{
-			build_code_function ($<symbol>0, $1, $3);
-			current_symtab = $<symtab>2;
+			build_code_function ($<symbol>2, $1, $4);
+			current_symtab = $<symtab>3;
 			current_storage = st_global;
 		}
 	| '=' '#' expr ';'
