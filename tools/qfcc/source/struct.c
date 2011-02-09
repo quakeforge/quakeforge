@@ -223,6 +223,7 @@ emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 	def_t      *struct_def;
 	def_t       field_def;
 
+	name = save_string (name);
 	if (!type) {
 		memset (&new, 0, sizeof (new));
 		type = &new;
