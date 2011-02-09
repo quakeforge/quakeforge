@@ -1023,7 +1023,7 @@ emit_symtab_refs (def_t *def, void *data, int index)
 		internal_error (0, "%s: expected SEL def", __FUNCTION__);
 	D_INT (def) = 0;
 	if (da->refs)
-		EMIT_DEF (def->space, def->offset, da->refs);
+		EMIT_DEF (def->space, D_INT (def), da->refs);
 }
 
 static void
@@ -1060,10 +1060,10 @@ emit_symtab_defs (def_t *def, void *data, int index)
 
 	if (index < da->cls_def_cnt) {
 		class_t    *cl = da->classes[index];
-		EMIT_DEF (def->space, def->offset, cl->def);
+		EMIT_DEF (def->space, D_INT (def), cl->def);
 	} else {
 		category_t *ca = da->categories[index - da->cls_def_cnt];
-		EMIT_DEF (def->space, def->offset, ca->def);
+		EMIT_DEF (def->space, D_INT (def), ca->def);
 	}
 }
 
