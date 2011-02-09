@@ -227,7 +227,7 @@ emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 	if (!type) {
 		memset (&new, 0, sizeof (new));
 		type = &new;
-		make_structure (0, su, defs, type);
+		type = make_structure (0, su, defs, type)->type;
 	}
 	if (!is_struct (type) || (su == 's' && type->ty != ty_struct)
 		|| (su == 'u' && type->ty != ty_union))
