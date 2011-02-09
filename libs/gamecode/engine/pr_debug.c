@@ -447,7 +447,7 @@ PR_Get_Source_Line (progs_t *pr, pr_uint_t addr)
 
 	file = PR_Load_Source_File (pr, fname);
 
-	if (!file || line > file->num_lines)
+	if (!file || !file->lines || line > file->num_lines)
 		return va ("%s:%u", fname, line);
 
 	return va ("%s:%u:%.*s", fname, line, (int)file->lines[line - 1].len,
