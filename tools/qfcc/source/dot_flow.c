@@ -113,15 +113,15 @@ get_operand (operand_t *op)
 				case ev_pointer:
 					return va ("ptr %d", op->o.value->v.pointer.val);
 				case ev_field:
-					return va ("fld %d", op->o.value->v.pointer.val);
+					return va ("field %d", op->o.value->v.pointer.val);
 				case ev_entity:
 					return va ("ent %d", op->o.value->v.integer_val);
 				case ev_func:
-					return va ("fnc %d", op->o.value->v.integer_val);
+					return va ("func %d", op->o.value->v.integer_val);
 				case ev_integer:
-					return va ("fnc %d", op->o.value->v.integer_val);
+					return va ("int %d", op->o.value->v.integer_val);
 				case ev_short:
-					return va ("fnc %d", op->o.value->v.short_val);
+					return va ("short %d", op->o.value->v.short_val);
 				case ev_void:
 					return "(void)";
 				case ev_invalid:
