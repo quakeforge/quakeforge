@@ -75,15 +75,16 @@ type_t      type_IMP = { ev_func, "IMP", ty_none,
 						 {{&type_id, -3, {&type_id, &type_SEL}}}};
 type_t      type_supermsg = { ev_func, ".supermsg", ty_none,
 							  {{&type_id, -3, {0, &type_SEL}}}};
-type_t      type_obj_exec_class = { ev_func, "function", ty_none,
-									{{&type_void, 1, { 0 }}}};
 type_t      type_Method = { ev_invalid, "Method" };
 type_t      type_Super = { ev_invalid, "Super" };
 type_t      type_method_description = { ev_invalid, "obj_method_description",
 										ty_struct };
 type_t      type_category = { ev_invalid, "category", ty_struct};
 type_t      type_ivar = { ev_invalid, "ivar", ty_struct};
-type_t      type_module = { ev_invalid, "module", ty_struct};
+type_t      type_module = { ev_invalid, 0, ty_struct};
+type_t      type_moduleptr = { ev_pointer, 0, ty_none, {{&type_module}}};
+type_t      type_obj_exec_class = { ev_func, 0, ty_none,
+									{{&type_void, 1, { &type_moduleptr }}}};
 
 type_t      type_object = {ev_invalid, "object", ty_class};
 type_t      type_id = { ev_pointer, "id", ty_none, {{&type_object}}};
@@ -231,13 +232,9 @@ init_objective_structs (void)
 	chain_type (&type_Super);
 
 	make_structure ("obj_module_s", 's', module_struct, &type_module);
-	chain_type (&type_module);
 
 	type_supermsg.t.func.param_types[0] = pointer_type (&type_Super);
 	chain_type (&type_supermsg);
-
-	type_obj_exec_class.t.func.param_types[0] = pointer_type (&type_module);
-	chain_type (&type_obj_exec_class);
 }
 
 static void
@@ -275,14 +272,26 @@ init_classes (void)
 void
 class_init (void)
 {
-	symbol_t   *sym;
-
 	if (!current_symtab)
 		current_symtab = pr.symtab;
 	init_classes ();
 	init_objective_structs ();
+}
 
-	sym = new_symbol_type ("obj_module_t", &type_module);
+void
+class_init_obj_module (void)
+{
+	symbol_t   *sym;
+
+	sym = new_symbol ("obj_module_s");
+	sym = find_struct ('s', sym, &type_module);
+	chain_type (&type_module);
+	chain_type (&type_moduleptr);
+	chain_type (&type_obj_exec_class);
+	if (!sym->table)
+		symtab_addsymbol (pr.symtab, sym);
+
+	sym = new_symbol_type ("obj_module_t", sym->type);
 	sym->sy_type = sy_type;
 	symtab_addsymbol (pr.symtab, sym);
 }

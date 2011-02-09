@@ -111,9 +111,11 @@ new_def (const char *name, type_t *type, defspace_t *space,
 
 	if (storage != st_extern) {
 		def->space = space;
+		def->offset = defspace_new_loc (space, type_size (type));
+	}
+	if (space) {
 		*space->def_tail = def;
 		space->def_tail = &def->next;
-		def->offset = defspace_new_loc (space, type_size (type));
 	}
 
 	def->file = pr.source_file;

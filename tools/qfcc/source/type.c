@@ -471,6 +471,8 @@ print_type (type_t *type)
 	dstring_delete (str);
 }
 
+static void _encode_type (dstring_t *encoding, type_t *type, int level);
+
 const char *
 encode_params (type_t *type)
 {
@@ -483,7 +485,7 @@ encode_params (type_t *type)
 	else
 		count = type->t.func.num_params;
 	for (i = 0; i < count; i++)
-		encode_type (encoding, type->t.func.param_types[i]);
+		_encode_type (encoding, type->t.func.param_types[i], 1);
 	if (type->t.func.num_params < 0)
 		dasprintf (encoding, ".");
 
@@ -491,8 +493,6 @@ encode_params (type_t *type)
 	dstring_delete (encoding);
 	return ret;
 }
-
-static void _encode_type (dstring_t *encoding, type_t *type, int level);
 
 static void
 encode_struct_fields (dstring_t *encoding, symtab_t *strct, int level)
@@ -526,9 +526,9 @@ encode_struct (dstring_t *encoding, type_t *type, int level)
 
 	if (type->name)		// FIXME
 		name = type->name;
-	if (strct && strct->type == stab_union)
+	if (type->ty == ty_union)
 		su = '-';
-	if (strct && strct->type != stab_union)
+	else
 		su = '=';
 	dasprintf (encoding, "{%s%c", name, su);
 	if (strct && level < 2)
@@ -1010,4 +1010,5 @@ chain_initial_types (void)
 	chain_type (&type_quaternion);
 	chain_type (&type_integer);
 	chain_type (&type_short);
+	class_init_obj_module ();
 }
