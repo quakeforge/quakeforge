@@ -68,6 +68,11 @@ get_value_def (ex_value_t *value, etype_t type)
 	//FIXME share immediates
 	def_t      *def;
 
+	if (type == ev_short) {
+		def = new_def (0, &type_short, 0, st_extern);
+		def->offset = value->v.short_val;
+		return def;
+	}
 	def = new_def (".imm", ev_types[type], pr.near_data, st_static);
 	if (type == ev_string) {
 		EMIT_STRING (def->space, D_STRUCT (string_t, def),
