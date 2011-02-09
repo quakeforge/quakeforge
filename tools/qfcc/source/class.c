@@ -870,6 +870,13 @@ class_new_ivars (class_t *class)
 void
 class_add_ivars (class_t *class, symtab_t *ivars)
 {
+	int         base = 0;
+	symbol_t   *sym;
+
+	if (class->super_class)
+		base = type_size (class->super_class->type);
+	for (sym = ivars->symbols; sym; sym = sym->next)
+		sym->s.offset += base;
 	class->ivars = ivars;
 }
 
