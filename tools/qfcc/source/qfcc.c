@@ -193,7 +193,8 @@ WriteData (int crc)
 			dd->type |= DEF_SAVEGLOBAL;
 	}
 
-	pr.strings->size = (pr.strings->size + 3) & ~3;
+	while (pr.strings->size & 3)
+		pr.strings->strings[pr.strings->size++] = 0;
 
 	if (options.verbosity >= 0) {
 		printf ("%6i strofs\n", pr.strings->size);
