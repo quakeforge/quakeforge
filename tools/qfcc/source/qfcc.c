@@ -136,6 +136,8 @@ InitData (void)
 	pr.strings = strpool_new ();
 	pr.num_functions = 1;
 
+	pr.data = new_defspace ();
+
 	pr.far_data = new_defspace ();
 
 	pr.near_data = new_defspace ();
@@ -164,12 +166,12 @@ WriteData (int crc)
 	int         i;
 	int         num_defs = 0;
 
-	for (def = pr.near_data->defs; def; def = def->next)
+	for (def = pr.data->defs; def; def = def->next)
 		num_defs++;
 	globals = calloc (num_defs + 1, sizeof (ddef_t));
 	fields = calloc (num_defs + 1, sizeof (ddef_t));
 
-	for (def = pr.near_data->defs; def; def = def->next) {
+	for (def = pr.data->defs; def; def = def->next) {
 		if (def->local || !def->name)
 			continue;
 		if (options.code.progsversion == PROG_ID_VERSION && *def->name == '.'
@@ -197,15 +199,17 @@ WriteData (int crc)
 		pr.strings->strings[pr.strings->size++] = 0;
 
 	if (options.verbosity >= 0) {
+		if (!big_function)
+			big_function = "";
 		printf ("%6i strofs\n", pr.strings->size);
 		printf ("%6i statements\n", pr.code->size);
 		printf ("%6i functions\n", pr.num_functions);
 		printf ("%6i global defs\n", numglobaldefs);
-		if (!big_function)
-			big_function = "";
-		printf ("%6i locals size (%s)\n", num_localdefs, big_function);
 		printf ("%6i fielddefs\n", numfielddefs);
-		printf ("%6i globals\n", pr.near_data->size);
+		printf ("%6i globals\n", pr.data->size);
+		printf ("    %6i near globals\n", pr.near_data->size);
+		printf ("        %6i locals size (%s)\n", num_localdefs, big_function);
+		printf ("    %6i far globals\n", pr.far_data->size);
 		printf ("%6i entity fields\n", pr.entity_data->size);
 	}
 
@@ -263,10 +267,10 @@ WriteData (int crc)
 	Qwrite (h, fields, numfielddefs * sizeof (ddef_t));
 
 	progs.ofs_globals = Qtell (h);
-	progs.numglobals = pr.near_data->size;
-	for (i = 0; i < pr.near_data->size; i++)
-		pr.near_data->data[i] = LittleLong (pr.near_data->data[i]);
-	Qwrite (h, pr.near_data->data, pr.near_data->size * 4);
+	progs.numglobals = pr.data->size;
+	for (i = 0; i < pr.data->size; i++)
+		pr.data->data[i] = LittleLong (pr.data->data[i]);
+	Qwrite (h, pr.data->data, pr.data->size * 4);
 
 	if (options.verbosity >= -1)
 		printf ("%6i TOTAL SIZE\n", (int) Qtell (h));
@@ -380,21 +384,7 @@ finish_compilation (void)
 	function_t *f;
 	def_t      *def;
 	dfunction_t *df;
-
-	// check to make sure all functions prototyped have code
-	if (options.warnings.undefined_function) {
-		for (d = pr.near_data->defs; d; d = d->next) {
-			if (d->type->type == ev_func && d->global) {
-				// function args ok
-				//FIXME if (d->used) {
-					if (!d->initialized) {
-						warning (0, "function %s was called but not defined\n",
-								 d->name);
-					}
-				//FIXME }
-			}
-		}
-	}
+	int         far_base;
 
 	for (d = pr.near_data->defs; d; d = d->next) {
 		if (d->external && d->relocs) {
@@ -410,31 +400,18 @@ finish_compilation (void)
 //FIXME			}
 		}
 	}
+	for (d = pr.far_data->defs; d; d = d->next) {
+		if (d->external && d->relocs) {
+			errors = true;
+			error (0, "undefined global %s", d->name);
+		}
+	}
 
 	if (errors)
 		return !errors;
 
-	if (options.code.progsversion != PROG_ID_VERSION) {
-		//FIXME better init code
-		symbol_t   *sym = new_symbol (".param_size");
-		initialize_def (sym, &type_integer, 0, pr.symtab->space, st_global);
-		D_INT (sym->s.def) = type_size (&type_param);
-	}
-
-	if (options.code.debug) {
-		//FIXME better init code
-		symbol_t   *sym = new_symbol (".debug_file");
-		initialize_def (sym, &type_string, 0, pr.symtab->space, st_global);
-		EMIT_STRING (sym->s.def->space, D_STRUCT (string_t, sym->s.def),
-					 debugfile);
-	}
-
-	for (def = pr.near_data->defs; def; def = def->next)
-		relocate_refs (def->relocs, def->offset);
-
 	pr.functions = calloc (pr.num_functions + 1, sizeof (dfunction_t));
 	for (df = pr.functions + 1, f = pr.func_head; f; df++, f = f->next) {
-		relocate_refs (f->refs, f->function_num);
 		df->s_name = f->s_name;
 		df->s_file = f->s_file;
 		df->numparms = function_parms (f, df->parm_size);
@@ -462,14 +439,74 @@ finish_compilation (void)
 			if (!def->local)
 				continue;
 			def->offset += df->parm_start;
-			relocate_refs (def->relocs, def->offset);
 		}
 	}
-	if (options.code.local_merging) {
-		int         offset;
-		for (offset = defspace_new_loc (pr.near_data, num_localdefs);
-			 offset < pr.near_data->size; offset++)
-			pr.near_data->data[offset].integer_var = 0;
+	if (options.code.local_merging)
+		defspace_new_loc (pr.near_data, num_localdefs);
+
+	if (options.code.progsversion != PROG_ID_VERSION) {
+		//FIXME better init code
+		symbol_t   *sym = new_symbol (".param_size");
+		initialize_def (sym, &type_integer, 0, pr.far_data, st_global);
+		D_INT (sym->s.def) = type_size (&type_param);
+	}
+
+	if (options.code.debug) {
+		//FIXME better init code
+		symbol_t   *sym = new_symbol (".debug_file");
+		initialize_def (sym, &type_string, 0, pr.far_data, st_global);
+		EMIT_STRING (sym->s.def->space, D_STRUCT (string_t, sym->s.def),
+					 debugfile);
+	}
+
+	// merge near and far data
+	defspace_add_data (pr.data, pr.near_data->data, pr.near_data->size);
+	far_base = pr.data->size;
+	defspace_add_data (pr.data, pr.far_data->data, pr.far_data->size);
+	for (d = pr.far_data->defs; d; d = d->next) {
+		if (!d->external)
+			d->offset += far_base;
+	}
+	if (pr.near_data->defs) {
+		pr.data->defs = pr.near_data->defs;
+		pr.data->def_tail = pr.near_data->def_tail;
+		pr.near_data->defs = 0;
+		pr.near_data->def_tail = &pr.near_data->defs;
+	}
+	if (pr.far_data->defs) {
+		*pr.data->def_tail = pr.far_data->defs;
+		pr.data->def_tail = pr.far_data->def_tail;
+		pr.far_data->defs = 0;
+		pr.far_data->def_tail = &pr.far_data->defs;
+	}
+
+	// check to make sure all functions prototyped have code
+	if (options.warnings.undefined_function) {
+		for (d = pr.data->defs; d; d = d->next) {
+			if (d->type->type == ev_func && d->global) {
+				// function args ok
+				//FIXME if (d->used) {
+					if (!d->initialized) {
+						warning (0, "function %s was called but not defined\n",
+								 d->name);
+					}
+				//FIXME }
+			}
+		}
+	}
+
+	for (def = pr.data->defs; def; def = def->next)
+		relocate_refs (def->relocs, def->offset);
+
+	for (df = pr.functions + 1, f = pr.func_head; f; df++, f = f->next) {
+		relocate_refs (f->refs, f->function_num);
+		if (!f->code)
+			continue;
+		for (def = f->symtab->space->defs; def; def = def->next) {
+			if (!def->local)
+				continue;
+			relocate_refs (def->relocs, def->offset);
+		}
 	}
 
 	return !errors;

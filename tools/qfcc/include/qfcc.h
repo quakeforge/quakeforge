@@ -63,6 +63,7 @@ typedef struct pr_info_s {
 	dfunction_t		*functions;
 	int				num_functions;
 
+	struct defspace_s *data;			///< combined near and far data
 	struct defspace_s *near_data;
 	struct defspace_s *far_data;
 	struct defspace_s *entity_data;
