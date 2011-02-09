@@ -69,6 +69,7 @@ typedef struct reloc_s {
 	reloc_type	type;
 	int			line;
 	string_t	file;
+	void       *return_address;
 } reloc_t;
 
 struct statement_s;

@@ -161,6 +161,7 @@ new_reloc (int offset, reloc_type type)
 	ref->type = type;
 	ref->line = pr.source_line;
 	ref->file = pr.source_file;
+	ref->return_address = __builtin_return_address (0);
 	return ref;
 }
 
@@ -168,6 +169,7 @@ void
 reloc_op_def (def_t *def, int offset, int field)
 {
 	reloc_t    *ref = new_reloc (offset, rel_op_a_def + field);
+	ref->return_address = __builtin_return_address (0);
 	ref->next = def->relocs;
 	def->relocs = ref;
 }
@@ -176,6 +178,7 @@ void
 reloc_op_def_ofs (def_t *def, int offset, int field)
 {
 	reloc_t    *ref = new_reloc (offset, rel_op_a_def_ofs + field);
+	ref->return_address = __builtin_return_address (0);
 	ref->next = def->relocs;
 	def->relocs = ref;
 }
@@ -184,6 +187,7 @@ void
 reloc_def_def (def_t *def, int offset)
 {
 	reloc_t    *ref = new_reloc (offset, rel_def_def);
+	ref->return_address = __builtin_return_address (0);
 	ref->next = def->relocs;
 	def->relocs = ref;
 }
@@ -192,6 +196,7 @@ void
 reloc_def_def_ofs (def_t *def, int offset)
 {
 	reloc_t    *ref = new_reloc (offset, rel_def_def_ofs);
+	ref->return_address = __builtin_return_address (0);
 	ref->next = def->relocs;
 	def->relocs = ref;
 }
@@ -200,6 +205,7 @@ void
 reloc_def_func (function_t *func, int offset)
 {
 	reloc_t    *ref = new_reloc (offset, rel_def_func);
+	ref->return_address = __builtin_return_address (0);
 	ref->next = func->refs;
 	func->refs = ref;
 }
@@ -208,6 +214,7 @@ void
 reloc_def_string (int offset)
 {
 	reloc_t    *ref = new_reloc (offset, rel_def_string);
+	ref->return_address = __builtin_return_address (0);
 	ref->next = pr.relocs;
 	pr.relocs = ref;
 }
@@ -216,6 +223,7 @@ void
 reloc_def_field (def_t *def, int offset)
 {
 	reloc_t    *ref = new_reloc (offset, rel_def_field);
+	ref->return_address = __builtin_return_address (0);
 	ref->next = def->relocs;
 	def->relocs = ref;
 }
@@ -224,6 +232,7 @@ void
 reloc_def_field_ofs (def_t *def, int offset)
 {
 	reloc_t    *ref = new_reloc (offset, rel_def_field_ofs);
+	ref->return_address = __builtin_return_address (0);
 	ref->next = def->relocs;
 	def->relocs = ref;
 }
@@ -232,6 +241,7 @@ void
 reloc_def_op (ex_label_t *label, int offset)
 {
 	reloc_t    *ref = new_reloc (offset, rel_def_op);
+	ref->return_address = __builtin_return_address (0);
 	ref->next = pr.relocs;
 	ref->label = label;
 	pr.relocs = ref;
