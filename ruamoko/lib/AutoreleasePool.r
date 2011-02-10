@@ -38,11 +38,13 @@
 - (id) retain
 {
 	[self error: "Don't send -retain to an autorelease pool."];
+	return self;
 }
 
 - (id) autorelease
 {
 	[self error: "Don't send -autorelease to an autorelease pool."];
+	return self;
 }
 
 - (void) dealloc
