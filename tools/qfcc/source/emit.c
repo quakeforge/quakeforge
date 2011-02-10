@@ -169,8 +169,11 @@ emit_statement (statement_t *statement)
 	opcode_t   *op = opcode_find (opcode, def_a, def_b, def_c);
 	dstatement_t *s;
 
-	if (!op)
+	if (!op) {
+		print_expr (statement->expr);
+		print_statement (statement);
 		internal_error (statement->expr, "ice ice baby");
+	}
 	if (options.code.debug && current_func->aux) {
 		expr_t     *e = statement->expr;
 		pr_uint_t   line = (e ? e->line : pr.source_line) - lineno_base;
