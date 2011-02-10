@@ -215,6 +215,8 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 	}
 	if (!init)
 		return;
+	if (init->type == ex_nil)
+		convert_nil (init, type);
 	if (!type_assignable (type, get_type (init))) {
 		error (init, "type mismatch in initializer");
 		return;
