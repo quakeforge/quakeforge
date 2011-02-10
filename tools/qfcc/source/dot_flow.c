@@ -137,7 +137,7 @@ get_operand (operand_t *op)
 		case op_pointer:
 			type = op->o.pointer->type;
 			if (op->o.pointer->def)
-				return va ("(%s)[%d]<%s>",
+				return va ("(%s)[%d]&lt;%s&gt;",
 						   type ? pr_type_name[type->type] : "???",
 						   op->o.pointer->val, op->o.pointer->def->name);
 			else
