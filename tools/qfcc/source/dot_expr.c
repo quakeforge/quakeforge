@@ -167,7 +167,7 @@ print_block (expr_t *e, int level, int id)
 	}
 	printf ("%*se_%p -> e_%p [style=dashed];\n", indent, "",
 			e, e->e.block.head);
-	printf ("%*ssubgraph cluster_%p {\n", indent, "", e);
+	//printf ("%*ssubgraph cluster_%p {\n", indent, "", e);
 	for (se = e->e.block.head; se; se = se->next) {
 		_print_expr (se, level + 1, id);
 	}
@@ -181,7 +181,7 @@ print_block (expr_t *e, int level, int id)
 	if (se && se->type == ex_label && e->next)
 		printf ("%*se_%p -> e_%p [constraint=false,style=dashed];\n",
 				indent, "", se, e->next);
-	printf ("%*s}\n", indent, "");
+	//printf ("%*s}\n", indent, "");
 	printf ("%*se_%p [label=\"<block>\"];\n", indent, "", e);
 }
 
