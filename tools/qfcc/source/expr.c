@@ -121,7 +121,7 @@ convert_name (expr_t *e)
 		return;
 	}
 	if (sym->sy_type == sy_expr) {
-		new = sym->s.expr;
+		new = copy_expr (sym->s.expr);
 		goto convert;
 	}
 	if (sym->sy_type == sy_type)
