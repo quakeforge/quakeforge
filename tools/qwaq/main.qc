@@ -1,12 +1,12 @@
 string read_file (string filename)
 {
 	local QFile file;
-	local string data = NIL, d;
+	local string data = nil, d;
 	file = Qopen (filename, "rtz");
 	if (!file) {
 		printf ("Can't open %s for reading."
 				" Probably a bad hardcoded filename:)\n", filename);
-		return NIL;
+		return nil;
 	}
 	while ((d = Qgetline (file)))
 		data = data + d;
@@ -67,7 +67,7 @@ void () test_str =
 	printf ("%i \"%.5s\" %3.4f %v\n", 14, "hi there", 3.1415926, '4 1 3');
 };
 void (...) dprint = #0;
-integer (integer argc, string []argv) main =
+integer (integer argc, string *argv) main =
 {
 	local integer i;
 	local SEL sel;
