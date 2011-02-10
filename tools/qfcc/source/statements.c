@@ -435,7 +435,7 @@ expr_deref (sblock_t *sblock, expr_t *e, operand_t **op)
 		sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
 		if (!*op) {
 			*op = new_operand (op_temp);
-			(*op)->type = low_level_type (e->e.expr.type);
+			(*op)->type = low_level_type (type);
 		}
 		s->opc = *op;
 		sblock_add_statement (sblock, s);
