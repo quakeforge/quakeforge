@@ -35,6 +35,7 @@
 {
 	print ("Hello world\n");
 	printf ("%i %p\n", self, &self.x);
+	return self;
 }
 
 @end
