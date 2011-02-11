@@ -289,10 +289,13 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 
 	if (e->e.expr.op == '=') {
 		sblock = statement_subexpr (sblock, dst_expr, &dst);
+		src = dst;
 		sblock = statement_subexpr (sblock, src_expr, &src);
 		ofs = 0;
 		if (op)
 			*op = dst;
+		if (src == dst)
+			return sblock;
 	} else {
 		//FIXME this sucks. find a better way to handle both pointer
 		//dereferences and pointer assignements
