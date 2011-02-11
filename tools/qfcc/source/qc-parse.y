@@ -207,7 +207,6 @@ int yylex (void);
 %{
 
 function_t *current_func;
-param_t    *current_params;
 class_type_t *current_class;
 expr_t     *local_expr;
 vis_e       current_visibility;
@@ -313,6 +312,7 @@ external_def
 			$<spec>$ = $1;		// copy spec bits and storage
 			$<spec>$.type = parse_params ($1.type, $2), st_global, 0;
 			$<spec>$.type = find_type ($<spec>$.type);
+			$<spec>$.params = $2;
 		}
 	  function_def_list
 	| optional_specifiers function_decl function_body
@@ -760,7 +760,7 @@ overloaded_identifier
 	: identifier
 		{
 			$$ = $1;
-			$$->params = current_params;
+			$$->params = $<spec>0.params;
 			$$->type = $<spec>0.type;
 			$$ = function_symbol ($$, $<spec>0.is_overload, 1);
 		}

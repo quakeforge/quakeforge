@@ -79,6 +79,7 @@ typedef struct type_s {
 
 typedef struct {
 	type_t     *type;
+	struct param_s *params;
 	storage_class_t storage;
 	unsigned    multi_type:1;
 	unsigned    multi_store:1;
