@@ -352,7 +352,7 @@ function_body
 
 external_decl_list
 	: external_decl
-	| external_decl_list ',' external_decl
+	| external_decl_list ',' { $<spec>$ = $<spec>0; } external_decl
 	;
 
 external_decl
