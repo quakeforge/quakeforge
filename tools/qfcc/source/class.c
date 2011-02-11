@@ -569,69 +569,93 @@ class_begin (class_type_t *class_type)
 void
 emit_class_ref (const char *class_name)
 {
-	def_t      *def;
-	def_t      *ref;
+	symbol_t   *ref_sym;
+	symbol_t   *name_sym;
+	def_t      *ref_def;
+	def_t      *name_def;
 
-	def = make_symbol (va (".obj_class_ref_%s", class_name), &type_pointer,
-					   pr.far_data, st_static)->s.def;
-	if (def->initialized)
+	ref_sym = make_symbol (va (".obj_class_ref_%s", class_name), &type_pointer,
+						   pr.far_data, st_static);
+	if (!ref_sym->table)
+		symtab_addsymbol (pr.symtab, ref_sym);
+	ref_def = ref_sym->s.def;
+	if (ref_def->initialized)
 		return;
-	def->initialized = def->constant = def->nosave = 1;
-	ref = make_symbol (va (".obj_class_name_%s", class_name), &type_pointer,
-					   pr.far_data, st_extern)->s.def;
-	if (!ref->external)
-		D_INT (def) = ref->offset;
-	reloc_def_def (ref, def->offset);
+	ref_def->initialized = ref_def->constant = ref_def->nosave = 1;
+	name_sym = make_symbol (va (".obj_class_name_%s", class_name),
+							&type_pointer, pr.far_data, st_extern);
+	if (!name_sym->table)
+		symtab_addsymbol (pr.symtab, name_sym);
+	name_def = name_sym->s.def;
+	if (!name_def->external)
+		D_INT (ref_def) = name_def->offset;
+	reloc_def_def (name_def, ref_def->offset);
 }
 
 static void
 emit_class_name (const char *class_name)
 {
-	def_t      *def;
+	symbol_t   *name_sym;
+	def_t      *name_def;
 
-	def = make_symbol (va (".obj_class_name_%s", class_name), &type_pointer,
-					   pr.far_data, st_global)->s.def;
-	if (def->initialized)
+	name_sym = make_symbol (va (".obj_class_name_%s", class_name),
+							&type_pointer, pr.far_data, st_global);
+	if (!name_sym->table)
+		symtab_addsymbol (pr.symtab, name_sym);
+	name_def = name_sym->s.def;
+	if (name_def->initialized)
 		return;
-	def->initialized = def->constant = 1;
-	def->nosave = 1;
-	D_INT (def) = 0;
+	name_def->initialized = name_def->constant = 1;
+	name_def->nosave = 1;
+	D_INT (name_def) = 0;
 }
 
 void
 emit_category_ref (const char *class_name, const char *category_name)
 {
-	def_t      *def;
-	def_t      *ref;
+	symbol_t   *ref_sym;
+	symbol_t   *name_sym;
+	def_t      *ref_def;
+	def_t      *name_def;
 
-	def = make_symbol (va (".obj_category_ref_%s_%s",
+	ref_sym = make_symbol (va (".obj_category_ref_%s_%s",
 						   class_name, category_name),
-					   &type_pointer, pr.far_data, st_static)->s.def;
-	if (def->initialized)
+					   &type_pointer, pr.far_data, st_static);
+	if (!ref_sym->table)
+		symtab_addsymbol (pr.symtab, ref_sym);
+	ref_def = ref_sym->s.def;
+	if (ref_def->initialized)
 		return;
-	def->initialized = def->constant = 1;
-	def->nosave = 1;
-	ref = make_symbol (va (".obj_category_name_%s_%s",
+	ref_def->initialized = ref_def->constant = 1;
+	ref_def->nosave = 1;
+	name_sym = make_symbol (va (".obj_category_name_%s_%s",
 						   class_name, category_name),
-					   &type_pointer, pr.far_data, st_extern)->s.def;
-	if (!ref->external)
-		D_INT (def) = ref->offset;
-	reloc_def_def (ref, def->offset);
+					   &type_pointer, pr.far_data, st_extern);
+	if (!name_sym->table)
+		symtab_addsymbol (pr.symtab, name_sym);
+	name_def = name_sym->s.def;
+	if (!name_def->external)
+		D_INT (ref_def) = name_def->offset;
+	reloc_def_def (name_def, ref_def->offset);
 }
 
 static void
 emit_category_name (const char *class_name, const char *category_name)
 {
-	def_t      *def;
+	symbol_t   *name_sym;
+	def_t      *name_def;
 
-	def = make_symbol (va (".obj_category_name_%s_%s",
-						   class_name, category_name),
-					   &type_pointer, pr.far_data, st_global)->s.def;
-	if (def->initialized)
+	name_sym = make_symbol (va (".obj_category_name_%s_%s",
+							    class_name, category_name),
+							&type_pointer, pr.far_data, st_global);
+	if (!name_sym->table)
+		symtab_addsymbol (pr.symtab, name_sym);
+	name_def = name_sym->s.def;
+	if (name_def->initialized)
 		return;
-	def->initialized = def->constant = 1;
-	def->nosave = 1;
-	D_INT (def) = 0;
+	name_def->initialized = name_def->constant = 1;
+	name_def->nosave = 1;
+	D_INT (name_def) = 0;
 }
 
 static void
