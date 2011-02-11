@@ -113,10 +113,10 @@ new_def (const char *name, type_t *type, defspace_t *space,
 	def->type = type;
 
 	if (storage != st_extern) {
-		def->space = space;
 		def->offset = defspace_new_loc (space, type_size (type));
 	}
 	if (space) {
+		def->space = space;
 		*space->def_tail = def;
 		space->def_tail = &def->next;
 	}
@@ -150,7 +150,8 @@ free_def (def_t *def)
 		for (d = &def->space->defs; *d && *d != def; d = &(*d)->next)
 			;
 		*d = def->next;
-		defspace_free_loc (def->space, def->offset, type_size (def->type));
+		if (!def->external)
+			defspace_free_loc (def->space, def->offset, type_size (def->type));
 	}
 	def->next = free_defs;
 	free_defs = def;

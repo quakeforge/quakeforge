@@ -1160,10 +1160,13 @@ class_finish_module (void)
 				 GETSTR (pr.source_file));
 	EMIT_DEF (module_sym->s.def->space, module->symtab, symtab_def);
 
-	exec_class_sym = new_symbol_type ("__obj_exec_class",
-									  &type_obj_exec_class);
-	exec_class_sym = function_symbol (exec_class_sym, 0, 1);
-	make_function (exec_class_sym, 0, st_extern);
+	exec_class_sym = symtab_lookup (pr.symtab, "__obj_exec_class");
+	if (!exec_class_sym) {
+		exec_class_sym = new_symbol_type ("__obj_exec_class",
+										  &type_obj_exec_class);
+		exec_class_sym = function_symbol (exec_class_sym, 0, 1);
+		make_function (exec_class_sym, 0, st_extern);
+	}
 
 	init_sym = new_symbol_type (".ctor", &type_function);
 	init_sym = function_symbol (init_sym, 0, 1);
