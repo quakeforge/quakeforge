@@ -494,12 +494,24 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	// FIXME int<->float
-	if (!*op) {
-		(*op) = new_operand (op_temp);
-		(*op)->type = low_level_type (e->e.expr.type);
+	operand_t  *src = 0;
+	type_t     *type = e->e.expr.type;
+	statement_t *s;
+
+	sblock = statement_subexpr (sblock, e->e.expr.e1, &src);
+	if ((src->type == ev_integer && type->type == ev_float)
+		|| (src->type == ev_float && type->type == ev_integer)) {
+		if (!*op) {
+			(*op) = new_operand (op_temp);
+			(*op)->type = low_level_type (e->e.expr.type);
+		}
+		s = new_statement ("=", e);
+		s->opa = src;
+		s->opc = *op;
+	} else {
+		src->type = low_level_type (e->e.expr.type);
+		*op = src;
 	}
-	sblock = statement_subexpr (sblock, e->e.expr.e1, op);
 	return sblock;
 }
 

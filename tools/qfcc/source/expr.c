@@ -777,10 +777,13 @@ param_expr (const char *name, type_t *type)
 {
 	symbol_t   *sym;
 	expr_t     *sym_expr;
+	expr_t     *cast;
 
 	sym = make_symbol (name, &type_param, 0, st_extern);
 	sym_expr = new_symbol_expr (sym);
-	return unary_expr ('.', address_expr (sym_expr, 0, type));
+	cast = new_unary_expr ('C', sym_expr);
+	cast->e.expr.type = type;
+	return cast;
 }
 
 expr_t *
