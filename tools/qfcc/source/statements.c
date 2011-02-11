@@ -326,6 +326,34 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_move (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	statement_t *s;
+	type_t     *type = e->e.expr.type;
+	expr_t     *dst_expr = e->e.expr.e1;
+	expr_t     *src_expr = e->e.expr.e2;
+	expr_t     *size_expr;
+	operand_t  *dst = 0;
+	operand_t  *src = 0;
+	operand_t  *size = 0;
+
+	if (!op)
+		op = &dst;
+	size_expr = new_short_expr (type_size (type));
+	sblock = statement_subexpr (sblock, dst_expr, op);
+	dst = *op;
+	sblock = statement_subexpr (sblock, src_expr, &src);
+	sblock = statement_subexpr (sblock, size_expr, &size);
+	s = new_statement ("<MOVE>", e);
+	s->opa = src;
+	s->opb = size;
+	s->opc = dst;
+	sblock_add_statement (sblock, s);
+
+	return sblock;
+}
+
+static sblock_t *
 vector_call (sblock_t *sblock, expr_t *earg, expr_t *param, int ind,
 			 operand_t **op)
 {
@@ -475,6 +503,9 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 		case '=':
 		case PAS:
 			sblock = expr_assign (sblock, e, op);
+			break;
+		case 'M':
+			sblock = expr_move (sblock, e, op);
 			break;
 		default:
 			opcode = convert_op (e->e.expr.op);
@@ -776,6 +807,9 @@ statement_expr (sblock_t *sblock, expr_t *e)
 		case '=':
 		case PAS:
 			sblock = expr_assign (sblock, e, 0);
+			break;
+		case 'M':
+			sblock = expr_move (sblock, e, 0);
 			break;
 		default:
 			if (e->e.expr.op < 256)
