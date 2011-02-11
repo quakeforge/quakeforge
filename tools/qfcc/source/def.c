@@ -103,6 +103,9 @@ new_def (const char *name, type_t *type, defspace_t *space,
 
 	if (!space && storage != st_extern)
 		internal_error (0, "non-external def with no storage space");
+	if (!type)
+		internal_error (0, "attempt to create def '%s' with a null type",
+						name);
 
 	def->return_addr = __builtin_return_address (0);
 
