@@ -2231,12 +2231,14 @@ build_state_expr (expr_t *frame, expr_t *think, expr_t *step)
 static int
 is_indirect (expr_t *e)
 {
+	if (e->type == ex_block && e->e.block.result)
+		return is_indirect (e->e.block.result);
 	if (e->type == ex_expr && e->e.expr.op == '.')
 		return 1;
 	if (!(e->type == ex_uexpr && e->e.expr.op == '.'))
 		return 0;
 	e = e->e.expr.e1;
-	if ((e->type != ex_value && e->e.value.type != ev_pointer)
+	if (e->type != ex_value || e->e.value.type != ev_pointer
 		|| !(POINTER_VAL (e->e.value.v.pointer) >= 0
 			 && POINTER_VAL (e->e.value.v.pointer) < 65536)) {
 		return 1;
