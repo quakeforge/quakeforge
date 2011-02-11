@@ -326,6 +326,7 @@ static sblock_t *
 vector_call (sblock_t *sblock, expr_t *earg, expr_t *param, int ind,
 			 operand_t **op)
 {
+	//FIXME this should be done in the expression tree
 	expr_t     *a, *v, *n;
 	int         i;
 	static const char *names[] = {"x", "y", "z"};
@@ -375,6 +376,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 			continue;
 		}
 		if (is_struct (get_type (param))) {
+			//FIXME this should be done in the expression tree
 			expr_t     *mov = assign_expr (param, a);
 			mov->line = a->line;
 			mov->file = a->file;
@@ -492,6 +494,7 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 {
+	// FIXME int<->float
 	if (!*op) {
 		(*op) = new_operand (op_temp);
 		(*op)->type = low_level_type (e->e.expr.type);
@@ -514,6 +517,7 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 			sblock = expr_cast (sblock, e, op);
 			break;
 		default:
+			//FIXME implement unary expressions
 			;
 	}
 	return sblock;
