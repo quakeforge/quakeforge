@@ -207,8 +207,8 @@ param_mismatch (expr_t *e, int param, const char *fn, type_t *t1, type_t *t2)
 	print_type_str (s1, t1);
 	print_type_str (s2, t2);
 
-	e = error (e, "type mismatch for parameter %d of %s: %s %s", param, fn,
-			   s1->str, s2->str);
+	e = error (e, "type mismatch for parameter %d of %s: expected %s, got %s",
+			   param, fn, s1->str, s2->str);
 	dstring_delete (s1);
 	dstring_delete (s2);
 	return e;
@@ -2536,7 +2536,7 @@ super_expr (class_type_t *class_type)
 					 binary_expr ('.', e, new_name_expr ("super_class")));
 	append_expr (super_block, e);
 
-	e = address_expr (super, 0, &type_void);
+	e = address_expr (super, 0, 0);
 	super_block->e.block.result = e;
 	return super_block;
 }
@@ -2553,6 +2553,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	type_t     *return_type;
 	class_t    *class;
 	method_t   *method;
+	expr_t     *send_msg;
 
 	if (receiver->type == ex_symbol
 		&& strcmp (receiver->e.symbol->name, "super") == 0) {
@@ -2604,14 +2605,13 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	a = &(*a)->next;
 	*a = receiver;
 
+	send_msg = send_message (super);
 	if (method) {
 		expr_t      *err;
 		if ((err = method_check_params (method, args)))
 			return err;
-		call = build_function_call (send_message (super), method->type, args);
-	} else {
-		call = build_function_call (send_message (super), &type_IMP, args);
 	}
+	call = build_function_call (send_msg, get_type (send_msg), args);
 
 	if (call->type == ex_error)
 		return receiver;

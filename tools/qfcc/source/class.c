@@ -73,10 +73,11 @@ static hashtab_t *protocol_hash;
 type_t      type_SEL = { ev_pointer, "SEL" };
 type_t      type_IMP = { ev_func, "IMP", ty_none,
 						 {{&type_id, -3, {&type_id, &type_SEL}}}};
-type_t      type_supermsg = { ev_func, ".supermsg", ty_none,
-							  {{&type_id, -3, {0, &type_SEL}}}};
-type_t      type_Method = { ev_invalid, "Method" };
 type_t      type_Super = { ev_invalid, "Super" };
+type_t      type_SuperPtr = { ev_pointer, 0, ty_none, {{&type_Super}}};
+type_t      type_supermsg = { ev_func, ".supermsg", ty_none,
+							  {{&type_id, -3, {&type_SuperPtr, &type_SEL}}}};
+type_t      type_Method = { ev_invalid, "Method" };
 type_t      type_method_description = { ev_invalid, "obj_method_description",
 										ty_struct };
 type_t      type_category = { ev_invalid, "category", ty_struct};
@@ -230,11 +231,11 @@ init_objective_structs (void)
 
 	make_structure (0, 's', super_struct, &type_Super);
 	chain_type (&type_Super);
+	chain_type (&type_SuperPtr);
+	chain_type (&type_supermsg);
 
 	make_structure ("obj_module_s", 's', module_struct, &type_module);
 
-	type_supermsg.t.func.param_types[0] = pointer_type (&type_Super);
-	chain_type (&type_supermsg);
 }
 
 static void

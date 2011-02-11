@@ -259,7 +259,7 @@ send_message (int super)
 
 	if (super) {
 		sm_name = "obj_msgSend_super";
-		sm_type = &type_IMP;
+		sm_type = &type_supermsg;
 	}
 	sym = symtab_lookup (pr.symtab, sm_name);
 	if (!sym) {
