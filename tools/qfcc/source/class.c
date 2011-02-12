@@ -1151,7 +1151,7 @@ class_finish_module (void)
 	symtab_def = emit_structure ("_OBJ_SYMTAB", 's', symtab_struct, 0, &data,
 								 st_static);
 
-	module_sym = make_symbol ("_OBJ_MODULE", &type_module, pr.near_data,
+	module_sym = make_symbol ("_OBJ_MODULE", &type_module, pr.far_data,
 							  st_static);
 	symtab_addsymbol (current_symtab, module_sym);
 	module = &D_STRUCT (pr_module_t, module_sym->s.def);
