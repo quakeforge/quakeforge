@@ -479,6 +479,10 @@ finish_compilation (void)
 		pr.far_data->defs = 0;
 		pr.far_data->def_tail = &pr.far_data->defs;
 	}
+	// point near and far data spaces into the merged data. this allows
+	// relocations to work without having to adjust their location.
+	pr.near_data->data = pr.data->data;
+	pr.far_data->data = pr.data->data + far_base;
 
 	// check to make sure all functions prototyped have code
 	if (options.warnings.undefined_function) {
