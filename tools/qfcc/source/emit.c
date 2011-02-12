@@ -152,7 +152,7 @@ add_statement_op_ref (operand_t *op, dstatement_t *st, int field)
 {
 	if (op && op->op_type == op_label) {
 		int         st_ofs = st - pr.code->code;
-		reloc_t    *reloc = new_reloc (st_ofs, rel_op_a_op + field);
+		reloc_t    *reloc = new_reloc (0, st_ofs, rel_op_a_op + field);
 
 		reloc->next = op->o.label->dest->relocs;
 		op->o.label->dest->relocs = reloc;

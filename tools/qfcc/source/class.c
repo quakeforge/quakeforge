@@ -589,7 +589,7 @@ emit_class_ref (const char *class_name)
 	name_def = name_sym->s.def;
 	if (!name_def->external)
 		D_INT (ref_def) = name_def->offset;
-	reloc_def_def (name_def, ref_def->offset);
+	reloc_def_def (name_def, ref_def);
 }
 
 static void
@@ -636,7 +636,7 @@ emit_category_ref (const char *class_name, const char *category_name)
 	name_def = name_sym->s.def;
 	if (!name_def->external)
 		D_INT (ref_def) = name_def->offset;
-	reloc_def_def (name_def, ref_def->offset);
+	reloc_def_def (name_def, ref_def);
 }
 
 static void
@@ -1030,7 +1030,7 @@ class_pointer_symbol (class_t *class)
 		class->def = class_symbol (&class_type, 1)->s.def;
 	if (!class->def->external)
 		D_INT (def) = class->def->offset;
-	reloc_def_def (class->def, def->offset);
+	reloc_def_def (class->def, def);
 	return sym;
 }
 

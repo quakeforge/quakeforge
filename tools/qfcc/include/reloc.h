@@ -70,7 +70,11 @@ typedef enum {
 typedef struct reloc_s {
 	struct reloc_s *next;		///< next reloc in reloc chain
 	struct ex_label_s *label;	///< instruction label for *_op relocs
-	int			offset;			///< the addressof the location in need of
+	struct defspace_s *space;	///< the space containing the location in
+								///< need of adjustment for def_* relocations
+								///< (op_* relocations always use the code
+								///< space)
+	int			offset;			///< the address of the location in need of
 								///< adjustment
 	reloc_type	type;			///< type type of relocation to perform
 	int			line;			///< current source line when creating reloc
@@ -95,10 +99,11 @@ void relocate_refs (reloc_t *refs, int offset);
 	The current source file and line will be preserved in the relocation
 	record.
 
-	\param offset	The address of the instruction that will be adjusted.
+	\param space	The defspace containting the location to be adjusted.
+	\param offset	The address of the location to be adjusted.
 	\param type		The type of relocation to be performed.
 */
-reloc_t *new_reloc (int offset, reloc_type type);
+reloc_t *new_reloc (struct defspace_s *space, int offset, reloc_type type);
 
 /**	Create a relocation record for an instruction referencing a def.
 
@@ -139,9 +144,11 @@ void reloc_op_def_ofs (struct def_s *def, int offset, int field);
 	value stored in the data location.
 
 	\param def		The def being referenced.
-	\param offset	The address of the data location that will be adjusted.
+	\param location	Def describing the location of the reference to be
+					adjusted. As the def's space and offset will be copied
+					into the relocation record, a dummy def may be used.
 */
-void reloc_def_def (struct def_s *def, int offset);
+void reloc_def_def (struct def_s *def, struct def_s *location);
 
 /**	Create a relocation record for a data location referencing a def.
 
@@ -152,9 +159,11 @@ void reloc_def_def (struct def_s *def, int offset);
 	the value stored in the data location.
 
 	\param def		The def being referenced.
-	\param offset	The address of the data location that will be adjusted.
+	\param location	Def describing the location of the reference to be
+					adjusted. As the def's space and offset will be copied
+					into the relocation record, a dummy def may be used.
 */
-void reloc_def_def_ofs (struct def_s *def, int offset);
+void reloc_def_def_ofs (struct def_s *def, struct def_s *location);
 
 /**	Create a relocation record for a data location referencing a function.
 
@@ -165,9 +174,11 @@ void reloc_def_def_ofs (struct def_s *def, int offset);
 	value stored in the data location.
 
 	\param func		The function being referenced.
-	\param offset	The address of the data location that will be adjusted.
+	\param location	Def describing the location of the reference to be
+					adjusted. As the def's space and offset will be copied
+					into the relocation record, a dummy def may be used.
 */
-void reloc_def_func (struct function_s *func, int offset);
+void reloc_def_func (struct function_s *func, struct def_s *location);
 
 /**	Create a relocation record for a data location referencing a string.
 
@@ -177,9 +188,11 @@ void reloc_def_func (struct function_s *func, int offset);
 	When the relocation is performed, the string index will replace the
 	value stored in the data location.
 
-	\param offset	The address of the data location that will be adjusted.
+	\param location	Def describing the location of the reference to be
+					adjusted. As the def's space and offset will be copied
+					into the relocation record, a dummy def may be used.
 */
-void reloc_def_string (int offset);
+void reloc_def_string (struct def_s *location);
 
 /**	Create a relocation record for a data location referencing a field.
 
@@ -190,9 +203,11 @@ void reloc_def_string (int offset);
 	value stored in the data location.
 
 	\param def		The def representing the field being referenced.
-	\param offset	The address of the data location that will be adjusted.
+	\param location	Def describing the location of the reference to be
+					adjusted. As the def's space and offset will be copied
+					into the relocation record, a dummy def may be used.
 */
-void reloc_def_field (struct def_s *def, int offset);
+void reloc_def_field (struct def_s *def, struct def_s *location);
 
 /**	Create a relocation record for a data location referencing a field.
 
@@ -203,9 +218,11 @@ void reloc_def_field (struct def_s *def, int offset);
 	the value stored in the data location.
 
 	\param def		The def representing the field being referenced.
-	\param offset	The address of the data location that will be adjusted.
+	\param location	Def describing the location of the reference to be
+					adjusted. As the def's space and offset will be copied
+					into the relocation record, a dummy def may be used.
 */
-void reloc_def_field_ofs (struct def_s *def, int offset);
+void reloc_def_field_ofs (struct def_s *def, struct def_s *location);
 
 /**	Create a relocation record for a data location referencing an
 	instruction.
@@ -217,9 +234,11 @@ void reloc_def_field_ofs (struct def_s *def, int offset);
 	value stored in the data location.
 
 	\param label	The label representing the instruction being referenced.
-	\param offset	The address of the data location that will be adjusted.
+	\param location	Def describing the location of the reference to be
+					adjusted. As the def's space and offset will be copied
+					into the relocation record, a dummy def may be used.
 */
-void reloc_def_op (struct ex_label_s *label, int offset);
+void reloc_def_op (struct ex_label_s *label, struct def_s *location);
 
 ///@}
 

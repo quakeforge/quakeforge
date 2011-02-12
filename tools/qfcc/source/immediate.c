@@ -162,7 +162,6 @@ ReuseConstant (expr_t *expr, def_t *def)
 	hashtab_t  *tab = 0;
 	type_t     *type;
 	expr_t      e = *expr;
-	reloc_t    *reloc = 0;
 	immediate_t *imm, search;
 
 	if (!string_imm_defs) {
@@ -266,15 +265,19 @@ ReuseConstant (expr_t *expr, def_t *def)
 	// copy the immediate to the global area
 	switch (e.e.value.type) {
 		case ev_string:
-			reloc = new_reloc (cn->offset, rel_def_string);
+			reloc_def_string (cn);
 			break;
 		case ev_func:
-			if (e.e.value.v.func_val)
-				reloc = new_reloc (cn->offset, rel_def_func);
+			if (e.e.value.v.func_val) {
+				reloc_t    *reloc;
+				reloc = new_reloc (cn->space, cn->offset, rel_def_func);
+				reloc->next = pr.relocs;
+				pr.relocs = reloc;
+			}
 			break;
 		case ev_field:
 			if (e.e.value.v.pointer.def)
-				reloc_def_field_ofs (e.e.value.v.pointer.def, cn->offset);
+				reloc_def_field_ofs (e.e.value.v.pointer.def, cn);
 			break;
 		case ev_pointer:
 			if (e.e.value.v.pointer.def) {
@@ -284,10 +287,6 @@ ReuseConstant (expr_t *expr, def_t *def)
 			break;
 		default:
 			break;
-	}
-	if (reloc) {
-		reloc->next = pr.relocs;
-		pr.relocs = reloc;
 	}
 
 	memcpy (D_POINTER (void, cn), &e.e, 4 * type_size (type));

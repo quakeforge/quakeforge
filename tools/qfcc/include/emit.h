@@ -36,26 +36,35 @@ struct sblock_s;
 
 void emit_statements (struct sblock_s *first_sblock);
 
-#define EMIT_STRING(s,dest,str)						\
-	do {											\
-		(dest) = ReuseString (str);					\
-		reloc_def_string (POINTER_OFS (s, &(dest)));\
+#define EMIT_STRING(s,dest,str)					\
+	do {										\
+		def_t       loc;						\
+		loc.space = s;							\
+		loc.offset = POINTER_OFS (s, &(dest));	\
+		(dest) = ReuseString (str);				\
+		reloc_def_string (&loc);\
 	} while (0)
 
-#define EMIT_DEF(s,dest,def)							\
-	do {												\
-		def_t      *d = (def);							\
-		(dest) = d ? d->offset : 0;						\
-		if (d)											\
-			reloc_def_def (d, POINTER_OFS (s, &(dest)));\
+#define EMIT_DEF(s,dest,def)					\
+	do {										\
+		def_t      *d = (def);					\
+		def_t       loc;						\
+		loc.space = s;							\
+		loc.offset = POINTER_OFS (s, &(dest));	\
+		(dest) = d ? d->offset : 0;				\
+		if (d)									\
+			reloc_def_def (d, &loc);			\
 	} while (0)
 
-#define EMIT_DEF_OFS(s,dest,def)							\
-	do {													\
-		def_t      *d = (def);								\
-		(dest) = d ? d->offset : 0;							\
-		if (d)												\
-			reloc_def_def_ofs (d, POINTER_OFS (s, &(dest)));\
+#define EMIT_DEF_OFS(s,dest,def)				\
+	do {										\
+		def_t      *d = (def);					\
+		def_t       loc;						\
+		loc.space = s;							\
+		loc.offset = POINTER_OFS (s, &(dest));	\
+		(dest) = d ? d->offset : 0;				\
+		if (d)									\
+			reloc_def_def_ofs (d, &loc);		\
 	} while (0)
 
 #endif//__emit_h

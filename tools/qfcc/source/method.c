@@ -451,8 +451,12 @@ emit_methods_list_item (def_t *def, void *data, int index)
 	EMIT_STRING (def->space, meth->method_name, m->name);
 	EMIT_STRING (def->space, meth->method_types, m->types);
 	meth->method_imp = D_FUNCTION (m->def);
-	if (m->func)
-		reloc_def_func (m->func, POINTER_OFS (def->space, &meth->method_imp));
+	if (m->func) {
+		def_t       loc;
+		loc.space = def->space;
+		loc.offset = POINTER_OFS (def->space, &meth->method_imp);
+		reloc_def_func (m->func, &loc);
+	}
 }
 
 def_t *

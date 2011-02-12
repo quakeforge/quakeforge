@@ -542,7 +542,7 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent)
 		sym->s.func->def->constant = 1;
 		sym->s.func->def->nosave = 1;
 		add_function (sym->s.func);
-		reloc_def_func (sym->s.func, sym->s.func->def->offset);
+		reloc_def_func (sym->s.func, sym->s.func->def);
 	}
 	sym->s.func->code = pr.code->size;
 
@@ -603,7 +603,7 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val)
 	else
 		bi = expr_float (bi_val);
 	sym->s.func->builtin = bi;
-	reloc_def_func (sym->s.func, sym->s.func->def->offset);
+	reloc_def_func (sym->s.func, sym->s.func->def);
 	build_function (sym->s.func);
 	finish_function (sym->s.func);
 
