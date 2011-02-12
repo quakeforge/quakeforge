@@ -120,10 +120,15 @@ dump_protocol_list (progs_t *pr, pr_protocol_list_t *list)
 static void
 dump_class (progs_t *pr, pr_class_t *class)
 {
-	pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
+	pr_class_t *meta;
 	const char *class_name = "<invalid string>";
 	const char *super_class_name = "<invalid string>";
 
+	if (!class) {
+		printf ("    (nil)\n");
+		return;
+	}
+	meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
 	if (PR_StringValid (pr, class->name))
 		class_name = PR_GetString (pr, class->name);
 	if (class->super_class) {
@@ -205,7 +210,9 @@ dump_modules (progs_t *pr)
 
 		if (PR_StringValid (pr, def->s_name))
 			name = PR_GetString (pr, def->s_name);
-		if (strcmp (name, "_OBJ_MODULE") == 0)
+		if (strcmp (name, "_OBJ_MODULE") == 0) {
+			printf ("module @ %x\n", def->ofs);
 			dump_module (pr, &G_STRUCT (pr, pr_module_t, def->ofs));
+		}
 	}
 }
