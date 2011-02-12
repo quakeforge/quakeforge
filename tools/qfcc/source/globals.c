@@ -126,13 +126,14 @@ dump_globals (progs_t *pr)
 				}
 				break;
 			case ev_pointer:
+				comment = va (" %x", G_INT (pr, offset));
 				break;
 			case ev_quat:
 				comment = va (" '%g %g %g %g",
-							  G_VECTOR (pr, offset)[0],//FIXME quat!!!
-							  G_VECTOR (pr, offset)[1],
-							  G_VECTOR (pr, offset)[2],
-							  G_VECTOR (pr, offset)[3]);
+							  G_QUAT (pr, offset)[0],
+							  G_QUAT (pr, offset)[1],
+							  G_QUAT (pr, offset)[2],
+							  G_QUAT (pr, offset)[3]);
 				break;
 			case ev_integer:
 				comment = va (" %d", G_INT (pr, offset));
