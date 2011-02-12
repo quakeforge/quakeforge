@@ -62,30 +62,163 @@ typedef enum {
 	rel_def_field_ofs,	///< data[ref.offset] += field def offset
 } reloc_type;
 
+/**	Relocation record.
+
+	One relocation record is created for each reference that needs to be
+	updated.
+*/
 typedef struct reloc_s {
-	struct reloc_s *next;
-	struct ex_label_s *label;
-	int			offset;
-	reloc_type	type;
-	int			line;
-	string_t	file;
-	void       *return_address;
+	struct reloc_s *next;		///< next reloc in reloc chain
+	struct ex_label_s *label;	///< instruction label for *_op relocs
+	int			offset;			///< the addressof the location in need of
+								///< adjustment
+	reloc_type	type;			///< type type of relocation to perform
+	int			line;			///< current source line when creating reloc
+	string_t	file;			///< current source file when creating reloc
+	void       *return_address;	///< for debugging
 } reloc_t;
 
 struct statement_s;
 struct def_s;
 struct function_s;
 
-reloc_t *new_reloc (int offset, reloc_type type);
+/**	Perform all relocations in a relocation chain.
+
+	\param refs		The head of the relocation chain.
+	\param offset	The value to be used in the relocations. This will either
+					replace or be added to the value in the relocation target.
+*/
 void relocate_refs (reloc_t *refs, int offset);
+
+/**	Create a relocation record of the specified type.
+
+	The current source file and line will be preserved in the relocation
+	record.
+
+	\param offset	The address of the instruction that will be adjusted.
+	\param type		The type of relocation to be performed.
+*/
+reloc_t *new_reloc (int offset, reloc_type type);
+
+/**	Create a relocation record for an instruction referencing a def.
+
+	The relocation record will be linked into the def's chain of relocation
+	records.
+
+	When the relocation is performed, the target address will replace the
+	value stored in the instruction's operand field.
+
+	\param def		The def being referenced.
+	\param offset	The address of the instruction that will be adjusted.
+	\param field	The instruction field to be adjusted: 0 = opa, 1 = opb,
+					2 = opc.
+*/
 void reloc_op_def (struct def_s *def, int offset, int field);
+
+/**	Create a relative relocation record for an instruction referencing a def.
+
+	The relocation record will be linked into the def's chain of relocation
+	records.
+
+	When the relocation is performed, the target address will be added to
+	the value stored in the instruction's operand field.
+
+	\param def		The def being referenced.
+	\param offset	The address of the instruction that will be adjusted.
+	\param field	The instruction field to be adjusted: 0 = opa, 1 = opb,
+					2 = opc.
+*/
 void reloc_op_def_ofs (struct def_s *def, int offset, int field);
+
+/**	Create a relocation record for a data location referencing a def.
+
+	The relocation record will be linked into the def's chain of relocation
+	records.
+
+	When the relocation is performed, the target address will replace the
+	value stored in the data location.
+
+	\param def		The def being referenced.
+	\param offset	The address of the data location that will be adjusted.
+*/
 void reloc_def_def (struct def_s *def, int offset);
+
+/**	Create a relocation record for a data location referencing a def.
+
+	The relocation record will be linked into the def's chain of relocation
+	records.
+
+	When the relocation is performed, the target address will be added to
+	the value stored in the data location.
+
+	\param def		The def being referenced.
+	\param offset	The address of the data location that will be adjusted.
+*/
 void reloc_def_def_ofs (struct def_s *def, int offset);
+
+/**	Create a relocation record for a data location referencing a function.
+
+	The relocation record will be linked into the function's chain of
+	relocation records.
+
+	When the relocation is performed, the function number will replace the
+	value stored in the data location.
+
+	\param func		The function being referenced.
+	\param offset	The address of the data location that will be adjusted.
+*/
 void reloc_def_func (struct function_s *func, int offset);
+
+/**	Create a relocation record for a data location referencing a string.
+
+	The relocation record will be linked into the global chain of
+	relocation records.
+
+	When the relocation is performed, the string index will replace the
+	value stored in the data location.
+
+	\param offset	The address of the data location that will be adjusted.
+*/
 void reloc_def_string (int offset);
+
+/**	Create a relocation record for a data location referencing a field.
+
+	The relocation record will be linked into the def's chain of relocation
+	records.
+
+	When the relocation is performed, the target address will replace the
+	value stored in the data location.
+
+	\param def		The def representing the field being referenced.
+	\param offset	The address of the data location that will be adjusted.
+*/
 void reloc_def_field (struct def_s *def, int offset);
+
+/**	Create a relocation record for a data location referencing a field.
+
+	The relocation record will be linked into the def's chain of relocation
+	records.
+
+	When the relocation is performed, the target address will be added to
+	the value stored in the data location.
+
+	\param def		The def representing the field being referenced.
+	\param offset	The address of the data location that will be adjusted.
+*/
 void reloc_def_field_ofs (struct def_s *def, int offset);
+
+/**	Create a relocation record for a data location referencing an
+	instruction.
+
+	The relocation record will be linked into the global chain of
+	relocation records.
+
+	When the relocation is performed, the string index will replace the
+	value stored in the data location.
+
+	\param label	The label representing the instruction being referenced.
+	\param offset	The address of the data location that will be adjusted.
+*/
 void reloc_def_op (struct ex_label_s *label, int offset);
 
 ///@}
