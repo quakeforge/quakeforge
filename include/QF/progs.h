@@ -359,6 +359,18 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define G_VECTOR(p,o)	G_var (p, o, vector)
 
+/** Access a quaternion global. Can be assigned to.
+
+	\par QC type:
+		\c quaternion
+	\param p		pointer to ::progs_t VM struct
+	\param o		offset into global data space
+	\return			quat_t lvalue
+
+	\hideinitializer
+*/
+#define G_QUAT(p,o)		G_var (p, o, quat)
+
 /** Access a string index global. Can be assigned to.
 
 	\par QC type:
@@ -537,6 +549,18 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define P_VECTOR(p,n)	P_var (p, n, vector)
 
+/** Access a quaterion parameter. Can be used any way a quat_t variable can.
+
+	\par QC type:
+		\c quaterion
+	\param p		pointer to ::progs_t VM struct
+	\param n		parameter number (0-7)
+	\return			quat_t lvalue
+
+	\hideinitializer
+*/
+#define P_QUAT(p,n)		P_var (p, n, quat)
+
 /** Access a string index parameter. Can be assigned to.
 
 	\par QC type:
@@ -710,6 +734,17 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define R_VECTOR(p)		R_var (p, vector)
 
+/** Access the quaternion return value.
+
+	\par QC type:
+		\c quaternion
+	\param p		pointer to ::progs_t VM struct
+	\return			quat_t lvalue
+
+	\hideinitializer
+*/
+#define R_QUAT(p)		R_var (p, quat)
+
 /** Access the string index return value.
 
 	\par QC type:
@@ -779,17 +814,27 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define RETURN_POINTER(p,ptr)	(R_POINTER (p) = PR_SetPointer (p, ptr))
 
-/** Set the return value to the given vector. The pointer is
-	converted into a progs entity address.
+/** Set the return value to the given vector.
 
 	\par QC type:
 		\c vector
 	\param p		pointer to ::progs_t VM struct
-	\param v		C entity pointer to be returned
+	\param v		vector to be returned
 
 	\hideinitializer
 */
 #define RETURN_VECTOR(p,v)		VectorCopy (v, R_VECTOR (p))
+
+/** Set the return value to the given quaterion.
+
+	\par QC type:
+		\c vector
+	\param p		pointer to ::progs_t VM struct
+	\param q		quaternion to be returned
+
+	\hideinitializer
+*/
+#define RETURN_QUAT(p,q)		VectorCopy (q, R_QUAT (p))
 //@}
 
 /** \defgroup prda_entity_fields Entity Fields
@@ -857,6 +902,19 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define E_VECTOR(e,o)	E_var (e, o, vector)
+
+/** Access a quaternion entity field. Can be used any way a quat_t variable
+	can.
+
+	\par QC type:
+		\c quaterion
+	\param e		pointer to the entity
+	\param o		field offset into entity data space
+	\return			quat_t lvalue
+
+	\hideinitializer
+*/
+#define E_QUAT(e,o)		E_var (e, o, quat)
 
 /** Access a string index entity field. Can be assigned to.
 
