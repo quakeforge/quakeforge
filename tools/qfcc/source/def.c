@@ -113,7 +113,12 @@ new_def (const char *name, type_t *type, defspace_t *space,
 	def->type = type;
 
 	if (storage != st_extern) {
-		def->offset = defspace_new_loc (space, type_size (type));
+		int         size = type_size (type);
+		if (!size) {
+			error (0, "%s has incomplete type", name);
+			size = 1;
+		}
+		def->offset = defspace_new_loc (space, size);
 	}
 	if (space) {
 		def->space = space;

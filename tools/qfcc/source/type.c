@@ -890,9 +890,13 @@ type_size (type_t *type)
 		case ev_invalid:
 			switch (type->ty) {
 				case ty_enum:
+					if (!type->t.symtab)
+						return 0;
 					return type_size (&type_integer);
 				case ty_struct:
 				case ty_union:
+					if (!type->t.symtab)
+						return 0;
 					return type->t.symtab->size;
 				case ty_class:
 					{
