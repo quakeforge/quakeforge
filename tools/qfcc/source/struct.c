@@ -129,8 +129,8 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 				symtab->size = size;
 		}
 	}
+	sym->type = find_type (sym->type);	// checks the tag, not the symtab
 	sym->type->t.symtab = symtab;
-	sym->type = find_type (sym->type);
 	return sym;
 }
 
