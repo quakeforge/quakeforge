@@ -157,6 +157,7 @@ int yylex (void);
 %type	<spec>		type
 
 %type	<param>		function_params var_list param_declaration
+%type	<param>		qc_func_params qc_var_list qc_param_decl
 %type	<symbol>	var_decl function_decl
 %type	<symbol>	abstract_decl abs_decl
 
@@ -307,7 +308,7 @@ external_def_list
 external_def
 	: optional_specifiers external_decl_list ';' { }
 	| optional_specifiers ';' { }
-	| optional_specifiers function_params
+	| optional_specifiers qc_func_params
 		{
 			$<spec>$ = $1;		// copy spec bits and storage
 			$<spec>$.type = parse_params ($1.type, $2), st_global, 0;
@@ -569,7 +570,6 @@ var_decl
 	| var_decl function_params
 		{
 			$$->type = append_type ($$->type, parse_params (0, $2));
-			print_type ($$->type);
 		}
 	| var_decl array_decl
 		{
@@ -615,11 +615,29 @@ function_params
 	| '(' ps var_list ')'					{ $$ = check_params ($3); }
 	;
 
+qc_func_params
+	: '(' ')'								{ $$ = 0; }
+	| '(' ps qc_var_list ')'				{ $$ = check_params ($3); }
+	;
+
 ps : ;
 
 var_list
 	: param_declaration
 	| var_list ',' param_declaration
+		{
+			param_t    *p;
+
+			for (p = $1; p->next; p = p->next)
+				;
+			p->next = $3;
+			$$ = $1;
+		}
+	;
+
+qc_var_list
+	: qc_param_decl
+	| qc_var_list ',' qc_param_decl
 		{
 			param_t    *p;
 
@@ -646,6 +664,22 @@ abstract_decl
 			$$ = $2;
 			$$->type = find_type (append_type ($$->type, $1.type));
 		}
+	;
+
+qc_param_decl
+	: type NAME
+		{
+			$2->type = find_type ($1.type);
+			$$ = new_param (0, $2->type, $2->name);
+		}
+	| type qc_func_params NAME
+		{
+			$3->type = parse_params ($1.type, $2);
+			$3->type = find_type ($3->type);
+			$3->params = $2;
+			$$ = new_param (0, $3->type, $3->name);
+		}
+	| ELLIPSIS				{ $$ = new_param (0, 0, 0); }
 	;
 
 //FIXME type construction is inside-out
