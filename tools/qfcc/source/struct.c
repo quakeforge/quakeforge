@@ -168,8 +168,8 @@ add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 	name->type = enum_type;
 	enum_tab = enum_type->t.symtab;
 	value = 0;
-	if (*enum_tab->symtail)
-		value = ((symbol_t *)(*enum_tab->symtail))->s.value.v.integer_val + 1;
+	if (enum_tab->symbols)
+		value = ((symbol_t *)(enum_tab->symtail))->s.value.v.integer_val + 1;
 	if (val) {
 		if (!is_constant (val))
 			error (val, "non-constant initializer");
