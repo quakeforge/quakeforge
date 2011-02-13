@@ -1100,11 +1100,20 @@ emit_symtab_defs (def_t *def, void *data, int index)
 						da->cls_def_cnt + da->cat_def_cnt);
 
 	if (index < da->cls_def_cnt) {
-		class_t    *cl = da->classes[index];
-		EMIT_DEF (def->space, D_INT (def), cl->def);
+		class_t   **cl;
+		for (cl = da->classes; *cl; cl++)
+			if ((*cl)->def && !(*cl)->def->external)
+				if (!index--)
+					break;
+		EMIT_DEF (def->space, D_INT (def), (*cl)->def);
 	} else {
-		category_t *ca = da->categories[index - da->cls_def_cnt];
-		EMIT_DEF (def->space, D_INT (def), ca->def);
+		category_t **ca;
+		index -= da->cls_def_cnt;
+		for (ca = da->categories; *ca; ca++)
+			if ((*ca)->def && !(*ca)->def->external)
+				if (!index--)
+					break;
+		EMIT_DEF (def->space, D_INT (def), (*ca)->def);
 	}
 }
 
@@ -1150,6 +1159,8 @@ class_finish_module (void)
 										data.cls_def_cnt + data.cat_def_cnt);
 	symtab_def = emit_structure ("_OBJ_SYMTAB", 's', symtab_struct, 0, &data,
 								 st_static);
+	free (data.classes);
+	free (data.categories);
 
 	module_sym = make_symbol ("_OBJ_MODULE", &type_module, pr.far_data,
 							  st_static);
