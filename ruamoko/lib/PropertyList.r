@@ -77,7 +77,7 @@
 	return self;
 }
 
--dealloc
+- (void) dealloc
 {
 	if (own)
 		PL_Free (item);

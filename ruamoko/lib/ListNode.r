@@ -45,6 +45,7 @@
 
 	data = [anObject retain];
 	nextNode = nil;
+	return self;
 }
 
 - (void) dealloc

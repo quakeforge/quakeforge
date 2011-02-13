@@ -73,7 +73,7 @@
 
 - (integer) count
 {
-
+	return stackSize;
 }
 
 @end
