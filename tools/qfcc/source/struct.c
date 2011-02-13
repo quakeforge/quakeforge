@@ -215,7 +215,6 @@ def_t *
 emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 				void *data, storage_class_t storage)
 {
-	type_t      new;
 	int         i, j;
 	int         saw_null = 0;
 	int         saw_func = 0;
@@ -225,11 +224,8 @@ emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 	def_t       field_def;
 
 	name = save_string (name);
-	if (!type) {
-		memset (&new, 0, sizeof (new));
-		type = &new;
-		type = make_structure (0, su, defs, type)->type;
-	}
+	if (!type)
+		type = make_structure (0, su, defs, 0)->type;
 	if (!is_struct (type) || (su == 's' && type->ty != ty_struct)
 		|| (su == 'u' && type->ty != ty_union))
 		internal_error (0, "structure %s type mismatch", name);
