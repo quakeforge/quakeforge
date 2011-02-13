@@ -1,19 +1,19 @@
 #include "hash.h"
 
-hashtab_t (integer size, string (void []ele, void []data) gk, void (void []ele, void []data) f, void [] ud) Hash_NewTable = #0;
-void (hashtab_t tab, unsigned (void []ele, void []data) gh, integer (void [] ele1, void [] ele2, void [] data) cmp) Hash_SetHashCompare = #0;
-void (hashtab_t tab) Hash_DelTable = #0;
-void (hashtab_t tab) Hash_FlushTable = #0;
-integer (hashtab_t tab, void [] ele) Hash_Add = #0;
-integer (hashtab_t tab, void [] ele) Hash_AddElement = #0;
-(void []) (hashtab_t tab, string key) Hash_Find = #0;
-(void []) (hashtab_t tab, void [] ele) Hash_FindElement = #0;
-(void [][]) (hashtab_t tab, string key) Hash_FindList = #0;
-(void [][]) (hashtab_t tab, void [] ele) Hash_FindElementList = #0;
-(void []) (hashtab_t tab, string key) Hash_Del = #0;
-(void []) (hashtab_t tab, void [] ele) Hash_DelElement = #0;
-void (hashtab_t tab, void [] ele) Hash_Free = #0;
-integer (string str) Hash_String = #0;
-integer (void [] buf, integer len) Hash_Buffer = #0;
-(void [][]) (hashtab_t tab) Hash_GetList = #0;
-void (hashtab_t tab) Hash_Stats = #0;
+hashtab_t Hash_NewTable (integer size, string gk (void *ele, void *data), void f (void *ele, void *data), void *ud) = #0;
+void Hash_SetHashCompare (hashtab_t tab, unsigned gh (void *ele, void *data), integer cmp (void *ele1, void *ele2, void *data)) = #0;
+void Hash_DelTable (hashtab_t tab) = #0;
+void Hash_FlushTable (hashtab_t tab) = #0;
+integer Hash_Add (hashtab_t tab, void *ele) = #0;
+integer Hash_AddElement (hashtab_t tab, void *ele) = #0;
+void *Hash_Find (hashtab_t tab, string key) = #0;
+void *Hash_FindElement (hashtab_t tab, void *ele) = #0;
+void **Hash_FindList (hashtab_t tab, string key) = #0;
+void **Hash_FindElementList (hashtab_t tab, void *ele) = #0;
+void *Hash_Del (hashtab_t tab, string key) = #0;
+void *Hash_DelElement (hashtab_t tab, void *ele) = #0;
+void Hash_Free (hashtab_t tab, void *ele) = #0;
+integer Hash_String (string str) = #0;
+integer Hash_Buffer (void *buf, integer len) = #0;
+void **Hash_GetList (hashtab_t tab) = #0;
+void Hash_Stats (hashtab_t tab) = #0;

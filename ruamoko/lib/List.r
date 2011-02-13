@@ -1,8 +1,8 @@
 #include "List.h"
 
 struct list_bucket_s {
-	struct list_bucket_s [] next;
-	struct list_bucket_s [][] prev;
+	struct list_bucket_s *next;
+	struct list_bucket_s **prev;
 	id obj;
 };
 typedef struct list_bucket_s list_bucket_t;
@@ -19,7 +19,7 @@ typedef struct list_bucket_s list_bucket_t;
 
 - (void) dealloc
 {
-	local list_bucket_t [] e, t = nil; //FIXME t uninitialized
+	local list_bucket_t *e, *t = nil; //FIXME t uninitialized
 
 	for (e = head; e; e = t) {
 		t = e.next;
@@ -31,7 +31,7 @@ typedef struct list_bucket_s list_bucket_t;
 
 - (id) getItemAt: (integer) index
 {
-	local list_bucket_t [] e;
+	local list_bucket_t *e;
 	if (index < 0 || index >= count)
 		return nil;
 	for (e = head; e && index; index--)
@@ -48,7 +48,7 @@ typedef struct list_bucket_s list_bucket_t;
 
 -(id) tail
 {
-	local list_bucket_t [] e = (list_bucket_t []) tail;
+	local list_bucket_t *e = (list_bucket_t *) tail;
 	if (!e)
 		return nil;
 	return e.obj;
@@ -56,7 +56,7 @@ typedef struct list_bucket_s list_bucket_t;
 
 -(void) addItemAtHead: (id) item
 {
-	local list_bucket_t [] e = obj_malloc (@sizeof (list_bucket_t));
+	local list_bucket_t *e = obj_malloc (@sizeof (list_bucket_t));
 	e.obj = item;
 	e.next = head;
 	e.prev = &head;
@@ -68,7 +68,7 @@ typedef struct list_bucket_s list_bucket_t;
 
 -(void) addItemAtTail: (id) item
 {
-	local list_bucket_t [] e = obj_malloc (@sizeof (list_bucket_t));
+	local list_bucket_t *e = obj_malloc (@sizeof (list_bucket_t));
 	e.obj = item;
 	e.next = nil;
 	e.prev = tail;
@@ -79,7 +79,7 @@ typedef struct list_bucket_s list_bucket_t;
 
 - (id) removeItem: (id) item
 {
-	local list_bucket_t [] e;
+	local list_bucket_t *e;
 
 	for (e = head; e; e = e.next) {
 		if (e.obj == item) {
@@ -96,7 +96,7 @@ typedef struct list_bucket_s list_bucket_t;
 
 - (id) removeItemAtHead
 {
-	local list_bucket_t [] e;
+	local list_bucket_t *e;
 	local id obj;
 
 	if (!count)
@@ -115,12 +115,12 @@ typedef struct list_bucket_s list_bucket_t;
 
 - (id) removeItemAtTail
 {
-	local list_bucket_t [] e;
+	local list_bucket_t *e;
 	local id obj;
 
 	if (!count)
 		return nil;
-	e = (list_bucket_t []) tail;
+	e = (list_bucket_t *) tail;
 	obj = e.obj;
 	e.prev[0] = e.next;
 	if (e.next)
@@ -137,14 +137,14 @@ typedef struct list_bucket_s list_bucket_t;
 
 -(void)makeObjectsPerformSelector:(SEL)selector
 {
-	local list_bucket_t [] e;
+	local list_bucket_t *e;
 	for (e = head; e; e = e.next)
 		[e.obj performSelector:selector];
 }
 
 -(void)makeObjectsPerformSelector:(SEL)selector withObject:(id)arg
 {
-	local list_bucket_t [] e;
+	local list_bucket_t *e;
 	for (e = head; e; e = e.next)
 		[e.obj performSelector:selector withObject:arg];
 }

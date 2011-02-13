@@ -112,6 +112,6 @@
 */
 @extern entity nextent (entity e);
 
-@extern void EntityParseFunction (void (string ent_data) func);
+@extern void EntityParseFunction (void func (string ent_data));
 ///\}
 #endif //__ruamoko_entities_h

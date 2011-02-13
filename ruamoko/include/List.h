@@ -6,8 +6,8 @@
 @interface List: Object
 {
 	integer count;
-	struct list_bucket_s [] head;
-	struct list_bucket_s [][] tail;
+	struct list_bucket_s *head;
+	struct list_bucket_s **tail;
 }
 - (id) init;
 - (id) getItemAt: (integer) index;

@@ -15,4 +15,4 @@ entity nextent (entity e) = #47;
 void makestatic (entity e) = #69;
 void setspawnparms (entity e) = #78;
 
-void EntityParseFunction (void (string ent_data) func) = #0;
+void EntityParseFunction (void func (string ent_data)) = #0;

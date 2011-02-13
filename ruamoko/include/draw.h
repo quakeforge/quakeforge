@@ -7,7 +7,7 @@ struct _qpic_t {
 	integer width;
 	integer height;
 };
-typedef struct _qpic_t [] qpic_t;
+typedef struct _qpic_t *qpic_t;
 
 @extern qpic_t Draw_CachePic (string name, integer alpha);
 

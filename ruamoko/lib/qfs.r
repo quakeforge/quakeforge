@@ -1,10 +1,10 @@
 #include "qfs.h"
 
-QFile (string path, string mode) QFS_Open = #0;
-QFile (string path, integer zip) QFS_WOpen = #0;
-integer (string old, string new) QFS_Rename = #0;
-(void []) (string filename) QFS_LoadFile = #0;
-QFile (string filename) QFS_OpenFile = #0;
-integer (string filename, void [] buf, integer count) QFS_WriteFile = #0;
-QFSlist (string path, string ext, integer strip) QFS_Filelist = #0;
-void  (QFSlist list) QFS_FilelistFree = #0;
+QFile QFS_Open (string path, string mode) = #0;
+QFile QFS_WOpen (string path, integer zip) = #0;
+integer QFS_Rename (string old, string new) = #0;
+void *QFS_LoadFile (string filename) = #0;
+QFile QFS_OpenFile (string filename) = #0;
+integer QFS_WriteFile (string filename, void *buf, integer count) = #0;
+QFSlist QFS_Filelist (string path, string ext, integer strip) = #0;
+void  QFS_FilelistFree (QFSlist list) = #0;

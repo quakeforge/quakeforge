@@ -1,19 +1,19 @@
 #include "qfile.h"
 
-integer (string old, string new) Qrename = #0;
-integer (string path) Qremove = #0;
-QFile (string path, string mode) Qopen = #0;
-void (QFile file) Qclose = #0;
-string (QFile file) Qgetline = #0;
-string (QFile file, integer length) Qreadstring = #0;
-integer (QFile file, void *buf, integer count) Qread = #0;
-integer (QFile file, void *buf, integer count) Qwrite = #0;
-integer (QFile file, string str) Qputs = #0;
-//integer (QFile file, void *buf, integer count) Qgets = #0;
-integer (QFile file) Qgetc = #0;
-integer (QFile file, integer c) Qputc = #0;
-integer (QFile file, integer offset, integer whence) Qseek = #0;
-integer (QFile file) Qtell = #0;
-integer (QFile file) Qflush = #0;
-integer (QFile file) Qeof = #0;
-integer (QFile file) Qfilesize = #0;
+integer Qrename (string old, string new) = #0;
+integer Qremove (string path) = #0;
+QFile Qopen (string path, string mode) = #0;
+void Qclose (QFile file) = #0;
+string Qgetline (QFile file) = #0;
+string Qreadstring (QFile file, integer length) = #0;
+integer Qread (QFile file, void *buf, integer count) = #0;
+integer Qwrite (QFile file, void *buf, integer count) = #0;
+integer Qputs (QFile file, string str) = #0;
+//integer Qgets (QFile file, void *buf, integer count) = #0;
+integer Qgetc (QFile file) = #0;
+integer Qputc (QFile file, integer c) = #0;
+integer Qseek (QFile file, integer offset, integer whence) = #0;
+integer Qtell (QFile file) = #0;
+integer Qflush (QFile file) = #0;
+integer Qeof (QFile file) = #0;
+integer Qfilesize (QFile file) = #0;
