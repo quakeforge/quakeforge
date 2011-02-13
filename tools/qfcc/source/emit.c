@@ -65,7 +65,6 @@ static def_t zero_def;
 static def_t *
 get_value_def (ex_value_t *value, etype_t type)
 {
-	//FIXME share immediates
 	def_t      *def;
 
 	if (type == ev_short) {
@@ -73,14 +72,7 @@ get_value_def (ex_value_t *value, etype_t type)
 		def->offset = value->v.short_val;
 		return def;
 	}
-	def = new_def (".imm", ev_types[type], pr.near_data, st_static);
-	if (type == ev_string) {
-		EMIT_STRING (def->space, D_STRUCT (string_t, def),
-					 value->v.string_val);
-	} else {
-		memcpy (D_POINTER (pr_type_t, def), &value->v, pr_type_size[type]);
-	}
-	return def;
+	return emit_value (value, 0);
 }
 
 static def_t *

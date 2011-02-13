@@ -32,8 +32,8 @@
 #ifndef __immediate_h
 #define __immediate_h
 
-struct expr_s;
-struct def_s *ReuseConstant (struct expr_s *expr, struct def_s *def);
+struct ex_value_s;
+struct def_s *emit_value (struct ex_value_s *value, struct def_s *def);
 
 int	ReuseString (const char *str);
 

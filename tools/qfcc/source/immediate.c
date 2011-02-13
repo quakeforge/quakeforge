@@ -156,23 +156,19 @@ ReuseString (const char *str)
 }
 
 def_t *
-ReuseConstant (expr_t *expr, def_t *def)
+emit_value (ex_value_t *value, def_t *def)
 {
 	def_t      *cn;
 	hashtab_t  *tab = 0;
 	type_t     *type;
-	expr_t      e = *expr;
+	ex_value_t  val = *value;
 	immediate_t *imm, search;
 
 	if (!string_imm_defs) {
 		clear_immediates ();
 	}
 	cn = 0;
-	if (e.type == ex_nil)
-		convert_nil (&e, def->type);
-	if (!is_constant (&e))
-		abort ();
-	switch (extract_type (&e)) {
+	switch (val.type) {
 		case ev_entity:
 			tab = entity_imm_defs;
 			type = &type_entity;
@@ -195,15 +191,14 @@ ReuseConstant (expr_t *expr, def_t *def)
 				type = &type_integer;
 				break;
 			}
-			e.e.value.v.float_val = expr_integer (&e);
-			e.e.value.type = ev_float;
-			e.type = ex_value;
+			val.v.float_val = val.v.integer_val;
+			val.type = ev_float;
 		case ev_float:
 			tab = float_imm_defs;
 			type = &type_float;
 			break;
 		case ev_string:
-			e.e.value.v.integer_val = ReuseString (expr_string (&e));
+			val.v.integer_val = ReuseString (val.v.string_val);
 			tab = string_imm_defs;
 			type = &type_string;
 			break;
@@ -218,7 +213,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 		default:
 			abort ();
 	}
-	memcpy (&search.i, &e.e, sizeof (search.i));
+	memcpy (&search.i, &val.v, sizeof (search.i));
 	imm = (immediate_t *) Hash_FindElement (tab, &search);
 	if (imm && strcmp (imm->def->name, ".zero") == 0) {
 		if (def) {
@@ -263,12 +258,12 @@ ReuseConstant (expr_t *expr, def_t *def)
 	cn->initialized = cn->constant = 1;
 	cn->nosave = 1;
 	// copy the immediate to the global area
-	switch (e.e.value.type) {
+	switch (val.type) {
 		case ev_string:
 			reloc_def_string (cn);
 			break;
 		case ev_func:
-			if (e.e.value.v.func_val) {
+			if (val.v.func_val) {
 				reloc_t    *reloc;
 				reloc = new_reloc (cn->space, cn->offset, rel_def_func);
 				reloc->next = pr.relocs;
@@ -276,24 +271,24 @@ ReuseConstant (expr_t *expr, def_t *def)
 			}
 			break;
 		case ev_field:
-			if (e.e.value.v.pointer.def)
-				reloc_def_field_ofs (e.e.value.v.pointer.def, cn);
+			if (val.v.pointer.def)
+				reloc_def_field_ofs (val.v.pointer.def, cn);
 			break;
 		case ev_pointer:
-			if (e.e.value.v.pointer.def) {
+			if (val.v.pointer.def) {
 				EMIT_DEF_OFS (pr.near_data, D_INT (cn),
-							  e.e.value.v.pointer.def);
+							  val.v.pointer.def);
 			}
 			break;
 		default:
 			break;
 	}
 
-	memcpy (D_POINTER (void, cn), &e.e, 4 * type_size (type));
+	memcpy (D_POINTER (void, cn), &val.v, 4 * type_size (type));
 
 	imm = malloc (sizeof (immediate_t));
 	imm->def = cn;
-	memcpy (&imm->i, &e.e, sizeof (imm->i));
+	memcpy (&imm->i, &val.v, sizeof (imm->i));
 
 	Hash_AddElement (tab, imm);
 
