@@ -72,7 +72,10 @@ get_value_def (ex_value_t *value, etype_t type)
 		def->offset = value->v.short_val;
 		return def;
 	}
-	return emit_value (value, 0);
+	def = emit_value (value, 0);
+	if (type != def->type->type)
+		return alias_def (def, ev_types[type]);
+	return def;
 }
 
 static def_t *
