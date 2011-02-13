@@ -751,24 +751,22 @@ expr_short (expr_t *e)
 expr_t *
 new_self_expr (void)
 {
-	symbol_t   *sym = symtab_lookup (pr.symtab, ".self");
+	symbol_t   *sym;
 	
-	if (!sym) {
-		sym = new_symbol_type (".self", &type_entity);
+	sym = make_symbol (".self", &type_entity, 0, st_extern);
+	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
-	}
 	return new_symbol_expr (sym);
 }
 
 expr_t *
 new_this_expr (void)
 {
-	symbol_t   *sym = symtab_lookup (pr.symtab, ".this");
+	symbol_t   *sym;
 	
-	if (!sym) {
-		sym = new_symbol_type (".this", field_type (&type_id));
+	sym = make_symbol (".this", field_type (&type_id), 0, st_extern);
+	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
-	}
 	return new_symbol_expr (sym);
 }
 
