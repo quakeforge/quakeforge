@@ -618,6 +618,12 @@ function_params
 qc_func_params
 	: '(' ')'								{ $$ = 0; }
 	| '(' ps qc_var_list ')'				{ $$ = check_params ($3); }
+	| '(' ps TYPE ')'
+		{
+			if ($3 != &type_void)
+				PARSE_ERROR;
+			$$ = 0;
+		}
 	;
 
 ps : ;
