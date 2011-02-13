@@ -67,7 +67,7 @@ void () test_str =
 	printf ("%i \"%.5s\" %3.4f %v\n", 14, "hi there", 3.1415926, '4 1 3');
 };
 void (...) dprint = #0;
-integer (integer argc, string *argv) main =
+integer main (integer argc, string *argv)
 {
 	local integer i;
 	local SEL sel;

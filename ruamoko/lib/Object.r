@@ -1,21 +1,21 @@
 #include "Object.h"
 #include "AutoreleasePool.h"
 
-void (obj_module_t *msg) __obj_exec_class = #0;
+void __obj_exec_class (obj_module_t *msg) = #0;
 void (id object, integer code, string fmt, ...) obj_error = #0;
 void (id object, integer code, string fmt, @va_list args) obj_verror = #0;
 //obj_error_handler (objc_error_handler func) obj_set_error_handler = #0;
 IMP (id receiver, SEL op) obj_msg_lookup = #0;
 IMP (Super class, SEL op) obj_msg_lookup_super = #0;
 id (id receiver, SEL op, ...) obj_msgSend = #0;
-id (Super*class, SEL op, ...) obj_msgSend_super = #0;
+id obj_msgSend_super (Super *class, SEL op, ...) = #0;
 @param (id receiver, SEL op, @va_list args) obj_msg_sendv = #0;
 void *obj_malloc (integer size) = #0;
 void *obj_atomic_malloc (integer size) = #0;
 void *obj_valloc (integer size) = #0;
 void *obj_realloc (void *mem, integer size) = #0;
 void *obj_calloc (integer nelem, integer size) = #0;
-void (void *mem) obj_free = #0;
+void obj_free (void *mem) = #0;
 //(void *) (void) obj_get_uninstalled_dtable = #0;
 
 Class (string name) obj_get_class = #0;
@@ -47,7 +47,7 @@ void (Class class, integer version) class_set_version = #0;
 void *class_get_gc_object_type (Class class) = #0;
 void (Class class, string ivarname, BOOL gcInvisible) class_ivar_set_gcinvisible = #0;
 
-IMP (Method *method) method_get_imp = #0;
+IMP method_get_imp (Method *method) = #0;
 IMP (Class class, SEL sel) get_imp = #0;
 
 id (id object) object_copy = #0;
