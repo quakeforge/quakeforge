@@ -2272,6 +2272,8 @@ is_lvalue (expr_t *e)
 		return 1;
 	if (e->type == ex_uexpr && e->e.expr.op == '.')
 		return 1;
+	if (e->type == ex_uexpr && e->e.expr.op == 'C') //FIXME really need alias
+		return is_lvalue (e->e.expr.e1);
 	return 0;
 }
 
