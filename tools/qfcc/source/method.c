@@ -266,7 +266,6 @@ send_message (int super)
 		sym = new_symbol_type (sm_name, sm_type);
 		sym = function_symbol (sym, 0, 1);
 		make_function (sym, 0, st_extern);
-		symtab_addsymbol (pr.symtab, sym);
 	}
 	return new_symbol_expr (sym);
 }
