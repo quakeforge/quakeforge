@@ -842,13 +842,17 @@ field_expr (expr_t *e1, expr_t *e2)
 		}
 	} else if (t1->type == ev_pointer) {
 		if (is_struct (t1->t.fldptr.type)) {
-			symtab_t   *strct = t1->t.fldptr.type->t.symtab;
+			type_t     *struct_type = t1->t.fldptr.type;
+			symtab_t   *strct = struct_type->t.symtab;
 			symbol_t   *sym = e2->e.symbol;//FIXME need to check
 			symbol_t   *field;
-			
+
+			if (!strct)
+				return error (e1, "dereferencing pointer to incomplete type");
 			field = symtab_lookup (strct, sym->name);
 			if (!field)
-				return new_error_expr ();
+				return error (e2, "'%s' has no member named '%s'",
+							  struct_type->name + 4, sym->name);
 			e2->type = ex_value;
 			e2->e.value.type = ev_short;
 			e2->e.value.v.short_val = field->s.offset;
@@ -877,9 +881,12 @@ field_expr (expr_t *e1, expr_t *e2)
 		symbol_t   *sym = e2->e.symbol;//FIXME need to check
 		symbol_t   *field;
 		
+		if (!strct)
+			return error (e1, "dereferencing pointer to incomplete type");
 		field = symtab_lookup (strct, sym->name);
 		if (!field)
-			return new_error_expr ();
+			return error (e2, "'%s' has no member named '%s'",
+						  t1->name + 4, sym->name);
 		e2->type = ex_value;
 		e2->e.value.type = ev_short;
 		e2->e.value.v.short_val = field->s.offset;
