@@ -351,6 +351,7 @@ get_class (symbol_t *sym, int create)
 	if (sym) {
 		Hash_Add (class_hash, c);
 		sym->type = c->type;
+		sym->sy_type = sy_class;
 	}
 	return c;
 }

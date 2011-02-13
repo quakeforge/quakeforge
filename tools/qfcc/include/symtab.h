@@ -54,6 +54,7 @@ typedef enum {
 	sy_type,					///< symbol refers to a type
 	sy_expr,					///< symbol refers to an expression
 	sy_func,					///< symbol refers to a function
+	sy_class,					///< symbol refers to a class
 } sy_type_e;
 
 typedef struct symbol_s {

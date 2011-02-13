@@ -2264,6 +2264,8 @@ is_lvalue (expr_t *e)
 				return 0;
 			case sy_func:
 				return 0;
+			case sy_class:
+				return 0;
 		}
 	}
 	if (e->type == ex_temp)
@@ -2554,7 +2556,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	int         self = 0, super = 0, class_msg = 0;
 	type_t     *rec_type;
 	type_t     *return_type;
-	class_t    *class;
+	class_t    *class = 0;
 	method_t   *method;
 	expr_t     *send_msg;
 
@@ -2572,8 +2574,11 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		if (receiver->type == ex_symbol) {
 			if (strcmp (receiver->e.symbol->name, "self") == 0)
 				self = 1;
-			if (get_class (receiver->e.symbol, 0))
+			if (receiver->e.symbol->sy_type == sy_class) {
+				class = receiver->e.symbol->type->t.class;
 				class_msg = 1;
+				receiver = new_symbol_expr (class_pointer_symbol (class));
+			}
 		}
 		rec_type = get_type (receiver);
 
@@ -2586,11 +2591,13 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 			return error (receiver, "not a class/object");
 
 		if (self) {
-			class = extract_class (current_class);
+			if (!class)
+				class = extract_class (current_class);
 			if (rec_type == class_Class.type)
 				class_msg = 1;
 		} else {
-			class = rec_type->t.class;
+			if (!class)
+				class = rec_type->t.class;
 		}
 	}
 

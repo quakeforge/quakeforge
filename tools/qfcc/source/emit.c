@@ -99,6 +99,7 @@ get_operand_def (expr_t *expr, operand_t *op)
 					return get_value_def (&op->o.symbol->s.value, op->type);
 				case sy_type:
 				case sy_expr:
+				case sy_class:
 					internal_error (expr, "invalid operand type");
 			}
 			break;

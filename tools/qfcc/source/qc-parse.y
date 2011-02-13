@@ -1569,7 +1569,7 @@ receiver
 	: fexpr
 	| CLASS_NAME
 		{
-			$$ = new_symbol_expr (class_pointer_symbol ($1->type->t.class));
+			$$ = new_symbol_expr ($1);
 		}
 	;
 
