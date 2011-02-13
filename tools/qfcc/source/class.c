@@ -1019,7 +1019,7 @@ class_pointer_symbol (class_t *class)
 
 	sym = make_symbol (va ("_OBJ_CLASS_POINTER_%s", class->name),
 					   &type_ClassPtr,
-					   pr.far_data, st_static);
+					   pr.near_data, st_static);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
 	def = sym->s.def;
