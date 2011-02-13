@@ -491,6 +491,10 @@ enumerator
 struct_specifier
 	: STRUCT optional_tag '{'
 		{
+			symbol_t   *sym;
+			sym = find_struct ($1, $2, 0);
+			if (!sym->table)
+				symtab_addsymbol (current_symtab, sym);
 			current_symtab = new_symtab (current_symtab, stab_local);
 		}
 	  struct_defs '}'
