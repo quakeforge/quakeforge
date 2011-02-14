@@ -55,6 +55,8 @@ quote_string (const char *str)
 	static dstring_t *q;
 	char        c[2] = {0, 0};
 
+	if (!str)
+		return "(null)";
 	if (!q)
 		q = dstring_new ();
 	dstring_clearstr (q);
