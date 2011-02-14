@@ -33,20 +33,20 @@
 #include "plistmenu.h"
 
 @static @param
-class_from_plist (PLDictionary []pldict)
+class_from_plist (PLDictionary *pldict)
 {
-	local @param [8]params;
+	local @param params[8];
 	local @param ret;
 	local @va_list va_list = { 0, params };
 	local string classname, selname, paramstr;
 	local id class;
 	local id obj;
-	local PLArray []messages, msg;
+	local PLArray *messages, *msg;
 	local integer message_count, i, j;
 	local SEL sel;
-	local PLItem []item;
+	local PLItem *item;
 
-	classname = [(PLString[]) [pldict getObjectForKey:"Class"] string];
+	classname = [(PLString*) [pldict getObjectForKey:"Class"] string];
 	class = obj_lookup_class (classname);
 	if (!class) {
 		dprint ("could not find " + classname + "\n");
@@ -55,15 +55,15 @@ class_from_plist (PLDictionary []pldict)
 	}
 	obj = [class alloc];
 
-	messages = (PLArray[]) [pldict getObjectForKey:"Messages"];
+	messages = (PLArray*) [pldict getObjectForKey:"Messages"];
 	message_count = [messages count];
 	for (i = 0; i < message_count; i++) {
-		msg = (PLArray[]) [messages getObjectAtIndex:i];
-		selname = [(PLString[]) [msg getObjectAtIndex:0] string];
+		msg = (PLArray*) [messages getObjectAtIndex:i];
+		selname = [(PLString*) [msg getObjectAtIndex:0] string];
 		sel = sel_get_uid (selname);
 		va_list.count = [msg count] - 1;
 		for (j = 0; j < va_list.count; j++) {
-			paramstr = [(PLString[]) [msg getObjectAtIndex:j + 1] string];
+			paramstr = [(PLString*) [msg getObjectAtIndex:j + 1] string];
 			switch (str_mid (paramstr, 0, 1)) {
 				case "\"":
 					va_list.list[j].string_val = str_mid (paramstr, 1, -1);
@@ -88,9 +88,9 @@ class_from_plist (PLDictionary []pldict)
 }
 
 @static @param
-array_from_plist (PLArray []plarray)
+array_from_plist (PLArray *plarray)
 {
-	local Array []array;
+	local Array *array;
 	local integer i, count;
 	local @param ret;
 
@@ -110,29 +110,29 @@ union ParamRect {
 };
 
 @static @param
-rect_from_plist (PLString []plstring)
+rect_from_plist (PLString *plstring)
 {
 	local string str = [plstring string];
 	local string tmp;
 	local integer xp, yp, xl, yl;
-	local PLItem []item;
+	local PLItem *item;
 	local union ParamRect pr;
 
 	pr.r = makeRect (0, 0, 0, 0);
 	if (str_mid (str, 0, 1) == "[") {
 		tmp = "(" + str_mid (str, 1, -1) + ")";
 		item = [PLItem fromString:tmp];
-		xp = stoi ([(PLString[]) [(PLArray[]) item getObjectAtIndex:0] string]);
-		yp = stoi ([(PLString[]) [(PLArray[]) item getObjectAtIndex:1] string]);
-		xl = stoi ([(PLString[]) [(PLArray[]) item getObjectAtIndex:2] string]);
-		yl = stoi ([(PLString[]) [(PLArray[]) item getObjectAtIndex:3] string]);
+		xp = stoi ([(PLString*) [(PLArray*) item getObjectAtIndex:0] string]);
+		yp = stoi ([(PLString*) [(PLArray*) item getObjectAtIndex:1] string]);
+		xl = stoi ([(PLString*) [(PLArray*) item getObjectAtIndex:2] string]);
+		yl = stoi ([(PLString*) [(PLArray*) item getObjectAtIndex:3] string]);
 		pr.r = makeRect (xp, yp, xl, yl);
 	}
 	return pr.p;
 }
 
 @static @param
-string_from_plist (PLString []plstring)
+string_from_plist (PLString *plstring)
 {
 	local @param ret;
 	local string str = [plstring string];
@@ -145,28 +145,29 @@ string_from_plist (PLString []plstring)
 }
 
 @param
-object_from_plist (PLItem []plist)
+object_from_plist (PLItem *plist)
 {
 	local @param ret;
 
 	switch ([plist type]) {
 		case QFDictionary:
-			return class_from_plist ((PLDictionary []) plist);
+			return class_from_plist ((PLDictionary *) plist);
 		case QFArray:
-			return array_from_plist ((PLArray []) plist);
+			return array_from_plist ((PLArray *) plist);
 		case QFBinary:
 			ret.pointer_val = nil;
 			return ret;
 		case QFString:
-			return string_from_plist ((PLString []) plist);
+			return string_from_plist ((PLString *) plist);
 	}
+	return nil;
 }
 
-PLItem []
+PLItem *
 read_plist (string fname)
 {
 	local QFile file;
-	local PLItem []plist;
+	local PLItem *plist;
 
 	file = QFS_OpenFile (fname);
 	if (!file) {

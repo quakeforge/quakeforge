@@ -5,10 +5,10 @@
 
 @interface ProxyView : View
 {
-	View []title;
-	View []view;
+	View *title;
+	View *view;
 }
--(id)initWithBounds:(Rect)aRect title:(View[])aTitle view:(View[])aView;
+-(id)initWithBounds:(Rect)aRect title:(View*)aTitle view:(View*)aView;
 @end
 
 #endif//__ProxyView_h

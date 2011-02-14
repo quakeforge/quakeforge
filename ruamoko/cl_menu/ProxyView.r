@@ -2,7 +2,7 @@
 
 @implementation ProxyView
 
--(id)initWithBounds:(Rect)aRect title:(View [])aTitle view:(View [])aView
+-(id)initWithBounds:(Rect)aRect title:(View *)aTitle view:(View *)aView
 {
 	self = [super initWithBounds:aRect];
 	if (!self)
@@ -24,7 +24,7 @@
 	[view draw];
 }
 
-- (void) setBasePosFromView: (View []) aview
+- (void) setBasePosFromView: (View *) aview
 {
     [super setBasePosFromView:aview];
 	[title setBasePosFromView:self];

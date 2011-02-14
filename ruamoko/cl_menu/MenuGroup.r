@@ -11,6 +11,7 @@
 {
 	if ((self = [super init]))
 		current = base = 0;
+	return self;
 }
 
 -(void)setBase:(integer)b
@@ -57,7 +58,7 @@
 
 - (void) draw
 {
-	local View []cur;
+	local View *cur;
 
 	[super draw];
 	cur = [views objectAtIndex:current];

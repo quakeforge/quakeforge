@@ -13,7 +13,7 @@
 	[value setText:[toggle value] ? "On" : "Off"];
 }
 
--(id)initWithBounds:(Rect)aRect title:(string)_title :(CvarToggle [])_toggle
+-(id)initWithBounds:(Rect)aRect title:(string)_title :(CvarToggle *)_toggle
 {
 	local Rect rect;
 

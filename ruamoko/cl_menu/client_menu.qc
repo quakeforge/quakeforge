@@ -21,7 +21,7 @@
 
 float () random = #7;
 
-string [6] dot_name = {
+string dot_name[6] = {
 	"gfx/menudot1.lmp",
 	"gfx/menudot2.lmp",
 	"gfx/menudot3.lmp",
@@ -68,7 +68,7 @@ void (integer x, integer y) spinner =
 
 integer do_single_player;
 
-string [32] quitMessage = {
+string quitMessage[32] = {
 /*   .........1.........2.... */
 	"  Are you gonna quit    ",
 	"  this game just like   ",
@@ -115,18 +115,18 @@ integer quit_index;
 // ********* LOAD / SAVE
 
 #define MAX_SAVEGAMES 12
-string [MAX_SAVEGAMES] filenames;
-integer [MAX_SAVEGAMES] loadable;
+string filenames[MAX_SAVEGAMES];
+integer loadable[MAX_SAVEGAMES];
 integer load_cursor;
 integer save_cursor;
 
 string (QFile f) get_comment =
 {
 	local string line;
-	local PLItem []plist;
+	local PLItem *plist;
 
 	plist = [PLItem fromFile:f];
-	line = [(PLString[]) [(PLDictionary[]) plist getObjectForKey:"comment"] string];
+	line = [(PLString*) [(PLDictionary*) plist getObjectForKey:"comment"] string];
 	return line;
 }
 
@@ -367,10 +367,10 @@ string my_tcpip_address;
 string lanConfig_portname;
 string lanConfig_joinname;
 #define NUM_LANCONFIG_CMDS 3
-integer [NUM_LANCONFIG_CMDS] lanConfig_cursor_table = { 72, 92, 124 };
-InputLine []lanConfig_port_il;
-InputLine []lanConfig_join_il;
-InputLine []input_active;
+integer lanConfig_cursor_table[NUM_LANCONFIG_CMDS] = { 72, 92, 124 };
+InputLine *lanConfig_port_il;
+InputLine *lanConfig_join_il;
+InputLine *input_active;
 
 integer (integer x, integer y) join_draw =
 {

@@ -6,7 +6,7 @@
 #include "CvarColor.h"
 
 @implementation CvarColorView
--(id)initWithBounds:(Rect)aRect :(CvarColor [])_color
+-(id)initWithBounds:(Rect)aRect :(CvarColor *)_color
 {
 	self = [self initWithBounds:aRect];
 	color = _color;
@@ -47,5 +47,6 @@
 			[self prev];
 			return 1;
 	}
+	return 0;
 }
 @end

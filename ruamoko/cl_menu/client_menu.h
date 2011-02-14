@@ -2,6 +2,6 @@
 #define __client_menu_h
 
 @class InputLine;
-@extern InputLine []input_active;
+@extern InputLine *input_active;
 
 #endif

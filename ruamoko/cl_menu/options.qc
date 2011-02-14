@@ -53,32 +53,32 @@
 #include "CvarColor.h"
 #include "CvarToggle.h"
 
-Group []video_options;
-Group []audio_options;
+Group *video_options;
+Group *audio_options;
 
-Group []control_options;
-CvarToggleView []grab_mouse_view;
-CvarToggleView []invert_mouse_view;
-CvarToggleView []autorun_view;
-CvarToggleView []freelook_view;
-CvarToggleView []lookspring_view;
-CvarToggleView []lookstrafe_view;
-CvarRangeView []mouse_amp_view;
+Group *control_options;
+CvarToggleView *grab_mouse_view;
+CvarToggleView *invert_mouse_view;
+CvarToggleView *autorun_view;
+CvarToggleView *freelook_view;
+CvarToggleView *lookspring_view;
+CvarToggleView *lookstrafe_view;
+CvarRangeView *mouse_amp_view;
 
-Group []feature_options;
-CvarToggleView []fraglog_view;
-CvarToggleView []autorecord_view;
+Group *feature_options;
+CvarToggleView *fraglog_view;
+CvarToggleView *autorecord_view;
 
-Group []player_options;
-InputLine []player_config_plname_il;
-InputLine []player_config_tname_il;
-InputLine []player_config_iactive;
-CvarColorView []topcolor_view;
-CvarColorView []bottomcolor_view;
+Group *player_options;
+InputLine *player_config_plname_il;
+InputLine *player_config_tname_il;
+InputLine *player_config_iactive;
+CvarColorView *topcolor_view;
+CvarColorView *bottomcolor_view;
 
-Group []network_options;
-InputLine []network_config_rate_il;
-InputLine []network_config_iactive;
+Group *network_options;
+InputLine *network_config_rate_il;
+InputLine *network_config_iactive;
 
 /*
 	some definitions of border values for different things
@@ -133,8 +133,8 @@ KEY_video_options =
 
 	Menu function for the video options menu.
 */
-void (PLItem []plist) 
-MENU_video_options =
+void
+MENU_video_options (PLItem *plist)
 {
 	local @param ret;
 	Menu_Begin (54, 50, "Video");
@@ -143,7 +143,7 @@ MENU_video_options =
 	Menu_KeyEvent (KEY_video_options);
 
 	if (plist) {
-		ret = object_from_plist ([(PLDictionary[]) plist getObjectForKey:"video_options"]);
+		ret = object_from_plist ([(PLDictionary*) plist getObjectForKey:"video_options"]);
 		video_options = ret.pointer_val;
 	}
 
@@ -180,8 +180,8 @@ KEY_audio_options =
 
 	Makes the audio menu
 */
-void (PLItem []plist) 
-MENU_audio_options =
+void
+MENU_audio_options (PLItem *plist)
 {
 	local @param ret;
 	Menu_Begin (54, 60, "Audio");
@@ -190,7 +190,7 @@ MENU_audio_options =
 	Menu_KeyEvent (KEY_audio_options);
 
 	if (plist) {
-		ret = object_from_plist ([(PLDictionary[]) plist getObjectForKey:"audio_options"]);
+		ret = object_from_plist ([(PLDictionary*) plist getObjectForKey:"audio_options"]);
 		audio_options = ret.pointer_val;
 	}
 
@@ -264,8 +264,8 @@ KEY_control_options =
 
 	Menu make function for control options
 */
-void (PLItem []plist) 
-MENU_control_options =
+void
+MENU_control_options (PLItem *plist)
 {
 	local @param ret;
 	Menu_Begin (54, 40, "Controls");
@@ -274,7 +274,7 @@ MENU_control_options =
 	Menu_KeyEvent (KEY_control_options);
 
 	if (plist) {
-		ret = object_from_plist ([(PLDictionary[]) plist getObjectForKey:"control_options"]);
+		ret = object_from_plist ([(PLDictionary*) plist getObjectForKey:"control_options"]);
 		control_options = ret.pointer_val;
 	}
 
@@ -328,8 +328,8 @@ DRAW_feature_options =
 
 	Makes the feature option menu
 */
-void (PLItem []plist) 
-MENU_feature_options =
+void
+MENU_feature_options (PLItem *plist)
 {
 	local Rect rect;
 	local id view;
@@ -385,7 +385,7 @@ string teamname_cvar; // name of the cvar holding teamname (MAY ? gametype depen
 
 // table for cursor-positions
 #define NUM_PLAYERCONFIG_CMDS 4
-integer [NUM_PLAYERCONFIG_CMDS] player_config_cursor_tbl = { 
+integer player_config_cursor_tbl[NUM_PLAYERCONFIG_CMDS] = { 
 	PLAYER_CONF_Y_PAD + 8,
 	PLAYER_CONF_Y_PAD + 20 + 8,
 	PLAYER_CONF_Y_PAD + 45,
@@ -395,7 +395,7 @@ integer [NUM_PLAYERCONFIG_CMDS] player_config_cursor_tbl = {
 integer player_config_cursor;
 
 // array, which holds commands for this menu
-string [NUM_PLAYERCONFIG_CMDS] player_config_vals = {
+string player_config_vals[NUM_PLAYERCONFIG_CMDS] = {
 	"",
 	"",
 	"topcolor",
@@ -512,8 +512,8 @@ CB_ME_player_options =
 
 	Makes the player option menu
 */
-void (PLItem []plist) 
-MENU_player_options =
+void
+MENU_player_options (PLItem *plist)
 {
 	local Rect rect;
 	local id view;
@@ -590,14 +590,14 @@ integer network_config_cursor;
 
 // table for cursor-positions
 #define NUM_NETWORKCONFIG_CMDS 1
-integer [NUM_NETWORKCONFIG_CMDS] network_config_cursor_tbl = { 
+integer network_config_cursor_tbl[NUM_NETWORKCONFIG_CMDS] = { 
 	PLAYER_CONF_Y_PAD + 8, 
 };
 
 integer network_config_cursor;
 
 // array, which holds commands for this menu
-string [NUM_NETWORKCONFIG_CMDS] network_config_vals = {
+string network_config_vals[NUM_NETWORKCONFIG_CMDS] = {
 	"",
 };
 
@@ -682,8 +682,8 @@ CB_ME_network_options =
 
 	Makes the network option menu
 */
-void (PLItem []plist) 
-MENU_network_options =
+void
+MENU_network_options (PLItem *plist)
 {
 	local id view;
 
@@ -743,7 +743,7 @@ void ()
 MENU_options =
 {
 	local integer	spacing = 120;
-	local PLItem    []plist;
+	local PLItem    *plist;
 
 	plist = read_plist ("menu.plist");
 

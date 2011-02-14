@@ -7,9 +7,9 @@
 
 @interface CvarColorView : View
 {
-	CvarColor  []color;
+	CvarColor  *color;
 }
--(id)initWithBounds:(Rect)aRect :(CvarColor [])_color;
+-(id)initWithBounds:(Rect)aRect :(CvarColor *)_color;
 -(void)next;
 -(void)prev;
 @end

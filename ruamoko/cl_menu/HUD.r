@@ -147,13 +147,13 @@ integer HUDHandleClass;
 
 - (Size) size
 {
-	local Frame []frame;
+	local Frame *frame;
 
 	frame = [frames objectAtIndex: currentFrame];
 	return [frame size];
 }
 
-- (void) addFrame: (Frame[]) frame
+- (void) addFrame: (Frame*) frame
 {
 	[frames addObject: frame];
 }
@@ -161,7 +161,7 @@ integer HUDHandleClass;
 - (void) changeFrame
 {
 	while (time >= nextFrameTime) {
-		local Frame []f;
+		local Frame *f;
 		if (++currentFrame == [frames count]) {
 			if (looping)
 				currentFrame = 0;
@@ -178,7 +178,7 @@ integer HUDHandleClass;
 
 - (void) display
 {
-	local Frame []f;
+	local Frame *f;
 
 	if (!visible)
 		return;
@@ -192,7 +192,7 @@ integer HUDHandleClass;
 
 - (void) start
 {
-	local Frame []f;
+	local Frame *f;
 
 	currentFrame = 0;
 	f = [frames objectAtIndex: 0];

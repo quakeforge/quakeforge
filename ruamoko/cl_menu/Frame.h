@@ -3,7 +3,7 @@
 
 @interface Frame : Object
 {
-	QPic []picture;
+	QPic *picture;
 	float duration;
 }
 - (id) initWithFile: (string) file duration: (float) time;
