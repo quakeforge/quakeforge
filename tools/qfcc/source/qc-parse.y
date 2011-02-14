@@ -340,6 +340,7 @@ function_body
 			build_code_function ($<symbol>2, $1, $4);
 			current_symtab = $<symtab>3;
 			current_storage = st_global;
+			current_func = 0;
 		}
 	| '=' '#' expr ';'
 		{
@@ -838,6 +839,7 @@ code_func
 			build_code_function ($<symbol>0, $2, $4);
 			current_symtab = $<symtab>3;
 			current_storage = st_global;
+			current_func = 0;
 		}
 	;
 
@@ -1487,6 +1489,7 @@ methoddef
 			build_code_function ($<symbol>4, $3, $6);
 			current_symtab = $<symtab>5;
 			current_storage = st_global;
+			current_func = 0;
 		}
 	| ci methoddecl '=' '#' const ';'
 		{
