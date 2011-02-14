@@ -373,7 +373,22 @@ external_decl
 								spec.storage);
 			}
 		}
-	| var_decl '=' var_initializer
+	| var_decl var_initializer
+		{
+			specifier_t spec = $<spec>0;
+			type_t     *type;
+
+			type = find_type (append_type ($1->type, spec.type));
+			if (spec.is_typedef) {
+				error (0, "typedef %s is initialized", $1->name);
+				$1->type = type;
+				$1->sy_type = sy_type;
+				symtab_addsymbol (current_symtab, $1);
+			} else {
+				initialize_def ($1, type, $2, current_symtab->space,
+								spec.storage);
+			}
+		}
 	| function_decl
 		{
 			specifier_t spec = $<spec>0;
