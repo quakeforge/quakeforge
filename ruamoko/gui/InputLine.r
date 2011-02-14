@@ -3,7 +3,7 @@
 #include "gui/Rect.h"
 
 inputline_t (integer lines, integer size, integer prompt) InputLine_Create = #0;
-void (inputline_t il, void [] data) InputLine_SetUserData = #0;
+void InputLine_SetUserData (inputline_t il, void *data) = #0;
 void (inputline_t il, integer width) InputLine_SetWidth = #0;
 void (inputline_t il) InputLine_Destroy = #0;
 void (inputline_t il, integer size) InputLine_Clear = #0;

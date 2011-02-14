@@ -4,10 +4,10 @@
 #include "View.h"
 
 struct _inputline_t {};	// opaque type :)
-typedef struct _inputline_t [] inputline_t;
+typedef struct _inputline_t *inputline_t;
 
 @extern inputline_t (integer lines, integer size, integer prompt) InputLine_Create;
-@extern void (inputline_t il, void [] data) InputLine_SetUserData;
+@extern void InputLine_SetUserData (inputline_t il, void *data);
 @extern void (inputline_t il, integer width) InputLine_SetWidth;
 @extern void (inputline_t il) InputLine_Destroy;
 @extern void (inputline_t il, integer save) InputLine_Clear;
@@ -44,7 +44,7 @@ struct il_data_t {
 
 @interface InputLineBox: View
 {
-	InputLine []input_line;
+	InputLine *input_line;
 }
 - (id) initWithBounds: (Rect)aRect promptCharacter: (integer)char;
 

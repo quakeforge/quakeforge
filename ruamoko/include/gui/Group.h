@@ -7,11 +7,11 @@
 
 @interface Group : View
 {
-	Array []views;
+	Array *views;
 }
 - (void) dealloc;
-- (View[]) addView: (View[])aView;
-- (id) addViews: (Array[])viewlist;
+- (View*) addView: (View*)aView;
+- (id) addViews: (Array*)viewlist;
 - (void) moveTo: (integer)x y:(integer)y;
 - (void) draw;
 @end

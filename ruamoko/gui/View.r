@@ -50,7 +50,7 @@
 	yabs = ypos + y;
 }
 
-- (void) setBasePosFromView: (View []) view
+- (void) setBasePosFromView: (View *) view
 {
 	Point pos = [view basePos];
 	xabs = xpos + pos.x;

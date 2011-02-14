@@ -10,7 +10,7 @@
 	integer xpos, ypos;
 	integer xlen, ylen;
 	integer xabs, yabs;
-	View	[]parent;
+	View	*parent;
 	integer flags;
 }
 
@@ -20,7 +20,7 @@
 - (id) canFocus: (integer)cf;
 - (integer) canFocus;
 - (void) setBasePos: (integer)x y: (integer)y;
-- (void) setBasePosFromView: (View[])view;
+- (void) setBasePosFromView: (View*)view;
 - (void) draw;
 
 - (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down;
