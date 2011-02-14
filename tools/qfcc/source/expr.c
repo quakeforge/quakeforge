@@ -269,6 +269,8 @@ copy_expr (expr_t *e)
 			// nothing to do here
 			n = new_expr ();
 			*n = *e;
+			n->line = pr.source_line;
+			n->file = pr.source_file;
 			return n;
 		case ex_state:
 			return new_state_expr (copy_expr (e->e.state.frame),
@@ -277,6 +279,8 @@ copy_expr (expr_t *e)
 		case ex_bool:
 			n = new_expr ();
 			*n = *e;
+			n->line = pr.source_line;
+			n->file = pr.source_file;
 			if (e->e.bool.true_list) {
 				int         count = e->e.bool.true_list->size;
 				size_t      size = (size_t)&((ex_list_t *) 0)->e[count];
@@ -301,6 +305,8 @@ copy_expr (expr_t *e)
 		case ex_block:
 			n = new_expr ();
 			*n = *e;
+			n->line = pr.source_line;
+			n->file = pr.source_file;
 			n->e.block.head = 0;
 			n->e.block.tail = &n->e.block.head;
 			n->e.block.result = 0;
@@ -320,17 +326,23 @@ copy_expr (expr_t *e)
 		case ex_expr:
 			n = new_expr ();
 			*n = *e;
+			n->line = pr.source_line;
+			n->file = pr.source_file;
 			n->e.expr.e1 = copy_expr (e->e.expr.e1);
 			n->e.expr.e2 = copy_expr (e->e.expr.e2);
 			return n;
 		case ex_uexpr:
 			n = new_expr ();
 			*n = *e;
+			n->line = pr.source_line;
+			n->file = pr.source_file;
 			n->e.expr.e1 = copy_expr (e->e.expr.e1);
 			return n;
 		case ex_temp:
 			n = new_expr ();
 			*n = *e;
+			n->line = pr.source_line;
+			n->file = pr.source_file;
 			n->e.temp.expr = copy_expr (e->e.temp.expr);
 			return n;
 	}
