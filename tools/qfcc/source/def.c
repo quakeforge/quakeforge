@@ -182,6 +182,11 @@ void
 initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 				storage_class_t storage)
 {
+	if (!type) {
+		warning (0, "type for %s defaults to %s", sym->name,
+				 type_default->name);
+		type = type_default;
+	}
 	if (sym->table == current_symtab) {
 		if (sym->sy_type != sy_var || sym->type != type) {
 			error (0, "%s redefined", sym->name);
