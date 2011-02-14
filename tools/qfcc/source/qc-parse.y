@@ -568,7 +568,11 @@ struct_decl
 var_decl
 	: NAME			%prec COMMA
 		{
-			$$ = check_redefined ($1);
+			$$ = $1;
+			// due to the way declarations work, we need a new symbol at all
+			// times. redelcarations will be checked later
+			if ($$->table)
+				$$ = new_symbol ($1->name);
 			$$->type = 0;
 		}
 	| var_decl function_params

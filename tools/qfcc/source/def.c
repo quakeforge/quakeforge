@@ -182,34 +182,34 @@ void
 initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 				storage_class_t storage)
 {
+	symbol_t   *check = symtab_lookup (current_symtab, sym->name);
 	if (!type) {
 		warning (0, "type for %s defaults to %s", sym->name,
 				 type_default->name);
 		type = type_default;
 	}
-	if (sym->table == current_symtab) {
-		if (sym->sy_type != sy_var || sym->type != type) {
+	if (check && check->table == current_symtab) {
+		if (check->sy_type != sy_var || check->type != type) {
 			error (0, "%s redefined", sym->name);
-			sym = new_symbol (sym->name);
 		} else {
 			// is var and same type
-			if (!sym->s.def)
+			if (!check->s.def)
 				internal_error (0, "half defined var");
 			if (storage == st_extern) {
 				if (init)
 					warning (0, "initializing external variable");
 				return;
 			}
-			if (init && sym->s.def->initialized) {
+			if (init && check->s.def->initialized) {
 				error (0, "%s redefined", sym->name);
 				return;
 			}
+			sym = check;
 		}
-	} else if (sym->table) {
-		sym = new_symbol (sym->name);
 	}
 	sym->type = type;
-	symtab_addsymbol (current_symtab, sym);
+	if (!sym->table)
+		symtab_addsymbol (current_symtab, sym);
 	if (storage == st_global && init) {
 		sym->sy_type = sy_const;
 		memset (&sym->s.value, 0, sizeof (&sym->s.value));
