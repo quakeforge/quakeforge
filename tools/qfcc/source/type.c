@@ -99,8 +99,12 @@ low_level_type (type_t *type)
 		return type->type;
 	if (is_enum (type))
 		return type_default->type;
-	if (is_struct (type) || is_class (type))
+	if (is_struct (type) || is_class (type)) {
+		//FIXME enable later when the real bug is fixed
+		//if (type_size (type) == 1)
+		//	return ev_integer;
 		return ev_void;
+	}
 	if (is_array (type))
 		return ev_void;
 	internal_error (0, "invalid complex type");
