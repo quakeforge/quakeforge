@@ -7,7 +7,7 @@
 
 @interface Axe: Object <Weapon>
 {
-	Entity[]	owner;
+	Entity	*owner;
 	float	damage;
 }
 

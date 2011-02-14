@@ -8,12 +8,12 @@ integer	deathmatch;
 
 @interface BodyQueue: Object
 {
-	entity[MAX_BODIES]	bodies;
-	integer				head;
+	entity	bodies[MAX_BODIES];
+	integer	head;
 }
 
 - (id) init;
-- (void) addEntity: (GameEntity [])ent;
+- (void) addEntity: (GameEntity *)ent;
 
 @end
 
@@ -27,7 +27,7 @@ integer	deathmatch;
 	head = nil;
 
 	for (i = 0; i < MAX_BODIES; i++) {
-		local GameEntity[]	ent = nil;
+		local GameEntity*	ent = nil;
 		ent = [[GameEntity alloc] init];
 		bodies[i] = ent.ent;
 	}
@@ -36,9 +36,10 @@ integer	deathmatch;
 		bodies[i] = [[[GameEntity alloc] init] ent];
 	}
 #endif
+	return self;
 }
 
-- (void) addEntity: (GameEntity[])ent
+- (void) addEntity: (GameEntity*)ent
 {
 	local entity	be = bodies[head++];
 	local entity	e = [ent ent];
@@ -63,7 +64,7 @@ integer	deathmatch;
 }
 
 - (void) spawn: (entity)ent;
-- (void) copyToBodyQueue: (GameEntity [])ent;
+- (void) copyToBodyQueue: (GameEntity *)ent;
 
 @end
 
@@ -75,7 +76,7 @@ integer	deathmatch;
 	bodyque = [[BodyQueue alloc] init];
 }
 
-- (void) copyToBodyQueue: (GameEntity [])ent
+- (void) copyToBodyQueue: (GameEntity *)ent
 {
 	[bodyque addEntity: ent];
 }
