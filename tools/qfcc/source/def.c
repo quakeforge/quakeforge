@@ -154,7 +154,11 @@ free_def (def_t *def)
 
 		for (d = &def->space->defs; *d && *d != def; d = &(*d)->next)
 			;
+		if (!*d)
+			internal_error (0, "freeing unlinked def %s", def->name);
 		*d = def->next;
+		if (&def->next == def->space->def_tail)
+			def->space->def_tail = d;
 		if (!def->external)
 			defspace_free_loc (def->space, def->offset, type_size (def->type));
 	}
