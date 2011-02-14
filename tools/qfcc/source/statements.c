@@ -452,26 +452,53 @@ expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
-expr_deref (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 {
-	type_t     *type = e->e.expr.type;
+	type_t     *type = deref->e.expr.type;
+	expr_t     *e;
 
-	e = e->e.expr.e1;
+	e = deref->e.expr.e1;
 	if (e->type == ex_uexpr && e->e.expr.op == '&'
 		&& e->e.expr.e1->type == ex_symbol) {
 		*op = new_operand (op_symbol);
 		(*op)->type = low_level_type (type);
 		(*op)->o.symbol = e->e.expr.e1->e.symbol;
 	} else if (e->type == ex_expr && e->e.expr.op == '&') {
-		statement_t *s = new_statement (".", e);
-		sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
-		sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
+		statement_t *s;
+		operand_t  *ptr = 0;
+		operand_t  *offs = 0;
+		sblock = statement_subexpr (sblock, e->e.expr.e1, &ptr);
+		sblock = statement_subexpr (sblock, e->e.expr.e2, &offs);
 		if (!*op) {
 			*op = new_operand (op_temp);
 			(*op)->type = low_level_type (type);
 		}
-		s->opc = *op;
-		sblock_add_statement (sblock, s);
+		if (low_level_type (type) == ev_void) {
+			operand_t  *addr;
+			addr = new_operand (op_temp);
+			addr->type = ev_pointer;
+			s = new_statement ("&", e);
+			s->opa = ptr;
+			s->opb = offs;
+			s->opc = addr;
+			sblock_add_statement (sblock, s);
+			s = new_statement ("<MOVE>", deref);
+			s->opa = addr;
+			//FIXME make convenience routines
+			s->opb = new_operand (op_value);
+			s->opb->type = ev_short;
+			s->opb->o.value = calloc (1, sizeof (ex_value_t));
+			s->opb->o.value->type = ev_short;
+			s->opb->o.value->v.short_val = type_size (type);
+			s->opc = *op;
+			sblock_add_statement (sblock, s);
+		} else {
+			s = new_statement (".", deref);
+			s->opa = ptr;
+			s->opb = offs;
+			s->opc = *op;
+			sblock_add_statement (sblock, s);
+		}
 	} else if (e->type == ex_value && e->e.value.type == ev_pointer) {
 		*op = new_operand (op_pointer);
 		(*op)->type = low_level_type (e->e.value.v.pointer.type);
