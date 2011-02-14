@@ -101,7 +101,7 @@ print_error (expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 
-	printf ("%*s\"e_%p\" [label=\"(error)\"];\n", indent, "", e);
+	printf ("%*s\"e_%p\" [label=\"(error)\\n%d\"];\n", indent, "", e, e->line);
 }
 
 static void
@@ -140,7 +140,7 @@ print_bool (expr_t *e, int level, int id)
 	} else {
 		printf ("%*s\"e_%p\" -> \"e_%p\";\n", indent, "", e, e->e.bool.e);
 	}
-	printf ("%*s\"e_%p\" [label=\"<bool>\"];\n", indent, "", e);
+	printf ("%*s\"e_%p\" [label=\"<bool>\\n%d\"];\n", indent, "", e, e->line);
 }
 
 static void
@@ -152,7 +152,8 @@ print_label (expr_t *e, int level, int id)
 		printf ("%*s\"e_%p\" -> \"e_%p\" "
 				"[constraint=false,style=dashed];\n", indent, "",
 				e, e->next);
-	printf ("%*s\"e_%p\" [label=\"%s\"];\n", indent, "", e, e->e.label.name);
+	printf ("%*s\"e_%p\" [label=\"%s\\n%d\"];\n", indent, "", e,
+			e->e.label.name, e->line);
 }
 
 static void
@@ -183,7 +184,7 @@ print_block (expr_t *e, int level, int id)
 		printf ("%*s\"e_%p\" -> \"e_%p\" [constraint=false,style=dashed];\n",
 				indent, "", se, e->next);
 	//printf ("%*s}\n", indent, "");
-	printf ("%*s\"e_%p\" [label=\"<block>\"];\n", indent, "", e);
+	printf ("%*s\"e_%p\" [label=\"<block>\\n%d\"];\n", indent, "", e, e->line);
 }
 
 static void
@@ -237,8 +238,8 @@ print_subexpr (expr_t *e, int level, int id)
 		printf ("%*s\"e_%p\" -> \"e_%p\" [label=\"r\"];\n", indent, "",
 				e, e->e.expr.e2);
 	}
-	printf ("%*s\"e_%p\" [label=\"%s\"];\n", indent, "", e,
-			get_op_string (e->e.expr.op));
+	printf ("%*s\"e_%p\" [label=\"%s\\n%d\"];\n", indent, "", e,
+			get_op_string (e->e.expr.op), e->line);
 }
 
 static void
@@ -249,8 +250,8 @@ print_uexpr (expr_t *e, int level, int id)
 	if (e->e.expr.op != 'g')
 		_print_expr (e->e.expr.e1, level, id);
 	printf ("%*s\"e_%p\" -> \"e_%p\";\n", indent, "", e, e->e.expr.e1);
-	printf ("%*s\"e_%p\" [label=\"%s\"];\n", indent, "", e,
-			get_op_string (e->e.expr.op));
+	printf ("%*s\"e_%p\" [label=\"%s\\n%d\"];\n", indent, "", e,
+			get_op_string (e->e.expr.op), e->line);
 }
 
 static void
@@ -258,7 +259,8 @@ print_symbol (expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 
-	printf ("%*s\"e_%p\" [label=\"%s\"];\n", indent, "", e, e->e.symbol->name);
+	printf ("%*s\"e_%p\" [label=\"%s\\n%d\"];\n", indent, "", e,
+			e->e.symbol->name, e->line);
 }
 
 static void
@@ -266,7 +268,8 @@ print_temp (expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 
-	printf ("%*s\"e_%p\" [label=\"tmp_%p\"];\n", indent, "", e, e);
+	printf ("%*s\"e_%p\" [label=\"tmp_%p\\n%d\"];\n", indent, "", e, e,
+			e->line);
 }
 
 static void
@@ -274,7 +277,7 @@ print_nil (expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 
-	printf ("%*s\"e_%p\" [label=\"nil\"];\n", indent, "", e);
+	printf ("%*s\"e_%p\" [label=\"nil\\n%d\"];\n", indent, "", e, e->line);
 }
 
 static void
@@ -341,7 +344,8 @@ print_value (expr_t *e, int level, int id)
 			label = "<type_count>";
 			break;
 	}
-	printf ("%*s\"e_%p\" [label=\"%s\"];\n", indent, "", e, label);
+	printf ("%*s\"e_%p\" [label=\"%s\\n%d\"];\n", indent, "", e, label,
+			e->line);
 }
 
 static void
@@ -371,7 +375,8 @@ _print_expr (expr_t *e, int level, int id)
 	e->printid = id;
 
 	if (e->type < 0 || e->type > ex_value) {
-		printf ("%*s\"e_%p\" [label=\"(bad expr type)\"];\n", indent, "", e);
+		printf ("%*s\"e_%p\" [label=\"(bad expr type)\\n%d\"];\n", indent, "",
+				e, e->line);
 		return;
 	}
 	print_funcs [e->type] (e, level, id);
