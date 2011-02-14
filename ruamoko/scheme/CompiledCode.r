@@ -22,7 +22,7 @@
             [instructions makeObjectsPerformSelector: @selector(mark)];
 }
 
-- (void) addInstruction: (Instruction []) inst
+- (void) addInstruction: (Instruction *) inst
 {
     [inst line: [self line]];
     [inst source: [self source]];
@@ -32,7 +32,7 @@
     }
 }
 
-- (integer) addConstant: (SchemeObject []) c
+- (integer) addConstant: (SchemeObject *) c
 {
     local integer number = [constants count];
     [constants addObject: c];
@@ -42,12 +42,12 @@
 - (void) compile
 {
     local integer index;
-    local Instruction []inst;
+    local Instruction *inst;
     literals = [Frame newWithSize: [constants count] link: nil];
     code = obj_malloc (@sizeof(instruction_t) * [instructions count]);
     lineinfo = obj_malloc(@sizeof(lineinfo_t) * [instructions count]);
     for (index = 0; index < [constants count]; index++) {
-            [literals set: index to: (SchemeObject[]) [constants objectAtIndex: index]];
+            [literals set: index to: (SchemeObject*) [constants objectAtIndex: index]];
     }
     for (index = 0; index < [instructions count]; index++) {
             inst = [instructions objectAtIndex: index];
@@ -62,24 +62,24 @@
     instructions = constants = nil;
 }
 
-- (instruction_t []) code
+- (instruction_t *) code
 {
     return code;
 }
 
-- (lineinfo_t []) lineinfo
+- (lineinfo_t *) lineinfo
 {
     return lineinfo;
 }
 
-- (Frame[]) literals
+- (Frame*) literals
 {
     return literals;
 }
 
 - (void) dealloc
 {
-    local Array []temp;
+    local Array *temp;
     
     if (instructions) {
             temp = instructions;

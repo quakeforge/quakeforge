@@ -19,11 +19,11 @@
     return self;
 }
 
-- (SchemeObject[]) readList
+- (SchemeObject*) readList
 {
-    local SchemeObject []token, res;
+    local SchemeObject *token, *res;
     local integer line;
-    local Error []err;
+    local Error *err;
 
     line = [lexer lineNumber];
     token = [self readAtomic];
@@ -60,9 +60,9 @@
     }
 }
 
-- (SchemeObject[]) readAtomic
+- (SchemeObject*) readAtomic
 {
-    local SchemeObject []token, list, res;
+    local SchemeObject *token, *list, *res;
     local integer line;
 
     line = [lexer lineNumber];
@@ -93,10 +93,10 @@
     } else return token;
 }
 
-- (SchemeObject[]) read
+- (SchemeObject*) read
 {
-    local SchemeObject []token;
-    local Error []err;
+    local SchemeObject *token;
+    local Error *err;
 
     token = [self readAtomic];
     if (token == [Symbol rightParen]) {

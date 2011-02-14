@@ -7,11 +7,11 @@
 
 @interface Lambda: Procedure
 {
-    Frame []env;
-    CompiledCode []code;
+    Frame *env;
+    CompiledCode *code;
 }
-+ (id) newWithCode: (CompiledCode []) c environment: (Frame []) e;
-- (id) initWithCode: (CompiledCode []) c environment: (Frame []) e;
++ (id) newWithCode: (CompiledCode *) c environment: (Frame *) e;
+- (id) initWithCode: (CompiledCode *) c environment: (Frame *) e;
 @end
 
 #endif //__Lambda_h

@@ -11,7 +11,7 @@
 }
 + (id) newFromSource: (string) s file: (string) f;
 - (id) initWithSource: (string) s file: (string) f;
-- (SchemeObject []) nextToken;
+- (SchemeObject *) nextToken;
 - (integer) lineNumber;
 @end
 

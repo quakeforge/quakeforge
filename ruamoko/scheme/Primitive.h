@@ -3,7 +3,7 @@
 #include "Procedure.h"
 #include "Machine.h"
 
-typedef SchemeObject [](SchemeObject []args, Machine []m) primfunc_t;
+typedef SchemeObject *primfunc_t (SchemeObject *args, Machine *m);
 
 @interface Primitive: Procedure
 {

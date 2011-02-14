@@ -2,7 +2,7 @@
 #include "string.h"
 
 @implementation Error
-+ (id) type: (string) t message: (string) m by: (SchemeObject []) o
++ (id) type: (string) t message: (string) m by: (SchemeObject *) o
 {
     return [[self alloc] initWithType: t message: m by: o];
 }
@@ -12,7 +12,7 @@
     return [[self alloc] initWithType: t message: m by: nil];
 }
 
-- (id) initWithType: (string) t message: (string) m by: (SchemeObject []) o
+- (id) initWithType: (string) t message: (string) m by: (SchemeObject *) o
 {
     self = [super init];
     type = str_new();

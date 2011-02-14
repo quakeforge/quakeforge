@@ -8,12 +8,12 @@
 #include "Machine.h"
 
 @implementation Lambda
-+ (id) newWithCode: (CompiledCode []) c environment: (Frame []) e
++ (id) newWithCode: (CompiledCode *) c environment: (Frame *) e
 {
     return [[self alloc] initWithCode: c environment: e];
 }
             
-- (id) initWithCode: (CompiledCode []) c environment: (Frame []) e
+- (id) initWithCode: (CompiledCode *) c environment: (Frame *) e
 {
     self = [super init];
     code = c;
@@ -21,7 +21,7 @@
     return self;
 }
 
-- (void) invokeOnMachine: (Machine []) m
+- (void) invokeOnMachine: (Machine *) m
 {
     [super invokeOnMachine: m];
     if (length([m stack]) < [code minimumArguments]) {

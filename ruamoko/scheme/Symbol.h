@@ -6,13 +6,13 @@
 {
 }
 + (void) initialize;
-+ (Symbol []) leftParen;
-+ (Symbol []) rightParen;
-+ (Symbol []) dot;
-+ (Symbol []) forString: (string) s;
-+ (Symbol []) quote;
++ (Symbol *) leftParen;
++ (Symbol *) rightParen;
++ (Symbol *) dot;
++ (Symbol *) forString: (string) s;
++ (Symbol *) quote;
 @end
 
-@extern Symbol []symbol (string str);
+@extern Symbol *symbol (string str);
 
 #endif //__Symbol_h

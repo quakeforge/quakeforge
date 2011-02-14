@@ -6,12 +6,12 @@
 #include "Cons.h"
 #include "defs.h"
 
-Symbol []lambdaSym;
-Symbol []quoteSym;
-Symbol []defineSym;
-Symbol []ifSym;
-Symbol []letrecSym;
-Symbol []beginSym;
+Symbol *lambdaSym;
+Symbol *quoteSym;
+Symbol *defineSym;
+Symbol *ifSym;
+Symbol *letrecSym;
+Symbol *beginSym;
 
 @implementation Compiler
 + (void) initialize
@@ -30,12 +30,12 @@ Symbol []beginSym;
     [beginSym retain];
 }
 
-+ (id) newWithLambda: (SchemeObject[]) xp scope: (Scope[]) sc
++ (id) newWithLambda: (SchemeObject*) xp scope: (Scope*) sc
 {
     return [[self alloc] initWithLambda: xp scope: sc];
 }
 
-- (id) initWithLambda: (SchemeObject[]) xp scope: (Scope[]) sc
+- (id) initWithLambda: (SchemeObject*) xp scope: (Scope*) sc
 {
     self = [super init];
     sexpr = xp;
@@ -45,14 +45,14 @@ Symbol []beginSym;
     return self;
 }
 
-- (void) emitBuildEnvironment: (SchemeObject []) arguments
+- (void) emitBuildEnvironment: (SchemeObject *) arguments
 {
     local integer count, index;
-    local SchemeObject []cur;
+    local SchemeObject *cur;
 
     scope = [Scope newWithOuter: scope];
     count = 0;
-    for (cur = arguments; [cur isKindOfClass: [Cons class]]; cur = [(Cons[]) cur cdr]) {
+    for (cur = arguments; [cur isKindOfClass: [Cons class]]; cur = [(Cons*) cur cdr]) {
             count++;
     }
     [code minimumArguments: count];
@@ -62,12 +62,12 @@ Symbol []beginSym;
     [code addInstruction: [Instruction opcode: MAKEENV operand: count]];
     [code addInstruction: [Instruction opcode: LOADENV]];
     cur = arguments;
-    for (index = 0; index < count; cur = [(Cons[]) cur cdr]) {
+    for (index = 0; index < count; cur = [(Cons*) cur cdr]) {
             if ([cur isKindOfClass: [Cons class]]) {
-                    [scope addName: (Symbol[]) [(Cons[]) cur car]];
+                    [scope addName: (Symbol*) [(Cons*) cur car]];
                     [code addInstruction: [Instruction opcode: SET operand: index]];
             } else if ([cur isKindOfClass: [Symbol class]]) {
-                    [scope addName: (Symbol[]) cur];
+                    [scope addName: (Symbol*) cur];
                     [code addInstruction:
                               [Instruction opcode: SETREST operand: index]];
                     break;
@@ -81,21 +81,21 @@ Symbol []beginSym;
     }       
 }
 
-- (void) emitSequence: (SchemeObject[]) expressions flags: (integer) fl
+- (void) emitSequence: (SchemeObject*) expressions flags: (integer) fl
 {
-    local SchemeObject []cur;
+    local SchemeObject *cur;
 
-    for (cur = expressions; cur != [Nil nil]; cur = [(Cons[]) cur cdr]) {
-            if ([(Cons[]) cur cdr] == [Nil nil] && (fl & TAIL)) {
-                    [self emitExpression: [(Cons[]) cur car] flags: fl];
+    for (cur = expressions; cur != [Nil nil]; cur = [(Cons*) cur cdr]) {
+            if ([(Cons*) cur cdr] == [Nil nil] && (fl & TAIL)) {
+                    [self emitExpression: [(Cons*) cur car] flags: fl];
             } else {
-                    [self emitExpression: [(Cons[]) cur car] flags: fl & ~TAIL];
+                    [self emitExpression: [(Cons*) cur car] flags: fl & ~TAIL];
             }
             if (err) return;
     }
 }
 
-- (void) emitVariable: (Symbol[]) sym
+- (void) emitVariable: (Symbol*) sym
 {
     local integer depth = [scope depthOf: sym];
     local integer index = [scope indexOf: sym];
@@ -114,27 +114,27 @@ Symbol []beginSym;
     }                          
 }
 
-- (void) emitDefine: (SchemeObject[]) expression
+- (void) emitDefine: (SchemeObject*) expression
 {
     local integer index = 0;
     
     if (![expression isKindOfClass: [Cons class]] ||
-        ![[(Cons[]) expression cdr] isKindOfClass: [Cons class]]) {
+        ![[(Cons*) expression cdr] isKindOfClass: [Cons class]]) {
             err = [Error type: "syntax"
                          message: "Malformed define statement"
                          by: expression];
             return;
     }
 
-    if ([[(Cons[]) expression car] isKindOfClass: [Cons class]]) {
-            index = [code addConstant: [(Cons[]) [(Cons[]) expression car] car]];
+    if ([[(Cons*) expression car] isKindOfClass: [Cons class]]) {
+            index = [code addConstant: [(Cons*) [(Cons*) expression car] car]];
             [self emitLambda: cons(lambdaSym,
-                                   cons([(Cons[]) [(Cons[]) expression car] cdr],
-                                        [(Cons[]) expression cdr]))];
+                                   cons([(Cons*) [(Cons*) expression car] cdr],
+                                        [(Cons*) expression cdr]))];
             if (err) return;
-    } else if ([[(Cons[]) expression car] isKindOfClass: [Symbol class]]) {
-            index = [code addConstant: [(Cons[]) expression car]];
-            [self emitExpression: [(Cons[]) [(Cons[]) expression cdr] car] flags: 0];
+    } else if ([[(Cons*) expression car] isKindOfClass: [Symbol class]]) {
+            index = [code addConstant: [(Cons*) expression car]];
+            [self emitExpression: [(Cons*) [(Cons*) expression cdr] car] flags: 0];
             if (err) return;
     } else {
             err = [Error type: "syntax"
@@ -148,12 +148,12 @@ Symbol []beginSym;
     [code addInstruction: [Instruction opcode: SETGLOBAL]];
 }
 
-- (void) emitIf: (SchemeObject[]) expression flags: (integer) fl
+- (void) emitIf: (SchemeObject*) expression flags: (integer) fl
 {
-    local Instruction []falseLabel, endLabel;
+    local Instruction *falseLabel, *endLabel;
     local integer index;
     if (![expression isKindOfClass: [Cons class]] ||
-        ![[(Cons[]) expression cdr] isKindOfClass: [Cons class]]) {
+        ![[(Cons*) expression cdr] isKindOfClass: [Cons class]]) {
             err = [Error type: "syntax"
                          message: "Malformed if expression"
                          by: expression];
@@ -162,19 +162,19 @@ Symbol []beginSym;
     falseLabel = [Instruction opcode: LABEL];
     endLabel = [Instruction opcode: LABEL];
 
-    [self emitExpression: [(Cons[]) expression car] flags: fl & ~TAIL];
+    [self emitExpression: [(Cons*) expression car] flags: fl & ~TAIL];
     if (err) return;
     [code addInstruction: [Instruction opcode: IFFALSE label: falseLabel]];
-    [self emitExpression: [(Cons[]) [(Cons[]) expression cdr] car] flags: fl];
+    [self emitExpression: [(Cons*) [(Cons*) expression cdr] car] flags: fl];
     if (err) return;
     [code addInstruction: [Instruction opcode: GOTO label: endLabel]];
     [code addInstruction: falseLabel];
-    if ([(Cons[]) [(Cons[]) expression cdr] cdr] == [Nil nil]) {
+    if ([(Cons*) [(Cons*) expression cdr] cdr] == [Nil nil]) {
             index = [code addConstant: [Void voidConstant]];
             [code addInstruction: [Instruction opcode: LOADLITS]];
             [code addInstruction: [Instruction opcode: GET operand: index]];
     } else {
-            [self emitExpression: [(Cons[]) [(Cons[]) [(Cons[]) expression cdr] cdr] car] flags: fl];
+            [self emitExpression: [(Cons*) [(Cons*) [(Cons*) expression cdr] cdr] car] flags: fl];
             if (err) return;
     }
     [code addInstruction: endLabel];
@@ -184,14 +184,14 @@ Symbol []beginSym;
 
     
 
-- (void) emitLetrec: (SchemeObject[]) expression flags: (integer) fl
+- (void) emitLetrec: (SchemeObject*) expression flags: (integer) fl
 {
-    local SchemeObject []bindings;
+    local SchemeObject *bindings;
     local integer count;
 
     if (!isList(expression) ||
-        !isList([(Cons[]) expression car]) ||
-        ![[(Cons[]) expression cdr] isKindOfClass: [Cons class]]) {
+        !isList([(Cons*) expression car]) ||
+        ![[(Cons*) expression cdr] isKindOfClass: [Cons class]]) {
             err = [Error type: "syntax"
                          message: "Malformed letrec expression"
                          by: expression];
@@ -201,8 +201,8 @@ Symbol []beginSym;
     
     count = 0;
     
-    for (bindings = [(Cons[]) expression car]; bindings != [Nil nil]; bindings = [(Cons[]) bindings cdr]) {
-            [scope addName: (Symbol[]) [(Cons[]) [(Cons[]) bindings car] car]];
+    for (bindings = [(Cons*) expression car]; bindings != [Nil nil]; bindings = [(Cons*) bindings cdr]) {
+            [scope addName: (Symbol*) [(Cons*) [(Cons*) bindings car] car]];
             count++;
     }
 
@@ -210,84 +210,84 @@ Symbol []beginSym;
 
     count = 0;
     
-    for (bindings = [(Cons[]) expression car]; bindings != [Nil nil]; bindings = [(Cons[]) bindings cdr]) {
-            [self emitSequence: [(Cons[]) [(Cons[]) bindings car] cdr] flags: fl & ~TAIL];
+    for (bindings = [(Cons*) expression car]; bindings != [Nil nil]; bindings = [(Cons*) bindings cdr]) {
+            [self emitSequence: [(Cons*) [(Cons*) bindings car] cdr] flags: fl & ~TAIL];
             [code addInstruction: [Instruction opcode: PUSH]];
             [code addInstruction: [Instruction opcode: LOADENV]];
             [code addInstruction: [Instruction opcode: SET operand: count]];
             count++;
     }
 
-    [self emitSequence: [(Cons[]) expression cdr] flags: fl];
+    [self emitSequence: [(Cons*) expression cdr] flags: fl];
     [code addInstruction: [Instruction opcode: POPENV]];
     scope = [scope outer];
 }
 
-- (void) emitExpression: (SchemeObject[]) expression flags: (integer) fl
+- (void) emitExpression: (SchemeObject*) expression flags: (integer) fl
 {
     if ([expression isKindOfClass: [Cons class]]) {
             [code source: [expression source]];
             [code line: [expression line]];
             
-            if ([(Cons[]) expression car] == lambdaSym) {
+            if ([(Cons*) expression car] == lambdaSym) {
                     [self emitLambda: expression];
-            } else if ([(Cons[]) expression car] == quoteSym) {
-                    [self emitConstant: [(Cons[]) [(Cons[]) expression cdr] car]];
-            } else if ([(Cons[]) expression car] == defineSym) {
-                    [self emitDefine: [(Cons[]) expression cdr]];
-            } else if ([(Cons[]) expression car] == ifSym) {
-                    [self emitIf: [(Cons[]) expression cdr] flags: fl];
-            } else if ([(Cons[]) expression car] == letrecSym) {
-                    [self emitLetrec: [(Cons[]) expression cdr] flags: fl];
-            } else if ([(Cons[]) expression car] == beginSym) {
-                    [self emitSequence: [(Cons[]) expression cdr] flags: fl];
+            } else if ([(Cons*) expression car] == quoteSym) {
+                    [self emitConstant: [(Cons*) [(Cons*) expression cdr] car]];
+            } else if ([(Cons*) expression car] == defineSym) {
+                    [self emitDefine: [(Cons*) expression cdr]];
+            } else if ([(Cons*) expression car] == ifSym) {
+                    [self emitIf: [(Cons*) expression cdr] flags: fl];
+            } else if ([(Cons*) expression car] == letrecSym) {
+                    [self emitLetrec: [(Cons*) expression cdr] flags: fl];
+            } else if ([(Cons*) expression car] == beginSym) {
+                    [self emitSequence: [(Cons*) expression cdr] flags: fl];
             } else {
                     [self emitApply: expression flags: fl];
             }
     } else if ([expression isKindOfClass: [Symbol class]]) {
-            [self emitVariable: (Symbol[]) expression];
+            [self emitVariable: (Symbol*) expression];
     } else {
             [self emitConstant: expression];
     }
 }
 
-- (void) emitArguments: (SchemeObject[]) expression
+- (void) emitArguments: (SchemeObject*) expression
 {
     if (expression == [Nil nil]) {
             return;
     } else {
-            [self emitArguments: [(Cons[]) expression cdr]];
+            [self emitArguments: [(Cons*) expression cdr]];
             if (err) return;
-            [self emitExpression: [(Cons[]) expression car] flags: 0];
+            [self emitExpression: [(Cons*) expression car] flags: 0];
             if (err) return;
             [code addInstruction: [Instruction opcode: PUSH]];
     }
 }
 
-- (void) emitApply: (SchemeObject[]) expression flags: (integer) fl
+- (void) emitApply: (SchemeObject*) expression flags: (integer) fl
 {
-    local Instruction []label = [Instruction opcode: LABEL];
+    local Instruction *label = [Instruction opcode: LABEL];
     if (!(fl & TAIL)) {
             [code addInstruction: [Instruction opcode: MAKECONT label: label]];
     }
-    [self emitArguments: [(Cons[]) expression cdr]];
+    [self emitArguments: [(Cons*) expression cdr]];
     if (err) return;
-    [self emitExpression: [(Cons[]) expression car] flags: fl & ~TAIL];
+    [self emitExpression: [(Cons*) expression car] flags: fl & ~TAIL];
     if (err) return;
     [code addInstruction: [Instruction opcode: CALL]];
     [code addInstruction: label];
 }
 
-- (void) emitLambda: (SchemeObject[]) expression
+- (void) emitLambda: (SchemeObject*) expression
 {
-    local Compiler []compiler = [Compiler newWithLambda: expression
+    local Compiler *compiler = [Compiler newWithLambda: expression
                                         scope: scope];
-    local SchemeObject []res;
+    local SchemeObject *res;
     local integer index;
 
     res = [compiler compile];
     if ([res isError]) {
-            err = (Error []) res;
+            err = (Error *) res;
             return;
     }          
     index = [code addConstant: res];
@@ -296,7 +296,7 @@ Symbol []beginSym;
     [code addInstruction: [Instruction opcode: MAKECLOSURE]];
 }
 
-- (void) emitConstant: (SchemeObject[]) expression
+- (void) emitConstant: (SchemeObject*) expression
 {
     local integer index;
     index = [code addConstant: expression];
@@ -304,29 +304,29 @@ Symbol []beginSym;
     [code addInstruction: [Instruction opcode: GET operand: index]];
 }
 
-- (void) checkLambdaSyntax: (SchemeObject[]) expression
+- (void) checkLambdaSyntax: (SchemeObject*) expression
 {
     if (![expression isKindOfClass: [Cons class]] ||
-        [(Cons[]) expression car] != lambdaSym ||
-        [(Cons[]) expression cdr] == [Nil nil] ||
-        [(Cons[]) [(Cons[]) expression cdr] cdr] == [Nil nil]) {
+        [(Cons*) expression car] != lambdaSym ||
+        [(Cons*) expression cdr] == [Nil nil] ||
+        [(Cons*) [(Cons*) expression cdr] cdr] == [Nil nil]) {
             err = [Error type: "syntax"
                          message: "malformed lambda expression"
                          by: expression];
     }
 }
 
-- (SchemeObject[]) compile
+- (SchemeObject*) compile
 {
     [self checkLambdaSyntax: sexpr];
     if (err) {
             return err;
     }
-    [self emitBuildEnvironment: [(Cons[]) [(Cons[]) sexpr cdr] car]];
+    [self emitBuildEnvironment: [(Cons*) [(Cons*) sexpr cdr] car]];
     if (err) {
             return err;
     }
-    [self emitSequence: [(Cons[]) [(Cons[]) sexpr cdr] cdr] flags: TAIL];
+    [self emitSequence: [(Cons*) [(Cons*) sexpr cdr] cdr] flags: TAIL];
     if (err) {
             return err;
     }

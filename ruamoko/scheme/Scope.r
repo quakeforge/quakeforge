@@ -3,12 +3,12 @@
 
 @implementation Scope
 
-+ (id) newWithOuter: (Scope []) o
++ (id) newWithOuter: (Scope *) o
 {
     return [[self alloc] initWithOuter: o];
 }
 
-- (id) initWithOuter: (Scope []) o
+- (id) initWithOuter: (Scope *) o
 {
     self = [super init];
     outerScope = o;
@@ -16,7 +16,7 @@
     return self;
 }
 
-- (integer) indexLocal: (Symbol []) sym
+- (integer) indexLocal: (Symbol *) sym
 {
     local integer index;
 
@@ -28,7 +28,7 @@
     return -1;
 }
 
-- (integer) indexOf: (Symbol []) sym
+- (integer) indexOf: (Symbol *) sym
 {
     local integer index;
 
@@ -41,7 +41,7 @@
     }
 }
 
-- (integer) depthOf: (Symbol []) sym
+- (integer) depthOf: (Symbol *) sym
 {
     local integer index;
     local integer res;
@@ -64,7 +64,7 @@
     }
 }
 
-- (void) addName: (Symbol []) sym
+- (void) addName: (Symbol *) sym
 {
     [names addObject: sym];
 }
@@ -84,7 +84,7 @@
     [outerScope mark];
 }
 
-- (Scope []) outer
+- (Scope *) outer
 {
     return outerScope;
 }

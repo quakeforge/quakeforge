@@ -3,7 +3,7 @@
 @extern string (integer err) strerror = #0;
 @extern integer (...) open = #0; // string path, float flags[, float mode]
 @extern integer (integer handle) close = #0;
-@extern string (integer handle, integer count, integer []result) read = #0;
+@extern string read (integer handle, integer count, integer *result) = #0;
 @extern integer (integer handle, string buffer, integer count) write = #0;
 @extern integer (integer handle, integer pos, integer whence) seek = #0;
 

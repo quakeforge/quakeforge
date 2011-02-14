@@ -4,18 +4,18 @@
 
 @interface Cons: SchemeObject
 {
-    SchemeObject []car, cdr;
+    SchemeObject *car, *cdr;
 }
-+ (id) newWithCar: (SchemeObject []) a cdr: (SchemeObject []) d;
-- (id) initWithCar: (SchemeObject []) a cdr: (SchemeObject []) d;
-- (SchemeObject []) car;
-- (void) car: (SchemeObject []) a;
-- (SchemeObject []) cdr;
-- (void) cdr: (SchemeObject []) d;
++ (id) newWithCar: (SchemeObject *) a cdr: (SchemeObject *) d;
+- (id) initWithCar: (SchemeObject *) a cdr: (SchemeObject *) d;
+- (SchemeObject *) car;
+- (void) car: (SchemeObject *) a;
+- (SchemeObject *) cdr;
+- (void) cdr: (SchemeObject *) d;
 @end
 
-@extern Cons []cons (SchemeObject []car, SchemeObject []cdr);
-@extern BOOL isList (SchemeObject []ls);
-@extern integer length (SchemeObject []foo);
+@extern Cons *cons (SchemeObject *car, SchemeObject *cdr);
+@extern BOOL isList (SchemeObject *ls);
+@extern integer length (SchemeObject *foo);
 
 #endif //__Cons_h

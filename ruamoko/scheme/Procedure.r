@@ -2,7 +2,7 @@
 #include "Machine.h"
 
 @implementation Procedure
-- (void) invokeOnMachine: (Machine []) m
+- (void) invokeOnMachine: (Machine *) m
 {
     [m procedure: self];
     return;

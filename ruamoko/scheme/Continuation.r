@@ -4,11 +4,11 @@
 #include "defs.h"
 
 @implementation Continuation
-+ (id) newWithState: (state_t []) st pc: (integer) p
++ (id) newWithState: (state_t *) st pc: (integer) p
 {
     return [[self alloc] initWithState: st pc: p];
 }
-- (id) initWithState: (state_t []) st pc: (integer) p
+- (id) initWithState: (state_t *) st pc: (integer) p
 {
     self = [self init];
     state.program = st.program;
@@ -22,15 +22,15 @@
     return self;
 }
 
-- (void) restoreOnMachine: (Machine []) m
+- (void) restoreOnMachine: (Machine *) m
 {
     [m state: &state];
     return;
 }
 
-- (void) invokeOnMachine: (Machine []) m
+- (void) invokeOnMachine: (Machine *) m
 {
-    [m value: [(Cons []) [m stack] car]];
+    [m value: [(Cons *) [m stack] car]];
     [m state: &state];
     return;
 }

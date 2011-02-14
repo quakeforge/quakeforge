@@ -44,13 +44,13 @@ BOOL issymbol (string x)
     return self;
 }
 
-- (SchemeObject[]) nextToken
+- (SchemeObject*) nextToken
 {
     local integer len;
-    local Number []num;
-    local Symbol []sym;
-    local String []str;
-    local Boolean []bl;
+    local Number *num;
+    local Symbol *sym;
+    local String *str;
+    local Boolean *bl;
 
     for (len = 0; isjunk(str_mid(source, len, len+1)); len++) {
             if (str_mid(source, len, len+1) == ";") {

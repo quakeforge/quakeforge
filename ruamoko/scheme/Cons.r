@@ -4,37 +4,37 @@
 #include "defs.h"
 #include "SchemeString.h"
 
-Cons []cons (SchemeObject []car, SchemeObject []cdr)
+Cons *cons (SchemeObject *car, SchemeObject *cdr)
 {
     return [Cons newWithCar: car cdr: cdr];
 }
 
-integer length (SchemeObject []foo)
+integer length (SchemeObject *foo)
 {
     local integer len;
 
-    for (len = 0; [foo isKindOfClass: [Cons class]]; foo = [(Cons []) foo cdr]) {
+    for (len = 0; [foo isKindOfClass: [Cons class]]; foo = [(Cons *) foo cdr]) {
             len++;
     }
 
     return len;
 }
 
-BOOL isList (SchemeObject []ls)
+BOOL isList (SchemeObject *ls)
 {
     return ls == [Nil nil] ||
         ([ls isKindOfClass: [Cons class]] &&
-         isList([(Cons[]) ls cdr]));
+         isList([(Cons*) ls cdr]));
 }
 
 @implementation Cons
 
-+ (id) newWithCar: (SchemeObject []) a cdr: (SchemeObject []) d
++ (id) newWithCar: (SchemeObject *) a cdr: (SchemeObject *) d
 {
     return [[self alloc] initWithCar: a cdr: d];
 }
 
-- (id) initWithCar: (SchemeObject []) a cdr: (SchemeObject []) d
+- (id) initWithCar: (SchemeObject *) a cdr: (SchemeObject *) d
 {
     car = a;
     cdr = d;
@@ -48,22 +48,22 @@ BOOL isList (SchemeObject []ls)
      return [super init];
 }
 
-- (SchemeObject []) car
+- (SchemeObject *) car
 {
     return car;
 }
 
-- (void) car: (SchemeObject []) a
+- (void) car: (SchemeObject *) a
 {
     car = a;
 }
 
-- (SchemeObject []) cdr
+- (SchemeObject *) cdr
 {
     return cdr;
 }
 
-- (void) cdr: (SchemeObject []) d
+- (void) cdr: (SchemeObject *) d
 {
     cdr = d;
 }   
