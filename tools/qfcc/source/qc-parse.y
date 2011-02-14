@@ -1411,6 +1411,8 @@ ivar_decl_list
 			ivars = class_new_ivars ($<class>0);
 			for (tab = ivars; tab->parent; tab = tab->parent)
 				;
+			if (tab == current_symtab)
+				internal_error (0, "ivars already linked to parent scope");
 			$<symtab>$ = tab;
 			tab->parent = current_symtab;
 			current_symtab = ivars;

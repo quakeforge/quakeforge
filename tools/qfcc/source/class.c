@@ -491,15 +491,17 @@ emit_ivars (symtab_t *ivars, const char *name)
 		{"ivar_list",  0,             emit_ivar_list_item},
 		{0, 0}
 	};
-	ivar_data_t ivar_data = {0, 0};
+	ivar_data_t ivar_data = {0, 0, 0};
 	symbol_t   *s;
 	def_t      *def;
 
 	ivar_data.encoding = dstring_newstr ();
-	ivar_data.ivars = ivars->symbols;
-	for (s = ivars->symbols; s; s = s->next)
-		if (s->sy_type == sy_var)
-			ivar_data.count++;
+	if (ivars) {
+		ivar_data.ivars = ivars->symbols;
+		for (s = ivars->symbols; s; s = s->next)
+			if (s->sy_type == sy_var)
+				ivar_data.count++;
+	}
 	ivar_list_struct[1].type = array_type (&type_ivar, ivar_data.count);
 
 	def = emit_structure (va ("_OBJ_INSTANCE_VARIABLES_%s", name), 's',

@@ -224,8 +224,6 @@ get_function (const char *name, type_t *type, int overload, int create)
 	func = Hash_Find (overloaded_functions, full_name);
 	if (func) {
 		if (func->type != type) {
-			print_type (func->type); printf (" %p\n", func->type);
-			print_type (type); printf (" %p\n", type);
 			error (0, "can't overload on return types");
 			return func;
 		}
@@ -534,7 +532,8 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent)
 	}
 	if (sym->s.func && sym->s.func->def && sym->s.func->def->initialized) {
 		error (0, "%s redefined", sym->name);
-		sym = function_symbol (new_symbol (sym->name), 1, 1);
+		sym = new_symbol_type (sym->name, sym->type);
+		sym = function_symbol (sym, 1, 1);
 	}
 	make_function (sym, nicename, current_storage);
 	if (!sym->s.func->def->external) {
