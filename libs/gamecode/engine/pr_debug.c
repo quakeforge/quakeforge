@@ -386,8 +386,14 @@ PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno)
 
 	if (lineno->line)
 		return lineno->fa.addr;
-	f = &pr->auxfunctions[lineno->fa.func];
-	return pr->pr_functions[f->function].first_statement;
+	if (lineno->fa.func >= 0
+		&& lineno->fa.func < pr->debug->num_auxfunctions) {
+		f = &pr->auxfunctions[lineno->fa.func];
+		return pr->pr_functions[f->function].first_statement;
+	}
+	// take a wild guess that only the line number is bogus and return
+	// the address anyway
+	return lineno->fa.addr;
 }
 
 pr_uint_t
@@ -423,6 +429,8 @@ PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno)
 	pr_auxfunction_t *f;
 
 	f = PR_Get_Lineno_Func (pr, lineno);
+	if (f->function >= (unsigned) pr->progs->numfunctions)
+		return 0;
 	return PR_GetString(pr, pr->pr_functions[f->function].s_file);
 }
 
@@ -447,7 +455,7 @@ PR_Get_Source_Line (progs_t *pr, pr_uint_t addr)
 
 	file = PR_Load_Source_File (pr, fname);
 
-	if (!file || !file->lines || line > file->num_lines)
+	if (!file || !file->lines || !line || line > file->num_lines)
 		return va ("%s:%u", fname, line);
 
 	return va ("%s:%u:%.*s", fname, line, (int)file->lines[line - 1].len,
