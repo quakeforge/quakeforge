@@ -233,6 +233,9 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 	}
 	if (!init)
 		return;
+	convert_name (init);
+	if (init->type == ex_error)
+		return;
 	if (init->type == ex_nil)
 		convert_nil (init, type);
 	if (!type_assignable (type, get_type (init))) {
