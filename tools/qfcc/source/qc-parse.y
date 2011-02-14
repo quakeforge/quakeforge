@@ -1421,11 +1421,14 @@ ivar_decl_list
 		}
 	  ivar_decl_list_2
 		{
+			symtab_t   *tab = $<symtab>1;
 			$$ = current_symtab;
-			current_symtab = $<symtab>1->parent;
-			$<symtab>1->parent = 0;
+			current_symtab = tab->parent;
+			tab->parent = 0;
 
+			tab = $$->parent;	// preserve the ivars inheritance chain
 			build_struct ('s', 0, $$, 0);
+			$$->parent = tab;
 		}
 	;
 
