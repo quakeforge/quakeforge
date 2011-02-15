@@ -188,6 +188,7 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 			 storage_class_t storage)
 {
 	symbol_t   *sym;
+	struct reloc_s *relocs = 0;
 
 	if (storage != st_extern && storage != st_global && storage != st_static)
 		internal_error (0, "invalid storage class for %s", __FUNCTION__);
@@ -202,10 +203,13 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 		sym = new_symbol_type (name, type);
 	}
 	if (sym->s.def && sym->s.def->external && storage != st_extern) {
+		relocs = sym->s.def->relocs;
 		free_def (sym->s.def);
 		sym->s.def = 0;
 	}
-	if (!sym->s.def)
+	if (!sym->s.def) {
 		sym->s.def = new_def (name, type, space, storage);
+		sym->s.def->relocs = relocs;
+	}
 	return sym;
 }
