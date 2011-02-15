@@ -122,6 +122,7 @@ get_operand_def (expr_t *expr, operand_t *op)
 			if (op->o.pointer->val || op->type != def->type->type) {
 				def = alias_def (def, ev_types[op->type]);
 				def->offset = op->o.pointer->val;
+				def->offset_reloc = 1;
 			}
 			return def;
 	}
@@ -135,7 +136,10 @@ add_statement_def_ref (def_t *def, dstatement_t *st, int field)
 		int         st_ofs = st - pr.code->code;
 
 		if (def->alias) {
-			reloc_op_def (def->alias, st_ofs, field);
+			if (def->offset_reloc)
+				reloc_op_def_ofs (def->alias, st_ofs, field);
+			else
+				reloc_op_def (def->alias, st_ofs, field);
 			free_def (def);
 		} else {
 			reloc_op_def (def, st_ofs, field);

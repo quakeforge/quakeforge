@@ -46,6 +46,7 @@ typedef struct def_s {
 	struct def_s   *alias;
 	struct reloc_s *relocs;			///< for relocations
 
+	unsigned		offset_reloc:1;	///< use *_def_ofs relocs
 	unsigned		initialized:1;
 	unsigned		constant:1;		///< stores constant value
 	unsigned		global:1;		///< globally declared def
