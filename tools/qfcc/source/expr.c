@@ -2515,7 +2515,8 @@ selector_expr (keywordarg_t *selector)
 						   pr.near_data, st_static);
 	if (!sel_sym->table) {
 		symtab_addsymbol (pr.symtab, sel_sym);
-		sel_table = make_symbol ("_OBJ_SELECTOR_TABLE", type_SEL.t.fldptr.type,
+		sel_table = make_symbol ("_OBJ_SELECTOR_TABLE",
+								 array_type (type_SEL.t.fldptr.type, 0),
 								 pr.far_data, st_extern);
 		if (!sel_table->table)
 			symtab_addsymbol (pr.symtab, sel_table);

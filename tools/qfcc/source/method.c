@@ -390,7 +390,7 @@ emit_selectors (void)
 		return 0;
 
 	sel_type = array_type (type_SEL.t.fldptr.type, sel_index);
-	sel_sym = make_symbol ("_OBJ_SELECTOR_TABLE", type_SEL.t.fldptr.type,
+	sel_sym = make_symbol ("_OBJ_SELECTOR_TABLE", sel_type,
 						   pr.far_data, st_static);
 	if (!sel_sym->table)
 		symtab_addsymbol (pr.symtab, sel_sym);
