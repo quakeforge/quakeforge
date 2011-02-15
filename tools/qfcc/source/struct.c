@@ -252,7 +252,7 @@ emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 
 	struct_def = struct_sym->s.def;
 	if (struct_def->initialized)
-		internal_error (0, "structure %s must be global or static", name);
+		internal_error (0, "structure %s already initialized", name);
 	struct_def->initialized = struct_def->constant = 1;
 	struct_def->nosave = 1;
 
@@ -270,9 +270,10 @@ emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 			data = &val[type_size (field_def.type)];
 		} else {
 			if (is_array (field_def.type)) {
+				type_t     *type = field_def.type->t.array.type;
 				for (j = 0; j < field_def.type->t.array.size; j++) {
 					defs[i].emit (&field_def, data, j);
-					field_def.offset+=type_size (field_def.type->t.array.type);
+					field_def.offset += type_size (type);
 				}
 			} else {
 				defs[i].emit (&field_def, data, 0);
