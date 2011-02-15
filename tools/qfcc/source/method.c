@@ -435,13 +435,9 @@ emit_methods_list_item (def_t *def, void *data, int index)
 	method_t   *m;
 	pr_method_t *meth;
 
-#if 0
-	//FIXME the type is dynamic, so need a way to pass it before it cn be
-	//checked
-	if (def->type != &XXX)
-		internal_error (0, "%s: expected XXX def",
+	if (!is_array (def->type) || def->type->t.array.type != &type_Method)
+		internal_error (0, "%s: expected array of method def",
 						__FUNCTION__);
-#endif
 	if (index < 0 || index >= methods->count)
 		internal_error (0, "%s: out of bounds index: %d %d",
 						__FUNCTION__, index, methods->count);
@@ -495,7 +491,7 @@ emit_methods (methodlist_t *methods, const char *name, int instance)
 	methods->count = count;
 	methods->instance = instance;
 
-	methods_struct[2].type = array_type (&type_integer, count);
+	methods_struct[2].type = array_type (&type_Method, count);
 	return emit_structure (va ("_OBJ_%s_METHODS_%s", type, name), 's',
 						   methods_struct, 0, methods, st_static);
 }
