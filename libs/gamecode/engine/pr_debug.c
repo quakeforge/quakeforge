@@ -518,6 +518,8 @@ PR_Get_Local_Def (progs_t *pr, pr_int_t offs)
 	if (!pr->pr_xfunction)
 		return 0;
 	func = pr->pr_xfunction->descriptor;
+	if (!func)
+		return 0;
 	aux_func = pr->auxfunction_map[func - pr->pr_functions];
 	if (!aux_func)
 		return 0;
