@@ -1176,7 +1176,8 @@ class_finish_module (void)
 		exec_class_sym = new_symbol_type ("__obj_exec_class",
 										  &type_obj_exec_class);
 		exec_class_sym = function_symbol (exec_class_sym, 0, 1);
-		make_function (exec_class_sym, 0, st_extern);
+		make_function (exec_class_sym, 0, exec_class_sym->table->space,
+					   st_extern);
 	}
 
 	init_sym = new_symbol_type (".ctor", &type_function);
@@ -1189,7 +1190,7 @@ class_finish_module (void)
 								 address_expr (new_symbol_expr (module_sym),
 									 		   0, 0)));
 
-	current_func = begin_function (init_sym, 0, current_symtab);
+	current_func = begin_function (init_sym, 0, current_symtab, 1);
 	build_code_function (init_sym, 0, init_expr);;
 	current_func = 0;
 }

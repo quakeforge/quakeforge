@@ -92,20 +92,21 @@ struct type_s *parse_params (struct type_s *type, param_t *params);
 param_t *check_params (param_t *params);
 
 enum storage_class_e; 
+struct defspace_s; 
 void make_function (struct symbol_s *sym, const char *nice_name,
-					enum storage_class_e storage);
+					struct defspace_s *space, enum storage_class_e storage);
 struct symbol_s *function_symbol (struct symbol_s *sym,
 								  int overload, int create);
 struct expr_s *find_function (struct expr_s *fexpr, struct expr_s *params);
 function_t *new_function (const char *name, const char *nice_name);
 void add_function (function_t *f);
 function_t *begin_function (struct symbol_s *sym, const char *nicename,
-							struct symtab_s *parent);
+							struct symtab_s *parent, int far);
 function_t *build_code_function (struct symbol_s *fsym,
 								 struct expr_s *state_expr,
 								 struct expr_s *statements);
 function_t *build_builtin_function (struct symbol_s *sym,
-									struct expr_s *bi_val);
+									struct expr_s *bi_val, int far);
 void build_function (function_t *f);
 void finish_function (function_t *f);
 void emit_function (function_t *f, struct expr_s *e);

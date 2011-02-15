@@ -175,7 +175,7 @@ method_symbol (class_type_t *class_type, method_t *method)
 	//printf ("%s %s %s %ld\n", method->name, method->types, str->str,
 	//		str->size);
 	sym = new_symbol_type (str->str, method->type);
-	sym = function_symbol (sym, 0, 1);//FIXME put in far data and make static
+	sym = function_symbol (sym, 0, 1);
 	sym->params = method->params;
 	dstring_delete (str);
 	return sym;
@@ -265,7 +265,7 @@ send_message (int super)
 	if (!sym) {
 		sym = new_symbol_type (sm_name, sm_type);
 		sym = function_symbol (sym, 0, 1);
-		make_function (sym, 0, st_extern);
+		make_function (sym, 0, sym->table->space, st_extern);
 	}
 	return new_symbol_expr (sym);
 }

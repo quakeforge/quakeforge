@@ -331,7 +331,7 @@ function_body
 		}
 		{
 			$<symtab>$ = current_symtab;
-			current_func = begin_function ($<symbol>2, 0, current_symtab);
+			current_func = begin_function ($<symbol>2, 0, current_symtab, 0);
 			current_symtab = current_func->symtab;
 			current_storage = st_local;
 		}
@@ -348,7 +348,7 @@ function_body
 
 			sym->type = find_type (append_type (sym->type, $<spec>-1.type));
 			sym = function_symbol (sym, $<spec>-1.is_overload, 1);
-			build_builtin_function (sym, $3);
+			build_builtin_function (sym, $3, 0);
 		}
 	;
 
@@ -394,7 +394,7 @@ external_decl
 			specifier_t spec = $<spec>0;
 			$1->type = find_type (append_type ($1->type, spec.type));
 			$1 = function_symbol ($1, spec.is_overload, 1);
-			make_function ($1, 0, spec.storage);
+			make_function ($1, 0, $1->table->space, spec.storage);
 		}
 	;
 
@@ -833,11 +833,12 @@ overloaded_identifier
 non_code_func
 	: '=' '#' fexpr
 		{
-			build_builtin_function ($<symbol>0, $3);
+			build_builtin_function ($<symbol>0, $3, 0);
 		}
 	| /* emtpy */
 		{
-			make_function ($<symbol>0, 0, current_storage);
+			symbol_t   *sym = $<symbol>0;
+			make_function (sym, 0, sym->table->space, current_storage);
 		}
 	;
 
@@ -845,7 +846,7 @@ code_func
 	: '=' optional_state_expr
 		{
 			$<symtab>$ = current_symtab;
-			current_func = begin_function ($<symbol>0, 0, current_symtab);
+			current_func = begin_function ($<symbol>0, 0, current_symtab, 0);
 			current_symtab = current_func->symtab;
 			current_storage = st_local;
 		}
@@ -1492,7 +1493,7 @@ methoddef
 			$<symtab>$ = current_symtab;
 
 			ivar_scope = class_ivar_scope (current_class, current_symtab);
-			current_func = begin_function (sym, nicename, ivar_scope);
+			current_func = begin_function (sym, nicename, ivar_scope, 1);
 			class_finish_ivar_scope (current_class, ivar_scope,
 									 current_func->symtab);
 			method->def = sym->s.func->def;
@@ -1514,7 +1515,7 @@ methoddef
 			method->instance = $1;
 			method = class_find_method (current_class, method);
 			sym = method_symbol (current_class, method);
-			build_builtin_function (sym, $5);
+			build_builtin_function (sym, $5, 1);
 			method->def = sym->s.func->def;
 		}
 	;

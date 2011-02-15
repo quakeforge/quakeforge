@@ -492,7 +492,8 @@ new_function (const char *name, const char *nice_name)
 }
 
 void
-make_function (symbol_t *sym, const char *nice_name, storage_class_t storage)
+make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
+			   storage_class_t storage)
 {
 	if (sym->sy_type != sy_func)
 		internal_error (0, "%s is not a function", sym->name);
@@ -508,8 +509,7 @@ make_function (symbol_t *sym, const char *nice_name, storage_class_t storage)
 		sym->s.func->def = 0;
 	}
 	if (!sym->s.func->def)
-		sym->s.func->def = new_def (sym->name, sym->type, sym->table->space,
-									storage);
+		sym->s.func->def = new_def (sym->name, sym->type, space, storage);
 }
 
 void
@@ -523,8 +523,11 @@ add_function (function_t *f)
 }
 
 function_t *
-begin_function (symbol_t *sym, const char *nicename, symtab_t *parent)
+begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
+				int far)
 {
+	defspace_t *space;
+
 	if (sym->sy_type != sy_func) {
 		error (0, "%s is not a function", sym->name);
 		sym = new_symbol_type (sym->name, &type_function);
@@ -535,7 +538,10 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent)
 		sym = new_symbol_type (sym->name, sym->type);
 		sym = function_symbol (sym, 1, 1);
 	}
-	make_function (sym, nicename, current_storage);
+	space = sym->table->space;
+	if (far)
+		space = pr.far_data;
+	make_function (sym, nicename, space, current_storage);
 	if (!sym->s.func->def->external) {
 		sym->s.func->def->initialized = 1;
 		sym->s.func->def->constant = 1;
@@ -575,9 +581,10 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 }
 
 function_t *
-build_builtin_function (symbol_t *sym, expr_t *bi_val)
+build_builtin_function (symbol_t *sym, expr_t *bi_val, int far)
 {
 	int         bi;
+	defspace_t *space;
 
 	if (sym->sy_type != sy_func) {
 		error (bi_val, "%s is not a function", sym->name);
@@ -591,7 +598,10 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val)
 		error (bi_val, "invalid constant for = #");
 		return 0;
 	}
-	make_function (sym, 0, current_storage);
+	space = sym->table->space;
+	if (far)
+		space = pr.far_data;
+	make_function (sym, 0, space, current_storage);
 	if (sym->s.func->def->external)
 		return 0;
 

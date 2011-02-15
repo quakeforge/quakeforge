@@ -173,7 +173,7 @@ program
 			symtab_removesymbol (current_symtab, $1);
 			symtab_addsymbol (current_symtab, $1);
 
-			current_func = begin_function ($1, 0, current_symtab);
+			current_func = begin_function ($1, 0, current_symtab, 0);
 			current_symtab = current_func->symtab;
 			build_code_function ($1, 0, $4);
 			current_symtab = st;
@@ -183,7 +183,7 @@ program
 			$1->params = 0;
 			$1->type = parse_params (&type_void, 0);
 			$1 = function_symbol ($1, 0, 1);
-			current_func = begin_function ($1, 0, current_symtab);
+			current_func = begin_function ($1, 0, current_symtab, 0);
 			current_symtab = current_func->symtab;
 			build_code_function ($1, 0, $4);
 			current_symtab = st;
@@ -255,7 +255,7 @@ subprogram_declaration
 		{
 			$<storage>$ = current_storage;
 			current_storage = st_local;
-			current_func = begin_function ($1, 0, current_symtab);
+			current_func = begin_function ($1, 0, current_symtab, 0);
 			current_symtab = current_func->symtab;
 		}
 	  declarations compound_statement ';'
@@ -266,7 +266,7 @@ subprogram_declaration
 		}
 	| subprogram_head ASSIGNOP '#' CONST ';'
 		{
-			build_builtin_function ($1, $4);
+			build_builtin_function ($1, $4, 0);
 		}
 	;
 
