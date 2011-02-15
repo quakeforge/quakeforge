@@ -1496,6 +1496,7 @@ methoddef
 			current_func = begin_function (sym, nicename, ivar_scope, 1);
 			class_finish_ivar_scope (current_class, ivar_scope,
 									 current_func->symtab);
+			method->func = sym->s.func;
 			method->def = sym->s.func->def;
 			current_symtab = current_func->symtab;
 			current_storage = st_local;
