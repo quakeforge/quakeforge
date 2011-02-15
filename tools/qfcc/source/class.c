@@ -835,12 +835,9 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 	class_t    *c = class;
 	category_t *cat;
 
-	if (sel->type != ex_value && sel->e.value.type != ev_pointer
-		&& sel->e.value.v.pointer.type != type_SEL.t.fldptr.type) {
-		error (sel, "not a selector");
-		return 0;
-	}
 	selector = get_selector (sel);
+	if (!selector)
+		return 0;
 	if (class->type == &type_id) {
 		m = find_method (selector->name);
 		if (m)

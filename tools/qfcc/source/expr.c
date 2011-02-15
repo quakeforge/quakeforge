@@ -2503,6 +2503,7 @@ selector_expr (keywordarg_t *selector)
 	dstring_t  *sel_id = dstring_newstr ();
 	expr_t     *sel;
 	symbol_t   *sel_sym;
+	symbol_t   *sel_table;
 	int         index;
 
 	selector = copy_keywordargs (selector);
@@ -2510,13 +2511,21 @@ selector_expr (keywordarg_t *selector)
 	selector_name (sel_id, selector);
 	index = selector_index (sel_id->str);
 	index *= type_size (type_SEL.t.fldptr.type);
-	sel_sym = make_symbol ("_OBJ_SELECTOR_TABLE", type_SEL.t.fldptr.type,
-						   0, st_extern);
-	if (!sel_sym->table)
+	sel_sym = make_symbol ("_OBJ_SELECTOR_TABLE_PTR", &type_SEL,
+						   pr.near_data, st_static);
+	if (!sel_sym->table) {
 		symtab_addsymbol (pr.symtab, sel_sym);
+		sel_table = make_symbol ("_OBJ_SELECTOR_TABLE", type_SEL.t.fldptr.type,
+								 pr.far_data, st_extern);
+		if (!sel_table->table)
+			symtab_addsymbol (pr.symtab, sel_table);
+		reloc_def_def (sel_table->s.def, sel_sym->s.def);
+	}
 	sel = new_symbol_expr (sel_sym);
 	dstring_delete (sel_id);
-	return address_expr (sel, new_short_expr (index), 0);
+	sel = new_binary_expr ('&', sel, new_short_expr (index));
+	sel->e.expr.type = &type_SEL;
+	return sel;
 }
 
 expr_t *

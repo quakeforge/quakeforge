@@ -365,7 +365,14 @@ selector_index (const char *sel_id)
 selector_t *
 get_selector (expr_t *sel)
 {
-	selector_t  _sel = {0, 0, sel->e.value.v.pointer.val};
+	selector_t  _sel = {0, 0, 0};
+
+	if (sel->type != ex_expr && sel->e.expr.op != '&'
+		&& sel->e.expr.type != &type_SEL) {
+		error (sel, "not a selector");
+		return 0;
+	}
+	_sel.index = expr_short (sel->e.expr.e2);
 	_sel.index /= type_size (type_SEL.t.fldptr.type);
 	return (selector_t *) Hash_FindElement (sel_index_hash, &_sel);
 }
