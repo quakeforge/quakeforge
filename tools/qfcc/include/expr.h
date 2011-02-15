@@ -438,6 +438,16 @@ short expr_short (expr_t *e);
 */
 int is_constant (expr_t *e);
 
+/**	Return a value expression representing the constant stored in \a e.
+
+	If \a e does not represent a constant, or \a e is already a value or
+	nil expression, then \a e is returned rather than a new expression.
+
+	\param e		The expression from which to extract the value.
+	\return			A new expression holding the value of \a e or \e itself.
+*/
+expr_t *constant_expr (expr_t *e);
+
 /**	Check if the op-code is a comparison.
 
 	\param op		The op-code to check.

@@ -602,6 +602,24 @@ is_constant (expr_t *e)
 	return 0;
 }
 
+expr_t *
+constant_expr (expr_t *e)
+{
+	expr_t     *new;
+	if (!is_constant (e))
+		return e;
+	if (e->type == ex_nil || e->type == ex_value)
+		return e;
+	if (e->type != ex_symbol || e->e.symbol->sy_type != sy_const)
+		return e;
+	new = new_expr ();
+	new->type = ex_value;
+	new->line = e->line;
+	new->file = e->file;
+	new->e.value = e->e.symbol->s.value;
+	return new;
+}
+
 int
 is_string_val (expr_t *e)
 {
