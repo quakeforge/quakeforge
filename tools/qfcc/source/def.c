@@ -51,6 +51,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "def.h"
 #include "defspace.h"
 #include "diagnostic.h"
+#include "emit.h"
 #include "expr.h"
 #include "immediate.h"
 #include "options.h"
@@ -178,6 +179,106 @@ def_to_ddef (def_t *def, ddef_t *ddef, int aux)
 	ddef->s_name = ReuseString (def->name);
 }
 
+static void
+init_elements (struct def_s *def, expr_t *eles)
+{
+	expr_t     *e, *c;
+	int         count, i, num_params, base_offset;
+	pr_type_t  *g;
+	def_t      *elements;
+
+	base_offset = def->offset;
+	if (def->local && local_expr)
+		base_offset = 0;
+	if (is_array (def->type)) {
+		type_t     *array_type = def->type->t.array.type;
+		int         array_size = def->type->t.array.size;
+		elements = calloc (array_size, sizeof (def_t));
+		for (i = 0; i < array_size; i++) {
+			elements[i].type = array_type;
+			elements[i].space = def->space;
+			elements[i].offset = base_offset + i * type_size (array_type);
+		}
+		num_params = i;
+	} else if (is_struct (def->type)) {
+		symtab_t   *symtab = def->type->t.symtab;
+		symbol_t   *field;
+
+		for (i = 0, field = symtab->symbols; field; field = field->next) {
+			if (field->sy_type != sy_var)
+				continue;
+			i++;
+		}
+		elements = calloc (i, sizeof (def_t));
+		for (i = 0, field = symtab->symbols; field; field = field->next) {
+			if (field->sy_type != sy_var)
+				continue;
+			elements[i].type = field->type;
+			elements[i].space = def->space;
+			elements[i].offset = base_offset + field->s.offset;
+			i++;
+		}
+		num_params = i;
+	} else {
+		error (eles, "invalid initializer");
+		return;
+	}
+	for (count = 0, e = eles->e.block.head; e; count++, e = e->next) {
+		convert_name (e);
+		if (e->type == ex_nil && count < num_params)
+			convert_nil (e, elements[count].type);
+		if (e->type == ex_error) {
+			free (elements);
+			return;
+		}
+	}
+	if (count > num_params) {
+		if (options.warnings.initializer)
+			warning (eles, "excessive elements in initializer");
+		count = num_params;
+	}
+	for (i = 0, e = eles->e.block.head; i < count; i++, e = e->next) {
+		g = D_POINTER (pr_type_t, &elements[i]);
+		c = constant_expr (e);
+		if (c->type == ex_block) {
+			if (!is_array (elements[i].type)
+				&& !is_struct (elements[i].type)) {
+				error (e, "type mismatch in initializer");
+				continue;
+			}
+			init_elements (&elements[i], c);
+		} else if (c->type == ex_value) {
+			if (c->e.value.type == ev_integer
+				&& elements[i].type->type == ev_float)
+				convert_int (c);
+			if (get_type (c) != elements[i].type) {
+				error (e, "type mismatch in initializer");
+				continue;
+			}
+		} else {
+			if (!def->local || !local_expr) {
+				error (e, "non-constant initializer");
+				continue;
+			}
+		}
+		if (def->local && local_expr) {
+			int         offset = elements[i].offset;
+			type_t     *type = elements[i].type;
+			expr_t     *ptr = new_pointer_expr (offset, type, def);
+
+			append_expr (local_expr, assign_expr (unary_expr ('.', ptr), c));
+		} else {
+			if (c->e.value.type == ev_string) {
+				EMIT_STRING (def->space, g->string_var,
+							 c->e.value.v.string_val);
+			} else {
+				memcpy (g, &c->e, type_size (get_type (c)) * 4);
+			}
+		}
+	}
+	free (elements);
+}
+
 void
 initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 				storage_class_t storage)
@@ -210,7 +311,7 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 	sym->type = type;
 	if (!sym->table)
 		symtab_addsymbol (current_symtab, sym);
-	if (storage == st_global && init) {
+	if (storage == st_global && init && is_scalar (type)) {
 		sym->sy_type = sy_const;
 		memset (&sym->s.value, 0, sizeof (&sym->s.value));
 		if (init->type != ex_value) {	//FIXME arrays/structs
@@ -238,18 +339,23 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 		return;
 	if (init->type == ex_nil)
 		convert_nil (init, type);
-	if (!type_assignable (type, get_type (init))) {
-		error (init, "type mismatch in initializer");
-		return;
-	}
-	if (local_expr) {
-		append_expr (local_expr, assign_expr (new_symbol_expr (sym), init));
+	if (init->type == ex_block) {
+		init_elements (sym->s.def, init);
 	} else {
-		if (init->type != ex_value) {	//FIXME arrays/structs
-			error (0, "non-constant initializier");
+		if (!type_assignable (type, get_type (init))) {
+			error (init, "type mismatch in initializer");
 			return;
 		}
-		memcpy (D_POINTER (void, sym->s.def), &init->e.value,
-				type_size (type) * sizeof (pr_type_t));
+		if (local_expr) {
+			append_expr (local_expr,
+						 assign_expr (new_symbol_expr (sym), init));
+		} else {
+			if (init->type != ex_value) {	//FIXME enum etc
+				error (0, "non-constant initializier");
+				return;
+			}
+			memcpy (D_POINTER (void, sym->s.def), &init->e.value,
+					type_size (type) * sizeof (pr_type_t));
+		}
 	}
 }

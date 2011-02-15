@@ -2497,12 +2497,6 @@ cast_expr (type_t *type, expr_t *e)
 	return c;
 }
 
-void
-init_elements (def_t *def, expr_t *eles)
-{
-	//FIXME
-}
-
 expr_t *
 selector_expr (keywordarg_t *selector)
 {

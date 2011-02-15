@@ -564,8 +564,6 @@ expr_t *build_state_expr (expr_t *frame, expr_t *think, expr_t *step);
 expr_t *assign_expr (expr_t *e1, expr_t *e2);
 expr_t *cast_expr (struct type_s *t, expr_t *e);
 
-void init_elements (struct def_s *def, expr_t *eles);
-
 const char *get_op_string (int op);
 
 struct keywordarg_s;
