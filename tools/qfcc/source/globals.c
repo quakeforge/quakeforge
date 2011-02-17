@@ -205,23 +205,23 @@ dump_functions (progs_t *pr)
 	}
 }
 
-static const char *
-flags_string (pr_uint_t flags)
-{
-	static dstring_t *str;
-	if (!str)
-		str = dstring_newstr ();
-	dstring_clearstr (str);
-	dstring_appendstr (str, (flags & QFOD_INITIALIZED) ? "I" : "-");
-	dstring_appendstr (str, (flags & QFOD_CONSTANT)    ? "C" : "-");
-	dstring_appendstr (str, (flags & QFOD_ABSOLUTE)    ? "A" : "-");
-	dstring_appendstr (str, (flags & QFOD_GLOBAL)      ? "G" : "-");
-	dstring_appendstr (str, (flags & QFOD_EXTERNAL)    ? "E" : "-");
-	dstring_appendstr (str, (flags & QFOD_LOCAL)       ? "L" : "-");
-	dstring_appendstr (str, (flags & QFOD_SYSTEM)      ? "S" : "-");
-	dstring_appendstr (str, (flags & QFOD_NOSAVE)      ? "N" : "-");
-	return str->str;
-}
+//static const char *
+//flags_string (pr_uint_t flags)
+//{
+//	static dstring_t *str;
+//	if (!str)
+//		str = dstring_newstr ();
+//	dstring_clearstr (str);
+//	dstring_appendstr (str, (flags & QFOD_INITIALIZED) ? "I" : "-");
+//	dstring_appendstr (str, (flags & QFOD_CONSTANT)    ? "C" : "-");
+//	dstring_appendstr (str, (flags & QFOD_ABSOLUTE)    ? "A" : "-");
+//	dstring_appendstr (str, (flags & QFOD_GLOBAL)      ? "G" : "-");
+//	dstring_appendstr (str, (flags & QFOD_EXTERNAL)    ? "E" : "-");
+//	dstring_appendstr (str, (flags & QFOD_LOCAL)       ? "L" : "-");
+//	dstring_appendstr (str, (flags & QFOD_SYSTEM)      ? "S" : "-");
+//	dstring_appendstr (str, (flags & QFOD_NOSAVE)      ? "N" : "-");
+//	return str->str;
+//}
 
 void
 qfo_globals (qfo_t *qfo)
@@ -231,11 +231,11 @@ qfo_globals (qfo_t *qfo)
 
 	for (i = 0; i < qfo->num_defs; i++) {
 		def = &qfo->defs[i];
-		printf ("%-5d %-5d %s %s %s", i, def->ofs, flags_string (def->flags),
-				QFO_GETSTR (qfo, def->name),
-				QFO_TYPESTR (qfo, def->full_type));
-		if (!(def->flags & QFOD_EXTERNAL))
-			printf (" %d", qfo->data[def->ofs].integer_var);
+//		printf ("%-5d %-5d %s %s %s", i, def->offset, flags_string (def->flags),
+//				QFO_GETSTR (qfo, def->name),
+//				QFO_TYPESTR (qfo, def->full_type));
+//		if (!(def->flags & QFOD_EXTERNAL))
+//			printf (" %d", qfo->data[def->offset].integer_var);
 		puts ("");
 	}
 }
@@ -264,59 +264,59 @@ qfo_relocs (qfo_t *qfo)
 			case rel_op_b_def:
 			case rel_op_c_def:
 				def = qfo->defs + reloc->def;
-				printf (" op.%c@%d def@%d %s",
-						reloc->type - rel_op_a_def + 'a',
-						reloc->ofs, def->ofs, QFO_GETSTR (qfo, def->name));
+//				printf (" op.%c@%d def@%d %s",
+//						reloc->type - rel_op_a_def + 'a',
+//						reloc->offset, def->offset, QFO_GETSTR (qfo, def->name));
 				break;
 			case rel_op_a_op:
 			case rel_op_b_op:
 			case rel_op_c_op:
 				printf (" op.%c op@%d", reloc->type - rel_op_a_def + 'a',
-						reloc->ofs);
+						reloc->offset);
 				break;
 			case rel_def_op:
-				printf (" def@%d op@%d", reloc->ofs, reloc->def);
+				printf (" def@%d op@%d", reloc->offset, reloc->def);
 				break;
 			case rel_def_def:
 				def = qfo->defs + reloc->def;
-				printf (" def@%d def@%d %s", reloc->ofs, reloc->def,
-						QFO_GETSTR (qfo, def->name));
+//				printf (" def@%d def@%d %s", reloc->offset, reloc->def,
+//						QFO_GETSTR (qfo, def->name));
 				break;
 			case rel_def_func:
 				func = qfo->funcs + reloc->def;
-				printf (" def@%d func@%d %s", reloc->ofs, reloc->def,
-						QFO_GETSTR (qfo, func->name));
+//				printf (" def@%d func@%d %s", reloc->offset, reloc->def,
+//						QFO_GETSTR (qfo, func->name));
 				break;
 			case rel_def_string:
-				printf (" def@%d string:`%s'", reloc->ofs,
-						QFO_GSTRING (qfo, reloc->ofs));
+//				printf (" def@%d string:`%s'", reloc->offset,
+//						QFO_GSTRING (qfo, reloc->offset));
 				break;
 			case rel_def_field:
 				def = qfo->defs + reloc->def;
-				printf (" def@%d def@%d %s", reloc->ofs, reloc->def,
-						QFO_GETSTR (qfo, def->name));
+//				printf (" def@%d def@%d %s", reloc->offset, reloc->def,
+//						QFO_GETSTR (qfo, def->name));
 				break;
 			case rel_op_a_def_ofs:
 			case rel_op_b_def_ofs:
 			case rel_op_c_def_ofs:
 				def = qfo->defs + reloc->def;
-				printf (" op.%c@%d def@%d %s",
-						reloc->type - rel_op_a_def_ofs + 'a',
-						reloc->ofs, def->ofs, QFO_GETSTR (qfo, def->name));
+//				printf (" op.%c@%d def@%d %s",
+//						reloc->type - rel_op_a_def_ofs + 'a',
+//						reloc->offset, def->offset, QFO_GETSTR (qfo, def->name));
 				break;
 			case rel_def_def_ofs:
 				def = qfo->defs + reloc->def;
-				printf (" def@%d def@%d+%d %s+%d", reloc->ofs, reloc->def,
-						qfo->data[reloc->ofs].integer_var,
-						QFO_GETSTR (qfo, def->name),
-						qfo->data[reloc->ofs].integer_var);
+//				printf (" def@%d def@%d+%d %s+%d", reloc->offset, reloc->def,
+//						qfo->data[reloc->offset].integer_var,
+//						QFO_GETSTR (qfo, def->name),
+//						qfo->data[reloc->offset].integer_var);
 				break;
 			case rel_def_field_ofs:
 				def = qfo->defs + reloc->def;
-				printf (" def@%d def@%d+%d %s+%d", reloc->ofs, reloc->def,
-						qfo->data[reloc->ofs].integer_var,
-						QFO_GETSTR (qfo, def->name),
-						qfo->data[reloc->ofs].integer_var);
+//				printf (" def@%d def@%d+%d %s+%d", reloc->offset, reloc->def,
+//						qfo->data[reloc->offset].integer_var,
+//						QFO_GETSTR (qfo, def->name),
+//						qfo->data[reloc->offset].integer_var);
 				break;
 		}
 		if (def && def->flags & QFOD_EXTERNAL)
@@ -341,12 +341,12 @@ qfo_functions (qfo_t *qfo)
 	for (i = 0; i < qfo->num_funcs; i++) {
 		func = &qfo->funcs[i];
 		def = &qfo->defs[func->def];
-		printf ("%-5d %-5d %s %s %d %s", i, def->ofs,
-				flags_string (def->flags),
-				QFO_GETSTR (qfo, func->name), func->def,
-				QFO_GETSTR (qfo, def->name));
-		if (!(def->flags & QFOD_EXTERNAL))
-			printf (" %d", qfo->data[def->ofs].integer_var);
+//		printf ("%-5d %-5d %s %s %d %s", i, def->offset,
+//				flags_string (def->flags),
+//				QFO_GETSTR (qfo, func->name), func->def,
+//				QFO_GETSTR (qfo, def->name));
+//		if (!(def->flags & QFOD_EXTERNAL))
+//			printf (" %d", qfo->data[def->offset].integer_var);
 		if (func->code)
 			printf (" @ %x", func->code);
 		else

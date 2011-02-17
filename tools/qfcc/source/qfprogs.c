@@ -127,9 +127,9 @@ static int      num_edicts;
 static int      reserved_edicts = 1;
 static progs_t  pr;
 
-static pr_debug_header_t debug;
+//static pr_debug_header_t debug;
 static qfo_t   *qfo;
-static dprograms_t progs;
+//static dprograms_t progs;
 
 static const char *source_path = "";
 
@@ -252,7 +252,7 @@ init_qf (void)
 	func_tab = Hash_NewTable (1021, 0, 0, 0);
 	Hash_SetHashCompare (func_tab, func_hash, func_compare);
 }
-
+/*
 static etype_t
 get_auxtype (const char *type)
 {
@@ -455,7 +455,7 @@ convert_qfo (void)
 		pr.debug = &debug;
 
 }
-
+*/
 static int
 load_progs (const char *name)
 {
@@ -480,7 +480,7 @@ load_progs (const char *name)
 		if (!qfo)
 			return 0;
 
-		convert_qfo ();
+//		convert_qfo ();
 	} else {
 		pr.progs_name = name;
 		PR_LoadProgsFile (&pr, file, size, 1, 0);

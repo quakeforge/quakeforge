@@ -164,7 +164,7 @@ Xgroup_add(reloc);	// relocgroup_add_relocs
 Xgroup_add(func);	// funcgroup_add_funcs
 
 static void def_error (qfo_def_t *def, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
-static void def_warning (qfo_def_t *def, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+//static void def_warning (qfo_def_t *def, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
 static defref_t *
 get_defref (qfo_def_t *def, defgroup_t *defgroup)
@@ -195,10 +195,10 @@ defs_get_key (void *_defref, void *_defgroup)
 static void
 add_strings (qfo_t *qfo)
 {
-	int         i;
+//	int         i;
 
-	for (i = 0; i < qfo->strings_size; i += strlen (qfo->strings + i) + 1)
-		strpool_addstr (strings, qfo->strings + i);
+//	for (i = 0; i < qfo->strings_size; i += strlen (qfo->strings + i) + 1)
+//		strpool_addstr (strings, qfo->strings + i);
 }
 
 static void
@@ -218,7 +218,7 @@ add_relocs (qfo_t *qfo)
 			case rel_op_a_def_ofs:
 			case rel_op_b_def_ofs:
 			case rel_op_c_def_ofs:
-				reloc->ofs += code_base;
+				reloc->offset += code_base;
 				break;
 			case rel_op_a_op:
 			case rel_op_b_op:
@@ -226,40 +226,40 @@ add_relocs (qfo_t *qfo)
 				// these are relative and fixed up before the .qfo is written
 				break;
 			case rel_def_op:
-				reloc->ofs += data_base;
+				reloc->offset += data_base;
 				reloc->def += code_base;
 				break;
 			case rel_def_func:
-				reloc->ofs += data_base;
+				reloc->offset += data_base;
 				reloc->def += func_base;
 				break;
 			case rel_def_def:
 			case rel_def_def_ofs:
-				reloc->ofs += data_base;
+				reloc->offset += data_base;
 				break;
 			case rel_def_string:
-				reloc->ofs += data_base;
-				DATA (reloc->ofs)->string_var =
-					strpool_addstr (strings,
-							qfo->strings + DATA (reloc->ofs)->string_var);
+				reloc->offset += data_base;
+//				DATA (reloc->offset)->string_var =
+//					strpool_addstr (strings,
+//							qfo->strings + DATA (reloc->offset)->string_var);
 				break;
 			case rel_def_field:
 			case rel_def_field_ofs:
 				//FIXME more?
-				reloc->ofs += data_base;
+				reloc->offset += data_base;
 				break;
 		}
 	}
 }
 
-static void
-linker_type_mismatch (qfo_def_t *def, qfo_def_t *d)
-{
-	def_error (def, "type mismatch for `%s' `%s'",
-			   STRING (def->name),
-			   TYPE_STRING (def->full_type));
-	def_error (d, "previous definition `%s'", TYPE_STRING (d->full_type));
-}
+//static void
+//linker_type_mismatch (qfo_def_t *def, qfo_def_t *d)
+//{
+//	def_error (def, "type mismatch for `%s' `%s'",
+//			   STRING (def->name),
+//			   TYPE_STRING (def->full_type));
+//	def_error (d, "previous definition `%s'", TYPE_STRING (d->full_type));
+//}
 
 static void
 process_def (qfo_def_t *def)
@@ -272,11 +272,11 @@ process_def (qfo_def_t *def)
 			return;
 		if ((_d = Hash_Find (defined_defs, STRING (def->name)))) {
 			d = deref_def (_d, &global_defs);
-			if (d->full_type != def->full_type) {
-				linker_type_mismatch (def, d);
-				return;
-			}
-			def->ofs = d->ofs;
+//			if (d->full_type != def->full_type) {
+//				linker_type_mismatch (def, d);
+//				return;
+//			}
+			def->offset = d->offset;
 			def->flags = d->flags;
 			Hash_Add (defined_defs, get_defref (def, &global_defs));
 		} else {
@@ -286,25 +286,25 @@ process_def (qfo_def_t *def)
 		if ((_d = Hash_Find (defined_defs, STRING (def->name)))) {
 			d = deref_def (_d, &global_defs);
 			if (d->flags & QFOD_SYSTEM) {
-				int         i, size;
+//				int         i, size;
 
-				if (d->full_type != def->full_type) {
-					linker_type_mismatch (def, d);
-					return;
-				}
+//				if (d->full_type != def->full_type) {
+//					linker_type_mismatch (def, d);
+//					return;
+//				}
 				d->flags &= ~QFOD_SYSTEM;
 				d->flags |= def->flags & (QFOD_INITIALIZED | QFOD_CONSTANT);
-				size = type_size (parse_type (TYPE_STRING (d->full_type)));
-				memcpy (DATA (d->ofs), DATA (def->ofs),
-						size * sizeof (pr_type_t));
-				for (i = 0; i < relocs.num_relocs; i++) {
-					qfo_reloc_t *reloc = relocs.relocs + i;
-					if (reloc->type >= rel_def_def
-						&& reloc->type <= rel_def_field)
-						if (reloc->ofs == def->ofs)
-							reloc->ofs = d->ofs;
-				}
-				def->ofs = d->ofs;
+//				size = type_size (parse_type (TYPE_STRING (d->full_type)));
+//				memcpy (DATA (d->offset), DATA (def->offset),
+//						size * sizeof (pr_type_t));
+//				for (i = 0; i < relocs.num_relocs; i++) {
+//					qfo_reloc_t *reloc = relocs.relocs + i;
+//					if (reloc->type >= rel_def_def
+//						&& reloc->type <= rel_def_field)
+//						if (reloc->offset == def->offset)
+//							reloc->offset = d->offset;
+//				}
+				def->offset = d->offset;
 				def->flags = d->flags;
 			} else {
 				def_error (def, "%s redefined", STRING (def->name));
@@ -314,11 +314,11 @@ process_def (qfo_def_t *def)
 		while ((_d = Hash_Del (extern_defs, STRING (def->name)))) {
 			Hash_Add (defined_defs, _d);
 			d = deref_def (_d, &global_defs);
-			if (d->full_type != def->full_type) {
-				linker_type_mismatch (def, d);
-				continue;
-			}
-			d->ofs = def->ofs;
+//			if (d->full_type != def->full_type) {
+//				linker_type_mismatch (def, d);
+//				continue;
+//			}
+			d->offset = def->offset;
 			d->flags = def->flags;
 		}
 		Hash_Add (defined_defs, get_defref (def, &global_defs));
@@ -330,7 +330,7 @@ process_field (qfo_def_t *def)
 {
 	defref_t   *_d;
 	qfo_def_t  *field_def;
-	pr_type_t  *var = DATA (def->ofs);
+	pr_type_t  *var = DATA (def->offset);
 
 	if (strcmp (STRING (def->name), ".imm")) { //FIXME better test
 		if ((_d = Hash_Find (field_defs, STRING (def->name)))) {
@@ -341,7 +341,7 @@ process_field (qfo_def_t *def)
 	}
 	defgroup_add_defs (&fields, def, 1);
 	field_def = fields.defs + fields.num_defs - 1;
-	field_def->ofs = var->integer_var + entity_base;
+	field_def->offset = var->integer_var + entity_base;
 	Hash_Add (field_defs, get_defref (field_def, &fields));
 }
 
@@ -350,12 +350,12 @@ fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
 {
 	pr_int_t    i;
 	qfo_reloc_t *reloc;
-	qfo_func_t *func;
-	const char *full_type = QFO_TYPESTR (qfo, def->full_type);
-	const char *name = QFO_GETSTR (qfo, def->name);
+//	qfo_func_t *func;
+//	const char *full_type = QFO_TYPESTR (qfo, def->full_type);
+//	const char *name = QFO_GETSTR (qfo, def->name);
 
-	def->full_type = strpool_addstr (type_strings, full_type);
-	def->name = strpool_addstr (strings, name);
+//	def->full_type = strpool_addstr (type_strings, full_type);
+//	def->name = strpool_addstr (strings, name);
 
 	def->relocs += reloc_base;
 	for (i = 0, reloc = relocs.relocs + def->relocs;
@@ -363,28 +363,28 @@ fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
 		 i++, reloc++)
 		reloc->def = def_num;
 
-	def->file = strpool_addstr (strings, qfo->strings + def->file);
+//	def->file = strpool_addstr (strings, qfo->strings + def->file);
 
 	if ((def->flags & (QFOD_LOCAL | QFOD_ABSOLUTE)))
 		return;
 	if (!(def->flags & QFOD_EXTERNAL)) {
-		def->ofs += data_base;
-		if (def->flags & QFOD_INITIALIZED) {
-			pr_type_t  *var = DATA (def->ofs);
-			switch (def->basic_type) {
-				case ev_func:
-					if (var->func_var) {
-						func = funcs.funcs + var->func_var - 1;
-						func->def = def_num;
-					}
-					break;
-				case ev_field:
-					process_field (def);
-					break;
-				default:
-					break;
-			}
-		}
+		def->offset += data_base;
+//		if (def->flags & QFOD_INITIALIZED) {
+//			pr_type_t  *var = DATA (def->offset);
+//			switch (def->basic_type) {
+//				case ev_func:
+//					if (var->func_var) {
+//						func = funcs.funcs + var->func_var - 1;
+//						func->def = def_num;
+//					}
+//					break;
+//				case ev_field:
+//					process_field (def);
+//					break;
+//				default:
+//					break;
+//			}
+//		}
 	}
 	process_def (def);
 }
@@ -421,8 +421,8 @@ add_funcs (qfo_t *qfo)
 	funcgroup_add_funcs (&funcs, qfo->funcs, qfo->num_funcs);
 	for (i = func_base; i < funcs.num_funcs; i++) {
 		qfo_func_t *func = funcs.funcs + i;
-		func->name = strpool_addstr (strings, qfo->strings + func->name);
-		func->file = strpool_addstr (strings, qfo->strings + func->file);
+//		func->name = strpool_addstr (strings, qfo->strings + func->name);
+//		func->file = strpool_addstr (strings, qfo->strings + func->file);
 		if (func->code)
 			func->code += code_base;
 		if (func->num_local_defs) {
@@ -469,7 +469,7 @@ fixup_relocs (void)
 	defref_t   *_d;
 	qfo_reloc_t *reloc;
 	qfo_def_t  *def, *field_def;
-	qfo_func_t *func;
+//	qfo_func_t *func;
 	int         i;
 
 	for (i = 0; i < final_relocs.num_relocs; i++) {
@@ -506,13 +506,13 @@ fixup_relocs (void)
 			case rel_none:
 				break;
 			case rel_op_a_def:
-				code->code[reloc->ofs].a = def->ofs;
+				code->code[reloc->offset].a = def->offset;
 				break;
 			case rel_op_b_def:
-				code->code[reloc->ofs].b = def->ofs;
+				code->code[reloc->offset].b = def->offset;
 				break;
 			case rel_op_c_def:
-				code->code[reloc->ofs].c = def->ofs;
+				code->code[reloc->offset].c = def->offset;
 				break;
 			case rel_op_a_op:
 			case rel_op_b_op:
@@ -524,13 +524,13 @@ fixup_relocs (void)
 			case rel_def_field_ofs:
 				break;
 			case rel_def_op:
-				DATA (reloc->ofs)->integer_var = reloc->def;
+				DATA (reloc->offset)->integer_var = reloc->def;
 				break;
 			case rel_def_def:
-				DATA (reloc->ofs)->integer_var = def->ofs;
+				DATA (reloc->offset)->integer_var = def->offset;
 				break;
 			case rel_def_func:
-				DATA (reloc->ofs)->func_var = reloc->def + 1;
+				DATA (reloc->offset)->func_var = reloc->def + 1;
 				break;
 			case rel_def_string:
 				break;
@@ -538,22 +538,22 @@ fixup_relocs (void)
 				_d = Hash_Find (field_defs, STRING (def->name));
 				if (_d) {		// null if not initialized
 					field_def = deref_def (_d, &fields);
-					DATA (reloc->ofs)->integer_var = field_def->ofs;
+					DATA (reloc->offset)->integer_var = field_def->offset;
 				}
 				break;
 		}
 	}
 	for (i = 0; i < defs.num_defs; i++) {
 		def = defs.defs + i;
-		if (def->basic_type == ev_func
-			&& (def->flags & QFOD_INITIALIZED)
-			&& !(def->flags & (QFOD_LOCAL | QFOD_EXTERNAL | QFOD_ABSOLUTE))) {
-			pr_type_t  *var = DATA (def->ofs);
-			if (var->func_var) {
-				func = funcs.funcs + var->func_var - 1;
-				func->def = i;
-			}
-		}
+//		if (def->basic_type == ev_func
+//			&& (def->flags & QFOD_INITIALIZED)
+//			&& !(def->flags & (QFOD_LOCAL | QFOD_EXTERNAL | QFOD_ABSOLUTE))) {
+//			pr_type_t  *var = DATA (def->offset);
+//			if (var->func_var) {
+//				func = funcs.funcs + var->func_var - 1;
+//				func->def = i;
+//			}
+//		}
 	}
 }
 
@@ -574,15 +574,15 @@ move_def (hashtab_t *deftab, qfo_def_t *d)
 		relocs.relocs[d->relocs + j].type = rel_none;
 		final_relocs.relocs[def->relocs + j].def = def_num;
 	}
-	if ((d->flags & QFOD_CONSTANT) && d->basic_type == ev_func) {
-		qfo_func_t *func;
-		pr_type_t  *var = DATA (d->ofs);
+//	if ((d->flags & QFOD_CONSTANT) && d->basic_type == ev_func) {
+//		qfo_func_t *func;
+//		pr_type_t  *var = DATA (d->offset);
 
-		if (var->func_var) {
-			func = funcs.funcs + var->func_var - 1;
-			func->def = def_num;
-		}
-	}
+//		if (var->func_var) {
+//			func = funcs.funcs + var->func_var - 1;
+//			func->def = def_num;
+//		}
+//	}
 	if (deftab) {
 		while ((_d = Hash_Del (deftab, STRING (def->name)))) {
 			int         def_relocs;
@@ -658,10 +658,10 @@ define_def (const char *name, etype_t basic_type, const char *full_type,
 
 	memset (&d, 0, sizeof (d));
 
-	d.basic_type = basic_type;
-	d.full_type = strpool_addstr (type_strings, full_type);
+//	d.basic_type = basic_type;
+//	d.full_type = strpool_addstr (type_strings, full_type);
 	d.name = strpool_addstr (strings, name);
-	d.ofs = data->size;
+	d.offset = data->size;
 	if (basic_type == ev_field) {
 		d.relocs = relocs.num_relocs;
 		d.num_relocs = 1;
@@ -675,7 +675,7 @@ define_def (const char *name, etype_t basic_type, const char *full_type,
 	if (basic_type == ev_field) {
 		int         def_num = global_defs.num_defs - 1;
 		qfo_def_t  *def = global_defs.defs + def_num;
-		qfo_reloc_t rel = {def->ofs, rel_def_field, def_num};
+		qfo_reloc_t rel = {def->offset, rel_def_field, def_num};
 		relocgroup_add_relocs (&relocs, &rel, 1);
 		process_field (def);
 	}
@@ -726,10 +726,10 @@ linker_add_qfo (qfo_t *qfo)
 	line_base = lines.num_lines;
 	entity_base = entity->size;
 
-	codespace_addcode (code, qfo->code, qfo->code_size);
-	defspace_add_data (data, qfo->data, qfo->data_size);
-	defspace_add_data (far_data, qfo->far_data, qfo->far_data_size);
-	defspace_add_data (entity, 0, qfo->entity_fields);
+//	codespace_addcode (code, qfo->code, qfo->code_size);
+//	defspace_add_data (data, qfo->data, qfo->data_size);
+//	defspace_add_data (far_data, qfo->far_data, qfo->far_data_size);
+//	defspace_add_data (entity, 0, qfo->entity_fields);
 	add_strings (qfo);
 	add_relocs (qfo);
 	add_funcs (qfo);
@@ -807,17 +807,17 @@ linker_add_lib (const char *libname)
 				return 1;
 
 			for (j = 0; j < qfo->num_defs; j++) {
-				qfo_def_t  *def = qfo->defs + j;
-				if ((def->flags & QFOD_GLOBAL)
-					&& !(def->flags & QFOD_EXTERNAL)
-					&& Hash_Find (extern_defs, qfo->strings + def->name)) {
-					if (options.verbosity >= 2)
-						printf ("adding %s because of %s\n",
-								pack->files[i].name, qfo->strings + def->name);
-					linker_add_qfo (qfo);
-					did_something = 1;
-					break;
-				}
+//				qfo_def_t  *def = qfo->defs + j;
+//				if ((def->flags & QFOD_GLOBAL)
+//					&& !(def->flags & QFOD_EXTERNAL)
+//					&& Hash_Find (extern_defs, qfo->strings + def->name)) {
+//					if (options.verbosity >= 2)
+//						printf ("adding %s because of %s\n",
+//								pack->files[i].name, qfo->strings + def->name);
+//					linker_add_qfo (qfo);
+//					did_something = 1;
+//					break;
+//				}
 			}
 
 			qfo_delete (qfo);
@@ -844,14 +844,14 @@ undefined_def (qfo_def_t *def)
 			&& lines.lines) {
 			qfo_func_t *func = funcs.funcs;
 			qfo_func_t *best = func;
-			pr_int_t    best_dist = reloc->ofs - func->code;
+			pr_int_t    best_dist = reloc->offset - func->code;
 			pr_lineno_t *line;
 
 			while (best_dist && func - funcs.funcs < funcs.num_funcs) {
-				if (func->code <= reloc->ofs) {
-					if (best_dist < 0 || reloc->ofs - func->code < best_dist) {
+				if (func->code <= reloc->offset) {
+					if (best_dist < 0 || reloc->offset - func->code < best_dist) {
 						best = func;
-						best_dist = reloc->ofs - func->code;
+						best_dist = reloc->offset - func->code;
 					}
 				}
 				func++;
@@ -862,7 +862,7 @@ undefined_def (qfo_def_t *def)
 			if (!line->line
 				&& line->fa.func == (pr_uint_t) (best - funcs.funcs)) {
 				while (line - lines.lines < lines.num_lines - 1 && line[1].line
-					   && line[1].fa.addr <= (pr_uint_t) reloc->ofs)
+					   && line[1].fa.addr <= (pr_uint_t) reloc->offset)
 					line++;
 				line_def.line = line->line + best->line;
 			}
@@ -890,9 +890,9 @@ linker_finish (void)
 			if (strcmp (name, ".self") == 0 && !did_self) {
 				defref_t   *_d = Hash_Find (defined_defs, "self");
 				if (_d) {
-					qfo_def_t  *d = deref_def (_d, &global_defs);
-					if (d->basic_type == ev_entity)
-						def_warning (d, "@self and self used together");
+//					qfo_def_t  *d = deref_def (_d, &global_defs);
+//					if (d->basic_type == ev_entity)
+//						def_warning (d, "@self and self used together");
 				}
 				define_def (".self", ev_entity, "E", 0, 1, 0);
 				did_self = 1;
@@ -929,7 +929,7 @@ linker_finish (void)
 	qfo_add_funcs (qfo, funcs.funcs, funcs.num_funcs);
 	qfo_add_lines (qfo, lines.lines, lines.num_lines);
 	qfo_add_types (qfo, type_strings->strings, type_strings->size);
-	qfo->entity_fields = entity->size;
+//	qfo->entity_fields = entity->size;
 	return qfo;
 }
 
@@ -962,21 +962,21 @@ def_error (qfo_def_t *def, const char *fmt, ...)
 	error (0, "%s", string->str);
 }
 
-static void
-def_warning (qfo_def_t *def, const char *fmt, ...)
-{
-	va_list     args;
-	static dstring_t *string;
-
-	if (!string)
-		string = dstring_new ();
-
-	va_start (args, fmt);
-	dvsprintf (string, fmt, args);
-	va_end (args);
-
-	pr.source_file = def->file;
-	pr.source_line = def->line;
-	pr.strings = strings;
-	warning (0, "%s", string->str);
-}
+//static void
+//def_warning (qfo_def_t *def, const char *fmt, ...)
+//{
+//	va_list     args;
+//	static dstring_t *string;
+//
+//	if (!string)
+//		string = dstring_new ();
+//
+//	va_start (args, fmt);
+//	dvsprintf (string, fmt, args);
+//	va_end (args);
+//
+//	pr.source_file = def->file;
+//	pr.source_line = def->line;
+//	pr.strings = strings;
+//	warning (0, "%s", string->str);
+//}

@@ -62,28 +62,40 @@
 typedef struct qfo_header_s {
 	int8_t      qfo[4];			///< identifier string (includes nul) (#QFO)
 	pr_int_t    version;		///< QFO format version (#QFO_VERSION)
-	pr_int_t    code_size;		///< number of instructions in code section
-	pr_int_t    data_size;		///< number of words in data section
-	pr_int_t    far_data_size;	///< number of words in far data section
-	pr_int_t    strings_size;	///< number of chars in strings section
+	pr_int_t    num_spaces;
 	pr_int_t    num_relocs;		///< number of relocation records
 	pr_int_t    num_defs;		///< number of def records
 	pr_int_t    num_funcs;		///< number of function records
 	pr_int_t    num_lines;		///< number of line records
-	pr_int_t    types_size;		///< number of chars in type strings section
-	/** Number of entity field words defined by the object file. There is no
-		corresponding section in the object file.
-	*/
-	pr_int_t    entity_fields;
 } qfo_header_t;
+
+typedef enum qfos_type_e {
+	qfos_null,					///< null space. no data or defs. first in qfo
+	qfos_code,					///< progs code. dstatement_t data
+	qfos_data,					///< progs data. pr_type_t data
+	qfos_string,				///< strings. char data
+	qfos_entity,				///< entity field defs. no data
+	qfos_type,					///< type encodings
+} qfos_type_t;
+
+/**	Representation of a space in the object file.
+*/
+typedef struct qfo_space_s {
+	pr_int_t    type;			///< code, string, data, entity...
+	pr_int_t    defs;			///< index of first def
+	pr_int_t    num_defs;		///< not used for code or string spaces
+	pr_int_t    data;			///< byte offset in qfo
+	pr_int_t    data_size;		///< in elements. not used for entity spaces
+	pr_int_t    id;
+} qfo_space_t;
 
 /** Representation of a def in the object file.
 */
 typedef struct qfo_def_s {
-	etype_t     basic_type;		///< type of def as seen by the VM
-	string_t    full_type;		///< full type string, encoded by encode_type()
+	pr_int_t    type;			///< offset in type space
 	string_t    name;			///< def name
-	pr_int_t    ofs;			///< def offset (address)
+	pr_int_t	space;			///< index of space holding this def's data
+	pr_int_t    offset;			///< def offset (address)
 
 	pr_int_t    relocs;			///< index of first reloc record
 	pr_int_t    num_relocs;		///< number of reloc records
@@ -240,22 +252,31 @@ typedef struct qfo_func_s {
 	the referenced field def.
 */
 typedef struct qfo_reloc_s {
-	pr_int_t    ofs;			///< offset of the relocation
+	pr_int_t    space;			///< index of space holding data to be adjusted
+	pr_int_t    offset;			///< offset of the relocation
 	pr_int_t    type;			///< type of the relocation (::reloc_type)
 	pr_int_t    def;			///< "def" this relocation is for
 } qfo_reloc_t;
 
+/**	In-memory representation of a QFO space
+*/
+typedef struct qfo_mspace_s {
+	qfos_type_t type;
+	qfo_def_t  *defs;
+	int         num_defs;
+	union {
+		dstatement_t *code;
+		pr_type_t  *data;
+		char       *strings;
+	}           d;
+	int         id;
+} qfo_mspace_t;
+
 /** In-memory representation of a QFO object file.
 */
 typedef struct qfo_s {
-	dstatement_t *code;
-	int         code_size;
-	pr_type_t  *data;
-	int         data_size;
-	pr_type_t  *far_data;
-	int         far_data_size;
-	char       *strings;
-	int         strings_size;
+	qfo_space_t *spaces;
+	int         num_spaces;
 	qfo_reloc_t *relocs;
 	int         num_relocs;
 	qfo_def_t  *defs;
@@ -264,9 +285,6 @@ typedef struct qfo_s {
 	int         num_funcs;
 	pr_lineno_t *lines;
 	int         num_lines;
-	char       *types;
-	int         types_size;
-	int         entity_fields;
 } qfo_t;
 //@}
 
