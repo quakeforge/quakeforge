@@ -1554,7 +1554,7 @@ struct progs_s {
 	\return			C pointer represented by the parameter. 0 offset -> NULL
 */
 static inline pr_type_t *
-PR_GetPointer (progs_t *pr, pr_uint_t o)
+PR_GetPointer (progs_t *pr, pointer_t o)
 {
 	return o ? pr->pr_globals + o : 0;
 }
