@@ -75,6 +75,8 @@ typedef struct type_s {
 	} t;
 	struct type_s *next;
 	int         freeable;
+	const char *encoding;	///< Objective-QC encoding
+	struct def_s *type_def;	///< offset of qfo encodoing
 } type_t;
 
 typedef struct {

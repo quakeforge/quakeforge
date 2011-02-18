@@ -2,5 +2,5 @@ AUTOMAKE_OPTIONS= foreign
 
 EXTRA_DIST= class.h codespace.h cpp.h debug.h def.h emit.h expr.h \
 		function.h grab.h idstuff.h immediate.h linker.h method.h \
-		obj_file.h opcodes.h options.h qfcc.h qfprogs.h reloc.h strpool.h \
-		struct.h switch.h symtab.h type.h
+		obj_file.h obj_type.h opcodes.h options.h qfcc.h qfprogs.h reloc.h \
+		strpool.h struct.h switch.h symtab.h type.h

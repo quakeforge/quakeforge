@@ -1,0 +1,257 @@
+/*
+	obj_type.c
+
+	object file type encoding support
+
+	Copyright (C) 2011 Bill Currie <bill@taniwha.org>
+
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2011/02/18
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id$
+*/
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+#include <alloca.h>
+
+#include "compat.h"
+
+#include "class.h"
+#include "def.h"
+#include "defspace.h"
+#include "diagnostic.h"
+#include "emit.h"
+#include "immediate.h"
+#include "obj_type.h"
+#include "qfcc.h"
+#include "reloc.h"
+#include "symtab.h"
+
+typedef def_t *(*encode_f) (type_t *type);
+
+static int
+encoding_string (const char *string)
+{
+	int         str;
+
+	str = ReuseString (string);
+	return str;
+}
+
+static def_t *
+qfo_new_encoding (type_t *type, int size)
+{
+	qfot_type_t *enc;
+	def_t      *def;
+	def_t       dummy;
+	string_t    enc_str = encoding_string (type->encoding);
+
+	size += sizeof (qfot_type_t) - sizeof (enc->t);
+	size /= sizeof (pr_type_t);
+
+	def = new_def (type->encoding, 0, pr.type_data, st_static);
+	def->offset = defspace_new_loc (pr.type_data, size);
+
+	enc = D_POINTER (qfot_type_t, def);
+	enc->ty = type->ty;
+	enc->size = size;
+	enc->encoding = enc_str;
+	dummy.space = pr.type_data;
+	dummy.offset = POINTER_OFS (pr.type_data, &enc->encoding);
+	reloc_def_string (&dummy);
+	return def;
+}
+
+static def_t *
+qfo_encode_func (type_t *type)
+{
+	int         param_count;
+	int         size;
+	qfot_type_t *enc;
+	qfot_func_t *func;
+	def_t      *return_type_def;
+	def_t     **param_type_defs;
+	def_t      *def;
+	int         i;
+
+	param_count = type->t.func.num_params;
+	if (param_count < 0)
+		param_count = ~param_count;
+	param_type_defs = alloca (param_count * sizeof (def_t *));
+	return_type_def = qfo_encode_type (type->t.func.type);
+	for (i = 0; i < param_count; i++)
+		param_type_defs[i] = qfo_encode_type (type->t.func.param_types[i]);
+	size = field_offset (qfot_func_t, param_types[param_count]);
+
+	def = qfo_new_encoding (type, size);
+	enc = D_POINTER (qfot_type_t, def);
+	func = &enc->t.func;
+	EMIT_DEF (pr.type_data, func->return_type, return_type_def);
+	func->num_params = type->t.func.num_params;
+	for (i = 0; i < param_count; i++)
+		EMIT_DEF (pr.type_data, func->param_types[i], param_type_defs[i]);
+	return def;
+}
+
+static def_t *
+qfo_encode_ptrfld (type_t *type)
+{
+	qfot_type_t *enc;
+	def_t      *def;
+	def_t      *type_def;
+
+	type_def = qfo_encode_type (type->t.fldptr.type);
+	def = qfo_new_encoding (type, sizeof (enc->t.ptrfld));
+	enc = D_POINTER (qfot_type_t, def);
+	EMIT_DEF (pr.type_data, enc->t.ptrfld.type, type_def);
+	return def;
+}
+
+static def_t *
+qfo_encode_none (type_t *type)
+{
+	qfot_type_t *enc;
+	def_t      *def;
+
+	if (type->type == ev_func)
+		return qfo_encode_func (type);
+	else if (type->type == ev_pointer || type->type == ev_field)
+		return qfo_encode_ptrfld (type);
+
+	def = qfo_new_encoding (type, sizeof (enc->t.type));
+	enc = D_POINTER (qfot_type_t, def);
+	enc->t.type = type->type;
+	return def;
+}
+
+static def_t *
+qfo_encode_struct (type_t *type)
+{
+	sy_type_e   sy;
+	int         num_fields;
+	symbol_t   *sym;
+	qfot_type_t *enc;
+	qfot_struct_t *strct;
+	def_t      *def;
+	def_t     **field_types = &def;
+	int         i;
+	int         size;
+	int         offset;
+
+	sy = sy_var;
+	if (type->ty == ty_enum)
+		sy = sy_const;
+	for (num_fields = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {
+		if (sym->sy_type != sy)
+			continue;
+		num_fields++;
+	}
+	if (type->ty != ty_enum) {
+		field_types = alloca (num_fields * sizeof (def_t *));
+		for (i = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {
+			if (sym->sy_type != sy)
+				continue;
+			if (i == num_fields)
+				internal_error (0, "whoa, what happened?");
+			field_types[i++] = qfo_encode_type (sym->type);
+		}
+	}
+
+	size = field_offset (qfot_struct_t, fields[num_fields]);
+	def = qfo_new_encoding (type, size);
+	enc = D_POINTER (qfot_type_t, def);
+	strct = &enc->t.strct;
+	strct->tag = encoding_string (type->name);//FIXME reloc
+	strct->num_fields = num_fields;
+	for (i = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {
+		if (sym->sy_type != sy)
+			continue;
+		if (i == num_fields)
+			internal_error (0, "whoa, what happened?");
+		if (sym->sy_type == sy_const)
+			offset = sym->s.value.v.integer_val;
+		else
+			offset = sym->s.offset;
+		EMIT_DEF (pr.type_data, strct->fields[i].type, field_types[i]);
+		strct->fields[i].name = encoding_string (sym->name);//FIXME reloc
+		strct->fields[i].offset = offset;
+	}
+	return def;
+}
+
+static def_t *
+qfo_encode_array (type_t *type)
+{
+	qfot_type_t *enc;
+	def_t      *def;
+	def_t      *array_type_def;
+
+	array_type_def = qfo_encode_type (type->t.array.type);
+
+	def = qfo_new_encoding (type, sizeof (enc->t.array));
+	enc = D_POINTER (qfot_type_t, def);
+	EMIT_DEF (pr.type_data, enc->t.array.type, array_type_def);
+	enc->t.array.base = type->t.array.base;
+	enc->t.array.size = type->t.array.size;
+	return def;
+}
+
+static def_t *
+qfo_encode_class (type_t *type)
+{
+	qfot_type_t *enc;
+	def_t      *def;
+
+	def = qfo_new_encoding (type, sizeof (enc->t.class));
+	enc = D_POINTER (qfot_type_t, def);
+	EMIT_DEF (pr.type_data, enc->t.class, type->t.class->def);
+	return def;
+}
+
+def_t *
+qfo_encode_type (type_t *type)
+{
+	static encode_f funcs[] = {
+		qfo_encode_none,	// ty_none
+		qfo_encode_struct,	// ty_struct
+		qfo_encode_struct,	// ty_union
+		qfo_encode_struct,	// ty_enum
+		qfo_encode_array,	// ty_array
+		qfo_encode_class,	// ty_class
+	};
+
+	if (type->type_def)
+		return type->type_def;
+	if (type->ty < 0 || type->ty > ty_class)
+		internal_error (0, "bad type meta type");
+	type->type_def = funcs[type->ty] (type);
+	return type->type_def;
+}

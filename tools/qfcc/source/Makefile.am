@@ -55,8 +55,8 @@ common_src=\
 	class.c codespace.c constfold.c cpp.c debug.c def.c defspace.c \
 	diagnostic.c dot_expr.c dot_flow.c emit.c \
 	expr.c function.c grab.c idstuff.c immediate.c linker.c method.c \
-	obj_stub.c opcodes.c options.c qfcc.c reloc.c statements.c strpool.c \
-	struct.c switch.c symtab.c type.c
+	obj_stub.c obj_type.c opcodes.c options.c qfcc.c reloc.c statements.c \
+	strpool.c struct.c switch.c symtab.c type.c
 
 qfcc_SOURCES= qc-lex.l qc-parse.y $(common_src)
 qfcc_LDADD=			$(QFCC_LIBS)
