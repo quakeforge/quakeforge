@@ -476,8 +476,6 @@ print_type (type_t *type)
 	dstring_delete (str);
 }
 
-static void _encode_type (dstring_t *encoding, type_t *type, int level);
-
 const char *
 encode_params (type_t *type)
 {
@@ -490,7 +488,7 @@ encode_params (type_t *type)
 	else
 		count = type->t.func.num_params;
 	for (i = 0; i < count; i++)
-		_encode_type (encoding, type->t.func.param_types[i], 1);
+		encode_type (encoding, type->t.func.param_types[i]);
 	if (type->t.func.num_params < 0)
 		dasprintf (encoding, ".");
 
@@ -500,19 +498,7 @@ encode_params (type_t *type)
 }
 
 static void
-encode_struct_fields (dstring_t *encoding, symtab_t *strct, int level)
-{
-	symbol_t   *field;
-
-	for (field = strct->symbols; field; field = field->next) {
-		if (field->sy_type != sy_var)
-			continue;
-		_encode_type (encoding, field->type, level + 1);
-	}
-}
-
-static void
-encode_class (dstring_t *encoding, type_t *type, int level)
+encode_class (dstring_t *encoding, type_t *type)
 {
 	class_t    *class = type->t.class;
 	const char *name ="?";
@@ -523,45 +509,32 @@ encode_class (dstring_t *encoding, type_t *type, int level)
 }
 
 static void
-encode_struct (dstring_t *encoding, type_t *type, int level)
+encode_struct (dstring_t *encoding, type_t *type)
 {
-	symtab_t   *strct = type->t.symtab;
 	const char *name ="?";
 	char        su = ' ';
 
-	if (type->name)		// FIXME
+	if (type->name)
 		name = type->name;
 	if (type->ty == ty_union)
 		su = '-';
 	else
 		su = '=';
-	dasprintf (encoding, "{%s%c", name, su);
-	if (strct && level < 2)
-		encode_struct_fields (encoding, strct, level);
-	dasprintf (encoding, "}");
+	dasprintf (encoding, "{%s%c}", name, su);
 }
 
 static void
-encode_enum (dstring_t *encoding, type_t *type, int level)
+encode_enum (dstring_t *encoding, type_t *type)
 {
-	symtab_t   *enm = type->t.symtab;
-	symbol_t   *e;
 	const char *name ="?";
 
-	if (type->name)		// FIXME
+	if (type->name)
 		name = type->name;
-	dasprintf (encoding, "{%s#", name);
-	if (level < 2) {
-		for (e = enm->symbols; e; e = e->next) {
-			dasprintf (encoding, "%s=%d%s", e->name, e->s.value.v.integer_val,
-					   e->next ? "," : "");
-		}
-	}
-	dasprintf (encoding, "}");
+	dasprintf (encoding, "{%s#}", name);
 }
 
-static void
-_encode_type (dstring_t *encoding, type_t *type, int level)
+void
+encode_type (dstring_t *encoding, type_t *type)
 {
 	if (!type)
 		return;
@@ -583,11 +556,11 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 			break;
 		case ev_field:
 			dasprintf (encoding, "F");
-			_encode_type (encoding, type->t.fldptr.type, level + 1);
+			encode_type (encoding, type->t.fldptr.type);
 			break;
 		case ev_func:
 			dasprintf (encoding, "(");
-			_encode_type (encoding, type->t.func.type, level + 1);
+			encode_type (encoding, type->t.func.type);
 			dasprintf (encoding, "%s)", encode_params (type));
 			break;
 		case ev_pointer:
@@ -605,7 +578,7 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 			}
 			type = type->t.fldptr.type;
 			dasprintf (encoding, "^");
-			_encode_type (encoding, type, level + 1);
+			encode_type (encoding, type);
 			break;
 		case ev_quat:
 			dasprintf (encoding, "Q");
@@ -619,14 +592,14 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 		case ev_invalid:
 			switch (type->ty) {
 				case ty_class:
-					encode_class (encoding, type, level);
+					encode_class (encoding, type);
 					break;
 				case ty_enum:
-					encode_enum (encoding, type, level);
+					encode_enum (encoding, type);
 					break;
 				case ty_struct:
 				case ty_union:
-					encode_struct (encoding, type, level);
+					encode_struct (encoding, type);
 					break;
 				case ty_array:
 					dasprintf (encoding, "[");
@@ -634,7 +607,7 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 					if (type->t.array.base)
 						dasprintf (encoding, ":%d", type->t.array.base);
 					dasprintf (encoding, "=");
-					_encode_type (encoding, type->t.array.type, level + 1);
+					encode_type (encoding, type->t.array.type);
 					dasprintf (encoding, "]");
 					break;
 				case ty_none:
@@ -646,132 +619,6 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 			dasprintf (encoding, "?");
 			break;
 	}
-}
-
-void
-encode_type (dstring_t *encoding, type_t *type)
-{
-	_encode_type (encoding, type, 0);
-}
-
-static type_t *
-parse_struct (const char **str)
-{
-	//FIXME
-	dstring_t  *name;
-	const char *s;
-
-	name = dstring_newstr ();
-	for (s = *str; *s && strchr ("=-@#}", *s); s++)
-		;
-	if (!*s)
-		return 0;
-	dstring_appendsubstr (name, *str, s - *str);
-	*str = s;
-	switch (*(*str)++) {
-		case '=':
-			break;
-		case '-':
-			break;
-		case '@':
-			break;
-		case '#':
-			break;
-	}
-	return 0;
-}
-
-static type_t *
-_parse_type (const char **str)
-{
-	type_t      new;
-
-	memset (&new, 0, sizeof (new));
-	switch (*(*str)++) {
-		case 'v':
-			return &type_void;
-		case '*':
-			return &type_string;
-		case 'f':
-			return &type_float;
-		case 'V':
-			return &type_vector;
-		case 'E':
-			return &type_entity;
-		case 'F':
-			return field_type (_parse_type (str));
-		case '(':
-			new.type = ev_func;
-			new.t.func.type = _parse_type (str);
-			while (**str && **str != ')' && **str != '.')
-				new.t.func.param_types[new.t.func.num_params++] = _parse_type (str);
-			if (!**str)
-				return 0;
-			if (**str == '.') {
-				(*str)++;
-				new.t.func.num_params = -new.t.func.num_params - 1;
-			}
-			if (**str != ')')
-				return 0;
-			(*str)++;
-			return find_type (&new);
-		case '@':
-			return &type_id;
-		case '#':
-			return &type_ClassPtr;
-		case ':':
-			return &type_SEL;
-		case '^':
-			return pointer_type (_parse_type (str));
-		case 'Q':
-			return &type_quaternion;
-		case 'i':
-			return &type_integer;
-		case 's':
-			return &type_short;
-		case '{':
-			return parse_struct (str);
-		case '[':
-			{
-				type_t     *type;
-				int         base = 0;
-				int         size = 0;
-
-				while (isdigit ((byte)**str)) {
-					size *= 10;
-					size += *(*str)++ - '0';
-				}
-				if (**str == ':') {
-					(*str)++;
-					while (isdigit ((byte)**str)) {
-						size *= 10;
-						size += *(*str)++ - '0';
-					}
-				}
-				if (**str != '=')
-					return 0;
-				(*str)++;
-				type = _parse_type (str);
-				if (**str != ']')
-					return 0;
-				(*str)++;
-				return based_array_type (type, base, base + size - 1);
-			}
-		default:
-			return 0;
-	}
-}
-
-type_t *
-parse_type (const char *str)
-{
-	const char *s = str;
-	type_t     *type = _parse_type (&s);
-	if (!type) {
-		error (0, "internal error: parsing type string `%s'", str);
-		abort ();
-	}
-	return type;
 }
 
 int

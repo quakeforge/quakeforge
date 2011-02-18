@@ -26,7 +26,6 @@ string_t ReuseString (const char *str) {return 0;}
 void encode_type (struct dstring_s *str, type_t *type) {}
 codespace_t *codespace_new (void) {return 0;}
 void codespace_addcode (codespace_t *codespace, struct dstatement_s *code, int size) {}
-type_t *parse_type (const char *str) {return 0;}
 int function_parms (function_t *f, byte *parm_size) {return 0;}
 pr_auxfunction_t *new_auxfunction (void) {return 0;}
 ddef_t *new_local (void) {return 0;}

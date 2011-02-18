@@ -145,7 +145,6 @@ void print_type_str (struct dstring_s *str, type_t *type);
 void print_type (type_t *type);
 const char *encode_params (type_t *type);
 void encode_type (struct dstring_s *encoding, type_t *type);
-type_t *parse_type (const char *str);
 int is_enum (type_t *type);
 int is_scalar (type_t *type);
 int is_math (type_t *type);
