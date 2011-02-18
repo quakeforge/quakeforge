@@ -55,9 +55,19 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "reloc.h"
 #include "symtab.h"
 
+#define ENC_DEF(dest,def) EMIT_DEF (pr.type_data, dest, def)
+#define ENC_STR(dest,str)									\
+	do {													\
+		def_t       loc;									\
+		loc.space = pr.type_data;							\
+		loc.offset = POINTER_OFS (pr.type_data, &(dest));	\
+		(dest) = encoding_string (str);						\
+		reloc_def_string (&loc);							\
+	} while (0)
+
 typedef def_t *(*encode_f) (type_t *type);
 
-static int
+static string_t
 encoding_string (const char *string)
 {
 	int         str;
@@ -71,8 +81,6 @@ qfo_new_encoding (type_t *type, int size)
 {
 	qfot_type_t *enc;
 	def_t      *def;
-	def_t       dummy;
-	string_t    enc_str = encoding_string (type->encoding);
 
 	size += sizeof (qfot_type_t) - sizeof (enc->t);
 	size /= sizeof (pr_type_t);
@@ -83,10 +91,7 @@ qfo_new_encoding (type_t *type, int size)
 	enc = D_POINTER (qfot_type_t, def);
 	enc->ty = type->ty;
 	enc->size = size;
-	enc->encoding = enc_str;
-	dummy.space = pr.type_data;
-	dummy.offset = POINTER_OFS (pr.type_data, &enc->encoding);
-	reloc_def_string (&dummy);
+	ENC_STR (enc->encoding, type->encoding);
 	return def;
 }
 
@@ -114,10 +119,10 @@ qfo_encode_func (type_t *type)
 	def = qfo_new_encoding (type, size);
 	enc = D_POINTER (qfot_type_t, def);
 	func = &enc->t.func;
-	EMIT_DEF (pr.type_data, func->return_type, return_type_def);
+	ENC_DEF (func->return_type, return_type_def);
 	func->num_params = type->t.func.num_params;
 	for (i = 0; i < param_count; i++)
-		EMIT_DEF (pr.type_data, func->param_types[i], param_type_defs[i]);
+		ENC_DEF (func->param_types[i], param_type_defs[i]);
 	return def;
 }
 
@@ -131,7 +136,7 @@ qfo_encode_ptrfld (type_t *type)
 	type_def = qfo_encode_type (type->t.fldptr.type);
 	def = qfo_new_encoding (type, sizeof (enc->t.ptrfld));
 	enc = D_POINTER (qfot_type_t, def);
-	EMIT_DEF (pr.type_data, enc->t.ptrfld.type, type_def);
+	ENC_DEF (enc->t.ptrfld.type, type_def);
 	return def;
 }
 
@@ -189,7 +194,7 @@ qfo_encode_struct (type_t *type)
 	def = qfo_new_encoding (type, size);
 	enc = D_POINTER (qfot_type_t, def);
 	strct = &enc->t.strct;
-	strct->tag = encoding_string (type->name);//FIXME reloc
+	ENC_STR (strct->tag, type->name);
 	strct->num_fields = num_fields;
 	for (i = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy)
@@ -200,8 +205,8 @@ qfo_encode_struct (type_t *type)
 			offset = sym->s.value.v.integer_val;
 		else
 			offset = sym->s.offset;
-		EMIT_DEF (pr.type_data, strct->fields[i].type, field_types[i]);
-		strct->fields[i].name = encoding_string (sym->name);//FIXME reloc
+		ENC_DEF (strct->fields[i].type, field_types[i]);
+		ENC_STR (strct->fields[i].name, sym->name);
 		strct->fields[i].offset = offset;
 	}
 	return def;
@@ -218,7 +223,7 @@ qfo_encode_array (type_t *type)
 
 	def = qfo_new_encoding (type, sizeof (enc->t.array));
 	enc = D_POINTER (qfot_type_t, def);
-	EMIT_DEF (pr.type_data, enc->t.array.type, array_type_def);
+	ENC_DEF (enc->t.array.type, array_type_def);
 	enc->t.array.base = type->t.array.base;
 	enc->t.array.size = type->t.array.size;
 	return def;
@@ -232,7 +237,7 @@ qfo_encode_class (type_t *type)
 
 	def = qfo_new_encoding (type, sizeof (enc->t.class));
 	enc = D_POINTER (qfot_type_t, def);
-	EMIT_DEF (pr.type_data, enc->t.class, type->t.class->def);
+	ENC_DEF (enc->t.class, type->t.class->def);
 	return def;
 }
 
