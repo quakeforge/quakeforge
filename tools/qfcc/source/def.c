@@ -102,16 +102,27 @@ new_def (const char *name, type_t *type, defspace_t *space,
 
 	ALLOC (16384, def_t, defs, def);
 
-	if (!space && storage != st_extern)
-		internal_error (0, "non-external def with no storage space");
-	if (!type)
-		internal_error (0, "attempt to create def '%s' with a null type",
-						name);
-
 	def->return_addr = __builtin_return_address (0);
 
 	def->name = name ? save_string (name) : 0;
 	def->type = type;
+
+	def->file = pr.source_file;
+	def->line = pr.source_line;
+
+	set_storage_bits (def, storage);
+
+	if (space) {
+		def->space = space;
+		*space->def_tail = def;
+		space->def_tail = &def->next;
+	}
+
+	if (!type)
+		return def;
+
+	if (!space && storage != st_extern)
+		internal_error (0, "non-external def with no storage space");
 
 	if (storage != st_extern) {
 		int         size = type_size (type);
@@ -121,16 +132,6 @@ new_def (const char *name, type_t *type, defspace_t *space,
 		}
 		def->offset = defspace_new_loc (space, size);
 	}
-	if (space) {
-		def->space = space;
-		*space->def_tail = def;
-		space->def_tail = &def->next;
-	}
-
-	def->file = pr.source_file;
-	def->line = pr.source_line;
-
-	set_storage_bits (def, storage);
 
 	return def;
 }
