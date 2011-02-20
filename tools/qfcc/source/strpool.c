@@ -274,7 +274,7 @@ make_string (char *token, char **end)
 					break;
 				case '>':
 					if (options.qccx_escapes)
-						c = 31;			// broun right end
+						c = 31;			// brown right end
 					else
 						mask = 0x00;
 					continue;

@@ -53,21 +53,23 @@ struct srcline_s {
 */
 typedef struct pr_info_s {
 	struct type_s	*types;
-	
-	struct strpool_s *strings;
-
-	struct codespace_s *code;
 
 	struct function_s *func_head;
 	struct function_s **func_tail;
 	dfunction_t		*functions;
 	int				num_functions;
 
+	struct strpool_s *strings;			///< progs string data
+	struct codespace_s *code;			///< progs code data
 	struct defspace_s *data;			///< combined near and far data
-	struct defspace_s *near_data;
-	struct defspace_s *far_data;
-	struct defspace_s *entity_data;
-	struct defspace_s *type_data;
+	struct defspace_s *near_data;		///< data directly addressable by
+										///< statments (address < 64k)
+	struct defspace_s *far_data;		///< data that might not be directly
+										///< addressabe by statements (address
+										///< possibly > 64k)
+	struct defspace_s *entity_data;		///< entity field address space. no
+										///< date is stored in the progs file
+	struct defspace_s *type_data;		///< encoded type information.
 
 	struct symtab_s *symtab;
 
