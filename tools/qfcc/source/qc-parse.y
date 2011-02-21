@@ -310,8 +310,14 @@ external_def
 	| optional_specifiers ';' { }
 	| optional_specifiers qc_func_params
 		{
+			type_t    **type;
 			$<spec>$ = $1;		// copy spec bits and storage
-			$<spec>$.type = parse_params ($1.type, $2), st_global, 0;
+			// .float () foo; is a field holding a function variable rather
+			// than a function that returns a float field.
+			for (type = &$<spec>$.type; *type && (*type)->type == ev_field;
+				 type = &(*type)->t.fldptr.type)
+				 ;
+			*type = parse_params (*type, $2);
 			$<spec>$.type = find_type ($<spec>$.type);
 			$<spec>$.params = $2;
 		}
@@ -447,10 +453,13 @@ type_specifier
 		{
 			$$ = make_spec ($1->type, current_storage, 0, 0);
 		}
-	// NOTE: fields don't parse the way they should
+	// NOTE: fields don't parse the way they should. This is not a problem
+	// for basic types, but functions need special treatment
 	| '.' type_specifier
 		{
-			$$ = make_spec (field_type ($2.type), current_storage, 0, 0);
+			// avoid find_type()
+			$$ = make_spec (field_type (0), current_storage, 0, 0);
+			$$.type = append_type ($$.type, $2.type);
 		}
 	;
 
@@ -704,15 +713,20 @@ qc_param_decl
 		}
 	| type qc_func_params NAME
 		{
-			$3->type = parse_params ($1.type, $2);
-			$3->type = find_type ($3->type);
+			type_t    **type;
+			// .float () foo; is a field holding a function variable rather
+			// than a function that returns a float field.
+			for (type = &$1.type; *type && (*type)->type == ev_field;
+				 type = &(*type)->t.fldptr.type)
+				 ;
+			*type = parse_params (*type, $2);
+			$3->type = find_type ($1.type);
 			$3->params = $2;
 			$$ = new_param (0, $3->type, $3->name);
 		}
 	| ELLIPSIS				{ $$ = new_param (0, 0, 0); }
 	;
 
-//FIXME type construction is inside-out
 abs_decl
 	: /* empty */			{ $$ = new_symbol (""); }
 	| '(' abs_decl ')' function_params
