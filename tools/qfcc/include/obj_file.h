@@ -46,17 +46,17 @@
 	\hideinitializer
 */
 #define QFO			"QFO"
-/** QFO object file format version (MMmmmRRR 0.001.005 (hex))
+/** QFO object file format version (MMmmmRRR 0.001.006 (hex))
 
 	\hideinitializer
 */
-#define QFO_VERSION 0x00001005
+#define QFO_VERSION 0x00001006
 
 /** Header block of QFO object files. The sections of the object file
 	come immediately after the header, and are always in the order given by
 	the struct.
 
-	All indeces to records are 0-based from the beginning of the relevant
+	All indices to records are 0-based from the beginning of the relevant
 	section.
 */
 typedef struct qfo_header_s {
@@ -83,19 +83,19 @@ typedef enum qfos_type_e {
 typedef struct qfo_space_s {
 	pr_int_t    type;			///< code, string, data, entity...
 	pr_int_t    defs;			///< index of first def
-	pr_int_t    num_defs;		///< not used for code or string spaces
+	pr_int_t    num_defs;		///< zero for code or string spaces
 	pr_int_t    data;			///< byte offset in qfo
-	pr_int_t    data_size;		///< in elements. not used for entity spaces
+	pr_int_t    data_size;		///< in elements. zero for entity spaces
 	pr_int_t    id;
 } qfo_space_t;
 
 /** Representation of a def in the object file.
 */
 typedef struct qfo_def_s {
-	pr_int_t    type;			///< offset in type space
+	pointer_t   type;			///< offset in type space
 	string_t    name;			///< def name
 	pr_int_t	space;			///< index of space holding this def's data
-	pr_int_t    offset;			///< def offset (address)
+	pointer_t   offset;			///< def offset (address)
 
 	pr_int_t    relocs;			///< index of first reloc record
 	pr_int_t    num_relocs;		///< number of reloc records
@@ -275,7 +275,7 @@ typedef struct qfo_mspace_s {
 /** In-memory representation of a QFO object file.
 */
 typedef struct qfo_s {
-	qfo_space_t *spaces;
+	qfo_mspace_t *spaces;
 	int         num_spaces;
 	qfo_reloc_t *relocs;
 	int         num_relocs;
