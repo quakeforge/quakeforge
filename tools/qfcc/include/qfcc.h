@@ -68,7 +68,7 @@ typedef struct pr_info_s {
 										///< addressabe by statements (address
 										///< possibly > 64k)
 	struct defspace_s *entity_data;		///< entity field address space. no
-										///< date is stored in the progs file
+										///< data is stored in the progs file
 	struct defspace_s *type_data;		///< encoded type information.
 
 	struct symtab_s *symtab;

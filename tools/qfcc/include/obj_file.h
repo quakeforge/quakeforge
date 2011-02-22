@@ -269,6 +269,7 @@ typedef struct qfo_mspace_s {
 		pr_type_t  *data;
 		char       *strings;
 	}           d;
+	int         data_size;
 	int         id;
 } qfo_mspace_t;
 

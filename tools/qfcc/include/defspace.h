@@ -44,6 +44,7 @@ typedef struct defspace_s {
 	int         size;
 	int         max_size;
 	int       (*grow) (struct defspace_s *space);
+	int         qfo_space;
 } defspace_t;
 
 defspace_t *new_defspace (void);

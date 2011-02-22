@@ -36,6 +36,7 @@ typedef struct codespace_s {
 	struct dstatement_s *code;
 	int         size;
 	int         max_size;
+	int         qfo_space;
 } codespace_t;
 
 codespace_t *codespace_new (void);

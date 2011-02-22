@@ -36,6 +36,7 @@ typedef struct strpool_s {
 	char       *strings;
 	struct hashtab_s *str_tab;
 	int         size, max_size;
+	int         qfo_space;
 } strpool_t;
 
 strpool_t *strpool_new (void);

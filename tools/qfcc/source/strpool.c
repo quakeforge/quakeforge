@@ -64,7 +64,7 @@ strpool_get_key (void *_str, void *_strpool)
 strpool_t *
 strpool_new (void)
 {
-	strpool_t  *strpool = malloc (sizeof (strpool_t));
+	strpool_t  *strpool = calloc (1, sizeof (strpool_t));
 
 	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool);
 	strpool->size = 1;
