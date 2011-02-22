@@ -53,6 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "diagnostic.h"
 #include "expr.h"
 #include "function.h"
+#include "obj_type.h"
 #include "options.h"
 #include "qfcc.h"
 #include "strpool.h"
@@ -116,6 +117,18 @@ chain_type (type_t *type)
 {
 	type->next = pr.types;
 	pr.types = type;
+	if (!type->encoding) {
+		static dstring_t *encoding;
+
+		if (!encoding)
+			encoding = dstring_newstr();
+		else
+			dstring_clearstr (encoding);
+		encode_type (encoding, type);
+		type->encoding = save_string (encoding->str);
+	}
+	if (!type->type_def)
+		type->type_def = qfo_encode_type (type);
 }
 
 type_t *

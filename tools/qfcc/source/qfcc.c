@@ -145,6 +145,8 @@ InitData (void)
 	pr.near_data->max_size = 65536;
 	pr.near_data->grow = 0;
 
+	pr.type_data = new_defspace ();
+
 	pr.symtab = new_symtab (0, stab_global);
 	pr.symtab->space = pr.near_data;
 

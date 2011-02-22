@@ -174,6 +174,10 @@ qfo_encode_struct (type_t *type)
 	sy = sy_var;
 	if (type->ty == ty_enum)
 		sy = sy_const;
+	if (!type->t.symtab) {
+		def = new_def (type->encoding, 0, pr.type_data, st_extern);
+		return def;
+	}
 	for (num_fields = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy)
 			continue;
@@ -253,6 +257,10 @@ qfo_encode_type (type_t *type)
 		qfo_encode_class,	// ty_class
 	};
 
+	if (type->type_def && type->type_def->external) {
+		free_def (type->type_def);
+		type->type_def = 0;
+	}
 	if (type->type_def)
 		return type->type_def;
 	if (type->ty < 0 || type->ty > ty_class)
