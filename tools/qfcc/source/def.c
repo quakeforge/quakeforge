@@ -284,8 +284,11 @@ static void
 init_field_def (def_t *def)
 {
 	type_t     *type = def->type->t.fldptr.type;
-	D_INT (def) = defspace_new_loc (pr.entity_data, type_size (type));
-	reloc_def_field (def, def);
+	def_t      *field_def;
+
+	field_def = new_def (def->name, type, pr.entity_data, st_global);
+	D_INT (def) = field_def->offset;
+	reloc_def_field (def, field_def);
 	def->constant = 1;
 	def->nosave = 1;
 }
