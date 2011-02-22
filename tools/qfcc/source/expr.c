@@ -162,6 +162,8 @@ get_type (expr_t *e)
 		case ex_value:
 			if (e->e.value.type == ev_pointer)
 				return pointer_type (e->e.value.v.pointer.type);
+			if (e->e.value.type == ev_field)
+				return field_type (e->e.value.v.pointer.type);
 			if (e->e.value.type == ev_integer
 				&& options.code.progsversion == PROG_ID_VERSION) {
 				e->e.value.type = ev_float;
@@ -1188,7 +1190,7 @@ convert_nil (expr_t *e, type_t *t)
 {
 	memset (&e->e.value, 0, sizeof (e->e.value));
 	e->e.value.type = low_level_type (t);
-	if (t->type == ev_pointer)
+	if (t->type == ev_pointer || t->type == ev_field)
 		e->e.value.v.pointer.type = t->t.fldptr.type;
 	e->type = ex_value;
 }
