@@ -48,10 +48,11 @@ typedef struct qfot_ptrfld_s {
 } qfot_ptrfld_t;
 
 typedef struct qfot_func_s {
-	pointer_t   return_type;		///< return type of function
-	pr_int_t    num_params;			///< ones compliment count of paramenters
-									///< -ve values indicate number of real
-									///< params
+	pointer_t   return_type;		///< return type of the function
+	pr_int_t    num_params;			///< ones compliment count of the
+									///< parameters. -ve values indicate the
+									///< number of real parameters before the
+									///< ellipsis
 	pointer_t   param_types[1];		///< variable length list of parameter
 									///< types
 } qfot_func_t;
