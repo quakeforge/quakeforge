@@ -319,7 +319,8 @@ external_def
 				 ;
 			*type = parse_params (*type, $2);
 			$<spec>$.type = find_type ($<spec>$.type);
-			$<spec>$.params = $2;
+			if ($<spec>$.type->type != ev_field)
+				$<spec>$.params = $2;
 		}
 	  function_def_list
 	| optional_specifiers function_decl function_body
@@ -721,7 +722,8 @@ qc_param_decl
 				 ;
 			*type = parse_params (*type, $2);
 			$3->type = find_type ($1.type);
-			$3->params = $2;
+			if ($3->type->type != ev_field)
+				$3->params = $2;
 			$$ = new_param (0, $3->type, $3->name);
 		}
 	| ELLIPSIS				{ $$ = new_param (0, 0, 0); }
@@ -838,9 +840,11 @@ overloaded_identifier
 	: identifier
 		{
 			$$ = $1;
-			$$->params = $<spec>0.params;
 			$$->type = $<spec>0.type;
-			$$ = function_symbol ($$, $<spec>0.is_overload, 1);
+			if ($$->type->type != ev_field) {
+				$$ = function_symbol ($$, $<spec>0.is_overload, 1);
+				$$->params = $<spec>0.params;
+			}
 		}
 	;
 
@@ -849,10 +853,23 @@ non_code_func
 		{
 			build_builtin_function ($<symbol>0, $3, 0);
 		}
+	| '=' fexpr
+		{
+			symbol_t   *sym = $<symbol>0;
+			specifier_t spec = $<spec>-1;
+			initialize_def (sym, sym->type, $2, current_symtab->space,
+							spec.storage);
+		}
 	| /* emtpy */
 		{
 			symbol_t   *sym = $<symbol>0;
-			make_function (sym, 0, sym->table->space, current_storage);
+			specifier_t spec = $<spec>-1;
+			if (sym->type->type != ev_field) {
+				make_function (sym, 0, sym->table->space, current_storage);
+			} else {
+				initialize_def (sym, sym->type, 0, current_symtab->space,
+								spec.storage);
+			}
 		}
 	;
 
