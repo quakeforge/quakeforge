@@ -280,6 +280,16 @@ init_elements (struct def_s *def, expr_t *eles)
 	free (elements);
 }
 
+static void
+init_field_def (def_t *def)
+{
+	type_t     *type = def->type->t.fldptr.type;
+	D_INT (def) = defspace_new_loc (pr.entity_data, type_size (type));
+	reloc_def_field (def, def);
+	def->constant = 1;
+	def->nosave = 1;
+}
+
 void
 initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 				storage_class_t storage)
@@ -333,8 +343,11 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 			warning (0, "initializing external variable");
 		return;
 	}
-	if (!init)
+	if (!init) {
+		if (type->type == ev_field)
+			init_field_def (sym->s.def);
 		return;
+	}
 	convert_name (init);
 	if (init->type == ex_error)
 		return;
@@ -355,8 +368,14 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 				error (0, "non-constant initializier");
 				return;
 			}
-			memcpy (D_POINTER (void, sym->s.def), &init->e.value,
-					type_size (type) * sizeof (pr_type_t));
+			if (init->e.value.type == ev_pointer
+				|| init->e.value.type == ev_field) {
+				// FIXME offset pointers
+				D_INT (sym->s.def) = init->e.value.v.pointer.val;
+			} else {
+				memcpy (D_POINTER (void, sym->s.def), &init->e.value,
+						type_size (type) * sizeof (pr_type_t));
+			}
 		}
 	}
 }
