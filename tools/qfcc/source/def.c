@@ -184,7 +184,7 @@ static void
 init_elements (struct def_s *def, expr_t *eles)
 {
 	expr_t     *e, *c;
-	int         count, i, num_params, base_offset;
+	int         count, i, num_elements, base_offset;
 	pr_type_t  *g;
 	def_t      *elements;
 
@@ -200,7 +200,7 @@ init_elements (struct def_s *def, expr_t *eles)
 			elements[i].space = def->space;
 			elements[i].offset = base_offset + i * type_size (array_type);
 		}
-		num_params = i;
+		num_elements = i;
 	} else if (is_struct (def->type)) {
 		symtab_t   *symtab = def->type->t.symtab;
 		symbol_t   *field;
@@ -219,24 +219,24 @@ init_elements (struct def_s *def, expr_t *eles)
 			elements[i].offset = base_offset + field->s.offset;
 			i++;
 		}
-		num_params = i;
+		num_elements = i;
 	} else {
 		error (eles, "invalid initializer");
 		return;
 	}
 	for (count = 0, e = eles->e.block.head; e; count++, e = e->next) {
 		convert_name (e);
-		if (e->type == ex_nil && count < num_params)
+		if (e->type == ex_nil && count < num_elements)
 			convert_nil (e, elements[count].type);
 		if (e->type == ex_error) {
 			free (elements);
 			return;
 		}
 	}
-	if (count > num_params) {
+	if (count > num_elements) {
 		if (options.warnings.initializer)
 			warning (eles, "excessive elements in initializer");
-		count = num_params;
+		count = num_elements;
 	}
 	for (i = 0, e = eles->e.block.head; i < count; i++, e = e->next) {
 		g = D_POINTER (pr_type_t, &elements[i]);
