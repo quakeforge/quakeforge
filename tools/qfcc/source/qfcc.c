@@ -146,6 +146,7 @@ InitData (void)
 	pr.near_data->grow = 0;
 
 	pr.type_data = new_defspace ();
+	defspace_new_loc (pr.type_data, 4);	// reserve space for a null descriptor
 
 	pr.symtab = new_symtab (0, stab_global);
 	pr.symtab->space = pr.near_data;
