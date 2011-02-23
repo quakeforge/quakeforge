@@ -61,18 +61,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "symtab.h"
 #include "type.h"
 
-enum {
-	qfo_null_space,
-	qfo_strings_space,
-	qfo_code_space,
-	qfo_near_data_space,
-	qfo_far_data_space,
-	qfo_entity_space,
-	qfo_type_space,
-
-	qfo_num_spaces
-};
-
 static int
 count_relocs (reloc_t *r)
 {
@@ -337,7 +325,7 @@ qfo_space_size (qfo_mspace_t *space)
 }
 
 static void
-qfo_byteswap_space (byte *space, int size, qfos_type_t type)
+qfo_byteswap_space (void *space, int size, qfos_type_t type)
 {
 	int         c;
 	pr_type_t  *val;
@@ -464,13 +452,99 @@ qfo_write (qfo_t *qfo, const char *filename)
 qfo_t *
 qfo_read (QFile *file)
 {
-	return 0;
+	char       *data;
+	int         size;
+	qfo_header_t *header;
+	qfo_space_t *spaces;
+	qfo_t      *qfo;
+	int         i;
+
+	size = Qfilesize (file);
+	data = malloc (size);
+	Qread (file, data, size);
+
+	header = (qfo_header_t *) data;
+	header->version = LittleLong (header->version);
+	if (memcmp (header->qfo, QFO, 4) || header->version != QFO_VERSION) {
+		fprintf (stderr, "not a valid qfo file\n");
+		free (data);
+		return 0;
+	}
+	qfo = calloc (1, sizeof (qfo_t));
+
+	qfo->num_spaces = LittleLong (header->num_spaces);
+	qfo->num_relocs = LittleLong (header->num_relocs);
+	qfo->num_defs = LittleLong (header->num_defs);
+	qfo->num_funcs = LittleLong (header->num_funcs);
+	qfo->num_lines = LittleLong (header->num_lines);
+
+	spaces = (qfo_space_t *) &header[1];
+	qfo->data = data;
+	qfo->spaces = calloc (sizeof (qfo_mspace_t), qfo->num_spaces);
+	qfo->relocs = (qfo_reloc_t *) &spaces[qfo->num_spaces];
+	qfo->defs = (qfo_def_t *) &qfo->relocs[qfo->num_relocs];
+	qfo->funcs = (qfo_func_t *) &qfo->defs[qfo->num_defs];
+	qfo->lines = (pr_lineno_t *) &qfo->funcs[qfo->num_funcs];
+
+	for (i = 0; i < qfo->num_spaces; i++) {
+		qfo->spaces[i].type = LittleLong (spaces[i].type);
+		qfo->spaces[i].defs = qfo->defs + LittleLong (spaces[i].defs);
+		qfo->spaces[i].num_defs = LittleLong (spaces[i].num_defs);
+		qfo->spaces[i].data_size = LittleLong (spaces[i].data_size);
+		if (spaces[i].data) {
+			qfo->spaces[i].d.strings = data + LittleLong (spaces[i].data);
+			qfo_byteswap_space (qfo->spaces[i].d.data,
+								qfo->spaces[i].data_size, qfo->spaces[i].type);
+		}
+	}
+	for (i = 0; i < qfo->num_relocs; i++) {
+		qfo->relocs[i].space = LittleLong (qfo->relocs[i].space);
+		qfo->relocs[i].offset = LittleLong (qfo->relocs[i].offset);
+		qfo->relocs[i].type = LittleLong (qfo->relocs[i].type);
+		qfo->relocs[i].def = LittleLong (qfo->relocs[i].def);
+	}
+	for (i = 0; i < qfo->num_defs; i++) {
+		qfo->defs[i].type = LittleLong (qfo->defs[i].type);
+		qfo->defs[i].name = LittleLong (qfo->defs[i].name);
+		qfo->defs[i].offset = LittleLong (qfo->defs[i].offset);
+		qfo->defs[i].relocs = LittleLong (qfo->defs[i].relocs);
+		qfo->defs[i].num_relocs = LittleLong (qfo->defs[i].num_relocs);
+		qfo->defs[i].flags = LittleLong (qfo->defs[i].flags);
+		qfo->defs[i].file = LittleLong (qfo->defs[i].file);
+		qfo->defs[i].line = LittleLong (qfo->defs[i].line);
+	}
+	for (i = 0; i < qfo->num_funcs; i++) {
+		qfo->funcs[i].name = LittleLong (qfo->funcs[i].name);
+		qfo->funcs[i].type = LittleLong (qfo->funcs[i].type);
+		qfo->funcs[i].file = LittleLong (qfo->funcs[i].file);
+		qfo->funcs[i].line = LittleLong (qfo->funcs[i].line);
+		qfo->funcs[i].code = LittleLong (qfo->funcs[i].code);
+		qfo->funcs[i].def = LittleLong (qfo->funcs[i].def);
+		qfo->funcs[i].locals_space = LittleLong (qfo->funcs[i].locals_space);
+		qfo->funcs[i].relocs = LittleLong (qfo->funcs[i].relocs);
+		qfo->funcs[i].num_relocs = LittleLong (qfo->funcs[i].num_relocs);
+	}
+	for (i = 0; i < qfo->num_lines; i++) {
+		qfo->lines[i].fa.addr = LittleLong (qfo->lines[i].fa.addr);
+		qfo->lines[i].line = LittleLong (qfo->lines[i].line);
+	}
+	return qfo;
 }
 
 qfo_t *
 qfo_open (const char *filename)
 {
-	return 0;
+	qfo_t      *qfo;
+	QFile      *file;
+
+	file = Qopen (filename, "rbz");
+	if (!file) {
+		perror (filename);
+		return 0;
+	}
+	qfo = qfo_read (file);
+	Qclose (file);
+	return qfo;
 }
 
 int
@@ -533,4 +607,17 @@ qfo_add_types (qfo_t *qfo, const char *types, int types_size)
 void
 qfo_delete (qfo_t *qfo)
 {
+	if (qfo->data) {
+		free (qfo->data);
+	} else {
+		int         i;
+		for (i = 0; i < qfo->num_spaces; i++)
+			free (qfo->spaces->d.data);
+		free (qfo->relocs);
+		free (qfo->defs);
+		free (qfo->funcs);
+		free (qfo->lines);
+	}
+	free (qfo->spaces);
+	free (qfo);
 }

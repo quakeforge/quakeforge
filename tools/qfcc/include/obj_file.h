@@ -254,6 +254,7 @@ typedef struct qfo_mspace_s {
 /** In-memory representation of a QFO object file.
 */
 typedef struct qfo_s {
+	void       *data;			///< data buffer holding qfo file when read
 	qfo_mspace_t *spaces;
 	int         num_spaces;
 	qfo_reloc_t *relocs;
@@ -265,6 +266,18 @@ typedef struct qfo_s {
 	pr_lineno_t *lines;
 	int         num_lines;
 } qfo_t;
+
+enum {
+	qfo_null_space,
+	qfo_strings_space,
+	qfo_code_space,
+	qfo_near_data_space,
+	qfo_far_data_space,
+	qfo_entity_space,
+	qfo_type_space,
+
+	qfo_num_spaces
+};
 //@}
 
 /** \defgroup qfcc_qfo_data_access QFO Data Acess
