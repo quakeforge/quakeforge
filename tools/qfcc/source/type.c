@@ -872,6 +872,7 @@ chain_initial_types (void)
 
 	va_list_struct[1].type = pointer_type (&type_param);
 	make_structure (0, 's', va_list_struct, &type_va_list);
+	chain_type (&type_va_list);
 
 	if (options.traditional)
 		return;
