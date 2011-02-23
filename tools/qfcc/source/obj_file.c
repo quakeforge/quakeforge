@@ -58,6 +58,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "qfcc.h"
 #include "reloc.h"
 #include "strpool.h"
+#include "symtab.h"
 #include "type.h"
 
 enum {
@@ -72,18 +73,6 @@ enum {
 	qfo_num_spaces
 };
 
-static qfo_mspace_t *spaces;
-
-static int
-count_defs (def_t *d)
-{
-	int         count;
-
-	for (count = 0; d; d = d->next)
-		count++;
-	return count;
-}
-
 static int
 count_relocs (reloc_t *r)
 {
@@ -94,10 +83,114 @@ count_relocs (reloc_t *r)
 	return count;
 }
 
-static void
-qfo_init_string_space (qfo_mspace_t *space, strpool_t *strings)
+static unsigned
+qfo_def_flags (def_t *def)
 {
-	strings->qfo_space = space - spaces;
+	unsigned    flags = 0;
+	if (def->initialized)
+		flags |= QFOD_INITIALIZED;
+	if (def->constant)
+		flags |= QFOD_CONSTANT;
+	if (def->global)
+		flags |= QFOD_GLOBAL;
+	if (def->external)
+		flags |= QFOD_EXTERNAL;
+	if (def->local)
+		flags |= QFOD_LOCAL;
+	if (def->system)
+		flags |= QFOD_SYSTEM;
+	if (def->nosave)
+		flags |= QFOD_NOSAVE;
+	return flags;
+}
+
+static int
+qfo_encode_relocs (qfo_t *qfo, reloc_t *relocs, qfo_reloc_t **qfo_relocs,
+				   qfo_def_t *def)
+{
+	int         count;
+	reloc_t    *r;
+	qfo_reloc_t *q;
+
+	for (count = 0, r = relocs; r; r = r->next) {
+		count++;
+		q = (*qfo_relocs)++;
+		if (r->space)	// op_* relocs do not have a space (code is implied)
+			q->space = r->space->qfo_space;
+		q->offset = r->offset;
+		q->type = r->type;
+		q->def = def - qfo->defs;
+	}
+	return count;
+}
+
+static int
+qfo_encode_defs (qfo_t *qfo, def_t *defs, qfo_def_t **qfo_defs,
+				 qfo_reloc_t **qfo_relocs)
+{
+	int         count;
+	def_t      *d;
+	qfo_def_t  *q;
+
+	for (count = 0, d = defs; d; d = d->next) {
+		count++;
+		q = (*qfo_defs)++;
+		d->qfo_def = q - qfo->defs;
+		// defs in the type data space do not have types
+		if (d->type)
+			q->type = d->type->type_def->offset;
+		q->name = ReuseString (d->name);
+		q->offset = d->offset;
+		q->relocs = *qfo_relocs - qfo->relocs;
+		q->num_relocs = qfo_encode_relocs (qfo, d->relocs, qfo_relocs, q);
+		q->flags = qfo_def_flags (d);
+		q->file = d->file;
+		q->line = d->line;
+	}
+	return count;
+}
+
+static void
+qfo_count_space_stuff (qfo_t *qfo, defspace_t *space)
+{
+	def_t      *d;
+
+	for (d = space->defs; d; d = d->next) {
+		qfo->num_defs++;
+		qfo->num_relocs += count_relocs (d->relocs);
+	}
+}
+
+static void
+qfo_count_function_stuff (qfo_t *qfo, function_t *functions)
+{
+	function_t *func;
+
+	for (func = functions; func; func = func->next) {
+		qfo->num_funcs++;
+		qfo->num_relocs += count_relocs (func->refs);
+		if (func->symtab && func->symtab->space) {
+			qfo->num_spaces++;
+			qfo_count_space_stuff (qfo, func->symtab->space);
+		}
+	}
+}
+
+static void
+qfo_count_stuff (qfo_t *qfo, pr_info_t *pr)
+{
+	qfo_count_space_stuff (qfo, pr->near_data);
+	qfo_count_space_stuff (qfo, pr->far_data);
+	qfo_count_space_stuff (qfo, pr->entity_data);
+	qfo_count_space_stuff (qfo, pr->type_data);
+	qfo_count_function_stuff (qfo, pr->func_head);
+	qfo->num_relocs += count_relocs (pr->relocs);
+}
+
+static void
+qfo_init_string_space (qfo_t *qfo, qfo_mspace_t *space, strpool_t *strings)
+{
+	strings->qfo_space = space - qfo->spaces;
 	space->type = qfos_string;
 	space->num_defs = 0;
 	space->defs = 0;
@@ -106,9 +199,9 @@ qfo_init_string_space (qfo_mspace_t *space, strpool_t *strings)
 }
 
 static void
-qfo_init_code_space (qfo_mspace_t *space, codespace_t *code)
+qfo_init_code_space (qfo_t *qfo, qfo_mspace_t *space, codespace_t *code)
 {
-	code->qfo_space = space - spaces;
+	code->qfo_space = space - qfo->spaces;
 	space->type = qfos_code;
 	space->num_defs = 0;
 	space->defs = 0;
@@ -117,57 +210,254 @@ qfo_init_code_space (qfo_mspace_t *space, codespace_t *code)
 }
 
 static void
-qfo_init_data_space (qfo_mspace_t *space, defspace_t *data)
+qfo_init_data_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
+					 qfo_mspace_t *space, defspace_t *data)
 {
-	data->qfo_space = space - spaces;
+	data->qfo_space = space - qfo->spaces;
 	space->type = qfos_data;
-	space->num_defs = count_defs (data->defs);
-	space->defs = 0;
+	space->defs = *defs;
+	space->num_defs = qfo_encode_defs (qfo, data->defs, defs, relocs);
 	space->d.data = data->data;
 	space->data_size = data->size;
 }
 
 static void
-qfo_init_entity_space (qfo_mspace_t *space, defspace_t *data)
+qfo_init_entity_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
+					   qfo_mspace_t *space, defspace_t *data)
 {
-	data->qfo_space = space - spaces;
+	data->qfo_space = space - qfo->spaces;
 	space->type = qfos_entity;
-	space->num_defs = count_defs (data->defs);
-	space->defs = 0;
+	space->defs = *defs;
+	space->num_defs = qfo_encode_defs (qfo, data->defs, defs, relocs);
 	space->d.data = 0;
 	space->data_size = data->size;
 }
 
 static void
-qfo_init_type_space (qfo_mspace_t *space, defspace_t *data)
+qfo_init_type_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
+					 qfo_mspace_t *space, defspace_t *data)
 {
-	data->qfo_space = space - spaces;
+	data->qfo_space = space - qfo->spaces;
 	space->type = qfos_type;
-	space->num_defs = count_defs (data->defs);
-	space->defs = 0;
+	space->defs = *defs;
+	space->num_defs = qfo_encode_defs (qfo, data->defs, defs, relocs);
 	space->d.data = data->data;
 	space->data_size = data->size;
 }
 
+static void
+qfo_encode_functions (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
+					  qfo_mspace_t *space, function_t *functions)
+{
+	function_t *f;
+	qfo_func_t *q;
+
+	for (f = functions, q = qfo->funcs; f; f = f->next, q++) {
+		q->name = f->s_name;
+		q->type = f->def->type->type_def->offset;
+		q->file = f->s_file;
+		q->line = f->def->line;
+		q->code = f->code;
+		if (f->builtin)		// FIXME redundant
+			q->code = -f->builtin;
+		q->def = f->def->qfo_def;
+		if (f->symtab && f->symtab->space) {
+			qfo_init_data_space (qfo, defs, relocs, space++, f->symtab->space);
+			q->locals_space = f->symtab->space->qfo_space;
+		}
+		if (f->aux)
+			q->line_info = f->aux->line_info;
+		q->relocs = *relocs - qfo->relocs;
+		q->num_relocs = qfo_encode_relocs (qfo, f->refs, relocs, 0);
+	}
+}
 
 qfo_t *
 qfo_from_progs (pr_info_t *pr)
 {
-	spaces = calloc (qfo_num_spaces, sizeof (qfo_mspace_t));
-	qfo_init_string_space (&spaces[qfo_strings_space], pr->strings);
-	qfo_init_code_space (&spaces[qfo_code_space], pr->code);
-	qfo_init_data_space (&spaces[qfo_near_data_space], pr->near_data);
-	qfo_init_data_space (&spaces[qfo_far_data_space], pr->far_data);
-	qfo_init_entity_space (&spaces[qfo_entity_space], pr->entity_data);
-	qfo_init_type_space (&spaces[qfo_type_space], pr->type_data);
+	qfo_t      *qfo;
+	qfo_def_t  *def;
+	qfo_reloc_t *reloc;
 
-	count_relocs (pr->relocs);
+	qfo = calloc (1, sizeof (qfo_t));
+	qfo->num_spaces = qfo_num_spaces; // certain spaces are always present
+	qfo_count_stuff (qfo, pr);
+	qfo->spaces = calloc (qfo->num_spaces, sizeof (qfo_mspace_t));
+	qfo->relocs = calloc (qfo->num_relocs, sizeof (qfo_reloc_t));
+	qfo->defs = calloc (qfo->num_defs, sizeof (qfo_def_t));
+	qfo->funcs = calloc (qfo->num_funcs, sizeof (qfo_func_t));
+
+	def = qfo->defs;
+	reloc = qfo->relocs;
+
+	qfo_init_code_space (qfo, &qfo->spaces[qfo_code_space], pr->code);
+	qfo_init_data_space (qfo, &def, &reloc, &qfo->spaces[qfo_near_data_space],
+						 pr->near_data);
+	qfo_init_data_space (qfo, &def, &reloc, &qfo->spaces[qfo_far_data_space],
+						 pr->far_data);
+	qfo_init_entity_space (qfo, &def, &reloc, &qfo->spaces[qfo_entity_space],
+						   pr->entity_data);
+	qfo_init_type_space (qfo, &def, &reloc, &qfo->spaces[qfo_type_space],
+						 pr->type_data);
+
+	qfo_encode_functions (qfo, &def, &reloc, qfo->spaces + qfo_num_spaces,
+						  pr->func_head);
+	qfo->lines = pr->linenos;
+	qfo->num_lines = pr->num_linenos;
+	// strings must be done last because encoding defs and functions adds the
+	// names
+	qfo_init_string_space (qfo, &qfo->spaces[qfo_strings_space], pr->strings);
+
+	qfo_encode_relocs (qfo, pr->relocs, &reloc, 0);
+
+	return qfo;
+}
+
+static int
+qfo_space_size (qfo_mspace_t *space)
+{
+	switch (space->type) {
+		case qfos_null:
+			return 0;
+		case qfos_code:
+			return space->data_size * sizeof (*space->d.code);
+		case qfos_data:
+			// data size > 0 but d.data == null -> all data is zero
+			if (!space->d.data)
+				return 0;
+			return space->data_size * sizeof (*space->d.data);
+		case qfos_string:
+			return space->data_size * sizeof (*space->d.strings);
+		case qfos_entity:
+			return 0;
+		case qfos_type:
+			return space->data_size * sizeof (*space->d.data);
+	}
 	return 0;
+}
+
+static void
+qfo_byteswap_space (byte *space, int size, qfos_type_t type)
+{
+	int         c;
+	pr_type_t  *val;
+	dstatement_t *s;
+	switch (type) {
+		case qfos_null:
+		case qfos_string:
+			break;
+		case qfos_code:
+			for (s = (dstatement_t *) space, c = 0; c < size; c++, s++) {
+				s->op = LittleShort (s->op);
+				s->a = LittleShort (s->a);
+				s->b = LittleShort (s->b);
+				s->c = LittleShort (s->c);
+			}
+			break;
+		case qfos_data:
+		case qfos_entity:
+		case qfos_type:
+			for (val = (pr_type_t *) space, c = 0; c < size; c++, val++)
+				val->integer_var = LittleLong (val->integer_var);
+			break;
+	}
 }
 
 int
 qfo_write (qfo_t *qfo, const char *filename)
 {
+	int         size;
+	int         space_offset;
+	int         i;
+	byte       *data;
+	qfo_header_t *header;
+	qfo_space_t *spaces;
+	qfo_reloc_t *relocs;
+	qfo_def_t  *defs;
+	qfo_func_t *funcs;
+	pr_lineno_t *lines;
+	byte       *space_data;
+	QFile      *file;
+
+	file = Qopen (filename, options.gzip ? "wbz9" : "wb");
+	if (!file)
+		return -1;
+
+	size = sizeof (qfo_header_t);
+	size += sizeof (qfo_space_t) * qfo->num_spaces;
+	size += sizeof (qfo_reloc_t) * qfo->num_relocs;
+	size += sizeof (qfo_def_t) * qfo->num_defs;
+	size += sizeof (qfo_func_t) * qfo->num_funcs;
+	size += sizeof (pr_lineno_t) * qfo->num_lines;
+	space_offset = size;
+	for (i = 0; i < qfo->num_spaces; i++)
+		size += RUP (qfo_space_size (qfo->spaces + i), 16);
+	data = calloc (1, size);
+	header = (qfo_header_t *) data;
+	memcpy (header->qfo, QFO, 4);
+	header->version = LittleLong (QFO_VERSION);
+	header->num_spaces = LittleLong (qfo->num_spaces);
+	header->num_relocs = LittleLong (qfo->num_relocs);
+	header->num_defs = LittleLong (qfo->num_defs);
+	header->num_funcs = LittleLong (qfo->num_funcs);
+	header->num_lines = LittleLong (qfo->num_lines);
+	spaces = (qfo_space_t *) &header[1];
+	relocs = (qfo_reloc_t *) &spaces[qfo->num_spaces];
+	defs = (qfo_def_t *) &relocs[qfo->num_relocs];
+	funcs = (qfo_func_t *) &defs[qfo->num_defs];
+	lines = (pr_lineno_t *) &funcs[qfo->num_funcs];
+	space_data = data + space_offset;
+	for (i = 0; i < qfo->num_spaces; i++) {
+		spaces[i].type = LittleLong (qfo->spaces[i].type);
+		if (qfo->spaces[i].defs)
+			spaces[i].defs = LittleLong (qfo->spaces[i].defs - qfo->defs);
+		spaces[i].num_defs = LittleLong (qfo->spaces[i].num_defs);
+		if (qfo->spaces[i].d.data) {
+			int         space_size = qfo_space_size (qfo->spaces + i);
+			spaces[i].data = LittleLong (space_data - data);
+			memcpy (space_data, qfo->spaces[i].d.data, space_size);
+			qfo_byteswap_space (space_data, qfo->spaces[i].data_size,
+								qfo->spaces[i].type);
+			space_data += RUP (space_size, 16);
+		}
+		spaces[i].data_size = LittleLong (qfo->spaces[i].data_size);
+	}
+	for (i = 0; i < qfo->num_relocs; i++) {
+		relocs[i].space = LittleLong (qfo->relocs[i].space);
+		relocs[i].offset = LittleLong (qfo->relocs[i].offset);
+		relocs[i].type = LittleLong (qfo->relocs[i].type);
+		relocs[i].def = LittleLong (qfo->relocs[i].def);
+	}
+	for (i = 0; i < qfo->num_defs; i++) {
+		defs[i].type = LittleLong (qfo->defs[i].type);
+		defs[i].name = LittleLong (qfo->defs[i].name);
+		defs[i].offset = LittleLong (qfo->defs[i].offset);
+		defs[i].relocs = LittleLong (qfo->defs[i].relocs);
+		defs[i].num_relocs = LittleLong (qfo->defs[i].num_relocs);
+		defs[i].flags = LittleLong (qfo->defs[i].flags);
+		defs[i].file = LittleLong (qfo->defs[i].file);
+		defs[i].line = LittleLong (qfo->defs[i].line);
+	}
+	for (i = 0; i < qfo->num_funcs; i++) {
+		funcs[i].name = LittleLong (qfo->funcs[i].name);
+		funcs[i].type = LittleLong (qfo->funcs[i].type);
+		funcs[i].file = LittleLong (qfo->funcs[i].file);
+		funcs[i].line = LittleLong (qfo->funcs[i].line);
+		funcs[i].code = LittleLong (qfo->funcs[i].code);
+		funcs[i].def = LittleLong (qfo->funcs[i].def);
+		funcs[i].locals_space = LittleLong (qfo->funcs[i].locals_space);
+		funcs[i].line_info = LittleLong (qfo->funcs[i].line_info);
+		funcs[i].relocs = LittleLong (qfo->funcs[i].relocs);
+		funcs[i].num_relocs = LittleLong (qfo->funcs[i].num_relocs);
+	}
+	for (i = 0; i < qfo->num_lines; i++) {
+		lines[i].fa.addr = LittleLong (qfo->lines[i].fa.addr);
+		lines[i].line = LittleLong (qfo->lines[i].line);
+	}
+
+	Qwrite (file, data, size);
+	free (data);
+	Qclose (file);
 	return 0;
 }
 

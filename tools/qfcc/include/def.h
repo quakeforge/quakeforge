@@ -58,7 +58,7 @@ typedef struct def_s {
 	string_t		file;			///< source file
 	int				line;			///< source line
 
-	int              obj_def;		///< index to def in qfo defs
+	int              qfo_def;		///< index to def in qfo defs
 
 	void			*return_addr;	///< who allocated this
 } def_t;
