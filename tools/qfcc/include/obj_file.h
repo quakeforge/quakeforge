@@ -67,6 +67,7 @@ typedef struct qfo_header_s {
 	pr_int_t    num_defs;		///< number of def records
 	pr_int_t    num_funcs;		///< number of function records
 	pr_int_t    num_lines;		///< number of line records
+	pr_int_t    reserved[1];
 } qfo_header_t;
 
 typedef enum qfos_type_e {
@@ -87,6 +88,7 @@ typedef struct qfo_space_s {
 	pr_int_t    data;			///< byte offset in qfo
 	pr_int_t    data_size;		///< in elements. zero for entity spaces
 	pr_int_t    id;
+	pr_int_t    reserved[2];
 } qfo_space_t;
 
 /** Representation of a def in the object file.
@@ -94,7 +96,6 @@ typedef struct qfo_space_s {
 typedef struct qfo_def_s {
 	pointer_t   type;			///< offset in type space
 	string_t    name;			///< def name
-	pr_int_t	space;			///< index of space holding this def's data
 	pointer_t   offset;			///< def offset (address)
 
 	pr_int_t    relocs;			///< index of first reloc record
@@ -170,52 +171,28 @@ typedef struct qfo_def_s {
 */
 typedef struct qfo_func_s {
 	string_t    name;			///< function name
+	pointer_t   type;			///< function type (in type data space)
 	string_t    file;			///< source file name
 	pr_int_t    line;			///< source line number
 
 	/** \name Function code location.
-		If #code is 0, or #builtin is non-zero, then the function is a VM
-		builtin function.
-		If both #code and #builtin are 0, then the function is a VM builtin
-		function and the VM resolves the function number using the function
-		name.
+		If #code is negative, then the function is a VM builtin function.
+		If #code is 0, then the function is a VM builtin function and the
+		VM resolves the function number using the function name.
+		If #code is positive, then the function is in progs and #code is
+		the first statement of the function.
 	*/
-	//@{
-	pr_int_t    builtin;		///< VM builtin function number
-	pr_int_t    code;			///< Address in the code section of the first
-								///< instruction of the function.
-	//@}
+	pr_int_t    code;
 
 	pr_int_t    def;			///< def that references this function. Index
 								///< to ::qfo_def_t. The data word pointed to
 								///< by the def stores the index of this
 								///< function.
 
-	/** \name Function local data.
-	*/
-	//@{
-	pr_int_t    locals_size;	///< Number of words of local data reqired by
-								///< the function.
-	pr_int_t    local_defs;		///< Index to the first ::qfo_def_t def record
-								///< representing the functions local
-								///< variables.
-	pr_int_t    num_local_defs;	///< Number of local def records.
-	//@}
+	pr_int_t    locals_space;	///< space holding the function's local data
 
 	pr_int_t    line_info;		///< Index to first ::pr_lineno_t line record.
 								///< Zero if there are no records.
-
-	/** \name Function parameters.
-	*/
-	//@{
-	pr_int_t    num_parms;		///< Number of parameters this function
-								///< accepts. Maximum number is defined by
-								///< #MAX_PARMS. Negative numbers give the
-								///< minumum number of parameters by
-								///< \f$-num\_parms - 1\f$
-	byte        parm_size[MAX_PARMS]; ///< Number of words used by each
-								///< parameter.
-	//@}
 
 	/** \name Function relocation records.
 		XXX not sure how these work
@@ -224,6 +201,7 @@ typedef struct qfo_func_s {
 	pr_int_t    relocs;			///< Index to first ::qfo_reloc_t reloc record.
 	pr_int_t    num_relocs;		///< Number of reloc records.
 	//@}
+	pr_int_t    reserved[2];
 } qfo_func_t;
 
 /** Evil source of many headaches. The whole reason I've started writing this

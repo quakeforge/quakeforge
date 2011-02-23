@@ -347,10 +347,10 @@ qfo_functions (qfo_t *qfo)
 //				QFO_GETSTR (qfo, def->name));
 //		if (!(def->flags & QFOD_EXTERNAL))
 //			printf (" %d", qfo->data[def->offset].integer_var);
-		if (func->code)
+		if (func->code > 0)
 			printf (" @ %x", func->code);
 		else
-			printf (" = #%d", func->builtin);
+			printf (" = #%d", -func->code);
 		puts ("");
 	}
 }

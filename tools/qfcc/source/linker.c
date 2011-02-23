@@ -425,16 +425,16 @@ add_funcs (qfo_t *qfo)
 //		func->file = strpool_addstr (strings, qfo->strings + func->file);
 		if (func->code)
 			func->code += code_base;
-		if (func->num_local_defs) {
-			int         def_num = local_defs.num_defs;
-			qfo_def_t  *d;
-			defgroup_add_defs (&local_defs, qfo->defs + func->local_defs,
-							   func->num_local_defs);
-			func->local_defs = def_num;
-			for (d = local_defs.defs + def_num; def_num < local_defs.num_defs;
-				 d++, def_num++)
-				fixup_def (qfo, d, def_num);
-		}
+//		if (func->num_local_defs) {
+//			int         def_num = local_defs.num_defs;
+//			qfo_def_t  *d;
+//			defgroup_add_defs (&local_defs, qfo->defs + func->local_defs,
+//							   func->num_local_defs);
+//			func->local_defs = def_num;
+//			for (d = local_defs.defs + def_num; def_num < local_defs.num_defs;
+//				 d++, def_num++)
+//				fixup_def (qfo, d, def_num);
+//		}
 		if (func->line_info)
 			func->line_info += line_base;
 		func->relocs += reloc_base;
@@ -630,7 +630,7 @@ merge_defgroups (void)
 	for (i = 0; i < funcs.num_funcs; i++) {
 		int         r = final_relocs.num_relocs;
 		func = funcs.funcs + i;
-		func->local_defs += local_base;
+//		func->local_defs += local_base;
 		relocgroup_add_relocs (&final_relocs, relocs.relocs + func->relocs,
 							   func->num_relocs);
 		for (j = 0; j < func->num_relocs; j++)
