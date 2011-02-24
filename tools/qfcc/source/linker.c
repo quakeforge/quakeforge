@@ -4,9 +4,11 @@
 	qc object file linking
 
 	Copyright (C) 2002 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2011 Bill Currie <bill@taniwha.org>
 
 	Author: Bill Currie <bill@taniwha.org>
 	Date: 2002/7/3
+	Date: 2011/2/24
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
