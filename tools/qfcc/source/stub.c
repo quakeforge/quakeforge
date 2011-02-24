@@ -21,7 +21,6 @@ options_t options;
 int num_linenos;
 pr_lineno_t *linenos;
 pr_info_t pr;
-defspace_t *new_defspace (void) {return 0;}
 string_t ReuseString (const char *str) {return 0;}
 void encode_type (struct dstring_s *str, type_t *type) {}
 codespace_t *codespace_new (void) {return 0;}

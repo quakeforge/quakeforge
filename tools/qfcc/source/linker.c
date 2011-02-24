@@ -267,10 +267,10 @@ linker_begin (void)
 	// the actual space data
 	work_strings = strpool_new ();
 	work_code = codespace_new ();
-	work_near_data = new_defspace();
-	work_far_data = new_defspace();
-	work_entity_data = new_defspace();
-	work_type_data = new_defspace();
+	work_near_data = defspace_new ();
+	work_far_data = defspace_new ();
+	work_entity_data = defspace_new ();
+	work_type_data = defspace_new ();
 }
 
 static void

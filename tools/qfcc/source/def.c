@@ -130,7 +130,7 @@ new_def (const char *name, type_t *type, defspace_t *space,
 			error (0, "%s has incomplete type", name);
 			size = 1;
 		}
-		def->offset = defspace_new_loc (space, size);
+		def->offset = defspace_alloc_loc (space, size);
 	}
 
 	return def;

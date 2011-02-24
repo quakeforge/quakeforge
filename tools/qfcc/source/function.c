@@ -450,7 +450,7 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 
 	symtab = new_symtab (parent, stab_local);
 	fsym->s.func->symtab = symtab;
-	symtab->space = new_defspace ();
+	symtab->space = defspace_new ();
 	current_symtab = symtab;
 
 	if (fsym->type->t.func.num_params < 0) {

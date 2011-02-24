@@ -78,7 +78,7 @@ grow_space (defspace_t *space)
 }
 
 defspace_t *
-new_defspace (void)
+defspace_new (void)
 {
 	defspace_t *space;
 
@@ -89,7 +89,7 @@ new_defspace (void)
 }
 
 int
-defspace_new_loc (defspace_t *space, int size)
+defspace_alloc_loc (defspace_t *space, int size)
 {
 	int         ofs;
 	locref_t   *loc;
@@ -180,7 +180,7 @@ defspace_add_data (defspace_t *space, pr_type_t *data, int size)
 {
 	int         loc;
 	
-	loc = defspace_new_loc (space, size);
+	loc = defspace_alloc_loc (space, size);
 	if (data)
 		memcpy (space->data + loc, data, size * sizeof (pr_type_t));
 	return loc;

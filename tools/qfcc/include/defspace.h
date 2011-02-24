@@ -47,8 +47,8 @@ typedef struct defspace_s {
 	int         qfo_space;
 } defspace_t;
 
-defspace_t *new_defspace (void);
-int defspace_new_loc (defspace_t *space, int size);
+defspace_t *defspace_new (void);
+int defspace_alloc_loc (defspace_t *space, int size);
 void defspace_free_loc (defspace_t *space, int ofs, int size);
 int defspace_add_data (defspace_t *space, pr_type_t *data, int size);
 

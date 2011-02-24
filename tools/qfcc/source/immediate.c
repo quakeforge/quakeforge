@@ -253,7 +253,7 @@ emit_value (ex_value_t *value, def_t *def)
 		}
 	} else {
 		cn = new_def (".imm", type, pr.near_data, st_static);
-		cn->offset = defspace_new_loc (pr.near_data, type_size (type));
+		cn->offset = defspace_alloc_loc (pr.near_data, type_size (type));
 	}
 	cn->initialized = cn->constant = 1;
 	cn->nosave = 1;

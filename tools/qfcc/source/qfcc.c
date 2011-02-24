@@ -136,22 +136,22 @@ InitData (void)
 	pr.strings = strpool_new ();
 	pr.num_functions = 1;
 
-	pr.data = new_defspace ();
+	pr.data = defspace_new ();
 
-	pr.far_data = new_defspace ();
+	pr.far_data = defspace_new ();
 
-	pr.near_data = new_defspace ();
+	pr.near_data = defspace_new ();
 	pr.near_data->data = calloc (65536, sizeof (pr_type_t));
 	pr.near_data->max_size = 65536;
 	pr.near_data->grow = 0;
 
-	pr.type_data = new_defspace ();
-	defspace_new_loc (pr.type_data, 4);	// reserve space for a null descriptor
+	pr.type_data = defspace_new ();
+	defspace_alloc_loc (pr.type_data, 4);// reserve space for a null descriptor
 
 	pr.symtab = new_symtab (0, stab_global);
 	pr.symtab->space = pr.near_data;
 
-	pr.entity_data = new_defspace ();
+	pr.entity_data = defspace_new ();
 
 	numglobaldefs = 1;
 	numfielddefs = 1;
@@ -434,8 +434,8 @@ finish_compilation (void)
 			}
 			df->parm_start = pr.near_data->size;
 		} else {
-			df->parm_start = defspace_new_loc (pr.near_data,
-											   f->symtab->space->size);
+			df->parm_start = defspace_alloc_loc (pr.near_data,
+												 f->symtab->space->size);
 			num_localdefs += f->symtab->space->size;
 		}
 		for (def = f->symtab->space->defs; def; def = def->next) {
@@ -445,7 +445,7 @@ finish_compilation (void)
 		}
 	}
 	if (options.code.local_merging)
-		defspace_new_loc (pr.near_data, num_localdefs);
+		defspace_alloc_loc (pr.near_data, num_localdefs);
 
 	if (options.code.progsversion != PROG_ID_VERSION) {
 		//FIXME better init code
