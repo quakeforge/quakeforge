@@ -296,6 +296,7 @@ qfo_from_progs (pr_info_t *pr)
 	// names
 	qfo_init_string_space (qfo, &qfo->spaces[qfo_strings_space], pr->strings);
 
+	qfo->num_loose_relocs = qfo->num_relocs - (reloc - qfo->relocs);
 	qfo_encode_relocs (qfo, pr->relocs, &reloc, 0);
 
 	return qfo;
@@ -389,6 +390,7 @@ qfo_write (qfo_t *qfo, const char *filename)
 	header->num_defs = LittleLong (qfo->num_defs);
 	header->num_funcs = LittleLong (qfo->num_funcs);
 	header->num_lines = LittleLong (qfo->num_lines);
+	header->num_loose_relocs = LittleLong (qfo->num_loose_relocs);
 	spaces = (qfo_space_t *) &header[1];
 	relocs = (qfo_reloc_t *) &spaces[qfo->num_spaces];
 	defs = (qfo_def_t *) &relocs[qfo->num_relocs];
@@ -477,6 +479,7 @@ qfo_read (QFile *file)
 	qfo->num_defs = LittleLong (header->num_defs);
 	qfo->num_funcs = LittleLong (header->num_funcs);
 	qfo->num_lines = LittleLong (header->num_lines);
+	qfo->num_loose_relocs = LittleLong (header->num_loose_relocs);
 
 	spaces = (qfo_space_t *) &header[1];
 	qfo->data = data;

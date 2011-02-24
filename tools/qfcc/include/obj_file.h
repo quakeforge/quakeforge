@@ -67,7 +67,8 @@ typedef struct qfo_header_s {
 	pr_int_t    num_defs;		///< number of def records
 	pr_int_t    num_funcs;		///< number of function records
 	pr_int_t    num_lines;		///< number of line records
-	pr_int_t    reserved[1];
+	pr_int_t    num_loose_relocs;	///< number of loose relocation records
+								///< included in num_relocs
 } qfo_header_t;
 
 typedef enum qfos_type_e {
@@ -258,13 +259,14 @@ typedef struct qfo_s {
 	qfo_mspace_t *spaces;
 	int         num_spaces;
 	qfo_reloc_t *relocs;
-	int         num_relocs;
+	int         num_relocs;			// includes num_loose_relocs
 	qfo_def_t  *defs;
 	int         num_defs;
 	qfo_func_t *funcs;
 	int         num_funcs;
 	pr_lineno_t *lines;
 	int         num_lines;
+	int         num_loose_relocs;	// included in num_relocs
 } qfo_t;
 
 enum {
