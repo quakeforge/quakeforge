@@ -1,5 +1,5 @@
 /*
-	modules.c
+	dump_modules.c
 
 	Module dumping.
 

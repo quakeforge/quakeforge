@@ -1,5 +1,5 @@
 /*
-	lines.c
+	dump_lines.c
 
 	Dump line number information.
 

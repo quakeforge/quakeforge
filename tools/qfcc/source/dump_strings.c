@@ -1,5 +1,5 @@
 /*
-	strings.c
+	dump_strings.c
 
 	Dump progs strings.
 

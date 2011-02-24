@@ -1,5 +1,5 @@
 /*
-	globals.c
+	dump_globals.c
 
 	Dump progs globals information.
 
