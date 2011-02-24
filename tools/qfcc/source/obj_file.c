@@ -556,7 +556,7 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 qfo_t *
 qfo_new (void)
 {
-	return 0;
+	return calloc (1, sizeof (qfo_t));
 }
 
 void
