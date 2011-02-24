@@ -67,7 +67,8 @@ qfpc_LDADD=			$(QFCC_LIBS)
 qfpc_DEPENDENCIES=	$(QFCC_DEPS)
 
 qfprogs_SOURCES= \
-	disassemble.c globals.c lines.c modules.c obj_file.c stub.c qfprogs.c strings.c
+	disassemble.c dump_globals.c dump_lines.c dump_modules.c obj_file.c \
+	stub.c qfprogs.c dump_strings.c
 qfprogs_LDADD=	$(QFCC_LIBS)
 qfprogs_DEPENDENCIES= $(QFCC_DEPS)
 
