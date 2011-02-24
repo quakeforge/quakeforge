@@ -450,16 +450,10 @@ print_type_str (dstring_t *str, type_t *type)
 					dasprintf (str, " enum %s", type->name);
 					break;
 				case ty_struct:
+					dasprintf (str, " struct %s", type->name);
+					break;
 				case ty_union:
-					{
-						const char *tag = "struct";
-
-						if (type->t.symtab) {//FIXME
-							if (type->t.symtab->type == stab_union)
-								tag = "union";
-						}
-						dasprintf (str, " %s %s", tag, type->name);
-					}
+					dasprintf (str, " union %s", type->name);
 					break;
 				case ty_array:
 					print_type_str (str, type->t.array.type);
