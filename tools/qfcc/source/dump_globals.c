@@ -356,17 +356,27 @@ qfo_functions (qfo_t *qfo)
 {
 	qfo_def_t  *def;
 	qfo_func_t *func;
-	int         i;
+	int         i, d;
+	int         space;
 
 	for (i = 0; i < qfo->num_funcs; i++) {
 		func = &qfo->funcs[i];
 		def = &qfo->defs[func->def];
-//		printf ("%-5d %-5d %s %s %d %s", i, def->offset,
-//				flags_string (def->flags),
-//				QFO_GETSTR (qfo, func->name), func->def,
-//				QFO_GETSTR (qfo, def->name));
-//		if (!(def->flags & QFOD_EXTERNAL))
-//			printf (" %d", qfo->data[def->offset].integer_var);
+		for (space = 0; space < qfo->num_spaces; space++) {
+			if (!qfo->spaces[space].num_defs)
+				continue;
+			d = qfo->spaces[space].defs - qfo->defs;
+			if (func->def >= d && func->def < d + qfo->spaces[space].num_defs)
+				break;
+		}
+		if (space == qfo->num_spaces)
+			space = qfo_near_data_space;
+		printf ("%-5d %-5d %s %s %d %s", i, def->offset,
+				flags_string (def->flags),
+				QFO_GETSTR (qfo, func->name), func->def,
+				QFO_GETSTR (qfo, def->name));
+		if (!(def->flags & QFOD_EXTERNAL))
+			printf (" %d", QFO_FUNCTION (qfo, space, def->offset));
 		if (func->code > 0)
 			printf (" @ %x", func->code);
 		else
