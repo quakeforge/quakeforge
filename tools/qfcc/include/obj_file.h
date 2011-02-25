@@ -290,129 +290,139 @@ enum {
 
 /** \internal
 	\param q pointer to ::qfo_t struct
+	\param s space index
 	\param t typename prefix (see pr_type_u)
 	\param o offset into object file data space
 	\return lvalue of the appropriate type
 
 	\hideinitializer
 */
-#define QFO_var(q, t, o)	((q)->data[o].t##_var)
+#define QFO_var(q, s, t, o)	((q)->spaces[s].d.data[o].t##_var)
 
 /** Access a float variable in the object file. Can be assigned to.
 
 	\par QC type:
 		\c float
 	\param q pointer to ::qfo_t struct
+	\param s space index
 	\param o offset into object file data space
 	\return float lvalue
 
 	\hideinitializer
 */
-#define	QFO_FLOAT(q, o)		QFO_var (q, float, o)
+#define	QFO_FLOAT(q, s, o)		QFO_var (q, s, float, o)
 
 /** Access a integer variable in the object file. Can be assigned to.
 
 	\par QC type:
 		\c integer
 	\param q pointer to ::qfo_t struct
+	\param s space index
 	\param o offset into object file data space
 	\return int lvalue
 
 	\hideinitializer
 */
-#define	QFO_INT(q, o)		QFO_var (q, integer, o)
+#define	QFO_INT(q, s, o)		QFO_var (q, s, integer, o)
 
 /** Access a vector variable in the object file. Can be assigned to.
 
 	\par QC type:
 		\c vector
 	\param q pointer to ::qfo_t struct
+	\param s space index
 	\param o offset into object file data space
 	\return vec3_t lvalue
 
 	\hideinitializer
 */
-#define	QFO_VECTOR(q, o)	QFO_var (q, vector, o)
+#define	QFO_VECTOR(q, s, o)	QFO_var (q, s, vector, o)
 
 /** Access a string index variable in the object file. Can be assigned to.
 
 	\par QC type:
 		\c string
 	\param q pointer to ::qfo_t struct
+	\param s space index
 	\param o offset into object file data space
 	\return string_t lvalue
 
 	\hideinitializer
 */
-#define	QFO_STRING(q, o)	QFO_var (q, string, o)
+#define	QFO_STRING(q, s, o)	QFO_var (q, s, string, o)
 
 /** Retrieve a string from the object file, converting it to a C string.
 
 	\param q pointer to ::qfo_t struct
+	\param s space index
 	\param s offset into object file string space
 	\return (char *)
 
 	\hideinitializer
 */
-#define QFO_GETSTR(q, s)	((q)->strings + (s))
+#define QFO_GETSTR(q, s)	((q)->spaces[qfo_strings_space].d.strings + (s))
 
 /** Retrieve a type string from the object file, converting it to a C string.
 
 	\param q pointer to ::qfo_t struct
-	\param s offset into object file type string space
+	\param t offset to type encoding
 	\return (char *)
 
 	\hideinitializer
 */
-#define QFO_TYPESTR(q, s)	((q)->types + (s))
+#define QFO_TYPESTR(q, t)	QFO_GSTRING (q, qfo_type_space, (t) + 2)
 
 /** Access a string global, converting it to a C string.
 
 	\param q pointer to ::qfo_t struct
+	\param s space index
 	\param o offset into object file data space
 	\return (char *)
 
 	\hideinitializer
 */
-#define QFO_GSTRING(q, o)	(QFO_GETSTR (q, (QFO_STRING (q, o))))
+#define QFO_GSTRING(q, s, o)	(QFO_GETSTR (q, QFO_STRING (q, s, o)))
 
 /** Access a function variable in the object file. Can be assigned to.
 
 	\par QC type:
 		\c void ()
 	\param q pointer to ::qfo_t struct
+	\param s space index
 	\param o offset into object file data space
 	\return func_t lvalue
 
 	\hideinitializer
 */
-#define	QFO_FUNCTION(q, o)	QFO_var (q, func, o)
+#define	QFO_FUNCTION(q, s, o)	QFO_var (q, s, func, o)
 
 /** Access a pointer variable in the object file. Can be assigned to.
 
 	\par QC type:
 		\c void []
 	\param q pointer to ::qfo_t struct
+	\param s space index
 	\param t C type of the structure
 	\param o offset into object file data space
 	\return pointer_t lvalue
 
 	\hideinitializer
 */
-#define QFO_POINTER(q, t,o)	((t *)((q)->data + o))
+#define QFO_POINTER(q, s, t, o)	((t *)&QFO_var (q, s, o))
 
 /** Access a structure variable in the object file. Can be assigned to.
 
 	\par QC type:
 		\c void [](?)
 	\param q pointer to ::qfo_t struct
+	\param s space index
 	\param t C type of the structure
 	\param o offset into object file data space
 	\return structure lvalue. use & to make a pointer of the appropriate type.
 
 	\hideinitializer
 */
-#define QFO_STRUCT(q, t,o)	(*QFO_POINTER (q, t, o))
+#define QFO_STRUCT(q, s, t, o)	(*QFO_POINTER (q, s, t, o))
 
 //@}
 
