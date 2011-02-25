@@ -788,8 +788,8 @@ init_types (void)
 		{"field_val",        &type_field},
 		{"func_val",         &type_function},
 		{"pointer_val",      &type_pointer},
-		{"integer_val",      &type_integer},
 		{"vector_val",       &type_vector},
+		{"integer_val",      &type_integer},
 		{"quaternion_val",   &type_quaternion},
 		{0, 0}
 	};
@@ -823,9 +823,9 @@ init_types (void)
 		// vector can't be part of .zero for v6 progs because for v6 progs,
 		// .zero is only one word wide.
 		zero_struct[7].name = 0;
-		// v6 progs don't have quaternions
-		zero_struct[8].name = 0;
-		param_struct[8].name = 0;
+		// v6 progs don't have integers or quaternions
+		zero_struct[7].name = 0;
+		param_struct[7].name = 0;
 		type_nil = &type_vector;
 		type_default = &type_float;
 	}
@@ -860,6 +860,12 @@ chain_initial_types (void)
 	chain_type (&type_function);
 	chain_type (&type_pointer);
 	chain_type (&type_floatfield);
+	if (!options.traditional) {
+		chain_type (&type_quaternion);
+		chain_type (&type_integer);
+		chain_type (&type_short);
+		class_init_obj_module ();
+	}
 
 	chain_type (&type_param);
 	chain_type (&type_zero);
@@ -867,12 +873,4 @@ chain_initial_types (void)
 	va_list_struct[1].type = pointer_type (&type_param);
 	make_structure (0, 's', va_list_struct, &type_va_list);
 	chain_type (&type_va_list);
-
-	if (options.traditional)
-		return;
-
-	chain_type (&type_quaternion);
-	chain_type (&type_integer);
-	chain_type (&type_short);
-	class_init_obj_module ();
 }

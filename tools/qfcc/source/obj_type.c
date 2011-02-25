@@ -190,7 +190,8 @@ qfo_encode_struct (type_t *type)
 				continue;
 			if (i == num_fields)
 				internal_error (0, "whoa, what happened?");
-			field_types[i++] = qfo_encode_type (sym->type);
+			field_types[i] = qfo_encode_type (sym->type);
+			i++;
 		}
 	}
 
@@ -212,6 +213,7 @@ qfo_encode_struct (type_t *type)
 		ENC_DEF (strct->fields[i].type, field_types[i]);
 		ENC_STR (strct->fields[i].name, sym->name);
 		strct->fields[i].offset = offset;
+		i++;
 	}
 	return def;
 }
