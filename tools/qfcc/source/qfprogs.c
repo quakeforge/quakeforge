@@ -481,6 +481,7 @@ load_progs (const char *name)
 			return 0;
 
 //		convert_qfo ();
+		return 1;
 	} else {
 		pr.progs_name = name;
 		PR_LoadProgsFile (&pr, file, size, 1, 0);

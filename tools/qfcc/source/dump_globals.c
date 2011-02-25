@@ -205,38 +205,44 @@ dump_functions (progs_t *pr)
 	}
 }
 
-//static const char *
-//flags_string (pr_uint_t flags)
-//{
-//	static dstring_t *str;
-//	if (!str)
-//		str = dstring_newstr ();
-//	dstring_clearstr (str);
-//	dstring_appendstr (str, (flags & QFOD_INITIALIZED) ? "I" : "-");
-//	dstring_appendstr (str, (flags & QFOD_CONSTANT)    ? "C" : "-");
-//	dstring_appendstr (str, (flags & QFOD_ABSOLUTE)    ? "A" : "-");
-//	dstring_appendstr (str, (flags & QFOD_GLOBAL)      ? "G" : "-");
-//	dstring_appendstr (str, (flags & QFOD_EXTERNAL)    ? "E" : "-");
-//	dstring_appendstr (str, (flags & QFOD_LOCAL)       ? "L" : "-");
-//	dstring_appendstr (str, (flags & QFOD_SYSTEM)      ? "S" : "-");
-//	dstring_appendstr (str, (flags & QFOD_NOSAVE)      ? "N" : "-");
-//	return str->str;
-//}
+static const char *
+flags_string (pr_uint_t flags)
+{
+	static dstring_t *str;
+	if (!str)
+		str = dstring_newstr ();
+	dstring_clearstr (str);
+	dstring_appendstr (str, (flags & QFOD_INITIALIZED) ? "I" : "-");
+	dstring_appendstr (str, (flags & QFOD_CONSTANT)    ? "C" : "-");
+	dstring_appendstr (str, (flags & QFOD_ABSOLUTE)    ? "A" : "-");
+	dstring_appendstr (str, (flags & QFOD_GLOBAL)      ? "G" : "-");
+	dstring_appendstr (str, (flags & QFOD_EXTERNAL)    ? "E" : "-");
+	dstring_appendstr (str, (flags & QFOD_LOCAL)       ? "L" : "-");
+	dstring_appendstr (str, (flags & QFOD_SYSTEM)      ? "S" : "-");
+	dstring_appendstr (str, (flags & QFOD_NOSAVE)      ? "N" : "-");
+	return str->str;
+}
 
 void
 qfo_globals (qfo_t *qfo)
 {
 	qfo_def_t  *def;
 	int         i;
+	int         space;
+	int         count = 0;
 
-	for (i = 0; i < qfo->num_defs; i++) {
-		def = &qfo->defs[i];
-//		printf ("%-5d %-5d %s %s %s", i, def->offset, flags_string (def->flags),
-//				QFO_GETSTR (qfo, def->name),
-//				QFO_TYPESTR (qfo, def->full_type));
-//		if (!(def->flags & QFOD_EXTERNAL))
-//			printf (" %d", qfo->data[def->offset].integer_var);
-		puts ("");
+	for (space = 0; space < qfo->num_spaces; space++) {
+		for (i = 0; i < qfo->spaces[space].num_defs; i++, count++) {
+			def = &qfo->spaces[space].defs[i];
+			printf ("%-5d %2d:%-5x %s %s %s", count, space, def->offset,
+					flags_string (def->flags),
+					QFO_GETSTR (qfo, def->name),
+					QFO_TYPESTR (qfo, def->type));
+			if (!(def->flags & QFOD_EXTERNAL))
+				printf (" %d",
+						qfo->spaces[space].d.data[def->offset].integer_var);
+			puts ("");
+		}
 	}
 }
 
