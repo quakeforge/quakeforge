@@ -270,9 +270,10 @@ qfo_relocs (qfo_t *qfo)
 			case rel_op_b_def:
 			case rel_op_c_def:
 				def = qfo->defs + reloc->def;
-//				printf (" op.%c@%d def@%d %s",
-//						reloc->type - rel_op_a_def + 'a',
-//						reloc->offset, def->offset, QFO_GETSTR (qfo, def->name));
+				printf (" op.%c@%d def#%d %s",
+						reloc->type - rel_op_a_def + 'a',
+						reloc->offset, reloc->def,
+						QFO_GETSTR (qfo, def->name));
 				break;
 			case rel_op_a_op:
 			case rel_op_b_op:
@@ -281,48 +282,59 @@ qfo_relocs (qfo_t *qfo)
 						reloc->offset);
 				break;
 			case rel_def_op:
-				printf (" def@%d op@%d", reloc->offset, reloc->def);
+				printf (" def@%d:%x op@%d", reloc->space, reloc->offset,
+						reloc->def);
 				break;
 			case rel_def_def:
 				def = qfo->defs + reloc->def;
-//				printf (" def@%d def@%d %s", reloc->offset, reloc->def,
-//						QFO_GETSTR (qfo, def->name));
+				printf (" def@%d:%x def#%d %s", reloc->space, reloc->offset,
+						reloc->def, QFO_GETSTR (qfo, def->name));
 				break;
 			case rel_def_func:
-				func = qfo->funcs + reloc->def;
-//				printf (" def@%d func@%d %s", reloc->offset, reloc->def,
-//						QFO_GETSTR (qfo, func->name));
+				//func = qfo->funcs + reloc->def;
+				func = qfo->funcs + QFO_FUNCTION (qfo, reloc->space,
+												  reloc->offset);
+				printf (" def@%d:%x func#%d %s %x",
+						reloc->space, reloc->offset,
+						QFO_FUNCTION (qfo, reloc->space, reloc->offset),
+						QFO_GETSTR (qfo, func->name),
+						reloc->def);
 				break;
 			case rel_def_string:
-//				printf (" def@%d string:`%s'", reloc->offset,
-//						QFO_GSTRING (qfo, reloc->offset));
+				printf (" def@%d:%x string:%x `%s'",
+						reloc->space, reloc->offset,
+						QFO_STRING (qfo, reloc->space, reloc->offset),
+						QFO_GSTRING (qfo, reloc->space, reloc->offset));
 				break;
 			case rel_def_field:
 				def = qfo->defs + reloc->def;
-//				printf (" def@%d def@%d %s", reloc->offset, reloc->def,
-//						QFO_GETSTR (qfo, def->name));
+				printf (" def@%d:%x def#%d %s", reloc->space, reloc->offset,
+						reloc->def, QFO_GETSTR (qfo, def->name));
 				break;
 			case rel_op_a_def_ofs:
 			case rel_op_b_def_ofs:
 			case rel_op_c_def_ofs:
 				def = qfo->defs + reloc->def;
-//				printf (" op.%c@%d def@%d %s",
-//						reloc->type - rel_op_a_def_ofs + 'a',
-//						reloc->offset, def->offset, QFO_GETSTR (qfo, def->name));
+				printf (" op.%c@%x def#%d %s",
+						reloc->type - rel_op_a_def_ofs + 'a',
+						reloc->offset, reloc->def,
+						QFO_GETSTR (qfo, def->name));
 				break;
 			case rel_def_def_ofs:
 				def = qfo->defs + reloc->def;
-//				printf (" def@%d def@%d+%d %s+%d", reloc->offset, reloc->def,
-//						qfo->data[reloc->offset].integer_var,
-//						QFO_GETSTR (qfo, def->name),
-//						qfo->data[reloc->offset].integer_var);
+				printf (" def@%d:%x def#%d+%d %s+%d",
+						reloc->space, reloc->offset, reloc->def,
+						QFO_INT (qfo, reloc->space, reloc->offset),
+						QFO_GETSTR (qfo, def->name),
+						QFO_INT (qfo, reloc->space, reloc->offset));
 				break;
 			case rel_def_field_ofs:
 				def = qfo->defs + reloc->def;
-//				printf (" def@%d def@%d+%d %s+%d", reloc->offset, reloc->def,
-//						qfo->data[reloc->offset].integer_var,
-//						QFO_GETSTR (qfo, def->name),
-//						qfo->data[reloc->offset].integer_var);
+				printf (" def@%d:%x def#%d+%d %s+%d",
+						reloc->space, reloc->offset, reloc->def,
+						QFO_INT (qfo, reloc->space, reloc->offset),
+						QFO_GETSTR (qfo, def->name),
+						QFO_INT (qfo, reloc->space, reloc->offset));
 				break;
 		}
 		if (def && def->flags & QFOD_EXTERNAL)
@@ -330,9 +342,11 @@ qfo_relocs (qfo_t *qfo)
 		if (func && qfo->defs[func->def].flags & QFOD_EXTERNAL)
 			printf (" external");
 		if (def && (i < def->relocs || i >= def->relocs + def->num_relocs))
-			printf (" BOGUS reloc!");
+			printf (" BOGUS def reloc! %d %d %d",
+					i, def->relocs, def->num_relocs);
 		if (func && (i < func->relocs || i >= func->relocs + func->num_relocs))
-			printf (" BOGUS reloc!");
+			printf (" BOGUS func reloc! %d %d %d",
+					i, func->relocs, func->num_relocs);
 		puts ("");
 	}
 }
