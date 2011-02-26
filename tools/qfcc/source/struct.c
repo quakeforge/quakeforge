@@ -56,6 +56,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "emit.h"
 #include "expr.h"
 #include "immediate.h"
+#include "obj_type.h"
 #include "qfcc.h"
 #include "reloc.h"
 #include "strpool.h"
@@ -132,6 +133,8 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 	if (!type)
 		sym->type = find_type (sym->type);	// checks the tag, not the symtab
 	sym->type->t.symtab = symtab;
+	if (!type && sym->type->type_def->external)	//FIXME should not be necessary
+		sym->type->type_def = qfo_encode_type (sym->type);
 	return sym;
 }
 
