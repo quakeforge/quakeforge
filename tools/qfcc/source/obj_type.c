@@ -119,6 +119,7 @@ qfo_encode_func (type_t *type)
 	def = qfo_new_encoding (type, size);
 	enc = D_POINTER (qfot_type_t, def);
 	func = &enc->t.func;
+	func->type = ev_func;
 	ENC_DEF (func->return_type, return_type_def);
 	func->num_params = type->t.func.num_params;
 	for (i = 0; i < param_count; i++)
@@ -136,7 +137,8 @@ qfo_encode_ptrfld (type_t *type)
 	type_def = qfo_encode_type (type->t.fldptr.type);
 	def = qfo_new_encoding (type, sizeof (enc->t.ptrfld));
 	enc = D_POINTER (qfot_type_t, def);
-	ENC_DEF (enc->t.ptrfld.type, type_def);
+	enc->t.ptrfld.type = type->type;
+	ENC_DEF (enc->t.ptrfld.aux_type, type_def);
 	return def;
 }
 

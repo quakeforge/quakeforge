@@ -44,10 +44,12 @@
 #include "type.h"
 
 typedef struct qfot_ptrfld_s {
-	pointer_t   type;				///< referenced type
+	pr_int_t    type;				///< ev_field or ev_pointer
+	pointer_t   aux_type;			///< referenced type
 } qfot_ptrfld_t;
 
 typedef struct qfot_func_s {
+	pr_int_t    type;				///< always ev_func
 	pointer_t   return_type;		///< return type of the function
 	pr_int_t    num_params;			///< ones compliment count of the
 									///< parameters. -ve values indicate the
