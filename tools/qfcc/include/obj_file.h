@@ -408,7 +408,7 @@ enum {
 
 	\hideinitializer
 */
-#define QFO_POINTER(q, s, t, o)	((t *)&QFO_var (q, s, o))
+#define QFO_POINTER(q, s, t, o)	((t *)(char *)&QFO_var (q, s, integer, o))
 
 /** Access a structure variable in the object file. Can be assigned to.
 
