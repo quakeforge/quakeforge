@@ -246,14 +246,14 @@ init_classes (void)
 	type_Class.ty = ty_class;
 	type_Class.t.class = &class_Class;
 	chain_type (&type_Class);
+	chain_type (&type_ClassPtr);
+
 	sym = make_structure (0, 's', class_ivars, 0);
 	class_Class.ivars = sym->type->t.symtab;
 	class_Class.type = &type_Class;
 	class_Class.super_class = get_class (sym = new_symbol ("Object"), 1);
 	class_Class.methods = new_methodlist ();
 	symtab_addsymbol (pr.symtab, sym);
-
-	chain_type (&type_ClassPtr);
 
 	type_Protocol.ty = ty_class;
 	type_Protocol.t.class = &class_Protocol;
