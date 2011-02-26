@@ -233,9 +233,6 @@ init_objective_structs (void)
 	chain_type (&type_Super);
 	chain_type (&type_SuperPtr);
 	chain_type (&type_supermsg);
-
-	make_structure ("obj_module_s", 's', module_struct, &type_module);
-
 }
 
 static void
@@ -284,15 +281,13 @@ class_init_obj_module (void)
 {
 	symbol_t   *sym;
 
-	sym = new_symbol ("obj_module_s");
-	sym = find_struct ('s', sym, &type_module);
+	make_structure ("obj_module_s", 's', module_struct, &type_module);
+
 	chain_type (&type_module);
 	chain_type (&type_moduleptr);
 	chain_type (&type_obj_exec_class);
-	if (!sym->table)
-		symtab_addsymbol (pr.symtab, sym);
 
-	sym = new_symbol_type ("obj_module_t", sym->type);
+	sym = new_symbol_type ("obj_module_t", &type_module);
 	sym->sy_type = sy_type;
 	symtab_addsymbol (pr.symtab, sym);
 }
