@@ -66,6 +66,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/zone.h"
 
 #include "obj_file.h"
+#include "obj_type.h"
 #include "qfprogs.h"
 #include "reloc.h"
 
@@ -127,9 +128,9 @@ static int      num_edicts;
 static int      reserved_edicts = 1;
 static progs_t  pr;
 
-//static pr_debug_header_t debug;
+static pr_debug_header_t debug;
 static qfo_t   *qfo;
-//static dprograms_t progs;
+static dprograms_t progs;
 
 static const char *source_path = "";
 
@@ -252,54 +253,97 @@ init_qf (void)
 	func_tab = Hash_NewTable (1021, 0, 0, 0);
 	Hash_SetHashCompare (func_tab, func_hash, func_compare);
 }
-/*
+
 static etype_t
-get_auxtype (const char *type)
+get_type (pointer_t type)
 {
-	if (type[0] != 'F') {
+	qfot_type_t *type_def;
+	if (type < 0 || type >= qfo->spaces[qfo_type_space].data_size)
 		return ev_void;
-	} else {
-		switch (type[1]) {
-			default:
-			case 'v':
-				return ev_void;
-			case '*':
-				return ev_string;
-			case 'f':
-				return ev_float;
-			case 'V':
-				return ev_vector;
-			case 'E':
-				return ev_entity;
-			case 'F':
-				return ev_field;
-			case '(':
-				return ev_func;
-			case '@':	// id
-			case '#':	// class
-			case '^':
-				return ev_pointer;
-			case 'Q':
-				return ev_quat;
-			case 'i':
-				return ev_integer;
-			case 's':
-				return ev_short;
-		}
+	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
+	switch ((ty_type_e)type_def->ty) {
+		case ty_none:
+			// field, pointer and function types store their basic type in
+			// the same location.
+			return type_def->t.type;
+		case ty_struct:
+		case ty_union:
+			return ev_invalid;
+		case ty_enum:
+			return ev_integer;	// FIXME v6 progs should be float
+		case ty_array:
+		case ty_class:
+			return ev_invalid;
 	}
+	return ev_invalid;
+}
+
+static etype_t
+get_type_size (pointer_t type)
+{
+	qfot_type_t *type_def;
+	int          i, size;
+	if (type < 0 || type >= qfo->spaces[qfo_type_space].data_size)
+		return 1;
+	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
+	switch ((ty_type_e)type_def->ty) {
+		case ty_none:
+			// field, pointer and function types store their basic type in
+			// the same location.
+			return pr_type_size[type_def->t.type];
+		case ty_struct:
+			for (i = size = 0; i < type_def->t.strct.num_fields; i++)
+				size += get_type_size (type_def->t.strct.fields[i].type);
+			return size;
+		case ty_union:
+			for (i = size = 0; i < type_def->t.strct.num_fields; i++) {
+				int         s;
+				s = get_type_size (type_def->t.strct.fields[i].type);
+				if (s > size)
+					size = s;
+			}
+			return size;
+		case ty_enum:
+			return pr_type_size[ev_integer];
+		case ty_array:
+			return type_def->t.array.size
+					* get_type_size (type_def->t.array.type);
+		case ty_class:
+			return 0;	// FIXME
+	}
+	return 0;
+}
+
+static void
+function_params (dfunction_t *df, qfo_func_t *func)
+{
+	qfot_type_t *type;
+	int         num_params;
+	int         i;
+
+	if (func->type < 0 || func->type >= qfo->spaces[qfo_type_space].data_size)
+		return;
+	type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, func->type);
+	if (type->ty != ty_none && type->t.type != ev_func)
+		return;
+	df->numparms = num_params = type->t.func.num_params;
+	if (num_params < 0)
+		num_params = ~num_params;
+	for (i = 0; i < num_params; i++)
+		df->parm_size[i] = get_type_size (type->t.func.param_types[i]);
 }
 
 static void
 convert_def (const qfo_def_t *def, ddef_t *ddef)
 {
-	ddef->type = def->basic_type;
-	ddef->ofs = def->ofs;
+	ddef->type = get_type (def->type);
+	ddef->ofs = def->offset;
 	ddef->s_name = def->name;
 	if (!(def->flags & QFOD_NOSAVE)
 		&& !(def->flags & QFOD_CONSTANT)
 		&& (def->flags & QFOD_GLOBAL)
-		&& def->basic_type != ev_func
-		&& def->basic_type != ev_field)
+		&& ddef->type != ev_func
+		&& ddef->type != ev_field)
 		ddef->type |= DEF_SAVEGLOBAL;
 }
 
@@ -316,14 +360,15 @@ convert_qfo (void)
 	pr.progs = &progs;
 	progs.version = PROG_VERSION;
 
-	pr.pr_statements = malloc (qfo->code_size * sizeof (dstatement_t));
-	memcpy (pr.pr_statements, qfo->code,
-			qfo->code_size * sizeof (dstatement_t));
-	progs.numstatements = qfo->code_size;
+	pr.pr_statements = malloc (qfo->spaces[qfo_code_space].data_size
+							   * sizeof (dstatement_t));
+	memcpy (pr.pr_statements, qfo->spaces[qfo_code_space].d.code,
+			qfo->spaces[qfo_code_space].data_size * sizeof (dstatement_t));
+	progs.numstatements = qfo->spaces[qfo_code_space].data_size;
 
-	pr.pr_strings = qfo->strings;
-	progs.numstrings = qfo->strings_size;
-	pr.pr_stringsize = qfo->strings_size;
+	pr.pr_strings = qfo->spaces[qfo_strings_space].d.strings;
+	progs.numstrings = qfo->spaces[qfo_strings_space].data_size;
+	pr.pr_stringsize = qfo->spaces[qfo_strings_space].data_size;
 
 	progs.numfunctions = qfo->num_funcs + 1;
 	pr.pr_functions = calloc (progs.numfunctions, sizeof (dfunction_t));
@@ -335,14 +380,15 @@ convert_qfo (void)
 		qfo_func_t *func = qfo->funcs + i;
 		dfunction_t df;
 
-		df.first_statement = func->builtin ? -func->builtin : func->code;
-		df.parm_start = qfo->data_size;
-		df.locals = func->locals_size;
+		memset (&df, 0, sizeof (df));
+
+		df.first_statement = func->code;
+		df.parm_start = qfo->spaces[qfo_near_data_space].data_size;
+		df.locals = qfo->spaces[func->locals_space].data_size;
 		df.profile = 0;
 		df.s_name = func->name;
 		df.s_file = func->file;
-		df.numparms = func->num_parms;
-		memcpy (df.parm_size, func->parm_size, sizeof (df.parm_size));
+		function_params (&df, func);
 
 		if (df.locals > num_locals)
 			num_locals = df.locals;
@@ -354,12 +400,13 @@ convert_qfo (void)
 		pr.auxfunctions[i].source_line = func->line;
 		pr.auxfunctions[i].line_info = func->line_info;
 		pr.auxfunctions[i].local_defs = ld - pr.local_defs;
-		pr.auxfunctions[i].num_locals = func->num_local_defs;
+		pr.auxfunctions[i].num_locals =
+			qfo->spaces[func->locals_space].num_defs;
 
-		for (j = 0; j < func->num_local_defs; j++) {
-			qfo_def_t  *d = defs + func->local_defs + j;
+		for (j = 0; j < qfo->spaces[func->locals_space].num_defs; j++) {
+			qfo_def_t  *d = qfo->spaces[func->locals_space].defs + j;
 			convert_def (d, ld++);
-			d->ofs += qfo->data_size;
+			ld->ofs += qfo->spaces[qfo_near_data_space].data_size;
 		}
 	}
 
@@ -374,30 +421,37 @@ convert_qfo (void)
 
 		if (!(def->flags & QFOD_LOCAL) && def->name) {
 			if (def->flags & QFOD_EXTERNAL) {
-				int         size = pr_type_size[def->basic_type]; //FIXME struct etc
+				int         size = get_type_size (def->type);
 				if (!size)
 					size = 1;
-				def->ofs += qfo->data_size + num_locals + num_externs;
+				def->offset += qfo->spaces[qfo_near_data_space].data_size
+					+ num_locals + num_externs;
 				num_externs += size;
 			}
 
 			convert_def (def, &ddef);
 			pr.pr_globaldefs[progs.numglobaldefs++] = ddef;
 			if (ddef.type == ev_field) {
-				ddef.type = get_auxtype (qfo->types + def->full_type);
-				progs.entityfields += pr_type_size[ddef.type];
-				ddef.ofs = qfo->data[ddef.ofs].integer_var;
+				ddef.type = get_type (def->type);
+				progs.entityfields += get_type_size (def->type);
+				ddef.ofs = QFO_INT (qfo, qfo_near_data_space, ddef.ofs);
 				pr.pr_fielddefs[progs.numfielddefs++] = ddef;
 			}
 		}
 	}
 
-	progs.numglobals = qfo->data_size;
+	progs.numglobals = qfo->spaces[qfo_near_data_space].data_size;
 	pr.globals_size = progs.numglobals + num_locals + num_externs;
+	pr.globals_size += qfo->spaces[qfo_far_data_space].data_size;
 	pr.pr_globals = calloc (pr.globals_size, sizeof (pr_type_t));
-	memcpy (pr.pr_globals, qfo->data, qfo->data_size * sizeof (pr_type_t));
+	memcpy (pr.pr_globals, qfo->spaces[qfo_near_data_space].d.data,
+			qfo->spaces[qfo_near_data_space].data_size * sizeof (pr_type_t));
+	memcpy (pr.pr_globals + progs.numglobals + num_locals + num_externs,
+			qfo->spaces[qfo_far_data_space].d.data,
+			qfo->spaces[qfo_far_data_space].data_size * sizeof (pr_type_t));
 
 	for (i = 0; i < qfo->num_defs; i++) {
+		break;
 		qfo_def_t  *def = defs + i;
 
 		for (j = 0; j < def->num_relocs; j++) {
@@ -406,28 +460,28 @@ convert_qfo (void)
 				case rel_none:
 					break;
 				case rel_op_a_def:
-					pr.pr_statements[reloc->ofs].a = def->ofs;
+					pr.pr_statements[reloc->offset].a = def->offset;
 					break;
 				case rel_op_b_def:
-					pr.pr_statements[reloc->ofs].b = def->ofs;
+					pr.pr_statements[reloc->offset].b = def->offset;
 					break;
 				case rel_op_c_def:
-					pr.pr_statements[reloc->ofs].c = def->ofs;
+					pr.pr_statements[reloc->offset].c = def->offset;
 					break;
 				case rel_op_a_def_ofs:
-					pr.pr_statements[reloc->ofs].a += def->ofs;
+					pr.pr_statements[reloc->offset].a += def->offset;
 					break;
 				case rel_op_b_def_ofs:
-					pr.pr_statements[reloc->ofs].b += def->ofs;
+					pr.pr_statements[reloc->offset].b += def->offset;
 					break;
 				case rel_op_c_def_ofs:
-					pr.pr_statements[reloc->ofs].c += def->ofs;
+					pr.pr_statements[reloc->offset].c += def->offset;
 					break;
 				case rel_def_def:
-					pr.pr_globals[reloc->ofs].integer_var = def->ofs;
+					pr.pr_globals[reloc->offset].integer_var = def->offset;
 					break;
 				case rel_def_def_ofs:
-					pr.pr_globals[reloc->ofs].integer_var += def->ofs;
+					pr.pr_globals[reloc->offset].integer_var += def->offset;
 					break;
 				// these are relative and fixed up before the .qfo is written
 				case rel_op_a_op:
@@ -455,7 +509,7 @@ convert_qfo (void)
 		pr.debug = &debug;
 
 }
-*/
+
 static int
 load_progs (const char *name)
 {
@@ -480,8 +534,7 @@ load_progs (const char *name)
 		if (!qfo)
 			return 0;
 
-//		convert_qfo ();
-		return 1;
+		convert_qfo ();
 	} else {
 		pr.progs_name = name;
 		PR_LoadProgsFile (&pr, file, size, 1, 0);
