@@ -234,7 +234,7 @@ typedef struct qfo_reloc_s {
 	pr_int_t    space;			///< index of space holding data to be adjusted
 	pr_int_t    offset;			///< offset of the relocation
 	pr_int_t    type;			///< type of the relocation (::reloc_type)
-	pr_int_t    def;			///< "def" this relocation is for
+	pr_int_t    target;			///< def/func/etc this relocation is for
 } qfo_reloc_t;
 
 /**	In-memory representation of a QFO space

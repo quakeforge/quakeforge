@@ -269,10 +269,10 @@ qfo_relocs (qfo_t *qfo)
 			case rel_op_a_def:
 			case rel_op_b_def:
 			case rel_op_c_def:
-				def = qfo->defs + reloc->def;
+				def = qfo->defs + reloc->target;
 				printf (" op.%c@%d def#%d %s",
 						reloc->type - rel_op_a_def + 'a',
-						reloc->offset, reloc->def,
+						reloc->offset, reloc->target,
 						QFO_GETSTR (qfo, def->name));
 				break;
 			case rel_op_a_op:
@@ -283,22 +283,22 @@ qfo_relocs (qfo_t *qfo)
 				break;
 			case rel_def_op:
 				printf (" def@%d:%x op@%d", reloc->space, reloc->offset,
-						reloc->def);
+						reloc->target);
 				break;
 			case rel_def_def:
-				def = qfo->defs + reloc->def;
+				def = qfo->defs + reloc->target;
 				printf (" def@%d:%x def#%d %s", reloc->space, reloc->offset,
-						reloc->def, QFO_GETSTR (qfo, def->name));
+						reloc->target, QFO_GETSTR (qfo, def->name));
 				break;
 			case rel_def_func:
-				//func = qfo->funcs + reloc->def;
-				func = qfo->funcs + QFO_FUNCTION (qfo, reloc->space,
-												  reloc->offset);
+				func = qfo->funcs + reloc->target;
+				//func = qfo->funcs + QFO_FUNCTION (qfo, reloc->space,
+				//								  reloc->offset);
 				printf (" def@%d:%x func#%d %s %x",
 						reloc->space, reloc->offset,
 						QFO_FUNCTION (qfo, reloc->space, reloc->offset),
 						QFO_GETSTR (qfo, func->name),
-						reloc->def);
+						reloc->target);
 				break;
 			case rel_def_string:
 				printf (" def@%d:%x string:%x `%s'",
@@ -307,31 +307,31 @@ qfo_relocs (qfo_t *qfo)
 						QFO_GSTRING (qfo, reloc->space, reloc->offset));
 				break;
 			case rel_def_field:
-				def = qfo->defs + reloc->def;
+				def = qfo->defs + reloc->target;
 				printf (" def@%d:%x def#%d %s", reloc->space, reloc->offset,
-						reloc->def, QFO_GETSTR (qfo, def->name));
+						reloc->target, QFO_GETSTR (qfo, def->name));
 				break;
 			case rel_op_a_def_ofs:
 			case rel_op_b_def_ofs:
 			case rel_op_c_def_ofs:
-				def = qfo->defs + reloc->def;
+				def = qfo->defs + reloc->target;
 				printf (" op.%c@%x def#%d %s",
 						reloc->type - rel_op_a_def_ofs + 'a',
-						reloc->offset, reloc->def,
+						reloc->offset, reloc->target,
 						QFO_GETSTR (qfo, def->name));
 				break;
 			case rel_def_def_ofs:
-				def = qfo->defs + reloc->def;
+				def = qfo->defs + reloc->target;
 				printf (" def@%d:%x def#%d+%d %s+%d",
-						reloc->space, reloc->offset, reloc->def,
+						reloc->space, reloc->offset, reloc->target,
 						QFO_INT (qfo, reloc->space, reloc->offset),
 						QFO_GETSTR (qfo, def->name),
 						QFO_INT (qfo, reloc->space, reloc->offset));
 				break;
 			case rel_def_field_ofs:
-				def = qfo->defs + reloc->def;
+				def = qfo->defs + reloc->target;
 				printf (" def@%d:%x def#%d+%d %s+%d",
-						reloc->space, reloc->offset, reloc->def,
+						reloc->space, reloc->offset, reloc->target,
 						QFO_INT (qfo, reloc->space, reloc->offset),
 						QFO_GETSTR (qfo, def->name),
 						QFO_INT (qfo, reloc->space, reloc->offset));

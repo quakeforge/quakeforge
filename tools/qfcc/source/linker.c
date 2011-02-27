@@ -185,7 +185,7 @@ update_relocs (qfo_t *qfo)
 		} else {
 			reloc->space += work->num_spaces;
 		}
-		reloc->def += work->num_defs;
+		reloc->target += work->num_defs;	//FIXME wrong
 	}
 }
 
