@@ -420,11 +420,13 @@ linker_begin (void)
 	work_type_data = defspace_new ();
 }
 
-typedef int (*space_func) (qfo_t *qfo, qfo_mspace_t *space);
+typedef int (*space_func) (qfo_t *qfo, qfo_mspace_t *space, int pass);
 
 static int
-process_null (qfo_t *qfo, qfo_mspace_t *space)
+process_null (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
+	if (pass != 0)
+		return 0;
 	if (space->defs || space->num_defs || space->d.data || space->data_size
 		|| space->id) {
 		linker_error ("non-null null space");
@@ -434,8 +436,10 @@ process_null (qfo_t *qfo, qfo_mspace_t *space)
 }
 
 static int
-process_code (qfo_t *qfo, qfo_mspace_t *space)
+process_code (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
+	if (pass != 1)
+		return 0;
 	if (space->defs || space->num_defs) {
 		linker_error ("defs in code space");
 		return 1;
@@ -447,8 +451,10 @@ process_code (qfo_t *qfo, qfo_mspace_t *space)
 }
 
 static int
-process_data (qfo_t *qfo, qfo_mspace_t *space)
+process_data (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
+	if (pass != 1)
+		return 0;
 	if (space->id == qfo_near_data_space) {
 		add_data (qfo_near_data_space, space);
 	} else if (space->id == qfo_far_data_space) {
@@ -460,8 +466,10 @@ process_data (qfo_t *qfo, qfo_mspace_t *space)
 }
 
 static int
-process_strings (qfo_t *qfo, qfo_mspace_t *space)
+process_strings (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
+	if (pass != 0)
+		return 0;
 	if (space->defs || space->num_defs) {
 		linker_error ("defs in strings space");
 		return 1;
@@ -471,8 +479,10 @@ process_strings (qfo_t *qfo, qfo_mspace_t *space)
 }
 
 static int
-process_entity (qfo_t *qfo, qfo_mspace_t *space)
+process_entity (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
+	if (pass != 1)
+		return 0;
 	add_data (qfo_entity_space, space);
 	return 0;
 }
@@ -531,7 +541,7 @@ transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
 }
 
 static int
-process_type (qfo_t *qfo, qfo_mspace_t *space)
+process_type (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
 	int         i;
 	int         size;
@@ -543,6 +553,8 @@ process_type (qfo_t *qfo, qfo_mspace_t *space)
 	defref_t   *ref;
 	pointer_t   offset;
 
+	if (pass != 0)
+		return 0;
 	if (qfo_type_defs) {
 		linker_error ("type space already defined");
 		return 1;
@@ -599,15 +611,18 @@ linker_add_qfo (qfo_t *qfo)
 		process_type,
 	};
 	int         i;
+	int         pass;
 	qfo_mspace_t *space;
 
-	for (i = 0, space = qfo->spaces; i < qfo->num_spaces; i++, space++) {
-		if (space->type < 0 || space->type > qfos_type) {
-			linker_error ("bad space type");
-			return 1;
+	for (pass = 0; pass < 2; pass++) {
+		for (i = 0, space = qfo->spaces; i < qfo->num_spaces; i++, space++) {
+			if (space->type < 0 || space->type > qfos_type) {
+				linker_error ("bad space type");
+				return 1;
+			}
+			if (funcs[space->type] (qfo, space, pass))
+				return 1;
 		}
-		if (funcs[space->type] (qfo, space))
-			return 1;
 	}
 	return 0;
 }
