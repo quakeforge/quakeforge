@@ -192,6 +192,7 @@ qfo_init_string_space (qfo_t *qfo, qfo_mspace_t *space, strpool_t *strings)
 	space->defs = 0;
 	space->d.strings = strings->strings;
 	space->data_size = strings->size;
+	space->id = qfo_strings_space;
 }
 
 static void
@@ -203,6 +204,7 @@ qfo_init_code_space (qfo_t *qfo, qfo_mspace_t *space, codespace_t *code)
 	space->defs = 0;
 	space->d.code = code->code;
 	space->data_size = code->size;
+	space->id = qfo_code_space;
 }
 
 static void
@@ -227,6 +229,7 @@ qfo_init_entity_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 	space->num_defs = qfo_encode_defs (qfo, data->defs, defs, relocs);
 	space->d.data = 0;
 	space->data_size = data->size;
+	space->id = qfo_entity_space;
 }
 
 static void
@@ -239,6 +242,7 @@ qfo_init_type_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 	space->num_defs = qfo_encode_defs (qfo, data->defs, defs, relocs);
 	space->d.data = data->data;
 	space->data_size = data->size;
+	space->id = qfo_type_space;
 }
 
 static void
@@ -258,6 +262,7 @@ qfo_encode_functions (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 			q->code = -f->builtin;
 		q->def = f->def->qfo_def;
 		if (f->symtab && f->symtab->space) {
+			space->id = f->symtab->space->qfo_space;
 			qfo_init_data_space (qfo, defs, relocs, space++, f->symtab->space);
 			q->locals_space = f->symtab->space->qfo_space;
 		}
@@ -290,8 +295,10 @@ qfo_from_progs (pr_info_t *pr)
 	qfo_init_code_space (qfo, &qfo->spaces[qfo_code_space], pr->code);
 	qfo_init_data_space (qfo, &def, &reloc, &qfo->spaces[qfo_near_data_space],
 						 pr->near_data);
+	qfo->spaces[qfo_near_data_space].id = qfo_near_data_space;
 	qfo_init_data_space (qfo, &def, &reloc, &qfo->spaces[qfo_far_data_space],
 						 pr->far_data);
+	qfo->spaces[qfo_far_data_space].id = qfo_far_data_space;
 	qfo_init_entity_space (qfo, &def, &reloc, &qfo->spaces[qfo_entity_space],
 						   pr->entity_data);
 	qfo_init_type_space (qfo, &def, &reloc, &qfo->spaces[qfo_type_space],
@@ -425,6 +432,7 @@ qfo_write (qfo_t *qfo, const char *filename)
 			space_data += RUP (space_size, 16);
 		}
 		spaces[i].data_size = LittleLong (qfo->spaces[i].data_size);
+		spaces[i].id = LittleLong (qfo->spaces[i].id);
 	}
 	for (i = 0; i < qfo->num_relocs; i++) {
 		relocs[i].space = LittleLong (qfo->relocs[i].space);
@@ -513,6 +521,7 @@ qfo_read (QFile *file)
 			qfo_byteswap_space (qfo->spaces[i].d.data,
 								qfo->spaces[i].data_size, qfo->spaces[i].type);
 		}
+		qfo->spaces[i].id = LittleLong (spaces[i].id);
 	}
 	for (i = 0; i < qfo->num_relocs; i++) {
 		qfo->relocs[i].space = LittleLong (qfo->relocs[i].space);
