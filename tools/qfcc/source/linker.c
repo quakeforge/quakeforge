@@ -561,6 +561,9 @@ process_type (qfo_t *qfo, qfo_mspace_t *space)
 		}
 		offset = transfer_type (qfo, space, def->offset);
 		type_def = type_space->defs + type_space->num_defs++;
+		memset (type_def, 0, sizeof (*type_def));
+		type_def->name = add_string (name);
+		type_def->offset = offset;
 		ref = get_defref (type_def, type_space, &type_space->defs);
 		Hash_Add (defined_type_defs, ref);
 		while ((ref = Hash_Del (extern_type_defs, name))) {
