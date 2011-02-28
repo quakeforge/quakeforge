@@ -551,6 +551,7 @@ process_type (qfo_t *qfo, qfo_mspace_t *space)
 	type_space = &work->spaces[qfo_type_space];
 	size = (type_space->num_defs + space->num_defs) * sizeof (qfo_def_t);
 	type_space->defs = realloc (type_space->defs, size);
+	// first pass: check for already defined types
 	for (i = 0, def = space->defs; i < space->num_defs; i++, def++) {
 		name = QFOSTR (qfo, def->name);
 		type = (qfot_type_t *) (char *) &space->d.data[def->offset];
@@ -559,6 +560,13 @@ process_type (qfo_t *qfo, qfo_mspace_t *space)
 			type->t.class = REF (ref)->offset;
 			continue;
 		}
+	}
+	// second pass: transfer any new types
+	for (i = 0, def = space->defs; i < space->num_defs; i++, def++) {
+		name = QFOSTR (qfo, def->name);
+		type = (qfot_type_t *) (char *) &space->d.data[def->offset];
+		if (type->ty < 0)
+			continue;
 		offset = transfer_type (qfo, space, def->offset);
 		type_def = type_space->defs + type_space->num_defs++;
 		memset (type_def, 0, sizeof (*type_def));
