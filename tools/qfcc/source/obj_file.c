@@ -513,8 +513,9 @@ qfo_read (QFile *file)
 
 	for (i = 0; i < qfo->num_spaces; i++) {
 		qfo->spaces[i].type = LittleLong (spaces[i].type);
-		qfo->spaces[i].defs = qfo->defs + LittleLong (spaces[i].defs);
 		qfo->spaces[i].num_defs = LittleLong (spaces[i].num_defs);
+		if (qfo->spaces[i].num_defs)
+			qfo->spaces[i].defs = qfo->defs + LittleLong (spaces[i].defs);
 		qfo->spaces[i].data_size = LittleLong (spaces[i].data_size);
 		if (spaces[i].data) {
 			qfo->spaces[i].d.strings = data + LittleLong (spaces[i].data);
