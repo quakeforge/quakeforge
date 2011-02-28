@@ -43,10 +43,10 @@
 
 #include "type.h"
 
-typedef struct qfot_ptrfld_s {
+typedef struct qfot_fldptr_s {
 	pr_int_t    type;				///< ev_field or ev_pointer
 	pointer_t   aux_type;			///< referenced type
-} qfot_ptrfld_t;
+} qfot_fldptr_t;
 
 typedef struct qfot_func_s {
 	pr_int_t    type;				///< always ev_func
@@ -92,7 +92,7 @@ typedef struct qfot_type_s {
 	string_t    encoding;			///< Objective-QC encoding
 	union {
 		pr_int_t    type;			///< basic type: etype_t
-		qfot_ptrfld_t ptrfld;		///< ty_none, ev_pointer/ev_field
+		qfot_fldptr_t fldptr;		///< ty_none, ev_pointer/ev_field
 		qfot_func_t func;			///< ty_none, ev_func
 		qfot_struct_t strct;		///< ty_struct/ty_union/ty_enum
 		qfot_array_t array;			///< ty_array

@@ -128,17 +128,17 @@ qfo_encode_func (type_t *type)
 }
 
 static def_t *
-qfo_encode_ptrfld (type_t *type)
+qfo_encode_fldptr (type_t *type)
 {
 	qfot_type_t *enc;
 	def_t      *def;
 	def_t      *type_def;
 
 	type_def = qfo_encode_type (type->t.fldptr.type);
-	def = qfo_new_encoding (type, sizeof (enc->t.ptrfld));
+	def = qfo_new_encoding (type, sizeof (enc->t.fldptr));
 	enc = D_POINTER (qfot_type_t, def);
-	enc->t.ptrfld.type = type->type;
-	ENC_DEF (enc->t.ptrfld.aux_type, type_def);
+	enc->t.fldptr.type = type->type;
+	ENC_DEF (enc->t.fldptr.aux_type, type_def);
 	return def;
 }
 
@@ -151,7 +151,7 @@ qfo_encode_none (type_t *type)
 	if (type->type == ev_func)
 		return qfo_encode_func (type);
 	else if (type->type == ev_pointer || type->type == ev_field)
-		return qfo_encode_ptrfld (type);
+		return qfo_encode_fldptr (type);
 
 	def = qfo_new_encoding (type, sizeof (enc->t.type));
 	enc = D_POINTER (qfot_type_t, def);
