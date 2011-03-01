@@ -106,6 +106,8 @@ typedef struct defref_s {
 	qfo_def_t **def_list;
 	int         def;
 	int         space;
+	int         merge;				// merge def's relocs with main def
+	struct defref_s *merge_list;	// list of defs to be merged with this def
 } defref_t;
 
 #define REF(r) (work->spaces[(r)->space].defs + (r)->def)
@@ -120,6 +122,8 @@ static hashtab_t *defined_type_defs;
 static qfo_mspace_t *qfo_type_defs;
 
 static qfo_t *work;
+static int work_base[qfo_num_spaces];
+static int work_func_base;
 static defref_t **work_defrefs;
 static int num_work_defrefs;
 static strpool_t *work_strings;
@@ -128,6 +132,8 @@ static defspace_t *work_near_data;
 static defspace_t *work_far_data;
 static defspace_t *work_entity_data;
 static defspace_t *work_type_data;
+static qfo_reloc_t *work_loose_relocs;
+static int work_num_loose_relocs;
 
 static dstring_t *linker_current_file;
 
@@ -217,10 +223,15 @@ resolve_external_def (defref_t *ext, defref_t *def)
 		linker_type_mismatch (REF (ext), REF (def));
 		return;
 	}
-	if (def->space != ext->space)
-		internal_error (0, "help, help!");
+	if (def->space != ext->space) {
+		def_warning (REF (def), "help, help!");
+		def_warning (REF (ext), "I'm being relocated!");
+	}
 	REF (ext)->offset = REF (def)->offset;
 	REF (ext)->flags = REF (def)->flags;
+	ext->merge = 1;
+	ext->next = def->merge_list;
+	def->merge_list = ext;
 }
 
 static void
@@ -381,8 +392,8 @@ add_space (qfo_t *qfo, qfo_mspace_t *space)
 	ws->id = space->id;
 }
 
-static __attribute__ ((used)) void
-define_def (const char *name, etype_t basic_type, const char *full_type,
+static void
+define_def (const char *name, const char *type,
 			unsigned flags, int size, int v)
 {
 }
@@ -604,6 +615,75 @@ process_type (qfo_t *qfo, qfo_mspace_t *space, int pass)
 	return 0;
 }
 
+static void
+process_funcs (qfo_t *qfo)
+{
+	int         size;
+	qfo_func_t *func;
+	qfot_type_t *type;
+
+	size = work->num_funcs + qfo->num_funcs;
+	work->funcs = realloc (work->funcs, size * sizeof (qfo_func_t));
+	memcpy (work->funcs + work->num_funcs, qfo->funcs,
+			qfo->num_funcs * sizeof (qfo_func_t));
+	while (work->num_funcs < size) {
+		func = work->funcs + work->num_funcs++;
+		type = (qfot_type_t *) (char *) (qfo_type_defs->d.data + func->type);
+		func->type = type->t.class;
+		func->name = add_string (QFOSTR (qfo, func->name));
+		func->file = add_string (QFOSTR (qfo, func->file));
+		func->code += work_base[qfo_code_space];
+		func->def = qfo->defs[func->def].offset;	// defref index
+		func->locals_space = qfo->spaces[func->locals_space].id;
+		func->line_info += work->num_lines;		//FIXME order dependent
+		//FIXME relocs
+	}
+}
+
+static void
+process_lines (qfo_t *qfo)
+{
+	int         size;
+	pr_lineno_t *line;
+
+	size = work->num_lines + qfo->num_lines;
+	work->lines = realloc (work->lines, size * sizeof (pr_lineno_t));
+	memcpy (work->lines + work->num_lines, qfo->lines,
+			qfo->num_lines * sizeof (pr_lineno_t));
+	while (work->num_lines < size) {
+		line = work->lines + work->num_lines++;
+		if (line->line)
+			line->fa.addr += work_base[qfo_code_space];
+		else
+			line->fa.func += work_func_base;
+	}
+}
+
+static void
+process_loose_relocs (qfo_t *qfo)
+{
+	int         size;
+	qfo_reloc_t *reloc;
+
+	size = work_num_loose_relocs + qfo->num_loose_relocs;
+	work_loose_relocs = realloc (work_loose_relocs,
+								 size * sizeof (qfo_reloc_t));
+	memcpy (work_loose_relocs + work_num_loose_relocs,
+			qfo->relocs + qfo->num_relocs - qfo->num_loose_relocs,
+			qfo->num_loose_relocs);
+	while (work_num_loose_relocs < size) {
+		reloc = work_loose_relocs + work_num_loose_relocs++;
+		if (reloc->space < 0 || reloc->space >= qfo->num_spaces) {
+			linker_error ("bad reloc space");
+			reloc->type = rel_none;
+			continue;
+		}
+		reloc->space = qfo->spaces[reloc->space].id;
+		if (reloc->space < qfo_num_spaces)
+			reloc->offset += work_base[reloc->space];
+	}
+}
+
 static int
 linker_add_qfo (qfo_t *qfo)
 {
@@ -620,6 +700,10 @@ linker_add_qfo (qfo_t *qfo)
 	qfo_mspace_t *space;
 
 	qfo_type_defs = 0;
+	for (i = 0; i < qfo_num_spaces; i++) {
+		work_base[i] = work->spaces[i].data_size;
+	}
+	work_func_base = work->num_funcs;
 	for (pass = 0; pass < 2; pass++) {
 		for (i = 0, space = qfo->spaces; i < qfo->num_spaces; i++, space++) {
 			if (space->type < 0 || space->type > qfos_type) {
@@ -630,6 +714,9 @@ linker_add_qfo (qfo_t *qfo)
 				return 1;
 		}
 	}
+	process_funcs (qfo);
+	process_lines (qfo);
+	process_loose_relocs (qfo);
 	return 0;
 }
 
@@ -754,10 +841,9 @@ linker_add_lib (const char *libname)
 static __attribute__ ((used)) void
 undefined_def (qfo_def_t *def)
 {
-#if 0
 	qfo_def_t   line_def;
 	pr_int_t    i;
-	qfo_reloc_t *reloc = relocs.relocs + def->relocs;
+	qfo_reloc_t *reloc = work->relocs + def->relocs;
 
 	for (i = 0; i < def->num_relocs; i++, reloc++) {
 		if ((reloc->type == rel_op_a_def
@@ -766,43 +852,43 @@ undefined_def (qfo_def_t *def)
 			 || reloc->type == rel_op_a_def_ofs
 			 || reloc->type == rel_op_b_def_ofs
 			 || reloc->type == rel_op_c_def_ofs)
-			&& lines.lines) {
-			qfo_func_t *func = funcs.funcs;
+			&& work->lines) {
+			qfo_func_t *func = work->funcs;
 			qfo_func_t *best = func;
 			pr_int_t    best_dist = reloc->offset - func->code;
 			pr_lineno_t *line;
 
-			while (best_dist && func - funcs.funcs < funcs.num_funcs) {
+			while (best_dist && func - work->funcs < work->num_funcs) {
 				if (func->code <= reloc->offset) {
-					if (best_dist < 0 || reloc->offset - func->code < best_dist) {
+					if (best_dist < 0
+						|| reloc->offset - func->code < best_dist) {
 						best = func;
 						best_dist = reloc->offset - func->code;
 					}
 				}
 				func++;
 			}
-			line = lines.lines + best->line_info;
+			line = work->lines + best->line_info;
 			line_def.file = best->file;
 			line_def.line = best->line;
 			if (!line->line
-				&& line->fa.func == (pr_uint_t) (best - funcs.funcs)) {
-				while (line - lines.lines < lines.num_lines - 1 && line[1].line
+				&& line->fa.func == (pr_uint_t) (best - work->funcs)) {
+				while (line - work->lines < work->num_lines - 1
+					   && line[1].line
 					   && line[1].fa.addr <= (pr_uint_t) reloc->offset)
 					line++;
 				line_def.line = line->line + best->line;
 			}
-			def_error (&line_def, "undefined symbol %s", STRING (def->name));
+			def_error (&line_def, "undefined symbol %s", WORKSTR (def->name));
 		} else {
-			def_error (def, "undefined symbol %s", STRING (def->name));
+			def_error (def, "undefined symbol %s", WORKSTR (def->name));
 		}
 	}
-#endif
 }
 
 qfo_t *
 linker_finish (void)
 {
-#if 0
 	defref_t  **undef_defs, **defref;
 	qfo_t      *qfo;
 
@@ -811,30 +897,30 @@ linker_finish (void)
 
 		undef_defs = (defref_t **) Hash_GetList (extern_defs);
 		for (defref = undef_defs; *defref; defref++) {
-			qfo_def_t  *def = deref_def (*defref, &global_defs);
-			const char *name = STRING (def->name);
+			qfo_def_t  *def = REF (*defref);
+			const char *name = WORKSTR (def->name);
 
 			if (strcmp (name, ".self") == 0 && !did_self) {
 				defref_t   *_d = Hash_Find (defined_defs, "self");
 				if (_d) {
-//					qfo_def_t  *d = deref_def (_d, &global_defs);
-//					if (d->basic_type == ev_entity)
-//						def_warning (d, "@self and self used together");
+					qfo_def_t  *d = REF (_d);
+					if (QFO_TYPEMETA (work, d->type) == ty_none
+						&& QFO_TYPETYPE (work, d->type) == ev_entity)
+						def_warning (d, "@self and self used together");
 				}
-				define_def (".self", ev_entity, "E", 0, 1, 0);
+				define_def (".self", "E", 0, 1, 0);
 				did_self = 1;
 			} else if (strcmp (name, ".this") == 0 && !did_this) {
-				entity_base = 0;
-				define_def (".this", ev_field, "F@", QFOD_NOSAVE, 1,
-							entity->size);
-				defspace_add_data (entity, 0, 1);
+				pointer_t   offset;
+				offset = defspace_alloc_loc (work_entity_data, 1);
+				define_def (".this", "F@", QFOD_NOSAVE, 1, offset);
 				did_this = 1;
 			}
 		}
 		free (undef_defs);
 		undef_defs = (defref_t **) Hash_GetList (extern_defs);
 		for (defref = undef_defs; *defref; defref++) {
-			qfo_def_t  *def = deref_def (*defref, &global_defs);
+			qfo_def_t  *def = REF (*defref);
 			undefined_def (def);
 		}
 		free (undef_defs);
@@ -842,23 +928,10 @@ linker_finish (void)
 			return 0;
 	}
 
-	merge_defgroups ();
-
-	fixup_relocs ();
+	//fixup_relocs ();
 
 	qfo = qfo_new ();
-	qfo_add_code (qfo, code->code, code->size);
-	qfo_add_data (qfo, data->data, data->size);
-	qfo_add_far_data (qfo, far_data->data, far_data->size);
-	qfo_add_strings (qfo, strings->strings, strings->size);
-	qfo_add_relocs (qfo, final_relocs.relocs, final_relocs.num_relocs);
-	qfo_add_defs (qfo, defs.defs, defs.num_defs);
-	qfo_add_funcs (qfo, funcs.funcs, funcs.num_funcs);
-	qfo_add_lines (qfo, lines.lines, lines.num_lines);
-	qfo_add_types (qfo, type_strings->strings, type_strings->size);
-//	qfo->entity_fields = entity->size;
-	return qfo;
-#endif
+
 	return work;
 }
 
