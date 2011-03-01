@@ -368,9 +368,13 @@ enum {
 	\param t offset to type encoding
 	\return (char *)
 
+	\note Assumes standard space order.
 	\hideinitializer
 */
 #define QFO_TYPESTR(q, t)	QFO_GSTRING (q, qfo_type_space, (t) + 2)
+
+#define QFO_TYPEMETA(q, t)	QFO_INT (q, qfo_type_space, (t) + 0)
+#define QFO_TYPETYPE(q, t)	QFO_INT (q, qfo_type_space, (t) + 3)
 
 /** Access a string global, converting it to a C string.
 
