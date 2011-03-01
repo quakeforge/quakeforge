@@ -865,7 +865,7 @@ non_code_func
 			symbol_t   *sym = $<symbol>0;
 			specifier_t spec = $<spec>-1;
 			if (sym->type->type != ev_field) {
-				make_function (sym, 0, sym->table->space, current_storage);
+				make_function (sym, 0, sym->table->space, spec.storage);
 			} else {
 				initialize_def (sym, sym->type, 0, current_symtab->space,
 								spec.storage);
