@@ -617,6 +617,7 @@ linker_add_qfo (qfo_t *qfo)
 	int         pass;
 	qfo_mspace_t *space;
 
+	qfo_type_defs = 0;
 	for (pass = 0; pass < 2; pass++) {
 		for (i = 0, space = qfo->spaces; i < qfo->num_spaces; i++, space++) {
 			if (space->type < 0 || space->type > qfos_type) {
