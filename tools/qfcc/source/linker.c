@@ -457,8 +457,10 @@ process_data (qfo_t *qfo, qfo_mspace_t *space, int pass)
 	if (pass != 1)
 		return 0;
 	if (space->id == qfo_near_data_space) {
+		add_defs (qfo, space, work->spaces + qfo_near_data_space);
 		add_data (qfo_near_data_space, space);
 	} else if (space->id == qfo_far_data_space) {
+		add_defs (qfo, space, work->spaces + qfo_far_data_space);
 		add_data (qfo_far_data_space, space);
 	} else {
 		add_space (qfo, space);
