@@ -392,117 +392,6 @@ add_space (qfo_t *qfo, qfo_mspace_t *space)
 	ws->id = space->id;
 }
 
-static void
-define_def (const char *name, const char *type,
-			unsigned flags, int size, int v)
-{
-}
-
-/**	Initialize the linker state.
-*/
-void
-linker_begin (void)
-{
-	linker_current_file = dstring_newstr ();
-
-	extern_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
-	defined_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
-
-	extern_type_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
-	defined_type_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
-
-	work = qfo_new ();
-	work->spaces = calloc (qfo_num_spaces, sizeof (qfo_mspace_t));
-	work->num_spaces = qfo_num_spaces;
-	work->spaces[qfo_null_space].type = qfos_null;
-	work->spaces[qfo_strings_space].type = qfos_string;
-	work->spaces[qfo_code_space].type = qfos_code;
-	work->spaces[qfo_near_data_space].type = qfos_data;
-	work->spaces[qfo_far_data_space].type = qfos_data;
-	work->spaces[qfo_entity_space].type = qfos_entity;
-	work->spaces[qfo_type_space].type = qfos_type;
-
-	// adding data will take care of connecting the work qfo spaces with
-	// the actual space data
-	work_strings = strpool_new ();
-	work_code = codespace_new ();
-	work_near_data = defspace_new ();
-	work_far_data = defspace_new ();
-	work_entity_data = defspace_new ();
-	work_type_data = defspace_new ();
-
-	pr.strings = work_strings;
-}
-
-typedef int (*space_func) (qfo_t *qfo, qfo_mspace_t *space, int pass);
-
-static int
-process_null (qfo_t *qfo, qfo_mspace_t *space, int pass)
-{
-	if (pass != 0)
-		return 0;
-	if (space->defs || space->num_defs || space->d.data || space->data_size
-		|| space->id) {
-		linker_error ("non-null null space");
-		return 1;
-	}
-	return 0;
-}
-
-static int
-process_code (qfo_t *qfo, qfo_mspace_t *space, int pass)
-{
-	if (pass != 1)
-		return 0;
-	if (space->defs || space->num_defs) {
-		linker_error ("defs in code space");
-		return 1;
-	}
-	if (space->id != qfo_code_space)
-		linker_warning ("hmm, unexpected code space. *shrug*");
-	add_code (space);
-	return 0;
-}
-
-static int
-process_data (qfo_t *qfo, qfo_mspace_t *space, int pass)
-{
-	if (pass != 1)
-		return 0;
-	if (space->id == qfo_near_data_space) {
-		add_defs (qfo, space, work->spaces + qfo_near_data_space);
-		add_data (qfo_near_data_space, space);
-	} else if (space->id == qfo_far_data_space) {
-		add_defs (qfo, space, work->spaces + qfo_far_data_space);
-		add_data (qfo_far_data_space, space);
-	} else {
-		add_space (qfo, space);
-	}
-	return 0;
-}
-
-static int
-process_strings (qfo_t *qfo, qfo_mspace_t *space, int pass)
-{
-	if (pass != 0)
-		return 0;
-	if (space->defs || space->num_defs) {
-		linker_error ("defs in strings space");
-		return 1;
-	}
-	add_qfo_strings (space);
-	return 0;
-}
-
-static int
-process_entity (qfo_t *qfo, qfo_mspace_t *space, int pass)
-{
-	if (pass != 1)
-		return 0;
-	add_data (qfo_entity_space, space);
-	return 0;
-}
-
 static pointer_t
 transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
 {
@@ -556,8 +445,119 @@ transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
 	return type_offset;
 }
 
+static void
+define_def (const char *name, const char *type,
+			unsigned flags, int size, int v)
+{
+}
+
+/**	Initialize the linker state.
+*/
+void
+linker_begin (void)
+{
+	linker_current_file = dstring_newstr ();
+
+	extern_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
+	defined_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
+
+	extern_type_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
+	defined_type_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
+
+	work = qfo_new ();
+	work->spaces = calloc (qfo_num_spaces, sizeof (qfo_mspace_t));
+	work->num_spaces = qfo_num_spaces;
+	work->spaces[qfo_null_space].type = qfos_null;
+	work->spaces[qfo_strings_space].type = qfos_string;
+	work->spaces[qfo_code_space].type = qfos_code;
+	work->spaces[qfo_near_data_space].type = qfos_data;
+	work->spaces[qfo_far_data_space].type = qfos_data;
+	work->spaces[qfo_entity_space].type = qfos_entity;
+	work->spaces[qfo_type_space].type = qfos_type;
+
+	// adding data will take care of connecting the work qfo spaces with
+	// the actual space data
+	work_strings = strpool_new ();
+	work_code = codespace_new ();
+	work_near_data = defspace_new ();
+	work_far_data = defspace_new ();
+	work_entity_data = defspace_new ();
+	work_type_data = defspace_new ();
+
+	pr.strings = work_strings;
+}
+
+typedef int (*space_func) (qfo_t *qfo, qfo_mspace_t *space, int pass);
+
 static int
-process_type (qfo_t *qfo, qfo_mspace_t *space, int pass)
+process_null_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
+{
+	if (pass != 0)
+		return 0;
+	if (space->defs || space->num_defs || space->d.data || space->data_size
+		|| space->id) {
+		linker_error ("non-null null space");
+		return 1;
+	}
+	return 0;
+}
+
+static int
+process_code_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
+{
+	if (pass != 1)
+		return 0;
+	if (space->defs || space->num_defs) {
+		linker_error ("defs in code space");
+		return 1;
+	}
+	if (space->id != qfo_code_space)
+		linker_warning ("hmm, unexpected code space. *shrug*");
+	add_code (space);
+	return 0;
+}
+
+static int
+process_data_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
+{
+	if (pass != 1)
+		return 0;
+	if (space->id == qfo_near_data_space) {
+		add_defs (qfo, space, work->spaces + qfo_near_data_space);
+		add_data (qfo_near_data_space, space);
+	} else if (space->id == qfo_far_data_space) {
+		add_defs (qfo, space, work->spaces + qfo_far_data_space);
+		add_data (qfo_far_data_space, space);
+	} else {
+		add_space (qfo, space);
+	}
+	return 0;
+}
+
+static int
+process_strings_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
+{
+	if (pass != 0)
+		return 0;
+	if (space->defs || space->num_defs) {
+		linker_error ("defs in strings space");
+		return 1;
+	}
+	add_qfo_strings (space);
+	return 0;
+}
+
+static int
+process_entity_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
+{
+	if (pass != 1)
+		return 0;
+	add_data (qfo_entity_space, space);
+	return 0;
+}
+
+static int
+process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
 	int         i;
 	int         size;
@@ -688,12 +688,12 @@ static int
 linker_add_qfo (qfo_t *qfo)
 {
 	static space_func funcs[] = {
-		process_null,
-		process_code,
-		process_data,
-		process_strings,
-		process_entity,
-		process_type,
+		process_null_space,
+		process_code_space,
+		process_data_space,
+		process_strings_space,
+		process_entity_space,
+		process_type_space,
 	};
 	int         i;
 	int         pass;
