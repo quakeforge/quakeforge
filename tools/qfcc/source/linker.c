@@ -108,7 +108,7 @@ typedef struct defref_s {
 	int         space;
 } defref_t;
 
-#define REF(r) ((*(r)->def_list) + (r)->def)
+#define REF(r) (work->spaces[(r)->space].defs + (r)->def)
 
 static defref_t *free_defrefs;
 
@@ -159,17 +159,15 @@ linker_type_mismatch (qfo_def_t *def, qfo_def_t *prev)
 
 	\param def		The def for which the reference will be created.
 	\param space	The defspace in \c work which holds \a def.
-	\param def_list	The list which currently holds the def.
 	\return			The new reference.
 */
 static defref_t *
-get_defref  (qfo_def_t *def, qfo_mspace_t *space, qfo_def_t **def_list)
+get_defref  (qfo_def_t *def, qfo_mspace_t *space)
 {
 	defref_t   *defref;
 
 	ALLOC (16384, defref_t, defrefs, defref);
-	defref->def_list = def_list;
-	defref->def = def - *def_list;
+	defref->def = def - space->defs;
 	defref->space = space - work->spaces;
 	return defref;
 }
@@ -295,7 +293,7 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space)
 		odef->file = add_string (QFOSTR (qfo, idef->file));
 		type = (qfot_type_t *) (char *) (qfo_type_defs->d.data + idef->type);
 		odef->type = type->t.class;
-		ref = get_defref (odef, dest_space, &dest_space->defs);
+		ref = get_defref (odef, dest_space);
 		work_defrefs[num_work_defrefs++] = ref;
 		process_def (ref, dest_space);
 	}
@@ -587,7 +585,7 @@ process_type (qfo_t *qfo, qfo_mspace_t *space, int pass)
 		memset (type_def, 0, sizeof (*type_def));
 		type_def->name = add_string (name);
 		type_def->offset = offset;
-		ref = get_defref (type_def, type_space, &type_space->defs);
+		ref = get_defref (type_def, type_space);
 		Hash_Add (defined_type_defs, ref);
 		while ((ref = Hash_Del (extern_type_defs, name))) {
 			REF (ref)->flags = 0;
