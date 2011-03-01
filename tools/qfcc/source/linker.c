@@ -280,6 +280,7 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space)
 	qfo_def_t  *idef;
 	qfo_def_t  *odef;
 	defref_t   *ref;
+	qfot_type_t *type;
 
 	size = (num_work_defrefs + count) * sizeof (defref_t *);
 	work_defrefs = realloc (work_defrefs, size);
@@ -292,6 +293,8 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space)
 		idef->offset = num_work_defrefs;	// so def can be found
 		odef->name = add_string (QFOSTR (qfo, idef->name));
 		odef->file = add_string (QFOSTR (qfo, idef->file));
+		type = (qfot_type_t *) (char *) (qfo_type_defs->d.data + idef->type);
+		odef->type = type->t.class;
 		ref = get_defref (odef, dest_space, &dest_space->defs);
 		work_defrefs[num_work_defrefs++] = ref;
 		process_def (ref, dest_space);
