@@ -419,6 +419,8 @@ linker_begin (void)
 	work_far_data = defspace_new ();
 	work_entity_data = defspace_new ();
 	work_type_data = defspace_new ();
+
+	pr.strings = work_strings;
 }
 
 typedef int (*space_func) (qfo_t *qfo, qfo_mspace_t *space, int pass);
@@ -656,7 +658,7 @@ linker_add_object_file (const char *filename)
 	}
 
 	if (options.verbosity >= 2)
-		puts (filename);
+		fprintf (stderr, "%s\n", filename);
 
 	linker_add_qfo (qfo);
 	
@@ -733,8 +735,9 @@ linker_add_lib (const char *libname)
 					&& !(def->flags & QFOD_EXTERNAL)
 					&& Hash_Find (extern_defs, QFOSTR (qfo, def->name))) {
 					if (options.verbosity >= 2)
-						printf ("adding %s because of %s\n",
-								pack->files[i].name, QFOSTR (qfo, def->name));
+						fprintf (stderr, "adding %s because of %s\n",
+								 pack->files[i].name,
+								 QFOSTR (qfo, def->name));
 					linker_add_qfo (qfo);
 					did_something = 1;
 					break;
@@ -884,7 +887,6 @@ def_error (qfo_def_t *def, const char *fmt, ...)
 
 	pr.source_file = def->file;
 	pr.source_line = def->line;
-//	pr.strings = strings;
 	error (0, "%s", string->str);
 }
 
@@ -903,7 +905,6 @@ def_warning (qfo_def_t *def, const char *fmt, ...)
 
 	pr.source_file = def->file;
 	pr.source_line = def->line;
-//	pr.strings = strings;
 	warning (0, "%s", string->str);
 }
 
