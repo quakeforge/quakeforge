@@ -297,6 +297,32 @@ process_def (defref_t *ref, qfo_mspace_t *space)
 }
 
 static int
+add_relocs (qfo_t *qfo, int start, int count, int target)
+{
+	int         size;
+	qfo_reloc_t *reloc;
+
+	size = work->num_relocs + count;
+	work->relocs = realloc (work->relocs, size * sizeof (qfo_reloc_t));
+	memcpy (work->relocs + work->num_relocs, qfo->relocs + start,
+			count * sizeof (qfo_reloc_t));
+	while (work->num_relocs < size) {
+		reloc = work->relocs + work->num_relocs++;
+		if (reloc->space < 0 || reloc->space >= qfo->num_spaces) {
+			linker_error ("bad reloc space: %d (%d)", reloc->space,
+						  qfo->num_spaces);
+			reloc->type = rel_none;
+			continue;
+		}
+		reloc->space = qfo->spaces[reloc->space].id;
+		if (reloc->space < qfo_num_spaces)
+			reloc->offset += work_base[reloc->space];
+		reloc->target = target;
+	}
+	return work->num_relocs - count;
+}
+
+static int
 add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space)
 {
 	int         count = space->num_defs;
@@ -323,6 +349,8 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space)
 		ref = get_defref (odef, dest_space);
 		work_defrefs[num_work_defrefs++] = ref;
 		process_def (ref, dest_space);
+		odef->relocs = add_relocs (qfo, odef->relocs, odef->num_relocs,
+								   odef - dest_space->defs);
 	}
 	dest_space->num_defs += count;
 	return count;
@@ -652,7 +680,8 @@ process_funcs (qfo_t *qfo)
 		func->def = qfo->defs[func->def].offset;	// defref index
 		func->locals_space = qfo->spaces[func->locals_space].id;
 		func->line_info += work->num_lines;		//FIXME order dependent
-		//FIXME relocs
+		func->relocs = add_relocs (qfo, func->relocs, func->num_relocs,
+								   func - work->funcs);
 	}
 }
 
@@ -686,7 +715,7 @@ process_loose_relocs (qfo_t *qfo)
 								 size * sizeof (qfo_reloc_t));
 	memcpy (work_loose_relocs + work_num_loose_relocs,
 			qfo->relocs + qfo->num_relocs - qfo->num_loose_relocs,
-			qfo->num_loose_relocs);
+			qfo->num_loose_relocs * sizeof (qfo_reloc_t));
 	while (work_num_loose_relocs < size) {
 		reloc = work_loose_relocs + work_num_loose_relocs++;
 		if (reloc->space < 0 || reloc->space >= qfo->num_spaces) {
