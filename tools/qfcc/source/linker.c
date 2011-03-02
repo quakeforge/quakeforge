@@ -57,6 +57,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/pakfile.h"
 #include "QF/va.h"
 
+#include "class.h"
 #include "codespace.h"
 #include "def.h"
 #include "defspace.h"
@@ -150,6 +151,14 @@ static defspace_t *work_entity_data;
 static defspace_t *work_type_data;
 static qfo_reloc_t *work_loose_relocs;
 static int work_num_loose_relocs;
+
+static defspace_t **work_spaces[qfo_num_spaces] = {
+	0, 0, 0,
+	&work_near_data,
+	&work_far_data,
+	&work_entity_data,
+	0,
+};
 
 static dstring_t *linker_current_file;
 
@@ -392,19 +401,11 @@ add_code (qfo_mspace_t *code)
 static void
 add_data (int space, qfo_mspace_t *data)
 {
-	defspace_t *work_spaces[qfo_num_spaces] = {
-		0, 0, 0,
-		work_near_data,
-		work_far_data,
-		work_entity_data,
-		0,
-	};
-
 	if (space < 0 || space >= qfo_num_spaces || !work_spaces[space])
 		internal_error (0, "bad space for add_data (): %d", space);
-	defspace_add_data (work_spaces[space], data->d.data, data->data_size);
-	work->spaces[space].d.data = work_spaces[space]->data;
-	work->spaces[space].data_size = work_spaces[space]->size;
+	defspace_add_data (*work_spaces[space], data->d.data, data->data_size);
+	work->spaces[space].d.data = (*work_spaces[space])->data;
+	work->spaces[space].data_size = (*work_spaces[space])->size;
 }
 
 /**	Add a defspace to the working qfo.
@@ -490,9 +491,31 @@ transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
 }
 
 static void
-define_def (const char *name, const char *type,
-			unsigned flags, int size, int v)
+define_def (qfo_mspace_t *space, const char *name, type_t *type,
+			unsigned flags, int v)
 {
+	qfo_def_t  *def;
+	defref_t   *ref;
+
+	if (space->type != qfos_data || space->id < 0
+		|| space->id >= qfo_num_spaces || !work_spaces[space->id])
+		internal_error (0, "bad space for define_def()");
+	space->defs = realloc (space->defs,
+						   (space->num_defs + 1) * sizeof (qfo_def_t));
+	def = space->defs + space->num_defs++;
+	memset (def, 0, sizeof (*def));
+	def->name = add_string (name);
+	def->type = -add_string (type->encoding);	// this will be fixed later
+	def->offset = defspace_alloc_loc (*work_spaces[space->id],
+									  type_size (type));
+	def->flags = flags;
+	(*work_spaces[space->id])->data[def->offset].integer_var = v;
+
+	ref = get_defref (def, space);
+	work_defrefs = realloc (work_defrefs,
+							(num_work_defrefs + 1) * sizeof (defref_t *));
+	work_defrefs[num_work_defrefs++] = ref;
+	Hash_Add (defined_defs, ref);
 }
 
 /**	Initialize the linker state.
@@ -500,6 +523,8 @@ define_def (const char *name, const char *type,
 void
 linker_begin (void)
 {
+	size_t      i;
+
 	linker_current_file = dstring_newstr ();
 
 	extern_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
@@ -518,6 +543,8 @@ linker_begin (void)
 	work->spaces[qfo_far_data_space].type = qfos_data;
 	work->spaces[qfo_entity_space].type = qfos_entity;
 	work->spaces[qfo_type_space].type = qfos_type;
+	for (i = 0; i < (size_t) qfo_num_spaces; i++)
+		work->spaces[i].id = i;
 
 	// adding data will take care of connecting the work qfo spaces with
 	// the actual space data
@@ -529,6 +556,16 @@ linker_begin (void)
 	work_type_data = defspace_new ();
 
 	pr.strings = work_strings;
+
+	if (!options.partial_link) {
+		for (i = 0;
+			 i < sizeof (builtin_symbols) / sizeof (builtin_symbols[0]);
+			 i++) {
+			define_def (&work->spaces[qfo_near_data_space],
+						builtin_symbols[i].name, builtin_symbols[i].type,
+						builtin_symbols[i].flags, 0);
+		}
+	}
 }
 
 typedef int (*space_func) (qfo_t *qfo, qfo_mspace_t *space, int pass);
@@ -953,12 +990,22 @@ linker_finish (void)
 						&& QFO_TYPETYPE (work, d->type) == ev_entity)
 						def_warning (d, "@self and self used together");
 				}
-				define_def (".self", "E", 0, 1, 0);
+				define_def (&work->spaces[qfo_near_data_space], ".self",
+							&type_entity, QFOD_GLOBAL, 0);
 				did_self = 1;
 			} else if (strcmp (name, ".this") == 0 && !did_this) {
 				pointer_t   offset;
+				type_t     *type;
+				int         flags;
+
+				if (!class_Class.super_class)
+					class_init ();
+				type = field_type (&type_ClassPtr);
 				offset = defspace_alloc_loc (work_entity_data, 1);
-				define_def (".this", "F@", QFOD_NOSAVE, 1, offset);
+				flags = (QFOD_GLOBAL | QFOD_CONSTANT
+						 | QFOD_INITIALIZED | QFOD_NOSAVE);
+				define_def (&work->spaces[qfo_near_data_space], ".this",
+							type, flags, offset);
 				did_this = 1;
 			}
 		}
