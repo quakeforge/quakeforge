@@ -254,146 +254,29 @@ init_qf (void)
 	Hash_SetHashCompare (func_tab, func_hash, func_compare);
 }
 
-static etype_t
-get_type (pointer_t type)
-{
-	qfot_type_t *type_def;
-	if (type < 0 || type >= qfo->spaces[qfo_type_space].data_size)
-		return ev_void;
-	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
-	switch ((ty_type_e)type_def->ty) {
-		case ty_none:
-			// field, pointer and function types store their basic type in
-			// the same location.
-			return type_def->t.type;
-		case ty_struct:
-		case ty_union:
-			return ev_invalid;
-		case ty_enum:
-			return ev_integer;	// FIXME v6 progs should be float
-		case ty_array:
-		case ty_class:
-			return ev_invalid;
-	}
-	return ev_invalid;
-}
-
-static etype_t
-get_type_size (pointer_t type)
-{
-	qfot_type_t *type_def;
-	int          i, size;
-	if (type < 0 || type >= qfo->spaces[qfo_type_space].data_size)
-		return 1;
-	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
-	switch ((ty_type_e)type_def->ty) {
-		case ty_none:
-			// field, pointer and function types store their basic type in
-			// the same location.
-			return pr_type_size[type_def->t.type];
-		case ty_struct:
-			for (i = size = 0; i < type_def->t.strct.num_fields; i++)
-				size += get_type_size (type_def->t.strct.fields[i].type);
-			return size;
-		case ty_union:
-			for (i = size = 0; i < type_def->t.strct.num_fields; i++) {
-				int         s;
-				s = get_type_size (type_def->t.strct.fields[i].type);
-				if (s > size)
-					size = s;
-			}
-			return size;
-		case ty_enum:
-			return pr_type_size[ev_integer];
-		case ty_array:
-			return type_def->t.array.size
-					* get_type_size (type_def->t.array.type);
-		case ty_class:
-			return 0;	// FIXME
-	}
-	return 0;
-}
-
-static void
-function_params (dfunction_t *df, qfo_func_t *func)
-{
-	qfot_type_t *type;
-	int         num_params;
-	int         i;
-
-	if (func->type < 0 || func->type >= qfo->spaces[qfo_type_space].data_size)
-		return;
-	type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, func->type);
-	if (type->ty != ty_none && type->t.type != ev_func)
-		return;
-	df->numparms = num_params = type->t.func.num_params;
-	if (num_params < 0)
-		num_params = ~num_params;
-	for (i = 0; i < num_params; i++)
-		df->parm_size[i] = get_type_size (type->t.func.param_types[i]);
-}
-
-static void
-convert_def (const qfo_def_t *def, ddef_t *ddef)
-{
-	ddef->type = get_type (def->type);
-	ddef->ofs = def->offset;
-	ddef->s_name = def->name;
-	if (!(def->flags & QFOD_NOSAVE)
-		&& !(def->flags & QFOD_CONSTANT)
-		&& (def->flags & QFOD_GLOBAL)
-		&& ddef->type != ev_func
-		&& ddef->type != ev_field)
-		ddef->type |= DEF_SAVEGLOBAL;
-}
-
+#define P(t,o) ((t *)((char *)pr.progs + pr.progs->o))
 static void
 convert_qfo (void)
 {
-	int         i, j, num_locals = 0, num_externs = 0;
-	qfo_def_t  *defs;
+	int         i;
 	ddef_t     *ld;
+	pr.progs = qfo_to_progs (qfo);
 
-	defs = malloc (qfo->num_defs * sizeof (qfo_def_t));
-	memcpy (defs, qfo->defs, qfo->num_defs * sizeof (qfo_def_t));
+	pr.pr_statements = P (dstatement_t, ofs_statements);
+	pr.pr_strings = P (char, ofs_strings);
+	pr.pr_stringsize = pr.progs->numstrings;
+	pr.pr_functions = P (dfunction_t, ofs_functions);
+	pr.pr_globaldefs = P (ddef_t, ofs_globaldefs);
+	pr.pr_fielddefs = P (ddef_t, ofs_fielddefs);
+	pr.pr_globals = P (pr_type_t, ofs_globals);
+	pr.globals_size = pr.progs->numglobals;
 
-	pr.progs = &progs;
-	progs.version = PROG_VERSION;
-
-	pr.pr_statements = malloc (qfo->spaces[qfo_code_space].data_size
-							   * sizeof (dstatement_t));
-	memcpy (pr.pr_statements, qfo->spaces[qfo_code_space].d.code,
-			qfo->spaces[qfo_code_space].data_size * sizeof (dstatement_t));
-	progs.numstatements = qfo->spaces[qfo_code_space].data_size;
-
-	pr.pr_strings = qfo->spaces[qfo_strings_space].d.strings;
-	progs.numstrings = qfo->spaces[qfo_strings_space].data_size;
-	pr.pr_stringsize = qfo->spaces[qfo_strings_space].data_size;
-
-	progs.numfunctions = qfo->num_funcs + 1;
-	pr.pr_functions = calloc (progs.numfunctions, sizeof (dfunction_t));
 	pr.auxfunctions = calloc (qfo->num_funcs, sizeof (pr_auxfunction_t));
 	pr.auxfunction_map = calloc (progs.numfunctions,
 								 sizeof (pr_auxfunction_t *));
 	ld = pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));
 	for (i = 0; i < qfo->num_funcs; i++) {
 		qfo_func_t *func = qfo->funcs + i;
-		dfunction_t df;
-
-		memset (&df, 0, sizeof (df));
-
-		df.first_statement = func->code;
-		df.parm_start = qfo->spaces[qfo_near_data_space].data_size;
-		df.locals = qfo->spaces[func->locals_space].data_size;
-		df.profile = 0;
-		df.s_name = func->name;
-		df.s_file = func->file;
-		function_params (&df, func);
-
-		if (df.locals > num_locals)
-			num_locals = df.locals;
-
-		pr.pr_functions[i + 1] = df;
 
 		pr.auxfunction_map[i + 1] = pr.auxfunctions + i;
 		pr.auxfunctions[i].function = i + 1;
@@ -402,56 +285,10 @@ convert_qfo (void)
 		pr.auxfunctions[i].local_defs = ld - pr.local_defs;
 		pr.auxfunctions[i].num_locals =
 			qfo->spaces[func->locals_space].num_defs;
-
-		for (j = 0; j < qfo->spaces[func->locals_space].num_defs; j++) {
-			qfo_def_t  *d = qfo->spaces[func->locals_space].defs + j;
-			convert_def (d, ld++);
-			ld->ofs += qfo->spaces[qfo_near_data_space].data_size;
-		}
 	}
-
-	progs.numglobaldefs = 0;
-	progs.numfielddefs = 0;
-	progs.entityfields = 0;
-	pr.pr_globaldefs = calloc (qfo->num_defs, sizeof (ddef_t));
-	pr.pr_fielddefs = calloc (qfo->num_defs, sizeof (ddef_t));
+#if 0
 	for (i = 0; i < qfo->num_defs; i++) {
-		qfo_def_t  *def = defs + i;
-		ddef_t      ddef;
-
-		if (!(def->flags & QFOD_LOCAL) && def->name) {
-			if (def->flags & QFOD_EXTERNAL) {
-				int         size = get_type_size (def->type);
-				if (!size)
-					size = 1;
-				def->offset += qfo->spaces[qfo_near_data_space].data_size
-					+ num_locals + num_externs;
-				num_externs += size;
-			}
-
-			convert_def (def, &ddef);
-			pr.pr_globaldefs[progs.numglobaldefs++] = ddef;
-			if (ddef.type == ev_field) {
-				ddef.type = get_type (def->type);
-				progs.entityfields += get_type_size (def->type);
-				ddef.ofs = QFO_INT (qfo, qfo_near_data_space, ddef.ofs);
-				pr.pr_fielddefs[progs.numfielddefs++] = ddef;
-			}
-		}
-	}
-
-	progs.numglobals = qfo->spaces[qfo_near_data_space].data_size;
-	pr.globals_size = progs.numglobals + num_locals + num_externs;
-	pr.globals_size += qfo->spaces[qfo_far_data_space].data_size;
-	pr.pr_globals = calloc (pr.globals_size, sizeof (pr_type_t));
-	memcpy (pr.pr_globals, qfo->spaces[qfo_near_data_space].d.data,
-			qfo->spaces[qfo_near_data_space].data_size * sizeof (pr_type_t));
-	memcpy (pr.pr_globals + progs.numglobals + num_locals + num_externs,
-			qfo->spaces[qfo_far_data_space].d.data,
-			qfo->spaces[qfo_far_data_space].data_size * sizeof (pr_type_t));
-
-	for (i = 0; i < qfo->num_defs; i++) {
-		break;
+		int         j;
 		qfo_def_t  *def = defs + i;
 
 		for (j = 0; j < def->num_relocs; j++) {
@@ -497,7 +334,7 @@ convert_qfo (void)
 			}
 		}
 	}
-
+#endif
 	pr.pr_edict_size = progs.entityfields * 4;
 
 	pr.linenos = qfo->lines;
