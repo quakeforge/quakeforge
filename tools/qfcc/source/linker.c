@@ -957,63 +957,149 @@ undefined_def (qfo_def_t *def)
 	}
 }
 
+static void
+check_defs (void)
+{
+	defref_t  **undef_defs, **defref;
+	int         did_self = 0, did_this = 0;
+
+	undef_defs = (defref_t **) Hash_GetList (extern_defs);
+	for (defref = undef_defs; *defref; defref++) {
+		qfo_def_t  *def = REF (*defref);
+		const char *name = WORKSTR (def->name);
+
+		if (strcmp (name, ".self") == 0 && !did_self) {
+			defref_t   *_d = Hash_Find (defined_defs, "self");
+			if (_d) {
+				qfo_def_t  *d = REF (_d);
+				if (QFO_TYPEMETA (work, d->type) == ty_none
+					&& QFO_TYPETYPE (work, d->type) == ev_entity)
+					def_warning (d, "@self and self used together");
+			}
+			define_def (&work->spaces[qfo_near_data_space], ".self",
+						&type_entity, QFOD_GLOBAL, 0);
+			did_self = 1;
+		} else if (strcmp (name, ".this") == 0 && !did_this) {
+			pointer_t   offset;
+			type_t     *type;
+			int         flags;
+
+			if (!class_Class.super_class)
+				class_init ();
+			type = field_type (&type_ClassPtr);
+			offset = defspace_alloc_loc (work_entity_data, 1);
+			flags = (QFOD_GLOBAL | QFOD_CONSTANT
+					 | QFOD_INITIALIZED | QFOD_NOSAVE);
+			define_def (&work->spaces[qfo_near_data_space], ".this",
+						type, flags, offset);
+			did_this = 1;
+		}
+	}
+	free (undef_defs);
+	undef_defs = (defref_t **) Hash_GetList (extern_defs);
+	for (defref = undef_defs; *defref; defref++) {
+		qfo_def_t  *def = REF (*defref);
+		undefined_def (def);
+	}
+	free (undef_defs);
+}
+
+static qfo_t *
+build_qfo (void)
+{
+	qfo_t      *qfo;
+	int         size;
+	int         i;
+	qfo_mspace_t *space;
+	qfo_reloc_t *reloc;
+	qfo_def_t **defs;
+
+	qfo = qfo_new ();
+	qfo->spaces = calloc (work->num_spaces, sizeof (qfo_mspace_t));
+	qfo->num_spaces = work->num_spaces;
+	for (i = 0; i < work->num_spaces; i++) {
+		space = &work->spaces[i];
+		qfo->spaces[i].type = work->spaces[i].type;
+		qfo->spaces[i].id = work->spaces[i].id;
+		qfo->spaces[i].d = work->spaces[i].d;
+		qfo->spaces[i].data_size = work->spaces[i].data_size;
+	}
+	// allocate space for all relocs and copy in the loose relocs. bound
+	// relocs will be handled with defs and funcs.
+	size = work->num_relocs + work_num_loose_relocs;
+	qfo->relocs = malloc (size * sizeof (qfo_reloc_t));
+	reloc = qfo->relocs;
+	memcpy (qfo->relocs + work->num_relocs, work_loose_relocs,
+			work_num_loose_relocs * sizeof (qfo_reloc_t));
+	qfo->num_relocs = size;
+	qfo->num_loose_relocs = work_num_loose_relocs;
+	qfo->funcs = work->funcs;
+	qfo->num_funcs = work->num_funcs;
+	qfo->lines = work->lines;
+	qfo->num_lines = work->num_lines;
+	// count final defs
+	for (i = 0; i < num_work_defrefs; i++) {
+		if (work_defrefs[i]->merge)
+			continue;
+		qfo->num_defs++;
+		qfo->spaces[work_defrefs[i]->space].num_defs++;
+	}
+	qfo->defs = malloc (qfo->num_defs * sizeof (qfo_def_t));
+	defs = alloca (qfo->num_spaces * sizeof (qfo_def_t *));
+	defs[0] = qfo->defs;
+	for (i = 1; i < qfo->num_spaces; i++) {
+		defs[i] = defs[i - 1] + qfo->spaces[i - 1].num_defs;
+		if (qfo->spaces[i].num_defs)
+			qfo->spaces[i].defs = defs[i];
+	}
+	for (i = 0; i < num_work_defrefs; i++) {
+		defref_t   *r = work_defrefs[i];
+		qfo_def_t   d;
+		int         space;
+		if (r->merge)
+			continue;
+		space = r->space;
+		d = *REF (r);
+		d.relocs = reloc - qfo->relocs;
+		memcpy (reloc, work->relocs + REF (r)->relocs,
+				REF (r)->num_relocs * sizeof (qfo_reloc_t));
+		reloc += REF (r)->num_relocs;
+		r->def_list = &qfo->spaces[space].defs;
+		r->def = defs[space] - qfo->defs;
+		// copy relocs from merged defs
+		for (r = r->merge_list; r; r = r->next) {
+			memcpy (reloc, work->relocs + REF (r)->relocs,
+					REF (r)->num_relocs * sizeof (qfo_reloc_t));
+			reloc += REF (r)->num_relocs;
+			d.num_relocs += REF (r)->num_relocs;
+			r->def_list = &qfo->spaces[space].defs;
+			r->space = space;
+			r->def = defs[space] - qfo->defs;
+		}
+		*defs[space]++ = d;
+	}
+	for (i = 0; i < qfo->num_funcs; i++) {
+		qfo_func_t *f = &qfo->funcs[i];
+		f->def = work_defrefs[f->def]->def;
+		memcpy (reloc, work->relocs + f->relocs,
+				f->num_relocs * sizeof (qfo_reloc_t));
+		reloc += f->num_relocs;
+	}
+	return qfo;
+}
+
 qfo_t *
 linker_finish (void)
 {
-	defref_t  **undef_defs, **defref;
-	qfo_t      *qfo;
 
 	if (!options.partial_link) {
-		int         did_self = 0, did_this = 0;
-
-		undef_defs = (defref_t **) Hash_GetList (extern_defs);
-		for (defref = undef_defs; *defref; defref++) {
-			qfo_def_t  *def = REF (*defref);
-			const char *name = WORKSTR (def->name);
-
-			if (strcmp (name, ".self") == 0 && !did_self) {
-				defref_t   *_d = Hash_Find (defined_defs, "self");
-				if (_d) {
-					qfo_def_t  *d = REF (_d);
-					if (QFO_TYPEMETA (work, d->type) == ty_none
-						&& QFO_TYPETYPE (work, d->type) == ev_entity)
-						def_warning (d, "@self and self used together");
-				}
-				define_def (&work->spaces[qfo_near_data_space], ".self",
-							&type_entity, QFOD_GLOBAL, 0);
-				did_self = 1;
-			} else if (strcmp (name, ".this") == 0 && !did_this) {
-				pointer_t   offset;
-				type_t     *type;
-				int         flags;
-
-				if (!class_Class.super_class)
-					class_init ();
-				type = field_type (&type_ClassPtr);
-				offset = defspace_alloc_loc (work_entity_data, 1);
-				flags = (QFOD_GLOBAL | QFOD_CONSTANT
-						 | QFOD_INITIALIZED | QFOD_NOSAVE);
-				define_def (&work->spaces[qfo_near_data_space], ".this",
-							type, flags, offset);
-				did_this = 1;
-			}
-		}
-		free (undef_defs);
-		undef_defs = (defref_t **) Hash_GetList (extern_defs);
-		for (defref = undef_defs; *defref; defref++) {
-			qfo_def_t  *def = REF (*defref);
-			undefined_def (def);
-		}
-		free (undef_defs);
+		check_defs ();
 		if (pr.error_count)
 			return 0;
 	}
 
 	//fixup_relocs ();
-
-	qfo = qfo_new ();
-
-	return work;
+	return build_qfo ();
 }
 
 void
