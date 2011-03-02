@@ -221,8 +221,8 @@ defs_get_key (void *_r, void *unused)
 	\param str		The string to add.
 	\return			The string offset in the working qfo string pool.
 */
-static string_t
-add_string (const char *str)
+int
+linker_add_string (const char *str)
 {
 	string_t    new;
 	new = strpool_addstr (work_strings, str);
@@ -340,8 +340,8 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space)
 	for (i = 0; i < count; i++, idef++, odef++) {
 		*odef = *idef;						// copy the def data
 		idef->offset = num_work_defrefs;	// so def can be found
-		odef->name = add_string (QFOSTR (qfo, idef->name));
-		odef->file = add_string (QFOSTR (qfo, idef->file));
+		odef->name = linker_add_string (QFOSTR (qfo, idef->name));
+		odef->file = linker_add_string (QFOSTR (qfo, idef->file));
 		type = (qfot_type_t *) (char *) (qfo_type_defs->d.data + idef->type);
 		odef->type = type->t.class;			// pointer to type in work
 		ref = get_defref (odef, dest_space);
@@ -364,7 +364,7 @@ add_qfo_strings (qfo_mspace_t *strings)
 	const char *str = strings->d.strings;
 
 	while (str - strings->d.strings < strings->data_size) {
-		add_string (str);
+		linker_add_string (str);
 		while (str - strings->d.strings < strings->data_size && *str)
 			str++;
 		str++;		// advance past the terminating nul
@@ -456,11 +456,12 @@ transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
 		case ty_struct:
 		case ty_union:
 		case ty_enum:
-			type->t.strct.tag = add_string (QFOSTR (qfo, type->t.strct.tag));
+			type->t.strct.tag = linker_add_string (QFOSTR (qfo,
+														   type->t.strct.tag));
 			for (i = 0; i < type->t.strct.num_fields; i++) {
 				qfot_var_t *field = &type->t.strct.fields[i];
 				field->type = transfer_type (qfo, space, field->type);
-				field->name = add_string (QFOSTR (qfo, field->name));
+				field->name = linker_add_string (QFOSTR (qfo, field->name));
 			}
 			break;
 		case ty_array:
@@ -479,22 +480,20 @@ transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
 	return type_offset;
 }
 
-static void
-define_def (qfo_mspace_t *space, const char *name, type_t *type,
-			unsigned flags, int v)
+void
+linker_add_def (const char *name, type_t *type, unsigned flags, int v)
 {
 	qfo_def_t  *def;
 	defref_t   *ref;
+	qfo_mspace_t *space;
 
-	if (space->type != qfos_data || space->id < 0
-		|| space->id >= qfo_num_spaces || !work_spaces[space->id])
-		internal_error (0, "bad space for define_def()");
+	space = &work->spaces[qfo_near_data_space];
 	space->defs = realloc (space->defs,
 						   (space->num_defs + 1) * sizeof (qfo_def_t));
 	def = space->defs + space->num_defs++;
 	memset (def, 0, sizeof (*def));
-	def->name = add_string (name);
-	def->type = -add_string (type->encoding);	// this will be fixed later
+	def->name = linker_add_string (name);
+	def->type = -linker_add_string (type->encoding);// this will be fixed later
 	def->offset = defspace_alloc_loc (*work_spaces[space->id],
 									  type_size (type));
 	def->flags = flags;
@@ -550,9 +549,8 @@ linker_begin (void)
 		for (i = 0;
 			 i < sizeof (builtin_symbols) / sizeof (builtin_symbols[0]);
 			 i++) {
-			define_def (&work->spaces[qfo_near_data_space],
-						builtin_symbols[i].name, builtin_symbols[i].type,
-						builtin_symbols[i].flags, 0);
+			linker_add_def (builtin_symbols[i].name, builtin_symbols[i].type,
+							builtin_symbols[i].flags, 0);
 		}
 	}
 }
@@ -668,7 +666,7 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 		offset = transfer_type (qfo, space, def->offset);
 		type_def = type_space->defs + type_space->num_defs++;
 		memset (type_def, 0, sizeof (*type_def));
-		type_def->name = add_string (name);
+		type_def->name = linker_add_string (name);
 		type_def->offset = offset;
 		ref = get_defref (type_def, type_space);
 		Hash_Add (defined_type_defs, ref);
@@ -700,8 +698,8 @@ process_funcs (qfo_t *qfo)
 		func = work->funcs + work->num_funcs++;
 		type = (qfot_type_t *) (char *) (qfo_type_defs->d.data + func->type);
 		func->type = type->t.class;
-		func->name = add_string (QFOSTR (qfo, func->name));
-		func->file = add_string (QFOSTR (qfo, func->file));
+		func->name = linker_add_string (QFOSTR (qfo, func->name));
+		func->file = linker_add_string (QFOSTR (qfo, func->file));
 		func->code += work_base[qfo_code_space];
 		func->def = qfo->defs[func->def].offset;	// defref index
 		func->locals_space = qfo->spaces[func->locals_space].id;
@@ -755,7 +753,7 @@ process_loose_relocs (qfo_t *qfo)
 	}
 }
 
-static int
+int
 linker_add_qfo (qfo_t *qfo)
 {
 	static space_func funcs[] = {
@@ -976,8 +974,7 @@ check_defs (void)
 					&& QFO_TYPETYPE (work, d->type) == ev_entity)
 					def_warning (d, "@self and self used together");
 			}
-			define_def (&work->spaces[qfo_near_data_space], ".self",
-						&type_entity, QFOD_GLOBAL, 0);
+			linker_add_def (".self", &type_entity, QFOD_GLOBAL, 0);
 			did_self = 1;
 		} else if (strcmp (name, ".this") == 0 && !did_this) {
 			pointer_t   offset;
@@ -990,8 +987,7 @@ check_defs (void)
 			offset = defspace_alloc_loc (work_entity_data, 1);
 			flags = (QFOD_GLOBAL | QFOD_CONSTANT
 					 | QFOD_INITIALIZED | QFOD_NOSAVE);
-			define_def (&work->spaces[qfo_near_data_space], ".this",
-						type, flags, offset);
+			linker_add_def (".this", type, flags, offset);
 			did_this = 1;
 		}
 	}

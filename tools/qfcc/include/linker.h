@@ -32,7 +32,14 @@
 #ifndef __linker_h
 #define __linker_h
 
+struct qfo_s;
+struct type_s;
+
 void linker_begin (void);
+int linker_add_string (const char *str);
+void linker_add_def (const char *name, struct type_s *type, unsigned flags,
+					 int v);
+int linker_add_qfo (struct qfo_s *qfo);
 int linker_add_object_file (const char *filename);
 int linker_add_lib (const char *libname);
 void linker_add_path (const char *path);
