@@ -474,13 +474,13 @@ tag : NAME ;
 enum_specifier
 	: ENUM tag optional_enum_list
 		{
-			$$ = make_spec ($3->type, 0, 0, 0);
+			$$ = make_spec ($3->type, current_storage, 0, 0);
 			if (!$3->table)
 				symtab_addsymbol (current_symtab, $3);
 		}
 	| ENUM enum_list
 		{
-			$$ = make_spec ($2->type, 0, 0, 0);
+			$$ = make_spec ($2->type, current_storage, 0, 0);
 			if (!$2->table)
 				symtab_addsymbol (current_symtab, $2);
 		}
@@ -530,7 +530,7 @@ struct_specifier
 			current_symtab = symtab->parent;
 
 			sym = build_struct ($1, $2, symtab, 0);
-			$$ = make_spec (sym->type, 0, 0, 0);
+			$$ = make_spec (sym->type, current_storage, 0, 0);
 			if (!sym->table)
 				symtab_addsymbol (current_symtab, sym);
 		}
@@ -539,7 +539,7 @@ struct_specifier
 			symbol_t   *sym;
 
 			sym = find_struct ($1, $2, 0);
-			$$ = make_spec (sym->type, 0, 0, 0);
+			$$ = make_spec (sym->type, current_storage, 0, 0);
 			if (!sym->table)
 				symtab_addsymbol (current_symtab, sym);
 		}
