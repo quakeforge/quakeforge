@@ -246,15 +246,10 @@ resolve_external_def (defref_t *ext, defref_t *def)
 		linker_type_mismatch (REF (ext), REF (def));
 		return;
 	}
-	if (def->space != ext->space) {
-		//FIXME this is here until I fix the main cause of problems:
-		//mishandling of obj_msgSend and obj_msgSend_super.
-		def_warning (REF (def), "help, help!");
-		def_warning (REF (ext), "I'm being relocated!");
-	}
 	REF (ext)->offset = REF (def)->offset;
 	REF (ext)->flags = REF (def)->flags;
 	ext->merge = 1;
+	ext->space = def->space;
 	ext->next = def->merge_list;
 	def->merge_list = ext;
 }
@@ -280,17 +275,11 @@ process_def (defref_t *ref, qfo_mspace_t *space)
 	} else if (def->flags & QFOD_GLOBAL) {
 		if (r) {
 			if (REF (r)->flags & QFOD_SYSTEM) {
-				if (def->type != REF (r)->type) {
-					linker_type_mismatch (def, REF (r));
-					return;
-				}
 				/// System defs may be redefined only once.
 				REF (r)->flags &= ~QFOD_SYSTEM;
-				if (ref->space != r->space)
-					internal_error (0, "help, help!");
+				// treat the new def as external
+				resolve_external_def (ref, r);
 				//FIXME copy stuff from new def to existing def???
-				def->offset = REF(r)->offset;
-				def->flags = REF(r)->flags;
 			} else {
 				def_error (def, "%s redefined", WORKSTR (def->name));
 				def_error (REF (r), "previous definition");

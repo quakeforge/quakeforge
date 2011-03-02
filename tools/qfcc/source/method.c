@@ -263,9 +263,12 @@ send_message (int super)
 	}
 	sym = symtab_lookup (pr.symtab, sm_name);
 	if (!sym) {
+		symtab_t   *save = current_symtab;
+		current_symtab = pr.symtab;
 		sym = new_symbol_type (sm_name, sm_type);
 		sym = function_symbol (sym, 0, 1);
 		make_function (sym, 0, sym->table->space, st_extern);
+		current_symtab = save;
 	}
 	return new_symbol_expr (sym);
 }
