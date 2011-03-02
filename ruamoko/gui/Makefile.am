@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS=	foreign
 pkglibdir=$(libdir)/qfcc/lib
 
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
-QCFLAGS=-qq -g -Werror -Wall -Wno-integer-divide -Wno-vararg-integer
+QCFLAGS=-qq -g -Werror -Wall -Wno-integer-divide
 QCPPFLAGS=$(INCLUDES)
 PAK=$(top_builddir)/tools/pak/pak$(EXEEXT)
 RANLIB=touch

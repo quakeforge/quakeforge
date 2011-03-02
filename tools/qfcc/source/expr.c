@@ -2599,6 +2599,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	int         self = 0, super = 0, class_msg = 0;
 	type_t     *rec_type;
 	type_t     *return_type;
+	type_t     *method_type = &type_IMP;
 	class_t    *class = 0;
 	method_t   *method;
 	expr_t     *send_msg;
@@ -2611,6 +2612,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 
 		if (receiver->type == ex_error)
 			return receiver;
+		receiver = cast_expr (&type_id, receiver);	//FIXME better way?
 		class = extract_class (current_class);
 		rec_type = class->type;
 	} else {
@@ -2663,8 +2665,9 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		expr_t      *err;
 		if ((err = method_check_params (method, args)))
 			return err;
+		method_type = method->type;
 	}
-	call = build_function_call (send_msg, get_type (send_msg), args);
+	call = build_function_call (send_msg, method_type, args);
 
 	if (call->type == ex_error)
 		return receiver;
