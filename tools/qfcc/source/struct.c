@@ -191,6 +191,40 @@ add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 	symtab_addsymbol (enum_tab->parent, sym);
 }
 
+int
+enum_as_bool (type_t *enm, expr_t **zero, expr_t **one)
+{
+	symtab_t   *symtab = enm->t.symtab;
+	symbol_t   *zero_sym = 0;
+	symbol_t   *one_sym = 0;
+	symbol_t   *sym;
+	int         val, v;
+
+	if (!symtab)
+		return 0;
+	for (sym = symtab->symbols; sym; sym = sym->next) {
+		if (sym->sy_type != sy_const)
+			continue;
+		val = sym->s.value.v.integer_val;
+		if (!val) {
+			zero_sym = sym;
+		} else {
+			if (one_sym) {
+				v = one_sym->s.value.v.integer_val;
+				if (val * val > v * v)
+					continue;
+			}
+			one_sym = sym;
+		}
+
+	}
+	if (!zero_sym || !one_sym)
+		return 0;
+	*zero = new_symbol_expr (zero_sym);
+	*one = new_symbol_expr (one_sym);
+	return 1;
+}
+
 symbol_t *
 make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
 {

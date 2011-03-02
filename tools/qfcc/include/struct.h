@@ -52,6 +52,8 @@ struct symbol_s *find_enum (struct symbol_s *tag);
 struct symtab_s *start_enum (struct symbol_s *enm);
 void add_enum (struct symbol_s *enm, struct symbol_s *name,
 			   struct expr_s *val);
+int enum_as_bool (struct type_s *enm, struct expr_s **zero,
+				  struct expr_s **one);
 
 struct symbol_s *make_structure (const char *name, int su, struct_def_t *defs,
 								 struct type_s *type);

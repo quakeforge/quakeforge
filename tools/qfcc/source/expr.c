@@ -1107,6 +1107,8 @@ convert_from_bool (expr_t *e, type_t *type)
 	} else if (type == &type_integer) {
 		one = new_integer_expr (1);
 		zero = new_integer_expr (0);
+	} else if (is_enum (type) && enum_as_bool (type, &zero, &one)) {
+		// don't need to do anything
 //	} else if (type == &type_uinteger) {
 //		one = new_uinteger_expr (1);
 //		zero = new_uinteger_expr (0);
