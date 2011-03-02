@@ -54,6 +54,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "function.h"
 #include "immediate.h"
 #include "obj_file.h"
+#include "obj_type.h"
 #include "options.h"
 #include "qfcc.h"
 #include "reloc.h"
@@ -574,12 +575,6 @@ qfo_open (const char *filename)
 	return qfo;
 }
 
-int
-qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
-{
-	return 0;
-}
-
 qfo_t *
 qfo_new (void)
 {
@@ -602,4 +597,204 @@ qfo_delete (qfo_t *qfo)
 	}
 	free (qfo->spaces);
 	free (qfo);
+}
+
+static etype_t
+get_def_type (qfo_t *qfo, pointer_t type)
+{
+	qfot_type_t *type_def;
+	if (type < 0 || type >= qfo->spaces[qfo_type_space].data_size)
+		return ev_void;
+	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
+	switch ((ty_type_e)type_def->ty) {
+		case ty_none:
+			// field, pointer and function types store their basic type in
+			// the same location.
+			return type_def->t.type;
+		case ty_struct:
+		case ty_union:
+			return ev_invalid;
+		case ty_enum:
+			return ev_integer;	// FIXME v6 progs should be float
+		case ty_array:
+		case ty_class:
+			return ev_invalid;
+	}
+	return ev_invalid;
+}
+
+static etype_t
+get_type_size (qfo_t *qfo, pointer_t type)
+{
+	qfot_type_t *type_def;
+	int          i, size;
+	if (type < 0 || type >= qfo->spaces[qfo_type_space].data_size)
+		return 1;
+	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
+	switch ((ty_type_e)type_def->ty) {
+		case ty_none:
+			// field, pointer and function types store their basic type in
+			// the same location.
+			return pr_type_size[type_def->t.type];
+		case ty_struct:
+			for (i = size = 0; i < type_def->t.strct.num_fields; i++)
+				size += get_type_size (qfo, type_def->t.strct.fields[i].type);
+			return size;
+		case ty_union:
+			for (i = size = 0; i < type_def->t.strct.num_fields; i++) {
+				int         s;
+				s = get_type_size (qfo, type_def->t.strct.fields[i].type);
+				if (s > size)
+					size = s;
+			}
+			return size;
+		case ty_enum:
+			return pr_type_size[ev_integer];
+		case ty_array:
+			return type_def->t.array.size
+					* get_type_size (qfo, type_def->t.array.type);
+		case ty_class:
+			return 0;	// FIXME
+	}
+	return 0;
+}
+
+static void
+function_params (qfo_t *qfo, qfo_func_t *func, dfunction_t *df)
+{
+	qfot_type_t *type;
+	int         num_params;
+	int         i;
+
+	if (func->type < 0 || func->type >= qfo->spaces[qfo_type_space].data_size)
+		return;
+	type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, func->type);
+	if (type->ty != ty_none && type->t.type != ev_func)
+		return;
+	df->numparms = num_params = type->t.func.num_params;
+	if (num_params < 0)
+		num_params = ~num_params;
+	for (i = 0; i < num_params; i++)
+		df->parm_size[i] = get_type_size (qfo, type->t.func.param_types[i]);
+}
+
+static void
+convert_def (qfo_t *qfo, const qfo_def_t *def, ddef_t *ddef)
+{
+	ddef->type = get_def_type (qfo, def->type);
+	ddef->ofs = def->offset;
+	ddef->s_name = def->name;
+	if (!(def->flags & QFOD_NOSAVE)
+		&& !(def->flags & QFOD_CONSTANT)
+		&& (def->flags & QFOD_GLOBAL)
+		&& ddef->type != ev_func
+		&& ddef->type != ev_field)
+		ddef->type |= DEF_SAVEGLOBAL;
+}
+
+dprograms_t *
+qfo_to_progs (qfo_t *qfo)
+{
+	char       *strings;
+	dstatement_t *statements;
+	dfunction_t *functions;
+	ddef_t     *globaldefs;
+	ddef_t     *fielddefs;
+	pr_type_t  *globals;
+	dprograms_t *progs;
+	int         i;
+	int         size = sizeof (dprograms_t);
+	int         locals_size = 0;
+	int         locals_start;
+	int         big_locals = 0;
+
+	progs = calloc (1, size);
+	progs->version = options.code.progsversion;
+	progs->numstatements = qfo->spaces[qfo_code_space].data_size;
+	progs->numglobaldefs = qfo->spaces[qfo_near_data_space].num_defs;
+	progs->numfielddefs = qfo->spaces[qfo_entity_space].num_defs;
+	progs->numfunctions = qfo->num_funcs;
+	progs->numstrings = qfo->spaces[qfo_strings_space].data_size;
+	progs->numglobals = qfo->spaces[qfo_near_data_space].data_size;
+	progs->numglobals += qfo->spaces[qfo_far_data_space].data_size;
+	progs->numglobals += qfo->spaces[qfo_type_space].data_size;
+	locals_start = qfo->spaces[qfo_near_data_space].data_size;
+	for (i = qfo_num_spaces; i < qfo->num_spaces; i++) {
+		if (options.code.local_merging) {
+			if (locals_size < qfo->spaces[i].data_size)
+				locals_size = qfo->spaces[i].data_size;
+			big_locals = i;
+		} else {
+			locals_size += qfo->spaces[i].data_size;
+		}
+	}
+	progs->entityfields = qfo->spaces[qfo_entity_space].data_size;
+	size += progs->numstatements * sizeof (dstatement_t);
+	size += progs->numglobaldefs * sizeof (ddef_t);
+	size += progs->numfielddefs * sizeof (ddef_t);
+	size += progs->numfunctions * sizeof (dfunction_t);
+	size += progs->numstrings * sizeof (char);
+	size += (progs->numglobals + locals_size) * sizeof (pr_type_t);
+	progs = realloc (progs, size);
+
+	strings = (char *) (progs + 1);
+	memcpy (strings, qfo->spaces[qfo_strings_space].d.strings,
+			qfo->spaces[qfo_strings_space].data_size * sizeof (char));
+	progs->ofs_strings = (char *) strings - (char *) progs;
+
+	statements = (dstatement_t *) (strings + progs->numstrings);
+	memcpy (statements, qfo->spaces[qfo_code_space].d.code,
+			qfo->spaces[qfo_code_space].data_size * sizeof (dstatement_t));
+	progs->ofs_statements = (char *) statements - (char *) progs;
+
+	functions = (dfunction_t *) (statements + progs->numstatements);
+	for (i = 0; i < qfo->num_funcs; i++) {
+		dfunction_t *df = functions + i;
+		qfo_func_t *qf = qfo->funcs + i;
+		df->parm_start = locals_start;
+		df->locals = qfo->spaces[qf->locals_space].data_size;
+		if (!options.code.local_merging)
+			locals_start += df->locals;
+		df->profile = 0;
+		df->s_name = qf->name;
+		df->s_file = qf->file;
+		function_params (qfo, qf, df);
+	}
+	progs->ofs_functions = (char *) functions - (char *) progs;
+
+	globaldefs = (ddef_t *) (functions + progs->numfunctions);
+	for (i = 0; i < qfo->spaces[qfo_near_data_space].num_defs; i++) {
+		convert_def (qfo, qfo->spaces[qfo_near_data_space].defs + i,
+					 globaldefs + i);
+	}
+	progs->ofs_globaldefs = (char *) globaldefs - (char *) progs;
+
+	fielddefs = (ddef_t *) (globaldefs + progs->numglobaldefs);
+	for (i = 0; i < qfo->spaces[qfo_entity_space].num_defs; i++) {
+		convert_def (qfo, qfo->spaces[qfo_near_data_space].defs + i,
+					 fielddefs + i);
+	}
+	progs->ofs_fielddefs = (char *) fielddefs - (char *) progs;
+
+	globals = (pr_type_t*) (fielddefs + progs->numfielddefs);
+	progs->ofs_globals = (char *) globals - (char *) progs;
+	// copy near data
+	memcpy (globals, qfo->spaces[qfo_near_data_space].d.data,
+			qfo->spaces[qfo_near_data_space].data_size * sizeof (pr_type_t));
+	qfo->spaces[qfo_near_data_space].d.data = globals;
+	globals += qfo->spaces[qfo_near_data_space].data_size;
+	// lcear locals data
+	memset (globals, 0, locals_size * sizeof (pr_type_t));
+	globals += locals_size;
+	// copy far data
+	memcpy (globals, qfo->spaces[qfo_far_data_space].d.data,
+			qfo->spaces[qfo_far_data_space].data_size * sizeof (pr_type_t));
+	qfo->spaces[qfo_far_data_space].d.data = globals;
+	globals += qfo->spaces[qfo_far_data_space].data_size;
+	// copy type data
+	memcpy (globals, qfo->spaces[qfo_type_space].d.data,
+			qfo->spaces[qfo_type_space].data_size * sizeof (pr_type_t));
+	qfo->spaces[qfo_type_space].d.data = globals;
+	// FIXME do relocs
+	return progs;
 }

@@ -679,7 +679,7 @@ separate_compile (void)
 			} else {
 				int         crc = 0;
 
-				qfo_to_progs (qfo, &pr);
+				//qfo_to_progs (qfo, &pr);
 				setup_sym_file (options.output_file);
 				finish_compilation ();
 

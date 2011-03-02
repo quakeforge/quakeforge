@@ -461,12 +461,7 @@ qfo_t *qfo_read (QFile *file);
 */
 qfo_t *qfo_open (const char *filename);
 
-/** Convert ::qfo_t struct to ::pr_info_t struct.
-	\param qfo pointer to ::qfo_t struct
-	\param pr pointer to ::pr_info_t struct
-	\return 0 for success, -1 for error
-*/
-int qfo_to_progs (qfo_t *qfo, struct pr_info_s *pr);
+dprograms_t *qfo_to_progs (qfo_t *qfo);
 
 /** Create a new ::qfo_t struct
 	\return pointer to new ::qfo_t struct, or 0 on error.
