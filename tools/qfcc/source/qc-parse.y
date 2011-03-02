@@ -400,8 +400,13 @@ external_decl
 		{
 			specifier_t spec = $<spec>0;
 			$1->type = find_type (append_type ($1->type, spec.type));
-			$1 = function_symbol ($1, spec.is_overload, 1);
-			make_function ($1, 0, $1->table->space, spec.storage);
+			if (spec.is_typedef) {
+				$1->sy_type = sy_type;
+				symtab_addsymbol (current_symtab, $1);
+			} else {
+				$1 = function_symbol ($1, spec.is_overload, 1);
+				make_function ($1, 0, $1->table->space, spec.storage);
+			}
 		}
 	;
 
