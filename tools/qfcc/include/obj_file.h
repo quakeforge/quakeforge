@@ -473,69 +473,6 @@ int qfo_to_progs (qfo_t *qfo, struct pr_info_s *pr);
 */
 qfo_t *qfo_new (void);
 
-/** Add a block of code to a ::qfo_t struct.
-	\param qfo ::qfo_t struct to add to
-	\param code pointer to beginning of code block
-	\param code_size number of instructions in the code block
-*/
-void qfo_add_code (qfo_t *qfo, dstatement_t *code, int code_size);
-
-/** Add a block of data to a ::qfo_t struct.
-	\param qfo ::qfo_t struct to add to
-	\param data pointer to beginning of data block
-	\param data_size number of data words in the data block
-*/
-void qfo_add_data (qfo_t *qfo, pr_type_t *data, int data_size);
-
-/** Add a block of far data to a ::qfo_t struct.
-	\param qfo ::qfo_t struct to add to
-	\param far_data pointer to beginning of far data block
-	\param far_data_size number of data words in the far data block
-*/
-void qfo_add_far_data (qfo_t *qfo, pr_type_t *far_data, int far_data_size);
-
-/** Add a block of string data to a ::qfo_t struct.
-	\param qfo ::qfo_t struct to add to
-	\param strings pointer to beginning of string data block
-	\param strings_size number of characters in the string data block
-*/
-void qfo_add_strings (qfo_t *qfo, const char *strings, int strings_size);
-
-/** Add a block of relocation records to a ::qfo_t struct.
-	\param qfo ::qfo_t struct to add to
-	\param relocs pointer to first relocation record
-	\param num_relocs number of relocation records
-*/
-void qfo_add_relocs (qfo_t *qfo, qfo_reloc_t *relocs, int num_relocs);
-
-/** Add a block of def records to a ::qfo_t struct.
-	\param qfo ::qfo_t struct to add to
-	\param defs pointer to first def record
-	\param num_defs number of def records
-*/
-void qfo_add_defs (qfo_t *qfo, qfo_def_t *defs, int num_defs);
-
-/** Add a block of function records to a ::qfo_t struct.
-	\param qfo ::qfo_t struct to add to
-	\param funcs pointer to first function record
-	\param num_funcs number of function records
-*/
-void qfo_add_funcs (qfo_t *qfo, qfo_func_t *funcs, int num_funcs);
-
-/** Add a block of line records to a ::qfo_t struct.
-	\param qfo ::qfo_t struct to add to
-	\param lines pointer to first line record
-	\param num_lines number of line records
-*/
-void qfo_add_lines (qfo_t *qfo, pr_lineno_t *lines, int num_lines);
-
-/** Add a block of type string data to a ::qfo_t struct.
-	\param qfo ::qfo_t struct to add to
-	\param types pointer to beginning of string data block
-	\param types_size number of characters in the type string data block
-*/
-void qfo_add_types (qfo_t *qfo, const char *types, int types_size);
-
 /** Delete a ::qfo_t struct, as well as any substructure data.
 	\param qfo ::qfo_t struct to delete
 */

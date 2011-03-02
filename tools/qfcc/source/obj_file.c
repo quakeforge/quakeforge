@@ -587,51 +587,6 @@ qfo_new (void)
 }
 
 void
-qfo_add_code (qfo_t *qfo, dstatement_t *code, int code_size)
-{
-}
-
-void
-qfo_add_data (qfo_t *qfo, pr_type_t *data, int data_size)
-{
-}
-
-void
-qfo_add_far_data (qfo_t *qfo, pr_type_t *far_data, int far_data_size)
-{
-}
-
-void
-qfo_add_strings (qfo_t *qfo, const char *strings, int strings_size)
-{
-}
-
-void
-qfo_add_relocs (qfo_t *qfo, qfo_reloc_t *relocs, int num_relocs)
-{
-}
-
-void
-qfo_add_defs (qfo_t *qfo, qfo_def_t *defs, int num_defs)
-{
-}
-
-void
-qfo_add_funcs (qfo_t *qfo, qfo_func_t *funcs, int num_funcs)
-{
-}
-
-void
-qfo_add_lines (qfo_t *qfo, pr_lineno_t *lines, int num_lines)
-{
-}
-
-void
-qfo_add_types (qfo_t *qfo, const char *types, int types_size)
-{
-}
-
-void
 qfo_delete (qfo_t *qfo)
 {
 	if (qfo->data) {
