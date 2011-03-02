@@ -101,15 +101,31 @@ static builtin_sym_t builtin_symbols[] __attribute__ ((used)) = {
 	{".param_7",	&type_param,	QFOD_NOSAVE},
 };
 
+/**	Safe handling of defs in hash tables and other containers.
+
+	As defs are stored in dynamic arrays, storing pointers to the defs is
+	a recipe for disaster when using realloc(). By storing the address of
+	the pointer to the array and the index into that that array, realloc
+	is allowed to do its magic.
+*/
 typedef struct defref_s {
-	struct defref_s *next;
-	qfo_def_t **def_list;
-	int         def;
-	int         space;
-	int         merge;				// merge def's relocs with main def
-	struct defref_s *merge_list;	// list of defs to be merged with this def
+	struct defref_s *next;			///< if \c merge is true, the next def to
+									///< be merged with the main def
+	qfo_def_t **def_list;			///< the address of the pointer to the
+									///< list holding this def. this allows
+									///< the list to move around (realloc)
+	int         def;				///< the index of this def in def_list
+	int         space;				///< the space in which this def resides
+	int         merge;				///< merge def's relocs with the main def
+	struct defref_s *merge_list;	///< list of defs to be merged with this
+									///< def
 } defref_t;
 
+/**	Retreive a def from a defref.
+
+	\param r		The defref pointing to the def (defref_t *).
+	\return			A pointer to the def (qfo_def_t *).
+*/
 #define REF(r) (work->spaces[(r)->space].defs + (r)->def)
 
 static defref_t *free_defrefs;
@@ -210,8 +226,6 @@ add_string (const char *str)
 
 	The types of the external def and the global def must match.
 	The offset and flags of the global def are copied to the external def.
-	\fixme handle cross-space resolutions.
-	\fixme copy relocs from \a ext to \a def and "delete" \a ext?
 
 	\param ext		The external def.
 	\param def		The global definition.
@@ -224,6 +238,8 @@ resolve_external_def (defref_t *ext, defref_t *def)
 		return;
 	}
 	if (def->space != ext->space) {
+		//FIXME this is here until I fix the main cause of problems:
+		//mishandling of obj_msgSend and obj_msgSend_super.
 		def_warning (REF (def), "help, help!");
 		def_warning (REF (ext), "I'm being relocated!");
 	}
@@ -298,12 +314,12 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space)
 	idef = space->defs;
 	odef = dest_space->defs + dest_space->num_defs;
 	for (i = 0; i < count; i++, idef++, odef++) {
-		*odef = *idef;
+		*odef = *idef;						// copy the def data
 		idef->offset = num_work_defrefs;	// so def can be found
 		odef->name = add_string (QFOSTR (qfo, idef->name));
 		odef->file = add_string (QFOSTR (qfo, idef->file));
 		type = (qfot_type_t *) (char *) (qfo_type_defs->d.data + idef->type);
-		odef->type = type->t.class;
+		odef->type = type->t.class;			// pointer to type in work
 		ref = get_defref (odef, dest_space);
 		work_defrefs[num_work_defrefs++] = ref;
 		process_def (ref, dest_space);
