@@ -32,11 +32,13 @@
 #ifndef __idstuff_h
 #define __idstuff_h
 
+#include "QF/pr_comp.h"
+
 //XXX eww :/
 void PrecacheSound (const char *, int ch);
 void PrecacheModel (const char *, int ch);
 void PrecacheFile (const char *, int ch);
 int  WriteFiles (const char *sourcedir);
-int  WriteProgdefs (const char *filename);
+int  WriteProgdefs (dprograms_t *progs, const char *filename);
 
 #endif//__idstuff_h

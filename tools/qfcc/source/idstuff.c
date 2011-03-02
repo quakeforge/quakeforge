@@ -193,12 +193,15 @@ WriteFiles (const char *sourcedir)
 	at load time.
 */
 int
-WriteProgdefs (const char *filename)
+WriteProgdefs (dprograms_t *progs, const char *filename)
 {
-	def_t      *d;
+	ddef_t     *d;
 	FILE       *f;
 	unsigned short crc;
 	int         c;
+	unsigned    i;
+	const char *strings;
+	const char *name;
 
 	if (options.verbosity >= 1)
 		printf ("writing %s\n", filename);
@@ -209,35 +212,38 @@ WriteProgdefs (const char *filename)
 				"\n\ntypedef struct\n{\tint\tpad[%i];\n",
 			 RESERVED_OFS);
 
-	for (d = pr.near_data->defs; d; d = d->next) {
-		if (d->name && !strcmp (d->name, "end_sys_globals"))
+	strings = (char *) progs + progs->ofs_strings;
+	for (i = 0; i < progs->numglobaldefs; i++) {
+		d = (ddef_t *) ((char *) progs + progs->ofs_globaldefs) + i;
+		name = strings + d->s_name;
+		if (!strcmp (name, "end_sys_globals"))
 			break;
-		if (!d->offset)
+		if (!d->ofs)
 			continue;
-		if (!d->name || *d->name == '.' || !*d->name)
+		if (*name == '.' || !*name)
 			continue;
 
-		switch (d->type->type) {
+		switch (d->type) {
 			case ev_float:
-				fprintf (f, "\tfloat\t%s;\n", d->name);
+				fprintf (f, "\tfloat\t%s;\n", name);
 				break;
 			case ev_vector:
-				fprintf (f, "\tvec3_t\t%s;\n", d->name);
+				fprintf (f, "\tvec3_t\t%s;\n", name);
 				break;
 			case ev_quat:
-				fprintf (f, "\tquat_t\t%s;\n", d->name);
+				fprintf (f, "\tquat_t\t%s;\n", name);
 				break;
 			case ev_string:
-				fprintf (f, "\tstring_t\t%s;\n", d->name);
+				fprintf (f, "\tstring_t\t%s;\n", name);
 				break;
 			case ev_func:
-				fprintf (f, "\tfunc_t\t%s;\n", d->name);
+				fprintf (f, "\tfunc_t\t%s;\n", name);
 				break;
 			case ev_entity:
-				fprintf (f, "\tint\t%s;\n", d->name);
+				fprintf (f, "\tint\t%s;\n", name);
 				break;
 			default:
-				fprintf (f, "\tint\t%s;\n", d->name);
+				fprintf (f, "\tint\t%s;\n", name);
 				break;
 		}
 	}
@@ -245,31 +251,33 @@ WriteProgdefs (const char *filename)
 
 	// print all fields
 	fprintf (f, "typedef struct\n{\n");
-	for (d = pr.near_data->defs; d; d = d->next) {
-		if (d->name && !strcmp (d->name, "end_sys_fields"))
+	for (i = 0; i < progs->numglobaldefs; i++) {
+		d = (ddef_t *) ((char *) progs + progs->ofs_fielddefs) + i;
+		name = strings + d->s_name;
+		if (!strcmp (name, "end_sys_fields"))
 			break;
 
-		if (!d->name || !d->offset || d->type->type != ev_field)
+		if (!d->ofs)
 			continue;
 
-		switch (d->type->t.fldptr.type->type) {
+		switch (d->type) {
 			case ev_float:
-				fprintf (f, "\tfloat\t%s;\n", d->name);
+				fprintf (f, "\tfloat\t%s;\n", name);
 				break;
 			case ev_vector:
-				fprintf (f, "\tvec3_t\t%s;\n", d->name);
+				fprintf (f, "\tvec3_t\t%s;\n", name);
 				break;
 			case ev_string:
-				fprintf (f, "\tstring_t\t%s;\n", d->name);
+				fprintf (f, "\tstring_t\t%s;\n", name);
 				break;
 			case ev_func:
-				fprintf (f, "\tfunc_t\t%s;\n", d->name);
+				fprintf (f, "\tfunc_t\t%s;\n", name);
 				break;
 			case ev_entity:
-				fprintf (f, "\tint\t%s;\n", d->name);
+				fprintf (f, "\tint\t%s;\n", name);
 				break;
 			default:
-				fprintf (f, "\tint\t%s;\n", d->name);
+				fprintf (f, "\tint\t%s;\n", name);
 				break;
 		}
 	}

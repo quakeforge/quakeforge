@@ -693,7 +693,7 @@ convert_def (qfo_t *qfo, const qfo_def_t *def, ddef_t *ddef)
 }
 
 dprograms_t *
-qfo_to_progs (qfo_t *qfo)
+qfo_to_progs (qfo_t *qfo, int *size)
 {
 	char       *strings;
 	dstatement_t *statements;
@@ -703,12 +703,12 @@ qfo_to_progs (qfo_t *qfo)
 	pr_type_t  *globals;
 	dprograms_t *progs;
 	int         i;
-	int         size = sizeof (dprograms_t);
 	int         locals_size = 0;
 	int         locals_start;
 	int         big_locals = 0;
 
-	progs = calloc (1, size);
+	*size = sizeof (dprograms_t);
+	progs = calloc (1, *size);
 	progs->version = options.code.progsversion;
 	progs->numstatements = qfo->spaces[qfo_code_space].data_size;
 	progs->numglobaldefs = qfo->spaces[qfo_near_data_space].num_defs;
@@ -729,13 +729,13 @@ qfo_to_progs (qfo_t *qfo)
 		}
 	}
 	progs->entityfields = qfo->spaces[qfo_entity_space].data_size;
-	size += progs->numstatements * sizeof (dstatement_t);
-	size += progs->numglobaldefs * sizeof (ddef_t);
-	size += progs->numfielddefs * sizeof (ddef_t);
-	size += progs->numfunctions * sizeof (dfunction_t);
-	size += progs->numstrings * sizeof (char);
-	size += (progs->numglobals + locals_size) * sizeof (pr_type_t);
-	progs = realloc (progs, size);
+	*size += progs->numstatements * sizeof (dstatement_t);
+	*size += progs->numglobaldefs * sizeof (ddef_t);
+	*size += progs->numfielddefs * sizeof (ddef_t);
+	*size += progs->numfunctions * sizeof (dfunction_t);
+	*size += progs->numstrings * sizeof (char);
+	*size += (progs->numglobals + locals_size) * sizeof (pr_type_t);
+	progs = realloc (progs, *size);
 
 	strings = (char *) (progs + 1);
 	memcpy (strings, qfo->spaces[qfo_strings_space].d.strings,

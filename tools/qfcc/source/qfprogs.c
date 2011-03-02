@@ -258,9 +258,11 @@ init_qf (void)
 static void
 convert_qfo (void)
 {
+	int         size;
 	int         i;
 	ddef_t     *ld;
-	pr.progs = qfo_to_progs (qfo);
+
+	pr.progs = qfo_to_progs (qfo, &size);
 
 	pr.pr_statements = P (dstatement_t, ofs_statements);
 	pr.pr_strings = P (char, ofs_strings);

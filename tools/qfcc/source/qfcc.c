@@ -157,50 +157,57 @@ InitData (void)
 	numfielddefs = 1;
 }
 
-
 static int
-WriteData (int crc)
+WriteData (dprograms_t *progs, int size)
 {
-	def_t      *def;
-	ddef_t     *dd;
-	dprograms_t progs;
-	pr_debug_header_t debug;
+	//pr_debug_header_t debug;
 	QFile      *h;
-	int         i;
-	int         num_defs = 0;
+	unsigned    i;
 
-	for (def = pr.data->defs; def; def = def->next)
-		num_defs++;
-	globals = calloc (num_defs + 1, sizeof (ddef_t));
-	fields = calloc (num_defs + 1, sizeof (ddef_t));
+	dstatement_t *statements;
+	dfunction_t *functions;
+	ddef_t     *globaldefs;
+	ddef_t     *fielddefs;
+	pr_type_t  *globals;
 
-	for (def = pr.data->defs; def; def = def->next) {
-		if (def->local || !def->name)
-			continue;
-		if (options.code.progsversion == PROG_ID_VERSION && *def->name == '.'
-			&& strcmp (def->name, ".imm") != 0
-			&& strcmp (def->name, ".debug_file") != 0)
-			continue;
-		if (def->type->type == ev_func) {
-		} else if (def->type->type == ev_field
-				   && strcmp (def->name, ".imm") != 0) {
-			dd = &fields[numfielddefs++];
-			def_to_ddef (def, dd, 1);
-			dd->ofs = D_INT (def);
-		}
+#define P(t,o) ((t *)((char *)progs + progs->o))
+	statements = P (dstatement_t, ofs_statements);
+	functions = P (dfunction_t, ofs_functions);
+	globaldefs = P (ddef_t, ofs_globaldefs);
+	fielddefs = P (ddef_t, ofs_fielddefs);
+	globals = P (pr_type_t, ofs_globals);
+#undef P
 
-		dd = &globals[numglobaldefs++];
-		def_to_ddef (def, dd, 0);
-		if (!def->nosave
-			&& !def->constant
-			&& def->type->type != ev_func
-			&& def->type->type != ev_field && def->global)
-			dd->type |= DEF_SAVEGLOBAL;
+	for (i = 0; i < progs->numstatements; i++) {
+		statements[i].op = LittleShort (statements[i].op);
+		statements[i].a = LittleShort (statements[i].a);
+		statements[i].b = LittleShort (statements[i].b);
+		statements[i].c = LittleShort (statements[i].c);
 	}
+	for (i = 0; i < (unsigned) progs->numfunctions; i++) {
+		dfunction_t *func = functions + i;
+		func->first_statement = LittleLong (func->first_statement);
+		func->parm_start = LittleLong (func->parm_start);
+		func->locals = LittleLong (func->locals);
+		func->profile = LittleLong (func->profile);
+		func->s_name = LittleLong (func->s_name);
+		func->s_file = LittleLong (func->s_file);
+		func->numparms = LittleLong (func->numparms);
+	}
+	for (i = 0; i < progs->numglobaldefs; i++) {
+		globaldefs[i].type = LittleShort (globaldefs[i].type);
+		globaldefs[i].ofs = LittleShort (globaldefs[i].ofs);
+		globaldefs[i].s_name = LittleLong (globaldefs[i].s_name);
+	}
+	for (i = 0; i < progs->numfielddefs; i++) {
+		fielddefs[i].type = LittleShort (fielddefs[i].type);
+		fielddefs[i].ofs = LittleShort (fielddefs[i].ofs);
+		fielddefs[i].s_name = LittleLong (fielddefs[i].s_name);
+	}
+	for (i = 0; i < progs->numglobals; i++)
+		globals[i].integer_var = LittleLong (globals[i].integer_var);
 
-	while (pr.strings->size & 3)
-		pr.strings->strings[pr.strings->size++] = 0;
-
+#if 0 //FIXME
 	if (options.verbosity >= 0) {
 		if (!big_function)
 			big_function = "";
@@ -215,86 +222,21 @@ WriteData (int crc)
 		printf ("    %6i far globals\n", pr.far_data->size);
 		printf ("%6i entity fields\n", pr.entity_data->size);
 	}
+#endif
 
 	if (!(h = Qopen (options.output_file, "wb")))
 		Sys_Error ("%s: %s\n", options.output_file, strerror(errno));
-	memset (&progs, 0, sizeof (progs));
-	Qwrite (h, &progs, sizeof (progs));
+	Qwrite (h, progs, size);
 
-	progs.ofs_strings = Qtell (h);
-	progs.numstrings = pr.strings->size;
-	Qwrite (h, pr.strings->strings, pr.strings->size);
+//	if (options.verbosity >= -1)
+//		printf ("%6i TOTAL SIZE\n", (int) Qtell (h));
 
-	progs.ofs_statements = Qtell (h);
-	progs.numstatements = pr.code->size;
-	for (i = 0; i < pr.code->size; i++) {
-		pr.code->code[i].op = LittleShort (pr.code->code[i].op);
-		pr.code->code[i].a = LittleShort (pr.code->code[i].a);
-		pr.code->code[i].b = LittleShort (pr.code->code[i].b);
-		pr.code->code[i].c = LittleShort (pr.code->code[i].c);
-	}
-	Qwrite (h, pr.code->code, pr.code->size * sizeof (dstatement_t));
-
-	{
-		dfunction_t *df;
-
-		progs.ofs_functions = Qtell (h);
-		progs.numfunctions = pr.num_functions;
-		for (i = 0, df = pr.functions + 1; i < pr.num_functions; i++, df++) {
-			df->first_statement = LittleLong (df->first_statement);
-			df->parm_start      = LittleLong (df->parm_start);
-			df->s_name          = LittleLong (df->s_name);
-			df->s_file          = LittleLong (df->s_file);
-			df->numparms        = LittleLong (df->numparms);
-			df->locals          = LittleLong (df->locals);
-		}
-		Qwrite (h, pr.functions, pr.num_functions * sizeof (dfunction_t));
-	}
-
-	progs.ofs_globaldefs = Qtell (h);
-	progs.numglobaldefs = numglobaldefs;
-	for (i = 0; i < numglobaldefs; i++) {
-		globals[i].type = LittleShort (globals[i].type);
-		globals[i].ofs = LittleShort (globals[i].ofs);
-		globals[i].s_name = LittleLong (globals[i].s_name);
-	}
-	Qwrite (h, globals, numglobaldefs * sizeof (ddef_t));
-
-	progs.ofs_fielddefs = Qtell (h);
-	progs.numfielddefs = numfielddefs;
-	for (i = 0; i < numfielddefs; i++) {
-		fields[i].type = LittleShort (fields[i].type);
-		fields[i].ofs = LittleShort (fields[i].ofs);
-		fields[i].s_name = LittleLong (fields[i].s_name);
-	}
-	Qwrite (h, fields, numfielddefs * sizeof (ddef_t));
-
-	progs.ofs_globals = Qtell (h);
-	progs.numglobals = pr.data->size;
-	for (i = 0; i < pr.data->size; i++)
-		pr.data->data[i] = LittleLong (pr.data->data[i]);
-	Qwrite (h, pr.data->data, pr.data->size * 4);
-
-	if (options.verbosity >= -1)
-		printf ("%6i TOTAL SIZE\n", (int) Qtell (h));
-
-	progs.entityfields = pr.entity_data->size;
-
-	progs.version = options.code.progsversion;
-	progs.crc = crc;
-
-	// byte swap the header and write it out
-	for (i = 0; i < (int) sizeof (progs) / 4; i++)
-		((int *) &progs)[i] = LittleLong (((int *) &progs)[i]);
-
-	Qseek (h, 0, SEEK_SET);
-	Qwrite (h, &progs, sizeof (progs));
 	Qclose (h);
 
 	if (!options.code.debug) {
 		return 0;
 	}
-
+#if 0 //FIXME
 	if (!(h = Qopen (options.output_file, "rb")))
 		Sys_Error ("%s: %s\n", options.output_file, strerror(errno));
 
@@ -343,6 +285,7 @@ WriteData (int crc)
 	Qseek (h, 0, SEEK_SET);
 	Qwrite (h, &debug, sizeof (debug));
 	Qclose (h);
+#endif
 	return 0;
 }
 
@@ -353,172 +296,6 @@ begin_compilation (void)
 
 	pr.error_count = 0;
 }
-
-static void
-setup_param_block (void)
-{
-	static struct_def_t defs[] = {
-		{".zero",		&type_zero},
-		{".return",		&type_param},
-		{".param_0",	&type_param},
-		{".param_1",	&type_param},
-		{".param_2",	&type_param},
-		{".param_3",	&type_param},
-		{".param_4",	&type_param},
-		{".param_5",	&type_param},
-		{".param_6",	&type_param},
-		{".param_7",	&type_param},
-	};
-	size_t      i;
-	symbol_t   *sym;
-
-	for (i = 0; i < sizeof (defs) / sizeof (defs[0]); i++) {
-		sym = make_symbol (defs[i].name, defs[i].type, pr.symtab->space,
-						   st_global);
-		symtab_addsymbol (pr.symtab, sym);
-	}
-}
-
-static qboolean
-finish_compilation (void)
-{
-	def_t      *d;
-	qboolean    errors = false;
-	function_t *f;
-	def_t      *def;
-	dfunction_t *df;
-	int         far_base;
-
-	for (d = pr.near_data->defs; d; d = d->next) {
-		if (d->external && d->relocs) {
-#if 0 //FIXME
-			if (strcmp (d->name, ".self") == 0) {
-				get_def (d->type, ".self", pr.scope, st_global);
-			} else if (strcmp (d->name, ".this") == 0) {
-				get_def (d->type, ".this", pr.scope, st_global);
-			} else {
-#endif
-				errors = true;
-				error (0, "undefined global %s", d->name);
-//FIXME			}
-		}
-	}
-	for (d = pr.far_data->defs; d; d = d->next) {
-		if (d->external && d->relocs) {
-			errors = true;
-			error (0, "undefined global %s", d->name);
-		}
-	}
-
-	if (errors)
-		return !errors;
-
-	pr.functions = calloc (pr.num_functions + 1, sizeof (dfunction_t));
-	for (df = pr.functions + 1, f = pr.func_head; f; df++, f = f->next) {
-		df->s_name = f->s_name;
-		df->s_file = f->s_file;
-		df->numparms = function_parms (f, df->parm_size);
-		if (f->symtab && f->symtab->space)
-			df->locals = f->symtab->space->size;
-		if (f->builtin) {
-			df->first_statement = -f->builtin;
-			continue;
-		}
-		if (!f->code)
-			continue;
-		df->first_statement = f->code;
-		if (options.code.local_merging) {
-			if (f->symtab->space->size > num_localdefs) {
-				num_localdefs = f->symtab->space->size;
-				big_function = f->def->name;
-			}
-			df->parm_start = pr.near_data->size;
-		} else {
-			df->parm_start = defspace_alloc_loc (pr.near_data,
-												 f->symtab->space->size);
-			num_localdefs += f->symtab->space->size;
-		}
-		for (def = f->symtab->space->defs; def; def = def->next) {
-			if (!def->local)
-				continue;
-			def->offset += df->parm_start;
-		}
-	}
-	if (options.code.local_merging)
-		defspace_alloc_loc (pr.near_data, num_localdefs);
-
-	if (options.code.progsversion != PROG_ID_VERSION) {
-		//FIXME better init code
-		symbol_t   *sym = new_symbol (".param_size");
-		initialize_def (sym, &type_integer, 0, pr.far_data, st_global);
-		D_INT (sym->s.def) = type_size (&type_param);
-	}
-
-	if (options.code.debug) {
-		//FIXME better init code
-		symbol_t   *sym = new_symbol (".debug_file");
-		initialize_def (sym, &type_string, 0, pr.far_data, st_global);
-		EMIT_STRING (sym->s.def->space, D_STRUCT (string_t, sym->s.def),
-					 debugfile);
-	}
-
-	// merge near and far data
-	defspace_add_data (pr.data, pr.near_data->data, pr.near_data->size);
-	far_base = pr.data->size;
-	defspace_add_data (pr.data, pr.far_data->data, pr.far_data->size);
-	for (d = pr.far_data->defs; d; d = d->next) {
-		if (!d->external)
-			d->offset += far_base;
-	}
-	if (pr.near_data->defs) {
-		pr.data->defs = pr.near_data->defs;
-		pr.data->def_tail = pr.near_data->def_tail;
-		pr.near_data->defs = 0;
-		pr.near_data->def_tail = &pr.near_data->defs;
-	}
-	if (pr.far_data->defs) {
-		*pr.data->def_tail = pr.far_data->defs;
-		pr.data->def_tail = pr.far_data->def_tail;
-		pr.far_data->defs = 0;
-		pr.far_data->def_tail = &pr.far_data->defs;
-	}
-	// point near and far data spaces into the merged data. this allows
-	// relocations to work without having to adjust their location.
-	pr.near_data->data = pr.data->data;
-	pr.far_data->data = pr.data->data + far_base;
-
-	// check to make sure all functions prototyped have code
-	if (options.warnings.undefined_function) {
-		for (d = pr.data->defs; d; d = d->next) {
-			if (d->type->type == ev_func && d->global) {
-				// function args ok
-				//FIXME if (d->used) {
-					if (!d->initialized) {
-						warning (0, "function %s was called but not defined\n",
-								 d->name);
-					}
-				//FIXME }
-			}
-		}
-	}
-
-	for (def = pr.data->defs; def; def = def->next)
-		relocate_refs (def->relocs, def->offset);
-
-	for (df = pr.functions + 1, f = pr.func_head; f; df++, f = f->next) {
-		relocate_refs (f->refs, f->function_num);
-		if (!f->code)
-			continue;
-		for (def = f->symtab->space->defs; def; def = def->next) {
-			if (!def->local)
-				continue;
-			relocate_refs (def->relocs, def->offset);
-		}
-	}
-
-	return !errors;
-}
-
 
 const char *
 strip_path (const char *filename)
@@ -596,6 +373,47 @@ compile_to_obj (const char *file, const char *obj)
 }
 
 static int
+finish_link (void)
+{
+	qfo_t      *qfo;
+	int         flags;
+
+	flags = (QFOD_GLOBAL | QFOD_CONSTANT | QFOD_INITIALIZED | QFOD_NOSAVE);
+	if (options.code.progsversion != PROG_ID_VERSION) {
+		linker_add_def (".param_size", &type_integer, flags,
+						type_size (&type_param));
+	}
+
+	if (options.code.debug) {
+		int         str = linker_add_string (debugfile);
+		linker_add_def (".debug_file", &type_string, flags, str);
+	}
+
+	qfo = linker_finish ();
+	if (!qfo)
+		return 1;
+	if (!options.output_file)
+		options.output_file = "progs.dat";
+	if (options.partial_link) {
+		qfo_write (qfo, options.output_file);
+	} else {
+		int         size;
+		dprograms_t *progs;
+
+		progs = qfo_to_progs (qfo, &size);
+		setup_sym_file (options.output_file);
+		//finish_compilation ();
+
+		// write progdefs.h
+		if (options.progdefs_h)
+			progs->crc = WriteProgdefs (progs, "progdefs.h");
+
+		WriteData (progs, size);
+	}
+	return 0;
+}
+
+static int
 separate_compile (void)
 {
 	const char **file;
@@ -654,7 +472,6 @@ separate_compile (void)
 		}
 	}
 	if (!err && !options.compile) {
-		qfo_t      *qfo;
 		linker_begin ();
 		for (file = source_files; *file; file++) {
 			if (strncmp (*file, "-l", 2)) {
@@ -670,28 +487,7 @@ separate_compile (void)
 			if (err)
 				return err;
 		}
-		qfo = linker_finish ();
-		if (qfo) {
-			if (!options.output_file)
-				options.output_file = "progs.dat";
-			if (options.partial_link) {
-				qfo_write (qfo, options.output_file);
-			} else {
-				int         crc = 0;
-
-				//qfo_to_progs (qfo, &pr);
-				setup_sym_file (options.output_file);
-				finish_compilation ();
-
-				// write progdefs.h
-				if (options.progdefs_h)
-					crc = WriteProgdefs ("progdefs.h");
-
-				WriteData (crc);
-			}
-		} else {
-			err = 1;
-		}
+		err = finish_link ();
 		if (!options.save_temps)
 			for (file = temp_files; *file; file++)
 				unlink (*file);
@@ -775,9 +571,10 @@ progs_src_compile (void)
 	dstring_t  *qc_filename = dstring_newstr ();
 	dstring_t  *single_name = dstring_newstr ();
 	const char *src;
-	int         crc = 0;
+	//int         crc = 0;
 	script_t   *script;
 	FILE       *single = 0;
+	qfo_t      *qfo;
 
 	if (options.verbosity >= 1 && strcmp (sourcedir, "")) {
 		printf ("Source directory: %s\n", sourcedir);
@@ -843,9 +640,6 @@ progs_src_compile (void)
 
 	begin_compilation ();
 
-	if (!options.compile)
-		setup_param_block ();
-
 	// compile all the files
 	while (Script_GetToken (script, 1)) {
 		if (strcmp (script->token->str, "#") == 0) {
@@ -891,30 +685,23 @@ progs_src_compile (void)
 			return 1;
 	}
 
+	class_finish_module ();
+	qfo = qfo_from_progs (&pr);
 	if (options.compile) {
-		qfo_t      *qfo = qfo_from_progs (&pr);
 		qfo_write (qfo, options.output_file);
-		qfo_delete (qfo);
 	} else {
-		class_finish_module ();
-		if (!finish_compilation ()) {
+		linker_begin ();
+		if (linker_add_qfo (qfo) || finish_link ()) {
 			fprintf (stderr, "compilation errors\n");
 			return 1;
 		}
-
-		// write progdefs.h
-		if (options.progdefs_h)
-			crc = WriteProgdefs ("progdefs.h");
-
-		// write data file
-		if (WriteData (crc))
-			return 1;
 
 		// write files.dat
 		if (options.files_dat)
 			if (WriteFiles (sourcedir))
 				return 1;
 	}
+	qfo_delete (qfo);
 
 	return 0;
 }
