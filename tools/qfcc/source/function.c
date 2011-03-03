@@ -397,8 +397,13 @@ find_function (expr_t *fexpr, expr_t *params)
 	if (reported)
 		return fexpr;
 	if (best) {
-		if (best->overloaded)
-			fexpr->e.symbol->name = best->full_name;
+		if (best->overloaded) {
+			fexpr->e.symbol = symtab_lookup (current_symtab,
+											 best->full_name);
+			if (!fexpr->e.symbol)
+				internal_error (fexpr, "overloaded function %s not found",
+								best->full_name);
+		}
 		free (funcs);
 		return fexpr;
 	}
