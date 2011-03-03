@@ -1001,16 +1001,16 @@ remove_dead_blocks (sblock_t *blocks)
 
 				debug (0, "removing dead block %p", sb);
 
-				sblock->next = sb->next;
-				free_sblock (sb);
-
-				s = (statement_t *) sblock->tail;
+				s = (statement_t *) sb->tail;
 				if (!strcmp (s->opcode, "<GOTO>"))
 					label = s->opa->o.label;
 				else if (!strncmp (s->opcode, "<IF", 3))
 					label = s->opb->o.label;
 				remove_label_from_dest (label);
 				did_something = 1;
+
+				sblock->next = sb->next;
+				free_sblock (sb);
 			}
 		}
 	} while (did_something);
