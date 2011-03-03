@@ -66,25 +66,24 @@ typedef struct case_node_s {
 	struct case_node_s *left, *right;
 } case_node_t;
 
-static uintptr_t
+static ex_value_t *
 get_value (expr_t *e)
 {
-	if (e->type == ex_symbol) {
-		if (e->e.symbol->s.value.type == ev_string)
-			return (uintptr_t) e->e.symbol->s.value.v.string_val;
-		return e->e.symbol->s.value.v.integer_val;
-	}
-	return e->e.value.v.integer_val;
+	if (e->type == ex_symbol)
+		return &e->e.symbol->s.value;
+	return &e->e.value;
 }
 
 static uintptr_t
 get_hash (void *_cl, void *unused)
 {
 	case_label_t *cl = (case_label_t *) _cl;
+	ex_value_t  *val;
 
 	if (!cl->value)
 		return 0;
-	return get_value (cl->value);
+	val = get_value (cl->value);
+	return Hash_Buffer (val, sizeof (*val));
 }
 
 static int
@@ -94,7 +93,7 @@ compare (void *_cla, void *_clb, void *unused)
 	case_label_t *clb = (case_label_t *) _clb;
 	expr_t     *v1 = cla->value;
 	expr_t     *v2 = clb->value;
-	uintptr_t   val1, val2;
+	ex_value_t *val1, *val2;
 
 	if (v1 == v2)
 		return 1;
@@ -104,7 +103,7 @@ compare (void *_cla, void *_clb, void *unused)
 		return 0;
 	val1 = get_value (v1);
 	val2 = get_value (v1);
-	return val1 == val2;
+	return memcmp (val1, val2, sizeof (*val1));
 }
 
 struct expr_s *
