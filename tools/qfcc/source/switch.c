@@ -319,6 +319,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		sym = make_symbol (name, array_type (&type_integer, high - low + 1),
 						   pr.near_data, st_static);
 		table = new_symbol_expr (sym);
+		table = new_alias_expr (&type_integer, table);
 
 		if (tree->left) {
 			branch = branch_expr (IFB, temp, low_label);
