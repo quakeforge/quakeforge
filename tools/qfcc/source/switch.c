@@ -293,7 +293,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		append_expr (sw, branch);
 
 		if (tree->left) {
-			branch = new_binary_expr (IFA, temp, high_label);
+			branch = branch_expr (IFA, temp, high_label);
 			append_expr (sw, branch);
 
 			build_switch (sw, tree->left, op, sw_val, temp, default_label);
@@ -321,7 +321,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		table = new_symbol_expr (sym);
 
 		if (tree->left) {
-			branch = new_binary_expr (IFB, temp, low_label);
+			branch = branch_expr (IFB, temp, low_label);
 			append_expr (sw, branch);
 		}
 		//FIXME unsigned int

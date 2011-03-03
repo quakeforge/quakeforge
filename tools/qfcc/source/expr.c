@@ -1014,6 +1014,8 @@ backpatch (ex_list_t *list, expr_t *label)
 
 	if (!list)
 		return;
+	if (!label || label->type != ex_label)
+		internal_error (label, "not a label");
 
 	for (i = 0; i < list->size; i++) {
 		e = list->e[i];
@@ -1025,6 +1027,7 @@ backpatch (ex_list_t *list, expr_t *label)
 		else {
 			internal_error (e, 0);
 		}
+		label->e.label.used++;
 	}
 }
 
