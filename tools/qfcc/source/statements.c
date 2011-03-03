@@ -239,7 +239,6 @@ convert_op (int op)
 		case IFB:	return "<IFB>";
 		case IFAE:	return "<IFAE>";
 		case IFA:	return "<IFA>";
-		case 'C':	return "=";
 		case 'M':	return "<MOVE>";
 		default:
 			return 0;
@@ -553,6 +552,17 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	operand_t  *src = 0;
+
+	sblock = statement_subexpr (sblock, e->e.expr.e1, &src);
+	src->type = low_level_type (e->e.expr.type);
+	*op = src;
+	return sblock;
+}
+
+static sblock_t *
 expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	operand_t  *src = 0;
@@ -585,6 +595,9 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 			break;
 		case '.':
 			sblock = expr_deref (sblock, e, op);
+			break;
+		case 'A':
+			sblock = expr_alias (sblock, e, op);
 			break;
 		case 'C':
 			sblock = expr_cast (sblock, e, op);

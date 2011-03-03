@@ -802,18 +802,25 @@ new_this_expr (void)
 	return new_symbol_expr (sym);
 }
 
+expr_t *
+new_alias_expr (type_t *type, expr_t *expr)
+{
+	expr_t     *alias;
+
+	alias = new_unary_expr ('A', expr);
+	alias->e.expr.type = type;
+	return alias;
+}
+
 static expr_t *
 param_expr (const char *name, type_t *type)
 {
 	symbol_t   *sym;
 	expr_t     *sym_expr;
-	expr_t     *cast;
 
 	sym = make_symbol (name, &type_param, 0, st_extern);
 	sym_expr = new_symbol_expr (sym);
-	cast = new_unary_expr ('C', sym_expr);
-	cast->e.expr.type = type;
-	return cast;
+	return new_alias_expr (type, sym_expr);
 }
 
 expr_t *
@@ -2313,7 +2320,7 @@ is_lvalue (expr_t *e)
 		return 1;
 	if (e->type == ex_uexpr && e->e.expr.op == '.')
 		return 1;
-	if (e->type == ex_uexpr && e->e.expr.op == 'C') //FIXME really need alias
+	if (e->type == ex_uexpr && e->e.expr.op == 'A')
 		return is_lvalue (e->e.expr.e1);
 	return 0;
 }

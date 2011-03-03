@@ -86,6 +86,7 @@ get_op_string (int op)
 		case 'r':	return "<return>";
 		case 's':	return "<state>";
 		case 'c':	return "<call>";
+		case 'A':	return "<alias>";
 		case 'C':	return "<cast>";
 		case 'M':	return "<move>";
 		default:
