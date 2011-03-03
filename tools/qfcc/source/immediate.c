@@ -168,6 +168,8 @@ emit_value (ex_value_t *value, def_t *def)
 		clear_immediates ();
 	}
 	cn = 0;
+	if (val.type == ev_void)
+		val.type = type_nil->type;
 	switch (val.type) {
 		case ev_entity:
 			tab = entity_imm_defs;
