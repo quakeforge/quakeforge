@@ -1054,6 +1054,7 @@ make_statements (expr_t *e)
 	statement_slist (sblock, e);
 //	print_flow (sblock);
 	remove_dead_blocks (sblock);
+//	print_flow (sblock);
 	check_final_block (sblock);
 //	print_flow (sblock);
 	return sblock;

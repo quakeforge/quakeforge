@@ -74,6 +74,7 @@ typedef struct ex_label_s {
 	struct reloc_s *refs;		///< relocations associated with this label
 	struct sblock_s *dest;		///< the location of this label if known
 	const char *name;			///< the name of this label
+	int         used;			///< label is used as a target
 } ex_label_t;
 
 typedef struct {
@@ -548,6 +549,8 @@ expr_t *build_function_call (expr_t *fexpr, struct type_s *ftype,
 							 expr_t *params);
 expr_t *function_expr (expr_t *e1, expr_t *e2);
 struct function_s;
+expr_t *branch_expr (int op, expr_t *test, expr_t *label);
+expr_t *goto_expr (expr_t *label);
 expr_t *return_expr (struct function_s *f, expr_t *e);
 expr_t *conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2);
 expr_t *incop_expr (int op, expr_t *e, int postop);

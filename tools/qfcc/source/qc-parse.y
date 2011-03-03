@@ -1000,7 +1000,7 @@ statement
 		{
 			$$ = 0;
 			if (break_label)
-				$$ = new_unary_expr ('g', break_label);
+				$$ = goto_expr (break_label);
 			else
 				error (0, "break outside of loop or switch");
 		}
@@ -1008,7 +1008,7 @@ statement
 		{
 			$$ = 0;
 			if (continue_label)
-				$$ = new_unary_expr ('g', continue_label);
+				$$ = goto_expr (continue_label);
 			else
 				error (0, "continue outside of loop");
 		}

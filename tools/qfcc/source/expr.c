@@ -1081,15 +1081,15 @@ convert_bool (expr_t *e, int block)
 		if (e->type == ex_error)
 			return e;
 		if (is_integer_val (e)) {
-			b = new_unary_expr ('g', 0);
+			b = goto_expr (0);
 			if (expr_integer (e))
 				e = new_bool_expr (make_list (b), 0, b);
 			else
 				e = new_bool_expr (0, make_list (b), b);
 		} else {
 			b = new_block_expr ();
-			append_expr (b, new_binary_expr ('i', e, 0));
-			append_expr (b, new_unary_expr ('g', 0));
+			append_expr (b, branch_expr ('i', e, 0));
+			append_expr (b, goto_expr (0));
 			e = new_bool_expr (make_list (b->e.block.head),
 							   make_list (b->e.block.head->next), b);
 		}
@@ -1819,6 +1819,26 @@ function_expr (expr_t *fexpr, expr_t *params)
 }
 
 expr_t *
+branch_expr (int op, expr_t *test, expr_t *label)
+{
+	if (label && label->type != ex_label)
+		internal_error (label, "not a label");
+	if (label)
+		label->e.label.used++;
+	return new_binary_expr (op, test, label);
+}
+
+expr_t *
+goto_expr (expr_t *label)
+{
+	if (label && label->type != ex_label)
+		internal_error (label, "not a label");
+	if (label)
+		label->e.label.used++;
+	return new_unary_expr ('g', label);
+}
+
+expr_t *
 return_expr (function_t *f, expr_t *e)
 {
 	type_t     *t;
@@ -1913,7 +1933,7 @@ conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2)
 		append_expr (block, assign_expr (block->e.block.result, e2));
 	else
 		append_expr (block, e2);
-	append_expr (block, new_unary_expr ('g', elabel));
+	append_expr (block, goto_expr (elabel));
 	append_expr (block, tlabel);
 	if (block->e.block.result)
 		append_expr (block, assign_expr (block->e.block.result, e1));
@@ -2124,7 +2144,7 @@ build_if_statement (expr_t *test, expr_t *s1, expr_t *s2)
 
 	if (s2) {
 		expr_t     *nl = new_label_expr ();
-		append_expr (if_expr, new_unary_expr ('g', nl));
+		append_expr (if_expr, goto_expr (nl));
 
 		append_expr (if_expr, fl);
 		append_expr (if_expr, s2);
@@ -2154,7 +2174,7 @@ build_while_statement (expr_t *test, expr_t *statement,
 
 	while_expr = new_block_expr ();
 
-	append_expr (while_expr, new_unary_expr ('g', continue_label));
+	append_expr (while_expr, goto_expr (continue_label));
 	append_expr (while_expr, l1);
 	append_expr (while_expr, statement);
 	append_expr (while_expr, continue_label);
@@ -2234,7 +2254,7 @@ build_for_statement (expr_t *init, expr_t *test, expr_t *next,
 	append_expr (for_expr, init);
 	if (test) {
 		l1 = new_label_expr ();
-		append_expr (for_expr, new_unary_expr ('g', l1));
+		append_expr (for_expr, goto_expr (l1));
 	}
 	append_expr (for_expr, tl);
 	append_expr (for_expr, statement);
@@ -2250,7 +2270,7 @@ build_for_statement (expr_t *init, expr_t *test, expr_t *next,
 			append_expr (for_expr, test);
 		}
 	} else {
-		append_expr (for_expr, new_unary_expr ('g', tl));
+		append_expr (for_expr, goto_expr (tl));
 		append_expr (for_expr, fl);
 	}
 

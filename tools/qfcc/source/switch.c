@@ -271,7 +271,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 	expr_t     *low_label = default_label;
 
 	if (!tree) {
-		branch = new_unary_expr ('g', default_label);
+		branch = goto_expr (default_label);
 		append_expr (sw, branch);
 		return;
 	}
@@ -289,7 +289,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 	append_expr (sw, test);
 
 	if (tree->low == tree->high) {
-		branch = new_binary_expr ('n', temp, tree->labels[0]);
+		branch = branch_expr ('n', temp, tree->labels[0]);
 		append_expr (sw, branch);
 
 		if (tree->left) {
@@ -326,7 +326,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		}
 		//FIXME unsigned int
 		test = binary_expr (GT, cast_expr (&type_integer, temp), range);
-		branch = new_binary_expr ('i', test, high_label);
+		branch = branch_expr ('i', test, high_label);
 		append_expr (sw, branch);
 		branch = new_binary_expr ('g', table, temp);
 		append_expr (sw, branch);
@@ -342,6 +342,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			def_t       loc;
 			loc.space = sym->s.def->space;
 			loc.offset = sym->s.def->offset + i;
+			tree->labels[i]->e.label.used++;
 			reloc_def_op (&tree->labels[i]->e.label, &loc);
 		}
 	}
@@ -373,7 +374,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		default_label = &_default_label;
 		default_label->label = break_label;
 	}
-	default_expr = new_unary_expr ('g', default_label->label);
+	default_expr = goto_expr (default_label->label);
 
 	append_expr (sw, assign_expr (sw_val, switch_block->test));
 
@@ -385,9 +386,8 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		|| num_labels < 8) {
 		for (l = labels; *l; l++) {
 			expr_t     *cmp = binary_expr (EQ, sw_val, (*l)->value);
-			expr_t     *test = new_binary_expr ('i',
-												test_expr (cmp),
-												(*l)->label);
+			expr_t     *test = branch_expr ('i', test_expr (cmp),
+											(*l)->label);
 
 			append_expr (sw, test);
 		}
