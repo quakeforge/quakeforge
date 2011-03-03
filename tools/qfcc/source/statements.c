@@ -827,9 +827,13 @@ statement_label (sblock_t *sblock, expr_t *e)
 		sblock->next = new_sblock ();
 		sblock = sblock->next;
 	}
-	e->e.label.dest = sblock;
-	e->e.label.next = sblock->labels;
-	sblock->labels = &e->e.label;
+	if (e->e.label.used) {
+		e->e.label.dest = sblock;
+		e->e.label.next = sblock->labels;
+		sblock->labels = &e->e.label;
+	} else {
+		debug (e, "dropping unused label %s\n", e->e.label.name);
+	}
 	return sblock;
 }
 
