@@ -90,14 +90,14 @@ binding_t movement_binding_list[16] = {
 	{"Swim down", "+movedown"},
 };
 
-binding_t [4] misc_binding_list = {
+binding_t misc_binding_list [4] = {
 	{"Pause game", "pause"},
 	{"Tog. m.-grab", "toggle in_grab"},
 	{"Messagemode", "messagemode"},
 	{"Screenshot", "screenshot"},
 };
 
-binding_t [10] weapon_binding_list = {
+binding_t weapon_binding_list [10] = {
 	{"Attack", "+attack"},
 	{"Next weapon", "impulse 10"},
 	{"Axe", "impulse 1"},
@@ -110,11 +110,11 @@ binding_t [10] weapon_binding_list = {
 	{"Thunderbolt", "impulse 8"},
 };
 
-Binding *(binding_t binding)
-new_binding =
+Binding *
+new_binding (binding_t binding)
 {
 	return [[Binding alloc] initWithBinding:binding];
-};
+}
 
 /*
 	init_binding_hash
