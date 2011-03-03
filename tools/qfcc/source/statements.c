@@ -590,6 +590,22 @@ expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_negate (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	expr_t     *neg;
+	expr_t     *zero;
+
+	zero = new_nil_expr ();
+	zero->file = e->file;
+	zero->line = e->line;
+	convert_nil (zero, e->e.expr.type);
+	neg = binary_expr ('-', zero, e->e.expr.e1);
+	neg->file = e->file;
+	neg->line = e->line;
+	return statement_subexpr (sblock, neg, op);
+}
+
+static sblock_t *
 expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	const char *opcode;
@@ -607,6 +623,10 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 			break;
 		case 'C':
 			sblock = expr_cast (sblock, e, op);
+			break;
+		case '-':
+			// progs has no neg instruction!?!
+			sblock = expr_negate (sblock, e, op);
 			break;
 		default:
 			opcode = convert_op (e->e.expr.op);
