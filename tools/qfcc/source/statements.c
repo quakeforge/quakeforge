@@ -589,6 +589,9 @@ expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 {
+	const char *opcode;
+	statement_t *s;
+
 	switch (e->e.expr.op) {
 		case '&':
 			sblock = expr_address (sblock, e, op);
@@ -603,8 +606,17 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 			sblock = expr_cast (sblock, e, op);
 			break;
 		default:
-			//FIXME implement unary expressions
-			;
+			opcode = convert_op (e->e.expr.op);
+			if (!opcode)
+				internal_error (e, "ice ice baby");
+			s = new_statement (opcode, e);
+			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+			if (!*op) {
+				*op = new_operand (op_temp);
+				(*op)->type = low_level_type (e->e.expr.type);
+			}
+			s->opc = *op;
+			sblock_add_statement (sblock, s);
 	}
 	return sblock;
 }
