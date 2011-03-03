@@ -909,6 +909,20 @@ class_add_ivars (class_t *class, symtab_t *ivars)
 	class->ivars = ivars;
 }
 
+static int
+compare_symbols (symbol_t *s1, symbol_t *s2)
+{
+	if (s1->visibility != s2->visibility)
+		return 0;
+	if (s1->name != s2->name)	// works thanks to save_string
+		return 0;
+	if (s1->sy_type != s2->sy_type)
+		return 0;
+	if (s1->type != s2->type)
+		return 0;
+	return 1;
+}
+
 void
 class_check_ivars (class_t *class, symtab_t *ivars)
 {
@@ -919,7 +933,7 @@ class_check_ivars (class_t *class, symtab_t *ivars)
 	if (ivars) {
 		for (civ = class->ivars->symbols, iv = ivars->symbols;
 			 civ && iv; civ = civ->next, iv = iv->next) {
-			if (memcmp (civ, iv, sizeof (*civ))) //FIXME does this work?
+			if (!compare_symbols (civ, iv))
 				goto missmatch;
 		}
 	}
