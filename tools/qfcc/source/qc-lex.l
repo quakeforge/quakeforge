@@ -299,6 +299,11 @@ static keyword_t keywords[] = {
 	{"enum",		ENUM,	0,					0, PROG_ID_VERSION,	0},
 	{"typedef",		TYPEDEF, 0,					0, PROG_ID_VERSION,	0},
 
+	// these two are a hack to trigger the initialization of the class
+	// sytem if they are seen before any other Objective-QC symbol
+	{"obj_module_s", 0,		0,					0, PROG_VERSION,	1},
+	{"obj_module_t", 0,		0,					0, PROG_VERSION,	1},
+
 	{"@class",		CLASS,	0,					0, PROG_VERSION,	1},
 	{"@defs",		DEFS,	0,					0, PROG_VERSION,	1},
 	{"@encode",		ENCODE,	0,					0, PROG_VERSION,	1},
@@ -348,13 +353,15 @@ keyword_or_id (char *token)
 	if (keyword) {
 		if (!options.traditional && keyword->objc && !class_Class.super_class)
 			class_init ();
-		if (keyword->value == STRUCT) {
-			yylval.op = token[0];
-		} else {
-			yylval.type = 0;
-			yylval.type = keyword->type;
+		if (keyword->value) {
+			if (keyword->value == STRUCT) {
+				yylval.op = token[0];
+			} else {
+				yylval.type = 0;
+				yylval.type = keyword->type;
+			}
+			return keyword->value;
 		}
-		return keyword->value;
 	}
 	if (token[0] == '@') {
 		return '@';

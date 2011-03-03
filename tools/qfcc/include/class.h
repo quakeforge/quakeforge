@@ -113,7 +113,6 @@ class_t *extract_class (class_type_t *class_type);
 const char *get_class_name (class_type_t *class_type, int pretty);
 struct symbol_s *class_symbol (class_type_t *class_type, int external);
 void class_init (void);
-void class_init_obj_module (void);
 class_t *get_class (struct symbol_s *sym, int create);
 void class_add_methods (class_t *class, struct methodlist_s *methods);
 void class_add_protocols (class_t *class, protocollist_t *protocols);

@@ -267,16 +267,7 @@ init_classes (void)
 	chain_type (&type_id);
 }
 
-void
-class_init (void)
-{
-	if (!current_symtab)
-		current_symtab = pr.symtab;
-	init_classes ();
-	init_objective_structs ();
-}
-
-void
+static void
 class_init_obj_module (void)
 {
 	symbol_t   *sym;
@@ -290,6 +281,16 @@ class_init_obj_module (void)
 	sym = new_symbol_type ("obj_module_t", &type_module);
 	sym->sy_type = sy_type;
 	symtab_addsymbol (pr.symtab, sym);
+}
+
+void
+class_init (void)
+{
+	if (!current_symtab)
+		current_symtab = pr.symtab;
+	class_init_obj_module ();
+	init_classes ();
+	init_objective_structs ();
 }
 
 symbol_t *

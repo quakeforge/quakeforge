@@ -864,7 +864,6 @@ chain_initial_types (void)
 		chain_type (&type_quaternion);
 		chain_type (&type_integer);
 		chain_type (&type_short);
-		class_init_obj_module ();
 	}
 
 	chain_type (&type_param);
