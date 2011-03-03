@@ -268,11 +268,17 @@ statement_branch (sblock_t *sblock, expr_t *e)
 		s->opa = new_operand (op_label);
 		s->opa->o.label = &e->e.expr.e1->e.label;
 	} else {
-		opcode = convert_op (e->e.expr.op);
-		s = new_statement (opcode, e);
-		sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
-		s->opb = new_operand (op_label);
-		s->opb->o.label = &e->e.expr.e2->e.label;
+		if (e->e.expr.op == 'g') {
+			s = new_statement ("<JUMPB>", e);
+			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+			sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
+		} else {
+			opcode = convert_op (e->e.expr.op);
+			s = new_statement (opcode, e);
+			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+			s->opb = new_operand (op_label);
+			s->opb->o.label = &e->e.expr.e2->e.label;
+		}
 	}
 
 	sblock_add_statement (sblock, s);
@@ -875,6 +881,7 @@ statement_expr (sblock_t *sblock, expr_t *e)
 		case 'c':
 			sblock = expr_call (sblock, e, 0);
 			break;
+		case 'g':
 		case 'i':
 		case 'n':
 		case IFBE:
