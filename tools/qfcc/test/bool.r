@@ -8,3 +8,11 @@ integer (integer x, integer y, integer z) foo =
 	}
 	return !x;
 };
+
+float bar (void *a)
+{
+	void *b;
+	if (!(b = a))
+		return 1;
+	return 2;
+}
