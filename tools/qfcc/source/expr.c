@@ -965,28 +965,29 @@ test_expr (expr_t *e)
 //		case ev_uinteger:
 		case ev_integer:
 		case ev_short:
+			if (type_default != &type_integer)
+				return new_alias_expr (type_default, e);
 			return e;
 		case ev_float:
 			if (options.code.fast_float
-				|| options.code.progsversion == PROG_ID_VERSION)
+				|| options.code.progsversion == PROG_ID_VERSION) {
+				if (type_default != &type_float)
+					return new_alias_expr (type_default, e);
 				return e;
+			}
 			new = new_float_expr (0);
 			break;
 		case ev_vector:
 			new = new_vector_expr (zero);
 			break;
 		case ev_entity:
-			new = new_entity_expr (0);
-			break;
+			return new_alias_expr (type_default, e);
 		case ev_field:
-			new = new_field_expr (0, 0, 0);
-			break;
+			return new_alias_expr (type_default, e);
 		case ev_func:
-			new = new_func_expr (0);
-			break;
+			return new_alias_expr (type_default, e);
 		case ev_pointer:
-			new = new_nil_expr ();
-			break;
+			return new_alias_expr (type_default, e);
 		case ev_quat:
 			new = new_quaternion_expr (zero);
 			break;
