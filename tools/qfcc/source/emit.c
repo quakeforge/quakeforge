@@ -125,6 +125,10 @@ get_operand_def (expr_t *expr, operand_t *op)
 				def->offset_reloc = 1;
 			}
 			return def;
+		case op_alias:
+			def = alias_def (get_operand_def (expr, op->o.alias),
+							 ev_types[op->type]);
+			return def;
 	}
 	return 0;
 }

@@ -37,6 +37,7 @@ typedef enum {
 	op_label,
 	op_temp,
 	op_pointer,
+	op_alias,
 } op_type_e;
 
 typedef struct operand_s {
@@ -49,6 +50,7 @@ typedef struct operand_s {
 		struct ex_label_s *label;
 		struct ex_pointer_s *pointer;
 		struct def_s   *def;
+		struct operand_s *alias;
 	} o;
 } operand_t;
 

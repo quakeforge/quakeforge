@@ -115,6 +115,11 @@ print_operand (operand_t *op)
 			break;
 		case op_pointer:
 			printf ("ptr %p", op->o.pointer);
+			break;
+		case op_alias:
+			printf ("alias %s ", pr_type_name[op->type]);
+			print_operand (op->o.alias);
+			break;
 	}
 }
 
@@ -554,11 +559,9 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	operand_t  *src = 0;
-
-	sblock = statement_subexpr (sblock, e->e.expr.e1, &src);
-	src->type = low_level_type (e->e.expr.type);
-	*op = src;
+	*op = new_operand (op_alias);
+	(*op)->type = low_level_type (e->e.expr.type);
+	sblock = statement_subexpr (sblock, e->e.expr.e1, &(*op)->o.alias);
 	return sblock;
 }
 

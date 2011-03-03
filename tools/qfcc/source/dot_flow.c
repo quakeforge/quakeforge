@@ -146,6 +146,8 @@ get_operand (operand_t *op)
 				return va ("(%s)[%d]",
 						   type ? pr_type_name[type->type] : "???",
 						   op->o.pointer->val);
+		case op_alias:
+			return get_operand (op->o.alias);//FIXME better output
 	}
 	return ("??");
 }
