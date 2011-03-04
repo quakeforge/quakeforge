@@ -69,13 +69,16 @@ find_tag (ty_type_e ty, symbol_t *tag, type_t *type)
 {
 	const char *tag_name;
 	symbol_t   *sym;
-	static int  tag_num;
 
-	if (tag)
+	if (tag) {
 		tag_name = va ("tag %s", tag->name);
-	else
-		tag_name = va ("tag .%s.%d.%d",
-					   GETSTR (pr.source_file), pr.source_line, tag_num++);
+	} else {
+		const char *path = GETSTR (pr.source_file);
+		const char *file = strrchr (path, '/');
+		if (!file++)
+			file = path;
+		tag_name = va ("tag .%s.%d", file, pr.source_line);
+	}
 	sym = symtab_lookup (current_symtab, tag_name);
 	if (sym) {
 		if (sym->table == current_symtab && sym->type->ty != ty)
