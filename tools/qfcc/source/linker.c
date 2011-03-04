@@ -112,10 +112,7 @@ static builtin_sym_t builtin_symbols[] __attribute__ ((used)) = {
 typedef struct defref_s {
 	struct defref_s *next;			///< if \c merge is true, the next def to
 									///< be merged with the main def
-	qfo_def_t **def_list;			///< the address of the pointer to the
-									///< list holding this def. this allows
-									///< the list to move around (realloc)
-	int         def;				///< the index of this def in def_list
+	int         def;				///< the index of this def
 	int         space;				///< the space in which this def resides
 	int         merge;				///< merge def's relocs with the main def
 	struct defref_s *merge_list;	///< list of defs to be merged with this
@@ -1086,7 +1083,6 @@ build_qfo (void)
 		memcpy (reloc, work->relocs + REF (r)->relocs,
 				REF (r)->num_relocs * sizeof (qfo_reloc_t));
 		reloc += REF (r)->num_relocs;
-		r->def_list = &qfo->spaces[space].defs;
 		r->def = defs[space] - qfo->defs;
 		// copy relocs from merged defs
 		for (r = r->merge_list; r; r = r->next) {
@@ -1094,7 +1090,6 @@ build_qfo (void)
 					REF (r)->num_relocs * sizeof (qfo_reloc_t));
 			reloc += REF (r)->num_relocs;
 			d.num_relocs += REF (r)->num_relocs;
-			r->def_list = &qfo->spaces[space].defs;
 			r->space = space;
 			r->def = defs[space] - qfo->defs;
 		}
