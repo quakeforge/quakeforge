@@ -319,8 +319,12 @@ add_relocs (qfo_t *qfo, int start, int count, int target)
 			continue;
 		}
 		reloc->space = qfo->spaces[reloc->space].id;
-		if (reloc->space < qfo_num_spaces)
+		if (!reloc->space) {
+			//FIXME double check
+			reloc->offset += work_base[qfo_code_space];
+		} else if (reloc->space < qfo_num_spaces) {
 			reloc->offset += work_base[reloc->space];
+		}
 		reloc->target = target;
 	}
 	return work->num_relocs - count;
@@ -802,8 +806,12 @@ process_loose_relocs (qfo_t *qfo)
 			const char *str = QFO_GSTRING (qfo, reloc->space, reloc->offset);
 			reloc->target = linker_add_string (str);
 		}
-		if (reloc->space < qfo_num_spaces)
+		if (!reloc->space) {
+			//FIXME double check
+			reloc->offset += work_base[qfo_code_space];
+		} else if (reloc->space < qfo_num_spaces) {
 			reloc->offset += work_base[reloc->space];
+		}
 	}
 }
 
