@@ -83,25 +83,6 @@ static void def_error (qfo_def_t *def, const char *fmt, ...)
 static void def_warning (qfo_def_t *def, const char *fmt, ...)
 	__attribute__ ((used, format (printf, 2, 3)));
 
-typedef struct builtin_sym_s {
-	const char *name;
-	type_t     *type;
-	unsigned    flags;
-} builtin_sym_t;
-
-static builtin_sym_t builtin_symbols[] __attribute__ ((used)) = {
-	{".zero",		&type_zero,		QFOD_NOSAVE},
-	{".return",		&type_param,	QFOD_NOSAVE},
-	{".param_0",	&type_param,	QFOD_NOSAVE},
-	{".param_1",	&type_param,	QFOD_NOSAVE},
-	{".param_2",	&type_param,	QFOD_NOSAVE},
-	{".param_3",	&type_param,	QFOD_NOSAVE},
-	{".param_4",	&type_param,	QFOD_NOSAVE},
-	{".param_5",	&type_param,	QFOD_NOSAVE},
-	{".param_6",	&type_param,	QFOD_NOSAVE},
-	{".param_7",	&type_param,	QFOD_NOSAVE},
-};
-
 /**	Safe handling of defs in hash tables and other containers.
 
 	As defs are stored in dynamic arrays, storing pointers to the defs is
@@ -125,6 +106,28 @@ typedef struct defref_s {
 	\return			A pointer to the def (qfo_def_t *).
 */
 #define REF(r) (work->spaces[(r)->space].defs + (r)->def)
+
+typedef struct builtin_sym_s {
+	const char *name;
+	type_t     *type;
+	unsigned    flags;
+	defref_t   *defref;
+} builtin_sym_t;
+
+static builtin_sym_t builtin_symbols[] __attribute__ ((used)) = {
+	{".zero",		&type_zero,		QFOD_NOSAVE | QFOD_GLOBAL},
+	{".return",		&type_param,	QFOD_NOSAVE | QFOD_GLOBAL},
+	{".param_0",	&type_param,	QFOD_NOSAVE | QFOD_GLOBAL},
+	{".param_1",	&type_param,	QFOD_NOSAVE | QFOD_GLOBAL},
+	{".param_2",	&type_param,	QFOD_NOSAVE | QFOD_GLOBAL},
+	{".param_3",	&type_param,	QFOD_NOSAVE | QFOD_GLOBAL},
+	{".param_4",	&type_param,	QFOD_NOSAVE | QFOD_GLOBAL},
+	{".param_5",	&type_param,	QFOD_NOSAVE | QFOD_GLOBAL},
+	{".param_6",	&type_param,	QFOD_NOSAVE | QFOD_GLOBAL},
+	{".param_7",	&type_param,	QFOD_NOSAVE | QFOD_GLOBAL},
+};
+static const int num_builtins = sizeof (builtin_symbols)
+								/ sizeof (builtin_symbols[0]);
 
 static defref_t *free_defrefs;
 
@@ -487,8 +490,8 @@ transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
 	return type_offset;
 }
 
-void
-linker_add_def (const char *name, type_t *type, unsigned flags, int v)
+static defref_t *
+define_def (const char *name, type_t *type, unsigned flags, int v)
 {
 	qfo_def_t  *def;
 	defref_t   *ref;
@@ -515,6 +518,14 @@ linker_add_def (const char *name, type_t *type, unsigned flags, int v)
 							(num_work_defrefs + 1) * sizeof (defref_t *));
 	work_defrefs[num_work_defrefs++] = ref;
 	Hash_Add (defined_defs, ref);
+
+	return ref;
+}
+
+void
+linker_add_def (const char *name, type_t *type, unsigned flags, int v)
+{
+	define_def (name, type, flags, v);
 }
 
 /**	Initialize the linker state.
@@ -522,7 +533,7 @@ linker_add_def (const char *name, type_t *type, unsigned flags, int v)
 void
 linker_begin (void)
 {
-	size_t      i;
+	int         i;
 
 	linker_current_file = dstring_newstr ();
 
@@ -564,15 +575,13 @@ linker_begin (void)
 	work->spaces[qfo_type_space].type = qfos_type;
 	work->spaces[qfo_type_space].d.data = work_type_data->data;
 	work->spaces[qfo_type_space].data_size = work_type_data->size;
-	for (i = 0; i < (size_t) qfo_num_spaces; i++)
+	for (i = 0; i < qfo_num_spaces; i++)
 		work->spaces[i].id = i;
 
 	if (!options.partial_link) {
-		for (i = 0;
-			 i < sizeof (builtin_symbols) / sizeof (builtin_symbols[0]);
-			 i++) {
-			linker_add_def (builtin_symbols[i].name, builtin_symbols[i].type,
-							builtin_symbols[i].flags, 0);
+		for (i = 0; i < num_builtins; i++) {
+			builtin_sym_t *bi = builtin_symbols + i;
+			bi->defref = define_def (bi->name, bi->type, bi->flags, 0);
 		}
 	}
 }
@@ -702,6 +711,19 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 
 	type_space->d.data = work_type_data->data;
 	type_space->data_size = work_type_data->size;
+
+	for (i = 0; i < num_builtins; i++) {
+		builtin_sym_t *bi = builtin_symbols + i;
+		if (!bi->defref)
+			continue;
+		def = REF (bi->defref);
+		if (def->type >= 0)
+			continue;
+		ref = Hash_Find (defined_type_defs, WORKSTR (-def->type));
+		if (!ref)
+			continue;
+		def->type = REF (ref)->offset;
+	}
 	return 0;
 }
 
