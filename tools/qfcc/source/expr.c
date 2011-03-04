@@ -818,7 +818,9 @@ param_expr (const char *name, type_t *type)
 	symbol_t   *sym;
 	expr_t     *sym_expr;
 
-	sym = make_symbol (name, &type_param, 0, st_extern);
+	sym = make_symbol (name, &type_param, pr.symtab->space, st_extern);
+	if (!sym->table)
+		symtab_addsymbol (pr.symtab, sym);
 	sym_expr = new_symbol_expr (sym);
 	return new_alias_expr (type, sym_expr);
 }
