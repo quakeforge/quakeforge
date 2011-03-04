@@ -698,6 +698,67 @@ convert_def (qfo_t *qfo, const qfo_def_t *def, ddef_t *ddef)
 		ddef->type |= DEF_SAVEGLOBAL;
 }
 
+static void
+qfo_relocate_refs (qfo_t *qfo)
+{
+	int         i;
+	qfo_reloc_t *reloc;
+
+	for (i = 0, reloc = qfo->relocs; i < qfo->num_relocs; i++, reloc++) {
+		// this will be valid only for *_def relocs
+		qfo_def_t  *def = qfo->defs + reloc->target;
+
+		switch (reloc->type) {
+			case rel_none:
+				break;
+			case rel_op_a_def:
+				QFO_STATEMENT (qfo, reloc->offset)->a = def->offset;
+				break;
+			case rel_op_b_def:
+				QFO_STATEMENT (qfo, reloc->offset)->b = def->offset;
+				break;
+			case rel_op_c_def:
+				QFO_STATEMENT (qfo, reloc->offset)->c = def->offset;
+				break;
+			case rel_op_a_op:
+			case rel_op_b_op:
+			case rel_op_c_op:
+				// these should never appear in a qfo file
+				break;
+			case rel_def_op:
+				//FIXME how?
+				break;
+			case rel_def_def:
+				QFO_INT (qfo, reloc->space, reloc->offset) = def->offset;
+				break;
+			case rel_def_func:
+				QFO_INT (qfo, reloc->space, reloc->offset) = reloc->target;
+				break;
+			case rel_def_string:
+				QFO_INT (qfo, reloc->space, reloc->offset) = reloc->target;
+				break;
+			case rel_def_field:
+				//FIXME how?
+				break;
+			case rel_op_a_def_ofs:
+				QFO_STATEMENT (qfo, reloc->offset)->a += def->offset;
+				break;
+			case rel_op_b_def_ofs:
+				QFO_STATEMENT (qfo, reloc->offset)->b += def->offset;
+				break;
+			case rel_op_c_def_ofs:
+				QFO_STATEMENT (qfo, reloc->offset)->c += def->offset;
+				break;
+			case rel_def_def_ofs:
+				QFO_INT (qfo, reloc->space, reloc->offset) += def->offset;
+				break;
+			case rel_def_field_ofs:
+				//FIXME how?
+				break;
+		}
+	}
+}
+
 dprograms_t *
 qfo_to_progs (qfo_t *qfo, int *size)
 {
@@ -839,7 +900,9 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	memcpy (type_data, qfo->spaces[qfo_type_space].d.data,
 			qfo->spaces[qfo_type_space].data_size * sizeof (pr_type_t));
 	qfo->spaces[qfo_type_space].d.data = type_data;
-	// FIXME do relocs
+
+	qfo_relocate_refs (qfo);
+
 	return progs;
 }
 

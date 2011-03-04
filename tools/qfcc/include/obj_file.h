@@ -376,6 +376,8 @@ enum {
 #define QFO_TYPEMETA(q, t)	QFO_INT (q, qfo_type_space, (t) + 0)
 #define QFO_TYPETYPE(q, t)	QFO_INT (q, qfo_type_space, (t) + 3)
 
+#define QFO_STATEMENT(q, s) ((q)->spaces[qfo_code_space].d.code + (s))
+
 /** Access a string global, converting it to a C string.
 
 	\param q pointer to ::qfo_t struct
