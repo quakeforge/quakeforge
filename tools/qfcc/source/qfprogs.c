@@ -259,7 +259,7 @@ static void
 convert_qfo (void)
 {
 	int         size;
-	int         i;
+//	int         i;
 	ddef_t     *ld;
 
 	pr.progs = qfo_to_progs (qfo, &size);
@@ -272,11 +272,11 @@ convert_qfo (void)
 	pr.pr_fielddefs = P (ddef_t, ofs_fielddefs);
 	pr.pr_globals = P (pr_type_t, ofs_globals);
 	pr.globals_size = pr.progs->numglobals;
-
+	ld = pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));
+#if 0
 	pr.auxfunctions = calloc (qfo->num_funcs, sizeof (pr_auxfunction_t));
 	pr.auxfunction_map = calloc (progs.numfunctions,
 								 sizeof (pr_auxfunction_t *));
-	ld = pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));
 	for (i = 0; i < qfo->num_funcs; i++) {
 		qfo_func_t *func = qfo->funcs + i;
 
@@ -288,7 +288,7 @@ convert_qfo (void)
 		pr.auxfunctions[i].num_locals =
 			qfo->spaces[func->locals_space].num_defs;
 	}
-#if 0
+
 	for (i = 0; i < qfo->num_defs; i++) {
 		int         j;
 		qfo_def_t  *def = defs + i;
