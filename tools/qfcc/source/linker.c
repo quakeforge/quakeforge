@@ -486,18 +486,22 @@ linker_add_def (const char *name, type_t *type, unsigned flags, int v)
 	qfo_def_t  *def;
 	defref_t   *ref;
 	qfo_mspace_t *space;
+	defspace_t *def_space;
 
 	space = &work->spaces[qfo_near_data_space];
+	def_space = work_near_data;
+
 	space->defs = realloc (space->defs,
 						   (space->num_defs + 1) * sizeof (qfo_def_t));
 	def = space->defs + space->num_defs++;
 	memset (def, 0, sizeof (*def));
 	def->name = linker_add_string (name);
 	def->type = -linker_add_string (type->encoding);// this will be fixed later
-	def->offset = defspace_alloc_loc (*work_spaces[space->id],
-									  type_size (type));
+	def->offset = defspace_alloc_loc (def_space, type_size (type));
 	def->flags = flags;
-	(*work_spaces[space->id])->data[def->offset].integer_var = v;
+	def_space->data[def->offset].integer_var = v;
+	space->d.data = def_space->data;
+	space->data_size = def_space->size;
 
 	ref = get_defref (def, space);
 	work_defrefs = realloc (work_defrefs,
@@ -521,21 +525,6 @@ linker_begin (void)
 	extern_type_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
 	defined_type_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
 
-	work = qfo_new ();
-	work->spaces = calloc (qfo_num_spaces, sizeof (qfo_mspace_t));
-	work->num_spaces = qfo_num_spaces;
-	work->spaces[qfo_null_space].type = qfos_null;
-	work->spaces[qfo_strings_space].type = qfos_string;
-	work->spaces[qfo_code_space].type = qfos_code;
-	work->spaces[qfo_near_data_space].type = qfos_data;
-	work->spaces[qfo_far_data_space].type = qfos_data;
-	work->spaces[qfo_entity_space].type = qfos_entity;
-	work->spaces[qfo_type_space].type = qfos_type;
-	for (i = 0; i < (size_t) qfo_num_spaces; i++)
-		work->spaces[i].id = i;
-
-	// adding data will take care of connecting the work qfo spaces with
-	// the actual space data
 	work_strings = strpool_new ();
 	work_code = codespace_new ();
 	work_near_data = defspace_new ();
@@ -544,6 +533,31 @@ linker_begin (void)
 	work_type_data = defspace_new ();
 
 	pr.strings = work_strings;
+
+	work = qfo_new ();
+	work->spaces = calloc (qfo_num_spaces, sizeof (qfo_mspace_t));
+	work->num_spaces = qfo_num_spaces;
+	work->spaces[qfo_null_space].type = qfos_null;
+	work->spaces[qfo_strings_space].type = qfos_string;
+	work->spaces[qfo_strings_space].d.strings = work_strings->strings;
+	work->spaces[qfo_strings_space].data_size = work_strings->size;
+	work->spaces[qfo_code_space].type = qfos_code;
+	work->spaces[qfo_code_space].d.code = work_code->code;
+	work->spaces[qfo_code_space].data_size = work_code->size;
+	work->spaces[qfo_near_data_space].type = qfos_data;
+	work->spaces[qfo_near_data_space].d.data = work_near_data->data;
+	work->spaces[qfo_near_data_space].data_size = work_near_data->size;
+	work->spaces[qfo_far_data_space].type = qfos_data;
+	work->spaces[qfo_far_data_space].d.data = work_far_data->data;
+	work->spaces[qfo_far_data_space].data_size = work_far_data->size;
+	work->spaces[qfo_entity_space].type = qfos_entity;
+	work->spaces[qfo_entity_space].d.data = work_entity_data->data;
+	work->spaces[qfo_entity_space].data_size = work_entity_data->size;
+	work->spaces[qfo_type_space].type = qfos_type;
+	work->spaces[qfo_type_space].d.data = work_type_data->data;
+	work->spaces[qfo_type_space].data_size = work_type_data->size;
+	for (i = 0; i < (size_t) qfo_num_spaces; i++)
+		work->spaces[i].id = i;
 
 	if (!options.partial_link) {
 		for (i = 0;
