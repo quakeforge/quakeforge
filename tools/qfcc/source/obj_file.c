@@ -799,3 +799,75 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	// FIXME do relocs
 	return progs;
 }
+
+pr_debug_header_t *
+qfo_to_sym (qfo_t *qfo, int *size)
+{
+	pr_debug_header_t *sym;
+	int         i, j;
+	pr_auxfunction_t *auxfuncs;
+	pr_lineno_t *linenos;
+	ddef_t     *locals, *ld;
+
+	*size = sizeof (pr_debug_header_t);
+	sym = calloc (1, *size);
+
+	sym->version = PROG_DEBUG_VERSION;
+	for (i = 0; i < qfo->num_funcs; i++) {
+		qfo_func_t *func = qfo->funcs + i;
+		int num_locals = 0;
+
+		if (func->locals_space)
+			num_locals = qfo->spaces[func->locals_space].num_defs;
+		if (!func->line_info && !num_locals)
+			continue;
+		sym->num_auxfunctions++;
+		sym->num_locals += num_locals;
+	}
+	sym->num_linenos = qfo->num_lines;
+
+	*size += sym->num_auxfunctions * sizeof (pr_auxfunction_t);
+	*size += sym->num_linenos * sizeof (pr_lineno_t);
+	*size += sym->num_locals * sizeof (ddef_t);
+	sym = realloc (sym, *size);
+
+	auxfuncs = (pr_auxfunction_t *)(sym + 1);
+	linenos = (pr_lineno_t *)(auxfuncs + sym->num_auxfunctions);
+	locals = (ddef_t *)(linenos + sym->num_linenos);
+
+	sym->auxfunctions = (char *) auxfuncs - (char *) sym;
+	sym->linenos = (char *) linenos - (char *) sym;
+	sym->locals = (char *) locals - (char *) sym;
+
+	ld = locals;
+
+	for (i = 0; i < qfo->num_funcs; i++) {
+		qfo_func_t *func = qfo->funcs + i;
+		qfo_def_t  *def = 0;
+		int         num_locals = 0;
+		qfot_type_t *type;
+
+		if (func->locals_space) {
+			num_locals = qfo->spaces[func->locals_space].num_defs;
+			def = qfo->spaces[func->locals_space].defs;
+		}
+		if (!func->line_info && !num_locals)
+			continue;
+		memset (auxfuncs, 0, sizeof (*auxfuncs));
+		auxfuncs->function = i;
+		auxfuncs->source_line = func->line;
+		auxfuncs->line_info = func->line_info;
+		if (num_locals) {
+			auxfuncs->local_defs = ld - locals;
+			for (j = 0; j < num_locals; j++)
+				convert_def (qfo, def++, ld++);
+		}
+		auxfuncs->num_locals = num_locals;
+		//FIXME check type
+		type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, func->type);
+		auxfuncs->return_type = type->t.func.return_type;
+		auxfuncs++;
+	}
+	memcpy (linenos, qfo->lines, qfo->num_lines * sizeof (pr_lineno_t));
+	return sym;
+}
