@@ -751,6 +751,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	for (i = 0; i < qfo->num_funcs; i++) {
 		dfunction_t *df = functions + i;
 		qfo_func_t *qf = qfo->funcs + i;
+		df->first_statement = qf->code;
 		df->parm_start = locals_start;
 		df->locals = qfo->spaces[qf->locals_space].data_size;
 		if (!options.code.local_merging)
