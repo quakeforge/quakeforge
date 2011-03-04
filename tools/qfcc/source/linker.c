@@ -431,10 +431,12 @@ transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
 {
 	qfot_type_t *type;
 	int         i;
+	const char *str;
 
 	type = (qfot_type_t *) (char *) &space->d.data[type_offset];
 	if (type->ty < 0)
 		return type->t.class;
+	type->encoding = linker_add_string (QFOSTR (qfo, type->encoding));
 	switch ((ty_type_e) type->ty) {
 		case ty_none:
 			if (type->t.type == ev_func) {
@@ -456,8 +458,8 @@ transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
 		case ty_struct:
 		case ty_union:
 		case ty_enum:
-			type->t.strct.tag = linker_add_string (QFOSTR (qfo,
-														   type->t.strct.tag));
+			str = QFOSTR (qfo, type->t.strct.tag);
+			type->t.strct.tag = linker_add_string (str);
 			for (i = 0; i < type->t.strct.num_fields; i++) {
 				qfot_var_t *field = &type->t.strct.fields[i];
 				field->type = transfer_type (qfo, space, field->type);
