@@ -474,6 +474,7 @@ separate_compile (void)
 		}
 	}
 	if (!err && !options.compile) {
+		chain_initial_types ();
 		linker_begin ();
 		for (file = source_files; *file; file++) {
 			if (strncmp (*file, "-l", 2)) {
