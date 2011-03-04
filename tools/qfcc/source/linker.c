@@ -531,6 +531,7 @@ linker_begin (void)
 	work_far_data = defspace_new ();
 	work_entity_data = defspace_new ();
 	work_type_data = defspace_new ();
+	defspace_alloc_loc (work_type_data, 4);
 
 	pr.strings = work_strings;
 
