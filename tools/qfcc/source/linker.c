@@ -770,7 +770,16 @@ process_loose_relocs (qfo_t *qfo)
 			reloc->type = rel_none;
 			continue;
 		}
+		if (reloc->space == qfo_type_defs - qfo->spaces) {
+			// loose relocs in the type space become invalid
+			reloc->type = rel_none;
+			continue;
+		}
 		reloc->space = qfo->spaces[reloc->space].id;
+		if (reloc->type == rel_def_string) {
+			const char *str = QFO_GSTRING (qfo, reloc->space, reloc->offset);
+			reloc->target = linker_add_string (str);
+		}
 		if (reloc->space < qfo_num_spaces)
 			reloc->offset += work_base[reloc->space];
 	}
@@ -1028,7 +1037,7 @@ build_qfo (void)
 {
 	qfo_t      *qfo;
 	int         size;
-	int         i;
+	int         i, j;
 	qfo_mspace_t *space;
 	qfo_reloc_t *reloc;
 	qfo_def_t **defs;
@@ -1073,25 +1082,34 @@ build_qfo (void)
 	}
 	for (i = 0; i < num_work_defrefs; i++) {
 		defref_t   *r = work_defrefs[i];
+		qfo_def_t  *def;
 		qfo_def_t   d;
 		int         space;
 		if (r->merge)
 			continue;
 		space = r->space;
-		d = *REF (r);
+		def = REF (r);
+		d = *def;
 		d.relocs = reloc - qfo->relocs;
-		memcpy (reloc, work->relocs + REF (r)->relocs,
-				REF (r)->num_relocs * sizeof (qfo_reloc_t));
-		reloc += REF (r)->num_relocs;
+		memcpy (reloc, work->relocs + def->relocs,
+				def->num_relocs * sizeof (qfo_reloc_t));
 		r->def = defs[space] - qfo->defs;
+		for (j = 0; j < def->num_relocs; j++) {
+			reloc->target = r->def;
+			reloc++;
+		}
 		// copy relocs from merged defs
 		for (r = r->merge_list; r; r = r->next) {
-			memcpy (reloc, work->relocs + REF (r)->relocs,
-					REF (r)->num_relocs * sizeof (qfo_reloc_t));
-			reloc += REF (r)->num_relocs;
-			d.num_relocs += REF (r)->num_relocs;
+			def = REF (r);
+			memcpy (reloc, work->relocs + def->relocs,
+					def->num_relocs * sizeof (qfo_reloc_t));
+			d.num_relocs += def->num_relocs;
 			r->space = space;
 			r->def = defs[space] - qfo->defs;
+			for (j = 0; j < def->num_relocs; j++) {
+				reloc->target = r->def;
+				reloc++;
+			}
 		}
 		*defs[space]++ = d;
 	}
@@ -1100,7 +1118,11 @@ build_qfo (void)
 		f->def = work_defrefs[f->def]->def;
 		memcpy (reloc, work->relocs + f->relocs,
 				f->num_relocs * sizeof (qfo_reloc_t));
-		reloc += f->num_relocs;
+		f->relocs = reloc - qfo->relocs;
+		for (j = 0; j < f->num_relocs; j++) {
+			reloc->target = i;
+			reloc++;
+		}
 	}
 	return qfo;
 }
