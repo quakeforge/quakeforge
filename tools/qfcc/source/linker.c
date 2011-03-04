@@ -350,6 +350,8 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space)
 		odef->file = linker_add_string (QFOSTR (qfo, idef->file));
 		type = (qfot_type_t *) (char *) (qfo_type_defs->d.data + idef->type);
 		odef->type = type->t.class;			// pointer to type in work
+		if (odef->flags & QFOD_EXTERNAL && !odef->num_relocs)
+			continue;
 		ref = get_defref (odef, dest_space);
 		work_defrefs[num_work_defrefs++] = ref;
 		process_def (ref, dest_space);
