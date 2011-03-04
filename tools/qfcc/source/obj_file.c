@@ -708,8 +708,11 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	ddef_t     *globaldefs;
 	ddef_t     *fielddefs;
 	pr_type_t  *globals;
+	pr_type_t  *locals;
+	pr_type_t  *far_data;
+	pr_type_t  *type_data;
 	dprograms_t *progs;
-	int         i;
+	int         i, j;
 	int         locals_size = 0;
 	int         locals_start;
 	int         big_locals = 0;
@@ -752,19 +755,37 @@ qfo_to_progs (qfo_t *qfo, int *size)
 
 	progs->ofs_strings = data - (byte *) progs;
 	strings = (char *) data;
-	memcpy (strings, qfo->spaces[qfo_strings_space].d.strings,
-			qfo->spaces[qfo_strings_space].data_size * sizeof (char));
 	data += RUP (progs->numstrings * sizeof (char), 16);
 
 	progs->ofs_statements = data - (byte *) progs;
 	statements = (dstatement_t *) data;
-	memcpy (statements, qfo->spaces[qfo_code_space].d.code,
-			qfo->spaces[qfo_code_space].data_size * sizeof (dstatement_t));
 	data += progs->numstatements * sizeof (dstatement_t);
 
 	progs->ofs_functions = data - (byte *) progs;
 	functions = (dfunction_t *) data;
 	functions++;	// skip over null function
+	data += progs->numfunctions * sizeof (dfunction_t);
+
+	progs->ofs_globaldefs = data - (byte *) progs;
+	globaldefs = (ddef_t *) data;
+	data += progs->numglobaldefs * sizeof (ddef_t);
+
+	progs->ofs_fielddefs = data - (byte *) progs;
+	fielddefs = (ddef_t *) (globaldefs + progs->numglobaldefs);
+	data += progs->numfielddefs * sizeof (ddef_t);
+
+	progs->ofs_globals = data - (byte *) progs;
+	globals = (pr_type_t*) data;
+	locals = globals + qfo->spaces[qfo_near_data_space].data_size;
+	far_data = locals + locals_size;
+	type_data = far_data + qfo->spaces[qfo_far_data_space].data_size;
+
+	memcpy (strings, qfo->spaces[qfo_strings_space].d.strings,
+			qfo->spaces[qfo_strings_space].data_size * sizeof (char));
+
+	memcpy (statements, qfo->spaces[qfo_code_space].d.code,
+			qfo->spaces[qfo_code_space].data_size * sizeof (dstatement_t));
+
 	for (i = 0; i < qfo->num_funcs; i++) {
 		dfunction_t *df = functions + i;
 		qfo_func_t *qf = qfo->funcs + i;
@@ -778,43 +799,31 @@ qfo_to_progs (qfo_t *qfo, int *size)
 		df->s_file = qf->file;
 		function_params (qfo, qf, df);
 	}
-	data += progs->numfunctions * sizeof (dfunction_t);
 
-	progs->ofs_globaldefs = data - (byte *) progs;
-	globaldefs = (ddef_t *) data;
 	for (i = 0; i < qfo->spaces[qfo_near_data_space].num_defs; i++) {
 		convert_def (qfo, qfo->spaces[qfo_near_data_space].defs + i,
 					 globaldefs + i);
 	}
-	data += progs->numglobaldefs * sizeof (ddef_t);
 
-	progs->ofs_fielddefs = data - (byte *) progs;
-	fielddefs = (ddef_t *) (globaldefs + progs->numglobaldefs);
 	for (i = 0; i < qfo->spaces[qfo_entity_space].num_defs; i++) {
 		convert_def (qfo, qfo->spaces[qfo_near_data_space].defs + i,
 					 fielddefs + i);
 	}
-	data += progs->numfielddefs * sizeof (ddef_t);
 
-	progs->ofs_globals = data - (byte *) progs;
-	globals = (pr_type_t*) data;
 	// copy near data
 	memcpy (globals, qfo->spaces[qfo_near_data_space].d.data,
 			qfo->spaces[qfo_near_data_space].data_size * sizeof (pr_type_t));
 	qfo->spaces[qfo_near_data_space].d.data = globals;
-	globals += qfo->spaces[qfo_near_data_space].data_size;
 	// lcear locals data
-	memset (globals, 0, locals_size * sizeof (pr_type_t));
-	globals += locals_size;
+	memset (locals, 0, locals_size * sizeof (pr_type_t));
 	// copy far data
-	memcpy (globals, qfo->spaces[qfo_far_data_space].d.data,
+	memcpy (far_data, qfo->spaces[qfo_far_data_space].d.data,
 			qfo->spaces[qfo_far_data_space].data_size * sizeof (pr_type_t));
-	qfo->spaces[qfo_far_data_space].d.data = globals;
-	globals += qfo->spaces[qfo_far_data_space].data_size;
+	qfo->spaces[qfo_far_data_space].d.data = far_data;
 	// copy type data
-	memcpy (globals, qfo->spaces[qfo_type_space].d.data,
+	memcpy (type_data, qfo->spaces[qfo_type_space].d.data,
 			qfo->spaces[qfo_type_space].data_size * sizeof (pr_type_t));
-	qfo->spaces[qfo_type_space].d.data = globals;
+	qfo->spaces[qfo_type_space].d.data = type_data;
 	// FIXME do relocs
 	return progs;
 }
