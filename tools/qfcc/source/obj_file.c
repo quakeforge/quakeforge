@@ -782,16 +782,23 @@ qfo_to_progs (qfo_t *qfo, int *size)
 
 	memcpy (strings, qfo->spaces[qfo_strings_space].d.strings,
 			qfo->spaces[qfo_strings_space].data_size * sizeof (char));
+	qfo->spaces[qfo_strings_space].d.strings = strings;
 
 	memcpy (statements, qfo->spaces[qfo_code_space].d.code,
 			qfo->spaces[qfo_code_space].data_size * sizeof (dstatement_t));
+	qfo->spaces[qfo_code_space].d.code = statements;
 
 	for (i = 0; i < qfo->num_funcs; i++) {
 		dfunction_t *df = functions + i;
 		qfo_func_t *qf = qfo->funcs + i;
+		qfo_mspace_t *space = qfo->spaces + qf->locals_space;
+
 		df->first_statement = qf->code;
 		df->parm_start = locals_start;
-		df->locals = qfo->spaces[qf->locals_space].data_size;
+		df->locals = space->data_size;
+		// finalize the offsets of the local defs
+		for (j = 0; j < space->num_defs; j++)
+			space->defs[j].offset += locals_start;
 		if (!options.code.local_merging)
 			locals_start += df->locals;
 		df->profile = 0;
@@ -803,6 +810,14 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	for (i = 0; i < qfo->spaces[qfo_near_data_space].num_defs; i++) {
 		convert_def (qfo, qfo->spaces[qfo_near_data_space].defs + i,
 					 globaldefs + i);
+	}
+
+	for (i = 0; i < qfo->spaces[qfo_far_data_space].num_defs; i++) {
+		qfo->spaces[qfo_far_data_space].defs[i].offset += far_data - globals;
+	}
+
+	for (i = 0; i < qfo->spaces[qfo_type_space].num_defs; i++) {
+		qfo->spaces[qfo_type_space].defs[i].offset += type_data - globals;
 	}
 
 	for (i = 0; i < qfo->spaces[qfo_entity_space].num_defs; i++) {
