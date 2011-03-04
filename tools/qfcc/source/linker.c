@@ -242,6 +242,10 @@ linker_add_string (const char *str)
 static void
 resolve_external_def (defref_t *ext, defref_t *def)
 {
+	if (!(REF (ext)->flags & QFOD_EXTERNAL))
+		internal_error (0, "ext is not an external def");
+	if (!(REF (def)->flags & QFOD_GLOBAL))
+		internal_error (0, "def is not a global def");
 	if (REF (ext)->type != REF (def)->type) {
 		linker_type_mismatch (REF (ext), REF (def));
 		return;
@@ -272,25 +276,27 @@ process_def (defref_t *ref, qfo_mspace_t *space)
 		} else {
 			Hash_Add (extern_defs, ref);
 		}
-	} else if (def->flags & QFOD_GLOBAL) {
-		if (r) {
-			if (REF (r)->flags & QFOD_SYSTEM) {
-				/// System defs may be redefined only once.
-				REF (r)->flags &= ~QFOD_SYSTEM;
-				// treat the new def as external
-				resolve_external_def (ref, r);
-				//FIXME copy stuff from new def to existing def???
-			} else {
-				def_error (def, "%s redefined", WORKSTR (def->name));
-				def_error (REF (r), "previous definition");
-			}
-			return;
-		}
-		Hash_Add (defined_defs, ref);
+	} else {
 		if (!(def->flags & QFOD_LOCAL))
 			def->offset += space->data_size;
-		while ((r = Hash_Del (extern_defs, name)))
-			resolve_external_def (r, ref);
+		if (def->flags & QFOD_GLOBAL) {
+			if (r) {
+				if (REF (r)->flags & QFOD_SYSTEM) {
+					/// System defs may be redefined only once.
+					REF (r)->flags &= ~QFOD_SYSTEM;
+					// treat the new def as external
+					resolve_external_def (ref, r);
+					//FIXME copy stuff from new def to existing def???
+				} else {
+					def_error (def, "%s redefined", WORKSTR (def->name));
+					def_error (REF (r), "previous definition");
+				}
+				return;
+			}
+			Hash_Add (defined_defs, ref);
+			while ((r = Hash_Del (extern_defs, name)))
+				resolve_external_def (r, ref);
+		}
 	}
 }
 
