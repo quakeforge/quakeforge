@@ -714,7 +714,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	progs->numstatements = qfo->spaces[qfo_code_space].data_size;
 	progs->numglobaldefs = qfo->spaces[qfo_near_data_space].num_defs;
 	progs->numfielddefs = qfo->spaces[qfo_entity_space].num_defs;
-	progs->numfunctions = qfo->num_funcs;
+	progs->numfunctions = qfo->num_funcs + 1;
 	progs->numstrings = qfo->spaces[qfo_strings_space].data_size;
 	progs->numglobals = qfo->spaces[qfo_near_data_space].data_size;
 	progs->numglobals += qfo->spaces[qfo_far_data_space].data_size;
@@ -758,6 +758,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 
 	progs->ofs_functions = data - (byte *) progs;
 	functions = (dfunction_t *) data;
+	functions++;	// skip over null function
 	for (i = 0; i < qfo->num_funcs; i++) {
 		dfunction_t *df = functions + i;
 		qfo_func_t *qf = qfo->funcs + i;
