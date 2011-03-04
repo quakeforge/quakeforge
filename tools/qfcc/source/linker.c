@@ -1130,6 +1130,7 @@ build_qfo (void)
 qfo_t *
 linker_finish (void)
 {
+	int         i;
 
 	if (!options.partial_link) {
 		check_defs ();
@@ -1137,7 +1138,14 @@ linker_finish (void)
 			return 0;
 	}
 
-	//fixup_relocs ();
+	for (i = 0; i < work_num_loose_relocs; /**/) {
+		if (work_loose_relocs[i].type != rel_none) {
+			i++;
+			continue;
+		}
+		memmove (work_loose_relocs + i, work_loose_relocs + i + 1,
+				 (--work_num_loose_relocs - i) * sizeof (qfo_reloc_t));
+	}
 	return build_qfo ();
 }
 
