@@ -302,9 +302,8 @@ qfo_relocs (qfo_t *qfo)
 				break;
 			case rel_def_string:
 				printf (" def@%d:%x string:%x `%s'",
-						reloc->space, reloc->offset,
-						QFO_STRING (qfo, reloc->space, reloc->offset),
-						QFO_GSTRING (qfo, reloc->space, reloc->offset));
+						reloc->space, reloc->offset, reloc->target,
+						QFO_GETSTR (qfo, reloc->target));
 				break;
 			case rel_def_field:
 				def = qfo->defs + reloc->target;

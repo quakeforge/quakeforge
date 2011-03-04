@@ -315,10 +315,16 @@ qfo_from_progs (pr_info_t *pr)
 
 	qfo->num_loose_relocs = qfo->num_relocs - (reloc - qfo->relocs);
 	for (r = pr->relocs; r; r = r->next) {
-		if (r->type == rel_def_op)
+		if (r->type == rel_def_op) {
 			qfo_encode_one_reloc (r, &reloc, r->label->dest->offset);
-		else
+		} else if (r->type == rel_def_string) {
+			def_t       d;
+			d.space = r->space;
+			d.offset = r->offset;
+			qfo_encode_one_reloc (r, &reloc, D_STRING (&d));
+		} else {
 			qfo_encode_one_reloc (r, &reloc, 0);
+		}
 	}
 
 	return qfo;
