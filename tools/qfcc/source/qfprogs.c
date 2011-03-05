@@ -129,7 +129,6 @@ static int      reserved_edicts = 1;
 static progs_t  pr;
 
 static qfo_t   *qfo;
-static dprograms_t progs;
 
 static const char *source_path = "";
 
@@ -271,7 +270,7 @@ convert_qfo (void)
 	pr.pr_fielddefs = P (ddef_t, ofs_fielddefs);
 	pr.pr_globals = P (pr_type_t, ofs_globals);
 	pr.globals_size = pr.progs->numglobals;
-	pr.pr_edict_size = progs.entityfields * 4;
+	pr.pr_edict_size = pr.progs->entityfields * 4;
 #undef P
 
 	if (verbosity) {
@@ -284,7 +283,7 @@ convert_qfo (void)
 
 		ld = pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));
 
-		pr.auxfunction_map = calloc (progs.numfunctions,
+		pr.auxfunction_map = calloc (pr.progs->numfunctions,
 									 sizeof (pr_auxfunction_t *));
 		for (i = 0; (int) i < pr.progs->numfunctions; i++)	//FIXME (cast)
 			pr.auxfunction_map[i] = 0;
