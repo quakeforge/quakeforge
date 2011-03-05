@@ -248,6 +248,7 @@ init_elements (struct def_s *def, expr_t *eles)
 				continue;
 			}
 			init_elements (&elements[i], c);
+			continue;
 		} else if (c->type == ex_value) {
 			if (c->e.value.type == ev_integer
 				&& elements[i].type->type == ev_float)
@@ -269,6 +270,8 @@ init_elements (struct def_s *def, expr_t *eles)
 
 			append_expr (local_expr, assign_expr (unary_expr ('.', ptr), c));
 		} else {
+			if (c->type != ex_value)
+				internal_error (c, "bogus expression type in init_elements()");
 			if (c->e.value.type == ev_string) {
 				EMIT_STRING (def->space, g->string_var,
 							 c->e.value.v.string_val);
