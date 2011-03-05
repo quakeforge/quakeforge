@@ -803,7 +803,15 @@ process_loose_relocs (qfo_t *qfo)
 		}
 		reloc->space = qfo->spaces[reloc->space].id;
 		if (reloc->type == rel_def_string) {
-			const char *str = QFO_GSTRING (qfo, reloc->space, reloc->offset);
+			const char *str;
+			
+			if (reloc->target < 0
+				|| reloc->target >= qfo->spaces[qfo_strings_space].data_size) {
+				linker_error ("bad string reloc at %d:%x", reloc->space,
+							  reloc->offset);
+				reloc->target = 0;
+			}
+			str = QFOSTR (qfo, reloc->target);
 			reloc->target = linker_add_string (str);
 		}
 		if (!reloc->space) {
