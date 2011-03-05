@@ -368,8 +368,9 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 			return;
 		}
 		if (local_expr) {
-			append_expr (local_expr,
-						 assign_expr (new_symbol_expr (sym), init));
+			init = assign_expr (new_symbol_expr (sym), init);
+			// fold_constants takes care of int/float conversions
+			append_expr (local_expr, fold_constants (init));
 		} else {
 			if (init->type != ex_value) {	//FIXME enum etc
 				error (0, "non-constant initializier");
