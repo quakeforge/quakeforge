@@ -732,7 +732,7 @@ qfo_relocate_refs (qfo_t *qfo)
 				QFO_INT (qfo, reloc->space, reloc->offset) = def->offset;
 				break;
 			case rel_def_func:
-				QFO_INT (qfo, reloc->space, reloc->offset) = reloc->target;
+				QFO_INT (qfo, reloc->space, reloc->offset) = reloc->target + 1;
 				break;
 			case rel_def_string:
 				QFO_INT (qfo, reloc->space, reloc->offset) = reloc->target;
