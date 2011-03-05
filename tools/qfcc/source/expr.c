@@ -876,6 +876,8 @@ field_expr (expr_t *e1, expr_t *e2)
 	t1 = get_type (e1);
 	if (t1->type == ev_entity) {
 		t2 = get_type (e2);
+		if (e2->type == ex_error)
+			return e2;
 		if (t2->type == ev_field) {
 			e = new_binary_expr ('.', e1, e2);
 			e->e.expr.type = t2->t.fldptr.type;
