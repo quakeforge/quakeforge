@@ -128,7 +128,6 @@ static int      num_edicts;
 static int      reserved_edicts = 1;
 static progs_t  pr;
 
-static pr_debug_header_t debug;
 static qfo_t   *qfo;
 static dprograms_t progs;
 
@@ -254,16 +253,16 @@ init_qf (void)
 	Hash_SetHashCompare (func_tab, func_hash, func_compare);
 }
 
-#define P(t,o) ((t *)((char *)pr.progs + pr.progs->o))
 static void
 convert_qfo (void)
 {
 	int         size;
-//	int         i;
+	int         i;
 	ddef_t     *ld;
 
 	pr.progs = qfo_to_progs (qfo, &size);
 
+#define P(t,o) ((t *)((char *)pr.progs + pr.progs->o))
 	pr.pr_statements = P (dstatement_t, ofs_statements);
 	pr.pr_strings = P (char, ofs_strings);
 	pr.pr_stringsize = pr.progs->numstrings;
@@ -272,81 +271,29 @@ convert_qfo (void)
 	pr.pr_fielddefs = P (ddef_t, ofs_fielddefs);
 	pr.pr_globals = P (pr_type_t, ofs_globals);
 	pr.globals_size = pr.progs->numglobals;
-	ld = pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));
-#if 0
-	pr.auxfunctions = calloc (qfo->num_funcs, sizeof (pr_auxfunction_t));
-	pr.auxfunction_map = calloc (progs.numfunctions,
-								 sizeof (pr_auxfunction_t *));
-	for (i = 0; i < qfo->num_funcs; i++) {
-		qfo_func_t *func = qfo->funcs + i;
+	pr.pr_edict_size = progs.entityfields * 4;
+#undef P
 
-		pr.auxfunction_map[i + 1] = pr.auxfunctions + i;
-		pr.auxfunctions[i].function = i + 1;
-		pr.auxfunctions[i].source_line = func->line;
-		pr.auxfunctions[i].line_info = func->line_info;
-		pr.auxfunctions[i].local_defs = ld - pr.local_defs;
-		pr.auxfunctions[i].num_locals =
-			qfo->spaces[func->locals_space].num_defs;
-	}
+	if (verbosity) {
+		pr.debug = qfo_to_sym (qfo, &size);
+#define P(t,o) ((t *)((char *)pr.debug + pr.debug->o))
+		pr.auxfunctions = P (pr_auxfunction_t, auxfunctions);
+		pr.linenos = P (pr_lineno_t, linenos);
+		pr.local_defs = P (ddef_t, locals);
+#undef P
 
-	for (i = 0; i < qfo->num_defs; i++) {
-		int         j;
-		qfo_def_t  *def = defs + i;
+		ld = pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));
 
-		for (j = 0; j < def->num_relocs; j++) {
-			qfo_reloc_t *reloc = qfo->relocs + def->relocs + j;
-			switch ((reloc_type)reloc->type) {
-				case rel_none:
-					break;
-				case rel_op_a_def:
-					pr.pr_statements[reloc->offset].a = def->offset;
-					break;
-				case rel_op_b_def:
-					pr.pr_statements[reloc->offset].b = def->offset;
-					break;
-				case rel_op_c_def:
-					pr.pr_statements[reloc->offset].c = def->offset;
-					break;
-				case rel_op_a_def_ofs:
-					pr.pr_statements[reloc->offset].a += def->offset;
-					break;
-				case rel_op_b_def_ofs:
-					pr.pr_statements[reloc->offset].b += def->offset;
-					break;
-				case rel_op_c_def_ofs:
-					pr.pr_statements[reloc->offset].c += def->offset;
-					break;
-				case rel_def_def:
-					pr.pr_globals[reloc->offset].integer_var = def->offset;
-					break;
-				case rel_def_def_ofs:
-					pr.pr_globals[reloc->offset].integer_var += def->offset;
-					break;
-				// these are relative and fixed up before the .qfo is written
-				case rel_op_a_op:
-				case rel_op_b_op:
-				case rel_op_c_op:
-				// these aren't relevant here
-				case rel_def_func:
-				case rel_def_op:
-				case rel_def_string:
-				case rel_def_field:
-				case rel_def_field_ofs:
-					break;
-			}
+		pr.auxfunction_map = calloc (progs.numfunctions,
+									 sizeof (pr_auxfunction_t *));
+		for (i = 0; (int) i < pr.progs->numfunctions; i++)	//FIXME (cast)
+			pr.auxfunction_map[i] = 0;
+
+		for (i = 0; i < (int) pr.debug->num_auxfunctions; i++) {
+			pr_auxfunction_t *aux = pr.auxfunctions + i;
+			pr.auxfunction_map[aux->function] = aux;
 		}
 	}
-#endif
-	pr.pr_edict_size = progs.entityfields * 4;
-
-	pr.linenos = qfo->lines;
-	debug.num_auxfunctions = qfo->num_funcs;
-	debug.num_linenos = qfo->num_lines;
-	debug.num_locals = ld - pr.local_defs;
-
-	if (verbosity)
-		pr.debug = &debug;
-
 }
 
 static int
