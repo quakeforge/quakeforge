@@ -1020,11 +1020,10 @@ statement
 		{
 			$$ = case_label_expr (switch_block, 0);
 		}
-	| SWITCH break_label switch_block '(' fexpr ')' compound_statement
+	| SWITCH break_label '(' fexpr switch_block ')' compound_statement
 		{
-			switch_block->test = $5;
 			$$ = switch_expr (switch_block, break_label, $7);
-			switch_block = $3;
+			switch_block = $5;
 			break_label = $2;
 		}
 	| IF '(' texpr ')' statement %prec IFX
@@ -1090,6 +1089,7 @@ switch_block
 		{
 			$$ = switch_block;
 			switch_block = new_switch_block ();
+			switch_block->test = $<expr>0;
 		}
 	;
 

@@ -125,6 +125,22 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 		free (cl);
 		return 0;
 	}
+	if (!switch_block->test)
+		internal_error (value, "broken switch block");
+	if (value) {
+		type_t     *type = get_type (switch_block->test);
+		type_t     *val_type = get_type (value);
+		if (!type_assignable (type, get_type (value)))
+			return error (value, "type mismatch in case label");
+		if (type != val_type) {
+			//FIXME shorts?
+			if (type == &type_float)
+				value->e.value.v.float_val = value->e.value.v.integer_val;
+			else
+				value->e.value.v.integer_val = value->e.value.v.float_val;
+			value->e.value.type = type->type;
+		}
+	}
 	cl->value = value;
 	if (Hash_FindElement (switch_block->labels, cl)) {
 		error (value, "duplicate %s", value ? "case" : "default");
@@ -289,11 +305,13 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 	append_expr (sw, test);
 
 	if (tree->low == tree->high) {
-		branch = branch_expr ('n', temp, tree->labels[0]);
+		branch = branch_expr ('n', new_alias_expr (&type_integer, temp),
+							  tree->labels[0]);
 		append_expr (sw, branch);
 
 		if (tree->left) {
-			branch = branch_expr (IFA, temp, high_label);
+			branch = branch_expr (IFA, new_alias_expr (&type_integer, temp),
+								  high_label);
 			append_expr (sw, branch);
 
 			build_switch (sw, tree->left, op, sw_val, temp, default_label);
