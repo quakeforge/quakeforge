@@ -2305,6 +2305,27 @@ build_state_expr (expr_t *frame, expr_t *think, expr_t *step)
 	return new_state_expr (frame, think, step);
 }
 
+expr_t *
+think_expr (symbol_t *think_sym)
+{
+	symbol_t   *sym;
+
+	if (think_sym->table)
+		return new_symbol_expr (think_sym);
+
+	sym = symtab_lookup (current_symtab, "think");
+	if (sym && sym->sy_type == sy_var && sym->type
+		&& sym->type->type == ev_field
+		&& sym->type->t.fldptr.type->type == ev_func) {
+		think_sym->type = sym->type->t.fldptr.type;
+	} else {
+		think_sym->type = &type_function;
+	}
+	think_sym = function_symbol (think_sym, 0, 1);
+	make_function (think_sym, 0, current_symtab->space, current_storage);
+	return new_symbol_expr (think_sym);
+}
+
 static int
 is_indirect (expr_t *e)
 {

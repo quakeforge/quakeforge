@@ -913,7 +913,7 @@ optional_state_expr
 think
 	: identifier
 		{
-			internal_error (0, "FIXME");
+			$$ = think_expr ($1);
 		}
 	| '(' fexpr ')'
 		{
