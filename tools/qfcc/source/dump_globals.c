@@ -270,7 +270,7 @@ qfo_relocs (qfo_t *qfo)
 			case rel_op_b_def:
 			case rel_op_c_def:
 				def = qfo->defs + reloc->target;
-				printf (" op.%c@%d def#%d %s",
+				printf (" op.%c@%x def#%d %s",
 						reloc->type - rel_op_a_def + 'a',
 						reloc->offset, reloc->target,
 						QFO_GETSTR (qfo, def->name));
@@ -278,7 +278,7 @@ qfo_relocs (qfo_t *qfo)
 			case rel_op_a_op:
 			case rel_op_b_op:
 			case rel_op_c_op:
-				printf (" op.%c op@%d", reloc->type - rel_op_a_def + 'a',
+				printf (" op.%c op@%x", reloc->type - rel_op_a_def + 'a',
 						reloc->offset);
 				break;
 			case rel_def_op:
