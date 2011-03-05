@@ -582,6 +582,9 @@ linker_begin (void)
 	for (i = 0; i < qfo_num_spaces; i++)
 		work->spaces[i].id = i;
 
+	work->lines = calloc (1, sizeof (pr_lineno_t));
+	work->num_lines = 1;
+
 	if (!options.partial_link) {
 		for (i = 0; i < num_builtins; i++) {
 			builtin_sym_t *bi = builtin_symbols + i;
@@ -752,7 +755,8 @@ process_funcs (qfo_t *qfo)
 			func->code += work_base[qfo_code_space];
 		func->def = qfo->defs[func->def].offset;	// defref index
 		func->locals_space = qfo->spaces[func->locals_space].id;
-		func->line_info += work->num_lines;		//FIXME order dependent
+		if (func->line_info)
+			func->line_info += work->num_lines - 1;		//FIXME order dependent
 		func->relocs = add_relocs (qfo, func->relocs, func->num_relocs,
 								   func - work->funcs);
 	}
@@ -764,10 +768,12 @@ process_lines (qfo_t *qfo)
 	int         size;
 	pr_lineno_t *line;
 
-	size = work->num_lines + qfo->num_lines;
+	if (!qfo->num_lines)
+		return;
+	size = work->num_lines + qfo->num_lines - 1;
 	work->lines = realloc (work->lines, size * sizeof (pr_lineno_t));
-	memcpy (work->lines + work->num_lines, qfo->lines,
-			qfo->num_lines * sizeof (pr_lineno_t));
+	memcpy (work->lines + work->num_lines, qfo->lines + 1,
+			(qfo->num_lines - 1) * sizeof (pr_lineno_t));
 	while (work->num_lines < size) {
 		line = work->lines + work->num_lines++;
 		if (line->line)

@@ -912,6 +912,7 @@ qfo_to_sym (qfo_t *qfo, int *size)
 	pr_debug_header_t *sym;
 	int         i, j;
 	pr_auxfunction_t *auxfuncs;
+	pr_auxfunction_t *aux;
 	pr_lineno_t *linenos;
 	ddef_t     *locals, *ld;
 
@@ -947,7 +948,7 @@ qfo_to_sym (qfo_t *qfo, int *size)
 
 	ld = locals;
 
-	for (i = 0; i < qfo->num_funcs; i++) {
+	for (i = 0, aux = auxfuncs; i < qfo->num_funcs; i++) {
 		qfo_func_t *func = qfo->funcs + i;
 		qfo_def_t  *def = 0;
 		int         num_locals = 0;
@@ -959,20 +960,22 @@ qfo_to_sym (qfo_t *qfo, int *size)
 		}
 		if (!func->line_info && !num_locals)
 			continue;
-		memset (auxfuncs, 0, sizeof (*auxfuncs));
-		auxfuncs->function = i;
-		auxfuncs->source_line = func->line;
-		auxfuncs->line_info = func->line_info;
+		memset (aux, 0, sizeof (*aux));
+		aux->function = i + 1;
+		aux->source_line = func->line;
+		aux->line_info = func->line_info;
+		if (func->line_info)
+			qfo->lines[func->line_info].fa.func = aux - auxfuncs;
 		if (num_locals) {
-			auxfuncs->local_defs = ld - locals;
+			aux->local_defs = ld - locals;
 			for (j = 0; j < num_locals; j++)
 				convert_def (qfo, def++, ld++);
 		}
-		auxfuncs->num_locals = num_locals;
+		aux->num_locals = num_locals;
 		//FIXME check type
 		type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, func->type);
-		auxfuncs->return_type = type->t.func.return_type;
-		auxfuncs++;
+		aux->return_type = type->t.func.return_type;
+		aux++;
 	}
 	memcpy (linenos, qfo->lines, qfo->num_lines * sizeof (pr_lineno_t));
 	return sym;

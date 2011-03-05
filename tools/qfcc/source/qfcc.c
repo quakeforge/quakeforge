@@ -124,6 +124,8 @@ fix_backslash (char *path)
 static void
 InitData (void)
 {
+	pr_lineno_t *line;
+
 	if (pr.code) {
 		codespace_delete (pr.code);
 		strpool_delete (pr.strings);
@@ -135,6 +137,11 @@ InitData (void)
 	memset (codespace_newstatement (pr.code), 0, sizeof (dstatement_t));
 	pr.strings = strpool_new ();
 	pr.num_functions = 1;
+
+	pr.num_linenos = 0;
+	line = new_lineno ();
+	line->fa.func = -1;
+	line->line = -1;
 
 	pr.data = defspace_new ();
 
