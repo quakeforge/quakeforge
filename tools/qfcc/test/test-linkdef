@@ -1,0 +1,6 @@
+#! /bin/sh
+./qfcc -gc linkdef1.r
+./qfcc -gc linkdef2.r
+./qfcc -gc linkdef3.r
+./qfcc -rg -o linkdef.qfo linkdef1.qfo linkdef2.qfo linkdef3.qfo
+./qfcc -g -o linkdef.dat linkdef1.qfo linkdef2.qfo linkdef3.qfo
