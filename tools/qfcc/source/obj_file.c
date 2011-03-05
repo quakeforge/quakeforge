@@ -783,6 +783,8 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	progs->version = options.code.progsversion;
 	progs->numstatements = qfo->spaces[qfo_code_space].data_size;
 	progs->numglobaldefs = qfo->spaces[qfo_near_data_space].num_defs;
+	//FIXME ddef offsets are 16 bits
+	progs->numglobaldefs += qfo->spaces[qfo_far_data_space].num_defs;
 	progs->numfielddefs = qfo->spaces[qfo_entity_space].num_defs;
 	progs->numfunctions = qfo->num_funcs + 1;
 	progs->numstrings = qfo->spaces[qfo_strings_space].data_size;
@@ -870,11 +872,14 @@ qfo_to_progs (qfo_t *qfo, int *size)
 
 	for (i = 0; i < qfo->spaces[qfo_near_data_space].num_defs; i++) {
 		convert_def (qfo, qfo->spaces[qfo_near_data_space].defs + i,
-					 globaldefs + i);
+					 globaldefs++);
 	}
 
+	//FIXME ddef offsets are 16 bits
 	for (i = 0; i < qfo->spaces[qfo_far_data_space].num_defs; i++) {
-		qfo->spaces[qfo_far_data_space].defs[i].offset += far_data - globals;
+		qfo_def_t  *def = qfo->spaces[qfo_far_data_space].defs + i;
+		def->offset += far_data - globals;
+		convert_def (qfo, def, globaldefs++);
 	}
 
 	for (i = 0; i < qfo->spaces[qfo_type_space].num_defs; i++) {
