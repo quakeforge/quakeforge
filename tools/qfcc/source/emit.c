@@ -138,15 +138,20 @@ add_statement_def_ref (def_t *def, dstatement_t *st, int field)
 {
 	if (def) {
 		int         st_ofs = st - pr.code->code;
+		int         offset_reloc = 0;
 
 		while (def->alias) {
 			//FIXME it seems there is a bug somewhere creating chains
 			//of aliases
 			def_t      *a = def;
+			offset_reloc |= def->offset_reloc;
 			def = def->alias;
 			free_def (a);
 		}
-		reloc_op_def (def, st_ofs, field);
+		if (offset_reloc)
+			reloc_op_def_ofs (def, st_ofs, field);
+		else
+			reloc_op_def (def, st_ofs, field);
 	}
 }
 
