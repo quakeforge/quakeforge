@@ -2123,6 +2123,11 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				}
 				break;
 			}
+			if (e1->e.expr.op == 'A') {
+				if (!t)
+					t = e1->e.expr.type;
+				return address_expr (e1->e.expr.e1, e2, t);
+			}
 			return error (e1, "invalid type for unary &");
 		default:
 			return error (e1, "invalid type for unary &");
