@@ -900,7 +900,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						break;
 					case 'E':
 						{
-							edict_t    *ed;
+							edict_t    *ed = 0;
 							opval = pr->pr_globals[s->a].entity_var;
 							parm_ind = pr->pr_globals[s->b].uinteger_var;
 							if (parm_ind < pr->progs->entityfields
@@ -908,7 +908,8 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 								&& opval < pr->pr_edictareasize) {
 								ed = PROG_TO_EDICT (pr, opval);
 								opval = &ed->v[parm_ind] - pr->pr_globals;
-							} else {
+							}
+							if (!ed) {
 								str = "bad entity.field";
 								break;
 							}
