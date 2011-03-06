@@ -658,6 +658,7 @@ process_entity_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
 	if (pass != 1)
 		return 0;
+	add_defs (qfo, space, work->spaces + qfo_entity_space);
 	add_data (qfo_entity_space, space);
 	return 0;
 }
