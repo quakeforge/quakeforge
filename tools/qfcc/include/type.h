@@ -147,6 +147,7 @@ const char *encode_params (type_t *type);
 void encode_type (struct dstring_s *encoding, type_t *type);
 int is_enum (type_t *type);
 int is_integral (type_t *type);
+int is_float (type_t *type);
 int is_scalar (type_t *type);
 int is_math (type_t *type);
 int is_struct (type_t *type);

@@ -647,9 +647,15 @@ is_integral (type_t *type)
 }
 
 int
+is_float (type_t *type)
+{
+	return type->type == ev_float;
+}
+
+int
 is_scalar (type_t *type)
 {
-	return type->type == ev_float || is_integral (type);
+	return is_float (type) || is_integral (type);
 }
 
 int
