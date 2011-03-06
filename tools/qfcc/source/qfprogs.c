@@ -271,6 +271,7 @@ convert_qfo (void)
 	pr.pr_globals = P (pr_type_t, ofs_globals);
 	pr.globals_size = pr.progs->numglobals;
 	pr.pr_edict_size = pr.progs->entityfields * 4;
+	pr.pr_edictareasize = 1 * pr.pr_edict_size;
 #undef P
 
 	if (verbosity) {
