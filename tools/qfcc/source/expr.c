@@ -2449,7 +2449,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 		if (is_struct (get_type (e2))) {
 			e1 = address_expr (e1, 0, 0);
 			e2 = address_expr (e2, 0, 0);
-			e = new_move_expr (e1, e2, get_type (e2));
+			e = new_move_expr (e1, e2, t2);
 		} else {
 			expr_t     *temp = new_temp_def_expr (t1);
 
@@ -2462,6 +2462,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 	} else if (is_indirect (e1)) {
 		if (is_struct (get_type (e1))) {
 			e1 = address_expr (e1, 0, 0);
+			e2 = address_expr (e2, 0, 0);
 			return new_move_expr (e1, e2, get_type (e2));
 		}
 		if (e1->type == ex_expr) {
@@ -2482,9 +2483,10 @@ assign_expr (expr_t *e1, expr_t *e2)
 		}
 	} else if (is_indirect (e2)) {
 		if (is_struct (get_type (e1))) {
+			e1 = address_expr (e1, 0, 0);
 			e2 = address_expr (e2, 0, 0);
 			e2->rvalue = 1;
-			return new_move_expr (e1, e2, get_type (e2));
+			return new_move_expr (e1, e2, t2);
 		}
 		if (e2->type == ex_uexpr) {
 			e = e2->e.expr.e1;
