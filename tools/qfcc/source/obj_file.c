@@ -908,6 +908,17 @@ qfo_to_progs (qfo_t *qfo, int *size)
 
 	qfo_relocate_refs (qfo);
 
+	// undo the relocation of the offsets of local defs so the local defs have
+	// the correct offset in the debug info
+	for (i = 0; i < qfo->num_funcs; i++) {
+		dfunction_t *df = functions + i;
+		qfo_func_t *qf = qfo->funcs + i;
+		qfo_mspace_t *space = qfo->spaces + qf->locals_space;
+
+		for (j = 0; j < space->num_defs; j++)
+			space->defs[j].offset -= df->parm_start;
+	}
+
 	return progs;
 }
 
