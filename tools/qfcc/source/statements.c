@@ -182,6 +182,12 @@ new_operand (op_type_e op)
 static void
 free_operand (operand_t *op)
 {
+	if (op->next) {
+		//FIXME this should be an error, but due to the way operands are use,
+		//it can happen.
+		debug (0, "free_operand: double free");
+		return;
+	}
 	op->next = free_operands;
 	free_operands = op;
 }
