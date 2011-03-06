@@ -2132,7 +2132,8 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 		case ex_block:
 			if (!e1->e.block.result)
 				return error (e1, "invalid type for unary &");
-			return address_expr (e1->e.block.result, e2, t);
+			e1->e.block.result = address_expr (e1->e.block.result, e2, t);
+			return e1;
 		default:
 			return error (e1, "invalid type for unary &");
 	}
