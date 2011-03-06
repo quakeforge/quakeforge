@@ -637,13 +637,19 @@ is_enum (type_t *type)
 }
 
 int
-is_scalar (type_t *type)
+is_integral (type_t *type)
 {
 	etype_t     t = type->type;
 
-	if (t == ev_float || t == ev_integer || t == ev_short)
+	if (t == ev_integer || t == ev_short)
 		return 1;
 	return is_enum (type);
+}
+
+int
+is_scalar (type_t *type)
+{
+	return type->type == ev_float || is_integral (type);
 }
 
 int
