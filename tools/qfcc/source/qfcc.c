@@ -378,6 +378,9 @@ finish_link (void)
 	qfo_t      *qfo;
 	int         flags;
 
+	if (!options.output_file)
+		options.output_file = "progs.dat";
+
 	flags = (QFOD_GLOBAL | QFOD_CONSTANT | QFOD_INITIALIZED | QFOD_NOSAVE);
 	if (options.code.progsversion != PROG_ID_VERSION) {
 		linker_add_def (".param_size", &type_integer, flags,
@@ -395,8 +398,6 @@ finish_link (void)
 	qfo = linker_finish ();
 	if (!qfo)
 		return 1;
-	if (!options.output_file)
-		options.output_file = "progs.dat";
 	if (options.partial_link) {
 		qfo_write (qfo, options.output_file);
 	} else {
