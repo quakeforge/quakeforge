@@ -72,6 +72,7 @@ typedef struct pr_info_s {
 	struct defspace_s *type_data;		///< encoded type information.
 
 	struct symtab_s *symtab;
+	struct symtab_s *entity_fields;
 
 	srcline_t      *srcline_stack;
 	string_t        source_file;

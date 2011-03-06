@@ -288,8 +288,12 @@ init_field_def (def_t *def)
 {
 	type_t     *type = def->type->t.fldptr.type;
 	def_t      *field_def;
+	symbol_t   *field_sym;
 
 	field_def = new_def (def->name, type, pr.entity_data, st_global);
+	field_sym = new_symbol_type (def->name, type);
+	field_sym->s.def = field_def;
+	symtab_addsymbol (pr.entity_fields, field_sym);
 	D_INT (def) = field_def->offset;
 	reloc_def_field (def, field_def);
 	def->constant = 1;
