@@ -492,8 +492,6 @@ PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 		ddef = &pr->local_defs[aux_func->local_defs + param_offs + i];
 		if (!parm--)
 			break;
-		if (ddef->type == ev_vector)
-			i += 3;						// skip over component defs
 	}
 	return ddef;
 }
@@ -1041,7 +1039,8 @@ ED_Print (progs_t *pr, edict_t *ed)
 		if (!d->s_name)					// null field def (probably 1st)
 			continue;
 		name = PR_GetString (pr, d->s_name);
-		if (name[strlen (name) - 2] == '_')
+		if (name[strlen (name) - 2] == '_'
+			&& strchr ("xyz", name[strlen (name) -1]))
 			continue;					// skip _x, _y, _z vars
 
 		v = ed->v + d->ofs;
