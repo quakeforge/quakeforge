@@ -329,10 +329,10 @@ qfo_relocs (qfo_t *qfo)
 				break;
 			case rel_def_field_ofs:
 				def = qfo->defs + reloc->target;
-				printf (" def@%d:%x def#%d+%d %s+%d",
+				printf (" def@%d:%x def#%d+%d %s(%d)+%d",
 						reloc->space, reloc->offset, reloc->target,
 						QFO_INT (qfo, reloc->space, reloc->offset),
-						QFO_GETSTR (qfo, def->name),
+						QFO_GETSTR (qfo, def->name), def->offset,
 						QFO_INT (qfo, reloc->space, reloc->offset));
 				break;
 		}
