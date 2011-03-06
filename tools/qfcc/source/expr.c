@@ -2423,6 +2423,9 @@ assign_expr (expr_t *e1, expr_t *e2)
 	if (e2->type == ex_error)
 		return e2;
 
+	e1 = fold_constants (e1);
+	e2 = fold_constants (e2);
+
 	if (options.traditional) {
 		if (e2->type == ex_expr && !e2->paren
 			&& (e2->e.expr.op == AND || e2->e.expr.op == OR)) {
