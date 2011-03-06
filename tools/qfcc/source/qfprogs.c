@@ -87,6 +87,7 @@ const char *reloc_names[] = {
 	"op_b_def_ofs",
 	"op_c_def_ofs",
 	"def_def_ofs",
+	"def_field_ofs",
 };
 
 int         sorted = 0;
