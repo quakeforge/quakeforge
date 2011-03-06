@@ -132,13 +132,18 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 		type_t     *val_type = get_type (value);
 		if (!type_assignable (type, get_type (value)))
 			return error (value, "type mismatch in case label");
-		if (type != val_type) {
-			//FIXME shorts?
-			if (type == &type_float)
-				value->e.value.v.float_val = value->e.value.v.integer_val;
-			else
-				value->e.value.v.integer_val = value->e.value.v.float_val;
-			value->e.value.type = type->type;
+		if (is_integral (type) && is_integral (val_type)) {
+			// do nothing
+			debug (value, "integeral label used in integral switch");
+		} else if (is_integral (type) && is_float (val_type)) {
+			warning (value, "float label used in integral switch");
+			value = new_integer_expr (expr_float (value));
+		} else if (is_float (type) && is_integral (val_type)) {
+			debug (value, "integeral label used in float switch");
+			value = new_float_expr (expr_integer (value));
+		} else if (is_float (type) && is_float (val_type)) {
+			// do nothing
+			debug (value, "float label used in float switch");
 		}
 	}
 	cl->value = value;
