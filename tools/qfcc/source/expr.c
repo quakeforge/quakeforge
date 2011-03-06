@@ -930,11 +930,35 @@ field_expr (expr_t *e1, expr_t *e2)
 		if (!field)
 			return error (e2, "'%s' has no member named '%s'",
 						  t1->name + 4, sym->name);
-		e2->type = ex_value;
-		e2->e.value.type = ev_short;
-		e2->e.value.v.short_val = field->s.offset;
-		e = address_expr (e1, e2, field->type);
-		return unary_expr ('.', e);
+		if (e1->type == ex_expr && e1->e.expr.op == '.'
+			&& get_type (e1->e.expr.e1) == &type_entity) {
+			// undo the . expression
+			e2 = e1->e.expr.e2;
+			e1 = e1->e.expr.e1;
+			// offset the field expresion
+			if (e2->type == ex_symbol) {
+				symbol_t   *sym;
+				def_t      *def;
+				sym = symtab_lookup (pr.entity_fields, e2->e.symbol->name);
+				if (!sym) {
+					internal_error (e2, "failed to find enitty field %s",
+									e2->e.symbol->name);
+				}
+				def = sym->s.def;
+				e2 = new_field_expr (0, field->type, def);
+			} else if (e2->type != ex_value || e2->e.value.type != ev_field) {
+				internal_error (e2, "unexpected field exression");
+			}
+			e2->e.value.v.pointer.val += field->s.offset;
+			// create a new . expression
+			return field_expr (e1, e2);
+		} else {
+			e2->type = ex_value;
+			e2->e.value.type = ev_short;
+			e2->e.value.v.short_val = field->s.offset;
+			e = address_expr (e1, e2, field->type);
+			return unary_expr ('.', e);
+		}
 	} else if (is_class (t1)) {
 	}
 	return type_mismatch (e1, e2, '.');
