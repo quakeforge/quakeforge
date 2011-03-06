@@ -753,7 +753,7 @@ qfo_relocate_refs (qfo_t *qfo)
 				QFO_INT (qfo, reloc->space, reloc->offset) += def->offset;
 				break;
 			case rel_def_field_ofs:
-				//FIXME how?
+				QFO_INT (qfo, reloc->space, reloc->offset) += def->offset;
 				break;
 		}
 	}
