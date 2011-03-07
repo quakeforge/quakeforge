@@ -2587,7 +2587,7 @@ cast_expr (type_t *type, expr_t *e)
 			  && (e_type == &type_float || e_type == &type_integer
 				  || e_type->type == ev_pointer))
 			 || (type == &type_float
-				 && (e_type == &type_integer)))) {
+				 && (e_type == &type_integer || is_enum (e_type))))) {
 		return cast_error (e, get_type (e), type);
 	}
 	if (is_array (e_type)) {
