@@ -158,6 +158,7 @@ int yylex (void);
 
 %type	<param>		function_params var_list param_declaration
 %type	<param>		qc_func_params qc_var_list qc_param_decl
+%type	<symbol>	new_name
 %type	<symbol>	var_decl function_decl
 %type	<symbol>	abstract_decl abs_decl
 
@@ -595,15 +596,22 @@ struct_decl
 	| ':' expr				%prec COMMA		{}
 	;
 
-//FIXME function overloading
-var_decl
-	: NAME			%prec COMMA
+new_name
+	: NAME					%prec COMMA
 		{
 			$$ = $1;
 			// due to the way declarations work, we need a new symbol at all
 			// times. redelcarations will be checked later
 			if ($$->table)
 				$$ = new_symbol ($1->name);
+		}
+	;
+
+//FIXME function overloading
+var_decl
+	: new_name
+		{
+			$$ = $1;
 			$$->type = 0;
 		}
 	| var_decl function_params
@@ -712,12 +720,12 @@ abstract_decl
 	;
 
 qc_param_decl
-	: type NAME
+	: type new_name
 		{
 			$2->type = find_type ($1.type);
 			$$ = new_param (0, $2->type, $2->name);
 		}
-	| type qc_func_params NAME
+	| type qc_func_params new_name
 		{
 			type_t    **type;
 			// .float () foo; is a field holding a function variable rather
