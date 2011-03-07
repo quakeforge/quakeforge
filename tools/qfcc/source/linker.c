@@ -302,6 +302,7 @@ process_def (defref_t *ref, qfo_mspace_t *space, int field)
 					/// System defs may be redefined only once.
 					REF (r)->flags &= ~QFOD_SYSTEM;
 					// treat the new def as external
+					def->flags |= QFOD_EXTERNAL;
 					resolve_external_def (ref, r);
 					//FIXME copy stuff from new def to existing def???
 				} else {
