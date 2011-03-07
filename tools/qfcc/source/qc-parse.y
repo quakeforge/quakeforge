@@ -448,24 +448,24 @@ type_specifier_or_storage_class
 type_specifier
 	: TYPE
 		{
-			$$ = make_spec ($1, current_storage, 0, 0);
+			$$ = make_spec ($1, 0, 0, 0);
 		}
 	| enum_specifier
 	| struct_specifier
 	| TYPE_NAME
 		{
-			$$ = make_spec ($1->type, current_storage, 0, 0);
+			$$ = make_spec ($1->type, 0, 0, 0);
 		}
 	| CLASS_NAME
 		{
-			$$ = make_spec ($1->type, current_storage, 0, 0);
+			$$ = make_spec ($1->type, 0, 0, 0);
 		}
 	// NOTE: fields don't parse the way they should. This is not a problem
 	// for basic types, but functions need special treatment
 	| '.' type_specifier
 		{
 			// avoid find_type()
-			$$ = make_spec (field_type (0), current_storage, 0, 0);
+			$$ = make_spec (field_type (0), 0, 0, 0);
 			$$.type = append_type ($$.type, $2.type);
 		}
 	;
@@ -480,13 +480,13 @@ tag : NAME ;
 enum_specifier
 	: ENUM tag optional_enum_list
 		{
-			$$ = make_spec ($3->type, current_storage, 0, 0);
+			$$ = make_spec ($3->type, 0, 0, 0);
 			if (!$3->table)
 				symtab_addsymbol (current_symtab, $3);
 		}
 	| ENUM enum_list
 		{
-			$$ = make_spec ($2->type, current_storage, 0, 0);
+			$$ = make_spec ($2->type, 0, 0, 0);
 			if (!$2->table)
 				symtab_addsymbol (current_symtab, $2);
 		}
@@ -536,7 +536,7 @@ struct_specifier
 			current_symtab = symtab->parent;
 
 			sym = build_struct ($1, $2, symtab, 0);
-			$$ = make_spec (sym->type, current_storage, 0, 0);
+			$$ = make_spec (sym->type, 0, 0, 0);
 			if (!sym->table)
 				symtab_addsymbol (current_symtab, sym);
 		}
@@ -545,7 +545,7 @@ struct_specifier
 			symbol_t   *sym;
 
 			sym = find_struct ($1, $2, 0);
-			$$ = make_spec (sym->type, current_storage, 0, 0);
+			$$ = make_spec (sym->type, 0, 0, 0);
 			if (!sym->table)
 				symtab_addsymbol (current_symtab, sym);
 		}
@@ -986,6 +986,8 @@ statements
 local_def
 	: local_specifiers
 		{
+			if (!$1.storage)
+				$1.storage = st_local;
 			$<spec>$ = $1;
 			local_expr = new_block_expr ();
 		}
