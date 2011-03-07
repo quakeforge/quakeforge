@@ -287,43 +287,84 @@ static void
 init_vector_components (symbol_t *vector_sym, int is_field)
 {
 	expr_t     *vector_expr;
-	expr_t     *expr;
+	expr_t     *expr = 0;
 	symbol_t   *sym;
 	int         i;
+	const char *name;
 	static const char *fields[] = { "x", "y", "z" };
 
 	vector_expr = new_symbol_expr (vector_sym);
 	for (i = 0; i < 3; i++) {
-		if (is_field) {
-			expr = new_field_expr (i, &type_float, vector_sym->s.def);
-		} else {
-			expr = binary_expr ('.', vector_expr,
-								new_symbol_expr (new_symbol (fields[i])));
+		name = va ("%s_%s", vector_sym->name, fields[i]);
+		sym = symtab_lookup (current_symtab, name);
+		if (sym) {
+			if (sym->table == current_symtab) {
+				if (sym->sy_type != sy_expr) {
+					error (0, "%s redefined", name);
+					sym = 0;
+				} else {
+					expr = sym->s.expr;
+					if (is_field) {
+						if (expr->type != ex_value
+							|| expr->e.value.type != ev_field) {
+							error (0, "%s redefined", name);
+							sym = 0;
+						} else {
+							expr->e.value.v.pointer.def = vector_sym->s.def;
+						}
+					}
+				}
+			} else {
+				sym = 0;
+			}
 		}
-		sym = new_symbol (va ("%s_%s", vector_sym->name, fields[i]));
+		if (!sym)
+			sym = new_symbol (name);
+		if (!expr) {
+			if (is_field) {
+				expr = new_field_expr (i, &type_float, vector_sym->s.def);
+			} else {
+				expr = binary_expr ('.', vector_expr,
+									new_symbol_expr (new_symbol (fields[i])));
+			}
+		}
 		sym->sy_type = sy_expr;
 		sym->s.expr = expr;
-		symtab_addsymbol (current_symtab, sym);
+		if (!sym->table)
+			symtab_addsymbol (current_symtab, sym);
 	}
 }
 
 static void
-init_field_def (def_t *def)
+init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 {
 	type_t     *type = def->type->t.fldptr.type;
 	def_t      *field_def;
 	symbol_t   *field_sym;
 
-	field_sym = new_symbol_type (def->name, type);
-	field_def = new_def (def->name, type, pr.entity_data, st_global);
-	field_sym->s.def = field_def;
-	symtab_addsymbol (pr.entity_fields, field_sym);
-	D_INT (def) = field_def->offset;
-	reloc_def_field (def, field_def);
-	def->constant = 1;
-	def->nosave = 1;
-	if (type == &type_vector && options.code.vector_components)
-		init_vector_components (field_sym, 1);
+	field_sym = symtab_lookup (pr.entity_fields, def->name);
+	if (!field_sym)
+		field_sym = new_symbol_type (def->name, type);
+	if (field_sym->s.def && field_sym->s.def->external) {
+		free_def (field_sym->s.def);
+		field_sym->s.def = 0;
+	}
+	if (!field_sym->s.def)
+		field_sym->s.def = new_def (def->name, type, pr.entity_data, storage);
+	field_def = field_sym->s.def;
+	if (!field_sym->table)
+		symtab_addsymbol (pr.entity_fields, field_sym);
+	if (!init)  {
+		if (storage != st_extern) {
+			D_INT (def) = field_def->offset;
+			reloc_def_field (def, field_def);
+			def->constant = 1;
+			def->nosave = 1;
+		}
+		// no support for initialized field vector componets (yet?)
+		if (type == &type_vector && options.code.vector_components)
+			init_vector_components (field_sym, 1);
+	}
 }
 
 void
@@ -376,16 +417,15 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 		sym->s.def = new_def (sym->name, type, space, storage);
 	if (type == &type_vector && options.code.vector_components)
 		init_vector_components (sym, 0);
+	if (type->type == ev_field)
+		init_field_def (sym->s.def, init, storage);
 	if (storage == st_extern) {
 		if (init)
 			warning (0, "initializing external variable");
 		return;
 	}
-	if (!init) {
-		if (type->type == ev_field)
-			init_field_def (sym->s.def);
+	if (!init)
 		return;
-	}
 	convert_name (init);
 	if (init->type == ex_error)
 		return;
