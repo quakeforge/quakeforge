@@ -925,8 +925,13 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 		case 'r':
 			debug (e, "RETURN");
 			opcode = "<RETURN>";
-			if (!e->e.expr.e1 && !options.traditional)
-				opcode = "<RETURN_V>";
+			if (!e->e.expr.e1) {
+				if (options.code.progsversion != PROG_ID_VERSION) {
+					opcode = "<RETURN_V>";
+				} else {
+					e->e.expr.e1 = new_float_expr (0);
+				}
+			}
 			s = new_statement (opcode, e);
 			if (e->e.expr.e1)
 				sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
