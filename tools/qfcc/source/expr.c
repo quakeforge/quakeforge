@@ -2088,11 +2088,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				def_t      *def = e1->e.symbol->s.def;
 				type_t     *type = def->type;
 
-				if (is_struct (type) || is_class (type)) {
-					e = new_pointer_expr (0, t, def);
-					e->line = e1->line;
-					e->file = e1->file;
-				} else if (is_array (type)) {
+				if (is_array (type)) {
 					e = e1;
 					e->type = ex_value;
 					e->e.value.type = ev_pointer;
@@ -2100,8 +2096,9 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 					e->e.value.v.pointer.type = t;
 					e->e.value.v.pointer.def = def;
 				} else {
-					e = new_unary_expr ('&', e1);
-					e->e.expr.type = pointer_type (t);
+					e = new_pointer_expr (0, t, def);
+					e->line = e1->line;
+					e->file = e1->file;
 				}
 				break;
 			}
