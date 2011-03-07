@@ -931,11 +931,8 @@ field_expr (expr_t *e1, expr_t *e2)
 			e->e.expr.type = pointer_type (ivar->type);
 			return unary_expr ('.', e);
 		}
-	} else if (t1->type == ev_vector) {
-	} else if (t1->type == ev_quat) {
-	} else if (is_struct (t1)) {
-		symtab_t   *strct = t1->t.symtab;
-		symbol_t   *sym = e2->e.symbol;//FIXME need to check
+	} else if (t1->type == ev_vector || t1->type == ev_quat
+			   || is_struct (t1)) {
 		symbol_t   *field;
 		
 		field = get_struct_field (t1, e1, e2);
