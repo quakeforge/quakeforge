@@ -342,7 +342,8 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		return e2;
 	if (op == '+' && is_constant (e2) && VectorIsZero (expr_vector (e2)))
 		return e1;
-	if (op == '-' && is_constant (e1) && VectorIsZero (expr_vector (e1))) {
+	if (op == '-' && is_constant (e1) && VectorIsZero (expr_vector (e1))
+		&& is_constant (e2)) {
 		vec3_t      v;
 		VectorNegate (expr_vector (e2), v);
 		e = new_vector_expr (v);
