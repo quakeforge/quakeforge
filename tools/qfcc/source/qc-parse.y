@@ -152,7 +152,7 @@ int yylex (void);
 %token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
 
 %type	<spec>		optional_specifiers specifiers local_specifiers
-%type	<spec>		storage_class
+%type	<spec>		storage_class save_storage
 %type	<spec>		type_specifier type_specifier_or_storage_class
 %type	<spec>		type
 
@@ -297,7 +297,6 @@ external_def_list
 	: /* empty */
 		{
 			current_symtab = pr.symtab;
-			current_storage = st_global;
 		}
 	| external_def_list external_def
 	| external_def_list obj_def
@@ -325,8 +324,21 @@ external_def
 		}
 	  function_def_list
 	| optional_specifiers function_decl function_body
-	| storage_class '{'						{ current_storage = $1.storage; }
-	  external_def_list '}' ';'				{ current_storage = st_global; }
+	| storage_class '{' save_storage
+		{
+			current_storage = $1.storage;
+		}
+	  external_def_list '}' ';'
+		{
+			current_storage = $3.storage;
+		}
+	;
+
+save_storage
+	: /* emtpy */
+		{
+			$$.storage = current_storage;
+		}
 	;
 
 function_body
@@ -337,6 +349,7 @@ function_body
 			sym->type = find_type (append_type (sym->type, $<spec>-1.type));
 			$<symbol>$ = function_symbol (sym, $<spec>-1.is_overload, 1);
 		}
+	  save_storage
 		{
 			$<symtab>$ = current_symtab;
 			current_func = begin_function ($<symbol>2, 0, current_symtab, 0);
@@ -345,9 +358,9 @@ function_body
 		}
 	  compound_statement
 		{
-			build_code_function ($<symbol>2, $1, $4);
-			current_symtab = $<symtab>3;
-			current_storage = st_global;
+			build_code_function ($<symbol>2, $1, $5);
+			current_symtab = $<symtab>4;
+			current_storage = $3.storage;
 			current_func = 0;
 		}
 	| '=' '#' expr ';'
@@ -421,6 +434,11 @@ storage_class
 
 optional_specifiers
 	: specifiers
+		{
+			$$ = $1;
+			if (!$$.storage)
+				$$.storage = current_storage;
+		}
 	| /* empty */
 		{
 			$$ = make_spec (0, current_storage, 0, 0);
@@ -906,6 +924,7 @@ non_code_func
 
 code_func
 	: '=' optional_state_expr
+	  save_storage
 		{
 			$<symtab>$ = current_symtab;
 			current_func = begin_function ($<symbol>0, 0, current_symtab, 0);
@@ -914,9 +933,9 @@ code_func
 		}
 	  compound_statement
 		{
-			build_code_function ($<symbol>0, $2, $4);
-			current_symtab = $<symtab>3;
-			current_storage = st_global;
+			build_code_function ($<symbol>0, $2, $5);
+			current_symtab = $<symtab>4;
+			current_storage = $3.storage;
 			current_func = 0;
 		}
 	;
@@ -1548,6 +1567,7 @@ methoddef
 			$2 = method = class_find_method (current_class, method);
 			$<symbol>$ = method_symbol (current_class, method);
 		}
+	  save_storage
 		{
 			method_t   *method = $2;
 			const char *nicename = method_name (method);
@@ -1567,9 +1587,9 @@ methoddef
 		}
 	  compound_statement
 		{
-			build_code_function ($<symbol>4, $3, $6);
-			current_symtab = $<symtab>5;
-			current_storage = st_global;
+			build_code_function ($<symbol>4, $3, $7);
+			current_symtab = $<symtab>6;
+			current_storage = $5.storage;
 			current_func = 0;
 		}
 	| ci methoddecl '=' '#' const ';'
