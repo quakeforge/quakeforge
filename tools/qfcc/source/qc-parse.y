@@ -797,6 +797,24 @@ param
 		}
 	;
 
+local_decl_list
+	: decl_list
+	| qc_func_params
+		{
+			type_t    **type;
+			specifier_t spec = $<spec>0;	// copy spec bits and storage
+			// .float () foo; is a field holding a function variable rather
+			// than a function that returns a float field.
+			for (type = &spec.type; *type && (*type)->type == ev_field;
+				 type = &(*type)->t.fldptr.type)
+				 ;
+			*type = parse_params (*type, $1);
+			spec.type = find_type (spec.type);
+			$<spec>$ = spec;
+		}
+	  func_def_list
+	;
+
 decl_list
 	: decl_list ',' { $<spec>$ = $<spec>0; } decl
 	| decl
@@ -854,7 +872,7 @@ overloaded_identifier
 		{
 			$$ = $1;
 			$$->type = $<spec>0.type;
-			if ($$->type->type != ev_field) {
+			if (!local_expr && $$->type->type != ev_field) {
 				$$ = function_symbol ($$, $<spec>0.is_overload, 1);
 				$$->params = $<spec>0.params;
 			}
@@ -877,7 +895,7 @@ non_code_func
 		{
 			symbol_t   *sym = $<symbol>0;
 			specifier_t spec = $<spec>-1;
-			if (sym->type->type != ev_field) {
+			if (!local_expr && sym->type->type != ev_field) {
 				make_function (sym, 0, sym->table->space, spec.storage);
 			} else {
 				initialize_def (sym, sym->type, 0, current_symtab->space,
@@ -991,7 +1009,7 @@ local_def
 			$<spec>$ = $1;
 			local_expr = new_block_expr ();
 		}
-	  decl_list ';'
+	  local_decl_list ';'
 		{
 			$$ = local_expr;
 			local_expr = 0;
