@@ -267,8 +267,7 @@ qfo_encode_functions (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 			qfo_init_data_space (qfo, defs, relocs, space++, f->symtab->space);
 			q->locals_space = f->symtab->space->qfo_space;
 		}
-		if (f->aux)
-			q->line_info = f->aux->line_info;
+		q->line_info = f->line_info;
 		q->relocs = *relocs - qfo->relocs;
 		q->num_relocs = qfo_encode_relocs (f->refs, relocs, q - qfo->funcs);
 	}

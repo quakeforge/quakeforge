@@ -50,10 +50,11 @@ typedef struct overloaded_function_s {
 
 typedef struct function_s {
 	struct function_s  *next;
-	pr_auxfunction_t   *aux;		///< debug info;
 	int                 builtin;	///< if non 0, call an internal function
 	int                 code;		///< first statement
 	int                 function_num;
+	int                 line_info;
+	int                 local_defs;
 	string_t            s_file;		///< source file with definition
 	string_t            s_name;
 	int                 temp_num;	///< number for next temp var

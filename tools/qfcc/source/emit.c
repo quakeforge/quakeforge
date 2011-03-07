@@ -182,7 +182,7 @@ emit_statement (statement_t *statement)
 		print_statement (statement);
 		internal_error (statement->expr, "ice ice baby");
 	}
-	if (options.code.debug && current_func->aux) {
+	if (options.code.debug) {
 		expr_t     *e = statement->expr;
 		pr_uint_t   line = (e ? e->line : pr.source_line) - lineno_base;
 

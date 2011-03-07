@@ -117,20 +117,6 @@ line_info (char *text)
 	pr.source_file = ReuseString (strip_path (str));
 }
 
-pr_auxfunction_t *
-new_auxfunction (void)
-{
-	if (pr.num_auxfunctions == pr.auxfunctions_size) {
-		pr.auxfunctions_size += 1024;
-		pr.auxfunctions = realloc (pr.auxfunctions,
-								   pr.auxfunctions_size 
-								   * sizeof (pr_auxfunction_t));
-	}
-	memset (&pr.auxfunctions[pr.num_auxfunctions], 0,
-			sizeof (pr_auxfunction_t));
-	return &pr.auxfunctions[pr.num_auxfunctions++];
-}
-
 pr_lineno_t *
 new_lineno (void)
 {

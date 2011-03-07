@@ -523,8 +523,6 @@ add_function (function_t *f)
 	*pr.func_tail = f;
 	pr.func_tail = &f->next;
 	f->function_num = pr.num_functions++;
-	if (options.code.debug)
-		f->aux = new_auxfunction ();
 }
 
 function_t *
@@ -556,14 +554,10 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 	}
 	sym->s.func->code = pr.code->size;
 
-	if (options.code.debug && sym->s.func->aux) {
+	if (options.code.debug) {
 		pr_lineno_t *lineno = new_lineno ();
-		sym->s.func->aux->source_line = sym->s.func->def->line;
-		sym->s.func->aux->line_info = lineno - pr.linenos;
-		sym->s.func->aux->local_defs = pr.num_locals;
-		sym->s.func->aux->return_type = sym->type->t.func.type->type;
-
-		lineno->fa.func = sym->s.func->aux - pr.auxfunctions;
+		sym->s.func->line_info = lineno - pr.linenos;
+		sym->s.func->local_defs = pr.num_locals;
 	}
 
 	build_scope (sym, parent);
@@ -640,18 +634,6 @@ build_function (function_t *f)
 void
 finish_function (function_t *f)
 {
-	if (f->aux) {
-		def_t *def;
-		f->aux->function = f->function_num;
-		if (f->symtab && f->symtab->space) {
-			for (def = f->symtab->space->defs; def; def = def->next) {
-				if (def->name) {
-					def_to_ddef (def, new_local (), 0);
-					f->aux->num_locals++;
-				}
-			}
-		}
-	}
 }
 
 void
@@ -660,8 +642,7 @@ emit_function (function_t *f, expr_t *e)
 	sblock_t   *sblock;
 
 	f->code = pr.code->size;
-	if (f->aux)
-		lineno_base = f->aux->source_line;
+	lineno_base = f->def->line;
 	sblock = make_statements (e);
 	emit_statements (sblock);
 }
