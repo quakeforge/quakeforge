@@ -865,6 +865,25 @@ append_expr (expr_t *block, expr_t *e)
 	return block;
 }
 
+static symbol_t *
+get_struct_field (type_t *t1, expr_t *e1, expr_t *e2)
+{
+	symtab_t   *strct = t1->t.symtab;
+	symbol_t   *sym = e2->e.symbol;//FIXME need to check
+	symbol_t   *field;
+	
+	if (!strct) {
+		error (e1, "dereferencing pointer to incomplete type");
+		return 0;
+	}
+	field = symtab_lookup (strct, sym->name);
+	if (!field) {
+		error (e2, "'%s' has no member named '%s'", t1->name + 4, sym->name);
+		e1->type = ex_error;
+	}
+	return field;
+}
+
 static expr_t *
 field_expr (expr_t *e1, expr_t *e2)
 {
@@ -885,17 +904,12 @@ field_expr (expr_t *e1, expr_t *e2)
 		}
 	} else if (t1->type == ev_pointer) {
 		if (is_struct (t1->t.fldptr.type)) {
-			type_t     *struct_type = t1->t.fldptr.type;
-			symtab_t   *strct = struct_type->t.symtab;
-			symbol_t   *sym = e2->e.symbol;//FIXME need to check
 			symbol_t   *field;
 
-			if (!strct)
-				return error (e1, "dereferencing pointer to incomplete type");
-			field = symtab_lookup (strct, sym->name);
+			field = get_struct_field (t1->t.fldptr.type, e1, e2);
 			if (!field)
-				return error (e2, "'%s' has no member named '%s'",
-							  struct_type->name + 4, sym->name);
+				return e1;
+
 			e2->type = ex_value;
 			e2->e.value.type = ev_short;
 			e2->e.value.v.short_val = field->s.offset;
@@ -924,12 +938,10 @@ field_expr (expr_t *e1, expr_t *e2)
 		symbol_t   *sym = e2->e.symbol;//FIXME need to check
 		symbol_t   *field;
 		
-		if (!strct)
-			return error (e1, "dereferencing pointer to incomplete type");
-		field = symtab_lookup (strct, sym->name);
+		field = get_struct_field (t1, e1, e2);
 		if (!field)
-			return error (e2, "'%s' has no member named '%s'",
-						  t1->name + 4, sym->name);
+			return e1;
+
 		if (e1->type == ex_expr && e1->e.expr.op == '.'
 			&& get_type (e1->e.expr.e1) == &type_entity) {
 			// undo the . expression
@@ -941,7 +953,7 @@ field_expr (expr_t *e1, expr_t *e2)
 				def_t      *def;
 				sym = symtab_lookup (pr.entity_fields, e2->e.symbol->name);
 				if (!sym) {
-					internal_error (e2, "failed to find enitty field %s",
+					internal_error (e2, "failed to find entity field %s",
 									e2->e.symbol->name);
 				}
 				def = sym->s.def;
@@ -960,6 +972,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			return unary_expr ('.', e);
 		}
 	} else if (is_class (t1)) {
+		internal_error (e1, "access to class instances not implemented");
 	}
 	return type_mismatch (e1, e2, '.');
 }
