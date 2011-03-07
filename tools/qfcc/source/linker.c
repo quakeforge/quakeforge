@@ -245,10 +245,18 @@ linker_add_string (const char *str)
 static void
 resolve_external_def (defref_t *ext, defref_t *def)
 {
-	if (!(REF (ext)->flags & QFOD_EXTERNAL))
-		internal_error (0, "ext is not an external def");
-	if (!(REF (def)->flags & QFOD_GLOBAL))
-		internal_error (0, "def is not a global def");
+	if (!(REF (ext)->flags & QFOD_EXTERNAL)) {
+		def_error (REF (ext), "%s %x", WORKSTR (REF (ext)->name),
+				   REF (ext)->flags);
+		linker_error ("ext is not an external def");
+		abort ();
+	}
+	if (!(REF (def)->flags & QFOD_GLOBAL)) {
+		def_error (REF (ext), "%s %x", WORKSTR (REF (ext)->name),
+				   REF (ext)->flags);
+		linker_error ("def is not a global def");
+		abort ();
+	}
 	if (REF (ext)->type != REF (def)->type) {
 		linker_type_mismatch (REF (ext), REF (def));
 		return;
