@@ -61,7 +61,7 @@ static int files_size;
 
 // keep me sane when adding long options :P
 enum {
-	start_opts = 255,	// not used, just for starting the enum.
+	start_opts = 255,	// not used, starts the enum.
 	OPT_ADVANCED,
 	OPT_CPP,
 	OPT_INCLUDE,
@@ -192,6 +192,7 @@ code_usage (void)
 "    [no-]vector-calls       Generate slower but data efficient code for\n"
 "                            passing\n"
 "                            vectors to functiosn.\n"
+"    [no-]vector-components  Create *_[xyz] symbols for vector variables.\n"
 "    [no-]v6only             Restrict output code to version 6 progs\n"
 "                            features.\n"
 "\n"
@@ -270,6 +271,7 @@ DecodeArgs (int argc, char **argv)
 
 	options.code.short_circuit = -1;
 	options.code.local_merging = -1;
+	options.code.vector_components = -1;
 	options.code.fast_float = true;
 	options.warnings.uninited_variable = true;
 	options.warnings.unused = true;
@@ -391,6 +393,8 @@ DecodeArgs (int argc, char **argv)
 							options.single_cpp = flag;
 						} else if (!(strcasecmp (temp, "vector-calls"))) {
 							options.code.vector_calls = flag;
+						} else if (!(strcasecmp (temp, "vector-components"))) {
+							options.code.vector_components = flag;
 						} else if (!(strcasecmp (temp, "v6only"))) {
 							if (flag)
 								options.code.progsversion = PROG_ID_VERSION;
@@ -555,6 +559,8 @@ DecodeArgs (int argc, char **argv)
 			options.code.short_circuit = false;
 		if (options.code.local_merging == (qboolean) -1)
 			options.code.local_merging = false;
+		if (options.code.vector_components == (qboolean) -1)
+			options.code.vector_components = true;
 	}
 	if (!options.code.progsversion)
 		options.code.progsversion = PROG_VERSION;
@@ -566,6 +572,8 @@ DecodeArgs (int argc, char **argv)
 			options.code.short_circuit = true;
 		if (options.code.local_merging == (qboolean) -1)
 			options.code.local_merging = true;
+		if (options.code.vector_components == (qboolean) -1)
+			options.code.vector_components = false;
 	}
 	if (options.code.progsversion == PROG_ID_VERSION)
 		add_cpp_def ("-D__VERSION6__=1");

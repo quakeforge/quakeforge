@@ -240,6 +240,12 @@ This can save a good number of pr_globals where those vectors contain many
 duplicate coordinates but do not match entirely.
 However, this will generate slower code for such calls.
 .TP
+.B vector\-components
+Create extra symbols for accessing the components of a vector variable or 
+field. For example, \fBvector vel\fP will also create \fBvel_x\fP,
+\fBvel_y\fP, and \fBvel_z\fP. Defaults to on for traditional code and off
+for advanced.
+.TP
 .B v6only
 Restrict the compiler to only version 6 progs (original Quake/QuakeWorld)
 features.

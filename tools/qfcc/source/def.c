@@ -284,6 +284,30 @@ init_elements (struct def_s *def, expr_t *eles)
 }
 
 static void
+init_vector_components (symbol_t *vector_sym, int is_field)
+{
+	expr_t     *vector_expr;
+	expr_t     *expr;
+	symbol_t   *sym;
+	int         i;
+	static const char *fields[] = { "x", "y", "z" };
+
+	vector_expr = new_symbol_expr (vector_sym);
+	for (i = 0; i < 3; i++) {
+		if (is_field) {
+			expr = new_field_expr (i, &type_float, vector_sym->s.def);
+		} else {
+			expr = binary_expr ('.', vector_expr,
+								new_symbol_expr (new_symbol (fields[i])));
+		}
+		sym = new_symbol (va ("%s_%s", vector_sym->name, fields[i]));
+		sym->sy_type = sy_expr;
+		sym->s.expr = expr;
+		symtab_addsymbol (current_symtab, sym);
+	}
+}
+
+static void
 init_field_def (def_t *def)
 {
 	type_t     *type = def->type->t.fldptr.type;
@@ -298,6 +322,8 @@ init_field_def (def_t *def)
 	reloc_def_field (def, field_def);
 	def->constant = 1;
 	def->nosave = 1;
+	if (type == &type_vector && options.code.vector_components)
+		init_vector_components (field_sym, 1);
 }
 
 void
@@ -348,6 +374,8 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 	}
 	if (!sym->s.def)
 		sym->s.def = new_def (sym->name, type, space, storage);
+	if (type == &type_vector && options.code.vector_components)
+		init_vector_components (sym, 0);
 	if (storage == st_extern) {
 		if (init)
 			warning (0, "initializing external variable");

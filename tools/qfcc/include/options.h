@@ -42,6 +42,7 @@ typedef struct {
 	qboolean    vector_calls;		// use floats instead of vectors for constant function args
 	qboolean    local_merging;		// merge function locals into one block
 	unsigned    progsversion;		// Progs version to generate code for
+	qboolean    vector_components;	// add *_[xyz] symbols for vectors
 } code_options_t;
 
 typedef struct {
