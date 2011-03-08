@@ -74,22 +74,24 @@ typedef struct memblock_s
 {
 	int         size;		// including the header and possibly tiny fragments
 	int         tag;		// a tag of 0 is a free block
-	int         id;			// should be ZONEID
 	struct memblock_s *next, *prev;
-	int         pad;		// pad to 64 bit boundary
+	int         id;			// should be ZONEID
+	int         id2;		// pad to 64 bit boundary
 } memblock_t;
 
 struct memzone_s
 {
 	int         size;		// total bytes malloced, including header
 	int         used;		// ammount used, including header
+	int         offset;
+	int         ele_size;
 	memblock_t  blocklist;	// start / end cap for linked list
 	memblock_t  *rover;
 };
 
 
 VISIBLE void
-Z_ClearZone (memzone_t *zone, int size)
+Z_ClearZone (memzone_t *zone, int size, int zone_offset, int ele_size)
 {
 	memblock_t	*block;
 	
@@ -101,6 +103,8 @@ Z_ClearZone (memzone_t *zone, int size)
 	zone->blocklist.tag = 1;	// in use block
 	zone->blocklist.id = 0;
 	zone->blocklist.size = 0;
+	zone->offset = zone_offset;
+	zone->ele_size = ele_size;
 	zone->rover = block;
 	zone->size = size;
 	zone->used = sizeof (memzone_t);
@@ -108,6 +112,7 @@ Z_ClearZone (memzone_t *zone, int size)
 	block->prev = block->next = &zone->blocklist;
 	block->tag = 0;			// free block
 	block->id = ZONEID;
+	block->id2 = ZONEID;
 	block->size = size - sizeof (memzone_t);
 }
 
@@ -115,12 +120,12 @@ VISIBLE void
 Z_Free (memzone_t *zone, void *ptr)
 {
 	memblock_t	*block, *other;
-	
+
 	if (!ptr)
 		Sys_Error ("Z_Free: NULL pointer");
 
 	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
-	if (block->id != ZONEID)
+	if (block->id != ZONEID || block->id2 != ZONEID)
 		Sys_Error ("Z_Free: freed a pointer without ZONEID");
 	if (block->tag == 0)
 		Sys_Error ("Z_Free: freed a freed pointer");
@@ -201,6 +206,7 @@ Z_TagMalloc (memzone_t *zone, int size, int tag)
 		new->tag = 0;			// free block
 		new->prev = base;
 		new->id = ZONEID;
+		new->id2 = ZONEID;
 		new->next = base->next;
 		new->next->prev = new;
 		base->next = new;
@@ -212,6 +218,7 @@ Z_TagMalloc (memzone_t *zone, int size, int tag)
 	zone->rover = base->next;	// next allocation will start looking here
 	
 	base->id = ZONEID;
+	base->id2 = ZONEID;
 
 	zone->used += base->size;
 
@@ -232,7 +239,7 @@ Z_Realloc (memzone_t *zone, void *ptr, int size)
 		return Z_Malloc (zone, size);
 
 	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
-	if (block->id != ZONEID)
+	if (block->id != ZONEID || block->id2 != ZONEID)
 		Sys_Error ("Z_Realloc: realloced a pointer without ZONEID");
 	if (block->tag == 0)
 		Sys_Error ("Z_Realloc: realloced a freed pointer");
@@ -253,6 +260,20 @@ Z_Realloc (memzone_t *zone, void *ptr, int size)
 	return ptr;
 }
 
+static int
+z_block_size (memblock_t *block)
+{
+	return block->size - sizeof (memblock_t) - 4;
+}
+
+static int
+z_offset (memzone_t *zone, memblock_t *block)
+{
+	int         offset = ((byte *) (block + 1) - (byte *) zone);
+	
+	return offset / zone->ele_size + zone->offset;
+}
+
 void
 Z_Print (memzone_t *zone)
 {
@@ -262,12 +283,14 @@ Z_Print (memzone_t *zone)
 				zone->size, zone, zone->used);
 
 	for (block = zone->blocklist.next ; ; block = block->next) {
-		Sys_Printf ("block:%p    size:%7i    tag:%3i ofs:%d\n",
-					block, block->size - (int) sizeof (memblock_t) - 4,
-					block->tag, (int) ((byte *) block - (byte *) zone));
+		Sys_Printf ("block:%p    size:%7i    tag:%3i ofs:%x\n",
+					block, z_block_size (block),
+					block->tag, z_offset (zone, block));
 
 		if (block->next == &zone->blocklist)
 			break;			// all blocks have been hit	
+		if (block->id != ZONEID || block->id2 != ZONEID)
+			Sys_Printf ("ERROR: block ids incorrect\n");
 		if ( (byte *)block + block->size != (byte *)block->next)
 			Sys_Printf ("ERROR: block size does not touch the next block\n");
 		if ( block->next->prev != block)

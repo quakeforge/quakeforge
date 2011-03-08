@@ -95,7 +95,7 @@ typedef struct memzone_s memzone_t;
 
 void Memory_Init (void *buf, int size);
 
-void Z_ClearZone (memzone_t *zone, int size);
+void Z_ClearZone (memzone_t *zone, int size, int zone_offset, int ele_size);
 void Z_Free (memzone_t *zone, void *ptr);
 void *Z_Malloc (memzone_t *zone, int size);			// returns 0 filled memory
 void *Z_TagMalloc (memzone_t *zone, int size, int tag);

@@ -51,7 +51,8 @@ static __attribute__ ((used)) const char rcsid[] =
 void
 PR_Zone_Init (progs_t *pr)
 {
-	Z_ClearZone (pr->zone, pr->zone_size);
+	Z_ClearZone (pr->zone, pr->zone_size,
+				 (pr_type_t *)pr->zone - pr->pr_globals, sizeof (pr_type_t));
 }
 
 VISIBLE void

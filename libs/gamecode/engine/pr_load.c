@@ -203,8 +203,6 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int edicts, int zone)
 		*pr->edicts = (edict_t *)((byte *) pr->progs + pr->progs_size);
 	pr->zone = (memzone_t *)((byte *) pr->progs + pr->progs_size
 						   + pr->pr_edictareasize);
-	if (pr->zone_size)
-		PR_Zone_Init (pr);
 
 	pr->pr_functions =
 		(dfunction_t *) (base + pr->progs->ofs_functions);
@@ -218,6 +216,8 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int edicts, int zone)
 
 	pr->globals_size = (pr_type_t*)((byte *) pr->zone + pr->zone_size)
 						- pr->pr_globals;
+	if (pr->zone_size)
+		PR_Zone_Init (pr);
 
 	if (pr->function_hash) {
 		Hash_FlushTable (pr->function_hash);
