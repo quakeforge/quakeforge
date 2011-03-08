@@ -139,7 +139,8 @@ dump_class (progs_t *pr, pr_class_t *class)
 	} else {
 		printf ("    %s @ %x\n", class_name, PR_SetPointer (pr, class));
 	}
-	printf ("        %x %d %u %d\n", class->class_pointer, class->version,
+	printf ("        meta:%x verion:%d info:%u size:%d\n",
+			class->class_pointer, class->version,
 			class->info, class->instance_size);
 	dump_methods (pr, &G_STRUCT (pr, pr_method_list_t, class->methods), 0);
 	dump_methods (pr, &G_STRUCT (pr, pr_method_list_t, meta->methods), 1);
@@ -184,13 +185,15 @@ dump_module (progs_t *pr, pr_module_t *module)
 
 	if (PR_StringValid (pr, module->name))
 		module_name = PR_GetString (pr, module->name);
-	printf ("%d %d %s\n", module->version, module->size, module_name);
+	printf ("version:%d size:%d %s\n", module->version, module->size,
+			module_name);
 	if (!symtab) {
 		printf ("    No symtab!\n");
 		return;
 	}
-	printf ("    %d %d %d\n", symtab->sel_ref_cnt, symtab->cls_def_cnt,
-			symtab->cat_def_cnt);
+	printf ("    symtab @ %x selectors:%d @ %x classes:%d categories:%d\n",
+			module->symtab, symtab->sel_ref_cnt, symtab->refs,
+			symtab->cls_def_cnt, symtab->cat_def_cnt);
 	for (i = 0; i < symtab->sel_ref_cnt; i++)
 		dump_selector (pr, sel++);
 	for (i = 0; i < symtab->cls_def_cnt; i++)
