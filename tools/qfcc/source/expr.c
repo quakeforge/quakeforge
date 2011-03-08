@@ -877,7 +877,7 @@ get_struct_field (type_t *t1, expr_t *e1, expr_t *e2)
 		return 0;
 	}
 	field = symtab_lookup (strct, sym->name);
-	if (!field) {
+	if (!field && t1 != &type_entity) {
 		error (e2, "'%s' has no member named '%s'", t1->name + 4, sym->name);
 		e1->type = ex_error;
 	}
@@ -894,13 +894,24 @@ field_expr (expr_t *e1, expr_t *e2)
 		return e1;
 	t1 = get_type (e1);
 	if (t1->type == ev_entity) {
-		t2 = get_type (e2);
-		if (e2->type == ex_error)
-			return e2;
-		if (t2->type == ev_field) {
+		symbol_t   *field = 0;
+
+		if (e2->type == ex_symbol)
+			field = get_struct_field (&type_entity, e1, e2);
+		if (field) {
+			e2 = new_field_expr (0, field->type, field->s.def);
 			e = new_binary_expr ('.', e1, e2);
-			e->e.expr.type = t2->t.fldptr.type;
+			e->e.expr.type = field->type;
 			return e;
+		} else {
+			t2 = get_type (e2);
+			if (e2->type == ex_error)
+				return e2;
+			if (t2->type == ev_field) {
+				e = new_binary_expr ('.', e1, e2);
+				e->e.expr.type = t2->t.fldptr.type;
+				return e;
+			}
 		}
 	} else if (t1->type == ev_pointer) {
 		if (is_struct (t1->t.fldptr.type)) {

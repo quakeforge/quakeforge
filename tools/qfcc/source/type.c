@@ -867,6 +867,7 @@ chain_initial_types (void)
 	chain_type (&type_string);
 	chain_type (&type_float);
 	chain_type (&type_vector);
+	type_entity.t.symtab = pr.entity_fields;
 	chain_type (&type_entity);
 	chain_type (&type_field);
 	chain_type (&type_function);
