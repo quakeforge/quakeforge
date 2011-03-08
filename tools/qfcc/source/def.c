@@ -417,7 +417,7 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 		sym->s.def = new_def (sym->name, type, space, storage);
 	if (type == &type_vector && options.code.vector_components)
 		init_vector_components (sym, 0);
-	if (type->type == ev_field)
+	if (type->type == ev_field && storage != st_local)
 		init_field_def (sym->s.def, init, storage);
 	if (storage == st_extern) {
 		if (init)
