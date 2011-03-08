@@ -696,7 +696,7 @@ finish_class (class_t *class)
 	EMIT_DEF (space, meta->methods, emit_methods (class->methods,
 												  class->name, 0));
 
-	cls->instance_size = class->ivars ? class->ivars->size : 0;
+	cls->instance_size = type_size (class->type);
 	EMIT_DEF (space, cls->ivars, emit_ivars (class->ivars, class->name));
 	EMIT_DEF (space, cls->methods, emit_methods (class->methods,
 												 class->name, 1));
