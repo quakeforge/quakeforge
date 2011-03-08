@@ -970,6 +970,7 @@ field_expr (expr_t *e1, expr_t *e2)
 				internal_error (e2, "unexpected field exression");
 			}
 			e2->e.value.v.pointer.val += field->s.offset;
+			e2->e.value.v.pointer.type = field->type;
 			// create a new . expression
 			return field_expr (e1, e2);
 		} else {
