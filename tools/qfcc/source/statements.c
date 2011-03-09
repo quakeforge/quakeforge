@@ -250,7 +250,8 @@ convert_op (int op)
 		case IFB:	return "<IFB>";
 		case IFAE:	return "<IFAE>";
 		case IFA:	return "<IFA>";
-		case 'M':	return "<MOVE>";
+		case 'm':	return "<MOVE>";
+		case 'M':	return "<MOVEP>";
 		default:
 			return 0;
 	}
@@ -360,7 +361,7 @@ expr_move (sblock_t *sblock, expr_t *e, operand_t **op)
 	dst = *op;
 	sblock = statement_subexpr (sblock, src_expr, &src);
 	sblock = statement_subexpr (sblock, size_expr, &size);
-	s = new_statement ("<MOVE>", e);
+	s = new_statement (convert_op (e->e.expr.op), e);
 	s->opa = src;
 	s->opb = size;
 	s->opc = dst;
@@ -547,6 +548,7 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 		case PAS:
 			sblock = expr_assign (sblock, e, op);
 			break;
+		case 'm':
 		case 'M':
 			sblock = expr_move (sblock, e, op);
 			break;
@@ -900,6 +902,7 @@ statement_expr (sblock_t *sblock, expr_t *e)
 		case PAS:
 			sblock = expr_assign (sblock, e, 0);
 			break;
+		case 'm':
 		case 'M':
 			sblock = expr_move (sblock, e, 0);
 			break;

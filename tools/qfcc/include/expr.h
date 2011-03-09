@@ -516,9 +516,11 @@ expr_t *new_param_expr (struct type_s *type, int num);
 	\param e1		Destination of move.
 	\param e2		Source of move.
 	\param type		type giving size of move.
+	\param indirect	Move uses dereferenced pointers.
 	\return			A new expression representing the move.
 */
-expr_t *new_move_expr (expr_t *e1, expr_t *e2, struct type_s *type);
+expr_t *new_move_expr (expr_t *e1, expr_t *e2, struct type_s *type,
+					   int indirect);
 
 /**	Convert a name to an expression of the appropriate type.
 
