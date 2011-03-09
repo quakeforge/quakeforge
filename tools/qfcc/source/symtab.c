@@ -208,6 +208,7 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 		}
 	}
 	if (sym->s.def && sym->s.def->external && storage != st_extern) {
+		//FIXME this really is not the right way
 		relocs = sym->s.def->relocs;
 		free_def (sym->s.def);
 		sym->s.def = 0;

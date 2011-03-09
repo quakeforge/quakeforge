@@ -341,16 +341,21 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 	type_t     *type = def->type->t.fldptr.type;
 	def_t      *field_def;
 	symbol_t   *field_sym;
+	reloc_t    *relocs = 0;
 
 	field_sym = symtab_lookup (pr.entity_fields, def->name);
 	if (!field_sym)
 		field_sym = new_symbol_type (def->name, type);
 	if (field_sym->s.def && field_sym->s.def->external) {
+		//FIXME this really is not the right way
+		relocs = field_sym->s.def->relocs;
 		free_def (field_sym->s.def);
 		field_sym->s.def = 0;
 	}
-	if (!field_sym->s.def)
+	if (!field_sym->s.def) {
 		field_sym->s.def = new_def (def->name, type, pr.entity_data, storage);
+		field_sym->s.def->relocs = relocs;
+	}
 	field_def = field_sym->s.def;
 	if (!field_sym->table)
 		symtab_addsymbol (pr.entity_fields, field_sym);
@@ -372,6 +377,8 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 				storage_class_t storage)
 {
 	symbol_t   *check = symtab_lookup (current_symtab, sym->name);
+	reloc_t    *relocs = 0;
+
 	if (!type) {
 		warning (0, "type for %s defaults to %s", sym->name,
 				 type_default->name);
@@ -410,11 +417,15 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 		return;
 	}
 	if (sym->s.def && sym->s.def->external) {
+		//FIXME this really is not the right way
+		relocs = sym->s.def->relocs;
 		free_def (sym->s.def);
 		sym->s.def = 0;
 	}
-	if (!sym->s.def)
+	if (!sym->s.def) {
 		sym->s.def = new_def (sym->name, type, space, storage);
+		sym->s.def->relocs = relocs;
+	}
 	if (type == &type_vector && options.code.vector_components)
 		init_vector_components (sym, 0);
 	if (type->type == ev_field && storage != st_local)

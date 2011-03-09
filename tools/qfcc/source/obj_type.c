@@ -262,6 +262,7 @@ qfo_encode_type (type_t *type)
 	};
 
 	if (type->type_def && type->type_def->external) {
+		//FIXME relocs
 		free_def (type->type_def);
 		type->type_def = 0;
 	}

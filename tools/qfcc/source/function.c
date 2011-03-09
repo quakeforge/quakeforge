@@ -500,6 +500,7 @@ void
 make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
 			   storage_class_t storage)
 {
+	reloc_t    *relocs = 0;
 	if (sym->sy_type != sy_func)
 		internal_error (0, "%s is not a function", sym->name);
 	if (storage == st_extern && sym->s.func)
@@ -510,11 +511,15 @@ make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
 	}
 	if (sym->s.func->def && sym->s.func->def->external
 		&& storage != st_extern) {
+		//FIXME this really is not the right way
+		relocs = sym->s.func->def->relocs;
 		free_def (sym->s.func->def);
 		sym->s.func->def = 0;
 	}
-	if (!sym->s.func->def)
+	if (!sym->s.func->def) {
 		sym->s.func->def = new_def (sym->name, sym->type, space, storage);
+		sym->s.func->def->relocs = relocs;
+	}
 }
 
 void
