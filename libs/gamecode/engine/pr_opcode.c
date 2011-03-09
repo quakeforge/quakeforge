@@ -1020,7 +1020,7 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 PROG_VERSION,
 	},
 
-	{"<MOVE>", "move", OP_MOVE, true,
+	{"<MOVE>", "movei", OP_MOVEI, true,
 	 ev_void, ev_short, ev_void,
 	 PROG_VERSION,
 	 "%Ga, %sb, %gc",
@@ -1234,7 +1234,7 @@ PR_Check_Opcodes (progs_t *pr)
 					check_global (pr, st, op, op->type_b, st->b, 1);
 					check_global (pr, st, op, op->type_c, st->c, 1);
 					break;
-				case OP_MOVE:
+				case OP_MOVEI:
 					check_global_size (pr, st, op, st->b, st->a);
 					check_global_size (pr, st, op, st->b, st->c);
 					break;

@@ -1043,7 +1043,7 @@ op_call:
 				OPC.integer_var = OPA.integer_var != OPB.integer_var;
 				break;
 
-			case OP_MOVE:
+			case OP_MOVEI:
 				memmove (&OPC, &OPA, st->b * 4);
 				break;
 			case OP_MOVEP:
