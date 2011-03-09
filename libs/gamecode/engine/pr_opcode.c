@@ -1030,6 +1030,11 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 PROG_VERSION,
 	 "%Ga, %Gb, %Gc",
 	},
+	{"<MOVEP>", "movepi", OP_MOVEPI, true,
+	 ev_pointer, ev_short, ev_pointer,
+	 PROG_VERSION,
+	 "%Ga, %Gb, %Gc",
+	},
 
 	// end of table
 	{0},

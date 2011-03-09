@@ -257,6 +257,7 @@ typedef enum {
 
 	OP_MOVEI,
 	OP_MOVEP,
+	OP_MOVEPI,
 
 	OP_SHL_U,
 	OP_SHR_U,

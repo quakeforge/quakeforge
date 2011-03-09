@@ -1055,6 +1055,15 @@ op_call:
 						 pr->pr_globals + OPA.integer_var,
 						 OPB.uinteger_var * 4);
 				break;
+			case OP_MOVEPI:
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheckSize (pr, OPC.integer_var, st->b);
+					PR_BoundsCheckSize (pr, OPA.integer_var, st->b);
+				}
+				memmove (pr->pr_globals + OPC.integer_var,
+						 pr->pr_globals + OPA.integer_var,
+						 st->b * 4);
+				break;
 
 // LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
 /*
