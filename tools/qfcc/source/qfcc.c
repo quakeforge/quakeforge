@@ -202,29 +202,9 @@ WriteProgs (dprograms_t *progs, int size)
 	for (i = 0; i < progs->numglobals; i++)
 		globals[i].integer_var = LittleLong (globals[i].integer_var);
 
-#if 0 //FIXME
-	if (options.verbosity >= 0) {
-		if (!big_function)
-			big_function = "";
-		printf ("%6i strofs\n", pr.strings->size);
-		printf ("%6i statements\n", pr.code->size);
-		printf ("%6i functions\n", pr.num_functions);
-		printf ("%6i global defs\n", numglobaldefs);
-		printf ("%6i fielddefs\n", numfielddefs);
-		printf ("%6i globals\n", pr.data->size);
-		printf ("    %6i near globals\n", pr.near_data->size);
-		printf ("        %6i locals size (%s)\n", num_localdefs, big_function);
-		printf ("    %6i far globals\n", pr.far_data->size);
-		printf ("%6i entity fields\n", pr.entity_data->size);
-	}
-#endif
-
 	if (!(h = Qopen (options.output_file, "wb")))
 		Sys_Error ("%s: %s\n", options.output_file, strerror(errno));
 	Qwrite (h, progs, size);
-
-//	if (options.verbosity >= -1)
-//		printf ("%6i TOTAL SIZE\n", (int) Qtell (h));
 
 	Qclose (h);
 
