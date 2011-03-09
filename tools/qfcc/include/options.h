@@ -89,6 +89,7 @@ typedef struct {
 	int				strip_path;		// number of leading path elements to strip
 									// from source file names
 	const char     *output_file;
+	const char     *debug_file;
 } options_t;
 
 extern options_t options;

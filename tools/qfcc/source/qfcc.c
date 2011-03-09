@@ -95,8 +95,6 @@ options_t   options;
 const char *sourcedir;
 const char *progs_src;
 
-char        debugfile[1024];
-
 pr_info_t   pr;
 
 #ifdef _WIN32
@@ -270,8 +268,8 @@ WriteSym (pr_debug_header_t *sym, int size)
 		locals[i].s_name = LittleLong (locals[i].s_name);
 	}
 
-	if (!(h = Qopen (debugfile, "wb")))
-		Sys_Error ("%s: %s\n", debugfile, strerror(errno));
+	if (!(h = Qopen (options.debug_file, "wb")))
+		Sys_Error ("%s: %s\n", options.debug_file, strerror(errno));
 	Qwrite (h, sym, size);
 
 	Qclose (h);
@@ -307,22 +305,26 @@ static void
 setup_sym_file (const char *output_file)
 {
 	if (options.code.debug) {
-		char       *s;
+		dstring_t  *str = dstring_strdup (output_file);
+		const char *s;
+		int         offset;
 
-		strcpy (debugfile, output_file);
-
-		s = debugfile + strlen (debugfile);
-		while (s-- > debugfile) {
+		s = str->str + strlen (str->str);
+		while (s-- > str->str) {
 			if (*s == '.')
 				break;
 			if (*s == '/' || *s == '\\') {
-				s = debugfile + strlen (debugfile);
+				s = str->str + strlen (str->str);
 				break;
 			}
 		}
-		strcpy (s, ".sym");
+		offset = s - str->str;
+		str->size = offset + 5;
+		dstring_adjust (str);
+		strcpy (str->str + offset, ".sym");
+		options.debug_file = save_string (str->str);
 		if (options.verbosity >= 1)
-			printf ("debug file: %s\n", debugfile);
+			printf ("debug file: %s\n", options.debug_file);
 	}
 }
 
@@ -381,7 +383,7 @@ finish_link (void)
 		int         str;
 
 		setup_sym_file (options.output_file);
-		str = linker_add_string (debugfile);
+		str = linker_add_string (options.debug_file);
 		linker_add_def (".debug_file", &type_string, flags, str);
 	}
 
