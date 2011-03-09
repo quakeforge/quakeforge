@@ -99,15 +99,6 @@ char        debugfile[1024];
 
 pr_info_t   pr;
 
-ddef_t      *globals;
-int         numglobaldefs;
-
-int         num_localdefs;
-const char *big_function = 0;
-
-ddef_t      *fields;
-int         numfielddefs;
-
 #ifdef _WIN32
 char *
 fix_backslash (char *path)
@@ -161,9 +152,6 @@ InitData (void)
 	pr.entity_data = defspace_new ();
 	pr.entity_fields = new_symtab (0, stab_global);
 	pr.entity_fields->space = pr.entity_data;;
-
-	numglobaldefs = 1;
-	numfielddefs = 1;
 }
 
 static int
