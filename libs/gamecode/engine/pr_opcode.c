@@ -1025,7 +1025,7 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 PROG_VERSION,
 	 "%Ga, %sb, %gc",
 	},
-	{"<MOVE>", "movep", OP_MOVEP, true,
+	{"<MOVEP>", "movep", OP_MOVEP, true,
 	 ev_pointer, ev_integer, ev_pointer,
 	 PROG_VERSION,
 	 "%Ga, %Gb, %Gc",
