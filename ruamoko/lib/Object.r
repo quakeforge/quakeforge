@@ -114,7 +114,7 @@ BOOL (id object) object_is_meta_class = #0;
 	return NO;
 }
 
-+ (BOOL) conformsToProtocol: (Protocol)aProtocol = #0;
++ (BOOL) conformsToProtocol: (Protocol *)aProtocol = #0;
 
 + (BOOL) instancesRespondToSelector: (SEL)aSelector
 {

@@ -60,7 +60,7 @@
 #endif	// invocations
 + (BOOL) instancesRespondToSelector: (SEL)aSelector;
 + (BOOL) respondsToSelector: (SEL)aSelector;
-+ (BOOL) conformsToProtocol: (Protocol)aProtocol;
++ (BOOL) conformsToProtocol: (Protocol *)aProtocol;
 + (BOOL) isKindOfClass: (Class)aClass;
 + (void) poseAsClass: (Class)aClass;
 + (Class) superclass;
