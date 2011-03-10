@@ -621,8 +621,7 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far)
 	finish_function (sym->s.func);
 
 	// for debug info
-	//build_scope (f, f->def, sym->params);
-	//flush_scope (f->scope, 1);
+	build_scope (sym, current_symtab);
 	return sym->s.func;
 }
 
