@@ -628,6 +628,7 @@ expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 		s = new_statement ("=", e);
 		s->opa = src;
 		s->opc = *op;
+		sblock_add_statement (sblock, s);
 	} else {
 		src->type = low_level_type (e->e.expr.type);
 		*op = src;
