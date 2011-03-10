@@ -217,6 +217,18 @@ free_sblock (sblock_t *sblock)
 	free_sblocks = sblock;
 }
 
+static operand_t *
+short_operand (short short_val)
+{
+	operand_t  *op = new_operand (op_value);
+
+	op->type = ev_short;
+	op->o.value = calloc (1, sizeof (ex_value_t));
+	op->o.value->type = ev_short;
+	op->o.value->v.short_val = short_val;
+	return op;
+}
+
 static const char *
 convert_op (int op)
 {
@@ -468,6 +480,27 @@ expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 	return sblock;
 }
 
+static statement_t *
+lea_statement (operand_t *pointer, operand_t *offset, expr_t *e)
+{
+	statement_t *s = new_statement ("&", e);
+	s->opa = pointer;
+	s->opb = offset;
+	s->opc = new_operand (op_temp);
+	s->opc->type = ev_pointer;
+	return s;
+}
+
+static statement_t *
+address_statement (operand_t *value, expr_t *e)
+{
+	statement_t *s = new_statement ("&", e);
+	s->opa = value;
+	s->opc = new_operand (op_temp);
+	s->opc->type = ev_pointer;
+	return s;
+}
+
 static sblock_t *
 expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 {
@@ -491,23 +524,22 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 			(*op)->type = low_level_type (type);
 		}
 		if (low_level_type (type) == ev_void) {
-			operand_t  *addr;
-			addr = new_operand (op_temp);
-			addr->type = ev_pointer;
-			s = new_statement ("&", e);
-			s->opa = ptr;
-			s->opb = offs;
-			s->opc = addr;
+			operand_t  *src_addr;
+			operand_t  *dst_addr;
+
+			s = lea_statement (ptr, offs, e);
+			src_addr = s->opc;
 			sblock_add_statement (sblock, s);
-			s = new_statement ("<MOVE>", deref);
-			s->opa = addr;
-			//FIXME make convenience routines
-			s->opb = new_operand (op_value);
-			s->opb->type = ev_short;
-			s->opb->o.value = calloc (1, sizeof (ex_value_t));
-			s->opb->o.value->type = ev_short;
-			s->opb->o.value->v.short_val = type_size (type);
-			s->opc = *op;
+
+			//FIXME an address immediate would be nice.
+			s = address_statement (*op, e);
+			dst_addr = s->opc;
+			sblock_add_statement (sblock, s);
+
+			s = new_statement ("<MOVEP>", deref);
+			s->opa = src_addr;
+			s->opb = short_operand (type_size (type));
+			s->opc = dst_addr;
 			sblock_add_statement (sblock, s);
 		} else {
 			s = new_statement (".", deref);
