@@ -2519,7 +2519,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 		if (is_struct (get_type (e1))) {
 			e1 = address_expr (e1, 0, 0);
 			e2 = address_expr (e2, 0, 0);
-			return new_move_expr (e1, e2, get_type (e2), 1);
+			return new_move_expr (e1, e2, t1, 1);
 		}
 		if (e1->type == ex_expr) {
 			if (get_type (e1->e.expr.e1) == &type_entity) {
