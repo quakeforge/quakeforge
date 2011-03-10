@@ -627,6 +627,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
 				OPC.integer_var = &ed->v[OPB.integer_var] - pr->pr_globals;
 				break;
+			case OP_ADDRESS_VOID:
 			case OP_ADDRESS_F:
 			case OP_ADDRESS_V:
 			case OP_ADDRESS_Q:
