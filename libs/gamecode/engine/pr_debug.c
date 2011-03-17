@@ -661,7 +661,10 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 			dsprintf (line, "%d", val->integer_var);
 			break;
 		default:
-			dsprintf (line, "bad type %i", type);
+			//dsprintf (line, "bad type %i", type);
+			dsprintf (line, "<%x %x %x %x>",
+					  val[0].integer_var, val[1].integer_var,
+					  val[2].integer_var, val[3].integer_var);
 			break;
 	}
 
