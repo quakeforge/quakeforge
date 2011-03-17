@@ -737,7 +737,7 @@ CL_ParseServerData (void)
 	// allow 2.2 and 2.29 demos to play
 	protover = MSG_ReadLong (net_message);
 	if (protover != PROTOCOL_VERSION
-		&& !(cls.demoplayback && (protover <= 26 && protover >= 28)))
+		&& !(cls.demoplayback && (protover <= 26 || protover >= 28)))
 		Host_Error ("Server returned version %i, not %i\nYou probably "
 					"need to upgrade.\nCheck http://www.quakeworld.net/",
 					protover, PROTOCOL_VERSION);

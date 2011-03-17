@@ -494,7 +494,7 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 
 	if (get_type (e1) != &type_quaternion) {
 
-		if (op != '*' || op != '/')
+		if (op != '*' && op != '/')
 			return error (e1, "invalid operand for quaternion");
 
 		if (op == '*') {

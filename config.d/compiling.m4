@@ -177,6 +177,7 @@ if test "x$check_pipe" = xyes; then
 	QF_CC_OPTION(-pipe)
 fi
 QF_CC_OPTION(-Wsign-compare)
+QF_CC_OPTION(-Wlogical-op)
 QF_CC_OPTION_TEST([-fvisibility=hidden], [VISIBILITY=-fvisibility=hidden])
 
 dnl QuakeForge uses lots of BCPL-style (//) comments, which can cause problems
