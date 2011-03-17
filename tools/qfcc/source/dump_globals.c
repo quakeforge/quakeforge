@@ -213,11 +213,11 @@ dump_functions (progs_t *pr)
 			pr_auxfunction_t *aux = pr->auxfunction_map[i];
 			if (!aux)
 				continue;
-			printf ("        %d %s:%d %d %d %d %s\n", aux->function,
+			printf ("        %d %s:%d %d %d %d %x\n", aux->function,
 					PR_GetString (pr, func->s_file), aux->source_line,
 					aux->line_info,
 					aux->local_defs, aux->num_locals,
-					pr_type_name[aux->return_type]);
+					aux->return_type);
 			for (j = 0; j < (int)aux->num_locals; j++)
 				dump_def (pr, pr->local_defs + aux->local_defs + j, 1);
 		}
