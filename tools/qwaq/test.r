@@ -34,7 +34,8 @@
 -run
 {
 	print ("Hello world\n");
-	printf ("%i %p\n", self, &self.x);
+	printf ("%i %p [%s %s]\n", self, &self.x, [self description],
+			__PRETTY_FUNCTION__);
 	return self;
 }
 
