@@ -320,6 +320,7 @@ signal_hook (int sig, void *data)
 		}
 	}
 	PR_DumpState (pr);
+	fflush (stdout);
 	return 0;
 }
 
