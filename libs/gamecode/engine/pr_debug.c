@@ -877,6 +877,9 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						break;
 					case 'F':
 						str = global_string (pr, opval, optype, contents & 1);
+						if (G_FUNCTION (pr, opval) >= 0
+							&& G_FUNCTION (pr, opval)
+								< pr->progs->numfunctions)
 						call_func = pr->pr_functions + G_FUNCTION (pr, opval);
 						break;
 					case 'P':
