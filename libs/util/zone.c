@@ -90,6 +90,20 @@ struct memzone_s
 };
 
 
+static int
+z_block_size (memblock_t *block)
+{
+	return block->size - sizeof (memblock_t) - 4;
+}
+
+static int
+z_offset (memzone_t *zone, memblock_t *block)
+{
+	int         offset = ((byte *) (block + 1) - (byte *) zone);
+	
+	return offset / zone->ele_size + zone->offset;
+}
+
 VISIBLE void
 Z_ClearZone (memzone_t *zone, int size, int zone_offset, int ele_size)
 {
@@ -125,8 +139,16 @@ Z_Free (memzone_t *zone, void *ptr)
 		Sys_Error ("Z_Free: NULL pointer");
 
 	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
-	if (block->id != ZONEID || block->id2 != ZONEID)
+	if (((byte *) block < (byte *) zone)
+		|| (((byte *) block) >= (byte *) zone + zone->size))
+		Sys_Error ("Z_Free: freed a pointer outside of the zone: %x",
+				   z_offset (zone, block));
+	if (block->id != ZONEID || block->id2 != ZONEID) {
+		Sys_Printf ("bad pointer %x\n", z_offset (zone, block));
+		Z_Print (zone);
+		fflush (stdout);
 		Sys_Error ("Z_Free: freed a pointer without ZONEID");
+	}
 	if (block->tag == 0)
 		Sys_Error ("Z_Free: freed a freed pointer");
 
@@ -258,20 +280,6 @@ Z_Realloc (memzone_t *zone, void *ptr, int size)
 		memmove (ptr, old_ptr, min (old_size, size));
 
 	return ptr;
-}
-
-static int
-z_block_size (memblock_t *block)
-{
-	return block->size - sizeof (memblock_t) - 4;
-}
-
-static int
-z_offset (memzone_t *zone, memblock_t *block)
-{
-	int         offset = ((byte *) (block + 1) - (byte *) zone);
-	
-	return offset / zone->ele_size + zone->offset;
 }
 
 void
