@@ -928,23 +928,23 @@ void
 class_check_ivars (class_t *class, symtab_t *ivars)
 {
 	symbol_t   *civ, *iv;
+	int         missmatch = 0;
 
-	if (!class->ivars != !ivars)
-		goto missmatch;
-	if (ivars) {
+	if (!class->ivars != !ivars) {
+		missmatch = 1;
+	} else if (ivars) {
 		for (civ = class->ivars->symbols, iv = ivars->symbols;
 			 civ && iv; civ = civ->next, iv = iv->next) {
-			if (!compare_symbols (civ, iv))
-				goto missmatch;
+			if (!compare_symbols (civ, iv)) {
+				missmatch = 1;
+				break;
+			}
 		}
 	}
-	class->ivars = ivars;
-	return;
-missmatch:
 	//FIXME right option?
-	if (options.warnings.interface_check)
+	if (missmatch && options.warnings.interface_check)
 		warning (0, "instance variable missmatch for %s", class->name);
-	class->ivars = ivars;
+	class_add_ivars (class, ivars);
 }
 
 category_t *
