@@ -888,7 +888,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	}
 
 	for (i = 0; i < qfo->spaces[qfo_entity_space].num_defs; i++) {
-		convert_def (qfo, qfo->spaces[qfo_near_data_space].defs + i,
+		convert_def (qfo, qfo->spaces[qfo_entity_space].defs + i,
 					 fielddefs + i);
 	}
 
