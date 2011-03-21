@@ -355,6 +355,7 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 	if (!field_sym->s.def) {
 		field_sym->s.def = new_def (def->name, type, pr.entity_data, storage);
 		field_sym->s.def->relocs = relocs;
+		field_sym->s.def->nosave = 1;
 	}
 	field_def = field_sym->s.def;
 	if (!field_sym->table)
