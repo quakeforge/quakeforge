@@ -846,12 +846,14 @@ init_types (void)
 	make_structure (0, 'u', param_struct, &type_param);
 	make_structure (0, 's', vector_struct, &type_vector);
 	type_vector.type = ev_vector;
+	type_vector.ty = ty_none;
 
 	if (options.traditional)
 		return;
 
 	make_structure (0, 's', quaternion_struct, &type_quaternion);
 	type_quaternion.type = ev_quat;
+	type_quaternion.ty = ty_none;
 }
 
 void
