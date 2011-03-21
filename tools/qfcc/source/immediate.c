@@ -99,7 +99,7 @@ imm_get_hash (void *_imm, void *_tab)
 	} else if (tab == &entity_imm_defs) {
 		return imm->i.integer_val;
 	} else if (tab == &field_imm_defs) {
-		return imm->i.integer_val;
+		return Hash_Buffer (&imm->i.pointer, sizeof (&imm->i.pointer));
 	} else if (tab == &func_imm_defs) {
 		return imm->i.integer_val;
 	} else if (tab == &pointer_imm_defs) {
@@ -132,7 +132,8 @@ imm_compare (void *_imm1, void *_imm2, void *_tab)
 	} else if (tab == &entity_imm_defs) {
 		return imm1->i.entity_val == imm2->i.entity_val;
 	} else if (tab == &field_imm_defs) {
-		return imm1->i.field_val == imm2->i.field_val;
+		return !memcmp (&imm1->i.pointer, &imm2->i.pointer,
+						sizeof (imm1->i.pointer));
 	} else if (tab == &func_imm_defs) {
 		return imm1->i.func_val == imm2->i.func_val;
 	} else if (tab == &pointer_imm_defs) {
