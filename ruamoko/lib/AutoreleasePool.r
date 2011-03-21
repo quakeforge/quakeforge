@@ -24,7 +24,7 @@
 
 + (void) addObject: (id)anObject
 {
-	if (!poolStack || [poolStack count])
+	if (!poolStack || ![poolStack count])
 		[[AutoreleasePool alloc] init];
 
 	[[poolStack lastObject] addObject: anObject];
