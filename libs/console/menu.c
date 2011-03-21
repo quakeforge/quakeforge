@@ -86,8 +86,27 @@ static hashtab_t *menu_hash;
 static func_t   menu_init;
 static func_t   menu_quit;
 static func_t   menu_draw_hud;
+static func_t   menu_pre;
 static func_t   menu_post;
 static const char *top_menu;
+
+typedef struct menu_func_s {
+	const char *name;
+	func_t     *func;
+} menu_func_t;
+
+static menu_func_t menu_functions[] = {
+	{"menu_init", &menu_init},
+	{"menu_draw_hud", &menu_draw_hud},
+	{"menu_pre", &menu_pre},
+	{"menu_post", &menu_post},
+};
+
+static void
+run_menu_pre (void)
+{
+	PR_ExecuteProgram (&menu_pr_state, menu_pre);
+}
 
 static void
 run_menu_post (void)
@@ -101,16 +120,16 @@ menu_resolve_globals (progs_t *pr)
 	const char *sym;
 	ddef_t     *def;
 	dfunction_t *f;
+	size_t      i;
 
-	if (!(f = PR_FindFunction (pr, sym = "menu_init")))
-		goto error;
-	menu_init = (func_t) (f - menu_pr_state.pr_functions);
-	if (!(f = PR_FindFunction (pr, sym = "menu_draw_hud")))
-		goto error;
-	menu_draw_hud = (func_t) (f - pr->pr_functions);
-	if (!(f = PR_FindFunction (pr, sym = "menu_post")))
-		goto error;
-	menu_post = (func_t) (f - pr->pr_functions);
+	for (i = 0;
+		 i < sizeof (menu_functions) / sizeof (menu_functions[0]); i++) {
+		sym = menu_functions[i].name;
+		if (!(f = PR_FindFunction (pr, sym)))
+			goto error;
+		*menu_functions[i].func = (func_t) (f - menu_pr_state.pr_functions);
+	}
+
 	if (!(def = PR_FindGlobal (pr, sym = "time")))
 		goto error;
 	menu_pr_state.globals.time = &G_FLOAT (pr, def->ofs);
@@ -351,6 +370,7 @@ bi_Menu_SelectMenu (progs_t *pr)
 		key_dest = key_menu;
 		game_target = IMT_CONSOLE;
 		if (menu->enter_hook) {
+			run_menu_pre ();
 			PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
 			run_menu_post ();
 		}
@@ -408,6 +428,7 @@ quit_f (void)
 	int         ret;
 
 	if (confirm_quit->int_val && menu_quit) {
+		run_menu_pre ();
 		PR_ExecuteProgram (&menu_pr_state, menu_quit);
 		ret = R_INT (&menu_pr_state);
 		run_menu_post ();
@@ -515,6 +536,7 @@ Menu_Load (void)
 		Con_SetOrMask (0x00);
 		return;
 	}
+	run_menu_pre ();
 	RUA_Cbuf_SetCbuf (&menu_pr_state, con_data.cbuf);
 	InputLine_Progs_SetDraw (&menu_pr_state, C_DrawInputLine);
 	PR_ExecuteProgram (&menu_pr_state, menu_init);
@@ -542,6 +564,7 @@ Menu_Draw (view_t *view)
 	if (menu->draw) {
 		int         ret;
 
+		run_menu_pre ();
 		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = x;
 		P_INT (&menu_pr_state, 1) = y;
@@ -574,6 +597,7 @@ Menu_Draw (view_t *view)
 		return;
 	item = menu->items[menu->cur_item];
 	if (menu->cursor) {
+		run_menu_pre ();
 		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = x + item->x;
 		P_INT (&menu_pr_state, 1) = y + item->y;
@@ -588,6 +612,7 @@ Menu_Draw (view_t *view)
 void
 Menu_Draw_Hud (view_t *view)
 {
+	run_menu_pre ();
 	*menu_pr_state.globals.time = *con_data.realtime;
 
 	PR_ExecuteProgram (&menu_pr_state, menu_draw_hud);
@@ -603,6 +628,7 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 	if (!menu)
 		return;
 	if (menu->keyevent) {
+		run_menu_pre ();
 		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = key;
 		P_INT (&menu_pr_state, 1) = unicode;
@@ -614,6 +640,7 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 			return;
 	} else if (menu->items && menu->items[menu->cur_item]->func
 			   && menu->items[menu->cur_item]->allkeys) {
+		run_menu_pre ();
 		PR_PushFrame (&menu_pr_state);
 		item = menu->items[menu->cur_item];
 		PR_RESET_PARAMS (&menu_pr_state);
@@ -645,6 +672,7 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 			{
 				item = menu->items[menu->cur_item];
 				if (item->func) {
+					run_menu_pre ();
 					PR_PushFrame (&menu_pr_state);
 					PR_RESET_PARAMS (&menu_pr_state);
 					P_STRING (&menu_pr_state, 0) =
@@ -656,6 +684,7 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 				} else {
 					menu = item;
 					if (menu->enter_hook) {
+						run_menu_pre ();
 						PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
 						run_menu_post ();
 					}
@@ -679,6 +708,7 @@ Menu_Enter ()
 	game_target = IMT_CONSOLE;
 	menu = Hash_Find (menu_hash, top_menu);
 	if (menu && menu->enter_hook) {
+		run_menu_pre ();
 		PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
 		run_menu_post ();
 	}
@@ -689,6 +719,7 @@ Menu_Leave ()
 {
 	if (menu) {
 		if (menu->leave_hook) {
+			run_menu_pre ();
 			PR_ExecuteProgram (&menu_pr_state, menu->leave_hook);
 			run_menu_post ();
 		}

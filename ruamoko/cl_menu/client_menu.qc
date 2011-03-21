@@ -585,7 +585,15 @@ void () menu_draw_hud =
 {
 };
 
+@static AutoreleasePool *autorelease_pool;
+
+void menu_pre ()
+{
+	autorelease_pool = [[AutoreleasePool alloc] init];
+}
+
 void menu_post ()
 {
-	[AutoreleasePool release];
+	[autorelease_pool release];
+	autorelease_pool = nil;
 }
