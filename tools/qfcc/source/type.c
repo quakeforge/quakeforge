@@ -164,7 +164,7 @@ free_type (type_t *type)
 			free_type (type->t.func.type);
 			break;
 		case ev_invalid:
-			if (type->ty == ty_array)
+			if (type->meta == ty_array)
 				free_type (type->t.array.type);
 			break;
 	}
@@ -198,7 +198,7 @@ append_type (type_t *type, type_t *new)
 				t = &(*t)->t.func.type;
 				break;
 			case ev_invalid:
-				if ((*t)->ty == ty_array)
+				if ((*t)->meta == ty_array)
 					t = &(*t)->t.array.type;
 				else
 					internal_error (0, "append to object type");
@@ -214,9 +214,9 @@ types_same (type_t *a, type_t *b)
 {
 	int         i, count;
 
-	if (a->type != b->type || a->ty != b->ty)
+	if (a->type != b->type || a->meta != b->meta)
 		return 0;
-	switch (a->ty) {
+	switch (a->meta) {
 		case ty_none:
 			switch (a->type) {
 				case ev_field:
@@ -276,7 +276,7 @@ find_type (type_t *type)
 		return 0;
 
 	if (type->freeable) {
-		switch (type->ty) {
+		switch (type->meta) {
 			case ty_none:
 				switch (type->type) {
 					case ev_field:
@@ -368,7 +368,7 @@ array_type (type_t *aux, int size)
 	else
 		new = new_type ();
 	new->type = ev_invalid;
-	new->ty = ty_array;
+	new->meta = ty_array;
 	new->t.array.type = aux;
 	new->t.array.size = size;
 	if (aux)
@@ -387,7 +387,7 @@ based_array_type (type_t *aux, int base, int top)
 	else
 		new = new_type ();
 	new->type = ev_invalid;
-	new->ty = ty_array;
+	new->meta = ty_array;
 	new->t.array.type = aux;
 	new->t.array.base = base;
 	new->t.array.size = top - base + 1;
@@ -442,7 +442,7 @@ print_type_str (dstring_t *str, type_t *type)
 			dasprintf (str, ")");
 			break;
 		case ev_invalid:
-			switch (type->ty) {
+			switch (type->meta) {
 				case ty_class:
 					dasprintf (str, " %s", type->t.class->name);
 					break;
@@ -523,7 +523,7 @@ encode_struct (dstring_t *encoding, type_t *type)
 
 	if (type->name)
 		name = type->name;
-	if (type->ty == ty_union)
+	if (type->meta == ty_union)
 		su = '-';
 	else
 		su = '=';
@@ -597,7 +597,7 @@ encode_type (dstring_t *encoding, type_t *type)
 			dasprintf (encoding, "s");
 			break;
 		case ev_invalid:
-			switch (type->ty) {
+			switch (type->meta) {
 				case ty_class:
 					encode_class (encoding, type);
 					break;
@@ -631,7 +631,7 @@ encode_type (dstring_t *encoding, type_t *type)
 int
 is_enum (type_t *type)
 {
-	if (type->type == ev_invalid && type->ty == ty_enum)
+	if (type->type == ev_invalid && type->meta == ty_enum)
 		return 1;
 	return 0;
 }
@@ -670,7 +670,7 @@ int
 is_struct (type_t *type)
 {
 	if (type->type == ev_invalid
-		&& (type->ty == ty_struct || type->ty == ty_union))
+		&& (type->meta == ty_struct || type->meta == ty_union))
 		return 1;
 	return 0;
 }
@@ -678,7 +678,7 @@ is_struct (type_t *type)
 int
 is_class (type_t *type)
 {
-	if (type->type == ev_invalid && type->ty == ty_class)
+	if (type->type == ev_invalid && type->meta == ty_class)
 		return 1;
 	return 0;
 }
@@ -686,7 +686,7 @@ is_class (type_t *type)
 int
 is_array (type_t *type)
 {
-	if (type->type == ev_invalid && type->ty == ty_array)
+	if (type->type == ev_invalid && type->meta == ty_array)
 		return 1;
 	return 0;
 }
@@ -709,7 +709,7 @@ type_assignable (type_t *dst, type_t *src)
 		return 1;
 	// pointer = array
 	if (dst->type == ev_pointer
-		&& src->type == ev_invalid && src->ty == ty_array) {
+		&& src->type == ev_invalid && src->meta == ty_array) {
 		if (dst->t.fldptr.type == src->t.array.type)
 			return 1;
 		return 0;
@@ -759,7 +759,7 @@ type_size (type_t *type)
 		case ev_type_count:
 			return pr_type_size[type->type];
 		case ev_invalid:
-			switch (type->ty) {
+			switch (type->meta) {
 				case ty_enum:
 					if (!type->t.symtab)
 						return 0;
@@ -846,14 +846,14 @@ init_types (void)
 	make_structure (0, 'u', param_struct, &type_param);
 	make_structure (0, 's', vector_struct, &type_vector);
 	type_vector.type = ev_vector;
-	type_vector.ty = ty_none;
+	type_vector.meta = ty_none;
 
 	if (options.traditional)
 		return;
 
 	make_structure (0, 's', quaternion_struct, &type_quaternion);
 	type_quaternion.type = ev_quat;
-	type_quaternion.ty = ty_none;
+	type_quaternion.meta = ty_none;
 }
 
 void

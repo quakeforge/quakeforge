@@ -466,7 +466,7 @@ transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
 	if (type->ty < 0)
 		return type->t.class;
 	type->encoding = linker_add_string (QFOSTR (qfo, type->encoding));
-	switch ((ty_type_e) type->ty) {
+	switch ((ty_meta_e) type->ty) {
 		case ty_none:
 			if (type->t.type == ev_func) {
 				int         count;

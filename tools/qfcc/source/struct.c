@@ -64,7 +64,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "type.h"
 
 static symbol_t *
-find_tag (ty_type_e ty, symbol_t *tag, type_t *type)
+find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
 {
 	const char *tag_name;
 	symbol_t   *sym;
@@ -80,9 +80,9 @@ find_tag (ty_type_e ty, symbol_t *tag, type_t *type)
 	}
 	sym = symtab_lookup (current_symtab, tag_name);
 	if (sym) {
-		if (sym->table == current_symtab && sym->type->ty != ty)
+		if (sym->table == current_symtab && sym->type->meta != meta)
 			error (0, "%s defined as wrong kind of tag", tag->name);
-		if (sym->type->ty == ty)
+		if (sym->type->meta == meta)
 			return sym;
 	}
 	sym = new_symbol (tag_name);
@@ -92,7 +92,7 @@ find_tag (ty_type_e ty, symbol_t *tag, type_t *type)
 		type->name = sym->name;
 	sym->type = type;
 	sym->type->type = ev_invalid;
-	sym->type->ty = ty;
+	sym->type->meta = meta;
 	sym->sy_type = sy_type;
 	return sym;
 }
@@ -100,12 +100,12 @@ find_tag (ty_type_e ty, symbol_t *tag, type_t *type)
 symbol_t *
 find_struct (int su, symbol_t *tag, type_t *type)
 {
-	ty_type_e   ty = ty_struct;
+	ty_meta_e   meta = ty_struct;
 
 	if (su == 'u')
-		ty = ty_union;
+		meta = ty_union;
 
-	return find_tag (ty, tag, type);
+	return find_tag (meta, tag, type);
 }
 
 symbol_t *
@@ -265,8 +265,8 @@ emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 	name = save_string (name);
 	if (!type)
 		type = make_structure (0, su, defs, 0)->type;
-	if (!is_struct (type) || (su == 's' && type->ty != ty_struct)
-		|| (su == 'u' && type->ty != ty_union))
+	if (!is_struct (type) || (su == 's' && type->meta != ty_struct)
+		|| (su == 'u' && type->meta != ty_union))
 		internal_error (0, "structure %s type mismatch", name);
 	for (i = 0, field_sym = type->t.symtab->symbols; field_sym;
 		 i++, field_sym = field_sym->next) {

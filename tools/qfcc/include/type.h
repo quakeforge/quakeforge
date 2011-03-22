@@ -59,13 +59,13 @@ typedef enum {
 	ty_enum,
 	ty_array,
 	ty_class,
-} ty_type_e;
+} ty_meta_e;
 
 typedef struct type_s {
 	etype_t     type;		///< ev_invalid means structure/array etc
 	const char *name;
 	/// function/pointer/array/struct types are more complex
-	ty_type_e   ty;
+	ty_meta_e   meta;
 	union {
 		ty_func_t   func;
 		ty_fldptr_t fldptr;

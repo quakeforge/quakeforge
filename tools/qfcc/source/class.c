@@ -240,7 +240,7 @@ init_classes (void)
 {
 	symbol_t   *sym;
 
-	type_Class.ty = ty_class;
+	type_Class.meta = ty_class;
 	type_Class.t.class = &class_Class;
 	chain_type (&type_Class);
 	chain_type (&type_ClassPtr);
@@ -252,7 +252,7 @@ init_classes (void)
 	class_Class.methods = new_methodlist ();
 	symtab_addsymbol (pr.symtab, sym);
 
-	type_Protocol.ty = ty_class;
+	type_Protocol.meta = ty_class;
 	type_Protocol.t.class = &class_Protocol;
 	chain_type (&type_Protocol);
 	sym = make_structure (0, 's', protocol_ivars, &type_Protocol);

@@ -612,7 +612,7 @@ get_def_type (qfo_t *qfo, pointer_t type)
 	if (type < 0 || type >= qfo->spaces[qfo_type_space].data_size)
 		return ev_void;
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
-	switch ((ty_type_e)type_def->ty) {
+	switch ((ty_meta_e)type_def->ty) {
 		case ty_none:
 			// field, pointer and function types store their basic type in
 			// the same location.
@@ -637,7 +637,7 @@ get_type_size (qfo_t *qfo, pointer_t type)
 	if (type < 0 || type >= qfo->spaces[qfo_type_space].data_size)
 		return 1;
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
-	switch ((ty_type_e)type_def->ty) {
+	switch ((ty_meta_e)type_def->ty) {
 		case ty_none:
 			// field, pointer and function types store their basic type in
 			// the same location.

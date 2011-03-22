@@ -89,7 +89,7 @@ qfo_new_encoding (type_t *type, int size)
 	def->offset = defspace_alloc_loc (pr.type_data, size);
 
 	enc = D_POINTER (qfot_type_t, def);
-	enc->ty = type->ty;
+	enc->ty = type->meta;
 	enc->size = size;
 	ENC_STR (enc->encoding, type->encoding);
 	return def;
@@ -174,7 +174,7 @@ qfo_encode_struct (type_t *type)
 	int         offset;
 
 	sy = sy_var;
-	if (type->ty == ty_enum)
+	if (type->meta == ty_enum)
 		sy = sy_const;
 	if (!type->t.symtab) {
 		def = new_def (type->encoding, 0, pr.type_data, st_extern);
@@ -185,7 +185,7 @@ qfo_encode_struct (type_t *type)
 			continue;
 		num_fields++;
 	}
-	if (type->ty != ty_enum) {
+	if (type->meta != ty_enum) {
 		field_types = alloca (num_fields * sizeof (def_t *));
 		for (i = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {
 			if (sym->sy_type != sy)
@@ -268,8 +268,8 @@ qfo_encode_type (type_t *type)
 	}
 	if (type->type_def)
 		return type->type_def;
-	if (type->ty < 0 || type->ty > ty_class)
+	if (type->meta < 0 || type->meta > ty_class)
 		internal_error (0, "bad type meta type");
-	type->type_def = funcs[type->ty] (type);
+	type->type_def = funcs[type->meta] (type);
 	return type->type_def;
 }
