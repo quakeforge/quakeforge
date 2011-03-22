@@ -287,14 +287,15 @@ static void
 init_vector_components (symbol_t *vector_sym, int is_field)
 {
 	expr_t     *vector_expr;
-	expr_t     *expr = 0;
-	symbol_t   *sym;
 	int         i;
-	const char *name;
 	static const char *fields[] = { "x", "y", "z" };
 
 	vector_expr = new_symbol_expr (vector_sym);
 	for (i = 0; i < 3; i++) {
+		expr_t     *expr = 0;
+		symbol_t   *sym;
+		const char *name;
+
 		name = va ("%s_%s", vector_sym->name, fields[i]);
 		sym = symtab_lookup (current_symtab, name);
 		if (sym) {
@@ -311,6 +312,7 @@ init_vector_components (symbol_t *vector_sym, int is_field)
 							sym = 0;
 						} else {
 							expr->e.value.v.pointer.def = vector_sym->s.def;
+							expr->e.value.v.pointer.val = i;
 						}
 					}
 				}
