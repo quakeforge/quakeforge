@@ -559,6 +559,7 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 	}
 	sym->s.func->code = pr.code->size;
 
+	sym->s.func->s_file = pr.source_file;
 	if (options.code.debug) {
 		pr_lineno_t *lineno = new_lineno ();
 		sym->s.func->line_info = lineno - pr.linenos;
