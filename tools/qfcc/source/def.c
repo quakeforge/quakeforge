@@ -276,7 +276,7 @@ init_elements (struct def_s *def, expr_t *eles)
 				EMIT_STRING (def->space, g->string_var,
 							 c->e.value.v.string_val);
 			} else {
-				memcpy (g, &c->e, type_size (get_type (c)) * 4);
+				memcpy (g, &c->e.value.v, type_size (get_type (c)) * 4);
 			}
 		}
 	}
@@ -468,9 +468,11 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 				// FIXME offset pointers
 				D_INT (sym->s.def) = init->e.value.v.pointer.val;
 			} else {
-				memcpy (D_POINTER (void, sym->s.def), &init->e.value,
+				memcpy (D_POINTER (void, sym->s.def), &init->e.value.v,
 						type_size (type) * sizeof (pr_type_t));
 			}
+			sym->s.def->initialized = sym->s.def->constant = 1;
+			sym->s.def->nosave = 1;
 		}
 	}
 }
