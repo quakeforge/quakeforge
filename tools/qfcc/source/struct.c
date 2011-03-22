@@ -55,7 +55,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "diagnostic.h"
 #include "emit.h"
 #include "expr.h"
-#include "immediate.h"
 #include "obj_type.h"
 #include "qfcc.h"
 #include "reloc.h"

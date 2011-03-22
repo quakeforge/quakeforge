@@ -51,7 +51,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "diagnostic.h"
 #include "emit.h"
 #include "function.h"
-#include "immediate.h"
 #include "opcodes.h"
 #include "options.h"
 #include "qfcc.h"
@@ -59,6 +58,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "statements.h"
 #include "symtab.h"
 #include "type.h"
+#include "value.h"
 
 static def_t zero_def;
 

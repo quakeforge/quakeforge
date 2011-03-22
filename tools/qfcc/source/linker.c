@@ -64,7 +64,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "diagnostic.h"
 #include "emit.h"
 #include "expr.h"
-#include "immediate.h"
 #include "linker.h"
 #include "obj_file.h"
 #include "obj_type.h"

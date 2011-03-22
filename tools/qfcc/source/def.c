@@ -53,13 +53,13 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "diagnostic.h"
 #include "emit.h"
 #include "expr.h"
-#include "immediate.h"
 #include "options.h"
 #include "reloc.h"
 #include "strpool.h"
 #include "struct.h"
 #include "symtab.h"
 #include "type.h"
+#include "value.h"
 
 static def_t *free_defs;
 
@@ -414,6 +414,7 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 			error (0, "non-constant initializier");
 		} else {
 			sym->s.value = init->e.value;
+			convert_value (&sym->s.value, sym->type);
 		}
 		return;
 	}

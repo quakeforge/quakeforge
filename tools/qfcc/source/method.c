@@ -55,7 +55,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "defspace.h"
 #include "diagnostic.h"
 #include "emit.h"
-#include "immediate.h"
 #include "method.h"
 #include "options.h"
 #include "reloc.h"
@@ -63,6 +62,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "struct.h"
 #include "symtab.h"
 #include "type.h"
+#include "value.h"
 
 static hashtab_t *known_methods;
 

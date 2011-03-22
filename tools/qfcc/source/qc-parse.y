@@ -53,7 +53,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "emit.h"
 #include "expr.h"
 #include "function.h"
-#include "immediate.h"
 #include "method.h"
 #include "options.h"
 #include "qfcc.h"
@@ -63,6 +62,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "switch.h"
 #include "symtab.h"
 #include "type.h"
+#include "value.h"
 
 #define YYDEBUG 1
 #define YYERROR_VERBOSE 1

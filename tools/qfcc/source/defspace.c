@@ -49,7 +49,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "defspace.h"
 #include "diagnostic.h"
 #include "expr.h"
-#include "immediate.h"
 #include "options.h"
 #include "reloc.h"
 #include "strpool.h"

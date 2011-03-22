@@ -53,7 +53,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "emit.h"
 #include "expr.h"
 #include "function.h"
-#include "immediate.h"
 #include "obj_file.h"
 #include "obj_type.h"
 #include "options.h"
@@ -63,6 +62,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "strpool.h"
 #include "symtab.h"
 #include "type.h"
+#include "value.h"
 
 static int
 count_relocs (reloc_t *r)

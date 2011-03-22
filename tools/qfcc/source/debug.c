@@ -48,9 +48,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "debug.h"
 #include "diagnostic.h"
 #include "expr.h"
-#include "immediate.h"
 #include "qfcc.h"
 #include "strpool.h"
+#include "value.h"
 
 int         lineno_base;
 

@@ -1,7 +1,7 @@
 /*
-	immediate.c
+	value.c
 
-	shared immediate value handling
+	value handling
 
 	Copyright (C) 2002 Bill Currie <bill@taniwha.org>
 
@@ -50,13 +50,14 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "qfcc.h"
 #include "def.h"
 #include "defspace.h"
+#include "diagnostic.h"
 #include "emit.h"
 #include "expr.h"
-#include "immediate.h"
 #include "reloc.h"
 #include "strpool.h"
 #include "symtab.h"
 #include "type.h"
+#include "value.h"
 
 typedef struct {
 	def_t      *def;
@@ -154,6 +155,53 @@ int
 ReuseString (const char *str)
 {
 	return strpool_addstr (pr.strings, str);
+}
+
+static float
+value_as_float (ex_value_t *value)
+{
+	if (value->type == ev_integer)
+		return value->v.integer_val;
+	if (value->type == ev_short)
+		return value->v.short_val;
+	if (value->type == ev_float)
+		return value->v.float_val;
+	return 0;
+}
+
+static float
+value_as_int (ex_value_t *value)
+{
+	if (value->type == ev_integer)
+		return value->v.integer_val;
+	if (value->type == ev_short)
+		return value->v.short_val;
+	if (value->type == ev_float)
+		return value->v.float_val;
+	return 0;
+}
+
+void
+convert_value (ex_value_t *value, type_t *type)
+{
+	if (!is_scalar (type) || !is_scalar (ev_types[value->type])) {
+		error (0, "unable to convert non-scalar value");
+		return;
+	}
+	if (is_float (type)) {
+		float       val = value_as_float (value);
+		value->type = ev_float;
+		value->v.float_val = val;
+	} else if (type->type == ev_short) {
+		int         val = value_as_int (value);
+		value->type = ev_short;
+		value->v.short_val = val;
+	} else {
+		//FIXME handle enums separately?
+		int         val = value_as_int (value);
+		value->type = ev_integer;
+		value->v.integer_val = val;
+	}
 }
 
 def_t *

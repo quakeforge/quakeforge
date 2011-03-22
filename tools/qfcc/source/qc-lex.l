@@ -53,13 +53,13 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "diagnostic.h"
 #include "expr.h"
 #include "grab.h"
-#include "immediate.h"
 #include "options.h"
 #include "qfcc.h"
 #include "strpool.h"
 #include "struct.h"
 #include "symtab.h"
 #include "type.h"
+#include "value.h"
 
 #include "qc-parse.h"
 

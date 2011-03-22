@@ -9,12 +9,12 @@
 #include "defspace.h"
 #include "emit.h"
 #include "function.h"
-#include "immediate.h"
 #include "obj_file.h"
 #include "options.h"
 #include "qfcc.h"
 #include "strpool.h"
 #include "type.h"
+#include "value.h"
 
 struct dstring_s;
 options_t options;

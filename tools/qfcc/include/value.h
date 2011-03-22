@@ -1,7 +1,7 @@
 /*
-	immediate.h
+	value.h
 
-	shared immediate value handling
+	value handling
 
 	Copyright (C) 2002 Bill Currie <bill@taniwha.org>
 
@@ -29,14 +29,17 @@
 	$Id$
 */
 
-#ifndef __immediate_h
-#define __immediate_h
+#ifndef __value_h
+#define __value_h
 
 struct ex_value_s;
+struct type_s;
+
+void convert_value (struct ex_value_s *value, struct type_s *type);
 struct def_s *emit_value (struct ex_value_s *value, struct def_s *def);
 
 int	ReuseString (const char *str);
 
 void clear_immediates (void);
 
-#endif//__immediate_h
+#endif//__value_h

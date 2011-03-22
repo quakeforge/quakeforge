@@ -78,7 +78,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "expr.h"
 #include "function.h"
 #include "idstuff.h"
-#include "immediate.h"
 #include "linker.h"
 #include "method.h"
 #include "obj_file.h"
@@ -89,6 +88,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "struct.h"
 #include "symtab.h"
 #include "type.h"
+#include "value.h"
 
 options_t   options;
 

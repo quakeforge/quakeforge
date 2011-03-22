@@ -56,7 +56,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "emit.h"
 #include "expr.h"
 #include "function.h"
-#include "immediate.h"
 #include "opcodes.h"
 #include "options.h"
 #include "reloc.h"
@@ -64,6 +63,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "strpool.h"
 #include "symtab.h"
 #include "type.h"
+#include "value.h"
 
 static param_t *free_params;
 static function_t *free_functions;

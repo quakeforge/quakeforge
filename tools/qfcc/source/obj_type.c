@@ -49,11 +49,11 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "defspace.h"
 #include "diagnostic.h"
 #include "emit.h"
-#include "immediate.h"
 #include "obj_type.h"
 #include "qfcc.h"
 #include "reloc.h"
 #include "symtab.h"
+#include "value.h"
 
 #define ENC_DEF(dest,def) EMIT_DEF (pr.type_data, dest, def)
 #define ENC_STR(dest,str)									\
