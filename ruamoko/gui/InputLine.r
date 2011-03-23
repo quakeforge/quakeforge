@@ -34,11 +34,11 @@ string (inputline_t il) InputLine_GetText = #0;
 	[super dealloc];
 }
 
-- (void) setBasePos: (Point)pos
+- (void) setBasePosFromView: (View *) view
 {
-	[super setBasePos:pos];
-	control.xbase = pos.x;
-	control.ybase = pos.y;
+	[super setBasePosFromView: view];
+	control.xbase = xabs;
+	control.ybase = yabs;
 }
 
 - (void) setWidth: (integer)width
@@ -120,10 +120,10 @@ string (inputline_t il) InputLine_GetText = #0;
 	return [input_line text];
 }
 
-- (void) setBasePos:(Point)pos
+- (void) setBasePosFromView: (View *) view
 {
-	[super setBasePos:pos];
-	[input_line setBasePos:xabs y:yabs];
+	[super setBasePosFromView: view];
+	[input_line setBasePosFromView: self];
 }
 
 - (void) draw

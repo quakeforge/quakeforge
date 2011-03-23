@@ -454,7 +454,7 @@ MENU_player_options (PLItem *plist)
 	[view setText:"Name"];
 	[player_options addView:view];
 
-	view = [[Text alloc] initWithComponents:70 :PLAYER_CONF_Y_PAD + 20 :32 :8];
+	view = [[Text alloc] initWithComponents:70 :PLAYER_CONF_Y_PAD + 28 :32 :8];
 	[view setText:"Team"];
 	[player_options addView:view];
 

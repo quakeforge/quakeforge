@@ -30,7 +30,7 @@ struct il_data_t {
 
 - (id) initWithBounds: (Rect)aRect promptCharacter: (integer)char;
 
-- (void) setBasePos: (Point)pos;
+- (void) setBasePosFromView: (View *) view;
 - (void) setWidth: (integer)width;
 - (void) cursor: (BOOL)cursor;
 - (void) draw;
