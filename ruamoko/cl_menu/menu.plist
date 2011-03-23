@@ -356,4 +356,73 @@
 			},
 		);
 	};
+	feature_options = {
+		Class = MenuGroup;
+		Messages = (
+			(initWithBounds:, $rect),
+			(addViews:, $views),
+			(setBase:, 4)
+		);
+		rect = "[0, 0, 320, 200]";
+		views = (
+			{
+				Class = Pic;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setPic:, "\"gfx/qplaque.lmp\"")
+				);
+				rect = "[16, 4, 0, 0]";
+			},
+			{
+				Class = CenterPic;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setPic:, "\"gfx/p_option.lmp\"")
+				);
+				rect = "[160, 4, 0, 0]";
+			},
+			{
+				Class = Text;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setText:, "\"Features\"")
+				);
+				rect = "[54, 40, 64, 8]";
+			},
+			{
+				Class = Text;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setText:, "\"--------\"")
+				);
+				rect = "[54, 50, 64, 8]";
+			},
+			{
+				Class = CvarToggleView;
+				Messages = (
+					(initWithBounds:title::, $rect, "\"Autorecord\"", $toggle),
+				);
+				rect = "[70, 60, 224, 8]";
+				toggle = {
+					Class = CvarToggle;
+					Messages = (
+						(initWithCvar:, "\"cl_autorecord\"")
+					);
+				};
+			},
+			{
+				Class = CvarToggleView;
+				Messages = (
+					(initWithBounds:title::, $rect, "\"Frag Logging\"", $toggle),
+				);
+				rect = "[70, 70, 224, 8]";
+				toggle = {
+					Class = CvarToggle;
+					Messages = (
+						(initWithCvar:, "\"cl_fraglog\"")
+					);
+				};
+			},
+		);
+	};
 }

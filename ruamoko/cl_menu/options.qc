@@ -55,6 +55,7 @@
 
 Group *video_options;
 Group *audio_options;
+Group *feature_options;
 
 Group *control_options;
 CvarToggleView *grab_mouse_view;
@@ -64,10 +65,6 @@ CvarToggleView *freelook_view;
 CvarToggleView *lookspring_view;
 CvarToggleView *lookstrafe_view;
 CvarRangeView *mouse_amp_view;
-
-Group *feature_options;
-CvarToggleView *fraglog_view;
-CvarToggleView *autorecord_view;
 
 Group *player_options;
 InputLine *player_config_plname_il;
@@ -288,25 +285,6 @@ MENU_control_options (PLItem *plist)
  ***********************************************/
 
 /*
-	CB_feature_options
-
-	Callback for feature settings
-*/
-integer (string text, integer key) 
-CB_feature_options =
-{
-	switch (text) {
-		case "cl_autorecord":
-			[autorecord_view toggle];
-			break;
-		case "cl_fraglog":
-			[fraglog_view toggle];
-			break;
-	}
-	return 0;
-};
-
-/*
 	DRAW_feature_options
 
 	Draws the feature option menu
@@ -319,9 +297,14 @@ DRAW_feature_options =
 	[feature_options setBasePos:x y:y];
 	[feature_options draw];
 
-	opt_cursor (x + 62, y + (Menu_GetIndex () * 10) + 60 + cursor_pad);
 	return 1;
 };
+
+integer (integer key, integer unicode, integer down)
+KEY_feature_options =
+{
+	return [feature_options keyEvent:key unicode:unicode down:down];
+}
 
 /*
 	MENU_feature_options
@@ -331,42 +314,18 @@ DRAW_feature_options =
 void
 MENU_feature_options (PLItem *plist)
 {
-	local Rect rect;
-	local id view;
-
+	local @param ret;
 	Menu_Begin (54, 70, "Features");
 	Menu_FadeScreen (1);
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 	Menu_Draw (DRAW_feature_options);
+	Menu_KeyEvent (KEY_feature_options);
 
-	feature_options = [[Group alloc] initWithComponents:0 :0 :320 :200];
+	if (plist) {
+		ret = object_from_plist ([(PLDictionary*) plist getObjectForKey:"feature_options"]);
+		feature_options = ret.pointer_val;
+	}
 
-	view = [[Pic alloc] initWithComponents:16 :4 :0 :0];
-	[view setPic:"gfx/qplaque.lmp"];
-	[feature_options addView:view];
-
-	view = [[CenterPic alloc] initWithComponents:160 :4 :0 :0];
-	[view setPic:"gfx/p_option.lmp"];
-	[feature_options addView:view];
-
-	view = [[Text alloc] initWithComponents:54 :40 :64 :8];
-	[view setText:"Features"];
-	[feature_options addView:view];
-
-	view = [[Text alloc] initWithComponents:54 :50 :64 :8];
-	[view setText:"--------"];
-	[feature_options addView:view];
-
-	rect = makeRect (70, 60, 224, 8);
-	autorecord_view = [[CvarToggleView alloc] initWithBounds:rect title:"Autorecord" :[[CvarToggle alloc] initWithCvar:"cl_autorecord"]];
-	[feature_options addView:autorecord_view];
-
-	rect.origin.y += 10;
-	fraglog_view = [[CvarToggleView alloc] initWithBounds:rect title:"Frag Logging" :[[CvarToggle alloc] initWithCvar:"cl_fraglog"]];
-	[feature_options addView:fraglog_view];
-
-	Menu_Item (54, 70, "cl_autorecord", CB_feature_options, 0);
-	Menu_Item (54, 80, "cl_fraglog", CB_feature_options, 0);
 	Menu_End ();
 };
 
