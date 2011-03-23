@@ -66,10 +66,9 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 
-// XXX check InputLine.h in ruamoko/include
+// XXX check InputLine.h in ruamoko/include/gui
 typedef struct {
 	int         x, y;
-	int         xbase, ybase;
 	int         cursor;
 } il_data_t;
 
@@ -572,8 +571,7 @@ void
 C_DrawInputLine (inputline_t *il)
 {
 	il_data_t   *data = il->user_data;
-	DrawInputLine (data->xbase + data->x, data->ybase + data->y, data->cursor,
-				   il);
+	DrawInputLine (data->x, data->y, data->cursor, il);
 }
 
 static void

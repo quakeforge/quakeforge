@@ -17,9 +17,8 @@ string (inputline_t il) InputLine_GetText = #0;
 - (id) initWithBounds: (Rect)aRect promptCharacter: (integer)char
 {
 	self = [super initWithComponents:aRect.origin.x :aRect.origin.y :aRect.size.width * 8 :8];
-	control.x = xpos;
-	control.y = ypos;
-	control.xbase = control.ybase = 0;
+	control.x = xabs;
+	control.y = yabs;
 	control.cursor = NO;
 
 	il = InputLine_Create (aRect.size.height, aRect.size.width, char);
@@ -37,8 +36,8 @@ string (inputline_t il) InputLine_GetText = #0;
 - (void) setBasePosFromView: (View *) view
 {
 	[super setBasePosFromView: view];
-	control.xbase = xabs;
-	control.ybase = yabs;
+	control.x = xabs;
+	control.y = yabs;
 }
 
 - (void) setWidth: (integer)width

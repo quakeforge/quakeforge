@@ -18,7 +18,6 @@ typedef struct _inputline_t *inputline_t;
 
 struct il_data_t {
 	integer		x, y;
-	integer		xbase, ybase;
 	BOOL		cursor;
 };
 
