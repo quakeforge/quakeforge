@@ -55,16 +55,8 @@
 
 Group *video_options;
 Group *audio_options;
-Group *feature_options;
-
 Group *control_options;
-CvarToggleView *grab_mouse_view;
-CvarToggleView *invert_mouse_view;
-CvarToggleView *autorun_view;
-CvarToggleView *freelook_view;
-CvarToggleView *lookspring_view;
-CvarToggleView *lookstrafe_view;
-CvarRangeView *mouse_amp_view;
+Group *feature_options;
 
 Group *player_options;
 InputLine *player_config_plname_il;
@@ -198,43 +190,6 @@ MENU_audio_options (PLItem *plist)
  * CONTROL OPTIONS
  * Control setting code
  ************************/
-
-/*
-	CB_control_options
-
-	Callback for control options
-*/
-integer (string text, integer key) 
-CB_control_options =
-{
-	switch (text) {
-	    case "in_grab":	    
-			[grab_mouse_view toggle];
-			break;
-		case "autorun":
-			[autorun_view toggle];
-			break;
-		case "freelook":
-			[freelook_view toggle];
-			break;
-		case "lookspring":
-			[lookspring_view toggle];
-			break;
-		case "lookstrafe":
-			[lookstrafe_view toggle];
-			break;
-		case "m_pitch":
-			[invert_mouse_view toggle];
-			break;
-		case "mouseamp":
-			if (key == QFK_RIGHT)
-				[mouse_amp_view inc];
-			else if (key == QFK_LEFT)
-				[mouse_amp_view dec];
-			break;
-	}
-	return 0;
-};
 
 /*
 	DRAW_control_options
