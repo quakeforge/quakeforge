@@ -53,6 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "diagnostic.h"
 #include "emit.h"
 #include "expr.h"
+#include "function.h"
 #include "options.h"
 #include "reloc.h"
 #include "strpool.h"
@@ -142,10 +143,31 @@ alias_def (def_t *def, type_t *type)
 	def_t      *alias;
 
 	ALLOC (16384, def_t, defs, alias);
+	alias->return_addr = __builtin_return_address (0);
 	alias->offset = def->offset;
 	alias->type = type;
 	alias->alias = def;
 	return alias;
+}
+
+def_t *
+temp_def (etype_t type, int size)
+{
+	def_t      *temp;
+	defspace_t *space = current_func->symtab->space;
+
+	ALLOC (16384, def_t, defs, temp);
+	temp->return_addr = __builtin_return_address (0);
+	temp->name = save_string (va (".tmp%d", current_func->temp_num++));
+	temp->type = ev_types[type];
+	temp->file = pr.source_file;
+	temp->line = pr.source_line;
+	set_storage_bits (temp, st_local);
+	temp->offset = defspace_alloc_loc (space, size);
+	temp->space = space;
+	*space->def_tail = temp;
+	space->def_tail = &temp->next;
+	return temp;
 }
 
 void

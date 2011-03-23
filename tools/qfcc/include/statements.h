@@ -44,6 +44,7 @@ typedef struct operand_s {
 	struct operand_s *next;
 	op_type_e   op_type;
 	etype_t     type;			///< possibly override symbol's type
+	int         size;			///< for structures
 	union {
 		struct symbol_s *symbol;
 		struct ex_value_s *value;

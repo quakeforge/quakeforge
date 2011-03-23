@@ -218,6 +218,16 @@ free_sblock (sblock_t *sblock)
 }
 
 static operand_t *
+temp_operand (type_t *type)
+{
+	operand_t  *op = new_operand (op_temp);
+
+	op->type = low_level_type (type);
+	op->size = type_size (type);
+	return op;
+}
+
+static operand_t *
 short_operand (short short_val)
 {
 	operand_t  *op = new_operand (op_value);
@@ -486,8 +496,7 @@ lea_statement (operand_t *pointer, operand_t *offset, expr_t *e)
 	statement_t *s = new_statement ("&", e);
 	s->opa = pointer;
 	s->opb = offset;
-	s->opc = new_operand (op_temp);
-	s->opc->type = ev_pointer;
+	s->opc = temp_operand (&type_pointer);
 	return s;
 }
 
@@ -496,8 +505,7 @@ address_statement (operand_t *value, expr_t *e)
 {
 	statement_t *s = new_statement ("&", e);
 	s->opa = value;
-	s->opc = new_operand (op_temp);
-	s->opc->type = ev_pointer;
+	s->opc = temp_operand (&type_pointer);
 	return s;
 }
 
@@ -519,10 +527,8 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 		operand_t  *offs = 0;
 		sblock = statement_subexpr (sblock, e->e.expr.e1, &ptr);
 		sblock = statement_subexpr (sblock, e->e.expr.e2, &offs);
-		if (!*op) {
-			*op = new_operand (op_temp);
-			(*op)->type = low_level_type (type);
-		}
+		if (!*op)
+			*op = temp_operand (type);
 		if (low_level_type (type) == ev_void) {
 			operand_t  *src_addr;
 			operand_t  *dst_addr;
@@ -591,10 +597,8 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 			s = new_statement (opcode, e);
 			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
 			sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
-			if (!*op) {
-				*op = new_operand (op_temp);
-				(*op)->type = low_level_type (e->e.expr.type);
-			}
+			if (!*op)
+				*op = temp_operand (e->e.expr.type);
 			s->opc = *op;
 			sblock_add_statement (sblock, s);
 			break;
@@ -621,10 +625,8 @@ expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 	sblock = statement_subexpr (sblock, e->e.expr.e1, &src);
 	if ((src->type == ev_integer && type->type == ev_float)
 		|| (src->type == ev_float && type->type == ev_integer)) {
-		if (!*op) {
-			(*op) = new_operand (op_temp);
-			(*op)->type = low_level_type (e->e.expr.type);
-		}
+		if (!*op)
+			*op = temp_operand (e->e.expr.type);
 		s = new_statement ("=", e);
 		s->opa = src;
 		s->opc = *op;
@@ -681,10 +683,8 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 				internal_error (e, "ice ice baby");
 			s = new_statement (opcode, e);
 			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
-			if (!*op) {
-				*op = new_operand (op_temp);
-				(*op)->type = low_level_type (e->e.expr.type);
-			}
+			if (!*op)
+				*op = temp_operand (e->e.expr.type);
 			s->opc = *op;
 			sblock_add_statement (sblock, s);
 	}
@@ -703,10 +703,8 @@ expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 expr_temp (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	if (!e->e.temp.op) {
-		e->e.temp.op = new_operand (op_temp);
-		e->e.temp.op->type = low_level_type (e->e.temp.type);
-	}
+	if (!e->e.temp.op)
+		e->e.temp.op = temp_operand (e->e.temp.type);
 	*op = e->e.temp.op;
 	return sblock;
 }
