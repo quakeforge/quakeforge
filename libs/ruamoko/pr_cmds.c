@@ -584,10 +584,8 @@ PF_sprintf (progs_t *pr)
 	int         count = pr->pr_argc - 1;
 	pr_type_t **args = pr->pr_params + 1;
 	dstring_t  *dstr;
-	int         str;
 
-	str = PR_NewMutableString (pr);
-	dstr = PR_GetMutableString (pr, str);
+	dstr = dstring_newstr ();
 	PR_Sprintf (pr, dstr, "PF_sprintf", fmt, count, args);
 	RETURN_STRING (pr, dstr->str);
 	dstring_delete (dstr);
