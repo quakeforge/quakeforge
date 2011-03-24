@@ -293,6 +293,16 @@ spec_merge (specifier_t spec, specifier_t new)
 
 %%
 
+program
+	: external_def_list
+		{
+			if (current_class) {
+				warning (0, "‘@end’ missing in implementation context");
+				class_finish (current_class);
+				current_class = 0;
+			}
+		}
+
 external_def_list
 	: /* empty */
 		{
@@ -1312,6 +1322,11 @@ class_name
 new_class_name
 	: identifier
 		{
+			if (current_class) {
+				warning (0, "‘@end’ missing in implementation context");
+				class_finish (current_class);
+				current_class = 0;
+			}
 			$$ = get_class ($1, 0);
 			if (!$$) {
 				$1 = check_redefined ($1);
@@ -1354,6 +1369,11 @@ category_name
 new_category_name
 	: identifier '(' identifier ')'
 		{
+			if (current_class) {
+				warning (0, "‘@end’ missing in implementation context");
+				class_finish (current_class);
+				current_class = 0;
+			}
 			$$ = get_category ($1, $3->name, 1);
 			if ($$->defined) {
 				error (0, "redefinition of category `%s (%s)'",

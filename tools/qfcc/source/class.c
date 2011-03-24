@@ -553,6 +553,11 @@ begin_class (class_t *class)
 void
 class_begin (class_type_t *class_type)
 {
+	if (current_class) {
+		warning (0, "‘@end’ missing in implementation context");
+		class_finish (current_class);
+		current_class = 0;
+	}
 	switch (class_type->type) {
 		case ct_category:
 			begin_category (class_type->c.category);
