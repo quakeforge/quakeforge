@@ -63,3 +63,10 @@
 {
 	nextNode = aNode;
 }
+
+- (id) object
+{
+	return data;
+}
+
+@end
