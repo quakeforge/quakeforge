@@ -1502,10 +1502,15 @@ classdef
 	;
 
 protocoldef
-	: PROTOCOL protocol_name
-	  protocolrefs			{ protocol_add_protocols ($2, $3); $<class>$ = 0; }
-	  methodprotolist			{ protocol_add_methods ($2, $5); }
-	  END						{ current_class = 0; (void) ($<class>4); }
+	: PROTOCOL					{ $<class_type>$ = current_class; }
+	  protocol_name
+	  protocolrefs			{ protocol_add_protocols ($3, $4); $<class>$ = 0; }
+	  methodprotolist			{ protocol_add_methods ($3, $6); }
+	  END
+		{
+			current_class = $<class_type>2;
+			(void) ($<class>5);
+		}
 	;
 
 protocolrefs
