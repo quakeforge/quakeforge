@@ -64,11 +64,19 @@ PR_Zone_Free (progs_t *pr, void *ptr)
 VISIBLE void *
 PR_Zone_Malloc (progs_t *pr, pr_int_t size)
 {
+	if (size <= 0)
+		PR_RunError (pr, "attempt to allocate less than 1 byte");
 	return Z_Malloc (pr->zone, size);
 }
 
 VISIBLE void *
 PR_Zone_Realloc (progs_t *pr, void *ptr, pr_int_t size)
 {
+	if (ptr && !size) {
+		Z_Free (pr->zone, ptr);
+		return 0;
+	}
+	if (size <= 0)
+		PR_RunError (pr, "attempt to allocate less than 1 byte");
 	return Z_Realloc (pr->zone, ptr, size);
 }
