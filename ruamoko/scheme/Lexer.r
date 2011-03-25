@@ -46,7 +46,7 @@ BOOL issymbol (string x)
 
 - (SchemeObject*) nextToken
 {
-    local integer len;
+    local int len;
     local Number *num;
     local Symbol *sym;
     local String *str;
@@ -121,12 +121,12 @@ BOOL issymbol (string x)
     }
 }
 
-- (integer) lineNumber
+- (int) lineNumber
 {
     return linenum;
 }
 
-- (integer) line
+- (int) line
 {
     return linenum;
 }

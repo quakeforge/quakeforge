@@ -37,7 +37,7 @@
 {
 @public
 	entity		ent;
-	integer		own;
+	int		own;
 }
 
 - (id) init;

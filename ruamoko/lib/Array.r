@@ -41,7 +41,7 @@
 
 + (id) arrayWithObjects: (id)firstObj, ...
 {
-	local integer i;
+	local int i;
 	id	newArray = [self arrayWithObject: firstObj];
 
 	for (i = 0; i < @args.count; i++) {
@@ -52,7 +52,7 @@
 
 + (id) arrayWithObjects: (id *) objs count: (unsigned)cnt
 {
-	local integer i;
+	local int i;
 	id	newArray = [self array];
 
 	for (i = 0; i < cnt; i++) {
@@ -124,7 +124,7 @@
 
 - (id) initWithObjects: (id)firstObj, ...
 {
-	local integer i;
+	local int i;
 
 	if (!(self = [self initWithCapacity: @args.count + 1]))
 		return nil;
@@ -138,7 +138,7 @@
 
 - (id) initWithObjects: (id *) objs count: (unsigned)cnt
 {
-	local integer i;
+	local int i;
 
 	if (!(self = [self initWithCapacity: cnt]))
 		return nil;
@@ -355,7 +355,7 @@
 
 - (void) removeObjectAtIndex: (unsigned)index
 {
-	local integer	i;
+	local int	i;
 	local id		temp;
 
 	if (index >= count) // FIXME: need exceptions
@@ -393,7 +393,7 @@
 
 - (void) makeObjectsPerformSelector: (SEL)selector
 {
-	local integer	i;
+	local int	i;
 
 	for (i = 0; i < [self count]; i++) {
 		[[self objectAtIndex: i] performSelector: selector];
@@ -403,7 +403,7 @@
 - (void) makeObjectsPerformSelector: (SEL)selector
                          withObject: (id)anObject
 {
-	local integer	i;
+	local int	i;
 
 	for (i = 0; i < [self count]; i++) {
 		[[self objectAtIndex: i] performSelector: selector withObject: anObject];

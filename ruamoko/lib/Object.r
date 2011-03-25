@@ -2,19 +2,19 @@
 #include "AutoreleasePool.h"
 
 void __obj_exec_class (obj_module_t *msg) = #0;
-void (id object, integer code, string fmt, ...) obj_error = #0;
-void (id object, integer code, string fmt, @va_list args) obj_verror = #0;
+void (id object, int code, string fmt, ...) obj_error = #0;
+void (id object, int code, string fmt, @va_list args) obj_verror = #0;
 //obj_error_handler (objc_error_handler func) obj_set_error_handler = #0;
 IMP (id receiver, SEL op) obj_msg_lookup = #0;
 IMP (Super class, SEL op) obj_msg_lookup_super = #0;
 id (id receiver, SEL op, ...) obj_msgSend = #0;
 id obj_msgSend_super (Super *class, SEL op, ...) = #0;
 @param (id receiver, SEL op, @va_list args) obj_msg_sendv = #0;
-void *obj_malloc (integer size) = #0;
-void *obj_atomic_malloc (integer size) = #0;
-void *obj_valloc (integer size) = #0;
-void *obj_realloc (void *mem, integer size) = #0;
-void *obj_calloc (integer nelem, integer size) = #0;
+void *obj_malloc (int size) = #0;
+void *obj_atomic_malloc (int size) = #0;
+void *obj_valloc (int size) = #0;
+void *obj_realloc (void *mem, int size) = #0;
+void *obj_calloc (int nelem, int size) = #0;
 void obj_free (void *mem) = #0;
 //(void *) (void) obj_get_uninstalled_dtable = #0;
 
@@ -37,13 +37,13 @@ Method *class_get_instance_method (Class class, SEL aSel) = #0;
 Class (Class imposter, Class superclass) class_pose_as = #0;
 id (Class class) class_create_instance = #0;
 string (Class class) class_get_class_name = #0;
-integer (Class class) class_get_instance_size = #0;
+int (Class class) class_get_instance_size = #0;
 Class (Class class) class_get_meta_class = #0;
 Class (Class class) class_get_super_class = #0;
-integer (Class class) class_get_version = #0;
+int (Class class) class_get_version = #0;
 BOOL (Class class) class_is_class = #0;
 BOOL (Class class) class_is_meta_class = #0;
-void (Class class, integer version) class_set_version = #0;
+void (Class class, int version) class_set_version = #0;
 void *class_get_gc_object_type (Class class) = #0;
 void (Class class, string ivarname, BOOL gcInvisible) class_ivar_set_gcinvisible = #0;
 
@@ -179,7 +179,7 @@ BOOL (id object) object_is_meta_class = #0;
 	return self;
 }
 
-- (unsigned) hash = #0;	// can't cast pointer to integer
+- (unsigned) hash = #0;	// can't cast pointer to int
 
 - (BOOL) isEqual: (id)anObject
 {

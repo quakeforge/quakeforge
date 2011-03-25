@@ -6,7 +6,7 @@
 @interface CvarColor : CvarObject
 -(void)next;
 -(void)prev;
--(integer)value;
+-(int)value;
 @end
 
 #endif//__CvarColor_h

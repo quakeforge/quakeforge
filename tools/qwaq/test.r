@@ -1,6 +1,6 @@
 @interface Foo : Object
 {
-	integer x;
+	int x;
 }
 -run;
 @end

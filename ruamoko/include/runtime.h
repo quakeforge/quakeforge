@@ -18,17 +18,17 @@ typedef enum {
 	YES			///< a true value
 } BOOL;
 
-@extern void obj_error (id object, integer code, string fmt, ...);
-@extern void obj_verror (id object, integer code, string fmt, @va_list args);
+@extern void obj_error (id object, int code, string fmt, ...);
+@extern void obj_verror (id object, int code, string fmt, @va_list args);
 //obj_error_handler obj_set_error_handler (objc_error_handler func);
 @extern IMP obj_msg_lookup (id receiver, SEL op);
 @extern IMP obj_msg_lookup_super (Super class, SEL op);
 @extern @param obj_msg_sendv (id receiver, SEL op, @va_list args);
-@extern void *obj_malloc (integer size);
-@extern void *obj_atomic_malloc (integer size);
-@extern void *obj_valloc (integer size);
-@extern void *obj_realloc (void *mem, integer size);
-@extern void *obj_calloc (integer nelem, integer size);
+@extern void *obj_malloc (int size);
+@extern void *obj_atomic_malloc (int size);
+@extern void *obj_valloc (int size);
+@extern void *obj_realloc (void *mem, int size);
+@extern void *obj_calloc (int nelem, int size);
 @extern void obj_free (void *mem);
 //(void *) obj_get_uninstalled_dtable (void);
 
@@ -51,13 +51,13 @@ typedef enum {
 @extern Class class_pose_as (Class imposter, Class superclass);
 @extern id class_create_instance (Class class);
 @extern string class_get_class_name (Class class);
-@extern integer class_get_instance_size (Class class);
+@extern int class_get_instance_size (Class class);
 @extern Class class_get_meta_class (Class class);
 @extern Class class_get_super_class (Class class);
-@extern integer class_get_version (Class class);
+@extern int class_get_version (Class class);
 @extern BOOL class_is_class (Class class);
 @extern BOOL class_is_meta_class (Class class);
-@extern void class_set_version (Class class, integer version);
+@extern void class_set_version (Class class, int version);
 @extern void *class_get_gc_object_type (Class class);
 @extern void class_ivar_set_gcinvisible (Class class, string ivarname, BOOL gcInvisible);
 

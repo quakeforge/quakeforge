@@ -43,7 +43,7 @@
 	S_LocalSound ("misc/menu3.wav");
 }
 
-- (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
+- (int) keyEvent:(int)key unicode:(int)unicode down:(int)down
 {
 	switch (key) {
 		case QFK_RETURN:

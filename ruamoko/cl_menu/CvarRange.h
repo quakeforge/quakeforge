@@ -11,7 +11,7 @@
 -(void)inc;
 -(void)dec;
 -(float)value;
--(integer)percentage;
+-(int)percentage;
 @end
 
 #endif//__CvarRange_h

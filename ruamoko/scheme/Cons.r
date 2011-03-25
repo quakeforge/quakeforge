@@ -9,9 +9,9 @@ Cons *cons (SchemeObject *car, SchemeObject *cdr)
     return [Cons newWithCar: car cdr: cdr];
 }
 
-integer length (SchemeObject *foo)
+int length (SchemeObject *foo)
 {
-    local integer len;
+    local int len;
 
     for (len = 0; [foo isKindOfClass: [Cons class]]; foo = [(Cons *) foo cdr]) {
             len++;

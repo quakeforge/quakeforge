@@ -10,7 +10,7 @@
 struct state_s {
     instruction_t *program;
     lineinfo_t *lineinfo;
-    integer pc;
+    int pc;
     Frame *literals, *env;
     SchemeObject *stack;
     Continuation *cont;

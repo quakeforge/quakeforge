@@ -5,7 +5,7 @@
 
 @interface CrosshairCvar : CvarObject
 -(void) next;
--(integer) crosshair;
+-(int) crosshair;
 @end
 
 #endif//__CrosshairCvar_h

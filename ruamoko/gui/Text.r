@@ -34,7 +34,7 @@
 
 - (void) draw
 {
-	local integer maxlen = xlen / 8;
+	local int maxlen = xlen / 8;
 	Draw_nString (xabs, yabs, text, maxlen);
 }
 

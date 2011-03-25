@@ -27,7 +27,7 @@ typedef enum {
 
 struct instruction_s {
     opcode_e opcode;
-    integer operand;
+    int operand;
 };
 
 typedef struct instruction_s instruction_t;
@@ -35,15 +35,15 @@ typedef struct instruction_s instruction_t;
 @interface Instruction: SchemeObject
 {
     opcode_e opcode;
-    integer operand, offset;
+    int operand, offset;
     Instruction *label;
 }
 + (id) opcode: (opcode_e) oc;
-+ (id) opcode: (opcode_e) oc operand: (integer) op;
++ (id) opcode: (opcode_e) oc operand: (int) op;
 + (id) opcode: (opcode_e) oc label: (Instruction *) l;
-- (id) initWithOpcode: (opcode_e) oc operand: (integer) op label: (Instruction *) l;
-- (void) offset: (integer) ofs;
-- (integer) offset;
+- (id) initWithOpcode: (opcode_e) oc operand: (int) op label: (Instruction *) l;
+- (void) offset: (int) ofs;
+- (int) offset;
 - (opcode_e) opcode;
 - (void) emitStruct: (instruction_t *) program;
 

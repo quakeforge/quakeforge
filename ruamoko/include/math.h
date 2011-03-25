@@ -39,12 +39,12 @@
 /**
 	Returns the integer component of \a f
 */
-@extern integer ftoi (float f);
+@extern int ftoi (float f);
 
 /**
 	Returns the float representation of \a i
 */
-@extern float itof (integer i);
+@extern float itof (int i);
 
 /**
 	Rounds \a f to the nearest integer value and returns it. Does not change the type.

@@ -1,21 +1,21 @@
 #include "draw.h"
 
-qpic_t (string name, integer alpha) Draw_CachePic = #0;
+qpic_t (string name, int alpha) Draw_CachePic = #0;
 
-void (integer x, integer y, qpic_t pic) Draw_Pic = #0;
-void (integer x, integer y, qpic_t pic, integer srcx, integer srcy, integer width, integer height) Draw_SubPic = #0;
-void (integer x, integer y, qpic_t pic) Draw_CenterPic = #0;
+void (int x, int y, qpic_t pic) Draw_Pic = #0;
+void (int x, int y, qpic_t pic, int srcx, int srcy, int width, int height) Draw_SubPic = #0;
+void (int x, int y, qpic_t pic) Draw_CenterPic = #0;
 
-void (integer x, integer y, integer chr) Draw_Character = #0;
-void (integer x, integer y, string text) Draw_String = #0;
-void (integer x, integer y, string text, integer n) Draw_nString = #0;
-void (integer x, integer y, string text) Draw_AltString = #0;
-void (integer x, integer y, integer w, integer h, integer c) Draw_Fill = #0;
-void (integer ch, integer x, integer y) Draw_Crosshair = #0;
+void (int x, int y, int chr) Draw_Character = #0;
+void (int x, int y, string text) Draw_String = #0;
+void (int x, int y, string text, int n) Draw_nString = #0;
+void (int x, int y, string text) Draw_AltString = #0;
+void (int x, int y, int w, int h, int c) Draw_Fill = #0;
+void (int ch, int x, int y) Draw_Crosshair = #0;
 
-void (integer x, integer y, integer width, integer lines) text_box =
+void (int x, int y, int width, int lines) text_box =
 {
-	local integer cx, cy, n;
+	local int cx, cy, n;
 	local qpic_t p;
 
 	cx = x;
@@ -77,26 +77,26 @@ void (integer x, integer y, integer width, integer lines) text_box =
 	return [self initName:n Centered:NO];
 }
 
--draw:(integer)x :(integer)y
+-draw:(int)x :(int)y
 {
 	local qpic_t pic = Draw_CachePic (name, 1);
 	Draw_Pic (x, y, pic);
 	return self;
 }
 
--draw:(integer)x :(integer)y :(integer)srcx :(integer)srcy :(integer)width :(integer)height
+-draw:(int)x :(int)y :(int)srcx :(int)srcy :(int)width :(int)height
 {
 	local qpic_t pic = Draw_CachePic (name, 1);
 	Draw_SubPic (x, y, pic, srcx, srcy, width, height);
 	return self;
 }
 
--(integer)width
+-(int)width
 {
 	return size.width;
 }
 
--(integer)height
+-(int)height
 {
 	return size.height;
 }

@@ -7,7 +7,7 @@
 #include "gui/InputLine.h"
 #include "gui/Rect.h"
 
-integer (integer x, integer y) servlist_favorates_draw =
+int (int x, int y) servlist_favorates_draw =
 {
 	Draw_Pic (x + 16, y + 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
 	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_multi.lmp", 1));
@@ -15,7 +15,7 @@ integer (integer x, integer y) servlist_favorates_draw =
 	return 1;
 };
 
-integer (integer x, integer y) servlist_all_draw =
+int (int x, int y) servlist_all_draw =
 {
 	Draw_Pic (x + 16, y + 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
 	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_multi.lmp", 1));
@@ -23,12 +23,12 @@ integer (integer x, integer y) servlist_all_draw =
 	return 1;
 };
 
-integer serv_nfull; 
-integer serv_nempty;
+int serv_nfull;
+int serv_nempty;
 InputLine *serv_maxping;
 InputLine *serv_game;
 
-integer (integer x, integer y) servlist_filter_draw =
+int (int x, int y) servlist_filter_draw =
 {
     Draw_Pic (x + 16, y + 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
 	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_multi.lmp", 1));
@@ -66,7 +66,7 @@ void () servlist_all_menu =
 	Menu_End ();					
 };
 
-integer (string text, integer key) sl_filter_in =
+int (string text, int key) sl_filter_in =
 {
 	load_keybindings();
 	switch (text) {

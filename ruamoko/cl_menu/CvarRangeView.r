@@ -15,7 +15,7 @@
 	[value setText:ftos ([range value])];
 }
 
--(id)initWithBounds:(Rect)aRect title:(string)_title sliderWidth:(integer)width :(CvarRange *)_range
+-(id)initWithBounds:(Rect)aRect title:(string)_title sliderWidth:(int)width :(CvarRange *)_range
 {
 	local Rect rect;
 
@@ -59,7 +59,7 @@
 	S_LocalSound ("misc/menu3.wav");
 }
 
-- (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
+- (int) keyEvent:(int)key unicode:(int)unicode down:(int)down
 {
 	switch (key) {
 		case QFK_RIGHT:

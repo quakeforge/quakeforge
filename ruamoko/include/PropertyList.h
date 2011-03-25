@@ -7,11 +7,11 @@
 @interface PLItem: Object
 {
 	plitem_t    item;
-	integer     own;
+	int     own;
 }
 + (PLItem *) newDictionary;
 + (PLItem *) newArray;
-+ (PLItem *) newData:(void*) data size:(integer) len;
++ (PLItem *) newData:(void*) data size:(int) len;
 + (PLItem *) newString:(string) str;
 + (PLItem *) fromString:(string) str;
 + (PLItem *) fromFile:(QFile) file;
@@ -25,8 +25,8 @@
 @interface PLDictionary: PLItem
 + (PLDictionary *) new;
 
-- (integer) count;
-- (integer) numKeys;
+- (int) count;
+- (int) numKeys;
 - (PLItem *) getObjectForKey:(string) key;
 - (PLItem *) allKeys;
 - addKey:(string) key value:(PLItem *) value;
@@ -35,15 +35,15 @@
 @interface PLArray: PLItem
 + (PLArray *) new;
 
-- (integer) count;
-- (integer) numObjects;
-- (PLItem *) getObjectAtIndex:(integer) index;
+- (int) count;
+- (int) numObjects;
+- (PLItem *) getObjectAtIndex:(int) index;
 - addObject:(PLItem *) object;
-- insertObject:(PLItem *) object atIndex:(integer) index;
+- insertObject:(PLItem *) object atIndex:(int) index;
 @end
 
 @interface PLData: PLItem
-+ (PLData *) new:(void*) data size:(integer) len;
++ (PLData *) new:(void*) data size:(int) len;
 @end
 
 @interface PLString: PLItem

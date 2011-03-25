@@ -5,13 +5,13 @@
 
 @interface Slider: View
 {
-	integer index;
-	integer size;
-	integer dir;
+	int index;
+	int size;
+	int dir;
 }
 
-- (id) initWithBounds: (Rect)aRect size: (integer) aSize;
-- (void) setIndex: (integer) ind;
+- (id) initWithBounds: (Rect)aRect size: (int) aSize;
+- (void) setIndex: (int) ind;
 - (void) draw;
 
 @end

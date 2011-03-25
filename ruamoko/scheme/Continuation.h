@@ -8,8 +8,8 @@
 {
     state_t state;
 }
-+ (id) newWithState: (state_t *) st pc: (integer) p;
-- (id) initWithState: (state_t *) st pc: (integer) p;
++ (id) newWithState: (state_t *) st pc: (int) p;
+- (id) initWithState: (state_t *) st pc: (int) p;
 - (void) restoreOnMachine: (Machine *) m;
 
 @end

@@ -4,11 +4,11 @@
 
 @interface Number: SchemeObject
 {
-    integer value;
+    int value;
 }
-+ (id) newFromInt: (integer) i;
-- (id) initWithInt: (integer) i;
-- (integer) intValue;
++ (id) newFromInt: (int) i;
+- (id) initWithInt: (int) i;
+- (int) intValue;
 - (string) printForm;
 @end
 

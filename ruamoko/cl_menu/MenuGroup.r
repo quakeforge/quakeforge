@@ -14,7 +14,7 @@
 	return self;
 }
 
--(void)setBase:(integer)b
+-(void)setBase:(int)b
 {
 	if (b >= [views count])
 		b = [views count] - 1;
@@ -23,7 +23,7 @@
 	current = base = b;
 }
 
-- (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
+- (int) keyEvent:(int)key unicode:(int)unicode down:(int)down
 {
 	switch (key) {
 		case QFK_DOWN:

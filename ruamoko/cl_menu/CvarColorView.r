@@ -27,7 +27,7 @@
 
 -(void)draw
 {
-	local integer xl;
+	local int xl;
 	xl = xlen / 8 - 2;
 	text_box (xabs, yabs, xl, ylen / 8 - 2);
 	xl = (xl + 1) & ~1;		// text_box does only multiples of 2
@@ -35,7 +35,7 @@
 			   [color value] * 16 + 8);
 }
 
-- (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
+- (int) keyEvent:(int)key unicode:(int)unicode down:(int)down
 {
 	switch (key) {
 		case QFK_DOWN:

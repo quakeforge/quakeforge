@@ -22,7 +22,7 @@
 - (SchemeObject*) readList
 {
     local SchemeObject *token, *res;
-    local integer line;
+    local int line;
     local Error *err;
 
     line = [lexer lineNumber];
@@ -63,7 +63,7 @@
 - (SchemeObject*) readAtomic
 {
     local SchemeObject *token, *list, *res;
-    local integer line;
+    local int line;
 
     line = [lexer lineNumber];
  

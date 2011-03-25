@@ -1,4 +1,4 @@
 #include "gib.h"
 
-void GIB_Builtin_Add (string name, void func (integer argc, string *argv)) = #0;
-integer (string value) GIB_Return = #0;
+void GIB_Builtin_Add (string name, void func (int argc, string *argv)) = #0;
+int (string value) GIB_Return = #0;

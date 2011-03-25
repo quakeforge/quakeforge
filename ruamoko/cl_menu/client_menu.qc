@@ -42,7 +42,7 @@ menu_leave_sound =
 	S_LocalSound ("misc/menu2.wav");
 }
 
-integer (integer key, integer unicode, integer down)
+int (int key, int unicode, int down)
 menu_key_sound =
 {
 	switch (key) {
@@ -58,15 +58,15 @@ menu_key_sound =
 	return 0;
 }
 
-void (integer x, integer y) spinner =
+void (int x, int y) spinner =
 {
-	local integer	i = (integer) (time * 10) % 6;
+	local int	i = (int) (time * 10) % 6;
 	local qpic_t	p = Draw_CachePic (dot_name[i], 1);
 
 	Draw_Pic (x, y, p);
 };
 
-integer do_single_player;
+int do_single_player;
 
 string quitMessage[32] = {
 /*   .........1.........2.... */
@@ -110,15 +110,15 @@ string quitMessage[32] = {
 	"   for you next time!   ",
 	"                        "
 };
-integer quit_index;
+int quit_index;
 
 // ********* LOAD / SAVE
 
 #define MAX_SAVEGAMES 12
 string filenames[MAX_SAVEGAMES];
-integer loadable[MAX_SAVEGAMES];
-integer load_cursor;
-integer save_cursor;
+int loadable[MAX_SAVEGAMES];
+int load_cursor;
+int save_cursor;
 
 string (QFile f) get_comment =
 {
@@ -132,7 +132,7 @@ string (QFile f) get_comment =
 
 void () scan_saves =
 {
-	local integer	i;
+	local int	i;
 	local QFile		f;
 	local string    line;
 	for (i = 0; i < MAX_SAVEGAMES; i++) {
@@ -155,14 +155,14 @@ void () scan_saves =
 	}
 };
 
-integer (string text, integer key) load_f =
+int (string text, int key) load_f =
 {
 	scan_saves ();
 	Menu_SelectMenu ("load");
 	return 0;
 };
 
-integer (string text, integer key) save_f =
+int (string text, int key) save_f =
 {
 	scan_saves ();
 	Menu_SelectMenu ("save");
@@ -178,31 +178,31 @@ void () load_save_f =
 		Menu_SelectMenu ("save");
 };
 
-integer (integer x, integer y) load_draw =
+int (int x, int y) load_draw =
 {
-	local integer i;
+	local int i;
 
 	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_load.lmp", 1));
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
 		Draw_String (x + 16, y + 32 + 8 * i, filenames[i]);
 	Draw_Character (x + 8, y + 32 + load_cursor * 8,
-					12 + ((integer) (time * 4) & 1));
+					12 + ((int) (time * 4) & 1));
 	return 1;
 };
 
-integer (integer x, integer y) save_draw =
+int (int x, int y) save_draw =
 {
-	local integer i;
+	local int i;
 
 	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_save.lmp", 1));
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
 		Draw_String (x + 16, y + 32 + 8 * i, filenames[i]);
 	Draw_Character (x + 8, y + 32 + save_cursor * 8,
-					12 + ((integer) (time * 4) & 1));
+					12 + ((int) (time * 4) & 1));
 	return 1;
 };
 
-integer (integer key, integer unicode, integer down) load_keyevent =
+int (int key, int unicode, int down) load_keyevent =
 {
 	switch (key) {
 		case QFK_DOWN:
@@ -229,7 +229,7 @@ integer (integer key, integer unicode, integer down) load_keyevent =
 	return 0;
 };
 
-integer (integer key, integer unicode, integer down) save_keyevent =
+int (int key, int unicode, int down) save_keyevent =
 {
 	switch (key) {
 		case QFK_DOWN:
@@ -279,21 +279,21 @@ void () save_menu =
 
 // ********* QUIT
 
-integer () quit =
+int () quit =
 {
 	Menu_SelectMenu ("quit");
-	quit_index = (integer) (random () * 8);
+	quit_index = (int) (random () * 8);
 	quit_index &= 7;
 	return 0;
 };
 
-integer (string text, integer key) quit_f =
+int (string text, int key) quit_f =
 {
 	quit ();
 	return 0;
 };
 
-integer (integer key, integer unicode, integer down) quit_keyevent =
+int (int key, int unicode, int down) quit_keyevent =
 {
 	if (key == 'y') {
 		Menu_Quit ();
@@ -306,7 +306,7 @@ integer (integer key, integer unicode, integer down) quit_keyevent =
 	return 0;
 };
 
-integer (integer x, integer y) quit_draw =
+int (int x, int y) quit_draw =
 {
 	text_box (x + 56, y + 76, 24, 4);
 	Draw_String (x + 64, y + 84, quitMessage[quit_index * 4 + 0]);
@@ -327,7 +327,7 @@ void () quit_menu =
 	Menu_End ();
 };
 
-integer (string text, integer key) sp_start =
+int (string text, int key) sp_start =
 {
 	Menu_SelectMenu (nil);
 	Cbuf_AddText ("disconnect\n");
@@ -361,20 +361,20 @@ void () single_player_menu =
 
 // ********* MULTIPLAYER
 
-integer JoiningGame;
-integer lanConfig_cursor;
+int JoiningGame;
+int lanConfig_cursor;
 string my_tcpip_address;
 string lanConfig_portname;
 string lanConfig_joinname;
 #define NUM_LANCONFIG_CMDS 3
-integer lanConfig_cursor_table[NUM_LANCONFIG_CMDS] = { 72, 92, 124 };
+int lanConfig_cursor_table[NUM_LANCONFIG_CMDS] = { 72, 92, 124 };
 InputLine *lanConfig_port_il;
 InputLine *lanConfig_join_il;
 InputLine *input_active;
 
-integer (integer x, integer y) join_draw =
+int (int x, int y) join_draw =
 {
-	local integer f = x + (320 - 26 * 8) / 2;
+	local int f = x + (320 - 26 * 8) / 2;
 	text_box (f, y + 134, 24, 4);
 	Draw_String (f, y + 142, " Commonly used to play  ");
 	Draw_String (f, y + 150, " over the Internet, but ");
@@ -383,9 +383,9 @@ integer (integer x, integer y) join_draw =
 	return 0;
 };
 
-integer (integer x, integer y) lanconfig_draw =
+int (int x, int y) lanconfig_draw =
 {
-	local integer basex = 54 + x;
+	local int basex = 54 + x;
 	local string startJoin = JoiningGame ? "Join Game" : "New Game";
 	local string protocol = "UDP";
 
@@ -415,12 +415,12 @@ integer (integer x, integer y) lanconfig_draw =
 	}
 	if (!input_active)
 		Draw_Character (basex - 8, y + lanConfig_cursor_table[lanConfig_cursor],
-						12 + ((integer) (time * 4) & 1));
+						12 + ((int) (time * 4) & 1));
 
 	return 0;
 };
 
-integer (integer key, integer unicode, integer down) lanconfig_keyevent =
+int (int key, int unicode, int down) lanconfig_keyevent =
 {
 	if (input_active)
 		[input_active processInput:(key >= 256 ? key : unicode)];
@@ -490,7 +490,7 @@ void () join_menu =
 	Menu_End ();
 };
 
-integer (integer key, integer unicode, integer down) multi_player_keyevent =
+int (int key, int unicode, int down) multi_player_keyevent =
 {
 	if (key == QFK_RETURN) {
 		JoiningGame = (Menu_GetIndex () == 0);

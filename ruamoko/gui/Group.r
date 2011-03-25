@@ -32,12 +32,12 @@
 	return self;
 }
 
-- (void) moveTo: (integer)x y:(integer)y
+- (void) moveTo: (int)x y:(int)y
 {
 	[self setBasePos: x y:y];
 }
 
-- (void) setBasePos: (integer) x y: (integer) y
+- (void) setBasePos: (int) x y: (int) y
 {
 	[super setBasePos: x y:y];
 	local SEL sel = @selector (setBasePosFromView:);

@@ -1,6 +1,6 @@
 #include "gui/Point.h"
 
-Point makePoint (integer x, integer y)
+Point makePoint (int x, int y)
 {
 	Point p = {x, y};
 	return p;

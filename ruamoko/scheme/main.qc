@@ -24,7 +24,7 @@ string readfile (string filename)
 }
     
 
-integer main (integer argc, string []argv)
+int main (int argc, string []argv)
 {
     local Parser parser; 
     local CompiledCode code;

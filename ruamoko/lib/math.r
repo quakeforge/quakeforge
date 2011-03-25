@@ -3,8 +3,8 @@
 vector v_forward, v_up, v_right;
 
 float () random = #7;
-integer (float f) ftoi = #0x000f0000 + 110;
-float (integer i) itof = #0x000f0000 + 111;
+int (float f) ftoi = #0x000f0000 + 110;
+float (int i) itof = #0x000f0000 + 111;
 vector (vector v) normalize = #9;
 float (vector v) vlen = #12;
 float (vector v) vectoyaw = #13;

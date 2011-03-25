@@ -4,11 +4,11 @@
 #include "defs.h"
 
 @implementation Continuation
-+ (id) newWithState: (state_t *) st pc: (integer) p
++ (id) newWithState: (state_t *) st pc: (int) p
 {
     return [[self alloc] initWithState: st pc: p];
 }
-- (id) initWithState: (state_t *) st pc: (integer) p
+- (id) initWithState: (state_t *) st pc: (int) p
 {
     self = [self init];
     state.program = st.program;

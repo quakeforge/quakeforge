@@ -12,7 +12,7 @@ typedef enum {
 } gc_state_e;
 
 gc_state_e gc_state;
-integer checkpoint;
+int checkpoint;
 
 #define GC_AMOUNT 100
 
@@ -43,7 +43,7 @@ integer checkpoint;
 + (void) collect
 {
     local SchemeObject *cur;
-    local integer amount;
+    local int amount;
 
     switch (gc_state) {
         case GC_IDLE:
@@ -62,7 +62,7 @@ integer checkpoint;
                     dprintf("GC: marking queue: %s[%s]@%i\n",
                             [queue_pos description],
                             [queue_pos printForm],
-                            (integer) queue_pos);
+                            (int) queue_pos);
                     [queue_pos markReachable];
                     queue_pos = queue_pos.prev;
                     if (++amount >= GC_AMOUNT/2) return;
@@ -78,7 +78,7 @@ integer checkpoint;
                     dprintf("GC: freeing %s[%s]@%i...\n",
                             [queue_pos description],
                             [queue_pos printForm],
-                            (integer) queue_pos);
+                            (int) queue_pos);
                     [queue_pos release];
                     queue_pos = queue_pos.next;
                         //if (++amount == GC_AMOUNT) return;
@@ -123,7 +123,7 @@ integer checkpoint;
             next = wait_list;
             wait_list = self;
             marked = markstate;
-            dprintf("GC: During collect: %i\n", (integer) self);
+            dprintf("GC: During collect: %i\n", (int) self);
     } else {
             if (maybe_garbage) {
                     maybe_garbage.prev = self;
@@ -131,7 +131,7 @@ integer checkpoint;
             next = maybe_garbage;
             maybe_garbage = self;
             marked = !markstate;
-            dprintf("GC: Not during collect: %i\n", (integer) self);
+            dprintf("GC: Not during collect: %i\n", (int) self);
     }
     
     prev = nil;
@@ -143,7 +143,7 @@ integer checkpoint;
 - (void) mark
 {
     if (!root && marked != markstate) {
-            dprintf("GC: Marking %s[%s]@%i\n", [self description], [self printForm], (integer) self);
+            dprintf("GC: Marking %s[%s]@%i\n", [self description], [self printForm], (int) self);
             marked = markstate;
             if (prev) {
                     prev.next = next;
@@ -200,7 +200,7 @@ integer checkpoint;
 
 - (void) dealloc
 {
-    dprintf("Deallocing %s @ %i!\n", [self description], (integer) self);
+    dprintf("Deallocing %s @ %i!\n", [self description], (int) self);
     [super dealloc];
 }
 
@@ -219,12 +219,12 @@ integer checkpoint;
     source = s;
 }
 
-- (integer) line
+- (int) line
 {
     return line;
 }
 
-- (void) line: (integer) l
+- (void) line: (int) l
 {
     line = l;
 }

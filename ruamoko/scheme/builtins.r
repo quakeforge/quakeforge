@@ -10,7 +10,7 @@
 #include "Boolean.h"
 #include "Error.h"
 
-BOOL num_args (SchemeObject *list, integer num)
+BOOL num_args (SchemeObject *list, int num)
 {
     for (; [list isKindOfClass: [Cons class]]; list = [(Cons*) list cdr]) {
             num--;
@@ -42,7 +42,7 @@ SchemeObject *bi_newline (SchemeObject *args, Machine *m)
 
 SchemeObject *bi_add (SchemeObject *args, Machine *m)
 {
-    local integer sum = 0;
+    local int sum = 0;
     local SchemeObject *cur;
 
     for (cur = args; cur != [Nil nil]; cur = [(Cons*) cur cdr]) {
@@ -60,7 +60,7 @@ SchemeObject *bi_add (SchemeObject *args, Machine *m)
 
 SchemeObject *bi_sub (SchemeObject *args, Machine *m)
 {
-    local integer diff = 0;
+    local int diff = 0;
     local SchemeObject *cur;
 
     if (args == [Nil nil]) {
@@ -99,7 +99,7 @@ SchemeObject *bi_sub (SchemeObject *args, Machine *m)
 
 SchemeObject *bi_mult (SchemeObject *args, Machine *m)
 {
-    local integer prod = 1;
+    local int prod = 1;
     local SchemeObject *cur;
 
     for (cur = args; cur != [Nil nil]; cur = [(Cons*) cur cdr]) {
@@ -117,7 +117,7 @@ SchemeObject *bi_mult (SchemeObject *args, Machine *m)
 
 SchemeObject *bi_div (SchemeObject *args, Machine *m)
 {
-    local integer frac = 0;
+    local int frac = 0;
     local SchemeObject *cur;
 
     if (args == [Nil nil]) {

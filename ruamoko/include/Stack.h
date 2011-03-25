@@ -35,14 +35,14 @@
 @interface Stack: Object
 {
 	id		top;		// Top of the stack
-	integer	stackSize;
+	int	stackSize;
 }
 
 - (void) removeAllObjects;			// Empty the stack
 - (void) addObject: (id)anObject;	// Push anObject onto the stack
 - (id) pop;							// pull top object off
 - (id) peek;						// Grab the top object without removing it
-- (integer) count;					// Number of objects on stack
+- (int) count;					// Number of objects on stack
 
 @end
 

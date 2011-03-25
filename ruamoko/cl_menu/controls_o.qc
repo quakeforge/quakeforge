@@ -34,8 +34,8 @@
 #include "key.h"
 #include "options_util.h"
 
-integer set_key_flag;	// holds flag for the key-setting
- 
+int set_key_flag;	// holds flag for the key-setting
+
 // three global hashes for the main binding groups
 Array *movement_bindings;
 Array *misc_bindings;
@@ -121,10 +121,10 @@ new_binding (binding_t binding)
 
 	this function initializes the hashes for the binding menus
 */
-void () 
+void ()
 init_binding_hash =
 {
-	local integer i;
+	local int i;
 
 	movement_bindings = [[Array alloc] init];
 	for (i = 0; i < @sizeof (movement_binding_list) / @sizeof (movement_binding_list[0]); i++)
@@ -146,10 +146,10 @@ init_binding_hash =
 	As a command/binding can be bound to many keys,	you can get the second,
 	third, etc. key by giving the bindnum.
 */
-string (string binding, integer bindnum) 
+string (string binding, int bindnum)
 get_keyname =
 {
-	local integer keynum;
+	local int keynum;
 	local string  keyname;
 
 	keynum = Key_LookupBinding(IMT_0, bindnum, binding);
@@ -171,7 +171,7 @@ get_keyname =
 void
 get_hash_keys (Array *list)
 {
-	local integer i,hlen;
+	local int i,hlen;
 	local Binding *binding;
 	local string desc1 = "", desc2 = "";
 	
@@ -200,7 +200,7 @@ get_hash_keys (Array *list)
 	
 	Loads the kername for into the hashes
 */
-void () 
+void ()
 load_keybindings =
 {
 	get_hash_keys (movement_bindings);
@@ -214,9 +214,9 @@ load_keybindings =
  *******************/
 
 /*
-	DESIGN NOTE (by elmex): 
+	DESIGN NOTE (by elmex):
 
-	Every sub-menu for control bindings has its own hash for holding the 
+	Every sub-menu for control bindings has its own hash for holding the
 	keybindings. Thats why there are three different functions, which shadow
 	the CB_MAIN_control_binding() function. They get the binding from the
 	correct hash.
@@ -229,10 +229,10 @@ load_keybindings =
 	It takes the binding as argument.
 	This function is called by the real callbacks.
 */
-integer
-CB_MAIN_control_binding (Binding *binding, integer key)
+int
+CB_MAIN_control_binding (Binding *binding, int key)
 {
-	local integer	retval = 0, bindcnt = 0;
+	local int	retval = 0, bindcnt = 0;
 
 	if(set_key_flag) {
 		bindcnt = Key_CountBinding(IMT_0, binding.command);
@@ -267,11 +267,11 @@ CB_MAIN_control_binding (Binding *binding, integer key)
 
 	Callback for the basic control bindings menu
 */
-integer (string text, integer key) 
-CB_basic_control_binding = 
+int (string text, int key)
+CB_basic_control_binding =
 {
 	local Binding *binding = [movement_bindings objectAtIndex: stoi (text)];
-	local integer ret = CB_MAIN_control_binding (binding, key);
+	local int ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
 	get_hash_keys (movement_bindings);
@@ -294,10 +294,10 @@ CB_ME_basic_control_binding =
 
 	Draws the menu for the basic control bindins
 */
-integer (integer x, integer y) 
-DRAW_basic_control_binding = 
+int (int x, int y)
+DRAW_basic_control_binding =
 {
-	local integer	cursor_pad = 40, bind_desc_pad, hl, i;
+	local int	cursor_pad = 40, bind_desc_pad, hl, i;
 
 	bind_desc_pad = 120;
 
@@ -308,7 +308,7 @@ DRAW_basic_control_binding =
 	hl = [movement_bindings count];	
 	for(i = 0; i < hl; i++) {
 		local Binding *binding = [movement_bindings objectAtIndex: i];
-		draw_val_item   (x + 20, y + 40 + ( i * 10), bind_desc_pad, 
+		draw_val_item   (x + 20, y + 40 + ( i * 10), bind_desc_pad,
 			binding.text, binding.keys);
 	}
 
@@ -322,10 +322,10 @@ DRAW_basic_control_binding =
 
 	Menu making function for the control bindings
 */
-void () 
+void ()
 MENU_basic_control_binding =
 {
-	local integer i,hl;
+	local int i,hl;
 	
 	Menu_Begin (54, 40, "Movement bindings");
 	Menu_FadeScreen (1);
@@ -344,11 +344,11 @@ MENU_basic_control_binding =
 
 	Callback for misc control bindings.
 */
-integer (string text, integer key) 
-CB_misc_control_binding = 
+int (string text, int key)
+CB_misc_control_binding =
 {
 	local Binding *binding = [misc_bindings objectAtIndex: stoi (text)];
-	local integer ret = CB_MAIN_control_binding (binding, key);
+	local int ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
 	get_hash_keys (misc_bindings);
@@ -371,11 +371,11 @@ CB_ME_misc_control_binding =
 
 	Draw the bindings for the misc controls
 */
-integer (integer x, integer y) 
+int (int x, int y)
 DRAW_misc_control_binding =
 {
-	local integer cursor_pad = 40, bind_desc_pad;
-	local integer i, hl;
+	local int cursor_pad = 40, bind_desc_pad;
+	local int i, hl;
 
 	bind_desc_pad = 120;
 
@@ -385,7 +385,7 @@ DRAW_misc_control_binding =
 	hl = [misc_bindings count];	
 	for(i=0;i < hl; i++) {
 		local Binding *binding = [misc_bindings objectAtIndex: i];
-		draw_val_item   (x + 20, y + 40+(i*10), bind_desc_pad, 
+		draw_val_item   (x + 20, y + 40+(i*10), bind_desc_pad,
 			binding.text, binding.keys);
 	}
 
@@ -398,10 +398,10 @@ DRAW_misc_control_binding =
 
 	Menu maker function for the misc control binding
 */
-void () 
+void ()
 MENU_misc_control_binding =
 {
-	local integer	hl, i;
+	local int	hl, i;
 
 	Menu_Begin (54, 50, "Misc bindings");
 	Menu_FadeScreen (1);
@@ -420,11 +420,11 @@ MENU_misc_control_binding =
 
 	Callback function for the weapons control bindings
 */
-integer (string text, integer key)
-CB_weapon_control_binding = 
+int (string text, int key)
+CB_weapon_control_binding =
 {
 	local Binding *binding = [weapon_bindings objectAtIndex: stoi (text)];
-	local integer ret = CB_MAIN_control_binding (binding, key);
+	local int ret = CB_MAIN_control_binding (binding, key);
 
 	// fetch all keynames (possible to optimize.. but not very neccessary)
 	get_hash_keys (weapon_bindings);
@@ -448,10 +448,10 @@ CB_ME_weapon_control_binding =
 
 	Draw the weapon binding menu
 */
-integer (integer x, integer y) 
+int (int x, int y)
 DRAW_weapon_control_binding =
 {
-	local integer	cursor_pad = 40, bind_desc_pad, hl, i;
+	local int	cursor_pad = 40, bind_desc_pad, hl, i;
 
 	bind_desc_pad = 120;
 
@@ -461,7 +461,7 @@ DRAW_weapon_control_binding =
 	hl = [weapon_bindings count];	
 	for(i = 0; i < hl; i++) {
 		local Binding *binding = [weapon_bindings objectAtIndex: i];
-		draw_val_item (x + 20, y + 40 + (i * 10), bind_desc_pad, 
+		draw_val_item (x + 20, y + 40 + (i * 10), bind_desc_pad,
 			binding.text, binding.keys);
 	}
 
@@ -475,10 +475,10 @@ DRAW_weapon_control_binding =
 
 	Menu maker for the weapons menu
 */
-void () 
+void ()
 MENU_weapon_control_binding =
 {
-	local integer	hl, i;
+	local int	hl, i;
 
 	Menu_Begin (54, 60, "Weapon bindings");
 	Menu_FadeScreen (1);
@@ -497,7 +497,7 @@ MENU_weapon_control_binding =
 
 	Main controls menu, for selecting the sub control menus
 */
-void () 
+void ()
 MENU_control_binding =
 {
 	init_binding_hash (); // init the keybinding hashes

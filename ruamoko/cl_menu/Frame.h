@@ -10,5 +10,5 @@
 - (void) dealloc;
 - (Size) size;
 - (float) duration;
-- (void) draw: (integer) x :(integer) y;
+- (void) draw: (int) x :(int) y;
 @end

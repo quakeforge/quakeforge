@@ -11,7 +11,7 @@
 {
     @public SchemeObject *prev, *next;
     BOOL marked, root;
-    integer line;
+    int line;
     string source;
 }
 + (void) collectCheckPoint;
@@ -21,8 +21,8 @@
 - (string) printForm;
 - (string) source;
 - (void) source: (string) s;
-- (integer) line;
-- (void) line: (integer) l;
+- (int) line;
+- (void) line: (int) l;
 - (BOOL) isError;
 @end
 

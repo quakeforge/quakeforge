@@ -2,9 +2,9 @@
 #define __ruamoko_key_h
 
 #include "QF/keys.h"
-@extern string Key_SetBinding (integer target, integer keynum, string binding);
-@extern integer Key_LookupBinding (integer target, integer bindnum, string binding);
-@extern integer Key_CountBinding (integer target, string binding);
-@extern string Key_KeynumToString (integer keynum);
+@extern string Key_SetBinding (int target, int keynum, string binding);
+@extern int Key_LookupBinding (int target, int bindnum, string binding);
+@extern int Key_CountBinding (int target, string binding);
+@extern string Key_KeynumToString (int keynum);
 
 #endif//__ruamoko_key_h

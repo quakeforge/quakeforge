@@ -35,7 +35,7 @@
 	return Cvar_GetFloat (name);
 }
 
--(integer)percentage
+-(int)percentage
 {
 	return to_percentage(min, max, Cvar_GetFloat (name));
 }

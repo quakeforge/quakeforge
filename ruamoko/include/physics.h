@@ -27,10 +27,10 @@
 @extern vector aim (entity e, float speed);
 @extern void ChangeYaw (void);
 @extern void movetogoal (float step);
-@extern integer hullpointcontents (entity ent, vector point);
-@extern vector getboxbounds (integer hull, integer max);
-@extern integer getboxhull (void);
-@extern void freeboxhull (integer hull);
-@extern void rotate_bbox (integer hull, vector right, vector forward, vector up, vector mins, vector maxs);
+@extern int hullpointcontents (entity ent, vector point);
+@extern vector getboxbounds (int hull, int max);
+@extern int getboxhull (void);
+@extern void freeboxhull (int hull);
+@extern void rotate_bbox (int hull, vector right, vector forward, vector up, vector mins, vector maxs);
 
 #endif//__ruamoko_physics_h

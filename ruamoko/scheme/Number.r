@@ -3,18 +3,18 @@
 
 @implementation Number
 
-+ (id) newFromInt: (integer) i
++ (id) newFromInt: (int) i
 {
     return [[self alloc] initWithInt: i];
 }
 
-- (id) initWithInt: (integer) i
+- (id) initWithInt: (int) i
 {
     value = i;
     return [super init];
 }
 
-- (integer) intValue
+- (int) intValue
 {
     return value;
 }

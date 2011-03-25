@@ -5,7 +5,7 @@
 
 @implementation Slider
 
-- (id) initWithBounds: (Rect)aRect size: (integer) aSize
+- (id) initWithBounds: (Rect)aRect size: (int) aSize
 {
 	self = [self initWithBounds:aRect];
 	dir = ylen > xlen;
@@ -14,7 +14,7 @@
 	return self;
 }
 
-- (void) setIndex: (integer) ind
+- (void) setIndex: (int) ind
 {
 	index = ind;
 	if (index < 0)
@@ -25,7 +25,7 @@
 
 - (void) draw
 {
-	local integer pos, x, y;
+	local int pos, x, y;
 
 	pos = (index * ((dir ? ylen : xlen) - 24) / size) + 8;
 	if (dir) {

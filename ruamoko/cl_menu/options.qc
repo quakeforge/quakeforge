@@ -93,7 +93,7 @@ InputLine *network_config_iactive;
 #define COLOR_STEP 1
 
 /****************************
- * VIDEO OPTIONS 
+ * VIDEO OPTIONS
  * Video settings menu code
  ****************************/
 
@@ -102,8 +102,8 @@ InputLine *network_config_iactive;
 
 	Drawing function for the video options menu
 */
-integer (integer x, integer y) 
-DRAW_video_options = 
+int (int x, int y)
+DRAW_video_options =
 {
 	[video_options setBasePos:x y:y];
 	[video_options draw];
@@ -111,7 +111,7 @@ DRAW_video_options =
 	return 1;
 };
 
-integer (integer key, integer unicode, integer down)
+int (int key, int unicode, int down)
 KEY_video_options =
 {
 	return [video_options keyEvent:key unicode:unicode down:down];
@@ -149,8 +149,8 @@ MENU_video_options (PLItem *plist)
 
 	Draws the audio options menu
 */
-integer (integer x, integer y) 
-DRAW_audio_options = 
+int (int x, int y)
+DRAW_audio_options =
 {
 	[audio_options setBasePos:x y:y];
 	[audio_options draw];
@@ -158,7 +158,7 @@ DRAW_audio_options =
 	return 1;
 };
 
-integer (integer key, integer unicode, integer down)
+int (int key, int unicode, int down)
 KEY_audio_options =
 {
 	return [audio_options keyEvent:key unicode:unicode down:down];
@@ -196,8 +196,8 @@ MENU_audio_options (PLItem *plist)
 
 	Draws the control option menu
 */
-integer (integer x, integer y) 
-DRAW_control_options = 
+int (int x, int y)
+DRAW_control_options =
 {
 	[control_options setBasePos:x y:y];
 	[control_options draw];
@@ -205,7 +205,7 @@ DRAW_control_options =
 	return 1;
 };
 
-integer (integer key, integer unicode, integer down)
+int (int key, int unicode, int down)
 KEY_control_options =
 {
 	return [control_options keyEvent:key unicode:unicode down:down];
@@ -244,10 +244,10 @@ MENU_control_options (PLItem *plist)
 
 	Draws the feature option menu
 */
-integer (integer x, integer y) 
-DRAW_feature_options = 
+int (int x, int y)
+DRAW_feature_options =
 {
-	local integer cursor_pad = 0, spacing = 120;
+	local int cursor_pad = 0, spacing = 120;
 
 	[feature_options setBasePos:x y:y];
 	[feature_options draw];
@@ -255,7 +255,7 @@ DRAW_feature_options =
 	return 1;
 };
 
-integer (integer key, integer unicode, integer down)
+int (int key, int unicode, int down)
 KEY_feature_options =
 {
 	return [feature_options keyEvent:key unicode:unicode down:down];
@@ -299,14 +299,14 @@ string teamname_cvar; // name of the cvar holding teamname (MAY ? gametype depen
 
 // table for cursor-positions
 #define NUM_PLAYERCONFIG_CMDS 4
-integer player_config_cursor_tbl[NUM_PLAYERCONFIG_CMDS] = { 
+int player_config_cursor_tbl[NUM_PLAYERCONFIG_CMDS] = {
 	PLAYER_CONF_Y_PAD + 8,
 	PLAYER_CONF_Y_PAD + 20 + 8,
 	PLAYER_CONF_Y_PAD + 45,
 	PLAYER_CONF_Y_PAD + 60
 };
 
-integer player_config_cursor;
+int player_config_cursor;
 
 // array, which holds commands for this menu
 string player_config_vals[NUM_PLAYERCONFIG_CMDS] = {
@@ -317,7 +317,7 @@ string player_config_vals[NUM_PLAYERCONFIG_CMDS] = {
 };
 
 
-integer (integer key, integer unicode, integer down) 
+int (int key, int unicode, int down)
 KEYEV_player_options =
 {
 	switch (key) {
@@ -385,10 +385,10 @@ KEYEV_player_options =
 
 	Draws the player option menu
 */
-integer (integer x, integer y) 
-DRAW_player_options = 
+int (int x, int y)
+DRAW_player_options =
 {
-	local integer	cursor_pad = 0, spacing = 120;
+	local int	cursor_pad = 0, spacing = 120;
 
 	[player_config_plname_il cursor: player_config_iactive == player_config_plname_il];
 	[player_config_tname_il cursor: player_config_iactive == player_config_tname_il];
@@ -406,7 +406,7 @@ DRAW_player_options =
 	Entercallback for the playermenu.
 	For initalising the playername and teamname.
 */
-void () 
+void ()
 CB_ME_player_options =
 {
 	if (gametype () == "quakeworld") {
@@ -417,8 +417,8 @@ CB_ME_player_options =
 
 	teamname_cvar = "team"; // FIXME: is this something else in netquake?
 
-	[player_config_plname_il setText:Cvar_GetString (playername_cvar)]; 
-	[player_config_tname_il setText:Cvar_GetString (teamname_cvar)]; 
+	[player_config_plname_il setText:Cvar_GetString (playername_cvar)];
+	[player_config_tname_il setText:Cvar_GetString (teamname_cvar)];
 };
 
 /*
@@ -497,18 +497,18 @@ MENU_player_options (PLItem *plist)
  * Options, which have to do with network stuff (rate, noskins, netgraph, ...)
  *****************************************************************************/
 
-integer network_config_cursor;
+int network_config_cursor;
 
 // Y padding for the player config
 #define NETWORK_CONF_Y_PAD 60
 
 // table for cursor-positions
 #define NUM_NETWORKCONFIG_CMDS 1
-integer network_config_cursor_tbl[NUM_NETWORKCONFIG_CMDS] = { 
-	PLAYER_CONF_Y_PAD + 8, 
+int network_config_cursor_tbl[NUM_NETWORKCONFIG_CMDS] = {
+	PLAYER_CONF_Y_PAD + 8,
 };
 
-integer network_config_cursor;
+int network_config_cursor;
 
 // array, which holds commands for this menu
 string network_config_vals[NUM_NETWORKCONFIG_CMDS] = {
@@ -516,7 +516,7 @@ string network_config_vals[NUM_NETWORKCONFIG_CMDS] = {
 };
 
 
-integer (integer key, integer unicode, integer down) 
+int (int key, int unicode, int down)
 KEYEV_network_options =
 {
 	switch (key) {
@@ -567,10 +567,10 @@ KEYEV_network_options =
 
 	Draws the network option menu
 */
-integer (integer x, integer y) 
-DRAW_network_options = 
+int (int x, int y)
+DRAW_network_options =
 {
-	local integer	cursor_pad = 0, spacing = 120;
+	local int	cursor_pad = 0, spacing = 120;
 
 	[network_config_rate_il cursor:network_config_iactive == network_config_rate_il];
 	[network_options setBasePos:x y:y];
@@ -635,7 +635,7 @@ MENU_network_options (PLItem *plist)
 	Menu_End ();
 };
 
-integer (string text, integer key)
+int (string text, int key)
 op_goto_console =
 {
 	Menu_SelectMenu ("");
@@ -644,7 +644,7 @@ op_goto_console =
 };
 
 /*************************
- * MAIN OPTIONS 
+ * MAIN OPTIONS
  * Main options menu code
  *************************/
 
@@ -653,10 +653,10 @@ op_goto_console =
 
 	Makes the main options menu
 */
-void () 
+void ()
 MENU_options =
 {
-	local integer	spacing = 120;
+	local int	spacing = 120;
 	local PLItem    *plist;
 
 	plist = read_plist ("menu.plist");

@@ -111,8 +111,8 @@ void GlobalFree (void *ele, void *data)
 
 - (SchemeObject*) run
 {
-    local integer opcode;
-    local integer operand;
+    local int opcode;
+    local int operand;
     local SchemeObject *res;
     while (1) {
             if (value && [value isError]) {
@@ -250,7 +250,7 @@ void GlobalFree (void *ele, void *data)
     }
 }
 
-- (integer) line
+- (int) line
 {
     if (state.lineinfo) {
             return state.lineinfo[state.pc-1].linenumber;

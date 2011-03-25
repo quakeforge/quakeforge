@@ -32,16 +32,16 @@
     }
 }
 
-- (integer) addConstant: (SchemeObject *) c
+- (int) addConstant: (SchemeObject *) c
 {
-    local integer number = [constants count];
+    local int number = [constants count];
     [constants addObject: c];
     return number;
 }
     
 - (void) compile
 {
-    local integer index;
+    local int index;
     local Instruction *inst;
     literals = [Frame newWithSize: [constants count] link: nil];
     code = obj_malloc (@sizeof(instruction_t) * [instructions count]);
@@ -97,7 +97,7 @@
     }
 
     if (lineinfo) {
-            local integer i;
+            local int i;
             for (i = 0; i < size; i++) {
                     [lineinfo[i].sourcefile release];
             }
@@ -106,12 +106,12 @@
     [super dealloc];
 }
 
-- (integer) minimumArguments
+- (int) minimumArguments
 {
     return minargs;
 }
 
-- (void) minimumArguments: (integer) min
+- (void) minimumArguments: (int) min
 {
     minargs = min;
 }

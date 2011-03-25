@@ -12,7 +12,7 @@
 - (void) dealloc;
 - (View*) addView: (View*)aView;
 - (id) addViews: (Array*)viewlist;
-- (void) moveTo: (integer)x y:(integer)y;
+- (void) moveTo: (int)x y:(int)y;
 - (void) draw;
 @end
 

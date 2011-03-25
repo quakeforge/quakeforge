@@ -18,7 +18,7 @@
 	Cvar_SetFloat (name, val);
 }
 
--(integer)value
+-(int)value
 {
 	return Cvar_GetInteger (name);
 }

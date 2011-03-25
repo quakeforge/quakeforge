@@ -11,8 +11,8 @@
 }
 + (id) newWithOuter: (Scope *) o;
 - (id) initWithOuter: (Scope *) o;
-- (integer) depthOf: (Symbol *) sym;
-- (integer) indexOf: (Symbol *) sym;
+- (int) depthOf: (Symbol *) sym;
+- (int) indexOf: (Symbol *) sym;
 - (void) addName: (Symbol *) sym;
 - (Scope *) outer;
 @end

@@ -8,12 +8,12 @@
 {
 	Point origin;
 	BOOL visible;
-	integer handle;
+	int handle;
 }
 
-- (id) initWithComponents: (integer) x : (integer) y;
+- (id) initWithComponents: (int) x : (int) y;
 - (void) dealloc;
-- (integer) handle;
+- (int) handle;
 - (Point) origin;
 - (Size) size;
 - (void) setOrigin: (Point) newPoint;
@@ -28,7 +28,7 @@
 	string text;
 }
 
-- (id) initWithComponents: (integer) x :(integer) y :(string) _text;
+- (id) initWithComponents: (int) x :(int) y :(string) _text;
 - (Size) size;
 - (string) text;
 - (void) setText: (string) _text;
@@ -40,7 +40,7 @@
 	QPic *picture;
 }
 
-- (id) initWithComponents: (integer)x :(integer)y :(string) _file;
+- (id) initWithComponents: (int)x :(int)y :(string) _file;
 - (void) dealloc;
 - (Size) size;
 - (void) setFile: (string) _file;
@@ -48,16 +48,16 @@
 @end
 
 @extern void () HUD_Init;
-@extern integer HUDHandleClass;
+@extern int HUDHandleClass;
 
 @interface HUDAnimation : HUDObject
 {
 	Array *frames;
-	integer currentFrame;
+	int currentFrame;
 	float nextFrameTime;
 	BOOL looping;
 }
-- (id) initWithComponents: (integer) x :(integer) y;
+- (id) initWithComponents: (int) x :(int) y;
 - (void) dealloc;
 - (Size) size;
 - (void) addFrame: (Frame *) frame;

@@ -10,7 +10,7 @@ struct Rect {
 };
 typedef struct Rect Rect;
 
-@extern Rect makeRect (integer x, integer y, integer w, integer h);
+@extern Rect makeRect (int x, int y, int w, int h);
 @extern Rect makeRectFromOriginSize (Point origin, Size size);
 
 #if 0

@@ -2,19 +2,19 @@
 #include "gui/InputLine.h"
 #include "gui/Rect.h"
 
-inputline_t (integer lines, integer size, integer prompt) InputLine_Create = #0;
+inputline_t (int lines, int size, int prompt) InputLine_Create = #0;
 void InputLine_SetUserData (inputline_t il, void *data) = #0;
-void (inputline_t il, integer width) InputLine_SetWidth = #0;
+void (inputline_t il, int width) InputLine_SetWidth = #0;
 void (inputline_t il) InputLine_Destroy = #0;
-void (inputline_t il, integer size) InputLine_Clear = #0;
-void (inputline_t il, integer ch) InputLine_Process = #0;
+void (inputline_t il, int size) InputLine_Clear = #0;
+void (inputline_t il, int ch) InputLine_Process = #0;
 void (inputline_t il) InputLine_Draw = #0;
 void (inputline_t il, string str) InputLine_SetText = #0;
 string (inputline_t il) InputLine_GetText = #0;
 
 @implementation InputLine
 
-- (id) initWithBounds: (Rect)aRect promptCharacter: (integer)char
+- (id) initWithBounds: (Rect)aRect promptCharacter: (int)char
 {
 	self = [super initWithComponents:aRect.origin.x :aRect.origin.y :aRect.size.width * 8 :8];
 	control.x = xabs;
@@ -40,12 +40,12 @@ string (inputline_t il) InputLine_GetText = #0;
 	control.y = yabs;
 }
 
-- (void) setWidth: (integer)width
+- (void) setWidth: (int)width
 {
 	InputLine_SetWidth (il, width);
 }
 
-- (void) processInput: (integer)key
+- (void) processInput: (int)key
 {
 	InputLine_Process (il, key);
 }
@@ -74,9 +74,9 @@ string (inputline_t il) InputLine_GetText = #0;
 @end
 
 @implementation InputLineBox
-- (id) initWithBounds: (Rect)aRect promptCharacter: (integer)char
+- (id) initWithBounds: (Rect)aRect promptCharacter: (int)char
 {
-	local integer xp, yp, xl, yl;
+	local int xp, yp, xl, yl;
 	local Rect r;
 
 	xp = aRect.origin.x;
@@ -94,7 +94,7 @@ string (inputline_t il) InputLine_GetText = #0;
 	return self;
 }
 
-- (void) setWidth: (integer)width
+- (void) setWidth: (int)width
 {
 	[input_line setWidth:width];
 }
@@ -104,7 +104,7 @@ string (inputline_t il) InputLine_GetText = #0;
 	[input_line cursor:cursor];
 }
 
-- (void) processInput: (integer)key
+- (void) processInput: (int)key
 {
 	[input_line processInput:key];
 }

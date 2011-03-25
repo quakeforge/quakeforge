@@ -2,13 +2,13 @@
 #define __ruamoko_gui_Point_h
 
 struct Point {
-	integer x;
-	integer y;
+	int x;
+	int y;
 };
 
 typedef struct Point Point;
 
-@extern Point makePoint (integer x, integer y);
+@extern Point makePoint (int x, int y);
 @extern Point addPoint (Point a, Point b);
 @extern Point subtractPoint (Point a, Point b);
 

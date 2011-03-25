@@ -12,7 +12,7 @@
 	return [PLArray new];
 }
 
-+ (PLItem *) newData:(void*) data size:(integer) len
++ (PLItem *) newData:(void*) data size:(int) len
 {
 	return [PLData new:data size:len];
 }
@@ -104,12 +104,12 @@
 	return [[PLDictionary alloc] initWithOwnItem: PL_NewDictionary ()];
 }
 
-- (integer) count
+- (int) count
 {
 	return PL_D_NumKeys (item);
 }
 
-- (integer) numKeys
+- (int) numKeys
 {
 	return PL_D_NumKeys (item);
 }
@@ -145,17 +145,17 @@
 	return [[PLArray alloc] initWithOwnItem: PL_NewArray ()];
 }
 
-- (integer) count
+- (int) count
 {
 	return PL_A_NumObjects (item);
 }
 
-- (integer) numObjects
+- (int) numObjects
 {
 	return PL_A_NumObjects (item);
 }
 
-- (PLItem *) getObjectAtIndex:(integer) index
+- (PLItem *) getObjectAtIndex:(int) index
 {
 	return [[PLItem itemClass: PL_ObjectAtIndex (item, index)] autorelease];
 }
@@ -172,7 +172,7 @@
 	return self;
 }
 
-- insertObject:(PLItem *) object atIndex:(integer) index
+- insertObject:(PLItem *) object atIndex:(int) index
 {
 	if (!object.own) {
 		obj_error (self, 0, "add of unowned object to PLArray");
@@ -188,7 +188,7 @@
 
 @implementation PLData
 
-+ (PLData *) new:(void*) data size:(integer) len
++ (PLData *) new:(void*) data size:(int) len
 {
 	return [[PLData alloc] initWithOwnItem: PL_NewData (data, len)];
 }

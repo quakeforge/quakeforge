@@ -3,7 +3,7 @@
 #include "gui/Size.h"
 #include "gui/Rect.h"
 
-Rect makeRect (integer x, integer y, integer w, integer h)
+Rect makeRect (int x, int y, int w, int h)
 {
 	//FIXME Rect r = {{x, y}, {w, h}};
 	Rect r;

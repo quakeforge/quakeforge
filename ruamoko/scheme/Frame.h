@@ -5,13 +5,13 @@
 @interface Frame: SchemeObject
 {
     SchemeObject**array;
-    integer size;
+    int size;
     Frame *link;
 }
-+ (id) newWithSize: (integer) sz link: (Frame *) l;
-- (id) initWithSize: (integer) sz link: (Frame *) l;
-- (void) set: (integer) index to: (SchemeObject *) o;
-- (SchemeObject *) get: (integer) index;
++ (id) newWithSize: (int) sz link: (Frame *) l;
+- (id) initWithSize: (int) sz link: (Frame *) l;
+- (void) set: (int) index to: (SchemeObject *) o;
+- (SchemeObject *) get: (int) index;
 - (Frame *) getLink;
 @end
 

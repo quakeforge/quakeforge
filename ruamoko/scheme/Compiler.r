@@ -47,7 +47,7 @@ Symbol *beginSym;
 
 - (void) emitBuildEnvironment: (SchemeObject *) arguments
 {
-    local integer count, index;
+    local int count, index;
     local SchemeObject *cur;
 
     scope = [Scope newWithOuter: scope];
@@ -81,7 +81,7 @@ Symbol *beginSym;
     }       
 }
 
-- (void) emitSequence: (SchemeObject*) expressions flags: (integer) fl
+- (void) emitSequence: (SchemeObject*) expressions flags: (int) fl
 {
     local SchemeObject *cur;
 
@@ -97,8 +97,8 @@ Symbol *beginSym;
 
 - (void) emitVariable: (Symbol*) sym
 {
-    local integer depth = [scope depthOf: sym];
-    local integer index = [scope indexOf: sym];
+    local int depth = [scope depthOf: sym];
+    local int index = [scope indexOf: sym];
 
     [code addInstruction: [Instruction opcode: LOADENV]];
     if (depth != -1) {
@@ -116,7 +116,7 @@ Symbol *beginSym;
 
 - (void) emitDefine: (SchemeObject*) expression
 {
-    local integer index = 0;
+    local int index = 0;
     
     if (![expression isKindOfClass: [Cons class]] ||
         ![[(Cons*) expression cdr] isKindOfClass: [Cons class]]) {
@@ -148,10 +148,10 @@ Symbol *beginSym;
     [code addInstruction: [Instruction opcode: SETGLOBAL]];
 }
 
-- (void) emitIf: (SchemeObject*) expression flags: (integer) fl
+- (void) emitIf: (SchemeObject*) expression flags: (int) fl
 {
     local Instruction *falseLabel, *endLabel;
-    local integer index;
+    local int index;
     if (![expression isKindOfClass: [Cons class]] ||
         ![[(Cons*) expression cdr] isKindOfClass: [Cons class]]) {
             err = [Error type: "syntax"
@@ -184,10 +184,10 @@ Symbol *beginSym;
 
     
 
-- (void) emitLetrec: (SchemeObject*) expression flags: (integer) fl
+- (void) emitLetrec: (SchemeObject*) expression flags: (int) fl
 {
     local SchemeObject *bindings;
-    local integer count;
+    local int count;
 
     if (!isList(expression) ||
         !isList([(Cons*) expression car]) ||
@@ -223,7 +223,7 @@ Symbol *beginSym;
     scope = [scope outer];
 }
 
-- (void) emitExpression: (SchemeObject*) expression flags: (integer) fl
+- (void) emitExpression: (SchemeObject*) expression flags: (int) fl
 {
     if ([expression isKindOfClass: [Cons class]]) {
             [code source: [expression source]];
@@ -264,7 +264,7 @@ Symbol *beginSym;
     }
 }
 
-- (void) emitApply: (SchemeObject*) expression flags: (integer) fl
+- (void) emitApply: (SchemeObject*) expression flags: (int) fl
 {
     local Instruction *label = [Instruction opcode: LABEL];
     if (!(fl & TAIL)) {
@@ -283,7 +283,7 @@ Symbol *beginSym;
     local Compiler *compiler = [Compiler newWithLambda: expression
                                         scope: scope];
     local SchemeObject *res;
-    local integer index;
+    local int index;
 
     res = [compiler compile];
     if ([res isError]) {
@@ -298,7 +298,7 @@ Symbol *beginSym;
 
 - (void) emitConstant: (SchemeObject*) expression
 {
-    local integer index;
+    local int index;
     index = [code addConstant: expression];
     [code addInstruction: [Instruction opcode: LOADLITS]];
     [code addInstruction: [Instruction opcode: GET operand: index]];

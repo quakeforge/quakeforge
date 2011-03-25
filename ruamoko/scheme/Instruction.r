@@ -7,7 +7,7 @@
     return [[self alloc] initWithOpcode: oc operand: 0 label: nil];
 }
 
-+ (id) opcode: (opcode_e) oc operand: (integer) op
++ (id) opcode: (opcode_e) oc operand: (int) op
 {
     return [[self alloc] initWithOpcode: oc operand: op label: nil];
 }
@@ -17,7 +17,7 @@
     return [[self alloc] initWithOpcode: oc operand: 0 label: l];
 }
 
-- (id) initWithOpcode: (opcode_e) oc operand: (integer) op label: (Instruction *) l
+- (id) initWithOpcode: (opcode_e) oc operand: (int) op label: (Instruction *) l
 {
     self = [super init];
     opcode = oc;
@@ -26,12 +26,12 @@
     return self;
 }
 
-- (void) offset: (integer) ofs
+- (void) offset: (int) ofs
 {
     offset = ofs;
 }
 
-- (integer) offset
+- (int) offset
 {
     return offset;
 }

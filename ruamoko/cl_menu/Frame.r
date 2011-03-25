@@ -27,7 +27,7 @@
 	return duration;
 }
 
-- (void) draw: (integer) x :(integer) y
+- (void) draw: (int) x :(int) y
 {
 	[picture draw :x :y];
 }

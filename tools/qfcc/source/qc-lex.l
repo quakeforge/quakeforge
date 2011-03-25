@@ -271,7 +271,7 @@ static keyword_t keywords[] = {
 	{"vector",		TYPE,	&type_vector,		1, PROG_ID_VERSION,	0},
 	{"entity",		TYPE,	&type_entity,		1, PROG_ID_VERSION,	0},
 	{"quaternion",	TYPE,	&type_quaternion,	0, PROG_VERSION,	0},
-	{"integer",		TYPE,	&type_integer,		0, PROG_VERSION,	0},
+	{"int",			TYPE,	&type_integer,		0, PROG_VERSION,	0},
 	{"unsigned",	TYPE,	&type_integer,		0, PROG_VERSION,	0},//FIXME
 	{"function",	TYPE,	&type_function,		0, PROG_VERSION,	0},
 	{"id",			TYPE,	&type_id,			0, PROG_VERSION,	1},

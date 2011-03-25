@@ -5,10 +5,10 @@
 #include "system.h"
 #include "HUD.h"
 
-integer HUDHandleClass;
+int HUDHandleClass;
 
 @implementation HUDObject
-- (id) initWithComponents: (integer) x : (integer) y
+- (id) initWithComponents: (int) x : (int) y
 {
 	self = [super init];
 	origin = makePoint (x, y);
@@ -22,7 +22,7 @@ integer HUDHandleClass;
 	[super dealloc];
 }
 
-- (integer) handle
+- (int) handle
 {
 	return handle;
 }
@@ -63,7 +63,7 @@ integer HUDHandleClass;
 @end
 
 @implementation HUDText : HUDObject
-- (id) initWithComponents: (integer) x :(integer) y :(string) _text
+- (id) initWithComponents: (int) x :(int) y :(string) _text
 {
 	self = [super initWithComponents :x :y];
 	[self setText :_text];
@@ -73,7 +73,7 @@ integer HUDHandleClass;
 
 - (Size) size
 {
-	return makeSize (8*(integer) strlen (text), 8);
+	return makeSize (8*(int) strlen (text), 8);
 }
 
 - (string) text
@@ -94,7 +94,7 @@ integer HUDHandleClass;
 @end
 
 @implementation HUDGraphic : HUDObject
-- (id) initWithComponents: (integer)x :(integer)y :(string) _file
+- (id) initWithComponents: (int)x :(int)y :(string) _file
 {
 	self = [super initWithComponents :x :y];
 	[self setFile :_file];
@@ -128,7 +128,7 @@ integer HUDHandleClass;
 
 @implementation HUDAnimation : HUDObject
 
-- (id) initWithComponents: (integer) x :(integer) y
+- (id) initWithComponents: (int) x :(int) y
 {
 	self = [super initWithComponents :x :y];
 	frames = [[Array alloc] init];

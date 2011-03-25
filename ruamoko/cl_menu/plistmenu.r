@@ -42,7 +42,7 @@ class_from_plist (PLDictionary *pldict)
 	local id class;
 	local id obj;
 	local PLArray *messages, *msg;
-	local integer message_count, i, j;
+	local int message_count, i, j;
 	local SEL sel;
 	local PLItem *item;
 
@@ -91,7 +91,7 @@ class_from_plist (PLDictionary *pldict)
 array_from_plist (PLArray *plarray)
 {
 	local Array *array;
-	local integer i, count;
+	local int i, count;
 	local @param ret;
 
 	array = [[Array alloc] init];
@@ -114,7 +114,7 @@ rect_from_plist (PLString *plstring)
 {
 	local string str = [plstring string];
 	local string tmp;
-	local integer xp, yp, xl, yl;
+	local int xp, yp, xl, yl;
 	local PLItem *item;
 	local union ParamRect pr;
 

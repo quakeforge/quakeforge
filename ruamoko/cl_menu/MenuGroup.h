@@ -5,10 +5,10 @@
 
 @interface MenuGroup : Group
 {
-	integer base;
-	integer current;
+	int base;
+	int current;
 }
--(void)setBase:(integer)b;
+-(void)setBase:(int)b;
 -(void) next;
 -(void) prev;
 @end

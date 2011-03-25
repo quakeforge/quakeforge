@@ -1,6 +1,6 @@
 #include "gui/Size.h"
 
-Size makeSize (integer width, integer height)
+Size makeSize (int width, int height)
 {
 	Size s = {width, height};
 	return s;

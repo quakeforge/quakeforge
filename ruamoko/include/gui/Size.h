@@ -2,13 +2,13 @@
 #define __ruamoko_gui_Size_h
 
 struct Size {
-	integer width;
-	integer height;
+	int width;
+	int height;
 };
 
 typedef struct Size Size;
 
-@extern Size makeSize (integer width, integer height);
+@extern Size makeSize (int width, int height);
 @extern Size addSize (Size a, Size b);
 @extern Size subtractSize (Size a, Size b);
 

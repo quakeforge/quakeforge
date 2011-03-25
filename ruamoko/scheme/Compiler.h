@@ -20,10 +20,10 @@
 - (id) initWithLambda: (SchemeObject *) xp scope: (Scope *) sc;
 - (SchemeObject*) compile;
 
-- (void) emitExpression: (SchemeObject *) expression flags: (integer) fl;
+- (void) emitExpression: (SchemeObject *) expression flags: (int) fl;
 - (void) emitLambda: (SchemeObject *) expression;
 - (void) emitConstant: (SchemeObject *) expression;
-- (void) emitApply: (SchemeObject *) expression flags: (integer) fl;
+- (void) emitApply: (SchemeObject *) expression flags: (int) fl;
 @end
 
 #endif //__Compiler_h

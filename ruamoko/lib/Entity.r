@@ -8,7 +8,7 @@
 
 typedef void () void_function;
 
-integer PR_SetField (entity ent, string field, string value) = #0;
+int PR_SetField (entity ent, string field, string value) = #0;
 function PR_FindFunction (string func) = #0;
 
 @static void ParseEntities (string ent_data);
@@ -63,7 +63,7 @@ function PR_FindFunction (string func) = #0;
 	local string classname;
 	local id class;
 	local entity ent;
-	local integer count;
+	local int count;
 	local string field, value;
 	local plitem_t keys;
 	local function func;
@@ -106,7 +106,7 @@ function PR_FindFunction (string func) = #0;
 	local script_t script;
 	local plitem_t plist, ent, key, value;
 	local string token;
-	local integer anglehack, i, count;
+	local int anglehack, i, count;
 
 	script = Script_New ();
 	token = Script_Start (script, "ent data", ent_data);

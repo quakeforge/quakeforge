@@ -5,7 +5,7 @@
 
 @implementation View
 
-- (id) initWithComponents: (integer)x : (integer)y : (integer)w : (integer)h
+- (id) initWithComponents: (int)x : (int)y : (int)w : (int)h
 {
 	self = [self init];
 	xpos = xabs = x;
@@ -27,13 +27,13 @@
 	return [self initWithOrigin:aRect.origin size:aRect.size];
 }
 
-- (id) canFocus: (integer) cf
+- (id) canFocus: (int) cf
 {
 	flags |= 1;
 	return self;
 }
 
-- (integer) canFocus
+- (int) canFocus
 {
 	return flags & 1;
 }
@@ -43,7 +43,7 @@
 	return makePoint (xabs, yabs);
 }
 
-- (void) setBasePos: (integer) x y: (integer) y
+- (void) setBasePos: (int) x y: (int) y
 {
 	local Point point = {x, y};
 	xabs = xpos + x;
@@ -61,7 +61,7 @@
 {
 }
 
-- (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
+- (int) keyEvent:(int)key unicode:(int)unicode down:(int)down
 {
 	return 0;
 }

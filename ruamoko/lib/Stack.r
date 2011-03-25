@@ -71,7 +71,7 @@
 	return [top object];
 }
 
-- (integer) count
+- (int) count
 {
 	return stackSize;
 }

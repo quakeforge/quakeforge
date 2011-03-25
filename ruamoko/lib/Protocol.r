@@ -2,12 +2,12 @@
 
 struct obj_protocol_list {
 	struct obj_protocol_list *next;
-	integer count;
+	int count;
 	Protocol *list[1];
 };
 
 struct obj_method_description_list {
-	integer count;
+	int count;
 	struct obj_method_description list[1];
 };
 
@@ -19,7 +19,7 @@ struct obj_method_description_list {
 
 - (BOOL) conformsTo: (Protocol *)aProtocolObject
 {
-	local integer i;
+	local int i;
 	local struct obj_protocol_list *proto_list;
 
 	if (aProtocolObject.protocol_name == protocol_name)
@@ -37,7 +37,7 @@ struct obj_method_description_list {
 
 - (struct obj_method_description *) descriptionForInstanceMethod: (SEL)aSel
 {
-	local integer i;
+	local int i;
 	local struct obj_protocol_list *proto_list;
 	local string name = sel_get_name (aSel);
 	local struct obj_method_description *result;
@@ -60,7 +60,7 @@ struct obj_method_description_list {
 
 - (struct obj_method_description *) descriptionForClassMethod: (SEL)aSel
 {
-	local integer i;
+	local int i;
 	local struct obj_protocol_list *proto_list;
 	local string name = sel_get_name (aSel);
 	local struct obj_method_description *result;

@@ -1,6 +1,6 @@
 #include "key.h"
 
-string (integer target, integer keynum, string binding) Key_SetBinding = #0;
-integer (integer target, integer bindnum, string binding) Key_LookupBinding = #0;
-integer (integer target, string binding) Key_CountBinding = #0;
-string (integer keynum) Key_KeynumToString = #0;
+string (int target, int keynum, string binding) Key_SetBinding = #0;
+int (int target, int bindnum, string binding) Key_LookupBinding = #0;
+int (int target, string binding) Key_CountBinding = #0;
+string (int keynum) Key_KeynumToString = #0;

@@ -7,23 +7,23 @@
 @interface View: Object
 {
 @public
-	integer xpos, ypos;
-	integer xlen, ylen;
-	integer xabs, yabs;
+	int xpos, ypos;
+	int xlen, ylen;
+	int xabs, yabs;
 	View	*parent;
-	integer flags;
+	int flags;
 }
 
-- (id) initWithComponents: (integer)x : (integer)y : (integer)w : (integer)h;
+- (id) initWithComponents: (int)x : (int)y : (int)w : (int)h;
 - (id) initWithOrigin: (Point)anOrigin size: (Size)aSize;
 - (id) initWithBounds: (Rect)aRect;
-- (id) canFocus: (integer)cf;
-- (integer) canFocus;
-- (void) setBasePos: (integer)x y: (integer)y;
+- (id) canFocus: (int)cf;
+- (int) canFocus;
+- (void) setBasePos: (int)x y: (int)y;
 - (void) setBasePosFromView: (View*)view;
 - (void) draw;
 
-- (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down;
+- (int) keyEvent:(int)key unicode:(int)unicode down:(int)down;
 @end
 
 #endif //__ruamoko_gui_View_h

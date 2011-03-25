@@ -16,9 +16,9 @@
     return self;
 }
 
-- (integer) indexLocal: (Symbol *) sym
+- (int) indexLocal: (Symbol *) sym
 {
-    local integer index;
+    local int index;
 
     for (index = 0; index < [names count]; index++) {
             if (sym == [names objectAtIndex: index]) {
@@ -28,9 +28,9 @@
     return -1;
 }
 
-- (integer) indexOf: (Symbol *) sym
+- (int) indexOf: (Symbol *) sym
 {
-    local integer index;
+    local int index;
 
     index = [self indexLocal: sym];
 
@@ -41,10 +41,10 @@
     }
 }
 
-- (integer) depthOf: (Symbol *) sym
+- (int) depthOf: (Symbol *) sym
 {
-    local integer index;
-    local integer res;
+    local int index;
+    local int res;
 
     index = [self indexLocal: sym];
 

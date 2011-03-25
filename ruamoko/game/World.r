@@ -2,14 +2,14 @@
 #include "World.h"
 
 id		world;
-integer	deathmatch;
+int	deathmatch;
 
 #define MAX_BODIES 8
 
 @interface BodyQueue: Object
 {
 	entity	bodies[MAX_BODIES];
-	integer	head;
+	int	head;
 }
 
 - (id) init;
@@ -21,7 +21,7 @@ integer	deathmatch;
 
 - (id) init
 {
-	local integer	i;
+	local int	i;
 	self = [super init];
 
 	head = nil;

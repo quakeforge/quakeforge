@@ -29,7 +29,7 @@ typedef struct list_bucket_s list_bucket_t;
 	[super dealloc];
 }
 
-- (id) getItemAt: (integer) index
+- (id) getItemAt: (int) index
 {
 	local list_bucket_t *e;
 	if (index < 0 || index >= count)
@@ -130,7 +130,7 @@ typedef struct list_bucket_s list_bucket_t;
 	return obj;
 }
 
-- (integer) count
+- (int) count
 {
 	return count;
 }

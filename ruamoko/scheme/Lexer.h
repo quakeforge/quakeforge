@@ -7,12 +7,12 @@
 {
     string source;
     string filename;
-    integer linenum;
+    int linenum;
 }
 + (id) newFromSource: (string) s file: (string) f;
 - (id) initWithSource: (string) s file: (string) f;
 - (SchemeObject *) nextToken;
-- (integer) lineNumber;
+- (int) lineNumber;
 @end
 
 #endif //__Lexer_h
