@@ -356,6 +356,8 @@ function_body
 		{
 			symbol_t   *sym = $<symbol>0;
 
+			if (!$<spec>-1.type)
+				$<spec>-1.type = type_default;
 			sym->type = find_type (append_type (sym->type, $<spec>-1.type));
 			$<symbol>$ = function_symbol (sym, $<spec>-1.is_overload, 1);
 		}
@@ -377,6 +379,8 @@ function_body
 		{
 			symbol_t   *sym = $<symbol>0;
 
+			if (!$<spec>-1.type)
+				$<spec>-1.type = type_default;
 			sym->type = find_type (append_type (sym->type, $<spec>-1.type));
 			sym = function_symbol (sym, $<spec>-1.is_overload, 1);
 			build_builtin_function (sym, $3, 0);
@@ -394,6 +398,8 @@ external_decl
 			specifier_t spec = $<spec>0;
 			type_t     *type;
 
+			if (!spec.type)
+				spec.type = type_default;
 			type = find_type (append_type ($1->type, spec.type));
 			if (spec.is_typedef) {
 				$1->type = type;
@@ -409,6 +415,8 @@ external_decl
 			specifier_t spec = $<spec>0;
 			type_t     *type;
 
+			if (!spec.type)
+				spec.type = type_default;
 			type = find_type (append_type ($1->type, spec.type));
 			if (spec.is_typedef) {
 				error (0, "typedef %s is initialized", $1->name);
@@ -423,6 +431,8 @@ external_decl
 	| function_decl
 		{
 			specifier_t spec = $<spec>0;
+			if (!spec.type)
+				spec.type = type_default;
 			$1->type = find_type (append_type ($1->type, spec.type));
 			if (spec.is_typedef) {
 				$1->sy_type = sy_type;
@@ -610,12 +620,16 @@ struct_decl_list
 struct_decl
 	: function_decl
 		{
+			if (!$<spec>0.type)
+				$<spec>0.type = type_default;
 			$1->type = append_type ($1->type, $<spec>0.type);
 			$1->type = find_type ($1->type);
 			symtab_addsymbol (current_symtab, $1);
 		}
 	| var_decl
 		{
+			if (!$<spec>0.type)
+				$<spec>0.type = type_default;
 			$1->type = append_type ($1->type, $<spec>0.type);
 			$1->type = find_type ($1->type);
 			symtab_addsymbol (current_symtab, $1);
@@ -732,6 +746,8 @@ qc_var_list
 param_declaration
 	: type var_decl
 		{
+			if (!$1.type)
+				$1.type = type_default;
 			$2->type = find_type (append_type ($2->type, $1.type));
 			$$ = new_param (0, $2->type, $2->name);
 		}
@@ -743,6 +759,8 @@ abstract_decl
 	: type abs_decl
 		{
 			$$ = $2;
+			if (!$1.type)
+				$1.type = type_default;
 			$$->type = find_type (append_type ($$->type, $1.type));
 		}
 	;
@@ -855,6 +873,8 @@ decl
 			specifier_t spec = $<spec>0;
 			type_t     *type;
 
+			if (!spec.type)
+				spec.type = type_default;
 			type = find_type (append_type ($1->type, spec.type));
 			initialize_def ($1, type, $2, current_symtab->space,
 							$<spec>0.storage);
