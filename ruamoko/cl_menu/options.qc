@@ -57,6 +57,7 @@ Group *video_options;
 Group *audio_options;
 Group *control_options;
 Group *feature_options;
+Group *network_options;
 
 Group *player_options;
 InputLine *player_config_plname_il;
@@ -64,10 +65,6 @@ InputLine *player_config_tname_il;
 InputLine *player_config_iactive;
 CvarColorView *topcolor_view;
 CvarColorView *bottomcolor_view;
-
-Group *network_options;
-InputLine *network_config_rate_il;
-InputLine *network_config_iactive;
 
 /*
 	some definitions of border values for different things
@@ -517,49 +514,9 @@ string network_config_vals[NUM_NETWORKCONFIG_CMDS] = {
 
 
 int (int key, int unicode, int down)
-KEYEV_network_options =
+KEY_network_options =
 {
-	switch (key) {
-		case QFK_DOWN:
-		case QFM_WHEEL_DOWN:
-			if (!network_config_iactive) {
-				network_config_cursor ++;
-				network_config_cursor %= NUM_PLAYERCONFIG_CMDS;
-			}
-			break;
-		case QFK_UP:
-		case QFM_WHEEL_UP:
-			if (!network_config_iactive) {
-				network_config_cursor += NUM_PLAYERCONFIG_CMDS - 1;
-				network_config_cursor %= NUM_PLAYERCONFIG_CMDS;
-			}
-			break;
-		case QFK_RETURN:
-			if (network_config_iactive) {
-				if(network_config_iactive == network_config_rate_il) {
-					Cvar_SetString ("rate",
-									[network_config_rate_il text]);
-				}
-				network_config_iactive = nil;
-			} else {
-				if (network_config_cursor == 0) {
-					network_config_iactive = network_config_rate_il;
-				}
-			}
-			break;
-	}
-	if (key != QFK_RETURN && network_config_iactive) {
-		[network_config_iactive processInput:(key >= 256 ? key : unicode)];
-	}
-
-	if (!(key == QFK_RIGHT || key == QFK_LEFT )) {
-		return 1;
-	}
-
-//	switch (network_config_vals[network_config_cursor]) {
-//	} // none yet
-
-	return 1;
+	return [network_options keyEvent:key unicode:unicode down:down];
 };
 
 /*
@@ -570,25 +527,9 @@ KEYEV_network_options =
 int (int x, int y)
 DRAW_network_options =
 {
-	local int	cursor_pad = 0, spacing = 120;
-
-	[network_config_rate_il cursor:network_config_iactive == network_config_rate_il];
 	[network_options setBasePos:x y:y];
 	[network_options draw];
-
-	opt_cursor  (x + 62, y + network_config_cursor_tbl[network_config_cursor]);
 	return 1;
-};
-
-/*
-	CB_ME_network_options
-
-	Entercallback for the networkmenu.
-*/
-void () 
-CB_ME_network_options =
-{
-	[network_config_rate_il setText:Cvar_GetString ("rate")]; 
 };
 
 /*
@@ -599,39 +540,19 @@ CB_ME_network_options =
 void
 MENU_network_options (PLItem *plist)
 {
-	local id view;
+	local @param ret;
+	Menu_Begin (54, 90, "Network");
+	Menu_FadeScreen (1);
+	Menu_KeyEvent (KEY_network_options);
+	Menu_Draw (DRAW_network_options);
 
 	network_options = [[Group alloc] initWithComponents:0 :0 :320 :200];
 
-	view = [[Pic alloc] initWithComponents:16 :4 :0 :0];
-	[view setPic:"gfx/qplaque.lmp"];
-	[network_options addView:view];
+	if (plist) {
+		ret = object_from_plist ([(PLDictionary*) plist getObjectForKey:"network_options"]);
+		network_options = ret.pointer_val;
+	}
 
-	view = [[CenterPic alloc] initWithComponents:160 :4 :0 :0];
-	[view setPic:"gfx/p_option.lmp"];
-	[network_options addView:view];
-
-	view = [[Text alloc] initWithComponents:54 :40 :56 :8];
-	[view setText:"Network"];
-	[network_options addView:view];
-
-	view = [[Text alloc] initWithComponents:54 :50 :56 :8];
-	[view setText:"-------"];
-	[network_options addView:view];
-
-	view = [[Text alloc] initWithComponents:70 :NETWORK_CONF_Y_PAD + 8 :56 :8];
-	[view setText:"Rate..:"];
-	[network_options addView:view];
-
-	network_config_rate_il = [[InputLineBox alloc] initWithBounds:makeRect (120, NETWORK_CONF_Y_PAD, 9, 4) promptCharacter:' '];
-	[network_config_rate_il setWidth:9];
-	[network_options addView:network_config_rate_il];
-
-	Menu_Begin (54, 90, "Network");
-	Menu_FadeScreen (1);
-	Menu_KeyEvent (KEYEV_network_options);
-	Menu_EnterHook (CB_ME_network_options);
-	Menu_Draw (DRAW_network_options);
 	Menu_End ();
 };
 

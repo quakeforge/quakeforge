@@ -25,21 +25,21 @@
 
 - (int) keyEvent:(int)key unicode:(int)unicode down:(int)down
 {
-	switch (key) {
-		case QFK_DOWN:
-		case QFM_WHEEL_DOWN:
-			[self next];
-			return 1;
-		case QFK_UP:
-		case QFM_WHEEL_UP:
-			[self prev];
-			return 1;
-		default:
-			return [[views objectAtIndex: current]
-						keyEvent: key
-						unicode: unicode
-						down: down];
+	View *cur = [views objectAtIndex: current];
+	int   ret = [cur keyEvent: key unicode: unicode down: down];
+	if (!ret) {
+		switch (key) {
+			case QFK_DOWN:
+			case QFM_WHEEL_DOWN:
+				[self next];
+				return 1;
+			case QFK_UP:
+			case QFM_WHEEL_UP:
+				[self prev];
+				return 1;
+		}
 	}
+	return ret;
 }
 
 -(void) next
