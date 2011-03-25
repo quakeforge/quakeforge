@@ -619,14 +619,14 @@ Menu_Draw_Hud (view_t *view)
 	run_menu_post ();
 }
 
-void
+int
 Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 {
 	menu_item_t *item;
 	int         ret;
 
 	if (!menu)
-		return;
+		return 0;
 	if (menu->keyevent) {
 		run_menu_pre ();
 		PR_RESET_PARAMS (&menu_pr_state);
@@ -637,7 +637,7 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		ret = R_INT (&menu_pr_state);
 		run_menu_post ();
 		if (ret)
-			return;
+			return 1;
 	} else if (menu->items && menu->items[menu->cur_item]->func
 			   && menu->items[menu->cur_item]->allkeys) {
 		run_menu_pre ();
@@ -652,21 +652,21 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		ret = R_INT (&menu_pr_state);
 		run_menu_post ();
 		if (ret)
-			return;
+			return 1;
 	}
 	if (!menu || !menu->items)
-		return;
+		return 0;
 	switch (key) {
 		case QFK_DOWN:
 		case QFM_WHEEL_DOWN:
 			menu->cur_item++;
 			menu->cur_item %= menu->num_items;
-			break;
+			return 1;
 		case QFK_UP:
 		case QFM_WHEEL_UP:
 			menu->cur_item += menu->num_items - 1;
 			menu->cur_item %= menu->num_items;
-			break;
+			return 1;
 		case QFK_RETURN:
 		case QFM_BUTTON1:
 			{
@@ -690,9 +690,9 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 					}
 				}
 			}
-			break;
+			return 1;
 		default:
-			break;
+			return 0;
 	}
 }
 

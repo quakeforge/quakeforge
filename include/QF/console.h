@@ -139,7 +139,7 @@ void Menu_Init (void);
 void Menu_Load (void);
 void Menu_Draw (struct view_s *view);
 void Menu_Draw_Hud (struct view_s *view);
-void Menu_KeyEvent (knum_t key, short unicode, qboolean down);
+int Menu_KeyEvent (knum_t key, short unicode, qboolean down);
 void Menu_Enter (void);
 void Menu_Leave (void);
 

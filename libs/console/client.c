@@ -460,6 +460,11 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 	if (!down)
 		return;
 
+	if (key_dest == key_menu) {
+		if (Menu_KeyEvent (key, unicode, down))
+			return;
+	}
+
 	if (down && (key == QFK_ESCAPE || unicode == '\x1b')) {
 		switch (key_dest) {
 			case key_menu:
@@ -488,11 +493,8 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 	}
 
 	if (key_dest == key_menu) {
-		Menu_KeyEvent (key, unicode, down);
 		return;
-	}
-
-	if (key_dest == key_message) {
+	} else if (key_dest == key_message) {
 		if (chat_team) {
 			il = say_team_line;
 		} else {
