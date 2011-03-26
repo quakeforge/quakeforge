@@ -56,6 +56,7 @@
 #include <QF/qendian.h>
 #include <QF/quakeio.h>
 #include <QF/sys.h>
+#include <QF/va.h>
 #include <QF/zone.h>
 
 #include "lmp.h"
@@ -90,7 +91,7 @@ replaceExtension (const char *oldstr, const char *extension)
 	char *newstr;
 
 	*blank = 0;
-	asprintf (&newstr, "%s.%s", tmp, extension);
+	newstr = nva ("%s.%s", tmp, extension);
 	free (tmp);
 	return newstr;
 }

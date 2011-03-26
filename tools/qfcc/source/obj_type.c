@@ -40,7 +40,9 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#include <alloca.h>
+#ifdef HAVE_ALLOCA_H
+# include <alloca.h>
+#endif
 
 #include "compat.h"
 
