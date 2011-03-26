@@ -326,8 +326,9 @@ cl_conmode_f (cvar_t *var)
 }
 
 static void
-C_Say (const char *line)
+C_Say (inputline_t *il)
 {
+	const char *line = il->line;
 	if (!*line)
 		return;
 
@@ -339,8 +340,9 @@ C_Say (const char *line)
 }
 
 static void
-C_SayTeam (const char *line)
+C_SayTeam (inputline_t *il)
 {
+	const char *line = il->line;
 	if (!*line)
 		return;
 
@@ -798,6 +800,12 @@ C_GIB_HUD_Disable_f (void)
 }
 
 static void
+exec_line (inputline_t *il)
+{
+	Con_ExecLine (il->line);
+}
+
+static void
 C_Init (void)
 {
 	view_t     *view;
@@ -875,7 +883,7 @@ C_Init (void)
 
 	input_line = Con_CreateInputLine (32, MAXCMDLINE, ']');
 	input_line->complete = Con_BasicCompleteCommandLine;
-	input_line->enter = Con_ExecLine;
+	input_line->enter = exec_line;
 	input_line->width = con_linewidth;
 	input_line->user_data = 0;
 	input_line->draw = 0;

@@ -105,8 +105,10 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 
 	switch (ch) {
 		case QFK_RETURN:
-			if (il->enter)
-				il->enter (il->lines[il->edit_line] + 1);
+			if (il->enter) {
+				il->line = il->lines[il->edit_line] + 1;
+				il->enter (il);
+			}
 			Con_ClearTyping (il, 1);
 			break;
 		case QFK_TAB:

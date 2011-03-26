@@ -544,6 +544,12 @@ create_window (view_t *parent, int xpos, int ypos, int xlen, int ylen,
 	return view;
 }
 
+static void
+exec_line (inputline_t *il)
+{
+	Con_ExecLine (il->line);
+}
+
 static inputline_t *
 create_input_line (int width)
 {
@@ -551,7 +557,7 @@ create_input_line (int width)
 
 	input_line = Con_CreateInputLine (16, MAXCMDLINE, ']');
 	input_line->complete = sv_complete;
-	input_line->enter = Con_ExecLine;
+	input_line->enter = exec_line;
 	input_line->user_data = input;
 	input_line->draw = draw_input_line;
 	input_line->width = width;

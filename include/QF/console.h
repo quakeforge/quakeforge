@@ -57,10 +57,11 @@ typedef struct inputline_s
 	int		history_line;	// current history line
 	size_t	linepos;		// cursor position within the current edit line
 	size_t	scroll;			// beginning of displayed line
-	size_t	width;			// viewable widht for horizontal scrolling
+	size_t	width;			// viewable width for horizontal scrolling
+	const char *line;
 	void   *user_data;		// eg: window pointer
 	void	(*complete)(struct inputline_s *); // tab key pressed
-	void	(*enter)(const char *line); // enter key pressed
+	void	(*enter)(struct inputline_s *); // enter key pressed
 	void	(*draw)(struct inputline_s *); // draw input line to screen
 } inputline_t;
 
