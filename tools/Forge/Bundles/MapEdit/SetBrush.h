@@ -8,7 +8,7 @@
 
 #include "TexturePalette.h"
 
-#define     MAX_FACES 16
+#define     MAX_FACES 64
 
 typedef  struct {
 	int     numpoints;

@@ -685,6 +685,10 @@ ParseVerts (script_t *script, int *n_verts)
 	}
 
 	do {
+		if (f - faces >= MAX_FACES) {
+			printf ("%s:%d: too many faces\n", script->file, script->line);
+			abort ();
+		}
 		if (!Script_GetToken (script, true))
 			break;
 		if (!strcmp (Script_Token (script), "}"))
