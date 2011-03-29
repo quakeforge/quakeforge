@@ -699,6 +699,9 @@ type_assignable (type_t *dst, type_t *src)
 	// same type
 	if (dst == src)
 		return 1;
+	// any field = any field
+	if (dst->type == ev_field && src->type == ev_field)
+		return 1;
 	// id = any class pointer
 	if (dst == &type_id && src->type == ev_pointer
 		&& is_class (src->t.fldptr.type))
