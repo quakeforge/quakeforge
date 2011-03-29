@@ -726,7 +726,7 @@ qfo_relocate_refs (qfo_t *qfo)
 				// these should never appear in a qfo file
 				break;
 			case rel_def_op:
-				//FIXME how?
+				QFO_INT (qfo, reloc->space, reloc->offset) = reloc->target;
 				break;
 			case rel_def_def:
 				QFO_INT (qfo, reloc->space, reloc->offset) = def->offset;
@@ -738,7 +738,7 @@ qfo_relocate_refs (qfo_t *qfo)
 				QFO_INT (qfo, reloc->space, reloc->offset) = reloc->target;
 				break;
 			case rel_def_field:
-				//FIXME how?
+				QFO_INT (qfo, reloc->space, reloc->offset) = def->offset;
 				break;
 			case rel_op_a_def_ofs:
 				QFO_STATEMENT (qfo, reloc->offset)->a += def->offset;
