@@ -34,6 +34,7 @@
 
 #include "QF/link.h"
 #include "QF/progs.h"
+#include "QF/ruamoko.h"
 
 #include "qw/protocol.h"
 #include "sv_pr_cmds.h"
@@ -216,16 +217,21 @@ static inline void
 sv_pr_touch (edict_t *self, edict_t *other)
 {
 	pr_int_t    this;
+	func_t      touch;
 
+	touch = SVfunc (self, touch);
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
 	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, other);
-	if ((this = sv_pr_state.fields.this) != -1) {
+	if ((this = sv_pr_state.fields.this) != -1
+		&& E_POINTER (self, this)) {
 		PR_RESET_PARAMS (&sv_pr_state);
 		P_INT (&sv_pr_state, 0) = E_POINTER (self, this);
-		P_INT (&sv_pr_state, 1) = 0;
+		P_INT (&sv_pr_state, 1) = touch;
 		P_INT (&sv_pr_state, 2) = E_POINTER (other, this);
+		touch = RUA_Obj_msg_lookup (&sv_pr_state, E_POINTER (self, this),
+									touch);
 	}
-	PR_ExecuteProgram (&sv_pr_state, SVfunc (self, touch));
+	PR_ExecuteProgram (&sv_pr_state, touch);
 }
 
 static inline void
@@ -237,30 +243,40 @@ static inline void
 sv_pr_think (edict_t *self)
 {
 	pr_int_t    this;
+	func_t      think;
 
+	think = SVfunc (self, think);
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
 	*sv_globals.other = 0;
-	if ((this = sv_pr_state.fields.this) != -1) {
+	if ((this = sv_pr_state.fields.this) != -1
+		&& E_POINTER (self, this)) {
 		PR_RESET_PARAMS (&sv_pr_state);
 		P_INT (&sv_pr_state, 0) = E_POINTER (self, this);
-		P_INT (&sv_pr_state, 1) = 0;
+		P_INT (&sv_pr_state, 1) = think;
 		P_INT (&sv_pr_state, 2) = 0;
+		think = RUA_Obj_msg_lookup (&sv_pr_state, E_POINTER (self, this),
+									think);
 	}
-	PR_ExecuteProgram (&sv_pr_state, SVfunc (self, think));
+	PR_ExecuteProgram (&sv_pr_state, think);
 }
 
 static inline void
 sv_pr_blocked (edict_t *self, edict_t *other)
 {
 	pr_int_t    this;
+	func_t      blocked;
 
+	blocked = SVfunc (self, blocked);
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
 	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, other);
-	if ((this = sv_pr_state.fields.this) != -1) {
+	if ((this = sv_pr_state.fields.this) != -1
+		&& E_POINTER (self, this)) {
 		PR_RESET_PARAMS (&sv_pr_state);
 		P_INT (&sv_pr_state, 0) = E_POINTER (self, this);
-		P_INT (&sv_pr_state, 1) = 0;
+		P_INT (&sv_pr_state, 1) = blocked;
 		P_INT (&sv_pr_state, 2) = E_POINTER (other, this);
+		blocked = RUA_Obj_msg_lookup (&sv_pr_state, E_POINTER (self, this),
+									  blocked);
 	}
 	PR_ExecuteProgram (&sv_pr_state, SVfunc (self, blocked));
 }

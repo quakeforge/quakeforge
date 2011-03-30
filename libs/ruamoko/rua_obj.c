@@ -50,6 +50,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/pr_obj.h"
 #include "QF/progs.h"
+#include "QF/ruamoko.h"
 #include "QF/sys.h"
 
 #include "compat.h"
@@ -1649,4 +1650,24 @@ RUA_Obj_Init (progs_t *pr, int secure)
 	PR_RegisterBuiltins (pr, obj_methods);
 
 	PR_AddLoadFunc (pr, rua_init_runtime);
+}
+
+func_t
+RUA_Obj_msg_lookup (progs_t *pr, pointer_t _self, pointer_t __cmd)
+{
+	pr_id_t    *self = &G_STRUCT (pr, pr_id_t, _self);
+	pr_sel_t   *_cmd = &G_STRUCT (pr, pr_sel_t, __cmd);
+	func_t      imp;
+
+	if (!self)
+		return 0;
+	if (!_cmd)
+		PR_RunError (pr, "null selector");
+	imp = obj_msg_lookup (pr, self, _cmd);
+	if (!imp)
+		PR_RunError (pr, "%s does not respond to %s",
+					 PR_GetString (pr, object_get_class_name (pr, self)),
+					 PR_GetString (pr, pr->selector_names[_cmd->sel_id]));
+
+	return imp;
 }
