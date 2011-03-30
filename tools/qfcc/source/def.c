@@ -500,7 +500,10 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 				if (init->e.value.v.pointer.def)
 					reloc_def_field (init->e.value.v.pointer.def, sym->s.def);
 			} else {
-				memcpy (D_POINTER (void, sym->s.def), &init->e.value.v,
+				ex_value_t  v = init->e.value;
+				if (is_scalar (sym->type))
+					convert_value (&v, sym->type);
+				memcpy (D_POINTER (void, sym->s.def), &v.v,
 						type_size (type) * sizeof (pr_type_t));
 			}
 			sym->s.def->initialized = sym->s.def->constant = 1;
