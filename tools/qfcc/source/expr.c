@@ -598,7 +598,9 @@ int
 is_constant (expr_t *e)
 {
 	if (e->type == ex_nil || e->type == ex_value
-		|| (e->type == ex_symbol && e->e.symbol->sy_type == sy_const))
+		|| (e->type == ex_symbol && e->e.symbol->sy_type == sy_const)
+		|| (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
+			&& e->e.symbol->s.def->constant))
 		return 1;
 	return 0;
 }
@@ -670,6 +672,10 @@ expr_float (expr_t *e)
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_float)
 		return e->e.symbol->s.value.v.float_val;
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
+		&& e->e.symbol->s.def->constant
+		&& is_float (e->e.symbol->s.def->type))
+		return D_FLOAT (e->e.symbol->s.def);
 	internal_error (e, "not a float constant");
 }
 
@@ -750,6 +756,10 @@ expr_integer (expr_t *e)
 		&& (e->e.symbol->type->type == ev_integer
 			|| is_enum (e->e.symbol->type)))
 		return e->e.symbol->s.value.v.integer_val;
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
+		&& e->e.symbol->s.def->constant
+		&& is_integral (e->e.symbol->s.def->type))
+		return D_INT (e->e.symbol->s.def);
 	internal_error (e, "not an integer constant");
 }
 

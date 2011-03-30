@@ -133,7 +133,7 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 		if (!type_assignable (type, get_type (value)))
 			return error (value, "type mismatch in case label");
 		if (is_integral (type) && is_integral (val_type)) {
-			// do nothing
+			value = new_integer_expr (expr_integer (value));
 			debug (value, "integeral label used in integral switch");
 		} else if (is_integral (type) && is_float (val_type)) {
 			warning (value, "float label used in integral switch");
@@ -142,7 +142,7 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 			debug (value, "integeral label used in float switch");
 			value = new_float_expr (expr_integer (value));
 		} else if (is_float (type) && is_float (val_type)) {
-			// do nothing
+			value = new_float_expr (expr_float (value));
 			debug (value, "float label used in float switch");
 		}
 	}
