@@ -367,33 +367,41 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 	symbol_t   *field_sym;
 	reloc_t    *relocs = 0;
 
-	field_sym = symtab_lookup (pr.entity_fields, def->name);
-	if (!field_sym)
-		field_sym = new_symbol_type (def->name, type);
-	if (field_sym->s.def && field_sym->s.def->external) {
-		//FIXME this really is not the right way
-		relocs = field_sym->s.def->relocs;
-		free_def (field_sym->s.def);
-		field_sym->s.def = 0;
-	}
-	if (!field_sym->s.def) {
-		field_sym->s.def = new_def (def->name, type, pr.entity_data, storage);
-		field_sym->s.def->relocs = relocs;
-		field_sym->s.def->nosave = 1;
-	}
-	field_def = field_sym->s.def;
-	if (!field_sym->table)
-		symtab_addsymbol (pr.entity_fields, field_sym);
 	if (!init)  {
+		field_sym = symtab_lookup (pr.entity_fields, def->name);
+		if (!field_sym)
+			field_sym = new_symbol_type (def->name, type);
+		if (field_sym->s.def && field_sym->s.def->external) {
+			//FIXME this really is not the right way
+			relocs = field_sym->s.def->relocs;
+			free_def (field_sym->s.def);
+			field_sym->s.def = 0;
+		}
+		if (!field_sym->s.def) {
+			field_sym->s.def = new_def (def->name, type, pr.entity_data, storage);
+			field_sym->s.def->relocs = relocs;
+			field_sym->s.def->nosave = 1;
+		}
+		field_def = field_sym->s.def;
+		if (!field_sym->table)
+			symtab_addsymbol (pr.entity_fields, field_sym);
 		if (storage != st_extern) {
 			D_INT (def) = field_def->offset;
-			reloc_def_field (def, field_def);
+			reloc_def_field (field_def, def);
 			def->constant = 1;
 			def->nosave = 1;
 		}
 		// no support for initialized field vector componets (yet?)
 		if (type == &type_vector && options.code.vector_components)
 			init_vector_components (field_sym, 1);
+	} else if (init->type == ex_symbol) {
+		symbol_t   *sym = init->e.symbol;
+		symbol_t   *field = symtab_lookup (pr.entity_fields, sym->name);
+		if (field) {
+			expr_t     *new = new_field_expr (0, field->type, field->s.def);
+			init->type = new->type;
+			init->e = new->e;
+		}
 	}
 }
 
@@ -489,6 +497,8 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 				|| init->e.value.type == ev_field) {
 				// FIXME offset pointers
 				D_INT (sym->s.def) = init->e.value.v.pointer.val;
+				if (init->e.value.v.pointer.def)
+					reloc_def_field (init->e.value.v.pointer.def, sym->s.def);
 			} else {
 				memcpy (D_POINTER (void, sym->s.def), &init->e.value.v,
 						type_size (type) * sizeof (pr_type_t));
