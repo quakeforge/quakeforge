@@ -1091,17 +1091,17 @@ check_defs (void)
 			linker_add_def (".self", &type_entity, QFOD_GLOBAL, 0);
 			did_self = 1;
 		} else if (strcmp (name, ".this") == 0 && !did_this) {
-			pointer_t   offset;
 			type_t     *type;
 			int         flags;
+			defref_t   *this_ref;
 
 			if (!class_Class.super_class)
 				class_init ();
-			type = field_type (&type_ClassPtr);
-			offset = defspace_alloc_loc (work_entity_data, 1);
-			flags = (QFOD_GLOBAL | QFOD_CONSTANT
-					 | QFOD_INITIALIZED | QFOD_NOSAVE);
-			linker_add_def (".this", type, flags, offset);
+			flags = QFOD_GLOBAL | QFOD_NOSAVE;
+			this_ref = make_def (qfo_entity_space, name, &type_id, flags, 0);
+			flags |= QFOD_CONSTANT | QFOD_INITIALIZED;
+			type = field_type (&type_id);
+			linker_add_def (".this", type, flags, REF (this_ref)->offset);
 			did_this = 1;
 		}
 	}
