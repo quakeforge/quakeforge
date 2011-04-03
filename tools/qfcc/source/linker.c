@@ -527,7 +527,10 @@ define_def (const char *name, type_t *type, unsigned flags, int v)
 	def = space->defs + space->num_defs++;
 	memset (def, 0, sizeof (*def));
 	def->name = linker_add_string (name);
-	def->type = -linker_add_string (type->encoding);// this will be fixed later
+	def->type = -linker_add_string (type->encoding);
+	ref = Hash_Find (defined_type_defs, WORKSTR (-def->type));
+	if (ref)
+		def->type = REF (ref)->offset;
 	def->offset = defspace_alloc_loc (def_space, type_size (type));
 	def->flags = flags;
 	def_space->data[def->offset].integer_var = v;
