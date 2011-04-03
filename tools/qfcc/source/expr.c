@@ -794,7 +794,7 @@ new_self_expr (void)
 {
 	symbol_t   *sym;
 	
-	sym = make_symbol (".self", &type_entity, 0, st_extern);
+	sym = make_symbol (".self", &type_entity, pr.near_data, st_extern);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
 	return new_symbol_expr (sym);
@@ -805,7 +805,7 @@ new_this_expr (void)
 {
 	symbol_t   *sym;
 	
-	sym = make_symbol (".this", field_type (&type_id), 0, st_extern);
+	sym = make_symbol (".this", field_type (&type_id), pr.near_data, st_extern);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
 	return new_symbol_expr (sym);
