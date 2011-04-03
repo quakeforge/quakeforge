@@ -269,9 +269,8 @@ resolve_external_def (defref_t *ext, defref_t *def)
 }
 
 static void
-process_def (defref_t *ref, qfo_mspace_t *space, int field)
+define_def (defref_t *ref, int field)
 {
-	qfo_def_t  *def;
 	defref_t   *r;
 	const char *name;
 	hashtab_t  *extern_tab = extern_defs;
@@ -281,11 +280,42 @@ process_def (defref_t *ref, qfo_mspace_t *space, int field)
 		extern_tab = extern_field_defs;
 		defined_tab = defined_field_defs;
 	}
-	def = REF (ref);
-	name = WORKSTR (def->name);
-	r = Hash_Find (defined_tab, name);
-	if (def->flags & QFOD_EXTERNAL) {
-		if (!def->num_relocs)
+	name = WORKSTR (REF (ref)->name);
+	if ((r = Hash_Find (defined_tab, name))) {
+		if (REF (r)->flags & QFOD_SYSTEM) {
+			/// System defs may be redefined only once.
+			REF (r)->flags &= ~QFOD_SYSTEM;
+			// treat the new def as external
+			REF (ref)->flags |= QFOD_EXTERNAL;
+			resolve_external_def (ref, r);
+			//FIXME copy stuff from new def to existing def???
+		} else {
+			def_error (REF (ref), "%s redefined", WORKSTR (REF (ref)->name));
+			def_error (REF (r), "previous definition");
+		}
+		return;
+	}
+	Hash_Add (defined_tab, ref);
+	while ((r = Hash_Del (extern_tab, name)))
+		resolve_external_def (r, ref);
+}
+
+static void
+process_def (defref_t *ref, qfo_mspace_t *space, int field)
+{
+	defref_t   *r;
+	const char *name;
+	hashtab_t  *extern_tab = extern_defs;
+	hashtab_t  *defined_tab = defined_defs;
+
+	if (field) {
+		extern_tab = extern_field_defs;
+		defined_tab = defined_field_defs;
+	}
+	if (REF (ref)->flags & QFOD_EXTERNAL) {
+		name = WORKSTR (REF (ref)->name);
+		r = Hash_Find (defined_tab, name);
+		if (!REF (ref)->num_relocs)
 			return;
 		if (r) {
 			resolve_external_def (ref, r);
@@ -293,27 +323,10 @@ process_def (defref_t *ref, qfo_mspace_t *space, int field)
 			Hash_Add (extern_tab, ref);
 		}
 	} else {
-		if (!(def->flags & QFOD_LOCAL))
-			def->offset += space->data_size;
-		if (def->flags & QFOD_GLOBAL) {
-			if (r) {
-				if (REF (r)->flags & QFOD_SYSTEM) {
-					/// System defs may be redefined only once.
-					REF (r)->flags &= ~QFOD_SYSTEM;
-					// treat the new def as external
-					def->flags |= QFOD_EXTERNAL;
-					resolve_external_def (ref, r);
-					//FIXME copy stuff from new def to existing def???
-				} else {
-					def_error (def, "%s redefined", WORKSTR (def->name));
-					def_error (REF (r), "previous definition");
-				}
-				return;
-			}
-			Hash_Add (defined_tab, ref);
-			while ((r = Hash_Del (extern_tab, name)))
-				resolve_external_def (r, ref);
-		}
+		if (!(REF (ref)->flags & QFOD_LOCAL))
+			REF (ref)->offset += space->data_size;
+		if (REF (ref)->flags & QFOD_GLOBAL)
+			define_def (ref, field);
 	}
 }
 
@@ -512,15 +525,15 @@ transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
 }
 
 static defref_t *
-define_def (const char *name, type_t *type, unsigned flags, int v)
+make_def (int s, const char *name, type_t *type, unsigned flags, int v)
 {
 	qfo_def_t  *def;
 	defref_t   *ref;
 	qfo_mspace_t *space;
 	defspace_t *def_space;
 
-	space = &work->spaces[qfo_near_data_space];
-	def_space = work_near_data;
+	space = &work->spaces[s];
+	def_space = *work_spaces[s];
 
 	space->defs = realloc (space->defs,
 						   (space->num_defs + 1) * sizeof (qfo_def_t));
@@ -541,7 +554,7 @@ define_def (const char *name, type_t *type, unsigned flags, int v)
 	work_defrefs = realloc (work_defrefs,
 							(num_work_defrefs + 1) * sizeof (defref_t *));
 	work_defrefs[num_work_defrefs++] = ref;
-	Hash_Add (defined_defs, ref);
+	define_def (ref, s == qfo_entity_space);
 
 	return ref;
 }
@@ -549,7 +562,7 @@ define_def (const char *name, type_t *type, unsigned flags, int v)
 void
 linker_add_def (const char *name, type_t *type, unsigned flags, int v)
 {
-	define_def (name, type, flags, v);
+	make_def (qfo_near_data_space, name, type, flags, v);
 }
 
 /**	Initialize the linker state.
@@ -611,7 +624,8 @@ linker_begin (void)
 	if (!options.partial_link) {
 		for (i = 0; i < num_builtins; i++) {
 			builtin_sym_t *bi = builtin_symbols + i;
-			bi->defref = define_def (bi->name, bi->type, bi->flags, 0);
+			bi->defref = make_def (qfo_near_data_space, bi->name, bi->type,
+								   bi->flags, 0);
 		}
 	}
 }
