@@ -106,6 +106,7 @@ extern	struct symtab_s *current_symtab;
 #define	D_FLOAT(d)			D_var (float, d)
 #define	D_INT(d)			D_var (integer, d)
 #define	D_VECTOR(d)			D_var (vector, d)
+#define	D_QUAT(d)			D_var (quat, d)
 #define	D_STRING(d)			D_var (string, d)
 #define	D_GETSTR(d)			GETSTR (D_STRING (d))
 #define	D_FUNCTION(d)		D_var (func, d)

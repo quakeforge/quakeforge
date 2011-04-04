@@ -702,6 +702,10 @@ expr_vector (expr_t *e)
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_vector)
 		return e->e.symbol->s.value.v.vector_val;
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
+		&& e->e.symbol->s.def->constant
+		&& e->e.symbol->s.def->type->type == ev_vector)
+		return D_VECTOR (e->e.symbol->s.def);
 	internal_error (e, "not a vector constant");
 }
 
@@ -728,6 +732,10 @@ expr_quaternion (expr_t *e)
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_quat)
 		return e->e.symbol->s.value.v.quaternion_val;
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
+		&& e->e.symbol->s.def->constant
+		&& e->e.symbol->s.def->type->type == ev_quat)
+		return D_QUAT (e->e.symbol->s.def);
 	internal_error (e, "not a quaternion constant");
 }
 
