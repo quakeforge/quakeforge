@@ -858,6 +858,8 @@ process_loose_relocs (qfo_t *qfo)
 			str = QFOSTR (qfo, reloc->target);
 			reloc->target = linker_add_string (str);
 		}
+		if (reloc->type == rel_def_op)
+			reloc->target += work_base[qfo_code_space];
 		if (!reloc->space) {
 			//FIXME double check
 			reloc->offset += work_base[qfo_code_space];
