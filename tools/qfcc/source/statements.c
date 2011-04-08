@@ -618,22 +618,22 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	operand_t  *src = 0;
+	type_t     *src_type;
 	type_t     *type = e->e.expr.type;
 	statement_t *s;
 
-	sblock = statement_subexpr (sblock, e->e.expr.e1, &src);
-	if ((src->type == ev_integer && type->type == ev_float)
-		|| (src->type == ev_float && type->type == ev_integer)) {
-		if (!*op)
-			*op = temp_operand (e->e.expr.type);
+	src_type = get_type (e->e.expr.e1);
+	if ((src_type->type == ev_integer && type->type == ev_float)
+		|| (src_type->type == ev_float && type->type == ev_integer)) {
+		operand_t  *src = 0;
+		sblock = statement_subexpr (sblock, e->e.expr.e1, &src);
+		*op = temp_operand (e->e.expr.type);
 		s = new_statement ("=", e);
 		s->opa = src;
 		s->opc = *op;
 		sblock_add_statement (sblock, s);
 	} else {
-		src->type = low_level_type (e->e.expr.type);
-		*op = src;
+		sblock = expr_alias (sblock, e, op);
 	}
 	return sblock;
 }
