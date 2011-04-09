@@ -122,6 +122,8 @@ get_operand (operand_t *op)
 					return va ("func %d", op->o.value->v.integer_val);
 				case ev_integer:
 					return va ("int %d", op->o.value->v.integer_val);
+				case ev_uinteger:
+					return va ("uint %u", op->o.value->v.uinteger_val);
 				case ev_short:
 					return va ("short %d", op->o.value->v.short_val);
 				case ev_void:

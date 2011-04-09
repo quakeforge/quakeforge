@@ -75,6 +75,7 @@ type_t      type_function = { ev_func, "function", ty_none, {{&type_void}} };
 type_t      type_pointer = { ev_pointer, "pointer", ty_none, {{&type_void}} };
 type_t      type_quaternion = { ev_quat, "quaternion" };
 type_t      type_integer = { ev_integer, "integer" };
+type_t      type_uinteger = { ev_uinteger, "uinteger" };
 type_t      type_short = { ev_short, "short" };
 
 type_t     *type_nil;
@@ -154,6 +155,7 @@ free_type (type_t *type)
 		case ev_type_count:
 		case ev_quat:
 		case ev_integer:
+		case ev_uinteger:
 		case ev_short:
 			break;
 		case ev_field:
@@ -188,6 +190,7 @@ append_type (type_t *type, type_t *new)
 			case ev_type_count:
 			case ev_quat:
 			case ev_integer:
+			case ev_uinteger:
 			case ev_short:
 				internal_error (0, "append to basic type");
 			case ev_field:
@@ -593,6 +596,9 @@ encode_type (dstring_t *encoding, type_t *type)
 		case ev_integer:
 			dasprintf (encoding, "i");
 			break;
+		case ev_uinteger:
+			dasprintf (encoding, "I");
+			break;
 		case ev_short:
 			dasprintf (encoding, "s");
 			break;
@@ -641,7 +647,7 @@ is_integral (type_t *type)
 {
 	etype_t     t = type->type;
 
-	if (t == ev_integer || t == ev_short)
+	if (t == ev_integer || t == ev_uinteger || t == ev_short)
 		return 1;
 	return is_enum (type);
 }
@@ -758,6 +764,7 @@ type_size (type_t *type)
 		case ev_pointer:
 		case ev_quat:
 		case ev_integer:
+		case ev_uinteger:
 		case ev_short:
 		case ev_type_count:
 			return pr_type_size[type->type];
@@ -805,6 +812,7 @@ init_types (void)
 		{"pointer_val",      &type_pointer},
 		{"vector_val",       &type_vector},
 		{"integer_val",      &type_integer},
+		{"uinteger_val",     &type_uinteger},
 		{"quaternion_val",   &type_quaternion},
 		{0, 0}
 	};
@@ -817,6 +825,7 @@ init_types (void)
 		{"func_val",         &type_function},
 		{"pointer_val",      &type_pointer},
 		{"integer_val",      &type_integer},
+		{"uinteger_val",     &type_uinteger},
 		{"quaternion_val",   &type_quaternion},
 		{0, 0}
 	};
@@ -881,6 +890,7 @@ chain_initial_types (void)
 	if (!options.traditional) {
 		chain_type (&type_quaternion);
 		chain_type (&type_integer);
+		chain_type (&type_uinteger);
 		chain_type (&type_short);
 	}
 

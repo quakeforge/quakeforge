@@ -105,6 +105,7 @@ extern	type_t	type_pointer;
 extern	type_t	type_floatfield;
 extern	type_t	type_quaternion;
 extern	type_t	type_integer;
+extern	type_t	type_uinteger;
 extern	type_t	type_short;
 
 extern	type_t	*type_nil;		// for passing nil into ...

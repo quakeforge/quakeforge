@@ -98,6 +98,9 @@ print_operand (operand_t *op)
 				case ev_integer:
 					printf ("%d", op->o.value->v.integer_val);
 					break;
+				case ev_uinteger:
+					printf ("%u", op->o.value->v.uinteger_val);
+					break;
 				case ev_short:
 					printf ("%d", op->o.value->v.short_val);
 					break;

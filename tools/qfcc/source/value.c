@@ -237,6 +237,7 @@ emit_value (ex_value_t *value, def_t *def)
 			type = &type_pointer;
 			break;
 		case ev_integer:
+		case ev_uinteger:
 			if (!def || def->type != &type_float) {
 				tab = integer_imm_defs;
 				type = &type_integer;

@@ -42,6 +42,7 @@ typedef enum {
 	ev_pointer,			// end of v6 types
 	ev_quat,
 	ev_integer,
+	ev_uinteger,
 	ev_short,			// value is embedded in the opcode
 
 	ev_invalid,			// invalid type. used for instruction checking
@@ -260,7 +261,6 @@ typedef enum {
 	OP_MOVEP,
 	OP_MOVEPI,
 
-	OP_SHL_U,
 	OP_SHR_U,
 
 	OP_STATE_F,
@@ -362,7 +362,7 @@ typedef struct pr_va_list_s {
 	 |(((0x##b) & 0xfff) << 12)		\
 	 |(((0x##c) & 0xfff) <<  0) )
 #define	PROG_ID_VERSION	6
-#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,007)
+#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,008)
 
 typedef struct dprograms_s {
 	pr_uint_t   version;

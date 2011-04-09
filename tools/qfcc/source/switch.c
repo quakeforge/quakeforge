@@ -338,7 +338,6 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 
 		range = fold_constants (range);
 
-		//FIXME unsigned int better?
 		sym = make_symbol (name, array_type (&type_integer, high - low + 1),
 						   pr.near_data, st_static);
 		table = new_symbol_expr (sym);
@@ -348,8 +347,8 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			branch = branch_expr (IFB, temp, low_label);
 			append_expr (sw, branch);
 		}
-		//FIXME unsigned int
-		test = binary_expr (GT, cast_expr (&type_integer, temp), range);
+		test = binary_expr (GT, cast_expr (&type_uinteger, temp),
+							cast_expr (&type_uinteger, range));
 		branch = branch_expr ('i', test, high_label);
 		append_expr (sw, branch);
 		branch = new_binary_expr ('g', table, temp);

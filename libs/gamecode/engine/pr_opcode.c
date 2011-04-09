@@ -60,6 +60,7 @@ VISIBLE int pr_type_size[ev_type_count] = {
 	1,			// ev_pointer
 	4,			// ev_quat
 	1,			// ev_integer
+	1,			// ev_uinteger
 	0,			// ev_short        value in opcode
 };
 
@@ -74,6 +75,7 @@ VISIBLE const char *pr_type_name[ev_type_count] = {
 	"pointer",
 	"quaternion",
 	"integer",
+	"uinteger",
 	"short",
 	"invalid",
 };
@@ -873,12 +875,8 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 ev_integer, ev_integer, ev_integer,
 	 PROG_VERSION,
 	},
-	{"<<", "shl.u", OP_SHL_U, false,
-	 ev_integer, ev_integer, ev_integer,
-	 PROG_VERSION,
-	},
 	{">>", "shr.u", OP_SHR_U, false,
-	 ev_integer, ev_integer, ev_integer,
+	 ev_uinteger, ev_integer, ev_uinteger,
 	 PROG_VERSION,
 	},
 
@@ -964,22 +962,22 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 PROG_VERSION,
 	},
 
-//	{">=", "ge.u", OP_GE_U, false,
-//	 ev_integer, ev_integer, ev_integer,
-//	 PROG_VERSION,
-//	},
-//	{"<=", "le.u", OP_LE_U, false,
-//	 ev_integer, ev_integer, ev_integer,
-//	 PROG_VERSION,
-//	},
-//	{">", "gt.u", OP_GT_U, false,
-//	 ev_integer, ev_integer, ev_integer,
-//	 PROG_VERSION,
-//	},
-//	{"<", "lt.u", OP_LT_U, false,
-//	 ev_integer, ev_integer, ev_integer,
-//	 PROG_VERSION,
-//	},
+	{">=", "ge.u", OP_GE_U, false,
+	 ev_uinteger, ev_uinteger, ev_integer,
+	 PROG_VERSION,
+	},
+	{"<=", "le.u", OP_LE_U, false,
+	 ev_uinteger, ev_uinteger, ev_integer,
+	 PROG_VERSION,
+	},
+	{">", "gt.u", OP_GT_U, false,
+	 ev_uinteger, ev_uinteger, ev_integer,
+	 PROG_VERSION,
+	},
+	{"<", "lt.u", OP_LT_U, false,
+	 ev_uinteger, ev_uinteger, ev_integer,
+	 PROG_VERSION,
+	},
 
 	{"^", "bitxor.f", OP_BITXOR_F, false,
 	 ev_float, ev_float, ev_float,

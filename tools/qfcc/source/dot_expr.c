@@ -332,6 +332,9 @@ print_value (expr_t *e, int level, int id)
 		case ev_integer:
 			label = va ("%d", e->e.value.v.integer_val);
 			break;
+		case ev_uinteger:
+			label = va ("%u", e->e.value.v.uinteger_val);
+			break;
 		case ev_short:
 			label = va ("%d", e->e.value.v.short_val);
 			break;

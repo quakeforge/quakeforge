@@ -660,6 +660,9 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 		case ev_integer:
 			dsprintf (line, "%d", val->integer_var);
 			break;
+		case ev_uinteger:
+			dsprintf (line, "$%08x", val->uinteger_var);
+			break;
 		default:
 			//dsprintf (line, "bad type %i", type);
 			dsprintf (line, "<%x %x %x %x>",
@@ -1058,6 +1061,7 @@ ED_Print (progs_t *pr, edict_t *ed)
 		switch (type) {
 			case ev_entity:
 			case ev_integer:
+			case ev_uinteger:
 			case ev_pointer:
 			case ev_func:
 			case ev_field:

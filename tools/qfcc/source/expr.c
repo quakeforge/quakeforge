@@ -78,6 +78,7 @@ type_t     *ev_types[ev_type_count] = {
 	&type_pointer,
 	&type_quaternion,
 	&type_integer,
+	&type_uinteger,
 	&type_short,
 	&type_invalid,
 };
@@ -585,6 +586,16 @@ new_integer_expr (int integer_val)
 }
 
 expr_t *
+new_uinteger_expr (unsigned uinteger_val)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_value;
+	e->e.value.type = ev_uinteger;
+	e->e.value.v.uinteger_val = uinteger_val;
+	return e;
+}
+
+expr_t *
 new_short_expr (short short_val)
 {
 	expr_t     *e = new_expr ();
@@ -769,6 +780,23 @@ expr_integer (expr_t *e)
 		&& is_integral (e->e.symbol->s.def->type))
 		return D_INT (e->e.symbol->s.def);
 	internal_error (e, "not an integer constant");
+}
+
+unsigned
+expr_uinteger (expr_t *e)
+{
+	if (e->type == ex_nil)
+		return 0;
+	if (e->type == ex_value && e->e.value.type == ev_uinteger)
+		return e->e.value.v.uinteger_val;
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
+		&& e->e.symbol->type->type == ev_uinteger)
+		return e->e.symbol->s.value.v.uinteger_val;
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
+		&& e->e.symbol->s.def->constant
+		&& is_integral (e->e.symbol->s.def->type))
+		return D_INT (e->e.symbol->s.def);
+	internal_error (e, "not an unsigned constant");
 }
 
 int
@@ -1029,7 +1057,7 @@ test_expr (expr_t *e)
 		case ev_string:
 			new = new_string_expr (0);
 			break;
-//		case ev_uinteger:
+		case ev_uinteger:
 		case ev_integer:
 		case ev_short:
 			if (type_default != &type_integer)
@@ -1187,9 +1215,9 @@ convert_from_bool (expr_t *e, type_t *type)
 		zero = new_integer_expr (0);
 	} else if (is_enum (type) && enum_as_bool (type, &zero, &one)) {
 		// don't need to do anything
-//	} else if (type == &type_uinteger) {
-//		one = new_uinteger_expr (1);
-//		zero = new_uinteger_expr (0);
+	} else if (type == &type_uinteger) {
+		one = new_uinteger_expr (1);
+		zero = new_uinteger_expr (0);
 	} else {
 		return error (e, "can't convert from bool value");
 	}
@@ -1567,6 +1595,8 @@ unary_expr (int op, expr_t *e)
 						return new_vector_expr (q);
 					case ev_integer:
 						return new_integer_expr (-expr_integer (e));
+					case ev_uinteger:
+						return new_uinteger_expr (-expr_uinteger (e));
 					case ev_short:
 						return new_short_expr (-expr_short (e));
 					case ev_invalid:
@@ -1627,6 +1657,8 @@ unary_expr (int op, expr_t *e)
 						return new_integer_expr (!QuatIsZero (expr_quaternion (e)));
 					case ev_integer:
 						return new_integer_expr (!expr_integer (e));
+					case ev_uinteger:
+						return new_uinteger_expr (!expr_uinteger (e));
 					case ev_short:
 						return new_short_expr (!expr_short (e));
 					case ev_invalid:
@@ -1682,6 +1714,8 @@ unary_expr (int op, expr_t *e)
 						return new_vector_expr (q);
 					case ev_integer:
 						return new_integer_expr (~expr_integer (e));
+					case ev_uinteger:
+						return new_uinteger_expr (~expr_uinteger (e));
 					case ev_short:
 						return new_short_expr (~expr_short (e));
 					case ev_invalid:
@@ -2607,6 +2641,9 @@ cast_expr (type_t *type, expr_t *e)
 	if ((type == type_default && is_enum (e_type))
 		|| (is_enum (type) && e_type == type_default))
 		return e;
+	if ((type == &type_integer && e_type == &type_uinteger)
+		|| (type == &type_uinteger && e_type == &type_integer))
+		return new_alias_expr (type, e);
 	if (!(type->type == ev_pointer
 		  && (e_type->type == ev_pointer
 			  || e_type == &type_integer //|| e_type == &type_uinteger

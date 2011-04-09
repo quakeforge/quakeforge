@@ -371,6 +371,7 @@ set_address (sv_def_t *def, void *address)
 		case ev_func:
 		case ev_pointer:
 		case ev_integer:
+		case ev_uinteger:
 			*(int **)def->field = (int *) address;
 			break;
 	}

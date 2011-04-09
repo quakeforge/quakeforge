@@ -423,6 +423,15 @@ const float *expr_quaternion (expr_t *e);
 expr_t *new_integer_expr (int integer_val);
 int expr_integer (expr_t *e);
 
+/** Create a new integer constant expression node.
+
+	\param integer_val	The integer constant being represented.
+	\return			The new integer constant expression node
+					(expr_t::e::integer_val).
+*/
+expr_t *new_uinteger_expr (unsigned uinteger_val);
+unsigned expr_uinteger (expr_t *e);
+
 /** Create a new short constant expression node.
 
 	\param short_val	The short constant being represented.
