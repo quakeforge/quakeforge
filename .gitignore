@@ -323,6 +323,7 @@ core
 /tools/Forge/Bundles/MapEdit/shared_profile_debug_obj
 /tools/Forge/Bundles/MapEdit/shared_profile_obj
 /tools/Forge/Bundles/MapEdit/obj
+/tools/Forge/Bundles/MapEdit/gmon.out
 /tools/Forge/Bundles/MapEdit/*.forgeb
 /tools/Forge/Bundles/MapEdit/*.app
 
