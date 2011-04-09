@@ -2655,24 +2655,16 @@ cast_expr (type_t *type, expr_t *e)
 	if ((type == type_default && is_enum (e_type))
 		|| (is_enum (type) && e_type == type_default))
 		return e;
-	if ((type == &type_integer && e_type == &type_uinteger)
-		|| (type == &type_uinteger && e_type == &type_integer))
-		return new_alias_expr (type, e);
 	if (!(type->type == ev_pointer
-		  && (e_type->type == ev_pointer
-			  || e_type == &type_integer //|| e_type == &type_uinteger
+		  && (e_type->type == ev_pointer || is_integral (e_type)
 			  || is_array (e_type)))
+		&& !(is_integral (type) && e_type->type == ev_pointer)
 		&& !(type->type == ev_func && e_type->type == ev_func)
-		&& !(((type == &type_integer)
-			  && (e_type == &type_float || e_type == &type_integer
-				  || e_type->type == ev_pointer))
-			 || (type == &type_float
-				 && (e_type == &type_integer || is_enum (e_type))))) {
-		return cast_error (e, get_type (e), type);
+		&& !(is_scalar (type) && is_scalar (e_type))) {
+		return cast_error (e, e_type, type);
 	}
-	if (is_array (e_type)) {
+	if (is_array (e_type))
 		return address_expr (e, 0, 0);
-	}
 	if ((is_float (type) && is_integral (e_type))
 		|| (is_integral (type) && is_float (e_type))) {
 		c = new_unary_expr ('C', e);
@@ -2681,8 +2673,7 @@ cast_expr (type_t *type, expr_t *e)
 		e->e.expr.type = type;
 		c = e;
 	} else {
-		c = new_unary_expr ('C', e);
-		c->e.expr.type = type;
+		c = new_alias_expr (type, e);
 	}
 	return c;
 }
