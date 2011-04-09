@@ -620,17 +620,31 @@ expr_t *
 constant_expr (expr_t *e)
 {
 	expr_t     *new;
+	symbol_t   *sym;
+	ex_value_t  value;
+
 	if (!is_constant (e))
 		return e;
 	if (e->type == ex_nil || e->type == ex_value)
 		return e;
-	if (e->type != ex_symbol || e->e.symbol->sy_type != sy_const)
+	if (e->type != ex_symbol)
 		return e;
+	sym = e->e.symbol;
+	if (sym->sy_type == sy_const) {
+		value = sym->s.value;
+	} else if (sym->sy_type == sy_var && sym->s.def->constant) {
+		//FIXME pointers and fields
+		memset (&value, 0, sizeof (value));
+		memcpy (&value.v, &D_INT (sym->s.def),
+				type_size (sym->s.def->type) * sizeof (pr_type_t));
+	} else {
+		return e;
+	}
 	new = new_expr ();
 	new->type = ex_value;
 	new->line = e->line;
 	new->file = e->file;
-	new->e.value = e->e.symbol->s.value;
+	new->e.value = value;
 	return new;
 }
 
