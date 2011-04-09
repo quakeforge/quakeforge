@@ -160,6 +160,8 @@ ReuseString (const char *str)
 static float
 value_as_float (ex_value_t *value)
 {
+	if (value->type == ev_uinteger)
+		return value->v.uinteger_val;
 	if (value->type == ev_integer)
 		return value->v.integer_val;
 	if (value->type == ev_short)
@@ -169,9 +171,25 @@ value_as_float (ex_value_t *value)
 	return 0;
 }
 
-static float
+static int
 value_as_int (ex_value_t *value)
 {
+	if (value->type == ev_uinteger)
+		return value->v.uinteger_val;
+	if (value->type == ev_integer)
+		return value->v.integer_val;
+	if (value->type == ev_short)
+		return value->v.short_val;
+	if (value->type == ev_float)
+		return value->v.float_val;
+	return 0;
+}
+
+static unsigned
+value_as_uint (ex_value_t *value)
+{
+	if (value->type == ev_uinteger)
+		return value->v.uinteger_val;
 	if (value->type == ev_integer)
 		return value->v.integer_val;
 	if (value->type == ev_short)
@@ -196,6 +214,10 @@ convert_value (ex_value_t *value, type_t *type)
 		int         val = value_as_int (value);
 		value->type = ev_short;
 		value->v.short_val = val;
+	} else if (type->type == ev_uinteger) {
+		unsigned    val = value_as_uint (value);
+		value->type = ev_uinteger;
+		value->v.uinteger_val = val;
 	} else {
 		//FIXME handle enums separately?
 		int         val = value_as_int (value);
