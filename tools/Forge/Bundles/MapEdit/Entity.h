@@ -8,6 +8,7 @@
 
 typedef struct  epair_s {
 	struct epair_s  *next;
+	struct epair_s **prev;
 	char            *key;
 	char            *value;
 } epair_t;
@@ -18,6 +19,7 @@ typedef struct  epair_s {
 {
 	NSMutableArray  *array;
 	epair_t         *epairs;
+	struct hashtab_s *epair_tab;
 	BOOL            modifiable;
 }
 

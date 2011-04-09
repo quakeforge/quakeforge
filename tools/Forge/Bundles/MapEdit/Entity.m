@@ -1,4 +1,5 @@
 #include "QF/dstring.h"
+#include "QF/hash.h"
 #include "QF/script.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -76,6 +77,25 @@ vec3_t  bad_maxs = {8, 8, 8};
 	return new;
 }
 
+static const char *
+epair_getkey (void *_ep, void *unused)
+{
+	epair_t    *ep = (epair_t *) _ep;
+	return ep->key;
+}
+
+static void
+epair_free (void *_ep, void *unused)
+{
+	epair_t    *ep = (epair_t *) _ep;
+	free (ep->key);
+	free (ep->value);
+	if (ep->next)
+		ep->next->prev = ep->prev;
+	*ep->prev = ep->next;
+	free (ep);
+}
+
 - (Entity *) initClass: (const char *)classname
 {
 	id          new;
@@ -86,6 +106,7 @@ vec3_t  bad_maxs = {8, 8, 8};
 
 	self = [super init];
 	array = [[NSMutableArray alloc] init];
+	epair_tab = Hash_NewTable (61, epair_getkey, epair_free, 0);
 
 	modifiable = YES;
 
@@ -117,14 +138,7 @@ vec3_t  bad_maxs = {8, 8, 8};
 
 - (oneway void) dealloc
 {
-	epair_t  *e, *n;
-
-	for (e = epairs; e; e = n) {
-		n = e->next;
-		free (e->key);
-		free (e->value);
-		free (e);
-	}
+	Hash_DelTable (epair_tab);
 	[array release];
 	[super dealloc];
 }
@@ -158,10 +172,9 @@ vec3_t  bad_maxs = {8, 8, 8};
 {
 	epair_t  *e;
 
-	for (e = epairs; e; e = e->next) {
-		if (!strcmp (k, e->key))
-			return e->value;
-	}
+	e = Hash_Find (epair_tab, k);
+	if (e)
+		return e->value;
 	return "";
 }
 
@@ -198,14 +211,13 @@ vec3_t  bad_maxs = {8, 8, 8};
 	if (!*k)
 		return;
 
-	for (e = epairs; e; e = e->next) {
-		if (!strcmp (k, e->key)) {
-			if (e->value == v)
-				return;
-			free (e->value);
-			e->value = strdup (v);
+	e = Hash_Find (epair_tab, k);
+	if (e) {
+		if (!strcmp (e->value, v))
 			return;
-		}
+		free (e->value);
+		e->value = strdup (v);
+		return;
 	}
 
 	e = malloc (sizeof (epair_t));
@@ -213,7 +225,11 @@ vec3_t  bad_maxs = {8, 8, 8};
 	e->key = strdup (k);
 	e->value = strdup (v);
 	e->next = epairs;
+	e->prev = &epairs;
+	if (epairs)
+		epairs->prev = &e->next;
 	epairs = e;
+	Hash_Add (epair_tab, e);
 }
 
 - (int) numPairs
@@ -235,25 +251,15 @@ vec3_t  bad_maxs = {8, 8, 8};
 
 - (void) removeKeyPair: (char *)key
 {
-	epair_t  *e, *e2;
+	epair_t  *e;
 
 	if (!epairs)
 		return;
 
-	e = epairs;
-	if (!strcmp (e->key, key)) {
-		epairs = e->next;
-		free (e);
+	e = Hash_Del (epair_tab, key);
+	if (e) {
+		Hash_Free (epair_tab, e);
 		return;
-	}
-
-	for ( ; e; e = e->next) {
-		if (e->next && !strcmp (e->next->key, key)) {
-			e2 = e->next;
-			e->next = e2->next;
-			free (e2);
-			return;
-		}
 	}
 
 	printf ("WARNING: removeKeyPair: %s not found\n", key);
@@ -320,6 +326,7 @@ int  nument;
 
 	self = [super init];
 	array = [[NSMutableArray alloc] init];
+	epair_tab = Hash_NewTable (61, epair_getkey, epair_free, 0);
 
 	if (!Script_GetToken (script, true)) {
 		[self dealloc];
