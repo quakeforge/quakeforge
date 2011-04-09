@@ -4,6 +4,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include "QF/hash.h"
 #include "QF/quakeio.h"
 #include "QF/script.h"
 #include "QF/sys.h"
@@ -32,10 +33,31 @@ FILE METHODS
 
 ===============================================================================
 */
+static const char *
+map_targets_getkey (void *_e, void *unused)
+{
+	Entity *e = (Entity *) _e;
+	return [e valueForQKey: "targetname"];
+}
+
+static uintptr_t
+map_targets_gethash (void *_e, void *unused)
+{
+	return Hash_String (map_targets_getkey (_e, unused));
+}
+
+static int
+map_targets_compare (void *_e1, void *_e2, void *unused)
+{
+	return _e1 == _e2;
+}
+
 - (id) init
 {
 	self = [super init];
 	array = [[NSMutableArray alloc] init];
+	targets = Hash_NewTable (1021, map_targets_getkey, 0, 0);
+	Hash_SetHashCompare (targets, map_targets_gethash, map_targets_compare);
 	map_i = self;
 	minz = 0;
 	maxz = 80;
@@ -43,6 +65,13 @@ FILE METHODS
 	oldselection = [[NSMutableArray alloc] init];
 
 	return self;
+}
+
+- (oneway void) dealloc
+{
+	Hash_DelTable (targets);
+	[array release];
+	[super dealloc];
 }
 
 - (id) saveSelected
@@ -65,7 +94,7 @@ FILE METHODS
 	c = [self count];
 	for (i = 0; i < c; i++) {
 		o = [self objectAtIndex: 0];
-		[self removeObjectAtIndex: 0];
+		[self removeEntityAtIndex: 0];
 		[o removeAllObjects];
 	}
 
@@ -98,7 +127,7 @@ FILE METHODS
 
 	[self saveSelected];
 	ent = [[Entity alloc] initClass: "worldspawn"];
-	[self addObject: ent];
+	[self addEntity: ent];
 	currentEntity = NULL;
 	[self setCurrentEntity: ent];
 	[self addSelected];
@@ -167,14 +196,69 @@ FILE METHODS
 	return self;
 }
 
-- (void) removeObject: o
+- (void) addEntity: o
 {
-	[super removeObject: o];
+	const char *t = [o valueForQKey: "targetname"];
+	if (t && t[0])
+		[self addTarget: o];
+
+	[self addObject: o];
+}
+
+- (void) removeEntity: o
+{
+	const char *t = [o valueForQKey: "targetname"];
+	if (t && t[0])
+		[self removeTarget: o];
+
+	[array removeObject: o];
 
 	if (o == currentEntity)         // select the world
 		[self setCurrentEntity: [self objectAtIndex: 0]];
 
 	return;
+}
+
+- (void) removeEntityAtIndex: (NSUInteger) index
+{
+	id          o = [self objectAtIndex: index];
+	const char *t = [o valueForQKey: "targetname"];
+	if (t && t[0])
+		[self removeTarget: o];
+	[self removeObjectAtIndex: index];
+}
+
+- (id) addTarget: (id) targ
+{
+	if (Hash_FindElement (targets, targ))
+		return self;
+	printf ("adding %s:%s\n", [targ valueForQKey: "classname"],
+			[targ valueForQKey: "targetname"]);
+	Hash_Add (targets, targ);
+	return self;
+}
+
+- (id) removeTarget: (id) targ
+{
+	Hash_DelElement (targets, targ);
+	return self;
+}
+
+- (NSArray *) targetsForTargetName: (const char *) targetname
+{
+	NSArray    *target_list;
+	void      **list;
+	int         count;
+
+	list = Hash_FindList (targets, targetname);
+	if (!list)
+		return nil;
+
+	for (count = 0; list[count]; count++)
+		;
+	target_list = [NSArray arrayWithObjects: (id *) list count: count];
+	free (list);
+	return target_list;
 }
 
 #define FN_DEVLOG "/qcache/devlog"
@@ -260,7 +344,7 @@ readMapFile
 		new = [[Entity alloc] initFromScript: script];
 		if (!new)
 			break;
-		[self addObject: new];
+		[self addEntity: new];
 	} while (1);
 
 	free (dat);
@@ -877,7 +961,7 @@ UI operations
 			continue;
 
 		new = [o copy];
-		[self addObject: new];
+		[self addEntity: new];
 
 		c = [o count];
 		for (j = 0; j < c; j++)
@@ -941,7 +1025,7 @@ UI operations
 		[[sb_newowner objectAtIndex: 0] setSelected: YES];
 	}
 
-	[self addObject: sb_newowner];
+	[self addEntity: sb_newowner];
 	[self setCurrentEntity: sb_newowner];
 
 	[quakeed_i updateAll];
@@ -1096,7 +1180,7 @@ subtractSelection
 
 	if (![currentEntity count]) {
 		o = currentEntity;
-		[self removeObject: o];
+		[self removeEntity: o];
 	}
 
 	Sys_Printf ("subtracted selection\n");

@@ -215,8 +215,12 @@ epair_free (void *_ep, void *unused)
 	if (e) {
 		if (!strcmp (e->value, v))
 			return;
+		if (!strcmp (e->key, "targetname") && e->value[0])
+			[map_i removeTarget: self];
 		free (e->value);
 		e->value = strdup (v);
+		if (!strcmp (e->key, "targetname") && e->value[0])
+			[map_i addTarget: self];
 		return;
 	}
 
@@ -230,6 +234,8 @@ epair_free (void *_ep, void *unused)
 		epairs->prev = &e->next;
 	epairs = e;
 	Hash_Add (epair_tab, e);
+	if (!strcmp (e->key, "targetname") && e->value[0])
+		[map_i addTarget: self];
 }
 
 - (int) numPairs

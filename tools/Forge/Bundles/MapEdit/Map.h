@@ -15,6 +15,7 @@ extern id  map_i;
 	id              currentEntity;
 	id              oldselection;   // temp when loading a new map
 	float           minz, maxz;
+	struct hashtab_s *targets;
 }
 
 - (id) newMap;
@@ -33,6 +34,13 @@ extern id  map_i;
 
 - (id) currentEntity;
 - (id) setCurrentEntity: ent;
+
+- (id) addTarget: (id) targ;
+- (id) removeTarget: (id) targ;
+- (void) addEntity: (id) ent;
+- (void) removeEntity: (id) ent;
+- (void) removeEntityAtIndex: (NSUInteger) index;
+- (NSArray *) targetsForTargetName: (const char *) targetname;
 
 - (float) currentMinZ;
 - (id) setCurrentMinZ: (float)m;

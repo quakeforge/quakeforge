@@ -1059,6 +1059,7 @@ BOOL  fakebrush;
 	const char  *targname;
 	vec3_t      min, max, temp;
 	const char  *targ;
+	NSArray     *target_list;
 
 	targ = [parent valueForQKey: "target"];
 
@@ -1068,9 +1069,10 @@ BOOL  fakebrush;
 	origin[0] = (bmins[0] + bmaxs[0]) / 2;
 	origin[1] = (bmins[1] + bmaxs[1]) / 2;
 
-	c = [map_i count];
+	target_list = [map_i targetsForTargetName: targ];
+	c = [target_list count];
 	for (i = 0; i < c; i++) {
-		obj = [map_i objectAtIndex: i];
+		obj = [target_list objectAtIndex: i];
 		targname = [obj valueForQKey: "targetname"];
 		if (strcmp (targ, targname))
 			continue;
