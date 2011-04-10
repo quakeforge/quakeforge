@@ -232,8 +232,6 @@ map_targets_compare (void *_e1, void *_e2, void *unused)
 {
 	if (Hash_FindElement (targets, targ))
 		return self;
-	printf ("adding %s:%s\n", [targ valueForQKey: "classname"],
-			[targ valueForQKey: "targetname"]);
 	Hash_Add (targets, targ);
 	return self;
 }
