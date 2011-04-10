@@ -8,7 +8,7 @@
 	    "downFloor:"
 	);
 	Outlets = (
-	    mode_radio_i
+	    "mode_radio_i"
 	);
 	Super = NSView;
     };
@@ -98,30 +98,30 @@
 	    "changeInspector:"
 	);
 	Outlets = (
-	    inspectorView_i,
-	    inspectorSubview_i,
+	    "inspectorView_i",
+	    "inspectorSubview_i",
 	    contentList,
 	    windowList,
-	    obj_textures_i,
-	    obj_genkeypair_i,
-	    popUpButton_i,
-	    popUpMatrix_i,
+	    "obj_textures_i",
+	    "obj_genkeypair_i",
+	    "popUpButton_i",
+	    "popUpMatrix_i",
 	    itemList,
 	    helpView,
-	    win_project_i,
-	    win_textures_i,
-	    win_things_i,
-	    win_prefs_i,
-	    win_settings_i,
-	    win_output_i,
-	    win_help_i,
-	    itemProject_i,
-	    itemTextures_i,
-	    itemThings_i,
-	    itemPrefs_i,
-	    itemSettings_i,
-	    itemOutput_i,
-	    itemHelp_i
+	    "win_project_i",
+	    "win_textures_i",
+	    "win_things_i",
+	    "win_prefs_i",
+	    "win_settings_i",
+	    "win_output_i",
+	    "win_help_i",
+	    "itemProject_i",
+	    "itemTextures_i",
+	    "itemThings_i",
+	    "itemPrefs_i",
+	    "itemSettings_i",
+	    "itemOutput_i",
+	    "itemHelp_i"
 	);
 	Super = NSObject;
     };
@@ -156,15 +156,15 @@
 	    "UIChanged:"
 	);
 	Outlets = (
-	    bspSound_i,
-	    startproject_i,
-	    bspSoundField_i,
-	    brushOffset_i,
-	    showBSP_i,
-	    startwad_i,
-	    xlight_i,
-	    ylight_i,
-	    zlight_i
+	    "bspSound_i",
+	    "startproject_i",
+	    "bspSoundField_i",
+	    "brushOffset_i",
+	    "showBSP_i",
+	    "startwad_i",
+	    "xlight_i",
+	    "ylight_i",
+	    "zlight_i"
 	);
 	Super = NSObject;
     };
@@ -176,21 +176,21 @@
 	);
 	Outlets = (
 	    projectInfo,
-	    basepathinfo_i,
-	    mapbrowse_i,
-	    currentmap_i,
+	    "basepathinfo_i",
+	    "mapbrowse_i",
+	    "currentmap_i",
 	    mapList,
 	    descList,
 	    wadList,
-	    pis_panel_i,
-	    pis_basepath_i,
-	    pis_wads_i,
-	    pis_fullvis_i,
-	    pis_fastvis_i,
-	    pis_novis_i,
-	    pis_relight_i,
-	    pis_leaktest_i,
-	    BSPoutput_i
+	    "pis_panel_i",
+	    "pis_basepath_i",
+	    "pis_wads_i",
+	    "pis_fullvis_i",
+	    "pis_fastvis_i",
+	    "pis_novis_i",
+	    "pis_relight_i",
+	    "pis_leaktest_i",
+	    "BSPoutput_i"
 	);
 	Super = NSObject;
     };
@@ -219,20 +219,20 @@
 	    "BSP_entities:"
 	);
 	Outlets = (
-	    brushcount_i,
-	    entitycount_i,
-	    regionbutton_i,
-	    show_coordinates_i,
-	    show_names_i,
-	    filter_light_i,
-	    filter_path_i,
-	    filter_entities_i,
-	    filter_clip_i,
-	    filter_water_i,
-	    filter_world_i,
-	    cmd_in_i,
-	    cmd_out_i,
-	    xy_drawmode_i
+	    "brushcount_i",
+	    "entitycount_i",
+	    "regionbutton_i",
+	    "show_coordinates_i",
+	    "show_names_i",
+	    "filter_light_i",
+	    "filter_path_i",
+	    "filter_entities_i",
+	    "filter_clip_i",
+	    "filter_water_i",
+	    "filter_world_i",
+	    "cmd_in_i",
+	    "cmd_out_i",
+	    "xy_drawmode_i"
 	);
 	Super = NSWindow;
     };
@@ -254,15 +254,15 @@
 	    "onlyShowMapTextures:"
 	);
 	Outlets = (
-	    textureList_i,
-	    textureView_i,
-	    searchField_i,
-	    sizeField_i,
-	    field_Xshift_i,
-	    field_Yshift_i,
-	    field_Xscale_i,
-	    field_Yscale_i,
-	    field_Rotate_i
+	    "textureList_i",
+	    "textureView_i",
+	    "searchField_i",
+	    "sizeField_i",
+	    "field_Xshift_i",
+	    "field_Yshift_i",
+	    "field_Xscale_i",
+	    "field_Yscale_i",
+	    "field_Rotate_i"
 	);
 	Super = NSObject;
     };
@@ -271,7 +271,7 @@
 	    "setParent:"
 	);
 	Outlets = (
-	    parent_i
+	    "parent_i"
 	);
 	Super = NSView;
     };
@@ -286,12 +286,12 @@
 	    "setFlags:"
 	);
 	Outlets = (
-	    entity_browser_i,
-	    entity_comment_i,
-	    prog_path_i,
-	    keyInput_i,
-	    valueInput_i,
-	    flags_i
+	    "entity_browser_i",
+	    "entity_comment_i",
+	    "prog_path_i",
+	    "keyInput_i",
+	    "valueInput_i",
+	    "flags_i"
 	);
 	Super = NSObject;
     };
@@ -302,7 +302,7 @@
 	    "drawMode:"
 	);
 	Outlets = (
-	    mode_radio_i
+	    "mode_radio_i"
 	);
 	Super = NSView;
     };
