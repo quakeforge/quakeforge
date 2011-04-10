@@ -60,13 +60,11 @@ print_operand (operand_t *op)
 {
 	switch (op->op_type) {
 		case op_symbol:
-			if (op->type != op->o.symbol->type->type)
-				printf ("(%s) ", pr_type_name[op->type]);
+			printf ("(%s) ", pr_type_name[op->type]);
 			printf ("%s", op->o.symbol->name);
 			break;
 		case op_value:
-			if (op->type != op->o.value->type)
-				printf ("(%s) ", pr_type_name[op->type]);
+			printf ("(%s) ", pr_type_name[op->type]);
 			switch (op->o.value->type) {
 				case ev_string:
 					printf ("\"%s\"", op->o.value->v.string_val);
@@ -114,7 +112,7 @@ print_operand (operand_t *op)
 			printf ("block %p", op->o.label->dest);
 			break;
 		case op_temp:
-			printf ("tmp %p", op);
+			printf ("tmp (%s) %p", pr_type_name[op->type], op);
 			break;
 		case op_pointer:
 			printf ("ptr %p", op->o.pointer);
