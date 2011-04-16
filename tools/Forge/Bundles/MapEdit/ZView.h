@@ -24,6 +24,7 @@ extern float    zplanedir;
 	vec3_t  origin;
 
 	NSBezierPath  *checker;
+	NSFont      *font;
 }
 
 - (id) clearBounds;

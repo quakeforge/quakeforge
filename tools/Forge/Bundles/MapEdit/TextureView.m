@@ -16,6 +16,7 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 
 - (id) init
 {
+	font = [[NSFont systemFontOfSize: FONTSIZE] retain];
 	deselectIndex = -1;
 	return self;
 }
@@ -51,7 +52,7 @@ NOTE: I am specifically not using cached image reps, because the data is also ne
 
 	selected = [parent_i getSelectedTexture];
 	list_i = [parent_i getList];
-	[[NSFont systemFontOfSize: FONTSIZE] set];
+	[font set];
 
 	[[NSColor lightGrayColor] set];
 	NSRectFill (rects);

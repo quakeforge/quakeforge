@@ -27,6 +27,7 @@ initWithFrame:
 	NSPoint         pt;
 	NSBezierPath    *path;
 
+	font = [[NSFont systemFontOfSize: 10] retain];
 	path = checker = [NSBezierPath new];
 	[path setLineWidth: 0.3];
 	[path moveToPoint: NSMakePoint (-16, -16)];
@@ -185,7 +186,7 @@ Called when the scaler popup on the window is used
 	return self;
 }
 
-- (id) getBounds: (float *)top: (float *)bottom;
+- (id) getBounds: (float *)top: (float *)bottom
 {
 	*top = topbound;
 	*bottom = bottombound;
@@ -363,7 +364,7 @@ Rect is in global world (unscaled) coordinates
 	[path removeAllPoints];
 
 	[[NSColor colorWithCalibratedWhite: 0.0 / 16.0 alpha: 1.0] set]; // for text
-	[[NSFont systemFontOfSize: 10] set];
+	[font set];
 
 	for ( ; y <= stopy; y += 64) {
 		if (showcoords) {
@@ -431,7 +432,7 @@ drawSelf
 	[self drawGrid: rect];
 
 	// draw zplane
-//	[self drawZplane]; FIXME zplane doesn't do anything yet
+	[self drawZplane]; //FIXME zplane doesn't do anything yet
 
 	// draw all entities
 	[map_i makeUnselectedPerform: @selector (ZDrawSelf)];

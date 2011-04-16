@@ -7,6 +7,7 @@ extern id  keypairview_i;
 
 @interface KeypairView: NSView
 {
+	NSFont *font;
 }
 
 - (id) calcViewSize;

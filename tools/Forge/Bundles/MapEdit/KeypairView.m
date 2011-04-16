@@ -14,6 +14,7 @@ initWithFrame:
 - (id) initWithFrame: (NSRect)frameRect
 {
 	[super initWithFrame: frameRect];
+	font = [[NSFont systemFontOfSize: FONTSIZE] retain];
 	keypairview_i = self;
 	return self;
 }
@@ -55,7 +56,7 @@ initWithFrame:
 	[[NSColor lightGrayColor] set];
 	NSRectFill (NSMakeRect (0, 0, _bounds.size.width, _bounds.size.height));
 
-	[[NSFont systemFontOfSize: FONTSIZE] set];
+	[font set];
 	[[NSColor blackColor] set];
 
 	pair = [[map_i currentEntity] epairs];

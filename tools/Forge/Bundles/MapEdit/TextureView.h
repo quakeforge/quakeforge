@@ -5,6 +5,7 @@
 
 @interface TextureView: NSView
 {
+	NSFont *font;
 	id      parent_i;
 	int     deselectIndex;
 }

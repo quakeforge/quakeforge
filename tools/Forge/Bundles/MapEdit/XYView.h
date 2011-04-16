@@ -30,6 +30,8 @@ void        XYlineto (vec3_t pt);
 {
 	NSRect      realbounds, newrect, combinedrect;
 	NSPoint     midpoint;
+	NSFont      *font;
+	NSFont      *scaledFont;
 	int         gridsize;
 	float       scale;
 
@@ -71,6 +73,8 @@ void        XYlineto (vec3_t pt);
 
 - (int) gridsize;
 - (float) snapToGrid: (float)f;
+
+- (NSFont *) scaledFont;
 
 @end
 

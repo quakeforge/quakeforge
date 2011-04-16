@@ -58,6 +58,8 @@ initWithFrame:
 	[super initWithFrame: frameRect];
 	[self allocateGState];
 
+	font = [[NSFont systemFontOfSize: 10] retain];
+
 	realbounds = NSMakeRect (0, 0, 0, 0);
 
 	gridsize = 16;
@@ -273,12 +275,17 @@ Called when the scaler popup on the window is used
 {
 	NSRect      rect;
 	NSPoint     mid, org, origin;
+	NSFont      *f;
 	float       nscale;
 
 	nscale = [[[sender selectedCell] title] floatValue] / 100;
 
 	if (nscale == scale)
 		return NULL;
+
+	f = [[NSFont systemFontOfSize: 10 / nscale] retain];
+	[scaledFont release];
+	scaledFont = f;
 
 	// keep the center of the view constant
 	rect = [_super_view bounds];
@@ -804,7 +811,7 @@ NSRect  xy_draw_rect;
 	newrect.size.width = newrect.size.height = -2 * 99999;
 
 	// setup for text
-	[[NSFont systemFontOfSize: 10] set];
+	[font set];
 
 	if (drawmode == dr_texture || drawmode == dr_flat) {
 		[quakeed_i xyNoRestore: [self visibleRect]];
@@ -1317,6 +1324,11 @@ rightMouseDown
 	NopSound ();
 
 	return self;
+}
+
+- (NSFont *) scaledFont
+{
+	return scaledFont;
 }
 
 @end

@@ -179,7 +179,7 @@ XYDrag
 	[[NSColor colorWithCalibratedRed: 1.0 green: 0.5 blue: 0.0 alpha: 1.0]
 	 set];
 
-	[[NSFont systemFontOfSize: 10 / [xyview_i currentScale]] set];
+	[[xyview_i scaledFont] set];
 
 	[path removeAllPoints];
 	for (i = 0; i < num; i++) {
@@ -202,7 +202,7 @@ XYDrag
 	NSMutableDictionary  *attribs = [NSMutableDictionary dictionary];
 
 	[[NSColor colorWithCalibratedRed: 1. green: 0.5 blue: 0. alpha: 1.] set];
-	[[NSFont systemFontOfSize: 10 / [xyview_i currentScale]] set];
+	[[xyview_i scaledFont] set];
 
 	[path removeAllPoints];
 	for (i = 0; i < num; i++) {
