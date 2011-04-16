@@ -762,8 +762,8 @@ drawSolid
 			free (xypicbuffer);
 			free (xyzbuffer);
 		}
-		xypicbuffer = malloc (r_width * (r_height + 1) * 4);
-		xyzbuffer = malloc (r_width * (r_height + 1) * 4);
+		xypicbuffer = malloc (r_width * (r_height + 1) * sizeof (unsigned));
+		xyzbuffer = malloc (r_width * (r_height + 1) * sizeof (float));
 	}
 
 	r_picbuffer = xypicbuffer;

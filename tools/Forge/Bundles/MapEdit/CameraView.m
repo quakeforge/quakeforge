@@ -36,9 +36,11 @@ initWithFrame:
 
 	move = 16;
 
-	size = _bounds.size.width * _bounds.size.height;
-	zbuffer = malloc (size * 4);
-	imagebuffer = malloc (size * 4);
+	camwidth = _bounds.size.width ;
+	camheight = _bounds.size.height;
+	size = camwidth * camheight;
+	zbuffer = malloc (size * sizeof (float));
+	imagebuffer = malloc (size * sizeof (unsigned));
 
 	return self;
 }
@@ -422,6 +424,18 @@ drawSolid
 
 	r_width = _bounds.size.width;
 	r_height = _bounds.size.height;
+	if (r_width != camwidth || r_height != camheight) {
+		int size;
+		camwidth = r_width;
+		camheight = r_height;
+		size = camwidth * camheight;
+		if (imagebuffer) {
+			free (zbuffer);
+			free (imagebuffer);
+		}
+		zbuffer = malloc (size * sizeof (float));
+		imagebuffer = malloc (size * sizeof (unsigned));
+	}
 	r_picbuffer = imagebuffer;
 	r_zbuffer = zbuffer;
 
@@ -463,6 +477,18 @@ drawWire
 
 	r_width = _bounds.size.width;
 	r_height = _bounds.size.height;
+	if (r_width != camwidth || r_height != camheight) {
+		int size;
+		camwidth = r_width;
+		camheight = r_height;
+		size = camwidth * camheight;
+		if (imagebuffer) {
+			free (zbuffer);
+			free (imagebuffer);
+		}
+		zbuffer = malloc (size * sizeof (float));
+		imagebuffer = malloc (size * sizeof (unsigned));
+	}
 	r_picbuffer = imagebuffer;
 	r_zbuffer = zbuffer;
 

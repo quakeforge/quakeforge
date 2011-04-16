@@ -35,10 +35,10 @@ REN_ClearBuffers (void)
 {
 	int  size;
 
-	size = r_width * r_height * 4;
+	size = r_width * r_height;
 
-	memset (r_zbuffer, 0, size);
-	memset (r_picbuffer, 0, size);
+	memset (r_zbuffer, 0, size * sizeof (float));
+	memset (r_picbuffer, 0, size * sizeof (unsigned));
 }
 
 /*

@@ -23,6 +23,7 @@ extern BOOL  timedrawing;
 	float   xa, ya, za;
 	float   move;
 
+	int         camwidth, camheight;
 	float       *zbuffer;
 	unsigned    *imagebuffer;
 
