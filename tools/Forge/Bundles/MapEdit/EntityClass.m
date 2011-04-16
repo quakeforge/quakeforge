@@ -175,7 +175,7 @@ scanFile
 - (void) scanFile: (NSString *)filename
 {
 	int         size, line;
-	const char  *data;
+	char        *data;
 	const char  *fname;
 	id          cl;
 	int         i;
@@ -190,7 +190,9 @@ scanFile
 	if (!contents)
 		return;
 	size = [contents length];
-	data = (const char *) [contents bytes];
+	data = malloc (size + 1);
+	memcpy (data, [contents bytes], size);
+	data[size] = 0;
 
 	line = 1;
 	for (i = 0; i < size; i++) {
@@ -204,6 +206,7 @@ scanFile
 			line++;
 		}
 	}
+	free (data);
 }
 
 /*
