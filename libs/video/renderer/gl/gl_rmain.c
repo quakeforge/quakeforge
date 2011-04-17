@@ -898,9 +898,8 @@ R_InitFishEye (void)
 
 		qfglEnable (GL_TEXTURE_CUBE_MAP_ARB);
 		qfglBindTexture (GL_TEXTURE_CUBE_MAP_ARB, cube_map_tex);
-		qfglBegin (GL_QUAD_STRIP);
-
 		for (y = 0; y < gl_cube_map_size; y += gl_cube_map_step) {
+			qfglBegin (GL_QUAD_STRIP);
 			for (x = 0; x <= gl_cube_map_size; x += gl_cube_map_step) { // quad_strip, X should be inclusive
 				struct xyz *v = &FisheyeLookupTbl[x / gl_cube_map_step]
 					[y / gl_cube_map_step + 1];
@@ -910,8 +909,8 @@ R_InitFishEye (void)
 				qfglTexCoord3f (v->x, v->y, v->z);
 				qfglVertex2i (x, y);
 			}
+			qfglEnd ();
 		}
-		qfglEnd ();
 		qfglDisable (GL_TEXTURE_CUBE_MAP_ARB);
 		qfglEnable (GL_DEPTH_TEST);
 		qfglEndList ();
