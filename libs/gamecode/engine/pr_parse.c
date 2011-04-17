@@ -408,8 +408,12 @@ ED_SpawnEntities (progs_t *pr, plitem_t *entity_list)
 	int         count;
 	const char *classname;
 	dfunction_t *func;
+	pr_int_t    max_edicts = pr->pr_edictareasize / pr->pr_edict_size;
 
+	max_edicts -= *pr->num_edicts;
 	count = PL_A_NumObjects (entity_list);
+	if (count > max_edicts)
+		PR_Error (pr, "too many entities: %d > %d", count, max_edicts);
 	for (i = 0; i < count; i++) {
 		entity = PL_ObjectAtIndex (entity_list, i);
 
