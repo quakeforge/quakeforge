@@ -26,6 +26,6 @@ AC_MSG_RESULT([
 
 if test -d $srcdir/.git; then
 	echo "WARNING: Hackers at work, watch for falling bits of code."
-	echo "(This is from a development subversion tree. Expect problems)"
+	echo "(This is from a development git tree. Expect problems)"
 	echo
 fi
