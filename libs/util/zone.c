@@ -674,7 +674,7 @@ Cache_UnlinkLRU (cache_system_t * cs)
 	cs->lru_prev = cs->lru_next = NULL;
 }
 
-static inline void
+static void
 Cache_MakeLRU (cache_system_t * cs)
 {
 	if (cs->lru_next || cs->lru_prev)

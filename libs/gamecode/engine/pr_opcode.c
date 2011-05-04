@@ -1149,7 +1149,7 @@ error:
 			  (long)(st - pr->pr_statements), op->opname);
 }
 
-static inline void
+static void
 check_global_size (progs_t *pr, dstatement_t *st, opcode_t *op,
 				   unsigned short size, unsigned short operand)
 {
