@@ -682,10 +682,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 	switch (pl->ptr[pl->pos]) {
 	case '{':
 	{
-		hashtab_t *dict;
-
 		item = PL_NewDictionary ();
-		dict = (hashtab_t *) item->data;
 
 		pl->pos++;
 
@@ -764,10 +761,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 	}
 
 	case '(': {
-		plarray_t *a;
-
 		item = PL_NewArray ();
-		a = (plarray_t *) item->data;
 
 		pl->pos++;
 
