@@ -266,6 +266,12 @@ void QuatInverse (const quat_t in, quat_t out);
 #define PlaneDiff(point,plane) \
 	(PlaneDist (point, plane) - (plane)->dist)
 
+#define PlaneFlip(sp, dp) \
+	do {											\
+		(dp)->dist = -(sp)->dist;					\
+		VectorNegate ((sp)->normal, (dp)->normal);	\
+	} while (0)
+
 extern mplane_t * const frustum;
 extern inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs);
 extern inline qboolean R_CullSphere (const vec3_t origin, const float radius);

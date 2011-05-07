@@ -201,13 +201,10 @@ MakeHeadnodePortals (node_t *node)
 
 			pl = &bplanes[n];
 			memset (pl, 0, sizeof (*pl));
-			if (j) {
-				pl->normal[i] = -1;
-				pl->dist = -bounds[j][i];
-			} else {
-				pl->normal[i] = 1;
-				pl->dist = bounds[j][i];
-			}
+			pl->normal[i] = 1;
+			pl->dist = bounds[j][i];
+			if (j)
+				PlaneFlip (pl, pl);
 			p->planenum = FindPlane (pl, &side);
 
 			p->winding = BaseWindingForPlane (pl);
@@ -269,12 +266,12 @@ CutNodePortals_r (node_t *node)
 	CalcNodeBounds (node);
 
 	if (node->contents) {
-		// at a leaf, no more dividing
+		/// Leaf nodes contain the final portals.
 		return;
 	}
 
 	if (node->detail && cutnode_detail) {
-		// detail nodes are fake leaf nodes
+		/// Detail nodes are fake leaf nodes.
 		return;
 	}
 
@@ -289,12 +286,11 @@ CutNodePortals_r (node_t *node)
 	w = BaseWindingForPlane (plane);
 	side = 0;
 	for (p = node->portals; p; p = p->next[side]) {
-		clipplane = planes[p->planenum];	// COPY the plane
+		clipplane = planes[p->planenum];	// copy the plane
 		if (p->nodes[0] == node)
 			side = 0;
 		else if (p->nodes[1] == node) {
-			clipplane.dist = -clipplane.dist;
-			VectorNegate (clipplane.normal, clipplane.normal);
+			PlaneFlip (&clipplane, &clipplane);
 			side = 1;
 		} else
 			Sys_Error ("CutNodePortals_r: mislinked portal");
@@ -331,10 +327,10 @@ CutNodePortals_r (node_t *node)
 		/// Remove each portal from the node. When finished, the node will
 		/// have no portals on it.
 		RemovePortalFromNode (p, node);
-		// The fragments will be added back to the other node.
+		/// The fragments will be added back to the other node.
 		RemovePortalFromNode (p, other_node);
 
-		// cut the portal into two portals, one on each side of the cut plane
+		/// Cut the portal in two, one on each side of the cut plane.
 		DivideWinding (p->winding, plane, &frontwinding, &backwinding);
 
 		if (!frontwinding) {
