@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS= foreign
 
-SUBDIRS= targets renderer 
+SUBDIRS= targets renderer test
 CFLAGS+= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 SDL_LIBS= @SDL_LIBS@
@@ -8,12 +8,6 @@ XMMS_LIBS= @XMMS_LIBS@
 plugin_ldflags= @plugin_ldflags@ -avoid-version -module -rpath $(plugindir)
 plugin_libadd= @plugin_libadd@
 EXEEXT=
-
-noinst_PROGRAMS= testsound
-
-testsound_SOURCES= testsound.c
-testsound_LDADD= libQFsound.la $(top_builddir)/libs/util/libQFutil.la
-testsound_DEPENDENCIES= libQFsound.la $(top_builddir)/libs/util/libQFutil.la
 
 plugin_LTLIBRARIES=	@CD_PLUGIN_TARGETS@
 noinst_LTLIBRARIES=	@CD_PLUGIN_STATIC@
