@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS= foreign
 
 SUBDIRS= alias brush sprite
-CFLAGS+= @PREFER_PIC@
+AM_CFLAGS= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 
 check_PROGRAMS=testclip

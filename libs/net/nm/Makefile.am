@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS= foreign
 
-CFLAGS+= @PREFER_NON_PIC@
+AM_CFLAGS= @PREFER_NON_PIC@
 INCLUDES= -I$(top_srcdir)/include
 
 noinst_LTLIBRARIES=	libnm.la

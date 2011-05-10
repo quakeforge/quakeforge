@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS= foreign
 
-CFLAGS+= @PREFER_PIC@
+AM_CFLAGS= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include $(GLX_CFLAGS)
 
 if BUILD_GL
