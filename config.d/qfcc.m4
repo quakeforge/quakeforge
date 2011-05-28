@@ -14,6 +14,12 @@ else
 		*freebsd*)
 			CPP_NAME="cpp %d %i %o"
 			;;
+		*openbsd*)
+			# /usr/bin/cpp is a wrapper script to /usr/libexec/cpp.
+			# It parses incorrectly the options needed, so call the
+			# binary directly.
+			CPP_NAME="/usr/libexec/cpp %d -o %o %i"
+			;;
 		*qnx*)
 			CPP_NAME="gcc -E -x c++ %d -o %o %i"
 			;;
