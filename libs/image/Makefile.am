@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS= foreign
-AM_CFLAGS= @PREFER_PIC@
-INCLUDES= -I$(top_srcdir)/include
+AM_CFLAGS= @PREFER_PIC@ $(PNG_CFLAGS)
+AM_CPPFLAGS= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES= libQFimage.la
 
