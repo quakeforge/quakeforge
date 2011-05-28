@@ -10,6 +10,9 @@ AC_ARG_ENABLE(alsa,
 AC_ARG_ENABLE(oss,
 	[  --disable-oss           disable checks for OSS support])
 
+AC_ARG_ENABLE(sun,
+	[  --disable-sun           disable checks for Sun audio support])
+
 AC_ARG_ENABLE(sound,
 	[  --disable-sound         disable sound outright])
 
@@ -199,16 +202,18 @@ fi
 AC_SUBST(SGISND_LIBS)
 
 dnl Sun
-if test "x$ac_cv_header_sys_audioio_h" = "xyes"; then
-	AC_EGREP_CPP([QF_maGiC_VALUE],
-		[
-#include <sys/audioio.h>
-#ifdef AUDIO_SETINFO
-QF_maGiC_VALUE
-#endif
-		],
-		SOUND_TYPES="$SOUND_TYPES SUN"
-	)
+if test "x$enable_sun" != "xno"; then
+	if test "x$ac_cv_header_sys_audioio_h" = "xyes"; then
+		AC_EGREP_CPP([QF_maGiC_VALUE],
+			[
+	#include <sys/audioio.h>
+	#ifdef AUDIO_SETINFO
+	QF_maGiC_VALUE
+	#endif
+			],
+			SOUND_TYPES="$SOUND_TYPES SUN"
+		)
+	fi
 fi
 
 dnl Win32
