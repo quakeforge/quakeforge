@@ -30,7 +30,7 @@ else
 	AC_CHECK_HEADERS(fnmatch.h)
 fi
 
-if test "x$ac_cv_header_alloca_h" = no; then
+if test "x$ac_cv_header_alloca_h" = xno; then
 	AC_MSG_CHECKING(for alloca in stdlib.h)
 	AC_TRY_COMPILE(
 		[#include <stdlib.h>],
