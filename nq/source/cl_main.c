@@ -221,7 +221,7 @@ CL_Disconnect (void)
 		CL_StopPlayback ();
 	else if (cls.state == ca_connected) {
 		if (cls.demorecording)
-			CL_Stop_f ();
+			CL_StopRecording ();
 
 		Sys_MaskPrintf (SYS_DEV, "Sending clc_disconnect\n");
 		SZ_Clear (&cls.message);
@@ -771,10 +771,6 @@ CL_Init (void)
 
 	Cmd_AddCommand ("entities", CL_PrintEntities_f, "No Description");
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "No Description");
-	Cmd_AddCommand ("record", CL_Record_f, "No Description");
-	Cmd_AddCommand ("stop", CL_Stop_f, "No Description");
-	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "No Description");
-	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "No Description");
 	Cmd_AddCommand ("maplist", Con_Maplist_f, "List available maps");
 	Cmd_AddCommand ("skyboxlist", Con_Skyboxlist_f, "List skyboxes available");
 	Cmd_AddCommand ("demolist", Con_Demolist_DEM_f, "List available demos");

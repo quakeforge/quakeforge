@@ -79,26 +79,6 @@ read from the demo file.
 */
 
 
-/*
-	CL_StopPlayback
-
-	Called when a demo file runs out, or the user starts a game
-*/
-void
-CL_StopPlayback (void)
-{
-	if (!cls.demoplayback)
-		return;
-
-	Qclose (cls.demofile);
-	cls.demoplayback = false;
-	cls.demofile = NULL;
-	CL_SetState (ca_disconnected);
-
-	if (cls.timedemo)
-		CL_FinishTimeDemo ();
-}
-
 
 /*
 	CL_WriteDemoMessage
@@ -121,6 +101,42 @@ CL_WriteDemoMessage (void)
 	Qwrite (cls.demofile, net_message->message->data,
 			net_message->message->cursize);
 	Qflush (cls.demofile);
+}
+
+/*
+	CL_StopPlayback
+
+	Called when a demo file runs out, or the user starts a game
+*/
+void
+CL_StopPlayback (void)
+{
+	if (!cls.demoplayback)
+		return;
+
+	Qclose (cls.demofile);
+	cls.demoplayback = false;
+	cls.demofile = NULL;
+	CL_SetState (ca_disconnected);
+
+	if (cls.timedemo)
+		CL_FinishTimeDemo ();
+}
+
+
+void
+CL_StopRecording (void)
+{
+// write a disconnect message to the demo file
+	SZ_Clear (net_message->message);
+	MSG_WriteByte (net_message->message, svc_disconnect);
+	CL_WriteDemoMessage ();
+
+// finish up
+	Qclose (cls.demofile);
+	cls.demofile = NULL;
+	cls.demorecording = false;
+	Sys_Printf ("Completed demo\n");
 }
 
 
@@ -198,7 +214,7 @@ CL_GetMessage (void)
 
 	stop recording a demo
 */
-void
+static void
 CL_Stop_f (void)
 {
 	if (cmd_source != src_command)
@@ -208,16 +224,7 @@ CL_Stop_f (void)
 		Sys_Printf ("Not recording a demo.\n");
 		return;
 	}
-// write a disconnect message to the demo file
-	SZ_Clear (net_message->message);
-	MSG_WriteByte (net_message->message, svc_disconnect);
-	CL_WriteDemoMessage ();
-
-// finish up
-	Qclose (cls.demofile);
-	cls.demofile = NULL;
-	cls.demorecording = false;
-	Sys_Printf ("Completed demo\n");
+	CL_StopRecording ();
 }
 
 
@@ -226,7 +233,7 @@ CL_Stop_f (void)
 
 	record <demoname> <map> [cd track]
 */
-void
+static void
 CL_Record_f (void)
 {
 	int         c;
@@ -339,7 +346,7 @@ CL_StartDemo (void)
 
 	play [demoname]
 */
-void
+static void
 CL_PlayDemo_f (void)
 {
 	if (cmd_source != src_command)
@@ -431,7 +438,7 @@ CL_FinishTimeDemo (void)
 
 	timedemo [demoname]
 */
-void
+static void
 CL_TimeDemo_f (void)
 {
 	if (cmd_source != src_command)
@@ -468,4 +475,8 @@ CL_Demo_Init (void)
 						   "< 1 slow-mo, > 1 timelapse");
 	demo_quit = Cvar_Get ("demo_quit", "0", CVAR_NONE, NULL,
 						  "automaticly quit after a timedemo has finished");
+	Cmd_AddCommand ("record", CL_Record_f, "No Description");
+	Cmd_AddCommand ("stop", CL_Stop_f, "No Description");
+	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "No Description");
+	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "No Description");
 }

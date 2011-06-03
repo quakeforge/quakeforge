@@ -326,12 +326,8 @@ float CL_KeyState (kbutton_t *key);
 
 // cl_demo.c
 void CL_StopPlayback (void);
+void CL_StopRecording (void);
 int CL_GetMessage (void);
-
-void CL_Stop_f (void);
-void CL_Record_f (void);
-void CL_PlayDemo_f (void);
-void CL_TimeDemo_f (void);
 void CL_Demo_Init (void);
 
 extern struct cvar_s *demo_gzip;
