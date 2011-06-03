@@ -327,8 +327,6 @@ CL_SignonReply (void)
 void
 CL_NextDemo (void)
 {
-	char        str[1024];
-
 	if (cls.demonum == -1)
 		return;							// don't play demos
 
@@ -341,8 +339,7 @@ CL_NextDemo (void)
 		}
 	}
 
-	snprintf (str, sizeof (str), "playdemo %s\n", cls.demos[cls.demonum]);
-	Cbuf_InsertText (host_cbuf, str);
+	Cbuf_InsertText (host_cbuf, va ("playdemo %s\n", cls.demos[cls.demonum]));
 	cls.demonum++;
 }
 
