@@ -398,13 +398,15 @@ CL_FinishTimeDemo (void)
 				frames == 1 ? "" : "s", time, frames / time);
 
 	timedemo_count--;
-	timedemo_data[timedemo_count].frames = frames;
-	timedemo_data[timedemo_count].time = time;
-	timedemo_data[timedemo_count].fps = frames / time;
+	if (timedemo_data) {
+		timedemo_data[timedemo_count].frames = frames;
+		timedemo_data[timedemo_count].time = time;
+		timedemo_data[timedemo_count].fps = frames / time;
+	}
 	if (timedemo_count > 0) {
 		CL_StartTimeDemo ();
 	} else {
-		if (--timedemo_runs > 0) {
+		if (--timedemo_runs > 0 && timedemo_data) {
 			double      average = 0;
 			double      variance = 0;
 			double      min, max;
@@ -425,8 +427,6 @@ CL_FinishTimeDemo (void)
 			Sys_Printf ("  min/max fps: %.3f/%.3f\n", min, max);
 			Sys_Printf ("std deviation: %.3f fps\n", sqrt (variance));
 		}
-		free (timedemo_data);
-		timedemo_data = 0;
 		if (demo_quit->int_val)
 			Cbuf_InsertText (host_cbuf, "quit\n");
 	}
@@ -441,6 +441,8 @@ CL_FinishTimeDemo (void)
 static void
 CL_TimeDemo_f (void)
 {
+	int         count = 1;
+
 	if (cmd_source != src_command)
 		return;
 
@@ -450,17 +452,17 @@ CL_TimeDemo_f (void)
 	}
 	timedemo_runs = timedemo_count = 1; // make sure looped timedemos stop
 
-	if (Cmd_Argc () == 3) {
-		timedemo_count = atoi (Cmd_Argv (2));
-	} else {
-		timedemo_count = 1;
-	}
-	timedemo_runs = timedemo_count = max (timedemo_count, 1);
-	if (timedemo_data)
+	if (Cmd_Argc () == 3)
+		count = atoi (Cmd_Argv (2));
+	timedemo_runs = timedemo_count = 1;
+	if (timedemo_data) {
 		free (timedemo_data);
-	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
+		timedemo_data = 0;
+	}
 	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
 	CL_StartTimeDemo ();
+	timedemo_runs = timedemo_count = max (count, 1);
+	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
 }
 
 void
