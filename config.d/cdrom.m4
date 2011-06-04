@@ -14,13 +14,14 @@ if test "x$mingw" != xyes -a "x$enable_xmms" == xyes; then
 fi	
 AC_SUBST(CD_CFLAGS)
 
+
+CDTYPE=""
 CD_CFLAGS=""
+CD_PLUGIN_TARGETS=""
 if test "x$HAVE_VORBIS" = xyes; then
-    CD_PLUGIN_TARGETS="cd_file.la"
-else
-    CD_PLUGIN_TARGETS=""
+	CDTYPE=" OGG"
+	CD_PLUGIN_TARGETS="cd_file.la"
 fi
-unset CDTYPE
 
 AC_MSG_CHECKING(for CD audio support)
 
@@ -74,7 +75,7 @@ QF_maGiC_VALUE
 	CDTYPE="$CDTYPE WIN32"
 	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS cd_win.la"
 )
-if test "$CDTYPE"; then
+if test "x$CDTYPE" != "x"; then
 	AC_MSG_RESULT([$CDTYPE])
 else
 	AC_MSG_RESULT([no])
