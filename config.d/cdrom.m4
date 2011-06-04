@@ -19,7 +19,7 @@ CDTYPE=""
 CD_CFLAGS=""
 CD_PLUGIN_TARGETS=""
 if test "x$HAVE_VORBIS" = xyes; then
-	CDTYPE=" OGG"
+	CDTYPE=" File"
 	CD_PLUGIN_TARGETS="cd_file.la"
 fi
 
@@ -82,3 +82,44 @@ else
 fi
 
 AC_SUBST(CD_LIBS)
+
+AC_ARG_WITH([cd-default],
+	AS_HELP_STRING([--with-cd-default=...],
+				   [Plugin to use for the default cd driver.]
+				   [Defaults to File.]
+				   [[File Linux XMMS SDL SGI WIN32]]), 
+	cd_default="$withval", cd_default=File
+)
+CD_DEFAULT=""
+if test "x$cd_default" != "x"; then
+	for cdd in $CDTYPE; do
+		if test "x$cdd" = "x$cd_default"; then
+			CD_DEFAULT="$cd_default"
+		fi
+	done
+fi
+case "x$CD_DEFAULT" in
+	xFile)
+		CD_DEFAULT=file
+		;;
+	xLinux)
+		CD_DEFAULT=linux
+		;;
+	xXMMS)
+		CD_DEFAULT=xmms
+		;;
+	xSDL)
+		CD_DEFAULT=sdl
+		;;
+	xSGI)
+		CD_DEFAULT=sgi
+		;;
+	xWIN32)
+		CD_DEFAULT=win
+		;;
+	x*)
+		AC_MSG_WARN([Unknown or unbuildable cd plugin])
+		CD_DEFAULT=file
+		;;
+esac
+AC_DEFINE_UNQUOTED(CD_DEFAULT, ["$CD_DEFAULT"], [Define to the default CD plugin])

@@ -95,7 +95,7 @@ VISIBLE int
 CDAudio_Init (void)
 {
 	PI_RegisterPlugins (cd_plugin_list);
-	cd_plugin = Cvar_Get ("cd_plugin", "sdl", CVAR_ROM, NULL,
+	cd_plugin = Cvar_Get ("cd_plugin", CD_DEFAULT, CVAR_ROM, NULL,
 						  "CD Plugin to use");
 
 	if (COM_CheckParm ("-nocdaudio"))
