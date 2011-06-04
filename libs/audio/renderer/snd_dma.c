@@ -75,14 +75,16 @@ static snd_output_funcs_t *snd_output_funcs;
 static void
 s_xfer_paint_buffer (int endtime)
 {
-	int			count, out_idx, out_mask, step, val;
+	int			count, out_idx, out_max, step, val;
 	float       snd_vol;
 	float	   *p;
 
 	p = (float *) snd_paintbuffer;
 	count = (endtime - snd_paintedtime) * snd_shm->channels;
-	out_mask = (snd_shm->frames * snd_shm->channels) - 1;
-	out_idx = (snd_paintedtime * snd_shm->channels) & out_mask;
+	out_max = (snd_shm->frames * snd_shm->channels) - 1;
+	out_idx = snd_paintedtime * snd_shm->channels;
+	while (out_idx > out_max)
+		out_idx -= out_max + 1;
 	step = 3 - snd_shm->channels;
 	snd_vol = snd_volume->value;
 
@@ -96,8 +98,9 @@ s_xfer_paint_buffer (int endtime)
 				val = 0x7fff;
 			else if (val < -0x8000)
 				val = -0x8000;
-			out[out_idx] = val;
-			out_idx = (out_idx + 1) & out_mask;
+			out[out_idx++] = val;
+			if (out_idx > out_max)
+				out_idx = 0;
 		}
 	} else if (snd_shm->samplebits == 8) {
 		unsigned char *out = (unsigned char *) snd_shm->buffer;
@@ -109,8 +112,9 @@ s_xfer_paint_buffer (int endtime)
 				val = 0x7f;
 			else if (val < -0x80)
 				val = -0x80;
-			out[out_idx] = val + 0x80;
-			out_idx = (out_idx + 1) & out_mask;
+			out[out_idx++] = val + 0x80;
+			if (out_idx > out_max)
+				out_idx = 0;
 		}
 	}
 }
