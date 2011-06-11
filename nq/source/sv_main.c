@@ -87,6 +87,7 @@ SV_Init (void)
 							   "None");
 	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_SERVERINFO, Cvar_Info,
 						   "None");
+	sv_jump_any = Cvar_Get ("sv_jump_any", "1", CVAR_NONE, NULL, "None");
 	sv_friction = Cvar_Get ("sv_friction", "4", CVAR_SERVERINFO, Cvar_Info,
 							"None");
 	sv_edgefriction = Cvar_Get ("edgefriction", "2", CVAR_NONE, NULL, "None");

@@ -212,6 +212,7 @@ extern	struct cvar_s	*timelimit;
 
 extern	struct cvar_s	*sv_maxvelocity;
 extern	struct cvar_s	*sv_gravity;
+extern	struct cvar_s	*sv_jump_any;
 extern	struct cvar_s	*sv_nostep;
 extern	struct cvar_s	*sv_friction;
 extern	struct cvar_s	*sv_edgefriction;
@@ -264,6 +265,7 @@ void SV_ClientPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void SV_BroadcastPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 
 struct trace_s SV_PushEntity (edict_t *ent, vec3_t push);
+int SV_EntCanSupportJump (edict_t *ent);
 int SV_FlyMove (edict_t *ent, float time, struct trace_s *steptrace);
 void SV_CheckVelocity (edict_t *ent);
 qboolean SV_RunThink (edict_t *ent);

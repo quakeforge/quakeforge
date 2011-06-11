@@ -291,7 +291,7 @@ SV_WalkMove (edict_t *ent)
 	downtrace = SV_PushEntity (ent, downmove);	// FIXME: don't link?
 
 	if (downtrace.plane.normal[2] > 0.7) {
-		if (SVfloat (ent, solid) == SOLID_BSP) {
+		if (SV_EntCanSupportJump (ent)) {
 			SVfloat (ent, flags) = (int) SVfloat (ent, flags) | FL_ONGROUND;
 			SVfloat (ent, groundentity) = EDICT_TO_PROG (&sv_pr_state,
 														 downtrace.ent);

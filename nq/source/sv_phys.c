@@ -61,6 +61,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 cvar_t     *sv_friction;
 cvar_t     *sv_gravity;
+cvar_t     *sv_jump_any;
 cvar_t     *sv_stopspeed;
 cvar_t     *sv_maxvelocity;
 cvar_t     *sv_nostep;
@@ -224,6 +225,19 @@ ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
 	return blocked;
 }
 
+int
+SV_EntCanSupportJump (edict_t *ent)
+{
+	int         solid = SVfloat (ent, solid);
+	if (solid == SOLID_BSP)
+		return 1;
+	if (!sv_jump_any->int_val)
+		return 0;
+	if (solid == SOLID_NOT || solid == SOLID_SLIDEBOX)
+		return 0;
+	return 1;
+}
+
 #define	MAX_CLIP_PLANES	5
 
 /*
@@ -284,7 +298,7 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 
 		if (trace.plane.normal[2] > 0.7) {
 			blocked |= 1;				// floor
-			if (SVfloat (trace.ent, solid) == SOLID_BSP) {
+			if (SV_EntCanSupportJump (trace.ent)) {
 				SVfloat (ent, flags) = (int) SVfloat (ent, flags) |
 					FL_ONGROUND;
 				SVentity (ent, groundentity) = EDICT_TO_PROG (&sv_pr_state,
