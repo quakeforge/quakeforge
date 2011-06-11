@@ -131,7 +131,7 @@ qboolean
 SV_RunThink (edict_t *ent)
 {
 	float       thinktime;
-	float       oldframe;
+//FIXME	float       oldframe;
 
 	do {
 		thinktime = SVfloat (ent, nextthink);
@@ -142,7 +142,7 @@ SV_RunThink (edict_t *ent)
 			thinktime = sv.time;		// don't let things stay in the past.
 										// it is possible to start that way
 										// by a trigger with a local time.
-		oldframe = SVfloat (ent, frame);
+//FIXME		oldframe = SVfloat (ent, frame);
 
 		SVfloat (ent, nextthink) = 0;
 		*sv_globals.time = thinktime;
