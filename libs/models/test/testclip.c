@@ -15,26 +15,25 @@
 # include "../trace.c"
 #endif
 
-
 //  0,0
 //   |\   .
 //   |s\  .
 //   |ss\ .
 //   0   1
 
-mclipnode_t clipnodes0[] = {
+mclipnode_t clipnodes_simple_wedge[] = {
 	{  0, {             1, CONTENTS_EMPTY}},
 	{  1, {CONTENTS_EMPTY, CONTENTS_SOLID}},
 };
 
-mplane_t planes0[] = {
+mplane_t planes_simple_wedge[] = {
 	{{1, 0, 0}, 0, 0, 0},		//  0
 	{{0.8, 0, 0.6}, 0, 4, 0},	//  1 
 };
 
-hull_t hull0 = {
-	clipnodes0,
-	planes0,
+hull_t hull_simple_wedge = {
+	clipnodes_simple_wedge,
+	planes_simple_wedge,
 	0,
 	1,
 	{0, 0, 0},
@@ -46,21 +45,21 @@ hull_t hull0 = {
 //  sss|sss|   |sss
 //     0   1   2
 
-mclipnode_t clipnodes1[] = {
+mclipnode_t clipnodes_tpp1[] = {
 	{  0, {             1, CONTENTS_SOLID}},
 	{  1, {             2, CONTENTS_SOLID}},
 	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
 };
 
-mplane_t planes1[] = {
+mplane_t planes_tpp1[] = {
 	{{1, 0, 0}, -32, 0, 0},
 	{{1, 0, 0},  32, 0, 0},
 	{{1, 0, 0},  48, 0, 0},
 };
 
-hull_t hull1 = {
-	clipnodes1,
-	planes1,
+hull_t hull_tpp1 = {
+	clipnodes_tpp1,
+	planes_tpp1,
 	0,
 	2,
 	{0, 0, 0},
@@ -72,21 +71,21 @@ hull_t hull1 = {
 //  sss|sss|   |sss
 //     1   0   2
 
-mclipnode_t clipnodes2[] = {
+mclipnode_t clipnodes_tpp2[] = {
 	{  0, {             2,              1}},
 	{  1, {CONTENTS_SOLID, CONTENTS_SOLID}},
 	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
 };
 
-mplane_t planes2[] = {
+mplane_t planes_tpp2[] = {
 	{{1, 0, 0},  32, 0, 0},
 	{{1, 0, 0}, -32, 0, 0},
 	{{1, 0, 0},  48, 0, 0},
 };
 
-hull_t hull2 = {
-	clipnodes2,
-	planes2,
+hull_t hull_tpp2 = {
+	clipnodes_tpp2,
+	planes_tpp2,
 	0,
 	2,
 	{0, 0, 0},
@@ -98,21 +97,21 @@ hull_t hull2 = {
 //  sss|   |www|sss
 //     1   0   2
 
-mclipnode_t clipnodes3[] = {
+mclipnode_t clipnodes_tppw[] = {
 	{  0, {             2,              1}},
 	{  1, {CONTENTS_EMPTY, CONTENTS_SOLID}},
 	{  2, {CONTENTS_SOLID, CONTENTS_WATER}},
 };
 
-mplane_t planes3[] = {
+mplane_t planes_tppw[] = {
 	{{1, 0, 0},  32, 0, 0},
 	{{1, 0, 0}, -32, 0, 0},
 	{{1, 0, 0},  48, 0, 0},
 };
 
-hull_t hull3 = {
-	clipnodes3,
-	planes3,
+hull_t hull_tppw = {
+	clipnodes_tppw,
+	planes_tppw,
 	0,
 	2,
 	{0, 0, 0},
@@ -142,25 +141,42 @@ box_t point = { {0, 0, 0} };
 box_t player = { {16, 16, 28} };
 
 test_t tests[] = {
-	{0, &point, &hull1, {-64, 0, 0}, { 64, 0, 0}, {     1, 1, 1, 0, 0}},
-	{0, &point, &hull1, {  0, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 0}},
-	{0, &point, &hull1, { 40, 0, 0}, {-88, 0, 0}, {0.0625, 0, 0, 1, 0}},
-	{0, &point, &hull1, {  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 1, 1, 0}},
-	{0, &point, &hull1, {  0, 0, 0}, {  0, 8, 0}, {     1, 1, 1, 0, 0}},
-	{0, &point, &hull1, { 40, 0, 0}, { 40, 8, 0}, {     1, 0, 0, 1, 0}},
+	{"Point, Three parallel planes 1", &point, &hull_tpp1,
+		{-64, 0, 0}, { 64, 0, 0}, {     1, 1, 1, 0, 0}},
+	{"Point, Three parallel planes 1", &point, &hull_tpp1,
+		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 0}},
+	{"Point, Three parallel planes 1", &point, &hull_tpp1,
+		{ 40, 0, 0}, {-88, 0, 0}, {0.0625, 0, 0, 1, 0}},
+	{"Point, Three parallel planes 1", &point, &hull_tpp1,
+		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 1, 1, 0}},
+	{"Point, Three parallel planes 1", &point, &hull_tpp1,
+		{  0, 0, 0}, {  0, 8, 0}, {     1, 1, 1, 0, 0}},
+	{"Point, Three parallel planes 1", &point, &hull_tpp1,
+		{ 40, 0, 0}, { 40, 8, 0}, {     1, 0, 0, 1, 0}},
 
-	{0, &point, &hull2, {-64, 0, 0}, { 64, 0, 0}, {     1, 1, 1, 0, 0}},
-	{0, &point, &hull2, {  0, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 0}},
-	{0, &point, &hull2, { 40, 0, 0}, {-88, 0, 0}, {0.0625, 0, 0, 1, 0}},
-	{0, &point, &hull2, {  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 1, 1, 0}},
+	{"Point, Three parallel planes 2", &point, &hull_tpp2,
+		{-64, 0, 0}, { 64, 0, 0}, {     1, 1, 1, 0, 0}},
+	{"Point, Three parallel planes 2", &point, &hull_tpp2,
+		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 0}},
+	{"Point, Three parallel planes 2", &point, &hull_tpp2,
+		{ 40, 0, 0}, {-88, 0, 0}, {0.0625, 0, 0, 1, 0}},
+	{"Point, Three parallel planes 2", &point, &hull_tpp2,
+		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 1, 1, 0}},
 
-	{0, &point, &hull3, {-64, 0, 0}, { 64, 0, 0}, { 0.875, 0, 1, 1, 1}},
-	{0, &point, &hull3, {  0, 0, 0}, { 40, 0, 0}, {     1, 0, 0, 1, 1}},
-	{0, &point, &hull3, { 40, 0, 0}, {-88, 0, 0}, {0.5625, 0, 0, 1, 1}},
-	{0, &point, &hull3, {  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 0, 1, 1}},
-	{0, &point, &hull3, {  0, 0, 0}, {  0, 8, 0}, {     1, 0, 0, 1, 0}},
-	{0, &point, &hull3, { 40, 0, 0}, { 40, 8, 0}, {     1, 0, 0, 0, 1}},
-	{0, &point, &hull3, {  0, 0, 0}, { 40, 0, 0}, {     1, 0, 0, 1, 1}},
+	{"Point, Three parallel planes with water", &point, &hull_tppw,
+		{-64, 0, 0}, { 64, 0, 0}, { 0.875, 0, 1, 1, 1}},
+	{"Point, Three parallel planes with water", &point, &hull_tppw,
+		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 0, 1, 1}},
+	{"Point, Three parallel planes with water", &point, &hull_tppw,
+		{ 40, 0, 0}, {-88, 0, 0}, {0.5625, 0, 0, 1, 1}},
+	{"Point, Three parallel planes with water", &point, &hull_tppw,
+		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 0, 1, 1}},
+	{"Point, Three parallel planes with water", &point, &hull_tppw,
+		{  0, 0, 0}, {  0, 8, 0}, {     1, 0, 0, 1, 0}},
+	{"Point, Three parallel planes with water", &point, &hull_tppw,
+		{ 40, 0, 0}, { 40, 8, 0}, {     1, 0, 0, 0, 1}},
+	{"Point, Three parallel planes with water", &point, &hull_tppw,
+		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 0, 1, 1}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
