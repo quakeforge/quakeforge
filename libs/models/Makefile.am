@@ -6,8 +6,6 @@ INCLUDES= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES=	libQFmodels.la @VID_MODEL_TARGETS@
 EXTRA_LTLIBRARIES=	libQFmodels_gl.la libQFmodels_sw.la
-EXTRA_DIST=	trace-id.c
-TESTS=$(check_PROGRAMS)
 
 models_sources = clip_hull.c model.c trace.c
 

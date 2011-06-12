@@ -24,6 +24,7 @@
 	libs/qw/Makefile
 	libs/ruamoko/Makefile
 	libs/util/Makefile
+	libs/util/test/Makefile
 	libs/video/Makefile
 	libs/video/renderer/Makefile
 	libs/video/renderer/gl/Makefile
