@@ -10,7 +10,7 @@
 #ifdef TEST_ID
 # include "trace-id.c"
 #else
-# include "trace.c"
+# include "../trace.c"
 #endif
 
 mclipnode_t clipnodes0[] = {

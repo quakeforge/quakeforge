@@ -1,14 +1,8 @@
 AUTOMAKE_OPTIONS= foreign
 
-SUBDIRS= alias brush sprite
+SUBDIRS= alias brush sprite . test
 AM_CFLAGS= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
-
-check_PROGRAMS=testclip
-
-testclip_SOURCES=testclip.c
-testclip_LDADD= libQFmodels.la $(top_builddir)/libs/util/libQFutil.la
-testclip_DEPENDENCIES=
 
 lib_LTLIBRARIES=	libQFmodels.la @VID_MODEL_TARGETS@
 EXTRA_LTLIBRARIES=	libQFmodels_gl.la libQFmodels_sw.la
