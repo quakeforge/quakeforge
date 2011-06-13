@@ -136,9 +136,9 @@ read_adtl (dstring_t *list_buf, QFile *f, int len)
 	riff_ltxt_t     *ltxt;
 	riff_label_t    *label;
 	riff_data_t     *data;
-	riff_list_t     *list;
+	//FIXME riff_list_t     *list;
 
-	list = (riff_list_t *) list_buf->str;
+	//FIXME list = (riff_list_t *) list_buf->str;
 	while (len) {
 		if (!Rread (f, &ck, sizeof (ck))) {
 			len = 0;
@@ -172,11 +172,11 @@ read_adtl (dstring_t *list_buf, QFile *f, int len)
 		}
 		len -= ck.len + (ck.len & 1);
 		dstring_append (list_buf, (char *)&chunk, sizeof (chunk));
-		list = (riff_list_t *) list_buf->str;
+		//FIXME list = (riff_list_t *) list_buf->str;
 		chunk = 0;
 	}
 	dstring_append (list_buf, (char *)&chunk, sizeof (chunk));
-	list = (riff_list_t *) list_buf->str;
+	//FIXME list = (riff_list_t *) list_buf->str;
 }
 
 static riff_list_t *
