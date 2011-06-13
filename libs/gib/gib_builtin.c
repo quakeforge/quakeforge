@@ -580,7 +580,7 @@ static void
 GIB_Regex_Replace_f (void)
 {
 	regex_t    *reg;
-	int         ofs, len;
+	int         ofs;
 	regmatch_t  match[10];
 
 	if (GIB_Argc () != 5) {
@@ -589,7 +589,6 @@ GIB_Regex_Replace_f (void)
 	}
 
 	ofs = 0;
-	len = strlen (GIB_Argv (4));
 
 	if (!
 		(reg =
