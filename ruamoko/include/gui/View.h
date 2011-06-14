@@ -4,6 +4,8 @@
 #include "Object.h"
 #include "gui/Rect.h"
 
+/** The View class.
+*/
 @interface View: Object
 {
 @public
