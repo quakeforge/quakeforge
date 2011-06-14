@@ -8,8 +8,8 @@ nobase_pkginclude_HEADERS= \
 	draw.h key.h \
 	\
 	cbuf.h cmd.h cvar.h file.h gib.h hash.h plist.h runtime.h \
-	AutoreleasePool.h Array.h Entity.h List.h ListNode.h Object.h \
-	PropertyList.h Protocol.h Stack.h \
+	Object.h Protocol.h \
+	AutoreleasePool.h Array.h Entity.h PropertyList.h \
 	\
 	gui/Group.h gui/InputLine.h gui/Pic.h gui/Point.h gui/Rect.h gui/Size.h \
 	gui/Slider.h gui/Text.h gui/View.h
