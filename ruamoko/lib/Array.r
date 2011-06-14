@@ -425,6 +425,21 @@
 	[super dealloc];
 }
 
-@end
+#if 0
+/*
+	This method is a sort of placeholder for when strings work.
+*/
+- (string) description
+{
+	string desc = "(";
+	for (i = 0; i < [self count]; i++) {
+		if (i)
+			desc += ", ";
+		desc += [[self objectAtIndex: i] description];
+	}
+	desc += ")";
+	return desc;
+}
+#endif
 
-@reference Array (Private);
+@end
