@@ -1,3 +1,7 @@
+/**
+	\defgroup runtime Objective Runtime
+	\{
+*/
 #ifndef __ruamoko_runtime_h_
 #define __ruamoko_runtime_h_
 
@@ -75,3 +79,6 @@ typedef enum {
 @extern BOOL object_is_meta_class (id object);
 
 #endif	//__ruamoko_runtime_h_
+/**
+	\}
+*/

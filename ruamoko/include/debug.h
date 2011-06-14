@@ -1,7 +1,6 @@
 /**
-	\file debug.h
-
-	Debugging function definitions
+	\defgroup debug Debugging Functions
+	\{
 */
 
 /*
@@ -76,4 +75,5 @@
 */
 @extern void objerror (string e);
 
+//\}
 #endif //__ruamoko_debug_h

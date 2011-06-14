@@ -32,6 +32,11 @@
 #define __ruamoko_math_h
 
 /**
+	\defgroup math Math Functions
+	\{
+*/
+
+/**
 	Generate a random number such that 0 <= n <= 1 (0 to 1 inclusive)
 */
 @extern float random (void);
@@ -69,8 +74,6 @@
 /****************************************************************************
  *									VECTORS									*
  ****************************************************************************/
-
-@extern vector v_forward, v_up, v_right;
 
 /**
 	Transform vector \a v into a unit vector (a vector with a length of 1).
@@ -145,5 +148,7 @@
 @extern float asinh (float x);
 @extern float acosh (float x);
 @extern float atanh (float x);
+
+//\}
 
 #endif //__ruamoko_math_h

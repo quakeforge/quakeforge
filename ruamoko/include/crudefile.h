@@ -1,6 +1,10 @@
 #ifndef __ruamoko_crudefile_h
 #define __ruamoko_crudefile_h
 
+/**
+	\defgroup crudefile Crudefile Functions
+	\{
+*/
 @extern float cfopen (string path, string mode);
 @extern void cfclose (float desc);
 @extern string cfread (float desc);
@@ -8,4 +12,7 @@
 @extern float cfeof (float desc);
 @extern float cfquota (void);
 
+/**
+	\}
+*/
 #endif//__ruamoko_crudefile_h

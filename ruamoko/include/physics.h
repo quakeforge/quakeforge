@@ -1,3 +1,7 @@
+/**
+	\defgroup physics Physics builtins
+	\{
+*/
 #ifndef __ruamoko_physics_h
 #define __ruamoko_physics_h
 
@@ -10,11 +14,12 @@
 @extern entity		trace_ent;
 @extern float		trace_inopen;
 @extern float		trace_inwater;
+@extern vector		v_forward;
+@extern vector		v_up;
+@extern vector		v_right;
 
-/*
-	makevectors
-
-	Set v_forward, v_up, v_right global vectors from the vector ang
+/**
+	Set #v_forward, #v_up, #v_right global vectors from the vector \a ang
 */
 @extern void makevectors (vector ang);
 @extern void traceline (vector v1, vector v2, float nomonsters, entity forent);
@@ -32,5 +37,9 @@
 @extern int getboxhull (void);
 @extern void freeboxhull (int hull);
 @extern void rotate_bbox (int hull, vector right, vector forward, vector up, vector mins, vector maxs);
+
+/**
+	\}
+*/
 
 #endif//__ruamoko_physics_h

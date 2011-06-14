@@ -1,10 +1,10 @@
 /**
-	\file entities.h
+	\defgroup entities Entity Handling
+	\{
 
 	Built-in functions for dealing with Quake entities.
 	These builtin functions create, modify, delete, etc. Quake entities.
 */
-
 /*
 	Copyright (C) 2002 Bill Currie <taniwha@quakeforge.net>
 	Copyright (C) 2002 Jeff Teunissen <deek@quakeforge.net>
@@ -28,8 +28,6 @@
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
-
-	$Id$
 */
 #ifndef __ruamoko_entities_h
 #define __ruamoko_entities_h
@@ -113,5 +111,7 @@
 @extern entity nextent (entity e);
 
 @extern void EntityParseFunction (void func (string ent_data));
-///\}
+
+//\}
+//\}
 #endif //__ruamoko_entities_h
