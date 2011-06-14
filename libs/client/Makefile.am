@@ -8,4 +8,4 @@ noinst_LTLIBRARIES= libQFclient.la
 libQFclient_la_LDFLAGS=	@STATIC@
 libQFclient_la_LIBADD=	$(top_builddir)/libs/gamecode/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la
 libQFclient_la_SOURCES= \
-		cl_entities.c
+		builtins.c cl_entities.c
