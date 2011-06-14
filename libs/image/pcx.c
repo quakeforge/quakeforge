@@ -80,7 +80,8 @@ LoadPCX (QFile *f, qboolean convert, byte *pal)
 		|| pcx->version != 5
 		|| pcx->encoding != 1
 		|| pcx->bits_per_pixel != 8) {
-		Sys_Printf ("Bad pcx file\n");
+		Sys_Printf ("Bad pcx file: %x %d %d %d\n",
+					pcx->manufacturer, pcx->version, pcx->encoding, pcx->bits_per_pixel);
 		return 0;
 	}
 

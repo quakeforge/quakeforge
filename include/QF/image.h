@@ -25,10 +25,7 @@
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
-
-	$Id$
 */
-
 #ifndef __QF_image_h
 #define __QF_image_h
 
@@ -52,4 +49,4 @@ typedef struct tex_s {
 
 tex_t *LoadImage (const char *imageFile);
 
-#endif//__QF_image_h
+#endif //__QF_image_h
