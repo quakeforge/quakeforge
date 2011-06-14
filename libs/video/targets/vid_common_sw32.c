@@ -31,6 +31,7 @@
 static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
@@ -211,6 +212,7 @@ VID_InitBuffers (void)
 	// No console scaling in the sw renderer
 	vid.conwidth = vid.width;
 	vid.conheight = vid.height;
+	Con_CheckResize ();
 
 	// Calculate the sizes we want first
 	buffersize = vid.rowbytes * vid.height;
