@@ -2027,7 +2027,7 @@ static builtin_t builtins[] = {
 };
 
 void
-SV_PR_Cmds_Init ()
+SV_PR_Cmds_Init (void)
 {
 	builtin_t  *bi;
 
