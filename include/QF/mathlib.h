@@ -180,6 +180,13 @@ extern const vec_t * const quat_origin;
 
 #define QuatIsZero(a) (!(a)[0] && !(a)[1] && !(a)[2] && !(a)[3])
 #define QuatZero(a) ((a)[3] = (a)[2] = (a)[1] = (a)[0] = 0);
+#define QuatSet(a,b,c,d,e) \
+	do { \
+		(e)[0] = a; \
+		(e)[1] = b; \
+		(e)[2] = c; \
+		(e)[3] = d; \
+	} while (0)
 
 #define QuatBlend(v1,v2,b,v) \
 	do { \
