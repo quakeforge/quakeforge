@@ -41,6 +41,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/vid.h"
 
 #include "qw/bothdefs.h"
+#include "cl_cam.h"
 #include "cl_main.h"
 #include "client.h"
 #include "compat.h"
@@ -187,7 +188,7 @@ V_StopPitchDrift (void)
 static void
 V_DriftPitch (void)
 {
-	float		delta, move;
+	float       delta, move;
 
 	if (view_message->onground == -1 || cls.demoplayback) {
 		cl.driftmove = 0;
@@ -246,8 +247,7 @@ V_ParseDamage (void)
 
 	armor = MSG_ReadByte (net_message);
 	blood = MSG_ReadByte (net_message);
-	for (i = 0; i < 3; i++)
-		from[i] = MSG_ReadCoord (net_message);
+	MSG_ReadCoordV (net_message, from);
 
 	count = blood * 0.5 + armor * 0.5;
 	if (count < 10)
@@ -375,7 +375,7 @@ V_CalcPowerupCshift (void)
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
 		cl.cshifts[CSHIFT_POWERUP].percent = 30;
-	} else 	if (cl.stats[STAT_ITEMS] & IT_SUIT) {
+	} else if (cl.stats[STAT_ITEMS] & IT_SUIT) {
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
@@ -399,12 +399,12 @@ V_CalcPowerupCshift (void)
 void
 V_CalcBlend (void)
 {
-	float		a2, a3;
-	float		r = 0, g = 0, b = 0, a = 0;
-	int			i;
+	float       a2, a3;
+	float       r = 0, g = 0, b = 0, a = 0;
+	int         i;
 
 	for (i = 0; i < NUM_CSHIFTS; i++) {
-		a2 = cl.cshifts[i].percent * (1.0 / 255.0);
+		a2 = cl.cshifts[i].percent / 255.0;
 
 		if (!a2)
 			continue;
@@ -426,16 +426,16 @@ V_CalcBlend (void)
 		b *= a2;
 	}
 
-	v_blend[0] = min (r, 255.0) * (1.0 / 255.0);
-	v_blend[1] = min (g, 255.0) * (1.0 / 255.0);
-	v_blend[2] = min (b, 255.0) * (1.0 / 255.0);
+	v_blend[0] = min (r, 255.0) / 255.0;
+	v_blend[1] = min (g, 255.0) / 255.0;
+	v_blend[2] = min (b, 255.0) / 255.0;
 	v_blend[3] = bound (0.0, a, 1.0);
 }
 
 void
 V_PrepBlend (void)
 { 
-	int		i, j;
+	int         i, j;
 
 	if (cl_cshift_powerup->int_val
 		|| (cl.sv_cshifts & INFO_CSHIFT_POWERUP))
@@ -487,8 +487,8 @@ angledelta (float a)
 static void
 CalcGunAngle (void)
 {
-	float			yaw, pitch, move;
-	static float	oldpitch = 0, oldyaw = 0;
+	float       yaw, pitch, move;
+	static float oldpitch = 0, oldyaw = 0;
 
 	yaw = r_refdef.viewangles[YAW];
 	pitch = -r_refdef.viewangles[PITCH];
@@ -553,7 +553,7 @@ V_AddIdle (void)
 static void
 V_CalcViewRoll (void)
 {
-	float		side;
+	float       side;
 
 	side = V_CalcRoll (cl.simangles, cl.simvel);
 	r_refdef.viewangles[ROLL] += side;
@@ -574,7 +574,7 @@ V_CalcIntermissionRefdef (void)
 	entity_t   *view;
 	float       old;
 
-	// view is the weapon model
+	// view is the weapon model (visible only from inside body)
 	view = &cl.viewent;
 
 	VectorCopy (cl.simorg, r_refdef.vieworg);
@@ -588,18 +588,15 @@ V_CalcIntermissionRefdef (void)
 	Cvar_SetValue (v_idlescale, old);
 }
 
-#include "cl_cam.h"
-
-
 static void
 V_CalcRefdef (void)
 {
 	entity_t   *view;
-	float		bob;
+	float       bob;
 	static float oldz = 0;
-	int			i;
-	int			zofs = 22;
-	vec3_t		forward, right, up;
+	int         i;
+	int         zofs = 22;
+	vec3_t      forward, right, up;
 
 	if (cl.stdver)
 		zofs = cl.stats[STAT_VIEWHEIGHT];
@@ -650,7 +647,7 @@ V_CalcRefdef (void)
 
 	for (i = 0; i < 3; i++) {
 		view->origin[i] += forward[i] * bob * 0.4;
-//		view->origin[i] += right[i] * bob *0.4;
+//		view->origin[i] += right[i] * bob * 0.4;
 //		view->origin[i] += up[i] * bob * 0.8;
 	}
 	view->origin[2] += bob;
@@ -733,14 +730,13 @@ V_RenderView (void)
 	R_RenderView ();
 }
 
-
 void
 V_Init (void)
 {
 	Cmd_AddCommand ("bf", V_BonusFlash_f, "Background flash, used when you "
 					"pick up an item");
 	Cmd_AddCommand ("centerview", V_StartPitchDrift, "Centers the player's "
-					"view ahead after +lookup or +lookdown \n"
+					"view ahead after +lookup or +lookdown\n"
 					"Will not work while mlook is active or freelook is 1.");
 	Cmd_AddCommand ("v_cshift", V_cshift_f, "This adjusts all of the colors "
 					"currently being displayed.\n"

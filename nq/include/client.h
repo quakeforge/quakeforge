@@ -132,6 +132,7 @@ typedef struct
 	struct qsocket_s	*netcon;
 	sizebuf_t	message;		// writing buffer to send to server
 	
+	int			sv_cshifts;
 } client_static_t;
 
 extern client_static_t	cls;

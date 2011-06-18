@@ -134,10 +134,9 @@ CL_Init_Entity (entity_t *ent)
 	memset (ent, 0, sizeof (*ent));
 
 	ent->colormap = vid.colormap8;
-	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] =
-		ent->colormod[3] = 1.0;
+	QuatSet (1.0, 1.0, 1.0, 1.0, ent->colormod);
 	ent->scale = 1.0;
-	ent->lerpflags |= LERP_RESETMOVE|LERP_RESETANIM;
+	ent->lerpflags |= LERP_RESETMOVE | LERP_RESETANIM;
 }
 
 static tent_t *
@@ -326,7 +325,8 @@ CL_ParseTEnt (void)
 	tent_obj_t *to;
 	explosion_t *ex;
 	int         colorStart, colorLength;
-	vec3_t      col, pos;
+	quat_t      col;
+	vec3_t      pos;
 	sfx_t      *spike_sound[] = {
 		cl_sfx_ric3, cl_sfx_ric3, cl_sfx_ric2, cl_sfx_ric1,
 	};
@@ -389,10 +389,7 @@ CL_ParseTEnt (void)
 				dl->radius = 350;
 				dl->die = cl.time + 0.5;
 				dl->decay = 300;
-				dl->color[0] = 1.0;
-				dl->color[1] = 0.5;
-				dl->color[2] = 0.25;
-				dl->color[3] = 0.7;
+				QuatSet (1.0, 0.5, 0.25, 0.7, dl->color);
 			}
 
 			// sound
@@ -466,15 +463,14 @@ CL_ParseTEnt (void)
 			dl->die = cl.time + 0.5;
 			dl->decay = 300;
 			colorStart = (colorStart + (rand () % colorLength)) * 3;
-			dl->color[0] = vid.palette[colorStart] * (1.0 / 255.0);
-			dl->color[1] = vid.palette[colorStart + 1] * (1.0 / 255.0);
-			dl->color[2] = vid.palette[colorStart + 2] * (1.0 / 255.0);
+			VectorScale (&vid.palette[colorStart], 1.0 / 255.0, dl->color);
 			dl->color[3] = 0.7;
 			break;
 
 		case TE_EXPLOSION3:				// Nehahra colored light explosion
 			MSG_ReadCoordV (net_message, pos);
 			MSG_ReadCoordV (net_message, col);			// OUCH!
+			col[3] = 0.7;
 			R_ParticleExplosion (pos);
 			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 			dl = R_AllocDlight (0);
@@ -483,8 +479,7 @@ CL_ParseTEnt (void)
 				dl->radius = 350;
 				dl->die = cl.time + 0.5;
 				dl->decay = 300;
-				VectorCopy (col, dl->color);
-				dl->color[3] = 0.7;
+				QuatCopy (col, dl->color);
 			}
 			break;
 
@@ -494,7 +489,7 @@ CL_ParseTEnt (void)
 			break;
 
 		default:
-			Sys_Error ("CL_ParseTEnt: bad type");
+			Sys_Error ("CL_ParseTEnt: bad type %d", type);
 	}
 }
 

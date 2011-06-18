@@ -140,8 +140,7 @@ CL_Init_Entity (entity_t *ent)
 	memset (ent, 0, sizeof (*ent));
 
 	ent->colormap = vid.colormap8;
-	VectorSet (1.0, 1.0, 1.0, ent->colormod);
-	ent->colormod[3] = 1.0;
+	QuatSet (1.0, 1.0, 1.0, 1.0, ent->colormod);
 	ent->scale = 1.0;
 	ent->lerpflags |= LERP_RESETMOVE | LERP_RESETANIM;
 }
@@ -396,10 +395,7 @@ CL_ParseTEnt (void)
 				dl->radius = 350;
 				dl->die = cl.time + 0.5;
 				dl->decay = 300;
-				dl->color[0] = 0.86;
-				dl->color[1] = 0.31;
-				dl->color[2] = 0.24;
-				dl->color[3] = 0.7;
+				QuatSet (0.86, 0.31, 0.24, 0.7, dl->color);
 			}
 
 			// sound
@@ -469,9 +465,7 @@ CL_ParseTEnt (void)
 			dl->die = cl.time + 0.5;
 			dl->decay = 300;
 			colorStart = (colorStart + (rand () % colorLength)) * 3;
-			dl->color[0] = vid.palette[colorStart] * (1.0 / 255.0);
-			dl->color[1] = vid.palette[colorStart + 1] * (1.0 / 255.0);
-			dl->color[2] = vid.palette[colorStart + 2] * (1.0 / 255.0);
+			VectorScale (&vid.palette[colorStart], 1.0 / 255.0, dl->color);
 			dl->color[3] = 0.7;
 			break;
 
@@ -497,10 +491,7 @@ CL_ParseTEnt (void)
 				dl->radius = 150;
 				dl->die = cl.time + 0.1;
 				dl->decay = 200;
-				dl->color[0] = 0.25;
-				dl->color[1] = 0.40;
-				dl->color[2] = 0.65;
-				dl->color[3] = 1;
+				QuatSet (0.25, 0.40, 0.65, 1, dl->color);
 			}
 
 			R_LightningBloodEffect (pos);
@@ -525,6 +516,8 @@ CL_UpdateBeams (void)
 	// update lightning
 	for (to = &cl_beams; *to; ) {
 		b = &(*to)->to.beam;
+		if (!b->endtime)
+			continue;
 		if (!b->model || b->endtime < cl.time) {
 			tent_obj_t *_to;
 			b->endtime = 0;
