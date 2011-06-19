@@ -242,7 +242,7 @@ void
 V_ParseDamage (void)
 {
 	float		count, side;
-	int			armor, blood, i;
+	int			armor, blood;
 	vec3_t		forward, from, right, up;
 
 	armor = MSG_ReadByte (net_message);

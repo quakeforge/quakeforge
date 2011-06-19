@@ -67,7 +67,6 @@ static __attribute__ ((used)) const char rcsid[] =
 	state bit 2 is edge triggered on the down to up transition
 */
 
-
 kbutton_t   in_left, in_right, in_forward, in_back;
 kbutton_t   in_lookup, in_lookdown, in_moveleft, in_moveright;
 kbutton_t   in_use, in_jump, in_attack;
@@ -163,7 +162,7 @@ static void
 IN_MLookRelease (void)
 {
 	KeyRelease (&in_mlook);
-	if (!(in_mlook.state & 1) && lookspring->int_val)
+	if (!freelook && lookspring->int_val)
 		V_StartPitchDrift ();
 }
 
@@ -419,37 +418,46 @@ cvar_t     *cl_yawspeed;
 static void
 CL_AdjustAngles (void)
 {
-	float       speed, up, down;
+	float       down, up;
+	float       pitchspeed, yawspeed;
 
-	if (in_speed.state & 1)
-		speed = host_frametime * cl_anglespeedkey->value;
-	else
-		speed = host_frametime;
+	pitchspeed = cl_pitchspeed->value;
+	yawspeed = cl_yawspeed->value;
+
+	if (in_speed.state & 1) {
+		pitchspeed *= cl_anglespeedkey->value;
+		yawspeed *= cl_anglespeedkey->value;
+	}
+
+	if ((cl.fpd & FPD_LIMIT_PITCH) && pitchspeed > FPD_MAXPITCH)
+		pitchspeed = FPD_MAXPITCH;
+	if ((cl.fpd & FPD_LIMIT_YAW) && yawspeed > FPD_MAXYAW)
+		yawspeed = FPD_MAXYAW;
+
+	pitchspeed *= host_frametime;
+	yawspeed *= host_frametime;
 
 	if (!(in_strafe.state & 1)) {
-		cl.viewangles[YAW] -=
-			speed * cl_yawspeed->value * CL_KeyState (&in_right);
-		cl.viewangles[YAW] +=
-			speed * cl_yawspeed->value * CL_KeyState (&in_left);
+		cl.viewangles[YAW] -= yawspeed * CL_KeyState (&in_right);
+		cl.viewangles[YAW] += yawspeed * CL_KeyState (&in_left);
 		cl.viewangles[YAW] = anglemod (cl.viewangles[YAW]);
 	}
 	if (in_klook.state & 1) {
 		V_StopPitchDrift ();
-		cl.viewangles[PITCH] -=
-			speed * cl_pitchspeed->value * CL_KeyState (&in_forward);
-		cl.viewangles[PITCH] +=
-			speed * cl_pitchspeed->value * CL_KeyState (&in_back);
+		cl.viewangles[PITCH] -= pitchspeed * CL_KeyState (&in_forward);
+		cl.viewangles[PITCH] += pitchspeed * CL_KeyState (&in_back);
 	}
 
 	up = CL_KeyState (&in_lookup);
 	down = CL_KeyState (&in_lookdown);
 
-	cl.viewangles[PITCH] -= speed * cl_pitchspeed->value * up;
-	cl.viewangles[PITCH] += speed * cl_pitchspeed->value * down;
+	cl.viewangles[PITCH] -= pitchspeed * up;
+	cl.viewangles[PITCH] += pitchspeed * down;
 
 	if (up || down)
 		V_StopPitchDrift ();
 
+	// FIXME: Need to clean up view angle limits
 	if (cl.viewangles[PITCH] > 80)
 		cl.viewangles[PITCH] = 80;
 	if (cl.viewangles[PITCH] < -70)
@@ -459,7 +467,6 @@ CL_AdjustAngles (void)
 		cl.viewangles[ROLL] = 50;
 	if (cl.viewangles[ROLL] < -50)
 		cl.viewangles[ROLL] = -50;
-
 }
 
 /*
@@ -509,9 +516,10 @@ CL_BaseMove (usercmd_t *cmd)
 	IN_Move ();
 
 	// adjust for chase camera angles
-	if (chase_active->int_val == 2 || chase_active->int_val == 3) {
-		vec3_t		forward, right, up, f, r;
-		vec3_t		dir = {0, 0, 0};
+	if (cl.chase
+		&& (chase_active->int_val == 2 || chase_active->int_val == 3)) {
+		vec3_t      forward, right, up, f, r;
+		vec3_t      dir = {0, 0, 0};
 
 		dir[1] = r_refdef.viewangles[1] - cl.viewangles[1];
 		AngleVectors (dir, forward, right, up);
@@ -594,7 +602,7 @@ CL_SendMove (usercmd_t *cmd)
 }
 
 void
-CL_InitInput (void)
+CL_Input_Init (void)
 {
 	Cmd_AddCommand ("+moveup", IN_UpPress, "When active the player is "
 					"swimming up in a liquid");

@@ -156,6 +156,7 @@ CL_ClearState (void)
 
 	// wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));
+	cl.chase = 1;
 	r_force_fullscreen = 0;
 
 	CL_Init_Entity (&cl.viewent);
@@ -765,7 +766,7 @@ CL_Init (void)
 {
 	SZ_Alloc (&cls.message, 1024);
 
-	CL_InitInput ();
+	CL_Input_Init ();
 	CL_TEnts_Init ();
 	CL_ClearState ();
 
