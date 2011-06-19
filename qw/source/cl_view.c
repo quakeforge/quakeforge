@@ -86,11 +86,11 @@ float       v_blend[4];
 frame_t    *view_frame;
 player_state_t *view_message;
 
-cshift_t	cshift_empty = { {130, 80, 50}, 0};
-cshift_t	cshift_water = { {130, 80, 50}, 128};
-cshift_t	cshift_slime = { {0, 25, 5}, 150};
-cshift_t	cshift_lava = { {255, 80, 0}, 150};
-cshift_t	cshift_bonus = { {215, 186, 60}, 50};
+cshift_t    cshift_empty = { {130, 80, 50}, 0};
+cshift_t    cshift_water = { {130, 80, 50}, 128};
+cshift_t    cshift_slime = { {0, 25, 5}, 150};
+cshift_t    cshift_lava = { {255, 80, 0}, 150};
+cshift_t    cshift_bonus = { {215, 186, 60}, 50};
 
 
 
@@ -118,9 +118,9 @@ V_CalcRoll (const vec3_t angles, const vec3_t velocity)
 static float
 V_CalcBob (void)
 {
-	static double	bobtime;
-	float			cycle;
-	static float	bob;
+	static double bobtime;
+	float       cycle;
+	static float bob;
 
 	if (cl.spectator)
 		return 0;
@@ -135,7 +135,7 @@ V_CalcBob (void)
 	if (cycle < cl_bobup->value)
 		cycle = M_PI * cycle / cl_bobup->value;
 	else
-		cycle =	M_PI + M_PI * (cycle - cl_bobup->value) /
+		cycle = M_PI + M_PI * (cycle - cl_bobup->value) /
 			(1.0 - cl_bobup->value);
 
 	// bob is proportional to simulated velocity in the xy plane
@@ -241,9 +241,9 @@ V_DriftPitch (void)
 void
 V_ParseDamage (void)
 {
-	float		count, side;
-	int			armor, blood;
-	vec3_t		forward, from, right, up;
+	float       count, side;
+	int         armor, blood;
+	vec3_t      from, forward, right, up;
 
 	armor = MSG_ReadByte (net_message);
 	blood = MSG_ReadByte (net_message);
@@ -533,14 +533,14 @@ V_AddIdle (void)
 	r_refdef.viewangles[ROLL] += v_idlescale->value *
 		sin (cl.time * v_iroll_cycle->value) * v_iroll_level->value;
 	r_refdef.viewangles[PITCH] += v_idlescale->value *
-		sin (cl.time * v_ipitch_cycle->value) *	v_ipitch_level->value;
-	r_refdef.viewangles[YAW] +=	v_idlescale->value *
+		sin (cl.time * v_ipitch_cycle->value) * v_ipitch_level->value;
+	r_refdef.viewangles[YAW] += v_idlescale->value *
 		sin (cl.time * v_iyaw_cycle->value) * v_iyaw_level->value;
 
 	cl.viewent.angles[ROLL] -= v_idlescale->value *
 		sin (cl.time * v_iroll_cycle->value) * v_iroll_level->value;
-	cl.viewent.angles[PITCH] -=	v_idlescale->value *
-		sin (cl.time * v_ipitch_cycle->value) *	v_ipitch_level->value;
+	cl.viewent.angles[PITCH] -= v_idlescale->value *
+		sin (cl.time * v_ipitch_cycle->value) * v_ipitch_level->value;
 	cl.viewent.angles[YAW] -= v_idlescale->value *
 		sin (cl.time * v_iyaw_cycle->value) * v_iyaw_level->value;
 }
@@ -625,14 +625,14 @@ V_CalcRefdef (void)
 	V_AddIdle ();
 
 	if (view_message->pls.flags & PF_GIB)
-		r_refdef.vieworg[2] += 8;		// gib view height
+		r_refdef.vieworg[2] += 8;			// gib view height
 	else if (view_message->pls.flags & PF_DEAD)
-		r_refdef.vieworg[2] -= 16;		// corpse view height
+		r_refdef.vieworg[2] -= 16;			// corpse view height
 	else
-		r_refdef.vieworg[2] += zofs;	// view height
+		r_refdef.vieworg[2] += zofs;		// view height
 
 	if (view_message->pls.flags & PF_DEAD)	// PF_GIB will also set PF_DEAD
-		r_refdef.viewangles[ROLL] = 80;	// dead view angle
+		r_refdef.viewangles[ROLL] = 80;		// dead view angle
 
 	// offsets
 	AngleVectors (cl.simangles, forward, right, up);

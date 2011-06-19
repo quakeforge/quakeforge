@@ -84,11 +84,11 @@ float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
 float       v_blend[4];
 
 
-cshift_t	cshift_empty = { {130, 80, 50}, 0};
-cshift_t	cshift_water = { {130, 80, 50}, 128};
-cshift_t	cshift_slime = { {0, 25, 5}, 150};
-cshift_t	cshift_lava = { {255, 80, 0}, 150};
-cshift_t	cshift_bonus = { {215, 186, 60}, 50};
+cshift_t    cshift_empty = { {130, 80, 50}, 0};
+cshift_t    cshift_water = { {130, 80, 50}, 128};
+cshift_t    cshift_slime = { {0, 25, 5}, 150};
+cshift_t    cshift_lava = { {255, 80, 0}, 150};
+cshift_t    cshift_bonus = { {215, 186, 60}, 50};
 
 
 static float
@@ -102,8 +102,8 @@ V_CalcBob (void)
 	if (cycle < cl_bobup->value)
 		cycle = M_PI * cycle / cl_bobup->value;
 	else
-		cycle = M_PI + M_PI * (cycle - cl_bobup->value) / (1.0 -
-														   cl_bobup->value);
+		cycle = M_PI + M_PI * (cycle - cl_bobup->value) /
+			(1.0 - cl_bobup->value);
 
 	// bob is proportional to velocity in the xy plane
 	// (don't count Z, or jumping messes it up)
@@ -531,8 +531,8 @@ V_AddIdle (void)
 	r_refdef.viewangles[ROLL] += v_idlescale->value *
 		sin (cl.time * v_iroll_cycle->value) * v_iroll_level->value;
 	r_refdef.viewangles[PITCH] += v_idlescale->value *
-		sin (cl.time * v_ipitch_cycle->value) *	v_ipitch_level->value;
-	r_refdef.viewangles[YAW] +=	v_idlescale->value *
+		sin (cl.time * v_ipitch_cycle->value) * v_ipitch_level->value;
+	r_refdef.viewangles[YAW] += v_idlescale->value *
 		sin (cl.time * v_iyaw_cycle->value) * v_iyaw_level->value;
 }
 
