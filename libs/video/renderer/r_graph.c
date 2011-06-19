@@ -54,11 +54,11 @@ R_TimeGraph (void)
 	static int  timex;
 	int         a;
 	int         l;
-	float       r_time2;
+	//XXX float       r_time2;
 	static int r_timings[MAX_TIMINGS];
 	int         x;
 
-	r_time2 = Sys_DoubleTime ();
+	//XXX r_time2 = Sys_DoubleTime ();
 
 	a = graphval;
 
@@ -84,7 +84,7 @@ R_TimeGraph (void)
 void
 R_ZGraph (void)
 {
-	int         a, x, w, i;
+	int         x, w;
 	static int  height[256];
 
 	if (r_refdef.vrect.width <= 256)
@@ -95,8 +95,5 @@ R_ZGraph (void)
 	height[r_framecount & 255] = ((int) r_origin[2]) & 31;
 
 	x = 0;
-	for (a = 0; a < w; a++) {
-		i = (r_framecount - a) & 255;
-	}
 	R_LineGraph (x, r_refdef.vrect.height - 2, height, w);
 }

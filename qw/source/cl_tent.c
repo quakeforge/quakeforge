@@ -625,6 +625,7 @@ CL_ParseProjectiles (qboolean nail2)
 			num = MSG_ReadByte (net_message);
 		else
 			num = 0;
+		(void) num;	//FIXME
 
 		for (j = 0; j < 6; j++)
 			bits[j] = MSG_ReadByte (net_message);

@@ -651,7 +651,6 @@ void
 CL_ParsePlayerinfo (void)
 {
 	int            flags, msec, num, i;
-	player_info_t *info;
 	player_state_t *state;
 
 	num = MSG_ReadByte (net_message);
@@ -663,7 +662,6 @@ CL_ParsePlayerinfo (void)
 		return;
 	}
 
-	info = &cl.players[num];
 	state = &cl.frames[parsecountmod].playerstate[num];
 
 	state->pls.number = num;

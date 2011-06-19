@@ -199,13 +199,13 @@ static void
 XLateKey (XKeyEvent * ev, int *k, int *u)
 {
 	char        buffer[4];
-	int         bytes, unicode;
+	int         unicode;
 	int         key = 0;
 	KeySym      keysym, shifted_keysym;
 	XComposeStatus compose;
 
 	keysym = XLookupKeysym (ev, 0);
-	bytes = XLookupString (ev, buffer, sizeof(buffer), &shifted_keysym,
+	XLookupString (ev, buffer, sizeof(buffer), &shifted_keysym,
 						   &compose);
 	unicode = (byte) buffer[0];
 

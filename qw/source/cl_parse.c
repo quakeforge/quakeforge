@@ -726,7 +726,7 @@ CL_ParseServerData (void)
 {
 	const char *str;
 	int			protover;
-	qboolean	cflag = false;
+	//FIXME qboolean	cflag = false;
 
 	Sys_MaskPrintf (SYS_DEV, "Serverdata packet received.\n");
 
@@ -750,7 +750,7 @@ CL_ParseServerData (void)
 	if (!strequal (qfs_gamedir->gamedir, str)) {
 		// save current config
 		Host_WriteConfiguration ();
-		cflag = true;
+		//FIXME cflag = true;
 		QFS_Gamedir (str);
 	}
 

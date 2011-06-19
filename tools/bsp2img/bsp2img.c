@@ -827,7 +827,7 @@ render_map (bsp_t *bsp)
 			Zoffset1 = (options.z_pad * (vert2->Z - midZ) / (maxZ - minZ));
 
 			offs0 = options.image_pad + options.z_pad + (Zoffset0 * Z_Xdir);
-			offs1 = options.image_pad + options.z_pad + (Zoffset1 * Z_Xdir);
+			offs1 = options.image_pad + options.z_pad + (Zoffset1 * Z_Ydir);
 
 			bresline (image, (vert1->X - minX) / options.scaledown + offs0,
 							 (vert1->Y - minY) / options.scaledown + offs0,

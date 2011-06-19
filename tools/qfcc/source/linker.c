@@ -1122,7 +1122,6 @@ build_qfo (void)
 	qfo_t      *qfo;
 	int         size;
 	int         i, j;
-	qfo_mspace_t *space;
 	qfo_reloc_t *reloc;
 	qfo_def_t **defs;
 
@@ -1130,7 +1129,6 @@ build_qfo (void)
 	qfo->spaces = calloc (work->num_spaces, sizeof (qfo_mspace_t));
 	qfo->num_spaces = work->num_spaces;
 	for (i = 0; i < work->num_spaces; i++) {
-		space = &work->spaces[i];
 		qfo->spaces[i].type = work->spaces[i].type;
 		qfo->spaces[i].id = work->spaces[i].id;
 		qfo->spaces[i].d = work->spaces[i].d;

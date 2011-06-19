@@ -331,7 +331,6 @@ Netchan_Transmit (netchan_t *chan, int length, byte *data)
 qboolean
 Netchan_Process (netchan_t *chan)
 {
-	int          qport;
 	unsigned int reliable_ack, reliable_message, sequence, sequence_ack;
 
 	if (!net_blocksend)
@@ -343,9 +342,9 @@ Netchan_Process (netchan_t *chan)
 	sequence = MSG_ReadLong (net_message);
 	sequence_ack = MSG_ReadLong (net_message);
 
-	// read the qport if we are a server
+	// read the qport if we are a server, but drop it
 	if (chan->flags & NC_READ_QPORT)
-		qport = MSG_ReadShort (net_message);
+		MSG_ReadShort (net_message);
 
 	reliable_message = sequence >> 31;
 	reliable_ack = sequence_ack >> 31;

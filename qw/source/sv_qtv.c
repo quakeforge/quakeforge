@@ -534,7 +534,6 @@ SV_qtvChanging (void)
 {
 	sv_qtv_t   *proxy;
 	int         i, len;
-	sizebuf_t  *buf;
 	const char *msg;
 
 	msg = va ("%cchanging", qtv_stringcmd);
@@ -545,7 +544,7 @@ SV_qtvChanging (void)
 			continue;
 		SVR_Pause (proxy->recorder);
 
-		buf = MSG_ReliableCheckBlock (&proxy->backbuf, len);
+		MSG_ReliableCheckBlock (&proxy->backbuf, len);
 		MSG_ReliableWrite_SZ (&proxy->backbuf, msg, len);
 	}
 	SV_qtvSendMessages ();
@@ -556,7 +555,6 @@ SV_qtvReconnect (void)
 {
 	sv_qtv_t   *proxy;
 	int         i, len;
-	sizebuf_t  *buf;
 	const char *msg;
 
 	msg = va ("%creconnect", qtv_stringcmd);
@@ -566,7 +564,7 @@ SV_qtvReconnect (void)
 		if (!proxy->info)
 			continue;
 
-		buf = MSG_ReliableCheckBlock (&proxy->backbuf, len);
+		MSG_ReliableCheckBlock (&proxy->backbuf, len);
 		MSG_ReliableWrite_SZ (&proxy->backbuf, msg, len);
 	}
 }

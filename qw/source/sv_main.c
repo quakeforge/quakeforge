@@ -1755,10 +1755,8 @@ SV_ReadPackets (void)
 	//NOTE star volatile, not volatile star
 	client_t   *volatile cl;			// * volatile for longjmp
 	int         qport, i;
-	qboolean    good;
 	double      until;
 
-	good = false;
 	while (NET_GetPacket ()) {
 		if (net_packetlog->int_val)
 			Log_Incoming_Packet (net_message->message->data,
@@ -1801,7 +1799,6 @@ SV_ReadPackets (void)
 			if (Netchan_Process (&cl->netchan)) {
 				// this is a valid, sequenced packet, so process it
 				svs.stats.packets++;
-				good = true;
 				cl->send_message = true;	// reply at end of frame
 				if (cl->state != cs_zombie) {
 					SV_ExecuteClientMessage (cl);

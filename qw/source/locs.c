@@ -135,12 +135,11 @@ locs_load (const char *filename)
 	char        tmp[PATH_MAX];
 	char       *t1, *t2;
 	const char *line;
-	int         templength = 0;
 	vec3_t      loc;
 	QFile      *file;
 	
 	snprintf (tmp, sizeof (tmp), "maps/%s", filename);
-	templength = QFS_FOpenFile (tmp, &file);
+	QFS_FOpenFile (tmp, &file);
 	if (!file) {
 		Sys_Printf ("Couldn't load %s\n", tmp);
 		return;

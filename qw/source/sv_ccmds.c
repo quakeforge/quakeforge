@@ -630,20 +630,20 @@ SV_Punish (int mode)
 	dstring_t  *text = dstring_new();
 	const char *cmd = 0;
 	const char *cmd_do = 0;
-	const char *cmd_undo = 0;
+	//FIXME const char *cmd_undo = 0;
 	int         field_offs = 0;
 
 	switch (mode) {
 		case 0:
 			cmd = "cuff";
 			cmd_do = "cuffed";
-			cmd_undo = "un-cuffed";
+			//FIXME cmd_undo = "un-cuffed";
 			field_offs = field_offset (client_t, cuff_time);
 			break;
 		case 1:
 			cmd = "mute";
 			cmd_do = "muted";
-			cmd_undo = "can speak";
+			//FIXME cmd_undo = "can speak";
 			field_offs = field_offset (client_t, lockedtill);
 			break;
 	}

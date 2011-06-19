@@ -258,7 +258,6 @@ convert_qfo (void)
 {
 	int         size;
 	int         i;
-	ddef_t     *ld;
 
 	pr.progs = qfo_to_progs (qfo, &size);
 
@@ -283,7 +282,7 @@ convert_qfo (void)
 		pr.local_defs = P (ddef_t, locals);
 #undef P
 
-		ld = pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));
+		pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));
 
 		pr.auxfunction_map = calloc (pr.progs->numfunctions,
 									 sizeof (pr_auxfunction_t *));

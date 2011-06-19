@@ -154,9 +154,9 @@ R_RecursiveMarkLights (const vec3_t lightorigin, dlight_t *light, int bit,
 	float       ndist, maxdist;
 	mplane_t   *splitplane;
 	msurface_t *surf;
-	mvertex_t  *vertices;
+	//XXX mvertex_t  *vertices;
 
-	vertices = r_worldentity.model->vertexes;
+	//XXX vertices = r_worldentity.model->vertexes;
 	maxdist = light->radius;
 
 loc0:

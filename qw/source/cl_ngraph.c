@@ -54,15 +54,13 @@ void
 CL_NetGraph (void)
 {
 	char        st[80];
-	int         lost, a, l, x, y, h, i;
+	int         lost, a, l, x, y, i;
 
 	if (!r_netgraph->int_val)
 		return;
 
 	x = hudswap ? vid.conwidth - (NET_TIMINGS + 16): 0;
 	y = vid.conheight - sb_lines - 24 - r_graphheight->int_val - 1;
-
-	h = r_graphheight->int_val % 8;
 
 	if (r_netgraph_box->int_val)
 		Draw_TextBox (x, y, NET_TIMINGS / 8, r_graphheight->int_val / 8 + 1,

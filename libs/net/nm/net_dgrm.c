@@ -528,9 +528,9 @@ Test_Poll (void *unused)
 		connectTime = MSG_ReadLong (net_message);
 		strcpy (address, MSG_ReadString (net_message));
 
-		Sys_Printf ("%s\n  frags:%3i  colors:%u %u  time:%u\n  %s\n", name,
-					frags, colors >> 4, colors & 0x0f, connectTime / 60,
-					address);
+		Sys_Printf ("%d, %s\n  frags:%3i  colors:%u %u  time:%u\n  %s\n",
+					playerNumber, name, frags, colors >> 4, colors & 0x0f,
+					connectTime / 60, address);
 	}
 
 	testPollCount--;

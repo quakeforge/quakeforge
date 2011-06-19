@@ -213,7 +213,7 @@ write_msg (sizebuf_t *msg, int type, int to, float time, sizebuf_t *dst)
 static void
 write_to_msg (int type, int to, float time, sizebuf_t *dst)
 {
-	int         pos = 0, oldm, oldd;
+	int         pos = 0;
 	header_t   *p;
 	int         size;
 	sizebuf_t   msg;
@@ -221,8 +221,6 @@ write_to_msg (int type, int to, float time, sizebuf_t *dst)
 	p = (header_t *) rec.dbuf->sz.data;
 	rec.dbuf->h = NULL;
 
-	oldm = rec.dbuf->bufsize;
-	oldd = rec.dbuffer.start;
 	while (pos < rec.dbuf->bufsize) {
 		size = p->size;
 		pos += HEADER + size;

@@ -783,13 +783,10 @@ class_find_method (class_type_t *class_type, method_t *method)
 	method_t   *m;
 	dstring_t  *sel;
 	class_t    *class = 0, *start_class;
-	const char *class_name;
-	const char *category_name = 0;
 
 	switch (class_type->type) {
 		case ct_category:
 			methods = class_type->c.category->methods;
-			category_name = class_type->c.category->name;
 			class = class_type->c.category->class;
 			break;
 		case ct_class:
@@ -799,7 +796,6 @@ class_find_method (class_type_t *class_type, method_t *method)
 		case ct_protocol:
 			return 0;		// probably in error recovery
 	}
-	class_name = class->name;
 	start_methods = methods;
 	start_class = class;
 	while (class) {

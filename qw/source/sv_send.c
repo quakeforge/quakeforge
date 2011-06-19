@@ -385,7 +385,7 @@ void
 SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 			   float attenuation)
 {
-	int         ent, field_mask, sound_num, i;
+	int         ent, sound_num, i;
 	qboolean    use_phs;
 	qboolean    reliable = false;
 	vec3_t      origin;
@@ -427,7 +427,6 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 
 	channel = (ent << 3) | channel;
 
-	field_mask = 0;
 	if (volume != DEFAULT_SOUND_PACKET_VOLUME)
 		channel |= SND_VOLUME;
 	if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION)

@@ -561,6 +561,7 @@ PF_getwave (progs_t *pr)
 	modes = (unsigned int) P_FLOAT (pr, 1);
 
 	balance = P_FLOAT (pr, 4);
+	(void) balance; //FIXME
 
 	if (modes & GWAVE_USEOFFSET)
 		offset = P_FLOAT (pr, 5);

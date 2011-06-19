@@ -4092,6 +4092,8 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
             POP_FAILURE_POINT (sdummy, pdummy,
                                dummy_low_reg, dummy_high_reg,
                                reg_dummy, reg_dummy, reg_info_dummy);
+			(void)pdummy;
+			(void)sdummy;
           }
           /* Note fall through.  */
 

@@ -924,6 +924,7 @@ PF_aim (progs_t *pr)
 
 	ent = P_EDICT (pr, 0);
 	speed = P_FLOAT (pr, 1);
+	(void)speed;	//FIXME
 
 	VectorCopy (SVvector (ent, origin), start);
 	start[2] += 20;

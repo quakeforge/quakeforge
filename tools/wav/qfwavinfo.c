@@ -34,6 +34,7 @@ main (int argc, char **argv)
 				break;
 			case 'l':
 				loop_info = 1;
+				(void) loop_info; //FIXME
 				break;
 			case 's':
 				sample_info = 1;

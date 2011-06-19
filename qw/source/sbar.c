@@ -993,7 +993,7 @@ void
 Sbar_TeamOverlay (view_t *view)
 {
 	char        num[20];
-	int         pavg, plow, phigh, i, k, l, x, y;
+	int         pavg, plow, phigh, i, k, x, y;
 	team_t     *tm;
 	info_key_t *player_team = cl.players[cl.playernum].team;
 
@@ -1020,8 +1020,6 @@ Sbar_TeamOverlay (view_t *view)
 	Sbar_SortTeams ();
 
 	// draw the text
-	l = scoreboardlines;
-
 	for (i = 0; i < scoreboardteams && y <= view->ylen - 10; i++) {
 		k = teamsort[i];
 		tm = teams + k;
@@ -1122,6 +1120,7 @@ Sbar_LogFrags (void)
 
  		// draw pl
 		p = s->pl;
+		(void) p; //FIXME
 
 		// get time
 		if (cl.intermission)

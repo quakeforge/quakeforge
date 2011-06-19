@@ -262,7 +262,7 @@ PM_GroundMove (void)
 {
 	float       downdist, updist;
 	trace_t     trace;
-	vec3_t      start, dest;
+	vec3_t      dest;
 	vec3_t      original, originalvel, down, up, downvel;
 
 	pmove.velocity[2] = 0;
@@ -275,7 +275,6 @@ PM_GroundMove (void)
 	dest[2] = pmove.origin[2];
 
 	// first try moving directly to the next spot
-	VectorCopy (dest, start);
 	trace = PM_PlayerMove (pmove.origin, dest);
 	if (trace.fraction == 1) {
 		VectorCopy (trace.endpos, pmove.origin);

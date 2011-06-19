@@ -771,14 +771,13 @@ BuildSurfaceDisplayList (msurface_t *fa)
 {
 	float       s, t;
 	float      *vec;
-	int         lindex, lnumverts, vertpage, i;
+	int         lindex, lnumverts, i;
 	glpoly_t   *poly;
 	medge_t    *pedges, *r_pedge;
 
 	// reconstruct the polygon
 	pedges = currentmodel->edges;
 	lnumverts = fa->numedges;
-	vertpage = 0;
 
 	// draw texture
 	poly = Hunk_Alloc (sizeof (glpoly_t) + (lnumverts - 4) *

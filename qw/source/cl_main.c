@@ -855,7 +855,7 @@ static void
 CL_ConnectionlessPacket (void)
 {
 	const char *s;
-	int         c, clcp_temp;
+	int         c;
 
 	MSG_BeginReading (net_message);
 	MSG_ReadLong (net_message);					// skip the -1
@@ -863,7 +863,6 @@ CL_ConnectionlessPacket (void)
 	c = MSG_ReadByte (net_message);
 	if (net_message->badread)
 		return;
-	clcp_temp = 0;
 	if (!cls.demoplayback
 		&& (cl_paranoid->int_val
 			|| !NET_CompareAdr (net_from, cls.server_addr)))
@@ -1000,7 +999,7 @@ CL_ConnectionlessPacket (void)
 	if (c == M2C_MASTER_REPLY)
 	{
 		Sys_Printf ("Master Server Reply\n");
-		clcp_temp = MSG_ReadByte (net_message);
+		MSG_ReadByte (net_message);
 		s = MSG_ReadString (net_message);
 		MSL_ParseServerList (s);
 		return;
