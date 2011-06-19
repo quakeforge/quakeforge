@@ -30,6 +30,7 @@
 #define _CL_ENTS_H
 
 #include "QF/qtypes.h"
+#include "QF/render.h"
 
 void CL_SetSolidPlayers (int playernum);
 void CL_ClearPredict (void);
@@ -44,5 +45,9 @@ void CL_Ents_Init (void);
 
 extern struct cvar_s   *cl_deadbodyfilter;
 extern struct cvar_s   *cl_gibfilter;
+
+extern entity_t cl_player_ents[];
+extern entity_t cl_flag_ents[];
+extern entity_t cl_packet_ents[];
 
 #endif
