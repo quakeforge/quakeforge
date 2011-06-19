@@ -373,11 +373,12 @@ void V_PrepBlend (void);
 
 // cl_tent
 void CL_TEnts_Init (void);
-void CL_ClearEnts (void);
 void CL_ClearTEnts (void);
 void CL_Init_Entity (struct entity_s *ent);
 void CL_ParseTEnt (void);
 void CL_SignonReply (void);
+void CL_RelinkEntities (void);
+void CL_ClearEnts (void);
 
 extern kbutton_t   in_left, in_right, in_forward, in_back;
 extern kbutton_t   in_lookup, in_lookdown, in_moveleft, in_moveright;

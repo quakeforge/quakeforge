@@ -75,8 +75,8 @@ server_LIBS=	$(server_LIBFILES) $(common_LIBFILES) $(NET_LIBS)
 server_LIB_DEPS=$(server_LIBFILES) $(common_LIBFILES)
 
 libnq_client_a_SOURCES= \
-		cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
-		cl_parse.c cl_tent.c cl_view.c host_skin.c skin.c \
+		cl_cam.c cl_cmd.c cl_demo.c cl_ents.c cl_input.c cl_main.c \
+		cl_screen.c cl_parse.c cl_tent.c cl_view.c host_skin.c skin.c \
 		sbar.c
 
 libnq_server_a_SOURCES= \

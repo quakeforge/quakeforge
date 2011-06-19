@@ -1301,7 +1301,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_print: {
- 				char	p[2048];
+				dstring_t  *p = 0;
 
 				i = MSG_ReadByte (net_message);
 				s = MSG_ReadString (net_message);
@@ -1313,13 +1313,12 @@ CL_ParseServerMessage (void)
 					if (cl_nofake->int_val) {
 						char	*c;
 
-						strncpy (p, s, sizeof (p));
-						p[sizeof (p) - 1] = 0;
-						for (c = p; *c; c++) {
+						p = dstring_strdup (s);
+						for (c = p->str; *c; c++) {
 							if (*c == '\r')
 								*c = '#';
 						}
-						s = p;
+						s = p->str;
 					}
 					Con_SetOrMask (128);
 					S_LocalSound ("misc/talk.wav");
@@ -1328,6 +1327,8 @@ CL_ParseServerMessage (void)
 					Team_ParseChat (s);
 				}
 				Sys_Printf ("%s", s);
+				if (p)
+					dstring_delete (p);
 				Con_SetOrMask (0);
 				break;
 			}
