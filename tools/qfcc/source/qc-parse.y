@@ -333,6 +333,9 @@ external_def
 				$<spec>$.params = $2;
 		}
 	  function_def_list
+		{
+			(void) ($<spec>3);
+		}
 	| optional_specifiers function_decl function_body
 	| storage_class '{' save_storage
 		{
@@ -389,7 +392,8 @@ function_body
 
 external_decl_list
 	: external_decl
-	| external_decl_list ',' { $<spec>$ = $<spec>0; } external_decl
+	| external_decl_list ',' { $<spec>$ = $<spec>0; }
+	  external_decl { (void) ($<spec>3); }
 	;
 
 external_decl
@@ -550,7 +554,11 @@ enum_init
 enumerator_list
 	: enumerator							{ $$ = $<symbol>0; }
 	| enumerator_list ','					{ $<symbol>$ = $<symbol>0; }
-	  enumerator							{ $$ = $<symbol>0; }
+	  enumerator
+		{
+			$$ = $<symbol>0;
+			(void) ($<symbol>3);
+		}
 	;
 
 enumerator
@@ -613,7 +621,8 @@ struct_def
 	;
 
 struct_decl_list
-	: struct_decl_list ',' { $<spec>$ = $<spec>0; } struct_decl
+	: struct_decl_list ',' { $<spec>$ = $<spec>0; }
+	  struct_decl { (void) ($<spec>3); }
 	| struct_decl
 	;
 
@@ -832,7 +841,11 @@ local_specifiers
 
 param_list
 	: param						{ $$ = $1; }
-	| param_list ',' { $<param>$ = $<param>1; } param	{ $$ = $4; }
+	| param_list ',' { $<param>$ = $<param>1; } param
+		{
+			$$ = $4;
+			(void) ($<symbol>3);
+		}
 	;
 
 param
@@ -859,10 +872,13 @@ local_decl_list
 			$<spec>$ = spec;
 		}
 	  func_def_list
+		{
+			(void) ($<spec>2);
+		}
 	;
 
 decl_list
-	: decl_list ',' { $<spec>$ = $<spec>0; } decl
+	: decl_list ',' { $<spec>$ = $<spec>0; } decl { (void) ($<spec>3); }
 	| decl
 	;
 
@@ -1062,6 +1078,7 @@ local_def
 		{
 			$$ = local_expr;
 			local_expr = 0;
+			(void) ($<spec>2);
 		}
 
 statement
@@ -1600,7 +1617,7 @@ ivar_decl
 
 ivars
 	: struct_decl
-	| ivars ',' { $<spec>$ = $<spec>0; } struct_decl
+	| ivars ',' { $<spec>$ = $<spec>0; } struct_decl { (void) ($<spec>3); }
 	;
 
 methoddef
