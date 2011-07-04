@@ -52,6 +52,8 @@ bi_Cvar_SetString (progs_t *pr)
 	const char *val = P_GSTRING (pr, 1);
 	cvar_t     *var = Cvar_FindVar (varname);
 
+	if (!var)
+		var = Cvar_FindAlias (varname);
 	if (var)
 		Cvar_Set (var, val);
 }
@@ -63,6 +65,8 @@ bi_Cvar_SetInteger (progs_t *pr)
 	int         val = P_INT (pr, 1);
 	cvar_t     *var = Cvar_FindVar (varname);
 
+	if (!var)
+		var = Cvar_FindAlias (varname);
 	if (var)
 		Cvar_Set (var, va ("%d", val));
 }
@@ -74,6 +78,8 @@ bi_Cvar_SetFloat (progs_t *pr)
 	float       val = P_FLOAT (pr, 1);
 	cvar_t     *var = Cvar_FindVar (varname);
 
+	if (!var)
+		var = Cvar_FindAlias (varname);
 	if (var)
 		Cvar_Set (var, va ("%g", val));
 }
@@ -85,6 +91,8 @@ bi_Cvar_SetVector (progs_t *pr)
 	float      *val = P_VECTOR (pr, 1);
 	cvar_t     *var = Cvar_FindVar (varname);
 
+	if (!var)
+		var = Cvar_FindAlias (varname);
 	if (var)
 		Cvar_Set (var, va ("%g %g %g", val[0], val[1], val[2]));
 }
@@ -95,6 +103,8 @@ bi_Cvar_GetString (progs_t *pr)
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
 
+	if (!var)
+		var = Cvar_FindAlias (varname);
 	if (var)
 		RETURN_STRING (pr, var->string);
 	else
@@ -107,6 +117,8 @@ bi_Cvar_GetInteger (progs_t *pr)
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
 
+	if (!var)
+		var = Cvar_FindAlias (varname);
 	R_INT (pr) = var ? var->int_val : 0;
 }
 
@@ -116,6 +128,8 @@ bi_Cvar_GetFloat (progs_t *pr)
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
 
+	if (!var)
+		var = Cvar_FindAlias (varname);
 	R_FLOAT (pr) = var ? var->value : 0;
 }
 
@@ -125,6 +139,8 @@ bi_Cvar_GetVector (progs_t *pr)
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
 
+	if (!var)
+		var = Cvar_FindAlias (varname);
 	if (var)
 		RETURN_VECTOR (pr, var->vec);
 	else

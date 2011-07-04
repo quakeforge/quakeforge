@@ -402,6 +402,8 @@ Cvar_Inc_f (void)
 			name = Cmd_Argv (1);
 			var = Cvar_FindVar (name);
 			if (!var)
+				var = Cvar_FindAlias (name);
+			if (!var)
 				Sys_Printf ("Unknown variable \"%s\"\n", name);
 			break;
 	}
@@ -444,6 +446,8 @@ Cvar_Cycle_f (void)
 
 	name = Cmd_Argv (1);
 	var = Cvar_FindVar (name);
+	if (!var)
+		var = Cvar_FindAlias (name);
 	if (!var) {
 		var = Cvar_Get (name, Cmd_Argv (Cmd_Argc () - 1), CVAR_USER_CREATED,
 						0, USER_CVAR);
@@ -490,6 +494,8 @@ Cvar_Reset_f (void)
 		case 2:
 			name = Cmd_Argv (1);
 			var = Cvar_FindVar (name);
+			if (!var)
+				var = Cvar_FindAlias (name);
 			if (!var)
 				Sys_Printf ("Unknown variable \"%s\"\n", name);
 			else
