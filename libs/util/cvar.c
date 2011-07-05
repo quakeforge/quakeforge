@@ -76,7 +76,7 @@ Cvar_FindAlias (const char *alias_name)
 {
 	cvar_alias_t *alias;
 
-	alias = (cvar_alias_t*) Hash_Find (calias_hash, alias_name);
+	alias = (cvar_alias_t *) Hash_Find (calias_hash, alias_name);
 	if (alias)
 		return alias->cvar;
 	return 0;
@@ -85,7 +85,7 @@ Cvar_FindAlias (const char *alias_name)
 cvar_t *
 Cvar_MakeAlias (const char *name, cvar_t *cvar)
 {
-	cvar_alias_t	*alias;
+	cvar_alias_t *alias;
 	cvar_t			*var;
 
 	if (Cmd_Exists (name)) {
@@ -113,6 +113,22 @@ Cvar_MakeAlias (const char *name, cvar_t *cvar)
 		Hash_Add (calias_hash, alias);
 	}
 	return cvar;
+}
+
+cvar_t *
+Cvar_RemoveAlias (const char *name)
+{
+	cvar_alias_t *alias;
+	cvar_t      *var;
+
+	alias = (cvar_alias_t *) Hash_Find (calias_hash, name);
+	if (!alias) {
+		Sys_Printf ("Cvar_RemoveAlias: %s is not an alias\n", name);
+		return 0;
+	}
+	var = alias->cvar;
+	Hash_Free (calias_hash, Hash_Del (calias_hash, name));
+	return var;
 }
 
 VISIBLE float
@@ -570,7 +586,7 @@ cvar_get_key (void *c, void *unused)
 static void
 calias_free (void *c, void *unused)
 {
-	cvar_alias_t *calias = (cvar_alias_t*)c;
+	cvar_alias_t *calias = (cvar_alias_t *) c;
 	free (calias->name);
 	free (calias);
 }
@@ -578,7 +594,7 @@ calias_free (void *c, void *unused)
 static const char *
 calias_get_key (void *c, void *unused)
 {
-	cvar_alias_t *calias = (cvar_alias_t*)c;
+	cvar_alias_t *calias = (cvar_alias_t *) c;
 	return calias->name;
 }
 
