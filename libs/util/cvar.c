@@ -82,21 +82,27 @@ Cvar_FindAlias (const char *alias_name)
 	return 0;
 }
 
-void
+cvar_t *
 Cvar_MakeAlias (const char *name, cvar_t *cvar)
 {
 	cvar_alias_t	*alias;
 	cvar_t			*var;
 
 	if (Cmd_Exists (name)) {
-		Sys_Printf ("CAlias_Get: %s is a command\n", name);
-		return;
+		Sys_Printf ("Cvar_MakeAlias: %s is a command\n", name);
+		return 0;
 	}
 	if (Cvar_FindVar (name)) {
-		Sys_Printf ("CAlias_Get: tried to alias used cvar name %s\n", name);
-		return;
+		Sys_Printf ("Cvar_MakeAlias: %s is a cvar\n",
+					name);
+		return 0;
 	}
 	var = Cvar_FindAlias (name);
+	if (var && var != cvar) {
+		Sys_Printf ("Cvar_MakeAlias: %s is an alias to %s\n",
+					name, var->name);
+		return 0;
+	}
 	if (!var) {
 		alias = (cvar_alias_t *) calloc (1, sizeof (cvar_alias_t));
 
@@ -106,6 +112,7 @@ Cvar_MakeAlias (const char *name, cvar_t *cvar)
 		alias->cvar = cvar;
 		Hash_Add (calias_hash, alias);
 	}
+	return cvar;
 }
 
 VISIBLE float
