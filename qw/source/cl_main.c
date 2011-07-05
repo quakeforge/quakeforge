@@ -1347,7 +1347,7 @@ CL_Init_Cvars (void)
 							 "sending rcon commands");
 	hud_fps = Cvar_Get ("hud_fps", "0", CVAR_ARCHIVE, NULL,
 						"display realtime frames per second");
-	Cvar_Alias_Get ("show_fps", hud_fps);
+	Cvar_MakeAlias ("show_fps", hud_fps);
 	hud_ping = Cvar_Get ("hud_ping", "0", CVAR_ARCHIVE, NULL,
 						 "display current ping to server");
 	hud_pl = Cvar_Get ("hud_pl", "0", CVAR_ARCHIVE, NULL,

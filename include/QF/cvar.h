@@ -83,7 +83,7 @@ cvar_t	*Cvar_Get (const char *name, const char *value, int cvarflags,
 
 cvar_t	*Cvar_FindAlias (const char *alias_name);
 
-void	Cvar_Alias_Get (const char *name, cvar_t *cvar);
+void	Cvar_MakeAlias (const char *name, cvar_t *cvar);
 
 // equivelants to "<name> <variable>" typed at the console
 void 	Cvar_Set (cvar_t *var, const char *value);

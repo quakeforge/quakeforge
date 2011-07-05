@@ -83,7 +83,7 @@ Cvar_FindAlias (const char *alias_name)
 }
 
 void
-Cvar_Alias_Get (const char *name, cvar_t *cvar)
+Cvar_MakeAlias (const char *name, cvar_t *cvar)
 {
 	cvar_alias_t	*alias;
 	cvar_t			*var;
