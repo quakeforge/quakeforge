@@ -164,7 +164,8 @@ RUA_Cmd_Init (progs_t *pr, int secure)
 	res->cmds = 0;
 	PR_Resources_Register (pr, "Cmd", res, bi_cmd_clear);
 
-	bi_cmds = Hash_NewTable (1021, bi_cmd_get_key, bi_cmd_free, 0);
+	if (!bi_cmds)
+		bi_cmds = Hash_NewTable (1021, bi_cmd_get_key, bi_cmd_free, 0);
 
 	PR_RegisterBuiltins (pr, builtins);
 }
