@@ -38,12 +38,10 @@
 - (int) keyEvent:(int)key unicode:(int)unicode down:(int)down
 {
 	switch (key) {
-		case QFK_DOWN:
-		case QFM_WHEEL_DOWN:
+		case QFK_RIGHT:
 			[self next];
 			return 1;
-		case QFK_UP:
-		case QFM_WHEEL_UP:
+		case QFK_LEFT:
 			[self prev];
 			return 1;
 	}
