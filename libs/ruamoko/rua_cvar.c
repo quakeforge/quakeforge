@@ -37,6 +37,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#include <stdlib.h>
 
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
@@ -44,6 +45,80 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/va.h"
 
 #include "rua_internal.h"
+
+typedef struct bi_alias_s {
+	struct bi_alias_s *next;
+	char       *name;
+} bi_alias_t;
+
+typedef struct {
+	bi_alias_t *aliases;
+} cvar_resources_t;
+
+static void
+bi_alias_free (void *_a, void *unused)
+{
+	bi_alias_t *a = (bi_alias_t *) _a;
+
+	free (a->name);
+	free (a);
+}
+
+static void
+bi_cvar_clear (progs_t *pr, void *data)
+{
+	cvar_resources_t *res = (cvar_resources_t *) data;
+	bi_alias_t *alias;
+
+	while ((alias = res->aliases)) {
+		Cvar_RemoveAlias (alias->name);
+		res->aliases = alias->next;
+		bi_alias_free (alias, 0);
+	}
+}
+
+static void
+bi_Cvar_MakeAlias (progs_t *pr)
+{
+	cvar_resources_t *res = PR_Resources_Find (pr, "Cvar");
+	const char *alias_name = P_GSTRING (pr, 0);
+	const char *cvar_name = P_GSTRING (pr, 1);
+	cvar_t     *cvar = Cvar_FindVar (cvar_name);
+	bi_alias_t *alias;
+
+	R_INT (pr) = 0;	// assume failure
+
+	if (!cvar)		// allow aliasing of aliases
+		cvar = Cvar_FindAlias (cvar_name);
+
+	if (cvar && Cvar_MakeAlias (alias_name, cvar)) {
+		alias = malloc (sizeof (bi_alias_t));
+		alias->name = strdup (alias_name);
+		alias->next = res->aliases;
+		res->aliases = alias;
+
+		R_INT (pr) = 1;
+	}
+}
+
+static void
+bi_Cvar_RemoveAlias (progs_t *pr)
+{
+	cvar_resources_t *res = PR_Resources_Find (pr, "Cvar");
+	const char *alias_name = P_GSTRING (pr, 0);
+	bi_alias_t **a;
+
+	R_INT (pr) = 0;	// assume failure
+	for (a = &res->aliases; *a; a = &(*a)->next) {
+		bi_alias_t *alias = *a;
+		if (!strcmp (alias_name, alias->name)) {
+			*a = (*a)->next;
+			if (Cvar_RemoveAlias (alias->name))
+				R_INT (pr) = 1;
+			bi_alias_free (alias, 0);
+		}
+	}
+}
 
 static void
 bi_Cvar_SetString (progs_t *pr)
@@ -161,20 +236,27 @@ bi_Cvar_Toggle (progs_t *pr)
 }
 
 static builtin_t builtins[] = {
-	{"Cvar_SetFloat",	bi_Cvar_SetFloat,	-1},
-	{"Cvar_SetInteger",	bi_Cvar_SetInteger,	-1},
-	{"Cvar_SetVector",	bi_Cvar_SetVector,	-1},
-	{"Cvar_SetString",	bi_Cvar_SetString,	-1},
-	{"Cvar_GetFloat",	bi_Cvar_GetFloat,	-1},
-	{"Cvar_GetInteger",	bi_Cvar_GetInteger,	-1},
-	{"Cvar_GetVector",	bi_Cvar_GetVector,	-1},
-	{"Cvar_GetString",	bi_Cvar_GetString,	-1},
-	{"Cvar_Toggle",		bi_Cvar_Toggle,		-1},
+	{"Cvar_MakeAlias",		bi_Cvar_MakeAlias,		-1},
+	{"Cvar_RemoveAlias",	bi_Cvar_RemoveAlias,	-1},
+	{"Cvar_SetFloat",		bi_Cvar_SetFloat,		-1},
+	{"Cvar_SetInteger",		bi_Cvar_SetInteger,		-1},
+	{"Cvar_SetVector",		bi_Cvar_SetVector,		-1},
+	{"Cvar_SetString",		bi_Cvar_SetString,		-1},
+	{"Cvar_GetFloat",		bi_Cvar_GetFloat,		-1},
+	{"Cvar_GetInteger",		bi_Cvar_GetInteger,		-1},
+	{"Cvar_GetVector",		bi_Cvar_GetVector,		-1},
+	{"Cvar_GetString",		bi_Cvar_GetString,		-1},
+	{"Cvar_Toggle",			bi_Cvar_Toggle,			-1},
 	{0}
 };
 
 void
 RUA_Cvar_Init (progs_t *pr, int secure)
 {
+	cvar_resources_t *res = calloc (1, sizeof (cvar_resources_t));
+
+	res->aliases = 0;
+	PR_Resources_Register (pr, "Cvar", res, bi_cvar_clear);
+
 	PR_RegisterBuiltins (pr, builtins);
 }

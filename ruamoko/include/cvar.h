@@ -1,6 +1,8 @@
 #ifndef __ruamoko_cvar_h
 #define __ruamoko_cvar_h
 
+@extern int Cvar_MakeAlias (string alias_name, string cvar_name);
+@extern int Cvar_RemoveAlias (string alias_name);
 @extern void Cvar_SetString (string varname, string value);
 @extern void Cvar_SetFloat (string varname, float value);
 @extern void Cvar_SetInteger (string varname, int value);
