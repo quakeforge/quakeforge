@@ -315,66 +315,9 @@ string player_config_vals[NUM_PLAYERCONFIG_CMDS] = {
 
 
 int (int key, int unicode, int down)
-KEYEV_player_options =
+KEY_player_options =
 {
-	switch (key) {
-		case QFK_DOWN:
-		case QFM_WHEEL_DOWN:
-			if (!player_config_iactive) {
-				player_config_cursor ++;
-				player_config_cursor %= NUM_PLAYERCONFIG_CMDS;
-			}
-			break;
-		case QFK_UP:
-		case QFM_WHEEL_UP:
-			if (!player_config_iactive) {
-				player_config_cursor += NUM_PLAYERCONFIG_CMDS - 1;
-				player_config_cursor %= NUM_PLAYERCONFIG_CMDS;
-			}
-			break;
-		case QFK_RETURN:
-			if (player_config_iactive) {
-				if (player_config_iactive == player_config_plname_il) {
-					Cvar_SetString (playername_cvar,
-									[player_config_plname_il text]);
-				} else if (player_config_iactive == player_config_tname_il) {
-					Cvar_SetString (teamname_cvar,
-									[player_config_tname_il text]);
-				}
-				player_config_iactive = nil;
-			} else {
-				if (player_config_cursor == 0) {
-					player_config_iactive = player_config_plname_il;
-				} else if (player_config_cursor == 1) {
-					player_config_iactive = player_config_tname_il;
-				}
-			}
-			break;
-	}
-	if(key != QFK_RETURN && player_config_iactive) {
-		[player_config_iactive  processInput:(key >= 256 ? key : unicode)];
-	}
-
-	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
-		return 1;
-	}
-
-	switch (player_config_vals[player_config_cursor]) {
-		case "topcolor":
-			if (key == QFK_RIGHT)
-				[topcolor_view next];
-			else if (key == QFK_LEFT)
-				[topcolor_view prev];
-			break;
-		case "bottomcolor":
-			if (key == QFK_RIGHT)
-				[bottomcolor_view next];
-			else if (key == QFK_LEFT)
-				[bottomcolor_view prev];
-			break;
-	}
-
-	return 1;
+	return [player_options keyEvent:key unicode:unicode down:down];
 };
 
 /*
@@ -385,37 +328,10 @@ KEYEV_player_options =
 int (int x, int y)
 DRAW_player_options =
 {
-	local int	cursor_pad = 0, spacing = 120;
-
-	[player_config_plname_il cursor: player_config_iactive == player_config_plname_il];
-	[player_config_tname_il cursor: player_config_iactive == player_config_tname_il];
-
 	[player_options setBasePos:x y:y];
 	[player_options draw];
 
-	opt_cursor  (x + 62, y + player_config_cursor_tbl[player_config_cursor]);
 	return 1;
-};
-
-/*
-	CB_ME_player_options
-
-	Entercallback for the playermenu.
-	For initalising the playername and teamname.
-*/
-void ()
-CB_ME_player_options =
-{
-	if (gametype () == "quakeworld") {
-		playername_cvar = "name";	
-	} else {
-		playername_cvar = "_cl_name";
-	}
-
-	teamname_cvar = "team"; // FIXME: is this something else in netquake?
-
-	[player_config_plname_il setText:Cvar_GetString (playername_cvar)];
-	[player_config_tname_il setText:Cvar_GetString (teamname_cvar)];
 };
 
 /*
@@ -426,66 +342,28 @@ CB_ME_player_options =
 void
 MENU_player_options (PLItem *plist)
 {
-	local Rect rect;
-	local id view;
-
-	player_options = [[Group alloc] initWithComponents:0 :0 :320 :200];
-
-	view = [[Pic alloc] initWithComponents:16 :4 :0 :0];
-	[view setPic:"gfx/qplaque.lmp"];
-	[player_options addView:view];
-
-	view = [[CenterPic alloc] initWithComponents:160 :4 :0 :0];
-	[view setPic:"gfx/p_option.lmp"];
-	[player_options addView:view];
-
-	view = [[Text alloc] initWithComponents:54 :40 :48 :8];
-	[view setText:"Player"];
-	[player_options addView:view];
-
-	view = [[Text alloc] initWithComponents:54 :50 :48 :8];
-	[view setText:"------"];
-	[player_options addView:view];
-
-	view = [[Text alloc] initWithComponents:70 :PLAYER_CONF_Y_PAD + 8 :32 :8];
-	[view setText:"Name"];
-	[player_options addView:view];
-
-	view = [[Text alloc] initWithComponents:70 :PLAYER_CONF_Y_PAD + 28 :32 :8];
-	[view setText:"Team"];
-	[player_options addView:view];
-
-	view = [[Text alloc] initWithComponents:70 :PLAYER_CONF_Y_PAD + 45 :88 :8];
-	[view setText:"Shirt color"];
-	[player_options addView:view];
-
-	view = [[Text alloc] initWithComponents:70 :PLAYER_CONF_Y_PAD + 60 :88 :8];
-	[view setText:"Pants color"];
-	[player_options addView:view];
-
-	player_config_plname_il = [[InputLineBox alloc] initWithBounds:makeRect (120, PLAYER_CONF_Y_PAD, 18, 4) promptCharacter:' '];
-	[player_config_plname_il setWidth:18];
-	[player_options addView:player_config_plname_il];
-
-	player_config_tname_il = [[InputLineBox alloc] initWithBounds:makeRect (120, PLAYER_CONF_Y_PAD + 20, 7, 4) promptCharacter:' '];
-	[player_config_tname_il setWidth:7];
-	[player_options addView:player_config_tname_il];
-
-	player_config_iactive = nil;
-
-	rect = makeRect (192, PLAYER_CONF_Y_PAD + 37, 24, 24);
-	topcolor_view = [[CvarColorView alloc] initWithBounds:rect :[[CvarColor alloc] initWithCvar:"topcolor"]];
-	[player_options addView:topcolor_view];
-
-	rect.origin.y = PLAYER_CONF_Y_PAD + 52;
-	bottomcolor_view = [[CvarColorView alloc] initWithBounds:rect :[[CvarColor alloc] initWithCvar:"bottomcolor"]];
-	[player_options addView:bottomcolor_view];
-
+	local @param ret;
 	Menu_Begin (54, 80, "Player");
 	Menu_FadeScreen (1);
-	Menu_KeyEvent (KEYEV_player_options);
-	Menu_EnterHook (CB_ME_player_options);
 	Menu_Draw (DRAW_player_options);
+	Menu_KeyEvent (KEY_player_options);
+
+	// setup cvar aliases so the player options can refer to the appropriate
+	// cvar using just the one name
+	if (gametype () == "quakeworld") {
+		Cvar_MakeAlias ("menu_name", "name");
+	} else {
+		Cvar_MakeAlias ("menu_name", "_cl_name");
+	}
+	// FIXME: is this something else in netquake?
+	Cvar_MakeAlias ("menu_team", "team");
+
+
+	if (plist) {
+		ret = object_from_plist ([(PLDictionary*) plist getObjectForKey:"player_options"]);
+		player_options = ret.pointer_val;
+	}
+
 	Menu_End ();
 };
 
@@ -545,8 +423,6 @@ MENU_network_options (PLItem *plist)
 	Menu_FadeScreen (1);
 	Menu_KeyEvent (KEY_network_options);
 	Menu_Draw (DRAW_network_options);
-
-	network_options = [[Group alloc] initWithComponents:0 :0 :320 :200];
 
 	if (plist) {
 		ret = object_from_plist ([(PLDictionary*) plist getObjectForKey:"network_options"]);

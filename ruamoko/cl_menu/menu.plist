@@ -481,4 +481,129 @@
 			},
 		);
 	};
+	player_options = {
+		Class = MenuGroup;
+		Messages = (
+			(initWithBounds:, $rect),
+			(addViews:, $views),
+			(setBase:, 4)
+		);
+		rect = "[0, 0, 320, 200]";
+		views = (
+			{
+				Class = Pic;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setPic:, "\"gfx/qplaque.lmp\"")
+				);
+				rect = "[16, 4, 0, 0]";
+			},
+			{
+				Class = CenterPic;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setPic:, "\"gfx/p_option.lmp\"")
+				);
+				rect = "[160, 4, 0, 0]";
+			},
+			{
+				Class = Text;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setText:, "\"Player\"")
+				);
+				rect = "[54, 40, 48, 8]";
+			},
+			{
+				Class = Text;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setText:, "\"------\"")
+				);
+				rect = "[54, 50, 48, 8]";
+			},
+			{
+				Class = CvarStringView;
+				Messages = (
+					(initWithBounds:title:inputLength::, $rect, "\"Name  \"", 18, $cvstring)
+				);
+				rect = "[70, 68, 224, 8]";
+				cvstring = {
+					Class = CvarString;
+					Messages = (
+						(initWithCvar:, "\"menu_name\"")//aliased to real cvar
+					);
+				};
+			},
+			{
+				Class = CvarStringView;
+				Messages = (
+					(initWithBounds:title:inputLength::, $rect, "\"Team  \"", 7, $cvstring)
+				);
+				rect = "[70, 88, 224, 8]";
+				cvstring = {
+					Class = CvarString;
+					Messages = (
+						(initWithCvar:, "\"menu_team\"")//aliased to real cvar
+					);
+				};
+			},
+			{
+				Class = ProxyView;
+				Messages = (
+					(initWithBounds:title:view:, $rect, $title, $view),
+				);
+				rect = "[70, 105, 224, 8]";
+				title = {
+					Class = Text;
+					Messages = (
+						(initWithBounds:, $rect),
+						(setText:, "\"Shirt Color\"")
+					);
+					rect = "[0, 0, 224, 8]";
+				};
+				view = {
+					Class = CvarColorView;
+					color = {
+						Class = CvarColor;
+						Messages = (
+							(initWithCvar:, "\"topcolor\"")
+						);
+					};
+					rect = "[186, -8, 32, 24]";
+					Messages = (
+						(initWithBounds::, $rect, $color)
+					);
+				};
+			},
+			{
+				Class = ProxyView;
+				Messages = (
+					(initWithBounds:title:view:, $rect, $title, $view),
+				);
+				rect = "[70, 120, 224, 8]";
+				title = {
+					Class = Text;
+					Messages = (
+						(initWithBounds:, $rect),
+						(setText:, "\"Pants Color\"")
+					);
+					rect = "[0, 0, 224, 8]";
+				};
+				view = {
+					Class = CvarColorView;
+					color = {
+						Class = CvarColor;
+						Messages = (
+							(initWithCvar:, "\"bottomcolor\"")
+						);
+					};
+					rect = "[186, -8, 32, 24]";
+					Messages = (
+						(initWithBounds::, $rect, $color)
+					);
+				};
+			},
+		);
+	};
 }

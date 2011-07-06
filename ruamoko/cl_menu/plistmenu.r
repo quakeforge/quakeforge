@@ -32,6 +32,9 @@
 #include "gui/Rect.h"
 #include "plistmenu.h"
 
+@reference Pic;
+@reference CenterPic;
+
 @static @param
 class_from_plist (PLDictionary *pldict)
 {
