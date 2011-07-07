@@ -432,7 +432,7 @@ int (int key, int unicode, int down) lanconfig_keyevent =
 				lanConfig_cursor ++;
 				lanConfig_cursor %= NUM_LANCONFIG_CMDS;
 			}
-			break;
+			return 1;
 		case QFK_UP:
 		case QFM_WHEEL_UP:
 			if (!input_active) {
@@ -440,7 +440,7 @@ int (int key, int unicode, int down) lanconfig_keyevent =
 				lanConfig_cursor += NUM_LANCONFIG_CMDS - 1;
 				lanConfig_cursor %= NUM_LANCONFIG_CMDS;
 			}
-			break;
+			return 1;
 		case QFK_RETURN:
 			if (input_active) {
 				input_active = nil;
@@ -453,9 +453,9 @@ int (int key, int unicode, int down) lanconfig_keyevent =
 					}
 				}
 			}
-			break;
+			return 1;
 	}
-	return 1;
+	return 0;
 };
 
 void () lanconfig_menu =
