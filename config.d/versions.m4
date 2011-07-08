@@ -19,3 +19,9 @@ AC_SUBST(NQ_VERSION)
 AC_SUBST(NQ_QSG_VERSION)
 AC_SUBST(QW_VERSION)
 AC_SUBST(QW_QSG_VERSION)
+
+AC_ARG_ENABLE([version-info], AC_HELP_STRING([--enable-version-info=CURRENT:REVISION:AGE],
+	[Override the value passed to libtool -version-info.]),
+	[], [enable_version_info=1:0:0])
+QUAKE_LIBRARY_VERSION_INFO=$enable_version_info
+AC_SUBST([QUAKE_LIBRARY_VERSION_INFO])

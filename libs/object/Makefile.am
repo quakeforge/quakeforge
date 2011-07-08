@@ -4,7 +4,7 @@ INCLUDES= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES= libQFobject.la
 
-libQFobject_la_LDFLAGS=		-version-info 1:0:0 -no-undefined
+libQFobject_la_LDFLAGS=		-version-info $(QUAKE_LIBRARY_VERSION_INFO) -no-undefined
 libQFobject_la_LIBADD=		$(top_builddir)/libs/util/libQFutil.la
 libQFobject_la_SOURCES= \
 	ArrayList.c Collection.c Double.c Integer.c Iterator.c \

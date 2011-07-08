@@ -5,7 +5,7 @@ INCLUDES= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES= libQFruamoko.la
 
-libQFruamoko_la_LDFLAGS=	-version-info 1:0:0 -no-undefined
+libQFruamoko_la_LDFLAGS=	-version-info $(QUAKE_LIBRARY_VERSION_INFO) -no-undefined
 libQFruamoko_la_LIBADD=		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/gib/libQFgib.la $(top_builddir)/libs/util/libQFutil.la
 libQFruamoko_la_SOURCES= \
 		bi_gib.c pr_cmds.c \

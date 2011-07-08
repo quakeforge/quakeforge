@@ -16,7 +16,7 @@ common_sources= \
 client_sources= bi_inputline.c client.c menu.c pr_keys.c
 server_sources= server.c
 
-libQFconsole_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir) -no-undefined
+libQFconsole_la_LDFLAGS=	-version-info $(QUAKE_LIBRARY_VERSION_INFO) -rpath $(libdir) -no-undefined
 libQFconsole_la_LIBADD=		$(plugin_libadd) $(top_builddir)/libs/util/libQFutil.la
 libQFconsole_la_SOURCES=	$(common_sources)
 

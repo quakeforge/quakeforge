@@ -34,7 +34,7 @@ joy_src=      $(joy_null_src)
 endif
 endif
 
-libQFjs_la_LDFLAGS=		-version-info 1:0:0 -rpath $(libdir)
+libQFjs_la_LDFLAGS=		-version-info $(QUAKE_LIBRARY_VERSION_INFO) -rpath $(libdir)
 libQFjs_la_CFLAGS=		@PREFER_PIC@ $(JOY_CFLAGS)
 libQFjs_la_SOURCES=		joy.c $(joy_src)
 EXTRA_libQFjs_la_SOURCES= $(joy_linux_src) $(joy_win_src) $(joy_null_src)
