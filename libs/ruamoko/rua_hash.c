@@ -198,6 +198,8 @@ bi_Hash_DelTable (progs_t *pr)
 
 	Hash_DelTable (ht->tab);
 	*ht->prev = ht->next;
+	if (ht->next)
+		ht->next->prev = ht->prev;
 	table_free (res, ht);
 }
 

@@ -101,6 +101,7 @@ bi_plist_clear (progs_t *pr, void *data)
 		if (plist->own)
 			PL_Free (plist->plitem);
 	}
+	res->plists = 0;
 
 	Hash_FlushTable (res->plist_tab);
 	plist_reset (res);
@@ -137,6 +138,8 @@ plist_free_handle (plist_resources_t *res, bi_plist_t *plist)
 {
 	Hash_DelElement (res->plist_tab, plist);
 	*plist->prev = plist->next;
+	if (plist->next)
+		plist->next->prev = plist->prev;
 	plist_free (res, plist);
 }
 

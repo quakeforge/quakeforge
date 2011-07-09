@@ -193,6 +193,8 @@ bi_Qclose (progs_t *pr)
 		PR_RunError (pr, "invalid file handle passed to Qclose");
 	Qclose (h->file);
 	*h->prev = h->next;
+	if (h->next)
+		h->next->prev = h->prev;
 	handle_free (res, h);
 }
 
