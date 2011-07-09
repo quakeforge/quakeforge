@@ -7,7 +7,8 @@ struct _inputline_t {};	// opaque type :)
 typedef struct _inputline_t *inputline_t;
 
 @extern inputline_t (int lines, int size, int prompt) InputLine_Create;
-@extern void InputLine_SetUserData (inputline_t il, void *data);
+@extern void InputLine_SetPos (inputline_t il, int x, int y);
+@extern void InputLine_SetCursor (inputline_t il, int cursorr);
 @extern @overload void InputLine_SetEnter (inputline_t il, void (f)(string, void*), void *data);
 @extern @overload void InputLine_SetEnter (inputline_t il, IMP imp, id obj, SEL sel);
 @extern void (inputline_t il, int width) InputLine_SetWidth;
@@ -18,14 +19,8 @@ typedef struct _inputline_t *inputline_t;
 @extern void (inputline_t il, string str) InputLine_SetText;
 @extern string (inputline_t il) InputLine_GetText;
 
-struct il_data_t {
-	int		x, y;
-	BOOL		cursor;
-};
-
 @interface InputLine: View
 {
-	struct il_data_t   control;
 	inputline_t	il;
 }
 

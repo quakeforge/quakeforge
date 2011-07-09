@@ -63,6 +63,9 @@ typedef struct inputline_s
 	void	(*complete)(struct inputline_s *); // tab key pressed
 	void	(*enter)(struct inputline_s *); // enter key pressed
 	void	(*draw)(struct inputline_s *); // draw input line to screen
+
+	int		x, y;			// coordinates depend on display
+	int		cursor;			// is the cursor active (drawn?)
 } inputline_t;
 
 typedef struct {

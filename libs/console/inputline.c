@@ -76,6 +76,7 @@ Con_CreateInputLine (int lines, int lsize, char prompt)
 	for (i = 0; i < inputline->num_lines; i++)
 		inputline->lines[i][0] = prompt;
 	inputline->linepos = 1;
+	inputline->cursor = 1;
 	return inputline;
 }
 

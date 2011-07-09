@@ -11,8 +11,7 @@
 
 -enter: (string) line
 {
-	if (line)
-		[cvstring setString: line];
+	[cvstring setString: line];
 	return self;
 }
 
@@ -56,6 +55,11 @@
 			[ilb cursor: NO];
 		} else {
 			[ilb processInput:(key >= 256 ? key : unicode)];
+			if (key == QFK_RETURN) {
+				[self update];
+				active = 0;
+				[ilb cursor: NO];
+			}
 		}
 		return 1;
 	} else {

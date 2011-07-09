@@ -123,7 +123,6 @@ bi_inputline_enter (inputline_t *il)
 	progs_t    *pr = data->pr;
 	const char *line = il->line;
 
-	Sys_Printf ("enter\n");
 	if (!data->enter)
 		return;			// no callback defined
 
@@ -172,6 +171,7 @@ bi_InputLine_Create (progs_t *pr)
 		res->lines->prev = &data->next;
 	res->lines = data;
 	data->line = line;
+	data->pr = pr;
 
 	line->draw = res->draw;
 	line->enter = bi_inputline_enter;
@@ -181,13 +181,20 @@ bi_InputLine_Create (progs_t *pr)
 }
 
 static void
-bi_InputLine_SetUserData (progs_t *pr)
+bi_InputLine_SetPos (progs_t *pr)
 {
 	il_data_t  *line = get_inputline (pr, P_INT (pr, 0),
-									  "InputLine_SetUserData");
-	pr_type_t  *data = P_GPOINTER (pr, 1);
+									  "InputLine_SetPos");
+	line->line->x = P_INT (pr, 1);
+	line->line->y = P_INT (pr, 2);
+}
 
-	line->line->user_data = data;
+static void
+bi_InputLine_SetCursor (progs_t *pr)
+{
+	il_data_t  *line = get_inputline (pr, P_INT (pr, 0),
+									  "InputLine_SetCursor");
+	line->line->cursor = P_INT (pr, 1);
 }
 
 static void
@@ -296,7 +303,8 @@ bi_InputLine_Draw (progs_t *pr)
 
 static builtin_t builtins[] = {
 	{"InputLine_Create",		bi_InputLine_Create,		-1},
-	{"InputLine_SetUserData",	bi_InputLine_SetUserData,	-1},
+	{"InputLine_SetPos",		bi_InputLine_SetPos,		-1},
+	{"InputLine_SetCursor",		bi_InputLine_SetCursor,		-1},
 	{"InputLine_SetEnter|^{tag _inputline_t=}(v*^v)^v",
 								bi_InputLine_SetEnter,		-1},
 	{"InputLine_SetEnter|^{tag _inputline_t=}(@@:.)@:",

@@ -1,10 +1,10 @@
 #include "draw.h"
-#include "debug.h"
 #include "gui/InputLine.h"
 #include "gui/Rect.h"
 
 inputline_t (int lines, int size, int prompt) InputLine_Create = #0;
-void InputLine_SetUserData (inputline_t il, void *data) = #0;
+void InputLine_SetPos (inputline_t il, int x, int y) = #0;
+void InputLine_SetCursor (inputline_t il, int cursorr) = #0;
 @overload void InputLine_SetEnter (inputline_t il, void (f)(string, void*), void *data) = #0;
 @overload void InputLine_SetEnter (inputline_t il, IMP imp, id obj, SEL sel) = #0;
 void (inputline_t il, int width) InputLine_SetWidth = #0;
@@ -20,12 +20,10 @@ string (inputline_t il) InputLine_GetText = #0;
 - (id) initWithBounds: (Rect)aRect promptCharacter: (int)char
 {
 	self = [super initWithComponents:aRect.origin.x :aRect.origin.y :aRect.size.width * 8 :8];
-	control.x = xabs;
-	control.y = yabs;
-	control.cursor = NO;
 
 	il = InputLine_Create (aRect.size.height, aRect.size.width, char);
-	InputLine_SetUserData (il, &control);
+	InputLine_SetPos (il, xabs, yabs);
+	InputLine_SetCursor (il, NO);
 
 	return self;
 }
@@ -39,8 +37,7 @@ string (inputline_t il) InputLine_GetText = #0;
 - (void) setBasePosFromView: (View *) view
 {
 	[super setBasePosFromView: view];
-	control.x = xabs;
-	control.y = yabs;
+	InputLine_SetPos (il, xabs, yabs);
 }
 
 - (void) setWidth: (int)width
@@ -50,10 +47,8 @@ string (inputline_t il) InputLine_GetText = #0;
 
 - (void) setEnter: obj message:(SEL) msg
 {
-traceon();
 	IMP imp = [obj methodForSelector: msg];
 	InputLine_SetEnter (il, imp, obj, msg);
-traceoff();
 }
 
 - (void) processInput: (int)key
@@ -63,7 +58,7 @@ traceoff();
 
 - (void) cursor: (BOOL)cursor
 {
-	control.cursor = cursor;
+	InputLine_SetCursor (il, cursor);
 }
 
 - (void) draw
