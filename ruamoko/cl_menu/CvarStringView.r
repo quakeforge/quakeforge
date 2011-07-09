@@ -9,6 +9,13 @@
 
 @implementation CvarStringView
 
+-enter: (string) line
+{
+	if (line)
+		[cvstring setString: line];
+	return self;
+}
+
 -(void)update
 {
 	[ilb setText: [cvstring value]];
@@ -30,6 +37,7 @@
 	rect.size.width = (aRect.size.width - rect.size.width) / 8 - 2;
 	rect.size.height = 4;	// history lines (stupid interface:P)
 	ilb = [[InputLineBox alloc] initWithBounds:rect promptCharacter:' '];
+	[ilb setEnter: self message:@selector(enter:)];
 
 	[self addView:title];
 	[self addView:ilb];

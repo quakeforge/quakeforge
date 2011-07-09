@@ -8,6 +8,8 @@ typedef struct _inputline_t *inputline_t;
 
 @extern inputline_t (int lines, int size, int prompt) InputLine_Create;
 @extern void InputLine_SetUserData (inputline_t il, void *data);
+@extern @overload void InputLine_SetEnter (inputline_t il, void (f)(string, void*), void *data);
+@extern @overload void InputLine_SetEnter (inputline_t il, IMP imp, id obj, SEL sel);
 @extern void (inputline_t il, int width) InputLine_SetWidth;
 @extern void (inputline_t il) InputLine_Destroy;
 @extern void (inputline_t il, int save) InputLine_Clear;
@@ -31,6 +33,7 @@ struct il_data_t {
 
 - (void) setBasePosFromView: (View *) view;
 - (void) setWidth: (int)width;
+- (void) setEnter: obj message:(SEL) msg;
 - (void) cursor: (BOOL)cursor;
 - (void) draw;
 
@@ -48,6 +51,7 @@ struct il_data_t {
 - (id) initWithBounds: (Rect)aRect promptCharacter: (int)char;
 
 - (void) setWidth: (int)width;
+- (void) setEnter: obj message:(SEL) msg;
 - (void) cursor: (BOOL)cursor;
 
 - (void) processInput: (int)key;

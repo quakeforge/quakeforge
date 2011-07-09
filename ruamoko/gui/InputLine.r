@@ -1,9 +1,12 @@
 #include "draw.h"
+#include "debug.h"
 #include "gui/InputLine.h"
 #include "gui/Rect.h"
 
 inputline_t (int lines, int size, int prompt) InputLine_Create = #0;
 void InputLine_SetUserData (inputline_t il, void *data) = #0;
+@overload void InputLine_SetEnter (inputline_t il, void (f)(string, void*), void *data) = #0;
+@overload void InputLine_SetEnter (inputline_t il, IMP imp, id obj, SEL sel) = #0;
 void (inputline_t il, int width) InputLine_SetWidth = #0;
 void (inputline_t il) InputLine_Destroy = #0;
 void (inputline_t il, int size) InputLine_Clear = #0;
@@ -43,6 +46,14 @@ string (inputline_t il) InputLine_GetText = #0;
 - (void) setWidth: (int)width
 {
 	InputLine_SetWidth (il, width);
+}
+
+- (void) setEnter: obj message:(SEL) msg
+{
+traceon();
+	IMP imp = [obj methodForSelector: msg];
+	InputLine_SetEnter (il, imp, obj, msg);
+traceoff();
 }
 
 - (void) processInput: (int)key
@@ -97,6 +108,11 @@ string (inputline_t il) InputLine_GetText = #0;
 - (void) setWidth: (int)width
 {
 	[input_line setWidth:width];
+}
+
+- (void) setEnter: obj message:(SEL) msg
+{
+	[input_line setEnter:obj message: msg];
 }
 
 - (void) cursor: (BOOL)cursor
