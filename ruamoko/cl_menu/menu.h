@@ -1,28 +1,27 @@
 #ifndef __menu_h
 #define __menu_h
 
-@extern void (int x, int y, string text) Menu_Begin;
-@extern void (int val) Menu_FadeScreen;
-@extern void (int (int x, int y) func) Menu_Draw;
-@extern void (void () func) Menu_EnterHook;
-@extern void (void () func) Menu_LeaveHook;
-@extern void (int x, int y, string name) Menu_Pic;
-@extern void (int x, int y, string name, int srcx, int srcy,
-			  int width, int height) Menu_SubPic;
-@extern void (int x, int y, string name) Menu_CenterPic;
-@extern void (int x, int y, string name, int srcx, int srcy,
-			  int width, int height) Menu_CenterSubPic;
-@extern void (int x, int y, string text,
-			  int (string text, int key) func,
-			  int allkeys) Menu_Item;
-@extern void (void (int x, int y) func) Menu_Cursor;
-@extern void (int (int key, int unicode, int down)
-			  func) Menu_KeyEvent;
-@extern void () Menu_End;
-@extern void (string name) Menu_TopMenu;
-@extern void (string name) Menu_SelectMenu;
-@extern void (int () func) Menu_SetQuit;
-@extern void () Menu_Quit;
-@extern int () Menu_GetIndex;
+@extern void Menu_Begin (int x, int y, string text);
+@extern void Menu_FadeScreen (int val);
+@extern void Menu_Draw (int (func)(int x, int y));
+@extern void Menu_EnterHook (void (func)(void));
+@extern void Menu_LeaveHook (void (func)(void));
+@extern void Menu_Pic (int x, int y, string name);
+@extern void Menu_SubPic (int x, int y, string name, int srcx, int srcy,
+						  int width, int height);
+@extern void Menu_CenterPic (int x, int y, string name);
+@extern void Menu_CenterSubPic (int x, int y, string name, int srcx, int srcy,
+								int width, int height);
+@extern void Menu_Item (int x, int y, string text,
+						int (func)(string text, int key),
+						int allkeys);
+@extern void Menu_Cursor (void (func)(int x, int y));
+@extern void Menu_KeyEvent (int (func)(int key, int unicode, int down));
+@extern void Menu_End (void);
+@extern void Menu_TopMenu (string name);
+@extern void Menu_SelectMenu (string name);
+@extern void Menu_SetQuit (int (func)(void));
+@extern void Menu_Quit (void);
+@extern int  Menu_GetIndex (void);
 
 #endif//__menu_h;
