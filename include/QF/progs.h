@@ -398,7 +398,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Access a pointer global. Can be assigned to.
 
 	\par QC type:
-		\c void[]
+		\c void *
 	\param p		pointer to ::progs_t VM struct
 	\param o		offset into global data space
 	\return			pointer_t lvalue
@@ -460,7 +460,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Access a pointer parameter.
 
 	\par QC type:
-		\c void[]
+		\c void *
 	\param p		pointer to ::progs_t VM struct
 	\param o		offset into global data space
 	\return			C pointer represented by the parameter. 0 offset -> NULL
@@ -472,7 +472,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Access a structure global. Can be assigned to.
 
 	\par QC type:
-		\c void[]
+		\c void *
 	\param p		pointer to ::progs_t VM struct
 	\param t		C type of the structure
 	\param o		offset into global data space
@@ -588,7 +588,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Access a pointer parameter. Can be assigned to.
 
 	\par QC type:
-		\c void[]
+		\c void *
 	\param p		pointer to ::progs_t VM struct
 	\param n		parameter number (0-7)
 	\return			pointer_t lvalue
@@ -650,7 +650,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Access a pointer parameter.
 
 	\par QC type:
-		\c void[]
+		\c void *
 	\param p		pointer to ::progs_t VM struct
 	\param n		parameter number (0-7)
 	\return			C pointer represented by the parameter. 0 offset -> NULL
@@ -662,7 +662,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Access a structure pointer parameter.
 
 	\par QC type:
-		\c void[]
+		\c void *
 	\param p		pointer to ::progs_t VM struct
 	\param t		C type of the structure
 	\param n		parameter number (0-7)
@@ -770,7 +770,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Access the pointer return value.
 
 	\par QC type:
-		\c void[]
+		\c void *
 	\param p		pointer to ::progs_t VM struct
 	\return			pointer_t lvalue
 
@@ -806,7 +806,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Set the return value to the given C pointer. NULL is converted to 0.
 
 	\par QC type:
-		\c void[]
+		\c void *
 	\param p		pointer to ::progs_t VM struct
 	\param ptr		C entity pointer to be returned
 
@@ -943,7 +943,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Access a pointer entity field. Can be assigned to.
 
 	\par QC type:
-		\c void[]
+		\c void *
 	\param e		pointer to the entity
 	\param o		field offset into entity data space
 	\return			pointer_t lvalue
@@ -1234,7 +1234,7 @@ void PR_FreeTempStrings (progs_t *pr);
 		<li>\c 'i'	\c integer Print a integer value. ("%i")
 		<li>\c 'f'	\c float Print a float value. ("%f")
 		<li>\c 'g'	\c float Print a float value. ("%f")
-		<li>\c 'p'	\c void[] Print a pointer value. ("%#x")
+		<li>\c 'p'	\c void * Print a pointer value. ("%#x")
 		<li>\c 's'	\c string Print a string value. ("%s")
 		<li>\c 'v'	\c vector Print a vector value. ("'%g %g %g'")
 		<li>\c 'q'	\c quaternion Print a quaternion value. ("'%g %g %g %g'")
