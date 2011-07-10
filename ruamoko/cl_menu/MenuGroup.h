@@ -3,13 +3,33 @@
 
 #include "gui/Group.h"
 
+/**	A group of views for use as a menu.
+
+	A menu may consist of decorations and actual menu items. For correct
+	results, the decoration views must be added before the menu item views.
+*/
 @interface MenuGroup : Group
 {
-	int base;
-	int current;
+	int base;				///< The index of the first menu item.
+	int current;			///< The currently selected menu item.
 }
--(void)setBase:(int)b;
+
+/**	Set the index of the first menu item.
+
+	\param	b	The index of the first menu item.
+*/
+-(void) setBase: (int) b;
+
+/**	Select the next menu item.
+
+	Wraps back to the base menu item if the current menu item is the last.
+*/
 -(void) next;
+
+/**	Select the previous menu item.
+
+	Wraps to the last menu item if the current menu item is the base item.
+*/
 -(void) prev;
 @end
 

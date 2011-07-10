@@ -256,8 +256,10 @@ PF_newstr (progs_t *pr)
 	dstring_copystr (dstr, s);
 
 	if (pr->pr_argc > 1 && P_FLOAT (pr, 1) > dstr->size) {
-		dstr->size = P_FLOAT (pr, 1);
+		int         s = dstr->size;
+		dstr->size = P_FLOAT (pr, 1) + 1;
 		dstring_adjust (dstr);
+		memset (dstr->str + s, dstr->size - s, 0);
 	}
 
 	R_STRING (pr) = i;

@@ -425,7 +425,7 @@ int expr_integer (expr_t *e);
 
 /** Create a new integer constant expression node.
 
-	\param integer_val	The integer constant being represented.
+	\param uinteger_val	The integer constant being represented.
 	\return			The new integer constant expression node
 					(expr_t::e::integer_val).
 */

@@ -33,7 +33,7 @@ menu_src= \
 	CrosshairCvar.r CrosshairView.r CvarColor.r CvarColorView.r \
 	CvarObject.r CvarRange.r CvarRangeView.r CvarString.r CvarStringView.r \
 	CvarToggle.r CvarToggleView.r \
-	MenuGroup.r MouseToggle.r ProxyView.r RunToggle.r
+	MenuGroup.r MouseToggle.r ProxyView.r RunToggle.r SubMenu.r
 
 %.qfo: %.r
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
@@ -52,7 +52,7 @@ EXTRA_DIST= $(menu_src) \
 	CrosshairCvar.h CrosshairView.h CvarColor.h CvarColorView.h CvarObject.h \
 	CvarRange.h CvarRangeView.h CvarString.h CvarStringView.h \
 	CvarToggle.h CvarToggleView.h Frame.h HUD.h \
-	MenuGroup.h MouseToggle.h ProxyView.h RunToggle.h client_menu.h \
+	MenuGroup.h MouseToggle.h ProxyView.h RunToggle.h SubMenu.h client_menu.h \
 	controls_o.h menu.h options.h options_util.h plistmenu.h servlist.h \
 	menu.plist
 CLEANFILES= *.dat *.sym *.gz *.qfo

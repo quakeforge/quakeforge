@@ -41,12 +41,20 @@
 				rect = "[54, 50, 64, 8]";
 			},
 			{
-				Class = Text;
+				Class = SubMenu;
 				Messages = (
-					(initWithBounds:, $rect),
-					(setText:, "\"Bindings\"")
+					(initWithBounds:title:menu:, $rect, $title,
+												"\"Bindings\""),
 				);
 				rect = "[70, 60, 64, 8]";
+				title = {
+					Class = Text;
+					Messages = (
+						(initWithBounds:, $rect),
+						(setText:, "\"Bindings\"")
+					);
+					rect = "[0, 0, 64, 8]";
+				};
 			},
 			{
 				Class = CvarToggleView;

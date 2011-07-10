@@ -32,7 +32,7 @@ size is the number of data bytes in the message (if >= 0) or a special flag:
         be the empty string (""), otherwise it contains the new name of the
         file. See -2.
 
-QF #defines for the above values:
+QF \#defines for the above values:
 \verbatim
 #define DL_NOFILE       -1
 #define DL_RENAME       -2
