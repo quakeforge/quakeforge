@@ -3,6 +3,9 @@
 
 #include "View.h"
 
+/**	\addtogroup gui */
+//@{
+
 @interface Slider: View
 {
 	int index;
@@ -15,5 +18,7 @@
 - (void) draw;
 
 @end
+
+//@}
 
 #endif //__ruamoko_gui_Slider_h

@@ -4,6 +4,12 @@
 #include "Object.h"
 #include "gui/Rect.h"
 
+/**	\defgroup gui GUI goo for gooey chewing
+*/
+
+/**	\addtogroup gui */
+//@{
+
 /** The View class.
 */
 @interface View: Object
@@ -27,5 +33,7 @@
 
 - (int) keyEvent:(int)key unicode:(int)unicode down:(int)down;
 @end
+
+//@}
 
 #endif //__ruamoko_gui_View_h
