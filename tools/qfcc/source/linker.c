@@ -427,6 +427,7 @@ add_code (qfo_mspace_t *code)
 
 /**	Add the data in a data space to the working qfo.
 
+	\param space	The space to which the data will be added.
 	\param data		A data space of the qfo being linked.
 */
 static void
