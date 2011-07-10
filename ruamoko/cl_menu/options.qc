@@ -199,7 +199,7 @@ DRAW_control_options =
 	[control_options setBasePos:x y:y];
 	[control_options draw];
 
-	return 1;
+	return 0;
 };
 
 int (int key, int unicode, int down)
@@ -227,8 +227,8 @@ MENU_control_options (PLItem *plist)
 		control_options = ret.pointer_val;
 	}
 
+	MENU_control_binding (); //FIXME how to hook in the bindings menu?
 	Menu_End ();
-	//MENU_control_binding (); FIXME how to hook in the bindings menu?
 };
 
 /***********************************************
