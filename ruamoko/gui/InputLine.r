@@ -2,18 +2,18 @@
 #include "gui/InputLine.h"
 #include "gui/Rect.h"
 
-inputline_t (int lines, int size, int prompt) InputLine_Create = #0;
+inputline_t InputLine_Create (int lines, int size, int prompt) = #0;
 void InputLine_SetPos (inputline_t il, int x, int y) = #0;
 void InputLine_SetCursor (inputline_t il, int cursorr) = #0;
 @overload void InputLine_SetEnter (inputline_t il, void (f)(string, void*), void *data) = #0;
 @overload void InputLine_SetEnter (inputline_t il, IMP imp, id obj, SEL sel) = #0;
-void (inputline_t il, int width) InputLine_SetWidth = #0;
-void (inputline_t il) InputLine_Destroy = #0;
-void (inputline_t il, int size) InputLine_Clear = #0;
-void (inputline_t il, int ch) InputLine_Process = #0;
-void (inputline_t il) InputLine_Draw = #0;
-void (inputline_t il, string str) InputLine_SetText = #0;
-string (inputline_t il) InputLine_GetText = #0;
+void InputLine_SetWidth (inputline_t il, int width) = #0;
+void InputLine_Destroy (inputline_t il) = #0;
+void InputLine_Clear (inputline_t il, int size) = #0;
+void InputLine_Process (inputline_t il, int ch) = #0;
+void InputLine_Draw (inputline_t il) = #0;
+void InputLine_SetText (inputline_t il, string str) = #0;
+string InputLine_GetText (inputline_t il) = #0;
 
 @implementation InputLine
 
