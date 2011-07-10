@@ -4,15 +4,12 @@ AC_ARG_ENABLE(flac,
 HAVE_FLAC=no
 if test "x$enable_flac" != "xno"; then
   if test "x$PKG_CONFIG" != "x"; then
-    PKG_CHECK_MODULES([FLAC], [flac], HAVE_FLAC=yes, HAVE_JACK=no)
-    if test "x$HAVE_FLAC" = "xyes"; then
-      AC_DEFINE(HAVE_JACK, 1, [Define if you have libFLAC])
-    fi
+    PKG_CHECK_MODULES([LIBFLAC], [flac], HAVE_FLAC=yes, HAVE_FLAC=no)
   else
     AM_PATH_LIBFLAC(HAVE_FLAC=yes, HAVE_FLAC=no)
-    if test "x$HAVE_FLAC" = xyes; then
-      AC_DEFINE(HAVE_FLAC, 1, [define this if you have flac libs])
-    fi
+  fi
+  if test "x$HAVE_FLAC" = xyes; then
+    AC_DEFINE(HAVE_FLAC, 1, [define this if you have flac libs])
   fi
 fi
 AM_CONDITIONAL(HAVE_FLAC, test "x$HAVE_FLAC" = "xyes")
