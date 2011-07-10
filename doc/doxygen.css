@@ -496,10 +496,14 @@ table.memberdecls {
 }
 
 .paramname {
-	color: #406;
-	text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.9);
+	color: white;
 	white-space: nowrap;
 }
+.memproto .paramname {
+	color: #406;
+	text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.9);
+}
+
 .paramname em {
 /*	font-style: normal;*/
 }
