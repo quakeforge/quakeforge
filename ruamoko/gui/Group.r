@@ -32,11 +32,6 @@
 	return self;
 }
 
-- (void) moveTo: (int)x y:(int)y
-{
-	[self setBasePos: x y:y];
-}
-
 - (void) setBasePos: (int) x y: (int) y
 {
 	[super setBasePos: x y:y];
