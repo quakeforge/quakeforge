@@ -4,6 +4,9 @@
 #include "gui/Point.h"
 #include "gui/Size.h"
 
+/**	\addtogroup gui */
+//@{
+
 struct Rect {
 	Point	origin;
 	Size	size;
@@ -26,5 +29,7 @@ typedef struct Rect Rect;
 - (Rect) insetBySize: (Size)aSize;
 - (Rect) offsetBySize: (Size)aSize;
 #endif
+
+//@}
 
 #endif //__ruamoko_gui_Rect_h
