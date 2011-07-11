@@ -5,6 +5,11 @@ body, table, div, p, dl {
 	font-size: 12px;
 }
 
+/* Make code fragments in doc text stand out */
+code {
+	font-weight: bold;
+}
+
 /* @group Heading Levels */
 
 h1 {
@@ -125,17 +130,17 @@ a.elRef {
 
 a.code {
 	color: #4444cc;
-/*	font-weight: bold;*/
+	font-weight: bold;
 }
 
 a.code:visited {
 	color: #444488;
-/*	font-weight: bold;*/
+	font-weight: bold;
 }
 
 a.codeRef {
 	color: #6666ff;
-/*	font-weight: bold;*/
+	font-weight: bold;
 }
 
 /* @end */
