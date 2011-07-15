@@ -674,10 +674,14 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 #define P_STRUCT(p,t,n)	(*(t *)P_GPOINTER (p, n))
 //@}
 
-/** \defgroup prda_return Return value
+/** \defgroup prda_return Return Values
 	\ingroup progs_data_access
-	Typed return value access marcos. No checking is done against the QC type,
-	but the appropriate C type will be used.
+	These macros are used to access the value returned by an interpreted VM
+	function, and to return values from engine functions into progs space
+	(that is, builtins).
+	\warning No checking is performed against progs types; for example, if you
+	ask for an \c int from a function that returned a \c float, you're asking
+	for trouble.
 */
 //@{
 
@@ -690,7 +694,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define R_var(p,t)		((p)->pr_return->t##_var)
 
-/** Access the float return value.
+/** Access the VM function return value as a \c float
 
 	\par QC type:
 		\c float
@@ -701,78 +705,78 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define R_FLOAT(p)		R_var (p, float)
 
-/** Access the integer return value.
+/** Access the VM function return value as a \c ::pr_int_t (AKA int32_t)
 
 	\par QC type:
 		\c integer
 	\param p		pointer to ::progs_t VM struct
-	\return			int lvalue
+	\return			::pr_int_t lvalue
 
 	\hideinitializer
 */
 #define R_INT(p)		R_var (p, integer)
 
-/** Access the unsigned integer return value.
+/** Access the VM function return value as a \c ::pr_uint_t (AKA uint32_t)
 
 	\par QC type:
 		\c uinteger
 	\param p		pointer to ::progs_t VM struct
-	\return			unsigned int lvalue
+	\return			::pr_int_t lvalue
 
 	\hideinitializer
 */
 #define R_UINT(p)		R_var (p, uinteger)
 
-/** Access the vector return value.
+/** Access the VM function return value as a \c ::vec3_t vector.
 
 	\par QC type:
 		\c vector
 	\param p		pointer to ::progs_t VM struct
-	\return			vec3_t lvalue
+	\return			::vec3_t lvalue
 
 	\hideinitializer
 */
 #define R_VECTOR(p)		R_var (p, vector)
 
-/** Access the quaternion return value.
+/** Access the VM function return value as a \c ::quat_t quaternion.
 
 	\par QC type:
 		\c quaternion
 	\param p		pointer to ::progs_t VM struct
-	\return			quat_t lvalue
+	\return			::quat_t lvalue
 
 	\hideinitializer
 */
 #define R_QUAT(p)		R_var (p, quat)
 
-/** Access the string index return value.
+/** Access the VM function return value as a ::string_t (a VM string reference).
 
 	\par QC type:
 		\c string
 	\param p		pointer to ::progs_t VM struct
-	\return			string_t lvalue
+	\return			::string_t lvalue
 
 	\hideinitializer
 */
 #define R_STRING(p)		R_var (p, string)
 
-/** Access the function return value.
+/** Access the VM function return value as a ::func_t (a VM function reference)
 
 	\par QC type:
 		\c void()
 	\param p		pointer to ::progs_t VM struct
-	\return			func_t lvalue
+	\return			::func_t lvalue
 
 	\hideinitializer
 */
 #define R_FUNCTION(p)	R_var (p, func)
 
-/** Access the pointer return value.
+/** Access the VM function return value as a ::pointer_t (a VM "pointer")
 
 	\par QC type:
 		\c void *
 	\param p		pointer to ::progs_t VM struct
-	\return			pointer_t lvalue
+	\return			::pointer_t lvalue
 
 	\hideinitializer
 */
