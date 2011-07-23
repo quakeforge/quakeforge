@@ -5,8 +5,10 @@ dnl ==================================================================
 LIBCURL_CHECK_CONFIG([], [], [CURL=yes], [])
 
 AC_ARG_WITH(ipv6,
-[  --with-ipv6=DIR         enable IPv6 support. Optional argument specifies
-                          location of inet6 libraries.],
+	AS_HELP_STRING([--with-ipv6=DIR],
+				   [Eenable IPv6 support.]
+				   [Optional argument specifies location of inet6 libraries.]), 
+	[
 	if test "x$withval" = xno ; then
 		NETTYPE_IPV6=no
 	else
@@ -16,8 +18,8 @@ AC_ARG_WITH(ipv6,
 			LIBS="$LIBS -L${withval}"
 		fi
 	fi
-	,
-	NETTYPE_IPV6=no
+	],
+	[NETTYPE_IPV6=no]
 )
 AM_CONDITIONAL(NETTYPE_IPV6, test "x$NETTYPE_IPV6" = "xyes")
 
