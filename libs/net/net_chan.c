@@ -141,7 +141,7 @@ Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
 	called to open a channel to a remote system
 */
 void
-Netchan_Setup (netchan_t *chan, netadr_t adr, ncqport_e qport, int flags)
+Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, ncqport_e flags)
 {
 	memset (chan, 0, sizeof (*chan));
 

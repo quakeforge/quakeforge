@@ -768,7 +768,7 @@ SVC_DirectConnect (void)
 	const char *s;
 	client_t   *cl, *newcl;
 	int         challenge, version, i, qtv = 0;
-	ncqport_e   qport;
+	int         qport;
 	netadr_t    adr;
 	qboolean    spectator;
 	client_frame_t *frames;
@@ -1756,7 +1756,7 @@ SV_ReadPackets (void)
 	//NOTE star volatile, not volatile star
 	client_t   *volatile cl;			// * volatile for longjmp
 	int         i;
-	ncqport_e   qport;
+	int         qport;
 	double      until;
 
 	while (NET_GetPacket ()) {

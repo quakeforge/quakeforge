@@ -398,7 +398,7 @@ qtv_reliable_send (sv_qtv_t *proxy)
 }
 
 void
-SV_qtvConnect (ncqport_e qport, info_t *info)
+SV_qtvConnect (int qport, info_t *info)
 {
 	sv_qtv_t   *proxy;
 
@@ -424,7 +424,7 @@ SV_qtvConnect (ncqport_e qport, info_t *info)
 }
 
 int
-SV_qtvPacket (ncqport_e qport)
+SV_qtvPacket (int qport)
 {
 	int         i;
 
