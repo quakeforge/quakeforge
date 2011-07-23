@@ -122,8 +122,8 @@ const char *NET_AdrToString (netadr_t a);
 
 	Do not include the port number in the string.
 
-	\note	The return value is a pointer to a static buffer. The returned
-			string must be saved if mixing calls with different addresses.
+	\warning	The return value is a pointer to a static buffer. The returned
+				string must be saved if mixing calls with different addresses.
 
 	\param a		The address to convert
 	\return			The address in human readable form.
