@@ -34,7 +34,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
@@ -102,7 +102,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/msg.h"
 #include "QF/qargs.h"
-#include "QF/qtypes.h"
 #include "QF/sys.h"
 
 #include "netchan.h"
@@ -136,9 +135,9 @@ byte        net_message_buffer[MAX_UDP_PACKET];
 
 typedef union address {
 	struct sockaddr_storage ss;
-	struct sockaddr			sa;
-	struct sockaddr_in		s4;
-	struct sockaddr_in6		s6;
+	struct sockaddr         sa;
+	struct sockaddr_in      s4;
+	struct sockaddr_in6     s6;
 } AF_address_t;
 
 
@@ -235,7 +234,7 @@ NET_AdrToString (netadr_t a)
 	/*
 		Yes, this duplication is lame, but we want to know the real address
 		family of the address so that we can know whether or not to put a
-		bracket around it, and this is less ugly than trying to check the 
+		bracket around it, and this is less ugly than trying to check the
 		string returned from NET_BaseAdrToString()
 	*/
 	memset (&ss, 0, sizeof (ss));
@@ -416,7 +415,7 @@ NET_GetPacket (void)
 
 	fromlen = sizeof (from);
 	memset (&from, 0, sizeof (from));
-	ret = recvfrom (net_socket, (void *) net_message_buffer, 
+	ret = recvfrom (net_socket, (void *) net_message_buffer,
 					sizeof (net_message_buffer), 0, &from.sa, &fromlen);
 
 	if (ret == -1) {
@@ -464,10 +463,8 @@ NET_SendPacket (int length, const void *data, netadr_t to)
 #ifdef _WIN32
 		int         err = WSAGetLastError ();
 
-#ifndef SERVERONLY
 		if (err == WSAEADDRNOTAVAIL)
 			Sys_Printf ("NET_SendPacket Warning: %i\n", err);
-#endif
 #else /* _WIN32 */
 		int         err = errno;
 
@@ -533,7 +530,7 @@ UDP_OpenSocket (int port)
 		Sys_Error ("UDP_OpenSocket: getaddrinfo: %s", gai_strerror (Error));
 
 	if ((newsocket = socket (res->ai_family,
-							 res->ai_socktype, 
+							 res->ai_socktype,
 							 res->ai_protocol)) == -1)
 		Sys_Error ("UDP_OpenSocket: socket: %s", strerror (errno));
 
@@ -562,7 +559,7 @@ static void
 NET_GetLocalAddress (void)
 {
 	char        buff[MAXHOSTNAMELEN];
-	unsigned int namelen;
+	socklen_t   namelen;
 	AF_address_t address;
 
 	if (gethostname (buff, MAXHOSTNAMELEN) == -1)
