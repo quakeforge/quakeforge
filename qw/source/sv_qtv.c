@@ -398,7 +398,7 @@ qtv_reliable_send (sv_qtv_t *proxy)
 }
 
 void
-SV_qtvConnect (int qport, info_t *info)
+SV_qtvConnect (ncqport_e qport, info_t *info)
 {
 	sv_qtv_t   *proxy;
 
@@ -413,7 +413,7 @@ SV_qtvConnect (int qport, info_t *info)
 	while (!(proxy->name_key = Hash_Find (proxy->info->tab, "name")))
 		Info_SetValueForKey (proxy->info, "name", "\"unnamed proxy\"", 1);
 
-	Netchan_Setup (&proxy->netchan, net_from, qport, NC_READ_QPORT);
+	Netchan_Setup (&proxy->netchan, net_from, qport, NC_QPORT_READ);
 	proxy->backbuf.netchan = &proxy->netchan;
 	proxy->backbuf.name = proxy->name_key->value;
 	proxy->datagram.data = proxy->datagram_buf;
@@ -424,7 +424,7 @@ SV_qtvConnect (int qport, info_t *info)
 }
 
 int
-SV_qtvPacket (int qport)
+SV_qtvPacket (ncqport_e qport)
 {
 	int         i;
 

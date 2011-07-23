@@ -162,6 +162,11 @@ qboolean ServerPaused (void);
 
 #define	MAX_LATENT	32
 
+typedef enum {
+	NC_QPORT_SEND = 0x01,
+	NC_QPORT_READ = 0x02,
+} ncqport_e;
+
 typedef struct netchan_s {
 	qboolean	fatal_error;
 
@@ -177,7 +182,7 @@ typedef struct netchan_s {
 	int			good_count;			// cleared each level
 
 	netadr_t	remote_address;
-	int			qport;
+	ncqport_e	qport;
 	int			flags;
 
 // bandwidth estimator
@@ -217,10 +222,7 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data);
 void Netchan_OutOfBand (netadr_t adr, int length, byte *data);
 void Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...) __attribute__((format(printf,2,3)));
 qboolean Netchan_Process (netchan_t *chan);
-void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, int flags);
-
-#define NC_SEND_QPORT	0x01
-#define NC_READ_QPORT	0x02
+void Netchan_Setup (netchan_t *chan, netadr_t adr, ncqport_e qport, int flags);
 
 qboolean Netchan_CanPacket (netchan_t *chan);
 qboolean Netchan_CanReliable (netchan_t *chan);

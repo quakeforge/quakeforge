@@ -902,7 +902,7 @@ CL_StartDemo (void)
 		Sys_Printf ("qwd\n");
 	}
 	CL_SetState (ca_demostart);
-	Netchan_Setup (&cls.netchan, net_from, 0, NC_SEND_QPORT);
+	Netchan_Setup (&cls.netchan, net_from, 0, NC_QPORT_SEND);
 	realtime = 0;
 	cls.findtrack = true;
 	cls.lasttype = 0;

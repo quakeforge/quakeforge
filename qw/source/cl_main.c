@@ -874,7 +874,7 @@ CL_ConnectionlessPacket (void)
 				Sys_Printf ("Dup connect received.  Ignored.\n");
 			return;
 		}
-		Netchan_Setup (&cls.netchan, net_from, cls.qport, NC_SEND_QPORT);
+		Netchan_Setup (&cls.netchan, net_from, cls.qport, NC_QPORT_SEND);
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, "new");
 		CL_SetState (ca_connected);

@@ -187,7 +187,7 @@ Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
 	called to open a channel to a remote system
 */
 void
-Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, int flags)
+Netchan_Setup (netchan_t *chan, netadr_t adr, ncqport_e qport, int flags)
 {
 	memset (chan, 0, sizeof (*chan));
 
@@ -286,7 +286,7 @@ Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	MSG_WriteLong (&send, w2);
 
 	// send the qport if we are a client
-	if (chan->flags & NC_SEND_QPORT)
+	if (chan->flags & NC_QPORT_SEND)
 		MSG_WriteShort (&send, chan->qport);
 
 	// copy the reliable message to the packet first
@@ -343,7 +343,7 @@ Netchan_Process (netchan_t *chan)
 	sequence_ack = MSG_ReadLong (net_message);
 
 	// read the qport if we are a server, but drop it
-	if (chan->flags & NC_READ_QPORT)
+	if (chan->flags & NC_QPORT_READ)
 		MSG_ReadShort (net_message);
 
 	reliable_message = sequence >> 31;

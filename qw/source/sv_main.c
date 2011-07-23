@@ -767,7 +767,8 @@ SVC_DirectConnect (void)
 	info_t     *userinfo = 0;
 	const char *s;
 	client_t   *cl, *newcl;
-	int         challenge, qport, version, i, qtv = 0;
+	int         challenge, version, i, qtv = 0;
+	ncqport_e   qport;
 	netadr_t    adr;
 	qboolean    spectator;
 	client_frame_t *frames;
@@ -908,7 +909,7 @@ SVC_DirectConnect (void)
 
 	Netchan_OutOfBandPrint (adr, "%c", S2C_CONNECTION);
 
-	Netchan_Setup (&newcl->netchan, adr, qport, NC_READ_QPORT);
+	Netchan_Setup (&newcl->netchan, adr, qport, NC_QPORT_READ);
 	newcl->backbuf.netchan = &newcl->netchan;
 	newcl->backbuf.name = newcl->name;
 
@@ -1754,7 +1755,8 @@ SV_ReadPackets (void)
 {
 	//NOTE star volatile, not volatile star
 	client_t   *volatile cl;			// * volatile for longjmp
-	int         qport, i;
+	int         i;
+	ncqport_e   qport;
 	double      until;
 
 	while (NET_GetPacket ()) {
