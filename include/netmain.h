@@ -64,7 +64,7 @@ struct qsockaddr
 //
 // General notes:
 //	game_name is currently always "QUAKE", but is there so this same protocol
-//		can be used for future games as well; can you say Quake2?
+//		can be used for future games as well
 //
 // CCREQ_CONNECT
 //		string	game_name				"QUAKE"
