@@ -34,6 +34,13 @@
 #include "QF/qdefs.h"
 #include "QF/sizebuf.h"
 
+/** \defgroup network Network support
+*/
+
+/** \defgroup qw-net QuakeWorld network support.
+	\ingroup network
+*/
+//{
 #define MAX_MSGLEN		1450		// max length of a reliable message
 #define MAX_DATAGRAM	1450		// max length of unreliable message
 
@@ -59,6 +66,25 @@ extern	struct cvar_s	*hostname;
 extern	struct cvar_s	*qport;
 
 extern	int		net_socket;
+
+int Net_Log_Init (const char **sound_precache);
+void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+void Log_Incoming_Packet (const byte *p, int len, int has_sequence);
+void Log_Outgoing_Packet (const byte *p, int len, int has_sequence);
+void Net_LogStop (void);
+void Analyze_Client_Packet (const byte * data, int len, int has_sequence);
+void Analyze_Server_Packet (const byte * data, int len, int has_sequence);
+
+extern struct cvar_s *net_packetlog;
+
+extern qboolean is_server;
+qboolean ServerPaused (void);
+//@}
+
+/** \defgroup qw-udp QuakeWorld udp support.
+	\ingroup qw-net
+*/
+//@{
 
 /** Initialize the UDP network interface.
 
@@ -143,21 +169,61 @@ const char *NET_BaseAdrToString (netadr_t a);
 */
 qboolean NET_StringToAdr (const char *s, netadr_t *a);
 
-int Net_Log_Init (const char **sound_precache);
-void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-void Log_Incoming_Packet (const byte *p, int len, int has_sequence);
-void Log_Outgoing_Packet (const byte *p, int len, int has_sequence);
-void Net_LogStop (void);
-void Analyze_Client_Packet (const byte * data, int len, int has_sequence);
-void Analyze_Server_Packet (const byte * data, int len, int has_sequence);
+//@}
 
-extern struct cvar_s *net_packetlog;
+/** \defgroup netchan Netchan
+	\ingroup qw-net
 
-extern qboolean is_server;
-qboolean ServerPaused (void);
+	<table>
+	<tr><td colspan=2>Packet Header</td></tr>
+	<tr><td>Bits</td>	<td>Meaning</td></tr>
+	<tr><td>31</td>		<td>sequence</td></tr>
+	<tr><td>1</td>		<td>this message contains a reliable payload</td></tr>
+	<tr><td>31</td>		<td>acknowledge sequence</td></tr>
+	<tr><td>1</td>		<td>acknowledge receipt of even/odd message</td></tr>
+	<tr><td>16</td>		<td>qport</td></tr>
+	</table>
 
-//============================================================================
+	The remote connection never knows if it missed a reliable message, the
+	local side detects that it has been dropped by seeing a sequence
+	acknowledge higher than the last reliable sequence, but without the
+	correct even/odd bit for the reliable set.
 
+	If the sender notices that a reliable message has been dropped, it will
+	be retransmitted.  It will not be retransmitted again until a message
+	after the retransmit has been acknowledged and the reliable still failed
+	to get there.
+
+	If the sequence number is -1, the packet should be handled without a
+	netcon.
+
+	The reliable message can be added to at any time by doing
+	MSG_Write* (&netchan->message, data).
+
+	If the message buffer is overflowed, either by a single message, or by
+	multiple frames worth piling up while the last reliable transmit goes
+	unacknowledged, the netchan signals a fatal error.
+
+	Reliable messages are always placed first in a packet, then the unreliable
+	message is included if there is sufficient room.
+
+	To the receiver, there is no distinction between the reliable and
+	unreliable parts of the message, they are just processed out as a single
+	larger message.
+
+	Illogical packet sequence numbers cause the packet to be dropped, but do
+	not kill the connection.  This, combined with the tight window of valid
+	reliable acknowledgement numbers provides protection against malicious
+	address spoofing.
+
+	The qport field is a workaround for bad address translating routers that
+	sometimes remap the client's source port on a packet during gameplay.
+
+	If the base part of the net address matches and the qport matches, then
+	the channel matches even if the IP port differs.  The IP port should be
+	updated to the new value before sending out any replies.
+*/
+//@{
 #define	OLD_AVG		0.99		// total = oldtotal*OLD_AVG + new*(1-OLD_AVG)
 
 #define	MAX_LATENT	32
@@ -168,59 +234,82 @@ typedef enum {
 } ncqport_e;
 
 typedef struct netchan_s {
-	qboolean	fatal_error;
+	qboolean	fatal_error;	///< True if the message overflowed
 
-	float		last_received;		// for timeouts
+	float		last_received;	///< Time the last packet was received.
 
-// the statistics are cleared at each client begin, because
-// the server connecting process gives a bogus picture of the data
-	float		frame_latency;		// rolling average
+	/// \name statistics
+	/// the statistics are cleared at each client begin, because
+	/// the server connection process gives a bogus picture of the data
+	///@{
+	float		frame_latency;		///< rolling average
 	float		frame_rate;
 
-	int			drop_count;			// dropped packets, cleared each level
-	int			net_drop;			//packets dropped before this one
-	int			good_count;			// cleared each level
+	int			drop_count;			///< dropped packets, cleared each level
+	int			net_drop;			///< packets dropped before this one
+	int			good_count;			///< cleared each level
+	///@}
 
 	netadr_t	remote_address;
 	ncqport_e	qport;
 	int			flags;
 
-// bandwidth estimator
-	double		cleartime;			// if realtime > nc->cleartime, free to go
-	double		rate;				// seconds / byte
+	/// \name bandwidth estimator
+	///@{
+	double		cleartime;			///< if realtime > nc->cleartime,
+									///< free to go
+	double		rate;				///< seconds / byte
+	///@}
 
-// sequencing variables
+	/// \name sequencing variables
+	///@{
 	int			incoming_sequence;
 	int			incoming_acknowledged;
-	int			incoming_reliable_acknowledged;	// single bit
+	int			incoming_reliable_acknowledged;	///< single bit
 
-	int			incoming_reliable_sequence;		// single bit, maintained local
+	int			incoming_reliable_sequence;	///< single bit, maintained local
 
 	int			outgoing_sequence;
-	int			reliable_sequence;			// single bit
-	int			last_reliable_sequence;		// sequence number of last send
+	int			reliable_sequence;			///< single bit
+	int			last_reliable_sequence;		///< sequence number of last send
+	///@}
 
-// reliable staging and holding areas
-	sizebuf_t	message;		// writing buffer to send to server
+	/// \name reliable staging and holding areas
+	///@{
+	sizebuf_t	message;		///< writing buffer to send to server
 	byte		message_buf[MAX_MSGLEN];
 
 	int			reliable_length;
-	byte		reliable_buf[MAX_MSGLEN];	// unacked reliable message
+	byte		reliable_buf[MAX_MSGLEN];	///< unacked reliable message
+	///@}
 
-// time and size data to calculate bandwidth
+	/// \name time and size data to calculate bandwidth
+	///@{
 	int			outgoing_size[MAX_LATENT];
 	double		outgoing_time[MAX_LATENT];
+	///@}
 } netchan_t;
 
+/** Disable packet choking.
+*/
 extern	int net_nochoke;	// don't choke packets
+
+/** Disable packet sending.
+
+	Used by clients in demo playback mode.
+*/
 extern	int net_blocksend;	// don't send packets (used by client for demos)
+
+/** Pointer to variable holding the current time in seconds.
+*/
 extern	double *net_realtime;
 
 void Netchan_Init (void);
 void Netchan_Init_Cvars (void);
 void Netchan_Transmit (netchan_t *chan, int length, byte *data);
 void Netchan_OutOfBand (netadr_t adr, int length, byte *data);
-void Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...) __attribute__((format(printf,2,3)));
+void Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
+	__attribute__ ((format (printf,2,3)));
 qboolean Netchan_Process (netchan_t *chan);
 void Netchan_Setup (netchan_t *chan, netadr_t adr, ncqport_e qport, int flags);
 
@@ -228,5 +317,7 @@ qboolean Netchan_CanPacket (netchan_t *chan);
 qboolean Netchan_CanReliable (netchan_t *chan);
 
 void Netchan_SendPacket (int length, const void *data, netadr_t to);
+
+//@}
 
 #endif // _NET_H
