@@ -57,7 +57,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "client.h"
 #include "compat.h"
 #include "host.h"
-#include "view.h"
+#include "clview.h"
 
 cvar_t     *cl_nodelta;
 cvar_t     *cl_maxnetfps;

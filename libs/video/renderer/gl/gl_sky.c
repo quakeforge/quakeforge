@@ -55,7 +55,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "r_cvar.h"
 #include "r_shared.h"
-#include "view.h"
 
 const char *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
 int         solidskytexture;

@@ -56,7 +56,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
-#include "view.h"
+#include "clview.h"	//FIXME
 
 #ifdef PIC
 # undef USE_INTEL_ASM //XXX asm pic hack

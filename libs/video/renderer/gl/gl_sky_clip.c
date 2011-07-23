@@ -59,7 +59,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "r_cvar.h"
 #include "r_shared.h"
-#include "view.h"
 
 #include "compat.h"
 

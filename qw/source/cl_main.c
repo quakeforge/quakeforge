@@ -112,7 +112,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "sbar.h"
-#include "view.h"
+#include "clview.h"
 
 CLIENT_PLUGIN_PROTOS
 static plugin_list_t client_plugin_list[] = {

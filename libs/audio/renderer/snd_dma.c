@@ -53,7 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/va.h"
 #include "QF/quakefs.h"
 
-#include "snd_render.h"
+#include "snd_internal.h"
 
 static qboolean snd_initialized = false;
 static int      snd_blocked = 0;

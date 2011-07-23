@@ -65,7 +65,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_dynamic.h"
 #include "r_local.h"
 #include "varrays.h"
-#include "view.h"
+#include "clview.h"		//FIXME
 
 entity_t    r_worldentity;
 

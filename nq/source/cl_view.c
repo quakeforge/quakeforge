@@ -43,7 +43,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "host.h"
 #include "r_local.h"
-#include "view.h"
+#include "clview.h"
 
 /*
 	The view is allowed to move slightly from it's true position for bobbing,

@@ -62,7 +62,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "sbar.h"
 #include "server.h"
 #include "sv_progs.h"
-#include "view.h"
+#include "clview.h"
 
 
 /*

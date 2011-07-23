@@ -45,7 +45,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "snd_render.h"
+#include "snd_internal.h"
 
 #define VOLSCALE 512.0				// so mixing is less likely to overflow
 									// note: must be >= 255 due to the channel

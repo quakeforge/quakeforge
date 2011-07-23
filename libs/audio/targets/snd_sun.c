@@ -53,7 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
-#include "snd_render.h"
+#include "snd_internal.h"
 
 static int		audio_fd;
 static int		snd_inited;

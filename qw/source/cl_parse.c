@@ -79,7 +79,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "qw/pmove.h"
 #include "qw/protocol.h"
 #include "sbar.h"
-#include "view.h"
+#include "clview.h"
 
 const char *svc_strings[] = {
 	"svc_bad",

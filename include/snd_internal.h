@@ -1,5 +1,5 @@
 /*
-	snd_render.h
+	snd_internal.h
 
 	Sound renderer plugin stuff
 
@@ -29,8 +29,8 @@
 	$Id$
 */
 
-#ifndef __snd_render_h
-#define __snd_render_h
+#ifndef __snd_internal_h
+#define __snd_internal_h
 
 
 /** \defgroup sound_render Sound rendering sub-system.
@@ -571,4 +571,4 @@ sfxbuffer_t *SND_GetCache (long samples, int rate, int channels,
 						   sfxblock_t *block, cache_allocator_t allocator);
 //@}
 
-#endif//__snd_render_h
+#endif//__snd_internal_h

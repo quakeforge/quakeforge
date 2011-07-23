@@ -50,7 +50,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/quakefs.h"
 
 #include "compat.h"
-#include "snd_render.h"
+#include "snd_internal.h"
 
 #define SAMPLE_GAP	4
 

@@ -48,7 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "snd_render.h"
+#include "snd_internal.h"
 
 static int sound_started = 0;
 static int snd_blocked = 0;

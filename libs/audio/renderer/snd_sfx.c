@@ -49,7 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "snd_render.h"
+#include "snd_internal.h"
 
 #define MAX_SFX		512
 static sfx_t    snd_sfx[MAX_SFX];

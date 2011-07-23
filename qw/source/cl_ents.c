@@ -60,7 +60,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "qw/pmove.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
-#include "view.h"
+#include "clview.h"
 
 static struct predicted_player {
 	int         flags;
