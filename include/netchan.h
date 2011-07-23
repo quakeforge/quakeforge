@@ -60,18 +60,88 @@ extern	struct cvar_s	*qport;
 
 extern	int		net_socket;
 
-void		NET_Init (int port);
-void		NET_Init (int port);
-void		NET_Shutdown (void);
-qboolean	NET_GetPacket (void);
-void		NET_SendPacket (int length, const void *data, netadr_t to);
+/** Initialize the UDP network interface.
 
-qboolean	NET_CompareAdr (netadr_t a, netadr_t b);
-qboolean	NET_CompareBaseAdr (netadr_t a, netadr_t b);
-const char	*NET_AdrToString (netadr_t a);
-const char	*NET_BaseAdrToString (netadr_t a);
-qboolean	NET_StringToAdr (const char *s, netadr_t *a);
+	Opens a single socket to be used for all communications.
 
+	\param port		The port to which the socket will be bound.
+*/
+void NET_Init (int port);
+
+/** Shutdown the UDP network interface.
+*/
+void NET_Shutdown (void);
+
+/** Read a single packet from the network into net_message.
+
+	\return			True if successfully read, otherwise false.
+*/
+qboolean NET_GetPacket (void);
+
+/**	Send a data packet out to the network.
+
+	\param length	The length of the data to be sent.
+	\param data		The data to be sent.
+	\param to		The address to which the data will be sent.
+*/
+void NET_SendPacket (int length, const void *data, netadr_t to);
+
+/** Compare two network addresses.
+
+	Compare the port number too.
+
+	\param a		The first address to compare.
+	\param b		The second address to compare.
+	\return			True of the addresses match, otherwise false.
+*/
+qboolean NET_CompareAdr (netadr_t a, netadr_t b);
+
+/** Compare two network addresses.
+
+	Ignore the port number.
+
+	\param a		The first address to compare.
+	\param b		The second address to compare.
+	\return			True of the addresses match, otherwise false.
+*/
+qboolean NET_CompareBaseAdr (netadr_t a, netadr_t b);
+
+/** Convert an address to a string.
+
+	Include the port number in the string.
+
+	\warning	The return value is a pointer to a static buffer. The returned
+				string must be saved if mixing calls with different addresses.
+
+	\param a		The address to convert
+	\return			The address in human readable form.
+*/
+const char *NET_AdrToString (netadr_t a);
+
+/** Convert an address to a string.
+
+	Do not include the port number in the string.
+
+	\note	The return value is a pointer to a static buffer. The returned
+			string must be saved if mixing calls with different addresses.
+
+	\param a		The address to convert
+	\return			The address in human readable form.
+*/
+const char *NET_BaseAdrToString (netadr_t a);
+
+/** Convert a human readable address to a quake address.
+
+	Accepts both host names (full or partial) and numeric form.
+
+	If a port is specified, the port value in the address will be set to that
+	value, otherwise it will be set to 0.
+
+	\param[in] s	The human readable address to be converted.
+	\param[out] a	The resulting address of the conversion.
+	\return			True if the conversion is successful, otherwise false.
+*/
+qboolean NET_StringToAdr (const char *s, netadr_t *a);
 
 int Net_Log_Init (const char **sound_precache);
 void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
