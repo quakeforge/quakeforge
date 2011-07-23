@@ -229,37 +229,6 @@ NET_StringToAdr (const char *s, netadr_t *a)
 	return true;
 }
 
-// Returns true if we can't bind the address locally--in other words,
-// the IP is NOT one of our interfaces.
-qboolean
-NET_IsClientLegal (netadr_t *adr)
-{
-#if 0
-	int         newsocket;
-	AF_address_t sadr;
-
-	if (adr->ip[0] == 127)
-		return false;					// no local connections period
-
-	NetadrToSockadr (adr, &sadr);
-
-	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
-		Sys_Error ("NET_IsClientLegal: socket:", strerror (errno));
-
-	sadr.sin_port = 0;
-
-	if (bind (newsocket, (void *) &sadr, sizeof (sadr)) == -1) {
-		// It is not a local address
-		close (newsocket);
-		return true;
-	}
-	close (newsocket);
-	return false;
-#else
-	return true;
-#endif
-}
-
 qboolean
 NET_GetPacket (void)
 {
@@ -422,7 +391,6 @@ NET_Init (int port)
 		Sys_Error ("Winsock initialization failed.");
 #endif /* _WIN32 */
 
-	// open the single socket to be used for all communications
 	net_socket = UDP_OpenSocket (port);
 
 	// init the message buffer
