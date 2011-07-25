@@ -15,7 +15,9 @@ GZ=.gz
 else
 GZ=
 endif
-STRIP=$(shell echo `echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`)
+# BSD make can't handle $(shell foo) directives, and GNU make can't handle |=
+# so we have to bite the bullet and pass this to the shell every time.
+STRIP=`echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`
 
 if BUILD_RUAMOKO
 data=game.dat$(GZ)
@@ -28,14 +30,11 @@ EXTRA_DATA= game.dat
 
 game_src= Axe.r GameEntity.r World.r tempent.r
 
-%.qfo: %.r
+SUFFIXES=.qfo .r
+.r.qfo:
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
 
-%.qfo: %.qc
-	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
-
-game_obj=$(addsuffix .qfo,$(basename $(game_src)))
-
+game_obj=$(game_src:.r=.qfo)
 game.dat$(GZ): $(game_obj) ../lib/libr.a ../lib/libqw.a
 	$(QFCC) $(QCFLAGS) -p $(STRIP) -o game.dat $(game_obj) ../lib/libr.a ../lib/libqw.a ../lib/libr.a
 	$(GZIP)

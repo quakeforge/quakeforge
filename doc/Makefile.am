@@ -16,11 +16,12 @@ EXTRA_DIST= qf.ico \
 	progs/vm-exec.c progs/vm-mem.fig \
 	qtv/qwtv.fig
 
-%.png: %.fig
+SUFFIXES=.eps .fig .png
+.fig.png:
 	@mkdir -p `dirname $@`
 	fig2dev -L png $< $@
 
-%.eps: %.fig
+.fig.eps:
 	@mkdir -p `dirname $@`
 	fig2dev -L ps $< $@
 

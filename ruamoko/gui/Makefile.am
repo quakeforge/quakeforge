@@ -20,10 +20,8 @@ endif
 pkglib_LIBRARIES= $(libs)
 EXTRA_LIBRARIES= $(gui_libs)
 
-%.qfo: %.r
-	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
-
-%.o: %.r
+SUFFIXES= .qfo .r .qc
+.r.o:
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
 
 libgui_a_SOURCES= \
