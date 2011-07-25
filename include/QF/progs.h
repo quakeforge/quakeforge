@@ -296,7 +296,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** \defgroup prda_globals Globals
 	\ingroup progs_data_access
-	Typed global access marcos. No checking is done against the QC type, but
+	Typed global access macros. No checking is done against the QC type, but
 	the appropriate C type will be used.
 */
 //@{
@@ -486,7 +486,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** \defgroup prda_parameters Parameters
 	\ingroup progs_data_access
-	Typed parameter access marcos. No checking is done against the QC type, but
+	Typed parameter access macros. No checking is done against the QC type, but
 	the appropriate C type will be used.
 */
 //@{
@@ -843,7 +843,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** \defgroup prda_entity_fields Entity Fields
 	\ingroup progs_data_access
-	Typed entity field  access marcos. No checking is done against the QC type,
+	Typed entity field access macros. No checking is done against the QC type,
 	but the appropriate C type will be used.
 */
 //@{
@@ -1077,7 +1077,7 @@ int PR_RelocateBuiltins (progs_t *pr);
 	Strings management functions.
 
 	All strings accessable by the VM are stored within the VM address space.
-	These functions provide facilities to set permanent, dynamic  and
+	These functions provide facilities to set permanent, dynamic and
 	temporary strings, as well as mutable strings using dstrings.
 
 	Permanent strings are either supplied by the progs (+ve string index) or
@@ -1175,7 +1175,7 @@ void PR_MakeTempString(progs_t *pr, string_t str);
 string_t PR_NewMutableString (progs_t *pr);
 
 /** Make a dynamic progs string from the given C string. Will not create a
-	duplicate permanent string (temporary, dynamic  and mutable strings are
+	duplicate permanent string (temporary, dynamic and mutable strings are
 	not checked).
 	\param pr		pointer to ::progs_t VM struct
 	\param s		C string to be made into a permanent progs string

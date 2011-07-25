@@ -67,10 +67,10 @@ typedef	enum	{false, true} qboolean;
 #endif
 
 // From mathlib...
-typedef float	vec_t;
-typedef vec_t	vec3_t[3];
+typedef float	vec_t;		///< The basic vector component type
+typedef vec_t	vec3_t[3];	///< A 3D vector (used for Euler angles and motion vectors)
 typedef vec_t	vec4_t[4];
-typedef vec_t	quat_t[4];
+typedef vec_t	quat_t[4];	///< A quaternion.
 typedef vec_t	vec5_t[5];
 typedef	int		fixed4_t;
 typedef int		fixed8_t;
