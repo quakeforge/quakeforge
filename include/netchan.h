@@ -41,8 +41,8 @@
 	\ingroup network
 */
 //{
-#define MAX_MSGLEN		1450		// max length of a reliable message
-#define MAX_DATAGRAM	1450		// max length of unreliable message
+#define MAX_MSGLEN		1450		///< max length of a reliable message
+#define MAX_DATAGRAM	1450		///< max length of unreliable message
 
 #define	PORT_ANY	-1
 
@@ -54,18 +54,16 @@ typedef struct
 	byte	ip[4];
 #endif
 	unsigned short	port;
-	unsigned short	family;	// used to be pad, before IPV6
+	unsigned short	family;
 } netadr_t;
 
+extern	int		net_socket;
 extern	netadr_t	net_local_adr;
 extern	netadr_t	net_loopback_adr;
 extern	netadr_t	net_from;		// address of who sent the packet
 extern	struct msg_s *net_message;
 
-extern	struct cvar_s	*hostname;
 extern	struct cvar_s	*qport;
-
-extern	int		net_socket;
 
 int Net_Log_Init (const char **sound_precache);
 void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
@@ -78,7 +76,6 @@ void Analyze_Server_Packet (const byte * data, int len, int has_sequence);
 extern struct cvar_s *net_packetlog;
 
 extern qboolean is_server;
-qboolean ServerPaused (void);
 //@}
 
 /** \defgroup qw-udp QuakeWorld udp support.
@@ -194,7 +191,8 @@ qboolean NET_StringToAdr (const char *s, netadr_t *a);
 	after the retransmit has been acknowledged and the reliable still failed
 	to get there.
 
-	If the sequence number is -1, the packet should be handled without a
+	If the sequence number and reliable payload bits are all 1 (32bit -1),
+	the packet is an out-of-band packet and should be handled without a
 	netcon.
 
 	The reliable message can be added to at any time by doing
@@ -292,30 +290,96 @@ typedef struct netchan_s {
 
 /** Disable packet choking.
 */
-extern	int net_nochoke;	// don't choke packets
+extern	int net_nochoke;
 
 /** Disable packet sending.
 
 	Used by clients in demo playback mode.
 */
-extern	int net_blocksend;	// don't send packets (used by client for demos)
+extern	int net_blocksend;
 
 /** Pointer to variable holding the current time in seconds.
 */
 extern	double *net_realtime;
 
+/** Initialize the netchan system.
+
+	Currently only sets the qport cvar default to a random value.
+*/
 void Netchan_Init (void);
+
+/** Initialize the netchan cvars.
+*/
 void Netchan_Init_Cvars (void);
+
+/** Try to send an unreliable packet to a connection.
+
+	Handles transmission or retransmission of the reliable packet.
+
+	0 length will still generate a packet and deal with the reliable messages.
+
+	\param chan		The netchan representing the connection.
+	\param length	The size of the unreliable packet.
+	\param data		The data of the unreliable packet.
+*/
 void Netchan_Transmit (netchan_t *chan, int length, byte *data);
+
+/** Send an out-of-band packet.
+
+	\param adr		The address to which the data will be sent.
+	\param length	The length of the data to be sent.
+	\param data		The data to be sent.
+*/
 void Netchan_OutOfBand (netadr_t adr, int length, byte *data);
+/** Send a formatted string as an out-of-band packet.
+
+	\param adr		The address to which the data will be sent.
+	\param format	The printf style format string.
+*/
 void Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
 	__attribute__ ((format (printf,2,3)));
+
+/** Process a packet for the specifiied connection.
+
+	Called when the current net_message is from remote_address.
+	Modifies net_message so that it points to the packet payload.
+
+	\param chan		The netchan representing the connection.
+*/
 qboolean Netchan_Process (netchan_t *chan);
+
+/** Initialize a new connection.
+
+	\param chan		The netchan representing the connection.
+	\param adr		The address of the remote end of the connection.
+	\param qport	The qport associated with the connection.
+	\param flags	Control of the sending/reading of the qport on this
+					connection.
+*/
 void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, ncqport_e flags);
 
+/** Check if a packet can be sent to the connection.
+
+	\param chan     The netchan representing the connection.
+	\return			True if the connection isn't chocked.
+*/
 qboolean Netchan_CanPacket (netchan_t *chan);
+
+/** Check if a reliable packet can be sent to the connection.
+
+	\param chan     The netchan representing the connection.
+	\return			True if there is no outstanding reliable packet and the
+					connection isn't chocked.
+*/
 qboolean Netchan_CanReliable (netchan_t *chan);
 
+/** Send a packet.
+
+	Very raw. Just calls NET_SendPacket().
+	\param length	The length of the data to be sent.
+	\param data		The data to be sent.
+	\param to		The address to which the data will be sent.
+*/
 void Netchan_SendPacket (int length, const void *data, netadr_t to);
 
 //@}
