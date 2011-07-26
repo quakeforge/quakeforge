@@ -29,7 +29,7 @@
 #ifndef _DRAW_H
 #define _DRAW_H
 
-/** \defgroup video Video Syb-sytem */
+/** \defgroup video Video Sub-sytem */
 
 /** \defgroup video_renderer Renderer Sub-system
 	\ingroup video
