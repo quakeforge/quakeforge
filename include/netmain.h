@@ -37,8 +37,7 @@
 */
 //@{
 
-struct qsockaddr
-{
+struct qsockaddr {
 	short qsa_family;
 	unsigned char qsa_data[14];
 };
@@ -62,77 +61,90 @@ struct qsockaddr
 
 #define NET_PROTOCOL_VERSION	3
 
-// This is the network info/connection protocol.  It is used to find Quake
-// servers, get info about them, and connect to them.  Once connected, the
-// Quake game protocol (documented elsewhere) is used.
-//
-//
-// General notes:
-//	game_name is currently always "QUAKE", but is there so this same protocol
-//		can be used for future games as well
-//
-// CCREQ_CONNECT
-//		string	game_name				"QUAKE"
-//		byte	net_protocol_version	NET_PROTOCOL_VERSION
-//
-// CCREQ_SERVER_INFO
-//		string	game_name				"QUAKE"
-//		byte	net_protocol_version	NET_PROTOCOL_VERSION
-//
-// CCREQ_PLAYER_INFO
-//		byte	player_number
-//
-// CCREQ_RULE_INFO
-//		string	rule
-//
-//
-//
-// CCREP_ACCEPT
-//		long	port
-//
-// CCREP_REJECT
-//		string	reason
-//
-// CCREP_SERVER_INFO
-//		string	server_address
-//		string	host_name
-//		string	level_name
-//		byte	current_players
-//		byte	max_players
-//		byte	protocol_version	NET_PROTOCOL_VERSION
-//
-// CCREP_PLAYER_INFO
-//		byte	player_number
-//		string	name
-//		long	colors
-//		long	frags
-//		long	connect_time
-//		string	address
-//
-// CCREP_RULE_INFO
-//		string	rule
-//		string	value
+/** \name Connection Protocol
 
-//	note:
-//		There are two address forms used above.  The short form is just a
-//		port number.  The address that goes along with the port is defined as
-//		"whatever address you receive this reponse from".  This lets us use
-//		the host OS to solve the problem of multiple host addresses (possibly
-//		with no routing between them); the host will use the right address
-//		when we reply to the inbound connection request.  The long from is
-//		a full address and port in a string.  It is used for returning the
-//		address of a server that is not running locally.
+	This is the network info/connection protocol.  It is used to find Quake
+	servers, get info about them, and connect to them.  Once connected, the
+	Quake game protocol (documented elsewhere) is used.
 
+	General notes:
+
+	\note	There are two address forms used.  The short form is just a
+		port number.  The address that goes along with the port is defined as
+		"whatever address you receive this reponse from".  This lets us use
+		the host OS to solve the problem of multiple host addresses (possibly
+		with no routing between them); the host will use the right address
+		when we reply to the inbound connection request.  The long from is
+		a full address and port in a string.  It is used for returning the
+		address of a server that is not running locally.
+*/
+///@{
+
+/** Connect Request:
+	\arg \b string	\c game_name			\em "QUAKE"
+	\arg \b byte	\c net_protocol_version	\em NET_PROTOCOL_VERSION
+
+	\note	\c game_name is currently always "QUAKE", but is there so this
+			same protocol can be used for future games as well
+*/
 #define CCREQ_CONNECT		0x01
+
+/** Connect Request:
+	\arg \b string	\c game_name			\em "QUAKE"
+	\arg \b byte	\c net_protocol_version	\em NET_PROTOCOL_VERSION
+
+	\note	\c game_name is currently always "QUAKE", but is there so this
+			same protocol can be used for future games as well
+*/
 #define CCREQ_SERVER_INFO	0x02
+
+/** Connect Request:
+	\arg \b byte	\c player_number
+*/
 #define CCREQ_PLAYER_INFO	0x03
+
+/** Connect Request:
+	\arg \b string	\c rule
+*/
 #define CCREQ_RULE_INFO		0x04
 
+
+/** Connect Reply:
+	\arg \b long	\c port
+*/
 #define CCREP_ACCEPT		0x81
+
+/** Connect Reply:
+	\arg \b string	\c reason
+*/
 #define CCREP_REJECT		0x82
+
+/** Connect Reply:
+	\arg \b string	\c server_address
+	\arg \b string	\c host_name
+	\arg \b string	\c level_name
+	\arg \b byte	\c current_players
+	\arg \b byte	\c max_players
+	\arg \b byte	\c protocol_version	\em NET_PROTOCOL_VERSION
+*/
 #define CCREP_SERVER_INFO	0x83
+
+/** Connect Reply:
+	\arg \b byte	\c player_number
+	\arg \b string	\c name
+	\arg \b long	\c colors
+	\arg \b long	\c frags
+	\arg \b long	\c connect_time
+	\arg \b string	\c address
+*/
 #define CCREP_PLAYER_INFO	0x84
+
+/** Connect Reply:
+	\arg \b string	\c rule
+	\arg \b string	\c value
+*/
 #define CCREP_RULE_INFO		0x85
+///@}
 
 typedef struct qsocket_s
 {
