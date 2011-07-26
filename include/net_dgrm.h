@@ -27,6 +27,10 @@
 */
 
 
+/** \defgroup nq-dgrm NetQuake Datagram network driver.
+	\ingroup nq-nd
+*/
+//@{
 
 int			Datagram_Init (void);
 void		Datagram_Listen (qboolean state);
@@ -40,3 +44,5 @@ qboolean	Datagram_CanSendMessage (qsocket_t *sock);
 qboolean	Datagram_CanSendUnreliableMessage (qsocket_t *sock);
 void		Datagram_Close (qsocket_t *sock);
 void		Datagram_Shutdown (void);
+
+//@}

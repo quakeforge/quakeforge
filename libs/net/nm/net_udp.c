@@ -1,7 +1,7 @@
 /*
 	net_udp.c
 
-	@description@
+	UDP lan driver.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 

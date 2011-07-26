@@ -31,6 +31,11 @@
 
 #include "QF/qtypes.h"
 
+/** \defgroup nq-udp NetQuake UDP lan driver.
+	\ingroup nq-ld
+*/
+//@{
+
 int  UDP_Init (void);
 void UDP_Shutdown (void);
 void UDP_Listen (qboolean state);
@@ -49,5 +54,7 @@ int  UDP_GetAddrFromName (const char *name, struct qsockaddr *addr);
 int  UDP_AddrCompare (struct qsockaddr *addr1, struct qsockaddr *addr2);
 int  UDP_GetSocketPort (struct qsockaddr *addr);
 int  UDP_SetSocketPort (struct qsockaddr *addr, int port);
+
+//@}
 
 #endif // __net_udp_h

@@ -2,7 +2,7 @@
 /*
 	net_wins.c
 
-	@description@
+	Winsock lan driver.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 

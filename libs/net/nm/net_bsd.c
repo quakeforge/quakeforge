@@ -1,7 +1,7 @@
 /*
 	net_bsd.c
 
-	@description@
+	BSD socket based network and lan driver structs.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 

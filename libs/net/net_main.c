@@ -133,15 +133,7 @@ SetNetTime (void)
 }
 
 
-/*
-===================
-NET_NewQSocket
-
-Called by drivers when a new communications endpoint is required
-The sequence and buffer fields will be filled in properly
-===================
-*/
-qsocket_t  *
+qsocket_t *
 NET_NewQSocket (void)
 {
 	qsocket_t  *sock;
@@ -182,7 +174,7 @@ NET_NewQSocket (void)
 
 
 void
-NET_FreeQSocket (qsocket_t * sock)
+NET_FreeQSocket (qsocket_t *sock)
 {
 	qsocket_t  *s;
 
@@ -327,7 +319,7 @@ PrintSlistTrailer (void)
 }
 
 
-void
+static void
 NET_Slist_f (void)
 {
 	if (slistInProgress)
@@ -393,16 +385,10 @@ Slist_Poll (void *unused)
 }
 
 
-/*
-===================
-NET_Connect
-===================
-*/
-
 int         hostCacheCount = 0;
 hostcache_t hostcache[HOSTCACHESIZE];
 
-qsocket_t  *
+qsocket_t *
 NET_Connect (const char *host)
 {
 	qsocket_t  *ret;
@@ -471,19 +457,13 @@ NET_Connect (const char *host)
 }
 
 
-/*
-===================
-NET_CheckNewConnections
-===================
-*/
-
 struct {
 	double      time;
 	int         op;
 	intptr_t    session;
 } vcrConnect;
 
-qsocket_t  *
+qsocket_t *
 NET_CheckNewConnections (void)
 {
 	qsocket_t  *ret;
@@ -519,13 +499,8 @@ NET_CheckNewConnections (void)
 	return NULL;
 }
 
-/*
-===================
-NET_Close
-===================
-*/
 void
-NET_Close (qsocket_t * sock)
+NET_Close (qsocket_t *sock)
 {
 	if (!sock)
 		return;
@@ -542,18 +517,6 @@ NET_Close (qsocket_t * sock)
 }
 
 
-/*
-=================
-NET_GetMessage
-
-If there is a complete message, return it in net_message
-
-returns 0 if no data is waiting
-returns 1 if a message was received
-returns -1 if connection is invalid
-=================
-*/
-
 struct {
 	double      time;
 	int         op;
@@ -564,7 +527,7 @@ struct {
 
 
 int
-NET_GetMessage (qsocket_t * sock)
+NET_GetMessage (qsocket_t *sock)
 {
 	int         ret;
 
@@ -622,17 +585,6 @@ NET_GetMessage (qsocket_t * sock)
 }
 
 
-/*
-==================
-NET_SendMessage
-
-Try to send a complete length+message unit over the reliable stream.
-returns 0 if the message cannot be delivered reliably, but the connection
-		is still considered valid
-returns 1 if the message was sent properly
-returns -1 if the connection died
-==================
-*/
 struct {
 	double      time;
 	int         op;
@@ -641,7 +593,7 @@ struct {
 } vcrSendMessage;
 
 int
-NET_SendMessage (qsocket_t * sock, sizebuf_t *data)
+NET_SendMessage (qsocket_t *sock, sizebuf_t *data)
 {
 	int         r;
 
@@ -671,7 +623,7 @@ NET_SendMessage (qsocket_t * sock, sizebuf_t *data)
 
 
 int
-NET_SendUnreliableMessage (qsocket_t * sock, sizebuf_t *data)
+NET_SendUnreliableMessage (qsocket_t *sock, sizebuf_t *data)
 {
 	int         r;
 
@@ -700,16 +652,8 @@ NET_SendUnreliableMessage (qsocket_t * sock, sizebuf_t *data)
 }
 
 
-/*
-==================
-NET_CanSendMessage
-
-Returns true or false if the given qsocket can currently accept a
-message to be transmitted.
-==================
-*/
 qboolean
-NET_CanSendMessage (qsocket_t * sock)
+NET_CanSendMessage (qsocket_t *sock)
 {
 	int         r;
 
@@ -796,12 +740,6 @@ NET_SendToAll (sizebuf_t *data, double blocktime)
 
 
 //=============================================================================
-
-/*
-====================
-NET_Init
-====================
-*/
 
 void
 NET_Init (void)
@@ -893,12 +831,6 @@ NET_Init (void)
 		Sys_MaskPrintf (SYS_DEV, "TCP/IP address %s\n", my_tcpip_address);
 }
 
-/*
-====================
-NET_Shutdown
-====================
-*/
-
 void
 NET_Shutdown (void)
 {
@@ -964,7 +896,7 @@ NET_Poll (void)
 
 
 void
-SchedulePollProcedure (PollProcedure * proc, double timeOffset)
+SchedulePollProcedure (PollProcedure *proc, double timeOffset)
 {
 	PollProcedure *pp, *prev;
 

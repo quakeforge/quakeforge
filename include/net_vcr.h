@@ -27,6 +27,11 @@
 */
 
 
+/** \defgroup nq-vcr NetQuake VCR network driver.
+	\ingroup nq-nd
+*/
+//@{
+
 #define VCR_OP_CONNECT					1
 #define VCR_OP_GETMESSAGE				2
 #define VCR_OP_SENDMESSAGE				3
@@ -43,3 +48,5 @@ int			VCR_SendMessage (qsocket_t *sock, sizebuf_t *data);
 qboolean	VCR_CanSendMessage (qsocket_t *sock);
 void		VCR_Close (qsocket_t *sock);
 void		VCR_Shutdown (void);
+
+//@}

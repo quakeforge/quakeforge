@@ -32,6 +32,11 @@
 #include "QF/quakeio.h"
 #include "QF/sizebuf.h"
 
+/** \defgroup nq-net NetQuake network support.
+	\ingroup network
+*/
+//@{
+
 struct qsockaddr
 {
 	short qsa_family;
@@ -165,8 +170,204 @@ extern qsocket_t	*net_activeSockets;
 extern qsocket_t	*net_freeSockets;
 extern int			net_numsockets;
 
-typedef struct
-{
+#define	MAX_NET_DRIVERS		8
+
+extern int			DEFAULTnet_hostport;
+extern int			net_hostport;
+
+extern int net_driverlevel;
+extern char			playername[];
+extern int			playercolor;
+
+extern int		messagesSent;
+extern int		messagesReceived;
+extern int		unreliableMessagesSent;
+extern int		unreliableMessagesReceived;
+
+/** Create and initialize a new qsocket.
+
+	Called by drivers when a new communications endpoint is required.
+	The sequence and buffer fields will be filled in properly.
+
+	\return			The qsocket representing the connection.
+*/
+qsocket_t *NET_NewQSocket (void);
+
+/** Destroy a qsocket.
+
+	\param sock		The qsocket representing the connection.
+*/
+void NET_FreeQSocket(qsocket_t *sock);
+
+/** Cache the system time for the network sub-system.
+*/
+double SetNetTime(void);
+
+
+#define HOSTCACHESIZE	8
+
+typedef struct {
+	char	name[16];
+	char	map[16];
+	char	cname[32];
+	int		users;
+	int		maxusers;
+	int		driver;
+	int		ldriver;
+	struct qsockaddr addr;
+} hostcache_t;
+
+extern int hostCacheCount;
+extern hostcache_t hostcache[HOSTCACHESIZE];
+
+extern	double		net_time;
+extern	struct msg_s *net_message;
+extern	int			net_activeconnections;
+
+/** Initialize the networking sub-system.
+*/
+void		NET_Init (void);
+
+/** Shutdown the networking sub-system.
+*/
+void		NET_Shutdown (void);
+
+/** Check for new connections.
+
+	\return			Pointer to the qsocket for the new connection if there
+					is one, otherwise null.
+*/
+struct qsocket_s	*NET_CheckNewConnections (void);
+
+/** Connect to a host.
+
+	\param host		The name of the host to which will be connected.
+	\return			Pointer to the qsocket representing the connection, or
+					null if unable to connect.
+*/
+struct qsocket_s	*NET_Connect (const char *host);
+
+/** Check if a message can be sent to the connection.
+
+	\param sock		The qsocket representing the connection.
+	\return			True if the message can be sent.
+*/
+qboolean NET_CanSendMessage (qsocket_t *sock);
+
+/** Read a single message from the connection into net_message.
+
+	If there is a complete message, return it in net_message.
+
+	\param sock		The qsocket representing the connection.
+	\return			0 if no data is waiting.
+	\return			1 if a message was received.
+	\return			-1 if the connection died.
+*/
+int			NET_GetMessage (struct qsocket_s *sock);
+
+/** Send a single reliable message to the connection.
+
+	Try to send a complete length+message unit over the reliable stream.
+
+	\param sock		The qsocket representing the connection.
+	\param data		The message to send.
+	\return			0 if the message connot be delivered reliably, but the
+					connection is still considered valid
+	\return			1 if the message was sent properly
+	\return			-1 if the connection died
+*/
+int			NET_SendMessage (struct qsocket_s *sock, sizebuf_t *data);
+
+/** Send a single unreliable message to the connection.
+
+	\param sock		The qsocket representing the connection.
+	\param data		The message to send.
+	\return			1 if the message was sent properly
+	\return			-1 if the connection died
+*/
+int			NET_SendUnreliableMessage (struct qsocket_s *sock, sizebuf_t *data);
+
+/** Send a reliable message to all attached clients.
+
+	\param data		The message to send.
+	\param blocktime	The blocking timeout in seconds.
+	\return			The number of clients to which the message could not be
+					sent before the timeout.
+*/
+int			NET_SendToAll(sizebuf_t *data, double blocktime);
+
+/** Close a connection.
+
+	If a dead connection is returned by a get or send function, this function
+	should be called when it is convenient.
+
+	Server calls when a client is kicked off for a game related misbehavior
+	like an illegal protocal conversation.  Client calls when disconnecting
+	from a server.
+
+	A netcon_t number will not be reused until this function is called for it
+
+	\param sock		The qsocket representing the connection.
+*/
+void		NET_Close (struct qsocket_s *sock);
+
+/** Run any current poll procedures.
+*/
+void NET_Poll(void);
+
+
+typedef struct _PollProcedure {
+	struct _PollProcedure	*next;
+	double					nextTime;
+	void					(*procedure)(void *);
+	void					*arg;
+} PollProcedure;
+
+/** Schedule a poll procedure to run.
+
+	The poll procedure will be called by NET_Poll() no earlier than
+	"now"+timeOffset.
+
+	\param pp		The poll procedure to shedule.
+	\param timeOffset	The time offset from "now" at which the procedure
+					will be run.
+*/
+void SchedulePollProcedure(PollProcedure *pp, double timeOffset);
+
+extern	qboolean	serialAvailable;
+extern	qboolean	ipxAvailable;
+extern	qboolean	tcpipAvailable;
+extern	char		my_ipx_address[NET_NAMELEN];
+extern	char		my_tcpip_address[NET_NAMELEN];
+extern void (*GetComPortConfig) (int portNumber, int *port, int *irq, int *baud, qboolean *useModem);
+extern void (*SetComPortConfig) (int portNumber, int port, int irq, int baud, qboolean useModem);
+extern void (*GetModemConfig) (int portNumber, char *dialType, char *clear, char *init, char *hangup);
+extern void (*SetModemConfig) (int portNumber, const char *dialType, const char *clear, const char *init, const char *hangup);
+
+extern	qboolean	slistInProgress;
+extern	qboolean	slistSilent;
+extern	qboolean	slistLocal;
+
+extern struct cvar_s	*config_com_port;
+extern struct cvar_s	*config_com_irq;
+extern struct cvar_s	*config_com_baud;
+extern struct cvar_s	*config_com_modem;
+extern struct cvar_s	*config_modem_dialtype;
+extern struct cvar_s	*config_modem_clear;
+extern struct cvar_s	*config_modem_init;
+extern struct cvar_s	*config_modem_hangup;
+extern struct cvar_s	*hostname;
+
+extern QFile *vcrFile;
+
+//@}
+
+/** \defgroup nq-ld NetQuake lan drivers.
+	\ingroup nq-net
+*/
+//@{
+
+typedef struct {
 	const char		*name;
 	qboolean	initialized;
 	int			controlSock;
@@ -190,12 +391,17 @@ typedef struct
 	int			(*SetSocketPort) (struct qsockaddr *addr, int port);
 } net_landriver_t;
 
-#define	MAX_NET_DRIVERS		8
 extern int 				net_numlandrivers;
 extern net_landriver_t	net_landrivers[MAX_NET_DRIVERS];
 
-typedef struct
-{
+//@}
+
+/** \defgroup nq-nd NetQuake network drivers.
+	\ingroup nq-net
+*/
+//@{
+
+typedef struct {
 	const char		*name;
 	qboolean	initialized;
 	int			(*Init) (void);
@@ -216,129 +422,6 @@ typedef struct
 extern int			net_numdrivers;
 extern net_driver_t	net_drivers[MAX_NET_DRIVERS];
 
-extern int			DEFAULTnet_hostport;
-extern int			net_hostport;
-
-extern int net_driverlevel;
-extern char			playername[];
-extern int			playercolor;
-
-extern int		messagesSent;
-extern int		messagesReceived;
-extern int		unreliableMessagesSent;
-extern int		unreliableMessagesReceived;
-
-qsocket_t *NET_NewQSocket (void);
-void NET_FreeQSocket(qsocket_t *);
-double SetNetTime(void);
-
-
-#define HOSTCACHESIZE	8
-
-typedef struct
-{
-	char	name[16];
-	char	map[16];
-	char	cname[32];
-	int		users;
-	int		maxusers;
-	int		driver;
-	int		ldriver;
-	struct qsockaddr addr;
-} hostcache_t;
-
-extern int hostCacheCount;
-extern hostcache_t hostcache[HOSTCACHESIZE];
-
-//============================================================================
-//
-// public network functions
-//
-//============================================================================
-
-extern	double		net_time;
-extern	struct msg_s *net_message;
-extern	int			net_activeconnections;
-
-void		NET_Init (void);
-void		NET_Shutdown (void);
-
-struct qsocket_s	*NET_CheckNewConnections (void);
-// returns a new connection number if there is one pending, else -1
-
-struct qsocket_s	*NET_Connect (const char *host);
-// called by client to connect to a host.  Returns -1 if not able to
-
-qboolean NET_CanSendMessage (qsocket_t *sock);
-// Returns true or false if the given qsocket can currently accept a
-// message to be transmitted.
-
-int			NET_GetMessage (struct qsocket_s *sock);
-// returns data in net_message sizebuf
-// returns 0 if no data is waiting
-// returns 1 if a message was received
-// returns 2 if an unreliable message was received
-// returns -1 if the connection died
-
-int			NET_SendMessage (struct qsocket_s *sock, sizebuf_t *data);
-int			NET_SendUnreliableMessage (struct qsocket_s *sock, sizebuf_t *data);
-// returns 0 if the message connot be delivered reliably, but the connection
-//		is still considered valid
-// returns 1 if the message was sent properly
-// returns -1 if the connection died
-
-int			NET_SendToAll(sizebuf_t *data, double blocktime);
-// This is a reliable *blocking* send to all attached clients.
-
-
-void		NET_Close (struct qsocket_s *sock);
-// if a dead connection is returned by a get or send function, this function
-// should be called when it is convenient
-
-// Server calls when a client is kicked off for a game related misbehavior
-// like an illegal protocal conversation.  Client calls when disconnecting
-// from a server.
-// A netcon_t number will not be reused until this function is called for it
-
-void NET_Poll(void);
-
-
-typedef struct _PollProcedure
-{
-	struct _PollProcedure	*next;
-	double					nextTime;
-	void					(*procedure)(void *);
-	void					*arg;
-} PollProcedure;
-
-void SchedulePollProcedure(PollProcedure *pp, double timeOffset);
-
-extern	qboolean	serialAvailable;
-extern	qboolean	ipxAvailable;
-extern	qboolean	tcpipAvailable;
-extern	char		my_ipx_address[NET_NAMELEN];
-extern	char		my_tcpip_address[NET_NAMELEN];
-extern void (*GetComPortConfig) (int portNumber, int *port, int *irq, int *baud, qboolean *useModem);
-extern void (*SetComPortConfig) (int portNumber, int port, int irq, int baud, qboolean useModem);
-extern void (*GetModemConfig) (int portNumber, char *dialType, char *clear, char *init, char *hangup);
-extern void (*SetModemConfig) (int portNumber, const char *dialType, const char *clear, const char *init, const char *hangup);
-
-extern	qboolean	slistInProgress;
-extern	qboolean	slistSilent;
-extern	qboolean	slistLocal;
-
-void NET_Slist_f (void);
-
-extern struct cvar_s	*config_com_port;
-extern struct cvar_s	*config_com_irq;
-extern struct cvar_s	*config_com_baud;
-extern struct cvar_s	*config_com_modem;
-extern struct cvar_s	*config_modem_dialtype;
-extern struct cvar_s	*config_modem_clear;
-extern struct cvar_s	*config_modem_init;
-extern struct cvar_s	*config_modem_hangup;
-extern struct cvar_s	*hostname;
-
-extern QFile *vcrFile;
+//@}
 
 #endif // __net_h
