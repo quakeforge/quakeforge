@@ -89,7 +89,6 @@ net_landriver_t net_landrivers[MAX_NET_DRIVERS] = {
 	 WINS_Write,
 	 WINS_Broadcast,
 	 WINS_AddrToString,
-	 WINS_StringToAddr,
 	 WINS_GetSocketAddr,
 	 WINS_GetNameFromAddr,
 	 WINS_GetAddrFromName,

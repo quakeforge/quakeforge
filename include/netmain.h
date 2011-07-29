@@ -406,7 +406,6 @@ typedef struct {
 	int 		(*Write) (int socket, byte *buf, int len, struct qsockaddr *addr);
 	int 		(*Broadcast) (int socket, byte *buf, int len);
 	const char *		(*AddrToString) (struct qsockaddr *addr);
-	int 		(*StringToAddr) (const char *string, struct qsockaddr *addr);
 	int 		(*GetSocketAddr) (int socket, struct qsockaddr *addr);
 	int 		(*GetNameFromAddr) (struct qsockaddr *addr, char *name);
 	int 		(*GetAddrFromName) (const char *name, struct qsockaddr *addr);

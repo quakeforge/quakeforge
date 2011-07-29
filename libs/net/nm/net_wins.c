@@ -503,23 +503,6 @@ WINS_AddrToString (struct qsockaddr *addr)
 //=============================================================================
 
 int
-WINS_StringToAddr (const char *string, struct qsockaddr *addr)
-{
-	int         ha1, ha2, ha3, ha4, hp;
-	int         ipaddr;
-
-	sscanf (string, "%d.%d.%d.%d:%d", &ha1, &ha2, &ha3, &ha4, &hp);
-	ipaddr = (ha1 << 24) | (ha2 << 16) | (ha3 << 8) | ha4;
-
-	addr->qsa_family = AF_INET;
-	((struct sockaddr_in *) addr)->sin_addr.s_addr = htonl (ipaddr);
-	((struct sockaddr_in *) addr)->sin_port = htons ((unsigned short) hp);
-	return 0;
-}
-
-//=============================================================================
-
-int
 WINS_GetSocketAddr (int socket, struct qsockaddr *addr)
 {
 	int         addrlen = sizeof (struct qsockaddr);

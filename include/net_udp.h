@@ -131,16 +131,6 @@ int UDP_Broadcast (int socket, byte *buf, int len);
 */
 const char *UDP_AddrToString (struct qsockaddr *addr);
 
-/** Convert a human readable address to a quake address.
-
-	Parses a.b.c.d:p style addresses.
-
-	\param[in] string	The human readable address to be converted.
-	\param[out] addr	The resulting address of the conversion.
-	\return			0
-*/
-int UDP_StringToAddr (const char *string, struct qsockaddr *addr);
-
 /** Retrieve the address to which the socket is bound.
 
 	\param socket	The socket for which the address will be retrieved.
