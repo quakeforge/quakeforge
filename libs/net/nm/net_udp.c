@@ -365,7 +365,7 @@ UDP_CheckNewConnections (void)
 }
 
 int
-UDP_Read (int socket, byte * buf, int len, struct qsockaddr *addr)
+UDP_Read (int socket, byte *buf, int len, struct qsockaddr *addr)
 {
 	socklen_t   addrlen = sizeof (struct qsockaddr);
 	int         ret;
@@ -391,7 +391,7 @@ UDP_MakeSocketBroadcastCapable (int socket)
 }
 
 int
-UDP_Broadcast (int socket, byte * buf, int len)
+UDP_Broadcast (int socket, byte *buf, int len)
 {
 	int         ret;
 
@@ -409,7 +409,7 @@ UDP_Broadcast (int socket, byte * buf, int len)
 }
 
 int
-UDP_Write (int socket, byte * buf, int len, struct qsockaddr *addr)
+UDP_Write (int socket, byte *buf, int len, struct qsockaddr *addr)
 {
 	int         ret;
 
