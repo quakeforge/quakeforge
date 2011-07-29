@@ -49,7 +49,9 @@ struct qsockaddr {
 #define NET_HEADERSIZE		(2 * sizeof(unsigned int))
 #define NET_DATAGRAMSIZE	(MAX_DATAGRAM + NET_HEADERSIZE)
 
-// NetHeader flags
+/** \name NetHeader flags
+*/
+//@{
 #define NETFLAG_LENGTH_MASK	0x0000ffff
 #define NETFLAG_DATA		0x00010000
 #define NETFLAG_ACK			0x00020000
@@ -57,6 +59,7 @@ struct qsockaddr {
 #define NETFLAG_EOM			0x00080000
 #define NETFLAG_UNRELIABLE	0x00100000
 #define NETFLAG_CTL			0x80000000
+//@}
 
 
 #define NET_PROTOCOL_VERSION	3
@@ -78,7 +81,7 @@ struct qsockaddr {
 		a full address and port in a string.  It is used for returning the
 		address of a server that is not running locally.
 */
-///@{
+//@{
 
 /** Connect Request:
 	\arg \b string	\c game_name			\em "QUAKE"
@@ -144,43 +147,63 @@ struct qsockaddr {
 	\arg \b string	\c value
 */
 #define CCREP_RULE_INFO		0x85
-///@}
+//@}
 
-typedef struct qsocket_s
-{
+typedef struct qsocket_s {
 	struct qsocket_s	*next;
-	double			connecttime;
-	double			lastMessageTime;
-	double			lastSendTime;
+	/// \name socket timing
+	//@{
+	double			connecttime;		///< Time client connected.
+	double			lastMessageTime;	///< Time last message was received.
+	double			lastSendTime;		///< Time last message was sent.
+	//@}
 
-	qboolean		disconnected;
-	qboolean		canSend;
+	/// \name socket status
+	//@{
+	qboolean		disconnected;		///< Socket is not in use.
+	qboolean		canSend;			///< Socket can send a message.
 	qboolean		sendNext;
+	//@}
 	
-	int				driver;
-	int				landriver;
-	int				socket;
-	void			*driverdata;
+	/// \name socket drivers
+	//@{
+	int				driver;				///< Net driver used by this socket.
+	int				landriver;			///< Lan driver used by this socket.
+	int				socket;				///< Lan driver socket handle.
+	void			*driverdata;		///< Net driver private data.
+	//@}
 
+	/// \name message transmission
+	//@{
 	unsigned int	ackSequence;
 	unsigned int	sendSequence;
 	unsigned int	unreliableSendSequence;
 	int				sendMessageLength;
-	byte			sendMessage [NET_MAXMESSAGE];
+	byte			sendMessage[NET_MAXMESSAGE];
+	//@}
 
+	/// \name message reception
+	//@{
 	unsigned int	receiveSequence;
 	unsigned int	unreliableReceiveSequence;
 	int				receiveMessageLength;
-	byte			receiveMessage [NET_MAXMESSAGE];
+	byte			receiveMessage[NET_MAXMESSAGE];
+	//@}
 
+	/// \name socket address
+	//@{
 	struct qsockaddr	addr;
-	char				address[NET_NAMELEN];
-
+	char				address[NET_NAMELEN];	///< Human readable form.
+	//@}
 } qsocket_t;
 
+/** \name socket management
+*/
+//@{
 extern qsocket_t	*net_activeSockets;
 extern qsocket_t	*net_freeSockets;
 extern int			net_numsockets;
+//@}
 
 #define	MAX_NET_DRIVERS		8
 
@@ -189,10 +212,14 @@ extern int			net_hostport;
 
 extern int net_driverlevel;
 
+/** \name message statistics
+*/
+//@{
 extern int		messagesSent;
 extern int		messagesReceived;
 extern int		unreliableMessagesSent;
 extern int		unreliableMessagesReceived;
+//@}
 
 /** Create and initialize a new qsocket.
 
@@ -210,6 +237,8 @@ qsocket_t *NET_NewQSocket (void);
 void NET_FreeQSocket(qsocket_t *sock);
 
 /** Cache the system time for the network sub-system.
+
+	\return			The current time.
 */
 double SetNetTime(void);
 
