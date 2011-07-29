@@ -188,8 +188,6 @@ extern int			DEFAULTnet_hostport;
 extern int			net_hostport;
 
 extern int net_driverlevel;
-extern char			playername[];
-extern int			playercolor;
 
 extern int		messagesSent;
 extern int		messagesReceived;
@@ -346,28 +344,13 @@ typedef struct _PollProcedure {
 */
 void SchedulePollProcedure(PollProcedure *pp, double timeOffset);
 
-extern	qboolean	serialAvailable;
-extern	qboolean	ipxAvailable;
 extern	qboolean	tcpipAvailable;
-extern	char		my_ipx_address[NET_NAMELEN];
 extern	char		my_tcpip_address[NET_NAMELEN];
-extern void (*GetComPortConfig) (int portNumber, int *port, int *irq, int *baud, qboolean *useModem);
-extern void (*SetComPortConfig) (int portNumber, int port, int irq, int baud, qboolean useModem);
-extern void (*GetModemConfig) (int portNumber, char *dialType, char *clear, char *init, char *hangup);
-extern void (*SetModemConfig) (int portNumber, const char *dialType, const char *clear, const char *init, const char *hangup);
 
 extern	qboolean	slistInProgress;
 extern	qboolean	slistSilent;
 extern	qboolean	slistLocal;
 
-extern struct cvar_s	*config_com_port;
-extern struct cvar_s	*config_com_irq;
-extern struct cvar_s	*config_com_baud;
-extern struct cvar_s	*config_com_modem;
-extern struct cvar_s	*config_modem_dialtype;
-extern struct cvar_s	*config_modem_clear;
-extern struct cvar_s	*config_modem_init;
-extern struct cvar_s	*config_modem_hangup;
 extern struct cvar_s	*hostname;
 
 extern QFile *vcrFile;
