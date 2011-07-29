@@ -61,12 +61,12 @@ if test "x$enable_zlib" != "xno"; then
         AC_CHECK_HEADER(zlib.h, HAVE_ZLIB=yes, HAVE_ZLIB=no)
         if test "x$HAVE_ZLIB" = "xyes"; then
            Z_LIBS="-lz"
+           AC_DEFINE(HAVE_ZLIB, 1, [Define if you have zlib])
         fi
      fi
   fi
 fi
 AC_SUBST(Z_LIBS)
-AC_DEFINE(HAVE_ZLIB, 1, [Define if you have zlib])
 AM_CONDITIONAL(HAVE_ZLIB, test "$HAVE_ZLIB" = "yes")
 
 AC_ARG_ENABLE(png,
