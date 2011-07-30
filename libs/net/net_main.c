@@ -788,7 +788,7 @@ NET_Init (void)
 	}
 
 	if (*my_tcpip_address)
-		Sys_MaskPrintf (SYS_DEV, "TCP/IP address %s\n", my_tcpip_address);
+		Sys_MaskPrintf (SYS_NET, "TCP/IP address %s\n", my_tcpip_address);
 }
 
 void

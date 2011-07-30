@@ -141,7 +141,7 @@ get_address (int sock)
 		if (ioctl (sock, SIOCGIFADDR, &ifr[i]) == -1)
 			continue;
 		in_addr = (struct sockaddr_in *)&ifr[i].ifr_addr;
-		Sys_MaskPrintf (SYS_DEV, "%s: %s\n", ifr[i].ifr_name,
+		Sys_MaskPrintf (SYS_NET, "%s: %s\n", ifr[i].ifr_name,
 					 inet_ntoa (in_addr->sin_addr));
 		addr = *(unsigned *)&in_addr->sin_addr;
 		if (addr != htonl (0x7f000001)) {
