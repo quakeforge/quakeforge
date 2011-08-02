@@ -298,7 +298,7 @@ SND_OUTPUT_DEFAULT=""
 if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libQFcd.la"
 	SND_TARGETS="libQFsound.la"
-	AUDIO_TARGETS="testsound"
+	AUDIO_TARGETS="testsound\$(EXEEXT)"
 	JOY_TARGETS="libQFjs.la"
 	if test "`echo $SOUND_TYPES | grep ALSA`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_alsa.la"
