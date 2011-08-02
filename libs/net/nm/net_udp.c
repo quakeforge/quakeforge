@@ -373,6 +373,7 @@ UDP_Read (int socket, byte *buf, int len, struct qsockaddr *addr)
 	ret = recvfrom (socket, buf, len, 0, (struct sockaddr *) addr, &addrlen);
 	if (ret == -1 && (errno == EWOULDBLOCK || errno == ECONNREFUSED))
 		return 0;
+	Sys_MaskPrintf (SYS_NET, "got %d bytes from %s\n", ret, UDP_AddrToString (addr));
 	return ret;
 }
 
@@ -417,6 +418,7 @@ UDP_Write (int socket, byte *buf, int len, struct qsockaddr *addr)
 				  sizeof (struct qsockaddr));
 	if (ret == -1 && errno == EWOULDBLOCK)
 		return 0;
+	Sys_MaskPrintf (SYS_NET, "sent %d bytes to %s\n", ret, UDP_AddrToString (addr));
 	return ret;
 }
 
