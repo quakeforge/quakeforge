@@ -432,6 +432,7 @@ SV_DropClient (qboolean crash)
 		Sys_Printf ("Client %s removed\n", host_client->name);
 	}
 	// break the net connection
+	Sys_MaskPrintf (SYS_NET, "dropping client\n");
 	NET_Close (host_client->netconnection);
 	host_client->netconnection = NULL;
 

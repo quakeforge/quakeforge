@@ -491,6 +491,7 @@ NET_Close (qsocket_t *sock)
 	// call the driver_Close function
 	sfunc.Close (sock);
 
+	Sys_MaskPrintf (SYS_NET, "closing socket\n");
 	NET_FreeQSocket (sock);
 }
 
@@ -524,6 +525,7 @@ NET_GetMessage (qsocket_t *sock)
 	// see if this connection has timed out
 	if (ret == 0 && sock->driver) {
 		if (net_time - sock->lastMessageTime > net_messagetimeout->value) {
+			Sys_MaskPrintf (SYS_NET, "socket timed out\n");
 			NET_Close (sock);
 			return -1;
 		}
