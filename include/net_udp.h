@@ -52,6 +52,7 @@ void UDP_Shutdown (void);
 /** Open or close the accept socket.
 
 	Sets net_acceptsocket to the socket number or -1.
+	The accept socket is stored in net_hostport.
 
 	\param state	True to open the socket, false to close it.
 */
@@ -169,7 +170,10 @@ int UDP_GetAddrFromName (const char *name, struct qsockaddr *addr);
 
 	\param addr1	The first address to compare.
 	\param addr2	The second address to compare.
-	\return			True of the addresses match, otherwise false.
+	\return			-1 if the family or address are different.
+	\return			1 if the family and address are the same, but the port
+					is different.
+	\return			0 if everything is the same.
 */
 int UDP_AddrCompare (struct qsockaddr *addr1, struct qsockaddr *addr2);
 

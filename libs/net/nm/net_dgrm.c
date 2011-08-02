@@ -157,7 +157,7 @@ NET_Ban_f (void)
 
 
 int
-Datagram_SendMessage (qsocket_t * sock, sizebuf_t *data)
+Datagram_SendMessage (qsocket_t *sock, sizebuf_t *data)
 {
 	unsigned int packetLen;
 	unsigned int dataLen;
@@ -193,7 +193,7 @@ Datagram_SendMessage (qsocket_t * sock, sizebuf_t *data)
 
 
 static int
-SendMessageNext (qsocket_t * sock)
+SendMessageNext (qsocket_t *sock)
 {
 	unsigned int packetLen;
 	unsigned int dataLen;
@@ -225,7 +225,7 @@ SendMessageNext (qsocket_t * sock)
 
 
 static int
-ReSendMessage (qsocket_t * sock)
+ReSendMessage (qsocket_t *sock)
 {
 	unsigned int packetLen;
 	unsigned int dataLen;
@@ -257,7 +257,7 @@ ReSendMessage (qsocket_t * sock)
 
 
 qboolean
-Datagram_CanSendMessage (qsocket_t * sock)
+Datagram_CanSendMessage (qsocket_t *sock)
 {
 	if (sock->sendNext)
 		SendMessageNext (sock);
@@ -267,14 +267,14 @@ Datagram_CanSendMessage (qsocket_t * sock)
 
 
 qboolean
-Datagram_CanSendUnreliableMessage (qsocket_t * sock)
+Datagram_CanSendUnreliableMessage (qsocket_t *sock)
 {
 	return true;
 }
 
 
 int
-Datagram_SendUnreliableMessage (qsocket_t * sock, sizebuf_t *data)
+Datagram_SendUnreliableMessage (qsocket_t *sock, sizebuf_t *data)
 {
 	int         packetLen;
 
@@ -294,7 +294,7 @@ Datagram_SendUnreliableMessage (qsocket_t * sock, sizebuf_t *data)
 
 
 int
-Datagram_GetMessage (qsocket_t * sock)
+Datagram_GetMessage (qsocket_t *sock)
 {
 	unsigned int length;
 	unsigned int flags;
@@ -303,6 +303,8 @@ Datagram_GetMessage (qsocket_t * sock)
 	unsigned int sequence;
 	unsigned int count;
 
+	/// If there is an outstanding reliable packet and more than 1 second has
+	/// passed, resend the packet.
 	if (!sock->canSend)
 		if ((net_time - sock->lastSendTime) > 1.0)
 			ReSendMessage (sock);
@@ -357,6 +359,7 @@ Datagram_GetMessage (qsocket_t * sock)
 
 			length -= NET_HEADERSIZE;
 
+			/// Copy unreliable data to net_message
 			SZ_Clear (net_message->message);
 			SZ_Write (net_message->message, packetBuffer.data, length);
 
@@ -414,6 +417,7 @@ Datagram_GetMessage (qsocket_t * sock)
 				break;
 			}
 
+			/// Append reliable data to sock->receiveMessage.
 			memcpy (sock->receiveMessage + sock->receiveMessageLength,
 					packetBuffer.data, length);
 			sock->receiveMessageLength += length;
@@ -429,7 +433,7 @@ Datagram_GetMessage (qsocket_t * sock)
 
 
 static void
-PrintStats (qsocket_t * s)
+PrintStats (qsocket_t *s)
 {
 	Sys_Printf ("canSend = %4u   \n", s->canSend);
 	Sys_Printf ("sendSeq = %4u   ", s->sendSequence);
@@ -790,7 +794,7 @@ Datagram_Shutdown (void)
 
 
 void
-Datagram_Close (qsocket_t * sock)
+Datagram_Close (qsocket_t *sock)
 {
 	sfunc.CloseSocket (sock->socket);
 }
