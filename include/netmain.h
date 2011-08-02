@@ -113,7 +113,8 @@ struct qsockaddr {
 
 
 /** Connect Reply:
-	\arg \b long	\c port
+	\arg \b long	\c port	The port which the client is to use for further
+							communication.
 */
 #define CCREP_ACCEPT		0x81
 
