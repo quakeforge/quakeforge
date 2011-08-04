@@ -1,3 +1,9 @@
+quakeforge (0.6.0~git20110804-0) frozen unstable; urgency=low
+
+  * Small debian bugfixes and GIT snapshot
+
+ -- sergio <mailbox@sergio.spb.ru>  Thu, 04 Aug 2011 03:24:32 +0400
+
 quakeforge (0.6.0~git20101223-1) frozen unstable; urgency=low
 
   * The "No, really" release.

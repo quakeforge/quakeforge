@@ -1,7 +1,6 @@
 #!/bin/sh -e
 
 update-alternatives --install /usr/lib/quakeforge/plugins/snd_output_default.so quakeforge-audio-default /usr/lib/quakeforge/plugins/snd_output_disk.so 10
-update-alternatives --install /usr/lib/quakeforge/plugins/snd_output_default.so quakeforge-audio-default /usr/lib/quakeforge/plugins/snd_output_oss.so 20
 
 #DEBHELPER#
 exit 0

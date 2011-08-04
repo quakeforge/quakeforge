@@ -3,7 +3,6 @@ usr/lib/libQFcd.so.*
 usr/lib/libQFconsole.so.*
 usr/lib/libQFruamoko.so.*
 usr/lib/libQFgamecode.so.*
-usr/lib/libQFgamecode_builtins.so.*
 usr/lib/libQFgib.so.*
 usr/lib/libQFimage.so.*
 usr/lib/libQFjs.so.*

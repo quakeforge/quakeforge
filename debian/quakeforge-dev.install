@@ -6,8 +6,6 @@ usr/lib/libQFruamoko.*a
 usr/lib/libQFruamoko.so
 usr/lib/libQFgamecode.*a
 usr/lib/libQFgamecode.so
-usr/lib/libQFgamecode_builtins.*a
-usr/lib/libQFgamecode_builtins.so
 usr/lib/libQFgib.a
 usr/lib/libQFgib.so
 usr/lib/libQFimage.*a
