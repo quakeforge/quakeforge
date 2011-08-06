@@ -514,8 +514,11 @@ UDP_GetSocketAddr (int socket, struct qsockaddr *addr)
 
 	getsockname (socket, (struct sockaddr *) addr, &addrlen);
 	a = ((struct sockaddr_in *) addr)->sin_addr.s_addr;
-	if (a == 0 || a == inet_addr ("127.0.0.1"))
-		((struct sockaddr_in *) addr)->sin_addr.s_addr = myAddr;
+	if (a == 0 || a == inet_addr ("127.0.0.1")) {
+		((struct sockaddr_in *) addr)->sin_addr.s_addr = *default_iface;
+		if (last_iface)
+			((struct sockaddr_in *) addr)->sin_addr.s_addr = *last_iface;
+	}
 
 	return 0;
 }
