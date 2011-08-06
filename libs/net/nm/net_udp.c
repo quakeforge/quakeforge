@@ -121,6 +121,7 @@ static unsigned myAddr;
 static int num_ifaces;
 uint32_t *ifaces;
 uint32_t *default_iface;
+uint32_t *last_iface;
 
 static int
 get_iface_list (int sock)
@@ -257,7 +258,10 @@ UDP_OpenSocket (int port)
 #define ioctl ioctlsocket
 	unsigned long _true = true;
 #else
-	int        _true = true;
+	int         _true = true;
+#endif
+#ifdef HAVE_IN_PKTINFO
+	int         ip_pktinfo = 1;
 #endif
 
 	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
@@ -265,6 +269,13 @@ UDP_OpenSocket (int port)
 
 	if (ioctl (newsocket, FIONBIO, &_true) == -1)
 		goto ErrorReturn;
+#ifdef HAVE_IN_PKTINFO
+	if (setsockopt (newsocket, SOL_IP, IP_PKTINFO, &ip_pktinfo,
+					sizeof (ip_pktinfo)) == -1) {
+		close (newsocket);
+		return -1;
+	}
+#endif
 
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
@@ -372,6 +383,7 @@ UDP_CheckNewConnections (void)
 	// quietly absorb empty packets
 	// there is no way to tell between an empty packet and no packets, but
 	// as non-blocking io is used, this is not a problem.
+	// we don't care about the interface on which the packet arrived
 	recvfrom (net_acceptsocket, buff, 0, 0, (struct sockaddr *) &from,
 			  &fromlen);
 	return -1;
@@ -380,13 +392,54 @@ UDP_CheckNewConnections (void)
 int
 UDP_Read (int socket, byte *buf, int len, struct qsockaddr *addr)
 {
-	socklen_t   addrlen = sizeof (struct qsockaddr);
 	int         ret;
+#ifdef HAVE_IN_PKTINFO
+	char        ancillary[CMSG_SPACE (sizeof (struct in_pktinfo))];
+	struct msghdr msghdr = {
+		addr,
+		sizeof (*addr),
+		0, 0,
+		ancillary,
+		sizeof (ancillary),
+		0
+	};
+	struct iovec iovec = {buf, len};
+	struct cmsghdr *cmsg;
+	struct in_pktinfo *info = 0;
+
+	msghdr.msg_iov = &iovec;
+	msghdr.msg_iovlen = 1;
+	ret = recvmsg (socket, &msghdr, 0);
+	if (ret == -1 && (errno == EWOULDBLOCK || errno == ECONNREFUSED))
+		return 0;
+	for (cmsg = CMSG_FIRSTHDR (&msghdr); cmsg;
+		 cmsg = CMSG_NXTHDR (&msghdr, cmsg)) {
+		Sys_MaskPrintf (SYS_NET, "%d\n", cmsg->cmsg_type);
+		if (cmsg->cmsg_type == IP_PKTINFO) {
+			info = (struct in_pktinfo *) CMSG_DATA (cmsg);
+			break;
+		}
+	}
+	last_iface = 0;
+	if (info) {
+		/* Our iterface list is 0 based, but the pktinfo interface index is 1
+		 * based.
+		 */
+		last_iface = &ifaces[info->ipi_ifindex - 1];
+	}
+	Sys_MaskPrintf (SYS_NET, "got %d bytes from %s on iface %d (%s)\n", ret,
+					UDP_AddrToString (addr), info ? info->ipi_ifindex - 1 : -1,
+					last_iface ? inet_ntoa (info->ipi_addr) : "?");
+#else
+	socklen_t   addrlen = sizeof (struct qsockaddr);
 
 	ret = recvfrom (socket, buf, len, 0, (struct sockaddr *) addr, &addrlen);
 	if (ret == -1 && (errno == EWOULDBLOCK || errno == ECONNREFUSED))
 		return 0;
-	Sys_MaskPrintf (SYS_NET, "got %d bytes from %s\n", ret, UDP_AddrToString (addr));
+	Sys_MaskPrintf (SYS_NET, "got %d bytes from %s\n", ret,
+					UDP_AddrToString (addr));
+	last_iface = default_iface;
+#endif
 	return ret;
 }
 
