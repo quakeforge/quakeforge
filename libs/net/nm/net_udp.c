@@ -118,39 +118,50 @@ static unsigned myAddr;
 
 #include "net_udp.h"
 
+static int num_ifaces;
+uint32_t *ifaces;
+uint32_t *default_iface;
+
 static int
-get_address (int sock)
+get_iface_list (int sock)
 {
-	struct ifconf  ifc;
-	struct ifreq  *ifr;
-	char           buf[8192];
-	int            i, n;
-	struct sockaddr_in *in_addr;
-	unsigned       addr;
+	int         ret;
+	int         buflen;
+	struct ifconf ifconf;
 
-	ifc.ifc_len = sizeof (buf);
-	ifc.ifc_buf = buf;
-
-	if (ioctl (sock, SIOCGIFCONF, &ifc) == -1)
-		return 0;
-
-	ifr = ifc.ifc_req;
-	n = ifc.ifc_len / sizeof (struct ifreq);
-
-	for (i = 0; i < n; i++) {
-		if (ioctl (sock, SIOCGIFADDR, &ifr[i]) == -1)
-			continue;
-		in_addr = (struct sockaddr_in *)&ifr[i].ifr_addr;
-		Sys_MaskPrintf (SYS_NET, "%s: %s\n", ifr[i].ifr_name,
-					 inet_ntoa (in_addr->sin_addr));
-		addr = *(unsigned *)&in_addr->sin_addr;
-		if (addr != htonl (0x7f000001)) {
-			myAddr = addr;
+	buflen = sizeof (*ifconf.ifc_req) * 4;
+	ifconf.ifc_req = 0;
+	do {
+		buflen *= 2;
+		ifconf.ifc_len = buflen;
+		ifconf.ifc_req = realloc (ifconf.ifc_req, ifconf.ifc_len);
+		if ((ret = ioctl (sock, SIOCGIFCONF, &ifconf)) < 0) {
+			Sys_MaskPrintf (SYS_NET, "ioctl: %s", strerror (errno));
 			break;
 		}
-	}
+	} while (ifconf.ifc_len == buflen);
 
-	return 1;
+	if (ret >= 0) {
+		int         i;
+		num_ifaces = ifconf.ifc_len / sizeof (*ifconf.ifc_req);
+		ifaces = malloc (num_ifaces * sizeof (int32_t));
+		Sys_MaskPrintf (SYS_NET, "Interfaces (count = %d)\n", num_ifaces);
+		for (i = 0; i < num_ifaces; i++) {
+			struct sockaddr_in *sa;
+
+			sa = (struct sockaddr_in *) &ifconf.ifc_req[i].ifr_ifru.ifru_addr;
+			Sys_MaskPrintf (SYS_NET, "    %-10s %s\n",
+							ifconf.ifc_req[i].ifr_name,
+							inet_ntoa (sa->sin_addr));
+			memcpy (&ifaces[i], &sa->sin_addr, sizeof (uint32_t));
+			if (!default_iface && ifaces[i] != htonl (0x7f000001))
+				default_iface = &ifaces[i];
+		}
+	}
+	if (default_iface)
+		myAddr = *default_iface;
+	free (ifconf.ifc_req);
+	return ret;
 }
 
 int
@@ -188,7 +199,7 @@ UDP_Init (void)
 	if ((net_controlsocket = UDP_OpenSocket (0)) == -1)
 		Sys_Error ("UDP_Init: Unable to open control socket");
 
-	get_address (net_controlsocket);
+	get_iface_list (net_controlsocket);
 
 	{
 		struct sockaddr_in t;
@@ -359,6 +370,8 @@ UDP_CheckNewConnections (void)
 	if (available)
 		return net_acceptsocket;
 	// quietly absorb empty packets
+	// there is no way to tell between an empty packet and no packets, but
+	// as non-blocking io is used, this is not a problem.
 	recvfrom (net_acceptsocket, buff, 0, 0, (struct sockaddr *) &from,
 			  &fromlen);
 	return -1;
