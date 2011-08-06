@@ -347,6 +347,22 @@ QW_Master (struct sockaddr_in *addr)
 			continue;
 		}
 #if 0
+		{
+			/* Dump the destination information (ie, our iface/address) of
+			 * the packet. Mostly so I know how this stuff works.
+			 */
+			struct cmsghdr *cmsg;
+
+			for (cmsg = CMSG_FIRSTHDR (&msghdr); cmsg;
+				 cmsg = CMSG_NXTHDR (&msghdr, cmsg)) {
+				struct in_pktinfo *d;
+				d = (struct in_pktinfo *) CMSG_DATA (cmsg);
+				printf ("iface %d %s %s\n", d->ipi_ifindex,
+						inet_ntoa(d->ipi_spec_dst), inet_ntoa (d->ipi_addr));
+			}
+		}
+#endif
+#if 0
 		ma_log ("Got %d bytes: 0x%x from %s\n", size, buf[0],
 				inet_ntoa (recvaddr.sin_addr));
 #endif
