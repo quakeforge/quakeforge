@@ -237,32 +237,36 @@ SNDDMA_Init (void)
 
 	switch (rate) {
 		case 0:
-			rate = 44100;
-			err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate, 0);
-			if (0 <= err) {
-				frag_size = 32 * bps;
-			} else {
-				rate = 22050;
-				err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate, 0);
-				if (0 <= err) {
-					frag_size = 16 * bps;
-				} else {
-					rate = 11025;
-					err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate,
-															 0);
+			{
+				int         rates[] = {
+								48000,
+								44100,
+								22050,
+								11025,
+								0
+							};
+				int         i;
+
+				for (i = 0; rates[i]; i++) {
+					rate = rates[i];
+					Sys_MaskPrintf (SYS_SND, "ALSA: trying %dHz\n", rate);
+					err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw,
+															 &rate, 0);
 					if (0 <= err) {
-						frag_size = 8 * bps;
-					} else {
-						Sys_Printf ("ALSA: no usable rates. %s\n",
-									qfsnd_strerror (err));
-						goto error;
+						frag_size = 8 * bps * (rate / 11025);
+						break;
 					}
 				}
-			}
-			break;
+				if (!rates[i]) {
+					Sys_Printf ("ALSA: no usable rates. %s\n",
+								qfsnd_strerror (err));
+					goto error;
+				}
+			} break;
 		case 11025:
 		case 22050:
 		case 44100:
+		case 48000:
 		default:
 			err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate, 0);
 			if (0 > err) {
