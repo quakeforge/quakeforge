@@ -342,6 +342,7 @@ ED_ConvertToPlist (progs_t *pr, script_t *script)
 VISIBLE void
 ED_InitGlobals (progs_t *pr, plitem_t *globals)
 {
+	ddef_t      vector_def;
 	ddef_t     *global;
 	plitem_t   *keys;
 	int         count;
@@ -354,6 +355,28 @@ ED_InitGlobals (progs_t *pr, plitem_t *globals)
 		global_name = PL_String (PL_ObjectAtIndex (keys, count));
 		value = PL_String (PL_ObjectForKey (globals, global_name));
 		global = PR_FindGlobal (pr, global_name);
+		//FIXME should this be here?
+		//This is a hardcoded fix for a design mistake in the original qcc
+		//(saving global vector components rather than the whole vector).
+		if (!global) {
+			int         len = strlen (global_name);
+			const char *tag = global_name + len - 2;
+			if (len > 2 && tag[0] == '_' && strchr ("xyz", tag[1])) {
+				char       *vector_name = strdup (global_name);
+				vector_name[len - 2] = 0;
+				global = PR_FindGlobal (pr, vector_name);
+				if (global) {
+					if ((global->type & ~DEF_SAVEGLOBAL) == ev_vector) {
+						vector_def = *global;
+						vector_def.ofs += tag[1] - 'x';
+						vector_def.type = ev_float;
+						global = &vector_def;
+					} else {
+						global = 0;
+					}
+				}
+			}
+		}
 		if (!global) {
 			Sys_Printf ("'%s' is not a global\n", global_name);
 			continue;
