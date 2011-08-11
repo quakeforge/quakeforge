@@ -89,7 +89,7 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 			comment = va (" %g", G_FLOAT (pr, offset));
 			break;
 		case ev_vector:
-			comment = va (" '%g %g %g",
+			comment = va (" '%g %g %g'",
 						  G_VECTOR (pr, offset)[0],
 						  G_VECTOR (pr, offset)[1],
 						  G_VECTOR (pr, offset)[2]);
@@ -118,7 +118,7 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 			comment = va (" %x", G_INT (pr, offset));
 			break;
 		case ev_quat:
-			comment = va (" '%g %g %g %g",
+			comment = va (" '%g %g %g %g'",
 						  G_QUAT (pr, offset)[0],
 						  G_QUAT (pr, offset)[1],
 						  G_QUAT (pr, offset)[2],
