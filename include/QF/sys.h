@@ -86,6 +86,7 @@ void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(print
 #define SYS_NET     (1|64)
 #define SYS_RUA_OBJ (1|128)
 #define SYS_RUA_MSG (1|256)
+#define SYS_SND     (1|512)
 
 int Sys_CheckInput (int idle, int net_socket);
 const char *Sys_ConsoleInput (void);

@@ -316,7 +316,7 @@ SNDDMA_Submit (void)
 	// find which sound blocks have completed
 	while (1) {
 		if (snd_completed == snd_sent) {
-			Sys_MaskPrintf (SYS_DEV, "Sound overrun\n");
+			Sys_MaskPrintf (SYS_SND, "Sound overrun\n");
 			break;
 		}
 
