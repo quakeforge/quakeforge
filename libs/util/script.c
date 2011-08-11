@@ -159,6 +159,8 @@ Script_GetToken (script_t *script, qboolean crossline)
 	} else {
 		const char *single = "{}()':";
 
+		if (script->single)
+			single = script->single;
 		token_p = script->p;
 		if (strchr (single, *script->p)) {
 			script->p++;
