@@ -639,6 +639,7 @@ Host_Loadgame_f (void)
 	Qclose (f);
 
 	script = Script_New ();
+	script->single = "";		// disable {}()': lexing
 	Script_Start (script, name->str, script_data);
 
 	Script_GetToken (script, 1);
