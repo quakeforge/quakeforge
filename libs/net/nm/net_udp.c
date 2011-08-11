@@ -52,6 +52,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_NETDB_H
 # include <netdb.h>
 #endif
+#ifdef HAVE_IFADDRS_H
+# include <ifaddrs.h>
+#endif
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>
 #endif
@@ -114,7 +117,7 @@ static int  net_controlsocket;
 static int  net_broadcastsocket = 0;
 static struct qsockaddr broadcastaddr;
 
-static unsigned myAddr;
+static uint32_t myAddr;
 
 #include "net_udp.h"
 
@@ -126,43 +129,53 @@ uint32_t *last_iface;
 static int
 get_iface_list (int sock)
 {
-	int         ret;
-	int         buflen;
-	struct ifconf ifconf;
+#ifdef HAVE_GETIFADDRS
+	struct ifaddrs *ifa_head;
+	struct ifaddrs *ifa;
+	struct ifreq ifreq;
 
-	buflen = sizeof (*ifconf.ifc_req) * 4;
-	ifconf.ifc_req = 0;
-	do {
-		buflen *= 2;
-		ifconf.ifc_len = buflen;
-		ifconf.ifc_req = realloc (ifconf.ifc_req, ifconf.ifc_len);
-		if ((ret = ioctl (sock, SIOCGIFCONF, &ifconf)) < 0) {
-			Sys_MaskPrintf (SYS_NET, "ioctl: %s", strerror (errno));
-			break;
-		}
-	} while (ifconf.ifc_len == buflen);
-
-	if (ret >= 0) {
-		int         i;
-		num_ifaces = ifconf.ifc_len / sizeof (*ifconf.ifc_req);
-		ifaces = malloc (num_ifaces * sizeof (int32_t));
-		Sys_MaskPrintf (SYS_NET, "Interfaces (count = %d)\n", num_ifaces);
-		for (i = 0; i < num_ifaces; i++) {
-			struct sockaddr_in *sa;
-
-			sa = (struct sockaddr_in *) &ifconf.ifc_req[i].ifr_ifru.ifru_addr;
-			Sys_MaskPrintf (SYS_NET, "    %-10s %s\n",
-							ifconf.ifc_req[i].ifr_name,
-							inet_ntoa (sa->sin_addr));
-			memcpy (&ifaces[i], &sa->sin_addr, sizeof (uint32_t));
-			if (!default_iface && ifaces[i] != htonl (0x7f000001))
-				default_iface = &ifaces[i];
-		}
+	if (getifaddrs (&ifa_head) < 0)
+		goto no_ifaddrs;
+	for (ifa = ifa_head; ifa; ifa = ifa->ifa_next) {
+		if (!ifa->ifa_flags & IFF_UP)
+			continue;
+		if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET)
+			continue;
+		strncpy (ifreq.ifr_name, ifa->ifa_name, IFNAMSIZ);
+		ifreq.ifr_name[IFNAMSIZ - 1] = 0;
+		ioctl (sock, SIOCGIFINDEX, (char*) &ifreq);
+		if (ifreq.ifr_ifindex > num_ifaces)
+			num_ifaces = ifreq.ifr_ifindex;
 	}
-	if (default_iface)
-		myAddr = *default_iface;
-	free (ifconf.ifc_req);
-	return ret;
+	ifaces = malloc (num_ifaces * sizeof (uint32_t));
+	Sys_MaskPrintf (SYS_NET, "%d interfaces\n", num_ifaces);
+	for (ifa = ifa_head; ifa; ifa = ifa->ifa_next) {
+		int         index;
+		struct sockaddr_in *sa;
+
+		if (!ifa->ifa_flags & IFF_UP)
+			continue;
+		if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET)
+			continue;
+		strncpy (ifreq.ifr_name, ifa->ifa_name, IFNAMSIZ);
+		ifreq.ifr_name[IFNAMSIZ - 1] = 0;
+		ioctl (sock, SIOCGIFINDEX, (char*) &ifreq);
+		index = ifreq.ifr_ifindex - 1;
+		sa = (struct sockaddr_in *) ifa->ifa_addr;
+		memcpy (&ifaces[index], &sa->sin_addr, sizeof (uint32_t));
+		Sys_MaskPrintf (SYS_NET, "    %-10s %s\n", ifa->ifa_name,
+						inet_ntoa (sa->sin_addr));
+		if (!default_iface && ifaces[index] != htonl (0x7f000001))
+			default_iface = &ifaces[index];
+	}
+	freeifaddrs (ifa_head);
+	return 0;
+#endif
+no_ifaddrs:
+	ifaces = &myAddr;
+	default_iface = &ifaces[0];
+	num_ifaces = 1;
+	return 0;
 }
 
 int
@@ -187,7 +200,7 @@ UDP_Init (void)
 	gethostname (buff, MAXHOSTNAMELEN);
 	local = gethostbyname (buff);
 	if (local)
-		myAddr = *(int *) local->h_addr_list[0];
+		myAddr = *(uint32_t *) local->h_addr_list[0];
 	else
 		myAddr = 0;
 

@@ -79,3 +79,16 @@ connect (0, NULL, 42);
 	LIBS="$SAVELIBS"
 fi
 AC_SUBST(NET_LIBS)
+
+AC_MSG_CHECKING([for getifaddrs])
+SAVELIBS="$LIBS"
+LIBS="$LIBS $NET_LIBS"
+AC_TRY_LINK([],
+	[
+getifaddrs (0);
+	],
+	AC_DEFINE(HAVE_GETIFADDRS, 1, [Define this if you have getifaddrs()])
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+LIBS="$SAVELIBS"
