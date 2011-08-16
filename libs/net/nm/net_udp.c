@@ -132,7 +132,7 @@ get_iface_list (int sock)
 #ifdef HAVE_GETIFADDRS
 	struct ifaddrs *ifa_head;
 	struct ifaddrs *ifa;
-	struct ifreq ifreq;
+	int         index;
 
 	if (getifaddrs (&ifa_head) < 0)
 		goto no_ifaddrs;
@@ -141,26 +141,20 @@ get_iface_list (int sock)
 			continue;
 		if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET)
 			continue;
-		strncpy (ifreq.ifr_name, ifa->ifa_name, IFNAMSIZ);
-		ifreq.ifr_name[IFNAMSIZ - 1] = 0;
-		ioctl (sock, SIOCGIFINDEX, (char*) &ifreq);
-		if (ifreq.ifr_ifindex > num_ifaces)
-			num_ifaces = ifreq.ifr_ifindex;
+		index = if_nametoindex (ifa->ifa_name);
+		if (index > num_ifaces)
+			num_ifaces = index;
 	}
 	ifaces = malloc (num_ifaces * sizeof (uint32_t));
 	Sys_MaskPrintf (SYS_NET, "%d interfaces\n", num_ifaces);
 	for (ifa = ifa_head; ifa; ifa = ifa->ifa_next) {
-		int         index;
 		struct sockaddr_in *sa;
 
 		if (!ifa->ifa_flags & IFF_UP)
 			continue;
 		if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET)
 			continue;
-		strncpy (ifreq.ifr_name, ifa->ifa_name, IFNAMSIZ);
-		ifreq.ifr_name[IFNAMSIZ - 1] = 0;
-		ioctl (sock, SIOCGIFINDEX, (char*) &ifreq);
-		index = ifreq.ifr_ifindex - 1;
+		index = if_nametoindex (ifa->ifa_name) - 1;
 		sa = (struct sockaddr_in *) ifa->ifa_addr;
 		memcpy (&ifaces[index], &sa->sin_addr, sizeof (uint32_t));
 		Sys_MaskPrintf (SYS_NET, "    %-10s %s\n", ifa->ifa_name,
