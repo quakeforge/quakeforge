@@ -588,6 +588,7 @@ INPUT                 += @TOPSRC@/qtv
 INPUT                 += @TOPSRC@/qw
 INPUT                 += @TOPSRC@/tools
 INPUT                 += @TOPSRC@/doc/bind.txt
+INPUT                 += @TOPSRC@/INSTALL
 INPUT                 += @TOPSRC@/doc/connect.txt
 INPUT                 += @TOPSRC@/doc/cshifts.txt
 INPUT                 += @TOPSRC@/doc/dirconf.txt
