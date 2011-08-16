@@ -1092,6 +1092,22 @@ check_branch (progs_t *pr, dstatement_t *st, opcode_t *op, short offset)
 				  (long)(st - pr->pr_statements), op->opname);
 }
 
+static int
+is_vector_parameter_store (progs_t *pr, dstatement_t *st,
+						   unsigned short operand)
+{
+	int         i;
+
+	if (st->op != OP_STORE_V)
+		return 0;
+	if (operand != st->a)
+		return 0;
+	for (i = 0; i < MAX_PARMS; i++)
+		if (st->b == pr->pr_params[i] - pr->pr_globals)
+			return 1;
+	return 0;
+}
+
 #define ISDENORM(x) ((x) && !((x) & 0x7f800000))
 
 static inline void
@@ -1113,8 +1129,11 @@ check_global (progs_t *pr, dstatement_t *st, opcode_t *op, etype_t type,
 		default:
 			if (operand + (unsigned) pr_type_size[type]
 				> pr->progs->numglobals) {
-				msg = "out of bounds global index";
-				goto error;
+				if (operand >= pr->progs->numglobals
+					|| !is_vector_parameter_store (pr, st, operand)) {
+					msg = "out of bounds global index";
+					goto error;
+				}
 			}
 			if (type != ev_float || !check_denorm)
 				break;
