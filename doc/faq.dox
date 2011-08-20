@@ -5,6 +5,7 @@
 \li \ref gfx_wad
 \li \ref pak0_pak
 \li \ref git_compile_error
+\li \ref no_music
 
 \section gfx_wad What does "W_LoadWadFile: unable to load gfx.wad" mean?
 The most common cause of this error is QuakeForge is unable to find
@@ -32,4 +33,25 @@ configure is being created autotools sources m4 files... If the files do not
 exist, you get the errors you have seen. Try installing packages which contain
 the libraries that caused the syntax error, including the -dev versions, then
 recreate configure using bootstrap and try again.
+
+\section no_music Why doesn't \QF play the background music even though I have the CD in the drive?
+By default, \QF no longer uses the CD drive to play music. Instead, \QF now
+looks for a \ref tracklist to map Quake's cd tracks to sound files. If you
+wish to continue using the CD instead, you may set the \c cd_plugin cvar to
+the value appropriate for your system:
+<dl>
+	<dt><code>file</code></dt>	<dd>The default CD plugin. Uses sound files
+									for the BGM.</dd>
+	<dt><code>linux</code></dt>	<dd>Use this plugin on a Linux system.</dd>
+	<dt><code>sdl</code></dt>	<dd>This plugin can be used on most
+									systems.</dd>
+<!--	<dt><code>sgi</code></dt>	<dd>Use this plugin on SGI systems.</dd>-->
+	<dt><code>win</code></dt>	<dd>Use this plugin on Windows
+									systems.</dd>
+	<dt><code>xmms</code></dt>	<dd>The predecessor to the \c file plugin.
+									Not always available, and expects xmms
+									to be available (but not necessarily
+									running) on the system. Useful if you
+									absolutely must have MP3 support.</dd>
+</dl>
 */

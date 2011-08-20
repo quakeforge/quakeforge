@@ -1,0 +1,46 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+/**
+\page tracklist Tracklist config file
+
+As \QF supports playing arbitrarily sized audio files, it seemed rather
+obvious that \QF should be able to use them as BGM in place of the CD
+drive. However, requiring specific names and locations for the files seemed
+overly onerous. Thus \QF looks for \c traclist.cfg in the root of the game
+directory (eg. \c id1, same place as \c pak0.pak, \c config.cfg, etc).
+
+Using the following \c tracklist.cfg:
+\verbinclude tracklist.cfg
+
+and the following commands in the \c id1 directory:
+\verbatim
+mkdir music
+cd music
+cdparanoia -B 2-
+oggenc *.wav
+rm *.wav
+cd ..
+pak -vcf quake1-music.pak tracklist.cfg `find music -type f print`
+rm -rf music tracklist.cfg
+\endverbatim
+
+a convenient pak file can be made of the Quake CD audio. Of course, the
+last two commands are optional if you prefer to have the files loose in the
+filesystem.
+
+\section tl-format Tracklist format
+The tracklist config file is a \ref property-list consistinf of a
+dictionary mapping the track numbers to the file to be played when that
+track is requested. The keys of the dictionary are the track number (the
+Quake CD has only tracks 2 to 11 as audio tracks) as a property list
+string, and the values are the file to play, also as a property list
+string.
+
+However, if the value is an array of strings, that track will
+become a playlist, and each file specified in the array will be played in
+order, looping back to the first file in the list.
+
+The files may be <code>.wav</code>, <code>.ogg</code> (Ogg Vorbis),
+<code>.mid</code> or <code>.midi</code> (MIDI), or <code>.flac</code>
+files. MP3 is <em>not</em> supported, and is not likely to ever be
+supported.
+*/
