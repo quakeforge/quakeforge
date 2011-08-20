@@ -1,4 +1,4 @@
-//unfortunatly, have to wrap the docs in a C comment for doxygen
+//unfortunately, have to wrap the docs in a C comment for doxygen
 /**
 \page faq Frequently Asked Questions
 
@@ -25,11 +25,11 @@ While QuakeForge itself (and the Quake source code in general) is Free
 Software, the game itself is not free. You need to either purchase it from <a
 href="http://www.idsoftware.com/store/index.php?view=quake">id Software</a> or
 you can use <a href="http://openquartz.sourceforge.net/">OpenQuartz</a>, a
-project developing GPL compatable game data for Quake.
+project developing GPL compatible game data for Quake.
 
 \section git_compile_error Checking out git and running ./bootstrap creates a configure that syntax errors when I run it! What's wrong?
 Unlike downloading and compiling a release, when you checkout from git, you
-must have all the dependencies of quakeforge already installed as when
+must have all the dependencies of QuakeForge already installed as when
 configure is being created autotools sources m4 files... If the files do not
 exist, you get the errors you have seen. Try installing packages which contain
 the libraries that caused the syntax error, including the -dev versions, then
@@ -59,5 +59,5 @@ the value appropriate for your system:
 \section no_mp3 Why doesn't \QF support MP3s?
 Because they are not free. MP3 support is a patent minefield, and we really
 don't want to wind up with lawyers at ten paces, especially since we'd be
-unarmed with no armor, and they have rocket launchers and quad-dammage.
+unarmed with no armor, and they have rocket launchers and quad-damage.
 */

@@ -47,6 +47,6 @@ same as Quake (an \c id1 directory tree, plus other mod directories), but
 with the addition of a \c QF directory which holds QuakeForge specific data
 (such as the menus). The structure of the data trees and, more importantly,
 the relationship between the mod directories can be configured with the
-directory configurtion file (see \ref dirconf).
+directory configuration file (see \ref dirconf).
 
 */

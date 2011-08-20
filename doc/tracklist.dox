@@ -5,7 +5,7 @@
 As \QF supports playing arbitrarily sized audio files, it seemed rather
 obvious that \QF should be able to use them as BGM in place of the CD
 drive. However, requiring specific names and locations for the files seemed
-overly onerous. Thus \QF looks for \c traclist.cfg in the root of the game
+overly onerous. Thus \QF looks for \c tracklist.cfg in the root of the game
 directory (eg. \c id1, same place as \c pak0.pak, \c config.cfg, etc).
 
 Using the following \c tracklist.cfg:

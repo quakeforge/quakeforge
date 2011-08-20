@@ -1,4 +1,4 @@
-//unfortunatly, have to wrap the docs in a C comment for doxygen
+//unfortunately, have to wrap the docs in a C comment for doxygen
 /**
 \page dirconf Directory Configuration
 
