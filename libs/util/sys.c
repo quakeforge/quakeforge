@@ -430,6 +430,14 @@ Sys_Error (const char *error, ...)
 #ifdef VA_LIST_IS_ARRAY
 	va_list     tmp_args;
 #endif
+	static int  in_sys_error = 0;
+
+	if (in_sys_error) {
+		const char *msg = "\nSys_Error: recursive error condition\n";
+		write (2, msg, strlen (msg));
+		abort ();
+	}
+	in_sys_error = 1;
 
 	va_start (args, error);
 #ifdef VA_LIST_IS_ARRAY
