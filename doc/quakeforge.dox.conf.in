@@ -587,20 +587,8 @@ INPUT                 += @TOPSRC@/nq
 INPUT                 += @TOPSRC@/qtv
 INPUT                 += @TOPSRC@/qw
 INPUT                 += @TOPSRC@/tools
-INPUT                 += @TOPSRC@/doc/bind.txt
+INPUT                 += @TOPSRC@/doc/
 INPUT                 += @TOPSRC@/INSTALL
-INPUT                 += @TOPSRC@/doc/connect.txt
-INPUT                 += @TOPSRC@/doc/cshifts.txt
-INPUT                 += @TOPSRC@/doc/dirconf.txt
-INPUT                 += @TOPSRC@/doc/faq.txt
-INPUT                 += @TOPSRC@/doc/filesystem.txt
-INPUT                 += @TOPSRC@/doc/mapformat.txt
-INPUT                 += @TOPSRC@/doc/qtv.txt
-INPUT                 += @TOPSRC@/doc/quakeforge.txt
-INPUT                 += @TOPSRC@/doc/qw-cap-spec.txt
-INPUT                 += @TOPSRC@/doc/qw-download-spec.txt
-INPUT                 += @TOPSRC@/doc/surround-sound.txt
-INPUT                 += @TOPSRC@/doc/timestamps.txt
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -617,7 +605,7 @@ INPUT_ENCODING         = UTF-8
 # *.c *.cc *.cxx *.cpp *.c++ *.java *.ii *.ixx *.ipp *.i++ *.inl *.h *.hh *.hxx
 # *.hpp *.h++ *.idl *.odl *.cs *.php *.php3 *.inc *.m *.mm *.py *.f90
 
-FILE_PATTERNS          = *.c *.h
+FILE_PATTERNS          = *.c *.h *.dox
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories
 # should be searched for input files as well. Possible values are YES and NO.

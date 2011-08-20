@@ -2,17 +2,17 @@ AUTOMAKE_OPTIONS= foreign
 
 SUBDIRS= man
 
-TXT_DOCS=\
-	bind.txt connect.txt cshifts.txt dirconf.txt faq.txt \
-	filesystem.txt mapformat.txt qtv.txt quakeforge.txt qw-cap-spec.txt \
-	qw-download-spec.txt surround-sound.txt timestamps.txt
+DOX=\
+	bind.dox connect.dox cshifts.dox dirconf.dox faq.dox \
+	filesystem.dox mapformat.dox qtv.dox quakeforge.dox qw-cap-spec.dox \
+	qw-download-spec.dox surround-sound.dox timestamps.dox
 
 EXTRA_DIST= qf.ico \
 	\
 	skybox.fig template.c template.h \
-	quakeforge.dox.in \
+	quakeforge.dox.conf.in \
 	\
-	${TXT_DOCS} \
+	${DOX} \
 	\
 	config/glspeed-v1.cfg config/glspeed-v3.cfg config/swspeed.cfg \
 	\
@@ -39,5 +39,5 @@ progs/vm-mem.eps: progs/vm-mem.fig
 qtv/qwtv.png: qtv/qwtv.fig
 qtv/qwtv.eps: qtv/qwtv.fig
 
-doc: quakeforge.dox progs/vm-mem.png progs/vm-mem.eps qtv/qwtv.png qtv/qwtv.eps ${TXT_DOCS}
-	doxygen quakeforge.dox
+doc: quakeforge.dox.conf progs/vm-mem.png progs/vm-mem.eps qtv/qwtv.png qtv/qwtv.eps ${DOX}
+	doxygen quakeforge.dox.conf
