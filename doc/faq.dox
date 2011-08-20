@@ -6,6 +6,7 @@
 \li \ref pak0_pak
 \li \ref git_compile_error
 \li \ref no_music
+\li \ref no_mp3
 
 \section gfx_wad What does "W_LoadWadFile: unable to load gfx.wad" mean?
 The most common cause of this error is QuakeForge is unable to find
@@ -54,4 +55,9 @@ the value appropriate for your system:
 									running) on the system. Useful if you
 									absolutely must have MP3 support.</dd>
 </dl>
+
+\section no_mp3 Why doesn't \QF support MP3s?
+Because they are not free. MP3 support is a patent minefield, and we really
+don't want to wind up with lawyers at ten paces, especially since we'd be
+unarmed with no armor, and they have rocket launchers and quad-dammage.
 */
