@@ -1,6 +1,6 @@
 //unfortunately, have to wrap the docs in a C comment for doxygen
 /**
-\page server_timestampes Server Log Timestamps
+\page server_timestamps Server Log Timestamps
 
 To enable time-stamped messages in the server, set the Cvar sv_timestamps to a
 value other than 0. When enabled, the string Cvar sv_timefmt is used to format
