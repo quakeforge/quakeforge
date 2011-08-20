@@ -38,7 +38,7 @@
 
 /** The type of the property list item.
 
-	For further details, see \ref property-lists.
+	For further details, see \ref property-list.
 */
 typedef enum {
 	QFDictionary,	///< The property list item represents a dictionary.

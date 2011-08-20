@@ -1,13 +1,13 @@
 //unfortunatly, have to wrap the docs in a C comment for doxygen
 /**
-\page property-lists Property Lists
+\page property-list Property List
 
 \QF's property lists are based on those used in OpenStep.
 
 \QF uses property lists for a wide variety of purposes. This includes saved
 game data, directory configuration and play-lists.
 
-Property lists are text files that describe a single value. However, that
+A property list is a text file that describes a single value. However, that
 value can be one of the following types:
 <dl>
 	<dt>Dictionaries</dt>	<dd>Lists of values that are each accociated
