@@ -28,7 +28,7 @@ last two commands are optional if you prefer to have the files loose in the
 filesystem.
 
 \section tl-format Tracklist format
-The tracklist config file is a \ref property-list consistinf of a
+The tracklist config file is a \ref property-list consisting of a
 dictionary mapping the track numbers to the file to be played when that
 track is requested. The keys of the dictionary are the track number (the
 Quake CD has only tracks 2 to 11 as audio tracks) as a property list
