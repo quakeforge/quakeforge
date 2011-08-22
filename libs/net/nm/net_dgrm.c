@@ -1275,9 +1275,9 @@ _Datagram_Connect (const char *host)
 				if (sfunc.AddrCompare (&readaddr, &sendaddr) != 0) {
 					Sys_MaskPrintf (SYS_NET, "%2d ",
 									sfunc.AddrCompare (&readaddr, &sendaddr));
-					Sys_MaskPrintf (SYS_NET, "%s ",
+					Sys_MaskPrintf (SYS_NET, "%d %s ", readaddr.qsa_family,
 									sfunc.AddrToString (&readaddr));
-					Sys_MaskPrintf (SYS_NET, "%s\n",
+					Sys_MaskPrintf (SYS_NET, "%d %s\n", sendaddr.qsa_family,
 									sfunc.AddrToString (&sendaddr));
 					ret = 0;
 					continue;
