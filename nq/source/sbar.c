@@ -28,13 +28,20 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <time.h>
 
-#include "QF/console.h"
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/dstring.h"
@@ -42,8 +49,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/plugin.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
-#include "QF/vid.h"
 #include "QF/va.h"
+#include "QF/vid.h"
 #include "QF/view.h"
 #include "QF/wad.h"
 
@@ -57,6 +64,7 @@ static __attribute__ ((used)) const char rcsid[] =
 int         sb_updates;				// if >= vid.numpages, no update needed
 
 #define STAT_MINUS		10			// num frame for '-' stats digit
+
 qpic_t     *sb_nums[2][11];
 qpic_t     *sb_colon, *sb_slash;
 qpic_t     *sb_ibar;
@@ -79,6 +87,7 @@ qpic_t     *sb_face_invis_invuln;
 qboolean    sb_showscores;
 
 int         sb_lines;				// scan lines to draw
+qboolean	hudswap;
 
 qpic_t     *rsb_invbar[2];
 qpic_t     *rsb_weapons[5];
@@ -115,6 +124,7 @@ static view_t *stuff_view;
 static void
 hud_swap_f (cvar_t *var)
 {
+	hudswap = var->int_val;
 	if (var->int_val) {
 		hud_armament_view->gravity = grav_southwest;
 		hud_armament_view->children[0]->gravity = grav_northwest;
@@ -225,52 +235,31 @@ viewsize_f (cvar_t *var)
 static int
 Sbar_ColorForMap (int m)
 {
-	return m + 8;						// FIXME: Might want this to be
-	// return (bound (0, m, 13) * 16) + 8;
+	return (bound (0, m, 13) * 16) + 8;
 }
 
-
-/*
-	Sbar_ShowScores
-
-	Tab key has been pressed, inform sbar it needs to show scores
-*/
 static void
 Sbar_ShowScores (void)
 {
 	if (sb_showscores)
 		return;
+
 	sb_showscores = true;
 	sb_updates = 0;
 }
 
-
-/*
-	Sbar_DontShowScores
-
-	Tab key up, show normal sbar again
-*/
 static void
 Sbar_DontShowScores (void)
 {
-	if (!sb_showscores)
-		return;
 	sb_showscores = false;
 	sb_updates = 0;
 }
 
-
-/*
-	Sbar_Changed
-
-	Call this to signal sbar to redraw next frame.
-*/
 void
 Sbar_Changed (void)
 {
 	sb_updates = 0;						// update next frame
 }
-
 
 static void
 draw_pic (view_t *view, int x, int y, qpic_t *pic)
@@ -389,8 +378,131 @@ draw_smallnum (view_t *view, int x, int y, int n, int packed, int colored)
 
 static void
 draw_tile (view_t *view)
-{   
+{
 	Draw_TileClear (view->xabs, view->yabs, view->xlen, view->ylen);
+}
+
+static void
+draw_ammo_sbar (view_t *view)
+{
+	int         i, count;
+
+	// ammo counts
+	for (i = 0; i < 4; i++) {
+		count = cl.stats[STAT_SHELLS + i];
+		draw_smallnum (view, (6 * i + 1) * 8 + 2, 0, count, 0, 1);
+	}
+}
+
+static void
+draw_ammo_hud (view_t *view)
+{
+	int         i, count;
+
+	// ammo counts
+	for (i = 0; i < 4; i++) {
+		count = cl.stats[STAT_SHELLS + i];
+		draw_subpic (view, 0, i * 11, sb_ibar, 3 + (i * 48), 0, 42, 11);
+		draw_smallnum (view, 7, i * 11, count, 0, 1);
+	}
+}
+
+static int
+calc_flashon (float time, int mask)
+{
+	int         flashon;
+
+	flashon = (int) ((cl.time - time) * 10);
+	if (flashon < 0)
+		flashon = 0;
+	if (flashon >= 10) {
+		if (cl.stats[STAT_ACTIVEWEAPON] == mask)
+			flashon = 1;
+		else
+			flashon = 0;
+	} else
+		flashon = (flashon % 5) + 2;
+	return flashon;
+}
+
+static void
+draw_weapons_sbar (view_t *view)
+{
+	int         flashon, i;
+
+	for (i = 0; i < 7; i++) {
+		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
+			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
+			draw_pic (view, i * 24, 0, sb_weapons[flashon][i]);
+			if (flashon > 1)
+				sb_updates = 0;			// force update to remove flash
+		}
+	}
+}
+
+static void
+draw_weapons_hud (view_t *view)
+{
+	int         flashon, i, x = 0;
+
+	if (view->parent->gravity == grav_southeast)
+		x = view->xlen - 24;
+
+	for (i = vid.conheight < 204; i < 7; i++) {
+		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
+			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
+			draw_subpic (view, x, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
+			if (flashon > 1)
+				sb_updates = 0;			// force update to remove flash
+		}
+	}
+}
+
+static void
+draw_items (view_t *view)
+{
+	float       time;
+	int         flashon = 0, i;
+
+	for (i = 0; i < 6; i++) {
+		if (cl.stats[STAT_ITEMS] & (1 << (17 + i))) {
+			time = cl.item_gettime[17 + i];
+			if (time && time > cl.time - 2 && flashon) {	// Flash frame
+				sb_updates = 0;
+			} else {
+				draw_pic (view, i * 16, 0, sb_items[i]);
+			}
+			if (time && time > cl.time - 2)
+				sb_updates = 0;
+		}
+	}
+}
+
+static void
+draw_sigils (view_t *view)
+{
+	float       time;
+	int         flashon = 0, i;
+
+	for (i = 0; i < 4; i++) {
+		if (cl.stats[STAT_ITEMS] & (1 << (28 + i))) {
+			time = cl.item_gettime[28 + i];
+			if (time && time > cl.time - 2 && flashon) {	// flash frame
+				sb_updates = 0;
+			} else {
+				draw_pic (view, i * 8, 0, sb_sigil[i]);
+			}
+			if (time && time > cl.time - 2)
+				sb_updates = 0;
+		}
+	}
+}
+
+static void
+draw_inventory_sbar (view_t *view)
+{
+	draw_pic (view, 0, 0, sb_ibar);
+	view_draw (view);
 }
 
 
@@ -460,125 +572,6 @@ draw_solo (view_t *view)
 }
 
 static void
-draw_ammo_sbar (view_t *view) 
-{
-	int         i, count;
-
-	for (i = 0; i < 4; i++) {
-		count = cl.stats[STAT_SHELLS + i];
-		draw_smallnum (view, (6 * i + 1) * 8 - 2, 0, count, 0, 1);
-	}
-}
-
-static void
-draw_ammo_hud (view_t *view) 
-{
-	int         i, count;
-
-	for (i = 0; i < 4; i++) {
-		count = cl.stats[STAT_SHELLS + i];
-		draw_subpic (view, 0, i * 11, sb_ibar, 3 + (i * 48), 0, 42, 11);
-		draw_smallnum (view, 7, i * 11, count, 0, 1);
-	}
-}
-
-static int
-calc_flashon (float time, int mask)
-{
-	int         flashon;
-
-	flashon = (int) ((cl.time - time) * 10);
-	if (flashon < 0)
-		flashon = 0;
-	if (flashon >= 10) {
-		if (cl.stats[STAT_ACTIVEWEAPON] == mask)
-			flashon = 1;
-		else
-			flashon = 0;
-	} else
-		flashon = (flashon % 5) + 2;
-	return flashon;
-}
-
-static void
-draw_weapons_sbar (view_t *view)
-{
-	int         flashon, i;
-
-	// weapons
-	for (i = 0; i < 7; i++) {
-		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
-			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
-			draw_pic (view, i * 24, 0, sb_weapons[flashon][i]);
-			if (flashon > 1)
-				sb_updates = 0;			// force update to remove flash
-		}
-	}
-}
-
-static void
-draw_weapons_hud (view_t *view)
-{
-	int         flashon, i;
-
-	for (i = vid.conheight < 204; i < 7; i++) {
-		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
-			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
-			draw_subpic (view, 0, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
-			if (flashon > 1)
-				sb_updates = 0;			// force update to remove flash
-		}
-	}
-}
-
-static void
-draw_items (view_t *view)
-{
-	float       time;
-	int         flashon = 0, i;
-
-	for (i = 0; i < 6; i++) {
-		if (cl.stats[STAT_ITEMS] & (1 << (17 + i))) {
-			time = cl.item_gettime[17 + i];
-			if (time && time > (cl.time - 2) && flashon) {	// Flash frame
-				sb_updates = 0;
-			} else {
-				draw_pic (view, i * 16, 0, sb_items[i]);
-			}
-			if (time && time > cl.time - 2)
-				sb_updates = 0;
-		}
-	}
-}
-
-static void
-draw_sigils (view_t *view)
-{
-	float       time;
-	int         flashon = 0, i;
-
-	for (i = 0; i < 4; i++) {
-		if (cl.stats[STAT_ITEMS] & (1 << (28 + i))) {
-			time = cl.item_gettime[28 + i];
-			if (time && time > cl.time - 2 && flashon) {	// flash frame
-				sb_updates = 0;
-			} else {
-				draw_pic (view, i * 8, 0, sb_sigil[i]);
-			}
-			if (time && time > cl.time - 2)
-				sb_updates = 0;
-		}
-	}
-}
-
-static void
-draw_inventory_sbar (view_t *view)
-{
-	draw_pic (view, 0, 0, sb_ibar);
-	view_draw (view);
-}
-
-static void
 draw_frags (view_t *view)
 {
 	int         i, k, l, p = -1;
@@ -603,8 +596,8 @@ draw_frags (view_t *view)
 			continue;
 
 		// draw background
-		top = s->colors & 0xf0;
-		bottom = (s->colors & 15) << 4;
+		top = (((unsigned) s->colors) >> 4) & 0x0f;
+		bottom = s->colors & 0x0f;
 		top = Sbar_ColorForMap (top);
 		bottom = Sbar_ColorForMap (bottom);
 
@@ -615,6 +608,7 @@ draw_frags (view_t *view)
 
 		if (k == cl.viewentity - 1)
 			p = i;
+
 		x += 32;
 	}
 	if (p != -1) {
@@ -817,8 +811,8 @@ draw_rogue_face (view_t *view)
 
 	s = &cl.scores[cl.viewentity - 1];
 
-	top = (s->colors & 0xf0);
-	bottom = ((s->colors & 15) << 4);
+	top = (((unsigned) s->colors) >> 4) & 0x0f;
+	bottom = s->colors & 0x0f;
 	top = Sbar_ColorForMap (top);
 	bottom = Sbar_ColorForMap (bottom);
 
@@ -1057,8 +1051,8 @@ Sbar_DeathmatchOverlay (view_t *view)
 			continue;
 
 		// draw background
-		top = s->colors & 0xf0;
-		bottom = (s->colors & 15) << 4;
+		top = (((unsigned) s->colors) >> 4) & 0x0f;
+		bottom = s->colors & 0x0f;
 		top = Sbar_ColorForMap (top);
 		bottom = Sbar_ColorForMap (bottom);
 
@@ -1118,7 +1112,7 @@ draw_time (view_t *view)
 static void
 draw_fps (view_t *view)
 {
-	static char   st[80];		//FIXME: overflow
+	static char   st[80];
 	double        t;
 	static double lastframetime;
 	static double lastfps;
@@ -1638,11 +1632,6 @@ Sbar_GIB_Print_Center_f (void)
 		Sbar_CenterPrint (GIB_Argv(1));
 }
 
-/*
-	Sbar_Init
-
-	Initialize the status bar's data
-*/
 void
 Sbar_Init (void)
 {
@@ -1724,8 +1713,10 @@ Sbar_Init (void)
 	sb_face_invis_invuln = Draw_PicFromWad ("face_inv2");
 	sb_face_quad = Draw_PicFromWad ("face_quad");
 
-	Cmd_AddCommand ("+showscores", Sbar_ShowScores, "No Description");
-	Cmd_AddCommand ("-showscores", Sbar_DontShowScores, "No Description");
+	Cmd_AddCommand ("+showscores", Sbar_ShowScores,
+					"Display information on everyone playing");
+	Cmd_AddCommand ("-showscores", Sbar_DontShowScores,
+					"Stop displaying information on everyone playing");
 
 	sb_sbar = Draw_PicFromWad ("sbar");
 	sb_ibar = Draw_PicFromWad ("ibar");
@@ -1786,7 +1777,7 @@ Sbar_Init (void)
 
 	r_viewsize_callback = viewsize_f;
 	hud_sbar = Cvar_Get ("hud_sbar", "0", CVAR_ARCHIVE, hud_sbar_f,
-						 "status bar mode");
+						 "status bar mode: 0 = hud, 1 = oldstyle");
 	hud_swap = Cvar_Get ("hud_swap", "0", CVAR_ARCHIVE, hud_swap_f,
 						 "new HUD on left side?");
 	hud_scoreboard_gravity = Cvar_Get ("hud_scoreboard_gravity", "center",
