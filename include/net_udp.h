@@ -170,7 +170,9 @@ int UDP_GetAddrFromName (const char *name, struct qsockaddr *addr);
 
 	\param addr1	The first address to compare.
 	\param addr2	The second address to compare.
-	\return			-1 if the family or address are different.
+	\return			-2 if the family is different.
+	\return			-1 if the family is the same, but the address is
+					different.
 	\return			1 if the family and address are the same, but the port
 					is different.
 	\return			0 if everything is the same.

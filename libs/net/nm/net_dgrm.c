@@ -1273,6 +1273,8 @@ _Datagram_Connect (const char *host)
 			if (ret > 0) {
 				// is it from the right place?
 				if (sfunc.AddrCompare (&readaddr, &sendaddr) != 0) {
+					Sys_MaskPrintf (SYS_NET, "%2d ",
+									sfunc.AddrCompare (&readaddr, &sendaddr));
 					Sys_MaskPrintf (SYS_NET, "%s ",
 									sfunc.AddrToString (&readaddr));
 					Sys_MaskPrintf (SYS_NET, "%s\n",

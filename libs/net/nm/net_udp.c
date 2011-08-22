@@ -573,7 +573,7 @@ int
 UDP_AddrCompare (struct qsockaddr *addr1, struct qsockaddr *addr2)
 {
 	if (addr1->qsa_family != addr2->qsa_family)
-		return -1;
+		return -2;
 
 	if (((struct sockaddr_in *) addr1)->sin_addr.s_addr !=
 		((struct sockaddr_in *) addr2)->sin_addr.s_addr)
