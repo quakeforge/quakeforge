@@ -207,6 +207,7 @@ NET_AdrIsLoopback (netadr_t a)
 	return false;
 }
 */
+
 qboolean
 NET_CompareBaseAdr (netadr_t a, netadr_t b)
 {
@@ -237,7 +238,7 @@ NET_AdrToString (netadr_t a)
 		string returned from NET_BaseAdrToString()
 	*/
 	memset (&ss, 0, sizeof (ss));
-	NetadrToSockadr(&a,&ss);
+	NetadrToSockadr (&a, &ss);
 
 	// Convert any "mapped" addresses back to v4
 	if (a.family == AF_INET6 && IN6_IS_ADDR_V4MAPPED (&(ss.s6.sin6_addr))) {
@@ -272,7 +273,7 @@ NET_BaseAdrToString (netadr_t a)
 	AF_address_t ss;
 
 	memset (&ss, 0, sizeof (ss));
-	NetadrToSockadr(&a,&ss);
+	NetadrToSockadr (&a, &ss);
 
 	// Convert any "mapped" addresses back to v4
 	if (a.family == AF_INET6 && IN6_IS_ADDR_V4MAPPED (&(ss.s6.sin6_addr))) {
