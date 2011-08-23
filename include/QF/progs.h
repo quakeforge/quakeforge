@@ -30,7 +30,7 @@
 #define __QF_progs_h
 
 /** \defgroup progs QuakeC Virtual Machine (VM)
-	\image html vm-mem.png
+	\image html vm-mem.svg
 	\image latex vm-mem.eps "VM memory map"
 */
 

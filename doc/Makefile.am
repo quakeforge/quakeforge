@@ -31,13 +31,17 @@ SUFFIXES=.eps .fig .png
 	@mkdir -p `dirname $@`
 	fig2dev -L ps $< $@
 
+.fig.svg:
+	@mkdir -p `dirname $@`
+	fig2dev -L svg $< $@
+
 clean-local:
 	-rm -fr doxygen
 
-progs/vm-mem.png: progs/vm-mem.fig
+progs/vm-mem.svg: progs/vm-mem.fig
 progs/vm-mem.eps: progs/vm-mem.fig
-qtv/qwtv.png: qtv/qwtv.fig
+qtv/qwtv.svg: qtv/qwtv.fig
 qtv/qwtv.eps: qtv/qwtv.fig
 
-doc: quakeforge.dox.conf progs/vm-mem.png progs/vm-mem.eps qtv/qwtv.png qtv/qwtv.eps ${DOX}
+doc: quakeforge.dox.conf progs/vm-mem.svg progs/vm-mem.eps qtv/qwtv.svg qtv/qwtv.eps ${DOX}
 	doxygen quakeforge.dox.conf

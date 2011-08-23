@@ -884,6 +884,8 @@ dl.bug
 .image
 {
 	text-align: center;
+	background: white;
+	border: 2px solid #737b9c;
 }
 
 .dotgraph
