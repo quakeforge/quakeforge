@@ -185,7 +185,6 @@ SockadrToNetadr (AF_address_t *s, netadr_t *a)
 		}
 		case AF_INET6: {
 			memcpy (a->ip, &(s->s6.sin6_addr), sizeof (s->s6.sin6_addr));
-			a->family = AF_INET6;
 			a->port = s->s6.sin6_port;
 			break;
 		}
