@@ -48,7 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 qboolean	isDedicated = true;
 
 static void
-shutdown (void)
+shutdown_f (void)
 {
 }
 
@@ -84,7 +84,7 @@ main (int argc, const char **argv)
 	host_parms.argv = com_argv;
 
 	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (shutdown);
+	Sys_RegisterShutdown (shutdown_f);
 
 	Host_Init ();
 

@@ -100,7 +100,7 @@ startup (void)
 }
 
 static void
-shutdown (void)
+shutdown_f (void)
 {
 #ifndef _WIN32
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
@@ -131,7 +131,7 @@ SDL_main (int c, char **v)
 #endif
 
 	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (shutdown);
+	Sys_RegisterShutdown (shutdown_f);
 
 	Host_Init ();
 

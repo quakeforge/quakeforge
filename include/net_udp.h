@@ -80,7 +80,7 @@ int UDP_CloseSocket (int socket);
 	\param addr		The address to which very little will be done.
 	\return			0
 */
-int UDP_Connect (int socket, struct qsockaddr *addr);
+int UDP_Connect (int socket, AF_address_t *addr);
 
 /** Check for incoming packets on the accept socket.
 
@@ -96,7 +96,7 @@ int UDP_CheckNewConnections (void);
 	\param[out] addr	The address from which the packet originated.
 	\return			The number of bytes read or -1 on error.
 */
-int UDP_Read (int socket, byte *buf, int len, struct qsockaddr *addr);
+int UDP_Read (int socket, byte *buf, int len, AF_address_t *addr);
 
 /** Send a packet via the specified socket to the specified address.
 
@@ -106,7 +106,7 @@ int UDP_Read (int socket, byte *buf, int len, struct qsockaddr *addr);
 	\param addr		The addres to which the packet will be sent.
 	\return			The number of bytes sent or -1 on error.
 */
-int UDP_Write (int socket, byte *buf, int len, struct qsockaddr *addr);
+int UDP_Write (int socket, byte *buf, int len, AF_address_t *addr);
 
 /** Broadcast a packet via the specified socket.
 
@@ -130,7 +130,7 @@ int UDP_Broadcast (int socket, byte *buf, int len);
 	\param addr		The address to convert.
 	\return			The address in human readable form.
 */
-const char *UDP_AddrToString (struct qsockaddr *addr);
+const char *UDP_AddrToString (AF_address_t *addr);
 
 /** Retrieve the address to which the socket is bound.
 
@@ -138,7 +138,7 @@ const char *UDP_AddrToString (struct qsockaddr *addr);
 	\param[out] addr	The address to which the socket is bound.
 	\return			0
 */
-int UDP_GetSocketAddr (int socket, struct qsockaddr *addr);
+int UDP_GetSocketAddr (int socket, AF_address_t *addr);
 
 /** Convert an address to a hostname.
 
@@ -147,7 +147,7 @@ int UDP_GetSocketAddr (int socket, struct qsockaddr *addr);
 
 	\bug	No checking is done on the size of the buffer, and uses strcpy.
 */
-int UDP_GetNameFromAddr (struct qsockaddr *addr, char *name);
+int UDP_GetNameFromAddr (AF_address_t *addr, char *name);
 
 /** Convert a human readable address to a quake address.
 
@@ -162,7 +162,7 @@ int UDP_GetNameFromAddr (struct qsockaddr *addr, char *name);
 	\param addr		The resulting address of the conversion.
 	\return			0 if the conversion is successful, otherwise -1.
 */
-int UDP_GetAddrFromName (const char *name, struct qsockaddr *addr);
+int UDP_GetAddrFromName (const char *name, AF_address_t *addr);
 
 /** Compare two network addresses.
 
@@ -177,14 +177,14 @@ int UDP_GetAddrFromName (const char *name, struct qsockaddr *addr);
 					is different.
 	\return			0 if everything is the same.
 */
-int UDP_AddrCompare (struct qsockaddr *addr1, struct qsockaddr *addr2);
+int UDP_AddrCompare (AF_address_t *addr1, AF_address_t *addr2);
 
 /** Get the port number from the socket address.
 
 	\param addr		The socket address from which to retrieve the port number.
 	\return			The port number.
 */
-int UDP_GetSocketPort (struct qsockaddr *addr);
+int UDP_GetSocketPort (AF_address_t *addr);
 
 /** Set the port number of the socket address.
 
@@ -192,7 +192,7 @@ int UDP_GetSocketPort (struct qsockaddr *addr);
 	\param port		The port number to which the socket address will be set.
 	\return			0
 */
-int UDP_SetSocketPort (struct qsockaddr *addr, int port);
+int UDP_SetSocketPort (AF_address_t *addr, int port);
 
 //@}
 

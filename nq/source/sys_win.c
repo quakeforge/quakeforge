@@ -112,7 +112,7 @@ startup (void)
 }
 
 static void
-shutdown (void)
+shutdown_f (void)
 {
 	if (tevent)
 		CloseHandle (tevent);
@@ -214,7 +214,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	Host_Init ();
 
 	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (shutdown);
+	Sys_RegisterShutdown (shutdown_f);
 
 	oldtime = Sys_DoubleTime ();
 

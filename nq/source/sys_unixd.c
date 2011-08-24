@@ -60,7 +60,7 @@ qboolean    isDedicated = true;
 int         nostdout = 0;
 
 static void
-shutdown (void)
+shutdown_f (void)
 {
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
 	fflush (stdout);
@@ -95,7 +95,7 @@ main (int argc, const char **argv)
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 
 	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (shutdown);
+	Sys_RegisterShutdown (shutdown_f);
 
 	Host_Init ();
 

@@ -62,7 +62,7 @@ static __attribute__ ((used)) const char rcsid[] =
 qboolean    isDedicated = false;
 
 static void
-shutdown (void)
+shutdown_f (void)
 {
 	// change stdin to blocking
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
@@ -85,7 +85,7 @@ main (int c, const char *v[])
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 
 	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (shutdown);
+	Sys_RegisterShutdown (shutdown_f);
 
 	Host_Init ();
 
