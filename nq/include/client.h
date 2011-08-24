@@ -348,6 +348,7 @@ float CL_KeyState (kbutton_t *key);
 // cl_demo.c
 void CL_StopPlayback (void);
 void CL_StopRecording (void);
+void CL_Record (const char *argv1, int track);
 int CL_GetMessage (void);
 void CL_Demo_Init (void);
 

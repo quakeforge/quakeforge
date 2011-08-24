@@ -1,7 +1,7 @@
 /*
 	cl_demo.c
 
-	(description)
+	demo playback support
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -28,8 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -70,28 +69,29 @@ typedef struct {
 	double      fps;
 } td_stats_t;
 
-int     demo_timeframes_isactive;
-int     demo_timeframes_index;
-int     demotime_cached;
-float   nextdemotime;
-char    demoname[1024];
-double *demo_timeframes_array;
+int         demo_timeframes_isactive;
+int         demo_timeframes_index;
+int         demotime_cached;
+float       nextdemotime;
+char        demoname[1024];
+double     *demo_timeframes_array;
 #define CL_TIMEFRAMES_ARRAYBLOCK 4096
 
-int     timedemo_count;
-int     timedemo_runs;
+int         timedemo_count;
+int         timedemo_runs;
 td_stats_t *timedemo_data;
-
 
 static void CL_FinishTimeDemo (void);
 static void CL_TimeFrames_DumpLog (void);
 static void CL_TimeFrames_AddTimestamp (void);
 static void CL_TimeFrames_Reset (void);
 
-cvar_t     *demo_speed;
 cvar_t     *demo_gzip;
+cvar_t     *demo_speed;
 cvar_t     *demo_quit;
 cvar_t     *demo_timeframes;
+
+#define MAX_DEMMSG (MAX_MSGLEN + 8) //+8 for header
 
 /*
 	DEMO CODE
@@ -103,6 +103,31 @@ cvar_t     *demo_timeframes;
 	read from the demo file.
 */
 
+
+/*
+	CL_WriteDemoMessage
+
+	Dumps the current net message, prefixed by the length and view angles
+*/
+static void
+CL_WriteDemoMessage (sizebuf_t *msg)
+{
+	byte        c;
+	float       f;
+	int         len;
+
+	f = LittleFloat ((float) realtime);
+	Qwrite (cls.demofile, &f, sizeof (f));
+
+	c = dem_read;
+	Qwrite (cls.demofile, &c, sizeof (c));
+
+	len = LittleLong (msg->cursize);
+	Qwrite (cls.demofile, &len, 4);
+	Qwrite (cls.demofile, msg->data, msg->cursize);
+
+	Qflush (cls.demofile);
+}
 
 /*
 	CL_StopPlayback
@@ -127,70 +152,21 @@ CL_StopPlayback (void)
 		CL_FinishTimeDemo ();
 }
 
-/*
-	CL_WriteDemoCmd
-
-	Writes the current user cmd
-*/
 void
-CL_WriteDemoCmd (usercmd_t *pcmd)
+CL_StopRecording (void)
 {
-	byte		c;
-	float		fl;
-	int			i;
-	usercmd_t	cmd;
+	// write a disconnect message to the demo file
+	SZ_Clear (net_message->message);
+	MSG_WriteLong (net_message->message, -1);  // -1 sequence means out of band
+	MSG_WriteByte (net_message->message, svc_disconnect);
+	MSG_WriteString (net_message->message, "EndOfDemo");
+	CL_WriteDemoMessage (net_message->message);
 
-	fl = LittleFloat ((float) realtime);
-	Qwrite (cls.demofile, &fl, sizeof (fl));
-
-	c = dem_cmd;
-	Qwrite (cls.demofile, &c, sizeof (c));
-
-	// correct for byte order, bytes don't matter
-	cmd = *pcmd;
-
-	for (i = 0; i < 3; i++)
-		cmd.angles[i] = LittleFloat (cmd.angles[i]);
-	cmd.forwardmove = LittleShort (cmd.forwardmove);
-	cmd.sidemove = LittleShort (cmd.sidemove);
-	cmd.upmove = LittleShort (cmd.upmove);
-
-	Qwrite (cls.demofile, &cmd, sizeof (cmd));
-
-	for (i = 0; i < 3; i++) {
-		fl = LittleFloat (cl.viewangles[i]);
-		Qwrite (cls.demofile, &fl, 4);
-	}
-
-	Qflush (cls.demofile);
-}
-
-/*
-	CL_WriteDemoMessage
-
-	Dumps the current net message, prefixed by the length and view angles
-*/
-static void
-CL_WriteDemoMessage (sizebuf_t *msg)
-{
-	byte		c;
-	float		fl;
-	int			len;
-
-	if (!cls.demorecording)
-		return;
-
-	fl = LittleFloat ((float) realtime);
-	Qwrite (cls.demofile, &fl, sizeof (fl));
-
-	c = dem_read;
-	Qwrite (cls.demofile, &c, sizeof (c));
-
-	len = LittleLong (msg->cursize);
-	Qwrite (cls.demofile, &len, 4);
-	Qwrite (cls.demofile, msg->data, msg->cursize);
-
-	Qflush (cls.demofile);
+	// finish up
+	Qclose (cls.demofile);
+	cls.demofile = NULL;
+	cls.demorecording = false;
+	Sys_Printf ("Completed demo\n");
 }
 
 #if 0
@@ -206,7 +182,7 @@ static const char *dem_names[] = {
 };
 #endif
 
-static qboolean
+static int
 CL_GetDemoMessage (void)
 {
 	byte		c, newtime;
@@ -326,11 +302,11 @@ nextdemomessage:
 readit:
 			// get the next message
 			Qread (cls.demofile, &net_message->message->cursize, 4);
-			net_message->message->cursize = LittleLong
-				(net_message->message->cursize);
-			if (net_message->message->cursize > MAX_MSGLEN + 8) //+8 for header
-				Host_Error ("Demo message > MAX_MSGLEN + 8: %d/%d",
-							net_message->message->cursize, MAX_MSGLEN + 8);
+			net_message->message->cursize =
+				LittleLong (net_message->message->cursize);
+			if (net_message->message->cursize > MAX_DEMMSG)
+				Host_Error ("Demo message > MAX_DEMMSG: %d/%d",
+							net_message->message->cursize, MAX_DEMMSG);
 			r = Qread (cls.demofile, net_message->message->data,
 					   net_message->message->cursize);
 			if (r != net_message->message->cursize) {
@@ -352,7 +328,6 @@ readit:
 				}
 			}
 			break;
-
 		case dem_set:
 			Qread (cls.demofile, &i, 4);
 			cls.netchan.outgoing_sequence = LittleLong (i);
@@ -364,7 +339,6 @@ readit:
 				goto nextdemomessage;
 			}
 			break;
-
 		case dem_multiple:
 			r = Qread (cls.demofile, &i, 4);
 			if (r != 4) {
@@ -374,29 +348,30 @@ readit:
 			cls.lastto = LittleLong (i);
 			cls.lasttype = dem_multiple;
 			goto readit;
-
 		case dem_single:
 			cls.lastto = c >> 3;
 			cls.lasttype = dem_single;
 			goto readit;
-
 		case dem_stats:
 			cls.lastto = c >> 3;
 			cls.lasttype = dem_stats;
 			goto readit;
-
 		case dem_all:
 			cls.lastto = 0;
 			cls.lasttype = dem_all;
 			goto readit;
-
 		default:
 			Sys_Printf ("Corrupted demo.\n");
 			CL_StopPlayback ();
 			return 0;
 	}
-
 	return 1;
+}
+
+static int
+CL_GetPacket (void)
+{
+	return NET_GetPacket ();
 }
 
 /*
@@ -404,11 +379,11 @@ readit:
 
 	Handles recording and playback of demos, on top of NET_ code
 */
-qboolean
+int
 CL_GetMessage (void)
 {
 	if (cls.demoplayback) {
-		qboolean    ret = CL_GetDemoMessage ();
+		int         ret = CL_GetDemoMessage ();
 
 		if (!ret && demo_timeframes_isactive && cls.td_starttime) {
 			CL_TimeFrames_AddTimestamp ();
@@ -416,16 +391,56 @@ CL_GetMessage (void)
 		return ret;
 	}
 
-	if (!NET_GetPacket ())
-		return false;
+	if (!CL_GetPacket ())
+		return 0;
 
 	if (net_packetlog->int_val)
 		Log_Incoming_Packet (net_message->message->data,
 							 net_message->message->cursize, 1);
 
-	CL_WriteDemoMessage (net_message->message);
 
-	return true;
+	if (cls.demorecording)
+		CL_WriteDemoMessage (net_message->message);
+
+	return 1;
+}
+
+/*
+	CL_WriteDemoCmd
+
+	Writes the current user cmd
+*/
+void
+CL_WriteDemoCmd (usercmd_t *pcmd)
+{
+	byte		c;
+	float		fl;
+	int			i;
+	usercmd_t	cmd;
+
+	fl = LittleFloat ((float) realtime);
+	Qwrite (cls.demofile, &fl, sizeof (fl));
+
+	c = dem_cmd;
+	Qwrite (cls.demofile, &c, sizeof (c));
+
+	// correct for byte order, bytes don't matter
+	cmd = *pcmd;
+
+	for (i = 0; i < 3; i++)
+		cmd.angles[i] = LittleFloat (cmd.angles[i]);
+	cmd.forwardmove = LittleShort (cmd.forwardmove);
+	cmd.sidemove = LittleShort (cmd.sidemove);
+	cmd.upmove = LittleShort (cmd.upmove);
+
+	Qwrite (cls.demofile, &cmd, sizeof (cmd));
+
+	for (i = 0; i < 3; i++) {
+		fl = LittleFloat (cl.viewangles[i]);
+		Qwrite (cls.demofile, &fl, 4);
+	}
+
+	Qflush (cls.demofile);
 }
 
 /*
@@ -433,29 +448,90 @@ CL_GetMessage (void)
 
 	stop recording a demo
 */
-void
+static void
 CL_Stop_f (void)
 {
 	if (!cls.demorecording) {
 		Sys_Printf ("Not recording a demo.\n");
 		return;
 	}
-	// write a disconnect message to the demo file
-	SZ_Clear (net_message->message);
-	MSG_WriteLong (net_message->message, -1);  // -1 sequence means out of band
-	MSG_WriteByte (net_message->message, svc_disconnect);
-	MSG_WriteString (net_message->message, "EndOfDemo");
-	CL_WriteDemoMessage (net_message->message);
-
-	// finish up
-	Qclose (cls.demofile);
-	cls.demofile = NULL;
-	cls.demorecording = false;
-	Sys_Printf ("Completed demo\n");
+	CL_StopRecording ();
 }
 
 /*
-	CL_WriteDemoMessage
+	CL_Record_f
+
+	record <demoname> <server>
+*/
+static void
+CL_Record_f (void)
+{
+	if (Cmd_Argc () > 2) {
+		// we use a demo name like year-month-day-hours-minutes-mapname.qwd
+		// if there is no argument
+		Sys_Printf ("record [demoname]\n");
+		return;
+	}
+
+	if (cls.demoplayback || cls.state != ca_active) {
+		Sys_Printf ("You must be connected to record.\n");
+		return;
+	}
+
+	if (cls.demorecording)
+		CL_Stop_f ();
+	if (Cmd_Argc () == 2)
+		CL_Record (Cmd_Argv (1), -1);
+	else
+		CL_Record (0, -1);
+}
+
+/*
+	CL_ReRecord_f
+
+	record <demoname>
+*/
+static void
+CL_ReRecord_f (void)
+{
+	dstring_t  *name;
+	int			c;
+
+	c = Cmd_Argc ();
+	if (c != 2) {
+		Sys_Printf ("rerecord <demoname>\n");
+		return;
+	}
+
+	if (!cls.servername || !cls.servername->str) {
+		Sys_Printf ("No server to which to reconnect...\n");
+		return;
+	}
+
+	if (cls.demorecording)
+		CL_Stop_f ();
+
+	name = dstring_newstr ();
+	dsprintf (name, "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
+
+	// open the demo file
+	QFS_DefaultExtension (name, ".qwd");
+
+	cls.demofile = QFS_WOpen (name->str, 0);
+	if (!cls.demofile) {
+		Sys_Printf ("ERROR: couldn't open.\n");
+	} else {
+		Sys_Printf ("recording to %s.\n", name->str);
+		cls.demorecording = true;
+
+		CL_Disconnect ();
+		CL_BeginServerConnect ();
+	}
+	dstring_delete (name);
+}
+
+/*
+	CL_WriteRecordDemoMessage
 
 	Dumps the current net message, prefixed by the length and view angles
 */
@@ -512,7 +588,7 @@ CL_WriteSetDemoMessage (void)
 }
 
 void
-CL_Record (const char *argv1)
+CL_Record (const char *argv1, int track)
 {
 	byte        buf_data[MAX_MSGLEN + 10];	// + 10 for header
 	dstring_t  *name;
@@ -803,93 +879,21 @@ CL_Record (const char *argv1)
 	// done
 }
 
-/*
-	CL_Record_f
-
-	record <demoname> <server>
-*/
-void
-CL_Record_f (void)
-{
-	if (Cmd_Argc () > 2) {
-		// we use a demo name like year-month-day-hours-minutes-mapname.qwd
-		// if there is no argument
-		Sys_Printf ("record [demoname]\n");
-		return;
-	}
-
-	if (cls.demoplayback || cls.state != ca_active) {
-		Sys_Printf ("You must be connected to record.\n");
-		return;
-	}
-
-	if (cls.demorecording)
-		CL_Stop_f ();
-	if (Cmd_Argc () == 2)
-		CL_Record (Cmd_Argv (1));
-	else
-		CL_Record (0);
-}
-
-/*
-	CL_ReRecord_f
-
-	record <demoname>
-*/
-void
-CL_ReRecord_f (void)
-{
-	dstring_t  *name;
-	int			c;
-
-	c = Cmd_Argc ();
-	if (c != 2) {
-		Sys_Printf ("rerecord <demoname>\n");
-		return;
-	}
-
-	if (!cls.servername || !cls.servername->str) {
-		Sys_Printf ("No server to which to reconnect...\n");
-		return;
-	}
-
-	if (cls.demorecording)
-		CL_Stop_f ();
-
-	name = dstring_newstr ();
-	dsprintf (name, "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
-
-	// open the demo file
-	QFS_DefaultExtension (name, ".qwd");
-
-	cls.demofile = QFS_WOpen (name->str, 0);
-	if (!cls.demofile) {
-		Sys_Printf ("ERROR: couldn't open.\n");
-	} else {
-		Sys_Printf ("recording to %s.\n", name->str);
-		cls.demorecording = true;
-
-		CL_Disconnect ();
-		CL_BeginServerConnect ();
-	}
-	dstring_delete (name);
-}
-
 static void
 CL_StartDemo (void)
 {
-	dstring_t  *name = dstring_newstr ();
+	dstring_t  *name;
 
 	// open the demo file
-	dstring_copystr (name, demoname);
+	name = dstring_strdup (demoname);
 	QFS_DefaultExtension (name, ".qwd");
 
 	Sys_Printf ("Playing demo from %s.\n", name->str);
 	QFS_FOpenFile (name->str, &cls.demofile);
+	dstring_delete (name);
 	if (!cls.demofile) {
 		Sys_Printf ("ERROR: couldn't open.\n");
 		cls.demonum = -1;				// stop demo loop
-		dstring_delete (name);
 		return;
 	}
 
@@ -921,7 +925,7 @@ CL_StartDemo (void)
 
 	play [demoname]
 */
-void
+static void
 CL_PlayDemo_f (void)
 {
 	if (Cmd_Argc () != 2) {
@@ -966,8 +970,8 @@ sqr (double x)
 static void
 CL_FinishTimeDemo (void)
 {
-	float		time;
-	int			frames;
+	int         frames;
+	float       time;
 
 	cls.timedemo = false;
 
@@ -983,13 +987,15 @@ CL_FinishTimeDemo (void)
 	demo_timeframes_isactive = 0;
 
 	timedemo_count--;
-	timedemo_data[timedemo_count].frames = frames;
-	timedemo_data[timedemo_count].time = time;
-	timedemo_data[timedemo_count].fps = frames / time;
+	if (timedemo_data) {
+		timedemo_data[timedemo_count].frames = frames;
+		timedemo_data[timedemo_count].time = time;
+		timedemo_data[timedemo_count].fps = frames / time;
+	}
 	if (timedemo_count > 0) {
 		CL_StartTimeDemo ();
 	} else {
-		if (--timedemo_runs > 0) {
+		if (--timedemo_runs > 0 && timedemo_data) {
 			double      average = 0;
 			double      variance = 0;
 			double      min, max;
@@ -1010,8 +1016,6 @@ CL_FinishTimeDemo (void)
 			Sys_Printf ("  min/max fps: %.3f/%.3f\n", min, max);
 			Sys_Printf ("std deviation: %.3f fps\n", sqrt (variance));
 		}
-		free (timedemo_data);
-		timedemo_data = 0;
 		if (demo_quit->int_val)
 			Cbuf_InsertText (cl_cbuf, "quit\n");
 	}
@@ -1022,9 +1026,11 @@ CL_FinishTimeDemo (void)
 
 	timedemo [demoname]
 */
-void
+static void
 CL_TimeDemo_f (void)
 {
+	int         count = 1;
+
 	if (Cmd_Argc () < 2 || Cmd_Argc () > 3) {
 		Sys_Printf ("timedemo <demoname> [count]: gets demo speeds\n");
 		return;
@@ -1033,17 +1039,17 @@ CL_TimeDemo_f (void)
 	// disconnect from server
 	CL_Disconnect ();
 
-	if (Cmd_Argc () == 3) {
-		timedemo_count = atoi (Cmd_Argv (2));
-	} else {
-		timedemo_count = 1;
-	}
-	timedemo_runs = timedemo_count = max (timedemo_count, 1);
-	if (timedemo_data)
+	if (Cmd_Argc () == 3)
+		count = atoi (Cmd_Argv (2));
+	if (timedemo_data) {
 		free (timedemo_data);
+		timedemo_data = 0;
+	}
 	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
 	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
 	CL_StartTimeDemo ();
+	timedemo_runs = timedemo_count = max (count, 1);
+	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
 }
 
 void
@@ -1064,6 +1070,16 @@ CL_Demo_Init (void)
 						  "automaticly quit after a timedemo has finished");
 	demo_timeframes = Cvar_Get ("demo_timeframes", "0", CVAR_NONE, NULL,
 								"write timestamps for every frame");
+	Cmd_AddCommand ("record", CL_Record_f, "Record a demo, if no filename "
+					"argument is given\n"
+					"the demo will be called Year-Month-Day-Hour-Minute-"
+					"Mapname");
+	Cmd_AddCommand ("rerecord", CL_ReRecord_f, "Rerecord a demo on the same "
+					"server");
+	Cmd_AddCommand ("stop", CL_Stop_f, "Stop recording a demo");
+	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "Play a recorded demo");
+	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "Play a demo as fast as your "
+					"hardware can. Useful for benchmarking.");
 }
 
 static void
@@ -1092,9 +1108,9 @@ static void
 CL_TimeFrames_DumpLog (void)
 {
 	const char *filename = "timeframes.txt";
-	int			i;
-	long		frame;
-	QFile	   *outputfile;
+	int         i;
+	long        frame;
+	QFile      *outputfile;
 
 	if (demo_timeframes_isactive == 0)
 		return;

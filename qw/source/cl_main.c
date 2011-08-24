@@ -486,7 +486,7 @@ CL_Disconnect (void)
 		CL_StopPlayback ();
 	else if (cls.state != ca_disconnected) {
 		if (cls.demorecording)
-			CL_Stop_f ();
+			CL_StopRecording ();
 
 		final[0] = clc_stringcmd;
 		strcpy ((char *) final + 1, "drop");
@@ -1155,7 +1155,7 @@ CL_SetState (cactive_t state)
 
 			// Auto demo recorder stops here
 			if (cl_autorecord->int_val && cls.demorecording)
-				CL_Stop_f ();
+				CL_StopRecording ();
 		} else if (state == ca_active) {
 			// entering active state
 			VID_SetCaption (cls.servername->str);
@@ -1167,7 +1167,7 @@ CL_SetState (cactive_t state)
 			// Auto demo recorder starts here
 			if (cl_autorecord->int_val && !cls.demoplayback
 				&& !cls.demorecording)
-				CL_Record (0);
+				CL_Record (0, -1);
 		}
 	}
 	if (con_module)
@@ -1192,18 +1192,8 @@ CL_Init (void)
 	Cmd_AddCommand ("version", CL_Version_f, "Report version information");
 	Cmd_AddCommand ("changing", CL_Changing_f, "Used when maps are changing");
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "Disconnect from server");
-	Cmd_AddCommand ("record", CL_Record_f, "Record a demo, if no filename "
-					"argument is given\n"
-					"the demo will be called Year-Month-Day-Hour-Minute-"
-					"Mapname");
-	Cmd_AddCommand ("rerecord", CL_ReRecord_f, "Rerecord a demo on the same "
-					"server");
 	Cmd_AddCommand ("snap", CL_RSShot_f, "Take a screenshot and upload it to "
 					"the server");
-	Cmd_AddCommand ("stop", CL_Stop_f, "Stop recording a demo");
-	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "Play a recorded demo");
-	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "Play a demo as fast as your "
-					"hardware can. Useful for benchmarking.");
 	Cmd_AddCommand ("maplist", Con_Maplist_f, "List maps available");
 	Cmd_AddCommand ("skinlist", Con_Skinlist_f, "List skins available");
 	Cmd_AddCommand ("skyboxlist", Con_Skyboxlist_f, "List skyboxes available");
