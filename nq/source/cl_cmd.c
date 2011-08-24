@@ -1,7 +1,7 @@
 /*
 	cl_cmd.c
 
-	script command processing module
+	Client-side script command processing module
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -27,6 +27,9 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
