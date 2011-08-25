@@ -80,12 +80,11 @@ if test "x$enable_png" != "xno"; then
 	else
 		AC_CHECK_LIB(png, png_set_read_fn, HAVE_PNG=yes, HAVE_PNG=no, [$LIBS])
 		if test "x$HAVE_PNG" = "xyes"; then
-			AC_CHECK_HEADER(png.h, HAVE_PNG=yes, HAVE_PNG=no)
+			AC_CHECK_HEADER(png.h, HAVE_PNG=yes PNG_LIBS="-lpng", HAVE_PNG=no)
 		fi
 	fi
 fi
 AC_SUBST(PNG_LIBS)
 if test "x$HAVE_PNG" = "xyes"; then
-	PNG_LIBS="-lpng"
 	AC_DEFINE(HAVE_PNG, 1, [Define if you have libpng])
 fi
