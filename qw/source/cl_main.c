@@ -56,7 +56,7 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <rpc/types.h>
 #endif
 
-#ifdef HAVE_MALLOC_H
+#if defined(_WIN32) && defined(HAVE_MALLOC_H)
 #include <malloc.h>
 #endif
 
