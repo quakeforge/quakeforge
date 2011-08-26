@@ -47,12 +47,13 @@
 */
 //@{
 
+//FIXME our code is not yet ready for anything but ipv4 addresses
 typedef union address {
-	struct sockaddr_storage ss;
+//	struct sockaddr_storage ss;
 	struct sockaddr         sa;
 	struct sockaddr_in      s4;
 #ifdef HAVE_IPV6
-	struct sockaddr_in6     s6;
+//	struct sockaddr_in6     s6;
 #endif
 } AF_address_t;
 
