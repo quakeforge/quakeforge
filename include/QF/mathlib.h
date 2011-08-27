@@ -240,6 +240,7 @@ int GreatestCommonDivisor (int i1, int i2);
 
 void AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right,
 				   vec3_t up);
+void AngleQuat (const vec3_t angles, quat_t q);
 void VectorVectors (const vec3_t forward, vec3_t right, vec3_t up);
 int BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs,
 					struct mplane_s *plane);

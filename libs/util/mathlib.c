@@ -385,7 +385,7 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, mplane_t *p)
 
 	the math in AngleVectors has the entity frame as left handed with x
 	(forward) axis forward, y (right) axis to the right and z (up) up. However,
-	the world is a right (?) handed system with x to the right, y forward and
+	the world is a right handed system with x to the right, y forward and
 	z up.
 
 	pitch =
@@ -435,6 +435,29 @@ AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 	up[0] = (cr * sp * cy + -sr * -sy);
 	up[1] = (cr * sp * sy + -sr * cy);
 	up[2] = cr * cp;
+}
+
+VISIBLE void
+AngleQuat (const vec3_t angles, quat_t q)
+{
+	float       alpha, sr, sp, sy, cr, cp, cy;
+
+	// alpha is half the angle
+	alpha = angles[YAW] * (M_PI / 360);
+	sy = sin (alpha);
+	cy = cos (alpha);
+	alpha = angles[PITCH] * (M_PI / 360);
+	sp = sin (alpha);
+	cp = cos (alpha);
+	alpha = angles[ROLL] * (M_PI / 360);
+	sr = sin (alpha);
+	cr = cos (alpha);
+
+	QuatSet (cy * cp * cr + sy * sp * sr,
+			 cy * cp * sr - sy * sp * cr,
+			 cy * sp * cr + sy * cp * sr,
+			 sy * cp * cr - cy * sp * sr,
+			 q);
 }
 
 VISIBLE int
