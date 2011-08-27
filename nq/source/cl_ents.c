@@ -1,5 +1,5 @@
 /*
-	cl_main.c
+	cl_ents.c
 
 	entity parsing and management
 
@@ -28,8 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
@@ -63,7 +62,7 @@ cl_entity_state_t    cl_baselines[MAX_EDICTS];
 void
 CL_ClearEnts (void)
 {
-	int         i;
+	size_t      i;
 
 	// clear other arrays   
 	memset (cl_entities, 0, sizeof (cl_entities));
@@ -77,56 +76,77 @@ CL_ClearEnts (void)
 }
 
 static void
-CL_NewDlight (int key, vec3_t org, int effects)
+CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
+			  byte glow_color)
 {
 	float       radius;
-	float       time = 0.1;
 	dlight_t   *dl;
 	static quat_t normal = {0.4, 0.2, 0.05, 0.7};
 	static quat_t red = {0.5, 0.05, 0.05, 0.7};
 	static quat_t blue = {0.05, 0.05, 0.5, 0.7};
 	static quat_t purple = {0.5, 0.05, 0.5, 0.7};
 
-	if (!(effects & (EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT)))
-		return;
+	effects &= EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT;
+	if (!effects) {
+		if (!glow_size)
+			return;
+	}
 
 	dl = R_AllocDlight (key);
 	if (!dl)
 		return;
 	VectorCopy (org, dl->origin);
 
-	radius = 200 + (rand () & 31);
-	if (effects & EF_BRIGHTLIGHT) {
-		radius += 200;
-		dl->origin[2] += 16;
-	}
-	if (effects & EF_DIMLIGHT)
-		if (effects & ~EF_DIMLIGHT)
-			radius -= 100;
-	dl->radius = radius;
-	dl->die = cl.time + time;
+	if (effects & (EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT)) {
+		radius = 200 + (rand () & 31);
+		if (effects & EF_BRIGHTLIGHT) {
+			radius += 200;
+			dl->origin[2] += 16;
+		}
+		if (effects & EF_DIMLIGHT)
+			if (effects & ~EF_DIMLIGHT)
+				radius -= 100;
+		dl->radius = radius;
+		dl->die = cl.time + 0.1;
 
-	switch (effects & (EF_BLUE | EF_RED)) {
-		case EF_RED | EF_BLUE:
-			QuatCopy (purple, dl->color);
-			break;
-		case EF_RED:
-			QuatCopy (red, dl->color);
-			break;
-		case EF_BLUE:
-			QuatCopy (blue, dl->color);
-			break;
-		default:
-			QuatCopy (normal, dl->color);
-			break;
+		switch (effects & (EF_RED | EF_BLUE)) {
+			case EF_RED | EF_BLUE:
+				QuatCopy (purple, dl->color);
+				break;
+			case EF_RED:
+				QuatCopy (red, dl->color);
+				break;
+			case EF_BLUE:
+				QuatCopy (blue, dl->color);
+				break;
+			default:
+				QuatCopy (normal, dl->color);
+				break;
+		}
+	}
+
+	if (glow_size) {
+		dl->radius += glow_size < 128 ? glow_size * 8.0 :
+			(glow_size - 256) * 8.0;
+		dl->die = cl.time + 0.1;
+		if (glow_color) {
+			if (glow_color == 255) {
+				dl->color[0] = dl->color[1] = dl->color[2] = 1.0;
+			} else {
+				byte        *tempcolor;
+
+				tempcolor = (byte *) &d_8to24table[glow_color];
+				VectorScale (tempcolor, 1 / 255.0, dl->color);
+			}
+		}
 	}
 }
 
 /*
 	CL_LerpPoint
 
-	Determines the fraction between the last two messages that the objects
-	should be put at.
+	Determines the fraction between the last two messages at which the
+	objects should be put.
 */
 static float
 CL_LerpPoint (void)
@@ -296,7 +316,7 @@ CL_RelinkEntities (void)
 				ent->lerpflags |= LERP_RESETANIM | LERP_RESETANIM2;
 #endif
 		}
-		CL_NewDlight (i, ent->origin, state->effects);
+		CL_NewDlight (i, ent->origin, state->effects, 0, 0);
 		if (VectorDistance_fast (state->msg_origins[1], ent->origin)
 			> (256 * 256))
 			VectorCopy (ent->origin, state->msg_origins[1]);

@@ -117,17 +117,13 @@ const char *svc_strings[] = {
 	"svc_foundsecret",
 	"svc_spawnstaticsound",
 	"svc_intermission",
-	"svc_finale",
-
-	"svc_cdtrack",
+	"svc_finale",				// [string] text
+	"svc_cdtrack",				// [byte] track
 	"svc_sellscreen",
-
 	"svc_smallkick",
 	"svc_bigkick",
-
 	"svc_updateping",
 	"svc_updateentertime",
-
 	"svc_updatestatlong",
 	"svc_muzzleflash",
 	"svc_updateuserinfo",
@@ -141,7 +137,6 @@ const char *svc_strings[] = {
 	"svc_deltapacketentities",
 	"svc_maxspeed",
 	"svc_entgravity",
-
 	"svc_setinfo",
 	"svc_serverinfo",
 	"svc_updatepl",
@@ -160,6 +155,7 @@ const char *svc_strings[] = {
 	"NEW PROTOCOL"
 };
 
+dstring_t  *centerprint;
 int         oldparsecountmod;
 int         parsecountmod;
 double      parsecounttime;
@@ -1173,6 +1169,10 @@ CL_ServerInfo (void)
 //		movevars.ktjump = atof (value);
 //		FIXME: need to set to 0.5 otherwise, outside of else structure
 	}
+	if (!centerprint)
+		centerprint = dstring_newstr ();
+	else
+		dstring_clearstr (centerprint);
 }
 
 static void
@@ -1246,7 +1246,7 @@ int			received_framecount;
 void
 CL_ParseServerMessage (void)
 {
-	const char *s;
+	const char *str;
 	static dstring_t *stuffbuf;
 	int			cmd = 0, i, j;
 
@@ -1304,55 +1304,60 @@ CL_ParseServerMessage (void)
 				dstring_t  *p = 0;
 
 				i = MSG_ReadByte (net_message);
-				s = MSG_ReadString (net_message);
+				str = MSG_ReadString (net_message);
 				if (i == PRINT_CHAT) {
-					if (!CL_Chat_Allow_Message (s))
+					if (!CL_Chat_Allow_Message (str))
 						break;
 					// TODO: cl_nofake 2 -- accept fake messages from teammates
 
 					if (cl_nofake->int_val) {
 						char	*c;
 
-						p = dstring_strdup (s);
+						p = dstring_strdup (str);
 						for (c = p->str; *c; c++) {
 							if (*c == '\r')
 								*c = '#';
 						}
-						s = p->str;
+						str = p->str;
 					}
 					Con_SetOrMask (128);
 					S_LocalSound ("misc/talk.wav");
 					if (cl_chat_e->func)
-						GIB_Event_Callback (cl_chat_e, 1, s);
-					Team_ParseChat (s);
+						GIB_Event_Callback (cl_chat_e, 1, str);
+					Team_ParseChat (str);
 				}
-				Sys_Printf ("%s", s);
+				Sys_Printf ("%s", str);
 				if (p)
 					dstring_delete (p);
 				Con_SetOrMask (0);
 				break;
 			}
 			case svc_centerprint:
-				Sbar_CenterPrint (MSG_ReadString (net_message));
+				str = MSG_ReadString (net_message);
+				if (strcmp (str, centerprint->str)) {
+					dstring_copystr (centerprint, str);
+					//FIXME logging
+				}
+				Sbar_CenterPrint (str);
 				break;
 
 			case svc_stufftext:
-				s = MSG_ReadString (net_message);
-				if (s[strlen (s) - 1] == '\n') {
+				str = MSG_ReadString (net_message);
+				if (str[strlen (str) - 1] == '\n') {
 					if (stuffbuf && stuffbuf->str[0]) {
 						Sys_MaskPrintf (SYS_DEV, "stufftext: %s%s\n",
-										stuffbuf->str, s);
+										stuffbuf->str, str);
 						Cbuf_AddText (cl_stbuf, stuffbuf->str);
 						dstring_clearstr (stuffbuf);
 					} else {
-						Sys_MaskPrintf (SYS_DEV, "stufftext: %s\n", s);
+						Sys_MaskPrintf (SYS_DEV, "stufftext: %s\n", str);
 					}
-					Cbuf_AddText (cl_stbuf, s);
+					Cbuf_AddText (cl_stbuf, str);
 				} else {
-					Sys_MaskPrintf (SYS_DEV, "partial stufftext: %s\n", s);
+					Sys_MaskPrintf (SYS_DEV, "partial stufftext: %s\n", str);
 					if (!stuffbuf)
 						stuffbuf = dstring_newstr ();
-					dstring_appendstr (stuffbuf, s);
+					dstring_appendstr (stuffbuf, str);
 				}
 				break;
 
@@ -1507,7 +1512,12 @@ CL_ParseServerMessage (void)
 				r_force_fullscreen = 1;
 				cl.completed_time = realtime;
 				vid.recalc_refdef = true;				// go to full screen
-				Sbar_CenterPrint (MSG_ReadString (net_message));
+				str = MSG_ReadString (net_message);
+				if (strcmp (str, centerprint->str)) {
+					dstring_copystr (centerprint, str);
+					//FIXME logging
+				}
+				Sbar_CenterPrint (str);
 				break;
 
 			case svc_sellscreen:

@@ -28,8 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -67,9 +66,9 @@ entity_t    cl_flag_ents[MAX_CLIENTS];
 entity_t    cl_packet_ents[512];	// FIXME: magic number
 
 void
-CL_ClearEnts ()
+CL_ClearEnts (void)
 {
-	unsigned int i;
+	size_t      i;
 
 	for (i = 0; i < sizeof (cl_packet_ents) / sizeof (cl_packet_ents[0]); i++)
 		CL_Init_Entity (&cl_packet_ents[i]);
@@ -83,7 +82,7 @@ static void
 CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
 			  byte glow_color)
 {
-	float		radius;
+	float       radius;
 	dlight_t   *dl;
 	static quat_t normal = {0.4, 0.2, 0.05, 0.7};
 	static quat_t red = {0.5, 0.05, 0.05, 0.7};
@@ -112,6 +111,7 @@ CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
 				radius -= 100;
 		dl->radius = radius;
 		dl->die = cl.time + 0.1;
+
 		switch (effects & (EF_RED | EF_BLUE)) {
 			case EF_RED | EF_BLUE:
 				QuatCopy (purple, dl->color);
@@ -136,12 +136,10 @@ CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
 			if (glow_color == 255) {
 				dl->color[0] = dl->color[1] = dl->color[2] = 1.0;
 			} else {
-				unsigned char	*tempcolor;
+				byte        *tempcolor;
 
 				tempcolor = (byte *) &d_8to24table[glow_color];
-				dl->color[0] = tempcolor[0] / 255.0;
-				dl->color[1] = tempcolor[1] / 255.0;
-				dl->color[2] = tempcolor[2] / 255.0;
+				VectorScale (tempcolor, 1 / 255.0, dl->color);
 			}
 		}
 	}

@@ -101,7 +101,7 @@ const char *svc_strings[] = {
 	"svc_foundsecret",
 	"svc_spawnstaticsound",
 	"svc_intermission",
-	"svc_finale",				// [string] music [string] text
+	"svc_finale",				// [string] text
 	"svc_cdtrack",				// [byte] track [byte] looptrack
 	"svc_sellscreen",
 	"svc_cutscene",
