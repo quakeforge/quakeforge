@@ -185,16 +185,16 @@ CL_ParseStartSoundPacket (void)
 		attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
 
 	if (field_mask & SND_LARGEENTITY) {
-		ent = (uint16_t) MSG_ReadShort (net_message);
+		ent = MSG_ReadShort (net_message);
 		channel = MSG_ReadByte (net_message);
 	} else {
-		channel = (uint16_t) MSG_ReadShort (net_message);
+		channel = MSG_ReadShort (net_message);
 		ent = channel >> 3;
 		channel &= 7;
 	}
 
 	if (field_mask & SND_LARGESOUND)
-		sound_num = (uint16_t) MSG_ReadShort (net_message);
+		sound_num = MSG_ReadShort (net_message);
 	else
 		sound_num = MSG_ReadByte (net_message);
 
@@ -688,7 +688,7 @@ CL_ParseClientdata (void)
 	int         i, j;
 	int         bits;
 
-	bits = (uint16_t) MSG_ReadShort (net_message);
+	bits = MSG_ReadShort (net_message);
 	if (bits & SU_EXTEND1)
 		bits |= MSG_ReadByte (net_message) << 16;
 	if (bits & SU_EXTEND2)
@@ -1006,7 +1006,7 @@ CL_ParseServerMessage (void)
 				if (i >= cl.maxclients)
 					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
 								"MAX_SCOREBOARD");
-				cl.scores[i].frags = MSG_ReadShort (net_message);
+				cl.scores[i].frags = (short) MSG_ReadShort (net_message);
 				break;
 
 			case svc_updatecolors:

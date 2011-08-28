@@ -435,9 +435,9 @@ SV_ReadClientMove (usercmd_t *move)
 	VectorCopy (angle, SVvector (host_client->edict, v_angle));
 
 	// read movement
-	move->forwardmove = MSG_ReadShort (net_message);
-	move->sidemove = MSG_ReadShort (net_message);
-	move->upmove = MSG_ReadShort (net_message);
+	move->forwardmove = (short) MSG_ReadShort (net_message);
+	move->sidemove = (short) MSG_ReadShort (net_message);
+	move->upmove = (short) MSG_ReadShort (net_message);
 
 	// read buttons
 	bits = MSG_ReadByte (net_message);

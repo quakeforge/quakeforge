@@ -1412,7 +1412,7 @@ CL_ParseServerMessage (void)
 				if (i >= MAX_CLIENTS)
 					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
 								"MAX_SCOREBOARD");
-				cl.players[i].frags = MSG_ReadShort (net_message);
+				cl.players[i].frags = (short) MSG_ReadShort (net_message);
 				break;
 
 			case svc_updateping:

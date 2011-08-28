@@ -250,8 +250,8 @@ MSG_ReadShort (qmsg_t *msg)
 	int         c;
 
 	if (msg->readcount + 2 <= msg->message->cursize) {
-		c = (short) (msg->message->data[msg->readcount]
-					 + (msg->message->data[msg->readcount + 1] << 8));
+		c = (msg->message->data[msg->readcount]
+			 + (msg->message->data[msg->readcount + 1] << 8));
 		msg->readcount += 2;
 		return c;
 	}
@@ -354,7 +354,7 @@ MSG_ReadBytes (qmsg_t *msg, void *buf, int len)
 VISIBLE float
 MSG_ReadCoord (qmsg_t *msg)
 {
-	return MSG_ReadShort (msg) * (1.0 / 8.0);
+	return (short) MSG_ReadShort (msg) * (1.0 / 8.0);
 }
 
 VISIBLE void
@@ -363,7 +363,7 @@ MSG_ReadCoordV (qmsg_t *msg, vec3_t coord)
 	int		i;
 
 	for (i = 0; i < 3; i++)
-		coord[i] = MSG_ReadShort (msg) * (1.0 / 8.0);
+		coord[i] = (short) MSG_ReadShort (msg) * (1.0 / 8.0);
 }
 
 VISIBLE void
@@ -372,7 +372,7 @@ MSG_ReadCoordAngleV (qmsg_t *msg, vec3_t coord, vec3_t angles)
 	int		i;
 
 	for (i = 0; i < 3; i++) {
-		coord[i] = MSG_ReadShort (msg) * (1.0 / 8.0);
+		coord[i] = (short) MSG_ReadShort (msg) * (1.0 / 8.0);
 		angles[i] = ((signed char) MSG_ReadByte (msg)) * (360.0 / 256.0);
 	}
 }
@@ -395,20 +395,16 @@ MSG_ReadAngleV (qmsg_t *msg, vec3_t angles)
 VISIBLE float
 MSG_ReadAngle16 (qmsg_t *msg)
 {
-	return MSG_ReadShort (msg) * (360.0 / 65536.0);
+	return (short) MSG_ReadShort (msg) * (360.0 / 65536.0);
 }
 
 VISIBLE void
 MSG_ReadAngle16V (qmsg_t *msg, vec3_t angles)
 {
 	int		i;
-	short   ang;
 
-	for (i = 0; i < 3; i++) {
-		ang = MSG_ReadByte (msg);
-		ang |= MSG_ReadByte (msg) << 8;
-		angles[i] = ang * (360.0 / 65536.0);
-	}
+	for (i = 0; i < 3; i++)
+		angles[i] = (short) MSG_ReadShort (msg) * (360.0 / 65536.0);
 }
 
 VISIBLE int

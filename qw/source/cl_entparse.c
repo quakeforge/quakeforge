@@ -181,7 +181,7 @@ FlushEntityPacket (void)
 
 	// read it all, but ignore it
 	while (1) {
-		word = (unsigned short) MSG_ReadShort (net_message);
+		word = MSG_ReadShort (net_message);
 		if (net_message->badread) {		// something didn't parse right...
 			Host_Error ("msg_badread in packetentities");
 			return;
@@ -238,7 +238,7 @@ CL_ParsePacketEntities (qboolean delta)
 	newp->num_entities = 0;
 
 	while (1) {
-		word = (unsigned short) MSG_ReadShort (net_message);
+		word = MSG_ReadShort (net_message);
 		if (net_message->badread) {		// something didn't parse right...
 			Host_Error ("msg_badread in packetentities");
 			return;
@@ -436,7 +436,7 @@ CL_ParsePlayerinfo (void)
 
 	for (i = 0; i < 3; i++) {
 		if (flags & (PF_VELOCITY1 << i))
-			state->pls.velocity[i] = MSG_ReadShort (net_message);
+			state->pls.velocity[i] = (short) MSG_ReadShort (net_message);
 		else
 			state->pls.velocity[i] = 0;
 	}
