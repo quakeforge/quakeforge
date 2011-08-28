@@ -1239,16 +1239,16 @@ CL_MuzzleFlash (void)
 
 #define SHOWNET(x) \
 	if (cl_shownet->int_val == 2) \
-		Sys_Printf ("%3i:%s\n", net_message->readcount-1, x);
+		Sys_Printf ("%3i:%s\n", net_message->readcount - 1, x);
 
 int			received_framecount;
 
 void
 CL_ParseServerMessage (void)
 {
+	int			cmd = 0, i, j;
 	const char *str;
 	static dstring_t *stuffbuf;
-	int			cmd = 0, i, j;
 
 	received_framecount = host_framecount;
 	cl.last_servermessage = realtime;
@@ -1265,11 +1265,9 @@ CL_ParseServerMessage (void)
 
 	// parse the message
 	while (1) {
-		if (net_message->badread) {
+		if (net_message->badread)
 			Host_Error ("CL_ParseServerMessage: Bad server message: %s\n",
 						svc_strings[cmd]);
-			break;
-		}
 
 		cmd = MSG_ReadByte (net_message);
 
@@ -1277,10 +1275,10 @@ CL_ParseServerMessage (void)
 			net_message->readcount++;	// so the EOM SHOWNET has the right
 										// value
 			SHOWNET ("END OF MESSAGE");
-			break;
+			break;						// end of message
 		}
 
-		SHOWNET (svc_strings[cmd]);
+		SHOWNET (va ("%s(%d)", svc_strings[cmd], cmd));
 
 		// other commands
 		switch (cmd) {
@@ -1300,7 +1298,8 @@ CL_ParseServerMessage (void)
 					Host_EndGame ("Server disconnected");
 				break;
 
-			case svc_print: {
+			case svc_print:
+			{
 				dstring_t  *p = 0;
 
 				i = MSG_ReadByte (net_message);
@@ -1365,28 +1364,29 @@ CL_ParseServerMessage (void)
 				V_ParseDamage ();
 				break;
 
+			case svc_serverinfo:
+				CL_ServerInfo ();
+				break;
+
+			case svc_setangle:
+			{
+				vec_t      *dest = cl.viewangles;
+				vec3_t      dummy;
+
+				if (cls.demoplayback2) {
+					j = MSG_ReadByte (net_message);
+//					fixangle |= 1 << j;
+					if (j != Cam_TrackNum ())
+						dest = dummy;
+				}
+				MSG_ReadAngleV (net_message, dest);
+				break;
+			}
 			case svc_serverdata:
 				// make sure any stuffed commands are done
 				Cbuf_Execute_Stack (cl_stbuf);
 				CL_ParseServerData ();
 				vid.recalc_refdef = true;	// leave full screen intermission
-				break;
-
-			case svc_setangle:
-				if (!cls.demoplayback2) {
-					MSG_ReadAngleV (net_message, cl.viewangles);
-				} else {
-					j = MSG_ReadByte (net_message);
-//					fixangle |= 1 << j;
-					if (j != Cam_TrackNum ()) {
-						MSG_ReadAngle (net_message);
-						MSG_ReadAngle (net_message);
-						MSG_ReadAngle (net_message);
-					} else {
-						MSG_ReadAngleV (net_message, cl.viewangles);
-					}
-				}
-// FIXME		cl.viewangles[PITCH] = cl.viewangles[ROLL] = 0;
 				break;
 
 			case svc_lightstyle:
@@ -1445,17 +1445,22 @@ CL_ParseServerMessage (void)
 				i = MSG_ReadShort (net_message);
 				CL_ParseBaseline (&cl_baselines[i]);
 				break;
-
 			case svc_spawnstatic:
 				CL_ParseStatic ();
 				break;
-
 			case svc_spawnstaticsound:
 				CL_ParseStaticSound ();
 				break;
-
 			case svc_temp_entity:
 				CL_ParseTEnt ();
+				break;
+
+			case svc_setpause:
+				r_paused = cl.paused = MSG_ReadByte (net_message);
+				if (cl.paused)
+					CDAudio_Pause ();
+				else
+					CDAudio_Resume ();
 				break;
 
 			case svc_killedmonster:
@@ -1544,10 +1549,6 @@ CL_ParseServerMessage (void)
 				CL_SetInfo ();
 				break;
 
-			case svc_serverinfo:
-				CL_ServerInfo ();
-				break;
-
 			case svc_download:
 				CL_ParseDownload ();
 				break;
@@ -1593,14 +1594,6 @@ CL_ParseServerMessage (void)
 
 			case svc_entgravity:
 				movevars.entgravity = MSG_ReadFloat (net_message);
-				break;
-
-			case svc_setpause:
-				r_paused = cl.paused = MSG_ReadByte (net_message);
-				if (cl.paused)
-					CDAudio_Pause ();
-				else
-					CDAudio_Resume ();
 				break;
 		}
 	}
