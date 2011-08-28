@@ -890,10 +890,10 @@ CL_StartDemo (void)
 
 	Sys_Printf ("Playing demo from %s.\n", name->str);
 	QFS_FOpenFile (name->str, &cls.demofile);
-	dstring_delete (name);
 	if (!cls.demofile) {
 		Sys_Printf ("ERROR: couldn't open.\n");
 		cls.demonum = -1;				// stop demo loop
+		dstring_delete (name);
 		return;
 	}
 
