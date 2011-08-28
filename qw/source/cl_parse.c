@@ -55,6 +55,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/idparse.h"
 #include "QF/msg.h"
+#include "QF/progs.h"
+#include "QF/qfplist.h"
 #include "QF/quakeio.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
@@ -174,6 +176,23 @@ extern cvar_t *hud_scoreboard_uid;
 entity_t *cl_static_entities;
 static entity_t **cl_static_tail;
 
+static void
+CL_LoadSky (void)
+{
+	plitem_t   *item;
+	const char *name = 0;
+
+	if (!cl.worldspawn) {
+		R_LoadSkys (0);
+		return;
+	}
+	if ((item = PL_ObjectForKey (cl.worldspawn, "sky")) // Q2/DarkPlaces
+		|| (item = PL_ObjectForKey (cl.worldspawn, "skyname")) // old QF
+		|| (item = PL_ObjectForKey (cl.worldspawn, "qlsky"))) /* QuakeLives */ {
+		name = PL_String (item);
+	}
+	R_LoadSkys (name);
+}
 
 int
 CL_CalcNet (void)
@@ -258,6 +277,26 @@ CL_CheckOrDownloadFile (const char *filename)
 	return false;
 }
 
+static plitem_t *
+map_ent (const char *mapname)
+{
+	static progs_t edpr;
+	char       *name = malloc (strlen (mapname) + 4 + 1);
+	char       *buf;
+	plitem_t   *edicts = 0;
+
+	QFS_StripExtension (mapname, name);
+	strcat (name, ".ent");
+	if ((buf = (char *) QFS_LoadFile (name, 0))) {
+		edicts = ED_Parse (&edpr, buf);
+		free (buf);
+	} else {
+		edicts = ED_Parse (&edpr, cl.model_precache[1]->entities);
+	}
+	free (name);
+	return edicts;
+}
+
 static void
 CL_NewMap (const char *mapname)
 {
@@ -268,6 +307,15 @@ CL_NewMap (const char *mapname)
 	Con_NewMap ();
 	Hunk_Check ();								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
+
+	if (cl.model_precache[1] && cl.model_precache[1]->entities) {
+		cl.edicts = map_ent (mapname);
+		if (cl.edicts) {
+			cl.worldspawn = PL_ObjectAtIndex (cl.edicts, 0);
+			CL_LoadSky ();
+			Fog_ParseWorldspawn (cl.worldspawn);
+		}
+	}
 
 	map_cfg (mapname, 1);
 }
