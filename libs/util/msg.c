@@ -420,28 +420,28 @@ MSG_ReadUTF8 (qmsg_t *msg)
 	buf = start = msg->message->data + msg->readcount;
 
 	c = *buf++;
-	if (c < 0x80) {
+	if (c < 0x80) {			// 0x00 - 0x7f 1,7,7
 		val = c;
 		count = 1;
-	} else if (c < 0xc0) {
+	} else if (c < 0xc0) {	// 0x80 - 0xbf not a valid first byte
 		msg->badread = true;
 		return -1;
-	} else if (c < 0xe0) {
+	} else if (c < 0xe0) {	// 0xc0 - 0xdf 2,5,11
 		count = 2;
 		val = c & 0x1f;
-	} else if (c < 0xf0) {
+	} else if (c < 0xf0) {	// 0xe0 - 0xef 3,4,16
 		count = 3;
 		val = c & 0x0f;
-	} else if (c < 0xf8) {
+	} else if (c < 0xf8) {	// 0xf0 - 0xf7 4,3,21
 		count = 4;
 		val = c & 0x07;
-	} else if (c < 0xfc) {
+	} else if (c < 0xfc) {	// 0xf8 - 0xfb 5,2,26
 		count = 5;
 		val = c & 0x03;
-	} else if (c < 0xfe) {
+	} else if (c < 0xfe) {	// 0xfc - 0xfd 6,1,31
 		count = 6;
 		val = c & 0x01;
-	} else {
+	} else {				// 0xfe - 0xff never valid
 		msg->badread = true;
 		return -1;
 	}

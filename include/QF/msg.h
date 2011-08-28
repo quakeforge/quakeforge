@@ -58,22 +58,192 @@ typedef struct msg_s {
 	char *badread_string;
 } qmsg_t;
 
+/** Reset the message read status.
+
+	Clears the error flag and resets the read index to 0.
+
+	\param msg		The message to be reset.
+*/
 void MSG_BeginReading (qmsg_t *msg);
+
+/** Get the number of bytes that have been read from the message.
+
+	The result can also be used as the index to the next byte to be read.
+
+	\param msg		The message to check.
+	\return			The number of bytes that have been read.
+*/
 int MSG_GetReadCount(qmsg_t *msg);
+
+/** Read a single byte from the message.
+
+	Advances the read index.
+
+	\param msg		The message from which the byte will be read.
+	\return			The byte value (0 - 255), or -1 if already at the end of
+					the message.
+*/
 int MSG_ReadByte (qmsg_t *msg);
+
+/** Read a single unsigned short from the message.
+
+	Advances the read index.
+
+	\param msg		The message from which the short will be read.
+	\return			The short value (0 - 65535), or -1 if already at
+					the end of the message.
+*/
 int MSG_ReadShort (qmsg_t *msg);
+
+/** Read a single long from the message.
+
+	Advances the read index.
+
+	\param msg		The message from which the long will be read.
+	\return			The signed long value or -1 if already at the end of
+					the message.
+	\note	-1 may be either an error or a value. Check qmsg_t::badread to
+			differentiate the two cases (false for a value).
+	\todo	Fix?
+*/
 int MSG_ReadLong (qmsg_t *msg);
+
+/** Read a single float from the message.
+
+	Advances the read index.
+
+	\param msg		The message from which the float will be read.
+	\return			The float value or -1 if already at the end of the
+					message.
+	\note	-1 may be either an error or a value. Check qmsg_t::badread to
+			differentiate the two cases (false for a value).
+	\todo	Fix?
+*/
 float MSG_ReadFloat (qmsg_t *msg);
+
+/** Read a nul terminated string from the message.
+
+	Advances the read index to the first byte after the string.
+
+	The returned string is guaranteed to be valid. If the string in the
+	message is not nul terminated, the string will be safely extracted,
+	qmst_t::badread set to true, and the extracted string will be returned.
+
+	\param msg		The message from which the string will be read.
+	\return			The string within the message, or "" if alread at the
+					end of the message.
+	\note	"" may be either an error or a value. Check qmsg_t::badread to
+			differentiate the two cases (false for a value).
+	\todo	Fix?
+*/
 const char *MSG_ReadString (qmsg_t *msg);
+
+/** Read a block of bytes from the message.
+
+	Advances the read index to the first byte after the block.
+
+	If not all bytes could be read, qmsg_t::badread will be set to true.
+
+	\param msg		The message from which the string will be read.
+	\param buf		Pointer to the buffer into which the bytes will be
+					placed.
+	\param len		The number of bytes to read.
+	\return			The number of bytes read from the message.
+*/
 int MSG_ReadBytes (qmsg_t *msg, void *buf, int len);
 
+/** Read a 16-bit fixed point (13.3) coordinate value from the message.
+
+	Advances the read index to the first byte after the block.
+
+	\param msg		The message from which the coordinate will be read.
+	\return			The coordinate value converted to floating point.
+
+	\note	-0.125 may be either an error or a value. Check qmsg_t::badread
+			to differentiate the two cases (false for a value).
+	\todo	Fix?
+*/
 float MSG_ReadCoord (qmsg_t *msg);
+
+/** Read three 16-bit fixed point (s12.3) coordinate values from the message.
+
+	Advances the read index.
+
+	\param msg		The message from which the coordinates will be read.
+	\param coord	The vector into which the three coordinates will be
+					placed.
+
+	\note	-0.125 may be either an error or a value. Check qmsg_t::badread
+			to differentiate the two cases (false for a value).
+	\todo	Fix?
+*/
 void MSG_ReadCoordV (qmsg_t *msg, vec3_t coord);
+
+/** Read an 8-bit encoded angle from the message.
+
+	Advances the read index.
+
+	\param msg		The message from which the angle will be read.
+	\return			The angle converted to the range -180 - 180.
+*/
 float MSG_ReadAngle (qmsg_t *msg);
+
+/** Read interleaved 16-bit coordinate/8-bit angle vectors from the message.
+
+	Advances the read index.
+
+	\param msg		The message from which the angle will be read.
+	\param coord	The vector into which the converted coordinate vector
+					will be placed.
+	\param angles	The vector into which the converted coordinate angles
+					will be placed.
+	\see MSG_ReadCoord
+	\see MSG_ReadAngle
+*/
 void MSG_ReadCoordAngleV (qmsg_t *msg, vec3_t coord, vec3_t angles);
+
+/** Read three 8-bit encoded angle values from the message.
+
+	Advances the read index.
+
+	\param msg		The message from which the angles will be read.
+	\param angles	The vector into which the three angles will be placed.
+
+	\note The angles will be converted to the range -180 - 180.
+*/
 void MSG_ReadAngleV (qmsg_t *msg, vec3_t angles);
+
+/** Read a 16-bit encoded angle from the message.
+
+	Advances the read index.
+
+	\param msg		The message from which the angle will be read.
+	\return			The angle converted to the range -180 - 180.
+*/
 float MSG_ReadAngle16 (qmsg_t *msg);
+
+/** Read three 16-bit encoded angle values from the message.
+
+	Advances the read index.
+
+	\param msg		The message from which the angles will be read.
+	\param angles	The vector into which the three angles will be placed.
+
+	\note The angles will be converted to the range -180 - 180.
+*/
 void MSG_ReadAngle16V (qmsg_t *msg, vec3_t angles);
+
+/** Read a single UTF-8 encoded value.
+
+	Advances the read index the the first byte after the value. However,
+	the read index will not be advanced if any error is detected.
+
+	A successfull read will read between 1 and 6 bytes from the message.
+
+	\param msg		The message from which the UTF-8 encoded value will be
+					read.
+	\return			The 31-bit value, or -1 on error.
+*/
 int MSG_ReadUTF8 (qmsg_t *msg);
 
 //@}
