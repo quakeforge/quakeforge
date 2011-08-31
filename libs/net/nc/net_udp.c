@@ -128,6 +128,25 @@ typedef union address {
 	struct sockaddr_in      s4;
 } AF_address_t;
 
+#undef SA_LEN
+#undef SS_LEN
+
+#ifdef HAVE_SA_LEN
+#define SA_LEN(sa) (sa)->sa_len
+#else
+#define SA_LEN(sa) (((sa)->sa_family == AF_INET6) \
+					? sizeof(struct sockaddr_in6) \
+					: sizeof(struct sockaddr_in))
+#endif
+
+#ifdef HAVE_SS_LEN
+#define SS_LEN(ss) (ss)->ss_len
+#else
+#define SS_LEN(ss) (((ss)->ss_family == AF_INET6) \
+					? sizeof(struct sockaddr_in6) \
+					: sizeof(struct sockaddr_in))
+#endif
+
 
 static void
 NetadrToSockadr (netadr_t *a, AF_address_t *s)
@@ -299,7 +318,7 @@ NET_SendPacket (int length, const void *data, netadr_t to)
 
 	NetadrToSockadr (&to, &addr);
 
-	ret = sendto (net_socket, data, length, 0, &addr.sa, sizeof (addr));
+	ret = sendto (net_socket, data, length, 0, &addr.sa, SA_LEN (&addr.sa));
 	if (ret == -1) {
 #ifdef _WIN32
 		int         err = WSAGetLastError ();
@@ -350,7 +369,7 @@ UDP_OpenSocket (int port)
 		address.s4.sin_port = 0;
 	else
 		address.s4.sin_port = htons ((short) port);
-	if (bind (newsocket, (void *) &address, sizeof (address)) == -1)
+	if (bind (newsocket, &address.sa, SA_LEN (&address.sa)) == -1)
 		Sys_Error ("UDP_OpenSocket: bind: %s", strerror (errno));
 
 	return newsocket;
