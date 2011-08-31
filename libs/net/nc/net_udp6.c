@@ -140,6 +140,25 @@ typedef union address {
 	struct sockaddr_in6     s6;
 } AF_address_t;
 
+#undef SA_LEN
+#undef SS_LEN
+
+#ifdef HAVE_SA_LEN
+#define SA_LEN(sa) (sa)->sa_len
+#else
+#define SA_LEN(sa) (((sa)->sa_family == AF_INET6) \
+					? sizeof(struct sockaddr_in6) \
+					: sizeof(struct sockaddr_in))
+#endif
+
+#ifdef HAVE_SS_LEN
+#define SS_LEN(ss) (ss)->ss_len
+#else
+#define SS_LEN(ss) (((ss)->ss_family == AF_INET6) \
+					? sizeof(struct sockaddr_in6) \
+					: sizeof(struct sockaddr_in))
+#endif
+
 
 static void
 NetadrToSockadr (netadr_t *a, AF_address_t *s)
@@ -249,13 +268,8 @@ NET_AdrToString (netadr_t a)
 		memcpy (&(ss.s4.sin_addr), &ss.s6.sin6_addr.s6_addr[12], sizeof (ss.s4.sin_addr));
 	}
 
-#ifdef HAVE_SS_LEN
-	if (getnameinfo (&ss.sa, ss.ss.ss_len, base, sizeof (base),
+	if (getnameinfo (&ss.sa, SS_LEN(&ss.ss), base, sizeof (base),
 					 NULL, 0, NI_NUMERICHOST)) strcpy (base, "<invalid>");
-#else
-	if (getnameinfo (&ss.sa, sizeof (ss.ss), base, sizeof (base),
-					 NULL, 0, NI_NUMERICHOST)) strcpy (base, "<invalid>");
-#endif
 
 	if (ss.ss.ss_family == AF_INET6) {
 		sprintf (s, "[%s]:%d", base, ntohs (a.port));
@@ -281,16 +295,12 @@ NET_BaseAdrToString (netadr_t a)
 		ss.ss.ss_len = sizeof (ss.s4);
 #endif
 		ss.ss.ss_family = AF_INET;
-		memcpy (&(ss.s4.sin_addr), &ss.s6.sin6_addr.s6_addr[12], sizeof (ss.s4.sin_addr));
+		memcpy (&(ss.s4.sin_addr), &ss.s6.sin6_addr.s6_addr[12],
+				sizeof (ss.s4.sin_addr));
 	}
 
-#ifdef HAVE_SS_LEN
-	if (getnameinfo (&ss.sa, ss.ss.ss_len, s, sizeof (s),
+	if (getnameinfo (&ss.sa, SS_LEN(&ss.ss), s, sizeof (s),
 					 NULL, 0, NI_NUMERICHOST)) strcpy (s, "<invalid>");
-#else
-	if (getnameinfo (&ss.sa, sizeof (ss.ss), s, sizeof (s),
-					 NULL, 0, NI_NUMERICHOST)) strcpy (s, "<invalid>");
-#endif
 	return s;
 }
 
@@ -427,7 +437,7 @@ NET_SendPacket (int length, const void *data, netadr_t to)
 
 	NetadrToSockadr (&to, &addr);
 
-	ret = sendto (net_socket, data, length, 0, &addr.sa, sizeof (addr));
+	ret = sendto (net_socket, data, length, 0, &addr.sa, SA_LEN (&addr.sa));
 	if (ret == -1) {
 #ifdef _WIN32
 		int         err = WSAGetLastError ();
