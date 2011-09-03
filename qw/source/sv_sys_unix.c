@@ -61,7 +61,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 qboolean    is_server = true;
 server_static_t svs;
-info_t    **svs_info = &svs.info;
 
 #ifdef __alpha__
 static inline unsigned long

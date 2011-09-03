@@ -63,8 +63,6 @@ static __attribute__ ((used)) const char rcsid[] =
 										// minimization
 #define NOT_FOCUS_SLEEP	20				// sleep time when not focus
 
-char       *svs_info;
-
 qboolean    ActiveApp, Minimized, WinNT;
 qboolean    is_server = false;
 

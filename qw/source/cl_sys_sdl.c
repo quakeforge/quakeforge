@@ -69,7 +69,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "host.h"
 
 qboolean    is_server = false;
-char       *svs_info;
 
 int         noconinput;
 

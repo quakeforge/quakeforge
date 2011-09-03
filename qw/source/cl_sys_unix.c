@@ -62,7 +62,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 int         noconinput = 0;
 qboolean    is_server = false;
-char       *svs_info;
 
 static void
 shutdown (void)

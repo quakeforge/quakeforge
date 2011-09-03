@@ -2033,6 +2033,18 @@ maxclients_f (cvar_t *var)
 }
 
 static void
+gamedir_f (int phase)
+{
+	if (!phase)
+		return;
+	if (qfs_gamedir->gamedir)
+		Info_SetValueForStarKey (svs.info, "*gamedir",
+								 qfs_gamedir->gamedir, 0);
+	else
+		Info_RemoveKey (svs.info, "*gamedir");
+}
+
+static void
 SV_InitLocal (void)
 {
 	int         i;
@@ -2522,6 +2534,7 @@ SV_Init (void)
 
 	SV_Init_Memory ();
 
+	QFS_GamedirCallback (gamedir_f);
 	svs.maxclients = MAX_CLIENTS;
 	svs.info = Info_ParseString ("", MAX_SERVERINFO_STRING, 0);
 	localinfo = Info_ParseString ("", 0, 0);	// unlimited

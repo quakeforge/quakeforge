@@ -432,7 +432,6 @@ extern	struct cvar_s	*fraglimit;
 extern	struct cvar_s	*timelimit;
 
 extern	server_static_t	svs;				// persistant server info
-extern	struct info_s	**svs_info;
 extern	server_t		sv;					// local server
 
 extern	client_t	*host_client;

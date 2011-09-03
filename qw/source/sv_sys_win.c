@@ -46,8 +46,6 @@ static __attribute__ ((used)) const char rcsid[] =
 qboolean    is_server = true;
 qboolean    WinNT;
 server_static_t svs;
-info_t    **svs_info = &svs.info;
-
 
 static void
 startup (void)

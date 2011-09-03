@@ -77,10 +77,6 @@ SV_Gamedir_f (void)
 	}
 
 	QFS_Gamedir (dir);
-
-	if (is_server) {
-		Info_SetValueForStarKey (*svs_info, "*gamedir", dir, 0);
-	}
 }
 
 void
