@@ -493,7 +493,13 @@ UDP_OpenSocket (int port)
 	address.sin6_family = AF_INET6;
 
 	memset (&hints, 0, sizeof (hints));
-	hints.ai_family = PF_UNSPEC;
+	if (strchr (net_family->string, '6')) {
+		hints.ai_family = AF_INET6;
+	} else if (strchr (net_family->string, '4')) {
+		hints.ai_family = AF_INET;
+	} else {
+		hints.ai_family = AF_UNSPEC;
+	}
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_protocol = IPPROTO_UDP;
 	hints.ai_flags = AI_PASSIVE;
