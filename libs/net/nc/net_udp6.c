@@ -117,6 +117,8 @@ static __attribute__ ((used)) const char rcsid[] =
 # endif
 #endif
 
+static cvar_t *net_family;
+
 netadr_t    net_from;
 netadr_t    net_local_adr;
 netadr_t    net_loopback_adr;
@@ -329,7 +331,13 @@ NET_StringToAdr (const char *s, netadr_t *a)
 
 	memset (&hints, 0, sizeof (hints));
 	hints.ai_socktype = SOCK_DGRAM;
-	hints.ai_family = PF_UNSPEC;
+	if (strchr (net_family->string, '6')) {
+		hints.ai_family = AF_INET6;
+	} else if (strchr (net_family->string, '4')) {
+		hints.ai_family = AF_INET;
+	} else {
+		hints.ai_family = AF_UNSPEC;
+	}
 
 	dstring_copystr (copy, s);
 	addrs = space = copy->str;
@@ -568,6 +576,9 @@ NET_Init (int port)
 	if (r)
 		Sys_Error ("Winsock initialization failed.");
 #endif /* _WIN32 */
+	net_family = Cvar_Get ("net_family", "unspecified", CVAR_ROM, 0,
+						   "Set the address family to ipv4, ipv6 or"
+						   " unspecified");
 
 	// open the single socket to be used for all communications
 	net_socket = UDP_OpenSocket (port);
