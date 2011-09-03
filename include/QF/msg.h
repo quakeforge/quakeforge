@@ -85,7 +85,7 @@ int MSG_GetReadCount(qmsg_t *msg);
 */
 int MSG_ReadByte (qmsg_t *msg);
 
-/** Read a single unsigned short from the message.
+/** Read a single little-endian unsigned short from the message.
 
 	Advances the read index.
 
@@ -95,7 +95,7 @@ int MSG_ReadByte (qmsg_t *msg);
 */
 int MSG_ReadShort (qmsg_t *msg);
 
-/** Read a single long from the message.
+/** Read a single little-endian long from the message.
 
 	Advances the read index.
 
@@ -108,7 +108,7 @@ int MSG_ReadShort (qmsg_t *msg);
 */
 int MSG_ReadLong (qmsg_t *msg);
 
-/** Read a single float from the message.
+/** Read a single little-endian float from the message.
 
 	Advances the read index.
 
@@ -152,7 +152,8 @@ const char *MSG_ReadString (qmsg_t *msg);
 */
 int MSG_ReadBytes (qmsg_t *msg, void *buf, int len);
 
-/** Read a 16-bit fixed point (13.3) coordinate value from the message.
+/** Read a little-endian 16-bit fixed point (13.3) coordinate value from the
+	message.
 
 	Advances the read index to the first byte after the block.
 
@@ -165,7 +166,8 @@ int MSG_ReadBytes (qmsg_t *msg, void *buf, int len);
 */
 float MSG_ReadCoord (qmsg_t *msg);
 
-/** Read three 16-bit fixed point (s12.3) coordinate values from the message.
+/** Read three little-endian 16-bit fixed point (s12.3) coordinate values
+	from the message.
 
 	Advances the read index.
 
@@ -188,7 +190,8 @@ void MSG_ReadCoordV (qmsg_t *msg, vec3_t coord);
 */
 float MSG_ReadAngle (qmsg_t *msg);
 
-/** Read interleaved 16-bit coordinate/8-bit angle vectors from the message.
+/** Read interleaved little-endian 16-bit coordinate/8-bit angle vectors
+	from the message.
 
 	Advances the read index.
 
@@ -213,7 +216,7 @@ void MSG_ReadCoordAngleV (qmsg_t *msg, vec3_t coord, vec3_t angles);
 */
 void MSG_ReadAngleV (qmsg_t *msg, vec3_t angles);
 
-/** Read a 16-bit encoded angle from the message.
+/** Read a little-endian 16-bit encoded angle from the message.
 
 	Advances the read index.
 
@@ -222,7 +225,7 @@ void MSG_ReadAngleV (qmsg_t *msg, vec3_t angles);
 */
 float MSG_ReadAngle16 (qmsg_t *msg);
 
-/** Read three 16-bit encoded angle values from the message.
+/** Read three little-endian 16-bit encoded angle values from the message.
 
 	Advances the read index.
 
