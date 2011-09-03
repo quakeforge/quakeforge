@@ -29,7 +29,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
@@ -41,13 +41,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
-
-#include <errno.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <sys/types.h>
 
 #include "QF/cvar.h"
 #include "QF/qargs.h"
@@ -118,7 +111,7 @@ startup (void)
 }
 
 int
-main (int argc, const char *argv[])
+main (int argc, const char **argv)
 {
 	double      time, oldtime, newtime;
 
@@ -137,9 +130,8 @@ main (int argc, const char *argv[])
 	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);
 
-	// main loop
 	oldtime = Sys_DoubleTime () - 0.1;
-	while (1) {
+	while (1) {							// Main message loop
 		Sys_CheckInput (!svs.num_clients, net_socket);
 
 		// find time passed since last cycle
@@ -154,5 +146,4 @@ main (int argc, const char *argv[])
 		if (sys_extrasleep->int_val)
 			usleep (sys_extrasleep->int_val);
 	}
-	return 1;
 }

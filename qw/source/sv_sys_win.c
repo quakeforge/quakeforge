@@ -28,7 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #include "winquake.h"
@@ -36,11 +36,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <winsock.h>
 
 #include "QF/cvar.h"
-#include "QF/info.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "compat.h"
 #include "server.h"
 
 qboolean    WinNT;
@@ -70,12 +68,10 @@ startup (void)
 		WinNT = false;
 }
 
-char       *newargv[256];
-
 int
 main (int argc, const char **argv)
 {
-	double      newtime, time, oldtime;
+	double      time, oldtime, newtime;
 
 	startup ();
 
@@ -105,9 +101,8 @@ main (int argc, const char **argv)
 	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);
 
-	// main loop
 	oldtime = Sys_DoubleTime () - 0.1;
-	while (1) {
+	while (1) {							// Main message loop
 		Sys_CheckInput (!svs.num_clients, net_socket);
 
 		// find time passed since last cycle
@@ -117,6 +112,4 @@ main (int argc, const char **argv)
 
 		SV_Frame (time);
 	}
-
-	return true;
 }

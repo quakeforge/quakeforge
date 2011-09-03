@@ -34,6 +34,6 @@
 static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
-extern int noconinput;
+extern int qf_sdl_link;
 
-static __attribute__ ((used)) int *const _noconinput = &noconinput;
+static __attribute__ ((used)) int *const _sdl_link = &qf_sdl_link;

@@ -28,33 +28,17 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
-#ifdef HAVE_CONIO_H
-# include <conio.h>
-#endif
-#ifdef HAVE_IO_H
-# include <io.h>
-#endif
-
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <stdio.h>
 #include "winquake.h"
 
 #include "QF/qargs.h"
 #include "QF/screen.h"
-#include "QF/sound.h"
 #include "QF/sys.h"
-#include "QF/vid.h"
 
 #include "client.h"
-#include "compat.h"
 #include "host.h"
-#include "netchan.h"
-#include "win32/resources/resource.h"
 
 #define MAXIMUM_WIN_MEMORY	0x1000000
 #define MINIMUM_WIN_MEMORY	0x0c00000
@@ -112,7 +96,7 @@ startup (void)
 }
 
 static void
-shutdown (void)
+shutdown_f (void)
 {
 	if (tevent)
 		CloseHandle (tevent);
@@ -129,18 +113,17 @@ SleepUntilInput (int time)
 
 HINSTANCE   global_hInstance;
 int         global_nCmdShow;
-const char *argv[MAX_NUM_ARGVS];
 static const char *empty_string = "";
 
 int WINAPI
 WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		 int nCmdShow)
 {
-//	MSG			msg;
-	static char cwd[1024];
-	double		time, oldtime, newtime;
+	int         argc;
+	const char *argv[MAX_NUM_ARGVS];
+	double      time, oldtime, newtime;
 #ifdef SPLASH_SCREEN
-	RECT		rect;
+	RECT        rect;
 #endif
 
 	// previous instances do not exist in Win32
@@ -152,22 +135,16 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	global_hInstance = hInstance;
 	global_nCmdShow = nCmdShow;
 
-	if (!GetCurrentDirectory (sizeof (cwd), cwd))
-		Sys_Error ("Couldn't determine current directory");
-
-	if (cwd[strlen (cwd) - 1] == '/')
-		cwd[strlen (cwd) - 1] = 0;
-
-	host_parms.argc = 1;
+	argc = 1;
 	argv[0] = empty_string;
 
-	while (*lpCmdLine && (host_parms.argc < MAX_NUM_ARGVS)) {
+	while (*lpCmdLine && (argc < MAX_NUM_ARGVS)) {
 		while (*lpCmdLine && ((*lpCmdLine <= 32) || (*lpCmdLine > 126)))
 			lpCmdLine++;
 
 		if (*lpCmdLine) {
-			argv[host_parms.argc] = lpCmdLine;
-			host_parms.argc++;
+			argv[argc] = lpCmdLine;
+			argc++;
 
 			while (*lpCmdLine && ((*lpCmdLine > 32) && (*lpCmdLine <= 126)))
 				lpCmdLine++;
@@ -179,7 +156,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		}
 	}
 
-	COM_InitArgv (host_parms.argc, argv);
+	COM_InitArgv (argc, argv);
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
@@ -207,17 +184,14 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	if (!tevent)
 		Sys_Error ("Couldn't create event");
 
-	Sys_Printf ("Host_Init\n");
-	Host_Init ();
-
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (Net_LogStop);
-	Sys_RegisterShutdown (shutdown);
+	Sys_RegisterShutdown (shutdown_f);
+
+	Host_Init ();
 
 	oldtime = Sys_DoubleTime ();
-
-	// main window message loop
-	while (1) {
+	while (1) {							// Main message loop
 		// yield CPU for a little bit when paused, minimized, or not the focus
 		if ((cl.paused && (!ActiveApp)) || Minimized) {
 			SleepUntilInput (PAUSE_SLEEP);
@@ -228,10 +202,8 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
+
 		Host_Frame (time);
 		oldtime = newtime;
 	}
-
-	// return success of application
-	return TRUE;
 }

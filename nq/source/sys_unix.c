@@ -29,7 +29,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
@@ -42,14 +42,11 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <unistd.h>
 #endif
 
-#include <errno.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <sys/time.h>
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#else
+# include <sys/fcntl.h>
+#endif
 
 #include "QF/cvar.h"
 #include "QF/qargs.h"
@@ -57,7 +54,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "client.h"
 #include "host.h"
-#include "server.h"
 
 qboolean    isDedicated = false;
 
@@ -66,23 +62,21 @@ shutdown_f (void)
 {
 	// change stdin to blocking
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
+	fflush (stdout);
 }
 
 int
-main (int c, const char *v[])
+main (int argc, const char **argv)
 {
-
 	double      time, oldtime, newtime;
 
 	memset (&host_parms, 0, sizeof (host_parms));
 
-	COM_InitArgv (c, v);
+	COM_InitArgv (argc, argv);
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
 	isDedicated = (COM_CheckParm ("-dedicated") != 0);
-
-	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (shutdown_f);
@@ -95,7 +89,7 @@ main (int c, const char *v[])
 	}
 
 	oldtime = Sys_DoubleTime () - 0.1;
-	while (1) {
+	while (1) {							// Main message loop
 		// find time spent rendering last frame
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;

@@ -1,7 +1,7 @@
 /*
 	sys_unixd.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -28,7 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
@@ -49,19 +49,16 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/cvar.h"
 #include "QF/qargs.h"
-#include "QF/qtypes.h"
 #include "QF/sys.h"
 
-#include "client.h"
 #include "host.h"
 
 qboolean    isDedicated = true;
 
-int         nostdout = 0;
-
 static void
 shutdown_f (void)
 {
+	// change stdin to blocking
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
 	fflush (stdout);
 }
@@ -92,12 +89,12 @@ main (int argc, const char **argv)
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
-	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
-
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (shutdown_f);
 
 	Host_Init ();
+
+	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {							// Main message loop
@@ -108,7 +105,7 @@ main (int argc, const char **argv)
 		time = newtime - oldtime;
 		if (time < sys_ticrate->value) {
 			usleep (1);
-			continue;
+			continue;				// not time to run a server-only tic yet
 		}
 		time = sys_ticrate->value;
 
@@ -119,5 +116,4 @@ main (int argc, const char **argv)
 
 		Host_Frame (time);
 	}
-	return true;						// return success
 }
