@@ -61,7 +61,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "netchan.h"
 
 int         noconinput = 0;
-qboolean    is_server = false;
 
 static void
 shutdown (void)

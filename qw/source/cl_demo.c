@@ -396,7 +396,7 @@ CL_GetMessage (void)
 
 	if (net_packetlog->int_val)
 		Log_Incoming_Packet (net_message->message->data,
-							 net_message->message->cursize, 1);
+							 net_message->message->cursize, 1, 0);
 
 
 	if (cls.demorecording)

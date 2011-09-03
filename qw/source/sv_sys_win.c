@@ -43,7 +43,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "server.h"
 
-qboolean    is_server = true;
 qboolean    WinNT;
 server_static_t svs;
 

@@ -1762,7 +1762,7 @@ SV_ReadPackets (void)
 	while (NET_GetPacket ()) {
 		if (net_packetlog->int_val)
 			Log_Incoming_Packet (net_message->message->data,
-								 net_message->message->cursize, 1);
+								 net_message->message->cursize, 1, 1);
 		if (SV_FilterIP (net_from.ip, &until)) {
 			SV_SendBan (until);			// tell them we aren't listening...
 			continue;

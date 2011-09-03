@@ -68,8 +68,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "host.h"
 
-qboolean    is_server = false;
-
 int         noconinput;
 
 #ifdef _WIN32

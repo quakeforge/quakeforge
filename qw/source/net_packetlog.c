@@ -226,7 +226,7 @@ ascii_dump_buf (unsigned char *buf, int len)
 }
 */
 void
-Log_Incoming_Packet (const byte *p, int len, int has_sequence)
+Log_Incoming_Packet (const byte *p, int len, int has_sequence, int is_server)
 {
 	if (!net_loglevel->int_val)
 		return;
@@ -250,7 +250,7 @@ Log_Incoming_Packet (const byte *p, int len, int has_sequence)
 }
 
 void
-Log_Outgoing_Packet (const byte *p, int len, int has_sequence)
+Log_Outgoing_Packet (const byte *p, int len, int has_sequence, int is_server)
 {
 	if (!net_loglevel->int_val)
 		return;

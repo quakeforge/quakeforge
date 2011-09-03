@@ -1025,7 +1025,7 @@ CL_ReadPackets (void)
 
 		if (cls.demoplayback && net_packetlog->int_val)
 			Log_Incoming_Packet (net_message->message->data,
-								 net_message->message->cursize, 0);
+								 net_message->message->cursize, 0, 0);
 
 		// remote command packet
 		if (*(int *) net_message->message->data == -1) {

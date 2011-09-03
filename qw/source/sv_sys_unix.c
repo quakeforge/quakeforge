@@ -59,7 +59,6 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <libc.h>
 #endif
 
-qboolean    is_server = true;
 server_static_t svs;
 
 #ifdef __alpha__

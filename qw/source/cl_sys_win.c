@@ -64,7 +64,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #define NOT_FOCUS_SLEEP	20				// sleep time when not focus
 
 qboolean    ActiveApp, Minimized, WinNT;
-qboolean    is_server = false;
 
 HWND        hwnd_dialog;				// startup dialog box
 
