@@ -40,12 +40,12 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
-
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
 #else
 # include <sys/fcntl.h>
 #endif
+#include <stdlib.h>
 
 #include "QF/cvar.h"
 #include "QF/qargs.h"
