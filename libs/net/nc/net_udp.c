@@ -134,17 +134,13 @@ typedef union address {
 #ifdef HAVE_SA_LEN
 #define SA_LEN(sa) (sa)->sa_len
 #else
-#define SA_LEN(sa) (((sa)->sa_family == AF_INET6) \
-					? sizeof(struct sockaddr_in6) \
-					: sizeof(struct sockaddr_in))
+#define SA_LEN(sa) (sizeof(struct sockaddr_in))
 #endif
 
 #ifdef HAVE_SS_LEN
 #define SS_LEN(ss) (ss)->ss_len
 #else
-#define SS_LEN(ss) (((ss)->ss_family == AF_INET6) \
-					? sizeof(struct sockaddr_in6) \
-					: sizeof(struct sockaddr_in))
+#define SS_LEN(ss) (sizeof(struct sockaddr_in))
 #endif
 
 
