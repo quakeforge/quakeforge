@@ -52,7 +52,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "../nq/include/client.h"
 #include "../nq/include/server.h"
 #include "../nq/include/game.h"
-#include "../nq/include/sv_progs.h"
 
 // This is enables a simple IP banning mechanism
 #define BAN_TEST
