@@ -299,7 +299,7 @@ Datagram_GetMessage (qsocket_t *sock)
 	unsigned int length;
 	unsigned int flags;
 	int         ret = 0;
-	AF_address_t readaddr;
+	netadr_t    readaddr;
 	unsigned int sequence;
 	unsigned int count;
 
@@ -491,7 +491,7 @@ PollProcedure testPollProcedure = { NULL, 0.0, Test_Poll };
 static void
 Test_Poll (void *unused)
 {
-	AF_address_t clientaddr;
+	netadr_t    clientaddr;
 	int         control;
 	int         len;
 	char        name[32];		//FIXME: overflow
@@ -552,7 +552,7 @@ Test_f (void)
 	const char *host;
 	int         n;
 	int         max = MAX_SCOREBOARD;
-	AF_address_t sendaddr;
+	netadr_t    sendaddr;
 
 	if (testInProgress)
 		return;
@@ -568,7 +568,7 @@ Test_f (void)
 				max = hostcache[n].maxusers;
 				memcpy (&sendaddr, &hostcache[n].addr,
 
-						sizeof (AF_address_t));
+						sizeof (netadr_t));
 				break;
 			}
 		if (n < hostCacheCount)
@@ -623,7 +623,7 @@ PollProcedure test2PollProcedure = { NULL, 0.0, Test2_Poll };
 static void
 Test2_Poll (void *unused)
 {
-	AF_address_t clientaddr;
+	netadr_t    clientaddr;
 	int         control;
 	int         len;
 	char        name[256];		//FIXME: overflow
@@ -689,7 +689,7 @@ Test2_f (void)
 {
 	const char *host;
 	int         n;
-	AF_address_t sendaddr;
+	netadr_t    sendaddr;
 
 	if (test2InProgress)
 		return;
@@ -704,7 +704,7 @@ Test2_f (void)
 				net_landriverlevel = hostcache[n].ldriver;
 				memcpy (&sendaddr, &hostcache[n].addr,
 
-						sizeof (AF_address_t));
+						sizeof (netadr_t));
 				break;
 			}
 		if (n < hostCacheCount)
@@ -814,8 +814,8 @@ Datagram_Listen (qboolean state)
 static qsocket_t *
 _Datagram_CheckNewConnections (void)
 {
-	AF_address_t clientaddr;
-	AF_address_t newaddr;
+	netadr_t    clientaddr;
+	netadr_t    newaddr;
 	int         newsock;
 	int         acceptsock;
 	qsocket_t  *sock;
@@ -977,10 +977,10 @@ _Datagram_CheckNewConnections (void)
 	}
 #ifdef BAN_TEST
 	// check for a ban
-	if (clientaddr.sa.sa_family == AF_INET) {
+	if (clientaddr.family == AF_INET) {
 		unsigned testAddr;
 
-		testAddr = clientaddr.s4.sin_addr.s_addr;
+		memcpy (&testAddr, clientaddr.ip, 4);
 		if ((testAddr & banMask) == banAddr) {
 			SZ_Clear (net_message->message);
 			// save space for the header, filled in later
@@ -1108,8 +1108,8 @@ _Datagram_SearchForHosts (qboolean xmit)
 	int         ret;
 	int         n;
 	int         i;
-	AF_address_t readaddr;
-	AF_address_t myaddr;
+	netadr_t    readaddr;
+	netadr_t    myaddr;
 	int         control;
 
 	dfunc.GetSocketAddr (dfunc.controlSock, &myaddr);
@@ -1180,7 +1180,7 @@ _Datagram_SearchForHosts (qboolean xmit)
 			strcpy (hostcache[n].name, "*");
 			strcat (hostcache[n].name, hostcache[n].cname);
 		}
-		memcpy (&hostcache[n].addr, &readaddr, sizeof (AF_address_t));
+		memcpy (&hostcache[n].addr, &readaddr, sizeof (netadr_t));
 
 		hostcache[n].driver = net_driverlevel;
 		hostcache[n].ldriver = net_landriverlevel;
@@ -1219,8 +1219,8 @@ Datagram_SearchForHosts (qboolean xmit)
 static qsocket_t *
 _Datagram_Connect (const char *host)
 {
-	AF_address_t sendaddr;
-	AF_address_t readaddr;
+	netadr_t    sendaddr;
+	netadr_t    readaddr;
 	qsocket_t  *sock;
 	int         newsock;
 	int         ret;
@@ -1275,9 +1275,9 @@ _Datagram_Connect (const char *host)
 				if (sfunc.AddrCompare (&readaddr, &sendaddr) != 0) {
 					Sys_MaskPrintf (SYS_NET, "%2d ",
 									sfunc.AddrCompare (&readaddr, &sendaddr));
-					Sys_MaskPrintf (SYS_NET, "%d %s ", readaddr.sa.sa_family,
+					Sys_MaskPrintf (SYS_NET, "%d %s ", readaddr.family,
 									sfunc.AddrToString (&readaddr));
-					Sys_MaskPrintf (SYS_NET, "%d %s\n", sendaddr.sa.sa_family,
+					Sys_MaskPrintf (SYS_NET, "%d %s\n", sendaddr.family,
 									sfunc.AddrToString (&sendaddr));
 					ret = 0;
 					continue;
@@ -1338,7 +1338,7 @@ _Datagram_Connect (const char *host)
 	}
 
 	if (ret == CCREP_ACCEPT) {
-		memcpy (&sock->addr, &sendaddr, sizeof (AF_address_t));
+		memcpy (&sock->addr, &sendaddr, sizeof (netadr_t));
 
 		dfunc.SetSocketPort (&sock->addr, MSG_ReadLong (net_message));
 	} else {

@@ -112,11 +112,57 @@ static __attribute__ ((used)) const char rcsid[] =
 # endif
 #endif
 
+#define ADDR_SIZE 4
+
+typedef union address {
+	struct sockaddr_storage ss;
+	struct sockaddr         sa;
+	struct sockaddr_in      s4;
+} AF_address_t;
+
+#undef SA_LEN
+#undef SS_LEN
+
+#ifdef HAVE_SA_LEN
+#define SA_LEN(sa) (sa)->sa_len
+#else
+#define SA_LEN(sa) (((sa)->sa_family == AF_INET6) \
+					? sizeof(struct sockaddr_in6) \
+					: sizeof(struct sockaddr_in))
+#endif
+
+#ifdef HAVE_SS_LEN
+#define SS_LEN(ss) (ss)->ss_len
+#else
+#define SS_LEN(ss) (((ss)->ss_family == AF_INET6) \
+					? sizeof(struct sockaddr_in6) \
+					: sizeof(struct sockaddr_in))
+#endif
+
+
+static void
+NetadrToSockadr (netadr_t *a, AF_address_t *s)
+{
+	memset (s, 0, sizeof (*s));
+	s->s4.sin_family = AF_INET;
+
+	memcpy (&s->s4.sin_addr, &a->ip, ADDR_SIZE);
+	s->s4.sin_port = a->port;
+}
+
+static void
+SockadrToNetadr (AF_address_t *s, netadr_t *a)
+{
+	memcpy (&a->ip, &s->s4.sin_addr, ADDR_SIZE);
+	a->port = s->s4.sin_port;
+	a->family = s->s4.sin_family;
+}
+
 static int  net_acceptsocket = -1;		// socket for fielding new
 										// connections
 static int  net_controlsocket;
 static int  net_broadcastsocket = 0;
-static AF_address_t broadcastaddr;
+static netadr_t broadcastaddr;
 
 static uint32_t myAddr;
 
@@ -176,7 +222,7 @@ UDP_Init (void)
 {
 	struct hostent *local;
 	char        buff[MAXHOSTNAMELEN];
-	AF_address_t addr;
+	netadr_t    addr;
 	char       *colon;
 #ifdef _WIN32
 	WSADATA winsockdata;
@@ -209,12 +255,11 @@ UDP_Init (void)
 	get_iface_list (net_controlsocket);
 
 	{
-		struct sockaddr_in t;
-		memcpy (&t, &broadcastaddr, sizeof (t));
-		t.sin_family = AF_INET;
-		t.sin_addr.s_addr = INADDR_BROADCAST;
-		t.sin_port = htons (net_hostport);
-		memcpy (&broadcastaddr, &t, sizeof (broadcastaddr));
+		AF_address_t t;
+		t.s4.sin_family = AF_INET;
+		t.s4.sin_addr.s_addr = INADDR_BROADCAST;
+		t.s4.sin_port = htons (net_hostport);
+		SockadrToNetadr (&t, &broadcastaddr);
 	}
 
 	UDP_GetSocketAddr (net_controlsocket, &addr);
@@ -317,7 +362,7 @@ UDP_CloseSocket (int socket)
   the local network components to fill in the rest
 */
 static int
-PartialIPAddress (const char *in, AF_address_t *hostaddr)
+PartialIPAddress (const char *in, netadr_t *hostaddr)
 {
 	char       *buff;
 	char       *b;
@@ -352,9 +397,13 @@ PartialIPAddress (const char *in, AF_address_t *hostaddr)
 	else
 		port = net_hostport;
 
-	hostaddr->sa.sa_family = AF_INET;
-	hostaddr->s4.sin_port = htons ((short) port);
-	hostaddr->s4.sin_addr.s_addr = (myAddr & htonl (mask)) | htonl (addr);
+	hostaddr->family = AF_INET;
+	hostaddr->port = htons ((short) port);
+	{
+		int32_t     t = myAddr & htonl (mask);
+		t |= htonl (addr);
+		memcpy (hostaddr->ip, &t, ADDR_SIZE);
+	}
 
 	free (buff);
 	return 0;
@@ -364,7 +413,7 @@ error:
 }
 
 int
-UDP_Connect (int socket, AF_address_t *addr)
+UDP_Connect (int socket, netadr_t *addr)
 {
 	return 0;
 }
@@ -388,20 +437,20 @@ UDP_CheckNewConnections (void)
 	// there is no way to tell between an empty packet and no packets, but
 	// as non-blocking io is used, this is not a problem.
 	// we don't care about the interface on which the packet arrived
-	recvfrom (net_acceptsocket, buff, 0, 0, (struct sockaddr *) &from,
-			  &fromlen);
+	recvfrom (net_acceptsocket, buff, 0, 0, &from.sa, &fromlen);
 	return -1;
 }
 
 int
-UDP_Read (int socket, byte *buf, int len, AF_address_t *addr)
+UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 {
 	int         ret;
+	AF_address_t addr;
 #ifdef HAVE_IN_PKTINFO
 	char        ancillary[CMSG_SPACE (sizeof (struct in_pktinfo))];
 	struct msghdr msghdr = {
-		addr,
-		sizeof (*addr),
+		&addr,
+		sizeof (addr),
 		0, 0,
 		ancillary,
 		sizeof (ancillary),
@@ -411,6 +460,7 @@ UDP_Read (int socket, byte *buf, int len, AF_address_t *addr)
 	struct cmsghdr *cmsg;
 	struct in_pktinfo *info = 0;
 
+	memset (&addr, 0, sizeof (addr));
 	msghdr.msg_iov = &iovec;
 	msghdr.msg_iovlen = 1;
 	ret = recvmsg (socket, &msghdr, 0);
@@ -431,17 +481,20 @@ UDP_Read (int socket, byte *buf, int len, AF_address_t *addr)
 		 */
 		last_iface = &ifaces[info->ipi_ifindex - 1];
 	}
+	SockadrToNetadr (&addr, from);
 	Sys_MaskPrintf (SYS_NET, "got %d bytes from %s on iface %d (%s)\n", ret,
-					UDP_AddrToString (addr), info ? info->ipi_ifindex - 1 : -1,
+					UDP_AddrToString (from), info ? info->ipi_ifindex - 1 : -1,
 					last_iface ? inet_ntoa (info->ipi_addr) : "?");
 #else
 	socklen_t   addrlen = sizeof (AF_address_t);
 
-	ret = recvfrom (socket, buf, len, 0, (struct sockaddr *) addr, &addrlen);
+	memset (&addr, 0, sizeof (addr));
+	ret = recvfrom (socket, buf, len, 0, &addr, &addrlen);
 	if (ret == -1 && (errno == EWOULDBLOCK || errno == ECONNREFUSED))
 		return 0;
+	SockadrToNetadr (&addr, from);
 	Sys_MaskPrintf (SYS_NET, "got %d bytes from %s\n", ret,
-					UDP_AddrToString (addr));
+					UDP_AddrToString (from));
 	last_iface = default_iface;
 #endif
 	return ret;
@@ -480,60 +533,61 @@ UDP_Broadcast (int socket, byte *buf, int len)
 }
 
 int
-UDP_Write (int socket, byte *buf, int len, AF_address_t *addr)
+UDP_Write (int socket, byte *buf, int len, netadr_t *to)
 {
 	int         ret;
+	AF_address_t addr;
 
-	ret = sendto (socket, buf, len, 0, (struct sockaddr *) addr,
-				  sizeof (AF_address_t));
+	NetadrToSockadr (to, &addr);
+	ret = sendto (socket, buf, len, 0, &addr.sa, SA_LEN (&addr.sa));
 	if (ret == -1 && errno == EWOULDBLOCK)
 		return 0;
-	Sys_MaskPrintf (SYS_NET, "sent %d bytes to %s\n", ret, UDP_AddrToString (addr));
+	Sys_MaskPrintf (SYS_NET, "sent %d bytes to %s\n", ret,
+					UDP_AddrToString (to));
 	return ret;
 }
 
 const char *
-UDP_AddrToString (AF_address_t *addr)
+UDP_AddrToString (netadr_t *addr)
 {
 	static dstring_t *buffer;
-	int         haddr;
 
 	if (!buffer)
 		buffer = dstring_new ();
 
-	haddr = ntohl (addr->s4.sin_addr.s_addr);
-	dsprintf (buffer, "%d.%d.%d.%d:%d", (haddr >> 24) & 0xff,
-			  (haddr >> 16) & 0xff, (haddr >> 8) & 0xff, haddr & 0xff,
-			  ntohs (addr->s4.sin_port));
+	dsprintf (buffer, "%d.%d.%d.%d:%d", addr->ip[0],
+			  addr->ip[1], addr->ip[2], addr->ip[3],
+			  ntohs (addr->port));
 	return buffer->str;
 }
 
 int
-UDP_GetSocketAddr (int socket, AF_address_t *addr)
+UDP_GetSocketAddr (int socket, netadr_t *na)
 {
 	unsigned int a;
 	socklen_t    addrlen = sizeof (AF_address_t);
+	AF_address_t addr;
 
-	memset (addr, 0, sizeof (AF_address_t));
+	memset (&addr, 0, sizeof (AF_address_t));
 
-	getsockname (socket, (struct sockaddr *) addr, &addrlen);
-	a = addr->s4.sin_addr.s_addr;
+	getsockname (socket, &addr.sa, &addrlen);
+	SockadrToNetadr (&addr, na);
+	memcpy (&a, na->ip, ADDR_SIZE);
 	if (a == 0 || a == inet_addr ("127.0.0.1")) {
-		addr->s4.sin_addr.s_addr = *default_iface;
+		memcpy (na->ip, default_iface, ADDR_SIZE);
 		if (last_iface)
-			addr->s4.sin_addr.s_addr = *last_iface;
+			memcpy (na->ip, last_iface, ADDR_SIZE);
 	}
 
 	return 0;
 }
 
 int
-UDP_GetNameFromAddr (AF_address_t *addr, char *name)
+UDP_GetNameFromAddr (netadr_t *addr, char *name)
 {
 	struct hostent *hostentry;
 
-	hostentry = gethostbyaddr ((char *) &addr->s4.sin_addr,
-							   sizeof (struct in_addr), AF_INET);
+	hostentry = gethostbyaddr (&addr->ip, ADDR_SIZE, AF_INET);
 
 	if (hostentry) {
 		strncpy (name, (char *) hostentry->h_name, NET_NAMELEN - 1);
@@ -545,7 +599,7 @@ UDP_GetNameFromAddr (AF_address_t *addr, char *name)
 }
 
 int
-UDP_GetAddrFromName (const char *name, AF_address_t *addr)
+UDP_GetAddrFromName (const char *name, netadr_t *addr)
 {
 	struct hostent *hostentry;
 
@@ -556,38 +610,37 @@ UDP_GetAddrFromName (const char *name, AF_address_t *addr)
 	if (!hostentry)
 		return -1;
 
-	addr->sa.sa_family = AF_INET;
-	addr->s4.sin_port = htons (net_hostport);
-
-	addr->s4.sin_addr.s_addr = *(uint32_t *) hostentry->h_addr_list[0];
+	addr->family = AF_INET;
+	addr->port = htons (net_hostport);
+	memcpy (addr->ip, hostentry->h_addr_list[0], ADDR_SIZE);
 
 	return 0;
 }
 
 int
-UDP_AddrCompare (AF_address_t *addr1, AF_address_t *addr2)
+UDP_AddrCompare (netadr_t *addr1, netadr_t *addr2)
 {
-	if (addr1->sa.sa_family != addr2->sa.sa_family)
+	if (addr1->family != addr2->family)
 		return -2;
 
-	if (addr1->s4.sin_addr.s_addr != addr2->s4.sin_addr.s_addr)
+	if (memcmp (addr1->ip, addr2->ip, ADDR_SIZE))
 		return -1;
 
-	if (addr1->s4.sin_port != addr2->s4.sin_port)
+	if (addr1->port != addr2->port)
 		return 1;
 
 	return 0;
 }
 
 int
-UDP_GetSocketPort (AF_address_t *addr)
+UDP_GetSocketPort (netadr_t *addr)
 {
-	return ntohs (addr->s4.sin_port);
+	return ntohs (addr->port);
 }
 
 int
-UDP_SetSocketPort (AF_address_t *addr, int port)
+UDP_SetSocketPort (netadr_t *addr, int port)
 {
-	addr->s4.sin_port = htons (port);
+	addr->port = htons (port);
 	return 0;
 }

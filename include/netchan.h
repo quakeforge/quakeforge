@@ -49,9 +49,9 @@
 typedef struct
 {
 #ifdef HAVE_IPV6
-	byte	ip[16];
+	byte        ip[16];
 #else
-	byte	ip[4];
+	byte        ip[4];
 #endif
 	unsigned short	port;
 	unsigned short	family;

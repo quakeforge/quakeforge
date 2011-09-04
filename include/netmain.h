@@ -29,16 +29,6 @@
 #ifndef __net_h
 #define __net_h
 
-#include <sys/types.h>
-#ifdef HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#endif
-#ifdef HAVE_NETINET_IN_H
-# define model_t sun_model_t
-# include <netinet/in.h>
-# undef model_t
-#endif
-
 #include "QF/quakeio.h"
 #include "QF/sizebuf.h"
 
@@ -47,15 +37,17 @@
 */
 //@{
 
-//FIXME our code is not yet ready for anything but ipv4 addresses
-typedef union address {
-//	struct sockaddr_storage ss;
-	struct sockaddr         sa;
-	struct sockaddr_in      s4;
-#ifdef HAVE_IPV6
-//	struct sockaddr_in6     s6;
-#endif
-} AF_address_t;
+typedef struct
+{
+//FIXME not yet ready for ipv6
+//#ifdef HAVE_IPV6
+//	byte        ip[16];
+//#else
+	byte        ip[4];
+//#endif
+	unsigned short  port;
+	unsigned short  family;
+} netadr_t;
 
 #define	NET_NAMELEN			64
 
@@ -207,7 +199,7 @@ typedef struct qsocket_s {
 
 	/// \name socket address
 	//@{
-	AF_address_t	addr;
+	netadr_t	addr;
 	char			address[NET_NAMELEN];	///< Human readable form.
 	//@}
 } qsocket_t;
@@ -268,7 +260,7 @@ typedef struct {
 	int		maxusers;
 	int		driver;
 	int		ldriver;
-	AF_address_t addr;
+	netadr_t addr;
 } hostcache_t;
 
 extern int hostCacheCount;
@@ -415,18 +407,18 @@ typedef struct {
 	void		(*Listen) (qboolean state);
 	int 		(*OpenSocket) (int port);
 	int 		(*CloseSocket) (int socket);
-	int 		(*Connect) (int socket, AF_address_t *addr);
+	int 		(*Connect) (int socket, netadr_t *addr);
 	int 		(*CheckNewConnections) (void);
-	int 		(*Read) (int socket, byte *buf, int len, AF_address_t *addr);
-	int 		(*Write) (int socket, byte *buf, int len, AF_address_t *addr);
+	int 		(*Read) (int socket, byte *buf, int len, netadr_t *addr);
+	int 		(*Write) (int socket, byte *buf, int len, netadr_t *addr);
 	int 		(*Broadcast) (int socket, byte *buf, int len);
-	const char *		(*AddrToString) (AF_address_t *addr);
-	int 		(*GetSocketAddr) (int socket, AF_address_t *addr);
-	int 		(*GetNameFromAddr) (AF_address_t *addr, char *name);
-	int 		(*GetAddrFromName) (const char *name, AF_address_t *addr);
-	int			(*AddrCompare) (AF_address_t *addr1, AF_address_t *addr2);
-	int			(*GetSocketPort) (AF_address_t *addr);
-	int			(*SetSocketPort) (AF_address_t *addr, int port);
+	const char *		(*AddrToString) (netadr_t *addr);
+	int 		(*GetSocketAddr) (int socket, netadr_t *addr);
+	int 		(*GetNameFromAddr) (netadr_t *addr, char *name);
+	int 		(*GetAddrFromName) (const char *name, netadr_t *addr);
+	int			(*AddrCompare) (netadr_t *addr1, netadr_t *addr2);
+	int			(*GetSocketPort) (netadr_t *addr);
+	int			(*SetSocketPort) (netadr_t *addr, int port);
 } net_landriver_t;
 
 extern int 				net_numlandrivers;
