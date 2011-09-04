@@ -1429,99 +1429,6 @@ PF_checkextension (progs_t *pr)
 	R_FLOAT (pr) = 0;			// FIXME: make this function actually useful
 }
 
-// integer (entity client) CL_Active
-static void
-PF_CL_Active (progs_t *pr)
-{
-	client_t   *client;
-	edict_t    *ent;
-	int         i;
-
-	ent = P_EDICT (pr, 0);
-	i = NUM_FOR_EDICT (pr, ent);
-	if (i < 1 || i > svs.maxclients)
-		PR_RunError (pr, "Entity is not a client");
-
-	client = svs.clients + (i - 1);
-	R_INT (pr) = client->active;
-}
-
-// vector (entity client) CL_Cmd
-static void
-PF_CL_Cmd (progs_t *pr)
-{
-	client_t   *client;
-	edict_t    *ent;
-	int         i;
-
-	ent = P_EDICT (pr, 0);
-	i = NUM_FOR_EDICT (pr, ent);
-	if (i < 1 || i > svs.maxclients)
-		PR_RunError (pr, "Entity is not a client");
-
-	client = svs.clients + (i - 1);
-	R_VECTOR (pr)[0] = client->cmd.forwardmove;
-	R_VECTOR (pr)[1] = client->cmd.sidemove;
-	R_VECTOR (pr)[2] = client->cmd.upmove;
-}
-
-// integer (entity client) CL_Colors
-static void
-PF_CL_Colors (progs_t *pr)
-{
-	client_t   *client;
-	edict_t    *ent;
-	int         i;
-
-	ent = P_EDICT (pr, 0);
-	i = NUM_FOR_EDICT (pr, ent);
-	if (i < 1 || i > svs.maxclients)
-		PR_RunError (pr, "Entity is not a client");
-
-	client = svs.clients + (i - 1);
-	R_INT (pr) = client->colors;
-}
-
-// integer (entity client) CL_Ping
-static void
-PF_CL_Ping (progs_t *pr)
-{
-	client_t   *client;
-	edict_t    *ent;
-	int         i;
-	float       ping = 0.0;
-
-	ent = P_EDICT (pr, 0);
-	i = NUM_FOR_EDICT (pr, ent);
-	if (i < 1 || i > svs.maxclients)
-		PR_RunError (pr, "Entity is not a client");
-
-	client = svs.clients + (i - 1);
-
-	for (i = 0; i < NUM_PING_TIMES; i++)
-		ping += client->ping_times[i] * 1000;
-
-	ping = floor (ping / 16);
-	R_INT (pr) = ping;
-}
-
-// string (entity client) CL_Address
-static void
-PF_CL_Address (progs_t *pr)
-{
-	client_t   *client;
-	edict_t    *ent;
-	int         i;
-
-	ent = P_EDICT (pr, 0);
-	i = NUM_FOR_EDICT (pr, ent);
-	if (i < 1 || i > svs.maxclients)
-		PR_RunError (pr, "Entity is not a client");
-
-	client = svs.clients + (i - 1);
-	RETURN_STRING (pr, client->netconnection->address);
-}
-
 #define QF (PR_RANGE_QF << PR_RANGE_SHIFT) |
 
 static builtin_t builtins[] = {
@@ -1582,11 +1489,6 @@ static builtin_t builtins[] = {
 
 	{"EntityParseFunction", ED_EntityParseFunction,	-1},
 
-	{"CL_Active",			PF_CL_Active,			-1},
-	{"CL_Cmd",				PF_CL_Cmd,				-1},
-	{"CL_Colors",			PF_CL_Colors,			-1},
-	{"CL_Ping",				PF_CL_Ping,				-1},
-	{"CL_Address",			PF_CL_Address,			-1},
 
 	{0}
 };
