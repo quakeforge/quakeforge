@@ -1087,11 +1087,9 @@ ED_Print (progs_t *pr, edict_t *ed)
 				PR_Error (pr, "ED_Print: Unhandled type %d", type);
 		}
 
-		Sys_Printf ("%s", name);
-		l = strlen (name);
-		while (l++ < 15)
-			Sys_Printf (" ");
-
-		Sys_Printf ("%s\n", value_string (pr, d->type, v));
+		l = 15 - strlen (name);
+		if (l < 1)
+			l = 1;
+		Sys_Printf ("%s%*s%s\n", name, l, "", value_string (pr, d->type, v));
 	}
 }
