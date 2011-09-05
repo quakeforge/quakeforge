@@ -1217,10 +1217,6 @@ CL_ServerInfo (void)
 //		movevars.ktjump = atof (value);
 //		FIXME: need to set to 0.5 otherwise, outside of else structure
 	}
-	if (!centerprint)
-		centerprint = dstring_newstr ();
-	else
-		dstring_clearstr (centerprint);
 }
 
 static void

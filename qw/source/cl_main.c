@@ -433,6 +433,8 @@ CL_ClearState (void)
 	// clear other arrays   
 	memset (cl_efrags, 0, sizeof (cl_efrags));
 	memset (r_lightstyle, 0, sizeof (r_lightstyle));
+
+	dstring_clearstr (centerprint);
 }
 
 /*
@@ -1751,6 +1753,7 @@ Host_Init (void)
 
 	pr_gametype = "quakeworld";
 
+	centerprint = dstring_newstr ();
 	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 	cls.servername = dstring_newstr ();
 	cls.downloadtempname = dstring_newstr ();
