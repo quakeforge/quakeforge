@@ -178,6 +178,8 @@ SV_Print (const char *fmt, va_list args)
 	in = premsg;
 	out = msg;
 
+	if (!*premsg)
+		return;
 	// expand FFnickFF to nick <userid>
 	do {
 		switch ((byte) *in) {
@@ -213,7 +215,7 @@ SV_Print (const char *fmt, va_list args)
 	if (sv_redirected) {				// Add to redirected message
 		dstring_appendstr (&outputbuf, (char *) msg);
 	}
-	if (!con_printf_no_log) {
+	if (*msg && !con_printf_no_log) {
 		// We want to output to console and maybe logfile
 		if (sv_timestamps && sv_timefmt && sv_timefmt->string
 			&& sv_timestamps->int_val && !pending)
