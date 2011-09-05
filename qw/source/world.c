@@ -455,11 +455,25 @@ SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 	if (ent->free)
 		return;
 
-	// set the abs box
-	VectorAdd (SVvector (ent, origin), SVvector (ent, mins),
-			   SVvector (ent, absmin));
-	VectorAdd (SVvector (ent, origin), SVvector (ent, maxs),
-			   SVvector (ent, absmax));
+	if (SVfloat (ent, solid) == SOLID_BSP
+		&& !VectorIsZero (SVvector (ent, angles)) && ent != sv.edicts) {
+		float       m, v;
+		vec3_t      r;
+		m = DotProduct (SVvector (ent, mins), SVvector (ent, mins));
+		v = DotProduct (SVvector (ent, maxs), SVvector (ent, maxs));
+		if (m < v)
+			m = v;
+		m = sqrt (m);
+		VectorSet (m, m, m, r);
+		VectorSubtract (SVvector (ent, origin), r, SVvector (ent, absmin));
+		VectorAdd (SVvector (ent, origin), r, SVvector (ent, absmax));
+	} else {
+		// set the abs box
+		VectorAdd (SVvector (ent, origin), SVvector (ent, mins),
+				   SVvector (ent, absmin));
+		VectorAdd (SVvector (ent, origin), SVvector (ent, maxs),
+				   SVvector (ent, absmax));
+	}
 
 	// to make items easier to pick up and allow them to be grabbed off
 	// of shelves, the abs sizes are expanded
@@ -591,6 +605,9 @@ SV_ClipMoveToEntity (edict_t *touched, const vec3_t start,
 	hull_t     *hull;
 	trace_t     trace;
 	vec3_t      offset, start_l, end_l;
+	vec3_t      forward, right, up;
+	int         rot = 0;
+	vec3_t      temp;
 
 	// fill in a default trace
 	memset (&trace, 0, sizeof (trace_t));
@@ -607,12 +624,49 @@ SV_ClipMoveToEntity (edict_t *touched, const vec3_t start,
 	VectorSubtract (start, offset, start_l);
 	VectorSubtract (end, offset, end_l);
 
+	if (SVfloat (touched, solid) == SOLID_BSP
+		&& !VectorIsZero (SVvector (touched, angles))
+		&& touched != sv.edicts) {
+		rot = 1;
+		AngleVectors (SVvector (touched, angles), forward, right, up);
+		VectorNegate (right, right);	// convert lhs to rhs
+
+		VectorCopy (start_l, temp);
+		start_l[0] = DotProduct (temp, forward);
+		start_l[1] = DotProduct (temp, right);
+		start_l[2] = DotProduct (temp, up);
+
+		VectorCopy (end_l, temp);
+		end_l[0] = DotProduct (temp, forward);
+		end_l[1] = DotProduct (temp, right);
+		end_l[2] = DotProduct (temp, up);
+	}
+
 	// trace a line through the apropriate clipping hull
 	MOD_TraceLine (hull, hull->firstclipnode, start_l, end_l, &trace);
 
-	// fix trace up by the offset
-	if (trace.fraction != 1)
+	// fix up trace by the rotation and offset
+	if (trace.fraction != 1) {
+		if (rot) {
+			vec_t       t;
+
+			// transpose the rotation matrix to get its inverse
+			t = forward[1]; forward[1] = right[0]; right[0] = t;
+			t = forward[2]; forward[2] = up[0]; up[0] = t;
+			t = right[2]; right[2] = up[1]; up[1] = t;
+
+			VectorCopy (trace.endpos, temp);
+			trace.endpos[0] = DotProduct (temp, forward);
+			trace.endpos[1] = DotProduct (temp, right);
+			trace.endpos[2] = DotProduct (temp, up);
+
+			VectorCopy (trace.plane.normal, temp);
+			trace.plane.normal[0] = DotProduct (temp, forward);
+			trace.plane.normal[1] = DotProduct (temp, right);
+			trace.plane.normal[2] = DotProduct (temp, up);
+		}
 		VectorAdd (trace.endpos, offset, trace.endpos);
+	}
 
 	// did we clip the move?
 	if (trace.fraction < 1 || trace.startsolid)

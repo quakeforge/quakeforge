@@ -214,6 +214,9 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 	trace_t     trace, total;
 	vec3_t      maxs, mins, offset, start_l, end_l;
 	vec3_t      move[2];
+	vec3_t      forward, right, up;
+	int         rot = 0;
+	vec3_t      temp;
 
 	// fill in a default trace
 	memset (&total, 0, sizeof (trace_t));
@@ -248,6 +251,23 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 
 		VectorSubtract (start, offset, start_l);
 		VectorSubtract (end, offset, end_l);
+
+		if (1 && pe->model && pe->model->type == mod_brush
+			&& !VectorIsZero (pe->angles)) {
+			rot = 1;
+			AngleVectors (pe->angles, forward, right, up);
+			VectorNegate (right, right);    // convert lhs to rhs
+
+			VectorCopy (start_l, temp);
+			start_l[0] = DotProduct (temp, forward);
+			start_l[1] = DotProduct (temp, right);
+			start_l[2] = DotProduct (temp, up);
+
+			VectorCopy (end_l, temp);
+			end_l[0] = DotProduct (temp, forward);
+			end_l[1] = DotProduct (temp, right);
+			end_l[2] = DotProduct (temp, up);
+		}
 
 		// fill in a default trace
 		memset (&trace, 0, sizeof (trace_t));
@@ -289,7 +309,25 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 
 		// did we clip the move?
 		if (trace.fraction < total.fraction) {
-			// fix trace up by the offset
+			// fix up trace by the offset
+			if (rot) {
+				vec_t       t;
+
+				// transpose the rotation matrix to get its inverse
+				t = forward[1]; forward[1] = right[0]; right[0] = t;
+				t = forward[2]; forward[2] = up[0]; up[0] = t;
+				t = right[2]; right[2] = up[1]; up[1] = t;
+
+				VectorCopy (trace.endpos, temp);
+				trace.endpos[0] = DotProduct (temp, forward);
+				trace.endpos[1] = DotProduct (temp, right);
+				trace.endpos[2] = DotProduct (temp, up);
+
+				VectorCopy (trace.plane.normal, temp);
+				trace.plane.normal[0] = DotProduct (temp, forward);
+				trace.plane.normal[1] = DotProduct (temp, right);
+				trace.plane.normal[2] = DotProduct (temp, up);
+			}
 			VectorAdd (trace.endpos, offset, trace.endpos);
 			total = trace;
 			total.ent = (struct edict_s *) &pmove.physents[i];

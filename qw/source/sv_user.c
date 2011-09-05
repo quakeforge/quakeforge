@@ -1540,6 +1540,7 @@ AddLinksToPmove (areanode_t *node)
 			pmove.numphysent++;
 
 			VectorCopy (SVvector (check, origin), pe->origin);
+			VectorCopy (SVvector (check, angles), pe->angles);
 			pe->info = NUM_FOR_EDICT (&sv_pr_state, check);
 
 			if (sv_fields.rotated_bbox != -1

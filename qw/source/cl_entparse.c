@@ -519,6 +519,7 @@ CL_SetSolidEntities (void)
 
 	pmove.physents[0].model = cl.worldmodel;
 	VectorZero (pmove.physents[0].origin);
+	VectorZero (pmove.physents[0].angles);
 	pmove.physents[0].info = 0;
 	pmove.numphysent = 1;
 
@@ -543,6 +544,8 @@ CL_SetSolidEntities (void)
 				cl.model_precache[state->modelindex];
 			VectorCopy (state->origin,
 						pmove.physents[pmove.numphysent].origin);
+			VectorCopy (state->angles,
+						pmove.physents[pmove.numphysent].angles);
 			pmove.numphysent++;
 		}
 	}
