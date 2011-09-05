@@ -114,6 +114,9 @@ extern const vec_t * const quat_origin;
 		(v)[2] = (v1)[2] * (1 - (b)) + (v2)[2] * (b); \
 	} while (0)
 
+//For printf etc
+#define VectorExpand(v) (v)[0], (v)[1], (v)[2]
+
 #define QDotProduct(a,b) ((a)[0] * (b)[0] + (a)[1] * (b)[1] \
 						  + (a)[2] * (b)[2] + (a)[3] * (b)[3])
 #define QuatSubtract(a,b,c) \
@@ -195,6 +198,9 @@ extern const vec_t * const quat_origin;
 		(v)[2] = (v1)[2] * (1 - (b)) + (v2)[2] * (b); \
 		(v)[3] = (v1)[3] * (1 - (b)) + (v2)[3] * (b); \
 	} while (0)
+
+//For printf etc
+#define QuatExpand(q) (q)[0], (q)[1], (q)[2], (q)[3]
 
 /*
  * VectorDistance, the distance between two points.
