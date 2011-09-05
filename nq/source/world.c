@@ -645,7 +645,7 @@ SV_ClipMoveToEntity (edict_t *touched, const vec3_t start,
 	// trace a line through the apropriate clipping hull
 	MOD_TraceLine (hull, hull->firstclipnode, start_l, end_l, &trace);
 
-	// fix trace up by the rotation and offset
+	// fix up trace by the rotation and offset
 	if (trace.fraction != 1) {
 		if (rot) {
 			vec_t       t;
