@@ -673,6 +673,9 @@ SV_Physics_Toss (edict_t *ent)
 	if (!SV_RunThink (ent))
 		return;
 
+	if (SVvector (ent, velocity)[2] > 0)
+		SVfloat (ent, flags) = (int) SVfloat (ent, flags) & ~FL_ONGROUND;
+
 	// if onground, return without moving
 	if (((int) SVfloat (ent, flags) & FL_ONGROUND))
 		return;
@@ -729,6 +732,7 @@ SV_Physics_Toss (edict_t *ent)
 
 	This is also used for objects that have become still on the ground, but
 	will fall if the floor is pulled out from under them.
+	FIXME: is this true?
 */
 static void
 SV_Physics_Step (edict_t *ent)
