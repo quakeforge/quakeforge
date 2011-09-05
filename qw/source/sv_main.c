@@ -2131,6 +2131,7 @@ SV_InitLocal (void)
 							  "clients");
 	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_NONE, NULL,
 						   "Sets the global value for the amount of gravity");
+	sv_jump_any = Cvar_Get ("sv_jump_any", "1", CVAR_NONE, NULL, "None");
 	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, NULL, 
 							 "Sets the value that determines how fast the "
 							 "player should come to a complete stop");

@@ -537,6 +537,7 @@ void SV_SetMoveVars(void);
 struct trace_s;
 int SV_FlyMove (struct edict_s *ent, float time, struct trace_s *steptrace);
 struct trace_s SV_PushEntity (struct edict_s *ent, vec3_t push);
+int SV_EntCanSupportJump (struct edict_s *ent);
 
 //
 // sv_send.c
@@ -621,6 +622,7 @@ extern struct cvar_s *sv_timefmt;
 extern struct cvar_s *sv_phs;
 extern struct cvar_s *sv_maxvelocity;
 extern struct cvar_s *sv_gravity;
+extern struct cvar_s *sv_jump_any;
 extern struct cvar_s *sv_aim;
 extern struct cvar_s *sv_stopspeed;
 extern struct cvar_s *sv_spectatormaxspeed;
