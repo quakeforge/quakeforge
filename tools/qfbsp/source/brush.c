@@ -28,6 +28,7 @@
 #endif
 
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "compat.h"
 
@@ -330,7 +331,7 @@ CreateBrushFaces (void)
 	winding_t  *w;
 	vec3_t      offset, point;
 
-	offset[0] = offset[1] = offset[2] = 0;
+	VectorZero (offset);
 	brush_mins[0] = brush_mins[1] = brush_mins[2] = BOGUS_RANGE;
 	brush_maxs[0] = brush_maxs[1] = brush_maxs[2] = -BOGUS_RANGE;
 
@@ -340,16 +341,14 @@ CreateBrushFaces (void)
 	if (rotate) {
 		entity_t   *FoundEntity;
 		const char *searchstring;
-		char       text[20];
 
 		searchstring = ValueForKey (CurrentEntity, "target");
 		FoundEntity = FindTargetEntity (searchstring);
 		if (FoundEntity)
 			GetVectorForKey (FoundEntity, "origin", offset);
 
-		snprintf (text, sizeof (text), "%g %g %g",
-				  offset[0], offset[1], offset[2]);
-		SetKeyValue (CurrentEntity, "origin", text);
+		SetKeyValue (CurrentEntity, "origin",
+					 va ("%g %g %g", VectorExpand (offset)));
 	}
 
 	for (i = 0; i < numbrushfaces; i++) {
