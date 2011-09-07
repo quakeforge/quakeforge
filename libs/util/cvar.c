@@ -697,6 +697,8 @@ Cvar_Get (const char *name, const char *string, int cvarflags,
 			|| strequal (var->description, USER_RO_CVAR)
 			|| strequal (var->description, USER_CVAR))
 			var->description = description;
+		if (!var->default_string)
+			var->default_string = strdup (string);
 	}
 	if (var->callback)
 		var->callback (var);
