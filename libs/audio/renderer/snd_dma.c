@@ -289,7 +289,8 @@ s_startup (void)
 		sound_started = 0;
 		return;
 	}
-	snd_shm->xfer = s_xfer_paint_buffer;
+	if (!snd_shm->xfer)
+		snd_shm->xfer = s_xfer_paint_buffer;
 
 	sound_started = 1;
 }

@@ -81,6 +81,9 @@ struct dma_s {
 		\param endtime	sample end time (count = endtime - snd_paintedtime)
 	*/
 	void            (*xfer) (int endtime);
+	/** Optional data for the xfer function.
+	*/
+	void            *xfer_data;
 };
 
 /** Describes the sound data.
