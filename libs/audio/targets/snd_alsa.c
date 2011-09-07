@@ -119,6 +119,85 @@ round_buffer_size (snd_pcm_uframes_t sz)
 	return sz;
 }
 
+static inline int
+clamp_16 (int val)
+{
+	if (val > 0x7fff)
+		val = 0x7fff;
+	else if (val < -0x8000)
+		val = -0x8000;
+	return val;
+}
+
+static inline int
+clamp_8 (int val)
+{
+	if (val > 0x7f)
+		val = 0x7f;
+	else if (val < -0x80)
+		val = -0x80;
+	return val;
+}
+
+static void
+SNDDMA_ni_xfer (int endtime)
+{
+	const snd_pcm_channel_area_t *areas;
+	int         count, out_idx, out_max;
+	float       snd_vol;
+	float      *p;
+
+	areas = sn.xfer_data;
+
+	p = (float *) snd_paintbuffer;
+	count = (endtime - snd_paintedtime);
+	out_max = sn.frames - 1;
+	out_idx = sn.framepos;
+	while (out_idx > out_max)
+		out_idx -= out_max + 1;
+	snd_vol = snd_volume->value;
+
+	if (sn.samplebits == 16) {
+		short      *out_0 = (short *) areas[0].addr;
+		short      *out_1 = (short *) areas[1].addr;
+
+		if (sn.channels == 2) {
+			while (count--) {
+				out_0[out_idx] = clamp_16 ((*p++ * snd_vol) * 0x8000);
+				out_1[out_idx] = clamp_16 ((*p++ * snd_vol) * 0x8000);
+				if (out_idx++ > out_max)
+					out_idx = 0;
+			}
+		} else {
+			while (count--) {
+				out_0[out_idx] = clamp_16 ((*p++ * snd_vol) * 0x8000);
+				p++;		// skip right channel
+				if (out_idx++ > out_max)
+					out_idx = 0;
+			}
+		}
+	} else if (sn.samplebits == 8) {
+		byte       *out_0 = (byte *) areas[0].addr;
+		byte       *out_1 = (byte *) areas[1].addr;
+
+		if (sn.channels == 2) {
+			while (count--) {
+				out_0[out_idx] = clamp_8 ((*p++ * snd_vol) * 0x80);
+				out_1[out_idx] = clamp_8 ((*p++ * snd_vol) * 0x80);
+				if (out_idx++ > out_max)
+					out_idx = 0;
+			}
+		} else {
+			while (count--) {
+				out_0[out_idx] = clamp_8 ((*p++ * snd_vol) * 0x8000);
+				p++;		// skip right channel
+				if (out_idx++ > out_max)
+					out_idx = 0;
+			}
+		}
+	}
+}
+
 static volatile dma_t *
 SNDDMA_Init (void)
 {
@@ -170,11 +249,19 @@ SNDDMA_Init (void)
 	err = qfsnd_pcm_hw_params_set_access (pcm, hw,
 										  SND_PCM_ACCESS_MMAP_INTERLEAVED);
 	if (0 > err) {
-		Sys_Printf ("ALSA: Failure to set noninterleaved PCM access. %s\n"
-					"Note: Interleaved is not supported\n",
-					qfsnd_strerror (err));
-		goto error;
+		Sys_MaskPrintf (SYS_SND, "ALSA: Failure to set interleaved PCM "
+						"access. %s\n", qfsnd_strerror (err));
+		err = qfsnd_pcm_hw_params_set_access (pcm, hw,
+										  SND_PCM_ACCESS_MMAP_NONINTERLEAVED);
+		if (0 > err) {
+			Sys_MaskPrintf (SYS_SND, "ALSA: Failure to set noninterleaved PCM "
+							"access. %s\n", qfsnd_strerror (err));
+			Sys_Printf ("ALSA: could not set mmap access");
+			goto error;
+		}
+		sn.xfer = SNDDMA_ni_xfer;
 	}
+
 
 	switch (bps) {
 		case -1:
@@ -371,7 +458,8 @@ SNDDMA_GetDMAPos (void)
 	qfsnd_pcm_avail_update (pcm);
 	qfsnd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);
 	sn.framepos = offset;
-	sn.buffer = areas->addr;	//XXX FIXME there's an area per channel
+	sn.buffer = areas->addr;
+	sn.xfer_data = (void *) areas;
 	return sn.framepos;
 }
 
