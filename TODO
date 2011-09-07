@@ -14,28 +14,30 @@ X  ~/.quakeforgerc should support all commands, not just set and setrom
 X  software PCXs don't work in X11 at least if you're using 16/24/32 color
 X  ogg support
 X  server-side demos
+X  Scitech MGL used in win32 is screwed - dump it and use SDL
+X  kill MAX_STATIC_ENTITIES
+X  stateful console (eg, rcon mode, chat mode, normal command mode...)
 M  it seems possible to crash a QF server still - need to fix this!
 M  merge nq and qw code bases
 M  mingw cross compiling
-X  Scitech MGL used in win32 is screwed - dump it and use SDL
 M  software targets should mix color at 16/16 or 24/32 color
 I  GL is still way too slow
 I  Client side QuakeC.
 I  menu rewrite
 I  clean up TODO ;)
-o  kill MAX_STATIC_ENTITIES
 o  doublesize modes (eg, render in 320x240 but display in 640x480)
 o  allow qf clients to download .lit files from qf servers.
 o  better server control of certain cvars
 o  triggers (f_respawn, f_death, f_took; cl_triggers)
-X  stateful console (eg, rcon mode, chat mode, normal command mode...)
 o  scripted hud
 o  add a U_PHYSICAL field to entities.  it should include a solid bit,
    a rotated bbox bit, and mins/maxs for the bbos
 o  gui for serverlist
-o  add favorates serverlist manipulation
+o  add favorites serverlist manipulation
 o  redo serverlist filtering for better flexability and/or easier use
 o  add individual server ping/info request from console
+?  dynamically allocate missing fields, particularly ones not needed by the
+   progs.
 ?  more direct intra-team comms (eg, talk to offense or defense directly)
 ?  Draw_Pic and friends need a cleanup in GL at least
 ?  Draw_Pic and other tex draw functions should use local palettes
