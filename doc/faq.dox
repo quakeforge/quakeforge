@@ -7,6 +7,7 @@
 \li \ref git_compile_error
 \li \ref no_music
 \li \ref no_mp3
+\li \ref faq_cvar_rom
 
 \section gfx_wad What does "W_LoadWadFile: unable to load gfx.wad" mean?
 The most common cause of this error is QuakeForge is unable to find
@@ -16,6 +17,8 @@ default to "." (ie, the current directory: the same as id's quake clients). In
 Linux (and other UNIX like operating systems), fs_userpath defaults to
 ~/.quakeforge and fs_sharepath defaults to $prefix/share/games/quakeforge
 (distribution packages might alter the exact path).
+
+See \ref filesystem for more details.
 
 \section pak0_pak Where can I get pak0.pak?
 See \ref game_data
@@ -60,4 +63,8 @@ the value appropriate for your system:
 Because they are not free. MP3 support is a patent minefield, and we really
 don't want to wind up with lawyers at ten paces, especially since we'd be
 unarmed with no armor, and they have rocket launchers and quad-damage.
+
+\section faq_cvar_rom How do I set a read-only cvar (eg, snd_rate)?
+Read-only cvars can be set by creating them before the engine does. See
+\ref cvar_rom for details.
 */

@@ -1,0 +1,122 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+/**
+\page run_config Runtime Configuration.
+
+\li \subpage cvars
+\li \subpage filesystem
+\li \subpage dirconf
+\li \subpage tracklist
+\li \subpage key_binding
+\li \subpage cshift_cvars
+\li \subpage server_timestamps
+
+*/
+
+/**
+\page cvars Configuration variables
+
+The core of \QF's configurabitly is the cvar.
+
+\section cvar_value Cvar values.
+Depending how the engine's use of the cvar, the value will be treated as a
+string, a floating point value, an integer value or even a vector value.
+
+If a space is needed in the value, the value must be "quoted".
+
+\section cvar_type Cvar types.
+From the user's perspective, there are three types of cvar:
+\li plain cvar: the value can be displayed or set, but will not be
+automatically saved.
+\li archive cvar: like a plain cvar, the value can be displayed or set, but
+the cvar will be automatically saved to \c config.cfg by the engine on
+shutdown or gamedir change (quakeworld).
+\li read-only cvar: the value can be displayed but not changed in any way
+(value or flags). If the cvar also happens to be an archive cvar (the
+archive flag was set before the read-only flag), then the cvar will be
+saved to \c config.cfg.
+
+\section cvar_cmds Cvar related commands.
+<code>\<cvar\> [value]</code><br>
+Display the current value of the specified cvar. If \c value is given, set
+the cvar to \c value. Does not create a new cvar.
+
+<code>set \<cvar\> \<value\></code><br>
+Set the specified cvar to the specified value. If the cvar does not already
+exist, a new cvar will be created.
+
+<code>seta \<cvar\> \<value\></code><br>
+Set the specified cvar to the specified value. If the cvar does not already
+exist, a new cvar will be created. Sets the cvar's archive flag so it will
+be automatically saved to \c config.cfg by the clients.
+
+<code>setrom \<cvar\> \<value\></code><br>
+Set the specified cvar to the specified value. If the cvar does not already
+exist, a new cvar will be created. Sets the cvar's read-only flag so it can
+no longer be modified in any way (not even by \c reset or \c resetall).
+
+<code>toggle \<cvar\></code><br>
+Treat the cvar as a boolean value, changing it from off to on, or on to
+off. Any non-zero integer value is considered to be on, while zero and
+any string that parses as zero (does not start with a non-zero number) will
+be treated as off. The new value will always be either one (1) or zero (0).
+\note values smaller than 1 will be treated as off.
+
+<code>cvarlist [foo]</code><br>
+Print a list of all cvars known to the engine (engine created or user
+created). If the foo parameter is given (any value), then extra
+information (cvar description, flags) will also be printed.
+
+<code>cycle \<cvar\> \<value list\></code><br>
+Cause the cvar to cycle through the list of values. Each time this command
+is executed, the cvar will change to the value immediately after the cvar's
+current value in the list, cycling back to the beginning when the current
+value is the last value in the list. If the current value is not in the
+list, the cvar will be set to the first value in the list.
+
+<code>inc \<cvar\> [amount]</code><br>
+Add one (1) to the cvar's current numeric value. If the optional amount is
+given, add that value to the cvar's current numeric value. Using -1
+(<code>inc \<cvar\> -1</code>), this can be used as a \c dec command.
+
+<code>reset \<cvar\></code><br>
+Reset the specified cvar to its default (engine specified) value.
+
+<code>resetall</code><br>
+Reset all cvars to their default (engine specified values).
+
+\section cvar_rom Read-only cvars.
+Many cvars in \QF are read-only because changing them at runtime would
+either have little meaning or be difficult to implement. However, there
+<em>is</em> a way to change even a read-only cvarsing the \c set command,
+the cvar can be created with the desired value before the engine creates
+the cvar (and sets its read-only flag). There are exactly three places
+where the cvar can be created before the engine does:
+\li the command line (eg <code>nq-glx +set snd_rate 48000</code>)
+\li the global configuration file specified by the \c fs_globalcfg cvar.
+\li the user configuration file specified by the \c fs_usercfg cvar.
+
+The global and user configuration files are normal quake scripts, but only
+\c set, \c seta, and \c setrom commands are executed.
+
+It might seem strange to have the global and user configuration files
+specified by cvars, but \QF's startup sequence is quite intense:
+\li execute any \c set commands given on the command line. This way, \c
+fs_globalcfg can be set.
+\li execute any \c set commands in the global configuration file. This way,
+\c fs_usercfg can be set.
+\li re-execute any \c set commands given on the command line. Thus it is
+possible to override \c fs_usercfg if it is set by the global configuration
+file (unless \c setrom is used: BOFH).
+\li execute any \c set commands in the user configuration file. Any cvars
+set in the user configuration file override those set in the global
+configuration file.
+\li once again, re-execute any \c set commands given on the command line.
+Thus cvars set on the command line override those set in either the user
+configuration file or the global configuration file (or both).
+
+During the above process, the only cvars created by the engine are \c
+fs_globalcfg (just before reading the global configuration file) and \c
+fs_usercfg (just before reading the user configuration file). Thus, it is
+possible to set <em>any</em> cvar in \QF.
+
+*/
