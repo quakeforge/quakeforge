@@ -252,7 +252,8 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 		VectorSubtract (start, offset, start_l);
 		VectorSubtract (end, offset, end_l);
 
-		if (1 && pe->model && pe->model->type == mod_brush
+		rot = 0;
+		if (i && pe->model && pe->model->type == mod_brush
 			&& !VectorIsZero (pe->angles)) {
 			rot = 1;
 			AngleVectors (pe->angles, forward, right, up);
