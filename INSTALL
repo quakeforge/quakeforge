@@ -1,5 +1,6 @@
 //This file is formatted for processing with doxygen.
 //unfortunatly, have to wrap the docs in a C comment for doxygen
+// vim:tw=74:formatoptions-=l
 /**
 \page build-install Building and Installing QuakeForge
 
