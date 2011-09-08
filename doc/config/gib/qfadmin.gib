@@ -73,7 +73,8 @@
 domain qfadmin
 
 global uservote cmds mapvote config
-global cvsheader = "$Id$"
+//global cvsheader = "$Id$"
+global qfadminversion = "1.17"
 
 // QFAdmin console interface
 function qfadmin {
@@ -238,19 +239,20 @@ function qfadmin::doVersion {
 
 // Return the current version
 function qfadmin::getVersion {
-	local tmp tmp2
+//	local tmp tmp2
 
-	tmp = $(split $cvsheader)
+//	tmp = $(split $cvsheader)
 
-	if $(equal $tmp[6] "Exp") {
-		tmp2 = "Beta"
-	} else if $(equal $tmp[6] "Stab") {
-		tmp2 = "Stable"
-	} else if $(equal $tmp[6] "Rel") {
-		tmp2 = "Release"
-	}
+//	if $(equal $tmp[6] "Exp") {
+//		tmp2 = "Beta"
+//	} else if $(equal $tmp[6] "Stab") {
+//		tmp2 = "Stable"
+//	} else if $(equal $tmp[6] "Rel") {
+//		tmp2 = "Release"
+//	}
 
-	return "QFAdmin v", $tmp[2], " (", $tmp[3], " ", $tmp2, ") by Harry Roberts"
+//	return "QFAdmin v", $tmp[2], " (", $tmp[3], " ", $tmp2, ") by Harry Roberts"
+	return "QFAdmin v", $qfadminversion, " by Harry Roberts"
 }
 
 // Clear uservore & mapvote vars
