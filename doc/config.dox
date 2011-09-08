@@ -19,7 +19,7 @@
 The core of \QF's configurabitly is the cvar.
 
 \section cvar_value Cvar values.
-Depending how the engine's use of the cvar, the value will be treated as a
+Depending on the engine's use of the cvar, the value will be treated as a
 string, a floating point value, an integer value or even a vector value.
 
 If a space is needed in the value, the value must be "quoted".
@@ -88,30 +88,39 @@ Reset all cvars to their default (engine specified values).
 \section cvar_rom Read-only cvars.
 Many cvars in \QF are read-only because changing them at runtime would
 either have little meaning or be difficult to implement. However, there
-<em>is</em> a way to change even a read-only cvarsing the \c set command,
-the cvar can be created with the desired value before the engine creates
-the cvar (and sets its read-only flag). There are exactly three places
-where the cvar can be created before the engine does:
+<em>is</em> a way to change even a read-only cvars: using the \c set
+command, the cvar can be created with the desired value before the engine
+creates the cvar (and sets its read-only flag). There are exactly three
+places where the cvar can be created before the engine does:
 \li the command line (eg <code>nq-glx +set snd_rate 48000</code>)
 \li the global configuration file specified by the \c fs_globalcfg cvar.
 \li the user configuration file specified by the \c fs_usercfg cvar.
+
+\c fs_globalcfg defaults to \c /etc/quakeforge.conf on Linux and other
+UNIX like systems, and <code>~/quakeforge.conf</code> on Windows (\QF will
+expand <code>~</code> to the value of the HOME environment variable if it
+is set, or WINDOWS if not).
+
+\c fs_usercfg defaults to either <code>~/.quakeforgerc</code> or
+<code>~/.config/quakeforge/quakeforge.conf</code> on Linux and other UNIX
+like systems, and \c ~/quakeforgerc on Windows.
 
 The global and user configuration files are normal quake scripts, but only
 \c set, \c seta, and \c setrom commands are executed.
 
 It might seem strange to have the global and user configuration files
 specified by cvars, but \QF's startup sequence is quite intense:
-\li execute any \c set commands given on the command line. This way, \c
+\li Execute any \c set commands given on the command line. This way, \c
 fs_globalcfg can be set.
-\li execute any \c set commands in the global configuration file. This way,
+\li Execute any \c set commands in the global configuration file. This way,
 \c fs_usercfg can be set.
-\li re-execute any \c set commands given on the command line. Thus it is
+\li Re-execute any \c set commands given on the command line. Thus it is
 possible to override \c fs_usercfg if it is set by the global configuration
 file (unless \c setrom is used: BOFH).
-\li execute any \c set commands in the user configuration file. Any cvars
+\li Execute any \c set commands in the user configuration file. Any cvars
 set in the user configuration file override those set in the global
 configuration file.
-\li once again, re-execute any \c set commands given on the command line.
+\li Once again, re-execute any \c set commands given on the command line.
 Thus cvars set on the command line override those set in either the user
 configuration file or the global configuration file (or both).
 
@@ -119,5 +128,18 @@ During the above process, the only cvars created by the engine are \c
 fs_globalcfg (just before reading the global configuration file) and \c
 fs_usercfg (just before reading the user configuration file). Thus, it is
 possible to set <em>any</em> cvar in \QF.
+
+The above means that:
+\li The command line can be used to set any cvar in \QF.
+\li The global config file can be used to set any cvar but \c
+fs_globalcfg.
+\li The user config file can be used to set any cvar but \c fs_globalcfg
+or \c fs_usercfg.
+\li The user config file can be used to override settings made in the
+global config file, unless those settings have been made read-only by the
+global config file (by using \c setrom instead of \c set).
+\li The command line can be used to override settings made in either the
+user config file or the global config file.  If \c setrom is used on the
+command line, even \c setrom in the config files can be overridden.
 
 */
