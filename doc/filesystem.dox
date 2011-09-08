@@ -42,7 +42,7 @@ when the trees are in the same place.
 Once QuakeForge is running, \c fs_sharepath and \c fs_userpath cannot be
 altered. However, they may be altered by setting them in the system
 configuration file, the user configuration file, or on the command line
-(see \ref cvar_rom).
+(see \ref cvar_rom and \ref cmdline).
 
 The internal layout of the shared and user data trees are, by default, the
 same as Quake (an \c id1 directory tree, plus other mod directories), but

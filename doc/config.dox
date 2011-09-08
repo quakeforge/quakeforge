@@ -3,6 +3,7 @@
 /**
 \page run_config Runtime Configuration.
 
+\li \subpage cmdline
 \li \subpage cvars
 \li \subpage filesystem
 \li \subpage dirconf
@@ -10,6 +11,37 @@
 \li \subpage key_binding
 \li \subpage cshift_cvars
 \li \subpage server_timestamps
+
+*/
+
+/**
+\page cmdline Command Line
+The \QF servers (\c nq-server, \c qw-server, and \c qtv), and clients
+(\c nq-glx, \c nq-wgl, \c qw-client-glx, \c qw-client-wgl etc) all parse
+the program command line looking for console commands.
+
+Console commands on the command line are marked with a \c + that follows
+whitespace. They continue until the next \c + or \c - that follows
+whitespace. This allows commands and arguments to contain \c + and \c - so
+long as the preceeding character is not whitespace, but also prevents
+command line switches (eg \c -nosound) from becoming part of the console
+command. Using careful quoting, it is even possible for a command or
+argument to beging with \c + or \c -.
+
+The following command line will fail to set m_pitch because the -0.022
+will not be part of the console command. <code>usage: setrom \<cvar\>
+\<value\></code> will be displayed instead.
+\verbatim
+nq-glx +setrom m_pitch -0.022
+\endverbatim
+
+The following command line will successfully set m_pitch to \c -0.022
+because \QF will see the \c " before the \c - and thus \c -0.022 will be
+part of the console command.
+\verbatim
+nq-glx +setrom m_pitch \"-0.022\"
+\endverbatim
+\note The above works in bash. Other shells may vary.
 
 */
 
@@ -110,7 +142,7 @@ The global and user configuration files are normal quake scripts, but only
 
 It might seem strange to have the global and user configuration files
 specified by cvars, but \QF's startup sequence is quite intense:
-\li Execute any \c set commands given on the command line. This way, \c
+\li Execute any \c set commands given on the \ref cmdline. This way, \c
 fs_globalcfg can be set.
 \li Execute any \c set commands in the global configuration file. This way,
 \c fs_usercfg can be set.
@@ -130,7 +162,7 @@ fs_usercfg (just before reading the user configuration file). Thus, it is
 possible to set <em>any</em> cvar in \QF.
 
 The above means that:
-\li The command line can be used to set any cvar in \QF.
+\li The \ref cmdline can be used to set any cvar in \QF.
 \li The global config file can be used to set any cvar but \c
 fs_globalcfg.
 \li The user config file can be used to set any cvar but \c fs_globalcfg
