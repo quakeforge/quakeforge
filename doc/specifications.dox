@@ -1,0 +1,13 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+// vim:tw=74:formatoptions-=l
+/**
+\page specs Various Specifications
+
+
+\li \subpage surround_sound_spec
+\li \subpage connection_sequence
+\li \subpage mapformat
+\li \subpage property-list
+\li \subpage qw_cap_spec
+\li \subpage qw_download_spec
+*/

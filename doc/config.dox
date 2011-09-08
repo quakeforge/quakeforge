@@ -7,6 +7,7 @@
 \li \subpage cvars
 \li \subpage filesystem
 \li \subpage dirconf
+\li \subpage sound
 \li \subpage tracklist
 \li \subpage key_binding
 \li \subpage cshift_cvars
@@ -117,7 +118,7 @@ Reset the specified cvar to its default (engine specified) value.
 <code>resetall</code><br>
 Reset all cvars to their default (engine specified values).
 
-\section cvar_rom Read-only cvars.
+\section cvar_rom Read-only cvars
 Many cvars in \QF are read-only because changing them at runtime would
 either have little meaning or be difficult to implement. However, there
 <em>is</em> a way to change even a read-only cvars: using the \c set

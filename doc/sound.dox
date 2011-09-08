@@ -1,0 +1,85 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+// vim:tw=74:formatoptions-=l
+/**
+\page sound \QF Sound System
+The \QF sound system is designed to work with many sound systems. The
+sound systems \QF supports are:
+<dl>
+	<dt>Linux</dt>				<dd>ALSA, OSS, SDL</dd>
+	<dt>Other UNIX-like</dt>	<dd>OSS, SDL</dd>
+	<dt>Windows</dt>			<dd>DirectX, Win32, SDL</dd>
+</dl>
+There are others (SUN, SGI, MME), but their status is unkown. SUN sound
+support will build (on OpenBSD), but whether it works is unknown.
+
+In the above list, the first sound system listed for each OS is the
+default. To use one of the other supported drivers, set the \c snd_output
+cvar to the appropriate name as shown below (all systems are shown).
+
+<table>
+<tr>
+	<td>System</td><td>ALSA</td><td>OSS</td><td>DirectX</td>
+	<td>Win32</td><td>SUN</td><td>SGI</td><td>MME</td><td>SDL</td>
+</tr>
+<tr>
+	<td>Driver</td><td>alsa</td><td>oss</td><td>dx</td>
+	<td>win</td><td>sun</td><td>sgi</td><td>mme</td><td>sdl</td>
+</tr>
+</table>
+
+As \c snd_output is read-only, see \ref cvar_rom for how to set it.
+
+In addition to the above, \QF also supports JACK audio. \QF's JACK support
+should work on any system that supports JACK. However, as JACK support
+uses a different architecture (JACK audio is "pull", \QF default audio is
+"push"), selecting JACK support uses a different cvar; Set \c snd_render
+to \c jack (the following table shows the name for both render systems).
+
+<table>
+<tr>
+	<td>System</td><td>Default</td><td>JACK</td>
+</tr>
+<tr>
+	<td>Render</td><td>default</td><td>jack</td>
+</tr>
+</table>
+
+\section snd_comcc Common Cvars and Commands
+\c ambient_level<br>
+\c ambient_fade<br>
+\c precache<br>
+\c snd_swapchannelside<br>
+\c snd_volumesep<br>
+\c snd_phasesep<br>
+\c volume<br>
+
+\c play<br>
+\c playcenter<br>
+\c playvol<br>
+\c snd_force_unblock<br>
+\c soundlist<br>
+
+When \QF is built with MIDI support (using WildMidi):<br>
+\c wildmidi_config<br>
+\c wildmidi_volume<br>
+
+\section snd_defcc QF Default Cvars and Commands
+\c snd_noextraupdate<br>
+\c snd_mixahead<br>
+\c nosound<br>
+
+\c stopsound<br>
+\c soundinfo<br>
+
+\c snd_stereo<br>
+\c snd_rate<br>
+\c snd_bits<br>
+
+\c snd_device<br>
+
+\c snd_oss_mmaped<br>
+
+\section snd_jackcc JACK Cvars and Commands
+\c snd_jack_server<br>
+
+*/

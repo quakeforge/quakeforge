@@ -5,7 +5,8 @@ SUBDIRS= man
 DOX=\
 	bind.dox config.dox connect.dox cshifts.dox dirconf.dox faq.dox \
 	filesystem.dox mapformat.dox property-list.dox qtv.dox quakeforge.dox \
-	qw-cap-spec.dox qw-download-spec.dox surround-sound.dox timestamps.dox
+	qw-cap-spec.dox qw-download-spec.dox sound.dox specifications.dox \
+	surround-sound.dox timestamps.dox
 
 EXTRA_DIST= qf.ico \
 	\
