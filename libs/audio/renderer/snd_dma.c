@@ -73,26 +73,25 @@ static general_data_t plugin_info_general_data;
 static snd_output_funcs_t *snd_output_funcs;
 
 static void
-s_xfer_paint_buffer (int endtime)
+s_xfer_paint_buffer (portable_samplepair_t *paintbuffer, int count,
+					 float volume)
 {
-	int			count, out_idx, out_max, step, val;
-	float       snd_vol;
+	int			out_idx, out_max, step, val;
 	float	   *p;
 
-	p = (float *) snd_paintbuffer;
-	count = (endtime - snd_paintedtime) * snd_shm->channels;
+	p = (float *) paintbuffer;
+	count *= snd_shm->channels;
 	out_max = (snd_shm->frames * snd_shm->channels) - 1;
-	out_idx = snd_paintedtime * snd_shm->channels;
+	out_idx = snd_shm->framepos * snd_shm->channels;
 	while (out_idx > out_max)
 		out_idx -= out_max + 1;
 	step = 3 - snd_shm->channels;
-	snd_vol = snd_volume->value;
 
 	if (snd_shm->samplebits == 16) {
 		short      *out = (short *) snd_shm->buffer;
 
 		while (count--) {
-			val = (*p * snd_vol) * 0x8000;
+			val = (*p * volume) * 0x8000;
 			p += step;
 			if (val > 0x7fff)
 				val = 0x7fff;
@@ -106,7 +105,7 @@ s_xfer_paint_buffer (int endtime)
 		unsigned char *out = (unsigned char *) snd_shm->buffer;
 
 		while (count--) {
-			val = (*p * snd_vol) * 128;
+			val = (*p * volume) * 128;
 			p += step;
 			if (val > 0x7f)
 				val = 0x7f;

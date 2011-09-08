@@ -258,13 +258,10 @@ s_channel_stop (channel_t *chan)
 }
 
 static void
-snd_jack_xfer (int endtime)
+snd_jack_xfer (portable_samplepair_t *paintbuffer, int count, float volume)
 {
 	int         i;
-	int         count;
-	float       snd_vol = snd_volume->value;
 
-	count = endtime - snd_paintedtime;
 	if (snd_blocked) {
 		for (i = 0; i < count; i++) {
 			*output[0]++ = 0;
@@ -274,8 +271,8 @@ snd_jack_xfer (int endtime)
 	}
 	for (i = 0; i < count; i++) {
 		/* max is +/- 1.0. need to implement clamping. */
-		*output[0]++ = snd_vol * snd_paintbuffer[i].left;
-		*output[1]++ = snd_vol * snd_paintbuffer[i].right;
+		*output[0]++ = volume * snd_paintbuffer[i].left;
+		*output[1]++ = volume * snd_paintbuffer[i].right;
 	}
 }
 

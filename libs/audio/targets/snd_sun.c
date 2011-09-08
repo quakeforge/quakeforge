@@ -171,7 +171,8 @@ SNDDMA_GetDMAPos (void)
 		return (0);
 	}
 
-	return ((info.play.samples * sn.channels) % sn.frames);
+	sn.framepos = ((info.play.samples * sn.channels) % sn.frames);
+	return sn.framepos;
 }
 #if 0
 static int

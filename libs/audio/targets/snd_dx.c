@@ -406,8 +406,9 @@ SNDDMA_GetDMAPos (void)
 	s /= sn.channels;
 
 	s %= sn.frames;
+	sn.framepos = s;
 
-	return s;
+	return sn.framepos;
 }
 
 /*

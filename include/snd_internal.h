@@ -78,9 +78,12 @@ struct dma_s {
 	int				framepos;				//!< position of dma cursor
 	unsigned char	*buffer;				//!< destination for mixed sound
 	/** Transfer mixed samples to the output.
-		\param endtime	sample end time (count = endtime - snd_paintedtime)
+		\param paintbuffer The buffer of mixed samples to be transferred.
+		\param count	The number of sample to transfer.
+		\param volume	The gain for the samples.
 	*/
-	void            (*xfer) (int endtime);
+	void            (*xfer) (portable_samplepair_t *paintbuffer, int count,
+							 float volume);
 	/** Optional data for the xfer function.
 	*/
 	void            *xfer_data;

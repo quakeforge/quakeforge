@@ -140,22 +140,19 @@ clamp_8 (int val)
 }
 
 static void
-SNDDMA_ni_xfer (int endtime)
+SNDDMA_ni_xfer (portable_samplepair_t *paintbuffer, int count, float volume)
 {
 	const snd_pcm_channel_area_t *areas;
-	int         count, out_idx, out_max;
-	float       snd_vol;
+	int         out_idx, out_max;
 	float      *p;
 
 	areas = sn.xfer_data;
 
-	p = (float *) snd_paintbuffer;
-	count = (endtime - snd_paintedtime);
+	p = (float *) paintbuffer;
 	out_max = sn.frames - 1;
 	out_idx = sn.framepos;
 	while (out_idx > out_max)
 		out_idx -= out_max + 1;
-	snd_vol = snd_volume->value;
 
 	if (sn.samplebits == 16) {
 		short      *out_0 = (short *) areas[0].addr;
@@ -163,14 +160,14 @@ SNDDMA_ni_xfer (int endtime)
 
 		if (sn.channels == 2) {
 			while (count--) {
-				out_0[out_idx] = clamp_16 ((*p++ * snd_vol) * 0x8000);
-				out_1[out_idx] = clamp_16 ((*p++ * snd_vol) * 0x8000);
+				out_0[out_idx] = clamp_16 ((*p++ * volume) * 0x8000);
+				out_1[out_idx] = clamp_16 ((*p++ * volume) * 0x8000);
 				if (out_idx++ > out_max)
 					out_idx = 0;
 			}
 		} else {
 			while (count--) {
-				out_0[out_idx] = clamp_16 ((*p++ * snd_vol) * 0x8000);
+				out_0[out_idx] = clamp_16 ((*p++ * volume) * 0x8000);
 				p++;		// skip right channel
 				if (out_idx++ > out_max)
 					out_idx = 0;
@@ -182,14 +179,14 @@ SNDDMA_ni_xfer (int endtime)
 
 		if (sn.channels == 2) {
 			while (count--) {
-				out_0[out_idx] = clamp_8 ((*p++ * snd_vol) * 0x80);
-				out_1[out_idx] = clamp_8 ((*p++ * snd_vol) * 0x80);
+				out_0[out_idx] = clamp_8 ((*p++ * volume) * 0x80);
+				out_1[out_idx] = clamp_8 ((*p++ * volume) * 0x80);
 				if (out_idx++ > out_max)
 					out_idx = 0;
 			}
 		} else {
 			while (count--) {
-				out_0[out_idx] = clamp_8 ((*p++ * snd_vol) * 0x8000);
+				out_0[out_idx] = clamp_8 ((*p++ * volume) * 0x8000);
 				p++;		// skip right channel
 				if (out_idx++ > out_max)
 					out_idx = 0;
