@@ -253,7 +253,7 @@ SNDDMA_Init (void)
 		if (0 > err) {
 			Sys_MaskPrintf (SYS_SND, "ALSA: Failure to set noninterleaved PCM "
 							"access. %s\n", qfsnd_strerror (err));
-			Sys_Printf ("ALSA: could not set mmap access");
+			Sys_Printf ("ALSA: could not set mmap access\n");
 			goto error;
 		}
 		sn.xfer = SNDDMA_ni_xfer;
