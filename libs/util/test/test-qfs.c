@@ -84,7 +84,7 @@ main (int argc, const char **argv)
 			fprintf (stderr, "FAIL: (%zd) \"%s\" -> %d (%s), got %d (%s)\n", i,
 					 ext_tests[i].path, ext_tests[i].expect_offset,
 					 ext_tests[i].path + ext_tests[i].expect_offset,
-					 ext - ext_tests[i].path, ext);
+					 (int) (ext - ext_tests[i].path), ext);
 			res = 1;
 		}
 	}
