@@ -2,25 +2,32 @@ AUTOMAKE_OPTIONS= foreign
 
 SUBDIRS= man
 
-DOX=\
+DOX= \
 	bind.dox config.dox connect.dox cshifts.dox dirconf.dox faq.dox \
 	filesystem.dox mapformat.dox property-list.dox qtv.dox quakeforge.dox \
 	qw-cap-spec.dox qw-download-spec.dox sound.dox specifications.dox \
 	surround-sound.dox timestamps.dox
+
+GIB= \
+	gib/GIB.lyx gib/break.gib gib/continue.gib gib/curly.gib gib/examples.sh \
+	gib/for.gib gib/gib_head.eps gib/if-chain.gib gib/if-else.gib \
+	gib/if-simple.gib gib/while.gib
+
+PROGS= \
+	progs/vm-exec.c progs/vm-mem.fig
 
 EXTRA_DIST= qf.ico \
 	\
 	skybox.fig template.c template.h \
 	quakeforge.dox.conf.in \
 	\
-	${DOX} \
+	${DOX} ${GIB} ${PROGS} \
 	\
 	config/glspeed-v1.cfg config/glspeed-v3.cfg config/swspeed.cfg \
 	\
 	config/gib/adjustvolume.gib config/gib/infobot.gib config/gib/ln.gib \
 	config/gib/qfadmin.gib config/gib/sshot.gib config/gib/zoom.gib \
 	\
-	progs/vm-exec.c progs/vm-mem.fig \
 	qtv/qwtv.fig
 
 SUFFIXES=.eps .fig .png
