@@ -1357,16 +1357,13 @@ VISIBLE void
 QFS_DefaultExtension (dstring_t *path, const char *extension)
 {
 	const char *src;
+	const char *ext;
 
 	// if path doesn't have a .EXT, append extension
 	// (extension should include the .)
-	src = path->str + strlen (path->str) - 1;
-
-	while (*src != '/' && src != path->str) {
-		if (*src == '.')
-			return;						// it has an extension
-		src--;
-	}
+	ext = QFS_FileExtension (path->str);
+	if (*ext)
+		return;						// it has an extension
 
 	dstring_appendstr (path, extension);
 }
@@ -1375,10 +1372,12 @@ VISIBLE void
 QFS_SetExtension (struct dstring_s *path, const char *extension)
 {
 	const char *ext = QFS_FileExtension (path->str);
+	ptrdiff_t   offs = ext - path->str;
 
-	if (ext != path->str) {
-		path->str[ext - path->str] = 0;
-		path->size = ext - path->str + 1;
+	if (*ext) {
+		// path has an extension... cut it off
+		path->str[offs] = 0;
+		path->size = offs + 1;
 	}
 	dstring_appendstr (path, extension);
 }
