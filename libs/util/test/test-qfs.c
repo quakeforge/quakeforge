@@ -7,6 +7,7 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#include <stdlib.h>
 
 #include "QF/quakefs.h"
 
@@ -46,6 +47,22 @@ struct {
 };
 #define num_ext_tests (sizeof (ext_tests) / sizeof (ext_tests[0]))
 
+struct {
+	const char *path;
+	const char *expect;
+} strip_tests[] = {
+	{"foo", "foo"},
+	{"foo.a", "foo"},
+	{"foo.a.b", "foo.a"},
+	{".foo", ".foo"},
+	{"bar/foo", "bar/foo"},
+	{"bar/foo.a", "bar/foo"},
+	{"bar/foo.a.b", "bar/foo.a"},
+	{"bar/.foo", "bar/.foo"},
+	{"bar.a/foo", "bar.a/foo"},
+};
+#define num_strip_tests (sizeof (strip_tests) / sizeof (strip_tests[0]))
+
 int
 main (int argc, const char **argv)
 {
@@ -70,6 +87,17 @@ main (int argc, const char **argv)
 					 ext - ext_tests[i].path, ext);
 			res = 1;
 		}
+	}
+
+	for (i = 0; i < num_strip_tests; i++) {
+		char       *strip = strdup (strip_tests[i].path);
+		QFS_StripExtension (strip, strip);
+		if (strcmp (strip, strip_tests[i].expect)) {
+			fprintf (stderr, "FAIL: (%zd) \"%s\" -> \"%s\", got \"%s\"\n", i,
+					 strip_tests[i].path, strip_tests[i].expect, strip);
+			res = 1;
+		}
+		free (strip);
 	}
 	return res;
 }

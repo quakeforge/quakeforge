@@ -1330,8 +1330,8 @@ QFS_StripExtension (const char *in, char *out)
 	if (out != in)
 		strcpy (out, in);
 
-	if ((tmp = strrchr (out, '.')))
-		*tmp = 0;
+	tmp = out + (QFS_FileExtension (out) - out);
+	*tmp = 0;
 }
 
 VISIBLE const char *
