@@ -651,7 +651,7 @@ qfs_expand_path (dstring_t *full_path, const char *base, const char *path,
 	if (*cpath == '/')
 		separator = "";
 	len = strlen (base);
-	if (base[len -1] == '/')
+	if (len && base[len - 1] == '/')
 		len--;
 	dsprintf (full_path, "%.*s%s%s", len, base, separator, cpath);
 	free (cpath);
