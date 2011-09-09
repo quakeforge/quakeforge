@@ -669,14 +669,14 @@ QFS_FileBase (const char *in)
 {
 	const char *base;
 	const char *ext;
-	ptrdiff_t   len;
+	int         len;
 	char       *out;
 
 	base = QFS_SkipPath (in);
 	ext = QFS_FileExtension (base);
 	len = ext - base;
 	out = malloc (len + 1);
-	strncpy (out, slash, len);
+	strncpy (out, base, len);
 	out [len] = 0;
 	return out;
 }
@@ -1347,7 +1347,6 @@ QFS_FileExtension (const char *in)
 VISIBLE void
 QFS_DefaultExtension (dstring_t *path, const char *extension)
 {
-	const char *src;
 	const char *ext;
 
 	// if path doesn't have a .EXT, append extension
@@ -1363,7 +1362,7 @@ VISIBLE void
 QFS_SetExtension (struct dstring_s *path, const char *extension)
 {
 	const char *ext = QFS_FileExtension (path->str);
-	ptrdiff_t   offs = ext - path->str;
+	int         offs = ext - path->str;
 
 	if (*ext) {
 		// path has an extension... cut it off
