@@ -667,26 +667,17 @@ qfs_expand_userpath (dstring_t *full_path, const char *path)
 VISIBLE char *
 QFS_FileBase (const char *in)
 {
-	const char *slash, *dot, *s;
+	const char *base;
+	const char *ext;
+	ptrdiff_t   len;
 	char       *out;
 
-	slash = in;
-	dot = NULL;
-	s = in;
-	while (*s) {
-		if (*s == '/')
-			slash = s + 1;
-		if (*s == '.')
-			dot = s;
-		s++;
-	}
-	if (dot == NULL)
-		dot = s;
-	if (dot - slash < 2)
-		return strdup ("?model?");
-	out = malloc (dot - slash + 1);
-	strncpy (out, slash, dot - slash);
-	out [dot - slash] = 0;
+	base = QFS_SkipPath (in);
+	ext = QFS_FileExtension (base);
+	len = ext - base;
+	out = malloc (len + 1);
+	strncpy (out, slash, len);
+	out [len] = 0;
 	return out;
 }
 
