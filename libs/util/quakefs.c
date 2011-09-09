@@ -1337,12 +1337,20 @@ QFS_StripExtension (const char *in, char *out)
 VISIBLE const char *
 QFS_FileExtension (const char *in)
 {
-	char       *tmp;
+	const char *tmp;
+	const char *end = in + strlen (in);
 
-	if ((tmp = strrchr (in, '.')))
-		return tmp;
+	for (tmp = end; tmp != in; tmp--) {
+		if (tmp[-1] == '/')
+			return end;
+		if (tmp[-1] == '.') {
+			if (tmp - 1 == in || tmp[-2] == '/')
+				return end;
+			return tmp - 1;
+		}
+	}
 
-	return in;
+	return end;
 }
 
 VISIBLE void
