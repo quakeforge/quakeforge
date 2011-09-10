@@ -57,6 +57,7 @@ typedef struct gamedir_s {
 	const char *gamedir;		///< the actual game dir
 	const char *path;			///< colon separated list of search paths
 	const char *gamecode;		///< name of file to load for gamecode
+	const char *hudtype;		///< name of the hud type
 	struct {
 		const char *def;		///< directory to which to write other files
 		const char *skins;		///< directory to which to write skins

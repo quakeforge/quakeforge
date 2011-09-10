@@ -1611,10 +1611,10 @@ init_views (void)
 		view_insert (con_module->data->console->view, stuff_view, 0);
 	}
 
-	if (hipnotic) {
+	if (!strcmp (qfs_gamedir->hudtype, "hipnotic")) {
 		init_hipnotic_sbar_views ();
 		init_hipnotic_hud_views ();
-	} else if (rogue) {
+	} else if (!strcmp (qfs_gamedir->hudtype, "rogue")) {
 		init_rogue_sbar_views ();
 		init_rogue_hud_views ();
 	} else {
@@ -1723,7 +1723,7 @@ Sbar_Init (void)
 	sb_scorebar = Draw_PicFromWad ("scorebar");
 
 	// MED 01/04/97 added new hipnotic weapons
-	if (hipnotic) {
+	if (!strcmp (qfs_gamedir->hudtype, "hipnotic")) {
 		hsb_weapons[0][0] = Draw_PicFromWad ("inv_laser");
 		hsb_weapons[0][1] = Draw_PicFromWad ("inv_mjolnir");
 		hsb_weapons[0][2] = Draw_PicFromWad ("inv_gren_prox");
@@ -1753,7 +1753,7 @@ Sbar_Init (void)
 	}
 
 	// FIXME: MISSIONHUD
-	if (rogue) {
+	if (!strcmp (qfs_gamedir->hudtype, "rogue")) {
 		rsb_invbar[0] = Draw_PicFromWad ("r_invbar1");
 		rsb_invbar[1] = Draw_PicFromWad ("r_invbar2");
 

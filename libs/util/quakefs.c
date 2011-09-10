@@ -159,12 +159,24 @@ static const char *qfs_default_dirconf =
 	"		Inherit = QF;"
 	"		Path = \"id1\";"
 	"		GameCode = \"progs.dat\";"
+	"		HudType = \"id\";"
 	"	};"
 	"	QuakeWorld = {"
 	"		Inherit = (Quake);"
 	"		Path = \"qw\";"
 	"		SkinPath = \"${path}/skins\";"
 	"		GameCode = \"qwprogs.dat\";"
+	"		HudType = \"id\";"
+	"	};"
+	"	\"Hipnotic\" = {"
+	"		Inherit = (Quake);"
+	"		Path = \"hipnotic\";"
+	"		HudType = \"hipnotic\";"
+	"	};"
+	"	\"Rogue\" = {"
+	"		Inherit = (Quake);"
+	"		Path = \"rogue\";"
+	"		HudType = \"rogue\";"
 	"	};"
 	"	\"qw:qw\" = {"
 	"		Inherit = (QuakeWorld);"
@@ -177,20 +189,12 @@ static const char *qfs_default_dirconf =
 	"		Inherit = (Quake);"
 	"		Path = \"$gamedir\";"
 	"	};"
-	"	\"hipnotic\" = {"
-	"		Inherit = (Quake);"
-	"		Path = \"hipnotic\";"
-	"	};"
 	"	\"hipnotic:*\" = {"
-	"		Inherit = (hipnotic);"
+	"		Inherit = (Hipnotic);"
 	"		Path = \"$gamedir\";"
 	"	};"
-	"	\"rogue\" = {"
-	"		Inherit = (Quake);"
-	"		Path = \"rogue\";"
-	"	};"
 	"	\"rogue:*\" = {"
-	"		Inherit = (rogue);"
+	"		Inherit = (Rogue);"
 	"		Path = \"$gamedir\";"
 	"	};"
 	"	\"abyss\" = {"
@@ -329,6 +333,8 @@ qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path,
 	}
 	if (!gamedir->gamecode && (p = PL_ObjectForKey (gdpl, "GameCode")))
 		gamedir->gamecode = qfs_var_subst (PL_String (p), vars);
+	if (!gamedir->hudtype && (p = PL_ObjectForKey (gdpl, "HudType")))
+		gamedir->hudtype = qfs_var_subst (PL_String (p), vars);
 	if (!gamedir->dir.skins && (p = PL_ObjectForKey (gdpl, "SkinPath")))
 		gamedir->dir.skins = qfs_var_subst (PL_String (p), vars);
 	if (!gamedir->dir.models && (p = PL_ObjectForKey (gdpl, "ModelPath")))
@@ -553,6 +559,7 @@ qfs_build_gamedir (const char **list)
 	Sys_MaskPrintf (SYS_FS, "    gamedir : %s\n", qfs_gamedir->gamedir);
 	Sys_MaskPrintf (SYS_FS, "    path    : %s\n", qfs_gamedir->path);
 	Sys_MaskPrintf (SYS_FS, "    gamecode: %s\n", qfs_gamedir->gamecode);
+	Sys_MaskPrintf (SYS_FS, "    hudtype : %s\n", qfs_gamedir->hudtype);
 	Sys_MaskPrintf (SYS_FS, "    def     : %s\n", qfs_gamedir->dir.def);
 	Sys_MaskPrintf (SYS_FS, "    skins   : %s\n", qfs_gamedir->dir.skins);
 	Sys_MaskPrintf (SYS_FS, "    models  : %s\n", qfs_gamedir->dir.models);

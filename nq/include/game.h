@@ -162,7 +162,7 @@ extern int			current_skill;		// skill level for currently loaded level (in case
 										//  running, this reflects the level actually in use)
 
 extern qboolean		isDedicated;
-extern qboolean		abyss, rogue, hipnotic, standard_quake;
+extern qboolean		standard_quake;
 extern struct cvar_s		*registered;
 
 const char *Game_Init (void);

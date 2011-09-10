@@ -16,12 +16,24 @@ Quake = {
 	Inherit = QF;
 	Path = "id1";
 	GameCode = "progs.dat";
+	HudType = "id";
 };
 QuakeWorld = {
 	Inherit = (Quake);
 	Path = "qw";
 	SkinPath = "${path}/skins";
 	GameCode = "qwprogs.dat";
+	HudType = "id";
+};
+"Hipnotic" = {
+	Inherit = (Quake);
+	Path = "hipnotic";
+	HudType = "hipnotic";
+};
+"Rogue" = {
+	Inherit = (Quake);
+	Path = "rogue";
+	HudType = "rogue";
 };
 "qw:qw" = {
 	Inherit = (QuakeWorld);
@@ -34,20 +46,12 @@ QuakeWorld = {
 	Inherit = (Quake);
 	Path = "$gamedir";
 };
-"hipnotic" = {
-	Inherit = (Quake);
-	Path = "hipnotic";
-};
 "hipnotic:*" = {
-	Inherit = (hipnotic);
+	Inherit = (Hipnotic);
 	Path = "$gamedir";
 };
-"rogue" = {
-	Inherit = (Quake);
-	Path = "rogue";
-};
 "rogue:*" = {
-	Inherit = (rogue);
+	Inherit = (Rogue);
 	Path = "$gamedir";
 };
 "abyss" = {
@@ -72,6 +76,9 @@ Supported attributes are:
 	<dt><code>GameCode</code></dt>
 		<dd>The name of the mod progs file. This is relative to the mod
 		directory</dd>
+	<dt><code>HudType</code></dt>
+		<dd>The name of the hud style. Currently, "id", "hipnotic" and
+		"rogue" are supported. Has no effect in quakeworld.</dd>
 	<dt><code>SkinPath</code></dt>
 		<dd>Directory to which downloaded skins will be saved. This is
 		relative to the QuakeForge data directory, and thus the default
