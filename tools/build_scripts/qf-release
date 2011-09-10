@@ -61,7 +61,7 @@ git_url=${git_url:-git://git.quakeforge.net/gitroot/quake/quakeforge}
 mkdir -p $RELEASE
 cd $RELEASE
 if test $no_rm -ne 1; then
-	rm -rf NEWS quakeforge-* quakeforge_* qfcc_*
+	rm -rf NEWS quakeforge-* qfcc-* quakeforge_* qfcc_*
 fi
 git clone $git_url || true
 mv quakeforge quakeforge-$ver
