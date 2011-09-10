@@ -95,39 +95,39 @@ C(d_zwidth):		.long	0
 //-------------------------------------------------------
 // ASM-only variables
 //-------------------------------------------------------
-.globl	izi
-izi:			.long	0
+.globl	C(izi)
+C(izi):			.long	0
 
-.globl	pbase, s, t, sfracf, tfracf, snext, tnext
-.globl	spancountminus1, zi16stepu, sdivz16stepu, tdivz16stepu
-.globl	zi8stepu, sdivz8stepu, tdivz8stepu, pz
-s:				.long	0
-t:				.long	0
-snext:			.long	0
-tnext:			.long	0
-sfracf:			.long	0
-tfracf:			.long	0
-pbase:			.long	0
-zi8stepu:		.long	0
-sdivz8stepu:	.long	0
-tdivz8stepu:	.long	0
-zi16stepu:		.long	0
-sdivz16stepu:	.long	0
-tdivz16stepu:	.long	0
-spancountminus1: .long	0
-pz:				.long	0
+.globl	C(pbase), C(s), C(t), C(sfracf), C(tfracf), C(snext), C(tnext)
+.globl	C(spancountminus1), C(zi16stepu), C(sdivz16stepu), C(tdivz16stepu)
+.globl	C(zi8stepu), C(sdivz8stepu), C(tdivz8stepu), C(pz)
+C(s):				.long	0
+C(t):				.long	0
+C(snext):			.long	0
+C(tnext):			.long	0
+C(sfracf):			.long	0
+C(tfracf):			.long	0
+C(pbase):			.long	0
+C(zi8stepu):		.long	0
+C(sdivz8stepu):	.long	0
+C(tdivz8stepu):	.long	0
+C(zi16stepu):		.long	0
+C(sdivz16stepu):	.long	0
+C(tdivz16stepu):	.long	0
+C(spancountminus1): .long	0
+C(pz):				.long	0
 
-.globl	izistep
-izistep:				.long	0
+.globl	C(izistep)
+C(izistep):				.long	0
 
 //-------------------------------------------------------
 // local variables for d_draw16.s
 //-------------------------------------------------------
 
-.globl	reciprocal_table_16
+.globl	C(reciprocal_table_16)
 // 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13,
 // 1/14, and 1/15 in 0.32 form
-reciprocal_table_16:	.long	0x40000000, 0x2aaaaaaa, 0x20000000
+C(reciprocal_table_16):	.long	0x40000000, 0x2aaaaaaa, 0x20000000
 						.long	0x19999999, 0x15555555, 0x12492492
 						.long	0x10000000, 0xe38e38e, 0xccccccc, 0xba2e8ba
 						.long	0xaaaaaaa, 0x9d89d89, 0x9249249, 0x8888888
@@ -136,68 +136,70 @@ reciprocal_table_16:	.long	0x40000000, 0x2aaaaaaa, 0x20000000
 //-------------------------------------------------------
 // local variables for d_parta.s
 //-------------------------------------------------------
-.globl	DP_Count, DP_u, DP_v, DP_32768, DP_Color, DP_Pix, DP_EntryTable
-DP_Count:		.long	0
-DP_u:			.long	0
-DP_v:			.long	0
-DP_32768:		.single	32768.0
-DP_Color:		.long	0
-DP_Pix:			.long	0
+.globl	C(DP_Count), C(DP_u), C(DP_v), C(DP_32768), C(DP_Color)
+.globl	C(DP_Pix), C(DP_EntryTable)
+C(DP_Count):	.long	0
+C(DP_u):		.long	0
+C(DP_v):		.long	0
+C(DP_32768):	.single	32768.0
+C(DP_Color):	.long	0
+C(DP_Pix):		.long	0
 
 
 #ifndef NeXT
-	.extern DP_1x1
-	.extern DP_2x2
-	.extern DP_3x3
-	.extern DP_4x4
+	.extern C(DP_1x1)
+	.extern C(DP_2x2)
+	.extern C(DP_3x3)
+	.extern C(DP_4x4)
 #endif
 
-DP_EntryTable:	.long	DP_1x1, DP_2x2, DP_3x3, DP_4x4
+C(DP_EntryTable):	.long	C(DP_1x1), C(DP_2x2), C(DP_3x3), C(DP_4x4)
 
 //
 // advancetable is 8 bytes, but points to the middle of that range so negative
 // offsets will work
 //
-.globl	advancetable, sstep, tstep, pspantemp, counttemp, jumptemp
-advancetable:	.long	0, 0
-sstep:			.long	0
-tstep:			.long	0
+.globl	C(advancetable), C(sstep), C(tstep), C(pspantemp)
+.globl	C(counttemp), C(jumptemp)
+C(advancetable):	.long	0, 0
+C(sstep):			.long	0
+C(tstep):			.long	0
 
-pspantemp:		.long	0
-counttemp:		.long	0
-jumptemp:		.long	0
+C(pspantemp):		.long	0
+C(counttemp):		.long	0
+C(jumptemp):		.long	0
 
 // 1/2, 1/3, 1/4, 1/5, 1/6, and 1/7 in 0.32 form
-.globl	reciprocal_table, entryvec_table
-reciprocal_table:	.long	0x40000000, 0x2aaaaaaa, 0x20000000
+.globl	C(reciprocal_table), C(entryvec_table)
+C(reciprocal_table):	.long	0x40000000, 0x2aaaaaaa, 0x20000000
 					.long	0x19999999, 0x15555555, 0x12492492
 
 #ifndef NeXT
-	.extern Entry2_8
-	.extern Entry3_8
-	.extern Entry4_8
-	.extern Entry5_8
-	.extern Entry6_8
-	.extern Entry7_8
-	.extern Entry8_8
+	.extern C(Entry2_8)
+	.extern C(Entry3_8)
+	.extern C(Entry4_8)
+	.extern C(Entry5_8)
+	.extern C(Entry6_8)
+	.extern C(Entry7_8)
+	.extern C(Entry8_8)
 #endif
 
-entryvec_table:	.long	0, Entry2_8, Entry3_8, Entry4_8
-				.long	Entry5_8, Entry6_8, Entry7_8, Entry8_8
+C(entryvec_table):	.long	0, C(Entry2_8), C(Entry3_8), C(Entry4_8)
+				.long	C(Entry5_8), C(Entry6_8), C(Entry7_8), C(Entry8_8)
 
 #ifndef NeXT
-	.extern Spr8Entry2_8
-	.extern Spr8Entry3_8
-	.extern Spr8Entry4_8
-	.extern Spr8Entry5_8
-	.extern Spr8Entry6_8
-	.extern Spr8Entry7_8
-	.extern Spr8Entry8_8
+	.extern C(Spr8Entry2_8)
+	.extern C(Spr8Entry3_8)
+	.extern C(Spr8Entry4_8)
+	.extern C(Spr8Entry5_8)
+	.extern C(Spr8Entry6_8)
+	.extern C(Spr8Entry7_8)
+	.extern C(Spr8Entry8_8)
 #endif
 	
-.globl spr8entryvec_table
-spr8entryvec_table:	.long	0, Spr8Entry2_8, Spr8Entry3_8, Spr8Entry4_8
-					.long	Spr8Entry5_8, Spr8Entry6_8, Spr8Entry7_8, Spr8Entry8_8
+.globl C(spr8entryvec_table)
+C(spr8entryvec_table):	.long	0, C(Spr8Entry2_8), C(Spr8Entry3_8), C(Spr8Entry4_8)
+					.long	C(Spr8Entry5_8), C(Spr8Entry6_8), C(Spr8Entry7_8), C(Spr8Entry8_8)
 
 #endif	// USE_INTEL_ASM
 

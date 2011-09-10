@@ -41,43 +41,43 @@
 //-------------------------------------------------------
 // ASM-only variables
 //-------------------------------------------------------
-.globl	float_1, float_particle_z_clip, float_point5
-.globl	float_minus_1, float_0
-float_0:				.single	0.0
-float_1:				.single	1.0
-float_minus_1:			.single	-1.0
-float_particle_z_clip:	.single	PARTICLE_Z_CLIP
-float_point5:			.single	0.5
+.globl	C(float_1), C(float_particle_z_clip), C(float_point5)
+.globl	C(float_minus_1), C(float_0)
+C(float_0):				.single	0.0
+C(float_1):				.single	1.0
+C(float_minus_1):			.single	-1.0
+C(float_particle_z_clip):	.single	PARTICLE_Z_CLIP
+C(float_point5):			.single	0.5
 
-.globl	fp_16, fp_64k, fp_1m, fp_64kx64k
-.globl	fp_1m_minus_1
-.globl	fp_8 
-fp_1m:					.single	1048576.0
-fp_1m_minus_1:			.single	1048575.0
-fp_64k:					.single	65536.0
-fp_8:					.single	8.0
-fp_16:					.single	16.0
-fp_64kx64k:				.long	0x4f000000	// (float)0x8000*0x10000
+.globl	C(fp_16), C(fp_64k), C(fp_1m), C(fp_64kx64k)
+.globl	C(fp_1m_minus_1)
+.globl	C(fp_8) 
+C(fp_1m):					.single	1048576.0
+C(fp_1m_minus_1):			.single	1048575.0
+C(fp_64k):					.single	65536.0
+C(fp_8):					.single	8.0
+C(fp_16):					.single	16.0
+C(fp_64kx64k):				.long	0x4f000000	// (float)0x8000*0x10000
 
 
-.globl	FloatZero, Float2ToThe31nd, FloatMinus2ToThe31nd
-FloatZero:				.long	0
-Float2ToThe31nd:		.long	0x4f000000
-FloatMinus2ToThe31nd:	.long	0xcf000000
+.globl	C(FloatZero), C(Float2ToThe31nd), C(FloatMinus2ToThe31nd)
+C(FloatZero):				.long	0
+C(Float2ToThe31nd):		.long	0x4f000000
+C(FloatMinus2ToThe31nd):	.long	0xcf000000
 
-.globl	r_ceil_cw, r_single_cw
-r_ceil_cw:		.long	0
-r_single_cw:	.long	0
+.globl	C(r_ceil_cw), C(r_single_cw)
+C(r_ceil_cw):		.long	0
+C(r_single_cw):	.long	0
 
 .globl	C(r_bmodelactive)
 C(r_bmodelactive):		.long	0
 
 .global C(R_InitVars)
 C(R_InitVars):
-	movl	ceil_cw, %eax
-	movl	single_cw, %edx
-	movl	%eax, r_ceil_cw
-	movl	%edx, r_single_cw
+	movl	C(ceil_cw), %eax
+	movl	C(single_cw), %edx
+	movl	%eax, C(r_ceil_cw)
+	movl	%edx, C(r_single_cw)
 	ret
 
 #endif	// USE_INTEL_ASM
