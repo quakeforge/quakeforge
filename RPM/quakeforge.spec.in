@@ -308,6 +308,7 @@ rm $RPM_BUILD_ROOT/usr/bin/nq-fbdev
 rm $RPM_BUILD_ROOT/usr/bin/nq-sdl32
 rm $RPM_BUILD_ROOT/usr/bin/qw-client-fbdev
 rm $RPM_BUILD_ROOT/usr/bin/qw-client-sdl32
+rm $RPM_BUILD_ROOT/usr/bin/qfpc
 find $RPM_BUILD_ROOT/usr/lib -name 'libQFrenderer_sw32.*' -exec rm {} \;
 #FIXME until I feel like making packages
 rm $RPM_BUILD_ROOT/usr/bin/qtv
@@ -327,7 +328,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) %{_prefix}/lib/libQFcd.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFconsole.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFgamecode.so.*
-%attr(-,root,root) %{_prefix}/lib/libQFgamecode_builtins.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFgib.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFimage.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFjs.so.*
@@ -335,11 +335,11 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) %{_prefix}/lib/libQFruamoko.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFsound.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFutil.so.*
-%attr(-,root,root) %{_prefix}/lib/quakeforge/cd_file.so*
-%attr(-,root,root) %{_prefix}/lib/quakeforge/cd_linux.so*
-%attr(-,root,root) %{_prefix}/lib/quakeforge/console_client.so*
-%attr(-,root,root) %{_prefix}/lib/quakeforge/snd_output_disk.so*
-%attr(-,root,root) %{_prefix}/lib/quakeforge/snd_render_default.so*
+%attr(-,root,root) %{_prefix}/lib/quakeforge/plugins/cd_file.so*
+%attr(-,root,root) %{_prefix}/lib/quakeforge/plugins/cd_linux.so*
+%attr(-,root,root) %{_prefix}/lib/quakeforge/plugins/console_client.so*
+%attr(-,root,root) %{_prefix}/lib/quakeforge/plugins/snd_output_disk.so*
+%attr(-,root,root) %{_prefix}/lib/quakeforge/plugins/snd_render_default.so*
 %attr(-,root,root) %{fs_sharepath}/QF/menu.*
 
 %files devel
@@ -349,8 +349,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFconsole.so
 %attr(-,root,root)	%{_prefix}/lib/libQFgamecode.*a
 %attr(-,root,root)	%{_prefix}/lib/libQFgamecode.so
-%attr(-,root,root)	%{_prefix}/lib/libQFgamecode_builtins.*a
-%attr(-,root,root)	%{_prefix}/lib/libQFgamecode_builtins.so
 %attr(-,root,root)	%{_prefix}/lib/libQFgib.*a
 %attr(-,root,root)	%{_prefix}/lib/libQFgib.so
 %attr(-,root,root)	%{_prefix}/lib/libQFimage.*a
@@ -395,7 +393,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/bin/nq-server
 %attr(-,root,root)	%{_prefix}/bin/qw-master
 #%attr(-,root,root)	%{_prefix}/bin/hw-master
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/console_server.so*
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/console_server.so*
 
 %if "%{HAVE_X11}"=="'yes'"
 %files glx
@@ -405,8 +403,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %if "%{HAVE_SDL}"=="'yes'"
 %files sdl-common
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/cd_sdl.so*
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/snd_output_sdl.so*
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/cd_sdl.so*
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/snd_output_sdl.so*
 
 %files sdl
 %attr(-,root,root)	%{_prefix}/bin/qw-client-sdl
@@ -431,17 +429,17 @@ rm -rf $RPM_BUILD_ROOT
 
 %if "%{HAVE_XMMS}"=="'yes'"
 %files xmms
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/cd_xmms.so
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/cd_xmms.so
 %endif
 
 %if "%{HAVE_ALSA}"=="'yes'"
 %files alsa
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/snd_output_alsa.so*
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/snd_output_alsa.so*
 %endif
 
 %if "%{HAVE_OSS}"=="'yes'"
 %files oss
-%attr(-,root,root)	%{_prefix}/lib/quakeforge/snd_output_oss.so*
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/snd_output_oss.so*
 %endif
 
 %files -n qfcc
@@ -466,6 +464,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/bin/bsp2img
 %attr(-,root,root)	%{_prefix}/bin/qfbsp
 %attr(-,root,root)	%{_prefix}/bin/qflight
+%attr(-,root,root)	%{_prefix}/bin/qflmp
 %attr(-,root,root)	%{_prefix}/bin/qfmodelgen
 %attr(-,root,root)	%{_prefix}/bin/qfvis
 %attr(-,root,root)	%{_prefix}/bin/wad
