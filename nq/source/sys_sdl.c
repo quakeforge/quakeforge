@@ -102,7 +102,7 @@ shutdown_f (void)
 #endif
 
 int
-SDL_main (int argc, const char **argv)
+SDL_main (int argc, char *argv[])
 {
 	double      time, oldtime, newtime;
 
@@ -110,7 +110,7 @@ SDL_main (int argc, const char **argv)
 
 	memset (&host_parms, 0, sizeof (host_parms));
 
-	COM_InitArgv (argc, argv);
+	COM_InitArgv (argc, (const char **) argv);
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 

@@ -110,7 +110,7 @@ shutdown_f (void)
 #endif
 
 int
-SDL_main (int argc, const char **argv)
+SDL_main (int argc, char *argv[])
 {
 	double      time, oldtime, newtime;
 
@@ -118,13 +118,13 @@ SDL_main (int argc, const char **argv)
 
 	memset (&host_parms, 0, sizeof (host_parms));
 
-	COM_InitArgv (argc, argv);
+	COM_InitArgv (argc, (const char **) argv);
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
-
+#ifndef _WIN32
 	if (!COM_CheckParm ("-noconinput"))
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
-
+#endif
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (Net_LogStop);
 	Sys_RegisterShutdown (shutdown_f);
