@@ -957,7 +957,6 @@ Host_Init (void)
 	PR_Init ();
 
 	V_Init ();
-	COM_Init ();
 
 	if (isDedicated) {
 		PI_RegisterPlugins (server_plugin_list);

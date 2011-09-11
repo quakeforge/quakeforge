@@ -2556,7 +2556,6 @@ SV_Init (void)
 	Sys_SetErrPrintf (SV_Error);
 
 	Game_Init_Cvars ();
-	COM_Init_Cvars ();
 	Mod_Init_Cvars ();
 	Netchan_Init_Cvars ();
 	Pmove_Init_Cvars ();
@@ -2570,7 +2569,6 @@ SV_Init (void)
 	SV_Sbar_Init ();
 
 	Game_Init ();
-	COM_Init ();
 
 	PR_Init ();
 	SV_Progs_Init ();

@@ -1770,7 +1770,6 @@ Host_Init (void)
 	CL_Skin_Init_Cvars ();
 	CL_Init_Cvars ();
 	CL_Prediction_Init_Cvars ();
-	COM_Init_Cvars ();
 	Game_Init_Cvars ();
 	IN_Init_Cvars ();
 	Key_Init_Cvars ();
@@ -1792,7 +1791,6 @@ Host_Init (void)
 	CL_Cmd_Init ();
 	V_Init ();
 	Game_Init ();
-	COM_Init ();
 
 	PI_RegisterPlugins (client_plugin_list);
 	Con_Init ("client");

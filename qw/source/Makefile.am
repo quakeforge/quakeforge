@@ -44,7 +44,7 @@ EXTRA_LIBRARIES=libqw_client.a libqw_common.a libqw_sdl.a libqw_server.a
 
 
 libqw_common_a_SOURCES=\
-	com.c game.c map_cfg.c pmove.c pmovetst.c net_packetlog.c
+	game.c map_cfg.c pmove.c pmovetst.c net_packetlog.c
 libqw_sdl_a_SOURCES=cl_sys_sdl.c
 libqw_sdl_a_CFLAGS=$(SDL_CFLAGS)
 

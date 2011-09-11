@@ -41,7 +41,7 @@ EXTRA_PROGRAMS= nq-fbdev nq-glx nq-mgl nq-sdl nq-sdl32 nq-sgl nq-svga nq-3dfx \
 noinst_LIBRARIES= @nq_libs@
 EXTRA_LIBRARIES=libnq_client.a libnq_common.a libnq_sdl.a libnq_server.a
 
-libnq_common_a_SOURCES=game.c world.c com.c
+libnq_common_a_SOURCES=game.c world.c
 libnq_sdl_a_SOURCES=	sys_sdl.c
 libnq_sdl_a_CFLAGS=	$(SDL_CFLAGS)
 

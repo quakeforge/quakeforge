@@ -30,17 +30,59 @@
 # include <config.h>
 #endif
 
+#include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
+#include "QF/sys.h"
 
 #include "game.h"
+#include "server.h"
 
 qboolean standard_quake = false;
+
+cvar_t     *registered;
+cvar_t     *cmdline;
+int         static_registered = 1;
+
+
+/*
+	Game_CheckRegistered
+
+	Looks for the pop.txt file and verifies it.
+	Sets the "registered" cvar.
+	Immediately exits out if an alternate game was attempted to be started
+	without being registered.
+*/
+static void
+Game_CheckRegistered (void)
+{
+	unsigned short check[128];
+	QFile      *h;
+
+	QFS_FOpenFile ("gfx/pop.lmp", &h);
+	static_registered = 0;
+
+	if (h) {
+		static_registered = 1;
+		Qread (h, check, sizeof (check));
+		Qclose (h);
+	}
+
+	if (static_registered) {
+		Cvar_Set (registered, "1");
+		Sys_Printf ("Playing registered version.\n");
+	}
+}
 
 const char *
 Game_Init (void)
 {
 	int     i;
+	registered = Cvar_Get ("registered", "0", CVAR_NONE, NULL,
+						   "Is the game the registered version. 1 yes 0 no");
+	cmdline = Cvar_Get ("cmdline", "0", CVAR_SERVERINFO, Cvar_Info, "None");
+
+	Game_CheckRegistered ();
 
 	// FIXME: make this dependant on QF metadata in the mission packs
 	standard_quake = true;
