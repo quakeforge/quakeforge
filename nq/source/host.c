@@ -888,8 +888,6 @@ CL_Init_Memory (void)
 void
 Host_Init (void)
 {
-	const char *mp;
-
 	Sys_Printf ("Host_Init\n");
 
 	host_cbuf = Cbuf_New (&id_interp);
@@ -901,8 +899,7 @@ Host_Init (void)
 
 	CL_Init_Memory ();
 
-	mp = Game_Init ();
-	QFS_Init (mp);
+	Game_Init ();
 	PI_Init ();
 
 	Chase_Init_Cvars ();

@@ -74,28 +74,29 @@ Game_CheckRegistered (void)
 	}
 }
 
-const char *
+void
 Game_Init (void)
 {
-	int     i;
-	registered = Cvar_Get ("registered", "0", CVAR_NONE, NULL,
-						   "Is the game the registered version. 1 yes 0 no");
-	cmdline = Cvar_Get ("cmdline", "0", CVAR_SERVERINFO, Cvar_Info, "None");
-
-	Game_CheckRegistered ();
+	int         i;
+	const char *game = "nq";
 
 	// FIXME: make this dependant on QF metadata in the mission packs
 	standard_quake = true;
 
 	if ((i = COM_CheckParm ("-hipnotic"))) {
 		standard_quake = false;
-		return "hipnotic";
+		game = "hipnotic";
 	} else if ((i = COM_CheckParm ("-rogue"))) {
 		standard_quake = false;
-		return "rogue";
+		game = "rogue";
 	} else if ((i = COM_CheckParm ("-abyss"))) {
-		return "abyss";
+		game = "abyss";
 	}
+	QFS_Init (game);
 
-	return "nq";
+	registered = Cvar_Get ("registered", "0", CVAR_NONE, NULL,
+						   "Is the game the registered version. 1 yes 0 no");
+	cmdline = Cvar_Get ("cmdline", "0", CVAR_SERVERINFO, Cvar_Info, "None");
+
+	Game_CheckRegistered ();
 }
