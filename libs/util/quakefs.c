@@ -264,7 +264,6 @@ qfs_var_subst (const char *string, hashtab_t *vars)
 	const char *s = string;
 	const char *e = s;
 	const char *var;
-	char       *t;
 	qfs_var_t  *sub;
 
 	while (1) {
@@ -307,9 +306,7 @@ qfs_var_subst (const char *string, hashtab_t *vars)
 			s = e;
 		}
 	}
-	t = new->str;
-	free (new);
-	return t;
+	return dstring_freeze (new);
 }
 
 static void
