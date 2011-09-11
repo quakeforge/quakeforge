@@ -113,7 +113,7 @@ if test $do_win32 -eq 1; then
 	../tools/cross/cross-make.sh $QFSMP \
 		prefix=${qf_win32_dir} \
 		exec_prefix=${qf_win32_dir} \
-		pkgdatadir=${qf_win32_dir} \
+		pkgdatadir=${qf_win32_dir}/QF \
 		man1dir=${qf_win32_dir} \
 		install
 	$MINGW/bin/strip --strip-unneeded "$qf_win32"/bin/*.exe

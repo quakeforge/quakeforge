@@ -31,8 +31,9 @@ client_wgl = [
 	dir + "bin",
 	dir + "bin/nq-wgl.exe",
 	dir + "bin/qw-client-wgl.exe",
-	dir + "menu.dat.gz",
-	dir + "menu.plist",
+	dir + "QF",
+	dir + "QF/menu.dat.gz",
+	dir + "QF/menu.plist",
 ]
 
 client_sgl = [
@@ -40,8 +41,9 @@ client_sgl = [
 	dir + "bin",
 	dir + "bin/nq-sgl.exe",
 	dir + "bin/qw-client-sgl.exe",
-	dir + "menu.dat.gz",
-	dir + "menu.plist",
+	dir + "QF",
+	dir + "QF/menu.dat.gz",
+	dir + "QF/menu.plist",
 ]
 
 client_sdl = [
@@ -49,8 +51,9 @@ client_sdl = [
 	dir + "bin",
 	dir + "bin/nq-sdl.exe",
 	dir + "bin/qw-client-sdl.exe",
-	dir + "menu.dat.gz",
-	dir + "menu.plist",
+	dir + "QF",
+	dir + "QF/menu.dat.gz",
+	dir + "QF/menu.plist",
 ]
 
 client_sdl32 = [
@@ -58,8 +61,9 @@ client_sdl32 = [
 	dir + "bin",
 	dir + "bin/nq-sdl32.exe",
 	dir + "bin/qw-client-sdl32.exe",
-	dir + "menu.dat.gz",
-	dir + "menu.plist",
+	dir + "QF",
+	dir + "QF/menu.dat.gz",
+	dir + "QF/menu.plist",
 ]
 
 tools = [
