@@ -123,9 +123,6 @@ qboolean    rcon_from_user;
 double      netdosexpire[DOSFLOODCMDS] = { 1, 1, 2, 0.9, 1, 5 };
 double      netdosvalues[DOSFLOODCMDS] = { 12, 1, 3, 1, 1, 1 };
 
-cvar_t     *fs_globalcfg;
-cvar_t     *fs_usercfg;
-
 cvar_t     *sv_mem_size;
 
 cvar_t     *sv_console_plugin;
@@ -2493,38 +2490,13 @@ SV_Init (void)
 	Sys_RegisterShutdown (SV_Shutdown);
 
 	Sys_Init ();
+	GIB_Init (true);
+	COM_ParseConfig ();
 
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
-	GIB_Init (true);
-
-	// execute +set as early as possible
-	Cmd_StuffCmds (sv_cbuf);
-	Cbuf_Execute_Sets (sv_cbuf);
 
 	// snax: Init experimental object system and run a test
 	//Object_Init();
-
-	// execute the global configuration file if it exists
-	// would have been nice if Cmd_Exec_f could have been used, but it
-	// reads from only within the quake file system, and changing that is
-	// probably Not A Good Thing (tm).
-	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG,
-							 CVAR_ROM, 0, "global configuration file");
-	Cmd_Exec_File (sv_cbuf, fs_globalcfg->string, 0);
-	Cbuf_Execute_Sets (sv_cbuf);
-
-	// execute +set again to override the config file
-	Cmd_StuffCmds (sv_cbuf);
-	Cbuf_Execute_Sets (sv_cbuf);
-
-	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG,
-						   CVAR_ROM, 0, "user configuration file");
-	Cmd_Exec_File (sv_cbuf, fs_usercfg->string, 0);
-	Cbuf_Execute_Sets (sv_cbuf);
-
-	// execute +set again to override the config file
-	Cmd_StuffCmds (sv_cbuf);
-	Cbuf_Execute_Sets (sv_cbuf);
 
 	SV_Init_Memory ();
 

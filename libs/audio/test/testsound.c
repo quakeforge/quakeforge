@@ -59,8 +59,6 @@ HWND mainwindow;
 
 cbuf_t     *testsound_cbuf;
 cbuf_args_t *testsound_args;
-static cvar_t  *fs_globalcfg;
-static cvar_t  *fs_usercfg;
 
 
 static void
@@ -70,27 +68,8 @@ init (void)
 	testsound_args = Cbuf_ArgsNew ();
 
 	Sys_Init ();
+	COM_ParseConfig ();
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
-
-	Cmd_StuffCmds (testsound_cbuf);
-	Cbuf_Execute_Sets (testsound_cbuf);
-
-	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG,
-							 CVAR_ROM, 0, "global configuration file");
-	Cmd_Exec_File (testsound_cbuf, fs_globalcfg->string, 0);
-	Cbuf_Execute_Sets (testsound_cbuf);
-
-	// execute +set again to override the config file
-	Cmd_StuffCmds (testsound_cbuf);
-	Cbuf_Execute_Sets (testsound_cbuf);
-	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG,
-						   CVAR_ROM, 0, "user configuration file");
-	Cmd_Exec_File (testsound_cbuf, fs_usercfg->string, 0);
-	Cbuf_Execute_Sets (testsound_cbuf);
-
-	// execute +set again to override the config file
-	Cmd_StuffCmds (testsound_cbuf);
-	Cbuf_Execute_Sets (testsound_cbuf);
 
 	Memory_Init (malloc (MEMSIZE), MEMSIZE);
 
