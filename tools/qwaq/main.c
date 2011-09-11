@@ -102,12 +102,8 @@ free_progs_mem (progs_t *pr, void *mem)
 static void
 init_qf (void)
 {
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
+	Sys_Init ();
 	//Cvar_Get ("developer", "128", 0, 0, 0);
-	Cvar_Init ();
-	Sys_Init_Cvars ();
-	Cmd_Init ();
 
 	Memory_Init (malloc (1024 * 1024), 1024 * 1024);
 

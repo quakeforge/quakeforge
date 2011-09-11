@@ -2492,16 +2492,9 @@ SV_Init (void)
 
 	Sys_RegisterShutdown (SV_Shutdown);
 
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
-	Cvar_Init ();
-	Sys_Init_Cvars ();
-
 	Sys_Init ();
 
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
-
-	Cmd_Init ();
 	GIB_Init (true);
 
 	// execute +set as early as possible

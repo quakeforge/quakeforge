@@ -69,13 +69,8 @@ init (void)
 	testsound_cbuf = Cbuf_New (&id_interp);
 	testsound_args = Cbuf_ArgsNew ();
 
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
-	Cvar_Init ();
-	Sys_Init_Cvars ();
 	Sys_Init ();
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
-	Cmd_Init ();
 
 	Cmd_StuffCmds (testsound_cbuf);
 	Cbuf_Execute_Sets (testsound_cbuf);

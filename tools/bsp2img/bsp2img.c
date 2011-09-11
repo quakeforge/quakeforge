@@ -922,11 +922,7 @@ write_pcx (image_t *image)
 		palette[i * 3 + 2] = i;
 	}
 
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
-	Cvar_Init ();
-	Sys_Init_Cvars ();
-	Cmd_Init ();
+	Sys_Init ();
 
 	Memory_Init (malloc (MEMSIZE), MEMSIZE);
 	pcx = EncodePCX (image->image, image->width, image->height,

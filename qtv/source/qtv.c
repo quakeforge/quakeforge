@@ -259,13 +259,8 @@ qtv_init (void)
 
 	Sys_RegisterShutdown (qtv_shutdown);
 
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
-	Cvar_Init ();
-	Sys_Init_Cvars ();
 	Sys_Init ();
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
-	Cmd_Init ();
 
 	Cmd_StuffCmds (qtv_cbuf);
 	Cbuf_Execute_Sets (qtv_cbuf);

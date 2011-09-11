@@ -898,14 +898,7 @@ Host_Init (void)
 	host_cbuf = Cbuf_New (&id_interp);
 	cmd_source = src_command;
 
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
-	Cvar_Init ();
-	Sys_Init_Cvars ();
-
 	Sys_Init ();
-
-	Cmd_Init ();
 	GIB_Init (true);
 
 	// execute +set as early as possible

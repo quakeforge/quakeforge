@@ -388,11 +388,7 @@ main (int argc, char **argv)
 	int         i;//, j, rehash = 0;
 	lumpinfo_t *pf;
 
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
-	Cvar_Init ();
-	Sys_Init_Cvars ();
-	Cmd_Init ();
+	Sys_Init ();
 	Memory_Init (malloc (MEMSIZE), MEMSIZE);
 
 	this_program = argv[0];

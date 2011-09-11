@@ -75,6 +75,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <direct.h>
 #endif
 
+#include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/sys.h"
@@ -773,6 +774,13 @@ Sys_Init (void)
 	signal (SIGSEGV, signal_handler);
 	signal (SIGTERM, signal_handler);
 	signal (SIGFPE, signal_handler);
+
+	Cvar_Init_Hash ();
+	Cmd_Init_Hash ();
+	Cvar_Init ();
+	Sys_Init_Cvars ();
+
+	Cmd_Init ();
 }
 
 VISIBLE int
