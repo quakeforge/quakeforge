@@ -756,7 +756,7 @@ PR_CheckEmptyString (progs_t *pr, const char *s)
 		PR_RunError (pr, "Bad string");
 }
 
-static void
+static int
 do_precache (progs_t *pr, const char **cache, int max, const char *name,
 			 const char *func)
 {
@@ -782,10 +782,10 @@ do_precache (progs_t *pr, const char **cache, int max, const char *name,
 			strcpy (c, s);
 			cache[i] = c; // blah, const
 			Sys_MaskPrintf (SYS_DEV, "%s: %3d %s\n", func, i, s);
-			return;
+			return i;
 		}
 		if (!strcmp (cache[i], s))
-			return;
+			return i;
 	}
 	PR_RunError (pr, "%s: overflow", func);
 }
@@ -814,8 +814,11 @@ PF_precache_sound (progs_t *pr)
 static void
 PF_precache_model (progs_t *pr)
 {
-	do_precache (pr, sv.model_precache, MAX_MODELS, P_GSTRING (pr, 0),
-				 "precache_model");
+	int         ind;
+	const char *mod = P_GSTRING (pr, 0);
+	ind = do_precache (pr, sv.model_precache, MAX_MODELS, mod,
+					   "precache_model");
+	sv.models[ind] = Mod_ForName (mod, true);
 	R_INT (pr) = P_INT (pr, 0);
 }
 
