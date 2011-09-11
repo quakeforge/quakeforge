@@ -764,7 +764,7 @@ CL_ParseClientdata (void)
 			cl.viewent.lerpflags |= LERP_RESETANIM;
 	}
 
-	i = MSG_ReadShort (net_message);
+	i = (short) MSG_ReadShort (net_message);
 	if (cl.stats[STAT_HEALTH] != i) {
 		cl.stats[STAT_HEALTH] = i;
 		Sbar_Changed ();
@@ -1151,7 +1151,7 @@ CL_ParseServerMessage (void)
 					red = MSG_ReadByte (net_message) / 255.0;
 					green = MSG_ReadByte (net_message) / 255.0;
 					blue = MSG_ReadByte (net_message) / 255.0;
-					time = MSG_ReadShort (net_message) / 100.0;
+					time = (short) MSG_ReadShort (net_message) / 100.0;
 					time = max (0.0, time);
 					Fog_Update (density, red, green, blue, time);
 				}
