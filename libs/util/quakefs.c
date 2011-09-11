@@ -318,11 +318,8 @@ qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path,
 
 	if ((p = PL_ObjectForKey (gdpl, "Path")) && *(ps = PL_String (p))) {
 		char       *str = qfs_var_subst (ps, vars);
-		char       *e = strchr (str, '"');
 
-		if (!e)
-			e = str + strlen (str);
-		qfs_set_var (vars, "path", va ("%.*s", (int) (e - str), str));
+		qfs_set_var (vars, "path", str);
 		if (path->str[0])
 			dstring_appendstr (path, ":");
 		dstring_appendstr (path, str);
