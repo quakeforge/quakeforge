@@ -6,6 +6,7 @@
 *.a
 *.o
 *~
+__pycache__/
 autom4te.cache/
 .deps/
 .libs/
