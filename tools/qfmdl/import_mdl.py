@@ -193,13 +193,11 @@ def make_faces(mdl):
     return faces, uvs
 
 def load_skins(mdl):
-    for i in range(mdl.numskins):
-        if mdl.skins[i].type:
-            continue #skin groups not yet supported
-        img = bpy.data.images.new("%s_%d" % (mdl.name, i),
-                                  mdl.skinwidth, mdl.skinheight)
+    def load_skin(skin, name):
+        img = bpy.data.images.new(name, mdl.skinwidth, mdl.skinheight)
+        mdl.images.append(img)
         p = [0.0] * mdl.skinwidth * mdl.skinheight * 4
-        d = mdl.skins[i].pixels
+        d = skin.pixels
         for j in range(mdl.skinheight):
             for k in range(mdl.skinwidth):
                 c = quakepal.palette[d[j * mdl.skinwidth + k]]
@@ -211,6 +209,15 @@ def load_skins(mdl):
                 p[l + 2] = c[2] / 255.0
                 p[l + 3] = 1.0
         img.pixels[:] = p[:]
+
+    mdl.images=[]
+    for i in range(mdl.numskins):
+        if mdl.skins[i].type:
+            for j in range(mdl.skins[i].numskins):
+                load_skin (mdl.skins[i].skins[j],
+                           "%s_%d_%d" % (mdl.name, i, j))
+        else:
+            load_skin (mdl.skins[i], "%s_%d" % (mdl.name, i))
 
 def import_mdl(operator, context, filepath):
     mdl = load_mdl(filepath)
