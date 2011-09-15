@@ -227,6 +227,7 @@ def import_mdl(operator, context, filepath):
     faces, uvs = make_faces (mdl)
     verts = make_verts (mdl, 0)
     load_skins (mdl)
+    img = mdl.images[0]   # use the first skin for now
     mesh = bpy.data.meshes.new(mdl.name)
     mesh.from_pydata(verts, [], faces)
     uvlay = mesh.uv_textures.new(mdl.name)
@@ -234,14 +235,15 @@ def import_mdl(operator, context, filepath):
         mdl_uv = uvs[i]
         for j, uv in enumerate(f.uv):
             uv[0], uv[1] = mdl_uv[j]
-
+        f.image = img
+        f.use_image = True
     mat = bpy.data.materials.new(mdl.name)
     mat.diffuse_color = (1,1,1)
     mat.use_raytrace = False
     tex = bpy.data.textures.new(mdl.name, 'IMAGE')
     tex.extension = 'CLIP'
     tex.use_preview_alpha = True
-    tex.image = mdl.images[0]   # use the first skin for now
+    tex.image = img
     mat.texture_slots.add()
     ts = mat.texture_slots[0]
     ts.texture = tex
