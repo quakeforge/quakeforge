@@ -229,7 +229,7 @@ def import_mdl(operator, context, filepath):
     load_skins (mdl)
     mesh = bpy.data.meshes.new(mdl.name)
     mesh.from_pydata(verts, [], faces)
-    uvlay = mesh.uv_textures.new()
+    uvlay = mesh.uv_textures.new(mdl.name)
     for i, f in enumerate(uvlay.data):
         mdl_uv = uvs[i]
         for j, uv in enumerate(f.uv):
