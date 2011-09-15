@@ -156,12 +156,11 @@ def load_mdl(filepath):
         mdl.frames.append(f)
     return mdl
 
-def make_mesh(mdl, framenum, subframenum=0):
+def make_verts(mdl, framenum, subframenum=0):
     frame = mdl.frames[framenum]
     if frame.type:
         frame = frame.frames[subframenum]
     verts = []
-    faces = []
     s = mdl.scale
     o = mdl.scale_origin
     m = Matrix(((s.x,  0,  0,  0),
@@ -170,9 +169,25 @@ def make_mesh(mdl, framenum, subframenum=0):
                 (o.x,o.y,o.z,  1)))
     for v in frame.verts:
         verts.append(Vector(v.r) * m)
-    for t in mdl.tris:
-        faces.append (t.verts)
-    return verts, faces
+    return verts
+
+def make_faces(mdl):
+    faces = []
+    uvs = []
+    for tri in mdl.tris:
+        faces.append (tri.verts)
+        sts = []
+        for v in tri.verts:
+            stv = mdl.stverts[v]
+            s = stv.s
+            t = stv.t
+            if stv.onseam and not tri.facesfront:
+                s += mdl.skinwidth / 2
+            # quake textures are top to bottom, but blender images
+            # are bottom to top
+            sts.append((s * 1.0 / mdl.skinwidth, 1 - t * 1.0 / mdl.skinheight))
+        uvs.append(sts)
+    return faces, uvs
 
 def load_skins(mdl):
     for i in range(mdl.numskins):
@@ -196,13 +211,22 @@ def load_skins(mdl):
 
 def import_mdl(operator, context, filepath):
     mdl = load_mdl(filepath)
-    verts, faces = make_mesh (mdl, 0)
+
     bpy.context.user_preferences.edit.use_global_undo = False
+
+    faces, uvs = make_faces (mdl)
+    verts = make_verts (mdl, 0)
     load_skins (mdl)
     mesh = bpy.data.meshes.new(mdl.name)
     mesh.from_pydata(verts, [], faces)
+    uvlay = mesh.uv_textures.new()
+    for i, f in enumerate(uvlay.data):
+        mdl_uv = uvs[i]
+        for j, uv in enumerate(f.uv):
+            uv[0], uv[1] = mdl_uv[j]
     mesh.update()
     object_data_add(context, mesh, operator=None)
+
     bpy.context.user_preferences.edit.use_global_undo = True
     return 'FINISHED'
 
