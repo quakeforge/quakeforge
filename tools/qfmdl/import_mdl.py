@@ -26,7 +26,11 @@ import bpy
 from bpy_extras.object_utils import object_data_add
 from mathutils import Vector,Matrix
 
+from . import quakepal
+
 class MDL:
+    pass
+class skin:
     pass
 class stvert:
     pass
@@ -42,6 +46,8 @@ def load_mdl(filepath):
     m = unpack("<4s i 3f 3f f 3f i i i i i i i i f", data[:84])
     data = data[84:]
     mdl = MDL()
+    mdl.name = filepath.split('/')[-1]
+    mdl.name = mdl.name.split('.')[0]
     mdl.ident = m[0]
     mdl.version = m[1]
     mdl.scale = Vector(m[2:5])
@@ -61,22 +67,27 @@ def load_mdl(filepath):
     size = mdl.skinwidth * mdl.skinheight
     mdl.skins = []
     for i in range(mdl.numskins):
-        skintype = unpack ("<i", data[:4])[0]
+        s = skin()
+        mdl.skins.append(s)
+        s.type = unpack ("<i", data[:4])[0]
         data = data[4:]
-        if skintype == 0:
+        if s.type == 0:
             # single skin
-            mdl.skins.append((0, data[:size]))
+            s.pixels = data[:size]
             data = data[size:]
         else:
             # skin group
-            n = unpack ("<i", data[:4])[0]
+            s.numskins = unpack ("<i", data[:4])[0]
             data = data[4:]
-            k = (n, unpack("<" + repr(n) + "f", data[:n * 4]), [])
+            s.times = unpack("<" + repr(n) + "f", data[:n * 4])
             data = data[n * 4:]
+            s.skins = []
             for j in range(n):
-                k[2].append(data[:size])
+                ss = skin()
+                ss.type = 0
+                ss.pixels = data[:size]
                 data = data[size:]
-            mdl.skins.append(k)
+                s.skins.append[ss]
     #read in the st verts (uv map)
     mdl.stverts = []
     for i in range(mdl.numverts):
@@ -163,13 +174,32 @@ def make_mesh(mdl, framenum, subframenum=0):
         faces.append (t.verts)
     return verts, faces
 
+def load_skins(mdl):
+    for i in range(mdl.numskins):
+        if mdl.skins[i].type:
+            continue #skin groups not yet supported
+        img = bpy.data.images.new("%s_%d" % (mdl.name, i),
+                                  mdl.skinwidth, mdl.skinheight)
+        p = [0.0] * mdl.skinwidth * mdl.skinheight * 4
+        d = mdl.skins[i].pixels
+        for j in range(mdl.skinheight):
+            for k in range(mdl.skinwidth):
+                c = quakepal.palette[d[j * mdl.skinwidth + k]]
+                # quake textures are top to bottom, but blender images
+                # are bottom to top
+                l = ((mdl.skinheight - 1 - j) * mdl.skinwidth + k) * 4
+                p[l + 0] = c[0] / 255.0
+                p[l + 1] = c[1] / 255.0
+                p[l + 2] = c[2] / 255.0
+                p[l + 3] = 1.0
+        img.pixels[:] = p[:]
+
 def import_mdl(operator, context, filepath):
     mdl = load_mdl(filepath)
     verts, faces = make_mesh (mdl, 0)
-    name = filepath.split('/')[-1]
-    name = name.split('.')[0]
     bpy.context.user_preferences.edit.use_global_undo = False
-    mesh = bpy.data.meshes.new(name)
+    load_skins (mdl)
+    mesh = bpy.data.meshes.new(mdl.name)
     mesh.from_pydata(verts, [], faces)
     mesh.update()
     object_data_add(context, mesh, operator=None)
