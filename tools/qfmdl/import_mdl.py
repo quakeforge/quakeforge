@@ -234,8 +234,25 @@ def import_mdl(operator, context, filepath):
         mdl_uv = uvs[i]
         for j, uv in enumerate(f.uv):
             uv[0], uv[1] = mdl_uv[j]
+
+    mat = bpy.data.materials.new(mdl.name)
+    mat.diffuse_color = (1,1,1)
+    mat.use_raytrace = False
+    tex = bpy.data.textures.new(mdl.name, 'IMAGE')
+    tex.extension = 'CLIP'
+    tex.use_preview_alpha = True
+    tex.image = mdl.images[0]   # use the first skin for now
+    mat.texture_slots.add()
+    ts = mat.texture_slots[0]
+    ts.texture = tex
+    ts.use_map_alpha = True
+    ts.texture_coords = 'UV'
     mesh.update()
     object_data_add(context, mesh, operator=None)
+    act = bpy.context.active_object
+    if not act.material_slots:
+        bpy.ops.object.material_slot_add()
+    act.material_slots[0].material = mat
 
     bpy.context.user_preferences.edit.use_global_undo = True
     return 'FINISHED'
