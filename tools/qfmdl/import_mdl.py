@@ -87,7 +87,7 @@ def load_mdl(filepath):
                 ss.type = 0
                 ss.pixels = data[:size]
                 data = data[size:]
-                s.skins.append[ss]
+                s.skins.append(ss)
     #read in the st verts (uv map)
     mdl.stverts = []
     for i in range(mdl.numverts):
