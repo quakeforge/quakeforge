@@ -219,17 +219,9 @@ def load_skins(mdl):
         else:
             load_skin (mdl.skins[i], "%s_%d" % (mdl.name, i))
 
-def import_mdl(operator, context, filepath):
-    mdl = load_mdl(filepath)
-
-    bpy.context.user_preferences.edit.use_global_undo = False
-
-    faces, uvs = make_faces (mdl)
-    verts = make_verts (mdl, 0)
+def setup_skins (mdl, mesh, uvs):
     load_skins (mdl)
     img = mdl.images[0]   # use the first skin for now
-    mesh = bpy.data.meshes.new(mdl.name)
-    mesh.from_pydata(verts, [], faces)
     uvlay = mesh.uv_textures.new(mdl.name)
     for i, f in enumerate(uvlay.data):
         mdl_uv = uvs[i]
@@ -249,12 +241,22 @@ def import_mdl(operator, context, filepath):
     ts.texture = tex
     ts.use_map_alpha = True
     ts.texture_coords = 'UV'
-    mesh.update()
-    object_data_add(context, mesh, operator=None)
     act = bpy.context.active_object
     if not act.material_slots:
         bpy.ops.object.material_slot_add()
     act.material_slots[0].material = mat
+
+def import_mdl(operator, context, filepath):
+    bpy.context.user_preferences.edit.use_global_undo = False
+
+    mdl = load_mdl(filepath)
+    faces, uvs = make_faces (mdl)
+    verts = make_verts (mdl, 0)
+    mesh = bpy.data.meshes.new(mdl.name)
+    mesh.from_pydata(verts, [], faces)
+    object_data_add(context, mesh, operator=None)
+    setup_skins (mdl, mesh, uvs)
+    mesh.update()
 
     bpy.context.user_preferences.edit.use_global_undo = True
     return 'FINISHED'
