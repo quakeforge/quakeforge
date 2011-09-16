@@ -241,20 +241,23 @@ def setup_skins (mdl, mesh, uvs):
     ts.texture = tex
     ts.use_map_alpha = True
     ts.texture_coords = 'UV'
-    act = bpy.context.active_object
-    if not act.material_slots:
-        bpy.ops.object.material_slot_add()
-    act.material_slots[0].material = mat
+    mesh.materials.append(mat)
 
 def import_mdl(operator, context, filepath):
     bpy.context.user_preferences.edit.use_global_undo = False
+
+    for obj in bpy.context.scene.objects:
+        obj.select = False
 
     mdl = load_mdl(filepath)
     faces, uvs = make_faces (mdl)
     verts = make_verts (mdl, 0)
     mesh = bpy.data.meshes.new(mdl.name)
     mesh.from_pydata(verts, [], faces)
-    object_data_add(context, mesh, operator=None)
+    obj = bpy.data.objects.new(mdl.name, mesh)
+    bpy.context.scene.objects.link(obj)
+    bpy.context.scene.objects.active = obj
+    obj.select = True
     setup_skins (mdl, mesh, uvs)
     mesh.update()
 
