@@ -219,10 +219,10 @@ def load_skins(mdl):
         else:
             load_skin (mdl.skins[i], "%s_%d" % (mdl.name, i))
 
-def setup_skins (mdl, mesh, uvs):
+def setup_skins (mdl, uvs):
     load_skins (mdl)
     img = mdl.images[0]   # use the first skin for now
-    uvlay = mesh.uv_textures.new(mdl.name)
+    uvlay = mdl.mesh.uv_textures.new(mdl.name)
     for i, f in enumerate(uvlay.data):
         mdl_uv = uvs[i]
         for j, uv in enumerate(f.uv):
@@ -241,7 +241,25 @@ def setup_skins (mdl, mesh, uvs):
     ts.texture = tex
     ts.use_map_alpha = True
     ts.texture_coords = 'UV'
-    mesh.materials.append(mat)
+    mdl.mesh.materials.append(mat)
+
+def make_shape_key(mdl, framenum, subframenum=0):
+    frame = mdl.frames[framenum]
+    name = "%s_%d" % (mdl.name, framenum)
+    if frame.type:
+        frame = frame.frames[subframenum]
+        name = "%s_%d_%d" % (mdl.name, framenum, subframenum)
+    if frame.name:
+        name = frame.name.decode('ascii','ignore')
+    frame.key = mdl.obj.shape_key_add(name)
+    s = mdl.scale
+    o = mdl.scale_origin
+    m = Matrix(((s.x,  0,  0,  0),
+                (  0,s.y,  0,  0),
+                (  0,  0,s.z,  0),
+                (o.x,o.y,o.z,  1)))
+    for i, v in enumerate(frame.verts):
+        frame.key.data[i].co = Vector(v.r) * m
 
 def import_mdl(operator, context, filepath):
     bpy.context.user_preferences.edit.use_global_undo = False
@@ -252,14 +270,24 @@ def import_mdl(operator, context, filepath):
     mdl = load_mdl(filepath)
     faces, uvs = make_faces (mdl)
     verts = make_verts (mdl, 0)
-    mesh = bpy.data.meshes.new(mdl.name)
-    mesh.from_pydata(verts, [], faces)
-    obj = bpy.data.objects.new(mdl.name, mesh)
-    bpy.context.scene.objects.link(obj)
-    bpy.context.scene.objects.active = obj
-    obj.select = True
-    setup_skins (mdl, mesh, uvs)
-    mesh.update()
+    mdl.mesh = bpy.data.meshes.new(mdl.name)
+    mdl.mesh.from_pydata(verts, [], faces)
+    mdl.obj = bpy.data.objects.new(mdl.name, mdl.mesh)
+    bpy.context.scene.objects.link(mdl.obj)
+    bpy.context.scene.objects.active = mdl.obj
+    mdl.obj.select = True
+    setup_skins (mdl, uvs)
+
+    if mdl.numframes > 1 or mdl.frames[0].type:
+        for i in range(mdl.numframes):
+            frame = mdl.frames[i]
+            if frame.type:
+                for j in range(frame.numframes):
+                    make_shape_key(mdl, i, j)
+            else:
+                make_shape_key(mdl, i)
+
+    mdl.mesh.update()
 
     bpy.context.user_preferences.edit.use_global_undo = True
     return 'FINISHED'
