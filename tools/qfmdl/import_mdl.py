@@ -43,8 +43,8 @@ class vert:
 
 def load_mdl(filepath):
     data = open(filepath, "rb").read()
-    m = unpack("<4s i 3f 3f f 3f i i i i i i i i f", data[:84])
-    data = data[84:]
+    m = unpack("<4s i 3f 3f f 3f i i i i i i i", data[:76])
+    data = data[76:]
     mdl = MDL()
     mdl.name = filepath.split('/')[-1]
     mdl.name = mdl.name.split('.')[0]
@@ -61,8 +61,13 @@ def load_mdl(filepath):
     mdl.numtris = m[16]
     mdl.numframes = m[17]
     mdl.synctype = m[18]
-    mdl.flags = m[19]
-    mdl.size = m[20]
+    mdl.flags = 0
+    mdl.size = 1.0  # random number ;)
+    if mdl.version == 6:
+        m = ("<i f", data[:8])
+        data = data[8:]
+        mdl.flags = m[0]
+        mdl.size = m[1]
     # read in the skin data
     size = mdl.skinwidth * mdl.skinheight
     mdl.skins = []
@@ -110,11 +115,16 @@ def load_mdl(filepath):
         f.type = unpack("<i", data[:4])[0]
         data = data[4:]
         if f.type == 0:
-            x = unpack("<3B B 3B B 16s", data[:24])
-            data = data[24:]
+            if mdl.version == 6:
+                x = unpack("<3B B 3B B 16s", data[:24])
+                data = data[24:]
+                name = x[8]
+            else:
+                x = unpack("<3B B 3B B", data[:8])
+                data = data[8:]
+                name = b""
             f.mins = x[0:3]
             f.maxs = x[4:7]
-            name = x[8]
             if b"\0" in name:
                 name = name[:name.index(b"\0")]
             f.name = name
