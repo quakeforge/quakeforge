@@ -118,15 +118,15 @@ def load_mdl(filepath):
             if mdl.version == 6:
                 x = unpack("<3B B 3B B 16s", data[:24])
                 data = data[24:]
-                name = x[8]
+                name = x[8].decode('ascii','ignore')
             else:
                 x = unpack("<3B B 3B B", data[:8])
                 data = data[8:]
-                name = b""
+                name = ""
             f.mins = x[0:3]
             f.maxs = x[4:7]
-            if b"\0" in name:
-                name = name[:name.index(b"\0")]
+            if "\0" in name:
+                name = name[:name.index("\0")]
             f.name = name
             f.verts = []
             for j in range(mdl.numverts):
@@ -148,11 +148,21 @@ def load_mdl(filepath):
             g.frames = []
             for k in range(g.numframes):
                 f = frame()
+                if mdl.version == 6:
+                    x = unpack("<3B B 3B B 16s", data[:24])
+                    data = data[24:]
+                    name = x[8].decode('ascii','ignore')
+                else:
+                    x = unpack("<3B B 3B B", data[:8])
+                    data = data[8:]
+                    name = ""
                 x = unpack("<3B B 3B B 16s", data[:24])
                 data = data[24:]
                 f.mins = x[0:3]
                 f.maxs = x[4:7]
-                f.name = x[8]
+                if "\0" in name:
+                    name = name[:name.index("\0")]
+                f.name = name
                 f.verts = []
                 for j in range(mdl.numverts):
                     x = unpack("<3B B", data[:4])
@@ -260,8 +270,10 @@ def make_shape_key(mdl, framenum, subframenum=0):
         frame = frame.frames[subframenum]
         name = "%s_%d_%d" % (mdl.name, framenum, subframenum)
     if frame.name:
-        name = frame.name.decode('ascii','ignore')
+        name = frame.name
     frame.key = mdl.obj.shape_key_add(name)
+    frame.key.value = 0.0
+    mdl.keys.append (frame.key)
     s = mdl.scale
     o = mdl.scale_origin
     m = Matrix(((s.x,  0,  0,  0),
@@ -270,6 +282,74 @@ def make_shape_key(mdl, framenum, subframenum=0):
                 (o.x,o.y,o.z,  1)))
     for i, v in enumerate(frame.verts):
         frame.key.data[i].co = Vector(v.r) * m
+
+def build_shape_keys(mdl):
+    mdl.keys = []
+    mdl.obj.shape_key_add("Basis")  # FIXME do I want this?
+    for i in range(mdl.numframes):
+        frame = mdl.frames[i]
+        if frame.type:
+            for j in range(frame.numframes):
+                make_shape_key(mdl, i, j)
+        else:
+            make_shape_key(mdl, i)
+
+"""
+fc.keyframe_points.add(3)
+fc.keyframe_points[0].co=10.0,0.0
+fc.keyframe_points[1].co=20.0,1.0
+fc.keyframe_points[2].co=30.0,0.0
+fc.keyframe_points[2].co=30.2,0.0
+"""
+def set_keys(fck, current, f, m):
+    c = 1
+    if f > 1:
+        c += 1
+    if f > 2:
+        c += 1
+    if f < m:
+        c += 1
+    if f < m - 1:
+        c += 1
+    for k in fck:
+        k[1].keyframe_points.add(c)
+        kp = k[1].keyframe_points
+        i = 0
+        if f > 2:
+            kp[i].co = 1.0,0.0
+            i += 1
+        x = f * 1.0
+        if f > 1:
+            kp[i].co = x - 1.0,0.0
+            i += 1
+        if k[0] == current:
+            y = 1.0
+        else:
+            y = 0.0
+        kp[i].co = x,y
+        i += 1
+        if f < m:
+            kp[i].co = x + 1.0,0.0
+            i += 1
+        if f < m - 1:
+            kp[i].co = m * 1.0,0.0
+
+def build_actions(mdl):
+    sk = mdl.mesh.shape_keys
+    for i in range(mdl.numframes):
+        frame = mdl.frames[i]
+        sk.animation_data_create()
+        sk.animation_data.action = bpy.data.actions.new(frame.name)
+        act=sk.animation_data.action
+        fck = []
+        for k in mdl.keys:
+            dp = """key_blocks["%s"].value""" % k.name
+            fck.append((k, act.fcurves.new(data_path=dp)))
+        if frame.type:
+            for j in range(frame.numframes):
+                set_keys (fck, frame.frames[i].key, j + 1, frame.numframes)
+        else:
+            set_keys (fck, frame.key, 1, 1)
 
 def import_mdl(operator, context, filepath):
     bpy.context.user_preferences.edit.use_global_undo = False
@@ -287,18 +367,11 @@ def import_mdl(operator, context, filepath):
     bpy.context.scene.objects.active = mdl.obj
     mdl.obj.select = True
     setup_skins (mdl, uvs)
-
     if mdl.numframes > 1 or mdl.frames[0].type:
-        for i in range(mdl.numframes):
-            frame = mdl.frames[i]
-            if frame.type:
-                for j in range(frame.numframes):
-                    make_shape_key(mdl, i, j)
-            else:
-                make_shape_key(mdl, i)
+        build_shape_keys(mdl)
+        build_actions(mdl)
 
     mdl.mesh.update()
 
     bpy.context.user_preferences.edit.use_global_undo = True
     return 'FINISHED'
-
