@@ -347,9 +347,38 @@ def build_actions(mdl):
             fck.append((k, act.fcurves.new(data_path=dp)))
         if frame.type:
             for j in range(frame.numframes):
-                set_keys (fck, frame.frames[i].key, j + 1, frame.numframes)
+                set_keys (fck, frame.frames[j].key, j + 1, frame.numframes)
         else:
             set_keys (fck, frame.key, 1, 1)
+
+def get_base(name):
+    i = 0
+    while name[i] not in "0123456789":
+        i += 1
+    return name[:i]
+
+def merge_frames(mdl):
+    i = 0
+    while i < mdl.numframes:
+        if mdl.frames[i].type:
+            i += 1
+            continue
+        base = get_base(mdl.frames[i].name)
+        j = i + 1
+        while j < mdl.numframes:
+            if mdl.frames[j].type:
+                break
+            if get_base(mdl.frames[j].name) != base:
+                break
+            j += 1
+        f = frame()
+        f.name = base
+        f.numframes = j - i
+        f.type = 1
+        f.frames = mdl.frames[i:j]
+        mdl.frames[i:j] = [f]
+        mdl.numframes -= f.numframes - 1
+        i += 1
 
 def import_mdl(operator, context, filepath):
     bpy.context.user_preferences.edit.use_global_undo = False
@@ -367,6 +396,7 @@ def import_mdl(operator, context, filepath):
     bpy.context.scene.objects.active = mdl.obj
     mdl.obj.select = True
     setup_skins (mdl, uvs)
+    merge_frames(mdl)
     if mdl.numframes > 1 or mdl.frames[0].type:
         build_shape_keys(mdl)
         build_actions(mdl)
