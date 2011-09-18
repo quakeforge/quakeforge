@@ -325,7 +325,6 @@ def build_actions(mdl):
                     co.append (((j + 2) * 1.0, 0.0))
                 if j < frame.numframes - 1:
                     co.append ((frame.numframes * 1.0, 0.0))
-                pprint (co)
                 data.append((frame.frames[j].key, co))
         else:
             data.append((frame.key, [(1.0, 1.0)]))
