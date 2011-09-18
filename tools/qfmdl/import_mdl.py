@@ -394,4 +394,4 @@ def import_mdl(operator, context, filepath):
     mdl.mesh.update()
 
     bpy.context.user_preferences.edit.use_global_undo = True
-    return 'FINISHED'
+    return {'FINISHED'}
