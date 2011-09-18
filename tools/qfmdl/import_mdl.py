@@ -313,6 +313,7 @@ def build_actions(mdl):
         sk.animation_data.action = bpy.data.actions.new(frame.name)
         act=sk.animation_data.action
         data = []
+        other_keys = mdl.keys[:]
         if frame.type:
             for j in range(frame.numframes):
                 co = []
@@ -326,8 +327,18 @@ def build_actions(mdl):
                 if j < frame.numframes - 1:
                     co.append ((frame.numframes * 1.0, 0.0))
                 data.append((frame.frames[j].key, co))
+                if frame.frames[j].key in other_keys:
+                    del(other_keys[other_keys.index(frame.frames[j].key)])
+            co = [(1.0, 0.0), (frame.numframes * 1.0, 0.0)]
+            for k in other_keys:
+                data.append((k, co))
         else:
             data.append((frame.key, [(1.0, 1.0)]))
+            if frame.key in other_keys:
+                del(other_keys[other_keys.index(frame.key)])
+            co = [(1.0, 0.0)]
+            for k in other_keys:
+                data.append((k, co))
         set_keys (act, data)
 
 def get_base(name):
