@@ -271,6 +271,8 @@ def make_shape_key(mdl, framenum, subframenum=0):
         name = "%s_%d_%d" % (mdl.name, framenum, subframenum)
     if frame.name:
         name = frame.name
+    else:
+        frame.name = name
     frame.key = mdl.obj.shape_key_add(name)
     frame.key.value = 0.0
     mdl.keys.append (frame.key)
@@ -353,7 +355,7 @@ def build_actions(mdl):
 
 def get_base(name):
     i = 0
-    while name[i] not in "0123456789":
+    while i < len(name) and name[i] not in "0123456789":
         i += 1
     return name[:i]
 
@@ -396,9 +398,9 @@ def import_mdl(operator, context, filepath):
     bpy.context.scene.objects.active = mdl.obj
     mdl.obj.select = True
     setup_skins (mdl, uvs)
-    merge_frames(mdl)
     if mdl.numframes > 1 or mdl.frames[0].type:
         build_shape_keys(mdl)
+        merge_frames(mdl)
         build_actions(mdl)
 
     mdl.mesh.update()
