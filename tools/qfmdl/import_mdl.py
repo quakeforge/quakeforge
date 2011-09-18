@@ -296,45 +296,14 @@ def build_shape_keys(mdl):
         else:
             make_shape_key(mdl, i)
 
-"""
-fc.keyframe_points.add(3)
-fc.keyframe_points[0].co=10.0,0.0
-fc.keyframe_points[1].co=20.0,1.0
-fc.keyframe_points[2].co=30.0,0.0
-fc.keyframe_points[2].co=30.2,0.0
-"""
-def set_keys(fck, current, f, m):
-    c = 1
-    if f > 1:
-        c += 1
-    if f > 2:
-        c += 1
-    if f < m:
-        c += 1
-    if f < m - 1:
-        c += 1
-    for k in fck:
-        k[1].keyframe_points.add(c)
-        kp = k[1].keyframe_points
-        i = 0
-        if f > 2:
-            kp[i].co = 1.0,0.0
-            i += 1
-        x = f * 1.0
-        if f > 1:
-            kp[i].co = x - 1.0,0.0
-            i += 1
-        if k[0] == current:
-            y = 1.0
-        else:
-            y = 0.0
-        kp[i].co = x,y
-        i += 1
-        if f < m:
-            kp[i].co = x + 1.0,0.0
-            i += 1
-        if f < m - 1:
-            kp[i].co = m * 1.0,0.0
+def set_keys(act, data):
+    for d in data:
+        key, co = d
+        dp = """key_blocks["%s"].value""" % key.name
+        fc = act.fcurves.new(data_path = dp)
+        fc.keyframe_points.add(len(co))
+        for i in range(len(co)):
+            fc.keyframe_points[i].co = co[i]
 
 def build_actions(mdl):
     sk = mdl.mesh.shape_keys
@@ -343,15 +312,24 @@ def build_actions(mdl):
         sk.animation_data_create()
         sk.animation_data.action = bpy.data.actions.new(frame.name)
         act=sk.animation_data.action
-        fck = []
-        for k in mdl.keys:
-            dp = """key_blocks["%s"].value""" % k.name
-            fck.append((k, act.fcurves.new(data_path=dp)))
+        data = []
         if frame.type:
             for j in range(frame.numframes):
-                set_keys (fck, frame.frames[j].key, j + 1, frame.numframes)
+                co = []
+                if j > 1:
+                    co.append ((1.0, 0.0))
+                if j > 0:
+                    co.append ((j * 1.0, 0.0))
+                co.append (((j + 1) * 1.0, 1.0))
+                if j < frame.numframes - 2:
+                    co.append (((j + 2) * 1.0, 0.0))
+                if j < frame.numframes - 1:
+                    co.append ((frame.numframes * 1.0, 0.0))
+                pprint (co)
+                data.append((frame.frames[j].key, co))
         else:
-            set_keys (fck, frame.key, 1, 1)
+            data.append((frame.key, [(1.0, 1.0)]))
+        set_keys (act, data)
 
 def get_base(name):
     i = 0
