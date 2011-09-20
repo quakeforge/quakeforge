@@ -392,8 +392,9 @@ def import_mdl(operator, context, filepath):
 
     mdl = MDL()
     if not mdl.read(filepath):
-        #FIXME report?
-        return {'CANCELED'}
+        operator.report({'ERROR'},
+            "Unrecognized format: %s %d" % (mdl.ident, mdl.version))
+        return {'CANCELLED'}
     faces, uvs = make_faces (mdl)
     verts = make_verts (mdl, 0)
     mdl.mesh = bpy.data.meshes.new(mdl.name)
