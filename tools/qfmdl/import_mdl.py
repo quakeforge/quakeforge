@@ -29,152 +29,160 @@ from mathutils import Vector,Matrix
 from . import quakepal
 
 class MDL:
-    pass
-class skin:
-    pass
-class stvert:
-    pass
-class tri:
-    pass
-class frame:
-    pass
-class vert:
-    pass
+    class Skin:
+        def __init__(self):
+            pass
+        def read(self, mdl, sub=0):
+            self.width, self.height = mdl.skinwidth, mdl.skinheight
+            if sub:
+                self.type = 0
+                self.read_pixels(mdl)
+                return self
+            self.type = mdl.read_int()
+            if self.type:
+                # skin group
+                num = mdl.read_int()
+                self.times = mdl.read_float(num)
+                self.skins = []
+                for i in range(num):
+                    self.skins.append(MDL.Skin().read(mdl, 1))
+                    num -= 1
+                return self
+            self.read_pixels(mdl)
+            return self
 
-def load_mdl(filepath):
-    data = open(filepath, "rb").read()
-    m = unpack("<4s i 3f 3f f 3f i i i i i i i", data[:76])
-    data = data[76:]
-    mdl = MDL()
-    mdl.name = filepath.split('/')[-1]
-    mdl.name = mdl.name.split('.')[0]
-    mdl.ident = m[0]
-    mdl.version = m[1]
-    mdl.scale = Vector(m[2:5])
-    mdl.scale_origin = Vector(m[5:8])
-    mdl.boundingradius = m[8]
-    mdl.eyeposition = Vector(m[9:12])
-    mdl.numskins = m[12]
-    mdl.skinwidth = m[13]
-    mdl.skinheight = m[14]
-    mdl.numverts = m[15]
-    mdl.numtris = m[16]
-    mdl.numframes = m[17]
-    mdl.synctype = m[18]
-    mdl.flags = 0
-    mdl.size = 1.0  # random number ;)
-    if mdl.version == 6:
-        m = ("<i f", data[:8])
-        data = data[8:]
-        mdl.flags = m[0]
-        mdl.size = m[1]
-    # read in the skin data
-    size = mdl.skinwidth * mdl.skinheight
-    mdl.skins = []
-    for i in range(mdl.numskins):
-        s = skin()
-        mdl.skins.append(s)
-        s.type = unpack ("<i", data[:4])[0]
-        data = data[4:]
-        if s.type == 0:
-            # single skin
-            s.pixels = data[:size]
-            data = data[size:]
-        else:
-            # skin group
-            s.numskins = unpack ("<i", data[:4])[0]
-            data = data[4:]
-            s.times = unpack("<" + repr(n) + "f", data[:n * 4])
-            data = data[n * 4:]
-            s.skins = []
-            for j in range(n):
-                ss = skin()
-                ss.type = 0
-                ss.pixels = data[:size]
-                data = data[size:]
-                s.skins.append(ss)
-    #read in the st verts (uv map)
-    mdl.stverts = []
-    for i in range(mdl.numverts):
-        st = stvert ()
-        st.onseam, st.s, st.t = unpack ("<i i i", data[:12])
-        data = data[12:]
-        mdl.stverts.append(st)
-    #read in the tris
-    mdl.tris = []
-    for i in range(mdl.numtris):
-        t = unpack("<i 3i", data[:16])
-        data = data[16:]
-        mdl.tris.append(tri())
-        mdl.tris[-1].facesfront = t[0]
-        mdl.tris[-1].verts = t[1:]
-    #read in the frames
-    mdl.frames = []
-    for i in range(mdl.numframes):
-        f = frame()
-        f.type = unpack("<i", data[:4])[0]
-        data = data[4:]
-        if f.type == 0:
-            if mdl.version == 6:
-                x = unpack("<3B B 3B B 16s", data[:24])
-                data = data[24:]
-                name = x[8].decode('ascii','ignore')
+        def read_pixels(self, mdl):
+            size = self.width * self.height
+            self.pixels = mdl.read_string(size)
+
+    class STVert:
+        def __init__(self):
+            pass
+        def read(self, mdl):
+            self.onseam = mdl.read_int()
+            self.s, self.t = mdl.read_int(2)
+            return self
+
+    class Tri:
+        def __init__(self):
+            pass
+        def read(self, mdl):
+            self.facesfront = mdl.read_int()
+            self.verts = mdl.read_int(3)
+            return self
+
+    class Frame:
+        def __init__(self):
+            pass
+        def read(self, mdl, numverts, sub=0):
+            if sub:
+                self.type = 0
             else:
-                x = unpack("<3B B 3B B", data[:8])
-                data = data[8:]
+                self.type = mdl.read_int()
+            if self.type:
+                num = mdl.read_int()
+                self.read_bounds(mdl)
+                self.times = mdl.read_float(num)
+                self.frames = []
+                for i in range(num):
+                    self.frames.append(MDL.Frame().read(mdl, numverts, 1))
+                return self
+            self.read_bounds(mdl)
+            self.read_name(mdl)
+            self.read_verts(mdl, numverts)
+            return self
+
+        def read_name(self, mdl):
+            if mdl.version == 6:
+                name = mdl.read_string(16)
+            else:
                 name = ""
-            f.mins = x[0:3]
-            f.maxs = x[4:7]
             if "\0" in name:
                 name = name[:name.index("\0")]
-            f.name = name
-            f.verts = []
-            for j in range(mdl.numverts):
-                x = unpack("<3B B", data[:4])
-                data = data[4:]
-                v = vert()
-                v.r = x[:3]
-                v.ni = x[3]
-                f.verts.append(v)
-        else:
-            g = f
-            x = unpack("<i 3B B 3B B", data[:12])
-            data = data[12:]
-            g.numframes = n = x[0]
-            g.mins = x[1:4]
-            g.maxs = x[5:8]
-            g.times = unpack("<" + repr(n) + "f", data[:n * 4])
-            data = data[n * 4:]
-            g.frames = []
-            for k in range(g.numframes):
-                f = frame()
-                if mdl.version == 6:
-                    x = unpack("<3B B 3B B 16s", data[:24])
-                    data = data[24:]
-                    name = x[8].decode('ascii','ignore')
-                else:
-                    x = unpack("<3B B 3B B", data[:8])
-                    data = data[8:]
-                    name = ""
-                x = unpack("<3B B 3B B 16s", data[:24])
-                data = data[24:]
-                f.mins = x[0:3]
-                f.maxs = x[4:7]
-                if "\0" in name:
-                    name = name[:name.index("\0")]
-                f.name = name
-                f.verts = []
-                for j in range(mdl.numverts):
-                    x = unpack("<3B B", data[:4])
-                    data = data[4:]
-                    v = vert()
-                    v.r = x[:3]
-                    v.ni = x[3]
-                    f.verts.append(v)
-                g.frames.append(f)
-            f = g
-        mdl.frames.append(f)
-    return mdl
+            self.name = name
+
+        def read_bounds(self, mdl):
+            self.mins = mdl.read_byte(4)[:3]    #discard normal index
+            self.maxs = mdl.read_byte(4)[:3]    #discard normal index
+
+        def read_verts(self, mdl, num):
+            self.verts = []
+            for i in range(num):
+                self.verts.append(MDL.Vert().read(mdl))
+
+    class Vert:
+        def __init__(self):
+            pass
+        def read(self, mdl):
+            self.r = mdl.read_byte(3)
+            self.ni = mdl.read_byte()
+            return self
+
+    def read_byte(self, count=1):
+        size = 1 * count
+        data = self.file.read(size)
+        data = unpack("<%dB" % count, data)
+        if count == 1:
+            return data[0]
+        return data
+
+    def read_int(self, count=1):
+        size = 4 * count
+        data = self.file.read(size)
+        data = unpack("<%di" % count, data)
+        if count == 1:
+            return data[0]
+        return data
+
+    def read_float(self, count=1):
+        size = 4 * count
+        data = self.file.read(size)
+        data = unpack("<%df" % count, data)
+        if count == 1:
+            return data[0]
+        return data
+
+    def read_string(self, size):
+        return self.file.read(size)
+
+    def __init__(self):
+        pass
+    def read(self, filepath):
+        self.file = open(filepath, "rb")
+        self.name = filepath.split('/')[-1]
+        self.name = self.name.split('.')[0]
+        self.ident = self.read_string(4)
+        self.version = self.read_int()
+        if self.ident not in [b"IDPO", b"MD16"] or self.version not in [3, 6]:
+            return None
+        self.scale = Vector(self.read_float(3))
+        self.scale_origin = Vector(self.read_float(3))
+        self.boundingradius = self.read_float()
+        self.eyeposition = Vector(self.read_float(3))
+        numskins = self.read_int()
+        self.skinwidth, self.skinheight = self.read_int(2)
+        numverts, numtris, numframes = self.read_int(3)
+        self.synctype = self.read_int()
+        if self.version == 6:
+            self.flags = self.read_int()
+            self.size = self.read_float()
+        # read in the skin data
+        self.skins = []
+        for i in range(numskins):
+            self.skins.append(MDL.Skin().read(self))
+        #read in the st verts (uv map)
+        self.stverts = []
+        for i in range(numverts):
+            self.stverts.append (MDL.STVert().read(self))
+        #read in the tris
+        self.tris = []
+        for i in range(numtris):
+            self.tris.append(MDL.Tri().read(self))
+        #read in the frames
+        self.frames = []
+        for i in range(numframes):
+            self.frames.append(MDL.Frame().read(self, numverts))
+        return self
 
 def make_verts(mdl, framenum, subframenum=0):
     frame = mdl.frames[framenum]
@@ -189,6 +197,7 @@ def make_verts(mdl, framenum, subframenum=0):
                 (o.x,o.y,o.z,  1)))
     for v in frame.verts:
         verts.append(Vector(v.r) * m)
+        #verts.append(m * Vector(v.r))
     return verts
 
 def make_faces(mdl):
@@ -229,15 +238,15 @@ def load_skins(mdl):
                 p[l + 2] = c[2] / 255.0
                 p[l + 3] = 1.0
         img.pixels[:] = p[:]
+        #img.pack(True)
 
     mdl.images=[]
-    for i in range(mdl.numskins):
-        if mdl.skins[i].type:
-            for j in range(mdl.skins[i].numskins):
-                load_skin (mdl.skins[i].skins[j],
-                           "%s_%d_%d" % (mdl.name, i, j))
+    for i, skin in enumerate(mdl.skins):
+        if skin.type:
+            for j, subskin in enumerate(skin.skins):
+                load_skin (subskin, "%s_%d_%d" % (mdl.name, i, j))
         else:
-            load_skin (mdl.skins[i], "%s_%d" % (mdl.name, i))
+            load_skin (skin, "%s_%d" % (mdl.name, i))
 
 def setup_skins (mdl, uvs):
     load_skins (mdl)
@@ -284,14 +293,15 @@ def make_shape_key(mdl, framenum, subframenum=0):
                 (o.x,o.y,o.z,  1)))
     for i, v in enumerate(frame.verts):
         frame.key.data[i].co = Vector(v.r) * m
+        #frame.key.data[i].co = m * Vector(v.r)
 
 def build_shape_keys(mdl):
     mdl.keys = []
     mdl.obj.shape_key_add("Basis")  # FIXME do I want this?
-    for i in range(mdl.numframes):
+    for i, frame in enumerate(mdl.frames):
         frame = mdl.frames[i]
         if frame.type:
-            for j in range(frame.numframes):
+            for j in range(len(frame.frames)):
                 make_shape_key(mdl, i, j)
         else:
             make_shape_key(mdl, i)
@@ -307,29 +317,28 @@ def set_keys(act, data):
 
 def build_actions(mdl):
     sk = mdl.mesh.shape_keys
-    for i in range(mdl.numframes):
-        frame = mdl.frames[i]
+    for frame in mdl.frames:
         sk.animation_data_create()
         sk.animation_data.action = bpy.data.actions.new(frame.name)
         act=sk.animation_data.action
         data = []
         other_keys = mdl.keys[:]
         if frame.type:
-            for j in range(frame.numframes):
+            for j, subframe in enumerate(frame.frames):
                 co = []
                 if j > 1:
                     co.append ((1.0, 0.0))
                 if j > 0:
                     co.append ((j * 1.0, 0.0))
                 co.append (((j + 1) * 1.0, 1.0))
-                if j < frame.numframes - 2:
+                if j < len(frame.frames) - 2:
                     co.append (((j + 2) * 1.0, 0.0))
-                if j < frame.numframes - 1:
-                    co.append ((frame.numframes * 1.0, 0.0))
-                data.append((frame.frames[j].key, co))
-                if frame.frames[j].key in other_keys:
-                    del(other_keys[other_keys.index(frame.frames[j].key)])
-            co = [(1.0, 0.0), (frame.numframes * 1.0, 0.0)]
+                if j < len(frame.frames) - 1:
+                    co.append ((len(frame.frames) * 1.0, 0.0))
+                data.append((subframe.key, co))
+                if subframe.key in other_keys:
+                    del(other_keys[other_keys.index(subframe.key)])
+            co = [(1.0, 0.0), (len(frame.frames) * 1.0, 0.0)]
             for k in other_keys:
                 data.append((k, co))
         else:
@@ -349,25 +358,23 @@ def get_base(name):
 
 def merge_frames(mdl):
     i = 0
-    while i < mdl.numframes:
+    while i < len(mdl.frames):
         if mdl.frames[i].type:
             i += 1
             continue
         base = get_base(mdl.frames[i].name)
         j = i + 1
-        while j < mdl.numframes:
+        while j < len(mdl.frames):
             if mdl.frames[j].type:
                 break
             if get_base(mdl.frames[j].name) != base:
                 break
             j += 1
-        f = frame()
+        f = MDL.Frame()
         f.name = base
-        f.numframes = j - i
         f.type = 1
         f.frames = mdl.frames[i:j]
         mdl.frames[i:j] = [f]
-        mdl.numframes -= f.numframes - 1
         i += 1
 
 def import_mdl(operator, context, filepath):
@@ -376,7 +383,10 @@ def import_mdl(operator, context, filepath):
     for obj in bpy.context.scene.objects:
         obj.select = False
 
-    mdl = load_mdl(filepath)
+    mdl = MDL()
+    if not mdl.read(filepath):
+        #FIXME report?
+        return {'CANCELED'}
     faces, uvs = make_faces (mdl)
     verts = make_verts (mdl, 0)
     mdl.mesh = bpy.data.meshes.new(mdl.name)
@@ -386,7 +396,7 @@ def import_mdl(operator, context, filepath):
     bpy.context.scene.objects.active = mdl.obj
     mdl.obj.select = True
     setup_skins (mdl, uvs)
-    if mdl.numframes > 1 or mdl.frames[0].type:
+    if len(mdl.frames) > 1 or mdl.frames[0].type:
         build_shape_keys(mdl)
         merge_frames(mdl)
         build_actions(mdl)
