@@ -309,7 +309,7 @@ def make_shape_key(mdl, framenum, subframenum=0):
 
 def build_shape_keys(mdl):
     mdl.keys = []
-    mdl.obj.shape_key_add("Basis")  # FIXME do I want this?
+    mdl.obj.shape_key_add("Basis")
     for i, frame in enumerate(mdl.frames):
         frame = mdl.frames[i]
         if frame.type:
@@ -362,13 +362,13 @@ def build_actions(mdl):
                 data.append((k, co))
         set_keys (act, data)
 
-def get_base(name):
-    i = 0
-    while i < len(name) and name[i] not in "0123456789":
-        i += 1
-    return name[:i]
-
 def merge_frames(mdl):
+    def get_base(name):
+        i = 0
+        while i < len(name) and name[i] not in "0123456789":
+            i += 1
+        return name[:i]
+
     i = 0
     while i < len(mdl.frames):
         if mdl.frames[i].type:
