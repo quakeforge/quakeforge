@@ -53,7 +53,7 @@ class MDL:
 
         def read_pixels(self, mdl):
             size = self.width * self.height
-            self.pixels = mdl.read_string(size)
+            self.pixels = mdl.read_bytes(size)
 
     class STVert:
         def __init__(self):
@@ -142,8 +142,15 @@ class MDL:
             return data[0]
         return data
 
-    def read_string(self, size):
+    def read_bytes(self, size):
         return self.file.read(size)
+
+    def read_string(self, size):
+        data = self.file.read(size)
+        s = ""
+        for c in data:
+            s = s + chr(c)
+        return s
 
     def __init__(self):
         pass
@@ -153,7 +160,7 @@ class MDL:
         self.name = self.name.split('.')[0]
         self.ident = self.read_string(4)
         self.version = self.read_int()
-        if self.ident not in [b"IDPO", b"MD16"] or self.version not in [3, 6]:
+        if self.ident not in ["IDPO", "MD16"] or self.version not in [3, 6]:
             return None
         self.scale = Vector(self.read_float(3))
         self.scale_origin = Vector(self.read_float(3))
