@@ -23,9 +23,8 @@ import bpy
 from bpy_extras.object_utils import object_data_add
 from mathutils import Vector,Matrix
 
-from . import quakepal
-from . import mdl
-MDL = mdl.MDL
+from .quakepal import palette
+from .mdl import MDL
 
 def export_mdl(operator, context, filepath):
     return {'FINISHED'}

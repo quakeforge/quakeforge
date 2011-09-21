@@ -23,9 +23,8 @@ import bpy
 from bpy_extras.object_utils import object_data_add
 from mathutils import Vector,Matrix
 
-from . import quakepal
-from . import mdl
-MDL = mdl.MDL
+from .quakepal import palette
+from .mdl import MDL
 
 def make_verts(mdl, framenum, subframenum=0):
     frame = mdl.frames[framenum]
@@ -74,7 +73,7 @@ def load_skins(mdl):
         d = skin.pixels
         for j in range(mdl.skinheight):
             for k in range(mdl.skinwidth):
-                c = quakepal.palette[d[j * mdl.skinwidth + k]]
+                c = palette[d[j * mdl.skinwidth + k]]
                 # quake textures are top to bottom, but blender images
                 # are bottom to top
                 l = ((mdl.skinheight - 1 - j) * mdl.skinwidth + k) * 4
