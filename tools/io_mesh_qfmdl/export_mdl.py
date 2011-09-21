@@ -27,4 +27,22 @@ from .quakepal import palette
 from .mdl import MDL
 
 def export_mdl(operator, context, filepath):
+    obj = context.active_object
+    mesh = obj.data
+    faces_ok = True
+    save_select = []
+    for f in mesh.faces:
+        save_select.append(f.select)
+        f.select = False
+        if len(f.vertices) > 3:
+            f.select = True
+            faces_ok = False
+    if not faces_ok:
+        mesh.update()
+        operator.report({'ERROR'},
+                        "Mesh has faces with more than 3 vertices.")
+        return {'CANCELLED'}
+    #reset selection to what it was before the check.
+    for f, s in map(lambda x,y: (x, y), mesh.faces, save_select):
+        f.select = s
     return {'FINISHED'}
