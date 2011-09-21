@@ -43,6 +43,53 @@ def export_mdl(operator, context, filepath):
                         "Mesh has faces with more than 3 vertices.")
         return {'CANCELLED'}
     #reset selection to what it was before the check.
-    for f, s in map(lambda x,y: (x, y), mesh.faces, save_select):
+    for f, s in map(lambda x, y: (x, y), mesh.faces, save_select):
         f.select = s
+    mdl = MDL()
+    mdl.name = obj.name
+    mdl.ident = "IDPO"      #only 8 bit for now
+    mdl.version = 6         #write only version 6 (nothing usable uses 3)
+    mdl.scale = (1.0, 1.0, 1.0)         #FIXME
+    mdl.scale_origin = (0.0, 0.0, 0.0)  #FIXME
+    mdl.boundingradius = 1.0            #FIXME
+    mdl.eyeposition = (0.0, 0.0, 0.0)   #FIXME
+    mdl.synctype = 0        #FIXME config (right default?)
+    mdl.flags = 0           #FIXME config
+    mdl.size = 0            #FIXME ???
+    mdl.skins = []
+    mdl.stverts = []
+    mdl.tris = []
+    mdl.frames = []
+    if (not mesh.uv_textures or not mesh.uv_textures[0].data
+        or not mesh.uv_textures[0].data[0].image):
+        mdl.skinwidth = mdl.skinheight = 4
+        skin = MDL.Skin()
+        skin.type = 0
+        skin.pixels = bytes(mdl.skinwidth * mdl.skinheight) # black skin
+    else:
+        image = mesh.uv_textures[0].data[0].image
+        mdl.skinwidth, mdl.skinheight = image.size
+        skin = MDL.Skin()
+        skin.type = 0
+        skin.pixels = bytearray(mdl.skinwidth * mdl.skinheight) # preallocate
+        for y in range(mdl.skinheight):
+            for x in range(mdl.skinwidth):
+                oi = y * mdl.skinwidth + x
+                # quake textures are top to bottom, but blender images
+                # are bottom to top
+                ii = ((mdl.skinheight - 1 - y) * mdl.skinwidth + x) * 4
+                rgb = image.pixels[ii : ii + 3] # ignore alpha
+                rgb = map(lambda x: int(x * 255 + 0.5), rgb)
+                best = (3*256*256, -1)
+                for i, p in enumerate(palette):
+                    if i > 255:     # should never happen
+                        break
+                    r = 0
+                    for x in map (lambda a, b: (a - b) ** 2, rgb, p):
+                        r += x
+                    if r < best[0]:
+                        best = (r, i)
+                skin.pixels[i] = best[1]
+    mdl.skins.append(skin)
+    mdl.write (filepath)
     return {'FINISHED'}

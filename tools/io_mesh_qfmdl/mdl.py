@@ -19,7 +19,7 @@
 
 # <pep8 compliant>
 
-from struct import unpack
+from struct import unpack, pack
 
 from mathutils import Vector
 
@@ -45,6 +45,15 @@ class MDL:
                 return self
             self.read_pixels(mdl)
             return self
+        def write(self, mdl, sub=9):
+            if not sub:
+                mdl.write_int(self.type)
+                if self.type:
+                    mdl.write_float(self.times)
+                    for subskin in self.skins:
+                        subskin.write(mdl, 1)
+                    return
+            mdl.write_bytes(self.pixels)
 
         def read_pixels(self, mdl):
             size = self.width * self.height
@@ -147,6 +156,32 @@ class MDL:
             s = s + chr(c)
         return s
 
+    def write_byte(self, data):
+        if not hasattr(data, "__len__"):
+            data = (data,)
+        self.file.write(pack(("<%dB" % len(data)), *data))
+
+    def write_int(self, data):
+        if not hasattr(data, "__len__"):
+            data = (data,)
+        self.file.write(pack(("<%di" % len(data)), *data))
+
+    def write_float(self, data):
+        if not hasattr(data, "__len__"):
+            data = (data,)
+        self.file.write(pack(("<%df" % len(data)), *data))
+
+    def write_bytes(self, data, size=-1):
+        if size == -1:
+            size = len(data)
+        self.file.write(data[:size])
+        if size > len(data):
+            self.file.write(bytes(size - len(data)))
+
+    def write_string(self, data, size=-1):
+        data = data.encode()
+        self.write_bytes(data, size)
+
     def __init__(self):
         pass
     def read(self, filepath):
@@ -185,3 +220,32 @@ class MDL:
         for i in range(numframes):
             self.frames.append(MDL.Frame().read(self, numverts))
         return self
+
+    def write (self, filepath):
+        self.file = open(filepath, "wb")
+        self.write_string (self.ident, 4)
+        self.write_int (self.version)
+        self.write_float (self.scale)
+        self.write_float (self.scale_origin)
+        self.write_float (self.boundingradius)
+        self.write_float (self.eyeposition)
+        self.write_int (len(self.skins))
+        self.write_int ((self.skinwidth, self.skinheight))
+        self.write_int (len(self.stverts))
+        self.write_int (len(self.tris))
+        self.write_int (len(self.frames))
+        self.write_int (self.synctype)
+        self.write_int (self.flags)
+        self.write_float (self.size)
+        # write out the skin data
+        for skin in self.skins:
+            skin.write(self)
+        #write out the st verts (uv map)
+        for stvert in self.stverts:
+            stvert.write(self)
+        #write out the tris
+        for tri in self.tris:
+            tri.write(self)
+        #write out the frames
+        for frame in self.frames:
+            frame.write(self)
