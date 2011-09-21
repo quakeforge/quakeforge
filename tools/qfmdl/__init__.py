@@ -54,6 +54,8 @@ class ImportMDL6(bpy.types.Operator, ImportHelper):
     bl_idname = "import_mesh.quake_mdl_v6"
     bl_label = "Import MDL"
 
+    filename_ext = ".mdl"
+
     def execute(self, context):
         from . import import_mdl
         keywords = self.as_keywords ()
@@ -63,9 +65,13 @@ class ExportMDL6(bpy.types.Operator, ExportHelper):
     '''Save a Quake MDL (v6) File'''
 
     bl_idname = "export_mesh.quake_mdl_v6"
-    bl_label = 'Export MDL'
+    bl_label = "Export MDL"
+
+    filename_ext = ".mdl"
 
     def execute(self, context):
+        from . import export_mdl
+        keywords = self.as_keywords ()
         return export_mdl.export_mdl(self, context, **keywords)
 
 
