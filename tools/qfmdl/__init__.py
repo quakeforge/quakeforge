@@ -55,10 +55,11 @@ class ImportMDL6(bpy.types.Operator, ImportHelper):
     bl_label = "Import MDL"
 
     filename_ext = ".mdl"
+    filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
 
     def execute(self, context):
         from . import import_mdl
-        keywords = self.as_keywords ()
+        keywords = self.as_keywords (ignore=("filter_glob",))
         return import_mdl.import_mdl(self, context, **keywords)
 
 class ExportMDL6(bpy.types.Operator, ExportHelper):
@@ -68,10 +69,16 @@ class ExportMDL6(bpy.types.Operator, ExportHelper):
     bl_label = "Export MDL"
 
     filename_ext = ".mdl"
+    filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
+
+    @classmethod
+    def poll(cls, context):
+        return (context.active_object != None
+                and type(context.active_object.data) == bpy.types.Mesh)
 
     def execute(self, context):
         from . import export_mdl
-        keywords = self.as_keywords ()
+        keywords = self.as_keywords (ignore=("check_existing", "filter_glob"))
         return export_mdl.export_mdl(self, context, **keywords)
 
 
