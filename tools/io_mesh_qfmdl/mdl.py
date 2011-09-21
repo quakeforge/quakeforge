@@ -21,8 +21,6 @@
 
 from struct import unpack, pack
 
-from mathutils import Vector
-
 class MDL:
     class Skin:
         def __init__(self):
@@ -192,10 +190,10 @@ class MDL:
         self.version = self.read_int()
         if self.ident not in ["IDPO", "MD16"] or self.version not in [3, 6]:
             return None
-        self.scale = Vector(self.read_float(3))
-        self.scale_origin = Vector(self.read_float(3))
+        self.scale = self.read_float(3)
+        self.scale_origin = self.read_float(3)
         self.boundingradius = self.read_float()
-        self.eyeposition = Vector(self.read_float(3))
+        self.eyeposition = self.read_float(3)
         numskins = self.read_int()
         self.skinwidth, self.skinheight = self.read_int(2)
         numverts, numtris, numframes = self.read_int(3)
