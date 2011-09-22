@@ -43,7 +43,7 @@ class MDL:
                 return self
             self.read_pixels(mdl)
             return self
-        def write(self, mdl, sub=9):
+        def write(self, mdl, sub=0):
             if not sub:
                 mdl.write_int(self.type)
                 if self.type:
@@ -52,7 +52,6 @@ class MDL:
                         subskin.write(mdl, 1)
                     return
             mdl.write_bytes(self.pixels)
-
         def read_pixels(self, mdl):
             size = self.width * self.height
             self.pixels = mdl.read_bytes(size)
@@ -64,6 +63,9 @@ class MDL:
             self.onseam = mdl.read_int()
             self.s, self.t = mdl.read_int(2)
             return self
+        def write(self, mdl):
+            mdl.write_int(self.onseam)
+            mdl.write_int((self.s, self.t))
 
     class Tri:
         def __init__(self):
@@ -72,6 +74,9 @@ class MDL:
             self.facesfront = mdl.read_int()
             self.verts = mdl.read_int(3)
             return self
+        def write(self, mdl):
+            mdl.write_int(self.facesfront)
+            mdl.write_int(self.verts)
 
     class Frame:
         def __init__(self):
@@ -93,7 +98,19 @@ class MDL:
             self.read_name(mdl)
             self.read_verts(mdl, numverts)
             return self
-
+        def write(self, mdl, sub=0):
+            if not sub:
+                mdl.write_int(self.type)
+                if self.type:
+                    mdl.write_int(len(self.frames))
+                    self.write_bounds(mdl)
+                    mdl.write_float(self.times)
+                    for frame in self.frames:
+                        frame.write(mdl, 1)
+                    return
+            self.write_bounds(mdl)
+            self.write_name(mdl)
+            self.write_verts(mdl)
         def read_name(self, mdl):
             if mdl.version == 6:
                 name = mdl.read_string(16)
@@ -102,15 +119,22 @@ class MDL:
             if "\0" in name:
                 name = name[:name.index("\0")]
             self.name = name
-
+        def write_name(self, mdl):
+            if mdl.version == 6:
+                mdl.write_string(self.name, 16)
         def read_bounds(self, mdl):
             self.mins = mdl.read_byte(4)[:3]    #discard normal index
             self.maxs = mdl.read_byte(4)[:3]    #discard normal index
-
+        def write_bounds(self, mdl):
+            mdl.write_byte(self.mins + (0,))
+            mdl.write_byte(self.maxs + (0,))
         def read_verts(self, mdl, num):
             self.verts = []
             for i in range(num):
                 self.verts.append(MDL.Vert().read(mdl))
+        def write_verts(self, mdl):
+            for vert in self.verts:
+                vert.write(mdl)
 
     class Vert:
         def __init__(self):
@@ -119,6 +143,9 @@ class MDL:
             self.r = mdl.read_byte(3)
             self.ni = mdl.read_byte()
             return self
+        def write(self, mdl):
+            mdl.write_byte(self.r)
+            mdl.write_byte(self.ni)
 
     def read_byte(self, count=1):
         size = 1 * count
@@ -233,8 +260,9 @@ class MDL:
         self.write_int (len(self.tris))
         self.write_int (len(self.frames))
         self.write_int (self.synctype)
-        self.write_int (self.flags)
-        self.write_float (self.size)
+        if self.version == 6:
+            self.write_int (self.flags)
+            self.write_float (self.size)
         # write out the skin data
         for skin in self.skins:
             skin.write(self)
