@@ -74,12 +74,12 @@ def export_mdl(operator, context, filepath):
         skin.pixels = bytearray(mdl.skinwidth * mdl.skinheight) # preallocate
         for y in range(mdl.skinheight):
             for x in range(mdl.skinwidth):
-                oi = y * mdl.skinwidth + x
+                outind = y * mdl.skinwidth + x
                 # quake textures are top to bottom, but blender images
                 # are bottom to top
-                ii = ((mdl.skinheight - 1 - y) * mdl.skinwidth + x) * 4
-                rgb = image.pixels[ii : ii + 3] # ignore alpha
-                rgb = map(lambda x: int(x * 255 + 0.5), rgb)
+                inind = ((mdl.skinheight - 1 - y) * mdl.skinwidth + x) * 4
+                rgb = image.pixels[inind : inind + 3] # ignore alpha
+                rgb = tuple(map(lambda x: int(x * 255 + 0.5), rgb))
                 best = (3*256*256, -1)
                 for i, p in enumerate(palette):
                     if i > 255:     # should never happen
@@ -89,7 +89,7 @@ def export_mdl(operator, context, filepath):
                         r += x
                     if r < best[0]:
                         best = (r, i)
-                skin.pixels[i] = best[1]
+                skin.pixels[outind] = best[1]
     mdl.skins.append(skin)
     mdl.write (filepath)
     return {'FINISHED'}
