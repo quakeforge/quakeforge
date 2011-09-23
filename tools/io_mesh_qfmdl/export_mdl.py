@@ -26,9 +26,10 @@ from mathutils import Vector,Matrix
 from .quakepal import palette
 from .mdl import MDL
 
-def export_mdl(operator, context, filepath):
-    obj = context.active_object
-    mesh = obj.data
+def check_faces(mesh):
+    #Check that all faces are tris because mdl does not support anything else.
+    #Because the diagonal on which a quad is split can make a big difference,
+    #quad to tri conversion will not be done automatically.
     faces_ok = True
     save_select = []
     for f in mesh.faces:
@@ -39,27 +40,14 @@ def export_mdl(operator, context, filepath):
             faces_ok = False
     if not faces_ok:
         mesh.update()
-        operator.report({'ERROR'},
-                        "Mesh has faces with more than 3 vertices.")
-        return {'CANCELLED'}
+        return False
     #reset selection to what it was before the check.
     for f, s in map(lambda x, y: (x, y), mesh.faces, save_select):
         f.select = s
-    mdl = MDL()
-    mdl.name = obj.name
-    mdl.ident = "IDPO"      #only 8 bit for now
-    mdl.version = 6         #write only version 6 (nothing usable uses 3)
-    mdl.scale = (1.0, 1.0, 1.0)         #FIXME
-    mdl.scale_origin = (0.0, 0.0, 0.0)  #FIXME
-    mdl.boundingradius = 1.0            #FIXME
-    mdl.eyeposition = (0.0, 0.0, 0.0)   #FIXME
-    mdl.synctype = 0        #FIXME config (right default?)
-    mdl.flags = 0           #FIXME config
-    mdl.size = 0            #FIXME ???
-    mdl.skins = []
-    mdl.stverts = []
-    mdl.tris = []
-    mdl.frames = []
+    mesh.update()
+    return True
+
+def make_skin(mdl, mesh):
     if (not mesh.uv_textures or not mesh.uv_textures[0].data
         or not mesh.uv_textures[0].data[0].image):
         mdl.skinwidth = mdl.skinheight = 4
@@ -91,5 +79,15 @@ def export_mdl(operator, context, filepath):
                         best = (r, i)
                 skin.pixels[outind] = best[1]
     mdl.skins.append(skin)
-    mdl.write (filepath)
+
+def export_mdl(operator, context, filepath):
+    obj = context.active_object
+    mesh = obj.data
+    if not check_faces (mesh):
+        operator.report({'ERROR'},
+                        "Mesh has faces with more than 3 vertices.")
+        return {'CANCELLED'}
+    mdl = MDL(obj.name)
+    make_skin(mdl, mesh)
+    mdl.write(filepath)
     return {'FINISHED'}

@@ -207,7 +207,21 @@ class MDL:
         data = data.encode()
         self.write_bytes(data, size)
 
-    def __init__(self):
+    def __init__(self, name = "mdl"):
+        self.name = name
+        self.ident = "IDPO"     #only 8 bit for now
+        self.version = 6        #write only version 6 (nothing usable uses 3)
+        self.scale = (1.0, 1.0, 1.0)        #FIXME
+        self.scale_origin = (0.0, 0.0, 0.0) #FIXME
+        self.boundingradius = 1.0           #FIXME
+        self.eyeposition = (0.0, 0.0, 0.0)  #FIXME
+        self.synctype = 0       #FIXME config (right default?)
+        self.flags = 0          #FIXME config
+        self.size = 0           #FIXME ???
+        self.skins = []
+        self.stverts = []
+        self.tris = []
+        self.frames = []
         pass
     def read(self, filepath):
         self.file = open(filepath, "rb")
