@@ -80,14 +80,76 @@ def make_skin(mdl, mesh):
                 skin.pixels[outind] = best[1]
     mdl.skins.append(skin)
 
+def build_tris(mesh):
+    # mdl files have a 1:1 relationship between stverts and 3d verts.
+    # a bit sucky, but it does allow faces to take less memory
+    #
+    # modelgen's algorithm for generating UVs is very efficient in that no
+    # vertices are duplicated (thanks to the onseam flag), but it can result
+    # in fairly nasty UV layouts, and worse: the artist has no control over
+    # the layout. However, there seems to be nothing in the mdl format
+    # preventing the use of duplicate 3d vertices to allow complete freedom
+    # of the UV layout.
+    uvfaces = mesh.uv_textures[0].data
+    stverts = []
+    tris = []
+    vertmap = []    # map mdl vert num to blender vert num (for 3d verts)
+    uvdict = {}
+    for face, uvface in map(lambda a,b: (a,b), mesh.faces, uvfaces):
+        fv = tuple(face.vertices)
+        uv = tuple(uvface.uv)
+        tv = []
+        for v, u in map(lambda a,b: (a,b), fv, uv):
+            k = tuple(u)
+            if k not in uvdict:
+                uvdict[k] = len(stverts)
+                vertmap.append(v)
+                stverts.append(u)
+            tv.append(uvdict[k])
+        # blender's and quake's vertex order seem to be opposed
+        tv.reverse()
+        tris.append(MDL.Tri(tv))
+    return tris, stverts, vertmap
+
+def convert_stverts(mdl, stverts):
+    for i, st in enumerate (stverts):
+        s, t = st
+        s = int (s * mdl.skinwidth + 0.5)
+        t = int (t * mdl.skinheight + 0.5)
+        # ensure st is within the skin
+        s = ((s % mdl.skinwidth) + mdl.skinwidth) % mdl.skinwidth
+        t = ((t % mdl.skinheight) + mdl.skinheight) % mdl.skinheight
+        stverts[i] = MDL.STVert ((s, t))
+
+def make_frame(mesh, vertmap):
+    frame = MDL.Frame()
+    for v in vertmap:
+        vert = MDL.Vert(tuple(mesh.vertices[v].co))
+        frame.add_vert(vert)
+    return frame
+
+def scale_verts(mdl):
+    tf = MDL.Frame()
+    for f in mdl.frames:
+        tf.add_frame(f, 0.0)    # let the frame class do the dirty work for us
+    size = Vector(tf.maxs) - Vector(tf.mins)
+    mdl.scale_origin = tf.mins
+    mdl.scale = tuple(map(lambda x: x / 255.0, size))
+    for f in mdl.frames:
+        f.scale(mdl)
+
 def export_mdl(operator, context, filepath):
     obj = context.active_object
-    mesh = obj.data
+    mesh = obj.to_mesh (context.scene, True, 'PREVIEW') #wysiwyg?
     if not check_faces (mesh):
         operator.report({'ERROR'},
                         "Mesh has faces with more than 3 vertices.")
         return {'CANCELLED'}
     mdl = MDL(obj.name)
     make_skin(mdl, mesh)
+    mdl.tris, mdl.stverts, vertmap = build_tris(mesh)
+    convert_stverts (mdl, mdl.stverts)
+    mdl.frames.append(make_frame(mesh, vertmap))
+    scale_verts(mdl)
     mdl.write(filepath)
     return {'FINISHED'}
