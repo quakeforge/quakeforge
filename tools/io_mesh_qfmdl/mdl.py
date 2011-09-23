@@ -57,7 +57,11 @@ class MDL:
             self.pixels = mdl.read_bytes(size)
 
     class STVert:
-        def __init__(self):
+        def __init__(self, st=None, onseam=False):
+            if not st:
+                st = (0, 0)
+            self.onseam = onseam
+            self.s, self.t = st
             pass
         def read(self, mdl):
             self.onseam = mdl.read_int()
@@ -68,8 +72,11 @@ class MDL:
             mdl.write_int((self.s, self.t))
 
     class Tri:
-        def __init__(self):
-            pass
+        def __init__(self, verts=None, facesfront=True):
+            if not verts:
+                verts = (0, 0, 0)
+            self.facesfront = facesfront
+            self.verts = verts
         def read(self, mdl):
             self.facesfront = mdl.read_int()
             self.verts = mdl.read_int(3)
@@ -80,7 +87,36 @@ class MDL:
 
     class Frame:
         def __init__(self):
-            pass
+            self.type = 0
+            self.name = ""
+            self.mins = [0, 0, 0]
+            self.maxs = [0, 0, 0]
+            self.verts = []
+            self.frames = []
+            self.times = []
+        def add_vert(self, vert):
+            self.verts.append(vert)
+            for i, v in enumerate(vert.r):
+                self.mins[i] = min(self.mins[i], v)
+                self.maxs[i] = max(self.maxs[i], v)
+        def add_frame(self, frame, time):
+            self.type = 1
+            self.frames.append(frame)
+            self.times.append(time)
+            for i in range(3):
+                self.mins[i] = min(self.mins[i], frame.mins[i])
+                self.maxs[i] = max(self.maxs[i], frame.maxs[i])
+        def scale(self, mdl):
+            self.mins = tuple(map(lambda x, s, t: int((x - t) / s),
+                                  self.mins, mdl.scale, mdl.scale_origin))
+            self.maxs = tuple(map(lambda x, s, t: int((x - t) / s),
+                                  self.maxs, mdl.scale, mdl.scale_origin))
+            if self.type:
+                for subframe in self.frames:
+                    subframe.scale(mdl)
+            else:
+                for vert in self.verts:
+                    vert.scale(mdl)
         def read(self, mdl, numverts, sub=0):
             if sub:
                 self.type = 0
@@ -137,7 +173,11 @@ class MDL:
                 vert.write(mdl)
 
     class Vert:
-        def __init__(self):
+        def __init__(self, r=None, ni=0):
+            if not r:
+                r = (0, 0, 0)
+            self.r = r
+            self.ni = ni
             pass
         def read(self, mdl):
             self.r = mdl.read_byte(3)
@@ -146,6 +186,9 @@ class MDL:
         def write(self, mdl):
             mdl.write_byte(self.r)
             mdl.write_byte(self.ni)
+        def scale(self, mdl):
+            self.r = tuple(map(lambda x, s, t: int((x - t) / s),
+                               self.r, mdl.scale, mdl.scale_origin))
 
     def read_byte(self, count=1):
         size = 1 * count
