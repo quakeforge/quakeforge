@@ -96,8 +96,11 @@ def build_tris(mesh):
     vertmap = []    # map mdl vert num to blender vert num (for 3d verts)
     uvdict = {}
     for face, uvface in map(lambda a,b: (a,b), mesh.faces, uvfaces):
-        fv = tuple(face.vertices)
-        uv = tuple(uvface.uv)
+        fv = list(face.vertices)
+        uv = list(uvface.uv)
+        # blender's and quake's vertex order seem to be opposed
+        fv.reverse()
+        uv.reverse()
         tv = []
         for v, u in map(lambda a,b: (a,b), fv, uv):
             k = tuple(u)
@@ -106,8 +109,6 @@ def build_tris(mesh):
                 vertmap.append(v)
                 stverts.append(u)
             tv.append(uvdict[k])
-        # blender's and quake's vertex order seem to be opposed
-        tv.reverse()
         tris.append(MDL.Tri(tv))
     return tris, stverts, vertmap
 

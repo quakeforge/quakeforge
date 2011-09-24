@@ -48,9 +48,7 @@ def make_faces(mdl):
     faces = []
     uvs = []
     for tri in mdl.tris:
-        tv = tri.verts
-        tv = tv[2], tv[1], tv[0]    # flip the normal by reversing the winding
-        faces.append (tv)
+        tv = list(tri.verts)
         sts = []
         for v in tri.verts:
             stv = mdl.stverts[v]
@@ -61,7 +59,15 @@ def make_faces(mdl):
             # quake textures are top to bottom, but blender images
             # are bottom to top
             sts.append((s * 1.0 / mdl.skinwidth, 1 - t * 1.0 / mdl.skinheight))
-        sts = sts[2], sts[1], sts[0]    # to match face vert reversal
+        # blender's and quake's vertex order seem to be opposed
+        tv.reverse()
+        sts.reverse()
+        # annoyingly, blender can't have 0 in the final vertex, so rotate the
+        # face vertices and uvs
+        if not tv[2]:
+            tv = [tv[2]] + tv[:2]
+            sts = [sts[2]] + sts[:2]
+        faces.append (tv)
         uvs.append(sts)
     return faces, uvs
 
