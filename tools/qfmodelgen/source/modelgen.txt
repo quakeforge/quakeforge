@@ -1,0 +1,25 @@
+$modelname <name>			#output name
+$base <name>				#basis model
+$cd	<path>					#source path base
+$sync
+$origin <X> <Y> <X>			#model origin offset
+$eyeposition <X> <Y> <Z>	#self explanatory :)
+$scale <scale>				#scale factor
+$flags NUM					#entity effects
+	1	EF_ROCKET
+	2	EF_GRENADE
+	4	EF_GIB
+	8	EF_ROTATE
+	16	EF_TRACER
+	32	EF_ZOMGIB
+	64	EF_TRACER2
+	128	EF_TRACER3
+	4096 EF_GLOWTRAIL	(qf ext? nehahra?)
+$frame <name>+				#frame grabbing
+$skin <name> [interval=0.1]	#skin grabbing
+$framegroupstart			#auto-animated frames
+	$frame <name> [interval]
+	$framegroupend
+$skingroupstart				#auto-animated skins
+	$skin
+	$skingroupend
