@@ -136,6 +136,8 @@ def scale_verts(mdl):
     for f in mdl.frames:
         tf.add_frame(f, 0.0)    # let the frame class do the dirty work for us
     size = Vector(tf.maxs) - Vector(tf.mins)
+    rsqr = tuple(map(lambda a, b: max(abs(a), abs(b)) ** 2, tf.mins, tf.maxs))
+    mdl.boundingradius = (rsqr[0] + rsqr[1] + rsqr[2]) ** 0.5
     mdl.scale_origin = tf.mins
     mdl.scale = tuple(map(lambda x: x / 255.0, size))
     for f in mdl.frames:
