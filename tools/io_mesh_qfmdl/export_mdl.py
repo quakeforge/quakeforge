@@ -143,6 +143,19 @@ def scale_verts(mdl):
     for f in mdl.frames:
         f.scale(mdl)
 
+def calc_average_area(mdl):
+    frame = mdl.frames[0]
+    if frame.type:
+        frame = frame.frames[0]
+    totalarea = 0.0
+    for tri in mdl.tris:
+        verts = tuple(map(lambda i: frame.verts[i], tri.verts))
+        a = Vector(verts[0].r) - Vector(verts[1].r)
+        b = Vector(verts[2].r) - Vector(verts[1].r)
+        c = a.cross(b)
+        totalarea += (c * c) ** 0.5 / 2.0
+    return totalarea / len(mdl.tris)
+
 def export_mdl(operator, context, filepath):
     obj = context.active_object
     mesh = obj.to_mesh (context.scene, True, 'PREVIEW') #wysiwyg?
@@ -155,6 +168,7 @@ def export_mdl(operator, context, filepath):
     mdl.tris, mdl.stverts, vertmap = build_tris(mesh)
     convert_stverts (mdl, mdl.stverts)
     mdl.frames.append(make_frame(mesh, vertmap))
+    mdl.size = calc_average_area(mdl)
     scale_verts(mdl)
     mdl.write(filepath)
     return {'FINISHED'}
