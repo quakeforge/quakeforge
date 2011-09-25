@@ -121,8 +121,8 @@ def convert_stverts(mdl, stverts):
         s, t = st
         # quake textures are top to bottom, but blender images
         # are bottom to top
-        s = int (s * mdl.skinwidth + 0.5)
-        t = int ((1 - t) * mdl.skinheight + 0.5)
+        s = int (s * (mdl.skinwidth - 1) + 0.5)
+        t = int ((1 - t) * (mdl.skinheight - 1) + 0.5)
         # ensure st is within the skin
         s = ((s % mdl.skinwidth) + mdl.skinwidth) % mdl.skinwidth
         t = ((t % mdl.skinheight) + mdl.skinheight) % mdl.skinheight
