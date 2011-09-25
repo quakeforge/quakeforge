@@ -60,24 +60,28 @@ def make_skin(mdl, mesh):
         skin = MDL.Skin()
         skin.type = 0
         skin.pixels = bytearray(mdl.skinwidth * mdl.skinheight) # preallocate
+        cache = {}
+        pixels = image.pixels[:]
         for y in range(mdl.skinheight):
             for x in range(mdl.skinwidth):
                 outind = y * mdl.skinwidth + x
                 # quake textures are top to bottom, but blender images
                 # are bottom to top
                 inind = ((mdl.skinheight - 1 - y) * mdl.skinwidth + x) * 4
-                rgb = image.pixels[inind : inind + 3] # ignore alpha
+                rgb = pixels[inind : inind + 3] # ignore alpha
                 rgb = tuple(map(lambda x: int(x * 255 + 0.5), rgb))
-                best = (3*256*256, -1)
-                for i, p in enumerate(palette):
-                    if i > 255:     # should never happen
-                        break
-                    r = 0
-                    for x in map (lambda a, b: (a - b) ** 2, rgb, p):
-                        r += x
-                    if r < best[0]:
-                        best = (r, i)
-                skin.pixels[outind] = best[1]
+                if rgb not in cache:
+                    best = (3*256*256, -1)
+                    for i, p in enumerate(palette):
+                        if i > 255:     # should never happen
+                            break
+                        r = 0
+                        for x in map (lambda a, b: (a - b) ** 2, rgb, p):
+                            r += x
+                        if r < best[0]:
+                            best = (r, i)
+                    cache[rgb] = best[1]
+                skin.pixels[outind] = cache[rgb]
     mdl.skins.append(skin)
 
 def build_tris(mesh):
