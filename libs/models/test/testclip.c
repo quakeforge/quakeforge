@@ -74,6 +74,27 @@ hull_t hull2 = {
 	{0, 0, 0},
 };
 
+mclipnode_t clipnodes3[] = {
+	{  0, {             2,              1}},
+	{  1, {CONTENTS_SOLID, CONTENTS_EMPTY}},
+	{  2, {CONTENTS_SOLID, CONTENTS_WATER}},
+};
+
+mplane_t planes3[] = {
+	{{1, 0, 0},  32, 0, 0},
+	{{1, 0, 0}, -32, 0, 0},
+	{{1, 0, 0},  48, 0, 0},
+};
+
+hull_t hull3 = {
+	clipnodes3,
+	planes3,
+	0,
+	2,
+	{0, 0, 0},
+	{0, 0, 0},
+};
+
 typedef struct {
 	vec3_t      extents;
 } box_t;
@@ -106,6 +127,11 @@ test_t tests[] = {
 	{0, &point, &hull2, {  0, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 0}},
 	{0, &point, &hull2, { 40, 0, 0}, {-88, 0, 0}, {0.0625, 0, 0, 1, 0}},
 	{0, &point, &hull2, {  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 1, 1, 0}},
+
+	{0, &point, &hull3, {-64, 0, 0}, { 64, 0, 0}, {  0.25, 0, 0, 1, 0}},
+	{0, &point, &hull3, {  0, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 0, 1}},
+	{0, &point, &hull3, { 40, 0, 0}, {-88, 0, 0}, {0.0625, 0, 0, 0, 1}},
+	{0, &point, &hull3, {  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 1, 0, 1}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
