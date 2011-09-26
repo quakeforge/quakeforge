@@ -123,7 +123,7 @@ qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, con
 		VectorSubtract (vec3_origin, plane->normal, trace->plane.normal);
 		trace->plane.dist = -plane->dist;
 	}
-
+#if 0
 	while (SV_HullPointContents (hull, hull->firstclipnode, mid)
 	== CONTENTS_SOLID)
 	{ // shouldn't really happen, but does occasionally
@@ -139,7 +139,7 @@ qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, con
 		for (i=0 ; i<3 ; i++)
 			mid[i] = p1[i] + frac*(p2[i] - p1[i]);
 	}
-
+#endif
 	trace->fraction = midf;
 	VectorCopy (mid, trace->endpos);
 
