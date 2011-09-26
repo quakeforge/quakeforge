@@ -1,4 +1,8 @@
-int SV_HullPointContents (hull_t *hull, int num, const vec3_t p)
+#include "QF/sys.h"
+#include "world.h"
+
+static int
+HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
 	float		d;
 	mclipnode_t	*node;
@@ -7,7 +11,7 @@ int SV_HullPointContents (hull_t *hull, int num, const vec3_t p)
 	while (num >= 0)
 	{
 		if (num < hull->firstclipnode || num > hull->lastclipnode)
-			Sys_Error ("SV_HullPointContents: bad node number");
+			Sys_Error ("HullPointContents: bad node number");
 	
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
@@ -30,7 +34,8 @@ int SV_HullPointContents (hull_t *hull, int num, const vec3_t p)
 #define	DIST_EPSILON	(0.03125)
 #endif
 
-qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2, trace_t *trace)
+static qboolean
+SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2, trace_t *trace)
 {
 	mclipnode_t	*node;
 	mplane_t	*plane;
@@ -102,7 +107,7 @@ qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, con
 	if (!SV_RecursiveHullCheck (hull, node->children[side], p1f, midf, p1, mid, trace) )
 		return false;
 
-	if (SV_HullPointContents (hull, node->children[side^1], mid)
+	if (HullPointContents (hull, node->children[side^1], mid)
 	!= CONTENTS_SOLID)
 // go past the node
 		return SV_RecursiveHullCheck (hull, node->children[side^1], midf, p2f, mid, p2, trace);
@@ -124,7 +129,7 @@ qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, con
 		trace->plane.dist = -plane->dist;
 	}
 #if 0
-	while (SV_HullPointContents (hull, hull->firstclipnode, mid)
+	while (HullPointContents (hull, hull->firstclipnode, mid)
 	== CONTENTS_SOLID)
 	{ // shouldn't really happen, but does occasionally
 		frac -= 0.1;
