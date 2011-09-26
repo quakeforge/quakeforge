@@ -14,8 +14,8 @@
 #endif
 
 mclipnode_t clipnodes0[] = {
-	{  0, { 1, -1}},
-	{  1, {-1, -2}},
+	{  0, {             1, CONTENTS_EMPTY}},
+	{  1, {CONTENTS_EMPTY, CONTENTS_SOLID}},
 };
 
 mplane_t planes0[] = {
@@ -33,9 +33,9 @@ hull_t hull0 = {
 };
 
 mclipnode_t clipnodes1[] = {
-	{  0, { 1, -2}},
-	{  1, { 2, -2}},
-	{  2, {-2, -1}},
+	{  0, {             1, CONTENTS_SOLID}},
+	{  1, {             2, CONTENTS_SOLID}},
+	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
 };
 
 mplane_t planes1[] = {
@@ -54,9 +54,9 @@ hull_t hull1 = {
 };
 
 mclipnode_t clipnodes2[] = {
-	{  0, { 2,  1}},
-	{  1, {-2, -2}},
-	{  2, {-2, -1}},
+	{  0, {             2,              1}},
+	{  1, {CONTENTS_SOLID, CONTENTS_SOLID}},
+	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
 };
 
 mplane_t planes2[] = {
