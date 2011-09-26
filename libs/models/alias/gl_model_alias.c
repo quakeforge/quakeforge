@@ -102,7 +102,7 @@ Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight)
 	}
 	// can't fill to filled color or transparent color (used as visited marker)
 	if ((fillcolor == filledcolor) || (fillcolor == 255)) {
-		Sys_MaskPrintf (SYS_DEV, "not filling skin from %d to %d\n",
+		Sys_MaskPrintf (SYS_GLT, "not filling skin from %d to %d\n",
 						fillcolor, filledcolor);
 		return;
 	}
@@ -160,6 +160,7 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 		}
 		fb_texnum = Mod_Fullbright (pskin, pheader->mdl.skinwidth,
 									pheader->mdl.skinheight, name);
+		Sys_MaskPrintf (SYS_GLT, "%s %d\n", name, fb_texnum);
 	}
 	if (group) {
 		snprintf (name, sizeof (name), "%s_%i_%i", modname, snum,
@@ -169,6 +170,7 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 	}
 	texnum = GL_LoadTexture (name, pheader->mdl.skinwidth,
 							 pheader->mdl.skinheight, pskin, true, false, 1);
+	Sys_MaskPrintf (SYS_GLT, "%s %d\n", name, texnum);
 	skindesc->texnum = texnum;
 	skindesc->fb_texnum = fb_texnum;
 	loadmodel->hasfullbrights = fb_texnum;
