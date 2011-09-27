@@ -156,5 +156,7 @@ MOD_TraceLine (hull_t *hull, int num,
 			   const vec3_t start_point, const vec3_t end_point,
 			   trace_t *trace)
 {
+	trace->fraction = 1;
+	trace->allsolid = true;
 	SV_RecursiveHullCheck (hull, num, 0, 1, start_point, end_point, trace);
 }
