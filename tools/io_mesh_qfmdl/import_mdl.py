@@ -231,6 +231,15 @@ def merge_frames(mdl):
         mdl.frames[i:j] = [f]
         i += 1
 
+def write_text(mdl):
+    string = "$eyeposition %g %g %g\n" % mdl.eyeposition
+    string += "$flags %d\n" % mdl.flags
+    if mdl.synctype:
+        string += "$sync\n"
+    txt = bpy.data.texts.new(mdl.name)
+    txt.from_string(string)
+    return txt.name
+
 def import_mdl(operator, context, filepath):
     bpy.context.user_preferences.edit.use_global_undo = False
 
@@ -259,6 +268,9 @@ def import_mdl(operator, context, filepath):
         build_shape_keys(mdl)
         merge_frames(mdl)
         build_actions(mdl)
+
+    operator.report({'INFO'},
+        "Extra settings saved in the %s text block." % write_text(mdl))
 
     mdl.mesh.update()
 

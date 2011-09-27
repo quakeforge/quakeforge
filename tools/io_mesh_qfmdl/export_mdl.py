@@ -168,6 +168,10 @@ def export_mdl(operator, context, filepath):
                         "Mesh has faces with more than 3 vertices.")
         return {'CANCELLED'}
     mdl = MDL(obj.name)
+    #FIXME this should be configurable
+    #FIXME use it
+    if mdl.name in bpy.data.texts:
+        mdl.script = bpy.data.texts[mdl.name].as_string()
     make_skin(mdl, mesh)
     mdl.tris, mdl.stverts, vertmap = build_tris(mesh)
     convert_stverts (mdl, mdl.stverts)
