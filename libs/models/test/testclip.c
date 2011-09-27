@@ -9,6 +9,8 @@
 
 #ifdef TEST_ID
 # include "trace-id.c"
+#elif defined(TEST_QF_BAD)
+# include "trace-qf-bad.c"
 #else
 # include "../trace.c"
 #endif
