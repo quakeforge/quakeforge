@@ -109,7 +109,7 @@ MOD_TraceLine (hull_t *hull, int num,
 	seen_solid = 0;
 	split_plane = 0;
 
-	trace->allsolid = false;
+	trace->allsolid = true;
 	trace->startsolid = false;
 	trace->inopen = false;
 	trace->inwater = false;
@@ -122,9 +122,10 @@ MOD_TraceLine (hull_t *hull, int num,
 					// this is the first leaf visited, thus the start leaf
 					trace->startsolid = seen_solid = true;
 				} else if (!seen_empty && seen_solid) {
-					// if crossing from one solid leaf to another, treat the
-					// whole trace as solid (this is what id does)
-					trace->allsolid = true;
+					// If crossing from one solid leaf to another, treat the
+					// whole trace as solid (this is what id does).
+					// However, since allsolid is initialized to true, no need
+					// to do anything.
 					return;
 				} else {
 					// crossing from an empty leaf to a solid leaf: the trace
@@ -134,6 +135,7 @@ MOD_TraceLine (hull_t *hull, int num,
 				}
 			} else {
 				seen_empty = true;
+				trace->allsolid = false;
 				if (num == CONTENTS_EMPTY)
 					trace->inopen = true;
 				else
