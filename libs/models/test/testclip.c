@@ -13,6 +13,13 @@
 # include "../trace.c"
 #endif
 
+
+//  0,0
+//   |\   .
+//   |s\  .
+//   |ss\ .
+//   0   1
+
 mclipnode_t clipnodes0[] = {
 	{  0, {             1, CONTENTS_EMPTY}},
 	{  1, {CONTENTS_EMPTY, CONTENTS_SOLID}},
@@ -31,6 +38,11 @@ hull_t hull0 = {
 	{0, 0, 0},
 	{0, 0, 0},
 };
+
+//    -32  32  48
+//  sss|sss|   |sss
+//  sss|sss|   |sss
+//     0   1   2
 
 mclipnode_t clipnodes1[] = {
 	{  0, {             1, CONTENTS_SOLID}},
@@ -53,6 +65,11 @@ hull_t hull1 = {
 	{0, 0, 0},
 };
 
+//    -32  32  48
+//  sss|sss|   |sss
+//  sss|sss|   |sss
+//     1   0   2
+
 mclipnode_t clipnodes2[] = {
 	{  0, {             2,              1}},
 	{  1, {CONTENTS_SOLID, CONTENTS_SOLID}},
@@ -73,6 +90,11 @@ hull_t hull2 = {
 	{0, 0, 0},
 	{0, 0, 0},
 };
+
+//    -32  32  48
+//  sss|   |www|sss
+//  sss|   |www|sss
+//     1   0   2
 
 mclipnode_t clipnodes3[] = {
 	{  0, {             2,              1}},
