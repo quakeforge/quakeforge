@@ -95,7 +95,7 @@ MOD_TraceLine (hull_t *hull, int num,
 	vec_t       start_dist, end_dist, frac;
 	vec3_t      start, end, dist;
 	int         side;
-	qboolean    empty, solid;
+	qboolean    seen_empty, seen_solid;
 	tracestack_t *tstack;
 	tracestack_t tracestack[256];
 	mclipnode_t *node;
@@ -105,8 +105,8 @@ MOD_TraceLine (hull_t *hull, int num,
 	VectorCopy (end_point, end);
 
 	tstack = tracestack;
-	empty = 0;
-	solid = 0;
+	seen_empty = 0;
+	seen_solid = 0;
 	split_plane = 0;
 
 	trace->allsolid = false;
@@ -118,23 +118,22 @@ MOD_TraceLine (hull_t *hull, int num,
 	while (1) {
 		while (num < 0) {
 			if (num == CONTENTS_SOLID) {
-				if (!empty && !solid) {
+				if (!seen_empty && !seen_solid) {
 					// this is the first leaf visited, thus the start leaf
-					trace->startsolid = solid = true;
-				} else if (solid) {
+					trace->startsolid = seen_solid = true;
+				} else if (!seen_empty && seen_solid) {
 					// if crossing from one solid leaf to another, treat the
 					// whole trace as solid (this is what id does)
 					trace->allsolid = true;
 					return;
-				} else if (empty) {
+				} else {
 					// crossing from an empty leaf to a solid leaf: the trace
 					// has collided.
 					calc_impact (trace, start_point, end_point, split_plane);
 					return;
 				}
 			} else {
-				empty = true;
-				solid = false;
+				seen_empty = true;
 				if (num == CONTENTS_EMPTY)
 					trace->inopen = true;
 				else
