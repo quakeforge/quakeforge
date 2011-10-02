@@ -61,6 +61,20 @@ typedef struct {
 	mplane_t   *plane;
 } tracestack_t;
 
+static inline float
+calc_offset (trace_t *trace, mplane_t *plane)
+{
+	if (trace->isbox) {
+		if (plane->type < 3)
+			return trace->extents[plane->type];
+		else
+			return (fabs (trace->extents[0] * plane->normal[0])
+					+ fabs (trace->extents[1] * plane->normal[1])
+					+ fabs (trace->extents[2] * plane->normal[2]));
+	}
+	return 0;
+}
+
 static inline void
 calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 			 mplane_t *plane)
@@ -92,7 +106,7 @@ MOD_TraceLine (hull_t *hull, int num,
 			   const vec3_t start_point, const vec3_t end_point,
 			   trace_t *trace)
 {
-	vec_t       start_dist, end_dist, frac;
+	vec_t       start_dist, end_dist, frac, offset;
 	vec3_t      start, end, dist;
 	int         side;
 	qboolean    seen_empty, seen_solid;
@@ -164,13 +178,14 @@ MOD_TraceLine (hull_t *hull, int num,
 
 		start_dist = PlaneDiff (start, plane);
 		end_dist = PlaneDiff (end, plane);
+		offset = calc_offset (trace, plane);
 
-		if (start_dist >= 0 && end_dist >= 0) {
+		if (start_dist >= offset && end_dist >= offset) {
 			// entirely in front of the plane
 			num = node->children[0];
 			continue;
 		}
-		if (start_dist < 0 && end_dist < 0) {
+		if (start_dist < offset && end_dist < offset) {
 			// entirely behind the plane
 			num = node->children[1];
 			continue;

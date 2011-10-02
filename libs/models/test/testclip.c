@@ -118,6 +118,33 @@ hull_t hull_tppw = {
 	{0, 0, 0},
 };
 
+//     2
+//  eee|eee
+// 0,32+--- 1
+//  eee|sss
+//  ---+--- 0
+//  ss0,0ss
+mclipnode_t clipnodes_step1[] = {
+	{  0, {             1, CONTENTS_SOLID}},
+	{  1, {CONTENTS_EMPTY,              2}},
+	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
+};
+
+mplane_t planes_step1[] = {
+	{{0, 0, 1},   0, 2, 0},
+	{{0, 0, 1},  32, 2, 0},
+	{{1, 0, 0},   0, 0, 0},
+};
+
+hull_t hull_step1 = {
+	clipnodes_step1,
+	planes_step1,
+	0,
+	2,
+	{0, 0, 0},
+	{0, 0, 0},
+};
+
 typedef struct {
 	vec3_t      extents;
 } box_t;
@@ -138,6 +165,7 @@ typedef struct {
 } test_t;
 
 box_t point = { {0, 0, 0} };
+box_t box =   { {8, 8, 8} };
 box_t player = { {16, 16, 28} };
 
 test_t tests[] = {
@@ -177,6 +205,11 @@ test_t tests[] = {
 		{ 40, 0, 0}, { 40, 8, 0}, {     1, 0, 0, 0, 1}},
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
 		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 0, 1, 1}},
+
+	{"Point, Step 1", &point, &hull_step1,
+		{ -16, 0, 8}, {16, 0, 24}, { 0.5, 0, 0, 1, 0}},
+	{"Box, Step 1", &box, &hull_step1,
+		{ -16, 0, 8}, {16, 0, 24}, { 0.25, 0, 0, 1, 0}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
