@@ -74,6 +74,7 @@ static const struct option long_options[] = {
 	{"pad", no_argument, 0, 'p'},
 	{"quiet", no_argument, 0, 'q'},
 	{"verbose", no_argument, 0, 'v'},
+	{"nomip", no_argument, 0, 256},
 	{NULL, 0, NULL, 0},
 };
 
@@ -94,6 +95,7 @@ usage (int status)
 	printf ("Options:\n"
 			"    -f, --file ARCHIVE        Use ARCHIVE for archive filename\n"
 			"    -p, --pad                 Pad file space to a 32-bit boundary\n"
+			"        --nomip               Do not output mipmaps with textures\n"
 			"    -q, --quiet               Inhibit usual output\n"
 			"    -v, --verbose             Display more output than usual\n");
 	exit (status);
@@ -147,6 +149,9 @@ decode_args (int argc, char **argv)
 				break;
 			case 'v':					// increase verbosity
 				options.verbosity++;
+				break;
+			case 256:
+				options.nomip = 1;
 				break;
 			default:
 				usage (1);
@@ -328,24 +333,29 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 			image = calloc (1, miptex->width * miptex->height * 3 / 2);
 			memcpy (image, buffer + miptex->offsets[0],
 					miptex->width * miptex->height);
-			for (u = 0; u < miptex->height * 1 / 2; u++) {
-				i = miptex->height + u;
-				memcpy (image + i * miptex->width,
-						buffer + miptex->offsets[1] + u * miptex->width / 2,
-						miptex->width / 2);
-				if (u >= miptex->height * 1 / 4)
-					continue;
-				memcpy (image + i * miptex->width + miptex->width / 2,
-						buffer + miptex->offsets[2] + u * miptex->width / 4,
-						miptex->width / 4);
-				if (u >= miptex->height * 1 / 8)
-					continue;
-				memcpy (image + i * miptex->width + miptex->width * 3 / 4,
-						buffer + miptex->offsets[2] + u * miptex->width / 8,
-						miptex->width / 8);
+			if (!options.nomip) {
+				for (u = 0; u < miptex->height * 1 / 2; u++) {
+					i = miptex->height + u;
+					memcpy (image + i * miptex->width,
+							buffer + miptex->offsets[1] + u * miptex->width / 2,
+							miptex->width / 2);
+					if (u >= miptex->height * 1 / 4)
+						continue;
+					memcpy (image + i * miptex->width + miptex->width / 2,
+							buffer + miptex->offsets[2] + u * miptex->width / 4,
+							miptex->width / 4);
+					if (u >= miptex->height * 1 / 8)
+						continue;
+					memcpy (image + i * miptex->width + miptex->width * 3 / 4,
+							buffer + miptex->offsets[2] + u * miptex->width / 8,
+							miptex->width / 8);
+				}
+				pcx = EncodePCX (image, miptex->width, miptex->height * 3 / 2,
+								 miptex->width, default_palette, false, &len);
+			} else {
+				pcx = EncodePCX (image, miptex->width, miptex->height,
+								 miptex->width, default_palette, false, &len);
 			}
-			pcx = EncodePCX (image, miptex->width, miptex->height * 3 /2,
-							 miptex->width, default_palette, false, &len);
 			free (image);
 			free (buffer);
 			if (Qwrite (file, pcx, len) != len) {
