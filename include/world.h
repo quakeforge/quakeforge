@@ -39,13 +39,19 @@ typedef struct
 	vec_t	dist;
 } plane_t;
 
+typedef enum {
+	tr_point,
+	tr_box,
+	tr_ellipsoid,
+} trace_e;
+
 typedef struct trace_s {
 	qboolean	allsolid;	// if true, plane is not valid
 	qboolean	startsolid;	// if true, the initial point was in a solid area
 	qboolean	inopen, inwater;
 	float		fraction;	// time completed, 1.0 = didn't hit anything
 	vec3_t		extents;	// 1/2 size of traced box
-	qboolean	isbox;		// box or point
+	trace_e		type;		// type of trace to perform
 	vec3_t		endpos;		// final position
 	plane_t		plane;		// surface normal at impact
 	struct edict_s *ent;	// entity the surface is on

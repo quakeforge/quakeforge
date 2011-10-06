@@ -64,15 +64,28 @@ typedef struct {
 static inline float
 calc_offset (trace_t *trace, mplane_t *plane)
 {
-	if (trace->isbox) {
-		if (plane->type < 3)
-			return trace->extents[plane->type];
-		else
-			return (fabs (trace->extents[0] * plane->normal[0])
-					+ fabs (trace->extents[1] * plane->normal[1])
-					+ fabs (trace->extents[2] * plane->normal[2]));
+	vec_t       d = 0;
+	vec3_t      Rn;
+
+	switch (trace->type) {
+		case tr_point:
+			break;
+		case tr_box:
+			if (plane->type < 3)
+				d = trace->extents[plane->type];
+			else
+				d = (fabs (trace->extents[0] * plane->normal[0])
+					 + fabs (trace->extents[1] * plane->normal[1])
+					 + fabs (trace->extents[2] * plane->normal[2]));
+			break;
+		case tr_ellipsoid:
+			VectorSet (trace->extents[0] * plane->normal[0],
+					   trace->extents[1] * plane->normal[1],
+					   trace->extents[2] * plane->normal[2], Rn);
+			d = sqrt(DotProduct (Rn, Rn));	//FIXME no sqrt
+			break;
 	}
-	return 0;
+	return d;
 }
 
 static inline void

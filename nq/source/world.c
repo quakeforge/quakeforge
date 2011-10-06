@@ -614,12 +614,13 @@ SV_ClipMoveToEntity (edict_t *touched, const vec3_t start,
 
 	trace.fraction = 1;
 	trace.allsolid = true;
-	trace.isbox = 0;
+	trace.type = tr_point;
 	VectorCopy (end, trace.endpos);
 
 	// get the clipping hull
 	hull = SV_HullForEntity (touched, mins, maxs,
-							 trace.isbox ? trace.extents : 0, offset);
+							 trace.type != tr_point ? trace.extents : 0,
+							 offset);
 
 	VectorSubtract (start, offset, start_l);
 	VectorSubtract (end, offset, end_l);
