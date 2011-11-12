@@ -128,7 +128,7 @@ Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 
 // BRUSHMODEL LOADING =========================================================
 
-//FIXME SLOW!
+//FIXME SLOW! However, it doesn't seem to be a big issue. Leave alone?
 static void
 mod_unique_miptex_name (texture_t **textures, texture_t *tx, int ind)
 {
