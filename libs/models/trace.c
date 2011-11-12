@@ -92,19 +92,20 @@ static inline void
 calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 			 mplane_t *plane)
 {
-	vec_t       t1, t2, frac;
+	vec_t       t1, t2, frac, offset;
 	vec3_t      dist;
 
 	t1 = PlaneDiff (start, plane);
 	t2 = PlaneDiff (end, plane);
+	offset = calc_offset (trace, plane);
 
 	if (t1 < 0) {
-		frac = (t1 + DIST_EPSILON) / (t1 - t2);
+		frac = (t1 + offset + DIST_EPSILON) / (t1 - t2);
 		// invert plane paramterers
 		VectorNegate (plane->normal, trace->plane.normal);
 		trace->plane.dist = -plane->dist;
 	} else {
-		frac = (t1 - DIST_EPSILON) / (t1 - t2);
+		frac = (t1 - offset - DIST_EPSILON) / (t1 - t2);
 		VectorCopy (plane->normal, trace->plane.normal);
 		trace->plane.dist = plane->dist;
 	}
@@ -207,7 +208,10 @@ MOD_TraceLine (hull_t *hull, int num,
 		// cross the plane
 
 		side = start_dist < 0;
-		frac = start_dist / (start_dist - end_dist);
+		if (side)
+			frac = (start_dist + offset) / (start_dist - end_dist);
+		else
+			frac = (start_dist - offset) / (start_dist - end_dist);
 		frac = bound (0, frac, 1);
 
 		tstack->num = num;
