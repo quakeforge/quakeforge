@@ -145,6 +145,37 @@ hull_t hull_step1 = {
 	{0, 0, 0},
 };
 
+//     2
+//  eee|eee
+// 0,32+--- 1
+//  eee|sss
+//  ---+--- 0
+//  ss0,0ss
+mclipnode_t clipnodes_covered_step[] = {
+	{  0, {             1, CONTENTS_SOLID}},
+	{  1, {             3,              2}},
+	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
+	{  3, {CONTENTS_EMPTY,              4}},
+	{  4, {CONTENTS_SOLID, CONTENTS_EMPTY}},
+};
+
+mplane_t planes_covered_step[] = {
+	{{0, 0, 1},   0, 2, 0},
+	{{0, 0, 1},  32, 2, 0},
+	{{1, 0, 0},   0, 0, 0},
+	{{1, 0, 0}, -20, 0, 0},
+	{{0, 0, 1},  40, 2, 0},
+};
+
+hull_t hull_covered_step = {
+	clipnodes_covered_step,
+	planes_covered_step,
+	0,
+	4,
+	{0, 0, 0},
+	{0, 0, 0},
+};
+
 typedef struct {
 	vec3_t      extents;
 } box_t;
@@ -217,6 +248,19 @@ test_t tests[] = {
 	// 136 is a corner case caused by back/front side issues and 0
 	{"Box, Step 1", &box, &hull_step1,
 		{ -16, 0, 8}, {16, 0, 137}, { 1, 0, 0, 1, 0}},
+
+	{"Point, Covered Step", &point, &hull_covered_step,
+		{ -24, 0, 8}, {-24, 0, 72}, { 0.5, 0, 0, 1, 0}},
+	{"Box, Covered Step", &box, &hull_covered_step,
+		{ -32, 0, 8}, {-32, 0, 72}, { 0.375, 0, 0, 1, 0}},
+	{"Box, Covered Step", &box, &hull_covered_step,
+		{ -24, 0, 8}, {-24, 0, 72}, { 0.375, 0, 0, 1, 0}},
+	{"Box, Covered Step", &box, &hull_covered_step,
+		{ -24, 0, 8}, {8, 0, 72}, { 0.375, 0, 0, 1, 0}},
+//	{"Box, Covered Step", &box, &hull_covered_step,
+//		{ -16, 0, 8}, {0, 0, 72}, { 1, 0, 0, 1, 0}},
+	{"Box, Covered Step", &box, &hull_covered_step,
+		{ -8, 0, 40}, {8, 0, 72}, { 1, 0, 0, 1, 0}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 

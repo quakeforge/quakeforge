@@ -55,6 +55,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 typedef struct {
+	vec3_t     start;
 	vec3_t     end;
 	int        side;
 	int        num;
@@ -120,7 +121,7 @@ MOD_TraceLine (hull_t *hull, int num,
 			   const vec3_t start_point, const vec3_t end_point,
 			   trace_t *trace)
 {
-	vec_t       start_dist, end_dist, frac, offset;
+	vec_t       start_dist, end_dist, frac[2], offset;
 	vec3_t      start, end, dist;
 	int         side;
 	qboolean    seen_empty, seen_solid;
@@ -177,7 +178,7 @@ MOD_TraceLine (hull_t *hull, int num,
 			}
 
 			// set the hit point for this plane
-			VectorCopy (end, start);
+			VectorCopy (end, tstack->start);
 
 			// go down the back side
 			VectorCopy (tstack->end, end);
@@ -208,11 +209,10 @@ MOD_TraceLine (hull_t *hull, int num,
 		// cross the plane
 
 		side = start_dist < 0;
-		if (side)
-			frac = (start_dist - offset) / (start_dist - end_dist);
-		else
-			frac = (start_dist + offset) / (start_dist - end_dist);
-		frac = bound (0, frac, 1);
+		frac[0] = (start_dist + offset) / (start_dist - end_dist);
+		frac[1] = (start_dist - offset) / (start_dist - end_dist);
+		frac[0] = bound (0, frac[0], 1);
+		frac[1] = bound (0, frac[1], 1);
 
 		tstack->num = num;
 		tstack->side = side;
@@ -221,7 +221,8 @@ MOD_TraceLine (hull_t *hull, int num,
 		tstack++;
 
 		VectorSubtract (end, start, dist);
-		VectorMultAdd (start, frac, dist, end);
+		VectorMultAdd (start, frac[side], dist, end);
+		VectorMultAdd (start, frac[side ^ 1], dist, tstack->start);
 
 		num = node->children[side];
 	}
