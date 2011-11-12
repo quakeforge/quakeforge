@@ -103,17 +103,23 @@ calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 	if (t1 < 0) {
 		frac = (t1 + offset + DIST_EPSILON) / (t1 - t2);
 		// invert plane paramterers
-		VectorNegate (plane->normal, trace->plane.normal);
-		trace->plane.dist = -plane->dist;
 	} else {
 		frac = (t1 - offset - DIST_EPSILON) / (t1 - t2);
-		VectorCopy (plane->normal, trace->plane.normal);
-		trace->plane.dist = plane->dist;
 	}
 	frac = bound (0, frac, 1);
-	trace->fraction = frac;
-	VectorSubtract (end, start, dist);
-	VectorMultAdd (start, frac, dist, trace->endpos);
+	if (frac < trace->fraction) {
+		trace->fraction = frac;
+		VectorSubtract (end, start, dist);
+		VectorMultAdd (start, frac, dist, trace->endpos);
+		if (t1 < 0) {
+			// invert plane paramterers
+			VectorNegate (plane->normal, trace->plane.normal);
+			trace->plane.dist = -plane->dist;
+		} else {
+			VectorCopy (plane->normal, trace->plane.normal);
+			trace->plane.dist = plane->dist;
+		}
+	}
 }
 
 VISIBLE void
@@ -160,7 +166,8 @@ MOD_TraceLine (hull_t *hull, int num,
 					// crossing from an empty leaf to a solid leaf: the trace
 					// has collided.
 					calc_impact (trace, start_point, end_point, split_plane);
-					return;
+					if (trace->type == tr_point)
+						return;
 				}
 			} else {
 				seen_empty = true;
@@ -172,6 +179,7 @@ MOD_TraceLine (hull_t *hull, int num,
 			}
 
 			// pop up the stack for a back side
+			// FIXME detect early out from collisions
 			if (tstack-- == tracestack) {
 				// we've finished.
 				return;
@@ -208,13 +216,19 @@ MOD_TraceLine (hull_t *hull, int num,
 
 		// cross the plane
 
-		if (start_dist < offset && end_dist < offset
-			&& start_dist >= -offset && end_dist >= end_dist) {
+		if (start_dist == end_dist) {
+			// avoid division by zero (non-point clip only)
+			// since we need to check both sides anyway, it doesn't matter
+			// which side we start with, so long as the fractions are
+			// correct.
 			side = 0;
 			frac[0] = 1;
 			frac[1] = 0;
 		} else {
-			side = start_dist < offset;
+			// if either start or end have the box straddling the plane, then
+			// frac will be appropriately clipped to 0 and 1, otherwise, frac
+			// will be inside that range
+			side = start_dist < end_dist;
 			frac[0] = (start_dist + offset) / (start_dist - end_dist);
 			frac[1] = (start_dist - offset) / (start_dist - end_dist);
 			frac[0] = bound (0, frac[0], 1);
