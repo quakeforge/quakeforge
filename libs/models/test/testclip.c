@@ -145,8 +145,64 @@ hull_t hull_step1 = {
 	{0, 0, 0},
 };
 
-//     2
+//     0
 //  eee|eee
+// 0,32+--- 1
+//  eee|sss
+//  ---+sss 2
+//  ss0,0ss
+mclipnode_t clipnodes_step2[] = {
+	{  0, {             1,              2}},
+	{  1, {CONTENTS_EMPTY, CONTENTS_SOLID}},
+	{  2, {CONTENTS_EMPTY, CONTENTS_SOLID}},
+};
+
+mplane_t planes_step2[] = {
+	{{1, 0, 0},   0, 0, 0},
+	{{0, 0, 1},  32, 2, 0},
+	{{0, 0, 1},   0, 2, 0},
+};
+
+hull_t hull_step2 = {
+	clipnodes_step2,
+	planes_step2,
+	0,
+	2,
+	{0, 0, 0},
+	{0, 0, 0},
+};
+
+//     0
+//  eee|eee
+// 2---+0,32
+//  sss|eee
+//  sss+--- 1
+//  ss0,0ss
+mclipnode_t clipnodes_step3[] = {
+	{  0, {             1,              2}},
+	{  1, {CONTENTS_EMPTY, CONTENTS_SOLID}},
+	{  2, {CONTENTS_EMPTY, CONTENTS_SOLID}},
+};
+
+mplane_t planes_step3[] = {
+	{{1, 0, 0},   0, 0, 0},
+	{{0, 0, 1},   0, 2, 0},
+	{{0, 0, 1},  32, 2, 0},
+};
+
+hull_t hull_step3 = {
+	clipnodes_step3,
+	planes_step3,
+	0,
+	2,
+	{0, 0, 0},
+	{0, 0, 0},
+};
+
+//   3 2
+//  s|e|eee
+// 4-+e|-20,40
+//  e|e|eee
 // 0,32+--- 1
 //  eee|sss
 //  ---+--- 0
@@ -256,11 +312,18 @@ test_t tests[] = {
 	{"Box, Covered Step", &box, &hull_covered_step,
 		{ -24, 0, 8}, {-24, 0, 72}, { 0.375, 0, 0, 1, 0}},
 	{"Box, Covered Step", &box, &hull_covered_step,
-		{ -24, 0, 8}, {8, 0, 72}, { 0.375, 0, 0, 1, 0}},
-//	{"Box, Covered Step", &box, &hull_covered_step,
-//		{ -16, 0, 8}, {0, 0, 72}, { 1, 0, 0, 1, 0}},
+		{ -25, 0, 8}, {7, 0, 72}, { 0.375, 0, 0, 1, 0}},
+	{"Box, Covered Step", &box, &hull_covered_step,
+		{ -8, 0, 40}, {-16, 0, 40}, { 0.5, 0, 0, 1, 0}},
+	{"Box, Covered Step", &box, &hull_covered_step,
+		{ -17, 0, 8}, {-1, 0, 72}, { 1, 0, 0, 1, 0}},
 	{"Box, Covered Step", &box, &hull_covered_step,
 		{ -8, 0, 40}, {8, 0, 72}, { 1, 0, 0, 1, 0}},
+
+	{"Box,  Step 2", &box, &hull_step2,
+		{ 0, 0, 64}, {0, 0, 0}, { 0.375, 0, 0, 1, 0}},
+	{"Box,  Step 3", &box, &hull_step3,
+		{ 0, 0, 64}, {0, 0, 0}, { 0.375, 0, 0, 1, 0}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 

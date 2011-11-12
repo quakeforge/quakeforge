@@ -208,11 +208,18 @@ MOD_TraceLine (hull_t *hull, int num,
 
 		// cross the plane
 
-		side = start_dist < 0;
-		frac[0] = (start_dist + offset) / (start_dist - end_dist);
-		frac[1] = (start_dist - offset) / (start_dist - end_dist);
-		frac[0] = bound (0, frac[0], 1);
-		frac[1] = bound (0, frac[1], 1);
+		if (start_dist < offset && end_dist < offset
+			&& start_dist >= -offset && end_dist >= end_dist) {
+			side = 0;
+			frac[0] = 1;
+			frac[1] = 0;
+		} else {
+			side = start_dist < offset;
+			frac[0] = (start_dist + offset) / (start_dist - end_dist);
+			frac[1] = (start_dist - offset) / (start_dist - end_dist);
+			frac[0] = bound (0, frac[0], 1);
+			frac[1] = bound (0, frac[1], 1);
+		}
 
 		tstack->num = num;
 		tstack->side = side;
