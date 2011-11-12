@@ -212,6 +212,11 @@ test_t tests[] = {
 		{ -16, 0, 8}, {16, 0, 24}, { 0.25, 0, 0, 1, 0}},
 	{"Box, Step 1", &box, &hull_step1,
 		{ -16, 0, 8}, {16, 0, 40}, { 0.25, 0, 0, 1, 0}},
+	{"Box, Step 1", &box, &hull_step1,
+		{ -16, 0, 8}, {16, 0, 135}, { 0.25, 0, 0, 1, 0}},
+	// 136 is a corner case caused by back/front side issues and 0
+	{"Box, Step 1", &box, &hull_step1,
+		{ -16, 0, 8}, {16, 0, 137}, { 1, 0, 0, 1, 0}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 

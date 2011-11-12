@@ -209,9 +209,9 @@ MOD_TraceLine (hull_t *hull, int num,
 
 		side = start_dist < 0;
 		if (side)
-			frac = (start_dist + offset) / (start_dist - end_dist);
-		else
 			frac = (start_dist - offset) / (start_dist - end_dist);
+		else
+			frac = (start_dist + offset) / (start_dist - end_dist);
 		frac = bound (0, frac, 1);
 
 		tstack->num = num;
