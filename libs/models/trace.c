@@ -57,6 +57,7 @@ static __attribute__ ((used)) const char rcsid[] =
 typedef struct {
 	vec3_t     start;
 	vec3_t     end;
+	vec_t      start_frac;
 	int        side;
 	int        num;
 	mplane_t   *plane;
@@ -179,11 +180,12 @@ MOD_TraceLine (hull_t *hull, int num,
 			}
 
 			// pop up the stack for a back side
-			// FIXME detect early out from collisions
-			if (tstack-- == tracestack) {
-				// we've finished.
-				return;
-			}
+			do {
+				if (tstack-- == tracestack) {
+					// we've finished.
+					return;
+				}
+			} while (tstack->start_frac > trace->fraction);
 
 			// set the hit point for this plane
 			VectorCopy (end, tstack->start);
@@ -244,6 +246,7 @@ MOD_TraceLine (hull_t *hull, int num,
 		VectorSubtract (end, start, dist);
 		VectorMultAdd (start, frac[side], dist, end);
 		VectorMultAdd (start, frac[side ^ 1], dist, tstack->start);
+		tstack->start_frac = frac[side ^ 1];
 
 		num = node->children[side];
 	}
