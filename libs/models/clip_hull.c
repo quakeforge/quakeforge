@@ -47,7 +47,7 @@ MOD_Alloc_Hull (int nodes, int planes)
 	int			 size, i;
 
 	size = sizeof (hull_t);
-	size += sizeof (mclipnode_t) * nodes + sizeof (mplane_t) * planes;
+	size += sizeof (mclipnode_t) * nodes + sizeof (plane_t) * planes;
 	size *= MAX_MAP_HULLS;
 	size += sizeof (clip_hull_t);
 
@@ -58,11 +58,11 @@ MOD_Alloc_Hull (int nodes, int planes)
 	for (i = 1; i < MAX_MAP_HULLS; i++)
 		ch->hulls[i] = &ch->hulls[i - 1][1];
 	ch->hulls[0]->clipnodes = (mclipnode_t *) &ch->hulls[i - 1][1];
-	ch->hulls[0]->planes = (mplane_t *) &ch->hulls[0]->clipnodes[nodes];
+	ch->hulls[0]->planes = (plane_t *) &ch->hulls[0]->clipnodes[nodes];
 	for (i = 1; i < MAX_MAP_HULLS; i++) {
 		ch->hulls[i]->clipnodes =
 			(mclipnode_t *) &ch->hulls[i - 1]->planes[planes];
-		ch->hulls[i]->planes = (mplane_t *) &ch->hulls[i]->clipnodes[nodes];
+		ch->hulls[i]->planes = (plane_t *) &ch->hulls[i]->clipnodes[nodes];
 	}
 	return ch;
 }

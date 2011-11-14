@@ -249,7 +249,7 @@ void AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right,
 void AngleQuat (const vec3_t angles, quat_t q);
 void VectorVectors (const vec3_t forward, vec3_t right, vec3_t up);
 int BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs,
-					struct mplane_s *plane);
+					struct plane_s *plane);
 float anglemod (float a);
 
 void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
@@ -288,7 +288,7 @@ void QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical);
 		VectorNegate ((sp)->normal, (dp)->normal);	\
 	} while (0)
 
-extern mplane_t * const frustum;
+extern plane_t * const frustum;
 extern inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs);
 extern inline qboolean R_CullSphere (const vec3_t origin, const float radius);
 extern inline float VectorNormalize (vec3_t v);	// returns vector length

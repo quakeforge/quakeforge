@@ -60,11 +60,11 @@ typedef struct {
 	vec_t      start_frac;
 	int        side;
 	int        num;
-	mplane_t   *plane;
+	plane_t   *plane;
 } tracestack_t;
 
 static inline float
-calc_offset (trace_t *trace, mplane_t *plane)
+calc_offset (trace_t *trace, plane_t *plane)
 {
 	vec_t       d = 0;
 	vec3_t      Rn;
@@ -92,7 +92,7 @@ calc_offset (trace_t *trace, mplane_t *plane)
 
 static inline void
 calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
-			 mplane_t *plane)
+			 plane_t *plane)
 {
 	vec_t       t1, t2, frac, offset;
 	vec3_t      dist;
@@ -135,7 +135,7 @@ MOD_TraceLine (hull_t *hull, int num,
 	tracestack_t *tstack;
 	tracestack_t tracestack[256];
 	mclipnode_t *node;
-	mplane_t   *plane, *split_plane;
+	plane_t    *plane, *split_plane;
 
 	VectorCopy (start_point, start);
 	VectorCopy (end_point, end);

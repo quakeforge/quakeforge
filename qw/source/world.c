@@ -136,7 +136,7 @@ typedef struct {
 
 static hull_t box_hull;
 static mclipnode_t box_clipnodes[6];
-static mplane_t box_planes[6];
+static plane_t box_planes[6];
 
 
 /*
@@ -146,7 +146,7 @@ static mplane_t box_planes[6];
 	can just be stored out and get a proper hull_t structure.
 */
 void
-SV_InitHull (hull_t *hull, mclipnode_t *clipnodes, mplane_t *planes)
+SV_InitHull (hull_t *hull, mclipnode_t *clipnodes, plane_t *planes)
 {
 	int			side, i;
 
@@ -412,7 +412,7 @@ SV_FindTouchedLeafs (edict_t *ent, mnode_t *node)
 {
 	int			sides;
 	mleaf_t    *leaf;
-	mplane_t   *splitplane;
+	plane_t    *splitplane;
 	edict_leaf_t *edict_leaf;
 
 	if (node->contents == CONTENTS_SOLID)
@@ -531,7 +531,7 @@ SV_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
 	float        d;
 	mclipnode_t *node;
-	mplane_t    *plane;
+	plane_t     *plane;
 
 	while (num >= 0) {
 		//if (num < hull->firstclipnode || num > hull->lastclipnode)

@@ -83,7 +83,7 @@ qboolean    envmap;						// true during envmap command capture
 
 int         mirrortexturenum;			// quake texturenum, not gltexturenum
 qboolean    mirror;
-mplane_t   *mirror_plane;
+plane_t    *mirror_plane;
 
 // view origin
 VISIBLE vec3_t      vup;
@@ -360,7 +360,7 @@ R_DrawViewModel (void)
 }
 
 static inline int
-SignbitsForPlane (mplane_t *out)
+SignbitsForPlane (plane_t *out)
 {
 	int		bits, j;
 

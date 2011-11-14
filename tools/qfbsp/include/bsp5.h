@@ -34,12 +34,6 @@
 */
 //@{
 
-typedef struct plane_s {
-	vec3_t      normal;
-	vec_t       dist;
-	int         type;
-} plane_t;
-
 #define MAX_THREADS 4
 
 #define ON_EPSILON 0.05

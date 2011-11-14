@@ -49,7 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 static hull_t box_hull;
 static mclipnode_t box_clipnodes[6];
-static mplane_t box_planes[6];
+static plane_t box_planes[6];
 
 
 /*
@@ -107,9 +107,9 @@ PM_HullForBox (const vec3_t mins, const vec3_t maxs)
 inline int
 PM_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
-	float		 d;
+	float        d;
 	mclipnode_t *node;
-	mplane_t	*plane;
+	plane_t     *plane;
 
 	while (num >= 0) {
 		node = hull->clipnodes + num;
@@ -135,7 +135,7 @@ PM_PointContents (const vec3_t p)
 	int         num;
 	mclipnode_t *node;
 	hull_t     *hull;
-	mplane_t   *plane;
+	plane_t    *plane;
 
 	hull = &pmove.physents[0].model->hulls[0];
 

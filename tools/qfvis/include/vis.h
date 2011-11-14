@@ -52,11 +52,6 @@ extern pthread_mutex_t *my_mutex;
 #define	MAX_PORTALS_ON_CLUSTER	128
 
 typedef struct {
-	vec3_t      normal;
-	float       dist;
-} plane_t;
-
-typedef struct {
 	qboolean    original;	// don't free, it's part of the portal
 	int	        numpoints;
 	vec3_t      points[8];	// variable sized

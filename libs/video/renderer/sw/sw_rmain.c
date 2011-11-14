@@ -116,7 +116,7 @@ float       screenAspect;
 float       verticalFieldOfView;
 float       xOrigin, yOrigin;
 
-mplane_t    screenedge[4];
+plane_t     screenedge[4];
 
 // refresh flags
 int         r_framecount = 1;	// so frame counts initialized to 0 don't match

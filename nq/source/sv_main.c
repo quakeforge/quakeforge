@@ -390,7 +390,7 @@ SV_AddToFatPVS (vec3_t org, mnode_t *node)
 	int         i;
 	float       d;
 	byte       *pvs;
-	mplane_t   *plane;
+	plane_t    *plane;
 
 	while (1) {
 		// if this is a leaf, accumulate the pvs bits

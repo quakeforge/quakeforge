@@ -370,7 +370,7 @@ R_DrawBrushModel (entity_t *e)
 	int         i;
 	unsigned int k;
 	model_t    *model;
-	mplane_t   *pplane;
+	plane_t    *pplane;
 	msurface_t *psurf;
 	qboolean    rotated;
 	vec3_t      mins, maxs;
@@ -571,7 +571,7 @@ static inline int
 get_side (mnode_t *node)
 {
 	// find which side of the node we are on
-	mplane_t   *plane = node->plane;
+	plane_t    *plane = node->plane;
 
 	if (plane->type < 3)
 		return (modelorg[plane->type] - plane->dist) < 0;

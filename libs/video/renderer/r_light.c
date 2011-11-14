@@ -152,7 +152,7 @@ R_RecursiveMarkLights (const vec3_t lightorigin, dlight_t *light, int bit,
 {
 	int         i;
 	float       ndist, maxdist;
-	mplane_t   *splitplane;
+	plane_t    *splitplane;
 	msurface_t *surf;
 	//XXX mvertex_t  *vertices;
 
@@ -276,7 +276,7 @@ R_PushDlights (const vec3_t entorigin)
 
 /* LIGHT SAMPLING */
 
-mplane_t   *lightplane;
+plane_t    *lightplane;
 vec3_t      lightspot;
 
 static int
@@ -345,12 +345,12 @@ calc_lighting_3 (msurface_t  *surf, int ds, int dt)
 static int
 RecursiveLightPoint (mnode_t *node, const vec3_t start, const vec3_t end)
 {
-	int			 i, r, s, t, ds, dt, side;
-	float		 front, back, frac;
-	mplane_t	*plane;
-	msurface_t	*surf;
-	mtexinfo_t	*tex;
-	vec3_t		 mid;
+	int         i, r, s, t, ds, dt, side;
+	float       front, back, frac;
+	plane_t    *plane;
+	msurface_t *surf;
+	mtexinfo_t *tex;
+	vec3_t      mid;
 loop:
 	if (node->contents < 0)
 		return -1;						// didn't hit anything

@@ -33,12 +33,6 @@
 #include "QF/mathlib.h"
 #include "QF/model.h"
 
-typedef struct
-{
-	vec3_t	normal;
-	vec_t	dist;
-} plane_t;
-
 typedef enum {
 	tr_point,
 	tr_box,
@@ -77,7 +71,7 @@ extern	areanode_t	sv_areanodes[AREA_NODES];
 
 void SV_FreeAllEdictLeafs (void);
 
-void SV_InitHull (hull_t *hull, mclipnode_t *clipnodes, mplane_t *planes);
+void SV_InitHull (hull_t *hull, mclipnode_t *clipnodes, plane_t *planes);
 
 void SV_ClearWorld (void);
 // called after the world model has been loaded, before linking any entities
