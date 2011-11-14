@@ -26,7 +26,7 @@ mclipnode_t clipnodes_simple_wedge[] = {
 	{  1, {CONTENTS_EMPTY, CONTENTS_SOLID}},
 };
 
-mplane_t planes_simple_wedge[] = {
+plane_t planes_simple_wedge[] = {
 	{{1, 0, 0}, 0, 0, 0},		//  0
 	{{0.8, 0, 0.6}, 0, 4, 0},	//  1 
 };
@@ -51,7 +51,7 @@ mclipnode_t clipnodes_tpp1[] = {
 	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
 };
 
-mplane_t planes_tpp1[] = {
+plane_t planes_tpp1[] = {
 	{{1, 0, 0}, -32, 0, 0},
 	{{1, 0, 0},  32, 0, 0},
 	{{1, 0, 0},  48, 0, 0},
@@ -77,7 +77,7 @@ mclipnode_t clipnodes_tpp2[] = {
 	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
 };
 
-mplane_t planes_tpp2[] = {
+plane_t planes_tpp2[] = {
 	{{1, 0, 0},  32, 0, 0},
 	{{1, 0, 0}, -32, 0, 0},
 	{{1, 0, 0},  48, 0, 0},
@@ -103,7 +103,7 @@ mclipnode_t clipnodes_tppw[] = {
 	{  2, {CONTENTS_SOLID, CONTENTS_WATER}},
 };
 
-mplane_t planes_tppw[] = {
+plane_t planes_tppw[] = {
 	{{1, 0, 0},  32, 0, 0},
 	{{1, 0, 0}, -32, 0, 0},
 	{{1, 0, 0},  48, 0, 0},
@@ -130,7 +130,7 @@ mclipnode_t clipnodes_step1[] = {
 	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
 };
 
-mplane_t planes_step1[] = {
+plane_t planes_step1[] = {
 	{{0, 0, 1},   0, 2, 0},
 	{{0, 0, 1},  32, 2, 0},
 	{{1, 0, 0},   0, 0, 0},
@@ -157,7 +157,7 @@ mclipnode_t clipnodes_step2[] = {
 	{  2, {CONTENTS_EMPTY, CONTENTS_SOLID}},
 };
 
-mplane_t planes_step2[] = {
+plane_t planes_step2[] = {
 	{{1, 0, 0},   0, 0, 0},
 	{{0, 0, 1},  32, 2, 0},
 	{{0, 0, 1},   0, 2, 0},
@@ -184,7 +184,7 @@ mclipnode_t clipnodes_step3[] = {
 	{  2, {CONTENTS_EMPTY, CONTENTS_SOLID}},
 };
 
-mplane_t planes_step3[] = {
+plane_t planes_step3[] = {
 	{{1, 0, 0},   0, 0, 0},
 	{{0, 0, 1},   0, 2, 0},
 	{{0, 0, 1},  32, 2, 0},
@@ -215,7 +215,7 @@ mclipnode_t clipnodes_covered_step[] = {
 	{  4, {CONTENTS_SOLID, CONTENTS_EMPTY}},
 };
 
-mplane_t planes_covered_step[] = {
+plane_t planes_covered_step[] = {
 	{{0, 0, 1},   0, 2, 0},
 	{{0, 0, 1},  32, 2, 0},
 	{{1, 0, 0},   0, 0, 0},
@@ -243,7 +243,7 @@ mclipnode_t clipnodes_ramp[] = {
 	{  2, {CONTENTS_EMPTY, CONTENTS_SOLID}},
 };
 
-mplane_t planes_ramp[] = {
+plane_t planes_ramp[] = {
 	{{   1, 0,   0},   0, 0, 0},
 	{{   0, 0,   1},   0, 2, 0},
 	{{-0.6, 0, 0.8},   0, 4, 0},

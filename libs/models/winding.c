@@ -37,8 +37,9 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/sys.h"
 
-#include "bsp5.h"
-#include "winding.h"
+#include "QF/winding.h"
+
+#define BOGUS (8e6)
 
 /**	\addtogroup qfbsp_winding
 */
@@ -56,7 +57,7 @@ BaseWindingForPlane (const plane_t *p)
 
 	// find the major axis
 
-	max = -BOGUS_RANGE;
+	max = -BOGUS;
 	x = -1;
 	for (i = 0; i < 3; i++) {
 		v = fabs (p->normal[i]);
@@ -87,8 +88,8 @@ BaseWindingForPlane (const plane_t *p)
 
 	CrossProduct (vup, p->normal, vright);
 
-	VectorScale (vup, BOGUS_RANGE, vup);
-	VectorScale (vright, BOGUS_RANGE, vright);
+	VectorScale (vup, BOGUS, vup);
+	VectorScale (vright, BOGUS, vright);
 
 	// project a really big axis aligned box onto the plane
 	w = NewWinding (4);

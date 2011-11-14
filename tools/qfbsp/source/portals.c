@@ -36,7 +36,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "draw.h"
 #include "options.h"
 #include "portals.h"
-#include "winding.h"
 
 /**	\addtogroup qfbsp_portals
 */

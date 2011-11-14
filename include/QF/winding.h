@@ -20,17 +20,18 @@
 	$Id$
 */
 
-#ifndef qfbsp_winding_h
-#define qfbsp_winding_h
+#ifndef __QF_winding_h
+#define __QF_winding_h
 
 #include "QF/mathlib.h"
 
-/**	\defgroup qfbsp_winding Winding Manipulation
-	\ingroup qfbsp
+/**	\defgroup winding Winding Manipulation
 */
 //@{
 
 struct plane_s;
+
+#define ON_EPSILON 0.05
 
 typedef struct winding_s {
 	int         numpoints;			///< The number of points in the winding
@@ -130,4 +131,4 @@ void DivideWinding (winding_t *in, struct plane_s *split,
 
 //@}
 
-#endif//qfbsp_winding_h
+#endif//__QF_winding_h

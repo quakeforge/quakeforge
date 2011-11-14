@@ -35,7 +35,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "bsp5.h"
 #include "region.h"
 #include "surfaces.h"
-#include "winding.h"
 
 /**	\addtogroup qfbsp_region
 */

@@ -527,7 +527,7 @@ QF_DEPS(BSP2IMG,
 )
 QF_DEPS(QFBSP,
 	[-I$(top_srcdir)/tools/qfbsp/include],
-	[$(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/models/libQFmodels.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(QFCC,

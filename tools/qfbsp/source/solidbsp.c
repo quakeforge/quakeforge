@@ -37,7 +37,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "draw.h"
 #include "solidbsp.h"
 #include "surfaces.h"
-#include "winding.h"
 
 /**	\addtogroup qfbsp_solidbsp
 */

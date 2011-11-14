@@ -37,7 +37,6 @@
 #include "draw.h"
 #include "options.h"
 #include "surfaces.h"
-#include "winding.h"
 
 /**	\addtogroup qfbsp_brush
 */

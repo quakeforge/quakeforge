@@ -7,7 +7,7 @@ INCLUDES= -I$(top_srcdir)/include
 lib_LTLIBRARIES=	libQFmodels.la @VID_MODEL_TARGETS@
 EXTRA_LTLIBRARIES=	libQFmodels_gl.la libQFmodels_sw.la
 
-models_sources = clip_hull.c model.c trace.c
+models_sources = clip_hull.c model.c trace.c winding.c
 
 libQFmodels_la_LDFLAGS= 	-version-info $(QUAKE_LIBRARY_VERSION_INFO) -no-undefined
 libQFmodels_la_LIBADD=		brush/libbrush.la $(top_builddir)/libs/util/libQFutil.la

@@ -35,7 +35,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "brush.h"
 #include "bsp5.h"
 #include "options.h"
-#include "winding.h"
 #include "tjunc.h"
 
 /**	\addtogroup qfbsp_tjunc
