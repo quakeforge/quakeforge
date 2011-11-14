@@ -232,6 +232,33 @@ hull_t hull_covered_step = {
 	{0, 0, 0},
 };
 
+//     0
+//  eee|eee
+//  eee+--- 1
+//  ee/0,0s
+//   2 ssss
+mclipnode_t clipnodes_ramp[] = {
+	{  0, {             1,              2}},
+	{  1, {CONTENTS_EMPTY, CONTENTS_SOLID}},
+	{  2, {CONTENTS_EMPTY, CONTENTS_SOLID}},
+};
+
+mplane_t planes_ramp[] = {
+	{{   1, 0,   0},   0, 0, 0},
+	{{   0, 0,   1},   0, 2, 0},
+	{{-0.6, 0, 0.8},   0, 4, 0},
+};
+
+hull_t hull_ramp = {
+	clipnodes_ramp,
+	planes_ramp,
+	0,
+	2,
+	{0, 0, 0},
+	{0, 0, 0},
+};
+
+
 typedef struct {
 	vec3_t      extents;
 } box_t;
@@ -324,6 +351,9 @@ test_t tests[] = {
 		{ 0, 0, 64}, {0, 0, 0}, { 0.375, 0, 0, 1, 0}},
 	{"Box,  Step 3", &box, &hull_step3,
 		{ 0, 0, 64}, {0, 0, 0}, { 0.375, 0, 0, 1, 0}},
+
+	{"Box,  Ramp", &box, &hull_ramp,
+		{ 0, 0, 16}, {0, 0, 0}, { 0.5, 0, 0, 1, 0}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
