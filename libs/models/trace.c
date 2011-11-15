@@ -237,16 +237,17 @@ MOD_TraceLine (hull_t *hull, int num,
 			frac[1] = bound (0, frac[1], 1);
 		}
 
+		VectorSubtract (end, start, dist);
+
 		tstack->num = num;
 		tstack->side = side;
 		tstack->plane = plane;
 		VectorCopy (end, tstack->end);
-		tstack++;
-
-		VectorSubtract (end, start, dist);
-		VectorMultAdd (start, frac[side], dist, end);
 		VectorMultAdd (start, frac[side ^ 1], dist, tstack->start);
 		tstack->start_frac = frac[side ^ 1];
+		tstack++;
+
+		VectorMultAdd (start, frac[side], dist, end);
 
 		num = node->children[side];
 	}
