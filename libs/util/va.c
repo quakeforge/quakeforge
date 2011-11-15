@@ -70,14 +70,13 @@ VISIBLE char *
 nva (const char *fmt, ...)
 {
 	va_list     args;
-	static dstring_t *string;
+	dstring_t  *string;
 
-	if (!string)
-		string = dstring_new ();
+	string = dstring_new ();
 
 	va_start (args, fmt);
 	dvsprintf (string, fmt, args);
 	va_end (args);
 
-	return strdup (string->str);
+	return dstring_freeze (string);
 }
