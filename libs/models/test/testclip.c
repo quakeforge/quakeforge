@@ -275,6 +275,7 @@ typedef struct {
 		qboolean    startsolid;
 		qboolean    inopen;
 		qboolean    inwater;
+		int         num_portals;
 	}           expect;
 } test_t;
 
@@ -284,76 +285,76 @@ box_t player = { {16, 16, 28} };
 
 test_t tests[] = {
 	{"Point, Three parallel planes 1", &point, &hull_tpp1,
-		{-64, 0, 0}, { 64, 0, 0}, {     1, 1, 1, 0, 0}},
+		{-64, 0, 0}, { 64, 0, 0}, {     1, 1, 1, 0, 0, 3}},
 	{"Point, Three parallel planes 1", &point, &hull_tpp1,
-		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 0}},
+		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 0, 3}},
 	{"Point, Three parallel planes 1", &point, &hull_tpp1,
-		{ 40, 0, 0}, {-88, 0, 0}, {0.0625, 0, 0, 1, 0}},
+		{ 40, 0, 0}, {-88, 0, 0}, {0.0625, 0, 0, 1, 0, 3}},
 	{"Point, Three parallel planes 1", &point, &hull_tpp1,
-		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 1, 1, 0}},
+		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 1, 1, 0, 3}},
 	{"Point, Three parallel planes 1", &point, &hull_tpp1,
-		{  0, 0, 0}, {  0, 8, 0}, {     1, 1, 1, 0, 0}},
+		{  0, 0, 0}, {  0, 8, 0}, {     1, 1, 1, 0, 0, 3}},
 	{"Point, Three parallel planes 1", &point, &hull_tpp1,
-		{ 40, 0, 0}, { 40, 8, 0}, {     1, 0, 0, 1, 0}},
+		{ 40, 0, 0}, { 40, 8, 0}, {     1, 0, 0, 1, 0, 3}},
 
 	{"Point, Three parallel planes 2", &point, &hull_tpp2,
-		{-64, 0, 0}, { 64, 0, 0}, {     1, 1, 1, 0, 0}},
+		{-64, 0, 0}, { 64, 0, 0}, {     1, 1, 1, 0, 0, 3}},
 	{"Point, Three parallel planes 2", &point, &hull_tpp2,
-		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 0}},
+		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 0, 3}},
 	{"Point, Three parallel planes 2", &point, &hull_tpp2,
-		{ 40, 0, 0}, {-88, 0, 0}, {0.0625, 0, 0, 1, 0}},
+		{ 40, 0, 0}, {-88, 0, 0}, {0.0625, 0, 0, 1, 0, 3}},
 	{"Point, Three parallel planes 2", &point, &hull_tpp2,
-		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 1, 1, 0}},
+		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 1, 1, 0, 3}},
 
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
-		{-64, 0, 0}, { 64, 0, 0}, { 0.875, 0, 1, 1, 1}},
+		{-64, 0, 0}, { 64, 0, 0}, { 0.875, 0, 1, 1, 1, 3}},
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
-		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 0, 1, 1}},
+		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 0, 1, 1, 3}},
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
-		{ 40, 0, 0}, {-88, 0, 0}, {0.5625, 0, 0, 1, 1}},
+		{ 40, 0, 0}, {-88, 0, 0}, {0.5625, 0, 0, 1, 1, 3}},
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
-		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 0, 1, 1}},
+		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 0, 1, 1, 3}},
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
-		{  0, 0, 0}, {  0, 8, 0}, {     1, 0, 0, 1, 0}},
+		{  0, 0, 0}, {  0, 8, 0}, {     1, 0, 0, 1, 0, 3}},
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
-		{ 40, 0, 0}, { 40, 8, 0}, {     1, 0, 0, 0, 1}},
+		{ 40, 0, 0}, { 40, 8, 0}, {     1, 0, 0, 0, 1, 3}},
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
-		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 0, 1, 1}},
+		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 0, 1, 1, 3}},
 
 	{"Point, Step 1", &point, &hull_step1,
-		{ -16, 0, 8}, {16, 0, 24}, { 0.5, 0, 0, 1, 0}},
+		{ -16, 0, 8}, {16, 0, 24}, { 0.5, 0, 0, 1, 0, 5}},
 	{"Box, Step 1", &box, &hull_step1,
-		{ -16, 0, 8}, {16, 0, 24}, { 0.25, 0, 0, 1, 0}},
+		{ -16, 0, 8}, {16, 0, 24}, { 0.25, 0, 0, 1, 0, 5}},
 	{"Box, Step 1", &box, &hull_step1,
-		{ -16, 0, 8}, {16, 0, 40}, { 0.25, 0, 0, 1, 0}},
+		{ -16, 0, 8}, {16, 0, 40}, { 0.25, 0, 0, 1, 0, 5}},
 	{"Box, Step 1", &box, &hull_step1,
-		{ -16, 0, 8}, {16, 0, 135}, { 0.25, 0, 0, 1, 0}},
+		{ -16, 0, 8}, {16, 0, 135}, { 0.25, 0, 0, 1, 0, 5}},
 	// 136 is a corner case caused by back/front side issues and 0
 	{"Box, Step 1", &box, &hull_step1,
-		{ -16, 0, 8}, {16, 0, 137}, { 1, 0, 0, 1, 0}},
+		{ -16, 0, 8}, {16, 0, 137}, { 1, 0, 0, 1, 0, 5}},
 
 	{"Point, Covered Step", &point, &hull_covered_step,
-		{ -24, 0, 8}, {-24, 0, 72}, { 0.5, 0, 0, 1, 0}},
+		{ -24, 0, 8}, {-24, 0, 72}, { 0.5, 0, 0, 1, 0, 9}},
 	{"Box, Covered Step", &box, &hull_covered_step,
-		{ -32, 0, 8}, {-32, 0, 72}, { 0.375, 0, 0, 1, 0}},
+		{ -32, 0, 8}, {-32, 0, 72}, { 0.375, 0, 0, 1, 0, 9}},
 	{"Box, Covered Step", &box, &hull_covered_step,
-		{ -24, 0, 8}, {-24, 0, 72}, { 0.375, 0, 0, 1, 0}},
+		{ -24, 0, 8}, {-24, 0, 72}, { 0.375, 0, 0, 1, 0, 9}},
 	{"Box, Covered Step", &box, &hull_covered_step,
-		{ -25, 0, 8}, {7, 0, 72}, { 0.375, 0, 0, 1, 0}},
+		{ -25, 0, 8}, {7, 0, 72}, { 0.375, 0, 0, 1, 0, 9}},
 	{"Box, Covered Step", &box, &hull_covered_step,
-		{ -8, 0, 40}, {-16, 0, 40}, { 0.5, 0, 0, 1, 0}},
+		{ -8, 0, 40}, {-16, 0, 40}, { 0.5, 0, 0, 1, 0, 9}},
 	{"Box, Covered Step", &box, &hull_covered_step,
-		{ -17, 0, 8}, {-1, 0, 72}, { 1, 0, 0, 1, 0}},
+		{ -17, 0, 8}, {-1, 0, 72}, { 1, 0, 0, 1, 0, 9}},
 	{"Box, Covered Step", &box, &hull_covered_step,
-		{ -8, 0, 40}, {8, 0, 72}, { 1, 0, 0, 1, 0}},
+		{ -8, 0, 40}, {8, 0, 72}, { 1, 0, 0, 1, 0, 9}},
 
 	{"Box,  Step 2", &box, &hull_step2,
-		{ 0, 0, 64}, {0, 0, 0}, { 0.375, 0, 0, 1, 0}},
+		{ 0, 0, 64}, {0, 0, 0}, { 0.375, 0, 0, 1, 0, 5}},
 	{"Box,  Step 3", &box, &hull_step3,
-		{ 0, 0, 64}, {0, 0, 0}, { 0.375, 0, 0, 1, 0}},
+		{ 0, 0, 64}, {0, 0, 0}, { 0.375, 0, 0, 1, 0, 5}},
 
 	{"Box,  Ramp", &box, &hull_ramp,
-		{ 0, 0, 16}, {0, 0, 0}, { 0.5, 0, 0, 1, 0}},
+		{ 0, 0, 16}, {0, 0, 0}, { 0.5, 0, 0, 1, 0, 4}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
@@ -378,6 +379,30 @@ do_trace (box_t *box, hull_t *hull, vec3_t start, vec3_t end)
 	return trace;
 }
 
+typedef struct portlist_s {
+	struct portlist_s *next;
+	clipport_t *portal;
+} portlist_t;
+
+static portlist_t *
+collect_portals (clipport_t *portal, portlist_t *portal_list)
+{
+	portlist_t *p;
+
+	if (!portal)
+		return portal_list;
+	for (p = portal_list; p; p = p->next)
+		if (p->portal == portal)
+			return portal_list;
+	p = malloc (sizeof (portlist_t));
+	p->portal = portal;
+	p->next = portal_list;
+	portal_list = p;
+	portal_list = collect_portals (portal->next[0], portal_list);
+	portal_list = collect_portals (portal->next[1], portal_list);
+	return portal_list;
+}
+
 static int
 run_test (test_t *test)
 {
@@ -387,6 +412,81 @@ run_test (test_t *test)
 	char       *expect;
 	char       *got;
 	static int  output = 0;
+	portlist_t *portal_list = 0;
+
+	if (!test->hull->nodeleafs) {
+		hull_t     *hull = test->hull;
+		int         i, j;
+		portlist_t *p;
+		clipport_t *portal;
+		clipleaf_t *leaf;
+		int         side;
+
+		hull->nodeleafs = MOD_BuildBrushes (hull);
+		for (i = hull->firstclipnode; i <= hull->lastclipnode; i++) {
+			for (j = 0; j < 2; j++) {
+				if (((hull->clipnodes[i].children[j] >= 0)
+					 != (!hull->nodeleafs[i].leafs[j]))
+					|| (hull->nodeleafs[i].leafs[j]
+						&& (hull->nodeleafs[i].leafs[j]->contents
+							!= hull->clipnodes[i].children[j]))) {
+					printf ("bad nodeleaf %d %d\n", i, j);
+					res = 1;
+				}
+			}
+			if (hull->nodeleafs[i].leafs[0]
+				&& (hull->nodeleafs[i].leafs[0]
+					== hull->nodeleafs[i].leafs[1])) {
+				printf ("bad nodeleaf %d %d\n", i, j);
+				res = 1;
+			}
+		}
+		if (res)
+			goto nodeleaf_bail;
+		for (i = hull->firstclipnode; i <= hull->lastclipnode; i++) {
+			for (j = 0; j < 2; j++) {
+				leaf = hull->nodeleafs[i].leafs[j];
+				if (!leaf)
+					continue;
+				portal_list = collect_portals (leaf->portals, portal_list);
+			}
+		}
+		for (i = 0, p = portal_list; p; i++, p = p->next)
+			;
+		if (i != test->expect.num_portals) {
+			res = 1;
+			printf ("bad portal count: %d %d\n", test->expect.num_portals, i);
+			goto nodeleaf_bail;
+		}
+		for (p = portal_list; p; p = p->next) {
+			for (j = 0; j < 2; j++) {
+				int         found = 0;
+
+				leaf = p->portal->leafs[j];
+				for (portal = leaf->portals; portal;
+					 portal = portal->next[side]) {
+				//printf("%p %d %p %p %p\n", p, j, leaf, portal, p->portal);
+					side = portal->leafs[1] == leaf;
+					if (!side && portal->leafs[0] != leaf) {
+						printf ("mislinked portal\n");
+						res = 1;
+					}
+					if (portal == p->portal)
+						found = 1;
+				}
+				if (!found) {
+					printf ("portal unreachable from leaf\n");
+					res = 1;
+				}
+			}
+		}
+	}
+nodeleaf_bail:
+	while (portal_list) {
+		portlist_t *t = portal_list;
+		portal_list = portal_list->next;
+		free (t);
+	}
 
 	VectorSubtract (test->end, test->start, end);
 	VectorMultAdd (test->start, test->expect.frac, end, end);

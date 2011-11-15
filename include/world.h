@@ -118,4 +118,22 @@ hull_t *SV_HullForEntity (struct edict_s *ent, const vec3_t mins,
 void MOD_TraceLine (hull_t *hull, int num,
 					const vec3_t start, const vec3_t end, trace_t *trace);
 
+typedef struct clipport_s {
+	int         planenum;
+	struct clipport_s *next[2];		///< front, back
+	struct clipleaf_s *leafs[2];	///< front, back
+	struct winding_s *winding;
+} clipport_t;
+
+typedef struct clipleaf_s {
+	clipport_t *portals;
+	int         contents;
+} clipleaf_t;
+
+typedef struct nodeleaf_s {
+	clipleaf_t *leafs[2];	///< front, back. If null, node's child is a node
+} nodeleaf_t;
+
+nodeleaf_t *MOD_BuildBrushes (hull_t *hull);
+
 #endif // __world_h

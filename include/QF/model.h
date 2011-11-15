@@ -202,6 +202,7 @@ typedef struct hull_s {
 	int			lastclipnode;
 	vec3_t		clip_mins;
 	vec3_t		clip_maxs;
+	struct nodeleaf_s *nodeleafs;
 } hull_t;
 
 // SPRITE MODELS ==============================================================
