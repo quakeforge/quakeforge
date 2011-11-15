@@ -555,6 +555,7 @@ qfo_read (QFile *file)
 		qfo->funcs[i].code = LittleLong (qfo->funcs[i].code);
 		qfo->funcs[i].def = LittleLong (qfo->funcs[i].def);
 		qfo->funcs[i].locals_space = LittleLong (qfo->funcs[i].locals_space);
+		qfo->funcs[i].line_info = LittleLong (qfo->funcs[i].line_info);
 		qfo->funcs[i].relocs = LittleLong (qfo->funcs[i].relocs);
 		qfo->funcs[i].num_relocs = LittleLong (qfo->funcs[i].num_relocs);
 	}
