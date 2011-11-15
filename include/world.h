@@ -123,6 +123,7 @@ typedef struct clipport_s {
 	struct clipport_s *next[2];		///< front, back
 	struct clipleaf_s *leafs[2];	///< front, back
 	struct winding_s *winding;
+	struct winding_s *edges;		///< unit vectors along edges
 } clipport_t;
 
 typedef struct clipleaf_s {

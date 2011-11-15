@@ -171,11 +171,27 @@ nodeleaf_t *
 MOD_BuildBrushes (hull_t *hull)
 {
 	int         numnodes = hull->lastclipnode + 1;
+	int         i, j, side;
 	nodeleaf_t *nodeleafs;
 	clipleaf_t *root;		// this will be carved into all the actual leafs
 
 	nodeleafs = calloc (numnodes, sizeof (nodeleaf_t));
 	root = alloc_leaf ();
 	carve_leaf (hull, nodeleafs, root, hull->firstclipnode);
+	for (i = 0; i < numnodes; i++) {
+		for (j = 0; j < 2; j++) {
+			clipleaf_t *leaf = nodeleafs[i].leafs[j];
+			clipport_t *p;
+
+			if (!leaf)
+				continue;
+			for (p = leaf->portals; p; p = p->next[side]) {
+				side = p->leafs[1] == leaf;
+				if (p->edges)
+					continue;
+				p->edges = WindingVectors (p->winding);
+			}
+		}
+	}
 	return nodeleafs;
 }

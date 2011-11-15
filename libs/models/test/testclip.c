@@ -451,8 +451,14 @@ run_test (test_t *test)
 				portal_list = collect_portals (leaf->portals, portal_list);
 			}
 		}
-		for (i = 0, p = portal_list; p; i++, p = p->next)
-			;
+		for (i = 0, p = portal_list; p; i++, p = p->next) {
+			if (!p->portal->winding || !p->portal->edges) {
+				res = 1;
+				printf ("portal with missing vertex/edge information\n");
+			}
+		}
+		if (res)
+			goto nodeleaf_bail;
 		if (i != test->expect.num_portals) {
 			res = 1;
 			printf ("bad portal count: %d %d\n", test->expect.num_portals, i);
