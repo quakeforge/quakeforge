@@ -141,6 +141,24 @@ CopyWindingReverse (const winding_t *w)
 }
 
 winding_t *
+WindingVectors (const winding_t *w)
+{
+	int         i;
+	size_t      size;
+	winding_t  *c;
+
+	size = (size_t) (uintptr_t) &((winding_t *) 0)->points[w->numpoints];
+	c = malloc (size);
+	c->numpoints = w->numpoints;
+	for (i = 0; i < w->numpoints; i++) {
+		VectorSubtract (w->points[(i + 1) % w->numpoints], w->points[i],
+						c->points[i]);
+		VectorNormalize (c->points[i]);
+	}
+	return c;
+}
+
+winding_t *
 ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 {
 	int         maxpts, i, j;

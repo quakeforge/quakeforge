@@ -86,6 +86,15 @@ winding_t *CopyWinding (const winding_t *w);
 */
 winding_t *CopyWindingReverse (const winding_t *w);
 
+/** Create a new "winding" that holds the unit vectors of the edges of the
+	given winding.
+
+	\param w		The winding to convert.
+	\return			The "winding" holding the unit vectors.
+	\note It is the caller's responsibiltiy to free the new winding.
+*/
+winding_t *WindingVectors (const winding_t *w);
+
 /**	Clip the winding to the plain.
 
 	The new winding will be the part of the input winding that is on the
