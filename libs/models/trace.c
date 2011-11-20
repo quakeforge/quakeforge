@@ -43,6 +43,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/model.h"
 #include "QF/sys.h"
+#include "QF/winding.h"
 
 #include "compat.h"
 #include "world.h"
@@ -90,6 +91,48 @@ calc_offset (trace_t *trace, plane_t *plane)
 	return d;
 }
 
+static int
+check_in_leaf (hull_t *hull, trace_t *trace, clipleaf_t *leaf, plane_t *plane,
+			   const vec3_t vel, const vec3_t org)
+{
+	clipport_t *portal;
+	int         side;
+	int         miss = 0;
+	int         i;
+	int         planenum;
+	plane_t     cutplane;
+	vec_t       offset, dist, v_n;
+	vec_t      *point, *edge;
+
+	planenum = plane - hull->planes;
+	cutplane.type = 3;	// generic plane
+	v_n = DotProduct (vel, plane->normal);
+
+	for (portal = leaf->portals; portal; portal = portal->next[side]) {
+		side = portal->leafs[1] == leaf;
+		if (portal->planenum != planenum)
+			continue;
+		for (i = 0; !miss && i < portal->winding->numpoints; i++) {
+			point = portal->winding->points[i];
+			edge = portal->edges->points[i];
+			// so long as the plane distance and offset are calculated using
+			// the  same normal vector, the normal vector length does not
+			// matter.
+			CrossProduct (vel, edge, cutplane.normal);
+			cutplane.dist = DotProduct (vel, point);
+			dist = PlaneDiff (org, &cutplane);
+			offset = calc_offset (trace, &cutplane);
+			if (v_n >= 0)
+				miss = dist >= offset;
+			else
+				miss = dist <= -offset;
+		}
+		if (!miss)
+			return 1;
+	}
+	return 0;
+}
+
 static inline void
 calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 			 plane_t *plane)
@@ -129,21 +172,26 @@ MOD_TraceLine (hull_t *hull, int num,
 			   trace_t *trace)
 {
 	vec_t       start_dist, end_dist, frac[2], offset;
-	vec3_t      start, end, dist;
+	vec3_t      start, end, dist, vel;
 	int         side;
 	qboolean    seen_empty, seen_solid;
 	tracestack_t *tstack;
 	tracestack_t tracestack[256];
 	mclipnode_t *node;
 	plane_t    *plane, *split_plane;
+	clipleaf_t *leaf;
 
 	VectorCopy (start_point, start);
 	VectorCopy (end_point, end);
+	VectorSubtract (end, start, vel);
+	VectorNormalize (vel);
 
 	tstack = tracestack;
 	seen_empty = 0;
 	seen_solid = 0;
 	split_plane = 0;
+	leaf = 0;
+	plane = 0;
 
 	trace->allsolid = true;
 	trace->startsolid = false;
@@ -153,7 +201,14 @@ MOD_TraceLine (hull_t *hull, int num,
 
 	while (1) {
 		while (num < 0) {
-			if (num == CONTENTS_SOLID) {
+			// it's not possible to not be in the leaf when doing a point trace
+			// if leaf is null, assume we're in the leaf
+			// if plane is null, the trace did not cross the last node plane
+			int         in_leaf = (trace->type == tr_point || !leaf || !plane
+								   || check_in_leaf (hull, trace, leaf,
+													 plane,
+													 vel, start));
+			if (in_leaf && num == CONTENTS_SOLID) {
 				if (!seen_empty && !seen_solid) {
 					// this is the first leaf visited, thus the start leaf
 					trace->startsolid = seen_solid = true;
@@ -170,7 +225,7 @@ MOD_TraceLine (hull_t *hull, int num,
 					if (trace->type == tr_point)
 						return;
 				}
-			} else {
+			} else if (in_leaf) {
 				seen_empty = true;
 				trace->allsolid = false;
 				if (num == CONTENTS_EMPTY)
@@ -195,6 +250,7 @@ MOD_TraceLine (hull_t *hull, int num,
 			side = tstack->side;
 			split_plane = tstack->plane;
 
+			leaf = hull->nodeleafs[tstack->num].leafs[side ^ 1];
 			num = hull->clipnodes[tstack->num].children[side ^ 1];
 		}
 
@@ -207,11 +263,17 @@ MOD_TraceLine (hull_t *hull, int num,
 
 		if (start_dist >= offset && end_dist >= offset) {
 			// entirely in front of the plane
+			plane = 0;
+			leaf = hull->nodeleafs[num].leafs[0];
 			num = node->children[0];
 			continue;
 		}
+		//FIXME non-zero offset lets the object touch the plane but still be
+		//behind the plane
 		if (start_dist < -offset && end_dist < -offset) {
 			// entirely behind the plane
+			plane = 0;
+			leaf = hull->nodeleafs[num].leafs[1];
 			num = node->children[1];
 			continue;
 		}
@@ -220,17 +282,19 @@ MOD_TraceLine (hull_t *hull, int num,
 
 		if (start_dist == end_dist) {
 			// avoid division by zero (non-point clip only)
-			// since we need to check both sides anyway, it doesn't matter
-			// which side we start with, so long as the fractions are
-			// correct.
+			// since neither side is forward and we need to check both sides
+			// anyway, it doesn't matter which side we start with, so long as
+			// the fractions are correct.
 			side = 0;
 			frac[0] = 1;
 			frac[1] = 0;
 		} else {
+			// choose the side such that we are always moving forward through
+			// the map
+			side = start_dist < end_dist;
 			// if either start or end have the box straddling the plane, then
 			// frac will be appropriately clipped to 0 and 1, otherwise, frac
 			// will be inside that range
-			side = start_dist < end_dist;
 			frac[0] = (start_dist + offset) / (start_dist - end_dist);
 			frac[1] = (start_dist - offset) / (start_dist - end_dist);
 			frac[0] = bound (0, frac[0], 1);
@@ -249,6 +313,7 @@ MOD_TraceLine (hull_t *hull, int num,
 
 		VectorMultAdd (start, frac[side], dist, end);
 
+		leaf = hull->nodeleafs[num].leafs[side];
 		num = node->children[side];
 	}
 }
