@@ -35,7 +35,7 @@ struct plane_s;
 
 typedef struct winding_s {
 	int         numpoints;			///< The number of points in the winding
-	vec3_t      points[3];			///< variable sized, never less than 3
+	vec3_t      points[4];			///< variable sized, never less than 3
 } winding_t;
 
 /**	Create a very large four-point winding with all point on the plane.
