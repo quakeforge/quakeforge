@@ -119,7 +119,7 @@ check_in_leaf (hull_t *hull, trace_t *trace, clipleaf_t *leaf, plane_t *plane,
 			// the  same normal vector, the normal vector length does not
 			// matter.
 			CrossProduct (vel, edge, cutplane.normal);
-			cutplane.dist = DotProduct (vel, point);
+			cutplane.dist = DotProduct (cutplane.normal, point);
 			dist = PlaneDiff (org, &cutplane);
 			offset = calc_offset (trace, &cutplane);
 			if (v_n >= 0)
