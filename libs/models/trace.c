@@ -204,9 +204,9 @@ MOD_TraceLine (hull_t *hull, int num,
 			// it's not possible to not be in the leaf when doing a point trace
 			// if leaf is null, assume we're in the leaf
 			// if plane is null, the trace did not cross the last node plane
-			int         in_leaf = (trace->type == tr_point || !leaf || !plane
+			int         in_leaf = (trace->type == tr_point || !leaf || !split_plane
 								   || check_in_leaf (hull, trace, leaf,
-													 plane,
+													 split_plane,
 													 vel, start));
 			if (in_leaf && num == CONTENTS_SOLID) {
 				if (!seen_empty && !seen_solid) {
