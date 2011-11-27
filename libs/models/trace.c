@@ -242,28 +242,29 @@ edge_portal_dist (const plane_t *plane, const clipport_t *portal,
 			vec3_t      x, c;
 			vec3_t      imp;
 
-			if (t1 >= vn) {
+			t1 /= -vn;
+			if (t1 >= 1) {
 				// the edge doesn't make it as far as the portal's plane
 				return 1;
 			}
-			VectorMultSub (p1, t1 / vn, vel, imp);
+			VectorMultSub (p1, t1, vel, imp);
 			for (i = 0; i < winding->numpoints; i++) {
 				VectorSubtract (imp, winding->points[i], x);
 				CrossProduct (x, edges->points[i], c);
-				if (DotProduct (c, plane->normal) >= 0)
+				if (DotProduct (c, plane->normal) < 0)
 					break;		// miss
 			}
 			if (i == winding->numpoints) {
-				// the closer end of the edge hit the portal, so t1/vn is the
+				// the closer end of the edge hit the portal, so t1 is the
 				// fraction
-				return t1 / vn;
+				return t1;
 			}
 			// the closer end of the edge missed the portal, check the farther
 			// end, but only with this portal edge.
 			VectorMultSub (p2, t2 / vn, vel, imp);
 			VectorSubtract (imp, winding->points[i], x);
 			CrossProduct (x, edges->points[i], c);
-			if (DotProduct (c, plane->normal) >= 0) {
+			if (DotProduct (c, plane->normal) < 0) {
 				// both impacts are on the outside of this portal edge, so the
 				// edge being tested misses the portal
 				return 1;
@@ -284,6 +285,7 @@ edge_portal_dist (const plane_t *plane, const clipport_t *portal,
 		ee = DotProduct (e, e);
 		CrossProduct (e, vel, ep.normal);
 		ep.dist = DotProduct (p1, ep.normal);
+		ep.type = 3;
 		for (i = 0; i < winding->numpoints; i++) {
 			vec_t       t, te, vn;
 			const vec_t *r = winding->points[i];
@@ -326,6 +328,7 @@ box_portal_dist (const hull_t *hull, const clipport_t *portal,
 	vec_t       frac, t;
 	vec3_t      p1, p2;
 
+	frac = 1.0;
 	for (i = 0; i < 3; i++) {
 		// all faces on box have 4 points (and edges), but we need test only
 		// three on each face
@@ -402,7 +405,7 @@ calc_impact (hull_t *hull, trace_t *trace,
 				vec3_t      r, s;
 				VectorSubtract (impact, portal->winding->points[i], r);
 				CrossProduct (r, portal->edges->points[i], s);
-				if (DotProduct (s, plane->normal) <= 0)
+				if (DotProduct (s, plane->normal) > 0)
 					continue;	// "hit"
 				break;	// "miss";
 			}
