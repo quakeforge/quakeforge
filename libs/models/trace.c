@@ -133,9 +133,232 @@ check_in_leaf (hull_t *hull, trace_t *trace, clipleaf_t *leaf, plane_t *plane,
 	return 0;
 }
 
+typedef struct {
+	plane_t     planes[3];
+	winding_t   points[3];
+	winding_t   edges[3];
+	clipport_t  portals[3];
+} clipbox_t;
+
+/** Initialize the clipbox representing the faces that might hit the portal.
+
+	When a box is moving, at most three of its faces might hit the portal.
+	Those faces all face such that the dot product of their normal and the
+	box's velocity is positive (ie, n.v > 0). When the motion is in an axial
+	plane, only two faces might hit. For axial motion, only one face.
+
+	The faces are set up such that the first point of each winding is the
+	leading corner of the box, and the edges are set up such that testing
+	only the first three edges of each winding covers all nine edges (ie,
+	the forth edge of one face is the reverse of the first edge of the next
+	face).
+
+	The windings are clockwise when looking down the face's normal (ie, when
+	looking at the front of the face).
+*/
+static void
+init_box (const trace_t *trace, clipbox_t *box, const vec3_t vel)
+{
+	vec3_t      p;
+	int         u[3];
+	int         i, j, k;
+	vec_t       s[2] = {1, -1};
+
+	//FIXME rotated box
+	for (i = 0; i < 3; i++)
+		u[i] = (vel[i] >= 0 ? 1 : -1);
+	Vector3Scale (u, trace->extents, p);
+	for (i = 0; i < 3; i++) {
+		box->portals[i].planenum = i;
+		box->portals[i].next[0] = 0;
+		box->portals[i].next[0] = 0;
+		box->portals[i].leafs[0] = 0;
+		box->portals[i].leafs[0] = 0;
+		box->portals[i].winding = &box->points[i];
+		box->portals[i].edges = &box->edges[i];
+
+		VectorZero (box->planes[i].normal);
+		box->planes[i].normal[i] = u[i];
+		box->planes[i].dist = DotProduct (p, box->planes[i].normal);
+		box->planes[i].type = i;
+
+		box->points[i].numpoints = 4;
+		box->edges[i].numpoints = 4;
+		VectorCopy (u, box->points[i].points[0]);
+		VectorZero (box->edges[i].points[0]);
+		j = (i + (u[0]*u[1]*u[2] + 3) / 2) % 3;
+		box->edges[i].points[0][j] = -u[j];
+		for (j = 1; j < 4; j++) {
+			box->points[i].points[j][i] = box->points[i].points[j - 1][i];
+			box->edges[i].points[j][i] = box->edges[i].points[j - 1][i];
+			for (k = 0; k < 2; k++) {
+				int         a, b;
+				a = (i + 1 + k) % 3;
+				b = (i + 2 - k) % 3;
+				box->points[i].points[j][a]
+					= s[k] * u[i] * box->points[i].points[j - 1][b];
+				box->edges[i].points[j][a]
+					= s[k] * u[i] * box->edges[i].points[j - 1][b];
+			}
+			Vector3Scale (box->points[i].points[j - 1], trace->extents,
+						  box->points[i].points[j - 1]);
+		}
+		Vector3Scale (box->points[i].points[3], trace->extents,
+					  box->points[i].points[3]);
+	}
+}
+
+static vec_t
+edge_portal_dist (const plane_t *plane, const clipport_t *portal,
+				  const vec3_t p1, const vec3_t p2, const vec3_t vel)
+{
+	int         i;
+	winding_t  *winding = portal->winding;
+	winding_t  *edges = portal->edges;
+
+	// check for edge point hitting portal face
+	{
+		vec_t       t1, t2, vn;
+
+		vn = DotProduct (vel, plane->normal);
+		t1 = PlaneDiff (p1, plane);
+		t2 = PlaneDiff (p2, plane);
+		// ensure p1 is the closest point to the plane
+		if ((0 < t1 && t1 > t2)
+				   || (0 > t1 && t1 < t2)) {
+			// p2 is closer to the plane, so swap the points and times
+			const vec_t *r = p2;
+			vec_t       t = t2;
+			t2 = t1; t1 = t;
+			p2 = p1; p1 = r;
+		}
+		if (vn * t1 > 0) {
+			// the edge is travelling away from the portal's plane
+			return 1;
+		}
+		// if t1 * t2 < 0, the points straddle the portal's plane and the
+		// nearest point test can be skipped
+		if (vn && t1 * t2 > 0) {		//FIXME epsilon
+			vec3_t      x, c;
+			vec3_t      imp;
+
+			if (t1 >= vn) {
+				// the edge doesn't make it as far as the portal's plane
+				return 1;
+			}
+			VectorMultSub (p1, t1 / vn, vel, imp);
+			for (i = 0; i < winding->numpoints; i++) {
+				VectorSubtract (imp, winding->points[i], x);
+				CrossProduct (x, edges->points[i], c);
+				if (DotProduct (c, plane->normal) >= 0)
+					break;		// miss
+			}
+			if (i == winding->numpoints) {
+				// the closer end of the edge hit the portal, so t1/vn is the
+				// fraction
+				return t1 / vn;
+			}
+			// the closer end of the edge missed the portal, check the farther
+			// end, but only with this portal edge.
+			VectorMultSub (p2, t2 / vn, vel, imp);
+			VectorSubtract (imp, winding->points[i], x);
+			CrossProduct (x, edges->points[i], c);
+			if (DotProduct (c, plane->normal) >= 0) {
+				// both impacts are on the outside of this portal edge, so the
+				// edge being tested misses the portal
+				return 1;
+			}
+			// the two impact points are on both sides of a portal edge, so the
+			// edge being tested might hit a portal edge rather than the portal
+			// face
+		}
+	}
+	{
+		vec3_t      e;
+		vec_t       frac = 1.0;
+		vec_t       ee;
+		plane_t     ep;
+
+		// set up the plane through which the edge travels
+		VectorSubtract (p2, p1, e);
+		ee = DotProduct (e, e);
+		CrossProduct (e, vel, ep.normal);
+		ep.dist = DotProduct (p1, ep.normal);
+		for (i = 0; i < winding->numpoints; i++) {
+			vec_t       t, te, vn;
+			const vec_t *r = winding->points[i];
+			const vec_t *v = edges->points[i];
+			vec3_t      x, y, z;
+
+			vn = DotProduct (v, ep.normal);
+			if (!vn)	// FIXME epsilon
+				continue;	// portal edge is parallel to the plane
+			t = PlaneDiff (r, &ep);
+			if (t < 0 || t > vn)
+				continue;	// portal edge does not reach the plane
+			// impact point of portal edge with the plane
+			VectorMultSub (r, t / vn, v, x);
+			// project the impact point back to the edge along the velocity
+			VectorSubtract (x, p1, y);
+			t = DotProduct (y, vel) / DotProduct (vel, vel);
+			VectorMultSub (x, t, vel, y);
+			if (t >= frac)
+				continue;	// this is not the nearest edge pair
+			// check projected impact point's position along the edge
+			VectorSubtract (y, p1, z);
+			te = DotProduct (z, e);
+			if (te < 0 || te > ee)
+				continue;	// the edge misses the portal edge
+			// the edges hit, and they are the closes edge pair so far
+			frac = t;
+		}
+		return frac;
+	}
+}
+
+static vec_t
+box_portal_dist (const hull_t *hull, const clipport_t *portal,
+				 const clipbox_t *box, const vec3_t start, const vec3_t vel)
+{
+	vec3_t      nvel;
+	plane_t    *plane = hull->planes + portal->planenum;
+	int         i, j;
+	vec_t       frac, t;
+	vec3_t      p1, p2;
+
+	for (i = 0; i < 3; i++) {
+		// all faces on box have 4 points (and edges), but we need test only
+		// three on each face
+		for (j = 0; j < 3; j++) {
+			VectorAdd (box->points->points[j], start, p1);
+			VectorAdd (box->points->points[j + 1], start, p2);
+			t = edge_portal_dist (plane, portal, p1, p2, vel);
+			if (t < frac)
+				frac = t;
+		}
+	}
+
+	VectorNegate (vel, nvel);
+	for (i = 0; i < portal->winding->numpoints; i++) {
+		j = i + 1;
+		if (j >= portal->winding->numpoints)
+			j -= portal->winding->numpoints;
+		VectorSubtract (portal->winding->points[i], start, p1);
+		VectorSubtract (portal->winding->points[j], start, p2);
+		for (j = 0; j < 3; j++) {
+			const clipport_t *p = &box->portals[j];
+			t = edge_portal_dist (box->planes + p->planenum, p, p1, p2, nvel);
+			if (t < frac)
+				frac = t;
+		}
+	}
+	return frac;
+}
+
 static inline void
-calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
-			 plane_t *plane)
+calc_impact (hull_t *hull, trace_t *trace,
+			 const vec3_t start, const vec3_t end,
+			 clipleaf_t *leaf, plane_t *plane)
 {
 	vec_t       t1, t2, frac, offset;
 	vec3_t      dist;
@@ -151,6 +374,53 @@ calc_impact (trace_t *trace, const vec3_t start, const vec3_t end,
 		frac = (t1 - offset - DIST_EPSILON) / (t1 - t2);
 	}
 	frac = bound (0, frac, 1);
+
+	if (leaf && trace->type != tr_point) {
+		int         i;
+		int         side;
+		int         planenum;
+		clipport_t *portal;
+		vec3_t      impact;
+		clipbox_t   box;
+
+		planenum = plane - hull->planes;
+
+		VectorSubtract (end, start, dist);
+		VectorMultAdd (start, frac, dist, impact);
+		if (DotProduct (dist, plane->normal) > 0)
+			VectorMultAdd (impact, offset, plane->normal, impact);
+		else
+			VectorMultSub (impact, offset, plane->normal, impact);
+
+		init_box (trace, &box, dist);
+
+		for (portal = leaf->portals; portal; portal = portal->next[side]) {
+			side = portal->leafs[1] == leaf;
+			if (portal->planenum != planenum)
+				continue;
+			for (i = 0; i < portal->winding->numpoints; i++) {
+				vec3_t      r, s;
+				VectorSubtract (impact, portal->winding->points[i], r);
+				CrossProduct (r, portal->edges->points[i], s);
+				if (DotProduct (s, plane->normal) <= 0)
+					continue;	// "hit"
+				break;	// "miss";
+			}
+			if (i == portal->winding->numpoints)
+				goto finish_impact;	// impact with the face of the polygon
+		}
+		for (portal = leaf->portals; portal; portal = portal->next[side]) {
+			vec_t       t;
+
+			side = portal->leafs[1] == leaf;
+			if (portal->planenum != planenum)
+				continue;
+			t = box_portal_dist (hull, portal, &box, start, dist);
+			if (t < frac)
+				frac = t;
+		}
+	}
+finish_impact:
 	if (frac < trace->fraction) {
 		trace->fraction = frac;
 		VectorSubtract (end, start, dist);
@@ -221,7 +491,8 @@ MOD_TraceLine (hull_t *hull, int num,
 				} else {
 					// crossing from an empty leaf to a solid leaf: the trace
 					// has collided.
-					calc_impact (trace, start_point, end_point, split_plane);
+					calc_impact (hull, trace, start_point, end_point, leaf,
+								 split_plane);
 					if (trace->type == tr_point)
 						return;
 				}
