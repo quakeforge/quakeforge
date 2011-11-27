@@ -295,11 +295,11 @@ edge_portal_dist (const plane_t *plane, const clipport_t *portal,
 			vn = DotProduct (v, ep.normal);
 			if (!vn)	// FIXME epsilon
 				continue;	// portal edge is parallel to the plane
-			t = PlaneDiff (r, &ep);
-			if (t < 0 || t > vn)
+			t = PlaneDiff (r, &ep) / vn;
+			if (t < -1)
 				continue;	// portal edge does not reach the plane
 			// impact point of portal edge with the plane
-			VectorMultSub (r, t / vn, v, x);
+			VectorMultSub (r, t, v, x);
 			// project the impact point back to the edge along the velocity
 			VectorSubtract (x, p1, y);
 			t = DotProduct (y, vel) / DotProduct (vel, vel);
@@ -333,8 +333,8 @@ box_portal_dist (const hull_t *hull, const clipport_t *portal,
 		// all faces on box have 4 points (and edges), but we need test only
 		// three on each face
 		for (j = 0; j < 3; j++) {
-			VectorAdd (box->points->points[j], start, p1);
-			VectorAdd (box->points->points[j + 1], start, p2);
+			VectorAdd (box->points[i].points[j], start, p1);
+			VectorAdd (box->points[i].points[j + 1], start, p2);
 			t = edge_portal_dist (plane, portal, p1, p2, vel);
 			if (t < frac)
 				frac = t;
@@ -412,6 +412,7 @@ calc_impact (hull_t *hull, trace_t *trace,
 			if (i == portal->winding->numpoints)
 				goto finish_impact;	// impact with the face of the polygon
 		}
+		frac = 1.0;
 		for (portal = leaf->portals; portal; portal = portal->next[side]) {
 			vec_t       t;
 
