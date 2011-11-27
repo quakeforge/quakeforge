@@ -362,6 +362,10 @@ test_t tests[] = {
 
 	{"Box,  Ramp", &box, &hull_ramp,
 		{ 0, 0, 16}, {0, 0, 0}, { 0.5, 0, 0, 1, 0, 4}},
+	{"Box,  Ramp", &box, &hull_ramp,
+		{-16, 0, 8}, {16, 0, 8}, { 1, 0, 0, 1, 0, 4}},
+	{"Box,  Ramp", &box, &hull_ramp,
+		{-16, 0, 5}, {16, 0, 5}, { 0.125, 0, 0, 1, 0, 4}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
