@@ -141,7 +141,7 @@ CopyWindingReverse (const winding_t *w)
 }
 
 winding_t *
-WindingVectors (const winding_t *w)
+WindingVectors (const winding_t *w, int unit)
 {
 	int         i;
 	size_t      size;
@@ -153,7 +153,8 @@ WindingVectors (const winding_t *w)
 	for (i = 0; i < w->numpoints; i++) {
 		VectorSubtract (w->points[(i + 1) % w->numpoints], w->points[i],
 						c->points[i]);
-		VectorNormalize (c->points[i]);
+		if (unit)
+			VectorNormalize (c->points[i]);
 	}
 	return c;
 }

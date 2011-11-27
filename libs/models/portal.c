@@ -189,7 +189,7 @@ MOD_BuildBrushes (hull_t *hull)
 				side = p->leafs[1] == leaf;
 				if (p->edges)
 					continue;
-				p->edges = WindingVectors (p->winding);
+				p->edges = WindingVectors (p->winding, 0);
 			}
 		}
 	}

@@ -90,10 +90,11 @@ winding_t *CopyWindingReverse (const winding_t *w);
 	given winding.
 
 	\param w		The winding to convert.
-	\return			The "winding" holding the unit vectors.
+	\param unit		If true, normalize the vectors.
+	\return			The "winding" holding the (unit) vectors.
 	\note It is the caller's responsibiltiy to free the new winding.
 */
-winding_t *WindingVectors (const winding_t *w);
+winding_t *WindingVectors (const winding_t *w, int unit);
 
 /**	Clip the winding to the plain.
 
