@@ -15,6 +15,13 @@
 # include "../trace.c"
 #endif
 
+#define FloatCompare(a, b) (fabs (a - b) < 1e-6)
+#undef VectorCompare
+#define VectorCompare(x, y)									\
+	(FloatCompare (x[0], y[0]) && FloatCompare (x[1], y[1])	\
+	 && FloatCompare (x[2], y[2]))
+
+
 //  0,0
 //   |\   .
 //   |s\  .
@@ -515,7 +522,7 @@ nodeleaf_bail:
 			   trace.allsolid, trace.startsolid,
 			   trace.inopen, trace.inwater);
 	if (VectorCompare (end, trace.endpos)
-		&& test->expect.frac == trace.fraction
+		&& FloatCompare (test->expect.frac, trace.fraction)
 		&& test->expect.allsolid == trace.allsolid
 		&& test->expect.startsolid == trace.startsolid
 		&& test->expect.inopen == trace.inopen
