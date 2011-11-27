@@ -477,6 +477,14 @@ run_test (test_t *test)
 			goto nodeleaf_bail;
 		}
 		for (p = portal_list; p; p = p->next) {
+			for (j = 0; j < p->portal->winding->numpoints; j++) {
+				p->portal->winding->points[j][0]
+					= bound (-8192, p->portal->winding->points[j][0], 8192);
+				p->portal->winding->points[j][1]
+					= bound (-8192, p->portal->winding->points[j][1], 8192);
+				p->portal->winding->points[j][2]
+					= bound (-8192, p->portal->winding->points[j][2], 8192);
+			}
 			for (j = 0; j < 2; j++) {
 				int         found = 0;
 
