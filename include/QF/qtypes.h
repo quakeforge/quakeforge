@@ -72,6 +72,13 @@ typedef vec_t	vec3_t[3];	///< A 3D vector (used for Euler angles and motion vect
 typedef vec_t	vec4_t[4];
 typedef vec_t	quat_t[4];	///< A quaternion.
 typedef vec_t	vec5_t[5];
+typedef union {
+	struct {
+		vec_t       s;
+		vec3_t      v;
+	} sv;
+	quat_t      q;
+} Quat_t;
 typedef	int		fixed4_t;
 typedef int		fixed8_t;
 typedef	int		fixed16_t;
