@@ -265,6 +265,39 @@ hull_t hull_ramp = {
 	{0, 0, 0},
 };
 
+//   2   1
+// ss|sss|ss
+// ss+-3-+ss 8
+// ss|eee|ss
+// ss+-4-+ss -8
+// ss|sss|ss
+//  -8   8
+//  looking at plane 0: back of 0 is empty, front of 0 has above hole
+mclipnode_t clipnodes_hole[] = {
+	{  0, {             1, CONTENTS_EMPTY}},
+	{  1, {CONTENTS_SOLID,              2}},
+	{  2, {             3, CONTENTS_SOLID}},
+	{  3, {CONTENTS_SOLID,              4}},
+	{  4, {CONTENTS_EMPTY, CONTENTS_SOLID}},
+};
+
+plane_t planes_hole[] = {
+	{{ 0, 1, 0},   0, 1, 0},
+	{{ 1, 0, 0},   8, 0, 0},
+	{{ 1, 0, 0},  -8, 0, 0},
+	{{ 0, 0, 1},   8, 2, 0},
+	{{ 0, 0, 1},  -8, 2, 0},
+};
+
+hull_t hull_hole = {
+	clipnodes_hole,
+	planes_hole,
+	0,
+	4,
+	{0, 0, 0},
+	{0, 0, 0},
+};
+
 
 typedef struct {
 	vec3_t      extents;
@@ -378,6 +411,27 @@ test_t tests[] = {
 		{-16, 0, 5}, {16, 0, 5}, { 0.25, 0, 0, 1, 0, 3}},
 	{"Box,  Simple Wedge", &box, &hull_simple_wedge,
 		{-16, 0, 12}, {16, 0, 4}, { 0.5, 0, 0, 1, 0, 3}},
+
+	{"Box,  Hole. slide in", &box, &hull_hole,
+		{ 0, -16,  0}, {  0,  16,   0}, { 1, 0, 0, 1, 0, 13}},
+	{"Box,  Hole. slide out", &box, &hull_hole,
+		{ 0,  16,  0}, {  0, -16,   0}, { 1, 0, 0, 1, 0, 13}},
+	{"Box,  Hole. tight", &box, &hull_hole,
+		{ 0,  16,  0}, {  0,  16,  16}, { 0, 0, 0, 1, 0, 13}},
+	{"Box,  Hole. tight", &box, &hull_hole,
+		{ 0,  16,  0}, {  0,  16, -16}, { 0, 0, 0, 1, 0, 13}},
+	{"Box,  Hole. tight", &box, &hull_hole,
+		{ 0,  16,  0}, { 16,  16,   0}, { 0, 0, 0, 1, 0, 13}},
+	{"Box,  Hole. tight", &box, &hull_hole,
+		{ 0,  16,  0}, {-16,  16,   0}, { 0, 0, 0, 1, 0, 13}},
+	{"Box,  Hole. edge", &box, &hull_hole,
+		{ 0, -16,  1}, {  0,  16,   1}, { 0.25, 0, 0, 1, 0, 13}},
+	{"Box,  Hole. edge", &box, &hull_hole,
+		{ 0, -16, -1}, {  0,  16,  -1}, { 0.25, 0, 0, 1, 0, 13}},
+	{"Box,  Hole. edge", &box, &hull_hole,
+		{ 1, -16,  0}, {  1,  16,   0}, { 0.25, 0, 0, 1, 0, 13}},
+	{"Box,  Hole. edge", &box, &hull_hole,
+		{-1, -16,  0}, { -1,  16,   0}, { 0.25, 0, 0, 1, 0, 13}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 

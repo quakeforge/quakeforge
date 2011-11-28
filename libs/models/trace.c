@@ -97,7 +97,6 @@ check_in_leaf (hull_t *hull, trace_t *trace, clipleaf_t *leaf, plane_t *plane,
 {
 	clipport_t *portal;
 	int         side;
-	int         miss = 0;
 	int         i;
 	int         planenum;
 	plane_t     cutplane;
@@ -107,12 +106,17 @@ check_in_leaf (hull_t *hull, trace_t *trace, clipleaf_t *leaf, plane_t *plane,
 	planenum = plane - hull->planes;
 	cutplane.type = 3;	// generic plane
 	v_n = DotProduct (vel, plane->normal);
+	if (!v_n) {
+		//FIXME is this correct? The assumption is that if we got to a leaf
+		//travelliing parallel to its plane, then we have to be in the leaf
+		return 1;
+	}
 
 	for (portal = leaf->portals; portal; portal = portal->next[side]) {
 		side = portal->leafs[1] == leaf;
 		if (portal->planenum != planenum)
 			continue;
-		for (i = 0; !miss && i < portal->winding->numpoints; i++) {
+		for (i = 0; i < portal->winding->numpoints; i++) {
 			point = portal->winding->points[i];
 			edge = portal->edges->points[i];
 			// so long as the plane distance and offset are calculated using
@@ -122,12 +126,15 @@ check_in_leaf (hull_t *hull, trace_t *trace, clipleaf_t *leaf, plane_t *plane,
 			cutplane.dist = DotProduct (cutplane.normal, point);
 			dist = PlaneDiff (org, &cutplane);
 			offset = calc_offset (trace, &cutplane);
-			if (v_n >= 0)
-				miss = dist >= offset;
-			else
-				miss = dist <= -offset;
+			if (v_n > 0) {
+				if (dist >= offset)
+					break;
+			} else  {
+				if (dist <= -offset)
+					break;
+			}
 		}
-		if (!miss)
+		if (i == portal->winding->numpoints)
 			return 1;
 	}
 	return 0;
