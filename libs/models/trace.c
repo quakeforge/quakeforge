@@ -551,9 +551,11 @@ MOD_TraceLine (hull_t *hull, int num,
 			num = node->children[0];
 			continue;
 		}
-		//FIXME non-zero offset lets the object touch the plane but still be
-		//behind the plane
-		if (start_dist < -offset && end_dist < -offset) {
+		//non-zero offset lets the object touch the plane but still be
+		//behind the plane. however, point traces are assumed to be on the
+		//front side of the plane if touching the plane
+		if ((offset && start_dist <= -offset && end_dist <= -offset)
+			|| (!offset && start_dist < -offset && end_dist < -offset)) {
 			// entirely behind the plane
 			plane = 0;
 			leaf = hull->nodeleafs[num].leafs[1];

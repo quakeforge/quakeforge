@@ -353,6 +353,10 @@ test_t tests[] = {
 		{ -17, 0, 8}, {-1, 0, 72}, { 1, 0, 0, 1, 0, 9}},
 	{"Box, Covered Step", &box, &hull_covered_step,
 		{ -8, 0, 40}, {8, 0, 72}, { 1, 0, 0, 1, 0, 9}},
+	{"Box, Covered Step touch backside", &box, &hull_covered_step,
+		{ -8, 0, 8}, {-12, 0, 12}, { 1, 0, 0, 1, 0, 9}},
+	{"Point, Covered Step touch backside", &point, &hull_covered_step,
+		{ 0, 0, 8}, {-12, 0, 12}, { 1, 0, 1, 1, 0, 9}},
 
 	{"Box,  Step 2", &box, &hull_step2,
 		{ 0, 0, 64}, {0, 0, 0}, { 0.375, 0, 0, 1, 0, 5}},
