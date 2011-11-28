@@ -202,9 +202,17 @@ init_box (const trace_t *trace, clipbox_t *box, const vec3_t vel)
 			}
 			Vector3Scale (box->points[i].points[j - 1], trace->extents,
 						  box->points[i].points[j - 1]);
+			Vector3Scale (box->edges[i].points[j - 1], trace->extents,
+						  box->edges[i].points[j - 1]);
+			VectorScale (box->edges[i].points[j - 1], 2,
+						 box->edges[i].points[j - 1]);
 		}
 		Vector3Scale (box->points[i].points[3], trace->extents,
 					  box->points[i].points[3]);
+		Vector3Scale (box->edges[i].points[3], trace->extents,
+					  box->edges[i].points[3]);
+		VectorScale (box->edges[i].points[3], 2,
+					 box->edges[i].points[3]);
 	}
 }
 
@@ -255,7 +263,7 @@ edge_portal_dist (const plane_t *plane, const clipport_t *portal,
 					break;		// miss
 			}
 			if (i == winding->numpoints) {
-				// the closer end of the edge hit the portal, so t1 is the
+				// the closer end of the edge hit the portal, so -t1 is the
 				// fraction
 				return -t1;
 			}
