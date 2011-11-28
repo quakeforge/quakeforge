@@ -224,8 +224,8 @@ edge_portal_dist (const plane_t *plane, const clipport_t *portal,
 		t1 = PlaneDiff (p1, plane);
 		t2 = PlaneDiff (p2, plane);
 		// ensure p1 is the closest point to the plane
-		if ((0 < t1 && t1 > t2)
-				   || (0 > t1 && t1 < t2)) {
+		if ((0 < t2 && t2 < t1)
+				   || (0 > t2 && t2 > t1)) {
 			// p2 is closer to the plane, so swap the points and times
 			const vec_t *r = p2;
 			vec_t       t = t2;
@@ -242,8 +242,8 @@ edge_portal_dist (const plane_t *plane, const clipport_t *portal,
 			vec3_t      x, c;
 			vec3_t      imp;
 
-			t1 /= -vn;
-			if (t1 >= 1) {
+			t1 /= vn;
+			if (t1 <= -1) {
 				// the edge doesn't make it as far as the portal's plane
 				return 1;
 			}
@@ -257,7 +257,7 @@ edge_portal_dist (const plane_t *plane, const clipport_t *portal,
 			if (i == winding->numpoints) {
 				// the closer end of the edge hit the portal, so t1 is the
 				// fraction
-				return t1;
+				return -t1;
 			}
 			// the closer end of the edge missed the portal, check the farther
 			// end, but only with this portal edge.
@@ -294,7 +294,7 @@ edge_portal_dist (const plane_t *plane, const clipport_t *portal,
 			if (!vn)	// FIXME epsilon
 				continue;	// portal edge is parallel to the plane
 			t = PlaneDiff (r, &ep) / vn;
-			if (t < -1)
+			if (t < -1 || t > 0)
 				continue;	// portal edge does not reach the plane
 			// impact point of portal edge with the plane
 			VectorMultSub (r, t, v, x);
