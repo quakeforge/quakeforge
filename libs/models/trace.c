@@ -463,7 +463,7 @@ MOD_TraceLine (hull_t *hull, int num,
 	vec_t       start_dist, end_dist, frac[2], offset;
 	vec3_t      start, end, dist, vel;
 	int         side;
-	qboolean    seen_empty, seen_solid;
+	qboolean    seen_empty, seen_solid, moved;
 	tracestack_t *tstack;
 	tracestack_t tracestack[256];
 	mclipnode_t *node;
@@ -476,8 +476,9 @@ MOD_TraceLine (hull_t *hull, int num,
 	VectorNormalize (vel);
 
 	tstack = tracestack;
-	seen_empty = 0;
-	seen_solid = 0;
+	seen_empty = false;
+	seen_solid = false;
+	moved = false;
 	split_plane = 0;
 	leaf = 0;
 	plane = 0;
@@ -506,7 +507,8 @@ MOD_TraceLine (hull_t *hull, int num,
 					// whole trace as solid (this is what id does).
 					// However, since allsolid is initialized to true, no need
 					// to do anything.
-					return;
+					if (moved)
+						return;
 				} else {
 					// crossing from an empty leaf to a solid leaf: the trace
 					// has collided.
@@ -539,6 +541,7 @@ MOD_TraceLine (hull_t *hull, int num,
 			VectorCopy (tstack->end, end);
 			side = tstack->side;
 			split_plane = tstack->plane;
+			moved = tstack->start_frac > 0;
 
 			leaf = hull->nodeleafs[tstack->num].leafs[side ^ 1];
 			num = hull->clipnodes[tstack->num].children[side ^ 1];
