@@ -277,20 +277,18 @@ edge_portal_dist (const plane_t *plane, const clipport_t *portal,
 	{
 		vec3_t      e;
 		vec_t       frac = 1.0;
-		vec_t       ee;
 		plane_t     ep;
 
 		// set up the plane through which the edge travels
 		VectorSubtract (p2, p1, e);
-		ee = DotProduct (e, e);
 		CrossProduct (e, vel, ep.normal);
 		ep.dist = DotProduct (p1, ep.normal);
 		ep.type = 3;
 		for (i = 0; i < winding->numpoints; i++) {
-			vec_t       t, te, vn;
+			vec_t       t, vn;
 			const vec_t *r = winding->points[i];
 			const vec_t *v = edges->points[i];
-			vec3_t      x, y, z;
+			vec3_t      x, y;
 
 			vn = DotProduct (v, ep.normal);
 			if (!vn)	// FIXME epsilon
@@ -304,13 +302,15 @@ edge_portal_dist (const plane_t *plane, const clipport_t *portal,
 			VectorSubtract (x, p1, y);
 			t = DotProduct (y, vel) / DotProduct (vel, vel);
 			VectorMultSub (x, t, vel, y);
+			VectorSubtract (y, p1, y);
+			t = DotProduct (y, y) / DotProduct (e, y);
+			if (t < 0 || t > 1)
+				continue;	// the edge misses the portal edge
+			VectorMultAdd (p1, t, e, y);
+			VectorSubtract (x, y, y);
+			t = DotProduct (y, vel) / DotProduct (vel, vel);
 			if (t >= frac)
 				continue;	// this is not the nearest edge pair
-			// check projected impact point's position along the edge
-			VectorSubtract (y, p1, z);
-			te = DotProduct (z, e);
-			if (te < 0 || te > ee)
-				continue;	// the edge misses the portal edge
 			// the edges hit, and they are the closes edge pair so far
 			frac = t;
 		}
