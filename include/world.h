@@ -132,6 +132,7 @@ typedef struct clipport_s {
 typedef struct clipleaf_s {
 	clipport_t *portals;
 	int         contents;
+	int         test_count;
 } clipleaf_t;
 
 typedef struct nodeleaf_s {

@@ -455,6 +455,8 @@ finish_impact:
 	}
 }
 
+static int test_count;
+
 static int
 trace_contents (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
 				const vec3_t origin)
@@ -462,6 +464,8 @@ trace_contents (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
 	clipport_t *portal;
 	int         side;
 	int         contents = leaf->contents;
+
+	leaf->test_count = test_count;
 	// set the auxiliary contents data. this is a bit field of all contents
 	// types contained within the trace.
 	// contents start at -1 (empty). bit 0 represents CONTENTS_EMPTY
@@ -472,10 +476,14 @@ trace_contents (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
 		vec_t       dist;
 		plane_t    *plane;
 		int         res;
+		clipleaf_t *l;
 
 		side = portal->leafs[1] == leaf;
-		plane = hull->planes + portal->planenum;
+		l = portal->leafs[side ^ 1];
+		if (l->test_count == test_count)
+			continue;
 
+		plane = hull->planes + portal->planenum;
 		dist = PlaneDiff (origin, plane);
 		offset = calc_offset (trace, plane);
 		// the side of the plane on which we are does not matter, only
@@ -484,7 +492,7 @@ trace_contents (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
 		if (fabs (dist) >= offset)
 			continue;
 		//FIXME test portal!
-		res = trace_contents (hull, trace, portal->leafs[side ^ 1], origin);
+		res = trace_contents (hull, trace, l, origin);
 		//FIXME better test?
 		// solid > lava > slime > water > empty (desired)
 		// solid > current (good)
@@ -680,5 +688,6 @@ MOD_HullContents (hull_t *hull, int num, const vec3_t origin, trace_t *trace)
 	// check the contents of the "central" and surrounding touched leafs
 	leaf = hull->nodeleafs[prevnode].leafs[side];
 	trace->contents = 0;
+	test_count++;
 	return trace_contents (hull, trace, leaf, origin);
 }
