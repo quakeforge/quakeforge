@@ -455,6 +455,47 @@ finish_impact:
 	}
 }
 
+static int
+trace_contents (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
+				const vec3_t origin)
+{
+	clipport_t *portal;
+	int         side;
+	int         contents = leaf->contents;
+	// set the auxiliary contents data. this is a bit field of all contents
+	// types contained within the trace.
+	// contents start at -1 (empty). bit 0 represents CONTENTS_EMPTY
+	trace->contents |= 1 << (~contents);
+	// check all adjoining leafs that contain part of the trace
+	for (portal = leaf->portals; portal; portal = portal->next[side]) {
+		vec_t       offset;
+		vec_t       dist;
+		plane_t    *plane;
+		int         res;
+
+		side = portal->leafs[1] == leaf;
+		plane = hull->planes + portal->planenum;
+
+		dist = PlaneDiff (origin, plane);
+		offset = calc_offset (trace, plane);
+		// the side of the plane on which we are does not matter, only
+		// whether we're crossing the plane. merely touching the plane does
+		// not cause us to cross it
+		if (fabs (dist) >= offset)
+			continue;
+		//FIXME test portal!
+		res = trace_contents (hull, trace, portal->leafs[side ^ 1], origin);
+		//FIXME better test?
+		// solid > lava > slime > water > empty (desired)
+		// solid > current (good)
+		// problem is, current > sky > lava (what is best?)
+		if (res == CONTENTS_SOLID
+			|| (contents != CONTENTS_SOLID && res < contents))
+			contents = res;
+	}
+	return contents;
+}
+
 VISIBLE void
 MOD_TraceLine (hull_t *hull, int num,
 			   const vec3_t start_point, const vec3_t end_point,
@@ -611,4 +652,33 @@ MOD_TraceLine (hull_t *hull, int num,
 		leaf = hull->nodeleafs[num].leafs[side];
 		num = node->children[side];
 	}
+}
+
+VISIBLE int
+MOD_HullContents (hull_t *hull, int num, const vec3_t origin, trace_t *trace)
+{
+	int         prevnode = -1;
+	int         side = 0;
+	clipleaf_t *leaf;
+	// follow origin down the bsp tree to find the "central" leaf
+	while (num >= 0) {
+		vec_t       d;
+		mclipnode_t *node;
+		plane_t    *plane;
+
+		node = hull->clipnodes + num;
+		plane = hull->planes + node->planenum;
+		d = PlaneDiff (origin, plane);
+		prevnode = num;
+		side = d < 0;
+		num = node->children[side];
+	}
+	if (!trace || trace->type == tr_point
+		|| prevnode == -1 || !hull->nodeleafs) {
+		return num;
+	}
+	// check the contents of the "central" and surrounding touched leafs
+	leaf = hull->nodeleafs[prevnode].leafs[side];
+	trace->contents = 0;
+	return trace_contents (hull, trace, leaf, origin);
 }

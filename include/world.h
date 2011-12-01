@@ -49,6 +49,7 @@ typedef struct trace_s {
 	vec3_t		endpos;		// final position
 	plane_t		plane;		// surface normal at impact
 	struct edict_s *ent;	// entity the surface is on
+	unsigned    contents;	// contents of leafs touched by trace
 } trace_t;
 
 
@@ -117,6 +118,8 @@ hull_t *SV_HullForEntity (struct edict_s *ent, const vec3_t mins,
 						  const vec3_t maxs, vec3_t extents, vec3_t offset);
 void MOD_TraceLine (hull_t *hull, int num,
 					const vec3_t start, const vec3_t end, trace_t *trace);
+int MOD_HullContents (hull_t *hull, int num, const vec3_t origin,
+					  trace_t *trace);
 
 typedef struct clipport_s {
 	int         planenum;
