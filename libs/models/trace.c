@@ -812,13 +812,14 @@ MOD_HullContents (hull_t *hull, int num, const vec3_t origin, trace_t *trace)
 		side = d < 0;
 		num = node->children[side];
 	}
+	if (trace)
+		trace->contents = 0;
 	if (!trace || trace->type == tr_point
 		|| prevnode == -1 || !hull->nodeleafs) {
 		return num;
 	}
 	// check the contents of the "central" and surrounding touched leafs
 	leaf = hull->nodeleafs[prevnode].leafs[side];
-	trace->contents = 0;
 	test_count++;
 	return trace_contents (hull, trace, leaf, origin);
 }
