@@ -91,6 +91,50 @@ calc_offset (trace_t *trace, plane_t *plane)
 	return d;
 }
 
+static qboolean
+point_inside_portal (const clipport_t *portal, const plane_t *plane,
+					  const vec3_t p)
+{
+	vec3_t      x, c;
+	const vec_t *n = plane->normal;
+	int         i;
+	const winding_t *points = portal->winding;
+	const winding_t *edges = portal->edges;
+
+	for (i = 0; i < points->numpoints; i++) {
+		VectorSubtract (p, points->points[i], x);
+		CrossProduct (x, edges->points[i], c);
+		if (DotProduct (c, n) <= 0)
+			return false;
+	}
+	return true;
+}
+
+static qboolean
+edges_intersect (const vec3_t p1, const vec3_t p2,
+				 const vec3_t r1, const vec3_t r2)
+{
+	vec3_t      p, r, b;
+	vec3_t      p_r, b_p, b_r;
+	vec_t       tp, tpd, tr, trd;
+
+	VectorSubtract (p2, p1, p);
+	VectorSubtract (r2, r1, r);
+	VectorSubtract (r1, p1, b);
+	CrossProduct (p, r, p_r);
+	if (VectorIsZero (p_r))
+		return false;
+	CrossProduct (b, p, b_p);
+	CrossProduct (b, r, b_r);
+	tr = DotProduct (b_p, b_p);
+	trd = DotProduct (b_p, p_r);
+	tp = DotProduct (b_r, b_r);
+	tpd = DotProduct (b_r, p_r);
+	if ((tr < 0 || tr > trd) || (tp < 0 || tp > tpd))
+		return false;
+	return true;
+}
+
 static int
 check_in_leaf (hull_t *hull, trace_t *trace, clipleaf_t *leaf, plane_t *plane,
 			   const vec3_t vel, const vec3_t org)
@@ -455,6 +499,88 @@ finish_impact:
 	}
 }
 
+static qboolean
+portal_intersect (trace_t *trace, clipport_t *portal, plane_t *plane,
+				  const vec3_t origin)
+{
+	vec3_t      r;
+	vec_t       o_n;
+	int         i;
+	static vec3_t verts[][2] = {
+		{{ -1, -1, -1}, {  1, -1, -1}},
+		{{ -1, -1,  1}, {  1, -1,  1}},
+		{{ -1,  1, -1}, {  1,  1, -1}},
+		{{ -1,  1,  1}, {  1,  1,  1}},
+		{{ -1, -1, -1}, { -1,  1, -1}},
+		{{  1, -1, -1}, {  1,  1, -1}},
+		{{ -1, -1,  1}, { -1,  1,  1}},
+		{{  1, -1,  1}, {  1,  1,  1}},
+		{{ -1, -1, -1}, { -1, -1,  1}},
+		{{ -1,  1, -1}, { -1,  1,  1}},
+		{{  1, -1, -1}, {  1, -1,  1}},
+		{{  1,  1, -1}, {  1,  1,  1}},
+	};
+
+	// if any portal point is inside or touches the box, then they intersect
+	for (i = 0; i < portal->winding->numpoints; i++) {
+		VectorSubtract (portal->winding->points[i], origin, r);
+		if (fabs(r[0]) <= trace->extents[0]
+			&& fabs(r[1]) <= trace->extents[1]
+			&& fabs(r[2]) <= trace->extents[2])
+			return true;
+	}
+	// if any box edge crosses or touches the plane within the portal, then
+	// they intersect
+	o_n = DotProduct (origin, plane->normal);
+	for (i = 0; i < 12; i++) {
+		vec3_t      p1, p2, imp, dist;
+		vec_t       t1, t2, frac;
+
+		Vector3Scale (trace->extents, verts[i][0], p1);
+		Vector3Scale (trace->extents, verts[i][1], p2);
+		t1 = PlaneDiff (p1, plane) + o_n;
+		t2 = PlaneDiff (p2, plane) + o_n;
+		// if both ends of the box edge are on the same side (or touching) the
+		// plane, the edge does not cross the plane
+		// if only one end of the edge is touching, then we still have to
+		// check the impact point. 
+		if ((t1 > 0 && t2 > 0) || (t1 < 0 && t2 < 0) || (t1 == t2))
+			continue;
+		if (t1 == t2) {
+			int         j;
+			// the edge is on the plane
+			// if either end touches the portal, then the box and portal touch
+			if (point_inside_portal (portal, plane, p1))
+				return true;
+			if (point_inside_portal (portal, plane, p2))
+				return true;
+			// if the edge intersects with a portal edge, then the box and
+			// portal touch
+			for (j = 0; j < portal->winding->numpoints; j++) {
+				int         k = j + 1;
+				if (k == portal->winding->numpoints)
+					k = 0;
+				if (edges_intersect (p1, p2, portal->winding->points[j],
+									 portal->winding->points[k]))
+					return true;
+			}
+			continue;
+		}
+		// since t1 and t2 are guaranteed to be on opposite sides of the plane,
+		// or only one touching, they are guaranteed to be unequal. Also, frac
+		// is guaranteed to be between 0 and 1
+		frac = t1 / (t1 - t2);
+		VectorSubtract (p2, p1, dist);
+		VectorMultAdd (p1, frac, dist, imp);
+		VectorAdd (imp, origin, imp);
+		if (point_inside_portal (portal, plane, imp)) {
+			// the impact point is in the portal
+			return true;
+		}
+	}
+	return 0;
+}
+
 static int test_count;
 
 static int
@@ -491,7 +617,8 @@ trace_contents (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
 		// not cause us to cross it
 		if (fabs (dist) >= offset)
 			continue;
-		//FIXME test portal!
+		if (!portal_intersect (trace, portal, plane, origin))
+			continue;
 		res = trace_contents (hull, trace, l, origin);
 		//FIXME better test?
 		// solid > lava > slime > water > empty (desired)
