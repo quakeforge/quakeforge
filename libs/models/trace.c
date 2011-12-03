@@ -592,7 +592,8 @@ MOD_TraceLine (hull_t *hull, int num,
 			split_plane = tstack->plane;
 			moved = tstack->start_frac > 0;
 
-			leaf = hull->nodeleafs[tstack->num].leafs[side ^ 1];
+			if (hull->nodeleafs)
+				leaf = hull->nodeleafs[tstack->num].leafs[side ^ 1];
 			num = hull->clipnodes[tstack->num].children[side ^ 1];
 		}
 
@@ -606,7 +607,8 @@ MOD_TraceLine (hull_t *hull, int num,
 		if (start_dist >= offset && end_dist >= offset) {
 			// entirely in front of the plane
 			plane = 0;
-			leaf = hull->nodeleafs[num].leafs[0];
+			if (hull->nodeleafs)
+				leaf = hull->nodeleafs[num].leafs[0];
 			num = node->children[0];
 			continue;
 		}
@@ -617,7 +619,8 @@ MOD_TraceLine (hull_t *hull, int num,
 			|| (!offset && start_dist < -offset && end_dist < -offset)) {
 			// entirely behind the plane
 			plane = 0;
-			leaf = hull->nodeleafs[num].leafs[1];
+			if (hull->nodeleafs)
+				leaf = hull->nodeleafs[num].leafs[1];
 			num = node->children[1];
 			continue;
 		}
@@ -657,7 +660,8 @@ MOD_TraceLine (hull_t *hull, int num,
 
 		VectorMultAdd (start, frac[side], dist, end);
 
-		leaf = hull->nodeleafs[num].leafs[side];
+		if (hull->nodeleafs)
+			leaf = hull->nodeleafs[num].leafs[side];
 		num = node->children[side];
 	}
 }
