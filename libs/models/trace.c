@@ -747,10 +747,8 @@ MOD_TraceLine (hull_t *hull, int num,
 				}
 			} while (tstack->start_frac > trace->fraction);
 
-			// set the hit point for this plane
-			VectorCopy (end, tstack->start);
-
 			// go down the back side
+			VectorCopy (tstack->start, start);
 			VectorCopy (tstack->end, end);
 			side = tstack->side;
 			trace_state.split_plane = tstack->plane;
