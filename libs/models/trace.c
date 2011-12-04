@@ -785,6 +785,10 @@ MOD_TraceLine (hull_t *hull, int num,
 		tstack->num = num;
 		tstack->side = side;
 		tstack->plane = plane;
+		// if the move is parallel to the plane, then the plane is not a good
+		// split plane
+		if (start_dist == end_dist)
+			tstack->plane = split_plane;
 		VectorCopy (end, tstack->end);
 		VectorMultAdd (start, frac[side ^ 1], dist, tstack->start);
 		tstack->start_frac = frac[side ^ 1];
