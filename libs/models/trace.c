@@ -688,8 +688,13 @@ MOD_TraceLine (hull_t *hull, int num,
 				} else {
 					// crossing from an empty leaf to a solid leaf: the trace
 					// has collided.
-					calc_impact (hull, trace, start_point, end_point, leaf,
-								 split_plane);
+					if (split_plane) {
+						calc_impact (hull, trace, start_point, end_point, leaf,
+									 split_plane);
+					} else {
+						// if there's no split plane, then there is no impact
+						trace->fraction = 1.0;
+					}
 					if (trace->type == tr_point)
 						return;
 				}
