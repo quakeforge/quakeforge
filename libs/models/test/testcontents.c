@@ -95,6 +95,11 @@ test_t tests[] = {
 		{ 0, 0, 8}, { CONTENTS_EMPTY, 1}},
 	{"Box, ramp", &box, &hull_ramp,
 		{ 0, 0, 7}, { CONTENTS_SOLID, 3}},
+
+	{"Box, ridge", &box, &hull_ridge,
+		{ 4, 0, 40}, { CONTENTS_EMPTY, 1}},
+	{"Box, ridge", &box, &hull_ridge,
+		{ 4, 0, 39}, { CONTENTS_SOLID, 3}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 

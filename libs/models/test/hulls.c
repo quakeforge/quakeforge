@@ -275,3 +275,32 @@ hull_t hull_hole = {
 	{0, 0, 0},
 	{0, 0, 0},
 };
+
+//     2   3
+//  eee|eee|eee
+// 0,32+---+--- 1
+//  eee|sss|eee
+//  ---+---+--- 0
+//  ss0,0s8,0ss
+static mclipnode_t clipnodes_ridge[] = {
+	{  0, {             1, CONTENTS_SOLID}},
+	{  1, {CONTENTS_EMPTY,              2}},
+	{  2, {             3, CONTENTS_EMPTY}},
+	{  3, {CONTENTS_EMPTY, CONTENTS_SOLID}},
+};
+
+static plane_t planes_ridge[] = {
+	{{0, 0, 1},   0, 2, 0},
+	{{0, 0, 1},  32, 2, 0},
+	{{1, 0, 0},   0, 0, 0},
+	{{1, 0, 0},   8, 0, 0},
+};
+
+hull_t hull_ridge = {
+	clipnodes_ridge,
+	planes_ridge,
+	0,
+	3,
+	{0, 0, 0},
+	{0, 0, 0},
+};

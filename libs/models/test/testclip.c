@@ -171,6 +171,9 @@ test_t tests[] = {
 		{ 1, -16,  0}, {  1,  16,   0}, { 0.25, 0, 0, 1, 0, 13}},
 	{"Box,  Hole. edge", &box, &hull_hole,
 		{-1, -16,  0}, { -1,  16,   0}, { 0.25, 0, 0, 1, 0, 13}},
+
+	{"Box,  ridge", &box, &hull_ridge,
+		{4, 41,  0}, { 4,  39,   0}, { 0.5, 0, 0, 1, 0, 8}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
