@@ -368,7 +368,7 @@ edge_portal_dist (const plane_t *plane, const clipport_t *portal,
 			VectorMultAdd (p1, t, e, y);
 			VectorSubtract (x, y, y);
 			t = DotProduct (y, vel) / DotProduct (vel, vel);
-			if (t >= frac)
+			if (t < 0 || t >= frac)
 				continue;	// this is not the nearest edge pair
 			// the edges hit, and they are the closes edge pair so far
 			frac = t;
