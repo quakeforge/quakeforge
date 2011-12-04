@@ -646,14 +646,23 @@ static int
 visit_leaf (hull_t *hull, int num, clipleaf_t *leaf, trace_t *trace,
 			trace_state_t *state)
 {
+	int         contents;
+
 	// it's not possible to not be in the leaf when doing a point trace
 	// if leaf is null, assume we're in the leaf
 	// if plane is null, the trace did not cross the last node plane
-	int         in_leaf = 1;
-	if (trace->type != tr_point && leaf && state->split_plane)
-		in_leaf = check_in_leaf (hull, trace, leaf, state->split_plane,
-								 state->vel, state->origin);
-	if (in_leaf && num == CONTENTS_SOLID) {
+	if (trace->type != tr_point) {
+		if (state->split_plane
+			&& !check_in_leaf (hull, trace, leaf, state->split_plane,
+							   state->vel, state->origin))
+			return 0;	// we're not here
+		//FIXME this is probably slow
+		test_count++;
+		contents = trace_contents (hull, trace, leaf, state->origin);
+	} else {
+		contents = num;
+	}
+	if (contents == CONTENTS_SOLID) {
 		if (!state->seen_empty && !state->seen_solid) {
 			// this is the first leaf visited, thus the start leaf
 			trace->startsolid = state->seen_solid = true;
@@ -677,10 +686,10 @@ visit_leaf (hull_t *hull, int num, clipleaf_t *leaf, trace_t *trace,
 			if (trace->type == tr_point)
 				return 1;
 		}
-	} else if (in_leaf) {
+	} else {
 		state->seen_empty = true;
 		trace->allsolid = false;
-		if (num == CONTENTS_EMPTY)
+		if (contents == CONTENTS_EMPTY)
 			trace->inopen = true;
 		else
 			trace->inwater = true;
