@@ -631,31 +631,91 @@ trace_contents (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
 	return contents;
 }
 
+typedef struct {
+	qboolean    seen_empty;
+	qboolean    seen_solid;
+	qboolean    moved;
+	plane_t    *split_plane;
+	vec3_t      vel;
+	const vec_t *origin;
+	const vec_t *start_point;
+	const vec_t *end_point;
+} trace_state_t;
+
+static int
+visit_leaf (hull_t *hull, int num, clipleaf_t *leaf, trace_t *trace,
+			trace_state_t *state)
+{
+	// it's not possible to not be in the leaf when doing a point trace
+	// if leaf is null, assume we're in the leaf
+	// if plane is null, the trace did not cross the last node plane
+	int         in_leaf = 1;
+	if (trace->type != tr_point && leaf && state->split_plane)
+		in_leaf = check_in_leaf (hull, trace, leaf, state->split_plane,
+								 state->vel, state->origin);
+	if (in_leaf && num == CONTENTS_SOLID) {
+		if (!state->seen_empty && !state->seen_solid) {
+			// this is the first leaf visited, thus the start leaf
+			trace->startsolid = state->seen_solid = true;
+		} else if (!state->seen_empty && state->seen_solid) {
+			// If crossing from one solid leaf to another, treat the
+			// whole trace as solid (this is what id does).
+			// However, since allsolid is initialized to true, no need
+			// to do anything.
+			if (state->moved)
+				return 1;
+		} else {
+			// crossing from an empty leaf to a solid leaf: the trace
+			// has collided.
+			if (state->split_plane) {
+				calc_impact (hull, trace, state->start_point, state->end_point,
+							 leaf, state->split_plane);
+			} else {
+				// if there's no split plane, then there is no impact
+				trace->fraction = 1.0;
+			}
+			if (trace->type == tr_point)
+				return 1;
+		}
+	} else if (in_leaf) {
+		state->seen_empty = true;
+		trace->allsolid = false;
+		if (num == CONTENTS_EMPTY)
+			trace->inopen = true;
+		else
+			trace->inwater = true;
+	}
+	return 0;
+}
+
 VISIBLE void
 MOD_TraceLine (hull_t *hull, int num,
 			   const vec3_t start_point, const vec3_t end_point,
 			   trace_t *trace)
 {
 	vec_t       start_dist, end_dist, frac[2], offset;
-	vec3_t      start, end, dist, vel;
+	vec3_t      start, end, dist;
 	int         side;
-	qboolean    seen_empty, seen_solid, moved;
 	tracestack_t *tstack;
 	tracestack_t tracestack[256];
 	mclipnode_t *node;
-	plane_t    *plane, *split_plane;
+	plane_t    *plane;
 	clipleaf_t *leaf;
+	trace_state_t trace_state;
 
 	VectorCopy (start_point, start);
 	VectorCopy (end_point, end);
-	VectorSubtract (end, start, vel);
-	VectorNormalize (vel);
+	VectorSubtract (end, start, trace_state.vel);
+	VectorNormalize (trace_state.vel);
 
 	tstack = tracestack;
-	seen_empty = false;
-	seen_solid = false;
-	moved = false;
-	split_plane = 0;
+	trace_state.start_point = start_point;
+	trace_state.end_point = end_point;
+	trace_state.origin = start;
+	trace_state.seen_empty = false;
+	trace_state.seen_solid = false;
+	trace_state.moved = false;
+	trace_state.split_plane = 0;
 	leaf = 0;
 	plane = 0;
 
@@ -667,45 +727,8 @@ MOD_TraceLine (hull_t *hull, int num,
 
 	while (1) {
 		while (num < 0) {
-			// it's not possible to not be in the leaf when doing a point trace
-			// if leaf is null, assume we're in the leaf
-			// if plane is null, the trace did not cross the last node plane
-			int         in_leaf = 1;
-			if (trace->type != tr_point && leaf && split_plane)
-				in_leaf = check_in_leaf (hull, trace, leaf, split_plane,
-										 vel, start);
-			if (in_leaf && num == CONTENTS_SOLID) {
-				if (!seen_empty && !seen_solid) {
-					// this is the first leaf visited, thus the start leaf
-					trace->startsolid = seen_solid = true;
-				} else if (!seen_empty && seen_solid) {
-					// If crossing from one solid leaf to another, treat the
-					// whole trace as solid (this is what id does).
-					// However, since allsolid is initialized to true, no need
-					// to do anything.
-					if (moved)
-						return;
-				} else {
-					// crossing from an empty leaf to a solid leaf: the trace
-					// has collided.
-					if (split_plane) {
-						calc_impact (hull, trace, start_point, end_point, leaf,
-									 split_plane);
-					} else {
-						// if there's no split plane, then there is no impact
-						trace->fraction = 1.0;
-					}
-					if (trace->type == tr_point)
-						return;
-				}
-			} else if (in_leaf) {
-				seen_empty = true;
-				trace->allsolid = false;
-				if (num == CONTENTS_EMPTY)
-					trace->inopen = true;
-				else
-					trace->inwater = true;
-			}
+			if (visit_leaf (hull, num, leaf, trace, &trace_state))
+				return;
 
 			// pop up the stack for a back side
 			do {
@@ -721,8 +744,8 @@ MOD_TraceLine (hull_t *hull, int num,
 			// go down the back side
 			VectorCopy (tstack->end, end);
 			side = tstack->side;
-			split_plane = tstack->plane;
-			moved = tstack->start_frac > 0;
+			trace_state.split_plane = tstack->plane;
+			trace_state.moved = tstack->start_frac > 0;
 
 			if (hull->nodeleafs)
 				leaf = hull->nodeleafs[tstack->num].leafs[side ^ 1];
@@ -788,7 +811,7 @@ MOD_TraceLine (hull_t *hull, int num,
 		// if the move is parallel to the plane, then the plane is not a good
 		// split plane
 		if (start_dist == end_dist)
-			tstack->plane = split_plane;
+			tstack->plane = trace_state.split_plane;
 		VectorCopy (end, tstack->end);
 		VectorMultAdd (start, frac[side ^ 1], dist, tstack->start);
 		tstack->start_frac = frac[side ^ 1];
