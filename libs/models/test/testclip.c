@@ -124,7 +124,7 @@ test_t tests[] = {
 	{"Point, Covered Step start solid", &point, &hull_covered_step,
 		{  4, 0,  -4}, {-12, 0, 12}, { 1, 1, 1, 0, 0, 9}},
 	{"Box, Covered Step start solid", &box, &hull_covered_step,
-		{ -4, 0,   4}, {-12, 0, 12}, { 1, 1, 1, 0, 0, 9}},
+		{ -4, 0,   4}, {-12, 0, 12}, { 1, 0, 1, 1, 0, 9}},
 	{"Box, Covered Step start solid", &box, &hull_covered_step,
 		{ -17, 0,   4}, {-17, 0, 12}, { 1, 0, 1, 1, 0, 9}},
 	{"Box, Covered Step start solid", &box, &hull_covered_step,
