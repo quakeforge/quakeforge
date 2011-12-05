@@ -658,6 +658,7 @@ visit_leaf (hull_t *hull, int num, clipleaf_t *leaf, trace_t *trace,
 			return 0;	// we're not here
 		//FIXME this is probably slow
 		test_count++;
+		trace->contents = 0;
 		contents = trace_contents (hull, trace, leaf, state->origin);
 	} else {
 		contents = num;
