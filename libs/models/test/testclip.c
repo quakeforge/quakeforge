@@ -85,6 +85,10 @@ test_t tests[] = {
 		{ 40, 0, 0}, { 40, 8, 0}, {     1, 0, 0, 0, 1, 3}},
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
 		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 0, 1, 1, 3}},
+	{"Box, Three parallel planes with water", &box, &hull_tppw,
+		{-32, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 1, 3}},
+	{"Box, Three parallel planes with water", &box, &hull_tppw,
+		{-32, 0, 0}, { 20, 0, 0}, {     1, 0, 1, 1, 0, 3}},
 
 	{"Point, Step 1", &point, &hull_step1,
 		{ -16, 0, 8}, {16, 0, 24}, { 0.5, 0, 0, 1, 0, 5}},
