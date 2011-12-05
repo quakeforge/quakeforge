@@ -65,7 +65,7 @@ typedef struct {
 } tracestack_t;
 
 static inline float
-calc_offset (trace_t *trace, plane_t *plane)
+calc_offset (const trace_t *trace, const plane_t *plane)
 {
 	vec_t       d = 0;
 	vec3_t      Rn;
@@ -636,11 +636,40 @@ typedef struct {
 	qboolean    seen_solid;
 	qboolean    moved;
 	plane_t    *split_plane;
-	vec3_t      vel;
+	vec3_t      dist;
 	const vec_t *origin;
 	const vec_t *start_point;
 	const vec_t *end_point;
 } trace_state_t;
+
+static void
+trace_to_leaf (const hull_t *hull, const clipleaf_t *leaf,
+			   const trace_t *trace, const trace_state_t *state, vec3_t stop)
+{
+	clipport_t *portal;
+	plane_t    *plane;
+	int         side;
+	vec_t       frac = 1;
+	vec_t       t1, t2, offset, f;
+	qboolean    clipped = false;
+
+	for (portal = leaf->portals; portal; portal = portal->next[side]) {
+		side = portal->leafs[1] == leaf;
+		plane = hull->planes + portal->planenum;
+		t1 = PlaneDiff (state->start_point, plane);
+		t2 = PlaneDiff (state->end_point, plane);
+		offset = calc_offset (trace, plane);
+		f = (t1 + (t1 < 0 ? offset : -offset)) / (t1 - t2);
+		if (f > 0) {
+			clipped = true;
+			if (f < frac)
+				frac = f;
+		}
+	}
+	if (!clipped)
+		frac = 0;
+	VectorMultAdd (state->start_point, frac, state->dist, stop);
+}
 
 static int
 visit_leaf (hull_t *hull, int num, clipleaf_t *leaf, trace_t *trace,
@@ -652,14 +681,17 @@ visit_leaf (hull_t *hull, int num, clipleaf_t *leaf, trace_t *trace,
 	// if leaf is null, assume we're in the leaf
 	// if plane is null, the trace did not cross the last node plane
 	if (trace->type != tr_point) {
+		vec3_t      origin;
+
 		if (state->split_plane
 			&& !trace_enters_leaf (hull, trace, leaf, state->split_plane,
-								   state->vel, state->origin))
+								   state->dist, state->origin))
 			return 0;	// we're not here
 		//FIXME this is probably slow
+		trace_to_leaf (hull, leaf, trace, state, origin);
 		test_count++;
 		trace->contents = 0;
-		contents = trace_contents (hull, trace, leaf, state->origin);
+		contents = trace_contents (hull, trace, leaf, origin);
 	} else {
 		contents = num;
 	}
@@ -715,8 +747,7 @@ MOD_TraceLine (hull_t *hull, int num,
 
 	VectorCopy (start_point, start);
 	VectorCopy (end_point, end);
-	VectorSubtract (end, start, trace_state.vel);
-	VectorNormalize (trace_state.vel);
+	VectorSubtract (end, start, trace_state.dist);
 
 	tstack = tracestack;
 	trace_state.start_point = start_point;
