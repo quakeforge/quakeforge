@@ -135,53 +135,61 @@ edges_intersect (const vec3_t p1, const vec3_t p2,
 	return true;
 }
 
-static int
+static qboolean
+trace_hits_portal (hull_t *hull, trace_t *trace, clipport_t *portal,
+				   const vec3_t start, const vec3_t vel)
+{
+	int         i;
+	vec_t      *point;
+	vec_t      *edge;
+	vec_t       dist, offset, vn;
+	plane_t    *plane;
+	plane_t     cutplane;
+
+	plane = hull->planes + portal->planenum;
+	vn = DotProduct (vel, plane->normal);
+	cutplane.type = 3;	// generic plane
+	for (i = 0; i < portal->winding->numpoints; i++) {
+		point = portal->winding->points[i];
+		edge = portal->edges->points[i];
+		// so long as the plane distance and offset are calculated using
+		// the  same normal vector, the normal vector length does not
+		// matter.
+		CrossProduct (vel, edge, cutplane.normal);
+		cutplane.dist = DotProduct (cutplane.normal, point);
+		dist = PlaneDiff (start, &cutplane);
+		offset = calc_offset (trace, &cutplane);
+		if ((vn > 0 && dist >= offset) || (vn < 0 && dist <= -offset))
+			return false;
+	}
+	return true;
+}
+
+static qboolean
 trace_enters_leaf (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
 				   plane_t *plane, const vec3_t vel, const vec3_t org)
 {
 	clipport_t *portal;
 	int         side;
-	int         i;
 	int         planenum;
-	plane_t     cutplane;
-	vec_t       offset, dist, v_n;
-	vec_t      *point, *edge;
+	vec_t       v_n;
 
 	planenum = plane - hull->planes;
-	cutplane.type = 3;	// generic plane
 	v_n = DotProduct (vel, plane->normal);
 	if (!v_n) {
 		//FIXME is this correct? The assumption is that if we got to a leaf
 		//travelliing parallel to its plane, then we have to be in the leaf
-		return 1;
+		return true;
 	}
 
 	for (portal = leaf->portals; portal; portal = portal->next[side]) {
 		side = portal->leafs[1] == leaf;
 		if (portal->planenum != planenum)
 			continue;
-		for (i = 0; i < portal->winding->numpoints; i++) {
-			point = portal->winding->points[i];
-			edge = portal->edges->points[i];
-			// so long as the plane distance and offset are calculated using
-			// the  same normal vector, the normal vector length does not
-			// matter.
-			CrossProduct (vel, edge, cutplane.normal);
-			cutplane.dist = DotProduct (cutplane.normal, point);
-			dist = PlaneDiff (org, &cutplane);
-			offset = calc_offset (trace, &cutplane);
-			if (v_n > 0) {
-				if (dist >= offset)
-					break;
-			} else  {
-				if (dist <= -offset)
-					break;
-			}
-		}
-		if (i == portal->winding->numpoints)
-			return 1;
+		if (trace_hits_portal (hull, trace, portal, org, vel))
+			return true;
 	}
-	return 0;
+	return false;
 }
 
 typedef struct {
