@@ -136,8 +136,8 @@ edges_intersect (const vec3_t p1, const vec3_t p2,
 }
 
 static int
-check_in_leaf (hull_t *hull, trace_t *trace, clipleaf_t *leaf, plane_t *plane,
-			   const vec3_t vel, const vec3_t org)
+trace_enters_leaf (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
+				   plane_t *plane, const vec3_t vel, const vec3_t org)
 {
 	clipport_t *portal;
 	int         side;
@@ -653,8 +653,8 @@ visit_leaf (hull_t *hull, int num, clipleaf_t *leaf, trace_t *trace,
 	// if plane is null, the trace did not cross the last node plane
 	if (trace->type != tr_point) {
 		if (state->split_plane
-			&& !check_in_leaf (hull, trace, leaf, state->split_plane,
-							   state->vel, state->origin))
+			&& !trace_enters_leaf (hull, trace, leaf, state->split_plane,
+								   state->vel, state->origin))
 			return 0;	// we're not here
 		//FIXME this is probably slow
 		test_count++;
