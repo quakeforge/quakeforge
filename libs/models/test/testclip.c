@@ -335,7 +335,7 @@ nodeleaf_bail:
 	VectorSubtract (test->end, test->start, end);
 	VectorMultAdd (test->start, test->expect.frac, end, end);
 	expect = nva ("expect: (%g %g %g) -> (%g %g %g) => (%g %g %g)"
-				  " %3g %d %d %d %d",
+				  " %3g as:%d ss:%d io:%d iw:%d",
 				  test->start[0], test->start[1], test->start[2],
 				  test->end[0], test->end[1], test->end[2],
 				  end[0], end[1], end[2],
@@ -344,7 +344,7 @@ nodeleaf_bail:
 				  test->expect.inopen, test->expect.inwater);
 	trace_t trace = do_trace (test->box, test->hull, test->start, test->end);
 	got = nva ("   got: (%g %g %g) -> (%g %g %g) => (%g %g %g)"
-			   " %3g %d %d %d %d",
+			   " %3g as:%d ss:%d io:%d iw:%d",
 			   test->start[0], test->start[1], test->start[2],
 			   test->end[0], test->end[1], test->end[2],
 			   trace.endpos[0], trace.endpos[1], trace.endpos[2],
