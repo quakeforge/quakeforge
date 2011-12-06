@@ -650,8 +650,8 @@ typedef struct {
 	const vec_t *end_point;
 } trace_state_t;
 
-static void
-trace_to_leaf (const hull_t *hull, const clipleaf_t *leaf,
+static vec_t
+trace_to_leaf (const hull_t *hull, clipleaf_t *leaf,
 			   const trace_t *trace, const trace_state_t *state, vec3_t stop)
 {
 	clipport_t *portal;
@@ -660,7 +660,9 @@ trace_to_leaf (const hull_t *hull, const clipleaf_t *leaf,
 	vec_t       frac = 1;
 	vec_t       t1, t2, offset, f;
 	qboolean    clipped = false;
+	clipleaf_t *l;
 
+	leaf->test_count = test_count;
 	for (portal = leaf->portals; portal; portal = portal->next[side]) {
 		side = portal->leafs[1] == leaf;
 		plane = hull->planes + portal->planenum;
@@ -668,6 +670,10 @@ trace_to_leaf (const hull_t *hull, const clipleaf_t *leaf,
 		t2 = PlaneDiff (state->end_point, plane);
 		offset = calc_offset (trace, plane);
 		f = (t1 + (t1 < 0 ? offset : -offset)) / (t1 - t2);
+		l = portal->leafs[side^1];
+		if (f < 0 && l->contents != CONTENTS_SOLID
+			&& l->test_count != test_count)
+			f = trace_to_leaf (hull, l, trace, state, 0);
 		if (f > 0) {
 			clipped = true;
 			if (f < frac)
@@ -676,7 +682,9 @@ trace_to_leaf (const hull_t *hull, const clipleaf_t *leaf,
 	}
 	if (!clipped)
 		frac = 0;
-	VectorMultAdd (state->start_point, frac, state->dist, stop);
+	if (stop)
+		VectorMultAdd (state->start_point, frac, state->dist, stop);
+	return frac;
 }
 
 static int
@@ -695,11 +703,15 @@ visit_leaf (hull_t *hull, int num, clipleaf_t *leaf, trace_t *trace,
 			&& !trace_enters_leaf (hull, trace, leaf, state->split_plane,
 								   state->dist, state->origin))
 			return 0;	// we're not here
-		//FIXME this is probably slow
-		trace_to_leaf (hull, leaf, trace, state, origin);
-		test_count++;
-		trace->contents = 0;
-		contents = trace_contents (hull, trace, leaf, origin);
+		contents = leaf->contents;
+		if (contents != CONTENTS_SOLID) {
+			//FIXME this is probably slow
+			test_count++;
+			trace_to_leaf (hull, leaf, trace, state, origin);
+			test_count++;
+			trace->contents = 0;
+			contents = trace_contents (hull, trace, leaf, origin);
+		}
 	} else {
 		contents = num;
 	}
