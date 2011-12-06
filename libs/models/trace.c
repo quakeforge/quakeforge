@@ -55,6 +55,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #define	DIST_EPSILON	(0.03125)
 #endif
 
+#define PLANE_EPSILON	(0.001)
+
 typedef struct {
 	vec3_t     start;
 	vec3_t     end;
@@ -63,6 +65,15 @@ typedef struct {
 	int        num;
 	plane_t   *plane;
 } tracestack_t;
+
+static void
+fast_norm (vec3_t v)
+{
+	vec_t       m;
+
+	m = fabs (v[0]) + fabs (v[1]) + fabs (v[2]);
+	VectorScale (v, 1 / m, v);
+}
 
 static inline float
 calc_offset (const trace_t *trace, const plane_t *plane)
@@ -156,10 +167,12 @@ trace_hits_portal (hull_t *hull, trace_t *trace, clipport_t *portal,
 		// the  same normal vector, the normal vector length does not
 		// matter.
 		CrossProduct (vel, edge, cutplane.normal);
+		fast_norm (cutplane.normal);
 		cutplane.dist = DotProduct (cutplane.normal, point);
 		dist = PlaneDiff (start, &cutplane);
 		offset = calc_offset (trace, &cutplane);
-		if ((vn > 0 && dist >= offset) || (vn < 0 && dist <= -offset))
+		if ((vn > 0 && dist >= offset - PLANE_EPSILON)
+			|| (vn < 0 && dist <= -offset + PLANE_EPSILON))
 			return false;
 	}
 	return true;
