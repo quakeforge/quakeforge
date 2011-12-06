@@ -11,3 +11,4 @@ extern hull_t hull_covered_step;
 extern hull_t hull_ramp;
 extern hull_t hull_hole;
 extern hull_t hull_ridge;
+extern hull_t hull_cave;

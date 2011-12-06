@@ -304,3 +304,35 @@ hull_t hull_ridge = {
 	{0, 0, 0},
 	{0, 0, 0},
 };
+
+//    1     2
+//   ss\sss/eeee
+//   sss\s/eeeee
+// 3 ----. 0,0 e
+//   wwwww\eeeee
+//   wwwwww\eeee
+// 0 -------.--- -20
+//   sssssssssss
+//   sssssssssss
+static mclipnode_t clipnodes_cave[] = {
+	{  0, {             1, CONTENTS_SOLID}},
+	{  1, {             2,              3}},
+	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
+	{  3, {CONTENTS_SOLID, CONTENTS_WATER}},
+};
+
+static plane_t planes_cave[] = {
+	{{   0, 0,   1}, -20, 2, 0},
+	{{ 0.6, 0, 0.8},   0, 3, 0},
+	{{-0.8, 0, 0.6},   0, 3, 0},
+	{{   0, 0,   1},   0, 2, 0},
+};
+
+hull_t hull_cave = {
+	clipnodes_cave,
+	planes_cave,
+	0,
+	3,
+	{0, 0, 0},
+	{0, 0, 0},
+};
