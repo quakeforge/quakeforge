@@ -147,8 +147,8 @@ edges_intersect (const vec3_t p1, const vec3_t p2,
 }
 
 static qboolean
-trace_hits_portal (hull_t *hull, trace_t *trace, clipport_t *portal,
-				   const vec3_t start, const vec3_t vel)
+trace_hits_portal (const hull_t *hull, const trace_t *trace,
+				   clipport_t *portal, const vec3_t start, const vec3_t vel)
 {
 	int         i;
 	vec_t      *point;
@@ -678,6 +678,9 @@ trace_to_leaf (const hull_t *hull, clipleaf_t *leaf,
 	leaf->test_count = test_count;
 	for (portal = leaf->portals; portal; portal = portal->next[side]) {
 		side = portal->leafs[1] == leaf;
+		if (!trace_hits_portal (hull, trace, portal,
+								state->start_point, state->dist))
+			continue;
 		plane = hull->planes + portal->planenum;
 		t1 = PlaneDiff (state->start_point, plane);
 		t2 = PlaneDiff (state->end_point, plane);
