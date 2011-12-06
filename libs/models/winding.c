@@ -39,7 +39,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/winding.h"
 
-#define BOGUS (8e6)
+#define BOGUS (65336.0)
 
 /**	\addtogroup qfbsp_winding
 */
