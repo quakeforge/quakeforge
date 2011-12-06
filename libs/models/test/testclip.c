@@ -243,7 +243,7 @@ run_test (test_t *test)
 {
 	const char *desc;
 	vec3_t      end;
-	int         res = 0;
+	int         err = 0;
 	char       *expect;
 	char       *got;
 	static int  output = 0;
@@ -266,17 +266,17 @@ run_test (test_t *test)
 						&& (hull->nodeleafs[i].leafs[j]->contents
 							!= hull->clipnodes[i].children[j]))) {
 					printf ("bad nodeleaf %d %d\n", i, j);
-					res = 1;
+					err = 1;
 				}
 			}
 			if (hull->nodeleafs[i].leafs[0]
 				&& (hull->nodeleafs[i].leafs[0]
 					== hull->nodeleafs[i].leafs[1])) {
 				printf ("bad nodeleaf %d %d\n", i, j);
-				res = 1;
+				err = 1;
 			}
 		}
-		if (res)
+		if (err)
 			goto nodeleaf_bail;
 		for (i = hull->firstclipnode; i <= hull->lastclipnode; i++) {
 			for (j = 0; j < 2; j++) {
@@ -288,14 +288,14 @@ run_test (test_t *test)
 		}
 		for (i = 0, p = portal_list; p; i++, p = p->next) {
 			if (!p->portal->winding || !p->portal->edges) {
-				res = 1;
+				err = 1;
 				printf ("portal with missing vertex/edge information\n");
 			}
 		}
-		if (res)
+		if (err)
 			goto nodeleaf_bail;
 		if (i != test->expect.num_portals) {
-			res = 1;
+			err = 1;
 			printf ("bad portal count: %d %d\n", test->expect.num_portals, i);
 			goto nodeleaf_bail;
 		}
@@ -318,14 +318,14 @@ run_test (test_t *test)
 					side = portal->leafs[1] == leaf;
 					if (!side && portal->leafs[0] != leaf) {
 						printf ("mislinked portal\n");
-						res = 1;
+						err = 1;
 					}
 					if (portal == p->portal)
 						found = 1;
 				}
 				if (!found) {
 					printf ("portal unreachable from leaf\n");
-					res = 1;
+					err = 1;
 				}
 			}
 		}
@@ -356,29 +356,29 @@ nodeleaf_bail:
 			   trace.fraction, 
 			   trace.allsolid, trace.startsolid,
 			   trace.inopen, trace.inwater);
-	if (VectorCompare (end, trace.endpos)
-		&& FloatCompare (test->expect.frac, trace.fraction)
-		&& test->expect.allsolid == trace.allsolid
-		&& test->expect.startsolid == trace.startsolid
-		&& test->expect.inopen == trace.inopen
-		&& test->expect.inwater == trace.inwater)
-		res = 1;
+	if (!(VectorCompare (end, trace.endpos)
+		  && FloatCompare (test->expect.frac, trace.fraction)
+		  && test->expect.allsolid == trace.allsolid
+		  && test->expect.startsolid == trace.startsolid
+		  && test->expect.inopen == trace.inopen
+		  && test->expect.inwater == trace.inwater))
+		err = 1;
 
 	if (test->desc)
 		desc = va ("(%d) %s", (int)(long)(test - tests), test->desc);
 	else
 		desc = va ("test #%d", (int)(long)(test - tests));
-	if (verbose >= 0 || !res) {
+	if (verbose >= 0 || err) {
 		if (output)
 			puts("");
 		output = 1;
 		puts (expect);
 		puts (got);
-		printf ("%s: %s\n", res ? "PASS" : "FAIL", desc);
+		printf ("%s: %s\n", !err ? "PASS" : "FAIL", desc);
 	}
 	free (expect);
 	free (got);
-	return res;
+	return !err;
 }
 
 #include "main.c"
