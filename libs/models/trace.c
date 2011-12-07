@@ -58,6 +58,24 @@ static __attribute__ ((used)) const char rcsid[] =
 #define PLANE_EPSILON	(0.001)
 
 typedef struct {
+	plane_t     planes[3];
+	winding_t   points[3];
+	winding_t   edges[3];
+	clipport_t  portals[3];
+} clipbox_t;
+
+typedef struct {
+	qboolean    seen_empty;
+	qboolean    seen_solid;
+	qboolean    moved;
+	plane_t    *split_plane;
+	vec3_t      dist;
+	const vec_t *origin;
+	const vec_t *start_point;
+	const vec_t *end_point;
+} trace_state_t;
+
+typedef struct {
 	vec3_t     start;
 	vec3_t     end;
 	vec_t      start_frac;
@@ -75,12 +93,89 @@ fast_norm (vec3_t v)
 	VectorScale (v, 1 / m, v);
 }
 
+/** Initialize the clipbox representing the faces that might hit the portal.
+
+	When a box is moving, at most three of its faces might hit the portal.
+	Those faces all face such that the dot product of their normal and the
+	box's velocity is positive (ie, n.v > 0). When the motion is in an axial
+	plane, only two faces might hit. For axial motion, only one face.
+
+	The faces are set up such that the first point of each winding is the
+	leading corner of the box, and the edges are set up such that testing
+	only the first three edges of each winding covers all nine edges (ie,
+	the forth edge of one face is the reverse of the first edge of the next
+	face).
+
+	The windings are clockwise when looking down the face's normal (ie, when
+	looking at the front of the face).
+*/
+static void
+init_box (const trace_t *trace, clipbox_t *box, const vec3_t vel)
+{
+	vec3_t      p;
+	int         u[3];
+	int         i, j, k;
+	vec_t       s[2] = {1, -1};
+
+	//FIXME rotated box
+	for (i = 0; i < 3; i++)
+		u[i] = (vel[i] >= 0 ? 1 : -1);
+	Vector3Scale (u, trace->extents, p);
+	for (i = 0; i < 3; i++) {
+		box->portals[i].planenum = i;
+		box->portals[i].next[0] = 0;
+		box->portals[i].next[0] = 0;
+		box->portals[i].leafs[0] = 0;
+		box->portals[i].leafs[0] = 0;
+		box->portals[i].winding = &box->points[i];
+		box->portals[i].edges = &box->edges[i];
+
+		VectorZero (box->planes[i].normal);
+		box->planes[i].normal[i] = u[i];
+		box->planes[i].dist = DotProduct (p, box->planes[i].normal);
+		box->planes[i].type = i;
+
+		box->points[i].numpoints = 4;
+		box->edges[i].numpoints = 4;
+		VectorCopy (u, box->points[i].points[0]);
+		VectorZero (box->edges[i].points[0]);
+		j = (i + (u[0]*u[1]*u[2] + 3) / 2) % 3;
+		box->edges[i].points[0][j] = -u[j];
+		for (j = 1; j < 4; j++) {
+			box->points[i].points[j][i] = box->points[i].points[j - 1][i];
+			box->edges[i].points[j][i] = box->edges[i].points[j - 1][i];
+			for (k = 0; k < 2; k++) {
+				int         a, b;
+				a = (i + 1 + k) % 3;
+				b = (i + 2 - k) % 3;
+				box->points[i].points[j][a]
+					= s[k] * u[i] * box->points[i].points[j - 1][b];
+				box->edges[i].points[j][a]
+					= s[k] * u[i] * box->edges[i].points[j - 1][b];
+			}
+			Vector3Scale (box->points[i].points[j - 1], trace->extents,
+						  box->points[i].points[j - 1]);
+			Vector3Scale (box->edges[i].points[j - 1], trace->extents,
+						  box->edges[i].points[j - 1]);
+			VectorScale (box->edges[i].points[j - 1], 2,
+						 box->edges[i].points[j - 1]);
+		}
+		Vector3Scale (box->points[i].points[3], trace->extents,
+					  box->points[i].points[3]);
+		Vector3Scale (box->edges[i].points[3], trace->extents,
+					  box->edges[i].points[3]);
+		VectorScale (box->edges[i].points[3], 2,
+					 box->edges[i].points[3]);
+	}
+}
+
 static inline float
 calc_offset (const trace_t *trace, const plane_t *plane)
 {
 	vec_t       d = 0;
 	vec3_t      Rn;
 
+	//FIXME rotated box/ellipsoid
 	switch (trace->type) {
 		case tr_point:
 			break;
@@ -202,89 +297,6 @@ trace_enters_leaf (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
 			return true;
 	}
 	return false;
-}
-
-typedef struct {
-	plane_t     planes[3];
-	winding_t   points[3];
-	winding_t   edges[3];
-	clipport_t  portals[3];
-} clipbox_t;
-
-/** Initialize the clipbox representing the faces that might hit the portal.
-
-	When a box is moving, at most three of its faces might hit the portal.
-	Those faces all face such that the dot product of their normal and the
-	box's velocity is positive (ie, n.v > 0). When the motion is in an axial
-	plane, only two faces might hit. For axial motion, only one face.
-
-	The faces are set up such that the first point of each winding is the
-	leading corner of the box, and the edges are set up such that testing
-	only the first three edges of each winding covers all nine edges (ie,
-	the forth edge of one face is the reverse of the first edge of the next
-	face).
-
-	The windings are clockwise when looking down the face's normal (ie, when
-	looking at the front of the face).
-*/
-static void
-init_box (const trace_t *trace, clipbox_t *box, const vec3_t vel)
-{
-	vec3_t      p;
-	int         u[3];
-	int         i, j, k;
-	vec_t       s[2] = {1, -1};
-
-	//FIXME rotated box
-	for (i = 0; i < 3; i++)
-		u[i] = (vel[i] >= 0 ? 1 : -1);
-	Vector3Scale (u, trace->extents, p);
-	for (i = 0; i < 3; i++) {
-		box->portals[i].planenum = i;
-		box->portals[i].next[0] = 0;
-		box->portals[i].next[0] = 0;
-		box->portals[i].leafs[0] = 0;
-		box->portals[i].leafs[0] = 0;
-		box->portals[i].winding = &box->points[i];
-		box->portals[i].edges = &box->edges[i];
-
-		VectorZero (box->planes[i].normal);
-		box->planes[i].normal[i] = u[i];
-		box->planes[i].dist = DotProduct (p, box->planes[i].normal);
-		box->planes[i].type = i;
-
-		box->points[i].numpoints = 4;
-		box->edges[i].numpoints = 4;
-		VectorCopy (u, box->points[i].points[0]);
-		VectorZero (box->edges[i].points[0]);
-		j = (i + (u[0]*u[1]*u[2] + 3) / 2) % 3;
-		box->edges[i].points[0][j] = -u[j];
-		for (j = 1; j < 4; j++) {
-			box->points[i].points[j][i] = box->points[i].points[j - 1][i];
-			box->edges[i].points[j][i] = box->edges[i].points[j - 1][i];
-			for (k = 0; k < 2; k++) {
-				int         a, b;
-				a = (i + 1 + k) % 3;
-				b = (i + 2 - k) % 3;
-				box->points[i].points[j][a]
-					= s[k] * u[i] * box->points[i].points[j - 1][b];
-				box->edges[i].points[j][a]
-					= s[k] * u[i] * box->edges[i].points[j - 1][b];
-			}
-			Vector3Scale (box->points[i].points[j - 1], trace->extents,
-						  box->points[i].points[j - 1]);
-			Vector3Scale (box->edges[i].points[j - 1], trace->extents,
-						  box->edges[i].points[j - 1]);
-			VectorScale (box->edges[i].points[j - 1], 2,
-						 box->edges[i].points[j - 1]);
-		}
-		Vector3Scale (box->points[i].points[3], trace->extents,
-					  box->points[i].points[3]);
-		Vector3Scale (box->edges[i].points[3], trace->extents,
-					  box->edges[i].points[3]);
-		VectorScale (box->edges[i].points[3], 2,
-					 box->edges[i].points[3]);
-	}
 }
 
 static vec_t
@@ -651,17 +663,6 @@ trace_contents (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
 	return contents;
 }
 
-typedef struct {
-	qboolean    seen_empty;
-	qboolean    seen_solid;
-	qboolean    moved;
-	plane_t    *split_plane;
-	vec3_t      dist;
-	const vec_t *origin;
-	const vec_t *start_point;
-	const vec_t *end_point;
-} trace_state_t;
-
 static vec_t
 trace_to_leaf (const hull_t *hull, clipleaf_t *leaf,
 			   const trace_t *trace, const trace_state_t *state, vec3_t stop)
@@ -709,11 +710,10 @@ visit_leaf (hull_t *hull, int num, clipleaf_t *leaf, trace_t *trace,
 	int         contents;
 
 	// it's not possible to not be in the leaf when doing a point trace
-	// if leaf is null, assume we're in the leaf
-	// if plane is null, the trace did not cross the last node plane
 	if (trace->type != tr_point) {
 		vec3_t      origin;
 
+		// if split_plane is null, the trace did not cross the last node plane
 		if (state->split_plane
 			&& !trace_enters_leaf (hull, trace, leaf, state->split_plane,
 								   state->dist, state->origin))
