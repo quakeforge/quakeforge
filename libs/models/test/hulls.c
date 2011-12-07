@@ -305,20 +305,27 @@ hull_t hull_ridge = {
 	{0, 0, 0},
 };
 
-//    1     2
-//   ss\sss/eeee
-//   sss\s/eeeee
-// 3 ----. 0,0 e
-//   wwwww\eeeee
-//   wwwwww\eeee
-// 0 -------.--- -20
-//   sssssssssss
-//   sssssssssss
+//               5
+//   ssssssssssss|6e
+//  1 sssssss 2 s.ee
+//   \sssssss/ss/|ee
+//   s\sssss/ss/e|ee
+//   ss\s 4.--.--.-- 20
+//   sss\s/eeeeeeeee
+// 3 ----. 0,0 eeeee
+//   wwwww\eeeeeeeee
+//   wwwwww\eeeeeeee
+// 0 -------.------- -20
+//   sssssssssssssss
+//   sssssssssssssss
 static mclipnode_t clipnodes_cave[] = {
 	{  0, {             1, CONTENTS_SOLID}},
 	{  1, {             2,              3}},
-	{  2, {CONTENTS_SOLID, CONTENTS_EMPTY}},
+	{  2, {CONTENTS_SOLID,              4}},
 	{  3, {CONTENTS_SOLID, CONTENTS_WATER}},
+	{  4, {             5, CONTENTS_EMPTY}},
+	{  5, {CONTENTS_EMPTY,              6}},
+	{  6, {CONTENTS_SOLID, CONTENTS_EMPTY}},
 };
 
 static plane_t planes_cave[] = {
@@ -326,13 +333,16 @@ static plane_t planes_cave[] = {
 	{{ 0.6, 0, 0.8},   0, 3, 0},
 	{{-0.8, 0, 0.6},   0, 3, 0},
 	{{   0, 0,   1},   0, 2, 0},
+	{{   0, 0,   1},  20, 2, 0},
+	{{   1, 0,   0},  50, 0, 0},
+	{{-0.8, 0, 0.6}, -20, 3, 0},
 };
 
 hull_t hull_cave = {
 	clipnodes_cave,
 	planes_cave,
 	0,
-	3,
+	6,
 	{0, 0, 0},
 	{0, 0, 0},
 };

@@ -188,9 +188,13 @@ test_t tests[] = {
 		{4, 41, 0}, { 4, 39, 0}, { 1, 1, 1, 0, 0, 8}},
 
 	{"Box,  cave. start solid", &box, &hull_cave,
-		{  4, 0, -16}, {   4, 0, 0}, { 0.5, 0, 1, 0, 1, 6}},
+		{  4, 0, -16}, {  4, 0,  0}, { 0.5, 0, 1, 0, 1, 14}},
 	{"Box,  cave. start solid", &box, &hull_cave,
-		{-8, 0, -16}, { -8, 0, 0}, { 0.5, 0, 1, 0, 1, 6}},
+		{ -8, 0, -16}, { -8, 0,  0}, { 0.5, 0, 1, 0, 1, 14}},
+	{"Box,  cave. start solid", &box, &hull_cave,
+		{ 54, 0, -16}, { 54, 0, 56}, { 0.5, 0, 1, 1, 0, 14}},
+	{"Box,  cave", &box, &hull_cave,
+		{ 54, 0,  12}, { 54, 0, 28}, { 0.5, 0, 0, 1, 0, 14}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
