@@ -211,6 +211,8 @@ point_inside_portal (const clipport_t *portal, const plane_t *plane,
 	for (i = 0; i < points->numpoints; i++) {
 		VectorSubtract (p, points->points[i], x);
 		CrossProduct (x, edges->points[i], c);
+		if (DotProduct (c, c) < PLANE_EPSILON)
+			return false;
 		if (DotProduct (c, n) <= 0)
 			return false;
 	}
