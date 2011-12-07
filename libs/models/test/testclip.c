@@ -44,8 +44,9 @@ typedef struct {
 	}           expect;
 } test_t;
 
-box_t point = { {0, 0, 0} };
-box_t box =   { {8, 8, 8} };
+box_t point =  { { 0,  0,  0} };
+box_t box =    { { 8,  8,  8} };
+box_t bigbox = { { 8,  8, 24} };
 box_t player = { {16, 16, 28} };
 
 test_t tests[] = {
@@ -195,6 +196,8 @@ test_t tests[] = {
 		{ 54, 0, -16}, { 54, 0, 56}, { 0.5, 0, 1, 1, 0, 14}},
 	{"Box,  cave", &box, &hull_cave,
 		{ 54, 0,  12}, { 54, 0, 28}, { 0.5, 0, 0, 1, 0, 14}},
+	{"Big Box,  cave. start solid", &bigbox, &hull_cave,
+		{ 54, 0,   0}, { 54, 0, 8}, { 0.5, 0, 1, 1, 0, 14}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 

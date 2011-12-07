@@ -667,10 +667,10 @@ trace_to_leaf (const hull_t *hull, clipleaf_t *leaf,
 			   const trace_t *trace, const trace_state_t *state, vec3_t stop)
 {
 	clipport_t *portal;
+	plane_t    *plane;
 	int         side;
 	vec_t       frac = 1;
-	plane_t    *plane;
-	vec_t       f;
+	vec_t       t1, t2, offset, f;
 	qboolean    clipped = false;
 	clipleaf_t *l;
 	trace_state_t lstate = *state;
@@ -684,13 +684,21 @@ trace_to_leaf (const hull_t *hull, clipleaf_t *leaf,
 		if (!trace_hits_portal (hull, trace, portal,
 								state->start_point, state->dist))
 			continue;
-		lstate.split_plane = plane;
-		f = box_portal_dist (hull, portal, &lstate);
 		l = portal->leafs[side^1];
+		if (l->test_count == test_count)
+			continue;
+		t1 = PlaneDiff (state->start_point, plane);
+		t2 = PlaneDiff (state->end_point, plane);
+		offset = calc_offset (trace, plane);
+		f = (t1 + (t1 < 0 ? offset : -offset)) / (t1 - t2);
 		if (f < 0 && l->contents != CONTENTS_SOLID
-			&& l->test_count != test_count)
+			&& l->test_count != test_count) {
 			f = trace_to_leaf (hull, l, trace, state, 0);
-		if (f > 0) {
+		} else {
+			lstate.split_plane = plane;
+			f = box_portal_dist (hull, portal, &lstate);
+		}
+		if (f >= 0) {
 			clipped = true;
 			if (f < frac)
 				frac = f;
