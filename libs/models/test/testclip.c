@@ -308,6 +308,8 @@ run_test (test_t *test)
 				p->portal->winding->points[j][2]
 					= bound (-8192, p->portal->winding->points[j][2], 8192);
 			}
+			FreeWinding (p->portal->edges);
+			p->portal->edges = WindingVectors (p->portal->winding, 0);
 			for (j = 0; j < 2; j++) {
 				int         found = 0;
 
