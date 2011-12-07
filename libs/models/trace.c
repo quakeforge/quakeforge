@@ -687,6 +687,7 @@ trace_to_leaf (const hull_t *hull, clipleaf_t *leaf,
 		l = portal->leafs[side^1];
 		if (l->test_count == test_count)
 			continue;
+		//FIXME the decision on whether to recurse needs to be reviewed
 		t1 = PlaneDiff (state->start_point, plane);
 		t2 = PlaneDiff (state->end_point, plane);
 		offset = calc_offset (trace, plane);
@@ -704,6 +705,7 @@ trace_to_leaf (const hull_t *hull, clipleaf_t *leaf,
 				frac = f;
 		}
 	}
+	//printf ("%d %g\n", clipped, frac);
 	if (!clipped)
 		frac = 0;
 	if (stop)
@@ -731,9 +733,12 @@ visit_leaf (hull_t *hull, int num, clipleaf_t *leaf, trace_t *trace,
 			//FIXME this is probably slow
 			test_count++;
 			trace_to_leaf (hull, leaf, trace, state, origin);
+			//printf ("(%g %g %g) (%g %g %g)\n",
+					//VectorExpand (state->start_point), VectorExpand (origin));
 			test_count++;
 			trace->contents = 0;
 			contents = trace_contents (hull, trace, leaf, origin);
+			//printf ("%d\n", contents);
 		}
 	} else {
 		contents = num;
@@ -834,6 +839,7 @@ MOD_TraceLine (hull_t *hull, int num,
 				leaf = hull->nodeleafs[tstack->num].leafs[side ^ 1];
 			num = hull->clipnodes[tstack->num].children[side ^ 1];
 		}
+		//printf ("%d\n", num);
 
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
