@@ -73,6 +73,7 @@ typedef struct {
 	const vec_t *origin;
 	const vec_t *start_point;
 	const vec_t *end_point;
+	clipbox_t   box;
 } trace_state_t;
 
 typedef struct {
@@ -411,13 +412,16 @@ edge_portal_dist (const plane_t *plane, const clipport_t *portal,
 
 static vec_t
 box_portal_dist (const hull_t *hull, const clipport_t *portal,
-				 const clipbox_t *box, const vec3_t start, const vec3_t vel)
+				 const trace_state_t *state)
 {
 	vec3_t      nvel;
 	plane_t    *plane = hull->planes + portal->planenum;
 	int         i, j;
 	vec_t       frac, t;
 	vec3_t      p1, p2;
+	const clipbox_t *box = &state->box;
+	const vec_t *start = state->start_point;
+	const vec_t *vel = state->dist;
 
 	frac = 1.0;
 	for (i = 0; i < 3; i++) {
@@ -450,16 +454,14 @@ box_portal_dist (const hull_t *hull, const clipport_t *portal,
 }
 
 static inline void
-calc_impact (hull_t *hull, trace_t *trace,
-			 const vec3_t start, const vec3_t end,
-			 clipleaf_t *leaf, plane_t *plane)
+calc_impact (hull_t *hull, trace_t *trace, trace_state_t *state,
+			 clipleaf_t *leaf)
 {
 	vec_t       t1, t2, frac, offset;
-	vec3_t      dist;
 
-	t1 = PlaneDiff (start, plane);
-	t2 = PlaneDiff (end, plane);
-	offset = calc_offset (trace, plane);
+	t1 = PlaneDiff (state->start_point, state->split_plane);
+	t2 = PlaneDiff (state->end_point, state->split_plane);
+	offset = calc_offset (trace, state->split_plane);
 
 	if (t1 < 0) {
 		frac = (t1 + offset + DIST_EPSILON) / (t1 - t2);
@@ -475,18 +477,14 @@ calc_impact (hull_t *hull, trace_t *trace,
 		int         planenum;
 		clipport_t *portal;
 		vec3_t      impact;
-		clipbox_t   box;
 
-		planenum = plane - hull->planes;
+		planenum = state->split_plane - hull->planes;
 
-		VectorSubtract (end, start, dist);
-		VectorMultAdd (start, frac, dist, impact);
-		if (DotProduct (dist, plane->normal) > 0)
-			VectorMultAdd (impact, offset, plane->normal, impact);
+		VectorMultAdd (state->start_point, frac, state->dist, impact);
+		if (DotProduct (state->dist, state->split_plane->normal) > 0)
+			VectorMultAdd (impact, offset, state->split_plane->normal, impact);
 		else
-			VectorMultSub (impact, offset, plane->normal, impact);
-
-		init_box (trace, &box, dist);
+			VectorMultSub (impact, offset, state->split_plane->normal, impact);
 
 		for (portal = leaf->portals; portal; portal = portal->next[side]) {
 			side = portal->leafs[1] == leaf;
@@ -496,7 +494,7 @@ calc_impact (hull_t *hull, trace_t *trace,
 				vec3_t      r, s;
 				VectorSubtract (impact, portal->winding->points[i], r);
 				CrossProduct (r, portal->edges->points[i], s);
-				if (DotProduct (s, plane->normal) > 0)
+				if (DotProduct (s, state->split_plane->normal) > 0)
 					continue;	// "hit"
 				break;	// "miss";
 			}
@@ -510,7 +508,7 @@ calc_impact (hull_t *hull, trace_t *trace,
 			side = portal->leafs[1] == leaf;
 			if (portal->planenum != planenum)
 				continue;
-			t = box_portal_dist (hull, portal, &box, start, dist);
+			t = box_portal_dist (hull, portal, state);
 			if (t < frac)
 				frac = t;
 		}
@@ -518,15 +516,14 @@ calc_impact (hull_t *hull, trace_t *trace,
 finish_impact:
 	if (frac < trace->fraction) {
 		trace->fraction = frac;
-		VectorSubtract (end, start, dist);
-		VectorMultAdd (start, frac, dist, trace->endpos);
+		VectorMultAdd (state->start_point, frac, state->dist, trace->endpos);
 		if (t1 < 0) {
 			// invert plane paramterers
-			VectorNegate (plane->normal, trace->plane.normal);
-			trace->plane.dist = -plane->dist;
+			VectorNegate (state->split_plane->normal, trace->plane.normal);
+			trace->plane.dist = -state->split_plane->dist;
 		} else {
-			VectorCopy (plane->normal, trace->plane.normal);
-			trace->plane.dist = plane->dist;
+			VectorCopy (state->split_plane->normal, trace->plane.normal);
+			trace->plane.dist = state->split_plane->dist;
 		}
 	}
 }
@@ -745,8 +742,7 @@ visit_leaf (hull_t *hull, int num, clipleaf_t *leaf, trace_t *trace,
 			// crossing from an empty leaf to a solid leaf: the trace
 			// has collided.
 			if (state->split_plane) {
-				calc_impact (hull, trace, state->start_point, state->end_point,
-							 leaf, state->split_plane);
+				calc_impact (hull, trace, state, leaf);
 			} else {
 				// if there's no split plane, then there is no impact
 				trace->fraction = 1.0;
@@ -792,6 +788,8 @@ MOD_TraceLine (hull_t *hull, int num,
 	trace_state.seen_solid = false;
 	trace_state.moved = false;
 	trace_state.split_plane = 0;
+	init_box (trace, &trace_state.box, trace_state.dist);
+
 	leaf = 0;
 	plane = 0;
 
