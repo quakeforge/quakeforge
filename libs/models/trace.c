@@ -127,7 +127,7 @@ edges_intersect (const vec3_t p1, const vec3_t p2,
 {
 	vec3_t      p, r, b;
 	vec3_t      p_r, b_p, b_r;
-	vec_t       tp, tpd, tr, trd;
+	vec_t       tp, tr, den;
 
 	VectorSubtract (p2, p1, p);
 	VectorSubtract (r2, r1, r);
@@ -137,11 +137,10 @@ edges_intersect (const vec3_t p1, const vec3_t p2,
 		return false;
 	CrossProduct (b, p, b_p);
 	CrossProduct (b, r, b_r);
-	tr = DotProduct (b_p, b_p);
-	trd = DotProduct (b_p, p_r);
-	tp = DotProduct (b_r, b_r);
-	tpd = DotProduct (b_r, p_r);
-	if ((tr < 0 || tr > trd) || (tp < 0 || tp > tpd))
+	tr = DotProduct (b_p, p_r);
+	tp = DotProduct (b_r, p_r);
+	den = DotProduct (p_r, p_r);
+	if ((tr < 0 || tr > den) || (tp < 0 || tp > den))
 		return false;
 	return true;
 }
