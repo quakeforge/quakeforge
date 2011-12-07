@@ -13,7 +13,7 @@ static mclipnode_t clipnodes_simple_wedge[] = {
 
 static plane_t planes_simple_wedge[] = {
 	{{1, 0, 0}, 0, 0, 0},		//  0
-	{{0.8, 0, 0.6}, 0, 4, 0},	//  1 
+	{{0.8, 0, 0.6}, 0, 4, 0},	//  1
 };
 
 hull_t hull_simple_wedge = {
@@ -103,12 +103,11 @@ hull_t hull_tppw = {
 	{0, 0, 0},
 };
 
-//     2
-//  eee|eee
-// 0,32+--- 1
-//  eee|sss
-//  ---+--- 0
-//  ss0,0ss
+//       2
+// 32 ---+--- 1
+//       |sss
+//    ---+--- 0
+//    ss0,0ss
 static mclipnode_t clipnodes_step1[] = {
 	{  0, {             1, CONTENTS_SOLID}},
 	{  1, {CONTENTS_EMPTY,              2}},
@@ -130,12 +129,12 @@ hull_t hull_step1 = {
 	{0, 0, 0},
 };
 
-//     0
-//  eee|eee
-// 0,32+--- 1
-//  eee|sss
-//  ---+sss 2
-//  ss0,0ss
+//      0
+//      |
+// 32   +--- 1
+//      |sss
+//   ---+sss 2
+//   ss0,0ss
 static mclipnode_t clipnodes_step2[] = {
 	{  0, {             1,              2}},
 	{  1, {CONTENTS_EMPTY, CONTENTS_SOLID}},
@@ -158,9 +157,9 @@ hull_t hull_step2 = {
 };
 
 //     0
-//  eee|eee
-// 2---+0,32
-//  sss|eee
+//     |
+// 2---+    32
+//  sss|
 //  sss+--- 1
 //  ss0,0ss
 static mclipnode_t clipnodes_step3[] = {
@@ -184,14 +183,14 @@ hull_t hull_step3 = {
 	{0, 0, 0},
 };
 
-//   3 2
-//  s|e|eee
-// 4-+e|-20,40
-//  e|e|eee
-// 0,32+--- 1
-//  eee|sss
-//  ---+--- 0
-//  ss0,0ss
+//      3 2
+//    ss| |
+//  4 --+ |   -20,40
+//      | |
+// 32 --+-+--- 1
+//        |sss
+//     ---+--- 0
+//     ss0,0ss
 static mclipnode_t clipnodes_covered_step[] = {
 	{  0, {             1, CONTENTS_SOLID}},
 	{  1, {             3,              2}},
@@ -218,9 +217,9 @@ hull_t hull_covered_step = {
 };
 
 //     0
-//  eee|eee
-//  eee+--- 1
-//  ee/0,0s
+//     |
+//  0,0+--- 1
+//    /ssss
 //   2 ssss
 static mclipnode_t clipnodes_ramp[] = {
 	{  0, {             1,              2}},
@@ -246,7 +245,7 @@ hull_t hull_ramp = {
 //   2   1
 // ss|sss|ss
 // ss+-3-+ss 8
-// ss|eee|ss
+// ss|   |ss
 // ss+-4-+ss -8
 // ss|sss|ss
 //  -8   8
@@ -276,12 +275,11 @@ hull_t hull_hole = {
 	{0, 0, 0},
 };
 
-//     2   3
-//  eee|eee|eee
-// 0,32+---+--- 1
-//  eee|sss|eee
-//  ---+---+--- 0
-//  ss0,0s8,0ss
+//       2   3
+// 32 ---+---+--- 1
+//       |sss|
+//    ---+---+--- 0
+//    ss0,0s8,0ss
 static mclipnode_t clipnodes_ridge[] = {
 	{  0, {             1, CONTENTS_SOLID}},
 	{  1, {CONTENTS_EMPTY,              2}},
@@ -306,15 +304,15 @@ hull_t hull_ridge = {
 };
 
 //               5
-//   ssssssssssss|6e
-//  1 sssssss 2 s.ee
-//   \sssssss/ss/|ee
-//   s\sssss/ss/e|ee
+//   ssssssssssss|6
+//  1 sssssss 2 s.
+//   \sssssss/ss/|
+//   s\sssss/ss/ |
 //   ss\s 4.--.--.-- 20
-//   sss\s/eeeeeeeee
-// 3 ----. 0,0 eeeee
-//   wwwww\eeeeeeeee
-//   wwwwww\eeeeeeee
+//   sss\s/        .
+// 3 ----. 0,0     .
+//   wwwww\        .
+//   wwwwww\       .
 // 0 -------.------- -20
 //   sssssssssssssss
 //   sssssssssssssss
