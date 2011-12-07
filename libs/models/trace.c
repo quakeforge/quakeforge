@@ -646,7 +646,7 @@ trace_contents (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
 		// the side of the plane on which we are does not matter, only
 		// whether we're crossing the plane. merely touching the plane does
 		// not cause us to cross it
-		if (fabs (dist) >= offset)
+		if (fabs (dist) >= offset - PLANE_EPSILON)
 			continue;
 		if (!portal_intersect (trace, portal, plane, origin))
 			continue;
