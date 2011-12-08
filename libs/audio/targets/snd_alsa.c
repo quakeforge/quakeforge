@@ -150,7 +150,7 @@ SNDDMA_ni_xfer (portable_samplepair_t *paintbuffer, int count, float volume)
 
 	p = (float *) paintbuffer;
 	out_max = sn.frames - 1;
-	out_idx = sn.framepos;
+	out_idx = *plugin_info_snd_output_data.paintedtime;
 	while (out_idx > out_max)
 		out_idx -= out_max + 1;
 

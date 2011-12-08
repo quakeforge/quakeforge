@@ -82,7 +82,7 @@ s_xfer_paint_buffer (portable_samplepair_t *paintbuffer, int count,
 	p = (float *) paintbuffer;
 	count *= snd_shm->channels;
 	out_max = (snd_shm->frames * snd_shm->channels) - 1;
-	out_idx = snd_shm->framepos * snd_shm->channels;
+	out_idx = snd_paintedtime * snd_shm->channels;
 	while (out_idx > out_max)
 		out_idx -= out_max + 1;
 	step = 3 - snd_shm->channels;
