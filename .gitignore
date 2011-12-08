@@ -118,7 +118,9 @@ core
 # /libs/
 
 # /libs/audio/
-/libs/audio/testsound
+
+# /libs/audio/test/
+/libs/audio/test/testsound
 
 # /libs/audio/cd/
 
@@ -139,7 +141,11 @@ core
 # /libs/image/
 
 # /libs/models/
-/libs/models/testclip
+
+# /libs/models/test/
+/libs/models/test/testclip
+/libs/models/test/testcontents
+/libs/models/test/testportals
 
 # /libs/models/alias/
 
@@ -161,6 +167,10 @@ core
 # /libs/ruamoko/
 
 # /libs/util/
+
+# /libs/util/test
+/libs/util/test/test-qfs
+/libs/util/test/test-quat
 
 # /libs/video/
 
