@@ -40,7 +40,6 @@ typedef struct {
 		qboolean    startsolid;
 		qboolean    inopen;
 		qboolean    inwater;
-		int         num_portals;
 	}           expect;
 } test_t;
 
@@ -51,153 +50,153 @@ box_t player = { {16, 16, 28} };
 
 test_t tests[] = {
 	{"Point, Three parallel planes 1", &point, &hull_tpp1,
-		{-64, 0, 0}, { 64, 0, 0}, {     1, 1, 1, 0, 0, 3}},
+		{-64, 0, 0}, { 64, 0, 0}, {     1, 1, 1, 0, 0}},
 	{"Point, Three parallel planes 1", &point, &hull_tpp1,
-		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 0, 3}},
+		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 0}},
 	{"Point, Three parallel planes 1", &point, &hull_tpp1,
-		{ 40, 0, 0}, {-88, 0, 0}, {0.0625, 0, 0, 1, 0, 3}},
+		{ 40, 0, 0}, {-88, 0, 0}, {0.0625, 0, 0, 1, 0}},
 	{"Point, Three parallel planes 1", &point, &hull_tpp1,
-		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 1, 1, 0, 3}},
+		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 1, 1, 0}},
 	{"Point, Three parallel planes 1", &point, &hull_tpp1,
-		{  0, 0, 0}, {  0, 8, 0}, {     1, 1, 1, 0, 0, 3}},
+		{  0, 0, 0}, {  0, 8, 0}, {     1, 1, 1, 0, 0}},
 	{"Point, Three parallel planes 1", &point, &hull_tpp1,
-		{ 40, 0, 0}, { 40, 8, 0}, {     1, 0, 0, 1, 0, 3}},
+		{ 40, 0, 0}, { 40, 8, 0}, {     1, 0, 0, 1, 0}},
 
 	{"Point, Three parallel planes 2", &point, &hull_tpp2,
-		{-64, 0, 0}, { 64, 0, 0}, {     1, 1, 1, 0, 0, 3}},
+		{-64, 0, 0}, { 64, 0, 0}, {     1, 1, 1, 0, 0}},
 	{"Point, Three parallel planes 2", &point, &hull_tpp2,
-		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 0, 3}},
+		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 0}},
 	{"Point, Three parallel planes 2", &point, &hull_tpp2,
-		{ 40, 0, 0}, {-88, 0, 0}, {0.0625, 0, 0, 1, 0, 3}},
+		{ 40, 0, 0}, {-88, 0, 0}, {0.0625, 0, 0, 1, 0}},
 	{"Point, Three parallel planes 2", &point, &hull_tpp2,
-		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 1, 1, 0, 3}},
+		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 1, 1, 0}},
 
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
-		{-64, 0, 0}, { 64, 0, 0}, { 0.875, 0, 1, 1, 1, 3}},
+		{-64, 0, 0}, { 64, 0, 0}, { 0.875, 0, 1, 1, 1}},
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
-		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 0, 1, 1, 3}},
+		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 0, 1, 1}},
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
-		{ 40, 0, 0}, {-88, 0, 0}, {0.5625, 0, 0, 1, 1, 3}},
+		{ 40, 0, 0}, {-88, 0, 0}, {0.5625, 0, 0, 1, 1}},
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
-		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 0, 1, 1, 3}},
+		{  0, 0, 0}, { 64, 0, 0}, {  0.75, 0, 0, 1, 1}},
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
-		{  0, 0, 0}, {  0, 8, 0}, {     1, 0, 0, 1, 0, 3}},
+		{  0, 0, 0}, {  0, 8, 0}, {     1, 0, 0, 1, 0}},
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
-		{ 40, 0, 0}, { 40, 8, 0}, {     1, 0, 0, 0, 1, 3}},
+		{ 40, 0, 0}, { 40, 8, 0}, {     1, 0, 0, 0, 1}},
 	{"Point, Three parallel planes with water", &point, &hull_tppw,
-		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 0, 1, 1, 3}},
+		{  0, 0, 0}, { 40, 0, 0}, {     1, 0, 0, 1, 1}},
 	{"Box, Three parallel planes with water", &box, &hull_tppw,
-		{-32, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 1, 3}},
+		{-32, 0, 0}, { 40, 0, 0}, {     1, 0, 1, 1, 1}},
 	{"Box, Three parallel planes with water", &box, &hull_tppw,
-		{-32, 0, 0}, { 20, 0, 0}, {     1, 0, 1, 1, 0, 3}},
+		{-32, 0, 0}, { 20, 0, 0}, {     1, 0, 1, 1, 0}},
 
 	{"Point, Step 1", &point, &hull_step1,
-		{ -16, 0, 8}, {16, 0, 24}, { 0.5, 0, 0, 1, 0, 5}},
+		{ -16, 0, 8}, {16, 0,  24}, {  0.5, 0, 0, 1, 0}},
 	{"Box, Step 1", &box, &hull_step1,
-		{ -16, 0, 8}, {16, 0, 24}, { 0.25, 0, 0, 1, 0, 5}},
+		{ -16, 0, 8}, {16, 0,  24}, { 0.25, 0, 0, 1, 0}},
 	{"Box, Step 1", &box, &hull_step1,
-		{ -16, 0, 8}, {16, 0, 40}, { 0.25, 0, 0, 1, 0, 5}},
+		{ -16, 0, 8}, {16, 0,  40}, { 0.25, 0, 0, 1, 0}},
 	{"Box, Step 1", &box, &hull_step1,
-		{ -16, 0, 8}, {16, 0, 135}, { 0.25, 0, 0, 1, 0, 5}},
+		{ -16, 0, 8}, {16, 0, 135}, { 0.25, 0, 0, 1, 0}},
 	{"Box, Step 1", &box, &hull_step1,
-		{ -16, 0, 8}, {16, 0, 136}, { 1, 0, 0, 1, 0, 5}},
+		{ -16, 0, 8}, {16, 0, 136}, {    1, 0, 0, 1, 0}},
 
 	{"Point, Covered Step", &point, &hull_covered_step,
-		{-24, 0,   8}, {-24, 0, 72}, { 0.5, 0, 0, 1, 0, 9}},
+		{ -24, 0,   8}, {-24, 0, 72}, {   0.5, 0, 0, 1, 0}},
 	{"Box, Covered Step", &box, &hull_covered_step,
-		{-32, 0,   8}, {-32, 0, 72}, { 0.375, 0, 0, 1, 0, 9}},
+		{ -32, 0,   8}, {-32, 0, 72}, { 0.375, 0, 0, 1, 0}},
 	{"Box, Covered Step", &box, &hull_covered_step,
-		{-24, 0,   8}, {-24, 0, 72}, { 0.375, 0, 0, 1, 0, 9}},
+		{ -24, 0,   8}, {-24, 0, 72}, { 0.375, 0, 0, 1, 0}},
 	{"Box, Covered Step", &box, &hull_covered_step,
-		{-25, 0,   8}, {  7, 0, 72}, { 0.375, 0, 0, 1, 0, 9}},
+		{ -25, 0,   8}, {  7, 0, 72}, { 0.375, 0, 0, 1, 0}},
 	{"Box, Covered Step", &box, &hull_covered_step,
-		{ -8, 0,  40}, {-16, 0, 40}, { 0.5, 0, 0, 1, 0, 9}},
+		{  -8, 0,  40}, {-16, 0, 40}, {   0.5, 0, 0, 1, 0}},
 	{"Box, Covered Step", &box, &hull_covered_step,
-		{-17, 0,   8}, { -1, 0, 72}, { 1, 0, 0, 1, 0, 9}},
+		{ -17, 0,   8}, { -1, 0, 72}, {     1, 0, 0, 1, 0}},
 	{"Box, Covered Step", &box, &hull_covered_step,
-		{ -8, 0,  40}, {  8, 0, 72}, { 1, 0, 0, 1, 0, 9}},
+		{  -8, 0,  40}, {  8, 0, 72}, {     1, 0, 0, 1, 0}},
 	{"Box, Covered Step touch backside", &box, &hull_covered_step,
-		{ -8, 0,   8}, {-12, 0, 12}, { 1, 0, 0, 1, 0, 9}},
+		{  -8, 0,   8}, {-12, 0, 12}, {     1, 0, 0, 1, 0}},
 	{"Point, Covered Step touch backside", &point, &hull_covered_step,
-		{  0, 0,   8}, {-12, 0, 12}, { 1, 0, 1, 1, 0, 9}},
+		{   0, 0,   8}, {-12, 0, 12}, {     1, 0, 1, 1, 0}},
 	{"Point, Covered Step start solid", &point, &hull_covered_step,
-		{  0, 0,  -4}, {-16, 0, 12}, { 1, 0, 1, 1, 0, 9}},
+		{   0, 0,  -4}, {-16, 0, 12}, {     1, 0, 1, 1, 0}},
 	{"Point, Covered Step start solid", &point, &hull_covered_step,
-		{  4, 0,  -4}, {-12, 0, 12}, { 1, 1, 1, 0, 0, 9}},
+		{   4, 0,  -4}, {-12, 0, 12}, {     1, 1, 1, 0, 0}},
 	{"Box, Covered Step start solid", &box, &hull_covered_step,
-		{ -4, 0,   4}, {-12, 0, 12}, { 1, 0, 1, 1, 0, 9}},
+		{  -4, 0,   4}, {-12, 0, 12}, {     1, 0, 1, 1, 0}},
 	{"Box, Covered Step start solid", &box, &hull_covered_step,
-		{ -17, 0,   4}, {-17, 0, 12}, { 1, 0, 1, 1, 0, 9}},
+		{ -17, 0,   4}, {-17, 0, 12}, {     1, 0, 1, 1, 0}},
 	{"Box, Covered Step start solid", &box, &hull_covered_step,
-		{ -4, 0,   4}, {-16, 0, 36}, { 0.875, 0, 1, 1, 0, 9}},
+		{  -4, 0,   4}, {-16, 0, 36}, { 0.875, 0, 1, 1, 0}},
 	{"Box, Covered Step start solid", &box, &hull_covered_step,
-		{ -4, 0,   4}, {-16, 0,  4}, { 1, 1, 1, 0, 0, 9}},
+		{  -4, 0,   4}, {-16, 0,  4}, {     1, 1, 1, 0, 0}},
 	{"Box, Covered Step start solid", &box, &hull_covered_step,
-		{-12, 0,   4}, {-16, 0,  4}, { 1, 1, 1, 0, 0, 9}},
+		{ -12, 0,   4}, {-16, 0,  4}, {     1, 1, 1, 0, 0}},
 	{"Box, Covered Step start solid", &box, &hull_covered_step,
-		{-16, 0,   4}, { -4, 0,  4}, { 1, 1, 1, 0, 0, 9}},
+		{ -16, 0,   4}, { -4, 0,  4}, {     1, 1, 1, 0, 0}},
 	{"Box, Covered Step start solid", &box, &hull_covered_step,
-		{ 16, 0, -16}, { 16, 0, 64}, { 1, 1, 1, 0, 0, 9}},
+		{  16, 0, -16}, { 16, 0, 64}, {     1, 1, 1, 0, 0}},
 	{"Box, Covered Step start solid", &box, &hull_covered_step,
-		{ 16, 0,  16}, { 16, 0, 64}, { 1, 0, 1, 1, 0, 9}},
+		{  16, 0,  16}, { 16, 0, 64}, {     1, 0, 1, 1, 0}},
 
 	{"Box,  Step 2", &box, &hull_step2,
-		{ 0, 0, 64}, {0, 0, 0}, { 0.375, 0, 0, 1, 0, 5}},
+		{ 0, 0, 64}, {0, 0, 0}, { 0.375, 0, 0, 1, 0}},
 	{"Box,  Step 3", &box, &hull_step3,
-		{ 0, 0, 64}, {0, 0, 0}, { 0.375, 0, 0, 1, 0, 5}},
+		{ 0, 0, 64}, {0, 0, 0}, { 0.375, 0, 0, 1, 0}},
 
 	{"Box,  Ramp", &box, &hull_ramp,
-		{ 0, 0, 16}, {0, 0, 0}, { 0.5, 0, 0, 1, 0, 4}},
+		{ 0, 0, 16}, { 0, 0, 0}, {   0.5, 0, 0, 1, 0}},
 	{"Box,  Ramp", &box, &hull_ramp,
-		{-16, 0, 8}, {16, 0, 8}, { 1, 0, 0, 1, 0, 4}},
+		{-16, 0, 8}, {16, 0, 8}, {     1, 0, 0, 1, 0}},
 	{"Box,  Ramp", &box, &hull_ramp,
-		{-16, 0, 5}, {16, 0, 5}, { 0.125, 0, 0, 1, 0, 4}},
+		{-16, 0, 5}, {16, 0, 5}, { 0.125, 0, 0, 1, 0}},
 
 	{"Box,  Simple Wedge", &box, &hull_simple_wedge,
-		{ 0, 0, 16}, {0, 0, 0}, { 0.5, 0, 0, 1, 0, 3}},
+		{  0, 0, 16}, { 0, 0, 0}, {  0.5, 0, 0, 1, 0}},
 	{"Box,  Simple Wedge", &box, &hull_simple_wedge,
-		{-16, 0, 8}, {16, 0, 8}, { 1, 0, 0, 1, 0, 3}},
+		{-16, 0,  8}, {16, 0, 8}, {    1, 0, 0, 1, 0}},
 	{"Box,  Simple Wedge", &box, &hull_simple_wedge,
-		{-16, 0, 5}, {16, 0, 5}, { 0.25, 0, 0, 1, 0, 3}},
+		{-16, 0,  5}, {16, 0, 5}, { 0.25, 0, 0, 1, 0}},
 	{"Box,  Simple Wedge", &box, &hull_simple_wedge,
-		{-16, 0, 12}, {16, 0, 4}, { 0.5, 0, 0, 1, 0, 3}},
+		{-16, 0, 12}, {16, 0, 4}, {  0.5, 0, 0, 1, 0}},
 
 	{"Box,  Hole. slide in", &box, &hull_hole,
-		{ 0, -16,  0}, {  0,  16,   0}, { 1, 0, 0, 1, 0, 13}},
+		{ 0, -16,  0}, {  0,  16,   0}, {    1, 0, 0, 1, 0}},
 	{"Box,  Hole. slide out", &box, &hull_hole,
-		{ 0,  16,  0}, {  0, -16,   0}, { 1, 0, 0, 1, 0, 13}},
+		{ 0,  16,  0}, {  0, -16,   0}, {    1, 0, 0, 1, 0}},
 	{"Box,  Hole. tight", &box, &hull_hole,
-		{ 0,  16,  0}, {  0,  16,  16}, { 0, 0, 0, 1, 0, 13}},
+		{ 0,  16,  0}, {  0,  16,  16}, {    0, 0, 0, 1, 0}},
 	{"Box,  Hole. tight", &box, &hull_hole,
-		{ 0,  16,  0}, {  0,  16, -16}, { 0, 0, 0, 1, 0, 13}},
+		{ 0,  16,  0}, {  0,  16, -16}, {    0, 0, 0, 1, 0}},
 	{"Box,  Hole. tight", &box, &hull_hole,
-		{ 0,  16,  0}, { 16,  16,   0}, { 0, 0, 0, 1, 0, 13}},
+		{ 0,  16,  0}, { 16,  16,   0}, {    0, 0, 0, 1, 0}},
 	{"Box,  Hole. tight", &box, &hull_hole,
-		{ 0,  16,  0}, {-16,  16,   0}, { 0, 0, 0, 1, 0, 13}},
+		{ 0,  16,  0}, {-16,  16,   0}, {    0, 0, 0, 1, 0}},
 	{"Box,  Hole. edge", &box, &hull_hole,
-		{ 0, -16,  1}, {  0,  16,   1}, { 0.25, 0, 0, 1, 0, 13}},
+		{ 0, -16,  1}, {  0,  16,   1}, { 0.25, 0, 0, 1, 0}},
 	{"Box,  Hole. edge", &box, &hull_hole,
-		{ 0, -16, -1}, {  0,  16,  -1}, { 0.25, 0, 0, 1, 0, 13}},
+		{ 0, -16, -1}, {  0,  16,  -1}, { 0.25, 0, 0, 1, 0}},
 	{"Box,  Hole. edge", &box, &hull_hole,
-		{ 1, -16,  0}, {  1,  16,   0}, { 0.25, 0, 0, 1, 0, 13}},
+		{ 1, -16,  0}, {  1,  16,   0}, { 0.25, 0, 0, 1, 0}},
 	{"Box,  Hole. edge", &box, &hull_hole,
-		{-1, -16,  0}, { -1,  16,   0}, { 0.25, 0, 0, 1, 0, 13}},
+		{-1, -16,  0}, { -1,  16,   0}, { 0.25, 0, 0, 1, 0}},
 
 	{"Box,  ridge", &box, &hull_ridge,
-		{4, 0, 41}, { 4, 0, 39}, { 0.5, 0, 0, 1, 0, 8}},
+		{4, 0, 41}, { 4, 0, 39}, { 0.5, 0, 0, 1, 0}},
 	{"Box,  ridge, all solid", &box, &hull_ridge,
-		{4, 41, 0}, { 4, 39, 0}, { 1, 1, 1, 0, 0, 8}},
+		{4, 41, 0}, { 4, 39, 0}, {   1, 1, 1, 0, 0}},
 
 	{"Box,  cave. start solid", &box, &hull_cave,
-		{  4, 0, -16}, {  4, 0,  0}, { 0.5, 0, 1, 0, 1, 14}},
+		{  4, 0, -16}, {  4, 0,  0}, { 0.5, 0, 1, 0, 1}},
 	{"Box,  cave. start solid", &box, &hull_cave,
-		{ -8, 0, -16}, { -8, 0,  0}, { 0.5, 0, 1, 0, 1, 14}},
+		{ -8, 0, -16}, { -8, 0,  0}, { 0.5, 0, 1, 0, 1}},
 	{"Box,  cave. start solid", &box, &hull_cave,
-		{ 54, 0, -16}, { 54, 0, 56}, { 0.5, 0, 1, 1, 0, 14}},
+		{ 54, 0, -16}, { 54, 0, 56}, { 0.5, 0, 1, 1, 0}},
 	{"Box,  cave", &box, &hull_cave,
-		{ 54, 0,  12}, { 54, 0, 28}, { 0.5, 0, 0, 1, 0, 14}},
+		{ 54, 0,  12}, { 54, 0, 28}, { 0.5, 0, 0, 1, 0}},
 	{"Big Box,  cave. start solid", &bigbox, &hull_cave,
-		{ 54, 0,   0}, { 54, 0, 8}, { 0.5, 0, 1, 1, 0, 14}},
+		{ 54, 0,   0}, { 54, 0,  8}, { 0.5, 0, 1, 1, 0}},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
@@ -260,31 +259,9 @@ run_test (test_t *test)
 		hull_t     *hull = test->hull;
 		int         i, j;
 		portlist_t *p;
-		clipport_t *portal;
 		clipleaf_t *leaf;
-		int         side;
 
 		hull->nodeleafs = MOD_BuildBrushes (hull);
-		for (i = hull->firstclipnode; i <= hull->lastclipnode; i++) {
-			for (j = 0; j < 2; j++) {
-				if (((hull->clipnodes[i].children[j] >= 0)
-					 != (!hull->nodeleafs[i].leafs[j]))
-					|| (hull->nodeleafs[i].leafs[j]
-						&& (hull->nodeleafs[i].leafs[j]->contents
-							!= hull->clipnodes[i].children[j]))) {
-					printf ("bad nodeleaf %d %d\n", i, j);
-					err = 1;
-				}
-			}
-			if (hull->nodeleafs[i].leafs[0]
-				&& (hull->nodeleafs[i].leafs[0]
-					== hull->nodeleafs[i].leafs[1])) {
-				printf ("bad nodeleaf %d %d\n", i, j);
-				err = 1;
-			}
-		}
-		if (err)
-			goto nodeleaf_bail;
 		for (i = hull->firstclipnode; i <= hull->lastclipnode; i++) {
 			for (j = 0; j < 2; j++) {
 				leaf = hull->nodeleafs[i].leafs[j];
@@ -292,19 +269,6 @@ run_test (test_t *test)
 					continue;
 				portal_list = collect_portals (leaf->portals, portal_list);
 			}
-		}
-		for (i = 0, p = portal_list; p; i++, p = p->next) {
-			if (!p->portal->winding || !p->portal->edges) {
-				err = 1;
-				printf ("portal with missing vertex/edge information\n");
-			}
-		}
-		if (err)
-			goto nodeleaf_bail;
-		if (i != test->expect.num_portals) {
-			err = 1;
-			printf ("bad portal count: %d %d\n", test->expect.num_portals, i);
-			goto nodeleaf_bail;
 		}
 		for (p = portal_list; p; p = p->next) {
 			for (j = 0; j < p->portal->winding->numpoints; j++) {
@@ -317,29 +281,8 @@ run_test (test_t *test)
 			}
 			FreeWinding (p->portal->edges);
 			p->portal->edges = WindingVectors (p->portal->winding, 0);
-			for (j = 0; j < 2; j++) {
-				int         found = 0;
-
-				leaf = p->portal->leafs[j];
-				for (portal = leaf->portals; portal;
-					 portal = portal->next[side]) {
-				//printf("%p %d %p %p %p\n", p, j, leaf, portal, p->portal);
-					side = portal->leafs[1] == leaf;
-					if (!side && portal->leafs[0] != leaf) {
-						printf ("mislinked portal\n");
-						err = 1;
-					}
-					if (portal == p->portal)
-						found = 1;
-				}
-				if (!found) {
-					printf ("portal unreachable from leaf\n");
-					err = 1;
-				}
-			}
 		}
 	}
-nodeleaf_bail:
 	while (portal_list) {
 		portlist_t *t = portal_list;
 		portal_list = portal_list->next;
