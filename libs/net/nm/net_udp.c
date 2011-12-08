@@ -417,7 +417,7 @@ UDP_Connect (int socket, netadr_t *addr)
 int
 UDP_CheckNewConnections (void)
 {
-	unsigned long available;
+	int         available;
 	AF_address_t from;
 	socklen_t   fromlen = sizeof (from);
 	char        buff[1];
