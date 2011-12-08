@@ -248,7 +248,7 @@ NET_CompareAdr (netadr_t a, netadr_t b)
 const char *
 NET_AdrToString (netadr_t a)
 {
-	static char s[64];
+	static dstring_t *s;
 	char		base[64];
 	AF_address_t ss;
 
@@ -273,13 +273,15 @@ NET_AdrToString (netadr_t a)
 	if (getnameinfo (&ss.sa, SS_LEN(&ss.ss), base, sizeof (base),
 					 NULL, 0, NI_NUMERICHOST)) strcpy (base, "<invalid>");
 
+	if (!s)
+		s = dstring_new ();
 	if (ss.ss.ss_family == AF_INET6) {
-		sprintf (s, "[%s]:%d", base, ntohs (a.port));
+		dsprintf (s, "[%s]:%d", base, ntohs (a.port));
 	} else {
-		sprintf (s, "%s:%d", base, ntohs (a.port));
+		dsprintf (s, "%s:%d", base, ntohs (a.port));
 	}
 
-	return s;
+	return s->str;
 }
 
 const char *
