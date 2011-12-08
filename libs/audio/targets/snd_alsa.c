@@ -227,14 +227,13 @@ SNDDMA_Init (void)
 	stereo = snd_stereo->int_val;
 	if (!pcmname)
 		pcmname = "default";
-
+retry_open:
 	err = qfsnd_pcm_open (&pcm, pcmname, SND_PCM_STREAM_PLAYBACK,
 						  SND_PCM_NONBLOCK);
 	if (0 > err) {
 		Sys_Printf ("Error: audio open error: %s\n", qfsnd_strerror (err));
 		return 0;
 	}
-	Sys_Printf ("Using PCM %s.\n", pcmname);
 
 	err = qfsnd_pcm_hw_params_any (pcm, hw);
 	if (0 > err) {
@@ -253,11 +252,18 @@ SNDDMA_Init (void)
 		if (0 > err) {
 			Sys_MaskPrintf (SYS_SND, "ALSA: Failure to set noninterleaved PCM "
 							"access. %s\n", qfsnd_strerror (err));
+			// "default" did not work, so retry with "plughw". However do not
+			// second guess the user, even if the user specified "default".
+			if (!snd_device->string[0] && !strcmp (pcmname, "default")) {
+				pcmname = "plughw";
+				goto retry_open;
+			}
 			Sys_Printf ("ALSA: could not set mmap access\n");
 			goto error;
 		}
 		sn.xfer = SNDDMA_ni_xfer;
 	}
+	Sys_Printf ("Using PCM %s.\n", pcmname);
 
 
 	switch (bps) {
