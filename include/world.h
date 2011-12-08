@@ -140,5 +140,6 @@ typedef struct nodeleaf_s {
 } nodeleaf_t;
 
 nodeleaf_t *MOD_BuildBrushes (hull_t *hull);
+void MOD_FreeBrushes (hull_t *hull);
 
 #endif // __world_h

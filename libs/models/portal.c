@@ -47,16 +47,18 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "world.h"
 
-static clipleaf_t *
-alloc_leaf (void)
-{
-	return calloc (1, sizeof (clipleaf_t));
-}
-
 static clipport_t *
 alloc_portal (void)
 {
 	return calloc (1, sizeof (clipport_t));
+}
+
+static void
+free_portal (clipport_t *portal)
+{
+	FreeWinding (portal->winding);
+	FreeWinding (portal->edges);
+	free (portal);
 }
 
 static void
@@ -73,6 +75,27 @@ remove_portal (clipport_t *portal, clipleaf_t *leaf)
 			break;
 		}
 	}
+}
+
+static clipleaf_t *
+alloc_leaf (void)
+{
+	return calloc (1, sizeof (clipleaf_t));
+}
+
+static void
+free_leaf (clipleaf_t *leaf)
+{
+	if (!leaf)
+		return;
+	while (leaf->portals) {
+		clipport_t *portal = leaf->portals;
+		int         side = portal->leafs[1] == leaf;
+		leaf->portals = portal->next[side];
+		remove_portal (portal, portal->leafs[side ^ 1]);
+		free_portal (portal);
+	}
+	free (leaf);
 }
 
 static void
@@ -194,4 +217,21 @@ MOD_BuildBrushes (hull_t *hull)
 		}
 	}
 	return nodeleafs;
+}
+
+void
+MOD_FreeBrushes (hull_t *hull)
+{
+	int         i, j;
+	int         numnodes;
+
+	if (!hull || !hull->nodeleafs)
+		return;
+	numnodes = hull->lastclipnode + 1;
+	for (i = 0; i < numnodes; i++) {
+		for (j = 0; j < 2; j++)
+			free_leaf (hull->nodeleafs[i].leafs[j]);
+	}
+	free (hull->nodeleafs);
+	hull->nodeleafs = 0;
 }
