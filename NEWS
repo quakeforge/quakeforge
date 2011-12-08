@@ -3,6 +3,46 @@ NEWS for the QuakeForge project
 
 Changes from 0.5.5
     o General enhancements
+        * many limits removed
+            o unlimited nails (client side)
+            o unlimited visible entities
+            o unlimited static entities
+            o for BSP files, only limits dictated by the format remain
+        * linux joystick improvements:
+            o default device is /dev/input/js0
+            o up to 18 buttons
+        * developer cvar is now a bit field
+            o    1 everything
+            o    2 warnings
+            o    4 video
+            o    8 file system: not found
+            o   16 file system: found
+            o   32 file system: general
+            o   64 networking
+            o  128 ruamoko: objects
+            o  256 ruamoko: messages
+            o  512 sound
+            o 1024 GL textures
+        * ALSA sound support now works with PulseAudio by default
+        * NQ now works on multi-homed hosts
+        * OpenBSD networking fixes
+        * loss of contact with the jack server is now detected. no more
+          hanging on shutdown after jack flakes out.
+        * fishey rendering fixed
+        * crash gracefully when a map has too many entities (rather than
+          silently dropping them: coag3 wasn't fun with missing ents)
+        * players can jump off pretty much anything (controllable via
+          sv_jump_any)
+        * funny size sound buffers no longer a problem
+        * RLE encoding for PCX output
+        * plugins moved to ${libdir}/quakeforge/plugins
+        * IPv6 support now working
+        * rotating bsp model support
+        * alsa 0.9 support dropped
+        * transparent map entities
+        * support map specified skyboxes
+        * NQ's maximum velocity is now spherical rather than cubical
+        * truncate long level names in NQ's HUD
         * protocol 666 support from fitzquake (nq)
         * large map support from fitzquake
         * fullscreen mode is now compliant with modern window managers
@@ -32,6 +72,7 @@ Changes from 0.5.5
         * particle improvements
         * nq can now release the CPU when it is not needed (cl_usleep 1)
     o Ruamoko (QuakeC)
+        * installed headers/libs now in ${prefix}/lib/qfcc
         * plist access
         * entity parsing support
         * quake script parsing support
@@ -40,6 +81,20 @@ Changes from 0.5.5
         * progs can provide their own entity parsing function. A sample
           implementation is available.
     o qfcc
+        * major rewrite of parser and code generation
+            o C style declarations fully supported (bit fields ignored)
+            o dead code elimination
+            o better constant folding
+            o Objective-QC runtime data moved into far data to avoid taking
+              precious near data defs.
+            o missing return statements in non-void functions now detected
+              with a suitable warning
+            o pointers and arrays now use C syntax
+            o "integer" now "int"
+        * field aliasing: .SEL thinkMethod = think;
+        * diagnostic variables
+          __PRETTY_FUNCTION__ __FUNCTION__ __LINE__ and __FILE__
+        * NIL renamed to nil
         * man page documentation
         * function overloading
         * allow entity.vector.x (etc) instead of entity.vector_x
@@ -56,10 +111,14 @@ Changes from 0.5.5
         * qccx escape codes supported. As there are conflicts with qfcc's
           escape codes, --qccx-escapes can be used to select qccx instead of
           qfcc.
+        * explicit references to classes and categories via
+          "@reference ClassName;" or "@reference ClassName(CategoryName);"
     o Tools
         * filter for displaying item information from a map (itemslist.py)
         * wad tool improvements
         * qfbsp can extract the entities data from bsp files.
+        * qflmp: converts between lmp and pcx
+        * io_mesh_qfmdl: blender mdl import/export script
 
 Changes from 0.5.4
     o General enhancements
