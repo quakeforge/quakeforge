@@ -159,6 +159,8 @@ extern client_static_t	cls;
 */
 typedef struct
 {
+	qboolean    loading;
+
 	int			movemessages;	// Since connecting to this server throw out
 								// the first couple, so the player doesn't
 								// accidentally do something the first frame

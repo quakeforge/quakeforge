@@ -300,7 +300,7 @@ CL_SignonReply (void)
 		break;
 
 	case 4:
-//		SCR_EndLoadingPlaque ();		// allow normal screen updates
+		cl.loading = false;
 		break;
 	}
 }
@@ -315,6 +315,9 @@ CL_NextDemo (void)
 {
 	if (cls.demonum == -1)
 		return;							// don't play demos
+
+	cl.loading = true;
+	CL_UpdateScreen(cl.time);
 
 	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS) {
 		cls.demonum = 0;

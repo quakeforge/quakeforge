@@ -64,6 +64,18 @@ SCR_DrawNet (void)
 	Draw_Pic (scr_vrect.x + 64, scr_vrect.y, scr_net);
 }
 
+static void
+SCR_DrawLoading (void)
+{
+	qpic_t     *pic;
+
+	if (!cl.loading)
+		return;
+	pic = Draw_CachePic ("gfx/loading.lmp", 1);
+	Draw_Pic ((vid.conwidth - pic->width) / 2,
+			  (vid.conheight - 48 - pic->height) / 2, pic);
+}
+
 static SCR_Func scr_funcs_normal[] = {
 	Draw_Crosshair,
 	SCR_DrawRam,
@@ -73,6 +85,7 @@ static SCR_Func scr_funcs_normal[] = {
 	Sbar_DrawCenterPrint,
 	Sbar_Draw,
 	Con_DrawConsole,
+	SCR_DrawLoading,
 	0
 };
 

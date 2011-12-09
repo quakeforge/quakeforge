@@ -299,7 +299,8 @@ Host_Map_f (void)
 	CL_Disconnect ();
 	Host_ShutdownServer (false);
 
-//	SCR_BeginLoadingPlaque ();
+	cl.loading = true;
+	CL_UpdateScreen (cl.time);
 
 	cls.mapstring[0] = 0;
 	for (i = 0; i < Cmd_Argc (); i++) {
@@ -379,7 +380,8 @@ Host_Restart_f (void)
 static void
 Host_Reconnect_f (void)
 {
-//	SCR_BeginLoadingPlaque ();
+	cl.loading = true;
+	CL_UpdateScreen (cl.time);
 	cls.signon = 0;						// need new connection messages
 }
 
@@ -623,9 +625,8 @@ Host_Loadgame_f (void)
 	dsprintf (name, "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
 	QFS_DefaultExtension (name, ".sav");
 
-	// we can't call SCR_BeginLoadingPlaque, because too much stack space has
-	// been used.  The menu calls it before stuffing loadgame command
-//  SCR_BeginLoadingPlaque ();
+	cl.loading = true;
+	CL_UpdateScreen (cl.time);
 
 	Sys_Printf ("Loading game from %s...\n", name->str);
 	f = QFS_Open (name->str, "rz");

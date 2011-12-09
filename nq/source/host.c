@@ -192,7 +192,7 @@ Host_Error (const char *error, ...)
 
 	inerror = true;
 
-//	SCR_EndLoadingPlaque ();						// reenable screen updates
+	cl.loading = false;
 
 	va_start (argptr, error);
 	dvsprintf (str, error, argptr);
