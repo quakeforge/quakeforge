@@ -369,6 +369,7 @@ typedef enum {
 
 typedef enum {
 	IMT_CONSOLE,
+	IMT_MOD,
 	IMT_0,
 	IMT_1,
 	IMT_2,
