@@ -440,7 +440,7 @@ Key_Game (knum_t key, short unicode)
 	kb = Key_GetBinding (game_target, key);
 	if (!kb && (game_target > IMT_0))
 		kb = Key_GetBinding (IMT_0, key);
-	if (!kb)
+	if (!kb && (game_target >= IMT_MOD))
 		kb = Key_GetBinding (IMT_MOD, key);
 
 /*
