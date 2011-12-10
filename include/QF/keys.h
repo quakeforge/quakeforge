@@ -369,6 +369,7 @@ typedef enum {
 
 typedef enum {
 	IMT_CONSOLE,
+	IMT_DEMO,
 	IMT_MOD,
 	IMT_0,
 	IMT_1,
@@ -393,6 +394,7 @@ typedef enum {
 // key_none should, preferably, be last
 typedef enum {
 	key_game,
+	key_demo,
 	key_console,
 	key_message,
 	key_menu,

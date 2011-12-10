@@ -76,6 +76,7 @@ typedef struct {
 
 imtname_t   imtnames[] = {
 	{"IMT_CONSOLE",	IMT_CONSOLE},
+	{"IMT_DEMO",	IMT_DEMO},
 	{"IMT_MOD",	    IMT_MOD},
 	{"IMT_0",		IMT_0},
 	{"IMT_1",		IMT_1},
@@ -409,6 +410,23 @@ keyname_t   keynames[] = {
 };
 
 
+static void
+process_binding (knum_t key, const char *kb)
+{
+	char        cmd[1024];
+
+	if (kb[0] == '+') {
+		if (keydown[key])
+			snprintf (cmd, sizeof (cmd), "%s %d\n", kb, key);
+		else
+			snprintf (cmd, sizeof (cmd), "-%s %d\n", kb + 1, key);
+	} else {
+		if (!keydown[key])
+			return;
+		snprintf (cmd, sizeof (cmd), "%s\n", kb);
+	}
+	Cbuf_AddText (cbuf, cmd);
+}
 /*
   Key_Game
 
@@ -418,7 +436,6 @@ static qboolean
 Key_Game (knum_t key, short unicode)
 {
 	const char *kb;
-	char        cmd[1024];
 
 	kb = Key_GetBinding (game_target, key);
 	if (!kb && (game_target > IMT_0))
@@ -436,18 +453,27 @@ Key_Game (knum_t key, short unicode)
 	if (keydown[key] > 1) 
 		return true;
 
-	if (kb[0] == '+') {
-		if (keydown[key])
-			snprintf (cmd, sizeof (cmd), "%s %d\n", kb, key);
-		else
-			snprintf (cmd, sizeof (cmd), "-%s %d\n", kb + 1, key);
-	} else {
-		if (!keydown[key])
-			return true;
-		snprintf (cmd, sizeof (cmd), "%s\n", kb);
-	}
-	Cbuf_AddText (cbuf, cmd);
+	process_binding (key, kb);
 	return true;
+}
+
+/*
+  Key_Demo
+
+  Interactive line editing and console scrollback
+*/
+static void
+Key_Demo (knum_t key, short unicode)
+{
+	const char *kb;
+
+	// escape is un-bindable
+	if (keydown[key] == 1 && key && Key_Game (key, unicode))
+		return;
+
+	kb = Key_GetBinding (IMT_DEMO, key);
+	if (kb)
+		process_binding (key, kb);
 }
 
 /*
@@ -850,6 +876,9 @@ Key_Event (knum_t key, short unicode, qboolean down)
 	switch (key_dest) {
 		case key_game:
 			Key_Game (key, unicode);
+			break;
+		case key_demo:
+			Key_Demo (key, unicode);
 			break;
 		case key_message:
 		case key_menu:
