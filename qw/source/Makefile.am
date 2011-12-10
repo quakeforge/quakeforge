@@ -32,6 +32,7 @@ AUTOMAKE_OPTIONS=	foreign
 # Stuff that is common to both client and server
 INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include @LIBCURL_CPPFLAGS@
 SDL_LIBS = @SDL_LIBS@
+AM_CFLAGS= @PTHREAD_CFLAGS@
 
 bin_PROGRAMS=	@QW_TARGETS@
 
@@ -48,7 +49,7 @@ libqw_common_a_SOURCES=\
 libqw_sdl_a_SOURCES=cl_sys_sdl.c
 libqw_sdl_a_CFLAGS=$(SDL_CFLAGS)
 
-common_ldflags= -export-dynamic
+common_ldflags= -export-dynamic @PTHREAD_LDFLAGS@
 
 # Server builds
 #

@@ -32,6 +32,7 @@ AUTOMAKE_OPTIONS= foreign
 #
 INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/nq/include
 SDL_LIBS = @SDL_LIBS@
+AM_CFLAGS= @PTHREAD_CFLAGS@
 
 bin_PROGRAMS=	@NQ_TARGETS@
 
@@ -45,7 +46,7 @@ libnq_common_a_SOURCES=game.c world.c
 libnq_sdl_a_SOURCES=	sys_sdl.c
 libnq_sdl_a_CFLAGS=	$(SDL_CFLAGS)
 
-common_ldflags= -export-dynamic
+common_ldflags= -export-dynamic @PTHREAD_LDFLAGS@
 
 cl_plugin_LIBS= \
 		$(SERVER_PLUGIN_STATIC_LIBS) \
