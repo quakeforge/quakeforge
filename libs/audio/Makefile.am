@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS= foreign
 
 SUBDIRS= targets renderer . test
-CFLAGS+= @PREFER_PIC@
+AM_CFLAGS= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 SDL_LIBS= @SDL_LIBS@
 XMMS_LIBS= @XMMS_LIBS@
