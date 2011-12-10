@@ -857,7 +857,7 @@ Key_Event (knum_t key, short unicode, qboolean down)
 	}
 
 	// handle escape specially, so the user can never unbind it
-	if (unicode == '\x1b' || key == QFK_ESCAPE) {
+	if (key == key_togglemenu || key == key_toggleconsole) {
 		Key_Console (key, unicode);
 		return;
 	}

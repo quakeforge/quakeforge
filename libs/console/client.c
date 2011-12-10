@@ -461,30 +461,35 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 			return;
 	}
 
-	if (down && (key == QFK_ESCAPE || unicode == '\x1b')) {
-		switch (key_dest) {
-			case key_menu:
-				Menu_Leave ();
-				return;
-			case key_message:
-				if (chat_team) {
-					Con_ClearTyping (say_team_line, 1);
-				} else {
-					Con_ClearTyping (say_line, 1);
-				}
-				key_dest = key_game;
-				game_target = IMT_0;
-				return;
-			case key_console:
-				if (!con_data.force_commandline) {
-					Cbuf_AddText (con_data.cbuf, "toggleconsole\n");
+	if (down) {
+		if (key == key_togglemenu) {
+			switch (key_dest) {
+				case key_menu:
+					Menu_Leave ();
 					return;
-				}
-			case key_game:
-				Menu_Enter ();
-				return;
-			default:
-				Sys_Error ("Bad key_dest");
+				case key_message:
+					if (chat_team) {
+						Con_ClearTyping (say_team_line, 1);
+					} else {
+						Con_ClearTyping (say_line, 1);
+					}
+					key_dest = key_game;
+					game_target = IMT_0;
+					return;
+				case key_console:
+					if (!con_data.force_commandline) {
+						Cbuf_AddText (con_data.cbuf, "toggleconsole\n");
+						return;
+					}
+				case key_game:
+					Menu_Enter ();
+					return;
+				default:
+					Sys_Error ("Bad key_dest");
+			}
+		} else if (key == key_toggleconsole) {
+			ToggleConsole_f ();
+			return;
 		}
 	}
 
