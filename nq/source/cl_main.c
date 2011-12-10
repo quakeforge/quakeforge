@@ -429,8 +429,13 @@ CL_SetState (cactive_t state)
 		if (state == ca_active) {
 			// entering active state
 			r_active = true;
-			game_target = IMT_0;
-			key_dest = key_game;
+			if (cls.demoplayback) {
+				game_target = IMT_DEMO;
+				key_dest = key_demo;
+			} else {
+				game_target = IMT_0;
+				key_dest = key_game;
+			}
 			IN_ClearStates ();
 			VID_SetCaption ("");
 		} else if (old_state == ca_active) {

@@ -482,6 +482,7 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 						return;
 					}
 				case key_game:
+				case key_demo:
 					Menu_Enter ();
 					return;
 				default:

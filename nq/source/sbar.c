@@ -1252,7 +1252,8 @@ Sbar_FinaleOverlay (void)
 {
 	int         remaining;
 
-	if (key_dest != key_game)
+	//FIXME cleaner test
+	if (key_dest != key_game && key_dest != key_demo)
 		return;
 
 	scr_copyeverything = 1;
@@ -1272,7 +1273,8 @@ Sbar_DrawCenterPrint (void)
 	if (centertime_off <= 0)
 		return;
 
-	if (key_dest != key_game)
+	//FIXME cleaner test
+	if (key_dest != key_game && key_dest != key_demo)
 		return;
 
 	Sbar_DrawCenterString (overlay_view, -1);
