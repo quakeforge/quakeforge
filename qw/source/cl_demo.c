@@ -49,6 +49,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
+#include "QF/keys.h"
 #include "QF/msg.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
@@ -147,6 +148,8 @@ CL_StopPlayback (void)
 	cls.demoplayback2 = 0;
 	demotime_cached = 0;
 	net_blocksend = 0;
+	key_game_target = IMT_0;
+	Key_SetKeyDest (key_game);
 
 	if (cls.timedemo)
 		CL_FinishTimeDemo ();
@@ -898,6 +901,8 @@ CL_StartDemo (void)
 	}
 
 	cls.demoplayback = true;
+	key_game_target = IMT_DEMO;
+	Key_SetKeyDest (key_game);
 	net_blocksend = 1;
 	if (strequal (QFS_FileExtension (name->str), ".mvd")) {
 		cls.demoplayback2 = true;

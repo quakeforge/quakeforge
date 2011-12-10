@@ -259,8 +259,7 @@ CL_EstablishConnection (const char *host)
 	CL_SetState (ca_connected);
 	cls.signon = 0;						// need all the signon messages
 										// before playing
-	key_dest = key_game;
-	game_target = IMT_0;
+	Key_SetKeyDest (key_game);
 }
 
 /*
@@ -429,20 +428,13 @@ CL_SetState (cactive_t state)
 		if (state == ca_active) {
 			// entering active state
 			r_active = true;
-			if (cls.demoplayback) {
-				game_target = IMT_DEMO;
-				key_dest = key_demo;
-			} else {
-				game_target = IMT_0;
-				key_dest = key_game;
-			}
+			Key_SetKeyDest (key_game);
 			IN_ClearStates ();
 			VID_SetCaption ("");
 		} else if (old_state == ca_active) {
 			// leaving active state
 			r_active = false;
-			game_target = IMT_CONSOLE;
-			key_dest = key_console;
+			Key_SetKeyDest (key_console);
 			VID_SetCaption ("Disconnected");
 		}
 		if (state == ca_connected)

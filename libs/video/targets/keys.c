@@ -59,13 +59,14 @@ static __attribute__ ((used)) const char rcsid[] =
 /*  key up events are sent even if in console mode */
 
 VISIBLE keydest_t   key_dest = key_console;
-VISIBLE imt_t		game_target = IMT_CONSOLE;
+VISIBLE imt_t		key_game_target = IMT_0;
 VISIBLE knum_t      key_togglemenu = QFK_ESCAPE;
 VISIBLE knum_t      key_toggleconsole = QFK_BACKQUOTE;
 
 VISIBLE struct keybind_s keybindings[IMT_LAST][QFK_LAST];
 VISIBLE int			keydown[QFK_LAST];
 
+static imt_t game_target = IMT_CONSOLE;
 static int  keyhelp;
 static cbuf_t *cbuf;
 
@@ -76,8 +77,8 @@ typedef struct {
 
 imtname_t   imtnames[] = {
 	{"IMT_CONSOLE",	IMT_CONSOLE},
-	{"IMT_DEMO",	IMT_DEMO},
 	{"IMT_MOD",	    IMT_MOD},
+	{"IMT_DEMO",	IMT_DEMO},
 	{"IMT_0",		IMT_0},
 	{"IMT_1",		IMT_1},
 	{"IMT_2",		IMT_2},
@@ -455,25 +456,6 @@ Key_Game (knum_t key, short unicode)
 
 	process_binding (key, kb);
 	return true;
-}
-
-/*
-  Key_Demo
-
-  Interactive line editing and console scrollback
-*/
-static void
-Key_Demo (knum_t key, short unicode)
-{
-	const char *kb;
-
-	// escape is un-bindable
-	if (keydown[key] == 1 && key && Key_Game (key, unicode))
-		return;
-
-	kb = Key_GetBinding (IMT_DEMO, key);
-	if (kb)
-		process_binding (key, kb);
 }
 
 /*
@@ -877,9 +859,6 @@ Key_Event (knum_t key, short unicode, qboolean down)
 		case key_game:
 			Key_Game (key, unicode);
 			break;
-		case key_demo:
-			Key_Demo (key, unicode);
-			break;
 		case key_message:
 		case key_menu:
 		case key_console:
@@ -963,5 +942,23 @@ Key_SetBinding (imt_t target, knum_t keynum, const char *binding)
 	// allocate memory for new binding
 	if (binding) {
 		keybindings[target][keynum].str = strdup(binding);
+	}
+}
+
+VISIBLE void
+Key_SetKeyDest(keydest_t kd)
+{
+	key_dest = kd;
+	switch (key_dest) {
+		default:
+			Sys_Error ("Bad key_dest");
+		case key_game:
+			game_target = key_game_target;
+			break;
+		case key_console:
+		case key_message:
+		case key_menu:
+			game_target = IMT_CONSOLE;
+			break;
 	}
 }

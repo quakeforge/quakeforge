@@ -1149,8 +1149,7 @@ CL_SetState (cactive_t state)
 			// leaving active state
 			IN_ClearStates ();
 			r_active = false;
-			game_target = IMT_CONSOLE;
-			key_dest = key_console;
+			Key_SetKeyDest (key_console);
 
 			// Auto demo recorder stops here
 			if (cl_autorecord->int_val && cls.demorecording)
@@ -1160,13 +1159,7 @@ CL_SetState (cactive_t state)
 			VID_SetCaption (cls.servername->str);
 			IN_ClearStates ();
 			r_active = true;
-			if (cls.demoplayback) {
-				game_target = IMT_DEMO;
-				key_dest = key_demo;
-			} else {
-				game_target = IMT_0;
-				key_dest = key_game;
-			}
+			Key_SetKeyDest (key_game);
 
 			// Auto demo recorder starts here
 			if (cl_autorecord->int_val && !cls.demoplayback
