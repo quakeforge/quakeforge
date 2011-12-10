@@ -62,6 +62,8 @@ cvar_t     *in_bind_imt;
 
 VISIBLE keydest_t   key_dest = key_console;
 VISIBLE imt_t		game_target = IMT_CONSOLE;
+VISIBLE knum_t      key_togglemenu = QFK_ESCAPE;
+VISIBLE knum_t      key_toggleconsole = QFK_BACKQUOTE;
 
 VISIBLE struct keybind_s keybindings[IMT_LAST][QFK_LAST];
 VISIBLE int			keydown[QFK_LAST];
@@ -738,6 +740,40 @@ in_bind_imt_f (cvar_t *var)
 }
 
 static void
+in_key_togglemenu_f (cvar_t *var)
+{
+	int         k;
+
+	if (!*var->string) {
+		key_togglemenu = QFK_ESCAPE;
+		return;
+	}
+	if ((k = Key_StringToKeynum (var->string)) == -1) {
+		k = QFK_ESCAPE;
+		Sys_Printf ("\"%s\" is not a valid key. setting to \"K_ESCAPE\"\n",
+					var->string);
+	}
+	key_togglemenu = k;
+}
+
+static void
+in_key_toggleconsole_f (cvar_t *var)
+{
+	int         k;
+
+	if (!*var->string) {
+		key_toggleconsole = -1;
+		return;
+	}
+	if ((k = Key_StringToKeynum (var->string)) == -1) {
+		Sys_Printf ("\"%s\" is not a valid key. not setting\n",
+					var->string);
+		return;
+	}
+	key_toggleconsole = k;
+}
+
+static void
 Key_InputMappingTable_f (void)
 {
 	int         c, t;
@@ -893,6 +929,11 @@ Key_Init_Cvars (void)
 	in_bind_imt = Cvar_Get ("in_bind_imt", "imt_default", CVAR_ARCHIVE,
 							in_bind_imt_f, "imt parameter for the bind and "
 							"unbind wrappers to in_bind and in_unbind");
+	Cvar_Get ("in_key_togglemenu", "", CVAR_NONE, in_key_togglemenu_f,
+			  "Key for toggling the menu.");
+	Cvar_Get ("in_key_toggleconsole", "K_BACKQUOTE", CVAR_NONE,
+			  in_key_toggleconsole_f,
+			  "Key for toggling the console.");
 }
 
 const char *

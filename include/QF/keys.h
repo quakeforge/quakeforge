@@ -406,6 +406,8 @@ typedef struct {
 
 extern keydest_t	key_dest;
 extern imt_t		game_target;
+extern knum_t       key_togglemenu;
+extern knum_t       key_toggleconsole;
 
 extern struct keybind_s {
 	char *str;
