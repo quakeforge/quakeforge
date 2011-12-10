@@ -566,7 +566,7 @@ CL_ParseDownload (void)
 	int         size, percent;
 
 	// read the data
-	size = MSG_ReadShort (net_message);
+	size = (short) MSG_ReadShort (net_message);
 	percent = MSG_ReadByte (net_message);
 
 	if (cls.demoplayback) {
