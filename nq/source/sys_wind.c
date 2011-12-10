@@ -1,7 +1,7 @@
 /*
 	sys_wind.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -28,43 +28,32 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
-#include <sys/types.h>
-#include <sys/timeb.h>
-#include <conio.h>
+#include "winquake.h"
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "game.h"
 #include "host.h"
-#include "winquake.h"
 
-
-qboolean	isDedicated = true;
+qboolean    isDedicated = true;
 
 static void
-shutdown (void)
+shutdown_f (void)
 {
 }
 
 int
 main (int argc, const char **argv)
 {
-	double      time, oldtime;
+	double      time, oldtime, newtime;
 	int         i;
 
 	memset (&host_parms, 0, sizeof (host_parms));
 
-#if 0
-	_getcwd (cwd, sizeof (cwd));
-	if (cwd[Q_strlen (cwd) - 1] == '\\')
-		cwd[Q_strlen (cwd) - 1] = 0;
-#endif
 	// dedicated server ONLY!
 	for (i = 1; i < argc; i++)
 		if (!strcmp (argv[i], "-dedicated"))
@@ -72,8 +61,8 @@ main (int argc, const char **argv)
 	if (i == argc) {
 		const char **newargv;
 
-		newargv = malloc ((argc + 2) * sizeof (*newargv));
-		memcpy (newargv, argv, argc * 4);
+		newargv = malloc ((argc + 2) * sizeof (char *));
+		memcpy (newargv, argv, argc * sizeof (char *));
 		newargv[argc++] = "-dedicated";
 		newargv[argc] = 0;
 		argv = newargv;
@@ -84,24 +73,26 @@ main (int argc, const char **argv)
 	host_parms.argv = com_argv;
 
 	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (shutdown);
+	Sys_RegisterShutdown (shutdown_f);
 
 	Host_Init ();
 
-	oldtime = Sys_DoubleTime ();
-
-	/* main window message loop */
-	while (1) {
-		time = Sys_DoubleTime ();
-		if (time - oldtime < sys_ticrate->value) {
+	oldtime = Sys_DoubleTime () - 0.1;
+	while (1) {							// Main message loop
+		// find time spent rendering last frame
+		newtime = Sys_DoubleTime ();
+		time = newtime - oldtime;
+		if (time < sys_ticrate->value) {
 			Sleep (1);
-			continue;
+			continue;				// not time to run a server-only tic yet
 		}
+		time = sys_ticrate->value;
 
-		Host_Frame (time - oldtime);
-		oldtime = time;
+		if (time > sys_ticrate->value * 2)
+			oldtime = newtime;
+		else
+			oldtime += time;
+
+		Host_Frame (time);
 	}
-
-	/* return success of application */
-	return TRUE;
 }

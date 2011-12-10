@@ -330,11 +330,7 @@ main (int argc, char **argv)
 
 	this_program = argv[0];
 
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
-	Cvar_Init ();
-	Sys_Init_Cvars ();
-	Cmd_Init ();
+	Sys_Init ();
 	Memory_Init (malloc (MEMSIZE), MEMSIZE);
 
 	decode_args (argc, argv);

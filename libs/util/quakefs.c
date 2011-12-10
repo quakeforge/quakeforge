@@ -44,7 +44,7 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <io.h>
 #endif
 
-#ifdef HAVE_MALLOC_H
+#if defined(_WIN32) && defined(HAVE_MALLOC_H)
 #include <malloc.h>
 #endif
 
@@ -159,12 +159,24 @@ static const char *qfs_default_dirconf =
 	"		Inherit = QF;"
 	"		Path = \"id1\";"
 	"		GameCode = \"progs.dat\";"
+	"		HudType = \"id\";"
 	"	};"
 	"	QuakeWorld = {"
 	"		Inherit = (Quake);"
 	"		Path = \"qw\";"
 	"		SkinPath = \"${path}/skins\";"
 	"		GameCode = \"qwprogs.dat\";"
+	"		HudType = \"id\";"
+	"	};"
+	"	\"Hipnotic\" = {"
+	"		Inherit = (Quake);"
+	"		Path = \"hipnotic\";"
+	"		HudType = \"hipnotic\";"
+	"	};"
+	"	\"Rogue\" = {"
+	"		Inherit = (Quake);"
+	"		Path = \"rogue\";"
+	"		HudType = \"rogue\";"
 	"	};"
 	"	\"qw:qw\" = {"
 	"		Inherit = (QuakeWorld);"
@@ -177,20 +189,12 @@ static const char *qfs_default_dirconf =
 	"		Inherit = (Quake);"
 	"		Path = \"$gamedir\";"
 	"	};"
-	"	\"hipnotic\" = {"
-	"		Inherit = (Quake);"
-	"		Path = \"hipnotic\";"
-	"	};"
 	"	\"hipnotic:*\" = {"
-	"		Inherit = (hipnotic);"
+	"		Inherit = (Hipnotic);"
 	"		Path = \"$gamedir\";"
 	"	};"
-	"	\"rogue\" = {"
-	"		Inherit = (Quake);"
-	"		Path = \"rogue\";"
-	"	};"
 	"	\"rogue:*\" = {"
-	"		Inherit = (rogue);"
+	"		Inherit = (Rogue);"
 	"		Path = \"$gamedir\";"
 	"	};"
 	"	\"abyss\" = {"
@@ -260,7 +264,6 @@ qfs_var_subst (const char *string, hashtab_t *vars)
 	const char *s = string;
 	const char *e = s;
 	const char *var;
-	char       *t;
 	qfs_var_t  *sub;
 
 	while (1) {
@@ -303,9 +306,7 @@ qfs_var_subst (const char *string, hashtab_t *vars)
 			s = e;
 		}
 	}
-	t = new->str;
-	free (new);
-	return t;
+	return dstring_freeze (new);
 }
 
 static void
@@ -317,11 +318,8 @@ qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path,
 
 	if ((p = PL_ObjectForKey (gdpl, "Path")) && *(ps = PL_String (p))) {
 		char       *str = qfs_var_subst (ps, vars);
-		char       *e = strchr (str, '"');
 
-		if (!e)
-			e = str + strlen (str);
-		qfs_set_var (vars, "path", va ("%.*s", (int) (e - str), str));
+		qfs_set_var (vars, "path", str);
 		if (path->str[0])
 			dstring_appendstr (path, ":");
 		dstring_appendstr (path, str);
@@ -329,6 +327,8 @@ qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path,
 	}
 	if (!gamedir->gamecode && (p = PL_ObjectForKey (gdpl, "GameCode")))
 		gamedir->gamecode = qfs_var_subst (PL_String (p), vars);
+	if (!gamedir->hudtype && (p = PL_ObjectForKey (gdpl, "HudType")))
+		gamedir->hudtype = qfs_var_subst (PL_String (p), vars);
 	if (!gamedir->dir.skins && (p = PL_ObjectForKey (gdpl, "SkinPath")))
 		gamedir->dir.skins = qfs_var_subst (PL_String (p), vars);
 	if (!gamedir->dir.models && (p = PL_ObjectForKey (gdpl, "ModelPath")))
@@ -553,6 +553,7 @@ qfs_build_gamedir (const char **list)
 	Sys_MaskPrintf (SYS_FS, "    gamedir : %s\n", qfs_gamedir->gamedir);
 	Sys_MaskPrintf (SYS_FS, "    path    : %s\n", qfs_gamedir->path);
 	Sys_MaskPrintf (SYS_FS, "    gamecode: %s\n", qfs_gamedir->gamecode);
+	Sys_MaskPrintf (SYS_FS, "    hudtype : %s\n", qfs_gamedir->hudtype);
 	Sys_MaskPrintf (SYS_FS, "    def     : %s\n", qfs_gamedir->dir.def);
 	Sys_MaskPrintf (SYS_FS, "    skins   : %s\n", qfs_gamedir->dir.skins);
 	Sys_MaskPrintf (SYS_FS, "    models  : %s\n", qfs_gamedir->dir.models);
@@ -651,7 +652,7 @@ qfs_expand_path (dstring_t *full_path, const char *base, const char *path,
 	if (*cpath == '/')
 		separator = "";
 	len = strlen (base);
-	if (base[len -1] == '/')
+	if (len && base[len - 1] == '/')
 		len--;
 	dsprintf (full_path, "%.*s%s%s", len, base, separator, cpath);
 	free (cpath);
@@ -667,26 +668,17 @@ qfs_expand_userpath (dstring_t *full_path, const char *path)
 VISIBLE char *
 QFS_FileBase (const char *in)
 {
-	const char *slash, *dot, *s;
+	const char *base;
+	const char *ext;
+	int         len;
 	char       *out;
 
-	slash = in;
-	dot = NULL;
-	s = in;
-	while (*s) {
-		if (*s == '/')
-			slash = s + 1;
-		if (*s == '.')
-			dot = s;
-		s++;
-	}
-	if (dot == NULL)
-		dot = s;
-	if (dot - slash < 2)
-		return strdup ("?model?");
-	out = malloc (dot - slash + 1);
-	strncpy (out, slash, dot - slash);
-	out [dot - slash] = 0;
+	base = QFS_SkipPath (in);
+	ext = QFS_FileExtension (base);
+	len = ext - base;
+	out = malloc (len + 1);
+	strncpy (out, base, len);
+	out [len] = 0;
 	return out;
 }
 
@@ -1330,35 +1322,39 @@ QFS_StripExtension (const char *in, char *out)
 	if (out != in)
 		strcpy (out, in);
 
-	if ((tmp = strrchr (out, '.')))
-		*tmp = 0;
+	tmp = out + (QFS_FileExtension (out) - out);
+	*tmp = 0;
 }
 
 VISIBLE const char *
 QFS_FileExtension (const char *in)
 {
-	char       *tmp;
+	const char *tmp;
+	const char *end = in + strlen (in);
 
-	if ((tmp = strrchr (in, '.')))
-		return tmp;
+	for (tmp = end; tmp != in; tmp--) {
+		if (tmp[-1] == '/')
+			return end;
+		if (tmp[-1] == '.') {
+			if (tmp - 1 == in || tmp[-2] == '/')
+				return end;
+			return tmp - 1;
+		}
+	}
 
-	return in;
+	return end;
 }
 
 VISIBLE void
 QFS_DefaultExtension (dstring_t *path, const char *extension)
 {
-	const char *src;
+	const char *ext;
 
 	// if path doesn't have a .EXT, append extension
 	// (extension should include the .)
-	src = path->str + strlen (path->str) - 1;
-
-	while (*src != '/' && src != path->str) {
-		if (*src == '.')
-			return;						// it has an extension
-		src--;
-	}
+	ext = QFS_FileExtension (path->str);
+	if (*ext)
+		return;						// it has an extension
 
 	dstring_appendstr (path, extension);
 }
@@ -1367,10 +1363,12 @@ VISIBLE void
 QFS_SetExtension (struct dstring_s *path, const char *extension)
 {
 	const char *ext = QFS_FileExtension (path->str);
+	int         offs = ext - path->str;
 
-	if (ext != path->str) {
-		path->str[ext - path->str] = 0;
-		path->size = ext - path->str + 1;
+	if (*ext) {
+		// path has an extension... cut it off
+		path->str[offs] = 0;
+		path->size = offs + 1;
 	}
 	dstring_appendstr (path, extension);
 }

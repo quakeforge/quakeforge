@@ -48,7 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "host.h"
 #include "server.h"
 #include "sv_progs.h"
-#include "view.h"
+#include "clview.h"	//FIXME
 #include "world.h"
 
 extern cvar_t *cl_rollangle;	//FIXME
@@ -435,9 +435,9 @@ SV_ReadClientMove (usercmd_t *move)
 	VectorCopy (angle, SVvector (host_client->edict, v_angle));
 
 	// read movement
-	move->forwardmove = MSG_ReadShort (net_message);
-	move->sidemove = MSG_ReadShort (net_message);
-	move->upmove = MSG_ReadShort (net_message);
+	move->forwardmove = (short) MSG_ReadShort (net_message);
+	move->sidemove = (short) MSG_ReadShort (net_message);
+	move->upmove = (short) MSG_ReadShort (net_message);
 
 	// read buttons
 	bits = MSG_ReadByte (net_message);

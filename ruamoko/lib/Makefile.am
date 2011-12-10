@@ -23,10 +23,10 @@ endif
 pkglib_LIBRARIES= $(libs)
 EXTRA_LIBRARIES= $(ruamoko_libs)
 
-%.qfo: %.r
+SUFFIXES= .o .r .qc
+.r.o:
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
-
-%.o: %.r
+.qc.o:
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
 
 libr_a_SOURCES=\

@@ -57,6 +57,7 @@ typedef struct gamedir_s {
 	const char *gamedir;		///< the actual game dir
 	const char *path;			///< colon separated list of search paths
 	const char *gamecode;		///< name of file to load for gamecode
+	const char *hudtype;		///< name of the hud type
 	struct {
 		const char *def;		///< directory to which to write other files
 		const char *skins;		///< directory to which to write skins
@@ -116,7 +117,7 @@ void QFS_Init (const char *game);
 	Sets the fields in ::qfs_gamedir. Can be called at any time (and is, by
 	the quakeworld clients and servers).
 
-	\param gamedir	The directory to which to set the game directory.
+	\param gamedir	The directory to which the game directory will be set.
 */
 void QFS_Gamedir (const char *gamedir);
 
@@ -275,7 +276,7 @@ int QFS_NextFilename (struct dstring_s *filename, const char *prefix,
 
 /** Extract the non-extension part of the file name from the path.
 
-	\param in		The path from which to extract the name.
+	\param in		The path from which the name will be extracted.
 	\return			The extracted name.
 	\note It is the caller's responsibility to free the extracted name.
 */
@@ -304,13 +305,17 @@ void QFS_SetExtension (struct dstring_s *path, const char *extension);
 	\param in		The path from which to strip the extension.
 	\param out		The destination of the stripped path. May be the same
 					as \a in.
+	\note			No size checking is done on \a out. It use the
+					caller's responsibility to ensure out is large enough
+					to hold the stripped path. However, the stripped path
+					will never be longer than the original path.
 */
 void QFS_StripExtension (const char *in, char *out);
 
 /** Create a canonical path.
 
-	Convert all \\ to /, remove all . elements from the path and resolve
-	all foo/..
+	Convert all \c \\ to \c /, remove all \c . elements from the path and
+	resolve all \c foo/.. pairs.
 
 	\param pth		The path to make canonical
 	\return			The canonical path.
@@ -331,7 +336,9 @@ const char *QFS_SkipPath (const char *pathname);
 
 	\param in		The path withing which to find the extention.
 	\return			Pointer to the beginning of the extention. This points
-					inside \a in.
+					inside \a in at all times. If the path has no extension,
+					the returned pointer will point to the terminating nul
+					of the path.
 */
 const char *QFS_FileExtension (const char *in);
 
@@ -374,6 +381,7 @@ void QFS_FilelistAdd (filelist_t *filelist, const char *fname,
 					added to the list.
 	\param ext		The extension of the files to be added.
 	\param strip	If true, the extension of the files will be stripped.
+	\bug can escape the quake file system
 */
 void QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 					   int strip);

@@ -30,15 +30,16 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#ifdef HAVE_MALLOC_H
+#if defined(_WIN32) && defined(HAVE_MALLOC_H)
 #include <malloc.h>
 #endif
 #include <stdlib.h>
 
 #include "QF/sys.h"
 
-#include "bsp5.h"
-#include "winding.h"
+#include "QF/winding.h"
+
+#define BOGUS (65336.0)
 
 /**	\addtogroup qfbsp_winding
 */
@@ -56,7 +57,7 @@ BaseWindingForPlane (const plane_t *p)
 
 	// find the major axis
 
-	max = -BOGUS_RANGE;
+	max = -BOGUS;
 	x = -1;
 	for (i = 0; i < 3; i++) {
 		v = fabs (p->normal[i]);
@@ -87,8 +88,8 @@ BaseWindingForPlane (const plane_t *p)
 
 	CrossProduct (vup, p->normal, vright);
 
-	VectorScale (vup, BOGUS_RANGE, vup);
-	VectorScale (vright, BOGUS_RANGE, vright);
+	VectorScale (vup, BOGUS, vup);
+	VectorScale (vright, BOGUS, vright);
 
 	// project a really big axis aligned box onto the plane
 	w = NewWinding (4);
@@ -140,6 +141,25 @@ CopyWindingReverse (const winding_t *w)
 }
 
 winding_t *
+WindingVectors (const winding_t *w, int unit)
+{
+	int         i;
+	size_t      size;
+	winding_t  *c;
+
+	size = (size_t) (uintptr_t) &((winding_t *) 0)->points[w->numpoints];
+	c = malloc (size);
+	c->numpoints = w->numpoints;
+	for (i = 0; i < w->numpoints; i++) {
+		VectorSubtract (w->points[(i + 1) % w->numpoints], w->points[i],
+						c->points[i]);
+		if (unit)
+			VectorNormalize (c->points[i]);
+	}
+	return c;
+}
+
+winding_t *
 ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 {
 	int         maxpts, i, j;
@@ -153,6 +173,7 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 
 	counts[0] = counts[1] = counts[2] = 0;
 
+	// +1 for duplicating the first point
 	sides = alloca ((in->numpoints + 1) * sizeof (int));
 	dists = alloca ((in->numpoints + 1) * sizeof (vec_t));
 
@@ -170,6 +191,7 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 		}
 		counts[sides[i]]++;
 	}
+	// duplicate the first point
 	sides[i] = sides[0];
 	dists[i] = dists[0];
 

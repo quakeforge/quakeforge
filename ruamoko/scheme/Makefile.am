@@ -13,7 +13,9 @@ GZ=.gz
 else
 GZ=
 endif
-STRIP=$(shell echo `echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`)
+# BSD make can't handle $(shell foo) directives, and GNU make can't handle |=
+# so we have to bite the bullet and pass this to the shell every time.
+STRIP=`echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`
 
 RANLIB=touch
 
@@ -39,15 +41,13 @@ EXTRA_DIST = \
 		SchemeObject.h SchemeString.h Scope.h Symbol.h Void.h builtins.h \
 		debug.h defs.h state.h \
 		\
-		main.qc defs.qc
+		main.r defs.r
 
-%.qfo: %.r
-	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
-
-%.o: %.r
-	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
-%.o: %.qc
-	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
+SUFFIXES=.qc .qfo .r
+.r.qfo:
+	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
+.r.o:
+	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
 
 libscheme_a_SOURCES=\
 	SchemeObject.r Cons.r Number.r SchemeString.r Symbol.r Lexer.r Parser.r \
@@ -60,9 +60,9 @@ scheme_data=\
 	main.dat$(GZ)
 
 scheme_src=\
-	main.qc defs.qc
+	main.r defs.r
 
-scheme_obj=$(addsuffix .o,$(basename $(scheme_src)))
+scheme_obj=$(scheme_src:.qc=.o)
 
 main.dat$(GZ): $(scheme_obj) $(QFCC_DEP) ../lib/libcsqc.a ../lib/libr.a libscheme.a
 	$(QFCC) $(QCFLAGS) -p $(STRIP) -o main.dat $(scheme_obj) libscheme.a ../lib/libcsqc.a ../lib/libr.a

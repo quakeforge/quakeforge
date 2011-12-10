@@ -30,7 +30,7 @@
 #define __QF_progs_h
 
 /** \defgroup progs QuakeC Virtual Machine (VM)
-	\image html vm-mem.png
+	\image html vm-mem.svg
 	\image latex vm-mem.eps "VM memory map"
 */
 
@@ -296,7 +296,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** \defgroup prda_globals Globals
 	\ingroup progs_data_access
-	Typed global access marcos. No checking is done against the QC type, but
+	Typed global access macros. No checking is done against the QC type, but
 	the appropriate C type will be used.
 */
 //@{
@@ -486,7 +486,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** \defgroup prda_parameters Parameters
 	\ingroup progs_data_access
-	Typed parameter access marcos. No checking is done against the QC type, but
+	Typed parameter access macros. No checking is done against the QC type, but
 	the appropriate C type will be used.
 */
 //@{
@@ -674,10 +674,14 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 #define P_STRUCT(p,t,n)	(*(t *)P_GPOINTER (p, n))
 //@}
 
-/** \defgroup prda_return Return value
+/** \defgroup prda_return Return Values
 	\ingroup progs_data_access
-	Typed return value access marcos. No checking is done against the QC type,
-	but the appropriate C type will be used.
+	These macros are used to access the value returned by an interpreted VM
+	function, and to return values from engine functions into progs space
+	(that is, builtins).
+	\warning No checking is performed against progs types; for example, if you
+	ask for an \c int from a function that returned a \c float, you're asking
+	for trouble.
 */
 //@{
 
@@ -690,7 +694,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define R_var(p,t)		((p)->pr_return->t##_var)
 
-/** Access the float return value.
+/** Access the VM function return value as a \c float
 
 	\par QC type:
 		\c float
@@ -701,78 +705,78 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define R_FLOAT(p)		R_var (p, float)
 
-/** Access the integer return value.
+/** Access the VM function return value as a \c ::pr_int_t (AKA int32_t)
 
 	\par QC type:
 		\c integer
 	\param p		pointer to ::progs_t VM struct
-	\return			int lvalue
+	\return			::pr_int_t lvalue
 
 	\hideinitializer
 */
 #define R_INT(p)		R_var (p, integer)
 
-/** Access the unsigned integer return value.
+/** Access the VM function return value as a \c ::pr_uint_t (AKA uint32_t)
 
 	\par QC type:
 		\c uinteger
 	\param p		pointer to ::progs_t VM struct
-	\return			unsigned int lvalue
+	\return			::pr_int_t lvalue
 
 	\hideinitializer
 */
 #define R_UINT(p)		R_var (p, uinteger)
 
-/** Access the vector return value.
+/** Access the VM function return value as a \c ::vec3_t vector.
 
 	\par QC type:
 		\c vector
 	\param p		pointer to ::progs_t VM struct
-	\return			vec3_t lvalue
+	\return			::vec3_t lvalue
 
 	\hideinitializer
 */
 #define R_VECTOR(p)		R_var (p, vector)
 
-/** Access the quaternion return value.
+/** Access the VM function return value as a \c ::quat_t quaternion.
 
 	\par QC type:
 		\c quaternion
 	\param p		pointer to ::progs_t VM struct
-	\return			quat_t lvalue
+	\return			::quat_t lvalue
 
 	\hideinitializer
 */
 #define R_QUAT(p)		R_var (p, quat)
 
-/** Access the string index return value.
+/** Access the VM function return value as a ::string_t (a VM string reference).
 
 	\par QC type:
 		\c string
 	\param p		pointer to ::progs_t VM struct
-	\return			string_t lvalue
+	\return			::string_t lvalue
 
 	\hideinitializer
 */
 #define R_STRING(p)		R_var (p, string)
 
-/** Access the function return value.
+/** Access the VM function return value as a ::func_t (a VM function reference)
 
 	\par QC type:
 		\c void()
 	\param p		pointer to ::progs_t VM struct
-	\return			func_t lvalue
+	\return			::func_t lvalue
 
 	\hideinitializer
 */
 #define R_FUNCTION(p)	R_var (p, func)
 
-/** Access the pointer return value.
+/** Access the VM function return value as a ::pointer_t (a VM "pointer")
 
 	\par QC type:
 		\c void *
 	\param p		pointer to ::progs_t VM struct
-	\return			pointer_t lvalue
+	\return			::pointer_t lvalue
 
 	\hideinitializer
 */
@@ -839,7 +843,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 /** \defgroup prda_entity_fields Entity Fields
 	\ingroup progs_data_access
-	Typed entity field  access marcos. No checking is done against the QC type,
+	Typed entity field access macros. No checking is done against the QC type,
 	but the appropriate C type will be used.
 */
 //@{
@@ -1073,7 +1077,7 @@ int PR_RelocateBuiltins (progs_t *pr);
 	Strings management functions.
 
 	All strings accessable by the VM are stored within the VM address space.
-	These functions provide facilities to set permanent, dynamic  and
+	These functions provide facilities to set permanent, dynamic and
 	temporary strings, as well as mutable strings using dstrings.
 
 	Permanent strings are either supplied by the progs (+ve string index) or
@@ -1153,8 +1157,7 @@ string_t PR_SetTempString(progs_t *pr, const char *s);
 	\param a		C string
 	\param b		C string
 	\return			string index of the progs string that represents the
-					concatenation
-			of strings a and b
+					concatenation of strings a and b
 */
 string_t PR_CatStrings (progs_t *pr, const char *a, const char *b);
 
@@ -1171,7 +1174,7 @@ void PR_MakeTempString(progs_t *pr, string_t str);
 string_t PR_NewMutableString (progs_t *pr);
 
 /** Make a dynamic progs string from the given C string. Will not create a
-	duplicate permanent string (temporary, dynamic  and mutable strings are
+	duplicate permanent string (temporary, dynamic and mutable strings are
 	not checked).
 	\param pr		pointer to ::progs_t VM struct
 	\param s		C string to be made into a permanent progs string
@@ -1262,14 +1265,75 @@ void PR_Sprintf (progs_t *pr, struct dstring_s *result, const char *name,
 */
 //@{
 
+/** Initialize the resource management fields.
+
+	\param pr		The VM of which the resource fields will be initialized.
+*/
 void PR_Resources_Init (progs_t *pr);
+
+/** Clear all resources before loading a new progs.
+
+	Calls the clear() callback of all registered resources.
+
+	\param pr		The VM of which the resources will be cleared.
+*/
 void PR_Resources_Clear (progs_t *pr);
+
+/** Register a resource with a VM.
+
+	\param pr		The VM to which the resource will be associated.
+	\param name		The name of the resource. Used for retrieving the
+					resource.
+	\param data		The resource data.
+					callback.
+	\param clear	Callback for performing any necessary cleanup. Called
+					by PR_Resources_Clear(). The parameters are the current
+					VM (\p pr) and \p data.
+	\note			The name should be unique to the VM, but no checking is
+					done. If the name is not unique, the previous registered
+					resource will break. The name of the sub-system
+					registering the resource is a suitable name, and will
+					probably be unique.
+*/
 void PR_Resources_Register (progs_t *pr, const char *name, void *data,
 							void (*clear)(progs_t *, void *));
+
+/** Retrieve a resource registered with the VM.
+
+	\param pr		The VM from which the resource will be retrieved.
+	\param name		The name of the resource.
+	\return			The resource, or NULL if \p name does not match any
+					resource registered with the VM.
+*/
 void *PR_Resources_Find (progs_t *pr, const char *name);
 
+/** \name Resource Map support
+
+	These macros can be used to create functions for mapping C resources
+	to QuakeC integer handles.
+
+	Valid handles are always negative.
+
+	\note			\p map is the resource map itself, not a pointer to the
+					resource map.
+*/
+//@{
+
+/** Type delcaration for the resource map.
+
+	\param type		The type of the resource. The size must be at least
+					as large as \c sizeof(type *).
+*/
 #define PR_RESMAP(type) struct { type *_free; type **_map; unsigned _size; }
 
+/** Allocate a new resource from the resource map.
+
+	\param type		The type of the resource. Must match the \c type parameter
+					used for PR_RESMAP.
+	\param map		The resource map.
+	\return			A pointer to the new resource, or null if no more could
+					be allocated.
+*/
 #define PR_RESNEW(type,map)									\
 	type       *t;											\
 															\
@@ -1293,11 +1357,27 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	memset (t, 0, sizeof (type));							\
 	return t
 
+/** Free a resource returning it to the resource map.
+
+	\param type		The type of the resource. Must match the \c type parameter
+					used for PR_RESMAP.
+	\param map		The resource map.
+	\param t		Pointer to the resource to be freed.
+*/
 #define PR_RESFREE(type,map,t)								\
 	memset (t, 0, sizeof (type));							\
 	*(type **) t = map._free;								\
 	map._free = t
 
+/** Free all resources in the resource map.
+
+	Any memory allocated to the resource must be freed before freeing the
+	resource.
+
+	\param type		The type of the resource. Must match the \c type parameter
+					used for PR_RESMAP.
+	\param map		The resource map.
+*/
 #define PR_RESRESET(type,map)								\
 	unsigned    i, j;										\
 	if (!map._size)											\
@@ -1311,6 +1391,13 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	}														\
 	map._free = map._map[0];
 
+/** Retrieve a resource from the resource map using a handle.
+
+	\param map		The resource map.
+	\param col		The handle.
+	\return			A pointer to the resource, or NULL if the handle is
+					invalid.
+*/
 #define PR_RESGET(map,col)									\
 	unsigned    row = ~col / 1024;							\
 	col = ~col % 1024;										\
@@ -1318,6 +1405,12 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 		return 0;											\
 	return &map._map[row][col]
 
+/** Convert a resource pointer to a handle.
+
+	\param map		The resource map.
+	\param ptr		The resource pointer.
+	\return			The handle or 0 if the pointer is invalid.
+*/
 #define PR_RESINDEX(map,ptr)								\
 	unsigned    i;											\
 	for (i = 0; i < map._size; i++) {						\
@@ -1326,6 +1419,7 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 			return ~(i * 1024 + d);							\
 	}														\
 	return 0
+//@}
 
 //@}
 
@@ -1397,9 +1491,9 @@ extern const char *pr_gametype;
 typedef struct strref_s strref_t;
 
 typedef struct {
-	pr_int_t    s;
-	bfunction_t *f;
-	strref_t   *tstr;
+	pr_int_t    s;					///< Return statement.
+	bfunction_t *f;					///< Calling function.
+	strref_t   *tstr;				///< Linked list of temporary strings.
 } prstack_t;
 
 struct obj_list_s;
@@ -1434,15 +1528,23 @@ struct progs_s {
 	struct memzone_s *zone;
 	int         zone_size;
 
+	/// \name builtin functions
+	//@{
 	struct hashtab_s *builtin_hash;
 	struct hashtab_s *builtin_num_hash;
 	unsigned    bi_next;
 	unsigned  (*bi_map) (progs_t *pr, unsigned binum);
+	//@}
 
+	/// \name symbol management
+	//@{
 	struct hashtab_s *function_hash;
 	struct hashtab_s *global_hash;
 	struct hashtab_s *field_hash;
+	//@}
 
+	/// \name load hooks
+	//@{
 	int         num_load_funcs;
 	int         max_load_funcs;
 	pr_load_func_t **load_funcs;
@@ -1453,7 +1555,10 @@ struct progs_s {
 	int         max_load_finish_funcs;
 	pr_load_func_t **load_finish_funcs;
 	//@}
+	//@}
 
+	/// \name string management
+	//@{
 	struct dstring_mem_s *ds_mem;
 	strref_t   *free_string_refs;
 	strref_t   *static_strings;
@@ -1464,7 +1569,10 @@ struct progs_s {
 	struct hashtab_s *strref_hash;
 	int         num_strings;
 	strref_t   *pr_xtstr;
+	//@}
 
+	/// \name memory map
+	//@{
 	dfunction_t *pr_functions;
 	bfunction_t *function_table;
 	char       *pr_strings;
@@ -1474,7 +1582,10 @@ struct progs_s {
 	dstatement_t *pr_statements;
 	pr_type_t  *pr_globals;
 	int         globals_size;
+	//@}
 
+	/// \name parameter block
+	//@{
 	pr_type_t  *pr_return;
 	pr_type_t  *pr_params[MAX_PARMS];
 	pr_type_t  *pr_real_params[MAX_PARMS];
@@ -1482,11 +1593,14 @@ struct progs_s {
 	pr_type_t  *pr_saved_params;
 	int         pr_saved_argc;
 	int         pr_param_size;		///< covers both params and return
+	//@}
 
 	int         pr_edict_size;		///< in bytes
 	int         pr_edictareasize;	///< for bounds checking, starts at 0
 	func_t      edict_parse;
 
+	/// \name execution state
+	//@{
 	int         pr_argc;
 
 	qboolean    pr_trace;
@@ -1499,11 +1613,15 @@ struct progs_s {
 
 	int         localstack[LOCALSTACK_SIZE];
 	int         localstack_used;
+	//@}
 
+	/// \name resources
+	//@{
 	pr_resource_t *resources;
 	struct hashtab_s *resource_hash;
+	//@}
 
-	/// obj info
+	/// \name obj info
 	//@{
 	int         selector_index;
 	int         selector_index_max;
@@ -1519,7 +1637,7 @@ struct progs_s {
 	struct obj_list_s *class_tree_list;
 	//@}
 
-	/// debug info
+	/// \name debug info
 	//@{
 	const char *debugfile;
 	struct pr_debug_header_s *debug;
@@ -1532,6 +1650,8 @@ struct progs_s {
 	pr_type_t   wp_val;
 	//@}
 
+	/// \name globals and fields needed by the VM
+	//@{
 	struct {
 		float      *time;		///< required for OP_STATE
 		pr_int_t   *self;		///< required for OP_STATE
@@ -1542,6 +1662,7 @@ struct progs_s {
 		pr_int_t    think;		///< required for OP_STATE
 		pr_int_t    this;		///< optional for entity<->object linking
 	} fields;
+	//@}
 };
 
 /** \addtogroup progs_data_access

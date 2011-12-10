@@ -160,6 +160,7 @@ static struct_def_t class_ivars[] = {
 	{"sibling_class",  &type_pointer},
 	{"protocols",      &type_pointer},
 	{"gc_object_type", &type_pointer},
+	{0, 0}
 };
 
 static struct_def_t protocol_ivars[] = {

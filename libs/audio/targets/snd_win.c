@@ -39,7 +39,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "snd_render.h"
+#include "snd_internal.h"
 
 // 64K is > 1 second at 16-bit, 22050 Hz
 #define	WAV_BUFFERS				64
@@ -298,8 +298,9 @@ SNDDMA_GetDMAPos (void)
 	s /= sn.channels;
 
 	s %= sn.frames;
+	sn.framepos = s;
 
-	return s;
+	return sn.framepos;
 }
 
 /*
@@ -316,7 +317,7 @@ SNDDMA_Submit (void)
 	// find which sound blocks have completed
 	while (1) {
 		if (snd_completed == snd_sent) {
-			Sys_MaskPrintf (SYS_DEV, "Sound overrun\n");
+			Sys_MaskPrintf (SYS_SND, "Sound overrun\n");
 			break;
 		}
 

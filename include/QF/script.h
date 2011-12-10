@@ -45,6 +45,10 @@ typedef struct script_s {
 	void      (*error)(struct script_s *script, const char *msg);
 	/// if set, multi line quoted tokens will be treated as errors
 	int         no_quote_lines;
+	/// if set, characters in this string will always be lexed as single
+	/// character tokens. If not set, defaults to "{}()':". Set to ""
+	/// (empty string) to disable. Not set by default.
+	const char *single;
 } script_t;
 
 /** Return a new script_t object.

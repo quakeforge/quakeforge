@@ -183,7 +183,7 @@ C(D_PolysetCalcGradients):
 							//  t1*p00_minus_p20 - t0*p10_minus_p20 |
 							//  t1*p01_minus_p21 - t0*p11_minus_p21 |
 							//  xstepdenominv | p00_minus_p20 | p11_minus_p21
-	fmuls	float_minus_1	// ystepdenominv |
+	fmuls	C(float_minus_1)	// ystepdenominv |
 							//  t1*p00_minus_p20 - t0*p10_minus_p20 |
 							//  t1*p01_minus_p21 - t0*p11_minus_p21 |
 							//  xstepdenominv | p00_minus_p20 | p11_minus_p21
@@ -205,12 +205,12 @@ C(D_PolysetCalcGradients):
 							//  (t1*p01_minus_p21 - t0*p11_minus_p21)*
 							//  xstepdenominv | ystepdenominv |
 							//  xstepdenominv | p00_minus_p20 | p11_minus_p21
-	fldcw	r_ceil_cw
+	fldcw	C(r_ceil_cw)
 	fistpl	C(r_lstepy)		// r_lstepx | ystepdenominv | xstepdenominv |
 							//  p00_minus_p20 | p11_minus_p21
 	fistpl	C(r_lstepx)		// ystepdenominv | xstepdenominv | p00_minus_p20 |
 							//  p11_minus_p21
-	fldcw	r_single_cw
+	fldcw	C(r_single_cw)
 
 //	t0 = r_p0[2] - r_p2[2];
 //	t1 = r_p1[2] - r_p2[2];
@@ -822,16 +822,16 @@ LRightEdgeStepped:
 	movl	C(a_ststepxwhole),%ecx
 	movl	C(r_affinetridesc)+atd_skinwidth,%edx
 
-	movl	%ecx,advancetable+4	// advance base in t
+	movl	%ecx,C(advancetable)+4	// advance base in t
 	addl	%edx,%ecx
 
-	movl	%ecx,advancetable	// advance extra in t
+	movl	%ecx,C(advancetable)	// advance extra in t
 	movl	C(a_tstepxfrac),%ecx
 
 	movw	C(r_lstepx),%cx
 	movl	%eax,%edx			// count
 
-	movl	%ecx,tstep
+	movl	%ecx,C(tstep)
 	addl	$7,%edx
 
 	shrl	$3,%edx				// count of full and partial loops
@@ -889,12 +889,12 @@ LDraw8:
 LPatch8:
 	movb	%al,(%edi)
 Lp1:
-	addl	tstep,%edx
+	addl	C(tstep),%edx
 	sbbl	%eax,%eax
 	addl	lzistepx,%ebp
 	adcl	$0,%ebp
 	addl	C(a_sstepxfrac),%ebx
-	adcl	advancetable+4(,%eax,4),%esi
+	adcl	C(advancetable)+4(,%eax,4),%esi
 
 LDraw7:
 	cmpw	2(%ecx),%bp
@@ -907,12 +907,12 @@ LDraw7:
 LPatch7:
 	movb	%al,1(%edi)
 Lp2:
-	addl	tstep,%edx
+	addl	C(tstep),%edx
 	sbbl	%eax,%eax
 	addl	lzistepx,%ebp
 	adcl	$0,%ebp
 	addl	C(a_sstepxfrac),%ebx
-	adcl	advancetable+4(,%eax,4),%esi
+	adcl	C(advancetable)+4(,%eax,4),%esi
 
 LDraw6:
 	cmpw	4(%ecx),%bp
@@ -925,12 +925,12 @@ LDraw6:
 LPatch6:
 	movb	%al,2(%edi)
 Lp3:
-	addl	tstep,%edx
+	addl	C(tstep),%edx
 	sbbl	%eax,%eax
 	addl	lzistepx,%ebp
 	adcl	$0,%ebp
 	addl	C(a_sstepxfrac),%ebx
-	adcl	advancetable+4(,%eax,4),%esi
+	adcl	C(advancetable)+4(,%eax,4),%esi
 
 LDraw5:
 	cmpw	6(%ecx),%bp
@@ -943,12 +943,12 @@ LDraw5:
 LPatch5:
 	movb	%al,3(%edi)
 Lp4:
-	addl	tstep,%edx
+	addl	C(tstep),%edx
 	sbbl	%eax,%eax
 	addl	lzistepx,%ebp
 	adcl	$0,%ebp
 	addl	C(a_sstepxfrac),%ebx
-	adcl	advancetable+4(,%eax,4),%esi
+	adcl	C(advancetable)+4(,%eax,4),%esi
 
 LDraw4:
 	cmpw	8(%ecx),%bp
@@ -961,12 +961,12 @@ LDraw4:
 LPatch4:
 	movb	%al,4(%edi)
 Lp5:
-	addl	tstep,%edx
+	addl	C(tstep),%edx
 	sbbl	%eax,%eax
 	addl	lzistepx,%ebp
 	adcl	$0,%ebp
 	addl	C(a_sstepxfrac),%ebx
-	adcl	advancetable+4(,%eax,4),%esi
+	adcl	C(advancetable)+4(,%eax,4),%esi
 
 LDraw3:
 	cmpw	10(%ecx),%bp
@@ -979,12 +979,12 @@ LDraw3:
 LPatch3:
 	movb	%al,5(%edi)
 Lp6:
-	addl	tstep,%edx
+	addl	C(tstep),%edx
 	sbbl	%eax,%eax
 	addl	lzistepx,%ebp
 	adcl	$0,%ebp
 	addl	C(a_sstepxfrac),%ebx
-	adcl	advancetable+4(,%eax,4),%esi
+	adcl	C(advancetable)+4(,%eax,4),%esi
 
 LDraw2:
 	cmpw	12(%ecx),%bp
@@ -997,12 +997,12 @@ LDraw2:
 LPatch2:
 	movb	%al,6(%edi)
 Lp7:
-	addl	tstep,%edx
+	addl	C(tstep),%edx
 	sbbl	%eax,%eax
 	addl	lzistepx,%ebp
 	adcl	$0,%ebp
 	addl	C(a_sstepxfrac),%ebx
-	adcl	advancetable+4(,%eax,4),%esi
+	adcl	C(advancetable)+4(,%eax,4),%esi
 
 LDraw1:
 	cmpw	14(%ecx),%bp
@@ -1015,12 +1015,12 @@ LDraw1:
 LPatch1:
 	movb	%al,7(%edi)
 Lp8:
-	addl	tstep,%edx
+	addl	C(tstep),%edx
 	sbbl	%eax,%eax
 	addl	lzistepx,%ebp
 	adcl	$0,%ebp
 	addl	C(a_sstepxfrac),%ebx
-	adcl	advancetable+4(,%eax,4),%esi
+	adcl	C(advancetable)+4(,%eax,4),%esi
 
 	addl	$8,%edi
 	addl	$16,%ecx
@@ -1652,7 +1652,7 @@ LNDLoop:
 	movl	%eax,C(r_p0)+16
 	movl	%esi,C(r_p0)+20
 
-	fdivrs	float_1
+	fdivrs	C(float_1)
 
 //		r_p1[0] = index1->v[0];
 //		r_p1[1] = index1->v[1];

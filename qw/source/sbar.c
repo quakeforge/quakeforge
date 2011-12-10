@@ -28,7 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
@@ -39,7 +39,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include <time.h>
-
 #include <stdlib.h>
 
 #include "QF/cmd.h"
@@ -99,7 +98,6 @@ static qboolean largegame = false;
 cvar_t     *fs_fraglog;
 cvar_t     *cl_fraglog;
 cvar_t     *hud_sbar;
-cvar_t     *hud_sbar_separator;
 cvar_t     *hud_swap;
 cvar_t     *hud_scoreboard_gravity;
 cvar_t     *hud_scoreboard_uid;
@@ -227,11 +225,12 @@ viewsize_f (cvar_t *var)
 }
 
 
-/*
-	Sbar_ShowTeamScores
+static int
+Sbar_ColorForMap (int m)
+{
+	return (bound (0, m, 13) * 16) + 8;
+}
 
-	Tab key down
-*/
 static void
 Sbar_ShowTeamScores (void)
 {
@@ -242,11 +241,6 @@ Sbar_ShowTeamScores (void)
 	sb_updates = 0;
 }
 
-/*
-	Sbar_DontShowTeamScores
-
-	Tab key up
-*/
 static void
 Sbar_DontShowTeamScores (void)
 {
@@ -254,11 +248,6 @@ Sbar_DontShowTeamScores (void)
 	sb_updates = 0;
 }
 
-/*
-	Sbar_ShowScores
-
-	Tab key down
-*/
 static void
 Sbar_ShowScores (void)
 {
@@ -269,11 +258,6 @@ Sbar_ShowScores (void)
 	sb_updates = 0;
 }
 
-/*
-	Sbar_DontShowScores
-
-	Tab key up
-*/
 static void
 Sbar_DontShowScores (void)
 {
@@ -294,10 +278,11 @@ draw_pic (view_t *view, int x, int y, qpic_t *pic)
 }
 
 static inline void
-draw_cachepic (view_t *view, int x, int y, const char *name)
+draw_cachepic (view_t *view, int x, int y, const char *name, int cent)
 {
 	qpic_t *pic = Draw_CachePic (name, true);
-	x += (view->xlen - pic->width) / 2;
+	if (cent)
+		x += (view->xlen - pic->width) / 2;
 	Draw_Pic (view->xabs + x, view->yabs + y, pic);
 }
 
@@ -480,19 +465,13 @@ Sbar_SortTeams (void)
 			}
 }
 
-static int
-Sbar_ColorForMap (int m)
-{
-	return (bound (0, m, 13) * 16) + 8;
-}
-
 static void
 draw_solo (view_t *view)
 {
 	char        str[80];
 	int         minutes, seconds;
 
-	draw_pic (view, 0, 0, sb_scorebar); 
+	draw_pic (view, 0, 0, sb_scorebar);
 
 	minutes = cl.time / 60;
 	seconds = cl.time - 60 * minutes;
@@ -522,6 +501,140 @@ draw_smallnum (view_t *view, int x, int y, int n, int packed, int colored)
 	draw_character (view, x + packed, y, num[0]);
 	draw_character (view, x + 8, y, num[1]);
 	draw_character (view, x + 16 - packed, y, num[2]);
+}
+
+static void
+draw_tile (view_t *view)
+{
+	Draw_TileClear (view->xabs, view->yabs, view->xlen, view->ylen);
+}
+
+static void
+draw_ammo_sbar (view_t *view)
+{
+	int         i, count;
+
+	// ammo counts
+	for (i = 0; i < 4; i++) {
+		count = cl.stats[STAT_SHELLS + i];
+		draw_smallnum (view, (6 * i + 1) * 8 + 2, 0, count, 0, 1);
+	}
+}
+
+static void
+draw_ammo_hud (view_t *view)
+{
+	int         i, count;
+
+	// ammo counts
+	for (i = 0; i < 4; i++) {
+		count = cl.stats[STAT_SHELLS + i];
+		draw_subpic (view, 0, i * 11, sb_ibar, 3 + (i * 48), 0, 42, 11);
+		draw_smallnum (view, 7, i * 11, count, 0, 1);
+	}
+}
+
+static int
+calc_flashon (float time, int mask)
+{
+	int         flashon;
+
+	flashon = (int) ((cl.time - time) * 10);
+	if (flashon < 0)
+		flashon = 0;
+	if (flashon >= 10) {
+		if (cl.stats[STAT_ACTIVEWEAPON] == mask)
+			flashon = 1;
+		else
+			flashon = 0;
+	} else
+		flashon = (flashon % 5) + 2;
+	return flashon;
+}
+
+static void
+draw_weapons_sbar (view_t *view)
+{
+	int         flashon, i;
+
+	for (i = 0; i < 7; i++) {
+		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
+			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
+			draw_pic (view, i * 24, 0, sb_weapons[flashon][i]);
+			if (flashon > 1)
+				sb_updates = 0;			// force update to remove flash
+		}
+	}
+}
+
+static void
+draw_weapons_hud (view_t *view)
+{
+	int         flashon, i, x = 0;
+
+	if (view->parent->gravity == grav_southeast)
+		x = view->xlen - 24;
+
+	for (i = vid.conheight < 204; i < 7; i++) {
+		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
+			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
+			draw_subpic (view, x, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
+			if (flashon > 1)
+				sb_updates = 0;			// force update to remove flash
+		}
+	}
+}
+
+static void
+draw_items (view_t *view)
+{
+	float       time;
+	int         flashon = 0, i;
+
+	for (i = 0; i < 6; i++) {
+		if (cl.stats[STAT_ITEMS] & (1 << (17 + i))) {
+			time = cl.item_gettime[17 + i];
+			if (time && time > cl.time - 2 && flashon) {	// Flash frame
+				sb_updates = 0;
+			} else {
+				draw_pic (view, i * 16, 0, sb_items[i]);
+			}
+			if (time && time > cl.time - 2)
+				sb_updates = 0;
+		}
+	}
+}
+
+static void
+draw_sigils (view_t *view)
+{
+	float       time;
+	int         flashon = 0, i;
+
+	for (i = 0; i < 4; i++) {
+		if (cl.stats[STAT_ITEMS] & (1 << (28 + i))) {
+			time = cl.item_gettime[28 + i];
+			if (time && time > cl.time - 2 && flashon) {	// flash frame
+				sb_updates = 0;
+			} else {
+				draw_pic (view, i * 8, 0, sb_sigil[i]);
+			}
+			if (time && time > cl.time - 2)
+				sb_updates = 0;
+		}
+	}
+}
+
+static void
+draw_inventory_sbar (view_t *view)
+{
+	if (cl.spectator && autocam == CAM_TRACK) {
+		if (sbar_frags_view)
+			sbar_frags_view->draw (sbar_frags_view);
+		return;
+	}
+	draw_pic (view, 0, 0, sb_ibar);
+	view_draw (view);
 }
 
 static inline void
@@ -595,7 +708,7 @@ dmo_main (view_t *view, int x, int y, player_info_t *s, int is_client)
 	fph = calc_fph (f, total);
 	snprintf (num, sizeof (num), "%3i", fph);
 	draw_string (view, x, y, num);
-	
+
 	//draw time
 	snprintf (num, sizeof (num), "%4i", minutes);
 	draw_string (view, x + 32, y, num);
@@ -628,151 +741,6 @@ static inline void
 dmo_name (view_t *view, int x, int y, player_info_t *s)
 {
 	draw_string (view, x, y, s->name);
-}
-
-static int
-calc_flashon (int ind)
-{
-	float       time;
-	int         flashon;
-
-	time = cl.item_gettime[ind];
-	flashon = (int) ((cl.time - time) * 10);
-	if (flashon < 0)
-		flashon = 0;
-	if (flashon >= 10) {
-		if (cl.stats[STAT_ACTIVEWEAPON] == (IT_SHOTGUN << ind))
-			flashon = 1;
-		else
-			flashon = 0;
-	} else
-		flashon = (flashon % 5) + 2;
-	return flashon;
-}
-
-static void
-draw_weapons_sbar (view_t *view)
-{
-	int         flashon, i;
-
-	for (i = 0; i < 7; i++) {
-		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
-			flashon = calc_flashon (i);
-			draw_pic (view, i * 24, 0, sb_weapons[flashon][i]);
-			if (flashon > 1)
-				sb_updates = 0;			// force update to remove flash
-		}
-	}
-}
-
-static void
-draw_weapons_hud (view_t *view)
-{
-	int         flashon, i, x = 0;
-
-	if (view->parent->gravity == grav_southeast)
-		x = view->xlen - 24;
-
-	for (i = vid.conheight < 204; i < 7; i++) {
-		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
-			flashon = calc_flashon (i);
-			draw_subpic (view, x, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
-			if (flashon > 1)
-				sb_updates = 0;			// force update to remove flash
-		}
-	}
-}
-
-static void
-draw_ammo_sbar (view_t *view)
-{
-	char        num[12];
-	int         i;
-
-	// ammo counts
-#define HUD_X(n, dist)  ((6 * n + dist) * 8 + 2)
-	for (i = 0; i < 4; i++) {
-		snprintf (num, sizeof (num), "%3i", min (cl.stats[STAT_SHELLS + i],
-												 999));
-		if (num[0] != ' ')
-			draw_character (view, HUD_X(i, 1), 0, 18 + num[0] - '0');
-		if (num[1] != ' ')
-			draw_character (view, HUD_X(i, 2), 0, 18 + num[1] - '0');
-		if (num[2] != ' ')
-			draw_character (view, HUD_X(i, 3), 0, 18 + num[2] - '0');
-	}
-#undef HUD_X
-}
-
-static void
-draw_ammo_hud (view_t *view)
-{
-	char        num[12];
-	int         i;
-
-	// ammo counts
-	for (i = 0; i < 4; i++) {
-		snprintf (num, sizeof (num), "%3i", min (cl.stats[STAT_SHELLS + i],
-												 999));
-#define HUD_X(dist)		(dist + 4)
-		draw_subpic (view, 0, i * 11, sb_ibar, 3 + (i * 48), 0, 42, 11);
-		if (num[0] != ' ')
-			draw_character (view, HUD_X (3),  i * 11, 18 + num[0] - '0');
-		if (num[1] != ' ')
-			draw_character (view, HUD_X (11), i * 11, 18 + num[1] - '0');
-		if (num[2] != ' ')
-			draw_character (view, HUD_X (19), i * 11, 18 + num[2] - '0');
-#undef HUD_X
-	}
-}
-
-static void
-draw_items (view_t *view)
-{
-	float       time;
-	int         flashon = 0, i;
-
-	for (i = 0; i < 6; i++)
-		if (cl.stats[STAT_ITEMS] & (1 << (17 + i))) {
-			time = cl.item_gettime[17 + i];
-			if (time && time > cl.time - 2 && flashon) {	// flash frame
-				sb_updates = 0;
-			} else
-				draw_pic (view, i * 16, 0, sb_items[i]);
-			if (time && time > cl.time - 2)
-				sb_updates = 0;
-		}
-}
-
-static void
-draw_sigils (view_t *view)
-{
-	float       time;
-	int         flashon = 0, i;
-
-	for (i = 0; i < 4; i++)
-		if (cl.stats[STAT_ITEMS] & (1 << (28 + i))) {
-			time = cl.item_gettime[28 + i];
-			if (time && time > cl.time - 2 && flashon) {	// flash frame
-				sb_updates = 0;
-			} else
-				draw_pic (view, i * 8, 0, sb_sigil[i]);
-			if (time && time > cl.time - 2)
-				sb_updates = 0;
-		}
-}
-
-static void
-draw_inventory_sbar (view_t *view)
-{
-	if (cl.spectator && autocam == CAM_TRACK) {
-		if (sbar_frags_view)
-			sbar_frags_view->draw (sbar_frags_view);
-		return;
-	}
-	draw_pic (view, 0, 0, sb_ibar);
-
-	view_draw (view);
 }
 
 static void
@@ -944,12 +912,6 @@ draw_overlay (view_t *view)
 		Sbar_TeamOverlay (view);
 }
 
-static void
-draw_tile (view_t *view)
-{
-	Draw_TileClear (view->xabs, view->yabs, view->xlen, view->ylen);
-}
-
 void
 Sbar_Draw (void)
 {
@@ -958,11 +920,12 @@ Sbar_Draw (void)
 	sbar_view->visible = 0;
 
 	headsup = !(hud_sbar->int_val || scr_viewsize->int_val < 100);
+
 	if ((sb_updates >= vid.numpages) && !headsup)
 		return;
 
 	if (con_module && con_module->data->console->lines == vid.conheight)
-		return;
+		return;							// console is full screen
 
 	if (cls.state == ca_active
 		&& ((cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
@@ -1005,7 +968,7 @@ Sbar_TeamOverlay (view_t *view)
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
 
-	draw_cachepic (view, 0, 0, "gfx/ranking.lmp");
+	draw_cachepic (view, 0, 0, "gfx/ranking.lmp", 1);
 
 	y = 24;
 	x = 36;
@@ -1066,7 +1029,7 @@ Sbar_TeamOverlay (view_t *view)
 /*
 	Sbar_LogFrags
 
-	autologging of frags after a match ended 
+	autologging of frags after a match ended
 	(called by recived network packet with command scv_intermission)
 	TODO: Find a new and better place for this function
 		  (i am nearly shure this is wrong place)
@@ -1097,7 +1060,7 @@ Sbar_LogFrags (void)
 	Qprintf (file, "%s\n%s %s\n", cls.servername->str, cl.worldmodel->name,
 			 cl.levelname);
 
-	// scores   
+	// scores
 	Sbar_SortFrags (true);
 
 	// draw the text
@@ -1138,7 +1101,7 @@ Sbar_LogFrags (void)
 		for (cp = (byte *) s->name, d = 0; *cp; cp++, d++)
 			name[d] = sys_char_map[*cp];
 		name[d] = 0;
-		
+
 		if (s->spectator) {
 			Qprintf (file, "%-3i%% %s (spectator)", s->pl, name);
 		} else {
@@ -1159,7 +1122,7 @@ Sbar_LogFrags (void)
 		free (name);
 		Qwrite (file, "\n\n", 1);
 	}
-	
+
 	Qclose (file);
 }
 
@@ -1170,7 +1133,7 @@ Sbar_Draw_DMO_Team_Ping (view_t *view, int l, int y, int skip)
 	player_info_t *s;
 
 	x = 4;
-//							  0    40 64  104  152   192
+//							  0    40 64   104   152  192 224
 	draw_string (view, x, y, "ping pl fph time frags team name");
 	y += 8;
 	draw_string (view, x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
@@ -1454,7 +1417,7 @@ Sbar_DeathmatchOverlay (view_t *view, int start)
 	scr_fullupdate = 0;
 
 	if (!start) {
-		draw_cachepic (view, 0, 0, "gfx/ranking.lmp");
+		draw_cachepic (view, 0, 0, "gfx/ranking.lmp", 1);
 		y = 24;
 	} else
 		y = start;
@@ -1489,7 +1452,7 @@ draw_minifrags (view_t *view)
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
 
-	// scores   
+	// scores
 	Sbar_SortFrags (false);
 
 	if (!scoreboardlines)
@@ -1504,7 +1467,7 @@ draw_minifrags (view_t *view)
 		if (fragsort[i] == cl.playernum)
 			break;
 
-	if (i == scoreboardlines)			// we're not there, we are probably a 
+	if (i == scoreboardlines)			// we're not there, we are probably a
 										// spectator, just display top
 		i = 0;
 	else								// figure out start
@@ -1749,12 +1712,13 @@ Sbar_FinaleOverlay (void)
 {
 	int         remaining;
 
+	//FIXME cleaner test
 	if (key_dest != key_game)
 		return;
 
 	scr_copyeverything = 1;
 
-	draw_cachepic (overlay_view, 0, 16, "gfx/finale.lmp");
+	draw_cachepic (overlay_view, 0, 16, "gfx/finale.lmp", 1);
 	// the finale prints the characters one at a time
 	remaining = scr_printspeed->value * (realtime - centertime_start);
 	Sbar_DrawCenterString (overlay_view, remaining);
@@ -1769,6 +1733,7 @@ Sbar_DrawCenterPrint (void)
 	if (centertime_off <= 0)
 		return;
 
+	//FIXME cleaner test
 	if (key_dest != key_game)
 		return;
 
@@ -1862,9 +1827,6 @@ init_sbar_views (void)
 		view->resize_y = 1;
 		view_add (sbar_view, view);
 	}
-
-	//if (con_module)
-	//	view_insert (con_module->data->console->view, sbar_view, 0);
 }
 
 static void
@@ -2078,8 +2040,6 @@ Sbar_Init (void)
 						   "it on.");
 	hud_sbar = Cvar_Get ("hud_sbar", "0", CVAR_ARCHIVE, hud_sbar_f,
 						 "status bar mode: 0 = hud, 1 = oldstyle");
-	hud_sbar_separator = Cvar_Get ("hud_sbar_separator", "0", CVAR_ARCHIVE,
-								   NULL, "turns on status bar separator");
 	hud_swap = Cvar_Get ("hud_swap", "0", CVAR_ARCHIVE, hud_swap_f,
 						 "new HUD on left side?");
 	hud_scoreboard_gravity = Cvar_Get ("hud_scoreboard_gravity", "center",

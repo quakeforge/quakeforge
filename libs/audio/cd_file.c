@@ -66,7 +66,7 @@ static __attribute__ ((used)) const char  rcsid[] =
 #include "QF/va.h"
 
 #include "compat.h"
-#include "snd_render.h"
+#include "snd_internal.h"
 
 /* Generic plugin structures */
 static general_data_t plugin_info_general_data;

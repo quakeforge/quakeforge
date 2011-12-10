@@ -57,24 +57,12 @@ qsocket_t  *net_activeSockets = NULL;
 qsocket_t  *net_freeSockets = NULL;
 int         net_numsockets = 0;
 
-qboolean    serialAvailable = false;
-qboolean    ipxAvailable = false;
 qboolean    tcpipAvailable = false;
 
 int         net_hostport;
 int         DEFAULTnet_hostport = 26000;
 
-char        my_ipx_address[NET_NAMELEN];
 char        my_tcpip_address[NET_NAMELEN];
-
-void        (*GetComPortConfig) (int portNumber, int *port, int *irq, int *baud,
-								 qboolean *useModem);
-void        (*SetComPortConfig) (int portNumber, int port, int irq, int baud,
-								 qboolean useModem);
-void        (*GetModemConfig) (int portNumber, char *dialType, char *clear,
-							   char *init, char *hangup);
-void        (*SetModemConfig) (int portNumber, const char *dialType, const char *clear,
-							   const char *init, const char *hangup);
 
 static qboolean listening = false;
 
@@ -103,16 +91,6 @@ int         unreliableMessagesReceived = 0;
 cvar_t     *net_messagetimeout;
 cvar_t     *hostname;
 
-qboolean    configRestored = false;
-cvar_t     *config_com_port;
-cvar_t     *config_com_irq;
-cvar_t     *config_com_baud;
-cvar_t     *config_com_modem;
-cvar_t     *config_modem_dialtype;
-cvar_t     *config_modem_clear;
-cvar_t     *config_modem_init;
-cvar_t     *config_modem_hangup;
-
 QFile      *vcrFile;
 qboolean    recording = false;
 
@@ -133,15 +111,7 @@ SetNetTime (void)
 }
 
 
-/*
-===================
-NET_NewQSocket
-
-Called by drivers when a new communications endpoint is required
-The sequence and buffer fields will be filled in properly
-===================
-*/
-qsocket_t  *
+qsocket_t *
 NET_NewQSocket (void)
 {
 	qsocket_t  *sock;
@@ -182,7 +152,7 @@ NET_NewQSocket (void)
 
 
 void
-NET_FreeQSocket (qsocket_t * sock)
+NET_FreeQSocket (qsocket_t *sock)
 {
 	qsocket_t  *s;
 
@@ -327,7 +297,7 @@ PrintSlistTrailer (void)
 }
 
 
-void
+static void
 NET_Slist_f (void)
 {
 	if (slistInProgress)
@@ -393,16 +363,10 @@ Slist_Poll (void *unused)
 }
 
 
-/*
-===================
-NET_Connect
-===================
-*/
-
 int         hostCacheCount = 0;
 hostcache_t hostcache[HOSTCACHESIZE];
 
-qsocket_t  *
+qsocket_t *
 NET_Connect (const char *host)
 {
 	qsocket_t  *ret;
@@ -471,19 +435,13 @@ NET_Connect (const char *host)
 }
 
 
-/*
-===================
-NET_CheckNewConnections
-===================
-*/
-
 struct {
 	double      time;
 	int         op;
 	intptr_t    session;
 } vcrConnect;
 
-qsocket_t  *
+qsocket_t *
 NET_CheckNewConnections (void)
 {
 	qsocket_t  *ret;
@@ -519,13 +477,8 @@ NET_CheckNewConnections (void)
 	return NULL;
 }
 
-/*
-===================
-NET_Close
-===================
-*/
 void
-NET_Close (qsocket_t * sock)
+NET_Close (qsocket_t *sock)
 {
 	if (!sock)
 		return;
@@ -538,21 +491,10 @@ NET_Close (qsocket_t * sock)
 	// call the driver_Close function
 	sfunc.Close (sock);
 
+	Sys_MaskPrintf (SYS_NET, "closing socket\n");
 	NET_FreeQSocket (sock);
 }
 
-
-/*
-=================
-NET_GetMessage
-
-If there is a complete message, return it in net_message
-
-returns 0 if no data is waiting
-returns 1 if a message was received
-returns -1 if connection is invalid
-=================
-*/
 
 struct {
 	double      time;
@@ -564,7 +506,7 @@ struct {
 
 
 int
-NET_GetMessage (qsocket_t * sock)
+NET_GetMessage (qsocket_t *sock)
 {
 	int         ret;
 
@@ -583,6 +525,7 @@ NET_GetMessage (qsocket_t * sock)
 	// see if this connection has timed out
 	if (ret == 0 && sock->driver) {
 		if (net_time - sock->lastMessageTime > net_messagetimeout->value) {
+			Sys_MaskPrintf (SYS_NET, "socket timed out\n");
 			NET_Close (sock);
 			return -1;
 		}
@@ -622,17 +565,6 @@ NET_GetMessage (qsocket_t * sock)
 }
 
 
-/*
-==================
-NET_SendMessage
-
-Try to send a complete length+message unit over the reliable stream.
-returns 0 if the message cannot be delivered reliably, but the connection
-		is still considered valid
-returns 1 if the message was sent properly
-returns -1 if the connection died
-==================
-*/
 struct {
 	double      time;
 	int         op;
@@ -641,7 +573,7 @@ struct {
 } vcrSendMessage;
 
 int
-NET_SendMessage (qsocket_t * sock, sizebuf_t *data)
+NET_SendMessage (qsocket_t *sock, sizebuf_t *data)
 {
 	int         r;
 
@@ -671,7 +603,7 @@ NET_SendMessage (qsocket_t * sock, sizebuf_t *data)
 
 
 int
-NET_SendUnreliableMessage (qsocket_t * sock, sizebuf_t *data)
+NET_SendUnreliableMessage (qsocket_t *sock, sizebuf_t *data)
 {
 	int         r;
 
@@ -700,16 +632,8 @@ NET_SendUnreliableMessage (qsocket_t * sock, sizebuf_t *data)
 }
 
 
-/*
-==================
-NET_CanSendMessage
-
-Returns true or false if the given qsocket can currently accept a
-message to be transmitted.
-==================
-*/
 qboolean
-NET_CanSendMessage (qsocket_t * sock)
+NET_CanSendMessage (qsocket_t *sock)
 {
 	int         r;
 
@@ -797,12 +721,6 @@ NET_SendToAll (sizebuf_t *data, double blocktime)
 
 //=============================================================================
 
-/*
-====================
-NET_Init
-====================
-*/
-
 void
 NET_Init (void)
 {
@@ -853,22 +771,6 @@ NET_Init (void)
 	net_messagetimeout =
 		Cvar_Get ("net_messagetimeout", "300", CVAR_NONE, NULL, "None");
 	hostname = Cvar_Get ("hostname", "UNNAMED", CVAR_NONE, NULL, "None");
-	config_com_port =
-		Cvar_Get ("_config_com_port", "0x3f8", CVAR_ARCHIVE, NULL, "None");
-	config_com_irq = Cvar_Get ("_config_com_irq", "4", CVAR_ARCHIVE, NULL,
-			"None");
-	config_com_baud =
-		Cvar_Get ("_config_com_baud", "57600", CVAR_ARCHIVE, NULL, "None");
-	config_com_modem =
-		Cvar_Get ("_config_com_modem", "1", CVAR_ARCHIVE, NULL, "None");
-	config_modem_dialtype =
-		Cvar_Get ("_config_modem_dialtype", "T", CVAR_ARCHIVE, NULL, "None");
-	config_modem_clear =
-		Cvar_Get ("_config_modem_clear", "ATZ", CVAR_ARCHIVE, NULL, "None");
-	config_modem_init =
-		Cvar_Get ("_config_modem_init", "", CVAR_ARCHIVE, NULL, "None");
-	config_modem_hangup =
-		Cvar_Get ("_config_modem_hangup", "AT H", CVAR_ARCHIVE, NULL, "None");
 
 	Cmd_AddCommand ("slist", NET_Slist_f, "No Description");
 	Cmd_AddCommand ("listen", NET_Listen_f, "No Description");
@@ -887,17 +789,9 @@ NET_Init (void)
 			net_drivers[net_driverlevel].Listen (true);
 	}
 
-	if (*my_ipx_address)
-		Sys_MaskPrintf (SYS_DEV, "IPX address %s\n", my_ipx_address);
 	if (*my_tcpip_address)
-		Sys_MaskPrintf (SYS_DEV, "TCP/IP address %s\n", my_tcpip_address);
+		Sys_MaskPrintf (SYS_NET, "TCP/IP address %s\n", my_tcpip_address);
 }
-
-/*
-====================
-NET_Shutdown
-====================
-*/
 
 void
 NET_Shutdown (void)
@@ -933,24 +827,6 @@ void
 NET_Poll (void)
 {
 	PollProcedure *pp;
-	qboolean    useModem;
-
-	if (!configRestored) {
-		if (serialAvailable) {
-			if (config_com_modem->int_val)
-				useModem = true;
-			else
-				useModem = false;
-			SetComPortConfig (0, config_com_port->int_val,
-							  config_com_irq->int_val, config_com_baud->int_val,
-							  useModem);
-			SetModemConfig (0, config_modem_dialtype->string,
-							config_modem_clear->string,
-							config_modem_init->string,
-							config_modem_hangup->string);
-		}
-		configRestored = true;
-	}
 
 	SetNetTime ();
 
@@ -964,7 +840,7 @@ NET_Poll (void)
 
 
 void
-SchedulePollProcedure (PollProcedure * proc, double timeOffset)
+SchedulePollProcedure (PollProcedure *proc, double timeOffset)
 {
 	PollProcedure *pp, *prev;
 

@@ -56,52 +56,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #define	PACKET_HEADER	8
 
-/*
-  packet header
-  -------------
-  31	sequence
-  1	does this message contain a reliable payload
-  31	acknowledge sequence
-  1	acknowledge receipt of even/odd message
-  16  qport
-
-  The remote connection never knows if it missed a reliable message, the
-  local side detects that it has been dropped by seeing a sequence acknowledge
-  higher thatn the last reliable sequence, but without the correct evon/odd
-  bit for the reliable set.
-
-  If the sender notices that a reliable message has been dropped, it will be
-  retransmitted.  It will not be retransmitted again until a message after the
-  retransmit has been acknowledged and the reliable still failed to get there.
-
-  if the sequence number is -1, the packet should be handled without a netcon
-
-  The reliable message can be added to at any time by doing
-  MSG_Write* (&netchan->message, <data>).
-
-  If the message buffer is overflowed, either by a single message, or by
-  multiple frames worth piling up while the last reliable transmit goes
-  unacknowledged, the netchan signals a fatal error.
-
-  Reliable messages are always placed first in a packet, then the unreliable
-  message is included if there is sufficient room.
-
-  To the receiver, there is no distinction between the reliable and unreliable
-  parts of the message, they are just processed out as a single larger message.
-
-  Illogical packet sequence numbers cause the packet to be dropped, but do
-  not kill the connection.  This, combined with the tight window of valid
-  reliable acknowledgement numbers provides protection against malicious
-  address spoofing.
-
-  The qport field is a workaround for bad address translating routers that
-  sometimes remap the client's source port on a packet during gameplay.
-
-  If the base part of the net address matches and the qport matches, then the
-  channel matches even if the IP port differs.  The IP port should be updated
-  to the new value before sending out any replies.
-*/
-
 int         net_nochoke;
 int         net_blocksend;
 double     *net_realtime;
@@ -187,7 +141,7 @@ Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
 	called to open a channel to a remote system
 */
 void
-Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, int flags)
+Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, ncqport_e flags)
 {
 	memset (chan, 0, sizeof (*chan));
 
@@ -233,14 +187,6 @@ Netchan_CanReliable (netchan_t *chan)
 	return Netchan_CanPacket (chan);
 }
 
-/*
-	Netchan_Transmit
-
-	tries to send an unreliable message to a connection, and handles the
-	transmition / retransmition of the reliable messages.
-
-	0 length will still generate a packet and deal with the reliable messages.
-*/
 void
 Netchan_Transmit (netchan_t *chan, int length, byte *data)
 {
@@ -285,20 +231,20 @@ Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	MSG_WriteLong (&send, w1);
 	MSG_WriteLong (&send, w2);
 
-	// send the qport if we are a client
-	if (chan->flags & NC_SEND_QPORT)
+	/// Send the qport if appropriate (we are a client).
+	if (chan->flags & NC_QPORT_SEND)
 		MSG_WriteShort (&send, chan->qport);
 
-	// copy the reliable message to the packet first
+	/// First copy the reliable message to the packet.
 	if (send_reliable) {
 		SZ_Write (&send, chan->reliable_buf, chan->reliable_length);
 		chan->last_reliable_sequence = chan->outgoing_sequence;
 	}
-	// add the unreliable part if space is available
+	/// Then add the unreliable part if space is available.
 	if (send.maxsize - send.cursize >= length)
 		SZ_Write (&send, data, length);
 
-	// send the datagram
+	/// Send the datagram if not blocked (in demo playback mode)
 	i = chan->outgoing_sequence & (MAX_LATENT - 1);
 	chan->outgoing_size[i] = send.cursize;
 	chan->outgoing_time[i] = *net_realtime;
@@ -322,12 +268,6 @@ Netchan_Transmit (netchan_t *chan, int length, byte *data)
 					chan->outgoing_sequence - chan->incoming_sequence);
 }
 
-/*
-	Netchan_Process
-
-	called when the current net_message is from remote_address
-	modifies net_message so that it points to the packet payload
-*/
 qboolean
 Netchan_Process (netchan_t *chan)
 {
@@ -337,13 +277,13 @@ Netchan_Process (netchan_t *chan)
 		if (!NET_CompareAdr (net_from, chan->remote_address))
 			return false;
 
-	// get sequence numbers     
+	/// Get the sequence numbers.
 	MSG_BeginReading (net_message);
 	sequence = MSG_ReadLong (net_message);
 	sequence_ack = MSG_ReadLong (net_message);
 
-	// read the qport if we are a server, but drop it
-	if (chan->flags & NC_READ_QPORT)
+	/// Read the qport if appropriate (we are a server), but ignore it.
+	if (chan->flags & NC_QPORT_READ)
 		MSG_ReadShort (net_message);
 
 	reliable_message = sequence >> 31;
@@ -383,7 +323,7 @@ Netchan_Process (netchan_t *chan)
 	}
 #endif
 
-	// discard stale or duplicated packets
+	/// Discard stale or duplicated packets.
 	if (sequence < (unsigned int) chan->incoming_sequence + 1) {
 		if (showdrop->int_val)
 			Sys_Printf ("%s:Out of order packet %i at %i\n",
@@ -392,7 +332,7 @@ Netchan_Process (netchan_t *chan)
 		return false;
 	}
 
-	// dropped packets don't keep the message from being used
+	/// Dropped packets don't keep the message from being used.
 	chan->net_drop = sequence - (chan->incoming_sequence + 1);
 	if (chan->net_drop > 0) {
 		chan->drop_count += 1;
@@ -403,21 +343,21 @@ Netchan_Process (netchan_t *chan)
 						sequence - (chan->incoming_sequence + 1), sequence);
 	}
 
-	// if the current outgoing reliable message has been acknowledged
-	// clear the buffer to make way for the next
+	/// If the current outgoing reliable message has been acknowledged,
+	/// clear the buffer to make way for the next.
 	if (reliable_ack == (unsigned int) chan->reliable_sequence)
 		chan->reliable_length = 0;		// it has been received
 
-	// if this message contains a reliable message, bump
-	// incoming_reliable_sequence 
+	/// If this message contains a reliable message, bump
+	/// incoming_reliable_sequence 
 	chan->incoming_sequence = sequence;
 	chan->incoming_acknowledged = sequence_ack;
 	chan->incoming_reliable_acknowledged = reliable_ack;
 	if (reliable_message)
 		chan->incoming_reliable_sequence ^= 1;
 
-	// the message can now be read from the current message pointer
-	// update statistics counters
+	// The message can now be read from the current message pointer.
+	/// Update statistics counters.
 	chan->frame_latency = chan->frame_latency * OLD_AVG
 		+ (chan->outgoing_sequence - sequence_ack) * (1.0 - OLD_AVG);
 	chan->frame_rate = chan->frame_rate * OLD_AVG

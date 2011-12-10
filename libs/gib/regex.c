@@ -66,7 +66,7 @@
 #ifdef STDC_HEADERS
 #include <stdlib.h>
 
-#ifdef HAVE_MALLOC_H
+#if defined(_WIN32) && defined(HAVE_MALLOC_H)
 #include <malloc.h>
 #endif
 
@@ -889,7 +889,7 @@ static reg_errcode_t compile_range (const char **p_ptr, const char *pend, char *
    cast the subscript to translate because some data is declared as
    `char *', to avoid warnings when a string constant is passed.  But
    when we use a character as a subscript we must make it unsigned.  */
-#define TRANSLATE(d) (translate ? translate[(unsigned char) (d)] : (unsigned char)(d))
+#define TRANSLATE(d) (translate ? translate[(unsigned char) (d)] : (d))
 
 
 /* Macros for outputting the compiled pattern into `buffer'.  */
@@ -2217,7 +2217,7 @@ compile_range (p_ptr, pend, translate, syntax, b)
     reg_syntax_t syntax;
     unsigned char *b;
 {
-  unsigned this_char;
+  int this_char;
 
   const char *p = *p_ptr;
   int range_start, range_end;
@@ -2247,7 +2247,7 @@ compile_range (p_ptr, pend, translate, syntax, b)
      char' -- the range is inclusive, so if `range_end' == 0xff
      (assuming 8-bit characters), we would otherwise go into an infinite
      loop, since all characters <= 0xff.  */
-  for (this_char = range_start; this_char <= (unsigned) range_end; this_char++)
+  for (this_char = range_start; this_char <= range_end; this_char++)
     {
       SET_LIST_BIT (TRANSLATE (this_char));
     }
@@ -2475,7 +2475,7 @@ typedef struct
 #define POP_FAILURE_POINT(str, pat, low_reg, high_reg, regstart, regend, reg_info)\
 {									\
   DEBUG_STATEMENT (fail_stack_elt_t failure_id;)			\
-  unsigned int this_reg;								\
+  int this_reg;								\
   const unsigned char *string_temp;					\
 									\
   assert (!FAIL_STACK_EMPTY ());					\
@@ -2512,7 +2512,7 @@ typedef struct
   low_reg = (unsigned long) POP_FAILURE_ITEM ();				\
   DEBUG_PRINT2 ("  Popping  low active reg: %d\n", low_reg);		\
 									\
-  for (this_reg = high_reg; this_reg >= low_reg; this_reg--)		\
+  for (this_reg = high_reg; (unsigned) this_reg >= low_reg; this_reg--)	\
     {									\
       DEBUG_PRINT2 ("    Popping reg: %d\n", this_reg);			\
 									\
@@ -3181,7 +3181,7 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
      int stop;
 {
   /* General temporaries.  */
-  unsigned int mcnt;
+  int mcnt;
   unsigned char *p1;
 
   /* Just past the end of the corresponding string.  */
@@ -3324,7 +3324,7 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
   /* Initialize subexpression text positions to -1 to mark ones that no
      start_memory/stop_memory has been seen for. Also initialize the
      register information struct.  */
-  for (mcnt = 1; mcnt < num_regs; mcnt++)
+  for (mcnt = 1; (unsigned) mcnt < num_regs; mcnt++)
     {
       regstart[mcnt] = regend[mcnt] 
         = old_regstart[mcnt] = old_regend[mcnt] = REG_UNSET_VALUE;
@@ -3414,7 +3414,7 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
                       
                       DEBUG_PRINT1 ("\nSAVING match as best so far.\n");
                       
-                      for (mcnt = 1; mcnt < num_regs; mcnt++)
+                      for (mcnt = 1; (unsigned) mcnt < num_regs; mcnt++)
                         {
                           best_regstart[mcnt] = regstart[mcnt];
                           best_regend[mcnt] = regend[mcnt];
@@ -3438,7 +3438,7 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
                   dend = ((d >= string1 && d <= end1)
 		           ? end_match_1 : end_match_2);
 
-		  for (mcnt = 1; mcnt < num_regs; mcnt++)
+		  for (mcnt = 1; (unsigned) mcnt < num_regs; mcnt++)
 		    {
 		      regstart[mcnt] = best_regstart[mcnt];
 		      regend[mcnt] = best_regend[mcnt];
@@ -3491,7 +3491,8 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
               
               /* Go through the first `min (num_regs, regs->num_regs)'
                  registers, since that is all we initialized.  */
-	      for (mcnt = 1; mcnt < MIN (num_regs, regs->num_regs); mcnt++)
+	      for (mcnt = 1; (unsigned) mcnt < MIN (num_regs, regs->num_regs);
+		   mcnt++)
 		{
                   if (REG_UNSET (regstart[mcnt]) || REG_UNSET (regend[mcnt]))
                     regs->start[mcnt] = regs->end[mcnt] = -1;
@@ -3507,7 +3508,7 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
                  we (re)allocated the registers, this is the case,
                  because we always allocate enough to have at least one
                  -1 at the end.  */
-              for (mcnt = num_regs; mcnt < regs->num_regs; mcnt++)
+              for (mcnt = num_regs; (unsigned) mcnt < regs->num_regs; mcnt++)
                 regs->start[mcnt] = regs->end[mcnt] = -1;
 	    } /* regs && !bufp->no_sub */
 
@@ -3840,7 +3841,7 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
                 
 		/* Want how many consecutive characters we can match in
                    one shot, so, if necessary, adjust the count.  */
-                if (mcnt > (unsigned) (dend2 - d2))
+                if ((unsigned) mcnt > (unsigned) (dend2 - d2))
 		  mcnt = dend2 - d2;
                   
 		/* Compare that many; failure if mismatch, else move

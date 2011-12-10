@@ -95,6 +95,12 @@ extern const vec_t * const quat_origin;
 		(c)[1] = (a)[1] * (b); \
 		(c)[2] = (a)[2] * (b); \
 	} while (0)
+#define Vector3Scale(a,b,c) \
+	do { \
+		(c)[0] = (a)[0] * (b)[0]; \
+		(c)[1] = (a)[1] * (b)[1]; \
+		(c)[2] = (a)[2] * (b)[2]; \
+	} while (0)
 #define VectorCompare(x, y) \
 	(((x)[0] == (y)[0]) && ((x)[1] == (y)[1]) && ((x)[2] == (y)[2]))
 
@@ -113,6 +119,9 @@ extern const vec_t * const quat_origin;
 		(v)[1] = (v1)[1] * (1 - (b)) + (v2)[1] * (b); \
 		(v)[2] = (v1)[2] * (1 - (b)) + (v2)[2] * (b); \
 	} while (0)
+
+//For printf etc
+#define VectorExpand(v) (v)[0], (v)[1], (v)[2]
 
 #define QDotProduct(a,b) ((a)[0] * (b)[0] + (a)[1] * (b)[1] \
 						  + (a)[2] * (b)[2] + (a)[3] * (b)[3])
@@ -180,6 +189,13 @@ extern const vec_t * const quat_origin;
 
 #define QuatIsZero(a) (!(a)[0] && !(a)[1] && !(a)[2] && !(a)[3])
 #define QuatZero(a) ((a)[3] = (a)[2] = (a)[1] = (a)[0] = 0);
+#define QuatSet(a,b,c,d,e) \
+	do { \
+		(e)[0] = a; \
+		(e)[1] = b; \
+		(e)[2] = c; \
+		(e)[3] = d; \
+	} while (0)
 
 #define QuatBlend(v1,v2,b,v) \
 	do { \
@@ -188,6 +204,9 @@ extern const vec_t * const quat_origin;
 		(v)[2] = (v1)[2] * (1 - (b)) + (v2)[2] * (b); \
 		(v)[3] = (v1)[3] * (1 - (b)) + (v2)[3] * (b); \
 	} while (0)
+
+//For printf etc
+#define QuatExpand(q) (q)[0], (q)[1], (q)[2], (q)[3]
 
 /*
  * VectorDistance, the distance between two points.
@@ -233,9 +252,10 @@ int GreatestCommonDivisor (int i1, int i2);
 
 void AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right,
 				   vec3_t up);
+void AngleQuat (const vec3_t angles, quat_t q);
 void VectorVectors (const vec3_t forward, vec3_t right, vec3_t up);
 int BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs,
-					struct mplane_s *plane);
+					struct plane_s *plane);
 float anglemod (float a);
 
 void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
@@ -243,6 +263,8 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 
 void QuatMult (const quat_t q1, const quat_t q2, quat_t out);
 void QuatInverse (const quat_t in, quat_t out);
+
+void QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical);
 
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)				\
 	(((p)->type < 3)?									\
@@ -272,7 +294,7 @@ void QuatInverse (const quat_t in, quat_t out);
 		VectorNegate ((sp)->normal, (dp)->normal);	\
 	} while (0)
 
-extern mplane_t * const frustum;
+extern plane_t * const frustum;
 extern inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs);
 extern inline qboolean R_CullSphere (const vec3_t origin, const float radius);
 extern inline float VectorNormalize (vec3_t v);	// returns vector length

@@ -38,7 +38,7 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#ifdef HAVE_MALLOC_H
+#if defined(_WIN32) && defined(HAVE_MALLOC_H)
 #include <malloc.h>
 #endif
 
@@ -50,7 +50,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/quakefs.h"
 
 #include "compat.h"
-#include "snd_render.h"
+#include "snd_internal.h"
 
 #define SAMPLE_GAP	4
 

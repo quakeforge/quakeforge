@@ -58,14 +58,15 @@ static __attribute__ ((used)) const char rcsid[] =
 
 /*  key up events are sent even if in console mode */
 
-cvar_t     *in_bind_imt;
-
 VISIBLE keydest_t   key_dest = key_console;
-VISIBLE imt_t		game_target = IMT_CONSOLE;
+VISIBLE imt_t		key_game_target = IMT_0;
+VISIBLE knum_t      key_togglemenu = QFK_ESCAPE;
+VISIBLE knum_t      key_toggleconsole = QFK_BACKQUOTE;
 
 VISIBLE struct keybind_s keybindings[IMT_LAST][QFK_LAST];
 VISIBLE int			keydown[QFK_LAST];
 
+static imt_t game_target = IMT_CONSOLE;
 static int  keyhelp;
 static cbuf_t *cbuf;
 
@@ -76,6 +77,8 @@ typedef struct {
 
 imtname_t   imtnames[] = {
 	{"IMT_CONSOLE",	IMT_CONSOLE},
+	{"IMT_MOD",	    IMT_MOD},
+	{"IMT_DEMO",	IMT_DEMO},
 	{"IMT_0",		IMT_0},
 	{"IMT_1",		IMT_1},
 	{"IMT_2",		IMT_2},
@@ -408,6 +411,23 @@ keyname_t   keynames[] = {
 };
 
 
+static void
+process_binding (knum_t key, const char *kb)
+{
+	char        cmd[1024];
+
+	if (kb[0] == '+') {
+		if (keydown[key])
+			snprintf (cmd, sizeof (cmd), "%s %d\n", kb, key);
+		else
+			snprintf (cmd, sizeof (cmd), "-%s %d\n", kb + 1, key);
+	} else {
+		if (!keydown[key])
+			return;
+		snprintf (cmd, sizeof (cmd), "%s\n", kb);
+	}
+	Cbuf_AddText (cbuf, cmd);
+}
 /*
   Key_Game
 
@@ -417,11 +437,12 @@ static qboolean
 Key_Game (knum_t key, short unicode)
 {
 	const char *kb;
-	char        cmd[1024];
 
 	kb = Key_GetBinding (game_target, key);
 	if (!kb && (game_target > IMT_0))
 		kb = Key_GetBinding (IMT_0, key);
+	if (!kb && (game_target >= IMT_MOD))
+		kb = Key_GetBinding (IMT_MOD, key);
 
 /*
 	Sys_DPrintf("kb %p, game_target %d, key_dest %d, key %d\n", kb,
@@ -433,17 +454,7 @@ Key_Game (knum_t key, short unicode)
 	if (keydown[key] > 1) 
 		return true;
 
-	if (kb[0] == '+') {
-		if (keydown[key])
-			snprintf (cmd, sizeof (cmd), "%s %d\n", kb, key);
-		else
-			snprintf (cmd, sizeof (cmd), "-%s %d\n", kb + 1, key);
-	} else {
-		if (!keydown[key])
-			return true;
-		snprintf (cmd, sizeof (cmd), "%s\n", kb);
-	}
-	Cbuf_AddText (cbuf, cmd);
+	process_binding (key, kb);
 	return true;
 }
 
@@ -660,14 +671,14 @@ Key_Unbind_f (void)
 		return;
 	}
 	key = OK_TranslateKeyName (Cmd_Argv (1));
-	Key_In_Unbind (in_bind_imt->string, key);
+	Key_In_Unbind ("imt_mod", key);
 }
 
 static void
 Key_Bind_f (void)
 {
 	int         c, i;
-	const char *imt, *key, *cmd = 0;
+	const char *key, *cmd = 0;
 	char        cmd_buf[1024];
 
 	c = Cmd_Argc ();
@@ -676,8 +687,6 @@ Key_Bind_f (void)
 		Sys_Printf ("bind <key> [command] : attach a command to a key\n");
 		return;
 	}
-
-	imt = in_bind_imt->string;
 
 	key = OK_TranslateKeyName (Cmd_Argv (1));
 
@@ -692,49 +701,65 @@ Key_Bind_f (void)
 		}
 	}
 
-	Key_In_Bind (imt, key, cmd);
+	Key_In_Bind ("imt_mod", key, cmd);
 }
 
 static void 
 Key_GIB_Bind_Get_f (void)
 {
-	const char *imt, *key, *cmd;
-	int t, k;
+	const char *key, *cmd;
+	int k;
 
 	if (GIB_Argc () != 2) {
 		GIB_USAGE ("key");
 		return;
 	}
 
-	imt = in_bind_imt->string;
-
 	key = OK_TranslateKeyName (GIB_Argv (1));
-
-	if ((t = Key_StringToIMTnum (imt)) == -1) {
-		GIB_Error ("bind", "bind::get: invalid imt %s", imt);
-		return;
-	}
 
 	if ((k = Key_StringToKeynum (key)) == -1) {
 		GIB_Error ("bind", "bind::get: invalid key %s", key);
 		return;
 	}
 	
-	if (!(cmd = Key_GetBinding (t, k)))
+	if (!(cmd = Key_GetBinding (IMT_MOD, k)))
 		GIB_Return ("");
 	else
 		GIB_Return (cmd);
 }
 
+static void
+in_key_togglemenu_f (cvar_t *var)
+{
+	int         k;
+
+	if (!*var->string) {
+		key_togglemenu = QFK_ESCAPE;
+		return;
+	}
+	if ((k = Key_StringToKeynum (var->string)) == -1) {
+		k = QFK_ESCAPE;
+		Sys_Printf ("\"%s\" is not a valid key. setting to \"K_ESCAPE\"\n",
+					var->string);
+	}
+	key_togglemenu = k;
+}
 
 static void
-in_bind_imt_f (cvar_t *var)
+in_key_toggleconsole_f (cvar_t *var)
 {
-	if (Key_StringToIMTnum (var->string) == -1) {
-		Sys_Printf ("\"%s\" is not a valid imt. setting to \"imt_default\"\n",
-					var->string);
-		Cvar_Set (var, "imt_default");
+	int         k;
+
+	if (!*var->string) {
+		key_toggleconsole = -1;
+		return;
 	}
+	if ((k = Key_StringToKeynum (var->string)) == -1) {
+		Sys_Printf ("\"%s\" is not a valid key. not setting\n",
+					var->string);
+		return;
+	}
+	key_toggleconsole = k;
 }
 
 static void
@@ -821,7 +846,7 @@ Key_Event (knum_t key, short unicode, qboolean down)
 	}
 
 	// handle escape specially, so the user can never unbind it
-	if (unicode == '\x1b' || key == QFK_ESCAPE) {
+	if (key == key_togglemenu || key == key_toggleconsole) {
 		Key_Console (key, unicode);
 		return;
 	}
@@ -890,9 +915,11 @@ Key_Init (cbuf_t *cb)
 void
 Key_Init_Cvars (void)
 {
-	in_bind_imt = Cvar_Get ("in_bind_imt", "imt_default", CVAR_ARCHIVE,
-							in_bind_imt_f, "imt parameter for the bind and "
-							"unbind wrappers to in_bind and in_unbind");
+	Cvar_Get ("in_key_togglemenu", "", CVAR_NONE, in_key_togglemenu_f,
+			  "Key for toggling the menu.");
+	Cvar_Get ("in_key_toggleconsole", "K_BACKQUOTE", CVAR_NONE,
+			  in_key_toggleconsole_f,
+			  "Key for toggling the console.");
 }
 
 const char *
@@ -915,5 +942,23 @@ Key_SetBinding (imt_t target, knum_t keynum, const char *binding)
 	// allocate memory for new binding
 	if (binding) {
 		keybindings[target][keynum].str = strdup(binding);
+	}
+}
+
+VISIBLE void
+Key_SetKeyDest(keydest_t kd)
+{
+	key_dest = kd;
+	switch (key_dest) {
+		default:
+			Sys_Error ("Bad key_dest");
+		case key_game:
+			game_target = key_game_target;
+			break;
+		case key_console:
+		case key_message:
+		case key_menu:
+			game_target = IMT_CONSOLE;
+			break;
 	}
 }

@@ -41,7 +41,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "snd_render.h"
+#include "snd_internal.h"
 
 static int			snd_inited;
 static int			snd_blocked = 0;
@@ -119,6 +119,82 @@ round_buffer_size (snd_pcm_uframes_t sz)
 	return sz;
 }
 
+static inline int
+clamp_16 (int val)
+{
+	if (val > 0x7fff)
+		val = 0x7fff;
+	else if (val < -0x8000)
+		val = -0x8000;
+	return val;
+}
+
+static inline int
+clamp_8 (int val)
+{
+	if (val > 0x7f)
+		val = 0x7f;
+	else if (val < -0x80)
+		val = -0x80;
+	return val;
+}
+
+static void
+SNDDMA_ni_xfer (portable_samplepair_t *paintbuffer, int count, float volume)
+{
+	const snd_pcm_channel_area_t *areas;
+	int         out_idx, out_max;
+	float      *p;
+
+	areas = sn.xfer_data;
+
+	p = (float *) paintbuffer;
+	out_max = sn.frames - 1;
+	out_idx = *plugin_info_snd_output_data.paintedtime;
+	while (out_idx > out_max)
+		out_idx -= out_max + 1;
+
+	if (sn.samplebits == 16) {
+		short      *out_0 = (short *) areas[0].addr;
+		short      *out_1 = (short *) areas[1].addr;
+
+		if (sn.channels == 2) {
+			while (count--) {
+				out_0[out_idx] = clamp_16 ((*p++ * volume) * 0x8000);
+				out_1[out_idx] = clamp_16 ((*p++ * volume) * 0x8000);
+				if (out_idx++ > out_max)
+					out_idx = 0;
+			}
+		} else {
+			while (count--) {
+				out_0[out_idx] = clamp_16 ((*p++ * volume) * 0x8000);
+				p++;		// skip right channel
+				if (out_idx++ > out_max)
+					out_idx = 0;
+			}
+		}
+	} else if (sn.samplebits == 8) {
+		byte       *out_0 = (byte *) areas[0].addr;
+		byte       *out_1 = (byte *) areas[1].addr;
+
+		if (sn.channels == 2) {
+			while (count--) {
+				out_0[out_idx] = clamp_8 ((*p++ * volume) * 0x80);
+				out_1[out_idx] = clamp_8 ((*p++ * volume) * 0x80);
+				if (out_idx++ > out_max)
+					out_idx = 0;
+			}
+		} else {
+			while (count--) {
+				out_0[out_idx] = clamp_8 ((*p++ * volume) * 0x8000);
+				p++;		// skip right channel
+				if (out_idx++ > out_max)
+					out_idx = 0;
+			}
+		}
+	}
+}
+
 static volatile dma_t *
 SNDDMA_Init (void)
 {
@@ -151,14 +227,13 @@ SNDDMA_Init (void)
 	stereo = snd_stereo->int_val;
 	if (!pcmname)
 		pcmname = "default";
-
+retry_open:
 	err = qfsnd_pcm_open (&pcm, pcmname, SND_PCM_STREAM_PLAYBACK,
 						  SND_PCM_NONBLOCK);
 	if (0 > err) {
 		Sys_Printf ("Error: audio open error: %s\n", qfsnd_strerror (err));
 		return 0;
 	}
-	Sys_Printf ("Using PCM %s.\n", pcmname);
 
 	err = qfsnd_pcm_hw_params_any (pcm, hw);
 	if (0 > err) {
@@ -170,11 +245,26 @@ SNDDMA_Init (void)
 	err = qfsnd_pcm_hw_params_set_access (pcm, hw,
 										  SND_PCM_ACCESS_MMAP_INTERLEAVED);
 	if (0 > err) {
-		Sys_Printf ("ALSA: Failure to set noninterleaved PCM access. %s\n"
-					"Note: Interleaved is not supported\n",
-					qfsnd_strerror (err));
-		goto error;
+		Sys_MaskPrintf (SYS_SND, "ALSA: Failure to set interleaved PCM "
+						"access. %s\n", qfsnd_strerror (err));
+		err = qfsnd_pcm_hw_params_set_access (pcm, hw,
+										  SND_PCM_ACCESS_MMAP_NONINTERLEAVED);
+		if (0 > err) {
+			Sys_MaskPrintf (SYS_SND, "ALSA: Failure to set noninterleaved PCM "
+							"access. %s\n", qfsnd_strerror (err));
+			// "default" did not work, so retry with "plughw". However do not
+			// second guess the user, even if the user specified "default".
+			if (!snd_device->string[0] && !strcmp (pcmname, "default")) {
+				pcmname = "plughw";
+				goto retry_open;
+			}
+			Sys_Printf ("ALSA: could not set mmap access\n");
+			goto error;
+		}
+		sn.xfer = SNDDMA_ni_xfer;
 	}
+	Sys_Printf ("Using PCM %s.\n", pcmname);
+
 
 	switch (bps) {
 		case -1:
@@ -237,32 +327,36 @@ SNDDMA_Init (void)
 
 	switch (rate) {
 		case 0:
-			rate = 44100;
-			err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate, 0);
-			if (0 <= err) {
-				frag_size = 32 * bps;
-			} else {
-				rate = 22050;
-				err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate, 0);
-				if (0 <= err) {
-					frag_size = 16 * bps;
-				} else {
-					rate = 11025;
-					err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate,
-															 0);
+			{
+				int         rates[] = {
+								48000,
+								44100,
+								22050,
+								11025,
+								0
+							};
+				int         i;
+
+				for (i = 0; rates[i]; i++) {
+					rate = rates[i];
+					Sys_MaskPrintf (SYS_SND, "ALSA: trying %dHz\n", rate);
+					err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw,
+															 &rate, 0);
 					if (0 <= err) {
-						frag_size = 8 * bps;
-					} else {
-						Sys_Printf ("ALSA: no usable rates. %s\n",
-									qfsnd_strerror (err));
-						goto error;
+						frag_size = 8 * bps * (rate / 11025);
+						break;
 					}
 				}
-			}
-			break;
+				if (!rates[i]) {
+					Sys_Printf ("ALSA: no usable rates. %s\n",
+								qfsnd_strerror (err));
+					goto error;
+				}
+			} break;
 		case 11025:
 		case 22050:
 		case 44100:
+		case 48000:
 		default:
 			err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate, 0);
 			if (0 > err) {
@@ -367,7 +461,8 @@ SNDDMA_GetDMAPos (void)
 	qfsnd_pcm_avail_update (pcm);
 	qfsnd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);
 	sn.framepos = offset;
-	sn.buffer = areas->addr;	//XXX FIXME there's an area per channel
+	sn.buffer = areas->addr;
+	sn.xfer_data = (void *) areas;
 	return sn.framepos;
 }
 

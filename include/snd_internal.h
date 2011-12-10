@@ -1,5 +1,5 @@
 /*
-	snd_render.h
+	snd_internal.h
 
 	Sound renderer plugin stuff
 
@@ -29,8 +29,8 @@
 	$Id$
 */
 
-#ifndef __snd_render_h
-#define __snd_render_h
+#ifndef __snd_internal_h
+#define __snd_internal_h
 
 
 /** \defgroup sound_render Sound rendering sub-system.
@@ -78,9 +78,15 @@ struct dma_s {
 	int				framepos;				//!< position of dma cursor
 	unsigned char	*buffer;				//!< destination for mixed sound
 	/** Transfer mixed samples to the output.
-		\param endtime	sample end time (count = endtime - snd_paintedtime)
+		\param paintbuffer The buffer of mixed samples to be transferred.
+		\param count	The number of sample to transfer.
+		\param volume	The gain for the samples.
 	*/
-	void            (*xfer) (int endtime);
+	void            (*xfer) (portable_samplepair_t *paintbuffer, int count,
+							 float volume);
+	/** Optional data for the xfer function.
+	*/
+	void            *xfer_data;
 };
 
 /** Describes the sound data.
@@ -571,4 +577,4 @@ sfxbuffer_t *SND_GetCache (long samples, int rate, int channels,
 						   sfxblock_t *block, cache_allocator_t allocator);
 //@}
 
-#endif//__snd_render_h
+#endif//__snd_internal_h

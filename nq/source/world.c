@@ -136,7 +136,7 @@ typedef struct {
 
 static hull_t box_hull;
 static mclipnode_t box_clipnodes[6];
-static mplane_t box_planes[6];
+static plane_t box_planes[6];
 
 
 /*
@@ -146,7 +146,7 @@ static mplane_t box_planes[6];
 	can just be stored out and get a proper hull_t structure.
 */
 void
-SV_InitHull (hull_t *hull, mclipnode_t *clipnodes, mplane_t *planes)
+SV_InitHull (hull_t *hull, mclipnode_t *clipnodes, plane_t *planes)
 {
 	int			side, i;
 
@@ -412,7 +412,7 @@ SV_FindTouchedLeafs (edict_t *ent, mnode_t *node)
 {
 	int			sides;
 	mleaf_t    *leaf;
-	mplane_t   *splitplane;
+	plane_t    *splitplane;
 	edict_leaf_t *edict_leaf;
 
 	if (node->contents == CONTENTS_SOLID)
@@ -531,7 +531,7 @@ SV_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
 	float        d;
 	mclipnode_t *node;
-	mplane_t    *plane;
+	plane_t     *plane;
 
 	while (num >= 0) {
 		//if (num < hull->firstclipnode || num > hull->lastclipnode)
@@ -614,12 +614,13 @@ SV_ClipMoveToEntity (edict_t *touched, const vec3_t start,
 
 	trace.fraction = 1;
 	trace.allsolid = true;
-	trace.isbox = 0;
+	trace.type = tr_point;
 	VectorCopy (end, trace.endpos);
 
 	// get the clipping hull
 	hull = SV_HullForEntity (touched, mins, maxs,
-							 trace.isbox ? trace.extents : 0, offset);
+							 trace.type != tr_point ? trace.extents : 0,
+							 offset);
 
 	VectorSubtract (start, offset, start_l);
 	VectorSubtract (end, offset, end_l);
@@ -645,7 +646,7 @@ SV_ClipMoveToEntity (edict_t *touched, const vec3_t start,
 	// trace a line through the apropriate clipping hull
 	MOD_TraceLine (hull, hull->firstclipnode, start_l, end_l, &trace);
 
-	// fix trace up by the rotation and offset
+	// fix up trace by the rotation and offset
 	if (trace.fraction != 1) {
 		if (rot) {
 			vec_t       t;

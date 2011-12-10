@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS= foreign
 
-AM_CFLAGS= @PREFER_PIC@ @VORBIS_CFLAGS@ @OGG_CFLAGS@
+AM_CFLAGS= @PREFER_PIC@ @VORBIS_CFLAGS@ @OGG_CFLAGS@ @SAMPLERATE_CFLAGS@
 INCLUDES= -I$(top_srcdir)/include
 plugin_ldflags= @plugin_ldflags@ -avoid-version -module -rpath $(plugindir)
 plugin_libadd= @plugin_libadd@
@@ -39,12 +39,12 @@ snd_common=snd_channels.c  snd_mem.c snd_mix.c snd_resample.c snd_sfx.c
 
 snd_render_default_la_LDFLAGS=	$(plugin_ldflags)
 snd_render_default_la_SOURCES=	snd_dma.c $(snd_common) $(format_src)
-snd_render_default_la_LIBADD=	$(SAMPLERATE_LIBS) $(VORBISFILE_LIBS) $(VORBIS_LIBS) $(LIBFLAC_LIBS) $(OGG_LIBS) $(WM_LIBS) $(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/models/libQFmodels.la
+snd_render_default_la_LIBADD=	$(SAMPLERATE_LIBS) $(VORBISFILE_LIBS) $(VORBIS_LIBS) $(FLAC_LIBS) $(OGG_LIBS) $(WM_LIBS) $(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/models/libQFmodels.la
 snd_render_default_la_DEPENDENCIES=
 EXTRA_snd_render_default_la_SOURCES= $(extra_format_src)
 
 snd_render_jack_la_LDFLAGS=	$(plugin_ldflags)
 snd_render_jack_la_SOURCES=	snd_jack.c $(snd_common) $(format_src)
-snd_render_jack_la_LIBADD=	$(SAMPLERATE_LIBS) $(VORBISFILE_LIBS) $(VORBIS_LIBS) $(LIBFLAC_LIBS) $(OGG_LIBS) $(WM_LIBS) $(JACK_LIBS) $(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/models/libQFmodels.la
+snd_render_jack_la_LIBADD=	$(SAMPLERATE_LIBS) $(VORBISFILE_LIBS) $(VORBIS_LIBS) $(FLAC_LIBS) $(OGG_LIBS) $(WM_LIBS) $(JACK_LIBS) $(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/models/libQFmodels.la
 snd_render_jack_la_DEPENDENCIES=
 EXTRA_snd_render_jack_la_SOURCES= $(extra_format_src)

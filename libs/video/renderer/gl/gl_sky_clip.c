@@ -42,7 +42,7 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <alloca.h>
 #endif
 
-#ifdef HAVE_MALLOC_H
+#if defined(_WIN32) && defined(HAVE_MALLOC_H)
 #include <malloc.h>
 #endif
 
@@ -59,7 +59,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "r_cvar.h"
 #include "r_shared.h"
-#include "view.h"
 
 #include "compat.h"
 

@@ -126,17 +126,22 @@ pr_debug_expression_error (script_t *script, const char *msg)
 	Sys_Printf ("%s\n", msg);
 }
 
-static pr_type_t *
+static ddef_t
 parse_expression (progs_t *pr, const char *expr, int conditional)
 {
 	script_t   *es;
 	char       *e;
 	pr_type_t  *expr_ptr;
+	ddef_t      d;
 
+	d.ofs = 0;
+	d.type = ev_invalid;
+	d.s_name = 0;
 	es = Script_New ();
 	es->error = pr_debug_expression_error;
 	Script_Start (es, "<console>", expr);
 	expr_ptr = 0;
+	es->single = "{}()':[].";
 	if (Script_GetToken (es, 1)) {
 		if (strequal (es->token->str, "[")) {
 			edict_t    *ent;
@@ -156,16 +161,21 @@ parse_expression (progs_t *pr, const char *expr, int conditional)
 			field = PR_FindField (pr, es->token->str);
 			if (!field)
 				goto error;
+			d = *field;
 			expr_ptr = &ent->v[field->ofs];
+			d.ofs = PR_SetPointer (pr, expr_ptr);
 		} else if (isdigit (es->token->str[0])) {
 			expr_ptr = PR_GetPointer (pr, strtol (es->token->str, 0, 0));
+			d.type = ev_void;
+			d.ofs = PR_SetPointer (pr, expr_ptr);
 		} else {
 			ddef_t     *global = PR_FindGlobal (pr, es->token->str);
 			if (!global)
 				goto error;
-			expr_ptr = PR_GetPointer (pr, global->ofs);
+			d = *global;
 		}
 		if (conditional) {
+			es->single = "{}()':[]";
 			pr->wp_conditional = 0;
 			if (Script_TokenAvailable (es, 1)) {
 				if (!Script_GetToken (es, 1)
@@ -185,7 +195,8 @@ parse_expression (progs_t *pr, const char *expr, int conditional)
 			Sys_Printf ("ignoring tail\n");
 	}
 error:
-	return expr_ptr;
+	Script_Delete (es);
+	return d;
 }
 
 void
@@ -735,6 +746,7 @@ global_string (progs_t *pr, pr_int_t ofs, etype_t type, int contents)
 VISIBLE void
 PR_Debug_Watch (progs_t *pr, const char *expr)
 {
+	ddef_t      watch;
 	if (!expr) {
 		Sys_Printf ("watch <watchpoint expr>\n");
 		if (pr->watch) {
@@ -749,7 +761,10 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 		return;
 	}
 
-	pr->watch = parse_expression (pr, expr, 1);
+	pr->watch = 0;
+	watch = parse_expression (pr, expr, 1);
+	if (watch.type != ev_invalid)
+		pr->watch = &pr->pr_globals[watch.ofs];
 	if (pr->watch) {
 		Sys_Printf ("watchpoint set to [%d]\n", PR_SetPointer (pr, pr->watch));
 		if (pr->wp_conditional)
@@ -762,7 +777,7 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 VISIBLE void
 PR_Debug_Print (progs_t *pr, const char *expr)
 {
-	pr_type_t  *print;
+	ddef_t      print;
 
 	if (!expr) {
 		Sys_Printf ("print <print expr>\n");
@@ -770,10 +785,9 @@ PR_Debug_Print (progs_t *pr, const char *expr)
 	}
 
 	print = parse_expression (pr, expr, 0);
-	if (print) {
-		pr_int_t    ofs = PR_SetPointer (pr, print);
-		const char *s = global_string (pr, ofs, ev_void, 1);
-		Sys_Printf ("[%d] = %s\n", ofs, s);
+	if (print.type != ev_invalid) {
+		const char *s = global_string (pr, print.ofs, print.type, 1);
+		Sys_Printf ("[%d] = %s\n", print.ofs, s);
 	}
 }
 
@@ -1087,11 +1101,9 @@ ED_Print (progs_t *pr, edict_t *ed)
 				PR_Error (pr, "ED_Print: Unhandled type %d", type);
 		}
 
-		Sys_Printf ("%s", name);
-		l = strlen (name);
-		while (l++ < 15)
-			Sys_Printf (" ");
-
-		Sys_Printf ("%s\n", value_string (pr, d->type, v));
+		l = 15 - strlen (name);
+		if (l < 1)
+			l = 1;
+		Sys_Printf ("%s%*s%s\n", name, l, "", value_string (pr, d->type, v));
 	}
 }

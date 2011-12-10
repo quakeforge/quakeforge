@@ -50,7 +50,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-#include "snd_render.h"
+#include "snd_internal.h"
 
 static channel_t *free_channels;
 channel_t       snd_channels[MAX_CHANNELS];

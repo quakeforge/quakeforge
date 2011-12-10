@@ -25,13 +25,22 @@
 		Boston, MA  02111-1307, USA
 
 */
+/* Sun's model_t in sys/model.h conflicts w/ Quake's model_t */
+#define model_t quakeforgemodel_t
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -45,9 +54,7 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <sys/socket.h>
 #endif
 #ifdef HAVE_NETINET_IN_H
-# define model_t sun_model_t
 # include <netinet/in.h>
-# undef model_t
 #endif
 #ifdef HAVE_NETDB_H
 # include <netdb.h>
@@ -62,26 +69,24 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <libc.h>
 #endif
 
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-
-#include "QF/cvar.h"
-#include "QF/dstring.h"
-#include "QF/msg.h"
-#include "QF/sys.h"
-#include "QF/qargs.h"
-
-#include "compat.h"
-#include "netchan.h"
-
 #ifdef _WIN32
 # include <windows.h>
 # undef EWOULDBLOCK
-# define EWOULDBLOCK    WSAEWOULDBLOCK
+# define EWOULDBLOCK	WSAEWOULDBLOCK
 #endif
+
+#include <stdio.h>
+#include <errno.h>
+#include <sys/types.h>
+
+#undef model_t
+
+#include "QF/dstring.h"
+#include "QF/msg.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
+
+#include "netchan.h"
 
 #ifndef MAXHOSTNAMELEN
 # define MAXHOSTNAMELEN	512
@@ -99,10 +104,10 @@ static __attribute__ ((used)) const char rcsid[] =
 # endif
 #endif
 
-int         net_socket;
+netadr_t    net_from;
 netadr_t    net_local_adr;
 netadr_t    net_loopback_adr;
-netadr_t    net_from;
+int         net_socket;
 
 static sizebuf_t _net_message_message;
 static qmsg_t _net_message = {0, 0, &_net_message_message};
@@ -115,29 +120,51 @@ byte        net_message_buffer[MAX_UDP_PACKET];
  WSADATA     winsockdata;
 #endif
 
+#define ADDR_SIZE 4
+
+typedef union address {
+	struct sockaddr_storage ss;
+	struct sockaddr         sa;
+	struct sockaddr_in      s4;
+} AF_address_t;
+
+#undef SA_LEN
+#undef SS_LEN
+
+#ifdef HAVE_SA_LEN
+#define SA_LEN(sa) (sa)->sa_len
+#else
+#define SA_LEN(sa) (sizeof(struct sockaddr_in))
+#endif
+
+#ifdef HAVE_SS_LEN
+#define SS_LEN(ss) (ss)->ss_len
+#else
+#define SS_LEN(ss) (sizeof(struct sockaddr_in))
+#endif
+
 
 static void
-NetadrToSockadr (netadr_t *a, struct sockaddr_in *s)
+NetadrToSockadr (netadr_t *a, AF_address_t *s)
 {
 	memset (s, 0, sizeof (*s));
-	s->sin_family = AF_INET;
+	s->s4.sin_family = AF_INET;
 
-	memcpy (&s->sin_addr, &a->ip, 4);
-	s->sin_port = a->port;
+	memcpy (&s->s4.sin_addr, &a->ip, ADDR_SIZE);
+	s->s4.sin_port = a->port;
 }
 
 static void
-SockadrToNetadr (struct sockaddr_in *s, netadr_t *a)
+SockadrToNetadr (AF_address_t *s, netadr_t *a)
 {
-	memcpy (&a->ip, &s->sin_addr, 4);
-	a->port = s->sin_port;
+	memcpy (&a->ip, &s->s4.sin_addr, ADDR_SIZE);
+	a->port = s->s4.sin_port;
 }
 
 qboolean
 NET_CompareBaseAdr (netadr_t a, netadr_t b)
 {
-	if (a.ip[0] == b.ip[0] && a.ip[1] == b.ip[1] && a.ip[2] == b.ip[2]
-		&& a.ip[3] == b.ip[3])
+	if (memcmp (a.ip, b.ip, ADDR_SIZE) == 0)
 		return true;
 	return false;
 }
@@ -145,13 +172,12 @@ NET_CompareBaseAdr (netadr_t a, netadr_t b)
 qboolean
 NET_CompareAdr (netadr_t a, netadr_t b)
 {
-	if (a.ip[0] == b.ip[0] && a.ip[1] == b.ip[1] && a.ip[2] == b.ip[2]
-		&& a.ip[3] == b.ip[3] && a.port == b.port)
+	if (memcmp (a.ip, b.ip, ADDR_SIZE) == 0 && a.port == b.port)
 		return true;
 	return false;
 }
 
-const char       *
+const char *
 NET_AdrToString (netadr_t a)
 {
 	static char s[64];
@@ -162,7 +188,7 @@ NET_AdrToString (netadr_t a)
 	return s;
 }
 
-const char       *
+const char *
 NET_BaseAdrToString (netadr_t a)
 {
 	static char s[64];
@@ -186,31 +212,31 @@ NET_StringToAdr (const char *s, netadr_t *a)
 	static dstring_t *copy;
 	char       *colon;
 	struct hostent *h;
-	struct sockaddr_in sadr;
+	AF_address_t sadr;
 
 	if (!copy)
 		copy = dstring_new ();
 
 	memset (&sadr, 0, sizeof (sadr));
-	sadr.sin_family = AF_INET;
+	sadr.s4.sin_family = AF_INET;
 
-	sadr.sin_port = 0;
+	sadr.s4.sin_port = 0;
 
 	dstring_copystr (copy, s);
 	// strip off a trailing :port if present
 	for (colon = copy->str; *colon; colon++)
 		if (*colon == ':') {
 			*colon = 0;
-			sadr.sin_port = htons ((unsigned short) atoi (colon + 1));
+			sadr.s4.sin_port = htons ((unsigned short) atoi (colon + 1));
 		}
 
 	if (copy->str[0] >= '0' && copy->str[0] <= '9') {
 		int         addr = inet_addr (copy->str);
-		memcpy (&sadr.sin_addr, &addr, 4);
+		memcpy (&sadr.s4.sin_addr, &addr, ADDR_SIZE);
 	} else {
 		if (!(h = gethostbyname (copy->str)))
 			return 0;
-		memcpy (&sadr.sin_addr, h->h_addr_list[0], 4);
+		memcpy (&sadr.s4.sin_addr, h->h_addr_list[0], ADDR_SIZE);
 	}
 
 	SockadrToNetadr (&sadr, a);
@@ -218,61 +244,30 @@ NET_StringToAdr (const char *s, netadr_t *a)
 	return true;
 }
 
-// Returns true if we can't bind the address locally--in other words, 
-// the IP is NOT one of our interfaces.
-qboolean
-NET_IsClientLegal (netadr_t *adr)
-{
-#if 0
-	int         newsocket;
-	struct sockaddr_in sadr;
-
-	if (adr->ip[0] == 127)
-		return false;					// no local connections period
-
-	NetadrToSockadr (adr, &sadr);
-
-	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
-		Sys_Error ("NET_IsClientLegal: socket:", strerror (errno));
-
-	sadr.sin_port = 0;
-
-	if (bind (newsocket, (void *) &sadr, sizeof (sadr)) == -1) {
-		// It is not a local address
-		close (newsocket);
-		return true;
-	}
-	close (newsocket);
-	return false;
-#else
-	return true;
-#endif
-}
-
 qboolean
 NET_GetPacket (void)
 {
 	int         ret;
 	socklen_t   fromlen;
-	struct sockaddr_in from;
+	AF_address_t from;
 
 	fromlen = sizeof (from);
-	ret =
-		recvfrom (net_socket, (void *) net_message_buffer,
-				  sizeof (net_message_buffer), 0, (struct sockaddr *) &from,
-				  &fromlen);
+	memset (&from, 0, sizeof (from));
+	ret = recvfrom (net_socket, (void *) net_message_buffer,
+					sizeof (net_message_buffer), 0, &from.sa, &fromlen);
 
 	if (ret == -1) {
 #ifdef _WIN32
 		int         err = WSAGetLastError ();
 
 		if (err == WSAEMSGSIZE) {
-			Sys_Printf ("NET_GetPacket Warning:  Oversize packet from %s\n",
+			Sys_Printf ("Warning:  Oversize packet from %s\n",
 						NET_AdrToString (net_from));
 			return false;
 		}
 		if (err == 10054) {
-			Sys_Printf ("NET_GetPacket: error 10054 from %s\n", NET_AdrToString (net_from));
+			Sys_Printf ("NET_GetPacket: error 10054 from %s\n",
+						NET_AdrToString (net_from));
 			return false;
 		}
 #else // _WIN32
@@ -283,8 +278,7 @@ NET_GetPacket (void)
 #endif // _WIN32
 		if (err == EWOULDBLOCK)
 			return false;
-		Sys_Printf ("NET_GetPacket: %d: %d: %s\n", net_socket, err,
-					strerror (err));
+		Sys_Printf ("NET_GetPacket: %s\n", strerror (err));
 		return false;
 	}
 
@@ -297,8 +291,8 @@ NET_GetPacket (void)
 		return false;
 	}
 
-	if (from.sin_addr.s_addr==INADDR_ANY || from.sin_addr.s_addr == 
-		INADDR_BROADCAST) {
+	if (from.s4.sin_addr.s_addr == INADDR_ANY
+		|| from.s4.sin_addr.s_addr == INADDR_BROADCAST) {
 		Sys_Printf ("Warning: Packet dropped - bad address\n");
 		return false;
 	}
@@ -316,29 +310,27 @@ void
 NET_SendPacket (int length, const void *data, netadr_t to)
 {
 	int         ret;
-	struct sockaddr_in addr;
+	AF_address_t addr;
 
 	NetadrToSockadr (&to, &addr);
 
-	ret = sendto (net_socket, data, length, 0, (struct sockaddr *) &addr,
-				  sizeof (addr));
+	ret = sendto (net_socket, data, length, 0, &addr.sa, SA_LEN (&addr.sa));
 	if (ret == -1) {
 #ifdef _WIN32
 		int         err = WSAGetLastError ();
 
 		if (err == WSAEADDRNOTAVAIL)
 			Sys_Printf ("NET_SendPacket Warning: %i\n", err);
-#else // _WIN32
+#else /* _WIN32 */
 		int         err = errno;
 
 		if (err == ECONNREFUSED)
 			return;
-#endif // _WIN32
+#endif /* _WIN32 */
 		if (err == EWOULDBLOCK)
 			return;
 
-		Sys_Printf ("NET_SendPacket: %d: %d: %s\n", net_socket, err,
-					strerror (errno));
+		Sys_Printf ("NET_SendPacket: %s\n", strerror (err));
 	}
 }
 
@@ -346,7 +338,7 @@ static int
 UDP_OpenSocket (int port)
 {
 	int         newsocket, i;
-	struct sockaddr_in address;
+	AF_address_t address;
 
 #ifdef _WIN32
 #define ioctl ioctlsocket
@@ -358,22 +350,22 @@ UDP_OpenSocket (int port)
 	memset (&address, 0, sizeof(address));
 
 	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
-		Sys_Error ("UDP_OpenSocket: socket:%s", strerror (errno));
+		Sys_Error ("UDP_OpenSocket: socket: %s", strerror (errno));
 	if (ioctl (newsocket, FIONBIO, &_true) == -1)
-		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO:%s", strerror (errno));
-	address.sin_family = AF_INET;
+		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO: %s", strerror (errno));
+	address.s4.sin_family = AF_INET;
 // ZOID -- check for interface binding option
 	if ((i = COM_CheckParm ("-ip")) != 0 && i < com_argc) {
-		address.sin_addr.s_addr = inet_addr (com_argv[i + 1]);
+		address.s4.sin_addr.s_addr = inet_addr (com_argv[i + 1]);
 		Sys_Printf ("Binding to IP Interface Address of %s\n",
-					inet_ntoa (address.sin_addr));
+					inet_ntoa (address.s4.sin_addr));
 	} else
-		address.sin_addr.s_addr = INADDR_ANY;
+		address.s4.sin_addr.s_addr = INADDR_ANY;
 	if (port == PORT_ANY)
-		address.sin_port = 0;
+		address.s4.sin_port = 0;
 	else
-		address.sin_port = htons ((short) port);
-	if (bind (newsocket, (void *) &address, sizeof (address)) == -1)
+		address.s4.sin_port = htons ((short) port);
+	if (bind (newsocket, &address.sa, SA_LEN (&address.sa)) == -1)
 		Sys_Error ("UDP_OpenSocket: bind: %s", strerror (errno));
 
 	return newsocket;
@@ -384,17 +376,18 @@ NET_GetLocalAddress (void)
 {
 	char        buff[MAXHOSTNAMELEN];
 	socklen_t   namelen;
-	struct sockaddr_in address;
+	AF_address_t address;
 
-	gethostname (buff, MAXHOSTNAMELEN);
+	if (gethostname (buff, MAXHOSTNAMELEN) == -1)
+		Sys_Error ("Net_GetLocalAddress: gethostname: %s", strerror (errno));
 	buff[MAXHOSTNAMELEN - 1] = 0;
 
 	NET_StringToAdr (buff, &net_local_adr);
 
 	namelen = sizeof (address);
 	if (getsockname (net_socket, (struct sockaddr *) &address, &namelen) == -1)
-		Sys_Error ("NET_Init: getsockname: %s", strerror (errno));
-	net_local_adr.port = address.sin_port;
+		Sys_Error ("NET_GetLocalAddress: getsockname: %s", strerror (errno));
+	net_local_adr.port = address.s4.sin_port;
 
 	Sys_Printf ("IP address %s\n", NET_AdrToString (net_local_adr));
 }
@@ -412,7 +405,7 @@ NET_Init (int port)
 	if (r)
 		Sys_Error ("Winsock initialization failed.");
 #endif /* _WIN32 */
-	// open the single socket to be used for all communications
+
 	net_socket = UDP_OpenSocket (port);
 
 	// init the message buffer

@@ -65,7 +65,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_dynamic.h"
 #include "r_local.h"
 #include "varrays.h"
-#include "view.h"
+#include "clview.h"		//FIXME
 
 entity_t    r_worldentity;
 
@@ -83,7 +83,7 @@ qboolean    envmap;						// true during envmap command capture
 
 int         mirrortexturenum;			// quake texturenum, not gltexturenum
 qboolean    mirror;
-mplane_t   *mirror_plane;
+plane_t    *mirror_plane;
 
 // view origin
 VISIBLE vec3_t      vup;
@@ -205,10 +205,9 @@ R_RotateForEntity (entity_t *e)
 {
 	qfglTranslatef (e->origin[0], e->origin[1], e->origin[2]);
 
-	qfglRotatef (e->angles[1], 0, 0, 1);
-	qfglRotatef (-e->angles[0], 0, 1, 0);
-	// ZOID: fixed z angle
-	qfglRotatef (e->angles[2], 1, 0, 0);
+	qfglRotatef ( e->angles[YAW],   0, 0, 1);
+	qfglRotatef (-e->angles[PITCH], 0, 1, 0);
+	qfglRotatef ( e->angles[ROLL],  1, 0, 0);
 }
 
 /*
@@ -361,7 +360,7 @@ R_DrawViewModel (void)
 }
 
 static inline int
-SignbitsForPlane (mplane_t *out)
+SignbitsForPlane (plane_t *out)
 {
 	int		bits, j;
 

@@ -226,7 +226,7 @@ ascii_dump_buf (unsigned char *buf, int len)
 }
 */
 void
-Log_Incoming_Packet (const byte *p, int len, int has_sequence)
+Log_Incoming_Packet (const byte *p, int len, int has_sequence, int is_server)
 {
 	if (!net_loglevel->int_val)
 		return;
@@ -250,7 +250,7 @@ Log_Incoming_Packet (const byte *p, int len, int has_sequence)
 }
 
 void
-Log_Outgoing_Packet (const byte *p, int len, int has_sequence)
+Log_Outgoing_Packet (const byte *p, int len, int has_sequence, int is_server)
 {
 	if (!net_loglevel->int_val)
 		return;
@@ -470,7 +470,8 @@ Parse_Server_Packet (int has_sequence)
 					break;
 				case svc_updatefrags:
 					Net_LogPrintf ("player: %d ", MSG_ReadByte (&packet));
-					Net_LogPrintf ("frags: %d", MSG_ReadShort (&packet));
+					Net_LogPrintf ("frags: %d",
+								   (short) MSG_ReadShort (&packet));
 					break;
 				case svc_clientdata:
 					Net_LogPrintf ("**QW OBSOLETE**");
@@ -538,8 +539,8 @@ Parse_Server_Packet (int has_sequence)
 						case 5:
 						case 6:
 						case 9:
-							Net_LogPrintf (" created by %d", MSG_ReadShort
-										   (&packet));
+							Net_LogPrintf (" created by %d",
+										   MSG_ReadShort (&packet));
 							Net_LogPrintf (" origin:");
 							for (i = 0; i < 3; i++)
 								Net_LogPrintf ("%c%f", i ? ',' : ' ',
@@ -663,14 +664,14 @@ Parse_Server_Packet (int has_sequence)
 							Net_LogPrintf (" Roll: %f", MSG_ReadAngle16
 										   (&packet));
 						if (mask2 & 0x04)
-							Net_LogPrintf (" Speed1: %d", MSG_ReadShort
-										   (&packet));
+							Net_LogPrintf (" Speed1: %d",
+										   MSG_ReadShort (&packet));
 						if (mask2 & 0x08)
-							Net_LogPrintf (" Speed2: %d", MSG_ReadShort
-										   (&packet));
+							Net_LogPrintf (" Speed2: %d",
+										   MSG_ReadShort (&packet));
 						if (mask2 & 0x10)
-							Net_LogPrintf (" Speed3: %d", MSG_ReadShort
-										   (&packet));
+							Net_LogPrintf (" Speed3: %d",
+										   MSG_ReadShort (&packet));
 						if (mask2 & 0x20)
 							Net_LogPrintf (" Flag: %d", MSG_ReadByte
 										   (&packet));
@@ -782,7 +783,7 @@ Parse_Server_Packet (int has_sequence)
 				case svc_packetentities:
 packetentities:
 					while (1) {
-						mask1 = (unsigned short) MSG_ReadShort (&packet);
+						mask1 = MSG_ReadShort (&packet);
 						if (packet.badread) {
 							Net_LogPrintf ("Badread\n");
 							return;
@@ -897,14 +898,14 @@ Parse_Client_Packet (int has_sequence)
 							Net_LogPrintf (" Roll: %f", MSG_ReadAngle16
 										   (&packet));
 						if (mask & 0x04)
-							Net_LogPrintf (" Fwd: %d", MSG_ReadShort
-										   (&packet));
+							Net_LogPrintf (" Fwd: %d",
+										   MSG_ReadShort (&packet));
 						if (mask & 0x08)
-							Net_LogPrintf (" Right: %d", MSG_ReadShort
-										   (&packet));
+							Net_LogPrintf (" Right: %d",
+										   MSG_ReadShort (&packet));
 						if (mask & 0x10)
-							Net_LogPrintf (" Up: %d", MSG_ReadShort
-										   (&packet));
+							Net_LogPrintf (" Up: %d",
+										   MSG_ReadShort (&packet));
 						if (mask & 0x20)
 							Net_LogPrintf (" Flags: %d", MSG_ReadByte
 										   (&packet));

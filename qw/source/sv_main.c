@@ -123,9 +123,6 @@ qboolean    rcon_from_user;
 double      netdosexpire[DOSFLOODCMDS] = { 1, 1, 2, 0.9, 1, 5 };
 double      netdosvalues[DOSFLOODCMDS] = { 12, 1, 3, 1, 1, 1 };
 
-cvar_t     *fs_globalcfg;
-cvar_t     *fs_usercfg;
-
 cvar_t     *sv_mem_size;
 
 cvar_t     *sv_console_plugin;
@@ -767,7 +764,8 @@ SVC_DirectConnect (void)
 	info_t     *userinfo = 0;
 	const char *s;
 	client_t   *cl, *newcl;
-	int         challenge, qport, version, i, qtv = 0;
+	int         challenge, version, i, qtv = 0;
+	int         qport;
 	netadr_t    adr;
 	qboolean    spectator;
 	client_frame_t *frames;
@@ -908,7 +906,7 @@ SVC_DirectConnect (void)
 
 	Netchan_OutOfBandPrint (adr, "%c", S2C_CONNECTION);
 
-	Netchan_Setup (&newcl->netchan, adr, qport, NC_READ_QPORT);
+	Netchan_Setup (&newcl->netchan, adr, qport, NC_QPORT_READ);
 	newcl->backbuf.netchan = &newcl->netchan;
 	newcl->backbuf.name = newcl->name;
 
@@ -1754,13 +1752,14 @@ SV_ReadPackets (void)
 {
 	//NOTE star volatile, not volatile star
 	client_t   *volatile cl;			// * volatile for longjmp
-	int         qport, i;
+	int         i;
+	int         qport;
 	double      until;
 
 	while (NET_GetPacket ()) {
 		if (net_packetlog->int_val)
 			Log_Incoming_Packet (net_message->message->data,
-								 net_message->message->cursize, 1);
+								 net_message->message->cursize, 1, 1);
 		if (SV_FilterIP (net_from.ip, &until)) {
 			SV_SendBan (until);			// tell them we aren't listening...
 			continue;
@@ -2031,6 +2030,18 @@ maxclients_f (cvar_t *var)
 }
 
 static void
+gamedir_f (int phase)
+{
+	if (!phase)
+		return;
+	if (qfs_gamedir->gamedir)
+		Info_SetValueForStarKey (svs.info, "*gamedir",
+								 qfs_gamedir->gamedir, 0);
+	else
+		Info_RemoveKey (svs.info, "*gamedir");
+}
+
+static void
 SV_InitLocal (void)
 {
 	int         i;
@@ -2117,6 +2128,7 @@ SV_InitLocal (void)
 							  "clients");
 	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_NONE, NULL,
 						   "Sets the global value for the amount of gravity");
+	sv_jump_any = Cvar_Get ("sv_jump_any", "1", CVAR_NONE, NULL, "None");
 	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, NULL, 
 							 "Sets the value that determines how fast the "
 							 "player should come to a complete stop");
@@ -2477,49 +2489,18 @@ SV_Init (void)
 
 	Sys_RegisterShutdown (SV_Shutdown);
 
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
-	Cvar_Init ();
-	Sys_Init_Cvars ();
-
 	Sys_Init ();
+	GIB_Init (true);
+	COM_ParseConfig ();
 
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
-
-	Cmd_Init ();
-	GIB_Init (true);
-
-	// execute +set as early as possible
-	Cmd_StuffCmds (sv_cbuf);
-	Cbuf_Execute_Sets (sv_cbuf);
 
 	// snax: Init experimental object system and run a test
 	//Object_Init();
 
-	// execute the global configuration file if it exists
-	// would have been nice if Cmd_Exec_f could have been used, but it
-	// reads from only within the quake file system, and changing that is
-	// probably Not A Good Thing (tm).
-	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG,
-							 CVAR_ROM, 0, "global configuration file");
-	Cmd_Exec_File (sv_cbuf, fs_globalcfg->string, 0);
-	Cbuf_Execute_Sets (sv_cbuf);
-
-	// execute +set again to override the config file
-	Cmd_StuffCmds (sv_cbuf);
-	Cbuf_Execute_Sets (sv_cbuf);
-
-	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG,
-						   CVAR_ROM, 0, "user configuration file");
-	Cmd_Exec_File (sv_cbuf, fs_usercfg->string, 0);
-	Cbuf_Execute_Sets (sv_cbuf);
-
-	// execute +set again to override the config file
-	Cmd_StuffCmds (sv_cbuf);
-	Cbuf_Execute_Sets (sv_cbuf);
-
 	SV_Init_Memory ();
 
+	QFS_GamedirCallback (gamedir_f);
 	svs.maxclients = MAX_CLIENTS;
 	svs.info = Info_ParseString ("", MAX_SERVERINFO_STRING, 0);
 	localinfo = Info_ParseString ("", 0, 0);	// unlimited
@@ -2540,7 +2521,6 @@ SV_Init (void)
 	Sys_SetErrPrintf (SV_Error);
 
 	Game_Init_Cvars ();
-	COM_Init_Cvars ();
 	Mod_Init_Cvars ();
 	Netchan_Init_Cvars ();
 	Pmove_Init_Cvars ();
@@ -2554,7 +2534,6 @@ SV_Init (void)
 	SV_Sbar_Init ();
 
 	Game_Init ();
-	COM_Init ();
 
 	PR_Init ();
 	SV_Progs_Init ();

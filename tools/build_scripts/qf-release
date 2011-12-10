@@ -61,13 +61,17 @@ git_url=${git_url:-git://git.quakeforge.net/gitroot/quake/quakeforge}
 mkdir -p $RELEASE
 cd $RELEASE
 if test $no_rm -ne 1; then
-	rm -rf NEWS quakeforge-* quakeforge_* qfcc_*
+	rm -rf NEWS quakeforge-* qfcc-* quakeforge_* qfcc_*
 fi
 git clone $git_url || true
 mv quakeforge quakeforge-$ver
 cd quakeforge-$ver
 git checkout $tag_name
 cp NEWS $RELEASE
+if test "$tag_name" != master; then
+	sed -e "s/git-master/$tag_name/" configure.ac > configure.ac-
+	mv configure.ac- configure.ac
+fi
 mkdir -p linux.o qf-win32.o
 ./bootstrap
 #begin linux
@@ -113,7 +117,7 @@ if test $do_win32 -eq 1; then
 	../tools/cross/cross-make.sh $QFSMP \
 		prefix=${qf_win32_dir} \
 		exec_prefix=${qf_win32_dir} \
-		pkgdatadir=${qf_win32_dir} \
+		pkgdatadir=${qf_win32_dir}/QF \
 		man1dir=${qf_win32_dir} \
 		install
 	$MINGW/bin/strip --strip-unneeded "$qf_win32"/bin/*.exe

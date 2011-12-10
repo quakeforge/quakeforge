@@ -38,8 +38,7 @@
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200
 
-typedef struct skin_s
-{
+typedef struct skin_s {
 	char		name[MAX_SKIN_LENGTH];
 	qboolean	failedload;		// the name isn't a valid skin
 	union {
@@ -55,6 +54,8 @@ extern byte player_8bit_texels[640 * 400];
 extern skin_t   skin_cache[MAX_CACHED_SKINS];
 extern int skin_textures;
 extern int skin_fb_textures;
+
+extern int playercolor;
 
 struct tex_s;
 struct tex_s *Skin_Cache (skin_t *skin);

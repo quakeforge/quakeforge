@@ -307,11 +307,11 @@ typedef struct {
 	unsigned int flags;			// nolerp, etc
 	vec3_t      origin;
 	vec3_t      angles;
-	int         modelindex;
-	int         frame;
-	int         colormap;
-	int         skinnum;
+	unsigned short modelindex;
+	unsigned short frame;
 	int         effects;
+	byte         colormap;
+	byte         skinnum;
 
 	// QSG 2
 	byte        alpha;

@@ -30,7 +30,7 @@
 AUTOMAKE_OPTIONS=	foreign
 
 # Stuff that is common to both client and server
-INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include
+INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include @LIBCURL_CPPFLAGS@
 SDL_LIBS = @SDL_LIBS@
 
 bin_PROGRAMS=	@QW_TARGETS@
@@ -44,7 +44,7 @@ EXTRA_LIBRARIES=libqw_client.a libqw_common.a libqw_sdl.a libqw_server.a
 
 
 libqw_common_a_SOURCES=\
-	com.c game.c map_cfg.c pmove.c pmovetst.c net_packetlog.c
+	game.c map_cfg.c pmove.c pmovetst.c net_packetlog.c
 libqw_sdl_a_SOURCES=cl_sys_sdl.c
 libqw_sdl_a_CFLAGS=$(SDL_CFLAGS)
 
@@ -106,9 +106,9 @@ client_LIBS= $(qw_client_LIBS)
 client_libs= libqw_client.a libqw_common.a
 
 libqw_client_a_SOURCES= \
-		cl_cam.c cl_chat.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c \
-		cl_http.c cl_input.c cl_main.c cl_ngraph.c cl_parse.c cl_pred.c \
-		cl_screen.c cl_skin.c cl_slist.c cl_tent.c cl_view.c \
+		cl_cam.c cl_chat.c cl_cmd.c cl_cvar.c cl_demo.c cl_entparse.c \
+		cl_ents.c cl_http.c cl_input.c cl_main.c cl_ngraph.c cl_parse.c \
+		cl_pred.c cl_screen.c cl_skin.c cl_slist.c cl_tent.c cl_view.c \
 		locs.c sbar.c skin.c teamplay.c
 
 # Software-rendering clients

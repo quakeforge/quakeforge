@@ -1540,6 +1540,7 @@ AddLinksToPmove (areanode_t *node)
 			pmove.numphysent++;
 
 			VectorCopy (SVvector (check, origin), pe->origin);
+			VectorCopy (SVvector (check, angles), pe->angles);
 			pe->info = NUM_FOR_EDICT (&sv_pr_state, check);
 
 			if (sv_fields.rotated_bbox != -1
@@ -2029,17 +2030,21 @@ SV_UserInit (void)
 static void
 OutofBandPrintf (netadr_t where, const char *fmt, ...)
 {
-	char		send[1024];
+	// 0 for davsprintf
+	static const char header[] = {0xff, 0xff, 0xff, 0xff, A2C_PRINT, 0};
+	static dstring_t *send = 0;
 	va_list		argptr;
+	int         len;
 
-	send[0] = 0xff;
-	send[1] = 0xff;
-	send[2] = 0xff;
-	send[3] = 0xff;
-	send[4] = A2C_PRINT;
+	if (!send)
+		send = dstring_new ();
+	send->size = sizeof (header);
+	dstring_adjust (send);
+	memcpy (send->str, header, sizeof (header));
 	va_start (argptr, fmt);
-	vsnprintf (send + 5, sizeof (send) - 5, fmt, argptr);
+	davsprintf (send, fmt, argptr);
 	va_end (argptr);
 
-	Netchan_SendPacket (strlen (send) + 1, send, where);
+	len = min (send->size, 1024);
+	Netchan_SendPacket (len, send->str, where);
 }

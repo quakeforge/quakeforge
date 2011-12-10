@@ -250,8 +250,8 @@ MSG_ReadShort (qmsg_t *msg)
 	int         c;
 
 	if (msg->readcount + 2 <= msg->message->cursize) {
-		c = (short) (msg->message->data[msg->readcount]
-					 + (msg->message->data[msg->readcount + 1] << 8));
+		c = (msg->message->data[msg->readcount]
+			 + (msg->message->data[msg->readcount + 1] << 8));
 		msg->readcount += 2;
 		return c;
 	}
@@ -354,7 +354,7 @@ MSG_ReadBytes (qmsg_t *msg, void *buf, int len)
 VISIBLE float
 MSG_ReadCoord (qmsg_t *msg)
 {
-	return MSG_ReadShort (msg) * (1.0 / 8.0);
+	return (short) MSG_ReadShort (msg) * (1.0 / 8.0);
 }
 
 VISIBLE void
@@ -363,7 +363,7 @@ MSG_ReadCoordV (qmsg_t *msg, vec3_t coord)
 	int		i;
 
 	for (i = 0; i < 3; i++)
-		coord[i] = MSG_ReadShort (msg) * (1.0 / 8.0);
+		coord[i] = (short) MSG_ReadShort (msg) * (1.0 / 8.0);
 }
 
 VISIBLE void
@@ -372,7 +372,7 @@ MSG_ReadCoordAngleV (qmsg_t *msg, vec3_t coord, vec3_t angles)
 	int		i;
 
 	for (i = 0; i < 3; i++) {
-		coord[i] = MSG_ReadShort (msg) * (1.0 / 8.0);
+		coord[i] = (short) MSG_ReadShort (msg) * (1.0 / 8.0);
 		angles[i] = ((signed char) MSG_ReadByte (msg)) * (360.0 / 256.0);
 	}
 }
@@ -395,20 +395,16 @@ MSG_ReadAngleV (qmsg_t *msg, vec3_t angles)
 VISIBLE float
 MSG_ReadAngle16 (qmsg_t *msg)
 {
-	return MSG_ReadShort (msg) * (360.0 / 65536.0);
+	return (short) MSG_ReadShort (msg) * (360.0 / 65536.0);
 }
 
 VISIBLE void
 MSG_ReadAngle16V (qmsg_t *msg, vec3_t angles)
 {
 	int		i;
-	short   ang;
 
-	for (i = 0; i < 3; i++) {
-		ang = MSG_ReadByte (msg);
-		ang |= MSG_ReadByte (msg) << 8;
-		angles[i] = ang * (360.0 / 65536.0);
-	}
+	for (i = 0; i < 3; i++)
+		angles[i] = (short) MSG_ReadShort (msg) * (360.0 / 65536.0);
 }
 
 VISIBLE int
@@ -424,28 +420,28 @@ MSG_ReadUTF8 (qmsg_t *msg)
 	buf = start = msg->message->data + msg->readcount;
 
 	c = *buf++;
-	if (c < 0x80) {
+	if (c < 0x80) {			// 0x00 - 0x7f 1,7,7
 		val = c;
 		count = 1;
-	} else if (c < 0xc0) {
+	} else if (c < 0xc0) {	// 0x80 - 0xbf not a valid first byte
 		msg->badread = true;
 		return -1;
-	} else if (c < 0xe0) {
+	} else if (c < 0xe0) {	// 0xc0 - 0xdf 2,5,11
 		count = 2;
 		val = c & 0x1f;
-	} else if (c < 0xf0) {
+	} else if (c < 0xf0) {	// 0xe0 - 0xef 3,4,16
 		count = 3;
 		val = c & 0x0f;
-	} else if (c < 0xf8) {
+	} else if (c < 0xf8) {	// 0xf0 - 0xf7 4,3,21
 		count = 4;
 		val = c & 0x07;
-	} else if (c < 0xfc) {
+	} else if (c < 0xfc) {	// 0xf8 - 0xfb 5,2,26
 		count = 5;
 		val = c & 0x03;
-	} else if (c < 0xfe) {
+	} else if (c < 0xfe) {	// 0xfc - 0xfd 6,1,31
 		count = 6;
 		val = c & 0x01;
-	} else {
+	} else {				// 0xfe - 0xff never valid
 		msg->badread = true;
 		return -1;
 	}

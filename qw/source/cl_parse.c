@@ -55,6 +55,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/idparse.h"
 #include "QF/msg.h"
+#include "QF/progs.h"
+#include "QF/qfplist.h"
 #include "QF/quakeio.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
@@ -79,7 +81,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "qw/pmove.h"
 #include "qw/protocol.h"
 #include "sbar.h"
-#include "view.h"
+#include "clview.h"
 
 const char *svc_strings[] = {
 	"svc_bad",
@@ -117,17 +119,13 @@ const char *svc_strings[] = {
 	"svc_foundsecret",
 	"svc_spawnstaticsound",
 	"svc_intermission",
-	"svc_finale",
-
-	"svc_cdtrack",
+	"svc_finale",				// [string] text
+	"svc_cdtrack",				// [byte] track
 	"svc_sellscreen",
-
 	"svc_smallkick",
 	"svc_bigkick",
-
 	"svc_updateping",
 	"svc_updateentertime",
-
 	"svc_updatestatlong",
 	"svc_muzzleflash",
 	"svc_updateuserinfo",
@@ -141,7 +139,6 @@ const char *svc_strings[] = {
 	"svc_deltapacketentities",
 	"svc_maxspeed",
 	"svc_entgravity",
-
 	"svc_setinfo",
 	"svc_serverinfo",
 	"svc_updatepl",
@@ -160,6 +157,7 @@ const char *svc_strings[] = {
 	"NEW PROTOCOL"
 };
 
+dstring_t  *centerprint;
 int         oldparsecountmod;
 int         parsecountmod;
 double      parsecounttime;
@@ -178,6 +176,23 @@ extern cvar_t *hud_scoreboard_uid;
 entity_t *cl_static_entities;
 static entity_t **cl_static_tail;
 
+static void
+CL_LoadSky (void)
+{
+	plitem_t   *item;
+	const char *name = 0;
+
+	if (!cl.worldspawn) {
+		R_LoadSkys (0);
+		return;
+	}
+	if ((item = PL_ObjectForKey (cl.worldspawn, "sky")) // Q2/DarkPlaces
+		|| (item = PL_ObjectForKey (cl.worldspawn, "skyname")) // old QF
+		|| (item = PL_ObjectForKey (cl.worldspawn, "qlsky"))) /* QuakeLives */ {
+		name = PL_String (item);
+	}
+	R_LoadSkys (name);
+}
 
 int
 CL_CalcNet (void)
@@ -262,6 +277,26 @@ CL_CheckOrDownloadFile (const char *filename)
 	return false;
 }
 
+static plitem_t *
+map_ent (const char *mapname)
+{
+	static progs_t edpr;
+	char       *name = malloc (strlen (mapname) + 4 + 1);
+	char       *buf;
+	plitem_t   *edicts = 0;
+
+	QFS_StripExtension (mapname, name);
+	strcat (name, ".ent");
+	if ((buf = (char *) QFS_LoadFile (name, 0))) {
+		edicts = ED_Parse (&edpr, buf);
+		free (buf);
+	} else {
+		edicts = ED_Parse (&edpr, cl.model_precache[1]->entities);
+	}
+	free (name);
+	return edicts;
+}
+
 static void
 CL_NewMap (const char *mapname)
 {
@@ -272,6 +307,15 @@ CL_NewMap (const char *mapname)
 	Con_NewMap ();
 	Hunk_Check ();								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
+
+	if (cl.model_precache[1] && cl.model_precache[1]->entities) {
+		cl.edicts = map_ent (mapname);
+		if (cl.edicts) {
+			cl.worldspawn = PL_ObjectAtIndex (cl.edicts, 0);
+			CL_LoadSky ();
+			Fog_ParseWorldspawn (cl.worldspawn);
+		}
+	}
 
 	map_cfg (mapname, 1);
 }
@@ -1239,16 +1283,16 @@ CL_MuzzleFlash (void)
 
 #define SHOWNET(x) \
 	if (cl_shownet->int_val == 2) \
-		Sys_Printf ("%3i:%s\n", net_message->readcount-1, x);
+		Sys_Printf ("%3i:%s\n", net_message->readcount - 1, x);
 
 int			received_framecount;
 
 void
 CL_ParseServerMessage (void)
 {
-	const char *s;
-	static dstring_t *stuffbuf;
 	int			cmd = 0, i, j;
+	const char *str;
+	static dstring_t *stuffbuf;
 
 	received_framecount = host_framecount;
 	cl.last_servermessage = realtime;
@@ -1265,11 +1309,9 @@ CL_ParseServerMessage (void)
 
 	// parse the message
 	while (1) {
-		if (net_message->badread) {
+		if (net_message->badread)
 			Host_Error ("CL_ParseServerMessage: Bad server message: %s\n",
 						svc_strings[cmd]);
-			break;
-		}
 
 		cmd = MSG_ReadByte (net_message);
 
@@ -1277,10 +1319,10 @@ CL_ParseServerMessage (void)
 			net_message->readcount++;	// so the EOM SHOWNET has the right
 										// value
 			SHOWNET ("END OF MESSAGE");
-			break;
+			break;						// end of message
 		}
 
-		SHOWNET (svc_strings[cmd]);
+		SHOWNET (va ("%s(%d)", svc_strings[cmd], cmd));
 
 		// other commands
 		switch (cmd) {
@@ -1300,58 +1342,65 @@ CL_ParseServerMessage (void)
 					Host_EndGame ("Server disconnected");
 				break;
 
-			case svc_print: {
- 				char	p[2048];
+			case svc_print:
+			{
+				dstring_t  *p = 0;
 
 				i = MSG_ReadByte (net_message);
-				s = MSG_ReadString (net_message);
+				str = MSG_ReadString (net_message);
 				if (i == PRINT_CHAT) {
-					if (!CL_Chat_Allow_Message (s))
+					if (!CL_Chat_Allow_Message (str))
 						break;
 					// TODO: cl_nofake 2 -- accept fake messages from teammates
 
 					if (cl_nofake->int_val) {
 						char	*c;
 
-						strncpy (p, s, sizeof (p));
-						p[sizeof (p) - 1] = 0;
-						for (c = p; *c; c++) {
+						p = dstring_strdup (str);
+						for (c = p->str; *c; c++) {
 							if (*c == '\r')
 								*c = '#';
 						}
-						s = p;
+						str = p->str;
 					}
 					Con_SetOrMask (128);
 					S_LocalSound ("misc/talk.wav");
 					if (cl_chat_e->func)
-						GIB_Event_Callback (cl_chat_e, 1, s);
-					Team_ParseChat (s);
+						GIB_Event_Callback (cl_chat_e, 1, str);
+					Team_ParseChat (str);
 				}
-				Sys_Printf ("%s", s);
+				Sys_Printf ("%s", str);
+				if (p)
+					dstring_delete (p);
 				Con_SetOrMask (0);
 				break;
 			}
 			case svc_centerprint:
-				Sbar_CenterPrint (MSG_ReadString (net_message));
+				str = MSG_ReadString (net_message);
+				if (strcmp (str, centerprint->str)) {
+					dstring_copystr (centerprint, str);
+					//FIXME logging
+				}
+				Sbar_CenterPrint (str);
 				break;
 
 			case svc_stufftext:
-				s = MSG_ReadString (net_message);
-				if (s[strlen (s) - 1] == '\n') {
+				str = MSG_ReadString (net_message);
+				if (str[strlen (str) - 1] == '\n') {
 					if (stuffbuf && stuffbuf->str[0]) {
 						Sys_MaskPrintf (SYS_DEV, "stufftext: %s%s\n",
-										stuffbuf->str, s);
+										stuffbuf->str, str);
 						Cbuf_AddText (cl_stbuf, stuffbuf->str);
 						dstring_clearstr (stuffbuf);
 					} else {
-						Sys_MaskPrintf (SYS_DEV, "stufftext: %s\n", s);
+						Sys_MaskPrintf (SYS_DEV, "stufftext: %s\n", str);
 					}
-					Cbuf_AddText (cl_stbuf, s);
+					Cbuf_AddText (cl_stbuf, str);
 				} else {
-					Sys_MaskPrintf (SYS_DEV, "partial stufftext: %s\n", s);
+					Sys_MaskPrintf (SYS_DEV, "partial stufftext: %s\n", str);
 					if (!stuffbuf)
 						stuffbuf = dstring_newstr ();
-					dstring_appendstr (stuffbuf, s);
+					dstring_appendstr (stuffbuf, str);
 				}
 				break;
 
@@ -1359,28 +1408,29 @@ CL_ParseServerMessage (void)
 				V_ParseDamage ();
 				break;
 
+			case svc_serverinfo:
+				CL_ServerInfo ();
+				break;
+
+			case svc_setangle:
+			{
+				vec_t      *dest = cl.viewangles;
+				vec3_t      dummy;
+
+				if (cls.demoplayback2) {
+					j = MSG_ReadByte (net_message);
+//					fixangle |= 1 << j;
+					if (j != Cam_TrackNum ())
+						dest = dummy;
+				}
+				MSG_ReadAngleV (net_message, dest);
+				break;
+			}
 			case svc_serverdata:
 				// make sure any stuffed commands are done
 				Cbuf_Execute_Stack (cl_stbuf);
 				CL_ParseServerData ();
 				vid.recalc_refdef = true;	// leave full screen intermission
-				break;
-
-			case svc_setangle:
-				if (!cls.demoplayback2) {
-					MSG_ReadAngleV (net_message, cl.viewangles);
-				} else {
-					j = MSG_ReadByte (net_message);
-//					fixangle |= 1 << j;
-					if (j != Cam_TrackNum ()) {
-						MSG_ReadAngle (net_message);
-						MSG_ReadAngle (net_message);
-						MSG_ReadAngle (net_message);
-					} else {
-						MSG_ReadAngleV (net_message, cl.viewangles);
-					}
-				}
-// FIXME		cl.viewangles[PITCH] = cl.viewangles[ROLL] = 0;
 				break;
 
 			case svc_lightstyle:
@@ -1406,7 +1456,7 @@ CL_ParseServerMessage (void)
 				if (i >= MAX_CLIENTS)
 					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
 								"MAX_SCOREBOARD");
-				cl.players[i].frags = MSG_ReadShort (net_message);
+				cl.players[i].frags = (short) MSG_ReadShort (net_message);
 				break;
 
 			case svc_updateping:
@@ -1439,17 +1489,22 @@ CL_ParseServerMessage (void)
 				i = MSG_ReadShort (net_message);
 				CL_ParseBaseline (&cl_baselines[i]);
 				break;
-
 			case svc_spawnstatic:
 				CL_ParseStatic ();
 				break;
-
 			case svc_spawnstaticsound:
 				CL_ParseStaticSound ();
 				break;
-
 			case svc_temp_entity:
 				CL_ParseTEnt ();
+				break;
+
+			case svc_setpause:
+				r_paused = cl.paused = MSG_ReadByte (net_message);
+				if (cl.paused)
+					CDAudio_Pause ();
+				else
+					CDAudio_Resume ();
 				break;
 
 			case svc_killedmonster:
@@ -1506,7 +1561,12 @@ CL_ParseServerMessage (void)
 				r_force_fullscreen = 1;
 				cl.completed_time = realtime;
 				vid.recalc_refdef = true;				// go to full screen
-				Sbar_CenterPrint (MSG_ReadString (net_message));
+				str = MSG_ReadString (net_message);
+				if (strcmp (str, centerprint->str)) {
+					dstring_copystr (centerprint, str);
+					//FIXME logging
+				}
+				Sbar_CenterPrint (str);
 				break;
 
 			case svc_sellscreen:
@@ -1531,10 +1591,6 @@ CL_ParseServerMessage (void)
 
 			case svc_setinfo:
 				CL_SetInfo ();
-				break;
-
-			case svc_serverinfo:
-				CL_ServerInfo ();
 				break;
 
 			case svc_download:
@@ -1582,14 +1638,6 @@ CL_ParseServerMessage (void)
 
 			case svc_entgravity:
 				movevars.entgravity = MSG_ReadFloat (net_message);
-				break;
-
-			case svc_setpause:
-				r_paused = cl.paused = MSG_ReadByte (net_message);
-				if (cl.paused)
-					CDAudio_Pause ();
-				else
-					CDAudio_Resume ();
 				break;
 		}
 	}

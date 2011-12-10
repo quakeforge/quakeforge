@@ -113,7 +113,9 @@ fi
 AC_SUBST(SAMPLERATE_LIBS)
 dnl AM_CONDITIONAL(HAVE_SAMPLERATE, test "$HAVE_SAMPLERATE" = "yes")
 if test "x$HAVE_SAMPLERATE" = "xno"; then
-	AC_MSG_ERROR(libsamplerate is required but was not found)
+	AC_MSG_WARN([libsamplerate is required but was not found.]
+				[Sound will be disabled.])
+	enable_sound=no
 fi
 
 SOUND_TYPES="$SOUND_TYPES DISK"

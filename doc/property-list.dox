@@ -1,0 +1,91 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+// vim:tw=74:formatoptions-=l
+/**
+\page property-list Property List
+
+\QF's property lists are based on those used in OpenStep.
+
+\QF uses property lists for a wide variety of purposes. This includes saved
+game data, directory configuration and play-lists.
+
+A property list is a text file that describes a single value. However, that
+value can be one of the following types:
+<dl>
+	<dt>Dictionaries</dt>	<dd>Lists of values that are each accociated
+							with a key</dd>
+	<dt>Arrays</dt>			<dd>Lists of indexed values</dd>
+	<dt>Strings</dt>		<dd>Simple text strings.</dd>
+	<dt>Binary data</dt>	<dd>Random binary data</dd>
+</dl>
+Dictionary and Array values allow for arbitrarily complex data to be
+represented by a property list.
+
+In addition, property lists also support comments, both single-line and
+multi-line. Single-line comments start with \c // and continue to the end
+of the line. Multi-line comments begin with
+<!-- crazy formatting to get C comments--><code>/</code><code>*</code> and
+end with <code>*</code><code>/</code>, and may span multiple lines, or be
+contained entirely within a single line, possibly with non-comment text
+following the comment.
+
+\section pl-dictionaries Dictionaries.
+A dictionary is a list of values, each associated with a key. The order of
+key/value pairs in a dictionary is not preserved.
+
+\code
+{
+	key1 = value1;
+	key2 = value2;
+	// ...
+}
+\endcode
+
+A dictionary may be empty or have any number of
+<code>key&nbsp;=&nbsp;value</code> pairs separated by \c ;. The final \c ;
+before the closing \c } is optional.
+
+The key must be a string, but the value may be of any type, including
+dictionary or array.
+
+\section Arrays
+An array is an ordered list of values. The order of the values in an array
+is preserved.
+
+\code
+(
+	value1,
+	value2,
+	// ...
+)
+\endcode
+
+An array may be empty or have any number of values. Each value may be of
+any type, including dictionary or array.
+
+\section pl-strings Strings
+\QF's property lists support three types of strings: unquoted, quoted and
+"long".
+
+An unquoted string may contain most printable characters. This includes the
+digits \c 0 to \c 9, the letters \c a to \c z and \c A to \c Z, and the
+symbols \c !, \c #, \c $, \c %, \c &, \c *, \c +, \c -, \c ., \c /, \c :,
+\c ?, \c @, \c |, \c ~, \c _ and \c ^.
+\verbatim
+0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ
+abcdefghijklmnopqrstuvwxyz!#$%&*+-./:?@|~_^
+\endverbatim
+
+Quoted strings may contain whitespace, C escape sequences, and any
+printable character. The quote character is \c \".
+
+Long strings use triple quotes (\c \"\"\") instead of \c \" as the quote
+character. This allows the use of unquoted \c \" characters in the string.
+And yes, these long strings were inspired by Python's long strings.
+
+\section pl-binary Binary Data
+<!-- in the following paragraph, the \< and \> are just < and >. the \ is
+	 for doxygen -->
+Binary data is hex-encoded and contained within angle brackets (\c \< \c
+\>). There must be an even number of hex-digits. That is, while \c \<FF00\>
+is value, \c \<F00\> is not.
+*/

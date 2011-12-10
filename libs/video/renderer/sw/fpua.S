@@ -97,30 +97,30 @@ F_END(unmaskexceptions)
 	.data
 
 	.align	4
-.globl	ceil_cw, single_cw, full_cw, cw, pushed_cw
-ceil_cw:	.long	0
-single_cw:	.long	0
-full_cw:	.long	0
-cw:			.long	0
-pushed_cw:	.long	0
+.globl	C(ceil_cw), C(single_cw), C(full_cw), C(cw), C(pushed_cw)
+C(ceil_cw):	.long	0
+C(single_cw):	.long	0
+C(full_cw):	.long	0
+C(cw):			.long	0
+C(pushed_cw):	.long	0
 #ifdef PIC
-.type	ceil_cw,@object
-.type	single_cw,@object
-.type	full_cw,@object
-.type	cw,@object
-.type	pushed_cw,@object
-.size	ceil_cw,4
-.size	single_cw,4
-.size	full_cw,4
-.size	cw,4
-.size	pushed_cw,4
+.type	C(ceil_cw),@object
+.type	C(single_cw),@object
+.type	C(full_cw),@object
+.type	C(cw),@object
+.type	C(pushed_cw),@object
+.size	C(ceil_cw),4
+.size	C(single_cw),4
+.size	C(full_cw),4
+.size	C(cw),4
+.size	C(pushed_cw),4
 #endif
 
 	.text
 
 F_BEGIN(R_LowFPPrecision)
 	got_base(3)
-	fldcw	got_var(single_cw)
+	fldcw	got_var(C(single_cw))
 
 	ret
 F_END(R_LowFPPrecision)
@@ -128,7 +128,7 @@ F_END(R_LowFPPrecision)
 
 F_BEGIN(R_HighFPPrecision)
 	got_base(4)
-	fldcw	got_var(full_cw)
+	fldcw	got_var(C(full_cw))
 
 	ret
 F_END(R_HighFPPrecision)
@@ -136,19 +136,19 @@ F_END(R_HighFPPrecision)
 
 F_BEGIN(R_SetFPCW)
 	got_base(7)
-	fnstcw	got_var(cw)
-	movl	got_var(cw),%eax
+	fnstcw	got_var(C(cw))
+	movl	got_var(C(cw)),%eax
 	andb	$0xF0,%ah
 	orb		$0x03,%ah	// round mode, 64-bit precision
-	movl	%eax,got_var(full_cw)
+	movl	%eax,got_var(C(full_cw))
 
 	andb	$0xF0,%ah
 	orb		$0x0C,%ah	// chop mode, single precision
-	movl	%eax,got_var(single_cw)
+	movl	%eax,got_var(C(single_cw))
 
 	andb	$0xF0,%ah
 	orb		$0x08,%ah	// ceil mode, single precision
-	movl	%eax,got_var(ceil_cw)
+	movl	%eax,got_var(C(ceil_cw))
 
 	ret
 F_END(R_SetFPCW)

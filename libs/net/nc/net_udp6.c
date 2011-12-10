@@ -34,7 +34,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
@@ -102,7 +102,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/msg.h"
 #include "QF/qargs.h"
-#include "QF/qtypes.h"
 #include "QF/sys.h"
 
 #include "netchan.h"
@@ -117,6 +116,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #  define ss_family __ss_family
 # endif
 #endif
+
+static cvar_t *net_family;
 
 netadr_t    net_from;
 netadr_t    net_local_adr;
@@ -136,10 +137,29 @@ byte        net_message_buffer[MAX_UDP_PACKET];
 
 typedef union address {
 	struct sockaddr_storage ss;
-	struct sockaddr			sa;
-	struct sockaddr_in		s4;
-	struct sockaddr_in6		s6;
+	struct sockaddr         sa;
+	struct sockaddr_in      s4;
+	struct sockaddr_in6     s6;
 } AF_address_t;
+
+#undef SA_LEN
+#undef SS_LEN
+
+#ifdef HAVE_SA_LEN
+#define SA_LEN(sa) (sa)->sa_len
+#else
+#define SA_LEN(sa) (((sa)->sa_family == AF_INET6) \
+					? sizeof(struct sockaddr_in6) \
+					: sizeof(struct sockaddr_in))
+#endif
+
+#ifdef HAVE_SS_LEN
+#define SS_LEN(ss) (ss)->ss_len
+#else
+#define SS_LEN(ss) (((ss)->ss_family == AF_INET6) \
+					? sizeof(struct sockaddr_in6) \
+					: sizeof(struct sockaddr_in))
+#endif
 
 
 static void
@@ -186,7 +206,6 @@ SockadrToNetadr (AF_address_t *s, netadr_t *a)
 		}
 		case AF_INET6: {
 			memcpy (a->ip, &(s->s6.sin6_addr), sizeof (s->s6.sin6_addr));
-			a->family = AF_INET6;
 			a->port = s->s6.sin6_port;
 			break;
 		}
@@ -209,6 +228,7 @@ NET_AdrIsLoopback (netadr_t a)
 	return false;
 }
 */
+
 qboolean
 NET_CompareBaseAdr (netadr_t a, netadr_t b)
 {
@@ -228,18 +248,18 @@ NET_CompareAdr (netadr_t a, netadr_t b)
 const char *
 NET_AdrToString (netadr_t a)
 {
-	static char s[64];
+	static dstring_t *s;
 	char		base[64];
 	AF_address_t ss;
 
 	/*
 		Yes, this duplication is lame, but we want to know the real address
 		family of the address so that we can know whether or not to put a
-		bracket around it, and this is less ugly than trying to check the 
+		bracket around it, and this is less ugly than trying to check the
 		string returned from NET_BaseAdrToString()
 	*/
 	memset (&ss, 0, sizeof (ss));
-	NetadrToSockadr(&a,&ss);
+	NetadrToSockadr (&a, &ss);
 
 	// Convert any "mapped" addresses back to v4
 	if (a.family == AF_INET6 && IN6_IS_ADDR_V4MAPPED (&(ss.s6.sin6_addr))) {
@@ -250,21 +270,18 @@ NET_AdrToString (netadr_t a)
 		memcpy (&(ss.s4.sin_addr), &ss.s6.sin6_addr.s6_addr[12], sizeof (ss.s4.sin_addr));
 	}
 
-#ifdef HAVE_SS_LEN
-	if (getnameinfo (&ss.sa, ss.ss.ss_len, base, sizeof (base),
+	if (getnameinfo (&ss.sa, SS_LEN(&ss.ss), base, sizeof (base),
 					 NULL, 0, NI_NUMERICHOST)) strcpy (base, "<invalid>");
-#else
-	if (getnameinfo (&ss.sa, sizeof (ss.ss), base, sizeof (base),
-					 NULL, 0, NI_NUMERICHOST)) strcpy (base, "<invalid>");
-#endif
 
+	if (!s)
+		s = dstring_new ();
 	if (ss.ss.ss_family == AF_INET6) {
-		sprintf (s, "[%s]:%d", base, ntohs (a.port));
+		dsprintf (s, "[%s]:%d", base, ntohs (a.port));
 	} else {
-		sprintf (s, "%s:%d", base, ntohs (a.port));
+		dsprintf (s, "%s:%d", base, ntohs (a.port));
 	}
 
-	return s;
+	return s->str;
 }
 
 const char *
@@ -274,7 +291,7 @@ NET_BaseAdrToString (netadr_t a)
 	AF_address_t ss;
 
 	memset (&ss, 0, sizeof (ss));
-	NetadrToSockadr(&a,&ss);
+	NetadrToSockadr (&a, &ss);
 
 	// Convert any "mapped" addresses back to v4
 	if (a.family == AF_INET6 && IN6_IS_ADDR_V4MAPPED (&(ss.s6.sin6_addr))) {
@@ -282,16 +299,12 @@ NET_BaseAdrToString (netadr_t a)
 		ss.ss.ss_len = sizeof (ss.s4);
 #endif
 		ss.ss.ss_family = AF_INET;
-		memcpy (&(ss.s4.sin_addr), &ss.s6.sin6_addr.s6_addr[12], sizeof (ss.s4.sin_addr));
+		memcpy (&(ss.s4.sin_addr), &ss.s6.sin6_addr.s6_addr[12],
+				sizeof (ss.s4.sin_addr));
 	}
 
-#ifdef HAVE_SS_LEN
-	if (getnameinfo (&ss.sa, ss.ss.ss_len, s, sizeof (s),
+	if (getnameinfo (&ss.sa, SS_LEN(&ss.ss), s, sizeof (s),
 					 NULL, 0, NI_NUMERICHOST)) strcpy (s, "<invalid>");
-#else
-	if (getnameinfo (&ss.sa, sizeof (ss.ss), s, sizeof (s),
-					 NULL, 0, NI_NUMERICHOST)) strcpy (s, "<invalid>");
-#endif
 	return s;
 }
 
@@ -320,7 +333,13 @@ NET_StringToAdr (const char *s, netadr_t *a)
 
 	memset (&hints, 0, sizeof (hints));
 	hints.ai_socktype = SOCK_DGRAM;
-	hints.ai_family = PF_UNSPEC;
+	if (strchr (net_family->string, '6')) {
+		hints.ai_family = AF_INET6;
+	} else if (strchr (net_family->string, '4')) {
+		hints.ai_family = AF_INET;
+	} else {
+		hints.ai_family = AF_UNSPEC;
+	}
 
 	dstring_copystr (copy, s);
 	addrs = space = copy->str;
@@ -376,37 +395,6 @@ NET_StringToAdr (const char *s, netadr_t *a)
 	return true;
 }
 
-// Returns true if we can't bind the address locally--in other words,
-// the IP is NOT one of our interfaces.
-qboolean
-NET_IsClientLegal (netadr_t *adr)
-{
-#if 0
-	int         newsocket;
-	struct sockaddr_in sadr;
-
-	if (adr->ip[0] == 127)
-		return false;					// no local connections period
-
-	NetadrToSockadr (adr, &sadr);
-
-	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
-		Sys_Error ("NET_IsClientLegal: socket: %s", strerror (errno));
-
-	sadr.sin_port = 0;
-
-	if (bind (newsocket, (void *) &sadr, sizeof (sadr)) == -1) {
-		// It is not a local address
-		close (newsocket);
-		return true;
-	}
-	close (newsocket);
-	return false;
-#else
-	return true;
-#endif
-}
-
 qboolean
 NET_GetPacket (void)
 {
@@ -416,7 +404,7 @@ NET_GetPacket (void)
 
 	fromlen = sizeof (from);
 	memset (&from, 0, sizeof (from));
-	ret = recvfrom (net_socket, (void *) net_message_buffer, 
+	ret = recvfrom (net_socket, (void *) net_message_buffer,
 					sizeof (net_message_buffer), 0, &from.sa, &fromlen);
 
 	if (ret == -1) {
@@ -459,15 +447,13 @@ NET_SendPacket (int length, const void *data, netadr_t to)
 
 	NetadrToSockadr (&to, &addr);
 
-	ret = sendto (net_socket, data, length, 0, &addr.sa, sizeof (addr));
+	ret = sendto (net_socket, data, length, 0, &addr.sa, SA_LEN (&addr.sa));
 	if (ret == -1) {
 #ifdef _WIN32
 		int         err = WSAGetLastError ();
 
-#ifndef SERVERONLY
 		if (err == WSAEADDRNOTAVAIL)
 			Sys_Printf ("NET_SendPacket Warning: %i\n", err);
-#endif
 #else /* _WIN32 */
 		int         err = errno;
 
@@ -509,7 +495,13 @@ UDP_OpenSocket (int port)
 	address.sin6_family = AF_INET6;
 
 	memset (&hints, 0, sizeof (hints));
-	hints.ai_family = PF_UNSPEC;
+	if (strchr (net_family->string, '6')) {
+		hints.ai_family = AF_INET6;
+	} else if (strchr (net_family->string, '4')) {
+		hints.ai_family = AF_INET;
+	} else {
+		hints.ai_family = AF_UNSPEC;
+	}
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_protocol = IPPROTO_UDP;
 	hints.ai_flags = AI_PASSIVE;
@@ -533,7 +525,7 @@ UDP_OpenSocket (int port)
 		Sys_Error ("UDP_OpenSocket: getaddrinfo: %s", gai_strerror (Error));
 
 	if ((newsocket = socket (res->ai_family,
-							 res->ai_socktype, 
+							 res->ai_socktype,
 							 res->ai_protocol)) == -1)
 		Sys_Error ("UDP_OpenSocket: socket: %s", strerror (errno));
 
@@ -562,7 +554,7 @@ static void
 NET_GetLocalAddress (void)
 {
 	char        buff[MAXHOSTNAMELEN];
-	unsigned int namelen;
+	socklen_t   namelen;
 	AF_address_t address;
 
 	if (gethostname (buff, MAXHOSTNAMELEN) == -1)
@@ -592,6 +584,9 @@ NET_Init (int port)
 	if (r)
 		Sys_Error ("Winsock initialization failed.");
 #endif /* _WIN32 */
+	net_family = Cvar_Get ("net_family", "unspecified", CVAR_ROM, 0,
+						   "Set the address family to ipv4, ipv6 or"
+						   " unspecified");
 
 	// open the single socket to be used for all communications
 	net_socket = UDP_OpenSocket (port);

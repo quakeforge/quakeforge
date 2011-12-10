@@ -122,7 +122,7 @@ typedef struct glpoly_s {
 typedef struct msurface_s {
 	int			visframe;		// should be drawn when node is crossed
 
-	mplane_t	*plane;
+	plane_t		*plane;
 	int			flags;
 
 	int			firstedge;	// look up in model->surfedges[], negative numbers
@@ -162,7 +162,7 @@ typedef struct mnode_s {
 	struct mnode_s	*parent;
 
 // node specific
-	mplane_t	*plane;
+	plane_t		*plane;
 	struct mnode_s	*children[2];
 
 	unsigned short		firstsurface;
@@ -197,11 +197,12 @@ typedef struct mclipnode_s {
 
 typedef struct hull_s {
 	mclipnode_t	*clipnodes;
-	mplane_t	*planes;
+	plane_t		*planes;
 	int			firstclipnode;
 	int			lastclipnode;
 	vec3_t		clip_mins;
 	vec3_t		clip_maxs;
+	struct nodeleaf_s *nodeleafs;
 } hull_t;
 
 // SPRITE MODELS ==============================================================
@@ -357,7 +358,7 @@ typedef struct model_s {
 	dmodel_t	*submodels;
 
 	int			 numplanes;
-	mplane_t	*planes;
+	plane_t		*planes;
 
 	int			 numleafs;		// number of visible leafs, not counting 0
 	mleaf_t		*leafs;

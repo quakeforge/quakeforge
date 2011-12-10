@@ -52,7 +52,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_dynamic.h"
 #include "sbar.h"
 #include "server.h"
-#include "view.h"
+#include "clview.h"	//FIXME
 
 client_state_t cl;
 client_static_t cls;

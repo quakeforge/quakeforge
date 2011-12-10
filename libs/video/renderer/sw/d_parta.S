@@ -89,12 +89,12 @@ C(D_DrawParticle):
 	faddp	%st(0),%st(1) // z | local[0] | local[1] | local[2]
 	fld		%st(0)		// z | z | local[0] | local[1] |
 						//  local[2]
-	fdivrs	float_1		// 1/z | z | local[0] | local[1] | local[2]
+	fdivrs	C(float_1)	// 1/z | z | local[0] | local[1] | local[2]
 	fxch	%st(1)		// z | 1/z | local[0] | local[1] | local[2]
 
 //	if (transformed[2] < PARTICLE_Z_CLIP)
 //		return;
-	fcomps	float_particle_z_clip	// 1/z | local[0] | local[1] | local[2]
+	fcomps	C(float_particle_z_clip)	// 1/z | local[0] | local[1] | local[2]
 	fxch	%st(3)					// local[2] | local[0] | local[1] | 1/z
 
 	flds	C(r_pup)	// r_pup[0] | local[2] | local[0] | local[1] | 1/z
@@ -141,20 +141,20 @@ C(D_DrawParticle):
 	fadds	C(xcenter)		// u | v | 1/z
 // FIXME: preadjust xcenter and ycenter
 	fxch	%st(1)			// v | u | 1/z
-	fadds	float_point5	// v | u | 1/z
+	fadds	C(float_point5)	// v | u | 1/z
 	fxch	%st(1)			// u | v | 1/z
-	fadds	float_point5	// u | v | 1/z
+	fadds	C(float_point5)	// u | v | 1/z
 	fxch	%st(2)			// 1/z | v | u
-	fmuls	DP_32768		// 1/z * 0x8000 | v | u
+	fmuls	C(DP_32768)		// 1/z * 0x8000 | v | u
 	fxch	%st(2)			// u | v | 1/z * 0x8000
 
 // FIXME: use Terje's fp->int trick here?
 // FIXME: check we're getting proper rounding here
-	fistpl	DP_u			// v | 1/z * 0x8000
-	fistpl	DP_v			// 1/z * 0x8000
+	fistpl	C(DP_u)			// v | 1/z * 0x8000
+	fistpl	C(DP_v)			// 1/z * 0x8000
 
-	movl	DP_u,%eax
-	movl	DP_v,%edx
+	movl	C(DP_u),%eax
+	movl	C(DP_v),%edx
 
 // if ((v > d_vrectbottom_particle) || 
 // 	(u > d_vrectright_particle) ||
@@ -179,7 +179,7 @@ C(D_DrawParticle):
 	jl		LPop1AndDone
 
 	flds	pt_color(%edi)	// color | 1/z * 0x8000
-	fstps	DP_Color		// 1/z * 0x8000
+	fstps	C(DP_Color)		// 1/z * 0x8000
 
 	movl	C(d_viewbuffer),%ebx
 
@@ -191,17 +191,17 @@ C(D_DrawParticle):
 	leal	(%edx,%eax,2),%edx
 	movl	C(d_pzbuffer),%eax
 
-	fistpl	izi
+	fistpl	C(izi)
 
 	addl	%ebx,%edi
 	addl	%eax,%edx
 
 // pix = izi >> d_pix_shift;
 
-	movl	izi,%eax
+	movl	C(izi),%eax
 	movl	C(d_pix_shift),%ecx
 	shrl	%cl,%eax
-	movl	izi,%ebp
+	movl	C(izi),%ebp
 
 // if (pix < d_pix_min)
 // 		pix = d_pix_min;
@@ -221,7 +221,7 @@ LTestPixMax:
 	movl	%ecx,%eax
 LTestDone:
 
-	movb	DP_Color,%ch
+	movb	C(DP_Color),%ch
 
 	movl	C(d_y_aspect_shift),%ebx
 	testl	%ebx,%ebx
@@ -230,11 +230,11 @@ LTestDone:
 	cmpl	$4,%eax
 	ja		LDefault
 
-	jmp		*DP_EntryTable-4(,%eax,4)
+	jmp		*C(DP_EntryTable)-4(,%eax,4)
 
 // 1x1
-.globl	DP_1x1
-DP_1x1:
+.globl	C(DP_1x1)
+C(DP_1x1):
 	cmpw	%bp,(%edx)		// just one pixel to do
 	jg		LDone
 	movw	%bp,(%edx)
@@ -242,8 +242,8 @@ DP_1x1:
 	jmp		LDone
 
 // 2x2
-.globl	DP_2x2
-DP_2x2:
+.globl	C(DP_2x2)
+C(DP_2x2):
 	pushl	%esi
 	movl	C(screenwidth),%ebx
 	movl	C(d_zrowbytes),%esi
@@ -273,8 +273,8 @@ L2x2_4:
 	jmp		LDone
 
 // 3x3
-.globl	DP_3x3
-DP_3x3:
+.globl	C(DP_3x3)
+C(DP_3x3):
 	pushl	%esi
 	movl	C(screenwidth),%ebx
 	movl	C(d_zrowbytes),%esi
@@ -332,8 +332,8 @@ L3x3_9:
 
 
 // 4x4
-.globl	DP_4x4
-DP_4x4:
+.globl	C(DP_4x4)
+C(DP_4x4):
 	pushl	%esi
 	movl	C(screenwidth),%ebx
 	movl	C(d_zrowbytes),%esi
@@ -434,7 +434,7 @@ LDefault:
 // count = pix << d_y_aspect_shift;
 
 	movl	%eax,%ebx
-	movl	%eax,DP_Pix
+	movl	%eax,C(DP_Pix)
 	movb	C(d_y_aspect_shift),%cl
 	shll	%cl,%ebx
 
@@ -451,7 +451,7 @@ LDefault:
 // }
 
 LGenRowLoop:
-	movl	DP_Pix,%eax
+	movl	C(DP_Pix),%eax
 
 LGenColLoop:
 	cmpw	%bp,-2(%edx,%eax,2)

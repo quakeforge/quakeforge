@@ -545,44 +545,36 @@ VISIBLE void
 Cmd_StuffCmds (cbuf_t *cbuf)
 {
 	int         i, j;
-	int         s;
-	char       *build, c;
-	char       *cmdline;
+	dstring_t  *build;
 
-	s = strlen (com_cmdline);
-	if (!s)
+	if (!*com_cmdline)
 		return;
 
-	cmdline = strdup (com_cmdline);
-	// pull out the commands
-	build = malloc (s + 1);
-	SYS_CHECKMEM (build);
-	build[0] = 0;
+	build = dstring_newstr ();
 
-	for (i = 0; i < s - 1; i++) {
-		if (cmdline[i] == '+') {
+	// pull out the commands
+	for (i = 0; com_cmdline[i]; i++) {
+		if (com_cmdline[i] == '+') {
 			i++;
 
-			for (j = i; !((cmdline[j] == '+')
-						  || (cmdline[j] == '-'
-							  && (j == 0 || cmdline[j - 1] == ' '))
-						  || (cmdline[j] == 0)); j++);
+			for (j = i;
+				 (com_cmdline[j]
+				  && !((j == 0 || isspace(com_cmdline[j - 1]))
+					   && ((com_cmdline[j] == '+')
+						    || (com_cmdline[j] == '-'))));
+				 j++)
+				;
 
-			c = cmdline[j];
-			cmdline[j] = 0;
-
-			strncat (build, cmdline + i, s - strlen (build));
-			strncat (build, "\n", s - strlen (build));
-			cmdline[j] = c;
+			dstring_appendsubstr (build, com_cmdline + i, j - i);
+			dstring_appendstr (build, "\n");
 			i = j - 1;
 		}
 	}
 
-	if (build[0])
-		Cbuf_InsertText (cbuf, build);
+	if (build->str[0])
+		Cbuf_InsertText (cbuf, build->str);
 
-	free (build);
-	free (cmdline);
+	dstring_delete (build);
 }
 
 static void

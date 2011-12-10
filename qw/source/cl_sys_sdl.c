@@ -47,11 +47,11 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <unistd.h>
 #endif
 
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#else
+# include <sys/fcntl.h>
+#endif
 
 #ifndef _WIN32
 # include <signal.h>
@@ -60,22 +60,17 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <SDL.h>
 #include <SDL_main.h>
 
-#include "QF/console.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "client.h"
-#include "compat.h"
 #include "host.h"
-
-qboolean    is_server = false;
-char       *svs_info;
-
-int         noconinput;
+#include "netchan.h"
 
 #ifdef _WIN32
 # include "winquake.h"
 #endif
+
+int qf_sdl_link;
 
 static void
 startup (void)
@@ -101,10 +96,12 @@ startup (void)
 }
 
 static void
-shutdown (void)
+shutdown_f (void)
 {
 #ifndef _WIN32
+	// change stdin to blocking
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
+	fflush (stdout);
 #endif
 }
 
@@ -113,7 +110,7 @@ shutdown (void)
 #endif
 
 int
-SDL_main (int c, char **v)
+SDL_main (int argc, char *argv[])
 {
 	double      time, oldtime, newtime;
 
@@ -121,24 +118,21 @@ SDL_main (int c, char **v)
 
 	memset (&host_parms, 0, sizeof (host_parms));
 
-	COM_InitArgv (c, (const char **)v);
+	COM_InitArgv (argc, (const char **) argv);
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
-
 #ifndef _WIN32
-	noconinput = COM_CheckParm ("-noconinput");
-	if (!noconinput)
+	if (!COM_CheckParm ("-noconinput"))
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 #endif
-
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (Net_LogStop);
-	Sys_RegisterShutdown (shutdown);
+	Sys_RegisterShutdown (shutdown_f);
 
 	Host_Init ();
 
 	oldtime = Sys_DoubleTime ();
-	while (1) {
+	while (1) {							// Main message loop
 		// find time spent rendering last frame
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
@@ -146,5 +140,4 @@ SDL_main (int c, char **v)
 		Host_Frame (time);
 		oldtime = newtime;
 	}
-	return 0;	// shouldn't be reachable, but mingw gcc 3.1 is being weird
 }

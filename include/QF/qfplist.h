@@ -36,46 +36,17 @@
 
 #include "QF/qtypes.h"
 
-/**
-	There are four types of data that can be stored in a property list:
+/** The type of the property list item.
 
-	<dl>
-		<dt>QFDictionary</dt>	<dd>A list of values, each associated with a
-								key (a C string).</dd>
-		<dt>QFArray</dt>		<dd>A list of indexed values</dd>
-		<dt>QFString</dt>		<dd>A string.</dd>
-		<dt>QFBinary</dt>		<dd>Random binary data.</dd>
-	</dl>
-
-	In textual form, a dictionary looks like:
-	\code
-	{
-		key = value;
-	}
-	\endcode
-	An array looks like:
-	\code
-	(
-		value1,
-		value2
-	)
-	\endcode
-	An unquoted string may contain only alphanumeric characters and/or the
-	underscore character, <code>_</code>. Quoted strings may contain
-	whitespace, C escape sequences, and so on. The quote character is
-	<code>\"</code>. Optionally, Python style long strings
-	(<code>\"\"\"...\"\"\"</code>) may be used, allowing for unquoted
-	<code>"</code> quotes in the string.
-
-	<!-- in the following paragraph, the \< and \> are just < and >. the \ is
-		 for doxygen -->
-	QFBinary data is hex-encoded and contained within angle brackets, \c \<
-	\c \>.  The length of the encoded data must be an even number, so while 
-	\c \<FF00\> is valid, \c \<F00\> isn't.
-
-	Property lists may contain C-style or BCPL-style comments.
+	For further details, see \ref property-list.
 */
-typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;
+typedef enum {
+	QFDictionary,	///< The property list item represents a dictionary.
+	QFArray,		///< The property list item represents an array.
+	QFBinary,		///< The property list item represents arbitrary binary
+					///< data.
+	QFString		///< The property list item represents a C string.
+} pltype_t;
 
 /**	Generic property list item.
 

@@ -186,12 +186,14 @@ parse_field (progs_t *pr, const char *key, const char *value)
 		If skyname is set, set what the map thinks the skybox name should 
 		be. "qlsky" is supported since at least one other map uses it.
 	*/
-	if (strcaseequal (key, "skyname")		// QuakeForge
-		|| strcaseequal (key, "sky")		// Q2/DarkPlaces
-		|| strcaseequal (key, "qlsky")) {	// QuakeLives
+	if (strequal (key, "skyname")		// QuakeForge
+		|| strequal (key, "sky")		// Q2/DarkPlaces
+		|| strequal (key, "qlsky")) {	// QuakeLives
 		Info_SetValueForKey (svs.info, "sky", value, 0);
 		return 1;
 	}
+	if (strequal (key, "fog"))
+		return 1;
 	if (*key == '_')						// ignore _fields
 		return 1;
 	return 0;

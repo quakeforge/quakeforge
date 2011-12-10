@@ -176,6 +176,13 @@ set_properties (entity_t *ent, plitem_t *dict)
 
 	if (properties) {
 		prop = PL_ObjectForKey (properties, ent->classname);
+		if ((p = get_item ("_light_name", dict, 0))
+			&& (str = PL_String (p)))
+			prop = PL_ObjectForKey (properties, str);
+		if (!prop)
+			prop = PL_ObjectForKey (properties, ent->classname);
+
+		prop = PL_ObjectForKey (properties, ent->classname);
 		if (!prop)
 			prop = PL_ObjectForKey (properties, "default");
 	}

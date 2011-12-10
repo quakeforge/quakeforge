@@ -153,7 +153,7 @@ Lemit:
 //
 // FIXME: do away with by manually extracting integers from floats?
 // FIXME: set less often
-	fldcw	r_ceil_cw
+	fldcw	C(r_ceil_cw)
 
 //	edge_t	*edge, *pcheck;
 //	int		u_check;
@@ -220,7 +220,7 @@ LCalcSecond:
 //	r_ceilv1 = (int)(r_v1 - 2000) + 2000; // ceil(r_v1);
 	fistl	C(r_ceilv1)
 
-	fldcw	r_single_cw				// put back normal floating-point state
+	fldcw	C(r_single_cw)			// put back normal floating-point state
 
 	fsts	C(r_v1)
 	fxch	%st(4)					// lzi0 | lzi1 | u1 | v0 | v1 | u0
@@ -398,11 +398,11 @@ LSideDone:
 //	edge->u_step = u_step*0x100000;
 //	edge->u = u*0x100000 + 0xFFFFF;
 
-	fmuls	fp_1m				// u*0x100000 | ustep
+	fmuls	C(fp_1m)				// u*0x100000 | ustep
 	fxch	%st(1)				// ustep | u*0x100000
-	fmuls	fp_1m				// ustep*0x100000 | u*0x100000
+	fmuls	C(fp_1m)				// ustep*0x100000 | u*0x100000
 	fxch	%st(1)				// u*0x100000 | ustep*0x100000
-	fadds	fp_1m_minus_1		// u*0x100000 + 0xFFFFF | ustep*0x100000
+	fadds	C(fp_1m_minus_1)		// u*0x100000 + 0xFFFFF | ustep*0x100000
 	fxch	%st(1)				// ustep*0x100000 | u*0x100000 + 0xFFFFF
 	fistpl	et_u_step(%edi)		// u*0x100000 + 0xFFFFF
 	fistpl	et_u(%edi)
@@ -784,7 +784,7 @@ LTransformAndProject:
 
 LNoClip:
 
-	fdivrs	float_1				// lzi0 | x | y
+	fdivrs	C(float_1)				// lzi0 | x | y
 	fxch	%st(1)				// x | lzi0 | y
 
 //	// FIXME: build x/yscale into transform?

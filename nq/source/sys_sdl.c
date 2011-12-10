@@ -31,12 +31,6 @@
 static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
-#ifdef HAVE_CONIO_H
-# include <conio.h>
-#endif
-#ifdef HAVE_IO_H
-# include <io.h>
-#endif
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -47,34 +41,28 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <unistd.h>
 #endif
 
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-#ifndef _WIN32
-# include <signal.h>
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#else
+# include <sys/fcntl.h>
 #endif
 
 #include <SDL.h>
 #include <SDL_main.h>
 
-#include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
 #include "client.h"
-#include "compat.h"
 #include "host.h"
-
-qboolean    isDedicated = false;
-
-int         noconinput;
 
 #ifdef _WIN32
 # include "winquake.h"
 #endif
+
+int qf_sdl_link;
+qboolean    isDedicated = false;
 
 static void
 startup (void)
@@ -100,10 +88,12 @@ startup (void)
 }
 
 static void
-shutdown (void)
+shutdown_f (void)
 {
 #ifndef _WIN32
+	// change stdin to blocking
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
+	fflush (stdout);
 #endif
 }
 
@@ -112,7 +102,7 @@ shutdown (void)
 #endif
 
 int
-SDL_main (int c, char **v)
+SDL_main (int argc, char *argv[])
 {
 	double      time, oldtime, newtime;
 
@@ -120,29 +110,43 @@ SDL_main (int c, char **v)
 
 	memset (&host_parms, 0, sizeof (host_parms));
 
-	COM_InitArgv (c, (const char **)v);
+	COM_InitArgv (argc, (const char **) argv);
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
-#ifndef _WIN32
-	noconinput = COM_CheckParm ("-noconinput");
-	if (!noconinput)
-		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
-#endif
+	isDedicated = (COM_CheckParm ("-dedicated") != 0);
 
 	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (shutdown);
+	Sys_RegisterShutdown (shutdown_f);
 
 	Host_Init ();
 
-	oldtime = Sys_DoubleTime ();
-	while (1) {
+#ifndef _WIN32
+	if (!sys_nostdout->int_val) {
+		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
+		Sys_Printf ("Quake -- Version %s\n", NQ_VERSION);
+	}
+#endif
+
+	oldtime = Sys_DoubleTime () - 0.1;
+	while (1) {							// Main message loop
 		// find time spent rendering last frame
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
 
+		if (cls.state == ca_dedicated) {	// play vcrfiles at max speed
+			if (time < sys_ticrate->value && (!vcrFile || recording)) {
+				usleep (1);
+				continue;			// not time to run a server-only tic yet
+			}
+			time = sys_ticrate->value;
+		}
+
+		if (time > sys_ticrate->value * 2)
+			oldtime = newtime;
+		else
+			oldtime += time;
+
 		Host_Frame (time);
-		oldtime = newtime;
 	}
-	return 0;	// shouldn't be reachable, but mingw gcc 3.1 is being weird
 }

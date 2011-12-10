@@ -353,7 +353,7 @@ R_RenderFace (msurface_t *fa, int clipflags)
 {
 	int         i, lindex;
 	unsigned int mask;
-	mplane_t   *pplane;
+	plane_t    *pplane;
 	float       distinv;
 	vec3_t      p_normal;
 	medge_t    *pedges, tedge;
@@ -519,7 +519,7 @@ R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 {
 	int         i;
 	unsigned int mask;
-	mplane_t   *pplane;
+	plane_t    *pplane;
 	float       distinv;
 	vec3_t      p_normal;
 	medge_t     tedge;
@@ -623,7 +623,7 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 	vec3_t      local, transformed;
 	clipplane_t *pclip;
 	medge_t    *pedges;
-	mplane_t   *pplane;
+	plane_t    *pplane;
 	mvertex_t   verts[2][100];			// FIXME: do real number
 	polyvert_t  pverts[100];			// FIXME: do real number, safely
 	int         vertpage, newverts, newpage, lastvert;
@@ -787,7 +787,7 @@ R_ZDrawSubmodelPolys (model_t *pmodel)
 	int         i, numsurfaces;
 	msurface_t *psurf;
 	float       dot;
-	mplane_t   *pplane;
+	plane_t    *pplane;
 
 	psurf = &pmodel->surfaces[pmodel->firstmodelsurface];
 	numsurfaces = pmodel->nummodelsurfaces;

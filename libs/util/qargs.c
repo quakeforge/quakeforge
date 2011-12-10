@@ -30,8 +30,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -46,9 +45,14 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/cmd.h"
 #include "QF/crc.h"
+#include "QF/cvar.h"
+#include "QF/idparse.h"
 #include "QF/qargs.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
+
+cvar_t     *fs_globalcfg;
+cvar_t     *fs_usercfg;
 
 static const char **largv;
 static const char *argvdummy = " ";
@@ -146,4 +150,40 @@ void
 COM_AddParm (const char *parm)
 {
 	largv[com_argc++] = parm;
+}
+
+void
+COM_ParseConfig (void)
+{
+	cbuf_t     *cbuf;
+
+	cbuf = Cbuf_New (&id_interp);
+
+	// execute +set as early as possible
+	Cmd_StuffCmds (cbuf);
+	Cbuf_Execute_Sets (cbuf);
+
+	// execute the global configuration file if it exists
+	// would have been nice if Cmd_Exec_f could have been used, but it
+	// reads from only within the quake file system, and changing that is
+	// probably Not A Good Thing (tm).
+	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG, CVAR_ROM, NULL,
+							 "global configuration file");
+	Cmd_Exec_File (cbuf, fs_globalcfg->string, 0);
+	Cbuf_Execute_Sets (cbuf);
+
+	// execute +set again to override the config file
+	Cmd_StuffCmds (cbuf);
+	Cbuf_Execute_Sets (cbuf);
+
+	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG, CVAR_ROM, NULL,
+						   "user configuration file");
+	Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+	Cbuf_Execute_Sets (cbuf);
+
+	// execute +set again to override the config file
+	Cmd_StuffCmds (cbuf);
+	Cbuf_Execute_Sets (cbuf);
+
+	Cbuf_Delete (cbuf);
 }

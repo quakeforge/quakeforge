@@ -52,7 +52,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "snd_render.h"
+#include "snd_internal.h"
 
 static int  snd_inited;
 static QFile      *snd_file;
@@ -68,30 +68,29 @@ static snd_output_data_t	plugin_info_snd_output_data;
 static snd_output_funcs_t	plugin_info_snd_output_funcs;
 
 
-/* FIXME
 static volatile dma_t *
 SNDDMA_Init (void)
 {
-	memset ((dma_t *) sn, 0, sizeof (sn));
+	memset ((dma_t *) &sn, 0, sizeof (sn));
 	sn.channels = 2;
 	sn.submission_chunk = 1;			// don't mix less than this #
-	sn.samplepos = 0;					// in mono samples
+	sn.framepos = 0;
 	sn.samplebits = 16;
-	sn.samples = 16384;				// mono samples in buffer
+	sn.frames = 16384;
 	sn.speed = 44100;
-	sn.buffer = malloc (sn.samples * sn.channels * sn.samplebits / 8);
+	sn.buffer = malloc (sn.frames * sn.channels * sn.samplebits / 8);
 	if (!sn.buffer) {
 		Sys_Printf ("SNDDMA_Init: memory allocation failure\n");
 		return 0;
 	}
 
-	Sys_Printf ("%5d stereo\n", sn.channels - 1);
-	Sys_Printf ("%5d samples\n", sn.samples);
-	Sys_Printf ("%5d samplepos\n", sn.samplepos);
+	Sys_Printf ("%5d channels\n", sn.channels - 1);
+	Sys_Printf ("%5d samples\n", sn.frames);
+	Sys_Printf ("%5d samplepos\n", sn.framepos);
 	Sys_Printf ("%5d samplebits\n", sn.samplebits);
 	Sys_Printf ("%5d submission_chunk\n", sn.submission_chunk);
 	Sys_Printf ("%5d speed\n", sn.speed);
-	Sys_Printf ("0x%x dma buffer\n", (int) sn.buffer);
+	Sys_Printf ("0x%lx dma buffer\n", (long) sn.buffer);
 
 	if (!(snd_file = Qopen ("qf.raw", "wb")))
 		return 0;
@@ -99,7 +98,11 @@ SNDDMA_Init (void)
 	snd_inited = 1;
 	return &sn;
 }
-*/
+
+static void
+SNDDMA_Init_Cvars (void)
+{
+}
 
 static int
 SNDDMA_GetDMAPos (void)
@@ -172,8 +175,10 @@ PLUGIN_INFO(snd_output, disk)
 	plugin_info_funcs.input = NULL;
 	plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
 
-//	plugin_info_general_funcs.p_Init = SNDDMA_Init; // FIXME
-	plugin_info_general_funcs.p_Shutdown = SNDDMA_Shutdown;
+	plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
+	plugin_info_general_funcs.p_Shutdown = NULL;
+	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
+	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_Shutdown;
 	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
 	plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
 	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;

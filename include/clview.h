@@ -1,5 +1,5 @@
 /*
-	view.h
+	clview.h
 
 	(description)
 
@@ -27,8 +27,8 @@
 */
 // view.h
 
-#ifndef __view_h_
-#define __view_h_
+#ifndef __clview_h_
+#define __clview_h_
 
 #include "QF/mathlib.h"
 
@@ -53,4 +53,4 @@ void V_CalcBlend (void);
 
 extern float	v_blend[4];
 
-#endif // __view_h_
+#endif // __clview_h_

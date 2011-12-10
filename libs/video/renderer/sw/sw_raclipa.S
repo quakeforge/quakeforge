@@ -68,11 +68,11 @@ C(R_Alias_clip_bottom):
 	popl	%eax
 	addl	$C(_GLOBAL_OFFSET_TABLE_)-1+[.-.Lpic1],%eax
 
-	movl	float_point5@GOTOFF(%eax),%edx
+	movl	C(float_point5)@GOTOFF(%eax),%edx
 	movl	C(r_refdef)@GOT(%eax),%eax
 #else
 	leal	C(r_refdef),%eax
-	movl	float_point5,%edx
+	movl	C(float_point5),%edx
 #endif
 	movl	rd_aliasvrectbottom(%eax),%eax
 	movl	%edx,point5(%esp)
@@ -209,11 +209,11 @@ C(R_Alias_clip_top):
 	popl	%eax
 	addl	$C(_GLOBAL_OFFSET_TABLE_)-1+[.-.Lpic2],%eax
 
-	movl	float_point5@GOTOFF(%eax),%edx
+	movl	C(float_point5)@GOTOFF(%eax),%edx
 	movl	C(r_refdef)@GOT(%eax),%eax
 #else
 	leal	C(r_refdef),%eax
-	movl	float_point5,%edx
+	movl	C(float_point5),%edx
 #endif
 	movl	rd_aliasvrect+4(%eax),%eax
 	movl	%edx,point5(%esp)
@@ -245,11 +245,11 @@ C(R_Alias_clip_right):
 	popl	%eax
 	addl	$C(_GLOBAL_OFFSET_TABLE_)-1+[.-.Lpic3],%eax
 
-	movl	float_point5@GOTOFF(%eax),%edx
+	movl	C(float_point5)@GOTOFF(%eax),%edx
 	movl	C(r_refdef)@GOT(%eax),%eax
 #else
 	leal	C(r_refdef),%eax
-	movl	float_point5,%edx
+	movl	C(float_point5),%edx
 #endif
 	movl	rd_aliasvrectright(%eax),%eax
 	movl	%edx,point5(%esp)
@@ -300,11 +300,11 @@ C(R_Alias_clip_left):
 	popl	%eax
 	addl	$C(_GLOBAL_OFFSET_TABLE_)-1+[.-.Lpic4],%eax
 
-	movl	float_point5@GOTOFF(%eax),%edx
+	movl	C(float_point5)@GOTOFF(%eax),%edx
 	movl	C(r_refdef)@GOT(%eax),%eax
 #else
 	leal	C(r_refdef),%eax
-	movl	float_point5,%edx
+	movl	C(float_point5),%edx
 #endif
 	movl	rd_aliasvrect+0(%eax),%eax
 	movl	%edx,point5(%esp)

@@ -40,6 +40,7 @@
 #define	MAX_PHYSENTS	(MAX_CLIENTS + MAX_PACKET_ENTITIES)
 typedef struct {
 	vec3_t	origin;
+	vec3_t	angles;
 	model_t	*model;		// only for bsp models
 	vec3_t	mins, maxs;	// only for non-bsp models
 	hull_t	*hull;		// hey, magic :)

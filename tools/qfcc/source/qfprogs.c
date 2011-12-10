@@ -230,11 +230,7 @@ func_find (int st_ofs)
 static void
 init_qf (void)
 {
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
-	Cvar_Init ();
-	Sys_Init_Cvars ();
-	Cmd_Init ();
+	Sys_Init ();
 
 	Cvar_Get ("pr_debug", va ("%d", verbosity), 0, 0, "");
 	Cvar_Get ("pr_source_path", source_path, 0, 0, "");

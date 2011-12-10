@@ -369,6 +369,8 @@ typedef enum {
 
 typedef enum {
 	IMT_CONSOLE,
+	IMT_MOD,
+	IMT_DEMO,
 	IMT_0,
 	IMT_1,
 	IMT_2,
@@ -405,7 +407,9 @@ typedef struct {
 } kbutton_t;
 
 extern keydest_t	key_dest;
-extern imt_t		game_target;
+extern imt_t		key_game_target;
+extern knum_t       key_togglemenu;
+extern knum_t       key_toggleconsole;
 
 extern struct keybind_s {
 	char *str;
@@ -420,6 +424,7 @@ void Key_WriteBindings (QFile *f);
 void Key_ClearStates (void);
 const char *Key_GetBinding (imt_t imt, knum_t key);
 void Key_SetBinding (imt_t target, knum_t keynum, const char *binding);
+void Key_SetKeyDest(keydest_t kd);
 
 
 const char *Key_KeynumToString (knum_t keynum);

@@ -84,8 +84,6 @@ cbuf_args_t *qtv_args;
 static cvar_t  *qtv_console_plugin;
 static cvar_t  *qtv_port;
 static cvar_t  *qtv_mem_size;
-static cvar_t  *fs_globalcfg;
-static cvar_t  *fs_usercfg;
 
 redirect_t  qtv_redirected;
 client_t   *qtv_redirect_client;
@@ -259,33 +257,9 @@ qtv_init (void)
 
 	Sys_RegisterShutdown (qtv_shutdown);
 
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
-	Cvar_Init ();
-	Sys_Init_Cvars ();
 	Sys_Init ();
+	COM_ParseConfig ();
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
-	Cmd_Init ();
-
-	Cmd_StuffCmds (qtv_cbuf);
-	Cbuf_Execute_Sets (qtv_cbuf);
-
-	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG,
-							 CVAR_ROM, 0, "global configuration file");
-	Cmd_Exec_File (qtv_cbuf, fs_globalcfg->string, 0);
-	Cbuf_Execute_Sets (qtv_cbuf);
-
-	// execute +set again to override the config file
-	Cmd_StuffCmds (qtv_cbuf);
-	Cbuf_Execute_Sets (qtv_cbuf);
-	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG,
-						   CVAR_ROM, 0, "user configuration file");
-	Cmd_Exec_File (qtv_cbuf, fs_usercfg->string, 0);
-	Cbuf_Execute_Sets (qtv_cbuf);
-
-	// execute +set again to override the config file
-	Cmd_StuffCmds (qtv_cbuf);
-	Cbuf_Execute_Sets (qtv_cbuf);
 
 	qtv_memory_init ();
 

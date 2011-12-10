@@ -5,8 +5,10 @@ dnl ==================================================================
 LIBCURL_CHECK_CONFIG([], [], [CURL=yes], [])
 
 AC_ARG_WITH(ipv6,
-[  --with-ipv6=DIR         enable IPv6 support. Optional argument specifies
-                          location of inet6 libraries.],
+	AS_HELP_STRING([--with-ipv6=DIR],
+				   [Eenable IPv6 support.]
+				   [Optional argument specifies location of inet6 libraries.]), 
+	[
 	if test "x$withval" = xno ; then
 		NETTYPE_IPV6=no
 	else
@@ -16,8 +18,8 @@ AC_ARG_WITH(ipv6,
 			LIBS="$LIBS -L${withval}"
 		fi
 	fi
-	,
-	NETTYPE_IPV6=no
+	],
+	[NETTYPE_IPV6=no]
 )
 AM_CONDITIONAL(NETTYPE_IPV6, test "x$NETTYPE_IPV6" = "xyes")
 
@@ -77,3 +79,16 @@ connect (0, NULL, 42);
 	LIBS="$SAVELIBS"
 fi
 AC_SUBST(NET_LIBS)
+
+AC_MSG_CHECKING([for getifaddrs])
+SAVELIBS="$LIBS"
+LIBS="$LIBS $NET_LIBS"
+AC_TRY_LINK([],
+	[
+getifaddrs (0);
+	],
+	AC_DEFINE(HAVE_GETIFADDRS, 1, [Define this if you have getifaddrs()])
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+LIBS="$SAVELIBS"

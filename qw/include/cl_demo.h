@@ -33,15 +33,11 @@
 #include "qw/protocol.h"
 
 void CL_StopPlayback (void);
-qboolean CL_GetMessage (void);
+int CL_GetMessage (void);
 void CL_WriteDemoCmd (usercmd_t *pcmd);
 
-void CL_Stop_f (void);
-void CL_Record_f (void);
-void CL_Record (const char *argv1);
-void CL_ReRecord_f (void);
-void CL_PlayDemo_f (void);
-void CL_TimeDemo_f (void);
+void CL_StopRecording (void);
+void CL_Record (const char *argv1, int track);	// track ignored
 
 void CL_Demo_Init (void);
 

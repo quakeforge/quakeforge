@@ -49,6 +49,7 @@ typedef struct {
 	int			verbosity;		// 0=silent
 	qboolean	compress;		// for the future
 	qboolean	pad;			// pad area of files to 4-byte boundary
+	qboolean	nomip;			// exclude mipmaps from output textures.
 	char		*wadfile;		// wad file to read/write/test
 } options_t;
 

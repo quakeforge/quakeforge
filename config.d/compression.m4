@@ -4,7 +4,7 @@ AC_ARG_ENABLE(flac,
 HAVE_FLAC=no
 if test "x$enable_flac" != "xno"; then
   if test "x$PKG_CONFIG" != "x"; then
-    PKG_CHECK_MODULES([LIBFLAC], [flac], HAVE_FLAC=yes, HAVE_FLAC=no)
+    PKG_CHECK_MODULES([FLAC], [flac], HAVE_FLAC=yes, HAVE_FLAC=no)
   else
     AM_PATH_LIBFLAC(HAVE_FLAC=yes, HAVE_FLAC=no)
   fi
@@ -61,12 +61,12 @@ if test "x$enable_zlib" != "xno"; then
         AC_CHECK_HEADER(zlib.h, HAVE_ZLIB=yes, HAVE_ZLIB=no)
         if test "x$HAVE_ZLIB" = "xyes"; then
            Z_LIBS="-lz"
+           AC_DEFINE(HAVE_ZLIB, 1, [Define if you have zlib])
         fi
      fi
   fi
 fi
 AC_SUBST(Z_LIBS)
-AC_DEFINE(HAVE_ZLIB, 1, [Define if you have zlib])
 AM_CONDITIONAL(HAVE_ZLIB, test "$HAVE_ZLIB" = "yes")
 
 AC_ARG_ENABLE(png,
@@ -80,12 +80,11 @@ if test "x$enable_png" != "xno"; then
 	else
 		AC_CHECK_LIB(png, png_set_read_fn, HAVE_PNG=yes, HAVE_PNG=no, [$LIBS])
 		if test "x$HAVE_PNG" = "xyes"; then
-			AC_CHECK_HEADER(png.h, HAVE_PNG=yes, HAVE_PNG=no)
+			AC_CHECK_HEADER(png.h, HAVE_PNG=yes PNG_LIBS="-lpng", HAVE_PNG=no)
 		fi
 	fi
 fi
 AC_SUBST(PNG_LIBS)
 if test "x$HAVE_PNG" = "xyes"; then
-	PNG_LIBS="-lpng"
 	AC_DEFINE(HAVE_PNG, 1, [Define if you have libpng])
 fi

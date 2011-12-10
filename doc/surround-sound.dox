@@ -1,4 +1,5 @@
 //unfortunately, have to wrap the docs in a C comment for doxygen
+// vim:tw=74:formatoptions-=l
 /**
 \page surround_sound_spec Description of Surround-Sound Channels
 

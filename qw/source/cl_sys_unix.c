@@ -29,7 +29,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
@@ -42,61 +42,48 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <unistd.h>
 #endif
 
-#include <ctype.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/mman.h>
-#include <sys/types.h>
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#else
+# include <sys/fcntl.h>
+#endif
 
-#include "QF/console.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
 #include "host.h"
 #include "netchan.h"
 
-int         noconinput = 0;
-qboolean    is_server = false;
-char       *svs_info;
-
 static void
-shutdown (void)
+shutdown_f (void)
 {
 	// change stdin to blocking
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
+	fflush (stdout);
 }
 
-int         skipframes;
-
 int
-main (int c, const char *v[])
+main (int argc, const char **argv)
 {
-//	static char cwd[1024];
 	double      time, oldtime, newtime;
 
 	memset (&host_parms, 0, sizeof (host_parms));
 
-	COM_InitArgv (c, v);
+	COM_InitArgv (argc, argv);
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
-	noconinput = COM_CheckParm ("-noconinput");
-	if (!noconinput)
+	if (!COM_CheckParm ("-noconinput"))
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (Net_LogStop);
-	Sys_RegisterShutdown (shutdown);
+	Sys_RegisterShutdown (shutdown_f);
 
 	Host_Init ();
 
 	oldtime = Sys_DoubleTime ();
-	while (1) {
+	while (1) {							// Main message loop
 		// find time spent rendering last frame
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;

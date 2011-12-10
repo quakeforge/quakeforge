@@ -56,7 +56,7 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <rpc/types.h>
 #endif
 
-#ifdef HAVE_MALLOC_H
+#if defined(_WIN32) && defined(HAVE_MALLOC_H)
 #include <malloc.h>
 #endif
 
@@ -112,7 +112,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "sbar.h"
-#include "view.h"
+#include "clview.h"
 
 CLIENT_PLUGIN_PROTOS
 static plugin_list_t client_plugin_list[] = {
@@ -126,9 +126,6 @@ qboolean    noclip_anglehack;			// remnant from old quake
 
 cbuf_t     *cl_cbuf;
 cbuf_t     *cl_stbuf;
-
-cvar_t     *fs_globalcfg;
-cvar_t     *fs_usercfg;
 
 cvar_t     *cl_mem_size;
 
@@ -433,6 +430,8 @@ CL_ClearState (void)
 	// clear other arrays   
 	memset (cl_efrags, 0, sizeof (cl_efrags));
 	memset (r_lightstyle, 0, sizeof (r_lightstyle));
+
+	dstring_clearstr (centerprint);
 }
 
 /*
@@ -486,7 +485,7 @@ CL_Disconnect (void)
 		CL_StopPlayback ();
 	else if (cls.state != ca_disconnected) {
 		if (cls.demorecording)
-			CL_Stop_f ();
+			CL_StopRecording ();
 
 		final[0] = clc_stringcmd;
 		strcpy ((char *) final + 1, "drop");
@@ -874,7 +873,7 @@ CL_ConnectionlessPacket (void)
 				Sys_Printf ("Dup connect received.  Ignored.\n");
 			return;
 		}
-		Netchan_Setup (&cls.netchan, net_from, cls.qport, NC_SEND_QPORT);
+		Netchan_Setup (&cls.netchan, net_from, cls.qport, NC_QPORT_SEND);
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, "new");
 		CL_SetState (ca_connected);
@@ -1025,7 +1024,7 @@ CL_ReadPackets (void)
 
 		if (cls.demoplayback && net_packetlog->int_val)
 			Log_Incoming_Packet (net_message->message->data,
-								 net_message->message->cursize, 0);
+								 net_message->message->cursize, 0, 0);
 
 		// remote command packet
 		if (*(int *) net_message->message->data == -1) {
@@ -1150,24 +1149,22 @@ CL_SetState (cactive_t state)
 			// leaving active state
 			IN_ClearStates ();
 			r_active = false;
-			game_target = IMT_CONSOLE;
-			key_dest = key_console;
+			Key_SetKeyDest (key_console);
 
 			// Auto demo recorder stops here
 			if (cl_autorecord->int_val && cls.demorecording)
-				CL_Stop_f ();
+				CL_StopRecording ();
 		} else if (state == ca_active) {
 			// entering active state
 			VID_SetCaption (cls.servername->str);
 			IN_ClearStates ();
 			r_active = true;
-			game_target = IMT_0;
-			key_dest = key_game;
+			Key_SetKeyDest (key_game);
 
 			// Auto demo recorder starts here
 			if (cl_autorecord->int_val && !cls.demoplayback
 				&& !cls.demorecording)
-				CL_Record (0);
+				CL_Record (0, -1);
 		}
 	}
 	if (con_module)
@@ -1192,18 +1189,8 @@ CL_Init (void)
 	Cmd_AddCommand ("version", CL_Version_f, "Report version information");
 	Cmd_AddCommand ("changing", CL_Changing_f, "Used when maps are changing");
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "Disconnect from server");
-	Cmd_AddCommand ("record", CL_Record_f, "Record a demo, if no filename "
-					"argument is given\n"
-					"the demo will be called Year-Month-Day-Hour-Minute-"
-					"Mapname");
-	Cmd_AddCommand ("rerecord", CL_ReRecord_f, "Rerecord a demo on the same "
-					"server");
 	Cmd_AddCommand ("snap", CL_RSShot_f, "Take a screenshot and upload it to "
 					"the server");
-	Cmd_AddCommand ("stop", CL_Stop_f, "Stop recording a demo");
-	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "Play a recorded demo");
-	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "Play a demo as fast as your "
-					"hardware can. Useful for benchmarking.");
 	Cmd_AddCommand ("maplist", Con_Maplist_f, "List maps available");
 	Cmd_AddCommand ("skinlist", Con_Skinlist_f, "List skins available");
 	Cmd_AddCommand ("skyboxlist", Con_Skyboxlist_f, "List skyboxes available");
@@ -1721,46 +1708,15 @@ Host_Init (void)
 	cl_cbuf = Cbuf_New (&id_interp);
 	cl_stbuf = Cbuf_New (&id_interp);
 
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
-	Cvar_Init ();
-	Sys_Init_Cvars ();
-
 	Sys_Init ();
-
-	Cmd_Init ();
 	GIB_Init (true);
-
-	// execute +set as early as possible
-	Cmd_StuffCmds (cl_cbuf);
-	Cbuf_Execute_Sets (cl_cbuf);
-
-	// execute the global configuration file if it exists
-	// would have been nice if Cmd_Exec_f could have been used, but it
-	// reads from only within the quake file system, and changing that is
-	// probably Not A Good Thing (tm).
-	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG, CVAR_ROM, NULL,
-							 "global configuration file");
-	Cmd_Exec_File (cl_cbuf, fs_globalcfg->string, 0);
-	Cbuf_Execute_Sets (cl_cbuf);
-
-	// execute +set again to override the config file
-	Cmd_StuffCmds (cl_cbuf);
-	Cbuf_Execute_Sets (cl_cbuf);
-
-	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG, CVAR_ROM, NULL,
-						   "user configuration file");
-	Cmd_Exec_File (cl_cbuf, fs_usercfg->string, 0);
-	Cbuf_Execute_Sets (cl_cbuf);
-
-	// execute +set again to override the config file
-	Cmd_StuffCmds (cl_cbuf);
-	Cbuf_Execute_Sets (cl_cbuf);
+	COM_ParseConfig ();
 
 	CL_Init_Memory ();
 
 	pr_gametype = "quakeworld";
 
+	centerprint = dstring_newstr ();
 	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 	cls.servername = dstring_newstr ();
 	cls.downloadtempname = dstring_newstr ();
@@ -1777,7 +1733,6 @@ Host_Init (void)
 	CL_Skin_Init_Cvars ();
 	CL_Init_Cvars ();
 	CL_Prediction_Init_Cvars ();
-	COM_Init_Cvars ();
 	Game_Init_Cvars ();
 	IN_Init_Cvars ();
 	Key_Init_Cvars ();
@@ -1799,7 +1754,6 @@ Host_Init (void)
 	CL_Cmd_Init ();
 	V_Init ();
 	Game_Init ();
-	COM_Init ();
 
 	PI_RegisterPlugins (client_plugin_list);
 	Con_Init ("client");

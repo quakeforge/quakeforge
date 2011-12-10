@@ -367,8 +367,7 @@ bi_Menu_SelectMenu (progs_t *pr)
 	if (name && *name)
 		menu = Hash_Find (menu_hash, name);
 	if (menu) {
-		key_dest = key_menu;
-		game_target = IMT_CONSOLE;
+		Key_SetKeyDest (key_menu);
 		if (menu->enter_hook) {
 			run_menu_pre ();
 			PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
@@ -378,11 +377,9 @@ bi_Menu_SelectMenu (progs_t *pr)
 		if (name && *name)
 			Sys_Printf ("no menu \"%s\"\n", name);
 		if (con_data.force_commandline) {
-			key_dest = key_console;
-			game_target = IMT_CONSOLE;
+			Key_SetKeyDest (key_console);
 		} else {
-			key_dest = key_game;
-			game_target = IMT_0;
+			Key_SetKeyDest (key_game);
 		}
 	}
 }
@@ -700,12 +697,10 @@ void
 Menu_Enter ()
 {
 	if (!top_menu) {
-		key_dest = key_console;
-		game_target = IMT_CONSOLE;
+		Key_SetKeyDest (key_console);
 		return;
 	}
-	key_dest = key_menu;
-	game_target = IMT_CONSOLE;
+	Key_SetKeyDest (key_menu);
 	menu = Hash_Find (menu_hash, top_menu);
 	if (menu && menu->enter_hook) {
 		run_menu_pre ();
@@ -726,11 +721,9 @@ Menu_Leave ()
 		menu = menu->parent;
 		if (!menu) {
 			if (con_data.force_commandline) {
-				key_dest = key_console;
-				game_target = IMT_CONSOLE;
+				Key_SetKeyDest (key_console);
 			} else {
-				key_dest = key_game;
-				game_target = IMT_0;
+				Key_SetKeyDest (key_game);
 			}
 		}
 	}

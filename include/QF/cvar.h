@@ -38,42 +38,55 @@
 #include "QF/quakeio.h"
 
 typedef struct cvar_s {
-	const char *name;
-	const char *string;
-	const char *default_string;
-	int	        flags;
+	const char *name;			///< The name of the cvar.
+	const char *string;			///< The current cvar value as a string.
+	const char *default_string;	///< The default value of the cvar.
+	int	        flags;			///< Cvar flags
+	/** Callback for when the cvar value changes.
+	
+		This allows for more flexibility in what happens when a cvar is
+		nodifed than can be achieved with flags alone. While a similar could
+		be done using commands, a cvar with a callback and CVAR_ARCHIVE set
+		allows the setting to be saved automatically.
+
+		\param var	This cvar.
+	*/
 	void      (*callback)(struct cvar_s *var);
-	const char *description;	// for "help" command
-	float       value;
-	int         int_val;
-	vec3_t      vec;
-	struct cvar_s *next;
+	const char *description;	///< for "help" command
+	float       value;			///< The current cvar value as a float
+	int         int_val;		///< The current cvar value as an integer
+	vec3_t      vec;			///< The current cvar value as a vector
+	struct cvar_s *next;		///< \internal Linked list of cvars.
 } cvar_t;
 
 typedef struct cvar_alias_s {
-	char       *name;
-	cvar_t     *cvar;
-	struct cvar_alias_s	*next;
+	char       *name;			///< The name of the alias.
+	cvar_t     *cvar;			///< The cvar to which this alias refers
+	struct cvar_alias_s	*next;	///< \internal LInked list of aliases.
 } cvar_alias_t;
 
-#define CVAR_NONE			0
-#define	CVAR_ARCHIVE		1		// set to cause it to be saved to vars.rc
-									// used for system variables, not for player
-									// specific configurations
-#define	CVAR_USERINFO		2		// sent to server on connect or change
-#define	CVAR_SERVERINFO		4		// sent in response to front end requests
-#define	CVAR_NOTIFY			32		// Will notify players when changed.
-#define	CVAR_ROM			64		// display only, cannot be set by user at all
-#define	CVAR_USER_CREATED	128		// created by a set command
-#define CVAR_LATCH			2048	// will change only when C code next does
-									// a Cvar_Get(), so it can't be changed
-
-// Zoid| A good CVAR_ROM example is userpath.  The code should read "cvar_t
-// *fs_userpath = CvarGet("fs_userpath", ".", CVAR_ROM);  The user can
-// override that with +set fs_userpath <blah> since the command line +set gets
-// created _before_ the C code for fs_basepath setup is called.  The code goes
-// "look, the user made fs_basepath already", uses the users value, but sets
-// CVAR_ROM as per the call.
+/** \name cvar_flags
+	Zoid| A good CVAR_ROM example is userpath.  The code should read "cvar_t
+	*fs_userpath = CvarGet("fs_userpath", ".", CVAR_ROM);  The user can
+	override that with +set fs_userpath \<blah\> since the command line +set
+	gets created _before_ the C code for fs_basepath setup is called.  The
+	code goes "look, the user made fs_basepath already", uses the users value,
+	but sets CVAR_ROM as per the call.
+*/
+//@{
+#define CVAR_NONE			0		///< normal cvar
+#define	CVAR_ARCHIVE		1		///< set to cause it to be saved to
+									///< config.cfg
+#define	CVAR_USERINFO		2		///< sent to server on connect or change
+#define	CVAR_SERVERINFO		4		///< sent in response to front end requests
+#define	CVAR_NOTIFY			32		///< Will notify players when changed.
+									///< (not implemented)
+#define	CVAR_ROM			64		///< display only, cannot be set
+#define	CVAR_USER_CREATED	128		///< created by a set command
+#define CVAR_LATCH			2048	///< will change only when C code next does
+									///< a Cvar_Get(), so it can't be changed
+									///< (not implemented)
+//@}
 
 
 // Returns the Cvar if found, creates it with value if not.  Description and

@@ -33,7 +33,7 @@
 #define __qtv_h
 
 /**	\defgroup qtv QuakeForge QTV Proxy
-	\image html qwtv.png
+	\image html qwtv.svg
 	\image latex qwtv.eps ""
 	\ref qtv_overview
 */

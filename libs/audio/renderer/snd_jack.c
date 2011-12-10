@@ -48,11 +48,13 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "snd_render.h"
+#include "snd_internal.h"
 
 static int sound_started = 0;
 static int snd_blocked = 0;
 static int snd_shutdown = 0;
+static int snd_alive = 0;
+static double snd_alive_time = 0;
 static jack_client_t *jack_handle;
 static jack_port_t *jack_out[2];
 static dma_t    _snd_shm;
@@ -79,11 +81,37 @@ s_start_sound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 }
 
 static void
+s_finish_channels (void)
+{
+	int         i;
+	channel_t  *ch;
+
+	for (i = 0; i < MAX_CHANNELS; i++) {
+		ch = &snd_channels[i];
+		ch->done = ch->stop = 1;
+	}
+}
+
+static void
 s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 		  const vec3_t up)
 {
+	double      now = Sys_DoubleTime ();
+
 	if (!sound_started)
 		return;
+	if (snd_alive) {
+		snd_alive = 0;
+		snd_alive_time = now;
+	} else {
+		if (!snd_shutdown) {
+			if (now - snd_alive_time > 1.0) {
+				Sys_Printf ("jackd client thread seems to have died\n");
+				s_finish_channels ();
+				snd_shutdown = 1;
+			}
+		}
+	}
 	if (snd_shutdown) {
 		if (snd_shutdown == 1) {
 			snd_shutdown++;
@@ -120,8 +148,10 @@ s_jack_activate (void)
 	}
 	ports = jack_get_ports (jack_handle, 0, 0,
 							JackPortIsPhysical | JackPortIsInput);
-	//for (i = 0; ports[i]; i++)
-	//	Sys_Printf ("%s\n", ports[i]);
+	if (developer->int_val & SYS_SND) {
+		for (i = 0; ports[i]; i++)
+			Sys_Printf ("%s\n", ports[i]);
+	}
 	for (i = 0; i < 2; i++)
 		jack_connect (jack_handle, jack_port_name (jack_out[i]), ports[i]);
 	free (ports);
@@ -228,13 +258,10 @@ s_channel_stop (channel_t *chan)
 }
 
 static void
-snd_jack_xfer (int endtime)
+snd_jack_xfer (portable_samplepair_t *paintbuffer, int count, float volume)
 {
 	int         i;
-	int         count;
-	float       snd_vol = snd_volume->value;
 
-	count = endtime - snd_paintedtime;
 	if (snd_blocked) {
 		for (i = 0; i < count; i++) {
 			*output[0]++ = 0;
@@ -244,8 +271,8 @@ snd_jack_xfer (int endtime)
 	}
 	for (i = 0; i < count; i++) {
 		/* max is +/- 1.0. need to implement clamping. */
-		*output[0]++ = snd_vol * snd_paintbuffer[i].left;
-		*output[1]++ = snd_vol * snd_paintbuffer[i].right;
+		*output[0]++ = volume * snd_paintbuffer[i].left;
+		*output[1]++ = volume * snd_paintbuffer[i].right;
 	}
 }
 
@@ -254,6 +281,7 @@ snd_jack_process (jack_nframes_t nframes, void *arg)
 {
 	int         i;
 
+	snd_alive = 1;
 	for (i = 0; i < 2; i++)
 		output[i] = (float *) jack_port_get_buffer (jack_out[i], nframes);
 	SND_PaintChannels (snd_paintedtime + nframes);
@@ -263,13 +291,21 @@ snd_jack_process (jack_nframes_t nframes, void *arg)
 static void
 snd_jack_shutdown (void *arg)
 {
-	int         i;
-	channel_t  *ch;
 	snd_shutdown = 1;
-	for (i = 0; i < MAX_CHANNELS; i++) {
-		ch = &snd_channels[i];
-		ch->done = ch->stop = 1;
-	}
+	s_finish_channels ();
+}
+
+static void
+snd_jack_error (const char *desc)
+{
+	fprintf (stderr, "snd_jack: %s\n", desc);
+}
+
+static int
+snd_jack_xrun (void *arg)
+{
+	fprintf (stderr, "snd_jack: xrun\n");
+	return 0;
 }
 
 static void
@@ -291,12 +327,15 @@ s_init (void)
 	SND_SFX_Init ();
 	SND_Channels_Init ();
 
+	jack_set_error_function (snd_jack_error);
 	if ((jack_handle = jack_client_open ("QuakeForge",
 										 JackServerName | JackNoStartServer, 0,
 										 snd_jack_server->string)) == 0) {
 		Sys_Printf ("Could not connect to JACK\n");
 		return;
 	}
+	if (jack_set_xrun_callback (jack_handle, snd_jack_xrun, 0))
+		Sys_Printf ("Could not set xrun callback\n");
 	jack_set_process_callback (jack_handle, snd_jack_process, 0);
 	jack_on_shutdown (jack_handle, snd_jack_shutdown, 0);
 	for (i = 0; i < 2; i++)

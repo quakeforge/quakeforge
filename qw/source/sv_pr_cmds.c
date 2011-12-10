@@ -28,7 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
@@ -44,7 +44,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
-#include "QF/progs.h"
 #include "QF/ruamoko.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -53,7 +52,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "crudefile.h"
 #include "server.h"
 #include "sv_gib.h"
-#include "sv_pr_cmds.h"
 #include "sv_progs.h"
 #include "sv_recorder.h"
 #include "world.h"
@@ -77,7 +75,7 @@ PF_error (progs_t *pr)
 	edict_t    *ed;
 
 	s = PF_VarString (pr, 0);
-	SV_Printf ("======SERVER ERROR in %s:\n%s\n",
+	Sys_Printf ("======SERVER ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->descriptor->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
@@ -101,7 +99,7 @@ PF_objerror (progs_t *pr)
 	edict_t    *ed;
 
 	s = PF_VarString (pr, 0);
-	SV_Printf ("======OBJECT ERROR in %s:\n%s\n",
+	Sys_Printf ("======OBJECT ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->descriptor->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
@@ -114,8 +112,7 @@ PF_objerror (progs_t *pr)
 	PF_makevectors
 
 	Writes new values for v_forward, v_up, and v_right based on angles
-	makevectors (vector)
-	// void (entity e) makevectors
+	void (vector angles) makevectors
 */
 static void
 PF_makevectors (progs_t *pr)
@@ -174,7 +171,7 @@ PF_setsize (progs_t *pr)
 /*
 	PF_setmodel
 
-	setmodel(entity, model)
+	setmodel (entity, model)
 	// void (entity e, string m) setmodel
 	Also sets size, mins, and maxs for inline bmodels
 */
@@ -249,7 +246,7 @@ PF_sprint (progs_t *pr)
 	level = P_FLOAT (pr, 1);
 
 	if (entnum < 1 || entnum > MAX_CLIENTS) {
-		SV_Printf ("tried to sprint to a non-client\n");
+		Sys_Printf ("tried to sprint to a non-client\n");
 		return;
 	}
 
@@ -265,11 +262,11 @@ PF_sprint (progs_t *pr)
 
 /*
 	PF_centerprint
-	// void (...) centerprint
 
 	single print to a specific client
 
 	centerprint (clientent, value)
+	// void (...) centerprint
 */
 static void
 PF_centerprint (progs_t *pr)
@@ -281,7 +278,7 @@ PF_centerprint (progs_t *pr)
 	entnum = P_EDICTNUM (pr, 0);
 
 	if (entnum < 1 || entnum > MAX_CLIENTS) {
-		SV_Printf ("tried to sprint to a non-client\n");
+		Sys_Printf ("tried to sprint to a non-client\n");
 		return;
 	}
 
@@ -327,7 +324,7 @@ PF_ambientsound (progs_t *pr)
 			break;
 
 	if (!*check) {
-		SV_Printf ("no precache: %s\n", samp);
+		Sys_Printf ("no precache: %s\n", samp);
 		return;
 	}
 
@@ -342,7 +339,6 @@ PF_ambientsound (progs_t *pr)
 
 /*
 	PF_sound
-	// void (entity e, float chan, string samp) sound
 
 	Each entity can have eight independant sound sources, like voice,
 	weapon, feet, etc.
@@ -352,6 +348,7 @@ PF_ambientsound (progs_t *pr)
 
 	An attenuation of 0 will play full volume everywhere in the level.
 	Larger attenuations will drop off.
+	// void (entity e, float chan, string samp) sound
 */
 static void
 PF_sound (progs_t *pr)
@@ -403,6 +400,7 @@ PF_traceline (progs_t *pr)
 	VectorCopy (trace.endpos, *sv_globals.trace_endpos);
 	VectorCopy (trace.plane.normal, *sv_globals.trace_plane_normal);
 	*sv_globals.trace_plane_dist = trace.plane.dist;
+
 	if (trace.ent)
 		*sv_globals.trace_ent = EDICT_TO_PROG (pr, trace.ent);
 	else
@@ -411,7 +409,8 @@ PF_traceline (progs_t *pr)
 
 /*
 	PF_tracebox
-	// void (vector start, vector mins, vector maxs, vector end, float type, entity passent) tracebox
+	// void (vector start, vector mins, vector maxs, vector end, float type,
+	//       entity passent) tracebox
 
 	Wrapper around SV_Move, this makes PF_movetoground and PF_traceline
 	redundant.
@@ -419,10 +418,10 @@ PF_traceline (progs_t *pr)
 static void
 PF_tracebox (progs_t *pr)
 {
-	edict_t	*ent;
-	float	*start, *end, *mins, *maxs;
-	int		type;
-	trace_t	trace;
+	edict_t    *ent;
+	float      *start, *end, *mins, *maxs;
+	int         type;
+	trace_t     trace;
 
 	start = P_VECTOR (pr, 0);
 	mins = P_VECTOR (pr, 1);
@@ -516,15 +515,17 @@ int         c_invis, c_notvis;
 
 /*
 	PF_checkclient
-	// entity () clientlist
 
 	Returns a client (or object that has a client enemy) that would be a
 	valid target.
 
 	If there are more than one valid options, they are cycled each frame
 
-	If (self.origin + self.viewofs) is not in the PVS of the current target, it
-	is not returned at all.
+	If (self.origin + self.viewofs) is not in the PVS of the current target,
+	it is not returned at all.
+
+	name checkclient ()
+	// entity () clientlist
 */
 static void
 PF_checkclient (progs_t *pr)
@@ -620,11 +621,11 @@ PF_stuffcmd (progs_t *pr)
 
 /*
 	PF_localcmd
-	// void (string s) localcmd
 
 	Inserts text into the server console's execution buffer
 
 	localcmd (string)
+	// void (string s) localcmd
 */
 static void
 PF_localcmd (progs_t *pr)
@@ -648,15 +649,15 @@ PF_findradius (progs_t *pr)
 {
 	edict_t    *ent, *chain;
 	float       rsqr;
-	//float      *eorigin;
-	float      *emins, *emaxs, *org;
+	vec_t      *emins, *emaxs, *org;
 	int         i, j;
 	vec3_t      eorg;
 
 	chain = (edict_t *) sv.edicts;
 
 	org = P_VECTOR (pr, 0);
-	rsqr = P_FLOAT (pr, 1) * P_FLOAT (pr, 1);		// Square early, sqrt never
+	rsqr = P_FLOAT (pr, 1);
+	rsqr *= rsqr;					// Square early, sqrt never
 
 	ent = NEXT_EDICT (pr, sv.edicts);
 	for (i = 1; i < sv.num_edicts; i++, ent = NEXT_EDICT (pr, ent)) {
@@ -665,14 +666,10 @@ PF_findradius (progs_t *pr)
 		if (SVfloat (ent, solid) == SOLID_NOT
 			&& !((int) SVfloat (ent, flags) & FL_FINDABLE_NONSOLID))
 			continue;
-		//eorigin = SVvector (ent, origin);
-		//emins = SVvector (ent, mins);
-		//emaxs = SVvector (ent, maxs);
 		emins = SVvector (ent, absmin);
 		emaxs = SVvector (ent, absmax);
 		for (j = 0; j < 3; j++)
 			eorg[j] = org[j] - 0.5 * (emins[j] + emaxs[j]);
-			//eorg[j] = org[j] - eorigin[j] - 0.5 * (emins[j] + emaxs[j]);
 		if (DotProduct (eorg, eorg) > rsqr)
 			continue;
 
@@ -705,14 +702,14 @@ PF_Remove (progs_t *pr)
 	if (NUM_FOR_EDICT (pr, ed) < *pr->reserved_edicts) {
 		if (pr_double_remove->int_val == 1) {
 			PR_DumpState (pr);
-			SV_Printf ("Reserved entity remove\n");
+			Sys_Printf ("Reserved entity remove\n");
 		} else // == 2
 			PR_RunError (pr, "Reserved entity remove\n");
 	}
 	if (ed->free && pr_double_remove->int_val) {
 		if (pr_double_remove->int_val == 1) {
 			PR_DumpState (pr);
-			SV_Printf ("Double entity remove\n");
+			Sys_Printf ("Double entity remove\n");
 		} else // == 2
 			PR_RunError (pr, "Double entity remove\n");
 	}
@@ -734,7 +731,7 @@ do_precache (progs_t *pr, const char **cache, int max, const char *name,
 	char       *s;
 
 	if (sv.state != ss_loading)
-		PR_RunError (pr, "%s: Precache can be done in only spawn functions",
+		PR_RunError (pr, "%s: Precache can be done only in spawn functions",
 					 func);
 
 	PR_CheckEmptyString (pr, name);
@@ -764,8 +761,8 @@ do_precache (progs_t *pr, const char **cache, int max, const char *name,
 // string (string s) precache_file2
 static void
 PF_precache_file (progs_t *pr)
-{										// precache_file is used only to copy 
-										// files with qcc, it does nothing
+{
+	// precache_file is used only to copy files with qcc, it does nothing
 	R_INT (pr) = P_INT (pr, 0);
 }
 
@@ -784,10 +781,9 @@ PF_precache_sound (progs_t *pr)
 static void
 PF_precache_model (progs_t *pr)
 {
-	R_INT (pr) = P_INT (pr, 0);
-
 	do_precache (pr, sv.model_precache, MAX_MODELS, P_GSTRING (pr, 0),
 				 "precache_model");
+	R_INT (pr) = P_INT (pr, 0);
 }
 
 /*
@@ -925,10 +921,10 @@ cvar_t     *sv_aim;
 
 /*
 	PF_aim
-	// vector (entity e, float speed) aim
 
 	Pick a vector for the player to shoot along
 	vector aim (entity, missilespeed)
+	// vector (entity e, float speed) aim
 */
 static void
 PF_aim (progs_t *pr)
@@ -1021,9 +1017,9 @@ PF_aim (progs_t *pr)
 
 /*
 	PF_changeyaw
-	// void () ChangeYaw
 
 	This was a major timewaster in progs, so it was converted to C
+	// void () ChangeYaw
 */
 void
 PF_changeyaw (progs_t *pr)
@@ -1065,7 +1061,7 @@ PF_changeyaw (progs_t *pr)
 #define	MSG_INIT		3				// write to the init string
 #define	MSG_MULTICAST	4				// for multicast ()
 
-static sizebuf_t  *
+static sizebuf_t *
 WriteDest (progs_t *pr)
 {
 	int         dest;
@@ -1971,6 +1967,7 @@ static builtin_t builtins[] = {
 	{"aim",					PF_aim,					44},
 
 	{"localcmd",			PF_localcmd,			46},
+
 	{"changeyaw",			PF_changeyaw,			49},
 
 	{"writebyte",			PF_WriteByte,			52},
@@ -2000,13 +1997,13 @@ static builtin_t builtins[] = {
 	{"logfrag",				PF_logfrag,				79},
 	{"infokey",				PF_infokey,				80},
 	{"multicast",			PF_multicast,			82},
+
 	{"testentitypos",		PF_testentitypos,		QF 92},
 	{"hullpointcontents",	PF_hullpointcontents,	QF 93},
 	{"getboxbounds",		PF_getboxbounds,		QF 94},
 	{"getboxhull",			PF_getboxhull,			QF 95},
 	{"freeboxhull",			PF_freeboxhull,			QF 96},
 	{"rotate_bbox",			PF_rotate_bbox,			QF 97},
-
 	{"tracebox",			PF_tracebox,			QF 98},
 	{"checkextension",		PF_checkextension,		QF 99},
 	{"setinfokey",			PF_setinfokey,			QF 102},
@@ -2025,6 +2022,7 @@ static builtin_t builtins[] = {
 	{"SV_Spawn",			PR_SV_Spawn,			-1},
 
 	{"EntityParseFunction", ED_EntityParseFunction,	-1},
+
 	{0}
 };
 
@@ -2042,5 +2040,4 @@ SV_PR_Cmds_Init ()
 	bi->proc = PF_sv_cvar;
 
 	PR_RegisterBuiltins (&sv_pr_state, builtins);
-};
-// void (float step) movetogoal
+}

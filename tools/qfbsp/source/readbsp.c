@@ -56,7 +56,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "options.h"
 #include "portals.h"
 #include "readbsp.h"
-#include "winding.h"
 
 /**	\addtogroup qfbsp_readbsp
 */

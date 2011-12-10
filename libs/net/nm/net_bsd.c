@@ -1,7 +1,7 @@
 /*
 	net_bsd.c
 
-	@description@
+	BSD socket based network and lan driver structs.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -89,7 +89,6 @@ net_landriver_t net_landrivers[MAX_NET_DRIVERS] = {
 	 UDP_Write,
 	 UDP_Broadcast,
 	 UDP_AddrToString,
-	 UDP_StringToAddr,
 	 UDP_GetSocketAddr,
 	 UDP_GetNameFromAddr,
 	 UDP_GetAddrFromName,

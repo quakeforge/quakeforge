@@ -1,72 +1,99 @@
-This is our new development tree (we're back to "quakeforge"), where we're again in the process of merging Quake and QuakeWorld ... but this time, it's much better. :), and will eventually provide the 0.6 versions of QuakeForge.
+//This file is formatted for processing with doxygen.
+//unfortunatly, have to wrap the docs in a C comment for doxygen
+// vim:tw=74:formatoptions-=l
+/**
+\page build-install Building and Installing QuakeForge
 
-While almost always in working order, it's under heavy development so be prepared to encounter some issues (Wear your hard hat!). Please check the docs.
+This is our new development tree (we're back to "quakeforge"), where we're
+again in the process of merging Quake and QuakeWorld ... but this time,
+it's much better. :), and will eventually provide the 0.6 versions of
+QuakeForge.
 
-UNIX users: because of the diversity of machines QuakeForge runs on, we do not provide UNIX binaries. You need to compile QuakeForge yourself, however QuakeForge is very easy to compile once you have the following packages installed:
+While almost always in working order, it's under heavy development so be
+prepared to encounter some issues (Wear your hard hat!). Please check the
+docs.
 
-    * GNU autoconf 2.50 or later
-    * GNU automake 1.6 or later
-    * GNU libtool 1.4 or later
-    * GNU bison
-    * GNU flex
-    * GNU make (BSD make doesn't like some constructs used)
-    * C compiler and preprocessor (gcc and cpp recommended)
-    * libsamplerate
+\note UNIX users: because of the diversity of machines on which QuakeForge
+runs , we do not provide UNIX binaries. You need to compile QuakeForge
+yourself, however QuakeForge is very easy to compile once you have the
+necessary packages installed.
+
+\section req-pack Required Packages
+The following packages are required to build QuakeForge:
+\li GNU autoconf 2.50 or later
+\li GNU automake 1.6 or later
+\li GNU libtool 1.4 or later
+\li GNU bison
+\li GNU flex
+\li GNU make (BSD make doesn't like some constructs used)
+\li C compiler and preprocessor (gcc and cpp recommended)
+\li libsamplerate
+
+\section rec-pack Recommended Packages
 The following are recommended:
-    * git (highly recommended for staying up to date with current changes)
-    * zlib devel (highly recommended for compressed file and download support)
-    * Ogg Vorbis libs (for compressed sound effects support)
-    * X11 devel (for X11-based clients: software and OpenGL)
-    * glide and mesa or other GL compatible lib
-    * svgalib (for console-based clients: software and 3dfx)
+\li git (highly recommended for staying up to date with current changes)
+\li zlib devel (highly recommended for compressed file and download support)
+\li curl (for http download support (\ref qw_download_spec))
+\li Ogg Vorbis libs (for compressed sound effects support)
+\li X11 devel (for X11-based clients: software and OpenGL)
+\li glide and mesa or other GL compatible lib
+\li svgalib (for console-based clients: software and 3dfx)
 
-Relevant packages (debian):
-    * build-essential
-    * autoconf
-    * automake
-    * libtool
-    * flex
-    * bison
-    * git
+\section package-names Relevant Package Names
+The following is the list of relevant package names in debian.
+\li build-essential
+\li autoconf
+\li automake
+\li libtool
+\li flex
+\li bison
+\li git
 
-    * libasound2-dev
-    * libjack-dev
+\li libasound2-dev
+\li libjack-dev
 
-    * libsamplerate0-dev
+\li libsamplerate0-dev
 
-    * libflac-dev
-    * libogg-dev
-    * libvorbis-dev
-    * libpng12-dev
-    * zlib1g-dev
+\li libflac-dev
+\li libogg-dev
+\li libvorbis-dev
+\li libpng12-dev
+\li zlib1g-dev
 
-    * libcurl4-openssl-dev (or libcurl4-gnutls-dev)
-    * libncurses5-dev
+\li libcurl4-openssl-dev (or libcurl4-gnutls-dev)
+\li libncurses5-dev
 
-    * libsdl1.2-dev
-    * libsvga1-dev
-    * libxxf86dga-dev
-    * libxxf86vm-dev
+\li libsdl1.2-dev
+\li libsvga1-dev
+\li libxxf86dga-dev
+\li libxxf86vm-dev
 
-
+\section building-and-installing Build and Install Procedure
 Basic process to build and install QuakeForge:
+\verbatim
 	./bootstrap
 	./configure
 	make install
+\endverbatim
 
-You may want to check `./configure --help` and select options.
+You may want to check <code>./configure --help</code> and select options.
 
 To build and install only the quakeworld server:
+\verbatim
 	./bootstrap
 	./configure --without-clients --without-tools --with-servers=qw
 	make install
+\endverbatim
 
 To build documentation (doxygen, graphviz and mscgen are required), in an
 already configured source tree:
+\verbatim
 	cd doc
 	make doc
+\endverbatim
 
-Then either point your webbrowser to doxygen/html/index.html, or copy/move
-doxygen/html to a webserver and point your browser to that. The
-documentation is currently grossly inadequate, but hopefully it is of some
-help.
+Then either point your webbrowser to <code>doxygen/html/index.html</code>, or
+copy/move <code>doxygen/html</code> to a webserver and point your browser
+to that. The documentation is currently grossly inadequate, but hopefully
+it is of some help.
+*/

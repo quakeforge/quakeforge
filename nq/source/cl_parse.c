@@ -101,7 +101,7 @@ const char *svc_strings[] = {
 	"svc_foundsecret",
 	"svc_spawnstaticsound",
 	"svc_intermission",
-	"svc_finale",				// [string] music [string] text
+	"svc_finale",				// [string] text
 	"svc_cdtrack",				// [byte] track [byte] looptrack
 	"svc_sellscreen",
 	"svc_cutscene",
@@ -185,16 +185,16 @@ CL_ParseStartSoundPacket (void)
 		attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
 
 	if (field_mask & SND_LARGEENTITY) {
-		ent = (uint16_t) MSG_ReadShort (net_message);
+		ent = MSG_ReadShort (net_message);
 		channel = MSG_ReadByte (net_message);
 	} else {
-		channel = (uint16_t) MSG_ReadShort (net_message);
+		channel = MSG_ReadShort (net_message);
 		ent = channel >> 3;
 		channel &= 7;
 	}
 
 	if (field_mask & SND_LARGESOUND)
-		sound_num = (uint16_t) MSG_ReadShort (net_message);
+		sound_num = MSG_ReadShort (net_message);
 	else
 		sound_num = MSG_ReadByte (net_message);
 
@@ -319,6 +319,7 @@ CL_NewMap (const char *mapname)
 {
 	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
 	Con_NewMap ();
+	Hunk_Check ();								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
 
 	if (cl.model_precache[1] && cl.model_precache[1]->entities) {
@@ -688,7 +689,7 @@ CL_ParseClientdata (void)
 	int         i, j;
 	int         bits;
 
-	bits = (uint16_t) MSG_ReadShort (net_message);
+	bits = MSG_ReadShort (net_message);
 	if (bits & SU_EXTEND1)
 		bits |= MSG_ReadByte (net_message) << 16;
 	if (bits & SU_EXTEND2)
@@ -763,7 +764,7 @@ CL_ParseClientdata (void)
 			cl.viewent.lerpflags |= LERP_RESETANIM;
 	}
 
-	i = MSG_ReadShort (net_message);
+	i = (short) MSG_ReadShort (net_message);
 	if (cl.stats[STAT_HEALTH] != i) {
 		cl.stats[STAT_HEALTH] = i;
 		Sbar_Changed ();
@@ -865,6 +866,14 @@ CL_ParseStaticSound (int version)
 	S_StaticSound (cl.sound_precache[sound_num], org, vol, atten);
 }
 
+static void
+CL_SetStat (int stat, int value)
+{
+	if (stat < 0 || stat >= MAX_CL_STATS)
+		Host_Error ("CL_SetStat: %i is invalid", stat);
+	cl.stats[stat] = value;
+}
+
 #define SHOWNET(x) \
 	if (cl_shownet->int_val == 2) \
 		Sys_Printf ("%3i:%s\n", net_message->readcount - 1, x);
@@ -874,7 +883,7 @@ int viewentity;
 void
 CL_ParseServerMessage (void)
 {
-	int         cmd, i;
+	int         cmd = 0, i, j;
 	const char *str;
 
 	// if recording demos, copy the message out
@@ -890,13 +899,16 @@ CL_ParseServerMessage (void)
 
 	while (1) {
 		if (net_message->badread)
-			Host_Error ("CL_ParseServerMessage: Bad server message");
+			Host_Error ("CL_ParseServerMessage: Bad server message: %s\n",
+						svc_strings[cmd]);
 
 		cmd = MSG_ReadByte (net_message);
 
 		if (cmd == -1) {
+			net_message->readcount++;	// so the EOM SHOWNET has the right
+										// value
 			SHOWNET ("END OF MESSAGE");
-			return;						// end of message
+			break;						// end of message
 		}
 		// if the high bit of the command byte is set, it is a fast update
 		if (cmd & U_SIGNAL) {
@@ -911,7 +923,7 @@ CL_ParseServerMessage (void)
 		switch (cmd) {
 			default:
 				Host_Error ("CL_ParseServerMessage: Illegible server "
-							"message\n");
+							"message %d\n", cmd);
 				break;
 
 			case svc_nop:
@@ -965,9 +977,12 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_setangle:
-				MSG_ReadAngleV (net_message, cl.viewangles);
-				break;
+			{
+				vec_t      *dest = cl.viewangles;
 
+				MSG_ReadAngleV (net_message, dest);
+				break;
+			}
 			case svc_setview:
 				cl.viewentity = MSG_ReadShort (net_message);
 				viewentity = cl.viewentity; // FIXME: evil hack
@@ -976,7 +991,7 @@ CL_ParseServerMessage (void)
 			case svc_lightstyle:
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_LIGHTSTYLES)
-					Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
+					Host_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
 				strcpy (r_lightstyle[i].map, MSG_ReadString (net_message));
 				r_lightstyle[i].length = strlen (r_lightstyle[i].map);
 				// FIXME extra info
@@ -991,6 +1006,15 @@ CL_ParseServerMessage (void)
 				S_StopSound (i >> 3, i & 7);
 				break;
 
+			case svc_updatefrags:
+				Sbar_Changed ();
+				i = MSG_ReadByte (net_message);
+				if (i >= cl.maxclients)
+					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
+								"MAX_SCOREBOARD");
+				cl.scores[i].frags = (short) MSG_ReadShort (net_message);
+				break;
+
 			case svc_updatename:
 				Sbar_Changed ();
 				i = MSG_ReadByte (net_message);
@@ -998,15 +1022,6 @@ CL_ParseServerMessage (void)
 					Host_Error ("CL_ParseServerMessage: svc_updatename > "
 								"MAX_SCOREBOARD");
 				strcpy (cl.scores[i].name, MSG_ReadString (net_message));
-				break;
-
-			case svc_updatefrags:
-				Sbar_Changed ();
-				i = MSG_ReadByte (net_message);
-				if (i >= cl.maxclients)
-					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
-								"MAX_SCOREBOARD");
-				cl.scores[i].frags = MSG_ReadShort (net_message);
 				break;
 
 			case svc_updatecolors:
@@ -1037,21 +1052,20 @@ CL_ParseServerMessage (void)
 			case svc_spawnstatic:
 				CL_ParseStatic (1);
 				break;
+			case svc_spawnstaticsound:
+				CL_ParseStaticSound (1);
+				break;
 			case svc_temp_entity:
 				CL_ParseTEnt ();
 				break;
 
 			case svc_setpause:
-			{
 				r_paused = cl.paused = MSG_ReadByte (net_message);
-
-				if (cl.paused) {
+				if (cl.paused)
 					CDAudio_Pause ();
-				} else {
+				else
 					CDAudio_Resume ();
-				}
-			}
-			break;
+				break;
 
 			case svc_signonnum:
 				i = MSG_ReadByte (net_message);
@@ -1072,13 +1086,8 @@ CL_ParseServerMessage (void)
 
 			case svc_updatestat:
 				i = MSG_ReadByte (net_message);
-				if (i < 0 || i >= MAX_CL_STATS)
-					Sys_Error ("svc_updatestat: %i is invalid", i);
-				cl.stats[i] = MSG_ReadLong (net_message);
-				break;
-
-			case svc_spawnstaticsound:
-				CL_ParseStaticSound (1);
+				j = MSG_ReadLong (net_message);
+				CL_SetStat (i, j);
 				break;
 
 			case svc_cdtrack:
@@ -1142,7 +1151,7 @@ CL_ParseServerMessage (void)
 					red = MSG_ReadByte (net_message) / 255.0;
 					green = MSG_ReadByte (net_message) / 255.0;
 					blue = MSG_ReadByte (net_message) / 255.0;
-					time = MSG_ReadShort (net_message) / 100.0;
+					time = (short) MSG_ReadShort (net_message) / 100.0;
 					time = max (0.0, time);
 					Fog_Update (density, red, green, blue, time);
 				}

@@ -411,7 +411,7 @@ SV_PushEntity (edict_t *ent, vec3_t push)
 }
 
 static qboolean
-SV_Push (edict_t *pusher, vec3_t tmove, vec3_t amove)
+SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 {
 	float       solid_save;
 	int         num_moved, i, e;
@@ -566,6 +566,8 @@ static void
 SV_Physics_Pusher (edict_t *ent)
 {
 	float       movetime, oldltime, thinktime;
+	float       l;
+	vec3_t      oldorg, move;
 
 	oldltime = SVfloat (ent, ltime);
 
@@ -583,13 +585,20 @@ SV_Physics_Pusher (edict_t *ent)
 	}
 
 	if (thinktime > oldltime && thinktime <= SVfloat (ent, ltime)) {
+		VectorCopy (SVvector (ent, origin), oldorg);
 		SVfloat (ent, nextthink) = 0;
 		*sv_globals.time = sv.time;
 		sv_pr_think (ent);
 		if (ent->free)
 			return;
-	}
+		VectorSubtract (SVvector (ent, origin), oldorg, move);
 
+		l = VectorLength (move);
+		if (l > (1.0 / 64.0)) {
+			VectorCopy (oldorg, SVvector (ent, origin));
+			SV_Push (ent, move, vec3_origin);	//FIXME angle
+		}
+	}
 }
 
 /*
@@ -673,6 +682,9 @@ SV_Physics_Toss (edict_t *ent)
 	if (!SV_RunThink (ent))
 		return;
 
+	if (SVvector (ent, velocity)[2] > 0)
+		SVfloat (ent, flags) = (int) SVfloat (ent, flags) & ~FL_ONGROUND;
+
 	// if onground, return without moving
 	if (((int) SVfloat (ent, flags) & FL_ONGROUND))
 		return;
@@ -729,6 +741,7 @@ SV_Physics_Toss (edict_t *ent)
 
 	This is also used for objects that have become still on the ground, but
 	will fall if the floor is pulled out from under them.
+	FIXME: is this true?
 */
 static void
 SV_Physics_Step (edict_t *ent)

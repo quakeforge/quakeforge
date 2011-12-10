@@ -45,7 +45,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "snd_render.h"
+#include "snd_internal.h"
 
 #define VOLSCALE 512.0				// so mixing is less likely to overflow
 									// note: must be >= 255 due to the channel
@@ -174,7 +174,8 @@ SND_PaintChannels (unsigned endtime)
 		}
 
 		// transfer out according to DMA format
-		snd_shm->xfer (end);
+		snd_shm->xfer (snd_paintbuffer, end - snd_paintedtime,
+					   snd_volume->value);
 
 		memmove (snd_paintbuffer, snd_paintbuffer + end - snd_paintedtime,
 				 max_overpaint * sizeof (snd_paintbuffer[0]));

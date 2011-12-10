@@ -1,8 +1,9 @@
 //unfortunately, have to wrap the docs in a C comment for doxygen
+// vim:tw=74:formatoptions-=l
 /**
 \page qtv_overview QF QTV overview/status.
 OVERVIEW:
-\image html qwtv.png
+\image html qwtv.svg
 \image latex qwtv.eps ""
 
 The server is "reserved" for playing clients. Any spectators would be

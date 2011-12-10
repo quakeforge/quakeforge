@@ -85,11 +85,6 @@ int         fps_count;
 client_static_t cls;
 client_state_t cl;
 
-// FIXME: put these on hunk?
-entity_t    cl_entities[MAX_EDICTS];
-cl_entity_state_t    cl_baselines[MAX_EDICTS];
-
-
 void
 CL_InitCvars (void)
 {
@@ -146,8 +141,6 @@ CL_InitCvars (void)
 void
 CL_ClearState (void)
 {
-	int         i;
-
 	if (!sv.active)
 		Host_ClearMemory ();
 
@@ -156,17 +149,13 @@ CL_ClearState (void)
 
 	// wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));
+	cl.chase = 1;
 	r_force_fullscreen = 0;
 
 	CL_Init_Entity (&cl.viewent);
 	r_view_model = &cl.viewent;
 
 	SZ_Clear (&cls.message);
-
-	// clear other arrays   
-	memset (cl_entities, 0, sizeof (cl_entities));
-	memset (cl_baselines, 0, sizeof (cl_baselines));
-	memset (r_lightstyle, 0, sizeof (r_lightstyle));
 
 	Skin_ClearTempSkins ();
 
@@ -176,10 +165,7 @@ CL_ClearState (void)
 	R_ClearDlights ();
 	R_ClearParticles ();
 
-	for (i = 0; i < MAX_EDICTS; i++) {
-		cl_baselines[i].ent = &cl_entities[i];
-		CL_Init_Entity (cl_entities + i);
-	}
+	CL_ClearEnts ();
 }
 
 /*
@@ -273,8 +259,7 @@ CL_EstablishConnection (const char *host)
 	CL_SetState (ca_connected);
 	cls.signon = 0;						// need all the signon messages
 										// before playing
-	key_dest = key_game;
-	game_target = IMT_0;
+	Key_SetKeyDest (key_game);
 }
 
 /*
@@ -314,7 +299,7 @@ CL_SignonReply (void)
 		break;
 
 	case 4:
-//		SCR_EndLoadingPlaque ();		// allow normal screen updates
+		cl.loading = false;
 		break;
 	}
 }
@@ -329,6 +314,9 @@ CL_NextDemo (void)
 {
 	if (cls.demonum == -1)
 		return;							// don't play demos
+
+	cl.loading = true;
+	CL_UpdateScreen(cl.time);
 
 	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS) {
 		cls.demonum = 0;
@@ -359,300 +347,6 @@ CL_PrintEntities_f (void)
 					ent->model->name, ent->frame, ent->origin[0],
 					ent->origin[1], ent->origin[2], ent->angles[0],
 					ent->angles[1], ent->angles[2]);
-	}
-}
-
-/*
-	SetPal
-
-	Debugging tool, just flashes the screen
-*/
-static void
-SetPal (int i)
-{
-#if 0
-	byte        pal[768];
-	int         c;
-	static int  old;
-
-	if (i == old)
-		return;
-	old = i;
-
-	if (i == 0)
-		VID_SetPalette (vid.palette);
-	else if (i == 1) {
-		for (c = 0; c < 768; c += 3) {
-			pal[c] = 0;
-			pal[c + 1] = 255;
-			pal[c + 2] = 0;
-		}
-		VID_SetPalette (pal);
-	} else {
-		for (c = 0; c < 768; c += 3) {
-			pal[c] = 0;
-			pal[c + 1] = 0;
-			pal[c + 2] = 255;
-		}
-		VID_SetPalette (pal);
-	}
-#endif
-}
-
-static void
-CL_NewDlight (int key, vec3_t org, int effects)
-{
-	float       radius;
-	float       time = 0.1;
-	dlight_t   *dl;
-	static quat_t normal = {0.4, 0.2, 0.05, 0.7};
-	static quat_t red = {0.5, 0.05, 0.05, 0.7};
-	static quat_t blue = {0.05, 0.05, 0.5, 0.7};
-	static quat_t purple = {0.5, 0.05, 0.5, 0.7};
-
-	if (!(effects & (EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT)))
-		return;
-
-	dl = R_AllocDlight (key);
-	if (!dl)
-		return;
-	VectorCopy (org, dl->origin);
-	radius = 200 + (rand () & 31);
-	if (effects & EF_BRIGHTLIGHT) {
-		radius += 200;
-		dl->origin[2] += 16;
-	}
-	if (effects & EF_DIMLIGHT)
-		if (effects & ~EF_DIMLIGHT)
-			radius -= 100;
-	dl->radius = radius;
-	dl->die = cl.time + time;
-
-	switch (effects & (EF_BLUE | EF_RED)) {
-		case EF_RED | EF_BLUE:
-			QuatCopy (purple, dl->color);
-			break;
-		case EF_RED:
-			QuatCopy (red, dl->color);
-			break;
-		case EF_BLUE:
-			QuatCopy (blue, dl->color);
-			break;
-		default:
-			QuatCopy (normal, dl->color);
-			break;
-	}
-}
-
-/*
-	CL_LerpPoint
-
-	Determines the fraction between the last two messages that the objects
-	should be put at.
-*/
-static float
-CL_LerpPoint (void)
-{
-	float       f, frac;
-
-	f = cl.mtime[0] - cl.mtime[1];
-
-	if (!f || cl_nolerp->int_val || cls.timedemo || sv.active) {
-		cl.time = cl.mtime[0];
-		return 1;
-	}
-
-	if (f > 0.1) {						// dropped packet, or start of demo
-		cl.mtime[1] = cl.mtime[0] - 0.1;
-		f = 0.1;
-	}
-	frac = (cl.time - cl.mtime[1]) / f;
-
-	if (frac < 0) {
-		if (frac < -0.01) {
-			SetPal (1);
-			cl.time = cl.mtime[1];
-		}
-		frac = 0;
-	} else if (frac > 1) {
-		if (frac > 1.01) {
-			SetPal (2);
-			cl.time = cl.mtime[0];
-		}
-		frac = 1;
-	} else
-		SetPal (0);
-
-	return frac;
-}
-
-static void
-CL_RelinkEntities (void)
-{
-	entity_t   *ent;
-	cl_entity_state_t *state;
-	dlight_t   *dl;
-	float       bobjrotate, frac, f, d;
-	int         i, j;
-	vec3_t      delta;
-	
-	r_player_entity = &cl_entities[cl.viewentity];
-
-	// determine partial update time    
-	frac = CL_LerpPoint ();
-
-	// interpolate player info
-	for (i = 0; i < 3; i++)
-		cl.velocity[i] = cl.mvelocity[1][i] +
-			frac * (cl.mvelocity[0][i] - cl.mvelocity[1][i]);
-
-	if (cls.demoplayback) {
-		// interpolate the angles   
-		for (j = 0; j < 3; j++) {
-			d = cl.mviewangles[0][j] - cl.mviewangles[1][j];
-			if (d > 180)
-				d -= 360;
-			else if (d < -180)
-				d += 360;
-			cl.viewangles[j] = cl.mviewangles[1][j] + frac * d;
-		}
-	}
-
-	bobjrotate = anglemod (100 * cl.time);
-
-	// start on the entity after the world
-	for (i = 1, state = cl_baselines + 1; i < cl.num_entities; i++, state++) {
-		ent = state->ent;
-		if (!ent->model) {				// empty slot
-			if (ent->efrag)
-				R_RemoveEfrags (ent);	// just became empty
-			continue;
-		}
-		// if the object wasn't included in the last packet, remove it
-		if (state->msgtime != cl.mtime[0]) {
-			ent->model = NULL;
-			//johnfitz -- next time this entity slot is reused, the lerp will
-			//need to be reset
-			ent->lerpflags |= LERP_RESETMOVE|LERP_RESETANIM;
-			if (ent->efrag)
-				R_RemoveEfrags (ent);	// just became empty
-			continue;
-		}
-
-		ent->colormod[3] = ENTALPHA_DECODE (state->alpha);
-
-		VectorCopy (ent->origin, ent->old_origin);
-
-		if (state->forcelink) {
-			// The entity was not updated in the last message so move to the
-			// final spot
-			VectorCopy (state->msg_origins[0], ent->origin);
-			VectorCopy (state->msg_angles[0], ent->angles);
-			if (i != cl.viewentity || chase_active->int_val) {
-				if (ent->efrag)
-					R_RemoveEfrags (ent);
-				R_AddEfrags (ent);
-			}
-		} else {
-			// If the delta is large, assume a teleport and don't lerp
-			f = frac;
-			VectorSubtract (state->msg_origins[0],
-							state->msg_origins[1], delta);
-			if (fabs (delta[0]) > 100 || fabs (delta[1] > 100)
-				|| fabs (delta[2]) > 100) {
-				// assume a teleportation, not a motion
-				VectorCopy (state->msg_origins[0], ent->origin);
-				VectorCopy (state->msg_angles[0], ent->angles);
-				ent->lerpflags |= LERP_RESETMOVE;
-			} else {
-				// interpolate the origin and angles
-				// FIXME r_lerpmove.value &&
-				if (ent->lerpflags & LERP_MOVESTEP)
-					f = 1;
-				VectorMultAdd (state->msg_origins[1], f, delta, ent->origin);
-				for (j = 0; j < 3; j++) {
-					d = state->msg_angles[0][j] - state->msg_angles[1][j];
-					if (d > 180)
-						d -= 360;
-					else if (d < -180)
-						d += 360;
-					ent->angles[j] = state->msg_angles[1][j] + f * d;
-				}
-			}
-			if (i != cl.viewentity || chase_active->int_val) {
-				if (ent->efrag) {
-					if (!VectorCompare (ent->origin, ent->old_origin)) {
-						R_RemoveEfrags (ent);
-						R_AddEfrags (ent);
-					}
-				} else {
-					R_AddEfrags (ent);
-				}
-			}
-		}
-
-		// rotate binary objects locally
-		if (ent->model->flags & EF_ROTATE)
-			ent->angles[1] = bobjrotate;
-
-		if (state->effects & EF_BRIGHTFIELD)
-			R_EntityParticles (ent);
-		if (state->effects & EF_MUZZLEFLASH) {
-			vec3_t      fv, rv, uv;
-
-			dl = R_AllocDlight (i);
-			if (dl) {
-				AngleVectors (ent->angles, fv, rv, uv);
-
-				VectorMultAdd (ent->origin, 18, fv, dl->origin);
-				dl->origin[2] += 16;
-				dl->radius = 200 + (rand () & 31);
-				dl->die = cl.time + 0.1;
-				dl->minlight = 32;
-				dl->color[0] = 0.2;
-				dl->color[1] = 0.1;
-				dl->color[2] = 0.05;
-				dl->color[3] = 0.7;
-			}
-#if 0		//FIXME how much do we want this?
-			//johnfitz -- assume muzzle flash accompanied by muzzle flare,
-			//which looks bad when lerped
-			if (ent == &cl_entities[cl.viewentity])
-				cl.viewent.lerpflags |= LERP_RESETANIM | LERP_RESETANIM2;
-			else
-				ent->lerpflags |= LERP_RESETANIM | LERP_RESETANIM2;
-#endif
-		}
-		CL_NewDlight (i, ent->origin, state->effects);
-		if (VectorDistance_fast (state->msg_origins[1], ent->origin)
-			> (256 * 256))
-			VectorCopy (ent->origin, state->msg_origins[1]);
-		if (ent->model->flags & EF_ROCKET) {
-			dl = R_AllocDlight (i);
-			if (dl) {
-				VectorCopy (ent->origin, dl->origin);
-				dl->radius = 200;
-				dl->die = cl.time + 0.1;
-				VectorCopy (r_firecolor->vec, dl->color);
-				dl->color[3] = 0.7;
-			}
-			R_RocketTrail (ent);
-		} else if (ent->model->flags & EF_GRENADE)
-			R_GrenadeTrail (ent);
-		else if (ent->model->flags & EF_GIB)
-			R_BloodTrail (ent);
-		else if (ent->model->flags & EF_ZOMGIB)
-			R_SlightBloodTrail (ent);
-		else if (ent->model->flags & EF_TRACER)
-			R_WizTrail (ent);
-		else if (ent->model->flags & EF_TRACER2)
-			R_FlameTrail (ent);
-		else if (ent->model->flags & EF_TRACER3)
-			R_VoorTrail (ent);
-		else if (ent->model->flags & EF_GLOWTRAIL)
-			R_GlowTrail (ent, state->glow_color);
-
-		state->forcelink = false;
 	}
 }
 
@@ -734,15 +428,13 @@ CL_SetState (cactive_t state)
 		if (state == ca_active) {
 			// entering active state
 			r_active = true;
-			game_target = IMT_0;
-			key_dest = key_game;
+			Key_SetKeyDest (key_game);
 			IN_ClearStates ();
 			VID_SetCaption ("");
 		} else if (old_state == ca_active) {
 			// leaving active state
 			r_active = false;
-			game_target = IMT_CONSOLE;
-			key_dest = key_console;
+			Key_SetKeyDest (key_console);
 			VID_SetCaption ("Disconnected");
 		}
 		if (state == ca_connected)
@@ -765,7 +457,7 @@ CL_Init (void)
 {
 	SZ_Alloc (&cls.message, 1024);
 
-	CL_InitInput ();
+	CL_Input_Init ();
 	CL_TEnts_Init ();
 	CL_ClearState ();
 

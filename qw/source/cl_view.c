@@ -41,12 +41,13 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/vid.h"
 
 #include "qw/bothdefs.h"
+#include "cl_cam.h"
 #include "cl_main.h"
 #include "client.h"
 #include "compat.h"
 #include "host.h"
 #include "qw/pmove.h"
-#include "view.h"
+#include "clview.h"
 
 /*
 	The view is allowed to move slightly from it's true position for bobbing,
@@ -85,11 +86,11 @@ float       v_blend[4];
 frame_t    *view_frame;
 player_state_t *view_message;
 
-cshift_t	cshift_empty = { {130, 80, 50}, 0};
-cshift_t	cshift_water = { {130, 80, 50}, 128};
-cshift_t	cshift_slime = { {0, 25, 5}, 150};
-cshift_t	cshift_lava = { {255, 80, 0}, 150};
-cshift_t	cshift_bonus = { {215, 186, 60}, 50};
+cshift_t    cshift_empty = { {130, 80, 50}, 0};
+cshift_t    cshift_water = { {130, 80, 50}, 128};
+cshift_t    cshift_slime = { {0, 25, 5}, 150};
+cshift_t    cshift_lava = { {255, 80, 0}, 150};
+cshift_t    cshift_bonus = { {215, 186, 60}, 50};
 
 
 
@@ -117,9 +118,9 @@ V_CalcRoll (const vec3_t angles, const vec3_t velocity)
 static float
 V_CalcBob (void)
 {
-	static double	bobtime;
-	float			cycle;
-	static float	bob;
+	static double bobtime;
+	float       cycle;
+	static float bob;
 
 	if (cl.spectator)
 		return 0;
@@ -134,7 +135,7 @@ V_CalcBob (void)
 	if (cycle < cl_bobup->value)
 		cycle = M_PI * cycle / cl_bobup->value;
 	else
-		cycle =	M_PI + M_PI * (cycle - cl_bobup->value) /
+		cycle = M_PI + M_PI * (cycle - cl_bobup->value) /
 			(1.0 - cl_bobup->value);
 
 	// bob is proportional to simulated velocity in the xy plane
@@ -187,7 +188,7 @@ V_StopPitchDrift (void)
 static void
 V_DriftPitch (void)
 {
-	float		delta, move;
+	float       delta, move;
 
 	if (view_message->onground == -1 || cls.demoplayback) {
 		cl.driftmove = 0;
@@ -240,14 +241,13 @@ V_DriftPitch (void)
 void
 V_ParseDamage (void)
 {
-	float		count, side;
-	int			armor, blood, i;
-	vec3_t		forward, from, right, up;
+	float       count, side;
+	int         armor, blood;
+	vec3_t      from, forward, right, up;
 
 	armor = MSG_ReadByte (net_message);
 	blood = MSG_ReadByte (net_message);
-	for (i = 0; i < 3; i++)
-		from[i] = MSG_ReadCoord (net_message);
+	MSG_ReadCoordV (net_message, from);
 
 	count = blood * 0.5 + armor * 0.5;
 	if (count < 10)
@@ -375,7 +375,7 @@ V_CalcPowerupCshift (void)
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
 		cl.cshifts[CSHIFT_POWERUP].percent = 30;
-	} else 	if (cl.stats[STAT_ITEMS] & IT_SUIT) {
+	} else if (cl.stats[STAT_ITEMS] & IT_SUIT) {
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
@@ -399,12 +399,12 @@ V_CalcPowerupCshift (void)
 void
 V_CalcBlend (void)
 {
-	float		a2, a3;
-	float		r = 0, g = 0, b = 0, a = 0;
-	int			i;
+	float       a2, a3;
+	float       r = 0, g = 0, b = 0, a = 0;
+	int         i;
 
 	for (i = 0; i < NUM_CSHIFTS; i++) {
-		a2 = cl.cshifts[i].percent * (1.0 / 255.0);
+		a2 = cl.cshifts[i].percent / 255.0;
 
 		if (!a2)
 			continue;
@@ -426,16 +426,16 @@ V_CalcBlend (void)
 		b *= a2;
 	}
 
-	v_blend[0] = min (r, 255.0) * (1.0 / 255.0);
-	v_blend[1] = min (g, 255.0) * (1.0 / 255.0);
-	v_blend[2] = min (b, 255.0) * (1.0 / 255.0);
+	v_blend[0] = min (r, 255.0) / 255.0;
+	v_blend[1] = min (g, 255.0) / 255.0;
+	v_blend[2] = min (b, 255.0) / 255.0;
 	v_blend[3] = bound (0.0, a, 1.0);
 }
 
 void
 V_PrepBlend (void)
 { 
-	int		i, j;
+	int         i, j;
 
 	if (cl_cshift_powerup->int_val
 		|| (cl.sv_cshifts & INFO_CSHIFT_POWERUP))
@@ -487,8 +487,8 @@ angledelta (float a)
 static void
 CalcGunAngle (void)
 {
-	float			yaw, pitch, move;
-	static float	oldpitch = 0, oldyaw = 0;
+	float       yaw, pitch, move;
+	static float oldpitch = 0, oldyaw = 0;
 
 	yaw = r_refdef.viewangles[YAW];
 	pitch = -r_refdef.viewangles[PITCH];
@@ -533,14 +533,14 @@ V_AddIdle (void)
 	r_refdef.viewangles[ROLL] += v_idlescale->value *
 		sin (cl.time * v_iroll_cycle->value) * v_iroll_level->value;
 	r_refdef.viewangles[PITCH] += v_idlescale->value *
-		sin (cl.time * v_ipitch_cycle->value) *	v_ipitch_level->value;
-	r_refdef.viewangles[YAW] +=	v_idlescale->value *
+		sin (cl.time * v_ipitch_cycle->value) * v_ipitch_level->value;
+	r_refdef.viewangles[YAW] += v_idlescale->value *
 		sin (cl.time * v_iyaw_cycle->value) * v_iyaw_level->value;
 
 	cl.viewent.angles[ROLL] -= v_idlescale->value *
 		sin (cl.time * v_iroll_cycle->value) * v_iroll_level->value;
-	cl.viewent.angles[PITCH] -=	v_idlescale->value *
-		sin (cl.time * v_ipitch_cycle->value) *	v_ipitch_level->value;
+	cl.viewent.angles[PITCH] -= v_idlescale->value *
+		sin (cl.time * v_ipitch_cycle->value) * v_ipitch_level->value;
 	cl.viewent.angles[YAW] -= v_idlescale->value *
 		sin (cl.time * v_iyaw_cycle->value) * v_iyaw_level->value;
 }
@@ -553,7 +553,7 @@ V_AddIdle (void)
 static void
 V_CalcViewRoll (void)
 {
-	float		side;
+	float       side;
 
 	side = V_CalcRoll (cl.simangles, cl.simvel);
 	r_refdef.viewangles[ROLL] += side;
@@ -574,7 +574,7 @@ V_CalcIntermissionRefdef (void)
 	entity_t   *view;
 	float       old;
 
-	// view is the weapon model
+	// view is the weapon model (visible only from inside body)
 	view = &cl.viewent;
 
 	VectorCopy (cl.simorg, r_refdef.vieworg);
@@ -588,18 +588,15 @@ V_CalcIntermissionRefdef (void)
 	Cvar_SetValue (v_idlescale, old);
 }
 
-#include "cl_cam.h"
-
-
 static void
 V_CalcRefdef (void)
 {
 	entity_t   *view;
-	float		bob;
+	float       bob;
 	static float oldz = 0;
-	int			i;
-	int			zofs = 22;
-	vec3_t		forward, right, up;
+	int         i;
+	int         zofs = 22;
+	vec3_t      forward, right, up;
 
 	if (cl.stdver)
 		zofs = cl.stats[STAT_VIEWHEIGHT];
@@ -628,14 +625,14 @@ V_CalcRefdef (void)
 	V_AddIdle ();
 
 	if (view_message->pls.flags & PF_GIB)
-		r_refdef.vieworg[2] += 8;		// gib view height
+		r_refdef.vieworg[2] += 8;			// gib view height
 	else if (view_message->pls.flags & PF_DEAD)
-		r_refdef.vieworg[2] -= 16;		// corpse view height
+		r_refdef.vieworg[2] -= 16;			// corpse view height
 	else
-		r_refdef.vieworg[2] += zofs;	// view height
+		r_refdef.vieworg[2] += zofs;		// view height
 
 	if (view_message->pls.flags & PF_DEAD)	// PF_GIB will also set PF_DEAD
-		r_refdef.viewangles[ROLL] = 80;	// dead view angle
+		r_refdef.viewangles[ROLL] = 80;		// dead view angle
 
 	// offsets
 	AngleVectors (cl.simangles, forward, right, up);
@@ -650,7 +647,7 @@ V_CalcRefdef (void)
 
 	for (i = 0; i < 3; i++) {
 		view->origin[i] += forward[i] * bob * 0.4;
-//		view->origin[i] += right[i] * bob *0.4;
+//		view->origin[i] += right[i] * bob * 0.4;
 //		view->origin[i] += up[i] * bob * 0.8;
 	}
 	view->origin[2] += bob;
@@ -733,14 +730,13 @@ V_RenderView (void)
 	R_RenderView ();
 }
 
-
 void
 V_Init (void)
 {
 	Cmd_AddCommand ("bf", V_BonusFlash_f, "Background flash, used when you "
 					"pick up an item");
 	Cmd_AddCommand ("centerview", V_StartPitchDrift, "Centers the player's "
-					"view ahead after +lookup or +lookdown \n"
+					"view ahead after +lookup or +lookdown\n"
 					"Will not work while mlook is active or freelook is 1.");
 	Cmd_AddCommand ("v_cshift", V_cshift_f, "This adjusts all of the colors "
 					"currently being displayed.\n"

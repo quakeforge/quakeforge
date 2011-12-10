@@ -62,7 +62,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "sbar.h"
 #include "server.h"
 #include "sv_progs.h"
-#include "view.h"
+#include "clview.h"
 
 
 /*
@@ -108,9 +108,6 @@ client_t   *host_client;				// current client
 jmp_buf		host_abortserver;
 
 byte       *host_basepal;
-
-cvar_t     *fs_globalcfg;
-cvar_t     *fs_usercfg;
 
 cvar_t     *host_mem_size;
 
@@ -195,7 +192,7 @@ Host_Error (const char *error, ...)
 
 	inerror = true;
 
-//	SCR_EndLoadingPlaque ();						// reenable screen updates
+	cl.loading = false;
 
 	va_start (argptr, error);
 	dvsprintf (str, error, argptr);
@@ -432,6 +429,7 @@ SV_DropClient (qboolean crash)
 		Sys_Printf ("Client %s removed\n", host_client->name);
 	}
 	// break the net connection
+	Sys_MaskPrintf (SYS_NET, "dropping client\n");
 	NET_Close (host_client->netconnection);
 	host_client->netconnection = NULL;
 
@@ -890,53 +888,18 @@ CL_Init_Memory (void)
 void
 Host_Init (void)
 {
-	const char *mp;
-
 	Sys_Printf ("Host_Init\n");
 
 	host_cbuf = Cbuf_New (&id_interp);
 	cmd_source = src_command;
 
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
-	Cvar_Init ();
-	Sys_Init_Cvars ();
-
 	Sys_Init ();
-
-	Cmd_Init ();
 	GIB_Init (true);
-
-	// execute +set as early as possible
-	Cmd_StuffCmds (host_cbuf);
-	Cbuf_Execute_Sets (host_cbuf);
-
-	// execute the global configuration file if it exists
-	// would have been nice if Cmd_Exec_f could have been used, but it
-	// reads only from within the quake file system, and changing that is
-	// probably Not A Good Thing (tm).
-	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG,
-							 CVAR_ROM, NULL, "global configuration file");
-	Cmd_Exec_File (host_cbuf, fs_globalcfg->string, 0);
-	Cbuf_Execute_Sets (host_cbuf);
-
-	// execute +set again to override the config file
-	Cmd_StuffCmds (host_cbuf);
-	Cbuf_Execute_Sets (host_cbuf);
-
-	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG, CVAR_ROM, NULL,
-						   "user configuration file");
-	Cmd_Exec_File (host_cbuf, fs_usercfg->string, 0);
-	Cbuf_Execute_Sets (host_cbuf);
-
-	// execute +set again to override the config file
-	Cmd_StuffCmds (host_cbuf);
-	Cbuf_Execute_Sets (host_cbuf);
+	COM_ParseConfig ();
 
 	CL_Init_Memory ();
 
-	mp = Game_Init ();
-	QFS_Init (mp);
+	Game_Init ();
 	PI_Init ();
 
 	Chase_Init_Cvars ();
@@ -956,7 +919,6 @@ Host_Init (void)
 	PR_Init ();
 
 	V_Init ();
-	COM_Init ();
 
 	if (isDedicated) {
 		PI_RegisterPlugins (server_plugin_list);

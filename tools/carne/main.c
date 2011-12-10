@@ -111,10 +111,7 @@ main (int argc, char **argv)
 	int result, i;
 	
 	// Initialize required QF subsystems
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
-	Cmd_Init ();
-	Cvar_Init ();
+	Sys_Init ();
 	GIB_Init (false); // No sandbox
 	
 	GIB_Builtin_Add ("exit", Carne_GIB_Exit_f);

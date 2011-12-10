@@ -13,7 +13,9 @@ GZ=.gz
 else
 GZ=
 endif
-STRIP=$(shell echo `echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`)
+# BSD make can't handle $(shell foo) directives, and GNU make can't handle |=
+# so we have to bite the bullet and pass this to the shell every time.
+STRIP=`echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`
 
 menu_data=menu.dat$(GZ) menu.sym$(GZ) menu.plist
 
@@ -27,7 +29,7 @@ pkgdata_DATA= $(data)
 EXTRA_DATA= $(menu_data)
 
 menu_src= \
-	client_menu.qc controls_o.qc options.qc options_util.qc servlist.qc \
+	client_menu.r controls_o.r options.r options_util.r servlist.r \
 	Frame.r menu.r HUD.r plistmenu.r ../lib/debug.r \
 	\
 	CrosshairCvar.r CrosshairView.r CvarColor.r CvarColorView.r \
@@ -35,13 +37,10 @@ menu_src= \
 	CvarToggle.r CvarToggleView.r \
 	MenuGroup.r MouseToggle.r ProxyView.r RunToggle.r SubMenu.r
 
-%.qfo: %.r
-	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
-
-%.qfo: %.qc
-	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
-
-menu_obj=$(addsuffix .qfo,$(basename $(menu_src)))
+SUFFIXES=.qfo .r
+.r.qfo:
+	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
+menu_obj=$(menu_src:.r=.qfo)
 
 menu.dat$(GZ): $(menu_obj) $(QFCC_DEP) ../lib/libcsqc.a ../lib/libr.a ../gui/libgui.a
 	$(QFCC) $(QCFLAGS) -p $(STRIP) -o menu.dat $(menu_obj) ../gui/libgui.a ../lib/libcsqc.a ../lib/libr.a

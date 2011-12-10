@@ -169,7 +169,7 @@ TransformVector (const vec3_t in, vec3_t out)
 }
 
 void
-R_TransformPlane (mplane_t *p, float *normal, float *dist)
+R_TransformPlane (plane_t *p, float *normal, float *dist)
 {
 	float       d;
 

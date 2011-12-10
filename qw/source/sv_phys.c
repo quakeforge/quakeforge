@@ -58,6 +58,7 @@ static __attribute__ ((used)) const char rcsid[] =
 */
 
 cvar_t     *sv_gravity;
+cvar_t     *sv_jump_any;
 cvar_t     *sv_stopspeed;
 cvar_t     *sv_maxspeed;
 cvar_t     *sv_maxvelocity;
@@ -211,6 +212,19 @@ ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
 	return blocked;
 }
 
+int
+SV_EntCanSupportJump (edict_t *ent)
+{
+	int         solid = SVfloat (ent, solid);
+	if (solid == SOLID_BSP)
+		return 1;
+	if (!sv_jump_any->int_val)
+		return 0;
+	if (solid == SOLID_NOT || solid == SOLID_SLIDEBOX)
+		return 0;
+	return 1;
+}
+
 #define	MAX_CLIP_PLANES	5
 
 /*
@@ -271,7 +285,7 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 
 		if (trace.plane.normal[2] > 0.7) {
 			blocked |= 1;				// floor
-			if (SVfloat (trace.ent, solid) == SOLID_BSP) {
+			if (SV_EntCanSupportJump (trace.ent)) {
 				SVfloat (ent, flags) = (int) SVfloat (ent, flags) |
 					FL_ONGROUND;
 				SVentity (ent, groundentity) = EDICT_TO_PROG (&sv_pr_state,
@@ -384,23 +398,35 @@ SV_PushEntity (edict_t *ent, vec3_t push)
 }
 
 static qboolean
-SV_Push (edict_t *pusher, vec3_t move)
+SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 {
 	float       solid_save;
 	int         num_moved, i, e;
 	edict_t    *check, *block;
 	edict_t   **moved_edict;
-	vec3_t      mins, maxs, pushorig;
+	vec3_t      move, org, org2;
+	vec3_t      mins, maxs, pushtorig, pushaorig;
 	vec3_t     *moved_from;
+	vec3_t      forward = {1,  0, 0};
+	vec3_t      right   = {0, -1, 0};
+	vec3_t      up      = {0,  0, 1};
 	int         mark;
 
-	VectorAdd (SVvector (pusher, absmin), move, mins);
-	VectorAdd (SVvector (pusher, absmax), move, maxs);
+	VectorAdd (SVvector (pusher, absmin), tmove, mins);
+	VectorAdd (SVvector (pusher, absmax), tmove, maxs);
 
-	VectorCopy (SVvector (pusher, origin), pushorig);
+	if (!VectorIsZero (amove)) {
+		vec3_t      a;
+		VectorSubtract (vec3_origin, amove, a);
+		AngleVectors (a, forward, right, up);
+	}
+
+	VectorCopy (SVvector (pusher, origin), pushtorig);
+	VectorCopy (SVvector (pusher, angles), pushaorig);
 
 	// move the pusher to it's final position
-	VectorAdd (SVvector (pusher, origin), move, SVvector (pusher, origin));
+	VectorAdd (SVvector (pusher, origin), tmove, SVvector (pusher, origin));
+	VectorAdd (SVvector (pusher, angles), amove, SVvector (pusher, angles));
 	SV_LinkEdict (pusher, false);
 
 	mark = Hunk_LowMark ();
@@ -448,6 +474,15 @@ SV_Push (edict_t *pusher, vec3_t move)
 		moved_edict[num_moved] = check;
 		num_moved++;
 
+		// calculate destination position
+		VectorSubtract (SVvector (check, origin),
+						SVvector (pusher, origin), org);
+		org2[0] = DotProduct (org, forward);
+		org2[1] = -DotProduct (org, right);
+		org2[2] = DotProduct (org, up);
+		VectorSubtract (org2, org, move);
+		VectorAdd (move, tmove, move);
+
 		// try moving the contacted entity
 		VectorAdd (SVvector (check, origin), move, SVvector (check, origin));
 		block = SV_TestEntityPosition (check);
@@ -476,7 +511,8 @@ SV_Push (edict_t *pusher, vec3_t move)
 			continue;
 		}
 
-		VectorCopy (pushorig, SVvector (pusher, origin));
+		VectorCopy (pushtorig, SVvector (pusher, origin));
+		VectorCopy (pushaorig, SVvector (pusher, angles));
 		SV_LinkEdict (pusher, false);
 
 		// if the pusher has a "blocked" function, call it
@@ -487,6 +523,8 @@ SV_Push (edict_t *pusher, vec3_t move)
 		// move back any entities we already moved
 		for (i = 0; i < num_moved; i++) {
 			VectorCopy (moved_from[i], SVvector (moved_edict[i], origin));
+			VectorSubtract (SVvector (moved_edict[i], angles), amove,
+							SVvector (moved_edict[i], angles));
 			SV_LinkEdict (moved_edict[i], false);
 		}
 		Hunk_FreeToLowMark (mark);
@@ -500,15 +538,18 @@ static void
 SV_PushMove (edict_t *pusher, float movetime)
 {
 	vec3_t      move;
+	vec3_t      amove;
 
-	if (VectorIsZero (SVvector (pusher, velocity))) {
+	if (VectorIsZero (SVvector (pusher, velocity))
+		&& VectorIsZero (SVvector (pusher, avelocity))) {
 		SVfloat (pusher, ltime) += movetime;
 		return;
 	}
 
 	VectorScale (SVvector (pusher, velocity), movetime, move);
+	VectorScale (SVvector (pusher, avelocity), movetime, amove);
 
-	if (SV_Push (pusher, move))
+	if (SV_Push (pusher, move, amove))
 		SVfloat (pusher, ltime) += movetime;
 }
 
@@ -546,7 +587,7 @@ SV_Physics_Pusher (edict_t *ent)
 		l = VectorLength (move);
 		if (l > (1.0 / 64.0)) {
 			VectorCopy (oldorg, SVvector (ent, origin));
-			SV_Push (ent, move);
+			SV_Push (ent, move, vec3_origin);	//FIXME angle
 		}
 	}
 }

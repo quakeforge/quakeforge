@@ -128,7 +128,7 @@ void R_RenderWorld (void);
 
 //=============================================================================
 
-extern	mplane_t	screenedge[4];
+extern	plane_t	screenedge[4];
 
 extern	vec3_t	r_origin;
 
@@ -158,7 +158,7 @@ void R_DrawSprite (void);
 void R_RenderFace (msurface_t *fa, int clipflags);
 void R_RenderPoly (msurface_t *fa, int clipflags);
 void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf);
-void R_TransformPlane (mplane_t *p, float *normal, float *dist);
+void R_TransformPlane (plane_t *p, float *normal, float *dist);
 void R_TransformFrustum (void);
 void R_SetSkyFrame (void);
 void R_DrawSurfaceBlock (void);

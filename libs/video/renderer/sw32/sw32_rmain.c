@@ -53,7 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
-#include "view.h"
+#include "clview.h"
 
 //define    PASSAGES
 
@@ -110,7 +110,7 @@ float       screenAspect;
 float       verticalFieldOfView;
 float       xOrigin, yOrigin;
 
-mplane_t    screenedge[4];
+plane_t     screenedge[4];
 
 // refresh flags
 VISIBLE int         r_framecount = 1;	// so frame counts initialized to 0 don't match

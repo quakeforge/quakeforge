@@ -1,0 +1,71 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+// vim:tw=74:formatoptions-=l
+/**
+\page faq Frequently Asked Questions
+
+\li \ref gfx_wad
+\li \ref pak0_pak
+\li \ref git_compile_error
+\li \ref no_music
+\li \ref no_mp3
+\li \ref faq_cvar_rom
+
+\section gfx_wad What does "W_LoadWadFile: unable to load gfx.wad" mean?
+The most common cause of this error is QuakeForge is unable to find
+pak0.pak. QuakeForge looks for pak0.pak in both the $fs_userpath/id1 and
+$fs_sharepath/id1 directories. In Windows, both fs_userpath and fs_sharepath
+default to "." (ie, the current directory: the same as id's quake clients). In
+Linux (and other UNIX like operating systems), fs_userpath defaults to
+~/.quakeforge and fs_sharepath defaults to $prefix/share/games/quakeforge
+(distribution packages might alter the exact path).
+
+See \ref filesystem for more details.
+
+\section pak0_pak Where can I get pak0.pak?
+See \ref game_data
+
+\section game_data Why doesn't QuakeForge come with the game data?
+While QuakeForge itself (and the Quake source code in general) is Free
+Software, the game itself is not free. You need to either purchase it from <a
+href="http://www.idsoftware.com/store/index.php?view=quake">id Software</a> or
+you can use <a href="http://openquartz.sourceforge.net/">OpenQuartz</a>, a
+project developing GPL compatible game data for Quake.
+
+\section git_compile_error Checking out git and running ./bootstrap creates a configure that syntax errors when I run it! What's wrong?
+Unlike downloading and compiling a release, when you checkout from git, you
+must have all the dependencies of QuakeForge already installed as when
+configure is being created autotools sources m4 files... If the files do not
+exist, you get the errors you have seen. Try installing packages which contain
+the libraries that caused the syntax error, including the -dev versions, then
+recreate configure using bootstrap and try again.
+
+\section no_music Why doesn't \QF play the background music even though I have the CD in the drive?
+By default, \QF no longer uses the CD drive to play music. Instead, \QF now
+looks for a \ref tracklist to map Quake's cd tracks to sound files. If you
+wish to continue using the CD instead, you may set the \c cd_plugin cvar to
+the value appropriate for your system:
+<dl>
+	<dt><code>file</code></dt>	<dd>The default CD plugin. Uses sound files
+									for the BGM.</dd>
+	<dt><code>linux</code></dt>	<dd>Use this plugin on a Linux system.</dd>
+	<dt><code>sdl</code></dt>	<dd>This plugin can be used on most
+									systems.</dd>
+<!--	<dt><code>sgi</code></dt>	<dd>Use this plugin on SGI systems.</dd>-->
+	<dt><code>win</code></dt>	<dd>Use this plugin on Windows
+									systems.</dd>
+	<dt><code>xmms</code></dt>	<dd>The predecessor to the \c file plugin.
+									Not always available, and expects xmms
+									to be available (but not necessarily
+									running) on the system. Useful if you
+									absolutely must have MP3 support.</dd>
+</dl>
+
+\section no_mp3 Why doesn't \QF support MP3s?
+Because they are not free. MP3 support is a patent minefield, and we really
+don't want to wind up with lawyers at ten paces, especially since we'd be
+unarmed with no armor, and they have rocket launchers and quad-damage.
+
+\section faq_cvar_rom How do I set a read-only cvar (eg, snd_rate)?
+Read-only cvars can be set by creating them before the engine does. See
+\ref cvar_rom for details.
+*/

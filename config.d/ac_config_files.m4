@@ -89,7 +89,7 @@
 	pkg-config/quakeforge.pc
 
 	doc/Makefile
-	doc/quakeforge.dox
+	doc/quakeforge.dox.conf
 	doc/man/Makefile
 
 	debian/Makefile

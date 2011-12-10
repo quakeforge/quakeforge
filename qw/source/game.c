@@ -27,7 +27,7 @@
 
 */
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+# include "config.h"
 #endif
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -47,6 +47,39 @@
 #include "server.h"
 
 
+
+cvar_t     *registered;
+int         static_registered = 1;		// only for startup check, then set
+qboolean    com_modified;				// set true if using non-id files
+
+/*
+	Game_CheckRegistered
+
+	Looks for the pop.txt file and verifies it.
+	Sets the "registered" cvar.
+	Immediately exits out if an alternate game was attempted to be started
+	without being registered.
+*/
+static void
+Game_CheckRegistered (void)
+{
+	unsigned short check[128];
+	QFile      *h;
+
+	QFS_FOpenFile ("gfx/pop.lmp", &h);
+	static_registered = 0;
+
+	if (h) {
+		static_registered = 1;
+		Qread (h, check, sizeof (check));
+		Qclose (h);
+	}
+
+	if (static_registered) {
+		Cvar_Set (registered, "1");
+		Sys_Printf ("Playing registered version.\n");
+	}
+}
 
 /*
 	SV_Gamedir_f
@@ -77,15 +110,14 @@ SV_Gamedir_f (void)
 	}
 
 	QFS_Gamedir (dir);
-
-	if (is_server) {
-		Info_SetValueForStarKey (*svs_info, "*gamedir", dir, 0);
-	}
 }
 
 void
 Game_Init (void)
 {
+	registered = Cvar_Get ("registered", "0", CVAR_NONE, NULL,
+						   "Is the game the registered version. 1 yes 0 no");
+	Game_CheckRegistered ();
 	Cmd_AddCommand ("gamedir", SV_Gamedir_f,
 					"Specifies the directory to be used while playing.");
 }

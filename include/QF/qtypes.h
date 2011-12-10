@@ -67,11 +67,18 @@ typedef	enum	{false, true} qboolean;
 #endif
 
 // From mathlib...
-typedef float	vec_t;
-typedef vec_t	vec3_t[3];
+typedef float	vec_t;		///< The basic vector component type
+typedef vec_t	vec3_t[3];	///< A 3D vector (used for Euler angles and motion vectors)
 typedef vec_t	vec4_t[4];
-typedef vec_t	quat_t[4];
+typedef vec_t	quat_t[4];	///< A quaternion.
 typedef vec_t	vec5_t[5];
+typedef union {
+	struct {
+		vec_t       s;
+		vec3_t      v;
+	} sv;
+	quat_t      q;
+} Quat_t;
 typedef	int		fixed4_t;
 typedef int		fixed8_t;
 typedef	int		fixed16_t;
@@ -82,12 +89,12 @@ typedef	int		fixed16_t;
 
 // plane_t structure
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
-typedef struct mplane_s {
+typedef struct plane_s {
 	vec3_t  normal;
 	float   dist;
 	byte    type;			// for texture axis selection and fast side tests
 	byte    signbits;		// signx + signy<<1 + signz<<1
 	byte    pad[2];
-} mplane_t;
+} plane_t;
 
 #endif // __qtypes_h

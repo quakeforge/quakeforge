@@ -63,7 +63,7 @@ Mod_PointInLeaf (const vec3_t p, model_t *model)
 {
 	float       d;
 	mnode_t    *node;
-	mplane_t   *plane;
+	plane_t    *plane;
 
 	if (!model || !model->nodes)
 		Sys_Error ("Mod_PointInLeaf: bad model");
@@ -128,7 +128,7 @@ Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 
 // BRUSHMODEL LOADING =========================================================
 
-//FIXME SLOW!
+//FIXME SLOW! However, it doesn't seem to be a big issue. Leave alone?
 static void
 mod_unique_miptex_name (texture_t **textures, texture_t *tx, int ind)
 {
@@ -837,7 +837,7 @@ Mod_LoadPlanes (bsp_t *bsp)
 {
 	dplane_t   *in;
 	int			bits, count, i, j;
-	mplane_t   *out;
+	plane_t    *out;
 
 	in = bsp->planes;
 	count = bsp->numplanes;

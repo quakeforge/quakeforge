@@ -1148,7 +1148,7 @@ client_connect (connection_t *con, void *object)
 
 	cl = calloc (1, sizeof (client_t));
 	client_count++;
-	Netchan_Setup (&cl->netchan, con->address, qport, NC_READ_QPORT);
+	Netchan_Setup (&cl->netchan, con->address, qport, NC_QPORT_READ);
 	cl->clnext = clients;
 	clients = cl;
 	cl->userinfo = userinfo;

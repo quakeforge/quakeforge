@@ -527,7 +527,7 @@ parse_player_delta (qmsg_t *msg, plent_state_t *from, plent_state_t *to)
 		MSG_ReadDeltaUsercmd (msg, &from->cmd, &to->cmd);
 	for (i = 0; i < 3; i++) {
 		if (flags & (PF_VELOCITY1 << i))
-			to->velocity[i] = MSG_ReadShort (msg);
+			to->velocity[i] = (short) MSG_ReadShort (msg);
 	}
 	if (flags & PF_MODEL)
 		to->modelindex = MSG_ReadByte (msg);

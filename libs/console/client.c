@@ -120,11 +120,9 @@ ToggleConsole_f (void)
 	Con_ClearTyping (input_line, 0);
 
 	if (key_dest == key_console && !con_data.force_commandline) {
-		key_dest = key_game;
-		game_target = IMT_0;
+		Key_SetKeyDest (key_game);
 	} else {
-		key_dest = key_console;
-		game_target = IMT_CONSOLE;
+		Key_SetKeyDest (key_console);
 	}
 
 	ClearNotify ();
@@ -136,11 +134,9 @@ ToggleChat_f (void)
 	Con_ClearTyping (input_line, 0);
 
 	if (key_dest == key_console && !con_data.force_commandline) {
-		key_dest = key_game;
-		game_target = IMT_0;
+		Key_SetKeyDest (key_game);
 	} else {
-		key_dest = key_console;
-		game_target = IMT_CONSOLE;
+		Key_SetKeyDest (key_console);
 	}
 
 	ClearNotify ();
@@ -162,8 +158,7 @@ MessageMode_f (void)
 	if (con_data.force_commandline)
 		return;
 	chat_team = false;
-	key_dest = key_message;
-	game_target = IMT_CONSOLE;
+	Key_SetKeyDest (key_message);
 }
 
 static void
@@ -172,8 +167,7 @@ MessageMode2_f (void)
 	if (con_data.force_commandline)
 		return;
 	chat_team = true;
-	key_dest = key_message;
-	game_target = IMT_CONSOLE;
+	Key_SetKeyDest (key_message);
 }
 
 static void
@@ -329,8 +323,7 @@ C_Say (inputline_t *il)
 	Cbuf_AddText (con_data.cbuf, "say \"");
 	Cbuf_AddText (con_data.cbuf, line);
 	Cbuf_AddText (con_data.cbuf, "\"\n");
-	key_dest = key_game;
-	game_target = IMT_0;
+	Key_SetKeyDest (key_game);
 }
 
 static void
@@ -343,8 +336,7 @@ C_SayTeam (inputline_t *il)
 	Cbuf_AddText (con_data.cbuf, "say_team \"");
 	Cbuf_AddText (con_data.cbuf, line);
 	Cbuf_AddText (con_data.cbuf, "\"\n");
-	key_dest = key_game;
-	game_target = IMT_0;
+	Key_SetKeyDest (key_game);
 }
 
 static void
@@ -461,30 +453,34 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 			return;
 	}
 
-	if (down && (key == QFK_ESCAPE || unicode == '\x1b')) {
-		switch (key_dest) {
-			case key_menu:
-				Menu_Leave ();
-				return;
-			case key_message:
-				if (chat_team) {
-					Con_ClearTyping (say_team_line, 1);
-				} else {
-					Con_ClearTyping (say_line, 1);
-				}
-				key_dest = key_game;
-				game_target = IMT_0;
-				return;
-			case key_console:
-				if (!con_data.force_commandline) {
-					Cbuf_AddText (con_data.cbuf, "toggleconsole\n");
+	if (down) {
+		if (key == key_togglemenu) {
+			switch (key_dest) {
+				case key_menu:
+					Menu_Leave ();
 					return;
-				}
-			case key_game:
-				Menu_Enter ();
-				return;
-			default:
-				Sys_Error ("Bad key_dest");
+				case key_message:
+					if (chat_team) {
+						Con_ClearTyping (say_team_line, 1);
+					} else {
+						Con_ClearTyping (say_line, 1);
+					}
+					Key_SetKeyDest (key_game);
+					return;
+				case key_console:
+					if (!con_data.force_commandline) {
+						Cbuf_AddText (con_data.cbuf, "toggleconsole\n");
+						return;
+					}
+				case key_game:
+					Menu_Enter ();
+					return;
+				default:
+					Sys_Error ("Bad key_dest");
+			}
+		} else if (key == key_toggleconsole) {
+			ToggleConsole_f ();
+			return;
 		}
 	}
 

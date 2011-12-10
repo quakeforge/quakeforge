@@ -49,7 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sound.h"
 #include "QF/sys.h"
 
-#include "snd_render.h"
+#include "snd_internal.h"
 
 #define FRAMES 1024
 

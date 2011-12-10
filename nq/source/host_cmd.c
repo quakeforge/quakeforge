@@ -100,8 +100,6 @@ Host_Status_f (void)
 	print ("version: %4.2f\n", PACKAGE_VERSION);
 	if (tcpipAvailable)
 		print ("tcp/ip:  %s\n", my_tcpip_address);
-	if (ipxAvailable)
-		print ("ipx:     %s\n", my_ipx_address);
 	print ("map:     %s\n", sv.name);
 	print ("players: %i active (%i max)\n\n", net_activeconnections,
 		   svs.maxclients);
@@ -301,7 +299,8 @@ Host_Map_f (void)
 	CL_Disconnect ();
 	Host_ShutdownServer (false);
 
-//	SCR_BeginLoadingPlaque ();
+	cl.loading = true;
+	CL_UpdateScreen (cl.time);
 
 	cls.mapstring[0] = 0;
 	for (i = 0; i < Cmd_Argc (); i++) {
@@ -381,7 +380,8 @@ Host_Restart_f (void)
 static void
 Host_Reconnect_f (void)
 {
-//	SCR_BeginLoadingPlaque ();
+	cl.loading = true;
+	CL_UpdateScreen (cl.time);
 	cls.signon = 0;						// need new connection messages
 }
 
@@ -625,9 +625,8 @@ Host_Loadgame_f (void)
 	dsprintf (name, "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
 	QFS_DefaultExtension (name, ".sav");
 
-	// we can't call SCR_BeginLoadingPlaque, because too much stack space has
-	// been used.  The menu calls it before stuffing loadgame command
-//  SCR_BeginLoadingPlaque ();
+	cl.loading = true;
+	CL_UpdateScreen (cl.time);
 
 	Sys_Printf ("Loading game from %s...\n", name->str);
 	f = QFS_Open (name->str, "rz");
@@ -641,6 +640,7 @@ Host_Loadgame_f (void)
 	Qclose (f);
 
 	script = Script_New ();
+	script->single = "";		// disable {}()': lexing
 	Script_Start (script, name->str, script_data);
 
 	Script_GetToken (script, 1);

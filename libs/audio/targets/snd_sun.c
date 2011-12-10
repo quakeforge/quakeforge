@@ -36,6 +36,12 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <errno.h>
 #include <fcntl.h>
@@ -53,13 +59,13 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
-#include "snd_render.h"
+#include "snd_internal.h"
 
 static int		audio_fd;
 static int		snd_inited;
 static int		snd_blocked = 0;
 
-static int  wbufp;
+static unsigned int wbufp;
 static audio_info_t info;
 
 #define BUFFER_SIZE		8192
@@ -141,8 +147,8 @@ SNDDMA_Init (void)
 		sn.channels = 2;
 	}
 
-	sn.samples = sizeof (dma_buffer) / (sn.samplebits / 8);
-	sn.samplepos = 0;
+	sn.frames = sizeof (dma_buffer) / (sn.samplebits / 8);
+	sn.framepos = 0;
 	sn.submission_chunk = 1;
 	sn.buffer = (unsigned char *) dma_buffer;
 
@@ -165,9 +171,10 @@ SNDDMA_GetDMAPos (void)
 		return (0);
 	}
 
-	return ((info.play.samples * sn.channels) % sn.samples);
+	sn.framepos = ((info.play.samples * sn.channels) % sn.frames);
+	return sn.framepos;
 }
-
+#if 0
 static int
 SNDDMA_GetSamples (void)
 {
@@ -184,7 +191,7 @@ SNDDMA_GetSamples (void)
 
 	return info.play.samples;
 }
-
+#endif
 static void
 SNDDMA_Shutdown (void)
 {
@@ -219,7 +226,7 @@ SNDDMA_Submit (void)
 	if (!bytes)
 		return;
 
-	if (bytes > sizeof (writebuf)) {
+	if (bytes > (int) sizeof (writebuf)) {
 		bytes = sizeof (writebuf);
 		stop = wbufp + bytes / bsize;
 	}

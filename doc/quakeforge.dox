@@ -1,0 +1,16 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+// vim:tw=74:formatoptions-=l
+/**
+\mainpage QuakeForge
+
+QuakeForge is a 3D graphics game engine based on
+<a href="http://www.idsoftware.com/">id Software's</a> legendary
+Quake and QuakeWorld game engine.  Our purpose?  To improve the state of the
+game by improving the engine and making it accessible to the largest number
+of players we can.
+
+\li \subpage build-install
+\li \subpage faq
+\li \subpage run_config
+\li \subpage specs
+*/

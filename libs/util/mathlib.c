@@ -48,8 +48,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 VISIBLE int nanmask = 255 << 23;
-static mplane_t _frustum[4];
-VISIBLE mplane_t   *const frustum = _frustum;
+static plane_t _frustum[4];
+VISIBLE plane_t   *const frustum = _frustum;
 static vec3_t _vec3_origin = { 0, 0, 0 };
 VISIBLE const vec_t * const vec3_origin = _vec3_origin;
 static vec3_t _quat_origin = { 0, 0, 0 };
@@ -195,6 +195,49 @@ QuatInverse (const quat_t in, quat_t out)
 	QuatScale (q, 1 / m, out);
 }
 
+VISIBLE void
+QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical)
+{
+	vec_t       aa, ab, ac, ad, bb, bc, bd, cc, cd, dd;
+	vec_t       *_m[4] = {
+		m + (homogenous ? 0 : 0),
+		m + (homogenous ? 4 : 3),
+		m + (homogenous ? 8 : 6),
+		m + (homogenous ? 12 : 9),
+	};
+
+	aa = q[0] * q[0];
+	ab = q[0] * q[1];
+	ac = q[0] * q[2];
+	ad = q[0] * q[3];
+
+	bb = q[1] * q[1];
+	bc = q[1] * q[2];
+	bd = q[1] * q[3];
+
+	cc = q[2] * q[2];
+	cd = q[2] * q[3];
+
+	dd = q[3] * q[3];
+
+	if (vertical) {
+		VectorSet (aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac), _m[0]);
+		VectorSet (2 * (bc - ad), aa - bb + cc - dd, 2 * (cd + ab), _m[1]);
+		VectorSet (2 * (bd + ac), 2 * (cd - ab), aa - bb - cc + dd, _m[2]);
+	} else {
+		VectorSet (aa + bb - cc - dd, 2 * (bc - ad), 2 * (bd + ac), _m[0]);
+		VectorSet (2 * (bc + ad), aa - bb + cc - dd, 2 * (cd - ab), _m[1]);
+		VectorSet (2 * (bd - ac), 2 * (cd + ab), aa - bb - cc + dd, _m[2]);
+	}
+	if (homogenous) {
+		_m[0][3] = 0;
+		_m[1][3] = 0;
+		_m[2][3] = 0;
+		VectorZero (_m[3]);
+		_m[3][3] = 1;
+	}
+}
+
 #if defined(_WIN32) && !defined(__GNUC__)
 # pragma optimize( "", on )
 #endif
@@ -226,7 +269,7 @@ BOPS_Error (void)
 	Returns 1, 2, or 1 + 2
 */
 VISIBLE int
-BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, mplane_t *p)
+BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, plane_t *p)
 {
 	float       dist1, dist2;
 	int         sides;
@@ -342,7 +385,7 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, mplane_t *p)
 
 	the math in AngleVectors has the entity frame as left handed with x
 	(forward) axis forward, y (right) axis to the right and z (up) up. However,
-	the world is a right (?) handed system with x to the right, y forward and
+	the world is a right handed system with x to the right, y forward and
 	z up.
 
 	pitch =
@@ -392,6 +435,29 @@ AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 	up[0] = (cr * sp * cy + -sr * -sy);
 	up[1] = (cr * sp * sy + -sr * cy);
 	up[2] = cr * cp;
+}
+
+VISIBLE void
+AngleQuat (const vec3_t angles, quat_t q)
+{
+	float       alpha, sr, sp, sy, cr, cp, cy;
+
+	// alpha is half the angle
+	alpha = angles[YAW] * (M_PI / 360);
+	sy = sin (alpha);
+	cy = cos (alpha);
+	alpha = angles[PITCH] * (M_PI / 360);
+	sp = sin (alpha);
+	cp = cos (alpha);
+	alpha = angles[ROLL] * (M_PI / 360);
+	sr = sin (alpha);
+	cr = cos (alpha);
+
+	QuatSet (cy * cp * cr + sy * sp * sr,
+			 cy * cp * sr - sy * sp * cr,
+			 cy * sp * cr + sy * cp * sr,
+			 sy * cp * cr - cy * sp * sr,
+			 q);
 }
 
 VISIBLE int

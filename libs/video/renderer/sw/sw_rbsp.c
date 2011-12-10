@@ -155,7 +155,7 @@ R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 	bedge_t    *psideedges[2], *pnextedge, *ptedge;
 	int         i, side, lastside;
 	float       dist, frac, lastdist;
-	mplane_t   *splitplane, tplane;
+	plane_t    *splitplane, tplane;
 	mvertex_t  *pvert, *plastvert, *ptvert;
 	mnode_t    *pn;
 
@@ -301,7 +301,7 @@ R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 	vec_t       dot;
 	msurface_t *psurf;
 	int         numsurfaces;
-	mplane_t   *pplane;
+	plane_t    *pplane;
 	mvertex_t   bverts[MAX_BMODEL_VERTS];
 	bedge_t     bedges[MAX_BMODEL_EDGES], *pbedge;
 	medge_t    *pedge, *pedges;
@@ -370,7 +370,7 @@ R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
 	vec_t       dot;
 	msurface_t *psurf;
 	int         numsurfaces;
-	mplane_t   *pplane;
+	plane_t    *pplane;
 
 	// FIXME: use bounding-box-based frustum clipping info?
 
@@ -409,7 +409,7 @@ static inline int
 get_side (mnode_t *node)
 {
 	// find which side of the node we are on
-	mplane_t   *plane = node->plane;
+	plane_t    *plane = node->plane;
 
 	if (plane->type < 3)
 		return (modelorg[plane->type] - plane->dist) < 0;
@@ -560,7 +560,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 {
 	int         i, c, side, *pindex;
 	vec3_t      acceptpt, rejectpt;
-	mplane_t   *plane;
+	plane_t    *plane;
 	msurface_t *surf;
 	mleaf_t    *pleaf;
 	double      d, dot;

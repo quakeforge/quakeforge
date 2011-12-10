@@ -9,7 +9,7 @@ nobase_pkginclude_HEADERS = \
 	qargs.h qdefs.h qendian.h qfplist.h qtypes.h quakefs.h quakeio.h render.h \
 	riff.h ruamoko.h screen.h script.h sizebuf.h skin.h sound.h spritegn.h \
 	sys.h teamplay.h tga.h uint32.h va.h ver_check.h vid.h view.h wad.h \
-	wadfile.h zone.h \
+	wadfile.h winding.h zone.h \
 	\
 	GL/ati.h GL/defines.h GL/extensions.h GL/funcs.h GL/qf_explosions.h \
 	GL/qf_funcs_list.h GL/qf_lightmap.h GL/qf_noisetextures.h \

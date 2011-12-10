@@ -298,6 +298,7 @@ SND_OUTPUT_DEFAULT=""
 if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libQFcd.la"
 	SND_TARGETS="libQFsound.la"
+	AUDIO_TARGETS="testsound\$(EXEEXT)"
 	JOY_TARGETS="libQFjs.la"
 	if test "`echo $SOUND_TYPES | grep ALSA`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_alsa.la"
@@ -364,6 +365,7 @@ else
 	SND_PLUGIN_TARGETS=""
 	SND_REND_TARGETS=""
 	SND_TARGETS=""
+	AUDIO_TARGETS=""
 	unset SOUND_TYPES
 fi
 AC_DEFINE_UNQUOTED(SND_OUTPUT_DEFAULT, "$SND_OUTPUT_DEFAULT", [Define this to the default sound output driver.])
@@ -510,6 +512,7 @@ AC_SUBST(SND_REND_STATIC)
 AC_SUBST(SND_REND_STATIC_LIBS)
 AC_SUBST(SND_REND_TARGETS)
 AC_SUBST(SND_TARGETS)
+AC_SUBST(AUDIO_TARGETS)
 AC_SUBST(VID_MODEL_TARGETS)
 AC_SUBST(VID_REND_TARGETS)
 AC_SUBST(VID_REND_NOINST_TARGETS)
@@ -524,7 +527,7 @@ QF_DEPS(BSP2IMG,
 )
 QF_DEPS(QFBSP,
 	[-I$(top_srcdir)/tools/qfbsp/include],
-	[$(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/models/libQFmodels.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(QFCC,

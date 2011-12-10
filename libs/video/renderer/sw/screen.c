@@ -56,7 +56,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_local.h"
 #include "r_screen.h"
 #include "sbar.h"
-#include "view.h"
+#include "clview.h"	//FIXME
 
 static void
 SCR_ApplyBlend (void)		// Used to be V_UpdatePalette

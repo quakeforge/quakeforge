@@ -64,7 +64,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sound.h"
 #include "QF/sys.h"
 
-#include "snd_render.h"
+#include "snd_internal.h"
 
 #ifdef LEGACY_FLAC
 #define FLAC__StreamDecoder FLAC__SeekableStreamDecoder

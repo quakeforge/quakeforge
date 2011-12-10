@@ -28,23 +28,21 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
+static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #include "winquake.h"
 #include "win32/resources/resource.h"
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
-#include "QF/quakeio.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 
 #include "client.h"
-#include "compat.h"
-#include "game.h"
 #include "host.h"
+
+qboolean    isDedicated = false;
 
 #define MINIMUM_WIN_MEMORY		0x0880000
 #define MAXIMUM_WIN_MEMORY		0x1000000
@@ -59,10 +57,7 @@ qboolean    WinNT;
 
 static double pfreq;
 static int  lowshift;
-qboolean    isDedicated;
 HANDLE      hinput, houtput;
-
-static const char tracking_tag[] = "Clams & Mooses";
 
 static HANDLE tevent;
 
@@ -112,7 +107,7 @@ startup (void)
 }
 
 static void
-shutdown (void)
+shutdown_f (void)
 {
 	if (tevent)
 		CloseHandle (tevent);
@@ -132,59 +127,10 @@ const char *argv[MAX_NUM_ARGVS];
 static const char *empty_string = "";
 HWND        hwnd_dialog;
 
-int         WINAPI
-WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
-		 int nCmdShow)
+static void
+init_handles (HINSTANCE hInstance)
 {
-	double      time, oldtime, newtime;
-	MEMORYSTATUS lpBuffer;
-	static char cwd[1024];
 	RECT        rect;
-
-	// previous instances do not exist in Win32
-	if (hPrevInstance)
-		return 0;
-
-	startup ();
-
-	global_hInstance = hInstance;
-	global_nCmdShow = nCmdShow;
-
-	lpBuffer.dwLength = sizeof (MEMORYSTATUS);
-	GlobalMemoryStatus (&lpBuffer);
-
-	if (!GetCurrentDirectory (sizeof (cwd), cwd))
-		Sys_Error ("Couldn't determine current directory");
-
-	if (cwd[strlen (cwd) - 1] == '/')
-		cwd[strlen (cwd) - 1] = 0;
-
-	host_parms.argc = 1;
-	argv[0] = empty_string;
-
-	while (*lpCmdLine && (host_parms.argc < MAX_NUM_ARGVS)) {
-		while (*lpCmdLine && ((*lpCmdLine <= 32) || (*lpCmdLine > 126)))
-			lpCmdLine++;
-
-		if (*lpCmdLine) {
-			argv[host_parms.argc] = lpCmdLine;
-			host_parms.argc++;
-
-			while (*lpCmdLine && ((*lpCmdLine > 32) && (*lpCmdLine <= 126)))
-				lpCmdLine++;
-
-			if (*lpCmdLine) {
-				*lpCmdLine = 0;
-				lpCmdLine++;
-			}
-		}
-	}
-
-	COM_InitArgv (host_parms.argc, argv);
-	host_parms.argc = com_argc;
-	host_parms.argv = com_argv;
-
-	isDedicated = (COM_CheckParm ("-dedicated") != 0);
 
 	if (!isDedicated) {
 		hwnd_dialog = CreateDialog (hInstance, MAKEINTRESOURCE (IDD_DIALOG1),
@@ -210,26 +156,68 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	if (!tevent)
 		Sys_Error ("Couldn't create event");
+}
+
+int         WINAPI
+WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
+		 int nCmdShow)
+{
+	double      time, oldtime, newtime;
+	MEMORYSTATUS lpBuffer;
+	int         argc;
+
+	// previous instances do not exist in Win32
+	if (hPrevInstance)
+		return 0;
+
+	startup ();
+
+	global_hInstance = hInstance;
+	global_nCmdShow = nCmdShow;
+
+	lpBuffer.dwLength = sizeof (MEMORYSTATUS);
+	GlobalMemoryStatus (&lpBuffer);
+
+	argc = 1;
+	argv[0] = empty_string;
+
+	while (*lpCmdLine && (argc < MAX_NUM_ARGVS)) {
+		while (*lpCmdLine && ((*lpCmdLine <= 32) || (*lpCmdLine > 126)))
+			lpCmdLine++;
+
+		if (*lpCmdLine) {
+			argv[argc] = lpCmdLine;
+			argc++;
+
+			while (*lpCmdLine && ((*lpCmdLine > 32) && (*lpCmdLine <= 126)))
+				lpCmdLine++;
+
+			if (*lpCmdLine) {
+				*lpCmdLine = 0;
+				lpCmdLine++;
+			}
+		}
+	}
+
+	memset (&host_parms, 0, sizeof (host_parms));
+
+	COM_InitArgv (argc, argv);
+	host_parms.argc = com_argc;
+	host_parms.argv = com_argv;
+
+	isDedicated = (COM_CheckParm ("-dedicated") != 0);
+
+	if (!isDedicated)
+		init_handles (hInstance);
+
+	Sys_RegisterShutdown (Host_Shutdown);
+	Sys_RegisterShutdown (shutdown_f);
 
 	Host_Init ();
 
-	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (shutdown);
-
-	oldtime = Sys_DoubleTime ();
-
-	// main window message loop
-	while (1) {
-		if (isDedicated) {
-			newtime = Sys_DoubleTime ();
-			time = newtime - oldtime;
-
-			while (time < sys_ticrate->value) {
-				Sleep (1);
-				newtime = Sys_DoubleTime ();
-				time = newtime - oldtime;
-			}
-		} else {
+	oldtime = Sys_DoubleTime () - 0.1;
+	while (1) {							// Main message loop
+		if (!isDedicated) {
 			// yield the CPU for a little while when paused, minimized, or
 			// not the focus
 			if ((cl.paused && !ActiveApp) || Minimized) {
@@ -238,15 +226,24 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 			} else if (!ActiveApp) {
 				SleepUntilInput (NOT_FOCUS_SLEEP);
 			}
+		}
+		// find time spent rendering last frame
+		newtime = Sys_DoubleTime ();
+		time = newtime - oldtime;
 
-			newtime = Sys_DoubleTime ();
-			time = newtime - oldtime;
+		if (cls.state == ca_dedicated) {	// play vcrfiles at max speed
+			if (time < sys_ticrate->value && (!vcrFile || recording)) {
+				Sleep (1);
+				continue;			// not time to run a server-only tic yet
+			}
+			time = sys_ticrate->value;
 		}
 
-		Host_Frame (time);
-		oldtime = newtime;
-	}
+		if (time > sys_ticrate->value * 2)
+			oldtime = newtime;
+		else
+			oldtime += time;
 
-		// return success of application
-	return TRUE;
+		Host_Frame (time);
+	}
 }

@@ -37,9 +37,11 @@
 
 #include "QF/qtypes.h"
 
-extern	int		com_argc;
-extern	const char	**com_argv;
-extern	const char	*com_cmdline;
+extern int com_argc;
+extern const char **com_argv;
+extern const char *com_cmdline;
+extern struct cvar_s *fs_globalcfg;
+extern struct cvar_s *fs_usercfg;
 
 int COM_CheckParm (const char *parm);
 void COM_AddParm (const char *parm);
@@ -47,6 +49,7 @@ void COM_AddParm (const char *parm);
 void COM_Init (void);
 void COM_Init_Cvars (void);
 void COM_InitArgv (int argc, const char **argv);
+void COM_ParseConfig (void);
 
 //@}
 

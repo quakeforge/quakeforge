@@ -45,7 +45,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/quakefs.h"
 
-#include "snd_render.h"
+#include "snd_internal.h"
 
 #define FRAMES 1024
 #define CHANNELS 2

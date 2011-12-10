@@ -49,7 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 static hull_t box_hull;
 static mclipnode_t box_clipnodes[6];
-static mplane_t box_planes[6];
+static plane_t box_planes[6];
 
 
 /*
@@ -107,9 +107,9 @@ PM_HullForBox (const vec3_t mins, const vec3_t maxs)
 inline int
 PM_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
-	float		 d;
+	float        d;
 	mclipnode_t *node;
-	mplane_t	*plane;
+	plane_t     *plane;
 
 	while (num >= 0) {
 		node = hull->clipnodes + num;
@@ -135,7 +135,7 @@ PM_PointContents (const vec3_t p)
 	int         num;
 	mclipnode_t *node;
 	hull_t     *hull;
-	mplane_t   *plane;
+	plane_t    *plane;
 
 	hull = &pmove.physents[0].model->hulls[0];
 
@@ -214,6 +214,9 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 	trace_t     trace, total;
 	vec3_t      maxs, mins, offset, start_l, end_l;
 	vec3_t      move[2];
+	vec3_t      forward, right, up;
+	int         rot = 0;
+	vec3_t      temp;
 
 	// fill in a default trace
 	memset (&total, 0, sizeof (trace_t));
@@ -248,6 +251,24 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 
 		VectorSubtract (start, offset, start_l);
 		VectorSubtract (end, offset, end_l);
+
+		rot = 0;
+		if (i && pe->model && pe->model->type == mod_brush
+			&& !VectorIsZero (pe->angles)) {
+			rot = 1;
+			AngleVectors (pe->angles, forward, right, up);
+			VectorNegate (right, right);    // convert lhs to rhs
+
+			VectorCopy (start_l, temp);
+			start_l[0] = DotProduct (temp, forward);
+			start_l[1] = DotProduct (temp, right);
+			start_l[2] = DotProduct (temp, up);
+
+			VectorCopy (end_l, temp);
+			end_l[0] = DotProduct (temp, forward);
+			end_l[1] = DotProduct (temp, right);
+			end_l[2] = DotProduct (temp, up);
+		}
 
 		// fill in a default trace
 		memset (&trace, 0, sizeof (trace_t));
@@ -289,7 +310,25 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 
 		// did we clip the move?
 		if (trace.fraction < total.fraction) {
-			// fix trace up by the offset
+			// fix up trace by the offset
+			if (rot) {
+				vec_t       t;
+
+				// transpose the rotation matrix to get its inverse
+				t = forward[1]; forward[1] = right[0]; right[0] = t;
+				t = forward[2]; forward[2] = up[0]; up[0] = t;
+				t = right[2]; right[2] = up[1]; up[1] = t;
+
+				VectorCopy (trace.endpos, temp);
+				trace.endpos[0] = DotProduct (temp, forward);
+				trace.endpos[1] = DotProduct (temp, right);
+				trace.endpos[2] = DotProduct (temp, up);
+
+				VectorCopy (trace.plane.normal, temp);
+				trace.plane.normal[0] = DotProduct (temp, forward);
+				trace.plane.normal[1] = DotProduct (temp, right);
+				trace.plane.normal[2] = DotProduct (temp, up);
+			}
 			VectorAdd (trace.endpos, offset, trace.endpos);
 			total = trace;
 			total.ent = (struct edict_s *) &pmove.physents[i];

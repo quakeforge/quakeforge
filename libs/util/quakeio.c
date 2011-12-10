@@ -49,7 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#ifdef HAVE_MALLOC_H
+#if defined(_WIN32) && defined(HAVE_MALLOC_H)
 #include <malloc.h>
 #endif
 
@@ -217,7 +217,9 @@ Qdopen (int fd, const char *mode)
 {
 	QFile      *file;
 	char       *m, *p;
+#ifdef HAVE_ZLIB
 	int         zip = 0;
+#endif
 	int         len = strlen (mode);
 
 	m = alloca (len + 1);
@@ -226,7 +228,9 @@ Qdopen (int fd, const char *mode)
 #endif
 	for (p = m; *mode && p - m < len; mode++) {
 		if (*mode == 'z') {
+#ifdef HAVE_ZLIB
 			zip = 1;
+#endif
 			continue;
 		}
 		*p++ = *mode;

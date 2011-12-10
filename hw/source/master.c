@@ -525,12 +525,7 @@ main (int argc, const char **argv)
 
 	Sys_RegisterShutdown (SV_Shutdown);
 
-	Cvar_Init_Hash ();
-	Cmd_Init_Hash ();
-	Cvar_Init ();
-	Sys_Init_Cvars ();
 	Sys_Init ();
-	Cmd_Init ();
 
 	Cmd_AddCommand ("quit", MST_Quit_f, "Shut down the master server");
 	Cmd_AddCommand ("clear", SVL_Clear, "Clear the server list");

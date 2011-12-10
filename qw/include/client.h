@@ -276,6 +276,9 @@ typedef struct
 	struct model_s		*model_precache[MAX_MODELS];
 	struct sfx_s		*sound_precache[MAX_SOUNDS];
 
+	struct plitem_s *edicts;
+	struct plitem_s *worldspawn;
+
 	char		levelname[40];	// for display on solo scoreboard
 	int			playernum;
 	int			viewentity;
@@ -377,5 +380,7 @@ void CL_RSShot_f (void);
 
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200
+
+extern struct dstring_s *centerprint;
 
 #endif // _CLIENT_H

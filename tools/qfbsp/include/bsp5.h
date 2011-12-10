@@ -28,21 +28,15 @@
 
 #include "QF/mathlib.h"
 #include "QF/bspfile.h"
+#include "QF/winding.h"
 
 /**	\defgroup qfbsp_general General functions
 	\ingroup qfbsp
 */
 //@{
 
-typedef struct plane_s {
-	vec3_t      normal;
-	vec_t       dist;
-	int         type;
-} plane_t;
-
 #define MAX_THREADS 4
 
-#define ON_EPSILON 0.05
 #define BOGUS_RANGE 18000
 
 // the exact bounding box of the brushes is expanded some for the headnode

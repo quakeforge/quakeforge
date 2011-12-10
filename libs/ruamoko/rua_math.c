@@ -47,100 +47,124 @@ static __attribute__ ((used)) const char rcsid[] =
 static void
 bi_sin (progs_t *pr)
 {
-	R_FLOAT (pr) = sin (P_FLOAT (pr, 0));
+	R_FLOAT (pr) = sinf (P_FLOAT (pr, 0));
 }
 
 static void
 bi_cos (progs_t *pr)
 {
-	R_FLOAT (pr) = cos (P_FLOAT (pr, 0));
+	R_FLOAT (pr) = cosf (P_FLOAT (pr, 0));
 }
 
 static void
 bi_tan (progs_t *pr)
 {
-	R_FLOAT (pr) = tan (P_FLOAT (pr, 0));
+	R_FLOAT (pr) = tanf (P_FLOAT (pr, 0));
 }
 
 static void
 bi_asin (progs_t *pr)
 {
-	R_FLOAT (pr) = asin (P_FLOAT (pr, 0));
+	R_FLOAT (pr) = asinf (P_FLOAT (pr, 0));
 }
 
 static void
 bi_acos (progs_t *pr)
 {
-	R_FLOAT (pr) = acos (P_FLOAT (pr, 0));
+	R_FLOAT (pr) = acosf (P_FLOAT (pr, 0));
 }
 
 static void
 bi_atan (progs_t *pr)
 {
-	R_FLOAT (pr) = atan (P_FLOAT (pr, 0));
+	R_FLOAT (pr) = atanf (P_FLOAT (pr, 0));
 }
 
 static void
 bi_atan2 (progs_t *pr)
 {
-	R_FLOAT (pr) = atan2 (P_FLOAT (pr, 0), P_FLOAT (pr, 1));
+	R_FLOAT (pr) = atan2f (P_FLOAT (pr, 0), P_FLOAT (pr, 1));
 }
 
 static void
 bi_log (progs_t *pr)
 {
-	R_FLOAT (pr) = log (P_FLOAT (pr, 0));
+	R_FLOAT (pr) = logf (P_FLOAT (pr, 0));
+}
+
+static void
+bi_log2 (progs_t *pr)
+{
+	R_FLOAT (pr) = log2f (P_FLOAT (pr, 0));
 }
 
 static void
 bi_log10 (progs_t *pr)
 {
-	R_FLOAT (pr) = log10 (P_FLOAT (pr, 0));
+	R_FLOAT (pr) = log10f (P_FLOAT (pr, 0));
 }
 
 static void
 bi_pow (progs_t *pr)
 {
-	R_FLOAT (pr) = pow (P_FLOAT (pr, 0), P_FLOAT (pr, 1));
+	R_FLOAT (pr) = powf (P_FLOAT (pr, 0), P_FLOAT (pr, 1));
+}
+
+static void
+bi_sqrt (progs_t *pr)
+{
+	R_FLOAT (pr) = sqrtf (P_FLOAT (pr, 0));
+}
+
+static void
+bi_cbrt (progs_t *pr)
+{
+	R_FLOAT (pr) = cbrtf (P_FLOAT (pr, 0));
+}
+
+static void
+bi_hypot (progs_t *pr)
+{
+	R_FLOAT (pr) = hypotf (P_FLOAT (pr, 0), P_FLOAT (pr, 1));
 }
 
 static void
 bi_sinh (progs_t *pr)
 {
-	R_FLOAT (pr) = sinh (P_FLOAT (pr, 0));
+	R_FLOAT (pr) = sinhf (P_FLOAT (pr, 0));
 }
 
 static void
 bi_cosh (progs_t *pr)
 {
-	R_FLOAT (pr) = cosh (P_FLOAT (pr, 0));
+	R_FLOAT (pr) = coshf (P_FLOAT (pr, 0));
 }
 
 static void
 bi_tanh (progs_t *pr)
 {
-	R_FLOAT (pr) = tanh (P_FLOAT (pr, 0));
+	R_FLOAT (pr) = tanhf (P_FLOAT (pr, 0));
 }
 
 static void
 bi_asinh (progs_t *pr)
 {
 	double      y = P_FLOAT (pr, 0);
-	R_FLOAT (pr) = log (y + sqrt (y * y + 1));
+	R_FLOAT (pr) = logf (y + sqrtf (y * y + 1));
 }
 
 static void
 bi_acosh (progs_t *pr)
 {
 	double      y = P_FLOAT (pr, 0);
-	R_FLOAT (pr) = log (y + sqrt (y * y - 1));
+	R_FLOAT (pr) = logf (y + sqrtf (y * y - 1));
 }
 
 static void
 bi_atanh (progs_t *pr)
 {
 	double      y = P_FLOAT (pr, 0);
-	R_FLOAT (pr) = log ((1 + y) / (1 - y)) / 2;
+	R_FLOAT (pr) = logf ((1 + y) / (1 - y)) / 2;
 }
 
 static builtin_t builtins[] = {
@@ -152,8 +176,12 @@ static builtin_t builtins[] = {
 	{"atan",	bi_atan,	-1},
 	{"atan2", 	bi_atan2, 	-1},
 	{"log",		bi_log,		-1},
+	{"log2",	bi_log2,	-1},
 	{"log10",	bi_log10,	-1},
 	{"pow",		bi_pow,		-1},
+	{"sqrt",	bi_sqrt,	-1},
+	{"cbrt",	bi_cbrt,	-1},
+	{"hypot",	bi_hypot,	-1},
 	{"sinh",	bi_sinh,	-1},
 	{"cosh",	bi_cosh,	-1},
 	{"tanh",	bi_tanh,	-1},

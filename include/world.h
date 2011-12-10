@@ -33,11 +33,11 @@
 #include "QF/mathlib.h"
 #include "QF/model.h"
 
-typedef struct
-{
-	vec3_t	normal;
-	vec_t	dist;
-} plane_t;
+typedef enum {
+	tr_point,
+	tr_box,
+	tr_ellipsoid,
+} trace_e;
 
 typedef struct trace_s {
 	qboolean	allsolid;	// if true, plane is not valid
@@ -45,10 +45,11 @@ typedef struct trace_s {
 	qboolean	inopen, inwater;
 	float		fraction;	// time completed, 1.0 = didn't hit anything
 	vec3_t		extents;	// 1/2 size of traced box
-	qboolean	isbox;		// box or point
+	trace_e		type;		// type of trace to perform
 	vec3_t		endpos;		// final position
 	plane_t		plane;		// surface normal at impact
 	struct edict_s *ent;	// entity the surface is on
+	unsigned    contents;	// contents of leafs touched by trace
 } trace_t;
 
 
@@ -71,7 +72,7 @@ extern	areanode_t	sv_areanodes[AREA_NODES];
 
 void SV_FreeAllEdictLeafs (void);
 
-void SV_InitHull (hull_t *hull, mclipnode_t *clipnodes, mplane_t *planes);
+void SV_InitHull (hull_t *hull, mclipnode_t *clipnodes, plane_t *planes);
 
 void SV_ClearWorld (void);
 // called after the world model has been loaded, before linking any entities
@@ -117,5 +118,28 @@ hull_t *SV_HullForEntity (struct edict_s *ent, const vec3_t mins,
 						  const vec3_t maxs, vec3_t extents, vec3_t offset);
 void MOD_TraceLine (hull_t *hull, int num,
 					const vec3_t start, const vec3_t end, trace_t *trace);
+int MOD_HullContents (hull_t *hull, int num, const vec3_t origin,
+					  trace_t *trace);
+
+typedef struct clipport_s {
+	int         planenum;
+	struct clipport_s *next[2];		///< front, back
+	struct clipleaf_s *leafs[2];	///< front, back
+	struct winding_s *winding;
+	struct winding_s *edges;		///< unit vectors along edges
+} clipport_t;
+
+typedef struct clipleaf_s {
+	clipport_t *portals;
+	int         contents;
+	int         test_count;
+} clipleaf_t;
+
+typedef struct nodeleaf_s {
+	clipleaf_t *leafs[2];	///< front, back. If null, node's child is a node
+} nodeleaf_t;
+
+nodeleaf_t *MOD_BuildBrushes (hull_t *hull);
+void MOD_FreeBrushes (hull_t *hull);
 
 #endif // __world_h

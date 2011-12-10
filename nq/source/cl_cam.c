@@ -80,6 +80,7 @@ TraceLine (vec3_t start, vec3_t end, vec3_t impact)
 	trace_t     trace;
 
 	memset (&trace, 0, sizeof (trace));
+	trace.fraction = 1;
 	MOD_TraceLine (cl.worldmodel->hulls, 0, start, end, &trace);
 
 	VectorCopy (trace.endpos, impact);
@@ -129,8 +130,8 @@ Chase_Update (void)
 
 		// don't let camera get too far from player
 
-		VectorSubtract (camera_origin, player_origin, dir);
-		VectorCopy (dir, forward);
+		VectorSubtract  (camera_origin, player_origin, dir);
+		VectorCopy      (dir, forward);
 		VectorNormalize (forward);
 
 		if (VectorLength (dir) > chase_back->value) {
@@ -198,25 +199,25 @@ Chase_Update (void)
 		}
 		if (in_speed.state & 1) {
 			cmd.forwardmove *= cl_movespeedkey->value;
-			cmd.sidemove *= cl_movespeedkey->value;
+			cmd.sidemove    *= cl_movespeedkey->value;
 		}
 
 		// mouse and joystick controllers add to movement
-		dir[1] = cl.viewangles[1] - camera_angles[1]; dir[0] = 0; dir[2] = 0;
+		VectorSet (0, cl.viewangles[1] - camera_angles[1], 0, dir);
 		AngleVectors (dir, forward, right, up);
-		VectorScale (forward, viewdelta.position[2] * m_forward->value,
+		VectorScale  (forward, viewdelta.position[2] * m_forward->value,
 					  forward);
-		VectorScale (right, viewdelta.position[0] * m_side->value, right);
-		VectorAdd (forward, right, dir);
+		VectorScale  (right, viewdelta.position[0] * m_side->value, right);
+		VectorAdd    (forward, right, dir);
 		cmd.forwardmove += dir[0];
-		cmd.sidemove -= dir[1];
+		cmd.sidemove    -= dir[1];
 
-		dir[1] = camera_angles[1]; dir[0] = 0; dir[2] = 0;
+		VectorSet (0, camera_angles[1], 0, dir);
 		AngleVectors (dir, forward, right, up);
 
 		VectorScale (forward, cmd.forwardmove, forward);
-		VectorScale (right, cmd.sidemove, right);
-		VectorAdd (forward, right, dir);
+		VectorScale (right,   cmd.sidemove,    right);
+		VectorAdd   (forward, right, dir);
 
 		if (dir[1] || dir[0]) {
 			cl.viewangles[YAW] = (atan2 (dir[1], dir[0]) * 180 / M_PI);

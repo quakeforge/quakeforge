@@ -358,7 +358,7 @@ server_connect (connection_t *con, void *object)
 		return;
 
 	qtv_printf ("connection from %s\n", sv->name);
-	Netchan_Setup (&sv->netchan, con->address, sv->qport, NC_SEND_QPORT);
+	Netchan_Setup (&sv->netchan, con->address, sv->qport, NC_QPORT_SEND);
 	sv->netchan.outgoing_sequence = 1;
 	sv->connected = 1;
 	sv->playermodel = -1;
@@ -461,7 +461,7 @@ sv_new_f (void)
 	Hash_Add (server_hash, sv);
 
 	sv->con = Connection_Add (&adr, sv, server_challenge);
-	Netchan_Setup (&sv->netchan, sv->con->address, sv->qport, NC_SEND_QPORT);
+	Netchan_Setup (&sv->netchan, sv->con->address, sv->qport, NC_QPORT_SEND);
 
 	server_getchallenge (sv->con, sv);
 }

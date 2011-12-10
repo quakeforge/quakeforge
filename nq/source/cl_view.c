@@ -43,7 +43,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "host.h"
 #include "r_local.h"
-#include "view.h"
+#include "clview.h"
 
 /*
 	The view is allowed to move slightly from it's true position for bobbing,
@@ -67,6 +67,10 @@ cvar_t     *cl_bobup;
 cvar_t     *v_centermove;
 cvar_t     *v_centerspeed;
 
+cvar_t     *v_kicktime;
+cvar_t     *v_kickroll;
+cvar_t     *v_kickpitch;
+
 cvar_t     *v_iyaw_cycle;
 cvar_t     *v_iroll_cycle;
 cvar_t     *v_ipitch_cycle;
@@ -76,19 +80,15 @@ cvar_t     *v_ipitch_level;
 
 cvar_t     *v_idlescale;
 
-cvar_t     *v_kicktime;
-cvar_t     *v_kickroll;
-cvar_t     *v_kickpitch;
-
 float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
 float       v_blend[4];
 
 
-cshift_t	cshift_empty = { {130, 80, 50}, 0};
-cshift_t	cshift_water = { {130, 80, 50}, 128};
-cshift_t	cshift_slime = { {0, 25, 5}, 150};
-cshift_t	cshift_lava = { {255, 80, 0}, 150};
-cshift_t	cshift_bonus = { {215, 186, 60}, 50};
+cshift_t    cshift_empty = { {130, 80, 50}, 0};
+cshift_t    cshift_water = { {130, 80, 50}, 128};
+cshift_t    cshift_slime = { {0, 25, 5}, 150};
+cshift_t    cshift_lava = { {255, 80, 0}, 150};
+cshift_t    cshift_bonus = { {215, 186, 60}, 50};
 
 
 static float
@@ -102,8 +102,8 @@ V_CalcBob (void)
 	if (cycle < cl_bobup->value)
 		cycle = M_PI * cycle / cl_bobup->value;
 	else
-		cycle = M_PI + M_PI * (cycle - cl_bobup->value) / (1.0 -
-														   cl_bobup->value);
+		cycle = M_PI + M_PI * (cycle - cl_bobup->value) /
+			(1.0 - cl_bobup->value);
 
 	// bob is proportional to velocity in the xy plane
 	// (don't count Z, or jumping messes it up)
@@ -122,9 +122,9 @@ void
 V_StartPitchDrift (void)
 {
 	if (cl.laststop == cl.time) {
-		return;							// something else is keeping it from
-										// drifting
+		return;					// something else is keeping it from drifting
 	}
+
 	if (cl.nodrift || !cl.pitchvel) {
 		cl.pitchvel = v_centerspeed->value;
 		cl.nodrift = false;
@@ -221,9 +221,9 @@ V_ParseDamage (void)
 
 	cl.faceanimtime = cl.time + 0.2;	// but sbar face into pain frame
 
-	if (cl_cshift_damage->int_val) {
-//		|| (atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) &
-//		INFO_CSHIFT_DAMAGE)) {
+	if (cl_cshift_damage->int_val
+		|| (cl.sv_cshifts & INFO_CSHIFT_DAMAGE)) {
+
 		cl.cshifts[CSHIFT_DAMAGE].percent += 3 * count;
 		cl.cshifts[CSHIFT_DAMAGE].percent =
 			bound (0, cl.cshifts[CSHIFT_DAMAGE].percent, 150);
@@ -277,7 +277,8 @@ V_cshift_f (void)
 static void
 V_BonusFlash_f (void)
 {
-	if (!cl_cshift_bonus->int_val)
+	if (!cl_cshift_bonus->int_val
+		&& !(cl.sv_cshifts & INFO_CSHIFT_BONUS))
 		return;
 	cl.cshifts[CSHIFT_BONUS] = cshift_bonus;
 }
@@ -290,14 +291,15 @@ V_BonusFlash_f (void)
 void
 V_SetContentsColor (int contents)
 {
-	if (!cl_cshift_contents->int_val) {
+	if (!cl_cshift_contents->int_val
+		&& !(cl.sv_cshifts & INFO_CSHIFT_CONTENTS)) {
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
 		return;
 	}
 
 	switch (contents) {
 		case CONTENTS_EMPTY:
-			cl.cshifts[CSHIFT_CONTENTS] = cshift_empty; 
+			cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
 			break;
 		case CONTENTS_LAVA:
 			cl.cshifts[CSHIFT_CONTENTS] = cshift_lava;
@@ -337,7 +339,7 @@ V_CalcPowerupCshift (void)
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
 		cl.cshifts[CSHIFT_POWERUP].percent = 30;
-	} else  if (cl.stats[STAT_ITEMS] & IT_SUIT) {
+	} else if (cl.stats[STAT_ITEMS] & IT_SUIT) {
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
@@ -399,9 +401,8 @@ V_PrepBlend (void)
 { 
 	int         i, j;
 
-	if (cl_cshift_powerup->int_val)
-//		|| (atoi (Info_ValueForKey (cl.serverinfo, "cshifts"))
-//			& INFO_CSHIFT_POWERUP))
+	if (cl_cshift_powerup->int_val
+		|| (cl.sv_cshifts & INFO_CSHIFT_POWERUP))
 		V_CalcPowerupCshift ();
 
 	vid.cshift_changed = false;
@@ -450,7 +451,7 @@ angledelta (float a)
 static void
 CalcGunAngle (void)
 {
-	float        yaw, pitch, move;
+	float       yaw, pitch, move;
 	static float oldpitch = 0, oldyaw = 0;
 
 	yaw = r_refdef.viewangles[YAW];
@@ -527,15 +528,12 @@ V_BoundOffsets (void)
 static void
 V_AddIdle (void)
 {
-	r_refdef.viewangles[ROLL] +=
-		v_idlescale->value * sin (cl.time * v_iroll_cycle->value) *
-		v_iroll_level->value;
-	r_refdef.viewangles[PITCH] +=
-		v_idlescale->value * sin (cl.time * v_ipitch_cycle->value) *
-		v_ipitch_level->value;
-	r_refdef.viewangles[YAW] +=
-		v_idlescale->value * sin (cl.time * v_iyaw_cycle->value) *
-		v_iyaw_level->value;
+	r_refdef.viewangles[ROLL] += v_idlescale->value *
+		sin (cl.time * v_iroll_cycle->value) * v_iroll_level->value;
+	r_refdef.viewangles[PITCH] += v_idlescale->value *
+		sin (cl.time * v_ipitch_cycle->value) * v_ipitch_level->value;
+	r_refdef.viewangles[YAW] += v_idlescale->value *
+		sin (cl.time * v_iyaw_cycle->value) * v_iyaw_level->value;
 }
 
 /*
@@ -612,7 +610,7 @@ V_CalcRefdef (void)
 	r_refdef.vieworg[2] += cl.viewheight + bob;
 
 	// never let it sit exactly on a node line, because a water plane can
-	// dissapear when viewed with the eye exactly on it.
+	// disappear when viewed with the eye exactly on it.
 	// server protocol specifies to only 1/16 pixel, so add 1/32 in each axis
 	r_refdef.vieworg[0] += 1.0 / 32;
 	r_refdef.vieworg[1] += 1.0 / 32;
@@ -648,8 +646,8 @@ V_CalcRefdef (void)
 
 	for (i = 0; i < 3; i++) {
 		view->origin[i] += forward[i] * bob * 0.4;
-//		view->origin[i] += right[i]*bob*0.4;
-//		view->origin[i] += up[i]*bob*0.8;
+//		view->origin[i] += right[i] * bob * 0.4;
+//		view->origin[i] += up[i] * bob * 0.8;
 	}
 	view->origin[2] += bob;
 
@@ -727,23 +725,23 @@ V_RenderView (void)
 void
 V_Init (void)
 {
-	Cmd_AddCommand ("v_cshift", V_cshift_f, "This adjusts all of the colors "
-					"currently being displayed.\n"
-					"Used when you are underwater, hit, have the Ring of "
-					"Shadows, or Quad Damage. (v_cshift r g b intensity)");
 	Cmd_AddCommand ("bf", V_BonusFlash_f, "Background flash, used when you "
 					"pick up an item");
 	Cmd_AddCommand ("centerview", V_StartPitchDrift, "Centers the player's "
 					"view ahead after +lookup or +lookdown\n"
 					"Will not work while mlook is active or freelook is 1.");
+	Cmd_AddCommand ("v_cshift", V_cshift_f, "This adjusts all of the colors "
+					"currently being displayed.\n"
+					"Used when you are underwater, hit, have the Ring of "
+					"Shadows, or Quad Damage. (v_cshift r g b intensity)");
 }
 
 void
 V_Init_Cvars (void)
 {
 	v_centermove = Cvar_Get ("v_centermove", "0.15", CVAR_NONE, NULL,
-							 "How far the player must move forward before "
-							 "the view re-centers");
+							 "How far the player must move forward before the "
+							 "view re-centers");
 	v_centerspeed = Cvar_Get ("v_centerspeed", "500", CVAR_NONE, NULL,
 							  "How quickly you return to a center view after "
 							  "a lookup or lookdown");
@@ -780,8 +778,9 @@ V_Init_Cvars (void)
 	cl_bobcycle = Cvar_Get ("cl_bobcycle", "0.6", CVAR_NONE, NULL,
 							"How quickly your weapon moves up and down when "
 							"walking");
-	cl_bobup = Cvar_Get ("cl_bobup", "0.5", CVAR_NONE, NULL, "How long your "
-						 "weapon stays up before cycling when walking");
+	cl_bobup = Cvar_Get ("cl_bobup", "0.5", CVAR_NONE, NULL,
+						 "How long your weapon stays up before cycling when "
+						 "walking");
 	v_kicktime = Cvar_Get ("v_kicktime", "0.5", CVAR_NONE, NULL,
 						   "How long the kick from an attack lasts");
 	v_kickroll = Cvar_Get ("v_kickroll", "0.6", CVAR_NONE, NULL,

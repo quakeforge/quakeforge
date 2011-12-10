@@ -35,7 +35,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef HAVE_MALLOC_H
+#if defined(_WIN32) && defined(HAVE_MALLOC_H)
 #include <malloc.h>
 #endif
 
@@ -69,7 +69,7 @@ struct plarray_s {
 	int				numvals;		///< Number of items in array
 	int				maxvals;		///< Number of items that can be stored
 									///< before a realloc is necesary.
-	struct plitem_s **values;	 	///< Array data
+	struct plitem_s **values;		///< Array data
 };
 typedef struct plarray_s	plarray_t;
 
@@ -93,8 +93,9 @@ typedef struct pldata_s {	// Unparsed property list string
 //	Ugly defines for fast checking and conversion from char to number
 #define inrange(ch,min,max) ((ch) >= (min) && (ch) <= (max))
 #define char2num(ch) \
-inrange((ch), '0', '9') ? ((ch) - 0x30) \
-: (inrange((ch), 'a', 'f') ? ((ch) - 0x57) : ((ch) - 0x37))
+	(inrange((ch), '0', '9') ? ((ch) - '0') \
+							 : 10 + (inrange((ch), 'a', 'f') ? ((ch) - 'a') \
+															 : ((ch) - 'A')))
 
 static byte quotable_bitmap[32];
 static inline int
@@ -554,7 +555,7 @@ PL_ParseQuotedString (pldata_t *pl)
 				shrink++;
 			} else if (c == '"'
 					   && (!long_string || (pl->ptr[pl->pos + 1] == '"'
-							   				&& pl->ptr[pl->pos + 2] == '"'))) {
+											&& pl->ptr[pl->pos + 2] == '"'))) {
 				break;
 			}
 		}

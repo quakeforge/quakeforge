@@ -75,6 +75,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <direct.h>
 #endif
 
+#include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/sys.h"
@@ -430,6 +431,14 @@ Sys_Error (const char *error, ...)
 #ifdef VA_LIST_IS_ARRAY
 	va_list     tmp_args;
 #endif
+	static int  in_sys_error = 0;
+
+	if (in_sys_error) {
+		const char *msg = "\nSys_Error: recursive error condition\n";
+		write (2, msg, strlen (msg));
+		abort ();
+	}
+	in_sys_error = 1;
 
 	va_start (args, error);
 #ifdef VA_LIST_IS_ARRAY
@@ -765,6 +774,13 @@ Sys_Init (void)
 	signal (SIGSEGV, signal_handler);
 	signal (SIGTERM, signal_handler);
 	signal (SIGFPE, signal_handler);
+
+	Cvar_Init_Hash ();
+	Cmd_Init_Hash ();
+	Cvar_Init ();
+	Sys_Init_Cvars ();
+
+	Cmd_Init ();
 }
 
 VISIBLE int

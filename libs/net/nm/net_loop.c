@@ -1,7 +1,7 @@
 /*
 	net_loop.c
 
-	@description@
+	Loopback network driver.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 

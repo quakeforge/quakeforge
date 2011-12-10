@@ -1,7 +1,7 @@
 /*
 	net_dgrm.c
 
-	@description@
+	Datagram network driver.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -52,7 +52,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "../nq/include/client.h"
 #include "../nq/include/server.h"
 #include "../nq/include/game.h"
-#include "../nq/include/sv_progs.h"
 
 // This is enables a simple IP banning mechanism
 #define BAN_TEST
@@ -157,7 +156,7 @@ NET_Ban_f (void)
 
 
 int
-Datagram_SendMessage (qsocket_t * sock, sizebuf_t *data)
+Datagram_SendMessage (qsocket_t *sock, sizebuf_t *data)
 {
 	unsigned int packetLen;
 	unsigned int dataLen;
@@ -193,7 +192,7 @@ Datagram_SendMessage (qsocket_t * sock, sizebuf_t *data)
 
 
 static int
-SendMessageNext (qsocket_t * sock)
+SendMessageNext (qsocket_t *sock)
 {
 	unsigned int packetLen;
 	unsigned int dataLen;
@@ -225,7 +224,7 @@ SendMessageNext (qsocket_t * sock)
 
 
 static int
-ReSendMessage (qsocket_t * sock)
+ReSendMessage (qsocket_t *sock)
 {
 	unsigned int packetLen;
 	unsigned int dataLen;
@@ -257,7 +256,7 @@ ReSendMessage (qsocket_t * sock)
 
 
 qboolean
-Datagram_CanSendMessage (qsocket_t * sock)
+Datagram_CanSendMessage (qsocket_t *sock)
 {
 	if (sock->sendNext)
 		SendMessageNext (sock);
@@ -267,14 +266,14 @@ Datagram_CanSendMessage (qsocket_t * sock)
 
 
 qboolean
-Datagram_CanSendUnreliableMessage (qsocket_t * sock)
+Datagram_CanSendUnreliableMessage (qsocket_t *sock)
 {
 	return true;
 }
 
 
 int
-Datagram_SendUnreliableMessage (qsocket_t * sock, sizebuf_t *data)
+Datagram_SendUnreliableMessage (qsocket_t *sock, sizebuf_t *data)
 {
 	int         packetLen;
 
@@ -294,22 +293,24 @@ Datagram_SendUnreliableMessage (qsocket_t * sock, sizebuf_t *data)
 
 
 int
-Datagram_GetMessage (qsocket_t * sock)
+Datagram_GetMessage (qsocket_t *sock)
 {
 	unsigned int length;
 	unsigned int flags;
 	int         ret = 0;
-	struct qsockaddr readaddr;
+	netadr_t    readaddr;
 	unsigned int sequence;
 	unsigned int count;
 
+	/// If there is an outstanding reliable packet and more than 1 second has
+	/// passed, resend the packet.
 	if (!sock->canSend)
 		if ((net_time - sock->lastSendTime) > 1.0)
 			ReSendMessage (sock);
 
 	while (1) {
 		length =
-			sfunc.Read (sock->socket, (byte *) & packetBuffer, NET_DATAGRAMSIZE,
+			sfunc.Read (sock->socket, (byte *) &packetBuffer, NET_DATAGRAMSIZE,
 						&readaddr);
 
 //  if ((rand() & 255) > 220)
@@ -344,19 +345,20 @@ Datagram_GetMessage (qsocket_t * sock)
 
 		if (flags & NETFLAG_UNRELIABLE) {
 			if (sequence < sock->unreliableReceiveSequence) {
-				Sys_MaskPrintf (SYS_DEV, "Got a stale datagram\n");
+				Sys_MaskPrintf (SYS_NET, "Got a stale datagram\n");
 				ret = 0;
 				break;
 			}
 			if (sequence != sock->unreliableReceiveSequence) {
 				count = sequence - sock->unreliableReceiveSequence;
 				droppedDatagrams += count;
-				Sys_MaskPrintf (SYS_DEV, "Dropped %u datagram(s)\n", count);
+				Sys_MaskPrintf (SYS_NET, "Dropped %u datagram(s)\n", count);
 			}
 			sock->unreliableReceiveSequence = sequence + 1;
 
 			length -= NET_HEADERSIZE;
 
+			/// Copy unreliable data to net_message
 			SZ_Clear (net_message->message);
 			SZ_Write (net_message->message, packetBuffer.data, length);
 
@@ -366,15 +368,15 @@ Datagram_GetMessage (qsocket_t * sock)
 
 		if (flags & NETFLAG_ACK) {
 			if (sequence != (sock->sendSequence - 1)) {
-				Sys_MaskPrintf (SYS_DEV, "Stale ACK received\n");
+				Sys_MaskPrintf (SYS_NET, "Stale ACK received\n");
 				continue;
 			}
 			if (sequence == sock->ackSequence) {
 				sock->ackSequence++;
 				if (sock->ackSequence != sock->sendSequence)
-					Sys_MaskPrintf (SYS_DEV, "ack sequencing error\n");
+					Sys_MaskPrintf (SYS_NET, "ack sequencing error\n");
 			} else {
-				Sys_MaskPrintf (SYS_DEV, "Duplicate ACK received\n");
+				Sys_MaskPrintf (SYS_NET, "Duplicate ACK received\n");
 				continue;
 			}
 			sock->sendMessageLength -= MAX_DATAGRAM;
@@ -414,6 +416,7 @@ Datagram_GetMessage (qsocket_t * sock)
 				break;
 			}
 
+			/// Append reliable data to sock->receiveMessage.
 			memcpy (sock->receiveMessage + sock->receiveMessageLength,
 					packetBuffer.data, length);
 			sock->receiveMessageLength += length;
@@ -429,7 +432,7 @@ Datagram_GetMessage (qsocket_t * sock)
 
 
 static void
-PrintStats (qsocket_t * s)
+PrintStats (qsocket_t *s)
 {
 	Sys_Printf ("canSend = %4u   \n", s->canSend);
 	Sys_Printf ("sendSeq = %4u   ", s->sendSequence);
@@ -487,7 +490,7 @@ PollProcedure testPollProcedure = { NULL, 0.0, Test_Poll };
 static void
 Test_Poll (void *unused)
 {
-	struct qsockaddr clientaddr;
+	netadr_t    clientaddr;
 	int         control;
 	int         len;
 	char        name[32];		//FIXME: overflow
@@ -548,7 +551,7 @@ Test_f (void)
 	const char *host;
 	int         n;
 	int         max = MAX_SCOREBOARD;
-	struct qsockaddr sendaddr;
+	netadr_t    sendaddr;
 
 	if (testInProgress)
 		return;
@@ -564,7 +567,7 @@ Test_f (void)
 				max = hostcache[n].maxusers;
 				memcpy (&sendaddr, &hostcache[n].addr,
 
-						sizeof (struct qsockaddr));
+						sizeof (netadr_t));
 				break;
 			}
 		if (n < hostCacheCount)
@@ -619,7 +622,7 @@ PollProcedure test2PollProcedure = { NULL, 0.0, Test2_Poll };
 static void
 Test2_Poll (void *unused)
 {
-	struct qsockaddr clientaddr;
+	netadr_t    clientaddr;
 	int         control;
 	int         len;
 	char        name[256];		//FIXME: overflow
@@ -685,7 +688,7 @@ Test2_f (void)
 {
 	const char *host;
 	int         n;
-	struct qsockaddr sendaddr;
+	netadr_t    sendaddr;
 
 	if (test2InProgress)
 		return;
@@ -700,7 +703,7 @@ Test2_f (void)
 				net_landriverlevel = hostcache[n].ldriver;
 				memcpy (&sendaddr, &hostcache[n].addr,
 
-						sizeof (struct qsockaddr));
+						sizeof (netadr_t));
 				break;
 			}
 		if (n < hostCacheCount)
@@ -790,7 +793,7 @@ Datagram_Shutdown (void)
 
 
 void
-Datagram_Close (qsocket_t * sock)
+Datagram_Close (qsocket_t *sock)
 {
 	sfunc.CloseSocket (sock->socket);
 }
@@ -810,8 +813,8 @@ Datagram_Listen (qboolean state)
 static qsocket_t *
 _Datagram_CheckNewConnections (void)
 {
-	struct qsockaddr clientaddr;
-	struct qsockaddr newaddr;
+	netadr_t    clientaddr;
+	netadr_t    newaddr;
 	int         newsock;
 	int         acceptsock;
 	qsocket_t  *sock;
@@ -973,10 +976,10 @@ _Datagram_CheckNewConnections (void)
 	}
 #ifdef BAN_TEST
 	// check for a ban
-	if (clientaddr.qsa_family == AF_INET) {
+	if (clientaddr.family == AF_INET) {
 		unsigned testAddr;
 
-		testAddr = ((struct sockaddr_in *) &clientaddr)->sin_addr.s_addr;
+		memcpy (&testAddr, clientaddr.ip, 4);
 		if ((testAddr & banMask) == banAddr) {
 			SZ_Clear (net_message->message);
 			// save space for the header, filled in later
@@ -1021,6 +1024,8 @@ _Datagram_CheckNewConnections (void)
 			}
 			// it's somebody coming back in from a crash/disconnect
 			// so close the old qsocket and let their retry get them back in
+			Sys_MaskPrintf (SYS_NET, "closing stale socket %d %g\n", ret,
+							net_time - s->connecttime);
 			NET_Close (s);
 			return NULL;
 		}
@@ -1046,11 +1051,13 @@ _Datagram_CheckNewConnections (void)
 	// allocate a network socket
 	newsock = dfunc.OpenSocket (0);
 	if (newsock == -1) {
+		Sys_MaskPrintf (SYS_NET, "failed to open socket");
 		NET_FreeQSocket (sock);
 		return NULL;
 	}
 	// connect to the client
 	if (dfunc.Connect (newsock, &clientaddr) == -1) {
+		Sys_MaskPrintf (SYS_NET, "failed to connect client");
 		dfunc.CloseSocket (newsock);
 		NET_FreeQSocket (sock);
 		return NULL;
@@ -1100,8 +1107,8 @@ _Datagram_SearchForHosts (qboolean xmit)
 	int         ret;
 	int         n;
 	int         i;
-	struct qsockaddr readaddr;
-	struct qsockaddr myaddr;
+	netadr_t    readaddr;
+	netadr_t    myaddr;
 	int         control;
 
 	dfunc.GetSocketAddr (dfunc.controlSock, &myaddr);
@@ -1172,7 +1179,7 @@ _Datagram_SearchForHosts (qboolean xmit)
 			strcpy (hostcache[n].name, "*");
 			strcat (hostcache[n].name, hostcache[n].cname);
 		}
-		memcpy (&hostcache[n].addr, &readaddr, sizeof (struct qsockaddr));
+		memcpy (&hostcache[n].addr, &readaddr, sizeof (netadr_t));
 
 		hostcache[n].driver = net_driverlevel;
 		hostcache[n].ldriver = net_landriverlevel;
@@ -1211,8 +1218,8 @@ Datagram_SearchForHosts (qboolean xmit)
 static qsocket_t *
 _Datagram_Connect (const char *host)
 {
-	struct qsockaddr sendaddr;
-	struct qsockaddr readaddr;
+	netadr_t    sendaddr;
+	netadr_t    readaddr;
 	qsocket_t  *sock;
 	int         newsock;
 	int         ret;
@@ -1265,6 +1272,12 @@ _Datagram_Connect (const char *host)
 			if (ret > 0) {
 				// is it from the right place?
 				if (sfunc.AddrCompare (&readaddr, &sendaddr) != 0) {
+					Sys_MaskPrintf (SYS_NET, "%2d ",
+									sfunc.AddrCompare (&readaddr, &sendaddr));
+					Sys_MaskPrintf (SYS_NET, "%d %s ", readaddr.family,
+									sfunc.AddrToString (&readaddr));
+					Sys_MaskPrintf (SYS_NET, "%d %s\n", sendaddr.family,
+									sfunc.AddrToString (&sendaddr));
 					ret = 0;
 					continue;
 				}
@@ -1324,7 +1337,7 @@ _Datagram_Connect (const char *host)
 	}
 
 	if (ret == CCREP_ACCEPT) {
-		memcpy (&sock->addr, &sendaddr, sizeof (struct qsockaddr));
+		memcpy (&sock->addr, &sendaddr, sizeof (netadr_t));
 
 		dfunc.SetSocketPort (&sock->addr, MSG_ReadLong (net_message));
 	} else {
@@ -1353,6 +1366,7 @@ _Datagram_Connect (const char *host)
 
   ErrorReturn:
 	// FIXME: MENUCODE - do something with reason
+	Sys_MaskPrintf (SYS_NET, "FIXME: MENUCODE - do something with reason\n");
 	NET_FreeQSocket (sock);
   ErrorReturn2:
 	dfunc.CloseSocket (newsock);
