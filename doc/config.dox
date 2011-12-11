@@ -5,6 +5,7 @@
 
 \li \subpage cmdline
 \li \subpage cvars
+\li \subpage cmdcvarlist
 \li \subpage filesystem
 \li \subpage dirconf
 \li \subpage sound
@@ -175,4 +176,21 @@ global config file (by using \c setrom instead of \c set).
 user config file or the global config file.  If \c setrom is used on the
 command line, even \c setrom in the config files can be overridden.
 
+*/
+/**
+\page cmdcvarlist Command and Cvar Lists
+Lists of commands and cvars by program.
+
+For now, only nq-glx, qw-client-glx and qw-server are covered (using the
+ALSA sound plugin).
+
+Commands:
+\li <a href="/doc_cmds.php?program=nq-glx">nq-glx</a>
+\li <a href="/doc_cmds.php?program=qw-client-glx">qw-client-glx</a>
+\li <a href="/doc_cmds.php?program=qw-server">qw-server</a>
+
+Cvars:
+\li <a href="/doc_cvars.php?program=nq-glx">nq-glx</a>
+\li <a href="/doc_cvars.php?program=qw-client-glx">qw-client-glx</a>
+\li <a href="/doc_cvars.php?program=qw-server">qw-server</a>
 */
