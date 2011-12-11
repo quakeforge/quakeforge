@@ -792,6 +792,7 @@ CL_ParseClientdata (void)
 			Sbar_Changed ();
 		}
 	} else {
+		// hipnotic/rogue weapon "bit field" (stupid idea)
 		if (cl.stats[STAT_ACTIVEWEAPON] != (1 << i)) {
 			cl.stats[STAT_ACTIVEWEAPON] = (1 << i);
 			Sbar_Changed ();

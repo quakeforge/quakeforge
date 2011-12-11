@@ -747,8 +747,15 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	if (standard_quake) {
 		MSG_WriteByte (msg, SVfloat (ent, weapon));
 	} else {
+		// NOTE: this is abysmally stupid. weapon is being treated as a
+		// radio button style bit mask, limiting the available weapons to
+		// 32. Sure, that's a lot of weapons, but still...
+		//
+		// Send the index of the lowest order set bit.
+		unsigned    weapon;
+		weapon = (unsigned) SVfloat (ent, weapon);
 		for (i = 0; i < 32; i++) {
-			if (((int) SVfloat (ent, weapon)) & (1 << i)) {
+			if (weapon & (1 << i)) {
 				MSG_WriteByte (msg, i);
 				break;
 			}
