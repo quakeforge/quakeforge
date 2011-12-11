@@ -1,6 +1,23 @@
 NEWS for the QuakeForge project
 -------------------------------
 
+Changes from 0.5.99 Beta 1
+    o The "loading" plaque has been reenabled.
+    o The key for toggling the menu can now be adjusted via a cvar.
+    o Similar for toggling the console.
+    o The legacy "bind" and "unbind" commands have been reworked. They now
+      affect only one table (IMT_MOD) that is below the main game tables.
+      This protects the user's advanced bindings from mods.
+    o A new key binding table has been added for use during demo playback
+      (IMT_DEMO). This is separate to the main game tables, but above
+      IMT_MOD (so important keys like F10 still work).
+    o More OpenBSD fixes.
+    o An apparent hang (sometimes crash) on a failed download in
+      quakeworld has been fixed.
+    o Ruamoko
+        * More math functions and constants
+        * Existing math functions should be faster
+
 Changes from 0.5.5
     o General enhancements
         * many limits removed
