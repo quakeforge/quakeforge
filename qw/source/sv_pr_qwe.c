@@ -506,6 +506,7 @@ static builtin_t builtins[] = {
 	{"QWE:forceddemoframe",		PF_forcedemoframe,	QWE 103},
 	{0}
 };
+#define LAST_QWE_BUILTIN 103
 
 static struct {
 	const char *name;
@@ -550,6 +551,22 @@ qwe_user_cmd (void)
 }
 
 static int
+qwe_load_finish (progs_t *pr)
+{
+	edict_t    *ent;
+	ddef_t     *targetname;
+
+	targetname = PR_FindField (pr, "targetname");
+	ent = EDICT_NUM (pr, 0);
+	SVstring (ent, netname) = PR_SetString (pr, PACKAGE_VERSION);//FIXME
+	if (targetname)
+		E_STRING (ent, targetname->ofs) = PR_SetString (pr, "MVDSV");
+	SVfloat (ent, impulse) = 0;//QWE_VERSION;//FIXME
+	SVfloat (ent, items) = LAST_QWE_BUILTIN;
+	return 1;
+}
+
+static int
 qwe_load (progs_t *pr)
 {
 	size_t      i;
@@ -564,6 +581,7 @@ qwe_load (progs_t *pr)
 
 	sv_cbuf->unknown_command = qwe_console_cmd;
 	ucmd_unknown = qwe_user_cmd;
+	PR_AddLoadFinishFunc (pr, qwe_load_finish);
 	return 1;
 }
 
