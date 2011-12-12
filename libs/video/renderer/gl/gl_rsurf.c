@@ -29,8 +29,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -281,7 +280,7 @@ R_DrawWaterSurfaces (void)
 }
 
 static inline void
-DrawTextureChains (void)
+DrawTextureChains (int disable_blend, int do_bind)
 {
 	int			i;
 	msurface_t *s;
@@ -330,8 +329,6 @@ DrawTextureChains (void)
 
 				qglActiveTexture (gl_mtex_enum + 0);
 			}
-			tex->texturechain = NULL;
-			tex->texturechain_tail = &tex->texturechain;
 		}
 		// Turn off lightmaps for other entities
 		qglActiveTexture (gl_mtex_enum + 1);
@@ -341,22 +338,36 @@ DrawTextureChains (void)
 		qglActiveTexture (gl_mtex_enum + 0);
 		qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	} else {
-		qfglDisable (GL_BLEND);
+		if (disable_blend)
+			qfglDisable (GL_BLEND);
 		for (i = 0; i < r_worldentity.model->numtextures; i++) {
 			tex = r_worldentity.model->textures[i];
 			if (!tex)
 				continue;
-			qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
+			if (do_bind)
+				qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 
 			for (s = tex->texturechain; s; s = s->texturechain)
 				R_RenderBrushPoly_1 (s);
-
-			tex->texturechain = NULL;
-			tex->texturechain_tail = &tex->texturechain;
 		}
-		qfglEnable (GL_BLEND);
+		if (disable_blend)
+			qfglEnable (GL_BLEND);
 	}
+}
 
+static void
+clear_texture_chains (void)
+{
+	int			i;
+	texture_t  *tex;
+
+	for (i = 0; i < r_worldentity.model->numtextures; i++) {
+		tex = r_worldentity.model->textures[i];
+		if (!tex)
+			continue;
+		tex->texturechain = NULL;
+		tex->texturechain_tail = &tex->texturechain;
+	}
 	tex = r_notexture_mip;
 	tex->texturechain = NULL;
 	tex->texturechain_tail = &tex->texturechain;
@@ -709,13 +720,68 @@ R_DrawWorld (void)
 
 	R_DrawSkyChain (sky_chain);
 
-	DrawTextureChains ();
+	if (!Fog_GetDensity ()
+		|| (gl_fb_bmodels->int_val && gl_mtex_fullbright)
+		|| gl_mtex_active_tmus > 1) {
+		// we have enough active TMUs to render everything in one go
+		// or we're not doing fog
+		DrawTextureChains (1, 1);
 
-	if (gl_mtex_active_tmus <= 1)
-		R_BlendLightmaps ();
-
-	if (gl_fb_bmodels->int_val && !gl_mtex_fullbright)
+		if (gl_fb_bmodels->int_val && !gl_mtex_fullbright)
+			R_RenderFullbrights ();
+	} else {
+		if (gl_mtex_active_tmus > 1) {
+			// textures and lightmaps in one pass
+			// black fog
+			// no blending
+			Fog_StartAdditive ();
+			DrawTextureChains (1, 1);
+			// buf = fTL + (1-f)0
+			//     = fTL
+		} else {
+			// texture pass + lightmap pass
+			// no fog
+			// no blending
+			Fog_DisableGFog ();
+			DrawTextureChains (1, 1);
+			// buf = T
+			// black fog
+			// blend: buf = zero, src (non-overbright)
+			// FIXME overbright broken?
+			Fog_EnableGFog ();
+			Fog_StartAdditive ();
+			R_BlendLightmaps ();	//leaves blending as As, 1-As
+			// buf = I*0 + buf*I
+			//     = T*C
+			//     = T(fL + (1-f)0)
+			//     = fTL
+		}
+		// fullbright pass
+		// fog is still black
 		R_RenderFullbrights ();
+		// buf = aI + (1-a)buf
+		//     = aC + (1-a)fTL
+		//     = a(fG + (1-f)0) + (1-a)fTL
+		//     = afG + (1-a)fTL
+		//     = f((1-a)TL + aG)
+		Fog_StopAdditive ();		// use fog color
+		qfglDepthMask (GL_FALSE);	// don't write Z
+		qfglBlendFunc (GL_ONE, GL_ONE);
+		// draw black polys
+		qfglColor4f (0, 0, 0, 1);
+		DrawTextureChains (0, 0);
+		// buf = I + buf
+		//     = C + f((1-a)TL + aG)
+		//     = (f0 + (1-f)F) + f((1-a)TL + aG)
+		//     = (1-f)F + f((1-a)TL + aG)
+		//     = f((1-a)TL + aG) + (1-f)F
+		// restore state
+		qfglColor4ubv (color_white);
+		qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		qfglDepthMask (GL_TRUE);
+	}
+
+	clear_texture_chains ();
 }
 
 void
