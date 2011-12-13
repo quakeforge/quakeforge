@@ -66,13 +66,6 @@ extern  lightstyle_t    r_lightstyle[MAX_LIGHTSTYLES];
 #define	TOP_RANGE		16			// soldier uniform colors
 #define	BOTTOM_RANGE	96
 
-#define LERP_MOVESTEP   (1<<0) //this is a MOVETYPE_STEP entity, enable movement lerp
-#define LERP_RESETANIM  (1<<1) //disable anim lerping until next anim frame
-#define LERP_RESETANIM2 (1<<2) //set this and previous flag to disable anim lerping for two anim frames
-#define LERP_RESETMOVE  (1<<3) //disable movement lerping until next origin/angles change
-#define LERP_FINISH     (1<<4) //use lerpfinish time from server update instead of assuming interval of 0.1
-
-
 typedef struct entity_s {
 	struct entity_s *next;
 	struct entity_s *unext;	//FIXME this shouldn't be here. for qw demos
@@ -103,18 +96,10 @@ typedef struct entity_s {
 									  // splits bmodel, or NULL if not split
 
 	// Animation interpolation
-	// FIXME separate struct?
-	byte					lerpflags;
-	float					lerpstart;
-	float					lerptime;
-	float					lerpfinish;
-	short					previouspose;
-	short					currentpose;
-	float					movelerpstart;
-	vec3_t					previousorigin;
-	vec3_t					currentorigin;
-	vec3_t					previousangles;	//FIXME quaternion?
-	vec3_t					currentangles;
+	float                   frame_start_time;
+	float                   frame_interval;
+	int						pose1;
+	int						pose2;
 } entity_t;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!

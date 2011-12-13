@@ -136,7 +136,7 @@ CL_Init_Entity (entity_t *ent)
 	ent->colormap = vid.colormap8;
 	QuatSet (1.0, 1.0, 1.0, 1.0, ent->colormod);
 	ent->scale = 1.0;
-	ent->lerpflags |= LERP_RESETMOVE | LERP_RESETANIM;
+	ent->pose1 = ent->pose2 = -1;
 }
 
 static tent_t *
