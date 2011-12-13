@@ -46,9 +46,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
-#ifdef HAVE_EXECINFO_H
-# include <execinfo.h>
-#endif
 
 #include <stdlib.h>
 #include <sys/ipc.h>
