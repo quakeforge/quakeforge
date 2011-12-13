@@ -250,6 +250,57 @@ fixed16_t Invert24To16(fixed16_t val);
 fixed16_t Mul16_30(fixed16_t multiplier, fixed16_t multiplicand);
 int GreatestCommonDivisor (int i1, int i2);
 
+/**	Convert quake angles to basis vectors.
+
+	The basis vectors form a left handed system (although the world is
+	right handed). When all angles are 0, \a forward points along the world
+	X axis, \a right along the <em>negative</em> Y axis, and \a up along
+	the Z axis.
+
+	Rotation is done by:
+	-# Rotating YAW degrees counterclockwise around the local Z axis
+	-# Rotating PITCH degrees clockwise around the new local negative Y axis
+	   (or counterclockwise around the new local Y axis).
+	-# Rotating ROLL degrees counterclockwise around the local X axis
+
+	Thus when used for the player from the first person perspective,
+	positive YAW turns to the left, positive PITCH looks down, and positive
+	ROLL leans to the right.
+
+	\f[
+		YAW=\begin{array}{ccc}
+		c_{y} & s_{y} & 0\\
+		-s_{y} & c_{y} & 0\\
+		0 & 0 & 1
+		\end{array}
+	\f]
+	\f[
+		PITCH=\begin{array}{ccc}
+		c_{p} & 0 & -s_{p}\\
+		0 & 1 & 0\\
+		s_{p} & 0 & c_{p}
+		\end{array}
+	\f]
+	\f[
+		ROLL=\begin{array}{ccc}
+		1 & 0 & 0\\
+		0 & c_{r} & -s_{r}\\
+		0 & s_{r} & c_{r}
+		\end{array}
+	\f]
+	\f[
+		ROLL\,(PITCH\,YAW)=\begin{array}{c}
+		forward\\
+		-right\\
+		up
+		\end{array}
+	\f]
+
+	\param angles	The rotation angles.
+	\param forward	The vector pointing forward.
+	\param right    The vector pointing to the right.
+	\param up		The vector pointing up.
+*/
 void AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right,
 				   vec3_t up);
 void AngleQuat (const vec3_t angles, quat_t q);
