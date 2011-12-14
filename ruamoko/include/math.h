@@ -213,11 +213,19 @@
 	these are the same values that would be returned by any math functions or
 	floating-point calculations, these allow you to get the results without
 	actually calling them.
-	\note There does not appear to be a portable way to translate C's HUGE_VAL
-	value, the basis for positive and negative infinities, to Ruamoko.
 	\{
 */
-# define M_E		2.7182818284590452354	///< Euler's number \em e, the irrational base of the natural logarithm and a really neat thing
+/**
+	Positive infinity. This is a special value replaced by the compiler with
+	the actual floating-point value for a positive infinity. To get a negative
+	infinity, just use -INFINITY.
+*/
+# define INFINITY	__INFINITY__
+/**
+	Euler's number \em e, the irrational base of the natural logarithm and a
+	really neat thing
+*/
+# define M_E		2.7182818284590452354
 # define M_LOG2E	1.4426950408889634074	///< The log, base 2, of \em e: <code>log2 (\ref M_E)</code>
 # define M_LOG10E	0.43429448190325182765	///< The log, base 10, of \em e: <code>log10 (\ref M_E)</code>
 # define M_LN2		0.69314718055994530942	///< The natural log evaluated at 2: <code>log (2)</code>

@@ -109,6 +109,11 @@ convert_name (expr_t *e)
 		new = new_integer_expr (e->line);
 		goto convert;
 	}
+	if (!strcmp (sym->name, "__INFINITY__")
+		&& current_func) {
+		new = new_float_expr (INFINITY);
+		goto convert;
+	}
 	if (!strcmp (sym->name, "__FILE__")
 		&& current_func) {
 		new = new_string_expr (GETSTR (e->file));
