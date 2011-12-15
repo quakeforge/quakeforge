@@ -905,5 +905,5 @@ dl.bug
 /* end NEW */
 
 #nav-tree {
-	background: black;
+	background: black !important;
 }
