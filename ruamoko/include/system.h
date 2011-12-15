@@ -6,10 +6,8 @@
 @extern void precache_sound (string s);
 @extern void precache_model (string s);
 @extern void stuffcmd (entity client, string s);
-@extern float cvar (string s);
 @extern void localcmd (string s);
 @extern void changelevel (string s);
-@extern void cvar_set (string var, string val);
 @extern string precache_file (string s);
 @extern string precache_model2 (string s);
 @extern string precache_sound2 (string s);

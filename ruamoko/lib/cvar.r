@@ -1,5 +1,8 @@
 #include "cvar.h"
 
+float (string s) cvar = #45;
+void (string var, string val) cvar_set = #72;
+
 int Cvar_MakeAlias (string alias_name, string cvar_name) = #0;
 int Cvar_RemoveAlias (string alias_name) = #0;
 void (string varname, string value) Cvar_SetString = #0;
