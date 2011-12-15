@@ -186,6 +186,22 @@ R_Init (void)
 	Fog_Init ();
 }
 
+static void
+register_textures (model_t *model)
+{
+	int         i;
+	texture_t  *tex;
+
+	for (i = 0; i < model->numtextures; i++) {
+		tex = model->textures[i];
+		if (!tex)
+			continue;
+		if (tex->texturechain_tail)
+			continue;
+		R_AddTexture (tex);
+	}
+}
+
 VISIBLE void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
@@ -223,7 +239,13 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		}
 		if (!strncmp (tex->name, "window02_1", 10))
 			mirrortexturenum = i;
-		R_AddTexture (tex);
+	}
+	register_textures (r_worldentity.model);
+	for (i = 0; i < num_models; i++) {
+		if (!models[i])
+			continue;
+		if (models[i] != r_worldentity.model && models[i]->type == mod_brush)
+			register_textures (models[i]);
 	}
 	tex = r_notexture_mip;
 	tex->texturechain = NULL;
