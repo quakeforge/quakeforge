@@ -592,6 +592,15 @@ GL_Init_Common (void)
 	GLF_FindFunctions ();
 	CheckGLVersionString ();
 
+	CheckAnisotropyExtensions ();
+	CheckMultiTextureExtensions ();
+	CheckCombineExtensions ();
+	CheckBGRAExtensions ();
+	CheckTruFormExtensions ();
+	GL_Common_Init_Cvars ();
+	CheckVertexArraySize ();
+	CheckLights ();
+
 	qfglClearColor (0, 0, 0, 0);
 
 	qfglEnable (GL_TEXTURE_2D);
@@ -602,7 +611,6 @@ GL_Init_Common (void)
 	qfglEnable (GL_BLEND);
 	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	CheckAnisotropyExtensions ();
 	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
@@ -611,14 +619,6 @@ GL_Init_Common (void)
 						   aniso);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	CheckMultiTextureExtensions ();
-	CheckCombineExtensions ();
-	CheckBGRAExtensions ();
-	CheckTruFormExtensions ();
-	GL_Common_Init_Cvars ();
-	CheckVertexArraySize ();
-	CheckLights ();
 }
 
 VISIBLE qboolean
