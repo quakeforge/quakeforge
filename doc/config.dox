@@ -38,7 +38,7 @@ nq-glx +setrom m_pitch -0.022
 \endverbatim
 
 The following command line will successfully set m_pitch to \c -0.022
-because \QF will see the \c " before the \c - and thus \c -0.022 will be
+because \QF will see the quotation mark before the \c - and thus \c -0.022 will be
 part of the console command.
 \verbatim
 nq-glx +setrom m_pitch \"-0.022\"
