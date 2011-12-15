@@ -190,7 +190,9 @@ extern int	c_faceclip;
 extern int	r_polycount;
 extern int	r_wholepolycount;
 
-extern	model_t		*cl_worldmodel;
+extern model_t     *cl_worldmodel;
+extern texture_t  **r_texture_chains;
+extern int          r_num_texture_chains;
 
 extern int		*pfrustum_indexes[4];
 

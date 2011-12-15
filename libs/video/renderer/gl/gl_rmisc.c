@@ -38,6 +38,11 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
+#if defined(_WIN32) && defined(HAVE_MALLOC_H)
+#include <malloc.h>
+#endif
+
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "QF/cmd.h"
@@ -61,6 +66,31 @@ static __attribute__ ((used)) const char rcsid[] =
 
 int			r_init = 0;
 
+texture_t **r_texture_chains;
+int         r_num_texture_chains;
+static int  max_texture_chains;
+
+static void
+R_AddTexture (texture_t *tex)
+{
+	int         i;
+	if (r_num_texture_chains == max_texture_chains) {
+		max_texture_chains += 64;
+		r_texture_chains = realloc (r_texture_chains,
+								  max_texture_chains * sizeof (texture_t *));
+		for (i = r_num_texture_chains; i < max_texture_chains; i++)
+			r_texture_chains[i] = 0;
+	}
+	r_texture_chains[r_num_texture_chains++] = tex;
+	tex->texturechain = NULL;
+	tex->texturechain_tail = &tex->texturechain;
+}
+
+static void
+R_ClearTextures (void)
+{
+	r_num_texture_chains = 0;
+}
 
 /*
 	R_Envmap_f
@@ -182,6 +212,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	// identify sky texture
 	skytexturenum = -1;
 	mirrortexturenum = -1;
+	R_ClearTextures ();
 	for (i = 0; i < r_worldentity.model->numtextures; i++) {
 		tex = r_worldentity.model->textures[i];
 		if (!tex)
@@ -192,8 +223,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		}
 		if (!strncmp (tex->name, "window02_1", 10))
 			mirrortexturenum = i;
-		tex->texturechain = NULL;
-		tex->texturechain_tail = &tex->texturechain;
+		R_AddTexture (tex);
 	}
 	tex = r_notexture_mip;
 	tex->texturechain = NULL;

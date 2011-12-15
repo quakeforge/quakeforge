@@ -361,8 +361,8 @@ clear_texture_chains (void)
 	int			i;
 	texture_t  *tex;
 
-	for (i = 0; i < r_worldentity.model->numtextures; i++) {
-		tex = r_worldentity.model->textures[i];
+	for (i = 0; i < r_num_texture_chains; i++) {
+		tex = r_texture_chains[i];
 		if (!tex)
 			continue;
 		tex->texturechain = NULL;
