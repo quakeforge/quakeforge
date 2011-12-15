@@ -373,6 +373,32 @@ clear_texture_chains (void)
 	tex->texturechain_tail = &tex->texturechain;
 }
 
+static inline void
+chain_surface (msurface_t *surf)
+{
+	if (surf->flags & SURF_DRAWTURB) {
+		CHAIN_SURF_B2F (surf, waterchain);
+	} else if (surf->flags & SURF_DRAWSKY) {
+		CHAIN_SURF_F2B (surf, sky_chain);
+	} else {
+		texture_t  *tex;
+
+		R_AddToLightmapChain (surf);
+
+		if (!surf->texinfo->texture->anim_total)
+			tex = surf->texinfo->texture;
+		else
+			tex = R_TextureAnimation (surf);
+		if (gl_fb_bmodels->int_val && tex->gl_fb_texturenum
+			&& !gl_mtex_fullbright) {
+			surf->polys->fb_chain =
+				fullbright_polys[tex->gl_fb_texturenum];
+			fullbright_polys[tex->gl_fb_texturenum] = surf->polys;
+		}
+		CHAIN_SURF_F2B (surf, tex->texturechain);
+	}
+}
+
 void
 R_DrawBrushModel (entity_t *e)
 {
@@ -413,7 +439,7 @@ R_DrawBrushModel (entity_t *e)
 
 	VectorCopy (e->colormod, color);
 	VectorCopy (color, watercolor);
-	color[3] = e->colormod[3];
+	color[3] = e->colormod[3];	// entity alpha
 	qfglColor4fv (color);
 	if (color[3] < 1.0)
 		qfglDepthMask (GL_FALSE);
@@ -605,27 +631,7 @@ visit_node (mnode_t *node, int side)
 			if (side ^ (surf->flags & SURF_PLANEBACK))
 				continue;				// wrong side
 
-			if (surf->flags & SURF_DRAWTURB) {
-				CHAIN_SURF_B2F (surf, waterchain);
-			} else if (surf->flags & SURF_DRAWSKY) {
-				CHAIN_SURF_F2B (surf, sky_chain);
-			} else {
-				texture_t  *tex;
-
-				R_AddToLightmapChain (surf);
-
-				if (!surf->texinfo->texture->anim_total)
-					tex = surf->texinfo->texture;
-				else
-					tex = R_TextureAnimation (surf);
-				if (gl_fb_bmodels->int_val && tex->gl_fb_texturenum
-					&& !gl_mtex_fullbright) {
-					surf->polys->fb_chain =
-						fullbright_polys[tex->gl_fb_texturenum];
-					fullbright_polys[tex->gl_fb_texturenum] = surf->polys;
-				}
-				CHAIN_SURF_F2B (surf, tex->texturechain);
-			}
+			chain_surface (surf);
 		}
 	}
 }
