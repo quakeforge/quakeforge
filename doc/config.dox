@@ -1,7 +1,7 @@
 //unfortunately, have to wrap the docs in a C comment for doxygen
 // vim:tw=74:formatoptions-=l
 /**
-\page run_config Runtime Configuration.
+\page run_config Runtime Configuration
 
 \li \subpage cmdline
 \li \subpage cvars
@@ -13,7 +13,6 @@
 \li \subpage key_binding
 \li \subpage cshift_cvars
 \li \subpage server_timestamps
-
 */
 
 /**
@@ -44,13 +43,12 @@ part of the console command.
 nq-glx +setrom m_pitch \"-0.022\"
 \endverbatim
 \note The above works in bash. Other shells may vary.
-
 */
 
 /**
-\page cvars Configuration variables
+\page cvars Config Variables (Cvars)
 
-The core of \QF's configurabitly is the cvar.
+The core of \QF's configuration is the cvar.
 
 \section cvar_value Cvar values.
 Depending on the engine's use of the cvar, the value will be treated as a
@@ -64,7 +62,7 @@ From the user's perspective, there are three types of cvar:
 automatically saved.
 \li archive cvar: like a plain cvar, the value can be displayed or set, but
 the cvar will be automatically saved to \c config.cfg by the engine on
-shutdown or gamedir change (quakeworld).
+shutdown or gamedir change (QuakeWorld).
 \li read-only cvar: the value can be displayed but not changed in any way
 (value or flags). If the cvar also happens to be an archive cvar (the
 archive flag was set before the read-only flag), then the cvar will be
@@ -139,7 +137,7 @@ is set, or WINDOWS if not).
 <code>~/.config/quakeforge/quakeforge.conf</code> on Linux and other UNIX
 like systems, and \c ~/quakeforgerc on Windows.
 
-The global and user configuration files are normal quake scripts, but only
+The global and user configuration files are normal Quake scripts, but only
 \c set, \c seta, and \c setrom commands are executed.
 
 It might seem strange to have the global and user configuration files
@@ -177,6 +175,7 @@ user config file or the global config file.  If \c setrom is used on the
 command line, even \c setrom in the config files can be overridden.
 
 */
+
 /**
 \page cmdcvarlist Command and Cvar Lists
 Lists of commands and cvars by program.
