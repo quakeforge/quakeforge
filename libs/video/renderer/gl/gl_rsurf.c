@@ -388,7 +388,7 @@ R_DrawBrushModel (entity_t *e)
 
 	model = e->model;
 
-	if (e->angles[0] || e->angles[1] || e->angles[2]) {
+	if (e->transform[0] != 1 || e->transform[5] != 1 || e->transform[10] != 1) {
 		rotated = true;
 		radius = model->radius;
 #if 0 //QSG FIXME
@@ -423,13 +423,12 @@ R_DrawBrushModel (entity_t *e)
 
 	VectorSubtract (r_refdef.vieworg, e->origin, modelorg);
 	if (rotated) {
-		vec3_t      temp, forward, right, up;
+		vec3_t      temp;
 
 		VectorCopy (modelorg, temp);
-		AngleVectors (e->angles, forward, right, up);
-		modelorg[0] = DotProduct (temp, forward);
-		modelorg[1] = -DotProduct (temp, right);
-		modelorg[2] = DotProduct (temp, up);
+		modelorg[0] = DotProduct (temp, e->transform + 0);
+		modelorg[1] = DotProduct (temp, e->transform + 4);
+		modelorg[2] = DotProduct (temp, e->transform + 8);
 	}
 
 	psurf = &model->surfaces[model->firstmodelsurface];
@@ -449,9 +448,7 @@ R_DrawBrushModel (entity_t *e)
 	}
 
 	qfglPushMatrix ();
-	e->angles[0] = -e->angles[0];		// stupid quake bug
 	R_RotateForEntity (e);
-	e->angles[0] = -e->angles[0];		// stupid quake bug
 
 	// Build lightmap chains
 	for (i = 0; i < model->nummodelsurfaces; i++, psurf++) {

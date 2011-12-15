@@ -35,6 +35,8 @@
 void CL_SetSolidPlayers (int playernum);
 void CL_ClearPredict (void);
 void CL_SetUpPlayerPrediction(qboolean dopred);
+void CL_TransformEntity (struct entity_s * ent, const vec3_t angles,
+						 qboolean force);
 void CL_EmitEntities (void);
 void CL_ClearProjectiles (void);
 void CL_ParseProjectiles (qboolean nail2);

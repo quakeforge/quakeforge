@@ -167,6 +167,38 @@ is_gib (entity_state_t *s1)
 	return 0;
 }
 
+void
+CL_TransformEntity (entity_t *ent, const vec3_t angles, qboolean force)
+{
+	vec3_t      ang;
+	vec_t      *forward, *left, *up;
+
+	if (VectorIsZero (angles)) {
+		VectorSet (1, 0, 0, ent->transform + 0);
+		VectorSet (0, 1, 0, ent->transform + 4);
+		VectorSet (0, 0, 1, ent->transform + 8);
+	} else if (force || !VectorCompare (angles, ent->angles)) {
+		forward = ent->transform + 0;
+		left = ent->transform + 4;
+		up = ent->transform + 8;
+		VectorCopy (angles, ang);
+		if (ent->model && ent->model->type == mod_alias) {
+			// stupid quake bug
+			// why, oh, why, do alias models pitch in the opposite direction
+			// to everything else?
+			ang[PITCH] = -ang[PITCH];
+		}
+		AngleVectors (ang, forward, left, up);
+		VectorNegate (left, left);  // AngleVectors is right-handed
+	}
+	VectorCopy (angles, ent->angles);
+	ent->transform[3] = 0;
+	ent->transform[7] = 0;
+	ent->transform[11] = 0;
+	VectorCopy (ent->origin, ent->transform + 12);
+	ent->transform[15] = 1;
+}
+
 static void
 CL_LinkPacketEntities (void)
 {
@@ -272,11 +304,13 @@ CL_LinkPacketEntities (void)
 			R_AddEfrags (ent);
 
 		if (model->flags & EF_ROTATE) {		// rotate binary objects locally
-			ent->angles[0] = 0;
-			ent->angles[1] = anglemod (100 * cl.time);
-			ent->angles[2] = 0;
+			vec3_t      ang;
+			ang[PITCH] = 0;
+			ang[YAW] = anglemod (100 * cl.time);
+			ang[ROLL] = 0;
+			CL_TransformEntity (ent, ang, false);
 		} else {
-			VectorCopy (s1->angles, ent->angles);
+			CL_TransformEntity (ent, s1->angles, false);
 		}
 
 		// add automatic particle trails
@@ -314,6 +348,9 @@ CL_LinkPacketEntities (void)
 	CL_AddFlagModels
 
 	Called when the CTF flags are set. Flags are effectively temp entities.
+
+	NOTE: this must be called /after/ the entity has been transformed as it
+	uses the entity's transform matrix to get the frame vectors
 */
 static void
 CL_AddFlagModels (entity_t *ent, int team, int key)
@@ -322,9 +359,10 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 		16.0, 22.0, 26.0, 25.0, 24.0, 18.0,					// 29-34 axpain
 		16.0, 24.0, 24.0, 22.0, 18.0, 16.0,					// 35-40 pain
 	};
-	float		f;
+	float       f;
 	entity_t   *fent;
-	vec3_t		v_forward, v_right, v_up;
+	vec_t      *v_forward, *v_left;
+	vec3_t      ang;
 
 	if (cl_flagindex == -1)
 		return;
@@ -343,15 +381,16 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 	fent->model = cl.model_precache[cl_flagindex];
 	fent->skinnum = team;
 
-	AngleVectors (ent->angles, v_forward, v_right, v_up);
-	v_forward[2] = -v_forward[2];		// reverse z component
+	v_forward = ent->transform + 0;
+	v_left = ent->transform + 4;
 
 	VectorMultAdd (ent->origin, -f, v_forward, fent->origin);
-	VectorMultAdd (fent->origin, 22, v_right, fent->origin);
+	VectorMultAdd (fent->origin, -22, v_left, fent->origin);
 	fent->origin[2] -= 16.0;
 
-	VectorCopy (ent->angles, fent->angles);
-	fent->angles[2] -= 45.0;
+	VectorCopy (ent->angles, ang);
+	ang[2] -= 45.0;
+	CL_TransformEntity (fent, ang, false);
 
 	R_EnqueueEntity (fent);	//FIXME should use efrag (needs smarter handling
 							//in the player code)
@@ -374,7 +413,7 @@ CL_LinkPlayers (void)
 	player_state_t	exact;
 	player_state_t *state;
 	qboolean		clientplayer;
-	vec3_t			org;
+	vec3_t			org, ang;
 
 	playertime = realtime - cls.latency + 0.02;
 	if (playertime > realtime)
@@ -436,19 +475,20 @@ CL_LinkPlayers (void)
 		// angles
 		if (j == cl.playernum)
 		{
-			ent->angles[PITCH] = -cl.viewangles[PITCH] / 3.0;
-			ent->angles[YAW] = cl.viewangles[YAW];
+			ang[PITCH] = -cl.viewangles[PITCH] / 3.0;
+			ang[YAW] = cl.viewangles[YAW];
 		} else {
-			ent->angles[PITCH] = -state->viewangles[PITCH] / 3.0;
-			ent->angles[YAW] = state->viewangles[YAW];
+			ang[PITCH] = -state->viewangles[PITCH] / 3.0;
+			ang[YAW] = state->viewangles[YAW];
 		}
-		ent->angles[ROLL] = V_CalcRoll (ent->angles,
-										state->pls.velocity) * 4.0;
+		ang[ROLL] = V_CalcRoll (ang, state->pls.velocity) * 4.0;
 
 		ent->model = cl.model_precache[state->pls.modelindex];
 		ent->frame = state->pls.frame;
 		ent->colormap = info->translations;
 		ent->skinnum = state->pls.skinnum;
+
+		CL_TransformEntity (ent, ang, false);
 
 		ent->min_light = 0;
 		ent->fullbright = 0;

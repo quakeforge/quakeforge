@@ -691,6 +691,8 @@ V_CalcRefdef (void)
 
 	if (chase_active->int_val)
 		Chase_Update ();
+
+	CL_TransformEntity (view, view->angles, true);
 }
 
 /*

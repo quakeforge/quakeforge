@@ -110,16 +110,15 @@ R_DrawSpriteModel_f (entity_t *e)
 	float			*up, *right;
 	msprite_t		*psprite;
 	mspriteframe_t	*frame;
-	vec3_t			 point, point1, point2, v_forward, v_right, v_up;
+	vec3_t			 point, point1, point2, v_up;
 
 	// don't bother culling, it's just a single polygon without a surface cache
 	frame = R_GetSpriteFrame (e);
 	psprite = e->model->cache.data;
 
 	if (psprite->type == SPR_ORIENTED) {	// bullet marks on walls
-		AngleVectors (e->angles, v_forward, v_right, v_up);
-		up = v_up;
-		right = v_right;
+		up = e->transform + 2 * 4;
+		right = e->transform + 1 * 4;
 	} else if (psprite->type == SPR_VP_PARALLEL_UPRIGHT) {
 		v_up[0] = 0;
 		v_up[1] = 0;
@@ -179,7 +178,7 @@ R_DrawSpriteModel_VA_f (entity_t *e)
 //	unsigned int	 vacount;
 	msprite_t		*psprite;
 	mspriteframe_t	*frame;
-	vec3_t			 point1, point2, v_forward, v_right, v_up;
+	vec3_t			 point1, point2, v_up;
 	varray_t2f_c4ub_v3f_t		*VA;
 
 	VA = spriteVertexArray; // FIXME: Despair
@@ -191,9 +190,8 @@ R_DrawSpriteModel_VA_f (entity_t *e)
 	qfglBindTexture (GL_TEXTURE_2D, frame->gl_texturenum); // FIXME: DESPAIR
 
 	if (psprite->type == SPR_ORIENTED) {	// bullet marks on walls
-		AngleVectors (e->angles, v_forward, v_right, v_up);
-		up = v_up;
-		right = v_right;
+		up = e->transform + 2 * 4;
+		right = e->transform + 1 * 4;
 	} else if (psprite->type == SPR_VP_PARALLEL_UPRIGHT) {
 		v_up[0] = 0;
 		v_up[1] = 0;

@@ -363,16 +363,10 @@ R_AliasSetUpTransform (int trivial_accept)
 	float       rotationmatrix[3][4], t2matrix[3][4];
 	static float tmatrix[3][4];
 	static float viewmatrix[3][4];
-	vec3_t      angles;
 
-// TODO: should really be stored with the entity instead of being reconstructed
-// TODO: should use a look-up table
-// TODO: could cache lazily, stored in the entity
-
-	angles[ROLL] = currententity->angles[ROLL];
-	angles[PITCH] = -currententity->angles[PITCH];
-	angles[YAW] = currententity->angles[YAW];
-	AngleVectors (angles, alias_forward, alias_right, alias_up);
+	VectorCopy (currententity->transform + 0, alias_forward);
+	VectorNegate (currententity->transform + 4, alias_right);
+	VectorCopy (currententity->transform + 8, alias_up);
 
 	tmatrix[0][0] = pmdl->scale[0];
 	tmatrix[1][1] = pmdl->scale[1];

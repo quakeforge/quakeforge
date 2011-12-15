@@ -73,6 +73,7 @@ typedef struct entity_s {
 	vec3_t					origin;
 	vec3_t					old_origin;
 	vec3_t					angles;
+	vec_t					transform[4 * 4];
 	struct model_s			*model;			// NULL = no model
 	int						frame;
 	byte					*colormap;

@@ -628,7 +628,7 @@ CL_ParseUpdate (int bits)
 		VectorCopy (state->msg_origins[0], state->msg_origins[1]);
 		VectorCopy (state->msg_origins[0], ent->origin);
 		VectorCopy (state->msg_angles[0], state->msg_angles[1]);
-		VectorCopy (state->msg_angles[0], ent->angles);
+		CL_TransformEntity (ent, state->msg_angles[0], true);
 		state->forcelink = true;
 	}
 }
@@ -821,8 +821,6 @@ CL_ParseStatic (int version)
 	CL_ParseBaseline (&state, version);
 
 	// copy it to the current state
-	VectorCopy (state.baseline.origin, ent->origin);
-	VectorCopy (state.baseline.angles, ent->angles);
 	//FIXME alpha & lerp
 	ent->model = cl.model_precache[state.baseline.modelindex];
 	ent->frame = state.baseline.frame;
@@ -840,6 +838,8 @@ CL_ParseStatic (int version)
 	}
 	ent->colormod[3] = ENTALPHA_DECODE (state.baseline.alpha);
 	ent->scale = state.baseline.scale / 16.0;
+	VectorCopy (state.baseline.origin, ent->origin);
+	CL_TransformEntity (ent, state.baseline.angles, true);
 
 	R_AddEfrags (ent);
 }

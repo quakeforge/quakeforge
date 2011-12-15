@@ -72,6 +72,8 @@ typedef struct {
 	int         seed;
 } beam_t;
 
+#define BEAM_SEED_INTERVAL 72
+#define BEAM_SEED_PRIME 3191
 
 typedef struct {
 	float       start;
@@ -244,12 +246,13 @@ beam_clear (beam_t *b)
 }
 
 static inline void
-beam_setup (beam_t *b)
+beam_setup (beam_t *b, qboolean transform)
 {
 	tent_t     *tent;
 	float       forward, pitch, yaw, d;
 	int         ent_count;
-	vec3_t      dist, org;
+	vec3_t      dist, org, ang;
+	unsigned    seed;
 
 	// calculate pitch and yaw
 	VectorSubtract (b->end, b->start, dist);
@@ -277,6 +280,10 @@ beam_setup (beam_t *b)
 	VectorScale (dist, 30, dist);
 	ent_count = ceil (d / 30);
 	d = 0;
+
+	seed = b->seed + ((int) (cl.time * BEAM_SEED_INTERVAL) %
+					  BEAM_SEED_INTERVAL);
+
 	while (ent_count--) {
 		tent = new_temp_entity ();
 		tent->next = b->tents;
@@ -285,8 +292,13 @@ beam_setup (beam_t *b)
 		VectorMultAdd (org, d, dist, tent->ent.origin);
 		d += 1.0;
 		tent->ent.model = b->model;
-		tent->ent.angles[0] = pitch;
-		tent->ent.angles[1] = yaw;
+		ang[PITCH] = pitch;
+		ang[YAW] = yaw;
+		if (transform) {
+			seed = seed * BEAM_SEED_PRIME;
+			ang[ROLL] = seed % 360;
+			CL_TransformEntity (&tent->ent, ang, true);
+		}
 		R_AddEfrags (&tent->ent);
 	}
 }
@@ -319,7 +331,7 @@ CL_ParseBeam (model_t *m)
 	if (b->entity != cl.viewentity) {
 		// this will be done in CL_UpdateBeams
 		VectorCopy (start, b->start);
-		beam_setup (b);
+		beam_setup (b, true);
 	}
 }
 
@@ -414,6 +426,7 @@ CL_ParseTEnt (void)
 			if (!cl_spr_explod->cache.data)
 				cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
 			ex->tent->ent.model = cl_spr_explod;
+			CL_TransformEntity (&ex->tent->ent, ex->tent->ent.angles, true);
 			break;
 
 		case TE_TAREXPLOSION:			// tarbaby explosion
@@ -502,9 +515,6 @@ CL_ParseTEnt (void)
 	}
 }
 
-#define BEAM_SEED_INTERVAL 72
-#define BEAM_SEED_PRIME 3191
-
 static void
 CL_UpdateBeams (void)
 {
@@ -534,7 +544,7 @@ CL_UpdateBeams (void)
 		if (b->entity == cl.viewentity) {
 			beam_clear (b);
 			VectorCopy (cl.simorg, b->start);
-			beam_setup (b);
+			beam_setup (b, false);
 		}
 
 		seed = b->seed + ((int) (cl.time * BEAM_SEED_INTERVAL) %
@@ -543,7 +553,8 @@ CL_UpdateBeams (void)
 		// add new entities for the lightning
 		for (t = b->tents; t; t = t->next) {
 			seed = seed * BEAM_SEED_PRIME;
-			t->ent.angles[2] = seed % 360;
+			t->ent.angles[ROLL] = seed % 360;
+			CL_TransformEntity (&t->ent, t->ent.angles, true);
 		}
 	}
 }
@@ -636,6 +647,7 @@ CL_ParseProjectiles (qboolean nail2)
 		pr->angles[0] = (bits[4] >> 4) * (360.0 / 16.0);
 		pr->angles[1] = bits[5] * (360.0 / 256.0);
 		pr->angles[2] = 0;
+		CL_TransformEntity (&tent->ent, tent->ent.angles, true);
 
 		R_AddEfrags (&tent->ent);
 	}

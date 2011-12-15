@@ -981,7 +981,7 @@ CL_ParseStatic (void)
 	ent->skinnum = es.skinnum;
 
 	VectorCopy (es.origin, ent->origin);
-	VectorCopy (es.angles, ent->angles);
+	CL_TransformEntity (ent, es.angles, true);
 
 	R_AddEfrags (ent);
 }

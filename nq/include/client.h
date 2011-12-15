@@ -380,6 +380,8 @@ void CL_ClearTEnts (void);
 void CL_Init_Entity (struct entity_s *ent);
 void CL_ParseTEnt (void);
 void CL_SignonReply (void);
+void CL_TransformEntity (struct entity_s *ent, const vec3_t
+						 angles, qboolean force);
 void CL_RelinkEntities (void);
 void CL_ClearEnts (void);
 

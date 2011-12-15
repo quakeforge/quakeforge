@@ -203,11 +203,7 @@ glrmain_init (void)
 void
 R_RotateForEntity (entity_t *e)
 {
-	qfglTranslatef (e->origin[0], e->origin[1], e->origin[2]);
-
-	qfglRotatef ( e->angles[YAW],   0, 0, 1);
-	qfglRotatef (-e->angles[PITCH], 0, 1, 0);
-	qfglRotatef ( e->angles[ROLL],  1, 0, 0);
+	qfglMultMatrixf (e->transform);
 }
 
 /*

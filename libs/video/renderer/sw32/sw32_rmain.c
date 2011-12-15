@@ -569,8 +569,8 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 
 	clipflags = 0;
 
-	if (currententity->angles[0] || currententity->angles[1]
-		|| currententity->angles[2]) {
+	if (currententity->transform[0] != 1 || currententity->transform[5] != 1
+		|| currententity->transform[10] != 1) {
 		for (i = 0; i < 4; i++) {
 			d = DotProduct (currententity->origin, view_clipplanes[i].normal);
 			d -= view_clipplanes[i].dist;

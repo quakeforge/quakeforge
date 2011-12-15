@@ -250,7 +250,7 @@ QFGL_DONT_NEED (void, glMaterialiv, (GLenum face, GLenum pname, const GLint * pa
 QFGL_NEED (void, glMatrixMode, (GLenum mode))
 QFGL_DONT_NEED (void, glMinmax, (GLenum target, GLenum internalformat, GLboolean sink))
 QFGL_DONT_NEED (void, glMultMatrixd, (const GLdouble * m))
-QFGL_DONT_NEED (void, glMultMatrixf, (const GLfloat * m))
+QFGL_NEED (void, glMultMatrixf, (const GLfloat * m))
 QFGL_NEED (void, glNewList, (GLuint list, GLenum mode))
 QFGL_DONT_NEED (void, glNormal3b, (GLbyte nx, GLbyte ny, GLbyte nz))
 QFGL_NEED (void, glNormal3bv, (const GLbyte * v))

@@ -42,6 +42,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "qw/bothdefs.h"
 #include "cl_cam.h"
+#include "cl_ents.h"
 #include "cl_main.h"
 #include "client.h"
 #include "compat.h"
@@ -693,6 +694,7 @@ V_CalcRefdef (void)
 
 	if (cl.chase && chase_active->int_val)
 		Chase_Update ();
+	CL_TransformEntity (view, view->angles, true);
 }
 
 static void

@@ -180,6 +180,38 @@ CL_LerpPoint (void)
 }
 
 void
+CL_TransformEntity (entity_t *ent, const vec3_t angles, qboolean force)
+{
+	vec3_t      ang;
+	vec_t      *forward, *left, *up;
+
+	if (VectorIsZero (angles)) {
+		VectorSet (1, 0, 0, ent->transform + 0);
+		VectorSet (0, 1, 0, ent->transform + 4);
+		VectorSet (0, 0, 1, ent->transform + 8);
+	} else if (force || !VectorCompare (angles, ent->angles)) {
+		forward = ent->transform + 0;
+		left = ent->transform + 4;
+		up = ent->transform + 8;
+		VectorCopy (angles, ang);
+		if (ent->model && ent->model->type == mod_alias) {
+			// stupid quake bug
+			// why, oh, why, do alias models pitch in the opposite direction
+			// to everything else?
+			ang[PITCH] = -ang[PITCH];
+		}
+		AngleVectors (ang, forward, left, up);
+		VectorNegate (left, left);  // AngleVectors is right-handed
+	}
+	VectorCopy (angles, ent->angles);
+	ent->transform[3] = 0;
+	ent->transform[7] = 0;
+	ent->transform[11] = 0;
+	VectorCopy (ent->origin, ent->transform + 12);
+	ent->transform[15] = 1;
+}
+
+void
 CL_RelinkEntities (void)
 {
 	entity_t   *ent;
@@ -251,18 +283,24 @@ CL_RelinkEntities (void)
 				|| fabs (delta[2]) > 100) {
 				// assume a teleportation, not a motion
 				VectorCopy (state->msg_origins[0], ent->origin);
-				VectorCopy (state->msg_angles[0], ent->angles);
+				if (!(ent->model->flags & EF_ROTATE))
+					CL_TransformEntity (ent, state->msg_angles[0], true);
 				ent->pose1 = ent->pose2 = -1;
 			} else {
-				VectorMultAdd (state->msg_origins[1], f, delta, ent->origin);
+				vec3_t      angles, d;
 				// interpolate the origin and angles
-				for (j = 0; j < 3; j++) {
-					d = state->msg_angles[0][j] - state->msg_angles[1][j];
-					if (d > 180)
-						d -= 360;
-					else if (d < -180)
-						d += 360;
-					ent->angles[j] = state->msg_angles[1][j] + f * d;
+				VectorMultAdd (state->msg_origins[1], f, delta, ent->origin);
+				if (!(ent->model->flags & EF_ROTATE)) {
+					VectorSubtract (state->msg_angles[0],
+									state->msg_angles[1], d);
+					for (j = 0; j < 3; j++) {
+						if (d[j] > 180)
+							d[j] -= 360;
+						else if (d[j] < -180)
+							d[j] += 360;
+					}
+					VectorMultAdd (state->msg_angles[1], f, d, angles);
+					CL_TransformEntity (ent, angles, false);
 				}
 			}
 			if (i != cl.viewentity || chase_active->int_val) {
@@ -278,18 +316,20 @@ CL_RelinkEntities (void)
 		}
 
 		// rotate binary objects locally
-		if (ent->model->flags & EF_ROTATE)
-			ent->angles[1] = bobjrotate;
+		if (ent->model->flags & EF_ROTATE) {
+			vec3_t      angles;
+			VectorCopy (state->msg_angles[0], angles);
+			angles[YAW] = bobjrotate;
+			CL_TransformEntity (ent, angles, false);
+		}
 
 		if (state->effects & EF_BRIGHTFIELD)
 			R_EntityParticles (ent);
 		if (state->effects & EF_MUZZLEFLASH) {
-			vec3_t      fv, rv, uv;
+			vec_t      *fv = ent->transform;
 
 			dl = R_AllocDlight (i);
 			if (dl) {
-				AngleVectors (ent->angles, fv, rv, uv);
-
 				VectorMultAdd (ent->origin, 18, fv, dl->origin);
 				dl->origin[2] += 16;
 				dl->radius = 200 + (rand () & 31);

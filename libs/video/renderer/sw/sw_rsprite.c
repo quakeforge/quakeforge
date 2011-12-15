@@ -364,8 +364,9 @@ R_DrawSprite (void)
 	} else if (psprite->type == SPR_ORIENTED) {
 		// generate the sprite's axes, according to the sprite's world
 		// orientation
-		AngleVectors (currententity->angles, r_spritedesc.vpn,
-					  r_spritedesc.vright, r_spritedesc.vup);
+		VectorCopy (currententity->transform + 0, r_spritedesc.vpn);
+		VectorNegate (currententity->transform + 4, r_spritedesc.vright);
+		VectorCopy (currententity->transform + 8, r_spritedesc.vup);
 	} else if (psprite->type == SPR_VP_PARALLEL_ORIENTED) {
 		// generate the sprite's axes, parallel to the viewplane, but rotated
 		// in that plane around the center according to the sprite entity's
