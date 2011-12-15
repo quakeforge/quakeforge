@@ -80,6 +80,7 @@ VISIBLE int					gl_release_number;
 static int			gl_bgra_capable;
 VISIBLE int					use_bgra;
 VISIBLE int					gl_va_capable;
+static  int					driver_vaelements;
 VISIBLE int					vaelements;
 VISIBLE int         		texture_extension_number = 1;
 VISIBLE int					gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
@@ -274,6 +275,15 @@ gl_tessellate_f (cvar_t * var)
 }
 
 static void
+gl_vaelements_max_f (cvar_t *var)
+{
+	if (var->int_val)
+		vaelements = min (var->int_val, driver_vaelements);
+	else
+		vaelements = driver_vaelements;
+}
+
+static void
 GL_Common_Init_Cvars (void)
 {
 	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit "
@@ -305,7 +315,8 @@ GL_Common_Init_Cvars (void)
 		Cvar_Get ("gl_tessellate", "0", CVAR_NONE, gl_tessellate_f,
 				  nva ("Specifies tessellation level from 0 to %i. Higher "
 					   "tessellation level means more triangles.", tess_max));
-	gl_vaelements_max = Cvar_Get ("gl_vaelements_max", "0", CVAR_ROM, NULL,
+	gl_vaelements_max = Cvar_Get ("gl_vaelements_max", "0", CVAR_ROM,
+								  gl_vaelements_max_f,
 								  "Limit the vertex array size for buggy "
 								  "drivers. 0 (default) uses driver provided "
 								  "limit, -1 disables use of vertex arrays.");
@@ -471,11 +482,10 @@ CheckTruFormExtensions (void)
 static void
 CheckVertexArraySize (void)
 {
-	qfglGetIntegerv (GL_MAX_ELEMENTS_VERTICES, &vaelements);
-	if (vaelements > 65536)
-		vaelements = 65536;
-	if (gl_vaelements_max->int_val)
-		vaelements = min (gl_vaelements_max->int_val, vaelements);
+	qfglGetIntegerv (GL_MAX_ELEMENTS_VERTICES, &driver_vaelements);
+	if (driver_vaelements > 65536)
+		driver_vaelements = 65536;
+	vaelements = driver_vaelements;
 //	qfglGetIntegerv (MAX_ELEMENTS_INDICES, *vaindices);
 }
 
@@ -597,9 +607,10 @@ GL_Init_Common (void)
 	CheckCombineExtensions ();
 	CheckBGRAExtensions ();
 	CheckTruFormExtensions ();
-	GL_Common_Init_Cvars ();
 	CheckVertexArraySize ();
 	CheckLights ();
+
+	GL_Common_Init_Cvars ();
 
 	qfglClearColor (0, 0, 0, 0);
 
