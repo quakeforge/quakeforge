@@ -377,7 +377,7 @@ CheckAnisotropyExtensions (void)
 static void
 CheckBGRAExtensions (void)
 {
-	if (gl_major >= 1 && gl_minor >= 3) {
+	if (gl_major > 1 || (gl_major >= 1 && gl_minor >= 3)) {
 		gl_bgra_capable = true;
 	} else if (QFGL_ExtensionPresent ("GL_EXT_bgra")) {
 		gl_bgra_capable = true;
