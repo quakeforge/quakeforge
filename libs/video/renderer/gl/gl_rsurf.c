@@ -730,6 +730,9 @@ R_DrawWorld (void)
 		// or we're not doing fog
 		DrawTextureChains (1, 1);
 
+		if (gl_mtex_active_tmus <= 1)
+			R_BlendLightmaps ();
+
 		if (gl_fb_bmodels->int_val && !gl_mtex_fullbright)
 			R_RenderFullbrights ();
 	} else {
