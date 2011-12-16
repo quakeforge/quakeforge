@@ -64,6 +64,7 @@ int		ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 int		ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
 int		ramp3[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 
+int						partUseVA;
 int						pVAsize;
 int					   *pVAindices;
 varray_t2f_c4ub_v3f_t  *particleVertexArray;
@@ -153,33 +154,34 @@ R_InitParticles (void)
 	int		i;
 
 	if (r_maxparticles && r_init) {
-		if (vaelements > 3)
-			pVAsize = min ((unsigned int) (vaelements - (vaelements % 4)),
-						   r_maxparticles * 4);
-		else if (vaelements >= 0)
+		if (vaelements) {
+			partUseVA = 0;
 			pVAsize = r_maxparticles * 4;
-		else
-			pVAsize = 0;
-		if (pVAsize) {
+			Sys_MaskPrintf (SYS_DEV,
+							"Particles: Vertex Array use disabled.\n");
+		} else {
+			if (vaelements > 3)
+				pVAsize = min ((unsigned int) (vaelements - (vaelements % 4)),
+							   r_maxparticles * 4);
+			else if (vaelements >= 0)
+				pVAsize = r_maxparticles * 4;
 			Sys_MaskPrintf (SYS_DEV,
 							"Particles: %i maximum vertex elements.\n",
 							pVAsize);
+		}
+		if (particleVertexArray)
+			free (particleVertexArray);
+		particleVertexArray = (varray_t2f_c4ub_v3f_t *)
+			calloc (pVAsize, sizeof (varray_t2f_c4ub_v3f_t));
 
-			if (particleVertexArray)
-				free (particleVertexArray);
-			particleVertexArray = (varray_t2f_c4ub_v3f_t *)
-				calloc (pVAsize, sizeof (varray_t2f_c4ub_v3f_t));
+		if (partUseVA)
 			qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, particleVertexArray);
 
-			if (pVAindices)
-				free (pVAindices);
-			pVAindices = (int *) calloc (pVAsize, sizeof (int));
-			for (i = 0; i < pVAsize; i++)
-				pVAindices[i] = i;
-		} else {
-			Sys_MaskPrintf (SYS_DEV,
-							"Particles: Vertex Array use disabled.\n");
-		}
+		if (pVAindices)
+			free (pVAindices);
+		pVAindices = (int *) calloc (pVAsize, sizeof (int));
+		for (i = 0; i < pVAsize; i++)
+			pVAindices[i] = i;
 	} else {
 		if (particleVertexArray) {
 			free (particleVertexArray);
@@ -1646,6 +1648,7 @@ R_DrawParticles (void)
 			VA += 4;
 			vacount += 4;
 			if (vacount + 4 > pVAsize) {
+				// never reached if partUseVA is false
 				qfglDrawElements (GL_QUADS, vacount, GL_UNSIGNED_INT,
 								  pVAindices);
 				vacount = 0;
@@ -1664,8 +1667,22 @@ R_DrawParticles (void)
 			activeparticles++;
 		}
 	}
-	if (vacount)
-		qfglDrawElements (GL_QUADS, vacount, GL_UNSIGNED_INT, pVAindices);
+	if (vacount) {
+		if (partUseVA) {
+			qfglDrawElements (GL_QUADS, vacount, GL_UNSIGNED_INT, pVAindices);
+		} else {
+			varray_t2f_c4ub_v3f_t *va = particleVertexArray;
+			int         i;
+
+			qfglBegin (GL_QUADS);
+			for (i = 0; i < vacount; i++, va++) {
+				qfglTexCoord2fv (va->texcoord);
+				qfglColor4ubv (va->color);
+				qfglVertex3fv (va->vertex);
+			}
+			qfglEnd ();
+		}
+	}
 
 	k = 0;
 	while (maxparticle >= activeparticles) {

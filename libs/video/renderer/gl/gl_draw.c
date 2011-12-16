@@ -77,11 +77,12 @@ typedef struct {
 
 byte	   *draw_chars;						// 8*8 graphic characters
 
-int			tVAsize;
-int		   *tVAindices;
-int			tVAcount;
-float	   *textVertices, *tV;
-float	   *textCoords, *tC;
+int         textUseVA;
+int         tVAsize;
+int        *tVAindices;
+int         tVAcount;
+float      *textVertices, *tV;
+float      *textCoords, *tC;
 
 qpic_t	   *draw_backtile;
 
@@ -146,35 +147,37 @@ Draw_InitText (void)
 {
 	int		i;
 
-	if (vaelements > 3) {
-		tVAsize = vaelements - (vaelements % 4);
-	} else if (vaelements >= 0) {
+	if (vaelements < 0) {
+		textUseVA = 0;
 		tVAsize = 2048;
-	} else
-		tVAsize = 0;
-
-	if (tVAsize) {
+		Sys_MaskPrintf (SYS_DEV, "Text: Vertex Array use disabled.\n");
+	} else {
+		textUseVA = 1;
+		if (vaelements > 3)
+			tVAsize = vaelements - (vaelements % 4);
+		else 
+			tVAsize = 2048;
 		Sys_MaskPrintf (SYS_DEV, "Text: %i maximum vertex elements.\n",
 						tVAsize);
+	}
 
-		if (textVertices)
-			free (textVertices);
-		textVertices = calloc (tVAsize, 2 * sizeof (float));
+	if (textVertices)
+		free (textVertices);
+	textVertices = calloc (tVAsize, 2 * sizeof (float));
 
-		if (textCoords)
-			free (textCoords);
-		textCoords = calloc (tVAsize, 2 * sizeof (float));
+	if (textCoords)
+		free (textCoords);
+	textCoords = calloc (tVAsize, 2 * sizeof (float));
 
+	if (textUseVA) {
 		qfglTexCoordPointer (2, GL_FLOAT, 0, textCoords);
 		qfglVertexPointer (2, GL_FLOAT, 0, textVertices);
-		if (tVAindices)
-			free (tVAindices);
-		tVAindices = (int *) calloc (tVAsize, sizeof (int));
-		for (i = 0; i < tVAsize; i++)
-			tVAindices[i] = i;
-	} else {
-		Sys_MaskPrintf (SYS_DEV, "Text: Vertex Array use disabled.\n");
 	}
+	if (tVAindices)
+		free (tVAindices);
+	tVAindices = (int *) calloc (tVAsize, sizeof (int));
+	for (i = 0; i < tVAsize; i++)
+		tVAindices[i] = i;
 }
 
 VISIBLE qpic_t *
@@ -424,7 +427,22 @@ static inline void
 flush_text (void)
 {
 	qfglBindTexture (GL_TEXTURE_2D, char_texture);
-	qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT, tVAindices);
+	if (textUseVA) {
+		qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT, tVAindices);
+	} else {
+		float      *v = textVertices;
+		float      *c = textCoords;
+		int         i;
+
+		qfglBegin (GL_QUADS);
+		for (i = 0; i < tVAcount; i++) {
+			qfglTexCoord2fv (c);
+			qfglVertex2fv (v);
+			c += 2;
+			v += 2;
+		}
+		qfglEnd ();
+	}
 	tVAcount = 0;
 	tV = textVertices;
 	tC = textCoords;
