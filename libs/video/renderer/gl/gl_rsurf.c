@@ -70,6 +70,7 @@ instsurf_t **sky_chain_tail;
 #define CHAIN_SURF_F2B(surf,chain)				\
 	do { 										\
 		instsurf_t *inst = (surf)->instsurf;	\
+		if (!inst) inst = get_instsurf ();		\
 		inst->surface = (surf);					\
 		*(chain##_tail) = inst;					\
 		(chain##_tail) = &inst->tex_chain;		\
@@ -79,6 +80,7 @@ instsurf_t **sky_chain_tail;
 #define CHAIN_SURF_B2F(surf,chain) 				\
 	do { 										\
 		instsurf_t *inst = (surf)->instsurf;	\
+		if (!inst) inst = get_instsurf ();		\
 		inst->surface = (surf);					\
 		inst->tex_chain = (chain);				\
 		(chain) = inst;							\
@@ -92,7 +94,45 @@ extern glRect_t		lightmap_rectchange[MAX_LIGHTMAPS];
 static texture_t **r_texture_chains;
 static int  r_num_texture_chains;
 static int  max_texture_chains;
+
 static instsurf_t *static_chains;
+static instsurf_t *free_instsurfs;
+static instsurf_t *alloced_instsurfs;
+static instsurf_t **alloced_instsurfs_tail = &alloced_instsurfs;
+#define NUM_INSTSURFS (64 * 6)	// most brush models are simple boxes.
+
+static inline instsurf_t *
+get_instsurf (void)
+{
+	instsurf_t *instsurf;
+
+	if (!free_instsurfs) {
+		int         i;
+
+		free_instsurfs = calloc (NUM_INSTSURFS, sizeof (instsurf_t));
+		for (i = 0; i < NUM_INSTSURFS - 1; i++)
+			free_instsurfs[i].next = &free_instsurfs[i + 1];
+	}
+	instsurf = free_instsurfs;
+	free_instsurfs = instsurf->next;
+	instsurf->next = 0;
+	//build the chain of allocated instance surfaces so they can all be freed
+	//in one go
+	*alloced_instsurfs_tail = instsurf;
+	alloced_instsurfs_tail = &instsurf->next;
+	return instsurf;
+}
+
+static inline void
+release_instsurfs (void)
+{
+	if (alloced_instsurfs) {
+		*alloced_instsurfs_tail = free_instsurfs;
+		free_instsurfs = alloced_instsurfs;
+		alloced_instsurfs = 0;
+		alloced_instsurfs_tail = &alloced_instsurfs;
+	}
+}
 
 void
 R_AddTexture (texture_t *tex)
@@ -121,6 +161,7 @@ R_InitSurfaceChains (model_t *model)
 	for (i = 0; i < model->nummodelsurfaces; i++)
 		model->surfaces[i].instsurf = static_chains + i;
 
+	release_instsurfs ();
 }
 
 void
@@ -456,6 +497,7 @@ clear_texture_chains (void)
 	tex = r_notexture_mip;
 	tex->tex_chain = NULL;
 	tex->tex_chain_tail = &tex->tex_chain;
+	release_instsurfs ();
 }
 
 static inline void
