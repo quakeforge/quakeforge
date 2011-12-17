@@ -766,10 +766,13 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		m = models[j];
 		if (!m)
 			break;
-		if (m->name[0] == '*')
+		if (m->name[0] == '*') {
+			// sub model surfaces are processed as part of the main model
 			continue;
+		}
 		r_pcurrentvertbase = m->vertexes;
 		currentmodel = m;
+		// non-bsp models don't have surfaces.
 		for (i = 0; i < m->numsurfaces; i++) {
 			if (m->surfaces[i].flags & SURF_DRAWTURB)
 				continue;
