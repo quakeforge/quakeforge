@@ -132,8 +132,6 @@ typedef struct {
 
 typedef struct glpoly_s {
 	struct	glpoly_s	*next;
-	struct	glpoly_s	*chain;
-	struct	glpoly_s	*fb_chain;
 	int		numverts;
 	int		flags;					// for SURF_UNDERWATER
 	float	verts[4][VERTEXSIZE];	// variable sized (xyz s1t1 s2t2)
@@ -157,6 +155,7 @@ typedef struct msurface_s {
 
 	glpoly_t	*polys;				// multiple if warped
 	instsurf_t *instsurf;	///< null if not part of world model/sub-model
+	instsurf_t *tinst;		///< for instance models
 
 	mtexinfo_t	*texinfo;
 

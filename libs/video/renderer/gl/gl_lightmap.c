@@ -72,7 +72,7 @@ unsigned int blocklights[34 * 34 * 3];	//FIXME make dynamic
 int          allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
 
 qboolean	 lightmap_modified[MAX_GLTEXTURES];
-glpoly_t	*lightmap_polys[MAX_LIGHTMAPS];
+instsurf_t	*lightmap_polys[MAX_LIGHTMAPS];
 glRect_t	 lightmap_rectchange[MAX_LIGHTMAPS];
 
 static int	 lmshift = 7;
@@ -482,11 +482,9 @@ void
 R_CalcLightmaps (void)
 {
 	int         i;
-	glpoly_t   *p;
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
-		p = lightmap_polys[i];
-		if (!p)
+		if (!lightmap_polys[i])
 			continue;
 		if (lightmap_modified[i]) {
 			qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
@@ -501,24 +499,30 @@ R_BlendLightmaps (void)
 {
 	float      *v;
 	int         i, j;
+	instsurf_t *sc;
 	glpoly_t   *p;
 
 	qfglDepthMask (GL_FALSE);					// don't bother writing Z
 	qfglBlendFunc (lm_src_blend, lm_dest_blend);
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
-		p = lightmap_polys[i];
-		if (!p)
-			continue;
-		qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
-		for (; p; p = p->chain) {
-			qfglBegin (GL_POLYGON);
-			v = p->verts[0];
-			for (j = 0; j < p->numverts; j++, v += VERTEXSIZE) {
-				qfglTexCoord2fv (&v[5]);
-				qfglVertex3fv (v);
+		for (sc = lightmap_polys[i]; sc; sc = sc->lm_chain) {
+			qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
+			if (sc->transform) {
+				qfglPushMatrix ();
+				qfglLoadMatrixf (sc->transform);
 			}
-			qfglEnd ();
+			for (p = sc->surface->polys; p; p = p->next) {
+				qfglBegin (GL_POLYGON);
+				v = p->verts[0];
+				for (j = 0; j < p->numverts; j++, v += VERTEXSIZE) {
+					qfglTexCoord2fv (&v[5]);
+					qfglVertex3fv (v);
+				}
+				qfglEnd ();
+			}
+			if (sc->transform)
+				qfglPopMatrix ();
 		}
 	}
 
@@ -617,41 +621,6 @@ gl_overbright_f (cvar_t *var)
 
 		R_BuildLightMap (fa);
 	}
-}
-
-void
-R_CalcAndBlendLightmaps (void)
-{
-	float      *v;
-	int         i, j;
-	glpoly_t   *p;
-
-	qfglDepthMask (GL_FALSE);					// don't bother writing Z
-	qfglBlendFunc (lm_src_blend, lm_dest_blend);
-
-	for (i = 0; i < MAX_LIGHTMAPS; i++) {
-		p = lightmap_polys[i];
-		if (!p)
-			continue;
-		qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
-		if (lightmap_modified[i]) {
-			GL_UploadLightmap (i);
-			lightmap_modified[i] = false;
-		}
-		for (; p; p = p->chain) {
-			qfglBegin (GL_POLYGON);
-			v = p->verts[0];
-			for (j = 0; j < p->numverts; j++, v += VERTEXSIZE) {
-				qfglTexCoord2fv (&v[5]);
-				qfglVertex3fv (v);
-			}
-			qfglEnd ();
-		}
-	}
-
-	// Return to normal blending  --KB
-	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	qfglDepthMask (GL_TRUE);					// back to normal Z buffering
 }
 
 // LIGHTMAP ALLOCATION ========================================================

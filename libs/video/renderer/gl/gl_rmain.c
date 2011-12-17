@@ -220,13 +220,6 @@ R_DrawEntitiesOnList (void)
 		return;
 
 	// LordHavoc: split into 3 loops to simplify state changes
-	for (ent = r_ent_queue; ent; ent = ent->next) {
-		if (ent->model->type != mod_brush)
-			continue;
-		currententity = ent;
-
-		R_DrawBrushModel (currententity);
-	}
 
 	if (gl_mtex_active_tmus >= 2) {
 		qglActiveTexture (gl_mtex_enum + 1);
