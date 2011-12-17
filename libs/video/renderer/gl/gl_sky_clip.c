@@ -639,14 +639,16 @@ R_DrawSkyBoxPoly (const glpoly_t *poly)
 }
 
 static void
-EmitSkyPolys (float speedscale, const msurface_t *fa)
+EmitSkyPolys (float speedscale, const instsurf_t *sc)
 {
 	float       length, s, t;
 	float      *v;
 	int         i;
 	glpoly_t   *p;
 	vec3_t      dir;
+	msurface_t *fa = sc->surface;
 
+	//FIXME transform/color
 	for (p = fa->polys; p; p = p->next) {
 		qfglBegin (GL_POLYGON);
 		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE) {
@@ -682,21 +684,27 @@ draw_poly (const glpoly_t *poly)
 }
 
 static void
-draw_black_sky_polys (const msurface_t *sky_chain)
+draw_black_sky_polys (const instsurf_t *sky_chain)
 {
-	const msurface_t *sc = sky_chain;
+	const instsurf_t *sc = sky_chain;
 
 	qfglDisable (GL_BLEND);
 	qfglDisable (GL_TEXTURE_2D);
 	qfglColor3ubv (color_black);
 	while (sc) {
-		glpoly_t   *p = sc->polys;
+		glpoly_t   *p = sc->surface->polys;
 
+		if (sc->transform) {
+			qfglPushMatrix ();
+			qfglLoadMatrixf (sc->transform);
+		}
 		while (p) {
 			draw_poly (p);
 			p = p->next;
 		}
-		sc = sc->texturechain;
+		if (sc->transform)
+			qfglPushMatrix ();
+		sc = sc->tex_chain;
 	}
 	qfglEnable (GL_TEXTURE_2D);
 	qfglEnable (GL_BLEND);
@@ -704,36 +712,37 @@ draw_black_sky_polys (const msurface_t *sky_chain)
 }
 
 static void
-draw_skybox_sky_polys (const msurface_t *sky_chain)
+draw_skybox_sky_polys (const instsurf_t *sky_chain)
 {
-	const msurface_t *sc = sky_chain;
+	const instsurf_t *sc = sky_chain;
 
 	qfglDepthMask (GL_FALSE);
 	qfglDisable (GL_DEPTH_TEST);
 	while (sc) {
-		glpoly_t   *p = sc->polys;
+		glpoly_t   *p = sc->surface->polys;
 
+		//FIXME transform/color
 		while (p) {
 			R_DrawSkyBoxPoly (p);
 			p = p->next;
 		}
-		sc = sc->texturechain;
+		sc = sc->tex_chain;
 	}
 	qfglEnable (GL_DEPTH_TEST);
 	qfglDepthMask (GL_TRUE);
 }
 
 static void
-draw_skydome_sky_polys (const msurface_t *sky_chain)
+draw_skydome_sky_polys (const instsurf_t *sky_chain)
 {
 	// this function is not yet implemented so just draw black
 	draw_black_sky_polys (sky_chain);
 }
 
 static void
-draw_id_sky_polys (const msurface_t *sky_chain)
+draw_id_sky_polys (const instsurf_t *sky_chain)
 {
-	const msurface_t *sc = sky_chain;
+	const instsurf_t *sc = sky_chain;
 	float       speedscale;
 
 	speedscale = r_realtime / 16;
@@ -742,7 +751,7 @@ draw_id_sky_polys (const msurface_t *sky_chain)
 	qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
 	while (sc) {
 		EmitSkyPolys (speedscale, sc);
-		sc = sc->texturechain;
+		sc = sc->tex_chain;
 	}
 
 	if (gl_sky_multipass->int_val) {
@@ -754,28 +763,34 @@ draw_id_sky_polys (const msurface_t *sky_chain)
 		qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
 		while (sc) {
 			EmitSkyPolys (speedscale, sc);
-			sc = sc->texturechain;
+			sc = sc->tex_chain;
 		}
 	}
 }
 
 static void
-draw_z_sky_polys (const msurface_t *sky_chain)
+draw_z_sky_polys (const instsurf_t *sky_chain)
 {
-	const msurface_t *sc = sky_chain;
+	const instsurf_t *sc = sky_chain;
 
 	qfglColorMask (GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	qfglDisable (GL_BLEND);
 	qfglDisable (GL_TEXTURE_2D);
 	qfglColor3ubv (color_black);
 	while (sc) {
-		glpoly_t   *p = sc->polys;
+		glpoly_t   *p = sc->surface->polys;
 
+		if (sc->transform) {
+			qfglPushMatrix ();
+			qfglLoadMatrixf (sc->transform);
+		}
 		while (p) {
 			draw_poly (p);
 			p = p->next;
 		}
-		sc = sc->texturechain;
+		if (sc->transform)
+			qfglPopMatrix ();
+		sc = sc->tex_chain;
 	}
 	qfglColor3ubv (color_white);
 	qfglEnable (GL_TEXTURE_2D);
@@ -784,7 +799,7 @@ draw_z_sky_polys (const msurface_t *sky_chain)
 }
 
 void
-R_DrawSkyChain (const msurface_t *sky_chain)
+R_DrawSkyChain (const instsurf_t *sky_chain)
 {
 	if (gl_sky_clip->int_val > 2) {
 		draw_black_sky_polys (sky_chain);
@@ -807,15 +822,19 @@ R_DrawSkyChain (const msurface_t *sky_chain)
 	}
 
 	if (gl_sky_debug->int_val) {
-		const msurface_t *sc;
+		const instsurf_t *sc;
 
 		qfglDisable (GL_TEXTURE_2D);
 		if (gl_sky_debug->int_val & 1) {
 			sc = sky_chain;
 			qfglColor3ub (255, 255, 255);
 			while (sc) {
-				glpoly_t   *p = sc->polys;
+				glpoly_t   *p = sc->surface->polys;
 
+				if (sc->transform) {
+					qfglPushMatrix ();
+					qfglLoadMatrixf (sc->transform);
+				}
 				while (p) {
 					int         i;
 
@@ -826,7 +845,7 @@ R_DrawSkyChain (const msurface_t *sky_chain)
 					qfglEnd ();
 					p = p->next;
 				}
-				sc = sc->texturechain;
+				sc = sc->tex_chain;
 			}
 		}
 		if (gl_sky_debug->int_val & 2) {
@@ -834,8 +853,12 @@ R_DrawSkyChain (const msurface_t *sky_chain)
 			qfglColor3ub (0, 255, 0);
 			qfglBegin (GL_POINTS);
 			while (sc) {
-				glpoly_t   *p = sc->polys;
+				glpoly_t   *p = sc->surface->polys;
 
+				if (sc->transform) {
+					qfglPushMatrix ();
+					qfglLoadMatrixf (sc->transform);
+				}
 				while (p) {
 					int         i;
 					vec3_t      x, c = { 0, 0, 0 };
@@ -849,7 +872,9 @@ R_DrawSkyChain (const msurface_t *sky_chain)
 					qfglVertex3fv (c);
 					p = p->next;
 				}
-				sc = sc->texturechain;
+				if (sc->transform)
+					qfglPopMatrix ();
+				sc = sc->tex_chain;
 			}
 			qfglEnd ();
 		}

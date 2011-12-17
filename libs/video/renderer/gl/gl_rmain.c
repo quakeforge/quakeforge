@@ -545,7 +545,7 @@ static void
 R_Mirror (void)
 {
 	float		d;
-	msurface_t *s;
+//	msurface_t *s;
 
 //	if (!mirror) // FIXME: Broken
 		return;
@@ -590,6 +590,7 @@ R_Mirror (void)
 
 	color_white[3] = r_mirroralpha->value * 255;
 	qfglColor4ubv (color_white);
+#if 0//FIXME
 	s = r_worldentity.model->textures[mirrortexturenum]->texturechain;
 	for (; s; s = s->texturechain) {
 		texture_t  *tex;
@@ -611,6 +612,7 @@ R_Mirror (void)
 //		R_RenderBrushPoly (s, tex); // FIXME: Need to move R_Mirror to gl_rsurf.c, and uncommment this line!
 	}
 	r_worldentity.model->textures[mirrortexturenum]->texturechain = NULL;
+#endif
 	qfglColor3ubv (color_white);
 }
 

@@ -178,6 +178,9 @@ void D_DrawSurfaces (void);
 void R_InsertNewEdges (edge_t *edgestoadd, edge_t *edgelist);
 void R_StepActiveU (edge_t *pedge);
 void R_RemoveEdges (edge_t *pedge);
+void R_AddTexture (texture_t *tex);
+void R_ClearTextures (void);
+void R_InitSurfaceChains (model_t *model);
 
 extern void R_Surf8Start (void);
 extern void R_Surf8End (void);
@@ -191,8 +194,6 @@ extern int	r_polycount;
 extern int	r_wholepolycount;
 
 extern model_t     *cl_worldmodel;
-extern texture_t  **r_texture_chains;
-extern int          r_num_texture_chains;
 
 extern int		*pfrustum_indexes[4];
 

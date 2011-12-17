@@ -66,32 +66,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 int			r_init = 0;
 
-texture_t **r_texture_chains;
-int         r_num_texture_chains;
-static int  max_texture_chains;
-
-static void
-R_AddTexture (texture_t *tex)
-{
-	int         i;
-	if (r_num_texture_chains == max_texture_chains) {
-		max_texture_chains += 64;
-		r_texture_chains = realloc (r_texture_chains,
-								  max_texture_chains * sizeof (texture_t *));
-		for (i = r_num_texture_chains; i < max_texture_chains; i++)
-			r_texture_chains[i] = 0;
-	}
-	r_texture_chains[r_num_texture_chains++] = tex;
-	tex->texturechain = NULL;
-	tex->texturechain_tail = &tex->texturechain;
-}
-
-static void
-R_ClearTextures (void)
-{
-	r_num_texture_chains = 0;
-}
-
 /*
 	R_Envmap_f
 
@@ -196,8 +170,6 @@ register_textures (model_t *model)
 		tex = model->textures[i];
 		if (!tex)
 			continue;
-		if (tex->texturechain_tail)
-			continue;
 		R_AddTexture (tex);
 	}
 }
@@ -240,16 +212,18 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		if (!strncmp (tex->name, "window02_1", 10))
 			mirrortexturenum = i;
 	}
+
+	R_InitSurfaceChains (r_worldentity.model);
+	R_AddTexture (r_notexture_mip);
 	register_textures (r_worldentity.model);
 	for (i = 0; i < num_models; i++) {
 		if (!models[i])
 			continue;
+		if (*models[i]->name == '*')
+			continue;
 		if (models[i] != r_worldentity.model && models[i]->type == mod_brush)
 			register_textures (models[i]);
 	}
-	tex = r_notexture_mip;
-	tex->texturechain = NULL;
-	tex->texturechain_tail = &tex->texturechain;
 }
 
 void

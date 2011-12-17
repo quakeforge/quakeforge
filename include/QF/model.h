@@ -68,13 +68,33 @@ typedef struct {
 	vec3_t		position;
 } mvertex_t;
 
+/** Instanced surface data.
+
+	There will be one of these for each surface in the world model. This
+	covers the sub-models in the world model. These instanced surfaces will
+	be allocated in one block at map load time and then never freed until
+	the next map load.
+
+	However, for instanced brush models (ammo boxes, health boxes, etc), an
+	instanced surface will be allocated for each surface for each model
+	once per frame. These instanced surfaces will be mass-freed each frame.
+*/
+typedef struct instsurf_s {
+	struct instsurf_s *next;		///< next in free/alloc list
+	struct instsurf_s *tex_chain;	///< next in texture chain
+	struct instsurf_s *lm_chain;	///< next in lightmap chain
+	struct msurface_s *surface;		///< surface to render
+	vec_t      *transform;
+	float      *color;
+} instsurf_t;
+
 typedef struct texture_s {
 	char		name[16];
 	unsigned int	width, height;
 	int			gl_texturenum;
 	int			gl_fb_texturenum;
-	struct msurface_s	*texturechain;	// for gl_texsort drawing
-	struct msurface_s	**texturechain_tail;
+	instsurf_t *tex_chain;	// for gl_texsort drawing
+	instsurf_t **tex_chain_tail;
 	int			anim_total;				// total tenths in sequence ( 0 = no)
 	int			anim_min, anim_max;		// time for this frame min <=time< max
 	struct texture_s *anim_next;		// in the animation sequence
@@ -136,8 +156,7 @@ typedef struct msurface_s {
 	int			light_s, light_t;	// gl lightmap coordinates
 
 	glpoly_t	*polys;				// multiple if warped
-	struct	msurface_s	*texturechain;
-//	struct msurface_s	*lightmapchain;		// Quake 2 ???
+	instsurf_t *instsurf;	///< null if not part of world model/sub-model
 
 	mtexinfo_t	*texinfo;
 

@@ -62,28 +62,72 @@ int			 skytexturenum;
 
 glpoly_t    *fullbright_polys[MAX_GLTEXTURES];
 
-msurface_t  *waterchain = NULL;
-msurface_t **waterchain_tail = &waterchain;
-msurface_t  *sky_chain;
-msurface_t **sky_chain_tail;
+instsurf_t  *waterchain = NULL;
+instsurf_t **waterchain_tail = &waterchain;
+instsurf_t  *sky_chain;
+instsurf_t **sky_chain_tail;
 
 #define CHAIN_SURF_F2B(surf,chain)				\
 	do { 										\
-		*(chain##_tail) = (surf);				\
-		(chain##_tail) = &(surf)->texturechain;	\
+		instsurf_t *inst = (surf)->instsurf;	\
+		inst->surface = (surf);					\
+		*(chain##_tail) = inst;					\
+		(chain##_tail) = &inst->tex_chain;		\
 		*(chain##_tail) = 0;					\
 	} while (0)
 
 #define CHAIN_SURF_B2F(surf,chain) 				\
 	do { 										\
-		(surf)->texturechain = (chain);			\
-		(chain) = (surf);						\
+		instsurf_t *inst = (surf)->instsurf;	\
+		inst->surface = (surf);					\
+		inst->tex_chain = (chain);				\
+		(chain) = inst;							\
 	} while (0)
 
 extern int			lightmap_textures;
 extern qboolean		lightmap_modified[MAX_LIGHTMAPS];
 extern glpoly_t    *lightmap_polys[MAX_LIGHTMAPS];
 extern glRect_t		lightmap_rectchange[MAX_LIGHTMAPS];
+
+static texture_t **r_texture_chains;
+static int  r_num_texture_chains;
+static int  max_texture_chains;
+static instsurf_t *static_chains;
+
+void
+R_AddTexture (texture_t *tex)
+{
+	int         i;
+	if (r_num_texture_chains == max_texture_chains) {
+		max_texture_chains += 64;
+		r_texture_chains = realloc (r_texture_chains,
+								  max_texture_chains * sizeof (texture_t *));
+		for (i = r_num_texture_chains; i < max_texture_chains; i++)
+			r_texture_chains[i] = 0;
+	}
+	r_texture_chains[r_num_texture_chains++] = tex;
+	tex->tex_chain = NULL;
+	tex->tex_chain_tail = &tex->tex_chain;
+}
+
+void
+R_InitSurfaceChains (model_t *model)
+{
+	int         i;
+
+	if (static_chains)
+		free (static_chains);
+	static_chains = calloc (model->nummodelsurfaces, sizeof (instsurf_t));
+	for (i = 0; i < model->nummodelsurfaces; i++)
+		model->surfaces[i].instsurf = static_chains + i;
+
+}
+
+void
+R_ClearTextures (void)
+{
+	r_num_texture_chains = 0;
+}
 
 
 /*
@@ -247,7 +291,8 @@ void
 R_DrawWaterSurfaces (void)
 {
 	int         i;
-	msurface_t *s;
+	instsurf_t *s;
+	msurface_t *fa;
 
 	if (!waterchain)
 		return;
@@ -262,13 +307,19 @@ R_DrawWaterSurfaces (void)
 	}
 
 	i = -1;
-	for (s = waterchain; s; s = s->texturechain) {
-		if (i != s->texinfo->texture->gl_texturenum) {
-			i = s->texinfo->texture->gl_texturenum;
+	for (s = waterchain; s; s = s->tex_chain) {
+		fa = s->surface;
+		if (s->transform)
+			qfglLoadMatrixf (s->transform);
+		else
+			qfglLoadMatrixf (r_world_matrix);
+		if (i != fa->texinfo->texture->gl_texturenum) {
+			i = fa->texinfo->texture->gl_texturenum;
 			qfglBindTexture (GL_TEXTURE_2D, i);
 		}
-		EmitWaterPolys (s);
+		EmitWaterPolys (fa);
 	}
+	qfglLoadMatrixf (r_world_matrix);
 
 	waterchain = NULL;
 	waterchain_tail = &waterchain;
@@ -283,7 +334,8 @@ static inline void
 DrawTextureChains (int disable_blend, int do_bind)
 {
 	int			i;
-	msurface_t *s;
+	instsurf_t *s;
+	msurface_t *fa;
 	texture_t  *tex;
 
 	if (gl_mtex_active_tmus >= 2) {
@@ -307,11 +359,22 @@ DrawTextureChains (int disable_blend, int do_bind)
 				qfglBindTexture (GL_TEXTURE_2D, tex->gl_fb_texturenum);
 
 				qglActiveTexture (gl_mtex_enum + 1);
-				for (s = tex->texturechain; s; s = s->texturechain) {
+				for (s = tex->tex_chain; s; s = s->tex_chain) {
+					fa = s->surface;
+					if (s->transform) {
+						qfglPushMatrix ();
+						qfglLoadMatrixf (s->transform);
+					}
+					if (s->color && do_bind)
+						qfglColor4fv (s->color);
 					qfglBindTexture (GL_TEXTURE_2D, lightmap_textures +
-									 s->lightmaptexturenum);
+									 fa->lightmaptexturenum);
+					if (s->transform)
+						qfglPopMatrix ();
+					if (s->color && do_bind)
+						qfglColor3ubv (color_white);
 
-					R_RenderBrushPoly_3 (s);
+					R_RenderBrushPoly_3 (fa);
 				}
 
 				qglActiveTexture (gl_mtex_enum + 2);
@@ -320,11 +383,23 @@ DrawTextureChains (int disable_blend, int do_bind)
 				qglActiveTexture (gl_mtex_enum + 0);
 			} else {
 				qglActiveTexture (gl_mtex_enum + 1);
-				for (s = tex->texturechain; s; s = s->texturechain) {
+				for (s = tex->tex_chain; s; s = s->tex_chain) {
+					fa = s->surface;
 					qfglBindTexture (GL_TEXTURE_2D, lightmap_textures +
-									 s->lightmaptexturenum);
+									 fa->lightmaptexturenum);
 
-					R_RenderBrushPoly_2 (s);
+					if (s->transform) {
+						qfglPushMatrix ();
+						qfglLoadMatrixf (s->transform);
+					}
+					if (s->color && do_bind)
+						qfglColor4fv (s->color);
+					R_RenderBrushPoly_2 (fa);
+
+					if (s->transform)
+						qfglPopMatrix ();
+					if (s->color && do_bind)
+						qfglColor3ubv (color_white);
 				}
 
 				qglActiveTexture (gl_mtex_enum + 0);
@@ -347,8 +422,18 @@ DrawTextureChains (int disable_blend, int do_bind)
 			if (do_bind)
 				qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 
-			for (s = tex->texturechain; s; s = s->texturechain)
-				R_RenderBrushPoly_1 (s);
+			for (s = tex->tex_chain; s; s = s->tex_chain) {
+				if (s->transform) {
+					qfglPushMatrix ();
+					qfglLoadMatrixf (s->transform);
+				}
+				R_RenderBrushPoly_1 (s->surface);
+
+				if (s->transform)
+					qfglPopMatrix ();
+				if (s->color && do_bind)
+					qfglColor3ubv (color_white);
+			}
 		}
 		if (disable_blend)
 			qfglEnable (GL_BLEND);
@@ -365,12 +450,12 @@ clear_texture_chains (void)
 		tex = r_texture_chains[i];
 		if (!tex)
 			continue;
-		tex->texturechain = NULL;
-		tex->texturechain_tail = &tex->texturechain;
+		tex->tex_chain = NULL;
+		tex->tex_chain_tail = &tex->tex_chain;
 	}
 	tex = r_notexture_mip;
-	tex->texturechain = NULL;
-	tex->texturechain_tail = &tex->texturechain;
+	tex->tex_chain = NULL;
+	tex->tex_chain_tail = &tex->tex_chain;
 }
 
 static inline void
@@ -395,7 +480,7 @@ chain_surface (msurface_t *surf)
 				fullbright_polys[tex->gl_fb_texturenum];
 			fullbright_polys[tex->gl_fb_texturenum] = surf->polys;
 		}
-		CHAIN_SURF_F2B (surf, tex->texturechain);
+		CHAIN_SURF_F2B (surf, tex->tex_chain);
 	}
 }
 
