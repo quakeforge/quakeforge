@@ -1,6 +1,27 @@
 NEWS for the QuakeForge project
 -------------------------------
 
+Changes from 0.5.99 Beta 2
+    o Possibly better ktpro support (server now informs the mod about its
+      MVDSV features)
+    o Due to it being incompatible with most clients, the MVD time skip
+      support has been removed.
+    o Global fog improvements for non-mtex rendering. Still not there yet,
+      though (hopefully next release).
+    o The OpenGL error on startup has been silenced: the cause was found and
+      taken out back of the barn.
+    o A mistake in an OpenGL version check has been fixed (thanks to MH).
+    o Setting gl_vaelements_max to -1 no longer causes QF to segfault
+      (console text and particles now support fake vertex arrays).
+    o Entity transform setup is now controled by the client rather than the
+      renderers. Amongst other things, this means that static entities now
+      setup their transform only once.
+    o Ruamoko
+        * Now has an __INFINITY__ built-in constant. It won't work on
+          machines that don't support IEEE single floats, but then again,
+          neither will quake.
+        * Old cvar() and cvar_set() functions moved from system.h to cvar.h.
+
 Changes from 0.5.99 Beta 1
     o The "loading" plaque has been reenabled.
     o The key for toggling the menu can now be adjusted via a cvar.
