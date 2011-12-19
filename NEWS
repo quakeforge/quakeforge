@@ -3,6 +3,7 @@ NEWS for the QuakeForge project
 
 Changes from 0.5.99 Beta 3
     o Global fog now works for both multi and single texture rendering.
+	o Z_Realloc() zeros the expanded part of the memory (thanks to sezero).
 
 Changes from 0.5.99 Beta 2
     o Possibly better ktpro support (server now informs the mod about its
