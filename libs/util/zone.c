@@ -278,6 +278,8 @@ Z_Realloc (memzone_t *zone, void *ptr, int size)
 
 	if (ptr != old_ptr)
 		memmove (ptr, old_ptr, min (old_size, size));
+	if (old_size < size)
+		memset ((byte *)ptr + old_size, 0, size - old_size);
 
 	return ptr;
 }
