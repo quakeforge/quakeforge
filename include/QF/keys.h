@@ -315,6 +315,28 @@ typedef enum {
 	QFK_ZEN_KOHO,					/* Multiple/All Candidate(s) */
 	QFK_MAE_KOHO,					/* Previous Candidate */
 
+	/* some multi-media/browser keys */
+	QFK_HOMEPAGE,
+	QFK_SEARCH,
+	QFK_MAIL,
+	QFK_FAVORITES,
+	QFK_AUDIOMUTE,
+	QFK_AUDIOLOWERVOLUME,
+	QFK_AUDIORAISEVOLUME,
+	QFK_AUDIOPLAY,
+	QFK_CALCULATOR,
+	QFK_REDO,
+	QFK_NEW,
+	QFK_RELOAD,
+	QFK_OPEN,
+	QFK_CLOSE,
+	QFK_REPLY,
+	QFK_MAILFORWARD,
+	QFK_SEND,
+	QFK_SAVE,
+	QFK_BACK,
+	QFK_FORWARD,
+
 	/* Add any other keys here */
 
 //

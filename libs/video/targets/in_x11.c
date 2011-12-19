@@ -51,6 +51,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdlib.h>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
+#include <X11/XF86keysym.h>
+#include <X11/Sunkeysym.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 
@@ -506,6 +508,83 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 			break;
 		case XK_Mae_Koho:
 			key = QFK_MAE_KOHO;
+			break;
+		case XF86XK_HomePage:
+			key = QFK_HOMEPAGE;
+			break;
+		case XF86XK_Search:
+			key = QFK_SEARCH;
+			break;
+		case XF86XK_Mail:
+			key = QFK_MAIL;
+			break;
+		case XF86XK_Favorites:
+			key = QFK_FAVORITES;
+			break;
+		case XF86XK_AudioMute:
+			key = QFK_AUDIOMUTE;
+			break;
+		case XF86XK_AudioLowerVolume:
+			key = QFK_AUDIOLOWERVOLUME;
+			break;
+		case XF86XK_AudioRaiseVolume:
+			key = QFK_AUDIORAISEVOLUME;
+			break;
+		case XF86XK_AudioPlay:
+			key = QFK_AUDIOPLAY;
+			break;
+		case XF86XK_Calculator:
+			key = QFK_CALCULATOR;
+			break;
+		case XK_Help:
+			key = QFK_HELP;
+			break;
+		case XK_Undo:
+			key = QFK_UNDO;
+			break;
+		case XK_Redo:
+			key = QFK_REDO;
+			break;
+		case XF86XK_New:
+			key = QFK_NEW;
+			break;
+		case XF86XK_Reload:	// eh? it's open (hiraku) on my kb
+			key = QFK_RELOAD;
+			break;
+		case SunXK_Open:
+			//FALL THROUGH
+		case XF86XK_Open:
+			key = QFK_OPEN;
+			break;
+		case XF86XK_Close:
+			key = QFK_CLOSE;
+			break;
+		case XF86XK_Reply:
+			key = QFK_REPLY;
+			break;
+		case XF86XK_MailForward:
+			key = QFK_MAILFORWARD;
+			break;
+		case XF86XK_Send:
+			key = QFK_SEND;
+			break;
+		case XF86XK_Save:
+			key = QFK_SAVE;
+			break;
+		case XK_KP_Equal:
+			key = QFK_KP_EQUALS;
+			break;
+		case XK_parenleft:
+			key = QFK_LEFTPAREN;
+			break;
+		case XK_parenright:
+			key = QFK_RIGHTPAREN;
+			break;
+		case XF86XK_Back:
+			key = QFK_BACK;
+			break;
+		case XF86XK_Forward:
+			key = QFK_FORWARD;
 			break;
 
 		default:
