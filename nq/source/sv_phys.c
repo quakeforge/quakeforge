@@ -132,7 +132,6 @@ qboolean
 SV_RunThink (edict_t *ent)
 {
 	float       thinktime;
-//FIXME	float       oldframe;
 
 	do {
 		thinktime = SVfloat (ent, nextthink);
@@ -143,27 +142,12 @@ SV_RunThink (edict_t *ent)
 			thinktime = sv.time;		// don't let things stay in the past.
 										// it is possible to start that way
 										// by a trigger with a local time.
-//FIXME		oldframe = SVfloat (ent, frame);
-
 		SVfloat (ent, nextthink) = 0;
 		*sv_globals.time = thinktime;
 		sv_pr_think (ent);
 
 		if (ent->free)
 			return false;
-#if 0 //FIXME
-		ent->sendinterval = false;
-		if (SVfloat (ent, nextthink)
-			&& (SVfloat (ent, movetype) == MOVETYPE_STEP
-				|| SVfloat (ent, frame) != oldframe)) {
-			int         i;
-			i = rint ((SVfloat (ent, nextthink) - thinktime) * 255);
-			if (i >= 0 && i < 256 && i != 25 && i != 26) {
-				//25 and 26 are close enough to 0.1 to not send
-				ent->sendinterval = true;
-			}
-		}
-#endif
 	} while (0);
 
 	return true;
