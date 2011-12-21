@@ -148,7 +148,7 @@ SV_RunThink (edict_t *ent)
 
 		if (ent->free)
 			return false;
-	} while (0);
+	} while (1);
 
 	return true;
 }
