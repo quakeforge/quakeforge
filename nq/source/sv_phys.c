@@ -62,9 +62,9 @@ static __attribute__ ((used)) const char rcsid[] =
 cvar_t     *sv_friction;
 cvar_t     *sv_gravity;
 cvar_t     *sv_jump_any;
-cvar_t     *sv_stopspeed;
 cvar_t     *sv_maxvelocity;
 cvar_t     *sv_nostep;
+cvar_t     *sv_stopspeed;
 
 #define	MOVE_EPSILON	0.01
 #if 0

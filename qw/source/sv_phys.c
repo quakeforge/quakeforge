@@ -57,16 +57,16 @@ static __attribute__ ((used)) const char rcsid[] =
 	solid_edge items clip against only bsp models.
 */
 
+cvar_t     *sv_accelerate;
+cvar_t     *sv_airaccelerate;
+cvar_t     *sv_friction;
 cvar_t     *sv_gravity;
 cvar_t     *sv_jump_any;
-cvar_t     *sv_stopspeed;
 cvar_t     *sv_maxspeed;
 cvar_t     *sv_maxvelocity;
 cvar_t     *sv_spectatormaxspeed;
-cvar_t     *sv_accelerate;
-cvar_t     *sv_airaccelerate;
+cvar_t     *sv_stopspeed;
 cvar_t     *sv_wateraccelerate;
-cvar_t     *sv_friction;
 cvar_t     *sv_waterfriction;
 
 #define	MOVE_EPSILON	0.01
