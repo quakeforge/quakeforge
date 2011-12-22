@@ -448,6 +448,15 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 			|| c_movetype == MOVETYPE_NOCLIP)
 			continue;
 
+		// If the entity is in another solid, it's not free to move. Make the
+		// pusher non-solid to ensure it doesn't interfere with the check.
+		solid_save = SVfloat (pusher, solid);
+		SVfloat (pusher, solid) = SOLID_NOT;
+		block = SV_TestEntityPosition (check);
+		SVfloat (pusher, solid) = solid_save;
+		if (block)
+			continue;
+
 		// if the entity is standing on the pusher, it will definately be moved
 		c_flags = SVfloat (check, flags);
 		c_groundentity = SVentity (check, groundentity);
