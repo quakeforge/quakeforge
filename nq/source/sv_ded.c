@@ -28,32 +28,14 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
-
-#include <stdio.h>
-#include <stdarg.h>
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "QF/cdaudio.h"
-#include "QF/cmd.h"
-#include "QF/csqc.h"
 #include "QF/cvar.h"
-#include "QF/draw.h"
-#include "QF/keys.h"
-#include "QF/msg.h"
 #include "QF/plugin.h"
-#include "QF/screen.h"
-#include "QF/sys.h"
 
-#include "chase.h"
-#include "client.h"
-#include "compat.h"
 #include "host.h"
-#include "r_dynamic.h"
-#include "sbar.h"
 #include "server.h"
-#include "cl_skin.h"//FIXME
-#include "clview.h"	//FIXME
 
 client_state_t cl;
 client_static_t cls;
@@ -93,17 +75,6 @@ CL_Cmd_ForwardToServer (void)
 {
 }
 
-int
-CDAudio_Init (void)
-{
-	return 0;
-}
-
-void
-CDAudio_Shutdown (void)
-{
-}
-
 void
 CDAudio_Update (void)
 {
@@ -125,74 +96,23 @@ CL_EstablishConnection (const char *host)
 }
 
 void
-CL_Init (void)
+CL_Shutdown ()
 {
 }
 
 void
-CL_Init_Entity (entity_t *ent)
+CL_Init (struct cbuf_s *cbuf)
 {
-}
-
-static void
-color_f (void)
-{
-	int         top, bottom;
-	char        playercolor;
-
-	if (Cmd_Argc () <= 1) {
-		Sys_Printf ("\"color\" is \"%d %d\"\n", (host_client->colors) >> 4,
-					(host_client->colors) & 0x0f);
-		Sys_Printf ("color <0-13> [0-13]\n");
-		return;
-	}
-
-	if (Cmd_Argc () == 2)
-		top = bottom = atoi (Cmd_Argv (1));
-	else {
-		top = atoi (Cmd_Argv (1));
-		bottom = atoi (Cmd_Argv (2));
-	}
-
-	top = min (top & 15, 13);
-	bottom = min (bottom & 15, 13);
-
-	playercolor = top * 16 + bottom;
-
-	host_client->colors = playercolor;
-	SVfloat (host_client->edict, team) = bottom + 1;
-
-	// send notification to all clients
-	MSG_WriteByte (&sv.reliable_datagram, svc_updatecolors);
-	MSG_WriteByte (&sv.reliable_datagram, host_client - svs.clients);
-	MSG_WriteByte (&sv.reliable_datagram, host_client->colors);
 }
 
 void
 CL_InitCvars (void)
 {
-	cl_name = Cvar_Get ("_cl_name", "player", CVAR_ARCHIVE, NULL, "");
-	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL, "");
-	cl_rollangle = Cvar_Get ("cl_rollangle", "2.0", CVAR_NONE, NULL,
-							 "How much your screen tilts when strafing");
-	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
-							 "How quickly you straighten out after strafing");
-
-	Cmd_AddCommand ("color", color_f, "The pant and shirt color (color shirt "
-					"pants) Note that if only shirt color is given, pants "
-					"will match");
-
 }
 
 void
 CL_NextDemo (void)
 {
-}
-
-void
-CL_Demo_Init (void)
-{
-	demo_speed = Cvar_Get ("demo_speed", "1", CVAR_NONE, NULL, "");
 }
 
 int
@@ -207,19 +127,8 @@ CL_SendCmd (void)
 }
 
 void
-CL_SetState (cactive_t state)
-{
-}
-
-void
 CL_StopPlayback (void)
 {
-}
-
-void
-Chase_Init_Cvars (void)
-{
-	chase_active = Cvar_Get ("chase_active", "0", CVAR_NONE, NULL, "None");
 }
 
 void
@@ -228,47 +137,7 @@ D_FlushCaches (void)
 }
 
 void
-Draw_Init (void)
-{
-}
-
-void
-CL_Skin_Init (void)
-{
-}
-
-void
-CL_Skin_Init_Cvars (void)
-{
-}
-
-void
-IN_Init (void)
-{
-}
-
-void
-IN_Init_Cvars (void)
-{
-}
-
-void
 IN_ProcessEvents (void)
-{
-}
-
-void
-IN_Shutdown (void)
-{
-}
-
-void
-Key_Init (struct cbuf_s *cb)
-{
-}
-
-void
-Key_Init_Cvars (void)
 {
 }
 
@@ -283,73 +152,8 @@ R_DecayLights (double frametime)
 }
 
 void
-R_Init (void)
-{
-}
-
-void
-R_Init_Cvars (void)
-{
-}
-
-void
-R_Particles_Init_Cvars (void)
-{
-}
-
-void
-SCR_Init (void)
-{
-}
-
-void
-S_Init (struct model_s **worldmodel, int *viewentity, double *host_frametime)
-{
-}
-
-void
-S_Init_Cvars (void)
-{
-}
-
-void
-S_Shutdown (void)
-{
-}
-
-void
 S_Update (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right,
 		  const vec3_t v_up)
-{
-}
-
-void
-Sbar_Init (void)
-{
-}
-
-void
-VID_Init (unsigned char *palette)
-{
-}
-
-void
-VID_Init_Cvars (void)
-{
-}
-
-void
-VID_Shutdown (void)
-{
-}
-
-void
-V_Init (void)
-{
-}
-
-void
-V_Init_Cvars (void)
 {
 }
 

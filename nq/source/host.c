@@ -28,27 +28,25 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_UNISTD_H
 # include "unistd.h"
 #endif
 
 #include "QF/cbuf.h"
-#include "QF/idparse.h"
 #include "QF/cdaudio.h"
+#include "QF/draw.h"
+#include "QF/idparse.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "QF/draw.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
 #include "QF/plugin.h"
 #include "QF/progs.h"
 #include "QF/qargs.h"
-#include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
@@ -58,12 +56,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "chase.h"
 #include "compat.h"
 #include "host.h"
-#include "r_dynamic.h"
-#include "sbar.h"
 #include "server.h"
 #include "sv_progs.h"
-#include "cl_skin.h"
-#include "clview.h"
 
 
 /*
@@ -107,8 +101,6 @@ int			minimum_memory;
 client_t   *host_client;				// current client
 
 jmp_buf		host_abortserver;
-
-byte       *host_basepal;
 
 cvar_t     *host_mem_size;
 
@@ -298,33 +290,6 @@ Host_InitLocal (void)
 	Host_FindMaxClients ();
 
 	host_time = 1.0;				// so a think at time 0 won't get called
-}
-
-/*
-	Host_WriteConfiguration
-
-	Writes key bindings and archived cvars to config.cfg
-*/
-static void
-Host_WriteConfiguration (void)
-{
-	QFile      *f;
-
-	// dedicated servers initialize the host but don't parse and set the
-	// config.cfg cvars
-	if (host_initialized && !isDedicated && cl_writecfg->int_val) {
-		char       *path = va ("%s/config.cfg", qfs_gamedir->dir.def);
-		f = QFS_WOpen (path, 0);
-		if (!f) {
-			Sys_Printf ("Couldn't write config.cfg.\n");
-			return;
-		}
-
-		Key_WriteBindings (f);
-		Cvar_WriteVariables (f);
-
-		Qclose (f);
-	}
 }
 
 /*
@@ -849,7 +814,7 @@ check_quakerc (void)
 }
 
 static void
-CL_Init_Memory (void)
+Host_Init_Memory (void)
 {
 	int         mem_parm = COM_CheckParm ("-mem");
 	int         mem_size;
@@ -895,31 +860,23 @@ Host_Init (void)
 	cmd_source = src_command;
 
 	Sys_Init ();
-	GIB_Init (true);
 	COM_ParseConfig ();
 
-	CL_Init_Memory ();
+	GIB_Init (true);
 
-	Game_Init ();
+	Host_Init_Memory ();
+
 	PI_Init ();
 
-	Chase_Init_Cvars ();
-	CL_Skin_Init_Cvars ();
-	CL_InitCvars ();
-	IN_Init_Cvars ();
-	VID_Init_Cvars ();
-	S_Init_Cvars ();
-	Key_Init_Cvars ();
+	Game_Init ();
+
+	if (!isDedicated)
+		CL_InitCvars ();
+
 	PR_Init_Cvars ();
 	SV_Progs_Init_Cvars ();
-	R_Init_Cvars ();
-	R_Particles_Init_Cvars ();
-	Mod_Init_Cvars ();
-	V_Init_Cvars ();
 
 	PR_Init ();
-
-	V_Init ();
 
 	if (isDedicated) {
 		PI_RegisterPlugins (server_plugin_list);
@@ -941,39 +898,15 @@ Host_Init (void)
 	NET_Init ();
 
 	W_LoadWadFile ("gfx.wad");
-	Key_Init (host_cbuf);
 	Mod_Init ();
-
-	CL_Demo_Init ();
 
 	SV_Progs_Init ();
 	SV_Init ();
 
 	Sys_Printf ("%4.1f megabyte heap\n", host_mem_size->value);
 
-	if (cls.state != ca_dedicated) {
-		host_basepal = (byte *) QFS_LoadHunkFile ("gfx/palette.lmp");
-		if (!host_basepal)
-			Sys_Error ("Couldn't load gfx/palette.lmp");
-		vid_colormap = (byte *) QFS_LoadHunkFile ("gfx/colormap.lmp");
-		if (!vid_colormap)
-			Sys_Error ("Couldn't load gfx/colormap.lmp");
-
-		VID_Init (host_basepal);
-		Draw_Init ();
-		SCR_Init ();
-		R_Init ();
-
-		S_Init (&cl.worldmodel, &viewentity, &host_frametime);
-
-		CDAudio_Init ();
-		Sbar_Init ();
-		CL_Init ();
-		IN_Init ();
-
-		CL_SetState (ca_disconnected);
-		CL_Skin_Init ();
-	}
+	if (cls.state != ca_dedicated)
+		CL_Init (host_cbuf);
 
 	CL_UpdateScreen (cl.time);
 	CL_UpdateScreen (cl.time);
@@ -1017,14 +950,10 @@ Host_Shutdown (void)
 	}
 	isdown = true;
 
-	Host_WriteConfiguration ();
 
 	NET_Shutdown ();
 	if (cls.state != ca_dedicated) {
-		CDAudio_Shutdown ();
-		S_Shutdown ();
-		IN_Shutdown ();
-		VID_Shutdown ();
+		CL_Shutdown ();
 	}
 	Con_Shutdown ();
 }

@@ -32,9 +32,11 @@ static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #include "QF/cbuf.h"
+#include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/draw.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
@@ -47,13 +49,16 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/va.h"
 
 #include "chase.h"
+#include "cl_skin.h"
 #include "client.h"
+#include "clview.h"
 #include "compat.h"
 #include "host.h"
 #include "host.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "server.h"
+#include "sbar.h"
 
 byte       *vid_colormap;
 
@@ -85,9 +90,59 @@ int         fps_count;
 client_static_t cls;
 client_state_t cl;
 
+/*
+	CL_WriteConfiguration
+
+	Writes key bindings and archived cvars to config.cfg
+*/
+static void
+CL_WriteConfiguration (void)
+{
+	QFile      *f;
+
+	// dedicated servers initialize the host but don't parse and set the
+	// config.cfg cvars
+	if (host_initialized && !isDedicated && cl_writecfg->int_val) {
+		char       *path = va ("%s/config.cfg", qfs_gamedir->dir.def);
+		f = QFS_WOpen (path, 0);
+		if (!f) {
+			Sys_Printf ("Couldn't write config.cfg.\n");
+			return;
+		}
+
+		Key_WriteBindings (f);
+		Cvar_WriteVariables (f);
+
+		Qclose (f);
+	}
+}
+
+void
+CL_Shutdown (void)
+{
+	CL_WriteConfiguration ();
+	CDAudio_Shutdown ();
+	S_Shutdown ();
+	IN_Shutdown ();
+	VID_Shutdown ();
+}
+
 void
 CL_InitCvars (void)
 {
+	Chase_Init_Cvars ();
+	CL_Skin_Init_Cvars ();
+	IN_Init_Cvars ();
+	VID_Init_Cvars ();
+	S_Init_Cvars ();
+	Key_Init_Cvars ();
+	R_Init_Cvars ();
+	R_Particles_Init_Cvars ();
+	Mod_Init_Cvars ();
+	V_Init_Cvars ();
+
+	CL_Demo_Init ();
+
 	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, NULL,
 								"Show bonus flash on item pickup");
 	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE,
@@ -452,13 +507,37 @@ Force_CenterView_f (void)
 }
 
 void
-CL_Init (void)
+CL_Init (cbuf_t *cbuf)
 {
+	byte       *basepal;
+
+	basepal = (byte *) QFS_LoadHunkFile ("gfx/palette.lmp");
+	if (!basepal)
+		Sys_Error ("Couldn't load gfx/palette.lmp");
+	vid_colormap = (byte *) QFS_LoadHunkFile ("gfx/colormap.lmp");
+	if (!vid_colormap)
+		Sys_Error ("Couldn't load gfx/colormap.lmp");
+
+	Key_Init (cbuf);
+	VID_Init (basepal);
+	Draw_Init ();
+	SCR_Init ();
+	R_Init ();
+
+	S_Init (&cl.worldmodel, &viewentity, &host_frametime);
+
+	CDAudio_Init ();
+	Sbar_Init ();
+	IN_Init ();
+
+	CL_SetState (ca_disconnected);
+	CL_Skin_Init ();
 	SZ_Alloc (&cls.message, 1024);
 
 	CL_Input_Init ();
 	CL_TEnts_Init ();
 	CL_ClearState ();
+	V_Init ();
 
 	Cmd_AddCommand ("entities", CL_PrintEntities_f, "No Description");
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "No Description");
