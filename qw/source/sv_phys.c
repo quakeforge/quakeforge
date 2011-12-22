@@ -483,6 +483,9 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 				continue;
 			// The pusher and entity collide, so push the entity.
 		}
+		// remove the onground flag for non-players
+		if (c_movetype != MOVETYPE_WALK)
+			SVfloat (check, flags) = c_flags & ~FL_ONGROUND;
 
 		c_origin = SVvector (check, origin);
 		VectorCopy (c_origin, moved_from[num_moved]);
