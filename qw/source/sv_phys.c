@@ -514,12 +514,9 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 		// if it is still inside the pusher, block
 		c_mins = SVvector (check, mins);
 		c_maxs = SVvector (check, maxs);
-		if (c_mins[0] == c_maxs[0]) {
-			SV_LinkEdict (check, false);
-			continue;
-		}
 		c_solid = SVfloat (check, solid);
-		if (c_solid == SOLID_NOT || c_solid == SOLID_TRIGGER) {	// corpse
+		if (c_mins[0] == c_maxs[0]
+			|| c_solid == SOLID_NOT || c_solid == SOLID_TRIGGER) {	// corpse
 			c_mins[0] = c_mins[1] = 0;
 			VectorCopy (c_mins, c_maxs);
 			SV_LinkEdict (check, false);
