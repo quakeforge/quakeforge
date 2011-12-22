@@ -407,10 +407,13 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 	vec3_t      move, org, org2;
 	vec3_t      mins, maxs, pushtorig, pushaorig;
 	vec3_t     *moved_from;
-	vec3_t      forward = {1,  0, 0};
-	vec3_t      right   = {0, -1, 0};
-	vec3_t      up      = {0,  0, 1};
+	vec3_t      forward = {1, 0, 0};
+	vec3_t      left    = {0, 1, 0};
+	vec3_t      up      = {0, 0, 1};
 	int         mark;
+	int         c_flags, c_movetype, c_groundentity, c_solid;
+	vec_t      *c_absmin, *c_absmax, *c_origin, *c_mins, *c_maxs;
+	vec_t      *p_origin, *p_angles;
 
 	VectorAdd (SVvector (pusher, absmin), tmove, mins);
 	VectorAdd (SVvector (pusher, absmax), tmove, maxs);
@@ -418,15 +421,18 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 	if (!VectorIsZero (amove)) {
 		vec3_t      a;
 		VectorSubtract (vec3_origin, amove, a);
-		AngleVectors (a, forward, right, up);
+		AngleVectors (a, forward, left, up);
+		VectorNegate (left, left);	// AngleVectors is right-handed
 	}
 
-	VectorCopy (SVvector (pusher, origin), pushtorig);
-	VectorCopy (SVvector (pusher, angles), pushaorig);
+	p_origin = SVvector (pusher, origin);
+	p_angles = SVvector (pusher, angles);
+	VectorCopy (p_origin, pushtorig);
+	VectorCopy (p_angles, pushaorig);
 
 	// move the pusher to it's final position
-	VectorAdd (SVvector (pusher, origin), tmove, SVvector (pusher, origin));
-	VectorAdd (SVvector (pusher, angles), amove, SVvector (pusher, angles));
+	VectorAdd (p_origin, tmove, p_origin);
+	VectorAdd (p_angles, amove, p_angles);
 	SV_LinkEdict (pusher, false);
 
 	mark = Hunk_LowMark ();
@@ -440,11 +446,13 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 		 e++, check = NEXT_EDICT (&sv_pr_state, check)) {
 		if (check->free)
 			continue;
-		if (SVfloat (check, movetype) == MOVETYPE_PUSH
-			|| SVfloat (check, movetype) == MOVETYPE_NONE
-			|| SVfloat (check, movetype) == MOVETYPE_NOCLIP)
+		c_movetype = SVfloat (check, movetype);
+		if (c_movetype == MOVETYPE_PUSH || c_movetype == MOVETYPE_NONE
+			|| c_movetype == MOVETYPE_NOCLIP)
 			continue;
 
+		// If the entity is in another solid, it's not free to move. Make the
+		// pusher non-solid to ensure it doesn't interfere with the check.
 		solid_save = SVfloat (pusher, solid);
 		SVfloat (pusher, solid) = SOLID_NOT;
 		block = SV_TestEntityPosition (check);
@@ -453,66 +461,69 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 			continue;
 
 		// if the entity is standing on the pusher, it will definately be moved
-		if (!(((int) SVfloat (check, flags) & FL_ONGROUND)
-			  && PROG_TO_EDICT (&sv_pr_state,
-								SVentity (check, groundentity)) == pusher)) {
-			// check is NOT standing on pusher
-			if (SVvector (check, absmin)[0] >= maxs[0]
-				|| SVvector (check, absmin)[1] >= maxs[1]
-				|| SVvector (check, absmin)[2] >= maxs[2]
-				|| SVvector (check, absmax)[0] <= mins[0]
-				|| SVvector (check, absmax)[1] <= mins[1]
-				|| SVvector (check, absmax)[2] <= mins[2])
+		c_flags = SVfloat (check, flags);
+		c_groundentity = SVentity (check, groundentity);
+		if (!(c_flags & FL_ONGROUND)
+			  || PROG_TO_EDICT (&sv_pr_state, c_groundentity) != pusher) {
+			// The entity is NOT standing on pusher, so check whether the
+			// entity is inside the pusher's final position.
+			// FIXME what if the pusher is moving so fast it skips past the
+			// entity?
+			c_absmin = SVvector (check, absmin);
+			c_absmax = SVvector (check, absmax);
+			if (VectorCompCompare (c_absmin, >=, maxs)
+				|| VectorCompCompare (c_absmax, <=, mins))
 				continue;
 
-			// see if the ent's bbox is inside the pusher's final position
 			if (!SV_TestEntityPosition (check))
 				continue;
+			// The pusher and entity collide, so push the entity.
 		}
 
-		VectorCopy (SVvector (check, origin), moved_from[num_moved]);
+		c_origin = SVvector (check, origin);
+		VectorCopy (c_origin, moved_from[num_moved]);
 		moved_edict[num_moved] = check;
 		num_moved++;
 
 		// calculate destination position
-		VectorSubtract (SVvector (check, origin),
-						SVvector (pusher, origin), org);
+		VectorSubtract (c_origin, p_origin, org);
 		org2[0] = DotProduct (org, forward);
-		org2[1] = -DotProduct (org, right);
+		org2[1] = DotProduct (org, left);
 		org2[2] = DotProduct (org, up);
 		VectorSubtract (org2, org, move);
 		VectorAdd (move, tmove, move);
 
 		// try moving the contacted entity
-		VectorAdd (SVvector (check, origin), move, SVvector (check, origin));
+		VectorAdd (c_origin, move, c_origin);
 		block = SV_TestEntityPosition (check);
 		if (!block) {					// pushed ok
 			SV_LinkEdict (check, false);
 			continue;
 		}
 		// if it is ok to leave in the old position, do it
-		VectorSubtract (SVvector (check, origin), move,
-						SVvector (check, origin));
+		VectorSubtract (c_origin, move, c_origin);
 		block = SV_TestEntityPosition (check);
 		if (!block) {
 			num_moved--;
 			continue;
 		}
 		// if it is still inside the pusher, block
-		if (SVvector (check, mins)[0] == SVvector (check, maxs)[0]) {
+		c_mins = SVvector (check, mins);
+		c_maxs = SVvector (check, maxs);
+		if (c_mins[0] == c_maxs[0]) {
 			SV_LinkEdict (check, false);
 			continue;
 		}
-		if (SVfloat (check, solid) == SOLID_NOT
-			|| SVfloat (check, solid) == SOLID_TRIGGER) {	// corpse
-			SVvector (check, mins)[0] = SVvector (check, mins)[1] = 0;
-			VectorCopy (SVvector (check, mins), SVvector (check, maxs));
+		c_solid = SVfloat (check, solid);
+		if (c_solid == SOLID_NOT || c_solid == SOLID_TRIGGER) {	// corpse
+			c_mins[0] = c_mins[1] = 0;
+			VectorCopy (c_mins, c_maxs);
 			SV_LinkEdict (check, false);
 			continue;
 		}
 
-		VectorCopy (pushtorig, SVvector (pusher, origin));
-		VectorCopy (pushaorig, SVvector (pusher, angles));
+		VectorCopy (pushtorig, p_origin);
+		VectorCopy (pushaorig, p_angles);
 		SV_LinkEdict (pusher, false);
 
 		// if the pusher has a "blocked" function, call it
@@ -522,9 +533,10 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 
 		// move back any entities we already moved
 		for (i = 0; i < num_moved; i++) {
-			VectorCopy (moved_from[i], SVvector (moved_edict[i], origin));
-			VectorSubtract (SVvector (moved_edict[i], angles), amove,
-							SVvector (moved_edict[i], angles));
+			vec_t      *m_origin = SVvector (moved_edict[i], origin);
+			vec_t      *m_angles = SVvector (moved_edict[i], angles);
+			VectorCopy (moved_from[i], m_origin);
+			VectorSubtract (m_angles, amove, m_angles);
 			SV_LinkEdict (moved_edict[i], false);
 		}
 		Hunk_FreeToLowMark (mark);
