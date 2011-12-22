@@ -413,7 +413,7 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 	vec3_t      up      = {0, 0, 1};
 	int         mark;
 	int         c_flags, c_movetype, c_groundentity, c_solid;
-	vec_t      *c_absmin, *c_absmax, *c_origin, *c_mins, *c_maxs;
+	vec_t      *c_absmin, *c_absmax, *c_origin, *c_angles, *c_mins, *c_maxs;
 	vec_t      *p_origin, *p_angles;
 
 	VectorAdd (SVvector (pusher, absmin), tmove, mins);
@@ -505,8 +505,8 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 
 		block = SV_TestEntityPosition (check);
 		if (!block) {
-			VectorAdd (SVvector (check, angles), amove,
-					   SVvector (check, angles));
+			c_angles = SVvector (check, angles);
+			VectorAdd (c_angles, amove, c_angles);
 			continue;
 		}
 		// if it is still inside the pusher, block

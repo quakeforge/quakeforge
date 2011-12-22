@@ -416,7 +416,7 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 	vec3_t      up      = {0, 0, 1};
 	int         mark;
 	int         c_flags, c_movetype, c_groundentity, c_solid;
-	vec_t      *c_absmin, *c_absmax, *c_origin, *c_mins, *c_maxs;
+	vec_t      *c_absmin, *c_absmax, *c_origin, *c_angles, *c_mins, *c_maxs;
 	vec_t      *p_origin, *p_angles;
 
 	VectorAdd (SVvector (pusher, absmin), tmove, mins);
@@ -501,17 +501,15 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 		VectorAdd (move, tmove, move);
 
 		// try moving the contacted entity
-		VectorAdd (c_origin, move, c_origin);
-		block = SV_TestEntityPosition (check);
-		if (!block) {					// pushed ok
-			SV_LinkEdict (check, false);
-			continue;
-		}
-		// if it is ok to leave in the old position, do it
-		VectorSubtract (c_origin, move, c_origin);
+		solid_save = SVfloat (pusher, solid);
+		SVfloat (pusher, solid) = SOLID_NOT;
+		SV_PushEntity (check, move);
+		SVfloat (pusher, solid) = solid_save;
+
 		block = SV_TestEntityPosition (check);
 		if (!block) {
-			num_moved--;
+			c_angles = SVvector (check, angles);
+			VectorAdd (c_angles, amove, c_angles);
 			continue;
 		}
 		// if it is still inside the pusher, block
