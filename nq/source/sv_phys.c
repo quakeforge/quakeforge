@@ -401,7 +401,7 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 	int         num_moved, i, e;
 	edict_t    *check, *block;
 	edict_t   **moved_edict;
-	vec3_t      entorig, move, org, org2;
+	vec3_t      move, org, org2;
 	vec3_t      mins, maxs, pushtorig, pushaorig;
 	vec3_t     *moved_from;
 	vec3_t      forward = {1, 0, 0};
@@ -472,7 +472,6 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 			SVfloat (check, flags) = c_flags & ~FL_ONGROUND;
 
 		c_origin = SVvector (check, origin);
-		VectorCopy (c_origin, entorig);
 		VectorCopy (c_origin, moved_from[num_moved]);
 		moved_edict[num_moved] = check;
 		num_moved++;
@@ -509,9 +508,6 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 			VectorCopy (c_mins, c_maxs);
 			continue;
 		}
-
-		VectorCopy (entorig, c_origin);
-		SV_LinkEdict (check, true);
 
 		VectorCopy (pushtorig, p_origin);
 		VectorCopy (pushaorig, p_angles);
