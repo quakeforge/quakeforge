@@ -373,22 +373,26 @@ SV_PushEntity (edict_t *ent, vec3_t push)
 {
 	trace_t     trace;
 	vec3_t      end;
+	vec_t      *e_origin, *e_mins, *e_maxs;
+	int         e_movetype, e_solid;
 
-	VectorAdd (SVvector (ent, origin), push, end);
+	e_origin = SVvector (ent, origin);
+	e_mins = SVvector (ent, mins);
+	e_maxs = SVvector (ent, maxs);
+	e_movetype = SVfloat (ent, movetype);
+	e_solid = SVfloat (ent, solid);
 
-	if (SVfloat (ent, movetype) == MOVETYPE_FLYMISSILE)
-		trace = SV_Move (SVvector (ent, origin), SVvector (ent, mins),
-						 SVvector (ent, maxs), end, MOVE_MISSILE, ent);
-	else if (SVfloat (ent, solid) == SOLID_TRIGGER
-			 || SVfloat (ent, solid) == SOLID_NOT)
+	VectorAdd (e_origin, push, end);
+
+	if (e_movetype == MOVETYPE_FLYMISSILE)
+		trace = SV_Move (e_origin, e_mins, e_maxs, end, MOVE_MISSILE, ent);
+	else if (e_solid == SOLID_TRIGGER || e_solid == SOLID_NOT)
 		// clip against only bmodels
-		trace = SV_Move (SVvector (ent, origin), SVvector (ent, mins),
-						 SVvector (ent, maxs), end, MOVE_NOMONSTERS, ent);
+		trace = SV_Move (e_origin, e_mins, e_maxs, end, MOVE_NOMONSTERS, ent);
 	else
-		trace = SV_Move (SVvector (ent, origin), SVvector (ent, mins),
-						 SVvector (ent, maxs), end, MOVE_NORMAL, ent);
+		trace = SV_Move (e_origin, e_mins, e_maxs, end, MOVE_NORMAL, ent);
 
-	VectorCopy (trace.endpos, SVvector (ent, origin));
+	VectorCopy (trace.endpos, e_origin);
 	SV_LinkEdict (ent, true);
 
 	if (trace.ent)
