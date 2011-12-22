@@ -101,8 +101,9 @@ extern const vec_t * const quat_origin;
 		(c)[1] = (a)[1] * (b)[1]; \
 		(c)[2] = (a)[2] * (b)[2]; \
 	} while (0)
-#define VectorCompare(x, y) \
-	(((x)[0] == (y)[0]) && ((x)[1] == (y)[1]) && ((x)[2] == (y)[2]))
+#define VectorCompCompare(x, op, y)	\
+	(((x)[0] op (y)[0]) && ((x)[1] op (y)[1]) && ((x)[2] op (y)[2]))
+#define VectorCompare(x, y) VectorCompCompare (x, ==, y)
 
 #define VectorIsZero(a) (!(a)[0] && !(a)[1] && !(a)[2])
 #define VectorZero(a) ((a)[2] = (a)[1] = (a)[0] = 0);
@@ -183,9 +184,10 @@ extern const vec_t * const quat_origin;
 		(c)[2] = (a)[2] * (b); \
 		(c)[3] = (a)[3] * (3); \
 	} while (0)
-#define QuatCompare(x, y) \
-	(((x)[0] == (y)[0]) && ((x)[1] == (y)[1]) \
-	 && ((x)[2] == (y)[2]) && ((x)[3] == (y)[3]))
+#define QuatCompCompare(x, op, y) \
+	(((x)[0] op (y)[0]) && ((x)[1] op (y)[1]) \
+	 && ((x)[2] op (y)[2]) && ((x)[3] op (y)[3]))
+#define QuatCompare(x, y) QuatCompCompare (x, ==, y)
 
 #define QuatIsZero(a) (!(a)[0] && !(a)[1] && !(a)[2] && !(a)[3])
 #define QuatZero(a) ((a)[3] = (a)[2] = (a)[1] = (a)[0] = 0);
