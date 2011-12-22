@@ -52,6 +52,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_dynamic.h"
 #include "sbar.h"
 #include "server.h"
+#include "cl_skin.h"//FIXME
 #include "clview.h"	//FIXME
 
 client_state_t cl;
@@ -232,12 +233,12 @@ Draw_Init (void)
 }
 
 void
-Host_Skin_Init (void)
+CL_Skin_Init (void)
 {
 }
 
 void
-Host_Skin_Init_Cvars (void)
+CL_Skin_Init_Cvars (void)
 {
 }
 

@@ -47,8 +47,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/va.h"
 
 #include "compat.h"
+#include "cl_skin.h"
 #include "client.h"
-#include "host.h"
 #include "server.h"
 
 cvar_t     *noskins; //XXX FIXME
@@ -60,7 +60,7 @@ cvar_t     *cl_color;
 
 
 static void
-Host_Color_f (void)
+CL_Color_f (void)
 {
 	int         top, bottom;
 	char        playercolor;
@@ -102,17 +102,17 @@ Host_Color_f (void)
 
 
 void
-Host_Skin_Init (void)
+CL_Skin_Init (void)
 {
 	Skin_Init ();
-	Cmd_AddCommand ("color", Host_Color_f, "The pant and shirt color (color "
+	Cmd_AddCommand ("color", CL_Color_f, "The pant and shirt color (color "
 					"shirt pants) Note that if only shirt color is given, "
 					"pants will match");
 }
 
 
 void
-Host_Skin_Init_Cvars (void)
+CL_Skin_Init_Cvars (void)
 {
 	Skin_Init_Cvars ();
 	cl_color = Cvar_Get ("_cl_color", "0", CVAR_ARCHIVE, NULL, "Player color");
@@ -130,7 +130,7 @@ CL_NewTranslation (int slot, skin_t *skin)
 	int         skinnum;
 
 	if (slot > cl.maxclients)
-		Sys_Error ("Host_NewTranslation: slot > cl.maxclients");
+		Sys_Error ("CL_NewTranslation: slot > cl.maxclients");
 
 	player = &cl.scores[slot];
 	dest = player->translations;

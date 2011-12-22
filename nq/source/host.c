@@ -62,6 +62,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "sbar.h"
 #include "server.h"
 #include "sv_progs.h"
+#include "cl_skin.h"
 #include "clview.h"
 
 
@@ -903,6 +904,7 @@ Host_Init (void)
 	PI_Init ();
 
 	Chase_Init_Cvars ();
+	CL_Skin_Init_Cvars ();
 	CL_InitCvars ();
 	IN_Init_Cvars ();
 	VID_Init_Cvars ();
@@ -913,7 +915,6 @@ Host_Init (void)
 	R_Init_Cvars ();
 	R_Particles_Init_Cvars ();
 	Mod_Init_Cvars ();
-	Host_Skin_Init_Cvars ();
 	V_Init_Cvars ();
 
 	PR_Init ();
@@ -971,8 +972,8 @@ Host_Init (void)
 		IN_Init ();
 
 		CL_SetState (ca_disconnected);
+		CL_Skin_Init ();
 	}
-	Host_Skin_Init ();
 
 	CL_UpdateScreen (cl.time);
 	CL_UpdateScreen (cl.time);
