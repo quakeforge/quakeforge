@@ -584,7 +584,7 @@ Host_FilterTime (float time)
 void
 Host_ServerFrame (void)
 {
-	*sv_globals.frametime = host_frametime;
+	*sv_globals.frametime = sv_frametime = host_frametime;
 
 	// set the time and clear the general datagram
 	SV_ClearDatagram ();

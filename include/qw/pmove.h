@@ -35,6 +35,7 @@
 
 #include "world.h"
 
+//FIXME location
 #define STOP_EPSILON 0.1
 
 #define	MAX_PHYSENTS	(MAX_CLIENTS + MAX_PACKET_ENTITIES)

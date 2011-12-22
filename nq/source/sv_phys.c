@@ -34,12 +34,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/sys.h"
 
-#include "host.h"
 #include "server.h"
 #include "sv_progs.h"
 #include "world.h"
-
-#define sv_frametime host_frametime
 
 /*
 	pushmove objects do not obey gravity, and do not interact with each
@@ -63,7 +60,6 @@ cvar_t     *sv_friction;
 cvar_t     *sv_gravity;
 cvar_t     *sv_jump_any;
 cvar_t     *sv_maxvelocity;
-cvar_t     *sv_nostep;
 cvar_t     *sv_stopspeed;
 
 #define	MOVE_EPSILON	0.01
@@ -852,7 +848,8 @@ SV_Physics (void)
 		}
 
 		if (i > 0 && i <= svs.maxclients) {
-			SV_Physics_Client (ent, i);
+			if (svs.phys_client)
+				svs.phys_client (ent, i);
 			continue;
 		}
 

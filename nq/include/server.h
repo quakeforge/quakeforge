@@ -48,6 +48,7 @@ typedef struct
 	int			maxclients;
 	int			maxclientslimit;
 	struct client_s	*clients;		// [maxclients]
+	void		(*phys_client) (struct edict_s *ent, int num);
 	int			serverflags;		// episode completion information
 	qboolean	changelevel_issued;	// cleared when at SV_SpawnServer
 } server_static_t;
@@ -234,6 +235,7 @@ extern	client_t	*host_client;
 extern	jmp_buf 	host_abortserver;
 
 extern	double		host_time;
+extern	double		sv_frametime;
 
 extern	edict_t		*sv_player;
 
@@ -294,6 +296,7 @@ void SV_Progs_Init_Cvars (void);
 
 void Cvar_Info (struct cvar_s *var);
 
+//FIXME location
 #define		STOP_EPSILON	0.1
 
 extern struct clip_hull_s *pf_hull_list[];

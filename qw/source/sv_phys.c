@@ -34,7 +34,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/sys.h"
 
-#include "qw/pmove.h"
 #include "server.h"
 #include "sv_progs.h"
 #include "world.h"
@@ -57,17 +56,11 @@ static __attribute__ ((used)) const char rcsid[] =
 	solid_edge items clip against only bsp models.
 */
 
-cvar_t     *sv_accelerate;
-cvar_t     *sv_airaccelerate;
 cvar_t     *sv_friction;
 cvar_t     *sv_gravity;
 cvar_t     *sv_jump_any;
-cvar_t     *sv_maxspeed;
 cvar_t     *sv_maxvelocity;
-cvar_t     *sv_spectatormaxspeed;
 cvar_t     *sv_stopspeed;
-cvar_t     *sv_wateraccelerate;
-cvar_t     *sv_waterfriction;
 
 #define	MOVE_EPSILON	0.01
 #if 0
@@ -855,7 +848,8 @@ SV_Physics (void)
 		}
 
 		if (i > 0 && i <= svs.maxclients) {
-			// clients are run directly from packets
+			if (svs.phys_client)
+				svs.phys_client (ent, i);
 			continue;
 		}
 

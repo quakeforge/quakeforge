@@ -41,6 +41,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #define sv_frametime host_frametime
 
+cvar_t     *sv_nostep;
 
 // CLIENT MOVEMENT ============================================================
 

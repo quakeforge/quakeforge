@@ -46,6 +46,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 server_t    sv;
 server_static_t svs;
+double      sv_frametime;
 
 char        localmodels[MAX_MODELS][5];	// inline model names for precache
 
@@ -1106,6 +1107,7 @@ SV_SpawnServer (const char *server)
 
 	Sys_MaskPrintf (SYS_DEV, "SpawnServer: %s\n", server);
 	svs.changelevel_issued = false;		// now safe to issue another
+	svs.phys_client = SV_Physics_Client;
 
 	// tell all connected clients that we are going to a new level
 	if (sv.active) {
@@ -1217,7 +1219,7 @@ SV_SpawnServer (const char *server)
 	sv.state = ss_active;
 
 	// run two frames to allow everything to settle
-	host_frametime = 0.1;
+	sv_frametime = host_frametime = 0.1;
 	SV_Physics ();
 	sv.time += host_frametime;
 	SV_Physics ();

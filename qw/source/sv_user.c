@@ -82,6 +82,13 @@ edict_t    *sv_player;
 
 usercmd_t   cmd;
 
+cvar_t     *sv_accelerate;
+cvar_t     *sv_airaccelerate;
+cvar_t     *sv_maxspeed;
+cvar_t     *sv_spectatormaxspeed;
+cvar_t     *sv_wateraccelerate;
+cvar_t     *sv_waterfriction;
+
 cvar_t     *sv_allowfake;
 
 cvar_t     *cl_rollspeed;

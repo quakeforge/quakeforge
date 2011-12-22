@@ -293,6 +293,7 @@ typedef struct {
 	int			maxclients;
 	int			num_clients;
 	int			serverflags;		// episode completion information
+	void		(*phys_client) (struct edict_s *ent, int num);
 	
 	double		last_heartbeat;
 	int			heartbeat_sequence;
@@ -649,5 +650,8 @@ extern char fp_msg[255];
 extern int sv_nailmodel, sv_supernailmodel, sv_playermodel;
 
 extern int con_printf_no_log;
+
+//FIXME location
+#define STOP_EPSILON 0.1
 
 #endif // _SERVER_H
