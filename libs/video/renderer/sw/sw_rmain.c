@@ -1190,3 +1190,12 @@ void
 gl_overbright_f (cvar_t *un)
 {
 }
+
+VISIBLE void
+R_ClearState (void)
+{
+	D_FlushCaches ();
+	R_ClearEfrags ();
+	R_ClearDlights ();
+	R_ClearParticles ();
+}

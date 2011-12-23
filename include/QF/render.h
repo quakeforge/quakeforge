@@ -152,6 +152,7 @@ extern int r_viewsize;
 void R_Init (void);
 void R_Init_Cvars (void);
 void R_InitEfrags (void);
+void R_ClearState (void);
 void R_InitSky (struct texture_s *mt);	// called at level load
 void R_Textures_Init (void);
 void R_RenderView (void);			// must set r_refdef first

@@ -947,3 +947,11 @@ R_RenderViewFishEye (void)
 	qfglMatrixMode (GL_MODELVIEW);
 	qfglCallList (fisheye_grid);
 }
+
+VISIBLE void
+R_ClearState (void)
+{
+	R_ClearEfrags ();
+	R_ClearDlights ();
+	R_ClearParticles ();
+}

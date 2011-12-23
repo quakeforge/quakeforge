@@ -216,9 +216,7 @@ CL_ClearState (void)
 
 	CL_ClearTEnts ();
 
-	R_ClearEfrags ();
-	R_ClearDlights ();
-	R_ClearParticles ();
+	R_ClearState ();
 
 	CL_ClearEnts ();
 }

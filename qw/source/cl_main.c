@@ -413,7 +413,6 @@ CL_ClearState (void)
 	CL_Init_Entity (&cl.viewent);
 
 	Sys_MaskPrintf (SYS_DEV, "Clearing memory\n");
-	D_FlushCaches ();
 	Mod_ClearAll ();
 	if (host_hunklevel)					// FIXME: check this...
 		Hunk_FreeToLowMark (host_hunklevel);
@@ -421,9 +420,7 @@ CL_ClearState (void)
 	CL_ClearEnts ();
 	CL_ClearTEnts ();
 
-	R_ClearEfrags ();
-	R_ClearDlights ();
-	R_ClearParticles ();
+	R_ClearState ();
 
 	SZ_Clear (&cls.netchan.message);
 

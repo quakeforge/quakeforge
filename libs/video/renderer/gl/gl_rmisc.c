@@ -256,8 +256,3 @@ R_TimeRefresh_f (void)
 	time = stop - start;
 	Sys_MaskPrintf (SYS_DEV, "%f seconds (%f fps)\n", time, 128 / time);
 }
-
-VISIBLE void
-D_FlushCaches (void)
-{
-}

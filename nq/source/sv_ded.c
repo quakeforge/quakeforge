@@ -132,11 +132,6 @@ CL_StopPlayback (void)
 }
 
 void
-D_FlushCaches (void)
-{
-}
-
-void
 IN_ProcessEvents (void)
 {
 }
