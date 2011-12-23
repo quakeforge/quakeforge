@@ -462,6 +462,7 @@ void	 Mod_LoadAlias2Model (model_t *mod, void *buffer,
 void	 Mod_LoadSpriteModel (model_t *mod, void *buffer);
 void	 Mod_LoadSprite2Model (model_t *mod, void *buffer);
 void	 Mod_SubdivideSurface (msurface_t *fa);
+void	 Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight);
 
 void	 Mod_Print (void);
 
