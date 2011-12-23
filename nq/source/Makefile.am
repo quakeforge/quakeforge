@@ -36,8 +36,8 @@ AM_CFLAGS= @PTHREAD_CFLAGS@
 
 bin_PROGRAMS=	@NQ_TARGETS@
 
-EXTRA_PROGRAMS= nq-fbdev nq-glx nq-mgl nq-sdl nq-sdl32 nq-sgl nq-svga nq-3dfx \
-		nq-wgl nq-x11 nq-server
+EXTRA_PROGRAMS= nq-fbdev nq-glx nq-glslx nq-mgl nq-sdl nq-sdl32 nq-sgl \
+		nq-svga nq-3dfx nq-wgl nq-x11 nq-server
 
 noinst_LIBRARIES= @nq_libs@
 EXTRA_LIBRARIES=libnq_client.a libnq_common.a libnq_sdl.a libnq_server.a
@@ -176,6 +176,10 @@ opengl_QFLIBS= \
 			$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
 			$(top_builddir)/libs/models/libQFmodels_gl.la
 
+glsl_QFLIBS= \
+			$(top_builddir)/libs/video/renderer/libQFrenderer_glsl.la \
+			$(top_builddir)/libs/models/libQFmodels_glsl.la
+
 # ... Linux 3DFX
 nq_3dfx_libs=  \
 			$(client_libs) \
@@ -201,6 +205,19 @@ nq_glx_LDADD=		$(nq_glx_libs) \
 			-lXext $(X_EXTRA_LIBS) $(DL_LIBS) $(NET_LIBS)
 nq_glx_LDFLAGS= 	$(common_ldflags)
 nq_glx_DEPENDENCIES=	$(nq_glx_libs)
+
+nq_glslx_libs=  \
+			$(client_libs) \
+			$(cl_plugin_LIBS) \
+			$(glsl_QFLIBS) \
+			$(top_builddir)/libs/video/targets/libQFglslx.la \
+			$(client_LIBS)
+nq_glslx_SOURCES= 	sys_unix.c
+nq_glslx_LDADD=		$(nq_glslx_libs) \
+			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
+			-lXext $(X_EXTRA_LIBS) $(DL_LIBS) $(NET_LIBS)
+nq_glslx_LDFLAGS= 	$(common_ldflags)
+nq_glslx_DEPENDENCIES=	$(nq_glslx_libs)
 
 # ... Simple Directmedia Layer, version 1.2 and higher, in GL mode
 nq_sgl_libs=  \

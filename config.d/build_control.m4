@@ -5,7 +5,7 @@ dnl ==================================================================
 QF_WITH_TARGETS(
 	clients,
 	[  --with-clients=<list>   compile clients in <list>:],
-	[3dfx,fbdev,glx,mgl,sdl,sdl32,sgl,svga,wgl,x11],dummy
+	[3dfx,fbdev,glx,glslx,mgl,sdl,sdl32,sgl,svga,wgl,x11],dummy
 )
 QF_WITH_TARGETS(
 	servers,
@@ -27,9 +27,11 @@ QW_DESKTOP_DATA=""
 NQ_DESKTOP_DATA=""
 
 BUILD_GL=no
+BUILD_GLSL=no
 BUILD_SW32=no
 BUILD_SW=no
 CAN_BUILD_GL=no
+CAN_BUILD_GLSL=no
 CAN_BUILD_SW32=no
 CAN_BUILD_SW=no
 
@@ -58,6 +60,7 @@ if test "x$HAVE_FBDEV" = xyes; then
 fi
 if test "x$HAVE_X" = xyes; then
 	CAN_BUILD_GL=yes
+	CAN_BUILD_GLSL=yes
 	CAN_BUILD_SW=yes
 	if test "x$ENABLE_clients_glx" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-glx\$(EXEEXT)"
@@ -69,6 +72,19 @@ if test "x$HAVE_X" = xyes; then
 		BUILD_GL=yes
 		QF_NEED(vid, [common gl x11])
 		QF_NEED(qw, [client common])
+		QF_NEED(nq, [client common])
+		QF_NEED(console, [client])
+	fi
+	if test "x$ENABLE_clients_glslx" = xyes; then
+		#QW_TARGETS="$QW_TARGETS qw-client-glslx\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-glslx\$(EXEEXT)"
+		#QW_DESKTOP_DATA="$QW_DESKTOP_DATA quakeforge-qw-glx.desktop"
+		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-glslx.desktop"
+		CL_TARGETS="$CL_TARGETS GLSLX"
+		VID_TARGETS="$VID_TARGETS libQFglslx.la"
+		BUILD_GLSL=yes
+		QF_NEED(vid, [common glsl x11])
+		#QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
 	fi
@@ -281,12 +297,17 @@ if test "x$BUILD_GL" = xyes; then
 	VID_REND_TARGETS="$VID_REND_TARGETS libQFrenderer_gl.la"
 	VID_MODEL_TARGETS="$VID_MODEL_TARGETS libQFmodels_gl.la"
 fi
+if test "x$BUILD_GL" = xyes; then
+	VID_REND_TARGETS="$VID_REND_TARGETS libQFrenderer_glsl.la"
+	VID_MODEL_TARGETS="$VID_MODEL_TARGETS libQFmodels_glsl.la"
+fi
 
-QF_PROCESS_NEED(vid, [asm common gl sdl sw sw32 svga x11])
+QF_PROCESS_NEED(vid, [asm common gl glsl sdl sw sw32 svga x11])
 QF_PROCESS_NEED(qw, [client common sdl server], a)
 QF_PROCESS_NEED(nq, [client common sdl server], a)
 
 AC_SUBST(CAN_BUILD_GL)
+AC_SUBST(CAN_BUILD_GLSL)
 AC_SUBST(CAN_BUILD_SW)
 AC_SUBST(CAN_BUILD_SW32)
 
@@ -587,6 +608,7 @@ QF_DEPS(WAV,
 )
 
 AM_CONDITIONAL(BUILD_GL, test "$BUILD_GL" = "yes")
+AM_CONDITIONAL(BUILD_GLSL, test "$BUILD_GLSL" = "yes")
 AM_CONDITIONAL(BUILD_SW, test "$BUILD_SW" = "yes")
 AM_CONDITIONAL(BUILD_SW_ASM, test "$BUILD_SW" = "yes" -a "$ASM_ARCH" = "yes")
 AM_CONDITIONAL(BUILD_SW_MOD, test "$BUILD_SW" = "yes" -o "$BUILD_SW32" = "yes")

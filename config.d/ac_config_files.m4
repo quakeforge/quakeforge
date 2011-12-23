@@ -28,6 +28,7 @@
 	libs/video/Makefile
 	libs/video/renderer/Makefile
 	libs/video/renderer/gl/Makefile
+	libs/video/renderer/glsl/Makefile
 	libs/video/renderer/sw/Makefile
 	libs/video/renderer/sw32/Makefile
 	libs/video/targets/Makefile

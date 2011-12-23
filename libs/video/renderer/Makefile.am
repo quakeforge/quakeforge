@@ -1,12 +1,13 @@
 AUTOMAKE_OPTIONS= foreign
 
-SUBDIRS= gl sw sw32
+SUBDIRS= gl glsl sw sw32
 INCLUDES= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES= @VID_REND_TARGETS@
 noinst_LTLIBRARIES= @VID_REND_NOINST_TARGETS@
 
-EXTRA_LTLIBRARIES= libQFrenderer_sw.la libQFrenderer_sw32.la libQFrenderer_gl.la
+EXTRA_LTLIBRARIES=	libQFrenderer_sw.la libQFrenderer_sw32.la \
+					libQFrenderer_gl.la libQFrenderer_glsl.la
 
 common_sources= \
 	r_cvar.c r_efrag.c r_ent.c r_graph.c r_light.c r_main.c \
@@ -16,6 +17,11 @@ libQFrenderer_gl_la_LDFLAGS=		-version-info $(QUAKE_LIBRARY_VERSION_INFO) -rpath
 libQFrenderer_gl_la_LIBADD=			gl/libgl.la
 libQFrenderer_gl_la_SOURCES=		$(common_sources)
 libQFrenderer_gl_la_DEPENDENCIES=	gl/libgl.la
+
+libQFrenderer_glsl_la_LDFLAGS=		-version-info $(QUAKE_LIBRARY_VERSION_INFO) -rpath $(libdir)
+libQFrenderer_glsl_la_LIBADD=		glsl/libglsl.la
+libQFrenderer_glsl_la_SOURCES=		$(common_sources)
+libQFrenderer_glsl_la_DEPENDENCIES=	glsl/libglsl.la
 
 libQFrenderer_sw_la_LDFLAGS=		@STATIC@
 libQFrenderer_sw_la_LIBADD=			sw/libsw.la
