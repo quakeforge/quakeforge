@@ -56,6 +56,8 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "compat.h"
 
+VISIBLE int mod_lightmap_bytes;
+
 void
 Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
 {

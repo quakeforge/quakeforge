@@ -180,16 +180,7 @@ void Fog_StartAdditive (void);
 void Fog_StopAdditive (void);
 void Fog_Init (void);
 
-//  Surface cache related ==========
-extern	int		reinit_surfcache;	// if 1, surface cache is currently empty
-extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
-extern qboolean	r_inhibit_viewmodel;
-extern qboolean	r_force_fullscreen;
-extern qboolean	r_paused;
-extern entity_t *r_view_model;
-extern entity_t *r_player_entity;
 extern int		r_lineadj;
-extern qboolean r_active;
 
 void *D_SurfaceCacheAddress (void);
 int D_SurfaceCacheForRes (int width, int height);

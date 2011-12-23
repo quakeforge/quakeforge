@@ -32,6 +32,7 @@
 #include "QF/mathlib.h"
 #include "QF/vid.h"
 #include "QF/model.h"
+#include "QF/render.h"
 #include "r_shared.h"
 
 #define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
@@ -148,6 +149,15 @@ extern int	vstartscan;
 void R_ClearPolyList (void);
 void R_DrawPolyList (void);
 
+//  Surface cache related ==========
+extern	int		reinit_surfcache;	// if 1, surface cache is currently empty
+extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
+extern qboolean	r_inhibit_viewmodel;
+extern qboolean	r_force_fullscreen;
+extern qboolean	r_paused;
+extern entity_t *r_view_model;
+extern entity_t *r_player_entity;
+extern qboolean r_active;
 
 // current entity info
 extern	qboolean		insubmodel;

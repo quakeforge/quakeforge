@@ -9,7 +9,8 @@ else
 noinst_LTLIBRARIES=
 endif
 
-glsl_src = 
+glsl_src = \
+	glsl_draw.c glsl_main.c
 
 libglsl_la_SOURCES= $(glsl_src)
 
