@@ -44,6 +44,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "r_dynamic.h"
 #include "r_screen.h"
 
+VISIBLE vec3_t r_origin, vpn, vright, vup;
 VISIBLE refdef_t r_refdef;
 qboolean r_cache_thrash;
 int r_init;
@@ -158,4 +159,12 @@ GL_LoadTexture (const char *identifier, int width, int height, byte *data,
 				qboolean mipmap, qboolean alpha, int bytesperpixel)
 {
 	return 0;
+}
+
+VISIBLE void
+R_ClearState (void)
+{
+	R_ClearEfrags ();
+	R_ClearDlights ();
+	R_ClearParticles ();
 }
