@@ -38,16 +38,6 @@
 
 #include <stdlib.h>
 
-
-#ifndef max
-# define max(a,b) ((a) > (b) ? (a) : (b))
-#endif
-#ifndef min
-# define min(a,b) ((a) < (b) ? (a) : (b))
-#endif
-#ifndef bound
-# define bound(a,b,c) (max(a, min(b, c)))
-#endif
 /* This fixes warnings when compiling with -pedantic */
 #if defined(__GNUC__) && !defined(inline)
 # define inline __inline__
@@ -109,8 +99,5 @@ size_t strnlen (const char *str, size_t len);
 #ifdef need_qstring_h
 # include "qstring.h"
 #endif
-
-#undef field_offset
-#define field_offset(type,field) ((size_t)&(((type *)0)->field))
 
 #endif // __compat_h

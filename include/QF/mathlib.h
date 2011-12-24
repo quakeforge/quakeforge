@@ -37,6 +37,16 @@
 #include <math.h>
 #include "QF/qtypes.h"
 
+#ifndef max
+# define max(a,b) ((a) > (b) ? (a) : (b))
+#endif
+#ifndef min
+# define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
+#ifndef bound
+# define bound(a,b,c) (max(a, min(b, c)))
+#endif
+
 #ifndef M_PI
 # define M_PI	    3.14159265358979323846  // matches value in gcc v2 math.h
 #endif

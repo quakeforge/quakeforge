@@ -42,6 +42,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/dstring.h"
+#include "QF/mathlib.h"
 #include "QF/qtypes.h"
 
 #include "compat.h"

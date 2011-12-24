@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "QF/bspfile.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/mathlib.h"
 #include "QF/pcx.h"
 #include "QF/png.h"
 #include "QF/quakefs.h"

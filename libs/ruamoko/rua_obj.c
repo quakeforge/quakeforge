@@ -48,6 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/mathlib.h"
 #include "QF/pr_obj.h"
 #include "QF/progs.h"
 #include "QF/ruamoko.h"

@@ -42,6 +42,9 @@
 # undef msg_t
 #endif
 
+#undef field_offset
+#define field_offset(type,field) ((size_t)&(((type *)0)->field))
+
 #define MAX_QPATH	64
 
 #ifndef _DEF_BYTE_

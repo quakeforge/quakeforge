@@ -14,6 +14,7 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/idparse.h"
+#include "QF/mathlib.h"
 #include "QF/msg.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"

@@ -42,6 +42,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdlib.h>		// should be sys/types.h, but bc is stupid
 
 #include "QF/hash.h"
+#include "QF/qtypes.h"
+#include "QF/mathlib.h"
 #include "QF/sys.h"
 
 #include "compat.h"
