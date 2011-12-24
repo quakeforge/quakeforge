@@ -114,6 +114,24 @@ extern const vec_t * const quat_origin;
 #define VectorCompCompare(x, op, y)	\
 	(((x)[0] op (y)[0]) && ((x)[1] op (y)[1]) && ((x)[2] op (y)[2]))
 #define VectorCompare(x, y) VectorCompCompare (x, ==, y)
+#define VectorCompMin(a, b, c) \
+	do { \
+		(c)[0] = min ((a)[0], (b)[0]); \
+		(c)[1] = min ((a)[1], (b)[1]); \
+		(c)[2] = min ((a)[2], (b)[2]); \
+	} while (0)
+#define VectorCompMax(a, b, c) \
+	do { \
+		(c)[0] = max ((a)[0], (b)[0]); \
+		(c)[1] = max ((a)[1], (b)[1]); \
+		(c)[2] = max ((a)[2], (b)[2]); \
+	} while (0)
+#define VectorCompBound(a, b, c, d) \
+	do { \
+		(d)[0] = bound ((a)[0], (b)[0], (c)[0]); \
+		(d)[1] = bound ((a)[1], (b)[1], (c)[1]); \
+		(d)[2] = bound ((a)[2], (b)[2], (c)[2]); \
+	} while (0)
 
 #define VectorIsZero(a) (!(a)[0] && !(a)[1] && !(a)[2])
 #define VectorZero(a) ((a)[2] = (a)[1] = (a)[0] = 0);
@@ -198,6 +216,27 @@ extern const vec_t * const quat_origin;
 	(((x)[0] op (y)[0]) && ((x)[1] op (y)[1]) \
 	 && ((x)[2] op (y)[2]) && ((x)[3] op (y)[3]))
 #define QuatCompare(x, y) QuatCompCompare (x, ==, y)
+#define QuatCompMin(a, b, c) \
+	do { \
+		(c)[0] = min ((a)[0], (b)[0]); \
+		(c)[1] = min ((a)[1], (b)[1]); \
+		(c)[2] = min ((a)[2], (b)[2]); \
+		(c)[3] = min ((a)[3], (b)[3]); \
+	} while (0)
+#define QuatCompMax(a, b, c) \
+	do { \
+		(c)[0] = max ((a)[0], (b)[0]); \
+		(c)[1] = max ((a)[1], (b)[1]); \
+		(c)[2] = max ((a)[2], (b)[2]); \
+		(c)[3] = max ((a)[3], (b)[3]); \
+	} while (0)
+#define QuatCompBound(a, b, c, d) \
+	do { \
+		(d)[0] = bound ((a)[0], (b)[0], (c)[0]); \
+		(d)[1] = bound ((a)[1], (b)[1], (c)[1]); \
+		(d)[2] = bound ((a)[2], (b)[2], (c)[2]); \
+		(d)[3] = bound ((a)[3], (b)[3], (c)[3]); \
+	} while (0)
 
 #define QuatIsZero(a) (!(a)[0] && !(a)[1] && !(a)[2] && !(a)[3])
 #define QuatZero(a) ((a)[3] = (a)[2] = (a)[1] = (a)[0] = 0);
