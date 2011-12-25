@@ -804,7 +804,8 @@ MOD_TraceLine (hull_t *hull, int num,
 	trace_state.seen_solid = false;
 	trace_state.moved = false;
 	trace_state.split_plane = 0;
-	init_box (trace, &trace_state.box, trace_state.dist);
+	if (trace->type == tr_box)
+		init_box (trace, &trace_state.box, trace_state.dist);
 
 	leaf = 0;
 	plane = 0;
