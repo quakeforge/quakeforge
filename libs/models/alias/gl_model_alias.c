@@ -110,35 +110,31 @@ Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
 					int extra)
 {
 	daliasframe_t  *pdaliasframe;
-	int				i;
 	trivertx_t	   *pinframe;
 
 	pdaliasframe = (daliasframe_t *) pin;
 
 	strncpy (frame->name, pdaliasframe->name, sizeof (frame->name));
+	frame->name[sizeof (frame->name) - 1] = 0;
 	frame->firstpose = (*posenum);
 	frame->numposes = 1;
 
-	for (i = 0; i < 3; i++) {
-		// byte values, don't worry about endianness
-		frame->bboxmin.v[i] = pdaliasframe->bboxmin.v[i];
-		frame->bboxmax.v[i] = pdaliasframe->bboxmax.v[i];
-
-		aliasbboxmins[i] = min (frame->bboxmin.v[i], aliasbboxmins[i]);
-		aliasbboxmaxs[i] = max (frame->bboxmax.v[i], aliasbboxmaxs[i]);
-	}
+	// byte values, don't worry about endianness
+	VectorCopy (pdaliasframe->bboxmin.v, frame->bboxmin.v);
+	VectorCopy (pdaliasframe->bboxmax.v, frame->bboxmax.v);
+	VectorCompMin (frame->bboxmin.v, aliasbboxmins, aliasbboxmins);
+	VectorCompMax (frame->bboxmax.v, aliasbboxmaxs, aliasbboxmaxs);
 
 	pinframe = (trivertx_t *) (pdaliasframe + 1);
 
 	poseverts[(*posenum)] = pinframe;
 	(*posenum)++;
 
+	pinframe += pheader->mdl.numverts;
 	if (extra)
-		pinframe += pheader->mdl.numverts * 2;
-	else
 		pinframe += pheader->mdl.numverts;
 
-	return (void *) pinframe;
+	return pinframe;
 }
 
 void *
@@ -157,14 +153,11 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 	frame->firstpose = (*posenum);
 	frame->numposes = numframes;
 
-	for (i = 0; i < 3; i++) {
-		// these are byte values, so we don't have to worry about endianness
-		frame->bboxmin.v[i] = pingroup->bboxmin.v[i];
-		frame->bboxmax.v[i] = pingroup->bboxmax.v[i];
-
-		aliasbboxmins[i] = min (frame->bboxmin.v[i], aliasbboxmins[i]);
-		aliasbboxmaxs[i] = max (frame->bboxmax.v[i], aliasbboxmaxs[i]);
-	}
+	// these are byte values, so we don't have to worry about endianness
+	VectorCopy (pingroup->bboxmin.v, frame->bboxmin.v);
+	VectorCopy (pingroup->bboxmax.v, frame->bboxmax.v);
+	VectorCompMin (frame->bboxmin.v, aliasbboxmins, aliasbboxmins);
+	VectorCompMax (frame->bboxmax.v, aliasbboxmaxs, aliasbboxmaxs);
 
 	pin_intervals = (daliasinterval_t *) (pingroup + 1);
 

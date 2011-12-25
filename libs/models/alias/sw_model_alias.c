@@ -66,11 +66,34 @@ Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 	return skin + skinsize;
 }
 
+static void
+process_frame (maliasframedesc_t *frame, int posenum, int extra)
+{
+	int         size = pheader->mdl.numverts * sizeof (trivertx_t);
+	trivertx_t *frame_verts;
+
+	if (extra)
+		size *= 2;
+
+	frame_verts = Hunk_AllocName (size, loadname);
+	frame->frame = (byte *) frame_verts - (byte *) pheader;
+
+	// I'm really not sure what the format of md16 is, but for now, I'll
+	// assume the sw renderer is correct (I believe that's what serplord
+	// was using when he developed it), which means the low-order 8 bits
+	// (actually, fractional) are completely separate from the high-order
+	// bits (see R_AliasTransformFinalVert16 in sw_ralias.c), but in
+	// adjacant arrays. This means we can get away with just one memcpy
+	// as there are non endian issues.
+	memcpy (frame_verts, poseverts[posenum], size);
+}
+
 void
 Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
 								int extra)
 {
 	int			 i, j;
+	int          posenum = 0;
 	int			 numv = hdr->mdl.numverts, numt = hdr->mdl.numtris;
 	stvert_t	*pstverts;
 	mtriangle_t *ptri;
@@ -91,8 +114,19 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
 
 	for (i = 0; i < numt; i++) {
 		ptri[i].facesfront = triangles[i].facesfront;
-		for (j = 0; j < 3; j++) {
-			ptri[i].vertindex[j] = triangles[i].vertindex[j];
+		VectorCopy (triangles[i].vertindex, ptri[i].vertindex);
+	}
+
+	for (i = 0; i < pheader->mdl.numframes; i++) {
+		maliasframedesc_t *frame = pheader->frames + i;
+		if (frame->type) {
+			maliasgroup_t *group;
+			group = (maliasgroup_t *) ((byte *) pheader + frame->frame);
+			for (j = 0; j < group->numframes; j++)
+				process_frame ((maliasframedesc_t *) &group->frames[j],
+							   posenum++, extra);
+		} else {
+			process_frame (frame, posenum++, extra);
 		}
 	}
 }
@@ -102,61 +136,31 @@ Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
 					int extra)
 {
 	daliasframe_t  *pdaliasframe;
-	int				i, j;
-	trivertx_t	   *pframe, *pinframe;
+	trivertx_t	   *pinframe;
 
 	pdaliasframe = (daliasframe_t *) pin;
 
-	strcpy (frame->name, pdaliasframe->name);
+	strncpy (frame->name, pdaliasframe->name, sizeof (frame->name));
+	frame->name[sizeof (frame->name) - 1] = 0;
+	frame->firstpose = (*posenum);
+	frame->numposes = 1;
 
-	for (i = 0; i < 3; i++) {
-		// byte values, don't worry about endianness
-		frame->bboxmin.v[i] = pdaliasframe->bboxmin.v[i];
-		frame->bboxmax.v[i] = pdaliasframe->bboxmax.v[i];
-
-		aliasbboxmins[i] = min (frame->bboxmin.v[i], aliasbboxmins[i]);
-		aliasbboxmaxs[i] = max (frame->bboxmax.v[i], aliasbboxmaxs[i]);
-	}
+	// byte values, don't worry about endianness
+	VectorCopy (pdaliasframe->bboxmin.v, frame->bboxmin.v);
+	VectorCopy (pdaliasframe->bboxmax.v, frame->bboxmax.v);
+	VectorCompMin (frame->bboxmin.v, aliasbboxmins, aliasbboxmins);
+	VectorCompMax (frame->bboxmax.v, aliasbboxmaxs, aliasbboxmaxs);
 
 	pinframe = (trivertx_t *) (pdaliasframe + 1);
 
+	poseverts[(*posenum)] = pinframe;
+	(*posenum)++;
+
+	pinframe += pheader->mdl.numverts;
 	if (extra)
-		pframe = Hunk_AllocName (pheader->mdl.numverts * sizeof (*pframe) * 2,
-							 loadname);
-	else
-		pframe = Hunk_AllocName (pheader->mdl.numverts * sizeof (*pframe),
-							 loadname);
-
-	frame->frame = (byte *) pframe - (byte *) pheader;
-
-	for (j = 0; j < pheader->mdl.numverts; j++) {
-		int		k;
-
-		// these are all byte values, so no need to deal with endianness
-		pframe[j].lightnormalindex = pinframe[j].lightnormalindex;
-
-		for (k = 0; k < 3; k++) {
-			pframe[j].v[k] = pinframe[j].v[k];
-		}
-	}
-
-	if (extra)
-	{
-		for (j = pheader->mdl.numverts; j < pheader->mdl.numverts * 2; j++)
-		{
-			int		k;
-			for (k = 0; k < 3; k++)
-				pframe[j].v[k] = pinframe[j].v[k];
-		}
-	}
-
-	if (extra)
-		pinframe += pheader->mdl.numverts * 2;
-	else
 		pinframe += pheader->mdl.numverts;
 
-
-	return (void *) pinframe;
+	return pinframe;
 }
 
 void *
@@ -178,14 +182,11 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 												frames[numframes]), loadname);
 	paliasgroup->numframes = numframes;
 
-	for (i = 0; i < 3; i++) {
-		// these are byte values, so we don't have to worry about endianness
-		frame->bboxmin.v[i] = pingroup->bboxmin.v[i];
-		frame->bboxmax.v[i] = pingroup->bboxmax.v[i];
-
-		aliasbboxmins[i] = min (frame->bboxmin.v[i], aliasbboxmins[i]);
-		aliasbboxmaxs[i] = max (frame->bboxmax.v[i], aliasbboxmaxs[i]);
-	}
+	// these are byte values, so we don't have to worry about endianness
+	VectorCopy (pingroup->bboxmin.v, frame->bboxmin.v);
+	VectorCopy (pingroup->bboxmax.v, frame->bboxmax.v);
+	VectorCompMin (frame->bboxmin.v, aliasbboxmins, aliasbboxmins);
+	VectorCompMax (frame->bboxmax.v, aliasbboxmaxs, aliasbboxmaxs);
 
 	frame->frame = (byte *) paliasgroup - (byte *) pheader;
 
@@ -208,7 +209,7 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 
 	for (i = 0; i < numframes; i++) {
 		maliasframedesc_t temp_frame;
-		ptemp = Mod_LoadAliasFrame (ptemp, &i, &temp_frame, extra);
+		ptemp = Mod_LoadAliasFrame (ptemp, posenum, &temp_frame, extra);
 		memcpy (&paliasgroup->frames[i], &temp_frame,
 				sizeof(paliasgroup->frames[i]));
 	}
