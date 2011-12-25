@@ -52,6 +52,8 @@ extern int						tess;
 
 extern int						gl_max_lights;
 
+extern int						glsl_palette;
+
 void GL_EndRendering (void);
 
 #endif // __QF_GL_vid_h
