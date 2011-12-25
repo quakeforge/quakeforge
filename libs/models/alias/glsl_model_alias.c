@@ -49,20 +49,6 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 	return 0;
 }
 
-void *
-Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
-					int extra)
-{
-	return 0;
-}
-
-void *
-Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
-					int extra)
-{
-	return 0;
-}
-
 void
 Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 {
