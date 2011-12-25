@@ -63,16 +63,6 @@ int r_visframecount;
 entity_t r_worldentity;
 
 void
-r_easter_eggs_f (cvar_t *var)
-{
-}
-
-void
-r_particles_style_f (cvar_t *var)
-{
-}
-
-void
 gl_overbright_f (cvar_t *var)
 {
 }
@@ -91,29 +81,6 @@ VISIBLE void
 R_Init (void)
 {
 	R_InitParticles ();
-}
-
-VISIBLE void
-R_Particles_Init_Cvars (void)
-{
-}
-
-VISIBLE void
-R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
-			    const vec3_t vel, float die, int color, float alpha, float ramp)
-{
-}
-
-VISIBLE void
-R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
-					  float scale, int vel_fuzz, float die, int color,
-					  float alpha, float ramp)
-{
-}
-
-VISIBLE void
-R_ClearParticles (void)
-{
 }
 
 VISIBLE void
@@ -181,150 +148,6 @@ Skin_Init_Translation (void)
 VISIBLE void
 R_LineGraph (int x, int y, int *h_vals, int count)
 {
-}
-
-static void
-particle_explosion (const vec3_t org)
-{
-}
-
-static void
-teleport_splash (const vec3_t org)
-{
-}
-
-static void
-rocket_trail (const entity_t *ent)
-{
-}
-
-static void
-grenade_trail (const entity_t *ent)
-{
-}
-
-static void
-blob_explosion (const vec3_t org)
-{
-}
-
-static void
-lava_splash (const vec3_t org)
-{
-}
-
-static void
-blood_puff_effect (const vec3_t org, int count)
-{
-}
-
-static void
-gunshot_effect (const vec3_t org, int count)
-{
-}
-
-static void
-lightnight_blood_effect (const vec3_t org)
-{
-}
-
-static inline void		// FIXME: inline?
-run_particle_effect (const vec3_t org, const vec3_t dir, int color,
-					 int count)
-{
-}
-
-static void
-spike_effect (const vec3_t org)
-{
-}
-
-static void
-super_spike_effect (const vec3_t org)
-{
-}
-
-static void
-knight_spike_effect (const vec3_t org)
-{
-}
-
-static void
-wiz_spike_effect (const vec3_t org)
-{
-}
-
-static void
-blood_trail (const entity_t *ent)
-{
-}
-
-static void
-slight_blood_trail (const entity_t *ent)
-{
-}
-
-static void
-wiz_trail (const entity_t *ent)
-{
-}
-
-static void
-flame_trail (const entity_t *ent)
-{
-}
-
-static void
-voor_trail (const entity_t *ent)
-{
-}
-
-static void
-dark_field_particles (const entity_t *ent)
-{
-}
-
-static void
-entity_particles (const entity_t *ent)
-{
-}
-
-static void
-particle_explosion_2 (const vec3_t org, int colorStart, int colorLength)
-{
-}
-
-static void
-glow_trail (const entity_t *ent, int glow_color)
-{
-}
-
-VISIBLE void
-R_InitParticles (void)
-{
-	R_BlobExplosion = blob_explosion;
-	R_LavaSplash = lava_splash;
-	R_BloodPuffEffect = blood_puff_effect;
-	R_GunshotEffect = gunshot_effect;
-	R_LightningBloodEffect = lightnight_blood_effect;
-	R_RunParticleEffect = run_particle_effect;
-	R_SpikeEffect = spike_effect;
-	R_SuperSpikeEffect = super_spike_effect;
-	R_KnightSpikeEffect = knight_spike_effect;
-	R_WizSpikeEffect = wiz_spike_effect;
-	R_BloodTrail = blood_trail;
-	R_SlightBloodTrail = slight_blood_trail;
-	R_WizTrail = wiz_trail;
-	R_FlameTrail = flame_trail;
-	R_VoorTrail = voor_trail;
-	R_DarkFieldParticles = dark_field_particles;
-	R_EntityParticles = entity_particles;
-	R_ParticleExplosion2 = particle_explosion_2;
-	R_GlowTrail = glow_trail;
-	R_ParticleExplosion = particle_explosion;
-	R_TeleportSplash = teleport_splash;
-	R_RocketTrail = rocket_trail;
-	R_GrenadeTrail = grenade_trail;
 }
 
 VISIBLE tex_t *
