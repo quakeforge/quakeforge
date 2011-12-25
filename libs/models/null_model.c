@@ -35,8 +35,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/model.h"
 #include "QF/render.h"
 
-int         mod_lightmap_bytes = 1;
-
 void
 Mod_LoadLighting (bsp_t *bsp)
 {

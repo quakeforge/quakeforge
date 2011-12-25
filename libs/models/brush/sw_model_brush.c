@@ -43,8 +43,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/model.h"
 
-VISIBLE int   mod_lightmap_bytes = 1;	//FIXME should this be visible?
-
 
 void
 Mod_SubdivideSurface (msurface_t *fa)

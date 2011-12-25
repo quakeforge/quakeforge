@@ -54,8 +54,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 
-VISIBLE int   mod_lightmap_bytes = 3;	//FIXME should this be visible?
-
 
 void
 Mod_ProcessTexture (miptex_t *mt, texture_t *tx)

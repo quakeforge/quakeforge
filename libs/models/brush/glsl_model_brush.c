@@ -56,8 +56,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "compat.h"
 
-VISIBLE int mod_lightmap_bytes;
-
 void
 Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
 {
@@ -71,6 +69,13 @@ Mod_LoadExternalTextures (model_t *mod)
 void
 Mod_LoadLighting (bsp_t *bsp)
 {
+	mod_lightmap_bytes = 1;
+	if (!bsp->lightdatasize) {
+		loadmodel->lightdata = NULL;
+		return;
+	}
+	loadmodel->lightdata = Hunk_AllocName (bsp->lightdatasize, loadname);
+	memcpy (loadmodel->lightdata, bsp->lightdata, bsp->lightdatasize);
 }
 
 void
