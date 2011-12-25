@@ -36,9 +36,9 @@ AM_CFLAGS= @PTHREAD_CFLAGS@
 
 bin_PROGRAMS=	@QW_TARGETS@
 
-EXTRA_PROGRAMS= qw-client-fbdev qw-client-glx qw-client-mgl qw-client-sdl \
-		qw-client-sdl32 qw-client-sgl qw-client-svga qw-client-3dfx \
-		qw-client-wgl qw-client-x11 qw-server qw-master
+EXTRA_PROGRAMS= qw-client-fbdev qw-client-glx qw-client-glslx qw-client-mgl \
+		qw-client-sdl qw-client-sdl32 qw-client-sgl qw-client-svga \
+		qw-client-3dfx qw-client-wgl qw-client-x11 qw-server qw-master
 
 noinst_LIBRARIES= @qw_libs@
 EXTRA_LIBRARIES=libqw_client.a libqw_common.a libqw_sdl.a libqw_server.a
@@ -200,6 +200,9 @@ qw_client_x11_DEPENDENCIES= $(qw_client_x11_libs)
 opengl_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
 		$(top_builddir)/libs/models/libQFmodels_gl.la
 
+glsl_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer_glsl.la \
+		$(top_builddir)/libs/models/libQFmodels_glsl.la
+
 # ... OpenGL in X Window
 qw_client_glx_libs= \
 			$(client_libs) \
@@ -213,6 +216,20 @@ qw_client_glx_LDADD= $(qw_client_glx_libs) \
 			-lXext $(X_EXTRA_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL)
 qw_client_glx_LDFLAGS=  $(common_ldflags)
 qw_client_glx_DEPENDENCIES= $(qw_client_glx_libs)
+
+# ... OpenGLSL in X Window
+qw_client_glslx_libs= \
+			$(client_libs) \
+			$(cl_plugin_LIBS) \
+			$(glsl_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFglslx.la \
+			$(client_LIBS)
+qw_client_glslx_SOURCES=	cl_sys_unix.c
+qw_client_glslx_LDADD= $(qw_client_glslx_libs) \
+			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
+			-lXext $(X_EXTRA_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL)
+qw_client_glslx_LDFLAGS=  $(common_ldflags)
+qw_client_glslx_DEPENDENCIES= $(qw_client_glslx_libs)
 
 # ... Linux 3DFX
 qw_client_3dfx_libs= \

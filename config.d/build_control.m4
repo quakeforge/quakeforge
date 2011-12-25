@@ -76,9 +76,9 @@ if test "x$HAVE_X" = xyes; then
 		QF_NEED(console, [client])
 	fi
 	if test "x$ENABLE_clients_glslx" = xyes; then
-		#QW_TARGETS="$QW_TARGETS qw-client-glslx\$(EXEEXT)"
+		QW_TARGETS="$QW_TARGETS qw-client-glslx\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-glslx\$(EXEEXT)"
-		#QW_DESKTOP_DATA="$QW_DESKTOP_DATA quakeforge-qw-glx.desktop"
+		QW_DESKTOP_DATA="$QW_DESKTOP_DATA quakeforge-qw-glx.desktop"
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-glslx.desktop"
 		CL_TARGETS="$CL_TARGETS GLSLX"
 		VID_TARGETS="$VID_TARGETS libQFglslx.la"

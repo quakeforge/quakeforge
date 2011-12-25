@@ -41,6 +41,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #endif
 
 #include "QF/cvar.h"
+#include "QF/image.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
@@ -97,6 +98,19 @@ R_Particles_Init_Cvars (void)
 }
 
 VISIBLE void
+R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
+			    const vec3_t vel, float die, int color, float alpha, float ramp)
+{
+}
+
+VISIBLE void
+R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
+					  float scale, int vel_fuzz, float die, int color,
+					  float alpha, float ramp)
+{
+}
+
+VISIBLE void
 R_ClearParticles (void)
 {
 }
@@ -132,7 +146,17 @@ Fog_ParseWorldspawn (struct plitem_s *worldspawn)
 }
 
 VISIBLE void
+Skin_Player_Model (model_t *model)
+{
+}
+
+VISIBLE void
 Skin_Set_Translate (int top, int bottom, void *_dest)
+{
+}
+
+VISIBLE void
+Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin)
 {
 }
 
@@ -299,6 +323,12 @@ R_InitParticles (void)
 	R_TeleportSplash = teleport_splash;
 	R_RocketTrail = rocket_trail;
 	R_GrenadeTrail = grenade_trail;
+}
+
+VISIBLE tex_t *
+SCR_ScreenShot (int width, int height)
+{
+	return 0;
 }
 
 VISIBLE void
