@@ -178,9 +178,13 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 
 	numframes = LittleLong (pingroup->numframes);
 
+	frame->firstpose = (*posenum);
+	frame->numposes = numframes;
+
 	paliasgroup = Hunk_AllocName (field_offset (maliasgroup_t,
 												frames[numframes]), loadname);
 	paliasgroup->numframes = numframes;
+	frame->frame = (byte *) paliasgroup - (byte *) pheader;
 
 	// these are byte values, so we don't have to worry about endianness
 	VectorCopy (pingroup->bboxmin.v, frame->bboxmin.v);
@@ -188,30 +192,24 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 	VectorCompMin (frame->bboxmin.v, aliasbboxmins, aliasbboxmins);
 	VectorCompMax (frame->bboxmax.v, aliasbboxmaxs, aliasbboxmaxs);
 
-	frame->frame = (byte *) paliasgroup - (byte *) pheader;
-
 	pin_intervals = (daliasinterval_t *) (pingroup + 1);
-
 	poutintervals = Hunk_AllocName (numframes * sizeof (float), loadname);
-
 	paliasgroup->intervals = (byte *) poutintervals - (byte *) pheader;
-
+	frame->interval = LittleFloat (pin_intervals->interval);
 	for (i = 0; i < numframes; i++) {
 		*poutintervals = LittleFloat (pin_intervals->interval);
 		if (*poutintervals <= 0.0)
 			Sys_Error ("Mod_LoadAliasGroup: interval<=0");
-
 		poutintervals++;
 		pin_intervals++;
 	}
 
 	ptemp = (void *) pin_intervals;
-
 	for (i = 0; i < numframes; i++) {
 		maliasframedesc_t temp_frame;
 		ptemp = Mod_LoadAliasFrame (ptemp, posenum, &temp_frame, extra);
 		memcpy (&paliasgroup->frames[i], &temp_frame,
-				sizeof(paliasgroup->frames[i]));
+				sizeof (paliasgroup->frames[i]));
 	}
 
 	return ptemp;

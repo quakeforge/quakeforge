@@ -143,7 +143,9 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 {
 	daliasgroup_t	 *pingroup;
 	daliasinterval_t *pin_intervals;
+	float			 *poutintervals;
 	int				  i, numframes;
+	maliasgroup_t	 *paliasgroup;
 	void			 *ptemp;
 
 	pingroup = (daliasgroup_t *) pin;
@@ -153,6 +155,11 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 	frame->firstpose = (*posenum);
 	frame->numposes = numframes;
 
+	paliasgroup = Hunk_AllocName (field_offset (maliasgroup_t,
+												frames[numframes]), loadname);
+	paliasgroup->numframes = numframes;
+	frame->frame = (byte *) paliasgroup - (byte *) pheader;
+
 	// these are byte values, so we don't have to worry about endianness
 	VectorCopy (pingroup->bboxmin.v, frame->bboxmin.v);
 	VectorCopy (pingroup->bboxmax.v, frame->bboxmax.v);
@@ -160,23 +167,25 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 	VectorCompMax (frame->bboxmax.v, aliasbboxmaxs, aliasbboxmaxs);
 
 	pin_intervals = (daliasinterval_t *) (pingroup + 1);
-
+	poutintervals = Hunk_AllocName (numframes * sizeof (float), loadname);
+	paliasgroup->intervals = (byte *) poutintervals - (byte *) pheader;
 	frame->interval = LittleFloat (pin_intervals->interval);
-
-	pin_intervals += numframes;
+	for (i = 0; i < numframes; i++) {
+		*poutintervals = LittleFloat (pin_intervals->interval);
+		if (*poutintervals <= 0.0)
+			Sys_Error ("Mod_LoadAliasGroup: interval<=0");
+		poutintervals++;
+		pin_intervals++;
+	}
 
 	ptemp = (void *) pin_intervals;
-
 	for (i = 0; i < numframes; i++) {
-		poseverts[(*posenum)] = (trivertx_t *) ((daliasframe_t *) ptemp + 1);
-		(*posenum)++;
-		if (extra)
-			ptemp =	(trivertx_t *) ((daliasframe_t *) ptemp + 1)
-				+ pheader->mdl.numverts * 2;
-		else
-			ptemp =	(trivertx_t *) ((daliasframe_t *) ptemp + 1)
-				+ pheader->mdl.numverts;
+		maliasframedesc_t temp_frame;
+		ptemp = Mod_LoadAliasFrame (ptemp, posenum, &temp_frame, extra);
+		memcpy (&paliasgroup->frames[i], &temp_frame,
+				sizeof (paliasgroup->frames[i]));
 	}
+
 	return ptemp;
 }
 
