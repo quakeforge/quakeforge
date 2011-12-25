@@ -25,7 +25,7 @@ noinst_LTLIBRARIES=	$(gl) $(glsl) $(sw)
 
 alias_src= model_alias.c
 gl_src= gl_mesh.c gl_model_alias.c mod_flood.c
-glsl_src= glsl_mesh.c glsl_model_alias.c mod_flood.c
+glsl_src= glsl_model_alias.c mod_flood.c
 sw_src= sw_model_alias.c
 
 libalias_gl_la_SOURCES= $(gl_src) $(alias_src)

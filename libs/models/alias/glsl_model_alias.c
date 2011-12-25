@@ -40,13 +40,30 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 # include <strings.h>
 #endif
 
+#include <stdlib.h>
+
 #include "QF/model.h"
+#include "QF/GL/defines.h"
+#include "QF/GL/funcs.h"
 
 void *
-Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
+Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum, qboolean group,
 			  maliasskindesc_t *skindesc)
 {
-	return 0;
+	byte       *tskin;
+	GLuint      tnum;
+
+	tskin = malloc (skinsize);
+	memcpy (tskin, skin, skinsize);
+	Mod_FloodFillSkin (tskin, pheader->mdl.skinwidth, pheader->mdl.skinheight);
+	qfglGenTextures (1, &tnum);
+	skindesc->texnum = tnum;
+	qfglBindTexture (GL_TEXTURE_2D, skindesc->texnum);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE,
+					pheader->mdl.skinwidth, pheader->mdl.skinheight,
+					0, GL_LUMINANCE, GL_UNSIGNED_BYTE, tskin);
+	free (tskin);
+	return skin + skinsize;
 }
 
 void
@@ -56,5 +73,11 @@ Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 
 void
 Mod_LoadExternalSkins (model_t *mod)
+{
+}
+
+void
+Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
+								int extra)
 {
 }
