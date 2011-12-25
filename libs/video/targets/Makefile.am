@@ -56,7 +56,7 @@ libvid_gl_la_SOURCES=		vid_common_gl.c qfgl_ext.c vtxarray.c
 libvid_gl_la_CFLAGS=		@PREFER_NON_PIC@
 libvid_gl_la_LDFLAGS=		@STATIC@
 
-libvid_glsl_la_SOURCES=		vid_common_gl.c qfgl_ext.c vtxarray.c
+libvid_glsl_la_SOURCES=		vid_common_glsl.c qfgl_ext.c vtxarray.c
 libvid_glsl_la_CFLAGS=		@PREFER_NON_PIC@
 libvid_glsl_la_LDFLAGS=		@STATIC@
 
