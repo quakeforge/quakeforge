@@ -35,6 +35,14 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "QF/draw.h"
 
+static const char quaketext_vert[] =
+#include "quaketxt.vc"
+;
+
+static const char quaketext_frag[] =
+#include "quaketxt.fc"
+;
+
 VISIBLE byte *draw_chars;
 
 VISIBLE qpic_t *
