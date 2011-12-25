@@ -84,12 +84,6 @@ R_Init (void)
 }
 
 VISIBLE void
-SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
-{
-	GL_FlushText ();
-}
-
-VISIBLE void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
@@ -147,17 +141,6 @@ Skin_Init_Translation (void)
 
 VISIBLE void
 R_LineGraph (int x, int y, int *h_vals, int count)
-{
-}
-
-VISIBLE tex_t *
-SCR_ScreenShot (int width, int height)
-{
-	return 0;
-}
-
-VISIBLE void
-SCR_ScreenShot_f (void)
 {
 }
 

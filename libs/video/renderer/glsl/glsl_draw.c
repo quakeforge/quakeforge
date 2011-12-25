@@ -207,7 +207,22 @@ Draw_FadeScreen (void)
 }
 
 void
-GL_FlushText (void)
+GL_Set2D (void)
+{
+}
+
+void
+GL_Set2DScaled (void)
+{
+}
+
+void
+GL_DrawReset (void)
 {
 	char_queue->size = 0;
+}
+
+void
+GL_FlushText (void)
+{
 }

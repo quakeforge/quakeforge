@@ -20,7 +20,7 @@ SUFFICES=.frag .vert .fc .vc
 	sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
 
 glsl_src = \
-	glsl_draw.c glsl_main.c glsl_particles.c
+	glsl_draw.c glsl_main.c glsl_particles.c glsl_screen.c
 
 libglsl_la_SOURCES= $(glsl_src)
 
