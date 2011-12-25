@@ -421,6 +421,18 @@ QFGL_NEED (void, glViewport, (GLint x, GLint y, GLsizei width, GLsizei height))
 // ATI Extensions
 QFGL_WANT (void, glPNTrianglesiATI, (GLenum pname, GLint param))
 
+// 1.3
+QFGL_WANT (void, glActiveTexture, (GLenum texture))
+QFGL_WANT (void, glSampleCoverage, (GLclampf value, GLboolean invert))
+QFGL_WANT (void, glCompressedTexImage3D, (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const GLvoid *data))
+QFGL_WANT (void, glCompressedTexImage2D, (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data))
+QFGL_WANT (void, glCompressedTexImage1D, (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLint border, GLsizei imageSize, const GLvoid *data))
+QFGL_WANT (void, glCompressedTexSubImage3D, (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLsizei imageSize, const GLvoid *data))
+QFGL_WANT (void, glCompressedTexSubImage2D, (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const GLvoid *data))
+QFGL_WANT (void, glCompressedTexSubImage1D, (GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLsizei imageSize, const GLvoid *data))
+QFGL_WANT (void, glGetCompressedTexImage, (GLenum target, GLint level, GLvoid *img))
+
+//GL 2.0
 QFGL_WANT (void, glBlendEquationSeparate, (GLenum modeRGB, GLenum modeAlpha))
 QFGL_WANT (void, glDrawBuffers, (GLsizei n, const GLenum *bufs))
 QFGL_WANT (void, glStencilOpSeparate, (GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass))
