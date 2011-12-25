@@ -48,6 +48,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "QF/GL/qf_textures.h"
 
+#include "gl_draw.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_screen.h"
@@ -118,6 +119,7 @@ R_ClearParticles (void)
 VISIBLE void
 SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 {
+	GL_FlushText ();
 }
 
 VISIBLE void

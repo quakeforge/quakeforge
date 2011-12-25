@@ -1,3 +1,4 @@
+uniform mat4 mvp_mat;
 /** Vertex position.
 
 	x, y, cx, cy
@@ -14,7 +15,7 @@ attribute vec4 vertex;
 	The quake character map supports only 256 characters, 0-255. Any other
 	value will give interesting results.
 */
-attribute int char;
+attribute float char;
 
 /** Coordinate in character map texture.
 */
@@ -23,18 +24,18 @@ varying vec2 st;
 void
 main (void)
 {
-	int         row, col;
+	float       row, col;
 	vec2        pos, corner, uv;
-	const vec2  inset = (0.25, 0.25);
-	const vec2  size = (0.0625, 0.0625);
+	const vec2  inset = vec2 (0.25, 0.25);
+	const vec2  size = vec2 (0.0625, 0.0625);
 
-	row = floor (char / 16);
-	col = mod (char, 16);
+	row = floor (char / 16.0);
+	col = mod (char, 16.0);
 
 	pos = vertex.xy;
 	corner = vertex.zw;
-	uv = vec2 (row, col) + inset * (1 - 2 * corner) + 8 * corner;
+	uv = vec2 (row, col) + inset * (1.0 - 2.0 * corner) + 8.0 * corner;
 	uv *= size;
-	gl_Position = mvp_mat * vec4 (pos + corner * 8, 0, 1);
-	st = uv + corner
+	gl_Position = mvp_mat * vec4 (pos + corner * 8.0, 0.0, 1.0);
+	st = uv + corner;
 }

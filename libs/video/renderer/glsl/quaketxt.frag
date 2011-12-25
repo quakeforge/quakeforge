@@ -1,13 +1,13 @@
-precision mediump float;
+//precision mediump float;
 uniform sampler2D   charmap;
 uniform sampler2D   palette;
-varying sv;
+varying vec2 st;
 
 void
 main (void)
 {
-	int         pix;
+	float       pix;
 
-	pix = texture2D (charmap, sv, 0);
-	gl_FragColor = texture2D (palette, vec2 (pix, 0.5), 0);
+	pix = texture2D (charmap, st).r;
+	gl_FragColor = texture2D (palette, vec2 (pix, 0.5));
 }
