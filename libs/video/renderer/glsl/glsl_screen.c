@@ -47,11 +47,10 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/screen.h"
 #include "QF/skin.h"
 
-#include "QF/GL/defines.h"
-#include "QF/GL/funcs.h"
-#include "QF/GL/qf_rmain.h"
-#include "QF/GL/qf_textures.h"
-#include "QF/GL/qf_vid.h"
+#include "QF/GLSL/defines.h"
+#include "QF/GLSL/funcs.h"
+#include "QF/GLSL/qf_textures.h"
+#include "QF/GLSL/qf_vid.h"
 
 #include "clview.h"//FIXME
 #include "gl_draw.h"

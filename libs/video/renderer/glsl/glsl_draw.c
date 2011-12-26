@@ -38,10 +38,9 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/sys.h"
 #include "QF/vid.h"
 
-#include "QF/GL/defines.h"
-#include "QF/GL/funcs.h"
-#include "QF/GL/qf_textures.h"
-#include "QF/GL/qf_vid.h"
+#include "QF/GLSL/defines.h"
+#include "QF/GLSL/funcs.h"
+#include "QF/GLSL/qf_vid.h"
 
 #include "gl_draw.h"
 #include "r_shared.h"
@@ -202,15 +201,15 @@ queue_character (int x, int y, byte chr)
 {
 	unsigned short *v;
 	unsigned    i, c;
-	const int   size = 5 * 2 * 4;
+	const int   size = 5 * 2 * 6;
 
 	char_queue->size += size;
 	dstring_adjust (char_queue);
 	v = (unsigned short *) (char_queue->str + char_queue->size - size);
-	for (i = 0; i < 4; i++) {
+	c = 0x738;
+	for (i = 0; i < 6; i++, c >>= 2) {
 		*v++ = x;
 		*v++ = y;
-		c = i ^ (i >> 1);
 		*v++ = c & 1;
 		*v++ = (c >> 1) & 1;
 		*v++ = chr;
@@ -227,21 +226,21 @@ flush_text (void)
 	qfglUniformMatrix4fv (matrix.location, 1, false, proj_matrix);
 
 	qfglUniform1i (charmap.location, 0);
-	qfglActiveTexture(GL_TEXTURE0 + 0);
+	qfglActiveTexture (GL_TEXTURE0 + 0);
 	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture(GL_TEXTURE_2D, char_texture);
+	qfglBindTexture (GL_TEXTURE_2D, char_texture);
 
 	qfglUniform1i (palette.location, 1);
-	qfglActiveTexture(GL_TEXTURE0 + 1);
+	qfglActiveTexture (GL_TEXTURE0 + 1);
 	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture(GL_TEXTURE_2D, glsl_palette);
+	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
 	qfglVertexAttribPointer (vertex.location, 4, GL_UNSIGNED_SHORT, 0, 10,
 							 char_queue->str);
 	qfglVertexAttribPointer (dchar.location, 1, GL_UNSIGNED_SHORT, 0, 10,
 							 char_queue->str + 8);
 
-	qfglDrawArrays(GL_QUADS, 0, char_queue->size / 10);
+	qfglDrawArrays (GL_TRIANGLES, 0, char_queue->size / 10);
 
 	qfglDisableVertexAttribArray (dchar.location);
 	qfglDisableVertexAttribArray (vertex.location);
@@ -373,8 +372,6 @@ set_2d (int width, int height)
 
 	qfglDisable (GL_DEPTH_TEST);
 	qfglDisable (GL_CULL_FACE);
-
-	qfglColor3ubv (color_white);
 
 	ortho_mat (proj_matrix, 0, width, height, 0, -99999, 99999);
 }

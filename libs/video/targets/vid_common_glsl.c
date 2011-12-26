@@ -48,10 +48,9 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
-#include "QF/GL/defines.h"
-#include "QF/GL/extensions.h"
-#include "QF/GL/funcs.h"
-#include "QF/GL/qf_vid.h"
+#include "QF/GLSL/defines.h"
+#include "QF/GLSL/funcs.h"
+#include "QF/GLSL/qf_vid.h"
 
 #include "compat.h"
 #include "d_iface.h"
@@ -134,17 +133,9 @@ GL_Init_Common (void)
 
 	qfglEnable (GL_TEXTURE_2D);
 	qfglCullFace (GL_FRONT);
-	qfglPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
-	qfglShadeModel (GL_FLAT);
 
 	qfglEnable (GL_BLEND);
 	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
 void
