@@ -33,8 +33,16 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
 #include "QF/draw.h"
 #include "QF/dstring.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
 
@@ -45,6 +53,15 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "gl_draw.h"
 #include "r_shared.h"
+
+typedef struct {
+	int         texnum;
+} glpic_t;
+
+
+static const char quakeicon_vert[] =
+#include "quakeico.vc"
+;
 
 static const char quaketext_vert[] =
 #include "quaketxt.vc"
@@ -72,20 +89,103 @@ static struct {
 	{"char", 0},
 };
 
+static struct {
+	int         program;
+	shaderparam_t icon;
+	shaderparam_t palette;
+	shaderparam_t matrix;
+	shaderparam_t vertex;
+} quake_icon = {
+	0,
+	{"texture", 1},
+	{"palette", 1},
+	{"mvp_mat", 1},
+	{"vertex", 0},
+};
+
 VISIBLE byte *draw_chars;
 static dstring_t *char_queue;
 static int  char_texture;
+static int  conback_texture;
+
+static qpic_t *
+make_glpic (const char *name, qpic_t *p)
+{
+	qpic_t     *pic = 0;
+	glpic_t    *gl;
+
+	if (p) {
+		// FIXME is alignment ok?
+		pic = malloc (sizeof (qpic_t) + sizeof (glpic_t));
+		*pic = *p;
+		gl = (glpic_t *) pic->data;
+		gl->texnum = GL_LoadQuakeTexture (name, p->width, p->height, p->data);
+	}
+	return pic;
+}
+
+static void
+make_quad (qpic_t *pic, int x, int y, int srcx, int srcy,
+		   int width, int height, float verts[6][4])
+{
+	float       sl, sh, tl, th;
+
+	sl = (float) srcx / (float) pic->width;
+	sh = sl + (float) width / (float) pic->width;
+	tl = (float) srcy / (float) pic->height;
+	th = tl + (float) height / (float) pic->height;
+
+	verts[0][0] = x;
+	verts[0][1] = y;
+	verts[0][2] = sl;
+	verts[0][3] = tl;
+
+	verts[1][0] = x + width;
+	verts[1][1] = y;
+	verts[1][2] = sh;
+	verts[1][3] = tl;
+
+	verts[2][0] = x + width;
+	verts[2][1] = y + height;
+	verts[2][2] = sh;
+	verts[2][3] = th;
+
+	verts[3][0] = x;
+	verts[3][1] = y;
+	verts[3][2] = sl;
+	verts[3][3] = tl;
+
+	verts[4][0] = x + width;
+	verts[4][1] = y + height;
+	verts[4][2] = sh;
+	verts[4][3] = th;
+
+	verts[5][0] = x;
+	verts[5][1] = y + height;
+	verts[5][2] = sl;
+	verts[5][3] = th;
+}
 
 VISIBLE qpic_t *
 Draw_PicFromWad (const char *name)
 {
-	return 0;
+	return make_glpic (name, W_GetLumpName (name));
 }
 
 VISIBLE qpic_t *
 Draw_CachePic (const char *path, qboolean alpha)
 {
-	return 0;
+	qpic_t     *p, *pic;
+
+	if (strlen (path) < 4 || strcmp (path + strlen (path) - 4, ".lmp")
+		|| !(p = (qpic_t *) QFS_LoadFile (path, 0))) {
+		//FIXME load a null texture
+		Sys_Error ("Draw_CachePic: failed to load %s", path);
+	}
+
+	pic = make_glpic (path, p);
+	free (p);
+	return pic;
 }
 
 VISIBLE void
@@ -98,6 +198,7 @@ Draw_Init (void)
 {
 	int         i;
 	int         frag, vert;
+	qpic_t     *pic;
 
 	char_queue = dstring_new ();
 	vert = GL_CompileShader ("quaketxt.vert", quaketext_vert, GL_VERTEX_SHADER);
@@ -109,12 +210,28 @@ Draw_Init (void)
 	GL_ResolveShaderParam (quake_text.program, &quake_text.vertex);
 	GL_ResolveShaderParam (quake_text.program, &quake_text.dchar);
 
+	vert = GL_CompileShader ("quakeico.vert", quakeicon_vert, GL_VERTEX_SHADER);
+	quake_icon.program = GL_LinkProgram ("quakeico", vert, frag);
+	GL_ResolveShaderParam (quake_icon.program, &quake_icon.icon);
+	GL_ResolveShaderParam (quake_icon.program, &quake_icon.palette);
+	GL_ResolveShaderParam (quake_icon.program, &quake_icon.matrix);
+	GL_ResolveShaderParam (quake_icon.program, &quake_icon.vertex);
+
 	draw_chars = W_GetLumpName ("conchars");
 	for (i = 0; i < 256 * 64; i++)
 		if (draw_chars[i] == 0)
 			draw_chars[i] = 255;		// proper transparent color
 
 	char_texture = GL_LoadQuakeTexture ("conchars", 128, 128, draw_chars);
+
+	pic = (qpic_t *) QFS_LoadFile ("gfx/conback.lmp", 0);
+	if (pic) {
+		SwapPic (pic);
+		conback_texture = GL_LoadQuakeTexture ("conback",
+											   pic->width, pic->height,
+											   pic->data);
+		free (pic);
+	}
 }
 
 static inline void
@@ -218,6 +335,19 @@ Draw_nString (int x, int y, const char *str, int count)
 void
 Draw_AltString (int x, int y, const char *str)
 {
+	byte        chr;
+
+	if (!str || !str[0])
+		return;
+	if (y <= -8)
+		return;							// totally off screen
+
+	while (*str) {
+		if ((chr = *str++ | 0x80) != (0x80 | 32)) {		// Don't render spaces
+			queue_character (x, y, chr);
+		}
+		x += 8;
+	}
 }
 
 VISIBLE void
@@ -230,20 +360,87 @@ Draw_CrosshairAt (int ch, int x, int y)
 {
 }
 
+static void
+draw_pic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height)
+{
+	glpic_t    *gl;
+	float       verts[6][4];
+
+	make_quad (pic, x, y, srcx, srcy, width, height, verts);
+	gl = (glpic_t *) pic->data;
+
+	qfglUseProgram (quake_icon.program);
+	qfglEnableVertexAttribArray (quake_icon.vertex.location);
+
+	qfglUniformMatrix4fv (quake_icon.matrix.location, 1, false, proj_matrix);
+
+	qfglUniform1i (quake_icon.icon.location, 0);
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
+
+	qfglUniform1i (quake_icon.palette.location, 1);
+	qfglActiveTexture (GL_TEXTURE0 + 1);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+
+	qfglVertexAttribPointer (quake_icon.vertex.location, 4, GL_FLOAT,
+							 0, 0, verts);
+
+	qfglDrawArrays (GL_TRIANGLES, 0, 6);
+
+	qfglDisableVertexAttribArray (quake_icon.vertex.location);
+	char_queue->size = 0;
+}
+
 VISIBLE void
 Draw_Pic (int x, int y, qpic_t *pic)
 {
+	draw_pic (x, y, pic, 0, 0, pic->width, pic->height);
 }
 
 VISIBLE void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
 {
+	draw_pic (x, y, pic, srcx, srcy, width, height);
 }
 
 VISIBLE void
 Draw_ConsoleBackground (int lines, byte alpha)
 {
+	float       ofs = (vid.conheight - lines) / (float) vid.conheight;
+	float       verts[][4] = {
+		{           0,     0, 0, ofs},
+		{vid.conwidth,     0, 1, ofs},
+		{vid.conwidth, lines, 1,   1},
+		{           0,     0, 0, ofs},
+		{vid.conwidth, lines, 1,   1},
+		{           0, lines, 0,   1},
+	};
+
+	qfglUseProgram (quake_icon.program);
+	qfglEnableVertexAttribArray (quake_icon.vertex.location);
+
+	qfglUniformMatrix4fv (quake_icon.matrix.location, 1, false, proj_matrix);
+
+	qfglUniform1i (quake_icon.icon.location, 0);
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, conback_texture);
+
+	qfglUniform1i (quake_icon.palette.location, 1);
+	qfglActiveTexture (GL_TEXTURE0 + 1);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+
+	qfglVertexAttribPointer (quake_icon.vertex.location, 4, GL_FLOAT,
+							 0, 0, verts);
+
+	qfglDrawArrays (GL_TRIANGLES, 0, 6);
+
+	qfglDisableVertexAttribArray (quake_icon.vertex.location);
+	char_queue->size = 0;
 }
 
 VISIBLE void
