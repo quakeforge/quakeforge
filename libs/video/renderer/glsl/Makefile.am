@@ -25,3 +25,4 @@ glsl_src = \
 libglsl_la_SOURCES= $(glsl_src)
 
 EXTRA_DIST = $(glsl_src) $(shader_src)
+CLEANFILES= *.vc *.fc
