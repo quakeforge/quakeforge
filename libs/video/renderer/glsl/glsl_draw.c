@@ -40,6 +40,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
+#include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
 #include "gl_draw.h"
@@ -95,7 +96,6 @@ Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 VISIBLE void
 Draw_Init (void)
 {
-	GLuint      tnum;
 	int         i;
 	int         frag, vert;
 
@@ -114,16 +114,7 @@ Draw_Init (void)
 		if (draw_chars[i] == 0)
 			draw_chars[i] = 255;		// proper transparent color
 
-	qfglGenTextures (1, &tnum);
-	char_texture = tnum;
-	qfglBindTexture (GL_TEXTURE_2D, char_texture);
-	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE,
-					128, 128, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, draw_chars);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	qfglGenerateMipmap (GL_TEXTURE_2D);
+	char_texture = GL_LoadQuakeTexture ("conchars", 128, 128, draw_chars);
 }
 
 static inline void

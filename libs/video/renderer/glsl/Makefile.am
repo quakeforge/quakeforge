@@ -5,6 +5,9 @@ INCLUDES= -I$(top_srcdir)/include $(GLX_CFLAGS)
 shader_src= quake2d.frag quaketxt.vert
 shader_gen= quake2d.fc quaketxt.vc
 
+glsl_src = \
+	glsl_draw.c glsl_main.c glsl_particles.c glsl_screen.c glsl_textures.c
+
 if BUILD_GL
 noinst_LTLIBRARIES=	libglsl.la
 BUILT_SOURCES= $(shader_gen)
@@ -18,9 +21,6 @@ SUFFICES=.frag .vert .fc .vc
 	sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
 .vert.vc:
 	sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
-
-glsl_src = \
-	glsl_draw.c glsl_main.c glsl_particles.c glsl_screen.c
 
 libglsl_la_SOURCES= $(glsl_src)
 
