@@ -29,8 +29,19 @@
 #ifndef __QF_GLSL_vid_h
 #define __QF_GLSL_vid_h
 
+#include "QF/qtypes.h"
+
+typedef struct shaderparam_s {
+	const char *name;
+	qboolean    uniform;
+	int         location;
+} shaderparam_t;
+
 extern int						glsl_palette;
 
 void GL_EndRendering (void);
+int GL_CompileShader (const char *name, const char *shader_src, int type);
+int GL_LinkProgram (const char *name, int vert, int frag);
+int GL_ResolveShaderParam (int program, shaderparam_t *param);
 
 #endif // __QF_GLSL_vid_h

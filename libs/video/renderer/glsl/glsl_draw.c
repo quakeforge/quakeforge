@@ -53,12 +53,6 @@ static const char quake2d_frag[] =
 #include "quake2d.fc"
 ;
 
-typedef struct {
-	const char *name;
-	qboolean    uniform;
-	int         location;
-} shaderparam_t;
-
 VISIBLE byte *draw_chars;
 static dstring_t *char_queue;
 static int  char_texture;
@@ -90,77 +84,6 @@ Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 {
 }
 
-static int
-compile_shader (const char *name, const char *shader_src, int type)
-{
-	const char *src[1];
-	int         shader;
-	int         compiled;
-
-	src[0] = shader_src;
-	shader = qfglCreateShader (type);
-	qfglShaderSource (shader, 1, src, 0);
-	qfglCompileShader (shader);
-	qfglGetShaderiv (shader, GL_COMPILE_STATUS, &compiled);
-	if (!compiled) {
-		dstring_t  *log = dstring_new ();
-		int         size;
-		qfglGetShaderiv (shader, GL_INFO_LOG_LENGTH, &size);
-		log->size = size + 1;	// for terminating null
-		dstring_adjust (log);
-		qfglGetShaderInfoLog (shader, log->size, 0, log->str);
-		qfglDeleteShader (shader);
-		Sys_Printf ("Shader (%s) compile error:\n----8<----\n%s----8<----\n",
-					name, log->str);
-		dstring_delete (log);
-		return 0;
-	}
-	return shader;
-}
-
-static int
-link_program (const char *name, int vert, int frag)
-{
-	int         program;
-	int         linked;
-
-	program = qfglCreateProgram ();
-	qfglAttachShader (program, vert);
-	qfglAttachShader (program, frag);
-	qfglLinkProgram (program);
-
-	qfglGetProgramiv (program, GL_LINK_STATUS, &linked);
-	if (!linked) {
-		dstring_t  *log = dstring_new ();
-		int         size;
-		qfglGetProgramiv (program, GL_INFO_LOG_LENGTH, &size);
-		log->size = size + 1;	// for terminating null
-		dstring_adjust (log);
-		qfglGetProgramInfoLog (program, log->size, 0, log->str);
-		qfglDeleteProgram (program);
-		Sys_Printf ("Program (%s) link error:\n----8<----\n%s----8<----\n",
-					name, log->str);
-		dstring_delete (log);
-		return 0;
-	}
-	return program;
-}
-
-static int
-resolve_shader_param (int program, shaderparam_t *param)
-{
-	if (param->uniform) {
-		param->location = qfglGetUniformLocation (program, param->name);
-	} else {
-		param->location = qfglGetAttribLocation (program, param->name);
-	}
-	if (param->location < 0) {
-		Sys_Printf ("could not resolve %s %s\n",
-					param->uniform ? "uniform" : "attribute", param->name);
-	}
-	return param->location;
-}
-
 VISIBLE void
 Draw_Init (void)
 {
@@ -168,16 +91,16 @@ Draw_Init (void)
 	int         i;
 
 	char_queue = dstring_new ();
-	qtxt_vert = compile_shader ("quaketxt.vert", quaketext_vert,
-								GL_VERTEX_SHADER);
-	q2d_frag = compile_shader ("quake2d.frag", quake2d_frag,
-								GL_FRAGMENT_SHADER);
-	qtxt_prog = link_program ("quaketxt", qtxt_vert, q2d_frag);
-	resolve_shader_param (qtxt_prog, &charmap);
-	resolve_shader_param (qtxt_prog, &palette);
-	resolve_shader_param (qtxt_prog, &matrix);
-	resolve_shader_param (qtxt_prog, &vertex);
-	resolve_shader_param (qtxt_prog, &dchar);
+	qtxt_vert = GL_CompileShader ("quaketxt.vert", quaketext_vert,
+								  GL_VERTEX_SHADER);
+	q2d_frag = GL_CompileShader ("quake2d.frag", quake2d_frag,
+								 GL_FRAGMENT_SHADER);
+	qtxt_prog = GL_LinkProgram ("quaketxt", qtxt_vert, q2d_frag);
+	GL_ResolveShaderParam (qtxt_prog, &charmap);
+	GL_ResolveShaderParam (qtxt_prog, &palette);
+	GL_ResolveShaderParam (qtxt_prog, &matrix);
+	GL_ResolveShaderParam (qtxt_prog, &vertex);
+	GL_ResolveShaderParam (qtxt_prog, &dchar);
 
 	draw_chars = W_GetLumpName ("conchars");
 	for (i = 0; i < 256 * 64; i++)

@@ -42,6 +42,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #endif
 
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -161,4 +162,75 @@ D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
 void
 D_EndDirectRect (int x, int y, int width, int height)
 {
+}
+
+int
+GL_CompileShader (const char *name, const char *shader_src, int type)
+{
+	const char *src[1];
+	int         shader;
+	int         compiled;
+
+	src[0] = shader_src;
+	shader = qfglCreateShader (type);
+	qfglShaderSource (shader, 1, src, 0);
+	qfglCompileShader (shader);
+	qfglGetShaderiv (shader, GL_COMPILE_STATUS, &compiled);
+	if (!compiled) {
+		dstring_t  *log = dstring_new ();
+		int         size;
+		qfglGetShaderiv (shader, GL_INFO_LOG_LENGTH, &size);
+		log->size = size + 1;	// for terminating null
+		dstring_adjust (log);
+		qfglGetShaderInfoLog (shader, log->size, 0, log->str);
+		qfglDeleteShader (shader);
+		Sys_Printf ("Shader (%s) compile error:\n----8<----\n%s----8<----\n",
+					name, log->str);
+		dstring_delete (log);
+		return 0;
+	}
+	return shader;
+}
+
+int
+GL_LinkProgram (const char *name, int vert, int frag)
+{
+	int         program;
+	int         linked;
+
+	program = qfglCreateProgram ();
+	qfglAttachShader (program, vert);
+	qfglAttachShader (program, frag);
+	qfglLinkProgram (program);
+
+	qfglGetProgramiv (program, GL_LINK_STATUS, &linked);
+	if (!linked) {
+		dstring_t  *log = dstring_new ();
+		int         size;
+		qfglGetProgramiv (program, GL_INFO_LOG_LENGTH, &size);
+		log->size = size + 1;	// for terminating null
+		dstring_adjust (log);
+		qfglGetProgramInfoLog (program, log->size, 0, log->str);
+		qfglDeleteProgram (program);
+		Sys_Printf ("Program (%s) link error:\n----8<----\n%s----8<----\n",
+					name, log->str);
+		dstring_delete (log);
+		return 0;
+	}
+	return program;
+}
+
+int
+GL_ResolveShaderParam (int program, shaderparam_t *param)
+{
+	if (param->uniform) {
+		param->location = qfglGetUniformLocation (program, param->name);
+	} else {
+		param->location = qfglGetAttribLocation (program, param->name);
+	}
+	if (param->location < 0) {
+		Sys_Printf ("could not resolve %s %s\n",
+					param->uniform ? "uniform" : "attribute", param->name);
+	}
+	return param->location;
 }
