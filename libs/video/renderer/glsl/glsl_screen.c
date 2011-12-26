@@ -101,6 +101,8 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	if (!scr_initialized)
 		return;
 
+	qfglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	begun = 1;
 
 	if (oldfov != scr_fov->value) {

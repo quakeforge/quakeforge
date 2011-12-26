@@ -113,6 +113,11 @@ VID_SetPalette (unsigned char *palette)
 	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
 	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, 256, 1, 0,
 					GL_RGBA, GL_UNSIGNED_BYTE, pal);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	qfglGenerateMipmap (GL_TEXTURE_2D);
 	free (pal);
 }
 

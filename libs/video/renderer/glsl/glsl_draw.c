@@ -190,13 +190,18 @@ Draw_Init (void)
 	qfglBindTexture (GL_TEXTURE_2D, char_texture);
 	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE,
 					128, 128, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, draw_chars);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	qfglGenerateMipmap (GL_TEXTURE_2D);
 }
 
 static inline void
 queue_character (int x, int y, byte chr)
 {
 	unsigned short *v;
-	int         i;
+	unsigned    i, c;
 	const int   size = 5 * 2 * 4;
 
 	char_queue->size += size;
@@ -205,8 +210,9 @@ queue_character (int x, int y, byte chr)
 	for (i = 0; i < 4; i++) {
 		*v++ = x;
 		*v++ = y;
-		*v++ = i & 1;
-		*v++ = (i >> 1) & 1;
+		c = i ^ (i >> 1);
+		*v++ = c & 1;
+		*v++ = (c >> 1) & 1;
 		*v++ = chr;
 	}
 }
@@ -219,12 +225,15 @@ flush_text (void)
 	qfglEnableVertexAttribArray (dchar.location);
 
 	qfglUniformMatrix4fv (matrix.location, 1, false, proj_matrix);
+
 	qfglUniform1i (charmap.location, 0);
 	qfglActiveTexture(GL_TEXTURE0 + 0);
+	qfglEnable (GL_TEXTURE_2D);
 	qfglBindTexture(GL_TEXTURE_2D, char_texture);
 
 	qfglUniform1i (palette.location, 1);
 	qfglActiveTexture(GL_TEXTURE0 + 1);
+	qfglEnable (GL_TEXTURE_2D);
 	qfglBindTexture(GL_TEXTURE_2D, glsl_palette);
 
 	qfglVertexAttribPointer (vertex.location, 4, GL_UNSIGNED_SHORT, 0, 10,

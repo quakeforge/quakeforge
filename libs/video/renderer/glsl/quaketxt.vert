@@ -26,7 +26,7 @@ main (void)
 {
 	float       row, col;
 	vec2        pos, corner, uv;
-	const vec2  inset = vec2 (0.25, 0.25);
+	const vec2  inset = vec2 (0.03125, 0.03125);
 	const vec2  size = vec2 (0.0625, 0.0625);
 
 	row = floor (char / 16.0);
@@ -34,8 +34,8 @@ main (void)
 
 	pos = vertex.xy;
 	corner = vertex.zw;
-	uv = vec2 (row, col) + inset * (1.0 - 2.0 * corner) + 8.0 * corner;
+	uv = vec2 (col, row) + inset * (1.0 - 2.0 * corner) + corner;
 	uv *= size;
 	gl_Position = mvp_mat * vec4 (pos + corner * 8.0, 0.0, 1.0);
-	st = uv + corner;
+	st = uv;
 }
