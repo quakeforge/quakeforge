@@ -53,19 +53,27 @@ static const char quake2d_frag[] =
 #include "quake2d.fc"
 ;
 
+static float proj_matrix[16];
+
+static struct {
+	int         program;
+	shaderparam_t charmap;
+	shaderparam_t palette;
+	shaderparam_t matrix;
+	shaderparam_t vertex;
+	shaderparam_t dchar;
+} quake_text = {
+	0,
+	{"texture", 1},
+	{"palette", 1},
+	{"mvp_mat", 1},
+	{"vertex", 0},
+	{"char", 0},
+};
+
 VISIBLE byte *draw_chars;
 static dstring_t *char_queue;
 static int  char_texture;
-static int  qtxt_vert;
-static int  q2d_frag;
-static int  qtxt_prog;
-static float proj_matrix[16];
-
-static shaderparam_t charmap = {"charmap", 1};
-static shaderparam_t palette = {"palette", 1};
-static shaderparam_t matrix = {"mvp_mat", 1};
-static shaderparam_t vertex = {"vertex", 0};
-static shaderparam_t dchar = {"char", 0};
 
 VISIBLE qpic_t *
 Draw_PicFromWad (const char *name)
@@ -89,18 +97,17 @@ Draw_Init (void)
 {
 	GLuint      tnum;
 	int         i;
+	int         frag, vert;
 
 	char_queue = dstring_new ();
-	qtxt_vert = GL_CompileShader ("quaketxt.vert", quaketext_vert,
-								  GL_VERTEX_SHADER);
-	q2d_frag = GL_CompileShader ("quake2d.frag", quake2d_frag,
-								 GL_FRAGMENT_SHADER);
-	qtxt_prog = GL_LinkProgram ("quaketxt", qtxt_vert, q2d_frag);
-	GL_ResolveShaderParam (qtxt_prog, &charmap);
-	GL_ResolveShaderParam (qtxt_prog, &palette);
-	GL_ResolveShaderParam (qtxt_prog, &matrix);
-	GL_ResolveShaderParam (qtxt_prog, &vertex);
-	GL_ResolveShaderParam (qtxt_prog, &dchar);
+	vert = GL_CompileShader ("quaketxt.vert", quaketext_vert, GL_VERTEX_SHADER);
+	frag = GL_CompileShader ("quake2d.frag", quake2d_frag, GL_FRAGMENT_SHADER);
+	quake_text.program = GL_LinkProgram ("quaketxt", vert, frag);
+	GL_ResolveShaderParam (quake_text.program, &quake_text.charmap);
+	GL_ResolveShaderParam (quake_text.program, &quake_text.palette);
+	GL_ResolveShaderParam (quake_text.program, &quake_text.matrix);
+	GL_ResolveShaderParam (quake_text.program, &quake_text.vertex);
+	GL_ResolveShaderParam (quake_text.program, &quake_text.dchar);
 
 	draw_chars = W_GetLumpName ("conchars");
 	for (i = 0; i < 256 * 64; i++)
@@ -142,31 +149,31 @@ queue_character (int x, int y, byte chr)
 static void
 flush_text (void)
 {
-	qfglUseProgram (qtxt_prog);
-	qfglEnableVertexAttribArray (vertex.location);
-	qfglEnableVertexAttribArray (dchar.location);
+	qfglUseProgram (quake_text.program);
+	qfglEnableVertexAttribArray (quake_text.vertex.location);
+	qfglEnableVertexAttribArray (quake_text.dchar.location);
 
-	qfglUniformMatrix4fv (matrix.location, 1, false, proj_matrix);
+	qfglUniformMatrix4fv (quake_text.matrix.location, 1, false, proj_matrix);
 
-	qfglUniform1i (charmap.location, 0);
+	qfglUniform1i (quake_text.charmap.location, 0);
 	qfglActiveTexture (GL_TEXTURE0 + 0);
 	qfglEnable (GL_TEXTURE_2D);
 	qfglBindTexture (GL_TEXTURE_2D, char_texture);
 
-	qfglUniform1i (palette.location, 1);
+	qfglUniform1i (quake_text.palette.location, 1);
 	qfglActiveTexture (GL_TEXTURE0 + 1);
 	qfglEnable (GL_TEXTURE_2D);
 	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-	qfglVertexAttribPointer (vertex.location, 4, GL_UNSIGNED_SHORT, 0, 10,
-							 char_queue->str);
-	qfglVertexAttribPointer (dchar.location, 1, GL_UNSIGNED_SHORT, 0, 10,
-							 char_queue->str + 8);
+	qfglVertexAttribPointer (quake_text.vertex.location, 4, GL_UNSIGNED_SHORT,
+							 0, 10, char_queue->str);
+	qfglVertexAttribPointer (quake_text.dchar.location, 1, GL_UNSIGNED_SHORT,
+							 0, 10, char_queue->str + 8);
 
 	qfglDrawArrays (GL_TRIANGLES, 0, char_queue->size / 10);
 
-	qfglDisableVertexAttribArray (dchar.location);
-	qfglDisableVertexAttribArray (vertex.location);
+	qfglDisableVertexAttribArray (quake_text.dchar.location);
+	qfglDisableVertexAttribArray (quake_text.vertex.location);
 	char_queue->size = 0;
 }
 
