@@ -384,4 +384,13 @@ void R_DrawSurfaceBlock32_mip1 (void);
 void R_DrawSurfaceBlock32_mip2 (void);
 void R_DrawSurfaceBlock32_mip3 (void);
 
+extern byte crosshair_data[];
+#define CROSSHAIR_WIDTH 8
+#define CROSSHAIR_HEIGHT 8
+#define CROSSHAIR_TILEX 2
+#define CROSSHAIR_TILEY 2
+#define CROSSHAIR_COUNT (CROSSHAIR_TILEX * CROSSHAIR_TILEY)
+
+struct qpic_s *Draw_CrosshairPic (void);
+
 #endif // _R_LOCAL_H

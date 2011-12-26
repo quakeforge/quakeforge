@@ -10,7 +10,7 @@ EXTRA_LTLIBRARIES=	libQFrenderer_sw.la libQFrenderer_sw32.la \
 					libQFrenderer_gl.la libQFrenderer_glsl.la
 
 common_sources= \
-	r_cvar.c r_efrag.c r_ent.c r_graph.c r_light.c r_main.c \
+	crosshair.c r_cvar.c r_efrag.c r_ent.c r_graph.c r_light.c r_main.c \
 	r_part.c r_progs.c r_screen.c
 
 libQFrenderer_gl_la_LDFLAGS=		-version-info $(QUAKE_LIBRARY_VERSION_INFO) -rpath $(libdir)

@@ -61,6 +61,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "compat.h"
 #include "gl_draw.h"
 #include "r_cvar.h"
+#include "r_local.h"
 #include "r_shared.h"
 #include "sbar.h"
 #include "varrays.h"
@@ -92,37 +93,6 @@ static int	char_texture;
 static int	cs_texture;					// crosshair texturea
 
 static byte color_0_8[4] = { 204, 204, 204, 255 };
-
-// NOTE: this array is INCORRECT for direct uploading see Draw_Init
-static byte cs_data[8 * 8 * 4] = {
-		0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff,
-		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-		0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff,
-		0xfe, 0xff, 0xfe, 0xff, 0xfe, 0xff, 0xfe, 0xff,
-		0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff,
-		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-		0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff,
-		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-
-		0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe, 0xff,
-		0xff, 0xfe, 0xff, 0xff, 0xff, 0xfe, 0xff, 0xff,
-		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-		0xff, 0xfe, 0xff, 0xff, 0xff, 0xfe, 0xff, 0xff,
-		0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe, 0xff,
-		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-
-		//From FitzQuake
-		255,255,255,255,255,255,255,255,
-		255,255,255,  8,  9,255,255,255,
-		255,255,255,  6,  8,  2,255,255,
-		255,  6,  8,  8,  6,  8,  8,255,
-		255,255,  2,  8,  8,  2,  2,  2,
-		255,255,255,  7,  8,  2,255,255,
-		255,255,255,255,  2,  2,255,255,
-		255,255,255,255,255,255,255,255,
-};
 
 typedef struct {
 	int			texnum;
@@ -338,8 +308,8 @@ Draw_Init (void)
 {
 	int	     i;
 	tex_t	*image;
-	byte    *cs_tmp_data;
 	float    width, height;
+	qpic_t  *ch_pic;
 
 	Cmd_AddCommand ("gl_texturemode", &GL_TextureMode_f,
 					"Texture mipmap quality.");
@@ -391,21 +361,12 @@ Draw_Init (void)
 		char_cells[i].bly = frow - CELL_INSET / height + CELL_SIZE;
 	}
 
-	// re-arrange the cs_data bytes so they're layed out properly for
-	// subimaging
-	cs_tmp_data = malloc (sizeof (cs_data));
-	for (i = 0; i < 8 * 8; i++) {
-		int         x, y;
-		x = i % 8;
-		y = i / 8;
-		cs_tmp_data[y * 16 + x + 0 * 8 * 8 + 0] = cs_data[i + 0 * 8 * 8];
-		cs_tmp_data[y * 16 + x + 0 * 8 * 8 + 8] = cs_data[i + 1 * 8 * 8];
-		cs_tmp_data[y * 16 + x + 2 * 8 * 8 + 0] = cs_data[i + 2 * 8 * 8];
-		cs_tmp_data[y * 16 + x + 2 * 8 * 8 + 8] = cs_data[i + 3 * 8 * 8];
-	}
-	cs_texture = GL_LoadTexture ("crosshair", 16, 16, cs_tmp_data,
-								 false, true, 1);
-	free (cs_tmp_data);
+	ch_pic = Draw_CrosshairPic ();
+	cs_texture = GL_LoadTexture ("crosshair",
+								 CROSSHAIR_WIDTH * CROSSHAIR_TILEX,
+								 CROSSHAIR_HEIGHT * CROSSHAIR_TILEY,
+								 ch_pic->data, false, true, 1);
+	free (ch_pic);
 
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
