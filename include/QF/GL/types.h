@@ -35,7 +35,6 @@ typedef unsigned int	GLenum;
 typedef unsigned char	GLboolean;
 typedef unsigned int	GLbitfield;
 typedef void			GLvoid;
-typedef char			GLchar;			/* 1-byte */
 typedef signed char		GLbyte;			/* 1-byte signed */
 typedef short			GLshort;		/* 2-byte signed */
 typedef int				GLint;			/* 4-byte signed */
