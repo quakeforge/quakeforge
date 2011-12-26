@@ -2,8 +2,8 @@ AUTOMAKE_OPTIONS= foreign
 
 AM_CFLAGS= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include $(GLX_CFLAGS)
-shader_src= quaketxt.frag quaketxt.vert
-shader_gen= quaketxt.fc quaketxt.vc
+shader_src= quake2d.frag quaketxt.vert
+shader_gen= quake2d.fc quaketxt.vc
 
 if BUILD_GL
 noinst_LTLIBRARIES=	libglsl.la

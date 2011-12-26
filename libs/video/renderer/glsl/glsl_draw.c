@@ -49,8 +49,8 @@ static const char quaketext_vert[] =
 #include "quaketxt.vc"
 ;
 
-static const char quaketext_frag[] =
-#include "quaketxt.fc"
+static const char quake2d_frag[] =
+#include "quake2d.fc"
 ;
 
 typedef struct {
@@ -63,7 +63,7 @@ VISIBLE byte *draw_chars;
 static dstring_t *char_queue;
 static int  char_texture;
 static int  qtxt_vert;
-static int  qtxt_frag;
+static int  q2d_frag;
 static int  qtxt_prog;
 static float proj_matrix[16];
 
@@ -170,9 +170,9 @@ Draw_Init (void)
 	char_queue = dstring_new ();
 	qtxt_vert = compile_shader ("quaketxt.vert", quaketext_vert,
 								GL_VERTEX_SHADER);
-	qtxt_frag = compile_shader ("quaketxt.frag", quaketext_frag,
+	q2d_frag = compile_shader ("quake2d.frag", quake2d_frag,
 								GL_FRAGMENT_SHADER);
-	qtxt_prog = link_program ("quaketxt", qtxt_vert, qtxt_frag);
+	qtxt_prog = link_program ("quaketxt", qtxt_vert, q2d_frag);
 	resolve_shader_param (qtxt_prog, &charmap);
 	resolve_shader_param (qtxt_prog, &palette);
 	resolve_shader_param (qtxt_prog, &matrix);
