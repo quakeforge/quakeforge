@@ -527,6 +527,28 @@ QFGL_WANT (void, glVertexAttrib4uiv, (GLuint index, const GLuint *v))
 QFGL_WANT (void, glVertexAttrib4usv, (GLuint index, const GLushort *v))
 QFGL_WANT (void, glVertexAttribPointer, (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer))
 
+//ARB
+QFGL_WANT (GLboolean, glIsRenderbuffer, (GLuint renderbuffer))
+QFGL_WANT (void, glBindRenderbuffer, (GLenum target, GLuint renderbuffer))
+QFGL_WANT (void, glDeleteRenderbuffers, (GLsizei n, const GLuint *renderbuffers))
+QFGL_WANT (void, glGenRenderbuffers, (GLsizei n, GLuint *renderbuffers))
+QFGL_WANT (void, glRenderbufferStorage, (GLenum target, GLenum internalformat, GLsizei width, GLsizei height))
+QFGL_WANT (void, glGetRenderbufferParameteriv, (GLenum target, GLenum pname, GLint *params))
+QFGL_WANT (GLboolean, glIsFramebuffer, (GLuint framebuffer))
+QFGL_WANT (void, glBindFramebuffer, (GLenum target, GLuint framebuffer))
+QFGL_WANT (void, glDeleteFramebuffers, (GLsizei n, const GLuint *framebuffers))
+QFGL_WANT (void, glGenFramebuffers, (GLsizei n, GLuint *framebuffers))
+QFGL_WANT (GLenum, glCheckFramebufferStatus, (GLenum target))
+QFGL_WANT (void, glFramebufferTexture1D, (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level))
+QFGL_WANT (void, glFramebufferTexture2D, (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level))
+QFGL_WANT (void, glFramebufferTexture3D, (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint zoffset))
+QFGL_WANT (void, glFramebufferRenderbuffer, (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer))
+QFGL_WANT (void, glGetFramebufferAttachmentParameteriv, (GLenum target, GLenum attachment, GLenum pname, GLint *params))
+QFGL_WANT (void, glGenerateMipmap, (GLenum target))
+QFGL_WANT (void, glBlitFramebuffer, (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter))
+QFGL_WANT (void, glRenderbufferStorageMultisample, (GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height))
+QFGL_WANT (void, glFramebufferTextureLayer, (GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer))
+
 #ifdef UNDEF_QFGL_DONT_NEED
 #undef QFGL_DONT_NEED
 #endif
