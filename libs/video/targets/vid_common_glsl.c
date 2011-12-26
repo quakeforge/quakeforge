@@ -101,6 +101,8 @@ VID_SetPalette (unsigned char *palette)
 	pal = malloc (256 * 4);
 	for (i = 0, ip = palette, op = pal; i < 255; i++) {
 		*op++ = *ip++;
+		*op++ = *ip++;
+		*op++ = *ip++;
 		*op++ = 255;	// alpha = 1
 	}
 	QuatZero (op);		// color 255 = transparent (alpha = 0)
