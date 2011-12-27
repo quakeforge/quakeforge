@@ -1,8 +1,8 @@
 extern struct cvar_s	 *easter_eggs;
-extern void r_easter_eggs_f (cvar_t *var);
-extern void r_particles_style_f (cvar_t *var);
+extern void r_easter_eggs_f (struct cvar_s *var);
+extern void r_particles_style_f (struct cvar_s *var);
 
-extern void gl_overbright_f (cvar_t *cvar);
+extern void gl_overbright_f (struct cvar_s *cvar);
 
 extern struct cvar_s     *cl_crossx;
 extern struct cvar_s     *cl_crossy;

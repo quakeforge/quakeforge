@@ -40,6 +40,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 # include <strings.h>
 #endif
 
+#include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/dstring.h"
 #include "QF/quakefs.h"
@@ -52,6 +53,8 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/qf_vid.h"
 
 #include "gl_draw.h"
+#include "r_cvar.h"
+#include "r_local.h"
 #include "r_shared.h"
 
 typedef struct {
@@ -107,6 +110,7 @@ VISIBLE byte *draw_chars;
 static dstring_t *char_queue;
 static int  char_texture;
 static int  conback_texture;
+static qpic_t *crosshair_pic;
 
 static qpic_t *
 make_glpic (const char *name, qpic_t *p)
@@ -164,6 +168,39 @@ make_quad (qpic_t *pic, int x, int y, int srcx, int srcy,
 	verts[5][1] = y + height;
 	verts[5][2] = sl;
 	verts[5][3] = th;
+}
+
+static void
+draw_pic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height)
+{
+	glpic_t    *gl;
+	float       verts[6][4];
+
+	make_quad (pic, x, y, srcx, srcy, width, height, verts);
+	gl = (glpic_t *) pic->data;
+
+	qfglUseProgram (quake_icon.program);
+	qfglEnableVertexAttribArray (quake_icon.vertex.location);
+
+	qfglUniformMatrix4fv (quake_icon.matrix.location, 1, false, proj_matrix);
+
+	qfglUniform1i (quake_icon.icon.location, 0);
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
+
+	qfglUniform1i (quake_icon.palette.location, 1);
+	qfglActiveTexture (GL_TEXTURE0 + 1);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+
+	qfglVertexAttribPointer (quake_icon.vertex.location, 4, GL_FLOAT,
+							 0, 0, verts);
+
+	qfglDrawArrays (GL_TRIANGLES, 0, 6);
+
+	qfglDisableVertexAttribArray (quake_icon.vertex.location);
+	char_queue->size = 0;
 }
 
 VISIBLE qpic_t *
@@ -232,6 +269,10 @@ Draw_Init (void)
 											   pic->data);
 		free (pic);
 	}
+
+	pic = Draw_CrosshairPic ();
+	crosshair_pic = make_glpic ("crosshair", pic);
+	free (pic);
 }
 
 static inline void
@@ -350,47 +391,77 @@ Draw_AltString (int x, int y, const char *str)
 	}
 }
 
+static void
+crosshair_1 (int x, int y)
+{
+	Draw_Character (x - 4, y - 4, '+');
+}
+
+//FIXME these should use an index to select the region.
+static void
+crosshair_2 (int x, int y)
+{
+	draw_pic (x, y, crosshair_pic,
+			  0, 0, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT);
+}
+
+static void
+crosshair_3 (int x, int y)
+{
+	draw_pic (x, y, crosshair_pic,
+			  CROSSHAIR_WIDTH, 0,
+			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT);
+}
+
+static void
+crosshair_4 (int x, int y)
+{
+	draw_pic (x, y, crosshair_pic,
+			  0, CROSSHAIR_HEIGHT,
+			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT);
+}
+
+static void
+crosshair_5 (int x, int y)
+{
+	draw_pic (x, y, crosshair_pic,
+			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT,
+			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT);
+}
+
+static void (*crosshair_func[]) (int x, int y) = {
+	crosshair_1,
+	crosshair_2,
+	crosshair_3,
+	crosshair_4,
+	crosshair_5,
+};
+
 VISIBLE void
 Draw_Crosshair (void)
 {
+	int         x, y;
+	size_t      ch;
+
+	ch = crosshair->int_val - 1;
+	if (ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
+		return;
+
+	x = vid.conwidth / 2 + cl_crossx->int_val;
+	y = vid.conheight / 2 + cl_crossy->int_val;
+
+	crosshair_func[ch] (x, y);
 }
 
 void
 Draw_CrosshairAt (int ch, int x, int y)
 {
-}
+	unsigned    c = ch - 1;
 
-static void
-draw_pic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height)
-{
-	glpic_t    *gl;
-	float       verts[6][4];
+	if (c >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
+		return;
 
-	make_quad (pic, x, y, srcx, srcy, width, height, verts);
-	gl = (glpic_t *) pic->data;
-
-	qfglUseProgram (quake_icon.program);
-	qfglEnableVertexAttribArray (quake_icon.vertex.location);
-
-	qfglUniformMatrix4fv (quake_icon.matrix.location, 1, false, proj_matrix);
-
-	qfglUniform1i (quake_icon.icon.location, 0);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
-
-	qfglUniform1i (quake_icon.palette.location, 1);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
-
-	qfglVertexAttribPointer (quake_icon.vertex.location, 4, GL_FLOAT,
-							 0, 0, verts);
-
-	qfglDrawArrays (GL_TRIANGLES, 0, 6);
-
-	qfglDisableVertexAttribArray (quake_icon.vertex.location);
-	char_queue->size = 0;
+	crosshair_func[c] (x, y);
 }
 
 VISIBLE void
