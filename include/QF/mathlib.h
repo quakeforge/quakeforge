@@ -210,7 +210,15 @@ extern const vec_t * const quat_origin;
 		(c)[0] = (a)[0] * (b); \
 		(c)[1] = (a)[1] * (b); \
 		(c)[2] = (a)[2] * (b); \
-		(c)[3] = (a)[3] * (3); \
+		(c)[3] = (a)[3] * (b); \
+	} while (0)
+
+#define QuatCompScale(a,b,c) \
+	do { \
+		(c)[0] = (a)[0] * (b)[0]; \
+		(c)[1] = (a)[1] * (b)[1]; \
+		(c)[2] = (a)[2] * (b)[2]; \
+		(c)[3] = (a)[3] * (b)[3]; \
 	} while (0)
 #define QuatCompCompare(x, op, y) \
 	(((x)[0] op (y)[0]) && ((x)[1] op (y)[1]) \
