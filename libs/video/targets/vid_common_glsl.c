@@ -329,6 +329,10 @@ GL_ResolveShaderParam (int program, shaderparam_t *param)
 	if (param->location < 0) {
 		Sys_Printf ("could not resolve %s %s\n",
 					param->uniform ? "uniform" : "attribute", param->name);
+	} else {
+		Sys_MaskPrintf (SYS_GLSL, "Resolved %s %s @ %d\n",
+						param->uniform ? "uniform" : "attribute",
+						param->name, param->location);
 	}
 	return param->location;
 }
