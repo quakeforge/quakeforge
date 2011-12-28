@@ -207,7 +207,6 @@ draw_pic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height,
 	qfglDrawArrays (GL_TRIANGLES, 0, 6);
 
 	qfglDisableVertexAttribArray (quake_icon.vertex.location);
-	char_queue->size = 0;
 }
 
 VISIBLE qpic_t *
@@ -531,7 +530,6 @@ Draw_ConsoleBackground (int lines, byte alpha)
 	qfglDrawArrays (GL_TRIANGLES, 0, 6);
 
 	qfglDisableVertexAttribArray (quake_icon.vertex.location);
-	char_queue->size = 0;
 }
 
 VISIBLE void
