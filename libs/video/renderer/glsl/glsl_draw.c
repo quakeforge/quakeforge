@@ -244,6 +244,10 @@ Draw_Init (void)
 	int         frag, vert;
 	qpic_t     *pic;
 
+	//FIXME temporary work around for the timing of cvar creation and palette
+	//loading
+	crosshaircolor->callback (crosshaircolor);
+
 	char_queue = dstring_new ();
 	vert = GL_CompileShader ("quaketxt.vert", quaketext_vert, GL_VERTEX_SHADER);
 	frag = GL_CompileShader ("quake2d.frag", quake2d_frag, GL_FRAGMENT_SHADER);
