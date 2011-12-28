@@ -1,4 +1,5 @@
 uniform mat4 mvp_mat;
+attribute vec4 vcolor;
 /** Vertex position.
 
 	x, y, s, t
@@ -7,7 +8,6 @@ uniform mat4 mvp_mat;
 	(\a x, \a y) and texture coordinate for the icon (\a s=z, \a t=w).
 */
 attribute vec4 vertex;
-attribute vec4 vcolor;
 
 varying vec4 color;
 varying vec2 st;
