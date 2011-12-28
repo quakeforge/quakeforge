@@ -43,5 +43,6 @@ void GL_EndRendering (void);
 int GL_CompileShader (const char *name, const char *shader_src, int type);
 int GL_LinkProgram (const char *name, int vert, int frag);
 int GL_ResolveShaderParam (int program, shaderparam_t *param);
+void GL_DumpAttribArrays (void);
 
 #endif // __QF_GLSL_vid_h
