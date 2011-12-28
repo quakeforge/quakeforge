@@ -176,20 +176,114 @@ GL_CompileShader (const char *name, const char *shader_src, int type)
 	qfglShaderSource (shader, 1, src, 0);
 	qfglCompileShader (shader);
 	qfglGetShaderiv (shader, GL_COMPILE_STATUS, &compiled);
-	if (!compiled) {
+	if (!compiled || (developer->int_val & SYS_GLSL)) {
 		dstring_t  *log = dstring_new ();
 		int         size;
 		qfglGetShaderiv (shader, GL_INFO_LOG_LENGTH, &size);
 		log->size = size + 1;	// for terminating null
 		dstring_adjust (log);
 		qfglGetShaderInfoLog (shader, log->size, 0, log->str);
-		qfglDeleteShader (shader);
-		Sys_Printf ("Shader (%s) compile error:\n----8<----\n%s----8<----\n",
+		if (!compiled)
+			qfglDeleteShader (shader);
+		Sys_Printf ("Shader (%s) compile log:\n----8<----\n%s----8<----\n",
 					name, log->str);
 		dstring_delete (log);
-		return 0;
+		if (!compiled)
+			return 0;
 	}
 	return shader;
+}
+
+static const char *
+type_name (GLenum type)
+{
+	switch (type) {
+		case GL_FLOAT_VEC2:
+			return "vec2";
+		case GL_FLOAT_VEC3:
+			return "vec3";
+		case GL_FLOAT_VEC4:
+			return "vec4";
+		case GL_INT_VEC2:
+			return "ivec2";
+		case GL_INT_VEC3:
+			return "ivec3";
+		case GL_INT_VEC4:
+			return "ivec4";
+		case GL_BOOL:
+			return "bool";
+		case GL_BOOL_VEC2:
+			return "bvec2";
+		case GL_BOOL_VEC3:
+			return "bvec3";
+		case GL_BOOL_VEC4:
+			return "bvec4";
+		case GL_FLOAT_MAT2:
+			return "mat2";
+		case GL_FLOAT_MAT3:
+			return "mat3";
+		case GL_FLOAT_MAT4:
+			return "mat4";
+		case GL_SAMPLER_2D:
+			return "sampler_2d";
+		case GL_SAMPLER_CUBE:
+			return "sampler_cube";
+		case GL_BYTE:
+			return "byte";
+		case GL_UNSIGNED_BYTE:
+			return "unsigned byte";
+		case GL_SHORT:
+			return "short";
+		case GL_UNSIGNED_SHORT:
+			return "unsigned short";
+		case GL_INT:
+			return "int";
+		case GL_UNSIGNED_INT:
+			return "unsigned int";
+		case GL_FLOAT:
+			return "float";
+		case GL_FIXED:
+			return "fixed";
+	}
+	return va("%x", type);
+}
+
+static void
+dump_program (const char *name, int program)
+{
+	GLint       ind = 0;
+	GLint       count = 0;
+	GLint       size;
+	dstring_t  *pname;
+	GLint       psize = 0;
+	GLenum      ptype = 0;
+
+	pname = dstring_new ();
+	qfglGetProgramiv (program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &size);
+	pname->size = size;
+	dstring_adjust (pname);
+
+	qfglGetProgramiv(program, GL_ACTIVE_UNIFORMS, &count);
+	Sys_Printf("Shader %s has %i uniforms\n", name, count);
+	for (ind = 0; ind < count; ind++) {
+		qfglGetActiveUniform(program, ind, pname->size, 0, &psize, &ptype,
+							 pname->str);
+		Sys_Printf ("Uniform %i name \"%s\" size %i type %s\n", (int)ind,
+					pname->str, (int)psize, type_name (ptype));
+	}
+
+	qfglGetProgramiv (program, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &size);
+	pname->size = size;
+	dstring_adjust (pname);
+
+	qfglGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, &count);
+	Sys_Printf("Shader %s has %i attributes\n", name, count);
+	for (ind = 0; ind < count; ind++) {
+		qfglGetActiveAttrib(program, ind, pname->size, 0, &psize, &ptype,
+							pname->str);
+		Sys_Printf ("Attribute %i name \"%s\" size %i type %s\n", (int)ind,
+					pname->str, (int)psize, type_name (ptype));
+	}
 }
 
 int
@@ -204,19 +298,23 @@ GL_LinkProgram (const char *name, int vert, int frag)
 	qfglLinkProgram (program);
 
 	qfglGetProgramiv (program, GL_LINK_STATUS, &linked);
-	if (!linked) {
+	if (!linked || (developer->int_val & SYS_GLSL)) {
 		dstring_t  *log = dstring_new ();
 		int         size;
 		qfglGetProgramiv (program, GL_INFO_LOG_LENGTH, &size);
 		log->size = size + 1;	// for terminating null
 		dstring_adjust (log);
 		qfglGetProgramInfoLog (program, log->size, 0, log->str);
-		qfglDeleteProgram (program);
-		Sys_Printf ("Program (%s) link error:\n----8<----\n%s----8<----\n",
+		if (!linked)
+			qfglDeleteProgram (program);
+		Sys_Printf ("Program (%s) link log:\n----8<----\n%s----8<----\n",
 					name, log->str);
 		dstring_delete (log);
-		return 0;
+		if (!linked)
+			return 0;
 	}
+	if (developer->int_val & SYS_GLSL)
+		dump_program (name, program);
 	return program;
 }
 
