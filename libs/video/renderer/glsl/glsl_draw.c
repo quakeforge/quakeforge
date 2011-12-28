@@ -82,6 +82,7 @@ static struct {
 	shaderparam_t palette;
 	shaderparam_t matrix;
 	shaderparam_t vertex;
+	shaderparam_t color;
 	shaderparam_t dchar;
 } quake_text = {
 	0,
@@ -89,6 +90,7 @@ static struct {
 	{"palette", 1},
 	{"mvp_mat", 1},
 	{"vertex", 0},
+	{"vcolor", 0},
 	{"char", 0},
 };
 
@@ -98,12 +100,14 @@ static struct {
 	shaderparam_t palette;
 	shaderparam_t matrix;
 	shaderparam_t vertex;
+	shaderparam_t color;
 } quake_icon = {
 	0,
 	{"texture", 1},
 	{"palette", 1},
 	{"mvp_mat", 1},
 	{"vertex", 0},
+	{"vcolor", 0},
 };
 
 VISIBLE byte *draw_chars;
@@ -171,7 +175,8 @@ make_quad (qpic_t *pic, int x, int y, int srcx, int srcy,
 }
 
 static void
-draw_pic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height)
+draw_pic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height,
+		  float *color)
 {
 	glpic_t    *gl;
 	float       verts[6][4];
@@ -193,6 +198,8 @@ draw_pic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height)
 	qfglActiveTexture (GL_TEXTURE0 + 1);
 	qfglEnable (GL_TEXTURE_2D);
 	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+
+	qfglVertexAttrib4fv (quake_icon.color.location, color);
 
 	qfglVertexAttribPointer (quake_icon.vertex.location, 4, GL_FLOAT,
 							 0, 0, verts);
@@ -245,6 +252,7 @@ Draw_Init (void)
 	GL_ResolveShaderParam (quake_text.program, &quake_text.palette);
 	GL_ResolveShaderParam (quake_text.program, &quake_text.matrix);
 	GL_ResolveShaderParam (quake_text.program, &quake_text.vertex);
+	GL_ResolveShaderParam (quake_text.program, &quake_text.color);
 	GL_ResolveShaderParam (quake_text.program, &quake_text.dchar);
 
 	vert = GL_CompileShader ("quakeico.vert", quakeicon_vert, GL_VERTEX_SHADER);
@@ -253,6 +261,7 @@ Draw_Init (void)
 	GL_ResolveShaderParam (quake_icon.program, &quake_icon.palette);
 	GL_ResolveShaderParam (quake_icon.program, &quake_icon.matrix);
 	GL_ResolveShaderParam (quake_icon.program, &quake_icon.vertex);
+	GL_ResolveShaderParam (quake_icon.program, &quake_icon.color);
 
 	draw_chars = W_GetLumpName ("conchars");
 	for (i = 0; i < 256 * 64; i++)
@@ -313,6 +322,8 @@ flush_text (void)
 	qfglActiveTexture (GL_TEXTURE0 + 1);
 	qfglEnable (GL_TEXTURE_2D);
 	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+
+	qfglVertexAttrib4f (quake_text.color.location, 1, 1, 1, 1);
 
 	qfglVertexAttribPointer (quake_text.vertex.location, 4, GL_UNSIGNED_SHORT,
 							 0, 10, char_queue->str);
@@ -402,7 +413,7 @@ static void
 crosshair_2 (int x, int y)
 {
 	draw_pic (x, y, crosshair_pic,
-			  0, 0, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT);
+			  0, 0, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_color);
 }
 
 static void
@@ -410,7 +421,7 @@ crosshair_3 (int x, int y)
 {
 	draw_pic (x, y, crosshair_pic,
 			  CROSSHAIR_WIDTH, 0,
-			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT);
+			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_color);
 }
 
 static void
@@ -418,7 +429,7 @@ crosshair_4 (int x, int y)
 {
 	draw_pic (x, y, crosshair_pic,
 			  0, CROSSHAIR_HEIGHT,
-			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT);
+			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_color);
 }
 
 static void
@@ -426,7 +437,7 @@ crosshair_5 (int x, int y)
 {
 	draw_pic (x, y, crosshair_pic,
 			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT,
-			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT);
+			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_color);
 }
 
 static void (*crosshair_func[]) (int x, int y) = {
@@ -467,14 +478,16 @@ Draw_CrosshairAt (int ch, int x, int y)
 VISIBLE void
 Draw_Pic (int x, int y, qpic_t *pic)
 {
-	draw_pic (x, y, pic, 0, 0, pic->width, pic->height);
+	static quat_t color = { 1, 1, 1, 1};
+	draw_pic (x, y, pic, 0, 0, pic->width, pic->height, color);
 }
 
 VISIBLE void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
 {
-	draw_pic (x, y, pic, srcx, srcy, width, height);
+	static quat_t color = { 1, 1, 1, 1};
+	draw_pic (x, y, pic, srcx, srcy, width, height, color);
 }
 
 VISIBLE void
@@ -504,6 +517,9 @@ Draw_ConsoleBackground (int lines, byte alpha)
 	qfglActiveTexture (GL_TEXTURE0 + 1);
 	qfglEnable (GL_TEXTURE_2D);
 	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+
+	qfglVertexAttrib4f (quake_icon.color.location,
+						1, 1, 1, bound (0, alpha, 255) / 255.0);
 
 	qfglVertexAttribPointer (quake_icon.vertex.location, 4, GL_FLOAT,
 							 0, 0, verts);

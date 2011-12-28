@@ -10,6 +10,12 @@ uniform mat4 mvp_mat;
 */
 attribute vec4 vertex;
 
+/** Vectex color.
+
+	r, g, b, a
+*/
+attribute vec4 vcolor;
+
 /** The character to draw.
 
 	The quake character map supports only 256 characters, 0-255. Any other
@@ -19,6 +25,7 @@ attribute float char;
 
 /** Coordinate in character map texture.
 */
+varying vec4 color;
 varying vec2 st;
 
 void
@@ -38,4 +45,5 @@ main (void)
 	uv *= size;
 	gl_Position = mvp_mat * vec4 (pos + corner * 8.0, 0.0, 1.0);
 	st = uv;
+	color = vcolor;
 }

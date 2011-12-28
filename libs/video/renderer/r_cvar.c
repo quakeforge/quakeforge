@@ -140,7 +140,15 @@ void      (*r_viewsize_callback)(cvar_t *var);
 int         r_viewsize;
 
 float		cl_wateralpha;
+quat_t      crosshair_color;
 
+static void
+crosshaircolor_f (cvar_t *var)
+{
+	byte       *color;
+	color = (byte *) &d_8to24table[bound (0, var->int_val, 255)];
+	QuatScale (color, 1.0 / 255, crosshair_color);
+}
 
 static void
 r_particles_f (cvar_t *var)
@@ -241,8 +249,8 @@ R_Init_Cvars (void)
 							 NULL, "Client version string");
 	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, NULL, "Crosshair "
 						  "type. 0 off, 1 old white, 2 new with colors");
-	crosshaircolor = Cvar_Get ("crosshaircolor", "79", CVAR_ARCHIVE, NULL,
-							   "Color of the new crosshair");
+	crosshaircolor = Cvar_Get ("crosshaircolor", "79", CVAR_ARCHIVE,
+							   crosshaircolor_f, "Color of the new crosshair");
 	d_mipcap = Cvar_Get ("d_mipcap", "0", CVAR_NONE, NULL,
 						 "Detail level. 0 is highest, 3 is lowest.");
 	d_mipscale = Cvar_Get ("d_mipscale", "1", CVAR_NONE, NULL, "Detail level "

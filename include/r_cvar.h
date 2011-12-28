@@ -1,3 +1,5 @@
+#include "QF/mathlib.h"
+
 extern struct cvar_s	 *easter_eggs;
 extern void r_easter_eggs_f (struct cvar_s *var);
 extern void r_particles_style_f (struct cvar_s *var);
@@ -9,6 +11,7 @@ extern struct cvar_s     *cl_crossy;
 extern struct cvar_s     *cl_verstring;
 extern struct cvar_s     *crosshair;
 extern struct cvar_s     *crosshaircolor;
+extern quat_t crosshair_color;
 
 extern struct cvar_s     *d_mipcap;
 extern struct cvar_s     *d_mipscale;
