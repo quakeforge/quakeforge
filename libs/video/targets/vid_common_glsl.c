@@ -348,15 +348,13 @@ GL_DumpAttribArrays (void)
 	GLint       type = -1;
 	GLint       norm = -1;
 	GLint       binding = -1;
-	GLint       current = -1;
+	GLint       current[4] = {-1, -1, -1, -1};
 	void       *pointer = 0;
 
 	qfglGetIntegerv (GL_MAX_VERTEX_ATTRIBS, &max);
 
 	for (ind = 0; ind < max; ind++) {
 		qfglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &enabled);
-		if (!enabled)
-			continue;
 		Sys_Printf ("attrib %d: %sabled\n", ind, enabled ? "en" : "dis");
 		qfglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_SIZE, &size);
 		qfglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_STRIDE, &stride);
@@ -364,10 +362,11 @@ GL_DumpAttribArrays (void)
 		qfglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_NORMALIZED, &norm);
 		qfglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING,
 							   &binding);
-		qfglGetVertexAttribiv (ind, GL_CURRENT_VERTEX_ATTRIB, &current);
+		qfglGetVertexAttribiv (ind, GL_CURRENT_VERTEX_ATTRIB, current);
 		qfglGetVertexAttribPointerv (ind, GL_VERTEX_ATTRIB_ARRAY_POINTER,
 									 &pointer);
-		Sys_Printf ("    %d %d '%s' %d %d %d %p\n", size, stride,
-					type_name (type), norm, binding, current, pointer);
+		Sys_Printf ("    %d %d '%s' %d %d (%d %d %d %d) %p\n", size, stride,
+					type_name (type), norm, binding, QuatExpand (current),
+					pointer);
 	}
 }
