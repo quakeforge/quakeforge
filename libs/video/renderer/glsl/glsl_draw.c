@@ -587,6 +587,8 @@ Draw_ConsoleBackground (int lines, byte alpha)
 		{           0, lines, 0,   1},
 	};
 
+	GL_FlushText (); // Flush text that should be rendered before the console
+
 	qfglUseProgram (quake_icon.program);
 	qfglEnableVertexAttribArray (quake_icon.vertex.location);
 
@@ -635,6 +637,7 @@ Draw_FadeScreen (void)
 {
 	static quat_t color = { 0, 0, 0, 0.7 };
 
+	GL_FlushText (); // Flush text that should be rendered before the menu
 	draw_pic (0, 0, vid.conwidth, vid.conheight, white_pic, 0, 0, 8, 8, color);
 }
 
