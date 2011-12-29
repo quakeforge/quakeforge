@@ -193,8 +193,8 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	while (*scr_funcs) {
 		(*scr_funcs)();
 		scr_funcs++;
+		GL_FlushText ();
 	}
-	GL_FlushText ();
 	qfglFlush ();
 }
 
