@@ -111,10 +111,13 @@ static struct {
 };
 
 VISIBLE byte *draw_chars;
+
+static byte white_block[8 * 8];
 static dstring_t *char_queue;
 static int  char_texture;
 static int  conback_texture;
 static qpic_t *crosshair_pic;
+static qpic_t *white_pic;
 
 static qpic_t *
 make_glpic (const char *name, qpic_t *p)
@@ -132,29 +135,44 @@ make_glpic (const char *name, qpic_t *p)
 	return pic;
 }
 
+static qpic_t *
+pic_data (const char *name, int w, int h, const byte *data)
+{
+	qpic_t     *pic;
+	qpic_t     *glpic;
+
+	pic = malloc (field_offset (qpic_t, data[w * h]));
+	pic->width = w;
+	pic->height = h;
+	memcpy (pic->data, data, pic->width * pic->height);
+	glpic = make_glpic (name, pic);
+	free (pic);
+	return glpic;
+}
+
 static void
-make_quad (qpic_t *pic, int x, int y, int srcx, int srcy,
-		   int width, int height, float verts[6][4])
+make_quad (qpic_t *pic, int x, int y, int w, int h,
+		   int srcx, int srcy, int srcw, int srch, float verts[6][4])
 {
 	float       sl, sh, tl, th;
 
 	sl = (float) srcx / (float) pic->width;
-	sh = sl + (float) width / (float) pic->width;
+	sh = sl + (float) srcw / (float) pic->width;
 	tl = (float) srcy / (float) pic->height;
-	th = tl + (float) height / (float) pic->height;
+	th = tl + (float) srch / (float) pic->height;
 
 	verts[0][0] = x;
 	verts[0][1] = y;
 	verts[0][2] = sl;
 	verts[0][3] = tl;
 
-	verts[1][0] = x + width;
+	verts[1][0] = x + w;
 	verts[1][1] = y;
 	verts[1][2] = sh;
 	verts[1][3] = tl;
 
-	verts[2][0] = x + width;
-	verts[2][1] = y + height;
+	verts[2][0] = x + w;
+	verts[2][1] = y + h;
 	verts[2][2] = sh;
 	verts[2][3] = th;
 
@@ -163,25 +181,26 @@ make_quad (qpic_t *pic, int x, int y, int srcx, int srcy,
 	verts[3][2] = sl;
 	verts[3][3] = tl;
 
-	verts[4][0] = x + width;
-	verts[4][1] = y + height;
+	verts[4][0] = x + w;
+	verts[4][1] = y + h;
 	verts[4][2] = sh;
 	verts[4][3] = th;
 
 	verts[5][0] = x;
-	verts[5][1] = y + height;
+	verts[5][1] = y + h;
 	verts[5][2] = sl;
 	verts[5][3] = th;
 }
 
 static void
-draw_pic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height,
+draw_pic (int x, int y, int w, int h, qpic_t *pic,
+		  int srcx, int srcy, int srcw, int srch,
 		  float *color)
 {
 	glpic_t    *gl;
 	float       verts[6][4];
 
-	make_quad (pic, x, y, srcx, srcy, width, height, verts);
+	make_quad (pic, x, y, w, h, srcx, srcy, srcw, srch, verts);
 	gl = (glpic_t *) pic->data;
 
 	qfglUseProgram (quake_icon.program);
@@ -285,6 +304,9 @@ Draw_Init (void)
 	pic = Draw_CrosshairPic ();
 	crosshair_pic = make_glpic ("crosshair", pic);
 	free (pic);
+
+	memset (white_block, 0xfe, sizeof (white_block));
+	white_pic = pic_data ("white_block", 8, 8, white_block);
 }
 
 static inline void
@@ -415,14 +437,14 @@ crosshair_1 (int x, int y)
 static void
 crosshair_2 (int x, int y)
 {
-	draw_pic (x, y, crosshair_pic,
+	draw_pic (x, y, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_pic,
 			  0, 0, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_color);
 }
 
 static void
 crosshair_3 (int x, int y)
 {
-	draw_pic (x, y, crosshair_pic,
+	draw_pic (x, y, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_pic,
 			  CROSSHAIR_WIDTH, 0,
 			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_color);
 }
@@ -430,7 +452,7 @@ crosshair_3 (int x, int y)
 static void
 crosshair_4 (int x, int y)
 {
-	draw_pic (x, y, crosshair_pic,
+	draw_pic (x, y, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_pic,
 			  0, CROSSHAIR_HEIGHT,
 			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_color);
 }
@@ -438,7 +460,7 @@ crosshair_4 (int x, int y)
 static void
 crosshair_5 (int x, int y)
 {
-	draw_pic (x, y, crosshair_pic,
+	draw_pic (x, y, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_pic,
 			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT,
 			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_color);
 }
@@ -482,7 +504,8 @@ VISIBLE void
 Draw_Pic (int x, int y, qpic_t *pic)
 {
 	static quat_t color = { 1, 1, 1, 1};
-	draw_pic (x, y, pic, 0, 0, pic->width, pic->height, color);
+	draw_pic (x, y, pic->width, pic->height, pic,
+			  0, 0, pic->width, pic->height, color);
 }
 
 VISIBLE void
@@ -490,7 +513,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
 {
 	static quat_t color = { 1, 1, 1, 1};
-	draw_pic (x, y, pic, srcx, srcy, width, height, color);
+	draw_pic (x, y, width, height, pic, srcx, srcy, width, height, color);
 }
 
 VISIBLE void
@@ -540,6 +563,11 @@ Draw_TileClear (int x, int y, int w, int h)
 VISIBLE void
 Draw_Fill (int x, int y, int w, int h, int c)
 {
+	quat_t      color;
+
+	VectorScale (vid.palette + c * 3, 1.0f/255.0f, color);
+	color[3] = 1.0;
+	draw_pic (x, y, w, h, white_pic, 0, 0, 8, 8, color);
 }
 
 VISIBLE void
