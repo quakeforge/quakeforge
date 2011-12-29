@@ -253,6 +253,58 @@ Draw_CachePic (const char *path, qboolean alpha)
 VISIBLE void
 Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 {
+	static quat_t color = { 1, 1, 1, 0 };
+	qpic_t     *p;
+	int         cx, cy, n;
+#define draw(px,py,pp) \
+	draw_pic (px, py, pp->width, pp->height, pp, \
+			  0, 0, pp->width, pp->height, color)
+
+	color[3] = alpha / 255.0;
+	// draw left side
+	cx = x;
+	cy = y;
+	p = Draw_CachePic ("gfx/box_tl.lmp", true);
+	draw (cx, cy, p);
+	p = Draw_CachePic ("gfx/box_ml.lmp", true);
+	for (n = 0; n < lines; n++) {
+		cy += 8;
+		draw (cx, cy, p);
+	}
+	p = Draw_CachePic ("gfx/box_bl.lmp", true);
+	draw (cx, cy + 8, p);
+
+	// draw middle
+	cx += 8;
+	while (width > 0) {
+		cy = y;
+		p = Draw_CachePic ("gfx/box_tm.lmp", true);
+		draw (cx, cy, p);
+		p = Draw_CachePic ("gfx/box_mm.lmp", true);
+		for (n = 0; n < lines; n++) {
+			cy += 8;
+			if (n == 1)
+				p = Draw_CachePic ("gfx/box_mm2.lmp", true);
+			draw (cx, cy, p);
+		}
+		p = Draw_CachePic ("gfx/box_bm.lmp", true);
+		draw (cx, cy + 8, p);
+		width -= 2;
+		cx += 16;
+	}
+
+	// draw right side
+	cy = y;
+	p = Draw_CachePic ("gfx/box_tr.lmp", true);
+	draw (cx, cy, p);
+	p = Draw_CachePic ("gfx/box_mr.lmp", true);
+	for (n = 0; n < lines; n++) {
+		cy += 8;
+		draw (cx, cy, p);
+	}
+	p = Draw_CachePic ("gfx/box_br.lmp", true);
+	draw (cx, cy + 8, p);
+#undef draw
 }
 
 VISIBLE void
@@ -573,6 +625,9 @@ Draw_Fill (int x, int y, int w, int h, int c)
 VISIBLE void
 Draw_FadeScreen (void)
 {
+	static quat_t color = { 0, 0, 0, 0.7 };
+
+	draw_pic (0, 0, vid.conwidth, vid.conheight, white_pic, 0, 0, 8, 8, color);
 }
 
 static void
