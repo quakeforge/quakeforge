@@ -118,6 +118,7 @@ static int  char_texture;
 static int  conback_texture;
 static qpic_t *crosshair_pic;
 static qpic_t *white_pic;
+static qpic_t *backtile_pic;
 
 static qpic_t *
 make_glpic (const char *name, qpic_t *p)
@@ -359,6 +360,11 @@ Draw_Init (void)
 
 	memset (white_block, 0xfe, sizeof (white_block));
 	white_pic = pic_data ("white_block", 8, 8, white_block);
+
+	backtile_pic = Draw_PicFromWad ("backtile");
+	qfglBindTexture (GL_TEXTURE_2D, ((glpic_t *) backtile_pic->data)->texnum);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
 static inline void
@@ -610,6 +616,8 @@ Draw_ConsoleBackground (int lines, byte alpha)
 VISIBLE void
 Draw_TileClear (int x, int y, int w, int h)
 {
+	static quat_t color = { 1, 1, 1, 1 };
+	draw_pic (x, y, w, h, backtile_pic, x, y, w, h, color);
 }
 
 VISIBLE void
