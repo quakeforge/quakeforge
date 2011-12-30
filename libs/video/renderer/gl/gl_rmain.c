@@ -478,9 +478,9 @@ R_SetupGL (void)
 
 	qfglRotatef (-90, 1, 0, 0);			// put Z going up
 	qfglRotatef (90, 0, 0, 1);			// put Z going up
-	qfglRotatef (-r_refdef.viewangles[2], 1, 0, 0);
-	qfglRotatef (-r_refdef.viewangles[0], 0, 1, 0);
-	qfglRotatef (-r_refdef.viewangles[1], 0, 0, 1);
+	qfglRotatef (-r_refdef.viewangles[ROLL],  1, 0, 0);
+	qfglRotatef (-r_refdef.viewangles[PITCH], 0, 1, 0);
+	qfglRotatef (-r_refdef.viewangles[YAW],   0, 0, 1);
 	qfglTranslatef (-r_refdef.vieworg[0], -r_refdef.vieworg[1],
 				  -r_refdef.vieworg[2]);
 
