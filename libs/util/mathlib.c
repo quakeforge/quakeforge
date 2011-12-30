@@ -695,3 +695,35 @@ Invert24To16 (fixed16_t val)
 		(((double) 0x10000 * (double) 0x1000000 / (double) val) + 0.5);
 }
 #endif
+
+void
+Mat4Transpose (const mat4_t a, mat4_t b)
+{
+	vec_t       t;
+	int         i, j;
+
+	for (i = 0; i < 3; i++) {
+		for (j = i + 1; j < 4; j++) {
+			t = a[i * 4 + j];				// in case b == a
+			b[i * 4 + j] = a[j * 4 + i];
+			b[j * 4 + i] = t;
+		}
+	}
+}
+
+void
+Mat4Mult (const mat4_t a, const mat4_t b, mat4_t c)
+{
+	mat4_t      ta, tb;					// in case c == b or c == a
+	int         i, j, k;
+
+	Mat4Transpose (a, ta);				// transpose so we can use dot
+	Mat4Copy (b, tb);
+
+	k = 0;
+	for (i = 0; i < 4; i++) {
+		for (j = 0; j < 4; j++) {
+			c[k++] = QDotProduct (ta + 4 * j, tb + 4 * i);
+		}
+	}
+}

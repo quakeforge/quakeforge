@@ -86,6 +86,8 @@ typedef	int		fixed4_t;
 typedef int		fixed8_t;
 typedef	int		fixed16_t;
 
+typedef float   mat4_t[4 * 4];
+
 #define SIDE_FRONT  0
 #define SIDE_BACK   1
 #define SIDE_ON     2

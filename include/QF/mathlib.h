@@ -278,6 +278,48 @@ extern const vec_t *const quat_origin;
 //For printf etc
 #define QuatExpand(q) (q)[0], (q)[1], (q)[2], (q)[3]
 
+#define Mat4Copy(a, b) \
+	do { \
+		QuatCopy ((a) + 0, (b) + 0); \
+		QuatCopy ((a) + 4, (b) + 4); \
+		QuatCopy ((a) + 8, (b) + 8); \
+		QuatCopy ((a) + 12, (b) + 12); \
+	} while (0)
+#define Mat4Add(a, b, c) \
+	do { \
+		QuatAdd ((a) + 0, (b) + 0, (c) + 0); \
+		QuatAdd ((a) + 4, (b) + 4, (c) + 4); \
+		QuatAdd ((a) + 8, (b) + 8, (c) + 8); \
+		QuatAdd ((a) + 12, (b) + 12, (c) + 12); \
+	} while (0)
+#define Mat4Subtract(a, b, c) \
+	do { \
+		QuatSubtract ((a) + 0, (b) + 0, (c) + 0); \
+		QuatSubtract ((a) + 4, (b) + 4, (c) + 4); \
+		QuatSubtract ((a) + 8, (b) + 8, (c) + 8); \
+		QuatSubtract ((a) + 12, (b) + 12, (c) + 12); \
+	} while (0)
+#define Mat4Scale(a, b, c) \
+	do { \
+		QuatScale ((a) + 0, (b), (c) + 0); \
+		QuatScale ((a) + 4, (b), (c) + 4); \
+		QuatScale ((a) + 8, (b), (c) + 8); \
+		QuatScale ((a) + 12, (b), (c) + 12); \
+	} while (0)
+#define Mat4CompMult(a, b, c) \
+	do { \
+		QuatCompMult ((a) + 0, (b) + 0, (c) + 0); \
+		QuatCompMult ((a) + 4, (b) + 4, (c) + 4); \
+		QuatCompMult ((a) + 8, (b) + 8, (c) + 8); \
+		QuatCompMult ((a) + 12, (b) + 12, (c) + 12); \
+	} while (0)
+#define Mat4Zero(a) \
+	memset (a, 0, sizeof (16 * sizeof a[0]))
+#define Mat4Identity(a) \
+	do { \
+		Mat4Zero (a); \
+		a[15] = a[10] = a[5] = a[0] = 1; \
+	} while (0)
 
 #define qfrandom(MAX) ((float) MAX * (rand() * (1.0 / (RAND_MAX + 1.0))))
 
@@ -375,6 +417,9 @@ void QuatMult (const quat_t q1, const quat_t q2, quat_t out);
 void QuatInverse (const quat_t in, quat_t out);
 
 void QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical);
+
+void Mat4Transpose (const mat4_t a, mat4_t b);
+void Mat4Mult (const mat4_t a, const mat4_t b, mat4_t c);
 
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)				\
 	(((p)->type < 3)?									\
