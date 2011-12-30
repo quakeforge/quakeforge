@@ -45,14 +45,19 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
+#include "QF/sys.h"
 
+#include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_textures.h"
 
 #include "gl_draw.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
+#include "r_local.h"
 #include "r_screen.h"
 
+mat4_t glsl_projection;
+mat4_t glsl_view;
 VISIBLE vec3_t r_origin, vpn, vright, vup;
 VISIBLE refdef_t r_refdef;
 qboolean r_cache_thrash;
@@ -70,11 +75,88 @@ gl_overbright_f (cvar_t *var)
 VISIBLE void
 R_ViewChanged (float aspect)
 {
+	double      xmin, xmax, ymin, ymax;
+	float       fovx, fovy, neard, fard;
+	vec_t      *proj = glsl_projection;
+
+	fovx = r_refdef.fov_x;
+	fovy = r_refdef.fov_y;
+	neard = r_nearclip->value;
+	fard = r_farclip->value;
+
+	ymax = neard * tan (fovy * M_PI / 360);		// fov_2 / 2
+	ymin = -ymax;
+	xmax = neard * tan (fovx * M_PI / 360);		// fov_2 / 2
+	xmin = -xmax;
+
+	proj[0] = (2 * neard) / (xmax - xmin);
+	proj[4] = 0;
+	proj[8] = (xmax + xmin) / (xmax - xmin);
+	proj[12] = 0;
+
+	proj[1] = 0;
+	proj[5] = (2 * neard) / (ymax - ymin);
+	proj[9] = (ymax + ymin) / (ymax - ymin);
+	proj[13] = 0;
+
+	proj[2] = 0;
+	proj[6] = 0;
+	proj[10] = (fard + neard) / (neard - fard);
+	proj[14] = (2 * fard + neard) / (neard - fard);
+
+	proj[3] = 0;
+	proj[7] = 0;
+	proj[11] = -1;
+	proj[15] = 0;
+}
+
+void
+R_SetupFrame (void)
+{
+	R_ClearEnts ();
+	r_framecount++;
+
+	VectorCopy (r_refdef.vieworg, r_origin);
+	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
+}
+
+static void
+R_SetupView (void)
+{
+	float       x, y, w, h;
+	mat4_t      mat;
+	static mat4_t z_up = {
+		 0, 0, -1, 0,
+		-1, 0,  0, 0,
+		 0, 1,  0, 0,
+		 0, 0,  0, 1,
+	};
+
+	x = r_refdef.vrect.x;
+	y = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
+	w = r_refdef.vrect.width;
+	h = r_refdef.vrect.height;
+	qfglViewport (x, y, w, h);
+
+	Mat4Zero (mat);
+	VectorCopy (vpn, mat + 0);
+	VectorNegate (vright, mat + 4);			// we want vleft
+	VectorCopy (vup, mat + 8);
+	mat[15] = 1;
+	Mat4Transpose (mat, mat);//AngleVectors gives the transpose of what we want
+	Mat4Mult (z_up, mat, glsl_view);
+
+	Mat4Identity (mat);
+	VectorNegate (r_refdef.vieworg, mat + 12);
+	Mat4Mult (glsl_view, mat, glsl_view);
+}
 }
 
 VISIBLE void
 R_RenderView (void)
 {
+	R_SetupFrame ();
+	R_SetupView ();
 }
 
 VISIBLE void
