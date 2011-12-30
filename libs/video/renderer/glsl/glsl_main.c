@@ -66,6 +66,7 @@ int r_framecount;
 int d_lightstylevalue[256];
 int r_visframecount;
 entity_t r_worldentity;
+entity_t *currententity;
 
 void
 gl_overbright_f (cvar_t *var)
@@ -150,6 +151,23 @@ R_SetupView (void)
 	VectorNegate (r_refdef.vieworg, mat + 12);
 	Mat4Mult (glsl_view, mat, glsl_view);
 }
+
+static void
+R_RenderEntities (void)
+{
+	entity_t   *ent;
+
+	if (!r_drawentities->int_val)
+		return;
+
+	R_SpriteBegin ();
+	for (ent = r_ent_queue; ent; ent = ent->next) {
+		if (ent->model->type != mod_sprite)
+			continue;
+		currententity = ent;
+		R_DrawSprite ();
+	}
+	R_SpriteEnd ();
 }
 
 VISIBLE void
@@ -157,12 +175,14 @@ R_RenderView (void)
 {
 	R_SetupFrame ();
 	R_SetupView ();
+	R_RenderEntities ();
 }
 
 VISIBLE void
 R_Init (void)
 {
 	R_InitParticles ();
+	R_InitSprites ();
 }
 
 VISIBLE void

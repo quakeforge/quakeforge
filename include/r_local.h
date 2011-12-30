@@ -164,6 +164,8 @@ extern	qboolean		insubmodel;
 extern	vec3_t			r_worldmodelorg;
 
 
+void R_SpriteBegin (void);
+void R_SpriteEnd (void);
 void R_DrawSprite (void);
 void R_RenderFace (msurface_t *fa, int clipflags);
 void R_RenderPoly (msurface_t *fa, int clipflags);
