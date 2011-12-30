@@ -45,11 +45,17 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/model.h"
 #include "QF/quakefs.h"
 #include "QF/va.h"
-#include "QF/GL/qf_textures.h"
+#include "QF/GLSL/qf_textures.h"
 
 #include "compat.h"
 
 void
 Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
 {
+	const char *name;
+
+	name = va ("%s_%i", loadmodel->name, framenum);
+	pspriteframe->gl_texturenum =
+		GL_LoadQuakeTexture (name, pspriteframe->width, pspriteframe->height,
+							 pspriteframe->pixels);
 }
