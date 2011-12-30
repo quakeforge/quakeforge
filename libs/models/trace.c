@@ -121,7 +121,7 @@ init_box (const trace_t *trace, clipbox_t *box, const vec3_t vel)
 	//FIXME rotated box
 	for (i = 0; i < 3; i++)
 		u[i] = (vel[i] >= 0 ? 1 : -1);
-	Vector3Scale (u, trace->extents, p);
+	VectorCompMult (u, trace->extents, p);
 	for (i = 0; i < 3; i++) {
 		box->portals[i].planenum = i;
 		box->portals[i].next[0] = 0;
@@ -154,17 +154,17 @@ init_box (const trace_t *trace, clipbox_t *box, const vec3_t vel)
 				box->edges[i].points[j][a]
 					= s[k] * u[i] * box->edges[i].points[j - 1][b];
 			}
-			Vector3Scale (box->points[i].points[j - 1], trace->extents,
-						  box->points[i].points[j - 1]);
-			Vector3Scale (box->edges[i].points[j - 1], trace->extents,
-						  box->edges[i].points[j - 1]);
+			VectorCompMult (box->points[i].points[j - 1], trace->extents,
+							box->points[i].points[j - 1]);
+			VectorCompMult (box->edges[i].points[j - 1], trace->extents,
+							box->edges[i].points[j - 1]);
 			VectorScale (box->edges[i].points[j - 1], 2,
 						 box->edges[i].points[j - 1]);
 		}
-		Vector3Scale (box->points[i].points[3], trace->extents,
-					  box->points[i].points[3]);
-		Vector3Scale (box->edges[i].points[3], trace->extents,
-					  box->edges[i].points[3]);
+		VectorCompMult (box->points[i].points[3], trace->extents,
+						box->points[i].points[3]);
+		VectorCompMult (box->edges[i].points[3], trace->extents,
+						box->edges[i].points[3]);
 		VectorScale (box->edges[i].points[3], 2,
 					 box->edges[i].points[3]);
 	}
@@ -567,8 +567,8 @@ portal_intersect (trace_t *trace, clipport_t *portal, plane_t *plane,
 		vec3_t      p1, p2, imp, dist;
 		vec_t       t1, t2, frac;
 
-		Vector3Scale (trace->extents, verts[i][0], p1);
-		Vector3Scale (trace->extents, verts[i][1], p2);
+		VectorCompMult (trace->extents, verts[i][0], p1);
+		VectorCompMult (trace->extents, verts[i][1], p2);
 		t1 = PlaneDiff (p1, plane) + o_n;
 		t2 = PlaneDiff (p2, plane) + o_n;
 		// if both ends of the box edge are on the same side (or touching) the

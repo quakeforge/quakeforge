@@ -52,8 +52,8 @@
 #endif
 
 extern int		nanmask;
-extern const vec_t * const vec3_origin;
-extern const vec_t * const quat_origin;
+extern const vec_t *const vec3_origin;
+extern const vec_t *const quat_origin;
 
 #define EQUAL_EPSILON 0.001
 #define RINT(x) (floor ((x) + 0.5))
@@ -105,7 +105,7 @@ extern const vec_t * const quat_origin;
 		(c)[1] = (a)[1] * (b); \
 		(c)[2] = (a)[2] * (b); \
 	} while (0)
-#define Vector3Scale(a,b,c) \
+#define VectorCompMult(a,b,c) \
 	do { \
 		(c)[0] = (a)[0] * (b)[0]; \
 		(c)[1] = (a)[1] * (b)[1]; \
@@ -151,6 +151,17 @@ extern const vec_t * const quat_origin;
 
 //For printf etc
 #define VectorExpand(v) (v)[0], (v)[1], (v)[2]
+
+/*
+ * VectorDistance, the distance between two points.
+ * Yes, this is the same as sqrt(VectorSubtract then DotProduct),
+ * however that way would involve more vars, this is cheaper.
+ */
+#define VectorDistance_fast(a, b) \
+	((((a)[0] - (b)[0]) * ((a)[0] - (b)[0])) + \
+	 (((a)[1] - (b)[1]) * ((a)[1] - (b)[1])) + \
+	 (((a)[2] - (b)[2]) * ((a)[2] - (b)[2])))
+#define VectorDistance(a, b)	sqrt(VectorDistance_fast(a, b))
 
 #define QDotProduct(a,b) ((a)[0] * (b)[0] + (a)[1] * (b)[1] \
 						  + (a)[2] * (b)[2] + (a)[3] * (b)[3])
@@ -213,7 +224,7 @@ extern const vec_t * const quat_origin;
 		(c)[3] = (a)[3] * (b); \
 	} while (0)
 
-#define QuatCompScale(a,b,c) \
+#define QuatCompMult(a,b,c) \
 	do { \
 		(c)[0] = (a)[0] * (b)[0]; \
 		(c)[1] = (a)[1] * (b)[1]; \
@@ -266,17 +277,6 @@ extern const vec_t * const quat_origin;
 
 //For printf etc
 #define QuatExpand(q) (q)[0], (q)[1], (q)[2], (q)[3]
-
-/*
- * VectorDistance, the distance between two points.
- * Yes, this is the same as sqrt(VectorSubtract then DotProduct), 
- * however that way would involve more vars, this is cheaper.
- */
-#define VectorDistance_fast(a, b) \
-	((((a)[0] - (b)[0]) * ((a)[0] - (b)[0])) + \
-	 (((a)[1] - (b)[1]) * ((a)[1] - (b)[1])) + \
-	 (((a)[2] - (b)[2]) * ((a)[2] - (b)[2])))
-#define VectorDistance(a, b)	sqrt(VectorDistance_fast(a, b))
 
 
 #define qfrandom(MAX) ((float) MAX * (rand() * (1.0 / (RAND_MAX + 1.0))))
