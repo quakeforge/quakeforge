@@ -28,8 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_PNG
 
@@ -54,21 +53,21 @@ static __attribute__ ((used)) const char rcsid[] =
 
 
 /* Qread wrapper for libpng */
-static void 
+static void
 user_read_data (png_structp png_ptr, png_bytep data, png_size_t length)
 {
 	Qread ((QFile *) png_get_io_ptr (png_ptr), data, length);
 }
 
 /* Qwrite wrapper for libpng */
-static void 
+static void
 user_write_data (png_structp png_ptr, png_bytep data, png_size_t length)
 {
 	Qwrite ((QFile *) png_get_io_ptr (png_ptr), data, length);
 }
 
 /* Qflush wrapper for libpng */
-static void 
+static void
 user_flush_data (png_structp png_ptr)
 {
 	Qflush ((QFile *) png_get_io_ptr (png_ptr));
@@ -105,9 +104,9 @@ readpng_init (QFile *infile, png_structp *png_ptr, png_infop *info_ptr)
 		png_destroy_read_struct (png_ptr, info_ptr, NULL);
 		return (4);
 	}
-	
+
 	png_set_read_fn (*png_ptr, infile, user_read_data);
-	
+
 	/* Is png_set_sig_bytes needed? */
 	png_set_sig_bytes (*png_ptr, 8); // We allready read the 8 signiture bytes
 
@@ -127,29 +126,29 @@ LoadPNG (QFile *infile)
 	png_bytepp		row_pointers = NULL;
 	int				bit_depth, color_type;
 	tex_t		   *tex;
-	
+
 	if (readpng_init (infile, &png_ptr, &info_ptr) != 0)
 		return (NULL);
-		
+
 	png_get_IHDR (png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
 				  NULL, NULL, NULL);
-	
+
 	if (color_type == PNG_COLOR_TYPE_PALETTE)
 		png_set_expand (png_ptr);
-	
+
 	if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
 		png_set_expand (png_ptr);
-		
+
 	if (png_get_valid (png_ptr, info_ptr, PNG_INFO_tRNS))
 		png_set_expand (png_ptr);
-		
+
 	if (bit_depth == 16)
 		png_set_strip_16 (png_ptr);
-	
+
 	if (color_type == PNG_COLOR_TYPE_GRAY
 		|| color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
 		png_set_gray_to_rgb (png_ptr);
-	
+
 	/* NOTE: gamma support? */
 	/* unlike the example in the libpng documentation, we have *no* idea where
 	 * this file may have come from--so if it doesn't have a file gamma, don't
@@ -159,13 +158,13 @@ LoadPNG (QFile *infile)
 		png_set_gamma (png_ptr, 1.0, gamma);
 
 	/* All transformations have been registered, now update the info_ptr
-	 * structure */		
+	 * structure */
 	png_read_update_info (png_ptr, info_ptr);
-	
+
 	/* Allocate tex_t structure */
 	rowbytes = png_get_rowbytes(png_ptr, info_ptr);
-	tex = Hunk_TempAlloc (field_offset (tex_t, data[height * rowbytes]));	
-	
+	tex = Hunk_TempAlloc (field_offset (tex_t, data[height * rowbytes]));
+
 	tex->width = width;
 	tex->height = height;
 	if (color_type & PNG_COLOR_MASK_ALPHA)
@@ -173,107 +172,133 @@ LoadPNG (QFile *infile)
 	else
 		tex->format = tex_rgb;
 	tex->palette = NULL;
-	
+
 	if ((row_pointers = (png_bytepp) malloc (height * sizeof (png_bytep)))
 		== NULL) {
 		png_destroy_read_struct (&png_ptr, &info_ptr, NULL);
 		return (NULL); /* Out of memory */
 	}
-	
+
 	for (i = 0; i < height; ++i)
 		row_pointers[i] = tex->data + (i * rowbytes);
-		
+
 	/* Now we can go ahead and read the whole image */
 	png_read_image (png_ptr, row_pointers);
-	
+
 	free (row_pointers);
 	row_pointers = NULL;
 
 	png_read_end (png_ptr, NULL);
-		
+
 	return (tex);
 }
 
 #define WRITEPNG_BIT_DEPTH 8
 
-VISIBLE void 
-WritePNG (const char *fileName, byte *data, int width, int height)
+static int
+write_png (QFile *outfile, const byte *data, int width, int height)
 {
-	QFile      *outfile;
 	int         i;
 	png_structp png_ptr;
 	png_infop   info_ptr;
 	png_bytepp  row_pointers = NULL;
-	
+
 	/* initialize write struct */
 	png_ptr = png_create_write_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if (png_ptr == NULL) {
 		Sys_Printf ("png_Create_write_struct failed\n");
-		return;
+		return 0;
 	}
-	
+
 	info_ptr = png_create_info_struct (png_ptr);
 	if (png_ptr == NULL) {
 		png_destroy_write_struct (&png_ptr, NULL);
 		Sys_Printf ("png_create_info_struct failed\n");
-		return;
+		return 0;
 	}
-	
+
 	if (setjmp(png_jmpbuf(png_ptr))) {
 		png_destroy_write_struct (&png_ptr, &info_ptr);
-		return;
+		return 0;
 	}
-	
+
+	png_set_write_fn (png_ptr, outfile, user_write_data, user_flush_data);
+
+	/* Write the header */
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		Sys_Printf ("Error writing png header\n");
+		return 0;
+	}
+
+	png_set_IHDR (png_ptr, info_ptr, width, height, WRITEPNG_BIT_DEPTH,
+				  PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
+				  PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+
+	/* NOTE: Write gamma support? */
+	/* png_set_gAMA (png_ptr, info_ptr, gamma); */
+
+	png_set_bgr(png_ptr);
+
+	png_write_info (png_ptr, info_ptr);
+
+	/* Setup row pointers */
+	row_pointers = (png_bytepp)malloc(height * sizeof(png_bytep));
+	if (row_pointers == NULL) {
+		png_destroy_write_struct (&png_ptr, &info_ptr);
+		return 0; /* Out of memory */
+	}
+
+	for (i = 0; i < height; i++) {
+		//FIXME stupid png types :P
+		row_pointers[height - i - 1] = (byte *) data + (i * width * 3);
+	}
+
+
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		Sys_Printf ("Error writing PNG image data\n");
+		return 0;
+	}
+
+	png_write_image (png_ptr, row_pointers);
+
+	/* end write */
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		Sys_Printf ("Error writing end of PNG image\n");
+		return 0;
+	}
+
+	png_write_end (png_ptr, NULL);
+
+	return 1;
+}
+
+VISIBLE void
+WritePNG (const char *fileName, const byte *data, int width, int height)
+{
+	QFile      *outfile;
+
 	outfile = Qopen (fileName, "wb");
 	if (!outfile) {
 		Sys_Printf ("Couldn't open %s\n", fileName);
 		return; /* Can't open file */
 	}
-	
-	png_set_write_fn (png_ptr, outfile, user_write_data, user_flush_data);
-	
-	/* Write the header */
-	if (setjmp(png_jmpbuf(png_ptr))) {
-		Sys_Printf ("Error writing png header\n");
-		return;
+	if (!write_png (outfile, data, width, height))
+		Qremove (fileName);
+	Qclose (outfile);
+}
+
+VISIBLE void
+WritePNGqfs (const char *fileName, const byte *data, int width, int height)
+{
+	QFile      *outfile;
+
+	outfile = QFS_Open (fileName, "wb");
+	if (!outfile) {
+		Sys_Printf ("Couldn't open %s\n", fileName);
+		return; /* Can't open file */
 	}
-	
-	png_set_IHDR (png_ptr, info_ptr, width, height, WRITEPNG_BIT_DEPTH,
-		PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
-		
-	/* NOTE: Write gamma support? */
-	/* png_set_gAMA (png_ptr, info_ptr, gamma); */
-	
-	png_set_bgr(png_ptr);
-	
-	png_write_info (png_ptr, info_ptr);
-	
-	/* Setup row pointers */
-	if ((row_pointers = (png_bytepp)malloc(height * sizeof(png_bytep))) == NULL) {
-		png_destroy_write_struct (&png_ptr, &info_ptr);
-		return; /* Out of memory */
-	}
-	
-	for (i = 0; i < height; i++) {
-		row_pointers[height - i - 1] = data + (i * width * 3);
-	}
-	
-	
-	if (setjmp(png_jmpbuf(png_ptr))) {
-		Sys_Printf ("Error writing PNG image data\n");
-		return;
-	}
-	
-	png_write_image (png_ptr, row_pointers);
-	
-	/* end write */
-	if (setjmp(png_jmpbuf(png_ptr))) {
-		Sys_Printf ("Error writing end of PNG image\n");
-		return; 
-	}
-		
-	png_write_end (png_ptr, NULL);
-	
+	if (!write_png (outfile, data, width, height))
+		QFS_Remove (fileName);
 	Qclose (outfile);
 }
 
@@ -288,10 +313,14 @@ LoadPNG (QFile *infile)
 	return 0;
 }
 
-VISIBLE void 
+VISIBLE void
 WritePNG (const char *fileName, byte *data, int width, int height)
 {
-	return;
+}
+
+VISIBLE void
+WritePNGqfs (const char *fileName, const byte *data, int width, int height)
+{
 }
 
 #endif
