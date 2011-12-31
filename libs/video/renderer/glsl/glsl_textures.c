@@ -62,3 +62,10 @@ GL_LoadQuakeTexture (const char *identifier, int width, int height, byte *data)
 
 	return tnum;
 }
+
+void
+GL_ReleaseTexture (int tex)
+{
+	GLuint      tnum = tex;
+	qfglDeleteTextures (1, &tnum);
+}

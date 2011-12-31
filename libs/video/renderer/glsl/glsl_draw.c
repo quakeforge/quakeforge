@@ -43,6 +43,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/dstring.h"
+#include "QF/hash.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
@@ -61,6 +62,11 @@ typedef struct {
 	int         texnum;
 } glpic_t;
 
+typedef struct cachepic_s {
+	struct cachepic_s *next;
+	char       *name;
+	qpic_t     *pic;
+} cachepic_t;
 
 static const char quakeicon_vert[] =
 #include "quakeico.vc"
@@ -119,6 +125,7 @@ static int  conback_texture;
 static qpic_t *crosshair_pic;
 static qpic_t *white_pic;
 static qpic_t *backtile_pic;
+static hashtab_t *pic_cache;
 
 static qpic_t *
 make_glpic (const char *name, qpic_t *p)
@@ -134,6 +141,42 @@ make_glpic (const char *name, qpic_t *p)
 		gl->texnum = GL_LoadQuakeTexture (name, p->width, p->height, p->data);
 	}
 	return pic;
+}
+
+static void
+pic_free (qpic_t *pic)
+{
+	glpic_t    *gl = (glpic_t *) pic->data;
+
+	GL_ReleaseTexture (gl->texnum);
+	free (pic);
+}
+
+//FIXME nicer allocator
+static cachepic_t *
+new_cachepic (const char *name, qpic_t *pic)
+{
+	cachepic_t *cp;
+
+	cp = malloc (sizeof (cachepic_t));
+	cp->name = strdup (name);
+	cp->pic = pic;
+	return cp;
+}
+
+static const char *
+cachepic_getkey (void *_cp, void *unused)
+{
+	return ((cachepic_t *) _cp)->name;
+}
+
+static void
+cachepic_free (void *_cp, void *unused)
+{
+	cachepic_t *cp = (cachepic_t *) _cp;
+	pic_free (cp->pic);
+	free (cp->name);
+	free (cp);
 }
 
 static qpic_t *
@@ -239,7 +282,10 @@ VISIBLE qpic_t *
 Draw_CachePic (const char *path, qboolean alpha)
 {
 	qpic_t     *p, *pic;
+	cachepic_t *cpic;
 
+	if ((cpic = Hash_Find (pic_cache, path)))
+		return cpic->pic;
 	if (strlen (path) < 4 || strcmp (path + strlen (path) - 4, ".lmp")
 		|| !(p = (qpic_t *) QFS_LoadFile (path, 0))) {
 		//FIXME load a null texture
@@ -248,6 +294,8 @@ Draw_CachePic (const char *path, qboolean alpha)
 
 	pic = make_glpic (path, p);
 	free (p);
+	cpic = new_cachepic (path, pic);
+	Hash_Add (pic_cache, cpic);
 	return pic;
 }
 
@@ -308,6 +356,14 @@ Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 #undef draw
 }
 
+static void
+Draw_ClearCache (int phase)
+{
+	if (phase)
+		return;
+	Hash_FlushTable (pic_cache);
+}
+
 VISIBLE void
 Draw_Init (void)
 {
@@ -315,6 +371,8 @@ Draw_Init (void)
 	int         frag, vert;
 	qpic_t     *pic;
 
+	pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free, 0);
+	QFS_GamedirCallback (Draw_ClearCache);
 	//FIXME temporary work around for the timing of cvar creation and palette
 	//loading
 	crosshaircolor->callback (crosshaircolor);

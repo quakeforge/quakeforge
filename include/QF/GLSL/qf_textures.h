@@ -33,6 +33,7 @@
 
 int GL_LoadQuakeTexture (const char *identifier, int width, int height,
 						 byte *data);
+void GL_ReleaseTexture (int tex);
 int GL_LoadTexture (const char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
 
 void GDT_Init (void);
