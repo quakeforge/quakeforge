@@ -314,7 +314,7 @@ extern const vec_t *const quat_origin;
 		QuatCompMult ((a) + 12, (b) + 12, (c) + 12); \
 	} while (0)
 #define Mat4Zero(a) \
-	memset (a, 0, sizeof (16 * sizeof a[0]))
+	memset (a, 0, 16 * sizeof a[0])
 #define Mat4Identity(a) \
 	do { \
 		Mat4Zero (a); \

@@ -703,12 +703,14 @@ Mat4Transpose (const mat4_t a, mat4_t b)
 	int         i, j;
 
 	for (i = 0; i < 3; i++) {
+		b[i * 4 + i] = a[i * 4 + i];		// in case b != a
 		for (j = i + 1; j < 4; j++) {
 			t = a[i * 4 + j];				// in case b == a
 			b[i * 4 + j] = a[j * 4 + i];
 			b[j * 4 + i] = t;
 		}
 	}
+	b[i * 4 + i] = a[i * 4 + i];		// in case b != a
 }
 
 void
