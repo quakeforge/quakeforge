@@ -42,10 +42,15 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/dstring.h"
 #include "QF/image.h"
+#include "QF/png.h"
+#include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
@@ -207,4 +212,28 @@ SCR_ScreenShot (int width, int height)
 VISIBLE void
 SCR_ScreenShot_f (void)
 {
+	byte       *buffer, *r, *b;
+	dstring_t  *name = dstring_new ();
+	int         size, i;
+
+	// find a file name to save it to
+	if (!QFS_NextFilename (name, va ("%s/qf", qfs_gamedir->dir.def), ".png")) {
+		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PNG file\n");
+	} else {
+		size = vid.width * vid.height;
+		buffer = malloc (size * 3);
+		SYS_CHECKMEM (buffer);
+		qfglReadPixels (0, 0, vid.width, vid.height, GL_RGB,
+						GL_UNSIGNED_BYTE, buffer);
+		// FIXME have to swap rgb (WritePNG bug?)
+		for (i = 0, r = buffer, b = buffer + 2; i < size; i++, r+=3, b+=3) {
+			byte        t = *b;
+			*b = *r;
+			*r = t;
+		}
+		WritePNGqfs (name->str, buffer, vid.width, vid.height);
+		free (buffer);
+		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, name->str);
+	}
+	dstring_delete (name);
 }
