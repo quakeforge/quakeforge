@@ -89,49 +89,7 @@ static struct {
 	{"vcolorb", 0},
 	{"vblend", 0},
 };
-/*
-static void
-make_quad (qpic_t *pic, int x, int y, int w, int h,
-		   int srcx, int srcy, int srcw, int srch, float verts[6][4])
-{
-	float       sl, sh, tl, th;
 
-	sl = (float) srcx / (float) pic->width;
-	sh = sl + (float) srcw / (float) pic->width;
-	tl = (float) srcy / (float) pic->height;
-	th = tl + (float) srch / (float) pic->height;
-
-	verts[0][0] = x;
-	verts[0][1] = y;
-	verts[0][2] = sl;
-	verts[0][3] = tl;
-
-	verts[1][0] = x + w;
-	verts[1][1] = y;
-	verts[1][2] = sh;
-	verts[1][3] = tl;
-
-	verts[2][0] = x + w;
-	verts[2][1] = y + h;
-	verts[2][2] = sh;
-	verts[2][3] = th;
-
-	verts[3][0] = x;
-	verts[3][1] = y;
-	verts[3][2] = sl;
-	verts[3][3] = tl;
-
-	verts[4][0] = x + w;
-	verts[4][1] = y + h;
-	verts[4][2] = sh;
-	verts[4][3] = th;
-
-	verts[5][0] = x;
-	verts[5][1] = y + h;
-	verts[5][2] = sl;
-	verts[5][3] = th;
-}
-*/
 VISIBLE void
 R_InitSprites (void)
 {
@@ -154,15 +112,191 @@ R_InitSprites (void)
 	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.blend);
 }
 
+static void
+R_GetSpriteFrames (msprite_t *sprite, mspriteframe_t **frame1,
+				   mspriteframe_t **frame2, float *blend)
+{
+	int         frame = currententity->frame;
+	int         i, numframes;
+	float      *intervals;
+	float       fullinterval, targettime, time, prev;
+	mspritegroup_t *spritegroup;
+
+	if (frame >= sprite->numframes || frame < 0)
+		frame = 0;
+	if (sprite->frames[frame].type == SPR_SINGLE) {
+		// for now, assume unanimated.
+		*frame1 = *frame2 = sprite->frames[frame].frameptr;
+		*blend = 0;
+	} else {
+		spritegroup = (mspritegroup_t *) sprite->frames[frame].frameptr;
+		intervals = spritegroup->intervals;
+		numframes = spritegroup->numframes;
+		fullinterval = intervals[numframes - 1];
+
+		prev = 0;
+		time = r_realtime + currententity->syncbase;
+		targettime = time - ((int) (time / fullinterval)) * fullinterval;
+
+		for (i = 0; i < numframes - 1; i++) {
+			if (intervals[i] > targettime)
+				break;
+			prev = intervals[i];
+		}
+		*frame1 = spritegroup->frames[i];
+		*frame2 = spritegroup->frames[(i + 1) % numframes];
+		*blend = (targettime - prev) / (intervals[i] - prev);
+	}
+}
+
+static void
+make_quad (mspriteframe_t *frame, const vec3_t vpn, const vec3_t vright,
+		   const vec3_t vup, float verts[6][3])
+{
+	vec3_t      left, up, right, down;
+	vec3_t      ul, ur, ll, lr;
+
+	// build the sprite poster in worldspace
+	// first, rotate the sprite axes into world space
+	VectorScale (vright, frame->right, right);
+	VectorScale (vup, frame->up, up);
+	VectorScale (vright, frame->left, left);
+	VectorScale (vup, frame->down, down);
+	// next, build the sprite corners from the axes
+	VectorAdd (up, left, ul);
+	VectorAdd (up, right, ur);
+	VectorAdd (down, left, ll);
+	VectorAdd (down, right, lr);
+	// finally, translate the sprite corners, creating two triangles
+	VectorAdd (currententity->origin, ul, verts[0]);	// first triangle
+	VectorAdd (currententity->origin, ur, verts[1]);
+	VectorAdd (currententity->origin, lr, verts[2]);
+	VectorAdd (currententity->origin, ul, verts[3]);	// second triangle
+	VectorAdd (currententity->origin, lr, verts[4]);
+	VectorAdd (currententity->origin, ll, verts[5]);
+}
+
 void
 R_DrawSprite (void)
 {
+	entity_t   *ent = currententity;
+	msprite_t  *sprite = (msprite_t *) ent->model->cache.data;
+	mspriteframe_t *frame1, *frame2;
+	float       blend, sr, cr, dot, angle;
+	vec3_t      tvec;
+	vec3_t      svpn, svright, svup;
+	static quat_t color = { 1, 1, 1, 1};
+	float       vertsa[6][3], vertsb[6][3];
+	static float uvab[6][4] = {
+		{ 0, 0, 0, 0 },
+		{ 1, 0, 1, 0 },
+		{ 1, 1, 1, 1 },
+		{ 0, 0, 0, 0 },
+		{ 1, 1, 1, 1 },
+		{ 0, 1, 0, 1 },
+	};
+
+	switch (sprite->type) {
+		case SPR_FACING_UPRIGHT:
+			// generate the sprite's exes with svup straight up in worldspace
+			// and svright perpendicular to r_origin. This will not work if the
+			// view direction is very close to straight up or down because the
+			// cross product will be between two nearly parallel vectors and
+			// starts to approach an undefined staate, so we don't draw if the
+			// two vectors are less than 1 degree apart
+			VectorNegate (r_origin, tvec);
+			VectorNormalize (tvec);
+			dot = tvec[2];			// same as DotProcut (tvec, svup) because
+									// svup is 0, 0, 1
+			if ((dot > 0.999848) || (dot < -0.99848)) // cos (1 degree)
+				return;
+			VectorSet (0, 0, 1, svup);
+			// CrossProduct (svup, -r_origin, svright)
+			VectorSet (tvec[1], -tvec[0], 0, svright);
+			VectorNormalize (svright);
+			// CrossProduct (svright, svup, svpn);
+			VectorSet (-svright[1], svright[0], 0, svpn);
+			break;
+		case SPR_VP_PARALLEL:
+			// generate the prite's axes completely parallel to the viewplane.
+			// There are no problem situations, because the prite is always in
+			// the same position relative to the viewer.
+			VectorCopy (vup, svup);
+			VectorCopy (vright, svright);
+			VectorCopy (vpn, svpn);
+			break;
+		case SPR_VP_PARALLEL_UPRIGHT:
+			// generate the sprite's axes with svup straight up in worldspace,
+			// and svright parallel to the viewplane. This will not work if the
+			// view diretion iss very close to straight up or down because the
+			// cross prodcut will be between two nearly parallel vectors and
+			// starts to approach an undefined state, so we don't draw if the
+			// two vectros are less that 1 degree apart
+			dot = vpn[2];
+			if ((dot > 0.999848) || (dot < -0.99848)) // cos (1 degree)
+				return;
+			VectorSet (0, 0, 1, svup);
+			// CrossProduct (svup, -r_origin, svright)
+			VectorSet (vpn[1], -vpn[0], 0, svright);
+			VectorNormalize (svright);
+			// CrossProduct (svright, svup, svpn);
+			VectorSet (-svright[1], svright[0], 0, svpn);
+			break;
+		case SPR_ORIENTED:
+			// generate the prite's axes according to the sprite's world
+			// orientation
+			VectorCopy (currententity->transform + 0, svpn);
+			VectorNegate (currententity->transform + 4, svright);
+			VectorCopy (currententity->transform + 8, svup);
+			break;
+		case SPR_VP_PARALLEL_ORIENTED:
+			// generate the sprite's axes parallel to the viewplane, but
+			// rotated in that plane round the center according to the sprite
+			// entity's roll angle. Thus svpn stays the same, but svright and
+			// svup rotate
+			angle = currententity->angles[ROLL] * (M_PI / 180);
+			sr = sin (angle);
+			cr = cos (angle);
+			VectorCopy (vpn, svpn);
+			VectorScale (vright, cr, svright);
+			VectorMultAdd (svright, sr, vup, svright);
+			VectorScale (vup, cr, svup);
+			VectorMultAdd (svup, -sr, vright, svup);
+			break;
+		default:
+			Sys_Error ("R_DrawSprite: Bad sprite type %d", sprite->type);
+	}
+
+	R_GetSpriteFrames (sprite, &frame1, &frame2, &blend);
+
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglBindTexture (GL_TEXTURE_2D, frame1->gl_texturenum);
+
+	qfglActiveTexture (GL_TEXTURE0 + 1);
+	qfglBindTexture (GL_TEXTURE_2D, frame2->gl_texturenum);
+
+	qfglVertexAttrib4fv (quake_sprite.colora.location, color);
+	qfglVertexAttrib4fv (quake_sprite.colorb.location, color);
+	qfglVertexAttrib1f (quake_sprite.blend.location, blend);
+
+	make_quad (frame1, svpn, svright, svup, vertsa);
+	make_quad (frame2, svpn, svright, svup, vertsb);
+
+	qfglVertexAttribPointer (quake_sprite.vertexa.location, 3, GL_FLOAT,
+							 0, 0, vertsa);
+	qfglVertexAttribPointer (quake_sprite.vertexb.location, 3, GL_FLOAT,
+							 0, 0, vertsb);
+	qfglVertexAttribPointer (quake_sprite.uvab.location, 4, GL_FLOAT,
+							 0, 0, uvab);
+	qfglDrawArrays (GL_TRIANGLES, 0, 6);
 }
 
 // All sprites are drawn in a batch, so avoid thrashing the gl state
 void
 R_SpriteBegin (void)
 {
+	mat4_t      mat;
+
 	qfglUseProgram (quake_sprite.program);
 	qfglEnableVertexAttribArray (quake_sprite.vertexa.location);
 	qfglEnableVertexAttribArray (quake_sprite.vertexb.location);
@@ -183,6 +317,9 @@ R_SpriteBegin (void)
 	qfglActiveTexture (GL_TEXTURE0 + 2);
 	qfglEnable (GL_TEXTURE_2D);
 	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+
+	Mat4Mult (glsl_projection, glsl_view, mat);
+	qfglUniformMatrix4fv (quake_sprite.matrix.location, 1, false, mat);
 }
 
 void
@@ -193,9 +330,9 @@ R_SpriteEnd (void)
 	qfglDisableVertexAttribArray (quake_sprite.uvab.location);
 
 	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglEnable (GL_TEXTURE_2D);
+	qfglDisable (GL_TEXTURE_2D);
 	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglEnable (GL_TEXTURE_2D);
+	qfglDisable (GL_TEXTURE_2D);
 	qfglActiveTexture (GL_TEXTURE0 + 2);
-	qfglEnable (GL_TEXTURE_2D);
+	qfglDisable (GL_TEXTURE_2D);
 }

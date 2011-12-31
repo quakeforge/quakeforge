@@ -163,6 +163,9 @@ extern qboolean r_active;
 extern	qboolean		insubmodel;
 extern	vec3_t			r_worldmodelorg;
 
+extern mat4_t   glsl_projection;
+extern mat4_t   glsl_view;
+
 
 void R_SpriteBegin (void);
 void R_SpriteEnd (void);
