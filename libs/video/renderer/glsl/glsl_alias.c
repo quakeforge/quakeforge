@@ -150,6 +150,20 @@ R_InitAlias (void)
 void
 R_DrawAlias (void)
 {
+#ifdef TETRAHEDRON
+	static aliasvrt_t debug_verts[] = {
+		{{0,0,0},{0,0,0}},
+		{{255,255,0},{0,300,0}},
+		{{0,255,255},{300,300,0}},
+		{{255,0,255},{300,0,0}},
+	};
+	static GLushort debug_indices[] = {
+		0, 1, 2,
+		0, 3, 1,
+		1, 3, 2,
+		0, 2, 3,
+	};
+#endif
 	static quat_t color = { 1, 1, 1, 1};
 	static vec3_t lightvec = { -1, 0, 0 };	//FIXME
 	float       ambient = 128;				//FIXME
@@ -193,8 +207,10 @@ R_DrawAlias (void)
 
 	qfglBindTexture (GL_TEXTURE_2D, skin->texnum);
 
+#ifndef TETRAHEDRON
 	qfglBindBuffer (GL_ARRAY_BUFFER, hdr->posedata);
 	qfglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, hdr->commands);
+#endif
 
 	qfglVertexAttrib4fv (quake_mdl.color.location, color);
 	qfglUniform1f (quake_mdl.ambient.location, ambient);
@@ -204,6 +220,7 @@ R_DrawAlias (void)
 	qfglUniformMatrix4fv (quake_mdl.mvp_matrix.location, 1, false, mvp_mat);
 	qfglUniformMatrix3fv (quake_mdl.norm_matrix.location, 1, false, norm_mat);
 
+#ifndef TETRAHEDRON
 	qfglVertexAttribPointer (quake_mdl.vertex.location, 3, GL_UNSIGNED_BYTE,
 							 0, sizeof (aliasvrt_t),
 							 pose + field_offset (aliasvrt_t, vertex));
@@ -211,6 +228,17 @@ R_DrawAlias (void)
 							 0, sizeof (aliasvrt_t),
 							 pose + field_offset (aliasvrt_t, stn));
 	qfglDrawElements (GL_TRIANGLES, hdr->mdl.numtris, GL_UNSIGNED_SHORT, 0);
+#else
+	qfglVertexAttribPointer (quake_mdl.vertex.location, 3, GL_UNSIGNED_BYTE,
+							 0, sizeof (aliasvrt_t),
+							 &debug_verts[0].vertex);
+	qfglVertexAttribPointer (quake_mdl.stn.location, 3, GL_SHORT,
+							 0, sizeof (aliasvrt_t),
+							 &debug_verts[0].stn);
+	qfglDrawElements (GL_TRIANGLES,
+					  sizeof (debug_indices) / sizeof (debug_indices[0]),
+					  GL_UNSIGNED_SHORT, debug_indices);
+#endif
 }
 
 // All alias models are drawn in a batch, so avoid thrashing the gl state
