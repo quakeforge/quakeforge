@@ -98,12 +98,9 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
 	int         numtris;
 	int         i, j;
 	int         pose;
-	float       w, h;
 
 	numverts = hdr->mdl.numverts;
 	numtris = hdr->mdl.numtris;
-	w = hdr->mdl.skinwidth;
-	h = hdr->mdl.skinheight;
 
 	// copy triangles before editing them
 	tris = malloc (numtris * sizeof (mtriangle_t));
@@ -144,7 +141,7 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
 		for (j = 0; j < hdr->mdl.numverts; j++) {
 			pv = &poseverts[i][j];
 			VectorCopy (pv->v, verts[pose + j].vertex);
-			VectorSet (st[j].s / w, st[j].t / h, pv->lightnormalindex,
+			VectorSet (st[j].s, st[j].t, pv->lightnormalindex,
 					   verts[pose + j].stn);
 			// duplicate any verts that are marked for duplication by the
 			// stvert setup, using the modified st coordinates
@@ -152,8 +149,8 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
 				// the vertex position and normal are duplicated, only s and t
 				// are not (and really, only s, but this feels cleaner)
 				verts[pose + indexmap[j]] = verts[pose + j];
-				verts[pose + indexmap[j]].stn[0] = st[indexmap[j]].s / w;
-				verts[pose + indexmap[j]].stn[1] = st[indexmap[j]].t / h;
+				verts[pose + indexmap[j]].stn[0] = st[indexmap[j]].s;
+				verts[pose + indexmap[j]].stn[1] = st[indexmap[j]].t;
 			}
 		}
 	}

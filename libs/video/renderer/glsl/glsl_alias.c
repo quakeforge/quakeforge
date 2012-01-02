@@ -66,6 +66,7 @@ static struct {
 	shaderparam_t normals;
 	shaderparam_t mvp_matrix;
 	shaderparam_t norm_matrix;
+	shaderparam_t skin_size;
 	shaderparam_t color;
 	shaderparam_t stn;
 	shaderparam_t vertex;
@@ -80,6 +81,7 @@ static struct {
 	{"normals", 1},
 	{"mvp_mat", 1},
 	{"norm_mat", 1},
+	{"skin_size", 1},
 	{"vcolor", 0},
 	{"stn", 0},
 	{"vertex", 0},
@@ -130,6 +132,7 @@ R_InitAlias (void)
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.normals);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.mvp_matrix);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.norm_matrix);
+	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.skin_size);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.color);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.stn);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.vertex);
