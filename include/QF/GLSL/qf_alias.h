@@ -33,7 +33,7 @@
 
 typedef struct aliasvrt_s {
 	byte        vertex[3];
-	byte        stn[3];
+	short       stn[3];
 } aliasvrt_t;
 
 void R_InitAlias (void);

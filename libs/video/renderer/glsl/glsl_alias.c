@@ -204,10 +204,10 @@ R_DrawAlias (void)
 	qfglUniformMatrix4fv (quake_mdl.mvp_matrix.location, 1, false, mvp_mat);
 	qfglUniformMatrix3fv (quake_mdl.norm_matrix.location, 1, false, norm_mat);
 
-	qfglVertexAttribPointer (quake_mdl.vertex.location, 3, GL_BYTE,
+	qfglVertexAttribPointer (quake_mdl.vertex.location, 3, GL_UNSIGNED_BYTE,
 							 0, sizeof (aliasvrt_t),
 							 pose + field_offset (aliasvrt_t, vertex));
-	qfglVertexAttribPointer (quake_mdl.vertex.location, 3, GL_BYTE,
+	qfglVertexAttribPointer (quake_mdl.stn.location, 3, GL_SHORT,
 							 0, sizeof (aliasvrt_t),
 							 pose + field_offset (aliasvrt_t, stn));
 	qfglDrawElements (GL_TRIANGLES, hdr->mdl.numtris, GL_UNSIGNED_SHORT, 0);
