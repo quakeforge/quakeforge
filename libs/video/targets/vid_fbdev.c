@@ -308,7 +308,7 @@ VID_SetMode (const char *name, unsigned char *palette)
 	vid.height = vmode->yres;
 	vid.rowbytes = vmode->xres * (vmode->depth >> 3);
 	vid.colormap8 = (byte *) vid_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
+	vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
 	vid.conrowbytes = vid.rowbytes;
 	vid.numpages = 1;
 
@@ -416,7 +416,7 @@ VID_Init (unsigned char *palette)
 		vid.rowbytes = 320;
 		vid.aspect = ((float) vid.height / (float) vid.width) * (4.0 / 3.0);
 		vid.colormap8 = (byte *) vid_colormap;
-		vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
+		vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
 		vid.conrowbytes = vid.rowbytes;
 		vid.conwidth = vid.width;
 		vid.conheight = vid.height;

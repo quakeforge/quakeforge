@@ -305,7 +305,7 @@ VID_SetMode (int modenum, unsigned char *palette)
 	}
 
 	vid.colormap8 = (byte *) vid_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
+	vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
 	vid.conrowbytes = vid.rowbytes;
 	vid.numpages = 1;
 

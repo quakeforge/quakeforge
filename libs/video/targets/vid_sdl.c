@@ -112,7 +112,7 @@ VID_Init (unsigned char *palette)
 	VGA_height = vid.height;
 	vid.numpages = 1;
 	vid.colormap8 = vid_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
+	vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
 	vid.do_screen_buffer = do_screen_buffer;
 	VGA_pagebase = vid.buffer = screen->pixels;
 	VGA_rowbytes = vid.rowbytes = screen->pitch;
