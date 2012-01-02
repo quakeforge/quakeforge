@@ -182,6 +182,8 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
 					GL_STATIC_DRAW);
 
 	// all done
+	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
+	qfglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
 	free (verts);
 	free (indices);
 }
