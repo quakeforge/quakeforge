@@ -14,7 +14,7 @@ main (void)
 {
 	float       pix = texture2D (skin, st).r;
 	float       light = ambient;
-	float       d;
+	float       d, col;
 
 	d = dot (normal, lightvec);
 	d = min (d, 0.0);

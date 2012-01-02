@@ -48,6 +48,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/sys.h"
 
 #include "QF/GLSL/funcs.h"
+#include "QF/GLSL/qf_alias.h"
 #include "QF/GLSL/qf_textures.h"
 
 #include "gl_draw.h"
@@ -301,6 +302,7 @@ VISIBLE void
 R_Init (void)
 {
 	R_InitParticles ();
+	R_InitAlias ();
 	R_InitSprites ();
 }
 
