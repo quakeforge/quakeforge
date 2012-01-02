@@ -52,6 +52,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_vid.h"
+#include "QF/GLSL/qf_textures.h"
 
 #include "compat.h"
 #include "d_iface.h"
@@ -59,6 +60,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "sbar.h"
 
 VISIBLE int					glsl_palette;
+VISIBLE int					glsl_colormap;
 VISIBLE int					gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
 VISIBLE int					gl_filter_max = GL_LINEAR;
 VISIBLE float       		gldepthmin, gldepthmax;
@@ -121,6 +123,11 @@ VID_SetPalette (unsigned char *palette)
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	qfglGenerateMipmap (GL_TEXTURE_2D);
 	free (pal);
+
+	if (glsl_colormap)
+		GL_ReleaseTexture (glsl_colormap);
+	glsl_colormap = GL_LoadQuakeTexture ("colormap", 256, VID_GRADES,
+										 vid.colormap8);
 }
 
 void

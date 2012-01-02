@@ -37,7 +37,8 @@ typedef struct shaderparam_s {
 	int         location;
 } shaderparam_t;
 
-extern int						glsl_palette;
+extern int glsl_palette;
+extern int glsl_colormap;
 
 void GL_EndRendering (void);
 int GL_CompileShader (const char *name, const char *shader_src, int type);
