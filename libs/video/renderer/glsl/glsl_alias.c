@@ -201,6 +201,8 @@ R_DrawAlias (void)
 	qfglUniform1f (quake_mdl.shadelight.location, shadelight);
 	qfglUniform3fv (quake_mdl.lightvec.location, 1, lightvec);
 	qfglUniform2fv (quake_mdl.skin_size.location, 1, skin_size);
+	qfglUniformMatrix4fv (quake_mdl.mvp_matrix.location, 1, false, mvp_mat);
+	qfglUniformMatrix3fv (quake_mdl.norm_matrix.location, 1, false, norm_mat);
 
 	qfglVertexAttribPointer (quake_mdl.vertex.location, 3, GL_BYTE,
 							 0, sizeof (aliasvrt_t),
