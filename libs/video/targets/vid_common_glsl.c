@@ -264,7 +264,7 @@ dump_program (const char *name, int program)
 	dstring_adjust (pname);
 
 	qfglGetProgramiv(program, GL_ACTIVE_UNIFORMS, &count);
-	Sys_Printf("Shader %s has %i uniforms\n", name, count);
+	Sys_Printf("Program %s (%d) has %i uniforms\n", name, program, count);
 	for (ind = 0; ind < count; ind++) {
 		qfglGetActiveUniform(program, ind, pname->size, 0, &psize, &ptype,
 							 pname->str);
@@ -277,7 +277,7 @@ dump_program (const char *name, int program)
 	dstring_adjust (pname);
 
 	qfglGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, &count);
-	Sys_Printf("Shader %s has %i attributes\n", name, count);
+	Sys_Printf("Program %s (%d) has %i attributes\n", name, program, count);
 	for (ind = 0; ind < count; ind++) {
 		qfglGetActiveAttrib(program, ind, pname->size, 0, &psize, &ptype,
 							pname->str);
