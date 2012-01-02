@@ -161,6 +161,15 @@ R_RenderEntities (void)
 	if (!r_drawentities->int_val)
 		return;
 
+	R_AliasBegin ();
+	for (ent = r_ent_queue; ent; ent = ent->next) {
+		if (ent->model->type != mod_alias)
+			continue;
+		currententity = ent;
+		R_DrawAlias ();
+	}
+	R_AliasEnd ();
+
 	R_SpriteBegin ();
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		if (ent->model->type != mod_sprite)

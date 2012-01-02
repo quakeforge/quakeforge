@@ -37,5 +37,8 @@ typedef struct aliasvrt_s {
 } aliasvrt_t;
 
 void R_InitAlias (void);
+void R_DrawAlias (void);
+void R_AliasBegin (void);
+void R_AliasEnd (void);
 
 #endif//__QF_GLSL_qf_alias_h

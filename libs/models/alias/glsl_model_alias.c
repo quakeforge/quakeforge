@@ -168,6 +168,8 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
 	// finished with tris
 	free (tris);
 
+	hdr->poseverts = numverts;
+
 	// load the vertex data and indices into GL
 	qfglGenBuffers (2, bnum);
 	hdr->posedata = bnum[0];

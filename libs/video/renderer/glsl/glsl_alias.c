@@ -41,13 +41,15 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #endif
 #include <stdlib.h>
 
+#include "QF/render.h"
+
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_alias.h"
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
-#include "r_shared.h"
+#include "r_local.h"
 
 static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 #include "anorms.h"
@@ -94,6 +96,7 @@ static struct {
 };
 
 static int vnorms_tex;
+//static mat4_t alias_vp;
 
 static void
 build_normals_texture (void)
@@ -142,4 +145,119 @@ R_InitAlias (void)
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.ambient);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.shadelight);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.lightvec);
+}
+
+void
+R_DrawAlias (void)
+{
+	static quat_t color = { 1, 1, 1, 1};
+	static vec3_t lightvec = { -1, 0, 0 };	//FIXME
+	float       ambient = 128;				//FIXME
+	float       shadelight = 64;			//FIXME
+	float       skin_size[2];
+	entity_t   *ent = currententity;
+	model_t    *model = ent->model;
+	aliashdr_t *hdr;
+	vec_t       norm_mat[9];
+	mat4_t      mvp_mat;
+	maliasskindesc_t *skin;
+	aliasvrt_t *pose = 0;		// VBO's are null based
+	maliasframedesc_t *frame;
+
+	hdr = Cache_Get (&model->cache);
+
+	// we need only the rotation for normals.
+	VectorCopy (ent->transform + 0, norm_mat + 0);
+	VectorCopy (ent->transform + 4, norm_mat + 3);
+	VectorCopy (ent->transform + 8, norm_mat + 6);
+
+	// ent model scaling and offset
+	Mat4Zero (mvp_mat);
+	mvp_mat[0] = hdr->mdl.scale[0];
+	mvp_mat[5] = hdr->mdl.scale[1];
+	mvp_mat[10] = hdr->mdl.scale[2];
+	mvp_mat[15] = 1;
+	VectorCopy (hdr->mdl.scale_origin, mvp_mat + 12);
+	Mat4Mult (ent->transform, mvp_mat, mvp_mat);
+	//Mat4Mult (alias_vp, mvp_mat, mvp_mat);
+	Mat4Mult (glsl_view, mvp_mat, mvp_mat);
+	Mat4Mult (glsl_projection, mvp_mat, mvp_mat);
+
+	skin = R_AliasGetSkindesc (ent->skinnum, hdr);
+	frame = R_AliasGetFramedesc (ent->frame, hdr);
+
+	pose += frame->firstpose * hdr->mdl.numverts;
+
+	skin_size[0] = hdr->mdl.skinwidth;
+	skin_size[1] = hdr->mdl.skinheight;
+
+	qfglBindTexture (GL_TEXTURE_2D, skin->texnum);
+
+	qfglBindBuffer (GL_ARRAY_BUFFER, hdr->posedata);
+	qfglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, hdr->commands);
+
+	qfglVertexAttrib4fv (quake_mdl.color.location, color);
+	qfglUniform1f (quake_mdl.ambient.location, ambient);
+	qfglUniform1f (quake_mdl.shadelight.location, shadelight);
+	qfglUniform3fv (quake_mdl.lightvec.location, 1, lightvec);
+	qfglUniform2fv (quake_mdl.skin_size.location, 1, skin_size);
+
+	qfglVertexAttribPointer (quake_mdl.vertex.location, 3, GL_BYTE,
+							 0, sizeof (aliasvrt_t),
+							 pose + field_offset (aliasvrt_t, vertex));
+	qfglVertexAttribPointer (quake_mdl.vertex.location, 3, GL_BYTE,
+							 0, sizeof (aliasvrt_t),
+							 pose + field_offset (aliasvrt_t, stn));
+	qfglDrawElements (GL_TRIANGLES, hdr->mdl.numtris, GL_UNSIGNED_SHORT, 0);
+}
+
+// All alias models are drawn in a batch, so avoid thrashing the gl state
+void
+R_AliasBegin (void)
+{
+	// pre-multiply the view and projection matricies
+	//Mat4Mult (glsl_projection, glsl_view, alias_vp);
+
+	qfglUseProgram (quake_mdl.program);
+	qfglEnableVertexAttribArray (quake_mdl.vertex.location);
+	qfglEnableVertexAttribArray (quake_mdl.stn.location);
+	qfglDisableVertexAttribArray (quake_mdl.color.location);
+
+	qfglUniform1i (quake_mdl.normals.location, 1);
+	qfglActiveTexture (GL_TEXTURE0 + 1);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, vnorms_tex);
+
+	qfglUniform1i (quake_mdl.colormap.location, 2);
+	qfglActiveTexture (GL_TEXTURE0 + 2);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, glsl_colormap);
+
+	qfglUniform1i (quake_mdl.palette.location, 3);
+	qfglActiveTexture (GL_TEXTURE0 + 3);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+
+	qfglUniform1i (quake_mdl.skin.location, 0);
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglEnable (GL_TEXTURE_2D);
+}
+
+void
+R_AliasEnd (void)
+{
+	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
+	qfglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	qfglDisableVertexAttribArray (quake_mdl.vertex.location);
+	qfglDisableVertexAttribArray (quake_mdl.stn.location);
+
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglDisable (GL_TEXTURE_2D);
+	qfglActiveTexture (GL_TEXTURE0 + 1);
+	qfglDisable (GL_TEXTURE_2D);
+	qfglActiveTexture (GL_TEXTURE0 + 2);
+	qfglDisable (GL_TEXTURE_2D);
+	qfglActiveTexture (GL_TEXTURE0 + 3);
+	qfglDisable (GL_TEXTURE_2D);
 }
