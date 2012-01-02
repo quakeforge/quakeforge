@@ -77,3 +77,41 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 
 	return pskindesc;
 }
+
+VISIBLE maliasframedesc_t *
+R_AliasGetFramedesc (int framenum, aliashdr_t *hdr)
+{
+	float      *intervals;
+	float       fullinterval, time, targettime;
+	maliasframedesc_t *frame;
+	maliasgroup_t *group;
+	int         numframes;
+	int         i;
+
+	if ((framenum >= hdr->mdl.numframes) || (framenum < 0)) {
+		Sys_MaskPrintf (SYS_DEV, "R_AliasSetupFrame: no such frame %d\n",
+						framenum);
+		framenum = 0;
+	}
+
+	frame = &hdr->frames[framenum];
+	if (frame->type == ALIAS_SINGLE)
+		return frame;
+
+	group = (maliasgroup_t *) ((byte *) hdr + frame->frame);
+	intervals = (float *) ((byte *) hdr + group->intervals);
+	numframes = group->numframes;
+	fullinterval = intervals[numframes - 1];
+
+	time = r_realtime + currententity->syncbase;
+
+	// when loading in Mod_LoadAliasGroup, we guaranteed all interval values
+	// are positive, so we don't have to worry about division by 0
+	targettime = time - ((int) (time / fullinterval)) * fullinterval;
+
+	for (i = 0; i < (numframes - 1); i++) {
+		if (intervals[i] > targettime)
+			break;
+	}
+	return &group->frames[i];
+}

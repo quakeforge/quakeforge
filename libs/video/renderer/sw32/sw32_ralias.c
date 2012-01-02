@@ -606,43 +606,10 @@ R_AliasSetupLighting (alight_t *plighting)
 static void
 R_AliasSetupFrame (void)
 {
-	int         frame;
-	int         i, numframes;
-	maliasgroup_t *paliasgroup;
-	float      *pintervals, fullinterval, targettime, time;
+	maliasframedesc_t *frame;
 
-	frame = currententity->frame;
-	if ((frame >= pmdl->numframes) || (frame < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "R_AliasSetupFrame: no such frame %d\n",
-						frame);
-		frame = 0;
-	}
-
-	if (paliashdr->frames[frame].type == ALIAS_SINGLE) {
-		r_apverts = (trivertx_t *)
-			((byte *) paliashdr + paliashdr->frames[frame].frame);
-		return;
-	}
-
-	paliasgroup = (maliasgroup_t *)
-		((byte *) paliashdr + paliashdr->frames[frame].frame);
-	pintervals = (float *) ((byte *) paliashdr + paliasgroup->intervals);
-	numframes = paliasgroup->numframes;
-	fullinterval = pintervals[numframes - 1];
-
-	time = r_realtime + currententity->syncbase;
-
-	// when loading in Mod_LoadAliasGroup, we guaranteed all interval values
-	// are positive, so we don't have to worry about division by 0
-	targettime = time - ((int) (time / fullinterval)) * fullinterval;
-
-	for (i = 0; i < (numframes - 1); i++) {
-		if (pintervals[i] > targettime)
-			break;
-	}
-
-	r_apverts = (trivertx_t *)
-		((byte *) paliashdr + paliasgroup->frames[i].frame);
+	frame = R_AliasGetFramedesc (currententity->frame, paliashdr);
+	r_apverts = (trivertx_t *) ((byte *) paliashdr + frame->frame);
 }
 
 
