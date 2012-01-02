@@ -545,10 +545,7 @@ R_AliasPrepareUnclippedPoints (void)
 static void
 R_AliasSetupSkin (void)
 {
-	int         numskins, skinnum, i;
-	float       skintargettime, skintime;
-	float      *pskinintervals, fullskininterval;
-	maliasskingroup_t *paliasskingroup;
+	int         skinnum;
 
 	skinnum = currententity->skinnum;
 	if ((skinnum >= pmdl->numskins) || (skinnum < 0)) {
@@ -557,32 +554,9 @@ R_AliasSetupSkin (void)
 		skinnum = 0;
 	}
 
-	pskindesc = ((maliasskindesc_t *)
-				 ((byte *) paliashdr + paliashdr->skindesc)) + skinnum;
+	pskindesc = R_AliasGetSkindesc (skinnum, paliashdr);
+
 	a_skinwidth = pmdl->skinwidth;
-
-	if (pskindesc->type == ALIAS_SKIN_GROUP) {
-		paliasskingroup = (maliasskingroup_t *) ((byte *) paliashdr +
-												 pskindesc->skin);
-		pskinintervals = (float *)
-			((byte *) paliashdr + paliasskingroup->intervals);
-		numskins = paliasskingroup->numskins;
-		fullskininterval = pskinintervals[numskins - 1];
-
-		skintime = r_realtime + currententity->syncbase;
-
-		// when loading in Mod_LoadAliasSkinGroup, we guaranteed all interval
-		// values are positive, so we don't have to worry about division by 0
-		skintargettime = skintime -
-			((int) (skintime / fullskininterval)) * fullskininterval;
-
-		for (i = 0; i < (numskins - 1); i++) {
-			if (pskinintervals[i] > skintargettime)
-				break;
-		}
-
-		pskindesc = &paliasskingroup->skindescs[i];
-	}
 
 	r_affinetridesc.pskindesc = pskindesc;
 	r_affinetridesc.pskin = (void *) ((byte *) paliashdr + pskindesc->skin);

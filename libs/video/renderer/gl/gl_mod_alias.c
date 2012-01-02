@@ -460,47 +460,6 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	return vo;
 }
 
-static maliasskindesc_t *
-R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
-{
-	maliasskindesc_t *pskindesc;
-	maliasskingroup_t *paliasskingroup;
-
-	if ((skinnum >= ahdr->mdl.numskins) || (skinnum < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "R_AliasSetupSkin: no such skin # %d\n",
-						skinnum);
-		skinnum = 0;
-	}
-
-	pskindesc = ((maliasskindesc_t *)
-				 ((byte *) ahdr + ahdr->skindesc)) + skinnum;
-
-	if (pskindesc->type == ALIAS_SKIN_GROUP) {
-		int         numskins, i;
-		float       fullskininterval, skintargettime, skintime;
-		float      *pskinintervals;
-
-		paliasskingroup = (maliasskingroup_t *) ((byte *) ahdr +
-												 pskindesc->skin);
-		pskinintervals = (float *)
-			((byte *) ahdr + paliasskingroup->intervals);
-		numskins = paliasskingroup->numskins;
-		fullskininterval = pskinintervals[numskins - 1];
-
-		skintime = r_realtime + currententity->syncbase;
-
-		skintargettime = skintime -
-			((int) (skintime / fullskininterval)) * fullskininterval;
-		for (i = 0; i < (numskins - 1); i++) {
-			if (pskinintervals[i] > skintargettime)
-				break;
-		}
-		pskindesc = &paliasskingroup->skindescs[i];
-	}
-
-	return pskindesc;
-}
-
 void
 R_DrawAliasModel (entity_t *e)
 {
