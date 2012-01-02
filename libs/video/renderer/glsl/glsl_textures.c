@@ -63,6 +63,24 @@ GL_LoadQuakeTexture (const char *identifier, int width, int height, byte *data)
 	return tnum;
 }
 
+int
+GL_LoadRGBTexture (const char *identifier, int width, int height, byte *data)
+{
+	GLuint      tnum;
+
+	qfglGenTextures (1, &tnum);
+	qfglBindTexture (GL_TEXTURE_2D, tnum);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_RGB,
+					width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	qfglGenerateMipmap (GL_TEXTURE_2D);
+
+	return tnum;
+}
+
 void
 GL_ReleaseTexture (int tex)
 {
