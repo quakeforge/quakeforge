@@ -39,11 +39,19 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#include <stdlib.h>
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_alias.h"
+#include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
+
+#include "r_shared.h"
+
+static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
+#include "anorms.h"
+};
 
 static const char quakemdl_vert[] =
 #include "quakemdl.vc"
@@ -83,11 +91,38 @@ static struct {
 	{"lightvec", 1},
 };
 
+static int vnorms_tex;
+
+static void
+build_normals_texture (void)
+{
+	vec3_t      temp;
+	static const vec3_t one = { 1, 1, 1};
+	unsigned short norm[3];
+	int         i, j;
+	byte       *data;
+
+	data = malloc (NUMVERTEXNORMALS * 3 * 2);
+	for (i = 0; i < NUMVERTEXNORMALS; i++) {
+		VectorAdd (vertex_normals[i], one, temp);	// temp is 0.0 .. 2.0
+		VectorScale (temp, 32767.5, norm);			// norm is 0 .. 65535
+		for (j = 0; j < 3; j++) {
+			data[i * 6 + 0 + j] = norm[j] >> 8;
+			data[i * 6 + 3 + j] = norm[j] & 0xff;
+		}
+	}
+	vnorms_tex = GL_LoadRGBTexture ("vertex_normals", 2, NUMVERTEXNORMALS,
+									data);
+	free (data);
+}
+
 VISIBLE void
 R_InitAlias (void)
 {
 	int         vert;
 	int         frag;
+
+	build_normals_texture ();
 	vert = GL_CompileShader ("quakemdl.vert", quakemdl_vert, GL_VERTEX_SHADER);
 	frag = GL_CompileShader ("quakemdl.frag", quakemdl_frag,
 							 GL_FRAGMENT_SHADER);

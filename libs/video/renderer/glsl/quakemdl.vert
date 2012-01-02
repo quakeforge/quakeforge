@@ -18,8 +18,8 @@ main (void)
 	gl_Position = mvp_mat * vec4 (vertex, 1.0);
 	st = stn.st;
 	nind = stn.p;
-	norma = texture2D (normals, vec2 (nind, 0.0)).xyz;
-	normb = texture2D (normals, vec2 (nind, 1.0)).xyz;
-	normal = norm_mat * (norma + normb / 256.0);
+	norma = texture2D (normals, vec2 (0.0, nind)).xyz;
+	normb = texture2D (normals, vec2 (1.0, nind)).xyz;
+	normal = norm_mat * (2.0 * norma + normb / 128.0 - vec3 (1.0, 1.0, 1.0));
 	color = vcolor;
 }
