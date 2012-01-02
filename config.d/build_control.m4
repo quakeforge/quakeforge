@@ -297,7 +297,7 @@ if test "x$BUILD_GL" = xyes; then
 	VID_REND_TARGETS="$VID_REND_TARGETS libQFrenderer_gl.la"
 	VID_MODEL_TARGETS="$VID_MODEL_TARGETS libQFmodels_gl.la"
 fi
-if test "x$BUILD_GL" = xyes; then
+if test "x$BUILD_GLSL" = xyes; then
 	VID_REND_TARGETS="$VID_REND_TARGETS libQFrenderer_glsl.la"
 	VID_MODEL_TARGETS="$VID_MODEL_TARGETS libQFmodels_glsl.la"
 fi

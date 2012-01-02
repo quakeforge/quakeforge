@@ -14,7 +14,7 @@ glsl_src = \
 	glsl_alias.c glsl_draw.c glsl_main.c glsl_particles.c glsl_screen.c \
 	glsl_sprite.c glsl_textures.c
 
-if BUILD_GL
+if BUILD_GLSL
 noinst_LTLIBRARIES=	libglsl.la
 BUILT_SOURCES= $(shader_gen)
 else

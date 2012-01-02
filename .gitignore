@@ -182,6 +182,10 @@ core
 /libs/video/renderer/gl/fbset_modes_y.[ch]
 /libs/video/renderer/gl/fbset_modes_l.c
 
+# /libs/video/renderer/glsl/
+/libs/video/renderer/glsl/*.fc
+/libs/video/renderer/glsl/*.vc
+
 # /libs/video/renderer/sw/
 /libs/video/renderer/sw/fbset_modes_y.[ch]
 /libs/video/renderer/sw/fbset_modes_l.c
@@ -213,6 +217,7 @@ core
 /nq/source/fbset_modes_y.h
 /nq/source/nq-3dfx
 /nq/source/nq-fbdev
+/nq/source/nq-glslx
 /nq/source/nq-glx
 /nq/source/nq-sdl
 /nq/source/nq-sdl32
@@ -256,6 +261,7 @@ core
 /qw/source/qw-client-3dfx
 /qw/source/qw-client-fbdev
 /qw/source/qw-client-glx
+/qw/source/qw-client-glslx
 /qw/source/qw-client-sdl
 /qw/source/qw-client-sdl32
 /qw/source/qw-client-sgl
