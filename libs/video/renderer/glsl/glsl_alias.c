@@ -146,6 +146,33 @@ R_InitAlias (void)
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.shadelight);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.lightvec);
 }
+
+static void
+calc_lighting (entity_t *ent, float *ambient, float *shadelight,
+			   vec3_t lightvec)
+{
+	unsigned    i;
+	float       add;
+	vec3_t      dist;
+
+	VectorSet ( -1, 0, 0, lightvec);	//FIXME
+	*ambient = max (R_LightPoint (ent->origin), max (ent->model->min_light,
+													 ent->min_light) * 128);
+	*shadelight = *ambient;
+
+	for (i = 0; i < r_maxdlights; i++) {
+		if (r_dlights[i].die >= r_realtime) {
+			VectorSubtract (ent->origin, r_dlights[i].origin, dist);
+			add = r_dlights[i].radius - VectorLength (dist);
+			if (add > 0)
+				*ambient += add;
+		}
+	}
+	if (*ambient >= 128)
+		*ambient = 128;
+	if (*shadelight > 192 - *ambient)
+		*shadelight = 192 - *ambient;
+}
 //#define TETRAHEDRON
 void
 R_DrawAlias (void)
@@ -165,9 +192,9 @@ R_DrawAlias (void)
 	};
 #endif
 	static quat_t color = { 1, 1, 1, 1};
-	static vec3_t lightvec = { -1, 0, 0 };	//FIXME
-	float       ambient = 128;				//FIXME
-	float       shadelight = 64;			//FIXME
+	static vec3_t lightvec;
+	float       ambient;
+	float       shadelight;
 	float       skin_size[2];
 	entity_t   *ent = currententity;
 	model_t    *model = ent->model;
@@ -179,6 +206,8 @@ R_DrawAlias (void)
 	maliasframedesc_t *frame;
 
 	hdr = Cache_Get (&model->cache);
+
+	calc_lighting (ent, &ambient, &shadelight, lightvec);
 
 	// we need only the rotation for normals.
 	VectorCopy (ent->transform + 0, norm_mat + 0);
