@@ -96,7 +96,7 @@ static struct {
 };
 
 static int vnorms_tex;
-//static mat4_t alias_vp;
+static mat4_t alias_vp;
 
 static void
 build_normals_texture (void)
@@ -146,7 +146,7 @@ R_InitAlias (void)
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.shadelight);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.lightvec);
 }
-
+//#define TETRAHEDRON
 void
 R_DrawAlias (void)
 {
@@ -193,9 +193,7 @@ R_DrawAlias (void)
 	mvp_mat[15] = 1;
 	VectorCopy (hdr->mdl.scale_origin, mvp_mat + 12);
 	Mat4Mult (ent->transform, mvp_mat, mvp_mat);
-	//Mat4Mult (alias_vp, mvp_mat, mvp_mat);
-	Mat4Mult (glsl_view, mvp_mat, mvp_mat);
-	Mat4Mult (glsl_projection, mvp_mat, mvp_mat);
+	Mat4Mult (alias_vp, mvp_mat, mvp_mat);
 
 	skin = R_AliasGetSkindesc (ent->skinnum, hdr);
 	frame = R_AliasGetFramedesc (ent->frame, hdr);
@@ -246,7 +244,7 @@ void
 R_AliasBegin (void)
 {
 	// pre-multiply the view and projection matricies
-	//Mat4Mult (glsl_projection, glsl_view, alias_vp);
+	Mat4Mult (glsl_projection, glsl_view, alias_vp);
 
 	qfglUseProgram (quake_mdl.program);
 	qfglEnableVertexAttribArray (quake_mdl.vertex.location);
