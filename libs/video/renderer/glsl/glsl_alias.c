@@ -198,7 +198,7 @@ R_DrawAlias (void)
 	skin = R_AliasGetSkindesc (ent->skinnum, hdr);
 	frame = R_AliasGetFramedesc (ent->frame, hdr);
 
-	pose += frame->firstpose * hdr->mdl.numverts;
+	pose += frame->firstpose * hdr->poseverts;
 
 	skin_size[0] = hdr->mdl.skinwidth;
 	skin_size[1] = hdr->mdl.skinheight;
