@@ -47,6 +47,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/skin.h"
 #include "QF/sys.h"
 
+#include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_alias.h"
 #include "QF/GLSL/qf_textures.h"
@@ -151,6 +152,9 @@ R_SetupView (void)
 	Mat4Identity (mat);
 	VectorNegate (r_refdef.vieworg, mat + 12);
 	Mat4Mult (glsl_view, mat, glsl_view);
+
+	qfglEnable (GL_CULL_FACE);
+	qfglEnable (GL_DEPTH_TEST);
 }
 
 static void
