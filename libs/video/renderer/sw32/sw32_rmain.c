@@ -127,8 +127,6 @@ int         reinit_surfcache = 1;	// if 1, surface cache is currently empty
 									// and must be reinitialized for current
 									// cache size
 
-mleaf_t    *r_viewleaf, *r_oldviewleaf;
-
 float       r_aliastransition, r_resfudge;
 
 int         d_lightstylevalue[256];		// 8.8 fraction of base light value
@@ -385,47 +383,6 @@ R_ViewChanged (float aspect)
 		r_fov_greater_than_90 = true;
 
 	D_ViewChanged ();
-}
-
-void
-R_MarkLeaves (void)
-{
-	byte       *vis;
-	mnode_t    *node;
-	mleaf_t    *leaf;
-	msurface_t **mark;
-	int         c;
-	int         i;
-
-	if (r_oldviewleaf == r_viewleaf)
-		return;
-
-	r_visframecount++;
-	r_oldviewleaf = r_viewleaf;
-
-	vis = Mod_LeafPVS (r_viewleaf, r_worldentity.model);
-
-	for (i = 0; i < r_worldentity.model->numleafs; i++) {
-		if (vis[i >> 3] & (1 << (i & 7))) {
-			leaf = &r_worldentity.model->leafs[i + 1];
-			mark = leaf->firstmarksurface;
-			c = leaf->nummarksurfaces;
-			if (c) {
-				do {
-					(*mark)->visframe = r_visframecount;
-					mark++;
-				} while (--c);
-			}
-
-			node = (mnode_t *) leaf;
-			do {
-				if (node->visframe == r_visframecount)
-					break;
-				node->visframe = r_visframecount;
-				node = node->parent;
-			} while (node);
-		}
-	}
 }
 
 static void

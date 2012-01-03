@@ -97,8 +97,6 @@ float       r_base_world_matrix[16];
 // screen size info
 VISIBLE refdef_t    r_refdef;
 
-mleaf_t    *r_viewleaf, *r_oldviewleaf;
-
 int         d_lightstylevalue[256];		// 8.8 fraction of base light value
 
 vec3_t		shadecolor;					// Ender (Extend) Colormod
