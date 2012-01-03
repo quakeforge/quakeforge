@@ -18,7 +18,8 @@ main (void)
 
 	d = dot (normal, lightvec);
 	d = min (d, 0.0);
+	light = 255.0 - light;
 	light += d * shadelight;
-	col = texture2D (colormap, vec2 (pix, light)).r;
+	col = texture2D (colormap, vec2 (pix, light / 255.0)).r;
 	gl_FragColor = texture2D (palette, vec2 (col, 0.5));
 }
