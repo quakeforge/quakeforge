@@ -401,7 +401,6 @@ R_SetupFrame (void)
 	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
 
 	// current viewleaf
-	r_oldviewleaf = r_viewleaf;
 	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
 
 	V_SetContentsColor (r_viewleaf->contents);

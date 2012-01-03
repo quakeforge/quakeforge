@@ -43,7 +43,8 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "r_local.h"
 #include "r_shared.h"
 
-mleaf_t    *r_viewleaf, *r_oldviewleaf;
+mleaf_t    *r_viewleaf;
+static mleaf_t *r_oldviewleaf;
 
 void
 R_MarkLeaves (void)
@@ -63,6 +64,8 @@ R_MarkLeaves (void)
 	r_oldviewleaf = r_viewleaf;
 
 	if (r_novis->int_val) {
+		r_oldviewleaf = 0;	// so vis will be recalcualted when novis gets
+							// turned off
 		vis = solid;
 		memset (solid, 0xff, (r_worldentity.model->numleafs + 7) >> 3);
 	} else

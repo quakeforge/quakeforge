@@ -320,7 +320,7 @@ extern int		r_maxsurfsseen, r_maxedgesseen, r_cnumsurfs;
 extern qboolean	r_surfsonstack;
 extern qboolean	r_dowarpold, r_viewchanged;
 
-extern mleaf_t	*r_viewleaf, *r_oldviewleaf;
+extern mleaf_t	*r_viewleaf;
 
 extern int		r_clipflags;
 extern int		r_dlightframecount;
