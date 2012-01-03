@@ -62,7 +62,26 @@ init_efrag_list (t_efrag_list *efl)
 
 	for (i = 0; i < MAX_EFRAGS - 1; i++)
 		efl->efrags[i].entnext = &efl->efrags[i + 1];
-	efl->efrags[i].entnext = NULL;
+	efl->efrags[i].entnext = 0;
+}
+
+static efrag_t *
+new_efrag (void)
+{
+	efrag_t    *ef;
+
+	if (__builtin_expect (!r_free_efrags, 0)) {
+		t_efrag_list *efl = calloc (1, sizeof (t_efrag_list));
+		SYS_CHECKMEM (efl);
+		efl->next = efrag_list;
+		efrag_list = efl;
+		init_efrag_list (efl);
+		r_free_efrags = &efl->efrags[0];
+	}
+	ef = r_free_efrags;
+	r_free_efrags = ef->entnext;
+	ef->entnext = 0;
+	return ef;
 }
 
 void
@@ -114,7 +133,7 @@ R_RemoveEfrags (entity_t *ent)
 		r_free_efrags = old;
 	}
 
-	ent->efrag = NULL;
+	ent->efrag = 0;
 }
 
 #define NODE_STACK_SIZE 1024
@@ -139,25 +158,14 @@ R_SplitEntityOnNode (mnode_t *node)
 
 			leaf = (mleaf_t *) node;
 
-			// grab an efrag off the free list
-			ef = r_free_efrags;
-			if (__builtin_expect (!ef, 0)) {
-				t_efrag_list *efl = calloc (1, sizeof (t_efrag_list));
-				SYS_CHECKMEM (efl);
-				efl->next = efrag_list;
-				efrag_list = efl;
-				ef = r_free_efrags = &efl->efrags[0];
-			}
-			r_free_efrags = r_free_efrags->entnext;
+			ef = new_efrag ();	// ensures ef->entnext is 0
 
+			// add the link to the chain of links on the entity
 			ef->entity = r_addent;
-
-			// add the entity link  
 			*lastlink = ef;
 			lastlink = &ef->entnext;
-			ef->entnext = NULL;
 
-			// set the leaf links
+			// add the link too the chain of links on the leaf
 			ef->leaf = leaf;
 			ef->leafnext = leaf->efrags;
 			leaf->efrags = ef;
@@ -203,7 +211,7 @@ R_AddEfrags (entity_t *ent)
 	r_addent = ent;
 
 	lastlink = &ent->efrag;
-	r_pefragtopnode = NULL;
+	r_pefragtopnode = 0;
 
 	entmodel = ent->model;
 
