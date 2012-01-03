@@ -615,7 +615,8 @@ GL_Init_Common (void)
 	qfglClearColor (0, 0, 0, 0);
 
 	qfglEnable (GL_TEXTURE_2D);
-	qfglCullFace (GL_FRONT);
+	qfglFrontFace (GL_CW);
+	qfglCullFace (GL_BACK);
 	qfglPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 	qfglShadeModel (GL_FLAT);
 

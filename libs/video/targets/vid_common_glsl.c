@@ -140,7 +140,8 @@ GL_Init_Common (void)
 	qfglClearColor (0, 0, 0, 0);
 
 	qfglEnable (GL_TEXTURE_2D);
-	qfglCullFace (GL_FRONT);
+	qfglFrontFace (GL_CW);
+	qfglCullFace (GL_BACK);
 
 	qfglEnable (GL_BLEND);
 	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

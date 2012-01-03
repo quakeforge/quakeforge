@@ -469,9 +469,9 @@ R_SetupGL (void)
 			qfglScalef (1, -1, 1);
 		else
 			qfglScalef (-1, 1, 1);
-		qfglCullFace (GL_BACK);
+		qfglFrontFace (GL_CCW);
 	} else
-		qfglCullFace (GL_FRONT);
+		qfglFrontFace (GL_CW);
 
 	qfglMatrixMode (GL_MODELVIEW);
 	qfglLoadIdentity ();
@@ -576,7 +576,7 @@ R_Mirror (void)
 		qfglScalef (1, -1, 1);
 	else
 		qfglScalef (-1, 1, 1);
-	qfglCullFace (GL_FRONT);
+	qfglFrontFace (GL_CW);
 	qfglMatrixMode (GL_MODELVIEW);
 
 	qfglLoadMatrixf (r_base_world_matrix);
@@ -883,7 +883,7 @@ R_InitFishEye (void)
 						-gl_cube_map_size / 2);
 
 		qfglDisable (GL_DEPTH_TEST);
-		qfglCullFace (GL_BACK);
+		qfglFrontFace (GL_CCW);
 		qfglClear (GL_COLOR_BUFFER_BIT);
 
 		qfglEnable (GL_TEXTURE_CUBE_MAP_ARB);
