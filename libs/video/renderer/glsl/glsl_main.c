@@ -121,6 +121,8 @@ R_SetupFrame (void)
 
 	VectorCopy (r_refdef.vieworg, r_origin);
 	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
+
+	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
 }
 
 static void
@@ -307,6 +309,7 @@ R_RenderView (void)
 {
 	R_SetupFrame ();
 	R_SetupView ();
+	R_MarkLeaves ();
 	R_DrawWorld ();
 	R_RenderEntities ();
 }
