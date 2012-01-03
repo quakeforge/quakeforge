@@ -221,10 +221,10 @@ R_DrawAlias (void)
 #ifndef TETRAHEDRON
 	qfglVertexAttribPointer (quake_mdl.vertex.location, 3, GL_UNSIGNED_BYTE,
 							 0, sizeof (aliasvrt_t),
-							 pose + field_offset (aliasvrt_t, vertex));
+							 (byte *) pose + field_offset (aliasvrt_t, vertex));
 	qfglVertexAttribPointer (quake_mdl.stn.location, 3, GL_SHORT,
 							 0, sizeof (aliasvrt_t),
-							 pose + field_offset (aliasvrt_t, stn));
+							 (byte *) pose + field_offset (aliasvrt_t, stn));
 	qfglDrawElements (GL_TRIANGLES, 3 * hdr->mdl.numtris, GL_UNSIGNED_SHORT, 0);
 #else
 	qfglVertexAttribPointer (quake_mdl.vertex.location, 3, GL_UNSIGNED_BYTE,
