@@ -189,6 +189,7 @@ surf_t *R_GetSurf (void);
 void R_AliasDrawModel (alight_t *plighting);
 maliasskindesc_t *R_AliasGetSkindesc (int skinnum, aliashdr_t *hdr);
 maliasframedesc_t *R_AliasGetFramedesc (int framenum, aliashdr_t *hdr);
+float R_AliasGetLerpedFrames (entity_t *ent, aliashdr_t *hdr);
 void R_BeginEdgeFrame (void);
 void R_ScanEdges (void);
 void D_DrawSurfaces (void);

@@ -246,24 +246,16 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, vert_order_t *vo)
 }
 
 static inline vert_order_t *
-GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
+GL_GetAliasFrameVerts16 (aliashdr_t *paliashdr, entity_t *e)
 {
-	float         interval;
-	int           count, numposes, pose, i;
+	float         blend;
+	int           count, i;
 	trivertx16_t *verts;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
-	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
-		if (developer->int_val)
-			Sys_MaskPrintf (SYS_DEV,
-							"R_AliasSetupFrame: no such frame %d %s\n", frame,
-							currententity->model->name);
-		frame = 0;
-	}
+	blend = R_AliasGetLerpedFrames (e, paliashdr);
 
-	pose = paliashdr->frames[frame].firstpose;
-	numposes = paliashdr->frames[frame].numposes;
 	verts = (trivertx16_t *) ((byte *) paliashdr + paliashdr->posedata);
 
 	count = paliashdr->poseverts;
@@ -277,72 +269,38 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 		vo->tex_coord = NULL;
 	}
 	vo->count = count;
-	if (numposes > 1) {
-		interval = paliashdr->frames[frame].interval;
-		pose += (int) (r_realtime / interval) % numposes;
+
+	if (!gl_lerp_anim->int_val)
+		blend = 1.0;
+
+
+	if (blend == 0.0) {
+		verts = verts + e->pose1 * count;
+	} else if (blend == 1.0) {
+		verts = verts + e->pose2 * count;
 	} else {
-		/*
-			One tenth of a second is good for most Quake animations. If
-			the nextthink is longer then the animation is usually meant
-			to pause (e.g. check out the shambler magic animation in
-			shambler.qc).  If its shorter then things will still be
-			smoothed partly, and the jumps will be less noticable
-			because of the shorter time.  So, this is probably a good
-			assumption.
-		*/
-		interval = 0.1;
-	}
-
-	if (gl_lerp_anim->int_val) {
 		trivertx16_t *verts1, *verts2;
-		float       blend;
 
-		e->frame_interval = interval;
+		verts1 = verts + e->pose1 * count;
+		verts2 = verts + e->pose2 * count;
 
-		if (e->pose2 != pose) {
-			e->frame_start_time = r_realtime;
-			if (e->pose2 == -1) {
-				e->pose1 = pose;
-			} else {
-				e->pose1 = e->pose2;
-			}
-			e->pose2 = pose;
-			blend = 0.0;
-		} else if (r_paused) {
-			blend = 1.0;
-		} else {
-			blend = (r_realtime - e->frame_start_time) / e->frame_interval;
-			blend = min (blend, 1.0);
-		}
+		for (i = 0, vo_v = vo->verts; i < count;
+			 i++, vo_v++, verts1++, verts2++) {
+			float      *n1, *n2;
 
-		if (blend == 0.0) {
-			verts = verts + e->pose1 * count;
-		} else if (blend == 1.0) {
-			verts = verts + e->pose2 * count;
-		} else {
-			verts1 = verts + e->pose1 * count;
-			verts2 = verts + e->pose2 * count;
-
-			for (i = 0, vo_v = vo->verts; i < count;
-				 i++, vo_v++, verts1++, verts2++) {
-				float      *n1, *n2;
-
-				VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
-				n1 = r_avertexnormals[verts1->lightnormalindex];
-				n2 = r_avertexnormals[verts2->lightnormalindex];
-				VectorBlend (n1, n2, blend, vo_v->normal);
-				if (VectorIsZero (vo_v->normal)) {
-					if (blend < 0.5) {
-						VectorCopy (n1, vo_v->normal);
-					} else {
-						VectorCopy (n2, vo_v->normal);
-					}
+			VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
+			n1 = r_avertexnormals[verts1->lightnormalindex];
+			n2 = r_avertexnormals[verts2->lightnormalindex];
+			VectorBlend (n1, n2, blend, vo_v->normal);
+			if (VectorIsZero (vo_v->normal)) {
+				if (blend < 0.5) {
+					VectorCopy (n1, vo_v->normal);
+				} else {
+					VectorCopy (n2, vo_v->normal);
 				}
 			}
-			return vo;
 		}
-	} else {
-		verts += pose * count;
+		return vo;
 	}
 
 	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
@@ -353,24 +311,15 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 }
 
 static inline vert_order_t *
-GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
+GL_GetAliasFrameVerts (aliashdr_t *paliashdr, entity_t *e)
 {
-	float       interval;
-	int         count, numposes, pose, i;
+	float       blend;
+	int         count, i;
 	trivertx_t *verts;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
-	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
-		if (developer->int_val)
-			Sys_MaskPrintf (SYS_DEV,
-							"R_AliasSetupFrame: no such frame %d %s\n", frame,
-							currententity->model->name);
-		frame = 0;
-	}
-
-	pose = paliashdr->frames[frame].firstpose;
-	numposes = paliashdr->frames[frame].numposes;
+	blend = R_AliasGetLerpedFrames (e, paliashdr);
 
 	verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
 
@@ -385,72 +334,36 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	}
 	vo->count = count;
 
-	if (numposes > 1) {
-		interval = paliashdr->frames[frame].interval;
-		pose += (int) (r_realtime / interval) % numposes;
+	if (!gl_lerp_anim->int_val)
+		blend = 1.0;
+
+	if (blend == 0.0) {
+		verts = verts + e->pose1 * count;
+	} else if (blend == 1.0) {
+		verts = verts + e->pose2 * count;
 	} else {
-		/*
-			One tenth of a second is good for most Quake animations. If
-			the nextthink is longer then the animation is usually meant
-			to pause (e.g. check out the shambler magic animation in
-			shambler.qc).  If its shorter then things will still be
-			smoothed partly, and the jumps will be less noticable
-			because of the shorter time.  So, this is probably a good
-			assumption.
-		*/
-		interval = 0.1;
-	}
-
-	if (gl_lerp_anim->int_val) {
 		trivertx_t *verts1, *verts2;
-		float       blend;
 
-		e->frame_interval = interval;
+		verts1 = verts + e->pose1 * count;
+		verts2 = verts + e->pose2 * count;
 
-		if (e->pose2 != pose) {
-			e->frame_start_time = r_realtime;
-			if (e->pose2 == -1) {
-				e->pose1 = pose;
-			} else {
-				e->pose1 = e->pose2;
-			}
-			e->pose2 = pose;
-			blend = 0.0;
-		} else if (r_paused) {
-			blend = 1.0;
-		} else {
-			blend = (r_realtime - e->frame_start_time) / e->frame_interval;
-			blend = min (blend, 1.0);
-		}
+		for (i = 0, vo_v = vo->verts; i < count;
+			 i++, vo_v++, verts1++, verts2++) {
+			float      *n1, *n2;
 
-		if (blend == 0.0) {
-			verts = verts + e->pose1 * count;
-		} else if (blend == 1.0) {
-			verts = verts + e->pose2 * count;
-		} else {
-			verts1 = verts + e->pose1 * count;
-			verts2 = verts + e->pose2 * count;
-
-			for (i = 0, vo_v = vo->verts; i < count;
-				 i++, vo_v++, verts1++, verts2++) {
-				float      *n1, *n2;
-
-				VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
-				n1 = r_avertexnormals[verts1->lightnormalindex];
-				n2 = r_avertexnormals[verts2->lightnormalindex];
-				VectorBlend (n1, n2, blend, vo_v->normal);
-				if (VectorIsZero (vo_v->normal)) {
-					if (blend < 0.5) {
-						VectorCopy (n1, vo_v->normal);
-					} else {
-						VectorCopy (n2, vo_v->normal);
-					}
+			VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
+			n1 = r_avertexnormals[verts1->lightnormalindex];
+			n2 = r_avertexnormals[verts2->lightnormalindex];
+			VectorBlend (n1, n2, blend, vo_v->normal);
+			if (VectorIsZero (vo_v->normal)) {
+				if (blend < 0.5) {
+					VectorCopy (n1, vo_v->normal);
+				} else {
+					VectorCopy (n2, vo_v->normal);
 				}
 			}
-			return vo;
 		}
-	} else {
-		verts += pose * count;
+		return vo;
 	}
 
 	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
@@ -626,10 +539,10 @@ R_DrawAliasModel (entity_t *e)
 
 	if (paliashdr->mdl.ident == HEADER_MDL16) {
 		VectorScale (paliashdr->mdl.scale, e->scale / 256.0, scale);
-		vo = GL_GetAliasFrameVerts16 (e->frame, paliashdr, e);
+		vo = GL_GetAliasFrameVerts16 (paliashdr, e);
 	} else {
 		VectorScale (paliashdr->mdl.scale, e->scale, scale);
-		vo = GL_GetAliasFrameVerts (e->frame, paliashdr, e);
+		vo = GL_GetAliasFrameVerts (paliashdr, e);
 	}
 
 	// setup the transform

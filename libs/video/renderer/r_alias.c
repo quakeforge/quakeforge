@@ -78,8 +78,8 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 	return pskindesc;
 }
 
-VISIBLE maliasframedesc_t *
-R_AliasGetFramedesc (int framenum, aliashdr_t *hdr)
+static maliasframedesc_t *
+alias_get_frame (int framenum, aliashdr_t *hdr, float *frame_interval)
 {
 	float      *intervals;
 	float       fullinterval, time, targettime;
@@ -95,8 +95,21 @@ R_AliasGetFramedesc (int framenum, aliashdr_t *hdr)
 	}
 
 	frame = &hdr->frames[framenum];
-	if (frame->type == ALIAS_SINGLE)
+	if (frame->type == ALIAS_SINGLE) {
+		if (frame_interval) {
+			/*
+				One tenth of a second is good for most Quake animations. If
+				the nextthink is longer then the animation is usually meant
+				to pause (e.g. check out the shambler magic animation in
+				shambler.qc).  If its shorter then things will still be
+				smoothed partly, and the jumps will be less noticable
+				because of the shorter time.  So, this is probably a good
+				assumption.
+			*/
+			*frame_interval = 0.1;
+		}
 		return frame;
+	}
 
 	group = (maliasgroup_t *) ((byte *) hdr + frame->frame);
 	intervals = (float *) ((byte *) hdr + group->intervals);
@@ -113,5 +126,46 @@ R_AliasGetFramedesc (int framenum, aliashdr_t *hdr)
 		if (intervals[i] > targettime)
 			break;
 	}
+	if (frame_interval) {
+		*frame_interval = intervals[i];
+		if (i)
+			*frame_interval -= intervals[i - 1];
+	}
 	return &group->frames[i];
+}
+
+VISIBLE maliasframedesc_t *
+R_AliasGetFramedesc (int framenum, aliashdr_t *hdr)
+{
+	return alias_get_frame (framenum, hdr, 0);
+}
+
+float
+R_AliasGetLerpedFrames (entity_t *ent, aliashdr_t *hdr)
+{
+	maliasframedesc_t *frame;
+	float       frame_interval;
+	int         pose;
+	float       blend;
+
+	frame = alias_get_frame (ent->frame, hdr, &frame_interval);
+	pose = frame->firstpose;
+
+	ent->frame_interval = frame_interval;
+	if (ent->pose2 != pose) {
+		ent->frame_start_time = r_realtime;
+		if (ent->pose2 == -1) {
+			ent->pose1 = pose;
+		} else {
+			ent->pose1 = ent->pose2;
+		}
+		ent->pose2 = pose;
+		blend = 0.0;
+	} else if (r_paused) {
+		blend = 1.0;
+	} else {
+		blend = (r_realtime - ent->frame_start_time) / ent->frame_interval;
+		blend = min (blend, 1.0);
+	}
+	return blend;
 }
