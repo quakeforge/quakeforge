@@ -113,39 +113,54 @@ R_InitSprites (void)
 }
 
 static void
-R_GetSpriteFrames (msprite_t *sprite, mspriteframe_t **frame1,
+R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 				   mspriteframe_t **frame2, float *blend)
 {
-	int         frame = currententity->frame;
+	int         framenum = currententity->frame;
+	int         pose;
 	int         i, numframes;
 	float      *intervals;
-	float       fullinterval, targettime, time, prev;
-	mspritegroup_t *spritegroup;
+	float       frame_interval;
+	float       fullinterval, targettime, time;
+	mspritegroup_t *group = 0;
+	mspriteframedesc_t *framedesc;
 
-	if (frame >= sprite->numframes || frame < 0)
-		frame = 0;
-	if (sprite->frames[frame].type == SPR_SINGLE) {
-		// for now, assume unanimated.
-		*frame1 = *frame2 = sprite->frames[frame].frameptr;
-		*blend = 0;
+	if (framenum >= sprite->numframes || framenum < 0)
+		framenum = 0;
+
+	numframes = sprite->numframes;
+	framedesc = &sprite->frames[framenum];
+	if (framedesc->type == SPR_SINGLE) {
+		frame_interval = 0.1;
+		pose = framenum;
 	} else {
-		spritegroup = (mspritegroup_t *) sprite->frames[frame].frameptr;
-		intervals = spritegroup->intervals;
-		numframes = spritegroup->numframes;
+		group = (mspritegroup_t *) framedesc->frameptr;
+		intervals = group->intervals;
+		numframes = group->numframes;
 		fullinterval = intervals[numframes - 1];
 
-		prev = 0;
 		time = r_realtime + currententity->syncbase;
 		targettime = time - ((int) (time / fullinterval)) * fullinterval;
 
 		for (i = 0; i < numframes - 1; i++) {
 			if (intervals[i] > targettime)
 				break;
-			prev = intervals[i];
 		}
-		*frame1 = spritegroup->frames[i];
-		*frame2 = spritegroup->frames[(i + 1) % numframes];
-		*blend = (targettime - prev) / (intervals[i] - prev);
+		frame_interval = intervals[i];
+		if (i)
+			frame_interval = intervals[i - 1];
+		pose = i;
+	}
+
+	//FIXME this will break if the sprite changes between single frames and
+	//group frames.
+	*blend = R_EntityBlend (ent, pose, frame_interval);
+	if (group) {
+		*frame1 = group->frames[ent->pose1];
+		*frame2 = group->frames[ent->pose2];
+	} else {
+		*frame1 = sprite->frames[ent->pose1].frameptr;
+		*frame2 = sprite->frames[ent->pose2].frameptr;
 	}
 }
 
@@ -267,7 +282,7 @@ R_DrawSprite (void)
 			Sys_Error ("R_DrawSprite: Bad sprite type %d", sprite->type);
 	}
 
-	R_GetSpriteFrames (sprite, &frame1, &frame2, &blend);
+	R_GetSpriteFrames (ent, sprite, &frame1, &frame2, &blend);
 
 	qfglActiveTexture (GL_TEXTURE0 + 0);
 	qfglBindTexture (GL_TEXTURE_2D, frame1->gl_texturenum);
