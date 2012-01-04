@@ -198,15 +198,15 @@ R_DrawAlias (void)
 	float       ambient;
 	float       shadelight;
 	float       skin_size[2];
-	float       blend = 0.0;
+	float       blend;
 	entity_t   *ent = currententity;
 	model_t    *model = ent->model;
 	aliashdr_t *hdr;
 	vec_t       norm_mat[9];
 	mat4_t      mvp_mat;
 	maliasskindesc_t *skin;
-	aliasvrt_t *pose = 0;		// VBO's are null based
-	maliasframedesc_t *frame;
+	aliasvrt_t *pose1 = 0;		// VBO's are null based
+	aliasvrt_t *pose2 = 0;		// VBO's are null based
 
 	hdr = Cache_Get (&model->cache);
 
@@ -228,9 +228,10 @@ R_DrawAlias (void)
 	Mat4Mult (alias_vp, mvp_mat, mvp_mat);
 
 	skin = R_AliasGetSkindesc (ent->skinnum, hdr);
-	frame = R_AliasGetFramedesc (ent->frame, hdr);
+	blend = R_AliasGetLerpedFrames (ent, hdr);
 
-	pose += frame->firstpose * hdr->poseverts;
+	pose1 += ent->pose1 * hdr->poseverts;
+	pose2 += ent->pose2 * hdr->poseverts;
 
 	skin_size[0] = hdr->mdl.skinwidth;
 	skin_size[1] = hdr->mdl.skinheight;
@@ -253,8 +254,8 @@ R_DrawAlias (void)
 	qfglUniformMatrix3fv (quake_mdl.norm_matrix.location, 1, false, norm_mat);
 
 #ifndef TETRAHEDRON
-	set_arrays (&quake_mdl.vertexa, &quake_mdl.normala, &quake_mdl.sta, pose);
-	set_arrays (&quake_mdl.vertexb, &quake_mdl.normalb, &quake_mdl.stb, pose);
+	set_arrays (&quake_mdl.vertexa, &quake_mdl.normala, &quake_mdl.sta, pose1);
+	set_arrays (&quake_mdl.vertexb, &quake_mdl.normalb, &quake_mdl.stb, pose2);
 	qfglDrawElements (GL_TRIANGLES, 3 * hdr->mdl.numtris,
 					  GL_UNSIGNED_SHORT, 0);
 #else
