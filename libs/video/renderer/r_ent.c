@@ -48,6 +48,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "r_dynamic.h"
+#include "r_local.h"
+#include "r_shared.h"
 
 #define ENT_POOL_SIZE 32
 
@@ -117,4 +119,28 @@ R_EnqueueEntity (entity_t *ent)
 	ent->next = 0;
 	*vis_tail = ent;
 	vis_tail = &ent->next;
+}
+
+float
+R_EntityBlend (entity_t *ent, int pose, float interval)
+{
+	float       blend;
+
+	ent->frame_interval = interval;
+	if (ent->pose2 != pose) {
+		ent->frame_start_time = r_realtime;
+		if (ent->pose2 == -1) {
+			ent->pose1 = pose;
+		} else {
+			ent->pose1 = ent->pose2;
+		}
+		ent->pose2 = pose;
+		blend = 0.0;
+	} else if (r_paused) {
+		blend = 1.0;
+	} else {
+		blend = (r_realtime - ent->frame_start_time) / ent->frame_interval;
+		blend = min (blend, 1.0);
+	}
+	return blend;
 }

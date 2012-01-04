@@ -144,28 +144,8 @@ float
 R_AliasGetLerpedFrames (entity_t *ent, aliashdr_t *hdr)
 {
 	maliasframedesc_t *frame;
-	float       frame_interval;
-	int         pose;
-	float       blend;
+	float       interval;
 
-	frame = alias_get_frame (ent->frame, hdr, &frame_interval);
-	pose = frame->firstpose;
-
-	ent->frame_interval = frame_interval;
-	if (ent->pose2 != pose) {
-		ent->frame_start_time = r_realtime;
-		if (ent->pose2 == -1) {
-			ent->pose1 = pose;
-		} else {
-			ent->pose1 = ent->pose2;
-		}
-		ent->pose2 = pose;
-		blend = 0.0;
-	} else if (r_paused) {
-		blend = 1.0;
-	} else {
-		blend = (r_realtime - ent->frame_start_time) / ent->frame_interval;
-		blend = min (blend, 1.0);
-	}
-	return blend;
+	frame = alias_get_frame (ent->frame, hdr, &interval);
+	return R_EntityBlend (ent, frame->firstpose, interval);
 }
