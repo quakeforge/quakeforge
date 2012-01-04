@@ -50,6 +50,12 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/qf_alias.h"
 #include "QF/GLSL/qf_textures.h"
 
+#include "r_shared.h"
+
+static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
+#include "anorms.h"
+};
+
 void *
 Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum, qboolean group,
 			  maliasskindesc_t *skindesc)
@@ -141,16 +147,18 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
 		for (j = 0; j < hdr->mdl.numverts; j++) {
 			pv = &poseverts[i][j];
 			VectorCopy (pv->v, verts[pose + j].vertex);
-			VectorSet (st[j].s, st[j].t, pv->lightnormalindex,
-					   verts[pose + j].stn);
+			verts[pose + j].st[0] = st[j].s;
+			verts[pose + j].st[1] = st[j].t;
+			VectorScale (vertex_normals[pv->lightnormalindex], 32767,
+						 verts[pose + j].normal);
 			// duplicate any verts that are marked for duplication by the
 			// stvert setup, using the modified st coordinates
 			if (indexmap[j] != -1) {
 				// the vertex position and normal are duplicated, only s and t
 				// are not (and really, only s, but this feels cleaner)
 				verts[pose + indexmap[j]] = verts[pose + j];
-				verts[pose + indexmap[j]].stn[0] = st[indexmap[j]].s;
-				verts[pose + indexmap[j]].stn[1] = st[indexmap[j]].t;
+				verts[pose + indexmap[j]].st[0] = st[indexmap[j]].s;
+				verts[pose + indexmap[j]].st[1] = st[indexmap[j]].t;
 			}
 		}
 	}

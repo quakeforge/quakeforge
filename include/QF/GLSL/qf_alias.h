@@ -32,8 +32,9 @@
 #define __QF_GLSL_qf_alias_h
 
 typedef struct aliasvrt_s {
+	short       st[2];
+	short       normal[3];
 	byte        vertex[3];
-	short       stn[3];
 } aliasvrt_t;
 
 void R_InitAlias (void);

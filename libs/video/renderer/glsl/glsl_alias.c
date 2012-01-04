@@ -51,10 +51,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "r_local.h"
 
-static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
-#include "anorms.h"
-};
-
 static const char quakemdl_vert[] =
 #include "quakemdl.vc"
 ;
@@ -65,12 +61,12 @@ static const char quakemdl_frag[] =
 
 static struct {
 	int         program;
-	shaderparam_t normals;
 	shaderparam_t mvp_matrix;
 	shaderparam_t norm_matrix;
 	shaderparam_t skin_size;
 	shaderparam_t color;
-	shaderparam_t stn;
+	shaderparam_t st;
+	shaderparam_t normal;
 	shaderparam_t vertex;
 	shaderparam_t palette;
 	shaderparam_t colormap;
@@ -80,12 +76,12 @@ static struct {
 	shaderparam_t lightvec;
 } quake_mdl = {
 	0,
-	{"normals", 1},
 	{"mvp_mat", 1},
 	{"norm_mat", 1},
 	{"skin_size", 1},
 	{"vcolor", 0},
-	{"stn", 0},
+	{"vst", 0},
+	{"vnormal", 0},
 	{"vertex", 0},
 	{"palette", 1},
 	{"colormap", 1},
@@ -95,31 +91,7 @@ static struct {
 	{"lightvec", 1},
 };
 
-static int vnorms_tex;
 static mat4_t alias_vp;
-
-static void
-build_normals_texture (void)
-{
-	vec3_t      temp;
-	static const vec3_t one = { 1, 1, 1};
-	unsigned short norm[3];
-	int         i, j;
-	byte       *data;
-
-	data = malloc (NUMVERTEXNORMALS * 3 * 2);
-	for (i = 0; i < NUMVERTEXNORMALS; i++) {
-		VectorAdd (vertex_normals[i], one, temp);	// temp is 0.0 .. 2.0
-		VectorScale (temp, 32767.5, norm);			// norm is 0 .. 65535
-		for (j = 0; j < 3; j++) {
-			data[i * 6 + 0 + j] = norm[j] >> 8;
-			data[i * 6 + 3 + j] = norm[j] & 0xff;
-		}
-	}
-	vnorms_tex = GL_LoadRGBTexture ("vertex_normals", 2, NUMVERTEXNORMALS,
-									data);
-	free (data);
-}
 
 VISIBLE void
 R_InitAlias (void)
@@ -127,17 +99,16 @@ R_InitAlias (void)
 	int         vert;
 	int         frag;
 
-	build_normals_texture ();
 	vert = GL_CompileShader ("quakemdl.vert", quakemdl_vert, GL_VERTEX_SHADER);
 	frag = GL_CompileShader ("quakemdl.frag", quakemdl_frag,
 							 GL_FRAGMENT_SHADER);
 	quake_mdl.program = GL_LinkProgram ("quakemdl", vert, frag);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.normals);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.mvp_matrix);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.norm_matrix);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.skin_size);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.color);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.stn);
+	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.st);
+	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.normal);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.vertex);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.palette);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.colormap);
@@ -179,10 +150,10 @@ R_DrawAlias (void)
 {
 #ifdef TETRAHEDRON
 	static aliasvrt_t debug_verts[] = {
-		{{0,0,0},{0,0,0}},
-		{{255,255,0},{0,300,0}},
-		{{0,255,255},{300,300,0}},
-		{{255,0,255},{300,0,0}},
+		{{  0,  0}, {-18918,-18918,-18918}, {  0,  0,  0}},
+		{{  0,300}, { 18918, 18918,-18918}, {255,255,  0}},
+		{{300,300}, {-18918, 18918, 18918}, {  0,255,255}},
+		{{300,  0}, { 18918,-18918, 18918}, {255,  0,255}},
 	};
 	static GLushort debug_indices[] = {
 		0, 1, 2,
@@ -251,17 +222,23 @@ R_DrawAlias (void)
 	qfglVertexAttribPointer (quake_mdl.vertex.location, 3, GL_UNSIGNED_BYTE,
 							 0, sizeof (aliasvrt_t),
 							 (byte *) pose + field_offset (aliasvrt_t, vertex));
-	qfglVertexAttribPointer (quake_mdl.stn.location, 3, GL_SHORT,
+	qfglVertexAttribPointer (quake_mdl.normal.location, 3, GL_SHORT,
 							 0, sizeof (aliasvrt_t),
-							 (byte *) pose + field_offset (aliasvrt_t, stn));
+							 (byte *) pose + field_offset (aliasvrt_t, normal));
+	qfglVertexAttribPointer (quake_mdl.st.location, 2, GL_SHORT,
+							 0, sizeof (aliasvrt_t),
+							 (byte *) pose + field_offset (aliasvrt_t, st));
 	qfglDrawElements (GL_TRIANGLES, 3 * hdr->mdl.numtris, GL_UNSIGNED_SHORT, 0);
 #else
 	qfglVertexAttribPointer (quake_mdl.vertex.location, 3, GL_UNSIGNED_BYTE,
 							 0, sizeof (aliasvrt_t),
 							 &debug_verts[0].vertex);
-	qfglVertexAttribPointer (quake_mdl.stn.location, 3, GL_SHORT,
+	qfglVertexAttribPointer (quake_mdl.st.location, 3, GL_SHORT,
 							 0, sizeof (aliasvrt_t),
-							 &debug_verts[0].stn);
+							 &debug_verts[0].normal);
+	qfglVertexAttribPointer (quake_mdl.st.location, 3, GL_SHORT,
+							 0, sizeof (aliasvrt_t),
+							 &debug_verts[0].st);
 	qfglDrawElements (GL_TRIANGLES,
 					  sizeof (debug_indices) / sizeof (debug_indices[0]),
 					  GL_UNSIGNED_SHORT, debug_indices);
@@ -277,21 +254,17 @@ R_AliasBegin (void)
 
 	qfglUseProgram (quake_mdl.program);
 	qfglEnableVertexAttribArray (quake_mdl.vertex.location);
-	qfglEnableVertexAttribArray (quake_mdl.stn.location);
+	qfglEnableVertexAttribArray (quake_mdl.normal.location);
+	qfglEnableVertexAttribArray (quake_mdl.st.location);
 	qfglDisableVertexAttribArray (quake_mdl.color.location);
 
-	qfglUniform1i (quake_mdl.normals.location, 1);
+	qfglUniform1i (quake_mdl.colormap.location, 1);
 	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, vnorms_tex);
-
-	qfglUniform1i (quake_mdl.colormap.location, 2);
-	qfglActiveTexture (GL_TEXTURE0 + 2);
 	qfglEnable (GL_TEXTURE_2D);
 	qfglBindTexture (GL_TEXTURE_2D, glsl_colormap);
 
-	qfglUniform1i (quake_mdl.palette.location, 3);
-	qfglActiveTexture (GL_TEXTURE0 + 3);
+	qfglUniform1i (quake_mdl.palette.location, 2);
+	qfglActiveTexture (GL_TEXTURE0 + 2);
 	qfglEnable (GL_TEXTURE_2D);
 	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
@@ -307,7 +280,8 @@ R_AliasEnd (void)
 	qfglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
 
 	qfglDisableVertexAttribArray (quake_mdl.vertex.location);
-	qfglDisableVertexAttribArray (quake_mdl.stn.location);
+	qfglDisableVertexAttribArray (quake_mdl.normal.location);
+	qfglDisableVertexAttribArray (quake_mdl.st.location);
 
 	qfglActiveTexture (GL_TEXTURE0 + 0);
 	qfglDisable (GL_TEXTURE_2D);
