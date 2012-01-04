@@ -76,6 +76,7 @@ typedef struct {
 	qboolean		single_cpp;		// process progs.src into a series of
 									// #include directives and then compile
 									// that
+	qboolean		no_default_paths;	// no default -I or -L
 	qboolean		save_temps;		// save temporary files
 	qboolean		files_dat;		// generate files.dat
 	qboolean		progdefs_h;		// generate progdefs.h
