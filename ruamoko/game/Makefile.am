@@ -7,7 +7,7 @@ pkgdatadir=@sharepath@/id1
 
 QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QFCC=$(QFCC_DEP)
-QCFLAGS=-qq -g -Werror -Wall -Wno-integer-divide
+QCFLAGS=-qq -g -Werror -Wall -Wno-integer-divide --no-default-paths
 QCPPFLAGS=-I. -I$(srcdir) -I$(top_builddir)/ruamoko/include -I$(top_srcdir)/ruamoko/include
 GZIP=if echo $@ | grep -q .gz; then gzip -f `basename $@ .gz`; if test -f `basename $@ .dat.gz`.sym; then gzip -f `basename $@ .dat.gz`.sym; fi; fi
 if HAVE_ZLIB

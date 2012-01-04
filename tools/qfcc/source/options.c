@@ -65,6 +65,7 @@ enum {
 	OPT_ADVANCED,
 	OPT_CPP,
 	OPT_INCLUDE,
+	OPT_NO_DEFAULT_PATHS,
 	OPT_PROGDEFS,
 	OPT_QCCX_ESCAPES,
 	OPT_TRADITIONAL,
@@ -78,6 +79,7 @@ static struct option const long_options[] = {
 	{"files", no_argument, 0, 'F'},
 	{"help", no_argument, 0, 'h'},
 	{"include", required_argument, 0, OPT_INCLUDE},
+	{"no-default-paths", no_argument, 0, OPT_NO_DEFAULT_PATHS},
 	{"notice", required_argument, 0, 'N'},
 	{"output-file", required_argument, 0, 'o'},
 	{"progdefs", no_argument, 0, OPT_PROGDEFS},
@@ -537,6 +539,9 @@ DecodeArgs (int argc, char **argv)
 					add_cpp_def (nva ("-M"));
 				}
 				break;
+			case OPT_NO_DEFAULT_PATHS:
+				options.no_default_paths = 1;
+				break;
 			default:
 				usage (1);
 		}
@@ -579,8 +584,10 @@ DecodeArgs (int argc, char **argv)
 		add_cpp_def ("-D__VERSION6__=1");
 
 	// add the default paths
-	add_cpp_def (nva ("-I%s", QFCC_INCLUDE_PATH));
-	linker_add_path (QFCC_LIB_PATH);
+	if (!options.no_default_paths) {
+		add_cpp_def (nva ("-I%s", QFCC_INCLUDE_PATH));
+		linker_add_path (QFCC_LIB_PATH);
+	}
 
 	if (options.verbosity >= 3)
 		yydebug = 1;

@@ -4,7 +4,7 @@ pkglibdir=$(libdir)/qfcc/lib
 
 QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QFCC=$(QFCC_DEP)
-QCFLAGS=-qq -g -Werror -Wall -Wno-integer-divide
+QCFLAGS=-qq -g -Werror -Wall -Wno-integer-divide --no-default-paths
 QCPPFLAGS=$(INCLUDES)
 PAK=$(top_builddir)/tools/pak/pak$(EXEEXT)
 GZIP=if echo $@ | grep -q .gz; then gzip -f `basename $@ .gz`; if test -f `basename $@ .dat.gz`.sym; then gzip -f `basename $@ .dat.gz`.sym; fi; fi
