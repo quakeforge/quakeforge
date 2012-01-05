@@ -81,6 +81,8 @@ Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum, qboolean group,
 void
 Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 {
+	if (hdr->mdl.ident == HEADER_MDL16)
+		VectorScale (hdr->mdl.scale, 1/256.0, hdr->mdl.scale);
 }
 
 void
@@ -146,7 +148,12 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
 	for (i = 0, pose = 0; i < hdr->numposes; i++, pose += numverts) {
 		for (j = 0; j < hdr->mdl.numverts; j++) {
 			pv = &poseverts[i][j];
-			VectorCopy (pv->v, verts[pose + j].vertex);
+			if (extra) {
+				VectorMultAdd (pv[hdr->numposes].v, 256, pv->v,
+							   verts[pose + j].vertex);
+			} else {
+				VectorCopy (pv->v, verts[pose + j].vertex);
+			}
 			verts[pose + j].st[0] = st[j].s;
 			verts[pose + j].st[1] = st[j].t;
 			VectorScale (vertex_normals[pv->lightnormalindex], 32767,

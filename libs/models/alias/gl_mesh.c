@@ -518,7 +518,13 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 			trivertx_t *pv = poseverts[i];
 			for (j = 0; j < numorder; j++) {
 				trivertx16_t v;
-				VectorMultSub (pv[vertexorder[j] + hdr->mdl.numverts].v,
+				// convert MD16's split coordinates into something a little
+				// saner. The first chunk of vertices is fully compatible with
+				// IDPO alias models (even the scale). The second chunk is the
+				// fractional bits of the vertex, giving 8.8. However, it's
+				// easier for us to multiply everything by 256 and adjust the
+				// model scale appropriately
+				VectorMultAdd (pv[vertexorder[j] + hdr->mdl.numverts].v,
 							   256, pv[vertexorder[j]].v, v.v);
 				v.lightnormalindex =
 					poseverts[i][vertexorder[j]].lightnormalindex;

@@ -165,7 +165,7 @@ set_arrays (const shaderparam_t *vert, const shaderparam_t *norm,
 		    const shaderparam_t *st, aliasvrt_t *pose)
 {
 	byte       *pose_offs = (byte *) pose;
-	qfglVertexAttribPointer (vert->location, 3, GL_UNSIGNED_BYTE,
+	qfglVertexAttribPointer (vert->location, 3, GL_UNSIGNED_SHORT,
 							 0, sizeof (aliasvrt_t),
 							 pose_offs + field_offset (aliasvrt_t, vertex));
 	qfglVertexAttribPointer (norm->location, 3, GL_SHORT,

@@ -78,13 +78,10 @@ process_frame (maliasframedesc_t *frame, int posenum, int extra)
 	frame_verts = Hunk_AllocName (size, loadname);
 	frame->frame = (byte *) frame_verts - (byte *) pheader;
 
-	// I'm really not sure what the format of md16 is, but for now, I'll
-	// assume the sw renderer is correct (I believe that's what serplord
-	// was using when he developed it), which means the low-order 8 bits
-	// (actually, fractional) are completely separate from the high-order
-	// bits (see R_AliasTransformFinalVert16 in sw_ralias.c), but in
-	// adjacant arrays. This means we can get away with just one memcpy
-	// as there are non endian issues.
+	// The low-order 8 bits (actually, fractional) are completely separate
+	// from the high-order bits (see R_AliasTransformFinalVert16 in
+	// sw_ralias.c), but in adjacant arrays. This means we can get away with
+	// just one memcpy as there are non endian issues.
 	memcpy (frame_verts, poseverts[posenum], size);
 }
 

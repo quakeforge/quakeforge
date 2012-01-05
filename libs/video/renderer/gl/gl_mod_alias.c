@@ -538,6 +538,8 @@ R_DrawAliasModel (entity_t *e)
 	}
 
 	if (paliashdr->mdl.ident == HEADER_MDL16) {
+		// because we multipled by 256 when we loaded the verts, we have to
+		// scale by 1/256 when drawing.
 		VectorScale (paliashdr->mdl.scale, e->scale / 256.0, scale);
 		vo = GL_GetAliasFrameVerts16 (paliashdr, e);
 	} else {
