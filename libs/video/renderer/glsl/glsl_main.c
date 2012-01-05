@@ -116,6 +116,7 @@ R_ViewChanged (float aspect)
 void
 R_SetupFrame (void)
 {
+	R_AnimateLight ();
 	R_ClearEnts ();
 	r_framecount++;
 
@@ -310,6 +311,7 @@ R_RenderView (void)
 	R_SetupFrame ();
 	R_SetupView ();
 	R_MarkLeaves ();
+	R_PushDlights (vec3_origin);
 	R_DrawWorld ();
 	R_RenderEntities ();
 }
