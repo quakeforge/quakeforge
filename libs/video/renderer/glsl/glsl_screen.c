@@ -217,7 +217,8 @@ SCR_ScreenShot_f (void)
 	int         size, i;
 
 	// find a file name to save it to
-	if (!QFS_NextFilename (name, va ("%s/qf", qfs_gamedir->dir.def), ".png")) {
+	if (!QFS_NextFilename (name,
+						   va ("%s/qf", qfs_gamedir->dir.shots), ".png")) {
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PNG file\n");
 	} else {
 		size = vid.width * vid.height;

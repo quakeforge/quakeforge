@@ -138,7 +138,7 @@ SCR_ScreenShot_f (void)
 
 	// find a file name to save it to 
 	if (!QFS_NextFilename (pcxname,
-						   va ("%s/qf", qfs_gamedir->dir.def), ".tga")) {
+						   va ("%s/qf", qfs_gamedir->dir.shots), ".tga")) {
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a TGA file\n");
 	} else {
 		buffer = malloc (vid.width * vid.height * 3);

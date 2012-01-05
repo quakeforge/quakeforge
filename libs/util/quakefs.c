@@ -338,6 +338,8 @@ qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path,
 		gamedir->dir.sound = qfs_var_subst (PL_String (p), vars);
 	if (!gamedir->dir.maps && (p = PL_ObjectForKey (gdpl, "MapPath")))
 		gamedir->dir.maps = qfs_var_subst (PL_String (p), vars);
+	if (!gamedir->dir.shots && (p = PL_ObjectForKey (gdpl, "ShotsPath")))
+		gamedir->dir.shots = qfs_var_subst (PL_String (p), vars);
 }
 
 static void
@@ -550,6 +552,8 @@ qfs_build_gamedir (const char **list)
 		gamedir->dir.sound = nva ("%s/sound", gamedir->dir.def);
 	if (!gamedir->dir.maps)
 		gamedir->dir.maps = nva ("%s/maps", gamedir->dir.def);
+	if (!gamedir->dir.shots)
+		gamedir->dir.shots = strdup ("QF");
 
 	qfs_gamedir = gamedir;
 	Sys_MaskPrintf (SYS_FS, "%s\n", qfs_gamedir->name);

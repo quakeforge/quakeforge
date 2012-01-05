@@ -64,6 +64,7 @@ typedef struct gamedir_s {
 		const char *models;		///< directory to which to write models
 		const char *sound;		///< directory to which to write sounds
 		const char *maps;		///< directory to which to write maps
+		const char *shots;		///< directory to which to write screenshots
 	} dir;
 } gamedir_t;
 

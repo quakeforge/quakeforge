@@ -93,6 +93,9 @@ Supported attributes are:
 	<dt><code>MapPath</code></dt>
 		<dd>Where to look for maps. Defaults to
 		<code>\${path}/maps</code>.</dd>
+	<dt><code>ShotsPath</code></dt>
+		<dd>Where to write screenshots. Defaults to
+		<code>QF</code>.</dd>
 </dl>
 
 Attribute allow variable substitution. Variables can take the form of
