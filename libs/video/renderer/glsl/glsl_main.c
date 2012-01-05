@@ -397,3 +397,8 @@ R_ClearState (void)
 	R_ClearDlights ();
 	R_ClearParticles ();
 }
+
+VISIBLE void
+D_FlushCaches (void)
+{
+}
