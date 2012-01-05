@@ -169,7 +169,7 @@ set_arrays (const shaderparam_t *vert, const shaderparam_t *norm,
 							 0, sizeof (aliasvrt_t),
 							 pose_offs + field_offset (aliasvrt_t, vertex));
 	qfglVertexAttribPointer (norm->location, 3, GL_SHORT,
-							 0, sizeof (aliasvrt_t),
+							 1, sizeof (aliasvrt_t),
 							 pose_offs + field_offset (aliasvrt_t, normal));
 	qfglVertexAttribPointer (st->location, 2, GL_SHORT,
 							 0, sizeof (aliasvrt_t),
