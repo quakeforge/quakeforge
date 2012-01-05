@@ -168,9 +168,18 @@ class MDL:
             self.verts = []
             for i in range(num):
                 self.verts.append(MDL.Vert().read(mdl))
+            if mdl.ident == 'MD16':
+                for i in range(num):
+                    v = MDL.Vert().read(mdl)
+                    r = tuple(map(lambda a, b: a * 256 + b,
+                                  self.verts[i].r, v.r))
+                    self.verts[i].r = r
         def write_verts(self, mdl):
             for vert in self.verts:
-                vert.write(mdl)
+                vert.write(mdl, True)
+            if mdl.ident == 'MD16' and high:
+                for vert in self.verts:
+                    vert.write(mdl, False)
 
     class Vert:
         def __init__(self, r=None, ni=0):
@@ -183,7 +192,11 @@ class MDL:
             self.r = mdl.read_byte(3)
             self.ni = mdl.read_byte()
             return self
-        def write(self, mdl):
+        def write(self, mdl, high=True):
+            if mdl.ident == 'MD16' and high:
+                r = tuple(map(lambda a: a >> 8, self.verts[i].r))
+            else:
+                r = tuple(map(lambda a: a & 255, self.verts[i].r))
             mdl.write_byte(self.r)
             mdl.write_byte(self.ni)
         def scale(self, mdl):
