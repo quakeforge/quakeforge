@@ -204,6 +204,31 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 }
 
 VISIBLE tex_t *
+SCR_CaptureBGR (void)
+{
+	byte       *r, *b;
+	int         count, i;
+	tex_t      *tex;
+
+	count = vid.width * vid.height;
+	tex = malloc (field_offset (tex_t, data[count * 3]));
+	SYS_CHECKMEM (tex);
+	tex->width = vid.width;
+	tex->height = vid.height;
+	tex->format = tex_rgb;
+	tex->palette = 0;
+	qfglReadPixels (0, 0, vid.width, vid.height, GL_RGB,
+					GL_UNSIGNED_BYTE, tex->data);
+	for (i = 0, r = tex->data, b = tex->data + 2; i < count;
+		 i++, r += 3, b += 3) {
+		byte        t = *b;
+		*b = *r;
+		*r = t;
+	}
+	return tex;
+}
+
+VISIBLE tex_t *
 SCR_ScreenShot (int width, int height)
 {
 	return 0;
@@ -212,28 +237,18 @@ SCR_ScreenShot (int width, int height)
 VISIBLE void
 SCR_ScreenShot_f (void)
 {
-	byte       *buffer, *r, *b;
 	dstring_t  *name = dstring_new ();
-	int         size, i;
 
 	// find a file name to save it to
 	if (!QFS_NextFilename (name,
 						   va ("%s/qf", qfs_gamedir->dir.shots), ".png")) {
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PNG file\n");
 	} else {
-		size = vid.width * vid.height;
-		buffer = malloc (size * 3);
-		SYS_CHECKMEM (buffer);
-		qfglReadPixels (0, 0, vid.width, vid.height, GL_RGB,
-						GL_UNSIGNED_BYTE, buffer);
-		// FIXME have to swap rgb (WritePNG bug?)
-		for (i = 0, r = buffer, b = buffer + 2; i < size; i++, r+=3, b+=3) {
-			byte        t = *b;
-			*b = *r;
-			*r = t;
-		}
-		WritePNGqfs (name->str, buffer, vid.width, vid.height);
-		free (buffer);
+		tex_t      *tex;
+
+		tex = SCR_CaptureBGR ();
+		WritePNGqfs (name->str, tex->data, tex->width, tex->height);
+		free (tex);
 		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, name->str);
 	}
 	dstring_delete (name);

@@ -28,8 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -86,6 +85,36 @@ SCR_ApplyBlend (void)		// Used to be V_UpdatePalette
 }
 
 /* SCREEN SHOTS */
+
+VISIBLE tex_t *
+SCR_CaptureBGR (void)
+{
+	int         count, x, y;
+	tex_t      *tex;
+	const byte *src;
+	byte       *dst;
+
+	count = vid.width * vid.height;
+	tex = malloc (field_offset (tex_t, data[count * 3]));
+	SYS_CHECKMEM (tex);
+	tex->width = vid.width;
+	tex->height = vid.height;
+	tex->format = tex_rgb;
+	tex->palette = 0;
+	D_EnableBackBufferAccess ();
+	src = vid.buffer;
+	for (y = 0; y < tex->height; y++) {
+		dst = tex->data + (tex->height - 1 - y) * tex->width * 3;
+		for (x = 0; x < tex->width; x++) {
+			*dst++ = vid.basepal[*src * 3 + 2]; // blue
+			*dst++ = vid.basepal[*src * 3 + 1]; // green
+			*dst++ = vid.basepal[*src * 3 + 0];	// red
+			src++;
+		}
+	}
+	D_DisableBackBufferAccess ();
+	return tex;
+}
 
 tex_t *
 SCR_ScreenShot (int width, int height)
@@ -159,7 +188,7 @@ SCR_ScreenShot_f (void)
 	pcx_t      *pcx;
 	int         pcx_len;
 
-	// find a file name to save it to 
+	// find a file name to save it to
 	if (!QFS_NextFilename (pcxname,
 						   va ("%s/qf", qfs_gamedir->dir.shots), ".pcx")) {
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PCX");

@@ -33,6 +33,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/cdaudio.h"
 #include "QF/cvar.h"
 #include "QF/plugin.h"
+#include "QF/screen.h"
 
 #include "host.h"
 #include "server.h"
@@ -69,6 +70,13 @@ void
 CL_UpdateScreen (double realtime)
 {
 }
+
+struct tex_s *
+SCR_CaptureBGR (void)
+{
+	return 0;
+}
+
 
 void
 CL_Cmd_ForwardToServer (void)

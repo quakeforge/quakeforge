@@ -41,12 +41,15 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/image.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
 #include "QF/plugin.h"
+#include "QF/png.h"
 #include "QF/progs.h"
 #include "QF/qargs.h"
+#include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
@@ -638,6 +641,9 @@ _Host_Frame (float time)
 
 	rand ();							// keep the random time dependent
 
+	if (cls.demo_capture)
+		time = 1.0 / 30;		//FIXME fixed 30fps atm
+
 	// decide the simulation time
 	if ((sleeptime = Host_FilterTime (time)) != 0) {
 		// don't run too fast, or packet will flood outs
@@ -684,6 +690,14 @@ _Host_Frame (float time)
 		Host_ClientFrame ();
 	else
 		host_time += host_frametime;	//FIXME is this needed? vcr stuff
+
+	if (cls.demo_capture) {
+		tex_t      *tex = SCR_CaptureBGR ();
+		WritePNGqfs (va ("%s/qfmv%06d.png", qfs_gamedir->dir.shots,
+						 cls.demo_capture++),
+					 tex->data, tex->width, tex->height);
+		free (tex);
+	}
 
 	host_framecount++;
 	fps_count++;

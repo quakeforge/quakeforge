@@ -126,6 +126,7 @@ CL_StopPlayback (void)
 	Qclose (cls.demofile);
 	cls.demofile = NULL;
 	CL_SetState (ca_disconnected);
+	cls.demo_capture = 0;
 	cls.demoplayback = 0;
 	key_game_target = IMT_0;
 	Key_SetKeyDest (key_game);
@@ -384,9 +385,19 @@ CL_PlayDemo_f (void)
 	if (cmd_source != src_command)
 		return;
 
-	if (Cmd_Argc () != 2) {
-		Sys_Printf ("play <demoname> : plays a demo\n");
-		return;
+	switch (Cmd_Argc ()) {
+		case 2:
+			cls.demo_capture = 0;
+			break;
+		case 3:
+			if (!strcmp (Cmd_Argv (2), "rec")) {
+				cls.demo_capture = 1;
+				break;
+			}
+			// fall through
+		default:
+			Sys_Printf ("play <demoname> : plays a demo\n");
+			return;
 	}
 	timedemo_runs = timedemo_count = 1;	// make sure looped timedemos stop
 	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));

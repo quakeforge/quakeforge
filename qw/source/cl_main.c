@@ -71,11 +71,13 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/image.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/model.h"
 #include "QF/msg.h"
 #include "QF/plugin.h"
+#include "QF/png.h"
 #include "QF/progs.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
@@ -1488,7 +1490,7 @@ Host_SimulationTime (float time)
 	if (oldrealtime > realtime)
 		oldrealtime = 0;
 
-	if (cls.timedemo)
+	if (cls.demoplayback)
 		return 0;
 
 	if (cl_maxfps->value <= 0)
@@ -1522,6 +1524,9 @@ Host_Frame (float time)
 	if (setjmp (host_abort))
 		// something bad happened, or the server disconnected
 		return;
+
+	if (cls.demo_capture)
+		time = 1.0 / 30;		//FIXME fixed 30fps atm
 
 	// decide the simulation time
 	if ((sleeptime = Host_SimulationTime (time)) != 0) {
@@ -1621,6 +1626,14 @@ Host_Frame (float time)
 		pass3 = (time3 - time2) * 1000;
 		Sys_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
 					pass1 + pass2 + pass3, pass1, pass2, pass3);
+	}
+
+	if (cls.demo_capture) {
+		tex_t      *tex = SCR_CaptureBGR ();
+		WritePNGqfs (va ("%s/qfmv%06d.png", qfs_gamedir->dir.shots,
+						 cls.demo_capture++),
+					 tex->data, tex->width, tex->height);
+		free (tex);
 	}
 
 	host_framecount++;

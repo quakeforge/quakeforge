@@ -28,8 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -65,6 +64,24 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "clview.h"	//FIXME
 
 /* SCREEN SHOTS */
+
+VISIBLE tex_t *
+SCR_CaptureBGR (void)
+{
+	int         count;
+	tex_t      *tex;
+
+	count = vid.width * vid.height;
+	tex = malloc (field_offset (tex_t, data[count * 3]));
+	SYS_CHECKMEM (tex);
+	tex->width = vid.width;
+	tex->height = vid.height;
+	tex->format = tex_rgb;
+	tex->palette = 0;
+	qfglReadPixels (0, 0, tex->width, tex->height, GL_BGR_EXT,
+					GL_UNSIGNED_BYTE, tex->data);
+	return tex;
+}
 
 VISIBLE tex_t *
 SCR_ScreenShot (int width, int height)
@@ -133,20 +150,18 @@ SCR_ScreenShot (int width, int height)
 void
 SCR_ScreenShot_f (void)
 {
-	byte       *buffer;
 	dstring_t  *pcxname = dstring_new ();
 
-	// find a file name to save it to 
+	// find a file name to save it to
 	if (!QFS_NextFilename (pcxname,
 						   va ("%s/qf", qfs_gamedir->dir.shots), ".tga")) {
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a TGA file\n");
 	} else {
-		buffer = malloc (vid.width * vid.height * 3);
-		SYS_CHECKMEM (buffer);
-		qfglReadPixels (0, 0, vid.width, vid.height, GL_BGR_EXT,
-						GL_UNSIGNED_BYTE, buffer);
-		WriteTGAfile (pcxname->str, buffer, vid.width, vid.height);
-		free (buffer);
+		tex_t      *tex;
+
+		tex = SCR_CaptureBGR ();
+		WriteTGAfile (pcxname->str, tex->data, tex->width, tex->height);
+		free (tex);
 		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, pcxname->str);
 	}
 	dstring_delete (pcxname);
