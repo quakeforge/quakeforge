@@ -540,6 +540,8 @@ qfs_build_gamedir (const char **list)
 		;
 	gamedir->dir.def = nva ("%.*s", (int) (dir - gamedir->path),
 							gamedir->path);
+	if (!gamedir->hudtype)
+		gamedir->hudtype = strdup ("id");
 	if (!gamedir->dir.skins)
 		gamedir->dir.skins = nva ("%s/skins", gamedir->dir.def);
 	if (!gamedir->dir.models)
