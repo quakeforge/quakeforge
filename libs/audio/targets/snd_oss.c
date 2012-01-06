@@ -250,7 +250,8 @@ try_open (int rw)
 		return 0;
 	}
 
-	sn.frames = info.fragstotal;
+	sn.frames = info.fragstotal * info.fragsize;
+	sn.frames /= sn.channels * sn.samplebits / 8;
 	sn.submission_chunk = 1;
 
 	if (mmaped_io) {				// memory map the dma buffer
@@ -260,7 +261,8 @@ try_open (int rw)
 		len = (len + sz - 1) & ~(sz - 1);
 		sn.buffer = (byte *) mmap (NULL, len, mmmode, mmflags, audio_fd, 0);
 		if (sn.buffer == MAP_FAILED) {
-			Sys_Printf ("Could not mmap %s: %s\n", snd_dev, strerror (errno));
+			Sys_MaskPrintf (SYS_SND, "Could not mmap %s: %s\n", snd_dev,
+							strerror (errno));
 			close (audio_fd);
 			return 0;
 		}
@@ -326,7 +328,7 @@ SNDDMA_GetDMAPos (void)
 	}
 //	sn.samplepos = (count.bytes / (sn.samplebits / 8)) & (sn.samples-1);
 //	fprintf(stderr, "%d \r", count.ptr);
-	sn.framepos = count.ptr / (sn.samplebits / 8);
+	sn.framepos = count.ptr / (sn.channels * sn.samplebits / 8);
 
 	return sn.framepos;
 
