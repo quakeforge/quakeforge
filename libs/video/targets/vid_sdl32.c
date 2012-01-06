@@ -197,7 +197,7 @@ VID_Update (vrect_t *rects)
 		// update display
 		SDL_UpdateRect (screen, rects->x, rects->y, rects->width,
 						rects->height);
-		rects = rects->pnext;
+		rects = rects->next;
 	}
 }
 

@@ -75,7 +75,7 @@ R_TimeRefresh_f (void)
 		vr.y = r_refdef.vrect.y;
 		vr.width = r_refdef.vrect.width;
 		vr.height = r_refdef.vrect.height;
-		vr.pnext = NULL;
+		vr.next = NULL;
 		VID_Update (&vr);
 	}
 	stop = Sys_DoubleTime ();

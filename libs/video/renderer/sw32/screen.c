@@ -307,7 +307,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 		vrect.y = 0;
 		vrect.width = vid.width;
 		vrect.height = vid.height;
-		vrect.pnext = 0;
+		vrect.next = 0;
 
 		VID_Update (&vrect);
 	} else if (scr_copytop) {
@@ -315,7 +315,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 		vrect.y = 0;
 		vrect.width = vid.width;
 		vrect.height = vid.height - r_lineadj;
-		vrect.pnext = 0;
+		vrect.next = 0;
 
 		VID_Update (&vrect);
 	} else {
@@ -323,7 +323,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 		vrect.y = scr_vrect.y;
 		vrect.width = scr_vrect.width;
 		vrect.height = scr_vrect.height;
-		vrect.pnext = 0;
+		vrect.next = 0;
 
 		VID_Update (&vrect);
 	}

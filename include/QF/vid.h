@@ -30,6 +30,7 @@
 #define __vid_h_
 
 #include "QF/qtypes.h"
+#include "QF/vrect.h"
 
 #define VID_CBITS	6
 #define VID_GRADES	(1 << VID_CBITS)
@@ -43,11 +44,6 @@ extern struct cvar_s *vid_system_gamma;
 extern struct cvar_s *vid_width;
 extern struct cvar_s *vid_height;
 extern struct cvar_s *vid_bitdepth;
-
-typedef struct vrect_s {
-	int				 x,y,width,height;
-	struct vrect_s	*pnext;
-} vrect_t;
 
 typedef struct {
 	qboolean		 initialized;

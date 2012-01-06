@@ -518,7 +518,7 @@ VID_Update (vrect_t *rects)
 				d += lineskip;
 				s += lineskip;
 			}
-			rects = rects->pnext;
+			rects = rects->next;
 		}
 	}
 }

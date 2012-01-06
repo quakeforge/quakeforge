@@ -457,7 +457,7 @@ VID_Update (vrect_t *rects)
 				}
 				offset += vid.rowbytes;
 			}
-			rects = rects->pnext;
+			rects = rects->next;
 		}
 	}
 }

@@ -147,14 +147,14 @@ VID_Update (vrect_t *rects)
 
 	// First, count the number of rectangles
 	n = 0;
-	for (rect = rects; rect; rect = rect->pnext)
+	for (rect = rects; rect; rect = rect->next)
 		++n;
 
 	// Second, copy them to SDL rectangles and update
 	if (!(sdlrects = (SDL_Rect *) calloc (1, n * sizeof (SDL_Rect))))
 		Sys_Error ("Out of memory!");
 	i = 0;
-	for (rect = rects; rect; rect = rect->pnext) {
+	for (rect = rects; rect; rect = rect->next) {
 		sdlrects[i].x = rect->x;
 		sdlrects[i].y = rect->y;
 		sdlrects[i].w = rect->width;

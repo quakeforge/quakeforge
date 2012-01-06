@@ -615,7 +615,7 @@ VID_Update (vrect_t *rects)
 			oktodraw = false;
 			while (!oktodraw)
 				X11_ProcessEvent ();
-			rects = rects->pnext;
+			rects = rects->next;
 
 			current_framebuffer = !current_framebuffer;
 		} else {
@@ -624,7 +624,7 @@ VID_Update (vrect_t *rects)
 							rects->width, rects->height)) {
 				Sys_Error ("VID_Update: XPutImage failed");
 			}
-			rects = rects->pnext;
+			rects = rects->next;
 		}
 	}
 	XSync (x_disp, False);
