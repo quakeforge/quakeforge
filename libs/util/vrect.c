@@ -174,5 +174,7 @@ VRect_Difference (const vrect_t *r, const vrect_t *s)
 	STASH (t->next);	// maybe stash the right section
 	VRect_Delete (t);	// discard the left section
 
+	VRect_Delete (i);	// finished with the intersection rect
+
 	return rects;
 }
