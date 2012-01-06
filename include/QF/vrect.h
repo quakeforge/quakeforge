@@ -137,4 +137,33 @@ vrect_t *VRect_VSplit (const vrect_t *r, int x);
 */
 vrect_t *VRect_Difference (const vrect_t *r, const vrect_t *s);
 
+/** Return the union of the two rectangles.
+
+	The union rectangle will be big enough to entirely contain both \a r1
+	and \a r2. An empty rectangle will be returned if both rectangles are
+	empty.
+
+	\param r1		The first rectangle.
+	\param r2		The second rectangle.
+	\return         The union of the two rectangles.
+	\note	It is the caller's responsibility to delete the returned rectangle.
+*/
+vrect_t *VRect_Union (const vrect_t *r1, const vrect_t *r2);
+
+/** Return the rectangle representing the merge of the two given rectangles.
+
+	If the two given rectangles cannot be perfectly joined (either they
+	intesect or subtracting them from the merged rectangle would result
+	in scrap rectangles, null will be returned. Two empty rectangles will
+	result in null being returned, but only one empty rectangle will result
+	in a copy of the non-empty rectangle.
+
+	\param r1		The first rectangle to be merged.
+	\param r2		The second rectangle to be merged.
+	\return			The merged rectangle, or null if the given rectangles
+					cannot be merged.
+	\note	It is the caller's responsibility to delete the returned rectangle.
+*/
+vrect_t *VRect_Merge (const vrect_t *r, const vrect_t *s);
+
 #endif//__QF_vrect_h

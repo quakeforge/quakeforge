@@ -38,14 +38,18 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/mathlib.h"
 #include "QF/vrect.h"
 
+//#define TEST_MEMORY
+
 #define RECT_BLOCK 128
+#ifndef TEST_MEMORY
 static vrect_t *free_rects;
+#endif
 
 VISIBLE vrect_t *
 VRect_New (int x, int y, int width, int height)
 {
 	vrect_t    *r;
-
+#ifndef TEST_MEMORY
 	if (!free_rects) {
 		int         i;
 
@@ -56,6 +60,9 @@ VRect_New (int x, int y, int width, int height)
 	}
 	r = free_rects;
 	free_rects = free_rects->next;
+#else
+	r = malloc (sizeof (vrect_t));
+#endif
 	r->next = 0;
 	r->x = x;
 	r->y = y;
@@ -67,8 +74,12 @@ VRect_New (int x, int y, int width, int height)
 VISIBLE void
 VRect_Delete (vrect_t *rect)
 {
+#ifndef TEST_MEMORY
 	rect->next = free_rects;
 	free_rects = rect;
+#else
+	free (rect);
+#endif
 }
 
 VISIBLE vrect_t *
@@ -177,4 +188,73 @@ VRect_Difference (const vrect_t *r, const vrect_t *s)
 	VRect_Delete (i);	// finished with the intersection rect
 
 	return rects;
+}
+
+VISIBLE vrect_t *
+VRect_Union (const vrect_t *r1, const vrect_t *r2)
+{
+	int         minx, miny;
+	int         maxx, maxy;
+
+	if (VRect_IsEmpty (r1))
+		return VRect_New (r2->x, r2->y, r2->width, r2->height);
+
+	if (VRect_IsEmpty (r2))
+		return VRect_New (r1->x, r1->y, r1->width, r1->height);
+
+	minx = min (VRect_MinX (r1), VRect_MinX (r2));
+	miny = min (VRect_MinY (r1), VRect_MinY (r2));
+	maxx = max (VRect_MaxX (r1), VRect_MaxX (r2));
+	maxy = max (VRect_MaxY (r1), VRect_MaxY (r2));
+	return VRect_New (minx, miny, maxx - minx, maxy - miny);
+}
+
+VISIBLE vrect_t *
+VRect_Merge (const vrect_t *r1, const vrect_t *r2)
+{
+	vrect_t    *t, *u = 0;
+	vrect_t    *merge;
+
+	// cannot merge intersecting rectangles
+	t = VRect_Intersect (r1, r2);
+	if (!VRect_IsEmpty (t)) {
+		VRect_Delete (t);
+		return 0;
+	}
+	VRect_Delete (t);
+
+	merge = VRect_Union (r1, r2);
+	if (VRect_IsEmpty (merge)) {
+		VRect_Delete (merge);
+		return 0;
+	}
+
+	// If the subtracting r1 from the union results in more than one rectangle
+	// then r1 and r2 cannot be merged.
+	t = VRect_Difference (merge, r1);
+	if (t && t->next)
+		goto cleanup;
+
+	// If subtracting r2 from the result of the previous difference results in
+	// any rectangles, then r1 and r2 cannot be merged.
+	if (t)
+		u = VRect_Difference (t, r2);
+	if (!u) {
+		VRect_Delete (t);
+		return merge;
+	}
+cleanup:
+	VRect_Delete (merge);
+	// merge is used as a temp while freeing t and u
+	while (u) {
+		merge = u->next;
+		VRect_Delete (u);
+		u = merge;
+	}
+	while (t) {
+		merge = t->next;
+		VRect_Delete (t);
+		t = merge;
+	}
+	return 0;
 }

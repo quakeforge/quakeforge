@@ -95,6 +95,31 @@ struct {
 	{VRect_Difference, VR (3,3,2,2), VR (1,1,3,3), &de_15_0},
 
 	{VRect_Difference, VR (4,4,2,2), VR (1,1,3,3), &de_16_0},
+
+	{VRect_Union, VR (0, 0, 0, 0), VR (1, 1, -1, 1), 0, VR (1, 1, 1, -1), 1},
+	{VRect_Union, VR (0, 0, 0, 0), VR (1, 1, 3, 3), 0, VR (1, 1, 3, 3), 1},
+	{VRect_Union, VR (0, 0, 2, 5), VR (1, 1, -1, 1), 0, VR (0, 0, 2, 5), 1},
+	{VRect_Union, VR (0, 0, 2, 5), VR (1, 1, 3, 3), 0, VR (0, 0, 4, 5), 1},
+
+	{VRect_Merge, VR (0, 0, 0, 0), VR (1, 1, -1, 1), 0},
+	{VRect_Merge, VR (0, 0, 0, 0), VR (1, 1, 3, 3), 0, VR (1, 1, 3, 3), 1},
+	{VRect_Merge, VR (0, 0, 2, 5), VR (1, 1, -1, 1), 0, VR (0, 0, 2, 5), 1},
+	{VRect_Merge, VR (0, 0, 2, 5), VR (1, 1, 3, 3), 0},
+
+	{VRect_Merge, VR (0,0,2,2), VR (1,1,3,3), 0},
+	{VRect_Merge, VR (0,0,5,2), VR (1,1,3,3), 0},
+	{VRect_Merge, VR (2,0,2,2), VR (1,1,3,3), 0},
+	{VRect_Merge, VR (3,0,2,2), VR (1,1,3,3), 0},
+
+	{VRect_Merge, VR (0,0,4,1), VR (1,1,3,3), 0},
+	{VRect_Merge, VR (1,-1,3,1), VR (1,1,3,3), 0},
+	{VRect_Merge, VR (0,4,4,1), VR (1,1,3,3), 0},
+	{VRect_Merge, VR (1,5,3,1), VR (1,1,3,3), 0},
+
+	{VRect_Merge, VR (1,0,3,1), VR (1,1,3,3), 0, VR (1,0,3,4), 1},
+	{VRect_Merge, VR (1,4,3,1), VR (1,1,3,3), 0, VR (1,1,3,4), 1},
+	{VRect_Merge, VR (0,1,1,3), VR (1,1,3,3), 0, VR (0,1,4,3), 1},
+	{VRect_Merge, VR (4,1,1,3), VR (1,1,3,3), 0, VR (1,1,4,3), 1},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
@@ -116,6 +141,9 @@ compare_rects (vrect_t *r1, vrect_t *r2)
 		return 1;
 	if (!r1 || !r2)
 		return 0;
+	// when both rects are empty, their exact values don't matter.
+	if (VRect_IsEmpty (r1) && VRect_IsEmpty (r2))
+		return 1;
 	if (r1->x != r2->x || r1->y != r2->y
 		|| r1->width != r2->width || r1->height != r2->height)
 		return 0;
