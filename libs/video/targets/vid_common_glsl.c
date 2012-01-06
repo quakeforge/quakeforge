@@ -137,6 +137,8 @@ GL_Init_Common (void)
 
 	GL_Common_Init_Cvars ();
 
+	GL_TextureInit ();
+
 	qfglClearColor (0, 0, 0, 0);
 
 	qfglEnable (GL_TEXTURE_2D);

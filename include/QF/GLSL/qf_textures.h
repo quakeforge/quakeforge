@@ -31,13 +31,30 @@
 
 #include "QF/qtypes.h"
 
+typedef struct scrap_s scrap_t;
+typedef struct subpic_s {
+	const scrap_t * const scrap;
+	const struct vrect_s * const rect;
+	const int   tnum;					///< texture number
+	const int width;					///< requested width
+	const int height;					///< requested height
+	const float size;					///< size factor for tex coords (mult)
+} subpic_t;
+
 int GL_LoadQuakeTexture (const char *identifier, int width, int height,
 						 byte *data);
 int GL_LoadRGBTexture (const char *identifier, int width, int height,
 					   byte *data);
 void GL_ReleaseTexture (int tex);
-int GL_LoadTexture (const char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
+void GL_TextureInit (void);
 
-void GDT_Init (void);
+scrap_t *GL_CreateScrap (int size, int format);
+void GL_DestroyScrap (scrap_t *scrap);
+subpic_t *GL_ScrapSubpic (scrap_t *scrap, int width, int height);	//XXX slow!
+void GL_SubpicDelete (subpic_t *subpic);	//XXX slow!
+void GL_SubpicUpdate (subpic_t *subpic, byte *data);
+
+int GL_LoadTexture (const char *identifier, int width, int height, byte *data,
+					qboolean mipmap, qboolean alpha, int bytesperpixel);
 
 #endif//__QF_GLSL_textures_h
