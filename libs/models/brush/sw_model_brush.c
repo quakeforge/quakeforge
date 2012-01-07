@@ -50,7 +50,7 @@ Mod_SubdivideSurface (msurface_t *fa)
 }
 
 void
-Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
+Mod_ProcessTexture (texture_t *tx)
 {
 }
 

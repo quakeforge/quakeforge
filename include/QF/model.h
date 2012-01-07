@@ -431,7 +431,7 @@ void	Mod_TouchModel (const char *name);
 mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model);
 byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
 model_t	*Mod_FindName (const char *name);
-void	Mod_ProcessTexture(miptex_t *mt, texture_t *tx);
+void	Mod_ProcessTexture(texture_t *tx);
 void	Mod_LoadExternalSkins (model_t * mod);
 void	Mod_LoadExternalTextures (model_t * mod);
 void	Mod_LoadLighting (bsp_t *bsp);

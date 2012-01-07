@@ -57,7 +57,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "compat.h"
 
 void
-Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
+Mod_ProcessTexture (texture_t *tx)
 {
 }
 

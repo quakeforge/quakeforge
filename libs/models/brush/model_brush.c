@@ -194,7 +194,6 @@ Mod_LoadTextures (bsp_t *bsp)
 
 		memcpy (tx->name, mt->name, sizeof (tx->name));
 		mod_unique_miptex_name (loadmodel->textures, tx, i);
-		memcpy (mt->name, tx->name, sizeof (tx->name));//FIXME ext tex
 		tx->width = mt->width;
 		tx->height = mt->height;
 		for (j = 0; j < MIPLEVELS; j++)
@@ -206,7 +205,7 @@ Mod_LoadTextures (bsp_t *bsp)
 		if (!strncmp (mt->name, "sky", 3))
 			loadmodel->skytexture = tx;
 		else {
-			Mod_ProcessTexture (mt, tx);
+			Mod_ProcessTexture (tx);
 		}
 	}
 

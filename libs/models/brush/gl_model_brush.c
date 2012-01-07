@@ -56,15 +56,15 @@ static __attribute__ ((used)) const char rcsid[] =
 
 
 void
-Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
+Mod_ProcessTexture (texture_t *tx)
 {
 	char		name[32];
 
-	snprintf (name, sizeof (name), "fb_%s", mt->name);
+	snprintf (name, sizeof (name), "fb_%s", tx->name);
 	tx->gl_fb_texturenum =
 		Mod_Fullbright ((byte *) (tx + 1), tx->width, tx->height, name);
 	tx->gl_texturenum =
-		GL_LoadTexture (mt->name, tx->width, tx->height, (byte *) (tx + 1),
+		GL_LoadTexture (tx->name, tx->width, tx->height, (byte *) (tx + 1),
 						true, false, 1);
 }
 

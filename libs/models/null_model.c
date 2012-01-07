@@ -56,7 +56,7 @@ R_InitSky (struct texture_s *mt)
 }
 
 void
-Mod_ProcessTexture (miptex_t *mx, texture_t *tx)
+Mod_ProcessTexture (texture_t *tx)
 {
 }
 
