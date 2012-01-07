@@ -160,6 +160,7 @@ typedef struct msurface_s {
 	mtexinfo_t	*texinfo;
 
 // lighting info
+	struct subpic_s *lightpic;	///< light map texture ref (glsl)
 	int			dlightframe;
 	int			dlightbits;
 
