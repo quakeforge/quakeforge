@@ -375,6 +375,7 @@ GL_SubpicDelete (subpic_t *subpic)
 	*t = rect->next;
 
 	do {
+		merge = 0;
 		for (t = &scrap->free_rects; *t; t = &(*t)->next) {
 			merge = VRect_Merge (*t, rect);
 			if (merge) {

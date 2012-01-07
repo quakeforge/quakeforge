@@ -48,7 +48,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
-#include "QF/GLSL/qf_alias.h"
 #include "QF/GLSL/qf_lightmap.h"
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"

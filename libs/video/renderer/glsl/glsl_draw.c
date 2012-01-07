@@ -370,6 +370,7 @@ Draw_Init (void)
 	int         i;
 	int         frag, vert;
 	qpic_t     *pic;
+	glpic_t    *gl;
 
 	pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free, 0);
 	QFS_GamedirCallback (Draw_ClearCache);
@@ -420,7 +421,8 @@ Draw_Init (void)
 	white_pic = pic_data ("white_block", 8, 8, white_block);
 
 	backtile_pic = Draw_PicFromWad ("backtile");
-	qfglBindTexture (GL_TEXTURE_2D, ((glpic_t *) backtile_pic->data)->texnum);
+	gl = (glpic_t *) backtile_pic->data;
+	qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
