@@ -43,6 +43,8 @@ typedef struct subpic_s {
 
 int GL_LoadQuakeTexture (const char *identifier, int width, int height,
 						 byte *data);
+struct texture_s;
+int GL_LoadQuakeMipTex (const struct texture_s *tex);
 int GL_LoadRGBTexture (const char *identifier, int width, int height,
 					   byte *data);
 void GL_ReleaseTexture (int tex);

@@ -52,13 +52,14 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
-#include "QF/GL/qf_textures.h"
+#include "QF/GLSL/qf_textures.h"
 
 #include "compat.h"
 
 void
 Mod_ProcessTexture (texture_t *tx)
 {
+	tx->gl_texturenum = GL_LoadQuakeMipTex (tx);
 }
 
 void

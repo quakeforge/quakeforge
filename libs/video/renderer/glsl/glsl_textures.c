@@ -29,8 +29,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -43,6 +42,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/cmd.h"
 #include "QF/mathlib.h"
+#include "QF/model.h"
 #include "QF/sys.h"
 #include "QF/vrect.h"
 
@@ -79,6 +79,92 @@ GL_LoadQuakeTexture (const char *identifier, int width, int height, byte *data)
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	qfglGenerateMipmap (GL_TEXTURE_2D);
 
+	return tnum;
+}
+
+static void
+GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight,
+						unsigned char *out, int outwidth, int outheight)
+{
+	// Improvements here should be mirrored in build_skin_8 in gl_skin.c
+	unsigned char *inrow;
+	int            i, j;
+	unsigned int   frac, fracstep;
+
+	if (!outwidth || !outheight)
+		return;
+	fracstep = inwidth * 0x10000 / outwidth;
+	for (i = 0; i < outheight; i++, out += outwidth) {
+		inrow = in + inwidth * (i * inheight / outheight);
+		frac = fracstep >> 1;
+		for (j = 0; j < outwidth; j ++) {
+			out[j] = inrow[frac >> 16];
+			frac += fracstep;
+		}
+	}
+}
+
+int
+GL_LoadQuakeMipTex (const texture_t *tex)
+{
+	unsigned    swidth, sheight;
+	GLuint      tnum;
+	byte       *data = (byte *) tex;
+	int         lod;
+
+	for (swidth = 1; swidth < tex->width; swidth <<= 1);
+	for (sheight = 1; sheight < tex->height; sheight <<= 1);
+
+	qfglGenTextures (1, &tnum);
+	qfglBindTexture (GL_TEXTURE_2D, tnum);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+					   GL_NEAREST_MIPMAP_NEAREST);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	if (swidth == tex->width && sheight == tex->height) {
+		qfglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE,
+						swidth, sheight, 0, GL_LUMINANCE,
+						GL_UNSIGNED_BYTE, data + tex->offsets[0]);
+		// generate mips first so supplied mips don't get overwritten
+		if (swidth > (1 << MIPLEVELS) || sheight > (1 << MIPLEVELS))
+			qfglGenerateMipmap (GL_TEXTURE_2D);
+		for (lod = 1; lod < MIPLEVELS; lod++) {
+			swidth >>= 1;
+			sheight >>= 1;
+			swidth = max (swidth, 1);
+			sheight = max (sheight, 1);
+			qfglTexImage2D (GL_TEXTURE_2D, lod, GL_LUMINANCE,
+							swidth, sheight, 0, GL_LUMINANCE,
+							GL_UNSIGNED_BYTE, data + tex->offsets[lod]);
+		}
+	} else {
+		byte       *scaled;
+		scaled = malloc (swidth * sheight);
+		GL_Resample8BitTexture (data + tex->offsets[0],
+								tex->width, tex->height,
+								scaled, swidth, sheight);
+		qfglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE,
+						swidth, sheight, 0, GL_LUMINANCE,
+						GL_UNSIGNED_BYTE, scaled);
+		// generate mips first so supplied mips don't get overwritten
+		if (swidth > (1 << MIPLEVELS) || sheight > (1 << MIPLEVELS))
+			qfglGenerateMipmap (GL_TEXTURE_2D);
+		for (lod = 1; lod < MIPLEVELS; lod++) {
+			swidth >>= 1;
+			sheight >>= 1;
+			swidth = max (swidth, 1);
+			sheight = max (sheight, 1);
+			GL_Resample8BitTexture (data + tex->offsets[lod],
+									tex->width, tex->height,
+									scaled, swidth, sheight);
+			qfglTexImage2D (GL_TEXTURE_2D, lod, GL_LUMINANCE,
+							swidth, sheight, 0, GL_LUMINANCE,
+							GL_UNSIGNED_BYTE, data + tex->offsets[lod]);
+		}
+		free (scaled);
+	}
 	return tnum;
 }
 
