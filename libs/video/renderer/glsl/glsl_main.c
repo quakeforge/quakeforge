@@ -50,6 +50,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_alias.h"
+#include "QF/GLSL/qf_lightmap.h"
 #include "QF/GLSL/qf_textures.h"
 
 #include "gl_draw.h"
@@ -332,6 +333,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 
 	R_FreeAllEntities ();
 	R_ClearParticles ();
+	R_BuildLightmaps (models, num_models);
 }
 
 VISIBLE void

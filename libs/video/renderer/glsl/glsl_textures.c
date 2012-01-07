@@ -41,6 +41,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <stdlib.h>
 
+#include "QF/cmd.h"
 #include "QF/mathlib.h"
 #include "QF/sys.h"
 #include "QF/vrect.h"
@@ -106,11 +107,33 @@ GL_ReleaseTexture (int tex)
 	qfglDeleteTextures (1, &tnum);
 }
 
+static void
+glsl_scraps_f (void)
+{
+	scrap_t    *scrap;
+	vrect_t    *rect;
+	int         area;
+
+	if (!scrap_list) {
+		Sys_Printf ("No scraps\n");
+		return;
+	}
+	for (scrap = scrap_list; scrap; scrap = scrap->next) {
+		for (rect = scrap->free_rects, area = 0; rect; rect = rect->next)
+			area += rect->width * rect->height;
+		Sys_Printf ("tnum=%u size=%d format=%04x bpp=%d free=%d%%\n",
+					scrap->tnum, scrap->size, scrap->format, scrap->bpp,
+					area * 100 / (scrap->size * scrap->size));
+	}
+}
+
 void
 GL_TextureInit (void)
 {
 	qfglGetIntegerv (GL_MAX_TEXTURE_SIZE, &max_tex_size);
 	Sys_MaskPrintf (SYS_GLSL, "max texture size: %d\n", max_tex_size);
+
+	Cmd_AddCommand ("glsl_scraps", glsl_scraps_f, "Dump GLSL scrap stats");
 }
 
 scrap_t *
@@ -203,11 +226,11 @@ GL_ScrapSubpic (scrap_t *scrap, int width, int height)
 	subpic_t   *subpic;
 
 	for (i = 0; i < 16; i++)
-		if (width <= 1 << i)
+		if (width <= (1 << i))
 			break;
 	w = 1 << i;
 	for (i = 0; i < 16; i++)
-		if (height <= 1 << i)
+		if (height <= (1 << i))
 			break;
 	h = 1 << i;
 
@@ -226,7 +249,7 @@ GL_ScrapSubpic (scrap_t *scrap, int width, int height)
 		return 0;							// couldn't find a spot
 	old = *best;
 	*best = old->next;
-	rect = VRect_New (old->x, old->y, width, height);
+	rect = VRect_New (old->x, old->y, w, h);
 	frags = VRect_Difference (old, rect);
 	VRect_Delete (old);
 	if (frags) {
