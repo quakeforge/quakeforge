@@ -1,5 +1,14 @@
 NEWS for the QuakeForge project
 -------------------------------
+Changes from 0.6.0
+    o qfprogs has been moved from tools to qfcc (windows packages).
+    o The software renderer can now cope with pics being off-screen.
+    o A potential issue with reading past the end of PCX files has been fixed.
+    o qfcc now accepts --no-default-paths. Mainly for building Ruamoko code in
+      the main source tree, but useful for those that want to avoid libr.
+    o A segfault involving old dirconfs has been fixed.
+    o OSS sound should be working now.
+
 Changes from 0.5.99 Beta 4.1
     o Many more keys supported in X11 (-glx, -x11) clients: most of the keys
       on a Microsoft Natural Ergonomic Keyboard 4000 v1.0 are supported (not
