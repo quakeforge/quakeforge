@@ -212,6 +212,11 @@ R_Init (void)
 VISIBLE void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
+	int         i;
+
+	for (i = 0; i < 256; i++)
+		d_lightstylevalue[i] = 264;		// normal light value
+
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
 	r_worldentity.model = worldmodel;
 
