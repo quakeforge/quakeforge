@@ -169,36 +169,6 @@ R_ClearTextures (void)
 }
 
 
-/*
-  R_TextureAnimation
-
-  Returns the proper texture for a given time and base texture
-*/
-texture_t  *
-R_TextureAnimation (msurface_t *surf)
-{
-	texture_t  *base = surf->texinfo->texture;
-	int         count, relative;
-
-	if (currententity->frame) {
-		if (base->alternate_anims)
-			base = base->alternate_anims;
-	}
-
-	relative = (int) (r_realtime * 10) % base->anim_total;
-
-	count = 0;
-	while (base->anim_min > relative || base->anim_max <= relative) {
-		base = base->anim_next;
-		if (!base)
-			Sys_Error ("R_TextureAnimation: broken cycle");
-		if (++count > 100)
-			Sys_Error ("R_TextureAnimation: infinite cycle");
-	}
-
-	return base;
-}
-
 // BRUSH MODELS ===============================================================
 
 static void
