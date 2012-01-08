@@ -562,8 +562,6 @@ R_DrawBrushModel (entity_t *e)
 		modelorg[2] = DotProduct (temp, e->transform + 8);
 	}
 
-	psurf = &model->surfaces[model->firstmodelsurface];
-
 	// calculate dynamic lighting for bmodel if it's not an instanced model
 	if (model->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
 		vec3_t      lightorigin;

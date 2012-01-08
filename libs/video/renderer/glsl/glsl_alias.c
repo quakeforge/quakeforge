@@ -320,6 +320,4 @@ R_AliasEnd (void)
 	qfglDisable (GL_TEXTURE_2D);
 	qfglActiveTexture (GL_TEXTURE0 + 2);
 	qfglDisable (GL_TEXTURE_2D);
-	qfglActiveTexture (GL_TEXTURE0 + 3);
-	qfglDisable (GL_TEXTURE_2D);
 }
