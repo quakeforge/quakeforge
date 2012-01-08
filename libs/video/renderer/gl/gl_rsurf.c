@@ -657,9 +657,8 @@ test_node (mnode_t *node)
 	return 1;
 }
 
-// FIXME: R_IterativeWorldNode
 static void
-R_RecursiveWorldNode (mnode_t *node)
+R_VisitWorldNodes (mnode_t *node)
 {
 #define NODE_STACK 1024
 	struct {
@@ -723,7 +722,7 @@ R_DrawWorld (void)
 		R_DrawSky ();
 	}
 
-	R_RecursiveWorldNode (r_worldentity.model->nodes);
+	R_VisitWorldNodes (r_worldentity.model->nodes);
 	if (r_drawentities->int_val) {
 		entity_t   *ent;
 		for (ent = r_ent_queue; ent; ent = ent->next) {
