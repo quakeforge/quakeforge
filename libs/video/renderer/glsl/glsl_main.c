@@ -203,9 +203,10 @@ R_RenderView (void)
 VISIBLE void
 R_Init (void)
 {
-	R_InitParticles ();
+	R_InitBsp ();
 	R_InitAlias ();
 	R_InitSprites ();
+	R_InitParticles ();
 }
 
 VISIBLE void

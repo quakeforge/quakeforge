@@ -41,6 +41,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #endif
 #include <stdlib.h>
 
+#include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/render.h"
 #include "QF/sys.h"
@@ -50,7 +51,9 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_bsp.h"
 #include "QF/GLSL/qf_textures.h"
+#include "QF/GLSL/qf_vid.h"
 
+#include "r_cvar.h"
 #include "r_local.h"
 
 typedef struct {
@@ -90,6 +93,37 @@ static elements_t  *free_elementss;
 static instsurf_t  *instsurfs;
 static instsurf_t **instsurfs_tail = &instsurfs;
 static instsurf_t  *free_instsurfs;
+
+static GLuint   bsp_vbo;
+static mat4_t   bsp_vp;
+
+static const char quakebsp_vert[] =
+#include "quakebsp.vc"
+;
+
+static const char quakebsp_frag[] =
+#include "quakebsp.fc"
+;
+
+static struct {
+	int         program;
+	shaderparam_t mvp_matrix;
+	shaderparam_t tlst;
+	shaderparam_t vertex;
+	shaderparam_t palette;
+	shaderparam_t colormap;
+	shaderparam_t texture;
+	shaderparam_t lightmap;
+} quake_bsp = {
+	0,
+	{"mvp_mat", 1},
+	{"tlst", 0},
+	{"vertex", 0},
+	{"palette", 1},
+	{"colormap", 1},
+	{"texture", 1},
+	{"lightmap", 1},
+};
 
 #define CHAIN_SURF_F2B(surf,chain)							\
 	do { 													\
@@ -215,10 +249,8 @@ R_ClearElements (void)
 }
 
 static inline void
-chain_surface (msurface_t *surf, vec_t *transform, float *color)
+chain_surface (msurface_t *surf)
 {
-	instsurf_t *sc;
-
 	if (surf->flags & SURF_DRAWTURB) {
 		CHAIN_SURF_B2F (surf, waterchain);
 	} else if (surf->flags & SURF_DRAWSKY) {
@@ -234,10 +266,6 @@ chain_surface (msurface_t *surf, vec_t *transform, float *color)
 
 		//XXX R_AddToLightmapChain (surf);
 	}
-	if (!(sc = surf->instsurf))
-		sc = surf->tinst;
-	sc->transform = transform;
-	sc->color = color;
 }
 
 static void
@@ -460,8 +488,87 @@ R_BuildDisplayLists (model_t **models, int num_models)
 			vertex_index_base += surf->numedges;
 		}
 	}
+	{
+		instsurf_t *is;
+		for (is = instsurfs; is; is = is->_next)
+			is->elements = 0;
+	}
 	clear_texture_chains ();
-	Sys_Printf ("%ld verts total\n", vertices->size / sizeof (bspvert_t));
+	Sys_MaskPrintf (SYS_GLSL, "R_BuildDisplayLists: %ld verts total\n",
+					vertices->size / sizeof (bspvert_t));
+	if (!bsp_vbo)
+		qfglGenBuffers (1, &bsp_vbo);
+	qfglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
+	qfglBufferData (GL_ARRAY_BUFFER, vertices->size, vertices->str,
+					GL_STATIC_DRAW);
+	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
+	dstring_delete (vertices);
+}
+
+static void
+R_DrawBrushModel (entity_t *e)
+{
+	float       dot, radius;
+	int         i;
+	unsigned    k;
+	model_t    *model;
+	plane_t    *plane;
+	msurface_t *surf;
+	qboolean    rotated;
+	vec3_t      mins, maxs, org;
+
+	model = e->model;
+	if (e->transform[0] != 1 || e->transform[5] != 1 || e->transform[10] != 1) {
+		rotated = true;
+		radius = model->radius;
+		if (R_CullSphere (e->origin, radius))
+			return;
+	} else {
+		rotated = false;
+		VectorAdd (e->origin, model->mins, mins);
+		VectorAdd (e->origin, model->maxs, maxs);
+		if (R_CullBox (mins, maxs))
+			return;
+	}
+
+	VectorSubtract (r_refdef.vieworg, e->origin, org);
+	if (rotated) {
+		vec3_t      temp;
+
+		VectorCopy (org, temp);
+		org[0] = DotProduct (temp, e->transform + 0);
+		org[1] = DotProduct (temp, e->transform + 4);
+		org[2] = DotProduct (temp, e->transform + 8);
+	}
+
+	// calculate dynamic lighting for bmodel if it's not an instanced model
+	if (model->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
+		vec3_t      lightorigin;
+
+		for (k = 0; k < r_maxdlights; k++) {
+			if ((r_dlights[k].die < r_realtime) || (!r_dlights[k].radius))
+				continue;
+
+			VectorSubtract (r_dlights[k].origin, e->origin, lightorigin);
+			R_RecursiveMarkLights (lightorigin, &r_dlights[k], 1 << k,
+							model->nodes + model->hulls[0].firstclipnode);
+		}
+	}
+
+	surf = &model->surfaces[model->firstmodelsurface];
+
+	for (i = 0; i < model->nummodelsurfaces; i++, surf++) {
+		// find which side of the node we are on
+		plane = surf->plane;
+
+		dot = PlaneDiff (org, plane);
+
+		// enqueue the polygon
+		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON))
+			|| (!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
+			chain_surface (surf);
+		}
+	}
 }
 
 static inline void
@@ -502,7 +609,7 @@ visit_node (mnode_t *node, int side)
 			if (side ^ (surf->flags & SURF_PLANEBACK))
 				continue;               // wrong side
 
-			//chain_surface (surf, 0, 0);
+			chain_surface (surf);
 		}
 	}
 }
@@ -566,10 +673,81 @@ R_VisitWorldNodes (mnode_t *node)
 		visit_leaf ((mleaf_t *) node);
 }
 
+static void
+draw_elechain (elechain_t *ec)
+{
+	mat4_t      mat;
+	elements_t *el;
+
+	if (ec->transform) {
+		Mat4Mult (bsp_vp, ec->transform, mat);
+		qfglUniformMatrix4fv (quake_bsp.mvp_matrix.location, 1, false, mat);
+	} else {
+		qfglUniformMatrix4fv (quake_bsp.mvp_matrix.location, 1, false, bsp_vp);
+	}
+	for (el = ec->elements; el; el = el->next) {
+		qfglVertexAttribPointer (quake_bsp.vertex.location, 4, GL_FLOAT,
+								 0, sizeof (bspvert_t),
+								 el->base + field_offset (bspvert_t, vertex));
+		qfglVertexAttribPointer (quake_bsp.vertex.location, 4, GL_FLOAT,
+								 0, sizeof (bspvert_t),
+								 el->base + field_offset (bspvert_t, tlst));
+		qfglDrawElements (GL_TRIANGLES, el->list->size / sizeof (GLushort),
+						  GL_UNSIGNED_SHORT, 0);
+	}
+}
+
+static void
+bsp_begin (void)
+{
+	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
+
+	qfglUseProgram (quake_bsp.program);
+	qfglEnableVertexAttribArray (quake_bsp.vertex.location);
+	qfglEnableVertexAttribArray (quake_bsp.tlst.location);
+
+	qfglUniform1i (quake_bsp.colormap.location, 2);
+	qfglActiveTexture (GL_TEXTURE0 + 2);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, glsl_colormap);
+
+	qfglUniform1i (quake_bsp.palette.location, 3);
+	qfglActiveTexture (GL_TEXTURE0 + 3);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+
+	qfglUniform1i (quake_bsp.lightmap.location, 1);
+	qfglActiveTexture (GL_TEXTURE0 + 1);
+	qfglEnable (GL_TEXTURE_2D);
+
+	qfglUniform1i (quake_bsp.texture.location, 0);
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglEnable (GL_TEXTURE_2D);
+
+	qfglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
+}
+
+static void
+bsp_end (void)
+{
+	qfglDisableVertexAttribArray (quake_bsp.vertex.location);
+	qfglDisableVertexAttribArray (quake_bsp.tlst.location);
+
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglDisable (GL_TEXTURE_2D);
+	qfglActiveTexture (GL_TEXTURE0 + 1);
+	qfglDisable (GL_TEXTURE_2D);
+	qfglActiveTexture (GL_TEXTURE0 + 2);
+	qfglDisable (GL_TEXTURE_2D);
+	qfglActiveTexture (GL_TEXTURE0 + 3);
+	qfglDisable (GL_TEXTURE_2D);
+}
+
 void
 R_DrawWorld (void)
 {
 	entity_t    worldent;
+	int         i;
 
 	memset (&worldent, 0, sizeof (worldent));
 	worldent.model = r_worldentity.model;
@@ -577,6 +755,56 @@ R_DrawWorld (void)
 	currententity = &worldent;
 
 	R_VisitWorldNodes (worldent.model->nodes);
+	if (0 && r_drawentities->int_val) {
+		entity_t   *ent;
+		for (ent = r_ent_queue; ent; ent = ent->next) {
+			if (ent->model->type != mod_brush)
+				continue;
+			currententity = ent;
+
+			R_DrawBrushModel (ent);
+		}
+	}
+
+	bsp_begin ();
+	for (i = 0; i < r_num_texture_chains; i++) {
+		texture_t  *tex;
+		instsurf_t *is;
+		elechain_t *ec = 0;
+		elements_t *el = 0;
+
+		tex = r_texture_chains[i];
+
+		for (is = tex->tex_chain; is; is = is->tex_chain) {
+			msurface_t *surf = is->surface;
+			glslpoly_t *poly = (glslpoly_t *) surf->polys;
+			el = is->elements;
+			dstring_append (el->list, (char *) poly->indices,
+							poly->count * sizeof (poly->indices[0]));
+		}
+		for (ec = tex->elechain; ec; ec = ec->next) {
+			draw_elechain (ec);
+		}
+	}
+	bsp_end ();
 
 	clear_texture_chains ();
+}
+
+void R_InitBsp (void)
+{
+	int         vert;
+	int         frag;
+
+	vert = GL_CompileShader ("quakebsp.vert", quakebsp_vert, GL_VERTEX_SHADER);
+	frag = GL_CompileShader ("quakebsp.frag", quakebsp_frag,
+							 GL_FRAGMENT_SHADER);
+	quake_bsp.program = GL_LinkProgram ("quakebsp", vert, frag);
+	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.mvp_matrix);
+	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.tlst);
+	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.vertex);
+	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.palette);
+	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.colormap);
+	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.texture);
+	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.lightmap);
 }

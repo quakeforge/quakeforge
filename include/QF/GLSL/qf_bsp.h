@@ -56,5 +56,6 @@ typedef struct elechain_s {
 void R_ClearElements (void);
 void R_DrawWorld (void);
 void R_BuildDisplayLists (model_t **models, int num_models);
+void R_InitBsp (void);
 
 #endif//__QF_GLSL_qf_bsp_h

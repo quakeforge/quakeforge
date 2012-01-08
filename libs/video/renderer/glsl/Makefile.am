@@ -4,11 +4,11 @@ AM_CFLAGS= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include $(GLX_CFLAGS)
 
 shader_src= \
-	quake2d.frag quakeico.vert quakemdl.frag quakemdl.vert quakespr.frag \
-	quakespr.vert quaketxt.vert
+	quake2d.frag quakebsp.frag quakebsp.vert quakeico.vert quakemdl.frag \
+	quakemdl.vert quakespr.frag quakespr.vert quaketxt.vert
 shader_gen= \
-	quake2d.fc quakeico.vc quakemdl.fc quakemdl.vc quakespr.fc quakespr.vc \
-	quaketxt.vc
+	quake2d.fc quakebsp.fc quakebsp.vc quakeico.vc quakemdl.fc quakemdl.vc \
+	quakespr.fc quakespr.vc quaketxt.vc
 
 glsl_src = \
 	glsl_alias.c glsl_bsp.c glsl_draw.c glsl_lightmap.c glsl_main.c \
