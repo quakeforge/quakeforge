@@ -48,6 +48,7 @@ typedef struct elements_s {
 typedef struct elechain_s {
 	struct elechain_s *_next;
 	struct elechain_s *next;
+	int         index;
 	elements_t *elements;
 	vec_t      *transform;
 } elechain_t;

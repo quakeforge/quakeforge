@@ -84,6 +84,7 @@ typedef struct instsurf_s {
 	struct instsurf_s *tex_chain;	///< next in texture chain
 	struct instsurf_s *lm_chain;	///< next in lightmap chain
 	struct msurface_s *surface;		///< surface to render
+	struct elements_s *elements;
 	vec_t      *transform;
 	float      *color;
 } instsurf_t;
@@ -95,6 +96,8 @@ typedef struct texture_s {
 	int			gl_fb_texturenum;
 	instsurf_t *tex_chain;	// for gl_texsort drawing
 	instsurf_t **tex_chain_tail;
+	struct elechain_s *elechain;
+	struct elechain_s **elechain_tail;
 	int			anim_total;				// total tenths in sequence ( 0 = no)
 	int			anim_min, anim_max;		// time for this frame min <=time< max
 	struct texture_s *anim_next;		// in the animation sequence
@@ -158,6 +161,7 @@ typedef struct msurface_s {
 	instsurf_t *tinst;		///< for instance models
 
 	mtexinfo_t	*texinfo;
+	int         ec_index;
 
 // lighting info
 	struct subpic_s *lightpic;	///< light map texture ref (glsl)

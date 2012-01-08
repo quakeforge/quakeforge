@@ -41,14 +41,22 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #endif
 #include <stdlib.h>
 
+#include "QF/dstring.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/vrect.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_bsp.h"
+#include "QF/GLSL/qf_textures.h"
 
 #include "r_local.h"
+
+typedef struct {
+	GLushort    count;
+	GLushort    indices[1];
+} glslpoly_t;
 
 #define ALLOC_CHUNK 64
 
@@ -65,9 +73,9 @@ static int          max_texture_chains;
 static elechain_t  *static_elechains;
 static elechain_t **static_elechains_tail = &static_elechains;
 static elechain_t  *free_static_elechains;
-static elements_t  *static_elements;
-static elements_t **static_elements_tail = &static_elements;
-static elements_t  *free_static_elements;
+static elements_t  *static_elementss;
+static elements_t **static_elementss_tail = &static_elementss;
+static elements_t  *free_static_elementss;
 static instsurf_t  *static_instsurfs;
 static instsurf_t **static_instsurfs_tail = &static_instsurfs;
 static instsurf_t  *free_static_instsurfs;
@@ -76,9 +84,9 @@ static instsurf_t  *free_static_instsurfs;
 static elechain_t  *elechains;
 static elechain_t **elechains_tail = &elechains;
 static elechain_t  *free_elechains;
-static elements_t  *elements;
-static elements_t **elements_tail = &elements;
-static elements_t  *free_elements;
+static elements_t  *elementss;
+static elements_t **elementss_tail = &elementss;
+static elements_t  *free_elementss;
 static instsurf_t  *instsurfs;
 static instsurf_t **instsurfs_tail = &instsurfs;
 static instsurf_t  *free_instsurfs;
@@ -133,8 +141,8 @@ release_##name##s (void)											\
 
 GET_RELEASE (elechain_t, static_elechain)
 GET_RELEASE (elechain_t, elechain)
-GET_RELEASE (elements_t, static_element)
-GET_RELEASE (elements_t, element)
+GET_RELEASE (elements_t, static_elements)
+GET_RELEASE (elements_t, elements)
 GET_RELEASE (instsurf_t, static_instsurf)
 GET_RELEASE (instsurf_t, instsurf)
 
@@ -150,8 +158,10 @@ R_AddTexture (texture_t *tex)
 			r_texture_chains[i] = 0;
 	}
 	r_texture_chains[r_num_texture_chains++] = tex;
-	tex->tex_chain = NULL;
+	tex->tex_chain = 0;
 	tex->tex_chain_tail = &tex->tex_chain;
+	tex->elechain = 0;
+	tex->elechain_tail = &tex->elechain;
 }
 
 void
@@ -168,8 +178,10 @@ R_InitSurfaceChains (model_t *model)
 	release_static_instsurfs ();
 	release_instsurfs ();
 
-	for (i = 0; i < model->nummodelsurfaces; i++)
+	for (i = 0; i < model->nummodelsurfaces; i++) {
 		model->surfaces[i].instsurf = get_static_instsurf ();
+		model->surfaces[i].instsurf->surface = &model->surfaces[i];
+	}
 }
 
 static void
@@ -188,30 +200,18 @@ clear_texture_chains (void)
 	tex = r_notexture_mip;
 	tex->tex_chain = NULL;
 	tex->tex_chain_tail = &tex->tex_chain;
+	release_elechains ();
+	release_elementss ();
 	release_instsurfs ();
-}
-
-static void
-register_textures (model_t *model)
-{
-	int         i;
-	texture_t  *tex;
-
-	for (i = 0; i < model->numtextures; i++) {
-		tex = model->textures[i];
-		if (!tex)
-			continue;
-		R_AddTexture (tex);
-	}
 }
 
 void
 R_ClearElements (void)
 {
 	release_static_elechains ();
-	release_static_elements ();
+	release_static_elementss ();
 	release_elechains ();
-	release_elements ();
+	release_elementss ();
 }
 
 static inline void
@@ -240,12 +240,124 @@ chain_surface (msurface_t *surf, vec_t *transform, float *color)
 	sc->color = color;
 }
 
+static void
+register_textures (model_t *model)
+{
+	int         i;
+	texture_t  *tex;
+
+	for (i = 0; i < model->numtextures; i++) {
+		tex = model->textures[i];
+		if (!tex)
+			continue;
+		R_AddTexture (tex);
+	}
+}
+
+static elechain_t *
+add_elechain (texture_t *tex, int ec_index)
+{
+	elechain_t *ec;
+
+	if (ec_index < 0) {
+		ec = get_elechain ();
+		ec->elements = get_elements ();
+	} else {
+		ec = get_static_elechain ();
+		ec->elements = get_static_elements ();
+	}
+	ec->index = ec_index;
+	ec->transform = 0;
+	*tex->elechain_tail = ec;
+	tex->elechain_tail = &ec->next;
+	return ec;
+}
+
+static void
+build_surf_displist (model_t **models, msurface_t *fa, int base,
+					 dstring_t *vert_list)
+{
+	int         numverts;
+	int         numtris;
+	int         numindices;
+	int         i;
+	vec_t      *vec;
+	mvertex_t  *vertices;
+	medge_t    *edges;
+	int        *surfedges;
+	int         index;
+	bspvert_t  *verts;
+	glslpoly_t *poly;
+	GLushort   *ind;
+	float       s, t;
+
+	if (fa->ec_index < 0) {
+		vertices = models[-fa->ec_index - 1]->vertexes;
+		edges = models[-fa->ec_index - 1]->edges;
+		surfedges = models[-fa->ec_index - 1]->surfedges;
+	} else {
+		vertices = r_worldentity.model->vertexes;
+		edges = r_worldentity.model->edges;
+		surfedges = r_worldentity.model->surfedges;
+	}
+	numverts = fa->numedges;
+	numtris = numverts - 2;
+	numindices = numtris * 3;
+	verts = alloca (numverts * sizeof (bspvert_t));
+	//FIXME leak
+	poly = malloc (field_offset (glslpoly_t, indices[numindices]));
+	poly->count = numindices;
+	for (i = 0, ind = poly->indices; i < numtris; i++) {
+		*ind++ = base;
+		*ind++ = base + i + 1;
+		*ind++ = base + i + 2;
+	}
+	fa->polys = (glpoly_t *) poly;
+
+	for (i = 0; i < numverts; i++) {
+		index = surfedges[fa->firstedge + i];
+		if (index > 0)
+			vec = vertices[edges[index].v[0]].position;
+		else
+			vec = vertices[edges[-index].v[1]].position;
+
+		s = DotProduct (vec, fa->texinfo->vecs[0]) + fa->texinfo->vecs[0][3];
+		t = DotProduct (vec, fa->texinfo->vecs[1]) + fa->texinfo->vecs[1][3];
+		VectorCopy (vec, verts[i].vertex);
+		verts[i].vertex[3] = 1;
+		verts[i].tlst[0] = s / fa->texinfo->texture->width;
+		verts[i].tlst[1] = t / fa->texinfo->texture->height;
+
+		//lightmap texture coordinates
+		if (!fa->lightpic) {
+			// sky and water textures don't have lightmaps
+			verts[i].tlst[2] = 0;
+			verts[i].tlst[3] = 0;
+			continue;
+		}
+		s = DotProduct (vec, fa->texinfo->vecs[0]) + fa->texinfo->vecs[0][3];
+		t = DotProduct (vec, fa->texinfo->vecs[1]) + fa->texinfo->vecs[1][3];
+		s -= fa->texturemins[0];
+		t -= fa->texturemins[1];
+		s += fa->lightpic->rect->x * 16 + 8;
+		t += fa->lightpic->rect->y * 16 + 8;
+		s /= 16;
+		t /= 16;
+		verts[i].tlst[2] = s * fa->lightpic->size;
+		verts[i].tlst[3] = t * fa->lightpic->size;
+	}
+	dstring_append (vert_list, (char *) verts, numverts * sizeof (bspvert_t));
+}
+
 void
 R_BuildDisplayLists (model_t **models, int num_models)
 {
 	int         i, j;
+	int         vertex_index_base;
 	model_t    *m;
+	dmodel_t   *dm;
 	msurface_t *surf;
+	dstring_t  *vertices;
 
 	R_InitSurfaceChains (r_worldentity.model);
 	R_AddTexture (r_notexture_mip);
@@ -260,6 +372,7 @@ R_BuildDisplayLists (model_t **models, int num_models)
 		// world has already been done, not interested in non-brush models
 		if (m == r_worldentity.model || m->type != mod_brush)
 			continue;
+		m->numsubmodels = 1; // no support for submodels in non-world model
 		register_textures (m);
 	}
 	// now run through all surfaces, chaining them to their textures, thus
@@ -273,13 +386,82 @@ R_BuildDisplayLists (model_t **models, int num_models)
 		if (*m->name == '*')
 			continue;
 		// non-bsp models don't have surfaces.
+		dm = m->submodels;
 		for (j = 0; j < m->numsurfaces; j++) {
 			texture_t  *tex;
+			if (j == dm->firstface + dm->numfaces) {
+				dm++;
+				if (dm - m->submodels == m->numsubmodels) {
+					// limit the surfaces
+					// probably never hit
+					Sys_Printf ("R_BuildDisplayLists: too many surfaces\n");
+					m->numsurfaces = j;
+					break;
+				}
+			}
 			surf = m->surfaces + j;
+			surf->ec_index = dm - m->submodels;
+			if (!surf->ec_index && m != r_worldentity.model)
+				surf->ec_index = -1 - i;	// instanced model
 			tex = surf->texinfo->texture;
 			CHAIN_SURF_F2B (surf, tex->tex_chain);
+			if (surf->instsurf)
+				surf->instsurf->elements = 0;
+			else
+				surf->tinst->elements = 0;
 		}
 	}
+	// All vertices from all brush models go into one giant vbo.
+	vertices = dstring_new ();
+	vertex_index_base = 0;
+	// All usable surfaces have been chained to the (base) texture they use.
+	// Run through the textures, using their chains to build display maps.
+	// For animated textures, if a surface is on one texture of the group, it
+	// will be on all.
+	for (i = 0; i < r_num_texture_chains; i++) {
+		texture_t  *tex;
+		instsurf_t *is;
+		elechain_t *ec = 0;
+		elements_t *el = 0;
+
+		tex = r_texture_chains[i];
+
+		for (is = tex->tex_chain; is; is = is->tex_chain) {
+			msurface_t *surf = is->surface;
+			if (!tex->elechain) {
+				ec = add_elechain (tex, surf->ec_index);
+				el = ec->elements;
+				el->base = (byte *) vertices->size;
+				vertex_index_base = 0;
+			}
+			if (surf->ec_index != ec->index) {	// next sub-model
+				ec = add_elechain (tex, surf->ec_index);
+				el = ec->elements;
+				el->base = (byte *) vertices->size;
+				vertex_index_base = 0;
+			}
+			if (vertex_index_base + surf->numedges > 65535) {
+				// elements index overflow
+				if (surf->ec_index < 0)
+					el->next = get_elements ();
+				else
+					el->next = get_static_elements ();
+				el = el->next;
+				el->base = (byte *) vertices->size;
+				vertex_index_base = 0;
+			}
+			// we don't use it now, but pre-initializing the list won't hurt
+			if (!el->list)
+				el->list = dstring_new ();
+			dstring_clear (el->list);
+
+			is->elements = el;
+			build_surf_displist (models, surf, vertex_index_base, vertices);
+			vertex_index_base += surf->numedges;
+		}
+	}
+	clear_texture_chains ();
+	Sys_Printf ("%ld verts total\n", vertices->size / sizeof (bspvert_t));
 }
 
 static inline void
