@@ -141,6 +141,8 @@ GL_Init_Common (void)
 
 	qfglClearColor (0, 0, 0, 0);
 
+	qfglPixelStorei (GL_UNPACK_ALIGNMENT, 1);
+
 	qfglEnable (GL_TEXTURE_2D);
 	qfglFrontFace (GL_CW);
 	qfglCullFace (GL_BACK);
