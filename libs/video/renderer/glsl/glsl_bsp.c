@@ -678,6 +678,7 @@ draw_elechain (elechain_t *ec)
 {
 	mat4_t      mat;
 	elements_t *el;
+	int         count;
 
 	if (ec->transform) {
 		Mat4Mult (bsp_vp, ec->transform, mat);
@@ -686,14 +687,18 @@ draw_elechain (elechain_t *ec)
 		qfglUniformMatrix4fv (quake_bsp.mvp_matrix.location, 1, false, bsp_vp);
 	}
 	for (el = ec->elements; el; el = el->next) {
+		if (!el->list->size)
+			continue;
+		count = el->list->size / sizeof (GLushort);
 		qfglVertexAttribPointer (quake_bsp.vertex.location, 4, GL_FLOAT,
 								 0, sizeof (bspvert_t),
 								 el->base + field_offset (bspvert_t, vertex));
-		qfglVertexAttribPointer (quake_bsp.vertex.location, 4, GL_FLOAT,
+		qfglVertexAttribPointer (quake_bsp.tlst.location, 4, GL_FLOAT,
 								 0, sizeof (bspvert_t),
 								 el->base + field_offset (bspvert_t, tlst));
-		qfglDrawElements (GL_TRIANGLES, el->list->size / sizeof (GLushort),
-						  GL_UNSIGNED_SHORT, 0);
+		qfglDrawElements (GL_TRIANGLES, count,
+						  GL_UNSIGNED_SHORT, el->list->str);
+		dstring_clear (el->list);
 	}
 }
 
@@ -748,6 +753,7 @@ R_DrawWorld (void)
 {
 	entity_t    worldent;
 	int         i;
+	int         lm = 0;
 
 	memset (&worldent, 0, sizeof (worldent));
 	worldent.model = r_worldentity.model;
@@ -774,14 +780,20 @@ R_DrawWorld (void)
 		elements_t *el = 0;
 
 		tex = r_texture_chains[i];
+		qfglActiveTexture (GL_TEXTURE0 + 0);
+		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 
 		for (is = tex->tex_chain; is; is = is->tex_chain) {
 			msurface_t *surf = is->surface;
 			glslpoly_t *poly = (glslpoly_t *) surf->polys;
 			el = is->elements;
+			if (surf->lightpic && !lm)
+				lm = surf->lightpic->tnum;
 			dstring_append (el->list, (char *) poly->indices,
 							poly->count * sizeof (poly->indices[0]));
 		}
+		qfglActiveTexture (GL_TEXTURE0 + 1);
+		qfglBindTexture (GL_TEXTURE_2D, lm);
 		for (ec = tex->elechain; ec; ec = ec->next) {
 			draw_elechain (ec);
 		}
