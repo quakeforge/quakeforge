@@ -109,15 +109,15 @@ get_instsurf (void)
 
 		free_instsurfs = calloc (NUM_INSTSURFS, sizeof (instsurf_t));
 		for (i = 0; i < NUM_INSTSURFS - 1; i++)
-			free_instsurfs[i].next = &free_instsurfs[i + 1];
+			free_instsurfs[i]._next = &free_instsurfs[i + 1];
 	}
 	instsurf = free_instsurfs;
-	free_instsurfs = instsurf->next;
-	instsurf->next = 0;
+	free_instsurfs = instsurf->_next;
+	instsurf->_next = 0;
 	//build the chain of allocated instance surfaces so they can all be freed
 	//in one go
 	*alloced_instsurfs_tail = instsurf;
-	alloced_instsurfs_tail = &instsurf->next;
+	alloced_instsurfs_tail = &instsurf->_next;
 	return instsurf;
 }
 

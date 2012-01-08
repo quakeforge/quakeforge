@@ -50,6 +50,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_alias.h"
+#include "QF/GLSL/qf_bsp.h"
 #include "QF/GLSL/qf_lightmap.h"
 #include "QF/GLSL/qf_textures.h"
 
@@ -188,124 +189,6 @@ R_RenderEntities (void)
 	R_SpriteEnd ();
 }
 
-static inline void
-visit_leaf (mleaf_t *leaf)
-{
-	// deal with model fragments in this leaf
-	if (leaf->efrags)
-		R_StoreEfrags (leaf->efrags);
-}
-
-static inline int
-get_side (mnode_t *node)
-{
-	// find which side of the node we are on
-	plane_t    *plane = node->plane;
-
-	if (plane->type < 3)
-		return (r_origin[plane->type] - plane->dist) < 0;
-	return (DotProduct (r_origin, plane->normal) - plane->dist) < 0;
-}
-
-
-static inline void
-visit_node (mnode_t *node, int side)
-{
-	int         c;
-	msurface_t *surf;
-
-	// sneaky hack for side = side ? SURF_PLANEBACK : 0;
-	side = (~side + 1) & SURF_PLANEBACK;
-	// draw stuff
-	if ((c = node->numsurfaces)) {
-		surf = r_worldentity.model->surfaces + node->firstsurface;
-		for (; c; c--, surf++) {
-			if (surf->visframe != r_visframecount)
-				continue;
-
-			// side is either 0 or SURF_PLANEBACK
-			if (side ^ (surf->flags & SURF_PLANEBACK))
-				continue;               // wrong side
-
-			//chain_surface (surf, 0, 0);
-		}
-	}
-}
-
-
-static inline int
-test_node (mnode_t *node)
-{
-	if (node->contents < 0)
-		return 0;
-	if (node->visframe != r_visframecount)
-		return 0;
-	if (R_CullBox (node->minmaxs, node->minmaxs + 3))
-		return 0;
-	return 1;
-}
-
-
-static void
-R_VisitWorldNodes (mnode_t *node)
-{
-#define NODE_STACK 1024
-	struct {
-		mnode_t    *node;
-		int         side;
-	}          *node_ptr, node_stack[NODE_STACK];
-	mnode_t    *front;
-	int         side;
-
-	node_ptr = node_stack;
-
-	while (1) {
-		while (test_node (node)) {
-			side = get_side (node);
-			front = node->children[side];
-			if (test_node (front)) {
-				if (node_ptr - node_stack == NODE_STACK)
-					Sys_Error ("node_stack overflow");
-				node_ptr->node = node;
-				node_ptr->side = side;
-				node_ptr++;
-				node = front;
-				continue;
-			}
-			if (front->contents < 0 && front->contents != CONTENTS_SOLID)
-				visit_leaf ((mleaf_t *) front);
-			visit_node (node, side);
-			node = node->children[!side];
-		}
-		if (node->contents < 0 && node->contents != CONTENTS_SOLID)
-			visit_leaf ((mleaf_t *) node);
-		if (node_ptr != node_stack) {
-			node_ptr--;
-			node = node_ptr->node;
-			side = node_ptr->side;
-			visit_node (node, side);
-			node = node->children[!side];
-			continue;
-		}
-		break;
-	}
-	if (node->contents < 0 && node->contents != CONTENTS_SOLID)
-		visit_leaf ((mleaf_t *) node);
-}
-
-static void
-R_DrawWorld (void)
-{
-	entity_t    worldent;
-
-	memset (&worldent, 0, sizeof (worldent));
-	worldent.model = r_worldentity.model;
-
-	currententity = &worldent;
-
-	R_VisitWorldNodes (worldent.model->nodes);
-}
-
 VISIBLE void
 R_RenderView (void)
 {
@@ -334,6 +217,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	R_FreeAllEntities ();
 	R_ClearParticles ();
 	R_BuildLightmaps (models, num_models);
+	R_BuildDisplayLists (models, num_models);
 }
 
 VISIBLE void

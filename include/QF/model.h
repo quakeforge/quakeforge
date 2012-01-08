@@ -80,7 +80,7 @@ typedef struct {
 	once per frame. These instanced surfaces will be mass-freed each frame.
 */
 typedef struct instsurf_s {
-	struct instsurf_s *next;		///< next in free/alloc list
+	struct instsurf_s *_next;		///< next in free/alloc list
 	struct instsurf_s *tex_chain;	///< next in texture chain
 	struct instsurf_s *lm_chain;	///< next in lightmap chain
 	struct msurface_s *surface;		///< surface to render
