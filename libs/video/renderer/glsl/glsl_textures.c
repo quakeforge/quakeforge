@@ -210,6 +210,11 @@ glsl_scraps_f (void)
 		Sys_Printf ("tnum=%u size=%d format=%04x bpp=%d free=%d%%\n",
 					scrap->tnum, scrap->size, scrap->format, scrap->bpp,
 					area * 100 / (scrap->size * scrap->size));
+		if (Cmd_Argc () > 1) {
+			for (rect = scrap->rects, area = 0; rect; rect = rect->next)
+				Sys_Printf ("%d %d %d %d\n", rect->x, rect->y,
+							rect->width, rect->height);
+		}
 	}
 }
 
