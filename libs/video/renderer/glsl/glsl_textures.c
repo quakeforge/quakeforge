@@ -354,7 +354,7 @@ GL_ScrapSubpic (scrap_t *scrap, int width, int height)
 	*((int *) &subpic->tnum) = scrap->tnum;
 	*((int *) &subpic->width) = width;
 	*((int *) &subpic->height) = height;
-	*((float *) &subpic->size) = scrap->size;
+	*((float *) &subpic->size) = 1.0 / scrap->size;
 	return subpic;
 }
 
