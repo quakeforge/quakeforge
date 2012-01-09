@@ -124,8 +124,8 @@ static void
 R_BuildLightMap_1 (msurface_t *surf)
 {
 	int         smax, tmax, size;
-	unsigned    scale, t;
-	int         i;
+	unsigned    scale;
+	int         i, t;
 	byte       *out;
 
 	smax = (surf->extents[0] >> 4) + 1;
@@ -163,10 +163,10 @@ R_BuildLightMap_1 (msurface_t *surf)
 	// bound, invert, and shift
 	out = (byte *) blocklights;
 	for (i = 0; i < size; i++) {
-		t = (255 * 256 - (int) blocklights[i]) >> (8 - VID_CBITS);
-
-		t = max (t, 1 << 6);
-		*out++ = t >> 8;
+		t = (255 * 256 - (int) blocklights[i]);
+		t = max (t, 1 << (14 - VID_CBITS));
+		t = ((unsigned) t) >> (16 - VID_CBITS);
+		*out++ = t;
 	}
 
 	GL_SubpicUpdate (surf->lightpic, (byte *) blocklights);
