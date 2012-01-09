@@ -755,10 +755,10 @@ CL_Record (const char *argv1, int track)
 	for (ent = cl_static_entities; ent; ent = ent->unext) {
 		MSG_WriteByte (&buf, svc_spawnstatic);
 
-		for (j = 1; j < MAX_MODELS; j++)
+		for (j = 1; j < cl.nummodels; j++)
 			if (ent->model == cl.model_precache[j])
 				break;
-		if (j == MAX_MODELS)
+		if (j == cl.nummodels)
 			MSG_WriteByte (&buf, 0);
 		else
 			MSG_WriteByte (&buf, j);

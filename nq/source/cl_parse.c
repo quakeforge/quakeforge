@@ -315,7 +315,7 @@ map_ent (const char *mapname)
 static void
 CL_NewMap (const char *mapname)
 {
-	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
+	R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
 	Con_NewMap ();
 	Hunk_Check ();								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
@@ -338,7 +338,7 @@ CL_ParseServerInfo (void)
 	char        model_precache[MAX_MODELS][MAX_QPATH];
 	char        sound_precache[MAX_SOUNDS][MAX_QPATH];
 	const char *str;
-	int         nummodels, numsounds, i;
+	int         i;
 
 	Sys_MaskPrintf (SYS_DEV, "Serverinfo packet received.\n");
 
@@ -387,36 +387,36 @@ CL_ParseServerInfo (void)
 
 	// precache models
 	memset (cl.model_precache, 0, sizeof (cl.model_precache));
-	for (nummodels = 1;; nummodels++) {
+	for (cl.nummodels = 1;; cl.nummodels++) {
 		str = MSG_ReadString (net_message);
 		if (!str[0])
 			break;
-		if (nummodels == MAX_MODELS) {
+		if (cl.nummodels >= MAX_MODELS) {
 			Sys_Printf ("Server sent too many model precaches\n");
 			goto done;
 		}
-		strcpy (model_precache[nummodels], str);
+		strcpy (model_precache[cl.nummodels], str);
 		Mod_TouchModel (str);
 	}
 
 	// precache sounds
 	memset (cl.sound_precache, 0, sizeof (cl.sound_precache));
-	for (numsounds = 1;; numsounds++) {
+	for (cl.numsounds = 1;; cl.numsounds++) {
 		str = MSG_ReadString (net_message);
 		if (!str[0])
 			break;
-		if (numsounds == MAX_SOUNDS) {
+		if (cl.numsounds >= MAX_SOUNDS) {
 			Sys_Printf ("Server sent too many sound precaches\n");
 			goto done;
 		}
-		strcpy (sound_precache[numsounds], str);
+		strcpy (sound_precache[cl.numsounds], str);
 	}
 
 	// now we try to load everything else until a cache allocation fails
 	if (model_precache[1])
 		map_cfg (model_precache[1], 0);
 
-	for (i = 1; i < nummodels; i++) {
+	for (i = 1; i < cl.nummodels; i++) {
 		cl.model_precache[i] = Mod_ForName (model_precache[i], false);
 		if (cl.model_precache[i] == NULL) {
 			Sys_Printf ("Model %s not found\n", model_precache[i]);
@@ -425,7 +425,7 @@ CL_ParseServerInfo (void)
 		CL_KeepaliveMessage ();
 	}
 
-	for (i = 1; i < numsounds; i++) {
+	for (i = 1; i < cl.numsounds; i++) {
 		cl.sound_precache[i] = S_PrecacheSound (sound_precache[i]);
 		CL_KeepaliveMessage ();
 	}

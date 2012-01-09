@@ -219,6 +219,8 @@ typedef struct
 
 	struct model_s		*model_precache[MAX_MODELS];
 	struct sfx_s		*sound_precache[MAX_SOUNDS];
+	int         nummodels;
+	int         numsounds;
 
 	struct plitem_s *edicts;
 	struct plitem_s *worldspawn;

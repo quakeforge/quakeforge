@@ -302,7 +302,7 @@ CL_NewMap (const char *mapname)
 {
 	cl_static_entities = 0;
 	cl_static_tail = &cl_static_entities;
-	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
+	R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
 	Team_NewMap ();
 	Con_NewMap ();
 	Hunk_Check ();								// make sure nothing is hurt
@@ -344,7 +344,7 @@ Model_NextDownload (void)
 	if (cl.model_name[1])
 		map_cfg (cl.model_name[1], 0);
 
-	for (i = 1; i < MAX_MODELS; i++) {
+	for (i = 1; i < cl.nummodels; i++) {
 		char *info_key = 0;
 
 		if (!cl.model_name[i][0])
@@ -426,7 +426,7 @@ Sound_NextDownload (void)
 			return;						// started a download
 	}
 
-	for (i = 1; i < MAX_SOUNDS; i++) {
+	for (i = 1; i < cl.numsounds; i++) {
 		if (!cl.sound_name[i][0])
 			break;
 		cl.sound_precache[i] = S_PrecacheSound (cl.sound_name[i]);
@@ -855,21 +855,21 @@ static void
 CL_ParseSoundlist (void)
 {
 	const char *str;
-	int			numsounds, n;
+	int			n;
 
 	// precache sounds
 //	memset (cl.sound_precache, 0, sizeof (cl.sound_precache));
 
-	numsounds = MSG_ReadByte (net_message);
+	cl.numsounds = MSG_ReadByte (net_message);
 
 	for (;;) {
 		str = MSG_ReadString (net_message);
 		if (!str[0])
 			break;
-		numsounds++;
-		if (numsounds == MAX_SOUNDS)
+		cl.numsounds++;
+		if (cl.numsounds >= MAX_SOUNDS)
 			Host_Error ("Server sent too many sound_precache");
-		strcpy (cl.sound_name[numsounds], str);
+		strcpy (cl.sound_name[cl.numsounds], str);
 	}
 
 	n = MSG_ReadByte (net_message);
@@ -889,36 +889,36 @@ CL_ParseSoundlist (void)
 static void
 CL_ParseModellist (void)
 {
-	int			nummodels, n;
+	int			n;
 	const char *str;
 
 	// precache models and note certain default indexes
-	nummodels = MSG_ReadByte (net_message);
+	cl.nummodels = MSG_ReadByte (net_message);
 
 	for (;;) {
 		str = MSG_ReadString (net_message);
 		if (!str[0])
 			break;
-		nummodels++;
-		if (nummodels == MAX_MODELS)
+		cl.nummodels++;
+		if (cl.nummodels >= MAX_MODELS)
 			Host_Error ("Server sent too many model_precache");
-		strcpy (cl.model_name[nummodels], str);
+		strcpy (cl.model_name[cl.nummodels], str);
 
-		if (!strcmp (cl.model_name[nummodels], "progs/spike.mdl"))
-			cl_spikeindex = nummodels;
-		else if (!strcmp (cl.model_name[nummodels], "progs/player.mdl"))
-			cl_playerindex = nummodels;
-		else if (!strcmp (cl.model_name[nummodels], "progs/flag.mdl"))
-			cl_flagindex = nummodels;
+		if (!strcmp (cl.model_name[cl.nummodels], "progs/spike.mdl"))
+			cl_spikeindex = cl.nummodels;
+		else if (!strcmp (cl.model_name[cl.nummodels], "progs/player.mdl"))
+			cl_playerindex = cl.nummodels;
+		else if (!strcmp (cl.model_name[cl.nummodels], "progs/flag.mdl"))
+			cl_flagindex = cl.nummodels;
 		// for deadbodyfilter & gib filter
-		else if (!strcmp (cl.model_name[nummodels], "progs/h_player.mdl"))
-			cl_h_playerindex = nummodels;
-		else if (!strcmp (cl.model_name[nummodels], "progs/gib1.mdl"))
-			cl_gib1index = nummodels;
-		else if (!strcmp (cl.model_name[nummodels], "progs/gib2.mdl"))
-			cl_gib2index = nummodels;
-		else if (!strcmp (cl.model_name[nummodels], "progs/gib3.mdl"))
-			cl_gib3index = nummodels;
+		else if (!strcmp (cl.model_name[cl.nummodels], "progs/h_player.mdl"))
+			cl_h_playerindex = cl.nummodels;
+		else if (!strcmp (cl.model_name[cl.nummodels], "progs/gib1.mdl"))
+			cl_gib1index = cl.nummodels;
+		else if (!strcmp (cl.model_name[cl.nummodels], "progs/gib2.mdl"))
+			cl_gib2index = cl.nummodels;
+		else if (!strcmp (cl.model_name[cl.nummodels], "progs/gib3.mdl"))
+			cl_gib3index = cl.nummodels;
 	}
 
 	n = MSG_ReadByte (net_message);
