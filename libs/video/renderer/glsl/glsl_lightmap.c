@@ -172,11 +172,6 @@ R_BuildLightMap_1 (msurface_t *surf)
 	GL_SubpicUpdate (surf->lightpic, (byte *) blocklights);
 }
 
-void
-R_CalcLightmaps (void)
-{
-}
-
 static void
 create_surf_lightmap (msurface_t *surf)
 {
