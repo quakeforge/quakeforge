@@ -119,8 +119,10 @@ GL_LoadQuakeMipTex (const texture_t *tex)
 	qfglBindTexture (GL_TEXTURE_2D, tnum);
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//FIXME GL generated mipmaps and paletted textures don't mix (Quake's
+	//mipmaps do only 4 levels, while many textures need 6+)
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-					   GL_NEAREST_MIPMAP_NEAREST);
+					   GL_NEAREST);
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	if (swidth == tex->width && sheight == tex->height) {
@@ -274,8 +276,9 @@ GL_CreateScrap (int size, int format)
 					size, size, 0, format, GL_UNSIGNED_BYTE, data);
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//FIXME parameterize (linear for lightmaps)
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	qfglGenerateMipmap (GL_TEXTURE_2D);
 	free (data);
 
