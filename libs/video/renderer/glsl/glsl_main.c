@@ -222,6 +222,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 
 	R_FreeAllEntities ();
 	R_ClearParticles ();
+	R_RegisterTextures (models, num_models);
 	R_BuildLightmaps (models, num_models);
 	R_BuildDisplayLists (models, num_models);
 }

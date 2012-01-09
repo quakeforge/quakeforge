@@ -199,12 +199,6 @@ R_AddTexture (texture_t *tex)
 }
 
 void
-R_ClearTextures (void)
-{
-	r_num_texture_chains = 0;
-}
-
-void
 R_InitSurfaceChains (model_t *model)
 {
 	int         i;
@@ -279,6 +273,37 @@ register_textures (model_t *model)
 		if (!tex)
 			continue;
 		R_AddTexture (tex);
+	}
+}
+
+void
+R_ClearTextures (void)
+{
+	r_num_texture_chains = 0;
+}
+
+void
+R_RegisterTextures (model_t **models, int num_models)
+{
+	int         i;
+	model_t    *m;
+
+	R_ClearTextures ();
+	R_InitSurfaceChains (r_worldentity.model);
+	R_AddTexture (r_notexture_mip);
+	register_textures (r_worldentity.model);
+	for (i = 0; i < num_models; i++) {
+		m = models[i];
+		if (!m)
+			continue;
+		// sub-models are done as part of the main model
+		if (*m->name == '*')
+			continue;
+		// world has already been done, not interested in non-brush models
+		if (m == r_worldentity.model || m->type != mod_brush)
+			continue;
+		m->numsubmodels = 1; // no support for submodels in non-world model
+		register_textures (m);
 	}
 }
 
@@ -387,22 +412,6 @@ R_BuildDisplayLists (model_t **models, int num_models)
 	msurface_t *surf;
 	dstring_t  *vertices;
 
-	R_InitSurfaceChains (r_worldentity.model);
-	R_AddTexture (r_notexture_mip);
-	register_textures (r_worldentity.model);
-	for (i = 0; i < num_models; i++) {
-		m = models[i];
-		if (!m)
-			continue;
-		// sub-models are done as part of the main model
-		if (*m->name == '*')
-			continue;
-		// world has already been done, not interested in non-brush models
-		if (m == r_worldentity.model || m->type != mod_brush)
-			continue;
-		m->numsubmodels = 1; // no support for submodels in non-world model
-		register_textures (m);
-	}
 	// now run through all surfaces, chaining them to their textures, thus
 	// effectively sorting the surfaces by texture (without worrying about
 	// surface order on the same texture chain).
