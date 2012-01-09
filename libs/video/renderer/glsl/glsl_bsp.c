@@ -50,6 +50,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_bsp.h"
+#include "QF/GLSL/qf_lightmap.h"
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
@@ -258,7 +259,7 @@ chain_surface (msurface_t *surf)
 			tex = R_TextureAnimation (surf);
 		CHAIN_SURF_F2B (surf, tex->tex_chain);
 
-		//XXX R_AddToLightmapChain (surf);
+		R_BuildLightMap (surf);
 	}
 }
 
