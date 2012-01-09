@@ -238,8 +238,10 @@ R_ClearElements (void)
 }
 
 static inline void
-chain_surface (msurface_t *surf)
+chain_surface (msurface_t *surf, vec_t *transform)
 {
+	instsurf_t *is;
+
 	if (surf->flags & SURF_DRAWTURB) {
 		CHAIN_SURF_B2F (surf, waterchain);
 	} else if (surf->flags & SURF_DRAWSKY) {
@@ -255,6 +257,9 @@ chain_surface (msurface_t *surf)
 
 		R_BuildLightMap (surf);
 	}
+	if (!(is = surf->instsurf))
+		is = surf->tinst;
+	is->transform = transform;
 }
 
 static void
@@ -475,7 +480,7 @@ R_BuildDisplayLists (model_t **models, int num_models)
 				el->list = dstring_new ();
 			dstring_clear (el->list);
 
-			is->base = el->base;
+			surf->base = el->base;
 			build_surf_displist (models, surf, vertex_index_base, vertices);
 			vertex_index_base += surf->numedges;
 		}
@@ -553,7 +558,7 @@ R_DrawBrushModel (entity_t *e)
 		// enqueue the polygon
 		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON))
 			|| (!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			chain_surface (surf);
+			chain_surface (surf, e->transform);
 		}
 	}
 }
@@ -596,7 +601,7 @@ visit_node (mnode_t *node, int side)
 			if (side ^ (surf->flags & SURF_PLANEBACK))
 				continue;               // wrong side
 
-			chain_surface (surf);
+			chain_surface (surf, 0);
 		}
 	}
 }
@@ -751,19 +756,28 @@ build_tex_elechain (texture_t *tex)
 			ec = add_elechain (tex, surf->ec_index);
 			ec->transform = is->transform;
 			el = ec->elements;
+			el->base = surf->base;
+			if (!el->list)
+				el->list = dstring_new ();
+			dstring_clear (el->list);
 		}
 		if (is->transform != ec->transform) {
 			ec = add_elechain (tex, surf->ec_index);
 			ec->transform = is->transform;
 			el = ec->elements;
+			el->base = surf->base;
+			if (!el->list)
+				el->list = dstring_new ();
+			dstring_clear (el->list);
 		}
-		if (is->base != el->base) {
+		if (surf->base != el->base) {
 			el->next = get_elements ();
 			el = el->next;
+			el->base = surf->base;
+			if (!el->list)
+				el->list = dstring_new ();
+			dstring_clear (el->list);
 		}
-		el->base = is->base;
-		if (!el->list)
-			el->list = dstring_new ();
 		dstring_append (el->list, (char *) poly->indices,
 						poly->count * sizeof (poly->indices[0]));
 	}

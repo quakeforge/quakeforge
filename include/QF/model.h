@@ -85,7 +85,6 @@ typedef struct instsurf_s {
 	struct instsurf_s *lm_chain;	///< next in lightmap chain
 	struct msurface_s *surface;		///< surface to render
 	vec_t      *transform;
-	byte       *base;
 	float      *color;
 } instsurf_t;
 
@@ -160,8 +159,9 @@ typedef struct msurface_s {
 	instsurf_t *instsurf;	///< null if not part of world model/sub-model
 	instsurf_t *tinst;		///< for instance models
 
-	mtexinfo_t	*texinfo;
+	mtexinfo_t *texinfo;
 	int         ec_index;
+	byte       *base;
 
 // lighting info
 	struct subpic_s *lightpic;	///< light map texture ref (glsl)
