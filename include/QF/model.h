@@ -84,8 +84,8 @@ typedef struct instsurf_s {
 	struct instsurf_s *tex_chain;	///< next in texture chain
 	struct instsurf_s *lm_chain;	///< next in lightmap chain
 	struct msurface_s *surface;		///< surface to render
-	struct elements_s *elements;
 	vec_t      *transform;
+	byte       *base;
 	float      *color;
 } instsurf_t;
 

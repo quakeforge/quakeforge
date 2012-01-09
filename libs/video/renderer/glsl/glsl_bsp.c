@@ -74,12 +74,6 @@ static int          r_num_texture_chains;
 static int          max_texture_chains;
 
 // for world and non-instance models
-static elechain_t  *static_elechains;
-static elechain_t **static_elechains_tail = &static_elechains;
-static elechain_t  *free_static_elechains;
-static elements_t  *static_elementss;
-static elements_t **static_elementss_tail = &static_elementss;
-static elements_t  *free_static_elementss;
 static instsurf_t  *static_instsurfs;
 static instsurf_t **static_instsurfs_tail = &static_instsurfs;
 static instsurf_t  *free_static_instsurfs;
@@ -174,9 +168,7 @@ release_##name##s (void)											\
 	}																\
 }
 
-GET_RELEASE (elechain_t, static_elechain)
 GET_RELEASE (elechain_t, elechain)
-GET_RELEASE (elements_t, static_elements)
 GET_RELEASE (elements_t, elements)
 GET_RELEASE (instsurf_t, static_instsurf)
 GET_RELEASE (instsurf_t, instsurf)
@@ -213,22 +205,26 @@ R_InitSurfaceChains (model_t *model)
 	}
 }
 
+static inline void
+clear_tex_chain (texture_t *tex)
+{
+	tex->tex_chain = 0;
+	tex->tex_chain_tail = &tex->tex_chain;
+	tex->elechain = 0;
+	tex->elechain_tail = &tex->elechain;
+}
+
 static void
 clear_texture_chains (void)
 {
 	int			i;
-	texture_t  *tex;
 
 	for (i = 0; i < r_num_texture_chains; i++) {
-		tex = r_texture_chains[i];
-		if (!tex)
+		if (!r_texture_chains[i])
 			continue;
-		tex->tex_chain = NULL;
-		tex->tex_chain_tail = &tex->tex_chain;
+		clear_tex_chain (r_texture_chains[i]);
 	}
-	tex = r_notexture_mip;
-	tex->tex_chain = NULL;
-	tex->tex_chain_tail = &tex->tex_chain;
+	clear_tex_chain (r_notexture_mip);
 	release_elechains ();
 	release_elementss ();
 	release_instsurfs ();
@@ -237,8 +233,6 @@ clear_texture_chains (void)
 void
 R_ClearElements (void)
 {
-	release_static_elechains ();
-	release_static_elementss ();
 	release_elechains ();
 	release_elementss ();
 }
@@ -313,13 +307,8 @@ add_elechain (texture_t *tex, int ec_index)
 {
 	elechain_t *ec;
 
-	if (ec_index < 0) {
-		ec = get_elechain ();
-		ec->elements = get_elements ();
-	} else {
-		ec = get_static_elechain ();
-		ec->elements = get_static_elements ();
-	}
+	ec = get_elechain ();
+	ec->elements = get_elements ();
 	ec->index = ec_index;
 	ec->transform = 0;
 	*tex->elechain_tail = ec;
@@ -443,10 +432,6 @@ R_BuildDisplayLists (model_t **models, int num_models)
 				surf->ec_index = -1 - i;	// instanced model
 			tex = surf->texinfo->texture;
 			CHAIN_SURF_F2B (surf, tex->tex_chain);
-			if (surf->instsurf)
-				surf->instsurf->elements = 0;
-			else
-				surf->tinst->elements = 0;
 		}
 	}
 	// All vertices from all brush models go into one giant vbo.
@@ -480,10 +465,7 @@ R_BuildDisplayLists (model_t **models, int num_models)
 			}
 			if (vertex_index_base + surf->numedges > 65535) {
 				// elements index overflow
-				if (surf->ec_index < 0)
-					el->next = get_elements ();
-				else
-					el->next = get_static_elements ();
+				el->next = get_elements ();
 				el = el->next;
 				el->base = (byte *) vertices->size;
 				vertex_index_base = 0;
@@ -493,15 +475,10 @@ R_BuildDisplayLists (model_t **models, int num_models)
 				el->list = dstring_new ();
 			dstring_clear (el->list);
 
-			is->elements = el;
+			is->base = el->base;
 			build_surf_displist (models, surf, vertex_index_base, vertices);
 			vertex_index_base += surf->numedges;
 		}
-	}
-	{
-		instsurf_t *is;
-		for (is = instsurfs; is; is = is->_next)
-			is->elements = 0;
 	}
 	clear_texture_chains ();
 	Sys_MaskPrintf (SYS_GLSL, "R_BuildDisplayLists: %ld verts total\n",
@@ -568,7 +545,7 @@ R_DrawBrushModel (entity_t *e)
 	surf = &model->surfaces[model->firstmodelsurface];
 
 	for (i = 0; i < model->nummodelsurfaces; i++, surf++) {
-		// find which side of the node we are on
+		// find the node side on which we are
 		plane = surf->plane;
 
 		dot = PlaneDiff (org, plane);
@@ -592,7 +569,7 @@ visit_leaf (mleaf_t *leaf)
 static inline int
 get_side (mnode_t *node)
 {
-	// find which side of the node we are on
+	// find the node side on which we are
 	plane_t    *plane = node->plane;
 
 	if (plane->type < 3)
@@ -734,6 +711,7 @@ bsp_begin (void)
 	qfglUniform1i (quake_bsp.lightmap.location, 1);
 	qfglActiveTexture (GL_TEXTURE0 + 1);
 	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, R_LightmapTexture ());
 
 	qfglUniform1i (quake_bsp.texture.location, 0);
 	qfglActiveTexture (GL_TEXTURE0 + 0);
@@ -758,12 +736,44 @@ bsp_end (void)
 	qfglDisable (GL_TEXTURE_2D);
 }
 
+static void
+build_tex_elechain (texture_t *tex)
+{
+	instsurf_t *is;
+	elechain_t *ec = 0;
+	elements_t *el = 0;
+
+	for (is = tex->tex_chain; is; is = is->tex_chain) {
+		msurface_t *surf = is->surface;
+		glslpoly_t *poly = (glslpoly_t *) surf->polys;
+
+		if (!tex->elechain) {
+			ec = add_elechain (tex, surf->ec_index);
+			ec->transform = is->transform;
+			el = ec->elements;
+		}
+		if (is->transform != ec->transform) {
+			ec = add_elechain (tex, surf->ec_index);
+			ec->transform = is->transform;
+			el = ec->elements;
+		}
+		if (is->base != el->base) {
+			el->next = get_elements ();
+			el = el->next;
+		}
+		el->base = is->base;
+		if (!el->list)
+			el->list = dstring_new ();
+		dstring_append (el->list, (char *) poly->indices,
+						poly->count * sizeof (poly->indices[0]));
+	}
+}
+
 void
 R_DrawWorld (void)
 {
 	entity_t    worldent;
 	int         i;
-	int         lm = 0;
 
 	memset (&worldent, 0, sizeof (worldent));
 	worldent.model = r_worldentity.model;
@@ -771,7 +781,7 @@ R_DrawWorld (void)
 	currententity = &worldent;
 
 	R_VisitWorldNodes (worldent.model->nodes);
-	if (0 && r_drawentities->int_val) {
+	if (r_drawentities->int_val) {
 		entity_t   *ent;
 		for (ent = r_ent_queue; ent; ent = ent->next) {
 			if (ent->model->type != mod_brush)
@@ -785,25 +795,14 @@ R_DrawWorld (void)
 	bsp_begin ();
 	for (i = 0; i < r_num_texture_chains; i++) {
 		texture_t  *tex;
-		instsurf_t *is;
 		elechain_t *ec = 0;
-		elements_t *el = 0;
 
 		tex = r_texture_chains[i];
 		qfglActiveTexture (GL_TEXTURE0 + 0);
 		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 
-		for (is = tex->tex_chain; is; is = is->tex_chain) {
-			msurface_t *surf = is->surface;
-			glslpoly_t *poly = (glslpoly_t *) surf->polys;
-			el = is->elements;
-			if (surf->lightpic && !lm)
-				lm = surf->lightpic->tnum;
-			dstring_append (el->list, (char *) poly->indices,
-							poly->count * sizeof (poly->indices[0]));
-		}
-		qfglActiveTexture (GL_TEXTURE0 + 1);
-		qfglBindTexture (GL_TEXTURE_2D, lm);
+		build_tex_elechain (tex);
+
 		for (ec = tex->elechain; ec; ec = ec->next) {
 			draw_elechain (ec);
 		}
