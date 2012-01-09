@@ -42,5 +42,6 @@ void gl_lightmap_init (void);
 void R_BuildLightmaps (struct model_s **models, int num_models);
 void R_CalcLightmaps (void);
 extern void (*R_BuildLightMap) (msurface_t *surf);
+int  R_LightmapTexture (void);
 
 #endif//__QF_GLSL_lightmap_h

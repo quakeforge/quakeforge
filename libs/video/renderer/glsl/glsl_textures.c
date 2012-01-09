@@ -311,6 +311,12 @@ GL_DestroyScrap (scrap_t *scrap)
 	free (scrap);
 }
 
+int
+GL_ScrapTexture (scrap_t *scrap)
+{
+	return scrap->tnum;
+}
+
 subpic_t *
 GL_ScrapSubpic (scrap_t *scrap, int width, int height)
 {

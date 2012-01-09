@@ -238,3 +238,9 @@ R_BuildLightmaps (model_t **models, int num_models)
 		}
 	}
 }
+
+int
+R_LightmapTexture (void)
+{
+	return GL_ScrapTexture (light_scrap);
+}
