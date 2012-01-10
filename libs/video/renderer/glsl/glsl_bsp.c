@@ -100,6 +100,10 @@ static const char quakebsp_frag[] =
 #include "quakebsp.fc"
 ;
 
+static const char quaketurb_frag[] =
+#include "quaketrb.fc"
+;
+
 static struct {
 	int         program;
 	shaderparam_t mvp_matrix;
@@ -118,6 +122,24 @@ static struct {
 	{"colormap", 1},
 	{"texture", 1},
 	{"lightmap", 1},
+};
+
+static struct {
+	int         program;
+	shaderparam_t mvp_matrix;
+	shaderparam_t tlst;
+	shaderparam_t vertex;
+	shaderparam_t palette;
+	shaderparam_t texture;
+	shaderparam_t realtime;
+} quake_turb = {
+	0,
+	{"mvp_mat", 1},
+	{"tlst", 0},
+	{"vertex", 0},
+	{"palette", 1},
+	{"texture", 1},
+	{"realtime", 1},
 };
 
 #define CHAIN_SURF_F2B(surf,chain)							\
@@ -739,6 +761,82 @@ bsp_end (void)
 	qfglDisable (GL_TEXTURE_2D);
 	qfglActiveTexture (GL_TEXTURE0 + 3);
 	qfglDisable (GL_TEXTURE_2D);
+
+	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
+}
+
+static void
+turb_begin (void)
+{
+	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
+
+	qfglUseProgram (quake_turb.program);
+	qfglEnableVertexAttribArray (quake_turb.vertex.location);
+	qfglEnableVertexAttribArray (quake_turb.tlst.location);
+
+	qfglUniform1i (quake_turb.palette.location, 1);
+	qfglActiveTexture (GL_TEXTURE0 + 1);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+
+	qfglUniform1f (quake_turb.realtime.location, r_realtime);
+
+	qfglUniform1i (quake_turb.texture.location, 0);
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglEnable (GL_TEXTURE_2D);
+
+	qfglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
+}
+
+static void
+turb_end (void)
+{
+	qfglDisableVertexAttribArray (quake_turb.vertex.location);
+	qfglDisableVertexAttribArray (quake_turb.tlst.location);
+
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglDisable (GL_TEXTURE_2D);
+	qfglActiveTexture (GL_TEXTURE0 + 1);
+	qfglDisable (GL_TEXTURE_2D);
+
+	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
+}
+
+static inline void
+add_surf_elements (texture_t *tex, instsurf_t *is,
+				   elechain_t **ec, elements_t **el)
+{
+	msurface_t *surf = is->surface;
+	glslpoly_t *poly = (glslpoly_t *) surf->polys;
+
+	if (!tex->elechain) {
+		(*ec) = add_elechain (tex, surf->ec_index);
+		(*ec)->transform = is->transform;
+		(*el) = (*ec)->elements;
+		(*el)->base = surf->base;
+		if (!(*el)->list)
+			(*el)->list = dstring_new ();
+		dstring_clear ((*el)->list);
+	}
+	if (is->transform != (*ec)->transform) {
+		(*ec) = add_elechain (tex, surf->ec_index);
+		(*ec)->transform = is->transform;
+		(*el) = (*ec)->elements;
+		(*el)->base = surf->base;
+		if (!(*el)->list)
+			(*el)->list = dstring_new ();
+		dstring_clear ((*el)->list);
+	}
+	if (surf->base != (*el)->base) {
+		(*el)->next = get_elements ();
+		(*el) = (*el)->next;
+		(*el)->base = surf->base;
+		if (!(*el)->list)
+			(*el)->list = dstring_new ();
+		dstring_clear ((*el)->list);
+	}
+	dstring_append ((*el)->list, (char *) poly->indices,
+					poly->count * sizeof (poly->indices[0]));
 }
 
 static void
@@ -749,37 +847,7 @@ build_tex_elechain (texture_t *tex)
 	elements_t *el = 0;
 
 	for (is = tex->tex_chain; is; is = is->tex_chain) {
-		msurface_t *surf = is->surface;
-		glslpoly_t *poly = (glslpoly_t *) surf->polys;
-
-		if (!tex->elechain) {
-			ec = add_elechain (tex, surf->ec_index);
-			ec->transform = is->transform;
-			el = ec->elements;
-			el->base = surf->base;
-			if (!el->list)
-				el->list = dstring_new ();
-			dstring_clear (el->list);
-		}
-		if (is->transform != ec->transform) {
-			ec = add_elechain (tex, surf->ec_index);
-			ec->transform = is->transform;
-			el = ec->elements;
-			el->base = surf->base;
-			if (!el->list)
-				el->list = dstring_new ();
-			dstring_clear (el->list);
-		}
-		if (surf->base != el->base) {
-			el->next = get_elements ();
-			el = el->next;
-			el->base = surf->base;
-			if (!el->list)
-				el->list = dstring_new ();
-			dstring_clear (el->list);
-		}
-		dstring_append (el->list, (char *) poly->indices,
-						poly->count * sizeof (poly->indices[0]));
+		add_surf_elements (tex, is, &ec, &el);
 	}
 }
 
@@ -788,6 +856,8 @@ R_DrawWorld (void)
 {
 	entity_t    worldent;
 	int         i;
+
+	clear_texture_chains ();	// do this first for water and skys
 
 	memset (&worldent, 0, sizeof (worldent));
 	worldent.model = r_worldentity.model;
@@ -822,11 +892,50 @@ R_DrawWorld (void)
 		}
 	}
 	bsp_end ();
-
-	clear_texture_chains ();
 }
 
-void R_InitBsp (void)
+void
+R_DrawWaterSurfaces ()
+{
+	instsurf_t *is;
+	msurface_t *surf;
+	texture_t  *tex = 0;
+	elechain_t *ec = 0;
+	elements_t *el = 0;
+
+	if (!waterchain)
+		return;
+
+	turb_begin ();
+	for (is = waterchain; is; is = is->tex_chain) {
+		surf = is->surface;
+		if (tex != surf->texinfo->texture) {
+			if (tex) {
+				qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
+				for (ec = tex->elechain; ec; ec = ec->next)
+					draw_elechain (ec);
+				tex->elechain = 0;
+				tex->elechain_tail = &tex->elechain;
+			}
+			tex = surf->texinfo->texture;
+		}
+		add_surf_elements (tex, is, &ec, &el);
+	}
+	if (tex) {
+		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
+		for (ec = tex->elechain; ec; ec = ec->next)
+			draw_elechain (ec);
+		tex->elechain = 0;
+		tex->elechain_tail = &tex->elechain;
+	}
+	turb_end ();
+
+	waterchain = 0;
+	waterchain_tail = &waterchain;
+}
+
+void
+R_InitBsp (void)
 {
 	int         vert;
 	int         frag;
@@ -842,4 +951,14 @@ void R_InitBsp (void)
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.colormap);
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.texture);
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.lightmap);
+
+	frag = GL_CompileShader ("quaketrb.frag", quaketurb_frag,
+							 GL_FRAGMENT_SHADER);
+	quake_turb.program = GL_LinkProgram ("quaketrb", vert, frag);
+	GL_ResolveShaderParam (quake_turb.program, &quake_turb.mvp_matrix);
+	GL_ResolveShaderParam (quake_turb.program, &quake_turb.tlst);
+	GL_ResolveShaderParam (quake_turb.program, &quake_turb.vertex);
+	GL_ResolveShaderParam (quake_turb.program, &quake_turb.palette);
+	GL_ResolveShaderParam (quake_turb.program, &quake_turb.texture);
+	GL_ResolveShaderParam (quake_turb.program, &quake_turb.realtime);
 }
