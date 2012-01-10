@@ -14,9 +14,9 @@ main (void)
 {
 	float       pix;
 	vec2        rt = vec2 (realtime, realtime);
-	vec2        st;
+	vec2        st = tst;
 
-	st = tst + sin ((tst.ts * 64.0 + rt * SPEED) * FACTOR);
+	st = st + sin ((tst.ts * 64.0 + rt * SPEED) * FACTOR) / 64.0;
 	pix = texture2D (texture, st).r;
 	gl_FragColor = texture2D (palette, vec2 (pix, 0.5));
 }
