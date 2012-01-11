@@ -104,6 +104,14 @@ static const char quaketurb_frag[] =
 #include "quaketrb.fc"
 ;
 
+static const char quakesky_vert[] =
+#include "quakesky.vc"
+;
+
+static const char quakeskyid_frag[] =
+#include "quakeski.fc"
+;
+
 static struct {
 	int         program;
 	shaderparam_t mvp_matrix;
@@ -139,6 +147,26 @@ static struct {
 	{"vertex", 0},
 	{"palette", 1},
 	{"texture", 1},
+	{"realtime", 1},
+};
+
+static struct {
+	int         program;
+	shaderparam_t mvp_matrix;
+	shaderparam_t sky_matrix;
+	shaderparam_t vertex;
+	shaderparam_t palette;
+	shaderparam_t solid;
+	shaderparam_t trans;
+	shaderparam_t realtime;
+} quake_skyid = {
+	0,
+	{"mvp_mat", 1},
+	{"sky_mat", 1},
+	{"vertex", 0},
+	{"palette", 1},
+	{"solid", 1},
+	{"trans", 1},
 	{"realtime", 1},
 };
 
@@ -961,4 +989,16 @@ R_InitBsp (void)
 	GL_ResolveShaderParam (quake_turb.program, &quake_turb.palette);
 	GL_ResolveShaderParam (quake_turb.program, &quake_turb.texture);
 	GL_ResolveShaderParam (quake_turb.program, &quake_turb.realtime);
+
+	vert = GL_CompileShader ("quakesky.vert", quakesky_vert, GL_VERTEX_SHADER);
+	frag = GL_CompileShader ("quakeski.frag", quakeskyid_frag,
+							 GL_FRAGMENT_SHADER);
+	quake_skyid.program = GL_LinkProgram ("quakebsp", vert, frag);
+	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.mvp_matrix);
+	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.sky_matrix);
+	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.vertex);
+	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.palette);
+	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.solid);
+	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.trans);
+	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.realtime);
 }
