@@ -204,9 +204,7 @@ Mod_LoadTextures (bsp_t *bsp)
 
 		if (!strncmp (mt->name, "sky", 3))
 			loadmodel->skytexture = tx;
-		else {
-			Mod_ProcessTexture (tx);
-		}
+		Mod_ProcessTexture (tx);
 	}
 
 	// sequence the animations
