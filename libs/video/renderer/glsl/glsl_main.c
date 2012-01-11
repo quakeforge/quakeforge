@@ -197,6 +197,7 @@ R_RenderView (void)
 	R_MarkLeaves ();
 	R_PushDlights (vec3_origin);
 	R_DrawWorld ();
+	R_DrawSky ();
 	R_RenderEntities ();
 	R_DrawWaterSurfaces ();
 }

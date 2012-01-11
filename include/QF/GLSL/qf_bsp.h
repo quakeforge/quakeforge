@@ -55,6 +55,7 @@ typedef struct elechain_s {
 
 void R_ClearElements (void);
 void R_DrawWorld (void);
+void R_DrawSky (void);
 void R_RegisterTextures (model_t **models, int num_models);
 void R_BuildDisplayLists (model_t **models, int num_models);
 void R_InitBsp (void);

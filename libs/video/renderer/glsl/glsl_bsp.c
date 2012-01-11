@@ -153,7 +153,7 @@ static struct {
 static struct {
 	int         program;
 	shaderparam_t mvp_matrix;
-	shaderparam_t sky_matrix;
+	shaderparam_t origin;
 	shaderparam_t vertex;
 	shaderparam_t palette;
 	shaderparam_t solid;
@@ -162,7 +162,7 @@ static struct {
 } quake_skyid = {
 	0,
 	{"mvp_mat", 1},
-	{"sky_mat", 1},
+	{"origin", 1},
 	{"vertex", 0},
 	{"palette", 1},
 	{"solid", 1},
@@ -716,7 +716,7 @@ R_VisitWorldNodes (mnode_t *node)
 }
 
 static void
-draw_elechain (elechain_t *ec)
+draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc)
 {
 	mat4_t      mat;
 	elements_t *el;
@@ -724,20 +724,21 @@ draw_elechain (elechain_t *ec)
 
 	if (ec->transform) {
 		Mat4Mult (bsp_vp, ec->transform, mat);
-		qfglUniformMatrix4fv (quake_bsp.mvp_matrix.location, 1, false, mat);
+		qfglUniformMatrix4fv (matloc, 1, false, mat);
 	} else {
-		qfglUniformMatrix4fv (quake_bsp.mvp_matrix.location, 1, false, bsp_vp);
+		qfglUniformMatrix4fv (matloc, 1, false, bsp_vp);
 	}
 	for (el = ec->elements; el; el = el->next) {
 		if (!el->list->size)
 			continue;
 		count = el->list->size / sizeof (GLushort);
-		qfglVertexAttribPointer (quake_bsp.vertex.location, 4, GL_FLOAT,
+		qfglVertexAttribPointer (vertloc, 4, GL_FLOAT,
 								 0, sizeof (bspvert_t),
 								 el->base + field_offset (bspvert_t, vertex));
-		qfglVertexAttribPointer (quake_bsp.tlst.location, 4, GL_FLOAT,
-								 0, sizeof (bspvert_t),
-								 el->base + field_offset (bspvert_t, tlst));
+		if (tlstloc >= 0)
+			qfglVertexAttribPointer (tlstloc, 4, GL_FLOAT,
+									 0, sizeof (bspvert_t),
+									 el->base + field_offset (bspvert_t,tlst));
 		qfglDrawElements (GL_TRIANGLES, count,
 						  GL_UNSIGNED_SHORT, el->list->str);
 		dstring_clear (el->list);
@@ -830,6 +831,49 @@ turb_end (void)
 	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
 }
 
+static void
+skyid_begin (void)
+{
+	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
+
+	qfglUseProgram (quake_skyid.program);
+	qfglEnableVertexAttribArray (quake_skyid.vertex.location);
+
+	qfglUniform3fv (quake_skyid.origin.location, 1, r_origin);
+
+	qfglUniform1i (quake_skyid.palette.location, 2);
+	qfglActiveTexture (GL_TEXTURE0 + 2);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+
+	qfglUniform1f (quake_skyid.realtime.location, r_realtime);
+
+	qfglUniform1i (quake_skyid.trans.location, 0);
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglEnable (GL_TEXTURE_2D);
+
+	qfglUniform1i (quake_skyid.solid.location, 1);
+	qfglActiveTexture (GL_TEXTURE0 + 1);
+	qfglEnable (GL_TEXTURE_2D);
+
+	qfglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
+}
+
+static void
+skyid_end (void)
+{
+	qfglDisableVertexAttribArray (quake_skyid.vertex.location);
+
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglDisable (GL_TEXTURE_2D);
+	qfglActiveTexture (GL_TEXTURE0 + 1);
+	qfglDisable (GL_TEXTURE_2D);
+	qfglActiveTexture (GL_TEXTURE0 + 2);
+	qfglDisable (GL_TEXTURE_2D);
+
+	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
+}
+
 static inline void
 add_surf_elements (texture_t *tex, instsurf_t *is,
 				   elechain_t **ec, elements_t **el)
@@ -916,7 +960,9 @@ R_DrawWorld (void)
 		build_tex_elechain (tex);
 
 		for (ec = tex->elechain; ec; ec = ec->next) {
-			draw_elechain (ec);
+			draw_elechain (ec, quake_bsp.mvp_matrix.location,
+						   quake_bsp.vertex.location,
+						   quake_bsp.tlst.location);
 		}
 	}
 	bsp_end ();
@@ -941,7 +987,9 @@ R_DrawWaterSurfaces ()
 			if (tex) {
 				qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 				for (ec = tex->elechain; ec; ec = ec->next)
-					draw_elechain (ec);
+					draw_elechain (ec, quake_turb.mvp_matrix.location,
+								   quake_turb.vertex.location,
+								   quake_turb.tlst.location);
 				tex->elechain = 0;
 				tex->elechain_tail = &tex->elechain;
 			}
@@ -952,7 +1000,9 @@ R_DrawWaterSurfaces ()
 	if (tex) {
 		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 		for (ec = tex->elechain; ec; ec = ec->next)
-			draw_elechain (ec);
+			draw_elechain (ec, quake_turb.mvp_matrix.location,
+						   quake_turb.vertex.location,
+						   quake_turb.tlst.location);
 		tex->elechain = 0;
 		tex->elechain_tail = &tex->elechain;
 	}
@@ -960,6 +1010,54 @@ R_DrawWaterSurfaces ()
 
 	waterchain = 0;
 	waterchain_tail = &waterchain;
+}
+
+void
+R_DrawSky (void)
+{
+	instsurf_t *is;
+	msurface_t *surf;
+	texture_t  *tex = 0;
+	elechain_t *ec = 0;
+	elements_t *el = 0;
+
+	if (!sky_chain)
+		return;
+
+	skyid_begin ();
+	for (is = sky_chain; is; is = is->tex_chain) {
+		surf = is->surface;
+		if (tex != surf->texinfo->texture) {
+			if (tex) {
+				qfglActiveTexture (GL_TEXTURE0 + 0);
+				qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[0]);
+				qfglActiveTexture (GL_TEXTURE0 + 1);
+				qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
+				for (ec = tex->elechain; ec; ec = ec->next)
+					draw_elechain (ec, quake_skyid.mvp_matrix.location,
+								   quake_skyid.vertex.location, -1);
+				tex->elechain = 0;
+				tex->elechain_tail = &tex->elechain;
+			}
+			tex = surf->texinfo->texture;
+		}
+		add_surf_elements (tex, is, &ec, &el);
+	}
+	if (tex) {
+		qfglActiveTexture (GL_TEXTURE0 + 0);
+		qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[0]);
+		qfglActiveTexture (GL_TEXTURE0 + 1);
+		qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
+		for (ec = tex->elechain; ec; ec = ec->next)
+			draw_elechain (ec, quake_skyid.mvp_matrix.location,
+						   quake_skyid.vertex.location, -1);
+		tex->elechain = 0;
+		tex->elechain_tail = &tex->elechain;
+	}
+	skyid_end ();
+
+	sky_chain = 0;
+	sky_chain_tail = &sky_chain;
 }
 
 void
@@ -993,9 +1091,9 @@ R_InitBsp (void)
 	vert = GL_CompileShader ("quakesky.vert", quakesky_vert, GL_VERTEX_SHADER);
 	frag = GL_CompileShader ("quakeski.frag", quakeskyid_frag,
 							 GL_FRAGMENT_SHADER);
-	quake_skyid.program = GL_LinkProgram ("quakebsp", vert, frag);
+	quake_skyid.program = GL_LinkProgram ("quakeskyid", vert, frag);
 	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.mvp_matrix);
-	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.sky_matrix);
+	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.origin);
 	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.vertex);
 	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.palette);
 	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.solid);
