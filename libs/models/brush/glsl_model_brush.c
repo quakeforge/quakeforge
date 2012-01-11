@@ -52,6 +52,8 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+#include "QF/GLSL/defines.h"
+#include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_textures.h"
 
 #include "compat.h"
@@ -59,7 +61,30 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 void
 Mod_ProcessTexture (texture_t *tx)
 {
-	tx->gl_texturenum = GL_LoadQuakeMipTex (tx);
+	if (!strncmp (tx->name, "sky", 3)) {
+		// sky textures need to be loaded as two separate textures to allow
+		// wrapping on both sky layers.
+		byte       *data;
+		byte       *tx_data;
+		int         i, j;
+
+		if (tx->width != 256 || tx->height != 128)
+			Sys_Error ("Mod_ProcessTexture: invalid sky texture: %dx%d\n",
+					   tx->width, tx->height);
+		data = alloca (128 * 128);
+		tx_data = (byte *)tx + tx->offsets[0];
+		for (i = 0; i < 2; i++) {
+			for (j = 0; j < 128; j++)
+				memcpy (&data[j * 128], &tx_data[j * 256 + i * 128], 128);
+			tx->sky_tex[i] = GL_LoadQuakeTexture (tx->name, 128, 128, data);
+			// GL_LoadQuakeTexture () leaves the texture bound
+			qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		}
+		tx->gl_texturenum = 0;
+	} else {
+		tx->gl_texturenum = GL_LoadQuakeMipTex (tx);
+	}
 }
 
 void

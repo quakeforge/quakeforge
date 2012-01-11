@@ -93,6 +93,7 @@ typedef struct texture_s {
 	unsigned int	width, height;
 	int			gl_texturenum;
 	int			gl_fb_texturenum;
+	int         sky_tex[2];
 	instsurf_t *tex_chain;	// for gl_texsort drawing
 	instsurf_t **tex_chain_tail;
 	struct elechain_s *elechain;
