@@ -43,8 +43,10 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "QF/cvar.h"
 #include "QF/dstring.h"
+#include "QF/image.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 #include "QF/vrect.h"
 
 #include "QF/GLSL/defines.h"
@@ -92,6 +94,9 @@ static instsurf_t  *free_instsurfs;
 static GLuint   bsp_vbo;
 static mat4_t   bsp_vp;
 
+static GLuint   skybox_tex;
+static qboolean skybox_loaded;
+
 static const char quakebsp_vert[] =
 #include "quakebsp.vc"
 ;
@@ -110,6 +115,10 @@ static const char quakesky_vert[] =
 
 static const char quakeskyid_frag[] =
 #include "quakeski.fc"
+;
+
+static const char quakeskybox_frag[] =
+#include "quakeskb.fc"
 ;
 
 static struct {
@@ -168,6 +177,20 @@ static struct {
 	{"solid", 1},
 	{"trans", 1},
 	{"realtime", 1},
+};
+
+static struct {
+	int         program;
+	shaderparam_t mvp_matrix;
+	shaderparam_t origin;
+	shaderparam_t vertex;
+	shaderparam_t sky;
+} quake_skybox = {
+	0,
+	{"mvp_mat", 1},
+	{"origin", 1},
+	{"vertex", 0},
+	{"sky", 1},
 };
 
 #define CHAIN_SURF_F2B(surf,chain)							\
@@ -874,6 +897,35 @@ skyid_end (void)
 	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
 }
 
+static void
+skybox_begin (void)
+{
+	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
+
+	qfglUseProgram (quake_skybox.program);
+	qfglEnableVertexAttribArray (quake_skybox.vertex.location);
+
+	qfglUniform3fv (quake_skybox.origin.location, 1, r_origin);
+
+	qfglUniform1i (quake_skybox.sky.location, 0);
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglEnable (GL_TEXTURE_CUBE_MAP);
+	qfglBindTexture (GL_TEXTURE_CUBE_MAP, skybox_tex);
+
+	qfglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
+}
+
+static void
+skybox_end (void)
+{
+	qfglDisableVertexAttribArray (quake_skybox.vertex.location);
+
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglDisable (GL_TEXTURE_CUBE_MAP);
+
+	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
+}
+
 static inline void
 add_surf_elements (texture_t *tex, instsurf_t *is,
 				   elechain_t **ec, elements_t **el)
@@ -1020,22 +1072,33 @@ R_DrawSky (void)
 	texture_t  *tex = 0;
 	elechain_t *ec = 0;
 	elements_t *el = 0;
+	shaderparam_t *matrix;
+	shaderparam_t *vertex;
 
 	if (!sky_chain)
 		return;
 
-	skyid_begin ();
+	if (skybox_loaded) {
+		skybox_begin ();
+		matrix = &quake_skybox.mvp_matrix;
+		vertex = &quake_skybox.vertex;
+	} else {
+		skyid_begin ();
+		matrix = &quake_skyid.mvp_matrix;
+		vertex = &quake_skyid.vertex;
+	}
 	for (is = sky_chain; is; is = is->tex_chain) {
 		surf = is->surface;
 		if (tex != surf->texinfo->texture) {
 			if (tex) {
-				qfglActiveTexture (GL_TEXTURE0 + 0);
-				qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[0]);
-				qfglActiveTexture (GL_TEXTURE0 + 1);
-				qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
+				if (!skybox_loaded) {
+					qfglActiveTexture (GL_TEXTURE0 + 0);
+					qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[0]);
+					qfglActiveTexture (GL_TEXTURE0 + 1);
+					qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
+				}
 				for (ec = tex->elechain; ec; ec = ec->next)
-					draw_elechain (ec, quake_skyid.mvp_matrix.location,
-								   quake_skyid.vertex.location, -1);
+					draw_elechain (ec, matrix->location, vertex->location, -1);
 				tex->elechain = 0;
 				tex->elechain_tail = &tex->elechain;
 			}
@@ -1044,17 +1107,21 @@ R_DrawSky (void)
 		add_surf_elements (tex, is, &ec, &el);
 	}
 	if (tex) {
-		qfglActiveTexture (GL_TEXTURE0 + 0);
-		qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[0]);
-		qfglActiveTexture (GL_TEXTURE0 + 1);
-		qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
+		if (!skybox_loaded) {
+			qfglActiveTexture (GL_TEXTURE0 + 0);
+			qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[0]);
+			qfglActiveTexture (GL_TEXTURE0 + 1);
+			qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
+		}
 		for (ec = tex->elechain; ec; ec = ec->next)
-			draw_elechain (ec, quake_skyid.mvp_matrix.location,
-						   quake_skyid.vertex.location, -1);
+			draw_elechain (ec, matrix->location, vertex->location, -1);
 		tex->elechain = 0;
 		tex->elechain_tail = &tex->elechain;
 	}
-	skyid_end ();
+	if (skybox_loaded)
+		skybox_end ();
+	else
+		skyid_end ();
 
 	sky_chain = 0;
 	sky_chain_tail = &sky_chain;
@@ -1099,4 +1166,70 @@ R_InitBsp (void)
 	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.solid);
 	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.trans);
 	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.realtime);
+
+	frag = GL_CompileShader ("quakeskb.frag", quakeskybox_frag,
+							 GL_FRAGMENT_SHADER);
+	quake_skybox.program = GL_LinkProgram ("quakeskybox", vert, frag);
+	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.mvp_matrix);
+	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.origin);
+	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.vertex);
+	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.sky);
+}
+
+VISIBLE void
+R_LoadSkys (const char *sky)
+{
+	const char *name;
+	int         i;
+	static const char *sky_suffix[] = { "ft", "bk", "lf", "rt", "up", "dn"};
+	static int  sky_target[] = {
+		GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+		GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+		GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+	};
+
+	if (!sky || !*sky)
+		sky = r_skyname->string;
+
+	if (!*sky || !strcasecmp (sky, "none")) {
+		skybox_loaded = false;
+		return;
+	}
+
+	if (!skybox_tex)
+		qfglGenTextures (1, &skybox_tex);
+
+	qfglBindTexture (GL_TEXTURE_CUBE_MAP, skybox_tex);
+
+	skybox_loaded = true;
+	for (i = 0; i < 6; i++) {
+		tex_t      *tex;
+
+		tex = LoadImage (name = va ("env/%s%s", sky, sky_suffix[i]));
+		if (!tex || tex->format < 3) {	// FIXME pcx support
+			Sys_MaskPrintf (SYS_GLSL, "Couldn't load %s\n", name);
+			// also look in gfx/env, where Darkplaces looks for skies
+			tex = LoadImage (name = va ("gfx/env/%s%s", sky, sky_suffix[i]));
+			if (!tex || tex->format < 3) {  // FIXME pcx support
+				Sys_MaskPrintf (SYS_GLSL, "Couldn't load %s\n", name);
+				skybox_loaded = false;
+				continue;
+			}
+		}
+		Sys_MaskPrintf (SYS_GLSL, "Loaded %s\n", name);
+		qfglTexImage2D (sky_target[i], 0, tex->format == 3 ? GL_RGB : GL_RGBA,
+						tex->width, tex->height, 0,
+						tex->format == 3 ? GL_RGB : GL_RGBA,
+						GL_UNSIGNED_BYTE, tex->data);
+	}
+	qfglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
+					   GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T,
+					   GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	qfglGenerateMipmap (GL_TEXTURE_CUBE_MAP);
 }

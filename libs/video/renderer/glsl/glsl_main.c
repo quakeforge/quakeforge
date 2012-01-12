@@ -230,11 +230,6 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 }
 
 VISIBLE void
-R_LoadSkys (const char *sky)
-{
-}
-
-VISIBLE void
 Fog_Update (float density, float red, float green, float blue, float time)
 {
 }
