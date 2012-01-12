@@ -267,12 +267,12 @@ extern const vec_t *const quat_origin;
 		(e)[3] = d; \
 	} while (0)
 
-#define QuatBlend(v1,v2,b,v) \
+#define QuatBlend(q1,q2,b,q) \
 	do { \
-		(v)[0] = (v1)[0] * (1 - (b)) + (v2)[0] * (b); \
-		(v)[1] = (v1)[1] * (1 - (b)) + (v2)[1] * (b); \
-		(v)[2] = (v1)[2] * (1 - (b)) + (v2)[2] * (b); \
-		(v)[3] = (v1)[3] * (1 - (b)) + (v2)[3] * (b); \
+		(q)[0] = (q1)[0] * (1 - (b)) + (q2)[0] * (b); \
+		(q)[1] = (q1)[1] * (1 - (b)) + (q2)[1] * (b); \
+		(q)[2] = (q1)[2] * (1 - (b)) + (q2)[2] * (b); \
+		(q)[3] = (q1)[3] * (1 - (b)) + (q2)[3] * (b); \
 	} while (0)
 
 //For printf etc
@@ -415,7 +415,7 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 
 void QuatMult (const quat_t q1, const quat_t q2, quat_t out);
 void QuatInverse (const quat_t in, quat_t out);
-
+void QuatExp (const quat_t a, quat_t b);
 void QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical);
 
 void Mat4Transpose (const mat4_t a, mat4_t b);

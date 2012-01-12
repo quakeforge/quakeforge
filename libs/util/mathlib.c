@@ -196,6 +196,23 @@ QuatInverse (const quat_t in, quat_t out)
 }
 
 VISIBLE void
+QuatExp (const quat_t a, quat_t b)
+{
+	vec3_t      n;
+	vec_t       th;
+	vec_t       r;
+	vec_t       c, s;
+
+	VectorCopy (a + 1, n);
+	th = VectorNormalize (n);
+	r = expf (a[0]);
+	c = cosf (th);
+	s = sinf (th);
+	VectorScale (n, r * s, b + 1);
+	b[0] = r * c;
+}
+
+VISIBLE void
 QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical)
 {
 	vec_t       aa, ab, ac, ad, bb, bc, bd, cc, cd, dd;
