@@ -920,6 +920,7 @@ CL_ParseModellist (void)
 		else if (!strcmp (cl.model_name[cl.nummodels], "progs/gib3.mdl"))
 			cl_gib3index = cl.nummodels;
 	}
+	cl.nummodels++;
 
 	n = MSG_ReadByte (net_message);
 
