@@ -193,6 +193,11 @@ static struct {
 	{"sky", 1},
 };
 
+static struct {
+	shaderparam_t *mvp_matrix;
+	shaderparam_t *vertex;
+} sky_params;
+
 #define CHAIN_SURF_F2B(surf,chain)							\
 	do { 													\
 		instsurf_t *inst = (surf)->instsurf;				\
@@ -855,73 +860,63 @@ turb_end (void)
 }
 
 static void
-skyid_begin (void)
+sky_begin (void)
 {
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
-	qfglUseProgram (quake_skyid.program);
-	qfglEnableVertexAttribArray (quake_skyid.vertex.location);
+	if (skybox_loaded) {
+		sky_params.mvp_matrix = &quake_skybox.mvp_matrix;
+		sky_params.vertex = &quake_skybox.vertex;
 
-	qfglUniform3fv (quake_skyid.origin.location, 1, r_origin);
+		qfglUseProgram (quake_skybox.program);
+		qfglEnableVertexAttribArray (quake_skybox.vertex.location);
 
-	qfglUniform1i (quake_skyid.palette.location, 2);
-	qfglActiveTexture (GL_TEXTURE0 + 2);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+		qfglUniform3fv (quake_skybox.origin.location, 1, r_origin);
 
-	qfglUniform1f (quake_skyid.realtime.location, r_realtime);
+		qfglUniform1i (quake_skybox.sky.location, 0);
+		qfglActiveTexture (GL_TEXTURE0 + 0);
+		qfglEnable (GL_TEXTURE_CUBE_MAP);
+		qfglBindTexture (GL_TEXTURE_CUBE_MAP, skybox_tex);
+	} else {
+		sky_params.mvp_matrix = &quake_skyid.mvp_matrix;
+		sky_params.vertex = &quake_skyid.vertex;
 
-	qfglUniform1i (quake_skyid.trans.location, 0);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglEnable (GL_TEXTURE_2D);
+		qfglUseProgram (quake_skyid.program);
+		qfglEnableVertexAttribArray (quake_skyid.vertex.location);
 
-	qfglUniform1i (quake_skyid.solid.location, 1);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglEnable (GL_TEXTURE_2D);
+		qfglUniform3fv (quake_skyid.origin.location, 1, r_origin);
+
+		qfglUniform1i (quake_skyid.palette.location, 2);
+		qfglActiveTexture (GL_TEXTURE0 + 2);
+		qfglEnable (GL_TEXTURE_2D);
+		qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+
+		qfglUniform1f (quake_skyid.realtime.location, r_realtime);
+
+		qfglUniform1i (quake_skyid.trans.location, 0);
+		qfglActiveTexture (GL_TEXTURE0 + 0);
+		qfglEnable (GL_TEXTURE_2D);
+
+		qfglUniform1i (quake_skyid.solid.location, 1);
+		qfglActiveTexture (GL_TEXTURE0 + 1);
+		qfglEnable (GL_TEXTURE_2D);
+	}
 
 	qfglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
 }
 
 static void
-skyid_end (void)
+sky_end (void)
 {
-	qfglDisableVertexAttribArray (quake_skyid.vertex.location);
+	qfglDisableVertexAttribArray (sky_params.vertex->location);
 
 	qfglActiveTexture (GL_TEXTURE0 + 0);
 	qfglDisable (GL_TEXTURE_2D);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglDisable (GL_TEXTURE_2D);
-	qfglActiveTexture (GL_TEXTURE0 + 2);
-	qfglDisable (GL_TEXTURE_2D);
-
-	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
-}
-
-static void
-skybox_begin (void)
-{
-	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
-
-	qfglUseProgram (quake_skybox.program);
-	qfglEnableVertexAttribArray (quake_skybox.vertex.location);
-
-	qfglUniform3fv (quake_skybox.origin.location, 1, r_origin);
-
-	qfglUniform1i (quake_skybox.sky.location, 0);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglEnable (GL_TEXTURE_CUBE_MAP);
-	qfglBindTexture (GL_TEXTURE_CUBE_MAP, skybox_tex);
-
-	qfglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
-}
-
-static void
-skybox_end (void)
-{
-	qfglDisableVertexAttribArray (quake_skybox.vertex.location);
-
-	qfglActiveTexture (GL_TEXTURE0 + 0);
 	qfglDisable (GL_TEXTURE_CUBE_MAP);
+	qfglActiveTexture (GL_TEXTURE0 + 1);
+	qfglDisable (GL_TEXTURE_2D);
+	qfglActiveTexture (GL_TEXTURE0 + 2);
+	qfglDisable (GL_TEXTURE_2D);
 
 	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
 }
@@ -1072,21 +1067,11 @@ R_DrawSky (void)
 	texture_t  *tex = 0;
 	elechain_t *ec = 0;
 	elements_t *el = 0;
-	shaderparam_t *matrix;
-	shaderparam_t *vertex;
 
 	if (!sky_chain)
 		return;
 
-	if (skybox_loaded) {
-		skybox_begin ();
-		matrix = &quake_skybox.mvp_matrix;
-		vertex = &quake_skybox.vertex;
-	} else {
-		skyid_begin ();
-		matrix = &quake_skyid.mvp_matrix;
-		vertex = &quake_skyid.vertex;
-	}
+	sky_begin ();
 	for (is = sky_chain; is; is = is->tex_chain) {
 		surf = is->surface;
 		if (tex != surf->texinfo->texture) {
@@ -1098,7 +1083,8 @@ R_DrawSky (void)
 					qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
 				}
 				for (ec = tex->elechain; ec; ec = ec->next)
-					draw_elechain (ec, matrix->location, vertex->location, -1);
+					draw_elechain (ec, sky_params.mvp_matrix->location,
+								   sky_params.vertex->location, -1);
 				tex->elechain = 0;
 				tex->elechain_tail = &tex->elechain;
 			}
@@ -1114,14 +1100,12 @@ R_DrawSky (void)
 			qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
 		}
 		for (ec = tex->elechain; ec; ec = ec->next)
-			draw_elechain (ec, matrix->location, vertex->location, -1);
+			draw_elechain (ec, sky_params.mvp_matrix->location,
+						   sky_params.vertex->location, -1);
 		tex->elechain = 0;
 		tex->elechain_tail = &tex->elechain;
 	}
-	if (skybox_loaded)
-		skybox_end ();
-	else
-		skyid_end ();
+	sky_end ();
 
 	sky_chain = 0;
 	sky_chain_tail = &sky_chain;
