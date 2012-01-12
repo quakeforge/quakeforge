@@ -1181,14 +1181,16 @@ R_LoadSkys (const char *sky)
 {
 	const char *name;
 	int         i;
+	// NOTE: quake's world and GL's world are rotated relative to each other
+	// quake has x right, y in, z up. gl has x right, y up, z out
 	static const char *sky_suffix[] = { "ft", "bk", "lf", "rt", "up", "dn"};
 	static int  sky_target[] = {
 		GL_TEXTURE_CUBE_MAP_POSITIVE_X,
 		GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+		GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
 		GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
 		GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-		GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
 	};
 
 	if (!sky || !*sky)
