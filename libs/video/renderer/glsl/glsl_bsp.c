@@ -96,6 +96,9 @@ static mat4_t   bsp_vp;
 
 static GLuint   skybox_tex;
 static qboolean skybox_loaded;
+static quat_t   sky_rotation[2];
+static quat_t   sky_velocity;
+static double   sky_time;
 
 static const char quakebsp_vert[] =
 #include "quakebsp.vc"
@@ -162,7 +165,7 @@ static struct {
 static struct {
 	int         program;
 	shaderparam_t mvp_matrix;
-	shaderparam_t origin;
+	shaderparam_t sky_matrix;
 	shaderparam_t vertex;
 	shaderparam_t palette;
 	shaderparam_t solid;
@@ -171,7 +174,7 @@ static struct {
 } quake_skyid = {
 	0,
 	{"mvp_mat", 1},
-	{"origin", 1},
+	{"sky_mat", 1},
 	{"vertex", 0},
 	{"palette", 1},
 	{"solid", 1},
@@ -182,19 +185,20 @@ static struct {
 static struct {
 	int         program;
 	shaderparam_t mvp_matrix;
-	shaderparam_t origin;
+	shaderparam_t sky_matrix;
 	shaderparam_t vertex;
 	shaderparam_t sky;
 } quake_skybox = {
 	0,
 	{"mvp_mat", 1},
-	{"origin", 1},
+	{"sky_mat", 1},
 	{"vertex", 0},
 	{"sky", 1},
 };
 
 static struct {
 	shaderparam_t *mvp_matrix;
+	shaderparam_t *sky_matrix;
 	shaderparam_t *vertex;
 } sky_params;
 
@@ -484,6 +488,12 @@ R_BuildDisplayLists (model_t **models, int num_models)
 	dmodel_t   *dm;
 	msurface_t *surf;
 	dstring_t  *vertices;
+
+	QuatSet (1, 0, 0, 0, sky_rotation[0]);
+	QuatSet (1, 0, 0, 0, sky_rotation[1]);
+	QuatSet (0, 0.02, 0.03, 0.01, sky_velocity);
+	QuatExp (sky_velocity, sky_velocity);
+	sky_time = r_realtime;
 
 	// now run through all surfaces, chaining them to their textures, thus
 	// effectively sorting the surfaces by texture (without worrying about
@@ -860,18 +870,40 @@ turb_end (void)
 }
 
 static void
+spin (mat4_t mat)
+{
+	quat_t      q;
+	mat4_t      m;
+	float       blend;
+
+	while (r_realtime - sky_time > 1) {
+		QuatCopy (sky_rotation[1], sky_rotation[0]);
+		QuatMult (sky_velocity, sky_rotation[0], sky_rotation[1]);
+		sky_time += 1;
+	}
+	blend = bound (0, (r_realtime - sky_time), 1);
+
+	QuatBlend (sky_rotation[0], sky_rotation[1], blend, q);
+	Mat4Identity (mat);
+	VectorNegate (r_origin, mat + 12);
+	QuatToMatrix (q, m, 1, 1);
+	Mat4Mult (m, mat, mat);
+}
+
+static void
 sky_begin (void)
 {
+	mat4_t      mat;
+
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
 	if (skybox_loaded) {
 		sky_params.mvp_matrix = &quake_skybox.mvp_matrix;
 		sky_params.vertex = &quake_skybox.vertex;
+		sky_params.sky_matrix = &quake_skybox.sky_matrix;
 
 		qfglUseProgram (quake_skybox.program);
 		qfglEnableVertexAttribArray (quake_skybox.vertex.location);
-
-		qfglUniform3fv (quake_skybox.origin.location, 1, r_origin);
 
 		qfglUniform1i (quake_skybox.sky.location, 0);
 		qfglActiveTexture (GL_TEXTURE0 + 0);
@@ -879,12 +911,11 @@ sky_begin (void)
 		qfglBindTexture (GL_TEXTURE_CUBE_MAP, skybox_tex);
 	} else {
 		sky_params.mvp_matrix = &quake_skyid.mvp_matrix;
+		sky_params.sky_matrix = &quake_skyid.sky_matrix;
 		sky_params.vertex = &quake_skyid.vertex;
 
 		qfglUseProgram (quake_skyid.program);
 		qfglEnableVertexAttribArray (quake_skyid.vertex.location);
-
-		qfglUniform3fv (quake_skyid.origin.location, 1, r_origin);
 
 		qfglUniform1i (quake_skyid.palette.location, 2);
 		qfglActiveTexture (GL_TEXTURE0 + 2);
@@ -901,6 +932,9 @@ sky_begin (void)
 		qfglActiveTexture (GL_TEXTURE0 + 1);
 		qfglEnable (GL_TEXTURE_2D);
 	}
+
+	spin (mat);
+	qfglUniformMatrix4fv (sky_params.sky_matrix->location, 1, false, mat);
 
 	qfglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
 }
@@ -1144,7 +1178,7 @@ R_InitBsp (void)
 							 GL_FRAGMENT_SHADER);
 	quake_skyid.program = GL_LinkProgram ("quakeskyid", vert, frag);
 	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.mvp_matrix);
-	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.origin);
+	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.sky_matrix);
 	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.vertex);
 	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.palette);
 	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.solid);
@@ -1155,7 +1189,7 @@ R_InitBsp (void)
 							 GL_FRAGMENT_SHADER);
 	quake_skybox.program = GL_LinkProgram ("quakeskybox", vert, frag);
 	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.mvp_matrix);
-	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.origin);
+	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.sky_matrix);
 	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.vertex);
 	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.sky);
 }
