@@ -107,7 +107,7 @@ R_ViewChanged (float aspect)
 	proj[2] = 0;
 	proj[6] = 0;
 	proj[10] = (fard + neard) / (neard - fard);
-	proj[14] = (2 * fard + neard) / (neard - fard);
+	proj[14] = (2 * fard * neard) / (neard - fard);
 
 	proj[3] = 0;
 	proj[7] = 0;
