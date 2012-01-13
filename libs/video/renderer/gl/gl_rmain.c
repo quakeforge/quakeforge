@@ -653,7 +653,6 @@ R_RenderView (void)
 		R_RenderView_ ();
 	else
 		R_RenderViewFishEye ();
-	GL_Set2D ();
 }
 
 #define BOX_FRONT  0
