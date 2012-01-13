@@ -679,7 +679,7 @@ VISIBLE void
 Draw_TileClear (int x, int y, int w, int h)
 {
 	static quat_t color = { 1, 1, 1, 1 };
-	draw_pic (x, y, w, h, backtile_pic, x, y, w, h, color);
+	draw_pic (x, y, w, h, backtile_pic, 0, 0, w, h, color);
 }
 
 VISIBLE void

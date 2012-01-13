@@ -190,8 +190,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	V_RenderView ();	// FIXME (scr_3dfuncs?)
 
 	SCR_SetUpToDrawConsole ();
-	if (!r_worldentity.model)
-		GL_Set2D ();
+	GL_Set2D ();
 	GL_DrawReset ();
 	SCR_TileClear ();
 	GL_Set2DScaled ();
