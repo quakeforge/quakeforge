@@ -705,20 +705,20 @@ static void
 ortho_mat (float *proj, float xmin, float xmax, float ymin, float ymax,
 		   float znear, float zfar)
 {
-	proj[0] = 2/(xmax-xmin);
+	proj[0] = 2 / (xmax - xmin);
 	proj[4] = 0;
 	proj[8] = 0;
-	proj[12] = -(xmax+xmin)/(xmax-xmin);
+	proj[12] = -(xmax + xmin) / (xmax - xmin);
 
 	proj[1] = 0;
-	proj[5] = 2/(ymax-ymin);
+	proj[5] = 2 / (ymax - ymin);
 	proj[9] = 0;
-	proj[13] = -(ymax+ymin)/(ymax-ymin);
+	proj[13] = -(ymax + ymin) / (ymax - ymin);
 
 	proj[2] = 0;
 	proj[6] = 0;
-	proj[10] = -2/(zfar-znear);
-	proj[14] = -(zfar+znear)/(zfar-znear);
+	proj[10] = -2 / (zfar - znear);
+	proj[14] = -(zfar + znear) / (zfar - znear);
 
 	proj[3] = 0;
 	proj[7] = 0;
