@@ -189,6 +189,24 @@ R_RenderEntities (void)
 	R_SpriteEnd ();
 }
 
+static void
+R_DrawViewModel (void)
+{
+	currententity = r_view_model;
+	if (r_inhibit_viewmodel
+		|| !r_drawviewmodel->int_val
+		|| !r_drawentities->int_val
+		|| !currententity->model)
+		return;
+
+	// hack the depth range to prevent view model from poking into walls
+	qfglDepthRangef (0, 0.3);
+	R_AliasBegin ();
+	R_DrawAlias ();
+	R_AliasEnd ();
+	qfglDepthRangef (0, 1);
+}
+
 VISIBLE void
 R_RenderView (void)
 {
@@ -200,6 +218,7 @@ R_RenderView (void)
 	R_DrawSky ();
 	R_RenderEntities ();
 	R_DrawWaterSurfaces ();
+	R_DrawViewModel ();
 }
 
 VISIBLE void
