@@ -16,8 +16,8 @@ main (void)
 	pixb = texture2D (spriteb, stb).r;
 	if (pixa == 1.0 && pixb == 1.0)
 		discard;
-	cola = texture2D (palette, vec2 (pixa, 0.5)) * colora;
-	colb = texture2D (palette, vec2 (pixb, 0.5)) * colorb;
+	cola = texture2D (palette, vec2 (pixa, 0.0)) * colora;
+	colb = texture2D (palette, vec2 (pixb, 0.0)) * colorb;
 	col = mix (cola, colb, blend);
 	if (col.a == 0.0)
 		discard;

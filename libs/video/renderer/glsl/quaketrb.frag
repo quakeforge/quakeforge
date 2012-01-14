@@ -27,5 +27,5 @@ main (void)
 
 	st = turb_st (tst, realtime);
 	pix = texture2D (texture, st).r;
-	gl_FragColor = texture2D (palette, vec2 (pix, 0.5));
+	gl_FragColor = texture2D (palette, vec2 (pix, 0.0));
 }

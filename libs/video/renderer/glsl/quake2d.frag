@@ -12,5 +12,5 @@ main (void)
 	pix = texture2D (texture, st).r;
 	if (pix == 1.0)
 		discard;
-	gl_FragColor = texture2D (palette, vec2 (pix, 0.5)) * color;
+	gl_FragColor = texture2D (palette, vec2 (pix, 0.0)) * color;
 }
