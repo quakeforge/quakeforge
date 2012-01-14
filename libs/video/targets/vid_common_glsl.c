@@ -124,12 +124,13 @@ VID_SetPalette (unsigned char *palette)
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	for (i = 0, ip = palette, op = pal; i < 256; i++) {
+	for (i = 0, ip = palette, op = pal; i < 255; i++) {
 		*op++ = *ip++;
 		*op++ = *ip++;
 		*op++ = *ip++;
 		*op++ = 255;	// alpha = 1
 	}
+	QuatZero (op);
 
 	if (!glsl_palette) {
 		GLuint      tex;
