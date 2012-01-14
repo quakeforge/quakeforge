@@ -104,12 +104,32 @@ GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight,
 	}
 }
 
+static void
+GL_Mipmap8BitTexture (const byte *src, unsigned width, unsigned height,
+					  byte *mip)
+{
+	unsigned    mw = width >> 1;
+	unsigned    mh = height >> 1;
+	unsigned    i, j;
+
+	mw = max (mw, 1);
+	mh = max (mh, 1);
+
+	for (j = 0; j < mh; j++) {
+		for (i = 0; i < mw; i++) {
+			*mip++ = src [j * 2 * width + i * 2];
+		}
+	}
+}
+
 int
 GL_LoadQuakeMipTex (const texture_t *tex)
 {
 	unsigned    swidth, sheight;
 	GLuint      tnum;
 	byte       *data = (byte *) tex;
+	byte       *buffer = 0;
+	byte       *scaled;
 	int         lod;
 
 	for (swidth = 1; swidth < tex->width; swidth <<= 1);
@@ -119,54 +139,60 @@ GL_LoadQuakeMipTex (const texture_t *tex)
 	qfglBindTexture (GL_TEXTURE_2D, tnum);
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	//FIXME GL generated mipmaps and paletted textures don't mix (Quake's
-	//mipmaps do only 4 levels, while many textures need 6+)
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-					   GL_NEAREST);
+					   GL_NEAREST_MIPMAP_NEAREST);
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	if (swidth == tex->width && sheight == tex->height) {
-		qfglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE,
-						swidth, sheight, 0, GL_LUMINANCE,
-						GL_UNSIGNED_BYTE, data + tex->offsets[0]);
-		// generate mips first so supplied mips don't get overwritten
-		if (swidth > (1 << MIPLEVELS) || sheight > (1 << MIPLEVELS))
-			qfglGenerateMipmap (GL_TEXTURE_2D);
-		for (lod = 1; lod < MIPLEVELS; lod++) {
-			swidth >>= 1;
-			sheight >>= 1;
-			swidth = max (swidth, 1);
-			sheight = max (sheight, 1);
-			qfglTexImage2D (GL_TEXTURE_2D, lod, GL_LUMINANCE,
-							swidth, sheight, 0, GL_LUMINANCE,
-							GL_UNSIGNED_BYTE, data + tex->offsets[lod]);
+	if (swidth != tex->width || sheight != tex->height)
+		buffer = malloc (swidth * sheight);
+
+	// preshift so swidth and sheight are the correct sizes end the end of
+	// the loop
+	swidth <<= 1;
+	sheight <<= 1;
+	for (lod = 0; lod < MIPLEVELS; lod++) {
+		// preshift so swidth and sheight are the correct sizes end the end of
+		// the loop
+		swidth >>= 1;
+		sheight >>= 1;
+		swidth = max (swidth, 1);
+		sheight = max (sheight, 1);
+		if (buffer) {
+			unsigned    w = tex->width;
+			unsigned    h = tex->height;
+
+			w = max (w >> lod, 1);
+			h = max (h >> lod, 1);
+			GL_Resample8BitTexture (data + tex->offsets[lod], w, h,
+									buffer, swidth, sheight);
+			scaled = buffer;
+		} else {
+			scaled = data + tex->offsets[lod];
 		}
-	} else {
-		byte       *scaled;
-		scaled = malloc (swidth * sheight);
-		GL_Resample8BitTexture (data + tex->offsets[0],
-								tex->width, tex->height,
-								scaled, swidth, sheight);
-		qfglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE,
-						swidth, sheight, 0, GL_LUMINANCE,
-						GL_UNSIGNED_BYTE, scaled);
-		// generate mips first so supplied mips don't get overwritten
-		if (swidth > (1 << MIPLEVELS) || sheight > (1 << MIPLEVELS))
-			qfglGenerateMipmap (GL_TEXTURE_2D);
-		for (lod = 1; lod < MIPLEVELS; lod++) {
-			swidth >>= 1;
-			sheight >>= 1;
-			swidth = max (swidth, 1);
-			sheight = max (sheight, 1);
-			GL_Resample8BitTexture (data + tex->offsets[lod],
-									tex->width, tex->height,
-									scaled, swidth, sheight);
-			qfglTexImage2D (GL_TEXTURE_2D, lod, GL_LUMINANCE,
-							swidth, sheight, 0, GL_LUMINANCE,
-							GL_UNSIGNED_BYTE, data + tex->offsets[lod]);
-		}
-		free (scaled);
+		qfglTexImage2D (GL_TEXTURE_2D, lod, GL_LUMINANCE, swidth, sheight,
+						0, GL_LUMINANCE, GL_UNSIGNED_BYTE, scaled);
 	}
+	if (swidth > 1 || sheight > 1) {
+		// mipmap will hold the reduced image, so this is more than enough
+		byte       *mipmap = malloc (swidth * sheight);
+		byte       *mip = mipmap;
+		while (swidth > 1 || sheight > 1) {
+			// scaled holds the source of the last lod uploaded
+			GL_Mipmap8BitTexture (scaled, swidth, sheight, mip);
+			swidth >>= 1;
+			sheight >>= 1;
+			swidth = max (swidth, 1);
+			sheight = max (sheight, 1);
+			qfglTexImage2D (GL_TEXTURE_2D, lod, GL_LUMINANCE, swidth, sheight,
+							0, GL_LUMINANCE, GL_UNSIGNED_BYTE, mip);
+			scaled = mip;
+			mip += swidth * sheight;
+			lod++;
+		}
+		free (mipmap);
+	}
+	if (buffer)
+		free (buffer);
 	return tnum;
 }
 
