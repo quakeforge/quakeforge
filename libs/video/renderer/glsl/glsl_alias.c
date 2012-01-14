@@ -73,7 +73,6 @@ static struct {
 	shaderparam_t normalb;
 	shaderparam_t vertexa;
 	shaderparam_t vertexb;
-	shaderparam_t palette;
 	shaderparam_t colormap;
 	shaderparam_t skin;
 	shaderparam_t ambient;
@@ -93,7 +92,6 @@ static struct {
 	{"vnormalb", 0},
 	{"vertexa", 0},
 	{"vertexb", 0},
-	{"palette", 1},
 	{"colormap", 1},
 	{"skin", 1},
 	{"ambient", 1},
@@ -125,7 +123,6 @@ R_InitAlias (void)
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.normalb);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.vertexa);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.vertexb);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.palette);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.colormap);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.skin);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.ambient);
@@ -291,11 +288,6 @@ R_AliasBegin (void)
 	qfglEnable (GL_TEXTURE_2D);
 	qfglBindTexture (GL_TEXTURE_2D, glsl_colormap);
 
-	qfglUniform1i (quake_mdl.palette.location, 2);
-	qfglActiveTexture (GL_TEXTURE0 + 2);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
-
 	qfglUniform1i (quake_mdl.skin.location, 0);
 	qfglActiveTexture (GL_TEXTURE0 + 0);
 	qfglEnable (GL_TEXTURE_2D);
@@ -317,7 +309,5 @@ R_AliasEnd (void)
 	qfglActiveTexture (GL_TEXTURE0 + 0);
 	qfglDisable (GL_TEXTURE_2D);
 	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglDisable (GL_TEXTURE_2D);
-	qfglActiveTexture (GL_TEXTURE0 + 2);
 	qfglDisable (GL_TEXTURE_2D);
 }

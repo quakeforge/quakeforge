@@ -1,4 +1,3 @@
-uniform sampler2D palette;
 uniform sampler2D colormap;
 uniform sampler2D texture;
 uniform sampler2D lightmap;
@@ -13,6 +12,5 @@ main (void)
 	float       light = texture2D (lightmap, lst).r;
 	float       col;
 
-	col = texture2D (colormap, vec2 (pix, light * 4.0)).r;
-	gl_FragColor = texture2D (palette, vec2 (col, 0.0));
+	gl_FragColor = texture2D (colormap, vec2 (pix, light * 4.0));
 }

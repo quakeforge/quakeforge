@@ -129,7 +129,6 @@ static struct {
 	shaderparam_t mvp_matrix;
 	shaderparam_t tlst;
 	shaderparam_t vertex;
-	shaderparam_t palette;
 	shaderparam_t colormap;
 	shaderparam_t texture;
 	shaderparam_t lightmap;
@@ -138,7 +137,6 @@ static struct {
 	{"mvp_mat", 1},
 	{"tlst", 0},
 	{"vertex", 0},
-	{"palette", 1},
 	{"colormap", 1},
 	{"texture", 1},
 	{"lightmap", 1},
@@ -797,11 +795,6 @@ bsp_begin (void)
 	qfglEnable (GL_TEXTURE_2D);
 	qfglBindTexture (GL_TEXTURE_2D, glsl_colormap);
 
-	qfglUniform1i (quake_bsp.palette.location, 3);
-	qfglActiveTexture (GL_TEXTURE0 + 3);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
-
 	qfglUniform1i (quake_bsp.lightmap.location, 1);
 	qfglActiveTexture (GL_TEXTURE0 + 1);
 	qfglEnable (GL_TEXTURE_2D);
@@ -825,8 +818,6 @@ bsp_end (void)
 	qfglActiveTexture (GL_TEXTURE0 + 1);
 	qfglDisable (GL_TEXTURE_2D);
 	qfglActiveTexture (GL_TEXTURE0 + 2);
-	qfglDisable (GL_TEXTURE_2D);
-	qfglActiveTexture (GL_TEXTURE0 + 3);
 	qfglDisable (GL_TEXTURE_2D);
 
 	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
@@ -1158,7 +1149,6 @@ R_InitBsp (void)
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.mvp_matrix);
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.tlst);
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.vertex);
-	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.palette);
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.colormap);
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.texture);
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.lightmap);

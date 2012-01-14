@@ -74,7 +74,7 @@ GL_Common_Init_Cvars (void)
 void
 VID_SetPalette (unsigned char *palette)
 {
-	byte       *pal, *ip, *op;
+	byte       *pal, *col, *ip, *op;
 	unsigned int r, g, b, v;
 	unsigned short i;
 	unsigned int *table;
@@ -99,15 +99,37 @@ VID_SetPalette (unsigned char *palette)
 	}
 	d_8to24table[255] = 0;	// 255 is transparent
 
-	Sys_MaskPrintf (SYS_VID, "Converting palette to RGBA texture\n");
-	pal = malloc (256 * 4);
-	for (i = 0, ip = palette, op = pal; i < 255; i++) {
+	Sys_MaskPrintf (SYS_VID, "Converting palette/colormap to RGBA textures\n");
+	pal = malloc (256 * VID_GRADES * 4);
+	for (i = 0, col = vid.colormap8, op = pal; i < 256 * VID_GRADES; i++) {
+		ip = palette + *col++ * 3;
 		*op++ = *ip++;
 		*op++ = *ip++;
 		*op++ = *ip++;
 		*op++ = 255;	// alpha = 1
 	}
-	QuatZero (op);		// color 255 = transparent (alpha = 0)
+	for (i = 0; i < VID_GRADES; i++)
+		pal[i * 256 * 4 + 255 + 3] = 0;
+
+	if (!glsl_colormap) {
+		GLuint      tex;
+		qfglGenTextures (1, &tex);
+		glsl_colormap = tex;
+	}
+	qfglBindTexture (GL_TEXTURE_2D, glsl_colormap);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, 256, VID_GRADES, 0,
+					GL_RGBA, GL_UNSIGNED_BYTE, pal);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	for (i = 0, ip = palette, op = pal; i < 256; i++) {
+		*op++ = *ip++;
+		*op++ = *ip++;
+		*op++ = *ip++;
+		*op++ = 255;	// alpha = 1
+	}
 
 	if (!glsl_palette) {
 		GLuint      tex;
@@ -121,13 +143,7 @@ VID_SetPalette (unsigned char *palette)
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	qfglGenerateMipmap (GL_TEXTURE_2D);
 	free (pal);
-
-	if (glsl_colormap)
-		GL_ReleaseTexture (glsl_colormap);
-	glsl_colormap = GL_LoadQuakeTexture ("colormap", 256, VID_GRADES,
-										 vid.colormap8);
 }
 
 void
