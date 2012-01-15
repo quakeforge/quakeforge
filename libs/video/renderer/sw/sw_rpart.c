@@ -757,8 +757,6 @@ R_DrawParticles (void)
 	float       dvel, frametime, grav, time1, time2, time3;
 	particle_t *p, **particle;
 
-	D_StartParticles ();
-
 	VectorScale (vright, xscaleshrink, r_pright);
 	VectorScale (vup, yscaleshrink, r_pup);
 	VectorCopy (vpn, r_ppn);
@@ -838,7 +836,6 @@ R_DrawParticles (void)
 			}
 		}
 	}
-	D_EndParticles ();
 }
 
 void

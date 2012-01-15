@@ -35,20 +35,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_local.h"
 
 
-void
-D_EndParticles (void)
-{
-	// not used by software driver
-}
-
-
-void
-D_StartParticles (void)
-{
-	// not used by software driver
-}
-
-
 #ifdef PIC
 #undef USE_INTEL_ASM //XXX asm pic hack
 #endif

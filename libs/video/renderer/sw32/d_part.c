@@ -38,20 +38,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 
 void
-D_EndParticles (void)
-{
-	// not used by software driver
-}
-
-
-void
-D_StartParticles (void)
-{
-	// not used by software driver
-}
-
-
-void
 D_DrawParticle (particle_t *pparticle)
 {
 	vec3_t      local, transformed;
