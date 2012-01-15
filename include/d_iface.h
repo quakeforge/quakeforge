@@ -70,8 +70,13 @@ typedef enum {
 	part_tex_smoke,
 } ptextype_t;
 
+typedef struct particle_s particle_t;
+typedef void (*pt_phys_func)(particle_t *);
+
+pt_phys_func R_ParticlePhysics (ptype_t type);
+
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
-typedef struct particle_s
+struct particle_s
 {
 // driver-usable fields
 	vec3_t		org;
@@ -84,8 +89,9 @@ typedef struct particle_s
 	ptype_t		type;
 	float		die;
 	float		ramp;
-	struct particle_s	*next;
-} particle_t;
+	pt_phys_func phys;
+	particle_t *next;
+};
 
 #define PARTICLE_Z_CLIP	8.0
 

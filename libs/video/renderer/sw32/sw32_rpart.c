@@ -123,6 +123,7 @@ R_ReadPointFile_f (void)
 		p->die = 99999;
 		p->color = (-c) & 15;
 		p->type = pt_static;
+		p->phys = R_ParticlePhysics (p->type);
 		VectorZero (p->vel);
 		VectorCopy (org, p->org);
 	}
@@ -164,6 +165,7 @@ R_ParticleExplosion_QF (const vec3_t org)
 				p->vel[j] = (rand () % 512) - 256;
 			}
 		}
+		p->phys = R_ParticlePhysics (p->type);
 	}
 }
 
@@ -188,6 +190,7 @@ R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 		colorMod++;
 
 		p->type = pt_blob;
+		p->phys = R_ParticlePhysics (p->type);
 		for (j=0 ; j<3 ; j++)
 		{
 			p->org[j] = org[j] + ((rand()%32)-16);
@@ -230,6 +233,7 @@ R_BlobExplosion_QF (const vec3_t org)
 				p->vel[j] = (rand () % 512) - 256;
 			}
 		}
+		p->phys = R_ParticlePhysics (p->type);
 	}
 }
 
@@ -257,6 +261,7 @@ R_LavaSplash_QF (const vec3_t org)
 				p->die = r_realtime + 2 + (rand () & 31) * 0.02;
 				p->color = 224 + (rand () & 7);
 				p->type = pt_grav;
+				p->phys = R_ParticlePhysics (p->type);
 
 				dir[0] = j * 8 + (rand () & 7);
 				dir[1] = i * 8 + (rand () & 7);
@@ -296,6 +301,7 @@ R_TeleportSplash_QF (const vec3_t org)
 				p->die = r_realtime + 0.2 + (rand () & 7) * 0.02;
 				p->color = 7 + (rand () & 7);
 				p->type = pt_grav;
+				p->phys = R_ParticlePhysics (p->type);
 
 				dir[0] = j * 8;
 				dir[1] = i * 8;
@@ -340,6 +346,7 @@ R_DarkFieldParticles_ID (const entity_t *ent)
 				p->die = r_realtime + 0.2 + (rnd & 7) * 0.02;
 				p->color = 150 + rand () % 6;
 				p->type = pt_slowgrav;
+				p->phys = R_ParticlePhysics (p->type);
 
 				dir[0] = j * 8;
 				dir[1] = i * 8;
@@ -399,6 +406,7 @@ R_EntityParticles_ID (const entity_t *ent)
 		p->die = r_realtime + 0.01;
 		p->color = 0x6f;
 		p->type = pt_explode;
+		p->phys = R_ParticlePhysics (p->type);
 
 		p->org[0] = ent->origin[0] + r_avertexnormals[i][0] * dist +
 			forward[0] * beamlength;
@@ -430,6 +438,7 @@ R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
 		p->die = r_realtime + 0.1 * (rand () % 5);
 		p->color = (color & ~7) + (rand () & 7);
 		p->type = pt_slowgrav;
+		p->phys = R_ParticlePhysics (p->type);
 		for (j = 0; j < 3; j++) {
 			p->org[j] = org[j] + ((rand () & 15) - 8);
 			p->vel[j] = dir[j];	// + (rand()%300)-150;
@@ -510,6 +519,7 @@ R_RocketTrail_QF (const entity_t *ent)
 		p->ramp = (rand () & 3);
 		p->color = ramp3[(int) p->ramp];
 		p->type = pt_fire;
+		p->phys = R_ParticlePhysics (p->type);
 		for (j = 0; j < 3; j++)
 			p->org[j] = old_origin[j] + ((rand () % 6) - 3);
 
@@ -548,6 +558,7 @@ R_GrenadeTrail_QF (const entity_t *ent)
 		p->ramp = (rand () & 3) + 2;
 		p->color = ramp3[(int) p->ramp];
 		p->type = pt_fire;
+		p->phys = R_ParticlePhysics (p->type);
 		for (j = 0; j < 3; j++)
 			p->org[j] = old_origin[j] + ((rand () % 6) - 3);
 
@@ -584,6 +595,7 @@ R_BloodTrail_QF (const entity_t *ent)
 
 		p->die = r_realtime + 2;
 		p->type = pt_slowgrav;
+		p->phys = R_ParticlePhysics (p->type);
 		p->color = 67 + (rand () & 3);
 		for (j = 0; j < 3; j++)
 			p->org[j] = old_origin[j] + ((rand () % 6) - 3);
@@ -622,6 +634,7 @@ R_SlightBloodTrail_QF (const entity_t *ent)
 
 		p->die = r_realtime + 2;
 		p->type = pt_slowgrav;
+		p->phys = R_ParticlePhysics (p->type);
 		p->color = 67 + (rand () & 3);
 		for (j = 0; j < 3; j++)
 			p->org[j] = old_origin[j] + ((rand () % 6) - 3);
@@ -658,6 +671,7 @@ R_WizTrail_QF (const entity_t *ent)
 
 		p->die = r_realtime + 0.5;
 		p->type = pt_static;
+		p->phys = R_ParticlePhysics (p->type);
 		p->color = 52 + ((tracercount & 4) << 1);
 
 		tracercount++;
@@ -704,6 +718,7 @@ R_FlameTrail_QF (const entity_t *ent)
 
 		p->die = r_realtime + 0.5;
 		p->type = pt_static;
+		p->phys = R_ParticlePhysics (p->type);
 		p->color = 230 + ((tracercount & 4) << 1);
 
 		tracercount++;
@@ -751,6 +766,7 @@ R_VoorTrail_QF (const entity_t *ent)
 
 		p->die = r_realtime + 0.3;
 		p->type = pt_static;
+		p->phys = R_ParticlePhysics (p->type);
 		p->color = 9 * 16 + 8 + (rand () & 3);
 		for (j = 0; j < 3; j++)
 			p->org[j] = old_origin[j] + ((rand () & 15) - 8);
@@ -762,20 +778,11 @@ R_VoorTrail_QF (const entity_t *ent)
 void
 R_DrawParticles (void)
 {
-	float       dvel, grav, frametime, time1, time2, time3;
-	int         i;
 	particle_t *p, **particle;
 
 	VectorScale (vright, xscaleshrink, r_pright);
 	VectorScale (vup, yscaleshrink, r_pup);
 	VectorCopy (vpn, r_ppn);
-
-	frametime = r_frametime;
-	time3 = frametime * 15;
-	time2 = frametime * 10;				// 15;
-	time1 = frametime * 5;
-	grav = frametime * r_gravity * 0.05;
-	dvel = 4 * frametime;
 
 	for (particle = &active_particles; *particle;) {
 		if ((*particle)->die < r_realtime) {
@@ -789,61 +796,7 @@ R_DrawParticles (void)
 
 			D_DrawParticle (p);
 
-			p->org[0] += p->vel[0] * frametime;
-			p->org[1] += p->vel[1] * frametime;
-			p->org[2] += p->vel[2] * frametime;
-
-			switch (p->type) {
-				case pt_static:
-					break;
-				case pt_fire:
-					p->ramp += time1;
-					if (p->ramp >= 6)
-						p->die = -1;
-					else
-						p->color = ramp3[(int) p->ramp];
-					p->vel[2] += grav;
-					break;
-				case pt_explode:
-					p->ramp += time2;
-					if (p->ramp >= 8)
-						p->die = -1;
-					else
-						p->color = ramp1[(int) p->ramp];
-					for (i = 0; i < 3; i++)
-						p->vel[i] += p->vel[i] * dvel;
-					p->vel[2] -= grav;
-					break;
-				case pt_explode2:
-					p->ramp += time3;
-					if (p->ramp >= 8)
-						p->die = -1;
-					else
-						p->color = ramp2[(int) p->ramp];
-					for (i = 0; i < 3; i++)
-						p->vel[i] -= p->vel[i] * frametime;
-					p->vel[2] -= grav;
-					break;
-				case pt_blob:
-					for (i = 0; i < 3; i++)
-						p->vel[i] += p->vel[i] * dvel;
-					p->vel[2] -= grav;
-					break;
-
-				case pt_blob2:
-					for (i = 0; i < 2; i++)
-						p->vel[i] -= p->vel[i] * dvel;
-					p->vel[2] -= grav;
-					break;
-				case pt_slowgrav:
-				case pt_grav:
-					p->vel[2] -= grav;
-					break;
-				default:
-					Sys_MaskPrintf (SYS_DEV, "unhandled particle type %d\n",
-									p->type);
-					break;
-			}
+			p->phys (p);
 		}
 	}
 }
@@ -914,6 +867,7 @@ R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
 	p->alpha = alpha;
 	VectorCopy (vel, p->vel);
 	p->type = type;
+	p->phys = R_ParticlePhysics (p->type);
 	p->die = die;
 	p->ramp = ramp;
 }

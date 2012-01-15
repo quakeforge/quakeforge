@@ -95,6 +95,7 @@ particle_new (ptype_t type, int texnum, const vec3_t org, float scale,
 	part->type = type;
 	part->die = die;
 	part->ramp = ramp;
+	part->phys = R_ParticlePhysics (type);
 }
 
 /*
@@ -1443,121 +1444,6 @@ R_VoorTrail_ID (const entity_t *ent)
 	}
 }
 
-static void
-R_ParticlePhysics (particle_t *part)
-{
-	float			grav, fast_grav,
-					time_125, time_25, time_40, time_55, time2, time4, time5,
-					time10, time15, time30, time50;
-	grav = (fast_grav = r_frametime * r_gravity) * 0.05;
-	time_125 = r_frametime * 0.125;
-	time_25= r_frametime * 0.25;
-	time_40 = r_frametime * 0.40;
-	time_55 = r_frametime * 0.55;
-	time2 = r_frametime * 2.0;
-	time4 = r_frametime * 4.0;
-	time5 = r_frametime * 5.0;
-	time10 = r_frametime * 10.0;
-	time15 = r_frametime * 15.0;
-	time30 = r_frametime * 30.0;
-	time50 = r_frametime * 50.0;
-
-	VectorMultAdd (part->org, r_frametime, part->vel, part->org);
-	switch (part->type) {
-		case pt_static:
-			break;
-		case pt_grav:
-			part->vel[2] -= grav;
-			break;
-		case pt_fire:
-			part->ramp += time5;
-			if (part->ramp >= 6) {
-				part->die = -1;
-				break;
-			}
-			part->color = ramp3[(int) part->ramp];
-			part->alpha = (6.0 - part->ramp) / 6.0;
-			part->vel[2] += grav;
-			break;
-		case pt_explode:
-			part->ramp += time10;
-			if (part->ramp >= 8) {
-				part->die = -1;
-				break;
-			}
-			part->color = ramp1[(int) part->ramp];
-			VectorMultAdd (part->vel, time4, part->vel, part->vel);
-			part->vel[2] -= grav;
-			break;
-		case pt_explode2:
-			part->ramp += time15;
-			if (part->ramp >= 8) {
-				part->die = -1;
-				break;
-			}
-			part->color = ramp2[(int) part->ramp];
-			VectorMultSub (part->vel, r_frametime, part->vel, part->vel);
-			part->vel[2] -= grav;
-			break;
-		case pt_blob:
-			VectorMultAdd (part->vel, time4, part->vel, part->vel);
-			part->vel[2] -= grav;
-			break;
-		case pt_blob2:
-			part->vel[0] -= part->vel[0] * time4;
-			part->vel[1] -= part->vel[1] * time4;
-			part->vel[2] -= grav;
-			break;
-		case pt_smoke:
-			if ((part->alpha -= time_40) <= 0.0)
-				part->die = -1;
-			part->scale += time4;
-//			part->org[2] += time30;
-			break;
-		case pt_smokecloud:
-			if ((part->alpha -= time_55) <= 0.0) {
-				part->die = -1;
-				break;
-			}
-			part->scale += time50;
-			part->org[2] += time30;
-			break;
-		case pt_bloodcloud:
-			if ((part->alpha -= time_25) <= 0.0) {
-				part->die = -1;
-				break;
-			}
-			part->scale += time4;
-			part->vel[2] -= grav;
-			break;
-		case pt_fallfade:
-			if ((part->alpha -= r_frametime) <= 0.0)
-				part->die = -1;
-			part->vel[2] -= fast_grav;
-			break;
-		case pt_fallfadespark:
-			part->ramp += time15;
-			if (part->ramp >= 8) {
-				part->die = -1;
-				break;
-			}
-			part->color = ramp1[(int) part->ramp];
-			if ((part->alpha -= r_frametime) <= 0.0)
-				part->die = -1;
-			part->vel[2] -= fast_grav;
-			break;
-		case pt_flame:
-			if ((part->alpha -= time_125) <= 0.0)
-				part->die = -1;
-			part->scale -= time2;
-			break;
-		default:
-			Sys_MaskPrintf (SYS_DEV, "unhandled particle type %d\n",
-							part->type);
-			break;
-	}
-}
-
 void
 R_DrawParticles (void)
 {
@@ -1656,7 +1542,7 @@ R_DrawParticles (void)
 			}
 		}
 
-		R_ParticlePhysics (part);
+		part->phys (part);
 
 		// LordHavoc: immediate removal of unnecessary particles (must be done
 		// to ensure compactor below operates properly in all cases)
