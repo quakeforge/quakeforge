@@ -104,7 +104,7 @@ R_AliasCheckBBox (void)
 	// expand, rotate, and translate points into worldspace
 	currententity->trivial_accept = 0;
 	pmodel = currententity->model;
-	if (!(paliashdr = pmodel->aliashdr))
+	if (!(pahdr = pmodel->aliashdr))
 		pahdr = Cache_Get (&pmodel->cache);
 	pmdl = (mdl_t *) ((byte *) pahdr + pahdr->model);
 
