@@ -52,6 +52,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "d_iface.h"
 #include "r_local.h"
 
+extern int alias_cache; //FIXME extern
 aliashdr_t *pheader;
 
 stvert_t    *stverts;
@@ -377,12 +378,17 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	Mod_LoadExternalSkins (mod);
 
 	// move the complete, relocatable alias model to the cache
-	end = Hunk_LowMark ();
-	total = end - start;
+	if (alias_cache) {
+		end = Hunk_LowMark ();
+		total = end - start;
 
-	mem = allocator (&mod->cache, total, loadname);
-	if (mem)
-		memcpy (mem, pheader, total);
+		mem = allocator (&mod->cache, total, loadname);
+		if (mem)
+			memcpy (mem, pheader, total);
 
-	Hunk_FreeToLowMark (start);
+		Hunk_FreeToLowMark (start);
+		mod->aliashdr = 0;
+	} else {
+		mod->aliashdr = pheader;
+	}
 }

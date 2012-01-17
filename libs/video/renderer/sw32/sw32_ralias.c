@@ -104,7 +104,8 @@ R_AliasCheckBBox (void)
 	// expand, rotate, and translate points into worldspace
 	currententity->trivial_accept = 0;
 	pmodel = currententity->model;
-	pahdr = Cache_Get (&pmodel->cache);
+	if (!(pahdr = pmodel->aliashdr))
+		pahdr = Cache_Get (&pmodel->cache);
 	pmdl = (mdl_t *) ((byte *) pahdr + pahdr->model);
 
 	R_AliasSetUpTransform (0);
@@ -157,7 +158,8 @@ R_AliasCheckBBox (void)
 	}
 
 	if (zfullyclipped) {
-		Cache_Release (&pmodel->cache);
+		if (!pmodel->aliashdr)
+			Cache_Release (&pmodel->cache);
 		return false;					// everything was near-z-clipped
 	}
 
@@ -219,7 +221,8 @@ R_AliasCheckBBox (void)
 	}
 
 	if (allclip) {
-		Cache_Release (&pmodel->cache);
+		if (!pmodel->aliashdr)
+			Cache_Release (&pmodel->cache);
 		return false;					// trivial reject off one side
 	}
 
@@ -231,7 +234,8 @@ R_AliasCheckBBox (void)
 		}
 	}
 
-	Cache_Release (&pmodel->cache);
+	if (!pmodel->aliashdr)
+		Cache_Release (&pmodel->cache);
 	return true;
 }
 
@@ -621,7 +625,8 @@ R_AliasDrawModel (alight_t *plighting)
 
 	r_amodels_drawn++;
 
-	paliashdr = Cache_Get (&currententity->model->cache);
+	if (!(paliashdr = currententity->model->aliashdr))
+		paliashdr = Cache_Get (&currententity->model->cache);
 	pmdl = (mdl_t *) ((byte *) paliashdr + paliashdr->model);
 
 	size = (CACHE_SIZE - 1)
@@ -666,5 +671,6 @@ R_AliasDrawModel (alight_t *plighting)
 	else
 		R_AliasPreparePoints ();
 
-	Cache_Release (&currententity->model->cache);
+	if (!currententity->model->aliashdr)
+		Cache_Release (&currententity->model->cache);
 }

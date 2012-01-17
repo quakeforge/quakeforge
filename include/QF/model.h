@@ -347,6 +347,7 @@ typedef enum {mod_brush, mod_sprite, mod_alias} modtype_t;
 typedef struct model_s {
 	char		 name[MAX_QPATH];
 	qboolean	 needload;		// bmodels and sprites don't cache normally
+	aliashdr_t  *aliashdr;		// if not null, alias model is not cached
 	qboolean	 hasfullbrights;
 
 	modtype_t	 type;
@@ -420,7 +421,7 @@ typedef struct model_s {
 	unsigned int checksum2;
 
 // additional model data
-	cache_user_t cache;		// access only through Mod_Extradata
+	cache_user_t cache;
 } model_t;
 
 // ============================================================================

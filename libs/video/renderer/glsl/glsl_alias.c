@@ -205,7 +205,8 @@ R_DrawAlias (void)
 	aliasvrt_t *pose1 = 0;		// VBO's are null based
 	aliasvrt_t *pose2 = 0;		// VBO's are null based
 
-	hdr = Cache_Get (&model->cache);
+	if (!(hdr = model->aliashdr))
+		hdr = Cache_Get (&model->cache);
 
 	calc_lighting (ent, &ambient, &shadelight, lightvec);
 
@@ -264,6 +265,8 @@ R_DrawAlias (void)
 					  sizeof (debug_indices) / sizeof (debug_indices[0]),
 					  GL_UNSIGNED_SHORT, debug_indices);
 #endif
+	if (!model->aliashdr)
+		Cache_Release (&model->cache);
 }
 
 // All alias models are drawn in a batch, so avoid thrashing the gl state

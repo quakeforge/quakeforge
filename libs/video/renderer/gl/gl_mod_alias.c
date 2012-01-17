@@ -516,7 +516,8 @@ R_DrawAliasModel (entity_t *e)
 	}
 
 	// locate the proper data
-	paliashdr = Cache_Get (&e->model->cache);
+	if (!(paliashdr = e->model->aliashdr))
+		paliashdr = Cache_Get (&e->model->cache);
 	c_alias_polys += paliashdr->mdl.numtris;
 
 	// if the model has a colorised/external skin, use it, otherwise use
@@ -686,5 +687,6 @@ R_DrawAliasModel (entity_t *e)
 		qfglDisable (GL_LIGHT0 + used_lights);
 	}
 
-	Cache_Release (&e->model->cache);
+	if (!e->model->aliashdr)
+		Cache_Release (&e->model->cache);
 }

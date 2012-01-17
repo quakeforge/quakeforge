@@ -31,8 +31,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -54,6 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 
 VISIBLE byte		player_8bit_texels[640 * 400];
+int alias_cache = 1;
 
 void *
 Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,

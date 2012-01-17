@@ -52,6 +52,8 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "r_shared.h"
 
+int alias_cache = 0;
+
 static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 #include "anorms.h"
 };

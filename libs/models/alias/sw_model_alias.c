@@ -31,8 +31,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -47,6 +46,8 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 #include "d_iface.h"
+
+int alias_cache = 1;
 
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses
