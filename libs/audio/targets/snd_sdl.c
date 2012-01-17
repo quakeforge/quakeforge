@@ -53,7 +53,13 @@ static __attribute__ ((used)) const char rcsid[] =
 
 static dma_t sn;
 static int snd_inited;
-static int snd_blocked = 0;
+static int snd_blocked;
+
+static unsigned shm_buflen;
+static unsigned char *shm_buf;
+static unsigned shm_rpos;
+
+static unsigned wpos;
 
 static cvar_t *snd_bits;
 static cvar_t *snd_rate;
@@ -71,25 +77,16 @@ static snd_output_funcs_t      plugin_info_snd_output_funcs;
 static void
 paint_audio (void *unused, Uint8 * stream, int len)
 {
-	int frameposbytes, framesbytes, frames;
-
-	frames = len / (sn.channels * (sn.samplebits / 8));
-	frameposbytes = sn.framepos * sn.channels * (sn.samplebits / 8);
-	framesbytes = sn.frames * sn.channels * (sn.samplebits / 8);
-
-	sn.framepos += frames;
-	while (sn.framepos >= sn.frames)
-		sn.framepos -= sn.frames;
-
-	if (sn.framepos + frames <= sn.frames)
-		memcpy (stream, sn.buffer + frameposbytes, len);
-	else {
-		memcpy (stream, sn.buffer + frameposbytes, framesbytes -
-				frameposbytes);
-		memcpy (stream + framesbytes - frameposbytes, sn.buffer, len -
-				(framesbytes - frameposbytes));
+	while (shm_rpos + len > shm_buflen) {
+		memcpy (stream, shm_buf + shm_rpos, shm_buflen - shm_rpos);
+		stream += shm_buflen - shm_rpos;
+		len -= shm_buflen - shm_rpos;
+		shm_rpos = 0;
 	}
-	*plugin_info_snd_output_data.soundtime += frames;
+	if (len) {
+		memcpy (stream, shm_buf + shm_rpos, len);
+		shm_rpos += len;
+	}
 }
 
 static void
@@ -101,7 +98,6 @@ SNDDMA_Init_Cvars (void)
 						 "sound playback rate. 0 is system default");
 	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, NULL,
 						 "sound sample depth. 0 is system default");
-
 }
 
 static volatile dma_t *
@@ -109,7 +105,8 @@ SNDDMA_Init (void)
 {
 	SDL_AudioSpec desired, obtained;
 
-	snd_inited = 0;
+	if (snd_inited)
+		return &sn;
 
 	if (SDL_Init (SDL_INIT_AUDIO) < 0) {
 		Sys_Printf ("Couldn't initialize SDL AUDIO: %s\n", SDL_GetError ());
@@ -179,20 +176,37 @@ SNDDMA_Init (void)
 	sn.frames = obtained.samples * 8;	// 8 chunks in the buffer
 	sn.framepos = 0;
 	sn.submission_chunk = 1;
-	sn.buffer = calloc(sn.frames * sn.channels * (sn.samplebits / 8), 1);
+
+	shm_buflen = sn.frames * sn.channels * (sn.samplebits / 8);
+
+	sn.buffer = calloc (shm_buflen, 1);
 	if (!sn.buffer)
 		Sys_Error ("Failed to allocate buffer for sound!");
 
-	SDL_LockAudio();
-	SDL_PauseAudio (0);
+	shm_buf = calloc (shm_buflen, 1);
+	if (!shm_buf)
+		Sys_Error ("Failed to allocate buffer for sound!");
+
+	shm_rpos = wpos = 0;
+
+	if (!snd_blocked)
+		SDL_PauseAudio (0);
 
 	snd_inited = 1;
+
 	return &sn;
 }
 
 static int
 SNDDMA_GetDMAPos (void)
 {
+	if (!snd_inited)
+		return 0;
+
+	SDL_LockAudio ();
+	sn.framepos = shm_rpos / (sn.channels * (sn.samplebits / 8));
+	SDL_UnlockAudio ();
+
 	return sn.framepos;
 }
 
@@ -200,9 +214,9 @@ static void
 SNDDMA_Shutdown (void)
 {
 	if (snd_inited) {
-		SDL_PauseAudio (1);
-		SDL_UnlockAudio ();
 		SDL_CloseAudio ();
+		free (sn.buffer);
+		free (shm_buf);
 		snd_inited = 0;
 	}
 }
@@ -215,25 +229,53 @@ SNDDMA_Shutdown (void)
 static void
 SNDDMA_Submit (void)
 {
-	if (snd_blocked)
+	static unsigned old_paintedtime;
+	unsigned len;
+
+	if (!snd_inited || snd_blocked)
 		return;
 
-	SDL_UnlockAudio();
-	SDL_LockAudio();
+	SDL_LockAudio ();
+
+	if (*plugin_info_snd_output_data.paintedtime < old_paintedtime)
+		old_paintedtime = 0;
+
+	len = (*plugin_info_snd_output_data.paintedtime - old_paintedtime) *
+			sn.channels * (sn.samplebits / 8);
+
+	old_paintedtime = *plugin_info_snd_output_data.paintedtime;
+
+	while (wpos + len > shm_buflen) {
+		memcpy (shm_buf + wpos, sn.buffer + wpos, shm_buflen - wpos);
+		len -= shm_buflen - wpos;
+		wpos = 0;
+	}
+	if (len) {
+		memcpy (shm_buf + wpos, sn.buffer + wpos, len);
+		wpos += len;
+	}
+
+	SDL_UnlockAudio ();
 }
 
 static void
 SNDDMA_BlockSound (void)
 {
-	++snd_blocked;
+	if (!snd_inited)
+		return;
+
+	if (++snd_blocked == 1)
+		SDL_PauseAudio (1);
 }
 
 static void
 SNDDMA_UnblockSound (void)
 {
-	if (!snd_blocked)
+	if (!snd_inited || !snd_blocked)
 		return;
-	--snd_blocked;
+
+	if (!--snd_blocked)
+		SDL_PauseAudio (0);
 }
 
 PLUGIN_INFO(snd_output, sdl)
@@ -243,7 +285,7 @@ PLUGIN_INFO(snd_output, sdl)
 	plugin_info.plugin_version = "0.1";
 	plugin_info.description = "SDL digital output";
 	plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
-		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
+		"Copyright (C) 1999,2000,2001,2012  contributors of the QuakeForge "
 		"project\n"
 		"Please see the file \"AUTHORS\" for a list of contributors";
 	plugin_info.functions = &plugin_info_funcs;
