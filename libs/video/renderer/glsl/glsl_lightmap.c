@@ -197,6 +197,9 @@ R_BuildLightmaps (model_t **models, int num_models)
 	if (!light_scrap) {
 		light_scrap = GL_CreateScrap (2048, GL_LUMINANCE);
 		light_data = malloc (BLOCK_SIZE * MAX_LIGHTMAPS);
+	} else {
+		GL_ScrapClear (light_scrap);
+		memset (light_data, 0, BLOCK_SIZE * MAX_LIGHTMAPS);
 	}
 	R_BuildLightMap = R_BuildLightMap_1;
 
