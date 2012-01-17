@@ -33,6 +33,7 @@
 
 typedef struct scrap_s scrap_t;
 typedef struct subpic_s {
+	const struct subpic_s * const next;
 	const scrap_t * const scrap;
 	const struct vrect_s * const rect;
 	const int   tnum;					///< texture number
@@ -52,6 +53,7 @@ void GL_TextureInit (void);
 
 scrap_t *GL_CreateScrap (int size, int format);
 void GL_DestroyScrap (scrap_t *scrap);
+void GL_ScrapClear (scrap_t *scrap);
 int GL_ScrapTexture (scrap_t *scrap);
 subpic_t *GL_ScrapSubpic (scrap_t *scrap, int width, int height);	//XXX slow!
 void GL_SubpicDelete (subpic_t *subpic);	//XXX slow!

@@ -57,6 +57,7 @@ struct scrap_s {
 	int         bpp;
 	vrect_t    *free_rects;
 	vrect_t    *rects;
+	subpic_t   *subpics;
 	struct scrap_s *next;
 };
 
@@ -292,6 +293,7 @@ GL_CreateScrap (int size, int format)
 	scrap->bpp = bpp;
 	scrap->free_rects = VRect_New (0, 0, size, size);
 	scrap->rects = 0;
+	scrap->subpics = 0;
 	scrap->next = scrap_list;
 	scrap_list = scrap;
 
@@ -312,18 +314,11 @@ GL_CreateScrap (int size, int format)
 }
 
 void
-GL_DestroyScrap (scrap_t *scrap)
+GL_ScrapClear (scrap_t *scrap)
 {
-	scrap_t   **s;
 	vrect_t    *t;
+	subpic_t   *sp;
 
-	for (s = &scrap_list; *s; s = &(*s)->next) {
-		if (*s == scrap) {
-			*s = scrap->next;
-			break;
-		}
-	}
-	GL_ReleaseTexture (scrap->tnum);
 	while (scrap->free_rects) {
 		t = scrap->free_rects;
 		scrap->free_rects = t->next;
@@ -334,6 +329,29 @@ GL_DestroyScrap (scrap_t *scrap)
 		scrap->rects = t->next;
 		VRect_Delete (t);
 	}
+	while (scrap->subpics) {
+		sp = scrap->subpics;
+		scrap->subpics = (subpic_t *) sp->next;
+		free (sp);
+	}
+
+	scrap->free_rects = VRect_New (0, 0, scrap->size, scrap->size);
+}
+
+void
+GL_DestroyScrap (scrap_t *scrap)
+{
+	scrap_t   **s;
+
+	for (s = &scrap_list; *s; s = &(*s)->next) {
+		if (*s == scrap) {
+			*s = scrap->next;
+			break;
+		}
+	}
+	GL_ScrapClear (scrap);
+	VRect_Delete (scrap->free_rects);
+	GL_ReleaseTexture (scrap->tnum);
 	free (scrap);
 }
 
@@ -389,6 +407,8 @@ GL_ScrapSubpic (scrap_t *scrap, int width, int height)
 	scrap->rects = rect;
 
 	subpic = malloc (sizeof (subpic_t));
+	*((subpic_t **) &subpic->next) = scrap->subpics;
+	scrap->subpics = subpic;
 	*((scrap_t **) &subpic->scrap) = scrap;
 	*((vrect_t **) &subpic->rect) = rect;
 	*((int *) &subpic->tnum) = scrap->tnum;
@@ -405,7 +425,14 @@ GL_SubpicDelete (subpic_t *subpic)
 	vrect_t    *rect = (vrect_t *) subpic->rect;
 	vrect_t    *old, *merge;
 	vrect_t   **t;
+	subpic_t  **sp;
 
+	for (sp = &scrap->subpics; *sp; sp = (subpic_t **) &(*sp)->next)
+		if (*sp == subpic)
+			break;
+	if (*sp != subpic)
+		Sys_Error ("GL_ScrapDelSubpic: broken subpic");
+	*sp = (subpic_t *) subpic->next;
 	free (subpic);
 	for (t = &scrap->rects; *t; t = &(*t)->next)
 		if (*t == rect)
