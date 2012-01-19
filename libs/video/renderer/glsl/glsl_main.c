@@ -218,6 +218,7 @@ R_RenderView (void)
 	R_DrawSky ();
 	R_RenderEntities ();
 	R_DrawWaterSurfaces ();
+	R_DrawParticles ();
 	R_DrawViewModel ();
 }
 
