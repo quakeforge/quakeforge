@@ -1486,7 +1486,7 @@ R_DrawParticles (void)
 			memcpy (VA[3].color, VA[0].color, sizeof (VA[0].color));
 
 			switch (part->tex) {
-				case 0:
+				case part_tex_dot:
 					VA[0].texcoord[0] = 0.0;
 					VA[0].texcoord[1] = 0.0;
 					VA[1].texcoord[0] = 0.5;
@@ -1496,7 +1496,7 @@ R_DrawParticles (void)
 					VA[3].texcoord[0] = 0.0;
 					VA[3].texcoord[1] = 0.5;
 					break;
-				case 1:
+				case part_tex_spark:
 					VA[0].texcoord[0] = 0.5;
 					VA[0].texcoord[1] = 0.0;
 					VA[1].texcoord[0] = 1.0;
@@ -1506,7 +1506,7 @@ R_DrawParticles (void)
 					VA[3].texcoord[0] = 0.5;
 					VA[3].texcoord[1] = 0.5;
 					break;
-				case 2:
+				case part_tex_smoke:
 					VA[0].texcoord[0] = 0.0;
 					VA[0].texcoord[1] = 0.5;
 					VA[1].texcoord[0] = 0.5;
