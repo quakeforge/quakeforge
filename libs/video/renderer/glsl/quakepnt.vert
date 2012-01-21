@@ -14,6 +14,6 @@ void
 main (void)
 {
 	gl_Position = mvp_mat * vec4 (vertex, 1.0);
-	gl_PointSize = max (1, 32768.0 * abs (1.0 / gl_Position.z));
+	gl_PointSize = max (1, 1024.0 * abs (1.0 / gl_Position.z));
 	color = vcolor;
 }
