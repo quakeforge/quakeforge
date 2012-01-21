@@ -1616,7 +1616,7 @@ draw_qf_particles (void)
 			VectorAdd (part->org, up_right_scale, VA[3].vertex);
 
 			VA += 4;
-			vacount += 4;
+			vacount += 6;
 		}
 
 		part->phys (part);
