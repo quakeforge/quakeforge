@@ -28,8 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -40,12 +39,14 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include <stdlib.h>
 
+#include "QF/image.h"
 #include "QF/qtypes.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
-#include "QF/GL/qf_noisetextures.h"
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
+
+#include "r_local.h"
 
 /*
 int         part_tex_dot;
@@ -75,80 +76,34 @@ GDT_InitParticleTexture (void)
 static void
 GDT_InitDotParticleTexture (void)
 {
-	byte        data[32][32][2];
-	int         x, y, dx2, dy, d;
+	tex_t      *tex;
 
-	for (x = 0; x < 32; x++) {
-		dx2 = x - 16;
-		dx2 *= dx2;
-		for (y = 0; y < 32; y++) {
-			dy = y - 16;
-			d = 255 - (dx2 + (dy * dy));
-			if (d <= 0)
-				d = 0;
-			data[y][x][0] = 255;
-			data[y][x][1] = (byte) d;
-		}
-	}
+	tex = R_DotParticleTexture ();
 	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, 32, 32, GL_LUMINANCE_ALPHA,
-					   GL_UNSIGNED_BYTE, data);
+					   GL_UNSIGNED_BYTE, tex->data);
+	free (tex);
 }
 
 static void
 GDT_InitSparkParticleTexture (void)
 {
-	byte        data[32][32][2];
-	int         x, y, dx2, dy, d;
+	tex_t      *tex;
 
-	for (x = 0; x < 32; x++) {
-		dx2 = 16 - abs (x - 16);
-		dx2 *= dx2;
-		for (y = 0; y < 32; y++) {
-			dy = 16 - abs (y - 16);
-			d = (dx2 + dy * dy) - 200;
-			if (d > 255) {
-				d = 255;
-			} else if (d < 1) {
-				d = 0;
-			}
-			data[y][x][0] = 255;
-			data[y][x][1] = (byte) d;
-		}
-	}
+	tex = R_SparkParticleTexture ();
 	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 32, 0, 32, 32, GL_LUMINANCE_ALPHA,
-					   GL_UNSIGNED_BYTE, data);
+					   GL_UNSIGNED_BYTE, tex->data);
+	free (tex);
 }
 
 static void
 GDT_InitSmokeParticleTexture (void)
 {
-	byte        d;
-	byte        data[32][32][2], noise1[32][32], noise2[32][32];
-	float       dx, dy2;
-	int         x, y, c;
+	tex_t      *tex;
 
-	memset (noise1, 0, sizeof (noise1));
-	noise_plasma (&noise1[0][0], 32);
-	noise_diamondsquare (&noise2[0][0], 32, 4);
-	for (y = 0; y < 32; y++) {
-		dy2 = y - 16;
-		dy2 *= dy2;
-		for (x = 0; x < 32; x++) {
-			dx = x - 16;
-			c = 255 - (dx * dx + dy2);
-			if (c < 1)
-				c = 0;
-			d = (noise1[y][x] + noise2[y][x]) / 2;
-			data[y][x][0] = 255;
-			if (d > 0) {
-				data[y][x][1] = (d * c) / 255;
-			} else {
-				data[y][x][1] = 0;
-			}
-		}
-	}
+	tex = R_SmokeParticleTexture ();
 	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, 32, 32, 32, GL_LUMINANCE_ALPHA,
-					   GL_UNSIGNED_BYTE, data);
+					   GL_UNSIGNED_BYTE, tex->data);
+	free (tex);
 }
 
 void

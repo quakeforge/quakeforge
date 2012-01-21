@@ -402,4 +402,8 @@ extern byte crosshair_data[];
 
 struct qpic_s *Draw_CrosshairPic (void);
 
+struct tex_s *R_DotParticleTexture (void);
+struct tex_s *R_SparkParticleTexture (void);
+struct tex_s *R_SmokeParticleTexture (void);
+
 #endif // _R_LOCAL_H
