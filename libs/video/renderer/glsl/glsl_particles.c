@@ -1627,8 +1627,8 @@ draw_id_particles (void)
 	qfglVertexAttribPointer (quake_point.vertex.location, 3, GL_FLOAT,
 							 0, sizeof (partvert_t),
 							 &particleVertexArray[0].vertex);
-	qfglVertexAttribPointer (quake_point.color.location, 1, GL_FLOAT,
-							 0, sizeof (partvert_t),
+	qfglVertexAttribPointer (quake_point.color.location, 1, GL_UNSIGNED_BYTE,
+							 1, sizeof (partvert_t),
 							 &particleVertexArray[0].color);
 	qfglDrawArrays (GL_POINTS, 0, vacount);
 
