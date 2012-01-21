@@ -41,6 +41,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/image.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
@@ -69,6 +70,7 @@ static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 static GLushort    *pVAindices;
 static partvert_t  *particleVertexArray;
 
+static GLuint   part_tex;
 
 static const char quakepoint_vert[] =
 #include "quakepnt.vc"
@@ -76,6 +78,14 @@ static const char quakepoint_vert[] =
 
 static const char quakepoint_frag[] =
 #include "quakepnt.fc"
+;
+
+static const char quakepart_vert[] =
+#include "quakepar.vc"
+;
+
+static const char quakepart_frag[] =
+#include "quakepar.fc"
 ;
 
 static struct {
@@ -90,6 +100,22 @@ static struct {
 	{"vertex", 0},
 	{"palette", 1},
 	{"vcolor", 0},
+};
+
+static struct {
+	int         program;
+	shaderparam_t mvp_matrix;
+	shaderparam_t st;
+	shaderparam_t vertex;
+	shaderparam_t color;
+	shaderparam_t texture;
+} quake_part = {
+	0,
+	{"mvp_mat", 1},
+	{"vst", 0},
+	{"vertex", 0},
+	{"vcolor", 0},
+	{"texture", 1},
 };
 
 inline static void
@@ -178,6 +204,8 @@ R_InitParticles (void)
 	int         vert;
 	int         frag;
 	float       v[2] = {0, 0};
+	byte        data[64][64][2];
+	tex_t      *tex;
 
 	qfglGetFloatv (GL_ALIASED_POINT_SIZE_RANGE, v);
 	Sys_MaskPrintf (SYS_GLSL, "point size: %g - %g\n", v[0], v[1]);
@@ -191,6 +219,38 @@ R_InitParticles (void)
 	GL_ResolveShaderParam (quake_point.program, &quake_point.vertex);
 	GL_ResolveShaderParam (quake_point.program, &quake_point.palette);
 	GL_ResolveShaderParam (quake_point.program, &quake_point.color);
+
+	vert = GL_CompileShader ("quakepar.vert", quakepart_vert,
+							 GL_VERTEX_SHADER);
+	frag = GL_CompileShader ("quakepar.frag", quakepart_frag,
+							 GL_FRAGMENT_SHADER);
+	quake_part.program = GL_LinkProgram ("quakepart", vert, frag);
+	GL_ResolveShaderParam (quake_part.program, &quake_part.mvp_matrix);
+	GL_ResolveShaderParam (quake_part.program, &quake_part.st);
+	GL_ResolveShaderParam (quake_part.program, &quake_part.vertex);
+	GL_ResolveShaderParam (quake_part.program, &quake_part.color);
+	GL_ResolveShaderParam (quake_part.program, &quake_part.texture);
+
+	memset (data, 0, sizeof (data));
+	qfglGenTextures (1, &part_tex);
+	qfglBindTexture (GL_TEXTURE_2D, part_tex);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, 64, 64, 0,
+					GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, data);
+	tex = R_DotParticleTexture ();
+	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, 32, 32, GL_LUMINANCE_ALPHA,
+					   GL_UNSIGNED_BYTE, tex->data);
+	free (tex);
+	tex = R_SparkParticleTexture ();
+	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 32, 0, 32, 32, GL_LUMINANCE_ALPHA,
+					   GL_UNSIGNED_BYTE, tex->data);
+	free (tex);
+	tex = R_SmokeParticleTexture ();
+	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, 32, 32, 32, GL_LUMINANCE_ALPHA,
+					   GL_UNSIGNED_BYTE, tex->data);
+	free (tex);
+
 	if (particleVertexArray)
 		free (particleVertexArray);
 	particleVertexArray = calloc (r_maxparticles * 4, sizeof (partvert_t));
@@ -1467,8 +1527,23 @@ draw_qf_particles (void)
 	particle_t *part;
 	vec3_t      up_scale, right_scale, up_right_scale, down_right_scale;
 	partvert_t *VA;
+	mat4_t      vp_mat;
 
-//	qfglBindTexture (GL_TEXTURE_2D, part_tex);
+	Mat4Mult (glsl_projection, glsl_view, vp_mat);
+
+	qfglDepthMask (GL_FALSE);
+	qfglUseProgram (quake_part.program);
+	qfglEnableVertexAttribArray (quake_part.vertex.location);
+	qfglEnableVertexAttribArray (quake_part.color.location);
+	qfglEnableVertexAttribArray (quake_part.st.location);
+
+	qfglUniformMatrix4fv (quake_part.mvp_matrix.location, 1, false, vp_mat);
+
+	qfglUniform1i (quake_part.texture.location, 0);
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglBindTexture (GL_TEXTURE_2D, part_tex);
+
 	// LordHavoc: particles should not affect zbuffer
 	qfglDepthMask (GL_FALSE);
 
@@ -1555,6 +1630,15 @@ draw_qf_particles (void)
 			activeparticles++;
 		}
 	}
+	qfglVertexAttribPointer (quake_part.vertex.location, 3, GL_FLOAT,
+							 0, sizeof (partvert_t),
+							 &particleVertexArray[0].vertex);
+	qfglVertexAttribPointer (quake_part.color.location, 4, GL_UNSIGNED_BYTE,
+							 1, sizeof (partvert_t),
+							 &particleVertexArray[0].color);
+	qfglVertexAttribPointer (quake_part.st.location, 2, GL_FLOAT,
+							 0, sizeof (partvert_t),
+							 &particleVertexArray[0].texcoord);
 	qfglDrawElements (GL_TRIANGLES, vacount, GL_UNSIGNED_SHORT, pVAindices);
 
 	k = 0;
@@ -1567,6 +1651,11 @@ draw_qf_particles (void)
 	numparticles = activeparticles;
 
 	qfglDepthMask (GL_TRUE);
+	qfglDisableVertexAttribArray (quake_part.vertex.location);
+	qfglDisableVertexAttribArray (quake_part.color.location);
+	qfglDisableVertexAttribArray (quake_part.st.location);
+	qfglActiveTexture (GL_TEXTURE0 + 0);
+	qfglDisable (GL_TEXTURE_2D);
 }
 
 static void
@@ -1653,7 +1742,7 @@ R_DrawParticles (void)
 {
 	if (!r_particles->int_val)
 		return;
-	if (0 && r_particles_style->int_val) {
+	if (r_particles_style->int_val) {
 		draw_qf_particles ();
 	} else {
 		draw_id_particles ();
