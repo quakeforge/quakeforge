@@ -177,6 +177,10 @@ R_InitParticles (void)
 	unsigned    i;
 	int         vert;
 	int         frag;
+	float       v[2] = {0, 0};
+
+	qfglGetFloatv (GL_ALIASED_POINT_SIZE_RANGE, v);
+	Sys_MaskPrintf (SYS_GLSL, "point size: %g - %g\n", v[0], v[1]);
 
 	vert = GL_CompileShader ("quakepnt.vert", quakepoint_vert,
 							 GL_VERTEX_SHADER);
