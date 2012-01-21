@@ -489,7 +489,7 @@ R_BuildDisplayLists (model_t **models, int num_models)
 
 	QuatSet (1, 0, 0, 0, sky_rotation[0]);
 	QuatSet (1, 0, 0, 0, sky_rotation[1]);
-	QuatSet (0, 0.02, 0.03, 0.01, sky_velocity);
+	QuatSet (0, 0, 0, 0, sky_velocity);
 	QuatExp (sky_velocity, sky_velocity);
 	sky_time = r_realtime;
 
