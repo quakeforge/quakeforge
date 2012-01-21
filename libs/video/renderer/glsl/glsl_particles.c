@@ -59,6 +59,11 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "r_local.h"
 #include "r_shared.h"
 
+//FIXME not part of GLES, but needed for GL
+#ifndef GL_VERTEX_PROGRAM_POINT_SIZE
+# define GL_VERTEX_PROGRAM_POINT_SIZE 0x8642
+#endif
+
 //FIXME should not be here
 static int  ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 //static int  ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
@@ -207,6 +212,7 @@ R_InitParticles (void)
 	byte        data[64][64][2];
 	tex_t      *tex;
 
+	qfglEnable (GL_VERTEX_PROGRAM_POINT_SIZE);
 	qfglGetFloatv (GL_ALIASED_POINT_SIZE_RANGE, v);
 	Sys_MaskPrintf (SYS_GLSL, "point size: %g - %g\n", v[0], v[1]);
 
