@@ -278,6 +278,7 @@ beam_setup (beam_t *b, qboolean transform)
 	seed = b->seed + ((int) (cl.time * BEAM_SEED_INTERVAL) %
 					  BEAM_SEED_INTERVAL);
 
+	ang[ROLL] = 0;
 	while (ent_count--) {
 		tent = new_temp_entity ();
 		tent->next = b->tents;
@@ -293,6 +294,7 @@ beam_setup (beam_t *b, qboolean transform)
 			ang[ROLL] = seed % 360;
 			CL_TransformEntity (&tent->ent, ang, true);
 		}
+		VectorCopy (ang, tent->ent.angles);
 		R_AddEfrags (&tent->ent);
 	}
 }
