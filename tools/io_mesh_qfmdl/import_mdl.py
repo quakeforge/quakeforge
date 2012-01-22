@@ -108,7 +108,8 @@ def setup_skins (mdl, uvs):
         for j, uv in enumerate(f.uv):
             uv[0], uv[1] = mdl_uv[j]
         f.image = img
-        f.use_image = True
+        if hasattr(f, "use_image"):     # for older blender
+            f.use_image = True
     mat = bpy.data.materials.new(mdl.name)
     mat.diffuse_color = (1,1,1)
     mat.use_raytrace = False
