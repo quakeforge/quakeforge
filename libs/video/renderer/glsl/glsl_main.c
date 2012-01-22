@@ -44,7 +44,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/screen.h"
-#include "QF/skin.h"
 #include "QF/sys.h"
 
 #include "QF/GLSL/defines.h"
@@ -256,37 +255,6 @@ Fog_Update (float density, float red, float green, float blue, float time)
 
 VISIBLE void
 Fog_ParseWorldspawn (struct plitem_s *worldspawn)
-{
-}
-
-VISIBLE void
-Skin_Player_Model (model_t *model)
-{
-}
-
-VISIBLE void
-Skin_Set_Translate (int top, int bottom, void *_dest)
-{
-}
-
-VISIBLE void
-Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin)
-{
-}
-
-VISIBLE void
-Skin_Do_Translation_Model (struct model_s *model, int skinnum, int slot,
-						   skin_t *skin)
-{
-}
-
-VISIBLE void
-Skin_Process (skin_t *skin, struct tex_s * tex)
-{
-}
-
-VISIBLE void
-Skin_Init_Translation (void)
 {
 }
 

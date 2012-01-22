@@ -42,6 +42,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include <stdlib.h>
 
 #include "QF/render.h"
+#include "QF/skin.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
@@ -201,7 +202,7 @@ R_DrawAlias (void)
 	aliashdr_t *hdr;
 	vec_t       norm_mat[9];
 	mat4_t      mvp_mat;
-	maliasskindesc_t *skin;
+	int         skin_tex;
 	aliasvrt_t *pose1 = 0;		// VBO's are null based
 	aliasvrt_t *pose2 = 0;		// VBO's are null based
 
@@ -225,7 +226,14 @@ R_DrawAlias (void)
 	Mat4Mult (ent->transform, mvp_mat, mvp_mat);
 	Mat4Mult (alias_vp, mvp_mat, mvp_mat);
 
-	skin = R_AliasGetSkindesc (ent->skinnum, hdr);
+	if (ent->skin) {
+		skin_t     *skin = ent->skin;
+		skin_tex = skin->texture;
+	} else {
+		maliasskindesc_t *skindesc;
+		skindesc = R_AliasGetSkindesc (ent->skinnum, hdr);
+		skin_tex = skindesc->texnum;
+	}
 	blend = R_AliasGetLerpedFrames (ent, hdr);
 
 	pose1 += ent->pose1 * hdr->poseverts;
@@ -234,7 +242,7 @@ R_DrawAlias (void)
 	skin_size[0] = hdr->mdl.skinwidth;
 	skin_size[1] = hdr->mdl.skinheight;
 
-	qfglBindTexture (GL_TEXTURE_2D, skin->texnum);
+	qfglBindTexture (GL_TEXTURE_2D, skin_tex);
 
 #ifndef TETRAHEDRON
 	qfglBindBuffer (GL_ARRAY_BUFFER, hdr->posedata);
