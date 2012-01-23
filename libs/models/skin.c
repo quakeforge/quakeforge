@@ -42,17 +42,25 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include <stdlib.h>
 
+#include "QF/hash.h"
 #include "QF/image.h"
 #include "QF/model.h"
+#include "QF/pcx.h"
+#include "QF/quakefs.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "QF/GLSL/funcs.h"
 
-// if more than 32 clients are to be supported, then this will need to be
-// updated
-#define MAX_TRANSLATIONS 32
+typedef struct skinbank_s {
+	char       *name;
+	tex_t      *texels;
+	int         users;
+} skinbank_t;
+
 static byte translations[MAX_TRANSLATIONS][VID_GRADES * 256];
+static hashtab_t *skin_cache;
 
 static skin_t *
 new_skin (void)
@@ -113,8 +121,110 @@ Skin_SetColormap (skin_t *skin, int cmap)
 	return skin;
 }
 
+skin_t *
+Skin_SetSkin (skin_t *skin, int cmap, const char *skinname)
+{
+	char       *name = 0;
+	skinbank_t *sb = 0;
+	tex_t      *tex = 0;
+
+	if (skinname) {
+		name = QFS_CompressPath (skinname);
+		QFS_StripExtension (name, name);
+		if (strchr (name, '.') || strchr (name, '/')) {
+			Sys_Printf ("Bad skin name: '%s'\n", skinname);
+			free (name);
+			name = 0;
+		}
+	}
+
+	do {
+		QFile      *file;
+		byte       *ipix, *opix;
+		int         i;
+		tex_t      *out;
+
+		if (!name)
+			break;
+		sb = Hash_Find (skin_cache, name);
+		if (sb) {
+			sb->users++;
+			tex = sb->texels;
+			break;
+		}
+
+		if (Hash_NumElements (skin_cache) >= MAX_CACHED_SKINS) {
+			Sys_Printf ("Too many skins\n");
+			free (name);
+			name = 0;
+			break;
+		}
+
+		QFS_FOpenFile (va ("skins/%s.pcx", name), &file);
+		if (!file) {
+			Sys_Printf ("Couldn't load skin %s\n", name);
+			free (name);
+			name = 0;
+			break;
+		}
+		tex = LoadPCX (file, 0, vid.palette);
+		Qclose (file);
+		if (!tex || tex->width > 320 || tex->height > 200) {
+			Sys_Printf ("Bad skin %s\n", name);
+			free (name);
+			name = 0;
+			tex = 0;
+			break;
+		}
+		out = malloc (field_offset (tex_t, data[PLAYER_WIDTH*PLAYER_HEIGHT]));
+		out->width = PLAYER_WIDTH;
+		out->height = PLAYER_HEIGHT;
+		out->format = tex_palette;
+		out->palette = vid.palette;
+		memset (out->data, 0, PLAYER_WIDTH * PLAYER_HEIGHT);
+		opix = out->data;
+		ipix = tex->data;
+		for (i = 0; i < out->height; i++) {
+			memcpy (opix, ipix, min (tex->width, out->width));
+			ipix += tex->width;
+			opix += out->width;
+		}
+		tex = out;
+
+		sb = malloc (sizeof (skinbank_t));
+		sb->texels = tex;
+		sb->name = name;
+		sb->users = 1;
+		Hash_Add (skin_cache, sb);
+	} while (0);
+
+	if (!skin)
+		skin = new_skin ();
+	skin->texels = tex;
+	skin->name = name;
+	Skin_SetupSkin (skin, cmap);
+	return skin;
+}
+
+static const char *
+skin_getkey (void *sb, void *unused)
+{
+	return ((skinbank_t *) sb)->name;
+}
+
+static void
+skin_free (void *_sb, void *unused)
+{
+	skinbank_t *sb = (skinbank_t *) _sb;
+
+	free (sb->name);
+	free (sb->texels);
+	free (sb);
+}
+
 void
 Skin_Init (void)
 {
+	skin_cache = Hash_NewTable (127, skin_getkey, skin_free, 0);
 	Skin_InitTranslations ();
 }

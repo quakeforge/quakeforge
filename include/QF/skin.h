@@ -42,6 +42,13 @@
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200
 
+// if more than 32 clients are to be supported, then this will need to be
+// updated
+#define MAX_TRANSLATIONS 32
+
+#define PLAYER_WIDTH 296
+#define PLAYER_HEIGHT 194
+
 typedef struct skin_s {
 	const char *name;
 	qboolean	valid;		// the skin was found
@@ -52,6 +59,7 @@ typedef struct skin_s {
 } skin_t;
 
 skin_t *Skin_SetColormap (skin_t *skin, int cmap);
+skin_t *Skin_SetSkin (skin_t *skin, int cmap, const char *skinname);
 void Skin_SetupSkin (skin_t *skin, int cmap);
 void Skin_SetTranslation (int cmap, int top, int bottom);
 void Skin_ProcessTranslation (int cmap, const byte *translation);

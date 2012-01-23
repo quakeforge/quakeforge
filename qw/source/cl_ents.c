@@ -208,7 +208,6 @@ CL_LinkPacketEntities (void)
 	entity_state_t *s1;
 	model_t		   *model;
 	packet_entities_t *pack;
-	//player_info_t  *info;
 
 	pack = &cl.frames[cls.netchan.incoming_sequence &
 					  UPDATE_MASK].packet_entities;
@@ -244,26 +243,12 @@ CL_LinkPacketEntities (void)
 
 		// set colormap
 		if (s1->colormap && (s1->colormap <= MAX_CLIENTS)
-			&& cl.players[s1->colormap - 1].name[0]
-			&& !strcmp (ent->model->name, "progs/player.mdl")) {
+			&& cl.players[s1->colormap - 1].name[0]) {
 			ent->skin = Skin_SetColormap (ent->skin, s1->colormap);
-			//info = &cl.players[s1->colormap - 1];
 		} else {
 			ent->skin = Skin_SetColormap (ent->skin, 0);
-			//info = NULL;
 		}
-#if 0 //XXX
-		if (info && info->skinname && !info->skin)
-			Skin_Find (info);
-		if (info && info->skin) {
-			ent->skin = Skin_NewTempSkin ();
-			if (ent->skin) {
-				CL_NewTranslation (s1->colormap - 1, ent->skin);
-			}
-		} else {
-			ent->skin = NULL;
-		}
-#endif
+
 		// LordHavoc: cleaned up Endy's coding style, and fixed Endy's bugs
 		// Ender: Extend (Colormod) [QSG - Begin]
 		// N.B: All messy code below is the sole fault of LordHavoc and
@@ -494,24 +479,14 @@ CL_LinkPlayers (void)
 
 		if (state->pls.modelindex == cl_playerindex) { //XXX
 			// use custom skin
-#if 0
-			if (!info->skin)
-				Skin_Find (info);
-			if (info && info->skin) {
-				ent->skin = Skin_NewTempSkin ();
-				if (ent->skin) {
-					CL_NewTranslation (j, ent->skin);
-				}
-			} else {
-				ent->skin = NULL;
-			}
-#endif
+			Skin_SetSkin (ent->skin, j + 1, info->skinname->value);
+
 			ent->min_light = min (cl.fbskins, cl_fb_players->value);
 
 			if (ent->min_light >= 1.0)
 				ent->fullbright = 1;
 		} else {
-			ent->skin = NULL;
+			Skin_SetSkin (ent->skin, j + 1, 0);
 		}
 
 		// stuff entity in map
