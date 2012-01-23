@@ -1097,7 +1097,8 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 
 	s = Info_ValueForKey (player->userinfo, "name");
 	if (!*s && player->userid)
-		Info_SetValueForKey (player->userinfo, "name", va ("user-%i [exploit]", player->userid), 1);
+		Info_SetValueForKey (player->userinfo, "name",
+							 va ("user-%i [exploit]", player->userid), 1);
 	strncpy (player->name, Info_ValueForKey (player->userinfo, "name"),
 			 sizeof (player->name) - 1);
 	player->_topcolor = player->_bottomcolor = -1;

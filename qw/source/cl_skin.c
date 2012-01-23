@@ -42,6 +42,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/screen.h"
+#include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -192,7 +193,7 @@ skin_f (cvar_t *var)
 void
 CL_Skin_Init (void)
 {
-	//Skin_Init ();
+	Skin_Init ();
 	//Skin_Init_Cvars ();
 	Cmd_AddCommand ("skins", CL_Skins_f, "Download all skins that are "
 					"currently in use");

@@ -57,7 +57,10 @@ typedef struct skin_s {
 } skin_t;
 
 skin_t *Skin_SetColormap (skin_t *skin, int cmap);
+void Skin_SetColormap_ (skin_t *skin, int cmap);
 void Skin_SetTranslation (int cmap, int top, int bottom);
+void Skin_ProcessTranslation (int cmap, const byte *translation);
+void Skin_InitTranslations (void);
 
 extern byte player_8bit_texels[640 * 400];
 extern skin_t   skin_cache[MAX_CACHED_SKINS];

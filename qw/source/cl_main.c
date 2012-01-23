@@ -403,7 +403,8 @@ CL_ClearState (void)
 	memset (&cl, 0, sizeof (cl));
 	r_force_fullscreen = 0;
 
-	// Note: we should probably hack around this and give diff values for diff gamedirs
+	// Note: we should probably hack around this and give diff values for
+	// diff gamedirs
 	cl.fpd = FPD_DEFAULT;
 	cl.fbskins = FBSKINS_DEFAULT;
 

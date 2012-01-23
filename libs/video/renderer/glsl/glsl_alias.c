@@ -203,6 +203,7 @@ R_DrawAlias (void)
 	vec_t       norm_mat[9];
 	mat4_t      mvp_mat;
 	int         skin_tex;
+	int         colormap;
 	aliasvrt_t *pose1 = 0;		// VBO's are null based
 	aliasvrt_t *pose2 = 0;		// VBO's are null based
 
@@ -226,7 +227,10 @@ R_DrawAlias (void)
 	Mat4Mult (ent->transform, mvp_mat, mvp_mat);
 	Mat4Mult (alias_vp, mvp_mat, mvp_mat);
 
-	if (ent->skin) {
+	colormap = glsl_colormap;
+	if (ent->skin && ent->skin->auxtex)
+		colormap = ent->skin->auxtex;
+	if (ent->skin && ent->skin->texnum) {
 		skin_t     *skin = ent->skin;
 		skin_tex = skin->texnum;
 	} else {
@@ -242,6 +246,9 @@ R_DrawAlias (void)
 	skin_size[0] = hdr->mdl.skinwidth;
 	skin_size[1] = hdr->mdl.skinheight;
 
+	qfglActiveTexture (GL_TEXTURE0 + 1);
+	qfglBindTexture (GL_TEXTURE_2D, colormap);
+	qfglActiveTexture (GL_TEXTURE0 + 0);
 	qfglBindTexture (GL_TEXTURE_2D, skin_tex);
 
 #ifndef TETRAHEDRON
@@ -297,7 +304,6 @@ R_AliasBegin (void)
 	qfglUniform1i (quake_mdl.colormap.location, 1);
 	qfglActiveTexture (GL_TEXTURE0 + 1);
 	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, glsl_colormap);
 
 	qfglUniform1i (quake_mdl.skin.location, 0);
 	qfglActiveTexture (GL_TEXTURE0 + 0);
