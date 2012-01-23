@@ -59,6 +59,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/qfplist.h"
 #include "QF/quakeio.h"
 #include "QF/screen.h"
+#include "QF/skin.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/teamplay.h"
@@ -365,7 +366,7 @@ Model_NextDownload (void)
 		if (strequal (cl.model_name[i], "progs/player.mdl")
 			&& cl.model_precache[i]->type == mod_alias) {
 			info_key = pmodel_name;
-			Skin_Player_Model (cl.model_precache[i]);
+			//XXX Skin_Player_Model (cl.model_precache[i]);
 		}
 		if (strequal (cl.model_name[i], "progs/eyes.mdl")
 			&& cl.model_precache[i]->type == mod_alias)
@@ -1111,8 +1112,8 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	else
 		player->spectator = false;
 
-	if (cls.state == ca_active)
-		Skin_Find (player);
+	//XXX if (cls.state == ca_active)
+		//XXX Skin_Find (player);
 
 	Sbar_Changed ();
 }

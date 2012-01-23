@@ -152,7 +152,7 @@ R_Init (void)
 	
 	texture_extension_number = R_InitGraphTextures (texture_extension_number);
 
-	texture_extension_number = Skin_Init_Textures (texture_extension_number);
+	//FIXME texture_extension_number = Skin_Init_Textures (texture_extension_number);
 
 	r_init = 1;
 	R_InitParticles ();

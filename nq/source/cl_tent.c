@@ -135,7 +135,7 @@ CL_Init_Entity (entity_t *ent)
 {
 	memset (ent, 0, sizeof (*ent));
 
-	ent->colormap = vid.colormap8;
+	ent->skin = 0;
 	QuatSet (1.0, 1.0, 1.0, 1.0, ent->colormod);
 	ent->scale = 1.0;
 	ent->pose1 = ent->pose2 = -1;

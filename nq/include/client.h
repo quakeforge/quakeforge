@@ -61,7 +61,6 @@ typedef struct
 	int		frags;
 	int		colors;			// two 4 bit fields
 	int		_colors;
-	byte	translations[4*VID_GRADES*256];	// space for colormap32
 } scoreboard_t;
 
 #define	NAME_LENGTH	64

@@ -30,6 +30,7 @@
 #define _SKIN_H
 
 #include "QF/qtypes.h"
+#include "QF/vid.h"
 #include "QF/zone.h"
 
 #define MAX_CACHED_SKINS 128
@@ -38,17 +39,22 @@
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200
 
+typedef struct translation_s {
+	byte        top[VID_GRADES][16];
+	byte        bottom[VID_GRADES][16];
+} translation_t;
+
 typedef struct skin_s {
-	char		name[MAX_SKIN_LENGTH];
-	qboolean	failedload;		// the name isn't a valid skin
-	union {
-		cache_user_t	cache;
-		struct tex_s	*texels;
-	} data;
-	int         texture;
-	int         fb_texture;
-	int         numfb;
+	const char *name;
+	qboolean	valid;		// the skin was found
+	struct tex_s *texels;
+	byte       *colormap;
+	int         texnum;
+	int         auxtex;
 } skin_t;
+
+skin_t *Skin_SetColormap (skin_t *skin, int cmap);
+void Skin_SetTranslation (int cmap, int top, int bottom);
 
 extern byte player_8bit_texels[640 * 400];
 extern skin_t   skin_cache[MAX_CACHED_SKINS];
@@ -68,7 +74,7 @@ int		Skin_Init_Textures (int base);
 void	Skin_Init (void);
 void	Skin_Init_Cvars (void);
 void	Skin_Init_Translation (void);
-void	Skin_Set_Translate (int top, int bottom, void *_dest);
+void	Skin_Set_Translate (int top, int bottom, translation_t *trans);
 void	Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin);
 void	Skin_Do_Translation_Model (struct model_s *model, int skinnum,
 								   int slot, skin_t *skin);

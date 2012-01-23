@@ -77,7 +77,6 @@ typedef struct entity_s {
 	vec_t					full_transform[4 * 4];
 	struct model_s			*model;			// NULL = no model
 	int						frame;
-	byte					*colormap;
 	int						skinnum;		// for Alias models
 	struct skin_s			*skin;
 

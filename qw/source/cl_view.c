@@ -671,7 +671,7 @@ V_CalcRefdef (void)
 	else
 		view->model = cl.model_precache[cl.stats[STAT_WEAPON]];
 	view->frame = view_message->pls.weaponframe;
-	view->colormap = vid.colormap8;
+	view->skin = 0;
 
 	// set up the refresh position
 	r_refdef.viewangles[PITCH] += cl.punchangle;

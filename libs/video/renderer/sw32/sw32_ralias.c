@@ -561,15 +561,17 @@ R_AliasSetupSkin (void)
 	r_affinetridesc.seamfixupX16 = (a_skinwidth >> 1) << 16;
 	r_affinetridesc.skinheight = pmdl->skinheight;
 
+	acolormap = vid.colormap8;
 	if (currententity->skin) {
 		tex_t      *base;
 
-		base = currententity->skin->data.texels;
+		base = currententity->skin->texels;
 		if (base) {
 			r_affinetridesc.pskin = base->data;
 			r_affinetridesc.skinwidth = base->width;
 			r_affinetridesc.skinheight = base->height;
 		}
+		acolormap = currententity->skin->colormap;
 	}
 }
 
@@ -646,10 +648,8 @@ R_AliasDrawModel (alight_t *plighting)
 	R_AliasSetupLighting (plighting);
 	R_AliasSetupFrame ();
 
-	if (!currententity->colormap)
-		Sys_Error ("R_AliasDrawModel: !currententity->colormap");
-
-	acolormap = currententity->colormap;
+	if (!acolormap)
+		acolormap = vid.colormap8;
 	if (acolormap == &vid.colormap8 && r_pixbytes != 1)
 	{
 		if (r_pixbytes == 2)

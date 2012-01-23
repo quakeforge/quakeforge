@@ -141,7 +141,7 @@ CL_Init_Entity (entity_t *ent)
 {
 	memset (ent, 0, sizeof (*ent));
 
-	ent->colormap = vid.colormap8;
+	ent->skin = 0;
 	QuatSet (1.0, 1.0, 1.0, 1.0, ent->colormod);
 	ent->scale = 1.0;
 	ent->pose1 = ent->pose2 = -1;
@@ -642,7 +642,7 @@ CL_ParseProjectiles (qboolean nail2)
 
 		pr = &tent->ent;
 		pr->model = cl.model_precache[cl_spikeindex];
-		pr->colormap = vid.colormap8;
+		pr->skin = 0;
 		pr->origin[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
 		pr->origin[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
 		pr->origin[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;

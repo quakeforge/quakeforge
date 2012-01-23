@@ -64,6 +64,7 @@ byte       *vid_colormap;
 
 // these two are not intended to be set directly
 cvar_t     *cl_name;
+cvar_t     *cl_color;
 
 cvar_t     *cl_writecfg;
 
@@ -131,7 +132,6 @@ void
 CL_InitCvars (void)
 {
 	Chase_Init_Cvars ();
-	CL_Skin_Init_Cvars ();
 	IN_Init_Cvars ();
 	VID_Init_Cvars ();
 	S_Init_Cvars ();
@@ -211,8 +211,6 @@ CL_ClearState (void)
 	r_view_model = &cl.viewent;
 
 	SZ_Clear (&cls.message);
-
-	Skin_ClearTempSkins ();
 
 	CL_ClearTEnts ();
 
@@ -529,7 +527,6 @@ CL_Init (cbuf_t *cbuf)
 	IN_Init ();
 
 	CL_SetState (ca_disconnected);
-	CL_Skin_Init ();
 	SZ_Alloc (&cls.message, 1024);
 
 	CL_Input_Init ();

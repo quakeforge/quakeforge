@@ -26,16 +26,10 @@
 	$Id$
 */
 
-#ifndef _CL_SKIN_H
-#define _CL_SKIN_H
+#ifndef __cl_skin_h
+#define __cl_skin_h
 
-#include "QF/qtypes.h"
-#include "QF/skin.h"
-
-void	CL_Skins_f (void);
-void	CL_AllSkins_f (void);
 void	Skin_NextDownload (void);
 void	CL_Skin_Init (void);
-void	CL_Skin_Init_Cvars (void);
 
-#endif
+#endif//__cl_skin_h

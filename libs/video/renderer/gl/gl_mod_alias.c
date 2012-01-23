@@ -522,12 +522,12 @@ R_DrawAliasModel (entity_t *e)
 
 	// if the model has a colorised/external skin, use it, otherwise use
 	// the skin embedded in the model data
-	if (e->skin && !gl_nocolors->int_val) {
+	if (e->skin && e->skin->texnum && !gl_nocolors->int_val) {
 		skin_t *skin = e->skin;
 
-		texture = skin->texture;
+		texture = skin->texnum;
 		if (gl_fb_models->int_val) {
-			fb_texture = skin->fb_texture;
+			fb_texture = skin->auxtex;
 		}
 	} else {
 		maliasskindesc_t *skindesc;

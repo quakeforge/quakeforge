@@ -1741,7 +1741,6 @@ Host_Init (void)
 
 	CL_Cam_Init_Cvars ();
 	CL_Input_Init_Cvars ();
-	CL_Skin_Init_Cvars ();
 	CL_Init_Cvars ();
 	CL_Prediction_Init_Cvars ();
 	Game_Init_Cvars ();

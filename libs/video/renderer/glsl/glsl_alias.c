@@ -228,7 +228,7 @@ R_DrawAlias (void)
 
 	if (ent->skin) {
 		skin_t     *skin = ent->skin;
-		skin_tex = skin->texture;
+		skin_tex = skin->texnum;
 	} else {
 		maliasskindesc_t *skindesc;
 		skindesc = R_AliasGetSkindesc (ent->skinnum, hdr);

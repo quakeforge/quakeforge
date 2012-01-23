@@ -155,7 +155,6 @@ CL_EntityNum (int num)
 		while (cl.num_entities <= num) {
 			cl_baselines[cl.num_entities].ent =
 				&cl_entities[cl.num_entities];
-			cl_entities[cl.num_entities].colormap = vid.colormap8;
 			cl.num_entities++;
 		}
 	}
@@ -523,13 +522,9 @@ CL_ParseUpdate (int bits)
 		i = MSG_ReadByte (net_message);
 	else
 		i = state->baseline.colormap;
-	if (!i)
-		ent->colormap = vid.colormap8;
-	else {
-		if (i > cl.maxclients)
-			Sys_Error ("i >= cl.maxclients");
-		ent->colormap = cl.scores[i - 1].translations;
-	}
+	if (i > cl.maxclients)
+		Sys_Error ("i > cl.maxclients");
+	ent->skin = Skin_SetColormap (ent->skin, i);
 
 	if (bits & U_SKIN)
 		skin = MSG_ReadByte (net_message);
@@ -537,11 +532,10 @@ CL_ParseUpdate (int bits)
 		skin = state->baseline.skin;
 	if (skin != ent->skinnum) {
 		ent->skinnum = skin;
-		if (num > 0 && num <= cl.maxclients) {
-			if (!ent->skin)
-				ent->skin = Skin_NewTempSkin ();
-			if (ent->skin)
-				CL_NewTranslation (num - 1, ent->skin);
+		if (num <= cl.maxclients) {
+			ent->skin = Skin_SetColormap (ent->skin, num);
+			Skin_SetTranslation (num, cl.scores[num].colors >> 4,
+								 cl.scores[num].colors & 0xf);
 		}
 	}
 
@@ -617,10 +611,9 @@ CL_ParseUpdate (int bits)
 		} else
 			forcelink = true;		// hack to make null model players work
 		if (num > 0 && num <= cl.maxclients) {
-			if (!ent->skin)
-				ent->skin = Skin_NewTempSkin ();
-			if (ent->skin)
-				CL_NewTranslation (num - 1, ent->skin);
+			ent->skin = Skin_SetColormap (ent->skin, num);
+			Skin_SetTranslation (num, cl.scores[num].colors >> 4,
+								 cl.scores[num].colors & 0xf);
 		}
 	}
 
@@ -824,7 +817,7 @@ CL_ParseStatic (int version)
 	//FIXME alpha & lerp
 	ent->model = cl.model_precache[state.baseline.modelindex];
 	ent->frame = state.baseline.frame;
-	ent->colormap = vid.colormap8;
+	ent->skin = 0;
 	ent->skinnum = state.baseline.skin;
 	if (state.baseline.colormod == 255) {
 		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
@@ -1028,10 +1021,9 @@ CL_ParseServerMessage (void)
 				} else {
 					entity_t   *ent = &cl_entities[i+1];
 					cl.scores[i].colors = MSG_ReadByte (net_message);
-					if (!ent->skin)
-						ent->skin = Skin_NewTempSkin ();
-					if (ent->skin)
-						CL_NewTranslation (i, ent->skin);
+					ent->skin = Skin_SetColormap (ent->skin, i);
+					Skin_SetTranslation (i, cl.scores[i].colors >> 4,
+										 cl.scores[i].colors & 0xf);
 				}
 				break;
 

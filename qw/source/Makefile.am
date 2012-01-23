@@ -110,7 +110,7 @@ libqw_client_a_SOURCES= \
 		cl_cam.c cl_chat.c cl_cmd.c cl_cvar.c cl_demo.c cl_entparse.c \
 		cl_ents.c cl_http.c cl_input.c cl_main.c cl_ngraph.c cl_parse.c \
 		cl_pred.c cl_screen.c cl_skin.c cl_slist.c cl_tent.c cl_view.c \
-		locs.c sbar.c skin.c teamplay.c
+		locs.c sbar.c teamplay.c
 
 # Software-rendering clients
 

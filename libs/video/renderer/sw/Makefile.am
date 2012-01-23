@@ -26,7 +26,7 @@ sw_src= \
 	d_sky.c d_sprite.c d_surf.c d_vars.c d_zpoint.c draw.c fpu.c nonintel.c \
 	screen.c sw_fog.c sw_graph.c sw_raclip.c sw_ralias.c sw_rbsp.c sw_rdraw.c \
 	sw_redge.c sw_rmain.c sw_rmisc.c sw_rpart.c sw_rsky.c sw_rsprite.c \
-	sw_rsurf.c sw_skin.c
+	sw_rsurf.c
 
 libasm_la_LDFLAGS= @STATIC@
 libasm_la_SOURCES= $(asm_src)

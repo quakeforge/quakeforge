@@ -160,6 +160,7 @@ Team_ParseSay (const char *s)
 			case 'S':
 				bracket = 0;
 				t1 = skin->string;
+				t1 = "FIXME";
 				break;
 			case 'd':
 				bracket = 0;
@@ -451,13 +452,15 @@ Team_F_Skins (char *args)
 	for (l = 0; args[l] && !isspace ((byte) args[l]); l++);
 
 	if (l == 0) {
-		totalfb = Skin_FbPercent (0);
+		//XXXtotalfb = Skin_FbPercent (0);
+		totalfb = 0;
 		return va ("say Player models have %f%% brightness\n"
 			   "say Average percent fullbright for all loaded skins is "
 			   "%d.%d%%", allfb * 100, totalfb / 10, totalfb % 10);
 	}
 
-	totalfb = Skin_FbPercent (args);
+	//XXX totalfb = Skin_FbPercent (args);
+	totalfb = 0;
 
 	if (totalfb >= 0)
 		return va ("say \"Skin %s is %d.%d%% fullbright\"", args, totalfb / 10,

@@ -76,11 +76,11 @@ Skin_NextDownload (void)
 		sc = &cl.players[cls.downloadnumber];
 		if (!sc->name[0])
 			continue;
-		Skin_Find (sc);
+		//XXX Skin_Find (sc);
 		if (noskins->int_val) //XXX FIXME
 			continue;
-		if (!CL_CheckOrDownloadFile (va ("skins/%s.pcx", sc->skin->name)))
-			return;						// started a download
+		//XXX if (!CL_CheckOrDownloadFile (va ("skins/%s.pcx", sc->skin->name)))
+			//XXX return;						// started a download
 	}
 
 	cls.downloadtype = dl_none;
@@ -90,9 +90,9 @@ Skin_NextDownload (void)
 		sc = &cl.players[i];
 		if (!sc->name[0])
 			continue;
-		Skin_Find (sc);
-		Skin_Cache (sc->skin);
-		sc->skin = NULL;
+		//XXX Skin_Find (sc);
+		//XXX Skin_Cache (sc->skin);
+		//XXX sc->skin = NULL;
 	}
 
 	if (cls.state != ca_active) {
@@ -112,10 +112,10 @@ Skin_NextDownload (void)
 
 	Refind all skins, downloading if needed.
 */
-void
+static void
 CL_Skins_f (void)
 {
-	Skin_Flush ();
+	//XXX Skin_Flush ();
 
 	if (cls.state == ca_disconnected)
 		return;
@@ -130,14 +130,14 @@ CL_Skins_f (void)
 
 	Sets all skins to one specific one
 */
-void
+static void
 CL_AllSkins_f (void)
 {
 	if (Cmd_Argc () == 2) {
-		strcpy (allskins, Cmd_Argv (1));
+		//XXX strcpy (allskins, Cmd_Argv (1));
 	} else if (Cmd_Argc () == 1) {
 		Sys_Printf ("clearing allskins\n");
-		allskins[0] = 0;
+		//XXX allskins[0] = 0;
 	} else {
 		Sys_Printf ("Usage: allskins [name]\n");
 		return;
@@ -180,19 +180,6 @@ CL_Color_f (void)
 	Cvar_Set (bottomcolor, num);
 }
 
-void
-CL_Skin_Init (void)
-{
-	Skin_Init ();
-	Cmd_AddCommand ("skins", CL_Skins_f, "Download all skins that are "
-					"currently in use");
-	Cmd_AddCommand ("allskins", CL_AllSkins_f, "Force all player skins to "
-					"one skin");
-	Cmd_AddCommand ("color", CL_Color_f, "The pant and shirt color (color "
-					"shirt pants) Note that if only shirt color is given, "
-					"pants will match");
-}
-
 static void
 skin_f (cvar_t *var)
 {
@@ -203,9 +190,18 @@ skin_f (cvar_t *var)
 }
 
 void
-CL_Skin_Init_Cvars (void)
+CL_Skin_Init (void)
 {
-	Skin_Init_Cvars ();
+	//Skin_Init ();
+	//Skin_Init_Cvars ();
+	Cmd_AddCommand ("skins", CL_Skins_f, "Download all skins that are "
+					"currently in use");
+	Cmd_AddCommand ("allskins", CL_AllSkins_f, "Force all player skins to "
+					"one skin");
+	Cmd_AddCommand ("color", CL_Color_f, "The pant and shirt color (color "
+					"shirt pants) Note that if only shirt color is given, "
+					"pants will match");
+
 	noskins = Cvar_Get ("noskins", "0", CVAR_ARCHIVE, NULL, //XXX FIXME
 						"set to 1 to not download new skins");
 	skin = Cvar_Get ("skin", "", CVAR_ARCHIVE | CVAR_USERINFO, skin_f,
@@ -214,40 +210,4 @@ CL_Skin_Init_Cvars (void)
 						 Cvar_Info, "Players color on top");
 	bottomcolor = Cvar_Get ("bottomcolor", "0", CVAR_ARCHIVE | CVAR_USERINFO,
 							Cvar_Info, "Players color on bottom");
-}
-
-void
-CL_NewTranslation (int slot, skin_t *skin)
-{
-	player_info_t *player;
-
-	if (slot > MAX_CLIENTS)
-		Host_Error ("CL_NewTranslation: slot > MAX_CLIENTS");
-
-	player = &cl.players[slot];
-	if (!player->name[0])
-		return;
-
-	if (player->skin && !strequal (player->skinname->value, player->skin->name))
-		player->skin = NULL;
-
-	if (player->_topcolor != player->topcolor ||
-		player->_bottomcolor != player->bottomcolor || !player->skin) {
-		player->_topcolor = player->topcolor;
-		player->_bottomcolor = player->bottomcolor;
-		Skin_Set_Translate (player->topcolor, player->bottomcolor,
-							player->translations);
-		if (!player->skin)
-			Skin_Find (player);
-		memcpy (skin, player->skin, sizeof (*skin));
-		skin->texture = skin_textures + slot;		// FIXME
-		skin->data.texels = Skin_Cache (player->skin);
-				// FIXME: breaks cache ownership
-		Skin_Do_Translation (player->skin, slot, skin);
-	} else {
-		memcpy (skin, player->skin, sizeof (*skin));
-		skin->texture = skin_textures + slot;		// FIXME
-		skin->data.texels = Skin_Cache (player->skin);
-				// FIXME: breaks cache ownership
-	}
 }
