@@ -810,7 +810,8 @@ Cache_Profile (void)
 					(sizes[i] * 100) / total);
 	}
 	Sys_Printf ("Total allocations: %d in %d allocations, average of"
-				" %d per allocation\n", total, count, total / count);
+				" %d per allocation\n", total, count,
+				count ? total / count : -1);
 }
 
 static void
