@@ -373,7 +373,9 @@ Model_NextDownload (void)
 			info_key = emodel_name;
 
 		if (info_key && cl_model_crcs->int_val) {
-			aliashdr_t *ahdr = Cache_Get (&cl.model_precache[i]->cache);
+			aliashdr_t *ahdr = cl.model_precache[i]->aliashdr;
+			if (!ahdr)
+				ahdr = Cache_Get (&cl.model_precache[i]->cache);
 			Info_SetValueForKey (cls.userinfo, info_key, va ("%d", ahdr->crc),
 								 0);
 			if (!cls.demoplayback) {
@@ -381,7 +383,8 @@ Model_NextDownload (void)
 				SZ_Print (&cls.netchan.message, va ("setinfo %s %d", info_key,
 													ahdr->crc));
 			}
-			Cache_Release (&cl.model_precache[i]->cache);
+			if (!cl.model_precache[i]->aliashdr)
+				Cache_Release (&cl.model_precache[i]->cache);
 		}
 	}
 
