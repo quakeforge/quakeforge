@@ -1115,6 +1115,7 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	else
 		player->spectator = false;
 
+	Skin_SetTranslation (slot + 1, player->topcolor, player->bottomcolor);
 	//XXX if (cls.state == ca_active)
 		//XXX Skin_Find (player);
 

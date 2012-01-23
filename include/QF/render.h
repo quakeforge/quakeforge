@@ -63,9 +63,6 @@ extern  lightstyle_t    r_lightstyle[MAX_LIGHTSTYLES];
 
 //===============
 
-#define	TOP_RANGE		16			// soldier uniform colors
-#define	BOTTOM_RANGE	96
-
 typedef struct entity_s {
 	struct entity_s *next;
 	struct entity_s *unext;	//FIXME this shouldn't be here. for qw demos

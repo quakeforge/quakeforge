@@ -63,29 +63,37 @@ new_skin (void)
 VISIBLE void
 Skin_SetTranslation (int cmap, int top, int bottom)
 {
-#if 0
 	int         i, j;
 	byte       *source;
+	byte       *dest;
 
+	if (!cmap)		// 0 is meant for no custom mapping. this just makes
+		return;		// other code simpler
 	top = bound (0, top, 13) * 16;
 	bottom = bound (0, bottom, 13) * 16;
 
-	source = vid.colormap8;
+	if (cmap < 0 || cmap > MAX_TRANSLATIONS) {
+		Sys_MaskPrintf (SYS_SKIN, "invalid skin slot: %d\n", cmap);
+		cmap = 1;
+	}
 
-	for (i = 0; i < VID_GRADES; i++, source += 256) {
+	dest = translations[cmap - 1];
+	source = vid.colormap8;
+	memcpy (dest, source, VID_GRADES * 256);
+
+	for (i = 0; i < VID_GRADES; i++, dest += 256, source += 256) {
 		if (top < 128)	// the artists made some backwards ranges.
-			memcpy (trans->top[i], source + top, 16);
+			memcpy (dest + TOP_RANGE, source + top, 16);
 		else
 			for (j = 0; j < 16; j++)
-				trans->top[i][j] = source[top + 15 - j];
+				dest[TOP_RANGE + j] = source[top + 15 - j];
 
 		if (bottom < 128)
-			memcpy (trans->bottom[i], source + bottom, 16);
+			memcpy (dest + BOTTOM_RANGE, source + bottom, 16);
 		else
 			for (j = 0; j < 16; j++)
-				trans->bottom[i][j] = source[bottom + 15 - j];
+				dest[BOTTOM_RANGE + j] = source[bottom + 15 - j];
 	}
-#endif
 }
 
 skin_t *
