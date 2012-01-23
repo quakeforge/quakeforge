@@ -109,7 +109,7 @@ Skin_SetColormap (skin_t *skin, int cmap)
 	}
 	if (cmap)
 		skin->colormap = translations[cmap - 1];
-	Skin_SetColormap_ (skin, cmap);
+	Skin_SetupSkin (skin, cmap);
 	return skin;
 }
 

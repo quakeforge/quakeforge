@@ -41,7 +41,7 @@ Skin_ProcessTranslation (int cmap, const byte *translation)
 }
 
 void
-Skin_SetColormap_ (skin_t *skin, int cmap)
+Skin_SetupSkin (skin_t *skin, int cmap)
 {
 }
 
