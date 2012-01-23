@@ -42,11 +42,6 @@
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200
 
-typedef struct translation_s {
-	byte        top[VID_GRADES][16];
-	byte        bottom[VID_GRADES][16];
-} translation_t;
-
 typedef struct skin_s {
 	const char *name;
 	qboolean	valid;		// the skin was found
@@ -61,37 +56,6 @@ void Skin_SetupSkin (skin_t *skin, int cmap);
 void Skin_SetTranslation (int cmap, int top, int bottom);
 void Skin_ProcessTranslation (int cmap, const byte *translation);
 void Skin_InitTranslations (void);
-
-extern byte player_8bit_texels[640 * 400];
-extern skin_t   skin_cache[MAX_CACHED_SKINS];
-extern int skin_textures;
-extern int skin_fb_textures;
-
-extern int playercolor;
-
-struct tex_s;
-struct tex_s *Skin_Cache (skin_t *skin);
-struct player_info_s;
-struct model_s;
-
-void	Skin_Find (struct player_info_s *sc);
-void	Skin_Flush (void);
-int		Skin_Init_Textures (int base);
-void	Skin_Init (void);
-void	Skin_Init_Cvars (void);
-void	Skin_Init_Translation (void);
-void	Skin_Set_Translate (int top, int bottom, translation_t *trans);
-void	Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin);
-void	Skin_Do_Translation_Model (struct model_s *model, int skinnum,
-								   int slot, skin_t *skin);
-void	Skin_Player_Model (struct model_s *model);
-void	Skin_Process (skin_t *skin, struct tex_s *);
-
-skin_t	*Skin_NewTempSkin (void);
-void	Skin_ClearTempSkins (void);
-
-int		Skin_FbPercent (const char *skin_name); // * 10
-
-extern char allskins[128];
+void Skin_Init (void);
 
 #endif
