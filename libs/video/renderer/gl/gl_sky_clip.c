@@ -703,7 +703,7 @@ draw_black_sky_polys (const instsurf_t *sky_chain)
 			p = p->next;
 		}
 		if (sc->transform)
-			qfglPushMatrix ();
+			qfglPopMatrix ();
 		sc = sc->tex_chain;
 	}
 	qfglEnable (GL_TEXTURE_2D);
@@ -845,6 +845,8 @@ R_DrawSkyChain (const instsurf_t *sky_chain)
 					qfglEnd ();
 					p = p->next;
 				}
+				if (sc->transform)
+					qfglPopMatrix ();
 				sc = sc->tex_chain;
 			}
 		}
