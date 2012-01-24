@@ -50,9 +50,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 
-// if more than 32 clients are to be supported, then this will need to be
-// updated
-#define MAX_TRANSLATIONS 32
 static GLuint cmap_tex[MAX_TRANSLATIONS];
 
 void

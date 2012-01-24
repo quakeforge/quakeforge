@@ -50,10 +50,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 
-// if more than 32 clients are to be supported, then this will need to be
-// updated
-#define MAX_TRANSLATIONS 32
-
 void
 Skin_ProcessTranslation (int cmap, const byte *translation)
 {
