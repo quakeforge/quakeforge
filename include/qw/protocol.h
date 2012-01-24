@@ -313,6 +313,8 @@ typedef struct {
 	byte         colormap;
 	byte         skinnum;
 
+	struct skin_s *skin;
+
 	// QSG 2
 	byte        alpha;
 	byte        scale;

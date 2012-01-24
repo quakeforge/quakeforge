@@ -1117,8 +1117,9 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 		player->spectator = false;
 
 	Skin_SetTranslation (slot + 1, player->topcolor, player->bottomcolor);
-	//XXX if (cls.state == ca_active)
-		//XXX Skin_Find (player);
+	player->skin = Skin_SetSkin (player->skin, slot + 1,
+								 player->skinname->value);
+	player->skin = Skin_SetColormap (player->skin, slot + 1);
 
 	Sbar_Changed ();
 }

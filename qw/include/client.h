@@ -81,6 +81,7 @@ typedef struct player_info_s
 	int		bottomcolor;
 	struct info_key_s *skinname;
 	struct info_key_s *team;
+	struct skin_s *skin;
 
 	int		_topcolor;
 	int		_bottomcolor;

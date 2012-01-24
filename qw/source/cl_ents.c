@@ -242,12 +242,7 @@ CL_LinkPacketEntities (void)
 		}
 
 		// set colormap
-		if (s1->colormap && (s1->colormap <= MAX_CLIENTS)
-			&& cl.players[s1->colormap - 1].name[0]) {
-			ent->skin = Skin_SetColormap (ent->skin, s1->colormap);
-		} else {
-			ent->skin = Skin_SetColormap (ent->skin, 0);
-		}
+		ent->skin = s1->skin;
 
 		// LordHavoc: cleaned up Endy's coding style, and fixed Endy's bugs
 		// Ender: Extend (Colormod) [QSG - Begin]
@@ -469,7 +464,6 @@ CL_LinkPlayers (void)
 
 		ent->model = cl.model_precache[state->pls.modelindex];
 		ent->frame = state->pls.frame;
-		ent->skin = Skin_SetColormap (ent->skin, j + 1);
 		ent->skinnum = state->pls.skinnum;
 
 		CL_TransformEntity (ent, ang, false);
@@ -479,14 +473,15 @@ CL_LinkPlayers (void)
 
 		if (state->pls.modelindex == cl_playerindex) { //XXX
 			// use custom skin
-			Skin_SetSkin (ent->skin, j + 1, info->skinname->value);
+			ent->skin = info->skin;
 
 			ent->min_light = min (cl.fbskins, cl_fb_players->value);
 
 			if (ent->min_light >= 1.0)
 				ent->fullbright = 1;
 		} else {
-			Skin_SetSkin (ent->skin, j + 1, 0);
+			// FIXME no team colors on nonstandard player models
+			ent->skin = 0;
 		}
 
 		// stuff entity in map
