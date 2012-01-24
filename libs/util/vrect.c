@@ -240,7 +240,8 @@ VRect_Merge (const vrect_t *r1, const vrect_t *r2)
 	if (t)
 		u = VRect_Difference (t, r2);
 	if (!u) {
-		VRect_Delete (t);
+		if (t)
+			VRect_Delete (t);
 		return merge;
 	}
 cleanup:
