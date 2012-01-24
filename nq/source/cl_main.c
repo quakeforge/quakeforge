@@ -526,6 +526,8 @@ CL_Init (cbuf_t *cbuf)
 	Sbar_Init ();
 	IN_Init ();
 
+	Skin_Init ();
+
 	CL_SetState (ca_disconnected);
 	SZ_Alloc (&cls.message, 1024);
 
