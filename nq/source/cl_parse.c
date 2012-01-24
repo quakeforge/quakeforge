@@ -610,11 +610,8 @@ CL_ParseUpdate (int bits)
 				ent->syncbase = 0.0;
 		} else
 			forcelink = true;		// hack to make null model players work
-		if (num > 0 && num <= cl.maxclients) {
+		if (num >= 0 && num <= cl.maxclients)
 			ent->skin = Skin_SetColormap (ent->skin, num);
-			Skin_SetTranslation (num, cl.scores[num].colors >> 4,
-								 cl.scores[num].colors & 0xf);
-		}
 	}
 
 	if (forcelink) {					// didn't have an update last message
@@ -1020,10 +1017,11 @@ CL_ParseServerMessage (void)
 								"MAX_SCOREBOARD");
 				} else {
 					entity_t   *ent = &cl_entities[i+1];
-					cl.scores[i].colors = MSG_ReadByte (net_message);
+					byte        col = MSG_ReadByte (net_message);
+					if (col != cl.scores[i].colors)
+						Skin_SetTranslation (i, col >> 4, col & 0xf);
+					cl.scores[i].colors = col;
 					ent->skin = Skin_SetColormap (ent->skin, i);
-					Skin_SetTranslation (i, cl.scores[i].colors >> 4,
-										 cl.scores[i].colors & 0xf);
 				}
 				break;
 
