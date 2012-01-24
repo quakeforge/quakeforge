@@ -16,6 +16,8 @@ struct {
 	const char *expect;
 } path_tests [] = {
 	{"", ""},
+	{"/x", "/x"},
+	{"x/", "x"},
 	{"/", "/"},
 	{"\\", "/"},
 	{".", ""},
@@ -25,7 +27,9 @@ struct {
 	{"/..", "/"},
 	{"foo/..", ""},
 	{"foo/bar/..", "foo"},
+	{"foo/bar/.", "foo/bar"},
 	{"foo//bar", "foo/bar"},
+	{"foo/./bar", "foo/bar"},
 	{"../foo/..", ".."},
 	{"\\blah\\../foo/..\\baz/.\\x", "/baz/x"},
 };
@@ -70,12 +74,13 @@ main (int argc, const char **argv)
 	int         res = 0;
 
 	for (i = 0; i < num_path_tests; i++) {
-		const char *cpath = QFS_CompressPath (path_tests[i].path);
+		char       *cpath = QFS_CompressPath (path_tests[i].path);
 		if (strcmp (cpath, path_tests[i].expect)) {
 			fprintf (stderr, "FAIL: (%zd) \"%s\" -> \"%s\", got \"%s\"\n", i,
 					 path_tests[i].path, path_tests[i].expect, cpath);
 			res = 1;
 		}
+		free (cpath);
 	}
 
 	for (i = 0; i < num_ext_tests; i++) {

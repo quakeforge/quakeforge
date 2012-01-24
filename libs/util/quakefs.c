@@ -776,12 +776,13 @@ QFS_CompressPath (const char *pth)
 						p += 2 + (p[2] == '/');
 						continue;
 					}
-					strcpy (d, p + 2 + (p[2] == '/'));
+					p = p + 2 + (p[2] == '/');
+					memmove (d, p, strlen (p) + 1);
 					p = d;
 					continue;
 				}
 			} else if (p[1] == '/') {
-				strcpy (p, p + 2);
+				memmove (p, p + 2, strlen (p + 2) + 1);
 				continue;
 			} else if (p[1] == 0) {
 				p[0] = 0;
@@ -795,11 +796,11 @@ QFS_CompressPath (const char *pth)
 			for (d = p; *d == '/'; d++)
 				;
 			if (d != p)
-				strcpy (p, d);
+				memmove (p, d, strlen (d) + 1);
 		}
 	}
 	// strip any trailing /, but not if it's the root /
-	if (--p != path && *p == '/')
+	if (--p > path && *p == '/')
 		*p = 0;
 
 	return path;
