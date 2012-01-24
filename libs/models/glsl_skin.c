@@ -51,6 +51,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/funcs.h"
 
 static GLuint cmap_tex[MAX_TRANSLATIONS];
+static GLuint skin_tex[MAX_TRANSLATIONS];
 
 void
 Skin_ProcessTranslation (int cmap, const byte *translation)
@@ -93,8 +94,29 @@ Skin_ProcessTranslation (int cmap, const byte *translation)
 void
 Skin_SetupSkin (skin_t *skin, int cmap)
 {
-	if (cmap)
+	skin->texnum = 0;
+	if (cmap) {
+		if (skin->texels) {
+			tex_t      *tex = skin->texels;
+
+			skin->texnum = skin_tex[cmap - 1];
+			qfglBindTexture (GL_TEXTURE_2D, skin->texnum);
+			qfglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE,
+							tex->width, tex->height,
+							0, GL_LUMINANCE, GL_UNSIGNED_BYTE, tex->data);
+			qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+							   GL_CLAMP_TO_EDGE);
+			qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
+							   GL_CLAMP_TO_EDGE);
+			qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+							   GL_NEAREST);
+			qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+							   GL_NEAREST);
+		}
 		skin->auxtex = cmap_tex[cmap - 1];
+	} else {
+		skin->auxtex = 0;
+	}
 }
 
 void
@@ -113,6 +135,7 @@ Skin_InitTranslations (void)
 		*dst++ = 255;	// alpha = 1
 	}
 	qfglGenTextures (MAX_TRANSLATIONS, cmap_tex);
+	qfglGenTextures (MAX_TRANSLATIONS, skin_tex);
 	for (i = 0; i < MAX_TRANSLATIONS; i++) {
 		qfglBindTexture (GL_TEXTURE_2D, cmap_tex[i]);
 		qfglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, 256, VID_GRADES, 0,
