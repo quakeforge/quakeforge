@@ -59,7 +59,9 @@ typedef struct skinbank_s {
 	int         users;
 } skinbank_t;
 
-static byte translations[MAX_TRANSLATIONS][VID_GRADES * 256];
+// each translation has one extra line for palette (vs colormap) based
+// translation (for 32bit rendering)
+static byte translations[MAX_TRANSLATIONS][(VID_GRADES + 1) * 256];
 static hashtab_t *skin_cache;
 
 static skin_t *
@@ -101,6 +103,20 @@ Skin_SetTranslation (int cmap, int top, int bottom)
 		else
 			for (j = 0; j < 16; j++)
 				dest[BOTTOM_RANGE + j] = source[bottom + 15 - j];
+	}
+	// set up the palette translation
+	// dest currently points to the palette line
+	for (i = 0; i < 256; i++)
+		dest[i] = i;
+	for (i = 0; i < 16; i++) {
+		if (top < 128)
+			dest[TOP_RANGE + i] = top + i;
+		else
+			dest[TOP_RANGE + i] = top + 15 - i;
+		if (bottom < 128)
+			dest[BOTTOM_RANGE + i] = bottom + i;
+		else
+			dest[BOTTOM_RANGE + i] = bottom + 15 - i;
 	}
 	Skin_ProcessTranslation (cmap, translations[cmap - 1]);
 }

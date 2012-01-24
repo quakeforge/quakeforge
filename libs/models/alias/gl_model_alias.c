@@ -52,7 +52,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "compat.h"
 
-VISIBLE byte		player_8bit_texels[640 * 400];
 int alias_cache = 1;
 
 void *
@@ -70,11 +69,9 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 
 	Mod_FloodFillSkin (pskin, pheader->mdl.skinwidth, pheader->mdl.skinheight);
 	// save 8 bit texels for the player model to remap
-	if (strequal (loadmodel->name, "progs/player.mdl")) {
-		if (skinsize > (int) sizeof (player_8bit_texels))
-			Sys_Error ("Player skin too large");
-		memcpy (player_8bit_texels, pskin, skinsize);
-	}
+	if (strequal (loadmodel->name, "progs/player.mdl"))
+		Skin_SetPlayerSkin (pheader->mdl.skinwidth, pheader->mdl.skinheight,
+							pskin);
 
 	QFS_StripExtension (loadmodel->name, modname);
 
