@@ -1019,9 +1019,9 @@ CL_ParseServerMessage (void)
 					entity_t   *ent = &cl_entities[i+1];
 					byte        col = MSG_ReadByte (net_message);
 					if (col != cl.scores[i].colors)
-						Skin_SetTranslation (i, col >> 4, col & 0xf);
+						Skin_SetTranslation (i + 1, col >> 4, col & 0xf);
 					cl.scores[i].colors = col;
-					ent->skin = Skin_SetColormap (ent->skin, i);
+					ent->skin = Skin_SetColormap (ent->skin, i + 1);
 				}
 				break;
 

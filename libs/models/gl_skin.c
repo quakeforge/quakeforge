@@ -234,8 +234,16 @@ Skin_SetupSkin (skin_t *skin, int cmap)
 	s = skins + cmap;
 	changed = (s->tex != skin->texels);
 	s->tex = skin->texels;
-	if (!changed)
+	if (!changed) {
+		skin->texnum = 0;
+		skin->auxtex = 0;
+		if (cmap >= 0) {
+			skin->texnum = skin_textures + cmap;
+			if (s->fb)
+				skin->auxtex = skin_fb_textures + cmap;
+		}
 		return;
+	}
 	do_fb_skin (s);
 	build_skin (skin, cmap);
 }
