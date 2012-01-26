@@ -69,6 +69,7 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 
 	Mod_FloodFillSkin (pskin, pheader->mdl.skinwidth, pheader->mdl.skinheight);
 	// save 8 bit texels for the player model to remap
+	// FIXME remove model restriction
 	if (strequal (loadmodel->name, "progs/player.mdl"))
 		Skin_SetPlayerSkin (pheader->mdl.skinwidth, pheader->mdl.skinheight,
 							pskin);
