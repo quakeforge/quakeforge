@@ -317,6 +317,22 @@ R_ClearElements (void)
 	release_elementss ();
 }
 
+static void
+update_lightmap (msurface_t *surf)
+{
+	int         maps;
+
+	for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255; maps++)
+		if (d_lightstylevalue[surf->styles[maps]] != surf->cached_light[maps])
+			goto dynamic;
+
+	if ((surf->dlightframe == r_framecount) || surf->cached_dlight) {
+dynamic:
+		if (r_dynamic->int_val)
+			R_BuildLightMap (surf);
+	}
+}
+
 static inline void
 chain_surface (msurface_t *surf, vec_t *transform)
 {
@@ -335,7 +351,7 @@ chain_surface (msurface_t *surf, vec_t *transform)
 			tex = R_TextureAnimation (surf);
 		CHAIN_SURF_F2B (surf, tex->tex_chain);
 
-		R_BuildLightMap (surf);
+		update_lightmap (surf);
 	}
 	if (!(is = surf->instsurf))
 		is = surf->tinst;
