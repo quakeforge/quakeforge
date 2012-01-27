@@ -33,7 +33,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/cvar.h"
 #include "QF/model.h"
-#include "QF/pcx.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 
@@ -92,10 +91,4 @@ Skin_ProcessTranslation (int cmap, const byte *translation)
 VISIBLE void
 Skin_SetupSkin (skin_t *skin, int cmap)
 {
-}
-
-VISIBLE struct tex_s *
-LoadPCX (QFile *f, qboolean convert, byte *pal)
-{
-	return 0;
 }

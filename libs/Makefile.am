@@ -5,5 +5,5 @@ AUTOMAKE_OPTIONS= foreign
 # ruamoko depends on gamecode (engine only, not builtins)
 # audio depends on gamecode
 # console depends on ruamoko and audio
-SUBDIRS=util gib gamecode ruamoko models audio console image net qw \
+SUBDIRS=util image gib gamecode ruamoko models audio console net qw \
 		video
