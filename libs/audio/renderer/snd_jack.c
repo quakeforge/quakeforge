@@ -354,8 +354,10 @@ s_shutdown (void)
 	int         i;
 	if (jack_handle) {
 		jack_deactivate (jack_handle);
-		for (i = 0; i < 2; i++)
-			jack_port_unregister (jack_handle, jack_out[i]);
+		if (!snd_shutdown) {
+			for (i = 0; i < 2; i++)
+				jack_port_unregister (jack_handle, jack_out[i]);
+		}
 		jack_client_close (jack_handle);
 	}
 }
