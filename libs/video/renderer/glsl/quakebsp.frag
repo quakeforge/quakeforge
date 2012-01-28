@@ -4,6 +4,7 @@ uniform sampler2D lightmap;
 
 varying vec2 tst;
 varying vec2 lst;
+varying vec4 color;
 
 void
 main (void)
@@ -12,5 +13,5 @@ main (void)
 	float       light = texture2D (lightmap, lst).r;
 	float       col;
 
-	gl_FragColor = texture2D (colormap, vec2 (pix, light * 4.0));
+	gl_FragColor = texture2D (colormap, vec2 (pix, light * 4.0)) * color;
 }

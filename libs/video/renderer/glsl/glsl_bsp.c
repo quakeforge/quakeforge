@@ -132,6 +132,7 @@ static struct {
 	shaderparam_t colormap;
 	shaderparam_t texture;
 	shaderparam_t lightmap;
+	shaderparam_t color;
 } quake_bsp = {
 	0,
 	{"mvp_mat", 1},
@@ -140,6 +141,7 @@ static struct {
 	{"colormap", 1},
 	{"texture", 1},
 	{"lightmap", 1},
+	{"vcolor", 0},
 };
 
 static struct {
@@ -150,6 +152,7 @@ static struct {
 	shaderparam_t palette;
 	shaderparam_t texture;
 	shaderparam_t realtime;
+	shaderparam_t color;
 } quake_turb = {
 	0,
 	{"mvp_mat", 1},
@@ -158,6 +161,7 @@ static struct {
 	{"palette", 1},
 	{"texture", 1},
 	{"realtime", 1},
+	{"vcolor", 0},
 };
 
 static struct {
@@ -800,11 +804,15 @@ draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc)
 static void
 bsp_begin (void)
 {
+	static quat_t color = { 1, 1, 1, 1 };
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
 	qfglUseProgram (quake_bsp.program);
 	qfglEnableVertexAttribArray (quake_bsp.vertex.location);
 	qfglEnableVertexAttribArray (quake_bsp.tlst.location);
+	qfglDisableVertexAttribArray (quake_bsp.color.location);
+
+	qfglVertexAttrib4fv (quake_bsp.color.location, color);
 
 	qfglUniform1i (quake_bsp.colormap.location, 2);
 	qfglActiveTexture (GL_TEXTURE0 + 2);
@@ -842,11 +850,17 @@ bsp_end (void)
 static void
 turb_begin (void)
 {
+	static quat_t color = { 1, 1, 1, 1 };
+
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
 	qfglUseProgram (quake_turb.program);
 	qfglEnableVertexAttribArray (quake_turb.vertex.location);
 	qfglEnableVertexAttribArray (quake_turb.tlst.location);
+	qfglDisableVertexAttribArray (quake_bsp.color.location);
+
+	color[3] = bound (0, r_wateralpha->value, 1);
+	qfglVertexAttrib4fv (quake_turb.color.location, color);
 
 	qfglUniform1i (quake_turb.palette.location, 1);
 	qfglActiveTexture (GL_TEXTURE0 + 1);
@@ -1168,6 +1182,7 @@ R_InitBsp (void)
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.colormap);
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.texture);
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.lightmap);
+	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.color);
 
 	frag = GL_CompileShader ("quaketrb.frag", quaketurb_frag,
 							 GL_FRAGMENT_SHADER);
@@ -1178,6 +1193,7 @@ R_InitBsp (void)
 	GL_ResolveShaderParam (quake_turb.program, &quake_turb.palette);
 	GL_ResolveShaderParam (quake_turb.program, &quake_turb.texture);
 	GL_ResolveShaderParam (quake_turb.program, &quake_turb.realtime);
+	GL_ResolveShaderParam (quake_turb.program, &quake_turb.color);
 
 	vert = GL_CompileShader ("quakesky.vert", quakesky_vert, GL_VERTEX_SHADER);
 	frag = GL_CompileShader ("quakeski.frag", quakeskyid_frag,

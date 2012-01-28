@@ -3,6 +3,7 @@ uniform sampler2D texture;
 uniform float realtime;
 
 varying vec2 tst;
+varying vec4 color;
 
 const float SPEED = 20.0;
 const float CYCLE = 128.0;
@@ -27,5 +28,5 @@ main (void)
 
 	st = turb_st (tst, realtime);
 	pix = texture2D (texture, st).r;
-	gl_FragColor = texture2D (palette, vec2 (pix, 0.0));
+	gl_FragColor = texture2D (palette, vec2 (pix, 0.0)) * color;
 }
