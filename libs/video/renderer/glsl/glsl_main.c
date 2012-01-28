@@ -209,16 +209,48 @@ R_DrawViewModel (void)
 VISIBLE void
 R_RenderView (void)
 {
+	double      t[10];
+	int         speeds = r_speeds->int_val;
+
+	if (speeds)
+		t[0] = Sys_DoubleTime ();
 	R_SetupFrame ();
 	R_SetupView ();
+	if (speeds)
+		t[1] = Sys_DoubleTime ();
 	R_MarkLeaves ();
+	if (speeds)
+		t[2] = Sys_DoubleTime ();
 	R_PushDlights (vec3_origin);
+	if (speeds)
+		t[3] = Sys_DoubleTime ();
 	R_DrawWorld ();
+	if (speeds)
+		t[4] = Sys_DoubleTime ();
 	R_DrawSky ();
+	if (speeds)
+		t[5] = Sys_DoubleTime ();
 	R_RenderEntities ();
+	if (speeds)
+		t[6] = Sys_DoubleTime ();
 	R_DrawWaterSurfaces ();
+	if (speeds)
+		t[7] = Sys_DoubleTime ();
 	R_DrawParticles ();
+	if (speeds)
+		t[8] = Sys_DoubleTime ();
 	R_DrawViewModel ();
+	if (speeds)
+		t[9] = Sys_DoubleTime ();
+	if (speeds) {
+		Sys_Printf ("frame: %g, setup: %g, mark: %g, pushdl: %g, world: %g,"
+					" sky: %g, ents: %g, water: %g, part: %g, view: %g\n",
+					(t[9] - t[0]) * 1000, (t[1] - t[0]) * 1000,
+					(t[2] - t[1]) * 1000, (t[3] - t[2]) * 1000,
+					(t[4] - t[3]) * 1000, (t[5] - t[4]) * 1000,
+					(t[6] - t[5]) * 1000, (t[7] - t[6]) * 1000,
+					(t[8] - t[7]) * 1000, (t[9] - t[8]) * 1000);
+	}
 }
 
 VISIBLE void
