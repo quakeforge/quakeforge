@@ -61,7 +61,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "r_local.h"
 #include "r_screen.h"
 #include "sbar.h"
-#include "clview.h"	//FIXME
 
 /* SCREEN SHOTS */
 
@@ -202,7 +201,7 @@ SCR_TileClear (void)
 	needs almost the entire 256k of stack space!
 */
 VISIBLE void
-SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
+SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	double      time1 = 0, time2;
 	static int  begun = 0;
@@ -240,29 +239,11 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 		SCR_CalcRefdef ();
 
 	// do 3D refresh drawing, and then update the screen
-	V_RenderView ();
+	scr_3dfunc ();
 
 	SCR_SetUpToDrawConsole ();
 	GL_Set2D ();
 	GL_DrawReset ();
-
-	// also makes polyblend apply to whole screen
-	if (v_blend[3]) {
-		qfglDisable (GL_TEXTURE_2D);
-
-		qfglBegin (GL_QUADS);
-
-		qfglColor4fv (v_blend);
-		qfglVertex2f (0, 0);
-		qfglVertex2f (vid.width, 0);
-		qfglVertex2f (vid.width, vid.height);
-		qfglVertex2f (0, vid.height);
-
-		qfglEnd ();
-
-		qfglColor3ubv (color_white);
-		qfglEnable (GL_TEXTURE_2D);
-	}
 
 	// draw any areas not covered by the refresh
 	SCR_TileClear ();

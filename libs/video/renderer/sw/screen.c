@@ -55,34 +55,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "r_local.h"
 #include "r_screen.h"
 #include "sbar.h"
-#include "clview.h"	//FIXME
-
-static void
-SCR_ApplyBlend (void)		// Used to be V_UpdatePalette
-{
-	int         r, g, b, i;
-	byte       *basepal, *newpal;
-	byte        pal[768];
-	basepal = vid.basepal;
-	newpal = pal;
-
-	for (i = 0; i < 256; i++) {
-		r = basepal[0];
-		g = basepal[1];
-		b = basepal[2];
-		basepal += 3;
-
-		r += (int) (v_blend[3] * (v_blend[0] * 256 - r));
-		g += (int) (v_blend[3] * (v_blend[1] * 256 - g));
-		b += (int) (v_blend[3] * (v_blend[2] * 256 - b));
-
-		newpal[0] = gammatable[r];
-		newpal[1] = gammatable[g];
-		newpal[2] = gammatable[b];
-		newpal += 3;
-	}
-	VID_ShiftPalette (pal);
-}
 
 /* SCREEN SHOTS */
 
@@ -221,7 +193,7 @@ SCR_ScreenShot_f (void)
 	needs almost the entire 256k of stack space!
 */
 void
-SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
+SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	vrect_t     vrect;
 
@@ -261,7 +233,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
 										// in for linear writes all the time
 	VID_LockBuffer ();
-	V_RenderView ();
+	scr_3dfunc ();
 	VID_UnlockBuffer ();
 
 	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
@@ -277,8 +249,6 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	if (pconupdate) {
 		D_UpdateRects (pconupdate);
 	}
-
-	SCR_ApplyBlend ();
 
 	// update one of three areas
 	if (scr_copyeverything) {

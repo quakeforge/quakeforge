@@ -57,7 +57,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
-#include "clview.h"//FIXME
 #include "gl_draw.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
@@ -157,7 +156,7 @@ SCR_TileClear (void)
 }
 
 VISIBLE void
-SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
+SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	static int  begun = 0;
 
@@ -187,7 +186,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	if (vid.recalc_refdef)
 		SCR_CalcRefdef ();
 
-	V_RenderView ();	// FIXME (scr_3dfuncs?)
+	scr_3dfunc ();
 
 	SCR_SetUpToDrawConsole ();
 	GL_Set2D ();

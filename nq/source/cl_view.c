@@ -81,7 +81,6 @@ cvar_t     *v_ipitch_level;
 cvar_t     *v_idlescale;
 
 float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
-float       v_blend[4];
 
 
 cshift_t    cshift_empty = { {130, 80, 50}, 0};
@@ -390,10 +389,10 @@ V_CalcBlend (void)
 		b *= a2;
 	}
 
-	v_blend[0] = min (r, 255.0) / 255.0;
-	v_blend[1] = min (g, 255.0) / 255.0;
-	v_blend[2] = min (b, 255.0) / 255.0;
-	v_blend[3] = bound (0.0, a, 1.0);
+	vid.cshift_color[0] = min (r, 255.0) / 255.0;
+	vid.cshift_color[1] = min (g, 255.0) / 255.0;
+	vid.cshift_color[2] = min (b, 255.0) / 255.0;
+	vid.cshift_color[3] = bound (0.0, a, 1.0);
 }
 
 void

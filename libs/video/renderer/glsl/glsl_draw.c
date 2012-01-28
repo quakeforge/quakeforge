@@ -692,13 +692,19 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	draw_pic (x, y, w, h, white_pic, 0, 0, 8, 8, color);
 }
 
+static inline void
+draw_blendscreen (quat_t color)
+{
+	draw_pic (0, 0, vid.conwidth, vid.conheight, white_pic, 0, 0, 8, 8, color);
+}
+
 VISIBLE void
 Draw_FadeScreen (void)
 {
 	static quat_t color = { 0, 0, 0, 0.7 };
 
 	GL_FlushText (); // Flush text that should be rendered before the menu
-	draw_pic (0, 0, vid.conwidth, vid.conheight, white_pic, 0, 0, 8, 8, color);
+	draw_blendscreen (color);
 }
 
 static void
@@ -760,4 +766,12 @@ GL_FlushText (void)
 {
 	if (char_queue->size)
 		flush_text ();
+}
+
+void
+Draw_BlendScreen (quat_t color)
+{
+	if (!color[3])
+		return;
+	draw_blendscreen (color);
 }

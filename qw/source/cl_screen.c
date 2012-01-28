@@ -53,6 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "cl_parse.h"
 #include "client.h"
+#include "clview.h"
 #include "compat.h"
 #include "r_local.h"
 #include "r_cvar.h"
@@ -71,6 +72,20 @@ SCR_DrawNet (void)
 	Draw_Pic (scr_vrect.x + 64, scr_vrect.y, scr_net);
 }
 
+static void
+SCR_CShift (void)
+{
+	mleaf_t    *leaf;
+	int         contents = CONTENTS_EMPTY;
+
+	if (r_active && cl.worldmodel) {
+		leaf = Mod_PointInLeaf (r_refdef.vieworg, cl.worldmodel);
+		contents = leaf->contents;
+	}
+	V_SetContentsColor (contents);
+	Draw_BlendScreen (vid.cshift_color);
+}
+
 static SCR_Func scr_funcs_normal[] = {
 	Draw_Crosshair,
 	SCR_DrawRam,
@@ -81,6 +96,7 @@ static SCR_Func scr_funcs_normal[] = {
 	Sbar_DrawCenterPrint,
 	Sbar_Draw,
 	Con_DrawConsole,
+	SCR_CShift,
 	0
 };
 
@@ -119,7 +135,7 @@ CL_UpdateScreen (double realtime)
 	}
 
 	V_PrepBlend ();
-	SCR_UpdateScreen (realtime, scr_funcs[index]);
+	SCR_UpdateScreen (realtime, V_RenderView, scr_funcs[index]);
 }
 
 void

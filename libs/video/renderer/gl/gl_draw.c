@@ -910,3 +910,25 @@ GL_FlushText (void)
 		flush_text ();
 	}
 }
+
+void
+Draw_BlendScreen (quat_t color)
+{
+	if (!color[3])
+		return;
+
+	qfglDisable (GL_TEXTURE_2D);
+
+	qfglBegin (GL_QUADS);
+
+	qfglColor4fv (color);
+	qfglVertex2f (0, 0);
+	qfglVertex2f (vid.conwidth, 0);
+	qfglVertex2f (vid.conwidth, vid.conheight);
+	qfglVertex2f (0, vid.conheight);
+
+	qfglEnd ();
+
+	qfglColor3ubv (color_white);
+	qfglEnable (GL_TEXTURE_2D);
+}

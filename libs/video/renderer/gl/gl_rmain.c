@@ -65,7 +65,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_dynamic.h"
 #include "r_local.h"
 #include "varrays.h"
-#include "clview.h"		//FIXME
 
 entity_t    r_worldentity;
 
@@ -402,8 +401,6 @@ R_SetupFrame (void)
 
 	// current viewleaf
 	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
-
-	V_SetContentsColor (r_viewleaf->contents);
 
 	r_cache_thrash = false;
 
@@ -947,6 +944,7 @@ R_RenderViewFishEye (void)
 VISIBLE void
 R_ClearState (void)
 {
+	r_worldentity.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();

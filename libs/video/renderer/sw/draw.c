@@ -645,3 +645,30 @@ Draw_FadeScreen (void)
 	S_ExtraUpdate ();
 	VID_LockBuffer ();
 }
+
+VISIBLE void
+Draw_BlendScreen (quat_t color)
+{
+	int         r, g, b, i;
+	byte       *basepal, *newpal;
+	byte        pal[768];
+	basepal = vid.basepal;
+	newpal = pal;
+
+	for (i = 0; i < 256; i++) {
+		r = basepal[0];
+		g = basepal[1];
+		b = basepal[2];
+		basepal += 3;
+
+		r += (int) (color[3] * (color[0] * 256 - r));
+		g += (int) (color[3] * (color[1] * 256 - g));
+		b += (int) (color[3] * (color[2] * 256 - b));
+
+		newpal[0] = gammatable[r];
+		newpal[1] = gammatable[g];
+		newpal[2] = gammatable[b];
+		newpal += 3;
+	}
+	VID_ShiftPalette (pal);
+}

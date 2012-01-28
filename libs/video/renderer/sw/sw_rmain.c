@@ -56,7 +56,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
-#include "clview.h"	//FIXME
 
 #ifdef PIC
 # undef USE_INTEL_ASM //XXX asm pic hack
@@ -790,8 +789,6 @@ R_RenderView_ (void)
 
 	if (r_dowarp)
 		D_WarpScreen ();
-
-	V_SetContentsColor (r_viewleaf->contents);
 
 	if (r_timegraph->int_val)
 		R_TimeGraph ();

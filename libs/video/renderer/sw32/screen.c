@@ -56,101 +56,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "r_local.h"
 #include "r_screen.h"
 #include "sbar.h"
-#include "clview.h"
-
-static void
-SCR_ApplyBlend (void)		// Used to be V_UpdatePalette
-{
-	int         r, g, b, i;
-	byte       *basepal, *newpal;
-	byte        pal[768];
-
-	switch(r_pixbytes) {
-	case 1:
-	{
-		basepal = vid.basepal;
-		newpal = pal;
-
-		for (i = 0; i < 256; i++) {
-			r = basepal[0];
-			g = basepal[1];
-			b = basepal[2];
-			basepal += 3;
-
-			r += (int) (v_blend[3] * (v_blend[0] * 256 - r));
-			g += (int) (v_blend[3] * (v_blend[1] * 256 - g));
-			b += (int) (v_blend[3] * (v_blend[2] * 256 -g));
-
-			newpal[0] = gammatable[r];
-			newpal[1] = gammatable[g];
-			newpal[2] = gammatable[b];
-			newpal += 3;
-		}
-		VID_ShiftPalette (pal);
-	}
-	break;
-	case 2:
-	{
-		unsigned int g1, g2, x, y;
-		unsigned short rramp[32], gramp[64], bramp[32], *temp;
-		for (i = 0; i < 32; i++) {
-			r = i << 3;
-			g1 = i << 3;
-			g2 = g1 + 4;
-			b = i << 3;
-
-			r += (int) (v_blend[3] * (v_blend[0] * 256 - r));
-			g1 += (int) (v_blend[3] * (v_blend[1] - g1));
-			g2 += (int) (v_blend[3] * (v_blend[1] - g2));
-			b += (int) (v_blend[3] * (v_blend[2] - b));
-
-			rramp[i] = (gammatable[r] << 8) & 0xF800;
-			gramp[i*2+0] = (gammatable[g1] << 3) & 0x07E0;
-			gramp[i*2+1] = (gammatable[g2] << 3) & 0x07E0;
-			bramp[i] = (gammatable[b] >> 3) & 0x001F;
-		}
-		temp = vid.buffer;
-		for (y = 0;y < vid.height;y++, temp += (vid.rowbytes >> 1))
-			for (x = 0;x < vid.width;x++)
-				temp[x] = rramp[(temp[x] & 0xF800) >> 11]
-					+ gramp[(temp[x] & 0x07E0) >> 5] + bramp[temp[x] & 0x001F];
-	}
-	break;
-	case 4:
-	{
-		unsigned int x, y;
-		byte ramp[256][4], *temp;
-		for (i = 0; i < 256; i++) {
-			r = i;
-			g = i;
-			b = i;
-
-			r += (int) (v_blend[3] * (v_blend[0] * 256 - r));
-			g += (int) (v_blend[3] * (v_blend[1] * 256 - g));
-			b += (int) (v_blend[3] * (v_blend[2] * 256 - b));
-
-			ramp[i][0] = gammatable[r];
-			ramp[i][1] = gammatable[g];
-			ramp[i][2] = gammatable[b];
-			ramp[i][3] = 0;
-		}
-		temp = vid.buffer;
-		for (y = 0;y < vid.height;y++, temp += vid.rowbytes)
-		{
-			for (x = 0;x < vid.width;x++)
-			{
-				temp[x*4+0] = ramp[temp[x*4+0]][0];
-				temp[x*4+1] = ramp[temp[x*4+1]][1];
-				temp[x*4+2] = ramp[temp[x*4+2]][2];
-				temp[x*4+3] = 0;
-			}
-		}
-	}
-	break;
-	default:
-		Sys_Error("V_UpdatePalette: unsupported r_pixbytes %i", r_pixbytes);
-	}
-}
 
 /* SCREEN SHOTS */
 
@@ -242,7 +147,7 @@ SCR_ScreenShot_f (void)
 	needs almost the entire 256k of stack space!
 */
 VISIBLE void
-SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
+SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	vrect_t     vrect;
 
@@ -282,7 +187,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
 										// in for linear writes all the time
 	VID_LockBuffer ();
-	V_RenderView ();
+	scr_3dfunc ();
 	VID_UnlockBuffer ();
 
 	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
@@ -298,8 +203,6 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	if (pconupdate) {
 		D_UpdateRects (pconupdate);
 	}
-
-	SCR_ApplyBlend ();
 
 	// update one of three areas
 	if (scr_copyeverything) {

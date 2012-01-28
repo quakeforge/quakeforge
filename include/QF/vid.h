@@ -63,6 +63,7 @@ typedef struct {
 	int				 numpages;
 	qboolean		 recalc_refdef;	// if true, recalc vid-based stuff
 	qboolean		 cshift_changed;
+	quat_t           cshift_color;
 	void			*conbuffer;
 	int				 conrowbytes;
 	unsigned int	 conwidth;

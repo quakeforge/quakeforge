@@ -157,6 +157,10 @@ void Draw_TextBox (int x, int y, int width, int lines, byte alpha);
 /** Darken the screen.
 */
 void Draw_FadeScreen (void);
+
+/** Shift the screen colors.
+*/
+void Draw_BlendScreen (quat_t color);
 //@}
 
 /** \defgroup video_renderer_draw_qpic QPic functions

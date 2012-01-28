@@ -76,6 +76,20 @@ SCR_DrawLoading (void)
 			  (vid.conheight - 48 - pic->height) / 2, pic);
 }
 
+static void
+SCR_CShift (void)
+{
+	mleaf_t    *leaf;
+	int         contents = CONTENTS_EMPTY;
+
+	if (cls.signon != SIGNONS && cl.worldmodel) {
+		leaf = Mod_PointInLeaf (r_refdef.vieworg, cl.worldmodel);
+		contents = leaf->contents;
+	}
+	V_SetContentsColor (contents);
+	Draw_BlendScreen (vid.cshift_color);
+}
+
 static SCR_Func scr_funcs_normal[] = {
 	Draw_Crosshair,
 	SCR_DrawRam,
@@ -86,6 +100,7 @@ static SCR_Func scr_funcs_normal[] = {
 	Sbar_Draw,
 	Con_DrawConsole,
 	SCR_DrawLoading,
+	SCR_CShift,
 	0
 };
 
@@ -118,5 +133,5 @@ CL_UpdateScreen (double realtime)
 	cl_wateralpha = r_wateralpha->value;
 
 	V_PrepBlend ();
-	SCR_UpdateScreen (realtime, scr_funcs[index]);
+	SCR_UpdateScreen (realtime, V_RenderView, scr_funcs[index]);
 }
