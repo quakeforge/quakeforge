@@ -82,7 +82,7 @@ SCR_CShift (void)
 	mleaf_t    *leaf;
 	int         contents = CONTENTS_EMPTY;
 
-	if (cls.signon != SIGNONS && cl.worldmodel) {
+	if (cls.signon == SIGNONS && cl.worldmodel) {
 		leaf = Mod_PointInLeaf (r_refdef.vieworg, cl.worldmodel);
 		contents = leaf->contents;
 	}
