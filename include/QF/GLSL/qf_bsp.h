@@ -51,6 +51,7 @@ typedef struct elechain_s {
 	int         index;
 	elements_t *elements;
 	vec_t      *transform;
+	float      *color;
 } elechain_t;
 
 void R_ClearElements (void);

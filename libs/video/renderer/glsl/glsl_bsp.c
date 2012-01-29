@@ -100,6 +100,9 @@ static quat_t   sky_rotation[2];
 static quat_t   sky_velocity;
 static double   sky_time;
 
+static quat_t   default_color = { 1, 1, 1, 1 };
+static float   *last_color = default_color;
+
 static const char quakebsp_vert[] =
 #include "quakebsp.vc"
 ;
@@ -347,7 +350,7 @@ dynamic:
 }
 
 static inline void
-chain_surface (msurface_t *surf, vec_t *transform)
+chain_surface (msurface_t *surf, vec_t *transform, float *color)
 {
 	instsurf_t *is;
 
@@ -369,6 +372,7 @@ chain_surface (msurface_t *surf, vec_t *transform)
 	if (!(is = surf->instsurf))
 		is = surf->tinst;
 	is->transform = transform;
+	is->color = color;
 }
 
 static void
@@ -425,6 +429,7 @@ add_elechain (texture_t *tex, int ec_index)
 	ec->elements = get_elements ();
 	ec->index = ec_index;
 	ec->transform = 0;
+	ec->color = 0;
 	*tex->elechain_tail = ec;
 	tex->elechain_tail = &ec->next;
 	return ec;
@@ -673,7 +678,7 @@ R_DrawBrushModel (entity_t *e)
 		// enqueue the polygon
 		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON))
 			|| (!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			chain_surface (surf, e->transform);
+			chain_surface (surf, e->transform, e->colormod);
 		}
 	}
 }
@@ -716,7 +721,7 @@ visit_node (mnode_t *node, int side)
 			if (side ^ (surf->flags & SURF_PLANEBACK))
 				continue;               // wrong side
 
-			chain_surface (surf, 0);
+			chain_surface (surf, 0, 0);
 		}
 	}
 }
@@ -781,12 +786,21 @@ R_VisitWorldNodes (mnode_t *node)
 }
 
 static void
-draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc)
+draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc,
+			   int colloc)
 {
 	mat4_t      mat;
 	elements_t *el;
 	int         count;
+	float      *color;
 
+	color = ec->color;
+	if (color != last_color && colloc >= 0) {
+		last_color = color;
+		if (!color)
+			color = default_color;
+		qfglVertexAttrib4fv (quake_bsp.color.location, color);
+	}
 	if (ec->transform) {
 		Mat4Mult (bsp_vp, ec->transform, mat);
 		qfglUniformMatrix4fv (matloc, 1, false, mat);
@@ -815,6 +829,8 @@ bsp_begin (void)
 {
 	static quat_t color = { 1, 1, 1, 1 };
 	quat_t      fog;
+
+	last_color = default_color;
 
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
@@ -867,6 +883,8 @@ turb_begin (void)
 {
 	static quat_t color = { 1, 1, 1, 1 };
 	quat_t      fog;
+
+	last_color = default_color;
 
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
@@ -936,6 +954,8 @@ sky_begin (void)
 {
 	mat4_t      mat;
 	quat_t      fog;
+
+	last_color = default_color;
 
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
@@ -1013,15 +1033,17 @@ add_surf_elements (texture_t *tex, instsurf_t *is,
 	if (!tex->elechain) {
 		(*ec) = add_elechain (tex, surf->ec_index);
 		(*ec)->transform = is->transform;
+		(*ec)->color = is->color;
 		(*el) = (*ec)->elements;
 		(*el)->base = surf->base;
 		if (!(*el)->list)
 			(*el)->list = dstring_new ();
 		dstring_clear ((*el)->list);
 	}
-	if (is->transform != (*ec)->transform) {
+	if (is->transform != (*ec)->transform || is->color != (*ec)->color) {
 		(*ec) = add_elechain (tex, surf->ec_index);
 		(*ec)->transform = is->transform;
+		(*ec)->color = is->color;
 		(*el) = (*ec)->elements;
 		(*el)->base = surf->base;
 		if (!(*el)->list)
@@ -1091,7 +1113,8 @@ R_DrawWorld (void)
 		for (ec = tex->elechain; ec; ec = ec->next) {
 			draw_elechain (ec, quake_bsp.mvp_matrix.location,
 						   quake_bsp.vertex.location,
-						   quake_bsp.tlst.location);
+						   quake_bsp.tlst.location,
+						   quake_bsp.color.location);
 		}
 	}
 	bsp_end ();
@@ -1118,7 +1141,8 @@ R_DrawWaterSurfaces ()
 				for (ec = tex->elechain; ec; ec = ec->next)
 					draw_elechain (ec, quake_turb.mvp_matrix.location,
 								   quake_turb.vertex.location,
-								   quake_turb.tlst.location);
+								   quake_turb.tlst.location,
+								   quake_turb.color.location);
 				tex->elechain = 0;
 				tex->elechain_tail = &tex->elechain;
 			}
@@ -1131,7 +1155,8 @@ R_DrawWaterSurfaces ()
 		for (ec = tex->elechain; ec; ec = ec->next)
 			draw_elechain (ec, quake_turb.mvp_matrix.location,
 						   quake_turb.vertex.location,
-						   quake_turb.tlst.location);
+						   quake_turb.tlst.location,
+						   quake_turb.color.location);
 		tex->elechain = 0;
 		tex->elechain_tail = &tex->elechain;
 	}
@@ -1166,7 +1191,7 @@ R_DrawSky (void)
 				}
 				for (ec = tex->elechain; ec; ec = ec->next)
 					draw_elechain (ec, sky_params.mvp_matrix->location,
-								   sky_params.vertex->location, -1);
+								   sky_params.vertex->location, -1, -1);
 				tex->elechain = 0;
 				tex->elechain_tail = &tex->elechain;
 			}
@@ -1183,7 +1208,7 @@ R_DrawSky (void)
 		}
 		for (ec = tex->elechain; ec; ec = ec->next)
 			draw_elechain (ec, sky_params.mvp_matrix->location,
-						   sky_params.vertex->location, -1);
+						   sky_params.vertex->location, -1, -1);
 		tex->elechain = 0;
 		tex->elechain_tail = &tex->elechain;
 	}
