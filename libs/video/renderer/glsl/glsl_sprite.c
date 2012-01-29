@@ -89,7 +89,7 @@ static struct {
 	{"vcolora", 0},
 	{"vcolorb", 0},
 	{"vblend", 0},
-	{"fog", 0},
+	{"fog", 1},
 };
 
 VISIBLE void

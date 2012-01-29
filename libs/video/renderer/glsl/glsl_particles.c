@@ -106,7 +106,7 @@ static struct {
 	{"vertex", 0},
 	{"palette", 1},
 	{"vcolor", 0},
-	{"fog", 0},
+	{"fog", 1},
 };
 
 static struct {
@@ -124,7 +124,7 @@ static struct {
 	{"vertex", 0},
 	{"vcolor", 0},
 	{"texture", 1},
-	{"fog", 0},
+	{"fog", 1},
 };
 
 inline static void
