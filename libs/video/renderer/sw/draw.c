@@ -73,6 +73,26 @@ typedef struct cachepic_s {
 cachepic_t  cachepics[MAX_CACHED_PICS];
 int         numcachepics;
 
+#define CLIP(x,y,w,h,mw,mh)		\
+	do {						\
+		if (y < 0) {			\
+			h += y;				\
+			y = 0;				\
+		}						\
+		if (y + h > mh)			\
+			h = mh - y;			\
+		if (h <= 0)				\
+			return;				\
+		if (x < 0) {			\
+			w += x;				\
+			x = 0;				\
+		}						\
+		if (x + w > mw)			\
+			w = mw - x;			\
+		if (w <= 0)				\
+			return;				\
+	} while (0)
+
 
 VISIBLE qpic_t *
 Draw_PicFromWad (const char *name)
@@ -362,7 +382,9 @@ Draw_Pic (int x, int y, qpic_t *pic)
 
 	if (x < 0 || (unsigned int) (x + pic->width) > vid.conwidth || y < 0 ||
 		(unsigned int) (y + pic->height) > vid.conheight) {
-		Sys_Error ("Draw_Pic: bad coordinates");
+		Sys_MaskPrintf (SYS_VID, "Draw_Pic: bad coordinates");
+		Draw_SubPic (x, y, pic, 0, 0, pic->width, pic->height);
+		return;
 	}
 
 	source = pic->data;
@@ -414,8 +436,29 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 
 	if ((x < 0) || (x + width > (int) vid.conwidth)
 		|| (y < 0) || (y + height > (int) vid.conheight)) {
-		Sys_Error ("Draw_SubPic: bad coordinates");
+		Sys_MaskPrintf (SYS_VID, "Draw_SubPic: bad coordinates");
 	}
+	// first, clip to screen
+	if (x < 0) {
+		srcx += x;
+		width += x;
+		x = 0;
+	}
+	if (x + width > (int) vid.width)
+		width = vid.width - x;
+	if (width <= 0)
+		return;
+	if (y < 0) {
+		srcy += y;
+		height += y;
+		y = 0;
+	}
+	if (y + height > (int) vid.height)
+		height = vid.height - y;
+	if (height <= 0)
+		return;
+	// next, clip to pic
+	CLIP (srcx, srcy, width, height, pic->width, pic->height);
 
 	source = pic->data + srcy * pic->width + srcx;
 
@@ -531,7 +574,6 @@ R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 	}
 }
 
-
 /*
 	Draw_TileClear
 
@@ -544,6 +586,8 @@ Draw_TileClear (int x, int y, int w, int h)
 	int         width, height, tileoffsetx, tileoffsety;
 	byte       *psrc;
 	vrect_t     vr;
+
+	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
 
 	r_rectdesc.rect.x = x;
 	r_rectdesc.rect.y = y;
@@ -608,9 +652,10 @@ Draw_Fill (int x, int y, int w, int h, int c)
 
 	if (x < 0 || x + w > (int) vid.conwidth
 		|| y < 0 || y + h > (int) vid.conheight) {
-		Sys_Printf ("Bad Draw_Fill(%d, %d, %d, %d, %c)\n", x, y, w, h, c);
-		return;
+		Sys_MaskPrintf (SYS_VID, "Bad Draw_Fill(%d, %d, %d, %d, %c)\n",
+						x, y, w, h, c);
 	}
+	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
 
 	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
 	for (v = 0; v < h; v++, dest += vid.rowbytes)

@@ -151,7 +151,7 @@ I_CDAudio_Resume (void)
 		return;
 
 	if (SDL_CDResume (cd_id))
-		Sys_MaskPrintf (SYS_SND, "CDAudio_Resume: Failed tp resume track.\n");
+		Sys_MaskPrintf (SYS_SND, "CDAudio_Resume: Failed to resume track.\n");
 }
 
 static void

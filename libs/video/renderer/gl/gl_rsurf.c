@@ -68,7 +68,8 @@ instsurf_t **sky_chain_tail;
 #define CHAIN_SURF_F2B(surf,chain)							\
 	do { 													\
 		instsurf_t *inst = (surf)->instsurf;				\
-		if (!inst) (surf)->tinst = inst = get_instsurf ();	\
+		if (__builtin_expect(!inst, 1))						\
+			(surf)->tinst = inst = get_instsurf ();			\
 		inst->surface = (surf);								\
 		*(chain##_tail) = inst;								\
 		(chain##_tail) = &inst->tex_chain;					\
@@ -78,7 +79,8 @@ instsurf_t **sky_chain_tail;
 #define CHAIN_SURF_B2F(surf,chain) 							\
 	do { 													\
 		instsurf_t *inst = (surf)->instsurf;				\
-		if (!inst) (surf)->tinst = inst = get_instsurf ();	\
+		if (__builtin_expect(!inst, 1))						\
+			(surf)->tinst = inst = get_instsurf ();			\
 		inst->surface = (surf);								\
 		inst->tex_chain = (chain);							\
 		(chain) = inst;										\
@@ -357,7 +359,7 @@ R_DrawWaterSurfaces (void)
 	}
 }
 
-static inline void
+static void
 DrawTextureChains (int disable_blend, int do_bind)
 {
 	int			i;

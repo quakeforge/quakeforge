@@ -55,6 +55,7 @@ LoadPCX (QFile *f, qboolean convert, byte *pal)
 	pcx_t      *pcx;
 	int         pcx_mark;
 	byte       *palette;
+	byte       *end;
 	byte       *pix;
 	byte       *dataByte;
 	int         runLength = 1;
@@ -85,7 +86,7 @@ LoadPCX (QFile *f, qboolean convert, byte *pal)
 		return 0;
 	}
 
-	palette = ((byte *) pcx) + fsize - 768;
+	end = palette = ((byte *) pcx) + fsize - 768;
 	dataByte = (byte *) &pcx[1];
 
 	count = (pcx->xmax + 1) * (pcx->ymax + 1);
@@ -106,12 +107,12 @@ LoadPCX (QFile *f, qboolean convert, byte *pal)
 	pix = tex->data;
 
 	while (count) {
-		if (dataByte >= palette)
+		if (dataByte >= end)
 			break;
 
 		if ((*dataByte & 0xC0) == 0xC0) {
 			runLength = *dataByte++ & 0x3F;
-			if (dataByte >= palette)
+			if (dataByte >= end)
 				break;
 		} else {
 			runLength = 1;

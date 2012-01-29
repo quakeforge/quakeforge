@@ -49,7 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 cvar_t *in_snd_block;
 
 static keydest_t old_key_dest = key_none;
-static int have_focus;
+static int have_focus = 1;
 
 
 static void

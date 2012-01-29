@@ -109,7 +109,7 @@ SNDDMA_BlockSound (void)
 static void
 SNDDMA_UnblockSound (void)
 {
-	if (!snd_blocked)
+	if (snd_blocked)
 		--snd_blocked;
 }
 
