@@ -79,6 +79,7 @@ static struct {
 	shaderparam_t ambient;
 	shaderparam_t shadelight;
 	shaderparam_t lightvec;
+	shaderparam_t fog;
 } quake_mdl = {
 	0,
 	{"mvp_mat", 1},
@@ -98,6 +99,7 @@ static struct {
 	{"ambient", 1},
 	{"shadelight", 1},
 	{"lightvec", 1},
+	{"fog", 1},
 };
 
 static mat4_t alias_vp;
@@ -129,6 +131,7 @@ R_InitAlias (void)
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.ambient);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.shadelight);
 	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.lightvec);
+	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.fog);
 }
 
 static void
@@ -288,6 +291,8 @@ R_DrawAlias (void)
 void
 R_AliasBegin (void)
 {
+	quat_t      fog;
+
 	// pre-multiply the view and projection matricies
 	Mat4Mult (glsl_projection, glsl_view, alias_vp);
 
@@ -300,6 +305,10 @@ R_AliasBegin (void)
 	qfglEnableVertexAttribArray (quake_mdl.stb.location);
 	qfglDisableVertexAttribArray (quake_mdl.colora.location);
 	qfglDisableVertexAttribArray (quake_mdl.colorb.location);
+
+	VectorCopy (Fog_GetColor (), fog);
+	fog[3] = Fog_GetDensity () / 64.0;
+	qfglUniform4fv (quake_mdl.fog.location, 1, fog);
 
 	qfglUniform1i (quake_mdl.colormap.location, 1);
 	qfglActiveTexture (GL_TEXTURE0 + 1);

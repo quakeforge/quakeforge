@@ -260,6 +260,7 @@ R_Init (void)
 	R_InitAlias ();
 	R_InitSprites ();
 	R_InitParticles ();
+	Fog_Init ();
 }
 
 VISIBLE void
@@ -278,16 +279,6 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	R_RegisterTextures (models, num_models);
 	R_BuildLightmaps (models, num_models);
 	R_BuildDisplayLists (models, num_models);
-}
-
-VISIBLE void
-Fog_Update (float density, float red, float green, float blue, float time)
-{
-}
-
-VISIBLE void
-Fog_ParseWorldspawn (struct plitem_s *worldspawn)
-{
 }
 
 VISIBLE void

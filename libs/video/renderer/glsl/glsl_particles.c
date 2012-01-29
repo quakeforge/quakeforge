@@ -99,12 +99,14 @@ static struct {
 	shaderparam_t vertex;
 	shaderparam_t palette;
 	shaderparam_t color;
+	shaderparam_t fog;
 } quake_point = {
 	0,
 	{"mvp_mat", 1},
 	{"vertex", 0},
 	{"palette", 1},
 	{"vcolor", 0},
+	{"fog", 0},
 };
 
 static struct {
@@ -114,6 +116,7 @@ static struct {
 	shaderparam_t vertex;
 	shaderparam_t color;
 	shaderparam_t texture;
+	shaderparam_t fog;
 } quake_part = {
 	0,
 	{"mvp_mat", 1},
@@ -121,6 +124,7 @@ static struct {
 	{"vertex", 0},
 	{"vcolor", 0},
 	{"texture", 1},
+	{"fog", 0},
 };
 
 inline static void
@@ -225,6 +229,7 @@ R_InitParticles (void)
 	GL_ResolveShaderParam (quake_point.program, &quake_point.vertex);
 	GL_ResolveShaderParam (quake_point.program, &quake_point.palette);
 	GL_ResolveShaderParam (quake_point.program, &quake_point.color);
+	GL_ResolveShaderParam (quake_point.program, &quake_point.fog);
 
 	vert = GL_CompileShader ("quakepar.vert", quakepart_vert,
 							 GL_VERTEX_SHADER);
@@ -236,6 +241,7 @@ R_InitParticles (void)
 	GL_ResolveShaderParam (quake_part.program, &quake_part.vertex);
 	GL_ResolveShaderParam (quake_part.program, &quake_part.color);
 	GL_ResolveShaderParam (quake_part.program, &quake_part.texture);
+	GL_ResolveShaderParam (quake_part.program, &quake_part.fog);
 
 	memset (data, 0, sizeof (data));
 	qfglGenTextures (1, &part_tex);
@@ -1534,6 +1540,7 @@ draw_qf_particles (void)
 	vec3_t      up_scale, right_scale, up_right_scale, down_right_scale;
 	partvert_t *VA;
 	mat4_t      vp_mat;
+	quat_t      fog;
 
 	Mat4Mult (glsl_projection, glsl_view, vp_mat);
 
@@ -1542,6 +1549,10 @@ draw_qf_particles (void)
 	qfglEnableVertexAttribArray (quake_part.vertex.location);
 	qfglEnableVertexAttribArray (quake_part.color.location);
 	qfglEnableVertexAttribArray (quake_part.st.location);
+
+	VectorCopy (Fog_GetColor (), fog);
+	fog[3] = Fog_GetDensity () / 64.0;
+	qfglUniform4fv (quake_part.fog.location, 1, fog);
 
 	qfglUniformMatrix4fv (quake_part.mvp_matrix.location, 1, false, vp_mat);
 
@@ -1673,6 +1684,7 @@ draw_id_particles (void)
 	particle_t *part;
 	partvert_t *VA;
 	mat4_t      vp_mat;
+	quat_t      fog;
 
 	Mat4Mult (glsl_projection, glsl_view, vp_mat);
 
@@ -1683,6 +1695,10 @@ draw_id_particles (void)
 	qfglEnableVertexAttribArray (quake_point.color.location);
 
 	qfglUniformMatrix4fv (quake_point.mvp_matrix.location, 1, false, vp_mat);
+
+	VectorCopy (Fog_GetColor (), fog);
+	fog[3] = Fog_GetDensity () / 64.0;
+	qfglUniform4fv (quake_point.fog.location, 1, fog);
 
 	qfglUniform1i (quake_point.palette.location, 0);
 	qfglActiveTexture (GL_TEXTURE0 + 0);

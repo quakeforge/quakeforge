@@ -133,6 +133,7 @@ static struct {
 	shaderparam_t texture;
 	shaderparam_t lightmap;
 	shaderparam_t color;
+	shaderparam_t fog;
 } quake_bsp = {
 	0,
 	{"mvp_mat", 1},
@@ -142,6 +143,7 @@ static struct {
 	{"texture", 1},
 	{"lightmap", 1},
 	{"vcolor", 0},
+	{"fog", 1},
 };
 
 static struct {
@@ -153,6 +155,7 @@ static struct {
 	shaderparam_t texture;
 	shaderparam_t realtime;
 	shaderparam_t color;
+	shaderparam_t fog;
 } quake_turb = {
 	0,
 	{"mvp_mat", 1},
@@ -162,6 +165,7 @@ static struct {
 	{"texture", 1},
 	{"realtime", 1},
 	{"vcolor", 0},
+	{"fog", 1},
 };
 
 static struct {
@@ -173,6 +177,7 @@ static struct {
 	shaderparam_t solid;
 	shaderparam_t trans;
 	shaderparam_t realtime;
+	shaderparam_t fog;
 } quake_skyid = {
 	0,
 	{"mvp_mat", 1},
@@ -182,6 +187,7 @@ static struct {
 	{"solid", 1},
 	{"trans", 1},
 	{"realtime", 1},
+	{"fog", 1},
 };
 
 static struct {
@@ -190,18 +196,21 @@ static struct {
 	shaderparam_t sky_matrix;
 	shaderparam_t vertex;
 	shaderparam_t sky;
+	shaderparam_t fog;
 } quake_skybox = {
 	0,
 	{"mvp_mat", 1},
 	{"sky_mat", 1},
 	{"vertex", 0},
 	{"sky", 1},
+	{"fog", 1},
 };
 
 static struct {
 	shaderparam_t *mvp_matrix;
 	shaderparam_t *sky_matrix;
 	shaderparam_t *vertex;
+	shaderparam_t *fog;
 } sky_params;
 
 #define CHAIN_SURF_F2B(surf,chain)							\
@@ -805,6 +814,8 @@ static void
 bsp_begin (void)
 {
 	static quat_t color = { 1, 1, 1, 1 };
+	quat_t      fog;
+
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
 	qfglUseProgram (quake_bsp.program);
@@ -813,6 +824,10 @@ bsp_begin (void)
 	qfglDisableVertexAttribArray (quake_bsp.color.location);
 
 	qfglVertexAttrib4fv (quake_bsp.color.location, color);
+
+	VectorCopy (Fog_GetColor (), fog);
+	fog[3] = Fog_GetDensity () / 64.0;
+	qfglUniform4fv (quake_bsp.fog.location, 1, fog);
 
 	qfglUniform1i (quake_bsp.colormap.location, 2);
 	qfglActiveTexture (GL_TEXTURE0 + 2);
@@ -851,6 +866,7 @@ static void
 turb_begin (void)
 {
 	static quat_t color = { 1, 1, 1, 1 };
+	quat_t      fog;
 
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
@@ -861,6 +877,10 @@ turb_begin (void)
 
 	color[3] = bound (0, r_wateralpha->value, 1);
 	qfglVertexAttrib4fv (quake_turb.color.location, color);
+
+	VectorCopy (Fog_GetColor (), fog);
+	fog[3] = Fog_GetDensity () / 64.0;
+	qfglUniform4fv (quake_turb.fog.location, 1, fog);
 
 	qfglUniform1i (quake_turb.palette.location, 1);
 	qfglActiveTexture (GL_TEXTURE0 + 1);
@@ -915,6 +935,7 @@ static void
 sky_begin (void)
 {
 	mat4_t      mat;
+	quat_t      fog;
 
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
@@ -922,6 +943,7 @@ sky_begin (void)
 		sky_params.mvp_matrix = &quake_skybox.mvp_matrix;
 		sky_params.vertex = &quake_skybox.vertex;
 		sky_params.sky_matrix = &quake_skybox.sky_matrix;
+		sky_params.fog = &quake_skybox.fog;
 
 		qfglUseProgram (quake_skybox.program);
 		qfglEnableVertexAttribArray (quake_skybox.vertex.location);
@@ -934,6 +956,7 @@ sky_begin (void)
 		sky_params.mvp_matrix = &quake_skyid.mvp_matrix;
 		sky_params.sky_matrix = &quake_skyid.sky_matrix;
 		sky_params.vertex = &quake_skyid.vertex;
+		sky_params.fog = &quake_skyid.fog;
 
 		qfglUseProgram (quake_skyid.program);
 		qfglEnableVertexAttribArray (quake_skyid.vertex.location);
@@ -953,6 +976,10 @@ sky_begin (void)
 		qfglActiveTexture (GL_TEXTURE0 + 1);
 		qfglEnable (GL_TEXTURE_2D);
 	}
+
+	VectorCopy (Fog_GetColor (), fog);
+	fog[3] = Fog_GetDensity () / 64.0;
+	qfglUniform4fv (sky_params.fog->location, 1, fog);
 
 	spin (mat);
 	qfglUniformMatrix4fv (sky_params.sky_matrix->location, 1, false, mat);
@@ -1183,6 +1210,7 @@ R_InitBsp (void)
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.texture);
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.lightmap);
 	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.color);
+	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.fog);
 
 	frag = GL_CompileShader ("quaketrb.frag", quaketurb_frag,
 							 GL_FRAGMENT_SHADER);
@@ -1194,6 +1222,7 @@ R_InitBsp (void)
 	GL_ResolveShaderParam (quake_turb.program, &quake_turb.texture);
 	GL_ResolveShaderParam (quake_turb.program, &quake_turb.realtime);
 	GL_ResolveShaderParam (quake_turb.program, &quake_turb.color);
+	GL_ResolveShaderParam (quake_turb.program, &quake_turb.fog);
 
 	vert = GL_CompileShader ("quakesky.vert", quakesky_vert, GL_VERTEX_SHADER);
 	frag = GL_CompileShader ("quakeski.frag", quakeskyid_frag,
@@ -1206,6 +1235,7 @@ R_InitBsp (void)
 	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.solid);
 	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.trans);
 	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.realtime);
+	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.fog);
 
 	frag = GL_CompileShader ("quakeskb.frag", quakeskybox_frag,
 							 GL_FRAGMENT_SHADER);
@@ -1214,6 +1244,7 @@ R_InitBsp (void)
 	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.sky_matrix);
 	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.vertex);
 	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.sky);
+	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.fog);
 }
 
 VISIBLE void

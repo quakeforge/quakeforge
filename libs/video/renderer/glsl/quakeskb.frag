@@ -1,6 +1,23 @@
 uniform samplerCube sky;
+uniform vec4 fog;
 
 varying vec3 direction;
+
+float
+sqr (float x)
+{
+	return x * x;
+}
+
+vec4
+fogBlend (vec4 color)
+{
+	float       f;
+	vec4        fog_color = vec4 (fog.rgb, 1.0);
+
+	f = exp (-sqr (fog.a / gl_FragCoord.w));
+	return mix (fog_color, color, f);
+}
 
 void
 main (void)
@@ -13,5 +30,5 @@ main (void)
 	// quake has x right, y in, z up. gl has x right, y up, z out
 	// The textures are loaded with GL's z (quake's y) already negated, so
 	// all that's needed here is to swizzle y and z.
-	gl_FragColor =  textureCube(sky, dir.xzy);
+	gl_FragColor = fogBlend (textureCube(sky, dir.xzy));
 }

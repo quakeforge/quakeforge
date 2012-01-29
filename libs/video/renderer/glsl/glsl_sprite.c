@@ -76,6 +76,7 @@ static struct {
 	shaderparam_t colora;
 	shaderparam_t colorb;
 	shaderparam_t blend;
+	shaderparam_t fog;
 } quake_sprite = {
 	0,
 	{"spritea", 1},
@@ -88,6 +89,7 @@ static struct {
 	{"vcolora", 0},
 	{"vcolorb", 0},
 	{"vblend", 0},
+	{"fog", 0},
 };
 
 VISIBLE void
@@ -110,6 +112,7 @@ R_InitSprites (void)
 	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.colorb);
 	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.uvab);
 	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.blend);
+	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.fog);
 }
 
 static void
@@ -311,6 +314,7 @@ void
 R_SpriteBegin (void)
 {
 	mat4_t      mat;
+	quat_t      fog;
 
 	qfglUseProgram (quake_sprite.program);
 	qfglEnableVertexAttribArray (quake_sprite.vertexa.location);
@@ -319,6 +323,10 @@ R_SpriteBegin (void)
 	qfglDisableVertexAttribArray (quake_sprite.colora.location);
 	qfglDisableVertexAttribArray (quake_sprite.colorb.location);
 	qfglDisableVertexAttribArray (quake_sprite.blend.location);
+
+	VectorCopy (Fog_GetColor (), fog);
+	fog[3] = Fog_GetDensity () / 64.0;
+	qfglUniform4fv (quake_sprite.fog.location, 1, fog);
 
 	qfglUniform1i (quake_sprite.spritea.location, 0);
 	qfglActiveTexture (GL_TEXTURE0 + 0);

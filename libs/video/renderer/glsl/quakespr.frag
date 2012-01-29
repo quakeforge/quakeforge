@@ -1,9 +1,27 @@
 uniform sampler2D spritea;
 uniform sampler2D spriteb;
 uniform sampler2D palette;
+uniform vec4 fog;
+
 varying float blend;
 varying vec4 colora, colorb;
 varying vec2 sta, stb;
+
+float
+sqr (float x)
+{
+	return x * x;
+}
+
+vec4
+fogBlend (vec4 color)
+{
+	float       f;
+	vec4        fog_color = vec4 (fog.rgb, 1.0);
+
+	f = exp (-sqr (fog.a / gl_FragCoord.w));
+	return mix (fog_color, color, f);
+}
 
 void
 main (void)
@@ -21,5 +39,5 @@ main (void)
 	col = mix (cola, colb, blend);
 	if (col.a == 0.0)
 		discard;
-	gl_FragColor = col;
+	gl_FragColor = fogBlend (col);
 }
