@@ -227,7 +227,10 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	if (worldmodel->skytexture)
 		R_InitSky (worldmodel->skytexture);
 
+	// Force a vis update
 	r_viewleaf = NULL;
+	R_MarkLeaves ();
+
 	R_ClearParticles ();
 
 	r_cnumsurfs = r_maxsurfs->int_val;

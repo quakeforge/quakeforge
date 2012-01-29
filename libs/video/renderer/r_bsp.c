@@ -63,6 +63,8 @@ R_MarkLeaves (void)
 
 	r_visframecount++;
 	r_oldviewleaf = r_viewleaf;
+	if (!r_viewleaf)
+		return;
 
 	if (r_novis->int_val) {
 		r_oldviewleaf = 0;	// so vis will be recalcualted when novis gets
