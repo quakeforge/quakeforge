@@ -58,6 +58,26 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "compat.h"
 
+static void
+glsl_brush_clear (model_t *m)
+{
+	int         i;
+
+	m->needload = true;
+	for (i = 0; i < m->numtextures; i++) {
+		if (m->textures[i]->gl_texturenum) {
+			GL_ReleaseTexture (m->textures[i]->gl_texturenum);
+			m->textures[i]->gl_texturenum = 0;
+		}
+	}
+	for (i = 0; i < m->numsurfaces; i++) {
+		if (m->surfaces[i].polys) {
+			free (m->surfaces[i].polys);
+			m->surfaces[i].polys = 0;
+		}
+	}
+}
+
 void
 Mod_ProcessTexture (texture_t *tx)
 {
@@ -95,6 +115,8 @@ Mod_LoadExternalTextures (model_t *mod)
 void
 Mod_LoadLighting (bsp_t *bsp)
 {
+	// a big hacky, but it's as good a place as any
+	loadmodel->clear = glsl_brush_clear;
 	mod_lightmap_bytes = 1;
 	if (!bsp->lightdatasize) {
 		loadmodel->lightdata = NULL;

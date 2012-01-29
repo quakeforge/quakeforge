@@ -466,7 +466,6 @@ build_surf_displist (model_t **models, msurface_t *fa, int base,
 	numtris = numverts - 2;
 	numindices = numtris * 3;
 	verts = alloca (numverts * sizeof (bspvert_t));
-	//FIXME leak
 	poly = malloc (field_offset (glslpoly_t, indices[numindices]));
 	poly->count = numindices;
 	for (i = 0, ind = poly->indices; i < numtris; i++) {

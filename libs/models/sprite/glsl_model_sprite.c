@@ -31,8 +31,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -49,11 +48,36 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 
+static void
+glsl_sprite_clear (model_t *m)
+{
+	int         i, j;
+	msprite_t  *sprite = (msprite_t *) m->cache.data;
+	mspritegroup_t *group;
+	mspriteframe_t *frame;
+
+	m->needload = true;
+	m->cache.data = 0;
+	for (i = 0; i < sprite->numframes; i++) {
+		if (sprite->frames[i].type == SPR_SINGLE) {
+			frame = sprite->frames[i].frameptr;
+			GL_ReleaseTexture (frame->gl_texturenum);
+		} else {
+			group = (mspritegroup_t *) sprite->frames[i].frameptr;
+			for (j = 0; j < group->numframes; j++) {
+				frame = group->frames[j];
+				GL_ReleaseTexture (frame->gl_texturenum);
+			}
+		}
+	}
+}
+
 void
 Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
 {
 	const char *name;
 
+	loadmodel->clear = glsl_sprite_clear;
 	name = va ("%s_%i", loadmodel->name, framenum);
 	pspriteframe->gl_texturenum =
 		GL_LoadQuakeTexture (name, pspriteframe->width, pspriteframe->height,

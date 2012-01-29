@@ -912,6 +912,8 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 	Mod_LoadEntities (bsp);
 	Mod_LoadSubmodels (bsp);
 
+	BSP_Free(bsp);
+
 	Mod_MakeHull0 ();
 
 	mod->numframes = 2;					// regular and alternate animation

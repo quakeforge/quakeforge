@@ -58,6 +58,42 @@ static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 #include "anorms.h"
 };
 
+static void
+glsl_alias_clear (model_t *m)
+{
+	int         i, j;
+	aliashdr_t *hdr;
+	GLuint      bufs[2];
+	maliasskindesc_t *skins;
+	maliasskingroup_t *group;
+
+	m->needload = true;
+
+	if (!(hdr = m->aliashdr))
+		hdr = Cache_Get (&m->cache);
+
+	bufs[0] = hdr->posedata;
+	bufs[1] = hdr->commands;
+	qfglDeleteBuffers (2, bufs);
+
+	skins = ((maliasskindesc_t *) ((byte *) hdr + hdr->skindesc));
+	for (i = 0; i < hdr->mdl.numskins; i++) {
+		if (skins[i].type == ALIAS_SKIN_GROUP) {
+			group = (maliasskingroup_t *) ((byte *) hdr + skins[i].skin);
+			for (j = 0; j < group->numskins; j++) {
+				GL_ReleaseTexture (group->skindescs[j].texnum);
+			}
+		} else {
+			GL_ReleaseTexture (skins[i].texnum);
+		}
+	}
+
+	if (!m->aliashdr) {
+		Cache_Release (&m->cache);
+		Cache_Free (&m->cache);
+	}
+}
+
 void *
 Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum, qboolean group,
 			  maliasskindesc_t *skindesc)
@@ -85,6 +121,7 @@ Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 {
 	if (hdr->mdl.ident == HEADER_MDL16)
 		VectorScale (hdr->mdl.scale, 1/256.0, hdr->mdl.scale);
+	m->clear = glsl_alias_clear;
 }
 
 void

@@ -313,6 +313,7 @@ dump_program (const char *name, int program)
 		Sys_Printf ("Attribute %i name \"%s\" size %i type %s\n", (int)ind,
 					pname->str, (int)psize, type_name (ptype));
 	}
+	dstring_delete (pname);
 }
 
 int

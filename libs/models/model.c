@@ -120,10 +120,14 @@ Mod_ClearAll (void)
 	model_t   **mod;
 
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
-		if ((*mod)->type != mod_alias)
-			(*mod)->needload = true;
-		if ((*mod)->type == mod_sprite)
-			(*mod)->cache.data = 0;
+		if (!(*mod)->needload && (*mod)->clear) {
+			(*mod)->clear (*mod);
+		} else {
+			if ((*mod)->type != mod_alias)
+				(*mod)->needload = true;
+			if ((*mod)->type == mod_sprite)
+				(*mod)->cache.data = 0;
+		}
 	}
 }
 
@@ -237,7 +241,7 @@ static model_t *
 Mod_LoadModel (model_t *mod, qboolean crash)
 {
 	if (!mod->needload) {
-		if (mod->type == mod_alias) {
+		if (mod->type == mod_alias && !mod->aliashdr) {
 			if (Cache_Check (&mod->cache))
 				return mod;
 		} else
