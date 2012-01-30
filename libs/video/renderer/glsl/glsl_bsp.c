@@ -953,6 +953,7 @@ sky_begin (void)
 	mat4_t      mat;
 	quat_t      fog;
 
+	default_color[3] = 1;
 	last_color = default_color;
 
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
