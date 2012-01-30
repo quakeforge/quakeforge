@@ -890,7 +890,7 @@ turb_begin (void)
 	qfglUseProgram (quake_turb.program);
 	qfglEnableVertexAttribArray (quake_turb.vertex.location);
 	qfglEnableVertexAttribArray (quake_turb.tlst.location);
-	qfglDisableVertexAttribArray (quake_bsp.color.location);
+	qfglDisableVertexAttribArray (quake_turb.color.location);
 
 	qfglVertexAttrib4fv (quake_turb.color.location, default_color);
 
