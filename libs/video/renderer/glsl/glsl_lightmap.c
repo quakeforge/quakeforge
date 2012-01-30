@@ -128,6 +128,10 @@ R_BuildLightMap_1 (msurface_t *surf)
 	int         i, t;
 	byte       *out;
 
+	// If we add dlights this frame, make sure they get removed next frame
+	// if the dlights disappear suddenly
+	surf->cached_dlight = (surf->dlightframe == r_framecount);
+
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
 	size = smax * tmax;
