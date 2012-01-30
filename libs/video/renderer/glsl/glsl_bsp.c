@@ -826,9 +826,9 @@ draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc,
 static void
 bsp_begin (void)
 {
-	static quat_t color = { 1, 1, 1, 1 };
 	quat_t      fog;
 
+	default_color[3] = 1;
 	last_color = default_color;
 
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
@@ -838,7 +838,7 @@ bsp_begin (void)
 	qfglEnableVertexAttribArray (quake_bsp.tlst.location);
 	qfglDisableVertexAttribArray (quake_bsp.color.location);
 
-	qfglVertexAttrib4fv (quake_bsp.color.location, color);
+	qfglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
 	VectorCopy (Fog_GetColor (), fog);
 	fog[3] = Fog_GetDensity () / 64.0;
@@ -880,9 +880,9 @@ bsp_end (void)
 static void
 turb_begin (void)
 {
-	static quat_t color = { 1, 1, 1, 1 };
 	quat_t      fog;
 
+	default_color[3] = bound (0, r_wateralpha->value, 1);
 	last_color = default_color;
 
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
@@ -892,8 +892,7 @@ turb_begin (void)
 	qfglEnableVertexAttribArray (quake_turb.tlst.location);
 	qfglDisableVertexAttribArray (quake_bsp.color.location);
 
-	color[3] = bound (0, r_wateralpha->value, 1);
-	qfglVertexAttrib4fv (quake_turb.color.location, color);
+	qfglVertexAttrib4fv (quake_turb.color.location, default_color);
 
 	VectorCopy (Fog_GetColor (), fog);
 	fog[3] = Fog_GetDensity () / 64.0;
