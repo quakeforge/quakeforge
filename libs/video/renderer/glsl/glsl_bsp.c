@@ -354,10 +354,10 @@ chain_surface (msurface_t *surf, vec_t *transform, float *color)
 {
 	instsurf_t *is;
 
-	if (surf->flags & SURF_DRAWTURB) {
-		CHAIN_SURF_B2F (surf, waterchain);
-	} else if (surf->flags & SURF_DRAWSKY) {
+	if (surf->flags & SURF_DRAWSKY) {
 		CHAIN_SURF_F2B (surf, sky_chain);
+	} else if ((surf->flags & SURF_DRAWTURB) || (color && color[3] < 1.0)) {
+		CHAIN_SURF_B2F (surf, waterchain);
 	} else {
 		texture_t  *tex;
 
@@ -365,10 +365,7 @@ chain_surface (msurface_t *surf, vec_t *transform, float *color)
 			tex = surf->texinfo->texture;
 		else
 			tex = R_TextureAnimation (surf);
-		if (color && color[3] < 1.0)
-			CHAIN_SURF_B2F (surf, tex->tex_chain);
-		else
-			CHAIN_SURF_F2B (surf, tex->tex_chain);
+		CHAIN_SURF_F2B (surf, tex->tex_chain);
 
 		update_lightmap (surf);
 	}
