@@ -65,7 +65,8 @@ glsl_brush_clear (model_t *m)
 
 	m->needload = true;
 	for (i = 0; i < m->numtextures; i++) {
-		if (m->textures[i]->gl_texturenum) {
+		// NOTE: some maps (eg e1m2) have empty texture slots
+		if (m->textures[i] && m->textures[i]->gl_texturenum) {
 			GL_ReleaseTexture (m->textures[i]->gl_texturenum);
 			m->textures[i]->gl_texturenum = 0;
 		}
