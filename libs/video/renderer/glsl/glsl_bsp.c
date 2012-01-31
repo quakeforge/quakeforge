@@ -365,7 +365,10 @@ chain_surface (msurface_t *surf, vec_t *transform, float *color)
 			tex = surf->texinfo->texture;
 		else
 			tex = R_TextureAnimation (surf);
-		CHAIN_SURF_F2B (surf, tex->tex_chain);
+		if (color && color[3] < 1.0)
+			CHAIN_SURF_B2F (surf, tex->tex_chain);
+		else
+			CHAIN_SURF_F2B (surf, tex->tex_chain);
 
 		update_lightmap (surf);
 	}
