@@ -373,8 +373,6 @@ GL_EndRendering (void)
 			}
 		}
 	}
-	if (fullsbardraw)
-		Sbar_Changed ();
 }
 
 void

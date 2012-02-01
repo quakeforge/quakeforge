@@ -95,7 +95,6 @@ GL_EndRendering (void)
 {
 	qfglFinish ();
 	SDL_GL_SwapBuffers ();
-	Sbar_Changed ();
 }
 
 void

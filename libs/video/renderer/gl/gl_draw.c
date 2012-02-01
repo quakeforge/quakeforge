@@ -891,8 +891,6 @@ Draw_FadeScreen (void)
 	qfglEnd ();
 	qfglColor3ubv (color_white);
 	qfglEnable (GL_TEXTURE_2D);
-
-	Sbar_Changed ();
 }
 
 static void

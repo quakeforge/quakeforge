@@ -183,7 +183,6 @@ GL_EndRendering (void)
 {
 	qfglFinish ();
 	qfglXSwapBuffers (x_disp, x_win);
-	Sbar_Changed ();
 }
 
 void

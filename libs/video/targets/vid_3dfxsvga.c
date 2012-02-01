@@ -198,7 +198,6 @@ GL_EndRendering (void)
 {
 	qfglFinish ();
 	qf_fxMesaSwapBuffers ();
-	Sbar_Changed ();
 }
 
 static unsigned int  resolutions[][3] = {

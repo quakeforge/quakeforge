@@ -223,7 +223,6 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	if (scr_fullupdate++ < vid.numpages) {	// clear the entire screen
 		scr_copyeverything = 1;
 		Draw_TileClear (0, 0, vid.width, vid.height);
-		Sbar_Changed ();
 	}
 
 	pconupdate = NULL;

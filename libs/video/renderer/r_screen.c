@@ -162,9 +162,6 @@ SCR_CalcRefdef (void)
 	scr_fullupdate = 0;
 	vid.recalc_refdef = 0;
 
-	// force the status bar to redraw
-	Sbar_Changed ();
-
 	// bound field of view
 	Cvar_SetValue (scr_fov, bound (1, scr_fov->value, 170));
 
@@ -278,8 +275,6 @@ SCR_DrawPause (void)
 void
 SCR_SetUpToDrawConsole (void)
 {
-	if (clearconsole++ < vid.numpages)
-		Sbar_Changed ();
 }
 
 /*
