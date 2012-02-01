@@ -863,6 +863,8 @@ Host_Init_Memory (void)
 
 	Sys_PageIn (mem_base, mem_size);
 	Memory_Init (mem_base, mem_size);
+
+	Sys_Printf ("%4.1f megabyte heap\n", host_mem_size->value);
 }
 
 void
@@ -874,9 +876,8 @@ Host_Init (void)
 	cmd_source = src_command;
 
 	Sys_Init ();
-	COM_ParseConfig ();
-
 	GIB_Init (true);
+	COM_ParseConfig ();
 
 	Host_Init_Memory ();
 
@@ -884,11 +885,11 @@ Host_Init (void)
 
 	Game_Init ();
 
-	if (!isDedicated)
-		CL_InitCvars ();
-
 	PR_Init_Cvars ();
 	SV_Progs_Init_Cvars ();
+
+	if (!isDedicated)
+		CL_InitCvars ();
 
 	PR_Init ();
 
@@ -911,13 +912,9 @@ Host_Init (void)
 
 	NET_Init ();
 
-	W_LoadWadFile ("gfx.wad");
 	Mod_Init ();
 
-	SV_Progs_Init ();
 	SV_Init ();
-
-	Sys_Printf ("%4.1f megabyte heap\n", host_mem_size->value);
 
 	if (cls.state != ca_dedicated)
 		CL_Init (host_cbuf);

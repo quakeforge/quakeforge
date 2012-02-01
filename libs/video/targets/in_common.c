@@ -31,8 +31,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -50,6 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "QF/cbuf.h"
 #include "QF/cvar.h"
 #include "QF/in_event.h"
 #include "QF/input.h"
@@ -142,11 +142,11 @@ IN_Shutdown (void)
 }
 
 void
-IN_Init (void)
+IN_Init (cbuf_t *cbuf)
 {
 	IE_Init ();
 	IN_LL_Init ();
-
+	Key_Init (cbuf);
 	JOY_Init ();
 
 	in_mouse_x = in_mouse_y = 0.0;
@@ -156,6 +156,7 @@ void
 IN_Init_Cvars (void)
 {
 	IE_Init_Cvars ();
+	Key_Init_Cvars ();
 	JOY_Init_Cvars ();
 	in_grab = Cvar_Get ("in_grab", "0", CVAR_ARCHIVE, IN_UpdateGrab,
 						"With this set to 1, quake will grab the mouse, "

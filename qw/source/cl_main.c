@@ -396,7 +396,8 @@ CL_ClearState (void)
 	S_StopAllSounds ();
 
 	// wipe the entire cl structure
-	Info_Destroy (cl.serverinfo);
+	if (cl.serverinfo)
+		Info_Destroy (cl.serverinfo);
 	memset (&cl, 0, sizeof (cl));
 	r_force_fullscreen = 0;
 
@@ -429,7 +430,8 @@ CL_ClearState (void)
 	memset (cl_efrags, 0, sizeof (cl_efrags));
 	memset (r_lightstyle, 0, sizeof (r_lightstyle));
 
-	dstring_clearstr (centerprint);
+	if (centerprint)
+		dstring_clearstr (centerprint);
 }
 
 /*
@@ -1172,16 +1174,46 @@ CL_SetState (cactive_t state)
 void
 CL_Init (void)
 {
-	CL_SetState (ca_disconnected);
+	byte       *basepal, *colormap;
 
-	Info_SetValueForStarKey (cls.userinfo, "*ver", QW_VERSION, 0);
+	basepal = (byte *) QFS_LoadHunkFile ("gfx/palette.lmp");
+	if (!basepal)
+		Sys_Error ("Couldn't load gfx/palette.lmp");
+	colormap = (byte *) QFS_LoadHunkFile ("gfx/colormap.lmp");
+	if (!colormap)
+		Sys_Error ("Couldn't load gfx/colormap.lmp");
+
+	W_LoadWadFile ("gfx.wad");
+	VID_Init (basepal, colormap);
+	IN_Init (cl_cbuf);
+	Draw_Init ();
+	Mod_Init ();
+	R_Init ();
+	S_Init (&cl.worldmodel, &viewentity, &host_frametime);
+	CDAudio_Init ();
+
+	Sbar_Init ();
 
 	CL_Input_Init ();
 	CL_Ents_Init ();
 	CL_TEnts_Init ();
+	CL_ClearState ();
 	Pmove_Init ();
 
 	SL_Init ();
+
+	CL_Skin_Init ();
+	Locs_Init ();
+	V_Init ();
+
+	Info_SetValueForStarKey (cls.userinfo, "*ver", QW_VERSION, 0);
+
+	centerprint = dstring_newstr ();
+	cls.servername = dstring_newstr ();
+	cls.downloadtempname = dstring_newstr ();
+	cls.downloadname = dstring_newstr ();
+	cls.downloadurl = dstring_newstr ();
+	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
 	// register our commands
 	Cmd_AddCommand ("version", CL_Version_f, "Report version information");
@@ -1240,6 +1272,8 @@ CL_Init (void)
 					"server info");
 	cl_player_health_e = GIB_Event_New ("player.health");
 	cl_chat_e = GIB_Event_New ("chat");
+
+	CL_SetState (ca_disconnected);
 }
 
 static void
@@ -1260,6 +1294,22 @@ cl_cmd_pkt_adr_f (cvar_t *var)
 static void
 CL_Init_Cvars (void)
 {
+	VID_Init_Cvars ();
+	IN_Init_Cvars ();
+	Mod_Init_Cvars ();
+	R_Init_Cvars ();
+	S_Init_Cvars ();
+
+	CL_Cam_Init_Cvars ();
+	CL_Input_Init_Cvars ();
+	CL_Prediction_Init_Cvars ();
+	Game_Init_Cvars ();
+	Pmove_Init_Cvars ();
+	Team_Init_Cvars ();
+	V_Init_Cvars ();
+
+	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
+
 	cl_model_crcs = Cvar_Get ("cl_model_crcs", "1", CVAR_ARCHIVE, NULL,
 							  "Controls setting of emodel and pmodel info "
 							  "vars. Required by some servers, but clearing "
@@ -1691,6 +1741,8 @@ CL_Init_Memory (void)
 
 	Sys_PageIn (mem_base, mem_size);
 	Memory_Init (mem_base, mem_size);
+
+	Sys_Printf ("%4.1f megabyte heap.\n", cl_mem_size->value);
 }
 
 static void
@@ -1714,8 +1766,6 @@ CL_Autoexec (int phase)
 void
 Host_Init (void)
 {
-	byte       *basepal, *colormap;
-
 	cl_cbuf = Cbuf_New (&id_interp);
 	cl_stbuf = Cbuf_New (&id_interp);
 
@@ -1727,41 +1777,21 @@ Host_Init (void)
 
 	pr_gametype = "quakeworld";
 
-	centerprint = dstring_newstr ();
-	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
-	cls.servername = dstring_newstr ();
-	cls.downloadtempname = dstring_newstr ();
-	cls.downloadname = dstring_newstr ();
-	cls.downloadurl = dstring_newstr ();
-	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
-
 	QFS_Init ("qw");
 	QFS_GamedirCallback (CL_Autoexec);
 	PI_Init ();
 
-	CL_Cam_Init_Cvars ();
-	CL_Input_Init_Cvars ();
-	CL_Init_Cvars ();
-	CL_Prediction_Init_Cvars ();
-	Game_Init_Cvars ();
-	IN_Init_Cvars ();
-	Key_Init_Cvars ();
-	Mod_Init_Cvars ();
 	Netchan_Init_Cvars ();
+
 	PR_Init_Cvars ();
-	Pmove_Init_Cvars ();
-	R_Init_Cvars ();
-	S_Init_Cvars ();
-	Team_Init_Cvars ();
-	V_Init_Cvars ();
-	VID_Init_Cvars ();
+
+	CL_Init_Cvars ();
 
 	PR_Init ();
 
 	CL_Chat_Init ();
 
 	CL_Cmd_Init ();
-	V_Init ();
 	Game_Init ();
 
 	PI_RegisterPlugins (client_plugin_list);
@@ -1788,36 +1818,9 @@ Host_Init (void)
 	}
 	CL_HTTP_Init ();
 
-	W_LoadWadFile ("gfx.wad");
-	Key_Init (cl_cbuf);
-	Mod_Init ();
-
 	CL_Demo_Init ();
 
-	Sys_Printf ("%4.1f megabyte heap.\n", cl_mem_size->value);
-
-	basepal = (byte *) QFS_LoadHunkFile ("gfx/palette.lmp");
-	if (!basepal)
-		Sys_Error ("Couldn't load gfx/palette.lmp");
-	colormap = (byte *) QFS_LoadHunkFile ("gfx/colormap.lmp");
-	if (!colormap)
-		Sys_Error ("Couldn't load gfx/colormap.lmp");
-
-	VID_Init (basepal, colormap);
-	Draw_Init ();
-	SCR_Init ();
-	R_Init ();
-
-	S_Init (&cl.worldmodel, &viewentity, &host_frametime);
-
-	CDAudio_Init ();
-	Sbar_Init ();
 	CL_Init ();
-	IN_Init ();
-
-	CL_SetState (ca_disconnected);
-	CL_Skin_Init ();
-	Locs_Init ();
 
 	CL_UpdateScreen (realtime);
 	CL_UpdateScreen (realtime);

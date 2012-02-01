@@ -147,6 +147,7 @@ R_Init (void)
 	// get stack position so we can guess if we are going to overflow
 	r_stack_start = (byte *) & dummy;
 
+	SCR_Init ();
 	R_SetFPCW ();
 #ifdef USE_INTEL_ASM
 	R_InitVars ();

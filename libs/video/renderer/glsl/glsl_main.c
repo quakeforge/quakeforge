@@ -256,6 +256,7 @@ R_RenderView (void)
 VISIBLE void
 R_Init (void)
 {
+	SCR_Init ();
 	R_InitBsp ();
 	R_InitAlias ();
 	R_InitSprites ();

@@ -84,6 +84,8 @@ SV_Init (void)
 {
 	int         i;
 
+	SV_Progs_Init ();
+
 	sv_maxvelocity = Cvar_Get ("sv_maxvelocity", "2000", CVAR_NONE, NULL,
 							   "None");
 	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_SERVERINFO, Cvar_Info,

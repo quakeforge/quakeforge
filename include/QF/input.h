@@ -42,7 +42,7 @@ extern viewdelta_t viewdelta;
 
 struct cvar_s;
 
-void IN_Init (void);
+void IN_Init (struct cbuf_s *cbuf);
 void IN_Init_Cvars (void);
 
 void IN_Shutdown (void);

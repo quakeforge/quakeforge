@@ -129,16 +129,15 @@ CL_Shutdown (void)
 void
 CL_InitCvars (void)
 {
-	Chase_Init_Cvars ();
-	IN_Init_Cvars ();
 	VID_Init_Cvars ();
-	S_Init_Cvars ();
-	Key_Init_Cvars ();
-	R_Init_Cvars ();
+	IN_Init_Cvars ();
 	Mod_Init_Cvars ();
-	V_Init_Cvars ();
+	R_Init_Cvars ();
+	S_Init_Cvars ();
 
 	CL_Demo_Init ();
+	Chase_Init_Cvars ();
+	V_Init_Cvars ();
 
 	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, NULL,
 								"Show bonus flash on item pickup");
@@ -511,26 +510,21 @@ CL_Init (cbuf_t *cbuf)
 	if (!colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
 
-	Key_Init (cbuf);
+	W_LoadWadFile ("gfx.wad");
 	VID_Init (basepal, colormap);
+	IN_Init (cbuf);
 	Draw_Init ();
-	SCR_Init ();
 	R_Init ();
-
 	S_Init (&cl.worldmodel, &viewentity, &host_frametime);
-
 	CDAudio_Init ();
+
 	Sbar_Init ();
-	IN_Init ();
-
-	Skin_Init ();
-
-	CL_SetState (ca_disconnected);
-	SZ_Alloc (&cls.message, 1024);
 
 	CL_Input_Init ();
 	CL_TEnts_Init ();
 	CL_ClearState ();
+
+	Skin_Init ();
 	V_Init ();
 
 	Cmd_AddCommand ("entities", CL_PrintEntities_f, "No Description");
@@ -540,4 +534,7 @@ CL_Init (cbuf_t *cbuf)
 	Cmd_AddCommand ("demolist", Con_Demolist_DEM_f, "List available demos");
 	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view "
 					"to be level");
+
+	SZ_Alloc (&cls.message, 1024);
+	CL_SetState (ca_disconnected);
 }
