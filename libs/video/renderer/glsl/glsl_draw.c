@@ -300,6 +300,12 @@ Draw_CachePic (const char *path, qboolean alpha)
 }
 
 VISIBLE void
+Draw_UncachePic (const char *path)
+{
+	Hash_Free (pic_cache, Hash_Del (pic_cache, path));
+}
+
+VISIBLE void
 Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 {
 	static quat_t color = { 1, 1, 1, 0 };

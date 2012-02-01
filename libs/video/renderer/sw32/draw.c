@@ -113,9 +113,14 @@ Draw_CachePic (const char *path, qboolean alpha)
 			break;
 
 	if (i == numcachepics) {
-		if (numcachepics == MAX_CACHED_PICS)
-			Sys_Error ("numcachepics == MAX_CACHED_PICS");
-		numcachepics++;
+		for (pic = cachepics, i = 0; i < numcachepics; pic++, i++)
+			if (!pic->name[0])
+				break;
+		if (i == numcachepics) {
+			if (numcachepics == MAX_CACHED_PICS)
+				Sys_Error ("numcachepics == MAX_CACHED_PICS");
+			numcachepics++;
+		}
 		strcpy (pic->name, path);
 	}
 
@@ -135,6 +140,21 @@ Draw_CachePic (const char *path, qboolean alpha)
 	SwapPic (dat);
 
 	return dat;
+}
+
+VISIBLE void
+Draw_UncachePic (const char *path)
+{
+	cachepic_t *pic;
+	int         i;
+
+	for (pic = cachepics, i = 0; i < numcachepics; pic++, i++) {
+		if (!strcmp (path, pic->name)) {
+			Cache_Release (&pic->cache);
+			pic->name[0] = 0;
+			break;
+		}
+	}
 }
 
 

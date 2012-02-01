@@ -250,6 +250,21 @@ Draw_CachePic (const char *path, qboolean alpha)
 }
 
 VISIBLE void
+Draw_UncachePic (const char *path)
+{
+	cachepic_t *pic;
+	int         i;
+
+	//FIXME chachpic and uncachepic suck in GL
+	for (pic = cachepics, i = 0; i < numcachepics; pic++, i++) {
+		if ((!strcmp (path, pic->name)) && !pic->dirty) {
+			pic->dirty = true;
+			return;
+		}
+	}
+}
+
+VISIBLE void
 Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 {
 	int         cx, cy, n;

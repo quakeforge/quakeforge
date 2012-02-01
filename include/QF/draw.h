@@ -175,6 +175,14 @@ void Draw_BlendScreen (quat_t color);
 */
 qpic_t *Draw_CachePic (const char *path, qboolean alpha);
 
+/** Remove a qpic from the qpic cache.
+
+	This affects only those qpics that were loaded via Draw_CachePic.
+
+	\param path	path of the file within the quake filesystem
+*/
+void Draw_UncachePic (const char *path);
+
 /** Load a qpic from gfx.wad.
 	\param name	name of the was lump to load
 	\return		pointer qpic data.
