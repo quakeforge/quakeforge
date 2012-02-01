@@ -43,6 +43,7 @@ static __attribute__ ((used)) const char rcsid[] =
 unsigned int	r_maxparticles, numparticles;
 particle_t	   *active_particles, *free_particles, *particles, **freeparticles;
 vec3_t			r_pright, r_pup, r_ppn;
+float			r_gravity;
 
 void (*R_RocketTrail) (const struct entity_s *ent);
 void (*R_GrenadeTrail) (const struct entity_s *ent);

@@ -120,7 +120,6 @@ const char *svc_strings[] = {
 	"svc_spawnstaticsound2",
 };
 
-float r_gravity;
 dstring_t  *centerprint;
 
 static void
