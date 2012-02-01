@@ -46,63 +46,140 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 typedef struct {
-	int         width;
-	int         height;
-	qpic_t     *pic;
+	pr_int_t    width;
+	pr_int_t    height;
+	pr_int_t    pic_handle;
 } bi_qpic_t;
 
 typedef struct qpic_res_s {
+	struct qpic_res_s *next;
+	struct qpic_res_s **prev;
+	bi_qpic_t  *bq;
+	qpic_t     *pic;
+	int         cached;
 	char       *name;
-	bi_qpic_t  *pic;
 } qpic_res_t;
 
 typedef struct {
+	PR_RESMAP (qpic_res_t) qpic_map;
+	qpic_res_t *qpics;
 	hashtab_t  *pic_hash;
 } draw_resources_t;
 
-static qpic_t *
-get_qpic (progs_t *pr, int arg, const char *func)
+static qpic_res_t *
+qpic_new (draw_resources_t *res)
 {
-	bi_qpic_t  *pic;
+	PR_RESNEW (qpic_res_t, res->qpic_map);
+}
 
-	if (arg <= ((pr_type_t *) pr->zone - pr->pr_globals)
-		|| arg >= pr->globals_size)
-		PR_RunError (pr, "%s: Invalid qpic_t: %d %d", func, arg, pr->globals_size);
+static void
+bi_draw_free_qpic (qpic_res_t *qp)
+{
+	if (qp->cached)
+		Draw_UncachePic (qp->name);
+	else
+		Draw_DestroyPic (qp->pic);
+	if (qp->name)
+		free (qp->name);
+}
 
-	pic = (bi_qpic_t *)(pr->pr_globals + arg);
-	return pic->pic;
+static void
+qpic_free (draw_resources_t *res, qpic_res_t *qp)
+{
+	bi_draw_free_qpic (qp);
+	PR_RESFREE (qpic_res_t, res->qpic_map, qp);
+}
+
+static void
+qpic_reset (draw_resources_t *res)
+{
+	PR_RESRESET (qpic_res_t, res->qpic_map);
+}
+
+static inline qpic_res_t *
+qpic_get (draw_resources_t *res, int index)
+{
+	PR_RESGET (res->qpic_map, index);
+}
+
+static inline int
+qpic_index (draw_resources_t *res, qpic_res_t *qp)
+{
+	PR_RESINDEX (res->qpic_map, qp);
+}
+
+static qpic_res_t *
+get_qpic (progs_t *pr, const char *name, int qpic_handle)
+{
+	draw_resources_t *res = PR_Resources_Find (pr, "Draw");
+	qpic_res_t *qp = qpic_get (res, qpic_handle);
+
+	if (!qp)
+		PR_RunError (pr, "invalid qpic handle passed to %s", name + 3);
+	return qp;
+}
+
+static void
+bi_Draw_FreePic (progs_t *pr)
+{
+	draw_resources_t *res = PR_Resources_Find (pr, "Draw");
+	bi_qpic_t  *bq = &P_STRUCT (pr, bi_qpic_t, 0);
+	qpic_res_t *qp = get_qpic (pr, __FUNCTION__, bq->pic_handle);
+
+	PR_Zone_Free (pr, qp->bq);
+	qpic_free (res, qp);
+}
+
+static void
+bi_Draw_MakePic (progs_t *pr)
+{
+	draw_resources_t *res = PR_Resources_Find (pr, "Draw");
+	int         width = P_INT (pr, 0);
+	int         height = P_INT (pr, 1);
+	byte       *data = (byte *) P_GPOINTER (pr, 2);
+	qpic_t     *pic;
+	qpic_res_t *qp;
+	bi_qpic_t  *bq;
+
+	pic = Draw_MakePic (width, height, data);
+	qp = qpic_new (res);
+	qp->name = 0;
+	qp->pic = pic;
+	qp->cached = 1;
+	bq = PR_Zone_Malloc (pr, sizeof (bi_qpic_t));
+	bq->width = pic->width;
+	bq->height = pic->height;
+	bq->pic_handle = qpic_index (res, qp);
+	qp->bq = bq;
+	RETURN_POINTER (pr, qp->bq);
 }
 
 static void
 bi_Draw_CachePic (progs_t *pr)
 {
 	draw_resources_t *res = PR_Resources_Find (pr, "Draw");
-	const char *path = P_GSTRING (pr, 0);
+	const char *name = P_GSTRING (pr, 0);
 	int         alpha = P_INT (pr, 1);
-	qpic_t     *pic = Draw_CachePic (path, alpha);
-	bi_qpic_t  *qpic;
-	qpic_res_t *rpic = Hash_Find (res->pic_hash, path);
+	qpic_t     *pic;
+	qpic_res_t *qp;
+	bi_qpic_t  *bq;
 
-	if (!pic) {
-		Sys_MaskPrintf (SYS_DEV, "can't load %s\n", path);
-		R_INT (pr) = 0;
+	pic = Draw_CachePic (name, alpha);
+	qp = Hash_Find (res->pic_hash, name);
+	if (qp) {
+		RETURN_POINTER (pr, qp->bq);
 		return;
 	}
-	if (rpic) {
-		qpic = rpic->pic;
-		qpic->pic = pic;
-		R_INT (pr) = (pr_type_t *)qpic - pr->pr_globals;
-		return;
-	}
-	qpic = PR_Zone_Malloc (pr, sizeof (bi_qpic_t));
-	qpic->width = pic->width;
-	qpic->height = pic->height;
-	qpic->pic = pic;
-	R_INT (pr) = (pr_type_t *)qpic - pr->pr_globals;
-	rpic = malloc (sizeof (qpic_res_t));
-	rpic->name = strdup (path);
-	rpic->pic = qpic;
-	Hash_Add (res->pic_hash, rpic);
+	qp = qpic_new (res);
+	qp->name = strdup (name);
+	qp->pic = pic;
+	qp->cached = 1;
+	bq = PR_Zone_Malloc (pr, sizeof (bi_qpic_t));
+	bq->width = pic->width;
+	bq->height = pic->height;
+	bq->pic_handle = qpic_index (res, qp);
+	qp->bq = bq;
+	RETURN_POINTER (pr, qp->bq);
 }
 
 static void
@@ -110,7 +187,9 @@ bi_Draw_Pic (progs_t *pr)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
-	qpic_t     *pic = get_qpic (pr, P_INT (pr, 2), "Draw_Pic");
+	bi_qpic_t  *bq = &P_STRUCT (pr, bi_qpic_t, 2);
+	qpic_res_t *qp = get_qpic (pr, __FUNCTION__, bq->pic_handle);
+	qpic_t     *pic = qp->pic;
 
 	Draw_Pic (x, y, pic);
 }
@@ -120,7 +199,9 @@ bi_Draw_SubPic (progs_t *pr)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
-	qpic_t     *pic = get_qpic (pr, P_INT (pr, 2), "Draw_SubPic");
+	bi_qpic_t  *bq = &P_STRUCT (pr, bi_qpic_t, 2);
+	qpic_res_t *qp = get_qpic (pr, __FUNCTION__, bq->pic_handle);
+	qpic_t     *pic = qp->pic;
 	int         srcx = P_INT (pr, 3);
 	int         srcy = P_INT (pr, 4);
 	int         width = P_INT (pr, 5);
@@ -134,7 +215,9 @@ bi_Draw_CenterPic (progs_t *pr)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
-	qpic_t     *pic = get_qpic (pr, P_INT (pr, 2), "Draw_CenterPic");
+	bi_qpic_t  *bq = &P_STRUCT (pr, bi_qpic_t, 2);
+	qpic_res_t *qp = get_qpic (pr, __FUNCTION__, bq->pic_handle);
+	qpic_t     *pic = qp->pic;
 
 	Draw_Pic (x - pic->width / 2, y, pic);
 }
@@ -215,23 +298,23 @@ bi_draw_get_key (void *p, void *unused)
 }
 
 static void
-bi_draw_free (void *_p, void *unused)
-{
-	qpic_res_t *p = (qpic_res_t *) _p;
-
-	free (p->name);
-	free (p);
-}
-
-static void
 bi_draw_clear (progs_t *pr, void *data)
 {
 	draw_resources_t *res = (draw_resources_t *) data;
+	qpic_res_t *qp;
 
+	for (qp = res->qpics; qp; qp = qp->next) {
+		bi_draw_free_qpic (qp);
+	}
+	res->qpics = 0;
+
+	qpic_reset (res);
 	Hash_FlushTable (res->pic_hash);
 }
 
 static builtin_t builtins[] = {
+	{"Draw_FreePic",	bi_Draw_FreePic,	-1},
+	{"Draw_MakePic",	bi_Draw_MakePic,	-1},
 	{"Draw_CachePic",	bi_Draw_CachePic,	-1},
 	{"Draw_Pic",		bi_Draw_Pic,		-1},
 	{"Draw_SubPic",		bi_Draw_SubPic,		-1},
@@ -249,7 +332,7 @@ void
 R_Progs_Init (progs_t *pr)
 {
 	draw_resources_t *res = malloc (sizeof (draw_resources_t));
-	res->pic_hash = Hash_NewTable (61, bi_draw_get_key, bi_draw_free, 0);
+	res->pic_hash = Hash_NewTable (61, bi_draw_get_key, 0, 0);
 
 	PR_Resources_Register (pr, "Draw", res, bi_draw_clear);
 	PR_RegisterBuiltins (pr, builtins);
