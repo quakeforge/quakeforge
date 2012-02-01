@@ -209,7 +209,7 @@ R_DrawViewModel (void)
 VISIBLE void
 R_RenderView (void)
 {
-	double      t[10];
+	double      t[10] = {};
 	int         speeds = r_speeds->int_val;
 
 	if (speeds)
