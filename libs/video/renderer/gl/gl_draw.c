@@ -151,6 +151,27 @@ Draw_InitText (void)
 }
 
 VISIBLE qpic_t *
+Draw_MakePic (int width, int height, const byte *data)
+{
+	glpic_t	   *gl;
+	qpic_t	   *pic;
+
+	pic = malloc (field_offset (qpic_t, data[sizeof (glpic_t)]));
+	pic->width = width;
+	pic->height = height;
+	gl = (glpic_t *) pic->data;
+	gl->texnum = GL_LoadTexture ("", width, height, data, false, true, 1);
+	return pic;
+}
+
+VISIBLE void
+Draw_DestroyPic (qpic_t *pic)
+{
+	//FIXME gl texture management sucks
+	free (pic);
+}
+
+VISIBLE qpic_t *
 Draw_PicFromWad (const char *name)
 {
 	glpic_t	   *gl;

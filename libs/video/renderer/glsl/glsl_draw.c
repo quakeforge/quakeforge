@@ -273,6 +273,18 @@ draw_pic (int x, int y, int w, int h, qpic_t *pic,
 }
 
 VISIBLE qpic_t *
+Draw_MakePic (int width, int height, const byte *data)
+{
+	return pic_data (0, width, height, data);
+}
+
+VISIBLE void
+Draw_DestroyPic (qpic_t *pic)
+{
+	pic_free (pic);
+}
+
+VISIBLE qpic_t *
 Draw_PicFromWad (const char *name)
 {
 	return make_glpic (name, W_GetLumpName (name));

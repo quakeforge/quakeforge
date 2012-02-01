@@ -183,6 +183,22 @@ qpic_t *Draw_CachePic (const char *path, qboolean alpha);
 */
 void Draw_UncachePic (const char *path);
 
+/** Create a qpic from raw data.
+
+	\param width	The width of the pic.
+	\param height	The height of the pic.
+	\param data		The raw data bytes. The system palette will be used for
+					colors.
+	\return			pointer qpic data.
+*/
+qpic_t *Draw_MakePic (int width, int height, const byte *data);
+
+/** Destroy a qpic created by Draw_MakePic.
+
+	\param pic		The qpic to destory.
+*/
+void Draw_DestroyPic (qpic_t *pic);
+
 /** Load a qpic from gfx.wad.
 	\param name	name of the was lump to load
 	\return		pointer qpic data.

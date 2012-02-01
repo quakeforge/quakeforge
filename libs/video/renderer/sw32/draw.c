@@ -28,8 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -37,6 +36,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+
+#include <stdlib.h>
 
 #include "QF/cvar.h"
 #include "QF/draw.h"
@@ -93,6 +94,25 @@ int         numcachepics;
 			return;				\
 	} while (0)
 
+
+VISIBLE qpic_t *
+Draw_MakePic (int width, int height, const byte *data)
+{
+	qpic_t	   *pic;
+	int         size = width * height;
+
+	pic = malloc (field_offset (qpic_t, data[size]));
+	pic->width = width;
+	pic->height = height;
+	memcpy (pic->data, data, size);
+	return pic;
+}
+
+VISIBLE void
+Draw_DestroyPic (qpic_t *pic)
+{
+	free (pic);
+}
 
 VISIBLE qpic_t *
 Draw_PicFromWad (const char *name)
