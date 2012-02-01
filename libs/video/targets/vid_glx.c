@@ -187,7 +187,7 @@ GL_EndRendering (void)
 }
 
 void
-VID_Init (unsigned char *palette)
+VID_Init (byte *palette, byte *colormap)
 {
 	int         attrib[] = {
 		GLX_RGBA,
@@ -205,7 +205,7 @@ VID_Init (unsigned char *palette)
 
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
-	vid.colormap8 = vid_colormap;
+	vid.colormap8 = vid_colormap = colormap;
 	vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
 
 	X11_OpenDisplay ();

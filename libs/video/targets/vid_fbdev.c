@@ -399,7 +399,7 @@ fb_switch_init (void)
 }
 
 void
-VID_Init (unsigned char *palette)
+VID_Init (byte *palette, byte *colormap)
 {
 	struct VideoMode *vmode;
 	const char *modestr;
@@ -409,6 +409,8 @@ VID_Init (unsigned char *palette)
 
 	if (fbdev_inited)
 		return;
+
+	vid_colormap = colormap;
 
 	if (COM_CheckParm ("-novideo")) {
 		vid.width = 320;

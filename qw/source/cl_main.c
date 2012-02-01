@@ -118,7 +118,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 CLIENT_PLUGIN_PROTOS
 static plugin_list_t client_plugin_list[] = {
-		CLIENT_PLUGIN_LIST
+	CLIENT_PLUGIN_LIST
 };
 
 // we need to declare some mouse variables here, because the menu system
@@ -211,9 +211,6 @@ double      con_realtime;
 double      oldcon_realtime;
 
 int         host_hunklevel;
-
-byte       *host_basepal;
-byte       *vid_colormap;
 
 cvar_t     *host_speeds;
 cvar_t     *hud_fps;
@@ -1717,6 +1714,8 @@ CL_Autoexec (int phase)
 void
 Host_Init (void)
 {
+	byte       *basepal, *colormap;
+
 	cl_cbuf = Cbuf_New (&id_interp);
 	cl_stbuf = Cbuf_New (&id_interp);
 
@@ -1798,14 +1797,14 @@ Host_Init (void)
 
 	Sys_Printf ("%4.1f megabyte heap.\n", cl_mem_size->value);
 
-	host_basepal = (byte *) QFS_LoadHunkFile ("gfx/palette.lmp");
-	if (!host_basepal)
+	basepal = (byte *) QFS_LoadHunkFile ("gfx/palette.lmp");
+	if (!basepal)
 		Sys_Error ("Couldn't load gfx/palette.lmp");
-	vid_colormap = (byte *) QFS_LoadHunkFile ("gfx/colormap.lmp");
-	if (!vid_colormap)
+	colormap = (byte *) QFS_LoadHunkFile ("gfx/colormap.lmp");
+	if (!colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
 
-	VID_Init (host_basepal);
+	VID_Init (basepal, colormap);
 	Draw_Init ();
 	SCR_Init ();
 	R_Init ();
@@ -1877,6 +1876,5 @@ Host_Shutdown (void)
 	NET_Shutdown ();
 	S_Shutdown ();
 	IN_Shutdown ();
-	if (host_basepal)
-		VID_Shutdown ();
+	VID_Shutdown ();
 }

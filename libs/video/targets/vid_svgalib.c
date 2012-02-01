@@ -352,7 +352,7 @@ comefrom_background (void)
 }
 
 void
-VID_Init (unsigned char *palette)
+VID_Init (byte *palette, byte *colormap)
 {
 	int         err;
 
@@ -382,6 +382,7 @@ VID_Init (unsigned char *palette)
 	current_mode = get_mode (vid.width, vid.height, 8);
 
 	/* Set vid parameters */
+	vid_colormap = colormap;
 	VID_SetMode (current_mode, palette);
 
 	VID_InitGamma (palette);

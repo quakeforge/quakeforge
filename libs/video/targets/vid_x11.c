@@ -392,7 +392,7 @@ x11_init_buffers (void)
 	need it later.
 */
 void
-VID_Init (unsigned char *palette)
+VID_Init (byte *palette, byte *colormap)
 {
 	int         pnum, i;
 	XVisualInfo template;
@@ -402,7 +402,7 @@ VID_Init (unsigned char *palette)
 	VID_GetWindowSize (320, 200);
 
 	vid.numpages = 2;
-	vid.colormap8 = vid_colormap;
+	vid.colormap8 = vid_colormap = colormap;
 	vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
 
 	srandom (getpid ());

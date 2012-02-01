@@ -89,7 +89,7 @@ do_screen_buffer (void)
 }
 
 void
-VID_Init (unsigned char *palette)
+VID_Init (byte *palette, byte *colormap)
 {
 	Uint32      flags;
 
@@ -119,6 +119,8 @@ VID_Init (unsigned char *palette)
 	if (!(screen = SDL_SetVideoMode (vid.width, vid.height,
 									 vid_bitdepth->int_val, flags)))
 		Sys_Error ("VID: Couldn't set video mode: %s", SDL_GetError ());
+
+	vid_colormap = colormap;
 	VID_InitGamma (palette);
 	VID_SetPalette (vid.palette);
 

@@ -60,8 +60,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "server.h"
 #include "sbar.h"
 
-byte       *vid_colormap;
-
 // these two are not intended to be set directly
 cvar_t     *cl_name;
 cvar_t     *cl_color;
@@ -505,17 +503,17 @@ Force_CenterView_f (void)
 void
 CL_Init (cbuf_t *cbuf)
 {
-	byte       *basepal;
+	byte       *basepal, *colormap;
 
 	basepal = (byte *) QFS_LoadHunkFile ("gfx/palette.lmp");
 	if (!basepal)
 		Sys_Error ("Couldn't load gfx/palette.lmp");
-	vid_colormap = (byte *) QFS_LoadHunkFile ("gfx/colormap.lmp");
-	if (!vid_colormap)
+	colormap = (byte *) QFS_LoadHunkFile ("gfx/colormap.lmp");
+	if (!colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
 
 	Key_Init (cbuf);
-	VID_Init (basepal);
+	VID_Init (basepal, colormap);
 	Draw_Init ();
 	SCR_Init ();
 	R_Init ();
