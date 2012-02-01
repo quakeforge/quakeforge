@@ -46,7 +46,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/mathlib.h"
 #include "QF/sys.h"
-#include "QF/GL/qf_noisetextures.h"
+#include "noisetextures.h"
 
 #include "compat.h"
 
