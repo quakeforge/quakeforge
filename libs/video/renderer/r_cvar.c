@@ -450,4 +450,5 @@ R_Init_Cvars (void)
 							   "Show a turtle icon if your fps is below 10");
 	scr_viewsize = Cvar_Get ("viewsize", "100", CVAR_ARCHIVE, viewsize_f,
 							 "Set the screen size 30 minimum, 120 maximum");
+	R_Particles_Init_Cvars ();
 }

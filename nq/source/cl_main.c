@@ -135,7 +135,6 @@ CL_InitCvars (void)
 	S_Init_Cvars ();
 	Key_Init_Cvars ();
 	R_Init_Cvars ();
-	R_Particles_Init_Cvars ();
 	Mod_Init_Cvars ();
 	V_Init_Cvars ();
 

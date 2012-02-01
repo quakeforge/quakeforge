@@ -1751,7 +1751,6 @@ Host_Init (void)
 	PR_Init_Cvars ();
 	Pmove_Init_Cvars ();
 	R_Init_Cvars ();
-	R_Particles_Init_Cvars ();
 	S_Init_Cvars ();
 	Team_Init_Cvars ();
 	V_Init_Cvars ();
