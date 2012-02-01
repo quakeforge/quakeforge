@@ -284,11 +284,11 @@ GL_ResampleTexture (unsigned int *in, int inwidth, int inheight,
 } 
 
 static void
-GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight,
+GL_Resample8BitTexture (const unsigned char *in, int inwidth, int inheight,
 						unsigned char *out, int outwidth, int outheight) 
 {
 	// Improvements here should be mirrored in build_skin_8 in gl_skin.c
-	unsigned char *inrow;
+	const unsigned char *inrow;
 	int            i, j;
 	unsigned int   frac, fracstep;
 
@@ -445,7 +445,7 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
         If we don't, this function does nothing. 
 */ 
 void 
-GL_Upload8_EXT (byte *data, int width, int height, qboolean mipmap,
+GL_Upload8_EXT (const byte *data, int width, int height, qboolean mipmap,
 				qboolean alpha)
 {
 	byte       *scaled;
@@ -516,7 +516,8 @@ GL_Upload8_EXT (byte *data, int width, int height, qboolean mipmap,
 }
 
 void
-GL_Upload8 (byte *data, int width, int height, qboolean mipmap, qboolean alpha)
+GL_Upload8 (const byte *data, int width, int height, qboolean mipmap,
+			qboolean alpha)
 {
 	int           i, s, p;
 	unsigned int *trans;
@@ -537,7 +538,7 @@ GL_Upload8 (byte *data, int width, int height, qboolean mipmap, qboolean alpha)
 		}
 	} else {
 		unsigned int *out = trans;
-		byte         *in = data;
+		const byte   *in = data;
 		for (i = 0; i < s; i++) {
 			*out++ = d_8to24table[*in++];
 		}
@@ -553,7 +554,7 @@ GL_Upload8 (byte *data, int width, int height, qboolean mipmap, qboolean alpha)
 }
 
 VISIBLE int
-GL_LoadTexture (const char *identifier, int width, int height, byte *data,
+GL_LoadTexture (const char *identifier, int width, int height, const byte *data,
 				qboolean mipmap, qboolean alpha, int bytesperpixel)
 {
 	int          crc, i;

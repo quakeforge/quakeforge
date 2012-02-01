@@ -47,9 +47,9 @@ extern int part_tex_smoke;
 extern int part_tex_spark;
 */
 
-void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
-void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
-int GL_LoadTexture (const char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
+void GL_Upload8 (const byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
+void GL_Upload8_EXT (const byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
+int GL_LoadTexture (const char *identifier, int width, int height, const byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
 int GL_FindTexture (const char *identifier);
 
 void GL_TextureMode_f (void);

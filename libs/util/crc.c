@@ -89,7 +89,7 @@ CRC_ProcessByte (unsigned short *crcvalue, byte data)
 }
 
 VISIBLE void
-CRC_ProcessBlock (byte *start, unsigned short *crcvalue, int count)
+CRC_ProcessBlock (const byte *start, unsigned short *crcvalue, int count)
 {
 	unsigned short crc = *crcvalue;
 	while (count--)
@@ -104,7 +104,7 @@ CRC_Value (unsigned short crcvalue)
 }
 
 VISIBLE unsigned short
-CRC_Block (byte *start, int count)
+CRC_Block (const byte *start, int count)
 {
 	unsigned short crc;
 
