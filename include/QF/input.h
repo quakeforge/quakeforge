@@ -40,6 +40,7 @@ extern viewdelta_t viewdelta;
 
 #define freelook (in_mlook.state & 1 || in_freelook->int_val)
 
+struct cvar_s;
 
 void IN_Init (void);
 void IN_Init_Cvars (void);
