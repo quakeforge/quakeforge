@@ -219,7 +219,8 @@ static struct {
 #define CHAIN_SURF_F2B(surf,chain)							\
 	do { 													\
 		instsurf_t *inst = (surf)->instsurf;				\
-		if (!inst) (surf)->tinst = inst = get_instsurf ();	\
+		if (__builtin_expect(!inst, 1))						\
+			(surf)->tinst = inst = get_instsurf ();			\
 		inst->surface = (surf);								\
 		*(chain##_tail) = inst;								\
 		(chain##_tail) = &inst->tex_chain;					\
@@ -229,7 +230,8 @@ static struct {
 #define CHAIN_SURF_B2F(surf,chain) 							\
 	do { 													\
 		instsurf_t *inst = (surf)->instsurf;				\
-		if (!inst) (surf)->tinst = inst = get_instsurf ();	\
+		if (__builtin_expect(!inst, 1))						\
+			(surf)->tinst = inst = get_instsurf ();			\
 		inst->surface = (surf);								\
 		inst->tex_chain = (chain);							\
 		(chain) = inst;										\
