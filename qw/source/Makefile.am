@@ -127,7 +127,7 @@ qw_client_fbdev_libs= \
 			$(top_builddir)/libs/video/targets/libQFfbdev.la \
 			$(client_LIBS)
 qw_client_fbdev_SOURCES= cl_sys_unix.c
-qw_client_fbdev_LDADD= $(qw_client_fbdev_libs) $(NET_LIBS) $(LIBCURL)
+qw_client_fbdev_LDADD= $(qw_client_fbdev_libs) $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_fbdev_LDFLAGS= $(common_ldflags)
 qw_client_fbdev_DEPENDENCIES= $(qw_client_fbdev_libs)
 
@@ -139,7 +139,7 @@ qw_client_mgl_libs= \
 			$(top_builddir)/libs/video/targets/libQFmgl.la \
 			$(client_LIBS)
 qw_client_mgl_SOURCES=	cl_sys_win.c
-qw_client_mgl_LDADD= $(qw_client_mgl_libs) $(MGL_LIBS) $(NET_LIBS) $(LIBCURL)
+qw_client_mgl_LDADD= $(qw_client_mgl_libs) $(MGL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_mgl_LDFLAGS=  $(common_ldflags)
 qw_client_mgl_DEPENDENCIES= $(qw_client_mgl_libs)
 
@@ -152,7 +152,7 @@ qw_client_sdl_libs= \
 			$(top_builddir)/libs/video/targets/libQFsdl.la \
 			$(client_LIBS)
 qw_client_sdl_SOURCES=sdl_link.c
-qw_client_sdl_LDADD= libqw_sdl.a $(qw_client_sdl_libs) $(SDL_LIBS) $(NET_LIBS) $(LIBCURL)
+qw_client_sdl_LDADD= libqw_sdl.a $(qw_client_sdl_libs) $(SDL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_sdl_LDFLAGS=  $(common_ldflags)
 qw_client_sdl_DEPENDENCIES= libqw_sdl.a $(qw_client_sdl_libs)
 
@@ -166,7 +166,7 @@ qw_client_sdl32_libs= \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIBS)
 qw_client_sdl32_SOURCES=sdl_link.c
-qw_client_sdl32_LDADD= libqw_sdl.a $(qw_client_sdl32_libs) $(SDL_LIBS) $(NET_LIBS) $(LIBCURL)
+qw_client_sdl32_LDADD= libqw_sdl.a $(qw_client_sdl32_libs) $(SDL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_sdl32_LDFLAGS=$(common_ldflags)
 qw_client_sdl32_DEPENDENCIES= libqw_sdl.a $(qw_client_sdl32_libs)
 
@@ -178,7 +178,7 @@ qw_client_svga_libs= \
 			$(top_builddir)/libs/video/targets/libQFsvga.la \
 			$(client_LIBS)
 qw_client_svga_SOURCES= cl_sys_unix.c
-qw_client_svga_LDADD= $(qw_client_svga_libs) $(SVGA_LIBS) $(NET_LIBS) $(LIBCURL)
+qw_client_svga_LDADD= $(qw_client_svga_libs) $(SVGA_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_svga_LDFLAGS=  $(common_ldflags)
 qw_client_svga_DEPENDENCIES= $(qw_client_svga_libs)
 
@@ -192,7 +192,7 @@ qw_client_x11_libs= \
 qw_client_x11_SOURCES=	cl_sys_unix.c
 qw_client_x11_LDADD= $(qw_client_x11_libs) \
 			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
-			$(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS) $(LIBCURL)
+			$(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_x11_LDFLAGS=	$(common_ldflags)
 qw_client_x11_DEPENDENCIES= $(qw_client_x11_libs)
 
@@ -214,7 +214,7 @@ qw_client_glx_libs= \
 qw_client_glx_SOURCES=	cl_sys_unix.c
 qw_client_glx_LDADD= $(qw_client_glx_libs) \
 			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
-			-lXext $(X_EXTRA_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL)
+			-lXext $(X_EXTRA_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_glx_LDFLAGS=  $(common_ldflags)
 qw_client_glx_DEPENDENCIES= $(qw_client_glx_libs)
 
@@ -228,7 +228,7 @@ qw_client_glslx_libs= \
 qw_client_glslx_SOURCES=	cl_sys_unix.c
 qw_client_glslx_LDADD= $(qw_client_glslx_libs) \
 			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
-			-lXext $(X_EXTRA_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL)
+			-lXext $(X_EXTRA_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_glslx_LDFLAGS=  $(common_ldflags)
 qw_client_glslx_DEPENDENCIES= $(qw_client_glslx_libs)
 
@@ -241,7 +241,7 @@ qw_client_3dfx_libs= \
 			$(client_LIBS)
 qw_client_3dfx_SOURCES= cl_sys_unix.c
 qw_client_3dfx_LDADD= $(qw_client_3dfx_libs) \
-			$(SVGA_LIBS) $(NET_LIBS) $(LIBCURL)
+			$(SVGA_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_3dfx_LDFLAGS=  $(common_ldflags)
 qw_client_3dfx_DEPENDENCIES= $(qw_client_3dfx_libs)
 
@@ -254,7 +254,7 @@ qw_client_sgl_libs= \
 			$(top_builddir)/libs/video/targets/libQFsgl.la \
 			$(client_LIBS)
 qw_client_sgl_SOURCES=sdl_link.c
-qw_client_sgl_LDADD= $(qw_client_sgl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL)
+qw_client_sgl_LDADD= $(qw_client_sgl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_sgl_LDFLAGS=  $(common_ldflags)
 qw_client_sgl_DEPENDENCIES= $(qw_client_sgl_libs)
 
@@ -266,7 +266,7 @@ qw_client_wgl_libs= \
 			$(top_builddir)/libs/video/targets/libQFwgl.la \
 			$(client_LIBS)
 qw_client_wgl_SOURCES=	cl_sys_win.c
-qw_client_wgl_LDADD= $(qw_client_wgl_libs) -lgdi32 -lwinmm $(NET_LIBS) $(LIBCURL)
+qw_client_wgl_LDADD= $(qw_client_wgl_libs) -lgdi32 -lwinmm $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_wgl_LDFLAGS=  $(common_ldflags)
 qw_client_wgl_DEPENDENCIES= $(qw_client_wgl_libs)
 

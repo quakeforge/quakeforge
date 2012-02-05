@@ -2,7 +2,16 @@ dnl ==================================================================
 dnl Checks for networking
 dnl ==================================================================
 
-LIBCURL_CHECK_CONFIG([], [], [CURL=yes], [])
+if test "x$PKG_CONFIG" != "x"; then
+  PKG_CHECK_MODULES([LIBCURL], [libcurl], HAVE_LIBCURL=yes, HAVE_LIBCURL=no)
+  CURL=$HAVE_LIBCURL
+  AC_DEFINE(HAVE_LIBCURL,1,
+    [Define to 1 if you have a functional curl library.])
+else
+  LIBCURL_CHECK_CONFIG([], [], [CURL=yes], [])
+  LIBCURL_LIBS=$LIBCURL
+  AC_SUBST(LIBCURL_LIBS)
+fi
 
 AC_ARG_WITH(ipv6,
 	AS_HELP_STRING([--with-ipv6=DIR],
