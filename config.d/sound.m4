@@ -138,7 +138,7 @@ AC_SUBST(MME_LIBS)
 
 dnl OSS
 HAVE_OSS=no
-if test "x$enable_oss" != "xno"; then
+if test "x$enable_oss" != "xno" -a "x$ac_cv_header_sys_shm_h" = "xyes"; then
 	if test "x$ac_cv_header_sys_soundcard_h" = "xyes" -o \
 		"x$ac_cv_header_machine_soundcard_h" = "xyes" -o \
 		"x$ac_cv_header_linux_soundcard_h" = "xyes"; then
