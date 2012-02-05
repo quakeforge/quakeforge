@@ -73,6 +73,7 @@ qw_server_LIBS= \
 		$(top_builddir)/libs/net/libnet_chan.la \
 		$(top_builddir)/libs/ruamoko/libQFruamoko.la \
 		$(top_builddir)/libs/models/libQFmodels.la \
+		$(top_builddir)/libs/image/libQFimage.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/gib/libQFgib.la \
