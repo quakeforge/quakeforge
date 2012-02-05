@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# This file has no copyright assigned and is placed in the Public Domain.
+# No warranty is given.
+
+# When using the android cross compiler tools, the native Linux
+# pkg-config executable works fine as long as the default PKG_CONFIG_LIBDIR
+# is overridden.
+export PKG_CONFIG_LIBDIR=$ANDROID_SYSROOT
+
+# Also want to override the standard user defined PKG_CONFIG_PATH with
+# a android specific one.
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_ANDROID
+
+# Now just execute pkg-config with the given command line args.
+pkg-config $@
