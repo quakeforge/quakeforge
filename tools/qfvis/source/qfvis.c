@@ -80,6 +80,7 @@ int         c_portalpass;
 int         c_portalcheck;
 int         c_vistest;
 
+int         portal_count;
 int         numportals;
 int         portalclusters;
 int         numrealleafs;
@@ -271,9 +272,7 @@ GetNextPortal (void)
 	}
 
 	if (p) {
-		static int  count;
-		printf ("%5d / %5d  %d\r", count++, numportals * 2, p->nummightsee);
-		fflush (stdout);
+		portal_count++;
 		p->status = stat_selected;
 	}
 
@@ -304,6 +303,9 @@ LeafThread (void *_thread)
 						portal->numcansee);
 	} while (1);
 
+	printf ("thread %d done\n", thread);
+	if (working)
+		working[thread] = -1;
 	return NULL;
 }
 
@@ -314,18 +316,30 @@ WatchThread (void *_thread)
 	int        *local_work = malloc (thread * sizeof (int));
 	int         i;
 	const char *spinner = "|/-\\";
-	int         ind = 0;
+	int         spinner_ind = 0;
+	int         count = 0;
 
 	while (1) {
-		usleep (1000000);
-
+		usleep (1000);
 		for (i = 0; i < thread; i ++)
-			local_work[i] = working[i];
-		for (i = 0; i < thread; i++)
-			printf ("%6d", local_work[i]);
-		printf (" %c\r", spinner[(ind++) % 4]);
-		fflush (stdout);
+			if (working[i] >= 0)
+				break;
+		if (i == thread)
+			break;
+		if (count++ == 1000) {
+			count = 0;
+
+			for (i = 0; i < thread; i ++)
+				local_work[i] = working[i];
+			for (i = 0; i < thread; i++)
+				printf ("%6d", local_work[i]);
+			printf ("  %5d / %5d", portal_count, numportals * 2);
+			fflush (stdout);
+			printf (" %c\r", spinner[(spinner_ind++) % 4]);
+			fflush (stdout);
+		}
 	}
+	printf ("watch thread done\n");
 
 	return NULL;
 }
@@ -466,8 +480,6 @@ CalcPortalVis (void)
 				if (pthread_join (work_threads[i], &status) == -1)
 					Sys_Error ("pthread_join failed");
 			}
-			if (pthread_cancel (work_threads[i]) != 0)
-				Sys_Error ("pthread_cancel failed");
 			if (pthread_join (work_threads[i], &status) == -1)
 				Sys_Error ("pthread_join failed");
 
