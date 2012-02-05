@@ -69,3 +69,11 @@ AC_TRY_LINK(
 	AC_MSG_RESULT(no)
 )
 AM_CONDITIONAL(BUILD_GETOPT, test "x$BUILD_GETOPT" = "xyes")
+
+AC_MSG_CHECKING(for log2f)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+	[[#include <math.h>]], [float (*foo)(float) = log2f;])],
+	AC_DEFINE(HAVE_LOG2F, 1, [Define if you have log2f.])
+	[HAVE_LOG2F=yes],
+	[HAVE_LOG2F=no])
+AC_MSG_RESULT($HAVE_LOG2F)

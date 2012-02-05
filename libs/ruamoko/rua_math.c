@@ -95,7 +95,11 @@ bi_log (progs_t *pr)
 static void
 bi_log2 (progs_t *pr)
 {
+#ifdef HAVE_LOG2F
 	R_FLOAT (pr) = log2f (P_FLOAT (pr, 0));
+#else
+	R_FLOAT (pr) = logf (P_FLOAT (pr, 0)) / M_LOG2E;
+#endif
 }
 
 static void
