@@ -205,8 +205,8 @@ get_iface_list (int sock)
 	}
 	freeifaddrs (ifa_head);
 	return 0;
-#endif
 no_ifaddrs:
+#endif
 	ifaces = &myAddr;
 	default_iface = &ifaces[0];
 	num_ifaces = 1;
@@ -583,7 +583,8 @@ UDP_GetNameFromAddr (netadr_t *addr, char *name)
 {
 	struct hostent *hostentry;
 
-	hostentry = gethostbyaddr (&addr->ip, ADDR_SIZE, AF_INET);
+	//FIXME the cast is an evil hack for android
+	hostentry = gethostbyaddr ((char *) &addr->ip, ADDR_SIZE, AF_INET);
 
 	if (hostentry) {
 		strncpy (name, (char *) hostentry->h_name, NET_NAMELEN - 1);
