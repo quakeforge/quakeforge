@@ -50,6 +50,9 @@
    `BSTRING', as far as I know, and neither of them use this code.  */
 #if HAVE_STRING_H || STDC_HEADERS
 #include <string.h>
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
 #ifndef bcmp
 #define bcmp(s1, s2, n)	memcmp ((s1), (s2), (n))
 #endif
