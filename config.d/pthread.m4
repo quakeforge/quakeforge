@@ -1,7 +1,9 @@
 if test "x$ac_cv_header_pthread_h" = "xyes"; then
 	save_LIBS="$LIBS"
 	case "$host_os" in
-		*qnx*)  dnl qnx have all pthread* functions in the libc.
+		*android*)  dnl android has all pthread* functions in the libc.
+			;;
+		*qnx*)  dnl qnx has all pthread* functions in the libc.
 			;;
 		*openbsd*)
 			LIBS="$LIBS -pthread"
