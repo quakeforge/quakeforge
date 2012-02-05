@@ -5,6 +5,8 @@ export PATH=$ANDROID_NDK_ROOT/android-14-toolchain/bin:$PATH
 ../configure \
 	--build=x86_64-unknown-linux-gnu \
 	--with-sysroot=$ANDROID_SYSROOT \
-	--host=arm-linux-androideabi --with-endian=little \
+	--host=arm-linux-androideabi \
+	--with-endian=little \
+	--disable-sdl \
 	$*
 
