@@ -10,7 +10,7 @@ export PKG_CONFIG_LIBDIR=$ANDROID_SYSROOT
 
 # Also want to override the standard user defined PKG_CONFIG_PATH with
 # a android specific one.
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_ANDROID
+export PKG_CONFIG_PATH=$ANDROID_SYSROOT/usr/local/lib/pkgconfig
 
 # Now just execute pkg-config with the given command line args.
 pkg-config $@
