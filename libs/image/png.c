@@ -314,7 +314,7 @@ LoadPNG (QFile *infile)
 }
 
 VISIBLE void
-WritePNG (const char *fileName, byte *data, int width, int height)
+WritePNG (const char *fileName, const byte *data, int width, int height)
 {
 }
 
