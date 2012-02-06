@@ -10,5 +10,5 @@ libQFruamoko_la_LIBADD=		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $
 libQFruamoko_la_SOURCES= \
 		bi_gib.c pr_cmds.c \
 		rua_cbuf.c rua_cmd.c rua_cvar.c rua_file.c rua_hash.c rua_init.c \
-		rua_math.c rua_obj.c rua_plist.c rua_qfile.c rua_qfs.c rua_script.c \
-		rua_string.c
+		rua_math.c rua_msgbuf.c rua_obj.c rua_plist.c rua_qfile.c rua_qfs.c \
+		rua_script.c rua_string.c

@@ -46,6 +46,8 @@ void RUA_Hash_Init (struct progs_s *pr, int secure);
 
 void RUA_Math_Init (struct progs_s *pr, int secure);
 
+void RUA_MsgBuf_Init (struct progs_s *pr, int secure);
+
 void RUA_Obj_Init (struct progs_s *pr, int secure);
 
 void RUA_Plist_Init (struct progs_s *pr, int secure);

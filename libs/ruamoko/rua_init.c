@@ -45,6 +45,7 @@ static void (*init_funcs[])(progs_t *, int) = {
 	RUA_File_Init,
 	RUA_Hash_Init,
 	RUA_Math_Init,
+	RUA_MsgBuf_Init,
 	RUA_Plist_Init,
 	RUA_QFile_Init,
 	RUA_QFS_Init,
