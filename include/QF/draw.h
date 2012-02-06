@@ -212,6 +212,13 @@ qpic_t *Draw_PicFromWad (const char *name);
 */
 void Draw_Pic (int x, int y, qpic_t *pic);
 
+/** Draw a qpic to the screen
+	\param x	horizontal location of the upper left corner of the qpic
+	\param y	vertical location of the upper left corner of the qpic
+	\param pic	qpic to draw
+*/
+void Draw_Picf (float x, float y, qpic_t *pic);
+
 /** Draw a sub-region of a qpic to the screan
 	\param x	horizontal screen location of the upper left corner of the
 				sub-region

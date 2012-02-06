@@ -15,6 +15,7 @@ typedef struct _qpic_t *qpic_t;
 @extern qpic_t Draw_CachePic (string name, int alpha);
 
 @extern void Draw_Pic (int x, int y, qpic_t pic);
+@extern void Draw_Picf (float x, float y, qpic_t pic);
 @extern void Draw_SubPic (int x, int y, qpic_t pic, int srcx, int srcy, int width, int height);
 @extern void Draw_CenterPic (int x, int y, qpic_t pic);
 

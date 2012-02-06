@@ -196,6 +196,18 @@ bi_Draw_Pic (progs_t *pr)
 }
 
 static void
+bi_Draw_Picf (progs_t *pr)
+{
+	float       x = P_FLOAT (pr, 0);
+	float       y = P_FLOAT (pr, 1);
+	bi_qpic_t  *bq = &P_STRUCT (pr, bi_qpic_t, 2);
+	qpic_res_t *qp = get_qpic (pr, __FUNCTION__, bq->pic_handle);
+	qpic_t     *pic = qp->pic;
+
+	Draw_Picf (x, y, pic);
+}
+
+static void
 bi_Draw_SubPic (progs_t *pr)
 {
 	int         x = P_INT (pr, 0);
@@ -318,6 +330,7 @@ static builtin_t builtins[] = {
 	{"Draw_MakePic",	bi_Draw_MakePic,	-1},
 	{"Draw_CachePic",	bi_Draw_CachePic,	-1},
 	{"Draw_Pic",		bi_Draw_Pic,		-1},
+	{"Draw_Picf",		bi_Draw_Picf,		-1},
 	{"Draw_SubPic",		bi_Draw_SubPic,		-1},
 	{"Draw_CenterPic",	bi_Draw_CenterPic,	-1},
 	{"Draw_Character",	bi_Draw_Character,	-1},

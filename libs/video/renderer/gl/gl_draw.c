@@ -722,6 +722,26 @@ Draw_Pic (int x, int y, qpic_t *pic)
 }
 
 VISIBLE void
+Draw_Picf (float x, float y, qpic_t *pic)
+{
+	glpic_t    *gl;
+
+	gl = (glpic_t *) pic->data;
+
+	qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
+	qfglBegin (GL_QUADS);
+	qfglTexCoord2f (0, 0);
+	qfglVertex2f (x, y);
+	qfglTexCoord2f (1, 0);
+	qfglVertex2f (x + pic->width, y);
+	qfglTexCoord2f (1, 1);
+	qfglVertex2f (x + pic->width, y + pic->height);
+	qfglTexCoord2f (0, 1);
+	qfglVertex2f (x, y + pic->height);
+	qfglEnd ();
+}
+
+VISIBLE void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
 {

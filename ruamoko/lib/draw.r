@@ -5,6 +5,7 @@ qpic_t Draw_MakePic (int width, int heiight, string data) = #0;
 qpic_t (string name, int alpha) Draw_CachePic = #0;
 
 void (int x, int y, qpic_t pic) Draw_Pic = #0;
+void (float x, float y, qpic_t pic) Draw_Picf = #0;
 void (int x, int y, qpic_t pic, int srcx, int srcy, int width, int height) Draw_SubPic = #0;
 void (int x, int y, qpic_t pic) Draw_CenterPic = #0;
 

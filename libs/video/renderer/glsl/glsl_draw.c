@@ -195,7 +195,7 @@ pic_data (const char *name, int w, int h, const byte *data)
 }
 
 static void
-make_quad (qpic_t *pic, int x, int y, int w, int h,
+make_quad (qpic_t *pic, float x, float y, int w, int h,
 		   int srcx, int srcy, int srcw, int srch, float verts[6][4])
 {
 	float       sl, sh, tl, th;
@@ -237,7 +237,7 @@ make_quad (qpic_t *pic, int x, int y, int w, int h,
 }
 
 static void
-draw_pic (int x, int y, int w, int h, qpic_t *pic,
+draw_pic (float x, float y, int w, int h, qpic_t *pic,
 		  int srcx, int srcy, int srcw, int srch,
 		  float *color)
 {
@@ -638,6 +638,14 @@ Draw_CrosshairAt (int ch, int x, int y)
 
 VISIBLE void
 Draw_Pic (int x, int y, qpic_t *pic)
+{
+	static quat_t color = { 1, 1, 1, 1};
+	draw_pic (x, y, pic->width, pic->height, pic,
+			  0, 0, pic->width, pic->height, color);
+}
+
+VISIBLE void
+Draw_Picf (float x, float y, qpic_t *pic)
 {
 	static quat_t color = { 1, 1, 1, 1};
 	draw_pic (x, y, pic->width, pic->height, pic,

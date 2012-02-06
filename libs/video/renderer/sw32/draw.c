@@ -579,6 +579,11 @@ Draw_Pic (int x, int y, qpic_t *pic)
 	}
 }
 
+VISIBLE void
+Draw_Picf (float x, float y, qpic_t *pic)
+{
+	Draw_Pic (x, y, pic);
+}
 
 VISIBLE void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
