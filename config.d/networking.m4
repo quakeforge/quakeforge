@@ -4,9 +4,11 @@ dnl ==================================================================
 
 if test "x$PKG_CONFIG" != "x"; then
   PKG_CHECK_MODULES([LIBCURL], [libcurl], HAVE_LIBCURL=yes, HAVE_LIBCURL=no)
+  if test "x$HAVE_LIBCURL" = xyes; then
+    AC_DEFINE(HAVE_LIBCURL,1,
+      [Define to 1 if you have a functional curl library.])
+  fi
   CURL=$HAVE_LIBCURL
-  AC_DEFINE(HAVE_LIBCURL,1,
-    [Define to 1 if you have a functional curl library.])
 else
   LIBCURL_CHECK_CONFIG([], [], [CURL=yes], [])
   LIBCURL_LIBS=$LIBCURL
