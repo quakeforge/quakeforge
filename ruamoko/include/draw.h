@@ -6,6 +6,7 @@
 struct _qpic_t {
 	int width;
 	int height;
+	int handle;
 };
 typedef struct _qpic_t *qpic_t;
 
