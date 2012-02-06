@@ -179,6 +179,7 @@ bi_Draw_CachePic (progs_t *pr)
 	bq->height = pic->height;
 	bq->pic_handle = qpic_index (res, qp);
 	qp->bq = bq;
+	Hash_Add (res->pic_hash, qp);
 	RETURN_POINTER (pr, qp->bq);
 }
 
@@ -331,7 +332,7 @@ static builtin_t builtins[] = {
 void
 R_Progs_Init (progs_t *pr)
 {
-	draw_resources_t *res = malloc (sizeof (draw_resources_t));
+	draw_resources_t *res = calloc (1, sizeof (draw_resources_t));
 	res->pic_hash = Hash_NewTable (61, bi_draw_get_key, 0, 0);
 
 	PR_Resources_Register (pr, "Draw", res, bi_draw_clear);
