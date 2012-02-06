@@ -10,7 +10,6 @@
 	libs/audio/test/Makefile
 	libs/console/Makefile
 	libs/gamecode/Makefile
-	libs/gamecode/engine/Makefile
 	libs/gib/Makefile
 	libs/image/Makefile
 	libs/models/Makefile

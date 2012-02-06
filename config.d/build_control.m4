@@ -553,7 +553,7 @@ QF_DEPS(QFBSP,
 )
 QF_DEPS(QFCC,
 	[-I$(top_srcdir)/tools/qfcc/include],
-	[$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/gamecode/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(QFLIGHT,
@@ -578,7 +578,7 @@ QF_DEPS(QFVIS,
 )
 QF_DEPS(QWAQ,
 	[],
-	[$(top_builddir)/libs/ruamoko/libQFruamoko.la $(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/gib/libQFgib.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/ruamoko/libQFruamoko.la $(top_builddir)/libs/gamecode/libQFgamecode.la $(top_builddir)/libs/gib/libQFgib.la $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(CARNE,
