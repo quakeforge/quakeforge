@@ -136,7 +136,7 @@ bi_Draw_MakePic (progs_t *pr)
 	draw_resources_t *res = PR_Resources_Find (pr, "Draw");
 	int         width = P_INT (pr, 0);
 	int         height = P_INT (pr, 1);
-	byte       *data = (byte *) P_GPOINTER (pr, 2);
+	byte       *data = (byte *) P_GSTRING (pr, 2);
 	qpic_t     *pic;
 	qpic_res_t *qp;
 	bi_qpic_t  *bq;
