@@ -1,5 +1,7 @@
 #include "draw.h"
 
+void Draw_FreePic (qpic_t pic) = #0;
+qpic_t Draw_MakePic (int width, int heiight, void *data) = #0;
 qpic_t (string name, int alpha) Draw_CachePic = #0;
 
 void (int x, int y, qpic_t pic) Draw_Pic = #0;
