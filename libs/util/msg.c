@@ -107,6 +107,12 @@ MSG_WriteString (sizebuf_t *sb, const char *s)
 }
 
 VISIBLE void
+MSG_WriteBytes (sizebuf_t *sb, const void *buf, int len)
+{
+	SZ_Write (sb, buf, len);
+}
+
+VISIBLE void
 MSG_WriteCoord (sizebuf_t *sb, float coord)
 {
 	MSG_WriteShort (sb, (int) (coord * 8.0));

@@ -40,6 +40,7 @@ void MSG_WriteShort (sizebuf_t *sb, int c);
 void MSG_WriteLong (sizebuf_t *sb, int c);
 void MSG_WriteFloat (sizebuf_t *sb, float f);
 void MSG_WriteString (sizebuf_t *sb, const char *s);
+void MSG_WriteBytes (sizebuf_t *sb, const void *buf, int len);
 void MSG_WriteCoord (sizebuf_t *sb, float coord);
 void MSG_WriteCoordV (sizebuf_t *sb, const vec3_t coord);
 void MSG_WriteCoordAngleV (sizebuf_t *sb, const vec3_t coord,
