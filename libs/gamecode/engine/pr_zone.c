@@ -48,11 +48,19 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 
+static void
+pr_zone_error (void *_pr, const char *msg)
+{
+	progs_t    *pr = (progs_t *) _pr;
+	PR_RunError (pr, "%s", msg);
+}
+
 void
 PR_Zone_Init (progs_t *pr)
 {
 	Z_ClearZone (pr->zone, pr->zone_size,
 				 (pr_type_t *)pr->zone - pr->pr_globals, sizeof (pr_type_t));
+	Z_SetError (pr->zone, pr_zone_error, pr);
 }
 
 VISIBLE void

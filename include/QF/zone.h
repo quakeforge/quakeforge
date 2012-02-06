@@ -102,7 +102,8 @@ void *Z_TagMalloc (memzone_t *zone, int size, int tag);
 void *Z_Realloc (memzone_t *zone, void *ptr, int size);
 void Z_Print (memzone_t *zone);
 void Z_CheckHeap (memzone_t *zone);
-
+void Z_SetError (memzone_t *zone, void (*err) (void *data, const char *msg),
+				 void *data);
 
 
 void *Hunk_Alloc (int size);		// returns 0 filled memory

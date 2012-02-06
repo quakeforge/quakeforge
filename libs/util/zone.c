@@ -46,6 +46,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 #include "QF/zone.h"
 
 #include "compat.h"
@@ -86,8 +87,10 @@ struct memzone_s
 	int         used;		// ammount used, including header
 	int         offset;
 	int         ele_size;
+	void        (*error) (void *, const char *);
+	void       *data;
 	memblock_t  blocklist;	// start / end cap for linked list
-	memblock_t  *rover;
+	memblock_t *rover;
 };
 
 
@@ -123,6 +126,8 @@ Z_ClearZone (memzone_t *zone, int size, int zone_offset, int ele_size)
 	zone->rover = block;
 	zone->size = size;
 	zone->used = sizeof (memzone_t);
+	zone->error = 0;
+	zone->data = 0;
 	
 	block->prev = block->next = &zone->blocklist;
 	block->tag = 0;			// free block
@@ -136,22 +141,37 @@ Z_Free (memzone_t *zone, void *ptr)
 {
 	memblock_t	*block, *other;
 
-	if (!ptr)
+	if (!ptr) {
+		if (zone->error)
+			zone->error (zone->data, "Z_Free: NULL pointer");
 		Sys_Error ("Z_Free: NULL pointer");
+	}
 
 	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
 	if (((byte *) block < (byte *) zone)
-		|| (((byte *) block) >= (byte *) zone + zone->size))
-		Sys_Error ("Z_Free: freed a pointer outside of the zone: %x",
+		|| (((byte *) block) >= (byte *) zone + zone->size)) {
+		const char *msg;
+		msg = nva ("Z_Free: freed a pointer outside of the zone: %x",
 				   z_offset (zone, block));
+		if (zone->error)
+			zone->error (zone->data, msg);
+		Sys_Error ("%s", msg);
+	}
 	if (block->id != ZONEID || block->id2 != ZONEID) {
-		Sys_Printf ("bad pointer %x\n", z_offset (zone, block));
+		const char *msg;
+		msg = nva ("bad pointer %x", z_offset (zone, block));
+		Sys_Printf ("%s\n", msg);
 		Z_Print (zone);
 		fflush (stdout);
+		if (zone->error)
+			zone->error (zone->data, msg);
 		Sys_Error ("Z_Free: freed a pointer without ZONEID");
 	}
-	if (block->tag == 0)
+	if (block->tag == 0) {
+		if (zone->error)
+			zone->error (zone->data, "Z_Free: freed a freed pointer");
 		Sys_Error ("Z_Free: freed a freed pointer");
+	}
 
 	block->tag = 0;		// mark as free
 	zone->used -= block->size;
@@ -186,8 +206,13 @@ Z_Malloc (memzone_t *zone, int size)
 	if (!developer || developer->int_val & SYS_DEV)
 		Z_CheckHeap (zone);	// DEBUG
 	buf = Z_TagMalloc (zone, size, 1);
-	if (!buf)
-		Sys_Error ("Z_Malloc: failed on allocation of %i bytes",size);
+	if (!buf) {
+		const char *msg;
+		msg = nva ("Z_Malloc: failed on allocation of %i bytes",size);
+		if (zone->error)
+			zone->error (zone->data, msg);
+		Sys_Error ("%s", msg);
+	}
 	memset (buf, 0, size);
 
 	return buf;
@@ -199,8 +224,11 @@ Z_TagMalloc (memzone_t *zone, int size, int tag)
 	int			 extra;
 	memblock_t	*start, *rover, *new, *base;
 
-	if (!tag)
+	if (!tag) {
+		if (zone->error)
+			zone->error (zone->data, "Z_TagMalloc: tried to use a 0 tag");
 		Sys_Error ("Z_TagMalloc: tried to use a 0 tag");
+	}
 
 	// scan through the block list looking for the first free block
 	// of sufficient size
@@ -262,10 +290,17 @@ Z_Realloc (memzone_t *zone, void *ptr, int size)
 		return Z_Malloc (zone, size);
 
 	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
-	if (block->id != ZONEID || block->id2 != ZONEID)
+	if (block->id != ZONEID || block->id2 != ZONEID) {
+		if (zone->error)
+			zone->error (zone->data,
+						 "Z_Realloc: realloced a pointer without ZONEID");
 		Sys_Error ("Z_Realloc: realloced a pointer without ZONEID");
-	if (block->tag == 0)
+	}
+	if (block->tag == 0) {
+		if (zone->error)
+			zone->error (zone->data, "Z_Realloc: realloced a freed pointer");
 		Sys_Error ("Z_Realloc: realloced a freed pointer");
+	}
 
 	old_size = block->size;
 	old_size -= sizeof (memblock_t);	// account for size of block header
@@ -274,8 +309,13 @@ Z_Realloc (memzone_t *zone, void *ptr, int size)
 
 	Z_Free (zone, ptr);
 	ptr = Z_TagMalloc (zone, size, 1);
-	if (!ptr)
-		Sys_Error ("Z_Realloc: failed on allocation of %i bytes", size);
+	if (!ptr) {
+		const char *msg;
+		msg = nva ("Z_Realloc: failed on allocation of %i bytes", size);
+		if (zone->error)
+			zone->error (zone->data, msg);
+		Sys_Error ("%s", msg);
+	}
 
 	if (ptr != old_ptr)
 		memmove (ptr, old_ptr, min (old_size, size));
@@ -332,6 +372,13 @@ Z_CheckHeap (memzone_t *zone)
 		if (!block->tag && !block->next->tag)
 			Sys_Error ("Z_CheckHeap: two consecutive free blocks\n");
 	}
+}
+
+VISIBLE void
+Z_SetError (memzone_t *zone, void (*err) (void *, const char *), void *data)
+{
+	zone->error = err;
+	zone->data = data;
 }
 
 //============================================================================
