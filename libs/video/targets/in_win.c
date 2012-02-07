@@ -123,7 +123,6 @@ static DIDATAFORMAT df = {
 
 // forward-referenced functions, joy
 
-
 void
 IN_UpdateClipCursor (void)
 {

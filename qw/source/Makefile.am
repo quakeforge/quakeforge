@@ -88,7 +88,7 @@ qw_server_DEPENDENCIES=	$(qw_server_deps)
 qw_master_deps=$(top_builddir)/libs/util/libQFutil.la
 qw_master_SOURCES=		master.c
 qw_master_LDADD=		$(qw_master_deps) $(NET_LIBS)
-qw_master_DEPENDENCIES=	$(qw_master_deps) $(NET_LIBS)
+qw_master_DEPENDENCIES=	$(qw_master_deps)
 qw_master_LDFLAGS=		$(common_ldflags)
 
 cl_plugin_LIBS= \

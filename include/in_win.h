@@ -33,15 +33,10 @@
 extern qboolean      mouseactive;
 extern float         mouse_x, mouse_y;
 
-extern void IN_UpdateClipCursor (void);
-extern void IN_ShowMouse (void);
-extern void IN_HideMouse (void);
-extern void IN_ActivateMouse (void);
-extern void IN_DeactivateMouse (void);
-extern void IN_Init (void);
-extern void IN_Shutdown (void);
-extern void IN_Move (void);
-extern void IN_Accumulate (void);
-extern void IN_Commands (void);
+void IN_UpdateClipCursor (void);
+void IN_ShowMouse (void);
+void IN_HideMouse (void);
+void IN_ActivateMouse (void);
+void IN_DeactivateMouse (void);
 
 #endif // _IN_WIN_H
