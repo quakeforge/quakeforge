@@ -269,7 +269,6 @@ fi
 
 AM_CONDITIONAL(BUILD_BSP2IMG, test "$ENABLE_tools_bsp2img" = "yes")
 AM_CONDITIONAL(BUILD_CARNE, test "$ENABLE_tools_carne" = "yes")
-AM_CONDITIONAL(BUILD_GSC, test "$ENABLE_tools_gsc" = "yes")
 AM_CONDITIONAL(BUILD_PAK, test "$ENABLE_tools_pak" = "yes")
 AM_CONDITIONAL(BUILD_QFBSP, test "$ENABLE_tools_qfbsp" = "yes")
 AM_CONDITIONAL(BUILD_QFCC, test "$ENABLE_tools_qfcc" = "yes")
@@ -578,11 +577,6 @@ QF_DEPS(QWAQ,
 QF_DEPS(CARNE,
 	[],
 	[$(top_builddir)/libs/gib/libQFgib.la $(top_builddir)/libs/util/libQFutil.la],
-	[$(WIN32_LIBS)],
-)
-QF_DEPS(GSC,
-	[],
-	[$(top_builddir)/libs/gibscript/libQFgibscript.la $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(PAK,
