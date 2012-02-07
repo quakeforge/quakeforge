@@ -320,30 +320,7 @@ if test -n "$CL_TARGETS"; then
 	SND_TARGETS="libQFsound.la"
 	AUDIO_TARGETS="testsound\$(EXEEXT)"
 	JOY_TARGETS="libQFjs.la"
-	if test "`echo $SOUND_TYPES | grep ALSA`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_alsa.la"
-	fi
-	if test "`echo $SOUND_TYPES | grep MME`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_mme.la"
-	fi
-	if test "`echo $SOUND_TYPES | grep OSS`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_oss.la"
-	fi
-	if test "`echo $SOUND_TYPES | grep SDL`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_sdl.la"
-	fi
-	if test "`echo $SOUND_TYPES | grep SGI`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_sgi.la"
-	fi
-	if test "`echo $SOUND_TYPES | grep SUN`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_sun.la"
-	fi
-	if test "`echo $SOUND_TYPES | grep Win32`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_win.la"
-	fi
-	if test "`echo $SOUND_TYPES | grep DirectX`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_dx.la"
-	fi
+
 	if test "$SOUND_TYPES"; then
 		SND_REND_TARGETS="$SND_REND_TARGETS snd_render_default.la"
 		if test "`echo $SOUND_TYPES | grep JACK`"; then
@@ -353,30 +330,18 @@ if test -n "$CL_TARGETS"; then
 
 	# priority sorted list for default sound driver in order of increasing
 	# priority. default is no driver.
-	if test "`echo $SOUND_TYPES | grep SDL`"; then
-		SND_OUTPUT_DEFAULT="sdl"
-	fi
-	if test "`echo $SOUND_TYPES | grep MME`"; then
-		SND_OUTPUT_DEFAULT="mme"
-	fi
-	if test "`echo $SOUND_TYPES | grep SGI`"; then
-		SND_OUTPUT_DEFAULT="sgi"
-	fi
-	if test "`echo $SOUND_TYPES | grep SUN`"; then
-		SND_OUTPUT_DEFAULT="sun"
-	fi
-	if test "`echo $SOUND_TYPES | grep Win32`"; then
-		SND_OUTPUT_DEFAULT="win"
-	fi
-	if test "`echo $SOUND_TYPES | grep DirectX`"; then
-		SND_OUTPUT_DEFAULT="dx"
-	fi
-	if test "`echo $SOUND_TYPES | grep OSS`"; then
-		SND_OUTPUT_DEFAULT="oss"
-	fi
-	if test "`echo $SOUND_TYPES | grep ALSA`"; then
-		SND_OUTPUT_DEFAULT="alsa"
-	fi
+	# NOTE both lists must match: SNDTYPE_LIST is the name as normally printed
+	# SNDDRIVER_LIST is the name as used by the plugin
+	SNDTYPE_LIST="SDL MME SGI SUN Win32 DirectX OSS ALSA"
+	SNDDRIVER_LIST="sdl mme sgi sun win dx oss alsa"
+	set $SNDDRIVER_LIST
+	for t in $SNDTYPE_LIST; do
+		if test "`echo $SOUND_TYPES | grep $t`"; then
+			SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_$1.la"
+			SND_OUTPUT_DEFAULT="$1"
+		fi
+		shift
+	done
 else
 	unset CDTYPE
 	CD_PLUGIN_TARGETS=""
