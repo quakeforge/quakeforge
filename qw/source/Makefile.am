@@ -65,7 +65,7 @@ EXTRA_DIST=sv_sys_win.c sv_sys_unix.c
 libqw_server_a_SOURCES= \
 	crudefile.c sv_ccmds.c sv_demo.c sv_ents.c sv_gib.c sv_init.c sv_main.c \
 	sv_move.c sv_phys.c sv_pr_cmds.c sv_pr_cpqw.c sv_pr_qwe.c sv_progs.c \
-	sv_qtv.c sv_recorder.c sv_sbar.c sv_send.c sv_user.c world.c $(syssv_SRC)
+	sv_qtv.c sv_recorder.c sv_sbar.c sv_send.c sv_user.c world.c
 
 qw_server_LIBS= \
 		$(SERVER_PLUGIN_STATIC_LIBS) \
@@ -79,14 +79,17 @@ qw_server_LIBS= \
 		$(top_builddir)/libs/gib/libQFgib.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
-qw_server_SOURCES=	
-qw_server_LDADD=	libqw_server.a libqw_common.a $(qw_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
-qw_server_LDFLAGS=	$(common_ldflags)
-qw_server_DEPENDENCIES=	libqw_common.a libqw_server.a $(qw_server_LIBS)
+qw_server_deps=libqw_server.a libqw_common.a $(qw_server_LIBS)
+qw_server_SOURCES=		$(syssv_SRC)
+qw_server_LDADD=		$(qw_server_deps) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
+qw_server_LDFLAGS=		$(common_ldflags)
+qw_server_DEPENDENCIES=	$(qw_server_deps)
 
-qw_master_SOURCES=	master.c
-qw_master_LDADD=	$(top_builddir)/libs/util/libQFutil.la $(NET_LIBS)
-qw_master_LDFLAGS=	$(common_ldflags)
+qw_master_deps=$(top_builddir)/libs/util/libQFutil.la
+qw_master_SOURCES=		master.c
+qw_master_LDADD=		$(qw_master_deps) $(NET_LIBS)
+qw_master_DEPENDENCIES=	$(qw_master_deps) $(NET_LIBS)
+qw_master_LDFLAGS=		$(common_ldflags)
 
 cl_plugin_LIBS= \
 		$(CLIENT_PLUGIN_STATIC_LIBS) \

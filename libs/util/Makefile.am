@@ -8,6 +8,9 @@ INCLUDES= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES= libQFutil.la
 
+lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
+			-rpath $(libdir) -no-undefined
+
 if ASM_ARCH
 asm= libasm.la
 else
@@ -34,7 +37,7 @@ else
 getopt=
 endif
 
-libQFutil_la_LDFLAGS=		-version-info $(QUAKE_LIBRARY_VERSION_INFO) -no-undefined
+libQFutil_la_LDFLAGS=		$(lib_ldflags)
 libQFutil_la_LIBADD=		$(asm) $(Z_LIBS) $(DL_LIBS) $(WIN32_LIBS)
 libQFutil_la_DEPENDENCIES=	$(asm)
 libQFutil_la_SOURCES= \

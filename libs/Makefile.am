@@ -1,9 +1,10 @@
 AUTOMAKE_OPTIONS= foreign
 
 # everything depends on util
-# gamecode depends on gib (only for builtins, not the engine)
-# ruamoko depends on gamecode (engine only, not builtins)
+# ruamoko depends on gamecode and gib
 # audio depends on gamecode
-# console depends on ruamoko and audio
-SUBDIRS=util image gib gamecode ruamoko models audio console net qw \
-		video
+# models depends on image
+# video depends on models(?), image(?) and gamecode
+# console depends on video, ruamoko and audio
+SUBDIRS=util gib gamecode ruamoko audio image models video console \
+		net qw

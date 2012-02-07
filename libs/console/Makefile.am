@@ -4,6 +4,8 @@ AM_CFLAGS= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 plugin_ldflags= @plugin_ldflags@ -avoid-version -module -rpath $(plugindir)
 plugin_libadd= @plugin_libadd@
+lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
+			-rpath $(libdir) -no-undefined
 EXEEXT=
 
 lib_LTLIBRARIES=	libQFconsole.la
@@ -16,14 +18,24 @@ common_sources= \
 client_sources= bi_inputline.c client.c menu.c pr_keys.c
 server_sources= server.c
 
-libQFconsole_la_LDFLAGS=	-version-info $(QUAKE_LIBRARY_VERSION_INFO) -rpath $(libdir) -no-undefined
-libQFconsole_la_LIBADD=		$(plugin_libadd) $(top_builddir)/libs/util/libQFutil.la
-libQFconsole_la_SOURCES=	$(common_sources)
+console_deps=$(top_builddir)/libs/util/libQFutil.la
+client_deps= libQFconsole.la \
+	$(top_builddir)/libs/audio/libQFsound.la \
+	$(top_builddir)/libs/ruamoko/libQFruamoko.la \
+	$(console_deps)
+server_deps= libQFconsole.la $(console_deps)
 
-console_client_la_LDFLAGS=	$(plugin_ldflags)
-console_client_la_LIBADD=	$(plugin_libadd) libQFconsole.la $(top_builddir)/libs/audio/libQFsound.la $(top_builddir)/libs/ruamoko/libQFruamoko.la
-console_client_la_SOURCES=	$(client_sources)
+libQFconsole_la_LDFLAGS=		$(lib_ldflags)
+libQFconsole_la_LIBADD=			$(console_deps) $(plugin_libadd)
+libQFconsole_la_DEPENDENCIES=	$(console_deps)
+libQFconsole_la_SOURCES=		$(common_sources)
 
-console_server_la_LDFLAGS=	$(plugin_ldflags)
-console_server_la_LIBADD=	$(CURSES_LIBS) $(plugin_libadd) libQFconsole.la
-console_server_la_SOURCES=	$(server_sources)
+console_client_la_LDFLAGS=		$(plugin_ldflags)
+console_client_la_LIBADD=		$(client_deps) $(plugin_libadd)
+console_client_la_DEPENDENCIES=	$(client_deps)
+console_client_la_SOURCES=		$(client_sources)
+
+console_server_la_LDFLAGS=		$(plugin_ldflags)
+console_server_la_LIBADD=		$(server_deps) $(CURSES_LIBS) $(plugin_libadd)
+console_server_la_DEPENDENCIES=	$(server_deps)
+console_server_la_SOURCES=		$(server_sources)
