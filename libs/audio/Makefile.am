@@ -21,7 +21,7 @@ EXTRA_LTLIBRARIES=	libQFsound.la libQFcd.la \
 cd_plug_libs=$(top_builddir)/libs/util/libQFutil.la
 
 cd_file_libs= \
-	$(top_builddir)/libs/audio/libQFsound.la \
+	libQFsound.la \
 	$(cd_plug_libs)
 
 cd_file_la_LDFLAGS=			$(plugin_ldflags)
