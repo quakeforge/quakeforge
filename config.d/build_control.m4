@@ -84,7 +84,7 @@ if test "x$HAVE_X" = xyes; then
 		VID_TARGETS="$VID_TARGETS libQFglslx.la"
 		BUILD_GLSL=yes
 		QF_NEED(vid, [common glsl x11])
-		#QF_NEED(qw, [client common])
+		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
 	fi
