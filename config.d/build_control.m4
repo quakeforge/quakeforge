@@ -445,14 +445,10 @@ if test "x$static_plugins" = xyes; then
 		SOUND_TYPES="$SOUND_TYPES (static)"
 		CDTYPE="$CDTYPE (static)"
 	fi
-	plugin_ldflags="$plugin_ldflags"
-else
-	plugin_ldflags="$plugin_ldflags"
 fi
 
 dnl Do not use -module here, it belongs in makefile.am due to automake
 dnl needing it there to work correctly
-plugin_ldflags="$plugin_ldflags"
 SERVER_PLUGIN_STATIC_LIBS=""
 CLIENT_PLUGIN_STATIC_LIBS=""
 CD_PLUGIN_STATIC_LIBS=""
@@ -538,8 +534,6 @@ AC_SUBST(VID_MODEL_TARGETS)
 AC_SUBST(VID_REND_TARGETS)
 AC_SUBST(VID_REND_NOINST_TARGETS)
 AC_SUBST(VID_TARGETS)
-AC_SUBST(plugin_ldflags)
-AC_SUBST(plugin_libadd)
 
 QF_DEPS(BSP2IMG,
 	[],
