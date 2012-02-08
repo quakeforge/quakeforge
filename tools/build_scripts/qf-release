@@ -108,13 +108,13 @@ if test $do_win32 -eq 1; then
 	qf_win32_dir=`pwd`"/$qf_win32"
 	mingw32="/usr/local/cross-tools/i386-mingw32msvc"
 	sed -e 's@^\./config@../config@' \
-		../tools/cross/cross-configure.sh > cross-configure.sh
+		../tools/cross/mingw/cross-configure.sh > cross-configure.sh
 	chmod +x cross-configure.sh
 	rm -rf $qf_win32_dir *.zip
 	./cross-configure.sh \
 		--disable-debug --disable-shared \
 		--program-prefix=
-	../tools/cross/cross-make.sh $QFSMP \
+	../tools/cross/mingw/cross-make.sh $QFSMP \
 		prefix=${qf_win32_dir} \
 		exec_prefix=${qf_win32_dir} \
 		pkgdatadir=${qf_win32_dir}/QF \
