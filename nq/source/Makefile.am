@@ -37,7 +37,7 @@ AM_CFLAGS= @PTHREAD_CFLAGS@
 bin_PROGRAMS=	@NQ_TARGETS@
 
 EXTRA_PROGRAMS= nq-fbdev nq-glx nq-glslx nq-mgl nq-sdl nq-sdl32 nq-sgl \
-		nq-svga nq-3dfx nq-wgl nq-x11 nq-server
+		nq-sglsl nq-svga nq-3dfx nq-wgl nq-x11 nq-server
 
 noinst_LIBRARIES= @nq_libs@
 EXTRA_LIBRARIES=libnq_client.a libnq_common.a libnq_sdl.a libnq_server.a
@@ -230,6 +230,19 @@ nq_sgl_SOURCES=sdl_link.c
 nq_sgl_LDADD=		$(nq_sgl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS)
 nq_sgl_LDFLAGS= 	$(common_ldflags)
 nq_sgl_DEPENDENCIES=	$(nq_sgl_libs)
+
+# ... Simple Directmedia Layer, version 1.2 and higher, in GLSL mode
+nq_sglsl_libs=  \
+			libnq_sdl.a \
+			$(client_libs) \
+			$(cl_plugin_LIBS) \
+			$(glsl_QFLIBS) \
+			$(top_builddir)/libs/video/targets/libQFsglsl.la \
+			$(client_LIBS)
+nq_sglsl_SOURCES=sdl_link.c
+nq_sglsl_LDADD=		$(nq_sglsl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS)
+nq_sglsl_LDFLAGS= 	$(common_ldflags)
+nq_sglsl_DEPENDENCIES=	$(nq_sglsl_libs)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
 nq_wgl_libs=  \

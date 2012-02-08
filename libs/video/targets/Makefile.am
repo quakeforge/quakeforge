@@ -18,8 +18,9 @@ noinst_LTLIBRARIES= @VID_TARGETS@ @vid_libs@
 EXTRA_LTLIBRARIES= \
 	libQFjs.la libQFfbdev.la libQFglx.la libQFglslx.la libQFsvga.la \
 	libQFtdfx.la libQFx11.la libQFsdl.la libQFsdl32.la libQFsgl.la \
-	libQFwgl.la libvid_asm.la libvid_common.la libvid_gl.la libvid_glsl.la \
-	libvid_sdl.la libvid_sw.la libvid_sw32.la libvid_svga.la libvid_x11.la
+	libQFsglsl.la libQFwgl.la \
+	libvid_asm.la libvid_common.la libvid_gl.la libvid_glsl.la libvid_sdl.la \
+	libvid_sw.la libvid_sw32.la libvid_svga.la libvid_x11.la
 
 libvid_asm_la_SOURCES=		d_copy.S
 libvid_asm_la_CFLAGS=		@PREFER_NON_PIC@
@@ -138,6 +139,13 @@ libQFsgl_la_SOURCES=		vid_sgl.c
 libQFsgl_la_LDFLAGS=		@STATIC@
 libQFsgl_la_LIBADD=			$(sgl_libs)
 libQFsgl_la_DEPENDENCIES=	$(sgl_libs)
+
+sglsl_libs=libvid_common.la libvid_glsl.la libvid_sdl.la
+libQFsglsl_la_CFLAGS=		@PREFER_NON_PIC@ $(SDL_CFLAGS)
+libQFsglsl_la_SOURCES=		vid_sgl.c
+libQFsglsl_la_LDFLAGS=		@STATIC@
+libQFsglsl_la_LIBADD=		$(sglsl_libs)
+libQFsglsl_la_DEPENDENCIES=	$(sglsl_libs)
 
 #
 # SVGAlib

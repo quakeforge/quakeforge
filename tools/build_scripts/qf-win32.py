@@ -46,6 +46,16 @@ client_sgl = [
 	dir + "QF/menu.plist",
 ]
 
+client_sglsl = [
+	dir,
+	dir + "bin",
+	dir + "bin/nq-sglsl.exe",
+	dir + "bin/qw-client-sglsl.exe",
+	dir + "QF",
+	dir + "QF/menu.dat.gz",
+	dir + "QF/menu.plist",
+]
+
 client_sdl = [
 	dir,
 	dir + "bin",
@@ -107,6 +117,7 @@ packages = [
 	(prefix + "-" + "server", server),
 	(prefix + "-" + "client-wgl", client_wgl),
 	(prefix + "-" + "client-sgl", client_sgl),
+	(prefix + "-" + "client-sglsl", client_sglsl),
 	(prefix + "-" + "client-sdl", client_sdl),
 	(prefix + "-" + "client-sdl32", client_sdl32),
 	(prefix + "-" + "tools", tools),

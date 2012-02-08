@@ -5,7 +5,7 @@ dnl ==================================================================
 QF_WITH_TARGETS(
 	clients,
 	[  --with-clients=<list>   compile clients in <list>:],
-	[3dfx,fbdev,glx,glslx,mgl,sdl,sdl32,sgl,svga,wgl,x11],dummy
+	[3dfx,fbdev,glx,glslx,mgl,sdl,sdl32,sgl,sglsl,svga,wgl,x11],dummy
 )
 QF_WITH_TARGETS(
 	servers,
@@ -155,6 +155,20 @@ if test "x$HAVE_SDL" = xyes; then
 		BUILD_GL=yes
 		CAN_BUILD_GL=yes
 		QF_NEED(vid, [common sdl gl])
+		QF_NEED(qw, [client common sdl])
+		QF_NEED(nq, [client common sdl])
+		QF_NEED(console, [client])
+	fi
+	if test "x$ENABLE_clients_sglsl" = xyes; then
+		QW_TARGETS="$QW_TARGETS qw-client-sglsl\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-sglsl\$(EXEEXT)"
+		QW_DESKTOP_DATA="$QW_DESKTOP_DATA quakeforge-qw-sglsl.desktop"
+		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-sglsl.desktop"
+		CL_TARGETS="$CL_TARGETS SDL-GLSL"
+		VID_TARGETS="$VID_TARGETS libQFsglsl.la"
+		BUILD_GLSL=yes
+		CAN_BUILD_GLSL=yes
+		QF_NEED(vid, [common sdl glsl])
 		QF_NEED(qw, [client common sdl])
 		QF_NEED(nq, [client common sdl])
 		QF_NEED(console, [client])

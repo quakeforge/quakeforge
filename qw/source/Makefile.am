@@ -37,8 +37,9 @@ AM_CFLAGS= @PTHREAD_CFLAGS@
 bin_PROGRAMS=	@QW_TARGETS@
 
 EXTRA_PROGRAMS= qw-client-fbdev qw-client-glx qw-client-glslx qw-client-mgl \
-		qw-client-sdl qw-client-sdl32 qw-client-sgl qw-client-svga \
-		qw-client-3dfx qw-client-wgl qw-client-x11 qw-server qw-master
+		qw-client-sdl qw-client-sdl32 qw-client-sgl qw-client-sglsl \
+		qw-client-svga qw-client-3dfx qw-client-wgl qw-client-x11 \
+		qw-server qw-master
 
 noinst_LIBRARIES= @qw_libs@
 EXTRA_LIBRARIES=libqw_client.a libqw_common.a libqw_sdl.a libqw_server.a
@@ -260,6 +261,19 @@ qw_client_sgl_SOURCES=sdl_link.c
 qw_client_sgl_LDADD= $(qw_client_sgl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_sgl_LDFLAGS=  $(common_ldflags)
 qw_client_sgl_DEPENDENCIES= $(qw_client_sgl_libs)
+
+# ... Simple DirectMedia Layer, version 1.2 and higher, in GLSL mode
+qw_client_sglsl_libs= \
+			libqw_sdl.a \
+			$(client_libs) \
+			$(cl_plugin_LIBS) \
+			$(glsl_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFsglsl.la \
+			$(client_LIBS)
+qw_client_sglsl_SOURCES=sdl_link.c
+qw_client_sglsl_LDADD= $(qw_client_sglsl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
+qw_client_sglsl_LDFLAGS=  $(common_ldflags)
+qw_client_sglsl_DEPENDENCIES= $(qw_client_sglsl_libs)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
 qw_client_wgl_libs= \
