@@ -1,6 +1,24 @@
 NEWS for the QuakeForge project
 -------------------------------
 Changes from 0.6.0
+    o New renderer using GLSL. Currently looks very much like the original
+      software renderer with the additions of translucency, skyboxes and fog.
+    o The new renderer is mostly GLES ready.
+    o Screenshots now get written to $fs_userpath/QF (ie, QF in the quake
+      root) instead of the current gamedir.
+    o Demo playback can be recorded (currently to PNG files as
+      QF/qfnvNNNNNN.png) by adding "rec" as a second parameter to the
+      playdemo commaand.
+    o qfcc now supports the --no-default-paths option.
+    o SDL sound now works in most caases.
+    o The blender mdl import/export script has been updated for blender
+      2.61.
+    o Some more functions added to the Ruamoko draw api.
+    o Partial cross-compile support for Android using the standalone ndk.
+      Doesn't produce a usable app yet.
+    o Message buffer API for Ruamoko.
+
+Changes from 0.6.0
     o qfprogs has been moved from tools to qfcc (windows packages).
     o The software renderer can now cope with pics being off-screen.
     o A potential issue with reading past the end of PCX files has been fixed.
@@ -17,7 +35,7 @@ Changes from 0.5.99 Beta 4.1
 
 Changes from 0.5.99 Beta 3
     o Global fog now works for both multi and single texture rendering.
-	o Z_Realloc() zeros the expanded part of the memory (thanks to sezero).
+    o Z_Realloc() zeros the expanded part of the memory (thanks to sezero).
 
 Changes from 0.5.99 Beta 2
     o Possibly better ktpro support (server now informs the mod about its
