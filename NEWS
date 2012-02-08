@@ -3,19 +3,21 @@ NEWS for the QuakeForge project
 Changes from 0.6.0
     o New renderer using GLSL. Currently looks very much like the original
       software renderer with the additions of translucency, skyboxes and fog.
-    o The new renderer is mostly GLES ready.
+      Also, it's mostly GLES ready.
     o Screenshots now get written to $fs_userpath/QF (ie, QF in the quake
       root) instead of the current gamedir.
     o Demo playback can be recorded (currently to PNG files as
       QF/qfnvNNNNNN.png) by adding "rec" as a second parameter to the
-      playdemo commaand.
-    o qfcc now supports the --no-default-paths option.
+      playdemo commaand. The recording is for 30fps playback. Sound is not
+      recorded at this stage.
     o SDL sound now works in most caases.
     o The blender mdl import/export script has been updated for blender
       2.61.
-    o Some more functions added to the Ruamoko draw api.
     o Partial cross-compile support for Android using the standalone ndk.
       Doesn't produce a usable app yet.
+    o qfcc now has a --no-default-paths option to prevent qfcc including or
+      linking installed headers or libraries.
+    o Some more functions added to the Ruamoko draw api.
     o Message buffer API for Ruamoko.
 
 Changes from 0.6.0
