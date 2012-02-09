@@ -240,46 +240,44 @@ if test "x$ENABLE_servers_qw" = xyes; then
 	QF_NEED(console, [server])
 fi
 
-unset TOOLS_TARGETS
 if test "x$ENABLE_tools_bsp2img" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS bsp2img"
+	QF_NEED(tools,[bsp2img])
 fi
 if test "x$ENABLE_tools_carne" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS carne"
-fi
-if test "x$ENABLE_tools_gsc" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS gsc"
+	QF_NEED(tools,[carne])
 fi
 if test "x$ENABLE_tools_pak" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS pak"
+	QF_NEED(tools,[pak])
 fi
 if test "x$ENABLE_tools_qfbsp" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS qfbsp"
+	QF_NEED(tools,[qfbsp])
 fi
 if test "x$ENABLE_tools_qfcc" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS qfcc"
+	QF_NEED(tools,[qfcc])
 fi
 if test "x$ENABLE_tools_qflight" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS qflight"
+	QF_NEED(tools,[qflight])
 fi
 if test "x$ENABLE_tools_qflmp" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS qflmp"
+	QF_NEED(tools,[qflmp])
 fi
 if test "x$ENABLE_tools_qfmodelgen" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS qfmodelgen"
+	QF_NEED(tools,[qfmodelgen])
 fi
 if test "x$ENABLE_tools_qfvis" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS qfvis"
+	QF_NEED(tools,[qfvis])
 fi
 if test "x$ENABLE_tools_qwaq" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS qwaq"
+	QF_NEED(tools,[qwaq])
 fi
 if test "x$ENABLE_tools_wad" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS wad"
+	QF_NEED(tools,[wad])
 fi
 if test "x$ENABLE_tools_wav" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS wav"
+	QF_NEED(tools,[wav])
 fi
+
+QF_PROCESS_NEED_DIRS(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfvis qwaq wad wav])
 
 AM_CONDITIONAL(BUILD_BSP2IMG, test "$ENABLE_tools_bsp2img" = "yes")
 AM_CONDITIONAL(BUILD_CARNE, test "$ENABLE_tools_carne" = "yes")

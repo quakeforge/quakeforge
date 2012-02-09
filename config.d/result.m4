@@ -2,14 +2,14 @@ AC_MSG_RESULT([
 	QuakeForge has been configured successfully.
 
 	Build type         :$BUILD_TYPE
-	Server support     :${SV_TARGETS- no}
-	Client support     :${CL_TARGETS- no}
-	Tools support      :${TOOLS_TARGETS- no}
-	Sound support      :${SOUND_TYPES- no} ${SND_OUTPUT_DEFAULT}
-	CD Audio system    :${CDTYPE- no} ${CD_DEFAULT}
+	Server support     :${SV_TARGETS:- no}
+	Client support     :${CL_TARGETS:- no}
+	Tools support      :${tools_dirs:- no}
+	Sound support      :${SOUND_TYPES:- no} ${SND_OUTPUT_DEFAULT}
+	CD Audio system    :${CDTYPE:- no} ${CD_DEFAULT}
 	IPv6 networking    : $NETTYPE_IPV6
 	Compression support: gz=$HAVE_ZLIB ogg=$HAVE_VORBIS flac=$HAVE_FLAC png=$HAVE_PNG
-	HTTP support       : ${CURL-no}
+	HTTP support       : ${CURL:-no}
 	Compiler version   : $CCVER
 	Compiler flags     : $CFLAGS
 	qfcc cpp invocation: $CPP_NAME

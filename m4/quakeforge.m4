@@ -112,6 +112,10 @@ qfn_ext=${qfn_ext:-la}
 QF_PROCESS_NEED_subroutin([lib],[$1],[.${qfn_ext}],[libs],[$2])
 ])
 
+AC_DEFUN([QF_PROCESS_NEED_DIRS], [
+QF_PROCESS_NEED_subroutin([],[$1],[],[dirs],[$2])
+])
+
 AC_DEFUN([QF_WITH_TARGETS], [
 AC_ARG_WITH($1,
 	[$2]
