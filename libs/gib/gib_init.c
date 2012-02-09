@@ -32,9 +32,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used))
-const char  rcsid[] =
-	"$Id$";
+static __attribute__ ((used)) const char  rcsid[] = "$Id$";
 
 #include <string.h>
 #include <stdlib.h>
@@ -55,6 +53,12 @@ const char  rcsid[] =
 #include "gib_thread.h"
 #include "gib_handle.h"
 #include "gib_object.h"
+
+#include "QF/csqc.h"
+#define U __attribute__ ((used))
+static U void (*const gib_progs_init)(struct progs_s *) = GIB_Progs_Init;
+#undef U
+
 
 static void
 GIB_Exec_Override_f (void)

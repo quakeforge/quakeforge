@@ -7,7 +7,6 @@ lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
 			-rpath $(libdir) -no-undefined
 rua_libs= \
 	$(top_builddir)/libs/gamecode/libQFgamecode.la \
-	$(top_builddir)/libs/gib/libQFgib.la \
 	$(top_builddir)/libs/util/libQFutil.la
 
 lib_LTLIBRARIES= libQFruamoko.la
@@ -16,7 +15,7 @@ libQFruamoko_la_LDFLAGS=		$(lib_ldflags)
 libQFruamoko_la_LIBADD=			$(rua_libs)
 libQFruamoko_la_DEPENDENCIES=	$(rua_libs)
 libQFruamoko_la_SOURCES= \
-		bi_gib.c pr_cmds.c \
+		pr_cmds.c \
 		rua_cbuf.c rua_cmd.c rua_cvar.c rua_file.c rua_hash.c rua_init.c \
 		rua_math.c rua_msgbuf.c rua_obj.c rua_plist.c rua_qfile.c rua_qfs.c \
 		rua_script.c rua_string.c

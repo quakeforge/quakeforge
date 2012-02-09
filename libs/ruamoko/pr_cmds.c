@@ -52,11 +52,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 
-#include "QF/csqc.h"
-#define U __attribute__ ((used))
-static U void (*const gib_progs_init)(progs_t *) = GIB_Progs_Init;
-#undef U
-
 VISIBLE const char *pr_gametype = "";
 
 /* BUILT-IN FUNCTIONS */
