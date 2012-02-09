@@ -3,8 +3,8 @@ AUTOMAKE_OPTIONS= foreign
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS=RPM debian desktop doc include libs hw nq qtv qw tools ruamoko \
-		pkg-config vc2005 vc2008
+SUBDIRS=desktop pkg-config include libs hw nq qtv qw tools ruamoko
+DIST_SUBDIRS=$(SUBDIRS) RPM debian doc vc2005 vc2008
 
 ## configure.ac needs to be listed here for older autoconfs
 EXTRA_DIST=	ChangeLog configure.ac bootstrap \
