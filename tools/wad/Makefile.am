@@ -7,7 +7,7 @@ WAD_INCS=@WAD_INCS@
 INCLUDES= -I$(top_srcdir)/include $(WAD_INCS)
 
 
-bin_PROGRAMS=	$(wad)
+bin_PROGRAMS=	wad
 
 mans=wad.1
 man_MANS=	$(mans)

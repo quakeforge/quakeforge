@@ -6,7 +6,7 @@ QFLMP_INCS=@QFLMP_INCS@
 
 INCLUDES= -I$(top_srcdir)/include $(QFLMP_INCS)
 
-bin_PROGRAMS=	$(qflmp)
+bin_PROGRAMS=	qflmp
 
 #mans=qflmp.1
 man_MANS=	$(mans)
