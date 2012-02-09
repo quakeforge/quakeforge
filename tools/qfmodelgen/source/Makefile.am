@@ -6,14 +6,7 @@ QFMODELGEN_INCS=@QFMODELGEN_INCS@
 
 INCLUDES=	-I$(top_srcdir)/include $(QFMODELGEN_INCS)
 
-if BUILD_QFMODELGEN
-qfmodelgen=qfmodelgen
-else
-qfmodelgen=
-endif
-
-bin_PROGRAMS=	$(qfmodelgen)
-EXTRA_PROGRAMS= qfmodelgen
+bin_PROGRAMS=	qfmodelgen
 
 qfmodelgen_SOURCES= lbmlib.c modelgen.c trilib.c
 

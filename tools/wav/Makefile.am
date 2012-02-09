@@ -6,19 +6,13 @@ WAV_INCS=@WAV_INCS@
 
 INCLUDES= -I$(top_srcdir)/include $(WAV_INCS)
 
-if BUILD_WAV
-qfwavinfo=qfwavinfo
-else
-qfwavinfo=
-endif
+bin_PROGRAMS=	qfwavinfo
 
-bin_PROGRAMS=	$(qfwavinfo)
-EXTRA_PROGRAMS= qfwavinfo
-
-#man_MANS=	qfwavinfo.1
+mans=qfwavinfo.1
+man_MANS=	#$(mans)
 
 qfwavinfo_SOURCES=	qfwavinfo.c
 qfwavinfo_LDADD=	$(WAV_LIBS)
 qfwavinfo_DEPENDENCIES= $(WAV_DEPS)
 
-EXTRA_DIST=
+EXTRA_DIST=#$(mans)

@@ -6,14 +6,7 @@ QFBSP_INCS=@QFBSP_INCS@
 
 INCLUDES=	-I$(top_srcdir)/include $(QFBSP_INCS)
 
-if BUILD_QFBSP
-qfbsp=qfbsp
-else
-qfbsp=
-endif
-
-bin_PROGRAMS=	$(qfbsp)
-EXTRA_PROGRAMS= qfbsp
+bin_PROGRAMS=	qfbsp
 
 qfbsp_SOURCES= \
 		brush.c csg4.c map.c merge.c nodraw.c options.c outside.c portals.c \

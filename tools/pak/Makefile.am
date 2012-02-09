@@ -6,24 +6,14 @@ PAK_INCS=@PAK_INCS@
 
 INCLUDES= -I$(top_srcdir)/include $(PAK_INCS)
 
-if BUILD_PAK
-pak=pak
-zpak=zpak
-mans=pak.1 zpak.1
-else
-pak=
-zpak=
-mans=
-endif
+bin_PROGRAMS=		pak
+bin_SCRIPTS=		zpak
 
-bin_PROGRAMS=	$(pak)
-bin_SCRIPTS=	$(zpak)
-EXTRA_PROGRAMS=	pak
+mans=				pak.1 zpak.1
+man_MANS=			$(mans)
 
-man_MANS=	$(mans)
+pak_SOURCES=		pak.c
+pak_LDADD=			$(PAK_LIBS)
+pak_DEPENDENCIES=	$(PAK_DEPS)
 
-pak_SOURCES=	pak.c
-pak_LDADD=	$(PAK_LIBS)
-pak_DEPENDENCIES= $(PAK_DEPS)
-
-EXTRA_DIST=		pak.h pak.1 zpak zpak.1
+EXTRA_DIST=pak.h zpak $(mans)

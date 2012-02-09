@@ -8,14 +8,7 @@ PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
 
 INCLUDES=	-I$(top_srcdir)/include $(QFVIS_INCS) $(PTHREAD_CFLAGS)
 
-if BUILD_QFVIS
-qfvis=qfvis
-else
-qfvis=
-endif
-
-bin_PROGRAMS=	$(qfvis)
-EXTRA_PROGRAMS= qfvis
+bin_PROGRAMS=	qfvis
 
 qfvis_SOURCES=	base-vis.c flow.c options.c qfvis.c soundphs.c
 

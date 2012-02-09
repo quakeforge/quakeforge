@@ -8,18 +8,8 @@ QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc
 QCFLAGS=-qq -g -Werror --advanced --no-default-paths
 
-if BUILD_QWAQ
-qwaq=qwaq
-data=qwaq.dat
-else
-qwaq=
-data=
-endif
-
-noinst_PROGRAMS=$(qwaq)
-noinst_DATA=$(data)
-EXTRA_PROGRAMS=qwaq
-EXTRA_DATA=qwaq.dat
+noinst_PROGRAMS=qwaq
+noinst_DATA=qwaq.dat
 
 qwaq_dat_src= \
 	defs.qc main.qc test.r

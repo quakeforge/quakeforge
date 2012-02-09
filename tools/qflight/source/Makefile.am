@@ -8,14 +8,7 @@ PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
 
 INCLUDES=	-I$(top_srcdir)/include $(QFLIGHT_INCS) $(PTHREAD_CFLAGS)
 
-if BUILD_QFLIGHT
-qflight=qflight
-else
-qflight=
-endif
-
-bin_PROGRAMS=	$(qflight)
-EXTRA_PROGRAMS= qflight
+bin_PROGRAMS=	qflight
 
 qflight_SOURCES=\
 	entities.c ltface.c noise.c options.c properties.c qflight.c \

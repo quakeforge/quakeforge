@@ -279,19 +279,6 @@ fi
 
 QF_PROCESS_NEED_DIRS(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfvis qwaq wad wav])
 
-AM_CONDITIONAL(BUILD_BSP2IMG, test "$ENABLE_tools_bsp2img" = "yes")
-AM_CONDITIONAL(BUILD_CARNE, test "$ENABLE_tools_carne" = "yes")
-AM_CONDITIONAL(BUILD_PAK, test "$ENABLE_tools_pak" = "yes")
-AM_CONDITIONAL(BUILD_QFBSP, test "$ENABLE_tools_qfbsp" = "yes")
-AM_CONDITIONAL(BUILD_QFCC, test "$ENABLE_tools_qfcc" = "yes")
-AM_CONDITIONAL(BUILD_QFLIGHT, test "$ENABLE_tools_qflight" = "yes")
-AM_CONDITIONAL(BUILD_QFLMP, test "$ENABLE_tools_qflmp" = "yes")
-AM_CONDITIONAL(BUILD_QFMODELGEN, test "$ENABLE_tools_qfmodelgen" = "yes")
-AM_CONDITIONAL(BUILD_QFVIS, test "$ENABLE_tools_qfvis" = "yes")
-AM_CONDITIONAL(BUILD_QWAQ, test "$ENABLE_tools_qwaq" = "yes" -a "$ENABLE_tools_qfcc" = "yes")
-AM_CONDITIONAL(BUILD_WAD, test "$ENABLE_tools_wad" = "yes")
-AM_CONDITIONAL(BUILD_WAV, test "$ENABLE_tools_wav" = "yes")
-
 AM_CONDITIONAL(BUILD_RUAMOKO, test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes")
 
 if test "x$BUILD_SW" = xyes; then

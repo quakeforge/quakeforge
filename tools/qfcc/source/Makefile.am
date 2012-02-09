@@ -35,21 +35,8 @@ QFCC_INCS=@QFCC_INCS@
 INCLUDES=	-I$(top_srcdir)/include $(QFCC_INCS)
 YFLAGS = -v -d
 
-if BUILD_QFCC
-qfcc=qfcc
-qfpc=qfpc
-qfpreqcc=qfpreqcc
-qfprogs=qfprogs
-else
-qfcc=
-qfpc=
-qfpreqcc=
-qfprogs=
-endif
-
-bin_PROGRAMS=	$(qfcc) $(qfpc) $(qfprogs)
-bin_SCRIPTS=	$(qfpreqcc)
-EXTRA_PROGRAMS= qfcc qfpc qfprogs
+bin_PROGRAMS=	qfcc qfpc qfprogs
+bin_SCRIPTS=	qfpreqcc
 
 common_src=\
 	class.c codespace.c constfold.c cpp.c debug.c def.c defspace.c \

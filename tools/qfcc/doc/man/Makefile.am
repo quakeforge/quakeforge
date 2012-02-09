@@ -1,10 +1,4 @@
 AUTOMAKE_OPTIONS= foreign
 
-if BUILD_QFCC
-mans=qfcc.1
-else
-mans=
-endif
-
-man_MANS=$(mans)
+man_MANS=qfcc.1
 EXTRA_DIST=qfcc.1
