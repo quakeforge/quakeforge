@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 AUTOMAKE_OPTIONS=	foreign
-EXTRA_DIST =
+EXTRA_DIST = \
 	Makefile.am QuakeForge-VS8-Express.sln QuakeForge-VS8.sln \
 	bsp2img/bsp2img.vcproj builtins/builtins.vcproj clean.ps1 \
 	common/common.vcproj console/console.vcproj \
