@@ -315,9 +315,9 @@ if test "x$BUILD_GLSL" = xyes; then
 	VID_MODEL_TARGETS="$VID_MODEL_TARGETS libQFmodels_glsl.la"
 fi
 
-QF_PROCESS_NEED(vid, [asm common gl glsl sdl sw sw32 svga x11])
-QF_PROCESS_NEED(qw, [client common sdl server], a)
-QF_PROCESS_NEED(nq, [client common sdl server], a)
+QF_PROCESS_NEED_LIBS(vid, [asm common gl glsl sdl sw sw32 svga x11])
+QF_PROCESS_NEED_LIBS(qw, [client common sdl server], a)
+QF_PROCESS_NEED_LIBS(nq, [client common sdl server], a)
 
 AC_SUBST(CAN_BUILD_GL)
 AC_SUBST(CAN_BUILD_GLSL)

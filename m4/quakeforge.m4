@@ -93,19 +93,23 @@ for qfn_lib in $2; do
 done
 ])
 
-AC_DEFUN([QF_PROCESS_NEED], [
-if test -n "$3"; then
-	qfn_ext="$3"
-else
-	qfn_ext=la
-fi
-for qfn_lib in $2; do
-	if eval test x'"${$1_need_'$qfn_lib'}"' = xyes; then
-		qfn_tmp="${$1_libs} lib$1_$qfn_lib.$qfn_ext"
-		eval '$1_libs="$qfn_tmp"'
+AC_DEFUN([QF_PROCESS_NEED_subroutin], [
+qfn_pref="$1"
+qfn_pref=${qfn_pref:+${qfn_pref}$2_}
+qfn_suf="$3"
+for qfn_need in $5; do
+	if eval test x'"${$2_need_'${qfn_need}'}"' = xyes; then
+		qfn_tmp="${$2_$4} ${qfn_pref}${qfn_need}${qfn_suf}"
+		eval '$2_$4="$qfn_tmp"'
 	fi
 done
-AC_SUBST($1_libs)
+AC_SUBST([$2_$4])
+])
+
+AC_DEFUN([QF_PROCESS_NEED_LIBS], [
+qfn_ext="$3"
+qfn_ext=${qfn_ext:-la}
+QF_PROCESS_NEED_subroutin([lib],[$1],[.${qfn_ext}],[libs],[$2])
 ])
 
 AC_DEFUN([QF_WITH_TARGETS], [
