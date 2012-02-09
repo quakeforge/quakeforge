@@ -39,7 +39,7 @@ endif
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'
 
-EXTRA_DATA= quakeforge-nq-glx.desktop quakeforge-nq-sdl.desktop \
+EXTRA_DIST= quakeforge-nq-glx.desktop quakeforge-nq-sdl.desktop \
 	quakeforge-nq-sdl32.desktop quakeforge-nq-sgl.desktop \
 	quakeforge-nq-x11.desktop quakeforge-qw-glx.desktop \
 	quakeforge-qw-sdl.desktop quakeforge-qw-sdl32.desktop \
