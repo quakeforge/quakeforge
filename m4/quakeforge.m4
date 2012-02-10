@@ -93,9 +93,8 @@ for qfn_lib in $2; do
 done
 ])
 
-AC_DEFUN([QF_PROCESS_NEED_subroutin], [
+AC_DEFUN([QF_PROCESS_NEED_subroutine], [
 qfn_pref="$1"
-qfn_pref=${qfn_pref:+${qfn_pref}$2_}
 qfn_suf="$3"
 for qfn_need in $5; do
 	if eval test x'"${$2_need_'${qfn_need}'}"' = xyes; then
@@ -109,11 +108,11 @@ AC_SUBST([$2_$4])
 AC_DEFUN([QF_PROCESS_NEED_LIBS], [
 qfn_ext="$3"
 qfn_ext=${qfn_ext:-la}
-QF_PROCESS_NEED_subroutin([lib],[$1],[.${qfn_ext}],[libs],[$2])
+QF_PROCESS_NEED_subroutine([lib$1_],[$1],[.${qfn_ext}],[libs],[$2])
 ])
 
 AC_DEFUN([QF_PROCESS_NEED_DIRS], [
-QF_PROCESS_NEED_subroutin([],[$1],[],[dirs],[$2])
+QF_PROCESS_NEED_subroutine([],[$1],[],[dirs],[$2])
 ])
 
 AC_DEFUN([QF_WITH_TARGETS], [
