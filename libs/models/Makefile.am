@@ -4,7 +4,7 @@ SUBDIRS= alias brush sprite . test
 AM_CFLAGS= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 
-lib_LTLIBRARIES=	libQFmodels.la @VID_MODEL_TARGETS@
+lib_LTLIBRARIES=	libQFmodels.la @QFmodels_libs@
 EXTRA_LTLIBRARIES=	libQFmodels_gl.la libQFmodels_glsl.la libQFmodels_sw.la
 
 lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \

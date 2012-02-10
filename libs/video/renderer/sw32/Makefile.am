@@ -3,11 +3,7 @@ AUTOMAKE_OPTIONS= foreign
 AM_CFLAGS= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 
-if BUILD_SW32
 noinst_LTLIBRARIES=	libsw32.la
-else
-noinst_LTLIBRARIES=
-endif
 
 sw32_src= \
 	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c d_scan.c \

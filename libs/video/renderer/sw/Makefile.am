@@ -4,17 +4,10 @@ AM_CFLAGS= @PREFER_NON_PIC@
 CCASFLAGS+= @PREFER_NON_PIC@
 INCLUDES= -I$(top_srcdir)/include
 
-if ASM_ARCH
-asm = libasm.la
-else
-asm =
-endif
+asm = @swrend_libs@
 
-if BUILD_SW
 noinst_LTLIBRARIES=	libsw.la $(asm)
-else
-noinst_LTLIBRARIES=
-endif
+EXTRA_LTLIBRARIES=libswrend_asm.la
 
 asm_src= \
 	d_draw.S d_parta.S d_polysa.S d_scana.S d_spr8.S d_varsa.S fpua.S \
@@ -28,14 +21,12 @@ sw_src= \
 	sw_redge.c sw_rmain.c sw_rmisc.c sw_rpart.c sw_rsky.c sw_rsprite.c \
 	sw_rsurf.c
 
-libasm_la_LDFLAGS= @STATIC@
-libasm_la_SOURCES= $(asm_src)
+libswrend_asm_la_LDFLAGS= @STATIC@
+libswrend_asm_la_SOURCES= $(asm_src)
 
 libsw_la_LDFLAGS= @STATIC@
 libsw_la_SOURCES= $(sw_src)
-if ASM_ARCH
 libsw_la_LIBADD= $(asm)
 libsw_la_DEPENDENCIES= $(asm)
-endif
 
 EXTRA_DIST= $(sw_src) $(asm_src)

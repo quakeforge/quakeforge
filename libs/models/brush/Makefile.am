@@ -3,25 +3,8 @@ AUTOMAKE_OPTIONS= foreign
 AM_CFLAGS= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 
-if BUILD_GL
-gl= libbrush_gl.la
-else
-gl=
-endif
-
-if BUILD_GLSL
-glsl= libbrush_glsl.la
-else
-glsl=
-endif
-
-if BUILD_SW_MOD
-sw= libbrush_sw.la
-else
-sw=
-endif
-
-noinst_LTLIBRARIES=	libbrush.la $(gl) $(glsl) $(sw)
+noinst_LTLIBRARIES=	libbrush.la @brush_libs@
+EXTRA_LTLIBRARIES=libbrush_gl.la libbrush_glsl.la libbrush_sw.la
 
 brush_src= model_brush.c
 gl_src= gl_model_brush.c

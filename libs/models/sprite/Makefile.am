@@ -3,25 +3,8 @@ AUTOMAKE_OPTIONS= foreign
 AM_CFLAGS= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 
-if BUILD_GL
-gl= libsprite_gl.la
-else
-gl=
-endif
-
-if BUILD_GLSL
-glsl= libsprite_glsl.la
-else
-glsl=
-endif
-
-if BUILD_SW_MOD
-sw= libsprite_sw.la
-else
-sw=
-endif
-
-noinst_LTLIBRARIES=	$(gl) $(glsl) $(sw)
+noinst_LTLIBRARIES=	@sprite_libs@
+EXTRA_LTLIBRARIES=libsprite_gl.la libsprite_glsl.la libsprite_sw.la
 
 sprite_src= model_sprite.c
 gl_src= gl_model_sprite.c

@@ -3,11 +3,7 @@ AUTOMAKE_OPTIONS= foreign
 AM_CFLAGS= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include $(GLX_CFLAGS)
 
-if BUILD_GL
 noinst_LTLIBRARIES=	libgl.la
-else
-noinst_LTLIBRARIES=
-endif
 
 gl_src = \
 	gl_draw.c gl_dyn_lights.c gl_dyn_part.c gl_dyn_textures.c \

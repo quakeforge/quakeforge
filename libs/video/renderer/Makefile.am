@@ -1,13 +1,14 @@
 AUTOMAKE_OPTIONS= foreign
 
-SUBDIRS= gl glsl sw sw32
+SUBDIRS= @QFrenderer_dirs@
+DIST_SUBDIRS= gl glsl sw sw32
 INCLUDES= -I$(top_srcdir)/include
 
 lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
 			-rpath $(libdir) -no-undefined
 
-lib_LTLIBRARIES= @VID_REND_TARGETS@
-noinst_LTLIBRARIES= @VID_REND_NOINST_TARGETS@
+#lib_LTLIBRARIES= @VID_REND_TARGETS@
+noinst_LTLIBRARIES= @QFrenderer_libs@
 
 EXTRA_LTLIBRARIES=	libQFrenderer_sw.la libQFrenderer_sw32.la \
 					libQFrenderer_gl.la libQFrenderer_glsl.la
