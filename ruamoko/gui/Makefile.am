@@ -11,11 +11,7 @@ RANLIB=touch
 INCLUDES=	-I$(top_srcdir)/ruamoko/include -I$(top_srcdir)/include
 
 gui_libs=libgui.a
-if BUILD_RUAMOKO
 libs=$(gui_libs)
-else
-libs=
-endif
 
 pkglib_LIBRARIES= $(libs)
 EXTRA_LIBRARIES= $(gui_libs)

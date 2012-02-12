@@ -19,11 +19,7 @@ endif
 # so we have to bite the bullet and pass this to the shell every time.
 STRIP=`echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`
 
-if BUILD_RUAMOKO
 data=game.dat$(GZ)
-else
-data=
-endif
 
 noinst_DATA= $(data)
 EXTRA_DATA= game.dat

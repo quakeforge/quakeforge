@@ -27,8 +27,6 @@ QW_DESKTOP_DATA=""
 NQ_DESKTOP_DATA=""
 
 CD_TARGETS=""
-SND_PLUGIN_TARGETS="snd_output_disk.la"
-SND_REND_TARGETS=""
 SND_TARGETS=""
 VID_MODEL_TARGETS=""
 VID_REND_TARGETS=""
@@ -263,23 +261,27 @@ if test "x$ENABLE_servers_nq" = xyes; then
 	SV_TARGETS="$SV_TARGETS nq"
 	QF_NEED(nq, [common server])
 	QF_NEED(console, [server])
+	QF_NEED(top, [nq])
 fi
 if test "x$ENABLE_servers_qtv" = xyes; then
 	QTV_TARGETS="qtv\$(EXEEXT) $QTV_TARGETS"
 	SV_TARGETS="$SV_TARGETS qtv"
 #	QF_NEED(qtv, [common server])
 	QF_NEED(console, [server])
+	QF_NEED(top, [qtv])
 fi
 if test "x$ENABLE_servers_master" = xyes; then
 	HW_TARGETS="hw-master\$(EXEEXT) $HW_TARGETS"
 	QW_TARGETS="qw-master\$(EXEEXT) $QW_TARGETS"
 	SV_TARGETS="$SV_TARGETS master"
+	QF_NEED(top, [hw qw])
 fi
 if test "x$ENABLE_servers_qw" = xyes; then
 	QW_TARGETS="qw-server\$(EXEEXT) $QW_TARGETS"
 	SV_TARGETS="$SV_TARGETS qw"
 	QF_NEED(qw, [common server])
 	QF_NEED(console, [server])
+	QF_NEED(top, [qw])
 fi
 
 if test "x$ENABLE_tools_bsp2img" = xyes; then
@@ -319,9 +321,16 @@ if test "x$ENABLE_tools_wav" = xyes; then
 	QF_NEED(tools,[wav])
 fi
 
-QF_PROCESS_NEED_DIRS(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfvis qwaq wad wav])
+QF_NEED(top, [libs hw nq qtv qw])
 
-AM_CONDITIONAL(BUILD_RUAMOKO, test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes")
+QF_PROCESS_NEED_DIRS(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfvis qwaq wad wav])
+QF_PROCESS_NEED_FUNC(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfvis qwaq wad wav], QF_NEED(top,tools))
+
+if test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes"; then
+	QF_NEED(top, [ruamoko])
+fi
+
+QF_PROCESS_NEED_DIRS(top, [libs hw nq qtv qw tools ruamoko])
 
 QF_PROCESS_NEED_LIBS(swrend, [asm])
 QF_PROCESS_NEED_LIBS(QFrenderer, [gl glsl sw sw32])
@@ -343,20 +352,13 @@ if test -n "$CL_TARGETS"; then
 	JOY_TARGETS="libQFjs.la"
 else
 	unset CDTYPE
-	CD_PLUGIN_TARGETS=""
+	unset SOUND_TYPES
 	CD_TARGETS=""
 	JOY_TARGETS=""
-	SND_PLUGIN_TARGETS=""
-	SND_REND_TARGETS=""
 	SND_TARGETS=""
 	AUDIO_TARGETS=""
-	unset SOUND_TYPES
 fi
 AC_DEFINE_UNQUOTED(SND_OUTPUT_DEFAULT, "$SND_OUTPUT_DEFAULT", [Define this to the default sound output driver.])
-
-CD_PLUGIN_STATIC=""
-SND_PLUGIN_STATIC=""
-SND_REND_STATIC=""
 
 if test "x$enable_shared" = xno; then
 	PREFER_PIC=
@@ -406,8 +408,6 @@ fi
 
 dnl Do not use -module here, it belongs in makefile.am due to automake
 dnl needing it there to work correctly
-AC_DEFINE_UNQUOTED(CD_PLUGIN_LIST, $CD_PLUGIN_LIST, [list of cd plugins])
-AC_DEFINE_UNQUOTED(CD_PLUGIN_PROTOS, $CD_PLUGIN_PROTOS, [list of cd prototypes])
 
 AC_SUBST(HW_TARGETS)
 AC_SUBST(NQ_TARGETS)

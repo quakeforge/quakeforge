@@ -136,6 +136,13 @@ QF_STATIC_PLUGIN_LIBS(m4_default($4,$1),[$1],[$2],[$3])
 QF_STATIC_PLUGIN_PROTOS(m4_default($4,$1),[$1],[$2])
 QF_STATIC_PLUGIN_LIST(m4_default($4,$1),[$1],[$2])])
 
+AC_DEFUN([QF_PROCESS_NEED_FUNC],
+[m4_foreach_w([qfn_need], [$2],
+[if test x"${$1[_need_]qfn_need}" = xyes; then
+	$3
+fi
+])])
+
 AC_DEFUN([QF_WITH_TARGETS], [
 AC_ARG_WITH($1,
 	[$2]

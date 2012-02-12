@@ -14,11 +14,7 @@ noinst_HEADERS= \
 	Array+Private.h
 
 ruamoko_libs=libr.a libqw.a libnq.a libcsqc.a
-if BUILD_RUAMOKO
 libs=$(ruamoko_libs)
-else
-libs=
-endif
 
 pkglib_LIBRARIES= $(libs)
 EXTRA_LIBRARIES= $(ruamoko_libs)

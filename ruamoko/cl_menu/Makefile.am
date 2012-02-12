@@ -19,11 +19,7 @@ STRIP=`echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`
 
 menu_data=menu.dat$(GZ) menu.sym$(GZ) menu.plist
 
-if BUILD_RUAMOKO
 data=$(menu_data)
-else
-data=
-endif
 
 pkgdata_DATA= $(data)
 EXTRA_DATA= $(menu_data)
