@@ -11,8 +11,8 @@ lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
 			-rpath $(libdir) -no-undefined
 EXEEXT=
 
-plugin_LTLIBRARIES=	@CD_PLUGIN_TARGETS@
-noinst_LTLIBRARIES=	@CD_PLUGIN_STATIC@
+plugin_LTLIBRARIES=	@cd_plugins@
+noinst_LTLIBRARIES=	@cd_static_plugins@
 lib_LTLIBRARIES=	@CD_TARGETS@ @SND_TARGETS@
 EXTRA_LTLIBRARIES=	libQFsound.la libQFcd.la \
 					cd_file.la cd_linux.la cd_sdl.la cd_sgi.la cd_win.la \
@@ -57,14 +57,14 @@ cd_xmms_la_CFLAGS=			$(XMMS_CFLAGS)
 cd_xmms_la_SOURCES=			cd_xmms.c
 
 sound_libs= \
-	@SND_PLUGIN_STATIC_LIBS@ \
-	@SND_REND_STATIC_LIBS@ \
+	@snd_output_static_plugin_libs@ \
+	@snd_render_static_plugin_libs@ \
 	$(top_builddir)/libs/models/libQFmodels.la \
 	$(top_builddir)/libs/gamecode/libQFgamecode.la \
 	$(top_builddir)/libs/util/libQFutil.la
 
 cd_libs= \
-	@CD_PLUGIN_STATIC_LIBS@ \
+	@cd_static_plugin_libs@ \
 	$(top_builddir)/libs/util/libQFutil.la
 
 libQFsound_la_LDFLAGS=		$(lib_ldflags)

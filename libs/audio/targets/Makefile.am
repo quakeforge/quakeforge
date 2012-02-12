@@ -8,8 +8,8 @@ plugin_libadd= @plugin_libadd@
 EXEEXT=
 snd_deps=$(top_builddir)/libs/util/libQFutil.la
 
-plugin_LTLIBRARIES=	@SND_PLUGIN_TARGETS@
-noinst_LTLIBRARIES=	@SND_PLUGIN_STATIC@
+plugin_LTLIBRARIES=	@snd_output_plugins@
+noinst_LTLIBRARIES=	@snd_output_static_plugins@
 EXTRA_LTLIBRARIES= \
 	snd_output_sdl.la snd_output_alsa.la snd_output_oss.la snd_output_sgi.la \
 	snd_output_sun.la snd_output_win.la snd_output_dx.la snd_output_disk.la

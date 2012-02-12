@@ -46,14 +46,14 @@ static plugin_t *snd_render_module = NULL;
 static plugin_t *snd_output_module = NULL;
 static snd_render_funcs_t *snd_render_funcs = NULL;
 
-SND_OUTPUT_PROTOS
+SND_OUTPUT_PLUGIN_PROTOS
 static plugin_list_t snd_output_list[] = {
-	SND_OUTPUT_LIST
+	SND_OUTPUT_PLUGIN_LIST
 };
 
-SND_RENDER_PROTOS
+SND_RENDER_PLUGIN_PROTOS
 static plugin_list_t snd_render_list[] = {
-	SND_RENDER_LIST
+	SND_RENDER_PLUGIN_LIST
 };
 
 

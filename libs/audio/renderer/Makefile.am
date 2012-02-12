@@ -7,10 +7,9 @@ plugin_ldflags= @plugin_ldflags@ -avoid-version -module -rpath $(plugindir)
 plugin_libadd= @plugin_libadd@
 EXEEXT=
 
-plugin_LTLIBRARIES=	@SND_REND_TARGETS@
+plugin_LTLIBRARIES=	@snd_render_plugins@
+noinst_LTLIBRARIES=	@snd_render_static_plugins@
 EXTRA_LTLIBRARIES=	snd_render_default.la snd_render_jack.la
-
-noinst_LTLIBRARIES=	@SND_REND_STATIC@
 
 flac_src=flac.c
 midi_src=midi.c

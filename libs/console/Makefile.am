@@ -9,8 +9,8 @@ lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
 EXEEXT=
 
 lib_LTLIBRARIES=	libQFconsole.la
-plugin_LTLIBRARIES= @SERVER_PLUGIN_TARGETS@ @CLIENT_PLUGIN_TARGETS@
-noinst_LTLIBRARIES= @SERVER_PLUGIN_STATIC@ @CLIENT_PLUGIN_STATIC@
+plugin_LTLIBRARIES= @console_plugins@
+noinst_LTLIBRARIES= @client_static_plugins@ @server_static_plugins@
 EXTRA_LTLIBRARIES=  console_server.la console_client.la
 
 common_sources= \

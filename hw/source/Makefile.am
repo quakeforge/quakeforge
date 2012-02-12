@@ -40,7 +40,7 @@ EXTRA_PROGRAMS= hw-master
 common_ldflags= -export-dynamic
 hw_master_libs= \
 	$(top_builddir)/libs/net/libnet_chan.la \
-	$(SERVER_PLUGIN_STATIC_LIBS) \
+	@server_static_plugin_libs@ \
 	$(top_builddir)/libs/console/libQFconsole.la \
 	$(top_builddir)/libs/util/libQFutil.la
 

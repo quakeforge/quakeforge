@@ -12,15 +12,11 @@ if test "x$mingw" != xyes -a "x$enable_xmms" == xyes; then
 		HAVE_XMMS=no)
 	AC_SUBST(HAVE_XMMS)
 fi	
-AC_SUBST(CD_CFLAGS)
-
 
 CDTYPE=""
-CD_CFLAGS=""
-CD_PLUGIN_TARGETS=""
 if test "x$HAVE_VORBIS" = xyes; then
 	CDTYPE=" File"
-	CD_PLUGIN_TARGETS="cd_file.la"
+	QF_NEED(cd,[file])
 fi
 
 AC_MSG_CHECKING(for CD audio support)
@@ -34,20 +30,20 @@ QF_maGiC_VALUE
 #endif
 	],
 	CDTYPE="$CDTYPE Linux"
-	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS cd_linux.la"
+	QF_NEED(cd,[linux])
 )
 
 dnl XMMS audio
 if test "x$HAVE_XMMS" = "xyes"; then
 	CDTYPE="$CDTYPE XMMS"
-	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS cd_xmms.la"
+	QF_NEED(cd,[xmms])
 	AC_DEFINE(HAVE_XMMS, [1], [Define if you have XMMS])
 fi
 
 dnl SDL CD audio
 if test "x$HAVE_SDL_CD" = "xyes"; then
 	CDTYPE="$CDTYPE SDL"
-	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS cd_sdl.la"
+	QF_NEED(cd,[sdl])
 fi
 
 dnl SGI
@@ -59,7 +55,7 @@ QF_maGiC_VALUE
 #endif
 	],
 	CDTYPE="$CDTYPE SGI"
-	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS cd_sgi.la"
+	QF_NEED(cd,[sgi])
 	SGI_CD_LIBS="-lcdaudio -lmediad -lds"
 )
 AC_SUBST(SGI_CD_LIBS)
@@ -73,7 +69,7 @@ QF_maGiC_VALUE
 #endif
 	],
 	CDTYPE="$CDTYPE WIN32"
-	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS cd_win.la"
+	QF_NEED(cd,[win])
 )
 if test "x$CDTYPE" != "x"; then
 	AC_MSG_RESULT([$CDTYPE])

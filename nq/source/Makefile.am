@@ -49,8 +49,8 @@ libnq_sdl_a_CFLAGS=	$(SDL_CFLAGS)
 common_ldflags= -export-dynamic @PTHREAD_LDFLAGS@
 
 cl_plugin_LIBS= \
-		$(SERVER_PLUGIN_STATIC_LIBS) \
-		$(CLIENT_PLUGIN_STATIC_LIBS)
+		@server_static_plugin_libs@ \
+		@client_static_plugin_libs@
 
 client_LIBFILES= \
 		$(top_builddir)/libs/video/targets/libQFjs.la \
@@ -58,7 +58,7 @@ client_LIBFILES= \
 		$(top_builddir)/libs/audio/libQFsound.la
 
 server_LIBFILES= \
-		$(SERVER_PLUGIN_STATIC_LIBS) \
+		@server_static_plugin_libs@ \
 		$(top_builddir)/libs/models/libQFmodels.la
 
 common_LIBFILES= \

@@ -341,28 +341,6 @@ if test -n "$CL_TARGETS"; then
 	SND_TARGETS="libQFsound.la"
 	AUDIO_TARGETS="testsound\$(EXEEXT)"
 	JOY_TARGETS="libQFjs.la"
-
-	if test "$SOUND_TYPES"; then
-		SND_REND_TARGETS="$SND_REND_TARGETS snd_render_default.la"
-		if test "`echo $SOUND_TYPES | grep JACK`"; then
-			SND_REND_TARGETS="$SND_REND_TARGETS snd_render_jack.la"
-		fi
-	fi
-
-	# priority sorted list for default sound driver in order of increasing
-	# priority. default is no driver.
-	# NOTE both lists must match: SNDTYPE_LIST is the name as normally printed
-	# SNDDRIVER_LIST is the name as used by the plugin
-	SNDTYPE_LIST="SDL MME SGI SUN Win32 DirectX OSS ALSA"
-	SNDDRIVER_LIST="sdl mme sgi sun win dx oss alsa"
-	set $SNDDRIVER_LIST
-	for t in $SNDTYPE_LIST; do
-		if test "`echo $SOUND_TYPES | grep $t`"; then
-			SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_$1.la"
-			SND_OUTPUT_DEFAULT="$1"
-		fi
-		shift
-	done
 else
 	unset CDTYPE
 	CD_PLUGIN_TARGETS=""
@@ -376,16 +354,6 @@ else
 fi
 AC_DEFINE_UNQUOTED(SND_OUTPUT_DEFAULT, "$SND_OUTPUT_DEFAULT", [Define this to the default sound output driver.])
 
-SERVER_PLUGIN_TARGETS=""
-if test x$console_need_server = xyes; then
-	SERVER_PLUGIN_TARGETS="console_server.la"
-fi
-SERVER_PLUGIN_STATIC=""
-CLIENT_PLUGIN_TARGETS=""
-if test x$console_need_client = xyes; then
-	CLIENT_PLUGIN_TARGETS="console_client.la"
-fi
-CLIENT_PLUGIN_STATIC=""
 CD_PLUGIN_STATIC=""
 SND_PLUGIN_STATIC=""
 SND_REND_STATIC=""
@@ -415,80 +383,30 @@ if test "x$static_plugins" = xauto; then
 	fi
 fi
 if test "x$static_plugins" = xyes; then
+	QF_PROCESS_NEED_STATIC_PLUGINS(console, [server], [\$(top_builddir)/libs/console], [server])
+	QF_PROCESS_NEED_STATIC_PLUGINS(console, [client], [\$(top_builddir)/libs/console], [client])
+
+	QF_PROCESS_NEED_STATIC_PLUGINS(snd_output, [sdl mme sgi sun win dx oss alsa], [targets])
+	QF_PROCESS_NEED_STATIC_PLUGINS(snd_render, [jack default], [renderer])
+	QF_PROCESS_NEED_STATIC_PLUGINS(cd, [xmms sdl sgi win linux file])
 	AC_DEFINE(STATIC_PLUGINS, 1, [Define this if you are building static plugins])
-	SERVER_PLUGIN_STATIC="$SERVER_PLUGIN_TARGETS"
-	SERVER_PLUGIN_TARGETS=""
-	CLIENT_PLUGIN_STATIC="$CLIENT_PLUGIN_TARGETS"
-	CLIENT_PLUGIN_TARGETS=""
-	CD_PLUGIN_STATIC="$CD_PLUGIN_TARGETS"
-	CD_PLUGIN_TARGETS=""
-	SND_PLUGIN_STATIC="$SND_PLUGIN_TARGETS"
-	SND_PLUGIN_TARGETS=""
-	SND_REND_STATIC="$SND_REND_TARGETS"
-	SND_REND_TARGETS=""
 	if test -n "$SOUND_TYPES"; then
 		SOUND_TYPES="$SOUND_TYPES (static)"
+	fi
+	if test -n "$CDTYPE"; then
 		CDTYPE="$CDTYPE (static)"
 	fi
+else
+	QF_PROCESS_NEED_PLUGINS(console, [client server])
+	QF_PROCESS_NEED_PLUGINS(snd_output, [sdl mme sgi sun win dx oss alsa])
+	QF_PROCESS_NEED_PLUGINS(snd_render, [jack default])
+	QF_PROCESS_NEED_PLUGINS(cd, [xmms sdl sgi win linux file])
 fi
 
 dnl Do not use -module here, it belongs in makefile.am due to automake
 dnl needing it there to work correctly
-SERVER_PLUGIN_STATIC_LIBS=""
-CLIENT_PLUGIN_STATIC_LIBS=""
-CD_PLUGIN_STATIC_LIBS=""
-SND_PLUGIN_STATIC_LIBS=""
-SND_REND_STATIC_LIBS=""
-SERVER_PLUGIN_LIST="{0, 0}"
-CLIENT_PLUGIN_LIST="{0, 0}"
-CD_PLUGIN_LIST="{0, 0}"
-SND_OUTPUT_LIST="{0, 0}"
-SND_RENDER_LIST="{0, 0}"
-SERVER_PLUGIN_PROTOS=""
-CLIENT_PLUGIN_PROTOS=""
-CD_PLUGIN_PROTOS=""
-SND_OUTPUT_PROTOS=""
-SND_RENDER_PROTOS=""
-for l in $SERVER_PLUGIN_STATIC; do
-	SERVER_PLUGIN_STATIC_LIBS="$SERVER_PLUGIN_STATIC_LIBS "'$(top_builddir)'"/libs/console/$l"
-	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
-	SERVER_PLUGIN_LIST='{"'"$n"'"'", ${n}_PluginInfo},$SERVER_PLUGIN_LIST"
-	SERVER_PLUGIN_PROTOS="$SERVER_PLUGIN_PROTOS extern plugin_t *${n}_PluginInfo (void);"
-done
-for l in $CLIENT_PLUGIN_STATIC; do
-	CLIENT_PLUGIN_STATIC_LIBS="$CLIENT_PLUGIN_STATIC_LIBS "'$(top_builddir)'"/libs/console/$l"
-	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
-	CLIENT_PLUGIN_LIST='{"'"$n"'"'", ${n}_PluginInfo},$CLIENT_PLUGIN_LIST"
-	CLIENT_PLUGIN_PROTOS="$CLIENT_PLUGIN_PROTOS extern plugin_t *${n}_PluginInfo (void);"
-done
-for l in $CD_PLUGIN_STATIC; do
-	CD_PLUGIN_STATIC_LIBS="$CD_PLUGIN_STATIC_LIBS $l"
-	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
-	CD_PLUGIN_LIST='{"'"$n"'"'", ${n}_PluginInfo},$CD_PLUGIN_LIST"
-	CD_PLUGIN_PROTOS="$CD_PLUGIN_PROTOS extern plugin_t *${n}_PluginInfo (void);"
-done
-for l in $SND_PLUGIN_STATIC; do
-	SND_PLUGIN_STATIC_LIBS="$SND_PLUGIN_STATIC_LIBS targets/$l"
-	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
-	SND_OUTPUT_LIST='{"'"$n"'"'", ${n}_PluginInfo},$SND_OUTPUT_LIST"
-	SND_OUTPUT_PROTOS="$SND_OUTPUT_PROTOS extern plugin_t *${n}_PluginInfo (void);"
-done
-for l in $SND_REND_STATIC; do
-	SND_REND_STATIC_LIBS="$SND_REND_STATIC_LIBS renderer/$l"
-	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
-	SND_RENDER_LIST='{"'"$n"'"'", ${n}_PluginInfo},$SND_RENDER_LIST"
-	SND_RENDER_PROTOS="$SND_RENDER_PROTOS extern plugin_t *${n}_PluginInfo (void);"
-done
-AC_DEFINE_UNQUOTED(SERVER_PLUGIN_LIST, $SERVER_PLUGIN_LIST, [list of server plugins])
-AC_DEFINE_UNQUOTED(SERVER_PLUGIN_PROTOS, $SERVER_PLUGIN_PROTOS, [list of server prototypes])
-AC_DEFINE_UNQUOTED(CLIENT_PLUGIN_LIST, $CLIENT_PLUGIN_LIST, [list of client plugins])
-AC_DEFINE_UNQUOTED(CLIENT_PLUGIN_PROTOS, $CLIENT_PLUGIN_PROTOS, [list of client prototypes])
 AC_DEFINE_UNQUOTED(CD_PLUGIN_LIST, $CD_PLUGIN_LIST, [list of cd plugins])
 AC_DEFINE_UNQUOTED(CD_PLUGIN_PROTOS, $CD_PLUGIN_PROTOS, [list of cd prototypes])
-AC_DEFINE_UNQUOTED(SND_OUTPUT_LIST, $SND_OUTPUT_LIST, [list of sound output plugins])
-AC_DEFINE_UNQUOTED(SND_OUTPUT_PROTOS, $SND_OUTPUT_PROTOS, [list of sound output prototypes])
-AC_DEFINE_UNQUOTED(SND_RENDER_LIST, $SND_RENDER_LIST, [list of sound render plugins])
-AC_DEFINE_UNQUOTED(SND_RENDER_PROTOS, $SND_RENDER_PROTOS, [list of sound render prototypes])
 
 AC_SUBST(HW_TARGETS)
 AC_SUBST(NQ_TARGETS)
@@ -496,23 +414,8 @@ AC_SUBST(NQ_DESKTOP_DATA)
 AC_SUBST(QTV_TARGETS)
 AC_SUBST(QW_TARGETS)
 AC_SUBST(QW_DESKTOP_DATA)
-AC_SUBST(SERVER_PLUGIN_STATIC)
-AC_SUBST(SERVER_PLUGIN_STATIC_LIBS)
-AC_SUBST(SERVER_PLUGIN_TARGETS)
-AC_SUBST(CLIENT_PLUGIN_STATIC)
-AC_SUBST(CLIENT_PLUGIN_STATIC_LIBS)
-AC_SUBST(CLIENT_PLUGIN_TARGETS)
-AC_SUBST(CD_PLUGIN_STATIC)
-AC_SUBST(CD_PLUGIN_STATIC_LIBS)
-AC_SUBST(CD_PLUGIN_TARGETS)
 AC_SUBST(CD_TARGETS)
 AC_SUBST(JOY_TARGETS)
-AC_SUBST(SND_PLUGIN_STATIC)
-AC_SUBST(SND_PLUGIN_STATIC_LIBS)
-AC_SUBST(SND_PLUGIN_TARGETS)
-AC_SUBST(SND_REND_STATIC)
-AC_SUBST(SND_REND_STATIC_LIBS)
-AC_SUBST(SND_REND_TARGETS)
 AC_SUBST(SND_TARGETS)
 AC_SUBST(AUDIO_TARGETS)
 AC_SUBST(VID_MODEL_TARGETS)

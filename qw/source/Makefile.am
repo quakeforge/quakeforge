@@ -69,7 +69,7 @@ libqw_server_a_SOURCES= \
 	sv_qtv.c sv_recorder.c sv_sbar.c sv_send.c sv_user.c world.c
 
 qw_server_LIBS= \
-		$(SERVER_PLUGIN_STATIC_LIBS) \
+		@server_static_plugin_libs@ \
 		$(top_builddir)/libs/qw/libqw.a \
 		$(top_builddir)/libs/net/libnet_chan.la \
 		$(top_builddir)/libs/ruamoko/libQFruamoko.la \
@@ -93,7 +93,7 @@ qw_master_DEPENDENCIES=	$(qw_master_deps)
 qw_master_LDFLAGS=		$(common_ldflags)
 
 cl_plugin_LIBS= \
-		$(CLIENT_PLUGIN_STATIC_LIBS) \
+		@client_static_plugin_libs@ \
 		$(top_builddir)/libs/ruamoko/libQFruamoko.la
 
 qw_client_LIBS= \
