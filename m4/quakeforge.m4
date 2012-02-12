@@ -108,8 +108,8 @@ AC_SUBST([$1_dirs])])
 AC_DEFUN([QF_PROCESS_NEED_PLUGINS],
 [QF_PROCESS_NEED_subroutine([$1_],[$1],[.la],[$1_plugins],[$2])
 AC_SUBST([$1_plugins])
-AC_DEFINE_UNQUOTED(m4_toupper([$1_plugin_protos]), , [list of $1 plugin prototypes])
-AC_DEFINE_UNQUOTED(m4_toupper([$1_plugin_list]), , [list of $1 plugins])
+AC_DEFINE_UNQUOTED(m4_toupper(m4_default($3,$1)[_plugin_protos]), [], [list of $1 plugin prototypes])
+AC_DEFINE_UNQUOTED(m4_toupper(m4_default($3,$1)[_plugin_list]), [], [list of $1 plugins])
 ])
 
 AC_DEFUN([QF_STATIC_PLUGIN_LIBS],
@@ -118,7 +118,7 @@ AC_SUBST([$1_static_plugin_libs])])
 
 AC_DEFUN([QF_STATIC_PLUGIN_PROTOS],
 [QF_PROCESS_NEED_subroutine([extern plugin_t *$2_],[$2],[_PluginInfo (void);],[$1_plugin_protos],[$3])
-AC_DEFINE_UNQUOTED(m4_toupper([$1_plugin_protos]), ${$1_plugin_protos}, [list of $1 plugin prototypes])])
+AC_DEFINE_UNQUOTED(m4_toupper([$1_plugin_protos]), [${$1_plugin_protos}], [list of $1 plugin prototypes])])
 
 AC_DEFUN([QF_STATIC_PLUGIN_LIST],
 [$1_plugin_list="{0, 0}"
@@ -127,7 +127,7 @@ m4_foreach_w([qfn_need], [$3],
 	$1_plugin_list="{\"qfn_need\", $2_[]qfn_need[]_PluginInfo},${$1_plugin_list}"
 fi
 ])
-AC_DEFINE_UNQUOTED(m4_toupper([$1_plugin_list]), ${$1_plugin_list}, [list of $1 plugins])])
+AC_DEFINE_UNQUOTED(m4_toupper([$1_plugin_list]), [${$1_plugin_list}], [list of $1 plugins])])
 
 AC_DEFUN([QF_PROCESS_NEED_STATIC_PLUGINS],
 [QF_PROCESS_NEED_subroutine([$1_],[$1],[.la],m4_default($4,$1)[_static_plugins],[$2])
