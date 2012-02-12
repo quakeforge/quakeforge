@@ -144,6 +144,11 @@ AC_DEFINE_UNQUOTED(m4_toupper([$1_plugin_list]), [${$1_plugin_list}], [list of $
 AC_DEFUN([QF_PROCESS_NEED_STATIC_PLUGINS],
 [QF_PROCESS_NEED_subroutine([$1_],[$1],[.la],m4_default($4,$1)[_static_plugins],[$2])
 AC_SUBST(m4_default($4,$1)[_static_plugins])
+m4_define([qfn_default], m4_default($4,$1)[_default])
+if test -z "${qfn_default}"; then
+	QF_PROCESS_NEED_FUNC([$1],[$2],[qfn_default=qfn_need])
+fi
+AC_DEFINE_UNQUOTED(m4_toupper(qfn_default), ["${qfn_default}"], [Define to default the $1 plugin])
 QF_STATIC_PLUGIN_LIBS(m4_default($4,$1),[$1],[$2],[$3])
 QF_STATIC_PLUGIN_PROTOS(m4_default($4,$1),[$1],[$2])
 QF_STATIC_PLUGIN_LIST(m4_default($4,$1),[$1],[$2])])
