@@ -119,7 +119,7 @@ m4_define([qfn_default], m4_default($3,$1)[_default])
 if test -z "${qfn_default}"; then
 	QF_PROCESS_NEED_FUNC([$1],[$2],[qfn_default=qfn_need])
 fi
-AC_DEFINE_UNQUOTED(m4_toupper(qfn_default), [${qfn_default}], [Define to default the $1 plugin])
+AC_DEFINE_UNQUOTED(m4_toupper(qfn_default), ["${qfn_default}"], [Define to default the $1 plugin])
 AC_DEFINE_UNQUOTED(m4_toupper(m4_default($3,$1)[_plugin_protos]), [], [list of $1 plugin prototypes])
 AC_DEFINE_UNQUOTED(m4_toupper(m4_default($3,$1)[_plugin_list]), [], [list of $1 plugins])
 ])
