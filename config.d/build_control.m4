@@ -426,17 +426,21 @@ AC_SUBST(VID_TARGETS)
 
 QF_DEPS(BSP2IMG,
 	[],
-	[$(top_builddir)/libs/image/libQFimage.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/image/libQFimage.la
+	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(QFBSP,
 	[-I$(top_srcdir)/tools/qfbsp/include],
-	[$(top_builddir)/libs/models/libQFmodels.la $(top_builddir)/libs/image/libQFimage.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/models/libQFmodels.la
+	 $(top_builddir)/libs/image/libQFimage.la
+	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(QFCC,
 	[-I$(top_srcdir)/tools/qfcc/include],
-	[$(top_builddir)/libs/gamecode/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/gamecode/libQFgamecode.la
+	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(QFLIGHT,
@@ -446,7 +450,8 @@ QF_DEPS(QFLIGHT,
 )
 QF_DEPS(QFLMP,
 	[],
-	[$(top_builddir)/libs/image/libQFimage.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/image/libQFimage.la
+	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(QFMODELGEN,
@@ -461,12 +466,16 @@ QF_DEPS(QFVIS,
 )
 QF_DEPS(QWAQ,
 	[],
-	[$(top_builddir)/libs/ruamoko/libQFruamoko.la $(top_builddir)/libs/gamecode/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/ruamoko/libQFruamoko.la
+	 $(top_builddir)/libs/gamecode/libQFgamecode.la
+	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(CARNE,
 	[],
-	[$(top_builddir)/libs/gib/libQFgib.la $(top_builddir)/libs/gamecode/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/gib/libQFgib.la
+	 $(top_builddir)/libs/gamecode/libQFgamecode.la
+	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(PAK,
@@ -476,7 +485,8 @@ QF_DEPS(PAK,
 )
 QF_DEPS(WAD,
 	[],
-	[$(top_builddir)/libs/image/libQFimage.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/image/libQFimage.la
+	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(WAV,
