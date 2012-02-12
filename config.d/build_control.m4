@@ -344,7 +344,6 @@ QF_PROCESS_NEED_LIBS(vid, [asm common gl glsl sdl sw sw32 svga x11])
 QF_PROCESS_NEED_LIBS(qw, [client common sdl server], a)
 QF_PROCESS_NEED_LIBS(nq, [client common sdl server], a)
 
-SND_OUTPUT_DEFAULT=""
 if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libQFcd.la"
 	SND_TARGETS="libQFsound.la"
@@ -358,7 +357,6 @@ else
 	SND_TARGETS=""
 	AUDIO_TARGETS=""
 fi
-AC_DEFINE_UNQUOTED(SND_OUTPUT_DEFAULT, "$SND_OUTPUT_DEFAULT", [Define this to the default sound output driver.])
 
 if test "x$enable_shared" = xno; then
 	PREFER_PIC=

@@ -11,7 +11,7 @@ if test "x$mingw" != xyes -a "x$enable_xmms" == xyes; then
 		HAVE_XMMS=yes,
 		HAVE_XMMS=no)
 	AC_SUBST(HAVE_XMMS)
-fi	
+fi
 
 CDTYPE=""
 if test "x$HAVE_VORBIS" = xyes; then
@@ -83,39 +83,6 @@ AC_ARG_WITH([cd-default],
 	AS_HELP_STRING([--with-cd-default=...],
 				   [Plugin to use for the default cd driver.]
 				   [Defaults to File.]
-				   [[File Linux XMMS SDL SGI WIN32]]), 
-	cd_default="$withval", cd_default=File
+				   [[file linux xmms sdl sgi win32]]),
+	[cd_default="$withval"]
 )
-CD_DEFAULT=""
-if test "x$cd_default" != "x"; then
-	for cdd in $CDTYPE; do
-		if test "x$cdd" = "x$cd_default"; then
-			CD_DEFAULT="$cd_default"
-		fi
-	done
-fi
-case "x$CD_DEFAULT" in
-	xFile)
-		CD_DEFAULT=file
-		;;
-	xLinux)
-		CD_DEFAULT=linux
-		;;
-	xXMMS)
-		CD_DEFAULT=xmms
-		;;
-	xSDL)
-		CD_DEFAULT=sdl
-		;;
-	xSGI)
-		CD_DEFAULT=sgi
-		;;
-	xWIN32)
-		CD_DEFAULT=win
-		;;
-	x*)
-		AC_MSG_WARN([Unknown or unbuildable cd plugin])
-		CD_DEFAULT=file
-		;;
-esac
-AC_DEFINE_UNQUOTED(CD_DEFAULT, ["$CD_DEFAULT"], [Define to the default CD plugin])
