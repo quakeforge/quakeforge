@@ -40,7 +40,6 @@ format_libs= \
 extra_format_src=flac.c midi.c vorbis.c wav.c
 snd_common=snd_channels.c snd_mem.c snd_mix.c snd_resample.c snd_sfx.c
 snd_libs= \
-	$(top_builddir)/libs/models/libQFmodels.la \
 	$(top_builddir)/libs/util/libQFutil.la
 
 snd_render_default_la_LDFLAGS=		$(plugin_ldflags)
