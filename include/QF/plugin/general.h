@@ -29,6 +29,7 @@
 #ifndef __QF_plugin_general_h_
 #define __QF_plugin_general_h_
 
+#include <QF/plugin.h>
 #include <QF/qtypes.h>
 
 /*
@@ -38,7 +39,7 @@
 typedef void (*P_Init) (void);
 typedef void (*P_Shutdown) (void);
 
-typedef struct general_func_s {
+typedef struct general_funcs_s {
 	P_Init		p_Init;
 	P_Shutdown	p_Shutdown;
 } general_funcs_t;

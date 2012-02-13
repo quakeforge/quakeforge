@@ -28,6 +28,7 @@
 #ifndef __QF_plugin_snd_render_h_
 #define __QF_plugin_snd_render_h_
 
+#include <QF/plugin.h>
 #include <QF/qtypes.h>
 
 /*

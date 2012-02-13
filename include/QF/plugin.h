@@ -37,12 +37,6 @@
 #define QFPLUGIN_VERSION	"1.0"
 
 #include <QF/qtypes.h>
-#include <QF/plugin/cd.h>
-#include <QF/plugin/console.h>
-#include <QF/plugin/general.h>
-#include <QF/plugin/input.h>
-#include <QF/plugin/snd_output.h>
-#include <QF/plugin/snd_render.h>
 
 #ifdef STATIC_PLUGINS
 #define PLUGIN_INFO(type,name) plugin_t *type##_##name##_PluginInfo (void); plugin_t * type##_##name##_PluginInfo (void)
@@ -57,24 +51,25 @@ typedef enum {
 	qfp_console,	// Console `driver'
 	qfp_snd_output,	// Sound output (OSS, ALSA, Win32)
 	qfp_snd_render,	// Sound mixing
+	qfp_vid_render,	// Video renderer
 } plugin_type_t;
 
 typedef struct plugin_funcs_s {
-	general_funcs_t *general;
-	input_funcs_t	*input;
-	cd_funcs_t		*cd;
-	console_funcs_t	*console;
-	snd_output_funcs_t	*snd_output;
-	snd_render_funcs_t	*snd_render;
+	struct general_funcs_s *general;
+	struct input_funcs_s	*input;
+	struct cd_funcs_s		*cd;
+	struct console_funcs_s	*console;
+	struct snd_output_funcs_s	*snd_output;
+	struct snd_render_funcs_s	*snd_render;
 } plugin_funcs_t;
 
 typedef struct plugin_data_s {
-	general_data_t	*general;
-	input_data_t	*input;
-	cd_data_t		*cd;
-	console_data_t	*console;
-	snd_output_data_t	*snd_output;
-	snd_render_data_t	*snd_render;
+	struct general_data_s	*general;
+	struct input_data_s	*input;
+	struct cd_data_s		*cd;
+	struct console_data_s	*console;
+	struct snd_output_data_s	*snd_output;
+	struct snd_render_data_s	*snd_render;
 } plugin_data_t;
 
 typedef struct plugin_s {

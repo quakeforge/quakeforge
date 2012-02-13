@@ -32,6 +32,7 @@
 #include <stdarg.h>
 
 #include <QF/keys.h>
+#include <QF/plugin.h>
 #include <QF/qtypes.h>
 
 typedef void (*P_C_Print) (const char *fmt, va_list args);
@@ -41,7 +42,7 @@ typedef void (*P_C_DrawConsole) (void);
 typedef void (*P_C_CheckResize) (void);
 typedef void (*P_C_NewMap) (void);
 
-typedef struct console_func_s {
+typedef struct console_funcs_s {
 	P_C_Print			pC_Print;
 	P_C_ProcessInput	pC_ProcessInput;
 	P_C_KeyEvent		pC_KeyEvent;

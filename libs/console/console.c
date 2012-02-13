@@ -40,8 +40,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "QF/plugin.h"
 #include "QF/sys.h"
+
+#include "QF/plugin/general.h"
+#include "QF/plugin/console.h"
 
 //FIXME probably shouldn't be visible
 VISIBLE int         con_linewidth;				// characters across screen

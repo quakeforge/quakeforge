@@ -61,6 +61,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/cmd.h"
 
+#include "QF/plugin/general.h"
+
 #include "compat.h"
 
 // loaded_plugins is only for plugins loaded from scripts - not system

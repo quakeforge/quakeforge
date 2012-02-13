@@ -38,7 +38,9 @@
 */
 //@{
 
+#include "QF/plugin/general.h"
 #include "QF/plugin/snd_render.h"
+#include "QF/plugin/snd_output.h"
 #include "QF/quakeio.h"
 #include "QF/sound.h"
 #include "QF/zone.h"

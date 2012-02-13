@@ -43,7 +43,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/hash.h"
-#include "QF/plugin.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
@@ -51,6 +50,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/view.h"
+
+#include "QF/plugin/console.h"
 
 typedef struct menu_pic_s {
 	struct menu_pic_s *next;

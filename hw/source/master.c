@@ -16,11 +16,12 @@
 #include "QF/idparse.h"
 #include "QF/mathlib.h"
 #include "QF/msg.h"
-#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/sizebuf.h"
 #include "QF/sys.h"
+
+#include "QF/plugin/console.h"
 
 #include "compat.h"
 #include "netchan.h"

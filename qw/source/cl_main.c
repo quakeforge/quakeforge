@@ -76,7 +76,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/keys.h"
 #include "QF/model.h"
 #include "QF/msg.h"
-#include "QF/plugin.h"
 #include "QF/png.h"
 #include "QF/progs.h"
 #include "QF/qargs.h"
@@ -90,6 +89,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/gib.h"
+
+#include "QF/plugin/console.h"
 
 #include "qw/bothdefs.h"
 #include "buildnum.h"

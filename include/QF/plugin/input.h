@@ -29,6 +29,7 @@
 #ifndef __QF_plugin_input_h_
 #define __QF_plugin_input_h_
 
+#include <QF/plugin.h>
 #include <QF/qtypes.h>
 
 /*

@@ -45,7 +45,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
-#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 

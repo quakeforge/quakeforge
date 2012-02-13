@@ -35,9 +35,10 @@ static __attribute__ ((used)) const char rcsid[] =
 	"$Id: template.c 11394 2007-03-17 03:23:39Z taniwha $";
 
 #include "QF/console.h"
-#include "QF/plugin.h"
 #include "QF/view.h"
 #include "QF/va.h"
+
+#include "QF/plugin/console.h"
 
 #include "server.h"
 #include "sv_console.h"

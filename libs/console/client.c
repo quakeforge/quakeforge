@@ -54,7 +54,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/gib.h"
 #include "QF/input.h"
 #include "QF/keys.h"
-#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
@@ -63,6 +62,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/view.h"
+
+#include "QF/plugin/general.h"
+#include "QF/plugin/console.h"
 
 #include "compat.h"
 

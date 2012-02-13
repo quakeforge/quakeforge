@@ -48,13 +48,14 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/gib.h"
 #include "QF/msg.h"
-#include "QF/plugin.h"
 #include "QF/quakefs.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/view.h"
+
+#include "QF/plugin/console.h"
 
 #include "qw/bothdefs.h"
 #include "cl_cam.h"

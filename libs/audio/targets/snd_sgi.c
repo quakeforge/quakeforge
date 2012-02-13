@@ -37,7 +37,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <dmedia/audio.h>
 #include <stdlib.h>
 
-#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"

@@ -53,10 +53,12 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
-#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "QF/plugin/general.h"
+#include "QF/plugin/cd.h"
 
 #include "compat.h"
 

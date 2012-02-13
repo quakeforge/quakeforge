@@ -42,7 +42,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/qargs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
-#include "QF/plugin.h"
+
+#include "QF/plugin/general.h"
+#include "QF/plugin/cd.h"
 
 #include "compat.h"
 

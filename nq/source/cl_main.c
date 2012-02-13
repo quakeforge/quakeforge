@@ -40,13 +40,14 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
-#include "QF/plugin.h"
 #include "QF/qfplist.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+
+#include "QF/plugin/console.h"
 
 #include "chase.h"
 #include "cl_skin.h"

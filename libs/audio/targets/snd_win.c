@@ -35,7 +35,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "winquake.h"
 #include "QF/cvar.h"
-#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 

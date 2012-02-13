@@ -54,7 +54,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
