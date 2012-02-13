@@ -44,7 +44,7 @@ typedef void (*P_S_StartSound) (int entnum, int entchannel, struct sfx_s *sfx, c
 typedef void (*P_S_StaticSound) (struct sfx_s *sfx, const vec3_t origin, float vol, float attenuation);
 typedef void (*P_S_StopSound) (int entnum, int entchannel);
 typedef struct sfx_s * (*P_S_PrecacheSound) (const char *sample);
-typedef void (*P_S_Update) (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right, const vec3_t v_up);
+typedef void (*P_S_Update) (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right, const vec3_t v_up, const byte *ambient_sound_level);
 typedef void (*P_S_StopAllSounds) (void);
 typedef void (*P_S_ExtraUpdate) (void);
 typedef void (*P_S_LocalSound) (const char *s);
@@ -73,7 +73,6 @@ typedef struct snd_render_funcs_s {
 } snd_render_funcs_t;
 
 typedef struct snd_render_data_s {
-	struct model_s **worldmodel;
 	double *host_frametime;
 	int *viewentity;
 

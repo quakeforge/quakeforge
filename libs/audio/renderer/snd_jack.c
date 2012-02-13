@@ -94,7 +94,7 @@ s_finish_channels (void)
 
 static void
 s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
-		  const vec3_t up)
+		  const vec3_t up, const byte *ambient_sound_level)
 {
 	double      now = Sys_DoubleTime ();
 
@@ -119,7 +119,7 @@ s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 		}
 		return;
 	}
-	SND_SetListener (origin, forward, right, up);
+	SND_SetListener (origin, forward, right, up, ambient_sound_level);
 }
 
 static void

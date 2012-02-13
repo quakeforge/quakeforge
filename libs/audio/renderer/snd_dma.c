@@ -208,12 +208,12 @@ s_update_ (void)
 */
 static void
 s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
-			const vec3_t up)
+			const vec3_t up, const byte *ambient_sound_level)
 {
 	if (!sound_started || (snd_blocked > 0))
 		return;
 
-	SND_SetListener (origin, forward, right, up);
+	SND_SetListener (origin, forward, right, up, ambient_sound_level);
 
 	// mix some sound
 	s_update_ ();

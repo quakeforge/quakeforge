@@ -607,10 +607,16 @@ Host_ClientFrame (void)
 
 	// update audio
 	if (cls.signon == SIGNONS) {
-		S_Update (r_origin, vpn, vright, vup);
+		mleaf_t    *l;
+		byte       *asl = 0;
+
+		l = Mod_PointInLeaf (r_origin, cl.worldmodel);
+		if (l)
+			asl = l->ambient_sound_level;
+		S_Update (r_origin, vpn, vright, vup, asl);
 		R_DecayLights (host_frametime);
 	} else
-		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
+		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin, 0);
 
 	CDAudio_Update ();
 

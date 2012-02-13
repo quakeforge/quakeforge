@@ -1189,7 +1189,7 @@ CL_Init (void)
 	Draw_Init ();
 	Mod_Init ();
 	R_Init ();
-	S_Init (&cl.worldmodel, &viewentity, &host_frametime);
+	S_Init (&viewentity, &host_frametime);
 	CDAudio_Init ();
 
 	Sbar_Init ();
@@ -1660,10 +1660,16 @@ Host_Frame (float time)
 
 	// update audio
 	if (cls.state == ca_active) {
-		S_Update (r_origin, vpn, vright, vup);
+		mleaf_t    *l;
+		byte       *asl = 0;
+
+		l = Mod_PointInLeaf (r_origin, cl.worldmodel);
+		if (l)
+			asl = l->ambient_sound_level;
+		S_Update (r_origin, vpn, vright, vup, asl);
 		R_DecayLights (host_frametime);
 	} else
-		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
+		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin, 0);
 
 	CDAudio_Update ();
 

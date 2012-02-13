@@ -161,7 +161,7 @@ R_DecayLights (double frametime)
 
 void
 S_Update (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right,
-		  const vec3_t v_up)
+		  const vec3_t v_up, const byte *ambient_sound_level)
 {
 }
 

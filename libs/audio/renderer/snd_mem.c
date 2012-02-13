@@ -59,7 +59,6 @@ snd_render_data_t snd_render_data = {
 	0,
 	0,
 	0,
-	0,
 	&snd_paintedtime,
 	0,
 };

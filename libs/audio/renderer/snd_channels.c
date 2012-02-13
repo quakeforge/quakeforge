@@ -379,22 +379,17 @@ SND_AmbientOn (void)
 }
 
 static void
-s_updateAmbientSounds (void)
+s_updateAmbientSounds (const byte *ambient_sound_level)
 {
 	float		vol;
 	int			ambient_channel;
 	channel_t  *chan;
 	sfx_t      *sfx;
-	mleaf_t    *l;
 
 	if (!snd_ambient)
 		return;
 	// calc ambient sound levels
-	if (!snd_render_data.worldmodel || !*snd_render_data.worldmodel)
-		return;
-
-	l = Mod_PointInLeaf (listener_origin, *snd_render_data.worldmodel);
-	if (!l || !ambient_level->value) {
+	if (!ambient_sound_level || !ambient_level->value) {
 		// if we're not in a leaf (huh?) or ambients have been turned off,
 		// stop all ambient channels.
 		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
@@ -433,7 +428,7 @@ s_updateAmbientSounds (void)
 		// sfx will be written to chan->sfx later to ensure mixer doesn't use
 		// channel prematurely.
 
-		vol = ambient_level->value * l->ambient_sound_level[ambient_channel];
+		vol = ambient_level->value * ambient_sound_level[ambient_channel];
 		if (vol < 8)
 			vol = 0;
 
@@ -528,7 +523,7 @@ s_combine_channel (channel_t *combine, channel_t *ch)
 
 void
 SND_SetListener (const vec3_t origin, const vec3_t forward, const vec3_t right,
-				 const vec3_t up)
+				 const vec3_t up, const byte *ambient_sound_level)
 {
 	int         i, j;
 	channel_t  *combine, *ch;
@@ -539,7 +534,7 @@ SND_SetListener (const vec3_t origin, const vec3_t forward, const vec3_t right,
 	VectorCopy (up, listener_up);
 
 	// update general area ambient sound sources
-	s_updateAmbientSounds ();
+	s_updateAmbientSounds (ambient_sound_level);
 
 	// update spatialization for dynamic sounds	
 	for (ch = dynamic_channels; ch; ch = ch->next)

@@ -35,7 +35,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/cvar.h"
 #include "QF/sound.h"
-#include "QF/model.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
@@ -58,7 +57,7 @@ static plugin_list_t snd_render_list[] = {
 
 
 VISIBLE void
-S_Init (struct model_s **worldmodel, int *viewentity, double *host_frametime)
+S_Init (int *viewentity, double *host_frametime)
 {
 	if (COM_CheckParm ("-nosound"))
 		return;
@@ -82,7 +81,6 @@ S_Init (struct model_s **worldmodel, int *viewentity, double *host_frametime)
 			PI_UnloadPlugin (snd_output_module);
 			snd_output_module = NULL;
 		} else {
-			snd_render_module->data->snd_render->worldmodel = worldmodel;
 			snd_render_module->data->snd_render->viewentity = viewentity;
 			snd_render_module->data->snd_render->host_frametime =
 				host_frametime;
@@ -171,10 +169,11 @@ S_PrecacheSound (const char *sample)
 
 VISIBLE void
 S_Update (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right,
-		  const vec3_t v_up)
+		  const vec3_t v_up, const byte *ambient_sound_level)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_Update (origin, v_forward, v_right, v_up);
+		snd_render_funcs->pS_Update (origin, v_forward, v_right, v_up,
+									 ambient_sound_level);
 }
 
 VISIBLE void

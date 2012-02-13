@@ -77,7 +77,7 @@ init (void)
 	PI_Init ();
 
 	S_Init_Cvars ();
-	S_Init (0, 0, 0);
+	S_Init (0, 0);
 
 	Cmd_StuffCmds (testsound_cbuf);
 }
@@ -91,7 +91,7 @@ main (int argc, const char *argv[])
 	while (1) {
 		Cbuf_Execute_Stack (testsound_cbuf);
 
-		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
+		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin, 0);
 		usleep(20 * 1000);
 	}
 	Sys_Quit ();

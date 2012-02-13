@@ -342,7 +342,8 @@ void SND_AmbientOn (void);
 	\param v_up		3d vector of the client's upward direction
 */
 void SND_SetListener (const vec3_t origin, const vec3_t v_forward,
-					  const vec3_t v_right, const vec3_t v_up);
+					  const vec3_t v_right, const vec3_t v_up,
+					  const byte *ambient_sound_level);
 
 /** Stop all sounds from playing.
 */

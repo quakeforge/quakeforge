@@ -515,7 +515,7 @@ CL_Init (cbuf_t *cbuf)
 	IN_Init (cbuf);
 	Draw_Init ();
 	R_Init ();
-	S_Init (&cl.worldmodel, &viewentity, &host_frametime);
+	S_Init (&viewentity, &host_frametime);
 	CDAudio_Init ();
 
 	Sbar_Init ();
