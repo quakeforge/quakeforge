@@ -398,7 +398,7 @@ if test "x$static_plugins" = xyes; then
 	fi
 else
 	QF_PROCESS_NEED_PLUGINS(console, [server], [server])
-	QF_PROCESS_NEED_PLUGINS(client, [client], [client])
+	QF_PROCESS_NEED_PLUGINS(console, [client], [client])
 	QF_PROCESS_NEED_PLUGINS(snd_output, [sdl mme sgi sun win dx oss alsa])
 	QF_PROCESS_NEED_PLUGINS(snd_render, [jack default])
 	QF_PROCESS_NEED_PLUGINS(cd, [xmms sdl sgi win linux file])
