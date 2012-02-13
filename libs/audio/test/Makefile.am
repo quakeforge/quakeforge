@@ -8,8 +8,7 @@ EXTRA_PROGRAMS= testsound
 
 test_libs= \
 	$(top_builddir)/libs/audio/libQFsound.la \
-	$(top_builddir)/libs/models/libQFmodels.la \
-	$(top_builddir)/libs/gamecode/libQFgamecode.la \
+	$(top_builddir)/libs/ruamoko/libQFruamoko.la \
 	$(top_builddir)/libs/util/libQFutil.la
 
 testsound_SOURCES=		testsound.c

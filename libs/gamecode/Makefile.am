@@ -2,12 +2,11 @@ AUTOMAKE_OPTIONS= foreign
 
 AM_CFLAGS= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
-lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
-			-rpath $(libdir) -no-undefined
+lib_ldflags=
 
 gc_deps=$(top_builddir)/libs/util/libQFutil.la
 
-lib_LTLIBRARIES=	libQFgamecode.la
+noinst_LTLIBRARIES=	libQFgamecode.la
 
 libQFgamecode_la_LDFLAGS=		$(lib_ldflags)
 libQFgamecode_la_LIBADD=		$(gc_deps)

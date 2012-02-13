@@ -6,7 +6,7 @@ lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
 			-rpath $(libdir) -no-undefined
 
 gib_deps= \
-	$(top_builddir)/libs/gamecode/libQFgamecode.la \
+	$(top_builddir)/libs/ruamoko/libQFruamoko.la \
 	$(top_builddir)/libs/util/libQFutil.la
 
 lib_LTLIBRARIES= libQFgib.la

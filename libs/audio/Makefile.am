@@ -59,7 +59,7 @@ cd_xmms_la_SOURCES=			cd_xmms.c
 sound_libs= \
 	@snd_output_static_plugin_libs@ \
 	@snd_render_static_plugin_libs@ \
-	$(top_builddir)/libs/gamecode/libQFgamecode.la \
+	$(top_builddir)/libs/ruamoko/libQFruamoko.la \
 	$(top_builddir)/libs/util/libQFutil.la
 
 cd_libs= \

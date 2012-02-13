@@ -23,7 +23,7 @@ client_deps= libQFconsole.la \
 	$(top_builddir)/libs/audio/libQFsound.la \
 	$(top_builddir)/libs/ruamoko/libQFruamoko.la \
 	$(top_builddir)/libs/gib/libQFgib.la \
-	$(top_builddir)/libs/gamecode/libQFgamecode.la \
+	$(top_builddir)/libs/ruamoko/libQFruamoko.la \
 	$(console_deps)
 server_deps= libQFconsole.la $(console_deps)
 

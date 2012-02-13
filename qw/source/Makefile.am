@@ -72,12 +72,11 @@ qw_server_LIBS= \
 		@server_static_plugin_libs@ \
 		$(top_builddir)/libs/qw/libqw.a \
 		$(top_builddir)/libs/net/libnet_chan.la \
-		$(top_builddir)/libs/ruamoko/libQFruamoko.la \
 		$(top_builddir)/libs/models/libQFmodels.la \
 		$(top_builddir)/libs/image/libQFimage.la \
-		$(top_builddir)/libs/gamecode/libQFgamecode.la \
-		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/gib/libQFgib.la \
+		$(top_builddir)/libs/ruamoko/libQFruamoko.la \
+		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
 qw_server_deps=libqw_server.a libqw_common.a $(qw_server_LIBS)
@@ -93,20 +92,19 @@ qw_master_DEPENDENCIES=	$(qw_master_deps)
 qw_master_LDFLAGS=		$(common_ldflags)
 
 cl_plugin_LIBS= \
-		@client_static_plugin_libs@ \
-		$(top_builddir)/libs/ruamoko/libQFruamoko.la
+		@client_static_plugin_libs@
 
 qw_client_LIBS= \
 		$(top_builddir)/libs/qw/libqw.a \
 		$(top_builddir)/libs/net/libnet_chan.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/video/targets/libQFjs.la \
-		$(top_builddir)/libs/gamecode/libQFgamecode.la \
 		$(top_builddir)/libs/audio/libQFcd.la \
 		$(top_builddir)/libs/audio/libQFsound.la \
 		$(top_builddir)/libs/image/libQFimage.la \
-		$(top_builddir)/libs/util/libQFutil.la \
-		$(top_builddir)/libs/gib/libQFgib.la
+		$(top_builddir)/libs/gib/libQFgib.la \
+		$(top_builddir)/libs/ruamoko/libQFruamoko.la \
+		$(top_builddir)/libs/util/libQFutil.la
 
 client_LIBS= $(qw_client_LIBS)
 client_libs= libqw_client.a libqw_common.a

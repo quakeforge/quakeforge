@@ -465,14 +465,13 @@ QF_DEPS(QFVIS,
 QF_DEPS(QWAQ,
 	[],
 	[$(top_builddir)/libs/ruamoko/libQFruamoko.la
-	 $(top_builddir)/libs/gamecode/libQFgamecode.la
 	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(CARNE,
 	[],
 	[$(top_builddir)/libs/gib/libQFgib.la
-	 $(top_builddir)/libs/gamecode/libQFgamecode.la
+	 $(top_builddir)/libs/ruamoko/libQFruamoko.la
 	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
