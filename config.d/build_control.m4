@@ -329,6 +329,11 @@ QF_PROCESS_NEED_FUNC(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelge
 if test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes"; then
 	QF_NEED(top, [ruamoko])
 fi
+progs_gz=
+if test "$HAVE_ZLIB" = "yes"; then
+	progs_gz=".gz"
+fi
+QF_SUBST(progs_gz)
 
 QF_PROCESS_NEED_DIRS(top, [libs hw nq qtv qw tools ruamoko])
 

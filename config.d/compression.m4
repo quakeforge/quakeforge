@@ -78,7 +78,6 @@ if test "x$enable_zlib" != "xno"; then
   fi
 fi
 AC_SUBST(Z_LIBS)
-AM_CONDITIONAL(HAVE_ZLIB, test "$HAVE_ZLIB" = "yes")
 
 AC_ARG_ENABLE(png,
 [  --disable-png           disable png support],

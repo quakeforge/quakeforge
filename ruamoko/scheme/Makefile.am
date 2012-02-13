@@ -8,11 +8,7 @@ QCFLAGS=-qq -g -Werror -Wall -Wno-integer-divide --no-default-paths
 QCPPFLAGS=$(INCLUDES)
 PAK=$(top_builddir)/tools/pak/pak$(EXEEXT)
 GZIP=if echo $@ | grep -q .gz; then gzip -f `basename $@ .gz`; if test -f `basename $@ .dat.gz`.sym; then gzip -f `basename $@ .dat.gz`.sym; fi; fi
-if HAVE_ZLIB
-GZ=.gz
-else
-GZ=
-endif
+GZ=@progs_gz@
 # BSD make can't handle $(shell foo) directives, and GNU make can't handle |=
 # so we have to bite the bullet and pass this to the shell every time.
 STRIP=`echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`
