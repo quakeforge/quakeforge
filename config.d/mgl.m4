@@ -33,6 +33,5 @@ if test "x$HAVE_MGL" != xno; then
 		MGL_CFLAGS="" MGL_LIBS=""
 	fi
 fi
-AC_SUBST(HAVE_MGL)
 AC_SUBST(MGL_CFLAGS)
 AC_SUBST(MGL_LIBS)

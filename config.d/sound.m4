@@ -94,7 +94,6 @@ QF_maGiC_VALUE
 		fi
 	fi
 	AC_SUBST(ALSA_LIBS)
-	AC_SUBST(HAVE_ALSA)
 
 	AC_ARG_ENABLE(jack,
 	[  --disable-jack          disable jack support],
@@ -196,7 +195,6 @@ QF_maGiC_VALUE
 		)
 		fi
 	fi
-	AC_SUBST(HAVE_OSS)
 	AC_SUBST(OSS_LIBS)
 
 	dnl SDL digital audio

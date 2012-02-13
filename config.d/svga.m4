@@ -30,6 +30,5 @@ if test "x$HAVE_SVGA" != xno; then
 		SVGA_LIBS=
 	fi
 fi
-AC_SUBST(HAVE_SVGA)
 AC_SUBST(SVGA_CFLAGS)
 AC_SUBST(SVGA_LIBS)

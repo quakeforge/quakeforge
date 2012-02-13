@@ -77,15 +77,16 @@ if test $ac_cv_type_va_list_array = yes; then
 	AC_DEFINE(VA_LIST_IS_ARRAY, 1, [Define if va_list is an array])
 fi])
 
+AC_DEFUN([QF_SUBST],
+[m4_ifset([AM_SUBST_NOTMAKE],[AM_SUBST_NOTMAKE([$1])], []) AC_SUBST([$1])]);
 
 AC_DEFUN([QF_DEPS], [
 $1_INCS='m4_normalize($2)'
 $1_DEPS='m4_normalize($3)'
 $1_LIBS='m4_normalize($3) m4_normalize($4)'
-AC_SUBST($1_INCS)
-AC_SUBST($1_DEPS)
-AC_SUBST($1_LIBS)
-])
+QF_SUBST($1_INCS)
+QF_SUBST($1_DEPS)
+QF_SUBST($1_LIBS)])
 
 AC_DEFUN([QF_NEED], [m4_map_args_w([$2], [$1_need_], [=yes], [;])])
 
@@ -106,15 +107,15 @@ fi
 AC_DEFUN([QF_PROCESS_NEED_LIBS],
 [m4_define([qfn_ext], m4_default($3,[la]))
 QF_PROCESS_NEED_subroutine([lib$1_],[$1],[.]qfn_ext,[$1_libs],[$2])
-AC_SUBST([$1_libs])])
+QF_SUBST([$1_libs])])
 
 AC_DEFUN([QF_PROCESS_NEED_DIRS],
 [QF_PROCESS_NEED_subroutine([],[$1],[],[$1_dirs],[$2])
-AC_SUBST([$1_dirs])])
+QF_SUBST([$1_dirs])])
 
 AC_DEFUN([QF_PROCESS_NEED_PLUGINS],
 [QF_PROCESS_NEED_subroutine([$1_],[$1],[.la],[$1_plugins],[$2])
-AC_SUBST([$1_plugins])
+QF_SUBST([$1_plugins])
 m4_define([qfn_default], m4_default($3,$1)[_default])
 if test -z "${qfn_default}"; then
 	QF_PROCESS_NEED_FUNC([$1],[$2],[qfn_default=qfn_need])
@@ -126,7 +127,7 @@ AC_DEFINE_UNQUOTED(m4_toupper(m4_default($3,$1)[_plugin_list]), [], [list of $1 
 
 AC_DEFUN([QF_STATIC_PLUGIN_LIBS],
 [QF_PROCESS_NEED_subroutine(m4_join([/],[$4],[$2_]),[$2],[.la],[$1_static_plugin_libs],[$3])
-AC_SUBST([$1_static_plugin_libs])])
+QF_SUBST([$1_static_plugin_libs])])
 
 AC_DEFUN([QF_STATIC_PLUGIN_PROTOS],
 [QF_PROCESS_NEED_subroutine([extern plugin_t *$2_],[$2],[_PluginInfo (void);],[$1_plugin_protos],[$3])
@@ -143,7 +144,7 @@ AC_DEFINE_UNQUOTED(m4_toupper([$1_plugin_list]), [${$1_plugin_list}], [list of $
 
 AC_DEFUN([QF_PROCESS_NEED_STATIC_PLUGINS],
 [QF_PROCESS_NEED_subroutine([$1_],[$1],[.la],m4_default($4,$1)[_static_plugins],[$2])
-AC_SUBST(m4_default($4,$1)[_static_plugins])
+QF_SUBST(m4_default($4,$1)[_static_plugins])
 m4_define([qfn_default], m4_default($4,$1)[_default])
 if test -z "${qfn_default}"; then
 	QF_PROCESS_NEED_FUNC([$1],[$2],[qfn_default=qfn_need])

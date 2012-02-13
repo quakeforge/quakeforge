@@ -8,7 +8,6 @@ if test "x$HAVE_FBDEV" != xno; then
 	AC_CHECK_HEADERS(linux/fb.h, HAVE_FBDEV=yes, HAVE_FBDEV=no)
 fi
 
-AC_SUBST(HAVE_FBDEV)
 if test "x$HAVE_FBDEV" = xyes; then
 	AC_MSG_CHECKING(for FB_AUX_VGA_PLANES_VGA4)
 	AC_TRY_COMPILE(

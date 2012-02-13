@@ -253,8 +253,8 @@ AC_SUBST(AS)
 AC_SUBST(ASFLAGS)
 AC_SUBST(CCAS)
 AC_SUBST(CCASFLAGS)
-AC_SUBST(plugin_ldflags)
-AC_SUBST(plugin_libadd)
+QF_SUBST(plugin_ldflags)
+QF_SUBST(plugin_libadd)
 
 dnl Finalization of CFLAGS, LDFLAGS, and LIBS
 AC_SUBST(CFLAGS)

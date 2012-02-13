@@ -45,7 +45,6 @@ if test "x$globalconf" = "xauto" || test "x$globalconf" = "xyes" || \
 	globalconf="$default_globalconf"
 fi
 AC_DEFINE_UNQUOTED(FS_GLOBALCFG, "$globalconf", [Define this to the location of the global config file])
-AC_SUBST(globalconf)
 
 AC_ARG_WITH(user-cfg,
 [  --with-user-cfg=FILE    If set will change the name and location of the
@@ -57,7 +56,6 @@ if test "x$userconf" = "xauto" || test "x$userconf" = "xyes" || \
 	userconf="$default_userconf"
 fi
 AC_DEFINE_UNQUOTED(FS_USERCFG, "$userconf", [Define this to the location of the user config file])
-AC_SUBST(userconf)
 
 AC_ARG_WITH(sharepath,
 [  --with-sharepath=DIR    Use DIR for shared game data, defaults to
@@ -69,7 +67,7 @@ elif test "x$sharepath" = xno; then
 	sharepath="."
 fi
 AC_DEFINE_UNQUOTED(FS_SHAREPATH, "$sharepath", [Define this to the shared game directory root])
-AC_SUBST(sharepath)
+QF_SUBST(sharepath)
 
 AC_ARG_WITH(userpath,
 [  --with-userpath=DIR     Use DIR for unshared game data, defaults to
@@ -81,7 +79,6 @@ elif test "x$userpath" = xno; then
 	userpath="."
 fi
 AC_DEFINE_UNQUOTED(FS_USERPATH, "$userpath", [Define this to the unshared game directory root])
-AC_SUBST(userpath)
 
 AC_ARG_WITH(plugin-path,
 [  --with-plugin-path=DIR  Use DIR for loading plugins, defaults to
@@ -100,7 +97,6 @@ eval expanded_plugindir="$plugindir"
 eval expanded_plugindir="$expanded_plugindir"
 AC_DEFINE_UNQUOTED(FS_PLUGINPATH, "$expanded_plugindir", [Define this to the path from which to load plugins])
 AC_SUBST(plugindir)
-AC_SUBST(PLUGINDIR)
 
 AC_ARG_WITH(gl-driver,
 	[  --with-gl-driver=NAME   Name of OpenGL driver DLL/DSO],

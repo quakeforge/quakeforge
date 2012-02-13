@@ -11,7 +11,6 @@ if test "x$mingw" != xyes; then
 	fi
 	AC_SUBST(X_SHM_LIB)
 fi
-AC_SUBST(HAVE_X)
 
 dnl Check for XFree86-VidMode support
 AC_ARG_ENABLE(vidmode,

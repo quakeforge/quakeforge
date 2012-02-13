@@ -7,7 +7,6 @@ if test "x$enable_sdl" != xno; then
 	AM_PATH_SDL(1.2.0,
 		HAVE_SDL=yes,
 		HAVE_SDL=no)
-	AC_SUBST(HAVE_SDL)
 	if test "x$HAVE_SDL" = "xyes"; then
 		case "$host_os" in
 			mingw*)
@@ -29,7 +28,6 @@ AC_ARG_ENABLE(sdl-audio,
 if test "x$enable_sdl_audio" != xno; then
 	if test "x$HAVE_SDL" = "xyes"; then
 		HAVE_SDL_AUDIO=yes
-		AC_SUBST(HAVE_SDL_AUDIO)
 	fi
 fi
 
@@ -40,6 +38,5 @@ AC_ARG_ENABLE(sdl-cd,
 if test "x$enable_sdl_cd" != xno; then
 	if test "x$HAVE_SDL" = "xyes"; then
 		HAVE_SDL_CD=yes
-		AC_SUBST(HAVE_SDL_CD)
 	fi
 fi
