@@ -80,7 +80,7 @@ static __attribute__ ((used)) const char rcsid[] =
 struct QFile_s {
 	FILE *file;
 #ifdef HAVE_ZLIB
-	gzFile *gzfile;
+	gzFile gzfile;
 #endif
 	off_t size;
 	off_t start;
