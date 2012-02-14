@@ -36,10 +36,9 @@ AM_CFLAGS= @PTHREAD_CFLAGS@
 
 bin_PROGRAMS=	@QW_TARGETS@
 
-EXTRA_PROGRAMS= qw-client-fbdev qw-client-glx qw-client-glslx qw-client-mgl \
-		qw-client-sdl qw-client-sdl32 qw-client-sgl qw-client-sglsl \
-		qw-client-svga qw-client-3dfx qw-client-wgl qw-client-x11 \
-		qw-server qw-master
+EXTRA_PROGRAMS= \
+	qw-client-fbdev qw-client-sdl qw-client-svga qw-client-wgl qw-client-x11 \
+	qw-server qw-master
 
 noinst_LIBRARIES= @qw_libs@
 EXTRA_LIBRARIES=libqw_client.a libqw_common.a libqw_sdl.a libqw_server.a
@@ -117,14 +116,12 @@ libqw_client_a_SOURCES= \
 
 # Software-rendering clients
 
-soft_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-		$(top_builddir)/libs/models/libQFmodels.la
-
 # ... Linux FBDev
 qw_client_fbdev_libs= \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
-			$(soft_LIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
+			$(top_builddir)/libs/models/libQFmodels.la
 			$(top_builddir)/libs/video/targets/libQFfbdev.la \
 			$(client_LIBS)
 qw_client_fbdev_SOURCES= cl_sys_unix.c
@@ -132,24 +129,13 @@ qw_client_fbdev_LDADD= $(qw_client_fbdev_libs) $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_fbdev_LDFLAGS= $(common_ldflags)
 qw_client_fbdev_DEPENDENCIES= $(qw_client_fbdev_libs)
 
-# ... SciTech MGL
-qw_client_mgl_libs= \
-			$(client_libs) \
-			$(cl_plugin_LIBS) \
-			$(soft_LIBS) \
-			$(top_builddir)/libs/video/targets/libQFmgl.la \
-			$(client_LIBS)
-qw_client_mgl_SOURCES=	cl_sys_win.c
-qw_client_mgl_LDADD= $(qw_client_mgl_libs) $(MGL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
-qw_client_mgl_LDFLAGS=  $(common_ldflags)
-qw_client_mgl_DEPENDENCIES= $(qw_client_mgl_libs)
-
 # ... Simple DirectMedia Layer, version 1.2 and higher
 qw_client_sdl_libs= \
 			libqw_sdl.a \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
-			$(soft_LIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
+			$(top_builddir)/libs/models/libQFmodels.la
 			$(top_builddir)/libs/video/targets/libQFsdl.la \
 			$(client_LIBS)
 qw_client_sdl_SOURCES=sdl_link.c
@@ -157,25 +143,12 @@ qw_client_sdl_LDADD= libqw_sdl.a $(qw_client_sdl_libs) $(SDL_LIBS) $(NET_LIBS) $
 qw_client_sdl_LDFLAGS=  $(common_ldflags)
 qw_client_sdl_DEPENDENCIES= libqw_sdl.a $(qw_client_sdl_libs)
 
-# ... 32-bit software, SDL
-qw_client_sdl32_libs= \
-			libqw_sdl.a \
-			$(client_libs) \
-			$(cl_plugin_LIBS) \
-			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-			$(top_builddir)/libs/models/libQFmodels.la \
-			$(top_builddir)/libs/video/targets/libQFsdl32.la \
-			$(client_LIBS)
-qw_client_sdl32_SOURCES=sdl_link.c
-qw_client_sdl32_LDADD= libqw_sdl.a $(qw_client_sdl32_libs) $(SDL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
-qw_client_sdl32_LDFLAGS=$(common_ldflags)
-qw_client_sdl32_DEPENDENCIES= libqw_sdl.a $(qw_client_sdl32_libs)
-
 # ... Linux SVGAlib
 qw_client_svga_libs= \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
-			$(soft_LIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
+			$(top_builddir)/libs/models/libQFmodels.la
 			$(top_builddir)/libs/video/targets/libQFsvga.la \
 			$(client_LIBS)
 qw_client_svga_SOURCES= cl_sys_unix.c
@@ -187,7 +160,8 @@ qw_client_svga_DEPENDENCIES= $(qw_client_svga_libs)
 qw_client_x11_libs= \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
-			$(soft_LIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
+			$(top_builddir)/libs/models/libQFmodels.la
 			$(top_builddir)/libs/video/targets/libQFx11.la \
 			$(client_LIBS)
 qw_client_x11_SOURCES=	cl_sys_unix.c
@@ -196,81 +170,6 @@ qw_client_x11_LDADD= $(qw_client_x11_libs) \
 			$(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_x11_LDFLAGS=	$(common_ldflags)
 qw_client_x11_DEPENDENCIES= $(qw_client_x11_libs)
-
-# OpenGL-using clients
-
-opengl_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-		$(top_builddir)/libs/models/libQFmodels.la
-
-glsl_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-		$(top_builddir)/libs/models/libQFmodels.la
-
-# ... OpenGL in X Window
-qw_client_glx_libs= \
-			$(client_libs) \
-			$(cl_plugin_LIBS) \
-			$(opengl_LIBS) \
-			$(top_builddir)/libs/video/targets/libQFglx.la \
-			$(client_LIBS)
-qw_client_glx_SOURCES=	cl_sys_unix.c
-qw_client_glx_LDADD= $(qw_client_glx_libs) \
-			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
-			-lXext $(X_EXTRA_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
-qw_client_glx_LDFLAGS=  $(common_ldflags)
-qw_client_glx_DEPENDENCIES= $(qw_client_glx_libs)
-
-# ... OpenGLSL in X Window
-qw_client_glslx_libs= \
-			$(client_libs) \
-			$(cl_plugin_LIBS) \
-			$(glsl_LIBS) \
-			$(top_builddir)/libs/video/targets/libQFglslx.la \
-			$(client_LIBS)
-qw_client_glslx_SOURCES=	cl_sys_unix.c
-qw_client_glslx_LDADD= $(qw_client_glslx_libs) \
-			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
-			-lXext $(X_EXTRA_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
-qw_client_glslx_LDFLAGS=  $(common_ldflags)
-qw_client_glslx_DEPENDENCIES= $(qw_client_glslx_libs)
-
-# ... Linux 3DFX
-qw_client_3dfx_libs= \
-			$(client_libs) \
-			$(cl_plugin_LIBS) \
-			$(opengl_LIBS) \
-			$(top_builddir)/libs/video/targets/libQFtdfx.la \
-			$(client_LIBS)
-qw_client_3dfx_SOURCES= cl_sys_unix.c
-qw_client_3dfx_LDADD= $(qw_client_3dfx_libs) \
-			$(SVGA_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
-qw_client_3dfx_LDFLAGS=  $(common_ldflags)
-qw_client_3dfx_DEPENDENCIES= $(qw_client_3dfx_libs)
-
-# ... Simple DirectMedia Layer, version 1.2 and higher, in GL mode
-qw_client_sgl_libs= \
-			libqw_sdl.a \
-			$(client_libs) \
-			$(cl_plugin_LIBS) \
-			$(opengl_LIBS) \
-			$(top_builddir)/libs/video/targets/libQFsgl.la \
-			$(client_LIBS)
-qw_client_sgl_SOURCES=sdl_link.c
-qw_client_sgl_LDADD= $(qw_client_sgl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
-qw_client_sgl_LDFLAGS=  $(common_ldflags)
-qw_client_sgl_DEPENDENCIES= $(qw_client_sgl_libs)
-
-# ... Simple DirectMedia Layer, version 1.2 and higher, in GLSL mode
-qw_client_sglsl_libs= \
-			libqw_sdl.a \
-			$(client_libs) \
-			$(cl_plugin_LIBS) \
-			$(glsl_LIBS) \
-			$(top_builddir)/libs/video/targets/libQFsglsl.la \
-			$(client_LIBS)
-qw_client_sglsl_SOURCES=sdl_link.c
-qw_client_sglsl_LDADD= $(qw_client_sglsl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
-qw_client_sglsl_LDFLAGS=  $(common_ldflags)
-qw_client_sglsl_DEPENDENCIES= $(qw_client_sglsl_libs)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
 qw_client_wgl_libs= \

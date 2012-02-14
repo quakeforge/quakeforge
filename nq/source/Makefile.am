@@ -36,8 +36,7 @@ AM_CFLAGS= @PTHREAD_CFLAGS@
 
 bin_PROGRAMS=	@NQ_TARGETS@
 
-EXTRA_PROGRAMS= nq-fbdev nq-glx nq-glslx nq-mgl nq-sdl nq-sdl32 nq-sgl \
-		nq-sglsl nq-svga nq-3dfx nq-wgl nq-x11 nq-server
+EXTRA_PROGRAMS= nq-fbdev nq-sdl nq-svga nq-wgl nq-x11 nq-server
 
 noinst_LIBRARIES= @nq_libs@
 EXTRA_LIBRARIES=libnq_client.a libnq_common.a libnq_sdl.a libnq_server.a
@@ -87,14 +86,12 @@ server_libs = libnq_server.a libnq_common.a
 
 # Software-rendering targets
 
-soft_QFLIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-		$(top_builddir)/libs/models/libQFmodels.la
-
 # ... Linux FBDev
 nq_fbdev_libs=  \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
-			$(soft_QFLIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
+			$(top_builddir)/libs/models/libQFmodels.la \
 			$(top_builddir)/libs/video/targets/libQFfbdev.la \
 			$(client_LIBS)
 nq_fbdev_SOURCES=	sys_unix.c
@@ -102,24 +99,13 @@ nq_fbdev_LDADD= $(nq_fbdev_libs) $(NET_LIBS)
 nq_fbdev_LDFLAGS=	$(common_ldflags)
 nq_fbdev_DEPENDENCIES=	$(nq_fbdev_libs)
 
-# ... SciTech MGL
-nq_mgl_libs=  \
-			$(client_libs) \
-			$(cl_plugin_LIBS) \
-			$(soft_QFLIBS) \
-			$(top_builddir)/libs/video/targets/libQFmgl.la \
-			$(client_LIBS)
-nq_mgl_SOURCES= 	sys_win.c
-nq_mgl_LDADD=		$(nq_mgl_libs) $(MGL_LIBS) $(NET_LIBS)
-nq_mgl_LDFLAGS= 	$(common_ldflags)
-nq_mgl_DEPENDENCIES=	$(nq_mgl_libs)
-
 # ... SDL, version 1.2 and higher
 nq_sdl_libs=  \
 			libnq_sdl.a \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
-			$(soft_QFLIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
+			$(top_builddir)/libs/models/libQFmodels.la \
 			$(top_builddir)/libs/video/targets/libQFsdl.la \
 			$(client_LIBS)
 nq_sdl_SOURCES=sdl_link.c
@@ -127,25 +113,12 @@ nq_sdl_LDADD=		$(nq_sdl_libs) $(SDL_LIBS) $(NET_LIBS)
 nq_sdl_LDFLAGS= 	$(common_ldflags)
 nq_sdl_DEPENDENCIES=	$(nq_sdl_libs)
 
-# ... 32-bit software, SDL
-nq_sdl32_libs=  \
-			libnq_sdl.a \
-			$(client_libs) \
-			$(cl_plugin_LIBS) \
-			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-			$(top_builddir)/libs/models/libQFmodels.la \
-			$(top_builddir)/libs/video/targets/libQFsdl32.la \
-			$(client_LIBS)
-nq_sdl32_SOURCES=sdl_link.c
-nq_sdl32_LDADD= 	$(nq_sdl32_libs) $(SDL_LIBS) $(NET_LIBS)
-nq_sdl32_LDFLAGS=	$(common_ldflags)
-nq_sdl32_DEPENDENCIES=	$(nq_sdl32_libs)
-
 # ... Linux SVGAlib
 nq_svga_libs=  \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
-			$(soft_QFLIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
+			$(top_builddir)/libs/models/libQFmodels.la \
 			$(top_builddir)/libs/video/targets/libQFsvga.la \
 			$(client_LIBS)
 nq_svga_SOURCES=	sys_unix.c
@@ -157,7 +130,8 @@ nq_svga_DEPENDENCIES=	$(nq_svga_libs)
 nq_x11_libs=  \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
-			$(soft_QFLIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
+			$(top_builddir)/libs/models/libQFmodels.la \
 			$(top_builddir)/libs/video/targets/libQFx11.la \
 			$(client_LIBS)
 nq_x11_SOURCES= 	sys_unix.c
@@ -168,80 +142,7 @@ nq_x11_LDFLAGS= 	$(common_ldflags)
 nq_x11_DEPENDENCIES=	$(nq_x11_libs)
 
 # OpenGL-using targets
-
-opengl_QFLIBS= \
-			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-			$(top_builddir)/libs/models/libQFmodels.la
-
-glsl_QFLIBS= \
-			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-			$(top_builddir)/libs/models/libQFmodels.la
-
-# ... Linux 3DFX
-nq_3dfx_libs=  \
-			$(client_libs) \
-			$(cl_plugin_LIBS) \
-			$(opengl_QFLIBS) \
-			$(top_builddir)/libs/video/targets/libQFtdfx.la \
-			$(client_LIBS)
-nq_3dfx_SOURCES= 	sys_unix.c
-nq_3dfx_LDADD=		$(nq_3dfx_libs) $(SVGA_LIBS) $(NET_LIBS)
-nq_3dfx_LDFLAGS=		$(common_ldflags)
-nq_3dfx_DEPENDENCIES= 	$(nq_3dfx_libs)
 							
-# ... OpenGL in X Window
-nq_glx_libs=  \
-			$(client_libs) \
-			$(cl_plugin_LIBS) \
-			$(opengl_QFLIBS) \
-			$(top_builddir)/libs/video/targets/libQFglx.la \
-			$(client_LIBS)
-nq_glx_SOURCES= 	sys_unix.c
-nq_glx_LDADD=		$(nq_glx_libs) \
-			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
-			-lXext $(X_EXTRA_LIBS) $(DL_LIBS) $(NET_LIBS)
-nq_glx_LDFLAGS= 	$(common_ldflags)
-nq_glx_DEPENDENCIES=	$(nq_glx_libs)
-
-nq_glslx_libs=  \
-			$(client_libs) \
-			$(cl_plugin_LIBS) \
-			$(glsl_QFLIBS) \
-			$(top_builddir)/libs/video/targets/libQFglslx.la \
-			$(client_LIBS)
-nq_glslx_SOURCES= 	sys_unix.c
-nq_glslx_LDADD=		$(nq_glslx_libs) \
-			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
-			-lXext $(X_EXTRA_LIBS) $(DL_LIBS) $(NET_LIBS)
-nq_glslx_LDFLAGS= 	$(common_ldflags)
-nq_glslx_DEPENDENCIES=	$(nq_glslx_libs)
-
-# ... Simple Directmedia Layer, version 1.2 and higher, in GL mode
-nq_sgl_libs=  \
-			libnq_sdl.a \
-			$(client_libs) \
-			$(cl_plugin_LIBS) \
-			$(opengl_QFLIBS) \
-			$(top_builddir)/libs/video/targets/libQFsgl.la \
-			$(client_LIBS)
-nq_sgl_SOURCES=sdl_link.c
-nq_sgl_LDADD=		$(nq_sgl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS)
-nq_sgl_LDFLAGS= 	$(common_ldflags)
-nq_sgl_DEPENDENCIES=	$(nq_sgl_libs)
-
-# ... Simple Directmedia Layer, version 1.2 and higher, in GLSL mode
-nq_sglsl_libs=  \
-			libnq_sdl.a \
-			$(client_libs) \
-			$(cl_plugin_LIBS) \
-			$(glsl_QFLIBS) \
-			$(top_builddir)/libs/video/targets/libQFsglsl.la \
-			$(client_LIBS)
-nq_sglsl_SOURCES=sdl_link.c
-nq_sglsl_LDADD=		$(nq_sglsl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS)
-nq_sglsl_LDFLAGS= 	$(common_ldflags)
-nq_sglsl_DEPENDENCIES=	$(nq_sglsl_libs)
-
 # ... SGI/Microsoft WGL (Windows OpenGL)
 nq_wgl_libs=  \
 			$(client_libs) \

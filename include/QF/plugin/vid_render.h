@@ -155,6 +155,7 @@ typedef struct vid_render_funcs_s {
 	void (*D_FlushCaches) (void);
 
 	vid_particle_funcs_t *particles;
+	vid_model_funcs_t *model_funcs;
 } vid_render_funcs_t;
 
 typedef struct vid_render_data_s {

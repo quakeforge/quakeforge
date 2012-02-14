@@ -22,9 +22,13 @@ common_sources= \
 	crosshair.c noisetextures.c r_alias.c r_bsp.c r_cvar.c r_dyn_textures.c \
 	r_efrag.c r_ent.c r_graph.c r_light.c r_main.c r_part.c r_screen.c
 
+renderer_libs= \
+	@vid_render_static_plugin_libs@ \
+	$(top_builddir)/libs/util/libQFutil.la
+
 libQFrenderer_la_LDFLAGS=		$(lib_ldflags)
-libQFrenderer_la_LIBADD=
-libQFrenderer_la_DEPENDENCIES=
+libQFrenderer_la_LIBADD=		$(renderer_libs)
+libQFrenderer_la_DEPENDENCIES=	$(renderer_libs)
 libQFrenderer_la_SOURCES=		r_init.c r_progs.c
 
 gl_libs= \
@@ -33,7 +37,7 @@ gl_libs= \
 vid_render_gl_la_LDFLAGS=		$(plugin_ldflags)
 vid_render_gl_la_LIBADD=		$(gl_libs)
 vid_render_gl_la_DEPENDENCIES=	$(gl_libs)
-vid_render_gl_la_SOURCES=		$(common_sources) #vid_render_gl.c
+vid_render_gl_la_SOURCES=		$(common_sources) vid_render_gl.c
 
 glsl_libs= \
 	glsl/libglsl.la \
@@ -41,7 +45,7 @@ glsl_libs= \
 vid_render_glsl_la_LDFLAGS=		$(plugin_ldflags)
 vid_render_glsl_la_LIBADD=		$(glsl_libs)
 vid_render_glsl_la_DEPENDENCIES=$(glsl_libs)
-vid_render_glsl_la_SOURCES=		$(common_sources) #vid_render_glsl.c
+vid_render_glsl_la_SOURCES=		$(common_sources) vid_render_glsl.c
 
 sw_libs= \
 	sw/libsw.la \
@@ -49,7 +53,7 @@ sw_libs= \
 vid_render_sw_la_LDFLAGS=		$(plugin_ldflags)
 vid_render_sw_la_LIBADD=		$(sw_libs)
 vid_render_sw_la_DEPENDENCIES=	$(sw_libs)
-vid_render_sw_la_SOURCES=		$(common_sources) #vid_render_sw.c
+vid_render_sw_la_SOURCES=		$(common_sources) vid_render_sw.c
 
 sw32_libs= \
 	sw32/libsw32.la \
@@ -57,4 +61,4 @@ sw32_libs= \
 vid_render_sw32_la_LDFLAGS=		$(plugin_ldflags)
 vid_render_sw32_la_LIBADD=		$(sw32_libs)
 vid_render_sw32_la_DEPENDENCIES=$(sw32_libs)
-vid_render_sw32_la_SOURCES=		$(common_sources) #vid_render_sw32.c
+vid_render_sw32_la_SOURCES=		$(common_sources) vid_render_sw32.c
