@@ -182,7 +182,7 @@ CL_LoadSky (void)
 	const char *name = 0;
 
 	if (!cl.worldspawn) {
-		R_LoadSkys (0);
+		r_funcs->R_LoadSkys (0);
 		return;
 	}
 	if ((item = PL_ObjectForKey (cl.worldspawn, "sky")) // Q2/DarkPlaces
@@ -190,7 +190,7 @@ CL_LoadSky (void)
 		|| (item = PL_ObjectForKey (cl.worldspawn, "qlsky"))) /* QuakeLives */ {
 		name = PL_String (item);
 	}
-	R_LoadSkys (name);
+	r_funcs->R_LoadSkys (name);
 }
 
 int
@@ -301,7 +301,7 @@ CL_NewMap (const char *mapname)
 {
 	cl_static_entities = 0;
 	cl_static_tail = &cl_static_entities;
-	R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
+	r_funcs->R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
 	Team_NewMap ();
 	Con_NewMap ();
 	Hunk_Check ();								// make sure nothing is hurt
@@ -312,7 +312,7 @@ CL_NewMap (const char *mapname)
 		if (cl.edicts) {
 			cl.worldspawn = PL_ObjectAtIndex (cl.edicts, 0);
 			CL_LoadSky ();
-			Fog_ParseWorldspawn (cl.worldspawn);
+			r_funcs->Fog_ParseWorldspawn (cl.worldspawn);
 		}
 	}
 
@@ -823,7 +823,7 @@ CL_ParseServerData (void)
 
 	// get the movevars
 	movevars.gravity = MSG_ReadFloat (net_message);
-	r_gravity = movevars.gravity;		// Gravity for renderer effects
+	r_data->gravity = movevars.gravity;		// Gravity for renderer effects
 	movevars.stopspeed = MSG_ReadFloat (net_message);
 	movevars.maxspeed = MSG_ReadFloat (net_message);
 	movevars.spectatormaxspeed = MSG_ReadFloat (net_message);
@@ -972,7 +972,7 @@ CL_ParseStatic (void)
 
 	CL_ParseBaseline (&es);
 
-	ent = R_AllocEntity ();
+	ent = r_funcs->R_AllocEntity ();
 	CL_Init_Entity (ent);
 
 	*cl_static_tail = ent;
@@ -986,7 +986,7 @@ CL_ParseStatic (void)
 	VectorCopy (es.origin, ent->origin);
 	CL_TransformEntity (ent, es.angles, true);
 
-	R_AddEfrags (ent);
+	r_funcs->R_AddEfrags (ent);
 }
 
 static void
@@ -1268,7 +1268,7 @@ CL_MuzzleFlash (void)
 
 	pl = &cl.frames[parsecountmod].playerstate[i - 1];
 
-	dl = R_AllocDlight (i);
+	dl = r_funcs->R_AllocDlight (i);
 	if (!dl)
 		return;
 
@@ -1436,15 +1436,16 @@ CL_ParseServerMessage (void)
 				// make sure any stuffed commands are done
 				Cbuf_Execute_Stack (cl_stbuf);
 				CL_ParseServerData ();
-				vid.recalc_refdef = true;	// leave full screen intermission
+				// leave full screen intermission
+				r_data->vid->recalc_refdef = true;
 				break;
 
 			case svc_lightstyle:
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_LIGHTSTYLES)
 					Host_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
-				strcpy (r_lightstyle[i].map, MSG_ReadString (net_message));
-				r_lightstyle[i].length = strlen (r_lightstyle[i].map);
+				strcpy (cl.lightstyle[i].map, MSG_ReadString (net_message));
+				cl.lightstyle[i].length = strlen (cl.lightstyle[i].map);
 				break;
 
 			case svc_sound:
@@ -1506,7 +1507,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_setpause:
-				r_paused = cl.paused = MSG_ReadByte (net_message);
+				r_data->paused = cl.paused = MSG_ReadByte (net_message);
 				if (cl.paused)
 					CDAudio_Pause ();
 				else
@@ -1542,9 +1543,9 @@ CL_ParseServerMessage (void)
 				Sys_MaskPrintf (SYS_DEV, "svc_intermission\n");
 
 				cl.intermission = 1;
-				r_force_fullscreen = 1;
+				r_data->force_fullscreen = 1;
 				cl.completed_time = realtime;
-				vid.recalc_refdef = true;	// go to full screen
+				r_data->vid->recalc_refdef = true;	// go to full screen
 				Sys_MaskPrintf (SYS_DEV, "intermission simorg: ");
 				MSG_ReadCoordV (net_message, cl.simorg);
 				for (i = 0; i < 3; i++)
@@ -1564,9 +1565,9 @@ CL_ParseServerMessage (void)
 
 			case svc_finale:
 				cl.intermission = 2;
-				r_force_fullscreen = 1;
+				r_data->force_fullscreen = 1;
 				cl.completed_time = realtime;
-				vid.recalc_refdef = true;				// go to full screen
+				r_data->vid->recalc_refdef = true;		// go to full screen
 				str = MSG_ReadString (net_message);
 				if (strcmp (str, centerprint->str)) {
 					dstring_copystr (centerprint, str);

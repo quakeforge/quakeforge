@@ -80,7 +80,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "context_x11.h"
 #include "dga_check.h"
-#include "r_internal.h"
 
 cvar_t	   *in_snd_block;
 cvar_t	   *in_dga;
@@ -683,11 +682,11 @@ center_pointer (void)
 	event.type = MotionNotify;
 	event.xmotion.display = x_disp;
 	event.xmotion.window = x_win;
-	event.xmotion.x = vid.width / 2;
-	event.xmotion.y = vid.height / 2;
+	event.xmotion.x = viddef.width / 2;
+	event.xmotion.y = viddef.height / 2;
 	XSendEvent (x_disp, x_win, False, PointerMotionMask, &event);
 	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0,
-				  vid.width / 2, vid.height / 2);
+				  viddef.width / 2, viddef.height / 2);
 }
 
 static void
@@ -706,11 +705,11 @@ event_motion (XEvent *event)
 	} else {
 		if (vid_fullscreen->int_val || input_grabbed) {
 			if (!event->xmotion.send_event) {
-				unsigned dist_x = abs (vid.width / 2 - event->xmotion.x);
-				unsigned dist_y = abs (vid.height / 2 - event->xmotion.y);
+				unsigned dist_x = abs (viddef.width / 2 - event->xmotion.x);
+				unsigned dist_y = abs (viddef.height / 2 - event->xmotion.y);
 				in_mouse_x += (event->xmotion.x - p_mouse_x);
 				in_mouse_y += (event->xmotion.y - p_mouse_y);
-				if (dist_x > vid.width / 4 || dist_y > vid.height / 4) {
+				if (dist_x > viddef.width / 4 || dist_y > viddef.height / 4) {
 					center_pointer ();
 				}
 			}

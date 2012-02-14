@@ -10,7 +10,7 @@ EXTRA_LTLIBRARIES=	libQFmodels_gl.la libQFmodels_glsl.la libQFmodels_sw.la
 lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
 			-rpath $(libdir) -no-undefined
 
-models_sources = clip_hull.c model.c portal.c skin.c trace.c winding.c
+models_sources = clip_hull.c model.c portal.c trace.c winding.c
 
 common_libs = \
 	$(top_builddir)/libs/image/libQFimage.la \
@@ -23,7 +23,7 @@ libQFmodels_la_LIBADD=				$(models_libs)
 libQFmodels_la_DEPENDENCIES=		$(models_libs)
 libQFmodels_la_SOURCES= 			$(models_sources) null_model.c
 
-gl_sources=gl_model_fullbright.c gl_skin.c
+gl_sources=gl_model_fullbright.c gl_skin.c skin.c
 gl_libs= \
 	alias/libalias_gl.la \
 	brush/libbrush_gl.la \
@@ -41,7 +41,7 @@ glsl_libs= \
 libQFmodels_glsl_la_LDFLAGS=		$(lib_ldflags)
 libQFmodels_glsl_la_LIBADD=			$(glsl_libs)
 libQFmodels_glsl_la_DEPENDENCIES=	$(glsl_libs)
-libQFmodels_glsl_la_SOURCES=		$(models_sources) glsl_skin.c
+libQFmodels_glsl_la_SOURCES=		$(models_sources) glsl_skin.c skin.c
 
 sw_libs= \
 	alias/libalias_sw.la \
@@ -51,4 +51,4 @@ sw_libs= \
 libQFmodels_sw_la_LDFLAGS=			$(lib_ldflags)
 libQFmodels_sw_la_LIBADD=			$(sw_libs)
 libQFmodels_sw_la_DEPENDENCIES=		$(sw_libs)
-libQFmodels_sw_la_SOURCES=			$(models_sources) sw_skin.c
+libQFmodels_sw_la_SOURCES=			$(models_sources) sw_skin.c skin.c

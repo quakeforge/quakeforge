@@ -46,9 +46,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "cl_parse.h"
 #include "client.h"
-#include "r_cvar.h" //XXX
 #include "sbar.h"
 
+cvar_t     *r_netgraph;
+cvar_t     *r_netgraph_alpha;
+cvar_t     *r_netgraph_box;
 
 void
 CL_NetGraph (void)
@@ -59,35 +61,39 @@ CL_NetGraph (void)
 	if (!r_netgraph->int_val)
 		return;
 
-	x = hudswap ? vid.conwidth - (NET_TIMINGS + 16): 0;
-	y = vid.conheight - sb_lines - 24 - r_graphheight->int_val - 1;
+	x = hudswap ? r_data->vid->conwidth - (NET_TIMINGS + 16): 0;
+	y = r_data->vid->conheight - sb_lines - 24
+		- r_data->graphheight->int_val - 1;
 
 	if (r_netgraph_box->int_val)
-		Draw_TextBox (x, y, NET_TIMINGS / 8, r_graphheight->int_val / 8 + 1,
-					  r_netgraph_alpha->value * 255);
+		r_funcs->Draw_TextBox (x, y, NET_TIMINGS / 8,
+							   r_data->graphheight->int_val / 8 + 1,
+							   r_netgraph_alpha->value * 255);
 
 	lost = CL_CalcNet ();
-	x = hudswap ? vid.conwidth - (NET_TIMINGS + 8) : 8;
-	y = vid.conheight - sb_lines - 9;
+	x = hudswap ? r_data->vid->conwidth - (NET_TIMINGS + 8) : 8;
+	y = r_data->vid->conheight - sb_lines - 9;
 
 	l = NET_TIMINGS;
-	if (l > r_refdef.vrect.width - 8)
-		l = r_refdef.vrect.width - 8;
+	if (l > r_data->refdef->vrect.width - 8)
+		l = r_data->refdef->vrect.width - 8;
 	i = cls.netchan.outgoing_sequence & NET_TIMINGSMASK;
 	a = i - l;
 	if (a < 0) {
-		R_LineGraph (x, y, &packet_latency[a + NET_TIMINGS], -a);
+		r_funcs->R_LineGraph (x, y, &packet_latency[a + NET_TIMINGS], -a);
 		x -= a;
 		l += a;
 		a = 0;
 	}
-	R_LineGraph (x, y, &packet_latency[a], l);
+	r_funcs->R_LineGraph (x, y, &packet_latency[a], l);
 
-	y = vid.conheight - sb_lines - 24 - r_graphheight->int_val + 7;
+	y = r_data->vid->conheight - sb_lines - 24
+		- r_data->graphheight->int_val + 7;
 	snprintf (st, sizeof (st), "%3i%% packet loss", lost);
 	if (hudswap) {
-		Draw_String (vid.conwidth - ((strlen (st) * 8) + 8), y, st);
+		r_funcs->Draw_String (r_data->vid->conwidth - ((strlen (st) * 8) + 8),
+							  y, st);
 	} else {
-		Draw_String (8, y, st);
+		r_funcs->Draw_String (8, y, st);
 	}
 }

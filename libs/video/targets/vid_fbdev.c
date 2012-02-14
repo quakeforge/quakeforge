@@ -74,7 +74,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/vid.h"
 
 #include "d_iface.h"
-#include "r_internal.h"
 #include "fbset.h"
 
 #ifndef PAGE_SIZE
@@ -106,10 +105,10 @@ D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 {
 	int i, j, reps, repshift, offset, off;
 
-	if (!fbdev_inited || !vid.direct || fbdev_backgrounded)
+	if (!fbdev_inited || !viddef.direct || fbdev_backgrounded)
 		return;
 
-	if (vid.aspect > 1.5) {
+	if (viddef.aspect > 1.5) {
 		reps = 2;
 		repshift = 1;
 	} else {
@@ -120,10 +119,10 @@ D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 	for (i = 0; i < (height << repshift); i += reps) {
 		for (j = 0; j < reps; j++) {
 			offset = x + ((y << repshift) + i + j)
-				* vid.rowbytes;
+				* viddef.rowbytes;
 			off = offset % 0x10000;
-			memcpy (&backingbuf[(i + j) * 24], vid.direct + off, width);
-			memcpy (vid.direct + off,
+			memcpy (&backingbuf[(i + j) * 24], viddef.direct + off, width);
+			memcpy (viddef.direct + off,
 				&pbitmap[(i >> repshift) * width], width);
 		}
 	}
@@ -134,10 +133,10 @@ D_EndDirectRect (int x, int y, int width, int height)
 {
 	int i, j, reps, repshift, offset, off;
 
-	if (!fbdev_inited || !vid.direct || fbdev_backgrounded)
+	if (!fbdev_inited || !viddef.direct || fbdev_backgrounded)
 		return;
 
-	if (vid.aspect > 1.5) {
+	if (viddef.aspect > 1.5) {
 		reps = 2;
 		repshift = 1;
 	} else {
@@ -148,9 +147,9 @@ D_EndDirectRect (int x, int y, int width, int height)
 	for (i = 0; i < (height << repshift); i += reps) {
 		for (j = 0; j < reps; j++) {
 			offset = x + ((y << repshift) + i + j)
-				* vid.rowbytes;
+				* viddef.rowbytes;
 			off = offset % 0x10000;
-			memcpy (vid.direct + off, &backingbuf[(i + j) * 24], width);
+			memcpy (viddef.direct + off, &backingbuf[(i + j) * 24], width);
 		}
 	}
 }
@@ -305,13 +304,13 @@ VID_SetMode (const char *name, unsigned char *palette)
 	current_mode = *vmode;
 	strncpy(current_name, current_mode.name, sizeof(current_name)-1);
 	current_name[31] = 0;
-	vid.width = vmode->xres;
-	vid.height = vmode->yres;
-	vid.rowbytes = vmode->xres * (vmode->depth >> 3);
-	vid.colormap8 = (byte *) vid_colormap;
-	vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
-	vid.conrowbytes = vid.rowbytes;
-	vid.numpages = 1;
+	viddef.width = vmode->xres;
+	viddef.height = vmode->yres;
+	viddef.rowbytes = vmode->xres * (vmode->depth >> 3);
+	viddef.colormap8 = (byte *) vid_colormap;
+	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
+	viddef.conrowbytes = viddef.rowbytes;
+	viddef.numpages = 1;
 
 	if (fb_map_addr) {
 		if (munmap(fb_map_addr, fb_map_length) == -1) {
@@ -338,7 +337,7 @@ VID_SetMode (const char *name, unsigned char *palette)
 							   fb_fd, 0);
 	if (!fb_map_addr)
 		Sys_Error ("This mode isn't hapnin'");
-	vid.direct = framebuffer_ptr = fb_map_addr;
+	viddef.direct = framebuffer_ptr = fb_map_addr;
 
 	// alloc screen buffer, z-buffer, and surface cache
 	VID_InitBuffers ();
@@ -348,7 +347,7 @@ VID_SetMode (const char *name, unsigned char *palette)
 	}
 
 	/* Force a surface cache flush */
-	vid.recalc_refdef = 1;
+	viddef.recalc_refdef = 1;
 
 	return 1;
 }
@@ -414,17 +413,18 @@ VID_Init (byte *palette, byte *colormap)
 	vid_colormap = colormap;
 
 	if (COM_CheckParm ("-novideo")) {
-		vid.width = 320;
-		vid.height = 200;
-		vid.rowbytes = 320;
-		vid.aspect = ((float) vid.height / (float) vid.width) * (4.0 / 3.0);
-		vid.colormap8 = (byte *) vid_colormap;
-		vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
-		vid.conrowbytes = vid.rowbytes;
-		vid.conwidth = vid.width;
-		vid.conheight = vid.height;
-		vid.numpages = 1;
-		vid.basepal = palette;
+		viddef.width = 320;
+		viddef.height = 200;
+		viddef.rowbytes = 320;
+		viddef.aspect = ((float) viddef.height
+						 / (float) viddef.width) * (4.0 / 3.0);
+		viddef.colormap8 = (byte *) vid_colormap;
+		viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
+		viddef.conrowbytes = viddef.rowbytes;
+		viddef.conwidth = viddef.width;
+		viddef.conheight = viddef.height;
+		viddef.numpages = 1;
+		viddef.basepal = palette;
 		Con_CheckResize (); // Now that we have a window size, fix console
 		VID_InitBuffers ();
 		return;
@@ -450,9 +450,9 @@ VID_Init (byte *palette, byte *colormap)
 	/* Interpret command-line params */
 	VID_GetWindowSize (320, 200);
 
-	modestr = get_mode (vid.width, vid.height, 8);
+	modestr = get_mode (viddef.width, viddef.height, 8);
 
-	/* Set vid parameters */
+	/* Set viddef parameters */
 	vmode = FindVideoMode(modestr);
 	if (!vmode)
 		Sys_Error("no video mode %s", modestr);
@@ -461,9 +461,9 @@ VID_Init (byte *palette, byte *colormap)
 	VID_SetMode (current_mode.name, palette);
 
 	VID_InitGamma (palette);
-	VID_SetPalette (vid.palette);
+	VID_SetPalette (viddef.palette);
 
-	vid.initialized = true;
+	viddef.initialized = true;
 }
 
 void
@@ -499,8 +499,9 @@ VID_Update (vrect_t *rects)
 	}
 
 	if (vid_redrawfull->int_val) {
-		double *d = (double *)framebuffer_ptr, *s = (double *)vid.buffer;
-		double *ends = (double *)(vid.buffer + vid.height*vid.rowbytes);
+		double *d = (double *)framebuffer_ptr, *s = (double *)viddef.buffer;
+		double *ends = (double *)(viddef.buffer
+								  + viddef.height*viddef.rowbytes);
 		while (s < ends)
 			*d++ = *s++;
 	} else {
@@ -512,9 +513,9 @@ VID_Update (vrect_t *rects)
 			width = rects->width / sizeof(double);
 			xoff = rects->x;
 			yoff = rects->y;
-			lineskip = (vid.width - (xoff + rects->width)) / sizeof(double);
-			d = (double *)(framebuffer_ptr + yoff * vid.rowbytes + xoff);
-			s = (double *)(vid.buffer + yoff * vid.rowbytes + xoff);
+			lineskip = (viddef.width - (xoff + rects->width)) / sizeof(double);
+			d = (double *)(framebuffer_ptr + yoff * viddef.rowbytes + xoff);
+			s = (double *)(viddef.buffer + yoff * viddef.rowbytes + xoff);
 			for (i = yoff; i < height; i++) {
 				for (j = xoff; j < width; j++)
 					*d++ = *s++;

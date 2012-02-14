@@ -210,6 +210,8 @@ static void
 hud_sbar_f (cvar_t *var)
 {
 	r_data->vid->recalc_refdef = true;
+	if (r_data->scr_viewsize)
+		calc_sb_lines (r_data->scr_viewsize);
 	r_data->lineadj = var->int_val ? sb_lines : 0;
 	if (con_module) {
 		if (var->int_val) {

@@ -55,8 +55,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "client.h"
 #include "clview.h"
 #include "compat.h"
-#include "r_local.h"
-#include "r_cvar.h"
 #include "sbar.h"
 
 
@@ -69,7 +67,7 @@ SCR_DrawNet (void)
 	if (cls.demoplayback)
 		return;
 
-	Draw_Pic (scr_vrect.x + 64, scr_vrect.y, scr_net);
+	//FIXME Draw_Pic (r_data->scr_vrect->x + 64, r_data->scr_vrect->y, scr_net);
 }
 
 static void
@@ -78,21 +76,21 @@ SCR_CShift (void)
 	mleaf_t    *leaf;
 	int         contents = CONTENTS_EMPTY;
 
-	if (r_active && cl.worldmodel) {
-		leaf = Mod_PointInLeaf (r_refdef.vieworg, cl.worldmodel);
+	if (r_data->active && cl.worldmodel) {
+		leaf = Mod_PointInLeaf (r_data->refdef->vieworg, cl.worldmodel);
 		contents = leaf->contents;
 	}
 	V_SetContentsColor (contents);
-	Draw_BlendScreen (vid.cshift_color);
+	r_funcs->Draw_BlendScreen (r_data->vid->cshift_color);
 }
 
 static SCR_Func scr_funcs_normal[] = {
-	Draw_Crosshair,
-	SCR_DrawRam,
+	0, //Draw_Crosshair,
+	0, //SCR_DrawRam,
 	SCR_DrawNet,
 	CL_NetGraph,
-	SCR_DrawTurtle,
-	SCR_DrawPause,
+	0, //SCR_DrawTurtle,
+	0, //SCR_DrawPause,
 	Sbar_DrawCenterPrint,
 	Sbar_Draw,
 	Con_DrawConsole,
@@ -127,15 +125,19 @@ CL_UpdateScreen (double realtime)
 		index = 0;
 
 	// don't allow cheats in multiplayer
-	if (r_active) {
+	if (r_data->active) {
 		if (cl.watervis)
 			r_data->min_wateralpha = 0.0;
 		else
 			r_data->min_wateralpha = 1.0;
 	}
+	scr_funcs_normal[0] = r_funcs->Draw_Crosshair;
+	scr_funcs_normal[1] = r_funcs->SCR_DrawRam;
+	scr_funcs_normal[4] = r_funcs->SCR_DrawTurtle;
+	scr_funcs_normal[5] = r_funcs->SCR_DrawPause;
 
 	V_PrepBlend ();
-	SCR_UpdateScreen (realtime, V_RenderView, scr_funcs[index]);
+	r_funcs->SCR_UpdateScreen (realtime, V_RenderView, scr_funcs[index]);
 }
 
 void
@@ -154,27 +156,27 @@ CL_RSShot_f (void)
 
 	Sys_Printf ("Remote screen shot requested.\n");
 
-	tex = SCR_ScreenShot (RSSHOT_WIDTH, RSSHOT_HEIGHT);
+	tex = r_funcs->SCR_ScreenShot (RSSHOT_WIDTH, RSSHOT_HEIGHT);
 
 	if (tex) {
 		time (&now);
 		strcpy (st, ctime (&now));
 		st[strlen (st) - 1] = 0;
-		SCR_DrawStringToSnap (st, tex, tex->width - strlen (st) * 8,
-							  tex->height - 1);
+		r_funcs->SCR_DrawStringToSnap (st, tex, tex->width - strlen (st) * 8,
+									   tex->height - 1);
 
 		strncpy (st, cls.servername->str, sizeof (st));
 		st[sizeof (st) - 1] = 0;
-		SCR_DrawStringToSnap (st, tex, tex->width - strlen (st) * 8,
-							  tex->height - 11);
+		r_funcs->SCR_DrawStringToSnap (st, tex, tex->width - strlen (st) * 8,
+									   tex->height - 11);
 
 		strncpy (st, cl_name->string, sizeof (st));
 		st[sizeof (st) - 1] = 0;
-		SCR_DrawStringToSnap (st, tex, tex->width - strlen (st) * 8,
-							  tex->height - 21);
+		r_funcs->SCR_DrawStringToSnap (st, tex, tex->width - strlen (st) * 8,
+									   tex->height - 21);
 
 		pcx = EncodePCX (tex->data, tex->width, tex->height, tex->width,
-						 vid.basepal, true, &pcx_len);
+						 r_data->vid->basepal, true, &pcx_len);
 		free (tex);
 	}
 	if (pcx) {

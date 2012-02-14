@@ -844,7 +844,7 @@ CL_Record (const char *argv1, int track)
 	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
 		MSG_WriteByte (&buf, svc_lightstyle);
 		MSG_WriteByte (&buf, (char) i);
-		MSG_WriteString (&buf, r_lightstyle[i].map);
+		MSG_WriteString (&buf, cl.lightstyle[i].map);
 	}
 
 	for (i = 0; i < MAX_CL_STATS; i++) {

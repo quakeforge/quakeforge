@@ -76,11 +76,12 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/va.h"
 #include "QF/vid.h"
 
+#include "QF/plugin/vid_render.h"
+
 #include "compat.h"
 #include "context_x11.h"
 #include "d_iface.h"
 #include "dga_check.h"
-#include "r_internal.h"
 
 int XShmGetEventBase (Display *x);	// for broken X11 headers
 
@@ -218,7 +219,7 @@ st2_fixup (XImage *framebuf, int x, int y, int width, int height)
 		return;
 
 	for (yi = y; yi < (y + height); yi++) {
-		src = &((byte *)vid.buffer)[yi * vid.width];
+		src = &((byte *)viddef.buffer)[yi * viddef.width];
 		dest = (PIXEL16 *) &framebuf->data[yi * framebuf->bytes_per_line];
 		for (xi = x; xi < x + width; xi++) {
 			dest[xi] = st2d_8to16table[src[xi]];
@@ -238,7 +239,7 @@ st3_fixup (XImage * framebuf, int x, int y, int width, int height)
 		return;
 
 	for (yi = y; yi < (y + height); yi++) {
-		src = &((byte *)vid.buffer)[yi * vid.width + x];
+		src = &((byte *)viddef.buffer)[yi * viddef.width + x];
 		dest = (PIXEL24 *) &framebuf->data[yi * framebuf->bytes_per_line + x];
 
 		// Duff's Device
@@ -294,14 +295,14 @@ ResetFrameBuffer (void)
 
 	if (pwidth == 3)
 		pwidth = 4;
-	mem = ((vid.width * pwidth + 7) & ~7) * vid.height;
+	mem = ((viddef.width * pwidth + 7) & ~7) * viddef.height;
 	buf = malloc (mem);
 	SYS_CHECKMEM (buf);
 
 	// allocate new screen buffer
 	x_framebuffer[0] = XCreateImage (x_disp, x_vis, x_visinfo->depth,
-									 ZPixmap, 0, buf, vid.width,
-									 vid.height, 32, 0);
+									 ZPixmap, 0, buf, viddef.width,
+									 viddef.height, 32, 0);
 
 	if (!x_framebuffer[0]) {
 		Sys_Error ("VID: XCreateImage failed");
@@ -327,7 +328,7 @@ ResetSharedFrameBuffers (void)
 		// create the image
 		x_framebuffer[frm] = XShmCreateImage (x_disp, x_vis, x_visinfo->depth,
 											  ZPixmap, 0, &x_shminfo[frm],
-											  vid.width, vid.height);
+											  viddef.width, viddef.height);
 
 		// grab shared memory
 		size = x_framebuffer[frm]->bytes_per_line * x_framebuffer[frm]->height;
@@ -368,20 +369,20 @@ x11_init_buffers (void)
 
 	current_framebuffer = 0;
 
-	vid.direct = 0;
-	vid.rowbytes = vid.width;
+	viddef.direct = 0;
+	viddef.rowbytes = viddef.width;
 	if (x_visinfo->depth != 8) {
-		if (vid.buffer)
-			free (vid.buffer);
-		vid.buffer = calloc (vid.width, vid.height);
-		if (!vid.buffer)
+		if (viddef.buffer)
+			free (viddef.buffer);
+		viddef.buffer = calloc (viddef.width, viddef.height);
+		if (!viddef.buffer)
 			Sys_Error ("Not enough memory for video mode");
 	} else {
-		vid.buffer = x_framebuffer[current_framebuffer]->data;
+		viddef.buffer = x_framebuffer[current_framebuffer]->data;
 	}
-	vid.conbuffer = vid.buffer;
+	viddef.conbuffer = viddef.buffer;
 
-	vid.conrowbytes = vid.rowbytes;
+	viddef.conrowbytes = viddef.rowbytes;
 }
 
 static void
@@ -452,7 +453,6 @@ x11_choose_visual (void)
 static void
 x11_create_context (void)
 {
-
 	// create the GC
 	{
 		XGCValues   xgcvalues;
@@ -482,7 +482,7 @@ x11_create_context (void)
 		x_shmeventtype = XShmGetEventBase (x_disp) + ShmCompletion;
 	}
 
-	vid.do_screen_buffer = x11_init_buffers;
+	viddef.do_screen_buffer = x11_init_buffers;
 	VID_InitBuffers ();
 
 //  XSynchronize (x_disp, False);
@@ -499,28 +499,28 @@ x11_create_context (void)
 void
 VID_Init (byte *palette, byte *colormap)
 {
-	vid.numpages = 2;
-	vid.colormap8 = vid_colormap = colormap;
-	vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
+	viddef.numpages = 2;
+	viddef.colormap8 = vid_colormap = colormap;
+	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 
 	srandom (getpid ());
 
 	VID_GetWindowSize (320, 200);
 	X11_OpenDisplay ();
 	x11_choose_visual ();
-	X11_SetVidMode (vid.width, vid.height);
-	X11_CreateWindow (vid.width, vid.height);
+	X11_SetVidMode (viddef.width, viddef.height);
+	X11_CreateWindow (viddef.width, viddef.height);
 	X11_CreateNullCursor ();	// hide mouse pointer
 	x11_create_context ();
 
 	VID_InitGamma (palette);
-	VID_SetPalette (vid.palette);
+	VID_SetPalette (viddef.palette);
 
 	Sys_MaskPrintf (SYS_VID, "Video mode %dx%d initialized.\n",
-					vid.width, vid.height);
+					viddef.width, viddef.height);
 
-	vid.initialized = true;
-	vid.recalc_refdef = 1;				// force a surface cache flush
+	viddef.initialized = true;
+	viddef.recalc_refdef = 1;			// force a surface cache flush
 }
 
 void
@@ -585,12 +585,12 @@ VID_Update (vrect_t *rects)
 	if (config_notify) {
 		fprintf (stderr, "config notify\n");
 		config_notify = 0;
-		vid.width = config_notify_width & ~7;
-		vid.height = config_notify_height;
+		viddef.width = config_notify_width & ~7;
+		viddef.height = config_notify_height;
 
 		VID_InitBuffers ();
 
-		vid.recalc_refdef = 1;			/* force a surface cache flush */
+		viddef.recalc_refdef = 1;			/* force a surface cache flush */
 		Con_CheckResize ();
 		return;
 	}
@@ -629,7 +629,7 @@ VID_Update (vrect_t *rects)
 		}
 	}
 	XSync (x_disp, False);
-	scr_fullupdate = 0;
+	r_data->scr_fullupdate = 0;
 }
 
 void

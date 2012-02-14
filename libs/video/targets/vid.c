@@ -48,10 +48,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/vid.h"
 
 #include "compat.h"
-#include "r_internal.h"
 
 /* Software and hardware gamma support */
 VISIBLE byte		gammatable[256];
+viddef_t    viddef;
 byte       *vid_colormap;
 cvar_t	   *vid_gamma;
 cvar_t	   *vid_system_gamma;
@@ -138,14 +138,14 @@ VID_GetWindowSize (int def_w, int def_h)
 	Cvar_SetFlags (vid_width, vid_width->flags | CVAR_ROM);
 	Cvar_SetFlags (vid_height, vid_height->flags | CVAR_ROM);
 
-	vid.width = vid_width->int_val;
-	vid.height = vid_height->int_val;
+	viddef.width = vid_width->int_val;
+	viddef.height = vid_height->int_val;
 
-	vid.aspect = ((vid_aspect->vec[0] * vid.height)
-				  / (vid_aspect->vec[1] * vid.width));
+	viddef.aspect = ((vid_aspect->vec[0] * viddef.height)
+				  / (vid_aspect->vec[1] * viddef.width));
 
-	con_width = Cvar_Get ("con_width", va ("%d", vid.width), CVAR_NONE, NULL,
-						  "console effective width (GL only)");
+	con_width = Cvar_Get ("con_width", va ("%d", viddef.width), CVAR_NONE,
+						  NULL, "console effective width (GL only)");
 	if ((pnum = COM_CheckParm ("-conwidth"))) {
 		if (pnum >= com_argc - 1)
 			Sys_Error ("VID: -conwidth <width>");
@@ -154,9 +154,9 @@ VID_GetWindowSize (int def_w, int def_h)
 	// make con_width a multiple of 8 and >= 320
 	Cvar_Set (con_width, va ("%d", max (con_width->int_val & ~7, 320)));
 	Cvar_SetFlags (con_width, con_width->flags | CVAR_ROM);
-	vid.conwidth = con_width->int_val;
+	viddef.conwidth = con_width->int_val;
 
-	conheight = (vid.conwidth * vid_aspect->vec[1]) / vid_aspect->vec[0];
+	conheight = (viddef.conwidth * vid_aspect->vec[1]) / vid_aspect->vec[0];
 	con_height = Cvar_Get ("con_height", va ("%d", conheight), CVAR_NONE, NULL,
 						   "console effective height (GL only)");
 	if ((pnum = COM_CheckParm ("-conheight"))) {
@@ -167,7 +167,7 @@ VID_GetWindowSize (int def_w, int def_h)
 	// make con_height >= 200
 	Cvar_Set (con_height, va ("%d", max (con_height->int_val, 200)));
 	Cvar_SetFlags (con_height, con_height->flags | CVAR_ROM);
-	vid.conheight = con_height->int_val;
+	viddef.conheight = con_height->int_val;
 
 	Con_CheckResize ();     // Now that we have a window size, fix console
 }
@@ -205,20 +205,20 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 {
 	double gamma = bound (0.1, vid_gamma->value, 9.9);
 	
-	vid.recalc_refdef = 1;				// force a surface cache flush
+	viddef.recalc_refdef = 1;				// force a surface cache flush
 
 	if (vid_gamma_avail && vid_system_gamma->int_val) {	// Have system, use it
 		Sys_MaskPrintf (SYS_VID, "Setting hardware gamma to %g\n", gamma);
 		VID_BuildGammaTable (1.0);	// hardware gamma wants a linear palette
 		VID_SetGamma (gamma);
-		memcpy (vid.palette, vid.basepal, 256 * 3);
+		memcpy (viddef.palette, viddef.basepal, 256 * 3);
 	} else {	// We have to hack the palette
 		int i;
 		Sys_MaskPrintf (SYS_VID, "Setting software gamma to %g\n", gamma);
 		VID_BuildGammaTable (gamma);
 		for (i = 0; i < 256 * 3; i++)
-			vid.palette[i] = gammatable[vid.basepal[i]];
-		VID_SetPalette (vid.palette); // update with the new palette
+			viddef.palette[i] = gammatable[viddef.basepal[i]];
+		VID_SetPalette (viddef.palette); // update with the new palette
 	}
 }
 
@@ -233,8 +233,8 @@ VID_InitGamma (unsigned char *pal)
 	int 	i;
 	double	gamma = 1.45;
 
-	vid.basepal = pal;
-	vid.palette = malloc (256 * 3);
+	viddef.basepal = pal;
+	viddef.palette = malloc (256 * 3);
 	if ((i = COM_CheckParm ("-gamma"))) {
 		gamma = atof (com_argv[i + 1]);
 	}

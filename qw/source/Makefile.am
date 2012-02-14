@@ -117,8 +117,7 @@ libqw_client_a_SOURCES= \
 
 # Software-rendering clients
 
-# We need libQFrenderer_sw to always be static -- there's assembler in there
-soft_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
+soft_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
 		$(top_builddir)/libs/models/libQFmodels_sw.la
 
 # ... Linux FBDev
@@ -163,7 +162,7 @@ qw_client_sdl32_libs= \
 			libqw_sdl.a \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
-			$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
+			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
 			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIBS)
@@ -200,10 +199,10 @@ qw_client_x11_DEPENDENCIES= $(qw_client_x11_libs)
 
 # OpenGL-using clients
 
-opengl_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
+opengl_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
 		$(top_builddir)/libs/models/libQFmodels_gl.la
 
-glsl_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer_glsl.la \
+glsl_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
 		$(top_builddir)/libs/models/libQFmodels_glsl.la
 
 # ... OpenGL in X Window

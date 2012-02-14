@@ -69,6 +69,14 @@ typedef struct vid_particle_funcs_s {
 	void (*R_TeleportSplash) (const vec3_t org);
 	void (*R_DarkFieldParticles) (const struct entity_s *ent);
 	void (*R_EntityParticles) (const struct entity_s *ent);
+
+	void (*R_Particle_New) (ptype_t type, int texnum, const vec3_t org,
+							float scale, const vec3_t vel, float die,
+							int color, float alpha, float ramp);
+	void (*R_Particle_NewRandom) (ptype_t type, int texnum, const vec3_t org,
+								  int org_fuzz, float scale, int vel_fuzz,
+								  float die, int color, float alpha,
+								  float ramp);
 } vid_particle_funcs_t;
 
 typedef struct vid_render_funcs_s {
@@ -104,6 +112,9 @@ typedef struct vid_render_funcs_s {
 	void (*SCR_DrawTurtle) (void);
 	void (*SCR_DrawPause) (void);
 	struct tex_s *(*SCR_CaptureBGR) (void);
+	struct tex_s *(*SCR_ScreenShot) (int width, int height);
+	void (*SCR_DrawStringToSnap) (const char *s, struct tex_s *tex,
+								  int x, int y);
 
 	void (*Fog_Update) (float density, float red, float green, float blue,
 						float time);
@@ -114,6 +125,8 @@ typedef struct vid_render_funcs_s {
 	void (*R_NewMap) (model_t *worldmodel, model_t **models, int num_models);
 	void (*R_AddEfrags) (entity_t *ent);
 	void (*R_RemoveEfrags) (entity_t *ent);
+	void (*R_EnqueueEntity) (struct entity_s *ent);	//FIXME should not be here
+	void (*R_LineGraph) (int x, int y, int *h_vals, int count);
 	dlight_t *(*R_AllocDlight) (int key);
 	entity_t *(*R_AllocEntity) (void);
 	void (*R_RenderView) (void);
@@ -132,6 +145,7 @@ typedef struct vid_render_data_s {
 	int         scr_fullupdate;	// set to 0 to force full redraw
 	void       (*viewsize_callback) (struct cvar_s *);
 	struct cvar_s *scr_viewsize;
+	struct cvar_s *graphheight;
 	float       min_wateralpha;
 	qboolean    active;
 	qboolean    force_fullscreen;

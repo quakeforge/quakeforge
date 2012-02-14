@@ -57,8 +57,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "d_iface.h"
 #include "host.h"
 #include "qw/pmove.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
 #include "clview.h"
 
 entity_t    cl_player_ents[MAX_CLIENTS];
@@ -95,7 +93,7 @@ CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
 			return;
 	}
 
-	dl = R_AllocDlight (key);
+	dl = r_funcs->R_AllocDlight (key);
 	if (!dl)
 		return;
 	VectorCopy (org, dl->origin);
@@ -226,7 +224,7 @@ CL_LinkPacketEntities (void)
 			|| (cl_deadbodyfilter->int_val && is_dead_body (s1))
 			|| (cl_gibfilter->int_val && is_gib (s1))) {
 			if (ent->efrag)
-				R_RemoveEfrags (ent);
+				r_funcs->R_RemoveEfrags (ent);
 			continue;
 		}
 
@@ -276,11 +274,11 @@ CL_LinkPacketEntities (void)
 			VectorCopy (s1->origin, ent->origin);
 			if (!VectorCompare (ent->origin, ent->old_origin)) {
 				// the entity moved, it must be relinked
-				R_RemoveEfrags (ent);
+				r_funcs->R_RemoveEfrags (ent);
 			}
 		}
 		if (!ent->efrag)
-			R_AddEfrags (ent);
+			r_funcs->R_AddEfrags (ent);
 
 		if (model->flags & EF_ROTATE) {		// rotate binary objects locally
 			vec3_t      ang;
@@ -297,29 +295,31 @@ CL_LinkPacketEntities (void)
 			continue;
 
 		if (model->flags & EF_ROCKET) {
-			dl = R_AllocDlight (-s1->number);
+			dl = r_funcs->R_AllocDlight (-s1->number);
 			if (dl) {
 				VectorCopy (ent->origin, dl->origin);
 				dl->radius = 200.0;
 				dl->die = cl.time + 0.1;
-				VectorCopy (r_firecolor->vec, dl->color);
+				//FIXME VectorCopy (r_firecolor->vec, dl->color);
+				VectorSet (0.9, 0.7, 0.0, dl->color);
 				dl->color[3] = 0.7;
 			}
-			R_RocketTrail (ent);
+			r_funcs->particles->R_RocketTrail (ent);
 		} else if (model->flags & EF_GRENADE)
-			R_GrenadeTrail (ent);
+			r_funcs->particles->R_GrenadeTrail (ent);
 		else if (model->flags & EF_GIB)
-			R_BloodTrail (ent);
+			r_funcs->particles->R_BloodTrail (ent);
 		else if (model->flags & EF_ZOMGIB)
-			R_SlightBloodTrail (ent);
+			r_funcs->particles->R_SlightBloodTrail (ent);
 		else if (model->flags & EF_TRACER)
-			R_WizTrail (ent);
+			r_funcs->particles->R_WizTrail (ent);
 		else if (model->flags & EF_TRACER2)
-			R_FlameTrail (ent);
+			r_funcs->particles->R_FlameTrail (ent);
 		else if (model->flags & EF_TRACER3)
-			R_VoorTrail (ent);
+			r_funcs->particles->R_VoorTrail (ent);
 		else if (model->flags & EF_GLOWTRAIL)
-			R_GlowTrail (ent, s1->glow_color);
+			if (r_funcs->particles->R_GlowTrail)
+				r_funcs->particles->R_GlowTrail (ent, s1->glow_color);
 	}
 }
 
@@ -371,8 +371,8 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 	ang[2] -= 45.0;
 	CL_TransformEntity (fent, ang, false);
 
-	R_EnqueueEntity (fent);	//FIXME should use efrag (needs smarter handling
-							//in the player code)
+	r_funcs->R_EnqueueEntity (fent);//FIXME should use efrag (needs smarter
+									// handling //in the player code)
 }
 
 /*
@@ -404,7 +404,7 @@ CL_LinkPlayers (void)
 		 j++, info++, state++) {
 		ent = &cl_player_ents[j];
 		if (ent->efrag)
-			R_RemoveEfrags (ent);
+			r_funcs->R_RemoveEfrags (ent);
 		if (state->messagenum != cl.parsecount)
 			continue;							// not present this frame
 
@@ -414,7 +414,7 @@ CL_LinkPlayers (void)
 		// spawn light flashes, even ones coming from invisible objects
 		if (j == cl.playernum) {
 			VectorCopy (cl.simorg, org);
-			r_player_entity = &cl_player_ents[j];
+			r_data->player_entity = &cl_player_ents[j];
 			clientplayer = true;
 		} else {
 			VectorCopy (state->pls.origin, org);
@@ -485,7 +485,7 @@ CL_LinkPlayers (void)
 		}
 
 		// stuff entity in map
-		R_AddEfrags (ent);
+		r_funcs->R_AddEfrags (ent);
 
 		if (state->pls.effects & EF_FLAG1)
 			CL_AddFlagModels (ent, 0, j);
@@ -512,7 +512,7 @@ CL_EmitEntities (void)
 	CL_LinkPlayers ();
 	CL_LinkPacketEntities ();
 	CL_UpdateTEnts ();
-
+#if 0 //FIXME
 	if (!r_drawentities->int_val) {
 		dlight_t   *dl;
 		location_t *nearloc;
@@ -521,30 +521,33 @@ CL_EmitEntities (void)
 
 		nearloc = locs_find (r_origin);
 		if (nearloc) {
-			dl = R_AllocDlight (4096);
+			dl = r_funcs->R_AllocDlight (4096);
 			if (dl) {
 				VectorCopy (nearloc->loc, dl->origin);
 				dl->radius = 200;
-				dl->die = r_realtime + 0.1;
+				dl->die = r_data->realtime + 0.1;
 				dl->color[0] = 0;
 				dl->color[1] = 1;
 				dl->color[2] = 0;
 				dl->color[3] = 0.7;
 			}
 			VectorCopy (nearloc->loc, trueloc);
-			R_Particle_New (pt_smokecloud, part_tex_smoke, trueloc, 2.0,
-							vec3_origin, r_realtime + 9.0, 254,
-							0.25 + qfrandom (0.125), 0.0);
+			r_funcs->particles->R_Particle_New (pt_smokecloud, part_tex_smoke,
+					trueloc, 2.0,
+					vec3_origin, r_data->realtime + 9.0, 254,
+					0.25 + qfrandom (0.125), 0.0);
 			for (i = 0; i < 15; i++)
-				R_Particle_NewRandom (pt_fallfade, part_tex_dot, trueloc, 12,
-									  0.7, 96, r_realtime + 5.0,
-									  104 + (rand () & 7), 1.0, 0.0);
+				r_funcs->particles->R_Particle_NewRandom (pt_fallfade,
+						part_tex_dot, trueloc, 12,
+						0.7, 96, r_data->realtime + 5.0,
+						104 + (rand () & 7), 1.0, 0.0);
 		}
 	}
+#endif
 }
 
 void
 CL_Ents_Init (void)
 {
-	r_view_model = &cl.viewent;
+	r_data->view_model = &cl.viewent;
 }

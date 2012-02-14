@@ -76,7 +76,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "context_x11.h"
 #include "dga_check.h"
-#include "r_internal.h"
 
 static void (*event_handlers[LASTEvent]) (XEvent *);
 qboolean	oktodraw = false;
@@ -342,8 +341,8 @@ check_mouse_event (Display *disp, XEvent *ev, XPointer arg)
 	XMotionEvent *me = &ev->xmotion;
 	if (ev->type != MotionNotify)
 		return False;
-	if ((unsigned) me->x != vid.width / 2
-		|| (unsigned) me->y != vid.height / 2)
+	if ((unsigned) me->x != viddef.width / 2
+		|| (unsigned) me->y != viddef.height / 2)
 		return False;
 	return True;
 }
@@ -355,7 +354,7 @@ X11_SetMouse (void)
 
 	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, 0, 0);
 	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0,
-				  vid.width / 2, vid.height / 2);
+				  viddef.width / 2, viddef.height / 2);
 	XPeekIfEvent (x_disp, &ev, check_mouse_event, 0);
 	x_mouse_time = ev.xmotion.time;
 }
@@ -439,8 +438,8 @@ X11_SetVidMode (int width, int height)
 			}
 
 			for (i = 0; i < nummodes; i++) {
-				if ((vidmodes[i]->hdisplay == vid.width) &&
-						(vidmodes[i]->vdisplay == vid.height)) {
+				if ((vidmodes[i]->hdisplay == viddef.width) &&
+						(vidmodes[i]->vdisplay == viddef.height)) {
 					found_mode = true;
 					best_mode = i;
 					break;
@@ -449,7 +448,7 @@ X11_SetVidMode (int width, int height)
 
 			if (found_mode) {
 				Sys_MaskPrintf (SYS_VID, "VID: Chose video mode: %dx%d\n",
-								vid.width, vid.height);
+								viddef.width, viddef.height);
 
 				XF86VidModeSwitchToMode (x_disp, x_screen,
 										 vidmodes[best_mode]);
@@ -457,7 +456,7 @@ X11_SetVidMode (int width, int height)
 				X11_SetScreenSaver ();
 			} else {
 				Sys_Printf ("VID: Mode %dx%d can't go fullscreen.\n",
-							vid.width, vid.height);
+							viddef.width, viddef.height);
 				vidmode_avail = vidmode_active = false;
 			}
 		}
@@ -479,7 +478,7 @@ X11_UpdateFullscreen (cvar_t *fullscreen)
 		return;
 	} else {
 		set_fullscreen (1);
-		X11_SetVidMode (vid.width, vid.height);
+		X11_SetVidMode (viddef.width, viddef.height);
 		X11_SetMouse ();
 		IN_UpdateGrab (in_grab);
 	}

@@ -31,6 +31,7 @@
 
 #include "QF/mathlib.h"
 #include "QF/model.h"
+#include "QF/render.h"
 #include "QF/vid.h"
 
 #define WARP_WIDTH		320
@@ -44,25 +45,6 @@ typedef struct
 	float	s, t;
 	float	zi;
 } emitpoint_t;
-
-typedef enum {
-	pt_static,
-	pt_grav,
-	pt_slowgrav,
-	pt_fire,
-	pt_explode,
-	pt_explode2,
-	pt_blob,
-	pt_blob2,
-	pt_smoke,
-	pt_smokecloud,
-	pt_bloodcloud,
-	pt_fadespark,
-	pt_fadespark2,
-	pt_fallfade,
-	pt_fallfadespark,
-	pt_flame
-} ptype_t;
 
 typedef enum {
 	part_tex_dot,

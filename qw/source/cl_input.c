@@ -535,7 +535,7 @@ CL_BaseMove (usercmd_t *cmd)
 		vec3_t      forward, right, up, f, r;
 		vec3_t      dir = {0, 0, 0};
 
-		dir[1] = r_refdef.viewangles[1] - cl.viewangles[1];
+		dir[1] = r_data->refdef->viewangles[1] - cl.viewangles[1];
 		AngleVectors (dir, forward, right, up);
 		VectorScale (forward, cmd->forwardmove, f);
 		VectorScale (right, cmd->sidemove, r);

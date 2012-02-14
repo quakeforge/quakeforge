@@ -34,11 +34,11 @@
 #include "QF/vid.h"
 #include "QF/zone.h"
 
+#include "QF/plugin/vid_render.h"
+
 #include "netchan.h"
 #include "qw/bothdefs.h"
 #include "qw/protocol.h"
-#include "r_local.h"
-#include "QF/render.h"
 
 
 /*
@@ -304,12 +304,17 @@ typedef struct
 
 // all player information
 	player_info_t	players[MAX_CLIENTS];
+
+	lightstyle_t    lightstyle[MAX_LIGHTSTYLES];
 } client_state_t;
 
 
 /*
   cvars
 */
+extern	struct cvar_s	*r_netgraph;
+extern	struct cvar_s	*r_netgraph_alpha;
+extern	struct cvar_s	*r_netgraph_box;
 extern	struct cvar_s	*cl_upspeed;
 extern	struct cvar_s	*cl_forwardspeed;
 extern	struct cvar_s	*cl_backspeed;

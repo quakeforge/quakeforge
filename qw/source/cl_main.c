@@ -112,8 +112,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "host.h"
 #include "netchan.h"
 #include "qw/pmove.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
 #include "sbar.h"
 #include "clview.h"
 
@@ -194,7 +192,6 @@ client_state_t cl;
 entity_state_t cl_entities[UPDATE_BACKUP][MAX_DEMO_PACKET_ENTITIES];
 
 entity_state_t cl_baselines[MAX_EDICTS];
-efrag_t     cl_efrags[MAX_EFRAGS];
 
 double      connect_time = -1;			// for connection retransmits
 
@@ -400,7 +397,7 @@ CL_ClearState (void)
 	if (cl.serverinfo)
 		Info_Destroy (cl.serverinfo);
 	memset (&cl, 0, sizeof (cl));
-	r_force_fullscreen = 0;
+	r_data->force_fullscreen = 0;
 
 	// Note: we should probably hack around this and give diff values for
 	// diff gamedirs
@@ -415,7 +412,7 @@ CL_ClearState (void)
 	CL_Init_Entity (&cl.viewent);
 
 	Sys_MaskPrintf (SYS_DEV, "Clearing memory\n");
-	D_FlushCaches ();
+	r_funcs->D_FlushCaches ();
 	Mod_ClearAll ();
 	if (host_hunklevel)					// FIXME: check this...
 		Hunk_FreeToLowMark (host_hunklevel);
@@ -423,13 +420,9 @@ CL_ClearState (void)
 	CL_ClearEnts ();
 	CL_ClearTEnts ();
 
-	R_ClearState ();
+	r_funcs->R_ClearState ();
 
 	SZ_Clear (&cls.netchan.message);
-
-	// clear other arrays   
-	memset (cl_efrags, 0, sizeof (cl_efrags));
-	memset (r_lightstyle, 0, sizeof (r_lightstyle));
 
 	if (centerprint)
 		dstring_clearstr (centerprint);
@@ -650,7 +643,7 @@ CL_FullServerinfo_f (void)
 	}
 
 	// R_LoadSkys does the right thing with null pointers.
-	R_LoadSkys (Info_ValueForKey (cl.serverinfo, "sky"));
+	r_funcs->R_LoadSkys (Info_ValueForKey (cl.serverinfo, "sky"));
 }
 
 static void
@@ -808,7 +801,7 @@ CL_Changing_f (void)
 
 	S_StopAllSounds ();
 	cl.intermission = 0;
-	r_force_fullscreen = 0;
+	r_data->force_fullscreen = 0;
 	CL_SetState (ca_connected);			// not active anymore, but not
 										// disconnected
 	Sys_Printf ("\nChanging map...\n");
@@ -1149,7 +1142,7 @@ CL_SetState (cactive_t state)
 		if (old_state == ca_active) {
 			// leaving active state
 			IN_ClearStates ();
-			r_active = false;
+			r_data->active = false;
 			Key_SetKeyDest (key_console);
 
 			// Auto demo recorder stops here
@@ -1159,7 +1152,7 @@ CL_SetState (cactive_t state)
 			// entering active state
 			VID_SetCaption (cls.servername->str);
 			IN_ClearStates ();
-			r_active = true;
+			r_data->active = true;
 			Key_SetKeyDest (key_game);
 
 			// Auto demo recorder starts here
@@ -1187,7 +1180,6 @@ CL_Init (void)
 	W_LoadWadFile ("gfx.wad");
 	VID_Init (basepal, colormap);
 	IN_Init (cl_cbuf);
-	Draw_Init ();
 	Mod_Init ();
 	R_Init ();
 	S_Init (&viewentity, &host_frametime);
@@ -1298,7 +1290,6 @@ CL_Init_Cvars (void)
 	VID_Init_Cvars ();
 	IN_Init_Cvars ();
 	Mod_Init_Cvars ();
-	R_Init_Cvars ();
 	S_Init_Cvars ();
 
 	CL_Cam_Init_Cvars ();
@@ -1308,6 +1299,14 @@ CL_Init_Cvars (void)
 	Pmove_Init_Cvars ();
 	Team_Init_Cvars ();
 	V_Init_Cvars ();
+
+	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_NONE, NULL,
+						   "Toggle the display of a graph showing network "
+						   "performance");
+	r_netgraph_alpha = Cvar_Get ("r_netgraph_alpha", "0.5", CVAR_ARCHIVE, NULL,
+								 "Net graph translucency");
+	r_netgraph_box = Cvar_Get ("r_netgraph_box", "1", CVAR_ARCHIVE, NULL,
+							   "Draw box around net graph");
 
 	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
@@ -1649,10 +1648,10 @@ Host_Frame (float time)
 	if (host_speeds->int_val)
 		time1 = Sys_DoubleTime ();
 
-	r_inhibit_viewmodel = (!Cam_DrawViewModel ()
-						   || (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
-						   || cl.stats[STAT_HEALTH] <= 0);
-	r_frametime = host_frametime;
+	r_data->inhibit_viewmodel = (!Cam_DrawViewModel ()
+								 || (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
+								 || cl.stats[STAT_HEALTH] <= 0);
+	r_data->frametime = host_frametime;
 
 	CL_UpdateScreen (realtime);
 
@@ -1664,11 +1663,12 @@ Host_Frame (float time)
 		mleaf_t    *l;
 		byte       *asl = 0;
 
-		l = Mod_PointInLeaf (r_origin, cl.worldmodel);
+		l = Mod_PointInLeaf (r_data->origin, cl.worldmodel);
 		if (l)
 			asl = l->ambient_sound_level;
-		S_Update (r_origin, vpn, vright, vup, asl);
-		R_DecayLights (host_frametime);
+		S_Update (r_data->origin, r_data->vpn, r_data->vright, r_data->vup,
+				  asl);
+		r_funcs->R_DecayLights (host_frametime);
 	} else
 		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin, 0);
 
@@ -1684,7 +1684,7 @@ Host_Frame (float time)
 	}
 
 	if (cls.demo_capture) {
-		tex_t      *tex = SCR_CaptureBGR ();
+		tex_t      *tex = r_funcs->SCR_CaptureBGR ();
 		WritePNGqfs (va ("%s/qfmv%06d.png", qfs_gamedir->dir.shots,
 						 cls.demo_capture++),
 					 tex->data, tex->width, tex->height);

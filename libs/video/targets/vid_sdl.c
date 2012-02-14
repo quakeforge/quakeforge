@@ -48,7 +48,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/vid.h"
 
 #include "d_iface.h"
-#include "r_internal.h"
 
 #ifdef _WIN32	// FIXME: evil hack to get full DirectSound support with SDL
 #include <windows.h>
@@ -103,25 +102,25 @@ VID_Init (byte *palette, byte *colormap)
 		flags |= SDL_FULLSCREEN;
 
 	// Initialize display
-	if (!(screen = SDL_SetVideoMode (vid.width, vid.height, 8, flags)))
+	if (!(screen = SDL_SetVideoMode (viddef.width, viddef.height, 8, flags)))
 		Sys_Error ("VID: Couldn't set video mode: %s", SDL_GetError ());
 
 	vid_colormap = colormap;
 	VID_InitGamma (palette);
-	VID_SetPalette (vid.palette);
+	VID_SetPalette (viddef.palette);
 
 	// now know everything we need to know about the buffer
-	VGA_width = vid.width;
-	VGA_height = vid.height;
-	vid.numpages = 1;
-	vid.colormap8 = vid_colormap;
-	vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
-	vid.do_screen_buffer = do_screen_buffer;
-	VGA_pagebase = vid.buffer = screen->pixels;
-	VGA_rowbytes = vid.rowbytes = screen->pitch;
-	vid.conbuffer = vid.buffer;
-	vid.conrowbytes = vid.rowbytes;
-	vid.direct = 0;
+	VGA_width = viddef.width;
+	VGA_height = viddef.height;
+	viddef.numpages = 1;
+	viddef.colormap8 = vid_colormap;
+	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
+	viddef.do_screen_buffer = do_screen_buffer;
+	VGA_pagebase = viddef.buffer = screen->pixels;
+	VGA_rowbytes = viddef.rowbytes = screen->pitch;
+	viddef.conbuffer = viddef.buffer;
+	viddef.conrowbytes = viddef.rowbytes;
+	viddef.direct = 0;
 
 	VID_InitBuffers ();		// allocate z buffer and surface cache
 
@@ -136,7 +135,7 @@ VID_Init (byte *palette, byte *colormap)
 	mainwindow=GetActiveWindow();
 #endif
 
-	vid.initialized = true;
+	viddef.initialized = true;
 }
 
 void

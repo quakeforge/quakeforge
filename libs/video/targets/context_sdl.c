@@ -22,7 +22,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/vid.h"
 
 #include "context_sdl.h"
-#include "r_internal.h"
 
 cvar_t     *vid_bitdepth;
 
@@ -68,7 +67,7 @@ VID_Shutdown (void)
 static void
 VID_UpdateFullscreen (cvar_t *vid_fullscreen)
 {
-	if (!vid.initialized)
+	if (!viddef.initialized)
 		return;
 	if ((vid_fullscreen->int_val && !(screen->flags & SDL_FULLSCREEN))
 		|| (!vid_fullscreen->int_val && screen->flags & SDL_FULLSCREEN))

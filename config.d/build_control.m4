@@ -5,7 +5,7 @@ dnl ==================================================================
 QF_WITH_TARGETS(
 	clients,
 	[  --with-clients=<list>   compile clients in <list>:],
-	[3dfx,fbdev,glx,glslx,mgl,sdl,sdl32,sgl,sglsl,svga,wgl,x11],dummy
+	[fbdev,sdl,svga,x11],dummy
 )
 QF_WITH_TARGETS(
 	servers,

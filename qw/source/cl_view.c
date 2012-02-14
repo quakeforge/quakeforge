@@ -426,10 +426,10 @@ V_CalcBlend (void)
 		b *= a2;
 	}
 
-	vid.cshift_color[0] = min (r, 255.0) / 255.0;
-	vid.cshift_color[1] = min (g, 255.0) / 255.0;
-	vid.cshift_color[2] = min (b, 255.0) / 255.0;
-	vid.cshift_color[3] = bound (0.0, a, 1.0);
+	r_data->vid->cshift_color[0] = min (r, 255.0) / 255.0;
+	r_data->vid->cshift_color[1] = min (g, 255.0) / 255.0;
+	r_data->vid->cshift_color[2] = min (b, 255.0) / 255.0;
+	r_data->vid->cshift_color[3] = bound (0.0, a, 1.0);
 }
 
 void
@@ -441,17 +441,17 @@ V_PrepBlend (void)
 		|| (cl.sv_cshifts & INFO_CSHIFT_POWERUP))
 		V_CalcPowerupCshift ();
 
-	vid.cshift_changed = false;
+	r_data->vid->cshift_changed = false;
 
 	for (i = 0; i < NUM_CSHIFTS; i++) {
 		if (cl.cshifts[i].percent != cl.prev_cshifts[i].percent) {
-			vid.cshift_changed = true;
+			r_data->vid->cshift_changed = true;
 			cl.prev_cshifts[i].percent = cl.cshifts[i].percent;
 		}
 		for (j = 0; j < 3; j++) {
 			if (cl.cshifts[i].destcolor[j] != cl.prev_cshifts[i].destcolor[j])
 			{
-				vid.cshift_changed = true;
+				r_data->vid->cshift_changed = true;
 				cl.prev_cshifts[i].destcolor[j] = cl.cshifts[i].destcolor[j];
 			}
 		}
@@ -467,7 +467,7 @@ V_PrepBlend (void)
 	if (cl.cshifts[CSHIFT_BONUS].percent < 0)
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
-	if (!vid.cshift_changed && !vid.recalc_refdef)
+	if (!r_data->vid->cshift_changed && !r_data->vid->recalc_refdef)
 		return;
 
 	V_CalcBlend ();
@@ -490,12 +490,12 @@ CalcGunAngle (void)
 	float       yaw, pitch, move;
 	static float oldpitch = 0, oldyaw = 0;
 
-	yaw = r_refdef.viewangles[YAW];
-	pitch = -r_refdef.viewangles[PITCH];
+	yaw = r_data->refdef->viewangles[YAW];
+	pitch = -r_data->refdef->viewangles[PITCH];
 
-	yaw = angledelta (yaw - r_refdef.viewangles[YAW]) * 0.4;
+	yaw = angledelta (yaw - r_data->refdef->viewangles[YAW]) * 0.4;
 	yaw = bound (-10, yaw, 10);
-	pitch = angledelta (-pitch - r_refdef.viewangles[PITCH]) * 0.4;
+	pitch = angledelta (-pitch - r_data->refdef->viewangles[PITCH]) * 0.4;
 	pitch = bound (-10, pitch, 10);
 
 	move = host_frametime * 20;
@@ -518,8 +518,8 @@ CalcGunAngle (void)
 	oldyaw = yaw;
 	oldpitch = pitch;
 
-	cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw;
-	cl.viewent.angles[PITCH] = -(r_refdef.viewangles[PITCH] + pitch);
+	cl.viewent.angles[YAW] = r_data->refdef->viewangles[YAW] + yaw;
+	cl.viewent.angles[PITCH] = -(r_data->refdef->viewangles[PITCH] + pitch);
 }
 
 /*
@@ -530,11 +530,11 @@ CalcGunAngle (void)
 static void
 V_AddIdle (void)
 {
-	r_refdef.viewangles[ROLL] += v_idlescale->value *
+	r_data->refdef->viewangles[ROLL] += v_idlescale->value *
 		sin (cl.time * v_iroll_cycle->value) * v_iroll_level->value;
-	r_refdef.viewangles[PITCH] += v_idlescale->value *
+	r_data->refdef->viewangles[PITCH] += v_idlescale->value *
 		sin (cl.time * v_ipitch_cycle->value) * v_ipitch_level->value;
-	r_refdef.viewangles[YAW] += v_idlescale->value *
+	r_data->refdef->viewangles[YAW] += v_idlescale->value *
 		sin (cl.time * v_iyaw_cycle->value) * v_iyaw_level->value;
 
 	cl.viewent.angles[ROLL] -= v_idlescale->value *
@@ -556,12 +556,12 @@ V_CalcViewRoll (void)
 	float       side;
 
 	side = V_CalcRoll (cl.simangles, cl.simvel);
-	r_refdef.viewangles[ROLL] += side;
+	r_data->refdef->viewangles[ROLL] += side;
 
 	if (v_dmg_time > 0) {
-		r_refdef.viewangles[ROLL] +=
+		r_data->refdef->viewangles[ROLL] +=
 			v_dmg_time / v_kicktime->value * v_dmg_roll;
-		r_refdef.viewangles[PITCH] +=
+		r_data->refdef->viewangles[PITCH] +=
 			v_dmg_time / v_kicktime->value * v_dmg_pitch;
 		v_dmg_time -= host_frametime;
 	}
@@ -577,8 +577,8 @@ V_CalcIntermissionRefdef (void)
 	// view is the weapon model (visible only from inside body)
 	view = &cl.viewent;
 
-	VectorCopy (cl.simorg, r_refdef.vieworg);
-	VectorCopy (cl.simangles, r_refdef.viewangles);
+	VectorCopy (cl.simorg, r_data->refdef->vieworg);
+	VectorCopy (cl.simangles, r_data->refdef->viewangles);
 	view->model = NULL;
 
 	// always idle in intermission
@@ -609,30 +609,30 @@ V_CalcRefdef (void)
 	bob = V_CalcBob ();
 
 	// refresh position from simulated origin
-	VectorCopy (cl.simorg, r_refdef.vieworg);
+	VectorCopy (cl.simorg, r_data->refdef->vieworg);
 
-	r_refdef.vieworg[2] += bob;
+	r_data->refdef->vieworg[2] += bob;
 
 	// never let it sit exactly on a node line, because a water plane can
 	// disappear when viewed with the eye exactly on it.
 	// server protocol specifies to only 1/8 pixel, so add 1/16 in each axis
-	r_refdef.vieworg[0] += (1.0 / 16.0);
-	r_refdef.vieworg[1] += (1.0 / 16.0);
-	r_refdef.vieworg[2] += (1.0 / 16.0);
+	r_data->refdef->vieworg[0] += (1.0 / 16.0);
+	r_data->refdef->vieworg[1] += (1.0 / 16.0);
+	r_data->refdef->vieworg[2] += (1.0 / 16.0);
 
-	VectorCopy (cl.simangles, r_refdef.viewangles);
+	VectorCopy (cl.simangles, r_data->refdef->viewangles);
 	V_CalcViewRoll ();
 	V_AddIdle ();
 
 	if (view_message->pls.flags & PF_GIB)
-		r_refdef.vieworg[2] += 8;			// gib view height
+		r_data->refdef->vieworg[2] += 8;			// gib view height
 	else if (view_message->pls.flags & PF_DEAD)
-		r_refdef.vieworg[2] -= 16;			// corpse view height
+		r_data->refdef->vieworg[2] -= 16;			// corpse view height
 	else
-		r_refdef.vieworg[2] += zofs;		// view height
+		r_data->refdef->vieworg[2] += zofs;		// view height
 
 	if (view_message->pls.flags & PF_DEAD)	// PF_GIB will also set PF_DEAD
-		r_refdef.viewangles[ROLL] = 80;		// dead view angle
+		r_data->refdef->viewangles[ROLL] = 80;		// dead view angle
 
 	// offsets
 	AngleVectors (cl.simangles, forward, right, up);
@@ -654,15 +654,15 @@ V_CalcRefdef (void)
 
 	// fudge position around to keep amount of weapon visible
 	// roughly equal with different FOV
-	if (hud_sbar->int_val == 0 && scr_viewsize->int_val >= 100)
+	if (hud_sbar->int_val == 0 && r_data->scr_viewsize->int_val >= 100)
 		;
-	else if (scr_viewsize->int_val == 110)
+	else if (r_data->scr_viewsize->int_val == 110)
 		view->origin[2] += 1;
-	else if (scr_viewsize->int_val == 100)
+	else if (r_data->scr_viewsize->int_val == 100)
 		view->origin[2] += 2;
-	else if (scr_viewsize->int_val == 90)
+	else if (r_data->scr_viewsize->int_val == 90)
 		view->origin[2] += 1;
-	else if (scr_viewsize->int_val == 80)
+	else if (r_data->scr_viewsize->int_val == 80)
 		view->origin[2] += 0.5;
 
 	if (view_message->pls.flags & (PF_GIB | PF_DEAD))
@@ -673,7 +673,7 @@ V_CalcRefdef (void)
 	view->skin = 0;
 
 	// set up the refresh position
-	r_refdef.viewangles[PITCH] += cl.punchangle;
+	r_data->refdef->viewangles[PITCH] += cl.punchangle;
 
 	// smooth out stair step ups
 	if ((cl.onground != -1) && (cl.simorg[2] - oldz > 0)) {
@@ -686,7 +686,7 @@ V_CalcRefdef (void)
 			oldz = cl.simorg[2];
 		if (cl.simorg[2] - oldz > 12)
 			oldz = cl.simorg[2] - 12;
-		r_refdef.vieworg[2] += oldz - cl.simorg[2];
+		r_data->refdef->vieworg[2] += oldz - cl.simorg[2];
 		view->origin[2] += oldz - cl.simorg[2];
 	} else
 		oldz = cl.simorg[2];
@@ -715,7 +715,7 @@ V_RenderView (void)
 {
 	cl.simangles[ROLL] = 0;				// FIXME @@@
 
-	if (!r_active)
+	if (!r_data->active)
 		return;
 
 	view_frame = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
@@ -728,7 +728,7 @@ V_RenderView (void)
 		V_CalcRefdef ();
 	}
 
-	R_RenderView ();
+	r_funcs->R_RenderView ();
 }
 
 void

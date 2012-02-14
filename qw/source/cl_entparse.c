@@ -58,8 +58,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "d_iface.h"
 #include "host.h"
 #include "qw/pmove.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
 #include "clview.h"
 
 static struct predicted_player {
@@ -308,7 +306,7 @@ CL_ParsePacketEntities (qboolean delta)
 			if (word & U_REMOVE) {				// Clear the entity
 				entity_t	*ent = &cl_packet_ents[newnum];
 				if (ent->efrag)
-					R_RemoveEfrags (ent);
+					r_funcs->R_RemoveEfrags (ent);
 				memset (ent, 0, sizeof (entity_t));
 				oldindex++;
 				continue;

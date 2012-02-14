@@ -47,8 +47,6 @@ void SCR_EndLoadingPlaque (void);
 
 struct view_s;
 
-struct tex_s *SCR_ScreenShot (int width, int height);
-void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
 int MipColor (int r, int g, int b);
 int SCR_ModalMessage (const char *text);
 

@@ -43,6 +43,8 @@ void SCR_DrawTime (void);
 void SCR_DrawTurtle (void);
 void SCR_DrawPause (void);
 struct tex_s *SCR_CaptureBGR (void);
+struct tex_s *SCR_ScreenShot (int width, int height);
+void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
 
 
 extern int         scr_copytop;

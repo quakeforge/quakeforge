@@ -102,9 +102,6 @@ cvar_t     *r_maxedges;
 cvar_t     *r_maxsurfs;
 cvar_t     *r_mirroralpha;
 cvar_t	   *r_nearclip;
-cvar_t     *r_netgraph;
-cvar_t     *r_netgraph_alpha;
-cvar_t     *r_netgraph_box;
 cvar_t     *r_norefresh;
 cvar_t     *r_novis;
 cvar_t     *r_numedges;
@@ -369,13 +366,6 @@ R_Init_Cvars (void)
 	r_nearclip = Cvar_Get ("r_nearclip", "4", CVAR_ARCHIVE, r_nearclip_f,
 						   "Distance of the near clipping plane from the "
 						   "player.");
-	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_NONE, NULL,
-						   "Toggle the display of a graph showing network "
-						   "performance");
-	r_netgraph_alpha = Cvar_Get ("r_netgraph_alpha", "0.5", CVAR_ARCHIVE, NULL,
-								 "Net graph translucency");
-	r_netgraph_box = Cvar_Get ("r_netgraph_box", "1", CVAR_ARCHIVE, NULL,
-							   "Draw box around net graph");
 	r_norefresh = Cvar_Get ("r_norefresh_", "0", CVAR_NONE, NULL,
 							"Set to 1 to disable display refresh");
 	r_novis = Cvar_Get ("r_novis", "0", CVAR_NONE, NULL, "Set to 1 to enable "

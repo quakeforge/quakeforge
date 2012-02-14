@@ -56,7 +56,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "compat.h"
 #include "d_iface.h"
-#include "r_internal.h"
 
 VISIBLE int					glsl_palette;
 VISIBLE int					glsl_colormap;
