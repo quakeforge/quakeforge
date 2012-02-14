@@ -41,7 +41,7 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "QF/model.h"
+#include "mod_internal.h"
 
 
 void

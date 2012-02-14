@@ -47,11 +47,12 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/model.h"
 #include "QF/pcx.h"
 #include "QF/quakefs.h"
-#include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
 #include "QF/plugin/vid_render.h"
+
+#include "mod_internal.h"
 
 typedef struct skinbank_s {
 	char       *name;

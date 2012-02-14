@@ -193,8 +193,6 @@ skin_f (cvar_t *var)
 void
 CL_Skin_Init (void)
 {
-	Skin_Init ();
-	//Skin_Init_Cvars ();
 	Cmd_AddCommand ("skins", CL_Skins_f, "Download all skins that are "
 					"currently in use");
 	Cmd_AddCommand ("allskins", CL_AllSkins_f, "Force all player skins to "

@@ -523,7 +523,6 @@ CL_Init (cbuf_t *cbuf)
 	CL_TEnts_Init ();
 	CL_ClearState ();
 
-	Skin_Init ();
 	V_Init ();
 
 	Cmd_AddCommand ("entities", CL_PrintEntities_f, "No Description");

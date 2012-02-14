@@ -42,7 +42,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include <stdlib.h>
 
-#include "QF/model.h"
 #include "QF/va.h"
 
 #include "QF/GLSL/defines.h"
@@ -50,6 +49,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/qf_alias.h"
 #include "QF/GLSL/qf_textures.h"
 
+#include "mod_internal.h"
 #include "r_shared.h"
 
 int alias_cache = 0;

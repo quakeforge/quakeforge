@@ -27,22 +27,34 @@ libQFrenderer_la_LIBADD=
 libQFrenderer_la_DEPENDENCIES=
 libQFrenderer_la_SOURCES=		r_init.c r_progs.c
 
+gl_libs= \
+	gl/libgl.la \
+	$(top_builddir)/libs/models/libmodels_gl.la
 vid_render_gl_la_LDFLAGS=		$(plugin_ldflags)
-vid_render_gl_la_LIBADD=		gl/libgl.la
-vid_render_gl_la_DEPENDENCIES=	gl/libgl.la
+vid_render_gl_la_LIBADD=		$(gl_libs)
+vid_render_gl_la_DEPENDENCIES=	$(gl_libs)
 vid_render_gl_la_SOURCES=		$(common_sources) #vid_render_gl.c
 
+glsl_libs= \
+	glsl/libglsl.la \
+	$(top_builddir)/libs/models/libmodels_glsl.la
 vid_render_glsl_la_LDFLAGS=		$(plugin_ldflags)
-vid_render_glsl_la_LIBADD=		glsl/libglsl.la
-vid_render_glsl_la_DEPENDENCIES=glsl/libglsl.la
+vid_render_glsl_la_LIBADD=		$(glsl_libs)
+vid_render_glsl_la_DEPENDENCIES=$(glsl_libs)
 vid_render_glsl_la_SOURCES=		$(common_sources) #vid_render_glsl.c
 
+sw_libs= \
+	sw/libsw.la \
+	$(top_builddir)/libs/models/libmodels_sw.la
 vid_render_sw_la_LDFLAGS=		$(plugin_ldflags)
-vid_render_sw_la_LIBADD=		sw/libsw.la
-vid_render_sw_la_DEPENDENCIES=	sw/libsw.la
+vid_render_sw_la_LIBADD=		$(sw_libs)
+vid_render_sw_la_DEPENDENCIES=	$(sw_libs)
 vid_render_sw_la_SOURCES=		$(common_sources) #vid_render_sw.c
 
+sw32_libs= \
+	sw32/libsw32.la \
+	$(top_builddir)/libs/models/libmodels_sw.la
 vid_render_sw32_la_LDFLAGS=		$(plugin_ldflags)
-vid_render_sw32_la_LIBADD=		sw32/libsw32.la
-vid_render_sw32_la_DEPENDENCIES=sw32/libsw32.la 
+vid_render_sw32_la_LIBADD=		$(sw32_libs)
+vid_render_sw32_la_DEPENDENCIES=$(sw32_libs)
 vid_render_sw32_la_SOURCES=		$(common_sources) #vid_render_sw32.c

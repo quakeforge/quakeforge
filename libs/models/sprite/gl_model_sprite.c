@@ -39,12 +39,12 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include "QF/image.h"
-#include "QF/model.h"
 #include "QF/quakefs.h"
 #include "QF/va.h"
 #include "QF/GL/qf_textures.h"
 
 #include "compat.h"
+#include "mod_internal.h"
 
 void
 Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)

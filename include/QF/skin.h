@@ -58,15 +58,4 @@ typedef struct skin_s {
 	int         auxtex;
 } skin_t;
 
-skin_t *Skin_SetColormap (skin_t *skin, int cmap);
-skin_t *Skin_SetSkin (skin_t *skin, int cmap, const char *skinname);
-void Skin_SetupSkin (skin_t *skin, int cmap);
-void Skin_SetTranslation (int cmap, int top, int bottom);
-void Skin_ProcessTranslation (int cmap, const byte *translation);
-void Skin_InitTranslations (void);
-int Skin_Init_Textures (int base);	// only GL
-void Skin_SetPlayerSkin (int width, int height, const byte *data);	// only GL
-
-void Skin_Init (void);
-
 #endif

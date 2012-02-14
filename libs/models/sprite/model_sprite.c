@@ -38,11 +38,11 @@ static __attribute__ ((used)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
 
 #include "compat.h"
+#include "mod_internal.h"
 
 static void *
 Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)

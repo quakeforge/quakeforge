@@ -53,6 +53,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_textures.h"
 
+#include "mod_internal.h"
 #include "r_internal.h"
 
 typedef struct {

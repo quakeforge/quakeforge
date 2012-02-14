@@ -42,7 +42,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include "QF/crc.h"
-#include "QF/model.h"
 #include "QF/msg.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
@@ -50,6 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 #include "d_iface.h"
+#include "mod_internal.h"
 #include "r_local.h"
 
 extern int alias_cache; //FIXME extern

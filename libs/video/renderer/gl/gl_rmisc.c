@@ -61,6 +61,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 
+#include "mod_internal.h"
 #include "r_internal.h"
 #include "varrays.h"
 

@@ -40,7 +40,7 @@ if test "x$HAVE_FBDEV" = xyes; then
 		CL_TARGETS="$CL_TARGETS FBDEV"
 		VID_TARGETS="$VID_TARGETS libQFfbdev.la"
 		QF_NEED(vid_render, [sw])
-		QF_NEED(QFmodels, [sw])
+		QF_NEED(models, [sw])
 		QF_NEED(alias, [sw])
 		QF_NEED(brush, [sw])
 		QF_NEED(sprite, [sw])
@@ -55,38 +55,10 @@ if test "x$HAVE_FBDEV" = xyes; then
 fi
 if test "x$HAVE_X" = xyes; then
 	if test "x$ENABLE_clients_glx" = xyes; then
-		QW_TARGETS="$QW_TARGETS qw-client-glx\$(EXEEXT)"
-		NQ_TARGETS="$NQ_TARGETS nq-glx\$(EXEEXT)"
-		QW_DESKTOP_DATA="$QW_DESKTOP_DATA quakeforge-qw-glx.desktop"
-		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-glx.desktop"
-		CL_TARGETS="$CL_TARGETS GLX"
-		VID_TARGETS="$VID_TARGETS libQFglx.la"
-		QF_NEED(vid_render, [gl])
-		QF_NEED(QFmodels, [gl])
-		QF_NEED(alias, [gl])
-		QF_NEED(brush, [gl])
-		QF_NEED(sprite, [gl])
 		QF_NEED(vid, [common gl x11])
-		QF_NEED(qw, [client common])
-		QF_NEED(nq, [client common])
-		QF_NEED(console, [client])
 	fi
 	if test "x$ENABLE_clients_glslx" = xyes; then
-		QW_TARGETS="$QW_TARGETS qw-client-glslx\$(EXEEXT)"
-		NQ_TARGETS="$NQ_TARGETS nq-glslx\$(EXEEXT)"
-		QW_DESKTOP_DATA="$QW_DESKTOP_DATA quakeforge-qw-glx.desktop"
-		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-glslx.desktop"
-		CL_TARGETS="$CL_TARGETS GLSLX"
-		VID_TARGETS="$VID_TARGETS libQFglslx.la"
-		QF_NEED(vid_render, [glsl])
-		QF_NEED(QFmodels, [glsl])
-		QF_NEED(alias, [glsl])
-		QF_NEED(brush, [glsl])
-		QF_NEED(sprite, [glsl])
 		QF_NEED(vid, [common glsl x11])
-		QF_NEED(qw, [client common])
-		QF_NEED(nq, [client common])
-		QF_NEED(console, [client])
 	fi
 	if test "x$ENABLE_clients_x11" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
@@ -95,35 +67,15 @@ if test "x$HAVE_X" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-x11.desktop"
 		CL_TARGETS="$CL_TARGETS X11"
 		VID_TARGETS="$VID_TARGETS libQFx11.la"
-		QF_NEED(vid_render, [sw])
-		QF_NEED(QFmodels, [sw])
-		QF_NEED(alias, [sw])
-		QF_NEED(brush, [sw])
-		QF_NEED(sprite, [sw])
+		QF_NEED(vid_render, [sw sw32 gl glsl])
+		QF_NEED(models, [sw gl glsl])
+		QF_NEED(alias, [sw gl glsl])
+		QF_NEED(brush, [sw gl glsl])
+		QF_NEED(sprite, [sw gl glsl])
 		if test "x$ASM_ARCH" = "xyes"; then
 			QF_NEED(swrend, [asm])
 		fi
 		QF_NEED(vid, [common sw x11])
-		QF_NEED(qw, [client common])
-		QF_NEED(nq, [client common])
-		QF_NEED(console, [client])
-	fi
-fi
-if test "x$HAVE_MGL" = xyes; then
-	if test "x$ENABLE_clients_mgl" = xyes; then
-		QW_TARGETS="$QW_TARGETS qw-client-mgl\$(EXEEXT)"
-		NQ_TARGETS="$NQ_TARGETS nq-mgl\$(EXEEXT)"
-		CL_TARGETS="$CL_TARGETS MGL"
-		VID_TARGETS="$VID_TARGETS libQFwgl.la"
-		QF_NEED(vid_render, [sw])
-		QF_NEED(QFmodels, [sw])
-		QF_NEED(alias, [sw])
-		QF_NEED(brush, [sw])
-		QF_NEED(sprite, [sw])
-		if test "x$ASM_ARCH" = "xyes"; then
-			QF_NEED(swrend, [asm])
-		fi
-		QF_NEED(vid, [common sw])
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
@@ -137,66 +89,15 @@ if test "x$HAVE_SDL" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-sdl.desktop"
 		CL_TARGETS="$CL_TARGETS SDL"
 		VID_TARGETS="$VID_TARGETS libQFsdl.la"
-		QF_NEED(vid_render, [sw])
-		QF_NEED(QFmodels, [sw])
-		QF_NEED(alias, [sw])
-		QF_NEED(brush, [sw])
-		QF_NEED(sprite, [sw])
+		QF_NEED(vid_render, [sw sw32 gl glsl])
+		QF_NEED(models, [sw gl glsl])
+		QF_NEED(alias, [sw gl glsl])
+		QF_NEED(brush, [sw gl glsl])
+		QF_NEED(sprite, [sw gl glsl])
 		if test "x$ASM_ARCH" = "xyes"; then
 			QF_NEED(swrend, [asm])
 		fi
 		QF_NEED(vid, [common sdl sw])
-		QF_NEED(qw, [client common sdl])
-		QF_NEED(nq, [client common sdl])
-		QF_NEED(console, [client])
-	fi
-	if test "x$ENABLE_clients_sdl32" = xyes; then
-		QW_TARGETS="$QW_TARGETS qw-client-sdl32\$(EXEEXT)"
-		NQ_TARGETS="$NQ_TARGETS nq-sdl32\$(EXEEXT)"
-		QW_DESKTOP_DATA="$QW_DESKTOP_DATA quakeforge-qw-sdl32.desktop"
-		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-sdl32.desktop"
-		CL_TARGETS="$CL_TARGETS SDL32"
-		VID_TARGETS="$VID_TARGETS libQFsdl32.la"
-		QF_NEED(vid_render, [sw32])
-		QF_NEED(QFmodels, [sw])
-		QF_NEED(alias, [sw])
-		QF_NEED(brush, [sw])
-		QF_NEED(sprite, [sw])
-		QF_NEED(vid, [common sdl sw32])
-		QF_NEED(qw, [client common sdl])
-		QF_NEED(nq, [client common sdl])
-		QF_NEED(console, [client])
-	fi
-	if test "x$ENABLE_clients_sgl" = xyes; then
-		QW_TARGETS="$QW_TARGETS qw-client-sgl\$(EXEEXT)"
-		NQ_TARGETS="$NQ_TARGETS nq-sgl\$(EXEEXT)"
-		QW_DESKTOP_DATA="$QW_DESKTOP_DATA quakeforge-qw-sgl.desktop"
-		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-sgl.desktop"
-		CL_TARGETS="$CL_TARGETS SDL-GL"
-		VID_TARGETS="$VID_TARGETS libQFsgl.la"
-		QF_NEED(vid_render, [gl])
-		QF_NEED(QFmodels, [gl])
-		QF_NEED(alias, [gl])
-		QF_NEED(brush, [gl])
-		QF_NEED(sprite, [gl])
-		QF_NEED(vid, [common sdl gl])
-		QF_NEED(qw, [client common sdl])
-		QF_NEED(nq, [client common sdl])
-		QF_NEED(console, [client])
-	fi
-	if test "x$ENABLE_clients_sglsl" = xyes; then
-		QW_TARGETS="$QW_TARGETS qw-client-sglsl\$(EXEEXT)"
-		NQ_TARGETS="$NQ_TARGETS nq-sglsl\$(EXEEXT)"
-		QW_DESKTOP_DATA="$QW_DESKTOP_DATA quakeforge-qw-sglsl.desktop"
-		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-sglsl.desktop"
-		CL_TARGETS="$CL_TARGETS SDL-GLSL"
-		VID_TARGETS="$VID_TARGETS libQFsglsl.la"
-		QF_NEED(vid_render, [glsl])
-		QF_NEED(QFmodels, [glsl])
-		QF_NEED(alias, [glsl])
-		QF_NEED(brush, [glsl])
-		QF_NEED(sprite, [glsl])
-		QF_NEED(vid, [common sdl glsl])
 		QF_NEED(qw, [client common sdl])
 		QF_NEED(nq, [client common sdl])
 		QF_NEED(console, [client])
@@ -209,7 +110,7 @@ if test "x$HAVE_SVGA" = xyes; then
 		CL_TARGETS="$CL_TARGETS SVGAlib"
 		VID_TARGETS="$VID_TARGETS libQFsvga.la"
 		QF_NEED(vid_render, [sw])
-		QF_NEED(QFmodels, [sw])
+		QF_NEED(models, [sw])
 		QF_NEED(alias, [sw])
 		QF_NEED(brush, [sw])
 		QF_NEED(sprite, [sw])
@@ -221,39 +122,24 @@ if test "x$HAVE_SVGA" = xyes; then
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
 	fi
-	if test "x$ENABLE_clients_3dfx" = xyes; then
-		QW_TARGETS="$QW_TARGETS qw-client-3dfx\$(EXEEXT)"
-		NQ_TARGETS="$NQ_TARGETS nq-3dfx\$(EXEEXT)"
-		CL_TARGETS="$CL_TARGETS 3dfx"
-		VID_TARGETS="$VID_TARGETS libQFtdfx.la"
-		QF_NEED(vid_render, [gl])
-		QF_NEED(QFmodels, [gl])
-		QF_NEED(alias, [gl])
-		QF_NEED(brush, [gl])
-		QF_NEED(sprite, [gl])
-		QF_NEED(vid, [asm common gl svga])
-		QF_NEED(qw, [client common])
-		QF_NEED(nq, [client common])
-		QF_NEED(console, [client])
-	fi
 fi
-if test "x$mingw" = xyes; then
-	if test "x$ENABLE_clients_wgl" = xyes; then
-		QW_TARGETS="$QW_TARGETS qw-client-wgl\$(EXEEXT)"
-		NQ_TARGETS="$NQ_TARGETS nq-wgl\$(EXEEXT)"
-		CL_TARGETS="$CL_TARGETS WGL"
-		VID_TARGETS="$VID_TARGETS libQFwgl.la"
-		QF_NEED(vid_render, [gl])
-		QF_NEED(QFmodels, [gl])
-		QF_NEED(alias, [gl])
-		QF_NEED(brush, [gl])
-		QF_NEED(sprite, [gl])
-		QF_NEED(vid, [common gl])
-		QF_NEED(qw, [client common])
-		QF_NEED(nq, [client common])
-		QF_NEED(console, [client])
-	fi
-fi
+#if test "x$mingw" = xyes; then
+#	if test "x$ENABLE_clients_wgl" = xyes; then
+#		QW_TARGETS="$QW_TARGETS qw-client-wgl\$(EXEEXT)"
+#		NQ_TARGETS="$NQ_TARGETS nq-wgl\$(EXEEXT)"
+#		CL_TARGETS="$CL_TARGETS WGL"
+#		VID_TARGETS="$VID_TARGETS libQFwgl.la"
+#		QF_NEED(vid_render, [gl])
+#		QF_NEED(models, [gl])
+#		QF_NEED(alias, [gl])
+#		QF_NEED(brush, [gl])
+#		QF_NEED(sprite, [gl])
+#		QF_NEED(vid, [common gl])
+#		QF_NEED(qw, [client common])
+#		QF_NEED(nq, [client common])
+#		QF_NEED(console, [client])
+#	fi
+#fi
 
 unset SV_TARGETS
 if test "x$ENABLE_servers_nq" = xyes; then
@@ -339,7 +225,7 @@ QF_PROCESS_NEED_DIRS(top, [libs hw nq qtv qw tools ruamoko])
 
 QF_PROCESS_NEED_LIBS(swrend, [asm])
 QF_PROCESS_NEED_DIRS(vid_render, [gl glsl sw sw32])
-QF_PROCESS_NEED_LIBS(QFmodels, [gl glsl sw])
+QF_PROCESS_NEED_LIBS(models, [gl glsl sw])
 QF_PROCESS_NEED_LIBS(alias, [gl glsl sw])
 QF_PROCESS_NEED_LIBS(brush, [gl glsl sw])
 QF_PROCESS_NEED_LIBS(sprite, [gl glsl sw])

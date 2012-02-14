@@ -33,7 +33,7 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
-#include "QF/skin.h"
+#include "mod_internal.h"
 
 void
 Skin_ProcessTranslation (int cmap, const byte *translation)

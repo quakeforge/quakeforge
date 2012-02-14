@@ -47,7 +47,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
+#include "QF/plugin/vid_render.h"
+
 #include "compat.h"
+
+vid_model_funcs_t *mod_funcs;
 
 model_t    *loadmodel;
 char       *loadname;					// for hunk tags
@@ -208,13 +212,13 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 			} else if (strequal (mod->name, "progs/player.mdl")) {
 				mod->min_light = 0.04;
 			}
-			Mod_LoadAliasModel (mod, buf, allocator);
+			mod_funcs->Mod_LoadAliasModel (mod, buf, allocator);
 			break;
 		case IDHEADER_MD2:			// Type 8: Quake 2 .md2
 //			Mod_LoadMD2 (mod, buf, allocator);
 			break;
 		case IDHEADER_SPR:			// Type 1: Quake 1 .spr
-			Mod_LoadSpriteModel (mod, buf);
+			mod_funcs->Mod_LoadSpriteModel (mod, buf);
 			break;
 		case IDHEADER_SP2:			// Type 2: Quake 2 .sp2
 //			Mod_LoadSP2 (mod, buf);
@@ -224,7 +228,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 			Mod_LoadBrushModel (mod, buf);
 
 			if (gl_textures_external->int_val)
-				Mod_LoadExternalTextures (mod);
+				mod_funcs->Mod_LoadExternalTextures (mod);
 			break;
 	}
 	free (buf);

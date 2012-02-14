@@ -33,9 +33,10 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
-#include "QF/model.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+
+#include "mod_internal.h"
 
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses

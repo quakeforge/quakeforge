@@ -44,7 +44,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/image.h"
-#include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -53,6 +52,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/qf_textures.h"
 
 #include "compat.h"
+#include "mod_internal.h"
 
 
 void

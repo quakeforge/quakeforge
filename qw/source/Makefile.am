@@ -118,7 +118,7 @@ libqw_client_a_SOURCES= \
 # Software-rendering clients
 
 soft_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-		$(top_builddir)/libs/models/libQFmodels_sw.la
+		$(top_builddir)/libs/models/libQFmodels.la
 
 # ... Linux FBDev
 qw_client_fbdev_libs= \
@@ -163,7 +163,7 @@ qw_client_sdl32_libs= \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-			$(top_builddir)/libs/models/libQFmodels_sw.la \
+			$(top_builddir)/libs/models/libQFmodels.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIBS)
 qw_client_sdl32_SOURCES=sdl_link.c
@@ -200,10 +200,10 @@ qw_client_x11_DEPENDENCIES= $(qw_client_x11_libs)
 # OpenGL-using clients
 
 opengl_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-		$(top_builddir)/libs/models/libQFmodels_gl.la
+		$(top_builddir)/libs/models/libQFmodels.la
 
 glsl_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-		$(top_builddir)/libs/models/libQFmodels_glsl.la
+		$(top_builddir)/libs/models/libQFmodels.la
 
 # ... OpenGL in X Window
 qw_client_glx_libs= \

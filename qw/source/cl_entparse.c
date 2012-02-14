@@ -109,7 +109,7 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 	if (bits & U_COLORMAP) {
 		byte        cmap = MSG_ReadByte (net_message);
 		if (cmap != to->colormap)
-			to->skin = Skin_SetColormap (to->skin, cmap);
+			to->skin = mod_funcs->Skin_SetColormap (to->skin, cmap);
 		to->colormap = cmap;
 	}
 

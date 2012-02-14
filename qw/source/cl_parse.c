@@ -364,7 +364,7 @@ Model_NextDownload (void)
 		if (strequal (cl.model_name[i], "progs/player.mdl")
 			&& cl.model_precache[i]->type == mod_alias) {
 			info_key = pmodel_name;
-			//XXX Skin_Player_Model (cl.model_precache[i]);
+			//XXX mod_funcs->Skin_Player_Model (cl.model_precache[i]);
 		}
 		if (strequal (cl.model_name[i], "progs/eyes.mdl")
 			&& cl.model_precache[i]->type == mod_alias)
@@ -1114,10 +1114,11 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	else
 		player->spectator = false;
 
-	Skin_SetTranslation (slot + 1, player->topcolor, player->bottomcolor);
-	player->skin = Skin_SetSkin (player->skin, slot + 1,
-								 player->skinname->value);
-	player->skin = Skin_SetColormap (player->skin, slot + 1);
+	mod_funcs->Skin_SetTranslation (slot + 1, player->topcolor,
+									player->bottomcolor);
+	player->skin = mod_funcs->Skin_SetSkin (player->skin, slot + 1,
+											player->skinname->value);
+	player->skin = mod_funcs->Skin_SetColormap (player->skin, slot + 1);
 
 	Sbar_Changed ();
 }

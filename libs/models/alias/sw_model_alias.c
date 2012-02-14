@@ -40,12 +40,12 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 # include <strings.h>
 #endif
 
-#include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
 
 #include "compat.h"
 #include "d_iface.h"
+#include "mod_internal.h"
 
 int alias_cache = 1;
 

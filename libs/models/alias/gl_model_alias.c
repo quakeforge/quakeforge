@@ -41,7 +41,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #endif
 
 #include "QF/image.h"
-#include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/skin.h"
@@ -49,6 +48,8 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/GL/qf_textures.h"
+
+#include "mod_internal.h"
 
 #include "compat.h"
 

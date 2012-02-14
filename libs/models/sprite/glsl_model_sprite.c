@@ -41,12 +41,12 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #endif
 
 #include "QF/image.h"
-#include "QF/model.h"
 #include "QF/quakefs.h"
 #include "QF/va.h"
 #include "QF/GLSL/qf_textures.h"
 
 #include "compat.h"
+#include "mod_internal.h"
 
 static void
 glsl_sprite_clear (model_t *m)

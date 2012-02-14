@@ -31,7 +31,7 @@
 static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
-#include "QF/model.h"
+#include "mod_internal.h"
 
 void
 Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)

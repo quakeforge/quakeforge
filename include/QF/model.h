@@ -35,6 +35,8 @@
 #include "QF/modelgen.h"
 #include "QF/zone.h"
 
+extern struct vid_model_funcs_s *mod_funcs;
+
 /*
 	d*_t structures are on-disk representations
 	m*_t structures are in-memory
@@ -438,10 +440,7 @@ void	Mod_TouchModel (const char *name);
 mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model);
 byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
 model_t	*Mod_FindName (const char *name);
-void	Mod_ProcessTexture(texture_t *tx);
 void	Mod_LoadExternalSkins (model_t * mod);
-void	Mod_LoadExternalTextures (model_t * mod);
-void	Mod_LoadLighting (bsp_t *bsp);
 int     Mod_CalcFullbright (byte *in, byte *out, int pixels);
 int     Mod_Fullbright (byte * skin, int width, int height, char *name);
 
@@ -457,13 +456,6 @@ void	 Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
 void	 Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);
 
 void	 Mod_LoadBrushModel (model_t *mod, void *buffer);
-void	 Mod_LoadAliasModel (model_t *mod, void *buffer,
-							 cache_allocator_t allocator);
-void	 Mod_LoadAlias2Model (model_t *mod, void *buffer,
-							 cache_allocator_t allocator);
-void	 Mod_LoadSpriteModel (model_t *mod, void *buffer);
-void	 Mod_LoadSprite2Model (model_t *mod, void *buffer);
-void	 Mod_SubdivideSurface (msurface_t *fa);
 void	 Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight);
 
 void	 Mod_Print (void);

@@ -525,7 +525,7 @@ CL_ParseUpdate (int bits)
 		i = state->baseline.colormap;
 	if (i > cl.maxclients)
 		Sys_Error ("i > cl.maxclients");
-	ent->skin = Skin_SetColormap (ent->skin, i);
+	ent->skin = mod_funcs->Skin_SetColormap (ent->skin, i);
 
 	if (bits & U_SKIN)
 		skin = MSG_ReadByte (net_message);
@@ -534,9 +534,9 @@ CL_ParseUpdate (int bits)
 	if (skin != ent->skinnum) {
 		ent->skinnum = skin;
 		if (num <= cl.maxclients) {
-			ent->skin = Skin_SetColormap (ent->skin, num);
-			Skin_SetTranslation (num, cl.scores[num].colors >> 4,
-								 cl.scores[num].colors & 0xf);
+			ent->skin = mod_funcs->Skin_SetColormap (ent->skin, num);
+			mod_funcs->Skin_SetTranslation (num, cl.scores[num].colors >> 4,
+											cl.scores[num].colors & 0xf);
 		}
 	}
 
@@ -612,7 +612,7 @@ CL_ParseUpdate (int bits)
 		} else
 			forcelink = true;		// hack to make null model players work
 		if (num >= 0 && num <= cl.maxclients)
-			ent->skin = Skin_SetColormap (ent->skin, num);
+			ent->skin = mod_funcs->Skin_SetColormap (ent->skin, num);
 	}
 
 	if (forcelink) {					// didn't have an update last message
@@ -1021,9 +1021,10 @@ CL_ParseServerMessage (void)
 					entity_t   *ent = &cl_entities[i+1];
 					byte        col = MSG_ReadByte (net_message);
 					if (col != cl.scores[i].colors)
-						Skin_SetTranslation (i + 1, col >> 4, col & 0xf);
+						mod_funcs->Skin_SetTranslation (i + 1, col >> 4,
+														col & 0xf);
 					cl.scores[i].colors = col;
-					ent->skin = Skin_SetColormap (ent->skin, i + 1);
+					ent->skin = mod_funcs->Skin_SetColormap (ent->skin, i + 1);
 				}
 				break;
 

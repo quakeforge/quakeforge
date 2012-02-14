@@ -36,6 +36,7 @@
 
 struct plitem_s;
 struct cvar_s;
+struct skin_s;
 
 /*
 	All video plugins must export these functions
@@ -78,6 +79,26 @@ typedef struct vid_particle_funcs_s {
 								  float die, int color, float alpha,
 								  float ramp);
 } vid_particle_funcs_t;
+
+typedef struct vid_model_funcs_s {
+	void (*Mod_LoadExternalTextures) (model_t *mod);
+	void (*Mod_LoadLighting) (bsp_t *bsp);
+	void (*Mod_SubdivideSurface) (msurface_t *fa);
+	void (*Mod_ProcessTexture) (texture_t *tx);
+	void (*Mod_LoadAliasModel) (model_t *mod, void *buffer,
+								cache_allocator_t allocator);
+	void (*Mod_LoadSpriteModel) (model_t *mod, void *buffer);
+
+	struct skin_s *(*Skin_SetColormap) (struct skin_s *skin, int cmap);
+	struct skin_s *(*Skin_SetSkin) (struct skin_s *skin, int cmap,
+									const char *skinname);
+	void (*Skin_SetupSkin) (struct skin_s *skin, int cmap);
+	void (*Skin_SetTranslation) (int cmap, int top, int bottom);
+	void (*Skin_ProcessTranslation) (int cmap, const byte *translation);
+	void (*Skin_InitTranslations) (void);
+	int (*Skin_Init_Textures) (int base);
+	void (*Skin_SetPlayerSkin) (int width, int height, const byte *data);
+} vid_model_funcs_t;
 
 typedef struct vid_render_funcs_s {
 	void (*Draw_Init) (void);
