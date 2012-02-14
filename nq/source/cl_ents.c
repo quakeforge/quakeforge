@@ -37,7 +37,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
-#include "QF/plugin.h"
 #include "QF/qfplist.h"
 #include "QF/render.h"
 #include "QF/screen.h"
@@ -45,13 +44,13 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "QF/plugin/vid_render.h"
+
 #include "chase.h"
 #include "client.h"
 #include "compat.h"
 #include "host.h"
 #include "host.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
 #include "server.h"
 
 // FIXME: put these on hunk?
@@ -67,7 +66,6 @@ CL_ClearEnts (void)
 	// clear other arrays   
 	memset (cl_entities, 0, sizeof (cl_entities));
 	memset (cl_baselines, 0, sizeof (cl_baselines));
-	memset (r_lightstyle, 0, sizeof (r_lightstyle));
 
 	for (i = 0; i < MAX_EDICTS; i++) {
 		cl_baselines[i].ent = &cl_entities[i];
@@ -92,7 +90,7 @@ CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
 			return;
 	}
 
-	dl = R_AllocDlight (key);
+	dl = r_funcs->R_AllocDlight (key);
 	if (!dl)
 		return;
 	VectorCopy (org, dl->origin);
@@ -221,7 +219,7 @@ CL_RelinkEntities (void)
 	int         i, j;
 	vec3_t      delta;
 	
-	r_player_entity = &cl_entities[cl.viewentity];
+	r_data->player_entity = &cl_entities[cl.viewentity];
 
 	// determine partial update time    
 	frac = CL_LerpPoint ();
@@ -250,7 +248,7 @@ CL_RelinkEntities (void)
 		ent = state->ent;
 		if (!ent->model) {				// empty slot
 			if (ent->efrag)
-				R_RemoveEfrags (ent);	// just became empty
+				r_funcs->R_RemoveEfrags (ent);	// just became empty
 			continue;
 		}
 		// if the object wasn't included in the last packet, remove it
@@ -258,7 +256,7 @@ CL_RelinkEntities (void)
 			ent->model = NULL;
 			ent->pose1 = ent->pose2 = -1;
 			if (ent->efrag)
-				R_RemoveEfrags (ent);	// just became empty
+				r_funcs->R_RemoveEfrags (ent);	// just became empty
 			continue;
 		}
 
@@ -271,8 +269,8 @@ CL_RelinkEntities (void)
 			// final spot
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->efrag)
-					R_RemoveEfrags (ent);
-				R_AddEfrags (ent);
+					r_funcs->R_RemoveEfrags (ent);
+				r_funcs->R_AddEfrags (ent);
 			}
 		} else {
 			// If the delta is large, assume a teleport and don't lerp
@@ -306,11 +304,11 @@ CL_RelinkEntities (void)
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->efrag) {
 					if (!VectorCompare (ent->origin, ent->old_origin)) {
-						R_RemoveEfrags (ent);
-						R_AddEfrags (ent);
+						r_funcs->R_RemoveEfrags (ent);
+						r_funcs->R_AddEfrags (ent);
 					}
 				} else {
-					R_AddEfrags (ent);
+					r_funcs->R_AddEfrags (ent);
 				}
 			}
 		}
@@ -324,11 +322,11 @@ CL_RelinkEntities (void)
 		}
 
 		if (state->effects & EF_BRIGHTFIELD)
-			R_EntityParticles (ent);
+			r_funcs->particles->R_EntityParticles (ent);
 		if (state->effects & EF_MUZZLEFLASH) {
 			vec_t      *fv = ent->transform;
 
-			dl = R_AllocDlight (i);
+			dl = r_funcs->R_AllocDlight (i);
 			if (dl) {
 				VectorMultAdd (ent->origin, 18, fv, dl->origin);
 				dl->origin[2] += 16;
@@ -346,29 +344,31 @@ CL_RelinkEntities (void)
 			> (256 * 256))
 			VectorCopy (ent->origin, state->msg_origins[1]);
 		if (ent->model->flags & EF_ROCKET) {
-			dl = R_AllocDlight (i);
+			dl = r_funcs->R_AllocDlight (i);
 			if (dl) {
 				VectorCopy (ent->origin, dl->origin);
 				dl->radius = 200;
 				dl->die = cl.time + 0.1;
-				VectorCopy (r_firecolor->vec, dl->color);
+				//FIXME VectorCopy (r_firecolor->vec, dl->color);
+				VectorSet (0.9, 0.7, 0.0, dl->color);
 				dl->color[3] = 0.7;
 			}
-			R_RocketTrail (ent);
+			r_funcs->particles->R_RocketTrail (ent);
 		} else if (ent->model->flags & EF_GRENADE)
-			R_GrenadeTrail (ent);
+			r_funcs->particles->R_GrenadeTrail (ent);
 		else if (ent->model->flags & EF_GIB)
-			R_BloodTrail (ent);
+			r_funcs->particles->R_BloodTrail (ent);
 		else if (ent->model->flags & EF_ZOMGIB)
-			R_SlightBloodTrail (ent);
+			r_funcs->particles->R_SlightBloodTrail (ent);
 		else if (ent->model->flags & EF_TRACER)
-			R_WizTrail (ent);
+			r_funcs->particles->R_WizTrail (ent);
 		else if (ent->model->flags & EF_TRACER2)
-			R_FlameTrail (ent);
+			r_funcs->particles->R_FlameTrail (ent);
 		else if (ent->model->flags & EF_TRACER3)
-			R_VoorTrail (ent);
+			r_funcs->particles->R_VoorTrail (ent);
 		else if (ent->model->flags & EF_GLOWTRAIL)
-			R_GlowTrail (ent, state->glow_color);
+			if (r_funcs->particles->R_GlowTrail)
+				r_funcs->particles->R_GlowTrail (ent, state->glow_color);
 
 		state->forcelink = false;
 	}

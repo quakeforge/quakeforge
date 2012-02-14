@@ -54,9 +54,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
-#include "r_cvar.h"
-#include "r_local.h"
-#include "r_shared.h"
+#include "r_internal.h"
 
 static instsurf_t  *waterchain = NULL;
 static instsurf_t **waterchain_tail = &waterchain;
@@ -315,6 +313,7 @@ R_DrawWaterSurfaces (void)
 	int         i;
 	instsurf_t *s;
 	msurface_t *fa;
+	float       wateralpha = max (vr_data.min_wateralpha, r_wateralpha->value);
 
 	if (!waterchain)
 		return;
@@ -322,9 +321,9 @@ R_DrawWaterSurfaces (void)
 	// go back to the world matrix
 	qfglLoadMatrixf (r_world_matrix);
 
-	if (cl_wateralpha < 1.0) {
+	if (wateralpha < 1.0) {
 		qfglDepthMask (GL_FALSE);
-		color_white[3] = cl_wateralpha * 255;
+		color_white[3] = wateralpha * 255;
 		qfglColor4ubv (color_white);
 	}
 
@@ -346,7 +345,7 @@ R_DrawWaterSurfaces (void)
 	waterchain = NULL;
 	waterchain_tail = &waterchain;
 
-	if (cl_wateralpha < 1.0) {
+	if (wateralpha < 1.0) {
 		qfglDepthMask (GL_TRUE);
 		qfglColor3ubv (color_white);
 	}
@@ -562,7 +561,8 @@ R_DrawBrushModel (entity_t *e)
 		vec3_t      lightorigin;
 
 		for (k = 0; k < r_maxdlights; k++) {
-			if ((r_dlights[k].die < r_realtime) || (!r_dlights[k].radius))
+			if ((r_dlights[k].die < vr_data.realtime)
+				 || (!r_dlights[k].radius))
 				continue;
 
 			VectorSubtract (r_dlights[k].origin, e->origin, lightorigin);

@@ -47,9 +47,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/pcx.h"
 #include "QF/screen.h"
 
+#include "QF/plugin/vid_render.h"
+
 #include "client.h"
-#include "r_cvar.h"
-#include "r_local.h"
 #include "sbar.h"
 
 
@@ -61,7 +61,9 @@ SCR_DrawNet (void)
 	if (cls.demoplayback)
 		return;
 
-	Draw_Pic (scr_vrect.x + 64, scr_vrect.y, scr_net);
+	//FIXME
+	//r_funcs->Draw_Pic (r_data->scr_vrect->x + 64, r_data->scr_vrect->y,
+	//				   scr_net);
 }
 
 static void
@@ -71,9 +73,9 @@ SCR_DrawLoading (void)
 
 	if (!cl.loading)
 		return;
-	pic = Draw_CachePic ("gfx/loading.lmp", 1);
-	Draw_Pic ((vid.conwidth - pic->width) / 2,
-			  (vid.conheight - 48 - pic->height) / 2, pic);
+	pic = r_funcs->Draw_CachePic ("gfx/loading.lmp", 1);
+	r_funcs->Draw_Pic ((r_data->vid->conwidth - pic->width) / 2,
+			  (r_data->vid->conheight - 48 - pic->height) / 2, pic);
 }
 
 static void
@@ -83,19 +85,19 @@ SCR_CShift (void)
 	int         contents = CONTENTS_EMPTY;
 
 	if (cls.signon == SIGNONS && cl.worldmodel) {
-		leaf = Mod_PointInLeaf (r_refdef.vieworg, cl.worldmodel);
+		leaf = Mod_PointInLeaf (r_data->refdef->vieworg, cl.worldmodel);
 		contents = leaf->contents;
 	}
 	V_SetContentsColor (contents);
-	Draw_BlendScreen (vid.cshift_color);
+	r_funcs->Draw_BlendScreen (r_data->vid->cshift_color);
 }
 
 static SCR_Func scr_funcs_normal[] = {
-	Draw_Crosshair,
-	SCR_DrawRam,
+	0, //Draw_Crosshair
+	0, //SCR_DrawRam,
 	SCR_DrawNet,
-	SCR_DrawTurtle,
-	SCR_DrawPause,
+	0, //SCR_DrawTurtle,
+	0, //SCR_DrawPause,
 	Sbar_DrawCenterPrint,
 	Sbar_Draw,
 	Con_DrawConsole,
@@ -130,8 +132,13 @@ CL_UpdateScreen (double realtime)
 	if (index >= sizeof (scr_funcs) / sizeof (scr_funcs[0]))
 		index = 0;
 
-	cl_wateralpha = r_wateralpha->value;
+	//FIXME not every time
+	r_data->min_wateralpha = 0;
+	scr_funcs_normal[0] = r_funcs->Draw_Crosshair;
+	scr_funcs_normal[1] = r_funcs->SCR_DrawRam;
+	scr_funcs_normal[3] = r_funcs->SCR_DrawTurtle;
+	scr_funcs_normal[4] = r_funcs->SCR_DrawPause;
 
 	V_PrepBlend ();
-	SCR_UpdateScreen (realtime, V_RenderView, scr_funcs[index]);
+	r_funcs->SCR_UpdateScreen (realtime, V_RenderView, scr_funcs[index]);
 }

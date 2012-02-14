@@ -47,9 +47,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sound.h"
 #include "QF/sys.h"
 
-#include "r_dynamic.h"
-#include "r_local.h"
-#include "r_shared.h"
+#include "r_internal.h"
 
 #define ENT_POOL_SIZE 32
 
@@ -128,7 +126,7 @@ R_EntityBlend (entity_t *ent, int pose, float interval)
 
 	ent->frame_interval = interval;
 	if (ent->pose2 != pose) {
-		ent->frame_start_time = r_realtime;
+		ent->frame_start_time = vr_data.realtime;
 		if (ent->pose2 == -1) {
 			ent->pose1 = pose;
 		} else {
@@ -136,10 +134,11 @@ R_EntityBlend (entity_t *ent, int pose, float interval)
 		}
 		ent->pose2 = pose;
 		blend = 0.0;
-	} else if (r_paused) {
+	} else if (vr_data.paused) {
 		blend = 1.0;
 	} else {
-		blend = (r_realtime - ent->frame_start_time) / ent->frame_interval;
+		blend = (vr_data.realtime - ent->frame_start_time)
+				/ ent->frame_interval;
 		blend = min (blend, 1.0);
 	}
 	return blend;

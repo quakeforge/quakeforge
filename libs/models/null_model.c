@@ -52,11 +52,6 @@ Mod_LoadSpriteModel (model_t *mod, void *buf)
 }
 
 void
-R_InitSky (struct texture_s *mt)
-{
-}
-
-void
 Mod_ProcessTexture (texture_t *tx)
 {
 }

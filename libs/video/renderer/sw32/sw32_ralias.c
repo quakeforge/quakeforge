@@ -37,7 +37,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "d_ifacea.h"
-#include "r_local.h"
+#include "r_internal.h"
 
 #include "stdlib.h"
 
@@ -656,7 +656,7 @@ R_AliasDrawModel (alight_t *plighting)
 					  r_pixbytes);
 	}
 
-	if (currententity != r_view_model)
+	if (currententity != vr_data.view_model)
 		ziscale = (float) 0x8000 *(float) 0x10000;
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;

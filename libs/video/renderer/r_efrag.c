@@ -36,7 +36,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/render.h"
 #include "QF/sys.h"
 
-#include "r_local.h"
+#include "r_internal.h"
 
 static mnode_t    *r_pefragtopnode;
 static vec3_t      r_emins, r_emaxs;

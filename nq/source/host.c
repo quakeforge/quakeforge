@@ -55,6 +55,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/gib.h"
 
 #include "QF/plugin/console.h"
+#include "QF/plugin/vid_render.h"
 
 #include "buildnum.h"
 #include "chase.h"
@@ -500,7 +501,7 @@ void
 Host_ClearMemory (void)
 {
 	Sys_MaskPrintf (SYS_DEV, "Clearing memory\n");
-	D_FlushCaches ();
+	r_funcs->D_FlushCaches ();
 	Mod_ClearAll ();
 	if (host_hunklevel)
 		Hunk_FreeToLowMark (host_hunklevel);
@@ -508,7 +509,7 @@ Host_ClearMemory (void)
 	cls.signon = 0;
 	memset (&sv, 0, sizeof (sv));
 	memset (&cl, 0, sizeof (cl));
-	r_force_fullscreen = 0;
+	r_data->force_fullscreen = 0;
 }
 
 /*
@@ -596,10 +597,10 @@ Host_ClientFrame (void)
 	if (host_speeds->int_val)
 		time1 = Sys_DoubleTime ();
 
-	r_inhibit_viewmodel = (chase_active->int_val
-						   || (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
-						   || cl.stats[STAT_HEALTH] <= 0);
-	r_frametime = host_frametime;
+	r_data->inhibit_viewmodel = (chase_active->int_val
+								 || (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
+								 || cl.stats[STAT_HEALTH] <= 0);
+	r_data->frametime = host_frametime;
 
 	CL_UpdateScreen (cl.time);
 
@@ -611,11 +612,12 @@ Host_ClientFrame (void)
 		mleaf_t    *l;
 		byte       *asl = 0;
 
-		l = Mod_PointInLeaf (r_origin, cl.worldmodel);
+		l = Mod_PointInLeaf (r_data->origin, cl.worldmodel);
 		if (l)
 			asl = l->ambient_sound_level;
-		S_Update (r_origin, vpn, vright, vup, asl);
-		R_DecayLights (host_frametime);
+		S_Update (r_data->origin, r_data->vpn, r_data->vright, r_data->vup,
+				  asl);
+		r_funcs->R_DecayLights (host_frametime);
 	} else
 		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin, 0);
 
@@ -699,7 +701,7 @@ _Host_Frame (float time)
 		host_time += host_frametime;	//FIXME is this needed? vcr stuff
 
 	if (cls.demo_capture) {
-		tex_t      *tex = SCR_CaptureBGR ();
+		tex_t      *tex = r_funcs->SCR_CaptureBGR ();
 		WritePNGqfs (va ("%s/qfmv%06d.png", qfs_gamedir->dir.shots,
 						 cls.demo_capture++),
 					 tex->data, tex->width, tex->height);

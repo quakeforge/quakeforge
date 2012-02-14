@@ -53,8 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
-#include "r_cvar.h"
-#include "r_shared.h"
+#include "r_internal.h"
 
 static const char *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
 int         gl_solidskytexture;
@@ -364,7 +363,7 @@ R_DrawSkyDome (void)
 	// base sky
 	qfglDisable (GL_BLEND);
 	qfglBindTexture (GL_TEXTURE_2D, gl_solidskytexture);
-	speedscale = r_realtime / 16.0;
+	speedscale = vr_data.realtime / 16.0;
 	speedscale -= floor (speedscale);
 	R_DrawSkyLayer (speedscale);
 	qfglEnable (GL_BLEND);
@@ -372,7 +371,7 @@ R_DrawSkyDome (void)
 	// clouds
 	if (gl_sky_multipass->int_val) {
 		qfglBindTexture (GL_TEXTURE_2D, gl_alphaskytexture);
-		speedscale = r_realtime / 8.0;
+		speedscale = vr_data.realtime / 8.0;
 		speedscale -= floor (speedscale);
 		R_DrawSkyLayer (speedscale);
 	}

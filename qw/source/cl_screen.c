@@ -129,9 +129,9 @@ CL_UpdateScreen (double realtime)
 	// don't allow cheats in multiplayer
 	if (r_active) {
 		if (cl.watervis)
-			cl_wateralpha = r_wateralpha->value;
+			r_data->min_wateralpha = 0.0;
 		else
-			cl_wateralpha = 1.0;
+			r_data->min_wateralpha = 1.0;
 	}
 
 	V_PrepBlend ();

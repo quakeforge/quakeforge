@@ -46,9 +46,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sound.h"
 #include "QF/sys.h"
 
+#include "QF/plugin/vid_render.h"
+
 #include "client.h"
 #include "compat.h"
-#include "r_dynamic.h"
 
 typedef struct tent_s {
 	struct tent_s *next;
@@ -231,7 +232,7 @@ beam_clear (beam_t *b)
 		tent_t     *t;
 
 		for (t = b->tents; t; t = t->next) {
-			R_RemoveEfrags (&t->ent);
+			r_funcs->R_RemoveEfrags (&t->ent);
 			t->ent.efrag = 0;
 		}
 		free_temp_entities (b->tents);
@@ -295,7 +296,7 @@ beam_setup (beam_t *b, qboolean transform)
 			CL_TransformEntity (&tent->ent, ang, true);
 		}
 		VectorCopy (ang, tent->ent.angles);
-		R_AddEfrags (&tent->ent);
+		r_funcs->R_AddEfrags (&tent->ent);
 	}
 }
 
@@ -349,19 +350,19 @@ CL_ParseTEnt (void)
 	switch (type) {
 		case TE_WIZSPIKE:				// spike hitting wall
 			MSG_ReadCoordV (net_message, pos);
-			R_WizSpikeEffect (pos);
+			r_funcs->particles->R_WizSpikeEffect (pos);
 			S_StartSound (-1, 0, cl_sfx_wizhit, pos, 1, 1);
 			break;
 
 		case TE_KNIGHTSPIKE:			// spike hitting wall
 			MSG_ReadCoordV (net_message, pos);
-			R_KnightSpikeEffect (pos);
+			r_funcs->particles->R_KnightSpikeEffect (pos);
 			S_StartSound (-1, 0, cl_sfx_knighthit, pos, 1, 1);
 			break;
 
 		case TE_SPIKE:					// spike hitting wall
 			MSG_ReadCoordV (net_message, pos);
-			R_SpikeEffect (pos);
+			r_funcs->particles->R_SpikeEffect (pos);
 			{
 				int		i;
 				sfx_t  *sound;
@@ -377,7 +378,7 @@ CL_ParseTEnt (void)
 
 		case TE_SUPERSPIKE:				// super spike hitting wall
 			MSG_ReadCoordV (net_message, pos);
-			R_SuperSpikeEffect (pos);
+			r_funcs->particles->R_SuperSpikeEffect (pos);
 			{
 				int		i;
 				sfx_t  *sound;
@@ -394,10 +395,10 @@ CL_ParseTEnt (void)
 		case TE_EXPLOSION:				// rocket explosion
 			// particles
 			MSG_ReadCoordV (net_message, pos);
-			R_ParticleExplosion (pos);
+			r_funcs->particles->R_ParticleExplosion (pos);
 
 			// light
-			dl = R_AllocDlight (0);
+			dl = r_funcs->R_AllocDlight (0);
 			if (dl) {
 				VectorCopy (pos, dl->origin);
 				dl->radius = 350;
@@ -427,7 +428,7 @@ CL_ParseTEnt (void)
 
 		case TE_TAREXPLOSION:			// tarbaby explosion
 			MSG_ReadCoordV (net_message, pos);
-			R_BlobExplosion (pos);
+			r_funcs->particles->R_BlobExplosion (pos);
 
 			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 			break;
@@ -456,12 +457,12 @@ CL_ParseTEnt (void)
 
 		case TE_LAVASPLASH:
 			MSG_ReadCoordV (net_message, pos);
-			R_LavaSplash (pos);
+			r_funcs->particles->R_LavaSplash (pos);
 			break;
 
 		case TE_TELEPORT:
 			MSG_ReadCoordV (net_message, pos);
-			R_TeleportSplash (pos);
+			r_funcs->particles->R_TeleportSplash (pos);
 			break;
 
 		case TE_EXPLOSION2:				// color mapped explosion
@@ -469,8 +470,9 @@ CL_ParseTEnt (void)
 			colorStart = MSG_ReadByte (net_message);
 			colorLength = MSG_ReadByte (net_message);
 			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
-			R_ParticleExplosion2 (pos, colorStart, colorLength);
-			dl = R_AllocDlight (0);
+			r_funcs->particles->R_ParticleExplosion2 (pos, colorStart,
+													  colorLength);
+			dl = r_funcs->R_AllocDlight (0);
 			if (!dl)
 				break;
 			VectorCopy (pos, dl->origin);
@@ -478,7 +480,8 @@ CL_ParseTEnt (void)
 			dl->die = cl.time + 0.5;
 			dl->decay = 300;
 			colorStart = (colorStart + (rand () % colorLength)) * 3;
-			VectorScale (&vid.palette[colorStart], 1.0 / 255.0, dl->color);
+			VectorScale (&r_data->vid->palette[colorStart], 1.0 / 255.0,
+						 dl->color);
 			dl->color[3] = 0.7;
 			break;
 
@@ -486,9 +489,9 @@ CL_ParseTEnt (void)
 			MSG_ReadCoordV (net_message, pos);
 			MSG_ReadCoordV (net_message, col);			// OUCH!
 			col[3] = 0.7;
-			R_ParticleExplosion (pos);
+			r_funcs->particles->R_ParticleExplosion (pos);
 			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
-			dl = R_AllocDlight (0);
+			dl = r_funcs->R_AllocDlight (0);
 			if (dl) {
 				VectorCopy (pos, dl->origin);
 				dl->radius = 350;
@@ -500,7 +503,7 @@ CL_ParseTEnt (void)
 
 		case TE_GUNSHOT:				// bullet hitting wall
 			MSG_ReadCoordV (net_message, pos);
-			R_GunshotEffect (pos, 20);
+			r_funcs->particles->R_GunshotEffect (pos, 20);
 			break;
 
 		default:
@@ -566,7 +569,7 @@ CL_UpdateExplosions (void)
 		f = 10 * (cl.time - ex->start);
 		if (f >= ent->model->numframes) {
 			tent_obj_t *_to;
-			R_RemoveEfrags (ent);
+			r_funcs->R_RemoveEfrags (ent);
 			ent->efrag = 0;
 			free_temp_entities (ex->tent);
 			_to = *to;
@@ -579,7 +582,7 @@ CL_UpdateExplosions (void)
 
 		ent->frame = f;
 		if (!ent->efrag)
-			R_AddEfrags (ent);
+			r_funcs->R_AddEfrags (ent);
 	}
 }
 
@@ -608,7 +611,7 @@ CL_ParseParticleEffect (void)
 	color = MSG_ReadByte (net_message);
 
 	if (count == 255)
-		R_ParticleExplosion (org);
+		r_funcs->particles->R_ParticleExplosion (org);
 	else
-		R_RunParticleEffect (org, dir, color, count);
+		r_funcs->particles->R_RunParticleEffect (org, dir, color, count);
 }

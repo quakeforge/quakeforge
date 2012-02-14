@@ -61,8 +61,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 
-#include "r_dynamic.h"
-#include "r_local.h"
+#include "r_internal.h"
 #include "varrays.h"
 
 /*
@@ -145,6 +144,7 @@ R_Init (void)
 					"Load a pointfile to determine map leaks");
 	Cmd_AddCommand ("loadsky", R_LoadSky_f, "Load a skybox");
 
+	Draw_Init ();
 	SCR_Init ();
 	R_InitBubble ();
 

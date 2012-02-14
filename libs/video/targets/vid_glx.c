@@ -67,8 +67,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 #include "context_x11.h"
-#include "r_cvar.h"
-#include "sbar.h"
+#include "r_internal.h"
 
 #define WARP_WIDTH		320
 #define WARP_HEIGHT 	200

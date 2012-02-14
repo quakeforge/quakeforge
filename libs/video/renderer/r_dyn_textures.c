@@ -43,7 +43,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/qtypes.h"
 
 #include "noisetextures.h"
-#include "r_local.h"
+#include "r_internal.h"
 
 tex_t *
 R_DotParticleTexture (void)

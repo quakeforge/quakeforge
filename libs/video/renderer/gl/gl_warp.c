@@ -34,8 +34,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/sys.h"
 
-#include "r_cvar.h"
-#include "r_shared.h"
+#include "r_internal.h"
 
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
@@ -62,7 +61,7 @@ GL_EmitWaterPolys (msurface_t *fa)
 	int         i;
 	glpoly_t   *p;
 
-	timetemp = r_realtime * TURBSCALE;
+	timetemp = vr_data.realtime * TURBSCALE;
 
 	for (p = fa->polys; p; p = p->next) {
 		qfglBegin (GL_POLYGON);

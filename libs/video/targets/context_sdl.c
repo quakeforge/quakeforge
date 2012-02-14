@@ -22,6 +22,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/vid.h"
 
 #include "context_sdl.h"
+#include "r_internal.h"
 
 cvar_t     *vid_bitdepth;
 

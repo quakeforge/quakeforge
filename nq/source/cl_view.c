@@ -38,11 +38,12 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/msg.h"
 #include "QF/screen.h"
 
+#include "QF/plugin/vid_render.h"
+
 #include "chase.h"
 #include "client.h"
 #include "compat.h"
 #include "host.h"
-#include "r_local.h"
 #include "clview.h"
 
 /*
@@ -389,10 +390,10 @@ V_CalcBlend (void)
 		b *= a2;
 	}
 
-	vid.cshift_color[0] = min (r, 255.0) / 255.0;
-	vid.cshift_color[1] = min (g, 255.0) / 255.0;
-	vid.cshift_color[2] = min (b, 255.0) / 255.0;
-	vid.cshift_color[3] = bound (0.0, a, 1.0);
+	r_data->vid->cshift_color[0] = min (r, 255.0) / 255.0;
+	r_data->vid->cshift_color[1] = min (g, 255.0) / 255.0;
+	r_data->vid->cshift_color[2] = min (b, 255.0) / 255.0;
+	r_data->vid->cshift_color[3] = bound (0.0, a, 1.0);
 }
 
 void
@@ -404,17 +405,17 @@ V_PrepBlend (void)
 		|| (cl.sv_cshifts & INFO_CSHIFT_POWERUP))
 		V_CalcPowerupCshift ();
 
-	vid.cshift_changed = false;
+	r_data->vid->cshift_changed = false;
 
 	for (i = 0; i < NUM_CSHIFTS; i++) {
 		if (cl.cshifts[i].percent != cl.prev_cshifts[i].percent) {
-			vid.cshift_changed = true;
+			r_data->vid->cshift_changed = true;
 			cl.prev_cshifts[i].percent = cl.cshifts[i].percent;
 		}
 		for (j = 0; j < 3; j++) {
 			if (cl.cshifts[i].destcolor[j] != cl.prev_cshifts[i].destcolor[j])
 			{
-				vid.cshift_changed = true;
+				r_data->vid->cshift_changed = true;
 				cl.prev_cshifts[i].destcolor[j] = cl.cshifts[i].destcolor[j];
 			}
 		}
@@ -430,7 +431,7 @@ V_PrepBlend (void)
 	if (cl.cshifts[CSHIFT_BONUS].percent < 0)
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
-	if (!vid.cshift_changed && !vid.recalc_refdef)
+	if (!r_data->vid->cshift_changed && !r_data->vid->recalc_refdef)
 		return;
 
 	V_CalcBlend ();
@@ -453,12 +454,12 @@ CalcGunAngle (void)
 	float       yaw, pitch, move;
 	static float oldpitch = 0, oldyaw = 0;
 
-	yaw = r_refdef.viewangles[YAW];
-	pitch = -r_refdef.viewangles[PITCH];
+	yaw = r_data->refdef->viewangles[YAW];
+	pitch = -r_data->refdef->viewangles[PITCH];
 
-	yaw = angledelta (yaw - r_refdef.viewangles[YAW]) * 0.4;
+	yaw = angledelta (yaw - r_data->refdef->viewangles[YAW]) * 0.4;
 	yaw = bound (-10, yaw, 10);
-	pitch = angledelta (-pitch - r_refdef.viewangles[PITCH]) * 0.4;
+	pitch = angledelta (-pitch - r_data->refdef->viewangles[PITCH]) * 0.4;
 	pitch = bound (-10, pitch, 10);
 
 	move = host_frametime * 20;
@@ -481,8 +482,8 @@ CalcGunAngle (void)
 	oldyaw = yaw;
 	oldpitch = pitch;
 
-	cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw;
-	cl.viewent.angles[PITCH] = -(r_refdef.viewangles[PITCH] + pitch);
+	cl.viewent.angles[YAW] = r_data->refdef->viewangles[YAW] + yaw;
+	cl.viewent.angles[PITCH] = -(r_data->refdef->viewangles[PITCH] + pitch);
 
 	cl.viewent.angles[ROLL] -=
 		v_idlescale->value * sin (cl.time * v_iroll_cycle->value) *
@@ -505,18 +506,18 @@ V_BoundOffsets (void)
 	// absolutely bound refresh reletive to entity clipping hull
 	// so the view can never be inside a solid wall
 
-	if (r_refdef.vieworg[0] < ent->origin[0] - 14)
-		r_refdef.vieworg[0] = ent->origin[0] - 14;
-	else if (r_refdef.vieworg[0] > ent->origin[0] + 14)
-		r_refdef.vieworg[0] = ent->origin[0] + 14;
-	if (r_refdef.vieworg[1] < ent->origin[1] - 14)
-		r_refdef.vieworg[1] = ent->origin[1] - 14;
-	else if (r_refdef.vieworg[1] > ent->origin[1] + 14)
-		r_refdef.vieworg[1] = ent->origin[1] + 14;
-	if (r_refdef.vieworg[2] < ent->origin[2] - 22)
-		r_refdef.vieworg[2] = ent->origin[2] - 22;
-	else if (r_refdef.vieworg[2] > ent->origin[2] + 30)
-		r_refdef.vieworg[2] = ent->origin[2] + 30;
+	if (r_data->refdef->vieworg[0] < ent->origin[0] - 14)
+		r_data->refdef->vieworg[0] = ent->origin[0] - 14;
+	else if (r_data->refdef->vieworg[0] > ent->origin[0] + 14)
+		r_data->refdef->vieworg[0] = ent->origin[0] + 14;
+	if (r_data->refdef->vieworg[1] < ent->origin[1] - 14)
+		r_data->refdef->vieworg[1] = ent->origin[1] - 14;
+	else if (r_data->refdef->vieworg[1] > ent->origin[1] + 14)
+		r_data->refdef->vieworg[1] = ent->origin[1] + 14;
+	if (r_data->refdef->vieworg[2] < ent->origin[2] - 22)
+		r_data->refdef->vieworg[2] = ent->origin[2] - 22;
+	else if (r_data->refdef->vieworg[2] > ent->origin[2] + 30)
+		r_data->refdef->vieworg[2] = ent->origin[2] + 30;
 }
 
 /*
@@ -527,11 +528,11 @@ V_BoundOffsets (void)
 static void
 V_AddIdle (void)
 {
-	r_refdef.viewangles[ROLL] += v_idlescale->value *
+	r_data->refdef->viewangles[ROLL] += v_idlescale->value *
 		sin (cl.time * v_iroll_cycle->value) * v_iroll_level->value;
-	r_refdef.viewangles[PITCH] += v_idlescale->value *
+	r_data->refdef->viewangles[PITCH] += v_idlescale->value *
 		sin (cl.time * v_ipitch_cycle->value) * v_ipitch_level->value;
-	r_refdef.viewangles[YAW] += v_idlescale->value *
+	r_data->refdef->viewangles[YAW] += v_idlescale->value *
 		sin (cl.time * v_iyaw_cycle->value) * v_iyaw_level->value;
 }
 
@@ -546,18 +547,18 @@ V_CalcViewRoll (void)
 	float       side;
 
 	side = V_CalcRoll (cl_entities[cl.viewentity].angles, cl.velocity);
-	r_refdef.viewangles[ROLL] += side;
+	r_data->refdef->viewangles[ROLL] += side;
 
 	if (v_dmg_time > 0) {
-		r_refdef.viewangles[ROLL] +=
+		r_data->refdef->viewangles[ROLL] +=
 			v_dmg_time / v_kicktime->value * v_dmg_roll;
-		r_refdef.viewangles[PITCH] +=
+		r_data->refdef->viewangles[PITCH] +=
 			v_dmg_time / v_kicktime->value * v_dmg_pitch;
 		v_dmg_time -= host_frametime;
 	}
 
 	if (cl.stats[STAT_HEALTH] <= 0) {
-		r_refdef.viewangles[ROLL] = 80;	// dead view angle
+		r_data->refdef->viewangles[ROLL] = 80;	// dead view angle
 		return;
 	}
 
@@ -575,8 +576,8 @@ V_CalcIntermissionRefdef (void)
 	// view is the weapon model (visible only from inside body)
 	view = &cl.viewent;
 
-	VectorCopy (ent->origin, r_refdef.vieworg);
-	VectorCopy (ent->angles, r_refdef.viewangles);
+	VectorCopy (ent->origin, r_data->refdef->vieworg);
+	VectorCopy (ent->angles, r_data->refdef->viewangles);
 	view->model = NULL;
 
 	// always idle in intermission
@@ -605,17 +606,17 @@ V_CalcRefdef (void)
 	bob = V_CalcBob ();
 
 	// refresh position
-	VectorCopy (ent->origin, r_refdef.vieworg);
-	r_refdef.vieworg[2] += cl.viewheight + bob;
+	VectorCopy (ent->origin, r_data->refdef->vieworg);
+	r_data->refdef->vieworg[2] += cl.viewheight + bob;
 
 	// never let it sit exactly on a node line, because a water plane can
 	// disappear when viewed with the eye exactly on it.
 	// server protocol specifies to only 1/16 pixel, so add 1/32 in each axis
-	r_refdef.vieworg[0] += 1.0 / 32;
-	r_refdef.vieworg[1] += 1.0 / 32;
-	r_refdef.vieworg[2] += 1.0 / 32;
+	r_data->refdef->vieworg[0] += 1.0 / 32;
+	r_data->refdef->vieworg[1] += 1.0 / 32;
+	r_data->refdef->vieworg[2] += 1.0 / 32;
 
-	VectorCopy (cl.viewangles, r_refdef.viewangles);
+	VectorCopy (cl.viewangles, r_data->refdef->viewangles);
 	V_CalcViewRoll ();
 	V_AddIdle ();
 
@@ -628,7 +629,7 @@ V_CalcRefdef (void)
 	AngleVectors (angles, forward, right, up);
 
 	for (i = 0; i < 3; i++) {
-		r_refdef.vieworg[i] += scr_ofsx->value * forward[i] +
+		r_data->refdef->vieworg[i] += scr_ofsx->value * forward[i] +
 			scr_ofsy->value * right[i] +
 			scr_ofsz->value * up[i];
 	}
@@ -652,15 +653,15 @@ V_CalcRefdef (void)
 
 	// fudge position around to keep amount of weapon visible
 	// roughly equal with different FOV
-	if (hud_sbar->int_val == 0 && scr_viewsize->int_val >= 100)
+	if (hud_sbar->int_val == 0 && r_data->scr_viewsize->int_val >= 100)
 		;
-	else if (scr_viewsize->int_val == 110)
+	else if (r_data->scr_viewsize->int_val == 110)
 		view->origin[2] += 1;
-	else if (scr_viewsize->int_val == 100)
+	else if (r_data->scr_viewsize->int_val == 100)
 		view->origin[2] += 2;
-	else if (scr_viewsize->int_val == 90)
+	else if (r_data->scr_viewsize->int_val == 90)
 		view->origin[2] += 1;
-	else if (scr_viewsize->int_val == 80)
+	else if (r_data->scr_viewsize->int_val == 80)
 		view->origin[2] += 0.5;
 
 	view->model = cl.model_precache[cl.stats[STAT_WEAPON]];
@@ -668,7 +669,8 @@ V_CalcRefdef (void)
 	view->skin = 0;
 
 	// set up the refresh position
-	VectorAdd (r_refdef.viewangles, cl.punchangle, r_refdef.viewangles);
+	VectorAdd (r_data->refdef->viewangles, cl.punchangle,
+			   r_data->refdef->viewangles);
 
 	// smooth out stair step ups
 	if (cl.onground && ent->origin[2] - oldz > 0) {
@@ -683,7 +685,7 @@ V_CalcRefdef (void)
 			oldz = ent->origin[2];
 		if (ent->origin[2] - oldz > 12)
 			oldz = ent->origin[2] - 12;
-		r_refdef.vieworg[2] += oldz - ent->origin[2];
+		r_data->refdef->vieworg[2] += oldz - ent->origin[2];
 		view->origin[2] += oldz - ent->origin[2];
 	} else
 		oldz = ent->origin[2];
@@ -720,7 +722,7 @@ V_RenderView (void)
 			V_CalcRefdef ();
 	}
 
-	R_RenderView ();
+	r_funcs->R_RenderView ();
 }
 
 void

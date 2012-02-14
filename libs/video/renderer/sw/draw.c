@@ -46,7 +46,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/sys.h"
 
 #include "d_iface.h"
-#include "r_cvar.h"
+#include "r_internal.h"
 
 typedef struct {
 	vrect_t     rect;

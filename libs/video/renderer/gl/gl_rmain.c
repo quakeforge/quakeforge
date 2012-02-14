@@ -61,9 +61,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 #include "gl_draw.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
-#include "r_local.h"
+#include "r_internal.h"
 #include "varrays.h"
 
 int         c_brush_polys, c_alias_polys;
@@ -266,8 +264,8 @@ R_DrawEntitiesOnList (void)
 static void
 R_DrawViewModel (void)
 {
-	currententity = r_view_model;
-	if (r_inhibit_viewmodel
+	currententity = vr_data.view_model;
+	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel->int_val
 		|| gl_envmap
 		|| !r_drawentities->int_val
@@ -530,7 +528,7 @@ R_Mirror (void)
 	r_refdef.viewangles[1] = atan2 (vpn[1], vpn[0]) / M_PI * 180;
 	r_refdef.viewangles[2] = -r_refdef.viewangles[2];
 
-	R_EnqueueEntity (r_player_entity);
+	R_EnqueueEntity (vr_data.player_entity);
 
 	gldepthmin = 0.5;
 	gldepthmax = 1;

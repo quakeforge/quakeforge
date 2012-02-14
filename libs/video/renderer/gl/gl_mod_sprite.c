@@ -46,8 +46,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "r_local.h"
-#include "r_shared.h"
+#include "r_internal.h"
 #include "varrays.h"
 
 static int						 sVAsize;
@@ -83,7 +82,7 @@ R_GetSpriteFrame (entity_t *currententity)
 		numframes = pspritegroup->numframes;
 		fullinterval = pintervals[numframes - 1];
 
-		time = r_realtime + currententity->syncbase;
+		time = vr_data.realtime + currententity->syncbase;
 
 		// when loading in Mod_LoadSpriteGroup, we guaranteed all interval
 		// values are positive, so we don't have to worry about division by 0

@@ -32,15 +32,15 @@ static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #include "QF/cvar.h"
+#include "QF/keys.h"
+#include "QF/input.h"
 #include "QF/mathlib.h"
+
+#include "QF/plugin/vid_render.h"
 
 #include "chase.h"
 #include "client.h"
 #include "world.h"
-
-#include "QF/keys.h"
-#include "QF/input.h"
-
 
 vec3_t camera_origin = {0,0,0};
 vec3_t camera_angles = {0,0,0};
@@ -114,14 +114,14 @@ Chase_Update (void)
 		// the angles are automatically changed to look toward the player
 
 		if (chase_active->int_val == 3)
-			VectorCopy (r_refdef.vieworg, player_origin);
+			VectorCopy (r_data->refdef->vieworg, player_origin);
 
 		AngleVectors (camera_angles, forward, right, up);
 		VectorScale (forward, chase_back->value, forward);
 		VectorSubtract (player_origin, forward, camera_origin);
 
 		if (chase_active->int_val == 2) {
-			VectorCopy (r_refdef.vieworg, player_origin);
+			VectorCopy (r_data->refdef->vieworg, player_origin);
 
 			// don't let camera get too low
 			if (camera_origin[2] < player_origin[2] + chase_up->value)
@@ -147,14 +147,14 @@ Chase_Update (void)
 		if (VectorLength (stop) != 0)
 			VectorSubtract (stop, forward, camera_origin);
 
-		VectorSubtract (camera_origin, r_refdef.vieworg, dir);
+		VectorSubtract (camera_origin, r_data->refdef->vieworg, dir);
 		VectorCopy (dir, forward);
 		VectorNormalize (forward);
 
 		if (chase_active->int_val == 2) {
 			if (dir[1] == 0 && dir[0] == 0) {
 				// look straight up or down
-//				camera_angles[YAW] = r_refdef.viewangles[YAW];
+//				camera_angles[YAW] = r_data->refdef->viewangles[YAW];
 				if (dir[2] > 0)
 					camera_angles[PITCH] = 90;
 				else
@@ -177,8 +177,8 @@ Chase_Update (void)
 			}
 		}
 
-		VectorCopy (camera_angles, r_refdef.viewangles); // rotate camera
-		VectorCopy (camera_origin, r_refdef.vieworg);    // move camera
+		VectorCopy (camera_angles, r_data->refdef->viewangles);// rotate camera
+		VectorCopy (camera_origin, r_data->refdef->vieworg);    // move camera
 
 		// get basic movement from keyboard
 
@@ -242,15 +242,15 @@ Chase_Update (void)
 
 	// calc exact destination
 	for (i = 0; i < 3; i++)
-		camera_origin[i] = r_refdef.vieworg[i]
+		camera_origin[i] = r_data->refdef->vieworg[i]
 			- forward[i] * chase_back->value - right[i] * chase_right->value;
 	camera_origin[2] += chase_up->value;
 
 	// check for walls between player and camera
-	TraceLine (r_refdef.vieworg, camera_origin, stop);
+	TraceLine (r_data->refdef->vieworg, camera_origin, stop);
 	if (VectorLength (stop) != 0)
 		for (i = 0; i < 3; i++)
 			camera_origin[i] = stop[i] + forward[i] * 8;
 
-	VectorCopy (camera_origin, r_refdef.vieworg);
+	VectorCopy (camera_origin, r_data->refdef->vieworg);
 }

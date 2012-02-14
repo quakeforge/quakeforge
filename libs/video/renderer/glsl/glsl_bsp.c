@@ -56,8 +56,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
-#include "r_cvar.h"
-#include "r_local.h"
+#include "r_internal.h"
 
 typedef struct {
 	GLushort    count;
@@ -526,7 +525,7 @@ R_BuildDisplayLists (model_t **models, int num_models)
 	QuatSet (1, 0, 0, 0, sky_rotation[1]);
 	QuatSet (0, 0, 0, 0, sky_velocity);
 	QuatExp (sky_velocity, sky_velocity);
-	sky_time = r_realtime;
+	sky_time = vr_data.realtime;
 
 	// now run through all surfaces, chaining them to their textures, thus
 	// effectively sorting the surfaces by texture (without worrying about
@@ -659,7 +658,8 @@ R_DrawBrushModel (entity_t *e)
 		vec3_t      lightorigin;
 
 		for (k = 0; k < r_maxdlights; k++) {
-			if ((r_dlights[k].die < r_realtime) || (!r_dlights[k].radius))
+			if ((r_dlights[k].die < vr_data.realtime)
+				|| (!r_dlights[k].radius))
 				continue;
 
 			VectorSubtract (r_dlights[k].origin, e->origin, lightorigin);
@@ -905,7 +905,7 @@ turb_begin (void)
 	qfglEnable (GL_TEXTURE_2D);
 	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-	qfglUniform1f (quake_turb.realtime.location, r_realtime);
+	qfglUniform1f (quake_turb.realtime.location, vr_data.realtime);
 
 	qfglUniform1i (quake_turb.texture.location, 0);
 	qfglActiveTexture (GL_TEXTURE0 + 0);
@@ -935,12 +935,12 @@ spin (mat4_t mat)
 	mat4_t      m;
 	float       blend;
 
-	while (r_realtime - sky_time > 1) {
+	while (vr_data.realtime - sky_time > 1) {
 		QuatCopy (sky_rotation[1], sky_rotation[0]);
 		QuatMult (sky_velocity, sky_rotation[0], sky_rotation[1]);
 		sky_time += 1;
 	}
-	blend = bound (0, (r_realtime - sky_time), 1);
+	blend = bound (0, (vr_data.realtime - sky_time), 1);
 
 	QuatBlend (sky_rotation[0], sky_rotation[1], blend, q);
 	Mat4Identity (mat);
@@ -987,7 +987,7 @@ sky_begin (void)
 		qfglEnable (GL_TEXTURE_2D);
 		qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-		qfglUniform1f (quake_skyid.realtime.location, r_realtime);
+		qfglUniform1f (quake_skyid.realtime.location, vr_data.realtime);
 
 		qfglUniform1i (quake_skyid.trans.location, 0);
 		qfglActiveTexture (GL_TEXTURE0 + 0);

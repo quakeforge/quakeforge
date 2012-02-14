@@ -80,6 +80,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "context_x11.h"
 #include "d_iface.h"
 #include "dga_check.h"
+#include "r_internal.h"
 
 int XShmGetEventBase (Display *x);	// for broken X11 headers
 

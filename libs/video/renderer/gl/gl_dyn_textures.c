@@ -46,7 +46,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 
-#include "r_local.h"
+#include "r_internal.h"
 
 int			gl_part_tex;
 static GLint part_tex_internal_format = 2;

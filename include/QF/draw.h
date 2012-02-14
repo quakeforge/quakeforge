@@ -59,7 +59,7 @@ void Draw_Init (void);
 				also standard ascii (brown). 0x01-0x1f and 0x80-0x9f are
 				various drawing characters, and 0x7f is a backwards arrow.
 */
-void Draw_Character (int x, int y, unsigned int ch);
+void Draw_Character (int x, int y, unsigned ch);
 
 /** Draws a character string to the screen.
 	No line wrapping is performed.

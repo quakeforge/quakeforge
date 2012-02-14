@@ -36,7 +36,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #ifndef USE_INTEL_ASM
-#include "r_local.h"
+#include "r_internal.h"
 
 int         r_bmodelactive;
 

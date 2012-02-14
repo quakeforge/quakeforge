@@ -143,9 +143,6 @@ extern void R_MakeSky (void);
 extern int gl_solidskytexture;
 extern int gl_alphaskytexture;
 
-extern double r_realtime;
-extern double r_frametime;
-
 // flags in finalvert_t.flags
 #define ALIAS_LEFT_CLIP				0x0001
 #define ALIAS_TOP_CLIP				0x0002

@@ -74,6 +74,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/vid.h"
 
 #include "d_iface.h"
+#include "r_internal.h"
 #include "fbset.h"
 
 #ifndef PAGE_SIZE

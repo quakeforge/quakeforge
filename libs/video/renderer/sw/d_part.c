@@ -32,7 +32,7 @@ static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #include "d_local.h"
-#include "r_local.h"
+#include "r_internal.h"
 
 
 #ifdef PIC

@@ -36,10 +36,6 @@ void SCR_Init_Cvars (void);
 void SCR_Init (void);
 
 typedef void (*SCR_Func)(void);
-// scr_funcs is a null terminated array
-void SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
-					   SCR_Func *scr_funcs);
-void SCR_UpdateWholeScreen (void);
 
 void SCR_SizeUp (void);
 void SCR_SizeDown (void);
@@ -50,21 +46,14 @@ void SCR_BeginLoadingPlaque (void);
 void SCR_EndLoadingPlaque (void);
 
 struct view_s;
-void SCR_DrawRam (void);
-void SCR_DrawFPS (void);
-void SCR_DrawTime (void);
-void SCR_DrawTurtle (void);
-void SCR_DrawPause (void);
 
 struct tex_s *SCR_ScreenShot (int width, int height);
-struct tex_s *SCR_CaptureBGR (void);
 void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
 int MipColor (int r, int g, int b);
 int SCR_ModalMessage (const char *text);
 
 extern float		scr_con_current;
 
-extern int			scr_fullupdate;	// set to 0 to force full redraw
 extern int			sb_lines;
 
 extern int			clearnotify;	// set to 0 whenever notify text is drawn
@@ -76,8 +65,6 @@ extern struct cvar_s		*scr_fov;
 extern struct cvar_s		*scr_viewsize;
 
 // only the refresh window will be updated unless these variables are flagged 
-extern int			scr_copytop;
-extern int			scr_copyeverything;
 
 extern struct qpic_s *scr_ram;
 extern struct qpic_s *scr_net;

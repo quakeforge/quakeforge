@@ -42,20 +42,6 @@
 #define BMODEL_FULLY_CLIPPED	0x10 // value returned by R_BmodelCheckBBox ()
 									 //  if bbox is trivially rejected
 
-// color shifts =============================================================
-
-typedef struct
-{
-	int     destcolor[3];
-	int     percent;        // 0-255
-} cshift_t;
-
-#define CSHIFT_CONTENTS 0
-#define CSHIFT_DAMAGE   1
-#define CSHIFT_BONUS    2
-#define CSHIFT_POWERUP  3
-#define NUM_CSHIFTS     4
-
 // viewmodel lighting =======================================================
 
 typedef struct {
@@ -131,7 +117,6 @@ void R_RenderWorld (void);
 extern	plane_t	screenedge[4];
 
 extern	vec3_t	r_origin;
-
 extern	vec3_t	r_entorigin;
 
 extern	int		r_visframecount;
@@ -146,12 +131,6 @@ void R_DrawPolyList (void);
 
 //  Surface cache related ==========
 extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
-extern qboolean	r_inhibit_viewmodel;
-extern qboolean	r_force_fullscreen;
-extern qboolean	r_paused;
-extern entity_t *r_view_model;
-extern entity_t *r_player_entity;
-extern qboolean r_active;
 
 // current entity info
 extern	qboolean		insubmodel;
@@ -265,8 +244,6 @@ void R_ClearParticles (void);
 void R_ReadPointFile_f (void);
 void R_InitSprites (void);
 void R_SurfacePatch (void);
-
-extern float r_gravity;
 
 // renderer stuff again ===================================
 

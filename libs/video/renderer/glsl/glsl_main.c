@@ -54,10 +54,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/qf_textures.h"
 
 #include "gl_draw.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
-#include "r_local.h"
-#include "r_screen.h"
+#include "r_internal.h"
 
 mat4_t glsl_projection;
 mat4_t glsl_view;
@@ -182,8 +179,8 @@ R_RenderEntities (void)
 static void
 R_DrawViewModel (void)
 {
-	currententity = r_view_model;
-	if (r_inhibit_viewmodel
+	currententity = vr_data.view_model;
+	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel->int_val
 		|| !r_drawentities->int_val
 		|| !currententity->model)
@@ -247,6 +244,7 @@ R_RenderView (void)
 VISIBLE void
 R_Init (void)
 {
+	Draw_Init ();
 	SCR_Init ();
 	R_InitBsp ();
 	R_InitAlias ();

@@ -47,9 +47,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/va.h"
 
 #include "compat.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
-#include "r_local.h"
+#include "r_internal.h"
 
 static int		ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 //static int	ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
@@ -149,7 +147,7 @@ R_ParticleExplosion_QF (const vec3_t org)
 		p->next = active_particles;
 		active_particles = p;
 
-		p->die = r_realtime + 5;
+		p->die = vr_data.realtime + 5;
 		p->color = ramp1[0];
 		p->ramp = rand () & 3;
 		if (i & 1) {
@@ -185,7 +183,7 @@ R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 		p->next = active_particles;
 		active_particles = p;
 
-		p->die = r_realtime + 0.3;
+		p->die = vr_data.realtime + 0.3;
 		p->color = colorStart + (colorMod % colorLength);
 		colorMod++;
 
@@ -216,7 +214,7 @@ R_BlobExplosion_QF (const vec3_t org)
 		p->next = active_particles;
 		active_particles = p;
 
-		p->die = r_realtime + 1 + (rand () & 8) * 0.05;
+		p->die = vr_data.realtime + 1 + (rand () & 8) * 0.05;
 
 		if (i & 1) {
 			p->type = pt_blob;
@@ -258,7 +256,7 @@ R_LavaSplash_QF (const vec3_t org)
 				p->next = active_particles;
 				active_particles = p;
 
-				p->die = r_realtime + 2 + (rand () & 31) * 0.02;
+				p->die = vr_data.realtime + 2 + (rand () & 31) * 0.02;
 				p->color = 224 + (rand () & 7);
 				p->type = pt_grav;
 				p->phys = R_ParticlePhysics (p->type);
@@ -298,7 +296,7 @@ R_TeleportSplash_QF (const vec3_t org)
 				p->next = active_particles;
 				active_particles = p;
 
-				p->die = r_realtime + 0.2 + (rand () & 7) * 0.02;
+				p->die = vr_data.realtime + 0.2 + (rand () & 7) * 0.02;
 				p->color = 7 + (rand () & 7);
 				p->type = pt_grav;
 				p->phys = R_ParticlePhysics (p->type);
@@ -343,7 +341,7 @@ R_DarkFieldParticles_ID (const entity_t *ent)
 
 				rnd = rand ();
 
-				p->die = r_realtime + 0.2 + (rnd & 7) * 0.02;
+				p->die = vr_data.realtime + 0.2 + (rnd & 7) * 0.02;
 				p->color = 150 + rand () % 6;
 				p->type = pt_slowgrav;
 				p->phys = R_ParticlePhysics (p->type);
@@ -381,14 +379,14 @@ R_EntityParticles_ID (const entity_t *ent)
 	}
 
 	for (i = 0; i < NUMVERTEXNORMALS; i++) {
-		angle = r_realtime * avelocities[i][0];
+		angle = vr_data.realtime * avelocities[i][0];
 		cy = cos (angle);
 		sy = sin (angle);
-		angle = r_realtime * avelocities[i][1];
+		angle = vr_data.realtime * avelocities[i][1];
 		cp = cos (angle);
 		sp = sin (angle);
 // Next 3 lines results aren't currently used, may be in future. --Despair
-//		angle = r_realtime * avelocities[i][2];
+//		angle = vr_data.realtime * avelocities[i][2];
 //		sr = sin (angle);
 //		cr = cos (angle);
 
@@ -403,7 +401,7 @@ R_EntityParticles_ID (const entity_t *ent)
 		p->next = active_particles;
 		active_particles = p;
 
-		p->die = r_realtime + 0.01;
+		p->die = vr_data.realtime + 0.01;
 		p->color = 0x6f;
 		p->type = pt_explode;
 		p->phys = R_ParticlePhysics (p->type);
@@ -435,7 +433,7 @@ R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
 		p->next = active_particles;
 		active_particles = p;
 
-		p->die = r_realtime + 0.1 * (rand () % 5);
+		p->die = vr_data.realtime + 0.1 * (rand () % 5);
 		p->color = (color & ~7) + (rand () & 7);
 		p->type = pt_slowgrav;
 		p->phys = R_ParticlePhysics (p->type);
@@ -455,7 +453,7 @@ R_SpikeEffect_QF (const vec3_t org)
 static void
 R_SuperSpikeEffect_QF (const vec3_t org)
 {
-	R_RunParticleEffect (org, vec3_origin, 0, 20);
+	R_RunParticleEffect_QF (org, vec3_origin, 0, 20);
 }
 
 static void
@@ -515,7 +513,7 @@ R_RocketTrail_QF (const entity_t *ent)
 
 		VectorZero (p->vel);
 
-		p->die = r_realtime + 2;
+		p->die = vr_data.realtime + 2;
 		p->ramp = (rand () & 3);
 		p->color = ramp3[(int) p->ramp];
 		p->type = pt_fire;
@@ -554,7 +552,7 @@ R_GrenadeTrail_QF (const entity_t *ent)
 
 		VectorZero (p->vel);
 
-		p->die = r_realtime + 2;
+		p->die = vr_data.realtime + 2;
 		p->ramp = (rand () & 3) + 2;
 		p->color = ramp3[(int) p->ramp];
 		p->type = pt_fire;
@@ -593,7 +591,7 @@ R_BloodTrail_QF (const entity_t *ent)
 
 		VectorZero (p->vel);
 
-		p->die = r_realtime + 2;
+		p->die = vr_data.realtime + 2;
 		p->type = pt_slowgrav;
 		p->phys = R_ParticlePhysics (p->type);
 		p->color = 67 + (rand () & 3);
@@ -632,7 +630,7 @@ R_SlightBloodTrail_QF (const entity_t *ent)
 
 		VectorZero (p->vel);
 
-		p->die = r_realtime + 2;
+		p->die = vr_data.realtime + 2;
 		p->type = pt_slowgrav;
 		p->phys = R_ParticlePhysics (p->type);
 		p->color = 67 + (rand () & 3);
@@ -669,7 +667,7 @@ R_WizTrail_QF (const entity_t *ent)
 		p->next = active_particles;
 		active_particles = p;
 
-		p->die = r_realtime + 0.5;
+		p->die = vr_data.realtime + 0.5;
 		p->type = pt_static;
 		p->phys = R_ParticlePhysics (p->type);
 		p->color = 52 + ((tracercount & 4) << 1);
@@ -716,7 +714,7 @@ R_FlameTrail_QF (const entity_t *ent)
 		p->next = active_particles;
 		active_particles = p;
 
-		p->die = r_realtime + 0.5;
+		p->die = vr_data.realtime + 0.5;
 		p->type = pt_static;
 		p->phys = R_ParticlePhysics (p->type);
 		p->color = 230 + ((tracercount & 4) << 1);
@@ -764,7 +762,7 @@ R_VoorTrail_QF (const entity_t *ent)
 
 		VectorZero (p->vel);
 
-		p->die = r_realtime + 0.3;
+		p->die = vr_data.realtime + 0.3;
 		p->type = pt_static;
 		p->phys = R_ParticlePhysics (p->type);
 		p->color = 9 * 16 + 8 + (rand () & 3);
@@ -785,7 +783,7 @@ R_DrawParticles (void)
 	VectorCopy (vpn, r_ppn);
 
 	for (particle = &active_particles; *particle;) {
-		if ((*particle)->die < r_realtime) {
+		if ((*particle)->die < vr_data.realtime) {
 			p = (*particle)->next;
 			(*particle)->next = free_particles;
 			free_particles = (*particle);
@@ -811,34 +809,36 @@ r_particles_style_f (cvar_t *var)
 {
 }
 
+static vid_particle_funcs_t particles_QF = {
+	R_RocketTrail_QF,
+	R_GrenadeTrail_QF,
+	R_BloodTrail_QF,
+	R_SlightBloodTrail_QF,
+	R_WizTrail_QF,
+	R_FlameTrail_QF,
+	R_VoorTrail_QF,
+	0,//R_GlowTrail_QF,
+	R_RunParticleEffect_QF,
+	R_BloodPuffEffect_QF,
+	R_GunshotEffect_QF,
+	R_LightningBloodEffect_QF,
+	R_SpikeEffect_QF,
+	R_KnightSpikeEffect_QF,
+	R_SuperSpikeEffect_QF,
+	R_WizSpikeEffect_QF,
+	R_BlobExplosion_QF,
+	R_ParticleExplosion_QF,
+	R_ParticleExplosion2_QF,
+	R_LavaSplash_QF,
+	R_TeleportSplash_QF,
+	R_DarkFieldParticles_ID,
+	R_EntityParticles_ID,
+};
+
 static void
 R_ParticleFunctionInit (void)
 {
-	R_BlobExplosion = R_BlobExplosion_QF;
-	R_ParticleExplosion = R_ParticleExplosion_QF;
-	R_ParticleExplosion2 = R_ParticleExplosion2_QF;
-	R_LavaSplash = R_LavaSplash_QF;
-	R_TeleportSplash = R_TeleportSplash_QF;
-	R_DarkFieldParticles = R_DarkFieldParticles_ID;
-	R_EntityParticles = R_EntityParticles_ID;
-
-	R_BloodPuffEffect = R_BloodPuffEffect_QF;
-	R_GunshotEffect = R_GunshotEffect_QF;
-	R_LightningBloodEffect = R_LightningBloodEffect_QF;
-
-	R_RunParticleEffect = R_RunParticleEffect_QF;
-	R_SpikeEffect = R_SpikeEffect_QF;
-	R_SuperSpikeEffect = R_SuperSpikeEffect_QF;
-	R_KnightSpikeEffect = R_KnightSpikeEffect_QF;
-	R_WizSpikeEffect = R_WizSpikeEffect_QF;
-
-	R_RocketTrail = R_RocketTrail_QF;
-	R_GrenadeTrail = R_GrenadeTrail_QF;
-	R_BloodTrail = R_BloodTrail_QF;
-	R_SlightBloodTrail = R_SlightBloodTrail_QF;
-	R_WizTrail = R_WizTrail_QF;
-	R_FlameTrail = R_FlameTrail_QF;
-	R_VoorTrail = R_VoorTrail_QF;
+	vr_funcs.particles = &particles_QF;
 }
 
 VISIBLE void

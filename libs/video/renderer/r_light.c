@@ -45,13 +45,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/render.h"
 
 #include "compat.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
-#include "r_local.h"
-#include "r_shared.h"
+#include "r_internal.h"
 
 dlight_t    *r_dlights;
-lightstyle_t r_lightstyle[MAX_LIGHTSTYLES];
 vec3_t      ambientcolor;
 
 unsigned int r_maxdlights;
@@ -80,14 +76,14 @@ R_AnimateLight (void)
 
 	// light animations
 	// 'm' is normal light, 'a' is no light, 'z' is double bright
-	i = (int) (r_realtime * 10);
+	i = (int) (vr_data.realtime * 10);
 	for (j = 0; j < MAX_LIGHTSTYLES; j++) {
-		if (!r_lightstyle[j].length) {
+		if (!vr_data.lightstyle[j].length) {
 			d_lightstylevalue[j] = 256;
 			continue;
 		}
-		k = i % r_lightstyle[j].length;
-		k = r_lightstyle[j].map[k] - 'a';
+		k = i % vr_data.lightstyle[j].length;
+		k = vr_data.lightstyle[j].map[k] - 'a';
 		k = k * 22;
 		d_lightstylevalue[j] = k;
 	}
@@ -267,7 +263,7 @@ R_PushDlights (const vec3_t entorigin)
 	l = r_dlights;
 
 	for (i = 0; i < r_maxdlights; i++, l++) {
-		if (l->die < r_realtime || !l->radius)
+		if (l->die < vr_data.realtime || !l->radius)
 			continue;
 		VectorSubtract (l->origin, entorigin, lightorigin);
 		R_MarkLights (lightorigin, l, 1 << i, r_worldentity.model);
@@ -466,7 +462,7 @@ R_AllocDlight (int key)
 	// then look for anything else
 	dl = r_dlights;
 	for (i = 0; i < r_maxdlights; i++, dl++) {
-		if (dl->die < r_realtime) {
+		if (dl->die < vr_data.realtime) {
 			memset (dl, 0, sizeof (*dl));
 			dl->key = key;
 			dl->color[0] = dl->color[1] = dl->color[2] = 1;
@@ -488,7 +484,7 @@ R_DecayLights (double frametime)
 
 	dl = r_dlights;
 	for (i = 0; i < r_maxdlights; i++, dl++) {
-		if (dl->die < r_realtime || !dl->radius)
+		if (dl->die < vr_data.realtime || !dl->radius)
 			continue;
 
 		dl->radius -= frametime * dl->decay;

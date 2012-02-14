@@ -35,7 +35,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sound.h"
 
 #include "d_ifacea.h"
-#include "r_local.h"
+#include "r_internal.h"
 
 /*
   FIXME

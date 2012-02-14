@@ -61,6 +61,7 @@ typedef struct plugin_funcs_s {
 	struct console_funcs_s	*console;
 	struct snd_output_funcs_s	*snd_output;
 	struct snd_render_funcs_s	*snd_render;
+	struct vid_render_funcs_s	*vid_render;
 } plugin_funcs_t;
 
 typedef struct plugin_data_s {
@@ -70,6 +71,7 @@ typedef struct plugin_data_s {
 	struct console_data_s	*console;
 	struct snd_output_data_s	*snd_output;
 	struct snd_render_data_s	*snd_render;
+	struct vid_render_data_s	*vid_render;
 } plugin_data_t;
 
 typedef struct plugin_s {

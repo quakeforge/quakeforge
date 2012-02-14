@@ -60,9 +60,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "compat.h"
 #include "gl_draw.h"
-#include "r_cvar.h"
-#include "r_local.h"
-#include "r_shared.h"
+#include "r_internal.h"
 #include "sbar.h"
 #include "varrays.h"
 

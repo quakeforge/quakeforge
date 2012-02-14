@@ -41,7 +41,6 @@
 #include "game.h"
 #include "netmain.h"
 #include "protocol.h"
-#include "r_local.h"
 
 
 typedef struct usercmd_s
@@ -244,6 +243,8 @@ typedef struct
 	int			sv_cshifts;
 	int         chase;
 	int         fpd;
+
+	lightstyle_t    lightstyle[MAX_LIGHTSTYLES];
 } client_state_t;
 
 

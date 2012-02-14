@@ -34,6 +34,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "r_internal.h"
 #include "d_local.h"
 
 int         d_vrectx, d_vrecty, d_vrectright_particle, d_vrectbottom_particle;

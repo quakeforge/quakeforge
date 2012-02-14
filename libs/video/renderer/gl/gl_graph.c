@@ -49,7 +49,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_textures.h"
 
-#include "r_cvar.h"
+#include "r_internal.h"
 
 #define NUM_GRAPH_TEXTURES 8
 

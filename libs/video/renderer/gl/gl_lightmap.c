@@ -54,9 +54,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
-#include "r_cvar.h"
-#include "r_local.h"
-#include "r_shared.h"
+#include "r_internal.h"
 
 static int          dlightdivtable[8192];
 static int			 gl_internalformat;				// 1 or 3

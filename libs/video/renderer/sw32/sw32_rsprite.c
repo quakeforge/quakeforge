@@ -43,7 +43,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/render.h"
 #include "QF/sys.h"
 
-#include "r_local.h"
+#include "r_internal.h"
 
 static int  clip_current;
 static vec5_t clip_verts[2][MAXWORKINGVERTS];
@@ -257,7 +257,7 @@ R_GetSpriteframe (msprite_t *psprite)
 		numframes = pspritegroup->numframes;
 		fullinterval = pintervals[numframes - 1];
 
-		time = r_realtime + currententity->syncbase;
+		time = vr_data.realtime + currententity->syncbase;
 
 		// when loading in Mod_LoadSpriteGroup, we guaranteed all interval
 		// values are positive, so we don't have to worry about division by 0

@@ -37,38 +37,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "r_dynamic.h"
-#include "r_local.h"
+#include "r_internal.h"
 
 unsigned int	r_maxparticles, numparticles;
 particle_t	   *active_particles, *free_particles, *particles, **freeparticles;
 vec3_t			r_pright, r_pup, r_ppn;
-float			r_gravity;
-
-void (*R_RocketTrail) (const struct entity_s *ent);
-void (*R_GrenadeTrail) (const struct entity_s *ent);
-void (*R_BloodTrail) (const struct entity_s *ent);
-void (*R_SlightBloodTrail) (const struct entity_s *ent);
-void (*R_WizTrail) (const struct entity_s *ent);
-void (*R_FlameTrail) (const struct entity_s *ent);
-void (*R_VoorTrail) (const struct entity_s *ent);
-void (*R_GlowTrail) (const struct entity_s *ent, int glow_color);
-void (*R_RunParticleEffect) (const vec3_t org, const vec3_t dir, int color, int count);
-void (*R_BloodPuffEffect) (const vec3_t org, int count);
-void (*R_GunshotEffect) (const vec3_t org, int count);
-void (*R_LightningBloodEffect) (const vec3_t org);
-void (*R_SpikeEffect) (const vec3_t org);
-void (*R_KnightSpikeEffect) (const vec3_t org);
-void (*R_SuperSpikeEffect) (const vec3_t org);
-void (*R_WizSpikeEffect) (const vec3_t org);
-void (*R_BlobExplosion) (const vec3_t org);
-void (*R_ParticleExplosion) (const vec3_t org);
-void (*R_ParticleExplosion2) (const vec3_t org, int colorStart, int colorLength);
-void (*R_LavaSplash) (const vec3_t org);
-void (*R_TeleportSplash) (const vec3_t org);
-void (*R_DarkFieldParticles) (const struct entity_s *ent);
-void (*R_EntityParticles) (const struct entity_s *ent);
-
 
 /*
   R_MaxParticlesCheck
@@ -123,19 +96,19 @@ static int  ramp3[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 static inline float
 grav (void)
 {
-	return r_frametime * r_gravity * 0.05;
+	return vr_data.frametime * vr_data.gravity * 0.05;
 }
 
 static inline float
 fast_grav (void)
 {
-	return r_frametime * r_gravity;
+	return vr_data.frametime * vr_data.gravity;
 }
 
 static inline void
 add_vel (particle_t *part)
 {
-	VectorMultAdd (part->org, r_frametime, part->vel, part->org);
+	VectorMultAdd (part->org, vr_data.frametime, part->vel, part->org);
 }
 
 static inline void
@@ -159,7 +132,7 @@ add_fastgrav (particle_t *part)
 static inline qboolean
 add_ramp (particle_t *part, float time, int max)
 {
-	part->ramp += r_frametime * time;
+	part->ramp += vr_data.frametime * time;
 	if (part->ramp >= max) {
 		part->die = -1;
 		return true;
@@ -170,7 +143,7 @@ add_ramp (particle_t *part, float time, int max)
 static inline qboolean
 fade_alpha (particle_t *part, float time)
 {
-	part->alpha -= r_frametime * time;
+	part->alpha -= vr_data.frametime * time;
 	if (part->alpha <= 0.0) {
 		part->die = -1;
 		return true;
@@ -209,7 +182,7 @@ part_phys_explode (particle_t *part)
 		return;
 	add_vel (part);
 	part->color = ramp1[(int) part->ramp];
-	VectorMultAdd (part->vel, r_frametime * 4.0, part->vel, part->vel);
+	VectorMultAdd (part->vel, vr_data.frametime * 4.0, part->vel, part->vel);
 	add_grav (part);
 }
 
@@ -220,7 +193,7 @@ part_phys_explode2 (particle_t *part)
 		return;
 	add_vel (part);
 	part->color = ramp2[(int) part->ramp];
-	VectorMultAdd (part->vel, r_frametime, part->vel, part->vel);
+	VectorMultAdd (part->vel, vr_data.frametime, part->vel, part->vel);
 	add_grav (part);
 }
 
@@ -228,7 +201,7 @@ static void
 part_phys_blob (particle_t *part)
 {
 	add_vel (part);
-	VectorMultAdd (part->vel, r_frametime * 4.0, part->vel, part->vel);
+	VectorMultAdd (part->vel, vr_data.frametime * 4.0, part->vel, part->vel);
 	add_grav (part);
 }
 
@@ -236,8 +209,8 @@ static void
 part_phys_blob2 (particle_t *part)
 {
 	add_vel (part);
-	part->vel[0] -= part->vel[0] * r_frametime * 4.0;
-	part->vel[1] -= part->vel[1] * r_frametime * 4.0;
+	part->vel[0] -= part->vel[0] * vr_data.frametime * 4.0;
+	part->vel[1] -= part->vel[1] * vr_data.frametime * 4.0;
 	add_grav (part);
 }
 
@@ -247,8 +220,8 @@ part_phys_smoke (particle_t *part)
 	if (fade_alpha (part, 0.4))
 		return;
 	add_vel (part);
-	part->scale += r_frametime * 4.0;
-	//part->org[2] += r_frametime * 30.0;
+	part->scale += vr_data.frametime * 4.0;
+	//part->org[2] += vr_data.frametime * 30.0;
 }
 
 static void
@@ -257,8 +230,8 @@ part_phys_smokecloud (particle_t *part)
 	if (fade_alpha (part, 0.55))
 		return;
 	add_vel (part);
-	part->scale += r_frametime * 50.0;
-	part->vel[2] += r_frametime * 30.0;
+	part->scale += vr_data.frametime * 50.0;
+	part->vel[2] += vr_data.frametime * 30.0;
 }
 
 static void
@@ -267,7 +240,7 @@ part_phys_bloodcloud (particle_t *part)
 	if (fade_alpha (part, 0.25))
 		return;
 	add_vel (part);
-	part->scale += r_frametime * 4.0;
+	part->scale += vr_data.frametime * 4.0;
 	add_grav (part);
 }
 
@@ -298,7 +271,7 @@ part_phys_flame (particle_t *part)
 	if (fade_alpha (part, 0.125))
 		return;
 	add_vel (part);
-	part->scale -= r_frametime * 2.0;
+	part->scale -= vr_data.frametime * 2.0;
 }
 
 static pt_phys_func part_phys[] = {

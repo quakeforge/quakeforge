@@ -31,14 +31,15 @@
 static __attribute__ ((used)) const char rcsid[] = 
 	"$Id$";
 
+#include <stdlib.h>
+
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
 
 #include "d_ifacea.h"
-#include "r_local.h"
-#include "stdlib.h"
+#include "r_internal.h"
 
 #define LIGHT_MIN	5					// lowest light value we'll allow, to
 										// avoid the need for inner-loop light
@@ -663,7 +664,7 @@ R_AliasDrawModel (alight_t *plighting)
 #endif
 	}
 
-	if (currententity != r_view_model)
+	if (currententity != vr_data.view_model)
 		ziscale = (float) 0x8000 *(float) 0x10000;
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;

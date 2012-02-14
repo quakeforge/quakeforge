@@ -34,7 +34,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/render.h"
 #include "QF/sys.h"
 
-#include "r_local.h"
+#include "r_internal.h"
 
 drawsurf_t  r_drawsurf;
 
@@ -439,7 +439,7 @@ R_GenTurbTile (byte *pbasetex, void *pdest)
 	int         i, j, s, t;
 	byte       *pd;
 
-	turb = sintable + ((int) (r_realtime * SPEED) & (CYCLE - 1));
+	turb = sintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
 	pd = (byte *) pdest;
 
 	for (i = 0; i < TILE_SIZE; i++) {

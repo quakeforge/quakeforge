@@ -35,6 +35,8 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/plugin.h"
 #include "QF/screen.h"
 
+#include "QF/plugin/vid_render.h"
+
 #include "host.h"
 #include "server.h"
 
@@ -53,15 +55,8 @@ int         viewentity;
 
 byte       *vid_colormap;
 
-vec3_t      vpn, vright, vup;
-
-qboolean    r_active;
-qboolean    r_force_fullscreen;
-double      r_frametime;
-qboolean    r_inhibit_viewmodel;
-vec3_t      r_origin;
-qboolean    r_paused;
-entity_t   *r_view_model;
+vid_render_data_t *r_data;
+vid_render_funcs_t *r_funcs;
 
 cvar_t *cl_rollangle;
 cvar_t *cl_rollspeed;
@@ -70,13 +65,6 @@ void
 CL_UpdateScreen (double realtime)
 {
 }
-
-struct tex_s *
-SCR_CaptureBGR (void)
-{
-	return 0;
-}
-
 
 void
 CL_Cmd_ForwardToServer (void)
@@ -139,11 +127,6 @@ CL_StopPlayback (void)
 {
 }
 
-VISIBLE void
-D_FlushCaches (void)
-{
-}
-
 void
 IN_ProcessEvents (void)
 {
@@ -151,11 +134,6 @@ IN_ProcessEvents (void)
 
 void
 Key_WriteBindings (QFile *f)
-{
-}
-
-void
-R_DecayLights (double frametime)
 {
 }
 

@@ -87,8 +87,7 @@ server_libs = libnq_server.a libnq_common.a
 
 # Software-rendering targets
 
-# We need libQFrenderer_sw to always be static -- there's assembler in there
-soft_QFLIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
+soft_QFLIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
 		$(top_builddir)/libs/models/libQFmodels_sw.la
 
 # ... Linux FBDev
@@ -133,7 +132,7 @@ nq_sdl32_libs=  \
 			libnq_sdl.a \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
-			$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
+			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
 			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIBS)
@@ -171,11 +170,11 @@ nq_x11_DEPENDENCIES=	$(nq_x11_libs)
 # OpenGL-using targets
 
 opengl_QFLIBS= \
-			$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
+			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
 			$(top_builddir)/libs/models/libQFmodels_gl.la
 
 glsl_QFLIBS= \
-			$(top_builddir)/libs/video/renderer/libQFrenderer_glsl.la \
+			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
 			$(top_builddir)/libs/models/libQFmodels_glsl.la
 
 # ... Linux 3DFX

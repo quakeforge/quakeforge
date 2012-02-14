@@ -34,7 +34,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/render.h"
 
 #include "compat.h"
-#include "r_local.h"
+#include "r_internal.h"
 
 #define MAXLEFTCLIPEDGES		100
 

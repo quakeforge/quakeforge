@@ -57,8 +57,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/qf_sky.h"
 #include "QF/GL/qf_vid.h"
 
-#include "r_cvar.h"
-#include "r_shared.h"
+#include "r_internal.h"
 
 #include "compat.h"
 
@@ -745,7 +744,7 @@ draw_id_sky_polys (const instsurf_t *sky_chain)
 	const instsurf_t *sc = sky_chain;
 	float       speedscale;
 
-	speedscale = r_realtime / 16;
+	speedscale = vr_data.realtime / 16;
 	speedscale -= floor (speedscale);
 
 	qfglBindTexture (GL_TEXTURE_2D, gl_solidskytexture);
@@ -757,7 +756,7 @@ draw_id_sky_polys (const instsurf_t *sky_chain)
 	if (gl_sky_multipass->int_val) {
 		sc = sky_chain;
 
-		speedscale = r_realtime / 8;
+		speedscale = vr_data.realtime / 8;
 		speedscale -= floor (speedscale);
 
 		qfglBindTexture (GL_TEXTURE_2D, gl_alphaskytexture);

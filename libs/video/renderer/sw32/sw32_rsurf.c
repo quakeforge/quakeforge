@@ -35,7 +35,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "r_local.h"
+#include "r_internal.h"
 
 drawsurf_t  r_drawsurf;
 

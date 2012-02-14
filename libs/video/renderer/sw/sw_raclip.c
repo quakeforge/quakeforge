@@ -34,7 +34,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/render.h"
 
 #include "d_local.h"
-#include "r_local.h"
+#include "r_internal.h"
 
 static finalvert_t fv[2][8];
 static auxvert_t av[8];

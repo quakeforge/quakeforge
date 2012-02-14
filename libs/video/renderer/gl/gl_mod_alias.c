@@ -59,9 +59,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
-#include "r_local.h"
+#include "r_internal.h"
 
 typedef struct {
 	vec3_t      normal;
@@ -422,7 +420,7 @@ R_DrawAliasModel (entity_t *e)
 
 		if (gl_vector_light->int_val) {
 			for (l = r_dlights, lnum = 0; lnum < r_maxdlights; lnum++, l++) {
-				if (l->die >= r_realtime) {
+				if (l->die >= vr_data.realtime) {
 					VectorSubtract (l->origin, e->origin, dist);
 					if ((d = DotProduct (dist, dist)) >	// Out of range
 						((l->radius + radius) * (l->radius + radius))) {
@@ -473,7 +471,7 @@ R_DrawAliasModel (entity_t *e)
 			VectorCopy (ambientcolor, emission);
 
 			for (l = r_dlights, lnum = 0; lnum < r_maxdlights; lnum++, l++) {
-				if (l->die >= r_realtime) {
+				if (l->die >= vr_data.realtime) {
 					VectorSubtract (l->origin, e->origin, dist);
 					
 					if ((d = DotProduct (dist, dist)) > (l->radius + radius) *

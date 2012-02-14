@@ -54,7 +54,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
-#include "r_cvar.h"
+#include "r_internal.h"
 #include "sbar.h"
 
 typedef struct {

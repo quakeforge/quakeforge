@@ -50,9 +50,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
-#include "r_local.h"
+#include "r_internal.h"
 
 //define    PASSAGES
 
@@ -149,6 +147,7 @@ R_Init (void)
 	// get stack position so we can guess if we are going to overflow
 	r_stack_start = (byte *) & dummy;
 
+	Draw_Init ();
 	SCR_Init ();
 	R_InitTurb ();
 
@@ -392,7 +391,7 @@ R_DrawEntitiesOnList (void)
 					lighting.plightvec = lightvec;
 
 					for (lnum = 0; lnum < r_maxdlights; lnum++) {
-						if (r_dlights[lnum].die >= r_realtime) {
+						if (r_dlights[lnum].die >= vr_data.realtime) {
 							VectorSubtract (currententity->origin,
 											r_dlights[lnum].origin, dist);
 							add = r_dlights[lnum].radius - VectorLength (dist);
@@ -431,11 +430,11 @@ R_DrawViewModel (void)
 	float       minlight;
 	dlight_t   *dl;
 
-	if (r_inhibit_viewmodel || !r_drawviewmodel->int_val
+	if (vr_data.inhibit_viewmodel || !r_drawviewmodel->int_val
 		|| !r_drawentities->int_val)
 		return;
 
-	currententity = r_view_model;
+	currententity = vr_data.view_model;
 	if (!currententity->model)
 		return;
 
@@ -459,7 +458,7 @@ R_DrawViewModel (void)
 			continue;
 		if (!dl->radius)
 			continue;
-		if (dl->die < r_realtime)
+		if (dl->die < vr_data.realtime)
 			continue;
 
 		VectorSubtract (currententity->origin, dl->origin, dist);
@@ -583,7 +582,7 @@ R_DrawBEntitiesOnList (void)
 						vec3_t      lightorigin;
 
 						for (k = 0; k < r_maxdlights; k++) {
-							if ((r_dlights[k].die < r_realtime) ||
+							if ((r_dlights[k].die < vr_data.realtime) ||
 								(!r_dlights[k].radius)) continue;
 
 							VectorSubtract (r_dlights[k].origin,

@@ -40,9 +40,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/cvar.h"
 #include "QF/sys.h"
 
-#include "r_cvar.h"
-#include "r_local.h"
-#include "r_shared.h"
+#include "r_internal.h"
 
 mvertex_t  *r_pcurrentvertbase;
 mleaf_t    *r_viewleaf;
@@ -115,7 +113,7 @@ R_TextureAnimation (msurface_t *surf)
 	if (!base->anim_total)
 		return base;
 
-	relative = (int) (r_realtime * 10) % base->anim_total;
+	relative = (int) (vr_data.realtime * 10) % base->anim_total;
 
 	count = 0;
 	while (base->anim_min > relative || base->anim_max <= relative) {

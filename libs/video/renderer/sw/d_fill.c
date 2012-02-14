@@ -32,7 +32,7 @@ static __attribute__ ((used)) const char rcsid[] =
 	"$Id$";
 
 #include "d_iface.h"
-
+#include "r_internal.h"
 
 void
 D_FillRect (vrect_t *rect, int color)

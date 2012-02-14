@@ -48,6 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/vid.h"
 
 #include "compat.h"
+#include "r_internal.h"
 
 /* Software and hardware gamma support */
 VISIBLE byte		gammatable[256];

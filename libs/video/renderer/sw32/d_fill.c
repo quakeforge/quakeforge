@@ -34,6 +34,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "d_iface.h"
+#include "r_internal.h"
 
 
 void

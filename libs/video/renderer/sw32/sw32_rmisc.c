@@ -38,7 +38,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "r_local.h"
+#include "r_internal.h"
 
 
 static void
@@ -275,7 +275,7 @@ R_SetupFrame (void)
 				vrect.width = vid.width;
 				vrect.height = vid.height;
 
-				R_SetVrect (&vrect, &r_refdef.vrect, r_lineadj);
+				R_SetVrect (&vrect, &r_refdef.vrect, vr_data.lineadj);
 				R_ViewChanged (vid.aspect);
 			} else {
 				w = vid.width;
@@ -297,7 +297,7 @@ R_SetupFrame (void)
 				vrect.height = (int) h;
 
 				R_SetVrect (&vrect, &r_refdef.vrect,
-							(int) ((float) r_lineadj *
+							(int) ((float) vr_data.lineadj *
 								   (h / (float) vid.height)));
 				R_ViewChanged (vid.aspect * (h / w) * ((float) vid.width /
 													   (float) vid.height));

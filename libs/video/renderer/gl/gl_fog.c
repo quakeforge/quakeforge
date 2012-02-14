@@ -41,7 +41,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GL/funcs.h"
 
 #include "compat.h"
-#include "r_shared.h"
+#include "r_internal.h"
 
 //==============================================================================
 //
@@ -73,10 +73,10 @@ Fog_Update (float density, float red, float green, float blue, float time)
 	//save previous settings for fade
 	if (time > 0) {
 		//check for a fade in progress
-		if (fade_done > r_realtime) {
+		if (fade_done > vr_data.realtime) {
 			float       f;
 
-			f = (fade_done - r_realtime) / fade_time;
+			f = (fade_done - vr_data.realtime) / fade_time;
 			old_density = f * old_density + (1.0 - f) * fog_density;
 			old_red = f * old_red + (1.0 - f) * fog_red;
 			old_green = f * old_green + (1.0 - f) * fog_green;
@@ -94,7 +94,7 @@ Fog_Update (float density, float red, float green, float blue, float time)
 	fog_green = green;
 	fog_blue = blue;
 	fade_time = time;
-	fade_done = r_realtime + time;
+	fade_done = vr_data.realtime + time;
 }
 
 /*
@@ -188,8 +188,8 @@ Fog_GetColor (void)
 	float       f;
 	int         i;
 
-	if (fade_done > r_realtime) {
-		f = (fade_done - r_realtime) / fade_time;
+	if (fade_done > vr_data.realtime) {
+		f = (fade_done - vr_data.realtime) / fade_time;
 		c[0] = f * old_red + (1.0 - f) * fog_red;
 		c[1] = f * old_green + (1.0 - f) * fog_green;
 		c[2] = f * old_blue + (1.0 - f) * fog_blue;
@@ -219,8 +219,8 @@ Fog_GetDensity (void)
 {
 	float       f;
 
-	if (fade_done > r_realtime) {
-		f = (fade_done - r_realtime) / fade_time;
+	if (fade_done > vr_data.realtime) {
+		f = (fade_done - vr_data.realtime) / fade_time;
 		return f * old_density + (1.0 - f) * fog_density;
 	} else {
 		return fog_density;

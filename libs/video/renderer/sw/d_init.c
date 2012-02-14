@@ -36,7 +36,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 #include "d_local.h"
-#include "r_cvar.h"
+#include "r_internal.h"
 
 #define NUM_MIPS	4
 

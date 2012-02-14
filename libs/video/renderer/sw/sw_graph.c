@@ -35,8 +35,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/draw.h"
 #include "QF/render.h"
 
-#include "r_local.h"
-#include "r_cvar.h"
+#include "r_internal.h"
 
 /*
 	R_LineGraph

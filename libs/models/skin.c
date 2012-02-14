@@ -51,7 +51,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "QF/GLSL/funcs.h"
+#include "QF/plugin/vid_render.h"
 
 typedef struct skinbank_s {
 	char       *name;
@@ -88,7 +88,7 @@ Skin_SetTranslation (int cmap, int top, int bottom)
 	}
 
 	dest = translations[cmap - 1];
-	source = vid.colormap8;
+	source = r_data->vid->colormap8;
 	memcpy (dest, source, VID_GRADES * 256);
 
 	for (i = 0; i < VID_GRADES; i++, dest += 256, source += 256) {
@@ -183,7 +183,7 @@ Skin_SetSkin (skin_t *skin, int cmap, const char *skinname)
 			name = 0;
 			break;
 		}
-		tex = LoadPCX (file, 0, vid.palette);
+		tex = LoadPCX (file, 0, r_data->vid->palette);
 		Qclose (file);
 		if (!tex || tex->width > 320 || tex->height > 200) {
 			Sys_Printf ("Bad skin %s\n", name);
@@ -196,7 +196,7 @@ Skin_SetSkin (skin_t *skin, int cmap, const char *skinname)
 		out->width = PLAYER_WIDTH;
 		out->height = PLAYER_HEIGHT;
 		out->format = tex_palette;
-		out->palette = vid.palette;
+		out->palette = r_data->vid->palette;
 		memset (out->data, 0, PLAYER_WIDTH * PLAYER_HEIGHT);
 		opix = out->data;
 		ipix = tex->data;

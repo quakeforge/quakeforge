@@ -37,7 +37,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 #include "d_local.h"
-#include "r_local.h"
+#include "r_internal.h"
 
 static byte       *r_turb_pbase;
 static void       *r_turb_pdest;
@@ -85,7 +85,7 @@ D_WarpScreen (void)
 				(int) ((float) u * wratio * w / (w + AMP2 * 2));
 		}
 
-		turb = intsintable + ((int) (r_realtime * SPEED) & (CYCLE - 1));
+		turb = intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
 		dest = (byte *)vid.buffer + scr_vrect.y * vid.rowbytes +
 						 scr_vrect.x;
 
@@ -131,7 +131,7 @@ D_WarpScreen (void)
 				(int) ((float) u * wratio * w / (w + AMP2 * 2));
 		}
 
-		turb = intsintable + ((int) (r_realtime * SPEED) & (CYCLE - 1));
+		turb = intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
 		dest = (short *) vid.buffer + scr_vrect.y * (vid.rowbytes >> 1) +
 			scr_vrect.x;
 
@@ -177,7 +177,7 @@ D_WarpScreen (void)
 				(int) ((float) u * wratio * w / (w + AMP2 * 2));
 		}
 
-		turb = intsintable + ((int) (r_realtime * SPEED) & (CYCLE - 1));
+		turb = intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
 		dest = (int *) vid.buffer + scr_vrect.y * (vid.rowbytes >> 2) +
 			scr_vrect.x;
 
@@ -263,7 +263,7 @@ Turbulent (espan_t *pspan)
 	float       sdivz, tdivz, zi, z, du, dv, spancountminus1;
 	float       sdivz16stepu, tdivz16stepu, zi16stepu;
 
-	r_turb_turb = sintable + ((int) (r_realtime * SPEED) & (CYCLE - 1));
+	r_turb_turb = sintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
 
 	r_turb_sstep = 0;					// keep compiler happy
 	r_turb_tstep = 0;					// ditto

@@ -34,6 +34,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/render.h"
 
 #include "d_local.h"
+#include "r_internal.h"
 
 static int  sprite_height;
 static int  minindex, maxindex;

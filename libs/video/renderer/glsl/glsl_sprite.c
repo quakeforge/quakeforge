@@ -52,7 +52,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
-#include "r_local.h"
+#include "r_internal.h"
 
 static const char quakesprite_vert[] =
 #include "quakespr.vc"
@@ -142,7 +142,7 @@ R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 		numframes = group->numframes;
 		fullinterval = intervals[numframes - 1];
 
-		time = r_realtime + currententity->syncbase;
+		time = vr_data.realtime + currententity->syncbase;
 		targettime = time - ((int) (time / fullinterval)) * fullinterval;
 
 		for (i = 0; i < numframes - 1; i++) {

@@ -95,14 +95,12 @@ extern struct cvar_s     *r_waterripple;
 extern struct cvar_s     *r_waterwarp;
 extern struct cvar_s     *r_zgraph;
 
-extern struct cvar_s     *scr_centertime;
 extern struct cvar_s     *scr_consize;
 extern struct cvar_s     *scr_conspeed;
 extern struct cvar_s     *scr_fov;
 extern struct cvar_s     *scr_fisheye;
 extern struct cvar_s     *scr_fviews;
 extern struct cvar_s     *scr_ffov;
-extern struct cvar_s     *scr_printspeed;
 extern struct cvar_s     *scr_showpause;
 extern struct cvar_s     *scr_showram;
 extern struct cvar_s     *scr_showturtle;

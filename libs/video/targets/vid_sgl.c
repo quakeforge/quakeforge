@@ -52,8 +52,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 #include "context_sdl.h"
-#include "r_cvar.h"
-#include "sbar.h"
+#include "r_internal.h"
 
 #ifdef _WIN32	// FIXME: evil hack to get full DirectSound support with SDL
 # include <windows.h>

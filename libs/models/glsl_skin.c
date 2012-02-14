@@ -50,6 +50,8 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 
+#include "r_internal.h"
+
 static GLuint cmap_tex[MAX_TRANSLATIONS];
 static GLuint skin_tex[MAX_TRANSLATIONS];
 

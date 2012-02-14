@@ -29,7 +29,8 @@
 #ifndef _D_LOCAL_H
 #define _D_LOCAL_H
 
-#include "r_shared.h"
+#include "QF/model.h"
+#include "QF/qtypes.h"
 
 //
 // TODO: fine-tune this; it's based on providing some overage even if there
@@ -80,14 +81,15 @@ extern fixed16_t       sadjust, tadjust;
 extern fixed16_t       bbextents, bbextentt;
 
 // FIXME: Better way of handling D_DrawSpans depths?
-void D_DrawSpans (espan_t *pspans);
-void D_DrawSpans8 (espan_t *pspans);
-void D_DrawSpans16 (espan_t *pspans);
-void D_DrawZSpans (espan_t *pspans);
-void Turbulent (espan_t *pspan);
+struct espan_s;
+void D_DrawSpans (struct espan_s *pspans);
+void D_DrawSpans8 (struct espan_s *pspans);
+void D_DrawSpans16 (struct espan_s *pspans);
+void D_DrawZSpans (struct espan_s *pspans);
+void Turbulent (struct espan_s *pspan);
 void D_SpriteDrawSpans (sspan_t *pspan);
 
-void D_DrawSkyScans (espan_t *pspan);
+void D_DrawSkyScans (struct espan_s *pspan);
 
 void R_ShowSubDiv (void);
 extern void (*prealspandrawer)(void);
@@ -104,7 +106,7 @@ extern short *d_pzbuffer;
 extern unsigned int d_zrowbytes, d_zwidth;
 
 extern int	*d_pscantable;
-extern int	 d_scantable[MAXHEIGHT];
+extern int	 d_scantable[];
 
 extern int	 d_vrectx, d_vrecty, d_vrectright_particle, d_vrectbottom_particle;
 
@@ -112,12 +114,12 @@ extern int	 d_y_aspect_shift, d_pix_min, d_pix_max, d_pix_shift;
 
 extern byte	*d_viewbuffer;
 
-extern short *zspantable[MAXHEIGHT];
+extern short *zspantable[];
 
 extern int	 d_minmip;
 extern float d_scalemip[3];
 
-extern void (*d_drawspans) (espan_t *pspan);
+extern void (*d_drawspans) (struct espan_s *pspan);
 
 void D_RasterizeAliasPolySmooth (void);
 void D_PolysetCalcGradients (int skinwidth);

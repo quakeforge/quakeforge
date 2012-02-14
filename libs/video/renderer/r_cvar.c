@@ -42,8 +42,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/render.h"
 
 #include "compat.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
+#include "r_internal.h"
 
 cvar_t	   *easter_eggs;
 
@@ -125,21 +124,17 @@ cvar_t     *r_waterripple;
 cvar_t     *r_waterwarp;
 cvar_t     *r_zgraph;
 
-cvar_t     *scr_centertime;
 cvar_t     *scr_fov;
 cvar_t     *scr_fisheye;
 cvar_t     *scr_fviews;
 cvar_t     *scr_ffov;
-cvar_t     *scr_printspeed;
 cvar_t     *scr_showpause;
 cvar_t     *scr_showram;
 cvar_t     *scr_showturtle;
 cvar_t     *scr_viewsize;
 
-void      (*r_viewsize_callback)(cvar_t *var);
 int         r_viewsize;
 
-float		cl_wateralpha;
 quat_t      crosshair_color;
 
 static void
@@ -230,8 +225,8 @@ viewsize_f (cvar_t *var)
 	} else {
 		vid.recalc_refdef = true;
 		r_viewsize = bound (0, var->int_val, 100);
-		if (r_viewsize_callback)
-			r_viewsize_callback (var);
+		if (vr_data.viewsize_callback)
+			vr_data.viewsize_callback (var);
 	}
 }
 
@@ -428,8 +423,6 @@ R_Init_Cvars (void)
 	r_zgraph = Cvar_Get ("r_zgraph", "0", CVAR_NONE, NULL,
 						 "Toggle the graph that reports the changes of "
 						 "z-axis position");
-	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, NULL, "How "
-							   "long in seconds screen hints are displayed");
 	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, NULL, "Your field of view in "
 						"degrees. Smaller than 90 zooms in. Don't touch in "
 						"fisheye mode, use ffov instead.");
@@ -439,9 +432,6 @@ R_Init_Cvars (void)
 						   "fisheye views.");
 	scr_ffov = Cvar_Get ("ffov", "180", CVAR_NONE, scr_ffov_f, "Your field of "
 						 "view in degrees in fisheye mode.");
-	scr_printspeed = Cvar_Get ("scr_printspeed", "8", CVAR_NONE, NULL,
-							   "How fast the text is displayed at the end of "
-							   "the single player episodes");
 	scr_showpause = Cvar_Get ("showpause", "1", CVAR_NONE, NULL,
 							  "Toggles display of pause graphic");
 	scr_showram = Cvar_Get ("showram", "1", CVAR_NONE, NULL,

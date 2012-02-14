@@ -36,6 +36,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 #include "d_local.h"
+#include "r_internal.h"
 
 static int  sprite_height;
 static int  minindex, maxindex;

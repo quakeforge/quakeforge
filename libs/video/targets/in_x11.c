@@ -80,6 +80,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "context_x11.h"
 #include "dga_check.h"
+#include "r_internal.h"
 
 cvar_t	   *in_snd_block;
 cvar_t	   *in_dga;

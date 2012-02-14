@@ -39,7 +39,7 @@ if test "x$HAVE_FBDEV" = xyes; then
 		NQ_TARGETS="$NQ_TARGETS nq-fbdev\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS FBDEV"
 		VID_TARGETS="$VID_TARGETS libQFfbdev.la"
-		QF_NEED(QFrenderer, [sw])
+		QF_NEED(vid_render, [sw])
 		QF_NEED(QFmodels, [sw])
 		QF_NEED(alias, [sw])
 		QF_NEED(brush, [sw])
@@ -61,7 +61,7 @@ if test "x$HAVE_X" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-glx.desktop"
 		CL_TARGETS="$CL_TARGETS GLX"
 		VID_TARGETS="$VID_TARGETS libQFglx.la"
-		QF_NEED(QFrenderer, [gl])
+		QF_NEED(vid_render, [gl])
 		QF_NEED(QFmodels, [gl])
 		QF_NEED(alias, [gl])
 		QF_NEED(brush, [gl])
@@ -78,7 +78,7 @@ if test "x$HAVE_X" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-glslx.desktop"
 		CL_TARGETS="$CL_TARGETS GLSLX"
 		VID_TARGETS="$VID_TARGETS libQFglslx.la"
-		QF_NEED(QFrenderer, [glsl])
+		QF_NEED(vid_render, [glsl])
 		QF_NEED(QFmodels, [glsl])
 		QF_NEED(alias, [glsl])
 		QF_NEED(brush, [glsl])
@@ -95,7 +95,7 @@ if test "x$HAVE_X" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-x11.desktop"
 		CL_TARGETS="$CL_TARGETS X11"
 		VID_TARGETS="$VID_TARGETS libQFx11.la"
-		QF_NEED(QFrenderer, [sw])
+		QF_NEED(vid_render, [sw])
 		QF_NEED(QFmodels, [sw])
 		QF_NEED(alias, [sw])
 		QF_NEED(brush, [sw])
@@ -115,7 +115,7 @@ if test "x$HAVE_MGL" = xyes; then
 		NQ_TARGETS="$NQ_TARGETS nq-mgl\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS MGL"
 		VID_TARGETS="$VID_TARGETS libQFwgl.la"
-		QF_NEED(QFrenderer, [sw])
+		QF_NEED(vid_render, [sw])
 		QF_NEED(QFmodels, [sw])
 		QF_NEED(alias, [sw])
 		QF_NEED(brush, [sw])
@@ -137,7 +137,7 @@ if test "x$HAVE_SDL" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-sdl.desktop"
 		CL_TARGETS="$CL_TARGETS SDL"
 		VID_TARGETS="$VID_TARGETS libQFsdl.la"
-		QF_NEED(QFrenderer, [sw])
+		QF_NEED(vid_render, [sw])
 		QF_NEED(QFmodels, [sw])
 		QF_NEED(alias, [sw])
 		QF_NEED(brush, [sw])
@@ -157,7 +157,7 @@ if test "x$HAVE_SDL" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-sdl32.desktop"
 		CL_TARGETS="$CL_TARGETS SDL32"
 		VID_TARGETS="$VID_TARGETS libQFsdl32.la"
-		QF_NEED(QFrenderer, [sw32])
+		QF_NEED(vid_render, [sw32])
 		QF_NEED(QFmodels, [sw])
 		QF_NEED(alias, [sw])
 		QF_NEED(brush, [sw])
@@ -174,7 +174,7 @@ if test "x$HAVE_SDL" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-sgl.desktop"
 		CL_TARGETS="$CL_TARGETS SDL-GL"
 		VID_TARGETS="$VID_TARGETS libQFsgl.la"
-		QF_NEED(QFrenderer, [gl])
+		QF_NEED(vid_render, [gl])
 		QF_NEED(QFmodels, [gl])
 		QF_NEED(alias, [gl])
 		QF_NEED(brush, [gl])
@@ -191,7 +191,7 @@ if test "x$HAVE_SDL" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-sglsl.desktop"
 		CL_TARGETS="$CL_TARGETS SDL-GLSL"
 		VID_TARGETS="$VID_TARGETS libQFsglsl.la"
-		QF_NEED(QFrenderer, [glsl])
+		QF_NEED(vid_render, [glsl])
 		QF_NEED(QFmodels, [glsl])
 		QF_NEED(alias, [glsl])
 		QF_NEED(brush, [glsl])
@@ -208,7 +208,7 @@ if test "x$HAVE_SVGA" = xyes; then
 		NQ_TARGETS="$NQ_TARGETS nq-svga\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS SVGAlib"
 		VID_TARGETS="$VID_TARGETS libQFsvga.la"
-		QF_NEED(QFrenderer, [sw])
+		QF_NEED(vid_render, [sw])
 		QF_NEED(QFmodels, [sw])
 		QF_NEED(alias, [sw])
 		QF_NEED(brush, [sw])
@@ -226,7 +226,7 @@ if test "x$HAVE_SVGA" = xyes; then
 		NQ_TARGETS="$NQ_TARGETS nq-3dfx\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS 3dfx"
 		VID_TARGETS="$VID_TARGETS libQFtdfx.la"
-		QF_NEED(QFrenderer, [gl])
+		QF_NEED(vid_render, [gl])
 		QF_NEED(QFmodels, [gl])
 		QF_NEED(alias, [gl])
 		QF_NEED(brush, [gl])
@@ -243,7 +243,7 @@ if test "x$mingw" = xyes; then
 		NQ_TARGETS="$NQ_TARGETS nq-wgl\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS WGL"
 		VID_TARGETS="$VID_TARGETS libQFwgl.la"
-		QF_NEED(QFrenderer, [gl])
+		QF_NEED(vid_render, [gl])
 		QF_NEED(QFmodels, [gl])
 		QF_NEED(alias, [gl])
 		QF_NEED(brush, [gl])
@@ -338,8 +338,7 @@ QF_SUBST(progs_gz)
 QF_PROCESS_NEED_DIRS(top, [libs hw nq qtv qw tools ruamoko])
 
 QF_PROCESS_NEED_LIBS(swrend, [asm])
-QF_PROCESS_NEED_LIBS(QFrenderer, [gl glsl sw sw32])
-QF_PROCESS_NEED_DIRS(QFrenderer, [gl glsl sw sw32])
+QF_PROCESS_NEED_DIRS(vid_render, [gl glsl sw sw32])
 QF_PROCESS_NEED_LIBS(QFmodels, [gl glsl sw])
 QF_PROCESS_NEED_LIBS(alias, [gl glsl sw])
 QF_PROCESS_NEED_LIBS(brush, [gl glsl sw])
@@ -388,6 +387,7 @@ if test "x$static_plugins" = xauto; then
 	fi
 fi
 if test "x$static_plugins" = xyes; then
+	QF_PROCESS_NEED_STATIC_PLUGINS(vid_render, [gl glsl sw sw32])
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [server], [\$(top_builddir)/libs/console], [server])
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [client], [\$(top_builddir)/libs/console], [client])
 
@@ -402,6 +402,7 @@ if test "x$static_plugins" = xyes; then
 		CDTYPE="$CDTYPE (static)"
 	fi
 else
+	QF_PROCESS_NEED_PLUGINS(vid_render, [gl glsl sw sw32])
 	QF_PROCESS_NEED_PLUGINS(console, [server], [server])
 	QF_PROCESS_NEED_PLUGINS(console, [client], [client])
 	QF_PROCESS_NEED_PLUGINS(snd_output, [sdl mme sgi sun win dx oss alsa])

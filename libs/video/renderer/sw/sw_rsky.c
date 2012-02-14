@@ -33,7 +33,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/render.h"
 
-#include "r_local.h"
+#include "r_internal.h"
 
 
 static int         iskyspeed = 8;
@@ -207,7 +207,7 @@ R_SetSkyFrame (void)
 	s2 = iskyspeed2 / g;
 	temp = SKYSIZE * s1 * s2;
 
-	skytime = r_realtime - ((int) (r_realtime / temp) * temp);
+	skytime = vr_data.realtime - ((int) (vr_data.realtime / temp) * temp);
 
 	r_skymade = 0;
 }

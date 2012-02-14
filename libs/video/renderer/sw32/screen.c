@@ -51,10 +51,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/va.h"
 
 #include "compat.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
-#include "r_local.h"
-#include "r_screen.h"
+#include "r_internal.h"
 #include "sbar.h"
 
 /* SCREEN SHOTS */
@@ -154,7 +151,7 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	if (scr_skipupdate)
 		return;
 
-	r_realtime = realtime;
+	vr_data.realtime = realtime;
 
 	scr_copytop = 0;
 	scr_copyeverything = 0;
@@ -216,7 +213,7 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		vrect.x = 0;
 		vrect.y = 0;
 		vrect.width = vid.width;
-		vrect.height = vid.height - r_lineadj;
+		vrect.height = vid.height - vr_data.lineadj;
 		vrect.next = 0;
 
 		VID_Update (&vrect);

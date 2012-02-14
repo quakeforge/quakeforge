@@ -54,6 +54,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
 #include "QF/va.h"
 
+#include "QF/plugin/vid_render.h"
+
 #include "client.h"
 #include "compat.h"
 #include "host.h"
@@ -129,7 +131,7 @@ CL_LoadSky (void)
 	const char *name = 0;
 
 	if (!cl.worldspawn) {
-		R_LoadSkys (0);
+		r_funcs->R_LoadSkys (0);
 		return;
 	}
 	if ((item = PL_ObjectForKey (cl.worldspawn, "sky")) // Q2/DarkPlaces
@@ -137,7 +139,7 @@ CL_LoadSky (void)
 		|| (item = PL_ObjectForKey (cl.worldspawn, "qlsky"))) /* QuakeLives */ {
 		name = PL_String (item);
 	}
-	R_LoadSkys (name);
+	r_funcs->R_LoadSkys (name);
 }
 
 /*
@@ -313,7 +315,7 @@ map_ent (const char *mapname)
 static void
 CL_NewMap (const char *mapname)
 {
-	R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
+	r_funcs->R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
 	Con_NewMap ();
 	Hunk_Check ();								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
@@ -323,7 +325,7 @@ CL_NewMap (const char *mapname)
 		if (cl.edicts) {
 			cl.worldspawn = PL_ObjectAtIndex (cl.edicts, 0);
 			CL_LoadSky ();
-			Fog_ParseWorldspawn (cl.worldspawn);
+			r_funcs->Fog_ParseWorldspawn (cl.worldspawn);
 		}
 	}
 
@@ -439,7 +441,7 @@ CL_ParseServerInfo (void)
 	Hunk_Check ();						// make sure nothing is hurt
 
 	noclip_anglehack = false;			// noclip is turned off at start    
-	r_gravity = 800.0;					// Set up gravity for renderer effects
+	r_data->gravity = 800.0;			// Set up gravity for renderer effects
 done:
 	S_UnblockSound ();
 }
@@ -804,7 +806,7 @@ CL_ParseStatic (int version)
 	cl_entity_state_t state;
 	entity_t   *ent;
 
-	ent = R_AllocEntity ();
+	ent = r_funcs->R_AllocEntity ();
 	CL_Init_Entity (ent);
 
 	CL_ParseBaseline (&state, version);
@@ -830,7 +832,7 @@ CL_ParseStatic (int version)
 	VectorCopy (state.baseline.origin, ent->origin);
 	CL_TransformEntity (ent, state.baseline.angles, true);
 
-	R_AddEfrags (ent);
+	r_funcs->R_AddEfrags (ent);
 }
 
 static void
@@ -957,7 +959,8 @@ CL_ParseServerMessage (void)
 
 			case svc_serverinfo:
 				CL_ParseServerInfo ();
-				vid.recalc_refdef = true;	// leave intermission full screen
+				// leave intermission full screen
+				r_data->vid->recalc_refdef = true;
 				break;
 
 			case svc_setangle:
@@ -976,8 +979,8 @@ CL_ParseServerMessage (void)
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_LIGHTSTYLES)
 					Host_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
-				strcpy (r_lightstyle[i].map, MSG_ReadString (net_message));
-				r_lightstyle[i].length = strlen (r_lightstyle[i].map);
+				strcpy (cl.lightstyle[i].map, MSG_ReadString (net_message));
+				cl.lightstyle[i].length = strlen (cl.lightstyle[i].map);
 				// FIXME extra info
 				break;
 
@@ -1044,7 +1047,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_setpause:
-				r_paused = cl.paused = MSG_ReadByte (net_message);
+				r_data->paused = cl.paused = MSG_ReadByte (net_message);
 				if (cl.paused)
 					CDAudio_Pause ();
 				else
@@ -1086,16 +1089,16 @@ CL_ParseServerMessage (void)
 
 			case svc_intermission:
 				cl.intermission = 1;
-				r_force_fullscreen = 1;
+				r_data->force_fullscreen = 1;
 				cl.completed_time = cl.time;
-				vid.recalc_refdef = true;	// go to full screen
+				r_data->vid->recalc_refdef = true;	// go to full screen
 				break;
 
 			case svc_finale:
 				cl.intermission = 2;
-				r_force_fullscreen = 1;
+				r_data->force_fullscreen = 1;
 				cl.completed_time = cl.time;
-				vid.recalc_refdef = true;	// go to full screen
+				r_data->vid->recalc_refdef = true;	// go to full screen
 				str = MSG_ReadString (net_message);
 				if (strcmp (str, centerprint->str)) {
 					dstring_copystr (centerprint, str);
@@ -1106,9 +1109,9 @@ CL_ParseServerMessage (void)
 
 			case svc_cutscene:
 				cl.intermission = 3;
-				r_force_fullscreen = 1;
+				r_data->force_fullscreen = 1;
 				cl.completed_time = cl.time;
-				vid.recalc_refdef = true;	// go to full screen
+				r_data->vid->recalc_refdef = true;	// go to full screen
 				str = MSG_ReadString (net_message);
 				if (strcmp (str, centerprint->str)) {
 					dstring_copystr (centerprint, str);
@@ -1123,7 +1126,7 @@ CL_ParseServerMessage (void)
 
 			// PROTOCOL_FITZQUAKE
 			case svc_skybox:
-				R_LoadSkys (MSG_ReadString(net_message));
+				r_funcs->R_LoadSkys (MSG_ReadString(net_message));
 				break;
 			case svc_bf:
 				Cmd_ExecuteString ("bf", src_command);
@@ -1137,7 +1140,7 @@ CL_ParseServerMessage (void)
 					blue = MSG_ReadByte (net_message) / 255.0;
 					time = (short) MSG_ReadShort (net_message) / 100.0;
 					time = max (0.0, time);
-					Fog_Update (density, red, green, blue, time);
+					r_funcs->Fog_Update (density, red, green, blue, time);
 				}
 				break;
 			case svc_spawnbaseline2:

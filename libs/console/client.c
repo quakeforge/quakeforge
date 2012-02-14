@@ -65,6 +65,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/plugin/general.h"
 #include "QF/plugin/console.h"
+#include "QF/plugin/vid_render.h"
 
 #include "compat.h"
 
@@ -178,7 +179,7 @@ Resize (old_console_t *con)
 	char		tbuf[CON_TEXTSIZE];
 	int			width, oldwidth, oldtotallines, numlines, numchars, i, j;
 
-	width = (vid.conwidth >> 3) - 2;
+	width = (r_data->vid->conwidth >> 3) - 2;
 
 	if (width < 1) {					// video hasn't been initialized yet
 		width = 38;
@@ -232,7 +233,7 @@ C_CheckResize (void)
 	Resize (&con_main);
 	Resize (&con_chat);
 
-	view_resize (con_data.view, vid.conwidth, vid.conheight);
+	view_resize (con_data.view, r_data->vid->conwidth, r_data->vid->conheight);
 }
 
 static void
@@ -665,7 +666,7 @@ draw_console (view_t *view)
 	if (con_data.force_commandline) {
 		alpha = 255;
 	} else {
-		float       y = vid.conheight * con_size->value;
+		float       y = r_data->vid->conheight * con_size->value;
 		alpha = 255 * con_alpha->value * view->ylen / y;
 		alpha = min (alpha, 255);
 	}
@@ -680,7 +681,7 @@ static void
 draw_say (view_t *view)
 {
 	clearnotify = 0;
-	scr_copytop = 1;
+	r_data->scr_copytop = 1;
 
 	if (chat_team) {
 		Draw_String (view->xabs + 8, view->yabs, "say_team:");
@@ -715,7 +716,7 @@ draw_notify (view_t *view)
 		text = con->text + (i % con_totallines) * con_linewidth;
 
 		clearnotify = 0;
-		scr_copytop = 1;
+		r_data->scr_copytop = 1;
 
 		Draw_nString (x, y, text, con_linewidth);
 		y += 8;
@@ -728,9 +729,9 @@ setup_console (void)
 	float       lines;
 
 	if (con_data.force_commandline) {
-		lines = con_data.lines = vid.conheight;
+		lines = con_data.lines = r_data->vid->conheight;
 	} else if (key_dest == key_console) {
-		lines = vid.conheight * bound (0.2, con_size->value, 1);
+		lines = r_data->vid->conheight * bound (0.2, con_size->value, 1);
 	} else {
 		lines = 0;
 	}
@@ -742,8 +743,8 @@ setup_console (void)
 		con_data.lines += max (0.2, con_speed->value) * *con_data.frametime;
 		con_data.lines = min (con_data.lines, lines);
 	}
-	if (con_data.lines >= vid.conheight - r_lineadj)
-		scr_copyeverything = 1;
+	if (con_data.lines >= r_data->vid->conheight - r_data->lineadj)
+		r_data->scr_copyeverything = 1;
 }
 
 static void

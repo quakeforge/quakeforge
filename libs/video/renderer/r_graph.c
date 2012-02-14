@@ -33,10 +33,10 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "QF/draw.h"
 #include "QF/render.h"
+#include "QF/plugin.h"
 #include "QF/sys.h"
 
-#include "r_local.h"
-#include "sbar.h"
+#include "r_internal.h"
 
 
 #define MAX_TIMINGS 100

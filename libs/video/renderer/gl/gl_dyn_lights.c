@@ -47,10 +47,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_rlight.h"
 
-#include "r_cvar.h"
-#include "r_dynamic.h"
-#include "r_local.h"
-#include "r_shared.h"
+#include "r_internal.h"
 
 float       gl_bubble_sintable[33], gl_bubble_costable[33];
 
@@ -129,7 +126,7 @@ R_RenderDlights (void)
 
 	l = r_dlights;
 	for (i = 0; i < r_maxdlights; i++, l++) {
-		if (l->die < r_realtime || !l->radius)
+		if (l->die < vr_data.realtime || !l->radius)
 			continue;
 		R_RenderDlight (l);
 	}

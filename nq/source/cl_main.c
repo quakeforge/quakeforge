@@ -48,6 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/va.h"
 
 #include "QF/plugin/console.h"
+#include "QF/plugin/vid_render.h"
 
 #include "chase.h"
 #include "cl_skin.h"
@@ -56,8 +57,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "host.h"
 #include "host.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
 #include "server.h"
 #include "sbar.h"
 
@@ -133,7 +132,6 @@ CL_InitCvars (void)
 	VID_Init_Cvars ();
 	IN_Init_Cvars ();
 	Mod_Init_Cvars ();
-	R_Init_Cvars ();
 	S_Init_Cvars ();
 
 	CL_Demo_Init ();
@@ -202,16 +200,17 @@ CL_ClearState (void)
 	// wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));
 	cl.chase = 1;
-	r_force_fullscreen = 0;
+	r_data->force_fullscreen = 0;
+	r_data->lightstyle = cl.lightstyle;
 
 	CL_Init_Entity (&cl.viewent);
-	r_view_model = &cl.viewent;
+	r_data->view_model = &cl.viewent;
 
 	SZ_Clear (&cls.message);
 
 	CL_ClearTEnts ();
 
-	R_ClearState ();
+	r_funcs->R_ClearState ();
 
 	CL_ClearEnts ();
 }
@@ -474,13 +473,13 @@ CL_SetState (cactive_t state)
 	if (old_state != state) {
 		if (state == ca_active) {
 			// entering active state
-			r_active = true;
+			r_data->active = true;
 			Key_SetKeyDest (key_game);
 			IN_ClearStates ();
 			VID_SetCaption ("");
 		} else if (old_state == ca_active) {
 			// leaving active state
-			r_active = false;
+			r_data->active = false;
 			Key_SetKeyDest (key_console);
 			VID_SetCaption ("Disconnected");
 		}
@@ -514,7 +513,6 @@ CL_Init (cbuf_t *cbuf)
 	W_LoadWadFile ("gfx.wad");
 	VID_Init (basepal, colormap);
 	IN_Init (cbuf);
-	Draw_Init ();
 	R_Init ();
 	S_Init (&viewentity, &host_frametime);
 	CDAudio_Init ();

@@ -46,34 +46,6 @@ typedef enum {
 
 struct entity_s;
 
-extern void (*R_RocketTrail) (const struct entity_s *ent);
-extern void (*R_GrenadeTrail) (const struct entity_s *ent);
-extern void (*R_BloodTrail) (const struct entity_s *ent);
-extern void (*R_SlightBloodTrail) (const struct entity_s *ent);
-extern void (*R_WizTrail) (const struct entity_s *ent);
-extern void (*R_FlameTrail) (const struct entity_s *ent);
-extern void (*R_VoorTrail) (const struct entity_s *ent);
-extern void (*R_GlowTrail) (const struct entity_s *ent, int glow_color);
-
-extern void (*R_RunParticleEffect) (const vec3_t org, const vec3_t dir,
-									int color, int count);
-extern void (*R_BloodPuffEffect) (const vec3_t org, int count);
-extern void (*R_GunshotEffect) (const vec3_t org, int count);
-extern void (*R_LightningBloodEffect) (const vec3_t org);
-extern void (*R_SpikeEffect) (const vec3_t org);
-extern void (*R_KnightSpikeEffect) (const vec3_t org);
-extern void (*R_SuperSpikeEffect) (const vec3_t org);
-extern void (*R_WizSpikeEffect) (const vec3_t org);
-
-extern void (*R_BlobExplosion) (const vec3_t org);
-extern void (*R_ParticleExplosion) (const vec3_t org);
-extern void (*R_ParticleExplosion2) (const vec3_t org, int colorStart,
-									 int colorLength);
-extern void (*R_LavaSplash) (const vec3_t org);
-extern void (*R_TeleportSplash) (const vec3_t org);
-extern void (*R_DarkFieldParticles) (const struct entity_s *ent);
-extern void (*R_EntityParticles) (const struct entity_s *ent);
-
 void R_PushDlights (const vec3_t entorigin);
 struct cvar_s;
 void R_MaxDlightsCheck (struct cvar_s *var);

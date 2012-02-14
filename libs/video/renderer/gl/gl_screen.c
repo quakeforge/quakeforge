@@ -56,10 +56,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "compat.h"
 #include "gl_draw.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
-#include "r_local.h"
-#include "r_screen.h"
+#include "r_internal.h"
 #include "sbar.h"
 
 /* SCREEN SHOTS */
@@ -171,11 +168,11 @@ SCR_TileClear (void)
 {
 	if (r_refdef.vrect.x > 0) {
 		// left
-		Draw_TileClear (0, 0, r_refdef.vrect.x, vid.height - r_lineadj);
+		Draw_TileClear (0, 0, r_refdef.vrect.x, vid.height - vr_data.lineadj);
 		// right
 		Draw_TileClear (r_refdef.vrect.x + r_refdef.vrect.width, 0,
 						vid.width - r_refdef.vrect.x + r_refdef.vrect.width,
-						vid.height - r_lineadj);
+						vid.height - vr_data.lineadj);
 	}
 	if (r_refdef.vrect.y > 0) {
 		// top
@@ -186,7 +183,7 @@ SCR_TileClear (void)
 		Draw_TileClear (r_refdef.vrect.x,
 						r_refdef.vrect.y + r_refdef.vrect.height,
 						r_refdef.vrect.width,
-						vid.height - r_lineadj -
+						vid.height - vr_data.lineadj -
 						(r_refdef.vrect.height + r_refdef.vrect.y));
 	}
 }
@@ -212,7 +209,7 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	if (begun)
 		GL_EndRendering ();
 
-	r_realtime = realtime;
+	vr_data.realtime = realtime;
 
 	vid.numpages = 2 + gl_triplebuffer->int_val;
 

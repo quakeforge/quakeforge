@@ -54,10 +54,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
-#include "r_cvar.h"
-#include "r_dynamic.h"
-#include "r_local.h"
-#include "r_shared.h"
+#include "r_internal.h"
 
 //FIXME not part of GLES, but needed for GL
 #ifndef GL_VERTEX_PROGRAM_POINT_SIZE
@@ -333,7 +330,7 @@ R_ParticleExplosion_QF (const vec3_t org)
 	if (numparticles >= r_maxparticles)
 		return;
 	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4, 30, 8,
-						 r_realtime + 5.0, (rand () & 7) + 8,
+						 vr_data.realtime + 5.0, (rand () & 7) + 8,
 						 0.5 + qfrandom (0.25), 0.0);
 }
 
@@ -349,7 +346,7 @@ R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 
 	for (i = 0; i < j; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256, 
-							 r_realtime + 0.3,
+							 vr_data.realtime + 0.3,
 							 								 colorStart + (i % colorLength), 1.0, 0.0);
 	}
 }
@@ -367,12 +364,12 @@ R_BlobExplosion_QF (const vec3_t org)
 
 	for (i = 0; i < j >> 1; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 12, 2, 256,
-							 r_realtime + 1.0 + (rand () & 7) * 0.05,
+							 vr_data.realtime + 1.0 + (rand () & 7) * 0.05,
 							 66 + i % 6, 1.0, 0.0);
 	}
 	for (i = 0; i < j / 2; i++) {
 		particle_new_random (pt_blob2, part_tex_dot, org, 12, 2, 256,
-							 r_realtime + 1.0 + (rand () & 7) * 0.05,
+							 vr_data.realtime + 1.0 + (rand () & 7) * 0.05,
 							 150 + i % 6, 1.0, 0.0);
 	}
 }
@@ -383,7 +380,7 @@ R_RunSparkEffect_QF (const vec3_t org, int count, int ofuzz)
 	if (numparticles >= r_maxparticles)
 		return;
 	particle_new (pt_smokecloud, part_tex_smoke, org, ofuzz * 0.08,
-				  vec3_origin, r_realtime + 9, 12 + (rand () & 3),
+				  vec3_origin, vr_data.realtime + 9, 12 + (rand () & 3),
 				  0.25 + qfrandom (0.125), 0.0);
 
 	if (numparticles + count >= r_maxparticles)
@@ -397,8 +394,8 @@ R_RunSparkEffect_QF (const vec3_t org, int count, int ofuzz)
 			int		color = rand () & 7;
 
 			particle_new_random (pt_fallfadespark, part_tex_dot, org, orgfuzz,
-								 0.7, 96, r_realtime + 5.0, ramp1[color], 1.0,
-								 color);
+								 0.7, 96, vr_data.realtime + 5.0, ramp1[color],
+								 1.0, color);
 		}
 	}
 }
@@ -410,7 +407,7 @@ R_BloodPuff_QF (const vec3_t org, int count)
 		return;
 
 	particle_new (pt_bloodcloud, part_tex_smoke, org, count / 5, vec3_origin,
-				  r_realtime + 99.0, 70 + (rand () & 3), 0.5, 0.0);
+				  vr_data.realtime + 99.0, 70 + (rand () & 3), 0.5, 0.0);
 }
 
 static void
@@ -438,14 +435,15 @@ R_LightningBloodEffect_QF (const vec3_t org)
 	if (numparticles >= r_maxparticles)
 		return;
 	particle_new (pt_smokecloud, part_tex_smoke, org, 3.0, vec3_origin,
-				  r_realtime + 9.0, 12 + (rand () & 3),
+				  vr_data.realtime + 9.0, 12 + (rand () & 3),
 				  0.25 + qfrandom (0.125), 0.0);
 
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 	while (count--)
 		particle_new_random (pt_fallfade, part_tex_spark, org, 12, 2.0, 128,
-							 r_realtime + 5.0, 244 + (count % 3), 1.0, 0.0);
+							 vr_data.realtime + 5.0, 244 + (count % 3),
+							 1.0, 0.0);
 }
 
 static void
@@ -472,7 +470,7 @@ R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
 		porg[2] = org[2] + scale * (((rnd >> 11) & 15) - 7.5);
 		// Note that ParseParticleEffect handles (dir * 15)
 		particle_new (pt_grav, part_tex_dot, porg, 1.5, dir,
-					  r_realtime + 0.1 * (i % 5),
+					  vr_data.realtime + 0.1 * (i % 5),
 					  (color & ~7) + (rnd & 7), 1.0, 0.0);
 	}
 }
@@ -497,13 +495,13 @@ R_KnightSpikeEffect_QF (const vec3_t org)
 	if (numparticles >= r_maxparticles)
 		return;
 	particle_new (pt_smokecloud, part_tex_smoke, org, 1.0, vec3_origin,
-				  r_realtime + 9.0, 234, 0.25 + qfrandom (0.125), 0.0);
+				  vr_data.realtime + 9.0, 234, 0.25 + qfrandom (0.125), 0.0);
 
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 	while (count--)
 		particle_new_random (pt_fallfade, part_tex_dot, org, 6, 0.7, 96,
-							 r_realtime + 5.0, 234, 1.0, 0.0);
+							 vr_data.realtime + 5.0, 234, 1.0, 0.0);
 }
 
 static void
@@ -514,13 +512,13 @@ R_WizSpikeEffect_QF (const vec3_t org)
 	if (numparticles >= r_maxparticles)
 		return;
 	particle_new (pt_smokecloud, part_tex_smoke, org, 2.0, vec3_origin,
-				  r_realtime + 9.0, 63, 0.25 + qfrandom (0.125), 0.0);
+				  vr_data.realtime + 9.0, 63, 0.25 + qfrandom (0.125), 0.0);
 
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 	while (count--)
 		particle_new_random (pt_fallfade, part_tex_dot, org, 12, 0.7, 96,
-							 r_realtime + 5.0, 63, 1.0, 0.0);
+							 vr_data.realtime + 5.0, 63, 1.0, 0.0);
 }
 
 static void
@@ -553,7 +551,7 @@ R_LavaSplash_QF (const vec3_t org)
 			vel = 50.0 + 0.5 * (float) (rnd & 127);
 			VectorScale (dir, vel, pvel);
 			particle_new (pt_grav, part_tex_dot, porg, 3, pvel,
-						  r_realtime + 2.0 + ((rnd >> 7) & 31) * 0.02,
+						  vr_data.realtime + 2.0 + ((rnd >> 7) & 31) * 0.02,
 						  224 + ((rnd >> 12) & 7), 0.75, 0.0);
 		}
 	}
@@ -591,7 +589,7 @@ R_TeleportSplash_QF (const vec3_t org)
 				vel = 50 + ((rnd >> 6) & 63);
 				VectorScale (pdir, vel, pvel);
 				particle_new (pt_grav, part_tex_spark, porg, 0.6, pvel,
-							  (r_realtime + 0.2 + (rand () & 15) * 0.01),
+							  (vr_data.realtime + 0.2 + (rand () & 15) * 0.01),
 							  (7 + ((rnd >> 12) & 7)), 1.0, 0.0);
 			}
 		}
@@ -611,7 +609,7 @@ R_RocketTrail_QF (const entity_t *ent)
 	VectorCopy (ent->old_origin, old_origin);
 	VectorSubtract (ent->origin, old_origin, vec);
 	maxlen = VectorNormalize (vec);
-	origlen = r_frametime / maxlen;
+	origlen = vr_data.frametime / maxlen;
 	pscale = 1.5 + qfrandom (1.5);
 
 	while (len < maxlen) {
@@ -621,7 +619,7 @@ R_RocketTrail_QF (const entity_t *ent)
 
 		particle_new (pt_smoke, part_tex_smoke, old_origin,
 					  pscale + percent * 4.0, vec3_origin,
-					  r_realtime + 2.0 - percent * 2.0, 
+					  vr_data.realtime + 2.0 - percent * 2.0, 
 					  12 + (rand () & 3),
 					  0.5 + qfrandom (0.125) - percent * 0.40, 0.0);
 		if (numparticles >= r_maxparticles)
@@ -645,7 +643,7 @@ R_GrenadeTrail_QF (const entity_t *ent)
 	VectorCopy (ent->old_origin, old_origin);
 	VectorSubtract (ent->origin, old_origin, vec);
 	maxlen = VectorNormalize (vec);
-	origlen = r_frametime / maxlen;
+	origlen = vr_data.frametime / maxlen;
 	pscale = 6.0 + qfrandom (7.0);
 
 	while (len < maxlen) {
@@ -655,7 +653,7 @@ R_GrenadeTrail_QF (const entity_t *ent)
 
 		particle_new (pt_smoke, part_tex_smoke, old_origin,
 					  pscale + percent * 4.0, vec3_origin,
-					  r_realtime + 2.0 - percent * 2.0,
+					  vr_data.realtime + 2.0 - percent * 2.0,
 					  1 + (rand () & 3),
 					  0.625 + qfrandom (0.125) - percent * 0.40, 0.0);
 		if (numparticles >= r_maxparticles)
@@ -680,7 +678,7 @@ R_BloodTrail_QF (const entity_t *ent)
 	VectorCopy (ent->old_origin, old_origin);
 	VectorSubtract (ent->origin, old_origin, vec);
 	maxlen = VectorNormalize (vec);
-	origlen = r_frametime / maxlen;
+	origlen = vr_data.frametime / maxlen;
 	pscale = 5.0 + qfrandom (10.0);
 
 	while (len < maxlen) {
@@ -696,8 +694,8 @@ R_BloodTrail_QF (const entity_t *ent)
 		pvel[2] -= percent * 40.0;
 
 		particle_new (pt_grav, part_tex_smoke, porg, pscale, pvel,
-					  r_realtime + 2.0 - percent * 2.0, 68 + (rand () & 3),
-					  1.0, 0.0);
+					  vr_data.realtime + 2.0 - percent * 2.0,
+					  68 + (rand () & 3), 1.0, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -720,7 +718,7 @@ R_SlightBloodTrail_QF (const entity_t *ent)
 	VectorCopy (ent->old_origin, old_origin);
 	VectorSubtract (ent->origin, old_origin, vec);
 	maxlen = VectorNormalize (vec);
-	origlen = r_frametime / maxlen;
+	origlen = vr_data.frametime / maxlen;
 	pscale = 1.5 + qfrandom (7.5);
 
 	while (len < maxlen) {
@@ -736,8 +734,8 @@ R_SlightBloodTrail_QF (const entity_t *ent)
 		pvel[2] -= percent * 40;
 
 		particle_new (pt_grav, part_tex_smoke, porg, pscale, pvel,
-					  r_realtime + 1.5 - percent * 1.5, 68 + (rand () & 3),
-					  0.75, 0.0);
+					  vr_data.realtime + 1.5 - percent * 1.5,
+					  68 + (rand () & 3), 0.75, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -760,7 +758,7 @@ R_WizTrail_QF (const entity_t *ent)
 	VectorCopy (ent->old_origin, old_origin);
 	VectorSubtract (ent->origin, old_origin, vec);
 	maxlen = VectorNormalize (vec);
-	origlen = r_frametime / maxlen;
+	origlen = vr_data.frametime / maxlen;
 	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
@@ -778,8 +776,8 @@ R_WizTrail_QF (const entity_t *ent)
 
 		particle_new (pt_flame, part_tex_smoke, old_origin,
 					  2.0 + qfrandom (1.0) - percent * 2.0, pvel,
-					  r_realtime + 0.5 - percent * 0.5, 52 + (rand () & 4),
-					  1.0 - percent * 0.125, 0.0);
+					  vr_data.realtime + 0.5 - percent * 0.5,
+					  52 + (rand () & 4), 1.0 - percent * 0.125, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -801,7 +799,7 @@ R_FlameTrail_QF (const entity_t *ent)
 	VectorCopy (ent->old_origin, old_origin);
 	VectorSubtract (ent->origin, old_origin, vec);
 	maxlen = VectorNormalize (vec);
-	origlen = r_frametime / maxlen;
+	origlen = vr_data.frametime / maxlen;
 	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
@@ -819,7 +817,7 @@ R_FlameTrail_QF (const entity_t *ent)
 
 		particle_new (pt_flame, part_tex_smoke, old_origin,
 					  2.0 + qfrandom (1.0) - percent * 2.0, pvel,
-					  r_realtime + 0.5 - percent * 0.5, 234,
+					  vr_data.realtime + 0.5 - percent * 0.5, 234,
 					  1.0 - percent * 0.125, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
@@ -842,7 +840,7 @@ R_VoorTrail_QF (const entity_t *ent)
 	VectorCopy (ent->old_origin, old_origin);
 	VectorSubtract (ent->origin, old_origin, vec);
 	maxlen = VectorNormalize (vec);
-	origlen = r_frametime / maxlen;
+	origlen = vr_data.frametime / maxlen;
 	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
@@ -852,7 +850,7 @@ R_VoorTrail_QF (const entity_t *ent)
 			porg[j] = old_origin[j] + qfrandom (16.0) - 8.0;
 
 		particle_new (pt_static, part_tex_dot, porg, 1.0 + qfrandom (1.0),
-					  vec3_origin, r_realtime + 0.3 - percent * 0.3,
+					  vec3_origin, vr_data.realtime + 0.3 - percent * 0.3,
 					  9 * 16 + 8 + (rand () & 3), 1.0, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
@@ -875,7 +873,7 @@ R_GlowTrail_QF (const entity_t *ent, int glow_color)
 	VectorCopy (ent->old_origin, old_origin);
 	VectorSubtract (ent->origin, old_origin, vec);
 	maxlen = VectorNormalize (vec);
-	origlen = r_frametime / maxlen;
+	origlen = vr_data.frametime / maxlen;
 	VectorScale (vec, (maxlen - dist), subtract);
 
 	while (len < maxlen) {
@@ -887,7 +885,8 @@ R_GlowTrail_QF (const entity_t *ent, int glow_color)
 		org[2] = old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
 
 		particle_new (pt_smoke, part_tex_dot, org, 1.0, vec3_origin,
-					  r_realtime + 2.0 - percent * 0.2, glow_color, 1.0, 0.0);
+					  vr_data.realtime + 2.0 - percent * 0.2, glow_color,
+					  1.0, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -904,7 +903,7 @@ R_ParticleExplosion_EE (const vec3_t org)
 	if (numparticles >= r_maxparticles)
 		return;
 	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4, 30, 8,
-						 r_realtime + 5.0, rand () & 255,
+						 vr_data.realtime + 5.0, rand () & 255,
 						 0.5 + qfrandom (0.25), 0.0);
 }
 
@@ -938,7 +937,7 @@ R_TeleportSplash_EE (const vec3_t org)
 				vel = 50 + ((rnd >> 6) & 63);
 				VectorScale (dir, vel, pvel);
 				particle_new (pt_grav, part_tex_spark, porg, 0.6, pvel,
-							  (r_realtime + 0.2 + (rand () & 15) * 0.01),
+							  (vr_data.realtime + 0.2 + (rand () & 15) * 0.01),
 							  qfrandom (1.0), 1.0, 0.0);
 			}
 		}
@@ -958,7 +957,7 @@ R_RocketTrail_EE (const entity_t *ent)
 	VectorCopy (ent->old_origin, old_origin);
 	VectorSubtract (ent->origin, old_origin, vec);
 	maxlen = VectorNormalize (vec);
-	origlen = r_frametime / maxlen;
+	origlen = vr_data.frametime / maxlen;
 	pscale = 1.5 + qfrandom (1.5);
 
 	while (len < maxlen) {
@@ -968,7 +967,7 @@ R_RocketTrail_EE (const entity_t *ent)
 
 		particle_new (pt_smoke, part_tex_smoke, old_origin,
 					  pscale + percent * 4.0, vec3_origin,
-					  r_realtime + 2.0 - percent * 2.0, 
+					  vr_data.realtime + 2.0 - percent * 2.0, 
 					  rand () & 255,
 					  0.5 + qfrandom (0.125) - percent * 0.40, 0.0);
 		if (numparticles >= r_maxparticles)
@@ -993,7 +992,7 @@ R_GrenadeTrail_EE (const entity_t *ent)
 	VectorCopy (ent->old_origin, old_origin);
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
-	origlen = r_frametime / maxlen;
+	origlen = vr_data.frametime / maxlen;
 	pscale = 6.0 + qfrandom (7.0);
 
 	while (len < maxlen) {
@@ -1003,7 +1002,7 @@ R_GrenadeTrail_EE (const entity_t *ent)
 
 		particle_new (pt_smoke, part_tex_smoke, old_origin,
 					  pscale + percent * 4.0, vec3_origin,
-					  r_realtime + 2.0 - percent * 2.0,
+					  vr_data.realtime + 2.0 - percent * 2.0,
 					  rand () & 255,
 					  0.625 + qfrandom (0.125) - percent * 0.40, 0.0);
 		if (numparticles >= r_maxparticles)
@@ -1028,11 +1027,11 @@ R_ParticleExplosion_ID (const vec3_t org)
 
 	for (i = 0; i < j >> 1; i++) {
 		particle_new_random (pt_explode, part_tex_dot, org, 16, 1.0, 256,
-							 r_realtime + 5.0, ramp1[0], 1.0, i & 3);
+							 vr_data.realtime + 5.0, ramp1[0], 1.0, i & 3);
 	}
 	for (i = 0; i < j / 2; i++) {
 		particle_new_random (pt_explode2, part_tex_dot, org, 16, 1.0, 256,
-                             r_realtime + 5.0, ramp1[0], 1.0, i & 3);
+                             vr_data.realtime + 5.0, ramp1[0], 1.0, i & 3);
 	}
 }
 
@@ -1049,12 +1048,12 @@ R_BlobExplosion_ID (const vec3_t org)
 
 	for (i = 0; i < j >> 1; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 12, 1.0, 256,
-							 r_realtime + 1.0 + (rand () & 8) * 0.05,
+							 vr_data.realtime + 1.0 + (rand () & 8) * 0.05,
 							 66 + i % 6, 1.0, 0.0);
 	}
 	for (i = 0; i < j / 2; i++) {
 		particle_new_random (pt_blob2, part_tex_dot, org, 12, 1.0, 256,
-							 r_realtime + 1.0 + (rand () & 8) * 0.05,
+							 vr_data.realtime + 1.0 + (rand () & 8) * 0.05,
 							 150 + i % 6, 1.0, 0.0);
 	}
 }
@@ -1089,7 +1088,7 @@ R_RunParticleEffect_ID (const vec3_t org, const vec3_t dir, int color,
 
 		// Note that ParseParticleEffect handles (dir * 15)
 		particle_new (pt_grav, part_tex_dot, porg, 1.0, dir,
-					  r_realtime + 0.1 * (i % 5),
+					  vr_data.realtime + 0.1 * (i % 5),
 					  (color & ~7) + (rnd & 7), 1.0, 0.0);
 	}
 }
@@ -1166,7 +1165,7 @@ R_LavaSplash_ID (const vec3_t org)
 			vel = 50 + (rnd & 63);
 			VectorScale (dir, vel, pvel);
 			particle_new (pt_grav, part_tex_dot, porg, 1.0, pvel,
-						  r_realtime + 2 + ((rnd >> 7) & 31) * 0.02,
+						  vr_data.realtime + 2 + ((rnd >> 7) & 31) * 0.02,
 						  224 + ((rnd >> 12) & 7), 1.0, 0.0);
 		}
 	}
@@ -1204,7 +1203,7 @@ R_TeleportSplash_ID (const vec3_t org)
 				vel = 50 + ((rnd >> 6) & 63);
 				VectorScale (pdir, vel, pvel);
 				particle_new (pt_grav, part_tex_dot, porg, 1.0, pvel,
-							  (r_realtime + 0.2 + (rand () & 7) * 0.02),
+							  (vr_data.realtime + 0.2 + (rand () & 7) * 0.02),
 							  (7 + ((rnd >> 12) & 7)), 1.0, 0.0);
 			}
 		}
@@ -1243,7 +1242,7 @@ R_DarkFieldParticles_ID (const entity_t *ent)
 				vel = 50 + ((rnd >> 9) & 63);
 				VectorScale (dir, vel, pvel);
 				particle_new (pt_slowgrav, part_tex_dot, porg, 1.5, pvel,
-							  (r_realtime + 0.2 + (rnd & 7) * 0.02),
+							  (vr_data.realtime + 0.2 + (rnd & 7) * 0.02),
 							  (150 + rand () % 6), 1.0, 0.0);
             }
 		}
@@ -1272,14 +1271,14 @@ R_EntityParticles_ID (const entity_t *ent)
 	}
 
 	for (i = 0; i < j; i++) {
-		angle = r_realtime * avelocities[i][0];
+		angle = vr_data.realtime * avelocities[i][0];
 		cy = cos (angle);
 		sy = sin (angle);
-		angle = r_realtime * avelocities[i][1];
+		angle = vr_data.realtime * avelocities[i][1];
 		cp = cos (angle);
 		sp = sin (angle);
 // Next 3 lines results aren't currently used, may be in future. --Despair
-//		angle = r_realtime * avelocities[i][2];
+//		angle = vr_data.realtime * avelocities[i][2];
 //		sr = sin (angle);
 //		cr = cos (angle);
 
@@ -1294,7 +1293,7 @@ R_EntityParticles_ID (const entity_t *ent)
 		porg[2] = ent->origin[2] + vertex_normals[i][2] * dist +
 			forward[2] * beamlength;
 		particle_new (pt_explode, part_tex_dot, porg, 1.0, vec3_origin,
-					  r_realtime + 0.01, 0x6f, 1.0, 0);
+					  vr_data.realtime + 0.01, 0x6f, 1.0, 0);
 	}
 }
 
@@ -1322,7 +1321,7 @@ R_RocketTrail_ID (const entity_t *ent)
 		ramp = rnd & 3;
 
 		particle_new (pt_fire, part_tex_dot, org, 1.0, vec3_origin,
-					  r_realtime + 2.0, ramp3[ramp], 1.0, ramp);
+					  vr_data.realtime + 2.0, ramp3[ramp], 1.0, ramp);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -1354,7 +1353,7 @@ R_GrenadeTrail_ID (const entity_t *ent)
 		ramp = (rnd & 3) + 2;
 
 		particle_new (pt_fire, part_tex_dot, org, 1.0, vec3_origin,
-					  r_realtime + 2.0, ramp3[ramp], 1.0, ramp);
+					  vr_data.realtime + 2.0, ramp3[ramp], 1.0, ramp);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -1385,7 +1384,7 @@ R_BloodTrail_ID (const entity_t *ent)
 		porg[2] = old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
 
 		particle_new (pt_grav, part_tex_dot, porg, 1.0, vec3_origin,
-					  r_realtime + 2.0, 67 + (rnd & 3), 1.0, 0.0);
+					  vr_data.realtime + 2.0, 67 + (rnd & 3), 1.0, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -1416,7 +1415,7 @@ R_SlightBloodTrail_ID (const entity_t *ent)
 		porg[2] = old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
 
 		particle_new (pt_grav, part_tex_dot, porg, 1.0, vec3_origin,
-					  r_realtime + 1.5, 67 + (rnd & 3), 1.0, 0.0);
+					  vr_data.realtime + 1.5, 67 + (rnd & 3), 1.0, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -1452,8 +1451,8 @@ R_WizTrail_ID (const entity_t *ent)
 		pvel[2] = 0.0;
 
 		particle_new (pt_static, part_tex_dot, old_origin, 1.0, pvel,
-					  r_realtime + 0.5, 52 + ((tracercount & 4) << 1), 1.0,
-					  0.0);
+					  vr_data.realtime + 0.5, 52 + ((tracercount & 4) << 1),
+					  1.0, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -1489,8 +1488,8 @@ R_FlameTrail_ID (const entity_t *ent)
 		pvel[2] = 0.0;
 
 		particle_new (pt_static, part_tex_dot, old_origin, 1.0, pvel,
-					  r_realtime + 0.5, 230 + ((tracercount & 4) << 1), 1.0,
-					  0.0);
+					  vr_data.realtime + 0.5, 230 + ((tracercount & 4) << 1),
+					  1.0, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -1521,7 +1520,8 @@ R_VoorTrail_ID (const entity_t *ent)
 		porg[2] = old_origin[2] + ((rnd >> 11) & 15) - 7.5;
 
 		particle_new (pt_static, part_tex_dot, porg, 1.0, vec3_origin,
-					  r_realtime + 0.3, 9 * 16 + 8 + (rnd & 3), 1.0, 0.0);
+					  vr_data.realtime + 0.3, 9 * 16 + 8 + (rnd & 3),
+					  1.0, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -1640,7 +1640,7 @@ draw_qf_particles (void)
 
 		// LordHavoc: immediate removal of unnecessary particles (must be done
 		// to ensure compactor below operates properly in all cases)
-		if (part->die < r_realtime) {
+		if (part->die < vr_data.realtime) {
 			freeparticles[j++] = part;
 		} else {
 			maxparticle = k;
@@ -1662,7 +1662,7 @@ draw_qf_particles (void)
 	while (maxparticle >= activeparticles) {
 		*freeparticles[k++] = particles[maxparticle--];
 		while (maxparticle >= activeparticles &&
-			   particles[maxparticle].die <= r_realtime)
+			   particles[maxparticle].die <= vr_data.realtime)
 			maxparticle--;
 	}
 	numparticles = activeparticles;
@@ -1728,7 +1728,7 @@ draw_id_particles (void)
 
 		// LordHavoc: immediate removal of unnecessary particles (must be done
 		// to ensure compactor below operates properly in all cases)
-		if (part->die < r_realtime) {
+		if (part->die < vr_data.realtime) {
 			freeparticles[j++] = part;
 		} else {
 			maxparticle = k;
@@ -1747,7 +1747,7 @@ draw_id_particles (void)
 	while (maxparticle >= activeparticles) {
 		*freeparticles[k++] = particles[maxparticle--];
 		while (maxparticle >= activeparticles &&
-			   particles[maxparticle].die <= r_realtime)
+			   particles[maxparticle].die <= vr_data.realtime)
 			maxparticle--;
 	}
 	numparticles = activeparticles;
@@ -1771,26 +1771,125 @@ R_DrawParticles (void)
 	}
 }
 
+static vid_particle_funcs_t particles_QF = {
+	R_RocketTrail_QF,
+	R_GrenadeTrail_QF,
+	R_BloodTrail_QF,
+	R_SlightBloodTrail_QF,
+	R_WizTrail_QF,
+	R_FlameTrail_QF,
+	R_VoorTrail_QF,
+	R_GlowTrail_QF,
+	R_RunParticleEffect_QF,
+	R_BloodPuffEffect_QF,
+	R_GunshotEffect_QF,
+	R_LightningBloodEffect_QF,
+	R_SpikeEffect_QF,
+	R_KnightSpikeEffect_QF,
+	R_SuperSpikeEffect_QF,
+	R_WizSpikeEffect_QF,
+	R_BlobExplosion_QF,
+	R_ParticleExplosion_QF,
+	R_ParticleExplosion2_QF,
+	R_LavaSplash_QF,
+	R_TeleportSplash_QF,
+	R_DarkFieldParticles_ID,
+	R_EntityParticles_ID,
+};
+
+static vid_particle_funcs_t particles_ID = {
+	R_RocketTrail_ID,
+	R_GrenadeTrail_ID,
+	R_BloodTrail_ID,
+	R_SlightBloodTrail_ID,
+	R_WizTrail_ID,
+	R_FlameTrail_ID,
+	R_VoorTrail_ID,
+	R_GlowTrail_QF,
+	R_RunParticleEffect_ID,
+	R_BloodPuffEffect_ID,
+	R_GunshotEffect_ID,
+	R_LightningBloodEffect_ID,
+	R_SpikeEffect_ID,
+	R_KnightSpikeEffect_ID,
+	R_SuperSpikeEffect_ID,
+	R_WizSpikeEffect_ID,
+	R_BlobExplosion_ID,
+	R_ParticleExplosion_ID,
+	R_ParticleExplosion2_QF,
+	R_LavaSplash_ID,
+	R_TeleportSplash_ID,
+	R_DarkFieldParticles_ID,
+	R_EntityParticles_ID,
+};
+
+static vid_particle_funcs_t particles_QF_egg = {
+	R_RocketTrail_EE,
+	R_GrenadeTrail_EE,
+	R_BloodTrail_QF,
+	R_SlightBloodTrail_QF,
+	R_WizTrail_QF,
+	R_FlameTrail_QF,
+	R_VoorTrail_QF,
+	R_GlowTrail_QF,
+	R_RunParticleEffect_QF,
+	R_BloodPuffEffect_QF,
+	R_GunshotEffect_QF,
+	R_LightningBloodEffect_QF,
+	R_SpikeEffect_QF,
+	R_KnightSpikeEffect_QF,
+	R_SuperSpikeEffect_QF,
+	R_WizSpikeEffect_QF,
+	R_BlobExplosion_QF,
+	R_ParticleExplosion_EE,
+	R_ParticleExplosion2_QF,
+	R_LavaSplash_QF,
+	R_TeleportSplash_EE,
+	R_DarkFieldParticles_ID,
+	R_EntityParticles_ID,
+};
+
+static vid_particle_funcs_t particles_ID_egg = {
+	R_RocketTrail_EE,
+	R_GrenadeTrail_EE,
+	R_BloodTrail_ID,
+	R_SlightBloodTrail_ID,
+	R_WizTrail_ID,
+	R_FlameTrail_ID,
+	R_VoorTrail_ID,
+	R_GlowTrail_QF,
+	R_RunParticleEffect_ID,
+	R_BloodPuffEffect_ID,
+	R_GunshotEffect_ID,
+	R_LightningBloodEffect_ID,
+	R_SpikeEffect_ID,
+	R_KnightSpikeEffect_ID,
+	R_SuperSpikeEffect_ID,
+	R_WizSpikeEffect_ID,
+	R_BlobExplosion_ID,
+	R_ParticleExplosion_EE,
+	R_ParticleExplosion2_QF,
+	R_LavaSplash_ID,
+	R_TeleportSplash_EE,
+	R_DarkFieldParticles_ID,
+	R_EntityParticles_ID,
+};
+
 void
 r_easter_eggs_f (cvar_t *var)
 {
 	if (easter_eggs) {
 		if (easter_eggs->int_val) {
-			R_ParticleExplosion = R_ParticleExplosion_EE;
-			R_TeleportSplash = R_TeleportSplash_EE;
-			R_RocketTrail = R_RocketTrail_EE;
-			R_GrenadeTrail = R_GrenadeTrail_EE;
+			if (r_particles_style->int_val) {
+				vr_funcs.particles = &particles_QF_egg;
+			} else {
+				vr_funcs.particles = &particles_ID_egg;
+			}
 		} else if (r_particles_style) {
 			if (r_particles_style->int_val) {
-				R_ParticleExplosion = R_ParticleExplosion_QF;
-				R_TeleportSplash = R_TeleportSplash_QF;
-				R_RocketTrail = R_RocketTrail_QF;
-				R_GrenadeTrail = R_GrenadeTrail_QF;
+				vr_funcs.particles = &particles_QF;
 			} else {
-				R_ParticleExplosion = R_ParticleExplosion_ID;
-				R_TeleportSplash = R_TeleportSplash_ID;
-				R_RocketTrail = R_RocketTrail_ID;
-				R_GrenadeTrail = R_GrenadeTrail_ID;
+				vr_funcs.particles = &particles_ID;
 			}
 		}
 	}
@@ -1799,53 +1898,6 @@ r_easter_eggs_f (cvar_t *var)
 void
 r_particles_style_f (cvar_t *var)
 {
-	if (r_particles_style) {
-		if (r_particles_style->int_val) {
-			R_BlobExplosion = R_BlobExplosion_QF;
-			R_LavaSplash = R_LavaSplash_QF;
-
-			R_BloodPuffEffect = R_BloodPuffEffect_QF;
-			R_GunshotEffect = R_GunshotEffect_QF;
-			R_LightningBloodEffect = R_LightningBloodEffect_QF;
-
-			R_RunParticleEffect = R_RunParticleEffect_QF;
-			R_SpikeEffect = R_SpikeEffect_QF;
-			R_SuperSpikeEffect = R_SuperSpikeEffect_QF;
-			R_KnightSpikeEffect = R_KnightSpikeEffect_QF;
-			R_WizSpikeEffect = R_WizSpikeEffect_QF;
-
-			R_BloodTrail = R_BloodTrail_QF;
-			R_SlightBloodTrail = R_SlightBloodTrail_QF;
-			R_WizTrail = R_WizTrail_QF;
-			R_FlameTrail = R_FlameTrail_QF;
-			R_VoorTrail = R_VoorTrail_QF;
-		} else {
-			R_BlobExplosion = R_BlobExplosion_ID;
-			R_LavaSplash = R_LavaSplash_ID;
-
-			R_BloodPuffEffect = R_BloodPuffEffect_ID;
-			R_GunshotEffect = R_GunshotEffect_ID;
-			R_LightningBloodEffect = R_LightningBloodEffect_ID;
-
-			R_RunParticleEffect = R_RunParticleEffect_ID;
-			R_SpikeEffect = R_SpikeEffect_ID;
-			R_SuperSpikeEffect = R_SuperSpikeEffect_ID;
-			R_KnightSpikeEffect = R_KnightSpikeEffect_ID;
-			R_WizSpikeEffect = R_WizSpikeEffect_ID;
-
-			R_BloodTrail = R_BloodTrail_ID;
-			R_SlightBloodTrail = R_SlightBloodTrail_ID;
-			R_WizTrail = R_WizTrail_ID;
-			R_FlameTrail = R_FlameTrail_ID;
-			R_VoorTrail = R_VoorTrail_ID;
-		}
-	}
-	R_DarkFieldParticles = R_DarkFieldParticles_ID;
-	R_EntityParticles = R_EntityParticles_ID;
-	R_ParticleExplosion2 = R_ParticleExplosion2_QF;
-	R_GlowTrail = R_GlowTrail_QF;
-	// Handle R_GrenadeTrail, R_RocketTrail, R_ParticleExplosion,
-	// R_TeleportSplash
 	r_easter_eggs_f (easter_eggs);
 }
 

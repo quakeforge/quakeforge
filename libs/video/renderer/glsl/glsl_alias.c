@@ -50,7 +50,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
-#include "r_local.h"
+#include "r_internal.h"
 
 static const char quakemdl_vert[] =
 #include "quakemdl.vc"
@@ -149,7 +149,7 @@ calc_lighting (entity_t *ent, float *ambient, float *shadelight,
 	*shadelight = *ambient;
 
 	for (i = 0; i < r_maxdlights; i++) {
-		if (r_dlights[i].die >= r_realtime) {
+		if (r_dlights[i].die >= vr_data.realtime) {
 			VectorSubtract (ent->origin, r_dlights[i].origin, dist);
 			add = r_dlights[i].radius - VectorLength (dist);
 			if (add > 0)

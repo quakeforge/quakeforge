@@ -31,8 +31,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -44,8 +43,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/qtypes.h"
 #include "QF/render.h"
+#include "QF/sys.h"
 
-#include "r_cvar.h"
+#include "r_internal.h"
 
 qboolean    r_inhibit_viewmodel;
 qboolean    r_force_fullscreen;
@@ -84,10 +84,6 @@ vec3_t      r_origin;
 VISIBLE refdef_t    r_refdef;
 
 int         d_lightstylevalue[256];     // 8.8 fraction of base light value
-
-#define U __attribute__ ((used))
-static U void (*const r_progs_init)(struct progs_s *) = R_Progs_Init;
-#undef U
 
 byte        color_white[4] = { 255, 255, 255, 0 };	// alpha will be explicitly set
 byte        color_black[4] = { 0, 0, 0, 0 };		// alpha will be explicitly set

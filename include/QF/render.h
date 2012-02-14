@@ -34,6 +34,9 @@
 #include "QF/qdefs.h" // FIXME
 #include "QF/vid.h"
 
+extern struct vid_render_funcs_s *r_funcs;
+extern struct vid_render_data_s *r_data;
+
 // dynamic lights ===========================================================
 
 typedef struct dlight_s
@@ -50,16 +53,11 @@ typedef struct dlight_s
 extern  dlight_t       *r_dlights;
 extern	unsigned int	r_maxdlights;
 
-// FIXME: client_state_t should hold all pieces of the client state
 typedef struct
 {
 	int		length;
 	char	map[MAX_STYLESTRING];
 } lightstyle_t;
-
-extern  lightstyle_t    r_lightstyle[MAX_LIGHTSTYLES];
-
-// FIXME: lightstyle_t and r_lightstyle were in client.h, is this the best place for them?
 
 //===============
 
@@ -131,78 +129,27 @@ typedef struct
 	int			ambientlight;
 } refdef_t;
 
-// REFRESH ====================================================================
+// color shifts =============================================================
 
-extern	refdef_t	r_refdef;
-extern vec3_t	r_origin, vpn, vright, vup;
+typedef struct {
+	int     destcolor[3];
+	int     percent;        // 0-255
+} cshift_t;
+
+#define CSHIFT_CONTENTS 0
+#define CSHIFT_DAMAGE   1
+#define CSHIFT_BONUS    2
+#define CSHIFT_POWERUP  3
+#define NUM_CSHIFTS     4
+
+// REFRESH ====================================================================
 
 extern	struct texture_s	*r_notexture_mip;
 
 extern entity_t r_worldentity;
 
-extern void (*r_viewsize_callback)(struct cvar_s *var);
-extern int r_viewsize;
-
 void R_Init (void);
-void R_Init_Cvars (void);
-void R_InitEfrags (void);
-void R_ClearState (void);
-void R_InitSky (struct texture_s *mt);	// called at level load
-void R_Textures_Init (void);
-void R_RenderView (void);			// must set r_refdef first
-void R_ViewChanged (float aspect);	// must set r_refdef first
-								// called whenever r_refdef or vid change
-
-void R_AddEfrags (entity_t *ent);
-void R_RemoveEfrags (entity_t *ent);
-
-void R_NewMap (model_t *worldmodel, struct model_s **models, int num_models);
-
-// LordHavoc: relative bmodel lighting
-void R_PushDlights (const vec3_t entorigin);
-void R_DrawWaterSurfaces (void);
-
-void Fog_Update (float density, float red, float green, float blue,
-				 float time);
-struct plitem_s;
-void Fog_ParseWorldspawn (struct plitem_s *worldspawn);
-float *Fog_GetColor (void);
-float Fog_GetDensity (void);
-void Fog_SetupFrame (void);
-void Fog_EnableGFog (void);
-void Fog_DisableGFog (void);
-void Fog_StartAdditive (void);
-void Fog_StopAdditive (void);
-void Fog_Init (void);
-
-extern int		r_lineadj;
-
-void *D_SurfaceCacheAddress (void);
-int D_SurfaceCacheForRes (int width, int height);
-void D_FlushCaches (void);
-void D_DeleteSurfaceCache (void);
-void D_InitCaches (void *buffer, int size);
-void R_SetVrect (vrect_t *pvrect, vrect_t *pvrectin, int lineadj);
-
-void R_LoadSkys (const char *);
-
-void R_ClearEfrags (void);
-void R_ClearEnts (void);
-void R_EnqueueEntity (struct entity_s *ent);
-struct entity_s *R_AllocEntity (void);
-void R_FreeAllEntities (void);
-
-dlight_t *R_AllocDlight (int key);
-void R_DecayLights (double frametime);
-void R_ClearDlights (void);
-
-int R_InitGraphTextures (int base);
-void R_LineGraph (int x, int y, int *h_vals, int count);
 struct progs_s;
 void R_Progs_Init (struct progs_s *pr);
-
-void R_DrawAliasModel (entity_t *e);
-
-void R_MarkLeaves (void);
 
 #endif // __render_h

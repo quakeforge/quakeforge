@@ -28,8 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -49,9 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/view.h"
 
 #include "compat.h"
-#include "r_cvar.h"
-#include "r_local.h"
-#include "r_screen.h"
+#include "r_internal.h"
 #include "sbar.h"
 
 /*
@@ -128,7 +125,7 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 	int         h;
 
 	// intermission is always full screen
-	if (r_viewsize >= 100 || r_force_fullscreen /* FIXME: better test */) {
+	if (r_viewsize >= 100 || vr_data.force_fullscreen /*FIXME: better test*/) {
 		size = 100.0;
 		lineadj = 0;
 	} else {
@@ -158,6 +155,7 @@ void
 SCR_CalcRefdef (void)
 {
 	vrect_t     vrect;
+	refdef_t   *refdef = r_data->refdef;
 
 	// force a background redraw
 	scr_fullupdate = 0;
@@ -171,12 +169,12 @@ SCR_CalcRefdef (void)
 	vrect.width = vid.width;
 	vrect.height = vid.height;
 
-	R_SetVrect (&vrect, &scr_vrect, r_lineadj);
+	R_SetVrect (&vrect, &scr_vrect, vr_data.lineadj);
 
-	r_refdef.vrect = scr_vrect;
-	r_refdef.fov_x = scr_fov->value;
-	r_refdef.fov_y =
-		CalcFov (r_refdef.fov_x, r_refdef.vrect.width, r_refdef.vrect.height);
+	refdef->vrect = scr_vrect;
+	refdef->fov_x = scr_fov->value;
+	refdef->fov_y =
+		CalcFov (refdef->fov_x, refdef->vrect.width, refdef->vrect.height);
 
 	// notify the refresh of the change
 	R_ViewChanged (vid.aspect);
@@ -245,7 +243,7 @@ SCR_DrawTurtle (void)
 	if (!scr_showturtle->int_val)
 		return;
 
-	if (r_frametime < 0.1) {
+	if (vr_data.frametime < 0.1) {
 		count = 0;
 		return;
 	}
@@ -265,7 +263,7 @@ SCR_DrawPause (void)
 	if (!scr_showpause->int_val)		// turn off for screenshots
 		return;
 
-	if (!r_paused)
+	if (!vr_data.paused)
 		return;
 
 	pic = Draw_CachePic ("gfx/pause.lmp", true);

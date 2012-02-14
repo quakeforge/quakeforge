@@ -35,7 +35,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/qtypes.h"
 #include "QF/wadfile.h"
 
-#include "r_local.h"
+#include "r_internal.h"
 
 // NOTE: this array is INCORRECT for direct uploading in GL
 // but is optimal for SW
