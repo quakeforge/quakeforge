@@ -55,7 +55,7 @@ static vid_model_funcs_t model_funcs = {
 	Skin_SetPlayerSkin,
 };
 
-static vid_render_funcs_t vid_render_funcs = {
+vid_render_funcs_t vid_render_funcs = {
 	Draw_Init,
 	Draw_Character,
 	Draw_String,
@@ -107,7 +107,7 @@ static vid_render_funcs_t vid_render_funcs = {
 	&model_funcs
 };
 
-static vid_render_data_t vid_render_data = {
+vid_render_data_t vid_render_data = {
 	&vid, &r_refdef, &scr_vrect,
 	0, 0, 0,
 	0,

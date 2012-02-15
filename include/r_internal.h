@@ -11,8 +11,10 @@
 
 extern viddef_t 		vid;				// global video state
 
-extern vid_render_data_t vr_data;
-extern vid_render_funcs_t vr_funcs;
+extern vid_render_data_t vid_render_data;
+extern vid_render_funcs_t vid_render_funcs;
+#define vr_data vid_render_data
+#define vr_funcs vid_render_funcs
 
 extern	refdef_t	r_refdef;
 extern int r_viewsize;
