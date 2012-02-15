@@ -40,6 +40,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/vid.h"
 
 #include "compat.h"
+#include "r_internal.h"
 
 VISIBLE unsigned short d_8to16table[256];
 unsigned char d_15to8table[65536];

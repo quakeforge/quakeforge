@@ -128,8 +128,6 @@ typedef struct vid_render_funcs_s {
 	void (*SCR_UpdateScreen) (double realtime, SCR_Func scr_3dfunc,
 							  SCR_Func *scr_funcs);
 	void (*SCR_DrawRam) (void);
-	void (*SCR_DrawFPS) (void);
-	void (*SCR_DrawTime) (void);
 	void (*SCR_DrawTurtle) (void);
 	void (*SCR_DrawPause) (void);
 	struct tex_s *(*SCR_CaptureBGR) (void);

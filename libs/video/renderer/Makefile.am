@@ -20,7 +20,8 @@ EXTRA_LTLIBRARIES=	\
 
 common_sources= \
 	crosshair.c noisetextures.c r_alias.c r_bsp.c r_cvar.c r_dyn_textures.c \
-	r_efrag.c r_ent.c r_graph.c r_light.c r_main.c r_part.c r_screen.c
+	r_efrag.c r_ent.c r_graph.c r_light.c r_main.c r_part.c r_screen.c \
+	vid_common.c
 
 renderer_libs= \
 	@vid_render_static_plugin_libs@ \

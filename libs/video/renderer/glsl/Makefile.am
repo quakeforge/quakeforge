@@ -15,7 +15,8 @@ shader_gen= \
 
 glsl_src = \
 	glsl_alias.c glsl_bsp.c glsl_draw.c glsl_fog.c glsl_lightmap.c \
-	glsl_main.c glsl_particles.c glsl_screen.c glsl_sprite.c glsl_textures.c
+	glsl_main.c glsl_particles.c glsl_screen.c glsl_sprite.c glsl_textures.c \
+	qfglsl.c vid_common_glsl.c
 
 noinst_LTLIBRARIES=	libglsl.la
 BUILT_SOURCES= $(shader_gen)

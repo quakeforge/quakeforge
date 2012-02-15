@@ -16,11 +16,9 @@ lib_LTLIBRARIES= @JOY_TARGETS@
 noinst_LTLIBRARIES= @VID_TARGETS@ @vid_libs@
 
 EXTRA_LTLIBRARIES= \
-	libQFjs.la libQFfbdev.la libQFglx.la libQFglslx.la libQFsvga.la \
-	libQFtdfx.la libQFx11.la libQFsdl.la libQFsdl32.la libQFsgl.la \
-	libQFsglsl.la libQFwgl.la \
+	libQFjs.la libQFfbdev.la libQFsvga.la libQFx11.la libQFsdl.la libQFwgl.la \
 	libvid_asm.la libvid_common.la libvid_gl.la libvid_glsl.la libvid_sdl.la \
-	libvid_sw.la libvid_sw32.la libvid_svga.la libvid_x11.la
+	libvid_svga.la libvid_x11.la
 
 libvid_asm_la_SOURCES=		d_copy.S
 libvid_asm_la_CFLAGS=		@PREFER_NON_PIC@
@@ -52,22 +50,6 @@ libvid_common_la_SOURCES=	\
 libvid_common_la_CFLAGS=	@PREFER_NON_PIC@
 libvid_common_la_LDFLAGS=	@STATIC@
 
-libvid_sw_la_SOURCES=		vid_common_sw.c
-libvid_sw_la_CFLAGS=		@PREFER_NON_PIC@
-libvid_sw_la_LDFLAGS=		@STATIC@
-
-libvid_sw32_la_SOURCES=		vid_common_sw32.c
-libvid_sw32_la_CFLAGS=		@PREFER_NON_PIC@
-libvid_sw32_la_LDFLAGS=		@STATIC@
-
-libvid_gl_la_SOURCES=		vid_common_gl.c qfgl_ext.c vtxarray.c
-libvid_gl_la_CFLAGS=		@PREFER_NON_PIC@
-libvid_gl_la_LDFLAGS=		@STATIC@
-
-libvid_glsl_la_SOURCES=		vid_common_glsl.c qfglsl.c vtxarray.c
-libvid_glsl_la_CFLAGS=		@PREFER_NON_PIC@
-libvid_glsl_la_LDFLAGS=		@STATIC@
-
 libvid_x11_la_SOURCES=		in_x11.c context_x11.c dga_check.c
 libvid_x11_la_CFLAGS=		@PREFER_NON_PIC@ $(X_CFLAGS)
 libvid_x11_la_LDFLAGS=		@STATIC@
@@ -88,7 +70,7 @@ fbdev_h= fbset_modes_y.h
 YFLAGS = -d
 YACCLEX_CLEANFILES=	$(fbdev_c) $(fbdev_h)
 
-fbdev_libs=libvid_common.la libvid_sw.la
+fbdev_libs=libvid_common.la
 libQFfbdev_la_CFLAGS=		@PREFER_NON_PIC@
 libQFfbdev_la_SOURCES=		fbset.c fbset_modes_y.y fbset_modes_l.l \
 							in_fbdev.c vid_fbdev.c
@@ -96,61 +78,21 @@ libQFfbdev_la_LDFLAGS=		@STATIC@
 libQFfbdev_la_LIBADD=		$(fbdev_libs)
 libQFfbdev_la_DEPENDENCIES=	$(fbdev_libs)
 
-#
-# OpenGL in X Window
-#
-glx_libs=libvid_common.la libvid_gl.la libvid_x11.la
-libQFglx_la_CFLAGS=			@PREFER_NON_PIC@ $(X_CFLAGS)
-libQFglx_la_SOURCES=		vid_glx.c
-libQFglx_la_LDFLAGS=		@STATIC@
-libQFglx_la_LIBADD=			$(glx_libs)
-libQFglx_la_DEPENDENCIES=	$(glx_libs)
-
-#
-# OpenGL in X Window
-#
-glslx_libs=libvid_common.la libvid_glsl.la libvid_x11.la
-libQFglslx_la_CFLAGS=		@PREFER_NON_PIC@ $(X_CFLAGS)
-libQFglslx_la_SOURCES=		vid_glx.c
-libQFglslx_la_LDFLAGS=		@STATIC@
-libQFglslx_la_LIBADD=		$(glslx_libs)
-libQFglslx_la_DEPENDENCIES=	$(glslx_libs)
 
 #
 # Simple DirectMedia Library
 #
-sdl_libs=libvid_common.la libvid_sw.la libvid_sdl.la
+sdl_libs=libvid_common.la libvid_sdl.la
 libQFsdl_la_CFLAGS=			@PREFER_NON_PIC@ $(SDL_CFLAGS)
 libQFsdl_la_SOURCES=		vid_sdl.c
 libQFsdl_la_LDFLAGS=		@STATIC@
 libQFsdl_la_LIBADD=			$(sdl_libs)
 libQFsdl_la_DEPENDENCIES=	$(sdl_libs)
 
-sdl32_libs=libvid_common.la libvid_sw32.la libvid_sdl.la
-libQFsdl32_la_CFLAGS=		@PREFER_NON_PIC@ $(SDL_CFLAGS)
-libQFsdl32_la_SOURCES=		vid_sdl32.c
-libQFsdl32_la_LDFLAGS=		@STATIC@
-libQFsdl32_la_LIBADD=		$(sdl32_libs)
-libQFsdl32_la_DEPENDENCIES=	$(sdl32_libs)
-
-sgl_libs=libvid_common.la libvid_gl.la libvid_sdl.la
-libQFsgl_la_CFLAGS=			@PREFER_NON_PIC@ $(SDL_CFLAGS)
-libQFsgl_la_SOURCES=		vid_sgl.c
-libQFsgl_la_LDFLAGS=		@STATIC@
-libQFsgl_la_LIBADD=			$(sgl_libs)
-libQFsgl_la_DEPENDENCIES=	$(sgl_libs)
-
-sglsl_libs=libvid_common.la libvid_glsl.la libvid_sdl.la
-libQFsglsl_la_CFLAGS=		@PREFER_NON_PIC@ $(SDL_CFLAGS)
-libQFsglsl_la_SOURCES=		vid_sgl.c
-libQFsglsl_la_LDFLAGS=		@STATIC@
-libQFsglsl_la_LIBADD=		$(sglsl_libs)
-libQFsglsl_la_DEPENDENCIES=	$(sglsl_libs)
-
 #
 # SVGAlib
 #
-svga_libs=$(asm) libvid_common.la libvid_sw.la libvid_svga.la
+svga_libs=$(asm) libvid_common.la libvid_svga.la
 libQFsvga_la_CFLAGS=		@PREFER_NON_PIC@ $(SVGA_CFLAGS)
 libQFsvga_la_SOURCES=		vid_svgalib.c
 libQFsvga_la_LDFLAGS=		@STATIC@
@@ -180,7 +122,7 @@ libQFwgl_la_DEPENDENCIES=	$(wgl_libs)
 #
 # X11 software rendering
 #
-x11_libs=libvid_common.la libvid_sw.la libvid_x11.la
+x11_libs=libvid_common.la libvid_x11.la
 libQFx11_la_CFLAGS=			@PREFER_NON_PIC@ $(X_CFLAGS)
 libQFx11_la_SOURCES=		vid_x11.c
 libQFx11_la_LDFLAGS=		@STATIC@
