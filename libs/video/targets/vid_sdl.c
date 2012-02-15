@@ -141,7 +141,8 @@ VID_Init (byte *palette, byte *colormap)
 void
 VID_Update (vrect_t *rects)
 {
-	SDL_Rect   *sdlrects;
+	static SDL_Rect *sdlrects;
+	static int  num_sdlrects;
 	int         i, n;
 	vrect_t    *rect;
 
@@ -152,9 +153,14 @@ VID_Update (vrect_t *rects)
 	for (rect = rects; rect; rect = rect->next)
 		++n;
 
+	if (n > num_sdlrects) {
+		num_sdlrects = n;
+		sdlrects = realloc (sdlrects, n * sizeof (SDL_Rect));
+		if (!sdlrects)
+			Sys_Error ("Out of memory!");
+	}
+
 	// Second, copy them to SDL rectangles and update
-	if (!(sdlrects = (SDL_Rect *) calloc (1, n * sizeof (SDL_Rect))))
-		Sys_Error ("Out of memory!");
 	i = 0;
 	for (rect = rects; rect; rect = rect->next) {
 		sdlrects[i].x = rect->x;
@@ -167,7 +173,7 @@ VID_Update (vrect_t *rects)
 }
 
 void
-D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
+D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
 {
 	Uint8      *offset;
 
