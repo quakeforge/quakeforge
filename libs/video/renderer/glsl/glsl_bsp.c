@@ -1273,15 +1273,57 @@ R_InitBsp (void)
 	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.fog);
 }
 
+static inline int
+is_pow2 (unsigned x)
+{
+	int         count;
+
+	for (count = 0; x; x >>= 1)
+		if (x & 1)
+			count++;
+	return count == 1;
+}
+
+// NOTE: this expects the destination tex_t to be set up: memory allocated
+// and dimentions/format etc already set. the size of the rect to be copied
+// is taken from dst. Also, dst->format and src->format must be the same, and
+// either 3 or 4, or bad things will happen. Also, no clipping is done, so if
+// x < 0 or y < 0 or x + dst->width > src->width
+// or y + dst->height > src->height, bad things will happen.
+static void
+copy_sub_tex (tex_t *src, int x, int y, tex_t *dst)
+{
+	int         dstbytes;
+	int         srcbytes;
+	int         i;
+
+	srcbytes = src->width * src->format;
+	dstbytes = dst->width * dst->format;
+
+	x *= src->format;
+	for (i = 0; i < dst->height; i++)
+		memcpy (dst->data + i * dstbytes, src->data + (i + y) * srcbytes + x,
+				dstbytes);
+}
+
 VISIBLE void
 R_LoadSkys (const char *sky)
 {
 	const char *name;
 	int         i;
+	tex_t      *tex;
 	// NOTE: quake's world and GL's world are rotated relative to each other
 	// quake has x right, y in, z up. gl has x right, y up, z out
 	// However, skymaps have lf and rt swapped :/    lf    rt
 	static const char *sky_suffix[] = { "ft", "bk", "rt", "lf", "up", "dn"};
+	static int  sky_coords[][2] = {
+		{2, 0},	// front
+		{0, 0}, // back
+		{2, 1}, // left
+		{1, 0}, // right
+		{1, 1}, // up
+		{0, 1}, // down
+	};
 	static int  sky_target[] = {
 		GL_TEXTURE_CUBE_MAP_POSITIVE_X,	// front
 		GL_TEXTURE_CUBE_MAP_NEGATIVE_X, // back
@@ -1304,26 +1346,55 @@ R_LoadSkys (const char *sky)
 
 	qfglBindTexture (GL_TEXTURE_CUBE_MAP, skybox_tex);
 
-	skybox_loaded = true;
-	for (i = 0; i < 6; i++) {
-		tex_t      *tex;
+	//blender envmap
+	// bk rt ft
+	// dn up lt
+	tex = LoadImage (name = va ("env/%s_map", sky));
+	if (tex && tex->format >= 3 && tex->height * 3 == tex->width * 2
+		&& is_pow2 (tex->height)) {
+		tex_t      *sub;
+		int         size = tex->height / 2;
 
-		tex = LoadImage (name = va ("env/%s%s", sky, sky_suffix[i]));
-		if (!tex || tex->format < 3) {	// FIXME pcx support
-			Sys_MaskPrintf (SYS_GLSL, "Couldn't load %s\n", name);
-			// also look in gfx/env, where Darkplaces looks for skies
-			tex = LoadImage (name = va ("gfx/env/%s%s", sky, sky_suffix[i]));
-			if (!tex || tex->format < 3) {  // FIXME pcx support
-				Sys_MaskPrintf (SYS_GLSL, "Couldn't load %s\n", name);
-				skybox_loaded = false;
-				continue;
-			}
+		skybox_loaded = true;
+		sub = malloc (field_offset (tex_t, data[size * size * tex->format]));
+		sub->width = size;
+		sub->height = size;
+		sub->format = tex->format;
+		sub->palette = tex->palette;
+		for (i = 0; i < 6; i++) {
+			int         x, y;
+			x = sky_coords[i][0] * size;
+			y = sky_coords[i][1] * size;
+			copy_sub_tex (tex, x, y, sub);
+			qfglTexImage2D (sky_target[i], 0,
+							sub->format == 3 ? GL_RGB : GL_RGBA,
+							sub->width, sub->height, 0,
+							sub->format == 3 ? GL_RGB : GL_RGBA,
+							GL_UNSIGNED_BYTE, sub->data);
 		}
-		Sys_MaskPrintf (SYS_GLSL, "Loaded %s\n", name);
-		qfglTexImage2D (sky_target[i], 0, tex->format == 3 ? GL_RGB : GL_RGBA,
-						tex->width, tex->height, 0,
-						tex->format == 3 ? GL_RGB : GL_RGBA,
-						GL_UNSIGNED_BYTE, tex->data);
+		free (sub);
+	} else {
+		skybox_loaded = true;
+		for (i = 0; i < 6; i++) {
+			tex = LoadImage (name = va ("env/%s%s", sky, sky_suffix[i]));
+			if (!tex || tex->format < 3) {	// FIXME pcx support
+				Sys_MaskPrintf (SYS_GLSL, "Couldn't load %s\n", name);
+				// also look in gfx/env, where Darkplaces looks for skies
+				tex = LoadImage (name = va ("gfx/env/%s%s", sky,
+											sky_suffix[i]));
+				if (!tex || tex->format < 3) {  // FIXME pcx support
+					Sys_MaskPrintf (SYS_GLSL, "Couldn't load %s\n", name);
+					skybox_loaded = false;
+					continue;
+				}
+			}
+			Sys_MaskPrintf (SYS_GLSL, "Loaded %s\n", name);
+			qfglTexImage2D (sky_target[i], 0,
+							tex->format == 3 ? GL_RGB : GL_RGBA,
+							tex->width, tex->height, 0,
+							tex->format == 3 ? GL_RGB : GL_RGBA,
+							GL_UNSIGNED_BYTE, tex->data);
+		}
 	}
 	qfglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
 					   GL_CLAMP_TO_EDGE);
