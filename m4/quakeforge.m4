@@ -137,7 +137,7 @@ AC_DEFUN([QF_STATIC_PLUGIN_LIST],
 [$1_plugin_list="{0, 0}"
 m4_foreach_w([qfn_need], [$3],
 [if test x"${$2[_need_]qfn_need}" = xyes; then
-	$1_plugin_list="{\"qfn_need\", $2_[]qfn_need[]_PluginInfo},${$1_plugin_list}"
+	$1_plugin_list="{\"$2_[]qfn_need\", $2_[]qfn_need[]_PluginInfo},${$1_plugin_list}"
 fi
 ])
 AC_DEFINE_UNQUOTED(m4_toupper([$1_plugin_list]), [${$1_plugin_list}], [list of $1 plugins])])
