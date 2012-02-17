@@ -48,14 +48,8 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "r_local.h"
 
-/*
-int         part_tex_dot;
-int         part_tex_smoke;
-int         part_tex_spark;
-*/
-
-int			part_tex;
-GLint		part_tex_internal_format = 2;
+int			gl_part_tex;
+static GLint part_tex_internal_format = 2;
 
 
 static void
@@ -65,8 +59,8 @@ GDT_InitParticleTexture (void)
 
 	memset (data, 0, sizeof (data));
 
-	part_tex = texture_extension_number++;
-	qfglBindTexture (GL_TEXTURE_2D, part_tex);
+	gl_part_tex = texture_extension_number++;
+	qfglBindTexture (GL_TEXTURE_2D, gl_part_tex);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	qfglTexImage2D (GL_TEXTURE_2D, 0, part_tex_internal_format, 64, 64, 0, GL_LUMINANCE_ALPHA,

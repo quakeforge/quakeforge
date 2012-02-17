@@ -60,14 +60,14 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_shared.h"
 #include "varrays.h"
 
-int		ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
-int		ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
-int		ramp3[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
+static int		ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
+//static int	ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
+static int		ramp3[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 
-int						partUseVA;
-int						pVAsize;
-int					   *pVAindices;
-varray_t2f_c4ub_v3f_t  *particleVertexArray;
+static int						partUseVA;
+static int						pVAsize;
+static int					   *pVAindices;
+static varray_t2f_c4ub_v3f_t   *particleVertexArray;
 
 
 inline static void
@@ -1458,7 +1458,7 @@ R_DrawParticles (void)
 	if (!r_particles->int_val)
 		return;
 
-	qfglBindTexture (GL_TEXTURE_2D, part_tex);
+	qfglBindTexture (GL_TEXTURE_2D, gl_part_tex);
 	// LordHavoc: particles should not affect zbuffer
 	qfglDepthMask (GL_FALSE);
 	qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, particleVertexArray);

@@ -58,12 +58,10 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "r_local.h"
 #include "r_shared.h"
 
-int			 skytexturenum;
-
-instsurf_t  *waterchain = NULL;
-instsurf_t **waterchain_tail = &waterchain;
-instsurf_t  *sky_chain;
-instsurf_t **sky_chain_tail;
+static instsurf_t  *waterchain = NULL;
+static instsurf_t **waterchain_tail = &waterchain;
+static instsurf_t  *sky_chain;
+static instsurf_t **sky_chain_tail;
 
 #define CHAIN_SURF_F2B(surf,chain)							\
 	do { 													\
@@ -85,11 +83,6 @@ instsurf_t **sky_chain_tail;
 		inst->tex_chain = (chain);							\
 		(chain) = inst;										\
 	} while (0)
-
-extern int			lightmap_textures;
-extern qboolean		lightmap_modified[MAX_LIGHTMAPS];
-extern instsurf_t  *lightmap_polys[MAX_LIGHTMAPS];
-extern glRect_t		lightmap_rectchange[MAX_LIGHTMAPS];
 
 static texture_t **r_texture_chains;
 static int  r_num_texture_chains;
@@ -282,8 +275,8 @@ R_AddToLightmapChain (msurface_t *fa)
 	if (!(sc = fa->instsurf))
 		sc = fa->tinst;
 
-	sc->lm_chain = lightmap_polys[fa->lightmaptexturenum];
-	lightmap_polys[fa->lightmaptexturenum] = sc;
+	sc->lm_chain = gl_lightmap_polys[fa->lightmaptexturenum];
+	gl_lightmap_polys[fa->lightmaptexturenum] = sc;
 
 	// check for lightmap modification
 	for (maps = 0; maps < MAXLIGHTMAPS && fa->styles[maps] != 255; maps++)
@@ -293,8 +286,8 @@ R_AddToLightmapChain (msurface_t *fa)
 	if ((fa->dlightframe == r_framecount) || fa->cached_dlight) {
 	  dynamic:
 		if (r_dynamic->int_val) {
-			lightmap_modified[fa->lightmaptexturenum] = true;
-			theRect = &lightmap_rectchange[fa->lightmaptexturenum];
+			gl_lightmap_modified[fa->lightmaptexturenum] = true;
+			theRect = &gl_lightmap_rectchange[fa->lightmaptexturenum];
 			if (fa->light_t < theRect->t) {
 				if (theRect->h)
 					theRect->h += theRect->t - fa->light_t;
@@ -346,7 +339,7 @@ R_DrawWaterSurfaces (void)
 			i = fa->texinfo->texture->gl_texturenum;
 			qfglBindTexture (GL_TEXTURE_2D, i);
 		}
-		EmitWaterPolys (fa);
+		GL_EmitWaterPolys (fa);
 	}
 	qfglLoadMatrixf (r_world_matrix);
 
@@ -396,7 +389,7 @@ DrawTextureChains (int disable_blend, int do_bind)
 					}
 					if (s->color && do_bind)
 						qfglColor4fv (s->color);
-					qfglBindTexture (GL_TEXTURE_2D, lightmap_textures +
+					qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures +
 									 fa->lightmaptexturenum);
 
 					R_RenderBrushPoly_3 (fa);
@@ -415,7 +408,7 @@ DrawTextureChains (int disable_blend, int do_bind)
 				qglActiveTexture (gl_mtex_enum + 1);
 				for (s = tex->tex_chain; s; s = s->tex_chain) {
 					fa = s->surface;
-					qfglBindTexture (GL_TEXTURE_2D, lightmap_textures +
+					qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures +
 									 fa->lightmaptexturenum);
 
 					if (s->transform) {
@@ -488,7 +481,7 @@ clear_texture_chains (void)
 	tex->tex_chain_tail = &tex->tex_chain;
 	release_instsurfs ();
 
-	memset (lightmap_polys, 0, sizeof (lightmap_polys));
+	memset (gl_lightmap_polys, 0, sizeof (gl_lightmap_polys));
 }
 
 static inline void
@@ -805,12 +798,10 @@ R_DrawWorld (void)
 	clear_texture_chains ();
 }
 
-int         nColinElim;
-model_t    *currentmodel;
-mvertex_t  *r_pcurrentvertbase;
+model_t    *gl_currentmodel;
 
 void
-BuildSurfaceDisplayList (msurface_t *fa)
+GL_BuildSurfaceDisplayList (msurface_t *fa)
 {
 	float       s, t;
 	float      *vec;
@@ -819,7 +810,7 @@ BuildSurfaceDisplayList (msurface_t *fa)
 	medge_t    *pedges, *r_pedge;
 
 	// reconstruct the polygon
-	pedges = currentmodel->edges;
+	pedges = gl_currentmodel->edges;
 	lnumverts = fa->numedges;
 
 	// draw texture
@@ -831,7 +822,7 @@ BuildSurfaceDisplayList (msurface_t *fa)
 	poly->numverts = lnumverts;
 
 	for (i = 0; i < lnumverts; i++) {
-		lindex = currentmodel->surfedges[fa->firstedge + i];
+		lindex = gl_currentmodel->surfedges[fa->firstedge + i];
 
 		if (lindex > 0) {
 			r_pedge = &pedges[lindex];
@@ -896,7 +887,6 @@ BuildSurfaceDisplayList (msurface_t *fa)
 						poly->verts[j - 1][k] = poly->verts[j][k];
 				}
 				--lnumverts;
-				++nColinElim;
 				// retry next vertex next time, which is now current vertex
 				--i;
 			}

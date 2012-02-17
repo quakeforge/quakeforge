@@ -42,7 +42,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_local.h"
 
 float        surfscale;
-qboolean     r_cache_thrash;			// set if surface cache is thrashing
 
 int          sc_size;
 surfcache_t *sc_rover, *sc_base;

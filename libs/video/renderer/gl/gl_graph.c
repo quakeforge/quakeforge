@@ -54,7 +54,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #define NUM_GRAPH_TEXTURES 8
 
 static byte *graph_texels[NUM_GRAPH_TEXTURES];
-int 	     graph_texture[NUM_GRAPH_TEXTURES];
+static int   graph_texture[NUM_GRAPH_TEXTURES];
 static int   graph_index;
 static int   graph_size[NUM_GRAPH_TEXTURES];
 static int   graph_width[NUM_GRAPH_TEXTURES];

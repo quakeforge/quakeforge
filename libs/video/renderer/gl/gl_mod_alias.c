@@ -75,17 +75,7 @@ typedef struct {
 	int         count;
 } vert_order_t;
 
-float		r_avertexnormals[NUMVERTEXNORMALS][3] = {
-#include "anorms.h"
-};
-
-// precalculated dot products for quantized angles
-#define SHADEDOT_QUANT 16
-float   r_avertexnormal_dots[SHADEDOT_QUANT][256] = {
-#include "anorm_dots.h"
-};
-
-vec3_t		shadevector;
+static vec3_t		shadevector;
 
 
 static void
@@ -401,7 +391,7 @@ R_DrawAliasModel (entity_t *e)
 
 	VectorSubtract (r_origin, e->origin, modelorg);
 
-	modelalpha = e->colormod[3];
+	gl_modelalpha = e->colormod[3];
 
 	is_fullbright = (model->fullbright || e->fullbright);
 	minlight = max (model->min_light, e->min_light);
@@ -557,7 +547,7 @@ R_DrawAliasModel (entity_t *e)
 					paliashdr->mdl.scale_origin[2]);
 	qfglScalef (scale[0], scale[1], scale[2]);
 
-	if (modelalpha < 1.0)
+	if (gl_modelalpha < 1.0)
 		qfglDepthMask (GL_FALSE);
 
 	// draw all the triangles
@@ -663,9 +653,9 @@ R_DrawAliasModel (entity_t *e)
 		qfglDisable (GL_TEXTURE_2D);
 		qfglDepthMask (GL_FALSE);
 
-		if (modelalpha < 1.0) {
+		if (gl_modelalpha < 1.0) {
 			VectorBlend (e->colormod, dark, 0.5, color);
-			color[3] = modelalpha * (model->shadow_alpha / 255.0);
+			color[3] = gl_modelalpha * (model->shadow_alpha / 255.0);
 			qfglColor4fv (color);
 		} else {
 			color_black[3] = model->shadow_alpha;
@@ -679,7 +669,7 @@ R_DrawAliasModel (entity_t *e)
 		if (!tess)
 			qfglEnable (GL_NORMALIZE);
 		qfglPopMatrix ();
-	} else if (modelalpha < 1.0) {
+	} else if (gl_modelalpha < 1.0) {
 		qfglDepthMask (GL_TRUE);
 	}
 

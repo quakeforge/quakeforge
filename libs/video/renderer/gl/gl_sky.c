@@ -56,15 +56,15 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_cvar.h"
 #include "r_shared.h"
 
-const char *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
-int         solidskytexture;
-int         alphaskytexture;
+static const char *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
+int         gl_solidskytexture;
+int         gl_alphaskytexture;
 
 // Set to true if a valid skybox is loaded --KB
-qboolean    skyloaded = false;
+qboolean    gl_skyloaded = false;
 
 
-vec5_t      skyvec[6][4] = {
+vec5_t      gl_skyvec[6][4] = {
 	{
 		// right +y
 		{1, 0, 1024, 1024, 1024},
@@ -119,11 +119,11 @@ R_LoadSkys (const char *skyname)
 		skyname = r_skyname->string;
 
 	if (!*skyname || strcasecmp (skyname, "none") == 0) {
-		skyloaded = false;
+		gl_skyloaded = false;
 		return;
 	}
 
-	skyloaded = true;
+	gl_skyloaded = true;
 	for (i = 0; i < 6; i++) {
 		tex_t	*targa;
 
@@ -136,7 +136,7 @@ R_LoadSkys (const char *skyname)
 			targa = LoadImage (name = va ("gfx/env/%s%s", skyname, suf[i]));
 			if (!targa) {
 				Sys_MaskPrintf (SYS_DEV, "Couldn't load %s\n", name);
-				skyloaded = false;
+				gl_skyloaded = false;
 				continue;
 			}
 		}
@@ -149,28 +149,28 @@ R_LoadSkys (const char *skyname)
 
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		if (Anisotropy)
+		if (gl_Anisotropy)
 			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-							   aniso);
+							   gl_aniso);
 		qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 #if 0
 		for (j = 0; j < 4; j++) {
 			// set the texture coords to be 1/2 pixel in from the edge
-			if (skyvec[i][j][0] < 0.5)
-				skyvec[i][j][0] = 0.5 / targa->width;
+			if (gl_skyvec[i][j][0] < 0.5)
+				gl_skyvec[i][j][0] = 0.5 / targa->width;
 			else
-				skyvec[i][j][0] = 1 - 0.5 / targa->width;
+				gl_skyvec[i][j][0] = 1 - 0.5 / targa->width;
 
-			if (skyvec[i][j][1] < 0.5)
-				skyvec[i][j][1] = 0.5 / targa->height;
+			if (gl_skyvec[i][j][1] < 0.5)
+				gl_skyvec[i][j][1] = 0.5 / targa->height;
 			else
-				skyvec[i][j][1] = 1 - 0.5 / targa->height;
+				gl_skyvec[i][j][1] = 1 - 0.5 / targa->height;
 		}
 #endif
 	}
-	if (!skyloaded)
+	if (!gl_skyloaded)
 		Sys_Printf ("Unable to load skybox %s, using normal sky\n", skyname);
 }
 
@@ -183,7 +183,7 @@ R_DrawSkyBox (void)
 		qfglBindTexture (GL_TEXTURE_2D, SKY_TEX + i);
 		qfglBegin (GL_QUADS);
 		for (j = 0; j < 4; j++) {
-			float *v = (float *) skyvec[i][j];
+			float *v = (float *) gl_skyvec[i][j];
 
 			qfglTexCoord2fv (v);
 			qfglVertex3f (r_refdef.vieworg[0] + v[2],
@@ -194,9 +194,9 @@ R_DrawSkyBox (void)
 	}
 }
 
-vec3_t      domescale = {2048.0, 2048.0,  512.0};
-vec3_t      zenith    = {   0.0,    0.0,  512.0};
-vec3_t      nadir     = {   0.0,    0.0, -512.0};
+static vec3_t      domescale = {2048.0, 2048.0,  512.0};
+static vec3_t      zenith    = {   0.0,    0.0,  512.0};
+static vec3_t      nadir     = {   0.0,    0.0, -512.0};
 
 static inline void
 skydome_vertex (const vec3_t v, float speedscale)
@@ -232,17 +232,17 @@ skydome_debug (void)
 	qfglDisable (GL_TEXTURE_2D);
 	qfglBegin (GL_LINES);
 	for (a = 0; a < 16; a++) {
-		a1x = bubble_costable[a * 2] * domescale[0];
-		a1y = -bubble_sintable[a * 2] * domescale[1];
-		a2x = bubble_costable[(a + 1) * 2] * domescale[0];
-		a2y = -bubble_sintable[(a + 1) * 2] * domescale[1];
+		a1x = gl_bubble_costable[a * 2] * domescale[0];
+		a1y = -gl_bubble_sintable[a * 2] * domescale[1];
+		a2x = gl_bubble_costable[(a + 1) * 2] * domescale[0];
+		a2y = -gl_bubble_sintable[(a + 1) * 2] * domescale[1];
 
 		h = 1;
 		t = 0;
 		VectorAdd (zenith, r_refdef.vieworg, v[0]);
 		for (b = 1; b <= 8; b++) {
-			x = bubble_costable[b + 8];
-			y = -bubble_sintable[b + 8];
+			x = gl_bubble_costable[b + 8];
+			y = -gl_bubble_sintable[b + 8];
 
 			v[h][0] = a1x * x;
 			v[h][1] = a1y * x;
@@ -273,8 +273,8 @@ skydome_debug (void)
 		t = 0;
 		VectorAdd (nadir, r_refdef.vieworg, v[0]);
 		for (b = 15; b >= 8; b--) {
-			x = bubble_costable[b + 8];
-			y = -bubble_sintable[b + 8];
+			x = gl_bubble_costable[b + 8];
+			y = -gl_bubble_sintable[b + 8];
 
 			v[h][0] = a2x * x;
 			v[h][1] = a2y * x;
@@ -313,16 +313,16 @@ R_DrawSkyLayer (float speedscale)
 	vec3_t      v;
 
 	for (a = 0; a < 16; a++) {
-		a1x = bubble_costable[a * 2] * domescale[0];
-		a1y = -bubble_sintable[a * 2] * domescale[1];
-		a2x = bubble_costable[(a + 1) * 2] * domescale[0];
-		a2y = -bubble_sintable[(a + 1) * 2] * domescale[1];
+		a1x = gl_bubble_costable[a * 2] * domescale[0];
+		a1y = -gl_bubble_sintable[a * 2] * domescale[1];
+		a2x = gl_bubble_costable[(a + 1) * 2] * domescale[0];
+		a2y = -gl_bubble_sintable[(a + 1) * 2] * domescale[1];
 
 		qfglBegin (GL_TRIANGLE_STRIP);
 		skydome_vertex (zenith, speedscale);
 		for (b = 1; b <= 8; b++) {
-			x = bubble_costable[b + 8];
-			y = -bubble_sintable[b + 8];
+			x = gl_bubble_costable[b + 8];
+			y = -gl_bubble_sintable[b + 8];
 
 			v[0] = a1x * x;
 			v[1] = a1y * x;
@@ -339,8 +339,8 @@ R_DrawSkyLayer (float speedscale)
 		qfglBegin (GL_TRIANGLE_STRIP);
 		skydome_vertex (nadir, speedscale);
 		for (b = 15; b >= 8; b--) {
-			x = bubble_costable[b + 8];
-			y = -bubble_sintable[b + 8];
+			x = gl_bubble_costable[b + 8];
+			y = -gl_bubble_sintable[b + 8];
 
 			v[0] = a2x * x;
 			v[1] = a2y * x;
@@ -363,7 +363,7 @@ R_DrawSkyDome (void)
 
 	// base sky
 	qfglDisable (GL_BLEND);
-	qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
+	qfglBindTexture (GL_TEXTURE_2D, gl_solidskytexture);
 	speedscale = r_realtime / 16.0;
 	speedscale -= floor (speedscale);
 	R_DrawSkyLayer (speedscale);
@@ -371,7 +371,7 @@ R_DrawSkyDome (void)
 
 	// clouds
 	if (gl_sky_multipass->int_val) {
-		qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
+		qfglBindTexture (GL_TEXTURE_2D, gl_alphaskytexture);
 		speedscale = r_realtime / 8.0;
 		speedscale -= floor (speedscale);
 		R_DrawSkyLayer (speedscale);
@@ -386,7 +386,7 @@ R_DrawSky (void)
 {
 	qfglDisable (GL_DEPTH_TEST);
 	qfglDepthMask (GL_FALSE);
-	if (skyloaded)
+	if (gl_skyloaded)
 		R_DrawSkyBox ();
 	else
 		R_DrawSkyDome ();
@@ -428,16 +428,16 @@ R_InitSky (texture_t *mt)
 	((byte *) & transpix)[2] = b / (128 * 128);
 	((byte *) & transpix)[3] = 0;
 
-	if (!solidskytexture)
-		solidskytexture = texture_extension_number++;
-	qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
+	if (!gl_solidskytexture)
+		gl_solidskytexture = texture_extension_number++;
+	qfglBindTexture (GL_TEXTURE_2D, gl_solidskytexture);
 	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, 128, 128, 0, GL_RGBA,
 					GL_UNSIGNED_BYTE, trans);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	if (Anisotropy)
+	if (gl_Anisotropy)
         qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                           aniso);
+                           gl_aniso);
 
 	for (i = 0; i < 128; i++)
 		for (j = 0; j < 128; j++) {
@@ -448,14 +448,14 @@ R_InitSky (texture_t *mt)
 				trans[(i * 128) + j] = d_8to24table[p];
 		}
 
-	if (!alphaskytexture)
-		alphaskytexture = texture_extension_number++;
-	qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
+	if (!gl_alphaskytexture)
+		gl_alphaskytexture = texture_extension_number++;
+	qfglBindTexture (GL_TEXTURE_2D, gl_alphaskytexture);
 	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 128, 128, 0, GL_RGBA,
 					GL_UNSIGNED_BYTE, trans);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	if (Anisotropy)
+	if (gl_Anisotropy)
         qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                           aniso);
+                           gl_aniso);
 }

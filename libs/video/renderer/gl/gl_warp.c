@@ -42,7 +42,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/GL/qf_rsurf.h"
 
 // speed up sin calculations - Ed
-float       turbsin[] = {
+static float turbsin[] = {
 #	include "gl_warp_sin.h"
 };
 
@@ -50,12 +50,12 @@ float       turbsin[] = {
 #define TURBFRAC (32.0 / (2 * M_PI))		// an 8th of TURBSCALE
 
 /*
-	EmitWaterPolys
+	GL_EmitWaterPolys
 
 	Does a water warp on the pre-fragmented glpoly_t chain
 */
 void
-EmitWaterPolys (msurface_t *fa)
+GL_EmitWaterPolys (msurface_t *fa)
 {
 	float		os, ot, s, t, timetemp;
 	float      *v;

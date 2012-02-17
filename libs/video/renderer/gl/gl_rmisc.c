@@ -65,8 +65,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_local.h"
 #include "varrays.h"
 
-int			r_init = 0;
-
 /*
 	R_Envmap_f
 
@@ -79,7 +77,7 @@ R_Envmap_f (void)
 
 	qfglDrawBuffer (GL_FRONT);
 	qfglReadBuffer (GL_FRONT);
-	envmap = true;
+	gl_envmap = true;
 
 	r_refdef.vrect.x = 0;
 	r_refdef.vrect.y = 0;
@@ -120,7 +118,7 @@ R_Envmap_f (void)
 	qfglReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	QFS_WriteFile ("env5.rgb", buffer, sizeof (buffer));
 
-	envmap = false;
+	gl_envmap = false;
 	qfglDrawBuffer (GL_BACK);
 	qfglReadBuffer (GL_BACK);
 	GL_EndRendering ();
@@ -203,19 +201,17 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	GL_BuildLightmaps (models, num_models);
 
 	// identify sky texture
-	skytexturenum = -1;
-	mirrortexturenum = -1;
+	gl_mirrortexturenum = -1;
 	R_ClearTextures ();
 	for (i = 0; i < r_worldentity.model->numtextures; i++) {
 		tex = r_worldentity.model->textures[i];
 		if (!tex)
 			continue;
 		if (!strncmp (tex->name, "sky", 3)) {
-			skytexturenum = i;
 			R_InitSky (tex);
 		}
 		if (!strncmp (tex->name, "window02_1", 10))
-			mirrortexturenum = i;
+			gl_mirrortexturenum = i;
 	}
 
 	R_InitSurfaceChains (r_worldentity.model);

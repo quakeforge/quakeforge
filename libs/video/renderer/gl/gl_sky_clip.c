@@ -748,7 +748,7 @@ draw_id_sky_polys (const instsurf_t *sky_chain)
 	speedscale = r_realtime / 16;
 	speedscale -= floor (speedscale);
 
-	qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
+	qfglBindTexture (GL_TEXTURE_2D, gl_solidskytexture);
 	while (sc) {
 		EmitSkyPolys (speedscale, sc);
 		sc = sc->tex_chain;
@@ -760,7 +760,7 @@ draw_id_sky_polys (const instsurf_t *sky_chain)
 		speedscale = r_realtime / 8;
 		speedscale -= floor (speedscale);
 
-		qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
+		qfglBindTexture (GL_TEXTURE_2D, gl_alphaskytexture);
 		while (sc) {
 			EmitSkyPolys (speedscale, sc);
 			sc = sc->tex_chain;
@@ -806,7 +806,7 @@ R_DrawSkyChain (const instsurf_t *sky_chain)
 		return;
 	}
 
-	if (skyloaded) {
+	if (gl_skyloaded) {
 		if (gl_sky_clip->int_val) {
 			draw_skybox_sky_polys (sky_chain);
 		}
@@ -881,7 +881,7 @@ R_DrawSkyChain (const instsurf_t *sky_chain)
 			qfglEnd ();
 		}
 		if (gl_sky_debug->int_val & 4) {
-			if (skyloaded) {
+			if (gl_skyloaded) {
 				int         i, j;
 
 				qfglColor3ub (255, 0, 0);
@@ -890,7 +890,7 @@ R_DrawSkyChain (const instsurf_t *sky_chain)
 
 					qfglBegin (GL_LINE_LOOP);
 					for (j = 0; j < 4; j++) {
-						VectorScale (&skyvec[i][j][2], 1.0 / 128.0, v);
+						VectorScale (&gl_skyvec[i][j][2], 1.0 / 128.0, v);
 						VectorAdd (v, r_refdef.vieworg, v);
 						qfglVertex3fv (v);
 					}

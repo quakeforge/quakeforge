@@ -105,9 +105,9 @@ VISIBLE qboolean			is8bit = false;
 VISIBLE qboolean			gl_feature_mach64 = false;
 
 // GL_EXT_texture_filter_anisotropic
-VISIBLE qboolean 			Anisotropy;
+VISIBLE qboolean 			gl_Anisotropy;
 static float		aniso_max;
-VISIBLE float				aniso;
+VISIBLE float				gl_aniso;
 
 // GL_ATI_pn_triangles
 static qboolean		TruForm;
@@ -241,13 +241,13 @@ gl_screenshot_byte_swap_f (cvar_t *var)
 static void
 gl_anisotropy_f (cvar_t * var)
 {
-	if (Anisotropy) {
+	if (gl_Anisotropy) {
 		if (var)
-			aniso = (bound (1.0, var->value, aniso_max));
+			gl_aniso = (bound (1.0, var->value, aniso_max));
 		else
-			aniso = 1.0;
+			gl_aniso = 1.0;
 	} else {
-		aniso = 1.0;
+		gl_aniso = 1.0;
 		if (var)
 			Sys_MaskPrintf (SYS_VID,
 							"Anisotropy (GL_EXT_texture_filter_anisotropic) "
@@ -366,10 +366,10 @@ static void
 CheckAnisotropyExtensions (void)
 {
 	if (QFGL_ExtensionPresent ("GL_EXT_texture_filter_anisotropic")) {
-		Anisotropy = true;
+		gl_Anisotropy = true;
 		qfglGetFloatv (GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &aniso_max);
 	} else {
-		Anisotropy = false;
+		gl_Anisotropy = false;
 		aniso_max = 1.0;
 	}
 }
@@ -626,9 +626,9 @@ GL_Init_Common (void)
 	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
-	if (Anisotropy)
+	if (gl_Anisotropy)
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-						   aniso);
+						   gl_aniso);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }

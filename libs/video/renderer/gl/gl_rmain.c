@@ -66,40 +66,19 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_local.h"
 #include "varrays.h"
 
-entity_t    r_worldentity;
-
-qboolean    r_cache_thrash;				// compatability
-
-vec3_t      modelorg, r_entorigin;
-entity_t   *currententity;
-
-int         r_visframecount;			// bumped when going to a new PVS
-VISIBLE int         r_framecount;				// used for dlight push checking
-
 int         c_brush_polys, c_alias_polys;
 
-qboolean    envmap;						// true during envmap command capture
+qboolean    gl_envmap;					// true during envmap command capture
 
-int         mirrortexturenum;			// quake texturenum, not gltexturenum
-qboolean    mirror;
-plane_t    *mirror_plane;
-
-// view origin
-VISIBLE vec3_t      vup;
-VISIBLE vec3_t      vpn;
-VISIBLE vec3_t      vright;
-VISIBLE vec3_t      r_origin;
+int         gl_mirrortexturenum;		// quake texturenum, not gltexturenum
+qboolean    gl_mirror;
+plane_t    *gl_mirror_plane;
 
 float       r_world_matrix[16];
-float       r_base_world_matrix[16];
+static float r_base_world_matrix[16];
 
-// screen size info
-VISIBLE refdef_t    r_refdef;
-
-int         d_lightstylevalue[256];		// 8.8 fraction of base light value
-
-vec3_t		shadecolor;					// Ender (Extend) Colormod
-float		modelalpha;					// Ender (Extend) Alpha
+//vec3_t		gl_shadecolor;					// Ender (Extend) Colormod
+float		gl_modelalpha;					// Ender (Extend) Alpha
 
 /* Unknown renamed to GLErr_Unknown to solve conflict with winioctl.h */
 unsigned int	GLErr_InvalidEnum;
@@ -273,7 +252,7 @@ R_DrawEntitiesOnList (void)
 
 	qfglEnable (GL_ALPHA_TEST);
 	if (gl_va_capable)
-		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, spriteVertexArray);
+		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, gl_spriteVertexArray);
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		if (ent->model->type != mod_sprite)
 			continue;
@@ -290,7 +269,7 @@ R_DrawViewModel (void)
 	currententity = r_view_model;
 	if (r_inhibit_viewmodel
 		|| !r_drawviewmodel->int_val
-		|| envmap
+		|| gl_envmap
 		|| !r_drawentities->int_val
 		|| !currententity->model)
 		return;
@@ -434,7 +413,7 @@ R_SetupGL_Viewport_and_Perspective (void)
 	qfglMatrixMode (GL_PROJECTION);
 	qfglLoadIdentity ();
 
-	if (envmap) {
+	if (gl_envmap) {
 		x = y2 = 0;
 		w = h = 256;
 	} else {
@@ -458,8 +437,8 @@ R_SetupGL (void)
 
 	R_SetupGL_Viewport_and_Perspective ();
 
-	if (mirror) {
-		if (mirror_plane->normal[2])
+	if (gl_mirror) {
+		if (gl_mirror_plane->normal[2])
 			qfglScalef (1, -1, 1);
 		else
 			qfglScalef (-1, 1, 1);
@@ -534,18 +513,18 @@ R_Mirror (void)
 	float		d;
 //	msurface_t *s;
 
-//	if (!mirror) // FIXME: Broken
+//	if (!gl_mirror) // FIXME: Broken
 		return;
 
 	memcpy (r_base_world_matrix, r_world_matrix, sizeof (r_base_world_matrix));
 
-	d = 2 * DotProduct (r_refdef.vieworg, mirror_plane->normal) -
-		mirror_plane->dist;
-	VectorMultSub (r_refdef.vieworg, d, mirror_plane->normal,
+	d = 2 * DotProduct (r_refdef.vieworg, gl_mirror_plane->normal) -
+		gl_mirror_plane->dist;
+	VectorMultSub (r_refdef.vieworg, d, gl_mirror_plane->normal,
 				   r_refdef.vieworg);
 
-	d = 2 * DotProduct (vpn, mirror_plane->normal);
-	VectorMultSub (vpn, d, mirror_plane->normal, vpn);
+	d = 2 * DotProduct (vpn, gl_mirror_plane->normal);
+	VectorMultSub (vpn, d, gl_mirror_plane->normal, vpn);
 
 	r_refdef.viewangles[0] = -asin (vpn[2]) / M_PI * 180;
 	r_refdef.viewangles[1] = atan2 (vpn[1], vpn[0]) / M_PI * 180;
@@ -566,7 +545,7 @@ R_Mirror (void)
 
 	// blend on top
 	qfglMatrixMode (GL_PROJECTION);
-	if (mirror_plane->normal[2])
+	if (gl_mirror_plane->normal[2])
 		qfglScalef (1, -1, 1);
 	else
 		qfglScalef (-1, 1, 1);
@@ -578,7 +557,7 @@ R_Mirror (void)
 	color_white[3] = r_mirroralpha->value * 255;
 	qfglColor4ubv (color_white);
 #if 0//FIXME
-	s = r_worldentity.model->textures[mirrortexturenum]->texturechain;
+	s = r_worldentity.model->textures[gl_mirrortexturenum]->texturechain;
 	for (; s; s = s->texturechain) {
 		texture_t  *tex;
 
@@ -598,7 +577,7 @@ R_Mirror (void)
 		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 //		R_RenderBrushPoly (s, tex); // FIXME: Need to move R_Mirror to gl_rsurf.c, and uncommment this line!
 	}
-	r_worldentity.model->textures[mirrortexturenum]->texturechain = NULL;
+	r_worldentity.model->textures[gl_mirrortexturenum]->texturechain = NULL;
 #endif
 	qfglColor3ubv (color_white);
 }
@@ -616,7 +595,7 @@ R_RenderView_ (void)
 	if (!r_worldentity.model)
 		Sys_Error ("R_RenderView: NULL worldmodel");
 
-	mirror = false;
+	gl_mirror = false;
 
 	R_Clear ();
 

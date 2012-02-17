@@ -116,8 +116,6 @@ static struct {
 	{"vcolor", 0},
 };
 
-VISIBLE byte *draw_chars;
-
 static byte white_block[8 * 8];
 static dstring_t *char_queue;
 static int  char_texture;

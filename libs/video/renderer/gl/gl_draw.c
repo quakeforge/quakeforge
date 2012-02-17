@@ -76,16 +76,14 @@ typedef struct {
 	float       blx, bly;
 } cc_cell_t;
 
-byte	   *draw_chars;						// 8*8 graphic characters
+static int         textUseVA;
+static int         tVAsize;
+static int        *tVAindices;
+static int         tVAcount;
+static float      *textVertices, *tV;
+static float      *textCoords, *tC;
 
-int         textUseVA;
-int         tVAsize;
-int        *tVAindices;
-int         tVAcount;
-float      *textVertices, *tV;
-float      *textCoords, *tC;
-
-qpic_t	   *draw_backtile;
+static qpic_t	   *draw_backtile;
 
 static cc_cell_t char_cells[256];
 static int	translate_texture;

@@ -34,8 +34,8 @@
 
 #define SKY_TEX 2000	// Quake 2 environment sky
 
-extern qboolean skyloaded;
-extern vec5_t skyvec[6][4];
+extern qboolean gl_skyloaded;
+extern vec5_t gl_skyvec[6][4];
 
 void R_DrawSky (void);
 void R_DrawSkyChain (const instsurf_t *s);

@@ -39,10 +39,14 @@ typedef struct glRect_s {
 } glRect_t;
 
 extern int lm_src_blend, lm_dest_blend;
-extern model_t *currentmodel;
-extern mvertex_t *r_pcurrentvertbase;
+extern model_t *gl_currentmodel;
 
-void BuildSurfaceDisplayList (msurface_t *fa);
+extern int			gl_lightmap_textures;
+extern qboolean		gl_lightmap_modified[MAX_LIGHTMAPS];
+extern instsurf_t  *gl_lightmap_polys[MAX_LIGHTMAPS];
+extern glRect_t		gl_lightmap_rectchange[MAX_LIGHTMAPS];
+
+void GL_BuildSurfaceDisplayList (msurface_t *fa);
 void gl_lightmap_init (void);
 void GL_BuildLightmaps (struct model_s **models, int num_models);
 void R_BlendLightmaps (void);

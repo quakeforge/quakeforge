@@ -57,6 +57,33 @@ entity_t   *r_player_entity;
 float       r_time1;
 int         r_lineadj;
 qboolean    r_active;
+int			r_init;
+
+entity_t   *currententity;
+
+int         r_visframecount;			// bumped when going to a new PVS
+VISIBLE int         r_framecount = 1;			// so frame counts initialized to 0 don't match
+
+vec3_t      modelorg;			// modelorg is the viewpoint relative to
+								// the currently rendering entity
+vec3_t      base_modelorg;
+vec3_t      r_entorigin;		// the currently rendering entity in world
+								// coordinates
+entity_t   *currententity;
+entity_t    r_worldentity;
+
+qboolean    r_cache_thrash;		// set if surface cache is thrashing
+
+// view origin
+vec3_t      vup, base_vup;
+vec3_t      vpn, base_vpn;
+vec3_t      vright, base_vright;
+vec3_t      r_origin;
+
+// screen size info
+VISIBLE refdef_t    r_refdef;
+
+int         d_lightstylevalue[256];     // 8.8 fraction of base light value
 
 #define U __attribute__ ((used))
 static U void (*const r_progs_init)(struct progs_s *) = R_Progs_Init;

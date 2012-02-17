@@ -29,8 +29,7 @@
 #ifndef __QF_GL_rsurf_h
 #define __QF_GL_rsurf_h
 
-extern int skytexturenum;		// index in cl.loadmodel, not gl texture object
-extern int mirrortexturenum;	// quake texturenum, not gltexturenum
+extern int gl_mirrortexturenum;	// quake texturenum, not gltexturenum
 
 void gl_lightmap_init (void);
 void GL_BuildLightmaps (struct model_s **models, int num_models);
@@ -38,6 +37,6 @@ void GL_BuildLightmaps (struct model_s **models, int num_models);
 void R_DrawBrushModel (struct entity_s *e);
 void R_DrawWorld (void);
 
-void EmitWaterPolys (msurface_t *fa);
+void GL_EmitWaterPolys (msurface_t *fa);
 
 #endif // __QF_GL_rsurf_h

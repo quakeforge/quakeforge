@@ -34,6 +34,10 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+float r_avertexnormals[NUMVERTEXNORMALS][3] = {
+#include "anorms.h"
+};
+
 VISIBLE maliasskindesc_t *
 R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 {

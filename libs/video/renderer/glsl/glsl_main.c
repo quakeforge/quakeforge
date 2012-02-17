@@ -61,15 +61,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 mat4_t glsl_projection;
 mat4_t glsl_view;
-VISIBLE vec3_t r_origin, vpn, vright, vup;
-VISIBLE refdef_t r_refdef;
-qboolean r_cache_thrash;
-int r_init;
-int r_framecount;
-int d_lightstylevalue[256];
-int r_visframecount;
-entity_t r_worldentity;
-entity_t *currententity;
 
 void
 gl_overbright_f (cvar_t *var)

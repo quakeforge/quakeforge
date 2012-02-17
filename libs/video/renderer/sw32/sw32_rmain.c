@@ -67,13 +67,11 @@ VISIBLE int         r_pixbytes = 1;
 float       r_aliasuvscale = 1.0;
 int         r_outofsurfaces;
 int         r_outofedges;
-int			r_init = 0;
 
 qboolean    r_dowarp, r_dowarpold, r_viewchanged;
 
 int         numbtofpolys;
 btofpoly_t *pbtofpolys;
-mvertex_t  *r_pcurrentvertbase;
 
 int         c_surf;
 int         r_maxsurfsseen, r_maxedgesseen, r_cnumsurfs;
@@ -86,16 +84,7 @@ byte       *r_stack_start;
 
 qboolean    r_fov_greater_than_90;
 
-entity_t    r_worldentity;
-
-// view origin
-VISIBLE vec3_t      vup, base_vup;
-VISIBLE vec3_t      vpn, base_vpn;
-VISIBLE vec3_t      vright, base_vright;
-VISIBLE vec3_t      r_origin;
-
 // screen size info
-VISIBLE refdef_t    r_refdef;
 float       xcenter, ycenter;
 float       xscale, yscale;
 float       xscaleinv, yscaleinv;
@@ -112,8 +101,6 @@ float       xOrigin, yOrigin;
 plane_t     screenedge[4];
 
 // refresh flags
-VISIBLE int         r_framecount = 1;	// so frame counts initialized to 0 don't match
-int         r_visframecount;
 int         d_spanpixcount;
 int         r_polycount;
 int         r_drawnpolycount;
@@ -127,8 +114,6 @@ int         reinit_surfcache = 1;	// if 1, surface cache is currently empty
 									// cache size
 
 float       r_aliastransition, r_resfudge;
-
-int         d_lightstylevalue[256];		// 8.8 fraction of base light value
 
 float       dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
 float       se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;

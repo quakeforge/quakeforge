@@ -159,9 +159,9 @@ build_skin_32 (tex_t *tex, int texnum, byte *translate,
 
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	if (Anisotropy)
+	if (gl_Anisotropy)
         qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-						   aniso);
+						   gl_aniso);
 }
 
 static void

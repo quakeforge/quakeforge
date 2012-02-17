@@ -38,14 +38,9 @@ extern int gl_solid_format;
 extern int gl_lightmap_format;
 extern int gl_filter_min;
 extern int gl_filter_max;
-extern qboolean Anisotropy;
-extern float aniso;
-extern int part_tex;
-/*
-extern int part_tex_dot;
-extern int part_tex_smoke;
-extern int part_tex_spark;
-*/
+extern qboolean gl_Anisotropy;
+extern float gl_aniso;
+extern int gl_part_tex;
 
 void GL_Upload8 (const byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
 void GL_Upload8_EXT (const byte *data, int width, int height,  qboolean mipmap, qboolean alpha);

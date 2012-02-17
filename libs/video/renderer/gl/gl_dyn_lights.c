@@ -52,7 +52,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_local.h"
 #include "r_shared.h"
 
-float       bubble_sintable[33], bubble_costable[33];
+float       gl_bubble_sintable[33], gl_bubble_costable[33];
 
 
 void
@@ -62,8 +62,8 @@ R_InitBubble (void)
 	float      *bub_sin, *bub_cos;
 	int         i;
 
-	bub_sin = bubble_sintable;
-	bub_cos = bubble_costable;
+	bub_sin = gl_bubble_sintable;
+	bub_cos = gl_bubble_costable;
 
 	for (i = 32; i >= 0; i--) {
 		a = i * (M_PI / 16.0);
@@ -80,8 +80,8 @@ R_RenderDlight (dlight_t *light)
 	int         i, j;
 	vec3_t      v;
 
-	bub_sin = bubble_sintable;
-	bub_cos = bubble_costable;
+	bub_sin = gl_bubble_sintable;
+	bub_cos = gl_bubble_costable;
 	rad = light->radius * 0.35;
 
 	VectorSubtract (light->origin, r_origin, v);

@@ -98,6 +98,7 @@ static __attribute__ ((used)) const char rcsid[] =
 // only the refresh window will be updated unless these variables are flagged 
 int         scr_copytop;
 int         scr_copyeverything;
+byte       *draw_chars;					// 8*8 graphic characters FIXME location
 
 float       oldfov;
 int         oldsbar;

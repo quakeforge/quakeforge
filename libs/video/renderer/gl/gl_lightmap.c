@@ -58,22 +58,21 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_local.h"
 #include "r_shared.h"
 
-int          active_lightmaps;
-int          dlightdivtable[8192];
-int			 gl_internalformat;				// 1 or 3
-int          lightmap_bytes;				// 1, 3, or 4
-int          lightmap_textures;
+static int          dlightdivtable[8192];
+static int			 gl_internalformat;				// 1 or 3
+static int          lightmap_bytes;				// 1, 3, or 4
+int          gl_lightmap_textures;
 
 // keep lightmap texture data in main memory so texsubimage can update properly
 // LordHavoc: changed to be allocated at runtime (typically lower memory usage)
-byte        *lightmaps[MAX_LIGHTMAPS];
+static byte        *lightmaps[MAX_LIGHTMAPS];
 
-unsigned int blocklights[34 * 34 * 3];	//FIXME make dynamic
-int          allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
+static unsigned int blocklights[34 * 34 * 3];	//FIXME make dynamic
+static int          allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
 
-qboolean	 lightmap_modified[MAX_GLTEXTURES];
-instsurf_t	*lightmap_polys[MAX_LIGHTMAPS];
-glRect_t	 lightmap_rectchange[MAX_LIGHTMAPS];
+qboolean	 gl_lightmap_modified[MAX_LIGHTMAPS];
+instsurf_t	*gl_lightmap_polys[MAX_LIGHTMAPS];
+glRect_t	 gl_lightmap_rectchange[MAX_LIGHTMAPS];
 
 static int	 lmshift = 7;
 
@@ -440,7 +439,7 @@ do_subimage_2 (int i)
 {
 	byte       *block, *lm, *b;
 	int         stride, width;
-	glRect_t   *rect = &lightmap_rectchange[i];
+	glRect_t   *rect = &gl_lightmap_rectchange[i];
 
 	width = rect->w * lightmap_bytes;
 	stride = BLOCK_WIDTH * lightmap_bytes;
@@ -463,10 +462,10 @@ GL_UploadLightmap (int i)
 		do_subimage_2 (i);
 		break;
 	case 1:
-		qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, lightmap_rectchange[i].t,
-						   BLOCK_WIDTH, lightmap_rectchange[i].h,
+		qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, gl_lightmap_rectchange[i].t,
+						   BLOCK_WIDTH, gl_lightmap_rectchange[i].h,
 						   gl_lightmap_format, GL_UNSIGNED_BYTE,
-						   lightmaps[i] + (lightmap_rectchange[i].t *
+						   lightmaps[i] + (gl_lightmap_rectchange[i].t *
 										   BLOCK_WIDTH) * lightmap_bytes);
 		break;
 	default:
@@ -484,12 +483,12 @@ R_CalcLightmaps (void)
 	int         i;
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
-		if (!lightmap_polys[i])
+		if (!gl_lightmap_polys[i])
 			continue;
-		if (lightmap_modified[i]) {
-			qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
+		if (gl_lightmap_modified[i]) {
+			qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures + i);
 			GL_UploadLightmap (i);
-			lightmap_modified[i] = false;
+			gl_lightmap_modified[i] = false;
 		}
 	}
 }
@@ -506,8 +505,8 @@ R_BlendLightmaps (void)
 	qfglBlendFunc (lm_src_blend, lm_dest_blend);
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
-		for (sc = lightmap_polys[i]; sc; sc = sc->lm_chain) {
-			qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
+		for (sc = gl_lightmap_polys[i]; sc; sc = sc->lm_chain) {
+			qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures + i);
 			if (sc->transform) {
 				qfglPushMatrix ();
 				qfglLoadMatrixf (sc->transform);
@@ -596,11 +595,11 @@ gl_overbright_f (cvar_t *var)
 				continue;
 
 			num = fa->lightmaptexturenum;
-			lightmap_modified[num] = true;
-			lightmap_rectchange[num].l = 0;
-			lightmap_rectchange[num].t = 0;
-			lightmap_rectchange[num].w = BLOCK_WIDTH;
-			lightmap_rectchange[num].h = BLOCK_HEIGHT;
+			gl_lightmap_modified[num] = true;
+			gl_lightmap_rectchange[num].l = 0;
+			gl_lightmap_rectchange[num].t = 0;
+			gl_lightmap_rectchange[num].w = BLOCK_WIDTH;
+			gl_lightmap_rectchange[num].h = BLOCK_HEIGHT;
 
 			R_BuildLightMap (fa);
 		}
@@ -613,11 +612,11 @@ gl_overbright_f (cvar_t *var)
 			continue;
 
 		num = fa->lightmaptexturenum;
-		lightmap_modified[num] = true;
-		lightmap_rectchange[num].l = 0;
-		lightmap_rectchange[num].t = 0;
-		lightmap_rectchange[num].w = BLOCK_WIDTH;
-		lightmap_rectchange[num].h = BLOCK_HEIGHT;
+		gl_lightmap_modified[num] = true;
+		gl_lightmap_rectchange[num].l = 0;
+		gl_lightmap_rectchange[num].t = 0;
+		gl_lightmap_rectchange[num].w = BLOCK_WIDTH;
+		gl_lightmap_rectchange[num].h = BLOCK_HEIGHT;
 
 		R_BuildLightMap (fa);
 	}
@@ -698,8 +697,8 @@ GL_BuildLightmaps (model_t **models, int num_models)
 
 	r_framecount = 1;					// no dlightcache
 
-	if (!lightmap_textures) {
-		lightmap_textures = texture_extension_number;
+	if (!gl_lightmap_textures) {
+		gl_lightmap_textures = texture_extension_number;
 		texture_extension_number += MAX_LIGHTMAPS;
 	}
 
@@ -740,7 +739,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 			continue;
 		}
 		r_pcurrentvertbase = m->vertexes;
-		currentmodel = m;
+		gl_currentmodel = m;
 		// non-bsp models don't have surfaces.
 		for (i = 0; i < m->numsurfaces; i++) {
 			if (m->surfaces[i].flags & SURF_DRAWTURB)
@@ -749,7 +748,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 										   SURF_DRAWSKY))
 				continue;
 			GL_CreateSurfaceLightmap (m->surfaces + i);
-			BuildSurfaceDisplayList (m->surfaces + i);
+			GL_BuildSurfaceDisplayList (m->surfaces + i);
 		}
 	}
 
@@ -757,17 +756,17 @@ GL_BuildLightmaps (model_t **models, int num_models)
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
 		if (!allocated[i][0])
 			break;						// no more used
-		lightmap_modified[i] = false;
-		lightmap_rectchange[i].l = BLOCK_WIDTH;
-		lightmap_rectchange[i].t = BLOCK_HEIGHT;
-		lightmap_rectchange[i].w = 0;
-		lightmap_rectchange[i].h = 0;
-		qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
+		gl_lightmap_modified[i] = false;
+		gl_lightmap_rectchange[i].l = BLOCK_WIDTH;
+		gl_lightmap_rectchange[i].t = BLOCK_HEIGHT;
+		gl_lightmap_rectchange[i].w = 0;
+		gl_lightmap_rectchange[i].h = 0;
+		qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures + i);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		if (Anisotropy)
+		if (gl_Anisotropy)
 			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-							   aniso);
+							   gl_aniso);
 		qfglTexImage2D (GL_TEXTURE_2D, 0, lightmap_bytes, BLOCK_WIDTH,
 						BLOCK_HEIGHT, 0, gl_lightmap_format,
 						GL_UNSIGNED_BYTE, lightmaps[i]);

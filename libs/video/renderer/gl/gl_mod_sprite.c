@@ -50,12 +50,9 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_shared.h"
 #include "varrays.h"
 
-int						 sVAsize;
-int						*sVAindices;
-float					*spriteVertices;
-float					*spriteTexCoords;
-float					*spriteColors;
-varray_t2f_c4ub_v3f_t	*spriteVertexArray;
+static int						 sVAsize;
+static int						*sVAindices;
+varray_t2f_c4ub_v3f_t	*gl_spriteVertexArray;
 
 void (*R_DrawSpriteModel) (struct entity_s *ent);
 
@@ -181,7 +178,7 @@ R_DrawSpriteModel_VA_f (entity_t *e)
 	vec3_t			 point1, point2, v_up;
 	varray_t2f_c4ub_v3f_t		*VA;
 
-	VA = spriteVertexArray; // FIXME: Despair
+	VA = gl_spriteVertexArray; // FIXME: Despair
 
 	// don't bother culling, it's just a single polygon without a surface cache
 	frame = R_GetSpriteFrame (e);
@@ -234,7 +231,7 @@ R_DrawSpriteModel_VA_f (entity_t *e)
 //		qfglDrawElements (GL_QUADS, vacount, GL_UNSIGNED_INT, sVAindices);
 		qfglDrawElements (GL_QUADS, 4, GL_UNSIGNED_INT, sVAindices);
 //		vacount = 0;
-//		VA = spriteVertexArray;
+//		VA = gl_spriteVertexArray;
 //	}
 
 	if (modelalpha < 255)
@@ -261,11 +258,11 @@ R_InitSprites (void)
 			Sys_MaskPrintf (SYS_DEV, "Sprites: %i maximum vertex elements.\n",
 							sVAsize);
 
-			if (spriteVertexArray)
-				free (spriteVertexArray);
-			spriteVertexArray = (varray_t2f_c4ub_v3f_t *)
+			if (gl_spriteVertexArray)
+				free (gl_spriteVertexArray);
+			gl_spriteVertexArray = (varray_t2f_c4ub_v3f_t *)
 				calloc (sVAsize, sizeof (varray_t2f_c4ub_v3f_t));
-			qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, spriteVertexArray);
+			qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, gl_spriteVertexArray);
 
 			if (sVAindices)
 				free (sVAindices);
@@ -273,21 +270,21 @@ R_InitSprites (void)
 			for (i = 0; i < sVAsize; i++)
 				sVAindices[i] = i;
 			for (i = 0; i < sVAsize / 4; i++) {
-				spriteVertexArray[i * 4].texcoord[0] = 0.0;
-				spriteVertexArray[i * 4].texcoord[1] = 1.0;
-				spriteVertexArray[i * 4 + 1].texcoord[0] = 0.0;
-				spriteVertexArray[i * 4 + 1].texcoord[1] = 0.0;
-				spriteVertexArray[i * 4 + 2].texcoord[0] = 1.0;
-				spriteVertexArray[i * 4 + 2].texcoord[1] = 0.0;
-				spriteVertexArray[i * 4 + 3].texcoord[0] = 1.0;
-				spriteVertexArray[i * 4 + 3].texcoord[1] = 1.0;
+				gl_spriteVertexArray[i * 4].texcoord[0] = 0.0;
+				gl_spriteVertexArray[i * 4].texcoord[1] = 1.0;
+				gl_spriteVertexArray[i * 4 + 1].texcoord[0] = 0.0;
+				gl_spriteVertexArray[i * 4 + 1].texcoord[1] = 0.0;
+				gl_spriteVertexArray[i * 4 + 2].texcoord[0] = 1.0;
+				gl_spriteVertexArray[i * 4 + 2].texcoord[1] = 0.0;
+				gl_spriteVertexArray[i * 4 + 3].texcoord[0] = 1.0;
+				gl_spriteVertexArray[i * 4 + 3].texcoord[1] = 1.0;
 			}
 		} else {
 			R_DrawSpriteModel = R_DrawSpriteModel_f;
 
-			if (spriteVertexArray) {
-				free (spriteVertexArray);
-				spriteVertexArray = 0;
+			if (gl_spriteVertexArray) {
+				free (gl_spriteVertexArray);
+				gl_spriteVertexArray = 0;
 			}
 			if (sVAindices) {
 				free (sVAindices);

@@ -32,13 +32,12 @@
 #include "QF/qtypes.h"
 #include "QF/cvar.h"
 
-extern qboolean envmap;
+extern qboolean gl_envmap;
 extern int c_brush_polys, c_alias_polys;
 extern float r_world_matrix[16];
 
-extern float modelalpha;
-extern vec3_t shadecolor;
-extern vec3_t lightspot;
+extern float gl_modelalpha;
+//extern vec3_t shadecolor;
 
 extern void gl_multitexture_f (cvar_t *var);
 

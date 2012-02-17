@@ -58,7 +58,6 @@ typedef struct {
 
 static rectdesc_t r_rectdesc;
 
-byte       *draw_chars;					// 8*8 graphic characters
 qpic_t     *draw_disc;
 qpic_t     *draw_backtile;
 

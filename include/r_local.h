@@ -331,6 +331,8 @@ extern qboolean	r_fov_greater_than_90;
 extern struct entity_s *r_ent_queue;
 struct dlight_s;
 
+extern vec3_t lightspot;
+
 void R_StoreEfrags (const efrag_t *ppefrag);
 void R_TimeRefresh_f (void);
 void R_TimeGraph (void);

@@ -40,13 +40,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 // current entity info
 qboolean    insubmodel;
-entity_t   *currententity;
-vec3_t      modelorg;			// modelorg is the viewpoint relative to
-								// the currently rendering entity
-vec3_t      base_modelorg;
 vec3_t      r_worldmodelorg;
-vec3_t      r_entorigin;		// the currently rendering entity in world
-								// coordinates
 float       entity_rotation[3][3];
 
 int         r_currentbkey;

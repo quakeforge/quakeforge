@@ -37,7 +37,6 @@
 extern model_t *currentmodel;
 extern mvertex_t *r_pcurrentvertbase;
 
-void BuildSurfaceDisplayList (msurface_t *fa);
 void gl_lightmap_init (void);
 void R_BuildLightmaps (struct model_s **models, int num_models);
 void R_CalcLightmaps (void);

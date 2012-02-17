@@ -44,6 +44,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "r_local.h"
 #include "r_shared.h"
 
+mvertex_t  *r_pcurrentvertbase;
 mleaf_t    *r_viewleaf;
 static mleaf_t *r_oldviewleaf;
 
