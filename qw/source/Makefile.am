@@ -30,7 +30,7 @@
 AUTOMAKE_OPTIONS=	foreign
 
 # Stuff that is common to both client and server
-INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include @LIBCURL_CPPFLAGS@
+INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include @LIBCURL_CFLAGS@
 SDL_LIBS = @SDL_LIBS@
 AM_CFLAGS= @PTHREAD_CFLAGS@
 
