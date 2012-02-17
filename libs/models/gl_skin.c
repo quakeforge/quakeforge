@@ -195,7 +195,7 @@ build_skin (skin_t *skin, int cmap)
 		skin->texnum = texnum;
 		skin->auxtex = fb_texnum;
 	}
-	if (VID_Is8bit ()) {
+	if (vid.is8bit) {
 		build_skin_8 (s->tex, texnum, skin_cmap[cmap],
 					  scaled_width, scaled_height, false);
 		if (s->fb)

@@ -5,23 +5,14 @@ INCLUDES= -I$(top_srcdir)/include
 lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
 			-rpath $(libdir) -no-undefined
 
-if ASM_ARCH
-asm= libvid_asm.la
-else
-asm=
-endif
-
 lib_LTLIBRARIES= @JOY_TARGETS@
 
 noinst_LTLIBRARIES= @VID_TARGETS@ @vid_libs@
 
 EXTRA_LTLIBRARIES= \
 	libQFjs.la libQFfbdev.la libQFsvga.la libQFx11.la libQFsdl.la libQFwgl.la \
-	libvid_asm.la libvid_common.la libvid_gl.la libvid_glsl.la libvid_sdl.la \
+	libvid_common.la libvid_gl.la libvid_glsl.la libvid_sdl.la \
 	libvid_svga.la libvid_x11.la
-
-libvid_asm_la_SOURCES=		d_copy.S
-libvid_asm_la_CFLAGS=		@PREFER_NON_PIC@
 
 joy_linux_src= joy_linux.c
 joy_win_src= joy_win.c
@@ -92,22 +83,12 @@ libQFsdl_la_DEPENDENCIES=	$(sdl_libs)
 #
 # SVGAlib
 #
-svga_libs=$(asm) libvid_common.la libvid_svga.la
+svga_libs=libvid_common.la libvid_svga.la
 libQFsvga_la_CFLAGS=		@PREFER_NON_PIC@ $(SVGA_CFLAGS)
 libQFsvga_la_SOURCES=		vid_svgalib.c
 libQFsvga_la_LDFLAGS=		@STATIC@
 libQFsvga_la_LIBADD=		$(svga_libs)
 libQFsvga_la_DEPENDENCIES=	$(svga_libs)
-
-#
-# 3dfx
-#
-tdfx_libs=$(asm) libvid_common.la libvid_gl.la libvid_svga.la
-libQFtdfx_la_CFLAGS=		@PREFER_NON_PIC@ $(SVGA_CFLAGS)
-libQFtdfx_la_SOURCES=		vid_3dfxsvga.c
-libQFtdfx_la_LDFLAGS=		@STATIC@
-libQFtdfx_la_LIBADD=		$(tdfx_libs)
-libQFtdfx_la_DEPENDENCIES=	$(tdfx_libs)
 
 #
 # OpenGL in Win32

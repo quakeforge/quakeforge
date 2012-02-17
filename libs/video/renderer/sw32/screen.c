@@ -52,7 +52,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "compat.h"
 #include "r_internal.h"
-#include "sbar.h"
+#include "vid_internal.h"
 
 /* SCREEN SHOTS */
 

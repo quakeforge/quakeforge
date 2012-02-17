@@ -36,6 +36,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "d_ifacea.h"
 #include "r_internal.h"
+#include "vid_internal.h"
 
 /*
   FIXME

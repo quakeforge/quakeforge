@@ -78,4 +78,6 @@ void R_DrawAliasModel (entity_t *e);
 
 void R_MarkLeaves (void);
 
+void GL_Init_Common (void);
+
 #endif//__r_internal_h

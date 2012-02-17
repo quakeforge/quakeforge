@@ -54,6 +54,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 #include "r_internal.h"
+#include "vid_internal.h"
 
 #ifdef PIC
 # undef USE_INTEL_ASM //XXX asm pic hack

@@ -75,11 +75,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/qargs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
-#include "QF/vid.h"
 
 #include "compat.h"
 #include "context_x11.h"
 #include "dga_check.h"
+#include "vid_internal.h"
 
 cvar_t	   *in_snd_block;
 cvar_t	   *in_dga;

@@ -48,11 +48,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vid.h"
 #include "QF/GL/qf_textures.h"
 
 #include "compat.h"
 #include "mod_internal.h"
+#include "r_internal.h"
 
 
 void
@@ -180,14 +180,14 @@ Mod_LoadLighting (bsp_t *bsp)
 
 	if (mod_lightmap_bytes > 1)
 		for (i = 0; i < bsp->lightdatasize ; i++) {
-			d = gammatable[*in++];
+			d = vid.gammatable[*in++];
 			*out++ = d;
 			*out++ = d;
 			*out++ = d;
 		}
 	else
 		for (i = 0; i < bsp->lightdatasize ; i++)
-			*out++ = gammatable[*in++];
+			*out++ = vid.gammatable[*in++];
 	dstring_delete (litfilename);
 }
 

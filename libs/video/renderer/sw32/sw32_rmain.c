@@ -51,6 +51,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 #include "r_internal.h"
+#include "vid_internal.h"
 
 //define    PASSAGES
 

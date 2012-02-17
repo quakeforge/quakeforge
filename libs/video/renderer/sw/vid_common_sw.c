@@ -39,6 +39,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/vid.h"
 
+#include "vid_internal.h"
+
 unsigned short d_8to16table[256];
 
 void

@@ -162,14 +162,6 @@ glx_get_functions (void)
 	use_gl_procaddress = 1;
 }
 
-
-void
-VID_Shutdown (void)
-{
-	Sys_MaskPrintf (SYS_VID, "VID_Shutdown\n");
-	X11_CloseDisplay ();
-}
-
 static void
 GL_Init (void)
 {
@@ -239,29 +231,4 @@ VID_Init (byte *palette, byte *colormap)
 
 	vid.initialized = true;
 	vid.recalc_refdef = 1;				// force a surface cache flush
-}
-
-void
-VID_Init_Cvars ()
-{
-	X11_Init_Cvars ();
-}
-
-void
-VID_SetCaption (const char *text)
-{
-	if (text && *text) {
-		char	*temp = strdup (text);
-
-		X11_SetCaption (va ("%s: %s", PACKAGE_STRING, temp));
-		free (temp);
-	} else {
-		X11_SetCaption (va ("%s", PACKAGE_STRING));
-	}
-}
-
-qboolean
-VID_SetGamma (double gamma)
-{
-	return X11_SetGamma (gamma);
 }

@@ -41,9 +41,9 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 #include "r_internal.h"
+#include "vid_internal.h"
 
 VISIBLE unsigned short d_8to16table[256];
-unsigned char d_15to8table[65536];
 
 
 /*
@@ -191,7 +191,7 @@ VID_MakeColormap8 (void *outcolormap, byte *pal)
 
 	LordHavoc: makes 8bit, 16bit, and 32bit colormaps and palettes
 */
-void
+static __attribute__((used)) void //FIXME
 VID_MakeColormaps (int fullbrights, byte *pal)
 {
 	vid.fullbright = fullbrights;

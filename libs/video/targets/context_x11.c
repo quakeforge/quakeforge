@@ -76,6 +76,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "context_x11.h"
 #include "dga_check.h"
+#include "vid_internal.h"
 
 static void (*event_handlers[LASTEvent]) (XEvent *);
 qboolean	oktodraw = false;

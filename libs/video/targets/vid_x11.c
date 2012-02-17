@@ -74,14 +74,12 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vid.h"
-
-#include "QF/plugin/vid_render.h"
 
 #include "compat.h"
 #include "context_x11.h"
 #include "d_iface.h"
 #include "dga_check.h"
+#include "vid_internal.h"
 
 int XShmGetEventBase (Display *x);	// for broken X11 headers
 
@@ -500,7 +498,7 @@ void
 VID_Init (byte *palette, byte *colormap)
 {
 	viddef.numpages = 2;
-	viddef.colormap8 = vid_colormap = colormap;
+	viddef.colormap8 = colormap;
 	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 
 	srandom (getpid ());

@@ -47,7 +47,7 @@ if test "x$HAVE_FBDEV" = xyes; then
 		if test "x$ASM_ARCH" = "xyes"; then
 			QF_NEED(swrend, [asm])
 		fi
-		QF_NEED(vid, [common sw])
+		QF_NEED(vid, [common])
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
@@ -55,10 +55,10 @@ if test "x$HAVE_FBDEV" = xyes; then
 fi
 if test "x$HAVE_X" = xyes; then
 	if test "x$ENABLE_clients_glx" = xyes; then
-		QF_NEED(vid, [common gl x11])
+		QF_NEED(vid, [common x11])
 	fi
 	if test "x$ENABLE_clients_glslx" = xyes; then
-		QF_NEED(vid, [common glsl x11])
+		QF_NEED(vid, [common x11])
 	fi
 	if test "x$ENABLE_clients_x11" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
@@ -75,7 +75,7 @@ if test "x$HAVE_X" = xyes; then
 		if test "x$ASM_ARCH" = "xyes"; then
 			QF_NEED(swrend, [asm])
 		fi
-		QF_NEED(vid, [common sw x11])
+		QF_NEED(vid, [common x11])
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
@@ -97,7 +97,7 @@ if test "x$HAVE_SDL" = xyes; then
 		if test "x$ASM_ARCH" = "xyes"; then
 			QF_NEED(swrend, [asm])
 		fi
-		QF_NEED(vid, [common sdl sw])
+		QF_NEED(vid, [common sdl])
 		QF_NEED(qw, [client common sdl])
 		QF_NEED(nq, [client common sdl])
 		QF_NEED(console, [client])
@@ -117,7 +117,7 @@ if test "x$HAVE_SVGA" = xyes; then
 		if test "x$ASM_ARCH" = "xyes"; then
 			QF_NEED(swrend, [asm])
 		fi
-		QF_NEED(vid, [asm common svga sw])
+		QF_NEED(vid, [common svga])
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
@@ -134,7 +134,7 @@ fi
 #		QF_NEED(alias, [gl])
 #		QF_NEED(brush, [gl])
 #		QF_NEED(sprite, [gl])
-#		QF_NEED(vid, [common gl])
+#		QF_NEED(vid, [common])
 #		QF_NEED(qw, [client common])
 #		QF_NEED(nq, [client common])
 #		QF_NEED(console, [client])
@@ -230,7 +230,7 @@ QF_PROCESS_NEED_LIBS(alias, [gl glsl sw])
 QF_PROCESS_NEED_LIBS(brush, [gl glsl sw])
 QF_PROCESS_NEED_LIBS(sprite, [gl glsl sw])
 
-QF_PROCESS_NEED_LIBS(vid, [asm common gl glsl sdl sw sw32 svga x11])
+QF_PROCESS_NEED_LIBS(vid, [common sdl svga x11])
 QF_PROCESS_NEED_LIBS(qw, [client common sdl server], a)
 QF_PROCESS_NEED_LIBS(nq, [client common sdl server], a)
 

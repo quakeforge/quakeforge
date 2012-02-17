@@ -47,6 +47,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "d_iface.h"
 #include "r_internal.h"
+#include "vid_internal.h"
 
 typedef struct {
 	vrect_t     rect;
@@ -754,9 +755,9 @@ Draw_BlendScreen (quat_t color)
 		g += (int) (color[3] * (color[1] * 256 - g));
 		b += (int) (color[3] * (color[2] * 256 - b));
 
-		newpal[0] = gammatable[r];
-		newpal[1] = gammatable[g];
-		newpal[2] = gammatable[b];
+		newpal[0] = vid.gammatable[r];
+		newpal[1] = vid.gammatable[g];
+		newpal[2] = vid.gammatable[b];
 		newpal += 3;
 	}
 	VID_ShiftPalette (pal);

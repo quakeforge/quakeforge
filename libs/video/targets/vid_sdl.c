@@ -48,6 +48,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/vid.h"
 
 #include "d_iface.h"
+#include "vid_internal.h"
 
 #ifdef _WIN32	// FIXME: evil hack to get full DirectSound support with SDL
 #include <windows.h>
@@ -105,7 +106,6 @@ VID_Init (byte *palette, byte *colormap)
 	if (!(screen = SDL_SetVideoMode (viddef.width, viddef.height, 8, flags)))
 		Sys_Error ("VID: Couldn't set video mode: %s", SDL_GetError ());
 
-	vid_colormap = colormap;
 	VID_InitGamma (palette);
 	VID_SetPalette (viddef.palette);
 
@@ -113,7 +113,7 @@ VID_Init (byte *palette, byte *colormap)
 	VGA_width = viddef.width;
 	VGA_height = viddef.height;
 	viddef.numpages = 1;
-	viddef.colormap8 = vid_colormap;
+	viddef.colormap8 = colormap;
 	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 	viddef.do_screen_buffer = do_screen_buffer;
 	VGA_pagebase = viddef.buffer = screen->pixels;

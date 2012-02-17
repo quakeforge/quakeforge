@@ -38,6 +38,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "d_local.h"
 #include "r_internal.h"
+#include "vid_internal.h"
 
 static byte       *r_turb_pbase;
 static void       *r_turb_pdest;

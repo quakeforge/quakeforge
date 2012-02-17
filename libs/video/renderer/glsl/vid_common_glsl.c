@@ -70,7 +70,7 @@ GLSL_Common_Init_Cvars (void)
 {
 }
 
-void
+static __attribute__((used)) void //FIXME
 VID_SetPalette (unsigned char *palette)
 {
 	byte       *pal, *col, *ip, *op;
@@ -165,21 +165,6 @@ GL_Init_Common (void)
 
 	qfglEnable (GL_BLEND);
 	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-}
-
-void
-VID_Init8bitPalette (void)
-{
-}
-
-void
-VID_LockBuffer (void)
-{
-}
-
-void
-VID_UnlockBuffer (void)
-{
 }
 
 void

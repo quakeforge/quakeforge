@@ -71,10 +71,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
-#include "QF/vid.h"
 
 #include "d_iface.h"
 #include "fbset.h"
+#include "vid_internal.h"
 
 #ifndef PAGE_SIZE
 # define PAGE_SIZE (sysconf(_SC_PAGESIZE))
@@ -307,7 +307,6 @@ VID_SetMode (const char *name, unsigned char *palette)
 	viddef.width = vmode->xres;
 	viddef.height = vmode->yres;
 	viddef.rowbytes = vmode->xres * (vmode->depth >> 3);
-	viddef.colormap8 = (byte *) vid_colormap;
 	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 	viddef.conrowbytes = viddef.rowbytes;
 	viddef.numpages = 1;
@@ -410,15 +409,13 @@ VID_Init (byte *palette, byte *colormap)
 	if (fbdev_inited)
 		return;
 
-	vid_colormap = colormap;
-
 	if (COM_CheckParm ("-novideo")) {
 		viddef.width = 320;
 		viddef.height = 200;
 		viddef.rowbytes = 320;
 		viddef.aspect = ((float) viddef.height
 						 / (float) viddef.width) * (4.0 / 3.0);
-		viddef.colormap8 = (byte *) vid_colormap;
+		viddef.colormap8 = colormap;
 		viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 		viddef.conrowbytes = viddef.rowbytes;
 		viddef.conwidth = viddef.width;

@@ -47,6 +47,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "d_iface.h"
 #include "r_internal.h"
+#include "vid_internal.h"
 
 typedef struct {
 	vrect_t     rect;
@@ -1225,9 +1226,9 @@ Draw_BlendScreen (quat_t color)
 			g += (int) (color[3] * (color[1] * 256 - g));
 			b += (int) (color[3] * (color[2] * 256 -g));
 
-			newpal[0] = gammatable[r];
-			newpal[1] = gammatable[g];
-			newpal[2] = gammatable[b];
+			newpal[0] = vid.gammatable[r];
+			newpal[1] = vid.gammatable[g];
+			newpal[2] = vid.gammatable[b];
 			newpal += 3;
 		}
 		VID_ShiftPalette (pal);
@@ -1248,10 +1249,10 @@ Draw_BlendScreen (quat_t color)
 			g2 += (int) (color[3] * (color[1] - g2));
 			b += (int) (color[3] * (color[2] - b));
 
-			rramp[i] = (gammatable[r] << 8) & 0xF800;
-			gramp[i*2+0] = (gammatable[g1] << 3) & 0x07E0;
-			gramp[i*2+1] = (gammatable[g2] << 3) & 0x07E0;
-			bramp[i] = (gammatable[b] >> 3) & 0x001F;
+			rramp[i] = (vid.gammatable[r] << 8) & 0xF800;
+			gramp[i*2+0] = (vid.gammatable[g1] << 3) & 0x07E0;
+			gramp[i*2+1] = (vid.gammatable[g2] << 3) & 0x07E0;
+			bramp[i] = (vid.gammatable[b] >> 3) & 0x001F;
 		}
 		temp = vid.buffer;
 		for (y = 0;y < vid.height;y++, temp += (vid.rowbytes >> 1))
@@ -1273,9 +1274,9 @@ Draw_BlendScreen (quat_t color)
 			g += (int) (color[3] * (color[1] * 256 - g));
 			b += (int) (color[3] * (color[2] * 256 - b));
 
-			ramp[i][0] = gammatable[r];
-			ramp[i][1] = gammatable[g];
-			ramp[i][2] = gammatable[b];
+			ramp[i][0] = vid.gammatable[r];
+			ramp[i][1] = vid.gammatable[g];
+			ramp[i][2] = vid.gammatable[b];
 			ramp[i][3] = 0;
 		}
 		temp = vid.buffer;

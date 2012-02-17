@@ -56,7 +56,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "compat.h"
 #include "d_iface.h"
-#include "r_cvar.h"
+#include "r_internal.h"
 #include "sbar.h"
 
 #define WARP_WIDTH              320
@@ -100,7 +100,6 @@ VISIBLE int					lm_src_blend, lm_dest_blend;
 VISIBLE float				rgb_scale = 1.0;
 
 VISIBLE QF_glColorTableEXT	qglColorTableEXT = NULL;
-VISIBLE qboolean			is8bit = false;
 
 VISIBLE qboolean			gl_feature_mach64 = false;
 
@@ -520,7 +519,104 @@ CheckLights (void)
 	qfglDisable (GL_LIGHTING);
 }
 
-void
+static void
+Tdfx_Init8bitPalette (void)
+{
+	// Check for 8bit Extensions and initialize them.
+	int         i;
+
+	if (vid.is8bit)
+		return;
+
+	if (QFGL_ExtensionPresent ("3DFX_set_global_palette")) {
+		char       *oldpal;
+		GLubyte     table[256][4];
+		QF_gl3DfxSetPaletteEXT qgl3DfxSetPaletteEXT = NULL;
+
+		if (!(qgl3DfxSetPaletteEXT =
+			  QFGL_ExtensionAddress ("gl3DfxSetPaletteEXT"))) {
+			Sys_MaskPrintf (SYS_VID, "3DFX_set_global_palette not found.\n");
+			return;
+		}
+
+		Sys_MaskPrintf (SYS_VID, "3DFX_set_global_palette.\n");
+
+		oldpal = (char *) d_8to24table;	// d_8to24table3dfx;
+		for (i = 0; i < 256; i++) {
+			table[i][2] = *oldpal++;
+			table[i][1] = *oldpal++;
+			table[i][0] = *oldpal++;
+			table[i][3] = 255;
+			oldpal++;
+		}
+		qfglEnable (GL_SHARED_TEXTURE_PALETTE_EXT);
+		qgl3DfxSetPaletteEXT ((GLuint *) table);
+		vid.is8bit = true;
+	} else {
+		Sys_MaskPrintf (SYS_VID, "\n    3DFX_set_global_palette not found.");
+	}
+}
+
+/*
+  The GL_EXT_shared_texture_palette seems like an idea which is 
+  /almost/ a good idea, but seems to be severely broken with many
+  drivers, as such it is disabled.
+  
+  It should be noted, that a palette object extension as suggested by
+  the GL_EXT_shared_texture_palette spec might be a very good idea in
+  general.
+*/
+static void
+Shared_Init8bitPalette (void)
+{
+	int 		i;
+	GLubyte 	thePalette[256 * 3];
+	GLubyte 	*oldPalette, *newPalette;
+
+	if (vid.is8bit)
+		return;
+
+	if (QFGL_ExtensionPresent ("GL_EXT_shared_texture_palette")) {
+		if (!(qglColorTableEXT = QFGL_ExtensionAddress ("glColorTableEXT"))) {
+			Sys_MaskPrintf (SYS_VID, "glColorTableEXT not found.\n");
+			return;
+		}
+
+		Sys_MaskPrintf (SYS_VID, "GL_EXT_shared_texture_palette\n");
+
+		qfglEnable (GL_SHARED_TEXTURE_PALETTE_EXT);
+		oldPalette = (GLubyte *) d_8to24table;	// d_8to24table3dfx;
+		newPalette = thePalette;
+		for (i = 0; i < 256; i++) {
+			*newPalette++ = *oldPalette++;
+			*newPalette++ = *oldPalette++;
+			*newPalette++ = *oldPalette++;
+			oldPalette++;
+		}
+		qglColorTableEXT (GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGB, 256, GL_RGB,
+							GL_UNSIGNED_BYTE, (GLvoid *) thePalette);
+		vid.is8bit = true;
+	} else {
+		Sys_MaskPrintf (SYS_VID,
+						"\n    GL_EXT_shared_texture_palette not found.");
+	}
+}
+
+static void
+VID_Init8bitPalette (void)
+{
+	Sys_MaskPrintf (SYS_VID, "Checking for 8-bit extension: ");
+	if (vid_use8bit->int_val) {
+		Tdfx_Init8bitPalette ();
+		Shared_Init8bitPalette ();
+		if (!vid.is8bit)
+			Sys_MaskPrintf (SYS_VID, "\n  8-bit extension not found.\n");
+	} else {
+		Sys_MaskPrintf (SYS_VID, "disabled.\n");
+	}
+}
+
+static __attribute__((used)) void //FIXME
 VID_SetPalette (unsigned char *palette)
 {
 	byte       *pal;
@@ -637,119 +733,6 @@ GL_Init_Common (void)
 						   gl_aniso);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-}
-
-VISIBLE qboolean
-VID_Is8bit (void)
-{
-	return is8bit;
-}
-
-static void
-Tdfx_Init8bitPalette (void)
-{
-	// Check for 8bit Extensions and initialize them.
-	int         i;
-
-	if (is8bit)
-		return;
-
-	if (QFGL_ExtensionPresent ("3DFX_set_global_palette")) {
-		char       *oldpal;
-		GLubyte     table[256][4];
-		QF_gl3DfxSetPaletteEXT qgl3DfxSetPaletteEXT = NULL;
-
-		if (!(qgl3DfxSetPaletteEXT =
-			  QFGL_ExtensionAddress ("gl3DfxSetPaletteEXT"))) {
-			Sys_MaskPrintf (SYS_VID, "3DFX_set_global_palette not found.\n");
-			return;
-		}
-
-		Sys_MaskPrintf (SYS_VID, "3DFX_set_global_palette.\n");
-
-		oldpal = (char *) d_8to24table;	// d_8to24table3dfx;
-		for (i = 0; i < 256; i++) {
-			table[i][2] = *oldpal++;
-			table[i][1] = *oldpal++;
-			table[i][0] = *oldpal++;
-			table[i][3] = 255;
-			oldpal++;
-		}
-		qfglEnable (GL_SHARED_TEXTURE_PALETTE_EXT);
-		qgl3DfxSetPaletteEXT ((GLuint *) table);
-		is8bit = true;
-	} else {
-		Sys_MaskPrintf (SYS_VID, "\n    3DFX_set_global_palette not found.");
-	}
-}
-
-/*
-  The GL_EXT_shared_texture_palette seems like an idea which is 
-  /almost/ a good idea, but seems to be severely broken with many
-  drivers, as such it is disabled.
-  
-  It should be noted, that a palette object extension as suggested by
-  the GL_EXT_shared_texture_palette spec might be a very good idea in
-  general.
-*/
-static void
-Shared_Init8bitPalette (void)
-{
-	int 		i;
-	GLubyte 	thePalette[256 * 3];
-	GLubyte 	*oldPalette, *newPalette;
-
-	if (is8bit)
-		return;
-
-	if (QFGL_ExtensionPresent ("GL_EXT_shared_texture_palette")) {
-		if (!(qglColorTableEXT = QFGL_ExtensionAddress ("glColorTableEXT"))) {
-			Sys_MaskPrintf (SYS_VID, "glColorTableEXT not found.\n");
-			return;
-		}
-
-		Sys_MaskPrintf (SYS_VID, "GL_EXT_shared_texture_palette\n");
-
-		qfglEnable (GL_SHARED_TEXTURE_PALETTE_EXT);
-		oldPalette = (GLubyte *) d_8to24table;	// d_8to24table3dfx;
-		newPalette = thePalette;
-		for (i = 0; i < 256; i++) {
-			*newPalette++ = *oldPalette++;
-			*newPalette++ = *oldPalette++;
-			*newPalette++ = *oldPalette++;
-			oldPalette++;
-		}
-		qglColorTableEXT (GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGB, 256, GL_RGB,
-							GL_UNSIGNED_BYTE, (GLvoid *) thePalette);
-		is8bit = true;
-	} else {
-		Sys_MaskPrintf (SYS_VID,
-						"\n    GL_EXT_shared_texture_palette not found.");
-	}
-}
-
-void
-VID_Init8bitPalette (void)
-{
-	Sys_MaskPrintf (SYS_VID, "Checking for 8-bit extension: ");
-	if (vid_use8bit->int_val) {
-		Tdfx_Init8bitPalette ();
-		Shared_Init8bitPalette ();
-		if (!is8bit)
-			Sys_MaskPrintf (SYS_VID, "\n  8-bit extension not found.\n");
-	} else {
-		Sys_MaskPrintf (SYS_VID, "disabled.\n");
-	}
-}
-
-void
-VID_LockBuffer (void)
-{
-}
-
-void
-VID_UnlockBuffer (void)
-{
 }
 
 void

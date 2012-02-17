@@ -42,6 +42,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/render.h"
 
 #include "r_internal.h"
+#include "vid_internal.h"
 
 
 static int         iskyspeed = 8;

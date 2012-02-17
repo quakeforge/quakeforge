@@ -35,21 +35,13 @@
 #define VID_CBITS	6
 #define VID_GRADES	(1 << VID_CBITS)
 
-struct cvar_s;
-extern byte   *vid_colormap;
-extern unsigned char d_15to8table[65536];
-
-extern struct cvar_s *vid_fullscreen;
-extern struct cvar_s *vid_system_gamma;
-extern struct cvar_s *vid_width;
-extern struct cvar_s *vid_height;
-extern struct cvar_s *vid_bitdepth;
-
 typedef struct {
 	qboolean		 initialized;
+	qboolean		 is8bit;
 	void			*buffer;		// invisible buffer
 	short			*zbuffer;
 	void			*surfcache;
+	byte			*gammatable;	// 256
 	byte            *basepal;		// 256 * 3
 	byte            *palette;		// 256 * 3
 	byte			*colormap8;		// 256 * VID_GRADES size
@@ -80,19 +72,9 @@ typedef struct {
 
 extern viddef_t viddef;
 
-extern unsigned short	d_8to16table[256];
-extern unsigned int 	d_8to24table[256];
+extern unsigned int 	d_8to24table[256];	//FIXME nq/qw uses
 
-extern byte 			gammatable[256];
-extern struct cvar_s	*vid_gamma;
 extern qboolean			vid_gamma_avail;
-
-// called at startup and after any gamma correction
-void VID_SetPalette (unsigned char *palette);
-void VID_Init8bitPalette (void);
-
-// called for bonus and pain flashes, and for underwater color changes
-void VID_ShiftPalette (unsigned char *palette);
 
 void VID_Init_Cvars (void);
 
@@ -100,40 +82,7 @@ void VID_Init_Cvars (void);
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
 void VID_Init (byte *palette, byte *colormap);
-
-// Called at shutdown
 void VID_Shutdown (void);
-
-// flushes the given rectangles from the view buffer to the screen
-void VID_Update (vrect_t *rects);
-
-// sets the mode; used only by the Quake engine for resetting to mode 0 (the
-// base mode) on memory allocation failures
-// or not
-// int VID_SetMode (int modenum, unsigned char *palette);
-
-void VID_InitBuffers (void);
-void VID_LockBuffer (void);
-void VID_UnlockBuffer (void);
-
-qboolean VID_Is8bit (void);
-
-void VID_RaiseWindow (void);
-void VID_MinimiseWindow (void);
 void VID_SetCaption (const char *text);
-// used to set window caption
-
-void VID_GetWindowSize (int def_w, int def_h);
-
-void VID_InitGamma (unsigned char *);
-double VID_GetGamma (void);
-qboolean VID_SetGamma (double);
-void VID_UpdateGamma (struct cvar_s *);
-
-void GL_Init_Common (void);
-
-void VID_MakeColormaps (int fullbrights, byte *pal);
-
-void VGA_UpdatePlanarScreen (void *srcbuffer);
 
 #endif	// __vid_h_

@@ -47,7 +47,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/draw.h"
 #include "QF/mathlib.h"
 #include "QF/sys.h"
-#include "QF/vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_textures.h"
@@ -56,6 +55,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "r_internal.h"
 #include "sbar.h"
+#include "vid_internal.h"
 
 typedef struct {
 	int         texnum;
@@ -544,7 +544,7 @@ GL_Upload8 (const byte *data, int width, int height, qboolean mipmap,
 		}
 	}
 
-	if (VID_Is8bit () && !alpha) {
+	if (vid.is8bit && !alpha) {
 		GL_Upload8_EXT (data, width, height, mipmap, alpha);
 	} else {
 		GL_Upload32 (trans, width, height, mipmap, alpha);
