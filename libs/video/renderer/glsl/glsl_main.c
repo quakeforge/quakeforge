@@ -282,13 +282,6 @@ R_LineGraph (int x, int y, int *h_vals, int count)
 {
 }
 
-VISIBLE int
-GL_LoadTexture (const char *identifier, int width, int height, byte *data,
-				qboolean mipmap, qboolean alpha, int bytesperpixel)
-{
-	return 0;
-}
-
 VISIBLE void
 R_ClearState (void)
 {

@@ -66,7 +66,8 @@ static scrap_t *scrap_list;
 static int max_tex_size;
 
 int
-GL_LoadQuakeTexture (const char *identifier, int width, int height, byte *data)
+GLSL_LoadQuakeTexture (const char *identifier, int width, int height,
+					   byte *data)
 {
 	GLuint      tnum;
 
@@ -84,7 +85,7 @@ GL_LoadQuakeTexture (const char *identifier, int width, int height, byte *data)
 }
 
 static void
-GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight,
+GLSL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight,
 						unsigned char *out, int outwidth, int outheight)
 {
 	// Improvements here should be mirrored in build_skin_8 in gl_skin.c
@@ -106,7 +107,7 @@ GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight,
 }
 
 static void
-GL_Mipmap8BitTexture (const byte *src, unsigned width, unsigned height,
+GLSL_Mipmap8BitTexture (const byte *src, unsigned width, unsigned height,
 					  byte *mip)
 {
 	unsigned    mw = width >> 1;
@@ -124,7 +125,7 @@ GL_Mipmap8BitTexture (const byte *src, unsigned width, unsigned height,
 }
 
 int
-GL_LoadQuakeMipTex (const texture_t *tex)
+GLSL_LoadQuakeMipTex (const texture_t *tex)
 {
 	unsigned    swidth, sheight;
 	GLuint      tnum;
@@ -164,7 +165,7 @@ GL_LoadQuakeMipTex (const texture_t *tex)
 
 			w = max (w >> lod, 1);
 			h = max (h >> lod, 1);
-			GL_Resample8BitTexture (data + tex->offsets[lod], w, h,
+			GLSL_Resample8BitTexture (data + tex->offsets[lod], w, h,
 									buffer, swidth, sheight);
 			scaled = buffer;
 		} else {
@@ -179,7 +180,7 @@ GL_LoadQuakeMipTex (const texture_t *tex)
 		byte       *mip = mipmap;
 		while (swidth > 1 || sheight > 1) {
 			// scaled holds the source of the last lod uploaded
-			GL_Mipmap8BitTexture (scaled, swidth, sheight, mip);
+			GLSL_Mipmap8BitTexture (scaled, swidth, sheight, mip);
 			swidth >>= 1;
 			sheight >>= 1;
 			swidth = max (swidth, 1);
@@ -198,7 +199,7 @@ GL_LoadQuakeMipTex (const texture_t *tex)
 }
 
 int
-GL_LoadRGBTexture (const char *identifier, int width, int height, byte *data)
+GLSL_LoadRGBTexture (const char *identifier, int width, int height, byte *data)
 {
 	GLuint      tnum;
 
@@ -216,7 +217,7 @@ GL_LoadRGBTexture (const char *identifier, int width, int height, byte *data)
 }
 
 void
-GL_ReleaseTexture (int tex)
+GLSL_ReleaseTexture (int tex)
 {
 	GLuint      tnum = tex;
 	qfglDeleteTextures (1, &tnum);
@@ -248,7 +249,7 @@ glsl_scraps_f (void)
 }
 
 void
-GL_TextureInit (void)
+GLSL_TextureInit (void)
 {
 	qfglGetIntegerv (GL_MAX_TEXTURE_SIZE, &max_tex_size);
 	Sys_MaskPrintf (SYS_GLSL, "max texture size: %d\n", max_tex_size);
@@ -257,7 +258,7 @@ GL_TextureInit (void)
 }
 
 scrap_t *
-GL_CreateScrap (int size, int format)
+GLSL_CreateScrap (int size, int format)
 {
 	int         i;
 	int         bpp;
@@ -314,7 +315,7 @@ GL_CreateScrap (int size, int format)
 }
 
 void
-GL_ScrapClear (scrap_t *scrap)
+GLSL_ScrapClear (scrap_t *scrap)
 {
 	vrect_t    *t;
 	subpic_t   *sp;
@@ -339,7 +340,7 @@ GL_ScrapClear (scrap_t *scrap)
 }
 
 void
-GL_DestroyScrap (scrap_t *scrap)
+GLSL_DestroyScrap (scrap_t *scrap)
 {
 	scrap_t   **s;
 
@@ -349,20 +350,20 @@ GL_DestroyScrap (scrap_t *scrap)
 			break;
 		}
 	}
-	GL_ScrapClear (scrap);
+	GLSL_ScrapClear (scrap);
 	VRect_Delete (scrap->free_rects);
-	GL_ReleaseTexture (scrap->tnum);
+	GLSL_ReleaseTexture (scrap->tnum);
 	free (scrap);
 }
 
 int
-GL_ScrapTexture (scrap_t *scrap)
+GLSL_ScrapTexture (scrap_t *scrap)
 {
 	return scrap->tnum;
 }
 
 subpic_t *
-GL_ScrapSubpic (scrap_t *scrap, int width, int height)
+GLSL_ScrapSubpic (scrap_t *scrap, int width, int height)
 {
 	int         i, w, h;
 	vrect_t   **t, **best;
@@ -419,7 +420,7 @@ GL_ScrapSubpic (scrap_t *scrap, int width, int height)
 }
 
 void
-GL_SubpicDelete (subpic_t *subpic)
+GLSL_SubpicDelete (subpic_t *subpic)
 {
 	scrap_t    *scrap = (scrap_t *) subpic->scrap;
 	vrect_t    *rect = (vrect_t *) subpic->rect;
@@ -431,14 +432,14 @@ GL_SubpicDelete (subpic_t *subpic)
 		if (*sp == subpic)
 			break;
 	if (*sp != subpic)
-		Sys_Error ("GL_ScrapDelSubpic: broken subpic");
+		Sys_Error ("GLSL_ScrapDelSubpic: broken subpic");
 	*sp = (subpic_t *) subpic->next;
 	free (subpic);
 	for (t = &scrap->rects; *t; t = &(*t)->next)
 		if (*t == rect)
 			break;
 	if (*t != rect)
-		Sys_Error ("GL_ScrapDelSubpic: broken subpic");
+		Sys_Error ("GLSL_ScrapDelSubpic: broken subpic");
 	*t = rect->next;
 
 	do {
@@ -460,7 +461,7 @@ GL_SubpicDelete (subpic_t *subpic)
 }
 
 void
-GL_SubpicUpdate (subpic_t *subpic, byte *data)
+GLSL_SubpicUpdate (subpic_t *subpic, byte *data)
 {
 	scrap_t    *scrap = (scrap_t *) subpic->scrap;
 	vrect_t    *rect = (vrect_t *) subpic->rect;

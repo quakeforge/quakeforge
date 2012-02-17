@@ -42,24 +42,21 @@ typedef struct subpic_s {
 	const float size;					///< size factor for tex coords (mult)
 } subpic_t;
 
-int GL_LoadQuakeTexture (const char *identifier, int width, int height,
-						 byte *data);
+int GLSL_LoadQuakeTexture (const char *identifier, int width, int height,
+						   byte *data);
 struct texture_s;
-int GL_LoadQuakeMipTex (const struct texture_s *tex);
-int GL_LoadRGBTexture (const char *identifier, int width, int height,
-					   byte *data);
-void GL_ReleaseTexture (int tex);
-void GL_TextureInit (void);
+int GLSL_LoadQuakeMipTex (const struct texture_s *tex);
+int GLSL_LoadRGBTexture (const char *identifier, int width, int height,
+						 byte *data);
+void GLSL_ReleaseTexture (int tex);
+void GLSL_TextureInit (void);
 
-scrap_t *GL_CreateScrap (int size, int format);
-void GL_DestroyScrap (scrap_t *scrap);
-void GL_ScrapClear (scrap_t *scrap);
-int GL_ScrapTexture (scrap_t *scrap);
-subpic_t *GL_ScrapSubpic (scrap_t *scrap, int width, int height);	//XXX slow!
-void GL_SubpicDelete (subpic_t *subpic);	//XXX slow!
-void GL_SubpicUpdate (subpic_t *subpic, byte *data);
-
-int GL_LoadTexture (const char *identifier, int width, int height, byte *data,
-					qboolean mipmap, qboolean alpha, int bytesperpixel);
+scrap_t *GLSL_CreateScrap (int size, int format);
+void GLSL_DestroyScrap (scrap_t *scrap);
+void GLSL_ScrapClear (scrap_t *scrap);
+int GLSL_ScrapTexture (scrap_t *scrap);
+subpic_t *GLSL_ScrapSubpic (scrap_t *scrap, int width, int height);	//XXX slow!
+void GLSL_SubpicDelete (subpic_t *subpic);	//XXX slow!
+void GLSL_SubpicUpdate (subpic_t *subpic, byte *data);
 
 #endif//__QF_GLSL_textures_h

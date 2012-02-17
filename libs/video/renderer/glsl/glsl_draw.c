@@ -136,7 +136,8 @@ make_glpic (const char *name, qpic_t *p)
 		pic = malloc (sizeof (qpic_t) + sizeof (glpic_t));
 		*pic = *p;
 		gl = (glpic_t *) pic->data;
-		gl->texnum = GL_LoadQuakeTexture (name, p->width, p->height, p->data);
+		gl->texnum = GLSL_LoadQuakeTexture (name, p->width, p->height,
+											p->data);
 	}
 	return pic;
 }
@@ -146,7 +147,7 @@ pic_free (qpic_t *pic)
 {
 	glpic_t    *gl = (glpic_t *) pic->data;
 
-	GL_ReleaseTexture (gl->texnum);
+	GLSL_ReleaseTexture (gl->texnum);
 	free (pic);
 }
 
@@ -395,35 +396,38 @@ Draw_Init (void)
 	crosshaircolor->callback (crosshaircolor);
 
 	char_queue = dstring_new ();
-	vert = GL_CompileShader ("quaketxt.vert", quaketext_vert, GL_VERTEX_SHADER);
-	frag = GL_CompileShader ("quake2d.frag", quake2d_frag, GL_FRAGMENT_SHADER);
-	quake_text.program = GL_LinkProgram ("quaketxt", vert, frag);
-	GL_ResolveShaderParam (quake_text.program, &quake_text.charmap);
-	GL_ResolveShaderParam (quake_text.program, &quake_text.palette);
-	GL_ResolveShaderParam (quake_text.program, &quake_text.matrix);
-	GL_ResolveShaderParam (quake_text.program, &quake_text.vertex);
-	GL_ResolveShaderParam (quake_text.program, &quake_text.color);
-	GL_ResolveShaderParam (quake_text.program, &quake_text.dchar);
+	vert = GLSL_CompileShader ("quaketxt.vert", quaketext_vert,
+							   GL_VERTEX_SHADER);
+	frag = GLSL_CompileShader ("quake2d.frag", quake2d_frag,
+							   GL_FRAGMENT_SHADER);
+	quake_text.program = GLSL_LinkProgram ("quaketxt", vert, frag);
+	GLSL_ResolveShaderParam (quake_text.program, &quake_text.charmap);
+	GLSL_ResolveShaderParam (quake_text.program, &quake_text.palette);
+	GLSL_ResolveShaderParam (quake_text.program, &quake_text.matrix);
+	GLSL_ResolveShaderParam (quake_text.program, &quake_text.vertex);
+	GLSL_ResolveShaderParam (quake_text.program, &quake_text.color);
+	GLSL_ResolveShaderParam (quake_text.program, &quake_text.dchar);
 
-	vert = GL_CompileShader ("quakeico.vert", quakeicon_vert, GL_VERTEX_SHADER);
-	quake_icon.program = GL_LinkProgram ("quakeico", vert, frag);
-	GL_ResolveShaderParam (quake_icon.program, &quake_icon.icon);
-	GL_ResolveShaderParam (quake_icon.program, &quake_icon.palette);
-	GL_ResolveShaderParam (quake_icon.program, &quake_icon.matrix);
-	GL_ResolveShaderParam (quake_icon.program, &quake_icon.vertex);
-	GL_ResolveShaderParam (quake_icon.program, &quake_icon.color);
+	vert = GLSL_CompileShader ("quakeico.vert", quakeicon_vert,
+							   GL_VERTEX_SHADER);
+	quake_icon.program = GLSL_LinkProgram ("quakeico", vert, frag);
+	GLSL_ResolveShaderParam (quake_icon.program, &quake_icon.icon);
+	GLSL_ResolveShaderParam (quake_icon.program, &quake_icon.palette);
+	GLSL_ResolveShaderParam (quake_icon.program, &quake_icon.matrix);
+	GLSL_ResolveShaderParam (quake_icon.program, &quake_icon.vertex);
+	GLSL_ResolveShaderParam (quake_icon.program, &quake_icon.color);
 
 	draw_chars = W_GetLumpName ("conchars");
 	for (i = 0; i < 256 * 64; i++)
 		if (draw_chars[i] == 0)
 			draw_chars[i] = 255;		// proper transparent color
 
-	char_texture = GL_LoadQuakeTexture ("conchars", 128, 128, draw_chars);
+	char_texture = GLSL_LoadQuakeTexture ("conchars", 128, 128, draw_chars);
 
 	pic = (qpic_t *) QFS_LoadFile ("gfx/conback.lmp", 0);
 	if (pic) {
 		SwapPic (pic);
-		conback_texture = GL_LoadQuakeTexture ("conback",
+		conback_texture = GLSL_LoadQuakeTexture ("conback",
 											   pic->width, pic->height,
 											   pic->data);
 		free (pic);

@@ -140,7 +140,7 @@ R_BuildLightMap_1 (msurface_t *surf)
 	memset (blocklights, 0, size * sizeof (blocklights[0]));
 	if (!r_worldentity.model->lightdata) {
 		// because we by-pass the inversion, "no light" = "full bright"
-		GL_SubpicUpdate (surf->lightpic, (byte *) blocklights);
+		GLSL_SubpicUpdate (surf->lightpic, (byte *) blocklights);
 		return;
 	}
 
@@ -173,7 +173,7 @@ R_BuildLightMap_1 (msurface_t *surf)
 		*out++ = t;
 	}
 
-	GL_SubpicUpdate (surf->lightpic, (byte *) blocklights);
+	GLSL_SubpicUpdate (surf->lightpic, (byte *) blocklights);
 }
 
 static void
@@ -182,7 +182,7 @@ create_surf_lightmap (msurface_t *surf)
 	int        smax, tmax;
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
-	surf->lightpic = GL_ScrapSubpic (light_scrap, smax, tmax);
+	surf->lightpic = GLSL_ScrapSubpic (light_scrap, smax, tmax);
 	if (!surf->lightpic)
 		Sys_Error ("FIXME taniwha is being lazy");
 	if (smax > bl_extents[0])
@@ -199,10 +199,10 @@ R_BuildLightmaps (model_t **models, int num_models)
 
 	//FIXME RGB support
 	if (!light_scrap) {
-		light_scrap = GL_CreateScrap (2048, GL_LUMINANCE);
+		light_scrap = GLSL_CreateScrap (2048, GL_LUMINANCE);
 		light_data = malloc (BLOCK_SIZE * MAX_LIGHTMAPS);
 	} else {
-		GL_ScrapClear (light_scrap);
+		GLSL_ScrapClear (light_scrap);
 		memset (light_data, 0, BLOCK_SIZE * MAX_LIGHTMAPS);
 	}
 	R_BuildLightMap = R_BuildLightMap_1;
@@ -249,5 +249,5 @@ R_BuildLightmaps (model_t **models, int num_models)
 int
 R_LightmapTexture (void)
 {
-	return GL_ScrapTexture (light_scrap);
+	return GLSL_ScrapTexture (light_scrap);
 }

@@ -97,22 +97,22 @@ R_InitSprites (void)
 {
 	int         frag, vert;
 
-	vert = GL_CompileShader ("quakespr.vert", quakesprite_vert,
-							 GL_VERTEX_SHADER);
-	frag = GL_CompileShader ("quakespr.frag", quakesprite_frag,
-							 GL_FRAGMENT_SHADER);
-	quake_sprite.program = GL_LinkProgram ("quakespr", vert, frag);
-	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.spritea);
-	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.spriteb);
-	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.palette);
-	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.matrix);
-	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.vertexa);
-	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.vertexb);
-	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.colora);
-	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.colorb);
-	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.uvab);
-	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.blend);
-	GL_ResolveShaderParam (quake_sprite.program, &quake_sprite.fog);
+	vert = GLSL_CompileShader ("quakespr.vert", quakesprite_vert,
+							   GL_VERTEX_SHADER);
+	frag = GLSL_CompileShader ("quakespr.frag", quakesprite_frag,
+							   GL_FRAGMENT_SHADER);
+	quake_sprite.program = GLSL_LinkProgram ("quakespr", vert, frag);
+	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.spritea);
+	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.spriteb);
+	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.palette);
+	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.matrix);
+	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.vertexa);
+	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.vertexb);
+	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.colora);
+	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.colorb);
+	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.uvab);
+	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.blend);
+	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.fog);
 }
 
 static void

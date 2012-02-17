@@ -110,28 +110,29 @@ R_InitAlias (void)
 	int         vert;
 	int         frag;
 
-	vert = GL_CompileShader ("quakemdl.vert", quakemdl_vert, GL_VERTEX_SHADER);
-	frag = GL_CompileShader ("quakemdl.frag", quakemdl_frag,
-							 GL_FRAGMENT_SHADER);
-	quake_mdl.program = GL_LinkProgram ("quakemdl", vert, frag);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.mvp_matrix);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.norm_matrix);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.skin_size);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.blend);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.colora);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.colorb);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.sta);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.stb);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.normala);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.normalb);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.vertexa);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.vertexb);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.colormap);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.skin);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.ambient);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.shadelight);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.lightvec);
-	GL_ResolveShaderParam (quake_mdl.program, &quake_mdl.fog);
+	vert = GLSL_CompileShader ("quakemdl.vert", quakemdl_vert,
+							   GL_VERTEX_SHADER);
+	frag = GLSL_CompileShader ("quakemdl.frag", quakemdl_frag,
+							   GL_FRAGMENT_SHADER);
+	quake_mdl.program = GLSL_LinkProgram ("quakemdl", vert, frag);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.mvp_matrix);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.norm_matrix);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.skin_size);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.blend);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.colora);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.colorb);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.sta);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.stb);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.normala);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.normalb);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.vertexa);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.vertexb);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.colormap);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.skin);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.ambient);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.shadelight);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.lightvec);
+	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.fog);
 }
 
 static void

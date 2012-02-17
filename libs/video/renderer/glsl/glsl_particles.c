@@ -220,28 +220,28 @@ R_InitParticles (void)
 	qfglGetFloatv (GL_ALIASED_POINT_SIZE_RANGE, v);
 	Sys_MaskPrintf (SYS_GLSL, "point size: %g - %g\n", v[0], v[1]);
 
-	vert = GL_CompileShader ("quakepnt.vert", quakepoint_vert,
-							 GL_VERTEX_SHADER);
-	frag = GL_CompileShader ("quakepnt.frag", quakepoint_frag,
-							 GL_FRAGMENT_SHADER);
-	quake_point.program = GL_LinkProgram ("quakepoint", vert, frag);
-	GL_ResolveShaderParam (quake_point.program, &quake_point.mvp_matrix);
-	GL_ResolveShaderParam (quake_point.program, &quake_point.vertex);
-	GL_ResolveShaderParam (quake_point.program, &quake_point.palette);
-	GL_ResolveShaderParam (quake_point.program, &quake_point.color);
-	GL_ResolveShaderParam (quake_point.program, &quake_point.fog);
+	vert = GLSL_CompileShader ("quakepnt.vert", quakepoint_vert,
+							   GL_VERTEX_SHADER);
+	frag = GLSL_CompileShader ("quakepnt.frag", quakepoint_frag,
+							   GL_FRAGMENT_SHADER);
+	quake_point.program = GLSL_LinkProgram ("quakepoint", vert, frag);
+	GLSL_ResolveShaderParam (quake_point.program, &quake_point.mvp_matrix);
+	GLSL_ResolveShaderParam (quake_point.program, &quake_point.vertex);
+	GLSL_ResolveShaderParam (quake_point.program, &quake_point.palette);
+	GLSL_ResolveShaderParam (quake_point.program, &quake_point.color);
+	GLSL_ResolveShaderParam (quake_point.program, &quake_point.fog);
 
-	vert = GL_CompileShader ("quakepar.vert", quakepart_vert,
-							 GL_VERTEX_SHADER);
-	frag = GL_CompileShader ("quakepar.frag", quakepart_frag,
-							 GL_FRAGMENT_SHADER);
-	quake_part.program = GL_LinkProgram ("quakepart", vert, frag);
-	GL_ResolveShaderParam (quake_part.program, &quake_part.mvp_matrix);
-	GL_ResolveShaderParam (quake_part.program, &quake_part.st);
-	GL_ResolveShaderParam (quake_part.program, &quake_part.vertex);
-	GL_ResolveShaderParam (quake_part.program, &quake_part.color);
-	GL_ResolveShaderParam (quake_part.program, &quake_part.texture);
-	GL_ResolveShaderParam (quake_part.program, &quake_part.fog);
+	vert = GLSL_CompileShader ("quakepar.vert", quakepart_vert,
+							   GL_VERTEX_SHADER);
+	frag = GLSL_CompileShader ("quakepar.frag", quakepart_frag,
+							   GL_FRAGMENT_SHADER);
+	quake_part.program = GLSL_LinkProgram ("quakepart", vert, frag);
+	GLSL_ResolveShaderParam (quake_part.program, &quake_part.mvp_matrix);
+	GLSL_ResolveShaderParam (quake_part.program, &quake_part.st);
+	GLSL_ResolveShaderParam (quake_part.program, &quake_part.vertex);
+	GLSL_ResolveShaderParam (quake_part.program, &quake_part.color);
+	GLSL_ResolveShaderParam (quake_part.program, &quake_part.texture);
+	GLSL_ResolveShaderParam (quake_part.program, &quake_part.fog);
 
 	memset (data, 0, sizeof (data));
 	qfglGenTextures (1, &part_tex);

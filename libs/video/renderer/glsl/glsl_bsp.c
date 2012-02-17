@@ -66,10 +66,10 @@ typedef struct {
 
 #define ALLOC_CHUNK 64
 
-instsurf_t  *waterchain = NULL;
-instsurf_t **waterchain_tail = &waterchain;
-instsurf_t  *sky_chain;
-instsurf_t **sky_chain_tail = &sky_chain;
+static instsurf_t  *waterchain = NULL;
+static instsurf_t **waterchain_tail = &waterchain;
+static instsurf_t  *sky_chain;
+static instsurf_t **sky_chain_tail = &sky_chain;
 
 static texture_t  **r_texture_chains;
 static int          r_num_texture_chains;
@@ -1225,52 +1225,54 @@ R_InitBsp (void)
 	int         vert;
 	int         frag;
 
-	vert = GL_CompileShader ("quakebsp.vert", quakebsp_vert, GL_VERTEX_SHADER);
-	frag = GL_CompileShader ("quakebsp.frag", quakebsp_frag,
-							 GL_FRAGMENT_SHADER);
-	quake_bsp.program = GL_LinkProgram ("quakebsp", vert, frag);
-	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.mvp_matrix);
-	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.tlst);
-	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.vertex);
-	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.colormap);
-	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.texture);
-	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.lightmap);
-	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.color);
-	GL_ResolveShaderParam (quake_bsp.program, &quake_bsp.fog);
+	vert = GLSL_CompileShader ("quakebsp.vert", quakebsp_vert,
+							   GL_VERTEX_SHADER);
+	frag = GLSL_CompileShader ("quakebsp.frag", quakebsp_frag,
+							   GL_FRAGMENT_SHADER);
+	quake_bsp.program = GLSL_LinkProgram ("quakebsp", vert, frag);
+	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.mvp_matrix);
+	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.tlst);
+	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.vertex);
+	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.colormap);
+	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.texture);
+	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.lightmap);
+	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.color);
+	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.fog);
 
-	frag = GL_CompileShader ("quaketrb.frag", quaketurb_frag,
-							 GL_FRAGMENT_SHADER);
-	quake_turb.program = GL_LinkProgram ("quaketrb", vert, frag);
-	GL_ResolveShaderParam (quake_turb.program, &quake_turb.mvp_matrix);
-	GL_ResolveShaderParam (quake_turb.program, &quake_turb.tlst);
-	GL_ResolveShaderParam (quake_turb.program, &quake_turb.vertex);
-	GL_ResolveShaderParam (quake_turb.program, &quake_turb.palette);
-	GL_ResolveShaderParam (quake_turb.program, &quake_turb.texture);
-	GL_ResolveShaderParam (quake_turb.program, &quake_turb.realtime);
-	GL_ResolveShaderParam (quake_turb.program, &quake_turb.color);
-	GL_ResolveShaderParam (quake_turb.program, &quake_turb.fog);
+	frag = GLSL_CompileShader ("quaketrb.frag", quaketurb_frag,
+							   GL_FRAGMENT_SHADER);
+	quake_turb.program = GLSL_LinkProgram ("quaketrb", vert, frag);
+	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.mvp_matrix);
+	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.tlst);
+	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.vertex);
+	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.palette);
+	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.texture);
+	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.realtime);
+	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.color);
+	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.fog);
 
-	vert = GL_CompileShader ("quakesky.vert", quakesky_vert, GL_VERTEX_SHADER);
-	frag = GL_CompileShader ("quakeski.frag", quakeskyid_frag,
-							 GL_FRAGMENT_SHADER);
-	quake_skyid.program = GL_LinkProgram ("quakeskyid", vert, frag);
-	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.mvp_matrix);
-	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.sky_matrix);
-	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.vertex);
-	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.palette);
-	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.solid);
-	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.trans);
-	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.realtime);
-	GL_ResolveShaderParam (quake_skyid.program, &quake_skyid.fog);
+	vert = GLSL_CompileShader ("quakesky.vert", quakesky_vert,
+							   GL_VERTEX_SHADER);
+	frag = GLSL_CompileShader ("quakeski.frag", quakeskyid_frag,
+							   GL_FRAGMENT_SHADER);
+	quake_skyid.program = GLSL_LinkProgram ("quakeskyid", vert, frag);
+	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.mvp_matrix);
+	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.sky_matrix);
+	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.vertex);
+	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.palette);
+	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.solid);
+	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.trans);
+	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.realtime);
+	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.fog);
 
-	frag = GL_CompileShader ("quakeskb.frag", quakeskybox_frag,
-							 GL_FRAGMENT_SHADER);
-	quake_skybox.program = GL_LinkProgram ("quakeskybox", vert, frag);
-	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.mvp_matrix);
-	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.sky_matrix);
-	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.vertex);
-	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.sky);
-	GL_ResolveShaderParam (quake_skybox.program, &quake_skybox.fog);
+	frag = GLSL_CompileShader ("quakeskb.frag", quakeskybox_frag,
+							   GL_FRAGMENT_SHADER);
+	quake_skybox.program = GLSL_LinkProgram ("quakeskybox", vert, frag);
+	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.mvp_matrix);
+	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.sky_matrix);
+	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.vertex);
+	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.sky);
+	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.fog);
 }
 
 static inline int

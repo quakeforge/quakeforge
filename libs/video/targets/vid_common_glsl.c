@@ -67,7 +67,7 @@ VISIBLE float       		gldepthmin, gldepthmax;
 VISIBLE qboolean			is8bit = false;
 
 static void
-GL_Common_Init_Cvars (void)
+GLSL_Common_Init_Cvars (void)
 {
 }
 
@@ -152,9 +152,9 @@ GL_Init_Common (void)
 {
 	GLF_FindFunctions ();
 
-	GL_Common_Init_Cvars ();
+	GLSL_Common_Init_Cvars ();
 
-	GL_TextureInit ();
+	GLSL_TextureInit ();
 
 	qfglClearColor (0, 0, 0, 0);
 
@@ -194,7 +194,7 @@ D_EndDirectRect (int x, int y, int width, int height)
 }
 
 int
-GL_CompileShader (const char *name, const char *shader_src, int type)
+GLSL_CompileShader (const char *name, const char *shader_src, int type)
 {
 	const char *src[1];
 	int         shader;
@@ -317,7 +317,7 @@ dump_program (const char *name, int program)
 }
 
 int
-GL_LinkProgram (const char *name, int vert, int frag)
+GLSL_LinkProgram (const char *name, int vert, int frag)
 {
 	int         program;
 	int         linked;
@@ -349,7 +349,7 @@ GL_LinkProgram (const char *name, int vert, int frag)
 }
 
 int
-GL_ResolveShaderParam (int program, shaderparam_t *param)
+GLSL_ResolveShaderParam (int program, shaderparam_t *param)
 {
 	if (param->uniform) {
 		param->location = qfglGetUniformLocation (program, param->name);
@@ -368,7 +368,7 @@ GL_ResolveShaderParam (int program, shaderparam_t *param)
 }
 
 void
-GL_DumpAttribArrays (void)
+GLSL_DumpAttribArrays (void)
 {
 	GLint       max = 0;
 	GLint       ind;

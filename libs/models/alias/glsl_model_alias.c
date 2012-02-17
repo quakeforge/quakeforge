@@ -81,10 +81,10 @@ glsl_alias_clear (model_t *m)
 		if (skins[i].type == ALIAS_SKIN_GROUP) {
 			group = (maliasskingroup_t *) ((byte *) hdr + skins[i].skin);
 			for (j = 0; j < group->numskins; j++) {
-				GL_ReleaseTexture (group->skindescs[j].texnum);
+				GLSL_ReleaseTexture (group->skindescs[j].texnum);
 			}
 		} else {
-			GL_ReleaseTexture (skins[i].texnum);
+			GLSL_ReleaseTexture (skins[i].texnum);
 		}
 	}
 
@@ -111,7 +111,7 @@ Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum, qboolean group,
 		name = va ("%s_%i_%i", loadmodel->name, snum, gnum);
 	else
 		name = va ("%s_%i", loadmodel->name, snum);
-	skindesc->texnum = GL_LoadQuakeTexture (name, w, h, tskin);
+	skindesc->texnum = GLSL_LoadQuakeTexture (name, w, h, tskin);
 	free (tskin);
 	return skin + skinsize;
 }

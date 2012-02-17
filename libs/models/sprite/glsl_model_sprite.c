@@ -61,12 +61,12 @@ glsl_sprite_clear (model_t *m)
 	for (i = 0; i < sprite->numframes; i++) {
 		if (sprite->frames[i].type == SPR_SINGLE) {
 			frame = sprite->frames[i].frameptr;
-			GL_ReleaseTexture (frame->gl_texturenum);
+			GLSL_ReleaseTexture (frame->gl_texturenum);
 		} else {
 			group = (mspritegroup_t *) sprite->frames[i].frameptr;
 			for (j = 0; j < group->numframes; j++) {
 				frame = group->frames[j];
-				GL_ReleaseTexture (frame->gl_texturenum);
+				GLSL_ReleaseTexture (frame->gl_texturenum);
 			}
 		}
 	}
@@ -80,6 +80,6 @@ Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
 	loadmodel->clear = glsl_sprite_clear;
 	name = va ("%s_%i", loadmodel->name, framenum);
 	pspriteframe->gl_texturenum =
-		GL_LoadQuakeTexture (name, pspriteframe->width, pspriteframe->height,
-							 pspriteframe->pixels);
+		GLSL_LoadQuakeTexture (name, pspriteframe->width, pspriteframe->height,
+							   pspriteframe->pixels);
 }

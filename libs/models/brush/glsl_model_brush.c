@@ -67,7 +67,7 @@ glsl_brush_clear (model_t *m)
 	for (i = 0; i < m->numtextures; i++) {
 		// NOTE: some maps (eg e1m2) have empty texture slots
 		if (m->textures[i] && m->textures[i]->gl_texturenum) {
-			GL_ReleaseTexture (m->textures[i]->gl_texturenum);
+			GLSL_ReleaseTexture (m->textures[i]->gl_texturenum);
 			m->textures[i]->gl_texturenum = 0;
 		}
 	}
@@ -97,14 +97,14 @@ Mod_ProcessTexture (texture_t *tx)
 		for (i = 0; i < 2; i++) {
 			for (j = 0; j < 128; j++)
 				memcpy (&data[j * 128], &tx_data[j * 256 + i * 128], 128);
-			tx->sky_tex[i] = GL_LoadQuakeTexture (tx->name, 128, 128, data);
-			// GL_LoadQuakeTexture () leaves the texture bound
+			tx->sky_tex[i] = GLSL_LoadQuakeTexture (tx->name, 128, 128, data);
+			// GLSL_LoadQuakeTexture () leaves the texture bound
 			qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 			qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		}
 		tx->gl_texturenum = 0;
 	} else {
-		tx->gl_texturenum = GL_LoadQuakeMipTex (tx);
+		tx->gl_texturenum = GLSL_LoadQuakeMipTex (tx);
 	}
 }
 
