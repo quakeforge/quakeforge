@@ -62,73 +62,73 @@ static __attribute__ ((used)) const char rcsid[] =
 #define WARP_WIDTH              320
 #define WARP_HEIGHT             200
 
-VISIBLE unsigned char	d_15to8table[65536];
+unsigned char	d_15to8table[65536];
 
-VISIBLE QF_glActiveTexture			qglActiveTexture = NULL;
-VISIBLE QF_glMultiTexCoord2f		qglMultiTexCoord2f = NULL;
-VISIBLE QF_glMultiTexCoord2fv		qglMultiTexCoord2fv = NULL;
+QF_glActiveTexture			qglActiveTexture = NULL;
+QF_glMultiTexCoord2f		qglMultiTexCoord2f = NULL;
+QF_glMultiTexCoord2fv		qglMultiTexCoord2fv = NULL;
 
-VISIBLE const char		   *gl_extensions;
-VISIBLE const char		   *gl_renderer;
-VISIBLE const char		   *gl_vendor;
-VISIBLE const char		   *gl_version;
+const char		   *gl_extensions;
+const char		   *gl_renderer;
+const char		   *gl_vendor;
+const char		   *gl_version;
 
-VISIBLE int					gl_major;
-VISIBLE int					gl_minor;
-VISIBLE int					gl_release_number;
+int					gl_major;
+int					gl_minor;
+int					gl_release_number;
 
 static int			gl_bgra_capable;
-VISIBLE int					use_bgra;
-VISIBLE int					gl_va_capable;
+int					use_bgra;
+int					gl_va_capable;
 static  int					driver_vaelements;
-VISIBLE int					vaelements;
-VISIBLE int         		texture_extension_number = 1;
-VISIBLE int					gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
-VISIBLE int					gl_filter_max = GL_LINEAR;
-VISIBLE float       		gldepthmin, gldepthmax;
+int					vaelements;
+int         		texture_extension_number = 1;
+int					gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
+int					gl_filter_max = GL_LINEAR;
+float       		gldepthmin, gldepthmax;
 
 // Multitexture
-VISIBLE qboolean			gl_mtex_capable = false;
+qboolean			gl_mtex_capable = false;
 static int			gl_mtex_tmus = 0;
-VISIBLE GLenum				gl_mtex_enum;
-VISIBLE int					gl_mtex_active_tmus = 0;
-VISIBLE qboolean			gl_mtex_fullbright = false;
+GLenum				gl_mtex_enum;
+int					gl_mtex_active_tmus = 0;
+qboolean			gl_mtex_fullbright = false;
 
 // Combine
-VISIBLE qboolean			gl_combine_capable = false;
-VISIBLE int					lm_src_blend, lm_dest_blend;
-VISIBLE float				rgb_scale = 1.0;
+qboolean			gl_combine_capable = false;
+int					lm_src_blend, lm_dest_blend;
+float				rgb_scale = 1.0;
 
-VISIBLE QF_glColorTableEXT	qglColorTableEXT = NULL;
+QF_glColorTableEXT	qglColorTableEXT = NULL;
 
-VISIBLE qboolean			gl_feature_mach64 = false;
+qboolean			gl_feature_mach64 = false;
 
 // GL_EXT_texture_filter_anisotropic
-VISIBLE qboolean 			gl_Anisotropy;
+qboolean 			gl_Anisotropy;
 static float		aniso_max;
-VISIBLE float				gl_aniso;
+float				gl_aniso;
 
 // GL_ATI_pn_triangles
 static qboolean		TruForm;
 static int			tess_max;
-VISIBLE int			tess;
+int			tess;
 
 // GL_LIGHT
-VISIBLE int					gl_max_lights;
+int					gl_max_lights;
 
-VISIBLE cvar_t		*gl_anisotropy;
-VISIBLE cvar_t		*gl_doublebright;
-VISIBLE cvar_t      *gl_fb_bmodels;
-VISIBLE cvar_t      *gl_finish;
-VISIBLE cvar_t      *gl_max_size;
-VISIBLE cvar_t      *gl_multitexture;
-VISIBLE cvar_t		*gl_tessellate;
-VISIBLE cvar_t		*gl_textures_bgra;
-VISIBLE cvar_t      *gl_vaelements_max;
-VISIBLE cvar_t      *gl_vector_light;
-VISIBLE cvar_t      *gl_screenshot_byte_swap;
-VISIBLE cvar_t      *vid_mode;
-VISIBLE cvar_t      *vid_use8bit;
+cvar_t		*gl_anisotropy;
+cvar_t		*gl_doublebright;
+cvar_t      *gl_fb_bmodels;
+cvar_t      *gl_finish;
+cvar_t      *gl_max_size;
+cvar_t      *gl_multitexture;
+cvar_t		*gl_tessellate;
+cvar_t		*gl_textures_bgra;
+cvar_t      *gl_vaelements_max;
+cvar_t      *gl_vector_light;
+cvar_t      *gl_screenshot_byte_swap;
+cvar_t      *vid_mode;
+cvar_t      *vid_use8bit;
 
 void gl_multitexture_f (cvar_t *var);
 
@@ -176,7 +176,7 @@ gl_fb_bmodels_f (cvar_t *var)
 	}
 }
 
-VISIBLE void
+void
 gl_multitexture_f (cvar_t *var)
 {
 	if (!var)

@@ -62,7 +62,7 @@ int			r_init;
 entity_t   *currententity;
 
 int         r_visframecount;			// bumped when going to a new PVS
-VISIBLE int         r_framecount = 1;			// so frame counts initialized to 0 don't match
+int         r_framecount = 1;			// so frame counts initialized to 0 don't match
 
 vec3_t      modelorg;			// modelorg is the viewpoint relative to
 								// the currently rendering entity
@@ -81,7 +81,7 @@ vec3_t      vright, base_vright;
 vec3_t      r_origin;
 
 // screen size info
-VISIBLE refdef_t    r_refdef;
+refdef_t    r_refdef;
 
 int         d_lightstylevalue[256];     // 8.8 fraction of base light value
 

@@ -1122,7 +1122,7 @@ gl_overbright_f (cvar_t *un)
 {
 }
 
-VISIBLE void
+void
 R_ClearState (void)
 {
 	R_ClearEfrags ();

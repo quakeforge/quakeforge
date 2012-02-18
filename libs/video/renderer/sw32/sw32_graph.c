@@ -44,7 +44,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 	Called by only R_DisplayTime
 */
-VISIBLE void
+void
 R_LineGraph (int x, int y, int *h_vals, int count)
 {
 	int         h, i, s, color;

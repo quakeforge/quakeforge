@@ -62,7 +62,7 @@ int         r_numallocatededges;
 qboolean    r_drawpolys;
 qboolean    r_drawculledpolys;
 qboolean    r_worldpolysbacktofront;
-VISIBLE int         r_pixbytes = 1;
+int         r_pixbytes = 1;
 float       r_aliasuvscale = 1.0;
 int         r_outofsurfaces;
 int         r_outofedges;
@@ -140,7 +140,7 @@ R_Textures_Init (void)
 	}
 }
 
-VISIBLE void
+void
 R_Init (void)
 {
 	int         dummy;
@@ -174,7 +174,7 @@ R_Init (void)
 	D_Init ();
 }
 
-VISIBLE void
+void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	int         i;
@@ -791,7 +791,7 @@ R_RenderView_ (void)
 		Sys_Printf ("Short roughly %d edges\n", r_outofedges * 2 / 3);
 }
 
-VISIBLE void
+void
 R_RenderView (void)
 {
 	int         dummy;
@@ -830,7 +830,7 @@ gl_overbright_f (cvar_t *un)
 {
 }
 
-VISIBLE void
+void
 R_ClearState (void)
 {
 	R_ClearEfrags ();

@@ -70,7 +70,7 @@ R_InitGraphTextures (int base)
 	return base;
 }
 
-VISIBLE void
+void
 R_LineGraph (int x, int y, int *h_vals, int count)
 {
 	byte        color;

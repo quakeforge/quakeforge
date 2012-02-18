@@ -197,7 +197,7 @@ particle_new_veryrandom (ptype_t type, int texnum, const vec3_t org,
 }
 */
 
-VISIBLE void
+void
 R_ClearParticles (void)
 {
 	numparticles = 0;
@@ -1908,13 +1908,13 @@ R_ParticleFunctionInit (void)
 	r_easter_eggs_f (easter_eggs);
 }
 
-VISIBLE void
+void
 R_Particles_Init_Cvars (void)
 {
 	R_ParticleFunctionInit ();
 }
 
-VISIBLE void
+void
 R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
 			    const vec3_t vel, float die, int color, float alpha, float ramp)
 {
@@ -1923,7 +1923,7 @@ R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
 	particle_new (type, texnum, org, scale, vel, die, color, alpha, ramp);
 }
 
-VISIBLE void
+void
 R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
 					  float scale, int vel_fuzz, float die, int color,
 					  float alpha, float ramp)

@@ -123,7 +123,7 @@ D_InitCaches (void *buffer, int size)
 }
 
 
-VISIBLE void
+void
 D_FlushCaches (void)
 {
 	surfcache_t *c;

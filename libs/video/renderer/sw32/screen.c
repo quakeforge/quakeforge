@@ -56,7 +56,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 /* SCREEN SHOTS */
 
-VISIBLE tex_t *
+tex_t *
 SCR_CaptureBGR (void)
 {
 	int         count, x, y;
@@ -86,7 +86,7 @@ SCR_CaptureBGR (void)
 	return tex;
 }
 
-VISIBLE tex_t *
+tex_t *
 SCR_ScreenShot (int width, int height)
 {
 	return 0;
@@ -143,7 +143,7 @@ SCR_ScreenShot_f (void)
 	WARNING: be very careful calling this from elsewhere, because the refresh
 	needs almost the entire 256k of stack space!
 */
-VISIBLE void
+void
 SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	vrect_t     vrect;

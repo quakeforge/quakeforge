@@ -92,7 +92,7 @@ static struct {
 	{"fog", 1},
 };
 
-VISIBLE void
+void
 R_InitSprites (void)
 {
 	int         frag, vert;

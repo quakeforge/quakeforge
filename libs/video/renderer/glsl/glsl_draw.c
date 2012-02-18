@@ -269,25 +269,25 @@ draw_pic (float x, float y, int w, int h, qpic_t *pic,
 	qfglDisableVertexAttribArray (quake_icon.vertex.location);
 }
 
-VISIBLE qpic_t *
+qpic_t *
 Draw_MakePic (int width, int height, const byte *data)
 {
 	return pic_data (0, width, height, data);
 }
 
-VISIBLE void
+void
 Draw_DestroyPic (qpic_t *pic)
 {
 	pic_free (pic);
 }
 
-VISIBLE qpic_t *
+qpic_t *
 Draw_PicFromWad (const char *name)
 {
 	return make_glpic (name, W_GetLumpName (name));
 }
 
-VISIBLE qpic_t *
+qpic_t *
 Draw_CachePic (const char *path, qboolean alpha)
 {
 	qpic_t     *p, *pic;
@@ -308,13 +308,13 @@ Draw_CachePic (const char *path, qboolean alpha)
 	return pic;
 }
 
-VISIBLE void
+void
 Draw_UncachePic (const char *path)
 {
 	Hash_Free (pic_cache, Hash_Del (pic_cache, path));
 }
 
-VISIBLE void
+void
 Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 {
 	static quat_t color = { 1, 1, 1, 0 };
@@ -379,7 +379,7 @@ Draw_ClearCache (int phase)
 	Hash_FlushTable (pic_cache);
 }
 
-VISIBLE void
+void
 Draw_Init (void)
 {
 	int         i;
@@ -498,7 +498,7 @@ flush_text (void)
 	char_queue->size = 0;
 }
 
-VISIBLE void
+void
 Draw_Character (int x, int y, unsigned int chr)
 {
 	chr &= 255;
@@ -511,7 +511,7 @@ Draw_Character (int x, int y, unsigned int chr)
 	queue_character (x, y, chr);
 }
 
-VISIBLE void
+void
 Draw_String (int x, int y, const char *str)
 {
 	byte        chr;
@@ -528,7 +528,7 @@ Draw_String (int x, int y, const char *str)
 	}
 }
 
-VISIBLE void
+void
 Draw_nString (int x, int y, const char *str, int count)
 {
 	byte        chr;
@@ -609,7 +609,7 @@ static void (*crosshair_func[]) (int x, int y) = {
 	crosshair_5,
 };
 
-VISIBLE void
+void
 Draw_Crosshair (void)
 {
 	int         x, y;
@@ -636,7 +636,7 @@ Draw_CrosshairAt (int ch, int x, int y)
 	crosshair_func[c] (x, y);
 }
 
-VISIBLE void
+void
 Draw_Pic (int x, int y, qpic_t *pic)
 {
 	static quat_t color = { 1, 1, 1, 1};
@@ -644,7 +644,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 			  0, 0, pic->width, pic->height, color);
 }
 
-VISIBLE void
+void
 Draw_Picf (float x, float y, qpic_t *pic)
 {
 	static quat_t color = { 1, 1, 1, 1};
@@ -652,7 +652,7 @@ Draw_Picf (float x, float y, qpic_t *pic)
 			  0, 0, pic->width, pic->height, color);
 }
 
-VISIBLE void
+void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
 {
@@ -660,7 +660,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	draw_pic (x, y, width, height, pic, srcx, srcy, width, height, color);
 }
 
-VISIBLE void
+void
 Draw_ConsoleBackground (int lines, byte alpha)
 {
 	float       ofs = (vid.conheight - lines) / (float) vid.conheight;
@@ -701,14 +701,14 @@ Draw_ConsoleBackground (int lines, byte alpha)
 	qfglDisableVertexAttribArray (quake_icon.vertex.location);
 }
 
-VISIBLE void
+void
 Draw_TileClear (int x, int y, int w, int h)
 {
 	static quat_t color = { 1, 1, 1, 1 };
 	draw_pic (x, y, w, h, backtile_pic, 0, 0, w, h, color);
 }
 
-VISIBLE void
+void
 Draw_Fill (int x, int y, int w, int h, int c)
 {
 	quat_t      color;
@@ -724,7 +724,7 @@ draw_blendscreen (quat_t color)
 	draw_pic (0, 0, vid.conwidth, vid.conheight, white_pic, 0, 0, 8, 8, color);
 }
 
-VISIBLE void
+void
 Draw_FadeScreen (void)
 {
 	static quat_t color = { 0, 0, 0, 0.7 };

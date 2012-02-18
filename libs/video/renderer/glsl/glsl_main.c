@@ -64,7 +64,7 @@ gl_overbright_f (cvar_t *var)
 {
 }
 
-VISIBLE void
+void
 R_ViewChanged (float aspect)
 {
 	double      xmin, xmax, ymin, ymax;
@@ -194,7 +194,7 @@ R_DrawViewModel (void)
 	qfglDepthRangef (0, 1);
 }
 
-VISIBLE void
+void
 R_RenderView (void)
 {
 	double      t[10] = {};
@@ -241,7 +241,7 @@ R_RenderView (void)
 	}
 }
 
-VISIBLE void
+void
 R_Init (void)
 {
 	Draw_Init ();
@@ -253,7 +253,7 @@ R_Init (void)
 	Fog_Init ();
 }
 
-VISIBLE void
+void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	int         i;
@@ -275,12 +275,12 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	R_BuildDisplayLists (models, num_models);
 }
 
-VISIBLE void
+void
 R_LineGraph (int x, int y, int *h_vals, int count)
 {
 }
 
-VISIBLE void
+void
 R_ClearState (void)
 {
 	R_ClearEfrags ();
@@ -288,7 +288,7 @@ R_ClearState (void)
 	R_ClearParticles ();
 }
 
-VISIBLE void
+void
 D_FlushCaches (void)
 {
 }

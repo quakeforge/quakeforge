@@ -620,7 +620,7 @@ R_RenderView_ (void)
 
 static void R_RenderViewFishEye (void);
 
-VISIBLE void
+void
 R_RenderView (void)
 {
 	if(!scr_fisheye->int_val)
@@ -918,7 +918,7 @@ R_RenderViewFishEye (void)
 	qfglCallList (fisheye_grid);
 }
 
-VISIBLE void
+void
 R_ClearState (void)
 {
 	r_worldentity.model = 0;

@@ -95,7 +95,7 @@ static int         numcachepics;
 	} while (0)
 
 
-VISIBLE qpic_t *
+qpic_t *
 Draw_MakePic (int width, int height, const byte *data)
 {
 	qpic_t	   *pic;
@@ -108,20 +108,20 @@ Draw_MakePic (int width, int height, const byte *data)
 	return pic;
 }
 
-VISIBLE void
+void
 Draw_DestroyPic (qpic_t *pic)
 {
 	free (pic);
 }
 
-VISIBLE qpic_t *
+qpic_t *
 Draw_PicFromWad (const char *name)
 {
 	return W_GetLumpName (name);
 }
 
 
-VISIBLE qpic_t *
+qpic_t *
 Draw_CachePic (const char *path, qboolean alpha)
 {
 	cachepic_t *pic;
@@ -162,7 +162,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 	return dat;
 }
 
-VISIBLE void
+void
 Draw_UncachePic (const char *path)
 {
 	cachepic_t *pic;
@@ -178,7 +178,7 @@ Draw_UncachePic (const char *path)
 }
 
 
-VISIBLE void
+void
 Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 {
 	qpic_t     *p;
@@ -231,7 +231,7 @@ Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 }
 
 
-VISIBLE void
+void
 Draw_Init (void)
 {
 	draw_chars = W_GetLumpName ("conchars");
@@ -252,7 +252,7 @@ Draw_Init (void)
 	It can be clipped to the top of the screen to allow the console to be
 	smoothly scrolled off.
 */
-VISIBLE void
+void
 Draw_Character (int x, int y, unsigned int chr)
 {
 	byte       *source;
@@ -369,7 +369,7 @@ Draw_Character (int x, int y, unsigned int chr)
 	}
 }
 
-VISIBLE void
+void
 Draw_String (int x, int y, const char *str)
 {
 	while (*str) {
@@ -378,7 +378,7 @@ Draw_String (int x, int y, const char *str)
 	}
 }
 
-VISIBLE void
+void
 Draw_nString (int x, int y, const char *str, int count)
 {
 	while (count-- && *str) {
@@ -461,7 +461,7 @@ static void (*crosshair_func[]) (int x, int y) = {
 	crosshair_3,
 };
 
-VISIBLE void
+void
 Draw_Crosshair (void)
 {
 	int            x, y;
@@ -487,7 +487,7 @@ Draw_CrosshairAt (int ch, int x, int y)
 	crosshair_func[ch] (x, y);
 }
 
-VISIBLE void
+void
 Draw_Pic (int x, int y, qpic_t *pic)
 {
 	byte       *source, tbyte;
@@ -579,13 +579,13 @@ Draw_Pic (int x, int y, qpic_t *pic)
 	}
 }
 
-VISIBLE void
+void
 Draw_Picf (float x, float y, qpic_t *pic)
 {
 	Draw_Pic (x, y, pic);
 }
 
-VISIBLE void
+void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
 {
@@ -662,7 +662,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 }
 
 
-VISIBLE void
+void
 Draw_ConsoleBackground (int lines, byte alpha)
 {
 	int         x, y, v;
@@ -1038,7 +1038,7 @@ R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 	This repeats a 64*64 tile graphic to fill the screen around a sized down
 	refresh window.
 */
-VISIBLE void
+void
 Draw_TileClear (int x, int y, int w, int h)
 {
 	int         width, height, tileoffsetx, tileoffsety;
@@ -1102,7 +1102,7 @@ Draw_TileClear (int x, int y, int w, int h)
 
 	Fills a box of pixels with a single color
 */
-VISIBLE void
+void
 Draw_Fill (int x, int y, int w, int h, int c)
 {
 	int         u, v;
@@ -1149,7 +1149,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 }
 
 
-VISIBLE void
+void
 Draw_FadeScreen (void)
 {
 	unsigned int x, y;
@@ -1203,7 +1203,7 @@ Draw_FadeScreen (void)
 	VID_LockBuffer ();
 }
 
-VISIBLE void
+void
 Draw_BlendScreen (quat_t color)
 {
 	int         r, g, b, i;

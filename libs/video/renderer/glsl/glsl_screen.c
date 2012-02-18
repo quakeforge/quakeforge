@@ -152,7 +152,7 @@ SCR_TileClear (void)
 	}
 }
 
-VISIBLE void
+void
 SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	static int  begun = 0;
@@ -198,7 +198,7 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	qfglFlush ();
 }
 
-VISIBLE tex_t *
+tex_t *
 SCR_CaptureBGR (void)
 {
 	byte       *r, *b;
@@ -223,13 +223,13 @@ SCR_CaptureBGR (void)
 	return tex;
 }
 
-VISIBLE tex_t *
+tex_t *
 SCR_ScreenShot (int width, int height)
 {
 	return 0;
 }
 
-VISIBLE void
+void
 SCR_ScreenShot_f (void)
 {
 	dstring_t  *name = dstring_new ();

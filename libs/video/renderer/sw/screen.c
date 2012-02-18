@@ -56,7 +56,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 /* SCREEN SHOTS */
 
-VISIBLE tex_t *
+tex_t *
 SCR_CaptureBGR (void)
 {
 	int         count, x, y;

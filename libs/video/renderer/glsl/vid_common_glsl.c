@@ -58,12 +58,12 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "d_iface.h"
 #include "r_internal.h"
 
-VISIBLE int					glsl_palette;
-VISIBLE int					glsl_colormap;
-VISIBLE int					gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
-VISIBLE int					gl_filter_max = GL_LINEAR;
-VISIBLE float       		gldepthmin, gldepthmax;
-VISIBLE qboolean			is8bit = false;
+int					glsl_palette;
+int					glsl_colormap;
+int					gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
+int					gl_filter_max = GL_LINEAR;
+float       		gldepthmin, gldepthmax;
+qboolean			is8bit = false;
 
 static void
 GLSL_Common_Init_Cvars (void)

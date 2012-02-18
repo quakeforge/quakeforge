@@ -146,7 +146,7 @@ Draw_InitText (void)
 		tVAindices[i] = i;
 }
 
-VISIBLE qpic_t *
+qpic_t *
 Draw_MakePic (int width, int height, const byte *data)
 {
 	glpic_t	   *gl;
@@ -160,14 +160,14 @@ Draw_MakePic (int width, int height, const byte *data)
 	return pic;
 }
 
-VISIBLE void
+void
 Draw_DestroyPic (qpic_t *pic)
 {
 	//FIXME gl texture management sucks
 	free (pic);
 }
 
-VISIBLE qpic_t *
+qpic_t *
 Draw_PicFromWad (const char *name)
 {
 	glpic_t	   *gl;
@@ -208,7 +208,7 @@ Draw_ClearCache (int phase)
 		pic->dirty = true;
 }
 
-VISIBLE qpic_t *
+qpic_t *
 Draw_CachePic (const char *path, qboolean alpha)
 {
 	cachepic_t *pic;
@@ -266,7 +266,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 	return &pic->pic;
 }
 
-VISIBLE void
+void
 Draw_UncachePic (const char *path)
 {
 	cachepic_t *pic;
@@ -281,7 +281,7 @@ Draw_UncachePic (const char *path)
 	}
 }
 
-VISIBLE void
+void
 Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 {
 	int         cx, cy, n;
@@ -335,7 +335,7 @@ Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 	qfglColor3ubv (color_white);
 }
 
-VISIBLE void
+void
 Draw_Init (void)
 {
 	int	     i;
@@ -478,7 +478,7 @@ tVA_increment (void)
 	It can be clipped to the top of the screen to allow the console to be
 	smoothly scrolled off.
 */
-VISIBLE void
+void
 Draw_Character (int x, int y, unsigned int chr)
 {
 	chr &= 255;
@@ -492,7 +492,7 @@ Draw_Character (int x, int y, unsigned int chr)
 	tVA_increment ();
 }
 
-VISIBLE void
+void
 Draw_String (int x, int y, const char *str)
 {
 	unsigned char	chr;
@@ -515,7 +515,7 @@ Draw_String (int x, int y, const char *str)
 	}
 }
 
-VISIBLE void
+void
 Draw_nString (int x, int y, const char *str, int count)
 {
 	unsigned char	chr;
@@ -671,7 +671,7 @@ static void (*crosshair_func[]) (int x, int y) = {
 	crosshair_5,
 };
 
-VISIBLE void
+void
 Draw_Crosshair (void)
 {
 	int            x, y;
@@ -697,7 +697,7 @@ Draw_CrosshairAt (int ch, int x, int y)
 	crosshair_func[ch] (x, y);
 }
 
-VISIBLE void
+void
 Draw_Pic (int x, int y, qpic_t *pic)
 {
 	glpic_t    *gl;
@@ -717,7 +717,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 	qfglEnd ();
 }
 
-VISIBLE void
+void
 Draw_Picf (float x, float y, qpic_t *pic)
 {
 	glpic_t    *gl;
@@ -737,7 +737,7 @@ Draw_Picf (float x, float y, qpic_t *pic)
 	qfglEnd ();
 }
 
-VISIBLE void
+void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
 {
@@ -773,7 +773,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	Draws console background (obviously!)  Completely rewritten to use
 	several simple yet very cool GL effects.  --KB
 */
-VISIBLE void
+void
 Draw_ConsoleBackground (int lines, byte alpha)
 {
 	float       ofs;
@@ -847,7 +847,7 @@ Draw_ConsoleBackground (int lines, byte alpha)
 	This repeats a 64*64 tile graphic to fill the screen around a sized down
 	refresh window.
 */
-VISIBLE void
+void
 Draw_TileClear (int x, int y, int w, int h)
 {
 	glpic_t    *gl;
@@ -872,7 +872,7 @@ Draw_TileClear (int x, int y, int w, int h)
 
 	Fills a box of pixels with a single color
 */
-VISIBLE void
+void
 Draw_Fill (int x, int y, int w, int h, int c)
 {
 	qfglDisable (GL_TEXTURE_2D);
@@ -890,7 +890,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	qfglEnable (GL_TEXTURE_2D);
 }
 
-VISIBLE void
+void
 Draw_FadeScreen (void)
 {
 	GL_FlushText (); // Flush text that should be rendered before the menu

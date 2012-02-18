@@ -838,7 +838,7 @@ R_Particles_Init_Cvars (void)
 	R_ParticleFunctionInit ();
 }
 
-VISIBLE void
+void
 R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
 			    const vec3_t vel, float die, int color, float alpha, float ramp)
 {
@@ -863,7 +863,7 @@ R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
 	p->ramp = ramp;
 }
 
-VISIBLE void
+void
 R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
 					  float scale, int vel_fuzz, float die, int color,
 					  float alpha, float ramp)

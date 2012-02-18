@@ -104,7 +104,7 @@ static struct {
 
 static mat4_t alias_vp;
 
-VISIBLE void
+void
 R_InitAlias (void)
 {
 	int         vert;

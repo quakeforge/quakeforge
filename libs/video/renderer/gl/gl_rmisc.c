@@ -135,7 +135,7 @@ R_LoadSky_f (void)
 	R_LoadSkys (Cmd_Argv (1));
 }
 
-VISIBLE void
+void
 R_Init (void)
 {
 	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f,
@@ -175,7 +175,7 @@ register_textures (model_t *model)
 	}
 }
 
-VISIBLE void
+void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	int         i;
@@ -259,7 +259,7 @@ R_TimeRefresh_f (void)
 	Sys_MaskPrintf (SYS_DEV, "%f seconds (%f fps)\n", time, 128 / time);
 }
 
-VISIBLE void
+void
 D_FlushCaches (void)
 {
 }

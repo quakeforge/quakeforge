@@ -38,7 +38,7 @@ float r_avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "anorms.h"
 };
 
-VISIBLE maliasskindesc_t *
+maliasskindesc_t *
 R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 {
 	maliasskindesc_t *pskindesc;
@@ -138,7 +138,7 @@ alias_get_frame (int framenum, aliashdr_t *hdr, float *frame_interval)
 	return &group->frames[i];
 }
 
-VISIBLE maliasframedesc_t *
+maliasframedesc_t *
 R_AliasGetFramedesc (int framenum, aliashdr_t *hdr)
 {
 	return alias_get_frame (framenum, hdr, 0);

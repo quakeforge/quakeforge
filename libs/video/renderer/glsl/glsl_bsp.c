@@ -1308,7 +1308,7 @@ copy_sub_tex (tex_t *src, int x, int y, tex_t *dst)
 				dstbytes);
 }
 
-VISIBLE void
+void
 R_LoadSkys (const char *sky)
 {
 	const char *name;
