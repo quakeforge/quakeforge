@@ -532,7 +532,13 @@ VID_SetPalette (unsigned char *palette)
 	unsigned int *table;
 	static qboolean palflag = false;
 	QFile      *f;
+	static int  inited_8 = 0;
 
+	if (!inited_8) {
+		inited_8 = 1;
+		// Check for 8-bit extension and initialize if present
+		VID_Init8bitPalette ();
+	}
 	// 8 8 8 encoding
 	Sys_MaskPrintf (SYS_VID, "Converting 8to24\n");
 

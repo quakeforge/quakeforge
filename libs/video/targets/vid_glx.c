@@ -185,8 +185,8 @@ GL_EndRendering (void)
 	qfglXSwapBuffers (x_disp, x_win);
 }
 
-void
-VID_Init (byte *palette, byte *colormap)
+static void
+glx_choose_visual (void)
 {
 	int         attrib[] = {
 		GLX_RGBA,
@@ -198,48 +198,48 @@ VID_Init (byte *palette, byte *colormap)
 		None
 	};
 
-	glx_get_functions ();
-
-	VID_GetWindowSize (640, 480);
-
-	vid.maxwarpwidth = WARP_WIDTH;
-	vid.maxwarpheight = WARP_HEIGHT;
-	vid.colormap8 = vid_colormap = colormap;
-	vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
-
-	X11_OpenDisplay ();
-
 	x_visinfo = qfglXChooseVisual (x_disp, x_screen, attrib);
 	if (!x_visinfo) {
 		Sys_Error ("Error couldn't get an RGB, Double-buffered, Depth visual");
 	}
 	x_vis = x_visinfo->visual;
+}
 
+static void
+glx_create_context (void)
+{
+	XSync (x_disp, 0);
+	ctx = qfglXCreateContext (x_disp, x_visinfo, NULL, True);
+	qfglXMakeCurrent (x_disp, x_win, ctx);
+	GL_Init ();
+}
+
+void
+VID_Init (byte *palette, byte *colormap)
+{
+	vid.maxwarpwidth = WARP_WIDTH;
+	vid.maxwarpheight = WARP_HEIGHT;
+	vid.colormap8 = vid_colormap = colormap;
+	vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
+	vid.numpages = 2;
+
+	glx_get_functions ();
+
+	VID_GetWindowSize (640, 480);
+	X11_OpenDisplay ();
+	glx_choose_visual ();
 	X11_SetVidMode (vid.width, vid.height);
 	X11_CreateWindow (vid.width, vid.height);
 	X11_CreateNullCursor ();	// hide mouse pointer
-
-	XSync (x_disp, 0);
-
-	ctx = qfglXCreateContext (x_disp, x_visinfo, NULL, True);
-
-	qfglXMakeCurrent (x_disp, x_win, ctx);
-
-	vid.numpages = 2;
-
-	GL_Init ();
+	glx_create_context ();
 
 	VID_InitGamma (palette);
-
-	// Check for 8-bit extension and initialize if present
-	VID_Init8bitPalette ();
 	VID_SetPalette (vid.palette);
 
 	Sys_MaskPrintf (SYS_VID, "Video mode %dx%d initialized.\n",
 					vid.width, vid.height);
 
 	vid.initialized = true;
-
 	vid.recalc_refdef = 1;				// force a surface cache flush
 }
 

@@ -50,6 +50,7 @@ extern Display	*x_disp;
 extern Visual	*x_vis;
 extern Window	x_root;
 extern Window	x_win;
+extern Colormap x_cmap;
 extern XVisualInfo *x_visinfo;
 extern int		x_screen;
 extern int		x_shmeventtype;

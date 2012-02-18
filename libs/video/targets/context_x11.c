@@ -90,6 +90,7 @@ Window		x_root = None;
 XVisualInfo *x_visinfo;
 Visual		*x_vis;
 Window		x_win;
+Colormap	x_cmap;
 Time 		x_time;
 Time		x_mouse_time;
 
@@ -516,7 +517,9 @@ X11_CreateWindow (int width, int height)
 	// window attributes
 	attr.background_pixel = 0;
 	attr.border_pixel = 0;
-	attr.colormap = XCreateColormap (x_disp, x_root, x_vis, AllocNone);
+	attr.colormap = x_cmap;
+	if (!attr.colormap)
+		attr.colormap = XCreateColormap (x_disp, x_root, x_vis, AllocNone);
 	attr.event_mask = X11_MASK;
 	mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
 

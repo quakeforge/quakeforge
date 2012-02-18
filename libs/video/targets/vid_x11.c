@@ -83,7 +83,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 int XShmGetEventBase (Display *x);	// for broken X11 headers
 
-static Colormap x_cmap;
 static GC		x_gc;
 
 static qboolean doShm;
@@ -384,31 +383,13 @@ x11_init_buffers (void)
 	vid.conrowbytes = vid.rowbytes;
 }
 
-/*
-	VID_Init
-
-	Set up color translation tables and the window.  Takes a 256-color 8-bit
-	palette.  Palette data will go away after the call, so copy it if you'll
-	need it later.
-*/
-void
-VID_Init (byte *palette, byte *colormap)
+static void
+x11_choose_visual (void)
 {
 	int         pnum, i;
 	XVisualInfo template;
 	int         num_visuals;
 	int         template_mask;
-
-	VID_GetWindowSize (320, 200);
-
-	vid.numpages = 2;
-	vid.colormap8 = vid_colormap = colormap;
-	vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
-
-	srandom (getpid ());
-
-	// open the display
-	X11_OpenDisplay ();
 
 	template_mask = 0;
 
@@ -428,6 +409,9 @@ VID_Init (byte *palette, byte *colormap)
 	// pick a visual -- warn if more than one was available
 	x_visinfo = XGetVisualInfo (x_disp, template_mask, &template,
 								&num_visuals);
+
+	if (x_visinfo->depth == 8 && x_visinfo->class == PseudoColor)
+		x_cmap = XCreateColormap (x_disp, x_win, x_vis, AllocAll);
 	x_vis = x_visinfo->visual;
 
 	if (num_visuals > 1) {
@@ -462,27 +446,11 @@ VID_Init (byte *palette, byte *colormap)
 					x_visinfo->colormap_size);
 	Sys_MaskPrintf (SYS_VID, "    bits_per_rgb %d\n",
 					x_visinfo->bits_per_rgb);
+}
 
-	/* Setup attributes for main window */
-	X11_SetVidMode (vid.width, vid.height);
-
-	/* Create the main window */
-	X11_CreateWindow (vid.width, vid.height);
-
-	/* Invisible cursor */
-	X11_CreateNullCursor ();
-
-	if (x_visinfo->depth == 8) {
-		/* Create and upload the palette */
-		if (x_visinfo->class == PseudoColor) {
-			x_cmap = XCreateColormap (x_disp, x_win, x_vis, AllocAll);
-			VID_SetPalette (palette);
-			XSetWindowColormap (x_disp, x_win, x_cmap);
-		}
-	}
-
-	VID_InitGamma (palette);
-	VID_SetPalette (vid.palette);
+static void
+x11_create_context (void)
+{
 
 	// create the GC
 	{
@@ -518,8 +486,40 @@ VID_Init (byte *palette, byte *colormap)
 
 //  XSynchronize (x_disp, False);
 //	X11_AddEvent (x_shmeventtype, event_shm);
+}
+
+/*
+	VID_Init
+
+	Set up color translation tables and the window.  Takes a 256-color 8-bit
+	palette.  Palette data will go away after the call, so copy it if you'll
+	need it later.
+*/
+void
+VID_Init (byte *palette, byte *colormap)
+{
+	vid.numpages = 2;
+	vid.colormap8 = vid_colormap = colormap;
+	vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
+
+	srandom (getpid ());
+
+	VID_GetWindowSize (320, 200);
+	X11_OpenDisplay ();
+	x11_choose_visual ();
+	X11_SetVidMode (vid.width, vid.height);
+	X11_CreateWindow (vid.width, vid.height);
+	X11_CreateNullCursor ();	// hide mouse pointer
+	x11_create_context ();
+
+	VID_InitGamma (palette);
+	VID_SetPalette (vid.palette);
+
+	Sys_MaskPrintf (SYS_VID, "Video mode %dx%d initialized.\n",
+					vid.width, vid.height);
 
 	vid.initialized = true;
+	vid.recalc_refdef = 1;				// force a surface cache flush
 }
 
 void
