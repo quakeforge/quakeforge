@@ -734,13 +734,3 @@ GL_Init_Common (void)
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
-
-void
-D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
-{
-}
-
-void
-D_EndDirectRect (int x, int y, int width, int height)
-{
-}

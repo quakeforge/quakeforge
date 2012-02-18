@@ -167,16 +167,6 @@ GL_Init_Common (void)
 	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void
-D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
-{
-}
-
-void
-D_EndDirectRect (int x, int y, int width, int height)
-{
-}
-
 int
 GLSL_CompileShader (const char *name, const char *shader_src, int type)
 {
