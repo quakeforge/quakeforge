@@ -39,6 +39,9 @@ static __attribute__ ((used)) const char rcsid[] =
 drawsurf_t  r_drawsurf;
 
 int         sourcesstep, sourcetstep;
+#ifndef USE_INTEL_ASM
+static int  lightleft;
+#endif
 static int  blocksize;
 int         lightdelta, lightdeltastep;
 int         lightright, lightleftstep, lightrightstep, blockdivshift;
