@@ -4,8 +4,8 @@ SUBDIRS= @QFrenderer_dirs@
 DIST_SUBDIRS= gl glsl sw sw32
 INCLUDES= -I$(top_srcdir)/include
 
-lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
-			-rpath $(libdir) -no-undefined
+#lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
+#			-rpath $(libdir) -no-undefined
 
 #lib_LTLIBRARIES= @VID_REND_TARGETS@
 noinst_LTLIBRARIES= @QFrenderer_libs@
