@@ -43,8 +43,9 @@ static __attribute__ ((used)) const char rcsid[] =
 
 float        surfscale;
 
-int          sc_size;
-surfcache_t *sc_rover, *sc_base;
+static int          sc_size;
+surfcache_t *sc_rover;
+static surfcache_t *sc_base;
 
 #define GUARDSIZE       4
 

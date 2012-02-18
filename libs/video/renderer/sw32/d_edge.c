@@ -41,7 +41,6 @@ static __attribute__ ((used)) const char rcsid[] =
 static int  miplevel;
 
 float       scale_for_mip;
-int         ubasestep, errorterm, erroradjustup, erroradjustdown, vstartscan;
 
 vec3_t      transformed_modelorg;
 

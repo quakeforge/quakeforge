@@ -37,6 +37,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "d_local.h"
 #include "r_local.h"
 
+static int  ubasestep, errorterm, erroradjustup, erroradjustdown;
+
 // TODO: put in span spilling to shrink list size
 // !!! if this is changed, it must be changed in d_polysa.s too !!!
 #define DPS_MAXSPANS		MAXHEIGHT+1		// +1 for spanpackage marking end
@@ -62,16 +64,13 @@ typedef struct {
 	int        *prightedgevert2;
 } edgetable;
 
-int         r_p0[6], r_p1[6], r_p2[6];
+static int         r_p0[6], r_p1[6], r_p2[6];
 
-byte       *d_pcolormap;
+static int         d_xdenom;
 
-int         d_aflatcolor;
-int         d_xdenom;
+static edgetable  *pedgetable;
 
-edgetable  *pedgetable;
-
-edgetable   edgetables[12] = {
+static edgetable   edgetables[12] = {
 	{0, 1, r_p0, r_p2, NULL, 2, r_p0, r_p1, r_p2},
 	{0, 2, r_p1, r_p0, r_p2, 1, r_p1, r_p2, NULL},
 	{1, 1, r_p0, r_p2, NULL, 1, r_p1, r_p2, NULL},
@@ -86,25 +85,23 @@ edgetable   edgetables[12] = {
 	{0, 1, r_p0, r_p2, NULL, 1, r_p0, r_p1, NULL},
 };
 
-// FIXME: some of these can become statics
-int         a_sstepxfrac, a_tstepxfrac, a_ststepxwhole;
-int         r_sstepx, r_tstepx, r_lstepx, r_lstepy, r_sstepy, r_tstepy;
-int         r_zistepx, r_zistepy;
-int         d_aspancount, d_countextrastep;
+static int         r_sstepx, r_tstepx, r_lstepx, r_lstepy, r_sstepy, r_tstepy;
+static int         r_zistepx, r_zistepy;
+static int         d_aspancount, d_countextrastep;
 
-spanpackage_t *a_spans;
-spanpackage_t *d_pedgespanpackage;
+static spanpackage_t *a_spans;
+static spanpackage_t *d_pedgespanpackage;
 static int  ystart;
-int		    d_pdest;
-byte       *d_ptex;
-short      *d_pz;
-int         d_sfrac, d_tfrac, d_light, d_zi;
-int         d_ptexextrastep, d_sfracextrastep;
-int         d_tfracextrastep, d_lightextrastep, d_pdestextrastep;
-int         d_lightbasestep, d_pdestbasestep, d_ptexbasestep;
-int         d_sfracbasestep, d_tfracbasestep;
-int         d_ziextrastep, d_zibasestep;
-int         d_pzextrastep, d_pzbasestep;
+static int  d_pdest;
+static byte       *d_ptex;
+static short      *d_pz;
+static int         d_sfrac, d_tfrac, d_light, d_zi;
+static int         d_ptexextrastep, d_sfracextrastep;
+static int         d_tfracextrastep, d_lightextrastep, d_pdestextrastep;
+static int         d_lightbasestep, d_pdestbasestep, d_ptexbasestep;
+static int         d_sfracbasestep, d_tfracbasestep;
+static int         d_ziextrastep, d_zibasestep;
+static int         d_pzextrastep, d_pzbasestep;
 
 typedef struct {
 	int         quotient;

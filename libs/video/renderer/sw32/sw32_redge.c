@@ -61,23 +61,23 @@ surf_t     *surfaces, *surface_p, *surf_max;
 edge_t     *newedges[MAXHEIGHT];
 edge_t     *removeedges[MAXHEIGHT];
 
-espan_t    *span_p, *max_span_p;
+static espan_t    *span_p, *max_span_p;
 
 int         r_currentkey;
 
 
-int         current_iv;
+static int         current_iv;
 
-int         edge_head_u_shift20, edge_tail_u_shift20;
+static int         edge_head_u_shift20, edge_tail_u_shift20;
 
 static void (*pdrawfunc) (void);
 
-edge_t      edge_head;
-edge_t      edge_tail;
-edge_t      edge_aftertail;
-edge_t      edge_sentinel;
+static edge_t      edge_head;
+static edge_t      edge_tail;
+static edge_t      edge_aftertail;
+static edge_t      edge_sentinel;
 
-float       fv;
+static float       fv;
 
 static void
 R_DrawCulledPolys (void)

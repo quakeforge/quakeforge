@@ -57,8 +57,8 @@ static __attribute__ ((used)) const char rcsid[] =
 //define    PASSAGES
 
 void       *colormap;
-vec3_t      viewlightvec;
-alight_t    r_viewlighting = { 128, 192, viewlightvec };
+static vec3_t      viewlightvec;
+static alight_t    r_viewlighting = { 128, 192, viewlightvec };
 int         r_numallocatededges;
 qboolean    r_drawpolys;
 qboolean    r_drawculledpolys;
@@ -74,15 +74,14 @@ int         numbtofpolys;
 btofpoly_t *pbtofpolys;
 
 int         c_surf;
-int         r_maxsurfsseen, r_maxedgesseen, r_cnumsurfs;
-qboolean    r_surfsonstack;
+int         r_maxsurfsseen, r_maxedgesseen;
+static int  r_cnumsurfs;
+static qboolean    r_surfsonstack;
 int         r_clipflags;
 
 byte       *r_warpbuffer;
 
-byte       *r_stack_start;
-
-qboolean    r_fov_greater_than_90;
+static byte       *r_stack_start;
 
 // screen size info
 float       xcenter, ycenter;
@@ -94,32 +93,23 @@ float       aliasxscale, aliasyscale, aliasxcenter, aliasycenter;
 int         screenwidth;
 
 float       pixelAspect;
-float       screenAspect;
-float       verticalFieldOfView;
-float       xOrigin, yOrigin;
+static float       screenAspect;
+static float       verticalFieldOfView;
+static float       xOrigin, yOrigin;
 
 plane_t     screenedge[4];
 
 // refresh flags
-int         d_spanpixcount;
 int         r_polycount;
 int         r_drawnpolycount;
-int         r_wholepolycount;
 
 int        *pfrustum_indexes[4];
 int         r_frustum_indexes[4 * 6];
-
-int         reinit_surfcache = 1;	// if 1, surface cache is currently empty
-									// and must be reinitialized for current
-									// cache size
 
 float       r_aliastransition, r_resfudge;
 
 float       dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
 float       se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
-
-cvar_t     *r_draworder;
-
 
 void
 R_Textures_Init (void)
@@ -183,17 +173,6 @@ R_Init (void)
 
 	D_Init ();
 }
-
-/*
-void
-R_Init_Cvars (void)
-{
-	D_Init_Cvars ();
-
-//	r_draworder = Cvar_Get ("r_draworder", "0", CVAR_NONE, "Toggles drawing "
-//							"order");
-}
-*/
 
 VISIBLE void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
@@ -364,11 +343,6 @@ R_ViewChanged (float aspect)
 										  r_refdef.horizontalFieldOfView);
 	r_aliastransition = r_aliastransbase->value * res_scale;
 	r_resfudge = r_aliastransadj->value * res_scale;
-
-	if (scr_fov->value <= 90.0)
-		r_fov_greater_than_90 = false;
-	else
-		r_fov_greater_than_90 = true;
 
 	D_ViewChanged ();
 }
@@ -724,7 +698,7 @@ R_EdgeDrawing (void)
 }
 
 // LordHavoc: took out of stack and made 4x size for 32bit capacity
-byte warpbuffer[WARP_WIDTH * WARP_HEIGHT * 4];
+static byte warpbuffer[WARP_WIDTH * WARP_HEIGHT * 4];
 
 /*
 	R_RenderView

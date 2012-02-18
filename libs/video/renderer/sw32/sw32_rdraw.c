@@ -48,11 +48,9 @@ int         c_faceclip;					// number of faces clipped
 
 zpointdesc_t r_zpointdesc;
 
-polydesc_t  r_polydesc;
+static polydesc_t  r_polydesc;
 
-clipplane_t *entity_clipplanes;
 clipplane_t view_clipplanes[4];
-clipplane_t world_clipplanes[16];
 
 medge_t    *r_pedge;
 

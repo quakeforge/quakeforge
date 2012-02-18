@@ -39,18 +39,18 @@ static __attribute__ ((used)) const char rcsid[] =
 
 drawsurf_t  r_drawsurf;
 
-int         lightleft, sourcesstep, blocksize, sourcetstep;
+static int         lightleft, blocksize, sourcetstep;
 int         lightdelta, lightdeltastep;
 int         lightright, lightleftstep, lightrightstep, blockdivshift;
-unsigned int blockdivmask;
+static unsigned int blockdivmask;
 byte       *prowdestbase;
-byte       *psource;
-int         surfrowbytes;				// used by ASM files
+static byte       *psource;
+static int         surfrowbytes;
 int        *r_lightptr;
 int         r_stepback;
 int         r_lightwidth;
-int         r_numhblocks, r_numvblocks;
-byte       *r_source, *r_sourcemax;
+static int         r_numhblocks, r_numvblocks;
+static byte       *r_source, *r_sourcemax;
 
 static void (*surfmiptable8[4]) (void) = {
 	R_DrawSurfaceBlock8_mip0,
@@ -73,7 +73,7 @@ static void (*surfmiptable32[4]) (void) = {
 	R_DrawSurfaceBlock32_mip3
 };
 
-int blocklights[34 * 34];	//FIXME make dynamic
+static int blocklights[34 * 34];	//FIXME make dynamic
 
 
 static void

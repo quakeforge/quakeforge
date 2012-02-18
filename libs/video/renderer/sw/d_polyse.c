@@ -37,6 +37,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "d_local.h"
 #include "r_local.h"
 
+int  ubasestep, errorterm, erroradjustup, erroradjustdown;
+
 // TODO: put in span spilling to shrink list size
 // !!! if this is changed, it must be changed in d_polysa.s too !!!
 #define DPS_MAXSPANS		MAXHEIGHT+1		// +1 for spanpackage marking end
@@ -66,12 +68,11 @@ int         r_p0[6], r_p1[6], r_p2[6];
 
 byte       *d_pcolormap;
 
-int         d_aflatcolor;
 int         d_xdenom;
 
-edgetable  *pedgetable;
+static edgetable  *pedgetable;
 
-edgetable   edgetables[12] = {
+static edgetable   edgetables[12] = {
 	{0, 1, r_p0, r_p2, NULL, 2, r_p0, r_p1, r_p2},
 	{0, 2, r_p1, r_p0, r_p2, 1, r_p1, r_p2, NULL},
 	{1, 1, r_p0, r_p2, NULL, 1, r_p1, r_p2, NULL},

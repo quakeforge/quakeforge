@@ -58,8 +58,8 @@ typedef struct {
 
 static rectdesc_t r_rectdesc;
 
-qpic_t     *draw_disc;
-qpic_t     *draw_backtile;
+static qpic_t     *draw_disc;
+static qpic_t     *draw_backtile;
 
 
 /* Support Routines */
@@ -70,8 +70,8 @@ typedef struct cachepic_s {
 } cachepic_t;
 
 #define	MAX_CACHED_PICS		128
-cachepic_t  cachepics[MAX_CACHED_PICS];
-int         numcachepics;
+static cachepic_t  cachepics[MAX_CACHED_PICS];
+static int         numcachepics;
 
 #define CLIP(x,y,w,h,mw,mh)		\
 	do {						\

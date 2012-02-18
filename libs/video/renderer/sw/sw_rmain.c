@@ -62,8 +62,8 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 void       *colormap;
-vec3_t      viewlightvec;
-alight_t    r_viewlighting = { 128, 192, viewlightvec };
+static vec3_t      viewlightvec;
+static alight_t    r_viewlighting = { 128, 192, viewlightvec };
 int         r_numallocatededges;
 qboolean    r_drawpolys;
 qboolean    r_drawculledpolys;
@@ -80,15 +80,14 @@ int         numbtofpolys;
 btofpoly_t *pbtofpolys;
 
 int         c_surf;
-int         r_maxsurfsseen, r_maxedgesseen, r_cnumsurfs;
-qboolean    r_surfsonstack;
+int         r_maxsurfsseen, r_maxedgesseen;
+static int  r_cnumsurfs;
+static qboolean    r_surfsonstack;
 int         r_clipflags;
 
 byte       *r_warpbuffer;
 
-byte       *r_stack_start;
-
-qboolean    r_fov_greater_than_90;
+static byte       *r_stack_start;
 
 // screen size info
 float       xcenter, ycenter;
@@ -100,24 +99,18 @@ float       aliasxscale, aliasyscale, aliasxcenter, aliasycenter;
 int         screenwidth;
 
 float       pixelAspect;
-float       screenAspect;
-float       verticalFieldOfView;
-float       xOrigin, yOrigin;
+static float       screenAspect;
+static float       verticalFieldOfView;
+static float       xOrigin, yOrigin;
 
 plane_t     screenedge[4];
 
 // refresh flags
-int         d_spanpixcount;
 int         r_polycount;
 int         r_drawnpolycount;
-int         r_wholepolycount;
 
 int        *pfrustum_indexes[4];
 int         r_frustum_indexes[4 * 6];
-
-int         reinit_surfcache = 1;	// if 1, surface cache is currently empty
-									// and must be reinitialized for current
-									// cache size
 
 float       r_aliastransition, r_resfudge;
 
@@ -336,11 +329,6 @@ R_ViewChanged (float aspect)
 										  r_refdef.horizontalFieldOfView);
 	r_aliastransition = r_aliastransbase->value * res_scale;
 	r_resfudge = r_aliastransadj->value * res_scale;
-
-	if (scr_fov->value <= 90.0)
-		r_fov_greater_than_90 = false;
-	else
-		r_fov_greater_than_90 = true;
 
 // TODO: collect 386-specific code in one place
 #ifdef USE_INTEL_ASM

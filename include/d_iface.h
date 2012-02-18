@@ -151,7 +151,6 @@ typedef struct
 } zpointdesc_t;
 
 extern struct cvar_s	*r_drawflat;
-extern int		d_spanpixcount;
 extern int		r_framecount;		// sequence # of current frame since Quake
 									//  started
 extern qboolean	r_drawpolys;		// 1 if driver wants clipped polygons
@@ -168,15 +167,12 @@ extern qboolean	r_recursiveaffinetriangles;	// true if a driver wants to use
 											//  a certain distance (normally 
 											//  used only by the software
 											//  driver)
-extern float	r_aliasuvscale;		// scale-up factor for screen u and v
-									//  on Alias vertices passed to driver
 extern int		r_pixbytes;
 extern qboolean	r_dowarp;
 
 extern affinetridesc_t	r_affinetridesc;
 extern spritedesc_t		r_spritedesc;
 extern zpointdesc_t		r_zpointdesc;
-extern polydesc_t		r_polydesc;
 
 extern int		d_con_indirect;	// if 0, Quake will draw console directly
 								//  to vid.buffer; if 1, Quake will
@@ -216,7 +212,6 @@ void D_UpdateRects (vrect_t *prect);
 void D_PolysetUpdateTables (void);
 
 // these are currently for internal use only, and should not be used by drivers
-extern int				r_skydirect;
 extern byte				*r_skysource;
 
 // transparency types for D_DrawRect ()
@@ -267,10 +262,9 @@ void R_GenTile (msurface_t *psurf, void *pdest);
 
 extern float	d_zitable[65536];
 
-extern float	skyspeed, skyspeed2;
+extern float	skyspeed;
 extern float	skytime;
 
-extern int		d_aflatcolor;
 extern int		c_surf;
 extern vrect_t	scr_vrect;
 

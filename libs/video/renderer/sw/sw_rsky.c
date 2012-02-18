@@ -36,17 +36,16 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_local.h"
 
 
-int         iskyspeed = 8;
-int         iskyspeed2 = 2;
-float       skyspeed, skyspeed2;
+static int         iskyspeed = 8;
+static int         iskyspeed2 = 2;
+float       skyspeed;
+static float skyspeed2;
 
 float       skytime;
 
 byte       *r_skysource;
 
 int         r_skymade;
-int         r_skydirect;				// not used?
-
 
 // TODO: clean up these routines
 

@@ -59,7 +59,6 @@ extern struct cvar_s     *r_dlight_lightmap;
 extern struct cvar_s     *r_drawentities;
 extern struct cvar_s     *r_drawexplosions;
 extern struct cvar_s     *r_drawflat;
-extern struct cvar_s     *r_draworder;
 extern struct cvar_s     *r_drawviewmodel;
 extern struct cvar_s     *r_dspeeds;
 extern struct cvar_s     *r_dynamic;

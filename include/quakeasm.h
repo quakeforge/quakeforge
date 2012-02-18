@@ -85,7 +85,6 @@
 	.extern C(sourcesstep)
 	.extern C(lightleft)
 	.extern C(blockdivshift)
-	.extern C(blockdivmask)
 	.extern C(lightleftstep)
 	.extern C(r_origin)
 	.extern C(r_ppn)

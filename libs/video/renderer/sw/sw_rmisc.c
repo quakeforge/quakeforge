@@ -332,10 +332,8 @@ R_SetupFrame (void)
 
 	// clear frame counts
 	c_faceclip = 0;
-	d_spanpixcount = 0;
 	r_polycount = 0;
 	r_drawnpolycount = 0;
-	r_wholepolycount = 0;
 	r_amodels_drawn = 0;
 	r_outofsurfaces = 0;
 	r_outofedges = 0;

@@ -39,11 +39,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "d_local.h"
 #include "r_local.h"
 
-byte       *r_turb_pbase;
-void       *r_turb_pdest;
-fixed16_t   r_turb_s, r_turb_t, r_turb_sstep, r_turb_tstep;
-int        *r_turb_turb;
-int         r_turb_spancount;
+static byte       *r_turb_pbase;
+static void       *r_turb_pdest;
+static fixed16_t   r_turb_s, r_turb_t, r_turb_sstep, r_turb_tstep;
+static int        *r_turb_turb;
+static int         r_turb_spancount;
 
 /*
 	D_WarpScreen

@@ -54,12 +54,9 @@ void        (*d_drawspans) (espan_t *pspan);
 void
 D_Init (void)
 {
-	r_skydirect = 1;
-
 	r_drawpolys = false;
 	r_worldpolysbacktofront = false;
 	r_recursiveaffinetriangles = true;
-	r_aliasuvscale = 1.0;
 
 	vid.surf_cache_size = D_SurfaceCacheForRes;
 	vid.flush_caches = D_FlushCaches;
@@ -110,8 +107,6 @@ D_SetupFrame (void)
 		d_scalemip[i] = basemip[i] * d_mipscale->value;
 
 	d_drawspans = D_DrawSpans8;
-
-	d_aflatcolor = 0;
 }
 
 void

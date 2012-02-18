@@ -54,11 +54,8 @@ float        d_zitable[65536];
 void
 D_Init (void)
 {
-	r_skydirect = 1;
-
 	r_drawpolys = false;
 	r_worldpolysbacktofront = false;
-	r_aliasuvscale = 1.0;
 
 	// LordHavoc: compute 1/zi table for use in rendering code everywhere
 	if (!d_zitable[1]) {
@@ -115,8 +112,6 @@ D_SetupFrame (void)
 
 	for (i = 0; i < (NUM_MIPS - 1); i++)
 		d_scalemip[i] = basemip[i] * d_mipscale->value;
-
-	d_aflatcolor = 0;
 }
 
 void

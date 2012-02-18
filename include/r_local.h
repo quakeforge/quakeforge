@@ -78,7 +78,6 @@ typedef struct {
 
 //===========================================================================
 
-extern struct cvar_s	*r_draworder;
 extern struct cvar_s	*r_speeds;
 extern struct cvar_s	*r_timegraph;
 extern struct cvar_s	*r_graphheight;
@@ -135,10 +134,6 @@ extern	vec3_t	r_origin;
 
 extern	vec3_t	r_entorigin;
 
-extern	float	screenAspect;
-extern	float	verticalFieldOfView;
-extern	float	xOrigin, yOrigin;
-
 extern	int		r_visframecount;
 
 //=============================================================================
@@ -150,7 +145,6 @@ void R_ClearPolyList (void);
 void R_DrawPolyList (void);
 
 //  Surface cache related ==========
-extern	int		reinit_surfcache;	// if 1, surface cache is currently empty
 extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
 extern qboolean	r_inhibit_viewmodel;
 extern qboolean	r_force_fullscreen;
@@ -210,7 +204,6 @@ extern void R_RotateBmodel (void);
 
 extern int	c_faceclip;
 extern int	r_polycount;
-extern int	r_wholepolycount;
 
 extern model_t     *cl_worldmodel;
 
@@ -218,9 +211,6 @@ extern int		*pfrustum_indexes[4];
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 #define	NEAR_CLIP	0.01
-
-extern int			ubasestep, errorterm, erroradjustup, erroradjustdown;
-extern int			vstartscan;
 
 extern fixed16_t	sadjust, tadjust;
 extern fixed16_t	bbextents, bbextentt;
@@ -230,9 +220,6 @@ extern fixed16_t	bbextents, bbextentt;
 extern mvertex_t	*r_ptverts, *r_ptvertsmax;
 
 extern vec3_t			sbaseaxis[3], tbaseaxis[3];
-extern float			entity_rotation[3][3];
-
-extern int		reinit_surfcache;
 
 extern int		r_currentkey;
 extern int		r_currentbkey;
@@ -256,10 +243,7 @@ void	R_ZDrawSubmodelPolys (model_t *clmodel);
 
 extern int				numverts;
 extern int				a_skinwidth;
-extern mtriangle_t		*ptriangles;
 extern int				numtriangles;
-extern aliashdr_t		*paliashdr;
-extern mdl_t			*pmdl;
 extern float			leftclip, topclip, rightclip, bottomclip;
 extern int				r_acliptype;
 extern finalvert_t		*pfinalverts;
@@ -296,10 +280,6 @@ extern	edge_t	*removeedges[MAXHEIGHT];
 
 extern	int	screenwidth;
 
-// FIXME: make stack vars when debugging done
-extern	edge_t	edge_head;
-extern	edge_t	edge_tail;
-extern	edge_t	edge_aftertail;
 extern int		r_bmodelactive;
 extern vrect_t	*pconupdate;
 
@@ -318,15 +298,13 @@ extern float	r_time1;
 extern float	dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
 extern float	se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 extern int		r_frustum_indexes[4*6];
-extern int		r_maxsurfsseen, r_maxedgesseen, r_cnumsurfs;
-extern qboolean	r_surfsonstack;
+extern int		r_maxsurfsseen, r_maxedgesseen;
 extern qboolean	r_dowarpold, r_viewchanged;
 
 extern mleaf_t	*r_viewleaf;
 
 extern int		r_clipflags;
 extern int		r_dlightframecount;
-extern qboolean	r_fov_greater_than_90;
 
 extern struct entity_s *r_ent_queue;
 struct dlight_s;

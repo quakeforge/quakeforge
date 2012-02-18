@@ -45,7 +45,6 @@ static __attribute__ ((used)) const char rcsid[] =
 										// avoid the need for inner-loop light
 										// clamping
 
-mtriangle_t *ptriangles;
 affinetridesc_t r_affinetridesc;
 
 void       *acolormap;					// FIXME: should go away
@@ -53,11 +52,11 @@ void       *acolormap;					// FIXME: should go away
 trivertx_t *r_apverts;
 
 // TODO: these probably will go away with optimized rasterization
-mdl_t      *pmdl;
+static mdl_t      *pmdl;
 vec3_t      r_plightvec;
 int         r_ambientlight;
 float       r_shadelight;
-aliashdr_t *paliashdr;
+static aliashdr_t *paliashdr;
 finalvert_t *pfinalverts;
 auxvert_t  *pauxverts;
 static float ziscale;
@@ -69,9 +68,9 @@ static maliasskindesc_t *pskindesc;
 
 int         r_amodels_drawn;
 int         a_skinwidth;
-int         r_anumverts;
+static int         r_anumverts;
 
-float       aliastransform[3][4];
+static float       aliastransform[3][4];
 
 typedef struct {
 	int         index0;

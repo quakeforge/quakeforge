@@ -41,7 +41,7 @@ static __attribute__ ((used)) const char rcsid[] =
 // current entity info
 qboolean    insubmodel;
 vec3_t      r_worldmodelorg;
-float       entity_rotation[3][3];
+static float       entity_rotation[3][3];
 
 int         r_currentbkey;
 
