@@ -43,7 +43,7 @@ static int  miplevel;
 
 float       scale_for_mip;
 
-vec3_t      transformed_modelorg;
+static vec3_t transformed_modelorg;
 
 
 void

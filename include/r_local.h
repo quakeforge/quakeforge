@@ -211,7 +211,6 @@ typedef struct btofpoly_s {
 #define MAX_BTOFPOLYS	5000	// FIXME: tune this
 
 extern int			numbtofpolys;
-extern btofpoly_t	*pbtofpolys;
 
 void	R_InitTurb (void);
 void	R_ZDrawSubmodelPolys (model_t *clmodel);
@@ -221,7 +220,6 @@ void	R_ZDrawSubmodelPolys (model_t *clmodel);
 #define ALIAS_Z_CLIP_PLANE	5
 
 extern int				numverts;
-extern int				a_skinwidth;
 extern int				numtriangles;
 extern float			leftclip, topclip, rightclip, bottomclip;
 extern int				r_acliptype;
@@ -272,8 +270,6 @@ extern int			r_maxvalidedgeoffset;
 void R_AliasClipTriangle (mtriangle_t *ptri);
 
 extern float	r_time1;
-extern float	dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
-extern float	se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 extern int		r_frustum_indexes[4*6];
 extern int		r_maxsurfsseen, r_maxedgesseen;
 extern qboolean	r_dowarpold, r_viewchanged;
@@ -294,7 +290,6 @@ void R_TimeGraph (void);
 void R_ZGraph (void);
 void R_PrintAliasStats (void);
 void R_PrintTimes (void);
-void R_PrintDSpeeds (void);
 void R_AnimateLight (void);
 int R_LightPoint (const vec3_t p);
 void R_SetupFrame (void);
@@ -332,23 +327,6 @@ void R_GenerateSpans (void);
 void R_InitVars (void);
 
 void R_LoadSky_f (void);
-
-void R_DrawSurfaceBlock_mip0 (void);
-void R_DrawSurfaceBlock_mip1 (void);
-void R_DrawSurfaceBlock_mip2 (void);
-void R_DrawSurfaceBlock_mip3 (void);
-void R_DrawSurfaceBlock8_mip0 (void);
-void R_DrawSurfaceBlock8_mip1 (void);
-void R_DrawSurfaceBlock8_mip2 (void);
-void R_DrawSurfaceBlock8_mip3 (void);
-void R_DrawSurfaceBlock16_mip0 (void);
-void R_DrawSurfaceBlock16_mip1 (void);
-void R_DrawSurfaceBlock16_mip2 (void);
-void R_DrawSurfaceBlock16_mip3 (void);
-void R_DrawSurfaceBlock32_mip0 (void);
-void R_DrawSurfaceBlock32_mip1 (void);
-void R_DrawSurfaceBlock32_mip2 (void);
-void R_DrawSurfaceBlock32_mip3 (void);
 
 extern byte crosshair_data[];
 #define CROSSHAIR_WIDTH 8

@@ -40,17 +40,29 @@ static __attribute__ ((used)) const char rcsid[] =
 drawsurf_t  r_drawsurf;
 
 static int         lightleft, blocksize, sourcetstep;
-int         lightdelta, lightdeltastep;
-int         lightright, lightleftstep, lightrightstep, blockdivshift;
+static int         lightright, lightleftstep, lightrightstep, blockdivshift;
 static unsigned int blockdivmask;
-byte       *prowdestbase;
+static byte       *prowdestbase;
 static byte       *psource;
 static int         surfrowbytes;
-int        *r_lightptr;
-int         r_stepback;
-int         r_lightwidth;
+static int        *r_lightptr;
+static int         r_stepback;
+static int         r_lightwidth;
 static int         r_numhblocks, r_numvblocks;
 static byte       *r_source, *r_sourcemax;
+
+static void R_DrawSurfaceBlock8_mip0 (void);
+static void R_DrawSurfaceBlock8_mip1 (void);
+static void R_DrawSurfaceBlock8_mip2 (void);
+static void R_DrawSurfaceBlock8_mip3 (void);
+static void R_DrawSurfaceBlock16_mip0 (void);
+static void R_DrawSurfaceBlock16_mip1 (void);
+static void R_DrawSurfaceBlock16_mip2 (void);
+static void R_DrawSurfaceBlock16_mip3 (void);
+static void R_DrawSurfaceBlock32_mip0 (void);
+static void R_DrawSurfaceBlock32_mip1 (void);
+static void R_DrawSurfaceBlock32_mip2 (void);
+static void R_DrawSurfaceBlock32_mip3 (void);
 
 static void (*surfmiptable8[4]) (void) = {
 	R_DrawSurfaceBlock8_mip0,
@@ -291,7 +303,7 @@ R_DrawSurface (void)
 
 //=============================================================================
 
-void
+static void
 R_DrawSurfaceBlock8_mip0 (void)
 {
 	int         v, i, b, lightstep, light;
@@ -330,7 +342,7 @@ R_DrawSurfaceBlock8_mip0 (void)
 	}
 }
 
-void
+static void
 R_DrawSurfaceBlock8_mip1 (void)
 {
 	int         v, i, b, lightstep, light;
@@ -369,7 +381,7 @@ R_DrawSurfaceBlock8_mip1 (void)
 	}
 }
 
-void
+static void
 R_DrawSurfaceBlock8_mip2 (void)
 {
 	int         v, i, b, lightstep, light;
@@ -408,7 +420,7 @@ R_DrawSurfaceBlock8_mip2 (void)
 	}
 }
 
-void
+static void
 R_DrawSurfaceBlock8_mip3 (void)
 {
 	int         v, i, b, lightstep, light;
@@ -447,7 +459,7 @@ R_DrawSurfaceBlock8_mip3 (void)
 	}
 }
 
-void
+static void
 R_DrawSurfaceBlock16_mip0 (void)
 {
 	int         k, v;
@@ -512,7 +524,7 @@ R_DrawSurfaceBlock16_mip0 (void)
 	}
 }
 
-void
+static void
 R_DrawSurfaceBlock16_mip1 (void)
 {
 	int         k, v;
@@ -561,7 +573,7 @@ R_DrawSurfaceBlock16_mip1 (void)
 	}
 }
 
-void
+static void
 R_DrawSurfaceBlock16_mip2 (void)
 {
 	int         k, v;
@@ -602,7 +614,7 @@ R_DrawSurfaceBlock16_mip2 (void)
 	}
 }
 
-void
+static void
 R_DrawSurfaceBlock16_mip3 (void)
 {
 	int v;
@@ -637,7 +649,7 @@ R_DrawSurfaceBlock16_mip3 (void)
 	}
 }
 
-void
+static void
 R_DrawSurfaceBlock32_mip0 (void)
 {
 	int         k, v;
@@ -702,7 +714,7 @@ R_DrawSurfaceBlock32_mip0 (void)
 	}
 }
 
-void
+static void
 R_DrawSurfaceBlock32_mip1 (void)
 {
 	int         k, v;
@@ -751,7 +763,7 @@ R_DrawSurfaceBlock32_mip1 (void)
 	}
 }
 
-void
+static void
 R_DrawSurfaceBlock32_mip2 (void)
 {
 	int         k, v;
@@ -792,7 +804,7 @@ R_DrawSurfaceBlock32_mip2 (void)
 	}
 }
 
-void
+static void
 R_DrawSurfaceBlock32_mip3 (void)
 {
 	int v;
@@ -868,8 +880,3 @@ R_DrawSurfaceBlock32 (void)
 	}
 }
 */
-
-void
-R_SurfacePatch (void)
-{
-}

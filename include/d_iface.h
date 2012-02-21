@@ -244,8 +244,8 @@ void R_GenTile (msurface_t *psurf, void *pdest);
 
 extern float	d_zitable[65536];
 
-extern float	skyspeed;
-extern float	skytime;
+extern float	r_skyspeed;
+extern float	r_skytime;
 
 extern int		c_surf;
 extern vrect_t	scr_vrect;

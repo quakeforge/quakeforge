@@ -47,10 +47,9 @@ static __attribute__ ((used)) const char rcsid[] =
 
 static int         iskyspeed = 8;
 static int         iskyspeed2 = 2;
-float       skyspeed;
-static float skyspeed2;
+float       r_skyspeed;
 
-float       skytime;
+float       r_skytime;
 
 byte       *r_skysource;
 
@@ -118,8 +117,8 @@ R_MakeSky (void)
 	byte *base1, *base2;
 	static int  xlast = -1, ylast = -1;
 
-	xshift2 = skytime * skyspeed * 2.0f;
-	yshift2 = skytime * skyspeed * 2.0f;
+	xshift2 = r_skytime * r_skyspeed * 2.0f;
+	yshift2 = r_skytime * r_skyspeed * 2.0f;
 
 	if ((xshift2 == xlast) && (yshift2 == ylast))
 		return;
@@ -201,15 +200,14 @@ R_SetSkyFrame (void)
 	int         g, s1, s2;
 	float       temp;
 
-	skyspeed = iskyspeed;
-	skyspeed2 = iskyspeed2;
+	r_skyspeed = iskyspeed;
 
 	g = GreatestCommonDivisor (iskyspeed, iskyspeed2);
 	s1 = iskyspeed / g;
 	s2 = iskyspeed2 / g;
 	temp = SKYSIZE * s1 * s2;
 
-	skytime = vr_data.realtime - ((int) (vr_data.realtime / temp) * temp);
+	r_skytime = vr_data.realtime - ((int) (vr_data.realtime / temp) * temp);
 
 	r_skymade = 0;
 }

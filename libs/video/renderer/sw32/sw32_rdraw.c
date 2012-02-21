@@ -42,7 +42,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #define FULLY_CLIPPED_CACHED	0x80000000
 #define FRAMECOUNT_MASK			0x7FFFFFFF
 
-unsigned int cacheoffset;
+static unsigned int cacheoffset;
 
 int         c_faceclip;					// number of faces clipped
 

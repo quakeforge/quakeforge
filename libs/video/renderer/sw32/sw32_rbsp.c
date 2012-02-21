@@ -54,6 +54,9 @@ static mvertex_t *pbverts;
 static bedge_t *pbedges;
 static int  numbverts, numbedges;
 
+int         numbtofpolys;
+static btofpoly_t *pbtofpolys;
+
 static mvertex_t *pfrontenter, *pfrontexit;
 
 static qboolean makeclippededge;

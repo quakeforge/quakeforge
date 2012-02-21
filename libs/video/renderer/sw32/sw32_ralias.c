@@ -67,7 +67,7 @@ static vec3_t alias_forward, alias_right, alias_up;
 static maliasskindesc_t *pskindesc;
 
 int         r_amodels_drawn;
-int         a_skinwidth;
+static int         a_skinwidth;
 static int         r_anumverts;
 
 static float       aliastransform[3][4];

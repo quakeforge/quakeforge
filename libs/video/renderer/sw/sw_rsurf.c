@@ -57,6 +57,11 @@ int         r_numvblocks;
 static unsigned char *r_source;
 unsigned char *r_sourcemax;
 
+void R_DrawSurfaceBlock_mip0 (void);
+void R_DrawSurfaceBlock_mip1 (void);
+void R_DrawSurfaceBlock_mip2 (void);
+void R_DrawSurfaceBlock_mip3 (void);
+
 static void (*surfmiptable[4]) (void) = {
 	R_DrawSurfaceBlock_mip0, R_DrawSurfaceBlock_mip1,
 	R_DrawSurfaceBlock_mip2, R_DrawSurfaceBlock_mip3};

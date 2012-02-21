@@ -113,28 +113,6 @@ R_PrintTimes (void)
 }
 
 void
-R_PrintDSpeeds (void)
-{
-	float       ms, dp_time, r_time2, rw_time, db_time, se_time, de_time,
-
-		dv_time;
-
-	r_time2 = Sys_DoubleTime ();
-
-	dp_time = (dp_time2 - dp_time1) * 1000;
-	rw_time = (rw_time2 - rw_time1) * 1000;
-	db_time = (db_time2 - db_time1) * 1000;
-	se_time = (se_time2 - se_time1) * 1000;
-	de_time = (de_time2 - de_time1) * 1000;
-	dv_time = (dv_time2 - dv_time1) * 1000;
-	ms = (r_time2 - r_time1) * 1000;
-
-	Sys_Printf ("%3i %4.1fp %3iw %4.1fb %3is %4.1fe %4.1fv\n",
-				(int) ms, dp_time, (int) rw_time, db_time, (int) se_time,
-				de_time, dv_time);
-}
-
-void
 R_PrintAliasStats (void)
 {
 	Sys_Printf ("%3i polygon model drawn\n", r_amodels_drawn);
