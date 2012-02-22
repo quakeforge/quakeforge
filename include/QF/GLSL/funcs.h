@@ -44,8 +44,6 @@
 #undef QFGL_NEED
 #undef QFGL_WANT
 
-extern void *libgl_handle;
-
 qboolean EGLF_Init (void);
 qboolean EGLF_FindFunctions (void);
 void *QFEGL_ProcAddress (void *handle, const char *name, qboolean);

@@ -99,7 +99,7 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT
-void		*libgl_handle;
+static void		*libgl_handle;
 
 // Then we need to open the libGL and set all the symbols.
 qboolean
