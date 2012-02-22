@@ -38,6 +38,7 @@ void Fog_StartAdditive (void);
 void Fog_StopAdditive (void);
 void Fog_Init (void);
 
+void sw_R_Init (void);
 void R_Init_Cvars (void);
 void R_InitEfrags (void);
 void R_ClearState (void);

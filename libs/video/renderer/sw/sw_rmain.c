@@ -114,7 +114,7 @@ static float dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
 static float se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 
 void
-R_Init (void)
+sw_R_Init (void)
 {
 	int         dummy;
 
