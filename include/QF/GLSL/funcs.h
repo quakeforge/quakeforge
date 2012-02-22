@@ -38,19 +38,19 @@
 # include <windows.h>
 #endif
 
-#define QFGL_WANT(ret, name, args)	extern ret (GLAPIENTRY * qf##name) args;
-#define QFGL_NEED(ret, name, args)	extern ret (GLAPIENTRY * qf##name) args;
+#define QFGL_WANT(ret, name, args)	extern ret (GLAPIENTRY * qfe##name) args;
+#define QFGL_NEED(ret, name, args)	extern ret (GLAPIENTRY * qfe##name) args;
 #include "QF/GLSL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT
 
 extern void *libgl_handle;
 
-qboolean GLF_Init (void);
-qboolean GLF_FindFunctions (void);
-void *QFGL_ProcAddress (void *handle, const char *name, qboolean);
+qboolean EGLF_Init (void);
+qboolean EGLF_FindFunctions (void);
+void *QFEGL_ProcAddress (void *handle, const char *name, qboolean);
 
-void *QFGL_LoadLibrary (void); 
-void *QFGL_GetProcAddress (void *handle, const char *name);
+void *QFEGL_LoadLibrary (void);
+void *QFEGL_GetProcAddress (void *handle, const char *name);
 
 #endif // __QF_GLSL_funcs_h_

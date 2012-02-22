@@ -74,15 +74,15 @@ GLSL_LoadQuakeTexture (const char *identifier, int width, int height,
 {
 	GLuint      tnum;
 
-	qfglGenTextures (1, &tnum);
-	qfglBindTexture (GL_TEXTURE_2D, tnum);
-	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE,
+	qfeglGenTextures (1, &tnum);
+	qfeglBindTexture (GL_TEXTURE_2D, tnum);
+	qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE,
 					width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	qfglGenerateMipmap (GL_TEXTURE_2D);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	qfeglGenerateMipmap (GL_TEXTURE_2D);
 
 	return tnum;
 }
@@ -140,13 +140,13 @@ GLSL_LoadQuakeMipTex (const texture_t *tex)
 	for (swidth = 1; swidth < tex->width; swidth <<= 1);
 	for (sheight = 1; sheight < tex->height; sheight <<= 1);
 
-	qfglGenTextures (1, &tnum);
-	qfglBindTexture (GL_TEXTURE_2D, tnum);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+	qfeglGenTextures (1, &tnum);
+	qfeglBindTexture (GL_TEXTURE_2D, tnum);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
 					   GL_NEAREST_MIPMAP_NEAREST);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	if (swidth != tex->width || sheight != tex->height)
 		buffer = malloc (swidth * sheight);
@@ -174,7 +174,7 @@ GLSL_LoadQuakeMipTex (const texture_t *tex)
 		} else {
 			scaled = data + tex->offsets[lod];
 		}
-		qfglTexImage2D (GL_TEXTURE_2D, lod, GL_LUMINANCE, swidth, sheight,
+		qfeglTexImage2D (GL_TEXTURE_2D, lod, GL_LUMINANCE, swidth, sheight,
 						0, GL_LUMINANCE, GL_UNSIGNED_BYTE, scaled);
 	}
 	if (swidth > 1 || sheight > 1) {
@@ -188,7 +188,7 @@ GLSL_LoadQuakeMipTex (const texture_t *tex)
 			sheight >>= 1;
 			swidth = max (swidth, 1);
 			sheight = max (sheight, 1);
-			qfglTexImage2D (GL_TEXTURE_2D, lod, GL_LUMINANCE, swidth, sheight,
+			qfeglTexImage2D (GL_TEXTURE_2D, lod, GL_LUMINANCE, swidth, sheight,
 							0, GL_LUMINANCE, GL_UNSIGNED_BYTE, mip);
 			scaled = mip;
 			mip += swidth * sheight;
@@ -206,15 +206,15 @@ GLSL_LoadRGBTexture (const char *identifier, int width, int height, byte *data)
 {
 	GLuint      tnum;
 
-	qfglGenTextures (1, &tnum);
-	qfglBindTexture (GL_TEXTURE_2D, tnum);
-	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_RGB,
+	qfeglGenTextures (1, &tnum);
+	qfeglBindTexture (GL_TEXTURE_2D, tnum);
+	qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_RGB,
 					width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	qfglGenerateMipmap (GL_TEXTURE_2D);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	qfeglGenerateMipmap (GL_TEXTURE_2D);
 
 	return tnum;
 }
@@ -223,7 +223,7 @@ void
 GLSL_ReleaseTexture (int tex)
 {
 	GLuint      tnum = tex;
-	qfglDeleteTextures (1, &tnum);
+	qfeglDeleteTextures (1, &tnum);
 }
 
 static void
@@ -254,7 +254,7 @@ glsl_scraps_f (void)
 void
 GLSL_TextureInit (void)
 {
-	qfglGetIntegerv (GL_MAX_TEXTURE_SIZE, &max_tex_size);
+	qfeglGetIntegerv (GL_MAX_TEXTURE_SIZE, &max_tex_size);
 	Sys_MaskPrintf (SYS_GLSL, "max texture size: %d\n", max_tex_size);
 
 	Cmd_AddCommand ("glsl_scraps", glsl_scraps_f, "Dump GLSL scrap stats");
@@ -291,7 +291,7 @@ GLSL_CreateScrap (int size, int format)
 			Sys_Error ("GL_CreateScrap: Invalid texture format");
 	}
 	scrap = malloc (sizeof (scrap_t));
-	qfglGenTextures (1, &scrap->tnum);
+	qfeglGenTextures (1, &scrap->tnum);
 	scrap->size = size;
 	scrap->format = format;
 	scrap->bpp = bpp;
@@ -303,15 +303,15 @@ GLSL_CreateScrap (int size, int format)
 
 	data = calloc (1, size * size * bpp);
 
-	qfglBindTexture (GL_TEXTURE_2D, scrap->tnum);
-	qfglTexImage2D (GL_TEXTURE_2D, 0, format,
+	qfeglBindTexture (GL_TEXTURE_2D, scrap->tnum);
+	qfeglTexImage2D (GL_TEXTURE_2D, 0, format,
 					size, size, 0, format, GL_UNSIGNED_BYTE, data);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	//FIXME parameterize (linear for lightmaps)
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	qfglGenerateMipmap (GL_TEXTURE_2D);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	qfeglGenerateMipmap (GL_TEXTURE_2D);
 	free (data);
 
 	return scrap;
@@ -469,8 +469,8 @@ GLSL_SubpicUpdate (subpic_t *subpic, byte *data)
 	scrap_t    *scrap = (scrap_t *) subpic->scrap;
 	vrect_t    *rect = (vrect_t *) subpic->rect;
 
-	qfglBindTexture (GL_TEXTURE_2D, scrap->tnum);
-	qfglTexSubImage2D (GL_TEXTURE_2D, 0, rect->x, rect->y,
+	qfeglBindTexture (GL_TEXTURE_2D, scrap->tnum);
+	qfeglTexSubImage2D (GL_TEXTURE_2D, 0, rect->x, rect->y,
 					   subpic->width, subpic->height, scrap->format,
 					   GL_UNSIGNED_BYTE, data);
 }

@@ -247,29 +247,29 @@ draw_pic (float x, float y, int w, int h, qpic_t *pic,
 	make_quad (pic, x, y, w, h, srcx, srcy, srcw, srch, verts);
 	gl = (glpic_t *) pic->data;
 
-	qfglUseProgram (quake_icon.program);
-	qfglEnableVertexAttribArray (quake_icon.vertex.location);
+	qfeglUseProgram (quake_icon.program);
+	qfeglEnableVertexAttribArray (quake_icon.vertex.location);
 
-	qfglUniformMatrix4fv (quake_icon.matrix.location, 1, false, proj_matrix);
+	qfeglUniformMatrix4fv (quake_icon.matrix.location, 1, false, proj_matrix);
 
-	qfglUniform1i (quake_icon.icon.location, 0);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
+	qfeglUniform1i (quake_icon.icon.location, 0);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, gl->texnum);
 
-	qfglUniform1i (quake_icon.palette.location, 1);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+	qfeglUniform1i (quake_icon.palette.location, 1);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-	qfglVertexAttrib4fv (quake_icon.color.location, color);
+	qfeglVertexAttrib4fv (quake_icon.color.location, color);
 
-	qfglVertexAttribPointer (quake_icon.vertex.location, 4, GL_FLOAT,
+	qfeglVertexAttribPointer (quake_icon.vertex.location, 4, GL_FLOAT,
 							 0, 0, verts);
 
-	qfglDrawArrays (GL_TRIANGLES, 0, 6);
+	qfeglDrawArrays (GL_TRIANGLES, 0, 6);
 
-	qfglDisableVertexAttribArray (quake_icon.vertex.location);
+	qfeglDisableVertexAttribArray (quake_icon.vertex.location);
 }
 
 qpic_t *
@@ -443,9 +443,9 @@ glsl_Draw_Init (void)
 
 	backtile_pic = glsl_Draw_PicFromWad ("backtile");
 	gl = (glpic_t *) backtile_pic->data;
-	qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	qfeglBindTexture (GL_TEXTURE_2D, gl->texnum);
+	qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
 static inline void
@@ -471,33 +471,33 @@ queue_character (int x, int y, byte chr)
 static void
 flush_text (void)
 {
-	qfglUseProgram (quake_text.program);
-	qfglEnableVertexAttribArray (quake_text.vertex.location);
-	qfglEnableVertexAttribArray (quake_text.dchar.location);
+	qfeglUseProgram (quake_text.program);
+	qfeglEnableVertexAttribArray (quake_text.vertex.location);
+	qfeglEnableVertexAttribArray (quake_text.dchar.location);
 
-	qfglUniformMatrix4fv (quake_text.matrix.location, 1, false, proj_matrix);
+	qfeglUniformMatrix4fv (quake_text.matrix.location, 1, false, proj_matrix);
 
-	qfglUniform1i (quake_text.charmap.location, 0);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, char_texture);
+	qfeglUniform1i (quake_text.charmap.location, 0);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, char_texture);
 
-	qfglUniform1i (quake_text.palette.location, 1);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+	qfeglUniform1i (quake_text.palette.location, 1);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-	qfglVertexAttrib4f (quake_text.color.location, 1, 1, 1, 1);
+	qfeglVertexAttrib4f (quake_text.color.location, 1, 1, 1, 1);
 
-	qfglVertexAttribPointer (quake_text.vertex.location, 4, GL_UNSIGNED_SHORT,
+	qfeglVertexAttribPointer (quake_text.vertex.location, 4, GL_UNSIGNED_SHORT,
 							 0, 10, char_queue->str);
-	qfglVertexAttribPointer (quake_text.dchar.location, 1, GL_UNSIGNED_SHORT,
+	qfeglVertexAttribPointer (quake_text.dchar.location, 1, GL_UNSIGNED_SHORT,
 							 0, 10, char_queue->str + 8);
 
-	qfglDrawArrays (GL_TRIANGLES, 0, char_queue->size / 10);
+	qfeglDrawArrays (GL_TRIANGLES, 0, char_queue->size / 10);
 
-	qfglDisableVertexAttribArray (quake_text.dchar.location);
-	qfglDisableVertexAttribArray (quake_text.vertex.location);
+	qfeglDisableVertexAttribArray (quake_text.dchar.location);
+	qfeglDisableVertexAttribArray (quake_text.vertex.location);
 	char_queue->size = 0;
 }
 
@@ -678,30 +678,30 @@ glsl_Draw_ConsoleBackground (int lines, byte alpha)
 
 	GL_FlushText (); // Flush text that should be rendered before the console
 
-	qfglUseProgram (quake_icon.program);
-	qfglEnableVertexAttribArray (quake_icon.vertex.location);
+	qfeglUseProgram (quake_icon.program);
+	qfeglEnableVertexAttribArray (quake_icon.vertex.location);
 
-	qfglUniformMatrix4fv (quake_icon.matrix.location, 1, false, proj_matrix);
+	qfeglUniformMatrix4fv (quake_icon.matrix.location, 1, false, proj_matrix);
 
-	qfglUniform1i (quake_icon.icon.location, 0);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, conback_texture);
+	qfeglUniform1i (quake_icon.icon.location, 0);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, conback_texture);
 
-	qfglUniform1i (quake_icon.palette.location, 1);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+	qfeglUniform1i (quake_icon.palette.location, 1);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-	qfglVertexAttrib4f (quake_icon.color.location,
+	qfeglVertexAttrib4f (quake_icon.color.location,
 						1, 1, 1, bound (0, alpha, 255) / 255.0);
 
-	qfglVertexAttribPointer (quake_icon.vertex.location, 4, GL_FLOAT,
+	qfeglVertexAttribPointer (quake_icon.vertex.location, 4, GL_FLOAT,
 							 0, 0, verts);
 
-	qfglDrawArrays (GL_TRIANGLES, 0, 6);
+	qfeglDrawArrays (GL_TRIANGLES, 0, 6);
 
-	qfglDisableVertexAttribArray (quake_icon.vertex.location);
+	qfeglDisableVertexAttribArray (quake_icon.vertex.location);
 }
 
 void
@@ -764,10 +764,10 @@ ortho_mat (float *proj, float xmin, float xmax, float ymin, float ymax,
 static void
 set_2d (int width, int height)
 {
-	qfglViewport (0, 0, vid.width, vid.height);
+	qfeglViewport (0, 0, vid.width, vid.height);
 
-	qfglDisable (GL_DEPTH_TEST);
-	qfglDisable (GL_CULL_FACE);
+	qfeglDisable (GL_DEPTH_TEST);
+	qfeglDisable (GL_CULL_FACE);
 
 	ortho_mat (proj_matrix, 0, width, height, 0, -99999, 99999);
 }

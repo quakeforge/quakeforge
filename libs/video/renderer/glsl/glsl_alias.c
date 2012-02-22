@@ -170,13 +170,13 @@ set_arrays (const shaderparam_t *vert, const shaderparam_t *norm,
 		    const shaderparam_t *st, aliasvrt_t *pose)
 {
 	byte       *pose_offs = (byte *) pose;
-	qfglVertexAttribPointer (vert->location, 3, GL_UNSIGNED_SHORT,
+	qfeglVertexAttribPointer (vert->location, 3, GL_UNSIGNED_SHORT,
 							 0, sizeof (aliasvrt_t),
 							 pose_offs + field_offset (aliasvrt_t, vertex));
-	qfglVertexAttribPointer (norm->location, 3, GL_SHORT,
+	qfeglVertexAttribPointer (norm->location, 3, GL_SHORT,
 							 1, sizeof (aliasvrt_t),
 							 pose_offs + field_offset (aliasvrt_t, normal));
-	qfglVertexAttribPointer (st->location, 2, GL_SHORT,
+	qfeglVertexAttribPointer (st->location, 2, GL_SHORT,
 							 0, sizeof (aliasvrt_t),
 							 pose_offs + field_offset (aliasvrt_t, st));
 }
@@ -253,37 +253,37 @@ glsl_R_DrawAlias (void)
 	skin_size[0] = hdr->mdl.skinwidth;
 	skin_size[1] = hdr->mdl.skinheight;
 
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglBindTexture (GL_TEXTURE_2D, colormap);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglBindTexture (GL_TEXTURE_2D, skin_tex);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglBindTexture (GL_TEXTURE_2D, colormap);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglBindTexture (GL_TEXTURE_2D, skin_tex);
 
 #ifndef TETRAHEDRON
-	qfglBindBuffer (GL_ARRAY_BUFFER, hdr->posedata);
-	qfglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, hdr->commands);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, hdr->posedata);
+	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, hdr->commands);
 #endif
 
-	qfglVertexAttrib4fv (quake_mdl.colora.location, color);
-	qfglVertexAttrib4fv (quake_mdl.colorb.location, color);
-	qfglUniform1f (quake_mdl.blend.location, blend);
-	qfglUniform1f (quake_mdl.ambient.location, ambient);
-	qfglUniform1f (quake_mdl.shadelight.location, shadelight);
-	qfglUniform3fv (quake_mdl.lightvec.location, 1, lightvec);
-	qfglUniform2fv (quake_mdl.skin_size.location, 1, skin_size);
-	qfglUniformMatrix4fv (quake_mdl.mvp_matrix.location, 1, false, mvp_mat);
-	qfglUniformMatrix3fv (quake_mdl.norm_matrix.location, 1, false, norm_mat);
+	qfeglVertexAttrib4fv (quake_mdl.colora.location, color);
+	qfeglVertexAttrib4fv (quake_mdl.colorb.location, color);
+	qfeglUniform1f (quake_mdl.blend.location, blend);
+	qfeglUniform1f (quake_mdl.ambient.location, ambient);
+	qfeglUniform1f (quake_mdl.shadelight.location, shadelight);
+	qfeglUniform3fv (quake_mdl.lightvec.location, 1, lightvec);
+	qfeglUniform2fv (quake_mdl.skin_size.location, 1, skin_size);
+	qfeglUniformMatrix4fv (quake_mdl.mvp_matrix.location, 1, false, mvp_mat);
+	qfeglUniformMatrix3fv (quake_mdl.norm_matrix.location, 1, false, norm_mat);
 
 #ifndef TETRAHEDRON
 	set_arrays (&quake_mdl.vertexa, &quake_mdl.normala, &quake_mdl.sta, pose1);
 	set_arrays (&quake_mdl.vertexb, &quake_mdl.normalb, &quake_mdl.stb, pose2);
-	qfglDrawElements (GL_TRIANGLES, 3 * hdr->mdl.numtris,
+	qfeglDrawElements (GL_TRIANGLES, 3 * hdr->mdl.numtris,
 					  GL_UNSIGNED_SHORT, 0);
 #else
 	set_arrays (&quake_mdl.vertexa, &quake_mdl.normala, &quake_mdl.sta,
 				debug_verts);
 	set_arrays (&quake_mdl.vertexb, &quake_mdl.normalb, &quake_mdl.stb,
 				debug_verts);
-	qfglDrawElements (GL_TRIANGLES,
+	qfeglDrawElements (GL_TRIANGLES,
 					  sizeof (debug_indices) / sizeof (debug_indices[0]),
 					  GL_UNSIGNED_SHORT, debug_indices);
 #endif
@@ -300,44 +300,44 @@ glsl_R_AliasBegin (void)
 	// pre-multiply the view and projection matricies
 	Mat4Mult (glsl_projection, glsl_view, alias_vp);
 
-	qfglUseProgram (quake_mdl.program);
-	qfglEnableVertexAttribArray (quake_mdl.vertexa.location);
-	qfglEnableVertexAttribArray (quake_mdl.vertexb.location);
-	qfglEnableVertexAttribArray (quake_mdl.normala.location);
-	qfglEnableVertexAttribArray (quake_mdl.normalb.location);
-	qfglEnableVertexAttribArray (quake_mdl.sta.location);
-	qfglEnableVertexAttribArray (quake_mdl.stb.location);
-	qfglDisableVertexAttribArray (quake_mdl.colora.location);
-	qfglDisableVertexAttribArray (quake_mdl.colorb.location);
+	qfeglUseProgram (quake_mdl.program);
+	qfeglEnableVertexAttribArray (quake_mdl.vertexa.location);
+	qfeglEnableVertexAttribArray (quake_mdl.vertexb.location);
+	qfeglEnableVertexAttribArray (quake_mdl.normala.location);
+	qfeglEnableVertexAttribArray (quake_mdl.normalb.location);
+	qfeglEnableVertexAttribArray (quake_mdl.sta.location);
+	qfeglEnableVertexAttribArray (quake_mdl.stb.location);
+	qfeglDisableVertexAttribArray (quake_mdl.colora.location);
+	qfeglDisableVertexAttribArray (quake_mdl.colorb.location);
 
 	VectorCopy (glsl_Fog_GetColor (), fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
-	qfglUniform4fv (quake_mdl.fog.location, 1, fog);
+	qfeglUniform4fv (quake_mdl.fog.location, 1, fog);
 
-	qfglUniform1i (quake_mdl.colormap.location, 1);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglEnable (GL_TEXTURE_2D);
+	qfeglUniform1i (quake_mdl.colormap.location, 1);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglEnable (GL_TEXTURE_2D);
 
-	qfglUniform1i (quake_mdl.skin.location, 0);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglEnable (GL_TEXTURE_2D);
+	qfeglUniform1i (quake_mdl.skin.location, 0);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglEnable (GL_TEXTURE_2D);
 }
 
 void
 glsl_R_AliasEnd (void)
 {
-	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
-	qfglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);
+	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
 
-	qfglDisableVertexAttribArray (quake_mdl.vertexa.location);
-	qfglDisableVertexAttribArray (quake_mdl.vertexb.location);
-	qfglDisableVertexAttribArray (quake_mdl.normala.location);
-	qfglDisableVertexAttribArray (quake_mdl.normalb.location);
-	qfglDisableVertexAttribArray (quake_mdl.sta.location);
-	qfglDisableVertexAttribArray (quake_mdl.stb.location);
+	qfeglDisableVertexAttribArray (quake_mdl.vertexa.location);
+	qfeglDisableVertexAttribArray (quake_mdl.vertexb.location);
+	qfeglDisableVertexAttribArray (quake_mdl.normala.location);
+	qfeglDisableVertexAttribArray (quake_mdl.normalb.location);
+	qfeglDisableVertexAttribArray (quake_mdl.sta.location);
+	qfeglDisableVertexAttribArray (quake_mdl.stb.location);
 
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglDisable (GL_TEXTURE_2D);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglDisable (GL_TEXTURE_2D);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglDisable (GL_TEXTURE_2D);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglDisable (GL_TEXTURE_2D);
 }

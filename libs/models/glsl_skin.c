@@ -87,10 +87,10 @@ Skin_ProcessTranslation (int cmap, const byte *translation)
 			*dst++ = 255;	// alpha = 1
 		}
 	}
-	qfglBindTexture (GL_TEXTURE_2D, cmap_tex[cmap - 1]);
-	qfglTexSubImage2D (GL_TEXTURE_2D, 0, TOP_RANGE, 0, 16, VID_GRADES,
+	qfeglBindTexture (GL_TEXTURE_2D, cmap_tex[cmap - 1]);
+	qfeglTexSubImage2D (GL_TEXTURE_2D, 0, TOP_RANGE, 0, 16, VID_GRADES,
 					   GL_RGBA, GL_UNSIGNED_BYTE, top);
-	qfglTexSubImage2D (GL_TEXTURE_2D, 0, BOTTOM_RANGE, 0, 16, VID_GRADES,
+	qfeglTexSubImage2D (GL_TEXTURE_2D, 0, BOTTOM_RANGE, 0, 16, VID_GRADES,
 					   GL_RGBA, GL_UNSIGNED_BYTE, bottom);
 }
 
@@ -103,17 +103,17 @@ Skin_SetupSkin (skin_t *skin, int cmap)
 			tex_t      *tex = skin->texels;
 
 			skin->texnum = skin_tex[cmap - 1];
-			qfglBindTexture (GL_TEXTURE_2D, skin->texnum);
-			qfglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE,
+			qfeglBindTexture (GL_TEXTURE_2D, skin->texnum);
+			qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE,
 							tex->width, tex->height,
 							0, GL_LUMINANCE, GL_UNSIGNED_BYTE, tex->data);
-			qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+			qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
 							   GL_CLAMP_TO_EDGE);
-			qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
+			qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
 							   GL_CLAMP_TO_EDGE);
-			qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+			qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
 							   GL_NEAREST);
-			qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+			qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
 							   GL_NEAREST);
 		}
 		skin->auxtex = cmap_tex[cmap - 1];
@@ -137,15 +137,15 @@ Skin_InitTranslations (void)
 		*dst++ = *in++;
 		*dst++ = 255;	// alpha = 1
 	}
-	qfglGenTextures (MAX_TRANSLATIONS, cmap_tex);
-	qfglGenTextures (MAX_TRANSLATIONS, skin_tex);
+	qfeglGenTextures (MAX_TRANSLATIONS, cmap_tex);
+	qfeglGenTextures (MAX_TRANSLATIONS, skin_tex);
 	for (i = 0; i < MAX_TRANSLATIONS; i++) {
-		qfglBindTexture (GL_TEXTURE_2D, cmap_tex[i]);
-		qfglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, 256, VID_GRADES, 0,
+		qfeglBindTexture (GL_TEXTURE_2D, cmap_tex[i]);
+		qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, 256, VID_GRADES, 0,
 						GL_RGBA, GL_UNSIGNED_BYTE, map);
-		qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	}
 }

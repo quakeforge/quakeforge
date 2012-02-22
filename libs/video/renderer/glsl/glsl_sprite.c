@@ -290,26 +290,26 @@ R_DrawSprite (void)
 
 	R_GetSpriteFrames (ent, sprite, &frame1, &frame2, &blend);
 
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglBindTexture (GL_TEXTURE_2D, frame1->gl_texturenum);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglBindTexture (GL_TEXTURE_2D, frame1->gl_texturenum);
 
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglBindTexture (GL_TEXTURE_2D, frame2->gl_texturenum);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglBindTexture (GL_TEXTURE_2D, frame2->gl_texturenum);
 
-	qfglVertexAttrib4fv (quake_sprite.colora.location, color);
-	qfglVertexAttrib4fv (quake_sprite.colorb.location, color);
-	qfglVertexAttrib1f (quake_sprite.blend.location, blend);
+	qfeglVertexAttrib4fv (quake_sprite.colora.location, color);
+	qfeglVertexAttrib4fv (quake_sprite.colorb.location, color);
+	qfeglVertexAttrib1f (quake_sprite.blend.location, blend);
 
 	make_quad (frame1, svpn, svright, svup, vertsa);
 	make_quad (frame2, svpn, svright, svup, vertsb);
 
-	qfglVertexAttribPointer (quake_sprite.vertexa.location, 3, GL_FLOAT,
+	qfeglVertexAttribPointer (quake_sprite.vertexa.location, 3, GL_FLOAT,
 							 0, 0, vertsa);
-	qfglVertexAttribPointer (quake_sprite.vertexb.location, 3, GL_FLOAT,
+	qfeglVertexAttribPointer (quake_sprite.vertexb.location, 3, GL_FLOAT,
 							 0, 0, vertsb);
-	qfglVertexAttribPointer (quake_sprite.uvab.location, 4, GL_FLOAT,
+	qfeglVertexAttribPointer (quake_sprite.uvab.location, 4, GL_FLOAT,
 							 0, 0, uvab);
-	qfglDrawArrays (GL_TRIANGLES, 0, 6);
+	qfeglDrawArrays (GL_TRIANGLES, 0, 6);
 }
 
 // All sprites are drawn in a batch, so avoid thrashing the gl state
@@ -319,46 +319,46 @@ R_SpriteBegin (void)
 	mat4_t      mat;
 	quat_t      fog;
 
-	qfglUseProgram (quake_sprite.program);
-	qfglEnableVertexAttribArray (quake_sprite.vertexa.location);
-	qfglEnableVertexAttribArray (quake_sprite.vertexb.location);
-	qfglEnableVertexAttribArray (quake_sprite.uvab.location);
-	qfglDisableVertexAttribArray (quake_sprite.colora.location);
-	qfglDisableVertexAttribArray (quake_sprite.colorb.location);
-	qfglDisableVertexAttribArray (quake_sprite.blend.location);
+	qfeglUseProgram (quake_sprite.program);
+	qfeglEnableVertexAttribArray (quake_sprite.vertexa.location);
+	qfeglEnableVertexAttribArray (quake_sprite.vertexb.location);
+	qfeglEnableVertexAttribArray (quake_sprite.uvab.location);
+	qfeglDisableVertexAttribArray (quake_sprite.colora.location);
+	qfeglDisableVertexAttribArray (quake_sprite.colorb.location);
+	qfeglDisableVertexAttribArray (quake_sprite.blend.location);
 
 	VectorCopy (glsl_Fog_GetColor (), fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
-	qfglUniform4fv (quake_sprite.fog.location, 1, fog);
+	qfeglUniform4fv (quake_sprite.fog.location, 1, fog);
 
-	qfglUniform1i (quake_sprite.spritea.location, 0);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglEnable (GL_TEXTURE_2D);
+	qfeglUniform1i (quake_sprite.spritea.location, 0);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglEnable (GL_TEXTURE_2D);
 
-	qfglUniform1i (quake_sprite.spriteb.location, 1);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglEnable (GL_TEXTURE_2D);
+	qfeglUniform1i (quake_sprite.spriteb.location, 1);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglEnable (GL_TEXTURE_2D);
 
-	qfglUniform1i (quake_sprite.palette.location, 2);
-	qfglActiveTexture (GL_TEXTURE0 + 2);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+	qfeglUniform1i (quake_sprite.palette.location, 2);
+	qfeglActiveTexture (GL_TEXTURE0 + 2);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
 	Mat4Mult (glsl_projection, glsl_view, mat);
-	qfglUniformMatrix4fv (quake_sprite.matrix.location, 1, false, mat);
+	qfeglUniformMatrix4fv (quake_sprite.matrix.location, 1, false, mat);
 }
 
 void
 R_SpriteEnd (void)
 {
-	qfglDisableVertexAttribArray (quake_sprite.vertexa.location);
-	qfglDisableVertexAttribArray (quake_sprite.vertexb.location);
-	qfglDisableVertexAttribArray (quake_sprite.uvab.location);
+	qfeglDisableVertexAttribArray (quake_sprite.vertexa.location);
+	qfeglDisableVertexAttribArray (quake_sprite.vertexb.location);
+	qfeglDisableVertexAttribArray (quake_sprite.uvab.location);
 
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglDisable (GL_TEXTURE_2D);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglDisable (GL_TEXTURE_2D);
-	qfglActiveTexture (GL_TEXTURE0 + 2);
-	qfglDisable (GL_TEXTURE_2D);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglDisable (GL_TEXTURE_2D);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglDisable (GL_TEXTURE_2D);
+	qfeglActiveTexture (GL_TEXTURE0 + 2);
+	qfeglDisable (GL_TEXTURE_2D);
 }

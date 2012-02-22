@@ -612,11 +612,11 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 	Sys_MaskPrintf (SYS_GLSL, "R_BuildDisplayLists: %ld verts total\n",
 					vertices->size / sizeof (bspvert_t));
 	if (!bsp_vbo)
-		qfglGenBuffers (1, &bsp_vbo);
-	qfglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
-	qfglBufferData (GL_ARRAY_BUFFER, vertices->size, vertices->str,
+		qfeglGenBuffers (1, &bsp_vbo);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
+	qfeglBufferData (GL_ARRAY_BUFFER, vertices->size, vertices->str,
 					GL_STATIC_DRAW);
-	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);
 	dstring_delete (vertices);
 }
 
@@ -803,26 +803,26 @@ draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc,
 		last_color = color;
 		if (!color)
 			color = default_color;
-		qfglVertexAttrib4fv (quake_bsp.color.location, color);
+		qfeglVertexAttrib4fv (quake_bsp.color.location, color);
 	}
 	if (ec->transform) {
 		Mat4Mult (bsp_vp, ec->transform, mat);
-		qfglUniformMatrix4fv (matloc, 1, false, mat);
+		qfeglUniformMatrix4fv (matloc, 1, false, mat);
 	} else {
-		qfglUniformMatrix4fv (matloc, 1, false, bsp_vp);
+		qfeglUniformMatrix4fv (matloc, 1, false, bsp_vp);
 	}
 	for (el = ec->elements; el; el = el->next) {
 		if (!el->list->size)
 			continue;
 		count = el->list->size / sizeof (GLushort);
-		qfglVertexAttribPointer (vertloc, 4, GL_FLOAT,
+		qfeglVertexAttribPointer (vertloc, 4, GL_FLOAT,
 								 0, sizeof (bspvert_t),
 								 el->base + field_offset (bspvert_t, vertex));
 		if (tlstloc >= 0)
-			qfglVertexAttribPointer (tlstloc, 4, GL_FLOAT,
+			qfeglVertexAttribPointer (tlstloc, 4, GL_FLOAT,
 									 0, sizeof (bspvert_t),
 									 el->base + field_offset (bspvert_t,tlst));
-		qfglDrawElements (GL_TRIANGLES, count,
+		qfeglDrawElements (GL_TRIANGLES, count,
 						  GL_UNSIGNED_SHORT, el->list->str);
 		dstring_clear (el->list);
 	}
@@ -838,48 +838,48 @@ bsp_begin (void)
 
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
-	qfglUseProgram (quake_bsp.program);
-	qfglEnableVertexAttribArray (quake_bsp.vertex.location);
-	qfglEnableVertexAttribArray (quake_bsp.tlst.location);
-	qfglDisableVertexAttribArray (quake_bsp.color.location);
+	qfeglUseProgram (quake_bsp.program);
+	qfeglEnableVertexAttribArray (quake_bsp.vertex.location);
+	qfeglEnableVertexAttribArray (quake_bsp.tlst.location);
+	qfeglDisableVertexAttribArray (quake_bsp.color.location);
 
-	qfglVertexAttrib4fv (quake_bsp.color.location, default_color);
+	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
 	VectorCopy (glsl_Fog_GetColor (), fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
-	qfglUniform4fv (quake_bsp.fog.location, 1, fog);
+	qfeglUniform4fv (quake_bsp.fog.location, 1, fog);
 
-	qfglUniform1i (quake_bsp.colormap.location, 2);
-	qfglActiveTexture (GL_TEXTURE0 + 2);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, glsl_colormap);
+	qfeglUniform1i (quake_bsp.colormap.location, 2);
+	qfeglActiveTexture (GL_TEXTURE0 + 2);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, glsl_colormap);
 
-	qfglUniform1i (quake_bsp.lightmap.location, 1);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, glsl_R_LightmapTexture ());
+	qfeglUniform1i (quake_bsp.lightmap.location, 1);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, glsl_R_LightmapTexture ());
 
-	qfglUniform1i (quake_bsp.texture.location, 0);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglEnable (GL_TEXTURE_2D);
+	qfeglUniform1i (quake_bsp.texture.location, 0);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglEnable (GL_TEXTURE_2D);
 
-	qfglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
 }
 
 static void
 bsp_end (void)
 {
-	qfglDisableVertexAttribArray (quake_bsp.vertex.location);
-	qfglDisableVertexAttribArray (quake_bsp.tlst.location);
+	qfeglDisableVertexAttribArray (quake_bsp.vertex.location);
+	qfeglDisableVertexAttribArray (quake_bsp.tlst.location);
 
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglDisable (GL_TEXTURE_2D);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglDisable (GL_TEXTURE_2D);
-	qfglActiveTexture (GL_TEXTURE0 + 2);
-	qfglDisable (GL_TEXTURE_2D);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglDisable (GL_TEXTURE_2D);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglDisable (GL_TEXTURE_2D);
+	qfeglActiveTexture (GL_TEXTURE0 + 2);
+	qfeglDisable (GL_TEXTURE_2D);
 
-	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);
 }
 
 static void
@@ -892,43 +892,43 @@ turb_begin (void)
 
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
-	qfglUseProgram (quake_turb.program);
-	qfglEnableVertexAttribArray (quake_turb.vertex.location);
-	qfglEnableVertexAttribArray (quake_turb.tlst.location);
-	qfglDisableVertexAttribArray (quake_turb.color.location);
+	qfeglUseProgram (quake_turb.program);
+	qfeglEnableVertexAttribArray (quake_turb.vertex.location);
+	qfeglEnableVertexAttribArray (quake_turb.tlst.location);
+	qfeglDisableVertexAttribArray (quake_turb.color.location);
 
-	qfglVertexAttrib4fv (quake_turb.color.location, default_color);
+	qfeglVertexAttrib4fv (quake_turb.color.location, default_color);
 
 	VectorCopy (glsl_Fog_GetColor (), fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
-	qfglUniform4fv (quake_turb.fog.location, 1, fog);
+	qfeglUniform4fv (quake_turb.fog.location, 1, fog);
 
-	qfglUniform1i (quake_turb.palette.location, 1);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+	qfeglUniform1i (quake_turb.palette.location, 1);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-	qfglUniform1f (quake_turb.realtime.location, vr_data.realtime);
+	qfeglUniform1f (quake_turb.realtime.location, vr_data.realtime);
 
-	qfglUniform1i (quake_turb.texture.location, 0);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglEnable (GL_TEXTURE_2D);
+	qfeglUniform1i (quake_turb.texture.location, 0);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglEnable (GL_TEXTURE_2D);
 
-	qfglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
 }
 
 static void
 turb_end (void)
 {
-	qfglDisableVertexAttribArray (quake_turb.vertex.location);
-	qfglDisableVertexAttribArray (quake_turb.tlst.location);
+	qfeglDisableVertexAttribArray (quake_turb.vertex.location);
+	qfeglDisableVertexAttribArray (quake_turb.tlst.location);
 
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglDisable (GL_TEXTURE_2D);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglDisable (GL_TEXTURE_2D);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglDisable (GL_TEXTURE_2D);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglDisable (GL_TEXTURE_2D);
 
-	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);
 }
 
 static void
@@ -969,62 +969,62 @@ sky_begin (void)
 		sky_params.sky_matrix = &quake_skybox.sky_matrix;
 		sky_params.fog = &quake_skybox.fog;
 
-		qfglUseProgram (quake_skybox.program);
-		qfglEnableVertexAttribArray (quake_skybox.vertex.location);
+		qfeglUseProgram (quake_skybox.program);
+		qfeglEnableVertexAttribArray (quake_skybox.vertex.location);
 
-		qfglUniform1i (quake_skybox.sky.location, 0);
-		qfglActiveTexture (GL_TEXTURE0 + 0);
-		qfglEnable (GL_TEXTURE_CUBE_MAP);
-		qfglBindTexture (GL_TEXTURE_CUBE_MAP, skybox_tex);
+		qfeglUniform1i (quake_skybox.sky.location, 0);
+		qfeglActiveTexture (GL_TEXTURE0 + 0);
+		qfeglEnable (GL_TEXTURE_CUBE_MAP);
+		qfeglBindTexture (GL_TEXTURE_CUBE_MAP, skybox_tex);
 	} else {
 		sky_params.mvp_matrix = &quake_skyid.mvp_matrix;
 		sky_params.sky_matrix = &quake_skyid.sky_matrix;
 		sky_params.vertex = &quake_skyid.vertex;
 		sky_params.fog = &quake_skyid.fog;
 
-		qfglUseProgram (quake_skyid.program);
-		qfglEnableVertexAttribArray (quake_skyid.vertex.location);
+		qfeglUseProgram (quake_skyid.program);
+		qfeglEnableVertexAttribArray (quake_skyid.vertex.location);
 
-		qfglUniform1i (quake_skyid.palette.location, 2);
-		qfglActiveTexture (GL_TEXTURE0 + 2);
-		qfglEnable (GL_TEXTURE_2D);
-		qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+		qfeglUniform1i (quake_skyid.palette.location, 2);
+		qfeglActiveTexture (GL_TEXTURE0 + 2);
+		qfeglEnable (GL_TEXTURE_2D);
+		qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-		qfglUniform1f (quake_skyid.realtime.location, vr_data.realtime);
+		qfeglUniform1f (quake_skyid.realtime.location, vr_data.realtime);
 
-		qfglUniform1i (quake_skyid.trans.location, 0);
-		qfglActiveTexture (GL_TEXTURE0 + 0);
-		qfglEnable (GL_TEXTURE_2D);
+		qfeglUniform1i (quake_skyid.trans.location, 0);
+		qfeglActiveTexture (GL_TEXTURE0 + 0);
+		qfeglEnable (GL_TEXTURE_2D);
 
-		qfglUniform1i (quake_skyid.solid.location, 1);
-		qfglActiveTexture (GL_TEXTURE0 + 1);
-		qfglEnable (GL_TEXTURE_2D);
+		qfeglUniform1i (quake_skyid.solid.location, 1);
+		qfeglActiveTexture (GL_TEXTURE0 + 1);
+		qfeglEnable (GL_TEXTURE_2D);
 	}
 
 	VectorCopy (glsl_Fog_GetColor (), fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
-	qfglUniform4fv (sky_params.fog->location, 1, fog);
+	qfeglUniform4fv (sky_params.fog->location, 1, fog);
 
 	spin (mat);
-	qfglUniformMatrix4fv (sky_params.sky_matrix->location, 1, false, mat);
+	qfeglUniformMatrix4fv (sky_params.sky_matrix->location, 1, false, mat);
 
-	qfglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
 }
 
 static void
 sky_end (void)
 {
-	qfglDisableVertexAttribArray (sky_params.vertex->location);
+	qfeglDisableVertexAttribArray (sky_params.vertex->location);
 
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglDisable (GL_TEXTURE_2D);
-	qfglDisable (GL_TEXTURE_CUBE_MAP);
-	qfglActiveTexture (GL_TEXTURE0 + 1);
-	qfglDisable (GL_TEXTURE_2D);
-	qfglActiveTexture (GL_TEXTURE0 + 2);
-	qfglDisable (GL_TEXTURE_2D);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglDisable (GL_TEXTURE_2D);
+	qfeglDisable (GL_TEXTURE_CUBE_MAP);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglDisable (GL_TEXTURE_2D);
+	qfeglActiveTexture (GL_TEXTURE0 + 2);
+	qfeglDisable (GL_TEXTURE_2D);
 
-	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);
 }
 
 static inline void
@@ -1109,8 +1109,8 @@ glsl_R_DrawWorld (void)
 		elechain_t *ec = 0;
 
 		tex = r_texture_chains[i];
-		qfglActiveTexture (GL_TEXTURE0 + 0);
-		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
+		qfeglActiveTexture (GL_TEXTURE0 + 0);
+		qfeglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 
 		build_tex_elechain (tex);
 
@@ -1141,7 +1141,7 @@ glsl_R_DrawWaterSurfaces ()
 		surf = is->surface;
 		if (tex != surf->texinfo->texture) {
 			if (tex) {
-				qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
+				qfeglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 				for (ec = tex->elechain; ec; ec = ec->next)
 					draw_elechain (ec, quake_turb.mvp_matrix.location,
 								   quake_turb.vertex.location,
@@ -1155,7 +1155,7 @@ glsl_R_DrawWaterSurfaces ()
 		add_surf_elements (tex, is, &ec, &el);
 	}
 	if (tex) {
-		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
+		qfeglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 		for (ec = tex->elechain; ec; ec = ec->next)
 			draw_elechain (ec, quake_turb.mvp_matrix.location,
 						   quake_turb.vertex.location,
@@ -1188,10 +1188,10 @@ glsl_R_DrawSky (void)
 		if (tex != surf->texinfo->texture) {
 			if (tex) {
 				if (!skybox_loaded) {
-					qfglActiveTexture (GL_TEXTURE0 + 0);
-					qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[0]);
-					qfglActiveTexture (GL_TEXTURE0 + 1);
-					qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
+					qfeglActiveTexture (GL_TEXTURE0 + 0);
+					qfeglBindTexture (GL_TEXTURE_2D, tex->sky_tex[0]);
+					qfeglActiveTexture (GL_TEXTURE0 + 1);
+					qfeglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
 				}
 				for (ec = tex->elechain; ec; ec = ec->next)
 					draw_elechain (ec, sky_params.mvp_matrix->location,
@@ -1205,10 +1205,10 @@ glsl_R_DrawSky (void)
 	}
 	if (tex) {
 		if (!skybox_loaded) {
-			qfglActiveTexture (GL_TEXTURE0 + 0);
-			qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[0]);
-			qfglActiveTexture (GL_TEXTURE0 + 1);
-			qfglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
+			qfeglActiveTexture (GL_TEXTURE0 + 0);
+			qfeglBindTexture (GL_TEXTURE_2D, tex->sky_tex[0]);
+			qfeglActiveTexture (GL_TEXTURE0 + 1);
+			qfeglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
 		}
 		for (ec = tex->elechain; ec; ec = ec->next)
 			draw_elechain (ec, sky_params.mvp_matrix->location,
@@ -1347,9 +1347,9 @@ glsl_R_LoadSkys (const char *sky)
 	}
 
 	if (!skybox_tex)
-		qfglGenTextures (1, &skybox_tex);
+		qfeglGenTextures (1, &skybox_tex);
 
-	qfglBindTexture (GL_TEXTURE_CUBE_MAP, skybox_tex);
+	qfeglBindTexture (GL_TEXTURE_CUBE_MAP, skybox_tex);
 
 	//blender envmap
 	// bk rt ft
@@ -1371,7 +1371,7 @@ glsl_R_LoadSkys (const char *sky)
 			x = sky_coords[i][0] * size;
 			y = sky_coords[i][1] * size;
 			copy_sub_tex (tex, x, y, sub);
-			qfglTexImage2D (sky_target[i], 0,
+			qfeglTexImage2D (sky_target[i], 0,
 							sub->format == 3 ? GL_RGB : GL_RGBA,
 							sub->width, sub->height, 0,
 							sub->format == 3 ? GL_RGB : GL_RGBA,
@@ -1394,18 +1394,18 @@ glsl_R_LoadSkys (const char *sky)
 				}
 			}
 			Sys_MaskPrintf (SYS_GLSL, "Loaded %s\n", name);
-			qfglTexImage2D (sky_target[i], 0,
+			qfeglTexImage2D (sky_target[i], 0,
 							tex->format == 3 ? GL_RGB : GL_RGBA,
 							tex->width, tex->height, 0,
 							tex->format == 3 ? GL_RGB : GL_RGBA,
 							GL_UNSIGNED_BYTE, tex->data);
 		}
 	}
-	qfglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
+	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
 					   GL_CLAMP_TO_EDGE);
-	qfglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T,
+	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T,
 					   GL_CLAMP_TO_EDGE);
-	qfglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	qfglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	qfglGenerateMipmap (GL_TEXTURE_CUBE_MAP);
+	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	qfeglGenerateMipmap (GL_TEXTURE_CUBE_MAP);
 }

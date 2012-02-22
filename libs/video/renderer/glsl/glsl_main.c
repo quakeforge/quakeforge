@@ -134,7 +134,7 @@ R_SetupView (void)
 	y = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
 	w = r_refdef.vrect.width;
 	h = r_refdef.vrect.height;
-	qfglViewport (x, y, w, h);
+	qfeglViewport (x, y, w, h);
 
 	Mat4Zero (mat);
 	VectorCopy (vpn, mat + 0);
@@ -148,8 +148,8 @@ R_SetupView (void)
 	VectorNegate (r_refdef.vieworg, mat + 12);
 	Mat4Mult (glsl_view, mat, glsl_view);
 
-	qfglEnable (GL_CULL_FACE);
-	qfglEnable (GL_DEPTH_TEST);
+	qfeglEnable (GL_CULL_FACE);
+	qfeglEnable (GL_DEPTH_TEST);
 }
 
 static void
@@ -190,11 +190,11 @@ R_DrawViewModel (void)
 		return;
 
 	// hack the depth range to prevent view model from poking into walls
-	qfglDepthRangef (0, 0.3);
+	qfeglDepthRangef (0, 0.3);
 	glsl_R_AliasBegin ();
 	glsl_R_DrawAlias ();
 	glsl_R_AliasEnd ();
-	qfglDepthRangef (0, 1);
+	qfeglDepthRangef (0, 1);
 }
 
 void

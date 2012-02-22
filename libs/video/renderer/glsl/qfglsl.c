@@ -66,13 +66,13 @@ static __attribute__ ((used)) const char rcsid[] =
 
 
 void *
-QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
+QFEGL_ProcAddress (void *handle, const char *name, qboolean crit)
 {
 	void	*glfunc = NULL;
 
 	Sys_MaskPrintf (SYS_VID, "DEBUG: Finding symbol %s ... ", name);
 
-	glfunc = QFGL_GetProcAddress (handle, name);
+	glfunc = QFEGL_GetProcAddress (handle, name);
 	if (glfunc) {
 		Sys_MaskPrintf (SYS_VID, "found [%p]\n", glfunc);
 		return glfunc;
@@ -93,9 +93,9 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 
 // First we need to get all the function pointers declared.
 #define QFGL_WANT(ret, name, args) \
-	ret (GLAPIENTRY * qf##name) args;
+	ret (GLAPIENTRY * qfe##name) args;
 #define QFGL_NEED(ret, name, args) \
-	ret (GLAPIENTRY * qf##name) args;
+	ret (GLAPIENTRY * qfe##name) args;
 #include "QF/GLSL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT
@@ -103,19 +103,19 @@ void		*libgl_handle;
 
 // Then we need to open the libGL and set all the symbols.
 qboolean
-GLF_Init (void)
+EGLF_Init (void)
 {
-	libgl_handle = QFGL_LoadLibrary ();
+	libgl_handle = QFEGL_LoadLibrary ();
 	return true;
 }
 
 qboolean
-GLF_FindFunctions (void)
+EGLF_FindFunctions (void)
 {
 #define QFGL_WANT(ret, name, args) \
-	qf##name = QFGL_ProcAddress (libgl_handle, #name, false);
+	qfe##name = QFEGL_ProcAddress (libgl_handle, #name, false);
 #define QFGL_NEED(ret, name, args) \
-	qf##name = QFGL_ProcAddress (libgl_handle, #name, true);
+	qfe##name = QFEGL_ProcAddress (libgl_handle, #name, true);
 #include "QF/GLSL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT

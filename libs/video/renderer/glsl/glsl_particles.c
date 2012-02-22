@@ -216,8 +216,8 @@ glsl_R_InitParticles (void)
 	byte        data[64][64][2];
 	tex_t      *tex;
 
-	qfglEnable (GL_VERTEX_PROGRAM_POINT_SIZE);
-	qfglGetFloatv (GL_ALIASED_POINT_SIZE_RANGE, v);
+	qfeglEnable (GL_VERTEX_PROGRAM_POINT_SIZE);
+	qfeglGetFloatv (GL_ALIASED_POINT_SIZE_RANGE, v);
 	Sys_MaskPrintf (SYS_GLSL, "point size: %g - %g\n", v[0], v[1]);
 
 	vert = GLSL_CompileShader ("quakepnt.vert", quakepoint_vert,
@@ -244,22 +244,22 @@ glsl_R_InitParticles (void)
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.fog);
 
 	memset (data, 0, sizeof (data));
-	qfglGenTextures (1, &part_tex);
-	qfglBindTexture (GL_TEXTURE_2D, part_tex);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, 64, 64, 0,
+	qfeglGenTextures (1, &part_tex);
+	qfeglBindTexture (GL_TEXTURE_2D, part_tex);
+	qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, 64, 64, 0,
 					GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, data);
 	tex = R_DotParticleTexture ();
-	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, 32, 32, GL_LUMINANCE_ALPHA,
+	qfeglTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, 32, 32, GL_LUMINANCE_ALPHA,
 					   GL_UNSIGNED_BYTE, tex->data);
 	free (tex);
 	tex = R_SparkParticleTexture ();
-	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 32, 0, 32, 32, GL_LUMINANCE_ALPHA,
+	qfeglTexSubImage2D (GL_TEXTURE_2D, 0, 32, 0, 32, 32, GL_LUMINANCE_ALPHA,
 					   GL_UNSIGNED_BYTE, tex->data);
 	free (tex);
 	tex = R_SmokeParticleTexture ();
-	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, 32, 32, 32, GL_LUMINANCE_ALPHA,
+	qfeglTexSubImage2D (GL_TEXTURE_2D, 0, 0, 32, 32, 32, GL_LUMINANCE_ALPHA,
 					   GL_UNSIGNED_BYTE, tex->data);
 	free (tex);
 
@@ -1547,25 +1547,25 @@ draw_qf_particles (void)
 
 	Mat4Mult (glsl_projection, glsl_view, vp_mat);
 
-	qfglDepthMask (GL_FALSE);
-	qfglUseProgram (quake_part.program);
-	qfglEnableVertexAttribArray (quake_part.vertex.location);
-	qfglEnableVertexAttribArray (quake_part.color.location);
-	qfglEnableVertexAttribArray (quake_part.st.location);
+	qfeglDepthMask (GL_FALSE);
+	qfeglUseProgram (quake_part.program);
+	qfeglEnableVertexAttribArray (quake_part.vertex.location);
+	qfeglEnableVertexAttribArray (quake_part.color.location);
+	qfeglEnableVertexAttribArray (quake_part.st.location);
 
 	VectorCopy (glsl_Fog_GetColor (), fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
-	qfglUniform4fv (quake_part.fog.location, 1, fog);
+	qfeglUniform4fv (quake_part.fog.location, 1, fog);
 
-	qfglUniformMatrix4fv (quake_part.mvp_matrix.location, 1, false, vp_mat);
+	qfeglUniformMatrix4fv (quake_part.mvp_matrix.location, 1, false, vp_mat);
 
-	qfglUniform1i (quake_part.texture.location, 0);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, part_tex);
+	qfeglUniform1i (quake_part.texture.location, 0);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, part_tex);
 
 	// LordHavoc: particles should not affect zbuffer
-	qfglDepthMask (GL_FALSE);
+	qfeglDepthMask (GL_FALSE);
 
 	minparticledist = DotProduct (r_refdef.vieworg, vpn) +
 		r_particles_nearclip->value;
@@ -1650,16 +1650,16 @@ draw_qf_particles (void)
 			activeparticles++;
 		}
 	}
-	qfglVertexAttribPointer (quake_part.vertex.location, 3, GL_FLOAT,
+	qfeglVertexAttribPointer (quake_part.vertex.location, 3, GL_FLOAT,
 							 0, sizeof (partvert_t),
 							 &particleVertexArray[0].vertex);
-	qfglVertexAttribPointer (quake_part.color.location, 4, GL_UNSIGNED_BYTE,
+	qfeglVertexAttribPointer (quake_part.color.location, 4, GL_UNSIGNED_BYTE,
 							 1, sizeof (partvert_t),
 							 &particleVertexArray[0].color);
-	qfglVertexAttribPointer (quake_part.st.location, 2, GL_FLOAT,
+	qfeglVertexAttribPointer (quake_part.st.location, 2, GL_FLOAT,
 							 0, sizeof (partvert_t),
 							 &particleVertexArray[0].texcoord);
-	qfglDrawElements (GL_TRIANGLES, vacount, GL_UNSIGNED_SHORT, pVAindices);
+	qfeglDrawElements (GL_TRIANGLES, vacount, GL_UNSIGNED_SHORT, pVAindices);
 
 	k = 0;
 	while (maxparticle >= activeparticles) {
@@ -1670,12 +1670,12 @@ draw_qf_particles (void)
 	}
 	numparticles = activeparticles;
 
-	qfglDepthMask (GL_TRUE);
-	qfglDisableVertexAttribArray (quake_part.vertex.location);
-	qfglDisableVertexAttribArray (quake_part.color.location);
-	qfglDisableVertexAttribArray (quake_part.st.location);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglDisable (GL_TEXTURE_2D);
+	qfeglDepthMask (GL_TRUE);
+	qfeglDisableVertexAttribArray (quake_part.vertex.location);
+	qfeglDisableVertexAttribArray (quake_part.color.location);
+	qfeglDisableVertexAttribArray (quake_part.st.location);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglDisable (GL_TEXTURE_2D);
 }
 
 static void
@@ -1692,21 +1692,21 @@ draw_id_particles (void)
 	Mat4Mult (glsl_projection, glsl_view, vp_mat);
 
 	// LordHavoc: particles should not affect zbuffer
-	qfglDepthMask (GL_FALSE);
-	qfglUseProgram (quake_point.program);
-	qfglEnableVertexAttribArray (quake_point.vertex.location);
-	qfglEnableVertexAttribArray (quake_point.color.location);
+	qfeglDepthMask (GL_FALSE);
+	qfeglUseProgram (quake_point.program);
+	qfeglEnableVertexAttribArray (quake_point.vertex.location);
+	qfeglEnableVertexAttribArray (quake_point.color.location);
 
-	qfglUniformMatrix4fv (quake_point.mvp_matrix.location, 1, false, vp_mat);
+	qfeglUniformMatrix4fv (quake_point.mvp_matrix.location, 1, false, vp_mat);
 
 	VectorCopy (glsl_Fog_GetColor (), fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
-	qfglUniform4fv (quake_point.fog.location, 1, fog);
+	qfeglUniform4fv (quake_point.fog.location, 1, fog);
 
-	qfglUniform1i (quake_point.palette.location, 0);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
+	qfeglUniform1i (quake_point.palette.location, 0);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
 	minparticledist = DotProduct (r_refdef.vieworg, vpn) +
 		r_particles_nearclip->value;
@@ -1738,13 +1738,13 @@ draw_id_particles (void)
 			activeparticles++;
 		}
 	}
-	qfglVertexAttribPointer (quake_point.vertex.location, 3, GL_FLOAT,
+	qfeglVertexAttribPointer (quake_point.vertex.location, 3, GL_FLOAT,
 							 0, sizeof (partvert_t),
 							 &particleVertexArray[0].vertex);
-	qfglVertexAttribPointer (quake_point.color.location, 1, GL_UNSIGNED_BYTE,
+	qfeglVertexAttribPointer (quake_point.color.location, 1, GL_UNSIGNED_BYTE,
 							 1, sizeof (partvert_t),
 							 &particleVertexArray[0].color);
-	qfglDrawArrays (GL_POINTS, 0, vacount);
+	qfeglDrawArrays (GL_POINTS, 0, vacount);
 
 	k = 0;
 	while (maxparticle >= activeparticles) {
@@ -1755,11 +1755,11 @@ draw_id_particles (void)
 	}
 	numparticles = activeparticles;
 
-	qfglDepthMask (GL_TRUE);
-	qfglDisableVertexAttribArray (quake_point.vertex.location);
-	qfglDisableVertexAttribArray (quake_point.color.location);
-	qfglActiveTexture (GL_TEXTURE0 + 0);
-	qfglDisable (GL_TEXTURE_2D);
+	qfeglDepthMask (GL_TRUE);
+	qfeglDisableVertexAttribArray (quake_point.vertex.location);
+	qfeglDisableVertexAttribArray (quake_point.color.location);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglDisable (GL_TEXTURE_2D);
 }
 
 void

@@ -74,7 +74,7 @@ glsl_alias_clear (model_t *m)
 
 	bufs[0] = hdr->posedata;
 	bufs[1] = hdr->commands;
-	qfglDeleteBuffers (2, bufs);
+	qfeglDeleteBuffers (2, bufs);
 
 	skins = ((maliasskindesc_t *) ((byte *) hdr + hdr->skindesc));
 	for (i = 0; i < hdr->mdl.numskins; i++) {
@@ -225,18 +225,18 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
 	hdr->poseverts = numverts;
 
 	// load the vertex data and indices into GL
-	qfglGenBuffers (2, bnum);
+	qfeglGenBuffers (2, bnum);
 	hdr->posedata = bnum[0];
 	hdr->commands = bnum[1];
-	qfglBindBuffer (GL_ARRAY_BUFFER, hdr->posedata);
-	qfglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, hdr->commands);
-	qfglBufferData (GL_ARRAY_BUFFER, vertexsize, verts, GL_STATIC_DRAW);
-	qfglBufferData (GL_ELEMENT_ARRAY_BUFFER, indexsize, indices,
+	qfeglBindBuffer (GL_ARRAY_BUFFER, hdr->posedata);
+	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, hdr->commands);
+	qfeglBufferData (GL_ARRAY_BUFFER, vertexsize, verts, GL_STATIC_DRAW);
+	qfeglBufferData (GL_ELEMENT_ARRAY_BUFFER, indexsize, indices,
 					GL_STATIC_DRAW);
 
 	// all done
-	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
-	qfglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);
+	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
 	free (verts);
 	free (indices);
 }

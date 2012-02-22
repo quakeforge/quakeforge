@@ -99,8 +99,8 @@ Mod_ProcessTexture (texture_t *tx)
 				memcpy (&data[j * 128], &tx_data[j * 256 + i * 128], 128);
 			tx->sky_tex[i] = GLSL_LoadQuakeTexture (tx->name, 128, 128, data);
 			// GLSL_LoadQuakeTexture () leaves the texture bound
-			qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		}
 		tx->gl_texturenum = 0;
 	} else {

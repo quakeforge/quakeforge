@@ -108,16 +108,16 @@ VID_SetPalette (unsigned char *palette)
 
 	if (!glsl_colormap) {
 		GLuint      tex;
-		qfglGenTextures (1, &tex);
+		qfeglGenTextures (1, &tex);
 		glsl_colormap = tex;
 	}
-	qfglBindTexture (GL_TEXTURE_2D, glsl_colormap);
-	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, 256, VID_GRADES, 0,
+	qfeglBindTexture (GL_TEXTURE_2D, glsl_colormap);
+	qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, 256, VID_GRADES, 0,
 					GL_RGBA, GL_UNSIGNED_BYTE, pal);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	for (i = 0, ip = palette, op = pal; i < 255; i++) {
 		*op++ = *ip++;
@@ -129,38 +129,38 @@ VID_SetPalette (unsigned char *palette)
 
 	if (!glsl_palette) {
 		GLuint      tex;
-		qfglGenTextures (1, &tex);
+		qfeglGenTextures (1, &tex);
 		glsl_palette = tex;
 	}
-	qfglBindTexture (GL_TEXTURE_2D, glsl_palette);
-	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, 256, 1, 0,
+	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
+	qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, 256, 1, 0,
 					GL_RGBA, GL_UNSIGNED_BYTE, pal);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	free (pal);
 }
 
 void
-GL_Init_Common (void)
+GLSL_Init_Common (void)
 {
-	GLF_FindFunctions ();
+	EGLF_FindFunctions ();
 
 	GLSL_Common_Init_Cvars ();
 
 	GLSL_TextureInit ();
 
-	qfglClearColor (0, 0, 0, 0);
+	qfeglClearColor (0, 0, 0, 0);
 
-	qfglPixelStorei (GL_UNPACK_ALIGNMENT, 1);
+	qfeglPixelStorei (GL_UNPACK_ALIGNMENT, 1);
 
-	qfglEnable (GL_TEXTURE_2D);
-	qfglFrontFace (GL_CW);
-	qfglCullFace (GL_BACK);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglFrontFace (GL_CW);
+	qfeglCullFace (GL_BACK);
 
-	qfglEnable (GL_BLEND);
-	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	qfeglEnable (GL_BLEND);
+	qfeglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 int
@@ -171,19 +171,19 @@ GLSL_CompileShader (const char *name, const char *shader_src, int type)
 	int         compiled;
 
 	src[0] = shader_src;
-	shader = qfglCreateShader (type);
-	qfglShaderSource (shader, 1, src, 0);
-	qfglCompileShader (shader);
-	qfglGetShaderiv (shader, GL_COMPILE_STATUS, &compiled);
+	shader = qfeglCreateShader (type);
+	qfeglShaderSource (shader, 1, src, 0);
+	qfeglCompileShader (shader);
+	qfeglGetShaderiv (shader, GL_COMPILE_STATUS, &compiled);
 	if (!compiled || (developer->int_val & SYS_GLSL)) {
 		dstring_t  *log = dstring_new ();
 		int         size;
-		qfglGetShaderiv (shader, GL_INFO_LOG_LENGTH, &size);
+		qfeglGetShaderiv (shader, GL_INFO_LOG_LENGTH, &size);
 		log->size = size + 1;	// for terminating null
 		dstring_adjust (log);
-		qfglGetShaderInfoLog (shader, log->size, 0, log->str);
+		qfeglGetShaderInfoLog (shader, log->size, 0, log->str);
 		if (!compiled)
-			qfglDeleteShader (shader);
+			qfeglDeleteShader (shader);
 		Sys_Printf ("Shader (%s) compile log:\n----8<----\n%s----8<----\n",
 					name, log->str);
 		dstring_delete (log);
@@ -258,27 +258,27 @@ dump_program (const char *name, int program)
 	GLenum      ptype = 0;
 
 	pname = dstring_new ();
-	qfglGetProgramiv (program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &size);
+	qfeglGetProgramiv (program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &size);
 	pname->size = size;
 	dstring_adjust (pname);
 
-	qfglGetProgramiv(program, GL_ACTIVE_UNIFORMS, &count);
+	qfeglGetProgramiv(program, GL_ACTIVE_UNIFORMS, &count);
 	Sys_Printf("Program %s (%d) has %i uniforms\n", name, program, count);
 	for (ind = 0; ind < count; ind++) {
-		qfglGetActiveUniform(program, ind, pname->size, 0, &psize, &ptype,
+		qfeglGetActiveUniform(program, ind, pname->size, 0, &psize, &ptype,
 							 pname->str);
 		Sys_Printf ("Uniform %i name \"%s\" size %i type %s\n", (int)ind,
 					pname->str, (int)psize, type_name (ptype));
 	}
 
-	qfglGetProgramiv (program, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &size);
+	qfeglGetProgramiv (program, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &size);
 	pname->size = size;
 	dstring_adjust (pname);
 
-	qfglGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, &count);
+	qfeglGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, &count);
 	Sys_Printf("Program %s (%d) has %i attributes\n", name, program, count);
 	for (ind = 0; ind < count; ind++) {
-		qfglGetActiveAttrib(program, ind, pname->size, 0, &psize, &ptype,
+		qfeglGetActiveAttrib(program, ind, pname->size, 0, &psize, &ptype,
 							pname->str);
 		Sys_Printf ("Attribute %i name \"%s\" size %i type %s\n", (int)ind,
 					pname->str, (int)psize, type_name (ptype));
@@ -292,21 +292,21 @@ GLSL_LinkProgram (const char *name, int vert, int frag)
 	int         program;
 	int         linked;
 
-	program = qfglCreateProgram ();
-	qfglAttachShader (program, vert);
-	qfglAttachShader (program, frag);
-	qfglLinkProgram (program);
+	program = qfeglCreateProgram ();
+	qfeglAttachShader (program, vert);
+	qfeglAttachShader (program, frag);
+	qfeglLinkProgram (program);
 
-	qfglGetProgramiv (program, GL_LINK_STATUS, &linked);
+	qfeglGetProgramiv (program, GL_LINK_STATUS, &linked);
 	if (!linked || (developer->int_val & SYS_GLSL)) {
 		dstring_t  *log = dstring_new ();
 		int         size;
-		qfglGetProgramiv (program, GL_INFO_LOG_LENGTH, &size);
+		qfeglGetProgramiv (program, GL_INFO_LOG_LENGTH, &size);
 		log->size = size + 1;	// for terminating null
 		dstring_adjust (log);
-		qfglGetProgramInfoLog (program, log->size, 0, log->str);
+		qfeglGetProgramInfoLog (program, log->size, 0, log->str);
 		if (!linked)
-			qfglDeleteProgram (program);
+			qfeglDeleteProgram (program);
 		Sys_Printf ("Program (%s) link log:\n----8<----\n%s----8<----\n",
 					name, log->str);
 		dstring_delete (log);
@@ -322,9 +322,9 @@ int
 GLSL_ResolveShaderParam (int program, shaderparam_t *param)
 {
 	if (param->uniform) {
-		param->location = qfglGetUniformLocation (program, param->name);
+		param->location = qfeglGetUniformLocation (program, param->name);
 	} else {
-		param->location = qfglGetAttribLocation (program, param->name);
+		param->location = qfeglGetAttribLocation (program, param->name);
 	}
 	if (param->location < 0) {
 		Sys_Printf ("could not resolve %s %s\n",
@@ -351,19 +351,19 @@ GLSL_DumpAttribArrays (void)
 	GLint       current[4] = {-1, -1, -1, -1};
 	void       *pointer = 0;
 
-	qfglGetIntegerv (GL_MAX_VERTEX_ATTRIBS, &max);
+	qfeglGetIntegerv (GL_MAX_VERTEX_ATTRIBS, &max);
 
 	for (ind = 0; ind < max; ind++) {
-		qfglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &enabled);
+		qfeglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &enabled);
 		Sys_Printf ("attrib %d: %sabled\n", ind, enabled ? "en" : "dis");
-		qfglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_SIZE, &size);
-		qfglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_STRIDE, &stride);
-		qfglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_TYPE, &type);
-		qfglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_NORMALIZED, &norm);
-		qfglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING,
+		qfeglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_SIZE, &size);
+		qfeglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_STRIDE, &stride);
+		qfeglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_TYPE, &type);
+		qfeglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_NORMALIZED, &norm);
+		qfeglGetVertexAttribiv (ind, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING,
 							   &binding);
-		qfglGetVertexAttribiv (ind, GL_CURRENT_VERTEX_ATTRIB, current);
-		qfglGetVertexAttribPointerv (ind, GL_VERTEX_ATTRIB_ARRAY_POINTER,
+		qfeglGetVertexAttribiv (ind, GL_CURRENT_VERTEX_ATTRIB, current);
+		qfeglGetVertexAttribPointerv (ind, GL_VERTEX_ATTRIB_ARRAY_POINTER,
 									 &pointer);
 		Sys_Printf ("    %d %d '%s' %d %d (%d %d %d %d) %p\n", size, stride,
 					type_name (type), norm, binding, QuatExpand (current),

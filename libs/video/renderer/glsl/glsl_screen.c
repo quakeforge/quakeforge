@@ -76,7 +76,7 @@ extern void (*R_DrawSpriteModel) (struct entity_s *ent);
 static unsigned int
 R_TestErrors (unsigned int numerous)
 {
-	switch (qfglGetError ()) {
+	switch (qfeglGetError ()) {
 	case GL_NO_ERROR:
 		return numerous;
 		break;
@@ -176,7 +176,7 @@ glsl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
 	if (!scr_initialized)
 		return;
 
-	qfglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	qfeglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	begun = 1;
 
@@ -199,7 +199,7 @@ glsl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
 		scr_funcs++;
 		GL_FlushText ();
 	}
-	qfglFlush ();
+	qfeglFlush ();
 }
 
 tex_t *
@@ -216,7 +216,7 @@ glsl_SCR_CaptureBGR (void)
 	tex->height = vid.height;
 	tex->format = tex_rgb;
 	tex->palette = 0;
-	qfglReadPixels (0, 0, vid.width, vid.height, GL_RGB,
+	qfeglReadPixels (0, 0, vid.width, vid.height, GL_RGB,
 					GL_UNSIGNED_BYTE, tex->data);
 	for (i = 0, r = tex->data, b = tex->data + 2; i < count;
 		 i++, r += 3, b += 3) {
