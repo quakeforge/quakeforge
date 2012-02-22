@@ -56,13 +56,13 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_draw.h"
 #include "QF/GL/qf_rlight.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
-#include "gl_draw.h"
 #include "r_internal.h"
 #include "varrays.h"
 

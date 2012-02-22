@@ -350,7 +350,7 @@ R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 	for (i = 0; i < j; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256, 
 							 vr_data.realtime + 0.3,
-							 								 colorStart + (i % colorLength), 1.0, 0.0);
+							 colorStart + (i % colorLength), 1.0, 0.0);
 	}
 }
 
@@ -1884,15 +1884,15 @@ glsl_r_easter_eggs_f (cvar_t *var)
 	if (easter_eggs) {
 		if (easter_eggs->int_val) {
 			if (r_particles_style->int_val) {
-				vr_funcs.particles = &particles_QF_egg;
+				glsl_vid_render_funcs.particles = &particles_QF_egg;
 			} else {
-				vr_funcs.particles = &particles_ID_egg;
+				glsl_vid_render_funcs.particles = &particles_ID_egg;
 			}
 		} else if (r_particles_style) {
 			if (r_particles_style->int_val) {
-				vr_funcs.particles = &particles_QF;
+				glsl_vid_render_funcs.particles = &particles_QF;
 			} else {
-				vr_funcs.particles = &particles_ID;
+				glsl_vid_render_funcs.particles = &particles_ID;
 			}
 		}
 	}

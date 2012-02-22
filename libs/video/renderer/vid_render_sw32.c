@@ -28,11 +28,84 @@
 # include "config.h"
 #endif
 
+#define NH_DEFINE
+#include "sw32/namehack.h"
+
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
+
+#include "sw32/namehack.h"
+
+static vid_model_funcs_t model_funcs = {
+    Mod_LoadExternalTextures,
+	Mod_LoadLighting,
+	Mod_SubdivideSurface,
+	Mod_ProcessTexture,
+	Mod_LoadAliasModel,
+	Mod_LoadSpriteModel,
+
+	Skin_SetColormap,
+	Skin_SetSkin,
+	Skin_SetupSkin,
+	Skin_SetTranslation,
+	Skin_ProcessTranslation,
+	Skin_InitTranslations,
+	Skin_Init_Textures,
+	Skin_SetPlayerSkin,
+};
+
+vid_render_funcs_t sw32_vid_render_funcs = {
+	sw32_Draw_Init,
+	sw32_Draw_Character,
+	sw32_Draw_String,
+	sw32_Draw_nString,
+	sw32_Draw_AltString,
+	sw32_Draw_ConsoleBackground,
+	sw32_Draw_Crosshair,
+	sw32_Draw_CrosshairAt,
+	sw32_Draw_TileClear,
+	sw32_Draw_Fill,
+	sw32_Draw_TextBox,
+	sw32_Draw_FadeScreen,
+	sw32_Draw_BlendScreen,
+	sw32_Draw_CachePic,
+	sw32_Draw_UncachePic,
+	sw32_Draw_MakePic,
+	sw32_Draw_DestroyPic,
+	sw32_Draw_PicFromWad,
+	sw32_Draw_Pic,
+	sw32_Draw_Picf,
+	sw32_Draw_SubPic,
+
+	sw32_SCR_UpdateScreen,
+	SCR_DrawRam,
+	SCR_DrawTurtle,
+	SCR_DrawPause,
+	sw32_SCR_CaptureBGR,
+	sw32_SCR_ScreenShot,
+	SCR_DrawStringToSnap,
+
+	0,
+	0,
+
+	sw32_R_ClearState,
+	sw32_R_LoadSkys,
+	sw32_R_NewMap,
+	R_AddEfrags,
+	R_RemoveEfrags,
+	R_EnqueueEntity,
+	sw32_R_LineGraph,
+	R_AllocDlight,
+	R_AllocEntity,
+	sw32_R_RenderView,
+	R_DecayLights,
+	sw32_D_FlushCaches,
+	0,
+	&model_funcs
+};
 
 static general_funcs_t plugin_info_general_funcs = {
 };
@@ -46,7 +119,7 @@ static plugin_funcs_t plugin_info_funcs = {
 	0,
 	0,
 	0,
-	&vid_render_funcs,
+	&sw32_vid_render_funcs,
 };
 
 static plugin_data_t plugin_info_data = {

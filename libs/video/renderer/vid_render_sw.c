@@ -34,6 +34,74 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 
+static vid_model_funcs_t model_funcs = {
+    Mod_LoadExternalTextures,
+	Mod_LoadLighting,
+	Mod_SubdivideSurface,
+	Mod_ProcessTexture,
+	Mod_LoadAliasModel,
+	Mod_LoadSpriteModel,
+
+	Skin_SetColormap,
+	Skin_SetSkin,
+	Skin_SetupSkin,
+	Skin_SetTranslation,
+	Skin_ProcessTranslation,
+	Skin_InitTranslations,
+	Skin_Init_Textures,
+	Skin_SetPlayerSkin,
+};
+
+vid_render_funcs_t sw_vid_render_funcs = {
+	Draw_Init,
+	Draw_Character,
+	Draw_String,
+	Draw_nString,
+	Draw_AltString,
+	Draw_ConsoleBackground,
+	Draw_Crosshair,
+	Draw_CrosshairAt,
+	Draw_TileClear,
+	Draw_Fill,
+	Draw_TextBox,
+	Draw_FadeScreen,
+	Draw_BlendScreen,
+	Draw_CachePic,
+	Draw_UncachePic,
+	Draw_MakePic,
+	Draw_DestroyPic,
+	Draw_PicFromWad,
+	Draw_Pic,
+	Draw_Picf,
+	Draw_SubPic,
+
+	SCR_UpdateScreen,
+	SCR_DrawRam,
+	SCR_DrawTurtle,
+	SCR_DrawPause,
+	SCR_CaptureBGR,
+	SCR_ScreenShot,
+	SCR_DrawStringToSnap,
+
+	0,
+	0,
+
+	R_ClearState,
+	R_LoadSkys,
+	R_NewMap,
+	R_AddEfrags,
+	R_RemoveEfrags,
+	R_EnqueueEntity,
+	R_LineGraph,
+	R_AllocDlight,
+	R_AllocEntity,
+	R_RenderView,
+	R_DecayLights,
+	D_FlushCaches,
+	0,
+	&model_funcs
+};
+
 static general_funcs_t plugin_info_general_funcs = {
 };
 
@@ -46,7 +114,7 @@ static plugin_funcs_t plugin_info_funcs = {
 	0,
 	0,
 	0,
-	&vid_render_funcs,
+	&sw_vid_render_funcs,
 };
 
 static plugin_data_t plugin_info_data = {

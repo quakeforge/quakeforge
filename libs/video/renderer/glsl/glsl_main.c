@@ -56,7 +56,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/qf_lightmap.h"
 #include "QF/GLSL/qf_textures.h"
 
-#include "gl_draw.h"
 #include "r_internal.h"
 
 mat4_t glsl_projection;
@@ -289,9 +288,4 @@ glsl_R_ClearState (void)
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	glsl_R_ClearParticles ();
-}
-
-void
-D_FlushCaches (void)
-{
 }

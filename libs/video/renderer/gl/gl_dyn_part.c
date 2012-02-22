@@ -1695,15 +1695,15 @@ gl_r_easter_eggs_f (cvar_t *var)
 	if (easter_eggs && !gl_feature_mach64) {
 		if (easter_eggs->int_val) {
 			if (r_particles_style->int_val) {
-				vr_funcs.particles = &particles_QF_egg;
+				gl_vid_render_funcs.particles = &particles_QF_egg;
 			} else {
-				vr_funcs.particles = &particles_ID_egg;
+				gl_vid_render_funcs.particles = &particles_ID_egg;
 			}
 		} else if (r_particles_style) {
 			if (r_particles_style->int_val) {
-				vr_funcs.particles = &particles_QF;
+				gl_vid_render_funcs.particles = &particles_QF;
 			} else {
-				vr_funcs.particles = &particles_ID;
+				gl_vid_render_funcs.particles = &particles_ID;
 			}
 		}
 	}

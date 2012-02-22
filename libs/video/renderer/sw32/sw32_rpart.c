@@ -840,7 +840,7 @@ static vid_particle_funcs_t particles_QF = {
 static void
 R_ParticleFunctionInit (void)
 {
-	vr_funcs.particles = &particles_QF;
+	sw32_vid_render_funcs.particles = &particles_QF;
 }
 
 void

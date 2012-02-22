@@ -1,5 +1,5 @@
 /*
-	vid_render_gl.c
+	vid_render_glsl.c
 
 	GLSL version of the renderer
 
@@ -28,11 +28,84 @@
 # include "config.h"
 #endif
 
+#define NH_DEFINE
+#include "glsl/namehack.h"
+
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
+
+#include "glsl/namehack.h"
+
+static vid_model_funcs_t model_funcs = {
+    Mod_LoadExternalTextures,
+	Mod_LoadLighting,
+	Mod_SubdivideSurface,
+	Mod_ProcessTexture,
+	Mod_LoadAliasModel,
+	Mod_LoadSpriteModel,
+
+	Skin_SetColormap,
+	Skin_SetSkin,
+	Skin_SetupSkin,
+	Skin_SetTranslation,
+	Skin_ProcessTranslation,
+	Skin_InitTranslations,
+	Skin_Init_Textures,
+	Skin_SetPlayerSkin,
+};
+
+vid_render_funcs_t glsl_vid_render_funcs = {
+	glsl_Draw_Init,
+	glsl_Draw_Character,
+	glsl_Draw_String,
+	glsl_Draw_nString,
+	glsl_Draw_AltString,
+	glsl_Draw_ConsoleBackground,
+	glsl_Draw_Crosshair,
+	glsl_Draw_CrosshairAt,
+	glsl_Draw_TileClear,
+	glsl_Draw_Fill,
+	glsl_Draw_TextBox,
+	glsl_Draw_FadeScreen,
+	glsl_Draw_BlendScreen,
+	glsl_Draw_CachePic,
+	glsl_Draw_UncachePic,
+	glsl_Draw_MakePic,
+	glsl_Draw_DestroyPic,
+	glsl_Draw_PicFromWad,
+	glsl_Draw_Pic,
+	glsl_Draw_Picf,
+	glsl_Draw_SubPic,
+
+	glsl_SCR_UpdateScreen,
+	SCR_DrawRam,
+	SCR_DrawTurtle,
+	SCR_DrawPause,
+	glsl_SCR_CaptureBGR,
+	glsl_SCR_ScreenShot,
+	SCR_DrawStringToSnap,
+
+	glsl_Fog_Update,
+	glsl_Fog_ParseWorldspawn,
+
+	glsl_R_ClearState,
+	glsl_R_LoadSkys,
+	glsl_R_NewMap,
+	R_AddEfrags,
+	R_RemoveEfrags,
+	R_EnqueueEntity,
+	glsl_R_LineGraph,
+	R_AllocDlight,
+	R_AllocEntity,
+	glsl_R_RenderView,
+	R_DecayLights,
+	0,
+	0,
+	&model_funcs
+};
 
 static general_funcs_t plugin_info_general_funcs = {
 };
@@ -46,7 +119,7 @@ static plugin_funcs_t plugin_info_funcs = {
 	0,
 	0,
 	0,
-	&vid_render_funcs,
+	&glsl_vid_render_funcs,
 };
 
 static plugin_data_t plugin_info_data = {

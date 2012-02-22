@@ -53,10 +53,10 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
+#include "QF/GLSL/qf_draw.h"
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
-#include "gl_draw.h"
 #include "r_internal.h"
 
 typedef struct {
@@ -676,7 +676,7 @@ glsl_Draw_ConsoleBackground (int lines, byte alpha)
 		{           0, lines, 0,   1},
 	};
 
-	GL_FlushText (); // Flush text that should be rendered before the console
+	GLSL_FlushText (); // Flush text that should be rendered before the console
 
 	qfeglUseProgram (quake_icon.program);
 	qfeglEnableVertexAttribArray (quake_icon.vertex.location);
@@ -732,7 +732,7 @@ glsl_Draw_FadeScreen (void)
 {
 	static quat_t color = { 0, 0, 0, 0.7 };
 
-	GL_FlushText (); // Flush text that should be rendered before the menu
+	GLSL_FlushText (); // Flush text that should be rendered before the menu
 	draw_blendscreen (color);
 }
 
@@ -773,25 +773,25 @@ set_2d (int width, int height)
 }
 
 void
-GL_Set2D (void)
+GLSL_Set2D (void)
 {
     set_2d (vid.width, vid.height);
 }
 
 void
-GL_Set2DScaled (void)
+GLSL_Set2DScaled (void)
 {
     set_2d (vid.conwidth, vid.conheight);
 }
 
 void
-GL_DrawReset (void)
+GLSL_DrawReset (void)
 {
 	char_queue->size = 0;
 }
 
 void
-GL_FlushText (void)
+GLSL_FlushText (void)
 {
 	if (char_queue->size)
 		flush_text ();

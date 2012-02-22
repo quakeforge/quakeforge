@@ -57,10 +57,10 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
+#include "QF/GLSL/qf_draw.h"
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
-#include "gl_draw.h"
 #include "r_internal.h"
 
 /* Unknown renamed to GLErr_Unknown to solve conflict with winioctl.h */
@@ -190,14 +190,14 @@ glsl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
 	scr_3dfunc ();
 
 	SCR_SetUpToDrawConsole ();
-	GL_Set2D ();
-	GL_DrawReset ();
+	GLSL_Set2D ();
+	GLSL_DrawReset ();
 	SCR_TileClear ();
-	GL_Set2DScaled ();
+	GLSL_Set2DScaled ();
 	while (*scr_funcs) {
 		(*scr_funcs)();
 		scr_funcs++;
-		GL_FlushText ();
+		GLSL_FlushText ();
 	}
 	qfeglFlush ();
 }

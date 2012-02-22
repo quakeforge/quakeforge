@@ -1,5 +1,5 @@
 /*
-	gl_draw.h
+	qf_draw.h
 
 	gl specific draw function
 
