@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/render.h"
 
@@ -77,7 +79,7 @@ R_Alias_clip_z (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 		out->v[4] = pfv1->v[4] + (pfv0->v[4] - pfv1->v[4]) * scale;
 	}
 
-	R_AliasProjectFinalVert (out, &avout);
+	sw32_R_AliasProjectFinalVert (out, &avout);
 
 	if (out->v[0] < r_refdef.aliasvrect.x)
 		out->flags |= ALIAS_LEFT_CLIP;
@@ -91,7 +93,7 @@ R_Alias_clip_z (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 
 
 void
-R_Alias_clip_left (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
+sw32_R_Alias_clip_left (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 {
 	float       scale;
 	int         i;
@@ -111,7 +113,7 @@ R_Alias_clip_left (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 
 
 void
-R_Alias_clip_right (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
+sw32_R_Alias_clip_right (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 {
 	float       scale;
 	int         i;
@@ -131,7 +133,7 @@ R_Alias_clip_right (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 
 
 void
-R_Alias_clip_top (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
+sw32_R_Alias_clip_top (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 {
 	float       scale;
 	int         i;
@@ -151,7 +153,7 @@ R_Alias_clip_top (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 
 
 void
-R_Alias_clip_bottom (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
+sw32_R_Alias_clip_bottom (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 {
 	float       scale;
 	int         i;
@@ -212,7 +214,7 @@ R_AliasClip (finalvert_t *in, finalvert_t *out, int flag, int count,
 
 
 void
-R_AliasClipTriangle (mtriangle_t *ptri)
+sw32_R_AliasClipTriangle (mtriangle_t *ptri)
 {
 	int         i, k, pingpong;
 	mtriangle_t mtri;
@@ -228,7 +230,7 @@ R_AliasClipTriangle (mtriangle_t *ptri)
 			fv[0][i] = pfinalverts[ptri->vertindex[i]];
 
 			if (!ptri->facesfront && (fv[0][i].flags & ALIAS_ONSEAM))
-				fv[0][i].v[2] += r_affinetridesc.seamfixupX16;
+				fv[0][i].v[2] += sw32_r_affinetridesc.seamfixupX16;
 		}
 	}
 
@@ -237,7 +239,7 @@ R_AliasClipTriangle (mtriangle_t *ptri)
 
 	if (clipflags & ALIAS_Z_CLIP) {
 		for (i = 0; i < 3; i++)
-			av[i] = pauxverts[ptri->vertindex[i]];
+			av[i] = sw32_pauxverts[ptri->vertindex[i]];
 
 		k = R_AliasClip (fv[0], fv[1], ALIAS_Z_CLIP, 3, R_Alias_clip_z);
 		if (k == 0)
@@ -252,7 +254,7 @@ R_AliasClipTriangle (mtriangle_t *ptri)
 
 	if (clipflags & ALIAS_LEFT_CLIP) {
 		k = R_AliasClip (fv[pingpong], fv[pingpong ^ 1],
-						 ALIAS_LEFT_CLIP, k, R_Alias_clip_left);
+						 ALIAS_LEFT_CLIP, k, sw32_R_Alias_clip_left);
 		if (k == 0)
 			return;
 
@@ -261,7 +263,7 @@ R_AliasClipTriangle (mtriangle_t *ptri)
 
 	if (clipflags & ALIAS_RIGHT_CLIP) {
 		k = R_AliasClip (fv[pingpong], fv[pingpong ^ 1],
-						 ALIAS_RIGHT_CLIP, k, R_Alias_clip_right);
+						 ALIAS_RIGHT_CLIP, k, sw32_R_Alias_clip_right);
 		if (k == 0)
 			return;
 
@@ -270,7 +272,7 @@ R_AliasClipTriangle (mtriangle_t *ptri)
 
 	if (clipflags & ALIAS_BOTTOM_CLIP) {
 		k = R_AliasClip (fv[pingpong], fv[pingpong ^ 1],
-						 ALIAS_BOTTOM_CLIP, k, R_Alias_clip_bottom);
+						 ALIAS_BOTTOM_CLIP, k, sw32_R_Alias_clip_bottom);
 		if (k == 0)
 			return;
 
@@ -279,7 +281,7 @@ R_AliasClipTriangle (mtriangle_t *ptri)
 
 	if (clipflags & ALIAS_TOP_CLIP) {
 		k = R_AliasClip (fv[pingpong], fv[pingpong ^ 1],
-						 ALIAS_TOP_CLIP, k, R_Alias_clip_top);
+						 ALIAS_TOP_CLIP, k, sw32_R_Alias_clip_top);
 		if (k == 0)
 			return;
 
@@ -302,14 +304,14 @@ R_AliasClipTriangle (mtriangle_t *ptri)
 
 	// draw triangles
 	mtri.facesfront = ptri->facesfront;
-	r_affinetridesc.ptriangles = &mtri;
-	r_affinetridesc.pfinalverts = fv[pingpong];
+	sw32_r_affinetridesc.ptriangles = &mtri;
+	sw32_r_affinetridesc.pfinalverts = fv[pingpong];
 
 	// FIXME: do all at once as trifan?
 	mtri.vertindex[0] = 0;
 	for (i = 1; i < k - 1; i++) {
 		mtri.vertindex[1] = i;
 		mtri.vertindex[2] = i + 1;
-		D_PolysetDraw ();
+		sw32_D_PolysetDraw ();
 	}
 }

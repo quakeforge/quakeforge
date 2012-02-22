@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/image.h"
 #include "QF/render.h"
@@ -45,20 +47,20 @@ static __attribute__ ((used)) const char rcsid[] =
 										// avoid the need for inner-loop light
 										// clamping
 
-affinetridesc_t r_affinetridesc;
+affinetridesc_t sw32_r_affinetridesc;
 
-void       *acolormap;					// FIXME: should go away
+void       *sw32_acolormap;					// FIXME: should go away
 
-trivertx_t *r_apverts;
+trivertx_t *sw32_r_apverts;
 
 // TODO: these probably will go away with optimized rasterization
 static mdl_t      *pmdl;
-vec3_t      r_plightvec;
-int         r_ambientlight;
-float       r_shadelight;
+vec3_t      sw32_r_plightvec;
+int         sw32_r_ambientlight;
+float       sw32_r_shadelight;
 static aliashdr_t *paliashdr;
-finalvert_t *pfinalverts;
-auxvert_t  *pauxverts;
+finalvert_t *sw32_pfinalverts;
+auxvert_t  *sw32_pauxverts;
 static float ziscale;
 static model_t *pmodel;
 
@@ -66,7 +68,7 @@ static vec3_t alias_forward, alias_right, alias_up;
 
 static maliasskindesc_t *pskindesc;
 
-int         r_amodels_drawn;
+int         sw32_r_amodels_drawn;
 static int         a_skinwidth;
 static int         r_anumverts;
 
@@ -84,7 +86,7 @@ static aedge_t aedges[12] = {
 };
 
 qboolean
-R_AliasCheckBBox (void)
+sw32_R_AliasCheckBBox (void)
 {
 	int         i, flags, frame, numv;
 	aliashdr_t *pahdr;
@@ -103,7 +105,7 @@ R_AliasCheckBBox (void)
 		pahdr = Cache_Get (&pmodel->cache);
 	pmdl = (mdl_t *) ((byte *) pahdr + pahdr->model);
 
-	R_AliasSetUpTransform (0);
+	sw32_R_AliasSetUpTransform (0);
 
 	// construct the base bounding box for this frame
 	frame = currententity->frame;
@@ -138,7 +140,7 @@ R_AliasCheckBBox (void)
 
 	minz = 9999;
 	for (i = 0; i < 8; i++) {
-		R_AliasTransformVector (&basepts[i][0], &viewaux[i].fv[0]);
+		sw32_R_AliasTransformVector (&basepts[i][0], &viewaux[i].fv[0]);
 
 		if (viewaux[i].fv[2] < ALIAS_Z_CLIP_PLANE) {
 			// we must clip points that are closer than the near clip plane
@@ -197,8 +199,8 @@ R_AliasCheckBBox (void)
 		zi = 1.0 / viewaux[i].fv[2];
 
 		// FIXME: do with chop mode in ASM, or convert to float
-		v0 = (viewaux[i].fv[0] * xscale * zi) + xcenter;
-		v1 = (viewaux[i].fv[1] * yscale * zi) + ycenter;
+		v0 = (viewaux[i].fv[0] * sw32_xscale * zi) + sw32_xcenter;
+		v1 = (viewaux[i].fv[1] * sw32_yscale * zi) + sw32_ycenter;
 
 		flags = 0;
 
@@ -224,7 +226,7 @@ R_AliasCheckBBox (void)
 	currententity->trivial_accept = !anyclip & !zclipped;
 
 	if (currententity->trivial_accept) {
-		if (minz > (r_aliastransition + (pmdl->size * r_resfudge))) {
+		if (minz > (sw32_r_aliastransition + (pmdl->size * sw32_r_resfudge))) {
 			currententity->trivial_accept |= 2;
 		}
 	}
@@ -236,7 +238,7 @@ R_AliasCheckBBox (void)
 
 
 void
-R_AliasTransformVector (vec3_t in, vec3_t out)
+sw32_R_AliasTransformVector (vec3_t in, vec3_t out)
 {
 	out[0] = DotProduct (in, aliastransform[0]) + aliastransform[0][3];
 	out[1] = DotProduct (in, aliastransform[1]) + aliastransform[1][3];
@@ -252,7 +254,7 @@ R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 		return;
 	}
 
-	R_AliasProjectFinalVert (fv, av);
+	sw32_R_AliasProjectFinalVert (fv, av);
 
 	if (fv->v[0] < r_refdef.aliasvrect.x)
 		fv->flags |= ALIAS_LEFT_CLIP;
@@ -311,27 +313,27 @@ R_AliasPreparePoints (void)
 	pstverts = (stvert_t *) ((byte *) paliashdr + paliashdr->stverts);
 	r_anumverts = pmdl->numverts;
 	fv = pfinalverts;
-	av = pauxverts;
+	av = sw32_pauxverts;
 
 	if (pmdl->ident == HEADER_MDL16) {
-		for (i = 0; i < r_anumverts; i++, fv++, av++, r_apverts++,
+		for (i = 0; i < r_anumverts; i++, fv++, av++, sw32_r_apverts++,
 				pstverts++) {
-			R_AliasTransformFinalVert16 (fv, av, r_apverts);
-			R_AliasTransformFinalVert (fv, av, r_apverts, pstverts);
+			R_AliasTransformFinalVert16 (fv, av, sw32_r_apverts);
+			sw32_R_AliasTransformFinalVert (fv, av, sw32_r_apverts, pstverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
 		}
 	}
 	else {
-		for (i = 0; i < r_anumverts; i++, fv++, av++, r_apverts++,
+		for (i = 0; i < r_anumverts; i++, fv++, av++, sw32_r_apverts++,
 				pstverts++) {
-			R_AliasTransformFinalVert8 (fv, av, r_apverts);
-			R_AliasTransformFinalVert (fv, av, r_apverts, pstverts);
+			R_AliasTransformFinalVert8 (fv, av, sw32_r_apverts);
+			sw32_R_AliasTransformFinalVert (fv, av, sw32_r_apverts, pstverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
 		}
 	}
 
 	// clip and draw all triangles
-	r_affinetridesc.numtriangles = 1;
+	sw32_r_affinetridesc.numtriangles = 1;
 
 	ptri = (mtriangle_t *) ((byte *) paliashdr + paliashdr->triangles);
 	for (i = 0; i < pmdl->numtris; i++, ptri++) {
@@ -345,18 +347,18 @@ R_AliasPreparePoints (void)
 
 		if (!((pfv[0]->flags | pfv[1]->flags | pfv[2]->flags) &
 			  (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP))) {	// totally unclipped
-			r_affinetridesc.pfinalverts = pfinalverts;
-			r_affinetridesc.ptriangles = ptri;
-			D_PolysetDraw ();
+			sw32_r_affinetridesc.pfinalverts = pfinalverts;
+			sw32_r_affinetridesc.ptriangles = ptri;
+			sw32_D_PolysetDraw ();
 		} else {						// partially clipped
-			R_AliasClipTriangle (ptri);
+			sw32_R_AliasClipTriangle (ptri);
 		}
 	}
 }
 
 
 void
-R_AliasSetUpTransform (int trivial_accept)
+sw32_R_AliasSetUpTransform (int trivial_accept)
 {
 	int         i;
 	float       rotationmatrix[3][4], t2matrix[3][4];
@@ -409,9 +411,9 @@ R_AliasSetUpTransform (int trivial_accept)
 // FIXME: make this work for clipped case too?
 	if (trivial_accept) {
 		for (i = 0; i < 4; i++) {
-			aliastransform[0][i] *= aliasxscale *
+			aliastransform[0][i] *= sw32_aliasxscale *
 				(1.0 / ((float) 0x8000 * 0x10000));
-			aliastransform[1][i] *= aliasyscale *
+			aliastransform[1][i] *= sw32_aliasyscale *
 				(1.0 / ((float) 0x8000 * 0x10000));
 			aliastransform[2][i] *= 1.0 / ((float) 0x8000 * 0x10000);
 		}
@@ -419,13 +421,13 @@ R_AliasSetUpTransform (int trivial_accept)
 }
 
 /*
-R_AliasTransformFinalVert
+sw32_R_AliasTransformFinalVert
 
 now this function just copies the texture coordinates and calculates lighting
 actual 3D transform is done by R_AliasTransformFinalVert8/16 functions above
 */
 void
-R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
+sw32_R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 						   trivertx_t *pverts, stvert_t *pstverts)
 {
 	int         temp;
@@ -439,11 +441,11 @@ R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 	// lighting
 	// LordHavoc: flipped lightcos so it is + for bright, not -
 	plightnormal = r_avertexnormals[pverts->lightnormalindex];
-	lightcos = -DotProduct (plightnormal, r_plightvec);
-	temp = r_ambientlight;
+	lightcos = -DotProduct (plightnormal, sw32_r_plightvec);
+	temp = sw32_r_ambientlight;
 
 	if (lightcos > 0) {
-		temp += (int) (r_shadelight * lightcos);
+		temp += (int) (sw32_r_shadelight * lightcos);
 
 		// clamp; because we limited the minimum ambient and shading light,
 		// we don't have to clamp low light, just bright
@@ -455,13 +457,13 @@ R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 }
 
 void
-R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
+sw32_R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
 {
 	int         i, temp;
 	float       lightcos, *plightnormal, zi;
 	trivertx_t *pverts;
 
-	pverts = r_apverts;
+	pverts = sw32_r_apverts;
 
 	for (i = 0; i < r_anumverts; i++, fv++, pverts++, pstverts++) {
 		// transform and project
@@ -474,9 +476,9 @@ R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
 		fv->v[5] = zi;
 
 		fv->v[0] = ((DotProduct (pverts->v, aliastransform[0]) +
-					 aliastransform[0][3]) * zi) + aliasxcenter;
+					 aliastransform[0][3]) * zi) + sw32_aliasxcenter;
 		fv->v[1] = ((DotProduct (pverts->v, aliastransform[1]) +
-					 aliastransform[1][3]) * zi) + aliasycenter;
+					 aliastransform[1][3]) * zi) + sw32_aliasycenter;
 
 		fv->v[2] = pstverts->s;
 		fv->v[3] = pstverts->t;
@@ -485,11 +487,11 @@ R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
 		// lighting
 		// LordHavoc: flipped lightcos so it is + for bright, not -
 		plightnormal = r_avertexnormals[pverts->lightnormalindex];
-		lightcos = -DotProduct (plightnormal, r_plightvec);
-		temp = r_ambientlight;
+		lightcos = -DotProduct (plightnormal, sw32_r_plightvec);
+		temp = sw32_r_ambientlight;
 
 		if (lightcos > 0) {
-			temp += (int) (r_shadelight * lightcos);
+			temp += (int) (sw32_r_shadelight * lightcos);
 
 			// clamp; because we limited the minimum ambient and shading
 			// light, we don't have to clamp low light, just bright
@@ -502,7 +504,7 @@ R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
 }
 
 void
-R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
+sw32_R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 {
 	float       zi;
 
@@ -511,8 +513,8 @@ R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 
 	fv->v[5] = zi * ziscale;
 
-	fv->v[0] = (av->fv[0] * aliasxscale * zi) + aliasxcenter;
-	fv->v[1] = (av->fv[1] * aliasyscale * zi) + aliasycenter;
+	fv->v[0] = (av->fv[0] * sw32_aliasxscale * zi) + sw32_aliasxcenter;
+	fv->v[1] = (av->fv[1] * sw32_aliasyscale * zi) + sw32_aliasycenter;
 }
 
 
@@ -524,14 +526,14 @@ R_AliasPrepareUnclippedPoints (void)
 	pstverts = (stvert_t *) ((byte *) paliashdr + paliashdr->stverts);
 	r_anumverts = pmdl->numverts;
 
-	R_AliasTransformAndProjectFinalVerts (pfinalverts, pstverts);
+	sw32_R_AliasTransformAndProjectFinalVerts (pfinalverts, pstverts);
 
-	r_affinetridesc.pfinalverts = pfinalverts;
-	r_affinetridesc.ptriangles = (mtriangle_t *)
+	sw32_r_affinetridesc.pfinalverts = pfinalverts;
+	sw32_r_affinetridesc.ptriangles = (mtriangle_t *)
 		((byte *) paliashdr + paliashdr->triangles);
-	r_affinetridesc.numtriangles = pmdl->numtris;
+	sw32_r_affinetridesc.numtriangles = pmdl->numtris;
 
-	D_PolysetDraw ();
+	sw32_D_PolysetDraw ();
 }
 
 
@@ -550,23 +552,23 @@ R_AliasSetupSkin (void)
 	pskindesc = R_AliasGetSkindesc (skinnum, paliashdr);
 	a_skinwidth = pmdl->skinwidth;
 
-	r_affinetridesc.pskindesc = pskindesc;
-	r_affinetridesc.pskin = (void *) ((byte *) paliashdr + pskindesc->skin);
-	r_affinetridesc.skinwidth = a_skinwidth;
-	r_affinetridesc.seamfixupX16 = (a_skinwidth >> 1) << 16;
-	r_affinetridesc.skinheight = pmdl->skinheight;
+	sw32_r_affinetridesc.pskindesc = pskindesc;
+	sw32_r_affinetridesc.pskin = (void *) ((byte *) paliashdr + pskindesc->skin);
+	sw32_r_affinetridesc.skinwidth = a_skinwidth;
+	sw32_r_affinetridesc.seamfixupX16 = (a_skinwidth >> 1) << 16;
+	sw32_r_affinetridesc.skinheight = pmdl->skinheight;
 
-	acolormap = vid.colormap8;
+	sw32_acolormap = vid.colormap8;
 	if (currententity->skin) {
 		tex_t      *base;
 
 		base = currententity->skin->texels;
 		if (base) {
-			r_affinetridesc.pskin = base->data;
-			r_affinetridesc.skinwidth = base->width;
-			r_affinetridesc.skinheight = base->height;
+			sw32_r_affinetridesc.pskin = base->data;
+			sw32_r_affinetridesc.skinwidth = base->width;
+			sw32_r_affinetridesc.skinheight = base->height;
 		}
-		acolormap = currententity->skin->colormap;
+		sw32_acolormap = currententity->skin->colormap;
 	}
 }
 
@@ -575,34 +577,34 @@ R_AliasSetupLighting (alight_t *plighting)
 {
 	// guarantee that no vertex will ever be lit below LIGHT_MIN, so we don't
 	// have to clamp off the bottom
-	r_ambientlight = plighting->ambientlight;
+	sw32_r_ambientlight = plighting->ambientlight;
 
-	if (r_ambientlight < LIGHT_MIN)
-		r_ambientlight = LIGHT_MIN;
+	if (sw32_r_ambientlight < LIGHT_MIN)
+		sw32_r_ambientlight = LIGHT_MIN;
 
-	r_ambientlight = (/*255 -*/ r_ambientlight) << VID_CBITS;
+	sw32_r_ambientlight = (/*255 -*/ sw32_r_ambientlight) << VID_CBITS;
 
-//	if (r_ambientlight < LIGHT_MIN)
-//		r_ambientlight = LIGHT_MIN;
+//	if (sw32_r_ambientlight < LIGHT_MIN)
+//		sw32_r_ambientlight = LIGHT_MIN;
 
-	r_shadelight = plighting->shadelight;
+	sw32_r_shadelight = plighting->shadelight;
 
-	if (r_shadelight < 0)
-		r_shadelight = 0;
+	if (sw32_r_shadelight < 0)
+		sw32_r_shadelight = 0;
 
-	r_shadelight *= VID_GRADES;
+	sw32_r_shadelight *= VID_GRADES;
 
 	// rotate the lighting vector into the model's frame of reference
-	r_plightvec[0] = DotProduct (plighting->plightvec, alias_forward);
-	r_plightvec[1] = -DotProduct (plighting->plightvec, alias_right);
-	r_plightvec[2] = DotProduct (plighting->plightvec, alias_up);
+	sw32_r_plightvec[0] = DotProduct (plighting->plightvec, alias_forward);
+	sw32_r_plightvec[1] = -DotProduct (plighting->plightvec, alias_right);
+	sw32_r_plightvec[2] = DotProduct (plighting->plightvec, alias_up);
 }
 
 
 /*
 	R_AliasSetupFrame
 
-	set r_apverts
+	set sw32_r_apverts
 */
 static void
 R_AliasSetupFrame (void)
@@ -610,17 +612,17 @@ R_AliasSetupFrame (void)
 	maliasframedesc_t *frame;
 
 	frame = R_AliasGetFramedesc (currententity->frame, paliashdr);
-	r_apverts = (trivertx_t *) ((byte *) paliashdr + frame->frame);
+	sw32_r_apverts = (trivertx_t *) ((byte *) paliashdr + frame->frame);
 }
 
 
 void
-R_AliasDrawModel (alight_t *plighting)
+sw32_R_AliasDrawModel (alight_t *plighting)
 {
 	int         size;
 	finalvert_t *finalverts;
 
-	r_amodels_drawn++;
+	sw32_r_amodels_drawn++;
 
 	if (!(paliashdr = currententity->model->aliashdr))
 		paliashdr = Cache_Get (&currententity->model->cache);
@@ -636,24 +638,24 @@ R_AliasDrawModel (alight_t *plighting)
 	// cache align
 	pfinalverts = (finalvert_t *)
 		(((intptr_t) &finalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
-	pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
+	sw32_pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
 
 	R_AliasSetupSkin ();
-	R_AliasSetUpTransform (currententity->trivial_accept);
+	sw32_R_AliasSetUpTransform (currententity->trivial_accept);
 	R_AliasSetupLighting (plighting);
 	R_AliasSetupFrame ();
 
-	if (!acolormap)
-		acolormap = vid.colormap8;
-	if (acolormap == &vid.colormap8 && r_pixbytes != 1)
+	if (!sw32_acolormap)
+		sw32_acolormap = vid.colormap8;
+	if (sw32_acolormap == &vid.colormap8 && sw32_r_pixbytes != 1)
 	{
-		if (r_pixbytes == 2)
-			acolormap = vid.colormap16;
-		else if (r_pixbytes == 4)
-			acolormap = vid.colormap32;
+		if (sw32_r_pixbytes == 2)
+			sw32_acolormap = vid.colormap16;
+		else if (sw32_r_pixbytes == 4)
+			sw32_acolormap = vid.colormap32;
 		else
 			Sys_Error("R_AliasDrawmodel: unsupported r_pixbytes %i",
-					  r_pixbytes);
+					  sw32_r_pixbytes);
 	}
 
 	if (currententity != vr_data.view_model)

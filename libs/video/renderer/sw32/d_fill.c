@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/sys.h"
 
@@ -39,9 +41,9 @@ static __attribute__ ((used)) const char rcsid[] =
 
 
 void
-D_FillRect (vrect_t *rect, int color)
+sw32_D_FillRect (vrect_t *rect, int color)
 {
-	switch (r_pixbytes)
+	switch (sw32_r_pixbytes)
 	{
 	case 1:
 		{
@@ -86,7 +88,7 @@ D_FillRect (vrect_t *rect, int color)
 			unsigned int rx, ry, rwidth, rheight;
 			unsigned short *dest, pix;
 
-			pix = d_8to16table[color];
+			pix = sw32_8to16table[color];
 
 			rx = rect->x;
 			ry = rect->y;
@@ -159,6 +161,6 @@ D_FillRect (vrect_t *rect, int color)
 		}
 		break;
 	default:
-		Sys_Error("D_FillRect: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("D_FillRect: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
 }

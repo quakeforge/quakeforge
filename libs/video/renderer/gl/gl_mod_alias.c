@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -362,7 +364,7 @@ GL_GetAliasFrameVerts (aliashdr_t *paliashdr, entity_t *e)
 }
 
 void
-R_DrawAliasModel (entity_t *e)
+gl_R_DrawAliasModel (entity_t *e)
 {
 	float       radius, minlight, d;
 	float       position[4] = {0.0, 0.0, 0.0, 1.0},
@@ -506,7 +508,7 @@ R_DrawAliasModel (entity_t *e)
 	// locate the proper data
 	if (!(paliashdr = e->model->aliashdr))
 		paliashdr = Cache_Get (&e->model->cache);
-	c_alias_polys += paliashdr->mdl.numtris;
+	gl_c_alias_polys += paliashdr->mdl.numtris;
 
 	// if the model has a colorised/external skin, use it, otherwise use
 	// the skin embedded in the model data
@@ -538,7 +540,7 @@ R_DrawAliasModel (entity_t *e)
 
 	// setup the transform
 	qfglPushMatrix ();
-	R_RotateForEntity (e);
+	gl_R_RotateForEntity (e);
 
 	qfglTranslatef (paliashdr->mdl.scale_origin[0],
 					paliashdr->mdl.scale_origin[1],
@@ -643,7 +645,7 @@ R_DrawAliasModel (entity_t *e)
 	// torches, grenades, and lightning bolts do not have shadows
 	if (r_shadows->int_val && model->shadow_alpha) {
 		qfglPushMatrix ();
-		R_RotateForEntity (e);
+		gl_R_RotateForEntity (e);
 
 		if (!gl_tess)
 			qfglDisable (GL_NORMALIZE);

@@ -31,6 +31,9 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -126,7 +129,7 @@ release_instsurfs (void)
 }
 
 void
-R_AddTexture (texture_t *tex)
+gl_R_AddTexture (texture_t *tex)
 {
 	int         i;
 	if (r_num_texture_chains == max_texture_chains) {
@@ -142,7 +145,7 @@ R_AddTexture (texture_t *tex)
 }
 
 void
-R_InitSurfaceChains (model_t *model)
+gl_R_InitSurfaceChains (model_t *model)
 {
 	int         i;
 
@@ -156,7 +159,7 @@ R_InitSurfaceChains (model_t *model)
 }
 
 void
-R_ClearTextures (void)
+gl_R_ClearTextures (void)
 {
 	r_num_texture_chains = 0;
 }
@@ -208,7 +211,7 @@ R_RenderBrushPoly_3 (msurface_t *fa)
 	float      *v;
 	int			i;
 
-	c_brush_polys++;
+	gl_c_brush_polys++;
 
 	qfglBegin (GL_POLYGON);
 	v = fa->polys->verts[0];
@@ -229,7 +232,7 @@ R_RenderBrushPoly_2 (msurface_t *fa)
 	float      *v;
 	int			i;
 
-	c_brush_polys++;
+	gl_c_brush_polys++;
 
 	qfglBegin (GL_POLYGON);
 	v = fa->polys->verts[0];
@@ -249,7 +252,7 @@ R_RenderBrushPoly_1 (msurface_t *fa)
 	float      *v;
 	int			i;
 
-	c_brush_polys++;
+	gl_c_brush_polys++;
 
 	qfglBegin (GL_POLYGON);
 	v = fa->polys->verts[0];
@@ -302,13 +305,13 @@ R_AddToLightmapChain (msurface_t *fa)
 				theRect->w = (fa->light_s - theRect->l) + smax;
 			if ((theRect->h + theRect->t) < (fa->light_t + tmax))
 				theRect->h = (fa->light_t - theRect->t) + tmax;
-			R_BuildLightMap (fa);
+			gl_R_BuildLightMap (fa);
 		}
 	}
 }
 
 void
-R_DrawWaterSurfaces (void)
+gl_R_DrawWaterSurfaces (void)
 {
 	int         i;
 	instsurf_t *s;
@@ -319,7 +322,7 @@ R_DrawWaterSurfaces (void)
 		return;
 
 	// go back to the world matrix
-	qfglLoadMatrixf (r_world_matrix);
+	qfglLoadMatrixf (gl_r_world_matrix);
 
 	if (wateralpha < 1.0) {
 		qfglDepthMask (GL_FALSE);
@@ -333,14 +336,14 @@ R_DrawWaterSurfaces (void)
 		if (s->transform)
 			qfglLoadMatrixf (s->transform);
 		else
-			qfglLoadMatrixf (r_world_matrix);
+			qfglLoadMatrixf (gl_r_world_matrix);
 		if (i != fa->texinfo->texture->gl_texturenum) {
 			i = fa->texinfo->texture->gl_texturenum;
 			qfglBindTexture (GL_TEXTURE_2D, i);
 		}
 		GL_EmitWaterPolys (fa);
 	}
-	qfglLoadMatrixf (r_world_matrix);
+	qfglLoadMatrixf (gl_r_world_matrix);
 
 	waterchain = NULL;
 	waterchain_tail = &waterchain;
@@ -510,7 +513,7 @@ chain_surface (msurface_t *surf, vec_t *transform, float *color)
 }
 
 void
-R_DrawBrushModel (entity_t *e)
+gl_R_DrawBrushModel (entity_t *e)
 {
 	float       dot, radius;
 	int         i;
@@ -572,7 +575,7 @@ R_DrawBrushModel (entity_t *e)
 	}
 
 	qfglPushMatrix ();
-	R_RotateForEntity (e);
+	gl_R_RotateForEntity (e);
 	qfglGetFloatv (GL_MODELVIEW_MATRIX, e->full_transform);
 	qfglPopMatrix ();
 
@@ -698,7 +701,7 @@ R_VisitWorldNodes (mnode_t *node)
 }
 
 void
-R_DrawWorld (void)
+gl_R_DrawWorld (void)
 {
 	entity_t    worldent;
 
@@ -712,7 +715,7 @@ R_DrawWorld (void)
 	sky_chain = 0;
 	sky_chain_tail = &sky_chain;
 	if (!gl_sky_clip->int_val) {
-		R_DrawSky ();
+		gl_R_DrawSky ();
 	}
 
 	R_VisitWorldNodes (r_worldentity.model->nodes);
@@ -723,15 +726,15 @@ R_DrawWorld (void)
 				continue;
 			currententity = ent;
 
-			R_DrawBrushModel (currententity);
+			gl_R_DrawBrushModel (currententity);
 		}
 	}
 
-	R_CalcLightmaps ();
+	gl_R_CalcLightmaps ();
 
-	R_DrawSkyChain (sky_chain);
+	gl_R_DrawSkyChain (sky_chain);
 
-	if (!Fog_GetDensity ()
+	if (!gl_Fog_GetDensity ()
 		|| (gl_fb_bmodels->int_val && gl_mtex_fullbright)
 		|| gl_mtex_active_tmus > 1) {
 		// we have enough active TMUs to render everything in one go
@@ -739,7 +742,7 @@ R_DrawWorld (void)
 		DrawTextureChains (1, 1);
 
 		if (gl_mtex_active_tmus <= 1)
-			R_BlendLightmaps ();
+			gl_R_BlendLightmaps ();
 
 		if (gl_fb_bmodels->int_val && !gl_mtex_fullbright)
 			R_RenderFullbrights ();
@@ -748,7 +751,7 @@ R_DrawWorld (void)
 			// textures and lightmaps in one pass
 			// black fog
 			// no blending
-			Fog_StartAdditive ();
+			gl_Fog_StartAdditive ();
 			DrawTextureChains (1, 1);
 			// buf = fTL + (1-f)0
 			//     = fTL
@@ -756,15 +759,15 @@ R_DrawWorld (void)
 			// texture pass + lightmap pass
 			// no fog
 			// no blending
-			Fog_DisableGFog ();
+			gl_Fog_DisableGFog ();
 			DrawTextureChains (1, 1);
 			// buf = T
 			// black fog
 			// blend: buf = zero, src (non-overbright)
 			// FIXME overbright broken?
-			Fog_EnableGFog ();
-			Fog_StartAdditive ();
-			R_BlendLightmaps ();	//leaves blending as As, 1-As
+			gl_Fog_EnableGFog ();
+			gl_Fog_StartAdditive ();
+			gl_R_BlendLightmaps ();	//leaves blending as As, 1-As
 			// buf = I*0 + buf*I
 			//     = T*C
 			//     = T(fL + (1-f)0)
@@ -778,7 +781,7 @@ R_DrawWorld (void)
 		//     = a(fG + (1-f)0) + (1-a)fTL
 		//     = afG + (1-a)fTL
 		//     = f((1-a)TL + aG)
-		Fog_StopAdditive ();		// use fog color
+		gl_Fog_StopAdditive ();		// use fog color
 		qfglDepthMask (GL_FALSE);	// don't write Z
 		qfglBlendFunc (GL_ONE, GL_ONE);
 		// draw black polys

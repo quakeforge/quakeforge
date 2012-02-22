@@ -30,6 +30,9 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -57,7 +60,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 /* SCREEN SHOTS */
 
 tex_t *
-SCR_CaptureBGR (void)
+sw32_SCR_CaptureBGR (void)
 {
 	int         count, x, y;
 	tex_t      *tex;
@@ -71,7 +74,7 @@ SCR_CaptureBGR (void)
 	tex->height = vid.height;
 	tex->format = tex_rgb;
 	tex->palette = 0;
-	D_EnableBackBufferAccess ();
+	sw32_D_EnableBackBufferAccess ();
 	src = vid.buffer;
 	for (y = 0; y < tex->height; y++) {
 		dst = tex->data + (tex->height - 1 - y) * tex->width * 3;
@@ -82,18 +85,18 @@ SCR_CaptureBGR (void)
 			src++;
 		}
 	}
-	D_DisableBackBufferAccess ();
+	sw32_D_DisableBackBufferAccess ();
 	return tex;
 }
 
 tex_t *
-SCR_ScreenShot (int width, int height)
+sw32_SCR_ScreenShot (int width, int height)
 {
 	return 0;
 }
 
 void
-SCR_ScreenShot_f (void)
+sw32_SCR_ScreenShot_f (void)
 {
 	dstring_t  *pcxname = dstring_new ();
 	pcx_t      *pcx = 0;
@@ -105,10 +108,10 @@ SCR_ScreenShot_f (void)
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PCX");
 	} else {
 		// enable direct drawing of console to back buffer
-		D_EnableBackBufferAccess ();
+		sw32_D_EnableBackBufferAccess ();
 
 		// save the pcx file
-		switch(r_pixbytes) {
+		switch(sw32_r_pixbytes) {
 		case 1:
 			pcx = EncodePCX (vid.buffer, vid.width, vid.height, vid.rowbytes,
 							 vid.basepal, false, &pcx_len);
@@ -120,11 +123,11 @@ SCR_ScreenShot_f (void)
 			Sys_Printf("SCR_ScreenShot_f: FIXME - add 32bit support\n");
 			break;
 		default:
-			Sys_Error("SCR_ScreenShot_f: unsupported r_pixbytes %i", r_pixbytes);
+			Sys_Error("SCR_ScreenShot_f: unsupported r_pixbytes %i", sw32_r_pixbytes);
 		}
 
 		// for adapters that can't stay mapped in for linear writes all the time
-		D_DisableBackBufferAccess ();
+		sw32_D_DisableBackBufferAccess ();
 
 		if (pcx) {
 			QFS_WriteFile (pcxname->str, pcx, pcx_len);
@@ -144,7 +147,7 @@ SCR_ScreenShot_f (void)
 	needs almost the entire 256k of stack space!
 */
 void
-SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+sw32_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	vrect_t     vrect;
 
@@ -168,25 +171,25 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		SCR_CalcRefdef ();
 
 	// do 3D refresh drawing, and then update the screen
-	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
+	sw32_D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
 										// directly
 
 	if (scr_fullupdate++ < vid.numpages) {	// clear the entire screen
 		scr_copyeverything = 1;
-		Draw_TileClear (0, 0, vid.width, vid.height);
+		sw32_Draw_TileClear (0, 0, vid.width, vid.height);
 	}
 
 	pconupdate = NULL;
 
 	SCR_SetUpToDrawConsole ();
 
-	D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
+	sw32_D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
 										// in for linear writes all the time
 	VID_LockBuffer ();
 	scr_3dfunc ();
 	VID_UnlockBuffer ();
 
-	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
+	sw32_D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
 										// directly
 
 	while (*scr_funcs) {
@@ -194,10 +197,10 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		scr_funcs++;
 	}
 
-	D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
+	sw32_D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
 										// in for linear writes all the time
 	if (pconupdate) {
-		D_UpdateRects (pconupdate);
+		sw32_D_UpdateRects (pconupdate);
 	}
 
 	// update one of three areas

@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/render.h"
 #include "QF/sys.h"
@@ -46,9 +48,9 @@ static sspan_t *sprite_spans;
 
 
 void
-D_SpriteDrawSpans (sspan_t *pspan)
+sw32_D_SpriteDrawSpans (sspan_t *pspan)
 {
-	switch(r_pixbytes) {
+	switch(sw32_r_pixbytes) {
 	case 1:
 	{
 		int         count, spancount, izistep;
@@ -64,18 +66,18 @@ D_SpriteDrawSpans (sspan_t *pspan)
 		sstep = 0;							// keep compiler happy
 		tstep = 0;							// ditto
 
-		pbase = (byte *) cacheblock;
+		pbase = (byte *) sw32_cacheblock;
 
-		sdivz8stepu = d_sdivzstepu * 8;
-		tdivz8stepu = d_tdivzstepu * 8;
+		sdivz8stepu = sw32_d_sdivzstepu * 8;
+		tdivz8stepu = sw32_d_tdivzstepu * 8;
 		zi8stepu = d_zistepu * 8 * 65536.0f;
 
 		// we count on FP exceptions being turned off to avoid range problems
 		izistep = (int) (d_zistepu * 0x8000 * 0x10000);
 
 		do {
-			pdest = (byte *) d_viewbuffer + screenwidth * pspan->v + pspan->u;
-			pz = d_pzbuffer + (d_zwidth * pspan->v) + pspan->u;
+			pdest = (byte *) sw32_d_viewbuffer + sw32_screenwidth * pspan->v + pspan->u;
+			pz = sw32_d_pzbuffer + (sw32_d_zwidth * pspan->v) + pspan->u;
 
 			count = pspan->count;
 
@@ -86,24 +88,24 @@ D_SpriteDrawSpans (sspan_t *pspan)
 			du = (float) pspan->u;
 			dv = (float) pspan->v;
 
-			sdivz = d_sdivzorigin + dv * d_sdivzstepv + du * d_sdivzstepu;
-			tdivz = d_tdivzorigin + dv * d_tdivzstepv + du * d_tdivzstepu;
+			sdivz = sw32_d_sdivzorigin + dv * sw32_d_sdivzstepv + du * sw32_d_sdivzstepu;
+			tdivz = sw32_d_tdivzorigin + dv * sw32_d_tdivzstepv + du * sw32_d_tdivzstepu;
 			zi = (d_ziorigin + dv * d_zistepv + du * d_zistepu) * 65536.0f;
-			z = d_zitable[(int) zi];
+			z = sw32_d_zitable[(int) zi];
 			// we count on FP exceptions being turned off to avoid range
 			// problems
 
 			izi = (int) (zi * 0x8000);
 
-			s = (int) (sdivz * z) + sadjust;
-			if (s > bbextents)
-				s = bbextents;
+			s = (int) (sdivz * z) + sw32_sadjust;
+			if (s > sw32_bbextents)
+				s = sw32_bbextents;
 			else if (s < 0)
 				s = 0;
 
-			t = (int) (tdivz * z) + tadjust;
-			if (t > bbextentt)
-				t = bbextentt;
+			t = (int) (tdivz * z) + sw32_tadjust;
+			if (t > sw32_bbextentt)
+				t = sw32_bbextentt;
 			else if (t < 0)
 				t = 0;
 
@@ -122,19 +124,19 @@ D_SpriteDrawSpans (sspan_t *pspan)
 					sdivz += sdivz8stepu;
 					tdivz += tdivz8stepu;
 					zi += zi8stepu;
-					z = d_zitable[(int) zi];
+					z = sw32_d_zitable[(int) zi];
 
-					snext = (int) (sdivz * z) + sadjust;
-					if (snext > bbextents)
-						snext = bbextents;
+					snext = (int) (sdivz * z) + sw32_sadjust;
+					if (snext > sw32_bbextents)
+						snext = sw32_bbextents;
 					else if (snext < 8)
 						snext = 8;			// prevent round-off error on <0
 											// steps from causing overstepping
 											// & running off the texture's edge
 
-					tnext = (int) (tdivz * z) + tadjust;
-						if (tnext > bbextentt)
-							tnext = bbextentt;
+					tnext = (int) (tdivz * z) + sw32_tadjust;
+						if (tnext > sw32_bbextentt)
+							tnext = sw32_bbextentt;
 						else if (tnext < 8)
 							tnext = 8;			// guard against round-off
 												// error on <0 steps
@@ -147,22 +149,22 @@ D_SpriteDrawSpans (sspan_t *pspan)
 					// calculate s and t steps across span by division,
 					// biasing steps low so we don't run off the texture
 					spancountminus1 = (float) (spancount - 1);
-					sdivz += d_sdivzstepu * spancountminus1;
-					tdivz += d_tdivzstepu * spancountminus1;
+					sdivz += sw32_d_sdivzstepu * spancountminus1;
+					tdivz += sw32_d_tdivzstepu * spancountminus1;
 					zi += d_zistepu * 65536.0f * spancountminus1;
-					z = d_zitable[(int) zi];
-					snext = (int) (sdivz * z) + sadjust;
-					if (snext > bbextents)
-						snext = bbextents;
+					z = sw32_d_zitable[(int) zi];
+					snext = (int) (sdivz * z) + sw32_sadjust;
+					if (snext > sw32_bbextents)
+						snext = sw32_bbextents;
 					else if (snext < 8)
 						snext = 8;			// prevent round-off error on <0
 											// steps from from causing
 											// overstepping & running off the
 											// edge of the texture
 
-					tnext = (int) (tdivz * z) + tadjust;
-					if (tnext > bbextentt)
-						tnext = bbextentt;
+					tnext = (int) (tdivz * z) + sw32_tadjust;
+					if (tnext > sw32_bbextentt)
+						tnext = sw32_bbextentt;
 					else if (tnext < 8)
 						tnext = 8;			// guard against round-off error on
 											// <0 steps
@@ -174,7 +176,7 @@ D_SpriteDrawSpans (sspan_t *pspan)
 				}
 
 				do {
-					btemp = pbase[(s >> 16) + (t >> 16) * cachewidth];
+					btemp = pbase[(s >> 16) + (t >> 16) * sw32_cachewidth];
 					if (btemp != TRANSPARENT_COLOR) {
 						if (*pz <= (izi >> 16)) {
 							*pz = izi >> 16;
@@ -216,18 +218,18 @@ NextSpan1:
 		sstep = 0;							// keep compiler happy
 		tstep = 0;							// ditto
 
-		pbase = (byte *) cacheblock;
+		pbase = (byte *) sw32_cacheblock;
 
-		sdivz8stepu = d_sdivzstepu * 8;
-		tdivz8stepu = d_tdivzstepu * 8;
+		sdivz8stepu = sw32_d_sdivzstepu * 8;
+		tdivz8stepu = sw32_d_tdivzstepu * 8;
 		zi8stepu = d_zistepu * 8 * 65536;
 
 		// we count on FP exceptions being turned off to avoid range problems
 		izistep = (int) (d_zistepu * 0x8000 * 0x10000);
 
 		do {
-			pdest = (short *) d_viewbuffer + screenwidth * pspan->v + pspan->u;
-			pz = d_pzbuffer + (d_zwidth * pspan->v) + pspan->u;
+			pdest = (short *) sw32_d_viewbuffer + sw32_screenwidth * pspan->v + pspan->u;
+			pz = sw32_d_pzbuffer + (sw32_d_zwidth * pspan->v) + pspan->u;
 
 			count = pspan->count;
 
@@ -238,23 +240,23 @@ NextSpan1:
 			du = (float) pspan->u;
 			dv = (float) pspan->v;
 
-			sdivz = d_sdivzorigin + dv * d_sdivzstepv + du * d_sdivzstepu;
-			tdivz = d_tdivzorigin + dv * d_tdivzstepv + du * d_tdivzstepu;
+			sdivz = sw32_d_sdivzorigin + dv * sw32_d_sdivzstepv + du * sw32_d_sdivzstepu;
+			tdivz = sw32_d_tdivzorigin + dv * sw32_d_tdivzstepv + du * sw32_d_tdivzstepu;
 			zi = (d_ziorigin + dv * d_zistepv + du * d_zistepu) * 65536.0f;
-			z = d_zitable[(int) zi];
+			z = sw32_d_zitable[(int) zi];
 			// we count on FP exceptions being turned off to avoid range
 			// problems
 			izi = (int) (zi * 0x8000);
 
-			s = (int) (sdivz * z) + sadjust;
-			if (s > bbextents)
-				s = bbextents;
+			s = (int) (sdivz * z) + sw32_sadjust;
+			if (s > sw32_bbextents)
+				s = sw32_bbextents;
 			else if (s < 0)
 				s = 0;
 
-			t = (int) (tdivz * z) + tadjust;
-			if (t > bbextentt)
-				t = bbextentt;
+			t = (int) (tdivz * z) + sw32_tadjust;
+			if (t > sw32_bbextentt)
+				t = sw32_bbextentt;
 			else if (t < 0)
 				t = 0;
 
@@ -273,19 +275,19 @@ NextSpan1:
 					sdivz += sdivz8stepu;
 					tdivz += tdivz8stepu;
 					zi += zi8stepu;
-					z = d_zitable[(int) zi];
+					z = sw32_d_zitable[(int) zi];
 
-					snext = (int) (sdivz * z) + sadjust;
-					if (snext > bbextents)
-						snext = bbextents;
+					snext = (int) (sdivz * z) + sw32_sadjust;
+					if (snext > sw32_bbextents)
+						snext = sw32_bbextents;
 					else if (snext < 8)
 						snext = 8;			// prevent round-off error on <0
 											// steps from causing overstepping
 											// & running off the texture's edge
 
-					tnext = (int) (tdivz * z) + tadjust;
-					if (tnext > bbextentt)
-						tnext = bbextentt;
+					tnext = (int) (tdivz * z) + sw32_tadjust;
+					if (tnext > sw32_bbextentt)
+						tnext = sw32_bbextentt;
 					else if (tnext < 8)
 						tnext = 8;			// guard against round-off error on
 											// <0 steps
@@ -298,22 +300,22 @@ NextSpan1:
 					// and t steps across span by division, biasing steps
 					// low so we don't run off the texture
 					spancountminus1 = (float) (spancount - 1);
-					sdivz += d_sdivzstepu * spancountminus1;
-					tdivz += d_tdivzstepu * spancountminus1;
+					sdivz += sw32_d_sdivzstepu * spancountminus1;
+					tdivz += sw32_d_tdivzstepu * spancountminus1;
 					zi += d_zistepu * 65536.0f * spancountminus1;
-					z = d_zitable[(int) zi];
-					snext = (int) (sdivz * z) + sadjust;
-					if (snext > bbextents)
-						snext = bbextents;
+					z = sw32_d_zitable[(int) zi];
+					snext = (int) (sdivz * z) + sw32_sadjust;
+					if (snext > sw32_bbextents)
+						snext = sw32_bbextents;
 					else if (snext < 8)
 						snext = 8;			// prevent round-off error on <0
 											// steps from from causing
 											// overstepping & running off the
 											// edge of the texture
 
-					tnext = (int) (tdivz * z) + tadjust;
-					if (tnext > bbextentt)
-						tnext = bbextentt;
+					tnext = (int) (tdivz * z) + sw32_tadjust;
+					if (tnext > sw32_bbextentt)
+						tnext = sw32_bbextentt;
 					else if (tnext < 8)
 						tnext = 8;			// guard against round-off error on
 											// <0 steps
@@ -325,11 +327,11 @@ NextSpan1:
 				}
 
 				do {
-					btemp = pbase[(s >> 16) + (t >> 16) * cachewidth];
+					btemp = pbase[(s >> 16) + (t >> 16) * sw32_cachewidth];
 					if (btemp != TRANSPARENT_COLOR) {
 						if (*pz <= (izi >> 16)) {
 							*pz = izi >> 16;
-							*pdest = d_8to16table[btemp];
+							*pdest = sw32_8to16table[btemp];
 						}
 					}
 
@@ -367,18 +369,18 @@ NextSpan2:
 		sstep = 0;							// keep compiler happy
 		tstep = 0;							// ditto
 
-		pbase = (byte *) cacheblock;
+		pbase = (byte *) sw32_cacheblock;
 
-		sdivz8stepu = d_sdivzstepu * 8;
-		tdivz8stepu = d_tdivzstepu * 8;
+		sdivz8stepu = sw32_d_sdivzstepu * 8;
+		tdivz8stepu = sw32_d_tdivzstepu * 8;
 		zi8stepu = d_zistepu * 8 * 65536;
 
 		// we count on FP exceptions being turned off to avoid range problems
 		izistep = (int) (d_zistepu * 0x8000 * 0x10000);
 
 		do {
-			pdest = (int *) d_viewbuffer + screenwidth * pspan->v + pspan->u;
-			pz = d_pzbuffer + (d_zwidth * pspan->v) + pspan->u;
+			pdest = (int *) sw32_d_viewbuffer + sw32_screenwidth * pspan->v + pspan->u;
+			pz = sw32_d_pzbuffer + (sw32_d_zwidth * pspan->v) + pspan->u;
 
 			count = pspan->count;
 
@@ -389,23 +391,23 @@ NextSpan2:
 			du = (float) pspan->u;
 			dv = (float) pspan->v;
 
-			sdivz = d_sdivzorigin + dv * d_sdivzstepv + du * d_sdivzstepu;
-			tdivz = d_tdivzorigin + dv * d_tdivzstepv + du * d_tdivzstepu;
+			sdivz = sw32_d_sdivzorigin + dv * sw32_d_sdivzstepv + du * sw32_d_sdivzstepu;
+			tdivz = sw32_d_tdivzorigin + dv * sw32_d_tdivzstepv + du * sw32_d_tdivzstepu;
 			zi = (d_ziorigin + dv * d_zistepv + du * d_zistepu) * 65536.0f;
-			z = d_zitable[(int) zi];
+			z = sw32_d_zitable[(int) zi];
 			// we count on FP exceptions being turned off to avoid range
 			// problems
 			izi = (int) (zi * 0x8000);
 
-			s = (int) (sdivz * z) + sadjust;
-			if (s > bbextents)
-				s = bbextents;
+			s = (int) (sdivz * z) + sw32_sadjust;
+			if (s > sw32_bbextents)
+				s = sw32_bbextents;
 			else if (s < 0)
 				s = 0;
 
-			t = (int) (tdivz * z) + tadjust;
-			if (t > bbextentt)
-				t = bbextentt;
+			t = (int) (tdivz * z) + sw32_tadjust;
+			if (t > sw32_bbextentt)
+				t = sw32_bbextentt;
 			else if (t < 0)
 				t = 0;
 
@@ -424,19 +426,19 @@ NextSpan2:
 					sdivz += sdivz8stepu;
 					tdivz += tdivz8stepu;
 					zi += zi8stepu;
-					z = d_zitable[(int) zi];
+					z = sw32_d_zitable[(int) zi];
 
-					snext = (int) (sdivz * z) + sadjust;
-					if (snext > bbextents)
-						snext = bbextents;
+					snext = (int) (sdivz * z) + sw32_sadjust;
+					if (snext > sw32_bbextents)
+						snext = sw32_bbextents;
 					else if (snext < 8)
 						snext = 8;			// prevent round-off error on <0
 											// steps from causing overstepping
 											// & running off the texture's edge
 
-					tnext = (int) (tdivz * z) + tadjust;
-					if (tnext > bbextentt)
-						tnext = bbextentt;
+					tnext = (int) (tdivz * z) + sw32_tadjust;
+					if (tnext > sw32_bbextentt)
+						tnext = sw32_bbextentt;
 					else if (tnext < 8)
 						tnext = 8;			// guard against round-off error on
 											// <0 steps
@@ -449,21 +451,21 @@ NextSpan2:
 					// and t steps across span by division, biasing steps low
 					// so we don't run off the texture
 					spancountminus1 = (float) (spancount - 1);
-					sdivz += d_sdivzstepu * spancountminus1;
-					tdivz += d_tdivzstepu * spancountminus1;
+					sdivz += sw32_d_sdivzstepu * spancountminus1;
+					tdivz += sw32_d_tdivzstepu * spancountminus1;
 					zi += d_zistepu * 65536.0f * spancountminus1;
-					z = d_zitable[(int) zi];
-					snext = (int) (sdivz * z) + sadjust;
-					if (snext > bbextents)
-						snext = bbextents;
+					z = sw32_d_zitable[(int) zi];
+					snext = (int) (sdivz * z) + sw32_sadjust;
+					if (snext > sw32_bbextents)
+						snext = sw32_bbextents;
 					else if (snext < 8)
 						snext = 8;			// prevent round-off error on <0
 											// steps fromcausing overstepping
 											// & running off the texture's edge
 
-					tnext = (int) (tdivz * z) + tadjust;
-					if (tnext > bbextentt)
-						tnext = bbextentt;
+					tnext = (int) (tdivz * z) + sw32_tadjust;
+					if (tnext > sw32_bbextentt)
+						tnext = sw32_bbextentt;
 					else if (tnext < 8)
 						tnext = 8;			// guard against round-off error on
 											// <0 steps
@@ -475,7 +477,7 @@ NextSpan2:
 				}
 
 				do {
-					btemp = pbase[(s >> 16) + (t >> 16) * cachewidth];
+					btemp = pbase[(s >> 16) + (t >> 16) * sw32_cachewidth];
 					if (btemp != TRANSPARENT_COLOR) {
 						if (*pz <= (izi >> 16)) {
 							*pz = izi >> 16;
@@ -504,7 +506,7 @@ NextSpan4:
 
 	default:
 		Sys_Error("D_SpriteDrawSpans: unsupported r_pixbytes %i",
-				  r_pixbytes);
+				  sw32_r_pixbytes);
 	}
 }
 
@@ -520,16 +522,16 @@ D_SpriteScanLeftEdge (void)
 	pspan = sprite_spans;
 	i = minindex;
 	if (i == 0)
-		i = r_spritedesc.nump;
+		i = sw32_r_spritedesc.nump;
 
 	lmaxindex = maxindex;
 	if (lmaxindex == 0)
-		lmaxindex = r_spritedesc.nump;
+		lmaxindex = sw32_r_spritedesc.nump;
 
-	vtop = ceil (r_spritedesc.pverts[i].v);
+	vtop = ceil (sw32_r_spritedesc.pverts[i].v);
 
 	do {
-		pvert = &r_spritedesc.pverts[i];
+		pvert = &sw32_r_spritedesc.pverts[i];
 		pnext = pvert - 1;
 
 		vbottom = ceil (pnext->v);
@@ -557,7 +559,7 @@ D_SpriteScanLeftEdge (void)
 
 		i--;
 		if (i == 0)
-			i = r_spritedesc.nump;
+			i = sw32_r_spritedesc.nump;
 
 	} while (i != lmaxindex);
 }
@@ -574,7 +576,7 @@ D_SpriteScanRightEdge (void)
 	pspan = sprite_spans;
 	i = minindex;
 
-	vvert = r_spritedesc.pverts[i].v;
+	vvert = sw32_r_spritedesc.pverts[i].v;
 	if (vvert < r_refdef.fvrecty_adj)
 		vvert = r_refdef.fvrecty_adj;
 	if (vvert > r_refdef.fvrectbottom_adj)
@@ -583,7 +585,7 @@ D_SpriteScanRightEdge (void)
 	vtop = ceil (vvert);
 
 	do {
-		pvert = &r_spritedesc.pverts[i];
+		pvert = &sw32_r_spritedesc.pverts[i];
 		pnext = pvert + 1;
 
 		vnext = pnext->v;
@@ -628,7 +630,7 @@ D_SpriteScanRightEdge (void)
 		vvert = vnext;
 
 		i++;
-		if (i == r_spritedesc.nump)
+		if (i == sw32_r_spritedesc.nump)
 			i = 0;
 
 	} while (i != maxindex);
@@ -642,44 +644,44 @@ D_SpriteCalculateGradients (void)
 	vec3_t      p_normal, p_saxis, p_taxis, p_temp1;
 	float       distinv;
 
-	TransformVector (r_spritedesc.vpn, p_normal);
-	TransformVector (r_spritedesc.vright, p_saxis);
-	TransformVector (r_spritedesc.vup, p_taxis);
+	sw32_TransformVector (sw32_r_spritedesc.vpn, p_normal);
+	sw32_TransformVector (sw32_r_spritedesc.vright, p_saxis);
+	sw32_TransformVector (sw32_r_spritedesc.vup, p_taxis);
 	VectorNegate (p_taxis, p_taxis);
 
-	distinv = 1.0 / (-DotProduct (modelorg, r_spritedesc.vpn));
+	distinv = 1.0 / (-DotProduct (modelorg, sw32_r_spritedesc.vpn));
 	distinv = min (distinv, 1.0);
 
-	d_sdivzstepu = p_saxis[0] * xscaleinv;
-	d_tdivzstepu = p_taxis[0] * xscaleinv;
+	sw32_d_sdivzstepu = p_saxis[0] * sw32_xscaleinv;
+	sw32_d_tdivzstepu = p_taxis[0] * sw32_xscaleinv;
 
-	d_sdivzstepv = -p_saxis[1] * yscaleinv;
-	d_tdivzstepv = -p_taxis[1] * yscaleinv;
+	sw32_d_sdivzstepv = -p_saxis[1] * sw32_yscaleinv;
+	sw32_d_tdivzstepv = -p_taxis[1] * sw32_yscaleinv;
 
-	d_zistepu = p_normal[0] * xscaleinv * distinv;
-	d_zistepv = -p_normal[1] * yscaleinv * distinv;
+	d_zistepu = p_normal[0] * sw32_xscaleinv * distinv;
+	d_zistepv = -p_normal[1] * sw32_yscaleinv * distinv;
 
-	d_sdivzorigin = p_saxis[2] - xcenter * d_sdivzstepu -
-		ycenter * d_sdivzstepv;
-	d_tdivzorigin = p_taxis[2] - xcenter * d_tdivzstepu -
-		ycenter * d_tdivzstepv;
-	d_ziorigin = p_normal[2] * distinv - xcenter * d_zistepu -
-		ycenter * d_zistepv;
+	sw32_d_sdivzorigin = p_saxis[2] - sw32_xcenter * sw32_d_sdivzstepu -
+		sw32_ycenter * sw32_d_sdivzstepv;
+	sw32_d_tdivzorigin = p_taxis[2] - sw32_xcenter * sw32_d_tdivzstepu -
+		sw32_ycenter * sw32_d_tdivzstepv;
+	d_ziorigin = p_normal[2] * distinv - sw32_xcenter * d_zistepu -
+		sw32_ycenter * d_zistepv;
 
-	TransformVector (modelorg, p_temp1);
+	sw32_TransformVector (modelorg, p_temp1);
 
-	sadjust = ((fixed16_t) (DotProduct (p_temp1, p_saxis) * 0x10000 + 0.5)) -
-		(-(cachewidth >> 1) << 16);
-	tadjust = ((fixed16_t) (DotProduct (p_temp1, p_taxis) * 0x10000 + 0.5)) -
+	sw32_sadjust = ((fixed16_t) (DotProduct (p_temp1, p_saxis) * 0x10000 + 0.5)) -
+		(-(sw32_cachewidth >> 1) << 16);
+	sw32_tadjust = ((fixed16_t) (DotProduct (p_temp1, p_taxis) * 0x10000 + 0.5)) -
 		(-(sprite_height >> 1) << 16);
 
 	// -1 (-epsilon) so we never wander off the edge of the texture
-	bbextents = (cachewidth << 16) - 1;
-	bbextentt = (sprite_height << 16) - 1;
+	sw32_bbextents = (sw32_cachewidth << 16) - 1;
+	sw32_bbextentt = (sprite_height << 16) - 1;
 }
 
 void
-D_DrawSprite (void)
+sw32_D_DrawSprite (void)
 {
 	int         i, nump;
 	float       ymin, ymax;
@@ -692,9 +694,9 @@ D_DrawSprite (void)
 	// scan to draw
 	ymin = 999999.9;
 	ymax = -999999.9;
-	pverts = r_spritedesc.pverts;
+	pverts = sw32_r_spritedesc.pverts;
 
-	for (i = 0; i < r_spritedesc.nump; i++) {
+	for (i = 0; i < sw32_r_spritedesc.nump; i++) {
 		if (pverts->v < ymin) {
 			ymin = pverts->v;
 			minindex = i;
@@ -714,18 +716,18 @@ D_DrawSprite (void)
 	if (ymin >= ymax)
 		return;							// doesn't cross any scans at all
 
-	cachewidth = r_spritedesc.pspriteframe->width;
-	sprite_height = r_spritedesc.pspriteframe->height;
-	cacheblock = &r_spritedesc.pspriteframe->pixels[0];
+	sw32_cachewidth = sw32_r_spritedesc.pspriteframe->width;
+	sprite_height = sw32_r_spritedesc.pspriteframe->height;
+	sw32_cacheblock = &sw32_r_spritedesc.pspriteframe->pixels[0];
 
 	// copy the first vertex to the last vertex, so we don't have to deal with
 	// wrapping
-	nump = r_spritedesc.nump;
-	pverts = r_spritedesc.pverts;
+	nump = sw32_r_spritedesc.nump;
+	pverts = sw32_r_spritedesc.pverts;
 	pverts[nump] = pverts[0];
 
 	D_SpriteCalculateGradients ();
 	D_SpriteScanLeftEdge ();
 	D_SpriteScanRightEdge ();
-	D_SpriteDrawSpans (sprite_spans);
+	sw32_D_SpriteDrawSpans (sprite_spans);
 }

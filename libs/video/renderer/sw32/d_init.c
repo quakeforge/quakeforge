@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/cvar.h"
 #include "QF/render.h"
@@ -41,82 +43,82 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #define NUM_MIPS	4
 
-surfcache_t *d_initial_rover;
-qboolean     d_roverwrapped;
-int          d_minmip;
-float        d_scalemip[NUM_MIPS - 1];
+surfcache_t *sw32_d_initial_rover;
+qboolean     sw32_d_roverwrapped;
+int          sw32_d_minmip;
+float        sw32_d_scalemip[NUM_MIPS - 1];
 
 static float basemip[NUM_MIPS - 1] = { 1.0, 0.5 * 0.8, 0.25 * 0.8 };
 
 
-float        d_zitable[65536];
+float        sw32_d_zitable[65536];
 
 
 void
-D_Init (void)
+sw32_D_Init (void)
 {
-	r_drawpolys = false;
-	r_worldpolysbacktofront = false;
+	sw32_r_drawpolys = false;
+	sw32_r_worldpolysbacktofront = false;
 
 	// LordHavoc: compute 1/zi table for use in rendering code everywhere
-	if (!d_zitable[1]) {
+	if (!sw32_d_zitable[1]) {
 		int i;
-		d_zitable[0] = 0;
+		sw32_d_zitable[0] = 0;
 		for (i = 1;i < 65536;i++)
-			d_zitable[i] = (65536.0 * 65536.0 / (double) i);
+			sw32_d_zitable[i] = (65536.0 * 65536.0 / (double) i);
 	}
 
-	vid.surf_cache_size = D_SurfaceCacheForRes;
-	vid.flush_caches = D_FlushCaches;
-	vid.init_caches = D_InitCaches;
+	vid.surf_cache_size = sw32_D_SurfaceCacheForRes;
+	vid.flush_caches = sw32_D_FlushCaches;
+	vid.init_caches = sw32_D_InitCaches;
 
 	VID_InitBuffers ();
 }
 
 void
-D_EnableBackBufferAccess (void)
+sw32_D_EnableBackBufferAccess (void)
 {
 	VID_LockBuffer ();
 }
 
 void
-D_TurnZOn (void)
+sw32_D_TurnZOn (void)
 {
 	// not needed for software version
 }
 
 void
-D_DisableBackBufferAccess (void)
+sw32_D_DisableBackBufferAccess (void)
 {
 	VID_UnlockBuffer ();
 }
 
 void
-D_SetupFrame (void)
+sw32_D_SetupFrame (void)
 {
 	int         i;
 
-	if (r_dowarp)
-		d_viewbuffer = r_warpbuffer;
+	if (sw32_r_dowarp)
+		sw32_d_viewbuffer = sw32_r_warpbuffer;
 	else
-		d_viewbuffer = vid.buffer;
+		sw32_d_viewbuffer = vid.buffer;
 
-	if (r_dowarp)
-		screenwidth = WARP_WIDTH;
+	if (sw32_r_dowarp)
+		sw32_screenwidth = WARP_WIDTH;
 	else
-		screenwidth = vid.rowbytes / r_pixbytes;
+		sw32_screenwidth = vid.rowbytes / sw32_r_pixbytes;
 
-	d_roverwrapped = false;
-	d_initial_rover = sc_rover;
+	sw32_d_roverwrapped = false;
+	sw32_d_initial_rover = sw32_sc_rover;
 
-	d_minmip = bound (0, d_mipcap->value, 3);
+	sw32_d_minmip = bound (0, d_mipcap->value, 3);
 
 	for (i = 0; i < (NUM_MIPS - 1); i++)
-		d_scalemip[i] = basemip[i] * d_mipscale->value;
+		sw32_d_scalemip[i] = basemip[i] * d_mipscale->value;
 }
 
 void
-D_UpdateRects (vrect_t *prect)
+sw32_D_UpdateRects (vrect_t *prect)
 {
 	// the software driver draws these directly to the vid buffer
 }

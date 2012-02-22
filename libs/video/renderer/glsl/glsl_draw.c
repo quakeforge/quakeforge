@@ -33,6 +33,9 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -270,25 +273,25 @@ draw_pic (float x, float y, int w, int h, qpic_t *pic,
 }
 
 qpic_t *
-Draw_MakePic (int width, int height, const byte *data)
+glsl_Draw_MakePic (int width, int height, const byte *data)
 {
 	return pic_data (0, width, height, data);
 }
 
 void
-Draw_DestroyPic (qpic_t *pic)
+glsl_Draw_DestroyPic (qpic_t *pic)
 {
 	pic_free (pic);
 }
 
 qpic_t *
-Draw_PicFromWad (const char *name)
+glsl_Draw_PicFromWad (const char *name)
 {
 	return make_glpic (name, W_GetLumpName (name));
 }
 
 qpic_t *
-Draw_CachePic (const char *path, qboolean alpha)
+glsl_Draw_CachePic (const char *path, qboolean alpha)
 {
 	qpic_t     *p, *pic;
 	cachepic_t *cpic;
@@ -309,13 +312,13 @@ Draw_CachePic (const char *path, qboolean alpha)
 }
 
 void
-Draw_UncachePic (const char *path)
+glsl_Draw_UncachePic (const char *path)
 {
 	Hash_Free (pic_cache, Hash_Del (pic_cache, path));
 }
 
 void
-Draw_TextBox (int x, int y, int width, int lines, byte alpha)
+glsl_Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 {
 	static quat_t color = { 1, 1, 1, 0 };
 	qpic_t     *p;
@@ -328,30 +331,30 @@ Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 	// draw left side
 	cx = x;
 	cy = y;
-	p = Draw_CachePic ("gfx/box_tl.lmp", true);
+	p = glsl_Draw_CachePic ("gfx/box_tl.lmp", true);
 	draw (cx, cy, p);
-	p = Draw_CachePic ("gfx/box_ml.lmp", true);
+	p = glsl_Draw_CachePic ("gfx/box_ml.lmp", true);
 	for (n = 0; n < lines; n++) {
 		cy += 8;
 		draw (cx, cy, p);
 	}
-	p = Draw_CachePic ("gfx/box_bl.lmp", true);
+	p = glsl_Draw_CachePic ("gfx/box_bl.lmp", true);
 	draw (cx, cy + 8, p);
 
 	// draw middle
 	cx += 8;
 	while (width > 0) {
 		cy = y;
-		p = Draw_CachePic ("gfx/box_tm.lmp", true);
+		p = glsl_Draw_CachePic ("gfx/box_tm.lmp", true);
 		draw (cx, cy, p);
-		p = Draw_CachePic ("gfx/box_mm.lmp", true);
+		p = glsl_Draw_CachePic ("gfx/box_mm.lmp", true);
 		for (n = 0; n < lines; n++) {
 			cy += 8;
 			if (n == 1)
-				p = Draw_CachePic ("gfx/box_mm2.lmp", true);
+				p = glsl_Draw_CachePic ("gfx/box_mm2.lmp", true);
 			draw (cx, cy, p);
 		}
-		p = Draw_CachePic ("gfx/box_bm.lmp", true);
+		p = glsl_Draw_CachePic ("gfx/box_bm.lmp", true);
 		draw (cx, cy + 8, p);
 		width -= 2;
 		cx += 16;
@@ -359,14 +362,14 @@ Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 
 	// draw right side
 	cy = y;
-	p = Draw_CachePic ("gfx/box_tr.lmp", true);
+	p = glsl_Draw_CachePic ("gfx/box_tr.lmp", true);
 	draw (cx, cy, p);
-	p = Draw_CachePic ("gfx/box_mr.lmp", true);
+	p = glsl_Draw_CachePic ("gfx/box_mr.lmp", true);
 	for (n = 0; n < lines; n++) {
 		cy += 8;
 		draw (cx, cy, p);
 	}
-	p = Draw_CachePic ("gfx/box_br.lmp", true);
+	p = glsl_Draw_CachePic ("gfx/box_br.lmp", true);
 	draw (cx, cy + 8, p);
 #undef draw
 }
@@ -380,7 +383,7 @@ Draw_ClearCache (int phase)
 }
 
 void
-Draw_Init (void)
+glsl_Draw_Init (void)
 {
 	int         i;
 	int         frag, vert;
@@ -438,7 +441,7 @@ Draw_Init (void)
 	memset (white_block, 0xfe, sizeof (white_block));
 	white_pic = pic_data ("white_block", 8, 8, white_block);
 
-	backtile_pic = Draw_PicFromWad ("backtile");
+	backtile_pic = glsl_Draw_PicFromWad ("backtile");
 	gl = (glpic_t *) backtile_pic->data;
 	qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -499,7 +502,7 @@ flush_text (void)
 }
 
 void
-Draw_Character (int x, int y, unsigned int chr)
+glsl_Draw_Character (int x, int y, unsigned int chr)
 {
 	chr &= 255;
 
@@ -512,7 +515,7 @@ Draw_Character (int x, int y, unsigned int chr)
 }
 
 void
-Draw_String (int x, int y, const char *str)
+glsl_Draw_String (int x, int y, const char *str)
 {
 	byte        chr;
 
@@ -529,7 +532,7 @@ Draw_String (int x, int y, const char *str)
 }
 
 void
-Draw_nString (int x, int y, const char *str, int count)
+glsl_Draw_nString (int x, int y, const char *str, int count)
 {
 	byte        chr;
 
@@ -546,7 +549,7 @@ Draw_nString (int x, int y, const char *str, int count)
 }
 
 void
-Draw_AltString (int x, int y, const char *str)
+glsl_Draw_AltString (int x, int y, const char *str)
 {
 	byte        chr;
 
@@ -566,7 +569,7 @@ Draw_AltString (int x, int y, const char *str)
 static void
 crosshair_1 (int x, int y)
 {
-	Draw_Character (x - 4, y - 4, '+');
+	glsl_Draw_Character (x - 4, y - 4, '+');
 }
 
 //FIXME these should use an index to select the region.
@@ -610,7 +613,7 @@ static void (*crosshair_func[]) (int x, int y) = {
 };
 
 void
-Draw_Crosshair (void)
+glsl_Draw_Crosshair (void)
 {
 	int         x, y;
 	size_t      ch;
@@ -626,7 +629,7 @@ Draw_Crosshair (void)
 }
 
 void
-Draw_CrosshairAt (int ch, int x, int y)
+glsl_Draw_CrosshairAt (int ch, int x, int y)
 {
 	unsigned    c = ch - 1;
 
@@ -637,7 +640,7 @@ Draw_CrosshairAt (int ch, int x, int y)
 }
 
 void
-Draw_Pic (int x, int y, qpic_t *pic)
+glsl_Draw_Pic (int x, int y, qpic_t *pic)
 {
 	static quat_t color = { 1, 1, 1, 1};
 	draw_pic (x, y, pic->width, pic->height, pic,
@@ -645,7 +648,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 }
 
 void
-Draw_Picf (float x, float y, qpic_t *pic)
+glsl_Draw_Picf (float x, float y, qpic_t *pic)
 {
 	static quat_t color = { 1, 1, 1, 1};
 	draw_pic (x, y, pic->width, pic->height, pic,
@@ -653,15 +656,15 @@ Draw_Picf (float x, float y, qpic_t *pic)
 }
 
 void
-Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
-			 int height)
+glsl_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
+				  int height)
 {
 	static quat_t color = { 1, 1, 1, 1};
 	draw_pic (x, y, width, height, pic, srcx, srcy, width, height, color);
 }
 
 void
-Draw_ConsoleBackground (int lines, byte alpha)
+glsl_Draw_ConsoleBackground (int lines, byte alpha)
 {
 	float       ofs = (vid.conheight - lines) / (float) vid.conheight;
 	float       verts[][4] = {
@@ -702,14 +705,14 @@ Draw_ConsoleBackground (int lines, byte alpha)
 }
 
 void
-Draw_TileClear (int x, int y, int w, int h)
+glsl_Draw_TileClear (int x, int y, int w, int h)
 {
 	static quat_t color = { 1, 1, 1, 1 };
 	draw_pic (x, y, w, h, backtile_pic, 0, 0, w, h, color);
 }
 
 void
-Draw_Fill (int x, int y, int w, int h, int c)
+glsl_Draw_Fill (int x, int y, int w, int h, int c)
 {
 	quat_t      color;
 
@@ -725,7 +728,7 @@ draw_blendscreen (quat_t color)
 }
 
 void
-Draw_FadeScreen (void)
+glsl_Draw_FadeScreen (void)
 {
 	static quat_t color = { 0, 0, 0, 0.7 };
 
@@ -795,7 +798,7 @@ GL_FlushText (void)
 }
 
 void
-Draw_BlendScreen (quat_t color)
+glsl_Draw_BlendScreen (quat_t color)
 {
 	if (!color[3])
 		return;

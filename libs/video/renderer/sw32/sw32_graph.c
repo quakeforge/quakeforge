@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/cvar.h"
 #include "QF/draw.h"
@@ -45,7 +47,7 @@ static __attribute__ ((used)) const char rcsid[] =
 	Called by only R_DisplayTime
 */
 void
-R_LineGraph (int x, int y, int *h_vals, int count)
+sw32_R_LineGraph (int x, int y, int *h_vals, int count)
 {
 	int         h, i, s, color;
 
@@ -67,7 +69,7 @@ R_LineGraph (int x, int y, int *h_vals, int count)
 		if (h > s)
 			h = s;
 
-		switch(r_pixbytes) {
+		switch(sw32_r_pixbytes) {
 			case 1:
 				{
 					byte *dest = (byte *) vid.buffer + vid.rowbytes * y + x;
@@ -79,7 +81,7 @@ R_LineGraph (int x, int y, int *h_vals, int count)
 				{
 					short *dest = (short *) vid.buffer +
 								  (vid.rowbytes >> 1) * y + x;
-					color = d_8to16table[color];
+					color = sw32_8to16table[color];
 					for (i = 0; i < h; i++, dest -= vid.rowbytes)
 						*dest = color;
 				}
@@ -95,7 +97,7 @@ R_LineGraph (int x, int y, int *h_vals, int count)
 			break;
 			default:
 				Sys_Error("R_LineGraph: unsupported r_pixbytes %i",
-						  r_pixbytes);
+						  sw32_r_pixbytes);
 		}
 	}
 }

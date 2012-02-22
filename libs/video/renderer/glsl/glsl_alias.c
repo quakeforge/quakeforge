@@ -33,6 +33,9 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -105,7 +108,7 @@ static struct {
 static mat4_t alias_vp;
 
 void
-R_InitAlias (void)
+glsl_R_InitAlias (void)
 {
 	int         vert;
 	int         frag;
@@ -179,7 +182,7 @@ set_arrays (const shaderparam_t *vert, const shaderparam_t *norm,
 }
 //#define TETRAHEDRON
 void
-R_DrawAlias (void)
+glsl_R_DrawAlias (void)
 {
 #ifdef TETRAHEDRON
 	static aliasvrt_t debug_verts[] = {
@@ -290,7 +293,7 @@ R_DrawAlias (void)
 
 // All alias models are drawn in a batch, so avoid thrashing the gl state
 void
-R_AliasBegin (void)
+glsl_R_AliasBegin (void)
 {
 	quat_t      fog;
 
@@ -307,8 +310,8 @@ R_AliasBegin (void)
 	qfglDisableVertexAttribArray (quake_mdl.colora.location);
 	qfglDisableVertexAttribArray (quake_mdl.colorb.location);
 
-	VectorCopy (Fog_GetColor (), fog);
-	fog[3] = Fog_GetDensity () / 64.0;
+	VectorCopy (glsl_Fog_GetColor (), fog);
+	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfglUniform4fv (quake_mdl.fog.location, 1, fog);
 
 	qfglUniform1i (quake_mdl.colormap.location, 1);
@@ -321,7 +324,7 @@ R_AliasBegin (void)
 }
 
 void
-R_AliasEnd (void)
+glsl_R_AliasEnd (void)
 {
 	qfglBindBuffer (GL_ARRAY_BUFFER, 0);
 	qfglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);

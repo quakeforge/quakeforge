@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -64,7 +66,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_internal.h"
 #include "varrays.h"
 
-int         c_brush_polys, c_alias_polys;
+int         gl_c_brush_polys, gl_c_alias_polys;
 
 qboolean    gl_envmap;					// true during envmap command capture
 
@@ -72,20 +74,20 @@ int         gl_mirrortexturenum;		// quake texturenum, not gltexturenum
 qboolean    gl_mirror;
 plane_t    *gl_mirror_plane;
 
-float       r_world_matrix[16];
+float       gl_r_world_matrix[16];
 static float r_base_world_matrix[16];
 
 //vec3_t		gl_shadecolor;					// Ender (Extend) Colormod
 float		gl_modelalpha;					// Ender (Extend) Alpha
 
 /* Unknown renamed to GLErr_Unknown to solve conflict with winioctl.h */
-unsigned int	GLErr_InvalidEnum;
-unsigned int	GLErr_InvalidValue;
-unsigned int	GLErr_InvalidOperation;
-unsigned int	GLErr_OutOfMemory;
-unsigned int	GLErr_StackOverflow;
-unsigned int	GLErr_StackUnderflow;
-unsigned int	GLErr_Unknown;
+static unsigned int GLErr_InvalidEnum;
+static unsigned int GLErr_InvalidValue;
+static unsigned int GLErr_InvalidOperation;
+static unsigned int GLErr_OutOfMemory;
+static unsigned int GLErr_StackOverflow;
+static unsigned int GLErr_StackUnderflow;
+static unsigned int GLErr_Unknown;
 
 extern void (*R_DrawSpriteModel) (struct entity_s *ent);
 
@@ -175,7 +177,7 @@ glrmain_init (void)
 }
 
 void
-R_RotateForEntity (entity_t *e)
+gl_R_RotateForEntity (entity_t *e)
 {
 	qfglMultMatrixf (e->transform);
 }
@@ -220,7 +222,7 @@ R_DrawEntitiesOnList (void)
 			continue;
 		currententity = ent;
 
-		R_DrawAliasModel (currententity);
+		gl_R_DrawAliasModel (currententity);
 	}
 	qfglColor3ubv (color_white);
 	
@@ -293,7 +295,7 @@ R_DrawViewModel (void)
 		qglActiveTexture (gl_mtex_enum + 0);
 	}
 
-	R_DrawAliasModel (currententity);
+	gl_R_DrawAliasModel (currententity);
 
 	qfglColor3ubv (color_white);
 	if (gl_mtex_active_tmus >= 2) { // FIXME: Ugly, but faster than cleaning
@@ -363,13 +365,13 @@ R_SetFrustum (void)
 }
 
 void
-R_SetupFrame (void)
+gl_R_SetupFrame (void)
 {
 	R_AnimateLight ();
 	R_ClearEnts ();
 	r_framecount++;
 
-	Fog_SetupFrame ();
+	gl_Fog_SetupFrame ();
 
 	// build the transformation matrix for the given view angles
 	VectorCopy (r_refdef.vieworg, r_origin);
@@ -381,8 +383,8 @@ R_SetupFrame (void)
 
 	r_cache_thrash = false;
 
-	c_brush_polys = 0;
-	c_alias_polys = 0;
+	gl_c_brush_polys = 0;
+	gl_c_alias_polys = 0;
 }
 
 static void
@@ -455,7 +457,7 @@ R_SetupGL (void)
 	qfglTranslatef (-r_refdef.vieworg[0], -r_refdef.vieworg[1],
 				  -r_refdef.vieworg[2]);
 
-	qfglGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
+	qfglGetFloatv (GL_MODELVIEW_MATRIX, gl_r_world_matrix);
 
 	// set drawing parms
 //	qfglEnable (GL_CULL_FACE);
@@ -483,20 +485,20 @@ R_RenderScene (void)
 	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val)
 		r_time1 = Sys_DoubleTime ();
 
-	R_SetupFrame ();
+	gl_R_SetupFrame ();
 	R_SetupGL ();
-	Fog_EnableGFog ();
+	gl_Fog_EnableGFog ();
 	R_MarkLeaves ();			// done here so we know if we're in water
 	R_PushDlights (vec3_origin);
-	R_DrawWorld ();				// adds static entities to the list
+	gl_R_DrawWorld ();				// adds static entities to the list
 	S_ExtraUpdate ();			// don't let sound get messed up if going slow
 	R_DrawEntitiesOnList ();
-	R_RenderDlights ();
+	gl_R_RenderDlights ();
 
-	R_DrawWaterSurfaces ();
-	R_DrawParticles ();
+	gl_R_DrawWaterSurfaces ();
+	gl_R_DrawParticles ();
 
-	Fog_DisableGFog ();
+	gl_Fog_DisableGFog ();
 
 	R_DrawViewModel ();
 
@@ -514,7 +516,8 @@ R_Mirror (void)
 //	if (!gl_mirror) // FIXME: Broken
 		return;
 
-	memcpy (r_base_world_matrix, r_world_matrix, sizeof (r_base_world_matrix));
+	memcpy (r_base_world_matrix, gl_r_world_matrix,
+			sizeof (r_base_world_matrix));
 
 	d = 2 * DotProduct (r_refdef.vieworg, gl_mirror_plane->normal) -
 		gl_mirror_plane->dist;
@@ -535,7 +538,7 @@ R_Mirror (void)
 	qfglDepthRange (gldepthmin, gldepthmax);
 
 	R_RenderScene ();
-	R_DrawWaterSurfaces ();
+	gl_R_DrawWaterSurfaces ();
 
 	gldepthmin = 0;
 	gldepthmax = 1;
@@ -621,7 +624,7 @@ R_RenderView_ (void)
 static void R_RenderViewFishEye (void);
 
 void
-R_RenderView (void)
+gl_R_RenderView (void)
 {
 	if(!scr_fisheye->int_val)
 		R_RenderView_ ();
@@ -919,10 +922,10 @@ R_RenderViewFishEye (void)
 }
 
 void
-R_ClearState (void)
+gl_R_ClearState (void)
 {
 	r_worldentity.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
-	R_ClearParticles ();
+	gl_R_ClearParticles ();
 }

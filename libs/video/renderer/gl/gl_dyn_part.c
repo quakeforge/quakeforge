@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -141,13 +143,13 @@ particle_new_veryrandom (ptype_t type, int texnum, const vec3_t org,
 */
 
 void
-R_ClearParticles (void)
+gl_R_ClearParticles (void)
 {
 	numparticles = 0;
 }
 
 void
-R_InitParticles (void)
+gl_R_InitParticles (void)
 {
 	int		i;
 
@@ -193,7 +195,7 @@ R_InitParticles (void)
 }
 
 void
-R_ReadPointFile_f (void)
+gl_R_ReadPointFile_f (void)
 {
 	const char *name;
 	char       *mapname;
@@ -1445,7 +1447,7 @@ R_VoorTrail_ID (const entity_t *ent)
 }
 
 void
-R_DrawParticles (void)
+gl_R_DrawParticles (void)
 {
 	unsigned char  *at;
 	int				activeparticles, maxparticle, j, vacount;
@@ -1688,7 +1690,7 @@ static vid_particle_funcs_t particles_ID_egg = {
 };
 
 void
-r_easter_eggs_f (cvar_t *var)
+gl_r_easter_eggs_f (cvar_t *var)
 {
 	if (easter_eggs && !gl_feature_mach64) {
 		if (easter_eggs->int_val) {
@@ -1708,27 +1710,28 @@ r_easter_eggs_f (cvar_t *var)
 }
 
 void
-r_particles_style_f (cvar_t *var)
+gl_r_particles_style_f (cvar_t *var)
 {
-	r_easter_eggs_f (easter_eggs);
+	gl_r_easter_eggs_f (easter_eggs);
 }
 
 static void
 R_ParticleFunctionInit (void)
 {
-	r_particles_style_f (r_particles_style);
-	r_easter_eggs_f (easter_eggs);
+	gl_r_particles_style_f (r_particles_style);
+	gl_r_easter_eggs_f (easter_eggs);
 }
 
 void
-R_Particles_Init_Cvars (void)
+gl_R_Particles_Init_Cvars (void)
 {
 	R_ParticleFunctionInit ();
 }
 
 void
-R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
-			    const vec3_t vel, float die, int color, float alpha, float ramp)
+gl_R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
+				   const vec3_t vel, float die, int color, float alpha,
+				   float ramp)
 {
 	if (numparticles >= r_maxparticles)
 		return;
@@ -1736,9 +1739,9 @@ R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
 }
 
 void
-R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
-					  float scale, int vel_fuzz, float die, int color,
-					  float alpha, float ramp)
+gl_R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org,
+						 int org_fuzz, float scale, int vel_fuzz, float die,
+						 int color, float alpha, float ramp)
 {
 	if (numparticles >= r_maxparticles)
 		return;

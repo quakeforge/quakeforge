@@ -30,6 +30,9 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -198,13 +201,13 @@ particle_new_veryrandom (ptype_t type, int texnum, const vec3_t org,
 */
 
 void
-R_ClearParticles (void)
+glsl_R_ClearParticles (void)
 {
 	numparticles = 0;
 }
 
 void
-R_InitParticles (void)
+glsl_R_InitParticles (void)
 {
 	unsigned    i;
 	int         vert;
@@ -278,7 +281,7 @@ R_InitParticles (void)
 }
 
 void
-R_ReadPointFile_f (void)
+glsl_R_ReadPointFile_f (void)
 {
 	const char *name;
 	char       *mapname;
@@ -1550,8 +1553,8 @@ draw_qf_particles (void)
 	qfglEnableVertexAttribArray (quake_part.color.location);
 	qfglEnableVertexAttribArray (quake_part.st.location);
 
-	VectorCopy (Fog_GetColor (), fog);
-	fog[3] = Fog_GetDensity () / 64.0;
+	VectorCopy (glsl_Fog_GetColor (), fog);
+	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfglUniform4fv (quake_part.fog.location, 1, fog);
 
 	qfglUniformMatrix4fv (quake_part.mvp_matrix.location, 1, false, vp_mat);
@@ -1696,8 +1699,8 @@ draw_id_particles (void)
 
 	qfglUniformMatrix4fv (quake_point.mvp_matrix.location, 1, false, vp_mat);
 
-	VectorCopy (Fog_GetColor (), fog);
-	fog[3] = Fog_GetDensity () / 64.0;
+	VectorCopy (glsl_Fog_GetColor (), fog);
+	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfglUniform4fv (quake_point.fog.location, 1, fog);
 
 	qfglUniform1i (quake_point.palette.location, 0);
@@ -1760,7 +1763,7 @@ draw_id_particles (void)
 }
 
 void
-R_DrawParticles (void)
+glsl_R_DrawParticles (void)
 {
 	if (!r_particles->int_val)
 		return;
@@ -1876,7 +1879,7 @@ static vid_particle_funcs_t particles_ID_egg = {
 };
 
 void
-r_easter_eggs_f (cvar_t *var)
+glsl_r_easter_eggs_f (cvar_t *var)
 {
 	if (easter_eggs) {
 		if (easter_eggs->int_val) {
@@ -1896,27 +1899,28 @@ r_easter_eggs_f (cvar_t *var)
 }
 
 void
-r_particles_style_f (cvar_t *var)
+glsl_r_particles_style_f (cvar_t *var)
 {
-	r_easter_eggs_f (easter_eggs);
+	glsl_r_easter_eggs_f (easter_eggs);
 }
 
 static void
 R_ParticleFunctionInit (void)
 {
-	r_particles_style_f (r_particles_style);
-	r_easter_eggs_f (easter_eggs);
+	glsl_r_particles_style_f (r_particles_style);
+	glsl_r_easter_eggs_f (easter_eggs);
 }
 
 void
-R_Particles_Init_Cvars (void)
+glsl_R_Particles_Init_Cvars (void)
 {
 	R_ParticleFunctionInit ();
 }
 
 void
-R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
-			    const vec3_t vel, float die, int color, float alpha, float ramp)
+glsl_R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
+					 const vec3_t vel, float die, int color, float alpha,
+					 float ramp)
 {
 	if (numparticles >= r_maxparticles)
 		return;
@@ -1924,9 +1928,9 @@ R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
 }
 
 void
-R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
-					  float scale, int vel_fuzz, float die, int color,
-					  float alpha, float ramp)
+glsl_R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org,
+						   int org_fuzz, float scale, int vel_fuzz, float die,
+						   int color, float alpha, float ramp)
 {
 	if (numparticles >= r_maxparticles)
 		return;

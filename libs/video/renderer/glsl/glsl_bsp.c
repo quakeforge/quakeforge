@@ -33,6 +33,9 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -271,7 +274,7 @@ GET_RELEASE (instsurf_t, static_instsurf)
 GET_RELEASE (instsurf_t, instsurf)
 
 void
-R_AddTexture (texture_t *tex)
+glsl_R_AddTexture (texture_t *tex)
 {
 	int         i;
 	if (r_num_texture_chains == max_texture_chains) {
@@ -289,7 +292,7 @@ R_AddTexture (texture_t *tex)
 }
 
 void
-R_InitSurfaceChains (model_t *model)
+glsl_R_InitSurfaceChains (model_t *model)
 {
 	int         i;
 
@@ -328,7 +331,7 @@ clear_texture_chains (void)
 }
 
 void
-R_ClearElements (void)
+glsl_R_ClearElements (void)
 {
 	release_elechains ();
 	release_elementss ();
@@ -346,7 +349,7 @@ update_lightmap (msurface_t *surf)
 	if ((surf->dlightframe == r_framecount) || surf->cached_dlight) {
 dynamic:
 		if (r_dynamic->int_val)
-			R_BuildLightMap (surf);
+			glsl_R_BuildLightMap (surf);
 	}
 }
 
@@ -386,25 +389,25 @@ register_textures (model_t *model)
 		tex = model->textures[i];
 		if (!tex)
 			continue;
-		R_AddTexture (tex);
+		glsl_R_AddTexture (tex);
 	}
 }
 
 void
-R_ClearTextures (void)
+glsl_R_ClearTextures (void)
 {
 	r_num_texture_chains = 0;
 }
 
 void
-R_RegisterTextures (model_t **models, int num_models)
+glsl_R_RegisterTextures (model_t **models, int num_models)
 {
 	int         i;
 	model_t    *m;
 
-	R_ClearTextures ();
-	R_InitSurfaceChains (r_worldentity.model);
-	R_AddTexture (r_notexture_mip);
+	glsl_R_ClearTextures ();
+	glsl_R_InitSurfaceChains (r_worldentity.model);
+	glsl_R_AddTexture (r_notexture_mip);
 	register_textures (r_worldentity.model);
 	for (i = 0; i < num_models; i++) {
 		m = models[i];
@@ -512,7 +515,7 @@ build_surf_displist (model_t **models, msurface_t *fa, int base,
 }
 
 void
-R_BuildDisplayLists (model_t **models, int num_models)
+glsl_R_BuildDisplayLists (model_t **models, int num_models)
 {
 	int         i, j;
 	int         vertex_index_base;
@@ -842,8 +845,8 @@ bsp_begin (void)
 
 	qfglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
-	VectorCopy (Fog_GetColor (), fog);
-	fog[3] = Fog_GetDensity () / 64.0;
+	VectorCopy (glsl_Fog_GetColor (), fog);
+	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfglUniform4fv (quake_bsp.fog.location, 1, fog);
 
 	qfglUniform1i (quake_bsp.colormap.location, 2);
@@ -854,7 +857,7 @@ bsp_begin (void)
 	qfglUniform1i (quake_bsp.lightmap.location, 1);
 	qfglActiveTexture (GL_TEXTURE0 + 1);
 	qfglEnable (GL_TEXTURE_2D);
-	qfglBindTexture (GL_TEXTURE_2D, R_LightmapTexture ());
+	qfglBindTexture (GL_TEXTURE_2D, glsl_R_LightmapTexture ());
 
 	qfglUniform1i (quake_bsp.texture.location, 0);
 	qfglActiveTexture (GL_TEXTURE0 + 0);
@@ -896,8 +899,8 @@ turb_begin (void)
 
 	qfglVertexAttrib4fv (quake_turb.color.location, default_color);
 
-	VectorCopy (Fog_GetColor (), fog);
-	fog[3] = Fog_GetDensity () / 64.0;
+	VectorCopy (glsl_Fog_GetColor (), fog);
+	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfglUniform4fv (quake_turb.fog.location, 1, fog);
 
 	qfglUniform1i (quake_turb.palette.location, 1);
@@ -998,8 +1001,8 @@ sky_begin (void)
 		qfglEnable (GL_TEXTURE_2D);
 	}
 
-	VectorCopy (Fog_GetColor (), fog);
-	fog[3] = Fog_GetDensity () / 64.0;
+	VectorCopy (glsl_Fog_GetColor (), fog);
+	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfglUniform4fv (sky_params.fog->location, 1, fog);
 
 	spin (mat);
@@ -1076,7 +1079,7 @@ build_tex_elechain (texture_t *tex)
 }
 
 void
-R_DrawWorld (void)
+glsl_R_DrawWorld (void)
 {
 	entity_t    worldent;
 	int         i;
@@ -1122,7 +1125,7 @@ R_DrawWorld (void)
 }
 
 void
-R_DrawWaterSurfaces ()
+glsl_R_DrawWaterSurfaces ()
 {
 	instsurf_t *is;
 	msurface_t *surf;
@@ -1168,7 +1171,7 @@ R_DrawWaterSurfaces ()
 }
 
 void
-R_DrawSky (void)
+glsl_R_DrawSky (void)
 {
 	instsurf_t *is;
 	msurface_t *surf;
@@ -1220,7 +1223,7 @@ R_DrawSky (void)
 }
 
 void
-R_InitBsp (void)
+glsl_R_InitBsp (void)
 {
 	int         vert;
 	int         frag;
@@ -1309,7 +1312,7 @@ copy_sub_tex (tex_t *src, int x, int y, tex_t *dst)
 }
 
 void
-R_LoadSkys (const char *sky)
+glsl_R_LoadSkys (const char *sky)
 {
 	const char *name;
 	int         i;

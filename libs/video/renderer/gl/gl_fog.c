@@ -25,6 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -68,7 +71,7 @@ static float fade_done; //time when fade will be done
 	update internal variables
 */
 void
-Fog_Update (float density, float red, float green, float blue, float time)
+gl_Fog_Update (float density, float red, float green, float blue, float time)
 {
 	//save previous settings for fade
 	if (time > 0) {
@@ -119,33 +122,33 @@ Fog_FogCommand_f (void)
 			Sys_Printf ("   \"blue\" is \"%f\"\n", fog_blue);
 			break;
 		case 2:
-			Fog_Update (max (0.0, atof (Cmd_Argv (1))),
-						fog_red, fog_green, fog_blue, 0.0);
+			gl_Fog_Update (max (0.0, atof (Cmd_Argv (1))),
+						   fog_red, fog_green, fog_blue, 0.0);
 			break;
 		case 3: //TEST
-			Fog_Update (max (0.0, atof (Cmd_Argv (1))),
-						fog_red, fog_green, fog_blue, atof (Cmd_Argv (2)));
+			gl_Fog_Update (max (0.0, atof (Cmd_Argv (1))),
+						   fog_red, fog_green, fog_blue, atof (Cmd_Argv (2)));
 			break;
 		case 4:
-			Fog_Update (fog_density,
-						bound (0.0, atof (Cmd_Argv (1)), 1.0),
-						bound (0.0, atof (Cmd_Argv (2)), 1.0),
-						bound (0.0, atof (Cmd_Argv (3)), 1.0),
-						0.0);
+			gl_Fog_Update (fog_density,
+						   bound (0.0, atof (Cmd_Argv (1)), 1.0),
+						   bound (0.0, atof (Cmd_Argv (2)), 1.0),
+						   bound (0.0, atof (Cmd_Argv (3)), 1.0),
+						   0.0);
 			break;
 		case 5:
-			Fog_Update (max (0.0, atof (Cmd_Argv (1))),
-						bound (0.0, atof (Cmd_Argv (2)), 1.0),
-						bound (0.0, atof (Cmd_Argv (3)), 1.0),
-						bound (0.0, atof (Cmd_Argv (4)), 1.0),
-						0.0);
+			gl_Fog_Update (max (0.0, atof (Cmd_Argv (1))),
+						   bound (0.0, atof (Cmd_Argv (2)), 1.0),
+						   bound (0.0, atof (Cmd_Argv (3)), 1.0),
+						   bound (0.0, atof (Cmd_Argv (4)), 1.0),
+						   0.0);
 			break;
 		case 6: //TEST
-			Fog_Update (max (0.0, atof (Cmd_Argv (1))),
-						bound (0.0, atof (Cmd_Argv (2)), 1.0),
-						bound (0.0, atof (Cmd_Argv (3)), 1.0),
-						bound (0.0, atof (Cmd_Argv (4)), 1.0),
-						atof (Cmd_Argv (5)));
+			gl_Fog_Update (max (0.0, atof (Cmd_Argv (1))),
+						   bound (0.0, atof (Cmd_Argv (2)), 1.0),
+						   bound (0.0, atof (Cmd_Argv (3)), 1.0),
+						   bound (0.0, atof (Cmd_Argv (4)), 1.0),
+						   atof (Cmd_Argv (5)));
 			break;
 	}
 }
@@ -156,7 +159,7 @@ Fog_FogCommand_f (void)
 	called at map load
 */
 void
-Fog_ParseWorldspawn (plitem_t *worldspawn)
+gl_Fog_ParseWorldspawn (plitem_t *worldspawn)
 {
 	plitem_t   *fog;
 	const char *value;
@@ -182,7 +185,7 @@ Fog_ParseWorldspawn (plitem_t *worldspawn)
 	calculates fog color for this frame, taking into account fade times
 */
 float *
-Fog_GetColor (void)
+gl_Fog_GetColor (void)
 {
 	static float c[4];
 	float       f;
@@ -215,7 +218,7 @@ Fog_GetColor (void)
 	returns current density of fog
 */
 float
-Fog_GetDensity (void)
+gl_Fog_GetDensity (void)
 {
 	float       f;
 
@@ -233,10 +236,10 @@ Fog_GetDensity (void)
 	called at the beginning of each frame
 */
 void
-Fog_SetupFrame (void)
+gl_Fog_SetupFrame (void)
 {
-	qfglFogfv (GL_FOG_COLOR, Fog_GetColor ());
-	qfglFogf (GL_FOG_DENSITY, Fog_GetDensity () / 64.0);
+	qfglFogfv (GL_FOG_COLOR, gl_Fog_GetColor ());
+	qfglFogf (GL_FOG_DENSITY, gl_Fog_GetDensity () / 64.0);
 }
 
 /*
@@ -245,9 +248,9 @@ Fog_SetupFrame (void)
 	called before drawing stuff that should be fogged
 */
 void
-Fog_EnableGFog (void)
+gl_Fog_EnableGFog (void)
 {
-	if (Fog_GetDensity () > 0)
+	if (gl_Fog_GetDensity () > 0)
 		qfglEnable (GL_FOG);
 }
 
@@ -257,9 +260,9 @@ Fog_EnableGFog (void)
 	called after drawing stuff that should be fogged
 */
 void
-Fog_DisableGFog (void)
+gl_Fog_DisableGFog (void)
 {
-	if (Fog_GetDensity () > 0)
+	if (gl_Fog_GetDensity () > 0)
 		qfglDisable (GL_FOG);
 }
 
@@ -270,11 +273,11 @@ Fog_DisableGFog (void)
 	to black
 */
 void
-Fog_StartAdditive (void)
+gl_Fog_StartAdditive (void)
 {
 	vec3_t      color = {0, 0, 0};
 
-	if (Fog_GetDensity () > 0)
+	if (gl_Fog_GetDensity () > 0)
 		qfglFogfv (GL_FOG_COLOR, color);
 }
 
@@ -283,10 +286,11 @@ Fog_StartAdditive (void)
 
 	called after drawing stuff that is additive blended -- restores fog color
 */
-void Fog_StopAdditive (void)
+void
+gl_Fog_StopAdditive (void)
 {
-	if (Fog_GetDensity () > 0)
-		qfglFogfv (GL_FOG_COLOR, Fog_GetColor ());
+	if (gl_Fog_GetDensity () > 0)
+		qfglFogfv (GL_FOG_COLOR, gl_Fog_GetColor ());
 }
 
 //==============================================================================
@@ -313,7 +317,7 @@ void Fog_StopAdditive (void)
 */
 #if 0
 void
-Fog_NewMap (void)
+gl_Fog_NewMap (void)
 {
 	Fog_ParseWorldspawn (); //for global fog
 	Fog_MarkModels (); //for volumetric fog
@@ -326,7 +330,7 @@ Fog_NewMap (void)
 	called when quake initializes
 */
 void
-Fog_Init (void)
+gl_Fog_Init (void)
 {
 	Cmd_AddCommand ("fog", Fog_FogCommand_f, "");
 

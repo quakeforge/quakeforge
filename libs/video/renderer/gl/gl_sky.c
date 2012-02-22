@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -109,7 +111,7 @@ vec5_t      gl_skyvec[6][4] = {
 };
 
 void
-R_LoadSkys (const char *skyname)
+gl_R_LoadSkys (const char *skyname)
 {
 	const char *name;
 	int         i;	// j
@@ -381,7 +383,7 @@ R_DrawSkyDome (void)
 }
 
 void
-R_DrawSky (void)
+gl_R_DrawSky (void)
 {
 	qfglDisable (GL_DEPTH_TEST);
 	qfglDepthMask (GL_FALSE);
@@ -399,7 +401,7 @@ R_DrawSky (void)
 	A sky texture is 256*128, with the right side being a masked overlay
 */
 void
-R_InitSky (texture_t *mt)
+gl_R_InitSky (texture_t *mt)
 {
 	byte         *src;
 	int           i, j, p, r, g, b;

@@ -28,20 +28,22 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/render.h"
 
 #include "d_local.h"
 #include "r_internal.h"
 
-int         d_vrectx, d_vrecty, d_vrectright_particle, d_vrectbottom_particle;
+int         sw32_d_vrectx, sw32_d_vrecty, sw32_d_vrectright_particle, sw32_d_vrectbottom_particle;
 
-int         d_y_aspect_shift, d_pix_min, d_pix_max, d_pix_shift;
+int         sw32_d_y_aspect_shift, sw32_d_pix_min, sw32_d_pix_max, sw32_d_pix_shift;
 
-int         d_scantable[MAXHEIGHT];
-short      *zspantable[MAXHEIGHT];
+int         sw32_d_scantable[MAXHEIGHT];
+short      *sw32_zspantable[MAXHEIGHT];
 
 
 static void
@@ -50,48 +52,48 @@ D_Patch (void)
 }
 
 void
-D_ViewChanged (void)
+sw32_D_ViewChanged (void)
 {
 	int         rowpixels;
 
-	if (r_dowarp)
+	if (sw32_r_dowarp)
 		rowpixels = WARP_WIDTH;
 	else
-		rowpixels = vid.rowbytes / r_pixbytes;
+		rowpixels = vid.rowbytes / sw32_r_pixbytes;
 
-	scale_for_mip = xscale;
-	if (yscale > xscale)
-		scale_for_mip = yscale;
+	sw32_scale_for_mip = sw32_xscale;
+	if (sw32_yscale > sw32_xscale)
+		sw32_scale_for_mip = sw32_yscale;
 
-	d_zrowbytes = vid.width * 2;
-	d_zwidth = vid.width;
+	sw32_d_zrowbytes = vid.width * 2;
+	sw32_d_zwidth = vid.width;
 
-	d_pix_min = r_refdef.vrect.width / 320;
-	if (d_pix_min < 1)
-		d_pix_min = 1;
+	sw32_d_pix_min = r_refdef.vrect.width / 320;
+	if (sw32_d_pix_min < 1)
+		sw32_d_pix_min = 1;
 
-	d_pix_max = (int) ((float) r_refdef.vrect.width / (320.0 / 4.0) + 0.5);
-	d_pix_shift = 8 - (int) ((float) r_refdef.vrect.width / 320.0 + 0.5);
-	if (d_pix_max < 1)
-		d_pix_max = 1;
+	sw32_d_pix_max = (int) ((float) r_refdef.vrect.width / (320.0 / 4.0) + 0.5);
+	sw32_d_pix_shift = 8 - (int) ((float) r_refdef.vrect.width / 320.0 + 0.5);
+	if (sw32_d_pix_max < 1)
+		sw32_d_pix_max = 1;
 
-	if (pixelAspect > 1.4)
-		d_y_aspect_shift = 1;
+	if (sw32_pixelAspect > 1.4)
+		sw32_d_y_aspect_shift = 1;
 	else
-		d_y_aspect_shift = 0;
+		sw32_d_y_aspect_shift = 0;
 
-	d_vrectx = r_refdef.vrect.x;
-	d_vrecty = r_refdef.vrect.y;
-	d_vrectright_particle = r_refdef.vrectright - d_pix_max;
-	d_vrectbottom_particle =
-		r_refdef.vrectbottom - (d_pix_max << d_y_aspect_shift);
+	sw32_d_vrectx = r_refdef.vrect.x;
+	sw32_d_vrecty = r_refdef.vrect.y;
+	sw32_d_vrectright_particle = r_refdef.vrectright - sw32_d_pix_max;
+	sw32_d_vrectbottom_particle =
+		r_refdef.vrectbottom - (sw32_d_pix_max << sw32_d_y_aspect_shift);
 
 	{
 		unsigned int i;
 
 		for (i = 0; i < vid.height; i++) {
-			d_scantable[i] = i * rowpixels;
-			zspantable[i] = d_pzbuffer + i * d_zwidth;
+			sw32_d_scantable[i] = i * rowpixels;
+			sw32_zspantable[i] = sw32_d_pzbuffer + i * sw32_d_zwidth;
 		}
 	}
 

@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -53,7 +55,7 @@ static int						 sVAsize;
 static int						*sVAindices;
 varray_t2f_c4ub_v3f_t	*gl_spriteVertexArray;
 
-void (*R_DrawSpriteModel) (struct entity_s *ent);
+void (*gl_R_DrawSpriteModel) (struct entity_s *ent);
 
 
 static mspriteframe_t *
@@ -238,13 +240,13 @@ R_DrawSpriteModel_VA_f (entity_t *e)
 }
 
 void
-R_InitSprites (void)
+gl_R_InitSprites (void)
 {
 	int		i;
 
 	if (r_init) {
 		if (gl_va_capable) {			// 0 == gl_va_capable
-			R_DrawSpriteModel = R_DrawSpriteModel_VA_f;
+			gl_R_DrawSpriteModel = R_DrawSpriteModel_VA_f;
 
 #if 0
 			if (vaelements > 3)
@@ -279,7 +281,7 @@ R_InitSprites (void)
 				gl_spriteVertexArray[i * 4 + 3].texcoord[1] = 1.0;
 			}
 		} else {
-			R_DrawSpriteModel = R_DrawSpriteModel_f;
+			gl_R_DrawSpriteModel = R_DrawSpriteModel_f;
 
 			if (gl_spriteVertexArray) {
 				free (gl_spriteVertexArray);

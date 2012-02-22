@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/qendian.h"
 #include "QF/render.h"
@@ -53,9 +55,9 @@ static int         r_turb_spancount;
 	the sine warp, to keep the edges from wrapping
 */
 void
-D_WarpScreen (void)
+sw32_D_WarpScreen (void)
 {
-	switch(r_pixbytes) {
+	switch(sw32_r_pixbytes) {
 	case 1:
 	{
 		int         w, h;
@@ -75,9 +77,9 @@ D_WarpScreen (void)
 		hratio = h / (float) scr_vrect.height;
 
 		for (v = 0; v < scr_vrect.height + AMP2 * 2; v++) {
-			rowptr[v] = (byte *) d_viewbuffer + (r_refdef.vrect.y *
-												 screenwidth) +
-				(screenwidth * (int) ((float) v * hratio * h /
+			rowptr[v] = (byte *) sw32_d_viewbuffer + (r_refdef.vrect.y *
+												 sw32_screenwidth) +
+				(sw32_screenwidth * (int) ((float) v * hratio * h /
 									  (h + AMP2 * 2)));
 		}
 
@@ -86,7 +88,7 @@ D_WarpScreen (void)
 				(int) ((float) u * wratio * w / (w + AMP2 * 2));
 		}
 
-		turb = intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
+		turb = sw32_intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
 		dest = (byte *)vid.buffer + scr_vrect.y * vid.rowbytes +
 						 scr_vrect.x;
 
@@ -121,9 +123,9 @@ D_WarpScreen (void)
 		hratio = h / (float) scr_vrect.height;
 
 		for (v = 0; v < scr_vrect.height + AMP2 * 2; v++) {
-			rowptr[v] = (short *) d_viewbuffer +
-				(r_refdef.vrect.y * screenwidth) +
-				(screenwidth * (int) ((float) v * hratio * h /
+			rowptr[v] = (short *) sw32_d_viewbuffer +
+				(r_refdef.vrect.y * sw32_screenwidth) +
+				(sw32_screenwidth * (int) ((float) v * hratio * h /
 									  (h + AMP2 * 2)));
 		}
 
@@ -132,7 +134,7 @@ D_WarpScreen (void)
 				(int) ((float) u * wratio * w / (w + AMP2 * 2));
 		}
 
-		turb = intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
+		turb = sw32_intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
 		dest = (short *) vid.buffer + scr_vrect.y * (vid.rowbytes >> 1) +
 			scr_vrect.x;
 
@@ -167,9 +169,9 @@ D_WarpScreen (void)
 		hratio = h / (float) scr_vrect.height;
 
 		for (v = 0; v < scr_vrect.height + AMP2 * 2; v++) {
-			rowptr[v] = (int *) d_viewbuffer +
-				(r_refdef.vrect.y * screenwidth) +
-				(screenwidth * (int) ((float) v * hratio * h /
+			rowptr[v] = (int *) sw32_d_viewbuffer +
+				(r_refdef.vrect.y * sw32_screenwidth) +
+				(sw32_screenwidth * (int) ((float) v * hratio * h /
 									  (h + AMP2 * 2)));
 		}
 
@@ -178,7 +180,7 @@ D_WarpScreen (void)
 				(int) ((float) u * wratio * w / (w + AMP2 * 2));
 		}
 
-		turb = intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
+		turb = sw32_intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
 		dest = (int *) vid.buffer + scr_vrect.y * (vid.rowbytes >> 2) +
 			scr_vrect.x;
 
@@ -195,7 +197,7 @@ D_WarpScreen (void)
 	}
 	break;
 	default:
-		Sys_Error("D_WarpScreen: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("D_WarpScreen: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
 }
 
@@ -204,7 +206,7 @@ D_DrawTurbulentSpan (void)
 {
 	int         sturb, tturb;
 
-	switch (r_pixbytes) {
+	switch (sw32_r_pixbytes) {
 	case 1:
 	{
 		byte *pdest = (byte *) r_turb_pdest;
@@ -228,7 +230,7 @@ D_DrawTurbulentSpan (void)
 											 (CYCLE - 1)]) >> 16) & 63;
 			tturb = ((r_turb_t + r_turb_turb[(r_turb_s >> 16) &
 											 (CYCLE - 1)]) >> 16) & 63;
-			*pdest++ = d_8to16table[r_turb_pbase[(tturb << 6) + sturb]];
+			*pdest++ = sw32_8to16table[r_turb_pbase[(tturb << 6) + sturb]];
 			r_turb_s += r_turb_sstep;
 			r_turb_t += r_turb_tstep;
 		} while (--r_turb_spancount > 0);
@@ -252,32 +254,32 @@ D_DrawTurbulentSpan (void)
 		break;
 	default:
 		Sys_Error("D_DrawTurbulentSpan: unsupported r_pixbytes %i",
-				  r_pixbytes);
+				  sw32_r_pixbytes);
 	}
 }
 
 void
-Turbulent (espan_t *pspan)
+sw32_Turbulent (espan_t *pspan)
 {
 	int         count;
 	fixed16_t   snext, tnext;
 	float       sdivz, tdivz, zi, z, du, dv, spancountminus1;
 	float       sdivz16stepu, tdivz16stepu, zi16stepu;
 
-	r_turb_turb = sintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
+	r_turb_turb = sw32_sintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
 
 	r_turb_sstep = 0;					// keep compiler happy
 	r_turb_tstep = 0;					// ditto
 
-	r_turb_pbase = (byte *) cacheblock;
+	r_turb_pbase = (byte *) sw32_cacheblock;
 
-	sdivz16stepu = d_sdivzstepu * 16;
-	tdivz16stepu = d_tdivzstepu * 16;
+	sdivz16stepu = sw32_d_sdivzstepu * 16;
+	tdivz16stepu = sw32_d_tdivzstepu * 16;
 	zi16stepu = d_zistepu * 16 * 65536;
 
 	do {
-		r_turb_pdest = (byte *) d_viewbuffer + ((screenwidth * pspan->v) +
-												pspan->u) * r_pixbytes;
+		r_turb_pdest = (byte *) sw32_d_viewbuffer + ((sw32_screenwidth * pspan->v) +
+												pspan->u) * sw32_r_pixbytes;
 
 		count = pspan->count;
 
@@ -285,20 +287,20 @@ Turbulent (espan_t *pspan)
 		du = (float) pspan->u;
 		dv = (float) pspan->v;
 
-		sdivz = d_sdivzorigin + dv * d_sdivzstepv + du * d_sdivzstepu;
-		tdivz = d_tdivzorigin + dv * d_tdivzstepv + du * d_tdivzstepu;
+		sdivz = sw32_d_sdivzorigin + dv * sw32_d_sdivzstepv + du * sw32_d_sdivzstepu;
+		tdivz = sw32_d_tdivzorigin + dv * sw32_d_tdivzstepv + du * sw32_d_tdivzstepu;
 		zi = (d_ziorigin + dv * d_zistepv + du * d_zistepu) * 65536.0f;
-		z = d_zitable[(int) zi];
+		z = sw32_d_zitable[(int) zi];
 
-		r_turb_s = (int) (sdivz * z) + sadjust;
-		if (r_turb_s > bbextents)
-			r_turb_s = bbextents;
+		r_turb_s = (int) (sdivz * z) + sw32_sadjust;
+		if (r_turb_s > sw32_bbextents)
+			r_turb_s = sw32_bbextents;
 		else if (r_turb_s < 0)
 			r_turb_s = 0;
 
-		r_turb_t = (int) (tdivz * z) + tadjust;
-		if (r_turb_t > bbextentt)
-			r_turb_t = bbextentt;
+		r_turb_t = (int) (tdivz * z) + sw32_tadjust;
+		if (r_turb_t > sw32_bbextentt)
+			r_turb_t = sw32_bbextentt;
 		else if (r_turb_t < 0)
 			r_turb_t = 0;
 
@@ -317,20 +319,20 @@ Turbulent (espan_t *pspan)
 				sdivz += sdivz16stepu;
 				tdivz += tdivz16stepu;
 				zi += zi16stepu;
-				z = d_zitable[(int) zi];
+				z = sw32_d_zitable[(int) zi];
 
-				snext = (int) (sdivz * z) + sadjust;
-				if (snext > bbextents)
-					snext = bbextents;
+				snext = (int) (sdivz * z) + sw32_sadjust;
+				if (snext > sw32_bbextents)
+					snext = sw32_bbextents;
 				else if (snext < 16)
 					snext = 16;			// prevent round-off error on <0
 										// steps from
 				// from causing overstepping & running off the
 				// edge of the texture
 
-				tnext = (int) (tdivz * z) + tadjust;
-				if (tnext > bbextentt)
-					tnext = bbextentt;
+				tnext = (int) (tdivz * z) + sw32_tadjust;
+				if (tnext > sw32_bbextentt)
+					tnext = sw32_bbextentt;
 				else if (tnext < 16)
 					tnext = 16;			// guard against round-off error on
 										// <0 steps
@@ -343,21 +345,21 @@ Turbulent (espan_t *pspan)
 				// steps across span by division, biasing steps low so we
 				// don't run off the texture
 				spancountminus1 = (float) (r_turb_spancount - 1);
-				sdivz += d_sdivzstepu * spancountminus1;
-				tdivz += d_tdivzstepu * spancountminus1;
+				sdivz += sw32_d_sdivzstepu * spancountminus1;
+				tdivz += sw32_d_tdivzstepu * spancountminus1;
 				zi += d_zistepu * 65536.0f * spancountminus1;
-				z = d_zitable[(int) zi];
-				snext = (int) (sdivz * z) + sadjust;
-				if (snext > bbextents)
-					snext = bbextents;
+				z = sw32_d_zitable[(int) zi];
+				snext = (int) (sdivz * z) + sw32_sadjust;
+				if (snext > sw32_bbextents)
+					snext = sw32_bbextents;
 				else if (snext < 16)
 					snext = 16;			// prevent round-off error on <0 steps
 										// from causing overstepping & running
 										// off the edge of the texture
 
-				tnext = (int) (tdivz * z) + tadjust;
-				if (tnext > bbextentt)
-					tnext = bbextentt;
+				tnext = (int) (tdivz * z) + sw32_tadjust;
+				if (tnext > sw32_bbextentt)
+					tnext = sw32_bbextentt;
 				else if (tnext < 16)
 					tnext = 16;			// guard against round-off error on
 										// <0 steps
@@ -382,12 +384,12 @@ Turbulent (espan_t *pspan)
 }
 
 void
-D_DrawSpans (espan_t *pspan)
+sw32_D_DrawSpans (espan_t *pspan)
 {
-	switch(r_pixbytes) {
+	switch(sw32_r_pixbytes) {
 	case 1:
 	{
-		byte       *pbase = (byte *) cacheblock, *pdest;
+		byte       *pbase = (byte *) sw32_cacheblock, *pdest;
 		int         count;
 		fixed16_t   s, t, snext, tnext, sstep, tstep;
 		float       sdivz, tdivz, zi, z, du, dv;
@@ -396,12 +398,12 @@ D_DrawSpans (espan_t *pspan)
 		sstep = 0;							// keep compiler happy
 		tstep = 0;							// ditto
 
-		sdivz8stepu = d_sdivzstepu * 8;
-		tdivz8stepu = d_tdivzstepu * 8;
+		sdivz8stepu = sw32_d_sdivzstepu * 8;
+		tdivz8stepu = sw32_d_tdivzstepu * 8;
 		zi8stepu = d_zistepu * 8 * 65536;
 
 		do {
-			pdest = (byte *) d_viewbuffer + (screenwidth * pspan->v) +
+			pdest = (byte *) sw32_d_viewbuffer + (sw32_screenwidth * pspan->v) +
 				pspan->u;
 
 			count = pspan->count;
@@ -410,15 +412,15 @@ D_DrawSpans (espan_t *pspan)
 			du = (float) pspan->u;
 			dv = (float) pspan->v;
 
-			sdivz = d_sdivzorigin + dv * d_sdivzstepv + du * d_sdivzstepu;
-			tdivz = d_tdivzorigin + dv * d_tdivzstepv + du * d_tdivzstepu;
+			sdivz = sw32_d_sdivzorigin + dv * sw32_d_sdivzstepv + du * sw32_d_sdivzstepu;
+			tdivz = sw32_d_tdivzorigin + dv * sw32_d_tdivzstepv + du * sw32_d_tdivzstepu;
 			zi = (d_ziorigin + dv * d_zistepv + du * d_zistepu) * 65536.0f;
-			z = d_zitable[(int) zi];
+			z = sw32_d_zitable[(int) zi];
 
-			s = (int) (sdivz * z) + sadjust;
-			s = bound(0, s, bbextents);
-			t = (int) (tdivz * z) + tadjust;
-			t = bound(0, t, bbextentt);
+			s = (int) (sdivz * z) + sw32_sadjust;
+			s = bound(0, s, sw32_bbextents);
+			t = (int) (tdivz * z) + sw32_tadjust;
+			t = bound(0, t, sw32_bbextentt);
 
 			while(count >= 8) {
 				count -= 8;
@@ -427,39 +429,39 @@ D_DrawSpans (espan_t *pspan)
 				sdivz += sdivz8stepu;
 				tdivz += tdivz8stepu;
 				zi += zi8stepu;
-				z = d_zitable[(int) zi];
+				z = sw32_d_zitable[(int) zi];
 
 				// prevent round-off error on <0 steps from from causing
 				// overstepping & running off the edge of the texture
-				snext = (int) (sdivz * z) + sadjust;
-				snext = bound(8, snext, bbextents);
-				tnext = (int) (tdivz * z) + tadjust;
-				tnext = bound(8, tnext, bbextentt);
+				snext = (int) (sdivz * z) + sw32_sadjust;
+				snext = bound(8, snext, sw32_bbextents);
+				tnext = (int) (tdivz * z) + sw32_tadjust;
+				tnext = bound(8, tnext, sw32_bbextentt);
 
 				sstep = (snext - s) >> 3;
 				tstep = (tnext - t) >> 3;
 
-				pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;t += tstep;
-				pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[1] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[2] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[2] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[3] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[3] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[4] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[4] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[5] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[5] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[6] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[6] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[7] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[7] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s = snext;
 				t = tnext;
 				pdest += 8;
@@ -471,17 +473,17 @@ D_DrawSpans (espan_t *pspan)
 				// across span by division, biasing steps low so we don't run
 				// off the texture
 				//countminus1 = (float) (count - 1);
-				sdivz += d_sdivzstepu * count; //minus1;
-				tdivz += d_tdivzstepu * count; //minus1;
+				sdivz += sw32_d_sdivzstepu * count; //minus1;
+				tdivz += sw32_d_tdivzstepu * count; //minus1;
 				zi += d_zistepu * 65536.0f * count; //minus1;
-				z = d_zitable[(int) zi];
+				z = sw32_d_zitable[(int) zi];
 
 				// prevent round-off error on <0 steps from from causing
 				// overstepping & running off the edge of the texture
-				snext = (int) (sdivz * z) + sadjust;
-				snext = bound(count, snext, bbextents);
-				tnext = (int) (tdivz * z) + tadjust;
-				tnext = bound(count, tnext, bbextentt);
+				snext = (int) (sdivz * z) + sw32_sadjust;
+				snext = bound(count, snext, sw32_bbextents);
+				tnext = (int) (tdivz * z) + sw32_tadjust;
+				tnext = bound(count, tnext, sw32_bbextentt);
 
 				if (count > 1) {
 					sstep = (snext - s) / count; //(count - 1);
@@ -489,38 +491,38 @@ D_DrawSpans (espan_t *pspan)
 
 					if (count & 4)
 					{
-						pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
-						pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[1] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
-						pdest[2] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[2] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
-						pdest[3] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[3] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
 						pdest += 4;
 					}
 					if (count & 2)
 					{
-						pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
-						pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[1] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
 						pdest += 2;
 					}
 					if (count & 1)
-						pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 					s += sstep;
 					t += tstep;
 				}
 				else
 				{
-					pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 					s += sstep;
 					t += tstep;
 				}
@@ -530,7 +532,7 @@ D_DrawSpans (espan_t *pspan)
 	break;
 	case 2:
 	{
-		short      *pbase = (short *) cacheblock, *pdest;
+		short      *pbase = (short *) sw32_cacheblock, *pdest;
 		int         count;
 		fixed16_t   s, t, snext, tnext, sstep, tstep;
 		float       sdivz, tdivz, zi, z, du, dv;
@@ -539,12 +541,12 @@ D_DrawSpans (espan_t *pspan)
 		sstep = 0;							// keep compiler happy
 		tstep = 0;							// ditto
 
-		sdivz8stepu = d_sdivzstepu * 8;
-		tdivz8stepu = d_tdivzstepu * 8;
+		sdivz8stepu = sw32_d_sdivzstepu * 8;
+		tdivz8stepu = sw32_d_tdivzstepu * 8;
 		zi8stepu = d_zistepu * 8 * 65536;
 
 		do {
-			pdest = (short *) d_viewbuffer + (screenwidth * pspan->v) +
+			pdest = (short *) sw32_d_viewbuffer + (sw32_screenwidth * pspan->v) +
 				pspan->u;
 
 			count = pspan->count;
@@ -553,15 +555,15 @@ D_DrawSpans (espan_t *pspan)
 			du = (float) pspan->u;
 			dv = (float) pspan->v;
 
-			sdivz = d_sdivzorigin + dv * d_sdivzstepv + du * d_sdivzstepu;
-			tdivz = d_tdivzorigin + dv * d_tdivzstepv + du * d_tdivzstepu;
+			sdivz = sw32_d_sdivzorigin + dv * sw32_d_sdivzstepv + du * sw32_d_sdivzstepu;
+			tdivz = sw32_d_tdivzorigin + dv * sw32_d_tdivzstepv + du * sw32_d_tdivzstepu;
 			zi = (d_ziorigin + dv * d_zistepv + du * d_zistepu) * 65536.0f;
-			z = d_zitable[(int) zi];
+			z = sw32_d_zitable[(int) zi];
 
-			s = (int) (sdivz * z) + sadjust;
-			s = bound(0, s, bbextents);
-			t = (int) (tdivz * z) + tadjust;
-			t = bound(0, t, bbextentt);
+			s = (int) (sdivz * z) + sw32_sadjust;
+			s = bound(0, s, sw32_bbextents);
+			t = (int) (tdivz * z) + sw32_tadjust;
+			t = bound(0, t, sw32_bbextentt);
 
 			while(count >= 8) {
 				count -= 8;
@@ -570,40 +572,40 @@ D_DrawSpans (espan_t *pspan)
 				sdivz += sdivz8stepu;
 				tdivz += tdivz8stepu;
 				zi += zi8stepu;
-				z = d_zitable[(int) zi];
+				z = sw32_d_zitable[(int) zi];
 
 				// prevent round-off error on <0 steps from from causing
 				// overstepping & running off the edge of the texture
-				snext = (int) (sdivz * z) + sadjust;
-				snext = bound(8, snext, bbextents);
-				tnext = (int) (tdivz * z) + tadjust;
-				tnext = bound(8, tnext, bbextentt);
+				snext = (int) (sdivz * z) + sw32_sadjust;
+				snext = bound(8, snext, sw32_bbextents);
+				tnext = (int) (tdivz * z) + sw32_tadjust;
+				tnext = bound(8, tnext, sw32_bbextentt);
 
 				sstep = (snext - s) >> 3;
 				tstep = (tnext - t) >> 3;
 
-				pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[1] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[2] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[2] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[3] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[3] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[4] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[4] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[5] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[5] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[6] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[6] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[7] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[7] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s = snext;t = tnext;
 				pdest += 8;
 			}
@@ -614,17 +616,17 @@ D_DrawSpans (espan_t *pspan)
 				// across span by division, biasing steps low so we don't run
 				// off the texture
 				//countminus1 = (float) (count - 1);
-				sdivz += d_sdivzstepu * count; //minus1;
-				tdivz += d_tdivzstepu * count; //minus1;
+				sdivz += sw32_d_sdivzstepu * count; //minus1;
+				tdivz += sw32_d_tdivzstepu * count; //minus1;
 				zi += d_zistepu * 65536.0f * count; //minus1;
-				z = d_zitable[(int) zi];
+				z = sw32_d_zitable[(int) zi];
 
 				// prevent round-off error on <0 steps from from causing
 				// overstepping & running off the edge of the texture
-				snext = (int) (sdivz * z) + sadjust;
-				snext = bound(count, snext, bbextents);
-				tnext = (int) (tdivz * z) + tadjust;
-				tnext = bound(count, tnext, bbextentt);
+				snext = (int) (sdivz * z) + sw32_sadjust;
+				snext = bound(count, snext, sw32_bbextents);
+				tnext = (int) (tdivz * z) + sw32_tadjust;
+				tnext = bound(count, tnext, sw32_bbextentt);
 
 				if (count > 1) {
 					sstep = (snext - s) / count; //(count - 1);
@@ -632,37 +634,37 @@ D_DrawSpans (espan_t *pspan)
 
 					if (count & 4)
 					{
-						pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
-						pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[1] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
-						pdest[2] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[2] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
-						pdest[3] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[3] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;t += tstep;
 						pdest += 4;
 					}
 					if (count & 2)
 					{
-						pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
-						pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[1] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
 						pdest += 2;
 					}
 					if (count & 1)
-						pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 					s += sstep;
 					t += tstep;
 				}
 				else
 				{
-					pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 					s += sstep;
 					t += tstep;
 				}
@@ -672,7 +674,7 @@ D_DrawSpans (espan_t *pspan)
 	break;
 	case 4:
 	{
-		int        *pbase = (int *) cacheblock, *pdest;
+		int        *pbase = (int *) sw32_cacheblock, *pdest;
 		int         count;
 		fixed16_t   s, t, snext, tnext, sstep, tstep;
 		float       sdivz, tdivz, zi, z, du, dv;
@@ -681,12 +683,12 @@ D_DrawSpans (espan_t *pspan)
 		sstep = 0;							// keep compiler happy
 		tstep = 0;							// ditto
 
-		sdivz8stepu = d_sdivzstepu * 8;
-		tdivz8stepu = d_tdivzstepu * 8;
+		sdivz8stepu = sw32_d_sdivzstepu * 8;
+		tdivz8stepu = sw32_d_tdivzstepu * 8;
 		zi8stepu = d_zistepu * 8 * 65536;
 
 		do {
-			pdest = (int *) d_viewbuffer + (screenwidth * pspan->v) + pspan->u;
+			pdest = (int *) sw32_d_viewbuffer + (sw32_screenwidth * pspan->v) + pspan->u;
 
 			count = pspan->count;
 
@@ -694,15 +696,15 @@ D_DrawSpans (espan_t *pspan)
 			du = (float) pspan->u;
 			dv = (float) pspan->v;
 
-			sdivz = d_sdivzorigin + dv * d_sdivzstepv + du * d_sdivzstepu;
-			tdivz = d_tdivzorigin + dv * d_tdivzstepv + du * d_tdivzstepu;
+			sdivz = sw32_d_sdivzorigin + dv * sw32_d_sdivzstepv + du * sw32_d_sdivzstepu;
+			tdivz = sw32_d_tdivzorigin + dv * sw32_d_tdivzstepv + du * sw32_d_tdivzstepu;
 			zi = (d_ziorigin + dv * d_zistepv + du * d_zistepu) * 65536.0f;
-			z = d_zitable[(int) zi];
+			z = sw32_d_zitable[(int) zi];
 
-			s = (int) (sdivz * z) + sadjust;
-			s = bound(0, s, bbextents);
-			t = (int) (tdivz * z) + tadjust;
-			t = bound(0, t, bbextentt);
+			s = (int) (sdivz * z) + sw32_sadjust;
+			s = bound(0, s, sw32_bbextents);
+			t = (int) (tdivz * z) + sw32_tadjust;
+			t = bound(0, t, sw32_bbextentt);
 
 			while(count >= 8) {
 				count -= 8;
@@ -711,40 +713,40 @@ D_DrawSpans (espan_t *pspan)
 				sdivz += sdivz8stepu;
 				tdivz += tdivz8stepu;
 				zi += zi8stepu;
-				z = d_zitable[(int) zi];
+				z = sw32_d_zitable[(int) zi];
 
 				// prevent round-off error on <0 steps from from causing
 				// overstepping & running off the edge of the texture
-				snext = (int) (sdivz * z) + sadjust;
-				snext = bound(8, snext, bbextents);
-				tnext = (int) (tdivz * z) + tadjust;
-				tnext = bound(8, tnext, bbextentt);
+				snext = (int) (sdivz * z) + sw32_sadjust;
+				snext = bound(8, snext, sw32_bbextents);
+				tnext = (int) (tdivz * z) + sw32_tadjust;
+				tnext = bound(8, tnext, sw32_bbextentt);
 
 				sstep = (snext - s) >> 3;
 				tstep = (tnext - t) >> 3;
 
-				pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[1] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[2] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[2] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[3] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[3] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[4] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[4] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[5] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[5] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[6] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[6] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s += sstep;
 				t += tstep;
-				pdest[7] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+				pdest[7] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 				s = snext;
 				t = tnext;
 				pdest += 8;
@@ -756,17 +758,17 @@ D_DrawSpans (espan_t *pspan)
 				// across span by division, biasing steps low so we don't run
 				// off the texture
 				//countminus1 = (float) (count - 1);
-				sdivz += d_sdivzstepu * count; //minus1;
-				tdivz += d_tdivzstepu * count; //minus1;
+				sdivz += sw32_d_sdivzstepu * count; //minus1;
+				tdivz += sw32_d_tdivzstepu * count; //minus1;
 				zi += d_zistepu * 65536.0f * count; //minus1;
-				z = d_zitable[(int) zi];
+				z = sw32_d_zitable[(int) zi];
 
 				// prevent round-off error on <0 steps from from causing
 				// overstepping & running off the edge of the texture
-				snext = (int) (sdivz * z) + sadjust;
-				snext = bound(count, snext, bbextents);
-				tnext = (int) (tdivz * z) + tadjust;
-				tnext = bound(count, tnext, bbextentt);
+				snext = (int) (sdivz * z) + sw32_sadjust;
+				snext = bound(count, snext, sw32_bbextents);
+				tnext = (int) (tdivz * z) + sw32_tadjust;
+				tnext = bound(count, tnext, sw32_bbextentt);
 
 				if (count > 1) {
 					sstep = (snext - s) / count; //(count - 1);
@@ -774,38 +776,38 @@ D_DrawSpans (espan_t *pspan)
 
 					if (count & 4)
 					{
-						pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
-						pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[1] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
-						pdest[2] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[2] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
-						pdest[3] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[3] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
 						pdest += 4;
 					}
 					if (count & 2)
 					{
-						pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
-						pdest[1] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[1] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 						s += sstep;
 						t += tstep;
 						pdest += 2;
 					}
 					if (count & 1)
-						pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+						pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 					s += sstep;
 					t += tstep;
 				}
 				else
 				{
-					pdest[0] = pbase[(t >> 16) * cachewidth + (s >> 16)];
+					pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
 					s += sstep;
 					t += tstep;
 				}
@@ -814,12 +816,12 @@ D_DrawSpans (espan_t *pspan)
 	}
 	break;
 	default:
-		Sys_Error("D_DrawSpans: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("D_DrawSpans: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
 }
 
 void
-D_DrawZSpans (espan_t *pspan)
+sw32_D_DrawZSpans (espan_t *pspan)
 {
 	int         count, doublecount, izistep;
 	int         izi;
@@ -833,7 +835,7 @@ D_DrawZSpans (espan_t *pspan)
 	izistep = (int) (d_zistepu * 0x8000 * 0x10000);
 
 	do {
-		pdest = d_pzbuffer + (d_zwidth * pspan->v) + pspan->u;
+		pdest = sw32_d_pzbuffer + (sw32_d_zwidth * pspan->v) + pspan->u;
 
 		count = pspan->count;
 

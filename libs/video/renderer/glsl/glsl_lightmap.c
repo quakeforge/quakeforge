@@ -35,6 +35,9 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -61,7 +64,7 @@ static byte    *light_data;
 static unsigned *blocklights;
 static int      bl_extents[2];
 
-void (*R_BuildLightMap) (msurface_t *surf);
+void (*glsl_R_BuildLightMap) (msurface_t *surf);
 
 static void
 R_AddDynamicLights_1 (msurface_t *surf)
@@ -192,7 +195,7 @@ create_surf_lightmap (msurface_t *surf)
 }
 
 void
-R_BuildLightmaps (model_t **models, int num_models)
+glsl_R_BuildLightmaps (model_t **models, int num_models)
 {
 	int         i, j, size;
 	model_t    *m;
@@ -205,7 +208,7 @@ R_BuildLightmaps (model_t **models, int num_models)
 		GLSL_ScrapClear (light_scrap);
 		memset (light_data, 0, BLOCK_SIZE * MAX_LIGHTMAPS);
 	}
-	R_BuildLightMap = R_BuildLightMap_1;
+	glsl_R_BuildLightMap = R_BuildLightMap_1;
 
 	bl_extents[1] = bl_extents[0] = 0;
 	for (j = 1; j < num_models; j++) {
@@ -241,13 +244,13 @@ R_BuildLightmaps (model_t **models, int num_models)
 		for (i = 0; i < m->numsurfaces; i++) {
 			msurface_t *surf = m->surfaces + i;
 			if (surf->lightpic)
-				R_BuildLightMap (surf);
+				glsl_R_BuildLightMap (surf);
 		}
 	}
 }
 
 int
-R_LightmapTexture (void)
+glsl_R_LightmapTexture (void)
 {
 	return GLSL_ScrapTexture (light_scrap);
 }

@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/render.h"
 #include "QF/sys.h"
@@ -37,7 +39,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "compat.h"
 #include "r_internal.h"
 
-drawsurf_t  r_drawsurf;
+drawsurf_t  sw32_r_drawsurf;
 
 static int         lightleft, blocksize, sourcetstep;
 static int         lightright, lightleftstep, lightrightstep, blockdivshift;
@@ -101,7 +103,7 @@ R_AddDynamicLights (void)
 	int         smax, tmax;
 	mtexinfo_t *tex;
 
-	surf = r_drawsurf.surf;
+	surf = sw32_r_drawsurf.surf;
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
 	tex = surf->texinfo;
@@ -165,7 +167,7 @@ R_BuildLightMap (void)
 	int         maps;
 	msurface_t *surf;
 
-	surf = r_drawsurf.surf;
+	surf = sw32_r_drawsurf.surf;
 
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
@@ -184,7 +186,7 @@ R_BuildLightMap (void)
 	// add all the lightmaps
 	if (lightmap)
 		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255; maps++) {
-			scale = r_drawsurf.lightadj[maps];	// 8.8 fraction     
+			scale = sw32_r_drawsurf.lightadj[maps];	// 8.8 fraction     
 			for (i = 0; i < size; i++)
 				blocklights[i] += lightmap[i] * scale;
 			lightmap += size;			// skip to next lightmap
@@ -213,7 +215,7 @@ R_BuildLightMap (void)
 }
 
 void
-R_DrawSurface (void)
+sw32_R_DrawSurface (void)
 {
 	byte       *basetptr;
 	int         smax, tmax, twidth;
@@ -227,62 +229,62 @@ R_DrawSurface (void)
 	// calculate the lightings
 	R_BuildLightMap ();
 
-	surfrowbytes = r_drawsurf.rowbytes;
+	surfrowbytes = sw32_r_drawsurf.rowbytes;
 
-	mt = r_drawsurf.texture;
+	mt = sw32_r_drawsurf.texture;
 
-	r_source = (byte *) mt + mt->offsets[r_drawsurf.surfmip];
+	r_source = (byte *) mt + mt->offsets[sw32_r_drawsurf.surfmip];
 
 	// the fractional light values should range from 0 to
 	// (VID_GRADES - 1) << 16 from a source range of 0 - 255
 
-	texwidth = mt->width >> r_drawsurf.surfmip;
+	texwidth = mt->width >> sw32_r_drawsurf.surfmip;
 
-	blocksize = 16 >> r_drawsurf.surfmip;
-	blockdivshift = 4 - r_drawsurf.surfmip;
+	blocksize = 16 >> sw32_r_drawsurf.surfmip;
+	blockdivshift = 4 - sw32_r_drawsurf.surfmip;
 	blockdivmask = (1 << blockdivshift) - 1;
 
-	r_lightwidth = (r_drawsurf.surf->extents[0] >> 4) + 1;
+	r_lightwidth = (sw32_r_drawsurf.surf->extents[0] >> 4) + 1;
 
-	r_numhblocks = r_drawsurf.surfwidth >> blockdivshift;
-	r_numvblocks = r_drawsurf.surfheight >> blockdivshift;
+	r_numhblocks = sw32_r_drawsurf.surfwidth >> blockdivshift;
+	r_numvblocks = sw32_r_drawsurf.surfheight >> blockdivshift;
 
 //==============================
 
-	smax = mt->width >> r_drawsurf.surfmip;
+	smax = mt->width >> sw32_r_drawsurf.surfmip;
 	twidth = texwidth;
-	tmax = mt->height >> r_drawsurf.surfmip;
+	tmax = mt->height >> sw32_r_drawsurf.surfmip;
 	sourcetstep = texwidth;
 	r_stepback = tmax * twidth;
 
-	soffset = r_drawsurf.surf->texturemins[0];
-	basetoffset = r_drawsurf.surf->texturemins[1];
+	soffset = sw32_r_drawsurf.surf->texturemins[0];
+	basetoffset = sw32_r_drawsurf.surf->texturemins[1];
 
-	switch (r_pixbytes) {
+	switch (sw32_r_pixbytes) {
 	case 1:
-		pblockdrawer = surfmiptable8[r_drawsurf.surfmip];
+		pblockdrawer = surfmiptable8[sw32_r_drawsurf.surfmip];
 		break;
 	case 2:
-		pblockdrawer = surfmiptable16[r_drawsurf.surfmip];
+		pblockdrawer = surfmiptable16[sw32_r_drawsurf.surfmip];
 		break;
 	case 4:
-		pblockdrawer = surfmiptable32[r_drawsurf.surfmip];
+		pblockdrawer = surfmiptable32[sw32_r_drawsurf.surfmip];
 		break;
 	default:
-		Sys_Error("R_DrawSurface: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("R_DrawSurface: unsupported r_pixbytes %i", sw32_r_pixbytes);
 		pblockdrawer = NULL;
 	}
 
-	horzblockstep = blocksize * r_pixbytes;
+	horzblockstep = blocksize * sw32_r_pixbytes;
 
 	r_sourcemax = r_source + (tmax * smax);
 
 	// << 16 components are to guarantee positive values for %
-	basetptr = r_source + (((basetoffset >> r_drawsurf.surfmip) +
+	basetptr = r_source + (((basetoffset >> sw32_r_drawsurf.surfmip) +
 							(tmax << 16)) % tmax) * twidth;
-	soffset = (((soffset >> r_drawsurf.surfmip) + (smax << 16)) % smax);
+	soffset = (((soffset >> sw32_r_drawsurf.surfmip) + (smax << 16)) % smax);
 
-	pcolumndest = (byte *) r_drawsurf.surfdat;
+	pcolumndest = (byte *) sw32_r_drawsurf.surfdat;
 
 	for (u = 0; u < r_numhblocks; u++) {
 		r_lightptr = blocklights + u;

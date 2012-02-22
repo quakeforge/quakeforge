@@ -30,6 +30,9 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -62,7 +65,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 /* SCREEN SHOTS */
 
 tex_t *
-SCR_CaptureBGR (void)
+gl_SCR_CaptureBGR (void)
 {
 	int         count;
 	tex_t      *tex;
@@ -80,7 +83,7 @@ SCR_CaptureBGR (void)
 }
 
 tex_t *
-SCR_ScreenShot (int width, int height)
+gl_SCR_ScreenShot (int width, int height)
 {
 	unsigned char *src, *dest, *snap;
 	float          fracw, frach;
@@ -144,7 +147,7 @@ SCR_ScreenShot (int width, int height)
 }
 
 void
-SCR_ScreenShot_f (void)
+gl_SCR_ScreenShot_f (void)
 {
 	dstring_t  *pcxname = dstring_new ();
 
@@ -155,7 +158,7 @@ SCR_ScreenShot_f (void)
 	} else {
 		tex_t      *tex;
 
-		tex = SCR_CaptureBGR ();
+		tex = gl_SCR_CaptureBGR ();
 		WriteTGAfile (pcxname->str, tex->data, tex->width, tex->height);
 		free (tex);
 		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, pcxname->str);
@@ -198,7 +201,7 @@ SCR_TileClear (void)
 	needs almost the entire 256k of stack space!
 */
 void
-SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+gl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	double      time1 = 0, time2;
 	static int  begun = 0;
@@ -223,8 +226,8 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 
 	if (r_speeds->int_val) {
 		time1 = Sys_DoubleTime ();
-		c_brush_polys = 0;
-		c_alias_polys = 0;
+		gl_c_brush_polys = 0;
+		gl_c_alias_polys = 0;
 	}
 
 	if (oldfov != scr_fov->value) {		// determine size of refresh window
@@ -256,8 +259,8 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 //		qfglFinish ();
 		time2 = Sys_DoubleTime ();
 		Sys_MaskPrintf (SYS_DEV, "%3i ms  %4i wpoly %4i epoly %4i parts\n",
-						(int) ((time2 - time1) * 1000), c_brush_polys,
-						c_alias_polys, numparticles);
+						(int) ((time2 - time1) * 1000), gl_c_brush_polys,
+						gl_c_alias_polys, numparticles);
 	}
 
 	GL_FlushText ();

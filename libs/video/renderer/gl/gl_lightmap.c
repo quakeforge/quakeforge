@@ -29,8 +29,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -74,7 +76,7 @@ glRect_t	 gl_lightmap_rectchange[MAX_LIGHTMAPS];
 
 static int	 lmshift = 7;
 
-void (*R_BuildLightMap) (msurface_t *surf);
+void (*gl_R_BuildLightMap) (msurface_t *surf);
 
 extern void gl_multitexture_f (cvar_t *var);
 
@@ -476,7 +478,7 @@ GL_UploadLightmap (int i)
 }
 
 void
-R_CalcLightmaps (void)
+gl_R_CalcLightmaps (void)
 {
 	int         i;
 
@@ -492,7 +494,7 @@ R_CalcLightmaps (void)
 }
 
 void
-R_BlendLightmaps (void)
+gl_R_BlendLightmaps (void)
 {
 	float      *v;
 	int         i, j;
@@ -577,7 +579,7 @@ gl_overbright_f (cvar_t *var)
 	if (gl_multitexture)
 		gl_multitexture_f (gl_multitexture);
 
-	if (!R_BuildLightMap)
+	if (!gl_R_BuildLightMap)
 		return;
 
 	for (ent = r_ent_queue; ent; ent = ent->next) {
@@ -599,7 +601,7 @@ gl_overbright_f (cvar_t *var)
 			gl_lightmap_rectchange[num].w = BLOCK_WIDTH;
 			gl_lightmap_rectchange[num].h = BLOCK_HEIGHT;
 
-			R_BuildLightMap (fa);
+			gl_R_BuildLightMap (fa);
 		}
 	}
 
@@ -616,7 +618,7 @@ gl_overbright_f (cvar_t *var)
 		gl_lightmap_rectchange[num].w = BLOCK_WIDTH;
 		gl_lightmap_rectchange[num].h = BLOCK_HEIGHT;
 
-		R_BuildLightMap (fa);
+		gl_R_BuildLightMap (fa);
 	}
 }
 
@@ -677,7 +679,7 @@ GL_CreateSurfaceLightmap (msurface_t *surf)
 
 	surf->lightmaptexturenum =
 		AllocBlock (smax, tmax, &surf->light_s, &surf->light_t);
-	R_BuildLightMap (surf);
+	gl_R_BuildLightMap (surf);
 }
 
 /*
@@ -705,7 +707,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		gl_internalformat = 1;
 		gl_lightmap_format = GL_LUMINANCE;
 		lightmap_bytes = 1;
-		R_BuildLightMap = R_BuildLightMap_1;
+		gl_R_BuildLightMap = R_BuildLightMap_1;
 		break;
 	case 3:
 		gl_internalformat = 3;
@@ -714,7 +716,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		else
 			gl_lightmap_format = GL_RGB;
 		lightmap_bytes = 3;
-		R_BuildLightMap = R_BuildLightMap_3;
+		gl_R_BuildLightMap = R_BuildLightMap_3;
 		break;
 	case 4:
 	default:
@@ -724,7 +726,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		else
 			gl_lightmap_format = GL_RGBA;
 		lightmap_bytes = 4;
-		R_BuildLightMap = R_BuildLightMap_4;
+		gl_R_BuildLightMap = R_BuildLightMap_4;
 		break;
 	}
 

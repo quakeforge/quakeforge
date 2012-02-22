@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -53,7 +55,7 @@ R_CheckVariables (void)
 	For program optimization
 */
 void
-R_TimeRefresh_f (void)
+sw32_R_TimeRefresh_f (void)
 {
 	int         i;
 	float       start, stop, time;
@@ -68,7 +70,7 @@ R_TimeRefresh_f (void)
 
 		VID_LockBuffer ();
 
-		R_RenderView ();
+		sw32_R_RenderView ();
 
 		VID_UnlockBuffer ();
 
@@ -87,18 +89,18 @@ R_TimeRefresh_f (void)
 }
 
 void
-R_LoadSky_f (void)
+sw32_R_LoadSky_f (void)
 {
 	if (Cmd_Argc () != 2) {
 		Sys_Printf ("loadsky <name> : load a skybox\n");
 		return;
 	}
 
-	R_LoadSkys (Cmd_Argv (1));
+	sw32_R_LoadSkys (Cmd_Argv (1));
 }
 
 void
-R_PrintTimes (void)
+sw32_R_PrintTimes (void)
 {
 	float       r_time2;
 	float       ms;
@@ -108,39 +110,39 @@ R_PrintTimes (void)
 	ms = 1000 * (r_time2 - r_time1);
 
 	Sys_Printf ("%5.1f ms %3i/%3i/%3i poly %3i surf\n",
-				ms, c_faceclip, r_polycount, r_drawnpolycount, c_surf);
-	c_surf = 0;
+				ms, sw32_c_faceclip, sw32_r_polycount, sw32_r_drawnpolycount, sw32_c_surf);
+	sw32_c_surf = 0;
 }
 
 void
-R_PrintAliasStats (void)
+sw32_R_PrintAliasStats (void)
 {
-	Sys_Printf ("%3i polygon model drawn\n", r_amodels_drawn);
+	Sys_Printf ("%3i polygon model drawn\n", sw32_r_amodels_drawn);
 }
 
 void
-R_TransformFrustum (void)
+sw32_R_TransformFrustum (void)
 {
 	int         i;
 	vec3_t      v, v2;
 
 	for (i = 0; i < 4; i++) {
-		v[0] = screenedge[i].normal[2];
-		v[1] = -screenedge[i].normal[0];
-		v[2] = screenedge[i].normal[1];
+		v[0] = sw32_screenedge[i].normal[2];
+		v[1] = -sw32_screenedge[i].normal[0];
+		v[2] = sw32_screenedge[i].normal[1];
 
 		v2[0] = v[1] * vright[0] + v[2] * vup[0] + v[0] * vpn[0];
 		v2[1] = v[1] * vright[1] + v[2] * vup[1] + v[0] * vpn[1];
 		v2[2] = v[1] * vright[2] + v[2] * vup[2] + v[0] * vpn[2];
 
-		VectorCopy (v2, view_clipplanes[i].normal);
+		VectorCopy (v2, sw32_view_clipplanes[i].normal);
 
-		view_clipplanes[i].dist = DotProduct (modelorg, v2);
+		sw32_view_clipplanes[i].dist = DotProduct (modelorg, v2);
 	}
 }
 
 void
-TransformVector (const vec3_t in, vec3_t out)
+sw32_TransformVector (const vec3_t in, vec3_t out)
 {
 	out[0] = DotProduct (in, vright);
 	out[1] = DotProduct (in, vup);
@@ -148,14 +150,14 @@ TransformVector (const vec3_t in, vec3_t out)
 }
 
 void
-R_TransformPlane (plane_t *p, float *normal, float *dist)
+sw32_R_TransformPlane (plane_t *p, float *normal, float *dist)
 {
 	float       d;
 
 	d = DotProduct (r_origin, p->normal);
 	*dist = p->dist - d;
 // TODO: when we have rotating entities, this will need to use the view matrix
-	TransformVector (p->normal, normal);
+	sw32_TransformVector (p->normal, normal);
 }
 
 static void
@@ -163,11 +165,11 @@ R_SetUpFrustumIndexes (void)
 {
 	int         i, j, *pindex;
 
-	pindex = r_frustum_indexes;
+	pindex = sw32_r_frustum_indexes;
 
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < 3; j++) {
-			if (view_clipplanes[i].normal[j] < 0) {
+			if (sw32_view_clipplanes[i].normal[j] < 0) {
 				pindex[j] = j;
 				pindex[j + 3] = j + 3;
 			} else {
@@ -177,13 +179,13 @@ R_SetUpFrustumIndexes (void)
 		}
 
 		// FIXME: do just once at start
-		pfrustum_indexes[i] = pindex;
+		sw32_pfrustum_indexes[i] = pindex;
 		pindex += 6;
 	}
 }
 
 void
-R_SetupFrame (void)
+sw32_R_SetupFrame (void)
 {
 	int         edgecount;
 	vrect_t     vrect;
@@ -194,22 +196,22 @@ R_SetupFrame (void)
 	Cvar_SetValue (r_drawflat, 0);
 
 	if (r_numsurfs->int_val) {
-		if ((surface_p - surfaces) > r_maxsurfsseen)
-			r_maxsurfsseen = surface_p - surfaces;
+		if ((sw32_surface_p - sw32_surfaces) > sw32_r_maxsurfsseen)
+			sw32_r_maxsurfsseen = sw32_surface_p - sw32_surfaces;
 
 		Sys_Printf ("Used %ld of %ld surfs; %d max\n",
-					(long) (surface_p - surfaces),
-					(long) (surf_max - surfaces), r_maxsurfsseen);
+					(long) (sw32_surface_p - sw32_surfaces),
+					(long) (sw32_surf_max - sw32_surfaces), sw32_r_maxsurfsseen);
 	}
 
 	if (r_numedges->int_val) {
-		edgecount = edge_p - r_edges;
+		edgecount = sw32_edge_p - sw32_r_edges;
 
-		if (edgecount > r_maxedgesseen)
-			r_maxedgesseen = edgecount;
+		if (edgecount > sw32_r_maxedgesseen)
+			sw32_r_maxedgesseen = edgecount;
 
 		Sys_Printf ("Used %d of %d edges; %d max\n", edgecount,
-					r_numallocatededges, r_maxedgesseen);
+					sw32_r_numallocatededges, sw32_r_maxedgesseen);
 	}
 
 	r_refdef.ambientlight = max (r_ambient->value, 0);
@@ -220,7 +222,7 @@ R_SetupFrame (void)
 	R_ClearEnts ();
 	r_framecount++;
 
-	numbtofpolys = 0;
+	sw32_numbtofpolys = 0;
 
 	// debugging
 #if 0
@@ -241,12 +243,12 @@ R_SetupFrame (void)
 	// current viewleaf
 	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
 
-	r_dowarpold = r_dowarp;
-	r_dowarp = r_waterwarp->int_val && (r_viewleaf->contents <=
+	sw32_r_dowarpold = sw32_r_dowarp;
+	sw32_r_dowarp = r_waterwarp->int_val && (r_viewleaf->contents <=
 										CONTENTS_WATER);
 
-	if ((r_dowarp != r_dowarpold) || r_viewchanged) {
-		if (r_dowarp) {
+	if ((sw32_r_dowarp != sw32_r_dowarpold) || sw32_r_viewchanged) {
+		if (sw32_r_dowarp) {
 			if ((vid.width <= (unsigned int) vid.maxwarpwidth) &&
 				(vid.height <= (unsigned int) vid.maxwarpheight)) {
 				vrect.x = 0;
@@ -255,7 +257,7 @@ R_SetupFrame (void)
 				vrect.height = vid.height;
 
 				R_SetVrect (&vrect, &r_refdef.vrect, vr_data.lineadj);
-				R_ViewChanged (vid.aspect);
+				sw32_R_ViewChanged (vid.aspect);
 			} else {
 				w = vid.width;
 				h = vid.height;
@@ -278,7 +280,7 @@ R_SetupFrame (void)
 				R_SetVrect (&vrect, &r_refdef.vrect,
 							(int) ((float) vr_data.lineadj *
 								   (h / (float) vid.height)));
-				R_ViewChanged (vid.aspect * (h / w) * ((float) vid.width /
+				sw32_R_ViewChanged (vid.aspect * (h / w) * ((float) vid.width /
 													   (float) vid.height));
 			}
 		} else {
@@ -288,13 +290,13 @@ R_SetupFrame (void)
 			vrect.height = vid.height;
 
 			r_refdef.vrect = scr_vrect;
-			R_ViewChanged (vid.aspect);
+			sw32_R_ViewChanged (vid.aspect);
 		}
 
-		r_viewchanged = false;
+		sw32_r_viewchanged = false;
 	}
 	// start off with just the four screen edge clip planes
-	R_TransformFrustum ();
+	sw32_R_TransformFrustum ();
 
 	// save base values
 	VectorCopy (vpn, base_vpn);
@@ -302,19 +304,19 @@ R_SetupFrame (void)
 	VectorCopy (vup, base_vup);
 	VectorCopy (modelorg, base_modelorg);
 
-	R_SetSkyFrame ();
+	sw32_R_SetSkyFrame ();
 
 	R_SetUpFrustumIndexes ();
 
 	r_cache_thrash = false;
 
 	// clear frame counts
-	c_faceclip = 0;
-	r_polycount = 0;
-	r_drawnpolycount = 0;
-	r_amodels_drawn = 0;
-	r_outofsurfaces = 0;
-	r_outofedges = 0;
+	sw32_c_faceclip = 0;
+	sw32_r_polycount = 0;
+	sw32_r_drawnpolycount = 0;
+	sw32_r_amodels_drawn = 0;
+	sw32_r_outofsurfaces = 0;
+	sw32_r_outofedges = 0;
 
-	D_SetupFrame ();
+	sw32_D_SetupFrame ();
 }

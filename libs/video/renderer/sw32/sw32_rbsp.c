@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include <math.h>
 
@@ -39,11 +41,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_internal.h"
 
 // current entity info
-qboolean    insubmodel;
-vec3_t      r_worldmodelorg;
+qboolean    sw32_insubmodel;
+vec3_t      sw32_r_worldmodelorg;
 static float       entity_rotation[3][3];
 
-int         r_currentbkey;
+int         sw32_r_currentbkey;
 
 typedef enum { touchessolid, drawnode, nodrawnode } solidstate_t;
 
@@ -54,7 +56,7 @@ static mvertex_t *pbverts;
 static bedge_t *pbedges;
 static int  numbverts, numbedges;
 
-int         numbtofpolys;
+int         sw32_numbtofpolys;
 static btofpoly_t *pbtofpolys;
 
 static mvertex_t *pfrontenter, *pfrontexit;
@@ -75,7 +77,7 @@ R_EntityRotate (vec3_t vec)
 
 
 void
-R_RotateBmodel (void)
+sw32_R_RotateBmodel (void)
 {
 	VectorCopy (currententity->transform + 0, entity_rotation[0]);
 	VectorCopy (currententity->transform + 4, entity_rotation[1]);
@@ -87,7 +89,7 @@ R_RotateBmodel (void)
 	R_EntityRotate (vright);
 	R_EntityRotate (vup);
 
-	R_TransformFrustum ();
+	sw32_R_TransformFrustum ();
 }
 
 
@@ -223,8 +225,8 @@ R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 			if (pn->visframe == r_visframecount) {
 				if (pn->contents < 0) {
 					if (pn->contents != CONTENTS_SOLID) {
-						r_currentbkey = ((mleaf_t *) pn)->key;
-						R_RenderBmodelFace (psideedges[i], psurf);
+						sw32_r_currentbkey = ((mleaf_t *) pn)->key;
+						sw32_R_RenderBmodelFace (psideedges[i], psurf);
 					}
 				} else {
 					R_RecursiveClipBPoly (psideedges[i], pnode->children[i],
@@ -237,7 +239,7 @@ R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 
 
 void
-R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
+sw32_R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 {
 	int         i, j, lindex;
 	vec_t       dot;
@@ -306,7 +308,7 @@ R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 
 
 void
-R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
+sw32_R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
 {
 	int         i;
 	vec_t       dot;
@@ -328,10 +330,10 @@ R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
 		// draw the polygon
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			r_currentkey = ((mleaf_t *) currententity->topnode)->key;
+			sw32_r_currentkey = ((mleaf_t *) currententity->topnode)->key;
 
 			// FIXME: use bounding-box-based frustum clipping info?
-			R_RenderFace (psurf, clipflags);
+			sw32_R_RenderFace (psurf, clipflags);
 		}
 	}
 }
@@ -343,8 +345,8 @@ visit_leaf (mleaf_t *leaf)
 	// deal with model fragments in this leaf
 	if (leaf->efrags)
 		R_StoreEfrags (leaf->efrags);
-	leaf->key = r_currentkey;
-	r_currentkey++;				// all bmodels in a leaf share the same key
+	leaf->key = sw32_r_currentkey;
+	sw32_r_currentkey++;				// all bmodels in a leaf share the same key
 }
 
 static inline int
@@ -377,22 +379,22 @@ visit_node (mnode_t *node, int side, int clipflags)
 			if (side ^ (surf->flags & SURF_PLANEBACK))
 				continue;				// wrong side
 
-			if (r_drawpolys) {
-				if (r_worldpolysbacktofront) {
-					if (numbtofpolys < MAX_BTOFPOLYS) {
-						pbtofpolys[numbtofpolys].clipflags = clipflags;
-						pbtofpolys[numbtofpolys].psurf = surf;
-						numbtofpolys++;
+			if (sw32_r_drawpolys) {
+				if (sw32_r_worldpolysbacktofront) {
+					if (sw32_numbtofpolys < MAX_BTOFPOLYS) {
+						pbtofpolys[sw32_numbtofpolys].clipflags = clipflags;
+						pbtofpolys[sw32_numbtofpolys].psurf = surf;
+						sw32_numbtofpolys++;
 					}
 				} else {
-					R_RenderPoly (surf, clipflags);
+					sw32_R_RenderPoly (surf, clipflags);
 				}
 			} else {
-				R_RenderFace (surf, clipflags);
+				sw32_R_RenderFace (surf, clipflags);
 			}
 		}
 		// all surfaces on the same node share the same sequence number
-		r_currentkey++;
+		sw32_r_currentkey++;
 	}
 }
 
@@ -419,14 +421,14 @@ test_node (mnode_t *node, int *clipflags)
 			// FIXME: do with fast look-ups or integer tests based on the
 			// sign bit of the floating point values
 
-			pindex = pfrustum_indexes[i];
+			pindex = sw32_pfrustum_indexes[i];
 
 			rejectpt[0] = (float) node->minmaxs[pindex[0]];
 			rejectpt[1] = (float) node->minmaxs[pindex[1]];
 			rejectpt[2] = (float) node->minmaxs[pindex[2]];
 
-			d = DotProduct (rejectpt, view_clipplanes[i].normal);
-			d -= view_clipplanes[i].dist;
+			d = DotProduct (rejectpt, sw32_view_clipplanes[i].normal);
+			d -= sw32_view_clipplanes[i].dist;
 
 			if (d <= 0)
 				return 0;
@@ -435,8 +437,8 @@ test_node (mnode_t *node, int *clipflags)
 			acceptpt[1] = (float) node->minmaxs[pindex[3 + 1]];
 			acceptpt[2] = (float) node->minmaxs[pindex[3 + 2]];
 
-			d = DotProduct (acceptpt, view_clipplanes[i].normal);
-			d -= view_clipplanes[i].dist;
+			d = DotProduct (acceptpt, sw32_view_clipplanes[i].normal);
+			d -= sw32_view_clipplanes[i].dist;
 			if (d >= 0)
 				*clipflags &= ~(1 << i);	// node is entirely on screen
 		}
@@ -525,14 +527,14 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 			// FIXME: do with fast look-ups or integer tests based on the
 			// sign bit of the floating point values
 
-			pindex = pfrustum_indexes[i];
+			pindex = sw32_pfrustum_indexes[i];
 
 			rejectpt[0] = (float) node->minmaxs[pindex[0]];
 			rejectpt[1] = (float) node->minmaxs[pindex[1]];
 			rejectpt[2] = (float) node->minmaxs[pindex[2]];
 
-			d = DotProduct (rejectpt, view_clipplanes[i].normal);
-			d -= view_clipplanes[i].dist;
+			d = DotProduct (rejectpt, sw32_view_clipplanes[i].normal);
+			d -= sw32_view_clipplanes[i].dist;
 
 			if (d <= 0)
 				return;
@@ -541,8 +543,8 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 			acceptpt[1] = (float) node->minmaxs[pindex[3 + 1]];
 			acceptpt[2] = (float) node->minmaxs[pindex[3 + 2]];
 
-			d = DotProduct (acceptpt, view_clipplanes[i].normal);
-			d -= view_clipplanes[i].dist;
+			d = DotProduct (acceptpt, sw32_view_clipplanes[i].normal);
+			d -= sw32_view_clipplanes[i].dist;
 
 			if (d >= 0)
 				clipflags &= ~(1 << i);	// node is entirely on screen
@@ -556,8 +558,8 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 			R_StoreEfrags (pleaf->efrags);
 		}
 
-		pleaf->key = r_currentkey;
-		r_currentkey++;				// all bmodels in a leaf share the same key
+		pleaf->key = sw32_r_currentkey;
+		sw32_r_currentkey++;				// all bmodels in a leaf share the same key
 	} else {
 		// node is just a decision point, so go down the apropriate sides
 
@@ -597,19 +599,19 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 				do {
 					if ((surf->flags & SURF_PLANEBACK) &&
 						(surf->visframe == r_visframecount)) {
-						if (r_drawpolys) {
-							if (r_worldpolysbacktofront) {
-								if (numbtofpolys < MAX_BTOFPOLYS) {
-									pbtofpolys[numbtofpolys].clipflags =
+						if (sw32_r_drawpolys) {
+							if (sw32_r_worldpolysbacktofront) {
+								if (sw32_numbtofpolys < MAX_BTOFPOLYS) {
+									pbtofpolys[sw32_numbtofpolys].clipflags =
 										clipflags;
-									pbtofpolys[numbtofpolys].psurf = surf;
-									numbtofpolys++;
+									pbtofpolys[sw32_numbtofpolys].psurf = surf;
+									sw32_numbtofpolys++;
 								}
 							} else {
-								R_RenderPoly (surf, clipflags);
+								sw32_R_RenderPoly (surf, clipflags);
 							}
 						} else {
-							R_RenderFace (surf, clipflags);
+							sw32_R_RenderFace (surf, clipflags);
 						}
 					}
 
@@ -619,19 +621,19 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 				do {
 					if (!(surf->flags & SURF_PLANEBACK) &&
 						(surf->visframe == r_visframecount)) {
-						if (r_drawpolys) {
-							if (r_worldpolysbacktofront) {
-								if (numbtofpolys < MAX_BTOFPOLYS) {
-									pbtofpolys[numbtofpolys].clipflags =
+						if (sw32_r_drawpolys) {
+							if (sw32_r_worldpolysbacktofront) {
+								if (sw32_numbtofpolys < MAX_BTOFPOLYS) {
+									pbtofpolys[sw32_numbtofpolys].clipflags =
 										clipflags;
-									pbtofpolys[numbtofpolys].psurf = surf;
-									numbtofpolys++;
+									pbtofpolys[sw32_numbtofpolys].psurf = surf;
+									sw32_numbtofpolys++;
 								}
 							} else {
-								R_RenderPoly (surf, clipflags);
+								sw32_R_RenderPoly (surf, clipflags);
 							}
 						} else {
-							R_RenderFace (surf, clipflags);
+							sw32_R_RenderFace (surf, clipflags);
 						}
 					}
 
@@ -639,7 +641,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 				} while (--c);
 			}
 			// all surfaces on the same node share the same sequence number
-			r_currentkey++;
+			sw32_r_currentkey++;
 		}
 		// recurse down the back side
 		R_RecursiveWorldNode (node->children[!side], clipflags);
@@ -648,7 +650,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 #endif
 
 void
-R_RenderWorld (void)
+sw32_R_RenderWorld (void)
 {
 	int         i;
 	model_t    *clmodel;
@@ -665,9 +667,9 @@ R_RenderWorld (void)
 
 	// if the driver wants the polygons back to front, play the visible ones
 	// back in that order
-	if (r_worldpolysbacktofront) {
-		for (i = numbtofpolys - 1; i >= 0; i--) {
-			R_RenderPoly (btofpolys[i].psurf, btofpolys[i].clipflags);
+	if (sw32_r_worldpolysbacktofront) {
+		for (i = sw32_numbtofpolys - 1; i >= 0; i--) {
+			sw32_R_RenderPoly (btofpolys[i].psurf, btofpolys[i].clipflags);
 		}
 	}
 }

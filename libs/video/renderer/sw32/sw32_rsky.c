@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #ifdef HAVE_STRING_H
 # include "string.h"
@@ -47,13 +49,13 @@ static __attribute__ ((used)) const char rcsid[] =
 
 static int         iskyspeed = 8;
 static int         iskyspeed2 = 2;
-float       r_skyspeed;
+float       sw32_r_skyspeed;
 
-float       r_skytime;
+float       sw32_r_skytime;
 
-byte       *r_skysource;
+byte       *sw32_r_skysource;
 
-int         r_skymade;
+int         sw32_r_skymade;
 
 // TODO: clean up these routines
 
@@ -76,7 +78,7 @@ static byte skytex[128*256*4]; // current sky texture
 	A sky texture is 256*128, with the right side being a masked overlay
 */
 void
-R_InitSky (texture_t *mt)
+sw32_R_InitSky (texture_t *mt)
 {
 	/*
 	int         i, j;
@@ -102,23 +104,23 @@ R_InitSky (texture_t *mt)
 		}
 	}
 
-	r_skysource = newsky;
+	sw32_r_skysource = newsky;
 	*/
 
 	// LordHavoc: save sky for use
 	memcpy(skydata, (byte *) mt + mt->offsets[0], 128*256);
-	r_skysource = skytex;
+	sw32_r_skysource = skytex;
 }
 
 void
-R_MakeSky (void)
+sw32_R_MakeSky (void)
 {
 	int x, y, xshift1, yshift1, xshift2, yshift2;
 	byte *base1, *base2;
 	static int  xlast = -1, ylast = -1;
 
-	xshift2 = r_skytime * r_skyspeed * 2.0f;
-	yshift2 = r_skytime * r_skyspeed * 2.0f;
+	xshift2 = sw32_r_skytime * sw32_r_skyspeed * 2.0f;
+	yshift2 = sw32_r_skytime * sw32_r_skyspeed * 2.0f;
 
 	if ((xshift2 == xlast) && (yshift2 == ylast))
 		return;
@@ -128,7 +130,7 @@ R_MakeSky (void)
 	xshift1 = xshift2 >> 1;
 	yshift1 = yshift2 >> 1;
 
-	switch(r_pixbytes)
+	switch(sw32_r_pixbytes)
 	{
 	case 1:
 		{
@@ -159,9 +161,9 @@ R_MakeSky (void)
 				for (x = 0;x < 128;x++)
 				{
 					if (base1[(x + xshift1) & 127])
-						*out = d_8to16table[base1[(x + xshift1) & 127]];
+						*out = sw32_8to16table[base1[(x + xshift1) & 127]];
 					else
-						*out = d_8to16table[base2[(x + xshift2) & 127]];
+						*out = sw32_8to16table[base2[(x + xshift2) & 127]];
 					out++;
 				}
 				out += 128;
@@ -188,28 +190,28 @@ R_MakeSky (void)
 		}
 		break;
 	default:
-		Sys_Error("R_MakeSky: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("R_MakeSky: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
-	r_skymade = 1;
+	sw32_r_skymade = 1;
 }
 
 
 void
-R_SetSkyFrame (void)
+sw32_R_SetSkyFrame (void)
 {
 	int         g, s1, s2;
 	float       temp;
 
-	r_skyspeed = iskyspeed;
+	sw32_r_skyspeed = iskyspeed;
 
 	g = GreatestCommonDivisor (iskyspeed, iskyspeed2);
 	s1 = iskyspeed / g;
 	s2 = iskyspeed2 / g;
 	temp = SKYSIZE * s1 * s2;
 
-	r_skytime = vr_data.realtime - ((int) (vr_data.realtime / temp) * temp);
+	sw32_r_skytime = vr_data.realtime - ((int) (vr_data.realtime / temp) * temp);
 
-	r_skymade = 0;
+	sw32_r_skymade = 0;
 }
 
 
@@ -218,6 +220,6 @@ R_SetSkyFrame (void)
    skyboxes only in GL targets, so we just do nothing here.  --KB
 */
 void
-R_LoadSkys (const char *name)
+sw32_R_LoadSkys (const char *name)
 {
 }

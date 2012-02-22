@@ -30,6 +30,9 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -96,7 +99,7 @@ static int         numcachepics;
 
 
 qpic_t *
-Draw_MakePic (int width, int height, const byte *data)
+sw32_Draw_MakePic (int width, int height, const byte *data)
 {
 	qpic_t	   *pic;
 	int         size = width * height;
@@ -109,20 +112,20 @@ Draw_MakePic (int width, int height, const byte *data)
 }
 
 void
-Draw_DestroyPic (qpic_t *pic)
+sw32_Draw_DestroyPic (qpic_t *pic)
 {
 	free (pic);
 }
 
 qpic_t *
-Draw_PicFromWad (const char *name)
+sw32_Draw_PicFromWad (const char *name)
 {
 	return W_GetLumpName (name);
 }
 
 
 qpic_t *
-Draw_CachePic (const char *path, qboolean alpha)
+sw32_Draw_CachePic (const char *path, qboolean alpha)
 {
 	cachepic_t *pic;
 	int         i;
@@ -163,7 +166,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 }
 
 void
-Draw_UncachePic (const char *path)
+sw32_Draw_UncachePic (const char *path)
 {
 	cachepic_t *pic;
 	int         i;
@@ -179,7 +182,7 @@ Draw_UncachePic (const char *path)
 
 
 void
-Draw_TextBox (int x, int y, int width, int lines, byte alpha)
+sw32_Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 {
 	qpic_t     *p;
 	int         cx, cy;
@@ -188,51 +191,51 @@ Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 	// draw left side
 	cx = x;
 	cy = y;
-	p = Draw_CachePic ("gfx/box_tl.lmp", true);
-	Draw_Pic (cx, cy, p);
-	p = Draw_CachePic ("gfx/box_ml.lmp", true);
+	p = sw32_Draw_CachePic ("gfx/box_tl.lmp", true);
+	sw32_Draw_Pic (cx, cy, p);
+	p = sw32_Draw_CachePic ("gfx/box_ml.lmp", true);
 	for (n = 0; n < lines; n++) {
 		cy += 8;
-		Draw_Pic (cx, cy, p);
+		sw32_Draw_Pic (cx, cy, p);
 	}
-	p = Draw_CachePic ("gfx/box_bl.lmp", true);
-	Draw_Pic (cx, cy + 8, p);
+	p = sw32_Draw_CachePic ("gfx/box_bl.lmp", true);
+	sw32_Draw_Pic (cx, cy + 8, p);
 
 	// draw middle
 	cx += 8;
 	while (width > 0) {
 		cy = y;
-		p = Draw_CachePic ("gfx/box_tm.lmp", true);
-		Draw_Pic (cx, cy, p);
-		p = Draw_CachePic ("gfx/box_mm.lmp", true);
+		p = sw32_Draw_CachePic ("gfx/box_tm.lmp", true);
+		sw32_Draw_Pic (cx, cy, p);
+		p = sw32_Draw_CachePic ("gfx/box_mm.lmp", true);
 		for (n = 0; n < lines; n++) {
 			cy += 8;
 			if (n == 1)
-				p = Draw_CachePic ("gfx/box_mm2.lmp", true);
-			Draw_Pic (cx, cy, p);
+				p = sw32_Draw_CachePic ("gfx/box_mm2.lmp", true);
+			sw32_Draw_Pic (cx, cy, p);
 		}
-		p = Draw_CachePic ("gfx/box_bm.lmp", true);
-		Draw_Pic (cx, cy + 8, p);
+		p = sw32_Draw_CachePic ("gfx/box_bm.lmp", true);
+		sw32_Draw_Pic (cx, cy + 8, p);
 		width -= 2;
 		cx += 16;
 	}
 
 	// draw right side
 	cy = y;
-	p = Draw_CachePic ("gfx/box_tr.lmp", true);
-	Draw_Pic (cx, cy, p);
-	p = Draw_CachePic ("gfx/box_mr.lmp", true);
+	p = sw32_Draw_CachePic ("gfx/box_tr.lmp", true);
+	sw32_Draw_Pic (cx, cy, p);
+	p = sw32_Draw_CachePic ("gfx/box_mr.lmp", true);
 	for (n = 0; n < lines; n++) {
 		cy += 8;
-		Draw_Pic (cx, cy, p);
+		sw32_Draw_Pic (cx, cy, p);
 	}
-	p = Draw_CachePic ("gfx/box_br.lmp", true);
-	Draw_Pic (cx, cy + 8, p);
+	p = sw32_Draw_CachePic ("gfx/box_br.lmp", true);
+	sw32_Draw_Pic (cx, cy + 8, p);
 }
 
 
 void
-Draw_Init (void)
+sw32_Draw_Init (void)
 {
 	draw_chars = W_GetLumpName ("conchars");
 	draw_disc = W_GetLumpName ("disc");
@@ -253,7 +256,7 @@ Draw_Init (void)
 	smoothly scrolled off.
 */
 void
-Draw_Character (int x, int y, unsigned int chr)
+sw32_Draw_Character (int x, int y, unsigned int chr)
 {
 	byte       *source;
 	int         drawline;
@@ -281,7 +284,7 @@ Draw_Character (int x, int y, unsigned int chr)
 		drawline = 8;
 
 
-	switch(r_pixbytes) {
+	switch(sw32_r_pixbytes) {
 	case 1:
 	{
 		byte       *dest = (byte *) vid.conbuffer + y * vid.conrowbytes + x;
@@ -315,21 +318,21 @@ Draw_Character (int x, int y, unsigned int chr)
 
 		while (drawline--) {
 			if (source[0])
-				dest[0] = d_8to16table[source[0]];
+				dest[0] = sw32_8to16table[source[0]];
 			if (source[1])
-				dest[1] = d_8to16table[source[1]];
+				dest[1] = sw32_8to16table[source[1]];
 			if (source[2])
-				dest[2] = d_8to16table[source[2]];
+				dest[2] = sw32_8to16table[source[2]];
 			if (source[3])
-				dest[3] = d_8to16table[source[3]];
+				dest[3] = sw32_8to16table[source[3]];
 			if (source[4])
-				dest[4] = d_8to16table[source[4]];
+				dest[4] = sw32_8to16table[source[4]];
 			if (source[5])
-				dest[5] = d_8to16table[source[5]];
+				dest[5] = sw32_8to16table[source[5]];
 			if (source[6])
-				dest[6] = d_8to16table[source[6]];
+				dest[6] = sw32_8to16table[source[6]];
 			if (source[7])
-				dest[7] = d_8to16table[source[7]];
+				dest[7] = sw32_8to16table[source[7]];
 
 			source += 128;
 			dest += (vid.conrowbytes >> 1);
@@ -365,34 +368,34 @@ Draw_Character (int x, int y, unsigned int chr)
 	}
 	break;
 	default:
-		Sys_Error("Draw_Character: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("Draw_Character: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
 }
 
 void
-Draw_String (int x, int y, const char *str)
+sw32_Draw_String (int x, int y, const char *str)
 {
 	while (*str) {
-		Draw_Character (x, y, *str++);
+		sw32_Draw_Character (x, y, *str++);
 		x += 8;
 	}
 }
 
 void
-Draw_nString (int x, int y, const char *str, int count)
+sw32_Draw_nString (int x, int y, const char *str, int count)
 {
 	while (count-- && *str) {
-		Draw_Character (x, y, *str++);
+		sw32_Draw_Character (x, y, *str++);
 		x += 8;
 	}
 }
 
 
 void
-Draw_AltString (int x, int y, const char *str)
+sw32_Draw_AltString (int x, int y, const char *str)
 {
 	while (*str) {
-		Draw_Character (x, y, (*str++) | 0x80);
+		sw32_Draw_Character (x, y, (*str++) | 0x80);
 		x += 8;
 	}
 }
@@ -401,28 +404,28 @@ Draw_AltString (int x, int y, const char *str)
 static void
 Draw_Pixel (int x, int y, byte color)
 {
-	switch(r_pixbytes)
+	switch(sw32_r_pixbytes)
 	{
 	case 1:
 		((byte *) vid.conbuffer)[y * vid.conrowbytes + x] = color;
 		break;
 	case 2:
 		((unsigned short *) vid.conbuffer)[y * (vid.conrowbytes >> 1) + x] =
-			d_8to16table[color];
+			sw32_8to16table[color];
 		break;
 	case 4:
 		((unsigned int *) vid.conbuffer)[y * (vid.conrowbytes >> 2) + x] =
 			d_8to24table[color];
 		break;
 	default:
-		Sys_Error("Draw_Pixel: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("Draw_Pixel: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
 }
 
 static void
 crosshair_1 (int x, int y)
 {
-	Draw_Character (x - 4, y - 4, '+');
+	sw32_Draw_Character (x - 4, y - 4, '+');
 }   
 
 static void
@@ -462,7 +465,7 @@ static void (*crosshair_func[]) (int x, int y) = {
 };
 
 void
-Draw_Crosshair (void)
+sw32_Draw_Crosshair (void)
 {
 	int            x, y;
 	int            ch;
@@ -478,7 +481,7 @@ Draw_Crosshair (void)
 }
 
 void
-Draw_CrosshairAt (int ch, int x, int y)
+sw32_Draw_CrosshairAt (int ch, int x, int y)
 {
 	ch -= 1;
 	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
@@ -488,7 +491,7 @@ Draw_CrosshairAt (int ch, int x, int y)
 }
 
 void
-Draw_Pic (int x, int y, qpic_t *pic)
+sw32_Draw_Pic (int x, int y, qpic_t *pic)
 {
 	byte       *source, tbyte;
 	int         v, u;
@@ -496,13 +499,13 @@ Draw_Pic (int x, int y, qpic_t *pic)
 	if (x < 0 || (unsigned int) (x + pic->width) > vid.conwidth || y < 0 ||
 		(unsigned int) (y + pic->height) > vid.conheight) {
 		Sys_MaskPrintf (SYS_VID, "Draw_Pic: bad coordinates");
-		Draw_SubPic (x, y, pic, 0, 0, pic->width, pic->height);
+		sw32_Draw_SubPic (x, y, pic, 0, 0, pic->width, pic->height);
 		return;
 	}
 
 	source = pic->data;
 
-	switch(r_pixbytes) {
+	switch(sw32_r_pixbytes) {
 	case 1:
 	{
 		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
@@ -551,7 +554,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 			for (u = 0; u < pic->width; u++) {
 				tbyte = source[u];
 				if (tbyte != TRANSPARENT_COLOR)
-					dest[u] = d_8to16table[tbyte];
+					dest[u] = sw32_8to16table[tbyte];
 			}
 
 			dest += vid.rowbytes >> 1;
@@ -575,19 +578,19 @@ Draw_Pic (int x, int y, qpic_t *pic)
 	}
 	break;
 	default:
-		Sys_Error("Draw_Pic: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("Draw_Pic: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
 }
 
 void
-Draw_Picf (float x, float y, qpic_t *pic)
+sw32_Draw_Picf (float x, float y, qpic_t *pic)
 {
-	Draw_Pic (x, y, pic);
+	sw32_Draw_Pic (x, y, pic);
 }
 
 void
-Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
-			 int height)
+sw32_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
+				  int height)
 {
 	byte       *source, tbyte;
 	int   v, u;
@@ -620,7 +623,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 
 	source = pic->data + srcy * pic->width + srcx;
 
-	switch (r_pixbytes) {
+	switch (sw32_r_pixbytes) {
 	case 1:
 	{
 		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
@@ -642,7 +645,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 				 source += pic->width)
 			for (u = 0; u < width; u++)
 				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
-					dest[u] = d_8to16table[tbyte];
+					dest[u] = sw32_8to16table[tbyte];
 	}
 	break;
 	case 4:
@@ -657,23 +660,23 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	}
 	break;
 	default:
-		Sys_Error("Draw_SubPic: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("Draw_SubPic: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
 }
 
 
 void
-Draw_ConsoleBackground (int lines, byte alpha)
+sw32_Draw_ConsoleBackground (int lines, byte alpha)
 {
 	int         x, y, v;
 	byte       *src;
 	int         f, fstep;
 	qpic_t     *conback;
 
-	conback = Draw_CachePic ("gfx/conback.lmp", true);
+	conback = sw32_Draw_CachePic ("gfx/conback.lmp", true);
 
 	// draw the pic
-	switch(r_pixbytes) {
+	switch(sw32_r_pixbytes) {
 	case 1:
 	{
 		byte       *dest = vid.conbuffer;
@@ -712,13 +715,13 @@ Draw_ConsoleBackground (int lines, byte alpha)
 			f = 0;
 			fstep = 320 * 0x10000 / vid.conwidth;
 			for (x = 0; x < (int) vid.conwidth; x += 4) {
-				dest[x] = d_8to16table[src[f >> 16]];
+				dest[x] = sw32_8to16table[src[f >> 16]];
 				f += fstep;
-				dest[x + 1] = d_8to16table[src[f >> 16]];
+				dest[x + 1] = sw32_8to16table[src[f >> 16]];
 				f += fstep;
-				dest[x + 2] = d_8to16table[src[f >> 16]];
+				dest[x + 2] = sw32_8to16table[src[f >> 16]];
 				f += fstep;
-				dest[x + 3] = d_8to16table[src[f >> 16]];
+				dest[x + 3] = sw32_8to16table[src[f >> 16]];
 				f += fstep;
 			}
 		}
@@ -744,18 +747,18 @@ Draw_ConsoleBackground (int lines, byte alpha)
 
 	default:
 		Sys_Error("Draw_ConsoleBackground: unsupported r_pixbytes %i",
-				  r_pixbytes);
+				  sw32_r_pixbytes);
 	}
 
 //	if (!cls.download)
-	Draw_AltString (vid.conwidth - strlen (cl_verstring->string) * 8 - 11,
-					lines - 14, cl_verstring->string);
+	sw32_Draw_AltString (vid.conwidth - strlen (cl_verstring->string) * 8 - 11,
+						 lines - 14, cl_verstring->string);
 }
 
 static void
 R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 {
-	switch(r_pixbytes) {
+	switch(sw32_r_pixbytes) {
 	case 1:
 	{
 		byte        t;
@@ -814,50 +817,50 @@ R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 				{
 					j -= 8;
 					if (psrc[0] != TRANSPARENT_COLOR)
-						pdest[0] = d_8to16table[psrc[0]];
+						pdest[0] = sw32_8to16table[psrc[0]];
 					if (psrc[1] != TRANSPARENT_COLOR)
-						pdest[1] = d_8to16table[psrc[1]];
+						pdest[1] = sw32_8to16table[psrc[1]];
 					if (psrc[2] != TRANSPARENT_COLOR)
-						pdest[2] = d_8to16table[psrc[2]];
+						pdest[2] = sw32_8to16table[psrc[2]];
 					if (psrc[3] != TRANSPARENT_COLOR)
-						pdest[3] = d_8to16table[psrc[3]];
+						pdest[3] = sw32_8to16table[psrc[3]];
 					if (psrc[4] != TRANSPARENT_COLOR)
-						pdest[4] = d_8to16table[psrc[4]];
+						pdest[4] = sw32_8to16table[psrc[4]];
 					if (psrc[5] != TRANSPARENT_COLOR)
-						pdest[5] = d_8to16table[psrc[5]];
+						pdest[5] = sw32_8to16table[psrc[5]];
 					if (psrc[6] != TRANSPARENT_COLOR)
-						pdest[6] = d_8to16table[psrc[6]];
+						pdest[6] = sw32_8to16table[psrc[6]];
 					if (psrc[7] != TRANSPARENT_COLOR)
-						pdest[7] = d_8to16table[psrc[7]];
+						pdest[7] = sw32_8to16table[psrc[7]];
 					psrc += 8;
 					pdest += 8;
 				}
 				if (j & 4)
 				{
 					if (psrc[0] != TRANSPARENT_COLOR)
-						pdest[0] = d_8to16table[psrc[0]];
+						pdest[0] = sw32_8to16table[psrc[0]];
 					if (psrc[1] != TRANSPARENT_COLOR)
-						pdest[1] = d_8to16table[psrc[1]];
+						pdest[1] = sw32_8to16table[psrc[1]];
 					if (psrc[2] != TRANSPARENT_COLOR)
-						pdest[2] = d_8to16table[psrc[2]];
+						pdest[2] = sw32_8to16table[psrc[2]];
 					if (psrc[3] != TRANSPARENT_COLOR)
-						pdest[3] = d_8to16table[psrc[3]];
+						pdest[3] = sw32_8to16table[psrc[3]];
 					psrc += 4;
 					pdest += 4;
 				}
 				if (j & 2)
 				{
 					if (psrc[0] != TRANSPARENT_COLOR)
-						pdest[0] = d_8to16table[psrc[0]];
+						pdest[0] = sw32_8to16table[psrc[0]];
 					if (psrc[1] != TRANSPARENT_COLOR)
-						pdest[1] = d_8to16table[psrc[1]];
+						pdest[1] = sw32_8to16table[psrc[1]];
 					psrc += 2;
 					pdest += 2;
 				}
 				if (j & 1)
 				{
 					if (psrc[0] != TRANSPARENT_COLOR)
-						pdest[0] = d_8to16table[psrc[0]];
+						pdest[0] = sw32_8to16table[psrc[0]];
 					psrc++;
 					pdest++;
 				}
@@ -873,36 +876,36 @@ R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 				while(j >= 8)
 				{
 					j -= 8;
-					pdest[0] = d_8to16table[psrc[0]];
-					pdest[1] = d_8to16table[psrc[1]];
-					pdest[2] = d_8to16table[psrc[2]];
-					pdest[3] = d_8to16table[psrc[3]];
-					pdest[4] = d_8to16table[psrc[4]];
-					pdest[5] = d_8to16table[psrc[5]];
-					pdest[6] = d_8to16table[psrc[6]];
-					pdest[7] = d_8to16table[psrc[7]];
+					pdest[0] = sw32_8to16table[psrc[0]];
+					pdest[1] = sw32_8to16table[psrc[1]];
+					pdest[2] = sw32_8to16table[psrc[2]];
+					pdest[3] = sw32_8to16table[psrc[3]];
+					pdest[4] = sw32_8to16table[psrc[4]];
+					pdest[5] = sw32_8to16table[psrc[5]];
+					pdest[6] = sw32_8to16table[psrc[6]];
+					pdest[7] = sw32_8to16table[psrc[7]];
 					psrc += 8;
 					pdest += 8;
 				}
 				if (j & 4)
 				{
-					pdest[0] = d_8to16table[psrc[0]];
-					pdest[1] = d_8to16table[psrc[1]];
-					pdest[2] = d_8to16table[psrc[2]];
-					pdest[3] = d_8to16table[psrc[3]];
+					pdest[0] = sw32_8to16table[psrc[0]];
+					pdest[1] = sw32_8to16table[psrc[1]];
+					pdest[2] = sw32_8to16table[psrc[2]];
+					pdest[3] = sw32_8to16table[psrc[3]];
 					psrc += 4;
 					pdest += 4;
 				}
 				if (j & 2)
 				{
-					pdest[0] = d_8to16table[psrc[0]];
-					pdest[1] = d_8to16table[psrc[1]];
+					pdest[0] = sw32_8to16table[psrc[0]];
+					pdest[1] = sw32_8to16table[psrc[1]];
 					psrc += 2;
 					pdest += 2;
 				}
 				if (j & 1)
 				{
-					pdest[0] = d_8to16table[psrc[0]];
+					pdest[0] = sw32_8to16table[psrc[0]];
 					psrc++;
 					pdest++;
 				}
@@ -1028,7 +1031,7 @@ R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 	}
 	break;
 	default:
-		Sys_Error("R_DrawRect: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("R_DrawRect: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
 }
 
@@ -1039,7 +1042,7 @@ R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 	refresh window.
 */
 void
-Draw_TileClear (int x, int y, int w, int h)
+sw32_Draw_TileClear (int x, int y, int w, int h)
 {
 	int         width, height, tileoffsetx, tileoffsety;
 	byte       *psrc;
@@ -1103,7 +1106,7 @@ Draw_TileClear (int x, int y, int w, int h)
 	Fills a box of pixels with a single color
 */
 void
-Draw_Fill (int x, int y, int w, int h, int c)
+sw32_Draw_Fill (int x, int y, int w, int h, int c)
 {
 	int         u, v;
 
@@ -1114,7 +1117,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	}
 	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
 
-	switch (r_pixbytes) {
+	switch (sw32_r_pixbytes) {
 	case 1:
 	{
 		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
@@ -1127,7 +1130,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	{
 		unsigned short *dest = (unsigned short *) vid.buffer + y *
 			(vid.rowbytes >> 1) + x;
-		c = d_8to16table[c];
+		c = sw32_8to16table[c];
 		for (v = 0; v < h; v++, dest += (vid.rowbytes >> 1))
 			for (u = 0; u < w; u++)
 				dest[u] = c;
@@ -1144,13 +1147,13 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	}
 	break;
 	default:
-		Sys_Error("Draw_Fill: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("Draw_Fill: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
 }
 
 
 void
-Draw_FadeScreen (void)
+sw32_Draw_FadeScreen (void)
 {
 	unsigned int x, y;
 
@@ -1158,7 +1161,7 @@ Draw_FadeScreen (void)
 	S_ExtraUpdate ();
 	VID_LockBuffer ();
 
-	switch(r_pixbytes) {
+	switch(sw32_r_pixbytes) {
 	case 1:
 	{
 		for (y = 0; y < vid.conheight; y++) {
@@ -1195,7 +1198,7 @@ Draw_FadeScreen (void)
 	}
 	break;
 	default:
-		Sys_Error("Draw_FadeScreen: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("Draw_FadeScreen: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
 
 	VID_UnlockBuffer ();
@@ -1204,13 +1207,13 @@ Draw_FadeScreen (void)
 }
 
 void
-Draw_BlendScreen (quat_t color)
+sw32_Draw_BlendScreen (quat_t color)
 {
 	int         r, g, b, i;
 	byte       *basepal, *newpal;
 	byte        pal[768];
 
-	switch(r_pixbytes) {
+	switch(sw32_r_pixbytes) {
 	case 1:
 	{
 		basepal = vid.basepal;
@@ -1293,6 +1296,6 @@ Draw_BlendScreen (quat_t color)
 	}
 	break;
 	default:
-		Sys_Error("V_UpdatePalette: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("V_UpdatePalette: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
 }

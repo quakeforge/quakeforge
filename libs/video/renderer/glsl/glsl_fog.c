@@ -25,6 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -68,7 +71,7 @@ static float fade_done; //time when fade will be done
 	update internal variables
 */
 void
-Fog_Update (float density, float red, float green, float blue, float time)
+glsl_Fog_Update (float density, float red, float green, float blue, float time)
 {
 	//save previous settings for fade
 	if (time > 0) {
@@ -119,33 +122,34 @@ Fog_FogCommand_f (void)
 			Sys_Printf ("   \"blue\" is \"%f\"\n", fog_blue);
 			break;
 		case 2:
-			Fog_Update (max (0.0, atof (Cmd_Argv (1))),
-						fog_red, fog_green, fog_blue, 0.0);
+			glsl_Fog_Update (max (0.0, atof (Cmd_Argv (1))),
+							 fog_red, fog_green, fog_blue, 0.0);
 			break;
 		case 3: //TEST
-			Fog_Update (max (0.0, atof (Cmd_Argv (1))),
-						fog_red, fog_green, fog_blue, atof (Cmd_Argv (2)));
+			glsl_Fog_Update (max (0.0, atof (Cmd_Argv (1))),
+							 fog_red, fog_green, fog_blue,
+							 atof (Cmd_Argv (2)));
 			break;
 		case 4:
-			Fog_Update (fog_density,
-						bound (0.0, atof (Cmd_Argv (1)), 1.0),
-						bound (0.0, atof (Cmd_Argv (2)), 1.0),
-						bound (0.0, atof (Cmd_Argv (3)), 1.0),
-						0.0);
+			glsl_Fog_Update (fog_density,
+							 bound (0.0, atof (Cmd_Argv (1)), 1.0),
+							 bound (0.0, atof (Cmd_Argv (2)), 1.0),
+							 bound (0.0, atof (Cmd_Argv (3)), 1.0),
+							 0.0);
 			break;
 		case 5:
-			Fog_Update (max (0.0, atof (Cmd_Argv (1))),
-						bound (0.0, atof (Cmd_Argv (2)), 1.0),
-						bound (0.0, atof (Cmd_Argv (3)), 1.0),
-						bound (0.0, atof (Cmd_Argv (4)), 1.0),
-						0.0);
+			glsl_Fog_Update (max (0.0, atof (Cmd_Argv (1))),
+							 bound (0.0, atof (Cmd_Argv (2)), 1.0),
+							 bound (0.0, atof (Cmd_Argv (3)), 1.0),
+							 bound (0.0, atof (Cmd_Argv (4)), 1.0),
+							 0.0);
 			break;
 		case 6: //TEST
-			Fog_Update (max (0.0, atof (Cmd_Argv (1))),
-						bound (0.0, atof (Cmd_Argv (2)), 1.0),
-						bound (0.0, atof (Cmd_Argv (3)), 1.0),
-						bound (0.0, atof (Cmd_Argv (4)), 1.0),
-						atof (Cmd_Argv (5)));
+			glsl_Fog_Update (max (0.0, atof (Cmd_Argv (1))),
+							 bound (0.0, atof (Cmd_Argv (2)), 1.0),
+							 bound (0.0, atof (Cmd_Argv (3)), 1.0),
+							 bound (0.0, atof (Cmd_Argv (4)), 1.0),
+							 atof (Cmd_Argv (5)));
 			break;
 	}
 }
@@ -156,7 +160,7 @@ Fog_FogCommand_f (void)
 	called at map load
 */
 void
-Fog_ParseWorldspawn (plitem_t *worldspawn)
+glsl_Fog_ParseWorldspawn (plitem_t *worldspawn)
 {
 	plitem_t   *fog;
 	const char *value;
@@ -182,7 +186,7 @@ Fog_ParseWorldspawn (plitem_t *worldspawn)
 	calculates fog color for this frame, taking into account fade times
 */
 float *
-Fog_GetColor (void)
+glsl_Fog_GetColor (void)
 {
 	static float c[4];
 	float       f;
@@ -215,7 +219,7 @@ Fog_GetColor (void)
 	returns current density of fog
 */
 float
-Fog_GetDensity (void)
+glsl_Fog_GetDensity (void)
 {
 	float       f;
 
@@ -233,7 +237,7 @@ Fog_GetDensity (void)
 	called when quake initializes
 */
 void
-Fog_Init (void)
+glsl_Fog_Init (void)
 {
 	Cmd_AddCommand ("fog", Fog_FogCommand_f, "");
 

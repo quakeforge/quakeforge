@@ -29,8 +29,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_MATH_H
 # include <math.h>
@@ -62,7 +61,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #define WARP_WIDTH              320
 #define WARP_HEIGHT             200
 
-unsigned char	d_15to8table[65536];
+unsigned char	gl_15to8table[65536];
 
 QF_glActiveTexture			qglActiveTexture = NULL;
 QF_glMultiTexCoord2f		qglMultiTexCoord2f = NULL;
@@ -661,7 +660,7 @@ VID_SetPalette (unsigned char *palette)
 
 	QFS_FOpenFile ("glquake/15to8.pal", &f);
 	if (f) {
-		Qread (f, d_15to8table, 1 << 15);
+		Qread (f, gl_15to8table, 1 << 15);
 		Qclose (f);
 	} else {
 		for (i = 0; i < (1 << 15); i++) {
@@ -687,11 +686,11 @@ VID_SetPalette (unsigned char *palette)
 					bestdist = dist;
 				}
 			}
-			d_15to8table[i] = k;
+			gl_15to8table[i] = k;
 		}
 		snprintf (s, sizeof (s), "%s/glquake/15to8.pal", qfs_gamedir->dir.def);
 		if ((f = QFS_WOpen (s, 0)) != NULL) {
-			Qwrite (f, d_15to8table, 1 << 15);
+			Qwrite (f, gl_15to8table, 1 << 15);
 			Qclose (f);
 		}
 	}

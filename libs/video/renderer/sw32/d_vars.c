@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/qtypes.h"
 
@@ -41,15 +43,15 @@ static __attribute__ ((used)) const char rcsid[] =
 // FIXME: make into one big structure, like cl or sv
 // FIXME: do separately for refresh engine and driver
 
-float       d_sdivzstepu, d_tdivzstepu, d_zistepu;
-float       d_sdivzstepv, d_tdivzstepv, d_zistepv;
-float       d_sdivzorigin, d_tdivzorigin, d_ziorigin;
+float       sw32_d_sdivzstepu, sw32_d_tdivzstepu, sw32_d_zistepu;
+float       sw32_d_sdivzstepv, sw32_d_tdivzstepv, sw32_d_zistepv;
+float       sw32_d_sdivzorigin, sw32_d_tdivzorigin, sw32_d_ziorigin;
 
-fixed16_t   sadjust, tadjust, bbextents, bbextentt;
+fixed16_t   sw32_sadjust, sw32_tadjust, sw32_bbextents, sw32_bbextentt;
 
-byte       *cacheblock;
-int         cachewidth;
-byte       *d_viewbuffer;
-short      *d_pzbuffer;
-unsigned int d_zrowbytes;
-unsigned int d_zwidth;
+byte       *sw32_cacheblock;
+int         sw32_cachewidth;
+byte       *sw32_d_viewbuffer;
+short      *sw32_d_pzbuffer;
+unsigned int sw32_d_zrowbytes;
+unsigned int sw32_d_zwidth;

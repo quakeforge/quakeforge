@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -43,7 +45,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "r_internal.h"
 #include "vid_internal.h"
 
-unsigned short d_8to16table[256];
+unsigned short sw32_8to16table[256];
 
 
 /*
@@ -145,10 +147,10 @@ VID_MakeColormap16 (void *outcolormap, byte *pal)
 {
 	int c, l;
 	unsigned short *out;
-	out = (unsigned short *)&d_8to16table;
+	out = (unsigned short *)&sw32_8to16table;
 	for (c = 0; c < 256; c++)
 		*out++ = lh24to16bit(pal[c*3+0], pal[c*3+1], pal[c*3+2]);
-	d_8to16table[255] = 0;				// 255 is transparent
+	sw32_8to16table[255] = 0;				// 255 is transparent
 	out = (unsigned short *) outcolormap;
 	for (l = 0;l < VID_GRADES;l++)
 	{

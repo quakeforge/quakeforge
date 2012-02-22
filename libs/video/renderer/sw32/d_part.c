@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/sys.h"
 
@@ -39,7 +41,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 
 void
-D_DrawParticle (particle_t *pparticle)
+sw32_D_DrawParticle (particle_t *pparticle)
 {
 	vec3_t      local, transformed;
 	float       zi;
@@ -57,38 +59,39 @@ D_DrawParticle (particle_t *pparticle)
 		return;
 
 	// project the point
-	// FIXME: preadjust xcenter and ycenter
+	// FIXME: preadjust sw32_xcenter and sw32_ycenter
 	zi = 1.0 / transformed[2];
-	u = (int) (xcenter + zi * transformed[0] + 0.5);
-	v = (int) (ycenter - zi * transformed[1] + 0.5);
+	u = (int) (sw32_xcenter + zi * transformed[0] + 0.5);
+	v = (int) (sw32_ycenter - zi * transformed[1] + 0.5);
 
-	if ((v > d_vrectbottom_particle) ||
-		(u > d_vrectright_particle) || (v < d_vrecty) || (u < d_vrectx)) {
+	if ((v > sw32_d_vrectbottom_particle)
+		|| (u > sw32_d_vrectright_particle)
+		|| (v < sw32_d_vrecty) || (u < sw32_d_vrectx)) {
 		return;
 	}
 
-	pz = d_pzbuffer + (d_zwidth * v) + u;
+	pz = sw32_d_pzbuffer + (sw32_d_zwidth * v) + u;
 	izi = (int) (zi * 0x8000);
 
-	pix = izi >> d_pix_shift;
+	pix = izi >> sw32_d_pix_shift;
 
-	if (pix < d_pix_min)
-		pix = d_pix_min;
-	else if (pix > d_pix_max)
-		pix = d_pix_max;
+	if (pix < sw32_d_pix_min)
+		pix = sw32_d_pix_min;
+	else if (pix > sw32_d_pix_max)
+		pix = sw32_d_pix_max;
 
-	switch(r_pixbytes)
+	switch(sw32_r_pixbytes)
 	{
 	case 1:
 		{
-			byte *pdest = (byte *) d_viewbuffer + d_scantable[v] + u,
+			byte *pdest = (byte *) sw32_d_viewbuffer + sw32_d_scantable[v] + u,
 				pixcolor = pparticle->color;
 			switch (pix) {
 				case 1:
-					count = 1 << d_y_aspect_shift;
+					count = 1 << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						if (pz[0] <= izi) {
 							pz[0] = izi;
 							pdest[0] = pixcolor;
@@ -96,10 +99,10 @@ D_DrawParticle (particle_t *pparticle)
 					}
 					break;
 				case 2:
-					count = 2 << d_y_aspect_shift;
+					count = 2 << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						if (pz[0] <= izi) {
 							pz[0] = izi;
 							pdest[0] = pixcolor;
@@ -112,10 +115,10 @@ D_DrawParticle (particle_t *pparticle)
 					}
 					break;
 				case 3:
-					count = 3 << d_y_aspect_shift;
+					count = 3 << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						if (pz[0] <= izi) {
 							pz[0] = izi;
 							pdest[0] = pixcolor;
@@ -133,10 +136,10 @@ D_DrawParticle (particle_t *pparticle)
 					}
 					break;
 				case 4:
-					count = 4 << d_y_aspect_shift;
+					count = 4 << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						if (pz[0] <= izi) {
 							pz[0] = izi;
 							pdest[0] = pixcolor;
@@ -159,10 +162,10 @@ D_DrawParticle (particle_t *pparticle)
 					}
 					break;
 				default:
-					count = pix << d_y_aspect_shift;
+					count = pix << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						for (i = 0; i < pix; i++) {
 							if (pz[i] <= izi) {
 								pz[i] = izi;
@@ -176,15 +179,15 @@ D_DrawParticle (particle_t *pparticle)
 		break;
 	case 2:
 		{
-			unsigned short *pdest = (unsigned short *) d_viewbuffer +
-				d_scantable[v] + u,
-				pixcolor = d_8to16table[(int) pparticle->color];
+			unsigned short *pdest = (unsigned short *) sw32_d_viewbuffer +
+				sw32_d_scantable[v] + u,
+				pixcolor = sw32_8to16table[(int) pparticle->color];
 			switch (pix) {
 				case 1:
-					count = 1 << d_y_aspect_shift;
+					count = 1 << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						if (pz[0] <= izi) {
 							pz[0] = izi;
 							pdest[0] = pixcolor;
@@ -192,10 +195,10 @@ D_DrawParticle (particle_t *pparticle)
 					}
 					break;
 				case 2:
-					count = 2 << d_y_aspect_shift;
+					count = 2 << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						if (pz[0] <= izi) {
 							pz[0] = izi;
 							pdest[0] = pixcolor;
@@ -208,10 +211,10 @@ D_DrawParticle (particle_t *pparticle)
 					}
 					break;
 				case 3:
-					count = 3 << d_y_aspect_shift;
+					count = 3 << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						if (pz[0] <= izi) {
 							pz[0] = izi;
 							pdest[0] = pixcolor;
@@ -229,10 +232,10 @@ D_DrawParticle (particle_t *pparticle)
 					}
 					break;
 				case 4:
-					count = 4 << d_y_aspect_shift;
+					count = 4 << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						if (pz[0] <= izi) {
 							pz[0] = izi;
 							pdest[0] = pixcolor;
@@ -255,10 +258,10 @@ D_DrawParticle (particle_t *pparticle)
 					}
 					break;
 				default:
-					count = pix << d_y_aspect_shift;
+					count = pix << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						for (i = 0; i < pix; i++) {
 							if (pz[i] <= izi) {
 								pz[i] = izi;
@@ -272,14 +275,14 @@ D_DrawParticle (particle_t *pparticle)
 		break;
 	case 4:
 		{
-			int *pdest = (int *) d_viewbuffer + d_scantable[v] + u,
+			int *pdest = (int *) sw32_d_viewbuffer + sw32_d_scantable[v] + u,
 				pixcolor = d_8to24table[(int) pparticle->color];
 			switch (pix) {
 				case 1:
-					count = 1 << d_y_aspect_shift;
+					count = 1 << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						if (pz[0] <= izi) {
 							pz[0] = izi;
 							pdest[0] = pixcolor;
@@ -287,10 +290,10 @@ D_DrawParticle (particle_t *pparticle)
 					}
 					break;
 				case 2:
-					count = 2 << d_y_aspect_shift;
+					count = 2 << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						if (pz[0] <= izi) {
 							pz[0] = izi;
 							pdest[0] = pixcolor;
@@ -303,10 +306,10 @@ D_DrawParticle (particle_t *pparticle)
 					}
 					break;
 				case 3:
-					count = 3 << d_y_aspect_shift;
+					count = 3 << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						if (pz[0] <= izi) {
 							pz[0] = izi;
 							pdest[0] = pixcolor;
@@ -324,10 +327,10 @@ D_DrawParticle (particle_t *pparticle)
 					}
 					break;
 				case 4:
-					count = 4 << d_y_aspect_shift;
+					count = 4 << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						if (pz[0] <= izi) {
 							pz[0] = izi;
 							pdest[0] = pixcolor;
@@ -350,10 +353,10 @@ D_DrawParticle (particle_t *pparticle)
 					}
 					break;
 				default:
-					count = pix << d_y_aspect_shift;
+					count = pix << sw32_d_y_aspect_shift;
 
-					for (; count; count--, pz += d_zwidth,
-							 pdest += screenwidth) {
+					for (; count; count--, pz += sw32_d_zwidth,
+							 pdest += sw32_screenwidth) {
 						for (i = 0; i < pix; i++) {
 							if (pz[i] <= izi) {
 								pz[i] = izi;
@@ -366,6 +369,7 @@ D_DrawParticle (particle_t *pparticle)
 		}
 		break;
 	default:
-		Sys_Error("D_DrawParticles: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("D_DrawParticles: unsupported r_pixbytes %i",
+				  sw32_r_pixbytes);
 	}
 }

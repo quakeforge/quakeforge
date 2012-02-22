@@ -33,6 +33,9 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -93,7 +96,7 @@ static struct {
 };
 
 void
-R_InitSprites (void)
+glsl_R_InitSprites (void)
 {
 	int         frag, vert;
 
@@ -324,8 +327,8 @@ R_SpriteBegin (void)
 	qfglDisableVertexAttribArray (quake_sprite.colorb.location);
 	qfglDisableVertexAttribArray (quake_sprite.blend.location);
 
-	VectorCopy (Fog_GetColor (), fog);
-	fog[3] = Fog_GetDensity () / 64.0;
+	VectorCopy (glsl_Fog_GetColor (), fog);
+	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfglUniform4fv (quake_sprite.fog.location, 1, fog);
 
 	qfglUniform1i (quake_sprite.spritea.location, 0);

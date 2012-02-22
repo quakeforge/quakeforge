@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -61,7 +63,7 @@ static int   graph_width[NUM_GRAPH_TEXTURES];
 
 
 int
-R_InitGraphTextures (int base)
+gl_R_InitGraphTextures (int base)
 {
 	int i;
 
@@ -71,7 +73,7 @@ R_InitGraphTextures (int base)
 }
 
 void
-R_LineGraph (int x, int y, int *h_vals, int count)
+gl_R_LineGraph (int x, int y, int *h_vals, int count)
 {
 	byte        color;
 	byte        *dest;

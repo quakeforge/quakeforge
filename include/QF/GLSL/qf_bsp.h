@@ -54,11 +54,11 @@ typedef struct elechain_s {
 	float      *color;
 } elechain_t;
 
-void R_ClearElements (void);
-void R_DrawWorld (void);
-void R_DrawSky (void);
-void R_RegisterTextures (model_t **models, int num_models);
-void R_BuildDisplayLists (model_t **models, int num_models);
-void R_InitBsp (void);
+void glsl_R_ClearElements (void);
+void glsl_R_DrawWorld (void);
+void glsl_R_DrawSky (void);
+void glsl_R_RegisterTextures (model_t **models, int num_models);
+void glsl_R_BuildDisplayLists (model_t **models, int num_models);
+void glsl_R_InitBsp (void);
 
 #endif//__QF_GLSL_qf_bsp_h

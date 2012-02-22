@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include <stdlib.h>
 
@@ -44,21 +46,21 @@ static __attribute__ ((used)) const char rcsid[] =
 static float        surfscale;
 
 static int          sc_size;
-surfcache_t *sc_rover;
+surfcache_t *sw32_sc_rover;
 static surfcache_t *sc_base;
 
 #define GUARDSIZE       4
 
 
 void *
-D_SurfaceCacheAddress (void)
+sw32_D_SurfaceCacheAddress (void)
 {
 	return sc_base;
 }
 
 
 int
-D_SurfaceCacheForRes (int width, int height)
+sw32_D_SurfaceCacheForRes (int width, int height)
 {
 	int         size, pix;
 
@@ -73,7 +75,7 @@ D_SurfaceCacheForRes (int width, int height)
 	if (pix > 64000)
 		size += (pix - 64000) * 3;
 
-	size *= r_pixbytes;
+	size *= sw32_r_pixbytes;
 
 	return size;
 }
@@ -105,26 +107,26 @@ D_ClearCacheGuard (void)
 
 
 void
-D_InitCaches (void *buffer, int size)
+sw32_D_InitCaches (void *buffer, int size)
 {
 	Sys_MaskPrintf (SYS_DEV, "D_InitCaches: %ik surface cache\n", size/1024);
 
 	sc_size = size - GUARDSIZE;
 	sc_base = (surfcache_t *) buffer;
-	sc_rover = sc_base;
+	sw32_sc_rover = sc_base;
 
 	sc_base->next = NULL;
 	sc_base->owner = NULL;
 	sc_base->size = sc_size;
 
-	d_pzbuffer = vid.zbuffer;
+	sw32_d_pzbuffer = vid.zbuffer;
 
 	D_ClearCacheGuard ();
 }
 
 
 void
-D_FlushCaches (void)
+sw32_D_FlushCaches (void)
 {
 	surfcache_t *c;
 
@@ -136,7 +138,7 @@ D_FlushCaches (void)
 			*c->owner = NULL;
 	}
 
-	sc_rover = sc_base;
+	sw32_sc_rover = sc_base;
 	sc_base->next = NULL;
 	sc_base->owner = NULL;
 	sc_base->size = sc_size;
@@ -152,7 +154,7 @@ D_SCAlloc (int width, int size)
 	if ((width < 0) || (width > 512))	// FIXME shouldn't really have a max
 		Sys_Error ("D_SCAlloc: bad cache width %d", width);
 
-	if ((size <= 0) || (size > (0x40000 * r_pixbytes))) //FIXME ditto
+	if ((size <= 0) || (size > (0x40000 * sw32_r_pixbytes))) //FIXME ditto
 		Sys_Error ("D_SCAlloc: bad cache size %d", size);
 
 	/* This adds the offset of data[0] in the surfcache_t struct. */
@@ -168,54 +170,54 @@ D_SCAlloc (int width, int size)
 	// if there is not size bytes after the rover, reset to the start
 	wrapped_this_time = false;
 
-	if (!sc_rover || (byte *) sc_rover - (byte *) sc_base > sc_size - size) {
-		if (sc_rover) {
+	if (!sw32_sc_rover || (byte *) sw32_sc_rover - (byte *) sc_base > sc_size - size) {
+		if (sw32_sc_rover) {
 			wrapped_this_time = true;
 		}
-		sc_rover = sc_base;
+		sw32_sc_rover = sc_base;
 	}
 	// colect and free surfcache_t blocks until the rover block is large enough
-	new = sc_rover;
-	if (sc_rover->owner)
-		*sc_rover->owner = NULL;
+	new = sw32_sc_rover;
+	if (sw32_sc_rover->owner)
+		*sw32_sc_rover->owner = NULL;
 
 	while (new->size < size) {
 		// free another
-		sc_rover = sc_rover->next;
-		if (!sc_rover)
+		sw32_sc_rover = sw32_sc_rover->next;
+		if (!sw32_sc_rover)
 			Sys_Error ("D_SCAlloc: hit the end of memory");
-		if (sc_rover->owner)
-			*sc_rover->owner = NULL;
+		if (sw32_sc_rover->owner)
+			*sw32_sc_rover->owner = NULL;
 
-		new->size += sc_rover->size;
-		new->next = sc_rover->next;
+		new->size += sw32_sc_rover->size;
+		new->next = sw32_sc_rover->next;
 	}
 
 	// create a fragment out of any leftovers
 	if (new->size - size > 256) {
-		sc_rover = (surfcache_t *) ((byte *) new + size);
-		sc_rover->size = new->size - size;
-		sc_rover->next = new->next;
-		sc_rover->width = 0;
-		sc_rover->owner = NULL;
-		new->next = sc_rover;
+		sw32_sc_rover = (surfcache_t *) ((byte *) new + size);
+		sw32_sc_rover->size = new->size - size;
+		sw32_sc_rover->next = new->next;
+		sw32_sc_rover->width = 0;
+		sw32_sc_rover->owner = NULL;
+		new->next = sw32_sc_rover;
 		new->size = size;
 	} else
-		sc_rover = new->next;
+		sw32_sc_rover = new->next;
 
 	new->width = width;
 // DEBUG
 	if (width > 0)
 		new->height = (size - sizeof (*new) + sizeof (new->data)) /
-			(width * r_pixbytes);
+			(width * sw32_r_pixbytes);
 
 	new->owner = NULL;					// should be set properly after return
 
-	if (d_roverwrapped) {
-		if (wrapped_this_time || (sc_rover >= d_initial_rover))
+	if (sw32_d_roverwrapped) {
+		if (wrapped_this_time || (sw32_sc_rover >= sw32_d_initial_rover))
 			r_cache_thrash = true;
 	} else if (wrapped_this_time) {
-		d_roverwrapped = true;
+		sw32_d_roverwrapped = true;
 	}
 
 	D_CheckCacheGuard ();				// DEBUG
@@ -224,40 +226,40 @@ D_SCAlloc (int width, int size)
 
 
 surfcache_t *
-D_CacheSurface (msurface_t *surface, int miplevel)
+sw32_D_CacheSurface (msurface_t *surface, int miplevel)
 {
 	surfcache_t *cache;
 
 	// if the surface is animating or flashing, flush the cache
-	r_drawsurf.texture = R_TextureAnimation (surface);
-	r_drawsurf.lightadj[0] = d_lightstylevalue[surface->styles[0]];
-	r_drawsurf.lightadj[1] = d_lightstylevalue[surface->styles[1]];
-	r_drawsurf.lightadj[2] = d_lightstylevalue[surface->styles[2]];
-	r_drawsurf.lightadj[3] = d_lightstylevalue[surface->styles[3]];
+	sw32_r_drawsurf.texture = R_TextureAnimation (surface);
+	sw32_r_drawsurf.lightadj[0] = d_lightstylevalue[surface->styles[0]];
+	sw32_r_drawsurf.lightadj[1] = d_lightstylevalue[surface->styles[1]];
+	sw32_r_drawsurf.lightadj[2] = d_lightstylevalue[surface->styles[2]];
+	sw32_r_drawsurf.lightadj[3] = d_lightstylevalue[surface->styles[3]];
 
 	// see if the cache holds apropriate data
 	cache = surface->cachespots[miplevel];
 
 	if (cache && !cache->dlight && surface->dlightframe != r_framecount
-		&& cache->texture == r_drawsurf.texture
-		&& cache->lightadj[0] == r_drawsurf.lightadj[0]
-		&& cache->lightadj[1] == r_drawsurf.lightadj[1]
-		&& cache->lightadj[2] == r_drawsurf.lightadj[2]
-		&& cache->lightadj[3] == r_drawsurf.lightadj[3])
+		&& cache->texture == sw32_r_drawsurf.texture
+		&& cache->lightadj[0] == sw32_r_drawsurf.lightadj[0]
+		&& cache->lightadj[1] == sw32_r_drawsurf.lightadj[1]
+		&& cache->lightadj[2] == sw32_r_drawsurf.lightadj[2]
+		&& cache->lightadj[3] == sw32_r_drawsurf.lightadj[3])
 		return cache;
 
 	// determine shape of surface
 	surfscale = 1.0 / (1 << miplevel);
-	r_drawsurf.surfmip = miplevel;
-	r_drawsurf.surfwidth = surface->extents[0] >> miplevel;
-	r_drawsurf.rowbytes = r_drawsurf.surfwidth * r_pixbytes;
-	r_drawsurf.surfheight = surface->extents[1] >> miplevel;
+	sw32_r_drawsurf.surfmip = miplevel;
+	sw32_r_drawsurf.surfwidth = surface->extents[0] >> miplevel;
+	sw32_r_drawsurf.rowbytes = sw32_r_drawsurf.surfwidth * sw32_r_pixbytes;
+	sw32_r_drawsurf.surfheight = surface->extents[1] >> miplevel;
 
 	// allocate memory if needed
 	if (!cache) {
 		// if a texture just animated, don't reallocate it
-		cache = D_SCAlloc (r_drawsurf.surfwidth,
-						   r_drawsurf.rowbytes * r_drawsurf.surfheight);
+		cache = D_SCAlloc (sw32_r_drawsurf.surfwidth,
+						   sw32_r_drawsurf.rowbytes * sw32_r_drawsurf.surfheight);
 		surface->cachespots[miplevel] = cache;
 		cache->owner = &surface->cachespots[miplevel];
 		cache->mipscale = surfscale;
@@ -268,19 +270,19 @@ D_CacheSurface (msurface_t *surface, int miplevel)
 	else
 		cache->dlight = 0;
 
-	r_drawsurf.surfdat = (byte *) cache->data;
+	sw32_r_drawsurf.surfdat = (byte *) cache->data;
 
-	cache->texture = r_drawsurf.texture;
-	cache->lightadj[0] = r_drawsurf.lightadj[0];
-	cache->lightadj[1] = r_drawsurf.lightadj[1];
-	cache->lightadj[2] = r_drawsurf.lightadj[2];
-	cache->lightadj[3] = r_drawsurf.lightadj[3];
+	cache->texture = sw32_r_drawsurf.texture;
+	cache->lightadj[0] = sw32_r_drawsurf.lightadj[0];
+	cache->lightadj[1] = sw32_r_drawsurf.lightadj[1];
+	cache->lightadj[2] = sw32_r_drawsurf.lightadj[2];
+	cache->lightadj[3] = sw32_r_drawsurf.lightadj[3];
 
 	// draw and light the surface texture
-	r_drawsurf.surf = surface;
+	sw32_r_drawsurf.surf = surface;
 
-	c_surf++;
-	R_DrawSurface ();
+	sw32_c_surf++;
+	sw32_R_DrawSurface ();
 
 	return surface->cachespots[miplevel];
 }

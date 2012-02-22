@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include <stdlib.h>
 #ifdef HAVE_STRING_H
@@ -55,12 +57,12 @@ static int		ramp3[8] = { 0x6d, 0x6b, 6, 5, 4, 3 };
 
 
 void
-R_InitParticles (void)
+sw32_R_InitParticles (void)
 {
 }
 
 void
-R_ClearParticles (void)
+sw32_R_ClearParticles (void)
 {
 	unsigned int i;
 
@@ -74,7 +76,7 @@ R_ClearParticles (void)
 }
 
 void
-R_ReadPointFile_f (void)
+sw32_R_ReadPointFile_f (void)
 {
 	QFile      *f;
 	vec3_t      org;
@@ -774,12 +776,12 @@ R_VoorTrail_QF (const entity_t *ent)
 }
 
 void
-R_DrawParticles (void)
+sw32_R_DrawParticles (void)
 {
 	particle_t *p, **particle;
 
-	VectorScale (vright, xscaleshrink, r_pright);
-	VectorScale (vup, yscaleshrink, r_pup);
+	VectorScale (vright, sw32_xscaleshrink, r_pright);
+	VectorScale (vup, sw32_yscaleshrink, r_pup);
 	VectorCopy (vpn, r_ppn);
 
 	for (particle = &active_particles; *particle;) {
@@ -792,7 +794,7 @@ R_DrawParticles (void)
 			p = *particle;
 			particle = &(*particle)->next;
 
-			D_DrawParticle (p);
+			sw32_D_DrawParticle (p);
 
 			p->phys (p);
 		}
@@ -800,12 +802,12 @@ R_DrawParticles (void)
 }
 
 void
-r_easter_eggs_f (cvar_t *var)
+sw32_r_easter_eggs_f (cvar_t *var)
 {
 }
 
 void
-r_particles_style_f (cvar_t *var)
+sw32_r_particles_style_f (cvar_t *var)
 {
 }
 
@@ -842,14 +844,15 @@ R_ParticleFunctionInit (void)
 }
 
 void
-R_Particles_Init_Cvars (void)
+sw32_R_Particles_Init_Cvars (void)
 {
 	R_ParticleFunctionInit ();
 }
 
 void
-R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
-			    const vec3_t vel, float die, int color, float alpha, float ramp)
+sw32_R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
+					 const vec3_t vel, float die, int color, float alpha,
+					 float ramp)
 {
 	particle_t *p;
 
@@ -873,9 +876,9 @@ R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
 }
 
 void
-R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
-					  float scale, int vel_fuzz, float die, int color,
-					  float alpha, float ramp)
+sw32_R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org,
+						   int org_fuzz, float scale, int vel_fuzz, float die,
+						   int color, float alpha, float ramp)
 {
 	float       o_fuzz = org_fuzz, v_fuzz = vel_fuzz;
 	int         rnd;
@@ -890,5 +893,5 @@ R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
 	pvel[1] = v_fuzz * (((rnd >> 5) & 63) - 31.5) / 63.0;
 	pvel[2] = v_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0;
 
-	R_Particle_New (type, texnum, porg, scale, pvel, die, color, alpha, ramp);
+	sw32_R_Particle_New (type, texnum, porg, scale, pvel, die, color, alpha, ramp);
 }

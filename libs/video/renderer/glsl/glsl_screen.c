@@ -33,6 +33,9 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include "string.h"
 #endif
@@ -153,7 +156,8 @@ SCR_TileClear (void)
 }
 
 void
-SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+glsl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
+					   SCR_Func *scr_funcs)
 {
 	static int  begun = 0;
 
@@ -163,7 +167,7 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 
 	if (begun) {
 		begun = 0;
-		GL_EndRendering ();
+		GLSL_EndRendering ();
 	}
 
 	vr_data.realtime = realtime;
@@ -199,7 +203,7 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 }
 
 tex_t *
-SCR_CaptureBGR (void)
+glsl_SCR_CaptureBGR (void)
 {
 	byte       *r, *b;
 	int         count, i;
@@ -224,13 +228,13 @@ SCR_CaptureBGR (void)
 }
 
 tex_t *
-SCR_ScreenShot (int width, int height)
+glsl_SCR_ScreenShot (int width, int height)
 {
 	return 0;
 }
 
 void
-SCR_ScreenShot_f (void)
+glsl_SCR_ScreenShot_f (void)
 {
 	dstring_t  *name = dstring_new ();
 
@@ -241,7 +245,7 @@ SCR_ScreenShot_f (void)
 	} else {
 		tex_t      *tex;
 
-		tex = SCR_CaptureBGR ();
+		tex = glsl_SCR_CaptureBGR ();
 		WritePNGqfs (name->str, tex->data, tex->width, tex->height);
 		free (tex);
 		Sys_Printf ("Wrote %s/%s\n", qfs_userpath, name->str);

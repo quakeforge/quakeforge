@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -49,7 +51,7 @@ static int  clip_current;
 static vec5_t clip_verts[2][MAXWORKINGVERTS];
 static int  sprite_width, sprite_height;
 
-spritedesc_t r_spritedesc;
+spritedesc_t sw32_r_spritedesc;
 
 
 static void
@@ -60,7 +62,7 @@ R_RotateSprite (float beamlength)
 	if (beamlength == 0.0)
 		return;
 
-	VectorScale (r_spritedesc.vpn, -beamlength, vec);
+	VectorScale (sw32_r_spritedesc.vpn, -beamlength, vec);
 	VectorAdd (r_entorigin, vec, r_entorigin);
 	VectorSubtract (modelorg, vec, modelorg);
 }
@@ -149,17 +151,17 @@ R_SetupAndDrawSprite (void)
 	vec3_t      left, up, right, down, transformed, local;
 	emitpoint_t outverts[MAXWORKINGVERTS + 1], *pout;
 
-	dot = DotProduct (r_spritedesc.vpn, modelorg);
+	dot = DotProduct (sw32_r_spritedesc.vpn, modelorg);
 
 	// backface cull
 	if (dot >= 0)
 		return;
 
 	// build the sprite poster in worldspace
-	VectorScale (r_spritedesc.vright, r_spritedesc.pspriteframe->right, right);
-	VectorScale (r_spritedesc.vup, r_spritedesc.pspriteframe->up, up);
-	VectorScale (r_spritedesc.vright, r_spritedesc.pspriteframe->left, left);
-	VectorScale (r_spritedesc.vup, r_spritedesc.pspriteframe->down, down);
+	VectorScale (sw32_r_spritedesc.vright, sw32_r_spritedesc.pspriteframe->right, right);
+	VectorScale (sw32_r_spritedesc.vup, sw32_r_spritedesc.pspriteframe->up, up);
+	VectorScale (sw32_r_spritedesc.vright, sw32_r_spritedesc.pspriteframe->left, left);
+	VectorScale (sw32_r_spritedesc.vup, sw32_r_spritedesc.pspriteframe->down, down);
 
 	pverts = clip_verts[0];
 
@@ -192,7 +194,7 @@ R_SetupAndDrawSprite (void)
 	clip_current = 0;
 
 	for (i = 0; i < 4; i++) {
-		nump = R_ClipSpriteFace (nump, &view_clipplanes[i]);
+		nump = R_ClipSpriteFace (nump, &sw32_view_clipplanes[i]);
 		if (nump < 3)
 			return;
 		if (nump >= MAXWORKINGVERTS)
@@ -201,36 +203,36 @@ R_SetupAndDrawSprite (void)
 
 	// transform vertices into viewspace and project
 	pv = &clip_verts[clip_current][0][0];
-	r_spritedesc.nearzi = -999999;
+	sw32_r_spritedesc.nearzi = -999999;
 
 	for (i = 0; i < nump; i++) {
 		VectorSubtract (pv, r_origin, local);
-		TransformVector (local, transformed);
+		sw32_TransformVector (local, transformed);
 
 		if (transformed[2] < NEAR_CLIP)
 			transformed[2] = NEAR_CLIP;
 
 		pout = &outverts[i];
 		pout->zi = 1.0 / transformed[2];
-		if (pout->zi > r_spritedesc.nearzi)
-			r_spritedesc.nearzi = pout->zi;
+		if (pout->zi > sw32_r_spritedesc.nearzi)
+			sw32_r_spritedesc.nearzi = pout->zi;
 
 		pout->s = pv[3];
 		pout->t = pv[4];
 
-		scale = xscale * pout->zi;
-		pout->u = (xcenter + scale * transformed[0]);
+		scale = sw32_xscale * pout->zi;
+		pout->u = (sw32_xcenter + scale * transformed[0]);
 
-		scale = yscale * pout->zi;
-		pout->v = (ycenter - scale * transformed[1]);
+		scale = sw32_yscale * pout->zi;
+		pout->v = (sw32_ycenter - scale * transformed[1]);
 
 		pv += sizeof (vec5_t) / sizeof (*pv);
 	}
 
 	// draw it
-	r_spritedesc.nump = nump;
-	r_spritedesc.pverts = outverts;
-	D_DrawSprite ();
+	sw32_r_spritedesc.nump = nump;
+	sw32_r_spritedesc.pverts = outverts;
+	sw32_D_DrawSprite ();
 }
 
 
@@ -276,7 +278,7 @@ R_GetSpriteframe (msprite_t *psprite)
 
 
 void
-R_DrawSprite (void)
+sw32_R_DrawSprite (void)
 {
 	int         i;
 	msprite_t  *psprite;
@@ -285,15 +287,15 @@ R_DrawSprite (void)
 
 	psprite = currententity->model->cache.data;
 
-	r_spritedesc.pspriteframe = R_GetSpriteframe (psprite);
+	sw32_r_spritedesc.pspriteframe = R_GetSpriteframe (psprite);
 
-	sprite_width = r_spritedesc.pspriteframe->width;
-	sprite_height = r_spritedesc.pspriteframe->height;
+	sprite_width = sw32_r_spritedesc.pspriteframe->width;
+	sprite_height = sw32_r_spritedesc.pspriteframe->height;
 
 	// TODO: make this caller-selectable
 	if (psprite->type == SPR_FACING_UPRIGHT) {
 		// generate the sprite's axes, with vup straight up in worldspace, and
-		// r_spritedesc.vright perpendicular to modelorg.
+		// sw32_r_spritedesc.vright perpendicular to modelorg.
 		// This will not work if the view direction is very close to straight
 		// up or down, because the cross product will be between two nearly
 		// parallel vectors and starts to approach an undefined state, so we
@@ -303,63 +305,63 @@ R_DrawSprite (void)
 		tvec[2] = -modelorg[2];
 		VectorNormalize (tvec);
 		dot = tvec[2];					// same as DotProduct (tvec,
-										// r_spritedesc.vup) because
-		// r_spritedesc.vup is 0, 0, 1
+										// sw32_r_spritedesc.vup) because
+		// sw32_r_spritedesc.vup is 0, 0, 1
 		if ((dot > 0.999848) || (dot < -0.999848))	// cos(1 degree) =
 													// 0.999848
 			return;
-		r_spritedesc.vup[0] = 0;
-		r_spritedesc.vup[1] = 0;
-		r_spritedesc.vup[2] = 1;
-		r_spritedesc.vright[0] = tvec[1];
-		//CrossProduct(r_spritedesc.vup, -modelorg, r_spritedesc.vright)
-		r_spritedesc.vright[1] = -tvec[0];
-		r_spritedesc.vright[2] = 0;
-		VectorNormalize (r_spritedesc.vright);
-		r_spritedesc.vpn[0] = -r_spritedesc.vright[1];
-		r_spritedesc.vpn[1] = r_spritedesc.vright[0];
-		r_spritedesc.vpn[2] = 0;
-		//CrossProduct (r_spritedesc.vright, r_spritedesc.vup, r_spritedesc.vpn)
+		sw32_r_spritedesc.vup[0] = 0;
+		sw32_r_spritedesc.vup[1] = 0;
+		sw32_r_spritedesc.vup[2] = 1;
+		sw32_r_spritedesc.vright[0] = tvec[1];
+		//CrossProduct(sw32_r_spritedesc.vup, -modelorg, sw32_r_spritedesc.vright)
+		sw32_r_spritedesc.vright[1] = -tvec[0];
+		sw32_r_spritedesc.vright[2] = 0;
+		VectorNormalize (sw32_r_spritedesc.vright);
+		sw32_r_spritedesc.vpn[0] = -sw32_r_spritedesc.vright[1];
+		sw32_r_spritedesc.vpn[1] = sw32_r_spritedesc.vright[0];
+		sw32_r_spritedesc.vpn[2] = 0;
+		//CrossProduct (sw32_r_spritedesc.vright, sw32_r_spritedesc.vup, sw32_r_spritedesc.vpn)
 	} else if (psprite->type == SPR_VP_PARALLEL) {
 		// generate the sprite's axes, completely parallel to the viewplane.
 		// There are no problem situations, because the sprite is always in the
 		// same position relative to the viewer
 		for (i = 0; i < 3; i++) {
-			r_spritedesc.vup[i] = vup[i];
-			r_spritedesc.vright[i] = vright[i];
-			r_spritedesc.vpn[i] = vpn[i];
+			sw32_r_spritedesc.vup[i] = vup[i];
+			sw32_r_spritedesc.vright[i] = vright[i];
+			sw32_r_spritedesc.vpn[i] = vpn[i];
 		}
 	} else if (psprite->type == SPR_VP_PARALLEL_UPRIGHT) {
 		// generate the sprite's axes, with vup straight up in worldspace, and
-		// r_spritedesc.vright parallel to the viewplane.
+		// sw32_r_spritedesc.vright parallel to the viewplane.
 		// This will not work if the view direction is very close to straight 
 		// up or down, because the cross product will be between two nearly
 		// parallel vectors and starts to approach an undefined state, so we
 		// don't draw if the two vectors are less than 1 degree apart
 		dot = vpn[2];					// same as DotProduct (vpn,
-										// r_spritedesc.vup) because
-		// r_spritedesc.vup is 0, 0, 1
+										// sw32_r_spritedesc.vup) because
+		// sw32_r_spritedesc.vup is 0, 0, 1
 		if ((dot > 0.999848) || (dot < -0.999848))	// cos(1 degree) =
 													// 0.999848
 			return;
-		r_spritedesc.vup[0] = 0;
-		r_spritedesc.vup[1] = 0;
-		r_spritedesc.vup[2] = 1;
-		r_spritedesc.vright[0] = vpn[1];
-		//CrossProduct (r_spritedesc.vup, vpn,
-		r_spritedesc.vright[1] = -vpn[0];	// r_spritedesc.vright)
-		r_spritedesc.vright[2] = 0;
-		VectorNormalize (r_spritedesc.vright);
-		r_spritedesc.vpn[0] = -r_spritedesc.vright[1];
-		r_spritedesc.vpn[1] = r_spritedesc.vright[0];
-		r_spritedesc.vpn[2] = 0;
-		//CrossProduct (r_spritedesc.vright, r_spritedesc.vup, r_spritedesc.vpn)
+		sw32_r_spritedesc.vup[0] = 0;
+		sw32_r_spritedesc.vup[1] = 0;
+		sw32_r_spritedesc.vup[2] = 1;
+		sw32_r_spritedesc.vright[0] = vpn[1];
+		//CrossProduct (sw32_r_spritedesc.vup, vpn,
+		sw32_r_spritedesc.vright[1] = -vpn[0];	// sw32_r_spritedesc.vright)
+		sw32_r_spritedesc.vright[2] = 0;
+		VectorNormalize (sw32_r_spritedesc.vright);
+		sw32_r_spritedesc.vpn[0] = -sw32_r_spritedesc.vright[1];
+		sw32_r_spritedesc.vpn[1] = sw32_r_spritedesc.vright[0];
+		sw32_r_spritedesc.vpn[2] = 0;
+		//CrossProduct (sw32_r_spritedesc.vright, sw32_r_spritedesc.vup, sw32_r_spritedesc.vpn)
 	} else if (psprite->type == SPR_ORIENTED) {
 		// generate the sprite's axes, according to the sprite's world
 		// orientation
-		VectorCopy (currententity->transform + 0, r_spritedesc.vpn);
-		VectorNegate (currententity->transform + 4, r_spritedesc.vright);
-		VectorCopy (currententity->transform + 8, r_spritedesc.vup);
+		VectorCopy (currententity->transform + 0, sw32_r_spritedesc.vpn);
+		VectorNegate (currententity->transform + 4, sw32_r_spritedesc.vright);
+		VectorCopy (currententity->transform + 8, sw32_r_spritedesc.vup);
 	} else if (psprite->type == SPR_VP_PARALLEL_ORIENTED) {
 		// generate the sprite's axes, parallel to the viewplane, but rotated
 		// in that plane around the center according to the sprite entity's
@@ -369,9 +371,9 @@ R_DrawSprite (void)
 		cr = cos (angle);
 
 		for (i = 0; i < 3; i++) {
-			r_spritedesc.vpn[i] = vpn[i];
-			r_spritedesc.vright[i] = vright[i] * cr + vup[i] * sr;
-			r_spritedesc.vup[i] = vright[i] * -sr + vup[i] * cr;
+			sw32_r_spritedesc.vpn[i] = vpn[i];
+			sw32_r_spritedesc.vright[i] = vright[i] * cr + vup[i] * sr;
+			sw32_r_spritedesc.vup[i] = vright[i] * -sr + vup[i] * cr;
 		}
 	} else {
 		Sys_Error ("R_DrawSprite: Bad sprite type %d", psprite->type);

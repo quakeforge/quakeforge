@@ -40,7 +40,7 @@ typedef struct shaderparam_s {
 extern int glsl_palette;
 extern int glsl_colormap;
 
-void GL_EndRendering (void);
+void GLSL_EndRendering (void);
 int GLSL_CompileShader (const char *name, const char *shader_src, int type);
 int GLSL_LinkProgram (const char *name, int vert, int frag);
 int GLSL_ResolveShaderParam (int program, shaderparam_t *param);

@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include <stdlib.h>
 #ifdef HAVE_STRING_H
@@ -798,7 +800,7 @@ draw_z_sky_polys (const instsurf_t *sky_chain)
 }
 
 void
-R_DrawSkyChain (const instsurf_t *sky_chain)
+gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 {
 	if (gl_sky_clip->int_val > 2) {
 		draw_black_sky_polys (sky_chain);

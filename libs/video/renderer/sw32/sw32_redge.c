@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/render.h"
 #include "QF/sound.h"
@@ -48,23 +50,23 @@ static __attribute__ ((used)) const char rcsid[] =
   have a sentinal at both ends?
 */
 
-edge_t     *auxedges;
-edge_t     *r_edges, *edge_p, *edge_max;
+edge_t     *sw32_auxedges;
+edge_t     *sw32_r_edges, *sw32_edge_p, *sw32_edge_max;
 
-surf_t     *surfaces, *surface_p, *surf_max;
+surf_t     *sw32_surfaces, *sw32_surface_p, *sw32_surf_max;
 
 /*
 	surfaces are generated in back to front order by the bsp, so if a surf
 	pointer is greater than another one, it should be drawn in front
-	surfaces[1] is the background, and is used as the active surface stack
+	sw32_surfaces[1] is the background, and is used as the active surface stack
 */
 
-edge_t     *newedges[MAXHEIGHT];
-edge_t     *removeedges[MAXHEIGHT];
+edge_t     *sw32_newedges[MAXHEIGHT];
+edge_t     *sw32_removeedges[MAXHEIGHT];
 
 static espan_t    *span_p, *max_span_p;
 
-int         r_currentkey;
+int         sw32_r_currentkey;
 
 
 static int         current_iv;
@@ -88,64 +90,64 @@ R_DrawCulledPolys (void)
 
 	currententity = &r_worldentity;
 
-	if (r_worldpolysbacktofront) {
-		for (s = surface_p - 1; s > &surfaces[1]; s--) {
+	if (sw32_r_worldpolysbacktofront) {
+		for (s = sw32_surface_p - 1; s > &sw32_surfaces[1]; s--) {
 			if (!s->spans)
 				continue;
 
 			if (!(s->flags & SURF_DRAWBACKGROUND)) {
 				pface = (msurface_t *) s->data;
-				R_RenderPoly (pface, 15);
+				sw32_R_RenderPoly (pface, 15);
 			}
 		}
 	} else {
-		for (s = &surfaces[1]; s < surface_p; s++) {
+		for (s = &sw32_surfaces[1]; s < sw32_surface_p; s++) {
 			if (!s->spans)
 				continue;
 
 			if (!(s->flags & SURF_DRAWBACKGROUND)) {
 				pface = (msurface_t *) s->data;
-				R_RenderPoly (pface, 15);
+				sw32_R_RenderPoly (pface, 15);
 			}
 		}
 	}
 }
 
 void
-R_BeginEdgeFrame (void)
+sw32_R_BeginEdgeFrame (void)
 {
 	int         v;
 
-	edge_p = r_edges;
-	edge_max = &r_edges[r_numallocatededges];
+	sw32_edge_p = sw32_r_edges;
+	sw32_edge_max = &sw32_r_edges[sw32_r_numallocatededges];
 
-	surface_p = &surfaces[2];			// background is surface 1,
+	sw32_surface_p = &sw32_surfaces[2];			// background is surface 1,
 										// surface 0 is a dummy
-	surfaces[1].spans = NULL;			// no background spans yet
-	surfaces[1].flags = SURF_DRAWBACKGROUND;
+	sw32_surfaces[1].spans = NULL;			// no background spans yet
+	sw32_surfaces[1].flags = SURF_DRAWBACKGROUND;
 
 	// put the background behind everything in the world
-	pdrawfunc = R_GenerateSpans;
-	surfaces[1].key = 0x7FFFFFFF;
-	r_currentkey = 0;
+	pdrawfunc = sw32_R_GenerateSpans;
+	sw32_surfaces[1].key = 0x7FFFFFFF;
+	sw32_r_currentkey = 0;
 
 	// FIXME: set with memset
 	for (v = r_refdef.vrect.y; v < r_refdef.vrectbottom; v++) {
-		newedges[v] = removeedges[v] = NULL;
+		sw32_newedges[v] = sw32_removeedges[v] = NULL;
 	}
 }
 
 /*
-	R_InsertNewEdges
+	sw32_R_InsertNewEdges
 
 	Adds the edges in the linked list edgestoadd, adding them to the edges
 	in the linked list edgelist.  edgestoadd is assumed to be sorted on u,
-	and non-empty (this is actually newedges[v]).  edgelist is assumed to
+	and non-empty (this is actually sw32_newedges[v]).  edgelist is assumed to
 	be sorted on u, with a sentinel at the end (actually, this is the
 	active edge table starting at edge_head.next).
 */
 void
-R_InsertNewEdges (edge_t *edgestoadd, edge_t *edgelist)
+sw32_R_InsertNewEdges (edge_t *edgestoadd, edge_t *edgelist)
 {
 	edge_t     *next_edge;
 
@@ -176,7 +178,7 @@ R_InsertNewEdges (edge_t *edgestoadd, edge_t *edgelist)
 }
 
 void
-R_RemoveEdges (edge_t *pedge)
+sw32_R_RemoveEdges (edge_t *pedge)
 {
 
 	do {
@@ -186,7 +188,7 @@ R_RemoveEdges (edge_t *pedge)
 }
 
 void
-R_StepActiveU (edge_t *pedge)
+sw32_R_StepActiveU (edge_t *pedge)
 {
 	edge_t     *pnext_edge, *pwedge;
 
@@ -253,7 +255,7 @@ R_CleanupSpan (void)
 
 	// now that we've reached the right edge of the screen, we're done with any
 	// unfinished surfaces, so emit a span for whatever's on top
-	surf = surfaces[1].next;
+	surf = sw32_surfaces[1].next;
 	iu = edge_tail_u_shift20;
 	if (iu > surf->last_u) {
 		span = span_p++;
@@ -267,7 +269,7 @@ R_CleanupSpan (void)
 	do {
 		surf->spanstate = 0;
 		surf = surf->next;
-	} while (surf != &surfaces[1]);
+	} while (surf != &sw32_surfaces[1]);
 }
 
 static void
@@ -279,7 +281,7 @@ R_TrailingEdge (surf_t *surf, edge_t *edge)
 	// don't generate a span if this is an inverted span, with the end edge
 	// preceding the start edge (that is, we haven't seen the start edge yet)
 	if (--surf->spanstate == 0) {
-		if (surf == surfaces[1].next) {
+		if (surf == sw32_surfaces[1].next) {
 			// emit a span (current top going away)
 			iu = edge->u >> 20;
 			if (iu > surf->last_u) {
@@ -309,12 +311,12 @@ R_LeadingEdge (edge_t *edge)
 
 	if (edge->surfs[1]) {
 		// it's adding a new surface in, so find the correct place
-		surf = &surfaces[edge->surfs[1]];
+		surf = &sw32_surfaces[edge->surfs[1]];
 
 		// don't start a span if this is an inverted span, with the end edge
 		// preceding the start edge (that is, we've already seen the end edge)
 		if (++surf->spanstate == 1) {
-			surf2 = surfaces[1].next;
+			surf2 = sw32_surfaces[1].next;
 
 			if (surf->key < surf2->key)
 				goto newtop;
@@ -406,20 +408,20 @@ R_LeadingEdge (edge_t *edge)
 }
 
 void
-R_GenerateSpans (void)
+sw32_R_GenerateSpans (void)
 {
 	edge_t     *edge;
 	surf_t     *surf;
 
 	// clear active surfaces to just the background surface
-	surfaces[1].next = surfaces[1].prev = &surfaces[1];
-	surfaces[1].last_u = edge_head_u_shift20;
+	sw32_surfaces[1].next = sw32_surfaces[1].prev = &sw32_surfaces[1];
+	sw32_surfaces[1].last_u = edge_head_u_shift20;
 
 	// generate spans
 	for (edge = edge_head.next; edge != &edge_tail; edge = edge->next) {
 		if (edge->surfs[0]) {
 			// it has a left surface, so a surface is going away for this span
-			surf = &surfaces[edge->surfs[0]];
+			surf = &sw32_surfaces[edge->surfs[0]];
 
 			R_TrailingEdge (surf, edge);
 
@@ -437,14 +439,14 @@ R_GenerateSpans (void)
 	R_ScanEdges
 
 	Input: 
-	newedges[] array
+	sw32_newedges[] array
 		this has links to edges, which have links to surfaces
 
 	Output:
 	Each surface has a linked list of its visible spans
 */
 void
-R_ScanEdges (void)
+sw32_R_ScanEdges (void)
 {
 	int         iv, bottom;
 	byte        basespans[MAXSPANS * sizeof (espan_t) + CACHE_SIZE];
@@ -492,10 +494,10 @@ R_ScanEdges (void)
 		fv = (float) iv;
 
 		// mark that the head (background start) span is pre-included
-		surfaces[1].spanstate = 1;
+		sw32_surfaces[1].spanstate = 1;
 
-		if (newedges[iv]) {
-			R_InsertNewEdges (newedges[iv], edge_head.next);
+		if (sw32_newedges[iv]) {
+			sw32_R_InsertNewEdges (sw32_newedges[iv], edge_head.next);
 		}
 
 		(*pdrawfunc) ();
@@ -507,23 +509,23 @@ R_ScanEdges (void)
 			S_ExtraUpdate ();	// don't let sound get messed up if going slow
 			VID_LockBuffer ();
 
-			if (r_drawculledpolys)
+			if (sw32_r_drawculledpolys)
 				R_DrawCulledPolys ();
 			else
-				D_DrawSurfaces ();
+				sw32_D_DrawSurfaces ();
 
 			// clear the surface span pointers
-			for (s = &surfaces[1]; s < surface_p; s++)
+			for (s = &sw32_surfaces[1]; s < sw32_surface_p; s++)
 				s->spans = NULL;
 
 			span_p = basespan_p;
 		}
 
-		if (removeedges[iv])
-			R_RemoveEdges (removeedges[iv]);
+		if (sw32_removeedges[iv])
+			sw32_R_RemoveEdges (sw32_removeedges[iv]);
 
 		if (edge_head.next != &edge_tail)
-			R_StepActiveU (edge_head.next);
+			sw32_R_StepActiveU (edge_head.next);
 	}
 
 	// do the last scan (no need to step or sort or remove on the last scan)
@@ -531,16 +533,16 @@ R_ScanEdges (void)
 	fv = (float) iv;
 
 	// mark that the head (background start) span is pre-included
-	surfaces[1].spanstate = 1;
+	sw32_surfaces[1].spanstate = 1;
 
-	if (newedges[iv])
-		R_InsertNewEdges (newedges[iv], edge_head.next);
+	if (sw32_newedges[iv])
+		sw32_R_InsertNewEdges (sw32_newedges[iv], edge_head.next);
 
 	(*pdrawfunc) ();
 
 	// draw whatever's left in the span list
-	if (r_drawculledpolys)
+	if (sw32_r_drawculledpolys)
 		R_DrawCulledPolys ();
 	else
-		D_DrawSurfaces ();
+		sw32_D_DrawSurfaces ();
 }

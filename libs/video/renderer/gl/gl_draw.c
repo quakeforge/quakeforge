@@ -30,6 +30,9 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -63,7 +66,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "r_internal.h"
 #include "sbar.h"
 #include "varrays.h"
-
 
 #define CELL_SIZE (1.0 / 16.0)	// conchars is 16x16
 #define CELL_INSET (1.0 / 4.0)	// of a pixel
@@ -147,7 +149,7 @@ Draw_InitText (void)
 }
 
 qpic_t *
-Draw_MakePic (int width, int height, const byte *data)
+gl_Draw_MakePic (int width, int height, const byte *data)
 {
 	glpic_t	   *gl;
 	qpic_t	   *pic;
@@ -161,14 +163,14 @@ Draw_MakePic (int width, int height, const byte *data)
 }
 
 void
-Draw_DestroyPic (qpic_t *pic)
+gl_Draw_DestroyPic (qpic_t *pic)
 {
 	//FIXME gl texture management sucks
 	free (pic);
 }
 
 qpic_t *
-Draw_PicFromWad (const char *name)
+gl_Draw_PicFromWad (const char *name)
 {
 	glpic_t	   *gl;
 	qpic_t	   *p, *pic;
@@ -209,7 +211,7 @@ Draw_ClearCache (int phase)
 }
 
 qpic_t *
-Draw_CachePic (const char *path, qboolean alpha)
+gl_Draw_CachePic (const char *path, qboolean alpha)
 {
 	cachepic_t *pic;
 	int         i;
@@ -267,7 +269,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 }
 
 void
-Draw_UncachePic (const char *path)
+gl_Draw_UncachePic (const char *path)
 {
 	cachepic_t *pic;
 	int         i;
@@ -282,7 +284,7 @@ Draw_UncachePic (const char *path)
 }
 
 void
-Draw_TextBox (int x, int y, int width, int lines, byte alpha)
+gl_Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 {
 	int         cx, cy, n;
 	qpic_t     *p;
@@ -292,51 +294,51 @@ Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 	qfglColor4ubv (color_white);
 	cx = x;
 	cy = y;
-	p = Draw_CachePic ("gfx/box_tl.lmp", true);
-	Draw_Pic (cx, cy, p);
-	p = Draw_CachePic ("gfx/box_ml.lmp", true);
+	p = gl_Draw_CachePic ("gfx/box_tl.lmp", true);
+	gl_Draw_Pic (cx, cy, p);
+	p = gl_Draw_CachePic ("gfx/box_ml.lmp", true);
 	for (n = 0; n < lines; n++) {
 		cy += 8;
-		Draw_Pic (cx, cy, p);
+		gl_Draw_Pic (cx, cy, p);
 	}
-	p = Draw_CachePic ("gfx/box_bl.lmp", true);
-	Draw_Pic (cx, cy + 8, p);
+	p = gl_Draw_CachePic ("gfx/box_bl.lmp", true);
+	gl_Draw_Pic (cx, cy + 8, p);
 
 	// draw middle
 	cx += 8;
 	while (width > 0) {
 		cy = y;
-		p = Draw_CachePic ("gfx/box_tm.lmp", true);
-		Draw_Pic (cx, cy, p);
-		p = Draw_CachePic ("gfx/box_mm.lmp", true);
+		p = gl_Draw_CachePic ("gfx/box_tm.lmp", true);
+		gl_Draw_Pic (cx, cy, p);
+		p = gl_Draw_CachePic ("gfx/box_mm.lmp", true);
 		for (n = 0; n < lines; n++) {
 			cy += 8;
 			if (n == 1)
-				p = Draw_CachePic ("gfx/box_mm2.lmp", true);
-			Draw_Pic (cx, cy, p);
+				p = gl_Draw_CachePic ("gfx/box_mm2.lmp", true);
+			gl_Draw_Pic (cx, cy, p);
 		}
-		p = Draw_CachePic ("gfx/box_bm.lmp", true);
-		Draw_Pic (cx, cy + 8, p);
+		p = gl_Draw_CachePic ("gfx/box_bm.lmp", true);
+		gl_Draw_Pic (cx, cy + 8, p);
 		width -= 2;
 		cx += 16;
 	}
 
 	// draw right side
 	cy = y;
-	p = Draw_CachePic ("gfx/box_tr.lmp", true);
-	Draw_Pic (cx, cy, p);
-	p = Draw_CachePic ("gfx/box_mr.lmp", true);
+	p = gl_Draw_CachePic ("gfx/box_tr.lmp", true);
+	gl_Draw_Pic (cx, cy, p);
+	p = gl_Draw_CachePic ("gfx/box_mr.lmp", true);
 	for (n = 0; n < lines; n++) {
 		cy += 8;
-		Draw_Pic (cx, cy, p);
+		gl_Draw_Pic (cx, cy, p);
 	}
-	p = Draw_CachePic ("gfx/box_br.lmp", true);
-	Draw_Pic (cx, cy + 8, p);
+	p = gl_Draw_CachePic ("gfx/box_br.lmp", true);
+	gl_Draw_Pic (cx, cy + 8, p);
 	qfglColor3ubv (color_white);
 }
 
 void
-Draw_Init (void)
+gl_Draw_Init (void)
 {
 	int	     i;
 	tex_t	*image;
@@ -404,10 +406,10 @@ Draw_Init (void)
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	// save a texture slot for translated picture
-	translate_texture = texture_extension_number++;
+	translate_texture = gl_texture_number++;
 
 	// get the other pics we need
-	draw_backtile = Draw_PicFromWad ("backtile");
+	draw_backtile = gl_Draw_PicFromWad ("backtile");
 
 	// LordHavoc: call init code for other GL renderer modules
 	glrmain_init ();
@@ -479,7 +481,7 @@ tVA_increment (void)
 	smoothly scrolled off.
 */
 void
-Draw_Character (int x, int y, unsigned int chr)
+gl_Draw_Character (int x, int y, unsigned int chr)
 {
 	chr &= 255;
 
@@ -493,7 +495,7 @@ Draw_Character (int x, int y, unsigned int chr)
 }
 
 void
-Draw_String (int x, int y, const char *str)
+gl_Draw_String (int x, int y, const char *str)
 {
 	unsigned char	chr;
 	float			x1, y1;
@@ -516,7 +518,7 @@ Draw_String (int x, int y, const char *str)
 }
 
 void
-Draw_nString (int x, int y, const char *str, int count)
+gl_Draw_nString (int x, int y, const char *str, int count)
 {
 	unsigned char	chr;
 	float			x1, y1;
@@ -539,7 +541,7 @@ Draw_nString (int x, int y, const char *str, int count)
 }
 
 void
-Draw_AltString (int x, int y, const char *str)
+gl_Draw_AltString (int x, int y, const char *str)
 {
 	unsigned char	chr;
 	float			x1, y1;
@@ -564,7 +566,7 @@ Draw_AltString (int x, int y, const char *str)
 static void
 crosshair_1 (int x, int y)
 {
-	Draw_Character (x - 4, y - 4, '+');
+	gl_Draw_Character (x - 4, y - 4, '+');
 }
 
 static void
@@ -672,7 +674,7 @@ static void (*crosshair_func[]) (int x, int y) = {
 };
 
 void
-Draw_Crosshair (void)
+gl_Draw_Crosshair (void)
 {
 	int            x, y;
 	int            ch;
@@ -688,7 +690,7 @@ Draw_Crosshair (void)
 }
 
 void
-Draw_CrosshairAt (int ch, int x, int y)
+gl_Draw_CrosshairAt (int ch, int x, int y)
 {
 	ch -= 1;
 	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
@@ -698,7 +700,7 @@ Draw_CrosshairAt (int ch, int x, int y)
 }
 
 void
-Draw_Pic (int x, int y, qpic_t *pic)
+gl_Draw_Pic (int x, int y, qpic_t *pic)
 {
 	glpic_t    *gl;
 
@@ -718,7 +720,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 }
 
 void
-Draw_Picf (float x, float y, qpic_t *pic)
+gl_Draw_Picf (float x, float y, qpic_t *pic)
 {
 	glpic_t    *gl;
 
@@ -738,7 +740,7 @@ Draw_Picf (float x, float y, qpic_t *pic)
 }
 
 void
-Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
+gl_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
 {
 	float       newsl, newtl, newsh, newth;
@@ -774,7 +776,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	several simple yet very cool GL effects.  --KB
 */
 void
-Draw_ConsoleBackground (int lines, byte alpha)
+gl_Draw_ConsoleBackground (int lines, byte alpha)
 {
 	float       ofs;
 	glpic_t    *gl;
@@ -783,7 +785,7 @@ Draw_ConsoleBackground (int lines, byte alpha)
 	GL_FlushText (); // Flush text that should be rendered before the console
 
 	// This can be a CachePic now, just like in software
-	conback = Draw_CachePic ("gfx/conback.lmp", false);
+	conback = gl_Draw_CachePic ("gfx/conback.lmp", false);
 	gl = (glpic_t *) conback->data;
 
 	// spin the console? - effect described in a QER tutorial
@@ -836,8 +838,8 @@ Draw_ConsoleBackground (int lines, byte alpha)
 		qfglPopMatrix ();
 	}
 
-	Draw_AltString (vid.conwidth - strlen (cl_verstring->string) * 8 - 11,
-					lines - 14, cl_verstring->string);
+	gl_Draw_AltString (vid.conwidth - strlen (cl_verstring->string) * 8 - 11,
+					   lines - 14, cl_verstring->string);
 	qfglColor3ubv (color_white);
 }
 
@@ -848,7 +850,7 @@ Draw_ConsoleBackground (int lines, byte alpha)
 	refresh window.
 */
 void
-Draw_TileClear (int x, int y, int w, int h)
+gl_Draw_TileClear (int x, int y, int w, int h)
 {
 	glpic_t    *gl;
 	qfglColor3ubv (color_0_8);
@@ -873,7 +875,7 @@ Draw_TileClear (int x, int y, int w, int h)
 	Fills a box of pixels with a single color
 */
 void
-Draw_Fill (int x, int y, int w, int h, int c)
+gl_Draw_Fill (int x, int y, int w, int h, int c)
 {
 	qfglDisable (GL_TEXTURE_2D);
 	qfglColor3ubv (vid.palette + c * 3);
@@ -891,7 +893,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 }
 
 void
-Draw_FadeScreen (void)
+gl_Draw_FadeScreen (void)
 {
 	GL_FlushText (); // Flush text that should be rendered before the menu
 
@@ -962,7 +964,7 @@ GL_FlushText (void)
 }
 
 void
-Draw_BlendScreen (quat_t color)
+gl_Draw_BlendScreen (quat_t color)
 {
 	if (!color[3])
 		return;

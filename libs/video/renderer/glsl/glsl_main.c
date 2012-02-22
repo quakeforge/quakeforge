@@ -33,6 +33,9 @@
 
 static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
+#define NH_DEFINE
+#include "namehack.h"
+
 #ifdef HAVE_STRING_H
 # include "string.h"
 #endif
@@ -65,7 +68,7 @@ gl_overbright_f (cvar_t *var)
 }
 
 void
-R_ViewChanged (float aspect)
+glsl_R_ViewChanged (float aspect)
 {
 	double      xmin, xmax, ymin, ymax;
 	float       fovx, fovy, neard, fard;
@@ -103,7 +106,7 @@ R_ViewChanged (float aspect)
 }
 
 void
-R_SetupFrame (void)
+glsl_R_SetupFrame (void)
 {
 	R_AnimateLight ();
 	R_ClearEnts ();
@@ -157,23 +160,23 @@ R_RenderEntities (void)
 	if (!r_drawentities->int_val)
 		return;
 
-	R_AliasBegin ();
+	glsl_R_AliasBegin ();
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		if (ent->model->type != mod_alias)
 			continue;
 		currententity = ent;
-		R_DrawAlias ();
+		glsl_R_DrawAlias ();
 	}
-	R_AliasEnd ();
+	glsl_R_AliasEnd ();
 
-	R_SpriteBegin ();
+	glsl_R_SpriteBegin ();
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		if (ent->model->type != mod_sprite)
 			continue;
 		currententity = ent;
-		R_DrawSprite ();
+		glsl_R_DrawSprite ();
 	}
-	R_SpriteEnd ();
+	glsl_R_SpriteEnd ();
 }
 
 static void
@@ -188,21 +191,21 @@ R_DrawViewModel (void)
 
 	// hack the depth range to prevent view model from poking into walls
 	qfglDepthRangef (0, 0.3);
-	R_AliasBegin ();
-	R_DrawAlias ();
-	R_AliasEnd ();
+	glsl_R_AliasBegin ();
+	glsl_R_DrawAlias ();
+	glsl_R_AliasEnd ();
 	qfglDepthRangef (0, 1);
 }
 
 void
-R_RenderView (void)
+glsl_R_RenderView (void)
 {
 	double      t[10] = {};
 	int         speeds = r_speeds->int_val;
 
 	if (speeds)
 		t[0] = Sys_DoubleTime ();
-	R_SetupFrame ();
+	glsl_R_SetupFrame ();
 	R_SetupView ();
 	if (speeds)
 		t[1] = Sys_DoubleTime ();
@@ -212,19 +215,19 @@ R_RenderView (void)
 	R_PushDlights (vec3_origin);
 	if (speeds)
 		t[3] = Sys_DoubleTime ();
-	R_DrawWorld ();
+	glsl_R_DrawWorld ();
 	if (speeds)
 		t[4] = Sys_DoubleTime ();
-	R_DrawSky ();
+	glsl_R_DrawSky ();
 	if (speeds)
 		t[5] = Sys_DoubleTime ();
 	R_RenderEntities ();
 	if (speeds)
 		t[6] = Sys_DoubleTime ();
-	R_DrawWaterSurfaces ();
+	glsl_R_DrawWaterSurfaces ();
 	if (speeds)
 		t[7] = Sys_DoubleTime ();
-	R_DrawParticles ();
+	glsl_R_DrawParticles ();
 	if (speeds)
 		t[8] = Sys_DoubleTime ();
 	R_DrawViewModel ();
@@ -242,19 +245,19 @@ R_RenderView (void)
 }
 
 void
-R_Init (void)
+glsl_R_Init (void)
 {
 	Draw_Init ();
 	SCR_Init ();
-	R_InitBsp ();
-	R_InitAlias ();
-	R_InitSprites ();
-	R_InitParticles ();
-	Fog_Init ();
+	glsl_R_InitBsp ();
+	glsl_R_InitAlias ();
+	glsl_R_InitSprites ();
+	glsl_R_InitParticles ();
+	glsl_Fog_Init ();
 }
 
 void
-R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
+glsl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	int         i;
 
@@ -269,23 +272,23 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	R_MarkLeaves ();
 
 	R_FreeAllEntities ();
-	R_ClearParticles ();
-	R_RegisterTextures (models, num_models);
-	R_BuildLightmaps (models, num_models);
-	R_BuildDisplayLists (models, num_models);
+	glsl_R_ClearParticles ();
+	glsl_R_RegisterTextures (models, num_models);
+	glsl_R_BuildLightmaps (models, num_models);
+	glsl_R_BuildDisplayLists (models, num_models);
 }
 
 void
-R_LineGraph (int x, int y, int *h_vals, int count)
+glsl_R_LineGraph (int x, int y, int *h_vals, int count)
 {
 }
 
 void
-R_ClearState (void)
+glsl_R_ClearState (void)
 {
 	R_ClearEfrags ();
 	R_ClearDlights ();
-	R_ClearParticles ();
+	glsl_R_ClearParticles ();
 }
 
 void

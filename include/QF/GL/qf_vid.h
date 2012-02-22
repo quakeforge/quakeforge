@@ -33,6 +33,8 @@
 #include "QF/GL/types.h"
 #include "QF/GL/extensions.h"
 
+extern byte gl_15to8table[65536];
+
 // Multitexturing
 extern QF_glActiveTexture		qglActiveTexture;
 extern QF_glMultiTexCoord2f		qglMultiTexCoord2f;

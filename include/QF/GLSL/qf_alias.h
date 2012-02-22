@@ -39,9 +39,9 @@ typedef struct aliasvrt_s {
 	GLushort    vertex[3];
 } aliasvrt_t;
 
-void R_InitAlias (void);
-void R_DrawAlias (void);
-void R_AliasBegin (void);
-void R_AliasEnd (void);
+void glsl_R_InitAlias (void);
+void glsl_R_DrawAlias (void);
+void glsl_R_AliasBegin (void);
+void glsl_R_AliasEnd (void);
 
 #endif//__QF_GLSL_qf_alias_h

@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/sys.h"
 
@@ -39,34 +41,34 @@ static __attribute__ ((used)) const char rcsid[] =
 
 
 void
-D_DrawZPoint (void)
+sw32_D_DrawZPoint (void)
 {
 	short      *pz;
 	int         izi;
 
-	pz = d_pzbuffer + (d_zwidth * r_zpointdesc.v) + r_zpointdesc.u;
-	izi = (int) (r_zpointdesc.zi * 0x8000);
+	pz = sw32_d_pzbuffer + (sw32_d_zwidth * sw32_r_zpointdesc.v) + sw32_r_zpointdesc.u;
+	izi = (int) (sw32_r_zpointdesc.zi * 0x8000);
 
 	if (*pz <= izi) {
 		*pz = izi;
-		switch(r_pixbytes)
+		switch(sw32_r_pixbytes)
 		{
 		case 1:
-			((byte *) d_viewbuffer) [d_scantable[r_zpointdesc.v] +
-									 r_zpointdesc.u] = r_zpointdesc.color;
+			((byte *) sw32_d_viewbuffer) [sw32_d_scantable[sw32_r_zpointdesc.v] +
+									 sw32_r_zpointdesc.u] = sw32_r_zpointdesc.color;
 			break;
 		case 2:
-			((short *) d_viewbuffer) [d_scantable[r_zpointdesc.v] +
-									  r_zpointdesc.u] =
-				d_8to16table[r_zpointdesc.color];
+			((short *) sw32_d_viewbuffer) [sw32_d_scantable[sw32_r_zpointdesc.v] +
+									  sw32_r_zpointdesc.u] =
+				sw32_8to16table[sw32_r_zpointdesc.color];
 			break;
 		case 4:
-			((int *) d_viewbuffer) [d_scantable[r_zpointdesc.v] +
-									r_zpointdesc.u] =
-				d_8to24table[r_zpointdesc.color];
+			((int *) sw32_d_viewbuffer) [sw32_d_scantable[sw32_r_zpointdesc.v] +
+									sw32_r_zpointdesc.u] =
+				d_8to24table[sw32_r_zpointdesc.color];
 			break;
 		default:
-			Sys_Error("D_DrawZPoint: unsupported r_pixbytes %i", r_pixbytes);
+			Sys_Error("D_DrawZPoint: unsupported r_pixbytes %i", sw32_r_pixbytes);
 		}
 	}
 }

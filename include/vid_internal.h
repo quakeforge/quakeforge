@@ -8,8 +8,7 @@ extern struct cvar_s *vid_fullscreen;
 extern struct cvar_s *vid_system_gamma;
 extern struct cvar_s *vid_gamma;
 
-extern byte d_15to8table[65536];
-extern unsigned short  d_8to16table[256];
+extern unsigned short  sw32_8to16table[256];
 
 void VID_GetWindowSize (int def_w, int def_h);
 

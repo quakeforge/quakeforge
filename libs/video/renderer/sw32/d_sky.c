@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/render.h"
 #include "QF/sys.h"
@@ -61,15 +63,15 @@ D_Sky_uv_To_st (int u, int v, fixed16_t *s, fixed16_t *t)
 	end[2] *= 3;
 	VectorNormalize (end);
 
-	temp = r_skytime * r_skyspeed;	// TODO: add D_SetupFrame & set this there
+	temp = sw32_r_skytime * sw32_r_skyspeed;	// TODO: add D_SetupFrame & set this there
 	*s = (int) ((temp + 6 * (SKYSIZE / 2 - 1) * end[0]) * 0x10000);
 	*t = (int) ((temp + 6 * (SKYSIZE / 2 - 1) * end[1]) * 0x10000);
 }
 
 void
-D_DrawSkyScans (espan_t *pspan)
+sw32_D_DrawSkyScans (espan_t *pspan)
 {
-	switch(r_pixbytes) {
+	switch(sw32_r_pixbytes) {
 	case 1:
 	{
 		int         count, spancount, u, v;
@@ -81,7 +83,7 @@ D_DrawSkyScans (espan_t *pspan)
 		tstep = 0;							// ditto
 
 		do {
-			pdest = (byte *) d_viewbuffer + screenwidth * pspan->v + pspan->u;
+			pdest = (byte *) sw32_d_viewbuffer + sw32_screenwidth * pspan->v + pspan->u;
 
 			count = pspan->count;
 
@@ -122,7 +124,7 @@ D_DrawSkyScans (espan_t *pspan)
 				}
 
 				do {
-					*pdest++ = ((byte *) r_skysource)
+					*pdest++ = ((byte *) sw32_r_skysource)
 						[((t & R_SKY_TMASK) >> 8) + ((s & R_SKY_SMASK) >> 16)];
 					s += sstep;
 					t += tstep;
@@ -148,7 +150,7 @@ D_DrawSkyScans (espan_t *pspan)
 		tstep = 0;							// ditto
 
 		do {
-			pdest = (short *) d_viewbuffer + screenwidth * pspan->v + pspan->u;
+			pdest = (short *) sw32_d_viewbuffer + sw32_screenwidth * pspan->v + pspan->u;
 
 			count = pspan->count;
 
@@ -189,7 +191,7 @@ D_DrawSkyScans (espan_t *pspan)
 				}
 
 				do {
-					*pdest++ = ((short *) r_skysource)
+					*pdest++ = ((short *) sw32_r_skysource)
 						[((t & R_SKY_TMASK) >> 8) + ((s & R_SKY_SMASK) >> 16)];
 					s += sstep;
 					t += tstep;
@@ -215,7 +217,7 @@ D_DrawSkyScans (espan_t *pspan)
 		tstep = 0;							// ditto
 
 		do {
-			pdest = (int *) d_viewbuffer + screenwidth * pspan->v + pspan->u;
+			pdest = (int *) sw32_d_viewbuffer + sw32_screenwidth * pspan->v + pspan->u;
 
 			count = pspan->count;
 
@@ -256,7 +258,7 @@ D_DrawSkyScans (espan_t *pspan)
 				}
 
 				do {
-					*pdest++ = ((int *) r_skysource)
+					*pdest++ = ((int *) sw32_r_skysource)
 						[((t & R_SKY_TMASK) >> 8) + ((s & R_SKY_SMASK) >> 16)];
 					s += sstep;
 					t += tstep;
@@ -272,6 +274,6 @@ D_DrawSkyScans (espan_t *pspan)
 	break;
 
 	default:
-		Sys_Error("D_DrawSkyScans: unsupported r_pixbytes %i", r_pixbytes);
+		Sys_Error("D_DrawSkyScans: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
 }

@@ -29,8 +29,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -359,7 +361,7 @@ GL_MipMap8Bit (byte *in, int width, int height)
 			b = (at1[2] + at2[2] + at3[2] + at4[2]);
 			b >>= 5;
 
-			out[0] = d_15to8table[(r << 0) + (g << 5) + (b << 10)];
+			out[0] = gl_15to8table[(r << 0) + (g << 5) + (b << 10)];
 		}
 }
 

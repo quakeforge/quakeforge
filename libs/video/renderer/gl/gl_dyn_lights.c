@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -53,7 +55,7 @@ float       gl_bubble_sintable[33], gl_bubble_costable[33];
 
 
 void
-R_InitBubble (void)
+gl_R_InitBubble (void)
 {
 	float       a;
 	float      *bub_sin, *bub_cos;
@@ -111,7 +113,7 @@ R_RenderDlight (dlight_t *light)
 }
 
 void
-R_RenderDlights (void)
+gl_R_RenderDlights (void)
 {
 	unsigned int i;
 	dlight_t   *l;

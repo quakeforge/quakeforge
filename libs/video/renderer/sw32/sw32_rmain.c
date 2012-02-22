@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -57,57 +59,57 @@ static __attribute__ ((used)) const char rcsid[] =
 
 static vec3_t      viewlightvec;
 static alight_t    r_viewlighting = { 128, 192, viewlightvec };
-int         r_numallocatededges;
-qboolean    r_drawpolys;
-qboolean    r_drawculledpolys;
-qboolean    r_worldpolysbacktofront;
-int         r_pixbytes = 1;
-float       r_aliasuvscale = 1.0;
-int         r_outofsurfaces;
-int         r_outofedges;
+int         sw32_r_numallocatededges;
+qboolean    sw32_r_drawpolys;
+qboolean    sw32_r_drawculledpolys;
+qboolean    sw32_r_worldpolysbacktofront;
+int         sw32_r_pixbytes = 1;
+float       sw32_r_aliasuvscale = 1.0;
+int         sw32_r_outofsurfaces;
+int         sw32_r_outofedges;
 
-qboolean    r_dowarp, r_dowarpold, r_viewchanged;
+qboolean    sw32_r_dowarp, sw32_r_dowarpold, sw32_r_viewchanged;
 
-int         c_surf;
-int         r_maxsurfsseen, r_maxedgesseen;
+int         sw32_c_surf;
+int         sw32_r_maxsurfsseen, sw32_r_maxedgesseen;
 static int  r_cnumsurfs;
 static qboolean    r_surfsonstack;
-int         r_clipflags;
+int         sw32_r_clipflags;
 
-byte       *r_warpbuffer;
+byte       *sw32_r_warpbuffer;
 
 static byte       *r_stack_start;
 
 // screen size info
-float       xcenter, ycenter;
-float       xscale, yscale;
-float       xscaleinv, yscaleinv;
-float       xscaleshrink, yscaleshrink;
-float       aliasxscale, aliasyscale, aliasxcenter, aliasycenter;
+float       sw32_xcenter, sw32_ycenter;
+float       sw32_xscale, sw32_yscale;
+float       sw32_xscaleinv, sw32_yscaleinv;
+float       sw32_xscaleshrink, sw32_yscaleshrink;
+float       sw32_aliasxscale, sw32_aliasyscale, sw32_aliasxcenter, sw32_aliasycenter;
 
-int         screenwidth;
+int         sw32_screenwidth;
 
-float       pixelAspect;
+float       sw32_pixelAspect;
 static float       screenAspect;
 static float       verticalFieldOfView;
 static float       xOrigin, yOrigin;
 
-plane_t     screenedge[4];
+plane_t     sw32_screenedge[4];
 
 // refresh flags
-int         r_polycount;
-int         r_drawnpolycount;
+int         sw32_r_polycount;
+int         sw32_r_drawnpolycount;
 
-int        *pfrustum_indexes[4];
-int         r_frustum_indexes[4 * 6];
+int        *sw32_pfrustum_indexes[4];
+int         sw32_r_frustum_indexes[4 * 6];
 
-float       r_aliastransition, r_resfudge;
+float       sw32_r_aliastransition, sw32_r_resfudge;
 
 static float dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
 static float se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 
 void
-R_Textures_Init (void)
+sw32_R_Textures_Init (void)
 {
 	int         x, y, m;
 	byte       *dest;
@@ -137,41 +139,41 @@ R_Textures_Init (void)
 }
 
 void
-R_Init (void)
+sw32_R_Init (void)
 {
 	int         dummy;
 
 	// get stack position so we can guess if we are going to overflow
 	r_stack_start = (byte *) & dummy;
 
-	Draw_Init ();
+	sw32_Draw_Init ();
 	SCR_Init ();
-	R_InitTurb ();
+	sw32_R_InitTurb ();
 
-	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f, "Tests the current "
+	Cmd_AddCommand ("timerefresh", sw32_R_TimeRefresh_f, "Tests the current "
 					"refresh rate for the current location");
-	Cmd_AddCommand ("pointfile", R_ReadPointFile_f, "Load a pointfile to "
+	Cmd_AddCommand ("pointfile", sw32_R_ReadPointFile_f, "Load a pointfile to "
 					"determine map leaks");
-	Cmd_AddCommand ("loadsky", R_LoadSky_f, "Load a skybox");
+	Cmd_AddCommand ("loadsky", sw32_R_LoadSky_f, "Load a skybox");
 
 	Cvar_SetValue (r_maxedges, (float) NUMSTACKEDGES);
 	Cvar_SetValue (r_maxsurfs, (float) NUMSTACKSURFACES);
 
-	view_clipplanes[0].leftedge = true;
-	view_clipplanes[1].rightedge = true;
-	view_clipplanes[1].leftedge = view_clipplanes[2].leftedge =
-		view_clipplanes[3].leftedge = false;
-	view_clipplanes[0].rightedge = view_clipplanes[2].rightedge =
-		view_clipplanes[3].rightedge = false;
+	sw32_view_clipplanes[0].leftedge = true;
+	sw32_view_clipplanes[1].rightedge = true;
+	sw32_view_clipplanes[1].leftedge = sw32_view_clipplanes[2].leftedge =
+		sw32_view_clipplanes[3].leftedge = false;
+	sw32_view_clipplanes[0].rightedge = sw32_view_clipplanes[2].rightedge =
+		sw32_view_clipplanes[3].rightedge = false;
 
 	r_refdef.xOrigin = XCENTERING;
 	r_refdef.yOrigin = YCENTERING;
 
-	D_Init ();
+	sw32_D_Init ();
 }
 
 void
-R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
+sw32_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	int         i;
 
@@ -186,13 +188,13 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		r_worldentity.model->leafs[i].efrags = NULL;
 
 	if (worldmodel->skytexture)
-		R_InitSky (worldmodel->skytexture);
+		sw32_R_InitSky (worldmodel->skytexture);
 
 	// Force a vis update
 	r_viewleaf = NULL;
 	R_MarkLeaves ();
 
-	R_ClearParticles ();
+	sw32_R_ClearParticles ();
 
 	r_cnumsurfs = r_maxsurfs->int_val;
 
@@ -200,35 +202,35 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		r_cnumsurfs = MINSURFACES;
 
 	if (r_cnumsurfs > NUMSTACKSURFACES) {
-		surfaces = Hunk_AllocName (r_cnumsurfs * sizeof (surf_t), "surfaces");
+		sw32_surfaces = Hunk_AllocName (r_cnumsurfs * sizeof (surf_t), "surfaces");
 
-		surface_p = surfaces;
-		surf_max = &surfaces[r_cnumsurfs];
+		sw32_surface_p = sw32_surfaces;
+		sw32_surf_max = &sw32_surfaces[r_cnumsurfs];
 		r_surfsonstack = false;
 		// surface 0 doesn't really exist; it's just a dummy because index 0
 		// is used to indicate no edge attached to surface
-		surfaces--;
+		sw32_surfaces--;
 	} else {
 		r_surfsonstack = true;
 	}
 
-	r_maxedgesseen = 0;
-	r_maxsurfsseen = 0;
+	sw32_r_maxedgesseen = 0;
+	sw32_r_maxsurfsseen = 0;
 
-	r_numallocatededges = r_maxedges->int_val;
+	sw32_r_numallocatededges = r_maxedges->int_val;
 
-	if (r_numallocatededges < MINEDGES)
-		r_numallocatededges = MINEDGES;
+	if (sw32_r_numallocatededges < MINEDGES)
+		sw32_r_numallocatededges = MINEDGES;
 
-	if (r_numallocatededges <= NUMSTACKEDGES) {
-		auxedges = NULL;
+	if (sw32_r_numallocatededges <= NUMSTACKEDGES) {
+		sw32_auxedges = NULL;
 	} else {
-		auxedges = Hunk_AllocName (r_numallocatededges * sizeof (edge_t),
+		sw32_auxedges = Hunk_AllocName (sw32_r_numallocatededges * sizeof (edge_t),
 								   "edges");
 	}
 
-	r_dowarpold = false;
-	r_viewchanged = false;
+	sw32_r_dowarpold = false;
+	sw32_r_viewchanged = false;
 }
 
 /*
@@ -238,12 +240,12 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	Guaranteed to be called before the first refresh
 */
 void
-R_ViewChanged (float aspect)
+sw32_R_ViewChanged (float aspect)
 {
 	int         i;
 	float       res_scale;
 
-	r_viewchanged = true;
+	sw32_r_viewchanged = true;
 
 	r_refdef.horizontalFieldOfView = 2.0 * tan (r_refdef.fov_x / 360 * M_PI);
 	r_refdef.fvrectx = (float) r_refdef.vrect.x;
@@ -261,24 +263,24 @@ R_ViewChanged (float aspect)
 	r_refdef.fvrectbottom = (float) r_refdef.vrectbottom;
 	r_refdef.fvrectbottom_adj = (float) r_refdef.vrectbottom - 0.5;
 
-	r_refdef.aliasvrect.x = (int) (r_refdef.vrect.x * r_aliasuvscale);
-	r_refdef.aliasvrect.y = (int) (r_refdef.vrect.y * r_aliasuvscale);
-	r_refdef.aliasvrect.width = (int) (r_refdef.vrect.width * r_aliasuvscale);
+	r_refdef.aliasvrect.x = (int) (r_refdef.vrect.x * sw32_r_aliasuvscale);
+	r_refdef.aliasvrect.y = (int) (r_refdef.vrect.y * sw32_r_aliasuvscale);
+	r_refdef.aliasvrect.width = (int) (r_refdef.vrect.width * sw32_r_aliasuvscale);
 	r_refdef.aliasvrect.height = (int) (r_refdef.vrect.height *
-										r_aliasuvscale);
+										sw32_r_aliasuvscale);
 	r_refdef.aliasvrectright = r_refdef.aliasvrect.x +
 		r_refdef.aliasvrect.width;
 	r_refdef.aliasvrectbottom = r_refdef.aliasvrect.y +
 		r_refdef.aliasvrect.height;
 
-	pixelAspect = aspect;
+	sw32_pixelAspect = aspect;
 	xOrigin = r_refdef.xOrigin;
 	yOrigin = r_refdef.yOrigin;
 
-	screenAspect = r_refdef.vrect.width * pixelAspect / r_refdef.vrect.height;
-	// 320*200 1.0 pixelAspect = 1.6 screenAspect
-	// 320*240 1.0 pixelAspect = 1.3333 screenAspect
-	// proper 320*200 pixelAspect = 0.8333333
+	screenAspect = r_refdef.vrect.width * sw32_pixelAspect / r_refdef.vrect.height;
+	// 320*200 1.0 sw32_pixelAspect = 1.6 screenAspect
+	// 320*240 1.0 sw32_pixelAspect = 1.3333 screenAspect
+	// proper 320*200 sw32_pixelAspect = 0.8333333
 
 	verticalFieldOfView = r_refdef.horizontalFieldOfView / screenAspect;
 
@@ -288,58 +290,58 @@ R_ViewChanged (float aspect)
 	// the polygon rasterization will never render in the first row or column
 	// but will definately render in the [range] row and column, so adjust the
 	// buffer origin to get an exact edge to edge fill
-	xcenter = ((float) r_refdef.vrect.width * XCENTERING) +
+	sw32_xcenter = ((float) r_refdef.vrect.width * XCENTERING) +
 		r_refdef.vrect.x - 0.5;
-	aliasxcenter = xcenter * r_aliasuvscale;
-	ycenter = ((float) r_refdef.vrect.height * YCENTERING) +
+	sw32_aliasxcenter = sw32_xcenter * sw32_r_aliasuvscale;
+	sw32_ycenter = ((float) r_refdef.vrect.height * YCENTERING) +
 		r_refdef.vrect.y - 0.5;
-	aliasycenter = ycenter * r_aliasuvscale;
+	sw32_aliasycenter = sw32_ycenter * sw32_r_aliasuvscale;
 
-	xscale = r_refdef.vrect.width / r_refdef.horizontalFieldOfView;
-	aliasxscale = xscale * r_aliasuvscale;
-	xscaleinv = 1.0 / xscale;
-	yscale = xscale * pixelAspect;
-	aliasyscale = yscale * r_aliasuvscale;
-	yscaleinv = 1.0 / yscale;
-	xscaleshrink = (r_refdef.vrect.width - 6) / r_refdef.horizontalFieldOfView;
-	yscaleshrink = xscaleshrink * pixelAspect;
+	sw32_xscale = r_refdef.vrect.width / r_refdef.horizontalFieldOfView;
+	sw32_aliasxscale = sw32_xscale * sw32_r_aliasuvscale;
+	sw32_xscaleinv = 1.0 / sw32_xscale;
+	sw32_yscale = sw32_xscale * sw32_pixelAspect;
+	sw32_aliasyscale = sw32_yscale * sw32_r_aliasuvscale;
+	sw32_yscaleinv = 1.0 / sw32_yscale;
+	sw32_xscaleshrink = (r_refdef.vrect.width - 6) / r_refdef.horizontalFieldOfView;
+	sw32_yscaleshrink = sw32_xscaleshrink * sw32_pixelAspect;
 
 	// left side clip
-	screenedge[0].normal[0] = -1.0 / (xOrigin *
+	sw32_screenedge[0].normal[0] = -1.0 / (xOrigin *
 									  r_refdef.horizontalFieldOfView);
-	screenedge[0].normal[1] = 0;
-	screenedge[0].normal[2] = 1;
-	screenedge[0].type = PLANE_ANYZ;
+	sw32_screenedge[0].normal[1] = 0;
+	sw32_screenedge[0].normal[2] = 1;
+	sw32_screenedge[0].type = PLANE_ANYZ;
 
 	// right side clip
-	screenedge[1].normal[0] = 1.0 / ((1.0 - xOrigin) *
+	sw32_screenedge[1].normal[0] = 1.0 / ((1.0 - xOrigin) *
 									 r_refdef.horizontalFieldOfView);
-	screenedge[1].normal[1] = 0;
-	screenedge[1].normal[2] = 1;
-	screenedge[1].type = PLANE_ANYZ;
+	sw32_screenedge[1].normal[1] = 0;
+	sw32_screenedge[1].normal[2] = 1;
+	sw32_screenedge[1].type = PLANE_ANYZ;
 
 	// top side clip
-	screenedge[2].normal[0] = 0;
-	screenedge[2].normal[1] = -1.0 / (yOrigin * verticalFieldOfView);
-	screenedge[2].normal[2] = 1;
-	screenedge[2].type = PLANE_ANYZ;
+	sw32_screenedge[2].normal[0] = 0;
+	sw32_screenedge[2].normal[1] = -1.0 / (yOrigin * verticalFieldOfView);
+	sw32_screenedge[2].normal[2] = 1;
+	sw32_screenedge[2].type = PLANE_ANYZ;
 
 	// bottom side clip
-	screenedge[3].normal[0] = 0;
-	screenedge[3].normal[1] = 1.0 / ((1.0 - yOrigin) * verticalFieldOfView);
-	screenedge[3].normal[2] = 1;
-	screenedge[3].type = PLANE_ANYZ;
+	sw32_screenedge[3].normal[0] = 0;
+	sw32_screenedge[3].normal[1] = 1.0 / ((1.0 - yOrigin) * verticalFieldOfView);
+	sw32_screenedge[3].normal[2] = 1;
+	sw32_screenedge[3].type = PLANE_ANYZ;
 
 	for (i = 0; i < 4; i++)
-		VectorNormalize (screenedge[i].normal);
+		VectorNormalize (sw32_screenedge[i].normal);
 
 	res_scale = sqrt ((double) (r_refdef.vrect.width * r_refdef.vrect.height) /
 					  (320.0 * 152.0)) * (2.0 /
 										  r_refdef.horizontalFieldOfView);
-	r_aliastransition = r_aliastransbase->value * res_scale;
-	r_resfudge = r_aliastransadj->value * res_scale;
+	sw32_r_aliastransition = r_aliastransbase->value * res_scale;
+	sw32_r_resfudge = r_aliastransadj->value * res_scale;
 
-	D_ViewChanged ();
+	sw32_D_ViewChanged ();
 }
 
 static void
@@ -366,7 +368,7 @@ R_DrawEntitiesOnList (void)
 			case mod_sprite:
 				VectorCopy (currententity->origin, r_entorigin);
 				VectorSubtract (r_origin, r_entorigin, modelorg);
-				R_DrawSprite ();
+				sw32_R_DrawSprite ();
 				break;
 
 			case mod_alias:
@@ -377,7 +379,7 @@ R_DrawEntitiesOnList (void)
 
 				// see if the bounding box lets us trivially reject, also
 				// sets trivial accept status
-				if (R_AliasCheckBBox ()) {
+				if (sw32_R_AliasCheckBBox ()) {
 					// 128 instead of 255 due to clamping below
 					j = max (R_LightPoint (currententity->origin), minlight * 128);
 
@@ -403,7 +405,7 @@ R_DrawEntitiesOnList (void)
 					if (lighting.ambientlight + lighting.shadelight > 192)
 						lighting.shadelight = 192 - lighting.ambientlight;
 
-					R_AliasDrawModel (&lighting);
+					sw32_R_AliasDrawModel (&lighting);
 				}
 
 				break;
@@ -471,7 +473,7 @@ R_DrawViewModel (void)
 
 	r_viewlighting.plightvec = lightvec;
 
-	R_AliasDrawModel (&r_viewlighting);
+	sw32_R_AliasDrawModel (&r_viewlighting);
 }
 
 static int
@@ -486,8 +488,8 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 	if (currententity->transform[0] != 1 || currententity->transform[5] != 1
 		|| currententity->transform[10] != 1) {
 		for (i = 0; i < 4; i++) {
-			d = DotProduct (currententity->origin, view_clipplanes[i].normal);
-			d -= view_clipplanes[i].dist;
+			d = DotProduct (currententity->origin, sw32_view_clipplanes[i].normal);
+			d -= sw32_view_clipplanes[i].dist;
 
 			if (d <= -clmodel->radius)
 				return BMODEL_FULLY_CLIPPED;
@@ -501,14 +503,14 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 			// FIXME: do with fast look-ups or integer tests based on the
 			// sign bit of the floating point values
 
-			pindex = pfrustum_indexes[i];
+			pindex = sw32_pfrustum_indexes[i];
 
 			rejectpt[0] = minmaxs[pindex[0]];
 			rejectpt[1] = minmaxs[pindex[1]];
 			rejectpt[2] = minmaxs[pindex[2]];
 
-			d = DotProduct (rejectpt, view_clipplanes[i].normal);
-			d -= view_clipplanes[i].dist;
+			d = DotProduct (rejectpt, sw32_view_clipplanes[i].normal);
+			d -= sw32_view_clipplanes[i].dist;
 
 			if (d <= 0)
 				return BMODEL_FULLY_CLIPPED;
@@ -517,8 +519,8 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 			acceptpt[1] = minmaxs[pindex[3 + 1]];
 			acceptpt[2] = minmaxs[pindex[3 + 2]];
 
-			d = DotProduct (acceptpt, view_clipplanes[i].normal);
-			d -= view_clipplanes[i].dist;
+			d = DotProduct (acceptpt, sw32_view_clipplanes[i].normal);
+			d -= sw32_view_clipplanes[i].dist;
 
 			if (d <= 0)
 				clipflags |= (1 << i);
@@ -566,11 +568,11 @@ R_DrawBEntitiesOnList (void)
 					VectorSubtract (r_origin, r_entorigin, modelorg);
 
 					// FIXME: is this needed?
-					VectorCopy (modelorg, r_worldmodelorg);
+					VectorCopy (modelorg, sw32_r_worldmodelorg);
 					r_pcurrentvertbase = clmodel->vertexes;
 
 					// FIXME: stop transforming twice
-					R_RotateBmodel ();
+					sw32_R_RotateBmodel ();
 
 					// calculate dynamic lighting for bmodel if it's not an
 					// instanced model
@@ -592,8 +594,8 @@ R_DrawBEntitiesOnList (void)
 					// if the driver wants polygons, deliver those.
 					// Z-buffering is on at this point, so no clipping to the
 					// world tree is needed, just frustum clipping
-					if (r_drawpolys | r_drawculledpolys) {
-						R_ZDrawSubmodelPolys (clmodel);
+					if (sw32_r_drawpolys | sw32_r_drawculledpolys) {
+						sw32_R_ZDrawSubmodelPolys (clmodel);
 					} else {
 						if (currententity->topnode) {
 							mnode_t    *topnode = currententity->topnode;
@@ -601,25 +603,25 @@ R_DrawBEntitiesOnList (void)
 							if (topnode->contents >= 0) {
 								// not a leaf; has to be clipped to the world 
 								// BSP
-								r_clipflags = clipflags;
-								R_DrawSolidClippedSubmodelPolygons (clmodel);
+								sw32_r_clipflags = clipflags;
+								sw32_R_DrawSolidClippedSubmodelPolygons (clmodel);
 							} else {
 								// falls entirely in one leaf, so we just put 
 								// all the edges in the edge list and let 1/z
 								// sorting handle drawing order
-								R_DrawSubmodelPolygons (clmodel, clipflags);
+								sw32_R_DrawSubmodelPolygons (clmodel, clipflags);
 							}
 						}
 					}
 
 					// put back world rotation and frustum clipping     
-					// FIXME: R_RotateBmodel should just work off base_vxx
+					// FIXME: sw32_R_RotateBmodel should just work off base_vxx
 					VectorCopy (base_vpn, vpn);
 					VectorCopy (base_vup, vup);
 					VectorCopy (base_vright, vright);
 					VectorCopy (base_modelorg, modelorg);
 					VectorCopy (oldorigin, modelorg);
-					R_TransformFrustum ();
+					sw32_R_TransformFrustum ();
 				}
 				break;
 			default:
@@ -660,36 +662,36 @@ R_EdgeDrawing (void)
 	surf_t      lsurfs[NUMSTACKSURFACES +
 					   ((CACHE_SIZE - 1) / sizeof (surf_t)) + 1];
 
-	if (auxedges) {
-		r_edges = auxedges;
+	if (sw32_auxedges) {
+		sw32_r_edges = sw32_auxedges;
 	} else {
-		r_edges = (edge_t *)
+		sw32_r_edges = (edge_t *)
 			(((intptr_t) &ledges[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	}
 
 	if (r_surfsonstack) {
-		surfaces = (surf_t *)
+		sw32_surfaces = (surf_t *)
 			(((intptr_t) &lsurfs[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
-		surf_max = &surfaces[r_cnumsurfs];
+		sw32_surf_max = &sw32_surfaces[r_cnumsurfs];
 		// surface 0 doesn't really exist; it's just a dummy because index 0
 		// is used to indicate no edge attached to surface
-		surfaces--;
+		sw32_surfaces--;
 	}
 
-	R_BeginEdgeFrame ();
+	sw32_R_BeginEdgeFrame ();
 
 	if (r_dspeeds->int_val) {
 		rw_time1 = Sys_DoubleTime ();
 	}
 
-	R_RenderWorld ();
+	sw32_R_RenderWorld ();
 
-	if (r_drawculledpolys)
-		R_ScanEdges ();
+	if (sw32_r_drawculledpolys)
+		sw32_R_ScanEdges ();
 
 	// only the world can be drawn back to front with no z reads or compares,
 	// just z writes, so have the driver turn z compares on now
-	D_TurnZOn ();
+	sw32_D_TurnZOn ();
 
 	if (r_dspeeds->int_val) {
 		rw_time2 = Sys_DoubleTime ();
@@ -709,8 +711,8 @@ R_EdgeDrawing (void)
 		VID_LockBuffer ();
 	}
 
-	if (!(r_drawpolys | r_drawculledpolys))
-		R_ScanEdges ();
+	if (!(sw32_r_drawpolys | sw32_r_drawculledpolys))
+		sw32_R_ScanEdges ();
 }
 
 // LordHavoc: took out of stack and made 4x size for 32bit capacity
@@ -727,12 +729,12 @@ R_RenderView_ (void)
 	if (r_norefresh->int_val)
 		return;
 
-	r_warpbuffer = warpbuffer;
+	sw32_r_warpbuffer = warpbuffer;
 
 	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val)
 		r_time1 = Sys_DoubleTime ();
 
-	R_SetupFrame ();
+	sw32_R_SetupFrame ();
 
 #ifdef PASSAGES
 	SetVisibilityByPassages ();
@@ -777,13 +779,13 @@ R_RenderView_ (void)
 		dp_time1 = Sys_DoubleTime ();
 	}
 
-	R_DrawParticles ();
+	sw32_R_DrawParticles ();
 
 	if (r_dspeeds->int_val)
 		dp_time2 = Sys_DoubleTime ();
 
-	if (r_dowarp)
-		D_WarpScreen ();
+	if (sw32_r_dowarp)
+		sw32_D_WarpScreen ();
 
 	if (r_timegraph->int_val)
 		R_TimeGraph ();
@@ -792,23 +794,23 @@ R_RenderView_ (void)
 		R_ZGraph ();
 
 	if (r_aliasstats->int_val)
-		R_PrintAliasStats ();
+		sw32_R_PrintAliasStats ();
 
 	if (r_speeds->int_val)
-		R_PrintTimes ();
+		sw32_R_PrintTimes ();
 
 	if (r_dspeeds->int_val)
 		R_PrintDSpeeds ();
 
-	if (r_reportsurfout->int_val && r_outofsurfaces)
-		Sys_Printf ("Short %d surfaces\n", r_outofsurfaces);
+	if (r_reportsurfout->int_val && sw32_r_outofsurfaces)
+		Sys_Printf ("Short %d surfaces\n", sw32_r_outofsurfaces);
 
-	if (r_reportedgeout->int_val && r_outofedges)
-		Sys_Printf ("Short roughly %d edges\n", r_outofedges * 2 / 3);
+	if (r_reportedgeout->int_val && sw32_r_outofedges)
+		Sys_Printf ("Short roughly %d edges\n", sw32_r_outofedges * 2 / 3);
 }
 
 void
-R_RenderView (void)
+sw32_R_RenderView (void)
 {
 	int         dummy;
 	int         delta;
@@ -823,33 +825,28 @@ R_RenderView (void)
 	if ((intptr_t) (&dummy) & 3)
 		Sys_Error ("Stack is missaligned");
 
-	if ((intptr_t) (&r_warpbuffer) & 3)
+	if ((intptr_t) (&sw32_r_warpbuffer) & 3)
 		Sys_Error ("Globals are missaligned");
 
 	R_RenderView_ ();
 }
 
 void
-R_InitTurb (void)
+sw32_R_InitTurb (void)
 {
 	int         i;
 
 	for (i = 0; i < MAXWIDTH; i++) {
-		sintable[i] = AMP + sin (i * 3.14159 * 2 / CYCLE) * AMP;
-		intsintable[i] = AMP2 + sin (i * 3.14159 * 2 / CYCLE) * AMP2;
+		sw32_sintable[i] = AMP + sin (i * 3.14159 * 2 / CYCLE) * AMP;
+		sw32_intsintable[i] = AMP2 + sin (i * 3.14159 * 2 / CYCLE) * AMP2;
 		// AMP2 not 20
 	}
 }
 
 void
-gl_overbright_f (cvar_t *un)
-{
-}
-
-void
-R_ClearState (void)
+sw32_R_ClearState (void)
 {
 	R_ClearEfrags ();
 	R_ClearDlights ();
-	R_ClearParticles ();
+	sw32_R_ClearParticles ();
 }

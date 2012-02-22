@@ -29,8 +29,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/sys.h"
 
@@ -114,7 +116,7 @@ static adivtab_t adivtab[32 * 32] = {
 
 
 void
-D_PolysetSetEdgeTable (void)
+sw32_D_PolysetSetEdgeTable (void)
 {
 	int         edgetableindex;
 
@@ -169,9 +171,9 @@ D_DrawNonSubdiv (void)
 	int         i;
 	int         lnumtriangles;
 
-	pfv = r_affinetridesc.pfinalverts;
-	ptri = r_affinetridesc.ptriangles;
-	lnumtriangles = r_affinetridesc.numtriangles;
+	pfv = sw32_r_affinetridesc.pfinalverts;
+	ptri = sw32_r_affinetridesc.ptriangles;
+	lnumtriangles = sw32_r_affinetridesc.numtriangles;
 
 	for (i = 0; i < lnumtriangles; i++, ptri++) {
 		index0 = pfv + ptri->vertindex[0];
@@ -208,20 +210,20 @@ D_DrawNonSubdiv (void)
 
 		if (!ptri->facesfront) {
 			if (index0->flags & ALIAS_ONSEAM)
-				r_p0[2] += r_affinetridesc.seamfixupX16;
+				r_p0[2] += sw32_r_affinetridesc.seamfixupX16;
 			if (index1->flags & ALIAS_ONSEAM)
-				r_p1[2] += r_affinetridesc.seamfixupX16;
+				r_p1[2] += sw32_r_affinetridesc.seamfixupX16;
 			if (index2->flags & ALIAS_ONSEAM)
-				r_p2[2] += r_affinetridesc.seamfixupX16;
+				r_p2[2] += sw32_r_affinetridesc.seamfixupX16;
 		}
 
-		D_PolysetSetEdgeTable ();
-		D_RasterizeAliasPolySmooth ();
+		sw32_D_PolysetSetEdgeTable ();
+		sw32_D_RasterizeAliasPolySmooth ();
 	}
 }
 
 void
-D_PolysetDraw (void)
+sw32_D_PolysetDraw (void)
 {
 	spanpackage_t spans[DPS_MAXSPANS + 1 +
 						((CACHE_SIZE - 1) / sizeof (spanpackage_t)) + 1];
@@ -235,7 +237,7 @@ D_PolysetDraw (void)
 }
 
 void
-D_PolysetScanLeftEdge (int height)
+sw32_D_PolysetScanLeftEdge (int height)
 {
 
 	do {
@@ -265,7 +267,7 @@ D_PolysetScanLeftEdge (int height)
 			d_sfrac &= 0xFFFF;
 			d_tfrac += d_tfracextrastep;
 			if (d_tfrac & 0x10000) {
-				d_ptex += r_affinetridesc.skinwidth;
+				d_ptex += sw32_r_affinetridesc.skinwidth;
 				d_tfrac &= 0xFFFF;
 			}
 			d_light += d_lightextrastep;
@@ -281,7 +283,7 @@ D_PolysetScanLeftEdge (int height)
 			d_sfrac &= 0xFFFF;
 			d_tfrac += d_tfracbasestep;
 			if (d_tfrac & 0x10000) {
-				d_ptex += r_affinetridesc.skinwidth;
+				d_ptex += sw32_r_affinetridesc.skinwidth;
 				d_tfrac &= 0xFFFF;
 			}
 			d_light += d_lightbasestep;
@@ -321,7 +323,7 @@ D_PolysetSetUpForLineScan (fixed8_t startvertu, fixed8_t startvertv,
 }
 
 void
-D_PolysetCalcGradients (int skinwidth)
+sw32_D_PolysetCalcGradients (int skinwidth)
 {
 	float       xstepdenominv, ystepdenominv, t0, t1;
 	float       p01_minus_p21, p11_minus_p21, p00_minus_p20, p10_minus_p20;
@@ -378,12 +380,12 @@ D_PolysetDrawSpans (spanpackage_t * pspanpackage)
 {
 	int i, j, texscantable[1024], *texscan;
 	// LordHavoc: compute skin row table
-	for (i = 0, j = -r_affinetridesc.skinheight * r_affinetridesc.skinwidth;
-		 i < r_affinetridesc.skinheight*2;i++, j += r_affinetridesc.skinwidth)
+	for (i = 0, j = -sw32_r_affinetridesc.skinheight * sw32_r_affinetridesc.skinwidth;
+		 i < sw32_r_affinetridesc.skinheight*2;i++, j += sw32_r_affinetridesc.skinwidth)
 		texscantable[i] = j;
-	texscan = texscantable + r_affinetridesc.skinheight;
+	texscan = texscantable + sw32_r_affinetridesc.skinheight;
 
-	switch(r_pixbytes) {
+	switch(sw32_r_pixbytes) {
 	case 1:
 	{
 		int         lcount, count = 0;
@@ -409,7 +411,7 @@ D_PolysetDrawSpans (spanpackage_t * pspanpackage)
 
 			if (lcount)
 			{
-				lpdest = (byte *) d_viewbuffer + pspanpackage->pdest;
+				lpdest = (byte *) sw32_d_viewbuffer + pspanpackage->pdest;
 				lptex = pspanpackage->ptex;
 				lpz = pspanpackage->pz;
 				lsfrac = pspanpackage->sfrac;
@@ -429,7 +431,7 @@ D_PolysetDrawSpans (spanpackage_t * pspanpackage)
 					}
 drawloop8:
 					*lpz++ = lzi >> 16;
-					*lpdest++ = ((byte *)acolormap)
+					*lpdest++ = ((byte *)sw32_acolormap)
 						[(llight & 0xFF00) | lptex[texscan[ltfrac >> 16] +
 												   (lsfrac >> 16)]];
 					lzi += r_zistepx;
@@ -490,7 +492,7 @@ done8:			;
 
 			if (lcount)
 			{
-				lpdest = (short *) d_viewbuffer + pspanpackage->pdest;
+				lpdest = (short *) sw32_d_viewbuffer + pspanpackage->pdest;
 				lptex = pspanpackage->ptex;
 				lpz = pspanpackage->pz;
 				lsfrac = pspanpackage->sfrac;
@@ -507,7 +509,7 @@ done8:			;
 					}
 drawloop16:
 					*lpz++ = lzi >> 16;
-					*lpdest++ = ((short *)acolormap)[(llight & 0xFF00) | lptex[texscan[ltfrac >> 16] + (lsfrac >> 16)]];
+					*lpdest++ = ((short *)sw32_acolormap)[(llight & 0xFF00) | lptex[texscan[ltfrac >> 16] + (lsfrac >> 16)]];
 					lzi += r_zistepx;
 					lsfrac += r_sstepx;
 					ltfrac += r_tstepx;
@@ -566,7 +568,7 @@ done16:			;
 
 			if (lcount)
 			{
-				lpdest = (int *) d_viewbuffer + pspanpackage->pdest;
+				lpdest = (int *) sw32_d_viewbuffer + pspanpackage->pdest;
 				lptex = pspanpackage->ptex;
 				lpz = pspanpackage->pz;
 				lsfrac = pspanpackage->sfrac;
@@ -622,13 +624,13 @@ done32:			;
 
 	default:
 		Sys_Error("D_PolysetDrawSpans: unsupported r_pixbytes %i",
-				  r_pixbytes);
+				  sw32_r_pixbytes);
 	}
 }
 
 
 void
-D_RasterizeAliasPolySmooth (void)
+sw32_D_RasterizeAliasPolySmooth (void)
 {
 	int         initialleftheight, initialrightheight;
 	int        *plefttop, *prighttop, *pleftbottom, *prightbottom;
@@ -645,7 +647,7 @@ D_RasterizeAliasPolySmooth (void)
 
 	// set the s, t, and light gradients, which are consistent across the
 	// triangle, because being a triangle, things are affine
-	D_PolysetCalcGradients (r_affinetridesc.skinwidth);
+	sw32_D_PolysetCalcGradients (sw32_r_affinetridesc.skinwidth);
 
 // rasterize the polygon
 
@@ -658,20 +660,20 @@ D_RasterizeAliasPolySmooth (void)
 	ystart = plefttop[1];
 	d_aspancount = plefttop[0] - prighttop[0];
 
-	d_ptex = (byte *) r_affinetridesc.pskin + (plefttop[2] >> 16) +
-		(plefttop[3] >> 16) * r_affinetridesc.skinwidth;
+	d_ptex = (byte *) sw32_r_affinetridesc.pskin + (plefttop[2] >> 16) +
+		(plefttop[3] >> 16) * sw32_r_affinetridesc.skinwidth;
 	d_sfrac = plefttop[2] & 0xFFFF;
 	d_tfrac = plefttop[3] & 0xFFFF;
-	d_pzbasestep = d_zwidth + ubasestep;
+	d_pzbasestep = sw32_d_zwidth + ubasestep;
 	d_pzextrastep = d_pzbasestep + 1;
 	d_light = plefttop[4];
 	d_zi = plefttop[5];
 
-	d_pdestbasestep = screenwidth + ubasestep;
+	d_pdestbasestep = sw32_screenwidth + ubasestep;
 	d_pdestextrastep = d_pdestbasestep + 1;
 	// LordHavoc: d_pdest has been changed to pixel offset
-	d_pdest = ystart * screenwidth + plefttop[0];
-	d_pz = d_pzbuffer + ystart * d_zwidth + plefttop[0];
+	d_pdest = ystart * sw32_screenwidth + plefttop[0];
+	d_pz = sw32_d_pzbuffer + ystart * sw32_d_zwidth + plefttop[0];
 
 // TODO: can reuse partial expressions here
 
@@ -685,7 +687,7 @@ D_RasterizeAliasPolySmooth (void)
 
 	d_countextrastep = ubasestep + 1;
 	d_ptexbasestep = ((r_sstepy + r_sstepx * ubasestep) >> 16) +
-		((r_tstepy + r_tstepx * ubasestep) >> 16) * r_affinetridesc.skinwidth;
+		((r_tstepy + r_tstepx * ubasestep) >> 16) * sw32_r_affinetridesc.skinwidth;
 	d_sfracbasestep = (r_sstepy + r_sstepx * ubasestep) & 0xFFFF;
 	d_tfracbasestep = (r_tstepy + r_tstepx * ubasestep) & 0xFFFF;
 	d_lightbasestep = r_lstepy + working_lstepx * ubasestep;
@@ -693,13 +695,13 @@ D_RasterizeAliasPolySmooth (void)
 
 	d_ptexextrastep = ((r_sstepy + r_sstepx * d_countextrastep) >> 16) +
 		((r_tstepy + r_tstepx * d_countextrastep) >> 16) *
-		r_affinetridesc.skinwidth;
+		sw32_r_affinetridesc.skinwidth;
 	d_sfracextrastep = (r_sstepy + r_sstepx * d_countextrastep) & 0xFFFF;
 	d_tfracextrastep = (r_tstepy + r_tstepx * d_countextrastep) & 0xFFFF;
 	d_lightextrastep = d_lightbasestep + working_lstepx;
 	d_ziextrastep = d_zibasestep + r_zistepx;
 
-	D_PolysetScanLeftEdge (initialleftheight);
+	sw32_D_PolysetScanLeftEdge (initialleftheight);
 
 	// scan out the bottom part of the left edge, if it exists
 	if (pedgetable->numleftedges == 2) {
@@ -717,21 +719,21 @@ D_RasterizeAliasPolySmooth (void)
 
 		ystart = plefttop[1];
 		d_aspancount = plefttop[0] - prighttop[0];
-		d_ptex = (byte *) r_affinetridesc.pskin + (plefttop[2] >> 16) +
-			(plefttop[3] >> 16) * r_affinetridesc.skinwidth;
+		d_ptex = (byte *) sw32_r_affinetridesc.pskin + (plefttop[2] >> 16) +
+			(plefttop[3] >> 16) * sw32_r_affinetridesc.skinwidth;
 		d_sfrac = 0;
 		d_tfrac = 0;
 		d_light = plefttop[4];
 		d_zi = plefttop[5];
 
-		d_pdestbasestep = screenwidth + ubasestep;
+		d_pdestbasestep = sw32_screenwidth + ubasestep;
 		d_pdestextrastep = d_pdestbasestep + 1;
 		// LordHavoc: d_pdest and relatives have been changed to pixel
 		// offsets into framebuffer
-		d_pdest = ystart * screenwidth + plefttop[0];
-		d_pzbasestep = d_zwidth + ubasestep;
+		d_pdest = ystart * sw32_screenwidth + plefttop[0];
+		d_pzbasestep = sw32_d_zwidth + ubasestep;
 		d_pzextrastep = d_pzbasestep + 1;
-		d_pz = d_pzbuffer + ystart * d_zwidth + plefttop[0];
+		d_pz = sw32_d_pzbuffer + ystart * sw32_d_zwidth + plefttop[0];
 
 		if (ubasestep < 0)
 			working_lstepx = r_lstepx - 1;
@@ -741,7 +743,7 @@ D_RasterizeAliasPolySmooth (void)
 		d_countextrastep = ubasestep + 1;
 		d_ptexbasestep = ((r_sstepy + r_sstepx * ubasestep) >> 16) +
 			((r_tstepy + r_tstepx * ubasestep) >> 16) *
-			r_affinetridesc.skinwidth;
+			sw32_r_affinetridesc.skinwidth;
 		d_sfracbasestep = (r_sstepy + r_sstepx * ubasestep) & 0xFFFF;
 		d_tfracbasestep = (r_tstepy + r_tstepx * ubasestep) & 0xFFFF;
 		d_lightbasestep = r_lstepy + working_lstepx * ubasestep;
@@ -749,13 +751,13 @@ D_RasterizeAliasPolySmooth (void)
 
 		d_ptexextrastep = ((r_sstepy + r_sstepx * d_countextrastep) >> 16) +
 			((r_tstepy + r_tstepx * d_countextrastep) >> 16) *
-			r_affinetridesc.skinwidth;
+			sw32_r_affinetridesc.skinwidth;
 		d_sfracextrastep = (r_sstepy + r_sstepx * d_countextrastep) & 0xFFFF;
 		d_tfracextrastep = (r_tstepy + r_tstepx * d_countextrastep) & 0xFFFF;
 		d_lightextrastep = d_lightbasestep + working_lstepx;
 		d_ziextrastep = d_zibasestep + r_zistepx;
 
-		D_PolysetScanLeftEdge (height);
+		sw32_D_PolysetScanLeftEdge (height);
 	}
 	// scan out the top (and possibly only) part of the right edge, updating
 	// the count field

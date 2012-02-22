@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
+
+#define NH_DEFINE
+#include "namehack.h"
 
 #include "QF/cvar.h"
 #include "QF/render.h"
@@ -41,34 +43,34 @@ static __attribute__ ((used)) const char rcsid[] =
 
 static int  miplevel;
 
-float       scale_for_mip;
+float       sw32_scale_for_mip;
 
 static vec3_t transformed_modelorg;
 
 
 void
-D_DrawPoly (void)
+sw32_D_DrawPoly (void)
 {
 // this driver takes spans, not polygons
 }
 
 
 int
-D_MipLevelForScale (float scale)
+sw32_D_MipLevelForScale (float scale)
 {
 	int         lmiplevel;
 
-	if (scale >= d_scalemip[0])
+	if (scale >= sw32_d_scalemip[0])
 		lmiplevel = 0;
-	else if (scale >= d_scalemip[1])
+	else if (scale >= sw32_d_scalemip[1])
 		lmiplevel = 1;
-	else if (scale >= d_scalemip[2])
+	else if (scale >= sw32_d_scalemip[2])
 		lmiplevel = 2;
 	else
 		lmiplevel = 3;
 
-	if (lmiplevel < d_minmip)
-		lmiplevel = d_minmip;
+	if (lmiplevel < sw32_d_minmip)
+		lmiplevel = sw32_d_minmip;
 
 	return lmiplevel;
 }
@@ -80,7 +82,7 @@ D_DrawSolidSurface (surf_t *surf, int color)
 {
 	espan_t *span;
 
-	switch(r_pixbytes) {
+	switch(sw32_r_pixbytes) {
 	case 1:
 	{
 		byte *pdest, pix;
@@ -89,7 +91,7 @@ D_DrawSolidSurface (surf_t *surf, int color)
 		pix = color;
 		for (span = surf->spans; span; span = span->pnext)
 		{
-			pdest = (byte *) d_viewbuffer + screenwidth * span->v;
+			pdest = (byte *) sw32_d_viewbuffer + sw32_screenwidth * span->v;
 			u = span->u;
 			u2 = span->u + span->count - 1;
 			for (;u <= u2; u++)
@@ -102,10 +104,10 @@ D_DrawSolidSurface (surf_t *surf, int color)
 		short *pdest, pix;
 		int u, u2;
 
-		pix = d_8to16table[color];
+		pix = sw32_8to16table[color];
 		for (span = surf->spans; span; span = span->pnext)
 		{
-			pdest = (short *) d_viewbuffer + screenwidth * span->v;
+			pdest = (short *) sw32_d_viewbuffer + sw32_screenwidth * span->v;
 			u = span->u;
 			u2 = span->u + span->count - 1;
 			for (;u <= u2; u++)
@@ -121,7 +123,7 @@ D_DrawSolidSurface (surf_t *surf, int color)
 		pix = d_8to24table[color];
 		for (span = surf->spans; span; span = span->pnext)
 		{
-			pdest = (int *) d_viewbuffer + screenwidth * span->v;
+			pdest = (int *) sw32_d_viewbuffer + sw32_screenwidth * span->v;
 			u = span->u;
 			u2 = span->u + span->count - 1;
 			for (;u <= u2; u++)
@@ -131,7 +133,7 @@ D_DrawSolidSurface (surf_t *surf, int color)
 	break;
 	default:
 		Sys_Error("D_DrawSolidSurface: unsupported r_pixbytes %i",
-				  r_pixbytes);
+				  sw32_r_pixbytes);
 	}
 }
 
@@ -144,40 +146,42 @@ D_CalcGradients (msurface_t *pface)
 
 	mipscale = 1.0 / (float) (1 << miplevel);
 
-	TransformVector (pface->texinfo->vecs[0], p_saxis);
-	TransformVector (pface->texinfo->vecs[1], p_taxis);
+	sw32_TransformVector (pface->texinfo->vecs[0], p_saxis);
+	sw32_TransformVector (pface->texinfo->vecs[1], p_taxis);
 
-	t = xscaleinv * mipscale;
-	d_sdivzstepu = p_saxis[0] * t;
-	d_tdivzstepu = p_taxis[0] * t;
+	t = sw32_xscaleinv * mipscale;
+	sw32_d_sdivzstepu = p_saxis[0] * t;
+	sw32_d_tdivzstepu = p_taxis[0] * t;
 
-	t = yscaleinv * mipscale;
-	d_sdivzstepv = -p_saxis[1] * t;
-	d_tdivzstepv = -p_taxis[1] * t;
+	t = sw32_yscaleinv * mipscale;
+	sw32_d_sdivzstepv = -p_saxis[1] * t;
+	sw32_d_tdivzstepv = -p_taxis[1] * t;
 
-	d_sdivzorigin = p_saxis[2] * mipscale - xcenter * d_sdivzstepu -
-		ycenter * d_sdivzstepv;
-	d_tdivzorigin = p_taxis[2] * mipscale - xcenter * d_tdivzstepu -
-		ycenter * d_tdivzstepv;
+	sw32_d_sdivzorigin = p_saxis[2] * mipscale -
+		sw32_xcenter * sw32_d_sdivzstepu -
+		sw32_ycenter * sw32_d_sdivzstepv;
+	sw32_d_tdivzorigin = p_taxis[2] * mipscale -
+		sw32_xcenter * sw32_d_tdivzstepu -
+		sw32_ycenter * sw32_d_tdivzstepv;
 
 	VectorScale (transformed_modelorg, mipscale, p_temp1);
 
 	t = 0x10000 * mipscale;
-	sadjust = ((fixed16_t) (DotProduct (p_temp1, p_saxis) * 0x10000 + 0.5)) -
+	sw32_sadjust = ((fixed16_t) (DotProduct (p_temp1, p_saxis) * 0x10000 + 0.5)) -
 		((pface->texturemins[0] << 16) >> miplevel)
 		 + pface->texinfo->vecs[0][3] * t;
-	tadjust = ((fixed16_t) (DotProduct (p_temp1, p_taxis) * 0x10000 + 0.5)) -
+	sw32_tadjust = ((fixed16_t) (DotProduct (p_temp1, p_taxis) * 0x10000 + 0.5)) -
 		((pface->texturemins[1] << 16) >> miplevel)
 		 + pface->texinfo->vecs[1][3] * t;
 
 	// -1 (-epsilon) so we never wander off the edge of the texture
-	bbextents = ((pface->extents[0] << 16) >> miplevel) - 1;
-	bbextentt = ((pface->extents[1] << 16) >> miplevel) - 1;
+	sw32_bbextents = ((pface->extents[0] << 16) >> miplevel) - 1;
+	sw32_bbextentt = ((pface->extents[1] << 16) >> miplevel) - 1;
 }
 
 
 void
-D_DrawSurfaces (void)
+sw32_D_DrawSurfaces (void)
 {
 	surf_t     *s;
 	msurface_t *pface;
@@ -186,12 +190,12 @@ D_DrawSurfaces (void)
 	vec3_t      local_modelorg;
 
 	currententity = &r_worldentity;
-	TransformVector (modelorg, transformed_modelorg);
+	sw32_TransformVector (modelorg, transformed_modelorg);
 	VectorCopy (transformed_modelorg, world_transformed_modelorg);
 
 	// TODO: could preset a lot of this at mode set time
 	if (r_drawflat->int_val) {
-		for (s = &surfaces[1]; s < surface_p; s++) {
+		for (s = &sw32_surfaces[1]; s < sw32_surface_p; s++) {
 			if (!s->spans)
 				continue;
 
@@ -200,26 +204,26 @@ D_DrawSurfaces (void)
 			d_ziorigin = s->d_ziorigin;
 
 			D_DrawSolidSurface (s, ((intptr_t) s->data & 0xFF));
-			D_DrawZSpans (s->spans);
+			sw32_D_DrawZSpans (s->spans);
 		}
 	} else {
-		for (s = &surfaces[1]; s < surface_p; s++) {
+		for (s = &sw32_surfaces[1]; s < sw32_surface_p; s++) {
 			if (!s->spans)
 				continue;
 
-			r_drawnpolycount++;
+			sw32_r_drawnpolycount++;
 
 			d_zistepu = s->d_zistepu;
 			d_zistepv = s->d_zistepv;
 			d_ziorigin = s->d_ziorigin;
 
 			if (s->flags & SURF_DRAWSKY) {
-				if (!r_skymade) {
-					R_MakeSky ();
+				if (!sw32_r_skymade) {
+					sw32_R_MakeSky ();
 				}
 
-				D_DrawSkyScans (s->spans);
-				D_DrawZSpans (s->spans);
+				sw32_D_DrawSkyScans (s->spans);
+				sw32_D_DrawZSpans (s->spans);
 			} else if (s->flags & SURF_DRAWBACKGROUND) {
 				// set up a gradient for the background surface that places
 				// it effectively at infinity distance from the viewpoint
@@ -228,31 +232,31 @@ D_DrawSurfaces (void)
 				d_ziorigin = -0.9;
 
 				D_DrawSolidSurface (s, r_clearcolor->int_val & 0xFF);
-				D_DrawZSpans (s->spans);
+				sw32_D_DrawZSpans (s->spans);
 			} else if (s->flags & SURF_DRAWTURB) {
 				pface = s->data;
 				miplevel = 0;
-				cacheblock = ((byte *) pface->texinfo->texture +
+				sw32_cacheblock = ((byte *) pface->texinfo->texture +
 							  pface->texinfo->texture->offsets[0]);
-				cachewidth = 64;
+				sw32_cachewidth = 64;
 
 				if (s->insubmodel) {
 					// FIXME: we don't want to do all this for every polygon!
 					// TODO: store once at start of frame
 					currententity = s->entity;	// FIXME: make this passed in 
-												// to R_RotateBmodel ()
+												// to sw32_R_RotateBmodel ()
 					VectorSubtract (r_origin, currententity->origin,
 									local_modelorg);
-					TransformVector (local_modelorg, transformed_modelorg);
+					sw32_TransformVector (local_modelorg, transformed_modelorg);
 
-					R_RotateBmodel ();	// FIXME: don't mess with the
+					sw32_R_RotateBmodel ();	// FIXME: don't mess with the
 										// frustum, make entity passed in
 				}
 
 				D_CalcGradients (pface);
 
-				Turbulent (s->spans);
-				D_DrawZSpans (s->spans);
+				sw32_Turbulent (s->spans);
+				sw32_D_DrawZSpans (s->spans);
 
 				if (s->insubmodel) {
 					// restore the old drawing state
@@ -266,37 +270,37 @@ D_DrawSurfaces (void)
 					VectorCopy (base_vup, vup);
 					VectorCopy (base_vright, vright);
 					VectorCopy (base_modelorg, modelorg);
-					R_TransformFrustum ();
+					sw32_R_TransformFrustum ();
 				}
 			} else {
 				if (s->insubmodel) {
 					// FIXME: we don't want to do all this for every polygon!
 					// TODO: store once at start of frame
 					currententity = s->entity;	// FIXME: make this passed in 
-												// to R_RotateBmodel ()
+												// to sw32_R_RotateBmodel ()
 					VectorSubtract (r_origin, currententity->origin,
 									local_modelorg);
-					TransformVector (local_modelorg, transformed_modelorg);
+					sw32_TransformVector (local_modelorg, transformed_modelorg);
 
-					R_RotateBmodel ();	// FIXME: don't mess with the
+					sw32_R_RotateBmodel ();	// FIXME: don't mess with the
 										// frustum, make entity passed in
 				}
 
 				pface = s->data;
-				miplevel = D_MipLevelForScale (s->nearzi * scale_for_mip
+				miplevel = sw32_D_MipLevelForScale (s->nearzi * sw32_scale_for_mip
 											   * pface->texinfo->mipadjust);
 
 				// FIXME: make this passed in to D_CacheSurface
-				pcurrentcache = D_CacheSurface (pface, miplevel);
+				pcurrentcache = sw32_D_CacheSurface (pface, miplevel);
 
-				cacheblock = (byte *) pcurrentcache->data;
-				cachewidth = pcurrentcache->width;
+				sw32_cacheblock = (byte *) pcurrentcache->data;
+				sw32_cachewidth = pcurrentcache->width;
 
 				D_CalcGradients (pface);
 
-				D_DrawSpans (s->spans);
+				sw32_D_DrawSpans (s->spans);
 
-				D_DrawZSpans (s->spans);
+				sw32_D_DrawZSpans (s->spans);
 
 				if (s->insubmodel) {
 					// restore the old drawing state
@@ -309,7 +313,7 @@ D_DrawSurfaces (void)
 					VectorCopy (base_vup, vup);
 					VectorCopy (base_vright, vright);
 					VectorCopy (base_modelorg, modelorg);
-					R_TransformFrustum ();
+					sw32_R_TransformFrustum ();
 					currententity = &r_worldentity;
 				}
 			}
