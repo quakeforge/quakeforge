@@ -103,7 +103,6 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_R_RenderView,
 	R_DecayLights,
 	0,
-	0,
 	&model_funcs
 };
 

@@ -150,7 +150,6 @@ typedef struct vid_render_funcs_s {
 	entity_t *(*R_AllocEntity) (void);
 	void (*R_RenderView) (void);
 	void (*R_DecayLights) (double frametime);
-	void (*D_FlushCaches) (void);
 
 	vid_particle_funcs_t *particles;
 	vid_model_funcs_t *model_funcs;

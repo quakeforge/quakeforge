@@ -53,6 +53,7 @@ cvar_t     *chase_active;
 int         fps_count;
 int         viewentity;
 
+viddef_t viddef;
 vid_render_data_t *r_data;
 vid_render_funcs_t *r_funcs;
 

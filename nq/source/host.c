@@ -501,7 +501,8 @@ void
 Host_ClearMemory (void)
 {
 	Sys_MaskPrintf (SYS_DEV, "Clearing memory\n");
-	r_funcs->D_FlushCaches ();
+	if (viddef.flush_caches)
+		viddef.flush_caches ();
 	Mod_ClearAll ();
 	if (host_hunklevel)
 		Hunk_FreeToLowMark (host_hunklevel);

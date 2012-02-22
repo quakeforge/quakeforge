@@ -102,7 +102,6 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	R_AllocEntity,
 	sw32_R_RenderView,
 	R_DecayLights,
-	sw32_D_FlushCaches,
 	0,
 	&model_funcs
 };
