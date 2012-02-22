@@ -554,7 +554,7 @@ R_DrawAliasModel (entity_t *e)
 		
 		if (gl_vector_light->int_val) {
 			qfglDisable (GL_LIGHTING);
-			if (!tess)
+			if (!gl_tess)
 				qfglDisable (GL_NORMALIZE);
 		}
 		
@@ -564,7 +564,7 @@ R_DrawAliasModel (entity_t *e)
 			GL_DrawAliasFrame (vo);
 		
 		if (gl_vector_light->int_val) {
-			if (!tess)
+			if (!gl_tess)
 				qfglEnable (GL_NORMALIZE);
 			qfglEnable (GL_LIGHTING);
 		}
@@ -600,7 +600,7 @@ R_DrawAliasModel (entity_t *e)
 
 				if (gl_vector_light->int_val) {
 					qfglDisable (GL_LIGHTING);
-					if (!tess)
+					if (!gl_tess)
 						qfglDisable (GL_NORMALIZE);
 				}
 
@@ -611,7 +611,7 @@ R_DrawAliasModel (entity_t *e)
 				
 				if (gl_vector_light->int_val) {
 					qfglEnable (GL_LIGHTING);
-					if (!tess)
+					if (!gl_tess)
 						qfglEnable (GL_NORMALIZE);
 				}
 			} else {
@@ -620,7 +620,7 @@ R_DrawAliasModel (entity_t *e)
 
 				if (gl_vector_light->int_val) {
 					qfglDisable (GL_LIGHTING);
-					if (!tess)
+					if (!gl_tess)
 						qfglDisable (GL_NORMALIZE);
 				}
 				
@@ -631,7 +631,7 @@ R_DrawAliasModel (entity_t *e)
 				
 				if (gl_vector_light->int_val) {
 					qfglEnable (GL_LIGHTING);
-					if (!tess)
+					if (!gl_tess)
 						qfglEnable (GL_NORMALIZE);
 				}
 			}
@@ -645,7 +645,7 @@ R_DrawAliasModel (entity_t *e)
 		qfglPushMatrix ();
 		R_RotateForEntity (e);
 
-		if (!tess)
+		if (!gl_tess)
 			qfglDisable (GL_NORMALIZE);
 		qfglDisable (GL_LIGHTING);
 		qfglDisable (GL_TEXTURE_2D);
@@ -664,7 +664,7 @@ R_DrawAliasModel (entity_t *e)
 		qfglDepthMask (GL_TRUE);
 		qfglEnable (GL_TEXTURE_2D);
 		qfglEnable (GL_LIGHTING);
-		if (!tess)
+		if (!gl_tess)
 			qfglEnable (GL_NORMALIZE);
 		qfglPopMatrix ();
 	} else if (gl_modelalpha < 1.0) {

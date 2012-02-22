@@ -547,7 +547,7 @@ gl_overbright_f (cvar_t *var)
 			lm_src_blend = GL_ZERO;
 			lm_dest_blend = GL_SRC_COLOR;
 			lmshift = 7;
-			rgb_scale = 1.0;
+			gl_rgb_scale = 1.0;
 		} else {
 			lm_src_blend = GL_DST_COLOR;
 			lm_dest_blend = GL_SRC_COLOR;
@@ -555,15 +555,15 @@ gl_overbright_f (cvar_t *var)
 			switch (var->int_val) {
 			case 2:
 				lmshift = 9;
-				rgb_scale = 4.0;
+				gl_rgb_scale = 4.0;
 				break;
 			case 1:
 				lmshift = 8;
-				rgb_scale = 2.0;
+				gl_rgb_scale = 2.0;
 				break;
 			default:
 				lmshift = 7;
-				rgb_scale = 1.0;
+				gl_rgb_scale = 1.0;
 				break;
 			}
 		}
@@ -571,7 +571,7 @@ gl_overbright_f (cvar_t *var)
 		lm_src_blend = GL_ZERO;
 		lm_dest_blend = GL_SRC_COLOR;
 		lmshift = 7;
-		rgb_scale = 1.0;
+		gl_rgb_scale = 1.0;
 	}
 
 	if (gl_multitexture)
@@ -696,8 +696,8 @@ GL_BuildLightmaps (model_t **models, int num_models)
 	r_framecount = 1;					// no dlightcache
 
 	if (!gl_lightmap_textures) {
-		gl_lightmap_textures = texture_extension_number;
-		texture_extension_number += MAX_LIGHTMAPS;
+		gl_lightmap_textures = gl_texture_number;
+		gl_texture_number += MAX_LIGHTMAPS;
 	}
 
 	switch (r_lightmap_components->int_val) {
@@ -709,7 +709,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		break;
 	case 3:
 		gl_internalformat = 3;
-		if (use_bgra)
+		if (gl_use_bgra)
 			gl_lightmap_format = GL_BGR;
 		else
 			gl_lightmap_format = GL_RGB;
@@ -719,7 +719,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 	case 4:
 	default:
 		gl_internalformat = 3;
-		if (use_bgra)
+		if (gl_use_bgra)
 			gl_lightmap_format = GL_BGRA;
 		else
 			gl_lightmap_format = GL_RGBA;

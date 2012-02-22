@@ -204,14 +204,14 @@ R_DrawEntitiesOnList (void)
 	}
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-	if (tess)
+	if (gl_tess)
 		qfglEnable (GL_PN_TRIANGLES_ATI);
 	qfglEnable (GL_CULL_FACE);
 	
 	if (gl_vector_light->int_val) {
 		qfglEnable (GL_LIGHTING);
 		qfglEnable (GL_NORMALIZE);
-	} else if (tess) {
+	} else if (gl_tess) {
 		qfglEnable (GL_NORMALIZE);
 	}
 	
@@ -228,7 +228,7 @@ R_DrawEntitiesOnList (void)
 	qfglDisable (GL_LIGHTING);
 
 	qfglDisable (GL_CULL_FACE);
-	if (tess)
+	if (gl_tess)
 		qfglDisable (GL_PN_TRIANGLES_ATI);
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
@@ -239,7 +239,7 @@ R_DrawEntitiesOnList (void)
 		if (gl_combine_capable && gl_overbright->int_val) {
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE, rgb_scale);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE, gl_rgb_scale);
 		} else {
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		}
@@ -279,7 +279,7 @@ R_DrawViewModel (void)
 	if (gl_vector_light->int_val) {
 		qfglEnable (GL_LIGHTING);
 		qfglEnable (GL_NORMALIZE);
-	} else if (tess) {
+	} else if (gl_tess) {
 		qfglEnable (GL_NORMALIZE);
 	}
 
@@ -303,7 +303,7 @@ R_DrawViewModel (void)
 		if (gl_combine_capable && gl_overbright->int_val) {
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
-			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE, rgb_scale);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE, gl_rgb_scale);
 		} else {
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		}

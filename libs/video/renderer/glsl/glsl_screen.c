@@ -61,11 +61,11 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "r_internal.h"
 
 /* Unknown renamed to GLErr_Unknown to solve conflict with winioctl.h */
-unsigned int	GLErr_InvalidEnum;
-unsigned int	GLErr_InvalidValue;
-unsigned int	GLErr_InvalidOperation;
-unsigned int	GLErr_OutOfMemory;
-unsigned int	GLErr_Unknown;
+static unsigned int GLErr_InvalidEnum;
+static unsigned int GLErr_InvalidValue;
+static unsigned int GLErr_InvalidOperation;
+static unsigned int GLErr_OutOfMemory;
+static unsigned int GLErr_Unknown;
 
 extern void (*R_DrawSpriteModel) (struct entity_s *ent);
 

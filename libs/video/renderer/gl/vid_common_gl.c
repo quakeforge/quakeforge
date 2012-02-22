@@ -78,11 +78,11 @@ int					gl_minor;
 int					gl_release_number;
 
 static int			gl_bgra_capable;
-int					use_bgra;
+int					gl_use_bgra;
 int					gl_va_capable;
 static  int					driver_vaelements;
 int					vaelements;
-int         		texture_extension_number = 1;
+int         		gl_texture_number = 1;
 int					gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
 int					gl_filter_max = GL_LINEAR;
 float       		gldepthmin, gldepthmax;
@@ -97,7 +97,7 @@ qboolean			gl_mtex_fullbright = false;
 // Combine
 qboolean			gl_combine_capable = false;
 int					lm_src_blend, lm_dest_blend;
-float				rgb_scale = 1.0;
+float				gl_rgb_scale = 1.0;
 
 QF_glColorTableEXT	qglColorTableEXT = NULL;
 
@@ -111,7 +111,7 @@ float				gl_aniso;
 // GL_ATI_pn_triangles
 static qboolean		TruForm;
 static int			tess_max;
-int			tess;
+int			gl_tess;
 
 // GL_LIGHT
 int					gl_max_lights;
@@ -127,8 +127,7 @@ cvar_t		*gl_textures_bgra;
 cvar_t      *gl_vaelements_max;
 cvar_t      *gl_vector_light;
 cvar_t      *gl_screenshot_byte_swap;
-cvar_t      *vid_mode;
-cvar_t      *vid_use8bit;
+static cvar_t *vid_use8bit;
 
 void gl_multitexture_f (cvar_t *var);
 
@@ -157,9 +156,9 @@ gl_textures_bgra_f (cvar_t *var)
 		return;
 
 	if (var->int_val && gl_bgra_capable) {
-		use_bgra = 1;
+		gl_use_bgra = 1;
 	} else {
-		use_bgra = 0;
+		gl_use_bgra = 0;
 	}
 }
 
@@ -212,7 +211,7 @@ gl_multitexture_f (cvar_t *var)
 			if (gl_combine_capable && gl_overbright->int_val) {
 				qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
 				qfglTexEnvf (GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
-				qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE, rgb_scale);
+				qfglTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE, gl_rgb_scale);
 			} else {
 				qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 			}
@@ -260,12 +259,12 @@ gl_tessellate_f (cvar_t * var)
 {
 	if (TruForm) {
 		if (var)
-			tess = (bound (0, var->int_val, tess_max));
+			gl_tess = (bound (0, var->int_val, tess_max));
 		else
-			tess = 0;
-		qfglPNTrianglesiATI (GL_PN_TRIANGLES_TESSELATION_LEVEL_ATI, tess);
+			gl_tess = 0;
+		qfglPNTrianglesiATI (GL_PN_TRIANGLES_TESSELATION_LEVEL_ATI, gl_tess);
 	} else {
-		tess = 0;
+		gl_tess = 0;
 		if (var)
 			Sys_MaskPrintf (SYS_VID,
 							"TruForm (GL_ATI_pn_triangles) is not supported "
@@ -473,7 +472,7 @@ CheckTruFormExtensions (void)
 							 GL_PN_TRIANGLES_POINT_MODE_CUBIC_ATI);
 	} else {
 		TruForm = false;
-		tess = 0;
+		gl_tess = 0;
 		tess_max = 0;
 	}
 }

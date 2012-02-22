@@ -428,7 +428,7 @@ R_InitSky (texture_t *mt)
 	((byte *) & transpix)[3] = 0;
 
 	if (!gl_solidskytexture)
-		gl_solidskytexture = texture_extension_number++;
+		gl_solidskytexture = gl_texture_number++;
 	qfglBindTexture (GL_TEXTURE_2D, gl_solidskytexture);
 	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, 128, 128, 0, GL_RGBA,
 					GL_UNSIGNED_BYTE, trans);
@@ -448,7 +448,7 @@ R_InitSky (texture_t *mt)
 		}
 
 	if (!gl_alphaskytexture)
-		gl_alphaskytexture = texture_extension_number++;
+		gl_alphaskytexture = gl_texture_number++;
 	qfglBindTexture (GL_TEXTURE_2D, gl_alphaskytexture);
 	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 128, 128, 0, GL_RGBA,
 					GL_UNSIGNED_BYTE, trans);

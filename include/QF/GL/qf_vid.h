@@ -42,13 +42,13 @@ extern qboolean					gl_mtex_capable;
 extern qboolean					gl_mtex_fullbright;
 extern GLenum					gl_mtex_enum;
 extern qboolean					gl_combine_capable;
-extern float					rgb_scale;
-extern int						texture_extension_number;
+extern float					gl_rgb_scale;
+extern int						gl_texture_number;
 
 extern qboolean					gl_feature_mach64;
 extern float					gldepthmin, gldepthmax;
-extern int						use_bgra;
-extern int						tess;
+extern int						gl_use_bgra;
+extern int						gl_tess;
 
 extern int						gl_max_lights;
 

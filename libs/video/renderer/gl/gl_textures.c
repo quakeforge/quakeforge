@@ -587,8 +587,8 @@ GL_LoadTexture (const char *identifier, int width, int height, const byte *data,
 	strncpy (glt->identifier, identifier, sizeof (glt->identifier) - 1);
 	glt->identifier[sizeof (glt->identifier) - 1] = '\0';
 
-	glt->texnum = texture_extension_number;
-	texture_extension_number++;
+	glt->texnum = gl_texture_number;
+	gl_texture_number++;
 
 SetupTexture:
 	glt->crc = crc;

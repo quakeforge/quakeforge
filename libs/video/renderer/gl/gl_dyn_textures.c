@@ -59,7 +59,7 @@ GDT_InitParticleTexture (void)
 
 	memset (data, 0, sizeof (data));
 
-	gl_part_tex = texture_extension_number++;
+	gl_part_tex = gl_texture_number++;
 	qfglBindTexture (GL_TEXTURE_2D, gl_part_tex);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

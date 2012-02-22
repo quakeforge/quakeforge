@@ -60,10 +60,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 int					glsl_palette;
 int					glsl_colormap;
-int					gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
-int					gl_filter_max = GL_LINEAR;
-float       		gldepthmin, gldepthmax;
-qboolean			is8bit = false;
 
 static void
 GLSL_Common_Init_Cvars (void)

@@ -151,9 +151,9 @@ R_Init (void)
 
 	GDT_Init ();
 	
-	texture_extension_number = R_InitGraphTextures (texture_extension_number);
+	gl_texture_number = R_InitGraphTextures (gl_texture_number);
 
-	texture_extension_number = Skin_Init_Textures (texture_extension_number);
+	gl_texture_number = Skin_Init_Textures (gl_texture_number);
 
 	r_init = 1;
 	R_InitParticles ();
