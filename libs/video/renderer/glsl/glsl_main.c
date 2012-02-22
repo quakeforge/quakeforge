@@ -62,11 +62,6 @@ mat4_t glsl_projection;
 mat4_t glsl_view;
 
 void
-gl_overbright_f (cvar_t *var)
-{
-}
-
-void
 glsl_R_ViewChanged (float aspect)
 {
 	double      xmin, xmax, ymin, ymax;

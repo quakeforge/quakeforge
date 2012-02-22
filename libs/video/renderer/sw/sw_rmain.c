@@ -1137,11 +1137,6 @@ R_RenderViewFishEye (void)
 }
 
 void
-gl_overbright_f (cvar_t *un)
-{
-}
-
-void
 R_ClearState (void)
 {
 	R_ClearEfrags ();

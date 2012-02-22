@@ -55,31 +55,6 @@ cvar_t     *crosshaircolor;
 cvar_t     *d_mipcap;
 cvar_t     *d_mipscale;
 
-cvar_t     *gl_affinemodels;
-cvar_t     *gl_clear;
-cvar_t     *gl_conspin;
-cvar_t     *gl_constretch;
-cvar_t     *gl_dlight_polyblend;
-cvar_t     *gl_dlight_smooth;
-cvar_t     *gl_driver;
-cvar_t     *gl_fb_models;
-cvar_t     *gl_keeptjunctions;
-cvar_t     *gl_lerp_anim;
-cvar_t     *gl_lightmap_align;
-cvar_t     *gl_lightmap_subimage;
-cvar_t     *gl_nocolors;
-cvar_t	   *gl_overbright;
-cvar_t     *gl_particle_mip;
-cvar_t     *gl_particle_size;
-cvar_t     *gl_picmip;
-cvar_t     *gl_playermip;
-cvar_t     *gl_reporttjunctions;
-cvar_t     *gl_sky_clip;
-cvar_t     *gl_sky_debug;
-cvar_t     *gl_sky_multipass;
-cvar_t     *gl_texsort;
-cvar_t     *gl_triplebuffer;
-
 cvar_t     *r_aliasstats;
 cvar_t     *r_aliastransadj;
 cvar_t     *r_aliastransbase;
@@ -247,71 +222,6 @@ R_Init_Cvars (void)
 						 "Detail level. 0 is highest, 3 is lowest.");
 	d_mipscale = Cvar_Get ("d_mipscale", "1", CVAR_NONE, NULL, "Detail level "
 						   "of objects. 0 is highest, 3 is lowest.");
-	gl_affinemodels = Cvar_Get ("gl_affinemodels", "0", CVAR_ARCHIVE, NULL,
-								"Makes texture rendering quality better if "
-								"set to 1");
-	gl_clear = Cvar_Get ("gl_clear", "0", CVAR_NONE, NULL, "Set to 1 to make "
-						 "background black. Useful for removing HOM effect");
-	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE, NULL,
-						   "speed at which the console spins");
-	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, NULL,
-							  "toggle console between slide and stretch");
-	gl_dlight_polyblend = Cvar_Get ("gl_dlight_polyblend", "0", CVAR_ARCHIVE,
-									NULL, "Set to 1 to use a dynamic light "
-									"effect faster on GL");
-	gl_dlight_smooth = Cvar_Get ("gl_dlight_smooth", "1", CVAR_ARCHIVE, NULL,
-								 "Smooth dynamic vertex lighting");
-	gl_fb_models = Cvar_Get ("gl_fb_models", "1", CVAR_ARCHIVE, NULL,
-							 "Toggles fullbright color support for models");
-	gl_keeptjunctions = Cvar_Get ("gl_keeptjunctions", "1", CVAR_ARCHIVE, NULL,
-								  "Set to 0 to turn off colinear vertexes "
-								  "upon level load.");
-	gl_lerp_anim = Cvar_Get ("gl_lerp_anim", "1", CVAR_ARCHIVE, NULL,
-							 "Toggles model animation interpolation");
-
-	gl_driver = Cvar_Get ("gl_driver", GL_DRIVER, CVAR_ROM, NULL,
-						  "The OpenGL library to use. (path optional)");
-	gl_lightmap_align = Cvar_Get ("gl_lightmap_align", "1", CVAR_NONE, NULL,
-								  "Workaround for nvidia slow path. Set to 4 "
-								  "or 16 if you have an nvidia 3d "
-								  "accelerator, set to 1 otherwise.");
-	gl_lightmap_subimage = Cvar_Get ("gl_lightmap_subimage", "1", CVAR_NONE,
-									 NULL, "Lightmap Update method. Default 2 "
-									 "updates a minimum 'dirty rectangle' "
-									 "around the area changed. 1 updates "
-									 "every line that changed. 0 updates the "
-									 "entire lightmap.");
-	gl_nocolors = Cvar_Get ("gl_nocolors", "0", CVAR_NONE, NULL,
-							"Set to 1, turns off all player colors");
-	gl_overbright = Cvar_Get ("gl_overbright", "0", CVAR_NONE,
-							  gl_overbright_f, "Darken lightmaps so that "
-							  "dynamic lights can be overbright. 1 = 0.75 "
-							  "brightness, 2 = 0.5 brightness.");
-	gl_particle_mip = Cvar_Get ("gl_particle_mip", "0", CVAR_NONE, NULL,
-								"Toggles particle texture mipmapping.");
-	gl_particle_size = Cvar_Get ("gl_particle_size", "5", CVAR_NONE, NULL,
-								 "Vertical and horizontal size of particle "
-								 "textures as a power of 2. Default is 5 "
-								 "(32 texel square).");
-	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, NULL, "Dimensions of "
-						  "textures. 0 is normal, 1 is half, 2 is 1/4");
-	gl_playermip = Cvar_Get ("gl_playermip", "0", CVAR_NONE, NULL,
-							 "Detail of player skins. 0 best, 4 worst.");
-	gl_reporttjunctions = Cvar_Get ("gl_reporttjunctions", "0", CVAR_NONE,
-									NULL, "None");
-	gl_sky_clip = Cvar_Get ("gl_sky_clip", "2", CVAR_ARCHIVE, NULL,
-							"controls amount of sky overdraw");
-	gl_sky_debug = Cvar_Get ("gl_sky_debug", "0", CVAR_NONE, NULL,
-							 "debugging `info' for sky clipping");
-	gl_sky_divide = Cvar_Get ("gl_sky_divide", "1", CVAR_ARCHIVE, NULL,
-							  "subdivide sky polys");
-	gl_sky_multipass = Cvar_Get ("gl_sky_multipass", "1", CVAR_ARCHIVE, NULL,
-								"controls whether the skydome is single or "
-								"double pass");
-	gl_texsort = Cvar_Get ("gl_texsort", "1", CVAR_NONE, NULL, "None");
-	gl_triplebuffer = Cvar_Get ("gl_triplebuffer", "1", CVAR_ARCHIVE, NULL,
-								"Set to 1 by default. Fixes status bar "
-								"flicker on some hardware");
 	r_aliasstats = Cvar_Get ("r_polymodelstats", "0", CVAR_NONE, NULL,
 							 "Toggles the displays of number of polygon "
 							 "models current being viewed");
