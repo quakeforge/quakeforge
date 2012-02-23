@@ -74,5 +74,6 @@ R_Init (void)
 				   vidrend_plugin->string);
 	}
 	r_funcs = vidrendmodule->functions->vid_render;
+	mod_funcs = r_funcs->model_funcs;
 	r_data = vidrendmodule->data->vid_render;
 }
