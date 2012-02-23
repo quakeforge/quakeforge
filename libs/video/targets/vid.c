@@ -245,3 +245,66 @@ VID_InitGamma (unsigned char *pal)
 
 	VID_BuildGammaTable (vid_gamma->value);
 }
+
+void
+VID_InitBuffers (void)
+{
+	int         buffersize, zbuffersize, cachesize = 1;
+
+	// No console scaling in the sw renderer
+	viddef.conwidth = viddef.width;
+	viddef.conheight = viddef.height;
+	Con_CheckResize ();
+
+	// Calculate the sizes we want first
+	buffersize = viddef.rowbytes * viddef.height;
+	zbuffersize = viddef.width * viddef.height * sizeof (*viddef.zbuffer);
+	if (viddef.surf_cache_size)
+		cachesize = viddef.surf_cache_size (viddef.width, viddef.height);
+
+	// Free the old z-buffer
+	if (viddef.zbuffer) {
+		free (viddef.zbuffer);
+		viddef.zbuffer = NULL;
+	}
+	// Free the old surface cache
+	if (viddef.surfcache) {
+		if (viddef.flush_caches)
+			viddef.flush_caches ();
+		free (viddef.surfcache);
+		viddef.surfcache = NULL;
+	}
+	if (viddef.do_screen_buffer) {
+		viddef.do_screen_buffer ();
+	} else {
+		// Free the old screen buffer
+		if (viddef.buffer) {
+			free (viddef.buffer);
+			viddef.conbuffer = viddef.buffer = NULL;
+		}
+		// Allocate the new screen buffer
+		viddef.conbuffer = viddef.buffer = calloc (buffersize, 1);
+		if (!viddef.conbuffer) {
+			Sys_Error ("Not enough memory for video mode");
+		}
+	}
+	// Allocate the new z-buffer
+	viddef.zbuffer = calloc (zbuffersize, 1);
+	if (!viddef.zbuffer) {
+		free (viddef.buffer);
+		viddef.conbuffer = viddef.buffer = NULL;
+		Sys_Error ("Not enough memory for video mode");
+	}
+	// Allocate the new surface cache; free the z-buffer if we fail
+	viddef.surfcache = calloc (cachesize, 1);
+	if (!viddef.surfcache) {
+		free (viddef.buffer);
+		free (viddef.zbuffer);
+		viddef.conbuffer = viddef.buffer = NULL;
+		viddef.zbuffer = NULL;
+		Sys_Error ("Not enough memory for video mode");
+	}
+
+	if (viddef.init_caches)
+		viddef.init_caches (viddef.surfcache, cachesize);
+}
