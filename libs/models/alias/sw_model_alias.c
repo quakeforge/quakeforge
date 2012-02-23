@@ -47,15 +47,13 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "d_iface.h"
 #include "mod_internal.h"
 
-int alias_cache = 1;
-
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses
 
 
 void *
-Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
-			  qboolean group, maliasskindesc_t *skindesc)
+sw_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
+				 qboolean group, maliasskindesc_t *skindesc)
 {
 	byte		*pskin;
 
@@ -87,8 +85,8 @@ process_frame (maliasframedesc_t *frame, int posenum, int extra)
 }
 
 void
-Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
-								int extra)
+sw_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
+								   int _s, int extra)
 {
 	int			 i, j;
 	int          posenum = 0;
@@ -130,11 +128,11 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
 }
 
 void
-Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
+sw_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 {
 }
 
 void
-Mod_LoadExternalSkins (model_t *mod)
+sw_Mod_LoadExternalSkins (model_t *mod)
 {
 }

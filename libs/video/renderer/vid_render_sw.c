@@ -35,12 +35,19 @@
 #include "r_internal.h"
 
 static vid_model_funcs_t model_funcs = {
-    Mod_LoadExternalTextures,
-	Mod_LoadLighting,
-	Mod_SubdivideSurface,
-	Mod_ProcessTexture,
+	sw_Mod_LoadExternalTextures,
+	sw_Mod_LoadLighting,
+	sw_Mod_SubdivideSurface,
+	sw_Mod_ProcessTexture,
+
 	Mod_LoadAliasModel,
 	Mod_LoadSpriteModel,
+
+	sw_Mod_MakeAliasModelDisplayLists,
+	sw_Mod_LoadSkin,
+	sw_Mod_FinalizeAliasModel,
+	sw_Mod_LoadExternalSkins,
+	1,
 
 	Skin_SetColormap,
 	Skin_SetSkin,

@@ -52,29 +52,29 @@ static __attribute__ ((used)) const char rcsid[] =
 
 // ALIAS MODEL DISPLAY LIST GENERATION ========================================
 
-model_t    *aliasmodel;
-aliashdr_t *paliashdr;
+static model_t    *aliasmodel;
+static aliashdr_t *paliashdr;
 
-qboolean   *used;
-int         used_size;
+static qboolean   *used;
+static int         used_size;
 
 // the command list holds counts and s/t values that are valid for every frame
-int        *commands;
-int         numcommands;
-int         commands_size;
+static int        *commands;
+static int         numcommands;
+static int         commands_size;
 
 // all frames will have their vertexes rearranged and expanded
 // so they are in the order expected by the command list
-int        *vertexorder;
-int         numorder;
-int         vertexorder_size;
+static int        *vertexorder;
+static int         numorder;
+static int         vertexorder_size;
 
-int         allverts, alltris;
+static int         allverts, alltris;
 
-int        *stripverts;
-int        *striptris;
-int         stripcount;
-int         strip_size;
+static int        *stripverts;
+static int        *striptris;
+static int         stripcount;
+static int         strip_size;
 
 
 static inline void
@@ -336,7 +336,8 @@ BuildTris (void)
 }
 
 void
-Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, int extra)
+gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
+								   int _s, int extra)
 {
 	dstring_t  *cache, *fullpath;
 	unsigned char model_digest[MDFOUR_DIGEST_BYTES];

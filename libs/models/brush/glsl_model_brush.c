@@ -80,7 +80,7 @@ glsl_brush_clear (model_t *m)
 }
 
 void
-Mod_ProcessTexture (texture_t *tx)
+glsl_Mod_ProcessTexture (texture_t *tx)
 {
 	if (!strncmp (tx->name, "sky", 3)) {
 		// sky textures need to be loaded as two separate textures to allow
@@ -109,12 +109,12 @@ Mod_ProcessTexture (texture_t *tx)
 }
 
 void
-Mod_LoadExternalTextures (model_t *mod)
+glsl_Mod_LoadExternalTextures (model_t *mod)
 {
 }
 
 void
-Mod_LoadLighting (bsp_t *bsp)
+glsl_Mod_LoadLighting (bsp_t *bsp)
 {
 	// a big hacky, but it's as good a place as any
 	loadmodel->clear = glsl_brush_clear;
@@ -128,6 +128,6 @@ Mod_LoadLighting (bsp_t *bsp)
 }
 
 void
-Mod_SubdivideSurface (msurface_t *fa)
+glsl_Mod_SubdivideSurface (msurface_t *fa)
 {
 }

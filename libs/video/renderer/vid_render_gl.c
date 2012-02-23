@@ -40,12 +40,19 @@
 #include "gl/namehack.h"
 
 static vid_model_funcs_t model_funcs = {
-    Mod_LoadExternalTextures,
-	Mod_LoadLighting,
-	Mod_SubdivideSurface,
-	Mod_ProcessTexture,
+	gl_Mod_LoadExternalTextures,
+	gl_Mod_LoadLighting,
+	gl_Mod_SubdivideSurface,
+	gl_Mod_ProcessTexture,
+
 	Mod_LoadAliasModel,
 	Mod_LoadSpriteModel,
+
+	gl_Mod_MakeAliasModelDisplayLists,
+	gl_Mod_LoadSkin,
+	gl_Mod_FinalizeAliasModel,
+	gl_Mod_LoadExternalSkins,
+	1,
 
 	Skin_SetColormap,
 	Skin_SetSkin,

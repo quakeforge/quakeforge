@@ -52,7 +52,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "mod_internal.h"
 #include "r_local.h"
 
-extern int alias_cache; //FIXME extern
 aliashdr_t *pheader;
 
 stvert_t    *stverts;
@@ -91,8 +90,8 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 		pskindesc[snum].type = pskintype->type;
 		if (pskintype->type == ALIAS_SKIN_SINGLE) {
 			skin = (byte *) (pskintype + 1);
-			skin = Mod_LoadSkin (skin, skinsize, snum, 0, false,
-								 &pskindesc[snum]);
+			skin = m_funcs->Mod_LoadSkin (skin, skinsize, snum, 0, false,
+										  &pskindesc[snum]);
 		} else {
 			pskintype++;
 			pinskingroup = (daliasskingroup_t *) pskintype;
@@ -123,8 +122,8 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 
 			for (gnum = 0; gnum < groupskins; gnum++) {
 				paliasskingroup->skindescs[gnum].type = ALIAS_SKIN_SINGLE;
-				skin = Mod_LoadSkin (skin, skinsize, snum, gnum, true,
-									 &paliasskingroup->skindescs[gnum]);
+				skin = mod_funcs->Mod_LoadSkin (skin, skinsize, snum, gnum,
+									true, &paliasskingroup->skindescs[gnum]);
 			}
 		}
 		pskintype = (daliasskintype_t *) skin;
@@ -371,14 +370,15 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	mod->radius = RadiusFromBounds (mod->mins, mod->maxs);
 
 	// build the draw lists
-	Mod_MakeAliasModelDisplayLists (mod, pheader, buffer, qfs_filesize, extra);
+	m_funcs->Mod_MakeAliasModelDisplayLists (mod, pheader, buffer,
+											 qfs_filesize, extra);
 
-	Mod_FinalizeAliasModel (mod, pheader);
+	m_funcs->Mod_FinalizeAliasModel (mod, pheader);
 
-	Mod_LoadExternalSkins (mod);
+	m_funcs->Mod_LoadExternalSkins (mod);
 
 	// move the complete, relocatable alias model to the cache
-	if (alias_cache) {
+	if (m_funcs->alias_cache) {
 		end = Hunk_LowMark ();
 		total = end - start;
 

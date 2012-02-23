@@ -45,22 +45,22 @@ static __attribute__ ((used)) const char rcsid[] =
 
 
 void
-Mod_SubdivideSurface (msurface_t *fa)
+sw_Mod_SubdivideSurface (msurface_t *fa)
 {
 }
 
 void
-Mod_ProcessTexture (texture_t *tx)
+sw_Mod_ProcessTexture (texture_t *tx)
 {
 }
 
 void
-Mod_LoadExternalTextures (model_t *mod)
+sw_Mod_LoadExternalTextures (model_t *mod)
 {
 }
 
 void
-Mod_LoadLighting (bsp_t *bsp)
+sw_Mod_LoadLighting (bsp_t *bsp)
 {
 	mod_lightmap_bytes = 1;
 	if (!bsp->lightdatasize) {

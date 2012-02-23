@@ -88,6 +88,13 @@ typedef struct vid_model_funcs_s {
 	void (*Mod_LoadAliasModel) (model_t *mod, void *buffer,
 								cache_allocator_t allocator);
 	void (*Mod_LoadSpriteModel) (model_t *mod, void *buffer);
+	void (*Mod_MakeAliasModelDisplayLists) (model_t *m, aliashdr_t *hdr,
+											void *_m, int _s, int extra);
+	void *(*Mod_LoadSkin) (byte *skin, int skinsize, int snum, int gnum,
+						   qboolean group, maliasskindesc_t *skindesc);
+	void (*Mod_FinalizeAliasModel) (model_t *m, aliashdr_t *hdr);
+	void (*Mod_LoadExternalSkins) (model_t * mod);
+	int alias_cache;
 
 	struct skin_s *(*Skin_SetColormap) (struct skin_s *skin, int cmap);
 	struct skin_s *(*Skin_SetSkin) (struct skin_s *skin, int cmap,

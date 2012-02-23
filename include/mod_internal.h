@@ -7,10 +7,42 @@
 
 extern vid_model_funcs_t *m_funcs;
 
-void Mod_LoadExternalTextures (model_t *mod);
-void Mod_LoadLighting (bsp_t *bsp);
-void Mod_SubdivideSurface (msurface_t *fa);
-void Mod_ProcessTexture(texture_t *tx);
+void gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
+										int _s, int extra);
+void *gl_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
+					   qboolean group, maliasskindesc_t *skindesc);
+void gl_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
+void gl_Mod_LoadExternalSkins (model_t * mod);
+
+void glsl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr,
+										  void *_m, int _s, int extra);
+void *glsl_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
+						 qboolean group, maliasskindesc_t *skindesc);
+void glsl_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
+void glsl_Mod_LoadExternalSkins (model_t * mod);
+
+void sw_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
+										int _s, int extra);
+void *sw_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
+					   qboolean group, maliasskindesc_t *skindesc);
+void sw_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
+void sw_Mod_LoadExternalSkins (model_t * mod);
+
+void gl_Mod_LoadExternalTextures (model_t *mod);
+void gl_Mod_LoadLighting (bsp_t *bsp);
+void gl_Mod_SubdivideSurface (msurface_t *fa);
+void gl_Mod_ProcessTexture(texture_t *tx);
+
+void glsl_Mod_LoadExternalTextures (model_t *mod);
+void glsl_Mod_LoadLighting (bsp_t *bsp);
+void glsl_Mod_SubdivideSurface (msurface_t *fa);
+void glsl_Mod_ProcessTexture(texture_t *tx);
+
+void sw_Mod_LoadExternalTextures (model_t *mod);
+void sw_Mod_LoadLighting (bsp_t *bsp);
+void sw_Mod_SubdivideSurface (msurface_t *fa);
+void sw_Mod_ProcessTexture(texture_t *tx);
+
 void Mod_LoadAliasModel (model_t *mod, void *buffer, 
                          cache_allocator_t allocator);
 void Mod_LoadSpriteModel (model_t *mod, void *buffer);

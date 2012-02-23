@@ -53,11 +53,9 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "compat.h"
 
-int alias_cache = 1;
-
 void *
-Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
-			  maliasskindesc_t *skindesc)
+gl_Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
+				 maliasskindesc_t *skindesc)
 {
 	byte   *pskin;
 	char	name[32], modname[MAX_QPATH + 4];
@@ -105,7 +103,7 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 }
 
 void
-Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
+gl_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 {
 	if (strequal (m->name, "progs/eyes.mdl")) {
 		hdr->mdl.scale_origin[2] -= (22 + 8);
@@ -153,7 +151,7 @@ Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 }
 
 void
-Mod_LoadExternalSkins (model_t *mod)
+gl_Mod_LoadExternalSkins (model_t *mod)
 {
 	char			   filename[MAX_QPATH + 4], modname[MAX_QPATH + 4];
 	int				   i, j;

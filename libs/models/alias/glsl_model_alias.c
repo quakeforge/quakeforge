@@ -52,8 +52,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "mod_internal.h"
 #include "r_shared.h"
 
-int alias_cache = 0;
-
 static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 #include "anorms.h"
 };
@@ -95,8 +93,8 @@ glsl_alias_clear (model_t *m)
 }
 
 void *
-Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum, qboolean group,
-			  maliasskindesc_t *skindesc)
+glsl_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
+				   qboolean group, maliasskindesc_t *skindesc)
 {
 	byte       *tskin;
 	const char *name;
@@ -117,7 +115,7 @@ Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum, qboolean group,
 }
 
 void
-Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
+glsl_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 {
 	if (hdr->mdl.ident == HEADER_MDL16)
 		VectorScale (hdr->mdl.scale, 1/256.0, hdr->mdl.scale);
@@ -125,13 +123,13 @@ Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 }
 
 void
-Mod_LoadExternalSkins (model_t *mod)
+glsl_Mod_LoadExternalSkins (model_t *mod)
 {
 }
 
 void
-Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s,
-								int extra)
+glsl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
+									 int _s, int extra)
 {
 	mtriangle_t *tris;
 	stvert_t   *st;

@@ -56,7 +56,7 @@ static __attribute__ ((used)) const char rcsid[] =
 
 
 void
-Mod_ProcessTexture (texture_t *tx)
+gl_Mod_ProcessTexture (texture_t *tx)
 {
 	char		name[32];
 
@@ -97,7 +97,7 @@ Mod_LoadAnExternalTexture (char * tname, char *mname)
 }
 
 void
-Mod_LoadExternalTextures (model_t *mod)
+gl_Mod_LoadExternalTextures (model_t *mod)
 {
 	int			i;
 	tex_t	   *base, *luma;
@@ -137,7 +137,7 @@ Mod_LoadExternalTextures (model_t *mod)
 }
 
 void
-Mod_LoadLighting (bsp_t *bsp)
+gl_Mod_LoadLighting (bsp_t *bsp)
 {
 	byte        d;
 	byte       *in, *out, *data;
@@ -297,7 +297,7 @@ SubdividePolygon (int numverts, float *verts)
 	can be done reasonably.
 */
 void
-Mod_SubdivideSurface (msurface_t *fa)
+gl_Mod_SubdivideSurface (msurface_t *fa)
 {
 	float      *vec;
 	int         lindex, numverts, i;
