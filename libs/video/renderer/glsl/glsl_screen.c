@@ -167,7 +167,7 @@ glsl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
 
 	if (begun) {
 		begun = 0;
-		GLSL_EndRendering ();
+		vid.end_rendering ();
 	}
 
 	vr_data.realtime = realtime;

@@ -62,7 +62,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GL/extensions.h"
 #include "QF/GL/funcs.h"
 
-#include "r_cvar.h"
+#include "r_internal.h"
 
 
 void *
@@ -72,7 +72,7 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 
 	Sys_MaskPrintf (SYS_VID, "DEBUG: Finding symbol %s ... ", name);
 
-	glfunc = QFGL_GetProcAddress (handle, name);
+	glfunc = vid.get_proc_address (handle, name);
 	if (glfunc) {
 		Sys_MaskPrintf (SYS_VID, "found [%p]\n", glfunc);
 		return glfunc;
@@ -105,7 +105,7 @@ static void		*libgl_handle;
 qboolean
 GLF_Init (void)
 {
-	libgl_handle = QFGL_LoadLibrary ();
+	libgl_handle = vid.load_library ();
 	return true;
 }
 

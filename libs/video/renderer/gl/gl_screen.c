@@ -210,7 +210,7 @@ gl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		return;
 
 	if (begun)
-		GL_EndRendering ();
+		vid.end_rendering ();
 
 	vr_data.realtime = realtime;
 
@@ -267,7 +267,7 @@ gl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	qfglFlush ();
 
 	if (gl_finish->int_val) {
-		GL_EndRendering ();
+		vid.end_rendering ();
 		begun = 0;
 	}
 }

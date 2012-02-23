@@ -48,7 +48,4 @@ qboolean EGLF_Init (void);
 qboolean EGLF_FindFunctions (void);
 void *QFEGL_ProcAddress (void *handle, const char *name, qboolean);
 
-void *QFEGL_LoadLibrary (void);
-void *QFEGL_GetProcAddress (void *handle, const char *name);
-
 #endif // __QF_GLSL_funcs_h_

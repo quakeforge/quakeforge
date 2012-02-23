@@ -47,7 +47,4 @@ qboolean GLF_Init (void);
 qboolean GLF_FindFunctions (void);
 void *QFGL_ProcAddress (void *handle, const char *name, qboolean);
 
-void *QFGL_LoadLibrary (void); 
-void *QFGL_GetProcAddress (void *handle, const char *name);
-
 #endif // __QF_GL_funcs_h_
