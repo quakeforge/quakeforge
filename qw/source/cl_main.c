@@ -1183,6 +1183,18 @@ CL_Init (void)
 	IN_Init (cl_cbuf);
 	Mod_Init ();
 	R_Init ();
+
+	PI_RegisterPlugins (client_plugin_list);
+	Con_Init ("client");
+	if (con_module) {
+		con_module->data->console->dl_name = cls.downloadname;
+		con_module->data->console->dl_percent = &cls.downloadpercent;
+		con_module->data->console->realtime = &con_realtime;
+		con_module->data->console->frametime = &con_frametime;
+		con_module->data->console->quit = CL_Quit_f;
+		con_module->data->console->cbuf = cl_cbuf;
+	}
+
 	S_Init (&viewentity, &host_frametime);
 	CDAudio_Init ();
 
@@ -1801,17 +1813,6 @@ Host_Init (void)
 
 	CL_Cmd_Init ();
 	Game_Init ();
-
-	PI_RegisterPlugins (client_plugin_list);
-	Con_Init ("client");
-	if (con_module) {
-		con_module->data->console->dl_name = cls.downloadname;
-		con_module->data->console->dl_percent = &cls.downloadpercent;
-		con_module->data->console->realtime = &con_realtime;
-		con_module->data->console->frametime = &con_frametime;
-		con_module->data->console->quit = CL_Quit_f;
-		con_module->data->console->cbuf = cl_cbuf;
-	}
 
 	NET_Init (cl_port->int_val);
 	Netchan_Init ();
