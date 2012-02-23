@@ -447,7 +447,6 @@ void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
 							 int extra);
 void    *Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 							 int extra);
-void	 Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);
 
 void	 Mod_LoadBrushModel (model_t *mod, void *buffer);
 void	 Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight);

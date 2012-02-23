@@ -95,6 +95,7 @@ typedef struct vid_model_funcs_s {
 	void (*Mod_FinalizeAliasModel) (model_t *m, aliashdr_t *hdr);
 	void (*Mod_LoadExternalSkins) (model_t * mod);
 	int alias_cache;
+	void (*Mod_SpriteLoadTexture) (mspriteframe_t *pspriteframe, int framenum);
 
 	struct skin_s *(*Skin_SetColormap) (struct skin_s *skin, int cmap);
 	struct skin_s *(*Skin_SetSkin) (struct skin_s *skin, int cmap,

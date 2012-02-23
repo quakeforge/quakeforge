@@ -75,7 +75,7 @@ Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 
 	memcpy (pspriteframe->pixels, (byte *) (pinframe + 1), size);
 
-	Mod_SpriteLoadTexture (pspriteframe, framenum);
+	m_funcs->Mod_SpriteLoadTexture (pspriteframe, framenum);
 
 	return (void *) ((byte *) pinframe + sizeof (dspriteframe_t) + size);
 }

@@ -47,7 +47,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "mod_internal.h"
 
 void
-Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
+gl_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
 {
 	tex_t      *targa;
 	const char *name;

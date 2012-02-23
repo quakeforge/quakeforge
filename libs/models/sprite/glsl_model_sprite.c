@@ -73,7 +73,7 @@ glsl_sprite_clear (model_t *m)
 }
 
 void
-Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
+glsl_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
 {
 	const char *name;
 

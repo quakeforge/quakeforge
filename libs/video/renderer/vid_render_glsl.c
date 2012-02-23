@@ -53,6 +53,7 @@ static vid_model_funcs_t model_funcs = {
 	glsl_Mod_FinalizeAliasModel,
 	glsl_Mod_LoadExternalSkins,
 	0,
+	glsl_Mod_SpriteLoadTexture,
 
 	Skin_SetColormap,
 	Skin_SetSkin,
