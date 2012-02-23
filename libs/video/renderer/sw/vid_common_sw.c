@@ -103,9 +103,3 @@ VID_InitBuffers (void)
 	if (viddef.init_caches)
 		viddef.init_caches (viddef.surfcache, cachesize);
 }
-
-void
-VID_ShiftPalette (unsigned char *p)
-{
-	VID_SetPalette (p);
-}

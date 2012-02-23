@@ -68,6 +68,7 @@ typedef struct {
 	void		   (*flush_caches)(void);
 	void		   (*init_caches)(void *cache, int size);
 	void		   (*do_screen_buffer)(void);
+	void           (*set_palette)(const byte *palette);
 
 	void           (*end_rendering)(void);
 	void          *(*load_library)(void);

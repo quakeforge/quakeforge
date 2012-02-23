@@ -13,7 +13,6 @@ extern unsigned short  sw32_8to16table[256];
 void VID_GetWindowSize (int def_w, int def_h);
 
 void VID_SetPalette (unsigned char *palette);
-void VID_ShiftPalette (unsigned char *palette);
 void VID_InitGamma (unsigned char *);
 qboolean VID_SetGamma (double);
 void VID_UpdateGamma (struct cvar_s *);
