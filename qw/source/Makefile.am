@@ -121,7 +121,7 @@ qw_client_fbdev_libs= \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-			$(top_builddir)/libs/models/libQFmodels.la
+			$(top_builddir)/libs/models/libQFmodels.la \
 			$(top_builddir)/libs/video/targets/libQFfbdev.la \
 			$(client_LIBS)
 qw_client_fbdev_SOURCES= cl_sys_unix.c
@@ -135,7 +135,7 @@ qw_client_sdl_libs= \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-			$(top_builddir)/libs/models/libQFmodels.la
+			$(top_builddir)/libs/models/libQFmodels.la \
 			$(top_builddir)/libs/video/targets/libQFsdl.la \
 			$(client_LIBS)
 qw_client_sdl_SOURCES=sdl_link.c
@@ -148,7 +148,7 @@ qw_client_svga_libs= \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-			$(top_builddir)/libs/models/libQFmodels.la
+			$(top_builddir)/libs/models/libQFmodels.la \
 			$(top_builddir)/libs/video/targets/libQFsvga.la \
 			$(client_LIBS)
 qw_client_svga_SOURCES= cl_sys_unix.c
@@ -161,7 +161,7 @@ qw_client_x11_libs= \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
-			$(top_builddir)/libs/models/libQFmodels.la
+			$(top_builddir)/libs/models/libQFmodels.la \
 			$(top_builddir)/libs/video/targets/libQFx11.la \
 			$(client_LIBS)
 qw_client_x11_SOURCES=	cl_sys_unix.c
