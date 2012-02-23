@@ -341,4 +341,7 @@ R_Init_Cvars (void)
 	scr_viewsize = Cvar_Get ("viewsize", "100", CVAR_ARCHIVE, viewsize_f,
 							 "Set the screen size 30 minimum, 120 maximum");
 	R_Particles_Init_Cvars ();
+
+	vr_data.graphheight = r_graphheight;
+	vr_data.scr_viewsize = scr_viewsize;
 }

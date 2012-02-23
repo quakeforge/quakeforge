@@ -172,7 +172,6 @@ typedef struct vid_render_data_s {
 	struct cvar_s *scr_viewsize;
 	struct cvar_s *graphheight;
 	float       min_wateralpha;
-	qboolean    active;
 	qboolean    force_fullscreen;
 	qboolean    inhibit_viewmodel;
 	qboolean    paused;

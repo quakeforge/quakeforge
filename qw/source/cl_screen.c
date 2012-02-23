@@ -76,7 +76,7 @@ SCR_CShift (void)
 	mleaf_t    *leaf;
 	int         contents = CONTENTS_EMPTY;
 
-	if (r_data->active && cl.worldmodel) {
+	if (cls.state == ca_active && cl.worldmodel) {
 		leaf = Mod_PointInLeaf (r_data->refdef->vieworg, cl.worldmodel);
 		contents = leaf->contents;
 	}
@@ -125,7 +125,7 @@ CL_UpdateScreen (double realtime)
 		index = 0;
 
 	// don't allow cheats in multiplayer
-	if (r_data->active) {
+	if (cls.state == ca_active) {
 		if (cl.watervis)
 			r_data->min_wateralpha = 0.0;
 		else

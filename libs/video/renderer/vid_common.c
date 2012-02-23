@@ -40,7 +40,7 @@ vid_render_data_t vid_render_data = {
 	0,
 	0, 0,
 	0.0,
-	true, false, false, false,
+	false, false, false,
 	0,
 	0, 0,
 	0,

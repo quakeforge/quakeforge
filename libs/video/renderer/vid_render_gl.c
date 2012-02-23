@@ -112,7 +112,22 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	&model_funcs
 };
 
+static void
+gl_vid_render_init (void)
+{
+	m_funcs = &model_funcs;
+	R_Init_Cvars ();
+	gl_R_Init ();
+}
+
+static void
+gl_vid_render_shutdown (void)
+{
+}
+
 static general_funcs_t plugin_info_general_funcs = {
+	gl_vid_render_init,
+	gl_vid_render_shutdown,
 };
 
 static general_data_t plugin_info_general_data;

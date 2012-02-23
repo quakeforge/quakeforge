@@ -107,7 +107,22 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	&model_funcs
 };
 
+static void
+sw_vid_render_init (void)
+{
+	m_funcs = &model_funcs;
+	R_Init_Cvars ();
+	sw_R_Init ();
+}
+
+static void
+sw_vid_render_shutdown (void)
+{
+}
+
 static general_funcs_t plugin_info_general_funcs = {
+	sw_vid_render_init,
+	sw_vid_render_shutdown,
 };
 
 static general_data_t plugin_info_general_data;

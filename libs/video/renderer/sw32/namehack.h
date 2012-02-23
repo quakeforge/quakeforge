@@ -73,7 +73,6 @@
 #define R_DrawSurface sw32_R_DrawSurface
 #define R_EmitEdge sw32_R_EmitEdge
 #define R_GenerateSpans sw32_R_GenerateSpans
-#define R_Init sw32_R_Init
 #define R_InitParticles sw32_R_InitParticles
 #define R_InitSky sw32_R_InitSky
 #define R_InitTurb sw32_R_InitTurb

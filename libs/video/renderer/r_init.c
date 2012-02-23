@@ -45,6 +45,8 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "QF/plugin/general.h"
+
 #include "r_internal.h"
 
 cvar_t         *vidrend_plugin;
@@ -76,4 +78,6 @@ R_Init (void)
 	r_funcs = vidrendmodule->functions->vid_render;
 	mod_funcs = r_funcs->model_funcs;
 	r_data = vidrendmodule->data->vid_render;
+
+	vidrendmodule->functions->general->p_Init ();
 }

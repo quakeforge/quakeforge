@@ -473,13 +473,11 @@ CL_SetState (cactive_t state)
 	if (old_state != state) {
 		if (state == ca_active) {
 			// entering active state
-			r_data->active = true;
 			Key_SetKeyDest (key_game);
 			IN_ClearStates ();
 			VID_SetCaption ("");
 		} else if (old_state == ca_active) {
 			// leaving active state
-			r_data->active = false;
 			Key_SetKeyDest (key_console);
 			VID_SetCaption ("Disconnected");
 		}

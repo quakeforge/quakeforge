@@ -1143,7 +1143,6 @@ CL_SetState (cactive_t state)
 		if (old_state == ca_active) {
 			// leaving active state
 			IN_ClearStates ();
-			r_data->active = false;
 			Key_SetKeyDest (key_console);
 
 			// Auto demo recorder stops here
@@ -1153,7 +1152,6 @@ CL_SetState (cactive_t state)
 			// entering active state
 			VID_SetCaption (cls.servername->str);
 			IN_ClearStates ();
-			r_data->active = true;
 			Key_SetKeyDest (key_game);
 
 			// Auto demo recorder starts here
@@ -1183,6 +1181,7 @@ CL_Init (void)
 	IN_Init (cl_cbuf);
 	Mod_Init ();
 	R_Init ();
+	r_data->lightstyle = cl.lightstyle;
 
 	PI_RegisterPlugins (client_plugin_list);
 	Con_Init ("client");

@@ -46,7 +46,6 @@
 #define R_DrawSpriteModel gl_R_DrawSpriteModel
 #define R_DrawWaterSurfaces gl_R_DrawWaterSurfaces
 #define R_DrawWorld gl_R_DrawWorld
-#define R_Init gl_R_Init
 #define R_InitBubble gl_R_InitBubble
 #define R_InitGraphTextures gl_R_InitGraphTextures
 #define R_InitParticles gl_R_InitParticles
