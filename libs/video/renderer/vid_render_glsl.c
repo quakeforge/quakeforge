@@ -49,12 +49,10 @@ static vid_model_funcs_t model_funcs = {
 
 	Skin_SetColormap,
 	Skin_SetSkin,
-	Skin_SetupSkin,
+	glsl_Skin_SetupSkin,
 	Skin_SetTranslation,
-	Skin_ProcessTranslation,
-	Skin_InitTranslations,
-	Skin_Init_Textures,
-	Skin_SetPlayerSkin,
+	glsl_Skin_ProcessTranslation,
+	glsl_Skin_InitTranslations,
 };
 
 vid_render_funcs_t glsl_vid_render_funcs = {

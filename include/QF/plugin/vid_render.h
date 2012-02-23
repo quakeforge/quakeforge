@@ -96,8 +96,6 @@ typedef struct vid_model_funcs_s {
 	void (*Skin_SetTranslation) (int cmap, int top, int bottom);
 	void (*Skin_ProcessTranslation) (int cmap, const byte *translation);
 	void (*Skin_InitTranslations) (void);
-	int (*Skin_Init_Textures) (int base);
-	void (*Skin_SetPlayerSkin) (int width, int height, const byte *data);
 } vid_model_funcs_t;
 
 typedef struct vid_render_funcs_s {

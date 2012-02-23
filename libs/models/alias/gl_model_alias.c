@@ -72,8 +72,8 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 	// save 8 bit texels for the player model to remap
 	// FIXME remove model restriction
 	if (strequal (loadmodel->name, "progs/player.mdl"))
-		Skin_SetPlayerSkin (pheader->mdl.skinwidth, pheader->mdl.skinheight,
-							pskin);
+		gl_Skin_SetPlayerSkin (pheader->mdl.skinwidth, pheader->mdl.skinheight,
+							   pskin);
 
 	QFS_StripExtension (loadmodel->name, modname);
 

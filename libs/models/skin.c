@@ -60,6 +60,8 @@ typedef struct skinbank_s {
 	int         users;
 } skinbank_t;
 
+vid_model_funcs_t *m_funcs;
+
 // each translation has one extra line for palette (vs colormap) based
 // translation (for 32bit rendering)
 static byte translations[MAX_TRANSLATIONS][(VID_GRADES + 1) * 256];
@@ -119,7 +121,7 @@ Skin_SetTranslation (int cmap, int top, int bottom)
 		else
 			dest[BOTTOM_RANGE + i] = bottom + 15 - i;
 	}
-	Skin_ProcessTranslation (cmap, translations[cmap - 1]);
+	m_funcs->Skin_ProcessTranslation (cmap, translations[cmap - 1]);
 }
 
 skin_t *
@@ -134,7 +136,7 @@ Skin_SetColormap (skin_t *skin, int cmap)
 	}
 	if (cmap)
 		skin->colormap = translations[cmap - 1];
-	Skin_SetupSkin (skin, cmap);
+	m_funcs->Skin_SetupSkin (skin, cmap);
 	return skin;
 }
 
@@ -219,7 +221,7 @@ Skin_SetSkin (skin_t *skin, int cmap, const char *skinname)
 		skin = new_skin ();
 	skin->texels = tex;
 	skin->name = name;
-	Skin_SetupSkin (skin, cmap);
+	m_funcs->Skin_SetupSkin (skin, cmap);
 	return skin;
 }
 
@@ -243,5 +245,5 @@ void
 Skin_Init (void)
 {
 	skin_cache = Hash_NewTable (127, skin_getkey, skin_free, 0);
-	Skin_InitTranslations ();
+	m_funcs->Skin_InitTranslations ();
 }

@@ -83,7 +83,7 @@ do_fb_skin (glskin_t *s)
 }
 
 void
-Skin_SetPlayerSkin (int width, int height, const byte *data)
+gl_Skin_SetPlayerSkin (int width, int height, const byte *data)
 {
 	int         size = width * height;
 	glskin_t   *s;
@@ -211,7 +211,7 @@ build_skin (skin_t *skin, int cmap)
 }
 
 void
-Skin_ProcessTranslation (int cmap, const byte *translation)
+gl_Skin_ProcessTranslation (int cmap, const byte *translation)
 {
 	int         changed;
 
@@ -227,7 +227,7 @@ Skin_ProcessTranslation (int cmap, const byte *translation)
 }
 
 void
-Skin_SetupSkin (skin_t *skin, int cmap)
+gl_Skin_SetupSkin (skin_t *skin, int cmap)
 {
 	int         changed;
 	glskin_t   *s;
@@ -252,12 +252,12 @@ Skin_SetupSkin (skin_t *skin, int cmap)
 }
 
 void
-Skin_InitTranslations (void)
+gl_Skin_InitTranslations (void)
 {
 }
 
 int
-Skin_Init_Textures (int base)
+gl_Skin_Init_Textures (int base)
 {
 	skin_textures = base;
 	base += MAX_TRANSLATIONS;

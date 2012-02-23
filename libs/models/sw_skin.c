@@ -36,16 +36,16 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "mod_internal.h"
 
 void
-Skin_ProcessTranslation (int cmap, const byte *translation)
+sw_Skin_ProcessTranslation (int cmap, const byte *translation)
 {
 }
 
 void
-Skin_SetupSkin (skin_t *skin, int cmap)
+sw_Skin_SetupSkin (skin_t *skin, int cmap)
 {
 }
 
 void
-Skin_InitTranslations (void)
+sw_Skin_InitTranslations (void)
 {
 }

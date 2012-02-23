@@ -57,7 +57,7 @@ static GLuint cmap_tex[MAX_TRANSLATIONS];
 static GLuint skin_tex[MAX_TRANSLATIONS];
 
 void
-Skin_ProcessTranslation (int cmap, const byte *translation)
+glsl_Skin_ProcessTranslation (int cmap, const byte *translation)
 {
 	byte        top[4 * VID_GRADES * 16];
 	byte        bottom[4 * VID_GRADES * 16];
@@ -95,7 +95,7 @@ Skin_ProcessTranslation (int cmap, const byte *translation)
 }
 
 void
-Skin_SetupSkin (skin_t *skin, int cmap)
+glsl_Skin_SetupSkin (skin_t *skin, int cmap)
 {
 	skin->texnum = 0;
 	if (cmap) {
@@ -123,7 +123,7 @@ Skin_SetupSkin (skin_t *skin, int cmap)
 }
 
 void
-Skin_InitTranslations (void)
+glsl_Skin_InitTranslations (void)
 {
 	byte        map[4 * VID_GRADES * 256];
 	byte       *src, *dst;

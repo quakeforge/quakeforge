@@ -14,7 +14,6 @@ lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
 models_sources = clip_hull.c model.c portal.c trace.c winding.c
 
 common_libs = \
-	$(top_builddir)/libs/image/libQFimage.la \
 	$(top_builddir)/libs/util/libQFutil.la
 
 models_libs=brush/libbrush.la $(common_libs)
@@ -28,7 +27,8 @@ gl_sources=gl_model_fullbright.c gl_skin.c skin.c
 gl_libs= \
 	alias/libalias_gl.la \
 	brush/libbrush_gl.la \
-	sprite/libsprite_gl.la
+	sprite/libsprite_gl.la \
+	$(top_builddir)/libs/image/libQFimage.la
 libmodels_gl_la_LDFLAGS=		
 libmodels_gl_la_LIBADD=			$(gl_libs)
 libmodels_gl_la_DEPENDENCIES=	$(gl_libs)
@@ -37,7 +37,8 @@ libmodels_gl_la_SOURCES=		$(gl_sources)
 glsl_libs= \
 	alias/libalias_glsl.la \
 	brush/libbrush_glsl.la \
-	sprite/libsprite_glsl.la
+	sprite/libsprite_glsl.la \
+	$(top_builddir)/libs/image/libQFimage.la
 libmodels_glsl_la_LDFLAGS=		
 libmodels_glsl_la_LIBADD=		$(glsl_libs)
 libmodels_glsl_la_DEPENDENCIES=	$(glsl_libs)
@@ -46,7 +47,8 @@ libmodels_glsl_la_SOURCES=		glsl_skin.c skin.c
 sw_libs= \
 	alias/libalias_sw.la \
 	brush/libbrush_sw.la \
-	sprite/libsprite_sw.la
+	sprite/libsprite_sw.la \
+	$(top_builddir)/libs/image/libQFimage.la
 libmodels_sw_la_LDFLAGS=		
 libmodels_sw_la_LIBADD=			$(sw_libs)
 libmodels_sw_la_DEPENDENCIES=	$(sw_libs)
