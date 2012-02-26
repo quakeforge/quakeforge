@@ -1227,7 +1227,7 @@ sw32_Draw_BlendScreen (quat_t color)
 
 			r += (int) (color[3] * (color[0] * 256 - r));
 			g += (int) (color[3] * (color[1] * 256 - g));
-			b += (int) (color[3] * (color[2] * 256 -g));
+			b += (int) (color[3] * (color[2] * 256 - b));
 
 			newpal[0] = vid.gammatable[r];
 			newpal[1] = vid.gammatable[g];
