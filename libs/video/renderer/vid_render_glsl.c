@@ -117,7 +117,9 @@ glsl_vid_render_init (void)
 {
 	m_funcs = &model_funcs;
 	R_Init_Cvars ();
+	glsl_R_Particles_Init_Cvars ();
 	glsl_R_Init ();
+	Skin_Init ();
 	vid = *vr_data.vid;
 }
 
