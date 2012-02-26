@@ -705,7 +705,7 @@ V_CalcRefdef (void)
 void
 V_RenderView (void)
 {
-	if (cls.state != ca_active)
+	if (cls.signon != SIGNONS)	//FIXME need proper state
 		return;
 
 	// don't allow cheats in multiplayer

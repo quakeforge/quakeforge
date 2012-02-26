@@ -60,6 +60,11 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "server.h"
 #include "sbar.h"
 
+CLIENT_PLUGIN_PROTOS
+static plugin_list_t client_plugin_list[] = {
+		CLIENT_PLUGIN_LIST
+};
+
 // these two are not intended to be set directly
 cvar_t     *cl_name;
 cvar_t     *cl_color;
@@ -512,7 +517,13 @@ CL_Init (cbuf_t *cbuf)
 	VID_Init (basepal, colormap);
 	IN_Init (cbuf);
 	R_Init ();
+	r_data->lightstyle = cl.lightstyle;
+
 	S_Init (&viewentity, &host_frametime);
+
+	PI_RegisterPlugins (client_plugin_list);
+	Con_Init ("client");
+
 	CDAudio_Init ();
 
 	Sbar_Init ();
