@@ -101,6 +101,7 @@ D_ClearCacheGuard (void)
 void
 D_InitCaches (void *buffer, int size)
 {
+	vid = *vr_data.vid;	// recache
 	Sys_MaskPrintf (SYS_DEV, "D_InitCaches: %ik surface cache\n", size/1024);
 
 	sc_size = size - GUARDSIZE;
