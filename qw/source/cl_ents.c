@@ -392,7 +392,7 @@ CL_LinkPlayers (void)
 	player_state_t	exact;
 	player_state_t *state;
 	qboolean		clientplayer;
-	vec3_t			org, ang;
+	vec3_t			org, ang = {0, 0, 0};
 
 	playertime = realtime - cls.latency + 0.02;
 	if (playertime > realtime)
