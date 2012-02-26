@@ -325,7 +325,8 @@ CL_NewMap (const char *mapname)
 		if (cl.edicts) {
 			cl.worldspawn = PL_ObjectAtIndex (cl.edicts, 0);
 			CL_LoadSky ();
-			r_funcs->Fog_ParseWorldspawn (cl.worldspawn);
+			if (r_funcs->Fog_ParseWorldspawn)
+				r_funcs->Fog_ParseWorldspawn (cl.worldspawn);
 		}
 	}
 
@@ -1141,7 +1142,8 @@ CL_ParseServerMessage (void)
 					blue = MSG_ReadByte (net_message) / 255.0;
 					time = (short) MSG_ReadShort (net_message) / 100.0;
 					time = max (0.0, time);
-					r_funcs->Fog_Update (density, red, green, blue, time);
+					if (r_funcs->Fog_Update)
+						r_funcs->Fog_Update (density, red, green, blue, time);
 				}
 				break;
 			case svc_spawnbaseline2:
