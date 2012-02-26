@@ -78,6 +78,7 @@ R_Init (void)
 	r_funcs = vidrendmodule->functions->vid_render;
 	mod_funcs = r_funcs->model_funcs;
 	r_data = vidrendmodule->data->vid_render;
+	r_data->vid = &viddef;
 
 	vidrendmodule->functions->general->p_Init ();
 }

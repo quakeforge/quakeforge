@@ -118,6 +118,7 @@ gl_vid_render_init (void)
 	m_funcs = &model_funcs;
 	R_Init_Cvars ();
 	gl_R_Init ();
+	vid = *vr_data.vid;
 }
 
 static void

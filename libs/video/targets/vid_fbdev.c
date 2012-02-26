@@ -252,7 +252,7 @@ loadpalette (unsigned short *red, unsigned short *green, unsigned short *blue)
 }
 
 void
-VID_SetPalette (byte * palette)
+VID_SetPalette (const byte *palette)
 {
 	static unsigned short tmppalr[256], tmppalg[256], tmppalb[256];
 	unsigned short i, *tpr, *tpg, *tpb;

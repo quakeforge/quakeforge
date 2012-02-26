@@ -368,5 +368,6 @@ SCR_Init (void)
 	scr_net = Draw_PicFromWad ("net");
 	scr_turtle = Draw_PicFromWad ("turtle");
 
+	vid = *vr_data.vid;	// cache
 	scr_initialized = true;
 }

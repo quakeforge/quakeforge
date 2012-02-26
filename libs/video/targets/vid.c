@@ -50,7 +50,6 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "vid_internal.h"
 
 /* Software and hardware gamma support */
-VISIBLE byte		gammatable[256];
 viddef_t    viddef;
 byte       *vid_colormap;
 cvar_t	   *vid_gamma;
@@ -181,7 +180,7 @@ VID_BuildGammaTable (double gamma)
 
 	if (gamma == 1.0) { // linear, don't bother with the math
 		for (i = 0; i < 256; i++) {
-			gammatable[i] = i;
+			viddef.gammatable[i] = i;
 		}
 	} else {
 		double	g = 1.0 / gamma;
@@ -189,7 +188,7 @@ VID_BuildGammaTable (double gamma)
 
 		for (i = 0; i < 256; i++) { // Build/update gamma lookup table
 			v = (int) ((255.0 * pow ((double) i / 255.0, g)) + 0.5);
-			gammatable[i] = bound (0, v, 255);
+			viddef.gammatable[i] = bound (0, v, 255);
 		}
 	}
 }
@@ -217,7 +216,7 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 		Sys_MaskPrintf (SYS_VID, "Setting software gamma to %g\n", gamma);
 		VID_BuildGammaTable (gamma);
 		for (i = 0; i < 256 * 3; i++)
-			viddef.palette[i] = gammatable[viddef.basepal[i]];
+			viddef.palette[i] = viddef.gammatable[viddef.basepal[i]];
 		VID_SetPalette (viddef.palette); // update with the new palette
 	}
 }
@@ -233,6 +232,8 @@ VID_InitGamma (unsigned char *pal)
 	int 	i;
 	double	gamma = 1.45;
 
+	viddef.set_palette = VID_SetPalette;
+	viddef.gammatable = malloc (256);
 	viddef.basepal = pal;
 	viddef.palette = malloc (256 * 3);
 	if ((i = COM_CheckParm ("-gamma"))) {

@@ -96,7 +96,8 @@ VID_SetPalette (unsigned char *palette)
 
 	Sys_MaskPrintf (SYS_VID, "Converting palette/colormap to RGBA textures\n");
 	pal = malloc (256 * VID_GRADES * 4);
-	for (i = 0, col = vid.colormap8, op = pal; i < 256 * VID_GRADES; i++) {
+	for (i = 0, col = vr_data.vid->colormap8, op = pal; i < 256 * VID_GRADES;
+		 i++) {
 		ip = palette + *col++ * 3;
 		*op++ = *ip++;
 		*op++ = *ip++;

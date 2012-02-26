@@ -613,7 +613,7 @@ Tdfx_Init8bitPalette (void)
 	// Check for 8bit Extensions and initialize them.
 	int         i;
 
-	if (vid.is8bit)
+	if (vr_data.vid->is8bit)
 		return;
 
 	if (QFGL_ExtensionPresent ("3DFX_set_global_palette")) {
@@ -639,7 +639,7 @@ Tdfx_Init8bitPalette (void)
 		}
 		qfglEnable (GL_SHARED_TEXTURE_PALETTE_EXT);
 		qgl3DfxSetPaletteEXT ((GLuint *) table);
-		vid.is8bit = true;
+		vr_data.vid->is8bit = true;
 	} else {
 		Sys_MaskPrintf (SYS_VID, "\n    3DFX_set_global_palette not found.");
 	}
@@ -661,7 +661,7 @@ Shared_Init8bitPalette (void)
 	GLubyte 	thePalette[256 * 3];
 	GLubyte 	*oldPalette, *newPalette;
 
-	if (vid.is8bit)
+	if (vr_data.vid->is8bit)
 		return;
 
 	if (QFGL_ExtensionPresent ("GL_EXT_shared_texture_palette")) {
@@ -683,7 +683,7 @@ Shared_Init8bitPalette (void)
 		}
 		qglColorTableEXT (GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGB, 256, GL_RGB,
 							GL_UNSIGNED_BYTE, (GLvoid *) thePalette);
-		vid.is8bit = true;
+		vr_data.vid->is8bit = true;
 	} else {
 		Sys_MaskPrintf (SYS_VID,
 						"\n    GL_EXT_shared_texture_palette not found.");
@@ -697,7 +697,7 @@ VID_Init8bitPalette (void)
 	if (vid_use8bit->int_val) {
 		Tdfx_Init8bitPalette ();
 		Shared_Init8bitPalette ();
-		if (!vid.is8bit)
+		if (!vr_data.vid->is8bit)
 			Sys_MaskPrintf (SYS_VID, "\n  8-bit extension not found.\n");
 	} else {
 		Sys_MaskPrintf (SYS_VID, "disabled.\n");

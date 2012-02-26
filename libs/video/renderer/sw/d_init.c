@@ -59,9 +59,9 @@ D_Init (void)
 	r_worldpolysbacktofront = false;
 	r_recursiveaffinetriangles = true;
 
-	vid.surf_cache_size = D_SurfaceCacheForRes;
-	vid.flush_caches = D_FlushCaches;
-	vid.init_caches = D_InitCaches;
+	vr_data.vid->surf_cache_size = D_SurfaceCacheForRes;
+	vr_data.vid->flush_caches = D_FlushCaches;
+	vr_data.vid->init_caches = D_InitCaches;
 
 	VID_InitBuffers ();
 }

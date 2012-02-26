@@ -67,7 +67,7 @@ SDL_Surface *screen = NULL;
 
 
 void
-VID_SetPalette (unsigned char *palette)
+VID_SetPalette (const byte *palette)
 {
 	SDL_Color   colors[256];
 	int         i;

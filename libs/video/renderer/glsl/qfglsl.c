@@ -72,7 +72,7 @@ QFEGL_ProcAddress (void *handle, const char *name, qboolean crit)
 
 	Sys_MaskPrintf (SYS_VID, "DEBUG: Finding symbol %s ... ", name);
 
-	glfunc = vid.get_proc_address (handle, name);
+	glfunc = vr_data.vid->get_proc_address (handle, name);
 	if (glfunc) {
 		Sys_MaskPrintf (SYS_VID, "found [%p]\n", glfunc);
 		return glfunc;
@@ -105,7 +105,7 @@ static void		*libgl_handle;
 qboolean
 EGLF_Init (void)
 {
-	libgl_handle = vid.load_library ();
+	libgl_handle = vr_data.vid->load_library ();
 	return true;
 }
 

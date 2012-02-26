@@ -118,6 +118,7 @@ sw32_vid_render_init (void)
 	m_funcs = &model_funcs;
 	R_Init_Cvars ();
 	sw32_R_Init ();
+	vid = *vr_data.vid;
 }
 
 static void

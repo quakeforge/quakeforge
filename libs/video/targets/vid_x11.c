@@ -528,7 +528,7 @@ VID_Init_Cvars ()
 }
 
 void
-VID_SetPalette (unsigned char *palette)
+VID_SetPalette (const byte *palette)
 {
 	int         i;
 	XColor      colors[256];
