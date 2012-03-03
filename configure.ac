@@ -93,6 +93,11 @@ case "${host}" in
 		AC_MSG_RESULT([Win32 driver])
 		WIN32_LIBS=' $(NET_LIBS)'
 		;;
+	*-openbsd*)
+		SYSTYPE=OPENBSD
+		AC_MSG_RESULT([OpenBSD driver])
+		WIN32_LIBS=''
+		;;
 	*)
 		SYSTYPE=POSIX
 		AC_MSG_RESULT([default POSIX driver])

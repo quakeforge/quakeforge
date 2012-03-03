@@ -106,6 +106,8 @@ AC_ARG_WITH(gl-driver,
 if test "x$gl_driver" = xauto -o "x$gl_driver" = xyes; then
 	if test "$SYSTYPE" = WIN32; then
 		gl_driver="OPENGL32.DLL"
+	elif test "$SYSTYPE" = OPENBSD; then
+		gl_driver="libGL.so"
 	else
 		gl_driver="libGL.so.1"
 	fi
