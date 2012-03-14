@@ -184,6 +184,8 @@ build_skin (skin_t *skin, int cmap)
 	s = skins + cmap;
 	if (!s->tex)
 		s = &player_skin;
+	if (!s->tex)	// we haven't loaded the player model yet
+		return;
 	texnum = skin_textures + cmap;
 	fb_texnum = 0;
 	if (s->fb)
