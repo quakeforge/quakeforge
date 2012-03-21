@@ -1,6 +1,23 @@
 NEWS for the QuakeForge project
 -------------------------------
-Changes from 0.6.0
+Changes from 0.6.2
+    o Compile fix for zlib 1.2.6.
+    o Use CURL compile flags correctly.
+    o Use the correct OpenGL library on OpenBSD.
+    o Fix a crash in qw gl renderers when skin data updates come in before
+      the player model has been loaded.
+    o libQFgamecode now part of libQFruamoko (first step in installed
+      libraries cleanup).
+    o None of the renderer libraries are installed now: they're all built
+      into the main binary.
+    o Build system cleanup: less empty recursion.
+    o Direct support for blender's environment maps as skyboxes. QF will
+      now load a single image with (${skyname}_map.*) using blender's
+      layout. That is, 3x2 with the top row being back, right, front and
+      the bottom row being bottom, top, left.
+	x Package building (deb and rpm) is broken.
+
+Changes from 0.6.1
     o New renderer using GLSL. Currently looks very much like the original
       software renderer with the additions of translucency, skyboxes and fog.
       Also, it's mostly GLES ready.
