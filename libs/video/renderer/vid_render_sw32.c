@@ -97,6 +97,7 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	0,
 	0,
 
+	sw32_R_Init,
 	sw32_R_ClearState,
 	sw32_R_LoadSkys,
 	sw32_R_NewMap,
@@ -116,10 +117,6 @@ static void
 sw32_vid_render_init (void)
 {
 	m_funcs = &model_funcs;
-	R_Init_Cvars ();
-	sw32_R_Particles_Init_Cvars ();
-	sw32_R_Init ();
-	Skin_Init ();
 	vid = *vr_data.vid;
 }
 

@@ -97,6 +97,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_Fog_Update,
 	gl_Fog_ParseWorldspawn,
 
+	gl_R_Init,
 	gl_R_ClearState,
 	gl_R_LoadSkys,
 	gl_R_NewMap,
@@ -116,10 +117,6 @@ static void
 gl_vid_render_init (void)
 {
 	m_funcs = &model_funcs;
-	R_Init_Cvars ();
-	gl_R_Particles_Init_Cvars ();
-	gl_R_Init ();
-	Skin_Init ();
 	vid = *vr_data.vid;
 }
 

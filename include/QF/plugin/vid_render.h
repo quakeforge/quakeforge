@@ -145,6 +145,7 @@ typedef struct vid_render_funcs_s {
 						float time);
 	void (*Fog_ParseWorldspawn) (struct plitem_s *worldspawn);
 
+	void (*R_Init) (void);
 	void (*R_ClearState) (void);
 	void (*R_LoadSkys) (const char *);
 	void (*R_NewMap) (model_t *worldmodel, model_t **models, int num_models);

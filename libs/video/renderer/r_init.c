@@ -65,7 +65,7 @@ static U void (*const r_progs_init)(struct progs_s *) = R_Progs_Init;
 #undef U
 
 VISIBLE void
-R_Init (void)
+R_LoadModule (void)
 {
 	PI_RegisterPlugins (vidrend_plugin_list);
 	vidrend_plugin = Cvar_Get ("vid_render", VID_RENDER_DEFAULT, CVAR_ROM, 0,
@@ -81,4 +81,10 @@ R_Init (void)
 	r_data->vid = &viddef;
 
 	vidrendmodule->functions->general->p_Init ();
+}
+
+VISIBLE void
+R_Init (void)
+{
+	r_funcs->R_Init ();
 }

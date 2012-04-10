@@ -140,6 +140,9 @@ gl_R_LoadSky_f (void)
 void
 gl_R_Init (void)
 {
+	R_Init_Cvars ();
+	gl_R_Particles_Init_Cvars ();
+
 	Cmd_AddCommand ("timerefresh", gl_R_TimeRefresh_f,
 					"Tests the current refresh rate for the current location");
 	Cmd_AddCommand ("envmap", R_Envmap_f, "No Description");
@@ -161,6 +164,7 @@ gl_R_Init (void)
 	gl_R_InitParticles ();
 	gl_R_InitSprites ();
 	gl_Fog_Init ();
+	Skin_Init ();
 }
 
 static void

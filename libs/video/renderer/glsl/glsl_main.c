@@ -56,6 +56,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/GLSL/qf_lightmap.h"
 #include "QF/GLSL/qf_textures.h"
 
+#include "mod_internal.h"
 #include "r_internal.h"
 
 mat4_t glsl_projection;
@@ -241,6 +242,8 @@ glsl_R_RenderView (void)
 void
 glsl_R_Init (void)
 {
+	R_Init_Cvars ();
+	glsl_R_Particles_Init_Cvars ();
 	Draw_Init ();
 	SCR_Init ();
 	glsl_R_InitBsp ();
@@ -248,6 +251,7 @@ glsl_R_Init (void)
 	glsl_R_InitSprites ();
 	glsl_R_InitParticles ();
 	glsl_Fog_Init ();
+	Skin_Init ();
 }
 
 void

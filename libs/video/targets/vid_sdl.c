@@ -94,6 +94,8 @@ VID_Init (byte *palette, byte *colormap)
 	if (SDL_Init (SDL_INIT_VIDEO) < 0)
 		Sys_Error ("VID: Couldn't load SDL: %s", SDL_GetError ());
 
+	R_LoadModule ();
+
 	// Set up display mode (width and height)
 	VID_GetWindowSize (BASEWIDTH, BASEHEIGHT);
 

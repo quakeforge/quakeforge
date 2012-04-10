@@ -168,6 +168,7 @@ extern	struct texture_s	*r_notexture_mip;
 extern entity_t r_worldentity;
 
 void R_Init (void);
+void R_LoadModule (void);
 struct progs_s;
 void R_Progs_Init (struct progs_s *pr);
 

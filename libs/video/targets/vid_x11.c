@@ -497,6 +497,8 @@ x11_create_context (void)
 void
 VID_Init (byte *palette, byte *colormap)
 {
+	R_LoadModule ();
+
 	viddef.numpages = 2;
 	viddef.colormap8 = colormap;
 	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];

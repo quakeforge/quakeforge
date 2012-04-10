@@ -427,6 +427,8 @@ VID_Init (byte *palette, byte *colormap)
 		return;
 	}
 
+	R_LoadModule ();
+
 	fbname = getenv("FRAMEBUFFER");
 	if (!fbname)
 		fbname = "/dev/fb0";

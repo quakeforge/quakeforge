@@ -53,6 +53,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "compat.h"
+#include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_internal.h"
 
@@ -121,6 +122,9 @@ sw_R_Init (void)
 	// get stack position so we can guess if we are going to overflow
 	r_stack_start = (byte *) & dummy;
 
+	R_Init_Cvars ();
+	R_Particles_Init_Cvars ();
+
 	Draw_Init ();
 	SCR_Init ();
 	R_SetFPCW ();
@@ -155,6 +159,8 @@ sw_R_Init (void)
 						   (long) R_EdgeCodeEnd - (long) R_EdgeCodeStart);
 #endif // USE_INTEL_ASM
 	D_Init ();
+
+	Skin_Init ();
 }
 
 void
