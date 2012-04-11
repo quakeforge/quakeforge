@@ -70,9 +70,11 @@ typedef struct {
 	void		   (*do_screen_buffer)(void);
 	void           (*set_palette)(const byte *palette);
 
+	// gl stuff
+	void           (*load_gl)(void);
+	void           (*init_gl)(void);
+	void          *(*get_proc_address)(const char *name, qboolean crit);
 	void           (*end_rendering)(void);
-	void          *(*load_library)(void);
-	void          *(*get_proc_address)(void *handle, const char *name);
 } viddef_t;
 
 extern viddef_t viddef;

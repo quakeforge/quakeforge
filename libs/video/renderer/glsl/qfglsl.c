@@ -64,33 +64,6 @@ static __attribute__ ((used)) const char rcsid[] =
 
 #include "r_internal.h"
 
-
-void *
-QFEGL_ProcAddress (void *handle, const char *name, qboolean crit)
-{
-	void	*glfunc = NULL;
-
-	Sys_MaskPrintf (SYS_VID, "DEBUG: Finding symbol %s ... ", name);
-
-	glfunc = vr_data.vid->get_proc_address (handle, name);
-	if (glfunc) {
-		Sys_MaskPrintf (SYS_VID, "found [%p]\n", glfunc);
-		return glfunc;
-	}
-	Sys_MaskPrintf (SYS_VID, "not found\n");
-
-	if (crit) {
-		if (strncmp ("fxMesa", name, 6) == 0) {
-			Sys_Printf ("This target requires a special version of Mesa with "
-						"support for Glide and SVGAlib.\n");
-			Sys_Printf ("If you are in X, try using a GLX or SGL target.\n");
-		}
-		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...",
-				   name);
-	}
-	return NULL;
-}
-
 // First we need to get all the function pointers declared.
 #define QFGL_WANT(ret, name, args) \
 	ret (GLAPIENTRY * qfe##name) args;
@@ -99,23 +72,14 @@ QFEGL_ProcAddress (void *handle, const char *name, qboolean crit)
 #include "QF/GLSL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT
-static void		*libgl_handle;
-
-// Then we need to open the libGL and set all the symbols.
-qboolean
-EGLF_Init (void)
-{
-	libgl_handle = vr_data.vid->load_library ();
-	return true;
-}
 
 qboolean
 EGLF_FindFunctions (void)
 {
 #define QFGL_WANT(ret, name, args) \
-	qfe##name = QFEGL_ProcAddress (libgl_handle, #name, false);
+	qfe##name = vid.get_proc_address (#name, false);
 #define QFGL_NEED(ret, name, args) \
-	qfe##name = QFEGL_ProcAddress (libgl_handle, #name, true);
+	qfe##name = vid.get_proc_address (#name, true);
 #include "QF/GLSL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT

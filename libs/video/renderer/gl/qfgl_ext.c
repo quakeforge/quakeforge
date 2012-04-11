@@ -64,33 +64,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "r_internal.h"
 
-
-void *
-QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
-{
-	void	*glfunc = NULL;
-
-	Sys_MaskPrintf (SYS_VID, "DEBUG: Finding symbol %s ... ", name);
-
-	glfunc = vr_data.vid->get_proc_address (handle, name);
-	if (glfunc) {
-		Sys_MaskPrintf (SYS_VID, "found [%p]\n", glfunc);
-		return glfunc;
-	}
-	Sys_MaskPrintf (SYS_VID, "not found\n");
-
-	if (crit) {
-		if (strncmp ("fxMesa", name, 6) == 0) {
-			Sys_Printf ("This target requires a special version of Mesa with "
-						"support for Glide and SVGAlib.\n");
-			Sys_Printf ("If you are in X, try using a GLX or SGL target.\n");
-		}
-		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...",
-				   name);
-	}
-	return NULL;
-}
-
 // First we need to get all the function pointers declared.
 #define QFGL_WANT(ret, name, args) \
 	ret (GLAPIENTRY * qf##name) args;
@@ -99,23 +72,14 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT
-static void		*libgl_handle;
-
-// Then we need to open the libGL and set all the symbols.
-qboolean
-GLF_Init (void)
-{
-	libgl_handle = vr_data.vid->load_library ();
-	return true;
-}
 
 qboolean
 GLF_FindFunctions (void)
 {
 #define QFGL_WANT(ret, name, args) \
-	qf##name = QFGL_ProcAddress (libgl_handle, #name, false);
+	qf##name = vid.get_proc_address (#name, false);
 #define QFGL_NEED(ret, name, args) \
-	qf##name = QFGL_ProcAddress (libgl_handle, #name, true);
+	qf##name = vid.get_proc_address (#name, true);
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT
@@ -172,27 +136,7 @@ QFGL_ExtensionPresent (const char *name)
 void *
 QFGL_ExtensionAddress (const char *name)
 {
-	static void *handle;
-
-	if (!handle) {
-#if defined(HAVE_DLOPEN)
-		if (!(handle = dlopen (gl_driver->string, RTLD_NOW))) {
-			Sys_Error ("Couldn't load OpenGL library %s: %s",
-					   gl_driver->string, dlerror ());
-			return 0;
-		}
-#elif defined(_WIN32)
-		if (!(handle = LoadLibrary (gl_driver->string))) {
-			Sys_Error ("Couldn't load OpenGL library %s!",
-					   gl_driver->string);
-			return 0;
-		}
-#else
-# error "Cannot load libraries: %s was not configured with DSO support"
-#endif
-	}
-
 	if (name)
-		return QFGL_ProcAddress (handle, name, false);
+		return vid.get_proc_address (name, false);
 	return NULL;
 }

@@ -34,6 +34,8 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/GL/qf_vid.h"
+
 #include "mod_internal.h"
 #include "r_internal.h"
 
@@ -116,6 +118,8 @@ vid_render_funcs_t gl_vid_render_funcs = {
 static void
 gl_vid_render_init (void)
 {
+	vr_data.vid->init_gl = GL_Init_Common;
+	vr_data.vid->load_gl ();
 	m_funcs = &model_funcs;
 	vid = *vr_data.vid;
 }

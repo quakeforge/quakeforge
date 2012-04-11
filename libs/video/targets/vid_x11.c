@@ -34,8 +34,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -48,6 +47,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #endif
 
 #include <ctype.h>
+#include <dlfcn.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
@@ -105,6 +105,152 @@ static int		shiftmask_fl = 0;
 static long 	r_shift, g_shift, b_shift;
 static unsigned long r_mask, g_mask, b_mask;
 
+#define GLX_RGBA				4		// true if RGBA mode
+#define GLX_DOUBLEBUFFER		5		// double buffering supported
+#define GLX_RED_SIZE			8		// number of red component bits
+#define GLX_GREEN_SIZE			9		// number of green component bits
+#define GLX_BLUE_SIZE			10		// number of blue component bits
+#define GLX_DEPTH_SIZE			12		// number of depth bits
+
+// GLXContext is a pointer to opaque data
+typedef struct __GLXcontextRec *GLXContext;
+typedef XID GLXDrawable;
+
+// Define GLAPIENTRY to a useful value
+#ifndef GLAPIENTRY
+# ifdef _WIN32
+#  include <windows.h>
+#  define GLAPIENTRY WINAPI
+#  undef LoadImage
+# else
+#  ifdef APIENTRY
+#   define GLAPIENTRY APIENTRY
+#  else
+#   define GLAPIENTRY
+#  endif
+# endif
+#endif
+static GLXContext ctx = NULL;
+static void    *libgl_handle;
+static void (*qfglXSwapBuffers) (Display *dpy, GLXDrawable drawable);
+static XVisualInfo* (*qfglXChooseVisual) (Display *dpy, int screen,
+										  int *attribList);
+static GLXContext (*qfglXCreateContext) (Display *dpy, XVisualInfo *vis,
+										 GLXContext shareList, Bool direct);
+static Bool (*qfglXMakeCurrent) (Display *dpy, GLXDrawable drawable,
+								 GLXContext ctx);
+static void (GLAPIENTRY *qfglFinish) (void);
+static void *(*glGetProcAddress) (const char *symbol) = NULL;
+static int use_gl_procaddress = 0;
+static cvar_t  *gl_driver;
+
+static void (*choose_visual) (void);
+static void (*create_context) (void);
+
+static void *
+QFGL_GetProcAddress (void *handle, const char *name)
+{
+	void       *glfunc = NULL;
+
+	if (use_gl_procaddress && glGetProcAddress)
+		glfunc = glGetProcAddress (name);
+	if (!glfunc)
+		glfunc = dlsym (handle, name);
+	return glfunc;
+}
+
+static void *
+QFGL_ProcAddress (const char *name, qboolean crit)
+{
+	void    *glfunc = NULL;
+
+	Sys_MaskPrintf (SYS_VID, "DEBUG: Finding symbol %s ... ", name);
+
+	glfunc = QFGL_GetProcAddress (libgl_handle, name);
+	if (glfunc) {
+		Sys_MaskPrintf (SYS_VID, "found [%p]\n", glfunc);
+		return glfunc;
+	}
+	Sys_MaskPrintf (SYS_VID, "not found\n");
+
+	if (crit) {
+		if (strncmp ("fxMesa", name, 6) == 0) {
+			Sys_Printf ("This target requires a special version of Mesa with "
+										"support for Glide and SVGAlib.\n");
+			Sys_Printf ("If you are in X, try using a GLX or SGL target.\n");
+		}
+		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...",
+				   name);
+	}
+	return NULL;
+}
+
+static void
+glx_choose_visual (void)
+{
+	int         attrib[] = {
+		GLX_RGBA,
+		GLX_RED_SIZE, 1,
+		GLX_GREEN_SIZE, 1,
+		GLX_BLUE_SIZE, 1,
+		GLX_DOUBLEBUFFER,
+		GLX_DEPTH_SIZE, 1,
+		None
+	};
+
+	x_visinfo = qfglXChooseVisual (x_disp, x_screen, attrib);
+	if (!x_visinfo) {
+		Sys_Error ("Error couldn't get an RGB, Double-buffered, Depth visual");
+	}
+	x_vis = x_visinfo->visual;
+}
+
+static void
+glx_create_context (void)
+{
+	XSync (x_disp, 0);
+	ctx = qfglXCreateContext (x_disp, x_visinfo, NULL, True);
+	qfglXMakeCurrent (x_disp, x_win, ctx);
+	viddef.init_gl ();
+}
+
+static void
+glx_end_rendering (void)
+{
+	qfglFinish ();
+	qfglXSwapBuffers (x_disp, x_win);
+}
+
+static void
+glx_load_gl (void)
+{
+	int          flags = RTLD_NOW;
+
+	choose_visual = glx_choose_visual;
+	create_context = glx_create_context;
+
+	viddef.get_proc_address = QFGL_ProcAddress;
+	viddef.end_rendering = glx_end_rendering;
+
+#ifdef RTLD_GLOBAL
+	flags |= RTLD_GLOBAL;
+#endif
+	if (!(libgl_handle = dlopen (gl_driver->string, flags))) {
+		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver->string,
+				   dlerror ());
+	}
+	glGetProcAddress = dlsym (libgl_handle, "glXGetProcAddress");
+	if (!glGetProcAddress)
+		glGetProcAddress = dlsym (libgl_handle, "glXGetProcAddressARB");
+
+	qfglXSwapBuffers = QFGL_ProcAddress ("glXSwapBuffers", true);
+	qfglXChooseVisual = QFGL_ProcAddress ("glXChooseVisual", true);
+	qfglXCreateContext = QFGL_ProcAddress ("glXCreateContext", true);
+	qfglXMakeCurrent = QFGL_ProcAddress ("glXMakeCurrent", true);
+	qfglFinish = QFGL_ProcAddress ("glFinish", true);
+
+	use_gl_procaddress = 1;
+}
 
 static void
 shiftmask_init (void)
@@ -488,8 +634,6 @@ x11_create_context (void)
 }
 
 /*
-	VID_Init
-
 	Set up color translation tables and the window.  Takes a 256-color 8-bit
 	palette.  Palette data will go away after the call, so copy it if you'll
 	need it later.
@@ -497,6 +641,10 @@ x11_create_context (void)
 void
 VID_Init (byte *palette, byte *colormap)
 {
+	choose_visual = x11_choose_visual;
+	create_context = x11_create_context;
+	viddef.load_gl = glx_load_gl;
+
 	R_LoadModule ();
 
 	viddef.numpages = 2;
@@ -507,11 +655,11 @@ VID_Init (byte *palette, byte *colormap)
 
 	VID_GetWindowSize (320, 200);
 	X11_OpenDisplay ();
-	x11_choose_visual ();
+	choose_visual ();
 	X11_SetVidMode (viddef.width, viddef.height);
 	X11_CreateWindow (viddef.width, viddef.height);
 	X11_CreateNullCursor ();	// hide mouse pointer
-	x11_create_context ();
+	create_context ();
 
 	VID_InitGamma (palette);
 	VID_SetPalette (viddef.palette);
@@ -527,6 +675,8 @@ void
 VID_Init_Cvars ()
 {
 	X11_Init_Cvars ();
+	gl_driver = Cvar_Get ("gl_driver", GL_DRIVER, CVAR_ROM, NULL,
+						  "The OpenGL library to use. (path optional)");
 }
 
 void
