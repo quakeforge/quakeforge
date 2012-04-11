@@ -48,3 +48,5 @@ vid_render_data_t vid_render_data = {
 	0,
 	r_origin, vpn, vright, vup
 };
+
+vid_render_funcs_t *vid_render_funcs;

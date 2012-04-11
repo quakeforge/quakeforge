@@ -1722,9 +1722,43 @@ R_ParticleFunctionInit (void)
 	gl_r_easter_eggs_f (easter_eggs);
 }
 
+static void
+r_particles_nearclip_f (cvar_t *var)
+{
+	Cvar_SetValue (r_particles_nearclip, bound (r_nearclip->value, var->value,
+												r_farclip->value));
+}
+
+static void
+r_particles_f (cvar_t *var)
+{
+	R_MaxParticlesCheck (var, r_particles_max);
+}
+
+static void
+r_particles_max_f (cvar_t *var)
+{
+	R_MaxParticlesCheck (r_particles, var);
+}
+
 void
 gl_R_Particles_Init_Cvars (void)
 {
+	easter_eggs = Cvar_Get ("easter_eggs", "0", CVAR_NONE, r_easter_eggs_f,
+							"Enables easter eggs.");
+	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, r_particles_f,
+							"Toggles drawing of particles.");
+	r_particles_max = Cvar_Get ("r_particles_max", "2048", CVAR_ARCHIVE,
+								r_particles_max_f, "Maximum amount of "
+								"particles to display. No maximum, minimum "
+								"is 0.");
+	r_particles_nearclip = Cvar_Get ("r_particles_nearclip", "32",
+									 CVAR_ARCHIVE, r_particles_nearclip_f,
+									 "Distance of the particle near clipping "
+									 "plane from the player.");
+	r_particles_style = Cvar_Get ("r_particles_style", "1", CVAR_ARCHIVE,
+								  r_particles_style_f, "Sets particle style. "
+								  "0 for Id, 1 for QF.");
 	R_ParticleFunctionInit ();
 }
 

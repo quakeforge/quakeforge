@@ -70,13 +70,13 @@ R_TimeGraph (void)
 	x = r_refdef.vrect.width - l;
 	a = timex - l;
 	if (a < 0) {
-		R_LineGraph (x, r_refdef.vrect.height - 2,
-					 &r_timings[a + MAX_TIMINGS], -a);
+		vr_funcs->R_LineGraph (x, r_refdef.vrect.height - 2,
+							   &r_timings[a + MAX_TIMINGS], -a);
 		x -= a;
 		l += a;
 		a = 0;
 	}
-	R_LineGraph (x, r_refdef.vrect.height - 2, &r_timings[a], l);
+	vr_funcs->R_LineGraph (x, r_refdef.vrect.height - 2, &r_timings[a], l);
 
 	timex = (timex + 1) % MAX_TIMINGS;
 }
@@ -95,5 +95,5 @@ R_ZGraph (void)
 	height[r_framecount & 255] = ((int) r_origin[2]) & 31;
 
 	x = 0;
-	R_LineGraph (x, r_refdef.vrect.height - 2, height, w);
+	vr_funcs->R_LineGraph (x, r_refdef.vrect.height - 2, height, w);
 }

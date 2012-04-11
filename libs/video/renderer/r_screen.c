@@ -177,7 +177,7 @@ SCR_CalcRefdef (void)
 		CalcFov (refdef->fov_x, refdef->vrect.width, refdef->vrect.height);
 
 	// notify the refresh of the change
-	R_ViewChanged (vid.aspect);
+	vr_funcs->R_ViewChanged (vid.aspect);
 }
 
 float
@@ -195,6 +195,12 @@ CalcFov (float fov_x, float width, float height)
 	a = a * (360 / M_PI);
 
 	return a;
+}
+
+static void
+ScreenShot_f (void)
+{
+	vr_funcs->SCR_ScreenShot_f ();
 }
 
 /*
@@ -232,7 +238,7 @@ SCR_DrawRam (void)
 	if (!r_cache_thrash)
 		return;
 
-	Draw_Pic (scr_vrect.x + 32, scr_vrect.y, scr_ram);
+	vr_funcs->Draw_Pic (scr_vrect.x + 32, scr_vrect.y, scr_ram);
 }
 
 void
@@ -252,7 +258,7 @@ SCR_DrawTurtle (void)
 	if (count < 3)
 		return;
 
-	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
+	vr_funcs->Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
 }
 
 void
@@ -266,9 +272,9 @@ SCR_DrawPause (void)
 	if (!vr_data.paused)
 		return;
 
-	pic = Draw_CachePic ("gfx/pause.lmp", true);
-	Draw_Pic ((vid.conwidth - pic->width) / 2,
-			  (vid.conheight - 48 - pic->height) / 2, pic);
+	pic = vr_funcs->Draw_CachePic ("gfx/pause.lmp", true);
+	vr_funcs->Draw_Pic ((vid.conwidth - pic->width) / 2,
+					    (vid.conheight - 48 - pic->height) / 2, pic);
 }
 
 void
@@ -359,14 +365,14 @@ void
 SCR_Init (void)
 {
 	// register our commands
-	Cmd_AddCommand ("screenshot", SCR_ScreenShot_f, "Take a screenshot, "
+	Cmd_AddCommand ("screenshot", ScreenShot_f, "Take a screenshot, "
 					"saves as qfxxx.pcx in the current directory");
 	Cmd_AddCommand ("sizeup", SCR_SizeUp_f, "Increases the screen size");
 	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decreases the screen size");
 
-	scr_ram = Draw_PicFromWad ("ram");
-	scr_net = Draw_PicFromWad ("net");
-	scr_turtle = Draw_PicFromWad ("turtle");
+	scr_ram = vr_funcs->Draw_PicFromWad ("ram");
+	scr_net = vr_funcs->Draw_PicFromWad ("net");
+	scr_turtle = vr_funcs->Draw_PicFromWad ("turtle");
 
 	vid = *vr_data.vid;	// cache
 	scr_initialized = true;

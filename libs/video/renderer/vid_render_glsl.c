@@ -109,6 +109,12 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	R_AllocEntity,
 	glsl_R_RenderView,
 	R_DecayLights,
+	glsl_R_ViewChanged,
+	glsl_R_ClearParticles,
+	glsl_R_InitParticles,
+	glsl_SCR_ScreenShot_f,
+	glsl_r_easter_eggs_f,
+	glsl_r_particles_style_f,
 	0,
 	&model_funcs
 };
@@ -116,6 +122,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 static void
 glsl_vid_render_init (void)
 {
+	vr_funcs = &glsl_vid_render_funcs;
 	m_funcs = &model_funcs;
 	vid = *vr_data.vid;
 }

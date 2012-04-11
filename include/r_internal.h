@@ -16,8 +16,10 @@ extern vid_render_funcs_t gl_vid_render_funcs;
 extern vid_render_funcs_t glsl_vid_render_funcs;
 extern vid_render_funcs_t sw_vid_render_funcs;
 extern vid_render_funcs_t sw32_vid_render_funcs;
+extern vid_render_funcs_t *vid_render_funcs;
 
 #define vr_data vid_render_data
+#define vr_funcs vid_render_funcs
 
 extern	refdef_t	r_refdef;
 extern int r_viewsize;

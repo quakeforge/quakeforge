@@ -158,6 +158,13 @@ typedef struct vid_render_funcs_s {
 	void (*R_RenderView) (void);
 	void (*R_DecayLights) (double frametime);
 
+	void (*R_ViewChanged) (float aspect);
+	void (*R_ClearParticles) (void);
+	void (*R_InitParticles) (void);
+	void (*SCR_ScreenShot_f) (void);
+	void (*r_easter_eggs_f) (struct cvar_s *var);
+	void (*r_particles_style_f) (struct cvar_s *var);
+
 	vid_particle_funcs_t *particles;
 	vid_model_funcs_t *model_funcs;
 } vid_render_funcs_t;

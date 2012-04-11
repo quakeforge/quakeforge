@@ -83,10 +83,10 @@ R_MaxParticlesCheck (cvar_t *r_particles, cvar_t *r_particles_max)
 												sizeof (particle_t *));
 	}
 
-	R_ClearParticles ();
+	vr_funcs->R_ClearParticles ();
 
 	if (r_init)
-		R_InitParticles ();
+		vr_funcs->R_InitParticles ();
 }
 
 static int  ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };

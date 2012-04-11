@@ -111,6 +111,12 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	R_AllocEntity,
 	gl_R_RenderView,
 	R_DecayLights,
+	gl_R_ViewChanged,
+	gl_R_ClearParticles,
+	gl_R_InitParticles,
+	gl_SCR_ScreenShot_f,
+	gl_r_easter_eggs_f,
+	gl_r_particles_style_f,
 	0,
 	&model_funcs
 };
@@ -120,6 +126,7 @@ gl_vid_render_init (void)
 {
 	vr_data.vid->init_gl = GL_Init_Common;
 	vr_data.vid->load_gl ();
+	vr_funcs = &gl_vid_render_funcs;
 	m_funcs = &model_funcs;
 	vid = *vr_data.vid;
 }

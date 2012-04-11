@@ -109,6 +109,12 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	R_AllocEntity,
 	sw32_R_RenderView,
 	R_DecayLights,
+	sw32_R_ViewChanged,
+	sw32_R_ClearParticles,
+	sw32_R_InitParticles,
+	sw32_SCR_ScreenShot_f,
+	sw32_r_easter_eggs_f,
+	sw32_r_particles_style_f,
 	0,
 	&model_funcs
 };
@@ -116,6 +122,7 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 static void
 sw32_vid_render_init (void)
 {
+	vr_funcs = &sw32_vid_render_funcs;
 	m_funcs = &model_funcs;
 	vid = *vr_data.vid;
 }
