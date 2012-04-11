@@ -550,18 +550,18 @@ DrawInputLine (int x, int y, int cursor, inputline_t *il)
 	const char *s = il->lines[il->edit_line] + il->scroll;
 
 	if (il->scroll) {
-		Draw_Character (x, y, '<' | 0x80);
-		Draw_nString (x + 8, y, s + 1, il->width - 2);
+		r_funcs->Draw_Character (x, y, '<' | 0x80);
+		r_funcs->Draw_nString (x + 8, y, s + 1, il->width - 2);
 	} else {
-		Draw_nString (x, y, s, il->width - 1);
+		r_funcs->Draw_nString (x, y, s, il->width - 1);
 	}
 	if (cursor && con_data.realtime) {
 		float       t = *con_data.realtime * con_cursorspeed;
 		int         ch = 10 + ((int) (t) & 1);
-		Draw_Character (x + ((il->linepos - il->scroll) << 3), y, ch);
+		r_funcs->Draw_Character (x + ((il->linepos - il->scroll) << 3), y, ch);
 	}
 	if (strlen (s) >= il->width)
-		Draw_Character (x + ((il->width - 1) << 3), y, '>' | 0x80);
+		r_funcs->Draw_Character (x + ((il->width - 1) << 3), y, '>' | 0x80);
 }
 
 void
@@ -621,7 +621,7 @@ draw_download (view_t *view)
 			  " %02d%%", *con_data.dl_percent);
 
 	// draw it
-	Draw_String (view->xabs, view->yabs, dlbar);
+	r_funcs->Draw_String (view->xabs, view->yabs, dlbar);
 }
 
 static void
@@ -639,7 +639,7 @@ draw_console_text (view_t *view)
 	if (con->display != con->current) {
 		// draw arrows to show the buffer is backscrolled
 		for (i = 0; i < con_linewidth; i += 4)
-			Draw_Character (x + (i << 3), y, '^');
+			r_funcs->Draw_Character (x + (i << 3), y, '^');
 
 		y -= 8;
 		rows--;
@@ -654,7 +654,7 @@ draw_console_text (view_t *view)
 
 		text = con->text + (row % con_totallines) * con_linewidth;
 
-		Draw_nString(x, y, text, con_linewidth);
+		r_funcs->Draw_nString(x, y, text, con_linewidth);
 	}
 }
 
@@ -671,7 +671,7 @@ draw_console (view_t *view)
 		alpha = min (alpha, 255);
 	}
 	// draw the background
-	Draw_ConsoleBackground (view->ylen, alpha);
+	r_funcs->Draw_ConsoleBackground (view->ylen, alpha);
 
 	// draw everything else
 	view_draw (view);
@@ -684,10 +684,10 @@ draw_say (view_t *view)
 	r_data->scr_copytop = 1;
 
 	if (chat_team) {
-		Draw_String (view->xabs + 8, view->yabs, "say_team:");
+		r_funcs->Draw_String (view->xabs + 8, view->yabs, "say_team:");
 		DrawInputLine (view->xabs + 80, view->yabs, 1, say_team_line);
 	} else {
-		Draw_String (view->xabs + 8, view->yabs, "say:");
+		r_funcs->Draw_String (view->xabs + 8, view->yabs, "say:");
 		DrawInputLine (view->xabs + 40, view->yabs, 1, say_line);
 	}
 }
@@ -718,7 +718,7 @@ draw_notify (view_t *view)
 		clearnotify = 0;
 		r_data->scr_copytop = 1;
 
-		Draw_nString (x, y, text, con_linewidth);
+		r_funcs->Draw_nString (x, y, text, con_linewidth);
 		y += 8;
 	}
 }

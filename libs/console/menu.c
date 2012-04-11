@@ -52,6 +52,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/view.h"
 
 #include "QF/plugin/console.h"
+#include "QF/plugin/vid_render.h"
 
 typedef struct menu_pic_s {
 	struct menu_pic_s *next;
@@ -282,7 +283,7 @@ bi_Menu_CenterPic (progs_t *pr)
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *name = P_GSTRING (pr, 2);
-	qpic_t     *qpic = Draw_CachePic (name, 1);
+	qpic_t     *qpic = r_funcs->Draw_CachePic (name, 1);
 
 	if (!qpic)
 		return;
@@ -296,7 +297,7 @@ bi_Menu_CenterSubPic (progs_t *pr)
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *name = P_GSTRING (pr, 2);
-	qpic_t     *qpic = Draw_CachePic (name, 1);
+	qpic_t     *qpic = r_funcs->Draw_CachePic (name, 1);
 	int         srcx = P_INT (pr, 3);
 	int         srcy = P_INT (pr, 4);
 	int         width = P_INT (pr, 5);
@@ -555,7 +556,7 @@ Menu_Draw (view_t *view)
 	y = view->yabs;
 
 	if (menu->fadescreen)
-		Draw_FadeScreen ();
+		r_funcs->Draw_FadeScreen ();
 
 	*menu_pr_state.globals.time = *con_data.realtime;
 
@@ -575,19 +576,20 @@ Menu_Draw (view_t *view)
 
 
 	for (m_pic = menu->pics; m_pic; m_pic = m_pic->next) {
-		qpic_t     *pic = Draw_CachePic (m_pic->name, 1);
+		qpic_t     *pic = r_funcs->Draw_CachePic (m_pic->name, 1);
 		if (!pic)
 			continue;
 		if (m_pic->width > 0 && m_pic->height > 0)
-			Draw_SubPic (x + m_pic->x, y + m_pic->y, pic,
+			r_funcs->Draw_SubPic (x + m_pic->x, y + m_pic->y, pic,
 						 m_pic->srcx, m_pic->srcy,
 						 m_pic->width, m_pic->height);
 		else
-			Draw_Pic (x + m_pic->x, y + m_pic->y, pic);
+			r_funcs->Draw_Pic (x + m_pic->x, y + m_pic->y, pic);
 	}
 	for (i = 0; i < menu->num_items; i++) {
 		if (menu->items[i]->text) {
-			Draw_String (x + menu->items[i]->x + 8, y + menu->items[i]->y,
+			r_funcs->Draw_String (x + menu->items[i]->x + 8,
+								  y + menu->items[i]->y,
 						 menu->items[i]->text);
 		}
 	}
@@ -602,8 +604,8 @@ Menu_Draw (view_t *view)
 		PR_ExecuteProgram (&menu_pr_state, menu->cursor);
 		run_menu_post ();
 	} else {
-		Draw_Character (x + item->x, y + item->y,
-						12 + ((int) (*con_data.realtime * 4) & 1));
+		r_funcs->Draw_Character (x + item->x, y + item->y,
+								 12 + ((int) (*con_data.realtime * 4) & 1));
 	}
 }
 
