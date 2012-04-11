@@ -225,7 +225,7 @@ EXP_DoUnary (token * chain)
 token *
 EXP_ParseString (char *str)
 {
-	char        buf[256];
+	char        buf[257];
 
 	token      *chain, *new, *cur;
 	size_t      i, m;
