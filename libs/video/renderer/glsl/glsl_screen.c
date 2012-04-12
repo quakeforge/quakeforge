@@ -171,7 +171,7 @@ glsl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
 	}
 
 	vr_data.realtime = realtime;
-	vid.numpages = 2 + gl_triplebuffer->int_val;
+	//FIXME useless cvar? vid.numpages = 2 + gl_triplebuffer->int_val;
 
 	if (!scr_initialized)
 		return;
