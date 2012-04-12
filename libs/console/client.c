@@ -680,7 +680,6 @@ draw_console (view_t *view)
 static void
 draw_say (view_t *view)
 {
-	clearnotify = 0;
 	r_data->scr_copytop = 1;
 
 	if (chat_team) {
@@ -715,7 +714,6 @@ draw_notify (view_t *view)
 			continue;
 		text = con->text + (i % con_totallines) * con_linewidth;
 
-		clearnotify = 0;
 		r_data->scr_copytop = 1;
 
 		r_funcs->Draw_nString (x, y, text, con_linewidth);

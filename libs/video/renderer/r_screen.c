@@ -109,7 +109,6 @@ qpic_t     *scr_turtle;
 int         scr_fullupdate;
 
 int         clearconsole;
-int         clearnotify;
 
 viddef_t    vid;						// global video state
 
