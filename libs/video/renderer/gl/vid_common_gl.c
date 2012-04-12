@@ -702,10 +702,10 @@ VID_Init8bitPalette (void)
 	}
 }
 
-static __attribute__((used)) void //FIXME
-VID_SetPalette (unsigned char *palette)
+void
+GL_SetPalette (const byte *palette)
 {
-	byte       *pal;
+	const byte *pal;
 	char        s[255];
 	float       dist, bestdist;
 	int			r1, g1, b1, k;

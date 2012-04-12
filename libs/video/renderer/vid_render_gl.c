@@ -124,6 +124,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 static void
 gl_vid_render_init (void)
 {
+	vr_data.vid->set_palette = GL_SetPalette;
 	vr_data.vid->init_gl = GL_Init_Common;
 	vr_data.vid->load_gl ();
 	vr_funcs = &gl_vid_render_funcs;

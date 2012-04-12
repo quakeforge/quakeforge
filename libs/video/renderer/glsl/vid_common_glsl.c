@@ -66,25 +66,23 @@ GLSL_Common_Init_Cvars (void)
 {
 }
 
-static __attribute__((used)) void //FIXME
-VID_SetPalette (unsigned char *palette)
+void
+GLSL_SetPalette (const byte *palette)
 {
-	byte       *pal, *col, *ip, *op;
-	unsigned int r, g, b, v;
+	const byte *col, *ip;
+	byte       *pal, *op;
+	unsigned    r, g, b, v;
 	unsigned short i;
-	unsigned int *table;
+	unsigned   *table;
 
 	// 8 8 8 encoding
 	Sys_MaskPrintf (SYS_VID, "Converting 8to24\n");
 
-	pal = palette;
 	table = d_8to24table;
 	for (i = 0; i < 255; i++) { // used to be i<256, see d_8to24table below
-		r = pal[0];
-		g = pal[1];
-		b = pal[2];
-		pal += 3;
-
+		r = palette[i * 3 + 0];
+		g = palette[i * 3 + 1];
+		b = palette[i * 3 + 2];
 #ifdef WORDS_BIGENDIAN
 		v = (255 << 0) + (r << 24) + (g << 16) + (b << 8);
 #else

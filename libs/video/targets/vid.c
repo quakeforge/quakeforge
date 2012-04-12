@@ -217,7 +217,7 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 		VID_BuildGammaTable (gamma);
 		for (i = 0; i < 256 * 3; i++)
 			viddef.palette[i] = viddef.gammatable[viddef.basepal[i]];
-		VID_SetPalette (viddef.palette); // update with the new palette
+		viddef.set_palette (viddef.palette); // update with the new palette
 	}
 }
 
@@ -232,7 +232,6 @@ VID_InitGamma (unsigned char *pal)
 	int 	i;
 	double	gamma = 1.45;
 
-	viddef.set_palette = VID_SetPalette;
 	viddef.gammatable = malloc (256);
 	viddef.basepal = pal;
 	viddef.palette = malloc (256 * 3);

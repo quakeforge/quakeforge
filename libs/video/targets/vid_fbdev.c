@@ -251,31 +251,6 @@ loadpalette (unsigned short *red, unsigned short *green, unsigned short *blue)
 		Sys_Error("ioctl FBIOPUTCMAP %s", strerror(errno));
 }
 
-void
-VID_SetPalette (const byte *palette)
-{
-	static unsigned short tmppalr[256], tmppalg[256], tmppalb[256];
-	unsigned short i, *tpr, *tpg, *tpb;
-
-	if (!fbdev_inited || fbdev_backgrounded || fb_fd < 0)
-		return;
-
-	memcpy (vid_current_palette, palette, sizeof (vid_current_palette));
-
-	if (current_mode.depth == 8) {
-		tpr = tmppalr;
-		tpg = tmppalg;
-		tpb = tmppalb;
-		for (i = 0; i < 256; i++) {
-			*tpr++ = (*palette++) << 8;
-			*tpg++ = (*palette++) << 8;
-			*tpb++ = (*palette++) << 8;
-		}
-
-		loadpalette(tmppalr, tmppalg, tmppalb);
-	}
-}
-
 static int
 VID_SetMode (const char *name, unsigned char *palette)
 {
@@ -324,7 +299,7 @@ VID_SetMode (const char *name, unsigned char *palette)
 		Sys_Error ("Video mode failed: %s", name);
 	ConvertToVideoMode(&var, &current_mode);
 	current_mode.name = current_name;
-	VID_SetPalette (palette);
+	viddef.set_palette (palette);
 
 	err = ioctl(fb_fd, FBIOGET_FSCREENINFO, &fix);
 	if (err)
@@ -397,6 +372,31 @@ fb_switch_init (void)
 	}
 }
 
+static void
+VID_SetPalette (const byte *palette)
+{
+	static unsigned short tmppalr[256], tmppalg[256], tmppalb[256];
+	unsigned short i, *tpr, *tpg, *tpb;
+
+	if (!fbdev_inited || fbdev_backgrounded || fb_fd < 0)
+		return;
+
+	memcpy (vid_current_palette, palette, sizeof (vid_current_palette));
+
+	if (current_mode.depth == 8) {
+		tpr = tmppalr;
+		tpg = tmppalg;
+		tpb = tmppalb;
+		for (i = 0; i < 256; i++) {
+			*tpr++ = (*palette++) << 8;
+			*tpg++ = (*palette++) << 8;
+			*tpb++ = (*palette++) << 8;
+		}
+
+		loadpalette(tmppalr, tmppalg, tmppalb);
+	}
+}
+
 void
 VID_Init (byte *palette, byte *colormap)
 {
@@ -408,6 +408,8 @@ VID_Init (byte *palette, byte *colormap)
 
 	if (fbdev_inited)
 		return;
+
+	viddef.set_palette = VID_SetPalette;
 
 	if (COM_CheckParm ("-novideo")) {
 		viddef.width = 320;
@@ -460,7 +462,7 @@ VID_Init (byte *palette, byte *colormap)
 	VID_SetMode (current_mode.name, palette);
 
 	VID_InitGamma (palette);
-	VID_SetPalette (viddef.palette);
+	viddef.set_palette (viddef.palette);
 
 	viddef.initialized = true;
 }
@@ -485,7 +487,7 @@ VID_Update (vrect_t *rects)
 		} else if (fbdev_backgrounded == 2) {
 			fb_switch_acquire();
 			fbdev_backgrounded = 0;
-			VID_SetPalette(vid_current_palette);
+			viddef.set_palette (vid_current_palette);
 		} else if (fbdev_backgrounded == 1) {
 			fb_switch_release();
 			fbdev_backgrounded = 3;

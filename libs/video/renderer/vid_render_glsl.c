@@ -34,6 +34,8 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/GLSL/qf_vid.h"
+
 #include "mod_internal.h"
 #include "r_internal.h"
 
@@ -122,6 +124,9 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 static void
 glsl_vid_render_init (void)
 {
+	vr_data.vid->set_palette = GLSL_SetPalette;
+	vr_data.vid->init_gl = GLSL_Init_Common;
+	vr_data.vid->load_gl ();
 	vr_funcs = &glsl_vid_render_funcs;
 	m_funcs = &model_funcs;
 	vid = *vr_data.vid;

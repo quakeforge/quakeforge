@@ -66,7 +66,7 @@ int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
 SDL_Surface *screen = NULL;
 
 
-void
+static void
 VID_SetPalette (const byte *palette)
 {
 	SDL_Color   colors[256];
@@ -90,6 +90,8 @@ VID_Init (byte *palette, byte *colormap)
 {
 	Uint32      flags;
 
+	viddef.set_palette = VID_SetPalette;
+
 	// Load the SDL library
 	if (SDL_Init (SDL_INIT_VIDEO) < 0)
 		Sys_Error ("VID: Couldn't load SDL: %s", SDL_GetError ());
@@ -109,7 +111,7 @@ VID_Init (byte *palette, byte *colormap)
 		Sys_Error ("VID: Couldn't set video mode: %s", SDL_GetError ());
 
 	VID_InitGamma (palette);
-	VID_SetPalette (viddef.palette);
+	viddef.set_palette (viddef.palette);
 
 	// now know everything we need to know about the buffer
 	VGA_width = viddef.width;

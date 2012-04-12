@@ -633,53 +633,7 @@ x11_create_context (void)
 //	X11_AddEvent (x_shmeventtype, event_shm);
 }
 
-/*
-	Set up color translation tables and the window.  Takes a 256-color 8-bit
-	palette.  Palette data will go away after the call, so copy it if you'll
-	need it later.
-*/
-void
-VID_Init (byte *palette, byte *colormap)
-{
-	choose_visual = x11_choose_visual;
-	create_context = x11_create_context;
-	viddef.load_gl = glx_load_gl;
-
-	R_LoadModule ();
-
-	viddef.numpages = 2;
-	viddef.colormap8 = colormap;
-	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
-
-	srandom (getpid ());
-
-	VID_GetWindowSize (320, 200);
-	X11_OpenDisplay ();
-	choose_visual ();
-	X11_SetVidMode (viddef.width, viddef.height);
-	X11_CreateWindow (viddef.width, viddef.height);
-	X11_CreateNullCursor ();	// hide mouse pointer
-	create_context ();
-
-	VID_InitGamma (palette);
-	VID_SetPalette (viddef.palette);
-
-	Sys_MaskPrintf (SYS_VID, "Video mode %dx%d initialized.\n",
-					viddef.width, viddef.height);
-
-	viddef.initialized = true;
-	viddef.recalc_refdef = 1;			// force a surface cache flush
-}
-
-void
-VID_Init_Cvars ()
-{
-	X11_Init_Cvars ();
-	gl_driver = Cvar_Get ("gl_driver", GL_DRIVER, CVAR_ROM, NULL,
-						  "The OpenGL library to use. (path optional)");
-}
-
-void
+static void
 VID_SetPalette (const byte *palette)
 {
 	int         i;
@@ -705,6 +659,53 @@ VID_SetPalette (const byte *palette)
 		}
 		XStoreColors (x_disp, x_cmap, colors, 256);
 	}
+}
+
+/*
+	Set up color translation tables and the window.  Takes a 256-color 8-bit
+	palette.  Palette data will go away after the call, so copy it if you'll
+	need it later.
+*/
+void
+VID_Init (byte *palette, byte *colormap)
+{
+	choose_visual = x11_choose_visual;
+	create_context = x11_create_context;
+	viddef.load_gl = glx_load_gl;
+	viddef.set_palette = VID_SetPalette;
+
+	R_LoadModule ();
+
+	viddef.numpages = 2;
+	viddef.colormap8 = colormap;
+	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
+
+	srandom (getpid ());
+
+	VID_GetWindowSize (320, 200);
+	X11_OpenDisplay ();
+	choose_visual ();
+	X11_SetVidMode (viddef.width, viddef.height);
+	X11_CreateWindow (viddef.width, viddef.height);
+	X11_CreateNullCursor ();	// hide mouse pointer
+	create_context ();
+
+	VID_InitGamma (palette);
+	viddef.set_palette (viddef.palette);
+
+	Sys_MaskPrintf (SYS_VID, "Video mode %dx%d initialized.\n",
+					viddef.width, viddef.height);
+
+	viddef.initialized = true;
+	viddef.recalc_refdef = 1;			// force a surface cache flush
+}
+
+void
+VID_Init_Cvars ()
+{
+	X11_Init_Cvars ();
+	gl_driver = Cvar_Get ("gl_driver", GL_DRIVER, CVAR_ROM, NULL,
+						  "The OpenGL library to use. (path optional)");
 }
 
 /*
