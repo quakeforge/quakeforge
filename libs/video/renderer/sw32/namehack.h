@@ -152,10 +152,12 @@
 #define d_zwidth sw32_d_zwidth
 #define edge_max sw32_edge_max
 #define edge_p sw32_edge_p
+#define insubmodel sw32_insubmodel
 #define intsintable sw32_intsintable
 #define newedges sw32_newedges
 #define numbtofpolys sw32_numbtofpolys
 #define pauxverts sw32_pauxverts
+#define pfinalverts sw32_pfinalverts
 #define pfrustum_indexes sw32_pfrustum_indexes
 #define pixelAspect sw32_pixelAspect
 #define r_affinetridesc sw32_r_affinetridesc
