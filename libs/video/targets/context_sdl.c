@@ -78,7 +78,7 @@ VID_UpdateFullscreen (cvar_t *vid_fullscreen)
 }
 
 void
-VID_Init_Cvars ()
+SDL_Init_Cvars (void)
 {
 	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ARCHIVE,
 							   VID_UpdateFullscreen,

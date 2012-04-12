@@ -47,6 +47,7 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/vid.h"
 
+#include "context_sdl.h"
 #include "d_iface.h"
 #include "vid_internal.h"
 
@@ -65,6 +66,121 @@ int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
 
 SDL_Surface *screen = NULL;
 
+// Define GLAPIENTRY to a useful value
+#ifndef GLAPIENTRY
+# ifdef _WIN32
+#  include <windows.h>
+#  define GLAPIENTRY WINAPI
+#  undef LoadImage
+# else
+#  ifdef APIENTRY
+#   define GLAPIENTRY APIENTRY
+#  else
+#   define GLAPIENTRY
+#  endif
+# endif
+#endif
+
+static void (*set_vid_mode) (Uint32 flags);
+
+static void (GLAPIENTRY *qfglFinish) (void);
+static int use_gl_procaddress = 0;
+static cvar_t  *gl_driver;
+
+static void *
+QFGL_ProcAddress (const char *name, qboolean crit)
+{
+	void    *glfunc = NULL;
+
+	Sys_MaskPrintf (SYS_VID, "DEBUG: Finding symbol %s ... ", name);
+
+	glfunc = SDL_GL_GetProcAddress (name);
+	if (glfunc) {
+		Sys_MaskPrintf (SYS_VID, "found [%p]\n", glfunc);
+		return glfunc;
+	}
+	Sys_MaskPrintf (SYS_VID, "not found\n");
+
+	if (crit) {
+		if (strncmp ("fxMesa", name, 6) == 0) {
+			Sys_Printf ("This target requires a special version of Mesa with "
+						"support for Glide and SVGAlib.\n");
+			Sys_Printf ("If you are in X, try using a GLX or SGL target.\n");
+		}
+		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...",
+				   name);
+	}
+	return NULL;
+}
+
+static void
+sdlgl_set_vid_mode (Uint32 flags)
+{
+	int         i, j;
+
+	flags |= SDL_OPENGL;
+
+	// Setup GL Attributes
+	SDL_GL_SetAttribute (SDL_GL_DOUBLEBUFFER, 1);
+//	SDL_GL_SetAttribute (SDL_GL_STENCIL_SIZE, 0);	// Try for 0, 8
+//	SDL_GL_SetAttribute (SDL_GL_STEREO, 1);			// Someday...
+
+	for (i = 0; i < 5; i++) {
+		int k;
+		int color[5] = {32, 24, 16, 15, 0};
+		int rgba[5][4] = {
+			{8, 8, 8, 0},
+			{8, 8, 8, 8},
+			{5, 6, 5, 0},
+			{5, 5, 5, 0},
+			{5, 5, 5, 1},
+		};
+
+		SDL_GL_SetAttribute (SDL_GL_RED_SIZE, rgba[i][0]);
+		SDL_GL_SetAttribute (SDL_GL_GREEN_SIZE, rgba[i][1]);
+		SDL_GL_SetAttribute (SDL_GL_BLUE_SIZE, rgba[i][2]);
+		SDL_GL_SetAttribute (SDL_GL_ALPHA_SIZE, rgba[i][3]);
+
+		for (j = 0; j < 5; j++) {
+			for (k = 32; k >= 16; k -= 8) {
+				SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, k);
+				if ((screen = SDL_SetVideoMode (viddef.width, viddef.height,
+												color[j], flags)))
+					goto success;
+			}
+		}
+	}
+
+	Sys_Error ("Couldn't set video mode: %s", SDL_GetError ());
+	SDL_Quit ();
+
+success:
+	viddef.numpages = 2;
+
+	viddef.init_gl ();
+}
+
+static void
+sdlgl_end_rendering (void)
+{
+	qfglFinish ();
+	SDL_GL_SwapBuffers ();
+}
+
+static void
+sdl_load_gl (void)
+{
+	viddef.get_proc_address = QFGL_ProcAddress;
+	viddef.end_rendering = sdlgl_end_rendering;
+	set_vid_mode = sdlgl_set_vid_mode;
+
+	if (SDL_GL_LoadLibrary (gl_driver->string) != 0)
+		Sys_Error ("Couldn't load OpenGL library %s!", gl_driver->string);
+
+	use_gl_procaddress = 1;
+
+	qfglFinish = QFGL_ProcAddress ("glFinish", true);
+}
 
 static void
 VID_SetPalette (const byte *palette)
@@ -85,40 +201,16 @@ do_screen_buffer (void)
 {
 }
 
-void
-VID_Init (byte *palette, byte *colormap)
+static void
+sdl_set_vid_mode (Uint32 flags)
 {
-	Uint32      flags;
-
-	viddef.set_palette = VID_SetPalette;
-
-	// Load the SDL library
-	if (SDL_Init (SDL_INIT_VIDEO) < 0)
-		Sys_Error ("VID: Couldn't load SDL: %s", SDL_GetError ());
-
-	R_LoadModule ();
-
-	// Set up display mode (width and height)
-	VID_GetWindowSize (BASEWIDTH, BASEHEIGHT);
-
-	// Set video width, height and flags
-	flags = (SDL_SWSURFACE | SDL_HWPALETTE);
-	if (vid_fullscreen->int_val)
-		flags |= SDL_FULLSCREEN;
-
 	// Initialize display
 	if (!(screen = SDL_SetVideoMode (viddef.width, viddef.height, 8, flags)))
 		Sys_Error ("VID: Couldn't set video mode: %s", SDL_GetError ());
 
-	VID_InitGamma (palette);
-	viddef.set_palette (viddef.palette);
-
 	// now know everything we need to know about the buffer
 	VGA_width = viddef.width;
 	VGA_height = viddef.height;
-	viddef.numpages = 1;
-	viddef.colormap8 = colormap;
-	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 	viddef.do_screen_buffer = do_screen_buffer;
 	VGA_pagebase = viddef.buffer = screen->pixels;
 	VGA_rowbytes = viddef.rowbytes = screen->pitch;
@@ -127,6 +219,52 @@ VID_Init (byte *palette, byte *colormap)
 	viddef.direct = 0;
 
 	VID_InitBuffers ();		// allocate z buffer and surface cache
+}
+
+void
+VID_Init (byte *palette, byte *colormap)
+{
+	Uint32      flags;
+
+	viddef.load_gl = sdl_load_gl;
+	viddef.set_palette = VID_SetPalette;
+	set_vid_mode = sdl_set_vid_mode;
+
+	// Load the SDL library
+	if (SDL_Init (SDL_INIT_VIDEO) < 0)
+		Sys_Error ("VID: Couldn't load SDL: %s", SDL_GetError ());
+
+	R_LoadModule ();
+
+	viddef.numpages = 1;
+	viddef.colormap8 = colormap;
+	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
+
+	// Set up display mode (width and height)
+	VID_GetWindowSize (BASEWIDTH, BASEHEIGHT);
+
+	// Set video width, height and flags
+	flags = (SDL_SWSURFACE | SDL_HWPALETTE);
+	if (vid_fullscreen->int_val) {
+		flags |= SDL_FULLSCREEN;
+#ifndef _WIN32      // Don't annoy Mesa/3dfx folks
+		// doesn't hurt if not using a gl renderer
+		// FIXME: Maybe this could be put in a different spot, but I don't
+		// know where. Anyway, it's to work around a 3Dfx Glide bug.
+		//      Cvar_SetValue (in_grab, 1); // Needs #include "QF/input.h"
+		putenv ((char *)"MESA_GLX_FX=fullscreen");
+	} else {
+		putenv ((char *)"MESA_GLX_FX=window");
+#endif
+	}
+
+	set_vid_mode (flags);
+
+	VID_SDL_GammaCheck ();
+	VID_InitGamma (palette);
+	viddef.set_palette (viddef.palette);
+
+	viddef.initialized = true;
 
 	SDL_ShowCursor (0);		// hide the mouse pointer
 
@@ -139,7 +277,15 @@ VID_Init (byte *palette, byte *colormap)
 	mainwindow=GetActiveWindow();
 #endif
 
-	viddef.initialized = true;
+	viddef.recalc_refdef = 1;				// force a surface cache flush
+}
+
+void
+VID_Init_Cvars ()
+{
+	SDL_Init_Cvars ();
+	gl_driver = Cvar_Get ("gl_driver", GL_DRIVER, CVAR_ROM, NULL,
+						  "The OpenGL library to use. (path optional)");
 }
 
 void

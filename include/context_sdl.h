@@ -32,5 +32,6 @@
 #define __context_sdl_h_
 
 void VID_SDL_GammaCheck (void);
+void SDL_Init_Cvars (void);
 
 #endif	// __context_sdl_h_

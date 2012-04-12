@@ -176,7 +176,7 @@ QFGL_ProcAddress (const char *name, qboolean crit)
 	if (crit) {
 		if (strncmp ("fxMesa", name, 6) == 0) {
 			Sys_Printf ("This target requires a special version of Mesa with "
-										"support for Glide and SVGAlib.\n");
+						"support for Glide and SVGAlib.\n");
 			Sys_Printf ("If you are in X, try using a GLX or SGL target.\n");
 		}
 		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...",
@@ -247,9 +247,10 @@ glx_load_gl (void)
 	qfglXChooseVisual = QFGL_ProcAddress ("glXChooseVisual", true);
 	qfglXCreateContext = QFGL_ProcAddress ("glXCreateContext", true);
 	qfglXMakeCurrent = QFGL_ProcAddress ("glXMakeCurrent", true);
-	qfglFinish = QFGL_ProcAddress ("glFinish", true);
 
 	use_gl_procaddress = 1;
+
+	qfglFinish = QFGL_ProcAddress ("glFinish", true);
 }
 
 static void
