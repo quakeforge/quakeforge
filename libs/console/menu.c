@@ -504,6 +504,7 @@ Menu_Init (void)
 
 	Cmd_AddCommand ("togglemenu", togglemenu_f,
 					"Toggle the display of the menu");
+	Cmd_RemoveCommand ("quit");
 	Cmd_AddCommand ("quit", quit_f, "Exit the program");
 }
 
