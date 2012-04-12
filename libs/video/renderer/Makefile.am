@@ -27,7 +27,7 @@ renderer_libs= \
 	@vid_render_static_plugin_libs@ \
 	$(top_builddir)/libs/util/libQFutil.la
 
-libQFrenderer_la_LDFLAGS=		$(lib_ldflags)
+libQFrenderer_la_LDFLAGS=		@STATIC@
 libQFrenderer_la_LIBADD=		$(renderer_libs)
 libQFrenderer_la_DEPENDENCIES=	$(renderer_libs)
 libQFrenderer_la_SOURCES=		r_init.c r_progs.c
