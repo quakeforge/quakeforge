@@ -33,15 +33,12 @@ def make_verts(mdl, framenum, subframenum=0):
     verts = []
     s = Vector(mdl.scale)
     o = Vector(mdl.scale_origin)
-    m = Matrix(((s.x,  0,  0,  0),
-                (  0,s.y,  0,  0),
-                (  0,  0,s.z,  0),
-                (o.x,o.y,o.z,  1)))
+    m = Matrix(((s.x,  0,  0,o.x),
+                (  0,s.y,  0,o.y),
+                (  0,  0,s.z,o.z),
+                (  0,  0,  0,  1)))
     for v in frame.verts:
-        try:    #FIXME
-            verts.append(Vector(v.r) * m)
-        except ValueError:
-            verts.append(m * Vector(v.r))
+        verts.append(m * Vector(v.r))
     return verts
 
 def make_faces(mdl):
@@ -139,15 +136,12 @@ def make_shape_key(mdl, framenum, subframenum=0):
     mdl.keys.append (frame.key)
     s = Vector(mdl.scale)
     o = Vector(mdl.scale_origin)
-    m = Matrix(((s.x,  0,  0,  0),
-                (  0,s.y,  0,  0),
-                (  0,  0,s.z,  0),
-                (o.x,o.y,o.z,  1)))
+    m = Matrix(((s.x,  0,  0,o.x),
+                (  0,s.y,  0,o.y),
+                (  0,  0,s.z,o.z),
+                (  0,  0,  0,  1)))
     for i, v in enumerate(frame.verts):
-        try:    #FIXME
-            frame.key.data[i].co = Vector(v.r) * m
-        except ValueError:
-            frame.key.data[i].co = m * Vector(v.r)
+        frame.key.data[i].co = m * Vector(v.r)
 
 def build_shape_keys(mdl):
     mdl.keys = []
