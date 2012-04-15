@@ -37,7 +37,7 @@
 #define WARP_WIDTH		320
 #define WARP_HEIGHT		200
 
-#define MAX_LBM_HEIGHT	480
+#define MAX_LBM_HEIGHT	1024
 
 typedef struct
 {
