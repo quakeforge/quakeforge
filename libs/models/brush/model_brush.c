@@ -206,7 +206,8 @@ Mod_LoadTextures (bsp_t *bsp)
 
 		if (!strncmp (mt->name, "sky", 3))
 			loadmodel->skytexture = tx;
-		mod_funcs->Mod_ProcessTexture (tx);
+		if (mod_funcs)
+			mod_funcs->Mod_ProcessTexture (tx);
 	}
 
 	// sequence the animations
@@ -544,7 +545,8 @@ Mod_LoadFaces (bsp_t *bsp)
 		if (!strncmp (out->texinfo->texture->name, "sky", 3)) {	// sky
 			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
 			if (gl_sky_divide && gl_sky_divide->int_val)
-				mod_funcs->Mod_SubdivideSurface (out);
+				if (mod_funcs)
+					mod_funcs->Mod_SubdivideSurface (out);
 			continue;
 		}
 
@@ -556,7 +558,8 @@ Mod_LoadFaces (bsp_t *bsp)
 				out->extents[i] = 16384;
 				out->texturemins[i] = -8192;
 			}
-			mod_funcs->Mod_SubdivideSurface (out);	// cut up polygon for warps
+			if (mod_funcs)	// cut up polygon for warps
+				mod_funcs->Mod_SubdivideSurface (out);
 			continue;
 		}
 	}
@@ -902,7 +905,8 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 	Mod_LoadEdges (bsp);
 	Mod_LoadSurfedges (bsp);
 	Mod_LoadTextures (bsp);
-	mod_funcs->Mod_LoadLighting (bsp);
+	if (mod_funcs)
+		mod_funcs->Mod_LoadLighting (bsp);
 	Mod_LoadPlanes (bsp);
 	Mod_LoadTexinfo (bsp);
 	Mod_LoadFaces (bsp);
