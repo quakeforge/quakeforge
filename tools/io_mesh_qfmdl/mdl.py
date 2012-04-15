@@ -194,10 +194,10 @@ class MDL:
             return self
         def write(self, mdl, high=True):
             if mdl.ident == 'MD16' and high:
-                r = tuple(map(lambda a: a >> 8, self.verts[i].r))
+                r = tuple(map(lambda a: a >> 8, self.r))
             else:
-                r = tuple(map(lambda a: a & 255, self.verts[i].r))
-            mdl.write_byte(self.r)
+                r = tuple(map(lambda a: a & 255, self.r))
+            mdl.write_byte(r)
             mdl.write_byte(self.ni)
         def scale(self, mdl):
             self.r = tuple(map(lambda x, s, t: int((x - t) / s),
