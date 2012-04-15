@@ -505,7 +505,8 @@ Host_ClearMemory (void)
 	cls.signon = 0;
 	memset (&sv, 0, sizeof (sv));
 	memset (&cl, 0, sizeof (cl));
-	r_data->force_fullscreen = 0;
+	if (r_data)
+		r_data->force_fullscreen = 0;
 }
 
 /*

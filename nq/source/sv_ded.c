@@ -57,9 +57,6 @@ viddef_t viddef;
 vid_render_data_t *r_data;
 vid_render_funcs_t *r_funcs;
 
-cvar_t *cl_rollangle;
-cvar_t *cl_rollspeed;
-
 void
 CL_UpdateScreen (double realtime)
 {

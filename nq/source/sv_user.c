@@ -48,11 +48,10 @@ static __attribute__ ((used)) const char rcsid[] =
 #include "host.h"
 #include "server.h"
 #include "sv_progs.h"
-#include "clview.h"	//FIXME
 #include "world.h"
 
-extern cvar_t *cl_rollangle;	//FIXME
-extern cvar_t *cl_rollspeed;	//FIXME
+cvar_t *sv_rollangle;
+cvar_t *sv_rollspeed;
 
 edict_t    *sv_player;
 
@@ -76,6 +75,30 @@ cvar_t     *sv_idealpitchscale;
 
 #define	MAX_FORWARD	6
 
+/*
+   FIXME duplicates V_CalcRoll in cl_view.c
+*/
+static float
+SV_CalcRoll (const vec3_t angles, const vec3_t velocity)
+{
+	float       side, sign, value;
+
+	AngleVectors (angles, forward, right, up);
+	side = DotProduct (velocity, right);
+	sign = side < 0 ? -1 : 1;
+	side = fabs (side);
+
+	value = sv_rollangle->value;
+//	if (cl.inwater)
+//		value *= 6;
+
+	if (side < sv_rollspeed->value)
+		side = side * value / sv_rollspeed->value;
+	else
+		side = value;
+
+	return side * sign;
+}
 
 void
 SV_SetIdealPitch (void)
@@ -394,8 +417,8 @@ SV_ClientThink (void)
 
 	VectorAdd (SVvector (sv_player, v_angle), SVvector (sv_player,
 														punchangle), v_angle);
-	angles[ROLL] = V_CalcRoll (SVvector (sv_player, angles),
-							   SVvector (sv_player, velocity)) * 4;
+	angles[ROLL] = SV_CalcRoll (SVvector (sv_player, angles),
+								SVvector (sv_player, velocity)) * 4;
 	if (!SVfloat (sv_player, fixangle)) {
 		angles[PITCH] = -v_angle[PITCH] / 3;
 		angles[YAW] = v_angle[YAW];
@@ -586,31 +609,4 @@ SV_RunClients (void)
 		if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game))
 			SV_ClientThink ();
 	}
-}
-
-/*
-  V_CalcRoll
-
-  Used by view and sv_user
-*/
-float
-V_CalcRoll (const vec3_t angles, const vec3_t velocity)
-{
-	float       side, sign, value;
-
-	AngleVectors (angles, forward, right, up);
-	side = DotProduct (velocity, right);
-	sign = side < 0 ? -1 : 1;
-	side = fabs (side);
-
-	value = cl_rollangle->value;
-//	if (cl.inwater)
-//		value *= 6;
-
-	if (side < cl_rollspeed->value)
-		side = side * value / cl_rollspeed->value;
-	else
-		side = value;
-
-	return side * sign;
 }

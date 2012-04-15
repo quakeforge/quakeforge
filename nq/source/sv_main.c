@@ -93,6 +93,12 @@ SV_Init (void)
 	sv_jump_any = Cvar_Get ("sv_jump_any", "1", CVAR_NONE, NULL, "None");
 	sv_friction = Cvar_Get ("sv_friction", "4", CVAR_SERVERINFO, Cvar_Info,
 							"None");
+	//NOTE: the cl/sv clash is deliberate: dedicated server will use the right
+	//vars, but client/server combo will use the one.
+	sv_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
+							 "How quickly you straighten out after strafing");
+	sv_rollangle = Cvar_Get ("cl_rollangle", "2.0", CVAR_NONE, NULL,
+							 "How much your screen tilts when strafing");
 	sv_edgefriction = Cvar_Get ("edgefriction", "2", CVAR_NONE, NULL, "None");
 	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, NULL, "None");
 	sv_maxspeed = Cvar_Get ("sv_maxspeed", "320", CVAR_SERVERINFO, Cvar_Info,

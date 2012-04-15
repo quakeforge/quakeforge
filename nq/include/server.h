@@ -210,6 +210,8 @@ extern	struct cvar_s	*coop;
 extern	struct cvar_s	*fraglimit;
 extern	struct cvar_s	*timelimit;
 
+extern	struct cvar_s	*sv_rollangle;
+extern	struct cvar_s	*sv_rollspeed;
 
 extern	struct cvar_s	*sv_maxvelocity;
 extern	struct cvar_s	*sv_gravity;

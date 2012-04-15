@@ -91,6 +91,32 @@ cshift_t    cshift_lava = { {255, 80, 0}, 150};
 cshift_t    cshift_bonus = { {215, 186, 60}, 50};
 
 
+/*
+   FIXME duplicates SV_CalcRoll in sv_user.c
+*/
+float
+V_CalcRoll (const vec3_t angles, const vec3_t velocity)
+{
+	float       side, sign, value;
+	vec3_t      forward, right, up;
+
+	AngleVectors (angles, forward, right, up);
+	side = DotProduct (velocity, right);
+	sign = side < 0 ? -1 : 1;
+	side = fabs (side);
+
+	value = cl_rollangle->value;
+//	if (cl.inwater)
+//		value *= 6;
+
+	if (side < cl_rollspeed->value)
+		side = side * value / cl_rollspeed->value;
+	else
+		side = value;
+
+	return side * sign;
+}
+
 static float
 V_CalcBob (void)
 {
