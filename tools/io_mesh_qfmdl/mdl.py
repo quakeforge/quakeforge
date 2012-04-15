@@ -22,6 +22,22 @@
 from struct import unpack, pack
 
 class MDL:
+    ST_SYNC = 0
+    ST_RAND = 1
+    SYNCTYPE={'ST_SYNC':ST_SYNC, 'ST_RAND':ST_RAND,
+              ST_SYNC:'ST_SYNC', ST_RAND:'ST_RAND'}
+    EF_ROCKET = 1
+    EF_GRENADE = 2
+    EF_GIB = 4
+    EF_ROTATE = 8
+    EF_TRACER = 16
+    EF_ZOMGIB = 32
+    EF_TRACER2 = 64
+    EF_TRACER3 = 128
+    EFFECTS={'EF_NONE':0, 'EF_ROCKET':EF_ROCKET, 'EF_GRENADE':EF_GRENADE,
+             'EF_GIB':EF_GIB, 'EF_TRACER':EF_TRACER, 'EF_ZOMGIB':EF_ZOMGIB,
+             'EF_TRACER2':EF_TRACER2, 'EF_TRACER3':EF_TRACER3}
+
     class Skin:
         def __init__(self):
             pass
@@ -271,7 +287,7 @@ class MDL:
         self.scale_origin = (0.0, 0.0, 0.0) #FIXME
         self.boundingradius = 1.0           #FIXME
         self.eyeposition = (0.0, 0.0, 0.0)  #FIXME
-        self.synctype = 0       #FIXME config (right default?)
+        self.synctype = MDL.ST_SYNC
         self.flags = 0          #FIXME config
         self.size = 0           #FIXME ???
         self.skins = []

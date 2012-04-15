@@ -40,14 +40,46 @@ if "bpy" in locals():
     import imp
     if "import_mdl" in locals():
         imp.reload(import_mdl)
-    #if "export_mdl" in locals():
-    #    imp.reload(export_mdl)
+    if "export_mdl" in locals():
+        imp.reload(export_mdl)
 
 
 import bpy
 from bpy.props import BoolProperty, FloatProperty, StringProperty, EnumProperty
+from bpy.props import FloatVectorProperty
 from bpy_extras.io_utils import ExportHelper, ImportHelper, path_reference_mode, axis_conversion
 
+SYNCTYPE=(
+    ('ST_SYNC', "Syncronized", "Automatic animations are all together"),
+    ('ST_RAND', "Random", "Automatic animations have random offsets"),
+)
+
+EFFECTS=(
+    ('EF_NONE', "None", "No effects"),
+    ('EF_ROCKET', "Rocket", "Leave a rocket trail"),
+    ('EF_GRENADE', "Grenade", "Leave a grenade trail"),
+    ('EF_GIB', "Gib", "Leave a trail of blood"),
+    ('EF_TRACER', "Tracer", "Green split trail"),
+    ('EF_ZOMGIB', "Zombie Gib", "Leave a smaller blood trail"),
+    ('EF_TRACER2', "Tracer 2", "Orange split trail + rotate"),
+    ('EF_TRACER3', "Tracer 3", "Purple split trail"),
+)
+
+class QFMDLSettings(bpy.types.PropertyGroup):
+    eyeposition = FloatVectorProperty(
+        name="Eye Position",
+        description="View possion relative to object origin")
+    synctype = EnumProperty(
+        items=SYNCTYPE,
+        name="Sync Type",
+        description="Add random time offset for automatic animations")
+    rotate = BoolProperty(
+        name="Rotate",
+        description="Rotate automatically (for pickup items)")
+    effects = EnumProperty(
+        items=EFFECTS,
+        name="Effects",
+        description="Particle trail effects")
 
 class ImportMDL6(bpy.types.Operator, ImportHelper):
     '''Load a Quake MDL (v6) File'''
@@ -81,6 +113,24 @@ class ExportMDL6(bpy.types.Operator, ExportHelper):
         keywords = self.as_keywords (ignore=("check_existing", "filter_glob"))
         return export_mdl.export_mdl(self, context, **keywords)
 
+class MDLPanel(bpy.types.Panel):
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = 'object'
+    bl_label = 'QF MDL'
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj and obj.type == 'MESH'
+
+    def draw(self, context):
+        layout = self.layout
+        obj = context.active_object
+        layout.prop(obj.qfmdl, "eyeposition")
+        layout.prop(obj.qfmdl, "synctype")
+        layout.prop(obj.qfmdl, "rotate")
+        layout.prop(obj.qfmdl, "effects")
 
 def menu_func_import(self, context):
     self.layout.operator(ImportMDL6.bl_idname, text="Quake MDL (.mdl)")
@@ -92,6 +142,8 @@ def menu_func_export(self, context):
 
 def register():
     bpy.utils.register_module(__name__)
+
+    bpy.types.Object.qfmdl = bpy.props.PointerProperty(type=QFMDLSettings)
 
     bpy.types.INFO_MT_file_import.append(menu_func_import)
     bpy.types.INFO_MT_file_export.append(menu_func_export)

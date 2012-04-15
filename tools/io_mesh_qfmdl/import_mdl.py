@@ -235,6 +235,35 @@ def write_text(mdl):
     txt.from_string(string)
     return txt.name
 
+def parse_flags(flags):
+    #NOTE these are in QuakeForge priority order; a little different to id.
+    # id has rocket and grenate between tracer2 and tracer3
+    if flags & MDL.EF_ROCKET:
+        return 'EF_ROCKET'
+    elif flags & MDL.EF_GRENADE:
+        return 'EF_GRENADE'
+    elif flags & MDL.EF_GIB:
+        return 'EF_GIB'
+    elif flags & MDL.EF_ZOMGIB:
+        return 'EF_ZOMGIB'
+    elif flags & MDL.EF_TRACER:
+        return 'EF_TRACER'
+    elif flags & MDL.EF_TRACER2:
+        return 'EF_TRACER2'
+    elif flags & MDL.EF_TRACER3:
+        return 'EF_TRACER3'
+    else:
+        return 'EF_NONE'
+
+def set_properties(mdl):
+    mdl.obj.qfmdl.eyeposition = mdl.eyeposition
+    try:
+        mdl.obj.qfmdl.synctype = MDL.SYNCTYPE[mdl.synctype]
+    except IndexError:
+        mdl.obj.qfmdl.synctype = 'ST_SYNC'
+    mdl.obj.qfmdl.rotate = (mdl.flags & MDL.EF_ROTATE) and True or False
+    mdl.obj.qfmdl.effects = parse_flags(mdl.flags)
+
 def import_mdl(operator, context, filepath):
     bpy.context.user_preferences.edit.use_global_undo = False
 
@@ -264,8 +293,9 @@ def import_mdl(operator, context, filepath):
         merge_frames(mdl)
         build_actions(mdl)
 
-    operator.report({'INFO'},
-        "Extra settings saved in the %s text block." % write_text(mdl))
+    #operator.report({'INFO'},
+    #    "Extra settings saved in the %s text block." % write_text(mdl))
+    set_properties(mdl)
 
     mdl.mesh.update()
 

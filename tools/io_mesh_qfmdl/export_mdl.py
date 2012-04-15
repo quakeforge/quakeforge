@@ -161,6 +161,12 @@ def calc_average_area(mdl):
         totalarea += (c * c) ** 0.5 / 2.0
     return totalarea / len(mdl.tris)
 
+def get_properties(mdl, obj):
+    mdl.eyeposition = tuple (obj.qfmdl.eyeposition)
+    mdl.synctype = MDL.SYNCTYPE[obj.qfmdl.synctype]
+    mdl.flags = ((obj.qfmdl.synctype and MDL.EF_ROTATE or 0)
+                 | MDL.EFFECTS[obj.qfmdl.effects])
+
 def export_mdl(operator, context, filepath):
     obj = context.active_object
     mesh = obj.to_mesh (context.scene, True, 'PREVIEW') #wysiwyg?
@@ -179,5 +185,6 @@ def export_mdl(operator, context, filepath):
     mdl.frames.append(make_frame(mesh, vertmap))
     mdl.size = calc_average_area(mdl)
     scale_verts(mdl)
+    get_properties(mdl, obj)
     mdl.write(filepath)
     return {'FINISHED'}
