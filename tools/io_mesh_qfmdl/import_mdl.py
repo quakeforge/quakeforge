@@ -100,13 +100,13 @@ def setup_skins (mdl, uvs):
     load_skins (mdl)
     img = mdl.images[0]   # use the first skin for now
     uvlay = mdl.mesh.uv_textures.new(mdl.name)
-    for i, f in enumerate(uvlay.data):
+    uvloop = mdl.mesh.uv_loop_layers[0]
+    for i, texpoly in enumerate(uvlay.data):
+        poly = mdl.mesh.polygons[i]
         mdl_uv = uvs[i]
-        for j, uv in enumerate(f.uv):
-            uv[0], uv[1] = mdl_uv[j]
-        f.image = img
-        if hasattr(f, "use_image"):     # for older blender
-            f.use_image = True
+        texpoly.image = img
+        for j,k in enumerate(poly.loop_indices):
+            uvloop.data[k].uv = mdl_uv[j]
     mat = bpy.data.materials.new(mdl.name)
     mat.diffuse_color = (1,1,1)
     mat.use_raytrace = False

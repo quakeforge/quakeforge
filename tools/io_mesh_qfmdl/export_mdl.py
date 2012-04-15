@@ -32,7 +32,7 @@ def check_faces(mesh):
     #quad to tri conversion will not be done automatically.
     faces_ok = True
     save_select = []
-    for f in mesh.faces:
+    for f in mesh.polygons:
         save_select.append(f.select)
         f.select = False
         if len(f.vertices) > 3:
@@ -42,7 +42,7 @@ def check_faces(mesh):
         mesh.update()
         return False
     #reset selection to what it was before the check.
-    for f, s in map(lambda x, y: (x, y), mesh.faces, save_select):
+    for f, s in map(lambda x, y: (x, y), mesh.polygons, save_select):
         f.select = s
     mesh.update()
     return True
@@ -94,14 +94,15 @@ def build_tris(mesh):
     # the layout. However, there seems to be nothing in the mdl format
     # preventing the use of duplicate 3d vertices to allow complete freedom
     # of the UV layout.
-    uvfaces = mesh.uv_textures[0].data
+    uvfaces = mesh.uv_loop_layers[0].data
     stverts = []
     tris = []
     vertmap = []    # map mdl vert num to blender vert num (for 3d verts)
     uvdict = {}
-    for face, uvface in map(lambda a,b: (a,b), mesh.faces, uvfaces):
+    for face in mesh.polygons:
         fv = list(face.vertices)
-        uv = list(uvface.uv)
+        uv = uvfaces[face.loop_start:face.loop_start + face.loop_total]
+        uv = list(map(lambda a: a.uv, uv))
         # blender's and quake's vertex order seem to be opposed
         fv.reverse()
         uv.reverse()
