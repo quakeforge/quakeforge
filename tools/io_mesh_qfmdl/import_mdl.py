@@ -167,11 +167,12 @@ def set_keys(act, data):
 
 def build_actions(mdl):
     sk = mdl.mesh.shape_keys
+    ad = sk.animation_data_create()
+    track = ad.nla_tracks.new ();
+    track.name = mdl.name
+    start_frame = 1
     for frame in mdl.frames:
-        sk.animation_data_create()
-        sk.animation_data.action = bpy.data.actions.new(frame.name)
-        act=sk.animation_data.action
-        act.use_fake_user = True
+        act = bpy.data.actions.new(frame.name)
         data = []
         other_keys = mdl.keys[:]
         if frame.type:
@@ -200,6 +201,8 @@ def build_actions(mdl):
             for k in other_keys:
                 data.append((k, co))
         set_keys (act, data)
+        track.strips.new (act.name, start_frame, act)
+        start_frame += act.frame_range[1]
 
 def merge_frames(mdl):
     def get_base(name):
