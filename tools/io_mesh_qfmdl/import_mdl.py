@@ -146,6 +146,7 @@ def make_shape_key(mdl, framenum, subframenum=0):
 def build_shape_keys(mdl):
     mdl.keys = []
     mdl.obj.shape_key_add("Basis")
+    mdl.mesh.shape_keys.name = mdl.name
     mdl.obj.active_shape_key_index = 0
     for i, frame in enumerate(mdl.frames):
         frame = mdl.frames[i]
