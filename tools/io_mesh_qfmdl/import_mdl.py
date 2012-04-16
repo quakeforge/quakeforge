@@ -170,6 +170,7 @@ def build_actions(mdl):
         sk.animation_data_create()
         sk.animation_data.action = bpy.data.actions.new(frame.name)
         act=sk.animation_data.action
+        act.use_fake_user = True
         data = []
         other_keys = mdl.keys[:]
         if frame.type:
