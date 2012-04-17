@@ -85,8 +85,7 @@ def load_skins(mdl):
                 p[l + 2] = c[2] / 255.0
                 p[l + 3] = 1.0
         img.pixels[:] = p[:]
-        if hasattr(img, "pack"):
-            img.pack(True)
+        img.pack(True)
 
     mdl.images=[]
     for i, skin in enumerate(mdl.skins):
@@ -289,10 +288,6 @@ def import_mdl(operator, context, filepath):
     bpy.context.scene.objects.active = mdl.obj
     mdl.obj.select = True
     setup_skins (mdl, uvs)
-    if mdl.images and not hasattr(mdl.images[0], "pack"):
-        operator.report({'WARNING'},
-            "Unable to pack skins. They must be packed by hand."
-            +" Some may have been lost")
     if len(mdl.frames) > 1 or mdl.frames[0].type:
         build_shape_keys(mdl)
         merge_frames(mdl)
