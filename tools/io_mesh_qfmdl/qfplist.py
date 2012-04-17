@@ -23,7 +23,7 @@ quotables = ("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
              + "abcdefghijklmnopqrstuvwxyz!#$%&*+-./:?@|~_^")
 
 class pldata:
-    def __init__(self, src):
+    def __init__(self, src = ''):
         self.src = src
         self.pos = 0;
         self.end = len (self.src)
@@ -206,3 +206,45 @@ class pldata:
             return self.parse_quoted_string()
         else:
             return self.parse_unquoted_string()
+    def write_string(self, item):
+        quote = False
+        for i in item:
+            if i not in quotables:
+                quote = True
+                break
+        if quote:
+            item = repr(item)
+            # repr uses ', we want "
+            item = '"' + item[1:-1].replace('"', '\\"') + '"'
+        self.data.append(item)
+    def write_item(self, item, level):
+        if type(item) == dict:
+            self.data.append("{\n")
+            for i in item.items():
+                self.data.append('\t' * (level + 1))
+                self.write_string(i[0])
+                self.data.append(' = ')
+                self.write_item(i[1], level + 1)
+                self.data.append(';\n')
+            self.data.append('\t' * (level))
+            self.data.append("}")
+        elif type(item) in (list, tuple):
+            self.data.append("(\n")
+            for n, i in enumerate(item):
+                self.data.append('\t' * (level + 1))
+                self.write_item(i, level + 1)
+                if n < len(item) - 1:
+                    self.data.append(',\n')
+            self.data.append('\n')
+            self.data.append('\t' * (level))
+            self.data.append(")")
+        elif type(item) == bytes:
+            self.data.append('<')
+            self.data.append(binascii.b2a_hex(item))
+            self.data.append('>')
+        elif type(item) == str:
+            self.write_string(item)
+    def write(self, item):
+        self.data = []
+        self.write_item(item, 0)
+        return ''.join(self.data)
