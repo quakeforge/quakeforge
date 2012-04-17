@@ -478,16 +478,17 @@ make_byte (byte h, byte l)
 static char *
 PL_ParseData (pldata_t *pl, int *len)
 {
-	unsigned int	start = ++pl->pos;
-	int				nibbles = 0, i;
-	char			*str;
+	unsigned    start = ++pl->pos;
+	int         nibbles = 0, i;
+	char       *str, c;
 
 	while (pl->pos < pl->end) {
-		if (isxdigit (pl->ptr[pl->pos])) {
+		c = pl->ptr[pl->pos++];
+		if (isxdigit (c)) {
 			nibbles++;
 			continue;
 		}
-		if (pl->ptr[pl->pos] == '>') {
+		if (c == '>') {
 			if (nibbles & 1) {
 				pl->error = "invalid data, missing nibble";
 				return NULL;
