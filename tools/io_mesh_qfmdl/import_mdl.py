@@ -88,6 +88,7 @@ def load_skins(mdl):
                 p[l + 3] = 1.0
         img.pixels[:] = p[:]
         img.pack(True)
+        img.use_fake_user = True
 
     mdl.images=[]
     for i, skin in enumerate(mdl.skins):
