@@ -163,6 +163,7 @@ def set_keys(act, data):
         fc.keyframe_points.add(len(co))
         for i in range(len(co)):
             fc.keyframe_points[i].co = co[i]
+            fc.keyframe_points[i].interpolation = 'LINEAR'
 
 def build_actions(mdl):
     sk = mdl.mesh.shape_keys
