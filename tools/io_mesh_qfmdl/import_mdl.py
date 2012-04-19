@@ -25,6 +25,7 @@ from mathutils import Vector,Matrix
 
 from .quakepal import palette
 from .mdl import MDL
+from .qfplist import pldata
 
 def make_verts(mdl, framenum, subframenum=0):
     frame = mdl.frames[framenum]
@@ -70,6 +71,7 @@ def make_faces(mdl):
 
 def load_skins(mdl):
     def load_skin(skin, name):
+        skin.name = name
         img = bpy.data.images.new(name, mdl.skinwidth, mdl.skinheight)
         mdl.images.append(img)
         p = [0.0] * mdl.skinwidth * mdl.skinheight * 4
@@ -170,13 +172,14 @@ def build_actions(mdl):
     ad = sk.animation_data_create()
     track = ad.nla_tracks.new ();
     track.name = mdl.name
-    start_frame = 1
+    start_frame = 1.0
     for frame in mdl.frames:
         act = bpy.data.actions.new(frame.name)
         data = []
         other_keys = mdl.keys[:]
         if frame.type:
             for j, subframe in enumerate(frame.frames):
+                subframe.frameno = start_frame + j
                 co = []
                 if j > 1:
                     co.append ((1.0, 0.0))
@@ -194,6 +197,7 @@ def build_actions(mdl):
             for k in other_keys:
                 data.append((k, co))
         else:
+            sub.frameno = start_frame + j
             data.append((frame.key, [(1.0, 1.0)]))
             if frame.key in other_keys:
                 del(other_keys[other_keys.index(frame.key)])
@@ -232,13 +236,72 @@ def merge_frames(mdl):
         i += 1
 
 def write_text(mdl):
-    string = "$eyeposition %g %g %g\n" % mdl.eyeposition
-    string += "$flags %d\n" % mdl.flags
-    if mdl.synctype:
-        string += "$sync\n"
+    header="""
+    /*  This script represents the animation data within the model file. It
+        is generated automatically on import, and is optional when exporting.
+        If no script is used when exporting, only a single frame and single
+        skin will be exported.
+
+        The fundamental format of the script is documented at
+        http://quakeforge.net/doxygen/property-list.html
+
+        The expected layout is a top-level dictionary with two expected
+        entries:
+            frames  array of frame entries
+            skins   array of skin entries
+
+        A frame entry is a dictionary with the following fields:
+            name    The name of the frame to be written to the mdl file. In a
+                    frame group, this will form the base for sub-frame names
+                    (name + relative frame number: eg, frame1) if the
+                    sub-frame does not have a name field. (string)
+            frameno The blender frame to use for the captured animation. In a
+                    frame group, this will be used as the base frame for any
+                    sub-frames that do not specify a frame. While fractional
+                    frames are supported, YMMV. (string:float)
+            frames  Array of frame entries. If present, the current frame
+                    entry is a frame group, and the frame entries specify
+                    sub-frames. (array of dictionary)
+                    NOTE: only top-level frames may be frame groups
+            intervals   Array of frame end times for frame groups. No meaning
+                    in blender, but the quake engine uses them for client-side
+                    animations. Times must be ascending, but any step > 0 is
+                    valid. Ignored for single frames. If not present in a
+                    frame group, the sub-frames of the group will be written
+                    as single frames (in order to undo the auto-group feature
+                    of the importer). Excess times will be ignored, missing
+                    times will be generated at 0.1
+                    second intervals.
+                    (array of string:float).
+
+        A skin entry is a dictionary with the following fields:
+            name    The name of the blender image to be used as the skin.
+                    Ignored for skin groups (animated skins). (string)
+            skins   Array of skin entries. If present, the current skin
+                    entry is a skin group (animated skin), and the skin
+                    entries specify sub-skin. (array of dictionary)
+                    NOTE: only top-level skins may be skins groups
+            intervals   Array of skin end times for skin groups. No meaning
+                    in blender, but the quake engine uses them for client-side
+                    animations. Times must be ascending, but any step > 0 is
+                    valid. Ignored for single skins. If not present in a
+                    skin group, it will be generated using 0.1 second
+                    intervals. Excess times will be ignored, missing times
+                    will be generated at 0.1 second intervals.
+                    (array of string:float).
+    */
+    """
+    d={'frames':[], 'skins':[]}
+    for f in mdl.frames:
+        d['frames'].append(f.info())
+    for s in mdl.skins:
+        d['skins'].append(s.info())
+    pl = pldata()
+    string = header + pl.write(d)
+
     txt = bpy.data.texts.new(mdl.name)
     txt.from_string(string)
-    return txt.name
+    mdl.text = txt
 
 def parse_flags(flags):
     #NOTE these are in QuakeForge priority order; a little different to id.
@@ -268,6 +331,7 @@ def set_properties(mdl):
         mdl.obj.qfmdl.synctype = 'ST_SYNC'
     mdl.obj.qfmdl.rotate = (mdl.flags & MDL.EF_ROTATE) and True or False
     mdl.obj.qfmdl.effects = parse_flags(mdl.flags)
+    mdl.obj.qfmdl.script = mdl.text.name #FIXME really want the text object
 
 def import_mdl(operator, context, filepath):
     bpy.context.user_preferences.edit.use_global_undo = False
@@ -293,9 +357,7 @@ def import_mdl(operator, context, filepath):
         build_shape_keys(mdl)
         merge_frames(mdl)
         build_actions(mdl)
-
-    #operator.report({'INFO'},
-    #    "Extra settings saved in the %s text block." % write_text(mdl))
+    write_text(mdl)
     set_properties(mdl)
 
     mdl.mesh.update()

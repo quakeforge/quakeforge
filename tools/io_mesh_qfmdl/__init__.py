@@ -46,7 +46,7 @@ if "bpy" in locals():
 
 import bpy
 from bpy.props import BoolProperty, FloatProperty, StringProperty, EnumProperty
-from bpy.props import FloatVectorProperty
+from bpy.props import FloatVectorProperty, PointerProperty
 from bpy_extras.io_utils import ExportHelper, ImportHelper, path_reference_mode, axis_conversion
 
 SYNCTYPE=(
@@ -80,6 +80,14 @@ class QFMDLSettings(bpy.types.PropertyGroup):
         items=EFFECTS,
         name="Effects",
         description="Particle trail effects")
+    #doesn't work :(
+    #script = PointerProperty(
+    #    type=bpy.types.Object,
+    #    name="Script",
+    #    description="Script for animating frames and skins")
+    script = StringProperty(
+        name="Script",
+        description="Script for animating frames and skins")
 
 class ImportMDL6(bpy.types.Operator, ImportHelper):
     '''Load a Quake MDL (v6) File'''
@@ -131,6 +139,7 @@ class MDLPanel(bpy.types.Panel):
         layout.prop(obj.qfmdl, "synctype")
         layout.prop(obj.qfmdl, "rotate")
         layout.prop(obj.qfmdl, "effects")
+        layout.prop(obj.qfmdl, "script")
 
 def menu_func_import(self, context):
     self.layout.operator(ImportMDL6.bl_idname, text="Quake MDL (.mdl)")
@@ -143,7 +152,7 @@ def menu_func_export(self, context):
 def register():
     bpy.utils.register_module(__name__)
 
-    bpy.types.Object.qfmdl = bpy.props.PointerProperty(type=QFMDLSettings)
+    bpy.types.Object.qfmdl = PointerProperty(type=QFMDLSettings)
 
     bpy.types.INFO_MT_file_import.append(menu_func_import)
     bpy.types.INFO_MT_file_export.append(menu_func_export)

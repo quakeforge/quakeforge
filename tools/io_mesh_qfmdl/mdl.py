@@ -40,7 +40,18 @@ class MDL:
 
     class Skin:
         def __init__(self):
-            pass
+            self.name = ''
+        def info(self):
+            info={}
+            if self.type:
+                if self.times:
+                    info['intervals'] = list(map(lambda t: str(t), self.times))
+                info['skins'] = []
+                for s in self.skins:
+                    info['skins'].append(s.info())
+            if self.name:
+                info['name'] = self.name
+            return info
         def read(self, mdl, sub=0):
             self.width, self.height = mdl.skinwidth, mdl.skinheight
             if sub:
@@ -110,6 +121,19 @@ class MDL:
             self.verts = []
             self.frames = []
             self.times = []
+        def info(self):
+            info={}
+            if self.type:
+                if self.times:
+                    info['intervals'] = list(map(lambda t: str(t), self.times))
+                info['frames'] = []
+                for f in self.frames:
+                    info['frames'].append(f.info())
+            if hasattr(self, 'frameno'):
+                info['frameno'] = str(self.frameno)
+            if self.name:
+                info['name'] = self.name
+            return info
         def add_vert(self, vert):
             self.verts.append(vert)
             for i, v in enumerate(vert.r):
