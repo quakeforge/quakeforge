@@ -22,12 +22,16 @@
 quotables = ("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
              + "abcdefghijklmnopqrstuvwxyz!#$%&*+-./:?@|~_^")
 
+class PListError(Exception):
+    def __init__(self, line, message):
+        Exception.__init__(self, "%d: %s" % (line, message))
+        self.line = line
+
 class pldata:
     def __init__(self, src = ''):
         self.src = src
         self.pos = 0;
         self.end = len (self.src)
-        self.error = None
         self.line = 1
     def skip_space(self):
         while self.pos < self.end:
@@ -42,9 +46,10 @@ class pldata:
                                 break
                             self.pos += 1
                         if self.pos >= self.end:
-                            self.error = "Reached end of string in comment"
-                            return False
+                            raise PListError(self.line,
+                                "Reached end of string in comment")
                     elif self.src[self.pos + 1] == '*': # /* comment */
+                        start_line = self.line
                         self.pos += 2
                         while self.pos < self.end:
                             c = self.src[self.pos]
@@ -56,8 +61,8 @@ class pldata:
                                 break
                             self.pos += 1
                         if self.pos >= self.end:
-                            self.error = "Reached end of string in comment"
-                            return False
+                            raise PListError(start_line,
+                                "Reached end of string in comment")
                     else:
                         return True
                 else:
@@ -65,8 +70,9 @@ class pldata:
             if c == '\n':
                 self.line += 1
             self.pos += 1
-        self.error = "Reached end of string"
+        raise PListError(self.line, "Reached end of string")
     def parse_quoted_string(self):
+        start_line = self.line
         long_string = False
         escaped = 0
         shrink = 0
@@ -114,8 +120,8 @@ class pldata:
                 self.line += 1
             self.pos += 1
         if self.pos >= self.end:
-            self.error = "Reached end of string while parsing quoted string"
-            return None
+            raise PListError(start_line,
+                "Reached end of string while parsing quoted string")
         if self.pos - start - shrink == 0:
             return ""
         s = self.src[start:self.pos]
@@ -131,6 +137,7 @@ class pldata:
             self.pos += 1
         return self.src[start:self.pos]
     def parse_data(self):
+        start_line = self.line
         self.pos += 1
         start = self.pos
         nibbles = 0
@@ -141,46 +148,40 @@ class pldata:
                 continue
             if self.src[self.pos] == '>':
                 if nibbles & 1:
-                    self.error = "invalid data, missing nibble"
-                    return None
+                    raise PListError(self.line,
+                        "Invalid data, missing nibble")
                 s = self.src[start:self.pos]
                 self.pos += 1
                 return binascii.a2b_hex(s)
-            self.error = "invalid character in data"
-            return None
-        self.error = "Reached end of string while parsing data"
-        return None
+            raise PListError(self.line,
+                "Invalid character in data")
+        raise PListError(start_line,
+            "Reached end of string while parsing data")
     def parse(self):
-        if not self.skip_space():
-            return None
+        self.skip_space()
         if self.src[self.pos] == '{':
             item = {}
             self.pos += 1
             while self.skip_space() and self.src[self.pos] != '}':
                 key = self.parse()
-                if key == None:
-                    return None
                 if type(key) != str:
-                    self.error = "Key is not a string"
-                    return None
-                if not self.skip_space():
-                    return None
+                    raise PListError(self.line,
+                        "Key is not a string")
+                self.skip_space()
                 if self.src[self.pos] != '=':
-                    self.error = "Unexpected character (expected '=')"
-                    return None
+                    raise PListError(self.line,
+                        "Unexpected character (expected '=')")
                 self.pos += 1
                 value = self.parse()
-                if not value:
-                    return None
                 if self.src[self.pos] == ';':
                     self.pos += 1
                 elif self.src[self.pos] != '}':
-                    self.error = "Unexpected character (wanted ';' or '}')"
-                    return None
+                    raise PListError(self.line,
+                        "Unexpected character (wanted ';' or '}')")
                 item[key] = value
             if self.pos >= self.end:
-                self.error = "Unexpected end of string when parsing dictionary"
-                return None
+                raise PListError(self.line,
+                    "Unexpected end of string when parsing dictionary")
             self.pos += 1
             return item
         elif self.src[self.pos] == '(':
@@ -188,15 +189,12 @@ class pldata:
             self.pos += 1
             while self.skip_space() and self.src[self.pos] != ')':
                 value = self.parse()
-                if value == None:
-                    return None
-                if not self.skip_space():
-                    return None
+                self.skip_space()
                 if self.src[self.pos] == ',':
                     self.pos += 1
                 elif self.src[self.pos] != ')':
-                    self.error = "Unexpected character (wanted ',' or ')')"
-                    return None
+                    raise PListError(self.line,
+                        "Unexpected character (wanted ',' or ')')")
                 item.append(value)
             self.pos += 1
             return item
@@ -244,6 +242,8 @@ class pldata:
             self.data.append('>')
         elif type(item) == str:
             self.write_string(item)
+        else:
+            raise PListError (0, "unsupported type")
     def write(self, item):
         self.data = []
         self.write_item(item, 0)
