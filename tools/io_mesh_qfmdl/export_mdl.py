@@ -23,6 +23,7 @@ import bpy
 from bpy_extras.object_utils import object_data_add
 from mathutils import Vector,Matrix
 
+from .qfplist import pldata, PListError
 from .quakepal import palette
 from .mdl import MDL
 
@@ -47,41 +48,49 @@ def check_faces(mesh):
     mesh.update()
     return True
 
+def convert_image(image):
+    size = image.size
+    skin = MDL.Skin()
+    skin.type = 0
+    skin.pixels = bytearray(size[0] * size[1]) # preallocate
+    cache = {}
+    pixels = image.pixels[:]
+    for y in range(size[1]):
+        for x in range(size[0]):
+            outind = y * size[0] + x
+            # quake textures are top to bottom, but blender images
+            # are bottom to top
+            inind = ((size[1] - 1 - y) * size[0] + x) * 4
+            rgb = pixels[inind : inind + 3] # ignore alpha
+            rgb = tuple(map(lambda x: int(x * 255 + 0.5), rgb))
+            if rgb not in cache:
+                best = (3*256*256, -1)
+                for i, p in enumerate(palette):
+                    if i > 255:     # should never happen
+                        break
+                    r = 0
+                    for x in map (lambda a, b: (a - b) ** 2, rgb, p):
+                        r += x
+                    if r < best[0]:
+                        best = (r, i)
+                cache[rgb] = best[1]
+            skin.pixels[outind] = cache[rgb]
+    return skin
+
+def null_skin(size):
+    skin = MDL.Skin()
+    skin.type = 0
+    skin.pixels = bytearray(size[0] * size[1]) # black skin
+
 def make_skin(mdl, mesh):
     if (not mesh.uv_textures or not mesh.uv_textures[0].data
         or not mesh.uv_textures[0].data[0].image):
-        mdl.skinwidth = mdl.skinheight = 4
-        skin = MDL.Skin()
-        skin.type = 0
-        skin.pixels = bytes(mdl.skinwidth * mdl.skinheight) # black skin
+        mdl.skinwidth, mdl.skinheight = (4, 4)
+        skin = null_skin((mdl.skinwidth, mdl.skinheight))
     else:
         image = mesh.uv_textures[0].data[0].image
         mdl.skinwidth, mdl.skinheight = image.size
-        skin = MDL.Skin()
-        skin.type = 0
-        skin.pixels = bytearray(mdl.skinwidth * mdl.skinheight) # preallocate
-        cache = {}
-        pixels = image.pixels[:]
-        for y in range(mdl.skinheight):
-            for x in range(mdl.skinwidth):
-                outind = y * mdl.skinwidth + x
-                # quake textures are top to bottom, but blender images
-                # are bottom to top
-                inind = ((mdl.skinheight - 1 - y) * mdl.skinwidth + x) * 4
-                rgb = pixels[inind : inind + 3] # ignore alpha
-                rgb = tuple(map(lambda x: int(x * 255 + 0.5), rgb))
-                if rgb not in cache:
-                    best = (3*256*256, -1)
-                    for i, p in enumerate(palette):
-                        if i > 255:     # should never happen
-                            break
-                        r = 0
-                        for x in map (lambda a, b: (a - b) ** 2, rgb, p):
-                            r += x
-                        if r < best[0]:
-                            best = (r, i)
-                    cache[rgb] = best[1]
-                skin.pixels[outind] = cache[rgb]
+        skin = convert_image(image)
     mdl.skins.append(skin)
 
 def build_tris(mesh):
@@ -161,11 +170,91 @@ def calc_average_area(mdl):
         totalarea += (c * c) ** 0.5 / 2.0
     return totalarea / len(mdl.tris)
 
-def get_properties(mdl, obj):
+def get_properties(operator, mdl, obj):
     mdl.eyeposition = tuple (obj.qfmdl.eyeposition)
     mdl.synctype = MDL.SYNCTYPE[obj.qfmdl.synctype]
     mdl.flags = ((obj.qfmdl.synctype and MDL.EF_ROTATE or 0)
                  | MDL.EFFECTS[obj.qfmdl.effects])
+    script = obj.qfmdl.script
+    mdl.script = None
+    if script:
+        try:
+            script = bpy.data.texts[script].as_string()
+        except KeyError:
+            operator.report({'ERROR'},
+                            "Script '%s' not found." % script)
+            return False
+        pl = pldata(script)
+        try:
+            mdl.script = pl.parse()
+        except PListError as err:
+            operator.report({'ERROR'}, "Script error: %s." % err)
+            return False
+    return True
+
+def process_skin(mdl, skin, ingroup=False):
+    if 'skins' in skin:
+        if ingroup:
+            raise ValueError("nested skin group")
+        intervals=['0.0']
+        if 'intervals' in skin:
+            intervals += list(skin['intervals'])
+        intervals = list(map(lambda x: float(x), intervals))
+        while len(intervals) < len(skin['skins']):
+            intervals.append(intervals[-1] + 0.1)
+        sk = MDL.Skin()
+        sk.type = 1
+        sk.times = intervals[1:len(skin['skins']) + 1]
+        sk.skins = []
+        for s in skin['skins']:
+            sk.skins.append(process_skin (mdl, s, True))
+        return sk
+    else:
+        #FIXME error handling
+        name = skin['name']
+        image = bpy.data.images[name]
+        if hasattr(mdl, 'skinwidth'):
+            if (mdl.skinwidth != image.size[0]
+                or mdl.skinheight != image.size[1]):
+                raise ValueError("%s: different skin size (%d %d) (%d %d)"
+                                 % (name, mdl.skinwidth, mdl.skinheight, int(image.size[0]), int(image.size[1])))
+        else:
+            mdl.skinwidth, mdl.skinheight = image.size
+        sk = convert_image(image)
+        return sk
+
+def process_frame(mdl, scene, frame, vertmap, ingroup = False,
+                  frameno = None, name = 'frame'):
+    sc = bpy.context.scene
+    if frameno == None:
+        frameno = scene.frame_current + scene.frame_subframe
+    if 'frameno' in frame:
+        frameno = float(frame['frameno'])
+    if 'name' in frame:
+        name = frame['name']
+    if 'frames' in frame:
+        if ingroup:
+            raise ValueError("nested frames group")
+        intervals=['0.0']
+        if 'intervals' in frame:
+            intervals += list(frame['intervals'])
+        intervals = list(map(lambda x: float(x), intervals))
+        while len(intervals) < len(frame['frames']):
+            intervals.append(intervals[-1] + 0.1)
+        fr = MDL.Frame()
+        for i, f in enumerate(frame['frames']):
+            fr.add_frame(process_frame (mdl, scene, f, vertmap, True,
+                                        frameno + i, name + str(i + 1)),
+                         intervals[i + 1])
+        if 'intervals' in frame:
+            return fr
+        mdl.frames += fr.frames[:-1]
+        return fr.frames[-1]
+    scene.frame_set (int(frameno), frameno - int(frameno))
+    mesh = mdl.obj.to_mesh (scene, True, 'PREVIEW') #wysiwyg?
+    fr = make_frame(mesh, vertmap)
+    fr.name = name
+    return fr
 
 def export_mdl(operator, context, filepath):
     obj = context.active_object
@@ -175,16 +264,24 @@ def export_mdl(operator, context, filepath):
                         "Mesh has faces with more than 3 vertices.")
         return {'CANCELLED'}
     mdl = MDL(obj.name)
-    #FIXME this should be configurable
-    #FIXME use it
-    if mdl.name in bpy.data.texts:
-        mdl.script = bpy.data.texts[mdl.name].as_string()
-    make_skin(mdl, mesh)
+    mdl.obj = obj
+    if not get_properties(operator, mdl, obj):
+        return {'CANCELLED'}
     mdl.tris, mdl.stverts, vertmap = build_tris(mesh)
+    if mdl.script:
+        if 'skins' in mdl.script:
+            for skin in mdl.script['skins']:
+                mdl.skins.append(process_skin(mdl, skin))
+        if 'frames' in mdl.script:
+            for frame in mdl.script['frames']:
+                mdl.frames.append(process_frame(mdl, context.scene, frame,
+                                                vertmap))
+    if not mdl.skins:
+        make_skin(mdl, mesh)
+    if not mdl.frames:
+        mdl.frames.append(make_frame(mesh, vertmap))
     convert_stverts (mdl, mdl.stverts)
-    mdl.frames.append(make_frame(mesh, vertmap))
     mdl.size = calc_average_area(mdl)
     scale_verts(mdl)
-    get_properties(mdl, obj)
     mdl.write(filepath)
     return {'FINISHED'}
