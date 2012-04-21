@@ -74,6 +74,7 @@ class MDL:
             if not sub:
                 mdl.write_int(self.type)
                 if self.type:
+                    mdl.write_int(len(self.skins))
                     mdl.write_float(self.times)
                     for subskin in self.skins:
                         subskin.write(mdl, 1)
