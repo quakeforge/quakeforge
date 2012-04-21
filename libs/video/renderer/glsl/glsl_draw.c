@@ -98,7 +98,7 @@ static struct {
 	{"mvp_mat", 1},
 	{"vertex", 0},
 	{"vcolor", 0},
-	{"char", 0},
+	{"dchar", 0},
 };
 
 static struct {

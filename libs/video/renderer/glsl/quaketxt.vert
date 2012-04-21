@@ -21,7 +21,7 @@ attribute vec4 vcolor;
 	The quake character map supports only 256 characters, 0-255. Any other
 	value will give interesting results.
 */
-attribute float char;
+attribute float dchar;
 
 /** Coordinate in character map texture.
 */
@@ -36,8 +36,8 @@ main (void)
 	const vec2  inset = vec2 (0.03125, 0.03125);
 	const vec2  size = vec2 (0.0625, 0.0625);
 
-	row = floor (char / 16.0);
-	col = mod (char, 16.0);
+	row = floor (dchar / 16.0);
+	col = mod (dchar, 16.0);
 
 	pos = vertex.xy;
 	corner = vertex.zw;
