@@ -239,7 +239,7 @@ def process_frame(mdl, scene, frame, vertmap, ingroup = False,
         if 'intervals' in frame:
             intervals += list(frame['intervals'])
         intervals = list(map(lambda x: float(x), intervals))
-        while len(intervals) < len(frame['frames']):
+        while len(intervals) < len(frame['frames']) + 1:
             intervals.append(intervals[-1] + 0.1)
         fr = MDL.Frame()
         for i, f in enumerate(frame['frames']):
