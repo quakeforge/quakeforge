@@ -173,7 +173,7 @@ def calc_average_area(mdl):
 def get_properties(operator, mdl, obj):
     mdl.eyeposition = tuple (obj.qfmdl.eyeposition)
     mdl.synctype = MDL.SYNCTYPE[obj.qfmdl.synctype]
-    mdl.flags = ((obj.qfmdl.synctype and MDL.EF_ROTATE or 0)
+    mdl.flags = ((obj.qfmdl.rotate and MDL.EF_ROTATE or 0)
                  | MDL.EFFECTS[obj.qfmdl.effects])
     script = obj.qfmdl.script
     mdl.script = None
