@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id: rua_qfs.c 11332 2006-12-20 12:08:57Z taniwha $";
-
 #include <stdlib.h>
 #ifdef HAVE_STRING_H
 # include <string.h>

@@ -30,9 +30,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
-
 #include <stdlib.h>
 #include <X11/Xlib.h>
 #include <X11/Xproto.h>

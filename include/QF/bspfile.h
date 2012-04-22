@@ -23,7 +23,6 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id$
 */
 #ifndef __bspfile_h_
 #define __bspfile_h_

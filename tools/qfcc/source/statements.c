@@ -53,8 +53,6 @@
 #include "type.h"
 #include "qc-parse.h"
 
-static __attribute__ ((used)) const char rcsid[] = "$Id$";
-
 static void
 print_operand (operand_t *op)
 {

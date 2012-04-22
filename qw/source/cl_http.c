@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id: template.c 11394 2007-03-17 03:23:39Z taniwha $";
-
 #ifdef HAVE_LIBCURL
 
 #include <curl/curl.h>

@@ -27,7 +27,6 @@
 		Boston, MA  02111-1307, USA
 
 
-	$Id$
 */
 
 #ifndef __gib_handle_h

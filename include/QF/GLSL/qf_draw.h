@@ -23,7 +23,6 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: draw.h 10910 2004-05-07 03:54:35Z taniwha $
 */
 
 #ifndef __gl_draw_h

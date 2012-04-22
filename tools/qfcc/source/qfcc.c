@@ -30,8 +30,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = "$Id$";
-
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif

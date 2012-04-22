@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id: template.c 11394 2007-03-17 03:23:39Z taniwha $";
-
 #include "QF/console.h"
 #include "QF/view.h"
 #include "QF/va.h"

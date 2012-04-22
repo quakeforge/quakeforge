@@ -23,7 +23,6 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: sv_pr_cpqw.h 10225 2004-01-06 07:00:39Z taniwha $
 */
 
 #ifndef __sv_pr_cpqw_h

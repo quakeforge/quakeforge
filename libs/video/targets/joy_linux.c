@@ -29,9 +29,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
-
 #include <fcntl.h>
 #include <unistd.h>
 #include <linux/joystick.h>

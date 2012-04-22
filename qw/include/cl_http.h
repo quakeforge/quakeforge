@@ -26,7 +26,6 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: template.h 11394 2007-03-17 03:23:39Z taniwha $
 */
 
 #ifndef __cl_http_h

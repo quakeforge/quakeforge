@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
-
 extern int qf_sdl_link;
 
 static __attribute__ ((used)) int *const _qf_sdl_link = &qf_sdl_link;

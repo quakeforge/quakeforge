@@ -33,8 +33,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = "$Id$";
-
 #define NH_DEFINE
 #include "namehack.h"
 

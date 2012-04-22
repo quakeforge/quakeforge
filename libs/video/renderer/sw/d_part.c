@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
-
 #include "d_local.h"
 #include "r_internal.h"
 

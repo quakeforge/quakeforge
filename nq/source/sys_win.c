@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
-
 #include "winquake.h"
 #include "win32/resources/resource.h"
 

@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
-
 #ifdef HAVE_CURSES_H
 # include <curses.h>
 #endif

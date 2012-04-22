@@ -23,7 +23,6 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id$
 */
 
 // the status bar is redrawn only if something has changed, but if anything

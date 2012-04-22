@@ -26,7 +26,6 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id$
 */
 #ifndef __QF_GLSL_qf_alias_h
 #define __QF_GLSL_qf_alias_h

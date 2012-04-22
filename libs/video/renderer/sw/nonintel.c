@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
-
 #ifdef PIC
 #undef USE_INTEL_ASM //XXX asm pic hack
 #endif

@@ -17,7 +17,6 @@
 
 	See file, 'COPYING', for details.
 
-	$Id$
 */
 
 #ifndef __QF_winding_h

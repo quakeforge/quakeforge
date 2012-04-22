@@ -32,8 +32,6 @@
 
 #include "r_internal.h"
 
-static __attribute__ ((used)) const char rcsid[] = "$Id$";
-
 float r_avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "anorms.h"
 };

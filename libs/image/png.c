@@ -28,8 +28,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = "$Id$";
-
 #ifdef HAVE_PNG
 
 #ifdef HAVE_STRING_H

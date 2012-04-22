@@ -29,9 +29,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
-
 #ifdef HAVE_IO_H
 # include <io.h>
 #endif

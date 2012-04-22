@@ -35,9 +35,6 @@
 
 #include "gib_handle.h"
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
-
 static unsigned long int gib_next_handle;
 static gib_handle_t *gib_unused_handles;
 static gib_handle_t **gib_handles;

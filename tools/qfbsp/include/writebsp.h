@@ -17,7 +17,6 @@
 
 	See file, 'COPYING', for details.
 
-	$Id$
 */
 
 #ifndef qfbsp_writebsp_h

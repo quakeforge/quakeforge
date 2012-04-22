@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
-
 #include <getopt.h>
 #include <stdlib.h>
 #ifdef HAVE_UNISTD_H

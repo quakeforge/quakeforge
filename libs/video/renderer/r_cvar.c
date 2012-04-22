@@ -33,9 +33,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
-
 #include "QF/cvar.h"
 #include "QF/model.h"
 #include "QF/qendian.h"

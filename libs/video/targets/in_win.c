@@ -30,9 +30,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
-
 #ifdef __MINGW32__
 # define INITGUID
 #endif

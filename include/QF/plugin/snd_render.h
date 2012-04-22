@@ -23,7 +23,6 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id$
 */
 #ifndef __QF_plugin_snd_render_h_
 #define __QF_plugin_snd_render_h_

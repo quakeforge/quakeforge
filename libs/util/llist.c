@@ -39,9 +39,6 @@
 
 #include "QF/llist.h"
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
-
 static llist_node_t *
 llist_newnode (llist_t *list, void *data)
 {

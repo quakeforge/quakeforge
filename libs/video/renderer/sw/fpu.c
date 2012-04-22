@@ -31,9 +31,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
-
 #ifndef USE_INTEL_ASM
 #include "r_internal.h"
 

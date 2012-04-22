@@ -23,7 +23,6 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id$
 */
 #if defined(_WIN32) && !defined(__GNUC__)
 # pragma warning(disable:4305)

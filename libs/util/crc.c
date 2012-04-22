@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
-
 #include "QF/crc.h"
 
 // this is a 16 bit, non-reflected CRC using the polynomial 0x1021

@@ -30,9 +30,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
-
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"

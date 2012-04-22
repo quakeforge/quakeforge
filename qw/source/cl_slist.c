@@ -32,9 +32,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
-
 #include <sys/types.h>
 #ifdef HAVE_NETINET_IN_H
 # define model_t sun_model_t

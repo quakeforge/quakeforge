@@ -26,13 +26,10 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id$
 */
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
-static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #ifdef HAVE_STRING_H
 # include <string.h>

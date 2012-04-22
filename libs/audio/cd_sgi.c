@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] = 
-	"$Id$";
-
 #include <errno.h>
 #include <sys/types.h>
 #include <dmedia/cdaudio.h>

@@ -37,9 +37,6 @@
 # include "strings.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
-
 #include <stdio.h>
 #include <stdlib.h>
 
