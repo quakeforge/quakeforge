@@ -341,6 +341,8 @@ void SND_AmbientOn (void);
 	\param v_forward 3d vector of the client's facing direction
 	\param v_right	3d vector of the client's rightward direction
 	\param v_up		3d vector of the client's upward direction
+	\param ambient_sound_level Pointer to 4 bytes indicating the levels at
+					which to play the ambient sounds.
 */
 void SND_SetListener (const vec3_t origin, const vec3_t v_forward,
 					  const vec3_t v_right, const vec3_t v_up,

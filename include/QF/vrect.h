@@ -89,7 +89,7 @@ vrect_t *VRect_Intersect (const vrect_t *r1, const vrect_t *r2);
 	pointer.
 
 	\param r		The rectangle to split.
-	\param y		The horizontal line by which \r will be split.
+	\param y		The horizontal line by which \a r will be split.
 	\return			The two linked rectangles representing the portions above
 					and below \a y. The returned pointer points to the first
 					(above) rectangle, which links to the second (below)
@@ -109,7 +109,7 @@ vrect_t *VRect_HSplit (const vrect_t *r, int y);
 	first's vrect_t::next pointer.
 
 	\param r		The rectangle to split.
-	\param x		The vertical line by which \r will be split.
+	\param x		The vertical line by which \a r will be split.
 	\return			The two linked rectangles representing the portions to the
 					left and right of \a y. The returned pointer points to the
 					first (left) rectangle, which links to the second (right)
@@ -163,6 +163,6 @@ vrect_t *VRect_Union (const vrect_t *r1, const vrect_t *r2);
 					cannot be merged.
 	\note	It is the caller's responsibility to delete the returned rectangle.
 */
-vrect_t *VRect_Merge (const vrect_t *r, const vrect_t *s);
+vrect_t *VRect_Merge (const vrect_t *r1, const vrect_t *r2);
 
 #endif//__QF_vrect_h
