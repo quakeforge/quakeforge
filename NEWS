@@ -1,5 +1,16 @@
 NEWS for the QuakeForge project
 -------------------------------
+Changes from 0.6.3
+    o Renderer plugins. This means the same program is used for all
+      renders. Which renderer to use is selected via the vid_render plugin
+      (one of gl, glsl, sw, sw32; defaults to glsl). Currently selectable
+      only at startup ("+set vid_render gl" on the command line, or "set
+      vid_render gl" in a startup config file (not config.cfg))
+    o MDL skins can now be 1024x1024
+    o Fix missing glsl console text with nvidia's drivers.
+    o MDL import/export addon for blender can now export animated models
+      (skins and mesh deformations)
+
 Changes from 0.6.2
     o Compile fix for zlib 1.2.6.
     o Use CURL compile flags correctly.
