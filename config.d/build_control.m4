@@ -273,7 +273,7 @@ if test "x$static_plugins" = xauto; then
 	fi
 fi
 if test "x$static_plugins" = xyes; then
-	QF_PROCESS_NEED_STATIC_PLUGINS(vid_render, [gl glsl sw sw32])
+	QF_PROCESS_NEED_STATIC_PLUGINS(vid_render, [sw sw32 gl glsl])
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [server], [\$(top_builddir)/libs/console], [server])
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [client], [\$(top_builddir)/libs/console], [client])
 
@@ -288,7 +288,7 @@ if test "x$static_plugins" = xyes; then
 		CDTYPE="$CDTYPE (static)"
 	fi
 else
-	QF_PROCESS_NEED_PLUGINS(vid_render, [gl glsl sw sw32])
+	QF_PROCESS_NEED_PLUGINS(vid_render, [sw sw32 gl glsl])
 	QF_PROCESS_NEED_PLUGINS(console, [server], [server])
 	QF_PROCESS_NEED_PLUGINS(console, [client], [client])
 	QF_PROCESS_NEED_PLUGINS(snd_output, [sdl mme sgi sun win dx oss alsa])
