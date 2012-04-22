@@ -88,6 +88,9 @@ class QFMDLSettings(bpy.types.PropertyGroup):
     script = StringProperty(
         name="Script",
         description="Script for animating frames and skins")
+    md16 = BoolProperty(
+        name="16-bit",
+        description="16 bit vertex coordinates: QuakeForge only")
 
 class ImportMDL6(bpy.types.Operator, ImportHelper):
     '''Load a Quake MDL (v6) File'''
@@ -140,6 +143,7 @@ class MDLPanel(bpy.types.Panel):
         layout.prop(obj.qfmdl, "rotate")
         layout.prop(obj.qfmdl, "effects")
         layout.prop(obj.qfmdl, "script")
+        layout.prop(obj.qfmdl, "md16")
 
 def menu_func_import(self, context):
     self.layout.operator(ImportMDL6.bl_idname, text="Quake MDL (.mdl)")

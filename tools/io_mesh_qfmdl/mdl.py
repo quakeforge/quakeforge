@@ -218,7 +218,7 @@ class MDL:
         def write_verts(self, mdl):
             for vert in self.verts:
                 vert.write(mdl, True)
-            if mdl.ident == 'MD16' and high:
+            if mdl.ident == 'MD16':
                 for vert in self.verts:
                     vert.write(mdl, False)
 
@@ -304,9 +304,9 @@ class MDL:
         data = data.encode()
         self.write_bytes(data, size)
 
-    def __init__(self, name = "mdl"):
+    def __init__(self, name = "mdl", md16 = False):
         self.name = name
-        self.ident = "IDPO"     #only 8 bit for now
+        self.ident = md16 and "MD16" or "IDPO"
         self.version = 6        #write only version 6 (nothing usable uses 3)
         self.scale = (1.0, 1.0, 1.0)        #FIXME
         self.scale_origin = (0.0, 0.0, 0.0) #FIXME

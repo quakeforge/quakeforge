@@ -175,6 +175,8 @@ def get_properties(operator, mdl, obj):
     mdl.synctype = MDL.SYNCTYPE[obj.qfmdl.synctype]
     mdl.flags = ((obj.qfmdl.rotate and MDL.EF_ROTATE or 0)
                  | MDL.EFFECTS[obj.qfmdl.effects])
+    if obj.qfmdl.md16:
+        mdl.ident = "MD16"
     script = obj.qfmdl.script
     mdl.script = None
     if script:
