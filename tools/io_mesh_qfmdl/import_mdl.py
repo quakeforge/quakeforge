@@ -102,7 +102,7 @@ def setup_skins (mdl, uvs):
     load_skins (mdl)
     img = mdl.images[0]   # use the first skin for now
     uvlay = mdl.mesh.uv_textures.new(mdl.name)
-    uvloop = mdl.mesh.uv_loop_layers[0]
+    uvloop = mdl.mesh.uv_layers[0]
     for i, texpoly in enumerate(uvlay.data):
         poly = mdl.mesh.polygons[i]
         mdl_uv = uvs[i]
