@@ -78,7 +78,7 @@ process_frame (maliasframedesc_t *frame, int posenum, int extra)
 	// The low-order 8 bits (actually, fractional) are completely separate
 	// from the high-order bits (see R_AliasTransformFinalVert16 in
 	// sw_ralias.c), but in adjacant arrays. This means we can get away with
-	// just one memcpy as there are non endian issues.
+	// just one memcpy as there are no endian issues.
 	memcpy (frame_verts, poseverts[posenum], size);
 }
 
