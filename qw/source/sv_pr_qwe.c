@@ -256,7 +256,7 @@ PF_newstr (progs_t *pr)
 		int         s = dstr->size;
 		dstr->size = P_FLOAT (pr, 1) + 1;
 		dstring_adjust (dstr);
-		memset (dstr->str + s, dstr->size - s, 0);
+		memset (dstr->str + s, 0, dstr->size - s);
 	}
 
 	R_STRING (pr) = i;
