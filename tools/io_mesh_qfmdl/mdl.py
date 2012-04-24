@@ -212,7 +212,7 @@ class MDL:
             if mdl.ident == 'MD16':
                 for i in range(num):
                     v = MDL.Vert().read(mdl)
-                    r = tuple(map(lambda a, b: a * 256 + b,
+                    r = tuple(map(lambda a, b: a + b / 256.0,
                                   self.verts[i].r, v.r))
                     self.verts[i].r = r
         def write_verts(self, mdl):
@@ -234,14 +234,14 @@ class MDL:
             self.ni = mdl.read_byte()
             return self
         def write(self, mdl, high=True):
-            if mdl.ident == 'MD16' and high:
-                r = tuple(map(lambda a: a >> 8, self.r))
+            if mdl.ident == 'MD16' and not high:
+                r = tuple(map(lambda a: int(a * 256) & 255, self.r))
             else:
-                r = tuple(map(lambda a: a & 255, self.r))
+                r = tuple(map(lambda a: int(a) & 255, self.r))
             mdl.write_byte(r)
             mdl.write_byte(self.ni)
         def scale(self, mdl):
-            self.r = tuple(map(lambda x, s, t: int((x - t) / s),
+            self.r = tuple(map(lambda x, s, t: (x - t) / s,
                                self.r, mdl.scale, mdl.scale_origin))
 
     def read_byte(self, count=1):
