@@ -288,7 +288,7 @@ sw32_Turbulent (espan_t *pspan)
 		sdivz = sw32_d_sdivzorigin + dv * sw32_d_sdivzstepv + du * sw32_d_sdivzstepu;
 		tdivz = sw32_d_tdivzorigin + dv * sw32_d_tdivzstepv + du * sw32_d_tdivzstepu;
 		zi = (d_ziorigin + dv * d_zistepv + du * d_zistepu) * 65536.0f;
-		z = sw32_d_zitable[(int) zi];
+		z = sw32_d_zitable[(unsigned short) zi];
 
 		r_turb_s = (int) (sdivz * z) + sw32_sadjust;
 		if (r_turb_s > sw32_bbextents)
@@ -317,7 +317,7 @@ sw32_Turbulent (espan_t *pspan)
 				sdivz += sdivz16stepu;
 				tdivz += tdivz16stepu;
 				zi += zi16stepu;
-				z = sw32_d_zitable[(int) zi];
+				z = sw32_d_zitable[(unsigned short) zi];
 
 				snext = (int) (sdivz * z) + sw32_sadjust;
 				if (snext > sw32_bbextents)
@@ -346,7 +346,7 @@ sw32_Turbulent (espan_t *pspan)
 				sdivz += sw32_d_sdivzstepu * spancountminus1;
 				tdivz += sw32_d_tdivzstepu * spancountminus1;
 				zi += d_zistepu * 65536.0f * spancountminus1;
-				z = sw32_d_zitable[(int) zi];
+				z = sw32_d_zitable[(unsigned short) zi];
 				snext = (int) (sdivz * z) + sw32_sadjust;
 				if (snext > sw32_bbextents)
 					snext = sw32_bbextents;
@@ -413,7 +413,7 @@ sw32_D_DrawSpans (espan_t *pspan)
 			sdivz = sw32_d_sdivzorigin + dv * sw32_d_sdivzstepv + du * sw32_d_sdivzstepu;
 			tdivz = sw32_d_tdivzorigin + dv * sw32_d_tdivzstepv + du * sw32_d_tdivzstepu;
 			zi = (d_ziorigin + dv * d_zistepv + du * d_zistepu) * 65536.0f;
-			z = sw32_d_zitable[(int) zi];
+			z = sw32_d_zitable[(unsigned short) zi];
 
 			s = (int) (sdivz * z) + sw32_sadjust;
 			s = bound(0, s, sw32_bbextents);
@@ -427,7 +427,7 @@ sw32_D_DrawSpans (espan_t *pspan)
 				sdivz += sdivz8stepu;
 				tdivz += tdivz8stepu;
 				zi += zi8stepu;
-				z = sw32_d_zitable[(int) zi];
+				z = sw32_d_zitable[(unsigned short) zi];
 
 				// prevent round-off error on <0 steps from from causing
 				// overstepping & running off the edge of the texture
@@ -474,7 +474,7 @@ sw32_D_DrawSpans (espan_t *pspan)
 				sdivz += sw32_d_sdivzstepu * count; //minus1;
 				tdivz += sw32_d_tdivzstepu * count; //minus1;
 				zi += d_zistepu * 65536.0f * count; //minus1;
-				z = sw32_d_zitable[(int) zi];
+				z = sw32_d_zitable[(unsigned short) zi];
 
 				// prevent round-off error on <0 steps from from causing
 				// overstepping & running off the edge of the texture
@@ -556,7 +556,7 @@ sw32_D_DrawSpans (espan_t *pspan)
 			sdivz = sw32_d_sdivzorigin + dv * sw32_d_sdivzstepv + du * sw32_d_sdivzstepu;
 			tdivz = sw32_d_tdivzorigin + dv * sw32_d_tdivzstepv + du * sw32_d_tdivzstepu;
 			zi = (d_ziorigin + dv * d_zistepv + du * d_zistepu) * 65536.0f;
-			z = sw32_d_zitable[(int) zi];
+			z = sw32_d_zitable[(unsigned short) zi];
 
 			s = (int) (sdivz * z) + sw32_sadjust;
 			s = bound(0, s, sw32_bbextents);
@@ -570,7 +570,7 @@ sw32_D_DrawSpans (espan_t *pspan)
 				sdivz += sdivz8stepu;
 				tdivz += tdivz8stepu;
 				zi += zi8stepu;
-				z = sw32_d_zitable[(int) zi];
+				z = sw32_d_zitable[(unsigned short) zi];
 
 				// prevent round-off error on <0 steps from from causing
 				// overstepping & running off the edge of the texture
@@ -617,7 +617,7 @@ sw32_D_DrawSpans (espan_t *pspan)
 				sdivz += sw32_d_sdivzstepu * count; //minus1;
 				tdivz += sw32_d_tdivzstepu * count; //minus1;
 				zi += d_zistepu * 65536.0f * count; //minus1;
-				z = sw32_d_zitable[(int) zi];
+				z = sw32_d_zitable[(unsigned short) zi];
 
 				// prevent round-off error on <0 steps from from causing
 				// overstepping & running off the edge of the texture
@@ -697,7 +697,7 @@ sw32_D_DrawSpans (espan_t *pspan)
 			sdivz = sw32_d_sdivzorigin + dv * sw32_d_sdivzstepv + du * sw32_d_sdivzstepu;
 			tdivz = sw32_d_tdivzorigin + dv * sw32_d_tdivzstepv + du * sw32_d_tdivzstepu;
 			zi = (d_ziorigin + dv * d_zistepv + du * d_zistepu) * 65536.0f;
-			z = sw32_d_zitable[(int) zi];
+			z = sw32_d_zitable[(unsigned short) zi];
 
 			s = (int) (sdivz * z) + sw32_sadjust;
 			s = bound(0, s, sw32_bbextents);
@@ -711,7 +711,7 @@ sw32_D_DrawSpans (espan_t *pspan)
 				sdivz += sdivz8stepu;
 				tdivz += tdivz8stepu;
 				zi += zi8stepu;
-				z = sw32_d_zitable[(int) zi];
+				z = sw32_d_zitable[(unsigned short) zi];
 
 				// prevent round-off error on <0 steps from from causing
 				// overstepping & running off the edge of the texture
@@ -759,7 +759,7 @@ sw32_D_DrawSpans (espan_t *pspan)
 				sdivz += sw32_d_sdivzstepu * count; //minus1;
 				tdivz += sw32_d_tdivzstepu * count; //minus1;
 				zi += d_zistepu * 65536.0f * count; //minus1;
-				z = sw32_d_zitable[(int) zi];
+				z = sw32_d_zitable[(unsigned short) zi];
 
 				// prevent round-off error on <0 steps from from causing
 				// overstepping & running off the edge of the texture
