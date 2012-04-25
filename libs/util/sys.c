@@ -432,7 +432,7 @@ Sys_Error (const char *error, ...)
 	static int  in_sys_error = 0;
 
 	if (in_sys_error) {
-		size_t      cnt;
+		ssize_t     cnt;
 		const char *msg = "\nSys_Error: recursive error condition\n";
 		cnt = write (2, msg, strlen (msg));
 		if (cnt < 0)
