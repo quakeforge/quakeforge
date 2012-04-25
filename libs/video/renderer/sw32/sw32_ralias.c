@@ -661,7 +661,7 @@ sw32_R_AliasDrawModel (alight_t *plighting)
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (currententity->trivial_accept && pmdl->ident != HEADER_MDL16)
+	if (currententity->trivial_accept)
 		R_AliasPrepareUnclippedPoints ();
 	else
 		R_AliasPreparePoints ();
