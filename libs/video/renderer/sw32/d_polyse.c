@@ -376,7 +376,7 @@ sw32_D_PolysetCalcGradients (int skinwidth)
 static void
 D_PolysetDrawSpans (spanpackage_t * pspanpackage)
 {
-	int i, j, texscantable[1024], *texscan;
+	int i, j, texscantable[2*MAX_LBM_HEIGHT], *texscan;
 	// LordHavoc: compute skin row table
 	for (i = 0, j = -sw32_r_affinetridesc.skinheight * sw32_r_affinetridesc.skinwidth;
 		 i < sw32_r_affinetridesc.skinheight*2;i++, j += sw32_r_affinetridesc.skinwidth)
