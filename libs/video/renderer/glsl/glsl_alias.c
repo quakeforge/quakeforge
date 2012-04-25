@@ -42,8 +42,10 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/skin.h"
+#include "QF/sys.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
@@ -168,6 +170,17 @@ set_arrays (const shaderparam_t *vert, const shaderparam_t *norm,
 		    const shaderparam_t *st, aliasvrt_t *pose)
 {
 	byte       *pose_offs = (byte *) pose;
+
+	if (developer->int_val & SYS_GLSL) {
+		GLint size;
+
+		qfeglGetBufferParameteriv (GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+		if (size <= (long)pose_offs) {
+			Sys_Printf ("Invalid pose");
+			pose = 0;
+		}
+	}
+
 	qfeglVertexAttribPointer (vert->location, 3, GL_UNSIGNED_SHORT,
 							 0, sizeof (aliasvrt_t),
 							 pose_offs + field_offset (aliasvrt_t, vertex));

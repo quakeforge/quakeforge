@@ -114,6 +114,7 @@ typedef struct entity_s {
 	float                   frame_interval;
 	int						pose1;
 	int						pose2;
+	struct model_s			*pose_model;	// no lerp if not the same as model
 } entity_t;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!

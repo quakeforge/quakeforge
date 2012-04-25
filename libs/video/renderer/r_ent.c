@@ -121,6 +121,12 @@ R_EntityBlend (entity_t *ent, int pose, float interval)
 {
 	float       blend;
 
+	if (ent->pose_model != ent->model) {
+		ent->pose_model = ent->model;
+		ent->pose1 = pose;
+		ent->pose2 = pose;
+		return 0.0;
+	}
 	ent->frame_interval = interval;
 	if (ent->pose2 != pose) {
 		ent->frame_start_time = vr_data.realtime;
