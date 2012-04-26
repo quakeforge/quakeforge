@@ -413,6 +413,7 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 							  const vec3_t point, float degrees);
 
 void QuatMult (const quat_t q1, const quat_t q2, quat_t out);
+void QuatMultVec (const quat_t q, const vec3_t v, vec3_t out);
 void QuatInverse (const quat_t in, quat_t out);
 void QuatExp (const quat_t a, quat_t b);
 void QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical);

@@ -182,6 +182,20 @@ QuatMult (const quat_t q1, const quat_t q2, quat_t out)
 }
 
 VISIBLE void
+QuatMultVec (const quat_t q, const vec3_t v, vec3_t out)
+{
+	vec_t      s;
+	vec3_t     tv;
+
+	s = -DotProduct (q + 1, v);
+	CrossProduct (q + 1, v, tv);
+	VectorMultAdd (tv, q[0], v, tv);
+	CrossProduct (q + 1, tv, out);
+	VectorMultSub (out, s, q + 1, out);
+	VectorMultAdd (out, q[0], tv, out);
+}
+
+VISIBLE void
 QuatInverse (const quat_t in, quat_t out)
 {
 	quat_t      q;
