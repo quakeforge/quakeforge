@@ -2,7 +2,11 @@ AUTOMAKE_OPTIONS= foreign
 
 INCLUDES= -I$(top_srcdir)/include
 
-check_PROGRAMS=test-qfs test-quat test-vrect
+check_PROGRAMS=test-half test-qfs test-quat test-vrect
+
+test_half_SOURCES=test-half.c
+test_half_LDADD=$(top_builddir)/libs/util/libQFutil.la
+test_half_DEPENDENCIES=$(top_builddir)/libs/util/libQFutil.la
 
 test_qfs_SOURCES=test-qfs.c
 test_qfs_LDADD=$(top_builddir)/libs/util/libQFutil.la

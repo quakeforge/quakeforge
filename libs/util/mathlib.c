@@ -54,6 +54,80 @@ VISIBLE const vec_t * const quat_origin = _quat_origin;
 
 #define DEG2RAD(a) (a * (M_PI / 180.0))
 
+#define FMANTBITS 23
+#define FMANTMASK ((1 << FMANTBITS) - 1)
+#define FEXPBITS 8
+#define FEXPMASK ((1 << FEXPBITS) - 1)
+#define FBIAS (1 << (FEXPBITS - 1))
+#define FEXPMAX ((1 << FEXPBITS) - 1)
+
+#define HMANTBITS 10
+#define HMANTMASK ((1 << HMANTBITS) - 1)
+#define HEXPBITS 5
+#define HEXPMASK ((1 << HEXPBITS) - 1)
+#define HBIAS (1 << (HEXPBITS - 1))
+#define HEXPMAX ((1 << HEXPBITS) - 1)
+
+int16_t
+FloatToHalf (float x)
+{
+	union {
+		float       f;
+		uint32_t    u;
+	} uf;
+	unsigned    sign;
+	int         exp;
+	unsigned    mant;
+	int16_t     half;
+
+	uf.f = x;
+	sign = (uf.u >> (FEXPBITS + FMANTBITS)) & 1;
+	exp = ((uf.u >> FMANTBITS) & FEXPMASK) - FBIAS + HBIAS;
+	mant = (uf.u & FMANTMASK) >> (FMANTBITS - HMANTBITS);
+	if (exp <= 0) {
+		mant |= 1 << HMANTBITS;
+		mant >>= min (1 - exp, HMANTBITS + 1);
+		exp = 0;
+	} else if (exp >= HEXPMAX) {
+		mant = 0;
+		exp = HEXPMAX;
+	}
+	half = (sign << (HEXPBITS + HMANTBITS)) | (exp << HMANTBITS) | mant;
+	return half;
+}
+
+float
+HalfToFloat (int16_t x)
+{
+	union {
+		float       f;
+		uint32_t    u;
+	} uf;
+	unsigned    sign;
+	int         exp;
+	unsigned    mant;
+
+	sign = (x >> (HEXPBITS + HMANTBITS)) & 1;
+	exp = ((x >> HMANTBITS) & HEXPMASK);
+	mant = (x & HMANTMASK) << (FMANTBITS - HMANTBITS);
+
+	if (exp == 0) {
+		if (mant) {
+			while (mant < (1 << FMANTBITS)) {
+				mant <<= 1;
+				exp--;
+			}
+			mant &= (1 << FMANTBITS) - 1;
+			exp += FBIAS - HBIAS + 1;
+		}
+	} else if (exp == HEXPMAX) {
+		exp = FEXPMAX;
+	} else {
+		exp += FBIAS - HBIAS;
+	}
+	uf.u = (sign << (FEXPBITS + FMANTBITS)) | (exp << FMANTBITS) | mant;
+	return uf.f;
+}
 
 static void
 ProjectPointOnPlane (vec3_t dst, const vec3_t p, const vec3_t normal)

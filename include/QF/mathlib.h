@@ -449,6 +449,8 @@ void Mat4Mult (const mat4_t a, const mat4_t b, mat4_t c);
 		VectorNegate ((sp)->normal, (dp)->normal);	\
 	} while (0)
 
+int16_t FloatToHalf (float x);
+float HalfToFloat (int16_t x);
 extern plane_t * const frustum;
 extern inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs);
 extern inline qboolean R_CullSphere (const vec3_t origin, const float radius);
