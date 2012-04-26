@@ -480,6 +480,28 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 }
 
 static expr_t *
+do_op_quatvect (int op, expr_t *e, expr_t *e1, expr_t *e2)
+{
+	if (op != '*')
+		return error (e1, "invalid operator for quaternion and vector");
+	if (is_constant (e1) && QuatIsZero (expr_quaternion (e1)))
+		return new_vector_expr (vec3_origin);
+	if (is_constant (e2) && VectorIsZero (expr_vector (e2)))
+		return new_vector_expr (vec3_origin);
+	if (is_constant (e1) && is_constant (e2)) {
+		const vec_t *q, *v;
+		vec3_t      r;
+
+		q = expr_quaternion (e1);
+		v = expr_vector (e2);
+		QuatMultVec (q, v, r);
+		return new_vector_expr (r);
+	}
+	e->e.expr.type = &type_vector;
+	return e;
+}
+
+static expr_t *
 do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	const float *q1, *q2;
@@ -994,7 +1016,7 @@ static operation_t op_quaternion[ev_type_count] = {
 	do_op_invalid,						// ev_void
 	do_op_invalid,						// ev_string
 	do_op_quaternion,					// ev_float
-	do_op_invalid,						// ev_vector
+	do_op_quatvect,						// ev_vector
 	do_op_invalid,						// ev_entity
 	do_op_invalid,						// ev_field
 	do_op_invalid,						// ev_func
