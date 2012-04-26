@@ -431,6 +431,9 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_MUL_Q:
 				QuatMult (OPA.quat_var, OPB.quat_var, OPC.quat_var);
 				break;
+			case OP_MUL_QV:
+				QuatMultVec (OPA.quat_var, OPB.vector_var, OPC.vector_var);
+				break;
 			case OP_MUL_FQ:
 				QuatScale (OPB.quat_var, OPA.float_var, OPC.quat_var);
 				break;

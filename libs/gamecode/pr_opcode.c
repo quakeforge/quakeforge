@@ -128,6 +128,10 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 ev_quat, ev_float, ev_quat,
 	 PROG_VERSION,
 	},
+	{"*", "mul.qv", OP_MUL_QV, false,
+	 ev_quat, ev_vector, ev_vector,
+	 PROG_VERSION,
+	},
 
 	{"~", "conj.q", OP_CONJ_Q, false,
 	 ev_quat, ev_invalid, ev_quat,

@@ -270,6 +270,7 @@ typedef enum {
 	OP_MUL_Q,
 	OP_MUL_QF,
 	OP_MUL_FQ,
+	OP_MUL_QV,
 	OP_CONJ_Q,
 	OP_NOT_Q,
 	OP_EQ_Q,
@@ -362,7 +363,7 @@ typedef struct pr_va_list_s {
 	 |(((0x##b) & 0xfff) << 12)		\
 	 |(((0x##c) & 0xfff) <<  0) )
 #define	PROG_ID_VERSION	6
-#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,008)
+#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,009)
 
 typedef struct dprograms_s {
 	pr_uint_t   version;
