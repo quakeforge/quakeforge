@@ -47,6 +47,7 @@ static vid_model_funcs_t model_funcs = {
 	glsl_Mod_SubdivideSurface,
 	glsl_Mod_ProcessTexture,
 
+	Mod_LoadIQM,
 	Mod_LoadAliasModel,
 	Mod_LoadSpriteModel,
 

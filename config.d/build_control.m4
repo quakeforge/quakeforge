@@ -43,6 +43,7 @@ if test "x$HAVE_FBDEV" = xyes; then
 		QF_NEED(models, [sw])
 		QF_NEED(alias, [sw])
 		QF_NEED(brush, [sw])
+		QF_NEED(iqm, [sw])
 		QF_NEED(sprite, [sw])
 		if test "x$ASM_ARCH" = "xyes"; then
 			QF_NEED(swrend, [asm])
@@ -71,6 +72,7 @@ if test "x$HAVE_X" = xyes; then
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
+		QF_NEED(iqm, [sw gl glsl])
 		QF_NEED(sprite, [sw gl glsl])
 		if test "x$ASM_ARCH" = "xyes"; then
 			QF_NEED(swrend, [asm])
@@ -93,6 +95,7 @@ if test "x$HAVE_SDL" = xyes; then
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
+		QF_NEED(iqm, [sw gl glsl])
 		QF_NEED(sprite, [sw gl glsl])
 		if test "x$ASM_ARCH" = "xyes"; then
 			QF_NEED(swrend, [asm])
@@ -113,6 +116,7 @@ if test "x$HAVE_SVGA" = xyes; then
 		QF_NEED(models, [sw])
 		QF_NEED(alias, [sw])
 		QF_NEED(brush, [sw])
+		QF_NEED(iqm, [sw])
 		QF_NEED(sprite, [sw])
 		if test "x$ASM_ARCH" = "xyes"; then
 			QF_NEED(swrend, [asm])
@@ -133,6 +137,7 @@ fi
 #		QF_NEED(models, [gl])
 #		QF_NEED(alias, [gl])
 #		QF_NEED(brush, [gl])
+#		QF_NEED(iqm, [gl])
 #		QF_NEED(sprite, [gl])
 #		QF_NEED(vid, [common])
 #		QF_NEED(qw, [client common])
@@ -228,6 +233,7 @@ QF_PROCESS_NEED_DIRS(vid_render, [gl glsl sw sw32])
 QF_PROCESS_NEED_LIBS(models, [gl glsl sw])
 QF_PROCESS_NEED_LIBS(alias, [gl glsl sw])
 QF_PROCESS_NEED_LIBS(brush, [gl glsl sw])
+QF_PROCESS_NEED_LIBS(iqm, [gl glsl sw])
 QF_PROCESS_NEED_LIBS(sprite, [gl glsl sw])
 
 QF_PROCESS_NEED_LIBS(vid, [common sdl svga x11])

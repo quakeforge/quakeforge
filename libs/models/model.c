@@ -39,6 +39,7 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/iqm.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
@@ -194,6 +195,12 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	mod->hasfullbrights = false;
 
 	switch (LittleLong (*buf)) {
+		case IQM_SMAGIC:
+			if (strequal ((char *) buf, IQM_MAGIC)) {
+				if (mod_funcs)
+					mod_funcs->Mod_LoadIQM (mod, buf);
+			}
+			break;
 		case IDHEADER_MDL:			// Type 6: Quake 1 .mdl
 		case HEADER_MDL16:			// QF Type 6 extended for 16bit precision
 			if (strequal (mod->name, "progs/grenade.mdl")) {

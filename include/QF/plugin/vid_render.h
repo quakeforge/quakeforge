@@ -84,6 +84,7 @@ typedef struct vid_model_funcs_s {
 	void (*Mod_LoadLighting) (bsp_t *bsp);
 	void (*Mod_SubdivideSurface) (msurface_t *fa);
 	void (*Mod_ProcessTexture) (texture_t *tx);
+	void (*Mod_LoadIQM) (model_t *mod, void *buffer);
 	void (*Mod_LoadAliasModel) (model_t *mod, void *buffer,
 								cache_allocator_t allocator);
 	void (*Mod_LoadSpriteModel) (model_t *mod, void *buffer);

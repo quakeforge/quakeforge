@@ -15,6 +15,7 @@
 	libs/models/Makefile
 	libs/models/alias/Makefile
 	libs/models/brush/Makefile
+	libs/models/iqm/Makefile
 	libs/models/sprite/Makefile
 	libs/models/test/Makefile
 	libs/net/Makefile

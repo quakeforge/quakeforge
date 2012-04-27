@@ -47,6 +47,7 @@ void gl_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);
 void glsl_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);
 void sw_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);
 
+void Mod_LoadIQM (model_t *mod, void *buffer);
 void Mod_LoadAliasModel (model_t *mod, void *buffer, 
                          cache_allocator_t allocator);
 void Mod_LoadSpriteModel (model_t *mod, void *buffer);

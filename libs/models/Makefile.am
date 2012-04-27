@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS= foreign
 
-SUBDIRS= alias brush sprite . test
+SUBDIRS= alias brush iqm sprite . test
 AM_CFLAGS= @PREFER_PIC@
 INCLUDES= -I$(top_srcdir)/include
 
@@ -27,6 +27,7 @@ gl_sources=gl_model_fullbright.c gl_skin.c skin.c
 gl_libs= \
 	alias/libalias_gl.la \
 	brush/libbrush_gl.la \
+	iqm/libiqm_gl.la \
 	sprite/libsprite_gl.la \
 	$(top_builddir)/libs/image/libQFimage.la
 libmodels_gl_la_LDFLAGS=		
@@ -37,6 +38,7 @@ libmodels_gl_la_SOURCES=		$(gl_sources)
 glsl_libs= \
 	alias/libalias_glsl.la \
 	brush/libbrush_glsl.la \
+	iqm/libiqm_glsl.la \
 	sprite/libsprite_glsl.la \
 	$(top_builddir)/libs/image/libQFimage.la
 libmodels_glsl_la_LDFLAGS=		
@@ -47,6 +49,7 @@ libmodels_glsl_la_SOURCES=		glsl_skin.c skin.c
 sw_libs= \
 	alias/libalias_sw.la \
 	brush/libbrush_sw.la \
+	iqm/libiqm_sw.la \
 	sprite/libsprite_sw.la \
 	$(top_builddir)/libs/image/libQFimage.la
 libmodels_sw_la_LDFLAGS=		

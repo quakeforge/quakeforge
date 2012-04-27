@@ -40,6 +40,7 @@ static vid_model_funcs_t model_funcs = {
 	sw_Mod_SubdivideSurface,
 	sw_Mod_ProcessTexture,
 
+	Mod_LoadIQM,
 	Mod_LoadAliasModel,
 	Mod_LoadSpriteModel,
 
