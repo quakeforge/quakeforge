@@ -33,6 +33,10 @@
 #include "d_local.h"
 #include "r_internal.h"
 
+#ifdef PIC
+# undef USE_INTEL_ASM //XXX asm pic hack
+#endif
+
 static finalvert_t fv[2][8];
 static auxvert_t av[8];
 

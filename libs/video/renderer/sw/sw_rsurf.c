@@ -33,6 +33,10 @@
 
 #include "r_internal.h"
 
+#ifdef PIC
+# undef USE_INTEL_ASM //XXX asm pic hack
+#endif
+
 drawsurf_t  r_drawsurf;
 
 int         sourcesstep, sourcetstep;
@@ -257,10 +261,6 @@ R_DrawSurface (void)
 		pcolumndest += horzblockstep;
 	}
 }
-
-#ifdef PIC
-# undef USE_INTEL_ASM //XXX asm pic hack
-#endif
 
 #ifndef USE_INTEL_ASM
 
