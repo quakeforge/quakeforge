@@ -60,6 +60,7 @@ typedef struct {
 	float       waterjumptime;
 	qboolean    dead;
 	qboolean    flying;
+	qboolean    add_grav;
 	int         spectator;
 
 	// world state

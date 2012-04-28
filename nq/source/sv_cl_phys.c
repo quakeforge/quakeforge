@@ -220,7 +220,7 @@ SV_TryUnstick (edict_t *ent, vec3_t oldvel)
 /*
   SV_WalkMove
 
-  Used by only players
+  Used only by players
 */
 static void
 SV_WalkMove (edict_t *ent)
@@ -318,6 +318,8 @@ SV_Physics_Client (edict_t *ent, int num)
 	*sv_globals.time = sv.time;
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
 	PR_ExecuteProgram (&sv_pr_state, sv_funcs.PlayerPreThink);
+
+	SVdata (ent)->add_grav = false;
 
 	// do a move
 	SV_CheckVelocity (ent);

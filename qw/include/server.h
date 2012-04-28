@@ -530,6 +530,7 @@ void SV_ProgStartFrame (void);
 void SV_Physics (void);
 void SV_CheckVelocity (struct edict_s *ent);
 void SV_AddGravity (struct edict_s *ent);
+void SV_FinishGravity (struct edict_s *ent, vec3_t move);
 qboolean SV_RunThink (struct edict_s *ent);
 void SV_Physics_Toss (struct edict_s *ent);
 void SV_RunNewmis (void);

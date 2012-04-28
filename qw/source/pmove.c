@@ -131,7 +131,11 @@ PM_FlyMove (void)
 			break;
 
 		VectorMultAdd (pmove.origin, time_left, pmove.velocity, end);
-
+		if (pmove.add_grav) {
+			pmove.add_grav = false;
+			end[2] += movevars.entgravity * movevars.gravity *
+				frametime * frametime / 2;
+		}
 		trace = PM_PlayerMove (pmove.origin, end);
 
 		if (trace.startsolid || trace.allsolid) {	// entity is trapped in
@@ -508,12 +512,14 @@ PM_AirMove (void)
 		VectorScale (wishvel, movevars.maxspeed / wishspeed, wishvel);
 		wishspeed = movevars.maxspeed;
 	}
+	pmove.add_grav = false;
 
 	if (onground != -1) {
 		pmove.velocity[2] = 0;
 		PM_Accelerate (wishdir, wishspeed, movevars.accelerate);
 		pmove.velocity[2] -= movevars.entgravity * movevars.gravity *
 			frametime;
+		pmove.add_grav = true;
 		PM_GroundMove ();
 	} else if (pmove.flying) {
 		PM_AirAccelerate (wishdir, wishspeed, movevars.accelerate);
@@ -525,6 +531,7 @@ PM_AirMove (void)
 		// add gravity
 		pmove.velocity[2] -= movevars.entgravity * movevars.gravity *
 			frametime;
+		pmove.add_grav = true;
 
 		if (!PM_FlyMove ()) {
 			// the move didn't get blocked

@@ -206,6 +206,7 @@ typedef struct sv_data_s {
 	link_t      area;			///< linked to a division node or leaf
 	edict_leaf_t *leafs;
 	entity_state_t state;
+	qboolean    add_grav;
 } sv_data_t;
 
 #define SVdata(e)		((sv_data_t *) ((e)->edata))

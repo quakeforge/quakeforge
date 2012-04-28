@@ -252,6 +252,10 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 
 		VectorMultAdd (SVvector (ent, origin), time_left,
 					   SVvector (ent, velocity), end);
+		if (SVdata (ent)->add_grav) {
+			SVdata (ent)->add_grav = false;
+			SV_FinishGravity (ent, end);
+		}
 
 		trace = SV_Move (SVvector (ent, origin), SVvector (ent, mins),
 						 SVvector (ent, maxs), end, false, ent);
@@ -342,13 +346,27 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 void
 SV_AddGravity (edict_t *ent)
 {
-	float       ent_gravity;
+	float       ent_grav;
 
 	if (sv_fields.gravity != -1 && SVfloat (ent, gravity))
-		ent_gravity = SVfloat (ent, gravity);
+		ent_grav = SVfloat (ent, gravity);
 	else
-		ent_gravity = 1.0;
-	SVvector (ent, velocity)[2] -= ent_gravity * sv_gravity->value * sv_frametime;
+		ent_grav = 1.0;
+	SVvector (ent, velocity)[2] -= ent_grav * sv_gravity->value * sv_frametime;
+	SVdata (ent)->add_grav = true;
+}
+
+void
+SV_FinishGravity (edict_t *ent, vec3_t move)
+{
+	float       ent_grav;
+
+	if (sv_fields.gravity != -1 && SVfloat (ent, gravity))
+		ent_grav = SVfloat (ent, gravity);
+	else
+		ent_grav = 1.0;
+	ent_grav *= sv_gravity->value;
+	move[2] += ent_grav * sv_frametime * sv_frametime / 2;
 }
 
 /* PUSHMOVE */
@@ -551,6 +569,7 @@ SV_PushMove (edict_t *pusher, float movetime)
 	}
 
 	VectorScale (SVvector (pusher, velocity), movetime, move);
+	//FIXME finish gravity
 	VectorScale (SVvector (pusher, avelocity), movetime, amove);
 
 	if (SV_Push (pusher, move, amove))
@@ -697,6 +716,10 @@ SV_Physics_Toss (edict_t *ent)
 
 	// move origin
 	VectorScale (SVvector (ent, velocity), sv_frametime, move);
+	if (SVdata (ent)->add_grav) {
+		SVdata (ent)->add_grav = false;
+		SV_FinishGravity (ent, move);
+	}
 	trace = SV_PushEntity (ent, move);
 	if (trace.fraction == 1)
 		return;
@@ -784,6 +807,7 @@ SV_RunEntity (edict_t *ent)
 			return;
 		SVfloat (ent, lastruntime) = (float) sv.time;
 	}
+	SVdata (ent)->add_grav = false;
 
 	switch ((int) SVfloat (ent, movetype)) {
 		case MOVETYPE_PUSH:

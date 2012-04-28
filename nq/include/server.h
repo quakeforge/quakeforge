@@ -273,6 +273,7 @@ int SV_FlyMove (edict_t *ent, float time, struct trace_s *steptrace);
 void SV_CheckVelocity (edict_t *ent);
 qboolean SV_RunThink (edict_t *ent);
 void SV_AddGravity (edict_t *ent);
+void SV_FinishGravity (edict_t *ent, vec3_t move);
 void SV_Physics_Toss (edict_t *ent);
 void SV_Physics_Client (edict_t *ent, int num);
 void SV_Physics (void);
