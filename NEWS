@@ -10,6 +10,9 @@ Changes from 0.6.3
     o Fix missing glsl console text with nvidia's drivers.
     o MDL import/export addon for blender can now export animated models
       (skins and mesh deformations)
+	o Jumping is now independent of frame rate. Whether you get 72 fps or
+      22, you jump the same height. The height is the same as if you got
+      infinite fps.
 
 Changes from 0.6.2
     o Compile fix for zlib 1.2.6.
