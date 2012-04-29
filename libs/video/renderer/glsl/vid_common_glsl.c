@@ -148,6 +148,29 @@ GLSL_Init_Common (void)
 
 	GLSL_TextureInit ();
 
+	if (developer->int_val & SYS_GLSL) {
+		GLint       max;
+
+		qfeglGetIntegerv (GL_MAX_VERTEX_UNIFORM_VECTORS, &max);
+		Sys_Printf ("max vertex uniform vectors: %d\n", max);
+		qfeglGetIntegerv (GL_MAX_FRAGMENT_UNIFORM_VECTORS, &max);
+		Sys_Printf ("max fragment uniforms: %d\n", max);
+		qfeglGetIntegerv (GL_MAX_TEXTURE_IMAGE_UNITS, &max);
+		Sys_Printf ("max texture image units: %d\n", max);
+		qfeglGetIntegerv (GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &max);
+		Sys_Printf ("max vertex texture image units: %d\n", max);
+		qfeglGetIntegerv (GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &max);
+		Sys_Printf ("max combined texture image units: %d\n", max);
+		qfeglGetIntegerv (GL_MAX_CUBE_MAP_TEXTURE_SIZE, &max);
+		Sys_Printf ("max cube map texture size: %d\n", max);
+		qfeglGetIntegerv (GL_MAX_RENDERBUFFER_SIZE, &max);
+		Sys_Printf ("max renderbuffer size: %d\n", max);
+		qfeglGetIntegerv (GL_MAX_VARYING_VECTORS, &max);
+		Sys_Printf ("max varying vectors: %d\n", max);
+		qfeglGetIntegerv (GL_MAX_VERTEX_ATTRIBS, &max);
+		Sys_Printf ("max vertex attribs: %d\n", max);
+	}
+
 	qfeglClearColor (0, 0, 0, 0);
 
 	qfeglPixelStorei (GL_UNPACK_ALIGNMENT, 1);
