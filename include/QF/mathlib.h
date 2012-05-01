@@ -390,7 +390,7 @@ extern const vec_t *const quat_origin;
 #define DualQuatNorm(a,b) \
 	do { \
 		(b).r = QuatLength ((a).q0.q); \
-		(b).e = QDotProduct ((a).q0.q, (a).qe.q) / (b).r; \
+		(b).e = 2 * QDotProduct ((a).q0.q, (a).qe.q); \
 	} while (0)
 #define DualQuatScale(a,b,c) \
 	do { \
