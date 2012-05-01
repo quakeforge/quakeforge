@@ -42,16 +42,21 @@ test_transform (const vec3_t angles, const vec3_t translation)
 	vec3_t      x;
 	quat_t      rotation;
 	DualQuat_t  transform, conj;
-	DualQuat_t  vd, xd;
+	DualQuat_t  inverse, iconj;
+	DualQuat_t  vd, xd, ix;
 	Dual_t      dual;
 
 	VectorZero (x);
 	DualQuatZero (xd);
+	DualQuatZero (ix);
 
 	AngleQuat (angles, rotation);
 	DualQuatSetVect (v, vd);
 	DualQuatRotTrans (rotation, translation, transform);
 	DualQuatConjQE (transform, conj);
+
+	DualQuatConjQ (transform, inverse);
+	DualQuatConjQE (inverse, iconj);
 
 	DualQuatNorm (vd, dual);
 	if (!DualIsUnit (dual)) {
@@ -75,6 +80,9 @@ test_transform (const vec3_t angles, const vec3_t translation)
 	DualQuatMult (transform, vd, xd);
 	DualQuatMult (xd, conj, xd);
 
+	DualQuatMult (inverse, xd, ix);
+	DualQuatMult (ix, iconj, ix);
+
 	DualQuatNorm (xd, dual);
 	if (!DualIsUnit (dual)) {
 		printf ("dual result not unit: "
@@ -83,8 +91,19 @@ test_transform (const vec3_t angles, const vec3_t translation)
 		goto fail;
 	}
 
+	DualQuatNorm (ix, dual);
+	if (!DualIsUnit (dual)) {
+		printf ("dual inverse not unit: "
+				"[(%g %g %g %g) (%g %g %g %g)] -> [%g %g]\n",
+				DualQuatExpand (ix), DualExpand (dual));
+		goto fail;
+	}
+
 	for (i = 0; i < 3; i++)
 		if (!compare (xd.qe.sv.v[i], x[i]))
+			goto fail;
+	for (i = 0; i < 3; i++)
+		if (!compare (ix.qe.sv.v[i], v[i]))
 			goto fail;
 	return 1;
 fail:
@@ -95,6 +114,7 @@ fail:
 	printf ("  [(%g %g %g %g) (%g %g %g %g)]\n", DualQuatExpand (conj));
 	printf ("  (%g %g %g)\n", VectorExpand (x));
 	printf ("  (%g %g %g)\n", VectorExpand (xd.qe.sv.v));
+	printf ("  (%g %g %g)\n", VectorExpand (ix.qe.sv.v));
 	return 0;
 }
 
