@@ -114,4 +114,14 @@ typedef struct iqmextension_s {
     uint32_t    ofs_extensions; // pointer to next extension
 } iqmextension;
 
+typedef struct {
+	byte       *vertices;
+	uint16_t   *elements;
+	int         num_arrays;
+	iqmvertexarray *vertexarrays;
+	int         num_joints;
+	int         num_frames;
+	DualQuat_t **frames;
+} iqm_t;
+
 #endif//__QF_iqm_h__
