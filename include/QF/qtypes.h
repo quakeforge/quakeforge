@@ -81,6 +81,14 @@ typedef union {
 	} sv;
 	quat_t      q;
 } Quat_t;
+typedef struct {
+	vec_t       r;
+	vec_t       e;
+} Dual_t;
+typedef struct {
+	Quat_t      q0;
+	Quat_t      qe;
+} DualQuat_t;
 typedef	int		fixed4_t;
 typedef int		fixed8_t;
 typedef	int		fixed16_t;
