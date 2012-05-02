@@ -105,8 +105,8 @@ static const char *short_options =
 	"g"		// debug
 	"h"		// help
 	"I:"	// set includes
-	"l:"	// lib file
 	"L:"	// lib path
+	"l:"	// lib file
 	"M::"
 	"N:"	// notice options
 	"o:"	// output file
@@ -148,8 +148,11 @@ usage (int status)
 "    -L DIR                    Add linker library search path\n"
 "    -l LIB                    Link with libLIB.a\n"
 "    -M[flags]                 Generate depency info. Dependent on cpp\n"
+"        --no-default-paths    Do not search default paths for headers or\n"
+"                              libs\n"
 "    -N, --notice OPTION,...   Set notice options\n"
 "    -o, --output-file FILE    Specify output file name\n"
+"        --progdefs            Genderate progdefs.h\n"
 "    -P, --progs-src FILE      File to use instead of progs.src\n"
 "    -p, --strip-path NUM      Strip NUM leading path elements from file\n"
 "                              names\n"
