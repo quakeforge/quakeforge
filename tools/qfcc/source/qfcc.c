@@ -378,8 +378,12 @@ finish_link (void)
 		//finish_compilation ();
 
 		// write progdefs.h
-		if (options.progdefs_h)
-			progs->crc = WriteProgdefs (progs, "progdefs.h");
+		if (options.code.crc || options.progdefs_h) {
+			const char *progdefs_h = "progdefs.h";
+			if (!options.progdefs_h)
+				progdefs_h = 0;
+			progs->crc = WriteProgdefs (progs, progdefs_h);
+		}
 
 		WriteProgs (progs, size);
 		if (options.code.debug) {

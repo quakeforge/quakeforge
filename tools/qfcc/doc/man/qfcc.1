@@ -113,7 +113,7 @@ Specify output file name.
 In \fBprogs.src\fP mode, this overrides the output file in \*[progs.src].
 .TP
 .B \-\-progdefs
-Generate \fIprogdefs.h\fP.
+Generate \fIprogdefs.h\fP. Forces \fB\-\-code crc\fP.
 .TP
 .B \-P, \-\-progs\-src FILE
 File to use instead of \*[progs.src].
@@ -191,6 +191,11 @@ that assigns values to initialized globals in this manner.
 .B cpp
 Preprocess all input files with \*[cpp].
 This includes the \*[progs.src] file when used.
+.TP
+.B crc
+Write the CRC of \fBprogdefs.h\fP to \*(lqprogs.dat\*(rq. Default for v6 progs,
+otherwise defaults to off. However, \fB\-\-progdefs\fP has the effect of
+forcing this option.
 .TP
 .B debug
 Generate debug code for QuakeForge engines.

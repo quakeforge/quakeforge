@@ -35,6 +35,7 @@
 
 typedef struct {
 	qboolean	cow;				// Turn constants into variables if written to
+	qboolean	crc;				// Write progsdef.h crc to progs.dat
 	qboolean	debug;				// Generate debug info for the engine
 	qboolean	short_circuit;		// short circuit logic for && and ||
 	qboolean	fast_float;			// use floats directly in ifs

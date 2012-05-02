@@ -184,6 +184,7 @@ code_usage (void)
 	printf (
 "    [no-]cow                Allow assignment to initialized globals.\n"
 "    [no-]cpp                Preprocess all input files with cpp.\n"
+"    [no-]crc                Write progdefs.h crc to progs.dat.\n"
 "    [no-]debug              Generate debug information.\n"
 "    [no-]fast-float         Use float values directly in \"if\" statements.\n"
 "    help                    Display his text.\n"
@@ -274,6 +275,7 @@ DecodeArgs (int argc, char **argv)
 	options.code.short_circuit = -1;
 	options.code.local_merging = -1;
 	options.code.vector_components = -1;
+	options.code.crc = -1;
 	options.code.fast_float = true;
 	options.warnings.uninited_variable = true;
 	options.warnings.unused = true;
@@ -381,6 +383,8 @@ DecodeArgs (int argc, char **argv)
 							options.code.cow = flag;
 						} else if (!(strcasecmp (temp, "cpp"))) {
 							cpp_name = flag ? CPP_NAME : 0;
+						} else if (!(strcasecmp (temp, "crc"))) {
+							options.code.crc = flag;
 						} else if (!(strcasecmp (temp, "debug"))) {
 							options.code.debug = flag;
 						} else if (!(strcasecmp (temp, "fast-float"))) {
@@ -580,8 +584,14 @@ DecodeArgs (int argc, char **argv)
 		if (options.code.vector_components == (qboolean) -1)
 			options.code.vector_components = false;
 	}
-	if (options.code.progsversion == PROG_ID_VERSION)
+	if (options.code.progsversion == PROG_ID_VERSION) {
 		add_cpp_def ("-D__VERSION6__=1");
+		if (options.code.crc == (qboolean) -1)
+			options.code.crc = true;
+	} else {
+		if (options.code.crc == (qboolean) -1)
+			options.code.crc = false;
+	}
 
 	// add the default paths
 	if (!options.no_default_paths) {
