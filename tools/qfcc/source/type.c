@@ -843,9 +843,8 @@ init_types (void)
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		// vector can't be part of .zero for v6 progs because for v6 progs,
 		// .zero is only one word wide.
-		zero_struct[7].name = 0;
+		zero_struct[6].name = 0;
 		// v6 progs don't have integers or quaternions
-		zero_struct[7].name = 0;
 		param_struct[7].name = 0;
 		type_nil = &type_vector;
 		type_default = &type_float;
