@@ -192,11 +192,12 @@ WriteFiles (const char *sourcedir)
 int
 WriteProgdefs (dprograms_t *progs, const char *filename)
 {
-	ddef_t     *d;
+	ddef_t     *def;
+	ddef_t     *fdef;
 	FILE       *f;
 	unsigned short crc;
 	int         c;
-	unsigned    i;
+	unsigned    i, j;
 	const char *strings;
 	const char *name;
 
@@ -211,16 +212,16 @@ WriteProgdefs (dprograms_t *progs, const char *filename)
 
 	strings = (char *) progs + progs->ofs_strings;
 	for (i = 0; i < progs->numglobaldefs; i++) {
-		d = (ddef_t *) ((char *) progs + progs->ofs_globaldefs) + i;
-		name = strings + d->s_name;
+		def = (ddef_t *) ((char *) progs + progs->ofs_globaldefs) + i;
+		name = strings + def->s_name;
 		if (!strcmp (name, "end_sys_globals"))
 			break;
-		if (!d->ofs)
+		if (!def->ofs)
 			continue;
 		if (*name == '.' || !*name)
 			continue;
 
-		switch (d->type) {
+		switch (def->type & ~DEF_SAVEGLOBAL) {
 			case ev_float:
 				fprintf (f, "\tfloat\t%s;\n", name);
 				break;
@@ -248,16 +249,22 @@ WriteProgdefs (dprograms_t *progs, const char *filename)
 
 	// print all fields
 	fprintf (f, "typedef struct\n{\n");
-	for (i = 0; i < progs->numglobaldefs; i++) {
-		d = (ddef_t *) ((char *) progs + progs->ofs_fielddefs) + i;
-		name = strings + d->s_name;
+	for (i = 0, j = 0; i < progs->numglobaldefs; i++) {
+		def = (ddef_t *) ((char *) progs + progs->ofs_globaldefs) + i;
+		name = strings + def->s_name;
 		if (!strcmp (name, "end_sys_fields"))
 			break;
 
-		if (!d->ofs)
+		if (!def->ofs)
+			continue;
+		if (def->type != ev_field)
 			continue;
 
-		switch (d->type) {
+		fdef = (ddef_t *) ((char *) progs + progs->ofs_fielddefs) + j++;
+		if (fdef->s_name != def->s_name)
+			internal_error (0, "def and field order messup");
+
+		switch (fdef->type) {
 			case ev_float:
 				fprintf (f, "\tfloat\t%s;\n", name);
 				break;
