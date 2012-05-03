@@ -121,6 +121,26 @@ debug (expr_t *e, const char *fmt, ...)
 	va_end (args);
 }
 
+void
+bug (expr_t *e, const char *fmt, ...)
+{
+	va_list     args;
+	string_t    file = pr.source_file;
+	int         line = pr.source_line;
+
+	va_start (args, fmt);
+
+	report_function (e);
+	if (e) {
+		file = e->file;
+		line = e->line;
+	}
+	fprintf (stderr, "%s:%d: BUG: ", GETSTR (file), line);
+	vfprintf (stderr, fmt, args);
+	fputs ("\n", stderr);
+	va_end (args);
+}
+
 expr_t *
 notice (expr_t *e, const char *fmt, ...)
 {
