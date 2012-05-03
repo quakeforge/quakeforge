@@ -296,6 +296,23 @@ is_conditional (statement_t *s)
 	return !strncmp (s->opcode, "<IF", 3);
 }
 
+static void
+invert_conditional (statement_t *s)
+{
+	if (!strcmp (s->opcode, "<IF>"))
+		s->opcode = "<IFNOT>";
+	else if (!strcmp (s->opcode, "<IFNOT>"))
+		s->opcode = "<IF>";
+	else if (!strcmp (s->opcode, "<IFBE>"))
+		s->opcode = "<IFA>";
+	else if (!strcmp (s->opcode, "<IFB>"))
+		s->opcode = "<IFAE>";
+	else if (!strcmp (s->opcode, "<IFAE>"))
+		s->opcode = "<IFB>";
+	else if (!strcmp (s->opcode, "<IFA>"))
+		s->opcode = "<IFBE>";
+}
+
 typedef sblock_t *(*statement_f) (sblock_t *, expr_t *);
 typedef sblock_t *(*expr_f) (sblock_t *, expr_t *, operand_t **);
 
@@ -1109,7 +1126,14 @@ remove_dead_blocks (sblock_t *blocks)
 				continue;
 			}
 			s = (statement_t *) sblock->tail;
-			if (!is_goto (s) && !is_return (s)) {
+			if (is_conditional (s) && is_goto (sb->statements)
+				&& s->opb->o.label->dest == sb->next) {
+				debug (0, "meging if/goto %p %p", sblock, sb);
+				if (!--s->opb->o.label->used)
+					remove_label_from_dest (s->opb->o.label);
+				s->opb->o.label = sb->statements->opa->o.label;
+				invert_conditional (s);
+			} else if (!is_goto (s) && !is_return (s)) {
 				sb->reachable = 1;
 				continue;
 			}
