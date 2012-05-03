@@ -184,7 +184,7 @@ get_target (statement_t *s)
 }
 
 static void
-flow_sblock (sblock_t *sblock)
+flow_sblock (sblock_t *sblock, int blockno)
 {
 	statement_t *s;
 	sblock_t   *target;
@@ -193,10 +193,10 @@ flow_sblock (sblock_t *sblock)
 	printf ("  sb_%p [shape=none,label=<\n", sblock);
 	printf ("    <table border=\"0\" cellborder=\"1\" cellspacing=\"0\">\n");
 	printf ("      <tr>\n");
-	printf ("        <td>%p</td>\n", sblock);
+	printf ("        <td>%p(%d)</td>\n", sblock, blockno);
 	printf ("        <td height=\"0\" colspan=\"2\" port=\"s\">\n");
 	for (l = sblock->labels; l; l = l->next)
-		printf ("            %s\n", l->name);
+		printf ("            %s(%d)\n", l->name, l->used);
 	printf ("        </td>\n");
 	printf ("        <td></td>\n");
 	printf ("      </tr>\n");
@@ -219,9 +219,11 @@ flow_sblock (sblock_t *sblock)
 void
 print_flow (sblock_t *sblock)
 {
+	int         i;
+
 	printf ("digraph flow_%p {\n", sblock);
 	printf ("  layout=dot; rankdir=TB;\n");
-	for (/**/; sblock; sblock = sblock->next)
-		flow_sblock (sblock);
+	for (i = 0; sblock; sblock = sblock->next, i++)
+		flow_sblock (sblock, i);
 	printf ("}\n");
 }
