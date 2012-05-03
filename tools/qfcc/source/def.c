@@ -139,11 +139,20 @@ alias_def (def_t *def, type_t *type)
 {
 	def_t      *alias;
 
+
+	if (def->alias) {
+		expr_t      e;
+		e.file = def->file;
+		e.line = def->line;
+		bug (&e, "aliasing an alias def");
+	}
 	ALLOC (16384, def_t, defs, alias);
 	alias->return_addr = __builtin_return_address (0);
 	alias->offset = def->offset;
 	alias->type = type;
 	alias->alias = def;
+	alias->line = pr.source_line;
+	alias->file = pr.source_file;
 	return alias;
 }
 

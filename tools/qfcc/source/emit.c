@@ -132,14 +132,25 @@ add_statement_def_ref (def_t *def, dstatement_t *st, int field)
 	if (def) {
 		int         st_ofs = st - pr.code->code;
 		int         offset_reloc = 0;
+		int         alias_depth = 0;
+		expr_t      alias_depth_expr;
 
 		while (def->alias) {
+			if (!alias_depth) {
+				alias_depth_expr.file = def->file;
+				alias_depth_expr.line = def->line;
+			}
+			alias_depth++;
 			//FIXME it seems there is a bug somewhere creating chains
 			//of aliases
 			def_t      *a = def;
 			offset_reloc |= def->offset_reloc;
 			def = def->alias;
 			free_def (a);
+		}
+		if (alias_depth > 1) {
+			bug (&alias_depth_expr, "alias chain detected: %d %s",
+				 alias_depth, def->name);
 		}
 		if (offset_reloc)
 			reloc_op_def_ofs (def, st_ofs, field);
