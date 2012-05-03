@@ -1108,7 +1108,8 @@ remove_dead_blocks (sblock_t *blocks)
 					label = s->opa->o.label;
 				else if (!strncmp (s->opcode, "<IF", 3))
 					label = s->opb->o.label;
-				remove_label_from_dest (label);
+				if (label && !--label->used)
+					remove_label_from_dest (label);
 				did_something = 1;
 
 				sblock->next = sb->next;
