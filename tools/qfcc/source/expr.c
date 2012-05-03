@@ -870,8 +870,8 @@ new_alias_expr (type_t *type, expr_t *expr)
 
 	alias = new_unary_expr ('A', expr);
 	alias->e.expr.type = type;
-	if (expr->type == ex_uexpr && expr->e.expr.op == 'A')
-		bug (alias, "aliasing an alias expression");
+	//if (expr->type == ex_uexpr && expr->e.expr.op == 'A')
+	//	bug (alias, "aliasing an alias expression");
 	alias->file = expr->file;
 	alias->line = expr->line;
 	return alias;
