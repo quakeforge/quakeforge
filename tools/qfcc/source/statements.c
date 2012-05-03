@@ -813,19 +813,19 @@ build_bool_block (expr_t *block, expr_t *e)
 }
 
 static int
-is_goto (expr_t *e)
+is_goto_expr (expr_t *e)
 {
 	return e && e->type == ex_uexpr && e->e.expr.op == 'g';
 }
 
 static int
-is_if (expr_t *e)
+is_if_expr (expr_t *e)
 {
 	return e && e->type == ex_expr && e->e.expr.op == 'i';
 }
 
 static int
-is_ifnot (expr_t *e)
+is_ifnot_expr (expr_t *e)
 {
 	return e && e->type == ex_expr && e->e.expr.op == 'n';
 }
@@ -841,7 +841,7 @@ statement_bool (sblock_t *sblock, expr_t *e)
 
 	s = &block->e.block.head;
 	while (*s) {
-		if (is_if (*s) && is_goto ((*s)->next)) {
+		if (is_if_expr (*s) && is_goto_expr ((*s)->next)) {
 			l = (*s)->e.expr.e2;
 			for (e = (*s)->next->next; e && e->type == ex_label; e = e->next) {
 				if (e == l) {
@@ -853,7 +853,7 @@ statement_bool (sblock_t *sblock, expr_t *e)
 				}
 			}
 			s = &(*s)->next;
-		} else if (is_ifnot (*s) && is_goto ((*s)->next)) {
+		} else if (is_ifnot_expr (*s) && is_goto_expr ((*s)->next)) {
 			l = (*s)->e.expr.e2;
 			for (e = (*s)->next->next; e && e->type == ex_label; e = e->next) {
 				if (e == l) {
@@ -865,7 +865,7 @@ statement_bool (sblock_t *sblock, expr_t *e)
 				}
 			}
 			s = &(*s)->next;
-		} else if (is_goto (*s)) {
+		} else if (is_goto_expr (*s)) {
 			l = (*s)->e.expr.e1;
 			for (e = (*s)->next; e && e->type == ex_label; e = e->next) {
 				if (e == l) {
