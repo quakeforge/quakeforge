@@ -278,6 +278,24 @@ convert_op (int op)
 	}
 }
 
+static int
+is_goto (statement_t *s)
+{
+	return !strcmp (s->opcode, "<GOTO>");
+}
+
+static int
+is_return (statement_t *s)
+{
+	return !strncmp (s->opcode, "<RETURN", 7);
+}
+
+static int
+is_conditional (statement_t *s)
+{
+	return !strncmp (s->opcode, "<IF", 3);
+}
+
 typedef sblock_t *(*statement_f) (sblock_t *, expr_t *);
 typedef sblock_t *(*expr_f) (sblock_t *, expr_t *, operand_t **);
 
@@ -1049,15 +1067,14 @@ thread_jumps (sblock_t *blocks)
 		ex_label_t **label, *l;
 
 		s = (statement_t *) sblock->tail;
-		if (!strcmp (s->opcode, "<GOTO>"))
+		if (is_goto (s))
 			label = &s->opa->o.label;
-		else if (!strncmp (s->opcode, "<IF", 3))
+		else if (is_conditional (s))
 			label = &s->opb->o.label;
 		else
 			continue;
 		for (l = *label;
-			 (l->dest->statements
-			  && !strcmp (l->dest->statements->opcode, "<GOTO>"));
+			 l->dest->statements && is_goto (l->dest->statements);
 			 l = l->dest->statements->opa->o.label) {
 		}
 		if (l != *label) {
@@ -1090,8 +1107,7 @@ remove_dead_blocks (sblock_t *blocks)
 				continue;
 			}
 			s = (statement_t *) sblock->tail;
-			if (strcmp (s->opcode, "<GOTO>")
-				&& strncmp (s->opcode, "<RETURN", 7)) {
+			if (!is_goto (s) && !is_return (s)) {
 				sb->reachable = 1;
 				continue;
 			}
@@ -1106,9 +1122,9 @@ remove_dead_blocks (sblock_t *blocks)
 				debug (0, "removing dead block %p", sb);
 
 				s = (statement_t *) sb->tail;
-				if (!strcmp (s->opcode, "<GOTO>"))
+				if (is_goto (s))
 					label = s->opa->o.label;
-				else if (!strncmp (s->opcode, "<IF", 3))
+				else if (is_conditional (s))
 					label = s->opb->o.label;
 				if (label && !--label->used)
 					remove_label_from_dest (label);
@@ -1134,9 +1150,9 @@ check_final_block (sblock_t *sblock)
 	while (sblock->next)
 		sblock = sblock->next;
 	s = (statement_t *) sblock->tail;
-	if (!strcmp (s->opcode, "<GOTO>"))
+	if (is_goto (s))
 		return;					// the end of function is the end of a loop
-	if (!strncmp (s->opcode, "<RETURN", 7))
+	if (is_return (s))
 		return;
 	if (current_func->sym->type->t.func.type != &type_void)
 		warning (0, "control reaches end of non-void function");
