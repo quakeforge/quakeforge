@@ -245,12 +245,18 @@ static void
 print_uexpr (expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
+	dstring_t  *dstr = dstring_newstr();
 
 	if (e->e.expr.op != 'g')
 		_print_expr (e->e.expr.e1, level, id);
+	if (e->e.expr.op == 'A') {
+		dstring_copystr (dstr, "\\n");
+		print_type_str (dstr, e->e.expr.type);
+	}
 	printf ("%*s\"e_%p\" -> \"e_%p\";\n", indent, "", e, e->e.expr.e1);
-	printf ("%*s\"e_%p\" [label=\"%s\\n%d\"];\n", indent, "", e,
-			get_op_string (e->e.expr.op), e->line);
+	printf ("%*s\"e_%p\" [label=\"%s%s\\n%d\"];\n", indent, "", e,
+			get_op_string (e->e.expr.op), dstr->str, e->line);
+	dstring_delete (dstr);
 }
 
 static void
