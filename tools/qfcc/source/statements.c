@@ -1026,6 +1026,7 @@ remove_label_from_dest (ex_label_t *label)
 	if (!label)
 		return;
 
+	debug (0, "dropping deceased label %s", label->name);
 	sblock = label->dest;
 	for (l = &sblock->labels; *l; l = &(*l)->next) {
 		if (*l == label) {
@@ -1040,29 +1041,30 @@ static void
 thread_jumps (sblock_t *blocks)
 {
 	sblock_t   *sblock;
-	ex_label_t *label, *l;
-	statement_t *s;
 
 	if (!blocks)
 		return;
 	for (sblock = blocks; sblock->next; sblock = sblock->next) {
+		statement_t *s;
+		ex_label_t **label, *l;
+
 		s = (statement_t *) sblock->tail;
 		if (!strcmp (s->opcode, "<GOTO>"))
-			label = s->opa->o.label;
+			label = &s->opa->o.label;
 		else if (!strncmp (s->opcode, "<IF", 3))
-			label = s->opb->o.label;
+			label = &s->opb->o.label;
 		else
 			continue;
-		for (l = label;
+		for (l = *label;
 			 (l->dest->statements
 			  && !strcmp (l->dest->statements->opcode, "<GOTO>"));
 			 l = l->dest->statements->opa->o.label) {
 		}
-		if (l != label) {
-			if (!strcmp (s->opcode, "<GOTO>"))
-				s->opa->o.label = l;
-			else if (!strncmp (s->opcode, "<IF", 3))
-				s->opb->o.label = l;
+		if (l != *label) {
+			if (!--(*label)->used)
+				remove_label_from_dest (*label);
+			l->used++;
+			*label = l;
 		}
 	}
 }
