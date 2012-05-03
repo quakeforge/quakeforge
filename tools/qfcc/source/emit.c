@@ -119,8 +119,10 @@ get_operand_def (expr_t *expr, operand_t *op)
 			}
 			return def;
 		case op_alias:
-			def = alias_def (get_operand_def (expr, op->o.alias),
-							 ev_types[op->type]);
+			def = get_operand_def (expr, op->o.alias);
+			if (def->alias)
+				def = def->alias;
+			def = alias_def (def, ev_types[op->type]);
 			return def;
 	}
 	return 0;
@@ -141,8 +143,6 @@ add_statement_def_ref (def_t *def, dstatement_t *st, int field)
 				alias_depth_expr.line = def->line;
 			}
 			alias_depth++;
-			//FIXME it seems there is a bug somewhere creating chains
-			//of aliases
 			def_t      *a = def;
 			offset_reloc |= def->offset_reloc;
 			def = def->alias;
