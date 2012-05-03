@@ -188,12 +188,16 @@ flow_sblock (sblock_t *sblock)
 {
 	statement_t *s;
 	sblock_t   *target;
+	ex_label_t *l;
 
 	printf ("  sb_%p [shape=none,label=<\n", sblock);
 	printf ("    <table border=\"0\" cellborder=\"1\" cellspacing=\"0\">\n");
 	printf ("      <tr>\n");
-	printf ("        <td></td>\n");
-	printf ("        <td height=\"0\" colspan=\"2\" port=\"s\"></td>\n");
+	printf ("        <td>%p</td>\n", sblock);
+	printf ("        <td height=\"0\" colspan=\"2\" port=\"s\">\n");
+	for (l = sblock->labels; l; l = l->next)
+		printf ("            %s\n", l->name);
+	printf ("        </td>\n");
 	printf ("        <td></td>\n");
 	printf ("      </tr>\n");
 	for (s = sblock->statements; s; s = s->next)
