@@ -863,6 +863,7 @@ statement_bool (sblock_t *sblock, expr_t *e)
 			l = (*s)->e.expr.e2;
 			for (e = (*s)->next->next; e && e->type == ex_label; e = e->next) {
 				if (e == l) {
+					l->e.label.used--;
 					e = *s;
 					e->e.expr.op = 'n';
 					e->e.expr.e2 = e->next->e.expr.e1;
@@ -875,6 +876,7 @@ statement_bool (sblock_t *sblock, expr_t *e)
 			l = (*s)->e.expr.e2;
 			for (e = (*s)->next->next; e && e->type == ex_label; e = e->next) {
 				if (e == l) {
+					l->e.label.used--;
 					e = *s;
 					e->e.expr.op = 'i';
 					e->e.expr.e2 = e->next->e.expr.e1;
