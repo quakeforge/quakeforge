@@ -1075,6 +1075,17 @@ remove_label_from_dest (ex_label_t *label)
 }
 
 static void
+dump_flow (sblock_t *sblock, const char *stage)
+{
+	char       *fname;
+
+	fname = nva ("%s.%s.%s.dot", GETSTR (pr.source_file), current_func->name,
+				 stage);
+	print_flow (sblock, fname);
+	free (fname);
+}
+
+static void
 thread_jumps (sblock_t *blocks)
 {
 	sblock_t   *sblock;
@@ -1203,12 +1214,16 @@ make_statements (expr_t *e)
 	sblock_t   *sblock = new_sblock ();
 //	print_expr (e);
 	statement_slist (sblock, e);
-//	print_flow (sblock);
+	if (options.block_dot.initial)
+		dump_flow (sblock, "initial");
 	thread_jumps (sblock);
-//	print_flow (sblock);
+	if (options.block_dot.thread)
+		dump_flow (sblock, "thread");
 	remove_dead_blocks (sblock);
-//	print_flow (sblock);
+	if (options.block_dot.dead)
+		dump_flow (sblock, "dead");
 	check_final_block (sblock);
-//	print_flow (sblock);
+	if (options.block_dot.final)
+		dump_flow (sblock, "final");
 	return sblock;
 }

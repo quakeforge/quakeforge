@@ -60,6 +60,7 @@ static int files_size;
 enum {
 	start_opts = 255,	// not used, starts the enum.
 	OPT_ADVANCED,
+	OPT_BLOCK_DOT,
 	OPT_CPP,
 	OPT_INCLUDE,
 	OPT_NO_DEFAULT_PATHS,
@@ -70,6 +71,7 @@ enum {
 
 static struct option const long_options[] = {
 	{"advanced", no_argument, 0, OPT_ADVANCED},
+	{"block-dot", optional_argument, 0, OPT_BLOCK_DOT},
 	{"code", required_argument, 0, 'C'},
 	{"cpp", required_argument, 0, OPT_CPP},
 	{"define", required_argument, 0, 'D'},
@@ -358,6 +360,37 @@ DecodeArgs (int argc, char **argv)
 				options.traditional = false;
 				options.advanced = true;
 				options.code.progsversion = PROG_VERSION;
+				break;
+			case OPT_BLOCK_DOT:
+				if (optarg) {
+					char       *opts = strdup (optarg);
+					char       *temp = strtok (opts, ",");
+
+					while (temp) {
+						qboolean    flag = true;
+
+						if (!strncasecmp (temp, "no-", 3)) {
+							flag = false;
+							temp += 3;
+						}
+						if (!strcasecmp (temp, "initial")) {
+							options.block_dot.initial = flag;
+						} else if (!(strcasecmp (temp, "thread"))) {
+							options.block_dot.thread = flag;
+						} else if (!(strcasecmp (temp, "dead"))) {
+							options.block_dot.dead = flag;
+						} else if (!(strcasecmp (temp, "final"))) {
+							options.block_dot.final = flag;
+						}
+						temp = strtok (NULL, ",");
+					}
+					free (opts);
+			    } else {
+					options.block_dot.initial = true;
+					options.block_dot.thread = true;
+					options.block_dot.dead = true;
+					options.block_dot.final = true;
+				}
 				break;
 			case 'c':
 				options.compile = true;

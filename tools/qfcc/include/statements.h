@@ -77,6 +77,6 @@ struct expr_s;
 
 sblock_t *make_statements (struct expr_s *expr);
 void print_statement (statement_t *s);
-void print_flow (sblock_t *sblock);
+void print_flow (sblock_t *sblock, const char *filename);
 
 #endif//statement_h

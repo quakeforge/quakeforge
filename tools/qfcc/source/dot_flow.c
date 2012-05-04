@@ -40,6 +40,7 @@
 #include <stdlib.h>
 
 #include <QF/dstring.h>
+#include <QF/quakeio.h>
 #include <QF/va.h>
 
 #include "expr.h"
@@ -153,14 +154,14 @@ get_operand (operand_t *op)
 }
 
 static void
-flow_statement (statement_t *s)
+flow_statement (dstring_t *dstr, statement_t *s)
 {
-	printf ("        <tr>");
-	printf ("<td>%s</td>", quote_string (s->opcode));
-	printf ("<td>%s</td>", get_operand (s->opa));
-	printf ("<td>%s</td>", get_operand (s->opb));
-	printf ("<td>%s</td>", get_operand (s->opc));
-	printf ("</tr>\n");
+	dasprintf (dstr, "        <tr>");
+	dasprintf (dstr, "<td>%s</td>", quote_string (s->opcode));
+	dasprintf (dstr, "<td>%s</td>", get_operand (s->opa));
+	dasprintf (dstr, "<td>%s</td>", get_operand (s->opb));
+	dasprintf (dstr, "<td>%s</td>", get_operand (s->opc));
+	dasprintf (dstr, "</tr>\n");
 }
 
 static int
@@ -184,46 +185,60 @@ get_target (statement_t *s)
 }
 
 static void
-flow_sblock (sblock_t *sblock, int blockno)
+flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 {
 	statement_t *s;
 	sblock_t   *target;
 	ex_label_t *l;
 
-	printf ("  sb_%p [shape=none,label=<\n", sblock);
-	printf ("    <table border=\"0\" cellborder=\"1\" cellspacing=\"0\">\n");
-	printf ("      <tr>\n");
-	printf ("        <td>%p(%d)</td>\n", sblock, blockno);
-	printf ("        <td height=\"0\" colspan=\"2\" port=\"s\">\n");
+	dasprintf (dstr, "  sb_%p [shape=none,label=<\n", sblock);
+	dasprintf (dstr, "    <table border=\"0\" cellborder=\"1\" "
+					 "cellspacing=\"0\">\n");
+	dasprintf (dstr, "      <tr>\n");
+	dasprintf (dstr, "        <td>%p(%d)</td>\n", sblock, blockno);
+	dasprintf (dstr, "        <td height=\"0\" colspan=\"2\" port=\"s\">\n");
 	for (l = sblock->labels; l; l = l->next)
-		printf ("            %s(%d)\n", l->name, l->used);
-	printf ("        </td>\n");
-	printf ("        <td></td>\n");
-	printf ("      </tr>\n");
+		dasprintf (dstr, "            %s(%d)\n", l->name, l->used);
+	dasprintf (dstr, "        </td>\n");
+	dasprintf (dstr, "        <td></td>\n");
+	dasprintf (dstr, "      </tr>\n");
 	for (s = sblock->statements; s; s = s->next)
-		flow_statement (s);
-	printf ("      <tr>\n");
-	printf ("        <td></td>\n");
-	printf ("        <td height=\"0\" colspan=\"2\" port=\"e\"></td>\n");
-	printf ("        <td></td>\n");
-	printf ("      </tr>\n");
-	printf ("    </table>>];\n");
+		flow_statement (dstr, s);
+	dasprintf (dstr, "      <tr>\n");
+	dasprintf (dstr, "        <td></td>\n");
+	dasprintf (dstr, "        <td height=\"0\" colspan=\"2\" "
+					 "port=\"e\"></td>\n");
+	dasprintf (dstr, "        <td></td>\n");
+	dasprintf (dstr, "      </tr>\n");
+	dasprintf (dstr, "    </table>>];\n");
 	if (sblock->next && !is_goto ((statement_t *) sblock->tail))
-		printf ("  sb_%p:e -> sb_%p:s;\n", sblock, sblock->next);
+		dasprintf (dstr, "  sb_%p:e -> sb_%p:s;\n", sblock, sblock->next);
 	if ((target = get_target ((statement_t *) sblock->tail)))
-		printf ("  sb_%p:e -> sb_%p:s [label=\"%s\"];\n", sblock, target,
-				((statement_t *) sblock->tail)->opcode);
-	printf ("\n");
+		dasprintf (dstr, "  sb_%p:e -> sb_%p:s [label=\"%s\"];\n", sblock,
+				   target, ((statement_t *) sblock->tail)->opcode);
+	dasprintf (dstr, "\n");
 }
 
 void
-print_flow (sblock_t *sblock)
+print_flow (sblock_t *sblock, const char *filename)
 {
 	int         i;
+	dstring_t  *dstr = dstring_newstr();
 
-	printf ("digraph flow_%p {\n", sblock);
-	printf ("  layout=dot; rankdir=TB;\n");
+	dasprintf (dstr, "digraph flow_%p {\n", sblock);
+	dasprintf (dstr, "  layout=dot; rankdir=TB;\n");
 	for (i = 0; sblock; sblock = sblock->next, i++)
-		flow_sblock (sblock, i);
-	printf ("}\n");
+		flow_sblock (dstr, sblock, i);
+	dasprintf (dstr, "}\n");
+
+	if (filename) {
+		QFile      *file;
+
+		file = Qopen (filename, "wt");
+		Qwrite (file, dstr->str, dstr->size - 1);
+		Qclose (file);
+	} else {
+		fputs (dstr->str, stdout);
+	}
+	dstring_delete (dstr);
 }

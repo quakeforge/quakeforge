@@ -68,9 +68,17 @@ typedef struct {
 } notice_options_t;
 
 typedef struct {
+	qboolean    initial;
+	qboolean    thread;
+	qboolean    dead;
+	qboolean    final;
+} blockdot_options_t;
+
+typedef struct {
 	code_options_t	code;			// Code generation options
 	warn_options_t	warnings;		// Warning options
 	notice_options_t notices;		// Notice options
+	blockdot_options_t block_dot;	// Statement block flow diagrams
 
 	int				verbosity;		// 0=silent, goes up to 2 currently
 	qboolean		single_cpp;		// process progs.src into a series of
