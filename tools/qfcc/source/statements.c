@@ -1121,11 +1121,13 @@ remove_dead_blocks (sblock_t *blocks)
 {
 	sblock_t   *sblock;
 	int         did_something;
+	int         pass = 0;
 
 	if (!blocks)
 		return;
 
 	do {
+		debug (0, "dead block pass %d", pass++);
 		did_something = 0;
 		blocks->reachable = 1;
 		for (sblock = blocks; sblock->next; sblock = sblock->next) {
@@ -1144,6 +1146,9 @@ remove_dead_blocks (sblock_t *blocks)
 					remove_label_from_dest (s->opb->o.label);
 				s->opb->o.label = sb->statements->opa->o.label;
 				invert_conditional (s);
+				sb->next->reachable = 1;
+				sb->reachable = 0;
+				break;
 			} else if (!is_goto (s) && !is_return (s)) {
 				sb->reachable = 1;
 				continue;
