@@ -486,7 +486,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 			mov->file = a->file;
 			sblock = statement_slist (sblock, mov);
 		} else {
-			if (options.code.vector_calls && a->type == ex_value 
+			if (options.code.vector_calls && a->type == ex_value
 				&& a->e.value.type == ev_vector) {
 				sblock = vector_call (sblock, a, param, ind, 0);
 			} else {
@@ -1123,6 +1123,88 @@ thread_jumps (sblock_t *blocks)
 }
 
 static void
+join_blocks (sblock_t *sblock, sblock_t *dest)
+{
+	statement_t **s;
+	statement_t *g;
+	expr_t     *label;
+
+	for (s = &sblock->statements; (*s) != (statement_t *) sblock->tail;
+		 s = &(*s)->next)
+		;
+	debug (0, "joining blocks %p %p", sblock, dest);
+	unuse_label ((*s)->opa->o.label);
+	free_statement (*s);
+	sblock->tail = s;
+	// append dest's statements to sblock
+	*sblock->tail = dest->statements;
+	sblock->tail = dest->tail;
+	// clear dest's statement list
+	dest->tail = &dest->statements;
+	dest->statements = 0;
+	// put a goto statement into dest incase the code in sblock flows into dest
+	// the goto will jump to dest's old
+	label = new_label_expr ();
+	label->e.label.dest = dest->next;
+	label->e.label.next = dest->next->labels;
+	label->e.label.used++;
+	dest->next->labels = &label->e.label;
+	g = new_statement ("<GOTO>", 0);
+	g->opa = new_operand (op_label);
+	g->opa->o.label = &label->e.label;
+	sblock_add_statement (dest, g);
+	// stich dest back into the block list immediately after sblock
+	dest->next = sblock->next;
+	sblock->next = dest;
+}
+
+static int
+merge_blocks (sblock_t *blocks)
+{
+	sblock_t   *sblock;
+	int         did_something = 0;
+
+	if (!blocks)
+		return 0;
+	for (sblock = blocks; sblock; sblock = sblock->next) {
+		statement_t *s;
+		sblock_t    *dest;
+		sblock_t    *sb;
+
+		s = (statement_t *) sblock->tail;
+		if (!is_goto (s))
+			continue;
+		dest = s->opa->o.label->dest;
+		// The destination block must not be the current block
+		if (dest == sblock) {
+			warning (0, "infinite loop detected");
+			continue;
+		}
+		// the destiniation block must have only one label and one user for
+		// that label (ie, no other branch statement jumps to the block).
+		if (dest->labels->next || dest->labels->used > 1)
+			continue;
+		// the destination block must be otherwise unreachable (preceeded by
+		// an unconditional jump (goto or return))
+		if (dest == blocks)
+			continue;
+		for (sb = blocks; sb; sb = sb->next)
+			if (sb->next == dest)
+				break;
+		if (!sb)		// dest is
+			internal_error (0, "dangling label");
+		s = (statement_t *) sb->tail;
+		if (!is_goto (s) && !is_return (s))
+			continue;
+		// desination block is reachable via only goto of the current block
+		sb->next = dest->next;			// pull dest out of the chain
+		join_blocks (sblock, dest);
+		did_something = 1;
+	}
+	return did_something;
+}
+
+static void
 remove_dead_blocks (sblock_t *blocks)
 {
 	sblock_t   *sblock;
@@ -1229,7 +1311,9 @@ make_statements (expr_t *e)
 	thread_jumps (sblock);
 	if (options.block_dot.thread)
 		dump_flow (sblock, "thread");
-	remove_dead_blocks (sblock);
+	do {
+		remove_dead_blocks (sblock);
+	} while (merge_blocks (sblock));
 	if (options.block_dot.dead)
 		dump_flow (sblock, "dead");
 	check_final_block (sblock);
