@@ -1146,8 +1146,9 @@ remove_dead_blocks (sblock_t *blocks)
 					remove_label_from_dest (s->opb->o.label);
 				s->opb->o.label = sb->statements->opa->o.label;
 				invert_conditional (s);
-				sb->next->reachable = 1;
 				sb->reachable = 0;
+				for (sb = sb->next; sb; sb = sb->next)
+					sb->reachable = 1;
 				break;
 			} else if (!is_goto (s) && !is_return (s)) {
 				sb->reachable = 1;
