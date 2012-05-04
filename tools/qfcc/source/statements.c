@@ -1075,6 +1075,13 @@ remove_label_from_dest (ex_label_t *label)
 }
 
 static void
+unuse_label (ex_label_t *label)
+{
+	if (label && !--label->used)
+		remove_label_from_dest (label);
+}
+
+static void
 dump_flow (sblock_t *sblock, const char *stage)
 {
 	char       *fname;
@@ -1108,8 +1115,7 @@ thread_jumps (sblock_t *blocks)
 			 l = l->dest->statements->opa->o.label) {
 		}
 		if (l != *label) {
-			if (!--(*label)->used)
-				remove_label_from_dest (*label);
+			unuse_label (*label);
 			l->used++;
 			*label = l;
 		}
@@ -1142,8 +1148,7 @@ remove_dead_blocks (sblock_t *blocks)
 			if (is_conditional (s) && is_goto (sb->statements)
 				&& s->opb->o.label->dest == sb->next) {
 				debug (0, "meging if/goto %p %p", sblock, sb);
-				if (!--s->opb->o.label->used)
-					remove_label_from_dest (s->opb->o.label);
+				unuse_label (s->opb->o.label);
 				s->opb->o.label = sb->statements->opa->o.label;
 				invert_conditional (s);
 				sb->reachable = 0;
@@ -1169,8 +1174,7 @@ remove_dead_blocks (sblock_t *blocks)
 					label = s->opa->o.label;
 				else if (is_conditional (s))
 					label = s->opb->o.label;
-				if (label && !--label->used)
-					remove_label_from_dest (label);
+				unuse_label (label);
 				did_something = 1;
 
 				sblock->next = sb->next;
