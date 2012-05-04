@@ -127,6 +127,8 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 	if (value) {
 		type_t     *type = get_type (switch_block->test);
 		type_t     *val_type = get_type (value);
+		if (!type)
+			return 0;
 		if (!type_assignable (type, get_type (value)))
 			return error (value, "type mismatch in case label");
 		if (is_integral (type) && is_integral (val_type)) {
