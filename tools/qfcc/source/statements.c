@@ -933,7 +933,7 @@ statement_label (sblock_t *sblock, expr_t *e)
 		e->e.label.next = sblock->labels;
 		sblock->labels = &e->e.label;
 	} else {
-		debug (e, "dropping unused label %s\n", e->e.label.name);
+		debug (e, "dropping unused label %s", e->e.label.name);
 	}
 	return sblock;
 }
@@ -1182,7 +1182,8 @@ merge_blocks (sblock_t *blocks)
 		}
 		// the destiniation block must have only one label and one user for
 		// that label (ie, no other branch statement jumps to the block).
-		if (dest->labels->next || dest->labels->used > 1)
+		// also, don't try to move a marker end-block
+		if (dest->labels->next || dest->labels->used > 1 || !dest->statements)
 			continue;
 		// the destination block must be otherwise unreachable (preceeded by
 		// an unconditional jump (goto or return))
@@ -1197,6 +1198,8 @@ merge_blocks (sblock_t *blocks)
 		if (!is_goto (s) && !is_return (s))
 			continue;
 		// desination block is reachable via only goto of the current block
+		if (!dest->next)
+			dest->next = new_sblock ();
 		sb->next = dest->next;			// pull dest out of the chain
 		join_blocks (sblock, dest);
 		did_something = 1;
