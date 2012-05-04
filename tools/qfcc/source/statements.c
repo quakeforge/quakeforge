@@ -1099,7 +1099,7 @@ thread_jumps (sblock_t *blocks)
 
 	if (!blocks)
 		return;
-	for (sblock = blocks; sblock->next; sblock = sblock->next) {
+	for (sblock = blocks; sblock; sblock = sblock->next) {
 		statement_t *s;
 		ex_label_t **label, *l;
 
