@@ -8,7 +8,7 @@
 #define IT_LIGHTNING        0x000040
 #define IT_EXTRA_WEAPON     0x000080
 string foo = "oo";
-vector (integer wep)
+vector (int wep)
 weapon_range =
 {
 	switch (wep) {
