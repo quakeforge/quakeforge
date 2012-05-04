@@ -1065,6 +1065,7 @@ remove_label_from_dest (ex_label_t *label)
 
 	debug (0, "dropping deceased label %s", label->name);
 	sblock = label->dest;
+	label->dest = 0;
 	for (l = &sblock->labels; *l; l = &(*l)->next) {
 		if (*l == label) {
 			*l = label->next;
@@ -1232,9 +1233,10 @@ remove_dead_blocks (sblock_t *blocks)
 			s = (statement_t *) sblock->tail;
 			if (is_conditional (s) && is_goto (sb->statements)
 				&& s->opb->o.label->dest == sb->next) {
-				debug (0, "meging if/goto %p %p", sblock, sb);
+				debug (0, "merging if/goto %p %p", sblock, sb);
 				unuse_label (s->opb->o.label);
 				s->opb->o.label = sb->statements->opa->o.label;
+				s->opb->o.label->used++;
 				invert_conditional (s);
 				sb->reachable = 0;
 				for (sb = sb->next; sb; sb = sb->next)
