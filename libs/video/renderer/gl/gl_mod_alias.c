@@ -207,9 +207,8 @@ GL_DrawAliasShadow (const aliashdr_t *paliashdr, const vert_order_t *vo)
 		} else
 			qfglBegin (GL_TRIANGLE_STRIP);
 
+		order += 2 * count;		// skip texture coords
 		do {
-			order += 2;		// skip texture coords
-
 			// normals and vertices come from the frame list
 			point[0] =
 				verts->vert[0] * paliashdr->mdl.scale[0] +
