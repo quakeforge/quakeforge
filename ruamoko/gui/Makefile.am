@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS=	foreign
 
-pkglibdir=$(libdir)/qfcc/lib
+pkglibdir=$(datarootdir)/qfcc/lib
 
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QCFLAGS=-qq -g -Werror -Wall -Wno-integer-divide --no-default-paths
