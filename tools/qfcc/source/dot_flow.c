@@ -172,6 +172,14 @@ is_goto (statement_t *s)
 	return !strcmp (s->opcode, "<GOTO>");
 }
 
+static int
+is_return (statement_t *s)
+{
+	if (!s)
+		return 0;
+	return !strncmp (s->opcode, "<RETURN", 7);
+}
+
 static sblock_t *
 get_target (statement_t *s)
 {
@@ -211,7 +219,8 @@ flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 	dasprintf (dstr, "        <td></td>\n");
 	dasprintf (dstr, "      </tr>\n");
 	dasprintf (dstr, "    </table>>];\n");
-	if (sblock->next && !is_goto ((statement_t *) sblock->tail))
+	if (sblock->next && !is_goto ((statement_t *) sblock->tail)
+		&& !is_return ((statement_t *) sblock->tail))
 		dasprintf (dstr, "  sb_%p:e -> sb_%p:s;\n", sblock, sblock->next);
 	if ((target = get_target ((statement_t *) sblock->tail)))
 		dasprintf (dstr, "  sb_%p:e -> sb_%p:s [label=\"%s\"];\n", sblock,
