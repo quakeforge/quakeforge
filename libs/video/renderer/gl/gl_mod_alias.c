@@ -188,13 +188,13 @@ GL_DrawAliasFrameMulti (vert_order_t *vo)
 	Standard shadow drawing
 */
 static void
-GL_DrawAliasShadow (aliashdr_t *paliashdr, vert_order_t *vo)
+GL_DrawAliasShadow (const aliashdr_t *paliashdr, const vert_order_t *vo)
 {
 	float       height, lheight;
 	int         count;
-	int        *order = vo->order;
+	const int  *order = vo->order;
 	vec3_t      point;
-	blended_vert_t *verts = vo->verts;
+	const blended_vert_t *verts = vo->verts;
 
 	lheight = currententity->origin[2] - lightspot[2];
 	height = -lheight + 1.0;
