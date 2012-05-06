@@ -51,6 +51,7 @@
 #include "qc-parse.h"
 
 typedef expr_t *(*operation_t) (int op, expr_t *e, expr_t *e1, expr_t *e2);
+typedef expr_t *(*unaryop_t) (int op, expr_t *e, expr_t *e1);
 
 static expr_t *
 cf_cast_expr (type_t *type, expr_t *e)
@@ -1108,6 +1109,297 @@ static operation_t *do_op[ev_type_count] = {
 	op_compound,						// ev_invalid
 };
 
+static unaryop_t do_unary_op[ev_type_count];
+static expr_t *
+uop_invalid (int op, expr_t *e, expr_t *e1)
+{
+	type_t     *t1 = get_type (e1);
+	if (is_scalar (t1)) {
+		// The expression is an enum. Treat the enum as the default type.
+		etype_t     t;
+		t = type_default->type;
+		return do_unary_op[t] (op, e, e1);
+	} else {
+		dstring_t  *enc1 = dstring_newstr ();
+
+		print_type_str (enc1, t1);
+
+		//print_expr (e);
+		e1 = error (e1, "invalid operand for unary %s: %s",
+					get_op_string (op), enc1->str);
+		dstring_delete (enc1);
+		return e1;
+	}
+}
+
+static expr_t *
+uop_string (int op, expr_t *e, expr_t *e1)
+{
+	// + - ! ~ *
+	static int  valid[] = { '!', 0 };
+	const char *s;
+
+	if (!valid_op (op, valid))
+		return error (e1, "invalid unary operator for string: %s",
+					  get_op_string (op));
+
+	if (!is_constant (e1))
+		return e;
+
+	s = expr_string (e1);
+	return new_integer_expr (!s || !s[0]);
+}
+
+static expr_t *
+uop_float (int op, expr_t *e, expr_t *e1)
+{
+	static int  valid[] = { '+', '-', '!', '~', 'C', 0 };
+
+	if (!valid_op (op, valid))
+		return error (e1, "invalid unary operator for float: %s",
+					  get_op_string (op));
+	if (op == '+')
+		return e1;
+	if (op == 'C' && get_type (e) != &type_integer)
+		return error (e1, "invalid cast of float");
+	if (!is_constant (e1))
+		return e;
+	switch (op) {
+		case '-':
+			return new_float_expr (-expr_float (e1));
+		case '!':
+			print_type (get_type (e));
+			return new_integer_expr (!expr_float (e1));
+		case '~':
+			return new_float_expr (~(int) expr_float (e1));
+		case 'C':
+			return new_integer_expr (expr_float (e1));
+	}
+	internal_error (e, "float unary op blew up");
+}
+
+static expr_t *
+uop_vector (int op, expr_t *e, expr_t *e1)
+{
+	static int  valid[] = { '+', '-', '!', 0 };
+	vec3_t      v;
+
+	if (!valid_op (op, valid))
+		return error (e1, "invalid unary operator for vector: %s",
+					  get_op_string (op));
+	if (op == '+')
+		return e1;
+	if (!is_constant (e1))
+		return e;
+	switch (op) {
+		case '-':
+			VectorNegate (expr_vector (e), v);
+			return new_vector_expr (v);
+		case '!':
+			return new_integer_expr (!VectorIsZero (expr_vector (e1)));
+	}
+	internal_error (e, "vector unary op blew up");
+}
+
+static expr_t *
+uop_entity (int op, expr_t *e, expr_t *e1)
+{
+	static int  valid[] = { '!', 0 };
+
+	if (!valid_op (op, valid))
+		return error (e1, "invalid unary operator for entity: %s",
+					  get_op_string (op));
+	if (!is_constant (e1))
+		return e;
+	switch (op) {
+		case '!':
+			internal_error (e, "!entity");
+	}
+	internal_error (e, "entity unary op blew up");
+}
+
+static expr_t *
+uop_field (int op, expr_t *e, expr_t *e1)
+{
+	static int  valid[] = { '!', 0 };
+
+	if (!valid_op (op, valid))
+		return error (e1, "invalid unary operator for field: %s",
+					  get_op_string (op));
+	if (!is_constant (e1))
+		return e;
+	switch (op) {
+		case '!':
+			internal_error (e, "!field");
+	}
+	internal_error (e, "field unary op blew up");
+}
+
+static expr_t *
+uop_func (int op, expr_t *e, expr_t *e1)
+{
+	static int  valid[] = { '!', 0 };
+
+	if (!valid_op (op, valid))
+		return error (e1, "invalid unary operator for func: %s",
+					  get_op_string (op));
+	if (!is_constant (e1))
+		return e;
+	switch (op) {
+		case '!':
+			internal_error (e, "!func");
+	}
+	internal_error (e, "func unary op blew up");
+}
+
+static expr_t *
+uop_pointer (int op, expr_t *e, expr_t *e1)
+{
+	static int  valid[] = { '!', '.', 0 };
+
+	if (!valid_op (op, valid))
+		return error (e1, "invalid unary operator for pointer: %s",
+					  get_op_string (op));
+	if (!is_constant (e1))
+		return e;
+	switch (op) {
+		case '!':
+			internal_error (e, "!pointer");
+		case '.':
+			debug (e, ".pointer");
+			return e;
+	}
+	internal_error (e, "pointer unary op blew up");
+}
+
+static expr_t *
+uop_quaternion (int op, expr_t *e, expr_t *e1)
+{
+	static int  valid[] = { '+', '-', '!', '~', 0 };
+	quat_t      q;
+
+	if (!valid_op (op, valid))
+		return error (e1, "invalid unary operator for quaternion: %s",
+					  get_op_string (op));
+	if (op == '+')
+		return e1;
+	if (!is_constant (e1))
+		return e;
+	switch (op) {
+		case '-':
+			QuatNegate (expr_vector (e), q);
+			return new_quaternion_expr (q);
+		case '!':
+			return new_integer_expr (!QuatIsZero (expr_quaternion (e1)));
+		case '~':
+			QuatConj (expr_vector (e), q);
+			return new_quaternion_expr (q);
+	}
+	internal_error (e, "quaternion unary op blew up");
+}
+
+static expr_t *
+uop_integer (int op, expr_t *e, expr_t *e1)
+{
+	static int  valid[] = { '+', '-', '!', '~', 'C', 0 };
+
+	if (!valid_op (op, valid))
+		return error (e1, "invalid unary operator for int: %s",
+					  get_op_string (op));
+	if (op == '+')
+		return e1;
+	if (op == 'C' && get_type (e) != &type_float)
+		return error (e1, "invalid cast of int");
+	if (!is_constant (e1))
+		return e;
+	switch (op) {
+		case '-':
+			return new_integer_expr (-expr_integer (e1));
+		case '!':
+			return new_integer_expr (!expr_integer (e1));
+		case '~':
+			return new_integer_expr (~expr_integer (e1));
+		case 'C':
+			return new_float_expr (expr_integer (e1));
+	}
+	internal_error (e, "integer unary op blew up");
+}
+
+static expr_t *
+uop_uinteger (int op, expr_t *e, expr_t *e1)
+{
+	static int  valid[] = { '+', '-', '!', '~', 0 };
+
+	if (!valid_op (op, valid))
+		return error (e1, "invalid unary operator for uint: %s",
+					  get_op_string (op));
+	if (op == '+')
+		return e1;
+	if (!is_constant (e1))
+		return e;
+	switch (op) {
+		case '-':
+			return new_uinteger_expr (-expr_uinteger (e1));
+		case '!':
+			return new_integer_expr (!expr_uinteger (e1));
+		case '~':
+			return new_uinteger_expr (~expr_uinteger (e1));
+	}
+	internal_error (e, "uinteger unary op blew up");
+}
+
+static expr_t *
+uop_short (int op, expr_t *e, expr_t *e1)
+{
+	static int  valid[] = { '+', '-', '!', '~', 0 };
+
+	if (!valid_op (op, valid))
+		return error (e1, "invalid unary operator for short: %s",
+					  get_op_string (op));
+	if (op == '+')
+		return e1;
+	if (!is_constant (e1))
+		return e;
+	switch (op) {
+		case '-':
+			return new_short_expr (-expr_short (e1));
+		case '!':
+			return new_integer_expr (!expr_short (e1));
+		case '~':
+			return new_short_expr (~expr_short (e1));
+	}
+	internal_error (e, "short unary op blew up");
+}
+
+static expr_t *
+uop_compound (int op, expr_t *e, expr_t *e1)
+{
+	type_t     *t1 = get_type (e1);
+
+	if (is_scalar (t1)) {
+		if (is_enum (t1)) {
+			return uop_integer (op, e, e1);
+		}
+	}
+	return error (e1, "invalid operand for unary %s", get_op_string (op));
+}
+
+static unaryop_t do_unary_op[ev_type_count] = {
+	uop_invalid,						// ev_void
+	uop_string,							// ev_string
+	uop_float,							// ev_float
+	uop_vector,							// ev_vector
+	uop_entity,							// ev_entity
+	uop_field,							// ev_field
+	uop_func,							// ev_func
+	uop_pointer,						// ev_pointer
+	uop_quaternion,						// ev_quaternion
+	uop_integer,						// ev_integer
+	uop_uinteger,						// ev_uinteger
+	uop_short,							// ev_short
+	uop_compound,						// ev_invalid
+};
+
 expr_t *
 fold_constants (expr_t *e)
 {
@@ -1137,9 +1429,20 @@ fold_constants (expr_t *e)
 		return e;
 	}
 	if (e->type == ex_uexpr) {
-		if (e->e.expr.e1)
-			e->e.expr.e1 = fold_constants (e->e.expr.e1);
-		return e;
+		if (!e->e.expr.e1)
+			return e;
+		op = e->e.expr.op;
+		e->e.expr.e1 = e1 = fold_constants (e->e.expr.e1);
+		if (e1->type == ex_error)
+			return e1;
+		if (op == 'A' || op == 'g' || op == 'r')
+			return e;
+		t1 = extract_type (e1);
+		if (t1 < 0 || t1 >= ev_type_count || !do_unary_op[t1]) {
+			print_expr (e);
+			internal_error (e, "invalid type: %d", t1);
+		}
+		return do_unary_op[t1] (op, e, e1);
 	}
 
 	if (e->type != ex_expr)
