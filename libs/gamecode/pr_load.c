@@ -42,6 +42,7 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/mathlib.h"
 #include "QF/progs.h"
 #include "QF/qdefs.h"
 #include "QF/qendian.h"
@@ -174,7 +175,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int edicts, int zone)
 	pr->zone_size &= ~(sizeof (void*) - 1);
 
 	// size of edict asked for by progs
-	pr->pr_edict_size = progs.entityfields * 4;
+	pr->pr_edict_size = max (1, progs.entityfields) * 4;
 	// size of engine data
 	pr->pr_edict_size += sizeof (edict_t) - sizeof (pr_type_t);
 	// round off to next highest whole word address (esp for Alpha)

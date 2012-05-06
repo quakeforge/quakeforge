@@ -55,6 +55,7 @@
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
+#include "QF/mathlib.h"
 #include "QF/pr_comp.h"
 #include "QF/progs.h"
 #include "QF/quakeio.h"
@@ -263,7 +264,7 @@ convert_qfo (void)
 	pr.pr_fielddefs = P (ddef_t, ofs_fielddefs);
 	pr.pr_globals = P (pr_type_t, ofs_globals);
 	pr.globals_size = pr.progs->numglobals;
-	pr.pr_edict_size = pr.progs->entityfields * 4;
+	pr.pr_edict_size = max (1, pr.progs->entityfields) * 4;
 	pr.pr_edictareasize = 1 * pr.pr_edict_size;
 #undef P
 
