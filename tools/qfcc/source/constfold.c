@@ -175,7 +175,7 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	};
 
 	if (!valid_op (op, valid))
-		return error (e1, "invalid operand for float");
+		return error (e1, "invalid operator for float");
 
 	if (op == '=' || op == PAS) {
 		if ((type = get_type (e1)) != &type_float) {
@@ -303,7 +303,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (get_type (e1) != &type_vector) {
 
 		if (op != '*')
-			return error (e1, "invalid operand for vector");
+			return error (e1, "invalid operator for vector");
 
 		t = e1;
 		e->e.expr.e1 = e1 = e2;
@@ -312,10 +312,10 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (get_type (e2) != &type_vector) {
 		e->e.expr.e2 = e2 = convert_to_float (e2);
 		if (op != '*' && op != '/')
-			return error (e1, "invalid operand for vector");
+			return error (e1, "invalid operator for vector");
 	} else {
 		if (!valid_op (op, valid))
-			return error (e1, "invalid operand for vector");
+			return error (e1, "invalid operator for vector");
 	}
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
@@ -410,7 +410,7 @@ do_op_entity (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		return e;
 	}
 	if (op != '=' || type != &type_entity)
-		return error (e1, "invalid operand for entity");
+		return error (e1, "invalid operator for entity");
 	e->e.expr.type = &type_entity;
 	return e;
 }
@@ -419,7 +419,7 @@ static expr_t *
 do_op_field (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	if (op != '=')
-		return error (e1, "invalid operand for field");
+		return error (e1, "invalid operator for field");
 	e->e.expr.type = &type_field;
 	return e;
 }
@@ -439,7 +439,7 @@ do_op_func (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		return e;
 	}
 	if (op != '=')
-		return error (e1, "invalid operand for func");
+		return error (e1, "invalid operator for func");
 	e->e.expr.type = &type_function;
 	return e;
 }
@@ -451,7 +451,7 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	static int  valid[] = {'=', PAS, '&', 'M', '.', EQ, NE, 0};
 
 	if (!valid_op (op, valid))
-		return error (e1, "invalid operand for pointer");
+		return error (e1, "invalid operator for pointer");
 
 	if (op == PAS && (type = get_type (e1)->t.fldptr.type) != get_type (e2)) {
 		// make sure auto-convertions happen
@@ -513,7 +513,7 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (get_type (e1) != &type_quaternion) {
 
 		if (op != '*' && op != '/')
-			return error (e1, "invalid operand for quaternion");
+			return error (e1, "invalid operator for quaternion");
 
 		if (op == '*') {
 			t = e1;
@@ -524,10 +524,10 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (get_type (e2) != &type_quaternion) {
 		e->e.expr.e2 = e2 = convert_to_float (e2);
 		if (op != '*' && op != '/')
-			return error (e1, "invalid operand for quaternion");
+			return error (e1, "invalid operator for quaternion");
 	} else {
 		if (!valid_op (op, valid))
-			return error (e1, "invalid operand for quaternion");
+			return error (e1, "invalid operator for quaternion");
 	}
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
@@ -609,7 +609,7 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	};
 
 	if (!valid_op (op, valid))
-		return error (e1, "invalid operand for integer");
+		return error (e1, "invalid operator for integer");
 
 	if (is_short_val (e1))
 		convert_short_int (e1);
@@ -734,7 +734,7 @@ do_op_short (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	};
 
 	if (!valid_op (op, valid))
-		return error (e1, "invalid operand for short");
+		return error (e1, "invalid operator for short");
 
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
@@ -822,7 +822,7 @@ do_op_struct (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	type_t     *type;
 
 	if (op != '=' && op != 'm')
-		return error (e1, "invalid operand for struct");
+		return error (e1, "invalid operator for struct");
 	if ((type = get_type (e1)) != get_type (e2))
 		return type_mismatch (e1, e2, op);
 	e->e.expr.type = type;
@@ -848,7 +848,7 @@ do_op_compound (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			return do_op_integer (op, e, e1, e2);
 		}
 	}
-	return error (e1, "invalid operand for compound");
+	return error (e1, "invalid operator for compound");
 }
 
 static operation_t *do_op[ev_type_count];
