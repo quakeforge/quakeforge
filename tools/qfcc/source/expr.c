@@ -1596,7 +1596,7 @@ unary_expr (int op, expr_t *e)
 	switch (op) {
 		case '-':
 			if (!is_math (get_type (e)))
-				return error (e, "invalid type for unary +");
+				return error (e, "invalid type for unary -");
 			if (is_constant (e)) {
 				switch (extract_type (e)) {
 					case ev_string:
@@ -1726,7 +1726,7 @@ unary_expr (int op, expr_t *e)
 					case ev_func:
 					case ev_pointer:
 					case ev_vector:
-						return error (e, "invalid type for unary -");
+						return error (e, "invalid type for unary ~");
 					case ev_float:
 						return new_float_expr (~(int) expr_float (e));
 					case ev_quat:
