@@ -794,9 +794,10 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	locals_start = qfo->spaces[qfo_near_data_space].data_size;
 	for (i = qfo_num_spaces; i < qfo->num_spaces; i++) {
 		if (options.code.local_merging) {
-			if (locals_size < qfo->spaces[i].data_size)
+			if (locals_size < qfo->spaces[i].data_size) {
 				locals_size = qfo->spaces[i].data_size;
-			big_locals = i;
+				big_locals = i;
+			}
 		} else {
 			locals_size += qfo->spaces[i].data_size;
 		}
