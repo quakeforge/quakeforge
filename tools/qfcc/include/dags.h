@@ -32,8 +32,10 @@
 
 typedef struct daglabel_s {
 	struct daglabel_s *next;
+	struct daglabel_s **prev;
 	const char *opcode;			///< not if op
 	struct operand_s *op;		///< not if opcode;
+	struct dagnode_s *dagnode;	///< node with which this label is associated
 } daglabel_t;
 
 typedef struct dagnode_s {
@@ -57,5 +59,13 @@ typedef struct dagnode_s {
 
 const char *daglabel_string (daglabel_t *label);
 void print_dag (dagnode_t *node, const char *filename);
+struct sblock_s;
+
+/** Make a dag for a single basic block.
+
+	\param block	The basic block for which the dag will be created.
+	\return			The dag representing the basic block.
+*/
+dagnode_t *make_dag (const struct sblock_s *block);
 
 #endif//dags_h
