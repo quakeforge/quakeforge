@@ -358,3 +358,39 @@ make_string (char *token, char **end)
 
 	return save_string (str->str);
 }
+
+const char *
+quote_string (const char *str)
+{
+	static dstring_t *q;
+	char        c[2] = {0, 0};
+
+	if (!str)
+		return "(null)";
+	if (!q)
+		q = dstring_new ();
+	dstring_clearstr (q);
+	while ((c[0] = *str++)) {
+		switch (c[0]) {
+			case '\n':
+				dstring_appendstr (q, "\\\\n");
+				break;
+			case '<':
+				dstring_appendstr (q, "&lt;");
+				break;
+			case '>':
+				dstring_appendstr (q, "&gt;");
+				break;
+			case '&':
+				dstring_appendstr (q, "&amp;");
+				break;
+			case '"':
+				dstring_appendstr (q, "&quot;");
+				break;
+			default:
+				dstring_appendstr (q, c);
+				break;
+		}
+	}
+	return q->str;
+}

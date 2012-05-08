@@ -30,6 +30,8 @@
 #ifndef statement_h
 #define statement_h
 
+#include "QF/pr_comp.h"
+
 typedef enum {
 	op_symbol,
 	op_value,
@@ -78,5 +80,6 @@ struct expr_s;
 sblock_t *make_statements (struct expr_s *expr);
 void print_statement (statement_t *s);
 void print_flow (sblock_t *sblock, const char *filename);
+const char *operand_string (operand_t *op);
 
 #endif//statement_h

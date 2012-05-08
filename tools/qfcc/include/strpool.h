@@ -55,4 +55,6 @@ const char *save_string (const char *str);
 
 const char *make_string (char *token, char **end);
 
+const char *quote_string (const char *str);
+
 #endif//__strpool_h

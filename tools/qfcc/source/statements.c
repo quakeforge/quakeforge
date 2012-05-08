@@ -53,6 +53,75 @@
 #include "type.h"
 #include "qc-parse.h"
 
+const char *
+operand_string (operand_t *op)
+{
+	type_t     *type;
+
+	if (!op)
+		return "";
+	switch (op->op_type) {
+		case op_symbol:
+			return op->o.symbol->name;
+		case op_value:
+			switch (op->o.value->type) {
+				case ev_string:
+					return quote_string (op->o.value->v.string_val);
+				case ev_float:
+					return va ("%g", op->o.value->v.float_val);
+				case ev_vector:
+					return va ("'%g %g %g'",
+							   op->o.value->v.vector_val[0],
+							   op->o.value->v.vector_val[1],
+							   op->o.value->v.vector_val[2]);
+				case ev_quat:
+					return va ("'%g %g %g %g'",
+							   op->o.value->v.quaternion_val[0],
+							   op->o.value->v.quaternion_val[1],
+							   op->o.value->v.quaternion_val[2],
+							   op->o.value->v.quaternion_val[3]);
+				case ev_pointer:
+					return va ("ptr %d", op->o.value->v.pointer.val);
+				case ev_field:
+					return va ("field %d", op->o.value->v.pointer.val);
+				case ev_entity:
+					return va ("ent %d", op->o.value->v.integer_val);
+				case ev_func:
+					return va ("func %d", op->o.value->v.integer_val);
+				case ev_integer:
+					return va ("int %d", op->o.value->v.integer_val);
+				case ev_uinteger:
+					return va ("uint %u", op->o.value->v.uinteger_val);
+				case ev_short:
+					return va ("short %d", op->o.value->v.short_val);
+				case ev_void:
+					return "(void)";
+				case ev_invalid:
+					return "(invalid)";
+				case ev_type_count:
+					return "(type_count)";
+			}
+			break;
+		case op_label:
+			return op->o.label->name;
+		case op_temp:
+			return va ("tmp %p", op);
+		case op_pointer:
+			type = op->o.pointer->type;
+			if (op->o.pointer->def)
+				return va ("(%s)[%d]&lt;%s&gt;",
+						   type ? pr_type_name[type->type] : "???",
+						   op->o.pointer->val, op->o.pointer->def->name);
+			else
+				return va ("(%s)[%d]",
+						   type ? pr_type_name[type->type] : "???",
+						   op->o.pointer->val);
+		case op_alias:
+			return operand_string (op->o.alias);//FIXME better output
+	}
+	return ("??");
+}
+
 static void
 print_operand (operand_t *op)
 {
