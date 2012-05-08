@@ -51,18 +51,21 @@
 static void
 print_node (dstring_t *dstr, dagnode_t *node)
 {
-	if (!node->left && node->right) {
-		// broken node (right is not null)
+	if (!node->a && (node->b || node->c)) {
 		dasprintf (dstr, "  \"dag_%p\" [label=\"bad node\"];\n", node);
 		return;
 	}
-	if (node->left)
-		dasprintf (dstr, "  \"dag_%p\" -> \"dag_%p\";\n", node, node->left);
-	if (node->right)
-		dasprintf (dstr, "  \"dag_%p\" -> \"dag_%p\";\n", node, node->right);
+	if (node->a)
+		dasprintf (dstr, "  \"dag_%p\" -> \"dag_%p\" [label=a];\n", node,
+				   node->a);
+	if (node->b)
+		dasprintf (dstr, "  \"dag_%p\" -> \"dag_%p\" [label=b];\n", node,
+				   node->b);
+	if (node->c)
+		dasprintf (dstr, "  \"dag_%p\" -> \"dag_%p\" [label=c];\n", node,
+				   node->c);
 	dasprintf (dstr, "  \"dag_%p\" [%slabel=\"%s\"];\n", node,
-			   node->left ? "" : "shape=none,",
-			   daglabel_string (node->label));
+			   node->a ? "" : "shape=none,", daglabel_string (node->label));
 	if (node->identifiers) {
 		daglabel_t *id;
 

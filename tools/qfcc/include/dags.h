@@ -39,8 +39,19 @@ typedef struct daglabel_s {
 typedef struct dagnode_s {
 	struct dagnode_s *next;
 	daglabel_t *label;			///< ident/const if leaf node, or operator
-	struct dagnode_s *left;		///< null if leaf node
-	struct dagnode_s *right;	///< null if unary op
+	/// \name child nodes
+	/// All three child nodes will be null if this node is a leaf
+	/// If \a a is null, both \a b and \a c must also be null. If \a is not
+	/// null, either \a b or \a c or even both may be non-null. Both \a b and
+	/// \a c being non-null is reserved for the few opcodes that take three
+	/// inputs (rcall2+, 3 op state, indirect move, indexed pointer assignment)
+	/// \a b and \a c are used to help keep track of the original statement
+	/// operands
+	//@{
+	struct dagnode_s *a;
+	struct dagnode_s *b;
+	struct dagnode_s *c;
+	//@}
 	daglabel_t *identifiers;	///< list of identifiers with value of this node
 } dagnode_t;
 
