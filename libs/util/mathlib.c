@@ -833,8 +833,8 @@ Mat4Mult (const mat4_t a, const mat4_t b, mat4_t c)
 }
 
 int
-MatDecompose (const mat4_t m, quat_t rot, vec3_t scale, vec3_t shear,
-			  vec3_t trans)
+Mat4Decompose (const mat4_t m, quat_t rot, vec3_t scale, vec3_t shear,
+			   vec3_t trans)
 {
 	vec3_t      row[3], shr, scl;
 	vec_t       l, t;
@@ -843,7 +843,7 @@ MatDecompose (const mat4_t m, quat_t rot, vec3_t scale, vec3_t shear,
 	if (trans)
 		VectorCopy (m + 12, trans);
 	for (i = 0; i < 3; i++)
-		for (j = 0; i < 3; j++)
+		for (j = 0; j < 3; j++)
 			row[j][i] = m[i * 4 + j];
 	l = DotProduct (row[0], row[0]);
 	if (l < 1e-5)
@@ -879,29 +879,29 @@ MatDecompose (const mat4_t m, quat_t rot, vec3_t scale, vec3_t shear,
 
 	t = 1 + row[0][0] + row[1][1] + row[2][2];
 	if (t >= 1e-5) {
-		vec_t       s = sqrt (t);
+		vec_t       s = sqrt (t) * 2;
 		rot[0] = s / 4;
-		rot[1] = (row[1][2] - row[2][1]) / s;
-		rot[2] = (row[2][0] - row[0][2]) / s;
-		rot[3] = (row[0][1] - row[1][4]) / s;
+		rot[1] = (row[2][1] - row[1][2]) / s;
+		rot[2] = (row[0][2] - row[2][0]) / s;
+		rot[3] = (row[1][0] - row[0][1]) / s;
 	} else {
 		if (row[0][0] > row[1][1] && row[0][0] > row[2][2]) {
-			vec_t       s = sqrt (1 + row[0][0] - row[1][1] - row[2][2]);
-			rot[0] = (row[1][2] - row[2][1]) / s;
+			vec_t       s = sqrt (1 + row[0][0] - row[1][1] - row[2][2]) * 2;
+			rot[0] = (row[2][1] - row[1][2]) / s;
 			rot[1] = s / 4;
-			rot[2] = (row[2][0] - row[0][2]) / s;
-			rot[3] = (row[0][1] - row[1][0]) / s;
+			rot[2] = (row[1][0] + row[0][1]) / s;
+			rot[3] = (row[0][2] + row[2][0]) / s;
 		} else if (row[1][1] > row[2][2]) {
-			vec_t       s = sqrt (1 + row[1][1] - row[0][0] - row[2][2]);
-			rot[0] = (row[2][0] - row[0][2]) / s;
-			rot[1] = (row[1][2] - row[2][1]) / s;
+			vec_t       s = sqrt (1 + row[1][1] - row[0][0] - row[2][2]) * 2;
+			rot[0] = (row[0][2] - row[2][0]) / s;
+			rot[1] = (row[1][0] + row[0][1]) / s;
 			rot[2] = s / 4;
-			rot[3] = (row[0][1] - row[1][0]) / s;
+			rot[3] = (row[2][1] + row[1][2]) / s;
 		} else {
-			vec_t       s = sqrt (1 + row[2][2] - row[0][0] - row[1][1]);
-			rot[0] = (row[0][1] - row[1][0]) / s;
-			rot[1] = (row[1][2] - row[2][1]) / s;
-			rot[2] = (row[2][0] - row[0][2]) / s;
+			vec_t       s = sqrt (1 + row[2][2] - row[0][0] - row[1][1]) * 2;
+			rot[0] = (row[1][0] - row[0][1]) / s;
+			rot[1] = (row[0][2] + row[2][0]) / s;
+			rot[2] = (row[2][1] + row[1][2]) / s;
 			rot[3] = s / 4;
 		}
 	}

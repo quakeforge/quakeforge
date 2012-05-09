@@ -483,6 +483,11 @@ extern const vec_t *const quat_origin;
 		Mat4Zero (a); \
 		a[15] = a[10] = a[5] = a[0] = 1; \
 	} while (0)
+#define Mat4Expand (a) \
+	QuatExpand (a + 0), \
+	QuatExpand (a + 4), \
+	QuatExpand (a + 8), \
+	QuatExpand (a + 12)
 
 #define qfrandom(MAX) ((float) MAX * (rand() * (1.0 / (RAND_MAX + 1.0))))
 
@@ -585,8 +590,8 @@ void QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical);
 void Mat4Transpose (const mat4_t a, mat4_t b);
 void Mat4Mult (const mat4_t a, const mat4_t b, mat4_t c);
 // Column major matrix
-int MatDecompose (const mat4_t m, quat_t rot, vec3_t scale, vec3_t shear,
-				  vec3_t trans);
+int Mat4Decompose (const mat4_t m, quat_t rot, vec3_t scale, vec3_t shear,
+				   vec3_t trans);
 
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)				\
 	(((p)->type < 3)?									\

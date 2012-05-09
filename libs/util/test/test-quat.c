@@ -14,6 +14,9 @@ static vec3_t test_angles[] = {
 	{0, 45, 45},
 	{45, 0, 45},
 	{45, 45, 45},
+	{0, 180, 180},
+	{180, 0, 180},
+	{180, 180, 0},
 };
 #define num_angle_tests (sizeof (test_angles) / sizeof (test_angles[0]))
 
