@@ -151,6 +151,7 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 	float      *texcoord = 0;
 	byte       *blendindex = 0;
 	byte       *blendweight = 0;
+	byte       *color = 0;
 	byte       *vert;
 	iqmvertexarray *va;
 	size_t      bytes = 0;
@@ -224,6 +225,15 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 				bytes += va->size;
 				blendweight = (byte *) (buffer + va->offset);
 				break;
+			case IQM_COLOR:
+				if (color)
+					return false;
+				if (va->format != IQM_UBYTE || va->size != 4)
+					return false;
+				iqm->num_arrays++;
+				bytes += va->size;
+				color = (byte *) (buffer + va->offset);
+				break;
 		}
 	}
 	iqm->vertexarrays = calloc (iqm->num_arrays + 1, sizeof (iqmvertexarray));
@@ -270,6 +280,13 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 		va[1].offset = va->offset + va->size;
 		va++;
 	}
+	if (color) {
+		va->type = IQM_COLOR;
+		va->format = IQM_UBYTE;
+		va->size = 4;
+		va[1].offset = va->offset + va->size;
+		va++;
+	}
 	iqm->vertexarrays = realloc (iqm->vertexarrays,
 								 iqm->num_arrays * sizeof (iqmvertexarray));
 	iqm->vertices = malloc (hdr->num_vertexes * bytes);
@@ -297,7 +314,11 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 			va++;
 		}
 		if (blendweight) {
-			memcpy (vert + va->offset, &blendindex[i * 4], 4);
+			memcpy (vert + va->offset, &blendweight[i * 4], 4);
+			va++;
+		}
+		if (color) {
+			memcpy (vert + va->offset, &color[i * 4], 4);
 			va++;
 		}
 	}
