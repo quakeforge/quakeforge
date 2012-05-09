@@ -890,7 +890,7 @@ Mat4Decompose (const mat4_t m, quat_t rot, vec3_t scale, vec3_t shear,
 	scl[2] = sqrt (l);
 	shr[1] /= scl[2];
 	shr[2] /= scl[2];
-	VectorScale (row[0], 1/scl[2], row[0]);
+	VectorScale (row[2], 1/scl[2], row[2]);
 	if (scale)
 		VectorCopy (scl, scale);
 	if (shear)
