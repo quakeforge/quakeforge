@@ -832,6 +832,17 @@ Mat4Mult (const mat4_t a, const mat4_t b, mat4_t c)
 	}
 }
 
+void
+Mat4MultVec (const mat4_t a, const vec3_t b, vec3_t c)
+{
+	int         i;
+	vec3_t      tb;
+
+	VectorCopy (b, tb);
+	for (i = 0; i < 3; i++)
+		c[i] = a[i + 0] * tb[0] + a[i + 4] * b[1] + a[i + 8] * b[2] + a[i +12];
+}
+
 int
 Mat4Decompose (const mat4_t m, quat_t rot, vec3_t scale, vec3_t shear,
 			   vec3_t trans)
