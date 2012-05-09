@@ -587,6 +587,8 @@ void QuatInverse (const quat_t in, quat_t out);
 void QuatExp (const quat_t a, quat_t b);
 void QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical);
 
+void Mat4Init (const quat_t rot, const vec3_t scale, const vec3_t trans,
+			   mat4_t mat);
 void Mat4Transpose (const mat4_t a, mat4_t b);
 void Mat4Mult (const mat4_t a, const mat4_t b, mat4_t c);
 void Mat4MultVec (const mat4_t a, const vec3_t b, vec3_t c);

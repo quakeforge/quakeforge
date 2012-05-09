@@ -799,6 +799,16 @@ Invert24To16 (fixed16_t val)
 #endif
 
 void
+Mat4Init (const quat_t rot, const vec3_t scale, const vec3_t trans, mat4_t mat)
+{
+	QuatToMatrix (rot, mat, 1, 1);
+	VectorScale (mat + 0, scale[0], mat + 0);
+	VectorScale (mat + 4, scale[1], mat + 4);
+	VectorScale (mat + 8, scale[2], mat + 8);
+	VectorCopy (trans, mat + 12);
+}
+
+void
 Mat4Transpose (const mat4_t a, mat4_t b)
 {
 	vec_t       t;
