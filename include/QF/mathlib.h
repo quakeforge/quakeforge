@@ -104,6 +104,22 @@ extern const vec_t *const quat_origin;
 		(c)[1] = (a)[1] * (b); \
 		(c)[2] = (a)[2] * (b); \
 	} while (0)
+/** Shear vector \a b by vector \a a.
+
+	Vector a represents the shear factors XY, XZ, YZ, ie in matrix form:
+	[  1  0  0 ] [ b0 ]
+	[ a0  1  0 ] [ b1 ]
+	[ a1 a2  1 ] [ b2 ]
+
+	The reason for this particular scheme is that is how Mat4Decompose
+	calculates the shear from a matrix.
+*/
+#define VectorShear(a,b,c) \
+	do { \
+		(c)[2] = (b)[0] * (a)[1] + (b)[1] * (a)[2] + (b)[2]; \
+		(c)[1] = (b)[0] * (a)[0] + (b)[1]; \
+		(c)[0] = (b)[0]; \
+	} while (0)
 #define VectorCompMult(a,b,c) \
 	do { \
 		(c)[0] = (a)[0] * (b)[0]; \

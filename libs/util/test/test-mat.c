@@ -117,10 +117,51 @@ test_transform (const vec3_t angles, const vec3_t scale,
 	for (i = 0; i < 3; i++)
 		if (!compare (x[i], y[i]))
 			goto fail;
+
 	return 1;
 fail:
 	printf ("\n\n(%g %g %g) (%g %g %g) (%g %g %g)\n", VectorExpand (angles),
 			VectorExpand (scale), VectorExpand (translation));
+	printf ("  (%g %g %g)\n", VectorExpand (x));
+	printf ("  (%g %g %g)\n", VectorExpand (y));
+	return 0;
+}
+
+static int
+test_transform2 (const vec3_t angles, const vec3_t scale,
+				 const vec3_t translation)
+{
+	int         i;
+	const vec3_t v = {4,5,6};
+	vec3_t      x, y;
+	quat_t      rotation;
+	mat4_t      mat;
+	vec3_t      rot, sc, sh, tr;
+
+	VectorCopy (v, x);
+	AngleQuat (angles, rotation);
+	VectorCompMult (scale, x, x);
+	QuatMultVec (rotation, x, x);
+	VectorAdd (translation, x, x);
+
+	Mat4Init (rotation, scale, translation, mat);
+	Mat4Decompose (mat, rot, sc, sh,  tr);
+
+	VectorCopy (v, y);
+	QuatMultVec (rot, y, y);
+	VectorShear (sh, y, y);
+	VectorCompMult (sc, y, y);//scale
+	VectorAdd (tr, y, y);
+
+	for (i = 0; i < 3; i++)
+		if (!compare (x[i], y[i]))
+			goto fail;
+
+	return 1;
+fail:
+	printf ("\n\n(%g %g %g) (%g %g %g) (%g %g %g) (%g %g %g)\n",
+			VectorExpand (angles), VectorExpand (scale),
+			VectorExpand (translation), VectorExpand (v));
 	printf ("  (%g %g %g)\n", VectorExpand (x));
 	printf ("  (%g %g %g)\n", VectorExpand (y));
 	return 0;
@@ -141,6 +182,15 @@ main (int argc, const char **argv)
 			for (k = 0; k < num_translation_tests; k ++) {
 				if (!test_transform (test_angles[i], test_scales[j],
 									 test_translations[k]))
+					res = 1;
+			}
+		}
+	}
+	for (i = 0; i < num_angle_tests; i ++) {
+		for (j = 0; j < num_translation_tests; j ++) {
+			for (k = 0; k < num_translation_tests; k ++) {
+				if (!test_transform2 (test_angles[i], test_scales[j],
+									  test_translations[k]))
 					res = 1;
 			}
 		}

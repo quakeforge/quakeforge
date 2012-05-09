@@ -861,11 +861,10 @@ Mat4Decompose (const mat4_t m, quat_t rot, vec3_t scale, vec3_t shear,
 	vec_t       l, t;
 	int         i, j;
 
-	if (trans)
-		VectorCopy (m + 12, trans);
 	for (i = 0; i < 3; i++)
 		for (j = 0; j < 3; j++)
 			row[j][i] = m[i * 4 + j];
+
 	l = DotProduct (row[0], row[0]);
 	if (l < 1e-5)
 		return 0;
@@ -884,6 +883,7 @@ Mat4Decompose (const mat4_t m, quat_t rot, vec3_t scale, vec3_t shear,
 
 	VectorMultSub (row[2], shr[1], row[0], row[2]);
 	shr[2] = DotProduct (row[1], row[2]);
+	VectorMultSub (row[2], shr[2], row[1], row[2]);
 	l = DotProduct (row[2], row[2]);
 	if (l < 1e-5)
 		return 0;
@@ -895,6 +895,8 @@ Mat4Decompose (const mat4_t m, quat_t rot, vec3_t scale, vec3_t shear,
 		VectorCopy (scl, scale);
 	if (shear)
 		VectorCopy (shr, shear);
+	if (trans)
+		VectorCopy (m + 12, trans);
 	if (!rot)
 		return 1;
 
