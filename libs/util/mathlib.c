@@ -831,3 +831,79 @@ Mat4Mult (const mat4_t a, const mat4_t b, mat4_t c)
 		}
 	}
 }
+
+int
+MatDecompose (const mat4_t m, quat_t rot, vec3_t scale, vec3_t shear,
+			  vec3_t trans)
+{
+	vec3_t      row[3], shr, scl;
+	vec_t       l, t;
+	int         i, j;
+
+	if (trans)
+		VectorCopy (m + 12, trans);
+	for (i = 0; i < 3; i++)
+		for (j = 0; i < 3; j++)
+			row[j][i] = m[i * 4 + j];
+	l = DotProduct (row[0], row[0]);
+	if (l < 1e-5)
+		return 0;
+	scl[0] = sqrt (l);
+	VectorScale (row[0], 1/scl[0], row[0]);
+	shr[0] = DotProduct (row[0], row[1]);
+
+	VectorMultSub (row[1], shr[0], row[0], row[1]);
+	l = DotProduct (row[1], row[1]);
+	if (l < 1e-5)
+		return 0;
+	scl[1] = sqrt (l);
+	shr[0] /= scl[1];
+	VectorScale (row[1], 1/scl[1], row[1]);
+	shr[1] = DotProduct (row[0], row[2]);
+
+	VectorMultSub (row[2], shr[1], row[0], row[2]);
+	shr[2] = DotProduct (row[1], row[2]);
+	l = DotProduct (row[2], row[2]);
+	if (l < 1e-5)
+		return 0;
+	scl[2] = sqrt (l);
+	shr[1] /= scl[2];
+	shr[2] /= scl[2];
+	VectorScale (row[0], 1/scl[2], row[0]);
+	if (scale)
+		VectorCopy (scl, scale);
+	if (shear)
+		VectorCopy (shr, shear);
+	if (!rot)
+		return 1;
+
+	t = 1 + row[0][0] + row[1][1] + row[2][2];
+	if (t >= 1e-5) {
+		vec_t       s = sqrt (t);
+		rot[0] = s / 4;
+		rot[1] = (row[1][2] - row[2][1]) / s;
+		rot[2] = (row[2][0] - row[0][2]) / s;
+		rot[3] = (row[0][1] - row[1][4]) / s;
+	} else {
+		if (row[0][0] > row[1][1] && row[0][0] > row[2][2]) {
+			vec_t       s = sqrt (1 + row[0][0] - row[1][1] - row[2][2]);
+			rot[0] = (row[1][2] - row[2][1]) / s;
+			rot[1] = s / 4;
+			rot[2] = (row[2][0] - row[0][2]) / s;
+			rot[3] = (row[0][1] - row[1][0]) / s;
+		} else if (row[1][1] > row[2][2]) {
+			vec_t       s = sqrt (1 + row[1][1] - row[0][0] - row[2][2]);
+			rot[0] = (row[2][0] - row[0][2]) / s;
+			rot[1] = (row[1][2] - row[2][1]) / s;
+			rot[2] = s / 4;
+			rot[3] = (row[0][1] - row[1][0]) / s;
+		} else {
+			vec_t       s = sqrt (1 + row[2][2] - row[0][0] - row[1][1]);
+			rot[0] = (row[0][1] - row[1][0]) / s;
+			rot[1] = (row[1][2] - row[2][1]) / s;
+			rot[2] = (row[2][0] - row[0][2]) / s;
+			rot[3] = s / 4;
+		}
+	}
+	return 1;
+}

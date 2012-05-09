@@ -571,6 +571,9 @@ void QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical);
 
 void Mat4Transpose (const mat4_t a, mat4_t b);
 void Mat4Mult (const mat4_t a, const mat4_t b, mat4_t c);
+// Column major matrix
+int MatDecompose (const mat4_t m, quat_t rot, vec3_t scale, vec3_t shear,
+				  vec3_t trans);
 
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)				\
 	(((p)->type < 3)?									\
