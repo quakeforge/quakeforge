@@ -118,6 +118,7 @@ get_joints (const iqmheader *hdr, byte *buffer)
 {
 	iqmjoint   *joint;
 	uint32_t    i, j;
+	float       t;
 
 	if (hdr->ofs_joints + hdr->num_joints * sizeof (iqmjoint) > hdr->filesize)
 		return 0;
@@ -134,6 +135,10 @@ get_joints (const iqmheader *hdr, byte *buffer)
 			joint[i].translate[j] = LittleFloat (joint[i].translate[j]);
 		for (j = 0; j < 4; j++)
 			joint[i].rotate[j] = LittleFloat (joint[i].rotate[j]);
+		// iqm quaternions use xyzw but QF quaternions use wxyz
+		t = joint[i].rotate[3];
+		memmove (&joint[i].rotate[1], &joint[i].rotate[0], 3 * sizeof (float));
+		joint[i].rotate[0] = t;
 		for (j = 0; j < 3; j++)
 			joint[i].scale[j] = LittleFloat (joint[i].scale[j]);
 	}
@@ -345,6 +350,22 @@ load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 		return false;
 	if (!(joints = get_joints (hdr, buffer)))
 		return false;
+	iqm->num_joints = hdr->num_joints;
+	iqm->joints = malloc (iqm->num_joints * sizeof (iqmjoint));
+	iqm->baseframe = malloc (iqm->num_joints * sizeof (mat4_t));
+	iqm->inverse_baseframe = malloc (iqm->num_joints * sizeof (mat4_t));
+	memcpy (iqm->joints, joints, iqm->num_joints * sizeof (iqmjoint));
+	for (i = 0; i < hdr->num_joints; i++) {
+		iqmjoint   *j = &iqm->joints[i];
+		mat4_t     *bf = &iqm->baseframe[i];
+		mat4_t     *ibf = &iqm->inverse_baseframe[i];
+		Mat4Init (j->rotate, j->scale, j->translate, *bf);
+		Mat4Inverse (*bf, *ibf);
+		if (j->parent >= 0) {
+			Mat4Mult (iqm->baseframe[j->parent], *bf, *bf);
+			Mat4Mult (*ibf, iqm->inverse_baseframe[j->parent], *ibf);
+		}
+	}
 	return true;
 }
 
