@@ -825,6 +825,73 @@ Mat4Transpose (const mat4_t a, mat4_t b)
 	b[i * 4 + i] = a[i * 4 + i];		// in case b != a
 }
 
+typedef vec_t mat3_t[3 * 3];
+
+static vec_t
+Mat3Det (const mat3_t m)
+{
+	vec3_t      t;
+	CrossProduct (m + 3, m + 6, t);
+	return DotProduct (m, t);
+}
+
+static void
+Mat4Sub3 (const mat4_t m4, mat3_t m3, int i, int j)
+{
+	int         si, sj, di, dj;
+
+	for (di = 0; di < 3; di++) {
+		for (dj = 0; dj < 3; dj++) {
+			si = di + ((di >= i) ? 1 : 0);
+			sj = dj + ((dj >= j) ? 1 : 0);
+			m3[di * 3 + dj] = m4[si * 4 + sj];
+		}
+	}
+}
+
+static vec_t
+Mat4Det (const mat4_t m)
+{
+	mat3_t      t;
+	int         i;
+	vec_t       res = 0, det, s = 1;
+
+	for (i = 0; i < 4; i++, s = -s) {
+		Mat4Sub3 (m, t, 0, i);
+		det = Mat3Det (t);
+		res += m[i] * det * s;
+	}
+	return res;
+}
+
+int
+Mat4Inverse (const mat4_t a, mat4_t b)
+{
+	mat4_t      tb;
+	mat3_t      m3;
+	vec_t      *m = b;
+	int         i, j;
+	vec_t       det;
+	vec_t       sign[2] = { 1, -1};
+
+	det = Mat4Det (a);
+	if (det * det < 1e-6) {
+		Mat4Identity (b);
+		return 0;
+	}
+	if (b == a)
+		m = tb;
+	for (i = 0; i < 4; i++) {
+		for (j = 0; j < 4; j++) {
+			Mat4Sub3 (a, m3, i, j);
+			m[j * 4 + i] = sign[(i + j) & 1] * Mat3Det (m3) / det;
+		}
+	}
+	if (m != b)
+		Mat4Copy (m, b);
+	return 1;
+}
+
 void
 Mat4Mult (const mat4_t a, const mat4_t b, mat4_t c)
 {

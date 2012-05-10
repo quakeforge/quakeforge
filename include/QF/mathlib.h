@@ -502,7 +502,7 @@ extern const vec_t *const quat_origin;
 		Mat4Zero (a); \
 		a[15] = a[10] = a[5] = a[0] = 1; \
 	} while (0)
-#define Mat4Expand (a) \
+#define Mat4Expand(a) \
 	QuatExpand (a + 0), \
 	QuatExpand (a + 4), \
 	QuatExpand (a + 8), \
@@ -609,6 +609,7 @@ void QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical);
 void Mat4Init (const quat_t rot, const vec3_t scale, const vec3_t trans,
 			   mat4_t mat);
 void Mat4Transpose (const mat4_t a, mat4_t b);
+int Mat4Inverse (const mat4_t a, mat4_t b);
 void Mat4Mult (const mat4_t a, const mat4_t b, mat4_t c);
 void Mat4MultVec (const mat4_t a, const vec3_t b, vec3_t c);
 /** Decompose a column major matrix into its component transformations.

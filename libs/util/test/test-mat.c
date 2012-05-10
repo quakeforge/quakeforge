@@ -2,6 +2,13 @@
 # include "config.h"
 #endif
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
 #include "QF/mathlib.h"
 
 //PITCH YAW ROLL
@@ -167,6 +174,39 @@ fail:
 	return 0;
 }
 
+static int
+test_inverse (const vec3_t angles, const vec3_t scale,
+				 const vec3_t translation)
+{
+	int         i;
+	quat_t      rotation;
+	mat4_t      mat, inv, I, res;
+
+	AngleQuat (angles, rotation);
+	Mat4Init (rotation, scale, translation, mat);
+
+	Mat4Identity (I);
+	Mat4Inverse (mat, inv);
+	Mat4Mult (mat, inv, res);
+
+	for (i = 0; i < 4 * 4; i++)
+		if (!compare (I[i], res[i]))
+			goto fail;
+
+	return 1;
+fail:
+	printf ("\n\n(%g %g %g) (%g %g %g) (%g %g %g)\n",
+			VectorExpand (angles), VectorExpand (scale),
+			VectorExpand (translation));
+	printf ("  [%g %g %g %g]\n  [%g %g %g %g]\n"
+			"  [%g %g %g %g]\n  [%g %g %g %g]\n\n", Mat4Expand (mat));
+	printf ("  [%g %g %g %g]\n  [%g %g %g %g]\n"
+			"  [%g %g %g %g]\n  [%g %g %g %g]\n\n", Mat4Expand (inv));
+	printf ("  [%g %g %g %g]\n  [%g %g %g %g]\n"
+			"  [%g %g %g %g]\n  [%g %g %g %g]\n\n", Mat4Expand (res));
+	return 0;
+}
+
 int
 main (int argc, const char **argv)
 {
@@ -191,6 +231,15 @@ main (int argc, const char **argv)
 			for (k = 0; k < num_translation_tests; k ++) {
 				if (!test_transform2 (test_angles[i], test_scales[j],
 									  test_translations[k]))
+					res = 1;
+			}
+		}
+	}
+	for (i = 0; i < num_angle_tests; i ++) {
+		for (j = 0; j < num_translation_tests; j ++) {
+			for (k = 0; k < num_translation_tests; k ++) {
+				if (!test_inverse (test_angles[i], test_scales[j],
+								   test_translations[k]))
 					res = 1;
 			}
 		}
