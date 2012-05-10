@@ -123,6 +123,12 @@ extern const vec_t *const quat_origin;
 		(c)[1] = (b)[0] * (a)[0] + (b)[1]; \
 		(c)[0] = (b)[0]; \
 	} while (0)
+#define VectorUnshear(a,b,c) \
+	do { \
+		(c)[2] = (b)[2] - (b)[1] * (a)[2] - (b)[0] * ((a)[1]-(a)[0]*(a)[2]); \
+		(c)[1] = (b)[1] - (b)[0] * (a)[0]; \
+		(c)[0] = (b)[0]; \
+	} while (0)
 #define VectorCompMult(a,b,c) \
 	do { \
 		(c)[0] = (a)[0] * (b)[0]; \
