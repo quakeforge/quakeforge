@@ -1,3 +1,4 @@
+uniform mat4 mvp_mat;
 uniform mat4 bonemats[80];
 attribute vec4 vcolor;
 attribute vec4 vweights;
@@ -24,14 +25,15 @@ main (void)
 	m += bonemats[int (vbones.y)] * vweights.y;
 	m += bonemats[int (vbones.z)] * vweights.z;
 	m += bonemats[int (vbones.w)] * vweights.w;
-	q0 = m[0].yzwx;
-	qe = m[1].yzwx;
+	q0 = m[0].yzwx; //swizzle for conversion betwen QF and GL
+	qe = m[1].yzwx; //swizzle for conversion betwen QF and GL
 	sh = m[2].xyz;
 	sc = m[3].xyz;
 
+	// extract translation from dual quaternion
 	tr = 2.0 * (q0.w * qe.xyz - qe.w * q0.xyz - cross (qe.xyz, q0.xyz));
-	v = position;
 	// apply rotation and translation
+	v = position;
 	v += 2.0 * cross (q0.xyz, cross (q0.xyz, v) + q0.w * v) + tr;
 	// apply shear
 	v.z += v.y * sh.z + v.x * sh.y;
@@ -47,8 +49,9 @@ main (void)
 	t = vtangent.xyz;
 	t += 2.0 * cross (q0.xyz, cross (q0.xyz, t) + q0.w * t);
 	gl_Position = mvp_mat * vec4 (v, 1.0);
-	normal = mat3 (mvp_mat[0].xyz, mvp_mat[1].xyz, mvp_mat[3].xyz) * n;
-	tangent = mat3 (mvp_mat[0].xyz, mvp_mat[1].xyz, mvp_mat[3].xyz) * t;
+	mat3 rot = mat3 (mvp_mat[0].xyz, mvp_mat[1].xyz, mvp_mat[3].xyz)
+	normal = rot * n;
+	tangent = rot * t;
 	bitangent = cross (normal, tangent) * vtangent.w;
 	color = vcolor;
 	st = texcoord;
