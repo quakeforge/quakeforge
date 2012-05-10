@@ -123,6 +123,9 @@ typedef struct {
 } iqmframe_t;
 
 typedef struct {
+	char       *text;
+	int         num_meshes;
+	iqmmesh    *meshes;
 	byte       *vertices;
 	uint16_t   *elements;
 	int         num_arrays;
@@ -133,6 +136,8 @@ typedef struct {
 	mat4_t     *inverse_baseframe;
 	int         num_frames;
 	iqmframe_t **frames;
+	int         num_anims;
+	iqmanim    *anims;
 } iqm_t;
 
 #endif//__QF_iqm_h__

@@ -348,6 +348,9 @@ load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 		VectorCopy (tris[i].vertex, iqm->elements + i * 3);
 	if (!(meshes = get_meshes (hdr, buffer)))
 		return false;
+	iqm->num_meshes = hdr->num_meshes;
+	iqm->meshes = malloc (hdr->num_meshes * sizeof (iqmmesh));
+	memcpy (iqm->meshes, meshes, hdr->num_meshes * sizeof (iqmmesh));
 	if (!(joints = get_joints (hdr, buffer)))
 		return false;
 	iqm->num_joints = hdr->num_joints;
@@ -370,8 +373,110 @@ load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 }
 
 static qboolean
-load_iqm_anims (model_t *mod, iqmheader *hdr, byte *buffer)
+load_iqm_anims (model_t *mod, const iqmheader *hdr, byte *buffer)
 {
+	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
+	iqmanim    *anims;
+	iqmpose    *poses;
+	uint16_t   *framedata;
+	uint32_t    i, j;
+
+	if (hdr->num_poses != hdr->num_joints)
+		return false;
+
+	iqm->num_anims = hdr->num_anims;
+	iqm->anims = malloc (hdr->num_anims * sizeof (iqmanim));
+	anims = (iqmanim *) (buffer + hdr->ofs_anims);
+	for (i = 0; i < hdr->num_anims; i++) {
+		iqm->anims[i].name = LittleLong (anims[i].name);
+		iqm->anims[i].first_frame = LittleLong (anims[i].first_frame);
+		iqm->anims[i].num_frames = LittleLong (anims[i].num_frames);
+		iqm->anims[i].framerate = LittleFloat (anims[i].framerate);
+		iqm->anims[i].flags = LittleLong (anims[i].flags);
+	}
+
+	poses = (iqmpose *) (buffer + hdr->ofs_poses);
+	for (i = 0; i < hdr->num_poses; i++) {
+		poses[i].parent = LittleLong (poses[i].parent);
+		poses[i].mask = LittleLong (poses[i].mask);
+		for (j = 0; j < 10; j++) {
+			poses[i].channeloffset[j] = LittleFloat(poses[i].channeloffset[j]);
+			poses[i].channelscale[j] = LittleFloat (poses[i].channelscale[j]);
+		}
+	}
+
+	framedata = (uint16_t *) (buffer + hdr->ofs_frames);
+	for (i = 0; i < hdr->num_frames * hdr->num_framechannels; i++)
+		framedata[i] = LittleShort (framedata[i]);
+
+	iqm->num_frames = hdr->num_frames;
+	iqm->frames = malloc (hdr->num_frames * sizeof (iqmframe_t *));
+	iqm->frames[0] = malloc (hdr->num_frames * hdr->num_poses
+							 * sizeof (iqmframe_t));
+
+	for (i = 0; i < hdr->num_frames; i++) {
+		iqm->frames[i] = iqm->frames[0] + i * hdr->num_poses;
+		for (j = 0; j < hdr->num_poses; j++) {
+			iqmframe_t *frame = &iqm->frames[i][j];
+			iqmpose    *p = &poses[j];
+			quat_t      rotation;
+			vec3_t      scale, translation;
+			mat4_t      mat;
+
+			translation[0] = p->channeloffset[0];
+			if (p->mask & 0x01)
+				translation[0] += *framedata++ * p->channelscale[0];
+			translation[1] = p->channeloffset[1];
+			if (p->mask & 0x02)
+				translation[1] += *framedata++ * p->channelscale[1];
+			translation[2] = p->channeloffset[2];
+			if (p->mask & 0x04)
+				translation[2] += *framedata++ * p->channelscale[2];
+
+			// QF's quaternions are wxyz while IQM's quaternions are xyzw
+			rotation[1] = p->channeloffset[3];
+			if (p->mask & 0x08)
+				rotation[1] += *framedata++ * p->channelscale[3];
+			rotation[2] = p->channeloffset[4];
+			if (p->mask & 0x10)
+				rotation[2] += *framedata++ * p->channelscale[4];
+			rotation[3] = p->channeloffset[5];
+			if (p->mask & 0x20)
+				rotation[3] += *framedata++ * p->channelscale[5];
+			rotation[0] = p->channeloffset[6];
+			if (p->mask & 0x40)
+				rotation[0] += *framedata++ * p->channelscale[6];
+
+			scale[0] = p->channeloffset[7];
+			if (p->mask & 0x01)
+				scale[0] += *framedata++ * p->channelscale[7];
+			scale[1] = p->channeloffset[8];
+			if (p->mask & 0x02)
+				scale[1] += *framedata++ * p->channelscale[8];
+			scale[2] = p->channeloffset[9];
+			if (p->mask & 0x04)
+				scale[2] += *framedata++ * p->channelscale[9];
+
+			Mat4Init (rotation, scale, translation, mat);
+			if (p->parent >= 0)
+				Mat4Mult (iqm->baseframe[p->parent], mat, mat);
+			Mat4Mult (mat, iqm->inverse_baseframe[j], mat);
+			// convert the matrix to dual quaternion + shear + scale
+			Mat4Decompose (mat, frame->rt.q0.q, frame->shear, frame->scale,
+						   frame->rt.qe.sv.v);
+			// apply the inverse of scale and shear to translation so
+			// everything works out properly in the shader.
+			// Normally v' = T*Sc*Sh*R*v, but with the dual quaternion, we get
+			// v' = Sc*Sh*T'*R*v
+			VectorCompDiv (frame->rt.qe.sv.v, frame->scale, frame->rt.qe.sv.v);
+			VectorUnshear (frame->shear, frame->rt.qe.sv.v, frame->rt.qe.sv.v);
+			// Dual quaternions need 1/2 translation.
+			VectorScale (frame->rt.qe.sv.v, 0.5, frame->rt.qe.sv.v);
+			frame->rt.qe.sv.s = 0;
+			// and tranlation * rotation
+			QuatMult (frame->rt.qe.q, frame->rt.q0.q, frame->rt.qe.q);
+		}
+	}
 	return true;
 }
 
@@ -379,6 +484,7 @@ void
 Mod_LoadIQM (model_t *mod, void *buffer)
 {
 	iqmheader  *hdr = (iqmheader *) buffer;
+	iqm_t      *iqm;
 	uint32_t   *swap;
 
 	if (!strequal (hdr->magic, IQM_MAGIC))
@@ -392,6 +498,10 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 				   hdr->version);
 	if (hdr->filesize != (uint32_t) qfs_filesize)
 		Sys_Error ("%s: invalid filesize", loadname);
+	iqm = calloc (1, sizeof (iqm_t));
+	iqm->text = malloc (hdr->num_text);
+	memcpy (iqm->text, (byte *) buffer + hdr->ofs_text, hdr->num_text);
+	mod->aliashdr = (aliashdr_t *) iqm;
 	if (hdr->num_meshes && !load_iqm_meshes (mod, hdr, (byte *) buffer))
 		Sys_Error ("%s: error loading meshes", loadname);
 	if (hdr->num_anims && !load_iqm_anims (mod, hdr, (byte *) buffer))
