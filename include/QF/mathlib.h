@@ -113,6 +113,9 @@ extern const vec_t *const quat_origin;
 
 	The reason for this particular scheme is that is how Mat4Decompose
 	calculates the shear from a matrix.
+
+	\note The order of calculations is important for when b and c refer to
+	the same vector.
 */
 #define VectorShear(a,b,c) \
 	do { \
