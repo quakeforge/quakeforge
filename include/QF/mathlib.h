@@ -611,8 +611,18 @@ void Mat4Init (const quat_t rot, const vec3_t scale, const vec3_t trans,
 void Mat4Transpose (const mat4_t a, mat4_t b);
 void Mat4Mult (const mat4_t a, const mat4_t b, mat4_t c);
 void Mat4MultVec (const mat4_t a, const vec3_t b, vec3_t c);
-// Column major matrix
-int Mat4Decompose (const mat4_t m, quat_t rot, vec3_t scale, vec3_t shear,
+/** Decompose a column major matrix into its component transformations.
+
+	This gives the matrix's rotation as a quaternion, shear, scale
+	(XY, XZ, YZ), and translation. Using the following sequence will give the
+	same result as multiplying \a v by \a mat.
+
+	QuatMultVec (rot, v, v);
+	VectorShear (shear, v, v);
+	VectorCompMult (scale, v, v);
+	VectorAdd (trans, v, v);
+*/
+int Mat4Decompose (const mat4_t mat, quat_t rot, vec3_t shear, vec3_t scale,
 				   vec3_t trans);
 
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)				\

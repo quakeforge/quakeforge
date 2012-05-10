@@ -72,7 +72,7 @@ test_angle (const vec3_t angles)
 
 	AngleQuat (angles, rotation);
 	QuatToMatrix (rotation, mat, 1, 1);
-	Mat4Decompose (mat, r, scale, shear, trans);
+	Mat4Decompose (mat, r, shear, scale, trans);
 	for (i = 0; i < 4; i++)
 		if (!compare (rotation[i], r[i]))
 			goto negate;
@@ -145,7 +145,7 @@ test_transform2 (const vec3_t angles, const vec3_t scale,
 	VectorAdd (translation, x, x);
 
 	Mat4Init (rotation, scale, translation, mat);
-	Mat4Decompose (mat, rot, sc, sh,  tr);
+	Mat4Decompose (mat, rot, sh, sc, tr);
 
 	VectorCopy (v, y);
 	QuatMultVec (rot, y, y);
