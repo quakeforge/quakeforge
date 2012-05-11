@@ -425,37 +425,37 @@ load_iqm_anims (model_t *mod, const iqmheader *hdr, byte *buffer)
 			mat4_t      mat;
 
 			translation[0] = p->channeloffset[0];
-			if (p->mask & 0x01)
+			if (p->mask & 0x001)
 				translation[0] += *framedata++ * p->channelscale[0];
 			translation[1] = p->channeloffset[1];
-			if (p->mask & 0x02)
+			if (p->mask & 0x002)
 				translation[1] += *framedata++ * p->channelscale[1];
 			translation[2] = p->channeloffset[2];
-			if (p->mask & 0x04)
+			if (p->mask & 0x004)
 				translation[2] += *framedata++ * p->channelscale[2];
 
 			// QF's quaternions are wxyz while IQM's quaternions are xyzw
 			rotation[1] = p->channeloffset[3];
-			if (p->mask & 0x08)
+			if (p->mask & 0x008)
 				rotation[1] += *framedata++ * p->channelscale[3];
 			rotation[2] = p->channeloffset[4];
-			if (p->mask & 0x10)
+			if (p->mask & 0x010)
 				rotation[2] += *framedata++ * p->channelscale[4];
 			rotation[3] = p->channeloffset[5];
-			if (p->mask & 0x20)
+			if (p->mask & 0x020)
 				rotation[3] += *framedata++ * p->channelscale[5];
 			rotation[0] = p->channeloffset[6];
-			if (p->mask & 0x40)
+			if (p->mask & 0x040)
 				rotation[0] += *framedata++ * p->channelscale[6];
 
 			scale[0] = p->channeloffset[7];
-			if (p->mask & 0x01)
+			if (p->mask & 0x080)
 				scale[0] += *framedata++ * p->channelscale[7];
 			scale[1] = p->channeloffset[8];
-			if (p->mask & 0x02)
+			if (p->mask & 0x100)
 				scale[1] += *framedata++ * p->channelscale[8];
 			scale[2] = p->channeloffset[9];
-			if (p->mask & 0x04)
+			if (p->mask & 0x200)
 				scale[2] += *framedata++ * p->channelscale[9];
 
 			Mat4Init (rotation, scale, translation, mat);
