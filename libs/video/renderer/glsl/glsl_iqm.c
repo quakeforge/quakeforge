@@ -177,7 +177,7 @@ set_arrays (iqm_t *iqm)
 			Sys_Error ("iqm: array order bogus");
 		while (j < va->type)
 			qfeglDisableVertexAttribArray (vertex_attribs[j++].attr->location);
-		attr = &vertex_attribs[j];
+		attr = &vertex_attribs[j++];
 		qfeglEnableVertexAttribArray (attr->attr->location);
 		qfeglVertexAttribPointer (attr->attr->location, attr->size,
 								  attr->type, attr->normalized, iqm->stride,
