@@ -127,6 +127,7 @@ typedef struct {
 	int         num_meshes;
 	iqmmesh    *meshes;
 	byte       *vertices;
+	int         stride;
 	uint16_t   *elements;
 	int         num_arrays;
 	iqmvertexarray *vertexarrays;

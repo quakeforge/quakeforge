@@ -295,6 +295,7 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 	iqm->vertexarrays = realloc (iqm->vertexarrays,
 								 iqm->num_arrays * sizeof (iqmvertexarray));
 	iqm->vertices = malloc (hdr->num_vertexes * bytes);
+	iqm->stride = bytes;
 	for (i = 0; i < hdr->num_vertexes; i++) {
 		va = iqm->vertexarrays;
 		vert = iqm->vertices + i * bytes;
