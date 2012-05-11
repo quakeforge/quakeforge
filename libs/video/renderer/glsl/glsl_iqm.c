@@ -82,7 +82,7 @@ static struct {
 	shaderparam_t texcoord;
 	shaderparam_t vtangent;
 	shaderparam_t vnormal;
-	shaderparam_t position;
+	shaderparam_t vposition;
 	lightpar_t    lights[MAX_IQM_LIGHTS];
 	shaderparam_t texture;
 	shaderparam_t normalmap;
@@ -98,7 +98,7 @@ static struct {
 	{"texcoord", 0},
 	{"vtangent", 0},
 	{"vnormal", 0},
-	{"position", 0},
+	{"vposition", 0},
 	{
 		{{"lights[0].position", 1}, {"lights[0].color", 1}},
 		{{"lights[1].position", 1}, {"lights[1].color", 1}},
@@ -120,7 +120,7 @@ static struct va_attr_s {
 	GLenum      type;
 	GLboolean   normalized;
 } vertex_attribs[] = {
-	{&iqm_shader.position, 3, GL_FLOAT, 0},
+	{&iqm_shader.vposition, 3, GL_FLOAT, 0},
 	{&iqm_shader.texcoord, 2, GL_FLOAT, 0},
 	{&iqm_shader.vnormal,  3, GL_FLOAT, 0},
 	{&iqm_shader.vtangent, 4, GL_FLOAT, 0},
@@ -150,7 +150,7 @@ glsl_R_InitIQM (void)
 	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.texcoord);
 	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.vtangent);
 	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.vnormal);
-	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.position);
+	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.vposition);
 	for (i = 0; i < MAX_IQM_LIGHTS; i++) {
 		GLSL_ResolveShaderParam (iqm_shader.program,
 								 &iqm_shader.lights[i].position);

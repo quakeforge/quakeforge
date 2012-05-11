@@ -7,7 +7,7 @@ attribute vec4 vbones;
 attribute vec2 texcoord;
 attribute vec4 vtangent;
 attribute vec3 vnormal;
-attribute vec3 position;
+attribute vec3 vposition;
 
 varying vec3 bitangent;
 varying vec3 tangent;
@@ -34,7 +34,7 @@ main (void)
 	// extract translation from dual quaternion
 	tr = 2.0 * (q0.w * qe.xyz - qe.w * q0.xyz - cross (qe.xyz, q0.xyz));
 	// apply rotation and translation
-	v = position;
+	v = vposition;
 	v += 2.0 * cross (q0.xyz, cross (q0.xyz, v) + q0.w * v) + tr;
 	// apply shear
 	v.z += v.y * sh.z + v.x * sh.y;
