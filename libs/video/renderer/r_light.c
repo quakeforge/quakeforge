@@ -60,6 +60,7 @@ R_FindNearLights (const vec3_t pos, int count)
 	int         num = 0, j;
 	vec3_t      d;
 
+	dl = r_dlights;
 	for (i = 0; i < r_maxdlights; i++, dl++) {
 		if (dl->die < vr_data.realtime || !dl->radius)
 			continue;
