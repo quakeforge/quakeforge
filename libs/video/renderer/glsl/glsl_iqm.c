@@ -202,7 +202,6 @@ glsl_R_DrawIQM (void)
 	float       blend;
 	iqmframe_t *frame;
 
-	Sys_MaskPrintf (SYS_GLSL, "glsl_R_DrawIQM\n");
 	lights = R_FindNearLights (ent->origin, MAX_IQM_LIGHTS);
 
 	// we need only the rotation for normals.
@@ -215,8 +214,8 @@ glsl_R_DrawIQM (void)
 
 	frame = malloc (iqm->num_joints * sizeof (iqmframe_t));
 	for (i = 0; i < iqm->num_joints; i++) {
-		iqmframe_t *f1 = iqm->frames[ent->pose1];
-		iqmframe_t *f2 = iqm->frames[ent->pose2];
+		iqmframe_t *f1 = &iqm->frames[ent->pose1][i];
+		iqmframe_t *f2 = &iqm->frames[ent->pose2][i];
 		DualQuatBlend (f1->rt, f2->rt, blend, frame[i].rt);
 		QuatBlend (f1->shear, f2->shear, blend, frame[i].shear);
 		QuatBlend (f1->scale, f2->scale, blend, frame[i].scale);
