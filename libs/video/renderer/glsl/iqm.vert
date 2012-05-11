@@ -16,6 +16,24 @@ varying vec3 normal;
 varying vec2 st;
 varying vec4 color;
 
+vec3
+qmult (vec4 q, vec3 v)
+{
+	float       qs = q.w;
+	vec3        qv = q.xyz;
+	vec3        t = cross (qv, v);
+	return (qs * qs) * v + 2.0 * qs * t + dot (qv, v) * qv + cross (qv, t);
+}
+
+vec3
+dqtrans (vec4 q0, vec4 qe)
+{//2.0 * (q0.w * qe.xyz - qe.w * q0.xyz - cross (qe.xyz, q0.xyz));
+	float       qs = q0.w, Ts = qe.w;
+	vec3        qv = -q0.xyz, Tv = qe.xyz;
+
+	return 2.0 * (Ts * qv + qs * Tv + cross (Tv, qv));
+}
+
 void
 main (void)
 {
@@ -33,23 +51,20 @@ main (void)
 	sc = m[3].xyz;
 
 	// extract translation from dual quaternion
-	tr = 2.0 * (q0.w * qe.xyz - qe.w * q0.xyz - cross (qe.xyz, q0.xyz));
+	tr = dqtrans (q0, qe);
 	// apply rotation and translation
-	v = vposition;
-	v += 2.0 * cross (q0.xyz, cross (q0.xyz, v) + q0.w * v) + tr;
+	v = qmult (q0, vposition) + tr;
 	// apply shear
 	v.z += v.y * sh.z + v.x * sh.y;
 	v.y += v.x * sh.x;
 	// apply scale
 	v *= sc;
 	// rotate normal (won't bother with shear or scale: not super accurate,
-	// but probably good enough
-	n = vnormal;
-	n += 2.0 * cross (q0.xyz, cross (q0.xyz, n) + q0.w * n);
+	// but probably good enough)
+	n = qmult (q0, vnormal);
 	// rotate tangent (won't bother with shear or scale: not super accurate,
-	// but probably good enough
-	t = vtangent.xyz;
-	t += 2.0 * cross (q0.xyz, cross (q0.xyz, t) + q0.w * t);
+	// but probably good enough)
+	t = qmult (q0, vtangent.xyz);
 	position = v * 8.0;
 	normal = norm_mat * n;
 	tangent = norm_mat * t;
