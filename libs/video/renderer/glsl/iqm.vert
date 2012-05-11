@@ -1,4 +1,5 @@
 uniform mat4 mvp_mat;
+uniform mat3 norm_mat;
 uniform mat4 bonemats[80];
 attribute vec4 vcolor;
 attribute vec4 vweights;
@@ -49,9 +50,8 @@ main (void)
 	t = vtangent.xyz;
 	t += 2.0 * cross (q0.xyz, cross (q0.xyz, t) + q0.w * t);
 	gl_Position = mvp_mat * vec4 (v, 1.0);
-	mat3 rot = mat3 (mvp_mat[0].xyz, mvp_mat[1].xyz, mvp_mat[3].xyz);
-	normal = rot * n;
-	tangent = rot * t;
+	normal = norm_mat * n;
+	tangent = norm_mat * t;
 	bitangent = cross (normal, tangent) * vtangent.w;
 	color = vcolor;
 	st = texcoord;
