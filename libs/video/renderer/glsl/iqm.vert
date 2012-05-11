@@ -9,6 +9,7 @@ attribute vec4 vtangent;
 attribute vec3 vnormal;
 attribute vec3 vposition;
 
+varying vec3 position;
 varying vec3 bitangent;
 varying vec3 tangent;
 varying vec3 normal;
@@ -49,10 +50,11 @@ main (void)
 	// but probably good enough
 	t = vtangent.xyz;
 	t += 2.0 * cross (q0.xyz, cross (q0.xyz, t) + q0.w * t);
-	gl_Position = mvp_mat * vec4 (v, 1.0);
+	position = v * 8.0;
 	normal = norm_mat * n;
 	tangent = norm_mat * t;
 	bitangent = cross (normal, tangent) * vtangent.w;
 	color = vcolor;
 	st = texcoord;
+	gl_Position = mvp_mat * vec4 (position, 1.0);
 }

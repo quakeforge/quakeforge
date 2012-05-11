@@ -7,6 +7,7 @@ uniform sampler2D normalmap;
 uniform light lights[8];
 uniform vec4 fog;
 
+varying vec3 position;
 varying vec3 bitangent;
 varying vec3 tangent;
 varying vec3 normal;
@@ -35,7 +36,7 @@ calc_light (vec3 n, int ind)
 	vec3        d;
 	light       l = lights[ind];
 
-	d = l.position.xyz - gl_FragCoord.xyz;
+	d = l.position.xyz - position;
 	return l.color.rgb * (l.position.w * dot (d, n) / dot (d, d));
 }
 
@@ -48,7 +49,7 @@ main (void)
 
 	norm = texture2D (normalmap, st).xyz;
 	norm = tbn * norm;
-	l += calc_light (norm, 0);
+	l  = calc_light (norm, 0);
 	l += calc_light (norm, 1);
 	l += calc_light (norm, 2);
 	l += calc_light (norm, 3);
