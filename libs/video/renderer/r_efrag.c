@@ -234,6 +234,7 @@ R_StoreEfrags (const efrag_t *pefrag)
 			case mod_alias:
 			case mod_brush:
 			case mod_sprite:
+			case mod_iqm:
 				if (pent->visframe != r_framecount) {
 					R_EnqueueEntity (pent);
 					// mark that we've recorded this entity for this frame
