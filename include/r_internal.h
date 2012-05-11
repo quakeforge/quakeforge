@@ -78,7 +78,7 @@ void R_EnqueueEntity (struct entity_s *ent);
 entity_t *R_AllocEntity (void);
 void R_FreeAllEntities (void);
 
-dlight_t **R_FindNearLights (const vec3_t pos, int count);
+void R_FindNearLights (const vec3_t pos, int count, dlight_t **lights);
 dlight_t *R_AllocDlight (int key);
 void R_DecayLights (double frametime);
 void R_ClearDlights (void);

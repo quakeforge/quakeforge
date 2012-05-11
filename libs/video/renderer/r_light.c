@@ -49,11 +49,10 @@ vec3_t      ambientcolor;
 
 unsigned int r_maxdlights;
 
-dlight_t **
-R_FindNearLights (const vec3_t pos, int count)
+void
+R_FindNearLights (const vec3_t pos, int count, dlight_t **lights)
 {
-	dlight_t  **lights = calloc (count, sizeof (dlight_t *));
-	float      *scores = calloc (count, sizeof (float));
+	float      *scores = alloca (count * sizeof (float));
 	float       score;
 	dlight_t   *dl;
 	unsigned    i;
@@ -100,8 +99,8 @@ R_FindNearLights (const vec3_t pos, int count)
 			}
 		}
 	}
-	free (scores);
-	return lights;
+	for (j = num; j < count; j++)
+		lights[j] = 0;
 }
 
 void

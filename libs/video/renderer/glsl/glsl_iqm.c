@@ -195,14 +195,14 @@ glsl_R_DrawIQM (void)
 	entity_t   *ent = currententity;
 	model_t    *model = ent->model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
-	dlight_t  **lights;
+	dlight_t   *lights[MAX_IQM_LIGHTS];
 	int         i;
 	vec_t       norm_mat[9];
 	mat4_t      mvp_mat;
 	float       blend;
 	iqmframe_t *frame;
 
-	lights = R_FindNearLights (ent->origin, MAX_IQM_LIGHTS);
+	R_FindNearLights (ent->origin, MAX_IQM_LIGHTS, lights);
 
 	// we need only the rotation for normals.
 	VectorCopy (ent->transform + 0, norm_mat + 0);
@@ -212,7 +212,7 @@ glsl_R_DrawIQM (void)
 
 	blend = R_IQMGetLerpedFrames (ent, iqm);
 
-	frame = malloc (iqm->num_joints * sizeof (iqmframe_t));
+	frame = Hunk_TempAlloc (iqm->num_joints * sizeof (iqmframe_t));
 	for (i = 0; i < iqm->num_joints; i++) {
 		iqmframe_t *f1 = &iqm->frames[ent->pose1][i];
 		iqmframe_t *f2 = &iqm->frames[ent->pose2][i];
@@ -249,8 +249,6 @@ glsl_R_DrawIQM (void)
 						   GL_UNSIGNED_SHORT,
 						   iqm->elements + 3 * iqm->meshes[i].first_triangle);
 	}
-	free (frame);
-	free (lights);
 }
 
 // All iqm models are drawn in a batch, so avoid thrashing the gl state
