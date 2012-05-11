@@ -503,6 +503,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 	iqm->text = malloc (hdr->num_text);
 	memcpy (iqm->text, (byte *) buffer + hdr->ofs_text, hdr->num_text);
 	mod->aliashdr = (aliashdr_t *) iqm;
+	mod->type = mod_iqm;
 	if (hdr->num_meshes && !load_iqm_meshes (mod, hdr, (byte *) buffer))
 		Sys_Error ("%s: error loading meshes", loadname);
 	if (hdr->num_anims && !load_iqm_anims (mod, hdr, (byte *) buffer))
