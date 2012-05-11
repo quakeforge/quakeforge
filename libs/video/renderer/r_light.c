@@ -49,6 +49,59 @@ vec3_t      ambientcolor;
 
 unsigned int r_maxdlights;
 
+dlight_t **
+R_FindNearLights (const vec3_t pos, int count)
+{
+	dlight_t  **lights = calloc (count, sizeof (dlight_t *));
+	float      *scores = calloc (count, sizeof (float));
+	float       score;
+	dlight_t   *dl;
+	unsigned    i;
+	int         num = 0, j;
+	vec3_t      d;
+
+	for (i = 0; i < r_maxdlights; i++, dl++) {
+		if (dl->die < vr_data.realtime || !dl->radius)
+			continue;
+		VectorSubtract (dl->origin, pos, d);
+		score = DotProduct (d, d) / dl->radius;
+		if (!num) {
+			scores[0] = score;
+			lights[0] = dl;
+			num = 1;
+		} else if (score <= scores[0]) {
+			memmove (&lights[1], &lights[0],
+					 (count - 1) * sizeof (dlight_t *));
+			memmove (&scores[1], &scores[0], (count - 1) * sizeof (float));
+			scores[0] = score;
+			lights[0] = dl;
+			if (num < count)
+				num++;
+		} else if (score > scores[num - 1]) {
+			if (num < count) {
+				scores[num] = score;
+				lights[num] = dl;
+				num++;
+			}
+		} else {
+			for (j = num - 1; j > 0; j--) {
+				if (score > scores[j - 1]) {
+					memmove (&lights[j + 1], &lights[j],
+							 (count - j) * sizeof (dlight_t *));
+					memmove (&scores[j + 1], &scores[j],
+							 (count - j) * sizeof (float));
+					scores[j] = score;
+					lights[j] = dl;
+					if (num < count)
+						num++;
+					break;
+				}
+			}
+		}
+	}
+	free (scores);
+	return lights;
+}
 
 void
 R_MaxDlightsCheck (cvar_t *var)
