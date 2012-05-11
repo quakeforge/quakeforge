@@ -210,7 +210,7 @@ glsl_R_DrawIQM (void)
 	VectorCopy (ent->transform + 8, norm_mat + 6);
 	Mat4Mult (iqm_vp, ent->transform, mvp_mat);
 
-	blend = R_EntityBlend (ent, ent->frame, 0.1);
+	blend = R_IQMGetLerpedFrames (ent, iqm);
 
 	frame = malloc (iqm->num_joints * sizeof (iqmframe_t));
 	for (i = 0; i < iqm->num_joints; i++) {

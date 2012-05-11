@@ -28,10 +28,11 @@
 #ifndef _R_LOCAL_H
 #define _R_LOCAL_H
 
+#include "QF/iqm.h"
 #include "QF/mathlib.h"
-#include "QF/vid.h"
 #include "QF/model.h"
 #include "QF/render.h"
+#include "QF/vid.h"
 #include "r_shared.h"
 
 #define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
@@ -162,6 +163,7 @@ void R_AliasDrawModel (alight_t *plighting);
 maliasskindesc_t *R_AliasGetSkindesc (int skinnum, aliashdr_t *hdr);
 maliasframedesc_t *R_AliasGetFramedesc (int framenum, aliashdr_t *hdr);
 float R_AliasGetLerpedFrames (entity_t *ent, aliashdr_t *hdr);
+float R_IQMGetLerpedFrames (entity_t *ent, iqm_t *hdr);
 float R_EntityBlend (entity_t *ent, int pose, float interval);
 void R_BeginEdgeFrame (void);
 void R_ScanEdges (void);
