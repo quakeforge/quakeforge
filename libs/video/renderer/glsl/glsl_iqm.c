@@ -237,7 +237,6 @@ glsl_R_DrawIQM (void)
 		qfeglUniform4fv (l->position.location, 1, quat_origin);
 		qfeglUniform4fv (l->color.location, 1, quat_origin);
 	}
-	free (lights);
 
 	qfeglUniformMatrix4fv (iqm_shader.mvp_matrix.location, 1, false, mvp_mat);
 	qfeglUniformMatrix3fv (iqm_shader.norm_matrix.location, 1, false,
@@ -251,6 +250,8 @@ glsl_R_DrawIQM (void)
 						   GL_UNSIGNED_SHORT,
 						   iqm->elements + 3 * iqm->meshes[i].first_triangle);
 	}
+	free (frame);
+	free (lights);
 }
 
 // All iqm models are drawn in a batch, so avoid thrashing the gl state
