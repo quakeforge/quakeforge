@@ -51,6 +51,7 @@
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_alias.h"
 #include "QF/GLSL/qf_bsp.h"
+#include "QF/GLSL/qf_iqm.h"
 #include "QF/GLSL/qf_lightmap.h"
 #include "QF/GLSL/qf_textures.h"
 
@@ -162,6 +163,15 @@ R_RenderEntities (void)
 	}
 	glsl_R_AliasEnd ();
 
+	glsl_R_IQMBegin ();
+	for (ent = r_ent_queue; ent; ent = ent->next) {
+		if (ent->model->type != mod_iqm)
+			continue;
+		currententity = ent;
+		glsl_R_DrawIQM ();
+	}
+	glsl_R_IQMEnd ();
+
 	glsl_R_SpriteBegin ();
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		if (ent->model->type != mod_sprite)
@@ -246,6 +256,7 @@ glsl_R_Init (void)
 	SCR_Init ();
 	glsl_R_InitBsp ();
 	glsl_R_InitAlias ();
+	glsl_R_InitIQM ();
 	glsl_R_InitSprites ();
 	glsl_R_InitParticles ();
 	glsl_Fog_Init ();

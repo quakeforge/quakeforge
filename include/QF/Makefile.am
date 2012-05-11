@@ -17,7 +17,7 @@ nobase_pkginclude_HEADERS = \
 	GL/qf_vid.h GL/types.h \
 	\
 	GLSL/defines.h GLSL/funcs.h GLSL/qf_alias.h GLSL/qf_bsp.h \
-	GLSL/qf_funcs_list.h GLSL/qf_lightmap.h GLSL/qf_particles.h \
+	GLSL/qf_funcs_list.h GLSL/qf_iqm.h GLSL/qf_lightmap.h GLSL/qf_particles.h \
 	GLSL/qf_textures.h GLSL/qf_vid.h GLSL/types.h \
 	\
 	plugin/cd.h plugin/console.h plugin/general.h plugin/input.h \
