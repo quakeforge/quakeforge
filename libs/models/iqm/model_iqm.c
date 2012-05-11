@@ -250,6 +250,13 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 		va[1].offset = va->offset + va->size * sizeof (float);
 		va++;
 	}
+	if (texcoord) {
+		va->type = IQM_TEXCOORD;
+		va->format = IQM_FLOAT;
+		va->size = 2;
+		va[1].offset = va->offset + va->size * sizeof (float);
+		va++;
+	}
 	if (normal) {
 		va->type = IQM_NORMAL;
 		va->format = IQM_FLOAT;
@@ -261,13 +268,6 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 		va->type = IQM_TANGENT;
 		va->format = IQM_FLOAT;
 		va->size = 4;
-		va[1].offset = va->offset + va->size * sizeof (float);
-		va++;
-	}
-	if (texcoord) {
-		va->type = IQM_TEXCOORD;
-		va->format = IQM_FLOAT;
-		va->size = 2;
 		va[1].offset = va->offset + va->size * sizeof (float);
 		va++;
 	}
@@ -303,16 +303,16 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 			memcpy (vert + va->offset, &position[i * 3], 3 * sizeof (float));
 			va++;
 		}
+		if (texcoord) {
+			memcpy (vert + va->offset, &texcoord[i * 2], 2 * sizeof (float));
+			va++;
+		}
 		if (normal) {
 			memcpy (vert + va->offset, &normal[i * 3], 3 * sizeof (float));
 			va++;
 		}
 		if (tangent) {
 			memcpy (vert + va->offset, &tangent[i * 4], 4 * sizeof (float));
-			va++;
-		}
-		if (texcoord) {
-			memcpy (vert + va->offset, &texcoord[i * 2], 2 * sizeof (float));
 			va++;
 		}
 		if (blendindex) {
