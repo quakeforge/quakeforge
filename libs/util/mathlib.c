@@ -49,7 +49,7 @@ static plane_t _frustum[4];
 VISIBLE plane_t   *const frustum = _frustum;
 static vec3_t _vec3_origin = { 0, 0, 0 };
 VISIBLE const vec_t * const vec3_origin = _vec3_origin;
-static vec3_t _quat_origin = { 0, 0, 0 };
+static quat_t _quat_origin = { 0, 0, 0, 0 };
 VISIBLE const vec_t * const quat_origin = _quat_origin;
 
 #define DEG2RAD(a) (a * (M_PI / 180.0))
