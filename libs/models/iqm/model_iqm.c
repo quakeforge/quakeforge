@@ -177,7 +177,7 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 				bytes += va->size * sizeof (float);
 				position = (float *) (buffer + va->offset);
 				for (j = 0; j < va->size * hdr->num_vertexes; j++)
-					position[i] = LittleFloat (position[i]);
+					position[j] = LittleFloat (position[j]);
 				break;
 			case IQM_NORMAL:
 				if (normal)
@@ -188,7 +188,7 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 				bytes += va->size * sizeof (float);
 				normal = (float *) (buffer + va->offset);
 				for (j = 0; j < va->size * hdr->num_vertexes; j++)
-					normal[i] = LittleFloat (normal[i]);
+					normal[j] = LittleFloat (normal[j]);
 				break;
 			case IQM_TANGENT:
 				if (tangent)
@@ -199,7 +199,7 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 				bytes += va->size * sizeof (float);
 				tangent = (float *) (buffer + va->offset);
 				for (j = 0; j < va->size * hdr->num_vertexes; j++)
-					tangent[i] = LittleFloat (tangent[i]);
+					tangent[j] = LittleFloat (tangent[j]);
 				break;
 			case IQM_TEXCOORD:
 				if (texcoord)
@@ -210,7 +210,7 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 				bytes += va->size * sizeof (float);
 				texcoord = (float *) (buffer + va->offset);
 				for (j = 0; j < va->size * hdr->num_vertexes; j++)
-					texcoord[i] = LittleFloat (texcoord[i]);
+					texcoord[j] = LittleFloat (texcoord[j]);
 				break;
 			case IQM_BLENDINDEXES:
 				if (blendindex)
