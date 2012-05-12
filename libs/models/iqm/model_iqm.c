@@ -363,7 +363,11 @@ load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 		iqmjoint   *j = &iqm->joints[i];
 		mat4_t     *bf = &iqm->baseframe[i];
 		mat4_t     *ibf = &iqm->inverse_baseframe[i];
-		Mat4Init (j->rotate, j->scale, j->translate, *bf);
+		quat_t      t;
+		float       ilen;
+		ilen = 1.0 / sqrt(QDotProduct (j->rotate, j->rotate));
+		QuatScale (j->rotate, ilen, t);
+		Mat4Init (t, j->scale, j->translate, *bf);
 		Mat4Inverse (*bf, *ibf);
 		if (j->parent >= 0) {
 			Mat4Mult (iqm->baseframe[j->parent], *bf, *bf);
@@ -423,6 +427,7 @@ load_iqm_anims (model_t *mod, const iqmheader *hdr, byte *buffer)
 			quat_t      rotation;
 			vec3_t      scale, translation;
 			mat4_t      mat;
+			float       ilen;
 
 			translation[0] = p->channeloffset[0];
 			if (p->mask & 0x001)
@@ -458,6 +463,8 @@ load_iqm_anims (model_t *mod, const iqmheader *hdr, byte *buffer)
 			if (p->mask & 0x200)
 				scale[2] += *framedata++ * p->channelscale[9];
 
+			ilen = 1.0 / sqrt(QDotProduct (rotation, rotation));
+			QuatScale (rotation, ilen, rotation);
 			Mat4Init (rotation, scale, translation, mat);
 			if (p->parent >= 0)
 				Mat4Mult (iqm->baseframe[p->parent], mat, mat);
