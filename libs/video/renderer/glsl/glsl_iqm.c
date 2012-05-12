@@ -211,7 +211,7 @@ glsl_R_DrawIQM (void)
 	Mat4Mult (iqm_vp, ent->transform, mvp_mat);
 
 	blend = R_IQMGetLerpedFrames (ent, iqm);
-
+#if 0
 	frame = Hunk_TempAlloc (iqm->num_joints * sizeof (iqmframe_t));
 	for (i = 0; i < iqm->num_joints; i++) {
 		iqmframe_t *f1 = &iqm->frames[ent->pose1][i];
@@ -220,6 +220,10 @@ glsl_R_DrawIQM (void)
 		QuatBlend (f1->shear, f2->shear, blend, frame[i].shear);
 		QuatBlend (f1->scale, f2->scale, blend, frame[i].scale);
 	}
+#else
+	blend = blend;
+	frame = iqm->frames[ent->pose1];
+#endif
 
 	for (i = 0; i < MAX_IQM_LIGHTS; i++) {
 		quat_t      val;

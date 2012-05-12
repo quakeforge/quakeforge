@@ -461,10 +461,12 @@ load_iqm_anims (model_t *mod, const iqmheader *hdr, byte *buffer)
 			Mat4Init (rotation, scale, translation, mat);
 			if (p->parent >= 0)
 				Mat4Mult (iqm->baseframe[p->parent], mat, mat);
+#if 0
 			Mat4Mult (mat, iqm->inverse_baseframe[j], mat);
 			// convert the matrix to dual quaternion + shear + scale
 			Mat4Decompose (mat, frame->rt.q0.q, frame->shear, frame->scale,
 						   frame->rt.qe.sv.v);
+			frame->rt.qe.sv.s = 0;
 			// apply the inverse of scale and shear to translation so
 			// everything works out properly in the shader.
 			// Normally v' = T*Sc*Sh*R*v, but with the dual quaternion, we get
@@ -473,9 +475,11 @@ load_iqm_anims (model_t *mod, const iqmheader *hdr, byte *buffer)
 			VectorUnshear (frame->shear, frame->rt.qe.sv.v, frame->rt.qe.sv.v);
 			// Dual quaternions need 1/2 translation.
 			VectorScale (frame->rt.qe.sv.v, 0.5, frame->rt.qe.sv.v);
-			frame->rt.qe.sv.s = 0;
 			// and tranlation * rotation
 			QuatMult (frame->rt.qe.q, frame->rt.q0.q, frame->rt.qe.q);
+#else
+			Mat4Mult (mat, iqm->inverse_baseframe[j], (float *)frame);
+#endif
 		}
 	}
 	return true;

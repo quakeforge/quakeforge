@@ -45,6 +45,7 @@ main (void)
 	m += bonemats[int (vbones.y)] * vweights.y;
 	m += bonemats[int (vbones.z)] * vweights.z;
 	m += bonemats[int (vbones.w)] * vweights.w;
+#if 0
 	q0 = m[0].yzwx; //swizzle for conversion betwen QF and GL
 	qe = m[1].yzwx; //swizzle for conversion betwen QF and GL
 	sh = m[2].xyz;
@@ -65,6 +66,11 @@ main (void)
 	// rotate tangent (won't bother with shear or scale: not super accurate,
 	// but probably good enough)
 	t = qmult (q0, vtangent.xyz);
+#else
+	v = (m * vec4 (vposition, 1.0)).xyz;
+	n = (m * vec4 (vnormal, 1.0)).xyz;
+	t = (m * vec4 (vtangent.xyz, 1.0)).xyz;
+#endif
 	position = v * 8.0;
 	normal = norm_mat * n;
 	tangent = norm_mat * t;
