@@ -509,10 +509,17 @@ extern const vec_t *const quat_origin;
 		a[15] = a[10] = a[5] = a[0] = 1; \
 	} while (0)
 #define Mat4Expand(a) \
-	QuatExpand (a + 0), \
-	QuatExpand (a + 4), \
-	QuatExpand (a + 8), \
-	QuatExpand (a + 12)
+	QuatExpand ((a) + 0), \
+	QuatExpand ((a) + 4), \
+	QuatExpand ((a) + 8), \
+	QuatExpand ((a) + 12)
+#define Mat4Blend(m1,m2,b,m) \
+	do { \
+		QuatBlend ((m1) + 0, (m2) + 0, (b), (m) + 0); \
+		QuatBlend ((m1) + 4, (m2) + 4, (b), (m) + 4); \
+		QuatBlend ((m1) + 8, (m2) + 8, (b), (m) + 8); \
+		QuatBlend ((m1) + 12, (m2) + 12, (b), (m) + 12); \
+	} while (0)
 
 #define qfrandom(MAX) ((float) MAX * (rand() * (1.0 / (RAND_MAX + 1.0))))
 
