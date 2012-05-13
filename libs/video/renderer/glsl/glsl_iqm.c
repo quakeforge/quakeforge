@@ -211,8 +211,8 @@ glsl_R_DrawIQM (void)
 	Mat4Mult (iqm_vp, ent->transform, mvp_mat);
 
 	blend = R_IQMGetLerpedFrames (ent, iqm);
-#if 0
 	frame = Hunk_TempAlloc (iqm->num_joints * sizeof (iqmframe_t));
+#if 0
 	for (i = 0; i < iqm->num_joints; i++) {
 		iqmframe_t *f1 = &iqm->frames[ent->pose1][i];
 		iqmframe_t *f2 = &iqm->frames[ent->pose2][i];
@@ -222,7 +222,14 @@ glsl_R_DrawIQM (void)
 	}
 #else
 	blend = blend;
-	frame = iqm->frames[ent->pose1];
+	for (i = 0; i < iqm->num_joints; i++) {
+		iqmframe_t *frameset = iqm->frames[ent->pose1];
+		iqmjoint   *j = &iqm->joints[i];
+		Mat4Copy ((float*)&frameset[i], (float*)&frame[i]);
+		if (j->parent >= 0)
+			Mat4Mult ((float*)&frame[j->parent],
+					  (float*)&frame[i], (float*)&frame[i]);
+	}
 #endif
 
 	for (i = 0; i < MAX_IQM_LIGHTS; i++) {

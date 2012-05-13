@@ -4,9 +4,9 @@ uniform mat4 bonemats[80];
 attribute vec4 vcolor;
 attribute vec4 vweights;
 attribute vec4 vbones;
-attribute vec2 texcoord;
 attribute vec4 vtangent;
 attribute vec3 vnormal;
+attribute vec2 texcoord;
 attribute vec3 vposition;
 
 varying vec3 position;
