@@ -221,11 +221,11 @@ glsl_R_DrawIQM (void)
 		QuatBlend (f1->scale, f2->scale, blend, frame[i].scale);
 	}
 #else
-	blend = blend;
 	for (i = 0; i < iqm->num_joints; i++) {
-		iqmframe_t *frameset = iqm->frames[ent->pose1];
+		iqmframe_t *f1 = &iqm->frames[ent->pose1][i];
+		iqmframe_t *f2 = &iqm->frames[ent->pose2][i];
 		iqmjoint   *j = &iqm->joints[i];
-		Mat4Copy ((float*)&frameset[i], (float*)&frame[i]);
+		Mat4Blend ((float *) f1, (float *) f2, blend, (float*)&frame[i]);
 		if (j->parent >= 0)
 			Mat4Mult ((float*)&frame[j->parent],
 					  (float*)&frame[i], (float*)&frame[i]);
