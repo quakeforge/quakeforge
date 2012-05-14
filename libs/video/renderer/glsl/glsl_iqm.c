@@ -248,6 +248,8 @@ glsl_R_DrawIQM (void)
 		qfeglUniform4fv (l->position.location, 1, quat_origin);
 		qfeglUniform4fv (l->color.location, 1, quat_origin);
 	}
+	qfeglBindBuffer (GL_ARRAY_BUFFER, glsl->vertex_array);
+	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, glsl->element_array);
 
 	qfeglUniformMatrix4fv (iqm_shader.mvp_matrix.location, 1, false, mvp_mat);
 	qfeglUniformMatrix3fv (iqm_shader.norm_matrix.location, 1, false,

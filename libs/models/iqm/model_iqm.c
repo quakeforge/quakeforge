@@ -294,6 +294,7 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 	}
 	iqm->vertexarrays = realloc (iqm->vertexarrays,
 								 iqm->num_arrays * sizeof (iqmvertexarray));
+	iqm->num_verts = hdr->num_vertexes;
 	iqm->vertices = malloc (hdr->num_vertexes * bytes);
 	iqm->stride = bytes;
 	for (i = 0; i < hdr->num_vertexes; i++) {
@@ -344,6 +345,7 @@ load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 		return false;
 	if (!(tris = get_triangles (hdr, buffer)))
 		return false;
+	iqm->num_elements = hdr->num_triangles * 3;
 	iqm->elements = malloc (hdr->num_triangles * 3 * sizeof (uint16_t));
 	for (i = 0; i < hdr->num_triangles; i++)
 		VectorCopy (tris[i].vertex, iqm->elements + i * 3);

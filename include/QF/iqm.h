@@ -126,8 +126,10 @@ typedef struct {
 	char       *text;
 	int         num_meshes;
 	iqmmesh    *meshes;
+	int         num_verts;
 	byte       *vertices;
 	int         stride;
+	int         num_elements;
 	uint16_t   *elements;
 	int         num_arrays;
 	iqmvertexarray *vertexarrays;

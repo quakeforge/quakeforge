@@ -72,9 +72,14 @@ glsl_iqm_clear (model_t *mod)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
 	glsliqm_t  *glsl = (glsliqm_t *) iqm->extra_data;
+	GLuint      bufs[2];
 	int         i;
 
 	mod->needload = true;
+
+	bufs[0] = glsl->vertex_array;
+	bufs[1] = glsl->element_array;
+	qfeglDeleteBuffers (2, bufs);
 
 	for (i = 0; i < iqm->num_meshes; i++) {
 		GLSL_ReleaseTexture (glsl->textures[i]);
@@ -82,9 +87,11 @@ glsl_iqm_clear (model_t *mod)
 	}
 	free (glsl);
 	free (iqm->text);
-	free (iqm->vertices);
+	if (iqm->vertices)
+		free (iqm->vertices);
 	free (iqm->vertexarrays);
-	free (iqm->elements);
+	if (iqm->elements)
+		free (iqm->elements);
 	free (iqm->meshes);
 	free (iqm->joints);
 	free (iqm->baseframe);
@@ -122,6 +129,30 @@ glsl_iqm_load_textures (iqm_t *iqm)
 	dstring_delete (str);
 }
 
+static void
+glsl_iqm_load_arrays (iqm_t *iqm)
+{
+	glsliqm_t  *glsl = (glsliqm_t *) iqm->extra_data;
+	GLuint      bufs[2];
+
+	qfeglGenBuffers (2, bufs);
+	glsl->vertex_array = bufs[0];
+	glsl->element_array = bufs[1];
+	qfeglBindBuffer (GL_ARRAY_BUFFER, glsl->vertex_array);
+	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, glsl->element_array);
+	qfeglBufferData (GL_ARRAY_BUFFER, iqm->num_verts * iqm->stride,
+					 iqm->vertices, GL_STATIC_DRAW);
+	qfeglBufferData (GL_ELEMENT_ARRAY_BUFFER,
+					 iqm->num_elements * sizeof (uint16_t), iqm->elements,
+					 GL_STATIC_DRAW);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);
+	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
+	free (iqm->vertices);
+	iqm->vertices = 0;
+	free (iqm->elements);
+	iqm->elements = 0;
+}
+
 void
 glsl_Mod_IQMFinish (model_t *mod)
 {
@@ -129,4 +160,5 @@ glsl_Mod_IQMFinish (model_t *mod)
 	mod->clear = glsl_iqm_clear;
 	iqm->extra_data = calloc (1, sizeof (glsliqm_t));
 	glsl_iqm_load_textures (iqm);
+	glsl_iqm_load_arrays (iqm);
 }
