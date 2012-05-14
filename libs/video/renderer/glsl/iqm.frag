@@ -37,7 +37,7 @@ calc_light (vec3 n, int ind)
 	light       l = lights[ind];
 	float       mag;
 
-	d = position - l.position.xyz;
+	d = l.position.xyz - position;
 	mag = dot (d, n);
 	mag = max (0.0, mag);
 	return l.color.rgb * (l.position.w * mag / dot (d, d));
@@ -50,7 +50,7 @@ main (void)
 	vec3        norm, l;
 	vec4        col;
 
-	norm = texture2D (normalmap, st).xyz;
+	norm = (texture2D (normalmap, st).xyz - vec3(0.5)) * 2.0;
 	norm = tbn * norm;
 	l  = calc_light (norm, 0);
 	l += calc_light (norm, 1);
