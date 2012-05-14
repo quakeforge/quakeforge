@@ -238,7 +238,7 @@ glsl_R_DrawIQM (void)
 		lightpar_t *l = &iqm_shader.lights[i];
 		if (!lights[i])
 			break;
-		VectorCopy (lights[i]->origin, val);
+		VectorSubtract (lights[i]->origin, ent->origin, val);
 		val[3] = lights[i]->radius;
 		qfeglUniform4fv (l->position.location, 1, val);
 		qfeglUniform4fv (l->color.location, 1, lights[i]->color);
