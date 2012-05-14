@@ -47,6 +47,8 @@ struct texture_s;
 int GLSL_LoadQuakeMipTex (const struct texture_s *tex);
 int GLSL_LoadRGBTexture (const char *identifier, int width, int height,
 						 byte *data);
+int GLSL_LoadRGBATexture (const char *identifier, int width, int height,
+						  byte *data);
 void GLSL_ReleaseTexture (int tex);
 void GLSL_TextureInit (void);
 

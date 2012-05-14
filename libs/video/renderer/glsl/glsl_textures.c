@@ -75,7 +75,7 @@ GLSL_LoadQuakeTexture (const char *identifier, int width, int height,
 	qfeglGenTextures (1, &tnum);
 	qfeglBindTexture (GL_TEXTURE_2D, tnum);
 	qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_LUMINANCE,
-					width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+					 width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -173,7 +173,7 @@ GLSL_LoadQuakeMipTex (const texture_t *tex)
 			scaled = data + tex->offsets[lod];
 		}
 		qfeglTexImage2D (GL_TEXTURE_2D, lod, GL_LUMINANCE, swidth, sheight,
-						0, GL_LUMINANCE, GL_UNSIGNED_BYTE, scaled);
+						 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, scaled);
 	}
 	if (swidth > 1 || sheight > 1) {
 		// mipmap will hold the reduced image, so this is more than enough
@@ -187,7 +187,7 @@ GLSL_LoadQuakeMipTex (const texture_t *tex)
 			swidth = max (swidth, 1);
 			sheight = max (sheight, 1);
 			qfeglTexImage2D (GL_TEXTURE_2D, lod, GL_LUMINANCE, swidth, sheight,
-							0, GL_LUMINANCE, GL_UNSIGNED_BYTE, mip);
+							 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, mip);
 			scaled = mip;
 			mip += swidth * sheight;
 			lod++;
@@ -207,11 +207,29 @@ GLSL_LoadRGBTexture (const char *identifier, int width, int height, byte *data)
 	qfeglGenTextures (1, &tnum);
 	qfeglBindTexture (GL_TEXTURE_2D, tnum);
 	qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_RGB,
-					width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+					 width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	qfeglGenerateMipmap (GL_TEXTURE_2D);
+
+	return tnum;
+}
+
+int
+GLSL_LoadRGBATexture (const char *identifier, int width, int height, byte *data)
+{
+	GLuint      tnum;
+
+	qfeglGenTextures (1, &tnum);
+	qfeglBindTexture (GL_TEXTURE_2D, tnum);
+	qfeglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA,
+					 width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	qfeglGenerateMipmap (GL_TEXTURE_2D);
 
 	return tnum;
@@ -303,7 +321,7 @@ GLSL_CreateScrap (int size, int format)
 
 	qfeglBindTexture (GL_TEXTURE_2D, scrap->tnum);
 	qfeglTexImage2D (GL_TEXTURE_2D, 0, format,
-					size, size, 0, format, GL_UNSIGNED_BYTE, data);
+					 size, size, 0, format, GL_UNSIGNED_BYTE, data);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	//FIXME parameterize (linear for lightmaps)

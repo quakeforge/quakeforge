@@ -519,4 +519,5 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 		Sys_Error ("%s: error loading meshes", loadname);
 	if (hdr->num_anims && !load_iqm_anims (mod, hdr, (byte *) buffer))
 		Sys_Error ("%s: error loading anims", loadname);
+	m_funcs->Mod_IQMFinish (mod);
 }

@@ -12,21 +12,24 @@ void gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 void *gl_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 					   qboolean group, maliasskindesc_t *skindesc);
 void gl_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
-void gl_Mod_LoadExternalSkins (model_t * mod);
+void gl_Mod_LoadExternalSkins (model_t *mod);
+void gl_Mod_IQMFinish (model_t *mod);
 
 void glsl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr,
 										  void *_m, int _s, int extra);
 void *glsl_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 						 qboolean group, maliasskindesc_t *skindesc);
 void glsl_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
-void glsl_Mod_LoadExternalSkins (model_t * mod);
+void glsl_Mod_LoadExternalSkins (model_t *mod);
+void glsl_Mod_IQMFinish (model_t *mod);
 
 void sw_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 										int _s, int extra);
 void *sw_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 					   qboolean group, maliasskindesc_t *skindesc);
 void sw_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
-void sw_Mod_LoadExternalSkins (model_t * mod);
+void sw_Mod_LoadExternalSkins (model_t *mod);
+void sw_Mod_IQMFinish (model_t *mod);
 
 void gl_Mod_LoadExternalTextures (model_t *mod);
 void gl_Mod_LoadLighting (bsp_t *bsp);

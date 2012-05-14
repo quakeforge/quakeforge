@@ -40,12 +40,91 @@
 
 #include <stdlib.h>
 
+#include "QF/dstring.h"
+#include "QF/image.h"
+#include "QF/quakefs.h"
 #include "QF/va.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
-//#include "QF/GLSL/qf_iqm.h"
+#include "QF/GLSL/qf_iqm.h"
 #include "QF/GLSL/qf_textures.h"
 
 #include "mod_internal.h"
 #include "r_shared.h"
+
+static byte null_texture[] = {
+	204, 204, 204, 255,
+	204, 204, 204, 255,
+	204, 204, 204, 255,
+	204, 204, 204, 255,
+};
+
+static byte null_normmap[] = {
+	127, 127, 255, 255,
+	127, 127, 255, 255,
+	127, 127, 255, 255,
+	127, 127, 255, 255,
+};
+
+static void
+glsl_iqm_clear (model_t *mod)
+{
+	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
+	glsliqm_t  *glsl = (glsliqm_t *) iqm->extra_data;
+	int         i;
+
+	for (i = 0; i < iqm->num_meshes; i++) {
+		GLSL_ReleaseTexture (glsl->textures[i]);
+		GLSL_ReleaseTexture (glsl->normmaps[i]);
+	}
+	free (glsl);
+	free (iqm->text);
+	free (iqm->vertices);
+	free (iqm->vertexarrays);
+	free (iqm->elements);
+	free (iqm->meshes);
+	free (iqm->joints);
+	free (iqm->baseframe);
+	free (iqm->inverse_baseframe);
+	free (iqm->anims);
+	free (iqm->frames[0]);
+	free (iqm->frames);
+	free (iqm);
+}
+
+static void
+glsl_iqm_load_textures (iqm_t *iqm)
+{
+	glsliqm_t  *glsl = (glsliqm_t *) iqm->extra_data;
+	int         i;
+	dstring_t  *str = dstring_new ();
+	tex_t      *tex;
+
+	glsl->textures = malloc (2 * iqm->num_meshes * sizeof (GLuint));
+	glsl->normmaps = &glsl->textures[iqm->num_meshes];
+	for (i = 0; i < iqm->num_meshes; i++) {
+		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
+		QFS_StripExtension (str->str, str->str);
+		if ((tex = LoadImage (va ("textures/%s", str->str))))
+			glsl->textures[i] = GLSL_LoadRGBATexture (str->str, tex->width,
+													  tex->height, tex->data);
+		else
+			glsl->textures[i] = GLSL_LoadRGBATexture ("", 2, 2, null_texture);
+		if ((tex = LoadImage (va ("textures/%s_norm", str->str))))
+			glsl->normmaps[i] = GLSL_LoadRGBATexture (str->str, tex->width,
+													  tex->height, tex->data);
+		else
+			glsl->normmaps[i] = GLSL_LoadRGBATexture ("", 2, 2, null_normmap);
+	}
+	dstring_delete (str);
+}
+
+void
+glsl_Mod_IQMFinish (model_t *mod)
+{
+	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
+	mod->clear = glsl_iqm_clear;
+	iqm->extra_data = calloc (1, sizeof (glsliqm_t));
+	glsl_iqm_load_textures (iqm);
+}

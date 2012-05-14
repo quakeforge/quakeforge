@@ -32,6 +32,13 @@
 
 #include "QF/iqm.h"
 
+typedef struct glsliqm_s {
+	GLuint     *textures;
+	GLuint     *normmaps;
+	GLuint      vertex_array;
+	GLuint      element_array;
+} glsliqm_t;
+
 void glsl_R_InitIQM (void);
 void glsl_R_DrawIQM (void);
 void glsl_R_IQMBegin (void);

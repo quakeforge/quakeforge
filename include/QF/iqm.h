@@ -139,6 +139,7 @@ typedef struct {
 	iqmframe_t **frames;
 	int         num_anims;
 	iqmanim    *anims;
+	void       *extra_data;
 } iqm_t;
 
 #endif//__QF_iqm_h__

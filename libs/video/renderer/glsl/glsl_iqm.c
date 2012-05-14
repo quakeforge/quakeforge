@@ -195,6 +195,7 @@ glsl_R_DrawIQM (void)
 	entity_t   *ent = currententity;
 	model_t    *model = ent->model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
+	glsliqm_t  *glsl = (glsliqm_t *) iqm->extra_data;
 	dlight_t   *lights[MAX_IQM_LIGHTS];
 	int         i;
 	vec_t       norm_mat[9];
@@ -256,6 +257,10 @@ glsl_R_DrawIQM (void)
 	qfeglVertexAttrib4fv (iqm_shader.vcolor.location, color);
 	set_arrays (iqm);
 	for (i = 0; i < iqm->num_meshes; i++) {
+		qfeglActiveTexture (GL_TEXTURE0 + 0);
+		qfeglBindTexture (GL_TEXTURE_2D, glsl->textures[i]);
+		qfeglActiveTexture (GL_TEXTURE0 + 1);
+		qfeglBindTexture (GL_TEXTURE_2D, glsl->normmaps[i]);
 		qfeglDrawElements (GL_TRIANGLES, 3 * iqm->meshes[i].num_triangles,
 						   GL_UNSIGNED_SHORT,
 						   iqm->elements + 3 * iqm->meshes[i].first_triangle);
@@ -276,6 +281,14 @@ glsl_R_IQMBegin (void)
 	VectorCopy (glsl_Fog_GetColor (), fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (iqm_shader.fog.location, 1, fog);
+
+	qfeglUniform1i (iqm_shader.texture.location, 0);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglEnable (GL_TEXTURE_2D);
+
+	qfeglUniform1i (iqm_shader.normalmap.location, 1);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglEnable (GL_TEXTURE_2D);
 }
 
 void

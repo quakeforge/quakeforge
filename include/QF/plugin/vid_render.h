@@ -93,7 +93,8 @@ typedef struct vid_model_funcs_s {
 	void *(*Mod_LoadSkin) (byte *skin, int skinsize, int snum, int gnum,
 						   qboolean group, maliasskindesc_t *skindesc);
 	void (*Mod_FinalizeAliasModel) (model_t *m, aliashdr_t *hdr);
-	void (*Mod_LoadExternalSkins) (model_t * mod);
+	void (*Mod_LoadExternalSkins) (model_t *mod);
+	void (*Mod_IQMFinish) (model_t *mod);
 	int alias_cache;
 	void (*Mod_SpriteLoadTexture) (mspriteframe_t *pspriteframe, int framenum);
 
