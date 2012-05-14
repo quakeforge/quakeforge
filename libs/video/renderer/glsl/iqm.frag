@@ -35,9 +35,12 @@ calc_light (vec3 n, int ind)
 {
 	vec3        d;
 	light       l = lights[ind];
+	float       mag;
 
-	d = l.position.xyz - position;
-	return l.color.rgb * (l.position.w * dot (d, n) / dot (d, d));
+	d = position - l.position.xyz;
+	mag = dot (d, n);
+	mag = max (0.0, mag);
+	return l.color.rgb * (l.position.w * mag / dot (d, d));
 }
 
 void

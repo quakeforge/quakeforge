@@ -67,9 +67,10 @@ main (void)
 	// but probably good enough)
 	t = qmult (q0, vtangent.xyz);
 #else
+	mat3 nm = mat3 (m[0].xyz, m[1].xyz, m[2].xyz);
 	v = (m * vec4 (vposition, 1.0)).xyz;
-	n = (m * vec4 (vnormal, 1.0)).xyz;
-	t = (m * vec4 (vtangent.xyz, 1.0)).xyz;
+	n = nm * vnormal;
+	t = nm * vtangent.xyz;
 #endif
 	position = v * 8.0;
 	normal = norm_mat * n;
