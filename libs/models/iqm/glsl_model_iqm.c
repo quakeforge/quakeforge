@@ -74,6 +74,8 @@ glsl_iqm_clear (model_t *mod)
 	glsliqm_t  *glsl = (glsliqm_t *) iqm->extra_data;
 	int         i;
 
+	mod->needload = true;
+
 	for (i = 0; i < iqm->num_meshes; i++) {
 		GLSL_ReleaseTexture (glsl->textures[i]);
 		GLSL_ReleaseTexture (glsl->normmaps[i]);
