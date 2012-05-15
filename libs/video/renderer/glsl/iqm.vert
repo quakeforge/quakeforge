@@ -72,7 +72,7 @@ main (void)
 	n = nm * vnormal;
 	t = nm * vtangent.xyz;
 #endif
-	position = v * 8.0;
+	position = v;
 	normal = norm_mat * n;
 	tangent = norm_mat * t;
 	bitangent = cross (normal, tangent) * vtangent.w;
