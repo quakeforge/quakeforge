@@ -83,6 +83,7 @@ static struct {
 	shaderparam_t vtangent;
 	shaderparam_t vnormal;
 	shaderparam_t vposition;
+	shaderparam_t ambient;
 	lightpar_t    lights[MAX_IQM_LIGHTS];
 	shaderparam_t texture;
 	shaderparam_t normalmap;
@@ -99,6 +100,7 @@ static struct {
 	{"vtangent", 0},
 	{"vnormal", 0},
 	{"vposition", 0},
+	{"ambient", 1},
 	{
 		{{"lights[0].position", 1}, {"lights[0].color", 1}},
 		{{"lights[1].position", 1}, {"lights[1].color", 1}},
@@ -151,6 +153,7 @@ glsl_R_InitIQM (void)
 	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.vtangent);
 	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.vnormal);
 	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.vposition);
+	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.ambient);
 	for (i = 0; i < MAX_IQM_LIGHTS; i++) {
 		GLSL_ResolveShaderParam (iqm_shader.program,
 								 &iqm_shader.lights[i].position);
@@ -203,6 +206,8 @@ glsl_R_DrawIQM (void)
 	float       blend;
 	iqmframe_t *frame;
 
+	R_LightPoint (ent->origin);	//FIXME min_light?
+	VectorScale (ambientcolor, 1/255.0, ambientcolor);
 	R_FindNearLights (ent->origin, MAX_IQM_LIGHTS, lights);
 
 	// we need only the rotation for normals.
@@ -233,6 +238,7 @@ glsl_R_DrawIQM (void)
 	}
 #endif
 
+	qfeglUniform3fv (iqm_shader.ambient.location, 1, ambientcolor);
 	for (i = 0; i < MAX_IQM_LIGHTS; i++) {
 		quat_t      val;
 		lightpar_t *l = &iqm_shader.lights[i];

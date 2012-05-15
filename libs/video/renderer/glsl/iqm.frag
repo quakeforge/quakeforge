@@ -4,6 +4,7 @@ struct light {
 };
 uniform sampler2D texture;
 uniform sampler2D normalmap;
+uniform vec3 ambient;
 uniform light lights[8];
 uniform vec4 fog;
 
@@ -52,7 +53,8 @@ main (void)
 
 	norm = (texture2D (normalmap, st).xyz - vec3(0.5)) * 2.0;
 	norm = tbn * norm;
-	l  = calc_light (norm, 0);
+	l = ambient;
+	l += calc_light (norm, 0);
 	l += calc_light (norm, 1);
 	l += calc_light (norm, 2);
 	l += calc_light (norm, 3);
