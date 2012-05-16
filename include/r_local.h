@@ -164,6 +164,8 @@ maliasskindesc_t *R_AliasGetSkindesc (int skinnum, aliashdr_t *hdr);
 maliasframedesc_t *R_AliasGetFramedesc (int framenum, aliashdr_t *hdr);
 float R_AliasGetLerpedFrames (entity_t *ent, aliashdr_t *hdr);
 float R_IQMGetLerpedFrames (entity_t *ent, iqm_t *hdr);
+iqmframe_t *R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2,
+							  int blend);
 float R_EntityBlend (entity_t *ent, int pose, float interval);
 void R_BeginEdgeFrame (void);
 void R_ScanEdges (void);

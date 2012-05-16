@@ -65,3 +65,32 @@ R_IQMGetLerpedFrames (entity_t *ent, iqm_t *iqm)
 	frame = (int) (time * anim->framerate) + anim->first_frame;
 	return R_EntityBlend (ent, frame, anim->framerate);
 }
+
+iqmframe_t *
+R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2, int blend)
+{
+	iqmframe_t *frame;
+	int         i;
+
+	frame = Hunk_TempAlloc (iqm->num_joints * sizeof (iqmframe_t));
+#if 0
+	for (i = 0; i < iqm->num_joints; i++) {
+		iqmframe_t *f1 = &iqm->frames[frame1][i];
+		iqmframe_t *f2 = &iqm->frames[frame2][i];
+		DualQuatBlend (f1->rt, f2->rt, blend, frame[i].rt);
+		QuatBlend (f1->shear, f2->shear, blend, frame[i].shear);
+		QuatBlend (f1->scale, f2->scale, blend, frame[i].scale);
+	}
+#else
+	for (i = 0; i < iqm->num_joints; i++) {
+		iqmframe_t *f1 = &iqm->frames[frame1][i];
+		iqmframe_t *f2 = &iqm->frames[frame2][i];
+		iqmjoint   *j = &iqm->joints[i];
+		Mat4Blend ((float *) f1, (float *) f2, blend, (float*)&frame[i]);
+		if (j->parent >= 0)
+			Mat4Mult ((float*)&frame[j->parent],
+					  (float*)&frame[i], (float*)&frame[i]);
+	}
+#endif
+	return frame;
+}
