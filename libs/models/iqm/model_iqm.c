@@ -523,3 +523,22 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 		Sys_Error ("%s: error loading anims", loadname);
 	m_funcs->Mod_IQMFinish (mod);
 }
+
+void
+Mod_FreeIQM (iqm_t *iqm)
+{
+	free (iqm->text);
+	if (iqm->vertices)
+		free (iqm->vertices);
+	free (iqm->vertexarrays);
+	if (iqm->elements)
+		free (iqm->elements);
+	free (iqm->meshes);
+	free (iqm->joints);
+	free (iqm->baseframe);
+	free (iqm->inverse_baseframe);
+	free (iqm->anims);
+	free (iqm->frames[0]);
+	free (iqm->frames);
+	free (iqm);
+}

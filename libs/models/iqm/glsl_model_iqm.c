@@ -86,20 +86,7 @@ glsl_iqm_clear (model_t *mod)
 		GLSL_ReleaseTexture (glsl->normmaps[i]);
 	}
 	free (glsl);
-	free (iqm->text);
-	if (iqm->vertices)
-		free (iqm->vertices);
-	free (iqm->vertexarrays);
-	if (iqm->elements)
-		free (iqm->elements);
-	free (iqm->meshes);
-	free (iqm->joints);
-	free (iqm->baseframe);
-	free (iqm->inverse_baseframe);
-	free (iqm->anims);
-	free (iqm->frames[0]);
-	free (iqm->frames);
-	free (iqm);
+	Mod_FreeIQM (iqm);
 }
 
 static void
