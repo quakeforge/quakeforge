@@ -78,7 +78,6 @@ gl_draw_iqm_frame (iqm_t *iqm, gliqm_t *gl, iqmframe_t *frame, iqmmesh *mesh)
 				vec_t      *f = (vec_t *) &frame[bind];
 				float      *v = (float *) (vert + gl->position->offset);
 				Mat4MultVec (f, v, position);
-				VectorScale (position, 8, position);
 				qfglVertex3fv (position);
 			} else {
 				qfglVertex3fv ((float *) (vert + gl->position->offset));
