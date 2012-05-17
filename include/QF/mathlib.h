@@ -520,6 +520,13 @@ extern const vec_t *const quat_origin;
 		QuatBlend ((m1) + 8, (m2) + 8, (b), (m) + 8); \
 		QuatBlend ((m1) + 12, (m2) + 12, (b), (m) + 12); \
 	} while (0)
+#define Mat4MultAdd(a,s,b,c) \
+	do { \
+		QuatMultAdd ((a) + 0, s, (b) + 0, (c) + 0); \
+		QuatMultAdd ((a) + 4, s, (b) + 4, (c) + 4); \
+		QuatMultAdd ((a) + 8, s, (b) + 8, (c) + 8); \
+		QuatMultAdd ((a) + 12, s, (b) + 12, (c) + 12); \
+	} while (0)
 
 #define qfrandom(MAX) ((float) MAX * (rand() * (1.0 / (RAND_MAX + 1.0))))
 
