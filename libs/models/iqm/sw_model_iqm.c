@@ -39,9 +39,154 @@
 # include <strings.h>
 #endif
 
+#include "QF/dstring.h"
+#include "QF/image.h"
 #include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "compat.h"
 #include "d_iface.h"
 #include "mod_internal.h"
+#include "r_internal.h"
+
+static tex_t null_texture = {
+	2, 2, tex_palette, 0, {15, 15, 15, 15}
+};
+
+static void
+sw_iqm_clear (model_t *mod)
+{
+	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
+	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
+	int         i, j;
+
+	mod->needload = true;
+
+	for (i = 0; i < iqm->num_meshes; i++) {
+		if (!sw->skins[i])
+			continue;
+		for (j = i + 1; j < iqm->num_meshes; j++)
+			if (sw->skins[j] == sw->skins[i])
+				sw->skins[j] = 0;
+		if (sw->skins[i] != &null_texture)
+			free (sw->skins[i]);
+	}
+	free (sw->skins);
+	free (sw->blend_palette);
+	free (sw);
+	Mod_FreeIQM (iqm);
+}
+
+static byte
+convert_color (byte *rgb)
+{
+	//FIXME slow!
+	byte        dist[3];
+	int         d, bestd = 256 * 256 * 3, bestc = -1;
+	int         i;
+
+	for (i = 0; i < 256; i++) {
+		VectorSubtract (vid.basepal, rgb, dist);
+		d = DotProduct (dist, dist);
+		if (d < bestd) {
+			bestd = d;
+			bestc = i;
+		}
+	}
+	return bestc;
+}
+
+static tex_t *
+convert_tex (tex_t *tex)
+{
+	tex_t      *new;
+	int         pixels;
+	int         bpp = 3;
+	int         i;
+
+	pixels = tex->width * tex->height;
+	new = malloc (field_offset (tex_t, data[pixels]));
+	new->width = tex->width;
+	new->height = tex->height;
+	new->format = tex_palette;
+	new->palette = 0;
+	switch (tex->format) {
+		case tex_palette:
+		case tex_l:			// will not work as expected
+		case tex_a:			// will not work as expected
+			memcpy (new->data, tex->data, pixels);
+			break;
+		case tex_la:		// will not work as expected
+			for (i = 0; i < pixels; i++)
+				new->data[i] = tex->data[i * 2];
+			break;
+		case tex_rgba:
+			bpp = 4;
+		case tex_rgb:
+			for (i = 0; i < pixels; i++)
+				new->data[i] = convert_color (tex->data + i * bpp);
+			break;
+	}
+	return new;
+}
+
+static void
+sw_iqm_load_textures (iqm_t *iqm)
+{
+	int         i, j;
+	dstring_t  *str = dstring_new ();
+	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
+	tex_t      *tex;
+
+	sw->skins = malloc (iqm->num_meshes * sizeof (tex_t));
+	for (i = 0; i < iqm->num_meshes; i++) {
+		for (j = 0; j < i; j++) {
+			if (iqm->meshes[j].material == iqm->meshes[i].material) {
+				sw->skins[i] = sw->skins[j];
+				break;
+			}
+		}
+		if (j < i)
+			continue;
+		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
+		QFS_StripExtension (str->str, str->str);
+		if ((tex = LoadImage (va ("textures/%s", str->str))))
+			sw->skins[i] = convert_tex (tex);
+		else
+			sw->skins[i] = &null_texture;
+		for (j = 0; j < (int) iqm->meshes[i].num_triangles * 3; j++) {
+			int         ind = iqm->meshes[i].first_triangle * 3 + j;
+			int         vind = iqm->elements[ind];
+			byte       *vert = iqm->vertices + iqm->stride * vind;
+			byte       *tc = vert + sw->texcoord->offset;
+			*(int32_t *) (tc + 0) = *(float *) (tc + 0) * tex->width;
+			*(int32_t *) (tc + 4) = *(float *) (tc + 4) * tex->height;
+		}
+	}
+	dstring_delete (str);
+}
+
+void
+sw_Mod_IQMFinish (model_t *mod)
+{
+	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
+	swiqm_t    *sw;
+	int         i;
+
+	mod->clear = sw_iqm_clear;
+	iqm->extra_data = sw = calloc (1, sizeof (swiqm_t));
+	sw->blend_palette = Mod_IQMBuildBlendPalette (iqm, &sw->palette_size);
+	for (i = 0; i < iqm->num_arrays; i++) {
+		if (iqm->vertexarrays[i].type == IQM_POSITION)
+			sw->position = &iqm->vertexarrays[i];
+		if (iqm->vertexarrays[i].type == IQM_TEXCOORD)
+			sw->texcoord = &iqm->vertexarrays[i];
+		if (iqm->vertexarrays[i].type == IQM_NORMAL)
+			sw->normal = &iqm->vertexarrays[i];
+		if (iqm->vertexarrays[i].type == IQM_BLENDINDEXES)
+			sw->bindices = &iqm->vertexarrays[i];
+	}
+	sw_iqm_load_textures (iqm);
+}

@@ -48,7 +48,7 @@ static vid_model_funcs_t model_funcs = {
 	sw_Mod_LoadSkin,
 	sw_Mod_FinalizeAliasModel,
 	sw_Mod_LoadExternalSkins,
-	0,
+	sw_Mod_IQMFinish,
 	1,
 	sw_Mod_SpriteLoadTexture,
 

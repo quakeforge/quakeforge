@@ -41,8 +41,8 @@ typedef struct tex_s {
 } tex_t;
 
 #define tex_palette 0
-#define tex_l GL_LUMINANCE
-#define tex_a GL_ALPHA
+#define tex_l 0x1909 //GL_LUMINANCE
+#define tex_a 0x1906 //GL_ALPHA
 #define tex_la 2
 #define tex_rgb 3
 #define tex_rgba 4

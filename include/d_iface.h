@@ -28,6 +28,7 @@
 #ifndef _D_IFACE_H
 #define _D_IFACE_H
 
+#include "QF/iqm.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/render.h"
@@ -37,6 +38,16 @@
 #define WARP_HEIGHT		200
 
 #define MAX_LBM_HEIGHT	1024
+
+typedef struct {
+	struct tex_s **skins;
+	iqmblend_t *blend_palette;	// includes base data from iqm
+	int         palette_size;	// includes base data from iqm
+	iqmvertexarray *position;
+	iqmvertexarray *texcoord;
+	iqmvertexarray *normal;
+	iqmvertexarray *bindices;
+} swiqm_t;
 
 typedef struct
 {
