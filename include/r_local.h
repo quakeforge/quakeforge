@@ -321,8 +321,8 @@ void R_Alias_clip_top (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out);
 
 void R_AliasSetUpTransform (int trivial_accept);
 void R_AliasTransformVector (vec3_t in, vec3_t out);
-void R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
-		                        trivertx_t *pverts, stvert_t *pstverts);
+void R_AliasTransformFinalVert (finalvert_t *fv, trivertx_t *pverts,
+								stvert_t *pstverts);
 void R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts);
 
 void R_GenerateSpans (void);

@@ -265,7 +265,7 @@ R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 }
 
 static void
-R_AliasTransformFinalVert16 (finalvert_t *fv, auxvert_t *av, trivertx_t *pverts)
+R_AliasTransformFinalVert16 (auxvert_t *av, trivertx_t *pverts)
 {
 	trivertx_t  * pextra;
 	float       vextra[3];
@@ -283,7 +283,7 @@ R_AliasTransformFinalVert16 (finalvert_t *fv, auxvert_t *av, trivertx_t *pverts)
 }
 
 static void
-R_AliasTransformFinalVert8 (finalvert_t *fv, auxvert_t *av, trivertx_t *pverts)
+R_AliasTransformFinalVert8 (auxvert_t *av, trivertx_t *pverts)
 {
 	av->fv[0] = DotProduct (pverts->v, aliastransform[0]) +
 		aliastransform[0][3];
@@ -316,16 +316,16 @@ R_AliasPreparePoints (void)
 	if (pmdl->ident == HEADER_MDL16) {
 		for (i = 0; i < r_anumverts; i++, fv++, av++, sw32_r_apverts++,
 				pstverts++) {
-			R_AliasTransformFinalVert16 (fv, av, sw32_r_apverts);
-			sw32_R_AliasTransformFinalVert (fv, av, sw32_r_apverts, pstverts);
+			R_AliasTransformFinalVert16 (av, sw32_r_apverts);
+			sw32_R_AliasTransformFinalVert (fv, sw32_r_apverts, pstverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
 		}
 	}
 	else {
 		for (i = 0; i < r_anumverts; i++, fv++, av++, sw32_r_apverts++,
 				pstverts++) {
-			R_AliasTransformFinalVert8 (fv, av, sw32_r_apverts);
-			sw32_R_AliasTransformFinalVert (fv, av, sw32_r_apverts, pstverts);
+			R_AliasTransformFinalVert8 (av, sw32_r_apverts);
+			sw32_R_AliasTransformFinalVert (fv, sw32_r_apverts, pstverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
 		}
 	}
@@ -425,8 +425,8 @@ now this function just copies the texture coordinates and calculates lighting
 actual 3D transform is done by R_AliasTransformFinalVert8/16 functions above
 */
 void
-sw32_R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
-						   trivertx_t *pverts, stvert_t *pstverts)
+sw32_R_AliasTransformFinalVert (finalvert_t *fv, trivertx_t *pverts,
+								stvert_t *pstverts)
 {
 	int         temp;
 	float       lightcos, *plightnormal;
