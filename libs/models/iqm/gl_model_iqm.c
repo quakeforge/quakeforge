@@ -98,9 +98,22 @@ gl_Mod_IQMFinish (model_t *mod)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
 	gliqm_t    *gl;
+	int         i;
 
 	mod->clear = gl_iqm_clear;
 	iqm->extra_data = gl = calloc (1, sizeof (gliqm_t));
 	gl_iqm_load_textures (iqm);
 	gl->blend_palette = Mod_IQMBuildBlendPalette (iqm, &gl->palette_size);
+	for (i = 0; i < iqm->num_arrays; i++) {
+		if (iqm->vertexarrays[i].type == IQM_POSITION)
+			gl->position = &iqm->vertexarrays[i];
+		if (iqm->vertexarrays[i].type == IQM_TEXCOORD)
+			gl->texcoord = &iqm->vertexarrays[i];
+		if (iqm->vertexarrays[i].type == IQM_NORMAL)
+			gl->normal = &iqm->vertexarrays[i];
+		if (iqm->vertexarrays[i].type == IQM_BLENDINDEXES)
+			gl->bindices = &iqm->vertexarrays[i];
+		if (iqm->vertexarrays[i].type == IQM_COLOR)
+			gl->color = &iqm->vertexarrays[i];
+	}
 }

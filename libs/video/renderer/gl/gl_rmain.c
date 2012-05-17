@@ -55,6 +55,7 @@
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_draw.h"
+#include "QF/GL/qf_iqm.h"
 #include "QF/GL/qf_rlight.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
@@ -214,7 +215,7 @@ R_DrawEntitiesOnList (void)
 	} else if (gl_tess) {
 		qfglEnable (GL_NORMALIZE);
 	}
-	
+
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		if (ent->model->type != mod_alias)
 			continue;
@@ -227,7 +228,6 @@ R_DrawEntitiesOnList (void)
 	qfglDisable (GL_NORMALIZE);
 	qfglDisable (GL_LIGHTING);
 
-	qfglDisable (GL_CULL_FACE);
 	if (gl_tess)
 		qfglDisable (GL_PN_TRIANGLES_ATI);
 	if (gl_affinemodels->int_val)
@@ -248,6 +248,16 @@ R_DrawEntitiesOnList (void)
 		qglActiveTexture (gl_mtex_enum + 0);
 	}
 
+	for (ent = r_ent_queue; ent; ent = ent->next) {
+		if (ent->model->type != mod_iqm)
+			continue;
+		currententity = ent;
+
+		gl_R_DrawIQMModel (currententity);
+	}
+	qfglColor3ubv (color_white);
+
+	qfglDisable (GL_CULL_FACE);
 	qfglEnable (GL_ALPHA_TEST);
 	if (gl_va_capable)
 		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, gl_spriteVertexArray);

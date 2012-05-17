@@ -31,11 +31,19 @@
 #define __QF_GL_qf_iqm_h
 
 #include "QF/iqm.h"
+#include "QF/render.h"
 
 typedef struct glsliqm_s {
 	int        *textures;
 	iqmblend_t *blend_palette;	// includes base data from iqm
 	int         palette_size;	// includes base data from iqm
+	iqmvertexarray *position;
+	iqmvertexarray *texcoord;
+	iqmvertexarray *normal;
+	iqmvertexarray *bindices;
+	iqmvertexarray *color;
 } gliqm_t;
+
+void gl_R_DrawIQMModel (entity_t *ent);
 
 #endif//__QF_GL_qf_iqm_h
