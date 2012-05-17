@@ -53,6 +53,7 @@ void sw_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);
 
 void Mod_LoadIQM (model_t *mod, void *buffer);
 void Mod_FreeIQM (iqm_t *iqm);
+iqmblend_t *Mod_IQMBuildBlendPalette (iqm_t *iqm, int *size);
 void Mod_LoadAliasModel (model_t *mod, void *buffer, 
                          cache_allocator_t allocator);
 void Mod_LoadSpriteModel (model_t *mod, void *buffer);

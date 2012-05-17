@@ -123,6 +123,11 @@ typedef struct {
 } iqmframe_t;
 
 typedef struct {
+	byte        indices[4];
+	byte        weights[4];
+} iqmblend_t;
+
+typedef struct {
 	char       *text;
 	int         num_meshes;
 	iqmmesh    *meshes;

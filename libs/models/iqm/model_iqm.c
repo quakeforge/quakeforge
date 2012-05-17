@@ -40,8 +40,8 @@
 #endif
 
 #include "QF/crc.h"
+#include "QF/hash.h"
 #include "QF/iqm.h"
-#include "QF/msg.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -541,4 +541,130 @@ Mod_FreeIQM (iqm_t *iqm)
 	free (iqm->frames[0]);
 	free (iqm->frames);
 	free (iqm);
+}
+
+static void
+swap_bones (byte *bi, byte *bw, int b1, int b2)
+{
+	byte        t;
+
+	t = bi[b1];
+	bi[b1] = bi[b2];
+	bi[b2] = t;
+
+	t = bw[b1];
+	bw[b1] = bw[b2];
+	bw[b2] = t;
+}
+
+static uintptr_t
+blend_get_hash (void *e, void *unused)
+{
+	iqmblend_t *b = (iqmblend_t *) e;
+	return CRC_Block ((byte *) b, sizeof (iqmblend_t));
+}
+
+static int
+blend_compare (void *e1, void *e2, void *unused)
+{
+	iqmblend_t *b1 = (iqmblend_t *) e1;
+	iqmblend_t *b2 = (iqmblend_t *) e2;
+	return !memcmp (b1, b2, sizeof (iqmblend_t));
+}
+
+#define MAX_BLENDS 1024
+
+iqmblend_t * 
+Mod_IQMBuildBlendPalette (iqm_t *iqm, int *size)
+{
+	int         i, j;
+	iqmvertexarray *bindices = 0;
+	iqmvertexarray *bweights = 0;
+	iqmblend_t *blend_list;
+	int         num_blends;
+	hashtab_t  *blend_hash;
+
+	for (i = 0; i < iqm->num_arrays; i++) {
+		if (iqm->vertexarrays[i].type == IQM_BLENDINDEXES)
+			bindices = &iqm->vertexarrays[i];
+		if (iqm->vertexarrays[i].type == IQM_BLENDWEIGHTS)
+			bweights = &iqm->vertexarrays[i];
+	}
+	if (!bindices || !bweights) {
+		// Not necessarily an error: might be a static model with no bones
+		// Either way, no need to make a blend palette
+		Sys_MaskPrintf (SYS_MODEL, "bone index or weight array missing\n");
+		*size = 0;
+		return 0;
+	}
+
+	blend_list = calloc (MAX_BLENDS, sizeof (iqmblend_t));
+	for (i = 0; i < iqm->num_joints; i++) {
+		blend_list[i].indices[0] = i;
+		blend_list[i].weights[0] = 255;
+	}
+	num_blends = iqm->num_joints;
+
+	blend_hash = Hash_NewTable (1023, 0, 0, 0);
+	Hash_SetHashCompare (blend_hash, blend_get_hash, blend_compare);
+
+	for (i = 0; i < iqm->num_verts; i++) {
+		byte       *vert = iqm->vertices + i * iqm->stride;
+		byte       *bi = vert + bindices->offset;
+		byte       *bw = vert + bweights->offset;
+		iqmblend_t  blend;
+		iqmblend_t *bl;
+
+		// First, canonicalize vextex bone data:
+		//   bone indices are in increasing order
+		//   bone weight of zero is never followed by a non-zero weight
+		//   bone weight of zero has bone index of zero
+
+		// if the weight is zero, ensure the index is also zero
+		// also, ensure non-zero weights never follow zero weights
+		for (j = 0; j < 4; j++) {
+			if (!bw[j]) {
+				bi[j] = 0;
+			} else {
+				if (j && !bw[j-1]) {
+					swap_bones (bi, bw, j - 1, j);
+					j = 0;					// force a rescan
+				}
+			}
+		}
+		// sort the bones such that the indeces are increasing (unless the
+		// weight is zero)
+		for (j = 0; j < 3; j++) {
+			if (!bw[j+1])					// zero weight == end of list
+				break;
+			if (bi[j] > bi[j+1]) {
+				swap_bones (bi, bw, j, j + 1);
+				j = -1;						// force rescan
+			}
+		}
+
+		// Now that the bone data is canonical, it can be hashed.
+		// However, no need to check other combinations if the vertex has
+		// only one influencing bone: the bone index will only change format.
+		if (!bw[1]) {
+			*(uint32_t *) bi = bi[0];
+			continue;
+		}
+		QuatCopy (bi, blend.indices);
+		QuatCopy (bw, blend.weights);
+		if ((bl = Hash_FindElement (blend_hash, &blend))) {
+			*(uint32_t *) bi = (bl - blend_list);
+			continue;
+		}
+		if (num_blends >= MAX_BLENDS)
+			Sys_Error ("Too many blends. Tell taniwha to stop being lazy.");
+		blend_list[num_blends] = blend;
+		Hash_AddElement (blend_hash, &blend_list[num_blends]);
+		*(uint32_t *) bi = num_blends;
+		num_blends++;
+	}
+
+	Hash_DelTable (blend_hash);
+	*size = num_blends;
+	return realloc (blend_list, num_blends * sizeof (iqmblend_t));
 }

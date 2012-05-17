@@ -12,7 +12,7 @@ nobase_pkginclude_HEADERS = \
 	vrect.h view.h wad.h wadfile.h winding.h zone.h \
 	\
 	GL/ati.h GL/defines.h GL/extensions.h GL/funcs.h GL/qf_explosions.h \
-	GL/qf_funcs_list.h GL/qf_lightmap.h \
+	GL/qf_funcs_list.h GL/qf_iqm.h GL/qf_lightmap.h \
 	GL/qf_rlight.h GL/qf_rmain.h GL/qf_rsurf.h GL/qf_sky.h GL/qf_textures.h \
 	GL/qf_vid.h GL/types.h \
 	\

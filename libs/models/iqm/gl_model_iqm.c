@@ -39,15 +39,68 @@
 # include <strings.h>
 #endif
 
+#include "QF/dstring.h"
 #include "QF/image.h"
-#include "QF/qendian.h"
 #include "QF/quakefs.h"
-#include "QF/skin.h"
-#include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vid.h"
+#include "QF/GL/qf_iqm.h"
 #include "QF/GL/qf_textures.h"
 
 #include "mod_internal.h"
 
-#include "compat.h"
+static byte null_texture[] = {
+	204, 204, 204, 255,
+	204, 204, 204, 255,
+	204, 204, 204, 255,
+	204, 204, 204, 255,
+};
+
+static void
+gl_iqm_clear (model_t *mod)
+{
+	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
+	gliqm_t    *gl = (gliqm_t *) iqm->extra_data;
+
+	mod->needload = true;
+
+	free (gl->blend_palette);
+	free (gl);
+	Mod_FreeIQM (iqm);
+}
+
+static void
+gl_iqm_load_textures (iqm_t *iqm)
+{
+	gliqm_t  *gl = (gliqm_t *) iqm->extra_data;
+	int         i;
+	dstring_t  *str = dstring_new ();
+	tex_t      *tex;
+
+	gl->textures = malloc (iqm->num_meshes * sizeof (int));
+	for (i = 0; i < iqm->num_meshes; i++) {
+		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
+		QFS_StripExtension (str->str, str->str);
+		if ((tex = LoadImage (va ("textures/%s", str->str))))
+			gl->textures[i] = GL_LoadTexture (str->str, tex->width,
+											  tex->height, tex->data, true,
+											  false,
+											  tex->format > 2 ? tex->format
+															  : 1);
+		else
+			gl->textures[i] = GL_LoadTexture ("", 2, 2, null_texture, true,
+											  false, 4);
+	}
+	dstring_delete (str);
+}
+
+void
+gl_Mod_IQMFinish (model_t *mod)
+{
+	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
+	gliqm_t    *gl;
+
+	mod->clear = gl_iqm_clear;
+	iqm->extra_data = gl = calloc (1, sizeof (gliqm_t));
+	gl_iqm_load_textures (iqm);
+	gl->blend_palette = Mod_IQMBuildBlendPalette (iqm, &gl->palette_size);
+}
