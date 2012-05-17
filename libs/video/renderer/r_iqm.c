@@ -67,12 +67,13 @@ R_IQMGetLerpedFrames (entity_t *ent, iqm_t *iqm)
 }
 
 iqmframe_t *
-R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2, int blend)
+R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2, float blend,
+				  int extra)
 {
 	iqmframe_t *frame;
 	int         i;
 
-	frame = Hunk_TempAlloc (iqm->num_joints * sizeof (iqmframe_t));
+	frame = Hunk_TempAlloc (iqm->num_joints * sizeof (iqmframe_t) + extra);
 #if 0
 	for (i = 0; i < iqm->num_joints; i++) {
 		iqmframe_t *f1 = &iqm->frames[frame1][i];

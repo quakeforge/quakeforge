@@ -217,7 +217,7 @@ glsl_R_DrawIQM (void)
 	Mat4Mult (iqm_vp, ent->transform, mvp_mat);
 
 	blend = R_IQMGetLerpedFrames (ent, iqm);
-	frame = R_IQMBlendFrames (iqm, ent->pose1, ent->pose2, blend);
+	frame = R_IQMBlendFrames (iqm, ent->pose1, ent->pose2, blend, 0);
 
 	qfeglUniform3fv (iqm_shader.ambient.location, 1, ambientcolor);
 	for (i = 0; i < MAX_IQM_LIGHTS; i++) {
