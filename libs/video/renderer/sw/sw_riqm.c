@@ -232,6 +232,59 @@ R_IQMSetupLighting (entity_t *ent, alight_t *plighting)
 	r_plightvec[2] = DotProduct (plighting->plightvec, ent->transform + 8);
 }
 
+static void
+R_IQMSetUpTransform (int trivial_accept)
+{
+	int         i;
+	float       rotationmatrix[3][4];
+	static float viewmatrix[3][4];
+	vec3_t      forward, left, up;
+
+	VectorCopy (currententity->transform + 0, forward);
+	VectorCopy (currententity->transform + 4, left);
+	VectorCopy (currententity->transform + 8, up);
+
+// TODO: can do this with simple matrix rearrangement
+
+	for (i = 0; i < 3; i++) {
+		rotationmatrix[i][0] = forward[i];
+		rotationmatrix[i][1] = left[i];
+		rotationmatrix[i][2] = up[i];
+	}
+
+	rotationmatrix[0][3] = -modelorg[0];
+	rotationmatrix[1][3] = -modelorg[1];
+	rotationmatrix[2][3] = -modelorg[2];
+
+// TODO: should be global, set when vright, etc., set
+	VectorCopy (vright, viewmatrix[0]);
+	VectorCopy (vup, viewmatrix[1]);
+	VectorNegate (viewmatrix[1], viewmatrix[1]);
+	VectorCopy (vpn, viewmatrix[2]);
+
+//	viewmatrix[0][3] = 0;
+//	viewmatrix[1][3] = 0;
+//	viewmatrix[2][3] = 0;
+
+	R_ConcatTransforms (viewmatrix, rotationmatrix, aliastransform);
+
+// do the scaling up of x and y to screen coordinates as part of the transform
+// for the unclipped case (it would mess up clipping in the clipped case).
+// Also scale down z, so 1/z is scaled 31 bits for free, and scale down x and y
+// correspondingly so the projected x and y come out right
+// FIXME: make this work for clipped case too?
+
+	if (trivial_accept) {
+		for (i = 0; i < 4; i++) {
+			aliastransform[0][i] *= aliasxscale *
+				(1.0 / ((float) 0x8000 * 0x10000));
+			aliastransform[1][i] *= aliasyscale *
+				(1.0 / ((float) 0x8000 * 0x10000));
+			aliastransform[2][i] *= 1.0 / ((float) 0x8000 * 0x10000);
+		}
+	}
+}
+
 void
 R_IQMDrawModel (alight_t *plighting)
 {
@@ -255,7 +308,7 @@ R_IQMDrawModel (alight_t *plighting)
 		(((intptr_t) &pfinalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = (auxvert_t *) &pfinalverts[iqm->num_verts + 1];
 	
-	R_AliasSetUpTransform (ent->trivial_accept);
+	R_IQMSetUpTransform (ent->trivial_accept);
 
 	R_IQMSetupLighting (ent, plighting);
 	r_affinetridesc.drawtype = (ent->trivial_accept == 3) &&
