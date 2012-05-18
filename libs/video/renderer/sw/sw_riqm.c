@@ -100,6 +100,27 @@ R_IQMTransformAndProjectFinalVerts (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 }
 
 static void
+iqm_setup_skin (swiqm_t *sw, int skinnum)
+{
+	tex_t      *skin = sw->skins[skinnum];
+	static maliasskindesc_t skindesc = {0, 0, 0, 0};
+
+	r_affinetridesc.pskindesc = &skindesc;
+	r_affinetridesc.pskin = skin->data;
+	r_affinetridesc.skinwidth = skin->width;
+	r_affinetridesc.skinheight = skin->height;
+	r_affinetridesc.seamfixupX16 = (skin->width >> 1) << 16;
+
+	if (r_affinetridesc.drawtype) {
+		D_PolysetUpdateTables ();		// FIXME: precalc...
+	} else {
+#ifdef USE_INTEL_ASM
+		D_Aff8Patch (acolormap);
+#endif
+	}
+}
+
+static void
 R_IQMPrepareUnclippedPoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 {
 	int         i;
@@ -113,23 +134,9 @@ R_IQMPrepareUnclippedPoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 	for (i = 0; i < iqm->num_meshes; i++) {
 		iqmmesh    *mesh = &iqm->meshes[i];
 		uint16_t   *tris;
-		tex_t      *skin = sw->skins[i];
-		maliasskindesc_t skindesc = {0, 0, 0, 0};
 
-		// setup skin
-		r_affinetridesc.pskindesc = &skindesc;
-		r_affinetridesc.pskin = skin->data;
-		r_affinetridesc.skinwidth = skin->width;
-		r_affinetridesc.skinheight = skin->height;
-		r_affinetridesc.seamfixupX16 = (skin->width >> 1) << 16;
+		iqm_setup_skin (sw, i);
 
-		if (r_affinetridesc.drawtype) {
-			D_PolysetUpdateTables ();		// FIXME: precalc...
-		} else {
-#ifdef USE_INTEL_ASM
-			D_Aff8Patch (acolormap);
-#endif
-		}
 		tris = iqm->elements + mesh->first_triangle;
 		r_affinetridesc.ptriangles = (mtriangle_t *) tris;
 		r_affinetridesc.numtriangles = mesh->num_triangles;
@@ -165,23 +172,9 @@ R_IQMPreparePoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 	for (i = 0; i < iqm->num_meshes; i++) {
 		iqmmesh    *mesh = &iqm->meshes[i];
 		mtriangle_t *mtri;
-		tex_t      *skin = sw->skins[i];
-		maliasskindesc_t skindesc = {0, 0, 0, 0};
 
-		// setup skin
-		r_affinetridesc.pskindesc = &skindesc;
-		r_affinetridesc.pskin = skin->data;
-		r_affinetridesc.skinwidth = skin->width;
-		r_affinetridesc.skinheight = skin->height;
-		r_affinetridesc.seamfixupX16 = (skin->width >> 1) << 16;
+		iqm_setup_skin (sw, i);
 
-		if (r_affinetridesc.drawtype) {
-			D_PolysetUpdateTables ();		// FIXME: precalc...
-		} else {
-#ifdef USE_INTEL_ASM
-			D_Aff8Patch (acolormap);
-#endif
-		}
 		mtri = (mtriangle_t *) iqm->elements + mesh->first_triangle;
 		r_affinetridesc.numtriangles = 1;
 		for (j = 0; j < mesh->num_triangles; j++, mtri++) {
