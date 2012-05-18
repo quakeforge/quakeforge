@@ -52,6 +52,7 @@
 #define Draw_nString sw32_Draw_nString
 #define R_AliasCheckBBox sw32_R_AliasCheckBBox
 #define R_AliasClipTriangle sw32_R_AliasClipTriangle
+#define R_AliasClipAndProjectFinalVert sw32_R_AliasClipAndProjectFinalVert
 #define R_AliasDrawModel sw32_R_AliasDrawModel
 #define R_AliasProjectFinalVert sw32_R_AliasProjectFinalVert
 #define R_AliasSetUpTransform sw32_R_AliasSetUpTransform
@@ -289,6 +290,7 @@ extern struct surf_s *sw32_surfaces;
 #undef Draw_nString
 #undef R_AliasCheckBBox
 #undef R_AliasClipTriangle
+#undef R_AliasClipAndProjectFinalVert
 #undef R_AliasDrawModel
 #undef R_AliasProjectFinalVert
 #undef R_AliasSetUpTransform

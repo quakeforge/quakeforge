@@ -56,7 +56,7 @@ float       r_shadelight;
 static aliashdr_t *paliashdr;
 finalvert_t *pfinalverts;
 auxvert_t  *pauxverts;
-static float ziscale;
+float ziscale;
 static model_t *pmodel;
 
 static vec3_t alias_forward, alias_right, alias_up;
@@ -239,7 +239,7 @@ R_AliasTransformVector (vec3_t in, vec3_t out)
 	out[2] = DotProduct (in, aliastransform[2]) + aliastransform[2][3];
 }
 
-static void
+void
 R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 {
 	if (av->fv[2] < ALIAS_Z_CLIP_PLANE) {
@@ -333,12 +333,12 @@ R_AliasPreparePoints (void)
 		pfv[1] = &pfinalverts[ptri->vertindex[1]];
 		pfv[2] = &pfinalverts[ptri->vertindex[2]];
 
-		if (pfv[0]->flags & pfv[1]->flags & pfv[2]->
-			flags & (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP))
+		if (pfv[0]->flags & pfv[1]->flags & pfv[2]->flags
+			& (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP))
 			continue;					// completely clipped
 
-		if (!((pfv[0]->flags | pfv[1]->flags | pfv[2]->flags) &
-			  (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP))) {	// totally unclipped
+		if (!((pfv[0]->flags | pfv[1]->flags | pfv[2]->flags)
+			  & (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP))) {	// totally unclipped
 			r_affinetridesc.pfinalverts = pfinalverts;
 			r_affinetridesc.ptriangles = ptri;
 			D_PolysetDraw ();

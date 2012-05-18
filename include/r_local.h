@@ -159,7 +159,9 @@ void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel);
 
 void R_AddPolygonEdges (emitpoint_t *pverts, int numverts, int miplevel);
 surf_t *R_GetSurf (void);
+void R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av);
 void R_AliasDrawModel (alight_t *plighting);
+void R_IQMDrawModel (alight_t *plighting);
 maliasskindesc_t *R_AliasGetSkindesc (int skinnum, aliashdr_t *hdr);
 maliasframedesc_t *R_AliasGetFramedesc (int framenum, aliashdr_t *hdr);
 float R_AliasGetLerpedFrames (entity_t *ent, aliashdr_t *hdr);
@@ -228,6 +230,8 @@ extern float			leftclip, topclip, rightclip, bottomclip;
 extern int				r_acliptype;
 extern finalvert_t		*pfinalverts;
 extern auxvert_t		*pauxverts;
+extern float            ziscale;
+extern float            aliastransform[3][4];
 
 qboolean R_AliasCheckBBox (void);
 

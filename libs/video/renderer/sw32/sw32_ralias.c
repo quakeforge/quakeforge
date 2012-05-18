@@ -59,7 +59,7 @@ float       sw32_r_shadelight;
 static aliashdr_t *paliashdr;
 finalvert_t *sw32_pfinalverts;
 auxvert_t  *sw32_pauxverts;
-static float ziscale;
+static float sw32_ziscale;
 static model_t *pmodel;
 
 static vec3_t alias_forward, alias_right, alias_up;
@@ -70,7 +70,7 @@ int         sw32_r_amodels_drawn;
 static int         a_skinwidth;
 static int         r_anumverts;
 
-static float       aliastransform[3][4];
+static float       sw32_aliastransform[3][4];
 
 typedef struct {
 	int         index0;
@@ -238,14 +238,17 @@ sw32_R_AliasCheckBBox (void)
 void
 sw32_R_AliasTransformVector (vec3_t in, vec3_t out)
 {
-	out[0] = DotProduct (in, aliastransform[0]) + aliastransform[0][3];
-	out[1] = DotProduct (in, aliastransform[1]) + aliastransform[1][3];
-	out[2] = DotProduct (in, aliastransform[2]) + aliastransform[2][3];
+	out[0] = DotProduct (in, sw32_aliastransform[0])
+		+ sw32_aliastransform[0][3];
+	out[1] = DotProduct (in, sw32_aliastransform[1])
+		+ sw32_aliastransform[1][3];
+	out[2] = DotProduct (in, sw32_aliastransform[2])
+		+ sw32_aliastransform[2][3];
 }
 
 
-static void
-R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
+void
+sw32_R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 {
 	if (av->fv[2] < ALIAS_Z_CLIP_PLANE) {
 		fv->flags |= ALIAS_Z_CLIP;
@@ -274,23 +277,23 @@ R_AliasTransformFinalVert16 (auxvert_t *av, trivertx_t *pverts)
 	vextra[0] = pverts->v[0] + pextra->v[0] / (float)256;
 	vextra[1] = pverts->v[1] + pextra->v[1] / (float)256;
 	vextra[2] = pverts->v[2] + pextra->v[2] / (float)256;
-	av->fv[0] = DotProduct (vextra, aliastransform[0]) +
-		aliastransform[0][3];
-	av->fv[1] = DotProduct (vextra, aliastransform[1]) +
-		aliastransform[1][3];
-	av->fv[2] = DotProduct (vextra, aliastransform[2]) +
-		aliastransform[2][3];
+	av->fv[0] = DotProduct (vextra, sw32_aliastransform[0]) +
+		sw32_aliastransform[0][3];
+	av->fv[1] = DotProduct (vextra, sw32_aliastransform[1]) +
+		sw32_aliastransform[1][3];
+	av->fv[2] = DotProduct (vextra, sw32_aliastransform[2]) +
+		sw32_aliastransform[2][3];
 }
 
 static void
 R_AliasTransformFinalVert8 (auxvert_t *av, trivertx_t *pverts)
 {
-	av->fv[0] = DotProduct (pverts->v, aliastransform[0]) +
-		aliastransform[0][3];
-	av->fv[1] = DotProduct (pverts->v, aliastransform[1]) +
-		aliastransform[1][3];
-	av->fv[2] = DotProduct (pverts->v, aliastransform[2]) +
-		aliastransform[2][3];
+	av->fv[0] = DotProduct (pverts->v, sw32_aliastransform[0]) +
+		sw32_aliastransform[0][3];
+	av->fv[1] = DotProduct (pverts->v, sw32_aliastransform[1]) +
+		sw32_aliastransform[1][3];
+	av->fv[2] = DotProduct (pverts->v, sw32_aliastransform[2]) +
+		sw32_aliastransform[2][3];
 }
 
 /*
@@ -400,7 +403,7 @@ sw32_R_AliasSetUpTransform (int trivial_accept)
 //	viewmatrix[1][3] = 0;
 //	viewmatrix[2][3] = 0;
 
-	R_ConcatTransforms (viewmatrix, rotationmatrix, aliastransform);
+	R_ConcatTransforms (viewmatrix, rotationmatrix, sw32_aliastransform);
 
 // do the scaling up of x and y to screen coordinates as part of the transform
 // for the unclipped case (it would mess up clipping in the clipped case).
@@ -409,11 +412,11 @@ sw32_R_AliasSetUpTransform (int trivial_accept)
 // FIXME: make this work for clipped case too?
 	if (trivial_accept) {
 		for (i = 0; i < 4; i++) {
-			aliastransform[0][i] *= sw32_aliasxscale *
+			sw32_aliastransform[0][i] *= sw32_aliasxscale *
 				(1.0 / ((float) 0x8000 * 0x10000));
-			aliastransform[1][i] *= sw32_aliasyscale *
+			sw32_aliastransform[1][i] *= sw32_aliasyscale *
 				(1.0 / ((float) 0x8000 * 0x10000));
-			aliastransform[2][i] *= 1.0 / ((float) 0x8000 * 0x10000);
+			sw32_aliastransform[2][i] *= 1.0 / ((float) 0x8000 * 0x10000);
 		}
 	}
 }
@@ -465,18 +468,18 @@ sw32_R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
 
 	for (i = 0; i < r_anumverts; i++, fv++, pverts++, pstverts++) {
 		// transform and project
-		zi = 1.0 / (DotProduct (pverts->v, aliastransform[2]) +
-					aliastransform[2][3]);
+		zi = 1.0 / (DotProduct (pverts->v, sw32_aliastransform[2]) +
+					sw32_aliastransform[2][3]);
 
 		// x, y, and z are scaled down by 1/2**31 in the transform, so 1/z is
 		// scaled up by 1/2**31, and the scaling cancels out for x and y in
 		// the projection
 		fv->v[5] = zi;
 
-		fv->v[0] = ((DotProduct (pverts->v, aliastransform[0]) +
-					 aliastransform[0][3]) * zi) + sw32_aliasxcenter;
-		fv->v[1] = ((DotProduct (pverts->v, aliastransform[1]) +
-					 aliastransform[1][3]) * zi) + sw32_aliasycenter;
+		fv->v[0] = ((DotProduct (pverts->v, sw32_aliastransform[0]) +
+					 sw32_aliastransform[0][3]) * zi) + sw32_aliasxcenter;
+		fv->v[1] = ((DotProduct (pverts->v, sw32_aliastransform[1]) +
+					 sw32_aliastransform[1][3]) * zi) + sw32_aliasycenter;
 
 		fv->v[2] = pstverts->s;
 		fv->v[3] = pstverts->t;
@@ -509,7 +512,7 @@ sw32_R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 	// project points
 	zi = 1.0 / av->fv[2];
 
-	fv->v[5] = zi * ziscale;
+	fv->v[5] = zi * sw32_ziscale;
 
 	fv->v[0] = (av->fv[0] * sw32_aliasxscale * zi) + sw32_aliasxcenter;
 	fv->v[1] = (av->fv[1] * sw32_aliasyscale * zi) + sw32_aliasycenter;
@@ -657,9 +660,9 @@ sw32_R_AliasDrawModel (alight_t *plighting)
 	}
 
 	if (currententity != vr_data.view_model)
-		ziscale = (float) 0x8000 *(float) 0x10000;
+		sw32_ziscale = (float) 0x8000 *(float) 0x10000;
 	else
-		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
+		sw32_ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
 	if (currententity->trivial_accept)
 		R_AliasPrepareUnclippedPoints ();

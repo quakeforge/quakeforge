@@ -168,6 +168,23 @@ sw_iqm_load_textures (iqm_t *iqm)
 	dstring_delete (str);
 }
 
+static void
+sw_iqm_convert_tris (iqm_t *iqm)
+{
+	mtriangle_t *tris;
+	uint32_t    i;
+	uint32_t    num_tris;
+
+	num_tris = iqm->num_elements / 3;
+	tris = malloc (num_tris * sizeof (mtriangle_t));
+	for (i = 0; i < num_tris; i++) {
+		tris[i].facesfront = 1;
+		VectorCopy (iqm->elements + i * 3, tris[i].vertindex);
+	}
+	free (iqm->elements);
+	iqm->elements = (uint16_t *) tris;
+}
+
 void
 sw_Mod_IQMFinish (model_t *mod)
 {
@@ -189,4 +206,5 @@ sw_Mod_IQMFinish (model_t *mod)
 			sw->bindices = &iqm->vertexarrays[i];
 	}
 	sw_iqm_load_textures (iqm);
+	sw_iqm_convert_tris (iqm);
 }
