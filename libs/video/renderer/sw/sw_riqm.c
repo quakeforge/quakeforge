@@ -89,10 +89,13 @@ R_IQMTransformAndProjectFinalVerts (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 		int32_t    *texcoord = (int32_t *) (vert + sw->texcoord->offset);
 		vec3_t      tv;
 		Mat4MultVec (mat, position, tv);
-		zi = 1.0 / tv[2];
+		zi = 1.0 / (DotProduct (tv, aliastransform[2])
+					+ aliastransform[2][3]);
 		fv->v[5] = zi;
-		fv->v[0] = tv[0] * zi + aliasxcenter;
-		fv->v[1] = tv[1] * zi + aliasxcenter;
+		fv->v[0] = (DotProduct (tv, aliastransform[0])
+					+ aliastransform[0][3]) * zi + aliasxcenter;
+		fv->v[1] = (DotProduct (tv, aliastransform[1])
+					+ aliastransform[1][3]) * zi + aliasxcenter;
 		fv->v[2] = texcoord[0];
 		fv->v[3] = texcoord[1];
 		fv->v[4] = calc_light (normal);
@@ -160,8 +163,11 @@ R_IQMPreparePoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 		float      *position = (float *) (vert + sw->position->offset);
 		float      *normal = (float *) (vert + sw->normal->offset);
 		int32_t    *texcoord = (int32_t *) (vert + sw->texcoord->offset);
-
-		Mat4MultVec (mat, position, av->fv);
+		vec3_t      tv;
+		Mat4MultVec (mat, position, tv);
+		av->fv[0] = DotProduct (tv, aliastransform[0]) + aliastransform[0][3];
+		av->fv[1] = DotProduct (tv, aliastransform[1]) + aliastransform[1][3];
+		av->fv[2] = DotProduct (tv, aliastransform[2]) + aliastransform[2][3];
 		fv->v[2] = texcoord[0];
 		fv->v[3] = texcoord[1];
 		fv->flags = 0;
@@ -196,29 +202,6 @@ R_IQMPreparePoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 			}
 		}
 	}
-}
-
-// NOTE: in1 is row major but in2 is column major
-// WARNING: will NOT work if in2 and out are the same location
-static void
-iqm_concat_transforms (float in1[3][4], const mat4_t in2, mat4_t out)
-{
-	out[0]  = DotProduct (in1[0], in2 + 0);
-	out[1]  = DotProduct (in1[1], in2 + 0);
-	out[2]  = DotProduct (in1[2], in2 + 0);
-	out[3]  = 0;
-	out[4]  = DotProduct (in1[0], in2 + 4);
-	out[5]  = DotProduct (in1[1], in2 + 4);
-	out[6]  = DotProduct (in1[2], in2 + 4);
-	out[7]  = 0;
-	out[8]  = DotProduct (in1[0], in2 + 8);
-	out[9]  = DotProduct (in1[1], in2 + 8);
-	out[10] = DotProduct (in1[2], in2 + 8);
-	out[11] = 0;
-	out[12] = DotProduct (in1[0], in2 + 12) + in1[0][3];
-	out[13] = DotProduct (in1[1], in2 + 12) + in1[1][3];
-	out[14] = DotProduct (in1[2], in2 + 12) + in1[2][3];
-	out[15] = 1;
 }
 
 static void
@@ -259,37 +242,20 @@ R_IQMDrawModel (alight_t *plighting)
 	int         size;
 	float       blend;
 	iqmframe_t *frame;
-	int         i, j;
 
-	size = (sw->palette_size - iqm->num_joints) * sizeof (iqmframe_t);
-	size += (CACHE_SIZE - 1)
+	size = (CACHE_SIZE - 1)
 		+ sizeof (finalvert_t) * (iqm->num_verts + 1)
 		+ sizeof (auxvert_t) * iqm->num_verts;
 	blend = R_IQMGetLerpedFrames (ent, iqm);
-	frame = R_IQMBlendFrames (iqm, ent->pose1, ent->pose2, blend, size);
+	frame = R_IQMBlendPalette (iqm, ent->pose1, ent->pose2, blend, size,
+							   sw->blend_palette, sw->palette_size);
+
 	pfinalverts = (finalvert_t *) &frame[sw->palette_size];
 	pfinalverts = (finalvert_t *)
 		(((intptr_t) &pfinalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = (auxvert_t *) &pfinalverts[iqm->num_verts + 1];
 	
 	R_AliasSetUpTransform (ent->trivial_accept);
-
-	for (i = iqm->num_joints; i < sw->palette_size; i++) {
-		vec_t      *mat = (vec_t *) &frame[i];
-		mat4_t      tmat;
-		iqmblend_t *blend = &sw->blend_palette[i];
-		vec_t      *f;
-
-		f = (vec_t *) &frame[blend->indices[0]];
-		Mat4Scale (f, blend->weights[0] / 255.0, tmat);
-		for (j = 1; j < 4; j++) {
-			if (!blend->weights[j])
-				break;
-			f = (vec_t *) &frame[blend->indices[j]];
-			Mat4MultAdd (tmat, blend->weights[j] / 255.0, f, tmat);
-		}
-		iqm_concat_transforms (aliastransform, tmat, mat);
-	}
 
 	R_IQMSetupLighting (ent, plighting);
 	r_affinetridesc.drawtype = (ent->trivial_accept == 3) &&

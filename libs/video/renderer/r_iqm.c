@@ -95,3 +95,29 @@ R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2, float blend,
 #endif
 	return frame;
 }
+
+iqmframe_t *
+R_IQMBlendPalette (const iqm_t *iqm, int frame1, int frame2, float blend,
+				   int extra, iqmblend_t *blend_palette, int palette_size)
+{
+	iqmframe_t *frame;
+	int         i, j;
+
+	extra += (palette_size - iqm->num_joints) * sizeof (iqmframe_t);
+	frame = R_IQMBlendFrames (iqm, frame1, frame2, blend, extra);
+	for (i = iqm->num_joints; i < palette_size; i++) {
+		vec_t      *mat = (vec_t *) &frame[i];
+		iqmblend_t *blend = &blend_palette[i];
+		vec_t      *f;
+
+		f = (vec_t *) &frame[blend->indices[0]];
+		Mat4Scale (f, blend->weights[0] / 255.0, mat);
+		for (j = 1; j < 4; j++) {
+			if (!blend->weights[j])
+				break;
+			f = (vec_t *) &frame[blend->indices[j]];
+			Mat4MultAdd (mat, blend->weights[j] / 255.0, f, mat);
+		}
+	}
+	return frame;
+}

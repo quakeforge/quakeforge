@@ -168,6 +168,9 @@ float R_AliasGetLerpedFrames (entity_t *ent, aliashdr_t *hdr);
 float R_IQMGetLerpedFrames (entity_t *ent, iqm_t *hdr);
 iqmframe_t *R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2,
 							  float blend, int extra);
+iqmframe_t *R_IQMBlendPalette (const iqm_t *iqm, int frame1, int frame2,
+							   float blend, int extra,
+							   iqmblend_t *blend_palette, int palette_size);
 float R_EntityBlend (entity_t *ent, int pose, float interval);
 void R_BeginEdgeFrame (void);
 void R_ScanEdges (void);

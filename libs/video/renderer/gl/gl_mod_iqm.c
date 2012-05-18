@@ -93,29 +93,14 @@ gl_R_DrawIQMModel (entity_t *ent)
 	model_t    *model = ent->model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	gliqm_t    *gl = (gliqm_t *) iqm->extra_data;
-	int         data_size;
 	float       blend;
 	iqmframe_t *frame;
-	int         i, j;
+	int         i;
 
 	model = ent->model;
-	data_size = (gl->palette_size - iqm->num_joints) * sizeof (iqmframe_t);
 	blend = R_IQMGetLerpedFrames (ent, iqm);
-	frame = R_IQMBlendFrames (iqm, ent->pose1, ent->pose2, blend, data_size);
-	for (i = iqm->num_joints; i < gl->palette_size; i++) {
-		vec_t      *mat = (vec_t *) &frame[i];
-		iqmblend_t *blend = &gl->blend_palette[i];
-		vec_t      *f;
-
-		f = (vec_t *) &frame[blend->indices[0]];
-		Mat4Scale (f, blend->weights[0] / 255.0, mat);
-		for (j = 1; j < 4; j++) {
-			if (!blend->weights[j])
-				break;
-			f = (vec_t *) &frame[blend->indices[j]];
-			Mat4MultAdd (mat, blend->weights[j] / 255.0, f, mat);
-		}
-	}
+	frame = R_IQMBlendPalette (iqm, ent->pose1, ent->pose2, blend, 0,
+							   gl->blend_palette, gl->palette_size);
 
 	qfglPushMatrix ();
 	gl_R_RotateForEntity (ent);
