@@ -106,9 +106,7 @@ static void
 iqm_setup_skin (swiqm_t *sw, int skinnum)
 {
 	tex_t      *skin = sw->skins[skinnum];
-	static maliasskindesc_t skindesc = {0, 0, 0, 0};
 
-	r_affinetridesc.pskindesc = &skindesc;
 	r_affinetridesc.pskin = skin->data;
 	r_affinetridesc.skinwidth = skin->width;
 	r_affinetridesc.skinheight = skin->height;

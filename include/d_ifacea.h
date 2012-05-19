@@ -94,15 +94,14 @@
 // affinetridesc_t structure
 // !!! if this is changed, it must be changed in d_iface.h too !!!
 #define atd_pskin			0
-#define atd_pskindesc		4
-#define atd_skinwidth		8
-#define atd_skinheight		12
-#define atd_ptriangles		16
-#define atd_pfinalverts		20
-#define atd_numtriangles	24
-#define atd_drawtype		28
-#define atd_seamfixupX16	32
-#define atd_size			36
+#define atd_skinwidth		4
+#define atd_skinheight		8
+#define atd_ptriangles		12
+#define atd_pfinalverts		16
+#define atd_numtriangles	20
+#define atd_drawtype		24
+#define atd_seamfixupX16	28
+#define atd_size			32
 
 #endif // _D_IFACE_H
 

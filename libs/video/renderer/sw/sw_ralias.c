@@ -553,7 +553,6 @@ R_AliasSetupSkin (void)
 
 	a_skinwidth = pmdl->skinwidth;
 
-	r_affinetridesc.pskindesc = pskindesc;
 	r_affinetridesc.pskin = (void *) ((byte *) paliashdr + pskindesc->skin);
 	r_affinetridesc.skinwidth = a_skinwidth;
 	r_affinetridesc.seamfixupX16 = (a_skinwidth >> 1) << 16;

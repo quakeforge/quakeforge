@@ -109,7 +109,6 @@ typedef struct finalvert_s {
 typedef struct
 {
 	void				*pskin;
-	maliasskindesc_t	*pskindesc;
 	int					skinwidth;
 	int					skinheight;
 	mtriangle_t			*ptriangles;
