@@ -139,7 +139,12 @@ sw_iqm_load_textures (iqm_t *iqm)
 	dstring_t  *str = dstring_new ();
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
 	tex_t      *tex;
+	byte       *done_verts;
+	int         bytes;
 
+	bytes = (iqm->num_verts + 7) / 8;
+	done_verts = alloca (bytes);
+	memset (done_verts, 0, bytes);
 	sw->skins = malloc (iqm->num_meshes * sizeof (tex_t));
 	for (i = 0; i < iqm->num_meshes; i++) {
 		for (j = 0; j < i; j++) {
@@ -153,14 +158,19 @@ sw_iqm_load_textures (iqm_t *iqm)
 		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
 		if ((tex = LoadImage (va ("textures/%s", str->str))))
-			sw->skins[i] = convert_tex (tex);
+			tex = sw->skins[i] = convert_tex (tex);
 		else
-			sw->skins[i] = &null_texture;
+			tex = sw->skins[i] = &null_texture;
 		for (j = 0; j < (int) iqm->meshes[i].num_triangles * 3; j++) {
 			int         ind = iqm->meshes[i].first_triangle * 3 + j;
 			int         vind = iqm->elements[ind];
 			byte       *vert = iqm->vertices + iqm->stride * vind;
 			byte       *tc = vert + sw->texcoord->offset;
+
+			if (done_verts[vind / 8] & (1 << (vind % 8)))
+				continue;
+			done_verts[vind / 8] |= (1 << (vind % 8));
+
 			*(int32_t *) (tc + 0) = *(float *) (tc + 0) * tex->width;
 			*(int32_t *) (tc + 4) = *(float *) (tc + 4) * tex->height;
 		}
