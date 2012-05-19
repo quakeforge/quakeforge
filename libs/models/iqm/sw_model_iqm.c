@@ -171,8 +171,8 @@ sw_iqm_load_textures (iqm_t *iqm)
 				continue;
 			done_verts[vind / 8] |= (1 << (vind % 8));
 
-			*(int32_t *) (tc + 0) = *(float *) (tc + 0) * tex->width;
-			*(int32_t *) (tc + 4) = *(float *) (tc + 4) * tex->height;
+			*(int32_t *) (tc + 0) = *(float *) (tc + 0) * (tex->width - 1);
+			*(int32_t *) (tc + 4) = *(float *) (tc + 4) * (tex->height - 1);
 		}
 	}
 	dstring_delete (str);
