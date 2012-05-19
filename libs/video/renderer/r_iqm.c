@@ -53,6 +53,8 @@ R_IQMGetLerpedFrames (entity_t *ent, iqm_t *iqm)
 	float       time, fullinterval;
 	iqmanim    *anim;
 
+	if (!iqm->num_anims)
+		return R_EntityBlend (ent, 0, 1.0 / 25.0);
 	if (frame >= iqm->num_anims || frame < 0) {
 		Sys_MaskPrintf (SYS_DEV, "R_IQMGetLerpedFrames: no such frame %d\n",
 						frame);
@@ -63,7 +65,7 @@ R_IQMGetLerpedFrames (entity_t *ent, iqm_t *iqm)
 	time = vr_data.realtime + currententity->syncbase;
 	time -= ((int) (time / fullinterval)) * fullinterval;
 	frame = (int) (time * anim->framerate) + anim->first_frame;
-	return R_EntityBlend (ent, frame, anim->framerate);
+	return R_EntityBlend (ent, frame, 1.0 / anim->framerate);
 }
 
 iqmframe_t *
@@ -74,25 +76,40 @@ R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2, float blend,
 	int         i;
 
 	frame = Hunk_TempAlloc (iqm->num_joints * sizeof (iqmframe_t) + extra);
+	if (iqm->num_frames) {
 #if 0
-	for (i = 0; i < iqm->num_joints; i++) {
-		iqmframe_t *f1 = &iqm->frames[frame1][i];
-		iqmframe_t *f2 = &iqm->frames[frame2][i];
-		DualQuatBlend (f1->rt, f2->rt, blend, frame[i].rt);
-		QuatBlend (f1->shear, f2->shear, blend, frame[i].shear);
-		QuatBlend (f1->scale, f2->scale, blend, frame[i].scale);
-	}
+		for (i = 0; i < iqm->num_joints; i++) {
+			iqmframe_t *f1 = &iqm->frames[frame1][i];
+			iqmframe_t *f2 = &iqm->frames[frame2][i];
+			DualQuatBlend (f1->rt, f2->rt, blend, frame[i].rt);
+			QuatBlend (f1->shear, f2->shear, blend, frame[i].shear);
+			QuatBlend (f1->scale, f2->scale, blend, frame[i].scale);
+		}
 #else
-	for (i = 0; i < iqm->num_joints; i++) {
-		iqmframe_t *f1 = &iqm->frames[frame1][i];
-		iqmframe_t *f2 = &iqm->frames[frame2][i];
-		iqmjoint   *j = &iqm->joints[i];
-		Mat4Blend ((float *) f1, (float *) f2, blend, (float*)&frame[i]);
-		if (j->parent >= 0)
-			Mat4Mult ((float*)&frame[j->parent],
-					  (float*)&frame[i], (float*)&frame[i]);
-	}
+		for (i = 0; i < iqm->num_joints; i++) {
+			iqmframe_t *f1 = &iqm->frames[frame1][i];
+			iqmframe_t *f2 = &iqm->frames[frame2][i];
+			iqmjoint   *j = &iqm->joints[i];
+			Mat4Blend ((float *) f1, (float *) f2, blend, (float*)&frame[i]);
+			if (j->parent >= 0)
+				Mat4Mult ((float*)&frame[j->parent],
+						  (float*)&frame[i], (float*)&frame[i]);
+		}
 #endif
+	} else {
+#if 0
+		for (i = 0; i < iqm->num_joints; i++) {
+			QuatSet (1, 0, 0, 0, frame[i].rt.q0.q);
+			QuatSet (0, 0, 0, 0, frame[i].rt.qe.q);
+			QuatSet (0, 0, 0, 0, frame[i].shear);
+			QuatSet (1, 1, 1, 0, frame[i].scale);
+		}
+#else
+		for (i = 0; i < iqm->num_joints; i++) {
+			Mat4Identity ((float*)&frame[i]);
+		}
+#endif
+	}
 	return frame;
 }
 
