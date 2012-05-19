@@ -83,12 +83,12 @@ static byte
 convert_color (byte *rgb)
 {
 	//FIXME slow!
-	byte        dist[3];
+	int         dist[3];
 	int         d, bestd = 256 * 256 * 3, bestc = -1;
 	int         i;
 
 	for (i = 0; i < 256; i++) {
-		VectorSubtract (vid.basepal, rgb, dist);
+		VectorSubtract (vid.basepal + i * 3, rgb, dist);
 		d = DotProduct (dist, dist);
 		if (d < bestd) {
 			bestd = d;
