@@ -87,8 +87,9 @@ R_IQMTransformAndProjectFinalVerts (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 		float      *position = (float *) (vert + sw->position->offset);
 		float      *normal = (float *) (vert + sw->normal->offset);
 		int32_t    *texcoord = (int32_t *) (vert + sw->texcoord->offset);
-		vec3_t      tv;
+		vec3_t      tv, tn;
 		Mat4MultVec (mat, position, tv);
+		Mat4as3MultVec (mat, normal, tn);
 		zi = 1.0 / (DotProduct (tv, aliastransform[2])
 					+ aliastransform[2][3]);
 		fv->v[5] = zi;
@@ -98,7 +99,7 @@ R_IQMTransformAndProjectFinalVerts (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 					+ aliastransform[1][3]) * zi + aliasxcenter;
 		fv->v[2] = texcoord[0];
 		fv->v[3] = texcoord[1];
-		fv->v[4] = calc_light (normal);
+		fv->v[4] = calc_light (tn);
 	}
 }
 
@@ -161,15 +162,16 @@ R_IQMPreparePoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 		float      *position = (float *) (vert + sw->position->offset);
 		float      *normal = (float *) (vert + sw->normal->offset);
 		int32_t    *texcoord = (int32_t *) (vert + sw->texcoord->offset);
-		vec3_t      tv;
+		vec3_t      tv, tn;
 		Mat4MultVec (mat, position, tv);
+		Mat4as3MultVec (mat, normal, tn);
 		av->fv[0] = DotProduct (tv, aliastransform[0]) + aliastransform[0][3];
 		av->fv[1] = DotProduct (tv, aliastransform[1]) + aliastransform[1][3];
 		av->fv[2] = DotProduct (tv, aliastransform[2]) + aliastransform[2][3];
 		fv->v[2] = texcoord[0];
 		fv->v[3] = texcoord[1];
 		fv->flags = 0;
-		fv->v[4] = calc_light (normal);
+		fv->v[4] = calc_light (tn);
 		R_AliasClipAndProjectFinalVert (fv, av);
 	}
 
