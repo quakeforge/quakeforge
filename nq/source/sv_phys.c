@@ -141,7 +141,7 @@ SV_RunThink (edict_t *ent)
 
 		if (ent->free)
 			return false;
-	} while (1);
+	} while (SVfloat (ent, nextthink) >= sv.time);
 
 	return true;
 }
