@@ -80,7 +80,7 @@ CSQC_setorigin (progs_t *pr)
 	org = P_VECTOR (pr, 1);
 	VectorCopy (org, CSQCvector (e, origin));
 	
-	CS_LinkEdict (e, false);
+	//XXX CS_LinkEdict (e, false);
 }
 
 static void
