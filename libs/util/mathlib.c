@@ -920,6 +920,17 @@ Mat4MultVec (const mat4_t a, const vec3_t b, vec3_t c)
 		c[i] = a[i + 0] * tb[0] + a[i + 4] * b[1] + a[i + 8] * b[2] + a[i +12];
 }
 
+void
+Mat4as3MultVec (const mat4_t a, const vec3_t b, vec3_t c)
+{
+	int         i;
+	vec3_t      tb;
+
+	VectorCopy (b, tb);
+	for (i = 0; i < 3; i++)
+		c[i] = a[i + 0] * tb[0] + a[i + 4] * b[1] + a[i + 8] * b[2];
+}
+
 int
 Mat4Decompose (const mat4_t mat, quat_t rot, vec3_t shear, vec3_t scale,
 			   vec3_t trans)

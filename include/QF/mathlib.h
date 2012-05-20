@@ -632,6 +632,7 @@ void Mat4Transpose (const mat4_t a, mat4_t b);
 int Mat4Inverse (const mat4_t a, mat4_t b);
 void Mat4Mult (const mat4_t a, const mat4_t b, mat4_t c);
 void Mat4MultVec (const mat4_t a, const vec3_t b, vec3_t c);
+void Mat4as3MultVec (const mat4_t a, const vec3_t b, vec3_t c);
 /** Decompose a column major matrix into its component transformations.
 
 	This gives the matrix's rotation as a quaternion, shear, scale
