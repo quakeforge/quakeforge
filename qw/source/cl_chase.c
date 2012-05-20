@@ -1,7 +1,7 @@
 /*
-	cl_cam.c
+	cl_chase.c
 
-	camera support
+	chase camera support
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -28,6 +28,13 @@
 # include "config.h"
 #endif
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
 #include "QF/cvar.h"
 #include "QF/keys.h"
 #include "QF/input.h"
@@ -36,6 +43,7 @@
 #include "QF/plugin/vid_render.h"
 
 #include "chase.h"
+#include "cl_input.h"
 #include "client.h"
 #include "world.h"
 

@@ -1,7 +1,7 @@
 /*
-	cl_cam.h
+	chase.h
 
-	Client camera definitions
+	@description@
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -25,33 +25,13 @@
 
 */
 
-#ifndef _CL_CAM_H
-#define _CL_CAM_H
+#ifndef __chase_h
+#define __chase_h
 
-// since all headers are circular-protected with #ifdef _xxx_H
-// try to get them self-sufficient by including whatever other
-// headers they might need
+extern	struct cvar_s	*chase_active;
 
+void Chase_Init_Cvars (void);
+void Chase_Reset (void);
+void Chase_Update (void);
 
-#include "qw/protocol.h"
-
-#define CAM_NONE	0
-#define CAM_TRACK	1
-
-extern	int	autocam;
-extern	int	spec_track; // player# of who we are tracking
-extern	int ideal_track;
-
-void Cam_Lock (int playernum);
-int Cam_TrackNum (void);
-qboolean Cam_DrawViewModel(void);
-qboolean Cam_DrawPlayer(int playernum);
-void Cam_Track(usercmd_t *cmd);
-void Cam_FinishMove(usercmd_t *cmd);
-void Cam_Reset(void);
-void CL_Cam_Init(void);
-void CL_Cam_Init_Cvars(void);
-
-void CL_ParseEntityLump(const char *entdata);
-
-#endif // _CL_CAM_H
+#endif // __chase_h

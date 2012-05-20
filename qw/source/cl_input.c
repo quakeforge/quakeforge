@@ -47,6 +47,7 @@
 
 #include "qw/msg_ucmd.h"
 
+#include "chase.h"
 #include "cl_cam.h"
 #include "cl_demo.h"
 #include "cl_input.h"

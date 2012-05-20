@@ -1,5 +1,5 @@
 /*
-	r_view.c
+	cl_view.c
 
 	player eye positioning
 
@@ -38,6 +38,7 @@
 #include "QF/vid.h"
 
 #include "qw/bothdefs.h"
+#include "chase.h"
 #include "cl_cam.h"
 #include "cl_ents.h"
 #include "cl_main.h"
