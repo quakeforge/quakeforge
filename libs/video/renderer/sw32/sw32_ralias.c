@@ -59,7 +59,7 @@ float       sw32_r_shadelight;
 static aliashdr_t *paliashdr;
 finalvert_t *sw32_pfinalverts;
 auxvert_t  *sw32_pauxverts;
-static float sw32_ziscale;
+float sw32_ziscale;
 static model_t *pmodel;
 
 static vec3_t alias_forward, alias_right, alias_up;

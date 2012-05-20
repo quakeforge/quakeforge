@@ -376,6 +376,7 @@ R_DrawEntitiesOnList (void)
 				break;
 
 			case mod_alias:
+			case mod_iqm:
 				VectorCopy (currententity->origin, r_entorigin);
 				VectorSubtract (r_origin, r_entorigin, modelorg);
 
@@ -383,7 +384,9 @@ R_DrawEntitiesOnList (void)
 
 				// see if the bounding box lets us trivially reject, also
 				// sets trivial accept status
-				if (sw32_R_AliasCheckBBox ()) {
+				currententity->trivial_accept = 0;	//FIXME
+				if (currententity->model->type == mod_iqm//FIXME
+					|| sw32_R_AliasCheckBBox ()) {
 					// 128 instead of 255 due to clamping below
 					j = max (R_LightPoint (currententity->origin), minlight * 128);
 
@@ -409,7 +412,10 @@ R_DrawEntitiesOnList (void)
 					if (lighting.ambientlight + lighting.shadelight > 192)
 						lighting.shadelight = 192 - lighting.ambientlight;
 
-					sw32_R_AliasDrawModel (&lighting);
+					if (currententity->model->type == mod_iqm)
+						sw32_R_IQMDrawModel (&lighting);
+					else
+						sw32_R_AliasDrawModel (&lighting);
 				}
 
 				break;

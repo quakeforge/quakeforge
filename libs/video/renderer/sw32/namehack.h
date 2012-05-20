@@ -63,6 +63,7 @@
 #define R_Alias_clip_left sw32_R_Alias_clip_left
 #define R_Alias_clip_right sw32_R_Alias_clip_right
 #define R_Alias_clip_top sw32_R_Alias_clip_top
+#define R_IQMDrawModel sw32_R_IQMDrawModel
 #define R_BeginEdgeFrame sw32_R_BeginEdgeFrame
 #define R_ClearParticles sw32_R_ClearParticles
 #define R_ClearState sw32_R_ClearState
@@ -301,6 +302,7 @@ extern struct surf_s *sw32_surfaces;
 #undef R_Alias_clip_left
 #undef R_Alias_clip_right
 #undef R_Alias_clip_top
+#undef R_IQMDrawModel
 #undef R_BeginEdgeFrame
 #undef R_ClearParticles
 #undef R_ClearState
