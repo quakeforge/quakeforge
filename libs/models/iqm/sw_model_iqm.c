@@ -132,6 +132,12 @@ convert_tex (tex_t *tex)
 	return new;
 }
 
+static inline void
+convert_coord (byte *tc, int size)
+{
+	*(int32_t *) tc = (int32_t) (*(float *) tc * (size - 1)) << 16;
+}
+
 static void
 sw_iqm_load_textures (iqm_t *iqm)
 {
@@ -171,8 +177,8 @@ sw_iqm_load_textures (iqm_t *iqm)
 				continue;
 			done_verts[vind / 8] |= (1 << (vind % 8));
 
-			*(int32_t *) (tc + 0) = *(float *) (tc + 0) * (tex->width - 1);
-			*(int32_t *) (tc + 4) = *(float *) (tc + 4) * (tex->height - 1);
+			convert_coord (tc + 0, tex->width);
+			convert_coord (tc + 4, tex->height);
 		}
 	}
 	dstring_delete (str);
