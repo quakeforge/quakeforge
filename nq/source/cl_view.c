@@ -649,10 +649,13 @@ V_CalcRefdef (void)
 
 	AngleVectors (angles, forward, right, up);
 
-	for (i = 0; i < 3; i++) {
-		r_data->refdef->vieworg[i] += scr_ofsx->value * forward[i] +
-			scr_ofsy->value * right[i] +
-			scr_ofsz->value * up[i];
+	// don't allow cheats in multiplayer
+	if (cl.maxclients == 1) {
+		for (i = 0; i < 3; i++) {
+			r_data->refdef->vieworg[i] += scr_ofsx->value * forward[i] +
+				scr_ofsy->value * right[i] +
+				scr_ofsz->value * up[i];
+		}
 	}
 
 	V_BoundOffsets ();
@@ -728,13 +731,6 @@ V_RenderView (void)
 {
 	if (cls.state != ca_active)
 		return;
-
-	// don't allow cheats in multiplayer
-	if (cl.maxclients > 1) {
-		Cvar_Set (scr_ofsx, "0");
-		Cvar_Set (scr_ofsy, "0");
-		Cvar_Set (scr_ofsz, "0");
-	}
 
 	if (cl.intermission) {				// intermission / finale rendering
 		V_CalcIntermissionRefdef ();
