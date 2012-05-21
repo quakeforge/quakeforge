@@ -155,7 +155,7 @@ I_XMMS_Running (void)
 				break;
 			default:					// Parent
 				// don't need now :/
-//				xmmsPid = res;			// so we can kill it later 
+//				xmmsPid = res;			// so we can kill it later
 				break;
 		}
 		return;
@@ -181,7 +181,7 @@ I_XMMS_Stop (void)						// stop playing
 // Play
 // start it playing, (unless disabled)
 static void
-I_XMMS_Play (int track, qboolean looping)		// looping for compatability 
+I_XMMS_Play (int track, qboolean looping)		// looping for compatability
 {
 	if (!musEnabled)
 		return;
@@ -395,8 +395,8 @@ I_XMMS_Info (void) // this is untested with really long tracks, prolly works
 	title = xmms_remote_get_playlist_title (sessionNo, pos); // get track title
 	ctime = xmms_remote_get_output_time (sessionNo); // get track elapsed time
 	ttime = xmms_remote_get_playlist_time (sessionNo, pos);
-	
-	// The time returned by xmms_remote_get_output_time is in milliseconds 
+
+	// The time returned by xmms_remote_get_output_time is in milliseconds
 	// elapsed, so, divide by (60*1000) to get mins (its an int, no decimals)
 	// and divide by 1000 mod 60 to get seconds. its a byte, no decimals too.
 	cmin = ctime / 60000;

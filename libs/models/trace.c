@@ -571,7 +571,7 @@ portal_intersect (trace_t *trace, clipport_t *portal, plane_t *plane,
 		// if both ends of the box edge are on the same side (or touching) the
 		// plane, the edge does not cross the plane
 		// if only one end of the edge is touching, then we still have to
-		// check the impact point. 
+		// check the impact point.
 		if ((t1 > 0 && t2 > 0) || (t1 < 0 && t2 < 0) || (t1 == t2))
 			continue;
 		if (t1 == t2) {

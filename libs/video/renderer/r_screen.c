@@ -90,7 +90,7 @@
 		full
 */
 
-// only the refresh window will be updated unless these variables are flagged 
+// only the refresh window will be updated unless these variables are flagged
 int         scr_copytop;
 int         scr_copyeverything;
 byte       *draw_chars;					// 8*8 graphic characters FIXME location

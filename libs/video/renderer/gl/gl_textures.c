@@ -266,26 +266,26 @@ GL_ResampleTexture (unsigned int *in, int inwidth, int inheight,
 					unsigned int *out, int outwidth, int outheight)
 {
 	// Improvements here should be mirrored in build_skin_32 in gl_skin.c
-	int           i, j; 
-	unsigned int  frac, fracstep; 
-	unsigned int *inrow; 
- 
-	if (!outwidth || !outheight) 
-		return; 
-	fracstep = inwidth * 0x10000 / outwidth; 
-	for (i = 0; i < outheight; i++, out += outwidth) { 
-		inrow = in + inwidth * (i * inheight / outheight); 
-		frac = fracstep >> 1; 
-		for (j = 0; j < outwidth; j ++) { 
-			out[j] = inrow[frac >> 16]; 
-			frac += fracstep; 
-		} 
-	} 
-} 
+	int           i, j;
+	unsigned int  frac, fracstep;
+	unsigned int *inrow;
+
+	if (!outwidth || !outheight)
+		return;
+	fracstep = inwidth * 0x10000 / outwidth;
+	for (i = 0; i < outheight; i++, out += outwidth) {
+		inrow = in + inwidth * (i * inheight / outheight);
+		frac = fracstep >> 1;
+		for (j = 0; j < outwidth; j ++) {
+			out[j] = inrow[frac >> 16];
+			frac += fracstep;
+		}
+	}
+}
 
 static void
 GL_Resample8BitTexture (const unsigned char *in, int inwidth, int inheight,
-						unsigned char *out, int outwidth, int outheight) 
+						unsigned char *out, int outwidth, int outheight)
 {
 	// Improvements here should be mirrored in build_skin_8 in gl_skin.c
 	const unsigned char *inrow;
@@ -307,9 +307,9 @@ GL_Resample8BitTexture (const unsigned char *in, int inwidth, int inheight,
 
 /*
 	GL_MipMap
- 
+
 	Operates in place, quartering the size of the texture.
-*/ 
+*/
 static void
 GL_MipMap (byte *in, int width, int height)
 {
@@ -332,9 +332,9 @@ GL_MipMap (byte *in, int width, int height)
 
 /*
 	GL_MipMap8Bit
- 
+
 	Mipping for 8 bit textures
-*/ 
+*/
 static void
 GL_MipMap8Bit (byte *in, int width, int height)
 {
@@ -438,13 +438,13 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 	free (scaled);
 }
 
-/* 
-        GL_Upload8_EXT 
- 
-        If we have shared or global palettes, upload an 8-bit texture. 
-        If we don't, this function does nothing. 
-*/ 
-void 
+/*
+        GL_Upload8_EXT
+
+        If we have shared or global palettes, upload an 8-bit texture.
+        If we don't, this function does nothing.
+*/
+void
 GL_Upload8_EXT (const byte *data, int width, int height, qboolean mipmap,
 				qboolean alpha)
 {
@@ -492,7 +492,7 @@ GL_Upload8_EXT (const byte *data, int width, int height, qboolean mipmap,
 							GL_UNSIGNED_BYTE, scaled);
 		}
 	}
- 
+
 	if (mipmap) {
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
 						   gl_filter_min);

@@ -1229,7 +1229,7 @@ VISIBLE void
 QFS_GamedirCallback (gamedir_callback_t *func)
 {
 	if (num_gamedir_callbacks == max_gamedir_callbacks) {
-		size_t size = (max_gamedir_callbacks + GAMEDIR_CALLBACK_CHUNK) 
+		size_t size = (max_gamedir_callbacks + GAMEDIR_CALLBACK_CHUNK)
 					  * sizeof (gamedir_callback_t *);
 		gamedir_callbacks = realloc (gamedir_callbacks, size);
 		if (!gamedir_callbacks)
@@ -1263,7 +1263,7 @@ QFS_Init (const char *game)
 							 qfs_path_cvar,
 							 "location of shared (read-only) game "
 							 "directories");
-	fs_userpath = Cvar_Get ("fs_userpath", FS_USERPATH, CVAR_ROM, 
+	fs_userpath = Cvar_Get ("fs_userpath", FS_USERPATH, CVAR_ROM,
 							qfs_path_cvar,
 							"location of your game directories");
 	fs_dirconf = Cvar_Get ("fs_dirconf", "", CVAR_ROM, NULL,

@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -201,7 +201,7 @@ PF_colstr (progs_t *pr)
 		case COLSTR_NUMBER:
 
 			for (i = 0; i < len; i++) {
-				if (result[i] > 47 && result[i] < 58)	// is a white number 
+				if (result[i] > 47 && result[i] < 58)	// is a white number
 					result[i] -= 30;
 			}
 
@@ -210,7 +210,7 @@ PF_colstr (progs_t *pr)
 		case COLSTR_NUMBERV:
 
 			for (i = 0; i < len; i++) {
-				if (result[i] > 47 && result[i] < 58)	// is a white number 
+				if (result[i] > 47 && result[i] < 58)	// is a white number
 					result[i] += 98;
 			}
 	}

@@ -202,18 +202,18 @@ Cvar_CompleteCountPossible (const char *partial)
 	cvar_t	*cvar;
 	int		len;
 	int		h;
-	
+
 	h = 0;
 	len = strlen(partial);
-	
+
 	if (!len)
 		return	0;
-	
+
 	// Loop through the cvars and count all possible matches
 	for (cvar = cvar_vars; cvar; cvar = cvar->next)
 		if (!strncmp(partial, cvar->name, len))
 			h++;
-	
+
 	return h;
 }
 
@@ -245,7 +245,7 @@ Cvar_CompleteBuildList (const char *partial)
 
 	buf[bpos] = NULL;
 	return buf;
-}	
+}
 
 VISIBLE void
 Cvar_Set (cvar_t *var, const char *value)
@@ -640,7 +640,7 @@ Cvar_Shutdown (void)
 		free (var);
 		var = next;
 	}
-	// Free aliases 
+	// Free aliases
 	alias = calias_vars;
 	while (alias) {
 		nextalias = alias->next;

@@ -38,7 +38,7 @@ classDecl (List, Collection,
 	qboolean methodDecl (List, set, unsigned int index, Object *o);
 	Object * methodDecl (List, get, unsigned int index);
 	qboolean methodDecl (List, insertAt, unsigned int index, Object *o);
-	Object * methodDecl (List, removeAt, unsigned int index); 
+	Object * methodDecl (List, removeAt, unsigned int index);
 );
 #define LIST(o) ((List *)(o))
 

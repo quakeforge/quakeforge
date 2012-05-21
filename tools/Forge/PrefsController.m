@@ -70,7 +70,7 @@ static NSMutableArray	*prefsViews = nil;
 
 		prefsViews = [[[NSMutableArray alloc] initWithCapacity: 5] retain];
 	}
-	return sharedInstance;	
+	return sharedInstance;
 }
 
 /*

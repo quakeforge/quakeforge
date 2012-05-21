@@ -425,7 +425,7 @@ nice_time (float time)
 /*
 	SV_Map_f
 
-	handle a 
+	handle a
 	map <mapname>
 	command from the console or progs.
 */
@@ -906,7 +906,7 @@ SV_Serverinfo_f (void)
 		return;
 	}
 
-	// if this is a cvar, change it too 
+	// if this is a cvar, change it too
 	var = Cvar_FindVar (Cmd_Argv (1));
 	if (var && (var->flags & CVAR_SERVERINFO)) {
 		Cvar_Set (var, Cmd_Argv (2));
@@ -1020,7 +1020,7 @@ SV_Gamedir (void)
 		return;
 	}
 
-	Info_SetValueForStarKey (svs.info, "*gamedir", dir, 
+	Info_SetValueForStarKey (svs.info, "*gamedir", dir,
 							 !sv_highchars->int_val);
 }
 

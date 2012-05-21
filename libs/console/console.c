@@ -72,7 +72,7 @@ Con_Interp_f (cvar_t *var)
 		Sys_Printf ("Switching to interpreter '%s'\n", var->string);
 
 		new = Cbuf_New (interp);
-	
+
 		if (con_module->data->console->cbuf) {
 			new->down = con_module->data->console->cbuf;
 			new->state = CBUF_STATE_STACK;
@@ -94,7 +94,7 @@ Con_Init (const char *plugin_name)
 	} else {
 		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
 	}
-	con_interpreter = 
+	con_interpreter =
 		Cvar_Get("con_interpreter", "id", CVAR_NONE, Con_Interp_f,
 				 "Interpreter for the interactive console");
 }

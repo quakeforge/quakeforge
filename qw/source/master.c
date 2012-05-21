@@ -22,7 +22,7 @@
 		eree Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
-		
+
 */
 		/* afternoon hack (james was here.)
 		   FIXME: I coded this outside of the QF tree so it has non-quake
@@ -158,7 +158,7 @@ typedef struct {
 	qboolean	notimeout;
 } server_t;
 
-static int 
+static int
 QW_AddHeartbeat (server_t **servers_p, int slen,
 				 struct sockaddr_in *addr, const char *buf, qboolean notimeout)
 {
@@ -217,7 +217,7 @@ QW_AddHeartbeat (server_t **servers_p, int slen,
 	return slen;
 }
 
-static void 
+static void
 QW_TimeoutHearts (server_t *servers, int slen)
 {
 	time_t t;
@@ -257,7 +257,7 @@ QW_HeartShutdown (struct sockaddr_in *addr, server_t *servers,
 }
 
 static void
-QW_SendHearts (int sock, msghdr_t *msghdr, server_t *servers, int serverlen) 
+QW_SendHearts (int sock, msghdr_t *msghdr, server_t *servers, int serverlen)
 {
 	unsigned char *out;
 	int count, cpos;
@@ -307,7 +307,7 @@ QW_Pong (int sock, msghdr_t *msghdr)
 int serverlen = SLIST_MULTIPLE;
 server_t *servers;
 
-static void 
+static void
 QW_Master (struct sockaddr_in *addr)
 {
 	int sock;
@@ -330,7 +330,7 @@ QW_Master (struct sockaddr_in *addr)
 		printf ("bind failed\n");
 		return;
 	}
-   
+
 	while (1) {
 		int size;
 		char buf[31];

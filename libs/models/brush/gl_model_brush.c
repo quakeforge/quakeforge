@@ -122,7 +122,7 @@ gl_Mod_LoadExternalTextures (model_t *mod)
 			if (luma) {
 				tx->gl_fb_texturenum =
 					GL_LoadTexture (va ("fb_%s", tx->name), luma->width,
-									luma->height, luma->data, true, true, 
+									luma->height, luma->data, true, true,
 									luma->format > 2 ? luma->format : 1);
 			} else if (base->format < 3) {
 				tx->gl_fb_texturenum =

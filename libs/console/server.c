@@ -217,7 +217,7 @@ draw_output (view_t *view)
 	sv_view_t  *sv_view = view->data;
 	WINDOW     *win = sv_view->win;
 	con_buffer_t *output_buffer = sv_view->obj;
-	
+
 	// this is not the most efficient way to update the screen, but oh well
 	int         lines = view->ylen - 1; // leave a blank line
 	int         width = view->xlen;
@@ -247,7 +247,7 @@ draw_output (view_t *view)
 		if (y > 0) {
 			text += y * width;
 			len -= y * width;
-			y = 0; 
+			y = 0;
 			if (len < 1) {
 				len = 1;
 				text = l->text + l->len - 1;

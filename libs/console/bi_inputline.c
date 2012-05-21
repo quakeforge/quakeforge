@@ -280,7 +280,7 @@ bi_InputLine_SetText (progs_t *pr)
 /*
 	bi_InputLine_GetText
 
-	Gets the text from a inputline 
+	Gets the text from a inputline
 */
 static void
 bi_InputLine_GetText (progs_t *pr)

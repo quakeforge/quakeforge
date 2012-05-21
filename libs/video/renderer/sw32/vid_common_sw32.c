@@ -151,8 +151,8 @@ VID_MakeColormap16 (void *outcolormap, byte *pal)
 	{
 		for (c = 0;c < vid.fullbright;c++)
 			out[l*256+c] = lh24to16bit(
-			(pal[c*3+0] * l) >> (VID_CBITS - 1), 
-			(pal[c*3+1] * l) >> (VID_CBITS - 1), 
+			(pal[c*3+0] * l) >> (VID_CBITS - 1),
+			(pal[c*3+1] * l) >> (VID_CBITS - 1),
 			(pal[c*3+2] * l) >> (VID_CBITS - 1));
 		for (;c < 255;c++)
 			out[l*256+c] = lh24to16bit(pal[c*3+0], pal[c*3+1], pal[c*3+2]);

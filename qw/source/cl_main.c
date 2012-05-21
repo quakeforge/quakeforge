@@ -1004,7 +1004,7 @@ CL_ConnectionlessPacket (void)
 	}
 
 	Sys_Printf ("unknown:  %c\n", c);
-}		
+}
 
 void
 CL_ReadPackets (void)
@@ -1405,7 +1405,7 @@ CL_Init_Cvars (void)
 								 "Are players solid? If off, you can walk "
 								 "through them with difficulty");
 	localid = Cvar_Get ("localid", "", CVAR_NONE, NULL, "Used by "
-								 "gamespy+others to authenticate when sending " 
+								 "gamespy+others to authenticate when sending "
 								 "commands to the client");
 	// info mirrors
 	cl_name = Cvar_Get ("name", "unnamed", CVAR_ARCHIVE | CVAR_USERINFO,
@@ -1604,7 +1604,7 @@ Host_Frame (float time)
 	IN_ProcessEvents ();
 
 	// process gib threads
-	
+
 	GIB_Thread_Execute ();
 
 	// process console commands

@@ -183,7 +183,7 @@ int
 defspace_add_data (defspace_t *space, pr_type_t *data, int size)
 {
 	int         loc;
-	
+
 	loc = defspace_alloc_loc (space, size);
 	if (data)
 		memcpy (space->data + loc, data, size * sizeof (pr_type_t));

@@ -470,7 +470,7 @@ Key_Game (knum_t key, short unicode)
 	if (!kb)
 		return false;
 
-	if (keydown[key] > 1) 
+	if (keydown[key] > 1)
 		return true;
 
 	process_binding (key, kb);
@@ -723,7 +723,7 @@ Key_Bind_f (void)
 	Key_In_Bind ("imt_mod", key, cmd);
 }
 
-static void 
+static void
 Key_GIB_Bind_Get_f (void)
 {
 	const char *key, *cmd;
@@ -740,7 +740,7 @@ Key_GIB_Bind_Get_f (void)
 		GIB_Error ("bind", "bind::get: invalid key %s", key);
 		return;
 	}
-	
+
 	if (!(cmd = Key_GetBinding (IMT_MOD, k)))
 		GIB_Return ("");
 	else

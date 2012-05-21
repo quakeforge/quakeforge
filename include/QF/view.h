@@ -39,7 +39,7 @@
 /** Control the positioning of a view within its parent. The directions are
 	the standard compass rose (north, east, south, west in clockwise order)
 	with north at the top.
-	
+
 	The origin of the view is taken to be the point corresponding point on the
 	edge of the view (eg, southeast is bottom right), or the view's center for
 	center gravity. When the relative coordinates of the view are (0,0), the

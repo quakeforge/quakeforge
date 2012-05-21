@@ -207,7 +207,7 @@ try_open (int rw)
 		close (audio_fd);
 		return 0;
 	}
-    
+
 	tmp = sn.channels;
 	rc = ioctl (audio_fd, SNDCTL_DSP_CHANNELS, &tmp);
 	if (rc < 0) {

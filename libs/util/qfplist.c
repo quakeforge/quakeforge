@@ -426,7 +426,7 @@ PL_SkipSpace (pldata_t *pl)
 
 					while (pl->pos < pl->end) {
 						c = pl->ptr[pl->pos];
-						
+
 						if (c == '\n') {
 							pl->line++;
 						} else if (c == '*' && pl->pos < pl->end - 1
@@ -579,7 +579,7 @@ PL_ParseQuotedString (pldata_t *pl)
 
 		escaped = 0;
 		hex = false;
-		
+
 		for (j = start, k = 0; j < pl->pos; j++) {
 
 			char	c = pl->ptr[j];
@@ -715,7 +715,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			}
 			pl->pos++;
 
-			// If there is no value, lose the key				
+			// If there is no value, lose the key
 			if (!(value = PL_ParsePropertyListItem (pl))) {
 				PL_Free (key);
 				PL_Free (item);

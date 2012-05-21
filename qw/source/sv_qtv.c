@@ -327,7 +327,7 @@ qtv_parse (sv_qtv_t *proxy)
 	int         c, delta;
 
 	// make sure the reply sequence number matches the incoming
-	// sequence number 
+	// sequence number
 	if (proxy->netchan.incoming_sequence >= proxy->netchan.outgoing_sequence) {
 		proxy->netchan.outgoing_sequence = proxy->netchan.incoming_sequence;
 		proxy->packet = true;

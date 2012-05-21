@@ -179,7 +179,7 @@ main (int argc, char **argv)
 
 	this_program = argv[0];
 
-	DecodeArgs (argc, argv);	
+	DecodeArgs (argc, argv);
 
 	if (!bspfile) {
 		fprintf (stderr, "%s: no bsp file specified.\n", this_program);
@@ -224,7 +224,7 @@ main (int argc, char **argv)
 	Qclose (f);
 
 	stop = Sys_DoubleTime ();
-	
+
 	if (options.verbosity >= 0)
 		printf ("%5.1f seconds elapsed\n", stop - start);
 

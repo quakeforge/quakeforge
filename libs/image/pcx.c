@@ -178,7 +178,7 @@ EncodePCX (byte * data, int width, int height,
 	for (i = 0; i < height; i++) {
 		// from darkplaces lmp2pcx
 		for (dataend = data + width; data < dataend; /* empty */) {
-			for (pix = *data++, run = 0xC1; 
+			for (pix = *data++, run = 0xC1;
 				 data < dataend && run < 0xFF && *data == pix;
 				 data++, run++)
 				/* empty */;
@@ -200,7 +200,7 @@ EncodePCX (byte * data, int width, int height,
 	for (i = 0; i < 768; i++)
 		*pack++ = *palette++;
 
-	// write output file 
+	// write output file
 	*length = pack - (byte *) pcx;
 	return pcx;
 }

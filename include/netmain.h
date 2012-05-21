@@ -170,7 +170,7 @@ typedef struct qsocket_s {
 	qboolean		canSend;			///< Socket can send a message.
 	qboolean		sendNext;
 	//@}
-	
+
 	/// \name socket drivers
 	//@{
 	int				driver;				///< Net driver used by this socket.

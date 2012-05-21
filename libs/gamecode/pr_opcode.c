@@ -855,7 +855,7 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 ev_float, ev_float, ev_integer,
 	 PROG_ID_VERSION,
 	},
-	{"||", "or.f", OP_OR, false, 
+	{"||", "or.f", OP_OR, false,
 	 ev_float, ev_float, ev_integer,
 	 PROG_ID_VERSION,
 	},
@@ -1086,7 +1086,7 @@ static inline void
 check_branch (progs_t *pr, dstatement_t *st, opcode_t *op, short offset)
 {
 	pr_int_t    address = st - pr->pr_statements;
-	
+
 	address += offset;
 	if (address < 0 || (pr_uint_t) address >= pr->progs->numstatements)
 		PR_Error (pr, "PR_Check_Opcodes: invalid branch (statement %ld: %s)",

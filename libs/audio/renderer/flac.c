@@ -312,7 +312,7 @@ flac_callback_load (void *object, cache_allocator_t allocator)
 	flacfile_t *ff;
 
 	sfxblock_t *block = (sfxblock_t *) object;
-	
+
 	QFS_FOpenFile (block->file, &file);
 	if (!file)
 		return; //FIXME Sys_Error?

@@ -296,7 +296,7 @@ GIB_Execute (cbuf_t * cbuf)
 							g->reply.obj, i - 2, mesg,
 							GIB_Buffer_Reply_Callback,
 							cbuf) : GIB_Send (obj,
-							g->reply.obj, i - 2, mesg, 
+							g->reply.obj, i - 2, mesg,
 							GIB_Buffer_Reply_Callback,
 							cbuf);
 				} else {
@@ -304,8 +304,8 @@ GIB_Execute (cbuf_t * cbuf)
 					i = super ? GIB_SendToMethod (obj,
 							g->reply.method->parent,
 							g->reply.obj, i - 2, mesg,
-							NULL, NULL) : 
-							GIB_Send (obj,g->reply.obj, 
+							NULL, NULL) :
+							GIB_Send (obj,g->reply.obj,
 							i - 2, mesg, NULL,
 							NULL);
 				}
@@ -338,7 +338,7 @@ GIB_Execute (cbuf_t * cbuf)
 						if (GIB_Function_Execute_D
 								(new, f,
 								 cbuf->args->argv,
-								 cbuf->args->argc))	
+								 cbuf->args->argc))
 							GIB_Error ("syntax", "not "
 									"enough "
 									"arguments to "

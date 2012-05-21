@@ -77,7 +77,7 @@ typedef struct edge_extra_t {
 	long        ref_faces[MAX_REF_FACES];	// which faces are referenced
 	dvertex_t   ref_faces_normal[MAX_REF_FACES];	// normal of referenced
 													// faces
-	int         ref_faces_area[MAX_REF_FACES];	// area of the referenced faces 
+	int         ref_faces_area[MAX_REF_FACES];	// area of the referenced faces
 } edge_extra_t;
 
 typedef unsigned char eightbit;
@@ -667,7 +667,7 @@ render_map (bsp_t *bsp)
 				vertexlist[i].Z = tempf;
 				break;
 
-			case -2:					/* -Y -- (+x <--> -x; -y out of screen, 
+			case -2:					/* -Y -- (+x <--> -x; -y out of screen,
 										   +z up) */
 				vertexlist[i].X = -vertexlist[i].X;
 				tempf = vertexlist[i].Z;
@@ -675,14 +675,14 @@ render_map (bsp_t *bsp)
 				vertexlist[i].Y = tempf;;
 				break;
 
-			case 2:					/* +Y -- (-x <--> +x; +y out of screen, 
+			case 2:					/* +Y -- (-x <--> +x; +y out of screen,
 										   +z up) */
 				tempf = vertexlist[i].Z;
 				vertexlist[i].Z = -vertexlist[i].Y;
 				vertexlist[i].Y = tempf;;
 				break;
 
-			case -3:					/* -Z -- negate X and Z (ie. 180 rotate 
+			case -3:					/* -Z -- negate X and Z (ie. 180 rotate
 										   along Y axis) */
 				vertexlist[i].X = -vertexlist[i].X;
 				vertexlist[i].Z = -vertexlist[i].Z;

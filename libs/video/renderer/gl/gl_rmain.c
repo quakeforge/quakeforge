@@ -208,7 +208,7 @@ R_DrawEntitiesOnList (void)
 	if (gl_tess)
 		qfglEnable (GL_PN_TRIANGLES_ATI);
 	qfglEnable (GL_CULL_FACE);
-	
+
 	if (gl_vector_light->int_val) {
 		qfglEnable (GL_LIGHTING);
 		qfglEnable (GL_NORMALIZE);
@@ -224,7 +224,7 @@ R_DrawEntitiesOnList (void)
 		gl_R_DrawAliasModel (currententity);
 	}
 	qfglColor3ubv (color_white);
-	
+
 	qfglDisable (GL_NORMALIZE);
 	qfglDisable (GL_LIGHTING);
 
@@ -323,11 +323,11 @@ R_DrawViewModel (void)
 	}
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
-	
+
 	qfglDisable (GL_NORMALIZE);
 	qfglDisable (GL_LIGHTING);
 
-	
+
 	qfglDisable (GL_CULL_FACE);
 	qfglDepthRange (gldepthmin, gldepthmax);
 }

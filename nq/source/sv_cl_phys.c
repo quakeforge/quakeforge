@@ -297,7 +297,7 @@ SV_WalkMove (edict_t *ent)
 	} else {
 		// if the push down didn't end up on good ground, use the move without
 		// the step up.  This happens near wall / slope combinations, and can
-		// cause the player to hop up higher on a slope too steep to climb  
+		// cause the player to hop up higher on a slope too steep to climb
 		VectorCopy (nosteporg, SVvector (ent, origin));
 		VectorCopy (nostepvel, SVvector (ent, velocity));
 	}

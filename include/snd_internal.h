@@ -246,7 +246,7 @@ extern portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 	\param info
 	\param loader
 */
-void SND_SFX_Cache (sfx_t *sfx, char *realname, wavinfo_t info, 
+void SND_SFX_Cache (sfx_t *sfx, char *realname, wavinfo_t info,
 		            cache_loader_t loader);
 
 /** Stream sound data. Initializes streaming fields of sfx.
@@ -255,7 +255,7 @@ void SND_SFX_Cache (sfx_t *sfx, char *realname, wavinfo_t info,
 	\param info
 	\param open
 */
-void SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info, 
+void SND_SFX_Stream (sfx_t *sfx, char *realname, wavinfo_t info,
 					 sfx_t *(*open) (sfx_t *sfx));
 
 /** Open a stream for playback.

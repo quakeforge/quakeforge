@@ -277,7 +277,7 @@ VID_SetMode (unsigned char *palette)
 		stat = VID_SetFullDIBMode ();
 		IN_ActivateMouse ();
 		IN_HideMouse ();
-	} 
+	}
 
 	VID_UpdateWindowStatus (window_x, window_y);
 
@@ -422,7 +422,7 @@ bSetupPixelFormat (HDC hDC)
 	int		pixelformat;
 
 	memset (&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
-	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR); 
+	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
 	pfd.nVersion = 1;
 	pfd.dwFlags = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW;
 	pfd.iPixelType = PFD_TYPE_RGBA;
@@ -454,7 +454,7 @@ VID_Init (byte *palette, byte *colormap)
 	DWORD		lasterror;
 	WNDCLASS	wc;
 
-	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ROM | CVAR_ARCHIVE, 
+	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ROM | CVAR_ARCHIVE,
 							   NULL, "Run WGL client at fullscreen");
 	GLF_Init ();
 
@@ -520,8 +520,8 @@ VID_Init (byte *palette, byte *colormap)
 					== DISP_CHANGE_SUCCESSFUL) {
 					break;
 				}
-			}	
-		
+			}
+
 			vid_mode++;
 		} while (stat);
 		if (!stat)

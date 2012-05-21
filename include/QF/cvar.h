@@ -42,7 +42,7 @@ typedef struct cvar_s {
 	const char *default_string;	///< The default value of the cvar.
 	int	        flags;			///< Cvar flags
 	/** Callback for when the cvar value changes.
-	
+
 		This allows for more flexibility in what happens when a cvar is
 		nodifed than can be achieved with flags alone. While a similar could
 		be done using commands, a cvar with a callback and CVAR_ARCHIVE set

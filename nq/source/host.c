@@ -655,7 +655,7 @@ _Host_Frame (float time)
 		if (cl_usleep_cache && sleeptime > 0.002) // minimum sleep time
 			usleep ((unsigned long) (sleeptime * 1000000 / 2));
 #endif
-		return;					
+		return;
 	}
 
 	if (cls.state != ca_dedicated)

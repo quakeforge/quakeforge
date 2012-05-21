@@ -296,7 +296,7 @@ run_test (test_t *test)
 				  test->start[0], test->start[1], test->start[2],
 				  test->end[0], test->end[1], test->end[2],
 				  end[0], end[1], end[2],
-				  test->expect.frac, 
+				  test->expect.frac,
 				  test->expect.allsolid, test->expect.startsolid,
 				  test->expect.inopen, test->expect.inwater);
 	trace_t trace = do_trace (test->box, test->hull, test->start, test->end);
@@ -305,7 +305,7 @@ run_test (test_t *test)
 			   test->start[0], test->start[1], test->start[2],
 			   test->end[0], test->end[1], test->end[2],
 			   trace.endpos[0], trace.endpos[1], trace.endpos[2],
-			   trace.fraction, 
+			   trace.fraction,
 			   trace.allsolid, trace.startsolid,
 			   trace.inopen, trace.inwater);
 	if (!(VectorCompare (end, trace.endpos)

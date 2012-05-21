@@ -1,11 +1,11 @@
 /*
 	gl_stub.c
-	
+
 	Dummy glXGetProcAddressARB function
 
 	Copyright (C)2001 Bill Currie <bill@taniwha.org>
 	Copyright (C)2002 Chris Ison wildcode@users.sourceforge.net
-	
+
 	This file is part of Quakeforge and lib3Dfxgl.
 
 	Quakeforge and lib3Dfxgl are free software; you can redistribute them
@@ -16,12 +16,12 @@
 	Quakeforge and lib3Dfxgl are distributed in the hope that they will be
 	useful,	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-	
+
 	See the	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
 	along with Quakeforge and lib3Dfxgl; if not, write to:
-	
+
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA

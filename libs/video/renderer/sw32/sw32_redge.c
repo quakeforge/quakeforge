@@ -218,7 +218,7 @@ sw32_R_StepActiveU (edge_t *pedge)
 		if (pedge == &edge_aftertail)
 			return;
 
-		// push it back to keep it sorted       
+		// push it back to keep it sorted
 		pnext_edge = pedge->next;
 
 		// pull the edge out of the edge list
@@ -436,7 +436,7 @@ sw32_R_GenerateSpans (void)
 /*
 	R_ScanEdges
 
-	Input: 
+	Input:
 	sw32_newedges[] array
 		this has links to edges, which have links to surfaces
 

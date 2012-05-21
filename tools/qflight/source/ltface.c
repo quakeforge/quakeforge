@@ -100,13 +100,13 @@ CalcFaceVectors (lightinfo_t *l, vec3_t faceorg)
 		for (j = 0; j < 3; j++)
 			l->worldtotex[i][j] = tex->vecs[i][j];
 
-	// calculate a normal to the texture axis.  points can 
+	// calculate a normal to the texture axis.  points can
 	// be moved along this without changing their S/T
-	texnormal[0] = tex->vecs[1][1] * tex->vecs[0][2] - 
+	texnormal[0] = tex->vecs[1][1] * tex->vecs[0][2] -
 		tex->vecs[1][2] * tex->vecs[0][1];
-	texnormal[1] = tex->vecs[1][2] * tex->vecs[0][0] - 
+	texnormal[1] = tex->vecs[1][2] * tex->vecs[0][0] -
 		tex->vecs[1][0] * tex->vecs[0][2];
-	texnormal[2] = tex->vecs[1][0] * tex->vecs[0][1] - 
+	texnormal[2] = tex->vecs[1][0] * tex->vecs[0][1] -
 		tex->vecs[1][1] * tex->vecs[0][0];
 	VectorNormalize (texnormal);
 
@@ -118,8 +118,8 @@ CalcFaceVectors (lightinfo_t *l, vec3_t faceorg)
 		distscale = -distscale;
 		VectorNegate (texnormal, texnormal);
 	}
-	
-	// distscale is the ratio of the distance along the 
+
+	// distscale is the ratio of the distance along the
 	// texture normal to the distance along the plane normal
 	distscale = 1 / distscale;
 
@@ -134,7 +134,7 @@ CalcFaceVectors (lightinfo_t *l, vec3_t faceorg)
 
 	// calculate texorg on the texture plane
 	for (i = 0; i < 3; i++)
-		l->texorg[i] = -tex->vecs[0][3] * l->textoworld[0][i] - 
+		l->texorg[i] = -tex->vecs[0][3] * l->textoworld[0][i] -
 						tex->vecs[1][3] * l->textoworld[1][i];
 
 	VectorAdd (l->texorg, faceorg, l->texorg);
@@ -224,8 +224,8 @@ CalcPoints (lightinfo_t *l)
 	midt = (l->exactmaxs[1] + l->exactmins[1]) / 2;
 
 	for (j = 0; j < 3; j++)
-		facemid[j] = l->texorg[j] + 
-			l->textoworld[0][j] * mids + 
+		facemid[j] = l->texorg[j] +
+			l->textoworld[0][j] * mids +
 			l->textoworld[1][j] * midt;
 
 	realw = l->texsize[0];
@@ -254,7 +254,7 @@ CalcPoints (lightinfo_t *l)
 
 			// calculate texture point
 			for (j = 0; j < 3; j++)
-				point->v[j] = l->texorg[j] + 
+				point->v[j] = l->texorg[j] +
 					l->textoworld[0][j] * us + l->textoworld[1][j] * ut;
 
 			if (!TestLine (l, facemid, point->v)) {
@@ -263,7 +263,7 @@ CalcPoints (lightinfo_t *l)
 				VectorNormalize(v);
 				VectorMultAdd (point->v, 0.25, v, point->v);
 			}
-		}	
+		}
 	}
 }
 
@@ -516,7 +516,7 @@ LightFace (lightinfo_t *l, int surfnum)
 		// no light styles
 		return;
 	}
-   
+
 	// save out the values
 	for (i = 0; i < MAXLIGHTMAPS; i++)
 		f->styles[i] = l->lightstyles[i];

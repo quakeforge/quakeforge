@@ -91,8 +91,8 @@ GIB_Signal_Free (void *ele, void *ptr)
 {
 	gib_signal_t *sig;
 	gib_slot_t *slot;
-	
-	sig = (gib_signal_t *) ele;	
+
+	sig = (gib_signal_t *) ele;
 	slot = llist_remove (llist_getnode (sig->receiver->slots,
 				sig->slot));
 
@@ -136,10 +136,10 @@ GIB_Method_Build_Hash (gib_class_t *class, hashtab_t *inherited,
 		method->class = class;
 		Hash_Add (new, method);
 	}
-	
+
 	if (inherited) {
 		void **list, **l;
-		
+
 		for (l = list = Hash_GetList (inherited); *l; l++)
 			if (!Hash_Find (new, GIB_Method_Get_Key (*l, NULL)))
 				Hash_Add (new, *l);
@@ -172,7 +172,7 @@ GIB_Class_Create (gib_classdesc_t *desc)
 	class->class_methods = GIB_Method_Build_Hash (class, parent ?
 			parent->class_methods : NULL, desc->class_methods);
 	class->children = llist_new (NULL, NULL, NULL);
-	
+
 	Hash_Add (gib_classes, class);
 
 	// Create a class object
@@ -209,7 +209,7 @@ GIB_Object_Create (const char *classname, qboolean classobj)
 	obj->signals = Hash_NewTable (128, GIB_Signal_Get_Key,
 			GIB_Signal_Free, NULL);
 	obj->slots = llist_new (GIB_Slot_Free, NULL, NULL);
-	
+
 	if (classobj) {
 		for (temp = class, i = class->depth; temp; temp = temp->parent, i--)
 			if (temp->class_construct)
@@ -279,7 +279,7 @@ GIB_Send (gib_object_t *obj, gib_object_t *sender, int argc, const char
 
 	if (!(method = Hash_Find (obj->methods, *argv)))
 		return -1;
-	
+
 	message.argc = argc;
 	message.argv = argv;
 	message.reply = reply;
@@ -287,7 +287,7 @@ GIB_Send (gib_object_t *obj, gib_object_t *sender, int argc, const char
 
 	if (reply)
 		GIB_Object_Incref (obj);
-	
+
 	return method->func (obj, method, obj->data[method->class->depth],
 			sender, message);
 }
@@ -298,7 +298,7 @@ GIB_SendToMethod (gib_object_t *obj, gib_method_t *method, gib_object_t
 		void *replydata)
 {
 	gib_message_t message;
-	
+
 	message.argc = argc;
 	message.argv = argv;
 	message.reply = reply;
@@ -306,7 +306,7 @@ GIB_SendToMethod (gib_object_t *obj, gib_method_t *method, gib_object_t
 
 	if (reply)
 		GIB_Object_Incref (obj);
-	
+
 	return method->func (obj, method, obj->data[method->class->depth],
 			sender, message);
 }
@@ -378,7 +378,7 @@ GIB_Object_Signal_Emit (gib_object_t *sender, int argc, const char **argv)
 {
 	gib_signal_t **list, **cur;
 	const char *old = *argv;
-	
+
 	if ((list = (gib_signal_t **) Hash_FindList (sender->signals, *argv))) {
 		for (cur = list; *cur; cur++) {
 			*argv = (*cur)->slot->mesg;

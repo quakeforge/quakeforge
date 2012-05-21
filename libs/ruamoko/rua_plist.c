@@ -109,7 +109,7 @@ plist_handle (plist_resources_t *res, plitem_t *plitem)
 {
 	bi_plist_t  dummy = {0, 0, plitem, 0};
 	bi_plist_t *plist = Hash_FindElement (res->plist_tab, &dummy);
-	
+
 	if (plist)
 		return plist_index (res, plist);
 
@@ -193,8 +193,8 @@ bi_PL_GetFromFile (progs_t *pr)
 	Qread (file, buf, len);
 	buf[len] = 0;
 
-	plitem = PL_GetPropertyList (buf);	
-	
+	plitem = PL_GetPropertyList (buf);
+
 	R_INT (pr) = plist_retain (res, plitem);
 }
 
@@ -202,8 +202,8 @@ static void
 bi_PL_GetPropertyList (progs_t *pr)
 {
 	plist_resources_t *res = PR_Resources_Find (pr, "plist");
-	plitem_t   *plitem = PL_GetPropertyList (P_GSTRING (pr, 0));	
-	
+	plitem_t   *plitem = PL_GetPropertyList (P_GSTRING (pr, 0));
+
 	R_INT (pr) = plist_retain (res, plitem);
 }
 
@@ -363,7 +363,7 @@ bi_PL_NewDictionary (progs_t *pr)
 {
 	plist_resources_t *res = PR_Resources_Find (pr, "plist");
 	plitem_t   *plitem = PL_NewDictionary ();
-	
+
 	R_INT (pr) = plist_retain (res, plitem);
 }
 
@@ -372,7 +372,7 @@ bi_PL_NewArray (progs_t *pr)
 {
 	plist_resources_t *res = PR_Resources_Find (pr, "plist");
 	plitem_t   *plitem = PL_NewArray ();
-	
+
 	R_INT (pr) = plist_retain (res, plitem);
 }
 
@@ -382,7 +382,7 @@ bi_PL_NewData (progs_t *pr)
 	//FIXME not safe
 	plist_resources_t *res = PR_Resources_Find (pr, "plist");
 	plitem_t   *plitem = PL_NewData (P_GPOINTER (pr, 0), P_INT (pr, 1));
-	
+
 	R_INT (pr) = plist_retain (res, plitem);
 }
 
@@ -391,7 +391,7 @@ bi_PL_NewString (progs_t *pr)
 {
 	plist_resources_t *res = PR_Resources_Find (pr, "plist");
 	plitem_t   *plitem = PL_NewString (P_GSTRING (pr, 0));
-	
+
 	R_INT (pr) = plist_retain (res, plitem);
 }
 

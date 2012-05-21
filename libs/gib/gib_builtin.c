@@ -88,7 +88,7 @@ GIB_Builtin_Free (void *ele, void *ptr)
 
 /*
 	GIB_Builtin_Add
-	
+
 	Registers a new builtin GIB command.
 */
 
@@ -124,7 +124,7 @@ GIB_Builtin_Exists (const char *name)
 
 /*
 	GIB_Builtin_Find
-	
+
 	Looks up the builtin name in the builtin hash,
 	returning a pointer to the struct on success,
 	zero otherwise.
@@ -165,7 +165,7 @@ GIB_Error (const char *type, const char *fmt, ...)
 
 /*
 	GIB Builtin functions
-	
+
 	See GIB docs for information.
 */
 static void
@@ -175,7 +175,7 @@ GIB_Function_f (void)
 	gib_function_t *func;
 	int i;
 	int argc = GIB_Argc ();
-	
+
 	if (argc < 3) {
 		GIB_USAGE ("name [arg1 arg2 ...] program");
 	} else {
@@ -262,7 +262,7 @@ GIB_Shared_f (void)
 				GIB_Return (GIB_Argv(i));
 	} else for (i = 1; i < GIB_Argc(); i++)
 		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->globals, &zero,
-								 GIB_Argv (i), &index, true);						 
+								 GIB_Argv (i), &index, true);
 }
 
 static void
@@ -273,7 +273,7 @@ GIB_Delete_f (void)
 	int i;
 	hashtab_t *source;
 	char *c;
-	
+
 	if (GIB_Argc () < 2) {
 		GIB_USAGE ("var [var2 var2 ...]");
 	} else for (i = 1; i < GIB_Argc(); i++) {
@@ -326,7 +326,7 @@ GIB_Return_f (void)
 
 		for (i = 1; i < GIB_Argc(); i++)
 			argv[i-1] = GIB_Argv(i);
-		
+
 		GIB_Reply (g->reply.obj, g->reply.mesg, GIB_Argc()-1, argv);
 		free ((void*)argv);
 		g->dnotify = NULL;
@@ -437,7 +437,7 @@ GIB_Count_f (void)
 	if (GIB_CanReturn())
 		dsprintf (GIB_Return(0), "%u", GIB_Argc() - 1);
 }
-		
+
 
 static void
 GIB_Contains_f (void)
@@ -949,10 +949,10 @@ static void
 GIB_Class_f (void)
 {
 	if (GIB_Object_Get (GIB_Argv(1))) {
-		GIB_Error ("ClassRedefinitionError", 
+		GIB_Error ("ClassRedefinitionError",
 				"Class '%s' already exists", GIB_Argv(1));
 	} else if (GIB_Argc () == 5)
-		GIB_Classes_Build_Scripted (GIB_Argv(1), GIB_Argv(3), 
+		GIB_Classes_Build_Scripted (GIB_Argv(1), GIB_Argv(3),
 				GIB_Argm (4)->children,
 				GIB_DATA(cbuf_active)->script);
 	else
@@ -973,10 +973,10 @@ GIB_Emit_f (void)
 	} else {
 		int i;
 		const char **argv = malloc (GIB_Argc () - 1);
-		
+
 		for (i = 1; i < GIB_Argc (); i ++)
 			argv[i-1] = GIB_Argv (1);
-		
+
 		GIB_Object_Signal_Emit (GIB_DATA(cbuf_active)->reply.obj,
 				GIB_Argc () - 1, argv);
 
@@ -1013,10 +1013,10 @@ GIB_New_f (void)
 	} else if (
 			   !(class = GIB_Object_Get(GIB_Argv(1)))
 			|| classobj->class->classobj != classobj) {
-		GIB_Error ("UnknownClassError", "Class '%s' does not exist", 
+		GIB_Error ("UnknownClassError", "Class '%s' does not exist",
 				GIB_Argv(1));
 	} else {
-		GIB_Send (classobj, 
+		GIB_Send (classobj,
 */
 
 static void

@@ -1,4 +1,4 @@
-/* 
+/*
 	wad.c
 
 	wadfile tool

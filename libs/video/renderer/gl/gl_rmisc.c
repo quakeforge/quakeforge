@@ -154,7 +154,7 @@ gl_R_Init (void)
 	gl_R_InitBubble ();
 
 	GDT_Init ();
-	
+
 	gl_texture_number = gl_R_InitGraphTextures (gl_texture_number);
 
 	gl_texture_number = gl_Skin_Init_Textures (gl_texture_number);

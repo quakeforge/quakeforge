@@ -91,8 +91,8 @@ param_t *copy_params (param_t *params);
 struct type_s *parse_params (struct type_s *type, param_t *params);
 param_t *check_params (param_t *params);
 
-enum storage_class_e; 
-struct defspace_s; 
+enum storage_class_e;
+struct defspace_s;
 void make_function (struct symbol_s *sym, const char *nice_name,
 					struct defspace_s *space, enum storage_class_e storage);
 struct symbol_s *function_symbol (struct symbol_s *sym,

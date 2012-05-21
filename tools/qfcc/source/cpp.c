@@ -154,7 +154,7 @@ intermediate_file (dstring_t *ifile, const char *filename, const char *ext,
 	if (options.save_temps) {
 		char	*basename = strdup (filename);
 		char	*temp;
-	
+
 		temp = strrchr (basename, '/');
 		if (!temp)
 			temp = basename;

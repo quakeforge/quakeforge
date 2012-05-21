@@ -214,7 +214,7 @@ Resize (old_console_t *con)
 	say_team_line->width = con_linewidth - 9;
 	say_line->width = con_linewidth - 4;
 	input_line->width = con_linewidth;
-							
+
 	con->current = con_totallines - 1;
 	con->display = con->current;
 }
@@ -641,7 +641,7 @@ draw_console_text (view_t *view)
 		y -= 8;
 		rows--;
 	}
-	
+
 	row = con->display;
 	for (i = 0; i < rows; i++, y -= 8, row--) {
 		if (row < 0)
@@ -905,7 +905,7 @@ C_Init (void)
 	Cmd_AddCommand ("clear", Clear_f, "Clear the console");
 	Cmd_AddCommand ("condump", Condump_f, "dump the console text to a "
 					"file");
-					
+
 	// register GIB builtins
 	GIB_Builtin_Add ("HUD::enable", C_GIB_HUD_Enable_f);
 	GIB_Builtin_Add ("HUD::disable", C_GIB_HUD_Disable_f);

@@ -847,7 +847,7 @@ process_loose_relocs (qfo_t *qfo)
 		reloc->space = qfo->spaces[reloc->space].id;
 		if (reloc->type == rel_def_string) {
 			const char *str;
-			
+
 			if (reloc->target < 0
 				|| reloc->target >= qfo->spaces[qfo_strings_space].data_size) {
 				linker_error ("bad string reloc at %d:%x", reloc->space,
@@ -932,7 +932,7 @@ linker_add_object_file (const char *filename)
 		fprintf (stderr, "%s\n", filename);
 
 	linker_add_qfo (qfo);
-	
+
 	qfo_delete (qfo);
 	return 0;
 }

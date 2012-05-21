@@ -256,7 +256,7 @@ nice_time (float time)
 /*
   Host_Map_f
 
-  handle a 
+  handle a
   map <servername>
   command from the console.  Active clients are kicked off.
 */

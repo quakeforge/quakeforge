@@ -43,7 +43,7 @@ static int
 GIB_Semantic_Validate_Class (gib_tree_t * tokens)
 {
 	gib_tree_t *a_class, *line, *cmd;
-	
+
 	if (!tokens->next || !tokens->next->next) {
 		GIB_Parse_Error ("Malformed class definition; expected class "
 				"name, optional 'extends' and parent class, and "
@@ -95,7 +95,7 @@ GIB_Semantic_Validate_Class (gib_tree_t * tokens)
 					gib_tree_t *last;
 
 					for (last = cmd; last->next; last = last->next);
-					
+
 					if (!cmd->next || !last || last->delim != '{' ||
 							!last->children) {
 						GIB_Parse_Error ("Malformed function "
@@ -490,17 +490,17 @@ GIB_Semantic_Label_To_Lines (gib_tree_t *tokens, const char *program,
 	char *name;
 
 	line = GIB_Tree_New (TREE_T_LABEL);
-	
+
 	name = strdup (tokens->str);
 	name[strlen(name)-1] = '\0';
 	line->str = name;
 	line->flags = flags;
-	
+
 	GIB_Tree_Unref (&tokens);
 
 	return line;
 }
-	
+
 gib_tree_t *
 GIB_Semantic_Tokens_To_Lines (gib_tree_t *tokens, const char *program, gib_tree_flags_t flags, unsigned int start, unsigned int end)
 {

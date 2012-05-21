@@ -92,7 +92,7 @@ qtv_print (const char *fmt, va_list args)
 {
 	static int pending;
 	static dstring_t *msg;
-	
+
 	if (!msg)
 		msg = dstring_new ();
 
@@ -268,7 +268,7 @@ qtv_init (void)
 								   CVAR_ROM, 0, "Plugin used for the console");
 	PI_RegisterPlugins (server_plugin_list);
 	Con_Init (qtv_console_plugin->string);
-	if (con_module) 
+	if (con_module)
 		con_module->data->console->cbuf = qtv_cbuf;
 	Sys_SetStdPrintf (qtv_print);
 
@@ -363,7 +363,7 @@ main (int argc, const char *argv[])
 	COM_InitArgv (argc, argv);
 
 	qtv_init ();
-	
+
 	Sys_Printf ("Ohayou gozaimasu\n");
 
 	while (1) {

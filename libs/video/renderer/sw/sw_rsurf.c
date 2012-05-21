@@ -166,7 +166,7 @@ R_BuildLightMap (void)
 	// add all the lightmaps
 	if (lightmap)
 		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255; maps++) {
-			scale = r_drawsurf.lightadj[maps];	// 8.8 fraction     
+			scale = r_drawsurf.lightadj[maps];	// 8.8 fraction
 			for (i = 0; i < size; i++)
 				blocklights[i] += lightmap[i] * scale;
 			lightmap += size;			// skip to next lightmap

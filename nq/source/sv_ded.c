@@ -152,4 +152,4 @@ plugin_t *
 console_client_PluginInfo (void)
 {
 	return 0;
-}   
+}

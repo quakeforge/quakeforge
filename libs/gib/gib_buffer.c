@@ -97,7 +97,7 @@ GIB_Buffer_Reset (struct cbuf_s *cbuf)
 	// It just means the buffer is going to be reused.
 	if (g->dnotify)
 		g->dnotify (cbuf, g->ddata);
-	
+
 	if (g->locals)
 		Hash_FlushTable (g->locals);
 	g->globals = gib_globals;
@@ -168,7 +168,7 @@ GIB_Buffer_Add (cbuf_t * cbuf, const char *str)
 			"|GIB Parse Error|\n"
 			"-----------------\n"
 			"Parse error while adding text to GIB buffer.\n"
-			"Line %u: %s\n", 
+			"Line %u: %s\n",
 			GIB_Buffer_Get_Line_Num (str, GIB_Parse_ErrorPos ()),
 			GIB_Parse_ErrorMsg ()
 		);

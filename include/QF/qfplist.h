@@ -54,7 +54,7 @@ typedef enum {
 typedef struct plitem_s plitem_t;
 
 /** Create an in-memory representation of the contents of a property list.
-	
+
 	\param string	the saved plist, as read from a file.
 
 	\return Returns an object equivalent to the passed-in string.

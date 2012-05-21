@@ -537,7 +537,7 @@ PF_checkclient (progs_t *pr)
 		sv.lastcheck = PF_newcheckclient (pr, sv.lastcheck);
 		sv.lastchecktime = sv.time;
 	}
-	// return check if it might be visible  
+	// return check if it might be visible
 	ent = EDICT_NUM (pr, sv.lastcheck);
 	if (ent->free || SVfloat (ent, health) <= 0) {
 		RETURN_EDICT (pr, sv.edicts);
@@ -1434,9 +1434,9 @@ PF_logfrag (progs_t *pr)
 		char buf[16];
 		char type1[2], type2[2];
 		int u1, u2;
-		
+
 		type1[1] = type2[1] = 0;
-		if (e1 < 1 || e1 > MAX_CLIENTS || 
+		if (e1 < 1 || e1 > MAX_CLIENTS ||
 			svs.clients[e1 - 1].state == cs_server) {
 			type1[0] = 'e';
 			u1 = e1;
@@ -1455,7 +1455,7 @@ PF_logfrag (progs_t *pr)
 		}
 
 		snprintf(buf, sizeof(buf), "%d", u2);
-		
+
 		GIB_Event_Callback (sv_frag_e, 4, type1, va ("%d", u1), type2, buf);
 	}
 

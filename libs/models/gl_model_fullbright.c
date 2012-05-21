@@ -45,7 +45,7 @@ VISIBLE int
 Mod_CalcFullbright (byte *in, byte *out, int pixels)
 {
 	int		fb = 0;
-	
+
 	while (pixels--) {
 		if (*in >= 256 - 32) {
 			fb = 1;

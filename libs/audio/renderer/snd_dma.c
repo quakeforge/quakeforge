@@ -156,7 +156,7 @@ s_get_soundtime (void)
 	// calls to s_update.  Oh well.
 	if ((framepos = snd_output_funcs->pS_O_GetDMAPos ()) == -1)
 		return;
-	
+
 	if (framepos < oldframepos) {
 		buffers++;						// buffer wrapped
 

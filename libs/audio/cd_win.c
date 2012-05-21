@@ -42,11 +42,11 @@
 
 #include "compat.h"
 
-static plugin_t			plugin_info; 
-static plugin_data_t	plugin_info_data; 
-static plugin_funcs_t	plugin_info_funcs; 
-static general_data_t	plugin_info_general_data; 
-static general_funcs_t	plugin_info_general_funcs; 
+static plugin_t			plugin_info;
+static plugin_data_t	plugin_info_data;
+static plugin_funcs_t	plugin_info_funcs;
+static general_data_t	plugin_info_general_data;
+static general_funcs_t	plugin_info_general_funcs;
 static cd_funcs_t		plugin_info_cd_funcs;
 
 static qboolean cdValid = false;

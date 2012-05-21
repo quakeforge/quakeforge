@@ -221,7 +221,7 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 		p2 = in->points[(i + 1) % in->numpoints];
 
 		dot = dists[i] / (dists[i] - dists[i + 1]);
-		for (j = 0; j < 3; j++) {	
+		for (j = 0; j < 3; j++) {
 			// avoid round off error when possible
 			if (split->normal[j] == 1)
 				mid[j] = split->dist;
@@ -294,9 +294,9 @@ LeafThread (void *_thread)
 		PortalFlow (portal);
 
 		if (options.verbosity > 0)
-			printf ("portal:%4i  mightsee:%4i  cansee:%4i\n", 
-						(int) (portal - portals), 
-						portal->nummightsee, 
+			printf ("portal:%4i  mightsee:%4i  cansee:%4i\n",
+						(int) (portal - portals),
+						portal->nummightsee,
 						portal->numcansee);
 	} while (1);
 
@@ -561,8 +561,8 @@ FindPassages (winding_t *source, winding_t *pass)
 			plane.normal[2] = v1[0] * v2[1] - v1[1] * v2[0];
 
 			// if points don't make a valid plane, skip it
-			length = plane.normal[0] * plane.normal[0] + 
-					 plane.normal[1] * plane.normal[1] + 
+			length = plane.normal[0] * plane.normal[0] +
+					 plane.normal[1] * plane.normal[1] +
 					 plane.normal[2] * plane.normal[2];
 
 			if (length < ON_EPSILON)
@@ -583,7 +583,7 @@ FindPassages (winding_t *source, winding_t *pass)
 				if (k == i || k == l)
 					continue;
 				d = DotProduct (source->points[k], plane.normal) - plane.dist;
-				if (d < -ON_EPSILON) {	
+				if (d < -ON_EPSILON) {
 					// source is on the negative side, so we want all
 					// pass and target on the positive side
 					fliptest = false;
@@ -747,7 +747,7 @@ LoadPortals (char *name)
 		printf ("%4i numportals\n", numportals);
 		printf ("%4i numrealleafs\n", numrealleafs);
 	}
-	
+
 	bitbytes = ((portalclusters + 63) & ~63) >> 3;
 	bitlongs = bitbytes / sizeof (long);
 
@@ -857,7 +857,7 @@ main (int argc, char **argv)
 	double      start, stop;
 	dstring_t  *portalfile = dstring_new ();
 	QFile      *f;
-	
+
 	start = Sys_DoubleTime ();
 
 	this_program = argv[0];
@@ -870,7 +870,7 @@ main (int argc, char **argv)
 	}
 
 	QFS_SetExtension (options.bspfile, ".bsp");
-	
+
 	f = Qopen (options.bspfile->str, "rb");
 	if (!f)
 		Sys_Error ("couldn't open %s for reading.", options.bspfile->str);
@@ -905,7 +905,7 @@ main (int argc, char **argv)
 	Qclose (f);
 
 	stop = Sys_DoubleTime ();
-	
+
 	if (options.verbosity >= 0)
 		printf ("%5.1f seconds elapsed\n", stop - start);
 

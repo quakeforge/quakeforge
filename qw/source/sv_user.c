@@ -734,7 +734,7 @@ SV_BeginDownload_f (void *unused)
 			!allow_download_sounds->int_val)
 		// now maps (note special case for maps, must not be in pak)
 		|| (strncmp (name, "maps/", 5) == 0 && !allow_download_maps->int_val)
-		// MUST be in a subdirectory    
+		// MUST be in a subdirectory
 		|| !strstr (name, "/")) {		// don't allow anything with .. path
 		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download, 4);
 		MSG_ReliableWrite_Short (&host_client->backbuf, -1);
@@ -785,7 +785,7 @@ SV_BeginDownload_f (void *unused)
 		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download, size);
 		MSG_ReliableWrite_Short (&host_client->backbuf, DL_HTTP);
 		MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
-		MSG_ReliableWrite_String (&host_client->backbuf, 
+		MSG_ReliableWrite_String (&host_client->backbuf,
 								  va ("%s/%s", sv_http_url_base->string,
 									  ren ? realname->str : name));
 		MSG_ReliableWrite_String (&host_client->backbuf,
@@ -1303,7 +1303,7 @@ ucmd_t      ucmds[] = {
 	{"drop",		SV_Drop_f,			0, 0},
 	{"pings",		SV_Pings_f,			0, 0},
 
-// issued by hand at client consoles    
+// issued by hand at client consoles
 	{"rate",		SV_Rate_f,			0, 0},
 	{"kill",		SV_Kill_f,			1, 1},
 	{"pause",		SV_Pause_f,			1, 0},
@@ -1401,22 +1401,22 @@ SV_AddUserCommand (const char *name, void (*func) (void *userdata), int flags,
 	cmd->userdata = userdata;
 	cmd->on_free = on_free;
 	Hash_Add (ucmd_table, cmd);
-	
+
 	return cmd;
 }
 
 /*
-	Removes a user command added with SV_AddUserCommand.  Returns true if 
+	Removes a user command added with SV_AddUserCommand.  Returns true if
 	successful, false if not.
 */
 int
 SV_RemoveUserCommand (void *cmd)
 {
 	void *ele = Hash_DelElement(ucmd_table, cmd);
-	
+
 	if (!ele)
 		return 0;
-	
+
 	Hash_Free (ucmd_table, ele);
 	return 1;
 }
@@ -1426,11 +1426,11 @@ PF_AddUserCommand (progs_t *pr)
 {
 	const char *name = P_GSTRING (pr, 0);
 	ucmd_t     *cmd;
-	cmd = SV_AddUserCommand (name, call_qc_hook, 
+	cmd = SV_AddUserCommand (name, call_qc_hook,
 							 P_INT (pr, 2) ? UCMD_NO_REDIRECT : 0,
 							 (void *) (intptr_t) P_FUNCTION (pr, 1),
 							 NULL);
-	
+
 	if (!cmd)
 		SV_Printf ("%s already a user command\n", name);
 }
@@ -1854,7 +1854,7 @@ SV_ExecuteClientMessage (client_t *cl)
 	vec3_t      o;
 
 	// make sure the reply sequence number matches the incoming
-	// sequence number 
+	// sequence number
 	if (cl->netchan.incoming_sequence >= cl->netchan.outgoing_sequence)
 		cl->netchan.outgoing_sequence = cl->netchan.incoming_sequence;
 	else
@@ -2001,7 +2001,7 @@ SV_UserInit (void)
 	cl_rollangle = Cvar_Get ("cl_rollangle", "2", CVAR_NONE, NULL, "How much "
 							 "a player's screen tilts when strafing");
 
-	sv_allowfake = Cvar_Get ("sv_allowfake", "2", CVAR_NONE, NULL, "Allow 'fake' messages (FuhQuake $\\). 1 = " 
+	sv_allowfake = Cvar_Get ("sv_allowfake", "2", CVAR_NONE, NULL, "Allow 'fake' messages (FuhQuake $\\). 1 = "
 								"always, 2 = only say_team");
 	sv_spectalk = Cvar_Get ("sv_spectalk", "1", CVAR_NONE, NULL, "Toggles "
 							"the ability of spectators to talk to players");

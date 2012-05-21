@@ -61,7 +61,7 @@ CL_ClearEnts (void)
 {
 	size_t      i;
 
-	// clear other arrays   
+	// clear other arrays
 	memset (cl_entities, 0, sizeof (cl_entities));
 	memset (cl_baselines, 0, sizeof (cl_baselines));
 
@@ -216,10 +216,10 @@ CL_RelinkEntities (void)
 	float       bobjrotate, frac, f, d;
 	int         i, j;
 	vec3_t      delta;
-	
+
 	r_data->player_entity = &cl_entities[cl.viewentity];
 
-	// determine partial update time    
+	// determine partial update time
 	frac = CL_LerpPoint ();
 
 	// interpolate player info
@@ -228,7 +228,7 @@ CL_RelinkEntities (void)
 			frac * (cl.mvelocity[0][i] - cl.mvelocity[1][i]);
 
 	if (cls.demoplayback) {
-		// interpolate the angles   
+		// interpolate the angles
 		for (j = 0; j < 3; j++) {
 			d = cl.mviewangles[0][j] - cl.mviewangles[1][j];
 			if (d > 180)

@@ -121,7 +121,7 @@ midi_stream_seek (sfxstream_t *stream, int pos)
 	pos *= stream->wavinfo.width * stream->wavinfo.channels;
 	pos += stream->wavinfo.dataofs;
 	new_pos = pos;
-	
+
 	return WildMidi_FastSeek(stream->file, &new_pos);
 }
 
@@ -156,8 +156,8 @@ midi_stream_open (sfx_t *sfx)
 
 	handle = WildMidi_OpenBuffer(local_buffer, local_buffer_size);
 
-	if (handle == NULL) 
-		return NULL;	
+	if (handle == NULL)
+		return NULL;
 
 	mf = calloc (sizeof (midi_file_t), 1);
 	mf->handle = handle;
@@ -179,8 +179,8 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 			return -1;
 		}
 	}
-		
-	
+
+
 	local_buffer = malloc (local_buffer_size);
 	Qread (file, local_buffer, local_buffer_size);
 	Qclose (file);
@@ -188,7 +188,7 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 	// WildMidi takes ownership, so be damned if you touch it
 	handle = WildMidi_OpenBuffer (local_buffer, local_buffer_size);
 
-	if (handle == NULL) 
+	if (handle == NULL)
 		return -1;
 
 	info = midi_get_info (handle);

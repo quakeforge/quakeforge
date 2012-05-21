@@ -1,7 +1,7 @@
-/* Texture Paint 
+/* Texture Paint
  * Plug-in for the GIMP
  *
- * Copyright (C) 1998 Uwe Maurer <uwe_maurer@t-online.de> 
+ * Copyright (C) 1998 Uwe Maurer <uwe_maurer@t-online.de>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ typedef struct
 } Data;
 
 
-void model_new(char *,Model *mdl);		
+void model_new(char *,Model *mdl);
 void update_images_menu(gint32 );
 
 void on_pakdialog_destroy(GtkObject *obj,gpointer data)
@@ -44,7 +44,7 @@ void on_pakdialog_destroy(GtkObject *obj,gpointer data)
 	d=(Data *)data;
 
 	fclose(d->fp);
-	g_free(d);	
+	g_free(d);
 }
 
 void on_pak_close_clicked(GtkWidget *w,gpointer data)
@@ -69,10 +69,10 @@ void on_pak_open_clicked(GtkWidget *widget,gpointer data)
 	gint nreturn_vals;
 
 	d=(Data *)data;
-	
+
 	sel=GTK_TREE(d->tree)->selection;
 
-	if (sel)	
+	if (sel)
 		item=GTK_WIDGET(sel->data);
 	else
 		item=widget;
@@ -117,7 +117,7 @@ void on_pak_open_clicked(GtkWidget *widget,gpointer data)
 			gimp_image_set_filename(image_id,title);
 			update_images_menu(image_id);
 			gimp_display_new(image_id);
-			gimp_displays_flush();		
+			gimp_displays_flush();
 		}
 
 		gimp_destroy_params(return_vals,nreturn_vals);
@@ -129,7 +129,7 @@ void on_item_clicked(GtkWidget *widget,GdkEvent *ev,gpointer data)
 {
 	if (ev->type==GDK_2BUTTON_PRESS)
 	{
-		on_pak_open_clicked(widget,data);		
+		on_pak_open_clicked(widget,data);
 	}
 }
 
@@ -145,7 +145,7 @@ void open_pak_file(char *file)
 
 	gtk_label_set(GTK_LABEL(get_widget(dialog,"filename")),file);
 
-	
+
 	gtk_signal_connect(GTK_OBJECT(dialog),"destroy",
 		GTK_SIGNAL_FUNC(on_pakdialog_destroy),data);
 
@@ -173,7 +173,7 @@ void open_pak_file(char *file)
 		return;
 	}
 
-	gtk_widget_show(data->tree);	
+	gtk_widget_show(data->tree);
 	gtk_container_add(GTK_CONTAINER(get_widget(dialog,"scrolledwindow")),
 		data->tree);
 	gtk_widget_show(dialog);
@@ -188,9 +188,9 @@ Model * model_load(char *name,FILE *fp)
 	int n;
 
 	n=strlen(name);
-	
+
 	if (n<=4) return NULL;
-	
+
 	if (g_strcasecmp(&name[n-4],".md2")==0)
 	{
 		return Model2Load(name,fp);

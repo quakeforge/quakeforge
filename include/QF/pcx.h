@@ -53,7 +53,7 @@ typedef struct
 	\param data A pointer to the buffer containing the source image
 	\param width The width, in pixels, of the source image
 	\param height The height, in pixels, of the source image
-	\param rowbytes The number of bytes in a row of an image (usually the same 
+	\param rowbytes The number of bytes in a row of an image (usually the same
 	as the width)
 	\param palette The palette in use for the texture.
 	\param flip If true, flip the order of lines output.

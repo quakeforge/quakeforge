@@ -329,7 +329,7 @@ _dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 #endif
 	}
 	dstr->size = size + offs + 2;
-	// "Proper" implementations return the required size 
+	// "Proper" implementations return the required size
 	if (dstr->size > dstr->truesize) {
 		dstring_adjust (dstr);
 #ifdef VA_LIST_IS_ARRAY

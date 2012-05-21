@@ -2,7 +2,7 @@
 	bspfile.c
 
 	DESCRIPTION
-	
+
 	Copyright (C) 1996-1997  Id Software, Inc.
 
 	This program is free software; you can redistribute it and/or
@@ -73,7 +73,7 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 		d->visleafs = LittleLong (d->visleafs);
 		d->firstface = LittleLong (d->firstface);
 		d->numfaces = LittleLong (d->numfaces);
-		
+
 		for (j=0 ; j<3 ; j++) {
 			d->mins[j] = LittleFloat(d->mins[j]);
 			d->maxs[j] = LittleFloat(d->maxs[j]);
@@ -87,7 +87,7 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 		for (j=0 ; j<3 ; j++)
 			vertex->point[j] = LittleFloat (vertex->point[j]);
 	}
-		
+
 	// planes
 	for (i=0 ; i<bsp->numplanes ; i++) {
 		dplane_t   *plane = &bsp->planes[i];
@@ -96,7 +96,7 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 		plane->dist = LittleFloat (plane->dist);
 		plane->type = LittleLong (plane->type);
 	}
-	
+
 	// texinfos
 	for (i=0 ; i<bsp->numtexinfo ; i++) {
 		texinfo_t  *texinfo = &bsp->texinfo[i];
@@ -105,7 +105,7 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 		texinfo->miptex = LittleLong (texinfo->miptex);
 		texinfo->flags = LittleLong (texinfo->flags);
 	}
-	
+
 	// faces
 	for (i=0 ; i<bsp->numfaces ; i++) {
 		dface_t    *face = &bsp->faces[i];
@@ -164,7 +164,7 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 		for (i=0 ; i<c ; i++)
 			mtl->dataofs[i] = LittleLong(mtl->dataofs[i]);
 	}
-	
+
 	// marksurfaces
 	for (i=0 ; i<bsp->nummarksurfaces ; i++) {
 		uint16_t   *marksurface = &bsp->marksurfaces[i];

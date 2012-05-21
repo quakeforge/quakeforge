@@ -1,4 +1,4 @@
-/* 
+/*
 	lmp.c
 
 	lump file tool
@@ -262,7 +262,7 @@ decode_args (int argc, char **argv)
 	options.verbosity = 0;
 	options.raw = false;
 	options.width = options.height = -1;
-	
+
 	while ((c = getopt_long (argc, argv, "e"	// export pcx
 										 "i"	// import pcx
 										 "h"	// show help
@@ -363,7 +363,7 @@ main (int argc, char **argv)
 				optind++;
 			}
 			break;
-			
+
 		case mo_import:
 			while (optind < argc) {
 				if (options.verbosity > 0)
@@ -418,7 +418,7 @@ main (int argc, char **argv)
 
 				Qprintf (outfile, "%3d %3d %3d\n",
 							palette[line[k]].color.red,
-							palette[line[k]].color.green, 
+							palette[line[k]].color.green,
 							palette[line[k]].color.blue);
 			}
 			Qprintf (outfile, "# next line\n");

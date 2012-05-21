@@ -209,7 +209,7 @@ void
 reloc_def_def (def_t *def, def_t *location)
 {
 	reloc_t    *ref;
-	
+
 	ref = new_reloc (location->space, location->offset, rel_def_def);
 	ref->return_address = __builtin_return_address (0);
 	ref->next = def->relocs;
@@ -220,7 +220,7 @@ void
 reloc_def_def_ofs (def_t *def, def_t *location)
 {
 	reloc_t    *ref;
-	
+
 	ref = new_reloc (location->space, location->offset, rel_def_def_ofs);
 	ref->return_address = __builtin_return_address (0);
 	ref->next = def->relocs;
@@ -231,7 +231,7 @@ void
 reloc_def_func (function_t *func, def_t *location)
 {
 	reloc_t    *ref;
-	
+
 	ref = new_reloc (location->space, location->offset, rel_def_func);
 	ref->return_address = __builtin_return_address (0);
 	ref->next = func->refs;
@@ -242,7 +242,7 @@ void
 reloc_def_string (def_t *location)
 {
 	reloc_t    *ref;
-	
+
 	ref = new_reloc (location->space, location->offset, rel_def_string);
 	ref->return_address = __builtin_return_address (0);
 	ref->next = pr.relocs;
@@ -253,7 +253,7 @@ void
 reloc_def_field (def_t *def, def_t *location)
 {
 	reloc_t    *ref;
-	
+
 	ref = new_reloc (location->space, location->offset, rel_def_field);
 	ref->return_address = __builtin_return_address (0);
 	ref->next = def->relocs;
@@ -264,7 +264,7 @@ void
 reloc_def_field_ofs (def_t *def, def_t *location)
 {
 	reloc_t    *ref;
-	
+
 	ref = new_reloc (location->space, location->offset, rel_def_field_ofs);
 	ref->return_address = __builtin_return_address (0);
 	ref->next = def->relocs;
@@ -275,7 +275,7 @@ void
 reloc_def_op (ex_label_t *label, def_t *location)
 {
 	reloc_t    *ref;
-	
+
 	ref = new_reloc (location->space, location->offset, rel_def_op);
 	ref->return_address = __builtin_return_address (0);
 	ref->next = pr.relocs;

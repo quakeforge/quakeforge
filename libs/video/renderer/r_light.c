@@ -417,7 +417,7 @@ loop:
 	mid[1] = start[1] + (end[1] - start[1]) * frac;
 	mid[2] = start[2] + (end[2] - start[2]) * frac;
 
-	// go down front side   
+	// go down front side
 	r = RecursiveLightPoint (node->children[side], start, mid);
 	if (r >= 0)
 		return r;						// hit something

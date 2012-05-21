@@ -632,7 +632,7 @@ LoadTGA (QFile *fin)
 	targa_mark = Hunk_LowMark ();
 	targa = Hunk_AllocName (fsize, "TGA");
 	Qread (fin, targa, fsize);
-	
+
 	targa->colormap_index = LittleShort (targa->colormap_index);
 	targa->colormap_length = LittleShort (targa->colormap_length);
 	targa->x_origin = LittleShort (targa->x_origin);

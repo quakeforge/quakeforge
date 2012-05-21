@@ -412,7 +412,7 @@ s_updateAmbientSounds (const byte *ambient_sound_level)
 			if (!chan)
 				continue;
 		}
-		
+
 		if (!chan->sfx) {
 			sfx = sfx->open (sfx);
 			if (!sfx)
@@ -533,13 +533,13 @@ SND_SetListener (const vec3_t origin, const vec3_t forward, const vec3_t right,
 	// update general area ambient sound sources
 	s_updateAmbientSounds (ambient_sound_level);
 
-	// update spatialization for dynamic sounds	
+	// update spatialization for dynamic sounds
 	for (ch = dynamic_channels; ch; ch = ch->next)
 		s_update_channel (ch);
 	for (ch = looped_dynamic_channels; ch; ch = ch->next)
 		s_update_channel (ch);
 
-	// update spatialization for static sounds	
+	// update spatialization for static sounds
 	combine = 0;
 	for (i = 0; i < snd_num_statics; i++) {
 		ch = static_channels[i];

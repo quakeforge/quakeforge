@@ -157,7 +157,7 @@ typedef struct _inputline_t *inputline_t;
 	\param	obj		The object receiving the message.
 	\param	sel		The selector representing the message.
 
-	\todo -(void) set[X]Action: (SEL)aSelector; 
+	\todo -(void) set[X]Action: (SEL)aSelector;
 	\todo -(void) setTarget: (id)ahnObject;
 */
 - (void) setEnter: obj message:(SEL) msg;
@@ -221,7 +221,7 @@ typedef struct _inputline_t *inputline_t;
 	\param	obj		The object receiving the message.
 	\param	sel		The selector representing the message.
 
-	\todo -(void) set[X]Action: (SEL)aSelector; 
+	\todo -(void) set[X]Action: (SEL)aSelector;
 	\todo -(void) setTarget: (id)ahnObject;
 */
 - (void) setEnter: obj message:(SEL) msg;

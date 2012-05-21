@@ -79,7 +79,7 @@ typedef enum {
 	QFK_GREATER		= 62,
 	QFK_QUESTION		= 63,
 	QFK_AT			= 64,
-	/* 
+	/*
 	   Skip uppercase letters
 	 */
 	QFK_LEFTBRACKET	= 91,

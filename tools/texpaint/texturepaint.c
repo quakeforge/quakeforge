@@ -1,7 +1,7 @@
-/* Texture Paint 
+/* Texture Paint
  * Plug-in for the GIMP
  *
- * Copyright (C) 1998 Uwe Maurer <uwe_maurer@t-online.de> 
+ * Copyright (C) 1998 Uwe Maurer <uwe_maurer@t-online.de>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 Dialog *dialog;
 
 
-int max_tex_size=64;	
+int max_tex_size=64;
 int red_bits,green_bits,blue_bits;
 int red_shift,green_shift,blue_shift;	// 8-red_bits
 
@@ -68,7 +68,7 @@ static int round_size(int size,gboolean floor)
 		{
 			if (s[i]==size) return size;
 			if (s[i]<size && size<s[i+1]) return s[i];
-		}	
+		}
 	}
 	else
 	{
@@ -76,24 +76,24 @@ static int round_size(int size,gboolean floor)
 		{
 			if (s[i]==size) return size;
 			if (s[i]<size && size<s[i+1]) return s[i+1];
-		}	
+		}
 	}
-	
+
 	return max_tex_size;
 }
 
 static void set_idle(ModelInfo *mdl)
 {
-	if (mdl->update_texture || mdl->playing) 
+	if (mdl->update_texture || mdl->playing)
 	{
 		if (mdl->idle<0)
  			mdl->idle=gtk_idle_add_priority(10,(GtkFunction)model_draw,mdl);
 	}
 	else
 	{
-		if (mdl->idle>=0) 
+		if (mdl->idle>=0)
 		{
-			gtk_idle_remove(mdl->idle);	
+			gtk_idle_remove(mdl->idle);
 			mdl->idle=-1;
 		}
 	}
@@ -102,7 +102,7 @@ static void set_idle(ModelInfo *mdl)
 
 void set_parameter(ModelInfo *mdl)
 {
-	GLint v;  
+	GLint v;
 
 	v=(GTK_TOGGLE_BUTTON(dialog->linear)->active) ? GL_LINEAR : GL_NEAREST;
 
@@ -138,19 +138,19 @@ void on_update_clicked(GtkButton *button,gpointer data)
 {
 	ModelInfo *mdl;
 
-	if (data) mdl=(ModelInfo *)data; 
+	if (data) mdl=(ModelInfo *)data;
 	else if (dialog->mdl) mdl=dialog->mdl;
 	else return;
 
 	if (get_texture(mdl)<0)
 	{
-		gimp_message("Select a correct texture first.");	
+		gimp_message("Select a correct texture first.");
 	}
 
 	model_draw(mdl);
 }
 
-		
+
 static void init_special_texture(ModelInfo *mdl,int w,int h)
 {
 	guchar *image;
@@ -158,7 +158,7 @@ static void init_special_texture(ModelInfo *mdl,int w,int h)
 	int red_mask,green_mask,blue_mask;
 
 	begingl(mdl->glarea);
-	
+
 	red_mask= (1<<red_bits)-1;
 	green_mask= (1<<green_bits)-1;
 	blue_mask= (1<<blue_bits)-1;
@@ -166,7 +166,7 @@ static void init_special_texture(ModelInfo *mdl,int w,int h)
 	image=g_malloc(max_tex_size*3);
 
 	pos=0;
-	for (x=1;x<=max_tex_size;x++) 
+	for (x=1;x<=max_tex_size;x++)
 	{
 		image[pos++]=((x) & red_mask)<<red_shift;
 		image[pos++]=((x>>red_bits) & green_mask)<<green_shift;
@@ -178,18 +178,18 @@ static void init_special_texture(ModelInfo *mdl,int w,int h)
 	glGenTextures(1,&mdl->texture_s);
 	glBindTexture(GL_TEXTURE_2D,mdl->texture_s);
 	glTexImage2D(GL_TEXTURE_2D,0,3,w,1,0,
-		GL_RGB,GL_UNSIGNED_BYTE,image);	
+		GL_RGB,GL_UNSIGNED_BYTE,image);
 
 	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
 	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
 
 	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-	
+
 	glGenTextures(1,&mdl->texture_t);
 	glBindTexture(GL_TEXTURE_2D,mdl->texture_t);
 	glTexImage2D(GL_TEXTURE_2D,0,3,1,h,0,
-		GL_RGB,GL_UNSIGNED_BYTE,image);	
+		GL_RGB,GL_UNSIGNED_BYTE,image);
 
 	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
 	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
@@ -197,25 +197,25 @@ static void init_special_texture(ModelInfo *mdl,int w,int h)
 	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 	glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 
-	g_free(image);	
+	g_free(image);
 	endgl(mdl->glarea);
 }
 
 
-gint model_draw(ModelInfo *mdl) 
+gint model_draw(ModelInfo *mdl)
 {
 	gdouble frametime;
 
 	DEBUG("%s",mdl->name);
 
-	if (mdl->drawing) 
+	if (mdl->drawing)
 	{
 		return TRUE;
 	}
 
 	mdl->drawing=TRUE;
 
-	if (mdl->update_texture) 
+	if (mdl->update_texture)
 	{
 		if (get_texture(mdl)<0)
 		{
@@ -231,7 +231,7 @@ gint model_draw(ModelInfo *mdl)
 		frametime=g_timer_elapsed(mdl->timer,NULL);
 
 		g_timer_start(mdl->timer);
-	
+
 		if (mdl->last > mdl->first)
 		{
 			mdl->frame+=mdl->fps*frametime;
@@ -251,7 +251,7 @@ gint model_draw(ModelInfo *mdl)
 
 		if (mdl==dialog->mdl)
 		{
-			gtk_adjustment_set_value(GTK_ADJUSTMENT(gtk_range_get_adjustment(GTK_RANGE(dialog->cur_frame))),mdl->frame);	
+			gtk_adjustment_set_value(GTK_ADJUSTMENT(gtk_range_get_adjustment(GTK_RANGE(dialog->cur_frame))),mdl->frame);
 
 		}
 	}
@@ -294,7 +294,7 @@ int get_texture(ModelInfo *mdl)
 
 	DEBUG("%s",mdl->name);
 
-	if (!check_texture(mdl->tex_image)) 
+	if (!check_texture(mdl->tex_image))
 	{
 		glDisable(GL_TEXTURE_2D);
 		glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
@@ -304,8 +304,8 @@ int get_texture(ModelInfo *mdl)
 	drawable_id=gimp_image_get_active_layer(mdl->tex_image);
 	drawable=gimp_drawable_get(drawable_id);
 
-	w=gimp_drawable_width(drawable->id); 
-	h=gimp_drawable_height(drawable->id); 
+	w=gimp_drawable_width(drawable->id);
+	h=gimp_drawable_height(drawable->id);
 
 	tex=g_malloc(3*w*h);
 	gimp_pixel_rgn_init(&rgn,drawable,0,0,w,h,FALSE,FALSE);
@@ -326,7 +326,7 @@ int get_texture(ModelInfo *mdl)
 void on_load_clicked(GtkButton *button,gpointer data)
 {
 
-	gtk_widget_show(dialog->fileselection);	
+	gtk_widget_show(dialog->fileselection);
 }
 
 void on_cancel_clicked(GtkButton *button,gpointer data)
@@ -347,7 +347,7 @@ void on_ok_clicked(GtkButton *button,gpointer data)
 			GTK_FILE_SELECTION(dialog->fileselection));
 
 
-	if (!filename || (len=strlen(filename))<=4) 
+	if (!filename || (len=strlen(filename))<=4)
 	{
 		gimp_message("Can't open Model!");
 		return;
@@ -360,13 +360,13 @@ void on_ok_clicked(GtkButton *button,gpointer data)
 	else if ((g_strcasecmp(&filename[len-4],".md2") == 0) || (g_strcasecmp(&filename[len-4],".mdl") == 0))
 	{
 		fp=fopen(filename,"rb");
-		if (fp==NULL || (mdl=model_load(filename,fp))==NULL)	
+		if (fp==NULL || (mdl=model_load(filename,fp))==NULL)
 		{
 			gimp_message("Can't open file!");
 			fclose(fp);
 			return;
 		}
-		fclose(fp);	
+		fclose(fp);
 		model_new(filename,mdl);
 	}
 	else
@@ -394,7 +394,7 @@ void set_image_item(gint32 image_id)
 	DEBUG("%i",image_id);
 
 	gtk_widget_set_sensitive(dialog->scale,(image_id>=0));
-	
+
 	str[0]='\0';
 
 	if (image_id>=0)
@@ -424,7 +424,7 @@ void set_image_item(gint32 image_id)
 		else	strcpy(str,"no active layer");
 	}
 
-	if (dialog->mdl) 
+	if (dialog->mdl)
 		DEBUG("%s %i",dialog->mdl->name,dialog->mdl->tex_image);
 
 	if (dialog->mdl && dialog->mdl->tex_image!=image_id)
@@ -465,16 +465,16 @@ static void update_value(GtkAdjustment *a,gpointer data)
 
 	switch(n)
 	{
-		case 1: 
-			mdl->frame=a->value; 
-			model_draw(mdl); 
+		case 1:
+			mdl->frame=a->value;
+			model_draw(mdl);
 			name=mdl->model->frames[(int)mdl->frame].name;
 			gtk_label_set(GTK_LABEL(dialog->frame_info2),name);
 			break;
 		case 2: mdl->first=(int)a->value; break;
 		case 3: mdl->last=(int)a->value; break;
 		case 4: mdl->fps=a->value; break;
-		
+
 	}
 
 }
@@ -504,12 +504,12 @@ void on_anim_clicked(GtkButton *button,gpointer data)
 		case 3:
 			mdl->frame=mdl->first;
 			gtk_adjustment_set_value(GTK_ADJUSTMENT
-				(gtk_range_get_adjustment(GTK_RANGE(dialog->cur_frame))),mdl->frame);	
+				(gtk_range_get_adjustment(GTK_RANGE(dialog->cur_frame))),mdl->frame);
 			break;
-		case 4:	
+		case 4:
 			mdl->frame=mdl->last;
 			gtk_adjustment_set_value(GTK_ADJUSTMENT
-				(gtk_range_get_adjustment(GTK_RANGE(dialog->cur_frame))),mdl->frame);	
+				(gtk_range_get_adjustment(GTK_RANGE(dialog->cur_frame))),mdl->frame);
 			break;
 	}
 }
@@ -625,7 +625,7 @@ void update_models_menu(ModelInfo *mdl)
 
 	list=dialog->models_list;
 	option_menu=dialog->models_menu;
-	
+
 	if (g_list_length(list)==0)
 	{
 		item=gtk_menu_item_new_with_label("none");
@@ -661,14 +661,14 @@ static gboolean check_size(int w,int h)
 		if (i==w) break;
 	}
 
-	if (i>max_tex_size) return FALSE;	
+	if (i>max_tex_size) return FALSE;
 
 	for (i=1;i<=max_tex_size;i*=2)
 	{
 		if (i==h) break;
 	}
 
-	if (i>max_tex_size) return FALSE;	
+	if (i>max_tex_size) return FALSE;
 	return TRUE;
 }
 
@@ -717,7 +717,7 @@ void update_images_menu(gint32 image_id)
 
 	images=gimp_image_list(&nimages);
 
-	item=gtk_menu_item_new_with_label("none"); 		
+	item=gtk_menu_item_new_with_label("none");
 	gtk_object_set_data(GTK_OBJECT(item),IMAGE_KEY,GINT_TO_POINTER(-1));
 	gtk_signal_connect(GTK_OBJECT(item),"activate",GTK_SIGNAL_FUNC(image_activate),NULL);
 	gtk_widget_show(item);
@@ -732,7 +732,7 @@ void update_images_menu(gint32 image_id)
 	for (i=0;i<nimages;i++)
 	{
 		name=gimp_image_get_filename(images[i]);
-		item=gtk_menu_item_new_with_label(name); 		
+		item=gtk_menu_item_new_with_label(name);
 		gtk_signal_connect(GTK_OBJECT(item),"activate",GTK_SIGNAL_FUNC(image_activate),NULL);
 		gtk_object_set_data(GTK_OBJECT(item),IMAGE_KEY,GINT_TO_POINTER(images[i]));
 		gtk_widget_show(item);
@@ -794,16 +794,16 @@ void on_scale_clicked(GtkButton *b,gpointer data)
 	if (image_id<0)
 	{
 		gimp_message("Select an image first.");
-		return;	
+		return;
 	}
-	
+
 	return_val=gimp_run_procedure("gimp_image_scale",
 		&nreturn_val,
 		GIMP_PDB_IMAGE,image_id,
 		GIMP_PDB_INT32,w,
 		GIMP_PDB_INT32,h,
 		GIMP_PDB_END);
-	
+
 	if (return_val[0].data.d_status!=GIMP_PDB_SUCCESS)
 	{
 		gimp_destroy_params(return_val,nreturn_val);
@@ -829,7 +829,7 @@ void on_scale_clicked(GtkButton *b,gpointer data)
 
 	update_images_menu(image_id);
 
-	if (dialog->mdl) 
+	if (dialog->mdl)
 	{
 		get_texture(dialog->mdl);
 		model_draw(dialog->mdl);
@@ -864,7 +864,7 @@ void on_base_texture_clicked(GtkButton *b,gpointer data)
 
 	if (dialog->mdl==NULL) return;
 	mdl=dialog->mdl->model;
-	
+
 	gimp_palette_get_background(&backgr[0],&backgr[1],&backgr[2]);
 	gimp_palette_get_foreground(&foregr[0],&foregr[1],&foregr[2]);
 
@@ -908,14 +908,14 @@ void on_base_texture_clicked(GtkButton *b,gpointer data)
 		mode=GIMP_NORMAL_MODE;
 	}
 	gimp_destroy_params(return_val,nreturn_val);
-	
+
 
 	gimp_palette_set_foreground(255,255,255);
 	gimp_palette_set_background(0,0,0);
 
 	w=gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(dialog->width));
 	h=gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(dialog->height));
-	
+
 	image_id=gimp_image_new(w,h,GIMP_RGB);
 	gimp_image_set_filename(image_id,"Base Texture");
 	layer_id=gimp_layer_new(image_id,"Base Texture",w,h,GIMP_RGB_IMAGE,100,GIMP_NORMAL_MODE);
@@ -959,7 +959,7 @@ void on_base_texture_clicked(GtkButton *b,gpointer data)
 	}
 	gimp_drawable_detach(drawable);
 
-	gimp_display_new(image_id);	
+	gimp_display_new(image_id);
 	gimp_image_clean_all(image_id);
 	gimp_displays_flush();
 
@@ -993,19 +993,19 @@ static void on_spin_button_changed(GtkSpinButton *button,gpointer data)
 			if (val<dialog->oldwidth)
 				val=round_size(val,TRUE);
 			else
-				val=round_size(val,FALSE);	
+				val=round_size(val,FALSE);
 
 			dialog->oldwidth=val;
 			break;
-		case 2: 
+		case 2:
 			if (val<dialog->oldheight)
 				val=round_size(val,TRUE);
 			else
-				val=round_size(val,FALSE);	
+				val=round_size(val,FALSE);
 
 			dialog->oldheight=val;
 			break;
-		
+
 	}
 
 	if (val!=oldval) gtk_spin_button_set_value(button,val);
@@ -1023,12 +1023,12 @@ void init_dialog(void)
 
 	dialog->widget=create_dialog();
 	dialog->fileselection=create_fileselection();
-	dialog->info=get_widget(dialog->widget,"info");	
-	dialog->nearest=get_widget(dialog->widget,"nearest");	
-	dialog->linear=get_widget(dialog->widget,"linear");	
-	dialog->fastest=get_widget(dialog->widget,"fastest");	
-	dialog->nicest=get_widget(dialog->widget,"nicest");	
-	dialog->update=get_widget(dialog->widget,"update");	
+	dialog->info=get_widget(dialog->widget,"info");
+	dialog->nearest=get_widget(dialog->widget,"nearest");
+	dialog->linear=get_widget(dialog->widget,"linear");
+	dialog->fastest=get_widget(dialog->widget,"fastest");
+	dialog->nicest=get_widget(dialog->widget,"nicest");
+	dialog->update=get_widget(dialog->widget,"update");
 	dialog->images_menu=get_widget(dialog->widget,"images_menu");
 	dialog->models_menu=get_widget(dialog->widget,"models_menu");
 	dialog->scale=get_widget(dialog->widget,"scale");
@@ -1061,7 +1061,7 @@ void init_dialog(void)
 	dialog->paint_image=-1;
 	dialog->texture_drawable=-1;
 
-	
+
 
 	gtk_widget_show(dialog->widget);
 
@@ -1080,7 +1080,7 @@ void on_glwindow_destroy(GtkObject *obj,gpointer data)
 	ModelInfo *mdl;
 
 	mdl=gtk_object_get_data(obj,MODEL_KEY);
-	if (mdl==NULL) return;  /* should never happen*/	
+	if (mdl==NULL) return;  /* should never happen*/
 
 	if (mdl->idle>=0) gtk_idle_remove(mdl->idle);
 
@@ -1101,7 +1101,7 @@ void on_glwindow_destroy(GtkObject *obj,gpointer data)
 		update_models_menu((ModelInfo *)dialog->models_list->data);
 	else
 		update_models_menu(NULL);
-	
+
 }
 
 void on_close_clicked(GtkButton *button,gpointer data)
@@ -1125,8 +1125,8 @@ static void run(gchar *name,
 	argv[0]=g_strdup("Texture Paint");
 
 	gtk_init(&argc, &argv);
-	gtk_rc_parse(gimp_gtkrc()); 
-	gdk_set_use_xshm(gimp_use_xshm()); 
+	gtk_rc_parse(gimp_gtkrc());
+	gdk_set_use_xshm(gimp_use_xshm());
 
 	val[0].type=GIMP_PDB_STATUS;
 	val[0].data.d_status=GIMP_PDB_SUCCESS;
@@ -1143,17 +1143,17 @@ static void run(gchar *name,
 
 	f=fopen("/home/bob/coding/qview/data/players/male/tris.md2","rb");
 	mdl = ModelLoad(f);
-	fclose(f);   
+	fclose(f);
 
 	model_new("test1",mdl);
 
 	f=fopen("/home/bob/coding/qview/data/players/male/tris.md2","rb");
 	mdl = ModelLoad(f);
-	fclose(f);   
+	fclose(f);
 
 	model_new("test2",mdl);
 }
-#endif  
+#endif
 
 	gtk_main();
 }
@@ -1227,7 +1227,7 @@ static void copy_to_drawable(ModelInfo *mdl,gint32 drawable_id,int w,int h)
 	drawable=gimp_drawable_get(drawable_id);
 	gimp_pixel_rgn_init(&pr,drawable,0,0,w,h,TRUE,FALSE);
 
-	gimp_pixel_rgn_set_rect(&pr,image,0,0,w,h);	
+	gimp_pixel_rgn_set_rect(&pr,image,0,0,w,h);
 
 	gimp_drawable_flush(drawable);
 	gimp_drawable_detach(drawable);
@@ -1243,7 +1243,7 @@ static void decode(gint16 **data,guchar *buf,int w,int h)
 
 
 	dest=g_malloc(w*h*sizeof(gint16));
-	
+
 	pos=0;
 	for (y=0;y<h;y++)
 	{
@@ -1300,7 +1300,7 @@ void on_paint_clicked(GtkButton *button,gpointer data)
 
 
 
-	if (data) mdl=(ModelInfo *)data; 
+	if (data) mdl=(ModelInfo *)data;
 	else if (dialog->mdl) mdl=dialog->mdl;
 	else return;
 
@@ -1329,7 +1329,7 @@ void on_paint_clicked(GtkButton *button,gpointer data)
 
 		for (i=0;i<nimages;i++)
 		{
-			if (mdl->paint_image==images[i]) 
+			if (mdl->paint_image==images[i])
 			{
 				new_image=FALSE;
 				break;
@@ -1338,7 +1338,7 @@ void on_paint_clicked(GtkButton *button,gpointer data)
 		g_free(images);
 	}
 
-	
+
 	if (new_image)
 	{
 		image_id=gimp_image_new(w,h,GIMP_RGB);
@@ -1358,7 +1358,7 @@ void on_paint_clicked(GtkButton *button,gpointer data)
 
 		g_free(layers);
 
-		if (gimp_image_width(image_id)!=w || 
+		if (gimp_image_width(image_id)!=w ||
 			gimp_image_height(image_id)!=h)
 		{
 			gimp_image_resize(image_id,w,h,0,0);
@@ -1376,7 +1376,7 @@ void on_paint_clicked(GtkButton *button,gpointer data)
 
 	display_model(mdl,DRAW_WHITE);
 	copy_to_drawable(mdl,mask_id,w,h);
-	
+
 	bglayer_id=gimp_layer_new(image_id,"Background",w,h,GIMP_RGB_IMAGE,100,GIMP_NORMAL_MODE);
 
 	gimp_palette_get_background(&r,&g,&b);
@@ -1392,12 +1392,12 @@ void on_paint_clicked(GtkButton *button,gpointer data)
 	gimp_layer_set_edit_mask(layer_id,FALSE);
 
 	if (new_image)
-	{	
+	{
 		display_id=gimp_display_new(image_id);
 	}
 	gimp_image_clean_all(image_id);
 	gimp_displays_flush();
-	
+
 	display_model(mdl,DRAW_NORMAL);
 
 }
@@ -1423,11 +1423,11 @@ void on_generate_clicked(GtkButton *button,gpointer data)
 	char str[256];
 
 
-	if (data) mdl=(ModelInfo *)data; 
+	if (data) mdl=(ModelInfo *)data;
 	else if (dialog->mdl) mdl=dialog->mdl;
 	else return;
 
-	if (mdl->paint_image<0) 
+	if (mdl->paint_image<0)
 	{
 		gimp_message("Click on the \"3D Paint\" button first.");
 		return;
@@ -1464,14 +1464,14 @@ void on_generate_clicked(GtkButton *button,gpointer data)
 	src=g_malloc(4*src_w*src_h);
 
 	gimp_pixel_rgn_init(&pr,drawable,0,0,src_w,src_h,FALSE,FALSE);
-	gimp_pixel_rgn_get_rect(&pr,src,0,0,src_w,src_h);	
+	gimp_pixel_rgn_get_rect(&pr,src,0,0,src_w,src_h);
 
 	gimp_drawable_flush(drawable);
 	gimp_drawable_detach(drawable);
 
 	drawable_id=gimp_image_get_active_layer(mdl->tex_image);
 
-	drawable=gimp_drawable_get(drawable_id);	
+	drawable=gimp_drawable_get(drawable_id);
 
 	w=gimp_drawable_width(drawable->id);
 	h=gimp_drawable_height(drawable->id);
@@ -1483,7 +1483,7 @@ void on_generate_clicked(GtkButton *button,gpointer data)
 	memset(buffer,0,w*h*sizeof(gint32[4]));
 
 	gimp_pixel_rgn_init(&pr,drawable,0,0,w,h,TRUE,FALSE);
-	gimp_pixel_rgn_get_rect(&pr,dest,0,0,w,h);	
+	gimp_pixel_rgn_get_rect(&pr,dest,0,0,w,h);
 
 
 	for (y=0;y<src_h;y++)
@@ -1493,7 +1493,7 @@ void on_generate_clicked(GtkButton *button,gpointer data)
 			s=mdl->tex_s[x+y*src_w]-1;
 			t=mdl->tex_t[x+y*src_w]-1;
 
-			if (s>0 && t>0) 
+			if (s>0 && t>0)
 			{
 				pos1=(s+t*w)*4;
 				pos2=(x+y*src_w)*4;
@@ -1522,18 +1522,18 @@ void on_generate_clicked(GtkButton *button,gpointer data)
 		}
 	}
 
-	gimp_pixel_rgn_set_rect(&pr,dest,0,0,w,h);	
+	gimp_pixel_rgn_set_rect(&pr,dest,0,0,w,h);
 	gimp_drawable_flush(drawable);
 	gimp_drawable_detach(drawable);
-	
+
 	begingl(mdl->glarea);
 	BindTexture(mdl,dest,w,h);
 	endgl(mdl->glarea);
 
-	display_model(mdl,DRAW_NORMAL);	
+	display_model(mdl,DRAW_NORMAL);
 
-	g_free(src);	
-	g_free(dest);	
+	g_free(src);
+	g_free(dest);
 	g_free(buffer);
 
 	gimp_drawable_update(drawable_id,0,0,w,h);

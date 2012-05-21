@@ -124,7 +124,7 @@ SV_SetIdealPitch (void)
 
 		tr = SV_Move (top, vec3_origin, vec3_origin, bottom, 1, sv_player);
 		if (tr.allsolid)
-			return;						// looking at a wall, leave ideal the 
+			return;						// looking at a wall, leave ideal the
 										// way it was
 		if (tr.fraction == 1)
 			return;						// near a dropoff
@@ -183,7 +183,7 @@ SV_UserFriction (void)
 	else
 		friction = sv_friction->value;
 
-	// apply friction   
+	// apply friction
 	control = speed < sv_stopspeed->value ? sv_stopspeed->value : speed;
 	newspeed = speed - host_frametime * control * friction;
 
@@ -446,7 +446,7 @@ SV_ReadClientMove (usercmd_t *move)
 		= sv.time - MSG_ReadFloat (net_message);
 	host_client->num_pings++;
 
-	// read current angles  
+	// read current angles
 	if (sv.protocol == PROTOCOL_NETQUAKE)
 		MSG_ReadAngleV (net_message, angle);
 	else

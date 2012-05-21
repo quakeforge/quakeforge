@@ -33,14 +33,14 @@
 */
 + (id) array;
 
-/** 
+/**
 	Creates and returns an empty array with initial capacity \a cap.
 
 	\param	cap	The initial capacity of the array.
 */
 + (id) arrayWithCapacity: (unsigned)cap;
 
-/** 
+/**
 	Returns a copy of \a array, retaining its contents.
 */
 + (id) arrayWithArray: (Array *)array;
@@ -59,7 +59,7 @@
 + (id) arrayWithObjects: (id)firstObj, ...;
 
 /**
-	Create and return an array containing the first \a count objects from 
+	Create and return an array containing the first \a count objects from
 	primitive array \a objs.
 
 	\warning Do not supply a primitive array containing fewer than \a count
@@ -93,7 +93,7 @@
 /**
 	Initialize the receiver with a list of objects.
 
-	\warning Due to the nature of the Ruamoko/QuakeC language, do not supply 
+	\warning Due to the nature of the Ruamoko/QuakeC language, do not supply
 	more than 6 objects to this method.
 */
 - (id) initWithObjects: (id)firstObj, ...;
@@ -110,7 +110,7 @@
 /**
 	Returns #YES if the receiver contains \a anObject.
 
-	The #isEqual: method is used to determine this, so that (for example) a 
+	The #isEqual: method is used to determine this, so that (for example) a
 	newly-created string object can be compared to one already in the array.
 */
 - (BOOL) containsObject: (id)anObject;
@@ -154,7 +154,7 @@
 
 #if 0
 /**
-	Returns the lowest index, within the range \a aRange, of an object equal 
+	Returns the lowest index, within the range \a aRange, of an object equal
 	to \a anObject.
 
 	If no object is equal, returns #NotFound.
@@ -172,7 +172,7 @@
 
 #if 0
 /**
-	Returns the lowest index, within the range \a aRange, of an object with 
+	Returns the lowest index, within the range \a aRange, of an object with
 	the same address as \a anObject.
 
 	Returns #NotFound if \a anObject is not found within the range.
@@ -198,7 +198,7 @@
 /**
 	Adds a single object to an array
 
-	Adds \a anObject to the receiver at index \a index, pushing any objects 
+	Adds \a anObject to the receiver at index \a index, pushing any objects
 	with a higher index to the next higher slot.
 */
 - (void) insertObject: (id)anObject
@@ -225,7 +225,7 @@
 //\{
 
 /**
-	Recursively removes all objects from the receiver by sending 
+	Recursively removes all objects from the receiver by sending
 	#removeLastObject to \a self, until #count() returns zero.
 */
 - (void) removeAllObjects;
@@ -236,13 +236,13 @@
 - (void) removeLastObject;
 
 /**
-	Finds and removes all objects from the receiver that are equal to 
+	Finds and removes all objects from the receiver that are equal to
 	\a anObject, by sending each #isEqual: with \a anObject as the argument.
 */
 - (void) removeObject: (id)anObject;
 
 /**
-	Finds and removes all objects from the receiver that are equal to any 
+	Finds and removes all objects from the receiver that are equal to any
 	objects in array \a anArray.
 */
 - (void) removeObjectsInArray: (Array *)anArray;
@@ -254,7 +254,7 @@
 - (void) removeObjectIdenticalTo: (id)anObject;
 
 /**
-	Removes the object located at index \a index, moving each object with a 
+	Removes the object located at index \a index, moving each object with a
 	higher index down one position.
 */
 - (void) removeObjectAtIndex: (unsigned)index;

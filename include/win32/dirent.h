@@ -56,7 +56,7 @@ extern      "C" {
 	      /* disk transfer area for this dir */
 	      struct _finddata_t dd_dta;
 
-	      /* dirent struct to return from dir (NOTE: this makes this thread 
+	      /* dirent struct to return from dir (NOTE: this makes this thread
 	         safe as long as only one thread uses a particular DIR struct
 	         at a time) */
 	      struct dirent dd_dir;
@@ -64,7 +64,7 @@ extern      "C" {
 	      /* _findnext handle */
 	      long        dd_handle;
 
-	      /* 
+	      /*
 	       * Status of search:
 	       *   0 = not started yet (next entry to read is first entry)
 	       *  -1 = off the end
@@ -103,7 +103,7 @@ extern      "C" {
 	      /* disk transfer area for this dir */
 	      struct _wfinddata_t dd_dta;
 
-	      /* dirent struct to return from dir (NOTE: this makes this thread 
+	      /* dirent struct to return from dir (NOTE: this makes this thread
 	         safe as long as only one thread uses a particular DIR struct
 	         at a time) */
 	      struct _wdirent dd_dir;
@@ -111,7 +111,7 @@ extern      "C" {
 	      /* _findnext handle */
 	      long        dd_handle;
 
-	      /* 
+	      /*
 	       * Status of search:
 	       *   0 = not started yet (next entry to read is first entry)
 	       *  -1 = off the end

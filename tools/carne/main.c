@@ -38,7 +38,7 @@ Carne_Execute_Script (const char *path, cbuf_args_t *args)
 	cbuf_t *mbuf = Cbuf_New (GIB_Interpreter ());
 	char *f;
 	int len, i;
-	
+
 	file = Qopen (path, "r");
 	if (file) {
 		len = Qfilesize (file);
@@ -63,14 +63,14 @@ Carne_Execute_Script (const char *path, cbuf_args_t *args)
 		carne_exitcode = 1;
 		goto ERROR;
 	}
-	
+
 	if (gib_parse_error) {
 		carne_exitcode = 2;
 		goto ERROR;
-	}	
-		
+	}
+
 	//GIB_Function_Prepare_Args_D (mbuf, args->argv, args->argc);
-	
+
 	// Main loop
 	while (1) {
 		GIB_Thread_Execute ();
@@ -89,9 +89,9 @@ Carne_Execute_Stdin (void)
 {
 	char linebuf[1024];
 	cbuf_t *cbuf = Cbuf_New (GIB_Interpreter ());
-	
+
 	memset (linebuf, 0, sizeof(linebuf));
-	
+
 	while (fgets(linebuf, sizeof(linebuf)-1, stdin)) {
 		GIB_Thread_Execute ();
 		Cbuf_AddText (cbuf, linebuf);
@@ -107,15 +107,15 @@ Carne_Execute_Stdin (void)
 int
 main (int argc, char **argv)
 {
-	cbuf_args_t *args; 
+	cbuf_args_t *args;
 	int result, i;
-	
+
 	// Initialize required QF subsystems
 	Sys_Init ();
 	GIB_Init (false); // No sandbox
-	
+
 	GIB_Builtin_Add ("exit", Carne_GIB_Exit_f);
-	
+
 	if (argc > 1) {
 		// Prepare arguments
 		args = Cbuf_ArgsNew ();

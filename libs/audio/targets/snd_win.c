@@ -189,10 +189,10 @@ SNDDMA_InitWav (void)
 		return false;
 	}
 
-	/* 
-	   Allocate and lock memory for the waveform data. The memory 
-	   for waveform data must be globally allocated with 
-	   GMEM_MOVEABLE and GMEM_SHARE flags. 
+	/*
+	   Allocate and lock memory for the waveform data. The memory
+	   for waveform data must be globally allocated with
+	   GMEM_MOVEABLE and GMEM_SHARE flags.
 	*/
 	gSndBufSize = WAV_BUFFERS * WAV_BUFFER_SIZE;
 	hData = GlobalAlloc (GMEM_MOVEABLE | GMEM_SHARE, gSndBufSize);
@@ -209,10 +209,10 @@ SNDDMA_InitWav (void)
 	}
 	memset (lpData, 0, gSndBufSize);
 
-	/* 
-	 * Allocate and lock memory for the header. This memory must 
-	 * also be globally allocated with GMEM_MOVEABLE and 
-	 * GMEM_SHARE flags. 
+	/*
+	 * Allocate and lock memory for the header. This memory must
+	 * also be globally allocated with GMEM_MOVEABLE and
+	 * GMEM_SHARE flags.
 	 */
 	hWaveHdr = GlobalAlloc (GMEM_MOVEABLE | GMEM_SHARE,
 							(DWORD) sizeof (WAVEHDR) * WAV_BUFFERS);
@@ -287,9 +287,9 @@ static int
 SNDDMA_GetDMAPos (void)
 {
 	int		s = 0;
-	
+
 	s = snd_sent * WAV_BUFFER_SIZE;
-	
+
 	s >>= sample16;
 	s /= sn.channels;
 
@@ -329,10 +329,10 @@ SNDDMA_Submit (void)
 		h = lpWaveHdr + (snd_sent & WAV_MASK);
 
 		snd_sent++;
-		/* 
-		   Now the data block can be sent to the output device. The 
-		   waveOutWrite function returns immediately and waveform 
-		   data is sent to the output device in the background. 
+		/*
+		   Now the data block can be sent to the output device. The
+		   waveOutWrite function returns immediately and waveform
+		   data is sent to the output device in the background.
 		*/
 		wResult = waveOutWrite (hWaveOut, h, sizeof (WAVEHDR));
 

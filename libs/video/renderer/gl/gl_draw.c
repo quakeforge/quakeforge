@@ -121,7 +121,7 @@ Draw_InitText (void)
 		textUseVA = 1;
 		if (vaelements > 3)
 			tVAsize = vaelements - (vaelements % 4);
-		else 
+		else
 			tVAsize = 2048;
 		Sys_MaskPrintf (SYS_DEV, "Text: %i maximum vertex elements.\n",
 						tVAsize);
@@ -351,9 +351,9 @@ gl_Draw_Init (void)
 	// load the console background and the charset by hand, because we need to
 	// write the version string into the background before turning it into a
 	// texture
-	
+
 	image = LoadImage ("gfx/conchars");
-	if (image) {	
+	if (image) {
 		if (image->format < 4) {
 			char_texture = GL_LoadTexture ("charset", image->width,
 										   image->height, image->data, false,
@@ -369,7 +369,7 @@ gl_Draw_Init (void)
 		for (i = 0; i < 256 * 64; i++)
 			if (draw_chars[i] == 0)
 				draw_chars[i] = 255;		// proper transparent color
-		
+
 		char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false,
 									   true, 1);
 		width = 128;

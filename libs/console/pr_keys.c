@@ -42,7 +42,7 @@
 
 /*
     bi_Key_SetBinding
-    
+
     QC-Function for set a binding
 */
 static void
@@ -61,7 +61,7 @@ bi_Key_SetBinding (progs_t *pr)
 
 /*
     bi_Key_LookupBinding
-    
+
     Perform a reverse-binding-lookup
 */
 static void
@@ -88,12 +88,12 @@ bi_Key_LookupBinding (progs_t *pr)
 		}
 	}
 
-	R_INT (pr) = keynum;	
+	R_INT (pr) = keynum;
 };
 
 /*
     bi_Key_CountBinding
-    
+
     Counts how often a binding is assigned to a key
 */
 static void
@@ -114,13 +114,13 @@ bi_Key_CountBinding (progs_t *pr)
 		}
 	}
 
-	R_INT (pr) = res;	
+	R_INT (pr) = res;
 };
 
 
 /*
     bi_Key_LookupBinding
-    
+
     Convertes a keynum to a string
 */
 static void

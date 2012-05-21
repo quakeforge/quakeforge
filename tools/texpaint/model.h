@@ -1,7 +1,7 @@
 /* Texture Paint - a GIMP plugin
  *
  * Copyright (C) 1998  Uwe Maurer <uwe_maurer@t-online.de>
- * 
+ *
  * Copyright (C) 1998  Lionel ULMER <bbrox@mygale.org>
  *
  * Based on code Copyright (C) 1997 Trey Harrison <trey@crack.com>
@@ -50,7 +50,7 @@ typedef struct {
 
 typedef struct {
   char name[16];
-  
+
   Vertex *vert_table;
 } Frame;
 
@@ -61,7 +61,7 @@ struct _Model
 	/* The number of Frames */
 	int numframes;
 	Frame *frames;
-	
+
 	void (*draw)(Model *,int frame,int nextframe,float interpolation);
 	void (*destroy)(Model *);
 

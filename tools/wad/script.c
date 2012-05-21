@@ -89,7 +89,7 @@ load_image (const char *name)
 	tex_t      *tex;
 	int         i, pixels;
 	byte       *s, *d;
-	
+
 	if (!(file = Qopen (name, "rb")))
 		Sys_Error ("couldn't open %s. %s", name, strerror(errno));
 	if (!(tex = LoadPNG (file)))

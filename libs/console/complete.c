@@ -66,7 +66,7 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 	cbuf_t     *cbuf;
 
 	s = il->lines[il->edit_line] + 1;
-	
+
 	if (*s == '/')
 		s++;
 
@@ -75,12 +75,12 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 	if (cbuf->interpreter->complete) {
 		const char **completions = cbuf->interpreter->complete (cbuf, s);
 		const char **com;
-		
+
 		for (o = 0, com = completions; *com; com++, o++)
 			;
-		
+
 		c = v = 0;
-		
+
 		list[2] = completions;
 	} else {
 		// Count number of possible matches
@@ -88,10 +88,10 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 		v = Cvar_CompleteCountPossible (s);
 		o = 0;
 	}
-	
+
 	if (!(c + v + o))	// No possible matches
 		return;
-	
+
 	if (c + v + o == 1) {
 		if (c) {
 			list[0] = Cmd_CompleteBuildList (s);
@@ -110,7 +110,7 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 			cmd = *(list[1] = Cvar_CompleteBuildList (s));
 		if (o)
 			cmd = *(list[2]);
-		
+
 		cmd_len = 0;
 		do {
 			for (i = 0; i < 3; i++) {
@@ -137,7 +137,7 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 			Sys_Printf ("%i possible command%s\n", c, (c > 1) ? "s: " : ":");
 			Con_DisplayList (list[0], con_linewidth);
 		}
-		
+
 		if (v) {
 			Sys_Printf ("%i possible variable%s\n", v, (v > 1) ? "s: " : ":");
 			Con_DisplayList (list[1], con_linewidth);
@@ -147,18 +147,18 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 			Con_DisplayList (list[2], con_linewidth);
 		}
 	}
-	
+
 	if (cmd) {
 		unsigned    bound = max (0, (int) strlen (s) - (int) cmd_len);
 		const char *overwrite;
-		
+
 		if (cmd_len > 0)
 			while (bound < strlen (s)
 				   && strncmp (s + bound, cmd, strlen (s + bound)))
 				bound++;
 
 		overwrite = va("%.*s%.*s", bound, s, cmd_len, cmd);
-	
+
 		il->lines[il->edit_line][1] = '/';
 		strncpy (il->lines[il->edit_line] + 2, overwrite, il->line_size - 3);
 		il->lines[il->edit_line][il->line_size-1] = 0;

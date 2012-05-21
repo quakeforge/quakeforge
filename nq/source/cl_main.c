@@ -71,10 +71,10 @@ cvar_t     *cl_writecfg;
 cvar_t     *cl_shownet;
 cvar_t     *cl_nolerp;
 
-cvar_t     *cl_cshift_bonus; 
-cvar_t     *cl_cshift_contents; 
-cvar_t     *cl_cshift_damage; 
-cvar_t     *cl_cshift_powerup; 
+cvar_t     *cl_cshift_bonus;
+cvar_t     *cl_cshift_contents;
+cvar_t     *cl_cshift_damage;
+cvar_t     *cl_cshift_powerup;
 
 cvar_t     *lookspring;
 
@@ -145,7 +145,7 @@ CL_InitCvars (void)
 	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE,
 								   NULL, "Shift view colors for contents "
 								   "(water, slime, etc)");
-	cl_cshift_damage = Cvar_Get ("cl_cshift_damage", "1", CVAR_ARCHIVE, NULL, 
+	cl_cshift_damage = Cvar_Get ("cl_cshift_damage", "1", CVAR_ARCHIVE, NULL,
 								 "Shift view colors on damage");
 	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE, NULL,                             "Shift view colors for powerups");
 	cl_name = Cvar_Get ("_cl_name", "player", CVAR_ARCHIVE, NULL,

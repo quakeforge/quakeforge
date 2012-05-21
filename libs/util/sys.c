@@ -102,7 +102,7 @@ typedef struct shutdown_list_s {
 
 static shutdown_list_t *shutdown_list;
 
-#ifndef _WIN32 
+#ifndef _WIN32
 static int  do_stdin = 1;
 qboolean    stdin_ready;
 #endif

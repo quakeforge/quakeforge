@@ -57,7 +57,7 @@
 */
 
 typedef struct baseobj_s {
-	unsigned long int ref;	
+	unsigned long int ref;
 } baseobj_t;
 
 static int
@@ -65,7 +65,7 @@ Object_Retain_f (gib_object_t *obj, gib_method_t *method, void *data,
 		gib_object_t *sender, gib_message_t mesg)
 {
 	baseobj_t *base = data;
-	
+
 	base->ref++;
 	GIB_Object_Incref (obj);
 	GIB_Reply (obj, mesg, 1, &obj->handstr);
@@ -74,7 +74,7 @@ Object_Retain_f (gib_object_t *obj, gib_method_t *method, void *data,
 
 static int
 Object_Release_f (gib_object_t *obj, gib_method_t *method, void *data,
-		gib_object_t *sender, gib_message_t mesg) 
+		gib_object_t *sender, gib_message_t mesg)
 {
 	baseobj_t *base = data;
 	if (base->ref) {
@@ -119,7 +119,7 @@ Object_IsKindOf_f (gib_object_t *obj, gib_method_t *method, void *data,
 	gib_class_t *c;
 	static const char *one = "1";
 	static const char *zero = "0";
-	
+
 	if (mesg.argc < 2)
 		return -1;
 
@@ -174,7 +174,7 @@ Object_Class_New_f (gib_object_t *obj, gib_method_t *method, void *data,
 {
 	const char *old;
 	gib_object_t *new;
-	
+
 	new = GIB_Object_Create (obj->class->name, false);
 	old = mesg.argv[0];
 	mesg.argv[0] = "init";
@@ -200,7 +200,7 @@ Object_Class_Children_f (gib_object_t *obj, gib_method_t *method, void *data,
 	unsigned int size;
 
 	g_occ_i = 0;
-	
+
 	size = llist_size (obj->class->children);
 	if (size) {
 		g_occ_reply = malloc (sizeof (char *) * size);
@@ -210,14 +210,14 @@ Object_Class_Children_f (gib_object_t *obj, gib_method_t *method, void *data,
 		GIB_Reply (obj, mesg, 0, NULL);
 	return 0;
 }
-	
+
 static void *
 Object_Construct (gib_object_t *obj)
 {
 	baseobj_t *base = malloc (sizeof (baseobj_t));
 
 	base->ref = 1;
-	
+
 	return base;
 }
 
@@ -256,11 +256,11 @@ static gib_classdesc_t Object_class = {
 	Object_Destruct,
 	Object_methods, Object_class_methods
 };
-	
-/* End Object class */
-	
 
-	
+/* End Object class */
+
+
+
 /*
    Begin Thread class
 
@@ -273,7 +273,7 @@ static gib_classdesc_t Object_class = {
    this case, the object must be released manually later on, but otherwise
    will do nothing.
 */
-	
+
 typedef struct Thread_class_s {
 	hashtab_t *methods;
 } Thread_class_t;
@@ -414,7 +414,7 @@ ObjectHash_Insert_f (gib_object_t *obj, gib_method_t *method, void *data,
 
 	if (mesg.argc < 3)
 		return -1;
-	
+
 	for (i = 2; i < mesg.argc; i++) {
 		if ((ins = GIB_Object_Get (mesg.argv[i]))) {
 			new = malloc (sizeof (ObjRef_t));
@@ -462,7 +462,7 @@ ObjectHash_Remove_f (gib_object_t *obj, gib_method_t *method, void *data,
 	ObjectHash_t *objh = data;
 	ObjRef_t **refs, **r;
 	int i;
-	
+
 	if (mesg.argc < 2)
 		return -1;
 
@@ -489,7 +489,7 @@ ObjectHash_Remove_f (gib_object_t *obj, gib_method_t *method, void *data,
 	}
 	GIB_Reply (obj, mesg, 0, NULL);
 	return 0;
-}		
+}
 
 static gib_methodtab_t ObjectHash_methods[] = {
 	{"insert", ObjectHash_Insert_f, NULL},
@@ -536,7 +536,7 @@ Scrobj_Construct (gib_object_t *obj)
 
 	if (!obj->vars)
 		obj->vars = GIB_Var_Hash_New ();
-	
+
 	return NULL;
 }
 
@@ -544,9 +544,9 @@ static void *
 Scrobj_Class_Construct (gib_object_t *obj)
 {
 	Scrobj_t *new = malloc (sizeof (Scrobj_t));
-	
+
 	new->shared = GIB_Domain_Get (obj->class->name);
-	
+
 	return new;
 }
 
@@ -575,7 +575,7 @@ Scrobj_Method_f (gib_object_t *obj, gib_method_t *method, void *data,
 	cbuf_t *thread = GIB_Thread_New ();
 	static hashtab_t *nhash = NULL;
 	gib_var_t *var;
-	
+
 	if (GIB_Function_Execute (thread, ((Scrobj_method_t *)method->data)->func,
 			mesg.argv, mesg.argc))
 		return -1;
@@ -598,7 +598,7 @@ Scrobj_Method_f (gib_object_t *obj, gib_method_t *method, void *data,
 	else
 		dstring_copystr (var->array[0].value, "0");
 	Cbuf_Execute_Stack (thread);
-	
+
 	return 0;
 }
 
@@ -629,7 +629,7 @@ GIB_Classes_Build_Scripted (const char *name, const char *parentname,
 
 	g_gcbs_mode = INSTANCE;
 	g_gcbs_name = name;
-	
+
 	methods = llist_new (gcbs_mtabfree, NULL, NULL);
 	cmethods = llist_new (gcbs_mtabfree, NULL, NULL);
 
@@ -684,7 +684,7 @@ GIB_Classes_Build_Scripted (const char *name, const char *parentname,
 
 	llist_append (methods, calloc (1, sizeof (gib_methodtab_t)));
 	llist_append (cmethods, calloc (1, sizeof (gib_methodtab_t)));
-	
+
 	mtab = llist_createarray (methods, sizeof (gib_methodtab_t));
 	cmtab = llist_createarray (cmethods, sizeof (gib_methodtab_t));
 
@@ -703,7 +703,7 @@ GIB_Classes_Build_Scripted (const char *name, const char *parentname,
 	llist_delete (methods);
 	llist_delete (cmethods);
 }
-	
+
 void
 GIB_Classes_Init (void)
 {

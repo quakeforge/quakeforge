@@ -1,8 +1,8 @@
 /*
 	gls_norm.c
-	
+
 	Dummy gl functions
-	
+
 	Copyright (C)2001 Bill Currie <bill@taniwha.org>
 	Copyright (C)2002 Chris Ison wildcode@users.sourceforge.net
 
@@ -16,12 +16,12 @@
 	Quakeforge and lib3Dfxgl are distributed in the hope that they will be
 	useful,	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-	
+
 	See the	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
 	along with Quakeforge and lib3Dfxgl; if not, write to:
-	
+
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
@@ -1995,7 +1995,7 @@ norm_glViewport (GLint x, GLint y, GLsizei width, GLsizei height)
 {
 }
 
-fxMesaContext 
+fxMesaContext
 norm_fxMesaCreateContext (GLuint win, GrScreenResolution_t res, GrScreenRefresh_t ref, const GLint attribList[])
 {
 	fxMesaContext fxMesa = ((void *)0);
@@ -2003,18 +2003,18 @@ norm_fxMesaCreateContext (GLuint win, GrScreenResolution_t res, GrScreenRefresh_
 	return fxMesa;
 }
 
-void 
+void
 norm_fxMesaMakeCurrent(fxMesaContext fxMesa)
 {
 }
 
-void 
+void
 norm_fxMesaDestroyContext(fxMesaContext fxMesa)
 {
 	free (fxMesa);
 }
 
-void 
+void
 norm_fxMesaSwapBuffers(void)
 {
 }

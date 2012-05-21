@@ -158,7 +158,7 @@ SV_CreateBaseline (void)
 /*
 	SV_SaveSpawnparms
 
-	Grabs the current state of the progs serverinfo flags 
+	Grabs the current state of the progs serverinfo flags
 	and each client for saving across the
 	transition to another level
 */

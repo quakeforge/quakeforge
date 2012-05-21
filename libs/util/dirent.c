@@ -1,14 +1,14 @@
 /*
  * dirent.c
  *
- * Derived from DIRLIB.C by Matt J. Weinstein 
+ * Derived from DIRLIB.C by Matt J. Weinstein
  * This note appears in the DIRLIB.H
  * DIRLIB.H by M. J. Weinstein   Released to public domain 1-Jan-89
  *
  * Updated by Jeremy Bettis <jeremy@hksys.com>
  * Significantly revised and rewinddir, seekdir and telldir added by Colin
  * Peters <colin@fu.is.saga-u.ac.jp>
- *	
+ *
  * $Revision$
  * $Author$
  * $Date$

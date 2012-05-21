@@ -241,7 +241,7 @@ sw32_D_DrawSurfaces (void)
 				if (s->insubmodel) {
 					// FIXME: we don't want to do all this for every polygon!
 					// TODO: store once at start of frame
-					currententity = s->entity;	// FIXME: make this passed in 
+					currententity = s->entity;	// FIXME: make this passed in
 												// to sw32_R_RotateBmodel ()
 					VectorSubtract (r_origin, currententity->origin,
 									local_modelorg);
@@ -274,7 +274,7 @@ sw32_D_DrawSurfaces (void)
 				if (s->insubmodel) {
 					// FIXME: we don't want to do all this for every polygon!
 					// TODO: store once at start of frame
-					currententity = s->entity;	// FIXME: make this passed in 
+					currententity = s->entity;	// FIXME: make this passed in
 												// to sw32_R_RotateBmodel ()
 					VectorSubtract (r_origin, currententity->origin,
 									local_modelorg);

@@ -215,7 +215,7 @@
 	.extern fp_64k
 	.extern fp_1m
 	.extern fp_1m_minus_1
-	.extern fp_8 
+	.extern fp_8
 	.extern entryvec_table
 	.extern advancetable
 	.extern sstep

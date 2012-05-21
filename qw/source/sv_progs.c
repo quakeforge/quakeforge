@@ -180,7 +180,7 @@ static int
 parse_field (progs_t *pr, const char *key, const char *value)
 {
 	/*
-		If skyname is set, set what the map thinks the skybox name should 
+		If skyname is set, set what the map thinks the skybox name should
 		be. "qlsky" is supported since at least one other map uses it.
 	*/
 	if (strequal (key, "skyname")		// QuakeForge

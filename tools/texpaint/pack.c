@@ -43,7 +43,7 @@ typedef struct dir_entry {
   char *name;
   int offset;
   int size;
-  
+
   struct dir_entry *same_level;
   struct dir_entry *sub_dir;
 } DirEntry;
@@ -66,10 +66,10 @@ char *GetDir(char **file) {
 
   if (tmp[i] == '\0')
     return NULL;
-  
+
   tmp[i] = '\0';
   *file = *file + i + 1;
-  
+
   return tmp;
 }
 
@@ -83,7 +83,7 @@ static inline DirEntry *NewDirEntry(char *name, DirEntry *level, DirEntry *sub,
 
   ret->offset = offset;
   ret->size = size;
-  
+
   return ret;
 }
 
@@ -93,13 +93,13 @@ static inline DirEntry *RecInsert(DirEntry *first, char *filename,
 
   subdir = filename;
   dir = GetDir(&subdir);
-  
+
   if (dir == NULL) {
     /* This is a leaf (a file) */
     DirEntry *prec, *cur, *newentry;
 
     newentry = NewDirEntry(subdir, NULL, NULL, offset, size);
-    
+
     prec = NULL;
     cur = first;
 
@@ -149,7 +149,7 @@ static inline DirEntry *RecInsert(DirEntry *first, char *filename,
 
     if (prec == NULL) {
       newentry->same_level = first;
-      
+
       return newentry;
     } else {
       prec->same_level = newentry;
@@ -181,13 +181,13 @@ static inline void BuildTree(GtkWidget *tree, DirEntry *de) {
     item = gtk_tree_item_new_with_label(de->name);
     gtk_tree_append(GTK_TREE(tree), item);
     gtk_widget_show(item);
-    
+
     if (de->sub_dir == NULL) {
       /* This is a file !!!! */
       EntryInfo *info = (EntryInfo *) malloc(sizeof(EntryInfo));
       info->offset = de->offset;
       info->size = de->size;
-      
+
       gtk_object_set_data(GTK_OBJECT(item),
 			  INFO_KEY,
 			  (gpointer) info);
@@ -206,7 +206,7 @@ static inline void BuildTree(GtkWidget *tree, DirEntry *de) {
 			 GTK_SIGNAL_FUNC(item_destroyed), NULL);
     } else {
       GtkWidget *stree;
-      
+
       stree = gtk_tree_new();
       gtk_tree_item_set_subtree(GTK_TREE_ITEM(item), stree);
       gtk_tree_item_collapse(GTK_TREE_ITEM(item));
@@ -239,7 +239,7 @@ GtkWidget *OpenPAK(FILE *f, char *name) {
   int i;
   DirEntry *first = NULL, *root;
   GtkWidget *ret;
-  
+
   /* Fail safe :-) */
   if (f == NULL)
     return NULL;
@@ -250,7 +250,7 @@ GtkWidget *OpenPAK(FILE *f, char *name) {
   /* Check if this is really a PACK file */
   if (strncmp((char *) &(header.magic), "PACK", 4))
     return NULL;
-  
+
   /* Goes to the start of the PAK directory */
   fseek(f, header.diroffset, SEEK_SET);
   num_entries = header.dirsize / sizeof(PakEntry);
@@ -265,14 +265,14 @@ GtkWidget *OpenPAK(FILE *f, char *name) {
 		      entries[i].offset, entries[i].size);
   }
   root = NewDirEntry(name, NULL, first, -1, -1);
-    
+
   /* Builds the corresponding GtkTree */
   ret = gtk_tree_new();
   BuildTree(ret, root);
-  
+
   /* Frees the memory */
   FreeMem(root);
   free(entries);
-  
+
   return ret;
 }

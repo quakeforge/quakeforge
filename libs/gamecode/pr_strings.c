@@ -330,7 +330,7 @@ VISIBLE string_t
 PR_SetString (progs_t *pr, const char *s)
 {
 	strref_t   *sr;
-	
+
 	if (!s)
 		s = "";
 	sr = Hash_Find (pr->strref_hash, s);
@@ -559,7 +559,7 @@ I_DoPrint (dstring_t *result, fmt_item_t *formatting)
 
 		doPrecision = -1 != current->precision;
 		doWidth = 0 != current->minFieldWidth;
-		
+
 		dsprintf (tmp, "%%%s%s%s%s%s%s%s",
 			(current->flags & FMT_ALTFORM) ? "#" : "",	// hash
 			(current->flags & FMT_ZEROPAD) ? "0" : "",	// zero padding

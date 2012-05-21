@@ -244,7 +244,7 @@ wav_get_info (QFile *file)
 		Sys_Printf ("missing data chunk\n");
 		goto bail;
 	}
-	
+
 	info.rate = dfmt->samples_per_sec;
 	info.width = dfmt->bits_per_sample / 8;
 	info.channels = dfmt->channels;

@@ -42,7 +42,7 @@
 #include <sys/time.h>
 #endif
 #include <time.h>
-	
+
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -218,7 +218,7 @@ nextdemomessage:
 		}
 	}
 
-	// decide if it is time to grab the next message        
+	// decide if it is time to grab the next message
 	if (cls.timedemo) {
 		if (cls.td_lastframe < 0)
 			cls.td_lastframe = demotime;

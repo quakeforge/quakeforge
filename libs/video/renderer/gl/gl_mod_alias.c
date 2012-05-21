@@ -394,7 +394,7 @@ gl_R_DrawAliasModel (entity_t *e)
 	minlight = max (model->min_light, e->min_light);
 
 	qfglColor4fv (e->colormod);
-	
+
 	if (!is_fullbright) {
 		float lightadj;
 
@@ -410,7 +410,7 @@ gl_R_DrawAliasModel (entity_t *e)
 				lightadj = minlight / lightadj;
 			else
 				lightadj = 1.0;
-		
+
 			// 255 is fullbright
 			VectorScale (ambientcolor, lightadj / 255.0, ambientcolor);
 		} else {
@@ -425,8 +425,8 @@ gl_R_DrawAliasModel (entity_t *e)
 						((l->radius + radius) * (l->radius + radius))) {
 						continue;
 					}
-					
-					
+
+
 					if (used_lights >= gl_max_lights) {
 						// For solid lighting, multiply by 0.5 since it's cos
 						// 60 and 60 is a good guesstimate at the average
@@ -472,12 +472,12 @@ gl_R_DrawAliasModel (entity_t *e)
 			for (l = r_dlights, lnum = 0; lnum < r_maxdlights; lnum++, l++) {
 				if (l->die >= vr_data.realtime) {
 					VectorSubtract (l->origin, e->origin, dist);
-					
+
 					if ((d = DotProduct (dist, dist)) > (l->radius + radius) *
 						(l->radius + radius)) {
 							continue;
 					}
-					
+
 					// For solid lighting, multiply by 0.5 since it's cos 60
 					// and 60 is a good guesstimate at the average incident
 					// angle. Seems to match vector lighting best, too.
@@ -486,8 +486,8 @@ gl_R_DrawAliasModel (entity_t *e)
 						l->color, emission);
 				}
 			}
-			
-			d = max (emission[0], max (emission[1], emission[2]));			
+
+			d = max (emission[0], max (emission[1], emission[2]));
 			// 1.5 to allow some fading (curb emission making stuff dark)
 			if (d > 1.5) {
 				VectorScale (emission, 1.5 / d, emission);
@@ -550,18 +550,18 @@ gl_R_DrawAliasModel (entity_t *e)
 	// draw all the triangles
 	if (is_fullbright) {
 		qfglBindTexture (GL_TEXTURE_2D, texture);
-		
+
 		if (gl_vector_light->int_val) {
 			qfglDisable (GL_LIGHTING);
 			if (!gl_tess)
 				qfglDisable (GL_NORMALIZE);
 		}
-		
+
 		if (vo->tex_coord)
 			GL_DrawAliasFrameTri (vo);
-		else 
+		else
 			GL_DrawAliasFrame (vo);
-		
+
 		if (gl_vector_light->int_val) {
 			if (!gl_tess)
 				qfglEnable (GL_NORMALIZE);
@@ -607,7 +607,7 @@ gl_R_DrawAliasModel (entity_t *e)
 
 				qfglBindTexture (GL_TEXTURE_2D, fb_texture);
 				GL_DrawAliasFrameTri (vo);
-				
+
 				if (gl_vector_light->int_val) {
 					qfglEnable (GL_LIGHTING);
 					if (!gl_tess)
@@ -622,12 +622,12 @@ gl_R_DrawAliasModel (entity_t *e)
 					if (!gl_tess)
 						qfglDisable (GL_NORMALIZE);
 				}
-				
+
 				qfglColor4fv (e->colormod);
-				
+
 				qfglBindTexture (GL_TEXTURE_2D, fb_texture);
 				GL_DrawAliasFrame (vo);
-				
+
 				if (gl_vector_light->int_val) {
 					qfglEnable (GL_LIGHTING);
 					if (!gl_tess)

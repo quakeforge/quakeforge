@@ -61,16 +61,16 @@ typedef struct {
 	server_state_t	state;			// precache commands are valid only during load
 
 	double		time;
-	
+
 	int			lastcheck;			// used by PF_checkclient
-	double		lastchecktime;		// for monster ai 
+	double		lastchecktime;		// for monster ai
 
 	qboolean	paused;				// are we paused?
 
 	//check player/eyes models for hacks
 	unsigned int	model_player_checksum;
 	unsigned int	eyes_player_checksum;
-	
+
 	char		name[64];			// map name
 	char		modelname[MAX_QPATH];		// maps/<name>.bsp, for model_precache[0]
 	struct model_s 	*worldmodel;
@@ -104,7 +104,7 @@ typedef struct {
 
 	// the signon buffer will be sent to each client as they connect
 	// includes the entity baselines, the static entities, etc
-	// large levels will have >MAX_DATAGRAM sized signons, so 
+	// large levels will have >MAX_DATAGRAM sized signons, so
 	// multiple signon messages are kept
 	sizebuf_t	signon;
 	int			num_signon_buffers;
@@ -218,9 +218,9 @@ typedef struct client_s {
 // spawn parms are carried from level to level
 	float			spawn_parms[NUM_SPAWN_PARMS];
 
-// client known data for deltas	
+// client known data for deltas
 	int				old_frags;
-	
+
 	int				stats[MAX_CL_STATS];
 
 	delta_t			delta;
@@ -239,7 +239,7 @@ typedef struct client_s {
 	struct dstring_s *uploadfn;
 	netadr_t		snap_from;
 	qboolean		remote_snap;
- 
+
 //===== NETWORK ============
 	int				chokecount;
 	netchan_t		netchan;
@@ -293,7 +293,7 @@ typedef struct {
 	int			num_clients;
 	int			serverflags;		// episode completion information
 	void		(*phys_client) (struct edict_s *ent, int num);
-	
+
 	double		last_heartbeat;
 	int			heartbeat_sequence;
 	svstats_t	stats;

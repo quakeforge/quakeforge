@@ -103,7 +103,7 @@ typedef struct entity_s {
 
 	int						fullbright;
 	float					min_light;
-	
+
 	// FIXME: could turn these into a union
 	int						trivial_accept;
 	struct mnode_s			*topnode; // for bmodels, first world node that
@@ -135,7 +135,7 @@ typedef struct
 										// right and bottom edges, for clamping
 	float		fvrectright;			// rightmost edge, for Alias clamping
 	float		fvrectbottom;			// bottommost edge, for Alias clamping
-	float		horizontalFieldOfView;	// at Z = 1.0, this many X is visible 
+	float		horizontalFieldOfView;	// at Z = 1.0, this many X is visible
 										// 2.0 = 90 degrees
 	float		xOrigin;			// should probably always be 0.5
 	float		yOrigin;			// between be around 0.3 to 0.5

@@ -845,7 +845,7 @@ expr_t *
 new_self_expr (void)
 {
 	symbol_t   *sym;
-	
+
 	sym = make_symbol (".self", &type_entity, pr.near_data, st_extern);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
@@ -856,7 +856,7 @@ expr_t *
 new_this_expr (void)
 {
 	symbol_t   *sym;
-	
+
 	sym = make_symbol (".this", field_type (&type_id), pr.near_data, st_extern);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
@@ -936,7 +936,7 @@ get_struct_field (type_t *t1, expr_t *e1, expr_t *e2)
 	symtab_t   *strct = t1->t.symtab;
 	symbol_t   *sym = e2->e.symbol;//FIXME need to check
 	symbol_t   *field;
-	
+
 	if (!strct) {
 		error (e1, "dereferencing pointer to incomplete type");
 		return 0;
@@ -954,7 +954,7 @@ field_expr (expr_t *e1, expr_t *e2)
 {
 	type_t     *t1, *t2;
 	expr_t     *e;
-	
+
 	if (e1->type == ex_error)
 		return e1;
 	t1 = get_type (e1);
@@ -996,7 +996,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			class_t    *class = t1->t.fldptr.type->t.class;
 			symbol_t   *sym = e2->e.symbol;//FIXME need to check
 			symbol_t   *ivar;
-			
+
 			ivar = class_find_ivar (class, vis_protected, sym->name);
 			if (!ivar)
 				return new_error_expr ();
@@ -1010,7 +1010,7 @@ field_expr (expr_t *e1, expr_t *e2)
 	} else if (t1->type == ev_vector || t1->type == ev_quat
 			   || is_struct (t1)) {
 		symbol_t   *field;
-		
+
 		field = get_struct_field (t1, e1, e2);
 		if (!field)
 			return e1;
@@ -1838,7 +1838,7 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 	}
 	for (i = arg_count - 1, e = params; i >= 0; i--, e = e->next) {
 		type_t     *t = get_type (e);
- 
+
 		if (!type_size (t))
 			err = error (e, "type of formal parameter %d is incomplete",
 						 i + 1);

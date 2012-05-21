@@ -104,7 +104,7 @@ Hash_String (const char *str)
 	}
 	return h;
 #else
-	// dx_hack_hash 
+	// dx_hack_hash
 	// shamelessly stolen from Daniel Phillips <phillips@innominate.de>
 	// from his post to lkml
 	unsigned long hash0 = 0x12a3fe2d, hash1 = 0x37abe8f9;
@@ -131,7 +131,7 @@ Hash_Buffer (const void *_buf, int len)
 	}
 	return h;
 #else
-	// dx_hack_hash 
+	// dx_hack_hash
 	// shamelessly stolen from Daniel Phillips <phillips@innominate.de>
 	// from his post to lkml
 	unsigned long hash0 = 0x12a3fe2d, hash1 = 0x37abe8f9;
@@ -163,7 +163,7 @@ get_index (uintptr_t hash, size_t size, size_t bits)
 #if 0
 	unsigned long mask = ~0UL << bits;
 	unsigned long extract;
-	
+
 	size -= 1;
 	for (extract = (hash & mask) >> bits;
 		 extract;

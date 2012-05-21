@@ -127,7 +127,7 @@ SV_AddNailUpdate (edict_t *ent)
 static void
 SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 {
-	byte	   *buf;				// [48 bits] xyzpy 12 12 12 4 8 
+	byte	   *buf;				// [48 bits] xyzpy 12 12 12 4 8
 	int			n, p, x, y, z, yaw;
 	int         bpn = recorder ? 7 : 6;	// bytes per nail
 	edict_t	   *ent;

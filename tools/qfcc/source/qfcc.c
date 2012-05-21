@@ -1,4 +1,4 @@
-/* 
+/*
 	qfcc.c
 
 	QuakeForge Code Compiler (main program)
@@ -709,7 +709,7 @@ main (int argc, char **argv)
 		fprintf (stderr, "Warning: putenv failed\n");
 	}
 #endif
-	
+
 	this_program = NORMALIZE (argv[0]);
 
 	DecodeArgs (argc, argv);

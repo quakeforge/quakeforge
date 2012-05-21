@@ -63,7 +63,7 @@ locs_nearest (const vec3_t loc)
 	float       best_distance = 9999999, distance;
 	int         i, j = -1;
 	location_t *cur;
-	
+
 	for (i = 0; i < locations_count; i++) {
 		cur = locations[i];
 		distance = VectorDistance_fast (loc, cur->loc);
@@ -74,14 +74,14 @@ locs_nearest (const vec3_t loc)
 	}
 	return (j);
 }
-	
+
 location_t *
 locs_find (const vec3_t target)
 {
 	int i;
 
 	i = locs_nearest (target);
-	if (i == -1) 
+	if (i == -1)
 		return NULL;
 	return locations[i];
 }
@@ -134,7 +134,7 @@ locs_load (const char *filename)
 	const char *line;
 	vec3_t      loc;
 	QFile      *file;
-	
+
 	snprintf (tmp, sizeof (tmp), "maps/%s", filename);
 	QFS_FOpenFile (tmp, &file);
 	if (!file) {
@@ -144,7 +144,7 @@ locs_load (const char *filename)
 	while ((line = Qgetline (file))) {
 		if (line[0] == '#')
 			continue;
-		
+
 		loc[0] = strtol (line, &t1, 0) * (1.0 / 8);
 		if (line == t1)
 			continue;
@@ -192,7 +192,7 @@ locs_save (const char *filename, qboolean gz)
 {
 	int i;
 	QFile *locfd;
-	
+
 	if (gz) {
 		if (strcmp (QFS_FileExtension (filename), ".gz") != 0)
 			filename = va ("%s.gz", filename);
@@ -203,7 +203,7 @@ locs_save (const char *filename, qboolean gz)
 		Sys_Printf ("ERROR: Unable to open %s\n", filename);
 		return;
 	}
-	for (i = 0; i < locations_count; i++) 
+	for (i = 0; i < locations_count; i++)
 		Qprintf (locfd,"%.0f %.0f %.0f %s\n", locations[i]->loc[0] * 8,
 				 locations[i]->loc[1] * 8, locations[i]->loc[2] * 8,
 				 locations[i]->name);
@@ -240,7 +240,7 @@ locs_edit (const vec3_t loc, const char *desc)
 			Sys_Printf ("Changing location description to %s\n",
 					locations[i]->name);
 		}
-	} else 
+	} else
 		Sys_Printf ("Error: No location markers to modify!\n");
 }
 
@@ -259,7 +259,7 @@ locs_del (const vec3_t loc)
 		for (; i < locations_count; i++)
 			locations[i] = locations[i+1];
 		locations[locations_count] = NULL;
-	} else 
+	} else
 		Sys_Printf ("Error: No location markers to remove\n");
 }
 
@@ -267,7 +267,7 @@ void
 map_to_loc (const char *mapname, char *filename)
 {
 	char *t1;
-	
+
 	strcpy (filename, mapname);
 	t1 = strrchr (filename, '.');
 	if (!t1)

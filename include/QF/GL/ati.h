@@ -7,7 +7,7 @@
 #define GL_ELEMENT_ARRAY_ATI										0x8768
 #define GL_ELEMENT_ARRAY_TYPE_ATI									0x8769
 #define GL_ELEMENT_ARRAY_POINTER_ATI   								0x876A
- 
+
 typedef GLvoid (GLAPIENTRY *QF_PFNGLELEMENTPOINTERATIPROC)
 	(GLenum type, const GLvoid *pointer);
 typedef GLvoid (GLAPIENTRY *QF_PFNGLDRAWELEMENTARRAYATIPROC)
@@ -186,10 +186,10 @@ typedef GLvoid (GLAPIENTRY *QF_PFNGLALPHAFRAGMENTOP3ATIPROC)
 	 GLuint arg3, GLuint arg3Rep, GLuint arg3Mod);
 typedef GLvoid (GLAPIENTRY *QF_PFNGLSETFRAGMENTSHADERCONSTANTATIPROC)
 	(GLuint dst, const GLfloat *value);
- 
+
 #endif // GL_ATI_fragment_shader
 
- 
+
 // GL_ATI_pn_triangles (Supported on R200+)
 #ifndef GL_ATI_pn_triangles
 #define GL_ATI_pn_triangles 1
@@ -265,7 +265,7 @@ typedef GLvoid (GLAPIENTRY *QF_PFNGLGETVARIANTARRAYOBJECTIVATIPROC)
 // GL_ATI_vertex_streams (Rage 128 & R100+)
 #ifndef GL_ATI_vertex_streams
 #define GL_ATI_vertex_streams 1
- 
+
 #define GL_MAX_VERTEX_STREAMS_ATI									0x876B
 #define GL_VERTEX_SOURCE_ATI										0x876C
 #define GL_VERTEX_STREAM0_ATI										0x876D
@@ -276,7 +276,7 @@ typedef GLvoid (GLAPIENTRY *QF_PFNGLGETVARIANTARRAYOBJECTIVATIPROC)
 #define GL_VERTEX_STREAM5_ATI										0x8772
 #define GL_VERTEX_STREAM6_ATI										0x8773
 #define GL_VERTEX_STREAM7_ATI										0x8774
- 
+
 typedef GLvoid (GLAPIENTRY *QF_PFNGLCLIENTACTIVEVERTEXSTREAMATIPROC)
 	(GLenum stream);
 typedef GLvoid (GLAPIENTRY *QF_PFNGLVERTEXBLENDENVIATIPROC)
@@ -359,7 +359,7 @@ typedef GLvoid (GLAPIENTRY *QF_PFNGLNORMALSTREAM3DVATIPROC)
 // GL_ATIX_point_sprites (R100)
 #ifndef GL_ATIX_point_sprites
 #define GL_ATIX_point_sprites 1
- 
+
 #define GL_TEXTURE_POINT_MODE_ATIX									0x60b0
 #define GL_TEXTURE_POINT_ONE_COORD_ATIX								0x60b1
 #define GL_TEXTURE_POINT_SPRITE_ATIX								0x60b2
@@ -373,29 +373,29 @@ typedef GLvoid (GLAPIENTRY *QF_PFNGLNORMALSTREAM3DVATIPROC)
 // GL_ATIX_texture_env_combine3 (R100)
 #ifndef GL_ATIX_texture_env_combine3
 #define GL_ATIX_texture_env_combine3
- 
+
 #define GL_MODULATE_ADD_ATIX										0x8744
 #define GL_MODULATE_SIGNED_ADD_ATIX									0x8745
 #define GL_MODULATE_SUBTRACT_ATIX									0x8746
- 
+
 #endif // GL_ATIX_texture_env_combine3
 
- 
+
 // GL_ATIX_texture_env_route (R100)
 #ifndef GL_ATIX_texture_env_route
 #define GL_ATIX_texture_env_route 1
- 
+
 #define GL_SECONDARY_COLOR_ATIX										0x8747
 #define GL_TEXTURE_OUTPUT_RGB_ATIX									0x8748
 #define GL_TEXTURE_OUTPUT_ALPHA_ATIX								0x8749
- 
+
 #endif // GL_ATIX_texture_env_route
 
- 
+
 // GL_ATIX_vertex_shader_output_point_size (Rage 128 (sw), R100 (sw) & Chaplin)
 #ifndef GL_ATIX_vertex_shader_output_point_size
 #define GL_ATIX_vertex_shader_output_point_size 1
 
 #define GL_OUTPUT_POINT_SIZE_ATIX									0x610E
- 
+
 #endif // GL_ATIX_vertex_shader_output_point_size

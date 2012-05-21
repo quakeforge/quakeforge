@@ -76,19 +76,19 @@ typedef enum {
 	OP_ADD_V,
 	OP_SUB_F,
 	OP_SUB_V,
-	
+
 	OP_EQ_F,
 	OP_EQ_V,
 	OP_EQ_S,
 	OP_EQ_E,
 	OP_EQ_FN,
-	
+
 	OP_NE_F,
 	OP_NE_V,
 	OP_NE_S,
 	OP_NE_E,
 	OP_NE_FN,
-	
+
 	OP_LE_F,
 	OP_GE_F,
 	OP_LT_F,
@@ -138,7 +138,7 @@ typedef enum {
 	OP_GOTO,
 	OP_AND,
 	OP_OR,
-	
+
 	OP_BITAND,
 	OP_BITOR,
 
@@ -331,12 +331,12 @@ typedef struct dfunction_s {
 	pr_int_t    first_statement;	// negative numbers are builtins
 	pr_int_t    parm_start;
 	pr_int_t    locals;				// total ints of parms + locals
-	
+
 	pr_int_t    profile;			// runtime
-	
+
 	pr_int_t    s_name;
 	pr_int_t    s_file;				// source file defined in
-	
+
 	pr_int_t    numparms;
 	uint8_t     parm_size[MAX_PARMS];
 } dfunction_t;
@@ -368,25 +368,25 @@ typedef struct pr_va_list_s {
 typedef struct dprograms_s {
 	pr_uint_t   version;
 	pr_uint_t   crc;			// check of header file
-	
+
 	pr_uint_t   ofs_statements;
 	pr_uint_t   numstatements;	// statement 0 is an error
 
 	pr_uint_t   ofs_globaldefs;
 	pr_uint_t   numglobaldefs;
-	
+
 	pr_uint_t   ofs_fielddefs;
 	pr_uint_t   numfielddefs;
-	
+
 	pr_uint_t   ofs_functions;
 	pr_int_t    numfunctions;	// function 0 is an empty
-	
+
 	pr_uint_t   ofs_strings;
 	pr_int_t    numstrings;		// first string is a null string
 
 	pr_uint_t   ofs_globals;
 	pr_uint_t   numglobals;
-	
+
 	pr_uint_t   entityfields;
 } dprograms_t;
 

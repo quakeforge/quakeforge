@@ -200,7 +200,7 @@ void
 VID_UpdateGamma (cvar_t *vid_gamma)
 {
 	double gamma = bound (0.1, vid_gamma->value, 9.9);
-	
+
 	viddef.recalc_refdef = 1;				// force a surface cache flush
 
 	if (vid_gamma_avail && vid_system_gamma->int_val) {	// Have system, use it

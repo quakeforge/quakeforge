@@ -180,7 +180,7 @@ V_StopPitchDrift (void)
 	stopped.
 
 	Drifting is enabled when the center view key is hit, mlook is released
-	and lookspring is non 0, or when 
+	and lookspring is non 0, or when
 */
 static void
 V_DriftPitch (void)
@@ -309,7 +309,7 @@ V_BonusFlash_f (void)
 	if (!cl_cshift_bonus->int_val
 		&& !(cl.sv_cshifts & INFO_CSHIFT_BONUS))
 		return;
-		
+
 	cl.cshifts[CSHIFT_BONUS].destcolor[0] = 215;
 	cl.cshifts[CSHIFT_BONUS].destcolor[1] = 186;
 	cl.cshifts[CSHIFT_BONUS].destcolor[2] = 69;
@@ -431,7 +431,7 @@ V_CalcBlend (void)
 
 void
 V_PrepBlend (void)
-{ 
+{
 	int         i, j;
 
 	if (cl_cshift_powerup->int_val

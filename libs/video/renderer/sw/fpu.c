@@ -41,8 +41,8 @@ R_HighFPPrecision (void)
 
 void
 R_LowFPPrecision (void)
-{   
-}   
+{
+}
 
 void
 R_SetFPCW (void)

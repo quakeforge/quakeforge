@@ -86,7 +86,7 @@ SV_CheckBottom (edict_t *ent)
 		return false;
 	mid = bottom = trace.endpos[2];
 
-	// the corners must be within 16 of the midpoint    
+	// the corners must be within 16 of the midpoint
 	for (x = 0; x <= 1; x++)
 		for (y = 0; y <= 1; y++) {
 			start[0] = stop[0] = x ? maxs[0] : mins[0];
@@ -121,7 +121,7 @@ SV_movestep (edict_t *ent, const vec3_t move, qboolean relink)
 	trace_t     trace;
 	vec3_t      oldorg, neworg, end;
 
-	// try the move 
+	// try the move
 	VectorCopy (SVvector (ent, origin), oldorg);
 	VectorAdd (SVvector (ent, origin), move, neworg);
 

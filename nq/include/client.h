@@ -97,7 +97,7 @@ typedef struct
 {
 	cactive_t	state;
 
-// personalization data sent to server	
+// personalization data sent to server
 	char		mapstring[MAX_QPATH];
 	char		spawnparms[MAX_MAPSTRING];	// to restart a level
 
@@ -141,12 +141,12 @@ extern client_static_t	cls;
 #define FPD_NO_TEAMSKIN		0x0100	// Disable skin force
 #define FPD_NO_TEAMCOLOR    0x0200	// Disable color force
 #define FPD_HIDE_ITEM		0x0400	// No idea what this does
-#define FPD_LIMIT_PITCH		0x4000	// Limit pitchspeed 
+#define FPD_LIMIT_PITCH		0x4000	// Limit pitchspeed
 #define FPD_LIMIT_YAW		0x8000	// Limit yawspeed
 
 #define FPD_DEFAULT			(FPD_HIDE_PERCENTE | FPD_NO_TEAMSKIN)
 
-// These limits prevent a usable RJ script, requiring > 0.1 sec of turning time. 
+// These limits prevent a usable RJ script, requiring > 0.1 sec of turning time.
 #define FPD_MAXPITCH		1000
 #define FPD_MAXYAW			2000
 
@@ -179,13 +179,13 @@ typedef struct
 	vec3_t		mviewangles[2];	// During demo playback viewangles is lerped
 								// between these
 	vec3_t		viewangles;
-	
+
 	vec3_t		mvelocity[2];	// Update by server, used for lean+bob
 								// (0 is newest)
 	vec3_t		velocity;		// Lerped between mvelocity[0] and [1]
 
 	vec3_t		punchangle;		// Temporary offset
-	
+
 // pitch drifting vars
 	float		idealpitch;
 	float		pitchvel;
@@ -199,11 +199,11 @@ typedef struct
 	qboolean	paused;			// Send over by server
 	qboolean	onground;
 	qboolean	inwater;
-	
+
 	int			intermission;	// Don't change view angle, full screen, etc
 	int			completed_time;	// Latched at intermission start
-	
-	double		mtime[2];		// The timestamp of last two messages	
+
+	double		mtime[2];		// The timestamp of last two messages
 	double		time;			// Clients view of time, should be between
 								// servertime and oldservertime to generate a
 								// lerp point for other data

@@ -233,7 +233,7 @@ wad_add (wad_t *wad, const char *filename, const char *lumpname, byte type)
 		return -1;
 	if (wad->numlumps == wad->lumps_size) {
 		lumpinfo_t *f;
-		
+
 		wad->lumps_size += 64;
 
 		f = realloc (wad->lumps, wad->lumps_size * sizeof (lumpinfo_t));
@@ -286,7 +286,7 @@ wad_add_data (wad_t *wad, const char *lumpname, byte type, const void *data,
 		return -1;
 	if (wad->numlumps == wad->lumps_size) {
 		lumpinfo_t *f;
-		
+
 		wad->lumps_size += 64;
 
 		f = realloc (wad->lumps, wad->lumps_size * sizeof (lumpinfo_t));

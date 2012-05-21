@@ -230,7 +230,7 @@ make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
 	symtab_t   *strct;
 	symbol_t   *field;
 	symbol_t   *sym = 0;
-	
+
 	if (name)
 		sym = new_symbol (name);
 	if (su == 'u')

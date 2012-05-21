@@ -130,7 +130,7 @@ bi_traceon (progs_t *pr)
 
 static void
 bi_traceoff (progs_t *pr)
-{   
+{
 	pr->pr_trace = false;
 }
 */

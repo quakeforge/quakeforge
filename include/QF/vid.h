@@ -48,7 +48,7 @@ typedef struct {
 	unsigned int	*colormap32;	// 256 * VID_GRADES size
 	int				 fullbright;	// index of first fullbright color
 	unsigned int	 rowbytes;		// may be > width if displayed in a window
-	unsigned int	 width;		
+	unsigned int	 width;
 	unsigned int	 height;
 	float			 aspect;	// width / height -- < 1 is taller than wide
 	int				 numpages;

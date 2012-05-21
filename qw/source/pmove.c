@@ -270,7 +270,7 @@ PM_GroundMove (void)
 	if (VectorIsZero (pmove.velocity))
 		return;
 
-	// first try just moving to the destination 
+	// first try just moving to the destination
 	dest[0] = pmove.origin[0] + pmove.velocity[0] * frametime;
 	dest[1] = pmove.origin[1] + pmove.velocity[1] * frametime;
 	dest[2] = pmove.origin[2];
@@ -562,7 +562,7 @@ PM_CategorizePosition (void)
 
 	// if the player hull point one unit down is solid, the player is on ground
 
-	// see if standing on something solid   
+	// see if standing on something solid
 	point[0] = pmove.origin[0];
 	point[1] = pmove.origin[1];
 	point[2] = pmove.origin[2] - 1;

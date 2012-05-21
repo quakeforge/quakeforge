@@ -103,7 +103,7 @@ getStringDefault (NSMutableDictionary *dict, NSString *name)
 		str = [defaultValues() objectForKey: name];
 
 	[dict setObject: str forKey: name];
-	
+
 	return str;
 }
 

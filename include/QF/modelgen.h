@@ -73,7 +73,7 @@ typedef struct {
 
 typedef struct {
 	float	st[2];
-} tex_coord_t; 
+} tex_coord_t;
 
 typedef struct {
 	int		onseam;
@@ -135,7 +135,7 @@ typedef struct {
 
 // little-endian "IDPO"
 #define IDHEADER_MDL	(('O'<<24)+('P'<<16)+('D'<<8)+'I')
-	
+
 // little-endian "MD16" -- 16 bit vertices
 #define HEADER_MDL16	(('6'<<24)+('1'<<16)+('D'<<8)+'M')
 

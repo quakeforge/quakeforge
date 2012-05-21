@@ -136,7 +136,7 @@ typedef struct
 {
 // connection information
 	cactive_t	state;
-	
+
 // network stuff
 	netchan_t	netchan;
 
@@ -193,12 +193,12 @@ extern client_static_t	cls;
 #define FPD_NO_TEAMSKIN	0x0100			// Disable skin force
 #define FPD_NO_TEAMCOLOR	0x0200			// Disable color force
 #define FPD_HIDE_ITEM		0x0400			// No idea what this does
-#define FPD_LIMIT_PITCH	0x4000			// Limit pitchspeed 
+#define FPD_LIMIT_PITCH	0x4000			// Limit pitchspeed
 #define FPD_LIMIT_YAW		0x8000			// Limit yawspeed
 
 #define FPD_DEFAULT		(FPD_HIDE_PERCENTE | FPD_NO_TEAMSKIN)
 
-// These limits prevent a usable RJ script, requiring > 0.1 sec of turning time. 
+// These limits prevent a usable RJ script, requiring > 0.1 sec of turning time.
 #define FPD_MAXPITCH		1000
 #define FPD_MAXYAW		2000
 
@@ -220,7 +220,7 @@ typedef struct
 								// render a frame yet
 	int			movemessages;	// since connecting to this server
 								// throw out the first couple, so the player
-								// doesn't accidentally do something the 
+								// doesn't accidentally do something the
 								// first frame
 
 	int			spectator;
@@ -262,10 +262,10 @@ typedef struct
 	qboolean	paused;			// send over by server
 
 	float		punchangle;		// temporar yview kick from weapon firing
-	
+
 	int			intermission;	// don't change view angle, full screen, etc
 	int			completed_time;	// latched ffrom time at intermission start
-	
+
 /* information that is static for the entire time connected to a server */
 
 	char		model_name[MAX_MODELS][MAX_QPATH];

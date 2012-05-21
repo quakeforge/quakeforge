@@ -332,7 +332,7 @@ sw32_R_DrawSprite (void)
 	} else if (psprite->type == SPR_VP_PARALLEL_UPRIGHT) {
 		// generate the sprite's axes, with vup straight up in worldspace, and
 		// sw32_r_spritedesc.vright parallel to the viewplane.
-		// This will not work if the view direction is very close to straight 
+		// This will not work if the view direction is very close to straight
 		// up or down, because the cross product will be between two nearly
 		// parallel vectors and starts to approach an undefined state, so we
 		// don't draw if the two vectors are less than 1 degree apart

@@ -278,7 +278,7 @@ I_CDAudio_Init (void)
 
 	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
 						  "Volume of CD music");
-	
+
 	Sys_Printf ("CD Audio Initialized.\n");
 }
 

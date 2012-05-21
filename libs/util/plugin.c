@@ -190,13 +190,13 @@ PI_Plugin_Load_f (void)
 	}
 
 	type = Cmd_Argv(1);
-	name = Cmd_Argv(2);	
+	name = Cmd_Argv(2);
 
 	pi = PI_LoadPlugin (type, name);
 	if (!pi)
 		Sys_Printf ("Error loading plugin %s %s\n", type, name);
-	
-	else if (pi->functions && pi->functions->general && 
+
+	else if (pi->functions && pi->functions->general &&
 			 pi->functions->general->p_Init)
 		pi->functions->general->p_Init ();
 }
@@ -223,7 +223,7 @@ PI_Plugin_Unload_f (void)
 		Sys_Printf ("Plugin %s not loaded\n", plugin_name);
 		return;
 	}
-	
+
 	PI_UnloadPlugin (pi);
 }
 
@@ -238,11 +238,11 @@ PI_Init (void)
 {
 	PI_InitCvars ();
 	registered_plugins = Hash_NewTable (253, plugin_get_key, 0, 0);
-	loaded_plugins = Hash_NewTable(253, loaded_plugin_get_key, 
+	loaded_plugins = Hash_NewTable(253, loaded_plugin_get_key,
 								   loaded_plugin_delete, 0);
-	Cmd_AddCommand("plugin_load", PI_Plugin_Load_f, 
+	Cmd_AddCommand("plugin_load", PI_Plugin_Load_f,
 				   "load the plugin of the given type name and name");
-	Cmd_AddCommand("plugin_unload", PI_Plugin_Unload_f, 
+	Cmd_AddCommand("plugin_unload", PI_Plugin_Unload_f,
 				   "unload the plugin of the given type name and name");
 }
 
@@ -250,15 +250,15 @@ void
 PI_Shutdown (void)
 {
 	void **elems, **cur;
-	
+
 	// unload all "loaded" plugins and free the hash
 	elems = Hash_GetList (loaded_plugins);
 	for (cur = elems; *cur; ++cur)
 		PI_UnloadPlugin (((loaded_plugin_t *) *cur)->plugin);
 	free (elems);
-	
+
 	Hash_DelTable (loaded_plugins);
-	
+
 }
 
 VISIBLE plugin_t *
@@ -336,21 +336,21 @@ PI_LoadPlugin (const char *type, const char *name)
 		if (plugin->data->general->flag & PIF_GLOBAL) {
 			// do the whole thing over again with global syms
 			pi_close_lib (dlhand);
-			
+
 			// try to reopen
 			if (!(dlhand = pi_open_lib (realname, 1))) {
 				Sys_Printf ("Error reopening plugin \"%s\".\n", realname);
 				Sys_MaskPrintf (SYS_DEV, "Reason: \"%s\".\n", pi_error);
 				return NULL;
 			}
-			
+
 			// get the plugin_info func pointer
 			if (!(plugin_info = pi_get_symbol (dlhand, plugin_info_name))) {
 				pi_close_lib (dlhand);
 				Sys_Printf ("Plugin info function missing on reload\n");
 				return NULL;
 			}
-			
+
 			// get the plugin data structure
 			if (!(plugin = plugin_info ())) {
 				pi_close_lib (dlhand);
@@ -390,10 +390,10 @@ PI_UnloadPlugin (plugin_t *plugin)
 						"Warning: No shutdown function for type %d plugin!\n",
 						plugin->type);
 	}
-	
+
 	// remove from the table of loaded plugins
 	Hash_Free (loaded_plugins, Hash_Del (loaded_plugins, plugin->full_name));
-	
+
 	if (!plugin->handle) // we didn't load it
 		return true;
 	return pi_close_lib (plugin->handle);

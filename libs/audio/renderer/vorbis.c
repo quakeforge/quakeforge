@@ -194,7 +194,7 @@ vorbis_callback_load (void *object, cache_allocator_t allocator)
 	OggVorbis_File vf;
 
 	sfxblock_t *block = (sfxblock_t *) object;
-	
+
 	QFS_FOpenFile (block->file, &file);
 	if (!file)
 		return; //FIXME Sys_Error?
@@ -279,7 +279,7 @@ vorbis_stream_open (sfx_t *sfx)
 static void
 vorbis_stream (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 {
-	ov_clear (vf); 
+	ov_clear (vf);
 	SND_SFX_Stream (sfx, realname, info, vorbis_stream_open);
 }
 

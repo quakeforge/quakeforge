@@ -175,7 +175,7 @@ void PR_AddLoadFunc (progs_t *pr, pr_load_func_t *func);
 
 /** Register a secondary function to be called after the progs code has been
 	loaded. These functions will be forgotten after each load. They will be
-	called in \e reverse order of being registered. 
+	called in \e reverse order of being registered.
 	\param pr		pointer to ::progs_t VM struct
 	\param func		function to call
 */

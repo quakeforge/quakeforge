@@ -126,7 +126,7 @@ typedef struct {
 typedef struct
 {
 	int			nump;
-	emitpoint_t	*pverts;	// there's room for an extra element at [nump], 
+	emitpoint_t	*pverts;	// there's room for an extra element at [nump],
 							//  if the driver wants to duplicate element [0] at
 							//  element [nump] to avoid dealing with wrapping
 	mspriteframe_t	*pspriteframe;
@@ -155,7 +155,7 @@ extern qboolean	r_recursiveaffinetriangles;	// true if a driver wants to use
 											//  recursive triangular subdivison
 											//  and vertex drawing via
 											//  D_PolysetDrawFinalVerts() past
-											//  a certain distance (normally 
+											//  a certain distance (normally
 											//  used only by the software
 											//  driver)
 extern int		r_pixbytes;

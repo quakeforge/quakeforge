@@ -619,7 +619,7 @@ PF_checkclient (progs_t *pr)
 		sv.lastcheck = PF_newcheckclient (pr, sv.lastcheck);
 		sv.lastchecktime = sv.time;
 	}
-	// return check if it might be visible  
+	// return check if it might be visible
 	ent = EDICT_NUM (pr, sv.lastcheck);
 	if (ent->free || SVfloat (ent, health) <= 0) {
 		RETURN_EDICT (pr, sv.edicts);

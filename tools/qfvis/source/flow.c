@@ -61,7 +61,7 @@ static int
 CheckStack (cluster_t *cluster, threaddata_t *thread)
 {
     pstack_t	*portal;
-	
+
     for (portal = thread->pstack_head.next; portal; portal = portal->next)
 		if (portal->cluster == cluster) {
 			printf ("CheckStack: cluster recursion\n");
@@ -85,7 +85,7 @@ CheckStack (cluster_t *cluster, threaddata_t *thread)
 	then flipclip should be set.
 */
 static winding_t	*
-ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target, 
+ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 				  qboolean flipclip)
 {
     float		d;
@@ -96,7 +96,7 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
     vec3_t		v1, v2;
     vec_t		length;
 
-	// check all combinations       
+	// check all combinations
     for (i = 0; i < source->numpoints; i++) {
 		l = (i + 1) % source->numpoints;
 		VectorSubtract (source->points[l], source->points[i], v1);
@@ -129,12 +129,12 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 				if (k == i || k == l)
 					continue;
 				d = DotProduct (source->points[k], plane.normal) - plane.dist;
-				if (d < -ON_EPSILON) {	
+				if (d < -ON_EPSILON) {
 					// source is on the negative side, so we want all
 					// pass and target on the positive side
 					fliptest = false;
 					break;
-				} else if (d > ON_EPSILON) {	
+				} else if (d > ON_EPSILON) {
 					// source is on the positive side, so we want all
 					// pass and target on the negative side
 					fliptest = true;
@@ -225,7 +225,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
     might = (long *) stack.mightsee;
     vis = (long *) thread->clustervis;
 
-	// check all portals for flowing into other clusters       
+	// check all portals for flowing into other clusters
     for (i = 0; i < cluster->numportals; i++) {
 		portal = cluster->portals[i];
 
@@ -317,7 +317,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			}
 		}
 
-		// now do the same as for levels 1 and 2, but trimming source using 
+		// now do the same as for levels 1 and 2, but trimming source using
 		// the trimmed target
 		if (options.level > 2) {
 			source = ClipToSeparators (target, prevstack->pass, source, false);

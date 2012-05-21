@@ -23,7 +23,7 @@
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
-	
+
 */
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -219,7 +219,7 @@ gl_multitexture_f (cvar_t *var)
 				} else {
 					gl_mtex_fullbright = false;
 					Sys_MaskPrintf (SYS_VID,
-									"Not enough TMUs for BSP fullbrights.\n");	
+									"Not enough TMUs for BSP fullbrights.\n");
 				}
 			}
 		} else {
@@ -642,10 +642,10 @@ Tdfx_Init8bitPalette (void)
 }
 
 /*
-  The GL_EXT_shared_texture_palette seems like an idea which is 
+  The GL_EXT_shared_texture_palette seems like an idea which is
   /almost/ a good idea, but seems to be severely broken with many
   drivers, as such it is disabled.
-  
+
   It should be noted, that a palette object extension as suggested by
   the GL_EXT_shared_texture_palette spec might be a very good idea in
   general.
@@ -753,7 +753,7 @@ GL_SetPalette (const byte *palette)
 			/* Maps
 			   000000000000000
 			   000000000011111 = Red  = 0x001F
-			   000001111100000 = Blue = 0x03E0 
+			   000001111100000 = Blue = 0x03E0
 			   111110000000000 = Grn  = 0x7C00
 			*/
 			r = ((i & 0x1F) << 3) + 4;

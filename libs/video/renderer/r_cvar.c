@@ -45,7 +45,7 @@ cvar_t	   *easter_eggs;
 
 cvar_t     *cl_crossx;
 cvar_t     *cl_crossy;
-cvar_t     *cl_verstring;   
+cvar_t     *cl_verstring;
 cvar_t     *crosshair;
 cvar_t     *crosshaircolor;
 

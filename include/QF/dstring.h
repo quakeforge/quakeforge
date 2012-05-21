@@ -101,7 +101,7 @@ void dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
 	null terminated.
 */
 char *dstring_freeze (dstring_t *dstr);
- 
+
 // String-specific functions
 //@{
 /** Allocate a new dstring pre-initialized as a null terminated string. size

@@ -174,7 +174,7 @@ void Hash_Free (hashtab_t *tab, void *ele);
 /** hash a string.
 	\param str	the string to hash
 	\return		the hash value of the string.
-	
+
 	this is the same function as used internally.
 */
 unsigned long Hash_String (const char *str);

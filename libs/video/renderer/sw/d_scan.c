@@ -54,7 +54,7 @@ D_WarpScreen (void)
 	int        *turb;
 	int        *col;
 	byte      **row;
-	
+
 	/* FIXME: allocate these arrays properly */
 	byte       *rowptr[MAXHEIGHT + AMP2 * 2];
 	int         column[MAXWIDTH + AMP2 * 2];

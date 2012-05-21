@@ -1,7 +1,7 @@
-/* Texture Paint 
+/* Texture Paint
  * Plug-in for the GIMP
  *
- * Copyright (C) 1998 Uwe Maurer <uwe_maurer@t-online.de> 
+ * Copyright (C) 1998 Uwe Maurer <uwe_maurer@t-online.de>
  *
  * Based on GiMd2Viewer-0.1 (Quake2 model viewer) by
  * Copyright (C) 1998  Lionel ULMER <bbrox@mygale.org>
@@ -58,34 +58,34 @@ gint resize(GtkWidget *widget, GdkEventConfigure *event,gpointer data)
 		(float) widget->allocation.width / widget->allocation.height,
 		0.1, 200.0);
 	glMatrixMode(GL_MODELVIEW);
-  
+
 	glViewport(0, 0, widget->allocation.width, widget->allocation.height);
 
 	model_draw((ModelInfo *)data);
-  
+
 	endgl(widget);
 
 	return TRUE;
 }
 
 
-void BindTexture(ModelInfo *mdl,char *texdata,int w,int h) 
+void BindTexture(ModelInfo *mdl,char *texdata,int w,int h)
 {
 
 	DEBUG("%s %i",mdl->name,mdl->tex_image);
 
 	glBindTexture(GL_TEXTURE_2D, mdl->texture);
-	set_parameter(mdl); 
- 	 
-	glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, 	
+	set_parameter(mdl);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0,
 		GL_RGB, GL_UNSIGNED_BYTE, texdata);
-  
+
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 	glBindTexture(GL_TEXTURE_2D,mdl->texture);
 }
 
 
-gint button_press_event(GtkWidget *widget, GdkEventButton *event,gpointer data) 
+gint button_press_event(GtkWidget *widget, GdkEventButton *event,gpointer data)
 {
 	ModelInfo *mdl;
 
@@ -97,7 +97,7 @@ gint button_press_event(GtkWidget *widget, GdkEventButton *event,gpointer data)
 			on_paint_clicked(NULL,mdl);
 		else if (event->button==3)
 			on_generate_clicked(NULL,mdl);
-		
+
 	}
 
 	if (event->button == 1)
@@ -105,11 +105,11 @@ gint button_press_event(GtkWidget *widget, GdkEventButton *event,gpointer data)
 		mdl->M1_beginx = event->x;
 		mdl->M1_beginy = event->y;
 		trackball(mdl->lastquat,0,0,0,0);
-	} else if (event->button == 2) 
+	} else if (event->button == 2)
 	{
 		mdl->M2_beginx = event->x;
 		mdl->M2_beginy = event->y;
-	}  else if (event->button == 3) 
+	}  else if (event->button == 3)
 	{
 		mdl->M3_beginy = event->y;
 	}
@@ -117,7 +117,7 @@ gint button_press_event(GtkWidget *widget, GdkEventButton *event,gpointer data)
 }
 
 gint motion_notify_event(GtkWidget *widget, GdkEventMotion *event,
-			 gpointer data) 
+			 gpointer data)
 {
 	int x, y;
 	int width,height;
@@ -129,7 +129,7 @@ gint motion_notify_event(GtkWidget *widget, GdkEventMotion *event,
 
 	width=widget->allocation.width;
 	height=widget->allocation.height;
-  
+
 	if (event->is_hint)
 	{
 		gdk_window_get_pointer(event->window, &x, &y, &state);
@@ -153,15 +153,15 @@ gint motion_notify_event(GtkWidget *widget, GdkEventMotion *event,
 			(height- 2.0 * y) / height);
 		mdl->M1_beginx = x;
 		mdl->M1_beginy = y;
-		add_quats(mdl->lastquat,mdl->curquat,mdl->curquat);	
+		add_quats(mdl->lastquat,mdl->curquat,mdl->curquat);
 	} else if (state & GDK_BUTTON2_MASK)
 	{
 		mdl->obj_Xpos += (mdl->obj_Zpos / -width) * (x - mdl->M2_beginx);
 		mdl->obj_Ypos -= (mdl->obj_Zpos / -height) * (y - mdl->M2_beginy);
-    
+
 		mdl->M2_beginx = x;
 		mdl->M2_beginy = y;
-    
+
 	} else if (state & GDK_BUTTON3_MASK)
 	{
 		mdl->obj_Zpos += (mdl->obj_Zpos / -height) * (y - mdl->M3_beginy);
@@ -185,14 +185,14 @@ static void initgl(ModelInfo *mdl)
 	{
 		glGetIntegerv(GL_MAX_TEXTURE_SIZE,data);
 		max_tex_size=data[0];
-	
+
 		glGetIntegerv(GL_RED_BITS,data);
 		red_bits=data[0];
 		glGetIntegerv(GL_GREEN_BITS,data);
 		green_bits=data[0];
 		glGetIntegerv(GL_BLUE_BITS,data);
 		blue_bits=data[0];
-	
+
 		red_shift   = 8-red_bits;
 		green_shift = 8-green_bits;
 		blue_shift  = 8-blue_bits;
@@ -207,19 +207,19 @@ static void initgl(ModelInfo *mdl)
 		(float) widget->allocation.width / widget->allocation.height,
 		0.1, 200.0);
 	glMatrixMode(GL_MODELVIEW);
-  
+
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
 	glEnable(GL_DEPTH_TEST);
-  
+
 	glDisable(GL_DITHER);
 	glShadeModel(GL_FLAT);
 	glEnable(GL_TEXTURE_2D);
-  
+
 	glGenTextures(1,&mdl->texture);
 
-	get_texture(mdl);	
- 
+	get_texture(mdl);
+
 	glViewport(0, 0, widget->allocation.width, widget->allocation.height);
 }
 
@@ -246,7 +246,7 @@ void on_center_clicked(GtkButton *button, gpointer data)
 
 void model_new(char *name,Model *model)
 {
-	int attrList[]= 
+	int attrList[]=
 	{ GDK_GL_RGBA, GDK_GL_DOUBLEBUFFER, GDK_GL_DEPTH_SIZE, 1, GDK_GL_NONE};
 
 	GtkWidget *glarea;
@@ -298,7 +298,7 @@ void model_new(char *name,Model *model)
 
 	gtk_signal_connect(GTK_OBJECT(glarea), "expose_event",
 			GTK_SIGNAL_FUNC(expose), mdl_info);
-  
+
 	/* when widgets size changes we want to change glViewport size to match it */
 	gtk_signal_connect(GTK_OBJECT(glarea), "configure_event",
 		GTK_SIGNAL_FUNC(resize), mdl_info);
@@ -307,7 +307,7 @@ void model_new(char *name,Model *model)
 		GTK_SIGNAL_FUNC(motion_notify_event), mdl_info);
 	gtk_signal_connect(GTK_OBJECT(glarea), "button_press_event",
 		GTK_SIGNAL_FUNC(button_press_event), mdl_info);
-  
+
 	gtk_container_add(GTK_CONTAINER(mdl_info->glwindow), glarea);
 	gtk_widget_show(mdl_info->glwindow);
 	gtk_widget_show(glarea);
@@ -322,8 +322,8 @@ void add_anim_button(GtkWidget *container,int num,char **pix)
 {
 	GtkStyle *style;
 	GdkBitmap *mask;
-	GdkPixmap *gdkpix;  
-	GtkWidget *gtkpix,*button;  
+	GdkPixmap *gdkpix;
+	GtkWidget *gtkpix,*button;
 
 	button=gtk_button_new();
 	gtk_container_add(GTK_CONTAINER(container),button);
@@ -334,7 +334,7 @@ void add_anim_button(GtkWidget *container,int num,char **pix)
                                         &style->bg[GTK_STATE_NORMAL],
                                         pix);
 	gtkpix = gtk_pixmap_new(gdkpix, mask);
-	gtk_widget_show(gtkpix);                  
+	gtk_widget_show(gtkpix);
 	gtk_container_add(GTK_CONTAINER(button),gtkpix);
 	gtk_signal_connect(GTK_OBJECT(button),"clicked",
 		GTK_SIGNAL_FUNC(on_anim_clicked),GINT_TO_POINTER(num));
@@ -358,17 +358,17 @@ void display_model(ModelInfo *mdl,int mode)
 
 	begingl(mdl->glarea);
 
-	if (!mdl->init) 
+	if (!mdl->init)
 	{
 		initgl(mdl);
 		mdl->init = 1;
-	}          
+	}
 
 	if (mode==DRAW_NORMAL)
 	{
 		glClearColor(.3,.4,.6,0);
 	}
-	else 
+	else
 	{
 		glClearColor(0,0,0,0);
 	}
@@ -378,11 +378,11 @@ void display_model(ModelInfo *mdl,int mode)
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 	glTranslatef(mdl->obj_Xpos,mdl->obj_Ypos,mdl->obj_Zpos);
-	build_rotmatrix(m,mdl->curquat);	
+	build_rotmatrix(m,mdl->curquat);
 	glMultMatrixf(&m[0][0]);
 	glRotatef(-90,1,0,0);
 
-	if (mode==DRAW_COORD_S) 
+	if (mode==DRAW_COORD_S)
 	{
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D,mdl->texture_s);
@@ -411,7 +411,7 @@ void display_model(ModelInfo *mdl,int mode)
 
 	mdl->model->draw(mdl->model,frame,nextframe,interp);
 
-	if (mode!=DRAW_NORMAL) 
+	if (mode!=DRAW_NORMAL)
 	{
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D,mdl->texture);

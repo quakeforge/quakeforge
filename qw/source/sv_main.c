@@ -365,7 +365,7 @@ SV_DropClient (client_t *drop)
 
 	// send notification to all remaining clients
 	SV_FullClientUpdate (drop, &sv.reliable_datagram);
-	
+
 	// Trigger GIB event
 	if (sv_client_disconnect_e->func)
 		GIB_Event_Callback (sv_client_disconnect_e, 1,
@@ -1025,7 +1025,7 @@ SVC_RemoteCommand (void)
 					   do_cmd ? "issued" : "attempted");
 		}
 	}
-	
+
 	if (do_cmd) {
 		command = Cmd_Args (2);
 
@@ -1893,7 +1893,7 @@ SV_CheckVars (void)
 	SV_GarbageCollect
 
 	Run string GC on progs every pr_gc_interval frames
-	
+
 	//snax: run QFobject GC as well
 */
 static void
@@ -2093,7 +2093,7 @@ SV_InitLocal (void)
 							  "equal-to or less-then the maxclients value");
 	hostname = Cvar_Get ("hostname", "unnamed", CVAR_SERVERINFO, Cvar_Info,
 						 "Report or sets the server name");
-	deathmatch = Cvar_Get ("deathmatch", "1", CVAR_SERVERINFO, Cvar_Info, 
+	deathmatch = Cvar_Get ("deathmatch", "1", CVAR_SERVERINFO, Cvar_Info,
 						   "Sets the rules for weapon and item respawning. "
 						   "1 Does not leave weapons on the map. You can "
 						   "pickup weapons and items and they will respawn, "
@@ -2127,7 +2127,7 @@ SV_InitLocal (void)
 	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_NONE, NULL,
 						   "Sets the global value for the amount of gravity");
 	sv_jump_any = Cvar_Get ("sv_jump_any", "1", CVAR_NONE, NULL, "None");
-	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, NULL, 
+	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, NULL,
 							 "Sets the value that determines how fast the "
 							 "player should come to a complete stop");
 	sv_maxspeed = Cvar_Get ("sv_maxspeed", "320", CVAR_NONE, NULL,
@@ -2164,7 +2164,7 @@ SV_InitLocal (void)
 							  "Time/date stamps in log entries");
 	sv_timefmt = Cvar_Get ("sv_timefmt", "[%b %e %X] ", CVAR_NONE, NULL,
 						   "Time/date format to use");
-	filterban = Cvar_Get ("filterban", "1", CVAR_NONE, NULL, 
+	filterban = Cvar_Get ("filterban", "1", CVAR_NONE, NULL,
 						  "Determines the rules for the IP list "
 						  "0 Only IP addresses on the Ban list will be "
 						  "allowed onto the server, 1 Only IP addresses NOT "
@@ -2504,7 +2504,7 @@ SV_Init (void)
 	localinfo = Info_ParseString ("", 0, 0);	// unlimited
 	SV_InitOperatorCommands ();
 	SV_GIB_Init ();
-	
+
 	QFS_Init ("qw");
 	PI_Init ();
 

@@ -28,7 +28,7 @@
 #ifndef _WINQUAKE_H
 #define _WINQUAKE_H
 
-#ifdef _WIN32 
+#ifdef _WIN32
 
 #ifndef __GNUC__
 # pragma warning( disable : 4229 )  /* mgraph gets this */

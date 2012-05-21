@@ -182,7 +182,7 @@ LoadEntities (void)
 
 	// go through all the entities
 	while (Script_GetToken (script, 1)) {
-		// parse the opening brace      
+		// parse the opening brace
 		if (strcmp (script->token->str, "{"))
 			fprintf (stderr, "LoadEntities: found %s when expecting {\n",
 					 script->token->str);
@@ -234,7 +234,7 @@ LoadEntities (void)
 				entity->target = epair->value;
 			else if (!strcmp (key, "targetname"))
 				entity->targetname = epair->value;
-			else if (!strcmp (key, "origin")) {   		
+			else if (!strcmp (key, "origin")) {
 				// scan into doubles, then assign
 				// which makes it vec_t size independent
 				if (sscanf (script->token->str, "%lf %lf %lf",
@@ -343,7 +343,7 @@ const char *
 ValueForKey (entity_t *ent, const char *key)
 {
 	epair_t		*ep;
-	
+
 	for (ep = ent->epairs; ep; ep = ep->next)
 		if (!strcmp (ep->key, key))
 			return ep->value;

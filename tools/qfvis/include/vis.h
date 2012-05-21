@@ -56,11 +56,11 @@ typedef struct {
 	vec3_t      points[8];	// variable sized
 } winding_t;
 
-typedef enum { 
-	stat_none, 
+typedef enum {
+	stat_none,
 	stat_selected,
-	stat_working, 
-	stat_done 
+	stat_working,
+	stat_done
 } vstatus_t;
 
 typedef struct {

@@ -24,7 +24,7 @@
 
 typedef enum {TOKEN_GENERIC, TOKEN_NUM, TOKEN_OP, TOKEN_FUNC, TOKEN_OPAREN, TOKEN_CPAREN, TOKEN_COMMA}
 token_type;
-typedef enum {EXP_E_NORMAL = 0, EXP_E_PARSE, EXP_E_INVOP, EXP_E_PAREN, 
+typedef enum {EXP_E_NORMAL = 0, EXP_E_PARSE, EXP_E_INVOP, EXP_E_PAREN,
 EXP_E_INVPARAM, EXP_E_SYNTAX} exp_error_t;
 typedef double (*opfunc) (double op1, double op2);
 typedef double (*funcfunc) (double *oplist, unsigned int numops);

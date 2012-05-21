@@ -209,7 +209,7 @@ pack_add (pack_t *pack, const char *filename)
 		return -1;
 	if (pack->numfiles == pack->files_size) {
 		dpackfile_t *f;
-		
+
 		pack->files_size += 64;
 
 		f = realloc (pack->files, pack->files_size * sizeof (dpackfile_t));

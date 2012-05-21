@@ -120,13 +120,13 @@ GIB_Var_Get_Complex (hashtab_t ** first, hashtab_t ** second, char *key,
 					*first = Hash_NewTable (256, GIB_Var_Get_Key, GIB_Var_Free, 0);
 				Hash_Add (*first, var);
 			}
-			
+
 			// We are done looking up/creating var, fix up key
 			if (n)
 				key[n] = '[';
 			if (i < len)
 				key[i] = '.';
-				
+
 			// Give up
 			if (!var)
 				return 0;
@@ -163,7 +163,7 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 	cvar_t *cvar;
 	char c, *str;
 	qboolean done = false;
-	
+
 	for (i = start, protect = 0; !done; i++) {
 		if (key->str[i] == '.' || key->str[i] == 0) {
 			index = 0;
@@ -229,7 +229,7 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 			}
 			i = n;
 		}
-			
+
 	}
 	if (!var->array[index].value)
 		var->array[index].value = dstring_newstr ();

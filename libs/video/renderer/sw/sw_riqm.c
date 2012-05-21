@@ -188,11 +188,11 @@ R_IQMPreparePoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 			pfv[1] = &pfinalverts[mtri->vertindex[1]];
 			pfv[2] = &pfinalverts[mtri->vertindex[2]];
 
-			if (pfv[0]->flags & pfv[1]->flags & pfv[2]->flags 
+			if (pfv[0]->flags & pfv[1]->flags & pfv[2]->flags
 				& (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP))
 				continue;					// completely clipped
 
-			if (!((pfv[0]->flags | pfv[1]->flags | pfv[2]->flags) 
+			if (!((pfv[0]->flags | pfv[1]->flags | pfv[2]->flags)
 				  & (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP))) {// totally unclipped
 				r_affinetridesc.pfinalverts = pfinalverts;
 				r_affinetridesc.ptriangles = mtri;
@@ -307,7 +307,7 @@ R_IQMDrawModel (alight_t *plighting)
 	pfinalverts = (finalvert_t *)
 		(((intptr_t) &pfinalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = (auxvert_t *) &pfinalverts[iqm->num_verts + 1];
-	
+
 	R_IQMSetUpTransform (ent->trivial_accept);
 
 	R_IQMSetupLighting (ent, plighting);

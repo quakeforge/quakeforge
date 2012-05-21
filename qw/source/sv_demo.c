@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the included (GNU.txt) GNU General Public License for more details.
 
@@ -409,7 +409,7 @@ SV_Record (char *name)
 			Qprintf (f, "date %s\nmap %s\nteamplay %d\ndeathmatch %d\n"
 					 "timelimit %d\n%s",
 					 date, sv.name, teamplay->int_val,
-					 deathmatch->int_val, timelimit->int_val, 
+					 deathmatch->int_val, timelimit->int_val,
 					 SV_PrintTeams ());
 			Qclose (f);
 		}
@@ -763,7 +763,7 @@ SV_EasyRecord_f (void)
 	}
 
 	// Make sure the filename doesn't contain illegal characters
-	dsprintf (name2, "%s/%s%s%s%s%s", 
+	dsprintf (name2, "%s/%s%s%s%s%s",
 			  qfs_gamedir->dir.def, sv_demoDir->string,
 			  sv_demoDir->string[0] ? "/" : "",
 			  sv_demoPrefix->string, SV_CleanName (name->str),

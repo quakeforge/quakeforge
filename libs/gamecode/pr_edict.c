@@ -223,7 +223,7 @@ ED_EdictNum (progs_t *pr, pr_int_t n)
 
 	if (offs < 0 || n >= pr->pr_edictareasize)
 		PR_RunError (pr, "EDICT_NUM: bad number %d", n);
-		
+
 	return PROG_TO_EDICT (pr, offs);
 }
 

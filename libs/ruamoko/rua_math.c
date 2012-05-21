@@ -32,7 +32,7 @@
 #endif
 
 #include <stdlib.h>
-#include <math.h>	
+#include <math.h>
 
 #include "QF/cmd.h"
 #include "QF/hash.h"

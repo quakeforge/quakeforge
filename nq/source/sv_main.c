@@ -115,7 +115,7 @@ SV_Init (void)
 
 // EVENT MESSAGES =============================================================
 
-/*  
+/*
 	SV_StartParticle
 
 	Make sure the event gets sent to all clients
@@ -141,7 +141,7 @@ SV_StartParticle (const vec3_t org, const vec3_t dir, int color, int count)
 	MSG_WriteByte (&sv.datagram, color);
 }
 
-/*  
+/*
 	SV_StartSound
 
 	Each entity can have eight independant sound sources, like voice,
@@ -257,7 +257,7 @@ SV_SendServerinfo (client_t *client)
 	else
 		MSG_WriteByte (&client->message, GAME_COOP);
 
-	snprintf (message, sizeof (message), "%s", 
+	snprintf (message, sizeof (message), "%s",
 			  PR_GetString (&sv_pr_state, SVstring (sv.edicts, message)));
 	message[sizeof (message) - 1] = 0;
 
@@ -279,7 +279,7 @@ SV_SendServerinfo (client_t *client)
 	MSG_WriteByte (&client->message, SVfloat (sv.edicts, sounds));
 	MSG_WriteByte (&client->message, SVfloat (sv.edicts, sounds));
 
-	// set view 
+	// set view
 	MSG_WriteByte (&client->message, svc_setview);
 	MSG_WriteShort (&client->message,
 					NUM_FOR_EDICT (&sv_pr_state, client->edict));

@@ -67,7 +67,7 @@ typedef struct snd_render_funcs_s {
 	P_S_LocalSound		pS_LocalSound;
 	P_S_BlockSound		pS_BlockSound;
 	P_S_UnblockSound	pS_UnblockSound;
-	P_S_LoadSound		pS_LoadSound; 
+	P_S_LoadSound		pS_LoadSound;
 	P_S_AllocChannel	pS_AllocChannel;
 	P_S_ChannelStop     pS_ChannelStop;
 } snd_render_funcs_t;

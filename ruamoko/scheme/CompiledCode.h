@@ -10,7 +10,7 @@ struct lineinfo_s {
     int linenumber;
     String *sourcefile;
 };
-    
+
 typedef struct lineinfo_s lineinfo_t;
 
 @interface CompiledCode: SchemeObject
@@ -30,7 +30,7 @@ typedef struct lineinfo_s lineinfo_t;
 - (Frame *) literals;
 - (int) minimumArguments;
 - (void) minimumArguments: (int) min;
-    
+
 @end
 
 #endif //__CompiledCode_h

@@ -63,7 +63,7 @@ sw32_R_LineGraph (int x, int y, int *h_vals, int count)
 			color = 0xd0;					// blue
 		else
 			color = 0xff;					// pink
-	 
+
 		if (h > s)
 			h = s;
 

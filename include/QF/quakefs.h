@@ -152,7 +152,7 @@ QFile *QFS_WOpen (const char *path, int zip);
 
 /** Write a block of data to a file.
 
-	This is a convenience wrapper for QFS_Open(). 
+	This is a convenience wrapper for QFS_Open().
 
 	\param filename	Path name of file to open, relative to ::qfs_userpath.
 	\param data		Pointer to the block of data to be written.

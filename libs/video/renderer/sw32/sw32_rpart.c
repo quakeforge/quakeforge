@@ -674,14 +674,14 @@ R_WizTrail_QF (const entity_t *ent)
 
 		tracercount++;
 
-        VectorCopy (old_origin, p->org); 
-        if (tracercount & 1) { 
-            p->vel[0] = 30.0 * vec[1]; 
-            p->vel[1] = 30.0 * -vec[0]; 
-        } else { 
-            p->vel[0] = 30.0 * -vec[1]; 
-            p->vel[1] = 30.0 * vec[0]; 
-        } 
+        VectorCopy (old_origin, p->org);
+        if (tracercount & 1) {
+            p->vel[0] = 30.0 * vec[1];
+            p->vel[1] = 30.0 * -vec[0];
+        } else {
+            p->vel[0] = 30.0 * -vec[1];
+            p->vel[1] = 30.0 * vec[0];
+        }
 		p->vel[2] = 0.0;
 
 		VectorAdd (old_origin, vec, old_origin);

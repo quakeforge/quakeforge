@@ -451,7 +451,7 @@ PR_Get_Source_Line (progs_t *pr, pr_uint_t addr)
 	file_t     *file;
 	pr_auxfunction_t *func;
 	pr_lineno_t *lineno;
-	
+
 	lineno = PR_Find_Lineno (pr, addr);
 	if (!lineno || PR_Get_Lineno_Addr (pr, lineno) != addr)
 		return 0;

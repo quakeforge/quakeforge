@@ -146,7 +146,7 @@
 #define	svc_stufftext		9	// [string] stuffed into client's console buffer
 								// the string should be \n terminated
 #define	svc_setangle		10	// [angle3] set the view angle to this absolute value
-	
+
 #define	svc_serverinfo		11	// [long] version
 								// [string] signon string
 								// [string]..[0]model cache
@@ -159,11 +159,11 @@
 #define	svc_updatecolors	17	// [byte] [byte]
 #define	svc_particle		18	// [vec3] <variable>
 #define	svc_damage			19
-	
+
 #define	svc_spawnstatic		20
 //		svc_spawnbinary		21
 #define	svc_spawnbaseline	22
-	
+
 #define	svc_temp_entity		23
 
 #define	svc_setpause		24	// [byte] on / off

@@ -403,7 +403,7 @@ gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 					mdfour_update (&md, (unsigned char *) vo, no * sizeof (vo[0]));
 					mdfour_update (&md, d1, MDFOUR_DIGEST_BYTES);
 					mdfour_result (&md, mesh_digest);
-	
+
 					if (memcmp (d2, mesh_digest, MDFOUR_DIGEST_BYTES) == 0
 						&& memcmp (d1, model_digest, MDFOUR_DIGEST_BYTES) == 0) {
 						remesh = false;
@@ -440,7 +440,7 @@ gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 			if (do_cache) {
 				// save out the cached version
 				dsprintf (fullpath, "%s/%s", qfs_gamedir->dir.def, cache->str);
-				f = QFS_WOpen (fullpath->str, 9);	
+				f = QFS_WOpen (fullpath->str, 9);
 
 				if (f) {
 					struct mdfour md;
@@ -458,7 +458,7 @@ gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 					mdfour_update (&md, (unsigned char *) vertexorder,
 								   numorder * sizeof (vertexorder[0]));
 					mdfour_update (&md, model_digest, MDFOUR_DIGEST_BYTES);
-					mdfour_result (&md, mesh_digest);	
+					mdfour_result (&md, mesh_digest);
 
 					Qwrite (f, &vers, sizeof (int));
 					Qwrite (f, &len, sizeof (int));
@@ -471,10 +471,10 @@ gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 					Qclose (f);
 				}
 			}
-		}	
+		}
 
 		// save the data out
-		paliashdr->poseverts = numorder;	
+		paliashdr->poseverts = numorder;
 
 		cmds = Hunk_Alloc (numcommands * sizeof (int));
 		paliashdr->commands = (byte *) cmds - (byte *) paliashdr;
@@ -483,13 +483,13 @@ gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 	} else {
 		tex_coord_t *tex_coord;
 
-		numorder = 0;	
+		numorder = 0;
 		for (i=0; i < pheader->mdl.numtris; i++) {
 			add_vertex(triangles[i].vertindex[0]);
 			add_vertex(triangles[i].vertindex[1]);
 			add_vertex(triangles[i].vertindex[2]);
 		}
-		paliashdr->poseverts = numorder;	
+		paliashdr->poseverts = numorder;
 
 		tex_coord = Hunk_Alloc (numorder * sizeof(tex_coord_t));
 		paliashdr->tex_coord = (byte *) tex_coord - (byte *) paliashdr;

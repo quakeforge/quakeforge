@@ -29,7 +29,7 @@
 #define _CL_CAM_H
 
 // since all headers are circular-protected with #ifdef _xxx_H
-// try to get them self-sufficient by including whatever other 
+// try to get them self-sufficient by including whatever other
 // headers they might need
 
 

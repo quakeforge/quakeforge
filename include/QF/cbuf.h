@@ -51,10 +51,10 @@ typedef struct cbuf_args_s {
 
 typedef struct cbuf_s {
 	cbuf_args_t *args;
-	struct cbuf_interpreter_s *interpreter;	
+	struct cbuf_interpreter_s *interpreter;
 
 	struct cbuf_s *up, *down;	// The stack
-	
+
 	enum {
 		CBUF_STATE_NORMAL = 0,	// Normal condition
 		CBUF_STATE_WAIT,		// Buffer is stalled until next frame
@@ -63,11 +63,11 @@ typedef struct cbuf_s {
 		CBUF_STATE_STACK,		// A buffer has been added to the stack
 		CBUF_STATE_JUNK			// Buffer can be freed or reused
 	} state;
-	
+
 	int	      (*unknown_command)(void);	// handle unkown commands. !0 = handled
 	qboolean    strict;			// Should we tolerate unknown commands?
 	double      resumetime;		// Time when stack can be executed again
-	
+
 	void       *data;			// Pointer to interpreter data
 } cbuf_t;
 

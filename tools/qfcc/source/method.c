@@ -385,7 +385,7 @@ emit_selectors (void)
 	type_t     *sel_type;
 	pr_sel_t   *sel;
 	selector_t **selectors, **s;
-	
+
 	if (!sel_index)
 		return 0;
 
@@ -401,7 +401,7 @@ emit_selectors (void)
 	sel = D_POINTER (pr_sel_t, sel_def);
 
 	selectors = (selector_t **) Hash_GetList (sel_hash);
-	
+
 	for (s = selectors; *s; s++) {
 		EMIT_STRING (sel_def->space,  sel[(*s)->index].sel_id, (*s)->name);
 		EMIT_STRING (sel_def->space,  sel[(*s)->index].sel_types, (*s)->types);
@@ -609,7 +609,7 @@ method_check_params (method_t *method, expr_t *args)
 
 		if (!t)
 			return e;
- 
+
 		if (i < param_count) {
 			if (e->type != ex_nil)
 				if (!type_assignable (mtype->t.func.param_types[i], t)) {

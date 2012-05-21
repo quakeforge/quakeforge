@@ -115,7 +115,7 @@ I_OGGMus_Stop (void)
 {
 	if (!tracklist || !mus_enabled || !playing)
 		return;
-	
+
 	playing = false;
 	wasPlaying = false;
 
@@ -267,7 +267,7 @@ I_OGGMus_Pause (void)
 {
 	if (!tracklist || !mus_enabled || !playing)
 		return;
-	
+
 	if (cd_channel)
 		cd_channel->pause = 1;
 

@@ -574,7 +574,7 @@ blend_compare (void *e1, void *e2, void *unused)
 
 #define MAX_BLENDS 1024
 
-iqmblend_t * 
+iqmblend_t *
 Mod_IQMBuildBlendPalette (iqm_t *iqm, int *size)
 {
 	int         i, j;

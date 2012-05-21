@@ -162,7 +162,7 @@ create_tree_of_subclasses_inherited_from (progs_t *pr, pr_class_t *bottom,
 	const char *super_class = PR_GetString (pr, bottom->super_class);
 	pr_class_t *superclass;
 	class_tree *tree, *prev;
-	
+
 	superclass = bottom->super_class ? Hash_Find (pr->classes, super_class)
 									 : 0;
 	tree = prev = class_tree_new ();
@@ -943,7 +943,7 @@ rua_obj_error (progs_t *pr)
 	const char *fmt = P_GSTRING (pr, 2);
 	int         count = pr->pr_argc - 3;
 	pr_type_t  *args = pr->pr_params[3];
-	
+
 	obj_verror (pr, object, code, fmt, count, args);
 }
 
@@ -1259,7 +1259,7 @@ rua_class_create_instance (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_id_t    *id = class_create_instance (pr, class);
-	
+
 	RETURN_POINTER (pr, id);
 }
 
@@ -1494,7 +1494,7 @@ rua__i_Object_error_error_ (progs_t *pr)
 	dstring_t  *dstr = dstring_new ();
 	int         count = pr->pr_argc - 3;
 	pr_type_t  *args = pr->pr_params[3];
-	
+
 	dsprintf (dstr, "error: %s (%s)\n%s",
 			  PR_GetString (pr, object_get_class_name (pr, self)),
 			  object_is_instance (pr, self) ? "instance" : "class", fmt);
@@ -1531,7 +1531,7 @@ static builtin_t obj_methods [] = {
 	{"obj_get_uninstalled_dtable",	rua_obj_get_uninstalled_dtable,	-1},
 	{"obj_msgSend",					rua_obj_msgSend,				-1},
 	{"obj_msgSend_super",			rua_obj_msgSend_super,			-1},
-	
+
 	{"obj_get_class",				rua_obj_get_class,				-1},
 	{"obj_lookup_class",			rua_obj_lookup_class,			-1},
 	{"obj_next_class",				rua_obj_next_class,				-1},

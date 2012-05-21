@@ -741,7 +741,7 @@
 #define GL_FUNC_REVERSE_SUBTRACT		0x800B
 #define	GL_BLEND_COLOR					0x8005
 
-/* glPush/PopAttrib bits */	
+/* glPush/PopAttrib bits */
 #define GL_CURRENT_BIT					0x00000001
 #define GL_POINT_BIT					0x00000002
 #define GL_LINE_BIT						0x00000004

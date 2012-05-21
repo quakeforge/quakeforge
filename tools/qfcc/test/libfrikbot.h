@@ -65,7 +65,7 @@ typedef struct bot_data_t bot_data_t;
 	//frame angles colormap effects
 	//owner
 
-	//movetype solid touch <size> watertype flags think nextthink 
+	//movetype solid touch <size> watertype flags think nextthink
 
 	integer keys, oldkeys;
 	integer buttons, impulse;
@@ -219,14 +219,14 @@ typedef struct bot_data_t bot_data_t;
 #define AI_TELELINK_4	0x00008	// link type
 #define AI_DOORFLAG		0x00010	// read ahead
 #define AI_PRECISION	0x00020	// read ahead + point
-#define AI_SURFACE		0x00040	// point 
+#define AI_SURFACE		0x00040	// point
 #define AI_BLIND		0x00080	// read ahead + point
 #define AI_JUMP			0x00100	// point + ignore
 #define AI_DIRECTIONAL	0x00200	// read ahead + ignore
-#define AI_PLAT_BOTTOM	0x00400	// read ahead 
-#define AI_RIDE_TRAIN	0x00800	// read ahead 
+#define AI_PLAT_BOTTOM	0x00400	// read ahead
+#define AI_RIDE_TRAIN	0x00800	// read ahead
 #define AI_SUPER_JUMP	0x01000	// point + ignore + route test
-#define AI_SNIPER		0x02000	// point type 
+#define AI_SNIPER		0x02000	// point type
 #define AI_AMBUSH		0x04000	// point type
 #define AI_DOOR_NO_OPEN	0x08000	// read ahead
 #define AI_DIFFICULT	0x10000	// route test
@@ -264,7 +264,7 @@ typedef struct bot_data_t bot_data_t;
 @extern float		bot_count, b_options;
 @extern float		lasttime;
 @extern float		waypoint_mode;
-@extern float		dump_mode; 
+@extern float		dump_mode;
 @extern float		direct_route;
 @extern float		sv_friction, sv_gravity;
 @extern float		sv_accelerate, sv_maxspeed, sv_stopspeed;

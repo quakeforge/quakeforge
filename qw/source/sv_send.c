@@ -368,7 +368,7 @@ SV_Multicast (const vec3_t origin, int to)
 	SZ_Clear (&sv.multicast);
 }
 
-/*  
+/*
 	SV_StartSound
 
 	Each entity can have eight independant sound sources, like voice,

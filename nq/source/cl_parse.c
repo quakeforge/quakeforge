@@ -438,7 +438,7 @@ CL_ParseServerInfo (void)
 
 	Hunk_Check ();						// make sure nothing is hurt
 
-	noclip_anglehack = false;			// noclip is turned off at start    
+	noclip_anglehack = false;			// noclip is turned off at start
 	r_data->gravity = 800.0;			// Set up gravity for renderer effects
 done:
 	S_UnblockSound ();
@@ -479,7 +479,7 @@ CL_ParseUpdate (int bits)
 		if (bits & U_EXTEND2)
 			bits |= MSG_ReadByte(net_message) << 24;
 	}
-	
+
 	if (bits & U_LONGENTITY)
 		num = MSG_ReadShort (net_message);
 	else
@@ -876,7 +876,7 @@ CL_ParseServerMessage (void)
 	else if (cl_shownet->int_val == 2)
 		Sys_Printf ("------------------\n");
 
-	cl.onground = false;				// unless the server says otherwise 
+	cl.onground = false;				// unless the server says otherwise
 
 	// parse the message
 	MSG_BeginReading (net_message);

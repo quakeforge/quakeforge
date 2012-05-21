@@ -453,7 +453,7 @@ R_DrawViewModel (void)
 	r_viewlighting.ambientlight = j;
 	r_viewlighting.shadelight = j;
 
-	// add dynamic lights       
+	// add dynamic lights
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
 		dl = &r_dlights[lnum];
 		if (!dl->radius)
@@ -605,7 +605,7 @@ R_DrawBEntitiesOnList (void)
 							mnode_t    *topnode = currententity->topnode;
 
 							if (topnode->contents >= 0) {
-								// not a leaf; has to be clipped to the world 
+								// not a leaf; has to be clipped to the world
 								// BSP
 								r_clipflags = clipflags;
 								R_DrawSolidClippedSubmodelPolygons (clmodel);
@@ -619,7 +619,7 @@ R_DrawBEntitiesOnList (void)
 						}
 					}
 
-					// put back world rotation and frustum clipping     
+					// put back world rotation and frustum clipping
 					// FIXME: R_RotateBmodel should just work off base_vxx
 					VectorCopy (base_vpn, vpn);
 					VectorCopy (base_vup, vup);

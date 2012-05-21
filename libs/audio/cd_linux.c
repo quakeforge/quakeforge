@@ -428,7 +428,7 @@ Mus_CDChange (cvar_t *mus_cdaudio)
 						mus_cdaudio->string, errno);
 		return;
 	}
-	
+
 	if (I_CDAudio_GetAudioDiskInfo ()) {
 		Sys_Printf ("CDAudio_Init: No CD in player.\n");
 		cdValid = false;

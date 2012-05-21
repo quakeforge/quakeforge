@@ -98,7 +98,7 @@ VID_Init (byte *palette, byte *colormap)
 	Uint32      flags = SDL_OPENGL;
 	int         i, j;
 
-	// Initialize the SDL library 
+	// Initialize the SDL library
 	if (SDL_Init (SDL_INIT_VIDEO) < 0)
 		Sys_Error ("Couldn't initialize SDL: %s", SDL_GetError ());
 

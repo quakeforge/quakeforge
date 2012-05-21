@@ -377,7 +377,7 @@ static ucmd_t ucmds[] = {
 	{"drop",		cl_drop_f,			1, 0},
 	{"pings",		cl_pings_f,			0, 0},
 
-// issued by hand at client consoles    
+// issued by hand at client consoles
 	{"rate",		cl_rate_f,			0, 0},
 	{"kill",		0,					1, 1},
 	{"pause",		0,					1, 0},
@@ -528,7 +528,7 @@ client_parse_message (client_t *cl)
 	qboolean    move_issued = false;
 
 	// make sure the reply sequence number matches the incoming
-	// sequence number 
+	// sequence number
 	if (cl->netchan.incoming_sequence >= cl->netchan.outgoing_sequence)
 		cl->netchan.outgoing_sequence = cl->netchan.incoming_sequence;
 	else
@@ -739,7 +739,7 @@ int         nailcount;
 static void
 emit_nails (sizebuf_t *msg, qboolean recorder)
 {
-	byte	   *buf;				// [48 bits] xyzpy 12 12 12 4 8 
+	byte	   *buf;				// [48 bits] xyzpy 12 12 12 4 8
 	int			n, p, x, y, z, yaw;
 	int         bpn = recorder ? 7 : 6;	// bytes per nail
 	edict_t	   *ent;

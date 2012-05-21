@@ -137,11 +137,11 @@ SNDDMA_Submit (void)
 }
 
 static void
-SNDDMA_BlockSound (void)                
+SNDDMA_BlockSound (void)
 {
 	++snd_blocked;
-}   
-    
+}
+
 static void
 SNDDMA_UnblockSound (void)
 {

@@ -46,9 +46,9 @@
 
 //
 // global variables set by built in functions
-//      
+//
 @extern vector          v_forward, v_up, v_right;       // set by makevectors()
-	
+
 // set by traceline / tracebox
 @extern float           trace_allsolid;
 @extern float           trace_startsolid;
@@ -552,12 +552,12 @@
 //
 @extern .float          aflag;
 @extern .float          dmg;                    // damage done by door when hit
-	
+
 //
 // misc
 //
 @extern .float          cnt;                    // misc flag
-	
+
 //
 // subs
 //
@@ -589,7 +589,7 @@
 
 
 //===========================================================================
-	
+
 
 //
 // builtin functions
@@ -616,7 +616,7 @@
 // An entity will also be ignored for testing if forent == test,
 // forent->owner == test, or test->owner == forent
 // a forent of world is ignored
-@extern void(vector v1, vector v2, float nomonsters, entity forent) traceline;    
+@extern void(vector v1, vector v2, float nomonsters, entity forent) traceline;
 
 @extern entity() checkclient;  // returns a client to look for
 @extern entity(entity start, .string fld, string match) find;

@@ -176,7 +176,7 @@ X11_AddEvent (int event, void (*event_handler) (XEvent *))
 						LASTEvent);
 		return false;
 	}
-	
+
 	if (event_handlers[event])
 		return false;
 
@@ -207,7 +207,7 @@ X11_ProcessEventProxy(XEvent *x_event)
 	}
 	if (event_handlers[x_event->type])
 		event_handlers[x_event->type] (x_event);
-}	
+}
 
 static void
 X11_WaitForEvent (int event)
@@ -219,7 +219,7 @@ X11_WaitForEvent (int event)
 		XMaskEvent (x_disp, X11_WINDOW_MASK, &ev);
 		type = ev.type;
 		X11_ProcessEventProxy (&ev);
-		if (type == event) 
+		if (type == event)
 			break;
 	}
 }
@@ -494,13 +494,13 @@ X11_Init_Cvars (void)
 {
 	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the "
 					"quake window in a virtual desktop.\n");
-	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ARCHIVE, 
+	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ARCHIVE,
 							   &X11_UpdateFullscreen,
 							   "Toggles fullscreen game mode");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
 }
-   
+
 void
 X11_CreateWindow (int width, int height)
 {
@@ -601,7 +601,7 @@ X11_SetGamma (double gamma)
 #ifdef HAVE_VIDMODE
 # ifdef X_XF86VidModeSetGamma
 	XF86VidModeGamma	xgamma;
-	
+
 	if (vid_gamma_avail && vid_system_gamma->int_val && x_have_focus) {
 		xgamma.red = xgamma.green = xgamma.blue = (float) gamma;
 		if (XF86VidModeSetGamma (x_disp, x_screen, &xgamma))

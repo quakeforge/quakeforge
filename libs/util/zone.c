@@ -101,7 +101,7 @@ static int
 z_offset (memzone_t *zone, memblock_t *block)
 {
 	int         offset = ((byte *) (block + 1) - (byte *) zone);
-	
+
 	return offset / zone->ele_size + zone->offset;
 }
 
@@ -109,7 +109,7 @@ VISIBLE void
 Z_ClearZone (memzone_t *zone, int size, int zone_offset, int ele_size)
 {
 	memblock_t	*block;
-	
+
 	// set the entire zone to one free block
 
 	block = (memblock_t *) (zone + 1);
@@ -125,7 +125,7 @@ Z_ClearZone (memzone_t *zone, int size, int zone_offset, int ele_size)
 	zone->used = sizeof (memzone_t);
 	zone->error = 0;
 	zone->data = 0;
-	
+
 	block->prev = block->next = &zone->blocklist;
 	block->tag = 0;			// free block
 	block->id = ZONEID;
@@ -172,7 +172,7 @@ Z_Free (memzone_t *zone, void *ptr)
 
 	block->tag = 0;		// mark as free
 	zone->used -= block->size;
-	
+
 	other = block->prev;
 	if (!other->tag) {
 		// merge with previous free block
@@ -183,7 +183,7 @@ Z_Free (memzone_t *zone, void *ptr)
 			zone->rover = other;
 		block = other;
 	}
-	
+
 	other = block->next;
 	if (!other->tag) {
 		// merge the next free block onto the end
@@ -232,10 +232,10 @@ Z_TagMalloc (memzone_t *zone, int size, int tag)
 	size += sizeof (memblock_t);	// account for size of block header
 	size += 4;						// space for memory trash tester
 	size = (size + 7) & ~7;			// align to 8-byte boundary
-	
+
 	base = rover = zone->rover;
 	start = base->prev;
-	
+
 	do {
 		if (rover == start)			// scaned all the way around the list
 			return NULL;
@@ -244,7 +244,7 @@ Z_TagMalloc (memzone_t *zone, int size, int tag)
 		else
 			rover = rover->next;
 	} while (base->tag || base->size < size);
-	
+
 	// found a block big enough
 	extra = base->size - size;
 	if (extra >  MINFRAGMENT) {
@@ -260,11 +260,11 @@ Z_TagMalloc (memzone_t *zone, int size, int tag)
 		base->next = new;
 		base->size = size;
 	}
-	
+
 	base->tag = tag;				// no longer a free block
-	
+
 	zone->rover = base->next;	// next allocation will start looking here
-	
+
 	base->id = ZONEID;
 	base->id2 = ZONEID;
 
@@ -282,7 +282,7 @@ Z_Realloc (memzone_t *zone, void *ptr, int size)
 	int         old_size;
 	memblock_t *block;
 	void       *old_ptr;
-	
+
 	if (!ptr)
 		return Z_Malloc (zone, size);
 
@@ -336,7 +336,7 @@ Z_Print (memzone_t *zone)
 					block->tag, z_offset (zone, block));
 
 		if (block->next == &zone->blocklist)
-			break;			// all blocks have been hit	
+			break;			// all blocks have been hit
 		if (block->id != ZONEID || block->id2 != ZONEID)
 			Sys_Printf ("ERROR: block ids incorrect\n");
 		if ( (byte *)block + block->size != (byte *)block->next)
@@ -359,7 +359,7 @@ Z_CheckHeap (memzone_t *zone)
 
 	for (block = zone->blocklist.next ; ; block = block->next) {
 		if (block->next == &zone->blocklist)
-			break;			// all blocks have been hit	
+			break;			// all blocks have been hit
 		if ( (byte *)block + block->size != (byte *)block->next)
 			Sys_Error ("Z_CheckHeap: block size does not touch the next "
 					   "block\n");
@@ -634,7 +634,7 @@ Hunk_TempAlloc (int size)
 typedef struct cache_system_s cache_system_t;
 struct cache_system_s {
 	cache_system_t *prev, *next;
-	cache_system_t *lru_prev, *lru_next;	// for LRU flushing 
+	cache_system_t *lru_prev, *lru_next;	// for LRU flushing
 	char        name[16];
 	size_t      size;							// including this header
 	int			readlock;
@@ -981,7 +981,7 @@ Cache_Alloc (cache_user_t *c, int size, const char *name)
 
 	size = (size + sizeof (cache_system_t) + 15) & ~15;
 
-	// find memory for it   
+	// find memory for it
 	while (1) {
 		cs = Cache_TryAlloc (size, false);
 		if (cs) {

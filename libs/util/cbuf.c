@@ -116,7 +116,7 @@ VISIBLE void
 Cbuf_DeleteStack (cbuf_t *stack)
 {
 	cbuf_t		*next;
-	
+
 	for (; stack; stack = next) {
 		next = stack->down;
 		Cbuf_Delete (stack);
@@ -182,7 +182,7 @@ VISIBLE void
 Cbuf_Execute_Stack (cbuf_t *cbuf)
 {
 	cbuf_t		*sp;
-	
+
 	if (cbuf->resumetime) {
 		if (cbuf->resumetime < Sys_DoubleTime())
 				cbuf->resumetime = 0;
@@ -208,7 +208,7 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 				return;
 			}
 		}
-		sp->state = CBUF_STATE_JUNK;		
+		sp->state = CBUF_STATE_JUNK;
 		sp = sp->up;
 	}
 	if (cbuf->down) {

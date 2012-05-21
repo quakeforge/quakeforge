@@ -1,7 +1,7 @@
-/* Texture Paint 
+/* Texture Paint
  * Plug-in for the GIMP
  *
- * Copyright (C) 1998 Uwe Maurer <uwe_maurer@t-online.de> 
+ * Copyright (C) 1998 Uwe Maurer <uwe_maurer@t-online.de>
  *
  * Based on GiMd2Viewer-0.1 (Quake2 model viewer) by
  * Copyright (C) 1998  Lionel ULMER <bbrox@mygale.org>
@@ -47,7 +47,7 @@
 #define DRAW_COORD_T	3
 
 
-#define IMAGE_KEY	"image_id"	/* for gtk_object_set_data */ 
+#define IMAGE_KEY	"image_id"	/* for gtk_object_set_data */
 #define MODEL_KEY	"model"
 
 #if 0
@@ -69,18 +69,18 @@ typedef struct
 	GtkWidget *glwindow;
 	GtkWidget *glarea;
 
-	Model *model;		
+	Model *model;
 
 	int init;
 
-	gint32 tex_image;	
+	gint32 tex_image;
 	gint32 paint_image;
 
 	GLint texture;
 	GLint texture_s;
 	GLint texture_t;
 
-	gint16 *tex_s;		
+	gint16 *tex_s;
 	gint16 *tex_t;
 
 	int oldw,oldh;
@@ -90,13 +90,13 @@ typedef struct
 	gint x1,x2,y1,y2;	/* texture drawable*/
 	gint w,h;		/* x2-x1+1, y2-y1+1 */
 
-	gboolean update_texture;	
-	
+	gboolean update_texture;
+
 	gboolean drawing;
 
 	/*Animation*/
 	GTimer *timer;
-	gboolean playing;	
+	gboolean playing;
 	gdouble fps;
 	gdouble frame;
 	int first;
@@ -144,7 +144,7 @@ typedef struct
 	gint32  texture_drawable;
 	gint32	paint_image;
 
-	GList *models_list;	
+	GList *models_list;
 
 	ModelInfo *mdl;
 
@@ -165,7 +165,7 @@ Model *model_load(char *name,FILE *fp);
 
 void begingl(GtkWidget *);
 void endgl(GtkWidget *);
-void set_parameter(ModelInfo *mdl); 
+void set_parameter(ModelInfo *mdl);
 void BindTexture(ModelInfo *mdl,char *texdata,int w,int h);
 void add_anim_button(GtkWidget *container,int num,char **pix);
 int get_texture(ModelInfo *mdl);

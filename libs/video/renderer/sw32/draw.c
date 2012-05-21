@@ -424,7 +424,7 @@ static void
 crosshair_1 (int x, int y)
 {
 	sw32_Draw_Character (x - 4, y - 4, '+');
-}   
+}
 
 static void
 crosshair_2 (int x, int y)

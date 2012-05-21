@@ -34,7 +34,7 @@ noiseXYZ (float x, float y, float z, int num)
 
 // returns a noise value from a scaled up noise pattern
 //
-// Actually created by sampling points on a certain grid 
+// Actually created by sampling points on a certain grid
 // and interpolating the inbetween value, making the noise smooth
 float
 noise_scaled (vec3_t v, float s, int num)

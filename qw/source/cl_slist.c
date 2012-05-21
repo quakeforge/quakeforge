@@ -5,7 +5,7 @@
 
 	Copyright (C) 2000      Brian Koropoff <brian.hk@home.com>
 	Copyright (C) 2001	Chris Ison <ceison@yahoo.com>
-	
+
 	Author: Brian Koropoff
 	Date: 03 May 2000
 
@@ -207,7 +207,7 @@ SL_Swap (server_entry_t *swap1, server_entry_t *swap2)
 {
 	server_entry_t *next1, *next2, *prev1, *prev2;
 	server_entry_t temp;
-	
+
 	next1 = swap1->next;
 	next2 = swap2->next;
 	prev1 = swap1->prev;
@@ -231,7 +231,7 @@ SL_CheckFilter (server_entry_t *sl_filteritem)
 	if (!sl_filteritem->status)
 		return (0);
 	if (strlen (sl_game->string)) {
-		if (strcasecmp (Info_ValueForKey (sl_filteritem->status, "*gamedir"), 
+		if (strcasecmp (Info_ValueForKey (sl_filteritem->status, "*gamedir"),
 						sl_game->string) != 0)
 			return (0);
 	}
@@ -303,7 +303,7 @@ void
 SL_Shutdown (void)
 {
 	QFile      *f;
-	
+
 	if (fav_slist) {
 		if ((f = QFS_Open ("servers.txt", "w"))) {
 			SL_SaveF (f, fav_slist);
@@ -369,7 +369,7 @@ SL_SortEntry (server_entry_t *start)
 {
 	int i = 0;
 	server_entry_t *q;
-	
+
 	if (!start || !sl_sortby)
 		return;
 
@@ -382,7 +382,7 @@ SL_SortEntry (server_entry_t *start)
 			}
 		} else {
 			i = 0;
-			
+
 			while ((start->desc[i] != '\0') && (q->desc[i] != '\0') &&
 				   (toupper (start->desc[i]) == toupper (q->desc[i])))
 				i++;
@@ -398,7 +398,7 @@ static void
 SL_Sort (cvar_t *var)
 {
 	server_entry_t *p;
-	
+
 	if (!slist)
 		return;
 
@@ -438,7 +438,7 @@ SL_Update (server_entry_t *sldata)
 	//         as it appears to be causing the occasional problem
 	//         with some servers
 	server_entry_t *cp;
-		
+
 	cp = sldata;
 	while (cp)
 	{
@@ -486,7 +486,7 @@ SL_MasterUpdate (void)
 {
 	char data[] = "c\n\0";
 	netadr_t addy;
-	
+
 	SL_Del_All (slist);
 	slist = NULL;
 	NET_StringToAdr ("194.251.249.32:27000", &addy);
@@ -522,14 +522,14 @@ SL_Switch (void)
 	SL_Sort (sl_sortby);
 	return (which_slist);
 }
-	
+
 static void
 SL_Command (void)
 {
 	int sltemp = 0;
-	
+
 	if (Cmd_Argc () == 1)
-		SL_Con_List (slist); 
+		SL_Con_List (slist);
 	else if (strcasecmp (Cmd_Argv (1), "switch") == 0) {
 		if (SL_Switch ())
 			Sys_Printf ("Switched to Server List from Masters\n");
@@ -551,7 +551,7 @@ SL_Command (void)
 			Sys_Printf ("Syntax: slist update\n");
 	} else if (strcasecmp (Cmd_Argv (1), "connect") == 0) {
 		if (Cmd_Argc () == 3) {
-			sltemp = atoi (Cmd_Argv (2)); 
+			sltemp = atoi (Cmd_Argv (2));
 			if (sltemp && (sltemp <= SL_Len (slist)))
 				SL_Connect (slist, sltemp);
 			else
@@ -652,7 +652,7 @@ SL_CheckStatus (const char *cs_from, const char *cs_data)
 {
 	const char *tmp_desc;
 	server_entry_t *temp;
-	
+
 	for (temp = slist; temp; temp = temp->next)
 		if (temp->waitstatus) {
 			if (strcmp (cs_from, temp->server) == 0) {
@@ -680,11 +680,11 @@ SL_CheckStatus (const char *cs_from, const char *cs_data)
 				free (data);
 				return (1);
 			}
-		}		
+		}
 	return (0);
 }
 
-void 
+void
 SL_CheckPing (const char *cp_from)
 {
 	server_entry_t *temp;

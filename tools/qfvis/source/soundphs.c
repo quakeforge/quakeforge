@@ -86,7 +86,7 @@ SurfaceBBox (dface_t *s, vec3_t mins, vec3_t maxs)
 				mins[j] = v[j];
 			if (v[j] > maxs[j])
 				maxs[j] = v[j];
-		}	
+		}
 	}
 }
 

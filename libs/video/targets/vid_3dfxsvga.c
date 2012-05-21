@@ -164,7 +164,7 @@ GL_Init (void)
 {
 	QF_3DfxSetDitherModeEXT dither_select = NULL;
 	int p;
-	
+
 	GL_Init_Common ();
 
 	if (!(QFGL_ExtensionPresent ("3DFX_set_dither_mode")))
@@ -281,7 +281,7 @@ VID_Init (byte *palette, byte *colormap)
 										  "fxMesaMakeCurrent", true);
 	qf_fxMesaSwapBuffers = QFGL_ProcAddress (libgl_handle,
 										  "fxMesaSwapBuffers", true);
-	
+
 	VID_GetWindowSize (640, 480);
 
 	vid.maxwarpwidth = WARP_WIDTH;
@@ -309,7 +309,7 @@ VID_Init (byte *palette, byte *colormap)
 	vid.numpages = 2;
 
 	vid_gamma_avail = 1;
-	
+
 	GL_Init ();
 
 	VID_InitGamma (palette);

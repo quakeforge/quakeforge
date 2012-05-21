@@ -51,7 +51,7 @@ static void
 COM_construct (cbuf_t *cbuf)
 {
 	idbuf_t *new = calloc (1, sizeof (idbuf_t));
-	
+
 	new->buf = dstring_newstr();
 	new->line = dstring_newstr();
 	cbuf->data = new;
@@ -97,7 +97,7 @@ COM_Parse (const char *data)
 	if (!_com_token)
 		_com_token = dstring_newstr ();
 	com_token = _com_token->str;
-	
+
 	if (!data)
 		return 0;
 

@@ -60,7 +60,7 @@ extern qboolean		hudswap;
 extern struct cvar_s		*scr_fov;
 extern struct cvar_s		*scr_viewsize;
 
-// only the refresh window will be updated unless these variables are flagged 
+// only the refresh window will be updated unless these variables are flagged
 
 extern struct qpic_s *scr_ram;
 extern struct qpic_s *scr_net;

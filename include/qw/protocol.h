@@ -106,7 +106,7 @@
 #define	svc_updateuserinfo	40		// [byte] slot [long] uid [string] userinfo
 #define	svc_download		41		// [short] size [size bytes]
 #define	svc_playerinfo		42		// variable
-#define	svc_nails			43		// [byte] num [48 bits] xyzpy 12 12 12 4 8 
+#define	svc_nails			43		// [byte] num [48 bits] xyzpy 12 12 12 4 8
 #define	svc_chokecount		44		// [byte] packets choked
 #define	svc_modellist		45		// [strings]
 #define	svc_soundlist		46		// [strings]

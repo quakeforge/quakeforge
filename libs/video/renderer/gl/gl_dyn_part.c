@@ -260,7 +260,7 @@ R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 		j = r_maxparticles - numparticles;
 
 	for (i = 0; i < j; i++) {
-		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256, 
+		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256,
 							 vr_data.realtime + 0.3,
 							 								 colorStart + (i % colorLength), 1.0, 0.0);
 	}
@@ -534,7 +534,7 @@ R_RocketTrail_QF (const entity_t *ent)
 
 		particle_new (pt_smoke, part_tex_smoke, old_origin,
 					  pscale + percent * 4.0, vec3_origin,
-					  vr_data.realtime + 2.0 - percent * 2.0, 
+					  vr_data.realtime + 2.0 - percent * 2.0,
 					  12 + (rand () & 3),
 					  0.5 + qfrandom (0.125) - percent * 0.40, 0.0);
 		if (numparticles >= r_maxparticles)
@@ -842,7 +842,7 @@ R_TeleportSplash_EE (const vec3_t org)
 			dir[1] = i * 8;
 			for (j = -16; j < 16; j += 4) {
 				dir[0] = j * 8;
-				
+
 				rnd = rand ();
 				porg[0] = org[0] + i + (rnd & 3);
 				porg[1] = org[1] + j + ((rnd >> 2) & 3);
@@ -882,7 +882,7 @@ R_RocketTrail_EE (const entity_t *ent)
 
 		particle_new (pt_smoke, part_tex_smoke, old_origin,
 					  pscale + percent * 4.0, vec3_origin,
-					  vr_data.realtime + 2.0 - percent * 2.0, 
+					  vr_data.realtime + 2.0 - percent * 2.0,
 					  rand () & 255,
 					  0.5 + qfrandom (0.125) - percent * 0.40, 0.0);
 		if (numparticles >= r_maxparticles)

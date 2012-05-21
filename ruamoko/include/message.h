@@ -1,7 +1,7 @@
 #ifndef __ruamoko_message_h
 #define __ruamoko_message_h
 
-// protocol bytes  
+// protocol bytes
 #define SVC_TEMPENTITY 23
 #define SVC_KILLEDMONSTER 27
 #define SVC_FOUNDSECRET 28

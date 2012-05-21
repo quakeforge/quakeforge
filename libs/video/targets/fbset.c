@@ -687,7 +687,7 @@ DisplayFBInfo (struct fb_fix_screeninfo *fix)
 	case FB_TYPE_VGA_PLANES:
 	    {
 	    	struct textentry *t;
-		
+
 			for (t = VGAModes; t->name; t++)
 				if (fix->type_aux == t->id)
 					break;

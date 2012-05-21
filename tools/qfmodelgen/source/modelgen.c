@@ -197,7 +197,7 @@ ClearModel (void)
 
 	scale = 0;
 	scale_up = 1.0;
-	
+
 	VectorZero (adjust);
 	VectorZero (mins);
 	VectorZero (maxs);
@@ -503,7 +503,7 @@ SetSkinValues (void)
 
 	scale = 8;
 	if (width*scale >= 150)
-		scale = 150.0 / width;	
+		scale = 150.0 / width;
 	if (height*scale >= 190)
 		scale = 190.0 / height;
 	iwidth = ceil(width*scale) + 4;
@@ -511,7 +511,7 @@ SetSkinValues (void)
 
 	printf ("scale: %f\n", scale);
 	printf ("iwidth: %i  iheight: %i\n", iwidth, iheight);
-	
+
 // determine which side of each triangle to map the texture to
 	for (i = 0; i < model.numtris; i++) {
 		int		j;
@@ -626,7 +626,7 @@ Cmd_Skin (void)
 	byte	*ppal, *pskinbitmap, *ptemp1, *ptemp2;
 	int		time1, i;
 
-	Script_GetToken (&scr, false);	
+	Script_GetToken (&scr, false);
 	strcpy (skinname, scr.token->str);
 
 	sprintf (file1, "%s/%s.lbm", cdpartial, scr.token->str);
@@ -636,7 +636,7 @@ Cmd_Skin (void)
 	time1 = Sys_FileTime (file1);
 	if (time1 == -1)
 		Sys_Error ("%s not found", file1);
-	
+
 	if (Script_TokenAvailable (&scr, false)) {
 		Script_GetToken (&scr, false);
 		skins[skincount].interval = atof (scr.token->str);
@@ -645,7 +645,7 @@ Cmd_Skin (void)
 	} else {
 		skins[skincount].interval = 0.1;
 	}
-	
+
 // load in the skin .lbm file
 	LoadLBM (file1, &pskinbitmap, &ppal);
 
@@ -707,7 +707,7 @@ GrabFrame (char *frame, int isgroup)
 	} else {
 		frames[framecount].interval = 0.1;
 	}
-	
+
 // allocate storage for the frame's vertices
 	ptrivert = verts[framecount];
 
@@ -792,13 +792,13 @@ GrabFrame (char *frame, int isgroup)
 		if (vnorms[i].numnormals > 0) {
 			for (j = 0; j < 3; j++) {
 				int		k;
-	
+
 				v[j] = 0;
-				
+
 				for (k = 0; k < vnorms[i].numnormals; k++) {
 					v[j] += vnorms[i].normals[k][j];
 				}
-	
+
 				v[j] /= vnorms[i].numnormals;
 			}
 		} else {
@@ -965,11 +965,11 @@ ParseScript (void)
 			if (!Script_GetToken (&scr, true))
 				return;
 			if (scr.token->str[0] == '$')
-				break;				
+				break;
 			while (Script_TokenAvailable (&scr, false))
 				Script_GetToken (&scr, false);
 		} while (1);
-	
+
 		if (!strcmp (scr.token->str, "$modelname")) {
 			Cmd_Modelname ();
 		} else if (!strcmp (scr.token->str, "$base")) {
@@ -1018,7 +1018,7 @@ main (int argc, char **argv)
 
 	if (argc != 2)
 		Sys_Error ("usage: modelgen file.qc");
-		
+
 	i = 1;
 
 // load the script
@@ -1036,7 +1036,7 @@ main (int argc, char **argv)
 	Qclose (file);
 	Script_Start (&scr, path->str, buf);
 
-	
+
 // parse it
 	memset (&model, 0, sizeof (model));
 

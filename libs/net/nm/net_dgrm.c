@@ -1059,7 +1059,7 @@ _Datagram_CheckNewConnections (void)
 		NET_FreeQSocket (sock);
 		return NULL;
 	}
-	// everything is allocated, just fill in the details    
+	// everything is allocated, just fill in the details
 	sock->socket = newsock;
 	sock->landriver = net_landriverlevel;
 	sock->addr = clientaddr;

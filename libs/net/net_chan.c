@@ -174,7 +174,7 @@ Netchan_CanPacket (netchan_t *chan)
 /*
 	Netchan_CanReliable
 
-	Returns true if the bandwidth choke isn't 
+	Returns true if the bandwidth choke isn't
 */
 qboolean
 Netchan_CanReliable (netchan_t *chan)
@@ -346,7 +346,7 @@ Netchan_Process (netchan_t *chan)
 		chan->reliable_length = 0;		// it has been received
 
 	/// If this message contains a reliable message, bump
-	/// incoming_reliable_sequence 
+	/// incoming_reliable_sequence
 	chan->incoming_sequence = sequence;
 	chan->incoming_acknowledged = sequence_ack;
 	chan->incoming_reliable_acknowledged = reliable_ack;

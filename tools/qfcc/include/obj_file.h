@@ -212,20 +212,20 @@ typedef struct qfo_func_s {
 
 	For \c ref_op_* relocation types, \c ofs is the code section address of the
 	statement that needs to be adjusted.
-	
+
 	For \c rel_def_* relocation types,
 	\c ofs refers to the data section address of the word that needs to be
 	adjusted.
 
 	For \c ref_*_def(_ofs) relocation types, \c def is the index of the
 	referenced def.
-	
+
 	For \c ref_*_op relocation types, \c def is the address of
 	the referenced statement.
-	
+
 	For \c ref_*_string relocation types, \c def is
 	always 0.
-	
+
 	For \c ref_*_field(_ofs) relocation types, \c def is the index of
 	the referenced field def.
 */

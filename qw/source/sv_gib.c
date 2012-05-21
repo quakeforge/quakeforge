@@ -56,7 +56,7 @@ SV_GIB_GetClient (int uid)
 {
 	client_t *cl;
 	int i;
-	
+
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 		if (cl->state >= cs_connected && cl->userid == uid)
 			return cl;
@@ -68,7 +68,7 @@ SV_GIB_Client_GetList_f (void)
 {
 	client_t *cl;
 	int i;
-	
+
 	if (GIB_Argc () != 1)
 		GIB_USAGE ("");
 	else if (GIB_CanReturn ())
@@ -81,7 +81,7 @@ static void
 SV_GIB_Client_GetKeys_f (void)
 {
 	client_t *cl;
-	
+
 	if (GIB_Argc () != 2)
 		GIB_USAGE ("");
 	else if (!(cl = SV_GIB_GetClient (atoi (GIB_Argv (1)))))
@@ -101,7 +101,7 @@ SV_GIB_Client_GetInfo_f (void)
 {
 	client_t *cl;
 	const char *str;
-	
+
 	if (GIB_Argc () != 3)
 		GIB_USAGE ("");
 	else if (!(cl = SV_GIB_GetClient (atoi (GIB_Argv (1)))))
@@ -110,12 +110,12 @@ SV_GIB_Client_GetInfo_f (void)
 	else if ((str = Info_ValueForKey (cl->userinfo, GIB_Argv (2))))
 		GIB_Return (str);
 }
-		
+
 static void
 SV_GIB_Client_Print_f (void)
 {
 	client_t *cl;
-	
+
 	if (GIB_Argc () != 3)
 		GIB_USAGE ("uid message");
 	else if (!(cl = SV_GIB_GetClient (atoi (GIB_Argv (1)))))
@@ -131,7 +131,7 @@ SV_GIB_Client_Print_All_f (void)
 {
 	client_t *cl;
 	int i, level = GIB_Argv (0)[16] ? PRINT_CHAT : PRINT_HIGH;
-	
+
 	if (GIB_Argc () != 2)
 		GIB_USAGE ("message");
 	else for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
@@ -150,9 +150,9 @@ SV_GIB_Map_Time_Elapsed_f (void)
 {
 	if (GIB_CanReturn ())
 		dsprintf (GIB_Return(0), "%f", sv.time);
-} 
+}
 
-void	
+void
 SV_GIB_Init (void)
 {
 	// Builtins
@@ -163,7 +163,7 @@ SV_GIB_Init (void)
 	GIB_Builtin_Add ("client::printChat", SV_GIB_Client_Print_f);
 	GIB_Builtin_Add ("client::printAll", SV_GIB_Client_Print_All_f);
 	GIB_Builtin_Add ("client::printAllChat", SV_GIB_Client_Print_All_f);
-	
+
 	GIB_Builtin_Add ("map::getCurrent", SV_GIB_Map_Get_Current_f);
 	GIB_Builtin_Add ("map::timeElapsed", SV_GIB_Map_Time_Elapsed_f);
 

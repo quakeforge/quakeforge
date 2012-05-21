@@ -51,8 +51,8 @@ static struct option const long_options[] = {
 	{"version", no_argument, 0, 'V'},
 	{"threads", required_argument, 0, 't'},
 	{"minimal", no_argument, 0, 'm'},
-	{"level", required_argument, 0, 'l'},	
-	{"file", required_argument, 0, 'f'},	
+	{"level", required_argument, 0, 'l'},
+	{"file", required_argument, 0, 'f'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -103,7 +103,7 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'v':					// verbose
 				options.verbosity += 1;
-				break;			
+				break;
 			case 'h':					// help
 				usage (0);
 				break;

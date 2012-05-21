@@ -67,7 +67,7 @@ PR_RunError (progs_t * pr, const char *error, ...)
 	Sys_Printf ("%s\n", string->str);
 
 	// dump the stack so PR_Error can shutdown functions
-	pr->pr_depth = 0;					
+	pr->pr_depth = 0;
 
 	PR_Error (pr, "Program error: %s", string->str);
 }
@@ -284,7 +284,7 @@ static int
 signal_hook (int sig, void *data)
 {
 	progs_t    *pr = (progs_t *) data;
-	
+
 	if (sig == SIGFPE && pr_faultchecks->int_val) {
 		dstatement_t *st;
 		pr_type_t  *op_a, *op_b, *op_c;

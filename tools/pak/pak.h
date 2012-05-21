@@ -1,4 +1,4 @@
-/* 
+/*
 	pak.h
 
 	Pakfile tool (definitions)

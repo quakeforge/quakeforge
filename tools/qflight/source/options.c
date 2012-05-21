@@ -62,7 +62,7 @@ static struct option const long_options[] = {
 	{"cutoff", required_argument, 0, 'c'},
 	{"extra", required_argument, 0, 'e'},
 	{"novis", no_argument, 0, 'N'},
-	{"distance", required_argument, 0, 'd'},	
+	{"distance", required_argument, 0, 'd'},
 	{"range", required_argument, 0, 'r'},
 	{"file", required_argument, 0, 'f'},
 	{NULL, 0, NULL, 0}

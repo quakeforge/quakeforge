@@ -407,7 +407,7 @@ begin_category (category_t *category)
 {
 	pr_category_t *pr_category;
 	class_t    *class = category->class;
-	symbol_t   *sym; 
+	symbol_t   *sym;
 	def_t      *def;
 	defspace_t *space;
 
@@ -511,7 +511,7 @@ begin_class (class_t *class)
 	def_t      *meta_def;
 	pr_class_t *meta;
 	pr_class_t *pr_class;
-	symbol_t   *sym; 
+	symbol_t   *sym;
 	def_t      *def;
 	defspace_t *space;
 
@@ -889,7 +889,7 @@ class_new_ivars (class_t *class)
 {
 	symtab_t   *ivars;
 	symtab_t   *super_ivars = 0;
-	
+
 	if (class->super_class)
 		super_ivars = class->super_class->ivars;
 	ivars = new_symtab (super_ivars, stab_local);

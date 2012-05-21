@@ -49,7 +49,7 @@
 
 hashtab_t  *gib_functions = 0;
 
-/* 
+/*
 	Hashtable callbacks
 */
 static const char *
@@ -77,7 +77,7 @@ GIB_Function_Free (void *ele, void *ptr)
 
 /*
 	GIB_Function_New
-	
+
 	Builds a new function struct and returns
 	a pointer to it.
 */
@@ -93,7 +93,7 @@ static gib_function_t *
 GIB_Function_New (const char *name)
 {
 	gib_function_t *new = calloc (1, sizeof (gib_function_t));
-	
+
 	new->text = dstring_newstr ();
 	new->name = strdup (name);
 	new->arglist = llist_new (afree, NULL, NULL);
@@ -102,7 +102,7 @@ GIB_Function_New (const char *name)
 
 /*
 	GIB_Function_Define
-	
+
 	Sets the program and text of a GIB function,
 	allocating one and adding it to the functions
 	hash if needed.
@@ -143,7 +143,7 @@ GIB_Function_Define (const char *name, const char *text, gib_tree_t * program,
 
 /*
 	GIB_Function_Find
-	
+
 	Looks up a function in the function hash
 	and returns a pointer to it on success,
 	0 otherwise
@@ -187,7 +187,7 @@ GIB_Function_Prepare_Args (cbuf_t * cbuf, const char **args, unsigned int
 	g_fpa_argc = argc;
 
 	g_fpa_i = 1; llist_iterate (arglist, LLIST_ICAST (fpa_iterate));
-	
+
 	var =
 		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &g_fpa_zero, argss,
 			&g_fpa_ind, true);
@@ -233,9 +233,9 @@ GIB_Function_Prepare_Args_D (cbuf_t * cbuf, dstring_t **args, unsigned int
 	g_fpad_cbuf = cbuf;
 	g_fpad_args = args;
 	g_fpad_argc = argc;
-	
+
 	i = 1; llist_iterate (arglist, LLIST_ICAST (fpad_iterate));
-	
+
 	var =
 		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &g_fpad_zero, argss,
 				&g_fpad_ind, true);
@@ -253,7 +253,7 @@ GIB_Function_Prepare_Args_D (cbuf_t * cbuf, dstring_t **args, unsigned int
 
 /*
 	GIB_Function_Execute
-	
+
 	Prepares a buffer to execute
 	a GIB function with certain arguments
 */

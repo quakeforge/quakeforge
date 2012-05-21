@@ -319,7 +319,7 @@ D_SpriteScanRightEdge (void)
 
 	} while (i != maxindex);
 
-	pspan->count = DS_SPAN_LIST_END;	// mark the end of the span list 
+	pspan->count = DS_SPAN_LIST_END;	// mark the end of the span list
 }
 
 static void

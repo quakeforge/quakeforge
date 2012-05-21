@@ -1,4 +1,4 @@
-/* 
+/*
 	pak.c
 
 	Pakfile tool

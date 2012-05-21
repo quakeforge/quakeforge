@@ -199,7 +199,7 @@ PF_break (progs_t *pr)
 }
 
 /*
-	float (string s) cvar 
+	float (string s) cvar
 */
 static void
 PF_cvar (progs_t *pr)

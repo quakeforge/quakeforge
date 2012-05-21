@@ -70,7 +70,7 @@ isc_iterator (ignore_t *ig, llist_node_t *node)
 
 static void
 CL_Ignore_Sanity_Check (void)
-{	
+{
 	llist_iterate (ignore_list, LLIST_ICAST (isc_iterator));
 }
 
@@ -167,7 +167,7 @@ CL_Chat_Allow_Message (const char *str)
 {
 	g_cam_str = str;
 	g_cam_test = dstring_newstr ();
-	g_cam_allowed = true;	
+	g_cam_allowed = true;
 
 	llist_iterate (ignore_list, LLIST_ICAST (cam_iterator));
 	return g_cam_allowed;

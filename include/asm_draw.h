@@ -61,7 +61,7 @@
 #define spanpackage_t_tfrac				20
 #define spanpackage_t_light				24
 #define spanpackage_t_zi				28
-#define spanpackage_t_size				32 
+#define spanpackage_t_size				32
 
 // edge_t structure
 // !!! if this is changed, it must be changed in r_shared.h too !!!

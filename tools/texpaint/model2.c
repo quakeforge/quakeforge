@@ -92,21 +92,21 @@ void DrawModel(Model *mdl, int frame, int nextframe, float ratio) {
   int nb_vert;
   long *command;
   Frame *frame1, *frame2;
-  
+
   /* Keeps the frame value valid */
   frame = frame % mdl->numframes;
   nextframe = nextframe % mdl->numframes;
-  
+
   /* Gets the frames information */
   frame1 = mdl->frames + frame;
   frame2 = mdl->frames + nextframe;
-  
+
   /* Do the gl commands */
   command = mdl->glcmds;
   nb_vert = 0;
   while (*command != 0) {
     int num_verts, i;
-    
+
     /* Determine the command to draw the triangles */
     if (*command > 0) {
       /* Triangle strip */
@@ -118,14 +118,14 @@ void DrawModel(Model *mdl, int frame, int nextframe, float ratio) {
       glBegin(GL_TRIANGLE_FAN);
     }
     command++;
-    
+
     for (i = 0; i < num_verts; i++) {
       Vec3 p;  /* Interpolated point */
       int vert_index;
 
       /* Grab the vertex index */
       vert_index = *command; command++;
-      
+
       /* Interpolate */
       p.x = frame1->vert_table[vert_index].x +
 	(frame2->vert_table[vert_index].x -
@@ -136,7 +136,7 @@ void DrawModel(Model *mdl, int frame, int nextframe, float ratio) {
       p.z = frame1->vert_table[vert_index].z +
 	(frame2->vert_table[vert_index].z -
 	 frame1->vert_table[vert_index].z) * ratio;
-      
+
       glTexCoord2f(mdl->texinfo[nb_vert].s, mdl->texinfo[nb_vert].t);
       glVertex3f(p.x, p.y, p.z);
 
@@ -172,18 +172,18 @@ Model *Model2Load(char *name,FILE *f) {
 
   /* In case of a PAK loading */
   offset = ftell(f);
-  
+
   /* Read the header*/
   fread(&mdl_header, sizeof(Model2Header), 1, f);
 
   /* Check if this is really a .MD2 file :-) */
   if (strncmp((char *) &(mdl_header.ident), "IDP2", 4))
     return NULL;
-  
+
   /* Create the model */
   mdl = (Model *) malloc(sizeof(Model));
   memset(mdl, 0, sizeof(Model));
-  
+
   /* We do not need all the info from the header, just some of it*/
   mdl->numframes = mdl_header.num_frames;
 
@@ -204,12 +204,12 @@ Model *Model2Load(char *name,FILE *f) {
   mdl->texinfo = (TexInfo *) malloc(sizeof(TexInfo) * num_vertices);
   mdl->glcmds = (long *)
     malloc(sizeof(long) * (mdl_header.num_glcmds - 2 * num_vertices));
-  
+
   /* Reads the frames */
   fseek(f, offset + mdl_header.ofs_frames, SEEK_SET);
   frames = (FrameInfo *) malloc(mdl_header.framesize * mdl->numframes);
   fread(frames, mdl_header.framesize * mdl->numframes, 1, f);
-  
+
   /* Converts the FrameInfos to Frames */
   mdl->frames = (Frame *) malloc(sizeof(Frame) * mdl->numframes);
 
@@ -220,10 +220,10 @@ Model *Model2Load(char *name,FILE *f) {
 	ymin=+G_MAXFLOAT;
 	zmin=+G_MAXFLOAT;
 
-	for (frame = 0; frame < mdl->numframes; frame++) 
+	for (frame = 0; frame < mdl->numframes; frame++)
 	{
 		FrameInfo *frameinfo;
-    
+
 		/* Gets the frames information */
 		frameinfo = (FrameInfo *) ((char *) frames + mdl_header.framesize * frame);
 		strcpy(mdl->frames[frame].name, frameinfo->name);
@@ -232,10 +232,10 @@ Model *Model2Load(char *name,FILE *f) {
 
 
 		/* Loads the vertices */
-		for (i = 0; i < mdl_header.num_xyz; i++) 
+		for (i = 0; i < mdl_header.num_xyz; i++)
 		{
 			Vertex *p = (mdl->frames[frame].vert_table) + i;
-      
+
 			p->x = (float) frameinfo->verts[i].x *
 				frameinfo->scale.x + frameinfo->origin.x;
 			p->y =  (float)frameinfo->verts[i].y *
@@ -266,9 +266,9 @@ Model *Model2Load(char *name,FILE *f) {
 	y=(ymax+ymin)/2;
 	z=(zmax+zmin)/2;
 
-	for (frame = 0; frame < mdl->numframes; frame++) 
+	for (frame = 0; frame < mdl->numframes; frame++)
 	{
-		for (i = 0; i < mdl_header.num_xyz; i++) 
+		for (i = 0; i < mdl_header.num_xyz; i++)
 		{
 			Vertex *p = (mdl->frames[frame].vert_table) + i;
 
@@ -277,14 +277,14 @@ Model *Model2Load(char *name,FILE *f) {
 			p->z=(p->z-z)*scale;
 		}
 	}
-	
+
   /* Now transform the GL commands */
   command = glcmds;
   cmd_copy = mdl->glcmds;
   texinfo = mdl->texinfo;
   while (*command != 0) {
     int nb_verts, i;
-    
+
     /* Determine the command to draw the triangles */
     if (*command > 0)
       /* Triangle strip */
@@ -293,17 +293,17 @@ Model *Model2Load(char *name,FILE *f) {
       /* Triangle fan */
       nb_verts = -(*command);
     *(cmd_copy++) = *(command++);
-    
+
     for (i = 0; i < nb_verts; i++) {
       float s, t;
-      
+
       /* Gets the texture information */
       s = *((float *) command); command++;
       t = *((float *) command); command++;
       texinfo->s = s;
       texinfo->t = t;
       texinfo++;
-      
+
       /* We keep the vertex index */
       *(cmd_copy++) = *(command++);
     }
@@ -328,12 +328,12 @@ Model *Model2Load(char *name,FILE *f) {
 		{
 			mdl->tri[i].v[k]=d_tri[i].v[k];
 			mdl->tri[i].tex[k][0]=(float)d_stvert[d_tri[i].st[k]].s
-					/mdl_header.skinwidth;			
+					/mdl_header.skinwidth;
 			mdl->tri[i].tex[k][1]=(float)d_stvert[d_tri[i].st[k]].t
-					/mdl_header.skinheight;			
+					/mdl_header.skinheight;
 		}
 	}
-	
+
 	g_free(d_tri);
 	g_free(d_stvert);
 

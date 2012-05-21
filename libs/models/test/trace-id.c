@@ -12,10 +12,10 @@ HullPointContents (hull_t *hull, int num, const vec3_t p)
 	{
 		if (num < hull->firstclipnode || num > hull->lastclipnode)
 			Sys_Error ("HullPointContents: bad node number");
-	
+
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
-		
+
 		if (plane->type < 3)
 			d = p[plane->type] - plane->dist;
 		else
@@ -25,7 +25,7 @@ HullPointContents (hull_t *hull, int num, const vec3_t p)
 		else
 			num = node->children[0];
 	}
-	
+
 	return num;
 }
 
@@ -81,7 +81,7 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, const vec3_t
 		t1 = DotProduct (plane->normal, p1) - plane->dist;
 		t2 = DotProduct (plane->normal, p2) - plane->dist;
 	}
-	
+
 	if (t1 >= 0 && t2 >= 0)
 		return SV_RecursiveHullCheck (hull, node->children[0], p1f, p2f, p1, p2, trace);
 	if (t1 < 0 && t2 < 0)
@@ -96,7 +96,7 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, const vec3_t
 		frac = 0;
 	if (frac > 1)
 		frac = 1;
-		
+
 	midf = p1f + (p2f - p1f)*frac;
 	for (i=0 ; i<3 ; i++)
 		mid[i] = p1[i] + frac*(p2[i] - p1[i]);
@@ -111,10 +111,10 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, const vec3_t
 	!= CONTENTS_SOLID)
 // go past the node
 		return SV_RecursiveHullCheck (hull, node->children[side^1], midf, p2f, mid, p2, trace);
-	
+
 	if (trace->allsolid)
 		return false;		// never got out of the solid area
-		
+
 //==================
 // the other side of the node is solid, this is the impact point
 //==================

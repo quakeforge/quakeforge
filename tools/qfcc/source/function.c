@@ -262,7 +262,7 @@ function_symbol (symbol_t *sym, int overload, int create)
 	const char *name = sym->name;
 	overloaded_function_t *func;
 	symbol_t   *s;
-	
+
 	func = get_function (name, sym->type, overload, create);
 
 	if (func && func->overloaded)

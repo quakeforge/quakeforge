@@ -47,7 +47,7 @@
 #include "gib_process.h"
 #include "gib_semantics.h"
 
-/* 
+/*
 	GIB_Escaped
 
 	Returns true if character i in str is
@@ -67,7 +67,7 @@ GIB_Escaped (const char *str, int i)
 
 /*
 	GIB_Parse_Match_*
-	
+
 	These are the workhorses of the GIB parser.  They iterate
 	an index variable through a string until an appropriate
 	matching character is found, calling themselves and their

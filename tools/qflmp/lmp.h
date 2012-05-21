@@ -1,4 +1,4 @@
-/* 
+/*
 	lmp.h
 
 	lump file tool (definitions)

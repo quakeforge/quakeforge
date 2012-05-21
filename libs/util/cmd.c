@@ -610,7 +610,7 @@ Cmd_Init (void)
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
 							"display of error messages for unknown commands");
 	cmd_cbuf = Cbuf_New (&id_interp);
-	
+
 	Cmd_AddProvider("id", &id_interp);
 }
 
@@ -661,7 +661,7 @@ VISIBLE void
 Cmd_AddProvider(const char *name, cbuf_interpreter_t *interp)
 {
 	cmd_provider_t *p = (cmd_provider_t *) Hash_Find (cmd_provider_hash, name);
-	
+
 	if (!p)
 	{
 		cmd_provider_t *p = malloc(sizeof(cmd_provider_t));
@@ -675,7 +675,7 @@ VISIBLE cbuf_interpreter_t *
 Cmd_GetProvider(const char *name)
 {
 	cmd_provider_t *p = (cmd_provider_t *) Hash_Find (cmd_provider_hash, name);
-	
+
 	if (!p)
 		return NULL;
 	else

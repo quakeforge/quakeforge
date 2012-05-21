@@ -88,15 +88,15 @@ static void draw(Model *mdl,int frame,int nextframe,float interp)
 {
 	int i,j,v;
 	vec3_t *vertex;
-	
+
 	gfloat x,y,z;
 
-	
+
 	frame= (frame % mdl->numframes)*mdl->num_verts;
 	nextframe= (nextframe % mdl->numframes)*mdl->num_verts;
 
 	vertex=mdl->vertex;
-	
+
 
 	glBegin(GL_TRIANGLES);
 
@@ -104,14 +104,14 @@ static void draw(Model *mdl,int frame,int nextframe,float interp)
 	{
 		for (j=0;j<3;j++)
 		{
-			v=mdl->tri[i].v[j];	
-			
+			v=mdl->tri[i].v[j];
+
 			x= vertex[frame+v].x +
-				(vertex[nextframe+v].x-vertex[frame+v].x)*interp;			
+				(vertex[nextframe+v].x-vertex[frame+v].x)*interp;
 			y= vertex[frame+v].y +
-				(vertex[nextframe+v].y-vertex[frame+v].y)*interp;			
+				(vertex[nextframe+v].y-vertex[frame+v].y)*interp;
 			z= vertex[frame+v].z +
-				(vertex[nextframe+v].z-vertex[frame+v].z)*interp;			
+				(vertex[nextframe+v].z-vertex[frame+v].z)*interp;
 			glTexCoord2fv(mdl->tri[i].tex[j]);
 			glVertex3f(x,y,z);
 		}
@@ -142,7 +142,7 @@ Model *Model1Load(char *name,FILE *fp)
 	gfloat xmin,xmax,ymax,ymin,zmax,zmin,scale;
 	char filename[300];
 
-	fread(&header,sizeof(header),1,fp);	
+	fread(&header,sizeof(header),1,fp);
 	if (strncmp((char *)&header.ident,"IDPO",4)!=0) return NULL;
 	if (header.version!=MDL_VERSION) return NULL;
 	mdl=g_malloc(sizeof(*mdl));
@@ -150,7 +150,7 @@ Model *Model1Load(char *name,FILE *fp)
 
 	mdl->num_tris=header.num_tris;
 	mdl->num_verts=header.num_verts;
-		
+
 	w=header.skin_width;
 	h=header.skin_height;
 	size=w*h;
@@ -161,12 +161,12 @@ Model *Model1Load(char *name,FILE *fp)
 	for (i=0;i<header.num_skins;i++)
 	{
 		fread(&dummy,sizeof(dummy),1,fp);
-		fread(texture,size,1,fp);	
+		fread(texture,size,1,fp);
 		image_id=gimp_image_new(w,h,GIMP_INDEXED);
 
 		if (i==0)
 		{
-			strcpy(filename,name);		
+			strcpy(filename,name);
 		}
 		else
 		{
@@ -184,12 +184,12 @@ Model *Model1Load(char *name,FILE *fp)
 		gimp_pixel_rgn_set_rect(&rgn,texture,0,0,w,h);
 
 		gimp_drawable_detach(drawable);
-		gimp_display_new(image_id);	
+		gimp_display_new(image_id);
 		gimp_image_clean_all(image_id);
-	}	
+	}
 	gimp_displays_flush();
 	g_free(texture);
-	update_images_menu(image_id);	
+	update_images_menu(image_id);
 
 	size=header.num_verts*sizeof(stvert_t);
 	stvert=g_malloc(size);
@@ -201,7 +201,7 @@ Model *Model1Load(char *name,FILE *fp)
 
 	mdl->tri=g_malloc(header.num_tris*sizeof(triangle_t));
 	mdl->vertex=g_malloc(header.num_frames*header.num_verts*sizeof(mdl->vertex[0]));
-	
+
 	size=header.num_verts*sizeof(vertex_t);
 	vertex=g_malloc(size);
 
@@ -226,23 +226,23 @@ Model *Model1Load(char *name,FILE *fp)
 
 		for (i=0;i<header.num_verts;i++,k++)
 		{
-			x=(gfloat)vertex[i].p[0] * header.scale.x 
+			x=(gfloat)vertex[i].p[0] * header.scale.x
 				+ header.origin.x;
 			y=(gfloat)vertex[i].p[1] * header.scale.y
 				+ header.origin.y;
-			z=(gfloat)vertex[i].p[2] * header.scale.z 
+			z=(gfloat)vertex[i].p[2] * header.scale.z
 				+ header.origin.z;
 
 			mdl->vertex[k].x=x;
 			mdl->vertex[k].y=y;
 			mdl->vertex[k].z=z;
 
-			if (x>xmax) xmax=x; 
-			if (x<xmin) xmin=x; 
-			if (y>ymax) ymax=y; 
-			if (y<ymin) ymin=y; 
-			if (z>zmax) zmax=z; 
-			if (z<zmin) zmin=z; 
+			if (x>xmax) xmax=x;
+			if (x<xmin) xmin=x;
+			if (y>ymax) ymax=y;
+			if (y<ymin) ymin=y;
+			if (z>zmax) zmax=z;
+			if (z<zmin) zmin=z;
 		}
 	}
 
@@ -254,14 +254,14 @@ Model *Model1Load(char *name,FILE *fp)
 	if (y>scale) scale=y;
 	if (z>scale) scale=z;
 
-	if (scale) scale=1/scale; else scale=1;	
+	if (scale) scale=1/scale; else scale=1;
 
 	x=(xmax+xmin)/2;
 	y=(ymax+ymin)/2;
 	z=(zmax+zmin)/2;
 
-	
-	
+
+
 	for (i=0;i<header.num_verts*header.num_frames;i++)
 	{
 			mdl->vertex[i].x=(mdl->vertex[i].x-x)*scale;

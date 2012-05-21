@@ -63,7 +63,7 @@ static void
 ByteSwapTri (tf_triangle *tri)
 {
 	unsigned int i;
-	
+
 	for (i = 0; i < sizeof (tf_triangle) / 4; i++) {
 		((int *) tri)[i] = BigLong (((int *) tri)[i]);
 	}
@@ -150,7 +150,7 @@ LoadTriangleList (char *filename, triangle_t **pptri, int *numtriangles)
 					i++;
 					Qread (input, &(name[i]), sizeof (char));
 				} while (name[i] != '\0');
-	
+
 	//			indent();
 	//			fprintf(stdout,"OBJECT END: %s\n",name);
 				continue;

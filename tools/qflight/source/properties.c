@@ -92,7 +92,7 @@ parse_light (const char *str, vec3_t color)
 			break;
 		case 3:
 			VectorCopy (vec, color);
-			return 1.0; 
+			return 1.0;
 			break;
 		case 1:
 			color[0] = 1.0;
@@ -270,7 +270,7 @@ LoadProperties (const char *filename)
 	}
 	len = Qfilesize (f);
 	buf = malloc (len + 1);
-	
+
 	Qread (f, buf, len);
 	Qclose (f);
 	buf[len] = 0;

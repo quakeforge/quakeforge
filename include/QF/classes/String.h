@@ -33,7 +33,7 @@
 
 #include "QF/object.h"
 
-classDecl (String, Object, 
+classDecl (String, Object,
 	const char *str;
 );
 #define STRING(o) ((String *)(o))

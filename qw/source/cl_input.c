@@ -140,7 +140,7 @@ KeyRelease (kbutton_t *b)
 		return;							// key up without coresponding down
 										// (menu pass through)
 	if (b->down[0] || b->down[1])
-		return;							// some other key is still holding it 
+		return;							// some other key is still holding it
 										// down
 
 	if (!(b->state & 1))
@@ -633,9 +633,9 @@ pps_check (int dontdrop)
 
 		if (!(pps = cl_maxnetfps->int_val))
 			pps = rate->value / 80.0;
-		
+
 		pps = bound (1, pps, 72);
-		
+
 		pps_balance -= 1.0 / pps;
 		pps_balance = bound (-0.1, pps_balance, 0.1);
 		dropcount = 0;

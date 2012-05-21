@@ -1,6 +1,6 @@
 /*
  * quaketoascii - Convert Quake extended characters into ASCII
- * 
+ *
  * This program is public domain.
  *
  * The orginal author is Dwayne C. Litzenberger <dlitz@dlitz.net>.
@@ -22,13 +22,13 @@ int
 main (int argc, char *argv[])
 {
 	unsigned char	c;
-	
+
 	if (argc > 1) {
 		printf ("quaketoascii - Convert Quake extended characters into ASCII\n");
 		printf ("Usage: %s < infile > outfile\n", argv[0]);
 		return 1;
 	}
-	
+
 	while (!feof (stdin) && !ferror (stdin)) {
 		if (fread (&c, 1, 1, stdin) == 1) {
 			fputc (sys_char_map[(int) c], stdout);

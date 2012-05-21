@@ -639,7 +639,7 @@ MapKey (unsigned int keycode, int press, int *k, int *u)
 		key = ext_scantokey[scan];
 	else
 		key = scantokey[scan];
-	
+
 	if (shifts & 0x03) {
 		if (extended)
 			uc = shift_ext_scantokey[scan];

@@ -130,7 +130,7 @@ KeyRelease (kbutton_t *b)
 		return;							// key up without coresponding down
 										// (menu pass through)
 	if (b->down[0] || b->down[1])
-		return;							// some other key is still holding it 
+		return;							// some other key is still holding it
 										// down
 
 	if (!(b->state & 1))

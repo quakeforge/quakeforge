@@ -154,7 +154,7 @@ CL_GetDemoMessage (void)
 	int         i, r;
 	float       f;
 
-	// decide if it is time to grab the next message        
+	// decide if it is time to grab the next message
 	if (cls.signon == SIGNONS) {	// always grab until fully connected
 		if (cls.timedemo) {
 			if (host_framecount == cls.td_lastframe)
