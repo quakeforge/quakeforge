@@ -101,8 +101,6 @@ V_CalcRoll (const vec3_t angles, const vec3_t velocity)
 	side = fabs (side);
 
 	value = cl_rollangle->value;
-//	if (cl.inwater)
-//		value *= 6;
 
 	if (side < cl_rollspeed->value)
 		side = side * value / cl_rollspeed->value;
