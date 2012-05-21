@@ -452,7 +452,7 @@ SV_FullClientUpdateToClient (client_t *client, backbuf_t *backbuf)
 {
 	if (client->state < cs_connected && client->state != cs_server)
 		return;
-	MSG_ReliableCheckBlock (backbuf, 24 + client->userinfo->cursize);
+	MSG_ReliableCheckBlock (backbuf, 24 + Info_CurrentSize (client->userinfo));
 	if (backbuf->num_backbuf) {
 		SV_FullClientUpdate (client, &backbuf->backbuf);
 		MSG_Reliable_FinishWrite (backbuf);

@@ -207,7 +207,8 @@ cl_spawn_f (client_t *cl, void *unused)
 	for (i = 0, pl = sv->players; i < MAX_SV_PLAYERS; i++, pl++) {
 		if (!pl->info)
 			continue;
-		msg = MSG_ReliableCheckBlock (&cl->backbuf, 24 + pl->info->cursize);
+		msg = MSG_ReliableCheckBlock (&cl->backbuf,
+									  24 + Info_CurrentSize(pl->info));
 		MSG_WriteByte (msg, svc_updatefrags);
 		MSG_WriteByte (msg, i);
 		MSG_WriteShort (msg, pl->frags);

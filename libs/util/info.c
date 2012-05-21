@@ -45,6 +45,12 @@
 
 #include "compat.h"
 
+struct info_s {
+	struct hashtab_s	*tab;
+	size_t				maxsize;
+	int					cursize;
+};
+
 /*
 	Info_FilterForKey
 
@@ -63,6 +69,11 @@ Info_FilterForKey (const char *key, const char **filter_list)
 	return false;
 }
 
+VISIBLE int
+Info_CurrentSize (info_t *info)
+{
+	return info->cursize;
+}
 
 /*
 	Info_ValueForKey
@@ -77,6 +88,18 @@ Info_ValueForKey (info_t *info, const char *key)
 	if (k)
 		return k->value;
 	return "";
+}
+
+VISIBLE info_key_t *
+Info_Key (info_t *info, const char *key)
+{
+	return Hash_Find (info->tab, key);
+}
+
+VISIBLE info_key_t **
+Info_KeyList (info_t *info)
+{
+	return (info_key_t **) Hash_GetList (info->tab);
 }
 
 VISIBLE void

@@ -36,7 +36,6 @@
 #endif
 
 #include "QF/dstring.h"
-#include "QF/hash.h"
 #include "QF/info.h"
 #include "QF/gib.h"
 
@@ -88,8 +87,7 @@ SV_GIB_Client_GetKeys_f (void)
 		GIB_Error ("uid", "No user with id '%s' was found on the server.",
 				   GIB_Argv (1));
 	else if (GIB_CanReturn ()) {
-		info_key_t **key, **keys =
-			(info_key_t **) Hash_GetList (cl->userinfo->tab);
+		info_key_t **key, **keys = Info_KeyList (cl->userinfo);
 		for (key = keys; *key; key++)
 			dstring_appendstr (GIB_Return (0), (*key)->key);
 		free (keys);

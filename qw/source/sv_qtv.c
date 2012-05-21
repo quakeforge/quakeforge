@@ -407,7 +407,7 @@ SV_qtvConnect (int qport, info_t *info)
 		return;
 	}
 	proxy->info = info;
-	while (!(proxy->name_key = Hash_Find (proxy->info->tab, "name")))
+	while (!(proxy->name_key = Info_Key (proxy->info, "name")))
 		Info_SetValueForKey (proxy->info, "name", "\"unnamed proxy\"", 1);
 
 	Netchan_Setup (&proxy->netchan, net_from, qport, NC_QPORT_READ);

@@ -40,11 +40,7 @@
 #define	MAX_SERVERINFO_STRING	512
 #define	MAX_LOCALINFO_STRING	32768
 
-typedef struct info_s {
-	struct hashtab_s	*tab;
-	size_t				maxsize;
-	int					cursize;
-} info_t;
+typedef struct info_s info_t;
 
 typedef struct info_key_s {
 	const char			*key;
@@ -54,6 +50,9 @@ typedef struct info_key_s {
 qboolean Info_FilterForKey (const char *key, const char **filter_list);
 
 void Info_Print (info_t *info);
+int Info_CurrentSize (info_t *info);
+info_key_t *Info_Key (info_t *info, const char *key);
+info_key_t **Info_KeyList (info_t *info);
 void Info_RemoveKey (info_t *info, const char *key);
 int Info_SetValueForKey (info_t *info, const char *key, const char *value, int flags);
 int Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int flags);

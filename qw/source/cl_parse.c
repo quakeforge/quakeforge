@@ -49,7 +49,6 @@
 #include "QF/draw.h"
 #include "QF/dstring.h"
 #include "QF/gib.h"
-#include "QF/hash.h"
 #include "QF/idparse.h"
 #include "QF/msg.h"
 #include "QF/progs.h"
@@ -1102,9 +1101,9 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	player->bottomcolor =
 		atoi (Info_ValueForKey (player->userinfo, "bottomcolor"));
 
-	while (!(player->team = Hash_Find (player->userinfo->tab, "team")))
+	while (!(player->team = Info_Key (player->userinfo, "team")))
 			Info_SetValueForKey (player->userinfo, "team", "", 1);
-	while (!(player->skinname = Hash_Find (player->userinfo->tab, "skin")))
+	while (!(player->skinname = Info_Key (player->userinfo, "skin")))
 			Info_SetValueForKey (player->userinfo, "skin", "", 1);
 
 	if (Info_ValueForKey (player->userinfo, "*spectator")[0])
