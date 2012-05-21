@@ -1,5 +1,5 @@
 /*
-	r_view.c
+	cl_view.c
 
 	player eye positioning
 
@@ -50,7 +50,6 @@
 	especially when crossing a water boudnary.
 */
 
-
 cvar_t     *scr_ofsx;
 cvar_t     *scr_ofsy;
 cvar_t     *scr_ofsz;
@@ -79,7 +78,6 @@ cvar_t     *v_ipitch_level;
 cvar_t     *v_idlescale;
 
 float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
-
 
 cshift_t    cshift_empty = { {130, 80, 50}, 0};
 cshift_t    cshift_water = { {130, 80, 50}, 128};
@@ -303,6 +301,7 @@ V_BonusFlash_f (void)
 	if (!cl_cshift_bonus->int_val
 		&& !(cl.sv_cshifts & INFO_CSHIFT_BONUS))
 		return;
+
 	cl.cshifts[CSHIFT_BONUS] = cshift_bonus;
 }
 
@@ -584,7 +583,6 @@ V_CalcViewRoll (void)
 		r_data->refdef->viewangles[ROLL] = 80;	// dead view angle
 		return;
 	}
-
 }
 
 static void

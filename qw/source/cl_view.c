@@ -80,7 +80,6 @@ cvar_t     *v_idlescale;
 
 float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
 
-
 frame_t    *view_frame;
 player_state_t *view_message;
 
@@ -91,12 +90,11 @@ cshift_t    cshift_lava = { {255, 80, 0}, 150};
 cshift_t    cshift_bonus = { {215, 186, 60}, 50};
 
 
-
 float
 V_CalcRoll (const vec3_t angles, const vec3_t velocity)
 {
-	float		side, sign, value;
-	vec3_t		forward, right, up;
+	float       side, sign, value;
+	vec3_t      forward, right, up;
 
 	AngleVectors (angles, forward, right, up);
 	side = DotProduct (velocity, right);
@@ -608,7 +606,6 @@ V_CalcRefdef (void)
 
 	// refresh position from simulated origin
 	VectorCopy (cl.simorg, r_data->refdef->vieworg);
-
 	r_data->refdef->vieworg[2] += bob;
 
 	// never let it sit exactly on a node line, because a water plane can

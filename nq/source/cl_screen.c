@@ -90,7 +90,7 @@ SCR_CShift (void)
 }
 
 static SCR_Func scr_funcs_normal[] = {
-	0, //Draw_Crosshair
+	0, //Draw_Crosshair,
 	0, //SCR_DrawRam,
 	SCR_DrawNet,
 	0, //SCR_DrawTurtle,
