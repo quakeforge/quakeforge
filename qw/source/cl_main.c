@@ -543,10 +543,10 @@ CL_User_f (void)
 	uid = atoi (Cmd_Argv (1));
 
 	for (i = 0; i < MAX_CLIENTS; i++) {
-		if (!cl.players[i].name[0])
+		if (!cl.players[i].name->value[0])
 			continue;
 		if (cl.players[i].userid == uid
-			|| !strcmp (cl.players[i].name, Cmd_Argv (1))) {
+			|| !strcmp (cl.players[i].name->value, Cmd_Argv (1))) {
 			Info_Print (cl.players[i].userinfo);
 			return;
 		}
@@ -568,9 +568,9 @@ CL_Users_f (void)
 	Sys_Printf ("userid frags name\n");
 	Sys_Printf ("------ ----- ----\n");
 	for (i = 0; i < MAX_CLIENTS; i++) {
-		if (cl.players[i].name[0]) {
+		if (cl.players[i].name->value[0]) {
 			Sys_Printf ("%6i %4i %s\n", cl.players[i].userid,
-						cl.players[i].frags, cl.players[i].name);
+						cl.players[i].frags, cl.players[i].name->value);
 			c++;
 		}
 	}

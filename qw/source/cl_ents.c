@@ -406,7 +406,7 @@ CL_LinkPlayers (void)
 		if (state->messagenum != cl.parsecount)
 			continue;							// not present this frame
 
-		if (!info->name[0])
+		if (!info->name || !info->name->value[0])
 			continue;
 
 		// spawn light flashes, even ones coming from invisible objects

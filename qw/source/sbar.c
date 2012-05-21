@@ -381,8 +381,8 @@ Sbar_SortFrags (qboolean includespec)
 	// sort by frags
 	scoreboardlines = 0;
 	for (i = 0; i < MAX_CLIENTS; i++) {
-		if (cl.players[i].name[0] && (!cl.players[i].spectator ||
-									  includespec)) {
+		if (cl.players[i].name && cl.players[i].name->value[0]
+			&& (!cl.players[i].spectator || includespec)) {
 			fragsort[scoreboardlines] = i;
 			scoreboardlines++;
 			if (cl.players[i].spectator)
@@ -420,7 +420,7 @@ Sbar_SortTeams (void)
 
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		s = &cl.players[i];
-		if (!s->name[0])
+		if (!s->name || !s->name->value[0])
 			continue;
 		if (s->spectator)
 			continue;
@@ -739,7 +739,7 @@ dmo_team (view_t *view, int x, int y, player_info_t *s)
 static inline void
 dmo_name (view_t *view, int x, int y, player_info_t *s)
 {
-	draw_string (view, x, y, s->name);
+	draw_string (view, x, y, s->name->value);
 }
 
 static void
@@ -760,7 +760,7 @@ draw_frags (view_t *view)
 	for (i = 0; i < l; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
-		if (!s->name[0])
+		if (!s->name || !s->name->value[0])
 			continue;
 		if (s->spectator)
 			continue;
@@ -836,7 +836,7 @@ draw_spectator (view_t *view)
 	} else {
 //		Sbar_DrawString (160-14*8+4,4, "SPECTATOR MODE - TRACK CAMERA");
 		snprintf (st, sizeof (st), "Tracking %-.13s, [JUMP] for next",
-				  cl.players[spec_track].name);
+				  cl.players[spec_track].name->value);
 		draw_string (view, 0, -8, st);
 	}
 }
@@ -1078,7 +1078,7 @@ Sbar_LogFrags (void)
 	for (i = 0; i < l; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
-		if (!s->name[0])
+		if (!s->name || !s->name->value[0])
 			continue;
 
  		// draw pl
@@ -1097,8 +1097,8 @@ Sbar_LogFrags (void)
 
 		fph = calc_fph (f, total);
 
-		name = malloc (strlen (s->name) + 1);
-		for (cp = (byte *) s->name, d = 0; *cp; cp++, d++)
+		name = malloc (strlen (s->name->value) + 1);
+		for (cp = (byte *) s->name->value, d = 0; *cp; cp++, d++)
 			name[d] = sys_char_map[*cp];
 		name[d] = 0;
 
@@ -1144,7 +1144,7 @@ Sbar_Draw_DMO_Team_Ping (view_t *view, int l, int y, int skip)
 	for (i = 0; i < l && y <= view->ylen - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
-		if (!s->name[0])
+		if (!s->name || !s->name->value[0])
 			continue;
 
 		dmo_ping (view, x + 0, y, s);
@@ -1183,7 +1183,7 @@ Sbar_Draw_DMO_Team_UID (view_t *view, int l, int y, int skip)
 	for (i = 0; i < l && y <= view->ylen - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
-		if (!s->name[0])
+		if (!s->name || !s->name->value[0])
 			continue;
 
 		dmo_uid (view, x + 0, y, s);
@@ -1223,7 +1223,7 @@ Sbar_Draw_DMO_Team_Ping_UID (view_t *view, int l, int y, int skip)
 	for (i = 0; i < l && y <= view->ylen - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
-		if (!s->name[0])
+		if (!s->name || !s->name->value[0])
 			continue;
 
 		dmo_ping (view, x + 0, y, s);
@@ -1265,7 +1265,7 @@ Sbar_Draw_DMO_Ping (view_t *view, int l, int y, int skip)
 	for (i = 0; i < l && y <= view->ylen - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
-		if (!s->name[0])
+		if (!s->name || !s->name->value[0])
 			continue;
 
 		dmo_ping (view, x + 0, y, s);
@@ -1303,7 +1303,7 @@ Sbar_Draw_DMO_UID (view_t *view, int l, int y, int skip)
 	for (i = 0; i < l && y <= view->ylen - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
-		if (!s->name[0])
+		if (!s->name || !s->name->value[0])
 			continue;
 
 		dmo_uid (view, x + 0, y, s);
@@ -1341,7 +1341,7 @@ Sbar_Draw_DMO_Ping_UID (view_t *view, int l, int y, int skip)
 	for (i = 0; i < l && y <= view->ylen - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
-		if (!s->name[0])
+		if (!s->name || !s->name->value[0])
 			continue;
 
 		dmo_ping (view, x + 0, y, s);
@@ -1484,7 +1484,7 @@ draw_minifrags (view_t *view)
 	for (; i < scoreboardlines && y < view->ylen - 8 + 1; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
-		if (!s->name[0])
+		if (!s->name || !s->name->value[0])
 			continue;
 
 		// draw ping
@@ -1509,9 +1509,9 @@ draw_minifrags (view_t *view)
 		// team
 		if (cl.teamplay) {
 			draw_nstring (view, x + 48, y, s->team->value, 4);
-			draw_nstring (view, x + 48 + 40, y, s->name, 16);
+			draw_nstring (view, x + 48 + 40, y, s->name->value, 16);
 		} else
-			draw_nstring (view, x + 48, y, s->name, 16);
+			draw_nstring (view, x + 48, y, s->name->value, 16);
 		y += 8;
 	}
 }

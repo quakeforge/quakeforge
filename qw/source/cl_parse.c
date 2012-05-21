@@ -1090,12 +1090,13 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 		Info_SetValueForKey (player->userinfo, "skin", skin, 1);
 	}
 
-	s = Info_ValueForKey (player->userinfo, "name");
-	if (!*s && player->userid)
-		Info_SetValueForKey (player->userinfo, "name",
-							 va ("user-%i [exploit]", player->userid), 1);
-	strncpy (player->name, Info_ValueForKey (player->userinfo, "name"),
-			 sizeof (player->name) - 1);
+	while (!(player->name = Info_Key (player->userinfo, "name"))) {
+		if (player->userid)
+			Info_SetValueForKey (player->userinfo, "name",
+								 va ("user-%i [exploit]", player->userid), 1);
+		else
+			Info_SetValueForKey (player->userinfo, "name", "", 1);
+	}
 	player->_topcolor = player->_bottomcolor = -1;
 	player->topcolor = atoi (Info_ValueForKey (player->userinfo, "topcolor"));
 	player->bottomcolor =
@@ -1170,8 +1171,6 @@ CL_SetInfo (void)
 	strncpy (value, MSG_ReadString (net_message), sizeof (value) - 1);
 	key[sizeof (value) - 1] = 0;
 
-	Sys_MaskPrintf (SYS_DEV, "SETINFO %s: %s=%s\n", player->name, key, value);
-
 	if (!player->userinfo)
 		player->userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
@@ -1180,6 +1179,9 @@ CL_SetInfo (void)
 	Info_SetValueForKey (player->userinfo, key, value, flags);
 
 	CL_ProcessUserInfo (slot, player);
+
+	Sys_MaskPrintf (SYS_DEV, "SETINFO %s: %s=%s\n", player->name->value, key,
+					value);
 }
 
 static void

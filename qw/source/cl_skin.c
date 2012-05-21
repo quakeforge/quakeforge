@@ -72,7 +72,7 @@ Skin_NextDownload (void)
 
 	for (; cls.downloadnumber != MAX_CLIENTS; cls.downloadnumber++) {
 		sc = &cl.players[cls.downloadnumber];
-		if (!sc->name[0])
+		if (!sc->name || !sc->name->value[0])
 			continue;
 		//XXX Skin_Find (sc);
 		if (noskins->int_val) //XXX FIXME
@@ -86,7 +86,7 @@ Skin_NextDownload (void)
 	// now load them in for real
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		sc = &cl.players[i];
-		if (!sc->name[0])
+		if (!sc->name || !sc->name->value[0])
 			continue;
 		//XXX Skin_Find (sc);
 		//XXX Skin_Cache (sc->skin);
