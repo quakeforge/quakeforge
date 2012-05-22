@@ -46,7 +46,7 @@ static void ClearVideoMode(void)
 
 %token MODE GEOMETRY TIMINGS HSYNC VSYNC CSYNC GSYNC EXTSYNC BCAST LACED DOUBLE
        RGBA NONSTD ACCEL GRAYSCALE
-%token <int_val>	ENDMODE POLARITY BOOLEAN NUMBER 
+%token <int_val>	ENDMODE POLARITY BOOLEAN NUMBER
 %token <string>		STRING
 %%
 
@@ -175,5 +175,5 @@ grayscale : GRAYSCALE BOOLEAN
 		VideoMode.grayscale = $2;
 	    }
 	  ;
-	  
+
 %%

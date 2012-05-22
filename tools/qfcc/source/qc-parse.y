@@ -799,7 +799,7 @@ abs_decl
 	| '(' abs_decl ')' function_params
 		{
 			$$ = $2;
-			$$->type = append_type ($$->type, parse_params (0, $4)); 
+			$$->type = append_type ($$->type, parse_params (0, $4));
 		}
 	| '*' abs_decl
 		{
