@@ -79,7 +79,7 @@ CSQC_setorigin (progs_t *pr)
 	e = P_EDICT (pr, 0);
 	org = P_VECTOR (pr, 1);
 	VectorCopy (org, CSQCvector (e, origin));
-	
+
 	//XXX CS_LinkEdict (e, false);
 }
 
