@@ -61,12 +61,17 @@ typedef struct
 	int		_colors;
 } scoreboard_t;
 
-#define	NAME_LENGTH	64
-
 
 // client_state_t should hold all pieces of the client state
 
-#define	SIGNONS		4			// signon messages to receive before connected
+typedef enum {
+	so_none,
+	so_prespawn,
+	so_spawn,
+	so_begin,
+	so_active,
+} signon_t;
+
 
 #define	MAX_DEMOS		8
 #define	MAX_DEMONAME	16
@@ -75,7 +80,8 @@ typedef struct
 typedef enum {
 	ca_dedicated, 		// a dedicated server with no ability to start a client
 	ca_disconnected, 	// full screen console with no connection
-	ca_connected		// valid netcon, talking to a server
+	ca_connected,		// valid netcon, talking to a server
+	ca_active,			// fully connected
 } cactive_t;
 
 typedef enum {
@@ -85,9 +91,6 @@ typedef enum {
 	dl_skin,
 	dl_single
 } dltype_t;		// download type
-
-// FIXME: A grotesque (temporary) hack.  They're not the same thing to QW.
-#define ca_active ca_connected
 
 /*
   the client_static_t structure is persistant through an arbitrary number
@@ -126,7 +129,7 @@ typedef struct
 	float		td_starttime;		// realtime at second frame of timedemo
 
 // connection information
-	int			signon;			// 0 to SIGNONS
+	signon_t    signon;
 	struct qsocket_s	*netcon;
 	sizebuf_t	message;		// writing buffer to send to server
 } client_static_t;

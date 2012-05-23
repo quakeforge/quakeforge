@@ -438,7 +438,7 @@ Host_ShutdownServer (qboolean crash)
 	sv.active = false;
 
 	// stop all client sounds immediately
-	if (cls.state == ca_connected)
+	if (cls.state >= ca_connected)
 		CL_Disconnect ();
 
 	// flush any pending messages - like the score!!!
@@ -585,7 +585,7 @@ Host_ClientFrame (void)
 	host_time += host_frametime;
 
 	// fetch results from server
-	if (cls.state == ca_connected)
+	if (cls.state >= ca_connected)
 		CL_ReadFromServer ();
 
 	// update video
@@ -603,7 +603,7 @@ Host_ClientFrame (void)
 		time2 = Sys_DoubleTime ();
 
 	// update audio
-	if (cls.signon == SIGNONS) {
+	if (cls.state == ca_active) {
 		mleaf_t    *l;
 		byte       *asl = 0;
 

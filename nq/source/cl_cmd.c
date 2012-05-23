@@ -51,7 +51,7 @@
 void
 CL_Cmd_ForwardToServer (void)
 {
-	if (cls.state != ca_connected) {
+	if (cls.state < ca_connected) {
 		Sys_Printf ("Can't \"%s\", not connected\n", Cmd_Argv (0));
 		return;
 	}

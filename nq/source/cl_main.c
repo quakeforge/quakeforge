@@ -254,7 +254,7 @@ CL_Disconnect (void)
 	// if running a local server, shut it down
 	if (cls.demoplayback)
 		CL_StopPlayback ();
-	else if (cls.state == ca_connected) {
+	else if (cls.state >= ca_connected) {
 		if (cls.demorecording)
 			CL_StopRecording ();
 
@@ -270,7 +270,6 @@ CL_Disconnect (void)
 			Host_ShutdownServer (false);
 	}
 
-	cls.signon = 0;
 	cl.worldmodel = NULL;
 }
 
@@ -306,8 +305,6 @@ CL_EstablishConnection (const char *host)
 
 	cls.demonum = -1;					// not in the demo loop now
 	CL_SetState (ca_connected);
-	cls.signon = 0;						// need all the signon messages
-										// before playing
 	Key_SetKeyDest (key_game);
 }
 
@@ -324,12 +321,14 @@ CL_SignonReply (void)
 	Sys_MaskPrintf (SYS_DEV, "CL_SignonReply: %i\n", cls.signon);
 
 	switch (cls.signon) {
-	case 1:
+	case so_none:
+		break;
+	case so_prespawn:
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message, "prespawn");
 		break;
 
-	case 2:
+	case so_spawn:
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message, va ("name \"%s\"\n", cl_name->string));
 		MSG_WriteByte (&cls.message, clc_stringcmd);
@@ -341,14 +340,15 @@ CL_SignonReply (void)
 		MSG_WriteString (&cls.message, str);
 		break;
 
-	case 3:
+	case so_begin:
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message, "begin");
 		Cache_Report ();				// print remaining memory
 		break;
 
-	case 4:
+	case so_active:
 		cl.loading = false;
+		CL_SetState (ca_active);
 		break;
 	}
 }
@@ -420,7 +420,7 @@ CL_ReadFromServer (void)
 
 		cl.last_received_message = realtime;
 		CL_ParseServerMessage ();
-	} while (ret && cls.state == ca_connected);
+	} while (ret && cls.state >= ca_connected);
 
 	if (cl_shownet->int_val)
 		Sys_Printf ("\n");
@@ -437,10 +437,10 @@ CL_SendCmd (void)
 {
 	usercmd_t   cmd;
 
-	if (cls.state != ca_connected)
+	if (cls.state < ca_connected)
 		return;
 
-	if (cls.signon == SIGNONS) {
+	if (cls.state == ca_active) {
 		CL_BaseMove (&cmd);
 
 		// send the unreliable message
@@ -472,21 +472,35 @@ CL_SetState (cactive_t state)
 {
 	cactive_t   old_state = cls.state;
 	cls.state = state;
+	Sys_MaskPrintf (SYS_NET, "CL_SetState: %d -> %d\n", old_state, state);
 	if (old_state != state) {
-		if (state == ca_active) {
-			// entering active state
-			Key_SetKeyDest (key_game);
-			IN_ClearStates ();
-			VID_SetCaption ("");
-		} else if (old_state == ca_active) {
+		if (old_state == ca_active) {
 			// leaving active state
 			Key_SetKeyDest (key_console);
-			VID_SetCaption ("Disconnected");
-		}
-		if (state == ca_connected)
-			S_AmbientOn ();
-		else
 			S_AmbientOff ();
+		}
+		switch (state) {
+			case ca_dedicated:
+				break;
+			case ca_disconnected:
+				cls.signon = so_none;
+				VID_SetCaption ("Disconnected");
+				break;
+			case ca_connected:
+				cls.signon = so_none;		// need all the signon messages
+											// before playing
+				Key_SetKeyDest (key_game);
+				IN_ClearStates ();
+				VID_SetCaption ("Connected");
+				break;
+			case ca_active:
+				// entering active state
+				Key_SetKeyDest (key_game);
+				IN_ClearStates ();
+				VID_SetCaption ("");
+				S_AmbientOn ();
+				break;
+		}
 	}
 	if (con_module)
 		con_module->data->console->force_commandline = (state != ca_active);

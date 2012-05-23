@@ -750,7 +750,7 @@ Host_Name_f (void)
 		if (strcmp (cl_name->string, newName) == 0)
 			return;
 		Cvar_Set (cl_name, va ("%.15s", newName));
-		if (cls.state == ca_connected)
+		if (cls.state >= ca_connected)
 			CL_Cmd_ForwardToServer ();
 		return;
 	}

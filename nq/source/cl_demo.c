@@ -155,7 +155,7 @@ CL_GetDemoMessage (void)
 	float       f;
 
 	// decide if it is time to grab the next message
-	if (cls.signon == SIGNONS) {	// always grab until fully connected
+	if (cls.state == ca_active) {	// always grab until fully connected
 		if (cls.timedemo) {
 			if (host_framecount == cls.td_lastframe)
 				return 0;			// already read this frame's message
@@ -280,7 +280,7 @@ CL_Record_f (void)
 		return;
 	}
 
-	if (c == 2 && cls.state == ca_connected) {
+	if (c == 2 && cls.state >= ca_connected) {
 		Sys_Printf
 			("Can not record - already connected to server\nClient demo recording must be started before connecting\n");
 		return;

@@ -462,9 +462,9 @@ CL_ParseUpdate (int bits)
 	model_t    *model;
 	qboolean    forcelink;
 
-	if (cls.signon == SIGNONS - 1) {
+	if (cls.signon == so_begin) {
 		// first update is the final signon stage
-		cls.signon = SIGNONS;
+		cls.signon = so_active;
 		CL_SignonReply ();
 	}
 
@@ -868,6 +868,7 @@ void
 CL_ParseServerMessage (void)
 {
 	int         cmd = 0, i, j;
+	signon_t    so;
 	const char *str;
 
 	// if recording demos, copy the message out
@@ -1054,11 +1055,11 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_signonnum:
-				i = MSG_ReadByte (net_message);
-				if (i <= cls.signon)
-					Host_Error ("Received signon %i when at %i", i,
+				so = MSG_ReadByte (net_message);
+				if (so <= cls.signon || so >= so_active)
+					Host_Error ("Received signon %i when at %i", so,
 								cls.signon);
-				cls.signon = i;
+				cls.signon = so;
 				CL_SignonReply ();
 				break;
 
