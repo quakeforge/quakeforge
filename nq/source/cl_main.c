@@ -316,8 +316,6 @@ CL_EstablishConnection (const char *host)
 void
 CL_SignonReply (void)
 {
-	char        str[8192];
-
 	Sys_MaskPrintf (SYS_DEV, "CL_SignonReply: %i\n", cls.signon);
 
 	switch (cls.signon) {
@@ -336,8 +334,7 @@ CL_SignonReply (void)
 						 va ("color %i %i\n", (cl_color->int_val) >> 4,
 							 (cl_color->int_val) & 15));
 		MSG_WriteByte (&cls.message, clc_stringcmd);
-		snprintf (str, sizeof (str), "spawn %s", cls.spawnparms);
-		MSG_WriteString (&cls.message, str);
+		MSG_WriteString (&cls.message, "spawn");
 		break;
 
 	case so_begin:

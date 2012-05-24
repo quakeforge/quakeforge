@@ -263,7 +263,6 @@ nice_time (float time)
 static void
 Host_Map_f (void)
 {
-	int         i;
 	char        name[MAX_QPATH];
 	const char *expanded;
 	QFile      *f;
@@ -299,13 +298,6 @@ Host_Map_f (void)
 	cl.loading = true;
 	CL_UpdateScreen (cl.time);
 
-	cls.mapstring[0] = 0;
-	for (i = 0; i < Cmd_Argc (); i++) {
-		strcat (cls.mapstring, Cmd_Argv (i));
-		strcat (cls.mapstring, " ");
-	}
-	strcat (cls.mapstring, "\n");
-
 	svs.serverflags = 0;				// haven't completed an episode yet
 	strcpy (name, Cmd_Argv (1));
 	SV_SpawnServer (name);
@@ -313,13 +305,6 @@ Host_Map_f (void)
 		return;
 
 	if (cls.state != ca_dedicated) {
-		strcpy (cls.spawnparms, "");
-
-		for (i = 2; i < Cmd_Argc (); i++) {
-			strcat (cls.spawnparms, Cmd_Argv (i));
-			strcat (cls.spawnparms, " ");
-		}
-
 		Cmd_ExecuteString ("connect local", src_command);
 	}
 }
