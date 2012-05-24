@@ -528,7 +528,7 @@ CL_ParseUpdate (int bits)
 	if (bits & U_SKIN)
 		skin = MSG_ReadByte (net_message);
 	else
-		skin = state->baseline.skin;
+		skin = state->baseline.skinnum;
 	if (skin != ent->skinnum) {
 		ent->skinnum = skin;
 		if (num <= cl.maxclients) {
@@ -641,7 +641,7 @@ CL_ParseBaseline (cl_entity_state_t *state, int version)
 		state->baseline.frame = MSG_ReadByte (net_message);
 
 	state->baseline.colormap = MSG_ReadByte (net_message);
-	state->baseline.skin = MSG_ReadByte (net_message);
+	state->baseline.skinnum = MSG_ReadByte (net_message);
 
 	MSG_ReadCoordAngleV (net_message, state->baseline.origin,
 						 state->baseline.angles);
@@ -814,7 +814,7 @@ CL_ParseStatic (int version)
 	ent->model = cl.model_precache[state.baseline.modelindex];
 	ent->frame = state.baseline.frame;
 	ent->skin = 0;
-	ent->skinnum = state.baseline.skin;
+	ent->skinnum = state.baseline.skinnum;
 	if (state.baseline.colormod == 255) {
 		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
 	} else {

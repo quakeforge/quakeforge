@@ -201,8 +201,7 @@ extern client_static_t	cls;
 /*
   the client_state_t structure is wiped completely at every server signon
 */
-typedef struct
-{
+typedef struct {
 	int			servercount;	// server identification for prespawns
 
 	struct info_s	*serverinfo;
@@ -254,10 +253,10 @@ typedef struct
 
 	qboolean	paused;			// send over by server
 
-	float		punchangle;		// temporar yview kick from weapon firing
+	float		punchangle;		// temporary view kick from weapon firing
 
 	int			intermission;	// don't change view angle, full screen, etc
-	int			completed_time;	// latched ffrom time at intermission start
+	int			completed_time;	// latched from time at intermission start
 
 /* information that is static for the entire time connected to a server */
 

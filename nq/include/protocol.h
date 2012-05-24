@@ -223,15 +223,16 @@
 
 #define MAX_CLIENTS		16
 
-typedef struct entity_state_s
-{
+typedef struct entity_state_s {
 	vec3_t	origin;
 	vec3_t	angles;
 	unsigned short modelindex;
 	unsigned short frame;
 	int		effects;
 	byte	colormap;
-	byte	skin;
+	byte	skinnum;
+
+	// QSG 2
 	byte	alpha;
 	byte	scale;
 	byte	glow_size;

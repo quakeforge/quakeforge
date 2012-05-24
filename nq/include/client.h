@@ -146,8 +146,7 @@ extern client_static_t	cls;
   the client_state_t structure is wiped completely at every
   server signon
 */
-typedef struct
-{
+typedef struct {
 	qboolean    loading;
 
 	int			movemessages;	// Since connecting to this server throw out
@@ -196,7 +195,7 @@ typedef struct
 
 	double		mtime[2];		// The timestamp of last two messages
 	double		time;			// Clients view of time, should be between
-								// servertime and oldservertime to generate a
+								// servertime and oldvertime to generate a
 								// lerp point for other data
 	double		oldtime;		// Previous cl.time, time-oldtime is used
 								// to decay light values and smooth step ups

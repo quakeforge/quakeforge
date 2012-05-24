@@ -509,7 +509,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 		if (baseline->colormap != SVfloat (ent, colormap))
 			bits |= U_COLORMAP;
 
-		if (baseline->skin != SVfloat (ent, skin))
+		if (baseline->skinnum != SVfloat (ent, skin))
 			bits |= U_SKIN;
 
 		if (baseline->frame != SVfloat (ent, frame))
@@ -982,7 +982,7 @@ SV_CreateBaseline (void)
 		VectorCopy (SVvector (svent, origin), baseline->origin);
 		VectorCopy (SVvector (svent, angles), baseline->angles);
 		baseline->frame = SVfloat (svent, frame);
-		baseline->skin = SVfloat (svent, skin);
+		baseline->skinnum = SVfloat (svent, skin);
 		if (entnum > 0 && entnum <= svs.maxclients) {
 			baseline->colormap = entnum;
 			baseline->modelindex = SV_ModelIndex ("progs/player.mdl");
@@ -1034,7 +1034,7 @@ SV_CreateBaseline (void)
 		else
 			MSG_WriteByte (&sv.signon, baseline->frame);
 		MSG_WriteByte (&sv.signon, baseline->colormap);
-		MSG_WriteByte (&sv.signon, baseline->skin);
+		MSG_WriteByte (&sv.signon, baseline->skinnum);
 
 		MSG_WriteCoordAngleV (&sv.signon, baseline->origin, baseline->angles);
 

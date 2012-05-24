@@ -304,6 +304,7 @@ typedef struct {
 	int         number;			// edict index
 
 	unsigned int flags;			// nolerp, etc
+
 	vec3_t      origin;
 	vec3_t      angles;
 	unsigned short modelindex;
