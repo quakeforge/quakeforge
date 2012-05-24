@@ -313,7 +313,9 @@ typedef struct {
 	byte         colormap;
 	byte         skinnum;
 
-	struct skin_s *skin;
+	struct skin_s *skin;	//FIXME this should not be here, but better state
+							//change tracking in the client is needed for this
+							//to be moved
 
 	// QSG 2
 	byte        alpha;
