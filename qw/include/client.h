@@ -136,14 +136,14 @@ typedef struct
 
 // network stuff
 	netchan_t	netchan;
-
-// private userinfo for sending to masterless servers
-	struct info_s	*userinfo;
-
+	int			qport;
+	int			challenge;
+	float		latency;		// rolling average
 	struct dstring_s *servername;		// name of server from original connect
 	netadr_t	server_addr;			// address of server
 
-	int			qport;
+// private userinfo for sending to masterless servers
+	struct info_s	*userinfo;
 
 // file transfer from server
 	QFile		*download;
@@ -174,10 +174,6 @@ typedef struct
 	float		td_lastframe;		// to meter out one message a frame
 	int			td_startframe;		// host_framecount at start
 	float		td_starttime;		// realtime at second frame of timedemo
-
-	int			challenge;
-
-	float		latency;		// rolling average
 } client_static_t;
 
 extern client_static_t	cls;

@@ -96,17 +96,14 @@ typedef enum {
   the client_static_t structure is persistant through an arbitrary number
   of server connections
 */
-typedef struct
-{
+typedef struct {
+// connection information
 	cactive_t	state;
+	signon_t    signon;
 
-// file transfer from server
-	QFile	   *download;
-	char	   *downloadtempname;
-	char	   *downloadname;
-	int			downloadnumber;
-	dltype_t	downloadtype;
-	int			downloadpercent;
+// network stuff
+	struct qsocket_s	*netcon;
+	sizebuf_t	message;		// writing buffer to send to server
 
 // demo loop control
 	int			demonum;		// -1 = don't play demos
@@ -123,11 +120,6 @@ typedef struct
 	int			td_lastframe;		// to meter out one message a frame
 	int			td_startframe;		// host_framecount at start
 	float		td_starttime;		// realtime at second frame of timedemo
-
-// connection information
-	signon_t    signon;
-	struct qsocket_s	*netcon;
-	sizebuf_t	message;		// writing buffer to send to server
 } client_static_t;
 
 extern client_static_t	cls;
