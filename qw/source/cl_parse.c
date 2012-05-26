@@ -1431,6 +1431,10 @@ CL_ParseServerMessage (void)
 			}
 			case svc_serverdata:
 				// make sure any stuffed commands are done
+				if (stuffbuf && stuffbuf->str[0]) {
+					Cbuf_AddText (cl_stbuf, stuffbuf->str);
+					dstring_clearstr (stuffbuf);
+				}
 				Cbuf_Execute_Stack (cl_stbuf);
 				CL_ParseServerData ();
 				// leave full screen intermission

@@ -982,10 +982,15 @@ CL_ParseServerMessage (void)
 				MSG_ReadAngleV (net_message, dest);
 				break;
 			}
-
 			case svc_serverinfo:
+				// make sure any stuffed commands are done
+				if (stuffbuf && stuffbuf->str[0]) {
+					Cbuf_AddText (host_cbuf, stuffbuf->str);
+					dstring_clearstr (stuffbuf);
+				}
+				Cbuf_Execute_Stack (host_cbuf);
 				CL_ParseServerInfo ();
-				// leave intermission full screen
+				// leave full screen intermission
 				r_data->vid->recalc_refdef = true;
 				break;
 
