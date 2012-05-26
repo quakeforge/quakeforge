@@ -132,10 +132,15 @@ R_AnimateLight (void)
 			d_lightstylevalue[j] = 256;
 			continue;
 		}
-		k = i % vr_data.lightstyle[j].length;
-		k = vr_data.lightstyle[j].map[k] - 'a';
-		k = k * 22;
-		d_lightstylevalue[j] = k;
+		if (r_flatlightstyles->int_val == 2) {
+			k = vr_data.lightstyle[j].peak - 'a';
+		} else if (r_flatlightstyles->int_val == 1) {
+			k = vr_data.lightstyle[j].average - 'a';
+		} else {
+			k = i % vr_data.lightstyle[j].length;
+			k = vr_data.lightstyle[j].map[k] - 'a';
+		}
+		d_lightstylevalue[j] = k * 22;
 	}
 }
 

@@ -75,6 +75,8 @@ typedef struct
 {
 	int		length;
 	char	map[MAX_STYLESTRING];
+	char    average;
+	char    peak;
 } lightstyle_t;
 
 //===============

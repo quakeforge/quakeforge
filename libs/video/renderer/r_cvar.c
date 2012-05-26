@@ -68,6 +68,7 @@ cvar_t     *r_dynamic;
 cvar_t     *r_explosionclip;
 cvar_t     *r_farclip;
 cvar_t     *r_firecolor;
+cvar_t     *r_flatlightstyles;
 cvar_t     *r_graphheight;
 cvar_t     *r_lightmap_components;
 cvar_t     *r_maxedges;
@@ -236,6 +237,9 @@ R_Init_Cvars (void)
 						  "player.");
 	r_firecolor = Cvar_Get ("r_firecolor", "0.9 0.7 0.0", CVAR_ARCHIVE, NULL,
 							"color of rocket and lava ball fires");
+	r_flatlightstyles = Cvar_Get ("r_flatlightstyles", "0", CVAR_NONE, NULL,
+								  "Disable animated lightmaps. 2 = use peak, "
+								  "1 = use average, anything else = normal");
 	r_graphheight = Cvar_Get ("r_graphheight", "32", CVAR_NONE, NULL,
 							  "Set the number of lines displayed in the "
 							  "various graphs");

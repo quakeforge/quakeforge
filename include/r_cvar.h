@@ -65,6 +65,7 @@ extern struct cvar_s     *r_dynamic;
 extern struct cvar_s	 *r_explosionclip;
 extern struct cvar_s     *r_farclip;
 extern struct cvar_s     *r_firecolor;
+extern struct cvar_s     *r_flatlightstyles;
 extern struct cvar_s     *r_fullbright;
 extern struct cvar_s     *r_graphheight;
 extern struct cvar_s     *r_lightmap;

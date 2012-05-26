@@ -974,6 +974,21 @@ CL_ParseServerMessage (void)
 					Host_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
 				strcpy (cl.lightstyle[i].map, MSG_ReadString (net_message));
 				cl.lightstyle[i].length = strlen (cl.lightstyle[i].map);
+				if (cl.lightstyle[i].length) {
+					int         total = 0;
+
+					cl.lightstyle[i].peak = 'a';
+					for (j = 0; j < cl.lightstyle[i].length; j++) {
+						total += cl.lightstyle[i].map[j] - 'a';
+						cl.lightstyle[i].peak = max (cl.lightstyle[i].peak,
+													 cl.lightstyle[i].map[j]);
+					}
+					total /= cl.lightstyle[i].length;
+					cl.lightstyle[i].average = total + 'a';
+				} else {
+					cl.lightstyle[i].average = 'm';
+					cl.lightstyle[i].peak = 'm';
+				}
 				break;
 
 			case svc_updatename:
