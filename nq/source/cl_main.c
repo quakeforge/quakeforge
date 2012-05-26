@@ -199,6 +199,13 @@ CL_ClearState (void)
 	if (cl.edicts)
 		PL_Free (cl.edicts);
 
+	if (cl.scores) {
+		int         i;
+
+		for (i = 0; i < cl.maxclients; i++)
+			Info_Destroy (cl.scores[i].info);
+	}
+
 	// wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));
 	cl.chase = 1;

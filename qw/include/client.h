@@ -67,6 +67,7 @@ typedef struct player_info_s
 
 	// scoreboard information
 	struct info_key_s *name;
+	struct info_key_s *team;
 	float	entertime;
 	int		frags;
 	int		ping;
@@ -76,9 +77,7 @@ typedef struct player_info_s
 	int		topcolor;
 	int		bottomcolor;
 	struct info_key_s *skinname;
-	struct info_key_s *team;
 	struct skin_s *skin;
-
 
 	int		spectator;
 	int		stats[MAX_CL_STATS];	// health, etc

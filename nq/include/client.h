@@ -54,7 +54,8 @@ typedef struct usercmd_s
 
 typedef struct
 {
-	char	name[MAX_SCOREBOARDNAME];
+	struct info_s *info;
+	struct info_key_s *name;
 	float	entertime;
 	int		frags;
 	int		topcolor;

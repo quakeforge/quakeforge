@@ -522,7 +522,7 @@ Sbar_SortFrags (void)
 	// sort by frags
 	scoreboardlines = 0;
 	for (i = 0; i < cl.maxclients; i++) {
-		if (cl.scores[i].name[0]) {
+		if (cl.scores[i].name->value[0]) {
 			fragsort[scoreboardlines] = i;
 			scoreboardlines++;
 		}
@@ -592,7 +592,7 @@ draw_frags (view_t *view)
 	for (i = 0; i < l; i++) {
 		k = fragsort[i];
 		s = &cl.scores[k];
-		if (!s->name[0])
+		if (!s->name->value[0])
 			continue;
 
 		// draw background
@@ -1044,7 +1044,7 @@ Sbar_DeathmatchOverlay (view_t *view)
 	for (i = 0; i < l; i++) {
 		k = fragsort[i];
 		s = &cl.scores[k];
-		if (!s->name[0])
+		if (!s->name->value[0])
 			continue;
 
 		// draw background
@@ -1060,7 +1060,7 @@ Sbar_DeathmatchOverlay (view_t *view)
 			draw_character (view, x - 4, y, 12);
 
 		// draw name
-		draw_string (view, x + 64, y, s->name);
+		draw_string (view, x + 64, y, s->name->value);
 
 		y += 10;
 	}
