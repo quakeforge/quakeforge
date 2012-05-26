@@ -1345,8 +1345,7 @@ CL_ParseServerMessage (void)
 					Host_EndGame ("Server disconnected\n"
 								  "Server version may not be compatible");
 				else
-					Host_EndGame ("Server disconnected");
-				break;
+					Host_EndGame ("Server disconnected\n");
 
 			case svc_updatestat:
 				i = MSG_ReadByte (net_message);
