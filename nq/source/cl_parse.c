@@ -869,6 +869,7 @@ CL_ParseServerMessage (void)
 {
 	int         cmd = 0, i, j;
 	const char *str;
+	static dstring_t *stuffbuf;
 	signon_t    so;
 
 	// if recording demos, copy the message out
@@ -955,7 +956,23 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_stufftext:
-				Cbuf_AddText (host_cbuf, MSG_ReadString (net_message));
+				str = MSG_ReadString (net_message);
+				if (str[strlen (str) - 1] == '\n') {
+					if (stuffbuf && stuffbuf->str[0]) {
+						Sys_MaskPrintf (SYS_DEV, "stufftext: %s%s\n",
+										stuffbuf->str, str);
+						Cbuf_AddText (host_cbuf, stuffbuf->str);
+						dstring_clearstr (stuffbuf);
+					} else {
+						Sys_MaskPrintf (SYS_DEV, "stufftext: %s\n", str);
+					}
+					Cbuf_AddText (host_cbuf, str);
+				} else {
+					Sys_MaskPrintf (SYS_DEV, "partial stufftext: %s\n", str);
+					if (!stuffbuf)
+						stuffbuf = dstring_newstr ();
+					dstring_appendstr (stuffbuf, str);
+				}
 				break;
 
 			case svc_setangle:
