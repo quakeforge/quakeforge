@@ -1097,7 +1097,6 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 		else
 			Info_SetValueForKey (player->userinfo, "name", "", 1);
 	}
-	player->_topcolor = player->_bottomcolor = -1;
 	player->topcolor = atoi (Info_ValueForKey (player->userinfo, "topcolor"));
 	player->bottomcolor =
 		atoi (Info_ValueForKey (player->userinfo, "bottomcolor"));

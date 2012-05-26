@@ -79,8 +79,6 @@ typedef struct player_info_s
 	struct info_key_s *team;
 	struct skin_s *skin;
 
-	int		_topcolor;
-	int		_bottomcolor;
 
 	int		spectator;
 	int		stats[MAX_CL_STATS];	// health, etc
