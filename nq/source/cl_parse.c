@@ -868,8 +868,8 @@ void
 CL_ParseServerMessage (void)
 {
 	int         cmd = 0, i, j;
-	signon_t    so;
 	const char *str;
+	signon_t    so;
 
 	// if recording demos, copy the message out
 	if (cl_shownet->int_val == 1)
@@ -908,19 +908,19 @@ CL_ParseServerMessage (void)
 		switch (cmd) {
 			default:
 				Host_Error ("CL_ParseServerMessage: Illegible server "
-							"message %d\n", cmd);
+							"message: %d\n", cmd);
 				break;
 
 			case svc_nop:
 				break;
 
-			case svc_time:
-				cl.mtime[1] = cl.mtime[0];
-				cl.mtime[0] = MSG_ReadFloat (net_message);
-				break;
+			case svc_disconnect:
+				Host_EndGame ("Server disconnected\n");
 
-			case svc_clientdata:
-				CL_ParseClientdata ();
+			case svc_updatestat:
+				i = MSG_ReadByte (net_message);
+				j = MSG_ReadLong (net_message);
+				CL_SetStat (i, j);
 				break;
 
 			case svc_version:
@@ -932,34 +932,26 @@ CL_ParseServerMessage (void)
 				cl.protocol = i;
 				break;
 
-			case svc_disconnect:
-				Host_EndGame ("Server disconnected\n");
+			case svc_setview:
+				cl.viewentity = MSG_ReadShort (net_message);
+				viewentity = cl.viewentity; // FIXME: evil hack
+				break;
+
+			case svc_sound:
+				CL_ParseStartSoundPacket ();
+				break;
+
+			case svc_time:
+				cl.mtime[1] = cl.mtime[0];
+				cl.mtime[0] = MSG_ReadFloat (net_message);
+				break;
 
 			case svc_print:
 				Sys_Printf ("%s", MSG_ReadString (net_message));
 				break;
 
-			case svc_centerprint:
-				str = MSG_ReadString (net_message);
-				if (strcmp (str, centerprint->str)) {
-					dstring_copystr (centerprint, str);
-					//FIXME logging
-				}
-				Sbar_CenterPrint (str);
-				break;
-
 			case svc_stufftext:
 				Cbuf_AddText (host_cbuf, MSG_ReadString (net_message));
-				break;
-
-			case svc_damage:
-				V_ParseDamage ();
-				break;
-
-			case svc_serverinfo:
-				CL_ParseServerInfo ();
-				// leave intermission full screen
-				r_data->vid->recalc_refdef = true;
 				break;
 
 			case svc_setangle:
@@ -969,9 +961,11 @@ CL_ParseServerMessage (void)
 				MSG_ReadAngleV (net_message, dest);
 				break;
 			}
-			case svc_setview:
-				cl.viewentity = MSG_ReadShort (net_message);
-				viewentity = cl.viewentity; // FIXME: evil hack
+
+			case svc_serverinfo:
+				CL_ParseServerInfo ();
+				// leave intermission full screen
+				r_data->vid->recalc_refdef = true;
 				break;
 
 			case svc_lightstyle:
@@ -980,16 +974,15 @@ CL_ParseServerMessage (void)
 					Host_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
 				strcpy (cl.lightstyle[i].map, MSG_ReadString (net_message));
 				cl.lightstyle[i].length = strlen (cl.lightstyle[i].map);
-				// FIXME extra info
 				break;
 
-			case svc_sound:
-				CL_ParseStartSoundPacket ();
-				break;
-
-			case svc_stopsound:
-				i = MSG_ReadShort (net_message);
-				S_StopSound (i >> 3, i & 7);
+			case svc_updatename:
+				Sbar_Changed ();
+				i = MSG_ReadByte (net_message);
+				if (i >= cl.maxclients)
+					Host_Error ("CL_ParseServerMessage: svc_updatename > "
+								"MAX_SCOREBOARD");
+				strcpy (cl.scores[i].name, MSG_ReadString (net_message));
 				break;
 
 			case svc_updatefrags:
@@ -1001,13 +994,13 @@ CL_ParseServerMessage (void)
 				cl.scores[i].frags = (short) MSG_ReadShort (net_message);
 				break;
 
-			case svc_updatename:
-				Sbar_Changed ();
-				i = MSG_ReadByte (net_message);
-				if (i >= cl.maxclients)
-					Host_Error ("CL_ParseServerMessage: svc_updatename > "
-								"MAX_SCOREBOARD");
-				strcpy (cl.scores[i].name, MSG_ReadString (net_message));
+			case svc_clientdata:
+				CL_ParseClientdata ();
+				break;
+
+			case svc_stopsound:
+				i = MSG_ReadShort (net_message);
+				S_StopSound (i >> 3, i & 7);
 				break;
 
 			case svc_updatecolors:
@@ -1031,17 +1024,22 @@ CL_ParseServerMessage (void)
 				CL_ParseParticleEffect ();
 				break;
 
+			case svc_damage:
+				V_ParseDamage ();
+				break;
+
+			case svc_spawnstatic:
+				CL_ParseStatic (1);
+				break;
+
+			//   svc_spawnbinary
+
 			case svc_spawnbaseline:
 				i = MSG_ReadShort (net_message);
 				// must use CL_EntityNum () to force cl.num_entities up
 				CL_ParseBaseline (CL_EntityNum (i), 1);
 				break;
-			case svc_spawnstatic:
-				CL_ParseStatic (1);
-				break;
-			case svc_spawnstaticsound:
-				CL_ParseStaticSound (1);
-				break;
+
 			case svc_temp_entity:
 				CL_ParseTEnt ();
 				break;
@@ -1063,6 +1061,15 @@ CL_ParseServerMessage (void)
 				CL_SignonReply ();
 				break;
 
+			case svc_centerprint:
+				str = MSG_ReadString (net_message);
+				if (strcmp (str, centerprint->str)) {
+					dstring_copystr (centerprint, str);
+					//FIXME logging
+				}
+				Sbar_CenterPrint (str);
+				break;
+
 			case svc_killedmonster:
 				cl.stats[STAT_MONSTERS]++;
 				break;
@@ -1071,10 +1078,28 @@ CL_ParseServerMessage (void)
 				cl.stats[STAT_SECRETS]++;
 				break;
 
-			case svc_updatestat:
-				i = MSG_ReadByte (net_message);
-				j = MSG_ReadLong (net_message);
-				CL_SetStat (i, j);
+			case svc_spawnstaticsound:
+				CL_ParseStaticSound (1);
+				break;
+
+			case svc_intermission:
+				cl.intermission = 1;
+				r_data->force_fullscreen = 1;
+				cl.completed_time = cl.time;
+				r_data->vid->recalc_refdef = true;		// go to full screen
+				break;
+
+			case svc_finale:
+				cl.intermission = 2;
+				r_data->force_fullscreen = 1;
+				cl.completed_time = cl.time;
+				r_data->vid->recalc_refdef = true;		// go to full screen
+				str = MSG_ReadString (net_message);
+				if (strcmp (str, centerprint->str)) {
+					dstring_copystr (centerprint, str);
+					//FIXME logging
+				}
+				Sbar_CenterPrint (str);
 				break;
 
 			case svc_cdtrack:
@@ -1087,24 +1112,8 @@ CL_ParseServerMessage (void)
 					CDAudio_Play ((byte) cl.cdtrack, true);
 				break;
 
-			case svc_intermission:
-				cl.intermission = 1;
-				r_data->force_fullscreen = 1;
-				cl.completed_time = cl.time;
-				r_data->vid->recalc_refdef = true;	// go to full screen
-				break;
-
-			case svc_finale:
-				cl.intermission = 2;
-				r_data->force_fullscreen = 1;
-				cl.completed_time = cl.time;
-				r_data->vid->recalc_refdef = true;	// go to full screen
-				str = MSG_ReadString (net_message);
-				if (strcmp (str, centerprint->str)) {
-					dstring_copystr (centerprint, str);
-					//FIXME logging
-				}
-				Sbar_CenterPrint (str);
+			case svc_sellscreen:
+				Cmd_ExecuteString ("help", src_command);
 				break;
 
 			case svc_cutscene:
@@ -1120,11 +1129,28 @@ CL_ParseServerMessage (void)
 				Sbar_CenterPrint (str);
 				break;
 
-			case svc_sellscreen:
-				Cmd_ExecuteString ("help", src_command);
-				break;
+			//   svc_smallkick (same value as svc_cutscene)
+			//   svc_bigkick
+			//   svc_updateping
+			//   svc_updateentertime
+			//   svc_updatestatlong
+			//   svc_muzzleflash
+			//   svc_updateuserinfo
+			//   svc_download
+			//   svc_playerinfo
+			//   svc_nails
+			//   svc_chokecount
+			//   svc_modellist
+			//   svc_soundlist
+			//   svc_packetentities
+			//   svc_deltapacketentities
+			//   svc_maxspeed
+			//   svc_entgravity
+			//   svc_setinfo
+			//   svc_serverinfo
+			//   svc_updatepl
 
-			// PROTOCOL_FITZQUAKE
+			// PROTOCOL_FITZQUAKE (these overlap with the above listed qw svcs)
 			case svc_skybox:
 				r_funcs->R_LoadSkys (MSG_ReadString(net_message));
 				break;
