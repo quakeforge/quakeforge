@@ -57,7 +57,8 @@ typedef struct
 	char	name[MAX_SCOREBOARDNAME];
 	float	entertime;
 	int		frags;
-	int		colors;			// two 4 bit fields
+	int		topcolor;
+	int		bottomcolor;
 } scoreboard_t;
 
 

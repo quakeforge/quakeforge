@@ -533,8 +533,8 @@ CL_ParseUpdate (int bits)
 		ent->skinnum = skin;
 		if (num <= cl.maxclients) {
 			ent->skin = mod_funcs->Skin_SetColormap (ent->skin, num);
-			mod_funcs->Skin_SetTranslation (num, cl.scores[num].colors >> 4,
-											cl.scores[num].colors & 0xf);
+			mod_funcs->Skin_SetTranslation (num, cl.scores[num].topcolor,
+											cl.scores[num].bottomcolor);
 		}
 	}
 
@@ -1053,10 +1053,13 @@ CL_ParseServerMessage (void)
 				} else {
 					entity_t   *ent = &cl_entities[i+1];
 					byte        col = MSG_ReadByte (net_message);
-					if (col != cl.scores[i].colors)
-						mod_funcs->Skin_SetTranslation (i + 1, col >> 4,
-														col & 0xf);
-					cl.scores[i].colors = col;
+					byte        top = col >> 4;
+					byte        bot = col & 0xf;
+					if (top != cl.scores[i].topcolor
+						|| bot != cl.scores[i].bottomcolor)
+						mod_funcs->Skin_SetTranslation (i + 1, top, bot);
+					cl.scores[i].topcolor = top;
+					cl.scores[i].bottomcolor = bot;
 					ent->skin = mod_funcs->Skin_SetColormap (ent->skin, i + 1);
 				}
 				break;

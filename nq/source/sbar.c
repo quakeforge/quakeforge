@@ -596,10 +596,8 @@ draw_frags (view_t *view)
 			continue;
 
 		// draw background
-		top = (((unsigned) s->colors) >> 4) & 0x0f;
-		bottom = s->colors & 0x0f;
-		top = Sbar_ColorForMap (top);
-		bottom = Sbar_ColorForMap (bottom);
+		top = Sbar_ColorForMap (s->topcolor);
+		bottom = Sbar_ColorForMap (s->bottomcolor);
 
 		draw_fill (view, x + 4, 1, 28, 4, top);
 		draw_fill (view, x + 4, 5, 28, 3, bottom);
@@ -811,10 +809,8 @@ draw_rogue_face (view_t *view)
 
 	s = &cl.scores[cl.viewentity - 1];
 
-	top = (((unsigned) s->colors) >> 4) & 0x0f;
-	bottom = s->colors & 0x0f;
-	top = Sbar_ColorForMap (top);
-	bottom = Sbar_ColorForMap (bottom);
+	top = Sbar_ColorForMap (s->topcolor);
+	bottom = Sbar_ColorForMap (s->bottomcolor);
 
 	draw_pic (view, 112, 0, rsb_teambord);
 	draw_fill (view, 113, 3, 22, 9, top);
@@ -1052,10 +1048,8 @@ Sbar_DeathmatchOverlay (view_t *view)
 			continue;
 
 		// draw background
-		top = (((unsigned) s->colors) >> 4) & 0x0f;
-		bottom = s->colors & 0x0f;
-		top = Sbar_ColorForMap (top);
-		bottom = Sbar_ColorForMap (bottom);
+		top = Sbar_ColorForMap (s->topcolor);
+		bottom = Sbar_ColorForMap (s->bottomcolor);
 
 		draw_fill (view, x, y, 40, 4, top);
 		draw_fill (view, x, y + 4, 40, 4, bottom);
