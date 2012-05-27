@@ -350,10 +350,9 @@ s_init (void)
 	snd_jack_server = Cvar_Get ("snd_jack_server", "default", CVAR_ROM, NULL,
 								"The name of the JACK server to connect to");
 
-	if (!snd_shutdown) {
-		SND_SFX_Init ();
-		SND_Channels_Init ();
-	}
+	SND_SFX_Init ();
+	SND_Channels_Init ();
+
 	s_jack_connect ();
 }
 
