@@ -58,6 +58,8 @@ static dma_t    _snd_shm;
 static float   *output[2];
 static cvar_t  *snd_jack_server;
 
+static void s_jack_connect (void);
+
 static void
 s_stop_all_sounds (void)
 {
@@ -113,8 +115,10 @@ s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 		if (snd_shutdown == 1) {
 			snd_shutdown++;
 			Sys_Printf ("Lost connection to jackd\n");
+			s_jack_connect ();
 		}
-		return;
+		if (snd_shutdown)
+			return;
 	}
 	SND_SetListener (origin, forward, right, up, ambient_sound_level);
 }
@@ -143,6 +147,7 @@ s_jack_activate (void)
 		Sys_Printf ("Could not activate JACK\n");
 		return;
 	}
+	snd_shutdown = 0;
 	ports = jack_get_ports (jack_handle, 0, 0,
 							JackPortIsPhysical | JackPortIsInput);
 	if (developer->int_val & SYS_SND) {
@@ -306,23 +311,9 @@ snd_jack_xrun (void *arg)
 }
 
 static void
-s_init (void)
+s_jack_connect (void)
 {
 	int         i;
-
-	snd_shm = &_snd_shm;
-	snd_shm->xfer = snd_jack_xfer;
-
-	Cmd_AddCommand ("snd_force_unblock", s_snd_force_unblock,
-					"fix permanently blocked sound");
-
-	snd_volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
-						   "Set the volume for sound playback");
-	snd_jack_server = Cvar_Get ("snd_jack_server", "default", CVAR_ROM, NULL,
-								"The name of the JACK server to connect to");
-
-	SND_SFX_Init ();
-	SND_Channels_Init ();
 
 	jack_set_error_function (snd_jack_error);
 	if ((jack_handle = jack_client_open ("QuakeForge",
@@ -343,6 +334,27 @@ s_init (void)
 	s_jack_activate ();
 	sound_started = 1;
 	Sys_Printf ("Connected to JACK: %d Sps\n", snd_shm->speed);
+}
+
+static void
+s_init (void)
+{
+	snd_shm = &_snd_shm;
+	snd_shm->xfer = snd_jack_xfer;
+
+	Cmd_AddCommand ("snd_force_unblock", s_snd_force_unblock,
+					"fix permanently blocked sound");
+
+	snd_volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
+						   "Set the volume for sound playback");
+	snd_jack_server = Cvar_Get ("snd_jack_server", "default", CVAR_ROM, NULL,
+								"The name of the JACK server to connect to");
+
+	if (!snd_shutdown) {
+		SND_SFX_Init ();
+		SND_Channels_Init ();
+	}
+	s_jack_connect ();
 }
 
 static void
