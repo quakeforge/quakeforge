@@ -170,11 +170,9 @@ typedef struct {
 	vec3_t		mviewangles[2];	// During demo playback viewangles is lerped
 								// between these
 	vec3_t		viewangles;
-
 	vec3_t		mvelocity[2];	// Update by server, used for lean+bob
 								// (0 is newest)
 	vec3_t		velocity;		// Lerped between mvelocity[0] and [1]
-
 	vec3_t		punchangle;		// Temporary offset
 
 // pitch drifting vars
@@ -187,7 +185,7 @@ typedef struct {
 	float		viewheight;
 	float		crouch;			// Local amount for smoothing stepups
 
-	qboolean	paused;			// Send over by server
+	qboolean	paused;			// Sent over by server
 	qboolean	onground;
 	qboolean	inwater;
 
@@ -215,6 +213,7 @@ typedef struct {
 
 	char		levelname[40];	// for display on solo scoreboard
 	int			viewentity;		// cl_entitites[cl.viewentity] = player
+	unsigned	protocol;
 	int			maxclients;
 	int			gametype;
 
@@ -227,8 +226,6 @@ typedef struct {
 
 // frag scoreboard
 	scoreboard_t	*scores;		// [cl.maxclients]
-
-	unsigned	protocol;
 
 	int			sv_cshifts;
 	int         chase;

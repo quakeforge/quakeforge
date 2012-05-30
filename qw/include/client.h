@@ -199,25 +199,10 @@ extern client_static_t	cls;
   the client_state_t structure is wiped completely at every server signon
 */
 typedef struct {
-	int			servercount;	// server identification for prespawns
-
-	struct info_s	*serverinfo;
-
-	int			parsecount;		// server message counter
-	int			validsequence;	// this is the sequence number of the last good
-								// packetentity_t we got.  If this is 0, we can't
-								// render a frame yet
-	int			movemessages;	// since connecting to this server
-								// throw out the first couple, so the player
-								// doesn't accidentally do something the
-								// first frame
-
-	int			spectator;
-
-	double		last_ping_request;	// while showing scoreboard
-	double		last_servermessage;
-
-// sentcmds[cl.netchan.outgoing_sequence & UPDATE_MASK] = cmd
+	int			movemessages;	// Since connecting to this server throw out
+								// the first couple, so the player doesn't
+								// accidentally do something the first frame
+	// sentcmds[cl.netchan.outgoing_sequence & UPDATE_MASK] = cmd
 	frame_t		frames[UPDATE_BACKUP];
 
 // information for local display
@@ -239,6 +224,8 @@ typedef struct {
 	vec3_t		simvel;
 	vec3_t		simangles;
 
+	float		punchangle;		// temporary view kick from weapon firing
+
 // pitch drifting vars
 	float		idealpitch;
 	float		pitchvel;
@@ -246,13 +233,22 @@ typedef struct {
 	float		driftmove;
 	double		laststop;
 
+	qboolean	paused;			// Sent over by server
 	int			onground;		// -1 when in air
 	float       viewheight;
 	float		crouch;			// local amount for smoothing stepups
 
-	qboolean	paused;			// send over by server
+	int			servercount;	// server identification for prespawns
+	struct info_s	*serverinfo;
+	int			parsecount;		// server message counter
+	int			validsequence;	// this is the sequence number of the last good
+								// packetentity_t we got.  If this is 0, we
+								// can't render a frame yet
 
-	float		punchangle;		// temporary view kick from weapon firing
+	int			spectator;
+
+	double		last_ping_request;	// while showing scoreboard
+	double		last_servermessage;
 
 	int			intermission;	// don't change view angle, full screen, etc
 	int			completed_time;	// latched from time at intermission start
@@ -287,10 +283,9 @@ typedef struct {
 // refresh related state
 	struct model_s	*worldmodel;	// cl_entitites[0].model
 	int			num_entities;	// stored bottom up in cl_entities array
+	entity_t	viewent;		// weapon model
 
 	int			cdtrack;		// cd audio
-
-	entity_t	viewent;		// weapon model
 
 // all player information
 	player_info_t	players[MAX_CLIENTS];
