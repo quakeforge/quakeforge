@@ -207,7 +207,7 @@ V_DriftPitch (void)
 		return;
 	}
 
-	delta = 0 - cl.viewangles[PITCH];
+	delta = cl.idealpitch - cl.viewangles[PITCH];
 
 	if (!delta) {
 		cl.pitchvel = 0;
@@ -591,11 +591,7 @@ V_CalcRefdef (void)
 	float       bob;
 	static float oldz = 0;
 	int         i;
-	int         zofs = 22;
 	vec3_t      forward, right, up;
-
-	if (cl.stdver)
-		zofs = cl.stats[STAT_VIEWHEIGHT];
 
 	V_DriftPitch ();
 
@@ -606,7 +602,7 @@ V_CalcRefdef (void)
 
 	// refresh position from simulated origin
 	VectorCopy (cl.simorg, r_data->refdef->vieworg);
-	r_data->refdef->vieworg[2] += bob;
+	r_data->refdef->vieworg[2] += cl.viewheight + bob;
 
 	// never let it sit exactly on a node line, because a water plane can
 	// disappear when viewed with the eye exactly on it.
@@ -618,13 +614,6 @@ V_CalcRefdef (void)
 	VectorCopy (cl.simangles, r_data->refdef->viewangles);
 	V_CalcViewRoll ();
 	V_AddIdle ();
-
-	if (view_message->pls.flags & PF_GIB)
-		r_data->refdef->vieworg[2] += 8;			// gib view height
-	else if (view_message->pls.flags & PF_DEAD)
-		r_data->refdef->vieworg[2] -= 16;			// corpse view height
-	else
-		r_data->refdef->vieworg[2] += zofs;		// view height
 
 	if (view_message->pls.flags & PF_DEAD)	// PF_GIB will also set PF_DEAD
 		r_data->refdef->viewangles[ROLL] = 80;		// dead view angle
@@ -638,7 +627,7 @@ V_CalcRefdef (void)
 	CalcGunAngle ();
 
 	VectorCopy (cl.simorg, view->origin);
-	view->origin[2] += zofs;
+	view->origin[2] += cl.viewheight;
 
 	for (i = 0; i < 3; i++) {
 		view->origin[i] += forward[i] * bob * 0.4;
@@ -715,6 +704,16 @@ V_RenderView (void)
 
 	view_frame = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
 	view_message = &view_frame->playerstate[cl.playernum];
+
+	if (view_message->pls.flags & PF_GIB)
+		cl.viewheight = 8;			// gib view height
+	else if (view_message->pls.flags & PF_DEAD)
+		cl.viewheight = -16;			// corpse view height
+	else {
+		cl.viewheight = DEFAULT_VIEWHEIGHT;	// view height
+		if (cl.stdver)
+			cl.viewheight = cl.stats[STAT_VIEWHEIGHT];
+	}
 
 	DropPunchAngle ();
 	if (cl.intermission) {				// intermission / finale rendering

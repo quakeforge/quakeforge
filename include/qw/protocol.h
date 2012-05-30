@@ -290,6 +290,8 @@
 #define TE_EXPLOSION2       16
 #define TE_BEAM             17			// PGM 01/21/97
 
+#define	DEFAULT_VIEWHEIGHT	22
+
 // ELEMENTS COMMUNICATED ACROSS THE NET =======================================
 
 #define	MAX_CLIENTS		32

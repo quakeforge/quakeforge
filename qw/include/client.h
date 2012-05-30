@@ -240,12 +240,14 @@ typedef struct {
 	vec3_t		simangles;
 
 // pitch drifting vars
+	float		idealpitch;
 	float		pitchvel;
 	qboolean	nodrift;
 	float		driftmove;
 	double		laststop;
 
 	int			onground;		// -1 when in air
+	float       viewheight;
 	float		crouch;			// local amount for smoothing stepups
 
 	qboolean	paused;			// send over by server
