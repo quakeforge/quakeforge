@@ -504,16 +504,6 @@ CalcGunAngle (void)
 
 	cl.viewent.angles[YAW] = r_data->refdef->viewangles[YAW] + yaw;
 	cl.viewent.angles[PITCH] = -(r_data->refdef->viewangles[PITCH] + pitch);
-
-	cl.viewent.angles[ROLL] -=
-		v_idlescale->value * sin (cl.time * v_iroll_cycle->value) *
-		v_iroll_level->value;
-	cl.viewent.angles[PITCH] -=
-		v_idlescale->value * sin (cl.time * v_ipitch_cycle->value) *
-		v_ipitch_level->value;
-	cl.viewent.angles[YAW] -=
-		v_idlescale->value * sin (cl.time * v_iyaw_cycle->value) *
-		v_iyaw_level->value;
 }
 
 static void
@@ -553,6 +543,13 @@ V_AddIdle (void)
 	r_data->refdef->viewangles[PITCH] += v_idlescale->value *
 		sin (cl.time * v_ipitch_cycle->value) * v_ipitch_level->value;
 	r_data->refdef->viewangles[YAW] += v_idlescale->value *
+		sin (cl.time * v_iyaw_cycle->value) * v_iyaw_level->value;
+
+	cl.viewent.angles[ROLL] -= v_idlescale->value *
+		sin (cl.time * v_iroll_cycle->value) * v_iroll_level->value;
+	cl.viewent.angles[PITCH] -= v_idlescale->value *
+		sin (cl.time * v_ipitch_cycle->value) * v_ipitch_level->value;
+	cl.viewent.angles[YAW] -= v_idlescale->value *
 		sin (cl.time * v_iyaw_cycle->value) * v_iyaw_level->value;
 }
 
