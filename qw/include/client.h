@@ -279,6 +279,7 @@ typedef struct {
 	int			watervis;
 	int			fpd;
 	int			fbskins;
+	int         maxclients;
 
 // refresh related state
 	struct model_s	*worldmodel;	// cl_entitites[0].model

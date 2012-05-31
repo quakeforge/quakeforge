@@ -396,6 +396,8 @@ CL_ClearState (void)
 	memset (&cl, 0, sizeof (cl));
 	r_data->force_fullscreen = 0;
 
+	cl.maxclients = MAX_CLIENTS;
+
 	// Note: we should probably hack around this and give diff values for
 	// diff gamedirs
 	cl.fpd = FPD_DEFAULT;

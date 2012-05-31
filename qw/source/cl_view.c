@@ -55,6 +55,10 @@
 	especially when crossing a water boudnary.
 */
 
+cvar_t     *scr_ofsx;
+cvar_t     *scr_ofsy;
+cvar_t     *scr_ofsz;
+
 cvar_t     *cl_rollspeed;
 cvar_t     *cl_rollangle;
 
@@ -518,6 +522,28 @@ CalcGunAngle (void)
 	cl.viewent.angles[PITCH] = -(r_data->refdef->viewangles[PITCH] + pitch);
 }
 
+static void
+V_BoundOffsets (void)
+{
+	vec_t      *origin = cl.simorg;
+
+	// absolutely bound refresh reletive to entity clipping hull
+	// so the view can never be inside a solid wall
+
+	if (r_data->refdef->vieworg[0] < origin[0] - 14)
+		r_data->refdef->vieworg[0] = origin[0] - 14;
+	else if (r_data->refdef->vieworg[0] > origin[0] + 14)
+		r_data->refdef->vieworg[0] = origin[0] + 14;
+	if (r_data->refdef->vieworg[1] < origin[1] - 14)
+		r_data->refdef->vieworg[1] = origin[1] - 14;
+	else if (r_data->refdef->vieworg[1] > origin[1] + 14)
+		r_data->refdef->vieworg[1] = origin[1] + 14;
+	if (r_data->refdef->vieworg[2] < origin[2] - 22)
+		r_data->refdef->vieworg[2] = origin[2] - 22;
+	else if (r_data->refdef->vieworg[2] > origin[2] + 30)
+		r_data->refdef->vieworg[2] = origin[2] + 30;
+}
+
 /*
 	V_AddIdle
 
@@ -620,6 +646,18 @@ V_CalcRefdef (void)
 
 	// offsets
 	AngleVectors (cl.simangles, forward, right, up);
+
+	// don't allow cheats in multiplayer
+	// FIXME check for dead
+	if (cl.maxclients == 1) {
+		for (i = 0; i < 3; i++) {
+			r_data->refdef->vieworg[i] += scr_ofsx->value * forward[i] +
+				scr_ofsy->value * right[i] +
+				scr_ofsz->value * up[i];
+		}
+	}
+
+	V_BoundOffsets ();
 
 	// set up gun position
 	VectorCopy (cl.simangles, view->angles);
@@ -768,6 +806,9 @@ V_Init_Cvars (void)
 	v_idlescale = Cvar_Get ("v_idlescale", "0", CVAR_NONE, NULL,
 							"Toggles whether the view remains idle");
 
+	scr_ofsx = Cvar_Get ("scr_ofsx", "0", CVAR_NONE, NULL, "None");
+	scr_ofsy = Cvar_Get ("scr_ofsy", "0", CVAR_NONE, NULL, "None");
+	scr_ofsz = Cvar_Get ("scr_ofsz", "0", CVAR_NONE, NULL, "None");
 	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
 							 "How quickly you straighten out after strafing");
 	cl_rollangle = Cvar_Get ("cl_rollangle", "2.0", CVAR_NONE, NULL,
