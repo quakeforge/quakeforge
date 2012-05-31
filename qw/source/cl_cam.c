@@ -537,6 +537,7 @@ Cam_SetView (void)
 	}
 	VectorCopy (cam_viewangles, cl.viewangles);
 	VectorCopy (cl.viewangles, cl.simangles);
+	cl.simangles[ROLL] = 0;						// FIXME @@@
 }
 #endif
 

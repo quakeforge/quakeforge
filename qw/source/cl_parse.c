@@ -1547,6 +1547,7 @@ CL_ParseServerMessage (void)
 					Sys_MaskPrintf (SYS_DEV, "%f ", cl.simorg[i]);
 				Sys_MaskPrintf (SYS_DEV, "\nintermission simangles: ");
 				MSG_ReadAngleV (net_message, cl.simangles);
+				cl.simangles[ROLL] = 0;						// FIXME @@@
 				for (i = 0; i < 3; i++)
 					Sys_MaskPrintf (SYS_DEV, "%f ", cl.simangles[i]);
 				Sys_MaskPrintf (SYS_DEV, "\n");

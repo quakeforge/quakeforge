@@ -130,6 +130,7 @@ CL_PredictMove (void)
 		return;
 
 	VectorCopy (cl.viewangles, cl.simangles);
+	cl.simangles[ROLL] = 0;						// FIXME @@@
 
 	// this is the last frame received from the server
 	from = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
