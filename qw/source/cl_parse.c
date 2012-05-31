@@ -1584,11 +1584,11 @@ CL_ParseServerMessage (void)
 			//   svc_cutscene (same value as svc_smallkick)
 
 			case svc_smallkick:
-				cl.punchangle = -2;
+				cl.punchangle[PITCH] = -2;
 				break;
 
 			case svc_bigkick:
-				cl.punchangle = -4;
+				cl.punchangle[PITCH] = -4;
 				break;
 
 			case svc_updateping:

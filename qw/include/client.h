@@ -224,7 +224,7 @@ typedef struct {
 	vec3_t		simvel;
 	vec3_t		simangles;
 
-	float		punchangle;		// temporary view kick from weapon firing
+	vec3_t		punchangle;		// temporary view kick from weapon firing
 
 // pitch drifting vars
 	float		idealpitch;

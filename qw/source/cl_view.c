@@ -657,7 +657,8 @@ V_CalcRefdef (void)
 	view->skin = 0;
 
 	// set up the refresh position
-	r_data->refdef->viewangles[PITCH] += cl.punchangle;
+	VectorAdd (r_data->refdef->viewangles, cl.punchangle,
+			   r_data->refdef->viewangles);
 
 	// smooth out stair step ups
 	if ((cl.onground != -1) && (cl.simorg[2] - oldz > 0)) {
@@ -683,9 +684,9 @@ V_CalcRefdef (void)
 static void
 DropPunchAngle (void)
 {
-	cl.punchangle -= 10 * host_frametime;
-	if (cl.punchangle < 0)
-		cl.punchangle = 0;
+	cl.punchangle[PITCH] -= 10 * host_frametime;
+	if (cl.punchangle[PITCH] < 0)
+		cl.punchangle[PITCH] = 0;
 }
 
 /*
