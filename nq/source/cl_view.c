@@ -29,9 +29,7 @@
 #endif
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
-#include "QF/draw.h"
 #include "QF/msg.h"
 #include "QF/screen.h"
 
@@ -86,9 +84,6 @@ cshift_t    cshift_lava = { {255, 80, 0}, 150};
 cshift_t    cshift_bonus = { {215, 186, 60}, 50};
 
 
-/*
-   FIXME duplicates SV_CalcRoll in sv_user.c
-*/
 float
 V_CalcRoll (const vec3_t angles, const vec3_t velocity)
 {
@@ -509,25 +504,24 @@ CalcGunAngle (void)
 static void
 V_BoundOffsets (void)
 {
-	entity_t   *ent;
-
-	ent = &cl_entities[cl.viewentity];
+	entity_t   *ent = &cl_entities[cl.viewentity];
+	vec_t      *origin = ent->origin;
 
 	// absolutely bound refresh reletive to entity clipping hull
 	// so the view can never be inside a solid wall
 
-	if (r_data->refdef->vieworg[0] < ent->origin[0] - 14)
-		r_data->refdef->vieworg[0] = ent->origin[0] - 14;
-	else if (r_data->refdef->vieworg[0] > ent->origin[0] + 14)
-		r_data->refdef->vieworg[0] = ent->origin[0] + 14;
-	if (r_data->refdef->vieworg[1] < ent->origin[1] - 14)
-		r_data->refdef->vieworg[1] = ent->origin[1] - 14;
-	else if (r_data->refdef->vieworg[1] > ent->origin[1] + 14)
-		r_data->refdef->vieworg[1] = ent->origin[1] + 14;
-	if (r_data->refdef->vieworg[2] < ent->origin[2] - 22)
-		r_data->refdef->vieworg[2] = ent->origin[2] - 22;
-	else if (r_data->refdef->vieworg[2] > ent->origin[2] + 30)
-		r_data->refdef->vieworg[2] = ent->origin[2] + 30;
+	if (r_data->refdef->vieworg[0] < origin[0] - 14)
+		r_data->refdef->vieworg[0] = origin[0] - 14;
+	else if (r_data->refdef->vieworg[0] > origin[0] + 14)
+		r_data->refdef->vieworg[0] = origin[0] + 14;
+	if (r_data->refdef->vieworg[1] < origin[1] - 14)
+		r_data->refdef->vieworg[1] = origin[1] - 14;
+	else if (r_data->refdef->vieworg[1] > origin[1] + 14)
+		r_data->refdef->vieworg[1] = origin[1] + 14;
+	if (r_data->refdef->vieworg[2] < origin[2] - 22)
+		r_data->refdef->vieworg[2] = origin[2] - 22;
+	else if (r_data->refdef->vieworg[2] > origin[2] + 30)
+		r_data->refdef->vieworg[2] = origin[2] + 30;
 }
 
 /*
@@ -574,26 +568,25 @@ V_CalcViewRoll (void)
 		v_dmg_time -= host_frametime;
 	}
 
-	if (cl.stats[STAT_HEALTH] <= 0) {
+	if (cl.stats[STAT_HEALTH] <= 0)
 		r_data->refdef->viewangles[ROLL] = 80;	// dead view angle
-		return;
-	}
 }
 
 static void
 V_CalcIntermissionRefdef (void)
 {
-	entity_t   *ent, *view;
-	float       old;
-
 	// ent is the player model (visible when out of body)
-	ent = &cl_entities[cl.viewentity];
+	entity_t   *ent = &cl_entities[cl.viewentity];
+	entity_t   *view;
+	float       old;
+	vec_t      *origin = ent->origin;
+	vec_t      *angles = ent->angles;
 
 	// view is the weapon model (visible only from inside body)
 	view = &cl.viewent;
 
-	VectorCopy (ent->origin, r_data->refdef->vieworg);
-	VectorCopy (ent->angles, r_data->refdef->viewangles);
+	VectorCopy (origin, r_data->refdef->vieworg);
+	VectorCopy (angles, r_data->refdef->viewangles);
 	view->model = NULL;
 
 	// always idle in intermission
@@ -606,23 +599,23 @@ V_CalcIntermissionRefdef (void)
 static void
 V_CalcRefdef (void)
 {
-	entity_t   *ent, *view;
+	// ent is the player model (visible when out of body)
+	entity_t   *ent = &cl_entities[cl.viewentity];
+	// view is the weapon model (visible only from inside body)
+	entity_t   *view = &cl.viewent;
 	float       bob;
 	static float oldz = 0;
 	int         i;
-	vec3_t      angles, forward, right, up;
+	vec3_t      angles;
+	vec3_t      forward, right, up;
+	vec_t      *origin = ent->origin;
 
 	V_DriftPitch ();
-
-	// ent is the player model (visible when out of body)
-	ent = &cl_entities[cl.viewentity];
-	// view is the weapon model (visible only from inside body)
-	view = &cl.viewent;
 
 	bob = V_CalcBob ();
 
 	// refresh position
-	VectorCopy (ent->origin, r_data->refdef->vieworg);
+	VectorCopy (origin, r_data->refdef->vieworg);
 	r_data->refdef->vieworg[2] += cl.viewheight + bob;
 
 	// never let it sit exactly on a node line, because a water plane can
@@ -645,6 +638,7 @@ V_CalcRefdef (void)
 	AngleVectors (angles, forward, right, up);
 
 	// don't allow cheats in multiplayer
+	// FIXME check for dead
 	if (cl.maxclients == 1) {
 		for (i = 0; i < 3; i++) {
 			r_data->refdef->vieworg[i] += scr_ofsx->value * forward[i] +
@@ -660,7 +654,7 @@ V_CalcRefdef (void)
 
 	CalcGunAngle ();
 
-	VectorCopy (ent->origin, view->origin);
+	VectorCopy (origin, view->origin);
 	view->origin[2] += cl.viewheight;
 
 	for (i = 0; i < 3; i++) {
@@ -692,7 +686,7 @@ V_CalcRefdef (void)
 			   r_data->refdef->viewangles);
 
 	// smooth out stair step ups
-	if (cl.onground && ent->origin[2] - oldz > 0) {
+	if (cl.onground && origin[2] - oldz > 0) {
 		float       steptime;
 
 		steptime = cl.time - cl.oldtime;
@@ -700,16 +694,16 @@ V_CalcRefdef (void)
 			steptime = 0;
 
 		oldz += steptime * 80;
-		if (oldz > ent->origin[2])
-			oldz = ent->origin[2];
-		if (ent->origin[2] - oldz > 12)
-			oldz = ent->origin[2] - 12;
-		r_data->refdef->vieworg[2] += oldz - ent->origin[2];
-		view->origin[2] += oldz - ent->origin[2];
+		if (oldz > origin[2])
+			oldz = origin[2];
+		if (origin[2] - oldz > 12)
+			oldz = origin[2] - 12;
+		r_data->refdef->vieworg[2] += oldz - origin[2];
+		view->origin[2] += oldz - origin[2];
 	} else
-		oldz = ent->origin[2];
+		oldz = origin[2];
 
-	if (chase_active->int_val)
+	if (cl.chase && chase_active->int_val)
 		Chase_Update ();
 
 	CL_TransformEntity (view, view->angles, true);
@@ -730,8 +724,7 @@ V_RenderView (void)
 	if (cl.intermission) {				// intermission / finale rendering
 		V_CalcIntermissionRefdef ();
 	} else {
-		if (!cl.paused)
-			V_CalcRefdef ();
+		V_CalcRefdef ();
 	}
 
 	r_funcs->R_RenderView ();

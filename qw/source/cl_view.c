@@ -28,14 +28,10 @@
 # include "config.h"
 #endif
 
-#include <stdlib.h>
-#include <math.h>
-
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/screen.h"
-#include "QF/vid.h"
 
 #include "qw/bothdefs.h"
 #include "chase.h"
@@ -313,10 +309,7 @@ V_BonusFlash_f (void)
 		&& !(cl.sv_cshifts & INFO_CSHIFT_BONUS))
 		return;
 
-	cl.cshifts[CSHIFT_BONUS].destcolor[0] = 215;
-	cl.cshifts[CSHIFT_BONUS].destcolor[1] = 186;
-	cl.cshifts[CSHIFT_BONUS].destcolor[2] = 69;
-	cl.cshifts[CSHIFT_BONUS].percent = 50;
+	cl.cshifts[CSHIFT_BONUS] = cshift_bonus;
 }
 
 /*
@@ -588,6 +581,8 @@ V_CalcViewRoll (void)
 		v_dmg_time -= host_frametime;
 	}
 
+	if (view_message->pls.flags & PF_DEAD)		// PF_GIB will also set PF_DEAD
+		r_data->refdef->viewangles[ROLL] = 80;	// dead view angle
 }
 
 static void
@@ -595,12 +590,14 @@ V_CalcIntermissionRefdef (void)
 {
 	entity_t   *view;
 	float       old;
+	vec_t      *origin = cl.simorg;
+	vec_t      *angles = cl.simangles;
 
 	// view is the weapon model (visible only from inside body)
 	view = &cl.viewent;
 
-	VectorCopy (cl.simorg, r_data->refdef->vieworg);
-	VectorCopy (cl.simangles, r_data->refdef->viewangles);
+	VectorCopy (origin, r_data->refdef->vieworg);
+	VectorCopy (angles, r_data->refdef->viewangles);
 	view->model = NULL;
 
 	// always idle in intermission
@@ -613,21 +610,20 @@ V_CalcIntermissionRefdef (void)
 static void
 V_CalcRefdef (void)
 {
-	entity_t   *view;
+	// view is the weapon model (visible only from inside body)
+	entity_t   *view = &cl.viewent;
 	float       bob;
 	static float oldz = 0;
 	int         i;
 	vec3_t      forward, right, up;
+	vec_t      *origin = cl.simorg;
 
 	V_DriftPitch ();
-
-	// view is the weapon model (visible only from inside body)
-	view = &cl.viewent;
 
 	bob = V_CalcBob ();
 
 	// refresh position from simulated origin
-	VectorCopy (cl.simorg, r_data->refdef->vieworg);
+	VectorCopy (origin, r_data->refdef->vieworg);
 	r_data->refdef->vieworg[2] += cl.viewheight + bob;
 
 	// never let it sit exactly on a node line, because a water plane can
@@ -640,9 +636,6 @@ V_CalcRefdef (void)
 	VectorCopy (cl.simangles, r_data->refdef->viewangles);
 	V_CalcViewRoll ();
 	V_AddIdle ();
-
-	if (view_message->pls.flags & PF_DEAD)	// PF_GIB will also set PF_DEAD
-		r_data->refdef->viewangles[ROLL] = 80;		// dead view angle
 
 	// offsets
 	AngleVectors (cl.simangles, forward, right, up);
@@ -664,7 +657,7 @@ V_CalcRefdef (void)
 
 	CalcGunAngle ();
 
-	VectorCopy (cl.simorg, view->origin);
+	VectorCopy (origin, view->origin);
 	view->origin[2] += cl.viewheight;
 
 	for (i = 0; i < 3; i++) {
@@ -699,23 +692,24 @@ V_CalcRefdef (void)
 			   r_data->refdef->viewangles);
 
 	// smooth out stair step ups
-	if ((cl.onground != -1) && (cl.simorg[2] - oldz > 0)) {
+	if ((cl.onground != -1) && (origin[2] - oldz > 0)) {
 		float       steptime;
 
 		steptime = host_frametime;
 
 		oldz += steptime * 80;
-		if (oldz > cl.simorg[2])
-			oldz = cl.simorg[2];
-		if (cl.simorg[2] - oldz > 12)
-			oldz = cl.simorg[2] - 12;
-		r_data->refdef->vieworg[2] += oldz - cl.simorg[2];
-		view->origin[2] += oldz - cl.simorg[2];
+		if (oldz > origin[2])
+			oldz = origin[2];
+		if (origin[2] - oldz > 12)
+			oldz = origin[2] - 12;
+		r_data->refdef->vieworg[2] += oldz - origin[2];
+		view->origin[2] += oldz - origin[2];
 	} else
-		oldz = cl.simorg[2];
+		oldz = origin[2];
 
 	if (cl.chase && chase_active->int_val)
 		Chase_Update ();
+
 	CL_TransformEntity (view, view->angles, true);
 }
 
