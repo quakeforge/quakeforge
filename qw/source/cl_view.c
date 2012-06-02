@@ -184,6 +184,8 @@ static void
 V_DriftPitch (void)
 {
 	float       delta, move;
+	int         frameno = (cls.netchan.outgoing_sequence - 1) & UPDATE_MASK;
+	usercmd_t  *cmd = &cl.frames[frameno].cmd;
 
 	if (view_message->onground == -1 || cls.demoplayback) {
 		cl.driftmove = 0;
@@ -193,9 +195,7 @@ V_DriftPitch (void)
 
 	// don't count small mouse motion
 	if (cl.nodrift) {
-		if (fabs
-			(cl.frames[(cls.netchan.outgoing_sequence - 1) &
-					   UPDATE_MASK].cmd.forwardmove) < 200)
+		if (fabs (cmd->forwardmove) < cl_forwardspeed->value)
 			cl.driftmove = 0;
 		else
 			cl.driftmove += host_frametime;
@@ -238,6 +238,8 @@ V_ParseDamage (void)
 {
 	float       count, side;
 	int         armor, blood;
+	vec_t      *origin = cl.simorg;
+	vec_t      *angles = cl.simangles;
 	vec3_t      from, forward, right, up;
 
 	armor = MSG_ReadByte (net_message);
@@ -273,10 +275,10 @@ V_ParseDamage (void)
 	}
 
 	// calculate view angle kicks
-	VectorSubtract (from, cl.simorg, from);
+	VectorSubtract (from, origin, from);
 	VectorNormalize (from);
 
-	AngleVectors (cl.simangles, forward, right, up);
+	AngleVectors (angles, forward, right, up);
 
 	side = DotProduct (from, right);
 	v_dmg_roll = count * side * v_kickroll->value;
@@ -568,8 +570,10 @@ static void
 V_CalcViewRoll (void)
 {
 	float       side;
+	vec_t      *angles = cl.simangles;
+	vec_t      *velocity = cl.simvel;
 
-	side = V_CalcRoll (cl.simangles, cl.simvel);
+	side = V_CalcRoll (angles, velocity);
 	r_data->refdef->viewangles[ROLL] += side;
 
 	if (v_dmg_time > 0) {

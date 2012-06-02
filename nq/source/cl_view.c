@@ -179,6 +179,7 @@ static void
 V_DriftPitch (void)
 {
 	float       delta, move;
+	usercmd_t  *cmd = &cl.cmd;
 
 	if (noclip_anglehack || cl.onground == -1 || cls.demoplayback) {
 		cl.driftmove = 0;
@@ -188,7 +189,7 @@ V_DriftPitch (void)
 
 	// don't count small mouse motion
 	if (cl.nodrift) {
-		if (fabs (cl.cmd.forwardmove) < cl_forwardspeed->value)
+		if (fabs (cmd->forwardmove) < cl_forwardspeed->value)
 			cl.driftmove = 0;
 		else
 			cl.driftmove += host_frametime;
@@ -232,6 +233,8 @@ V_ParseDamage (void)
 	entity_t   *ent = &cl_entities[cl.viewentity];
 	float       count, side;
 	int         armor, blood;
+	vec_t      *origin = ent->origin;
+	vec_t      *angles = ent->angles;
 	vec3_t      from, forward, right, up;
 
 	armor = MSG_ReadByte (net_message);
@@ -267,10 +270,10 @@ V_ParseDamage (void)
 	}
 
 	// calculate view angle kicks
-	VectorSubtract (from, ent->origin, from);
+	VectorSubtract (from, origin, from);
 	VectorNormalize (from);
 
-	AngleVectors (ent->angles, forward, right, up);
+	AngleVectors (angles, forward, right, up);
 
 	side = DotProduct (from, right);
 	v_dmg_roll = count * side * v_kickroll->value;
@@ -563,8 +566,10 @@ static void
 V_CalcViewRoll (void)
 {
 	float       side;
+	vec_t      *angles = cl_entities[cl.viewentity].angles;
+	vec_t      *velocity = cl_entities[cl.viewentity].angles;
 
-	side = V_CalcRoll (cl_entities[cl.viewentity].angles, cl.velocity);
+	side = V_CalcRoll (angles, velocity);
 	r_data->refdef->viewangles[ROLL] += side;
 
 	if (v_dmg_time > 0) {
