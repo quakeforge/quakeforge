@@ -83,6 +83,7 @@ cshift_t    cshift_slime = { {0, 25, 5}, 150};
 cshift_t    cshift_lava = { {255, 80, 0}, 150};
 cshift_t    cshift_bonus = { {215, 186, 60}, 50};
 
+#define sqr(x) ((x) * (x))
 
 float
 V_CalcRoll (const vec3_t angles, const vec3_t velocity)
@@ -108,23 +109,25 @@ V_CalcRoll (const vec3_t angles, const vec3_t velocity)
 static float
 V_CalcBob (void)
 {
-	float       bob, cycle;
+	vec_t      *velocity = cl.velocity;
+	float       cycle;
+	static double bobtime;
+	static float bob;
 
-	cycle = cl.time - (int) (cl.time / cl_bobcycle->value) *
+	bobtime += host_frametime;
+	cycle = bobtime - (int) (bobtime / cl_bobcycle->value) *
 		cl_bobcycle->value;
 	cycle /= cl_bobcycle->value;
 	if (cycle < cl_bobup->value)
-		cycle = M_PI * cycle / cl_bobup->value;
+		cycle = cycle / cl_bobup->value;
 	else
-		cycle = M_PI + M_PI * (cycle - cl_bobup->value) /
-			(1.0 - cl_bobup->value);
+		cycle = 1 + (cycle - cl_bobup->value) / (1.0 - cl_bobup->value);
 
 	// bob is proportional to velocity in the xy plane
 	// (don't count Z, or jumping messes it up)
 
-	bob = sqrt (cl.velocity[0] * cl.velocity[0] +
-				cl.velocity[1] * cl.velocity[1]) * cl_bob->value;
-	bob = bob * 0.3 + bob * 0.7 * sin (cycle);
+	bob = sqrt (sqr (velocity[0]) + sqr (velocity[1])) * cl_bob->value;
+	bob = bob * 0.3 + bob * 0.7 * sin (cycle * M_PI);
 	if (bob > 4)
 		bob = 4;
 	else if (bob < -7)
