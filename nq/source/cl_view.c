@@ -607,7 +607,6 @@ V_CalcRefdef (void)
 	float       bob;
 	static float oldz = 0;
 	int         i;
-	vec3_t      angles;
 	vec3_t      forward, right, up;
 	vec_t      *origin = ent->origin;
 	vec_t      *viewangles = cl.viewangles;
@@ -632,12 +631,7 @@ V_CalcRefdef (void)
 	V_AddIdle ();
 
 	// offsets
-	angles[PITCH] = -ent->angles[PITCH];	// because entity pitches are
-											// actually backward
-	angles[YAW] = ent->angles[YAW];
-	angles[ROLL] = ent->angles[ROLL];
-
-	AngleVectors (angles, forward, right, up);
+	AngleVectors (viewangles, forward, right, up);
 
 	// don't allow cheats in multiplayer
 	// FIXME check for dead
