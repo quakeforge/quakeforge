@@ -186,7 +186,7 @@ typedef struct {
 	float		crouch;			// Local amount for smoothing stepups
 
 	qboolean	paused;			// Sent over by server
-	qboolean	onground;
+	int			onground;
 	qboolean	inwater;
 
 	int			intermission;	// Don't change view angle, full screen, etc

@@ -717,7 +717,7 @@ CL_ParseClientdata (void)
 		cl.stats[STAT_ITEMS] = i;
 	}
 
-	cl.onground = (bits & SU_ONGROUND) != 0;
+	cl.onground = (bits & SU_ONGROUND) ? 0 : -1;
 	cl.inwater = (bits & SU_INWATER) != 0;
 
 	if (bits & SU_WEAPONFRAME)
@@ -882,7 +882,7 @@ CL_ParseServerMessage (void)
 	else if (cl_shownet->int_val == 2)
 		Sys_Printf ("------------------\n");
 
-	cl.onground = false;				// unless the server says otherwise
+	cl.onground = -1;				// unless the server says otherwise
 
 	// parse the message
 	MSG_BeginReading (net_message);

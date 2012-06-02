@@ -617,12 +617,13 @@ V_CalcRefdef (void)
 	int         i;
 	vec3_t      forward, right, up;
 	vec_t      *origin = cl.simorg;
+	vec_t      *viewangles = cl.simangles;
 
 	V_DriftPitch ();
 
 	bob = V_CalcBob ();
 
-	// refresh position from simulated origin
+	// refresh position
 	VectorCopy (origin, r_data->refdef->vieworg);
 	r_data->refdef->vieworg[2] += cl.viewheight + bob;
 
@@ -633,12 +634,12 @@ V_CalcRefdef (void)
 	r_data->refdef->vieworg[1] += 1.0 / 16;
 	r_data->refdef->vieworg[2] += 1.0 / 16;
 
-	VectorCopy (cl.simangles, r_data->refdef->viewangles);
+	VectorCopy (viewangles, r_data->refdef->viewangles);
 	V_CalcViewRoll ();
 	V_AddIdle ();
 
 	// offsets
-	AngleVectors (cl.simangles, forward, right, up);
+	AngleVectors (viewangles, forward, right, up);
 
 	// don't allow cheats in multiplayer
 	// FIXME check for dead
@@ -653,7 +654,7 @@ V_CalcRefdef (void)
 	V_BoundOffsets ();
 
 	// set up gun position
-	VectorCopy (cl.simangles, view->angles);
+	VectorCopy (viewangles, view->angles);
 
 	CalcGunAngle ();
 

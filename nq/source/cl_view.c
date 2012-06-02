@@ -174,7 +174,7 @@ V_DriftPitch (void)
 {
 	float       delta, move;
 
-	if (noclip_anglehack || !cl.onground || cls.demoplayback) {
+	if (noclip_anglehack || cl.onground == -1 || cls.demoplayback) {
 		cl.driftmove = 0;
 		cl.pitchvel = 0;
 		return;
@@ -610,6 +610,7 @@ V_CalcRefdef (void)
 	vec3_t      angles;
 	vec3_t      forward, right, up;
 	vec_t      *origin = ent->origin;
+	vec_t      *viewangles = cl.viewangles;
 
 	V_DriftPitch ();
 
@@ -626,7 +627,7 @@ V_CalcRefdef (void)
 	r_data->refdef->vieworg[1] += 1.0 / 16;
 	r_data->refdef->vieworg[2] += 1.0 / 16;
 
-	VectorCopy (cl.viewangles, r_data->refdef->viewangles);
+	VectorCopy (viewangles, r_data->refdef->viewangles);
 	V_CalcViewRoll ();
 	V_AddIdle ();
 
@@ -651,7 +652,7 @@ V_CalcRefdef (void)
 	V_BoundOffsets ();
 
 	// set up gun position
-	VectorCopy (cl.viewangles, view->angles);
+	VectorCopy (viewangles, view->angles);
 
 	CalcGunAngle ();
 
@@ -687,7 +688,7 @@ V_CalcRefdef (void)
 			   r_data->refdef->viewangles);
 
 	// smooth out stair step ups
-	if (cl.onground && origin[2] - oldz > 0) {
+	if ((cl.onground != -1) && (origin[2] - oldz > 0)) {
 		float       steptime;
 
 		steptime = cl.time - cl.oldtime;
