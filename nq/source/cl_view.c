@@ -620,10 +620,10 @@ V_CalcRefdef (void)
 
 	// never let it sit exactly on a node line, because a water plane can
 	// disappear when viewed with the eye exactly on it.
-	// server protocol specifies to only 1/16 pixel, so add 1/32 in each axis
-	r_data->refdef->vieworg[0] += 1.0 / 32;
-	r_data->refdef->vieworg[1] += 1.0 / 32;
-	r_data->refdef->vieworg[2] += 1.0 / 32;
+	// server protocol specifies to only 1/8 pixel, so add 1/16 in each axis
+	r_data->refdef->vieworg[0] += 1.0 / 16;
+	r_data->refdef->vieworg[1] += 1.0 / 16;
+	r_data->refdef->vieworg[2] += 1.0 / 16;
 
 	VectorCopy (cl.viewangles, r_data->refdef->viewangles);
 	V_CalcViewRoll ();
