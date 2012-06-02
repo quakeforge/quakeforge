@@ -49,12 +49,6 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
-#ifdef USE_INTEL_ASM
-#define UNALIGNED_OK	1	// set to 0 if unaligned accesses are not supported
-#else
-#define UNALIGNED_OK	0
-#endif
-
 #define	MINIMUM_MEMORY			0x550000
 #define	MINIMUM_MEMORY_LEVELPAK	(MINIMUM_MEMORY + 0x100000)
 

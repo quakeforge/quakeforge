@@ -28,16 +28,8 @@
 #ifndef _BOTHDEFS_H
 #define _BOTHDEFS_H
 
-#ifdef USE_INTEL_ASM
-# define UNALIGNED_OK	1	// set to 0 if unaligned accesses are not supported
-#else
-# define UNALIGNED_OK	0
-#endif
 
-#define UNUSED(x)	(x = x)	// for pesky compiler / lint warnings
-
-							// Error out if we get less than 4MB
-#define	MINIMUM_MEMORY	0x400000
+#define	MINIMUM_MEMORY	0x400000	// Error out if we get less than 4MB
 
 
 

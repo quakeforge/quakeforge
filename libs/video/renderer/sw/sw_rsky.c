@@ -110,21 +110,6 @@ R_MakeSky (void)
 
 	for (y = 0; y < SKYSIZE; y++) {
 		baseofs = ((y + yshift) & SKYMASK) * 131;
-
-// FIXME: clean this up
-#if UNALIGNED_OK
-		for (x = 0; x < SKYSIZE; x += 4) {
-			ofs = baseofs + ((x + xshift) & SKYMASK);
-
-			// PORT: unaligned dword access to bottommask and bottomsky
-
-			*pnewsky = (*(pnewsky + (128 / sizeof (unsigned int))) &
-						*(unsigned int *) &bottommask[ofs]) |
-				*(unsigned int *) &bottomsky[ofs];
-
-			pnewsky++;
-		}
-#else
 		for (x = 0; x < SKYSIZE; x++) {
 			ofs = baseofs + ((x + xshift) & SKYMASK);
 
@@ -133,7 +118,6 @@ R_MakeSky (void)
 				*(byte *) & bottomsky[ofs];
 			pnewsky = (unsigned int *) ((byte *) pnewsky + 1);
 		}
-#endif
 		pnewsky += 128 / sizeof (unsigned int);
 	}
 
