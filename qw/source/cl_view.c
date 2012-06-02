@@ -41,7 +41,6 @@
 #include "client.h"
 #include "compat.h"
 #include "host.h"
-#include "qw/pmove.h"
 #include "clview.h"
 
 /*
@@ -123,7 +122,7 @@ V_CalcBob (void)
 	if (cl.spectator)
 		return 0;
 
-	if (onground == -1)
+	if (cl.onground == -1)
 		return bob;						// just use old value
 
 	bobtime += host_frametime;

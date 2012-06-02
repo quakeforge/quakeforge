@@ -227,6 +227,8 @@ typedef struct {
 // frag scoreboard
 	scoreboard_t	*scores;		// [cl.maxclients]
 
+	int         spectator;
+
 	int			sv_cshifts;
 	int         chase;
 	int         fpd;

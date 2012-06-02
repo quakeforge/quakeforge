@@ -114,6 +114,12 @@ V_CalcBob (void)
 	static double bobtime;
 	static float bob;
 
+	if (cl.spectator)
+		return 0;
+
+	if (cl.onground == -1)
+		return bob;						// just use old value
+
 	bobtime += host_frametime;
 	cycle = bobtime - (int) (bobtime / cl_bobcycle->value) *
 		cl_bobcycle->value;
