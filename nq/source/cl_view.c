@@ -223,7 +223,7 @@ V_DriftPitch (void)
 void
 V_ParseDamage (void)
 {
-	entity_t   *ent;
+	entity_t   *ent = &cl_entities[cl.viewentity];
 	float       count, side;
 	int         armor, blood;
 	vec3_t      from, forward, right, up;
@@ -261,8 +261,6 @@ V_ParseDamage (void)
 	}
 
 	// calculate view angle kicks
-
-	ent = &cl_entities[cl.viewentity];
 	VectorSubtract (from, ent->origin, from);
 	VectorNormalize (from);
 
