@@ -71,7 +71,9 @@ typedef struct {
 
 int         demo_timeframes_isactive;
 int         demo_timeframes_index;
-int         demotime_cached;
+static int  demotime_cached;
+static float cached_demotime;
+static byte cached_newtime;
 float       nextdemotime;
 char        demoname[1024];
 double     *demo_timeframes_array;
@@ -185,14 +187,43 @@ static const char *dem_names[] = {
 };
 #endif
 
+static void
+get_demotime (float *demotime, byte *newtime)
+{
+	// read the time from the packet
+	*newtime = 0;
+	if (demotime_cached) {
+		*demotime = cached_demotime;
+		*newtime = cached_newtime;
+		demotime_cached = 0;
+	} else {
+		if (cls.demoplayback2) {
+			Qread (cls.demofile, newtime, sizeof (*newtime));
+			*demotime = cls.basetime + (cls.prevtime + *newtime) * 0.001;
+		} else {
+			Qread (cls.demofile, demotime, sizeof (*demotime));
+			*demotime = LittleFloat (*demotime);
+			if (!nextdemotime)
+				realtime = nextdemotime = *demotime;
+		}
+	}
+}
+
+static void
+push_demotime (float demotime, byte newtime)
+{
+	// rewind back to time
+	demotime_cached = 1;
+	cached_demotime = demotime;
+	cached_newtime = newtime;
+}
+
 static int
 CL_GetDemoMessage (void)
 {
-	byte		c, newtime;
-	float		demotime, f;
-	static float cached_demotime;
-	static byte cached_newtime;
-	int			r, i, j, tracknum;
+	byte        c, newtime;
+	float       demotime, f;
+	int         r, i, j, tracknum;
 	usercmd_t  *pcmd;
 
 	if (!cls.demoplayback2)
@@ -201,23 +232,7 @@ CL_GetDemoMessage (void)
 		realtime = nextdemotime - 1.0;
 
 nextdemomessage:
-	// read the time from the packet
-	newtime = 0;
-	if (demotime_cached) {
-		demotime = cached_demotime;
-		newtime = cached_newtime;
-		demotime_cached = 0;
-	} else {
-		if (cls.demoplayback2) {
-			Qread (cls.demofile, &newtime, sizeof (newtime));
-			demotime = cls.basetime + (cls.prevtime + newtime) * 0.001;
-		} else {
-			Qread (cls.demofile, &demotime, sizeof (demotime));
-			demotime = LittleFloat (demotime);
-			if (!nextdemotime)
-				realtime = nextdemotime = demotime;
-		}
-	}
+	get_demotime (&demotime, &newtime);
 
 	// decide if it is time to grab the next message
 	if (cls.timedemo) {
@@ -225,10 +240,7 @@ nextdemomessage:
 			cls.td_lastframe = demotime;
 		else if (demotime > cls.td_lastframe) {
 			cls.td_lastframe = demotime;
-			// rewind back to time
-			demotime_cached = 1;
-			cached_demotime = demotime;
-			cached_newtime = newtime;
+			push_demotime (demotime, newtime);
 			return 0;					// already read this frame's message
 		}
 		if (!cls.td_starttime && cls.state == ca_active) {
@@ -241,16 +253,10 @@ nextdemomessage:
 		if (!cls.demoplayback2 && realtime + 1.0 < demotime) {
 			// too far back
 			realtime = demotime - 1.0;
-			// rewind back to time
-			demotime_cached = 1;
-			cached_demotime = demotime;
-			cached_newtime = newtime;
+			push_demotime (demotime, newtime);
 			return 0;
 		} else if (realtime < demotime) {
-			// rewind back to time
-			demotime_cached = 1;
-			cached_demotime = demotime;
-			cached_newtime = newtime;
+			push_demotime (demotime, newtime);
 			return 0;					// don't need another message yet
 		}
 	} else
