@@ -958,10 +958,15 @@ CL_StartDemo (void)
 
 	// open the demo file
 	name = dstring_strdup (demoname);
-	QFS_DefaultExtension (name, ".qwd");
 
-	Sys_Printf ("Playing demo from %s.\n", name->str);
+	QFS_DefaultExtension (name, ".mvd");
 	QFS_FOpenFile (name->str, &cls.demofile);
+	if (!cls.demofile) {
+		dstring_copystr (name, demoname);
+		QFS_DefaultExtension (name, ".qwd");
+		QFS_FOpenFile (name->str, &cls.demofile);
+	}
+
 	if (!cls.demofile) {
 		Sys_Printf ("ERROR: couldn't open.\n");
 		cls.demonum = -1;				// stop demo loop
@@ -976,6 +981,7 @@ CL_StartDemo (void)
 		cls.demofile = 0;
 		return;
 	}
+	Sys_Printf ("Playing demo from %s.\n", name->str);
 
 	cls.demoplayback = true;
 	key_game_target = IMT_DEMO;
