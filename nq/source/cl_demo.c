@@ -166,7 +166,7 @@ CL_GetDemoMessage (void)
 			// so the bogus time on the first frame doesn't count
 			if (host_framecount == cls.td_startframe + 1)
 				cls.td_starttime = realtime;
-		} else if ( /* cl.time > 0 && */ cl.time <= cl.mtime[0]) {
+		} else if (cl.time <= cl.mtime[0]) {
 			return 0;				// don't need another message yet
 		}
 	}
