@@ -42,6 +42,7 @@
 #include <sys/time.h>
 #endif
 #include <time.h>
+#include <math.h>
 
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
@@ -880,10 +881,80 @@ CL_Record (const char *argv1, int track)
 	demo_start_recording (track);
 }
 
+static inline uint32_t
+get_ulong (const byte *buf)
+{
+	return buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
+}
+
+static inline float
+get_float (const byte *buf)
+{
+	union {
+		uint32_t    u;
+		float       f;
+	} uf;
+	uf.u = get_ulong (buf);
+	return uf.f;
+}
+
+static int
+demo_check_qwd_mvd (void)
+{
+	byte        buf[22];
+	size_t      bytes;
+	int         c, ret = 0;
+	float       f;
+	uint32_t    u;
+
+	bytes = Qread (cls.demofile, buf, sizeof (buf));
+	if (bytes != sizeof (buf))
+		goto done;
+
+	if ((f = get_float (buf + 0)) >= 0 && !isinf (f) && !isnan (f)
+		&& buf[4] == dem_read && get_ulong (buf + 5) <= MAX_DEMMSG
+		&& get_ulong (buf + 9) == 1 && get_ulong (buf + 13) == 1
+		&& buf[17] == svc_serverdata
+		&& (u = get_ulong (buf + 18)) >= 26 && u <= PROTOCOL_VERSION) {
+		ret = 1;
+		goto done;
+	}
+	if (buf[0] != 0 || (buf[1] != dem_read && buf[1] != dem_all)
+		|| (u = get_ulong (buf + 2)) > MAX_DEMMSG)
+		goto done;
+	Qseek (cls.demofile, 6, SEEK_SET);
+	net_message->message->cursize = u;
+	bytes = Qread (cls.demofile, net_message->message->data, u);
+	if (bytes != u)
+		goto done;
+	MSG_BeginReading (net_message);
+	while (!ret) {
+		if (net_message->badread)
+			goto done;
+		c = MSG_ReadByte (net_message);
+		switch (c) {
+			case svc_print:
+				MSG_ReadString (net_message);
+				break;
+			case svc_serverdata:
+				if (MSG_ReadLong (net_message) != PROTOCOL_VERSION)
+					goto done;
+				ret = 2;
+				break;
+			default:
+				goto done;
+		}
+	}
+done:
+	Qseek (cls.demofile, 0, SEEK_SET);
+	return ret;
+}
+
 static void
 CL_StartDemo (void)
 {
 	dstring_t  *name;
+	int         type;
 
 	// open the demo file
 	name = dstring_strdup (demoname);
@@ -897,16 +968,24 @@ CL_StartDemo (void)
 		dstring_delete (name);
 		return;
 	}
+	if (!(type = demo_check_qwd_mvd ())) {
+		Sys_Printf ("%s is not a valid .qwd or .mvd file.\n", name->str);
+		cls.demonum = -1;				// stop demo loop
+		dstring_delete (name);
+		Qclose (cls.demofile);
+		cls.demofile = 0;
+		return;
+	}
 
 	cls.demoplayback = true;
 	key_game_target = IMT_DEMO;
 	Key_SetKeyDest (key_game);
 	net_blocksend = 1;
-	if (strequal (QFS_FileExtension (name->str), ".mvd")) {
+	if (type == 2) {
 		cls.demoplayback2 = true;
-		Sys_Printf ("mvd\n");
+		Sys_MaskPrintf (SYS_DEV, "mvd\n");
 	} else {
-		Sys_Printf ("qwd\n");
+		Sys_MaskPrintf (SYS_DEV, "qwd\n");
 	}
 	CL_SetState (ca_demostart);
 	Netchan_Setup (&cls.netchan, net_from, 0, NC_QPORT_SEND);

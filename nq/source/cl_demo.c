@@ -35,6 +35,7 @@
 # include <strings.h>
 #endif
 #include <time.h>
+#include <ctype.h>
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -374,6 +375,58 @@ CL_Record (const char *argv1, int track)
 	demo_start_recording (track);
 }
 
+static int
+demo_check_dem (void)
+{
+	int         c, ret = 0;
+	uint32_t    len, bytes;
+
+	// .dem demo files begin with an ascii integer (possibly negative)
+	// representing the forced bgm track, followed by a newline
+	c = Qgetc (cls.demofile);
+	if (c == '-')
+		c = Qgetc (cls.demofile);
+	while (isdigit (c))
+		c = Qgetc (cls.demofile);
+	if (c != '\n')
+		goto done;
+
+	// After the bgm track comes the packet length plus 3 floats for view
+	// angles (not included in the packet length)
+	Qread (cls.demofile, &len, sizeof (len));
+	len = LittleLong (len);
+	if (len > MAX_DEMMSG)
+		goto done;
+	Qseek (cls.demofile, 3 * 4, SEEK_CUR);	// 3 * float (angles)
+
+	// Normally, svc_serverinfo is the first command in the packet, but some
+	// servers (eg, fitzquake) add in an svc_print command first. Allow
+	// multiple svc_print commands (but nothing else) before the svc_serverinfo
+	net_message->message->cursize = len;
+	bytes = Qread (cls.demofile, net_message->message->data, len);
+	if (bytes != len)
+		goto done;
+	MSG_BeginReading (net_message);
+	while (!ret) {
+		if (net_message->badread)
+			goto done;
+		c = MSG_ReadByte (net_message);
+		switch (c) {
+			case svc_print:
+				MSG_ReadString (net_message);
+				break;
+			case svc_serverinfo:
+				ret = 1;
+				break;
+			default:
+				goto done;
+		}
+	}
+done:
+	Qseek (cls.demofile, 0, SEEK_SET);
+	return ret;
+}
+
 static void
 CL_StartDemo (void)
 {
@@ -394,6 +447,14 @@ CL_StartDemo (void)
 		Sys_Printf ("ERROR: couldn't open.\n");
 		cls.demonum = -1;				// stop demo loop
 		dstring_delete (name);
+		return;
+	}
+	if (!demo_check_dem ()) {
+		Sys_Printf ("%s is not a valid .dem file.\n", name->str);
+		cls.demonum = -1;				// stop demo loop
+		dstring_delete (name);
+		Qclose (cls.demofile);
+		cls.demofile = 0;
 		return;
 	}
 
