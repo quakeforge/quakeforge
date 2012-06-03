@@ -34,6 +34,7 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#include <time.h>
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -270,12 +271,12 @@ CL_Record_f (void)
 		return;
 
 	c = Cmd_Argc ();
-	if (c != 2 && c != 3 && c != 4) {
-		Sys_Printf ("record <demoname> [<map> [cd track]]\n");
+	if (c > 4) {
+		Sys_Printf ("record [<demoname> [<map> [cd track]]]\n");
 		return;
 	}
 
-	if (strstr (Cmd_Argv (1), "..")) {
+	if (c >= 2 && strstr (Cmd_Argv (1), "..")) {
 		Sys_Printf ("Relative pathnames are not allowed.\n");
 		return;
 	}
@@ -300,13 +301,53 @@ CL_Record_f (void)
 	CL_Record (Cmd_Argv (1), track);
 }
 
+static dstring_t *
+demo_default_name (const char *argv1)
+{
+	dstring_t  *name;
+	const char *mapname;
+	int         mapname_len;
+	char        timestring[20];
+	time_t      tim;
+
+	name = dstring_new ();
+
+	if (argv1) {
+		dsprintf (name, "%s/%s", qfs_gamedir->dir.def, argv1);
+		return name;
+	}
+
+	// Get time to a useable format
+	time (&tim);
+	strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
+
+	// the leading path-name is to be removed from cl.worldmodel->name
+	mapname = QFS_SkipPath (cl.worldmodel->name);
+
+	// the map name is cut off after any "." because this would prevent
+	// an extension being appended
+	for (mapname_len = 0; mapname[mapname_len]; mapname_len++)
+		if (mapname[mapname_len] == '.')
+			break;
+
+	dsprintf (name, "%s/%s-%.*s", qfs_gamedir->dir.def, timestring,
+			  mapname_len, mapname);
+	return name;
+}
+
+static void
+demo_start_recording (int track)
+{
+	cls.forcetrack = track;
+	Qprintf (cls.demofile, "%i\n", cls.forcetrack);
+}
+
 void
 CL_Record (const char *argv1, int track)
 {
 	dstring_t  *name;
 
-	name = dstring_new ();
-	dsprintf (name, "%s/%s", qfs_gamedir->dir.def, argv1);
+	name = demo_default_name (argv1);
 
 	// open the demo file
 #ifdef HAVE_ZLIB
@@ -322,14 +363,15 @@ CL_Record (const char *argv1, int track)
 
 	if (!cls.demofile) {
 		Sys_Printf ("ERROR: couldn't open.\n");
-	} else {
-		Sys_Printf ("recording to %s.\n", name->str);
-		cls.demorecording = true;
-
-		cls.forcetrack = track;
-		Qprintf (cls.demofile, "%i\n", cls.forcetrack);
+		dstring_delete (name);
+		return;
 	}
+
+	Sys_Printf ("recording to %s.\n", name->str);
 	dstring_delete (name);
+	cls.demorecording = true;
+
+	demo_start_recording (track);
 }
 
 static void

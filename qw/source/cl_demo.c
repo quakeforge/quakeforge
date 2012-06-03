@@ -589,70 +589,51 @@ CL_WriteSetDemoMessage (void)
 	Qflush (cls.demofile);
 }
 
-void
-CL_Record (const char *argv1, int track)
+static dstring_t *
+demo_default_name (const char *argv1)
+{
+	dstring_t  *name;
+	const char *mapname;
+	int         mapname_len;
+	char        timestring[20];
+	time_t      tim;
+
+	name = dstring_new ();
+
+	if (argv1) {
+		dsprintf (name, "%s/%s", qfs_gamedir->dir.def, argv1);
+		return name;
+	}
+
+	// Get time to a useable format
+	time (&tim);
+	strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
+
+	// the leading path-name is to be removed from cl.worldmodel->name
+	mapname = QFS_SkipPath (cl.worldmodel->name);
+
+	// the map name is cut off after any "." because this would prevent
+	// an extension being appended
+	for (mapname_len = 0; mapname[mapname_len]; mapname_len++)
+		if (mapname[mapname_len] == '.')
+			break;
+
+	dsprintf (name, "%s/%s-%.*s", qfs_gamedir->dir.def, timestring,
+			  mapname_len, mapname);
+	return name;
+}
+
+static void
+demo_start_recording (int track)
 {
 	byte        buf_data[MAX_MSGLEN + 10];	// + 10 for header
-	dstring_t  *name;
 	char       *s;
-	char        timestring[20];
-
 	int         n, i, j;
-	size_t      k;
 	int         seq = 1;
 	entity_t   *ent;
 	entity_state_t *es, blankes;
 	player_info_t *player;
 	sizebuf_t   buf;
-	time_t      tim;
-
-	if (!argv1) {
-		char       *mapname;
-
-		// Get time to a useable format
-		time (&tim);
-		strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
-
-		// the leading path-name is to be removed from cl.worldmodel->name
-		mapname = strdup (QFS_SkipPath (cl.worldmodel->name));
-
-		// the map name is cut off after any "." because this would prevent
-		// ".qwd" from being appended
-
-		for (k = 0; k <= strlen (mapname); k++)
-			if (mapname[k] == '.')
-				mapname[k] = '\0';
-
-		name = dstring_new ();
-		dsprintf (name, "%s/%s-%s", qfs_gamedir->dir.def, timestring, mapname);
-		free (mapname);
-	} else {
-		name = dstring_new ();
-		dsprintf (name, "%s/%s", qfs_gamedir->dir.def, argv1);
-	}
-
-	// open the demo file
-#ifdef HAVE_ZLIB
-	if (demo_gzip->int_val) {
-		QFS_DefaultExtension (name, ".qwd.gz");
-		cls.demofile = QFS_WOpen (name->str, demo_gzip->int_val);
-	} else
-#endif
-	{
-		QFS_DefaultExtension (name, ".qwd");
-		cls.demofile = QFS_WOpen (name->str, 0);
-	}
-	if (!cls.demofile) {
-		Sys_Printf ("ERROR: couldn't open.\n");
-		dstring_delete (name);
-		return;
-	}
-
-	Sys_Printf ("recording to %s.\n", name->str);
-	dstring_delete (name);
-	cls.demorecording = true;
-
-/*-------------------------------------------------*/
 
 	// serverdata
 	// send the info about the new client to all connected clients
@@ -855,20 +836,6 @@ CL_Record (const char *argv1, int track)
 		}
 	}
 
-#if 0
-	MSG_WriteByte (&buf, svc_updatestatlong);
-	MSG_WriteByte (&buf, STAT_TOTALMONSTERS);
-	MSG_WriteLong (&buf, cl.stats[STAT_TOTALMONSTERS]);
-
-	MSG_WriteByte (&buf, svc_updatestatlong);
-	MSG_WriteByte (&buf, STAT_SECRETS);
-	MSG_WriteLong (&buf, cl.stats[STAT_SECRETS]);
-
-	MSG_WriteByte (&buf, svc_updatestatlong);
-	MSG_WriteByte (&buf, STAT_MONSTERS);
-	MSG_WriteLong (&buf, cl.stats[STAT_MONSTERS]);
-#endif
-
 	// get the client to check and download skins
 	// when that is completed, a begin command will be issued
 	MSG_WriteByte (&buf, svc_stufftext);
@@ -879,6 +846,38 @@ CL_Record (const char *argv1, int track)
 	CL_WriteSetDemoMessage ();
 
 	// done
+}
+
+void
+CL_Record (const char *argv1, int track)
+{
+	dstring_t  *name;
+
+	name = demo_default_name (argv1);
+
+	// open the demo file
+#ifdef HAVE_ZLIB
+	if (demo_gzip->int_val) {
+		QFS_DefaultExtension (name, ".qwd.gz");
+		cls.demofile = QFS_WOpen (name->str, demo_gzip->int_val);
+	} else
+#endif
+	{
+		QFS_DefaultExtension (name, ".qwd");
+		cls.demofile = QFS_WOpen (name->str, 0);
+	}
+
+	if (!cls.demofile) {
+		Sys_Printf ("ERROR: couldn't open.\n");
+		dstring_delete (name);
+		return;
+	}
+
+	Sys_Printf ("recording to %s.\n", name->str);
+	dstring_delete (name);
+	cls.demorecording = true;
+
+	demo_start_recording (track);
 }
 
 static void
