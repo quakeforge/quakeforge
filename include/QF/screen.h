@@ -63,7 +63,6 @@ extern struct cvar_s		*scr_viewsize;
 // only the refresh window will be updated unless these variables are flagged
 
 extern struct qpic_s *scr_ram;
-extern struct qpic_s *scr_net;
 extern struct qpic_s *scr_turtle;
 
 extern struct cvar_s *hud_fps, *hud_time;

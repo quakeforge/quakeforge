@@ -209,6 +209,7 @@ CL_ClearState (void)
 	// wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));
 	cl.chase = 1;
+	cl.watervis = 1;
 	r_data->force_fullscreen = 0;
 	r_data->lightstyle = cl.lightstyle;
 

@@ -231,6 +231,7 @@ typedef struct {
 
 	int			sv_cshifts;
 	int         chase;
+	int         watervis;
 	int         fpd;
 
 	lightstyle_t    lightstyle[MAX_LIGHTSTYLES];

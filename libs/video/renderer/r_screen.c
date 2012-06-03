@@ -101,7 +101,6 @@ int         oldsbar;
 qboolean    scr_initialized;			// ready to draw
 
 qpic_t     *scr_ram;
-qpic_t     *scr_net;
 qpic_t     *scr_turtle;
 
 int         scr_fullupdate;
@@ -368,7 +367,6 @@ SCR_Init (void)
 	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decreases the screen size");
 
 	scr_ram = vr_funcs->Draw_PicFromWad ("ram");
-	scr_net = vr_funcs->Draw_PicFromWad ("net");
 	scr_turtle = vr_funcs->Draw_PicFromWad ("turtle");
 
 	vid = *vr_data.vid;	// cache

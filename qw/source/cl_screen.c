@@ -40,20 +40,15 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
-#include "QF/dstring.h"
 #include "QF/image.h"
-#include "QF/msg.h"
 #include "QF/pcx.h"
 #include "QF/screen.h"
-#include "QF/sys.h"
-#include "QF/va.h"
 
-#include "cl_parse.h"
 #include "client.h"
 #include "clview.h"
-#include "compat.h"
 #include "sbar.h"
 
+static qpic_t  *scr_net;
 
 static void
 SCR_DrawNet (void)
@@ -64,7 +59,23 @@ SCR_DrawNet (void)
 	if (cls.demoplayback)
 		return;
 
-	//FIXME Draw_Pic (r_data->scr_vrect->x + 64, r_data->scr_vrect->y, scr_net);
+	if (!scr_net)
+		scr_net = r_funcs->Draw_PicFromWad ("net");
+
+	r_funcs->Draw_Pic (r_data->scr_vrect->x + 64, r_data->scr_vrect->y,
+					   scr_net);
+}
+
+static void
+SCR_DrawLoading (void)
+{
+	qpic_t     *pic;
+
+	if (!cl.loading)
+		return;
+	pic = r_funcs->Draw_CachePic ("gfx/loading.lmp", 1);
+	r_funcs->Draw_Pic ((r_data->vid->conwidth - pic->width) / 2,
+					   (r_data->vid->conheight - 48 - pic->height) / 2, pic);
 }
 
 static void
@@ -84,13 +95,14 @@ SCR_CShift (void)
 static SCR_Func scr_funcs_normal[] = {
 	0, //Draw_Crosshair,
 	0, //SCR_DrawRam,
-	SCR_DrawNet,
-	CL_NetGraph,
 	0, //SCR_DrawTurtle,
 	0, //SCR_DrawPause,
+	SCR_DrawNet,
+	CL_NetGraph,
 	Sbar_DrawCenterPrint,
 	Sbar_Draw,
 	Con_DrawConsole,
+	SCR_DrawLoading,
 	SCR_CShift,
 	0
 };
@@ -121,7 +133,7 @@ CL_UpdateScreen (double realtime)
 	if (index >= sizeof (scr_funcs) / sizeof (scr_funcs[0]))
 		index = 0;
 
-	// don't allow cheats in multiplayer
+	//FIXME not every time
 	if (cls.state == ca_active) {
 		if (cl.watervis)
 			r_data->min_wateralpha = 0.0;
@@ -130,8 +142,8 @@ CL_UpdateScreen (double realtime)
 	}
 	scr_funcs_normal[0] = r_funcs->Draw_Crosshair;
 	scr_funcs_normal[1] = r_funcs->SCR_DrawRam;
-	scr_funcs_normal[4] = r_funcs->SCR_DrawTurtle;
-	scr_funcs_normal[5] = r_funcs->SCR_DrawPause;
+	scr_funcs_normal[2] = r_funcs->SCR_DrawTurtle;
+	scr_funcs_normal[3] = r_funcs->SCR_DrawPause;
 
 	V_PrepBlend ();
 	r_funcs->SCR_UpdateScreen (realtime, V_RenderView, scr_funcs[index]);
