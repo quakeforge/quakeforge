@@ -218,43 +218,15 @@ push_demotime (float demotime, byte newtime)
 	cached_newtime = newtime;
 }
 
+// decide if it is time to grab the next message
 static int
-read_demopacket (void)
+check_next_demopacket (void)
 {
-	int         r;
+	byte        newtime;
+	float       demotime;
 
-	Qread (cls.demofile, &net_message->message->cursize, 4);
-	net_message->message->cursize =
-		LittleLong (net_message->message->cursize);
-	if (net_message->message->cursize > MAX_DEMMSG)
-		Host_Error ("Demo message > MAX_DEMMSG: %d/%d",
-					net_message->message->cursize, MAX_DEMMSG);
-	r = Qread (cls.demofile, net_message->message->data,
-			   net_message->message->cursize);
-	if (r != net_message->message->cursize) {
-		CL_StopPlayback ();
-		return 0;
-	}
-	return 1;
-}
-
-static int
-CL_GetDemoMessage (void)
-{
-	byte        c, newtime;
-	float       demotime, f;
-	int         r, i, j, tracknum;
-	usercmd_t  *pcmd;
-
-	if (!cls.demoplayback2)
-		nextdemotime = realtime;
-	if (realtime + 1.0 < nextdemotime)
-		realtime = nextdemotime - 1.0;
-
-nextdemomessage:
 	get_demotime (&demotime, &newtime);
 
-	// decide if it is time to grab the next message
 	if (cls.timedemo) {
 		if (cls.td_lastframe < 0)
 			cls.td_lastframe = demotime;
@@ -294,6 +266,45 @@ nextdemomessage:
 	nextdemotime = demotime;
 
 	cls.prevtime += newtime;
+	return 1;
+}
+
+static int
+read_demopacket (void)
+{
+	int         r;
+
+	Qread (cls.demofile, &net_message->message->cursize, 4);
+	net_message->message->cursize =
+		LittleLong (net_message->message->cursize);
+	if (net_message->message->cursize > MAX_DEMMSG)
+		Host_Error ("Demo message > MAX_DEMMSG: %d/%d",
+					net_message->message->cursize, MAX_DEMMSG);
+	r = Qread (cls.demofile, net_message->message->data,
+			   net_message->message->cursize);
+	if (r != net_message->message->cursize) {
+		CL_StopPlayback ();
+		return 0;
+	}
+	return 1;
+}
+
+static int
+CL_GetDemoMessage (void)
+{
+	byte        c;
+	float       f;
+	int         r, i, j, tracknum;
+	usercmd_t  *pcmd;
+
+	if (!cls.demoplayback2)
+		nextdemotime = realtime;
+	if (realtime + 1.0 < nextdemotime)
+		realtime = nextdemotime - 1.0;
+
+nextdemomessage:
+	if (!check_next_demopacket ())
+		return 0;
 
 	if (cls.state < ca_demostart)
 		Host_Error ("CL_GetDemoMessage: cls.state != ca_active");
@@ -318,7 +329,7 @@ nextdemomessage:
 			pcmd->forwardmove = LittleShort (pcmd->forwardmove);
 			pcmd->sidemove = LittleShort (pcmd->sidemove);
 			pcmd->upmove = LittleShort (pcmd->upmove);
-			cl.frames[i].senttime = demotime;
+			cl.frames[i].senttime = nextdemotime;	//FIXME was demotime
 			cl.frames[i].receivedtime = -1;	// we haven't gotten a reply yet
 			cls.netchan.outgoing_sequence++;
 			for (i = 0; i < 3; i++) {

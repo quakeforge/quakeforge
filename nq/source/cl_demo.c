@@ -150,6 +150,27 @@ CL_StopRecording (void)
 	Sys_Printf ("Completed demo\n");
 }
 
+// decide if it is time to grab the next message
+static int
+check_next_demopacket (void)
+{
+	if (cls.state == ca_active) {	// always grab until fully connected
+		if (cls.timedemo) {
+			if (host_framecount == cls.td_lastframe)
+				return 0;			// already read this frame's message
+			cls.td_lastframe = host_framecount;
+			// if this is the second frame, grab the real td_starttime
+			// so the bogus time on the first frame doesn't count
+			if (host_framecount == cls.td_startframe + 1)
+				cls.td_starttime = realtime;
+		} else if (cl.time <= cl.mtime[0]) {
+			return 0;				// don't need another message yet
+		}
+	}
+	return 1;
+}
+
+// get the next message
 static int
 read_demopacket (void)
 {
@@ -179,21 +200,8 @@ read_demopacket (void)
 static int
 CL_GetDemoMessage (void)
 {
-	// decide if it is time to grab the next message
-	if (cls.state == ca_active) {	// always grab until fully connected
-		if (cls.timedemo) {
-			if (host_framecount == cls.td_lastframe)
-				return 0;			// already read this frame's message
-			cls.td_lastframe = host_framecount;
-			// if this is the second frame, grab the real td_starttime
-			// so the bogus time on the first frame doesn't count
-			if (host_framecount == cls.td_startframe + 1)
-				cls.td_starttime = realtime;
-		} else if (cl.time <= cl.mtime[0]) {
-			return 0;				// don't need another message yet
-		}
-	}
-	// get the next message
+	if (!check_next_demopacket ())
+		return 0;
 	return read_demopacket ();
 }
 
