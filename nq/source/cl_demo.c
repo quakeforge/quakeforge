@@ -151,26 +151,11 @@ CL_StopRecording (void)
 }
 
 static int
-CL_GetDemoMessage (void)
+read_demopacket (void)
 {
 	int         i, r;
 	float       f;
 
-	// decide if it is time to grab the next message
-	if (cls.state == ca_active) {	// always grab until fully connected
-		if (cls.timedemo) {
-			if (host_framecount == cls.td_lastframe)
-				return 0;			// already read this frame's message
-			cls.td_lastframe = host_framecount;
-			// if this is the second frame, grab the real td_starttime
-			// so the bogus time on the first frame doesn't count
-			if (host_framecount == cls.td_startframe + 1)
-				cls.td_starttime = realtime;
-		} else if (cl.time <= cl.mtime[0]) {
-			return 0;				// don't need another message yet
-		}
-	}
-	// get the next message
 	Qread (cls.demofile, &net_message->message->cursize, 4);
 	net_message->message->cursize =
 		LittleLong (net_message->message->cursize);
@@ -188,8 +173,28 @@ CL_GetDemoMessage (void)
 		CL_StopPlayback ();
 		return 0;
 	}
-
 	return 1;
+}
+
+static int
+CL_GetDemoMessage (void)
+{
+	// decide if it is time to grab the next message
+	if (cls.state == ca_active) {	// always grab until fully connected
+		if (cls.timedemo) {
+			if (host_framecount == cls.td_lastframe)
+				return 0;			// already read this frame's message
+			cls.td_lastframe = host_framecount;
+			// if this is the second frame, grab the real td_starttime
+			// so the bogus time on the first frame doesn't count
+			if (host_framecount == cls.td_startframe + 1)
+				cls.td_starttime = realtime;
+		} else if (cl.time <= cl.mtime[0]) {
+			return 0;				// don't need another message yet
+		}
+	}
+	// get the next message
+	return read_demopacket ();
 }
 
 static int

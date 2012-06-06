@@ -219,6 +219,26 @@ push_demotime (float demotime, byte newtime)
 }
 
 static int
+read_demopacket (void)
+{
+	int         r;
+
+	Qread (cls.demofile, &net_message->message->cursize, 4);
+	net_message->message->cursize =
+		LittleLong (net_message->message->cursize);
+	if (net_message->message->cursize > MAX_DEMMSG)
+		Host_Error ("Demo message > MAX_DEMMSG: %d/%d",
+					net_message->message->cursize, MAX_DEMMSG);
+	r = Qread (cls.demofile, net_message->message->data,
+			   net_message->message->cursize);
+	if (r != net_message->message->cursize) {
+		CL_StopPlayback ();
+		return 0;
+	}
+	return 1;
+}
+
+static int
 CL_GetDemoMessage (void)
 {
 	byte        c, newtime;
@@ -310,20 +330,7 @@ nextdemomessage:
 		case dem_read:
 readit:
 			// get the next message
-			Qread (cls.demofile, &net_message->message->cursize, 4);
-			net_message->message->cursize =
-				LittleLong (net_message->message->cursize);
-			if (net_message->message->cursize > MAX_DEMMSG)
-				Host_Error ("Demo message > MAX_DEMMSG: %d/%d",
-							net_message->message->cursize, MAX_DEMMSG);
-			r = Qread (cls.demofile, net_message->message->data,
-					   net_message->message->cursize);
-			if (r != net_message->message->cursize) {
-				CL_StopPlayback ();
-				return 0;
-			}
-
-			if (cls.demoplayback2) {
+			if (read_demopacket () && cls.demoplayback2) {
 				tracknum = Cam_TrackNum ();
 
 				if (cls.lasttype == dem_multiple) {
