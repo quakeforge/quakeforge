@@ -162,7 +162,7 @@ check_next_demopacket (void)
 			// if this is the second frame, grab the real td_starttime
 			// so the bogus time on the first frame doesn't count
 			if (host_framecount == cls.td_startframe + 1)
-				cls.td_starttime = realtime;
+				cls.td_starttime = Sys_DoubleTime ();
 		} else if (cl.time <= cl.mtime[0]) {
 			return 0;				// don't need another message yet
 		}
@@ -552,7 +552,7 @@ CL_FinishTimeDemo (void)
 
 	// the first frame didn't count
 	frames = (host_framecount - cls.td_startframe) - 1;
-	time = realtime - cls.td_starttime;
+	time = Sys_DoubleTime () - cls.td_starttime;
 	if (!time)
 		time = 1;
 	Sys_Printf ("%i frame%s %.4g seconds %.4g fps\n", frames,
