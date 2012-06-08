@@ -488,7 +488,7 @@ CL_Stop_f (void)
 /*
 	CL_Record_f
 
-	record <demoname> <server>
+	record <demoname>
 */
 static void
 CL_Record_f (void)

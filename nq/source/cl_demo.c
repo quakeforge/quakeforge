@@ -307,8 +307,7 @@ CL_Record_f (void)
 	} else
 		track = -1;
 
-// start the map up
-//
+// start up the map
 	if (c > 2)
 		Cmd_ExecuteString (va ("map %s", Cmd_Argv (2)), src_command);
 
