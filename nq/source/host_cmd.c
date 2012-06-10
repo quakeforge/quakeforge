@@ -969,6 +969,7 @@ Host_Spawn_f (void)
 	int         i;
 	client_t   *client;
 	edict_t    *ent;
+	float      *sendangles;
 
 	if (cmd_source == src_command) {
 		Sys_Printf ("spawn is not valid from the console\n");
@@ -1059,8 +1060,9 @@ Host_Spawn_f (void)
 	// with a permanent head tilt
 	ent = EDICT_NUM (&sv_pr_state, 1 + (host_client - svs.clients));
 	MSG_WriteByte (&host_client->message, svc_setangle);
-	MSG_WriteAngle (&host_client->message, SVvector (ent, angles)[0]);
-	MSG_WriteAngle (&host_client->message, SVvector (ent, angles)[1]);
+	sendangles = sv.loadgame ? SVvector (ent, v_angle): SVvector (ent, angles);
+	MSG_WriteAngle (&host_client->message, sendangles[0]);
+	MSG_WriteAngle (&host_client->message, sendangles[1]);
 	MSG_WriteAngle (&host_client->message, 0);
 
 	SV_WriteClientdataToMessage (sv_player, &host_client->message);
