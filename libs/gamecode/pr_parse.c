@@ -125,6 +125,8 @@ ED_EntityDict (progs_t *pr, edict_t *ed)
 			ddef_t     *d = &pr->pr_fielddefs[i];
 
 			name = PR_GetString (pr, d->s_name);
+			if (!name[0])
+				continue;					// skip unnamed fields
 			if (name[strlen (name) - 2] == '_')
 				continue;					// skip _x, _y, _z vars
 
