@@ -249,24 +249,27 @@ V_ParseDamage (void)
 
 	if (cl_cshift_damage->int_val
 		|| (cl.sv_cshifts & INFO_CSHIFT_DAMAGE)) {
+		cshift_t   *cshift = &cl.cshifts[CSHIFT_DAMAGE];
 
-		cl.cshifts[CSHIFT_DAMAGE].percent += 3 * count;
-		cl.cshifts[CSHIFT_DAMAGE].percent =
-			bound (0, cl.cshifts[CSHIFT_DAMAGE].percent, 150);
+		cshift->percent += 3 * count;
+		cshift->percent =
+			bound (0, cshift->percent, 150);
 
 		if (armor > blood) {
-			cl.cshifts[CSHIFT_DAMAGE].destcolor[0] = 200;
-			cl.cshifts[CSHIFT_DAMAGE].destcolor[1] = 100;
-			cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 100;
+			cshift->destcolor[0] = 200;
+			cshift->destcolor[1] = 100;
+			cshift->destcolor[2] = 100;
 		} else if (armor) {
-			cl.cshifts[CSHIFT_DAMAGE].destcolor[0] = 220;
-			cl.cshifts[CSHIFT_DAMAGE].destcolor[1] = 50;
-			cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 50;
+			cshift->destcolor[0] = 220;
+			cshift->destcolor[1] = 50;
+			cshift->destcolor[2] = 50;
 		} else {
-			cl.cshifts[CSHIFT_DAMAGE].destcolor[0] = 255;
-			cl.cshifts[CSHIFT_DAMAGE].destcolor[1] = 0;
-			cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 0;
+			cshift->destcolor[0] = 255;
+			cshift->destcolor[1] = 0;
+			cshift->destcolor[2] = 0;
 		}
+		cshift->initialpct = cshift->percent;
+		cshift->time = cl.time;
 	}
 
 	// calculate view angle kicks
@@ -306,6 +309,8 @@ V_BonusFlash_f (void)
 		return;
 
 	cl.cshifts[CSHIFT_BONUS] = cshift_bonus;
+	cl.cshifts[CSHIFT_BONUS].initialpct = cl.cshifts[CSHIFT_BONUS].percent;
+	cl.cshifts[CSHIFT_BONUS].time = cl.time;
 }
 
 /*
@@ -421,6 +426,20 @@ V_CalcBlend (void)
 	r_data->vid->cshift_color[3] = bound (0.0, a, 1.0);
 }
 
+static void
+V_DropCShift (cshift_t *cs, float droprate)
+{
+	if (cs->time < 0) {
+		  cs->percent = 0;
+	} else {
+		cs->percent = cs->initialpct - (cl.time - cs->time) * droprate;
+		if (cs->percent  <= 0) {
+			cs->percent = 0;
+			cs->time = -1;
+		}
+	}
+}
+
 void
 V_PrepBlend (void)
 {
@@ -447,14 +466,9 @@ V_PrepBlend (void)
 	}
 
 	// drop the damage value
-	cl.cshifts[CSHIFT_DAMAGE].percent -= host_frametime * 150;
-	if (cl.cshifts[CSHIFT_DAMAGE].percent < 0)
-		cl.cshifts[CSHIFT_DAMAGE].percent = 0;
-
+	V_DropCShift (&cl.cshifts[CSHIFT_DAMAGE], 150);
 	// drop the bonus value
-	cl.cshifts[CSHIFT_BONUS].percent -= host_frametime * 100;
-	if (cl.cshifts[CSHIFT_BONUS].percent < 0)
-		cl.cshifts[CSHIFT_BONUS].percent = 0;
+	V_DropCShift (&cl.cshifts[CSHIFT_BONUS], 100);
 
 	if (!r_data->vid->cshift_changed && !r_data->vid->recalc_refdef)
 		return;
