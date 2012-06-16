@@ -943,6 +943,17 @@ demo_check_qwd_mvd (void)
 		ret = 1;
 		goto done;
 	}
+	if ((f = get_float (buf + 0)) >= 0 && !isinf (f) && !isnan (f)
+		&& buf[4] == dem_read && get_ulong (buf + 5) == 5
+		&& get_ulong (buf + 9) == 0xffffffff && buf[13] == S2C_CONNECTION) {
+		//FIXME for now, assuming this is qwd (recorded by qizmo)
+		//the particular sequence seems to be:
+		//  dem_read S2C_CONNECTION
+		//  dem_cmd
+		//  dem_read real start packet (with print, even:P)
+		ret = 1;
+		goto done;
+	}
 	if (buf[0] != 0 || (buf[1] != dem_read && buf[1] != dem_all)
 		|| (u = get_ulong (buf + 2)) > MAX_DEMMSG)
 		goto done;
