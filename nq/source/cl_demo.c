@@ -125,11 +125,10 @@ CL_StopPlayback (void)
 
 	Qclose (cls.demofile);
 	cls.demofile = NULL;
+	key_game_target = IMT_0;
 	CL_SetState (ca_disconnected);
 	cls.demo_capture = 0;
 	cls.demoplayback = 0;
-	key_game_target = IMT_0;
-	Key_SetKeyDest (key_game);
 
 	if (cls.timedemo)
 		CL_FinishTimeDemo ();
