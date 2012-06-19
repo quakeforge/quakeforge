@@ -246,7 +246,6 @@ typedef struct cl_entity_state_s {
 	vec3_t			msg_angles[2];
 	double			msgtime;
 	int				effects;
-	int				colors;
 	struct model_s	*model;
 	int				skinnum;
 	byte			alpha;
