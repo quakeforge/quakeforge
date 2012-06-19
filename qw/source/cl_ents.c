@@ -196,17 +196,50 @@ CL_TransformEntity (entity_t *ent, const vec3_t angles, qboolean force)
 }
 
 static void
+CL_ModelEffects (entity_t *ent, int num, int glow_color)
+{
+	dlight_t   *dl;
+	model_t    *model = ent->model;
+
+	if (model->flags & EF_ROCKET) {
+		dl = r_funcs->R_AllocDlight (num);
+		if (dl) {
+			VectorCopy (ent->origin, dl->origin);
+			dl->radius = 200.0;
+			dl->die = cl.time + 0.1;
+			//FIXME VectorCopy (r_firecolor->vec, dl->color);
+			VectorSet (0.9, 0.7, 0.0, dl->color);
+			dl->color[3] = 0.7;
+		}
+		r_funcs->particles->R_RocketTrail (ent);
+	} else if (model->flags & EF_GRENADE)
+		r_funcs->particles->R_GrenadeTrail (ent);
+	else if (model->flags & EF_GIB)
+		r_funcs->particles->R_BloodTrail (ent);
+	else if (model->flags & EF_ZOMGIB)
+		r_funcs->particles->R_SlightBloodTrail (ent);
+	else if (model->flags & EF_TRACER)
+		r_funcs->particles->R_WizTrail (ent);
+	else if (model->flags & EF_TRACER2)
+		r_funcs->particles->R_FlameTrail (ent);
+	else if (model->flags & EF_TRACER3)
+		r_funcs->particles->R_VoorTrail (ent);
+	else if (model->flags & EF_GLOWTRAIL)
+		if (r_funcs->particles->R_GlowTrail)
+			r_funcs->particles->R_GlowTrail (ent, glow_color);
+}
+
+static void
 CL_LinkPacketEntities (void)
 {
 	int				pnum;
-	dlight_t	   *dl;
 	entity_t	   *ent;
 	entity_state_t *s1;
 	model_t		   *model;
 	packet_entities_t *pack;
 
-	pack = &cl.frames[cls.netchan.incoming_sequence &
-					  UPDATE_MASK].packet_entities;
+	cl.link_sequence = cls.netchan.incoming_sequence;
+	pack = &cl.frames[cl.link_sequence & UPDATE_MASK].packet_entities;
 
 	for (pnum = 0; pnum < pack->num_entities; pnum++) {
 		s1 = &pack->entities[pnum];
@@ -278,12 +311,13 @@ CL_LinkPacketEntities (void)
 		if (!ent->efrag)
 			r_funcs->R_AddEfrags (ent);
 
-		if (model->flags & EF_ROTATE) {		// rotate binary objects locally
-			vec3_t      ang;
-			ang[PITCH] = 0;
-			ang[YAW] = anglemod (100 * cl.time);
-			ang[ROLL] = 0;
-			CL_TransformEntity (ent, ang, false);
+		// rotate binary objects locally
+		if (model->flags & EF_ROTATE) {
+			vec3_t      angles;
+			angles[PITCH] = 0;
+			angles[YAW] = anglemod (100 * cl.time);
+			angles[ROLL] = 0;
+			CL_TransformEntity (ent, angles, false);
 		} else {
 			CL_TransformEntity (ent, s1->angles, false);
 		}
@@ -292,32 +326,7 @@ CL_LinkPacketEntities (void)
 		if (!model->flags)
 			continue;
 
-		if (model->flags & EF_ROCKET) {
-			dl = r_funcs->R_AllocDlight (-s1->number);
-			if (dl) {
-				VectorCopy (ent->origin, dl->origin);
-				dl->radius = 200.0;
-				dl->die = cl.time + 0.1;
-				//FIXME VectorCopy (r_firecolor->vec, dl->color);
-				VectorSet (0.9, 0.7, 0.0, dl->color);
-				dl->color[3] = 0.7;
-			}
-			r_funcs->particles->R_RocketTrail (ent);
-		} else if (model->flags & EF_GRENADE)
-			r_funcs->particles->R_GrenadeTrail (ent);
-		else if (model->flags & EF_GIB)
-			r_funcs->particles->R_BloodTrail (ent);
-		else if (model->flags & EF_ZOMGIB)
-			r_funcs->particles->R_SlightBloodTrail (ent);
-		else if (model->flags & EF_TRACER)
-			r_funcs->particles->R_WizTrail (ent);
-		else if (model->flags & EF_TRACER2)
-			r_funcs->particles->R_FlameTrail (ent);
-		else if (model->flags & EF_TRACER3)
-			r_funcs->particles->R_VoorTrail (ent);
-		else if (model->flags & EF_GLOWTRAIL)
-			if (r_funcs->particles->R_GlowTrail)
-				r_funcs->particles->R_GlowTrail (ent, s1->glow_color);
+		CL_ModelEffects (ent, -s1->number, s1->glow_color);
 	}
 }
 

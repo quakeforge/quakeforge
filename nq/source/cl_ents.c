@@ -207,6 +207,40 @@ CL_TransformEntity (entity_t *ent, const vec3_t angles, qboolean force)
 	ent->transform[15] = 1;
 }
 
+static void
+CL_ModelEffects (entity_t *ent, int num, int glow_color)
+{
+	dlight_t   *dl;
+	model_t    *model = ent->model;
+
+	if (model->flags & EF_ROCKET) {
+		dl = r_funcs->R_AllocDlight (num);
+		if (dl) {
+			VectorCopy (ent->origin, dl->origin);
+			dl->radius = 200.0;
+			dl->die = cl.time + 0.1;
+			//FIXME VectorCopy (r_firecolor->vec, dl->color);
+			VectorSet (0.9, 0.7, 0.0, dl->color);
+			dl->color[3] = 0.7;
+		}
+		r_funcs->particles->R_RocketTrail (ent);
+	} else if (model->flags & EF_GRENADE)
+		r_funcs->particles->R_GrenadeTrail (ent);
+	else if (model->flags & EF_GIB)
+		r_funcs->particles->R_BloodTrail (ent);
+	else if (model->flags & EF_ZOMGIB)
+		r_funcs->particles->R_SlightBloodTrail (ent);
+	else if (model->flags & EF_TRACER)
+		r_funcs->particles->R_WizTrail (ent);
+	else if (model->flags & EF_TRACER2)
+		r_funcs->particles->R_FlameTrail (ent);
+	else if (model->flags & EF_TRACER3)
+		r_funcs->particles->R_VoorTrail (ent);
+	else if (model->flags & EF_GLOWTRAIL)
+		if (r_funcs->particles->R_GlowTrail)
+			r_funcs->particles->R_GlowTrail (ent, glow_color);
+}
+
 void
 CL_RelinkEntities (void)
 {
@@ -341,32 +375,7 @@ CL_RelinkEntities (void)
 		if (VectorDistance_fast (state->msg_origins[1], ent->origin)
 			> (256 * 256))
 			VectorCopy (ent->origin, state->msg_origins[1]);
-		if (ent->model->flags & EF_ROCKET) {
-			dl = r_funcs->R_AllocDlight (i);
-			if (dl) {
-				VectorCopy (ent->origin, dl->origin);
-				dl->radius = 200;
-				dl->die = cl.time + 0.1;
-				//FIXME VectorCopy (r_firecolor->vec, dl->color);
-				VectorSet (0.9, 0.7, 0.0, dl->color);
-				dl->color[3] = 0.7;
-			}
-			r_funcs->particles->R_RocketTrail (ent);
-		} else if (ent->model->flags & EF_GRENADE)
-			r_funcs->particles->R_GrenadeTrail (ent);
-		else if (ent->model->flags & EF_GIB)
-			r_funcs->particles->R_BloodTrail (ent);
-		else if (ent->model->flags & EF_ZOMGIB)
-			r_funcs->particles->R_SlightBloodTrail (ent);
-		else if (ent->model->flags & EF_TRACER)
-			r_funcs->particles->R_WizTrail (ent);
-		else if (ent->model->flags & EF_TRACER2)
-			r_funcs->particles->R_FlameTrail (ent);
-		else if (ent->model->flags & EF_TRACER3)
-			r_funcs->particles->R_VoorTrail (ent);
-		else if (ent->model->flags & EF_GLOWTRAIL)
-			if (r_funcs->particles->R_GlowTrail)
-				r_funcs->particles->R_GlowTrail (ent, state->glow_color);
+		CL_ModelEffects (ent, i, state->glow_color);
 
 		state->forcelink = false;
 	}
