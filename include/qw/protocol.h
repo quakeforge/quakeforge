@@ -302,9 +302,8 @@
 
 // entity_state_t is the information conveyed from the server
 // in an update message
-typedef struct {
+typedef struct entity_state_s {
 	int         number;			// edict index
-
 	unsigned int flags;			// nolerp, etc
 
 	vec3_t      origin;
@@ -312,12 +311,8 @@ typedef struct {
 	unsigned short modelindex;
 	unsigned short frame;
 	int         effects;
-	byte         colormap;
-	byte         skinnum;
-
-	struct skin_s *skin;	//FIXME this should not be here, but better state
-							//change tracking in the client is needed for this
-							//to be moved
+	byte        colormap;
+	byte        skinnum;
 
 	// QSG 2
 	byte        alpha;
@@ -325,6 +320,10 @@ typedef struct {
 	byte        glow_size;
 	byte        glow_color;
 	byte        colormod;
+
+	struct skin_s *skin;	//FIXME this should not be here, but better state
+							//change tracking in the client is needed for this
+							//to be moved
 } entity_state_t;
 
 #define	MAX_PACKET_ENTITIES			64	// doesn't count nails

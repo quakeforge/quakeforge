@@ -223,21 +223,23 @@
 
 #define MAX_CLIENTS		16
 
+// entity_state_t is the information conveyed from the server
+// in an update message
 typedef struct entity_state_s {
-	vec3_t	origin;
-	vec3_t	angles;
+	vec3_t      origin;
+	vec3_t      angles;
 	unsigned short modelindex;
 	unsigned short frame;
-	int		effects;
-	byte	colormap;
-	byte	skinnum;
+	int         effects;
+	byte        colormap;
+	byte        skinnum;
 
 	// QSG 2
-	byte	alpha;
-	byte	scale;
-	byte	glow_size;
-	byte	glow_color;
-	byte	colormod;
+	byte        alpha;
+	byte        scale;
+	byte        glow_size;
+	byte        glow_color;
+	byte        colormod;
 } entity_state_t;
 
 #endif // __protocol_h
