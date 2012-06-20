@@ -241,12 +241,36 @@ CL_ModelEffects (entity_t *ent, int num, int glow_color)
 			r_funcs->particles->R_GlowTrail (ent, glow_color);
 }
 
+static void
+CL_EntityEffects (int num, entity_t *ent, cl_entity_state_t *state)
+{
+	dlight_t   *dl;
+
+	if (state->effects & EF_BRIGHTFIELD)
+		r_funcs->particles->R_EntityParticles (ent);
+	if (state->effects & EF_MUZZLEFLASH) {
+		vec_t      *fv = ent->transform;
+
+		dl = r_funcs->R_AllocDlight (num);
+		if (dl) {
+			VectorMultAdd (ent->origin, 18, fv, dl->origin);
+			dl->origin[2] += 16;
+			dl->radius = 200 + (rand () & 31);
+			dl->die = cl.time + 0.1;
+			dl->minlight = 32;
+			dl->color[0] = 0.2;
+			dl->color[1] = 0.1;
+			dl->color[2] = 0.05;
+			dl->color[3] = 0.7;
+		}
+	}
+}
+
 void
 CL_RelinkEntities (void)
 {
 	entity_t   *ent;
 	cl_entity_state_t *state;
-	dlight_t   *dl;
 	float       bobjrotate, frac, f, d;
 	int         i, j;
 	vec3_t      delta;
@@ -352,25 +376,7 @@ CL_RelinkEntities (void)
 			angles[YAW] = bobjrotate;
 			CL_TransformEntity (ent, angles, false);
 		}
-
-		if (state->effects & EF_BRIGHTFIELD)
-			r_funcs->particles->R_EntityParticles (ent);
-		if (state->effects & EF_MUZZLEFLASH) {
-			vec_t      *fv = ent->transform;
-
-			dl = r_funcs->R_AllocDlight (i);
-			if (dl) {
-				VectorMultAdd (ent->origin, 18, fv, dl->origin);
-				dl->origin[2] += 16;
-				dl->radius = 200 + (rand () & 31);
-				dl->die = cl.time + 0.1;
-				dl->minlight = 32;
-				dl->color[0] = 0.2;
-				dl->color[1] = 0.1;
-				dl->color[2] = 0.05;
-				dl->color[3] = 0.7;
-			}
-		}
+		CL_EntityEffects (i, ent, state);
 		CL_NewDlight (i, ent->origin, state->effects, 0, 0);
 		if (VectorDistance_fast (state->msg_origins[1], ent->origin)
 			> (256 * 256))
