@@ -201,6 +201,7 @@ CL_ModelEffects (entity_t *ent, int num, int glow_color)
 	dlight_t   *dl;
 	model_t    *model = ent->model;
 
+	// add automatic particle trails
 	if (model->flags & EF_ROCKET) {
 		dl = r_funcs->R_AllocDlight (num);
 		if (dl) {
@@ -322,11 +323,8 @@ CL_LinkPacketEntities (void)
 			CL_TransformEntity (ent, s1->angles, false);
 		}
 
-		// add automatic particle trails
-		if (!model->flags)
-			continue;
-
-		CL_ModelEffects (ent, -s1->number, s1->glow_color);
+		if (model->flags & ~EF_ROTATE)
+			CL_ModelEffects (ent, -s1->number, s1->glow_color);
 	}
 }
 
