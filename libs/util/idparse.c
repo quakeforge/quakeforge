@@ -109,9 +109,19 @@ skipwhite:
 		com_token = _com_token->str;
 		return 0;
 	}
+	// skip // coments
 	if (data[0] == '/' && data[1] == '/') {
 		while (*data && *data != '\n')
 			data++;
+		goto skipwhite;
+	}
+	// skip /*..*/ comments
+	if (data[0] == '/' && data[1] == '*') {
+		data += 2;		// skip over the leading /*
+		while (data[0] && (data[0] != '*' && data[1] != '/'))
+			data++;
+		if (data[0])
+			data +=2;	// skip over the trailing */
 		goto skipwhite;
 	}
 	if (*data == '"') {
