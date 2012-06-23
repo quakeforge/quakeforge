@@ -116,15 +116,16 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 			break;
 		case QFK_BACKSPACE:
 			if (il->linepos > 1) {
-				strcpy (il->lines[il->edit_line] + il->linepos - 1,
-						il->lines[il->edit_line] + il->linepos);
+				char       *pos = il->lines[il->edit_line] + il->linepos - 1;
+				memmove (pos, pos + 1, strlen (pos + 1) + 1);
 				il->linepos--;
 			}
 			break;
 		case QFK_DELETE:
-			if (il->linepos < strlen (il->lines[il->edit_line]))
-				strcpy (il->lines[il->edit_line] + il->linepos,
-						il->lines[il->edit_line] + il->linepos + 1);
+			if (il->linepos < strlen (il->lines[il->edit_line])) {
+				char       *pos = il->lines[il->edit_line] + il->linepos;
+				memmove (pos, pos + 1, strlen (pos + 1) + 1);
+			}
 			break;
 		case QFK_RIGHT:
 			if (il->linepos < strlen (il->lines[il->edit_line]))
