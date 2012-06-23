@@ -239,8 +239,7 @@ CL_LinkPacketEntities (void)
 	model_t		   *model;
 	packet_entities_t *pack;
 
-	cl.link_sequence = cls.netchan.incoming_sequence;
-	pack = &cl.frames[cl.link_sequence & UPDATE_MASK].packet_entities;
+	pack = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK].packet_entities;
 
 	for (pnum = 0; pnum < pack->num_entities; pnum++) {
 		s1 = &pack->entities[pnum];

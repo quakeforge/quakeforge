@@ -381,7 +381,7 @@ CL_RelinkEntities (void)
 		if (VectorDistance_fast (state->msg_origins[1], ent->origin)
 			> (256 * 256))
 			VectorCopy (ent->origin, state->msg_origins[1]);
-		if (model->flags & ~EF_ROTATE)
+		if (ent->model->flags & ~EF_ROTATE)
 			CL_ModelEffects (ent, i, state->glow_color);
 
 		state->forcelink = false;
