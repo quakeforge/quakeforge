@@ -489,6 +489,7 @@ CL_SetState (cactive_t state)
 				break;
 			case ca_disconnected:
 				cls.signon = so_none;
+				cl.loading = true;
 				VID_SetCaption ("Disconnected");
 				break;
 			case ca_connected:
@@ -506,6 +507,7 @@ CL_SetState (cactive_t state)
 				S_AmbientOn ();
 				break;
 		}
+		CL_UpdateScreen (cl.time);
 	}
 	if (con_module)
 		con_module->data->console->force_commandline = (state != ca_active);

@@ -56,6 +56,11 @@ vid_render_data_t *r_data;
 vid_render_funcs_t *r_funcs;
 
 void
+CL_SetState (cactive_t state)
+{
+}
+
+void
 CL_UpdateScreen (double realtime)
 {
 }

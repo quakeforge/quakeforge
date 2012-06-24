@@ -362,9 +362,7 @@ Host_Restart_f (void)
 static void
 Host_Reconnect_f (void)
 {
-	cl.loading = true;
-	CL_UpdateScreen (cl.time);
-	cls.signon = 0;						// need new connection messages
+	CL_SetState (ca_connected);
 }
 
 /*
