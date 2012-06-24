@@ -537,7 +537,7 @@ CL_Init (cbuf_t *cbuf)
 	R_Init ();
 	r_data->lightstyle = cl.lightstyle;
 
-	S_Init (&viewentity, &host_frametime);
+	S_Init (&cl.viewentity, &host_frametime);
 
 	PI_RegisterPlugins (client_plugin_list);
 	Con_Init ("client");

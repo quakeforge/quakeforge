@@ -159,8 +159,6 @@ int         oldparsecountmod;
 int         parsecountmod;
 double      parsecounttime;
 
-int         viewentity;
-
 int         cl_spikeindex, cl_playerindex, cl_flagindex;
 int         cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
 
@@ -810,9 +808,7 @@ CL_ParseServerData (void)
 		}
 	}
 
-// FIXME: evil hack so NQ and QW can share sound code
 	cl.viewentity = cl.playernum + 1;
-	viewentity = cl.playernum + 1;
 
 	// get the full level name
 	str = MSG_ReadString (net_message);

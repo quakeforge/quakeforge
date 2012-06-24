@@ -866,8 +866,6 @@ CL_SetStat (int stat, int value)
 	if (cl_shownet->int_val == 2) \
 		Sys_Printf ("%3i:%s\n", net_message->readcount - 1, x);
 
-int viewentity;
-
 void
 CL_ParseServerMessage (void)
 {
@@ -943,7 +941,6 @@ CL_ParseServerMessage (void)
 
 			case svc_setview:
 				cl.viewentity = MSG_ReadShort (net_message);
-				viewentity = cl.viewentity; // FIXME: evil hack
 				break;
 
 			case svc_sound:

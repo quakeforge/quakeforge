@@ -1193,7 +1193,7 @@ CL_Init (void)
 		con_module->data->console->cbuf = cl_cbuf;
 	}
 
-	S_Init (&viewentity, &host_frametime);
+	S_Init (&cl.viewentity, &host_frametime);
 	CDAudio_Init ();
 
 	Sbar_Init ();
