@@ -617,7 +617,6 @@ CL_RelinkEntities (void)
 		VectorCopy (ent_colormod[new->colormod], ent->colormod);
 		ent->colormod[3] = ENTALPHA_DECODE (new->alpha);
 
-		VectorCopy (ent->origin, ent->old_origin);
 
 		if (cl_forcelink[i]) {
 			// The entity was not updated in the last message so move to the
@@ -630,9 +629,11 @@ CL_RelinkEntities (void)
 					r_funcs->R_RemoveEfrags (ent);
 				r_funcs->R_AddEfrags (ent);
 			}
+			VectorCopy (ent->origin, ent->old_origin);
 		} else {
 			// If the delta is large, assume a teleport and don't lerp
 			f = frac;
+			VectorCopy (ent->origin, ent->old_origin);
 			VectorSubtract (new->origin, old->origin, delta);
 			if (fabs (delta[0]) > 100 || fabs (delta[1] > 100)
 				|| fabs (delta[2]) > 100) {
