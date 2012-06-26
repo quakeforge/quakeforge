@@ -45,73 +45,69 @@
   to do move prediction and to generate a drawable entity
 */
 typedef struct player_state_s {
-	int			messagenum;		// all player's won't be updated each frame
+	int         messagenum;		// all player's won't be updated each frame
 
-	double		state_time;		// not the same as the packet time,
+	double      state_time;		// not the same as the packet time,
 								// because player commands come asyncronously
-	vec3_t		viewangles;		// only for demos, not from server
+	vec3_t      viewangles;		// only for demos, not from server
 
 	plent_state_t pls;
 
-	float		waterjumptime;
-	int			onground;		// -1 = in air, else pmove entity number
-	int			oldbuttons;
-	int			oldonground;
+	float       waterjumptime;
+	int         onground;		// -1 = in air, else pmove entity number
+	int         oldbuttons;
+	int         oldonground;
 
 } player_state_t;
 
-typedef struct player_info_s
-{
-	int		userid;
-	struct info_s	*userinfo;
+typedef struct player_info_s {
+	int         userid;
+	struct info_s *userinfo;
 
 	// scoreboard information
 	struct info_key_s *name;
 	struct info_key_s *team;
-	float	entertime;
-	int		frags;
-	int		ping;
-	byte	pl;
+	float       entertime;
+	int         frags;
+	int         ping;
+	byte        pl;
 
 	// skin information
-	int		topcolor;
-	int		bottomcolor;
+	int         topcolor;
+	int         bottomcolor;
 	struct info_key_s *skinname;
 	struct skin_s *skin;
 
-	int		spectator;
-	int		stats[MAX_CL_STATS];	// health, etc
-	int     prevcount;
+	int         spectator;
+	int         stats[MAX_CL_STATS];	// health, etc
+	int         prevcount;
 } player_info_t;
 
 
-typedef struct
-{
+typedef struct {
 	// generated on client side
-	usercmd_t	cmd;		// cmd that generated the frame
-	double		senttime;	// time cmd was sent off
-	int			delta_sequence;		// sequence number to delta from, -1 = full update
+	usercmd_t   cmd;		// cmd that generated the frame
+	double      senttime;	// time cmd was sent off
+	int         delta_sequence;		// sequence number to delta from, -1 = full update
 
 	// received from server
-	double		receivedtime;	// time message was received, or -1
-	player_state_t	playerstate[MAX_CLIENTS];	// message received that
+	double      receivedtime;	// time message was received, or -1
+	player_state_t playerstate[MAX_CLIENTS];	// message received that
 												// reflects performing the
 												// usercmd
-	packet_entities_t	packet_entities;
-	qboolean	invalid;		// true if the packet_entities delta was invalid
+	packet_entities_t packet_entities;
+	qboolean    invalid;		// true if the packet_entities delta was invalid
 } frame_t;
-
 
 #define	MAX_DEMOS		8
 #define	MAX_DEMONAME	16
 
-
 typedef enum {
 	ca_disconnected, 	// full screen console with no connection
 	ca_demostart,		// starting up a demo
-	ca_connected,		// netchan_t established, waiting for svc_serverdata
+	ca_connected,		// talking to a server
 	ca_onserver,		// processing data lists, donwloading, etc
-	ca_active			// everything is in, so frames can be rendered
+	ca_active,			// everything is in, so frames can be rendered
 } cactive_t;
 
 typedef enum {

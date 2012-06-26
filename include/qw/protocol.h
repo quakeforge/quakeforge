@@ -304,7 +304,7 @@
 // in an update message
 typedef struct entity_state_s {
 	int         number;			// edict index
-	unsigned int flags;			// nolerp, etc
+	unsigned    flags;			// nolerp, etc
 
 	vec3_t      origin;
 	vec3_t      angles;
