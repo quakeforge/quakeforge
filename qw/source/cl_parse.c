@@ -1006,17 +1006,17 @@ static void
 CL_ParseStartSoundPacket (void)
 {
 	float		attenuation;
-	int			channel, ent, sound_num, volume;
+	int			bits, channel, ent, sound_num, volume;
 	vec3_t		pos;
 
-	channel = MSG_ReadShort (net_message);
+	bits = MSG_ReadShort (net_message);
 
-	if (channel & SND_VOLUME)
+	if (bits & SND_VOLUME)
 		volume = MSG_ReadByte (net_message);
 	else
 		volume = DEFAULT_SOUND_PACKET_VOLUME;
 
-	if (channel & SND_ATTENUATION)
+	if (bits & SND_ATTENUATION)
 		attenuation = MSG_ReadByte (net_message) / 64.0;
 	else
 		attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
@@ -1025,8 +1025,8 @@ CL_ParseStartSoundPacket (void)
 
 	MSG_ReadCoordV (net_message, pos);
 
-	ent = (channel >> 3) & 1023;
-	channel &= 7;
+	ent = (bits >> 3) & 1023;
+	channel = bits & 7;
 
 	if (ent > MAX_EDICTS)
 		Host_Error ("CL_ParseStartSoundPacket: ent = %i", ent);
