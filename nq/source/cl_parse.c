@@ -144,20 +144,15 @@ CL_LoadSky (void)
 
 	This error checks and tracks the total number of entities
 */
-static cl_entity_state_t *
+static entity_state_t *
 CL_EntityNum (int num)
 {
 	if (num < 0 || num >= MAX_EDICTS)
 		Host_Error ("CL_EntityNum: %i is an invalid number", num);
-	if (num >= cl.num_entities) {
-		while (cl.num_entities <= num) {
-			cl_baselines[cl.num_entities].ent =
-				&cl_entities[cl.num_entities];
-			cl.num_entities++;
-		}
-	}
+	if (num >= cl.num_entities)
+		cl.num_entities = num + 1;
 
-	return &cl_baselines[num];
+	return &cl_entity_states[0][num];
 }
 
 static void
@@ -460,10 +455,9 @@ int         bitcounts[16];
 static void
 CL_ParseUpdate (int bits)
 {
-	entity_t   *ent;
-	cl_entity_state_t *state;
-	int         modnum, num, skin, i;
-	model_t    *model;
+	entity_state_t *baseline;
+	entity_state_t *state;
+	int         modnum, num, i;
 	qboolean    forcelink;
 
 	if (cls.signon == so_begin) {
@@ -489,94 +483,75 @@ CL_ParseUpdate (int bits)
 	else
 		num = MSG_ReadByte (net_message);
 
-	state = CL_EntityNum (num);
-	ent = state->ent;
+	baseline = CL_EntityNum (num);
+	state = &cl_entity_states[1 + cl.mindex][num];
 
 	for (i = 0; i < 16; i++)
 		if (bits & (1 << i))
 			bitcounts[i]++;
 
-	if (state->msgtime != cl.mtime[1])
+	if (cl_msgtime[num] != cl.mtime[1])
 		forcelink = true;				// no previous frame to lerp from
 	else
 		forcelink = false;
 
-	if (forcelink) {		// FIXME: do this right (ie, protocol support)
-		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] =
-			ent->colormod[3] = 1.0;
-		ent->scale = 1.0;
-	}
-
-	state->msgtime = cl.mtime[0];
+	cl_msgtime[num] = cl.mtime[0];
 
 	if (bits & U_MODEL) {
 		modnum = MSG_ReadByte (net_message);
 		if (modnum >= MAX_MODELS)
 			Host_Error ("CL_ParseModel: bad modnum");
 	} else
-		modnum = state->baseline.modelindex;
+		modnum = baseline->modelindex;
 
 	if (bits & U_FRAME)
-		ent->frame = MSG_ReadByte (net_message);
+		state->frame = MSG_ReadByte (net_message);
 	else
-		ent->frame = state->baseline.frame;
+		state->frame = baseline->frame;
 
 	if (bits & U_COLORMAP)
-		i = MSG_ReadByte (net_message);
+		state->colormap = MSG_ReadByte (net_message);
 	else
-		i = state->baseline.colormap;
-	if (i > cl.maxclients)
-		Sys_Error ("i > cl.maxclients");
-	ent->skin = mod_funcs->Skin_SetColormap (ent->skin, i);
+		state->colormap = baseline->colormap;
+	if (state->colormap > cl.maxclients)
+		Sys_Error ("colormap > cl.maxclients");
 
 	if (bits & U_SKIN)
-		skin = MSG_ReadByte (net_message);
+		state->skinnum = MSG_ReadByte (net_message);
 	else
-		skin = state->baseline.skinnum;
-	if (skin != ent->skinnum) {
-		ent->skinnum = skin;
-		if (num <= cl.maxclients) {
-			ent->skin = mod_funcs->Skin_SetColormap (ent->skin, num);
-			mod_funcs->Skin_SetTranslation (num, cl.scores[num].topcolor,
-											cl.scores[num].bottomcolor);
-		}
-	}
+		state->skinnum = baseline->skinnum;
 
 	if (bits & U_EFFECTS)
 		state->effects = MSG_ReadByte (net_message);
 	else
-		state->effects = state->baseline.effects;
-
-	// shift the known values for interpolation
-	VectorCopy (state->msg_origins[0], state->msg_origins[1]);
-	VectorCopy (state->msg_angles[0], state->msg_angles[1]);
+		state->effects = baseline->effects;
 
 	if (bits & U_ORIGIN1)
-		state->msg_origins[0][0] = MSG_ReadCoord (net_message);
+		state->origin[0] = MSG_ReadCoord (net_message);
 	else
-		state->msg_origins[0][0] = state->baseline.origin[0];
+		state->origin[0] = baseline->origin[0];
 	if (bits & U_ANGLE1)
-		state->msg_angles[0][0] = MSG_ReadAngle (net_message);
+		state->angles[0] = MSG_ReadAngle (net_message);
 	else
-		state->msg_angles[0][0] = state->baseline.angles[0];
+		state->angles[0] = baseline->angles[0];
 
 	if (bits & U_ORIGIN2)
-		state->msg_origins[0][1] = MSG_ReadCoord (net_message);
+		state->origin[1] = MSG_ReadCoord (net_message);
 	else
-		state->msg_origins[0][1] = state->baseline.origin[1];
+		state->origin[1] = baseline->origin[1];
 	if (bits & U_ANGLE2)
-		state->msg_angles[0][1] = MSG_ReadAngle (net_message);
+		state->angles[1] = MSG_ReadAngle (net_message);
 	else
-		state->msg_angles[0][1] = state->baseline.angles[1];
+		state->angles[1] = baseline->angles[1];
 
 	if (bits & U_ORIGIN3)
-		state->msg_origins[0][2] = MSG_ReadCoord (net_message);
+		state->origin[2] = MSG_ReadCoord (net_message);
 	else
-		state->msg_origins[0][2] = state->baseline.origin[2];
+		state->origin[2] = baseline->origin[2];
 	if (bits & U_ANGLE3)
-		state->msg_angles[0][2] = MSG_ReadAngle (net_message);
+		state->angles[2] = MSG_ReadAngle (net_message);
 	else
-		state->msg_angles[0][2] = state->baseline.angles[2];
+		state->angles[2] = baseline->angles[2];
 
 	if (bits & U_STEP)	//FIXME lerping (see fitzquake)
 		forcelink = true;
@@ -585,49 +560,36 @@ CL_ParseUpdate (int bits)
 		if (bits & U_ALPHA)
 			state->alpha = MSG_ReadByte(net_message);
 		else
-			state->alpha = state->baseline.alpha;
+			state->alpha = baseline->alpha;
 		if (bits & U_FRAME2)
-			ent->frame |= MSG_ReadByte(net_message) << 8;
+			state->frame |= MSG_ReadByte(net_message) << 8;
 		if (bits & U_MODEL2)
 			modnum |= MSG_ReadByte(net_message) << 8;
 		if (bits & U_LERPFINISH) {
 			MSG_ReadByte (net_message); //FIXME ignored for now. see fitzquake
 		}
 	} else {
-		state->alpha = state->baseline.alpha;
-		state->scale = state->baseline.scale;
-		state->glow_size = state->baseline.glow_size;
-		state->glow_color = state->baseline.glow_color;
-		state->colormod = state->baseline.colormod;
+		state->alpha = baseline->alpha;
+		state->scale = baseline->scale;
+		state->glow_size = baseline->glow_size;
+		state->glow_color = baseline->glow_color;
+		state->colormod = baseline->colormod;
 	}
 
-	model = cl.model_precache[modnum];
-	if (model != ent->model) {
-		ent->model = model;
-		// automatic animation (torches, etc) can be either all together
-		// or randomized
-		if (model) {
-			if (model->synctype == ST_RAND)
-				ent->syncbase = (float) (rand () & 0x7fff) / 0x7fff;
-			else
-				ent->syncbase = 0.0;
-		} else
-			forcelink = true;		// hack to make null model players work
-		if (num >= 0 && num <= cl.maxclients)
-			ent->skin = mod_funcs->Skin_SetColormap (ent->skin, num);
-	}
+	state->modelindex = modnum;
 
 	if (forcelink) {					// didn't have an update last message
-		VectorCopy (state->msg_origins[0], state->msg_origins[1]);
-		VectorCopy (state->msg_origins[0], ent->origin);
-		VectorCopy (state->msg_angles[0], state->msg_angles[1]);
-		CL_TransformEntity (ent, state->msg_angles[0], true);
-		state->forcelink = true;
+		//VectorCopy (state->msg_origins[0], state->msg_origins[1]);
+		//VectorCopy (state->msg_origins[0], ent->origin);
+		//VectorCopy (state->msg_angles[0], state->msg_angles[1]);
+		//CL_TransformEntity (ent, state->msg_angles[0], true);
+		//state->forcelink = true;
+		cl_forcelink[num] = true;
 	}
 }
 
 static void
-CL_ParseBaseline (cl_entity_state_t *state, int version)
+CL_ParseBaseline (entity_state_t *baseline, int version)
 {
 	int         bits = 0;
 
@@ -635,29 +597,28 @@ CL_ParseBaseline (cl_entity_state_t *state, int version)
 		bits = MSG_ReadByte (net_message);
 
 	if (bits & B_LARGEMODEL)
-		state->baseline.modelindex = MSG_ReadShort (net_message);
+		baseline->modelindex = MSG_ReadShort (net_message);
 	else
-		state->baseline.modelindex = MSG_ReadByte (net_message);
+		baseline->modelindex = MSG_ReadByte (net_message);
 
 	if (bits & B_LARGEFRAME)
-		state->baseline.frame = MSG_ReadShort (net_message);
+		baseline->frame = MSG_ReadShort (net_message);
 	else
-		state->baseline.frame = MSG_ReadByte (net_message);
+		baseline->frame = MSG_ReadByte (net_message);
 
-	state->baseline.colormap = MSG_ReadByte (net_message);
-	state->baseline.skinnum = MSG_ReadByte (net_message);
+	baseline->colormap = MSG_ReadByte (net_message);
+	baseline->skinnum = MSG_ReadByte (net_message);
 
-	MSG_ReadCoordAngleV (net_message, state->baseline.origin,
-						 state->baseline.angles);
+	MSG_ReadCoordAngleV (net_message, baseline->origin, baseline->angles);
 
 	if (bits & B_ALPHA)
-		state->baseline.alpha = MSG_ReadByte (net_message);
+		baseline->alpha = MSG_ReadByte (net_message);
 	else
-		state->baseline.alpha = 255;//FIXME alpha
-	state->baseline.scale = 16;
-	state->baseline.glow_size = 0;
-	state->baseline.glow_color = 254;
-	state->baseline.colormod = 255;
+		baseline->alpha = 255;//FIXME alpha
+	baseline->scale = 16;
+	baseline->glow_size = 0;
+	baseline->glow_color = 254;
+	baseline->colormod = 255;
 }
 
 /*
@@ -805,34 +766,25 @@ CL_ParseClientdata (void)
 static void
 CL_ParseStatic (int version)
 {
-	cl_entity_state_t state;
+	entity_state_t baseline;
 	entity_t   *ent;
 
 	ent = r_funcs->R_AllocEntity ();
 	CL_Init_Entity (ent);
 
-	CL_ParseBaseline (&state, version);
+	CL_ParseBaseline (&baseline, version);
 
 	// copy it to the current state
 	//FIXME alpha & lerp
-	ent->model = cl.model_precache[state.baseline.modelindex];
-	ent->frame = state.baseline.frame;
+	ent->model = cl.model_precache[baseline.modelindex];
+	ent->frame = baseline.frame;
 	ent->skin = 0;
-	ent->skinnum = state.baseline.skinnum;
-	if (state.baseline.colormod == 255) {
-		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
-	} else {
-		ent->colormod[0] = ((float) ((state.baseline.colormod >> 5) & 7)) *
-			(1.0 / 7.0);
-		ent->colormod[1] = ((float) ((state.baseline.colormod >> 2) & 7)) *
-			(1.0 / 7.0);
-		ent->colormod[2] = ((float) (state.baseline.colormod & 3)) *
-			(1.0 / 3.0);
-	}
-	ent->colormod[3] = ENTALPHA_DECODE (state.baseline.alpha);
-	ent->scale = state.baseline.scale / 16.0;
-	VectorCopy (state.baseline.origin, ent->origin);
-	CL_TransformEntity (ent, state.baseline.angles, true);
+	ent->skinnum = baseline.skinnum;
+	VectorCopy (ent_colormod[baseline.colormod], ent->colormod);
+	ent->colormod[3] = ENTALPHA_DECODE (baseline.alpha);
+	ent->scale = baseline.scale / 16.0;
+	VectorCopy (baseline.origin, ent->origin);
+	CL_TransformEntity (ent, baseline.angles, true);
 
 	r_funcs->R_AddEfrags (ent);
 }
@@ -950,6 +902,7 @@ CL_ParseServerMessage (void)
 			case svc_time:
 				cl.mtime[1] = cl.mtime[0];
 				cl.mtime[0] = MSG_ReadFloat (net_message);
+				cl.mindex = !cl.mindex;
 				break;
 
 			case svc_print:

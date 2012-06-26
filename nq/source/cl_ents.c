@@ -51,10 +51,269 @@
 #include "host.h"
 #include "server.h"
 
-// FIXME: put these on hunk?
-entity_t    cl_entities[MAX_EDICTS];
-cl_entity_state_t    cl_baselines[MAX_EDICTS];
+entity_t        cl_entities[MAX_EDICTS];
+entity_state_t  cl_entity_states[3][MAX_EDICTS];
+double          cl_msgtime[MAX_EDICTS];
+byte            cl_forcelink[MAX_EDICTS];
 
+vec3_t ent_colormod[256] = {
+	{0, 0, 0},
+	{0, 0, 0.333333},
+	{0, 0, 0.666667},
+	{0, 0, 1},
+	{0, 0.142857, 0},
+	{0, 0.142857, 0.333333},
+	{0, 0.142857, 0.666667},
+	{0, 0.142857, 1},
+	{0, 0.285714, 0},
+	{0, 0.285714, 0.333333},
+	{0, 0.285714, 0.666667},
+	{0, 0.285714, 1},
+	{0, 0.428571, 0},
+	{0, 0.428571, 0.333333},
+	{0, 0.428571, 0.666667},
+	{0, 0.428571, 1},
+	{0, 0.571429, 0},
+	{0, 0.571429, 0.333333},
+	{0, 0.571429, 0.666667},
+	{0, 0.571429, 1},
+	{0, 0.714286, 0},
+	{0, 0.714286, 0.333333},
+	{0, 0.714286, 0.666667},
+	{0, 0.714286, 1},
+	{0, 0.857143, 0},
+	{0, 0.857143, 0.333333},
+	{0, 0.857143, 0.666667},
+	{0, 0.857143, 1},
+	{0, 1, 0},
+	{0, 1, 0.333333},
+	{0, 1, 0.666667},
+	{0, 1, 1},
+	{0.142857, 0, 0},
+	{0.142857, 0, 0.333333},
+	{0.142857, 0, 0.666667},
+	{0.142857, 0, 1},
+	{0.142857, 0.142857, 0},
+	{0.142857, 0.142857, 0.333333},
+	{0.142857, 0.142857, 0.666667},
+	{0.142857, 0.142857, 1},
+	{0.142857, 0.285714, 0},
+	{0.142857, 0.285714, 0.333333},
+	{0.142857, 0.285714, 0.666667},
+	{0.142857, 0.285714, 1},
+	{0.142857, 0.428571, 0},
+	{0.142857, 0.428571, 0.333333},
+	{0.142857, 0.428571, 0.666667},
+	{0.142857, 0.428571, 1},
+	{0.142857, 0.571429, 0},
+	{0.142857, 0.571429, 0.333333},
+	{0.142857, 0.571429, 0.666667},
+	{0.142857, 0.571429, 1},
+	{0.142857, 0.714286, 0},
+	{0.142857, 0.714286, 0.333333},
+	{0.142857, 0.714286, 0.666667},
+	{0.142857, 0.714286, 1},
+	{0.142857, 0.857143, 0},
+	{0.142857, 0.857143, 0.333333},
+	{0.142857, 0.857143, 0.666667},
+	{0.142857, 0.857143, 1},
+	{0.142857, 1, 0},
+	{0.142857, 1, 0.333333},
+	{0.142857, 1, 0.666667},
+	{0.142857, 1, 1},
+	{0.285714, 0, 0},
+	{0.285714, 0, 0.333333},
+	{0.285714, 0, 0.666667},
+	{0.285714, 0, 1},
+	{0.285714, 0.142857, 0},
+	{0.285714, 0.142857, 0.333333},
+	{0.285714, 0.142857, 0.666667},
+	{0.285714, 0.142857, 1},
+	{0.285714, 0.285714, 0},
+	{0.285714, 0.285714, 0.333333},
+	{0.285714, 0.285714, 0.666667},
+	{0.285714, 0.285714, 1},
+	{0.285714, 0.428571, 0},
+	{0.285714, 0.428571, 0.333333},
+	{0.285714, 0.428571, 0.666667},
+	{0.285714, 0.428571, 1},
+	{0.285714, 0.571429, 0},
+	{0.285714, 0.571429, 0.333333},
+	{0.285714, 0.571429, 0.666667},
+	{0.285714, 0.571429, 1},
+	{0.285714, 0.714286, 0},
+	{0.285714, 0.714286, 0.333333},
+	{0.285714, 0.714286, 0.666667},
+	{0.285714, 0.714286, 1},
+	{0.285714, 0.857143, 0},
+	{0.285714, 0.857143, 0.333333},
+	{0.285714, 0.857143, 0.666667},
+	{0.285714, 0.857143, 1},
+	{0.285714, 1, 0},
+	{0.285714, 1, 0.333333},
+	{0.285714, 1, 0.666667},
+	{0.285714, 1, 1},
+	{0.428571, 0, 0},
+	{0.428571, 0, 0.333333},
+	{0.428571, 0, 0.666667},
+	{0.428571, 0, 1},
+	{0.428571, 0.142857, 0},
+	{0.428571, 0.142857, 0.333333},
+	{0.428571, 0.142857, 0.666667},
+	{0.428571, 0.142857, 1},
+	{0.428571, 0.285714, 0},
+	{0.428571, 0.285714, 0.333333},
+	{0.428571, 0.285714, 0.666667},
+	{0.428571, 0.285714, 1},
+	{0.428571, 0.428571, 0},
+	{0.428571, 0.428571, 0.333333},
+	{0.428571, 0.428571, 0.666667},
+	{0.428571, 0.428571, 1},
+	{0.428571, 0.571429, 0},
+	{0.428571, 0.571429, 0.333333},
+	{0.428571, 0.571429, 0.666667},
+	{0.428571, 0.571429, 1},
+	{0.428571, 0.714286, 0},
+	{0.428571, 0.714286, 0.333333},
+	{0.428571, 0.714286, 0.666667},
+	{0.428571, 0.714286, 1},
+	{0.428571, 0.857143, 0},
+	{0.428571, 0.857143, 0.333333},
+	{0.428571, 0.857143, 0.666667},
+	{0.428571, 0.857143, 1},
+	{0.428571, 1, 0},
+	{0.428571, 1, 0.333333},
+	{0.428571, 1, 0.666667},
+	{0.428571, 1, 1},
+	{0.571429, 0, 0},
+	{0.571429, 0, 0.333333},
+	{0.571429, 0, 0.666667},
+	{0.571429, 0, 1},
+	{0.571429, 0.142857, 0},
+	{0.571429, 0.142857, 0.333333},
+	{0.571429, 0.142857, 0.666667},
+	{0.571429, 0.142857, 1},
+	{0.571429, 0.285714, 0},
+	{0.571429, 0.285714, 0.333333},
+	{0.571429, 0.285714, 0.666667},
+	{0.571429, 0.285714, 1},
+	{0.571429, 0.428571, 0},
+	{0.571429, 0.428571, 0.333333},
+	{0.571429, 0.428571, 0.666667},
+	{0.571429, 0.428571, 1},
+	{0.571429, 0.571429, 0},
+	{0.571429, 0.571429, 0.333333},
+	{0.571429, 0.571429, 0.666667},
+	{0.571429, 0.571429, 1},
+	{0.571429, 0.714286, 0},
+	{0.571429, 0.714286, 0.333333},
+	{0.571429, 0.714286, 0.666667},
+	{0.571429, 0.714286, 1},
+	{0.571429, 0.857143, 0},
+	{0.571429, 0.857143, 0.333333},
+	{0.571429, 0.857143, 0.666667},
+	{0.571429, 0.857143, 1},
+	{0.571429, 1, 0},
+	{0.571429, 1, 0.333333},
+	{0.571429, 1, 0.666667},
+	{0.571429, 1, 1},
+	{0.714286, 0, 0},
+	{0.714286, 0, 0.333333},
+	{0.714286, 0, 0.666667},
+	{0.714286, 0, 1},
+	{0.714286, 0.142857, 0},
+	{0.714286, 0.142857, 0.333333},
+	{0.714286, 0.142857, 0.666667},
+	{0.714286, 0.142857, 1},
+	{0.714286, 0.285714, 0},
+	{0.714286, 0.285714, 0.333333},
+	{0.714286, 0.285714, 0.666667},
+	{0.714286, 0.285714, 1},
+	{0.714286, 0.428571, 0},
+	{0.714286, 0.428571, 0.333333},
+	{0.714286, 0.428571, 0.666667},
+	{0.714286, 0.428571, 1},
+	{0.714286, 0.571429, 0},
+	{0.714286, 0.571429, 0.333333},
+	{0.714286, 0.571429, 0.666667},
+	{0.714286, 0.571429, 1},
+	{0.714286, 0.714286, 0},
+	{0.714286, 0.714286, 0.333333},
+	{0.714286, 0.714286, 0.666667},
+	{0.714286, 0.714286, 1},
+	{0.714286, 0.857143, 0},
+	{0.714286, 0.857143, 0.333333},
+	{0.714286, 0.857143, 0.666667},
+	{0.714286, 0.857143, 1},
+	{0.714286, 1, 0},
+	{0.714286, 1, 0.333333},
+	{0.714286, 1, 0.666667},
+	{0.714286, 1, 1},
+	{0.857143, 0, 0},
+	{0.857143, 0, 0.333333},
+	{0.857143, 0, 0.666667},
+	{0.857143, 0, 1},
+	{0.857143, 0.142857, 0},
+	{0.857143, 0.142857, 0.333333},
+	{0.857143, 0.142857, 0.666667},
+	{0.857143, 0.142857, 1},
+	{0.857143, 0.285714, 0},
+	{0.857143, 0.285714, 0.333333},
+	{0.857143, 0.285714, 0.666667},
+	{0.857143, 0.285714, 1},
+	{0.857143, 0.428571, 0},
+	{0.857143, 0.428571, 0.333333},
+	{0.857143, 0.428571, 0.666667},
+	{0.857143, 0.428571, 1},
+	{0.857143, 0.571429, 0},
+	{0.857143, 0.571429, 0.333333},
+	{0.857143, 0.571429, 0.666667},
+	{0.857143, 0.571429, 1},
+	{0.857143, 0.714286, 0},
+	{0.857143, 0.714286, 0.333333},
+	{0.857143, 0.714286, 0.666667},
+	{0.857143, 0.714286, 1},
+	{0.857143, 0.857143, 0},
+	{0.857143, 0.857143, 0.333333},
+	{0.857143, 0.857143, 0.666667},
+	{0.857143, 0.857143, 1},
+	{0.857143, 1, 0},
+	{0.857143, 1, 0.333333},
+	{0.857143, 1, 0.666667},
+	{0.857143, 1, 1},
+	{1, 0, 0},
+	{1, 0, 0.333333},
+	{1, 0, 0.666667},
+	{1, 0, 1},
+	{1, 0.142857, 0},
+	{1, 0.142857, 0.333333},
+	{1, 0.142857, 0.666667},
+	{1, 0.142857, 1},
+	{1, 0.285714, 0},
+	{1, 0.285714, 0.333333},
+	{1, 0.285714, 0.666667},
+	{1, 0.285714, 1},
+	{1, 0.428571, 0},
+	{1, 0.428571, 0.333333},
+	{1, 0.428571, 0.666667},
+	{1, 0.428571, 1},
+	{1, 0.571429, 0},
+	{1, 0.571429, 0.333333},
+	{1, 0.571429, 0.666667},
+	{1, 0.571429, 1},
+	{1, 0.714286, 0},
+	{1, 0.714286, 0.333333},
+	{1, 0.714286, 0.666667},
+	{1, 0.714286, 1},
+	{1, 0.857143, 0},
+	{1, 0.857143, 0.333333},
+	{1, 0.857143, 0.666667},
+	{1, 0.857143, 1},
+	{1, 1, 0},
+	{1, 1, 0.333333},
+	{1, 1, 0.666667},
+	{1, 1, 1}
+};
 
 void
 CL_ClearEnts (void)
@@ -63,12 +322,12 @@ CL_ClearEnts (void)
 
 	// clear other arrays
 	memset (cl_entities, 0, sizeof (cl_entities));
-	memset (cl_baselines, 0, sizeof (cl_baselines));
+	memset (cl_entity_states, 0, sizeof (cl_entity_states));
+	memset (cl_msgtime, 0, sizeof (cl_msgtime));
+	memset (cl_forcelink, 0, sizeof (cl_forcelink));
 
-	for (i = 0; i < MAX_EDICTS; i++) {
-		cl_baselines[i].ent = &cl_entities[i];
+	for (i = 0; i < MAX_EDICTS; i++)
 		CL_Init_Entity (cl_entities + i);
-	}
 }
 
 static void
@@ -242,7 +501,7 @@ CL_ModelEffects (entity_t *ent, int num, int glow_color)
 }
 
 static void
-CL_EntityEffects (int num, entity_t *ent, cl_entity_state_t *state)
+CL_EntityEffects (int num, entity_t *ent, entity_state_t *state)
 {
 	dlight_t   *dl;
 
@@ -266,11 +525,30 @@ CL_EntityEffects (int num, entity_t *ent, cl_entity_state_t *state)
 	}
 }
 
+static void
+set_entity_model (entity_t *ent, int modelindex)
+{
+	int         i = ent - cl_entities;
+	ent->model = cl.model_precache[modelindex];
+	// automatic animation (torches, etc) can be either all together
+	// or randomized
+	if (ent->model) {
+		if (ent->model->synctype == ST_RAND)
+			ent->syncbase = (float) (rand () & 0x7fff) / 0x7fff;
+		else
+			ent->syncbase = 0.0;
+	} else {
+		cl_forcelink[i] = true;	// hack to make null model players work
+	}
+	if (i <= cl.maxclients)
+		ent->skin = mod_funcs->Skin_SetColormap (ent->skin, i);
+}
+
 void
 CL_RelinkEntities (void)
 {
 	entity_t   *ent;
-	cl_entity_state_t *state;
+	entity_state_t *new, *old;
 	float       bobjrotate, frac, f, d;
 	int         i, j;
 	vec3_t      delta;
@@ -300,15 +578,12 @@ CL_RelinkEntities (void)
 	bobjrotate = anglemod (100 * cl.time);
 
 	// start on the entity after the world
-	for (i = 1, state = cl_baselines + 1; i < cl.num_entities; i++, state++) {
-		ent = state->ent;
-		if (!ent->model) {				// empty slot
-			if (ent->efrag)
-				r_funcs->R_RemoveEfrags (ent);	// just became empty
-			continue;
-		}
+	for (i = 1; i < cl.num_entities; i++) {
+		new = &cl_entity_states[1 + cl.mindex][i];
+		old = &cl_entity_states[2 - cl.mindex][i];
+		ent = &cl_entities[i];
 		// if the object wasn't included in the last packet, remove it
-		if (state->msgtime != cl.mtime[0]) {
+		if (cl_msgtime[i] != cl.mtime[0] || !new->modelindex) {
 			ent->model = NULL;
 			ent->pose1 = ent->pose2 = -1;
 			if (ent->efrag)
@@ -316,11 +591,32 @@ CL_RelinkEntities (void)
 			continue;
 		}
 
-		ent->colormod[3] = ENTALPHA_DECODE (state->alpha);
+		if (cl_forcelink[i] || new->modelindex != old->modelindex) {
+			old->modelindex = new->modelindex;
+			set_entity_model (ent, new->modelindex);
+		}
+		ent->frame = new->frame;
+		if (cl_forcelink[i] || new->colormod != old->colormod) {
+			old->colormod = new->colormod;
+			ent->skin = mod_funcs->Skin_SetColormap (ent->skin, new->colormod);
+		}
+		if (cl_forcelink[i] || new->skinnum != old->skinnum) {
+			old->skinnum = new->skinnum;
+			ent->skinnum = new->skinnum;
+			if (i <= cl.maxclients) {
+				ent->skin = mod_funcs->Skin_SetColormap (ent->skin, i);
+				mod_funcs->Skin_SetTranslation (i, cl.scores[i].topcolor,
+												cl.scores[i].bottomcolor);
+			}
+		}
+		ent->scale = new->scale;
+
+		VectorCopy (ent_colormod[new->colormod], ent->colormod);
+		ent->colormod[3] = ENTALPHA_DECODE (new->alpha);
 
 		VectorCopy (ent->origin, ent->old_origin);
 
-		if (state->forcelink) {
+		if (cl_forcelink[i]) {
 			// The entity was not updated in the last message so move to the
 			// final spot
 			if (i != cl.viewentity || chase_active->int_val) {
@@ -331,29 +627,27 @@ CL_RelinkEntities (void)
 		} else {
 			// If the delta is large, assume a teleport and don't lerp
 			f = frac;
-			VectorSubtract (state->msg_origins[0],
-							state->msg_origins[1], delta);
+			VectorSubtract (new->origin, old->origin, delta);
 			if (fabs (delta[0]) > 100 || fabs (delta[1] > 100)
 				|| fabs (delta[2]) > 100) {
 				// assume a teleportation, not a motion
-				VectorCopy (state->msg_origins[0], ent->origin);
+				VectorCopy (new->origin, ent->origin);
 				if (!(ent->model->flags & EF_ROTATE))
-					CL_TransformEntity (ent, state->msg_angles[0], true);
+					CL_TransformEntity (ent, new->angles, true);
 				ent->pose1 = ent->pose2 = -1;
 			} else {
 				vec3_t      angles, d;
 				// interpolate the origin and angles
-				VectorMultAdd (state->msg_origins[1], f, delta, ent->origin);
+				VectorMultAdd (old->origin, f, delta, ent->origin);
 				if (!(ent->model->flags & EF_ROTATE)) {
-					VectorSubtract (state->msg_angles[0],
-									state->msg_angles[1], d);
+					VectorSubtract (new->angles, old->angles, d);
 					for (j = 0; j < 3; j++) {
 						if (d[j] > 180)
 							d[j] -= 360;
 						else if (d[j] < -180)
 							d[j] += 360;
 					}
-					VectorMultAdd (state->msg_angles[1], f, d, angles);
+					VectorMultAdd (old->angles, f, d, angles);
 					CL_TransformEntity (ent, angles, false);
 				}
 			}
@@ -372,18 +666,17 @@ CL_RelinkEntities (void)
 		// rotate binary objects locally
 		if (ent->model->flags & EF_ROTATE) {
 			vec3_t      angles;
-			VectorCopy (state->msg_angles[0], angles);
+			VectorCopy (new->angles, angles);
 			angles[YAW] = bobjrotate;
 			CL_TransformEntity (ent, angles, false);
 		}
-		CL_EntityEffects (i, ent, state);
-		CL_NewDlight (i, ent->origin, state->effects, 0, 0);
-		if (VectorDistance_fast (state->msg_origins[1], ent->origin)
-			> (256 * 256))
-			VectorCopy (ent->origin, state->msg_origins[1]);
+		CL_EntityEffects (i, ent, new);
+		CL_NewDlight (i, ent->origin, new->effects, 0, 0);
+		if (VectorDistance_fast (old->origin, ent->origin) > (256 * 256))
+			VectorCopy (ent->origin, old->origin);
 		if (ent->model->flags & ~EF_ROTATE)
-			CL_ModelEffects (ent, i, state->glow_color);
+			CL_ModelEffects (ent, i, new->glow_color);
 
-		state->forcelink = false;
+		cl_forcelink[i] = false;
 	}
 }

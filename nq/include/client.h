@@ -160,6 +160,7 @@ typedef struct {
 // server each frame.  The server sets punchangle when the view is temporarily
 // offset, and an angle reset commands at the start of each level and after
 // teleporting.
+	int         mindex;
 	vec3_t      mviewangles[2];	// During demo playback viewangles is lerped
 								// between these
 	vec3_t      viewangles;
@@ -227,25 +228,6 @@ typedef struct {
 	lightstyle_t lightstyle[MAX_LIGHTSTYLES];
 } client_state_t;
 
-
-typedef struct cl_entity_state_s {
-	entity_t		*ent;
-	entity_state_t	baseline;
-	int				forcelink;
-	vec3_t			msg_origins[2];
-	vec3_t			msg_angles[2];
-	double			msgtime;
-	int				effects;
-	struct model_s	*model;
-	int				skinnum;
-	byte			alpha;
-	byte			scale;
-	byte			colormod;
-	byte			glow_size;
-	byte			glow_color;
-} cl_entity_state_t;
-
-
 // cvars
 extern struct cvar_s	*cl_name;
 extern struct cvar_s	*cl_color;
@@ -290,8 +272,11 @@ extern struct cvar_s	*noskins;
 extern	client_state_t	cl;
 
 // FIXME, allocate dynamically
-extern	entity_t		cl_entities[MAX_EDICTS];
-extern	cl_entity_state_t	cl_baselines[MAX_EDICTS];
+extern entity_t cl_entities[MAX_EDICTS];
+extern entity_state_t cl_entity_states[3][MAX_EDICTS];
+extern double cl_msgtime[MAX_EDICTS];
+extern byte cl_forcelink[MAX_EDICTS];
+extern vec3_t ent_colormod[256];
 
 extern int fps_count;
 
