@@ -1150,7 +1150,7 @@ CL_ParseServerMessage (void)
 
 			case svc_cdtrack:
 				cl.cdtrack = MSG_ReadByte (net_message);
-				cl.looptrack = MSG_ReadByte (net_message);
+				MSG_ReadByte (net_message);	// looptrack (not used)
 				if ((cls.demoplayback || cls.demorecording)
 					&& (cls.forcetrack != -1))
 					CDAudio_Play ((byte) cls.forcetrack, true);

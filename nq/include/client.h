@@ -223,7 +223,7 @@ typedef struct {
 	int         num_entities;	// held in cl_entities array
 	entity_t    viewent;		// the weapon model
 
-	int         cdtrack, looptrack;		// cd audio
+	int         cdtrack;		// cd audio
 
 // frag scoreboard
 	scoreboard_t *scores;		// [cl.maxclients]
