@@ -870,6 +870,7 @@ CL_ParseSoundlist (void)
 			Host_Error ("Server sent too many sound_precache");
 		strcpy (cl.sound_name[cl.numsounds], str);
 	}
+	cl.numsounds++;
 
 	n = MSG_ReadByte (net_message);
 
