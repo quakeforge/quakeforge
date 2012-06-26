@@ -581,7 +581,7 @@ V_CalcViewRoll (void)
 {
 	float       side;
 	vec_t      *angles = cl_entities[cl.viewentity].angles;
-	vec_t      *velocity = cl_entities[cl.viewentity].angles;
+	vec_t      *velocity = cl.velocity;
 
 	side = V_CalcRoll (angles, velocity);
 	r_data->refdef->viewangles[ROLL] += side;
