@@ -591,6 +591,9 @@ CL_RelinkEntities (void)
 			continue;
 		}
 
+		if (cl_forcelink[i])
+			*old = *new;
+
 		if (cl_forcelink[i] || new->modelindex != old->modelindex) {
 			old->modelindex = new->modelindex;
 			set_entity_model (ent, new->modelindex);
@@ -619,6 +622,9 @@ CL_RelinkEntities (void)
 		if (cl_forcelink[i]) {
 			// The entity was not updated in the last message so move to the
 			// final spot
+			VectorCopy (new->origin, ent->origin);
+			if (!(ent->model->flags & EF_ROTATE))
+				CL_TransformEntity (ent, new->angles, true);
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->efrag)
 					r_funcs->R_RemoveEfrags (ent);

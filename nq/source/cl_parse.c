@@ -553,8 +553,8 @@ CL_ParseUpdate (int bits)
 	else
 		state->angles[2] = baseline->angles[2];
 
-	if (bits & U_STEP)	//FIXME lerping (see fitzquake)
-		forcelink = true;
+//	if (bits & U_STEP)	//FIXME lerping (see fitzquake)
+//		forcelink = true;
 
 	if (cl.protocol == PROTOCOL_FITZQUAKE) {
 		if (bits & U_ALPHA)
