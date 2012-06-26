@@ -99,28 +99,26 @@ typedef enum {
 */
 typedef struct {
 // connection information
-	cactive_t	state;
+	cactive_t   state;
 	signon_t    signon;
 
 // network stuff
-	struct qsocket_s	*netcon;
-	sizebuf_t	message;		// writing buffer to send to server
+	struct qsocket_s *netcon;
+	sizebuf_t   message;		// writing buffer to send to server
 
 // demo loop control
-	int			demonum;		// -1 = don't play demos
-	char		demos[MAX_DEMOS][MAX_DEMONAME];		// when not playing
+	int         demonum;		// -1 = don't play demos
+	char        demos[MAX_DEMOS][MAX_DEMONAME];		// when not playing
 
-// demo recording info must be here, because record is started before
-// entering a map (and clearing client_state_t)
-	qboolean	demorecording;
-	qboolean	demo_capture;
-	qboolean	demoplayback;
-	qboolean	timedemo;
-	int			forcetrack;			// -1 = use normal cd track
-	QFile		*demofile;
-	int			td_lastframe;		// to meter out one message a frame
-	int			td_startframe;		// host_framecount at start
-	float		td_starttime;		// realtime at second frame of timedemo
+	QFile      *demofile;
+	qboolean    demorecording;
+	qboolean    demo_capture;
+	qboolean    demoplayback;
+	int         forcetrack;			// -1 = use normal cd track
+	qboolean    timedemo;
+	int         td_lastframe;		// to meter out one message a frame
+	int         td_startframe;		// host_framecount at start
+	float       td_starttime;		// realtime at second frame of timedemo
 } client_static_t;
 
 extern client_static_t	cls;
@@ -131,7 +129,7 @@ extern client_static_t	cls;
 #define FPD_HIDE_PERCENTE	0x0020	// Ditto
 #define FPD_HIDE_POINT		0x0080	// Can ignore if we do visibility checking for point
 #define FPD_NO_TEAMSKIN		0x0100	// Disable skin force
-#define FPD_NO_TEAMCOLOR    0x0200	// Disable color force
+#define FPD_NO_TEAMCOLOR	0x0200	// Disable color force
 #define FPD_HIDE_ITEM		0x0400	// No idea what this does
 #define FPD_LIMIT_PITCH		0x4000	// Limit pitchspeed
 #define FPD_LIMIT_YAW		0x8000	// Limit yawspeed
@@ -144,97 +142,93 @@ extern client_static_t	cls;
 
 
 /*
-  the client_state_t structure is wiped completely at every
-  server signon
+  the client_state_t structure is wiped completely at every server signon
 */
 typedef struct {
 	qboolean    loading;
 
-	int			movemessages;	// Since connecting to this server throw out
+	int         movemessages;	// Since connecting to this server throw out
 								// the first couple, so the player doesn't
 								// accidentally do something the first frame
-	usercmd_t	cmd;			// Last command sent to the server
+	usercmd_t   cmd;			// Last command sent to the server
 
 // information for local display
-	int			stats[MAX_CL_STATS];	// Health, etc
-	float		item_gettime[32];	// cl.time of aquiring item, for blinking
-	float		faceanimtime;	// Use anim frame if cl.time < this
+	int         stats[MAX_CL_STATS];	// Health, etc
+	float       item_gettime[32];	// cl.time of aquiring item, for blinking
+	float       faceanimtime;	// Use anim frame if cl.time < this
 
-	cshift_t	cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
-	cshift_t	prev_cshifts[NUM_CSHIFTS];	// And content types
+	cshift_t    cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
+	cshift_t    prev_cshifts[NUM_CSHIFTS];	// and content types
 
 // The client maintains its own idea of view angles, which are sent to the
 // server each frame.  The server sets punchangle when the view is temporarily
 // offset, and an angle reset commands at the start of each level and after
 // teleporting.
-	vec3_t		mviewangles[2];	// During demo playback viewangles is lerped
+	vec3_t      mviewangles[2];	// During demo playback viewangles is lerped
 								// between these
-	vec3_t		viewangles;
-	vec3_t		mvelocity[2];	// Update by server, used for lean+bob
+	vec3_t      viewangles;
+	vec3_t      mvelocity[2];	// Update by server, used for lean+bob
 								// (0 is newest)
-	vec3_t		velocity;		// Lerped between mvelocity[0] and [1]
-	vec3_t		punchangle;		// Temporary offset
+	vec3_t      velocity;		// Lerped between mvelocity[0] and [1]
+	vec3_t      punchangle;		// Temporary offset
 
 // pitch drifting vars
-	float		idealpitch;
-	float		pitchvel;
-	qboolean	nodrift;
-	float		driftmove;
-	double		laststop;
+	float       idealpitch;
+	float       pitchvel;
+	qboolean    nodrift;
+	float       driftmove;
+	double      laststop;
 
-	float		viewheight;
-	float		crouch;			// Local amount for smoothing stepups
+	qboolean    paused;			// Sent over by server
+	int         onground;
+	float       viewheight;
+	float       crouch;			// Local amount for smoothing stepups
+	qboolean    inwater;
 
-	qboolean	paused;			// Sent over by server
-	int			onground;
-	qboolean	inwater;
+	int         intermission;	// Don't change view angle, full screen, etc
+	int         completed_time;	// Latched at intermission start
 
-	int			intermission;	// Don't change view angle, full screen, etc
-	int			completed_time;	// Latched at intermission start
-
-	double		mtime[2];		// The timestamp of last two messages
-	double		time;			// Clients view of time, should be between
+	double      mtime[2];		// The timestamp of last two messages
+	double      time;			// Clients view of time, should be between
 								// servertime and oldvertime to generate a
 								// lerp point for other data
-	double		oldtime;		// Previous cl.time, time-oldtime is used
+	double      oldtime;		// Previous cl.time, time-oldtime is used
 								// to decay light values and smooth step ups
 
-	float		last_received_message;	// (realtime) for net trouble icon
+	float       last_received_message;	// (realtime) for net trouble icon
 
 /* information that is static for the entire time connected to a server */
 
-	struct model_s		*model_precache[MAX_MODELS];
-	struct sfx_s		*sound_precache[MAX_SOUNDS];
+	struct model_s *model_precache[MAX_MODELS];
+	struct sfx_s *sound_precache[MAX_SOUNDS];
 	int         nummodels;
 	int         numsounds;
 
 	struct plitem_s *edicts;
 	struct plitem_s *worldspawn;
 
-	char		levelname[40];	// for display on solo scoreboard
-	int			viewentity;		// cl_entitites[cl.viewentity] = player
-	unsigned	protocol;
-	int			maxclients;
-	int			gametype;
-
-// refresh related state
-	struct model_s	*worldmodel;	// cl_entitites[0].model
-	int			num_entities;	// held in cl_entities array
-	entity_t	viewent;			// the gun model
-
-	int			cdtrack, looptrack;	// cd audio
-
-// frag scoreboard
-	scoreboard_t	*scores;		// [cl.maxclients]
-
+	char        levelname[40];	// for display on solo scoreboard
 	int         spectator;
-
-	int			sv_cshifts;
+	int         viewentity;		// cl_entitites[cl.viewentity] = player
+	unsigned    protocol;
+	int         gametype;
+	int         maxclients;
 	int         chase;
+	int         sv_cshifts;
 	int         watervis;
 	int         fpd;
 
-	lightstyle_t    lightstyle[MAX_LIGHTSTYLES];
+// refresh related state
+	struct model_s *worldmodel;	// cl_entitites[0].model
+	int         num_entities;	// held in cl_entities array
+	entity_t    viewent;		// the weapon model
+
+	int         cdtrack, looptrack;		// cd audio
+
+// frag scoreboard
+	scoreboard_t *scores;		// [cl.maxclients]
+
+	lightstyle_t lightstyle[MAX_LIGHTSTYLES];
 } client_state_t;
 
 
