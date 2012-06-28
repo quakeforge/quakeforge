@@ -33,6 +33,55 @@
 
 #include "client/entities.h"
 
+/*  QW has a max of 512 entities and wants 64 frames of data per entity, plus
+	the baseline data (512 * (64 + 1) = 33280), but NQ has a max of 32000
+	entities and wants 2 frames of data per entity, plus the baseline data
+	(32000 * (2 + 1) = 96000)
+*/
+#define NUM_ENTITY_STATES 96000
+
+static entity_state_t entity_states[NUM_ENTITY_STATES];
+static entity_state_t * const nq_frames[2] = {
+	&entity_states[32000 * 1],
+	&entity_states[32000 * 2],
+};
+static entity_state_t * const qw_frames[64] = {
+	&entity_states[512 *  1], &entity_states[512 *  2],
+	&entity_states[512 *  3], &entity_states[512 *  4],
+	&entity_states[512 *  5], &entity_states[512 *  6],
+	&entity_states[512 *  7], &entity_states[512 *  8],
+	&entity_states[512 *  9], &entity_states[512 * 10],
+	&entity_states[512 * 11], &entity_states[512 * 12],
+	&entity_states[512 * 13], &entity_states[512 * 14],
+	&entity_states[512 * 15], &entity_states[512 * 16],
+	&entity_states[512 * 17], &entity_states[512 * 18],
+	&entity_states[512 * 19], &entity_states[512 * 20],
+	&entity_states[512 * 21], &entity_states[512 * 22],
+	&entity_states[512 * 23], &entity_states[512 * 24],
+	&entity_states[512 * 25], &entity_states[512 * 26],
+	&entity_states[512 * 27], &entity_states[512 * 28],
+	&entity_states[512 * 29], &entity_states[512 * 30],
+	&entity_states[512 * 31], &entity_states[512 * 32],
+	&entity_states[512 * 33], &entity_states[512 * 34],
+	&entity_states[512 * 35], &entity_states[512 * 36],
+	&entity_states[512 * 37], &entity_states[512 * 38],
+	&entity_states[512 * 39], &entity_states[512 * 40],
+	&entity_states[512 * 41], &entity_states[512 * 42],
+	&entity_states[512 * 43], &entity_states[512 * 44],
+	&entity_states[512 * 45], &entity_states[512 * 46],
+	&entity_states[512 * 47], &entity_states[512 * 48],
+	&entity_states[512 * 49], &entity_states[512 * 50],
+	&entity_states[512 * 51], &entity_states[512 * 52],
+	&entity_states[512 * 53], &entity_states[512 * 54],
+	&entity_states[512 * 55], &entity_states[512 * 56],
+	&entity_states[512 * 57], &entity_states[512 * 58],
+	&entity_states[512 * 59], &entity_states[512 * 60],
+	&entity_states[512 * 61], &entity_states[512 * 62],
+	&entity_states[512 * 63], &entity_states[512 * 64],
+};
+entstates_t nq_entstates = {&entity_states[0], nq_frames};
+entstates_t qw_entstates = {&entity_states[0], qw_frames};
+
 vec3_t ent_colormod[256] = {
 	{0, 0, 0},
 	{0, 0, 0.333333},

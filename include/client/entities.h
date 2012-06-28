@@ -33,6 +33,40 @@
 
 #include "QF/qtypes.h"
 
+// entity_state_t is the information conveyed from the server
+// in an update message
+typedef struct entity_state_s {
+	int         number;			// edict index
+	unsigned    flags;			// nolerp, etc
+
+	vec3_t      origin;
+	vec3_t      angles;
+	unsigned short modelindex;
+	unsigned short frame;
+	int         effects;
+	byte        colormap;
+	byte        skinnum;
+
+	// QSG 2
+	byte        alpha;
+	byte        scale;
+	byte        glow_size;
+	byte        glow_color;
+	byte        colormod;
+
+	struct skin_s *skin;	//FIXME this should not be here, but better state
+							//change tracking in the client is needed for this
+							//to be moved
+} entity_state_t;
+
+typedef struct {
+	entity_state_t * const baseline;
+	entity_state_t * const * const frame;
+} entstates_t;
+
+extern entstates_t nq_entstates;
+extern entstates_t qw_entstates;
+
 extern vec3_t ent_colormod[256];
 
 #endif//__client_entities_h

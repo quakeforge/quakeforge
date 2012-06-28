@@ -300,31 +300,7 @@
 							// must be power of two
 #define	UPDATE_MASK		(UPDATE_BACKUP-1)
 
-// entity_state_t is the information conveyed from the server
-// in an update message
-typedef struct entity_state_s {
-	int         number;			// edict index
-	unsigned    flags;			// nolerp, etc
-
-	vec3_t      origin;
-	vec3_t      angles;
-	unsigned short modelindex;
-	unsigned short frame;
-	int         effects;
-	byte        colormap;
-	byte        skinnum;
-
-	// QSG 2
-	byte        alpha;
-	byte        scale;
-	byte        glow_size;
-	byte        glow_color;
-	byte        colormod;
-
-	struct skin_s *skin;	//FIXME this should not be here, but better state
-							//change tracking in the client is needed for this
-							//to be moved
-} entity_state_t;
+#include "client/entities.h"	// for entity_state_t
 
 #define	MAX_PACKET_ENTITIES			64	// doesn't count nails
 #define	MAX_DEMO_PACKET_ENTITIES	196	// doesn't count nails
