@@ -8,4 +8,4 @@ AUTOMAKE_OPTIONS= foreign
 # video depends on models(?), image(?) and ruamoko
 # console depends on video, ruamoko and audio
 SUBDIRS=util gamecode ruamoko gib audio image models video console \
-		net qw
+		net qw client

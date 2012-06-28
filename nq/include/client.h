@@ -37,6 +37,8 @@
 #include "QF/sound.h"
 #include "QF/render.h"
 
+#include "client/entities.h"
+
 #include "game.h"
 #include "netmain.h"
 #include "protocol.h"
@@ -276,7 +278,6 @@ extern entity_t cl_entities[MAX_EDICTS];
 extern entity_state_t cl_entity_states[3][MAX_EDICTS];
 extern double cl_msgtime[MAX_EDICTS];
 extern byte cl_forcelink[MAX_EDICTS];
-extern vec3_t ent_colormod[256];
 
 extern int fps_count;
 

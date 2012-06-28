@@ -273,17 +273,7 @@ CL_LinkPacketEntities (void)
 		// set colormap
 		ent->skin = s1->skin;
 
-		// LordHavoc: cleaned up Endy's coding style, and fixed Endy's bugs
-		// Ender: Extend (Colormod) [QSG - Begin]
-		// N.B: All messy code below is the sole fault of LordHavoc and
-		// his futile attempts to save bandwidth. :)
-		if (s1->colormod == 255) {
-			ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
-		} else {
-			ent->colormod[0] = (float) ((s1->colormod >> 5) & 7) * (1.0 / 7.0);
-			ent->colormod[1] = (float) ((s1->colormod >> 2) & 7) * (1.0 / 7.0);
-			ent->colormod[2] = (float) (s1->colormod & 3) * (1.0 / 3.0);
-		}
+		VectorCopy (ent_colormod[s1->colormod], ent->colormod);
 		ent->colormod[3] = s1->alpha / 255.0;
 		ent->scale = s1->scale / 16.0;
 		// Ender: Extend (Colormod) [QSG - End]

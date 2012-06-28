@@ -35,6 +35,8 @@
 
 #include "QF/plugin/vid_render.h"
 
+#include "client/entities.h"
+
 #include "netchan.h"
 #include "qw/bothdefs.h"
 #include "qw/protocol.h"

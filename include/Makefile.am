@@ -16,6 +16,8 @@ EXTRA_DIST = \
 	sv_console.h varrays.h vgamodes.h vid_internal.h vregset.h winquake.h \
 	world.h \
 	\
+	client/entities.h \
+	\
 	qw/bothdefs.h qw/msg_backbuf.h qw/msg_ucmd.h qw/pmove.h qw/protocol.h \
 	\
 	win32/dirent.h win32/fnmatch.h win32/stdint.h \

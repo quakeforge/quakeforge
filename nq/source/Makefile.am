@@ -81,7 +81,8 @@ libnq_server_a_SOURCES= \
 		host.c host_cmd.c sv_cl_phys.c sv_cvar.c sv_main.c \
 		sv_move.c sv_phys.c sv_pr_cmds.c sv_progs.c sv_user.c
 
-client_libs= libnq_server.a libnq_client.a libnq_common.a
+client_libs= libnq_server.a libnq_client.a libnq_common.a \
+			$(top_builddir)/libs/client/libQFclient.la
 server_libs = libnq_server.a libnq_common.a
 
 # Software-rendering targets

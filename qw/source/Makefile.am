@@ -106,7 +106,8 @@ qw_client_LIBS= \
 		$(top_builddir)/libs/util/libQFutil.la
 
 client_LIBS= $(qw_client_LIBS)
-client_libs= libqw_client.a libqw_common.a
+client_libs= libqw_client.a libqw_common.a \
+			$(top_builddir)/libs/client/libQFclient.la
 
 libqw_client_a_SOURCES= \
 		cl_cam.c cl_chase.c cl_chat.c cl_cmd.c cl_cvar.c cl_demo.c \

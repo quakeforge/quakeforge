@@ -9,6 +9,7 @@
 	libs/audio/renderer/Makefile
 	libs/audio/test/Makefile
 	libs/console/Makefile
+	libs/client/Makefile
 	libs/gamecode/Makefile
 	libs/gib/Makefile
 	libs/image/Makefile
