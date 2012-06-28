@@ -55,6 +55,12 @@ typedef struct trace_s {
 #define	MOVE_NORMAL		0
 #define	MOVE_NOMONSTERS	1
 #define	MOVE_MISSILE	2
+#define MOVE_HITMODEL   4
+#define MOVE_RESERVED   8
+#define MOVE_TRIGGERS	16 //triggers must be marked with FINDABLE_NONSOLID    (an alternative to solid-corpse)
+#define MOVE_EVERYTHING 32 //can return triggers and non-solid items if they're marked with FINDABLE_NONSOLID (works even if the items are not properly linked)
+#define MOVE_LAGGED     64 //trace touches current last-known-state, instead of actual ents (just affects players for now)
+#define MOVE_ENTCHAIN	128 //chain of impacted ents, otherwise result shows only world
 
 typedef struct areanode_s {
 	int		axis;		// -1 = leaf node

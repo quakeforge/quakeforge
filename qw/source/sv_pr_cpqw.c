@@ -711,9 +711,66 @@ PF_touchworld (progs_t *pr)
 	*sv_globals.self = oself;
 }
 
+/*
+	CPQW_traceline
+
+	Used for use tracing and shot targeting.
+	Traces are blocked by bbox and exact bsp entityes, and also slide box
+	entities if the tryents flag is set.
+
+	traceline (vector1, vector2, tryents)
+	// float (vector v1, vector v2, float tryents) traceline
+*/
+#define TL_ANY_SOLID		0
+#define TL_BSP_ONLY			1
+#define TL_TRIGGERS			3	// scan for triggers
+#define TL_EVERYTHING		4	// scan for anything
+
+static void
+CPQW_traceline (progs_t *pr)
+{
+	float      *v1, *v2;
+	edict_t    *ent;
+	int         nomonsters;
+	trace_t     trace;
+	static int  tl_to_move[] = {
+		MOVE_NORMAL,
+		MOVE_NORMAL,
+		MOVE_NORMAL,
+		MOVE_TRIGGERS,
+		MOVE_EVERYTHING,
+	};
+
+	v1 = P_VECTOR (pr, 0);
+	v2 = P_VECTOR (pr, 1);
+	nomonsters = P_FLOAT (pr, 2);
+	ent = P_EDICT (pr, 3);
+
+	if (nomonsters < TL_ANY_SOLID || nomonsters > TL_EVERYTHING)
+		nomonsters = TL_ANY_SOLID;
+	nomonsters = tl_to_move[nomonsters];
+
+	trace = SV_Move (v1, vec3_origin, vec3_origin, v2, nomonsters, ent);
+
+	*sv_globals.trace_allsolid = trace.allsolid;
+	*sv_globals.trace_startsolid = trace.startsolid;
+	*sv_globals.trace_fraction = trace.fraction;
+	*sv_globals.trace_inwater = trace.inwater;
+	*sv_globals.trace_inopen = trace.inopen;
+	VectorCopy (trace.endpos, *sv_globals.trace_endpos);
+	VectorCopy (trace.plane.normal, *sv_globals.trace_plane_normal);
+	*sv_globals.trace_plane_dist = trace.plane.dist;
+
+	if (trace.ent)
+		*sv_globals.trace_ent = EDICT_TO_PROG (pr, trace.ent);
+	else
+		*sv_globals.trace_ent = EDICT_TO_PROG (pr, sv.edicts);
+}
+
 #define CPQW (PR_RANGE_CPQW << PR_RANGE_SHIFT) |
 
 static builtin_t builtins[] = {
+	{"CPCW:traceline",		CPQW_traceline,		CPQW 16},
 	{"CPQW:getuid",			PF_getuid,			CPQW 83},
 	{"CPQW:strcat",			PF_strcat,			CPQW 84},
 	{"CPQW:padstr",			PF_padstr,			CPQW 85},

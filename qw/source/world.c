@@ -755,13 +755,21 @@ ctl_do_clip (edict_t *touch, moveclip_t *clip, trace_t *trace)
 	if (trace->allsolid || trace->startsolid
 		|| trace->fraction < clip->trace.fraction) {
 		trace->ent = touch;
-		if (clip->trace.startsolid) {
-			clip->trace = *trace;
-			clip->trace.startsolid = true;
-		} else
-			clip->trace = *trace;
-	} else if (trace->startsolid)
-		clip->trace.startsolid = true;
+		if (clip->type & MOVE_ENTCHAIN) {
+			SVentity (touch, chain) = EDICT_TO_PROG (&sv_pr_state,
+													 clip->trace.ent
+														? clip->trace.ent
+														: sv.edicts);
+			clip->trace.ent = touch;
+		} else {
+			if (clip->trace.startsolid) {
+				clip->trace = *trace;
+				clip->trace.startsolid = true;
+			} else {
+				clip->trace = *trace;
+			}
+		}
+	}
 }
 
 /*
@@ -777,7 +785,7 @@ SV_ClipToLinks (areanode_t *node, moveclip_t *clip)
 	trace_t		trace;
 	int         i;
 
-	if (clip->type == TL_EVERYTHING) {
+	if (clip->type & MOVE_EVERYTHING) {
 		touch = NEXT_EDICT (&sv_pr_state, sv.edicts);
 		for (i = 1; i < sv.num_edicts; i++,
 			 touch = NEXT_EDICT (&sv_pr_state, touch)) {
@@ -789,7 +797,7 @@ SV_ClipToLinks (areanode_t *node, moveclip_t *clip)
 				continue;
 			ctl_do_clip (touch, clip, &trace);
 		}
-	} else if (clip->type == TL_TRIGGERS) {
+	} else if (clip->type & MOVE_TRIGGERS) {
 		for (l = node->solid_edicts.next; l != &node->solid_edicts; l = next) {
 			next = l->next;
 			touch = EDICT_FROM_AREA (l);
