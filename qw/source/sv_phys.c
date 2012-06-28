@@ -377,7 +377,7 @@ SV_FinishGravity (edict_t *ent, vec3_t move)
 	Does not change the entities velocity at all
 */
 trace_t
-SV_PushEntity (edict_t *ent, vec3_t push)
+SV_PushEntity (edict_t *ent, vec3_t push, unsigned traceflags)
 {
 	trace_t     trace;
 	vec3_t      end;
@@ -392,13 +392,17 @@ SV_PushEntity (edict_t *ent, vec3_t push)
 
 	VectorAdd (e_origin, push, end);
 
+	if ((int) SVfloat (ent, flags) & FLQW_LAGGEDMOVE)
+		traceflags |= MOVE_LAGGED;
+
 	if (e_movetype == MOVETYPE_FLYMISSILE)
-		trace = SV_Move (e_origin, e_mins, e_maxs, end, MOVE_MISSILE, ent);
+		traceflags |= MOVE_MISSILE;
 	else if (e_solid == SOLID_TRIGGER || e_solid == SOLID_NOT)
 		// clip against only bmodels
-		trace = SV_Move (e_origin, e_mins, e_maxs, end, MOVE_NOMONSTERS, ent);
+		traceflags |= MOVE_NOMONSTERS;
 	else
-		trace = SV_Move (e_origin, e_mins, e_maxs, end, MOVE_NORMAL, ent);
+		traceflags |= MOVE_NORMAL;
+	trace = SV_Move (e_origin, e_mins, e_maxs, end, traceflags, ent);
 
 	VectorCopy (trace.endpos, e_origin);
 	SV_LinkEdict (ent, true);
@@ -511,7 +515,7 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 		// try moving the contacted entity
 		solid_save = SVfloat (pusher, solid);
 		SVfloat (pusher, solid) = SOLID_NOT;
-		SV_PushEntity (check, move);
+		SV_PushEntity (check, move, MOVE_NORMAL);
 		SVfloat (pusher, solid) = solid_save;
 
 		block = SV_TestEntityPosition (check);
@@ -691,6 +695,7 @@ SV_Physics_Toss (edict_t *ent)
 	float       backoff;
 	trace_t     trace;
 	vec3_t      move;
+	int         fl;
 
 	// regular thinking
 	if (!SV_RunThink (ent))
@@ -720,7 +725,11 @@ SV_Physics_Toss (edict_t *ent)
 		SVdata (ent)->add_grav = false;
 		SV_FinishGravity (ent, move);
 	}
-	trace = SV_PushEntity (ent, move);
+
+	fl = 0;
+	if (sv_antilag->int_val == 2)
+		fl |= MOVE_LAGGED;
+	trace = SV_PushEntity (ent, move, fl);
 	if (trace.fraction == 1)
 		return;
 	if (ent->free)

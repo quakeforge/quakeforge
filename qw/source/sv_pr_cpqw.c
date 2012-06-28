@@ -750,6 +750,9 @@ CPQW_traceline (progs_t *pr)
 		nomonsters = TL_ANY_SOLID;
 	nomonsters = tl_to_move[nomonsters];
 
+	if (sv_antilag->int_val == 2)
+		nomonsters |= MOVE_LAGGED;
+
 	trace = SV_Move (v1, vec3_origin, vec3_origin, v2, nomonsters, ent);
 
 	*sv_globals.trace_allsolid = trace.allsolid;

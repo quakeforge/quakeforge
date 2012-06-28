@@ -36,6 +36,8 @@
 #include "QF/quakeio.h"
 #include "QF/sizebuf.h"
 
+#include "world.h"
+
 #include "host.h"
 #include "netchan.h"
 #include "qw/bothdefs.h"
@@ -86,6 +88,11 @@ typedef struct {
 
 	byte		*pvs, *phs;			// fully expanded and decompressed
 
+	//antilag
+	float       lagentsfrac;
+	laggedentinfo_t *lagents;
+	unsigned    maxlagents;
+
 	// added to every client's unreliable buffer each frame, then cleared
 	sizebuf_t	datagram;
 	byte		datagram_buf[MAX_DATAGRAM];
@@ -133,6 +140,8 @@ typedef struct {
 	// reply
 	double				senttime;
 	float				ping_time;
+	vec3_t              playerpositions[MAX_CLIENTS];
+	qboolean            playerpresent[MAX_CLIENTS];
 	packet_entities_t	entities;
 	packet_players_t	players;
 } client_frame_t;
@@ -214,6 +223,11 @@ typedef struct client_s {
 
 	double			connection_started;	// or time of disconnect for zombies
 	qboolean		send_message;		// set on frames a datagram arived on
+
+	//antilag stuff
+	laggedentinfo_t laggedents[MAX_CLIENTS];
+	unsigned        laggedents_count;
+	float           laggedents_frac;
 
 // spawn parms are carried from level to level
 	float			spawn_parms[NUM_SPAWN_PARMS];
@@ -369,21 +383,22 @@ typedef enum {
 #define	DAMAGE_AIM				2
 
 // edict->flags
-#define	FL_FLY					1
-#define	FL_SWIM					2
-#define	FL_GLIMPSE				4
-#define	FL_CLIENT				8
-#define	FL_INWATER				16
-#define	FL_MONSTER				32
-#define	FL_GODMODE				64
-#define	FL_NOTARGET				128
-#define	FL_ITEM					256
-#define	FL_ONGROUND				512
-#define	FL_PARTIALGROUND		1024	// not all corners are valid
-#define	FL_WATERJUMP			2048	// player jumping out of water
+#define	FL_FLY					(1<<0)
+#define	FL_SWIM					(1<<1)
+#define	FL_GLIMPSE				(1<<2)
+#define	FL_CLIENT				(1<<3)
+#define	FL_INWATER				(1<<4)
+#define	FL_MONSTER				(1<<5)
+#define	FL_GODMODE				(1<<6)
+#define	FL_NOTARGET				(1<<7)
+#define	FL_ITEM					(1<<8)
+#define	FL_ONGROUND				(1<<9)
+#define	FL_PARTIALGROUND		(1<<10)	// not all corners are valid
+#define	FL_WATERJUMP			(1<<11)	// player jumping out of water
 // 4096 used by quakec
-#define FL_FINALIZED			8192
-#define FL_FINDABLE_NONSOLID	16384
+#define FL_FINALIZED			(1<<13)
+#define FL_FINDABLE_NONSOLID	(1<<14)
+#define FLQW_LAGGEDMOVE			(1<<16)
 
 // entity effects
 
@@ -531,7 +546,8 @@ void SV_RunNewmis (void);
 void SV_SetMoveVars(void);
 struct trace_s;
 int SV_FlyMove (struct edict_s *ent, float time, struct trace_s *steptrace);
-struct trace_s SV_PushEntity (struct edict_s *ent, vec3_t push);
+struct trace_s SV_PushEntity (struct edict_s *ent, vec3_t push,
+							  unsigned traceflags);
 int SV_EntCanSupportJump (struct edict_s *ent);
 
 //
@@ -609,6 +625,8 @@ void SV_WriteEntitiesToClient (delta_t *delta, sizebuf_t *msg);
 
 void Cvar_Info (struct cvar_s *var);
 
+extern struct cvar_s *sv_antilag;
+extern struct cvar_s *sv_antilag_frac;
 extern struct cvar_s *sv_timecheck_fuzz;
 extern struct cvar_s *sv_timecheck_decay;
 extern struct cvar_s *sv_maxrate;

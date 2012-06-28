@@ -32,6 +32,11 @@
 #include "QF/mathlib.h"
 #include "QF/model.h"
 
+typedef struct {
+	qboolean    present;
+	vec3_t      laggedpos;
+} laggedentinfo_t;
+
 typedef enum {
 	tr_point,
 	tr_box,

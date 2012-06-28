@@ -79,6 +79,9 @@ edict_t    *sv_player;
 
 usercmd_t   cmd;
 
+cvar_t     *sv_antilag;
+cvar_t     *sv_antilag_frac;
+
 cvar_t     *sv_accelerate;
 cvar_t     *sv_airaccelerate;
 cvar_t     *sv_maxspeed;
@@ -1869,6 +1872,21 @@ SV_ExecuteClientMessage (client_t *cl)
 	frame = &cl->delta.frames[cl->delta.cur_frame];
 	frame->ping_time = realtime - frame->senttime;
 
+	cl->laggedents_count = 0;
+	if (sv_antilag->int_val) {
+		int         i;
+
+		for (i = 0; i < MAX_CLIENTS; i++) {
+			cl->laggedents[i].present = frame->playerpresent[i];
+			if (cl->laggedents[i].present) {
+				VectorCopy(frame->playerpositions[i],
+						   cl->laggedents[i].laggedpos);
+			}
+		}
+		cl->laggedents_count = MAX_CLIENTS;
+		cl->laggedents_frac = sv_antilag_frac->value;
+	}
+
 	// save time for ping calculations
 	cl->delta.frames[cl->delta.out_frame].senttime = realtime;
 	cl->delta.frames[cl->delta.out_frame].ping_time = -1;
@@ -2000,6 +2018,15 @@ SV_UserInit (void)
 							 "strafing");
 	cl_rollangle = Cvar_Get ("cl_rollangle", "2", CVAR_NONE, NULL, "How much "
 							 "a player's screen tilts when strafing");
+
+	sv_antilag = Cvar_Get ("sv_antilag", "1", CVAR_SERVERINFO, Cvar_Info,
+						   "Attempt to backdate impacts to compensate for "
+						   "lag. 0=completely off. 1=mod-controlled. "
+						   "2=forced, which might break certain uses of "
+						   "traceline.");
+	sv_antilag_frac = Cvar_Get ("sv_antilag_frac", "1", CVAR_SERVERINFO,
+								Cvar_Info,
+								"FIXME something to do with sv_antilag");
 
 	sv_allowfake = Cvar_Get ("sv_allowfake", "2", CVAR_NONE, NULL, "Allow 'fake' messages (FuhQuake $\\). 1 = "
 								"always, 2 = only say_team");

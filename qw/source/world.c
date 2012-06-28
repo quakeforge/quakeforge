@@ -717,16 +717,18 @@ ctl_pretest_other (edict_t *touch, moveclip_t *clip)
 }
 
 static inline int
-ctl_touch_test (edict_t *touch, moveclip_t *clip)
+ctl_pretest_lagged (edict_t *touch, moveclip_t *clip)
 {
-	if (clip->boxmins[0] > SVvector (touch, absmax)[0]
-		|| clip->boxmins[1] > SVvector (touch, absmax)[1]
-		|| clip->boxmins[2] > SVvector (touch, absmax)[2]
-		|| clip->boxmaxs[0] < SVvector (touch, absmin)[0]
-		|| clip->boxmaxs[1] < SVvector (touch, absmin)[1]
-		|| clip->boxmaxs[2] < SVvector (touch, absmin)[2])
-		return 0;
+	if (clip->type & MOVE_LAGGED)
+		if ((unsigned) (touch->entnum - 1) < sv.maxlagents)
+			if (sv.lagents[touch->entnum - 1].present)
+				return 0;
+	return 1;
+}
 
+static inline int
+ctl_touch_common (edict_t *touch, moveclip_t *clip)
+{
 	if (clip->passedict && SVvector (clip->passedict, size)[0]
 		&& !SVvector (touch, size)[0])
 		return 0;						// points never interact
@@ -741,6 +743,34 @@ ctl_touch_test (edict_t *touch, moveclip_t *clip)
 			return 0;					// don't clip against owner
 	}
 	return 1;
+}
+
+static inline int
+ctl_touch_test (edict_t *touch, moveclip_t *clip)
+{
+	if (clip->boxmins[0] > SVvector (touch, absmax)[0]
+		|| clip->boxmins[1] > SVvector (touch, absmax)[1]
+		|| clip->boxmins[2] > SVvector (touch, absmax)[2]
+		|| clip->boxmaxs[0] < SVvector (touch, absmin)[0]
+		|| clip->boxmaxs[1] < SVvector (touch, absmin)[1]
+		|| clip->boxmaxs[2] < SVvector (touch, absmin)[2])
+		return 0;
+
+	return ctl_touch_common (touch, clip);
+}
+
+static inline int
+ctl_touch_test_origin (edict_t *touch, const vec3_t origin, moveclip_t *clip)
+{
+	if (clip->boxmins[0] > origin[0] + SVvector (touch, maxs)[0]
+		|| clip->boxmins[1] > origin[1] + SVvector (touch, maxs)[1]
+		|| clip->boxmins[2] > origin[2] + SVvector (touch, maxs)[2]
+		|| clip->boxmaxs[0] < origin[0] + SVvector (touch, mins)[0]
+		|| clip->boxmaxs[1] < origin[1] + SVvector (touch, mins)[1]
+		|| clip->boxmaxs[2] < origin[2] + SVvector (touch, mins)[2])
+		return 0;
+
+	return ctl_touch_common (touch, clip);
 }
 
 static void
@@ -793,6 +823,8 @@ SV_ClipToLinks (areanode_t *node, moveclip_t *clip)
 				return;
 			if (!ctl_pretest_everything (touch, clip))
 				continue;
+			if (!ctl_pretest_lagged (touch, clip))
+				continue;
 			if (!ctl_touch_test (touch, clip))
 				continue;
 			ctl_do_clip (touch, clip, &trace);
@@ -805,6 +837,8 @@ SV_ClipToLinks (areanode_t *node, moveclip_t *clip)
 			if (clip->trace.allsolid)
 				return;
 			if (!ctl_pretest_triggers (touch, clip))
+				continue;
+			if (!ctl_pretest_lagged (touch, clip))
 				continue;
 			if (!ctl_touch_test (touch, clip))
 				continue;
@@ -819,6 +853,8 @@ SV_ClipToLinks (areanode_t *node, moveclip_t *clip)
 			if (clip->trace.allsolid)
 				return;
 			if (!ctl_pretest_other (touch, clip))
+				continue;
+			if (!ctl_pretest_lagged (touch, clip))
 				continue;
 			if (!ctl_touch_test (touch, clip))
 				continue;
@@ -892,7 +928,51 @@ SV_Move (const vec3_t start, const vec3_t mins, const vec3_t maxs,
 				   clip.boxmaxs);
 
 	// clip to entities
-	SV_ClipToLinks (sv_areanodes, &clip);
+	if (clip.type & MOVE_LAGGED) {
+		clip.type &= ~MOVE_LAGGED;
+		if (passedict->entnum && passedict->entnum <= MAX_CLIENTS) {
+			client_t   *cl = &svs.clients[passedict->entnum - 1];
+			clip.type |= MOVE_LAGGED;
+			sv.lagents = cl->laggedents;
+			sv.maxlagents = cl->laggedents_count;
+			sv.lagentsfrac = cl->laggedents_frac;
+		} else if (PROG_TO_EDICT (&sv_pr_state, SVentity (passedict, owner))) {
+			edict_t    *owner;
+			owner = PROG_TO_EDICT (&sv_pr_state, SVentity (passedict, owner));
+			if (owner->entnum && owner->entnum <= MAX_CLIENTS) {
+				client_t   *cl = &svs.clients[passedict->entnum - 1];
+				clip.type |= MOVE_LAGGED;
+				sv.lagents = cl->laggedents;
+				sv.maxlagents = cl->laggedents_count;
+				sv.lagentsfrac = cl->laggedents_frac;
+			}
+		}
+	}
+	if (clip.type & MOVE_LAGGED) {
+		trace_t     trace;
+		edict_t    *touch;
+		vec3_t      lp;
+		unsigned    li;
+
+		SV_ClipToLinks (sv_areanodes, &clip);
+		for (li = 0; li < sv.maxlagents; li++) {
+			if (!sv.lagents[li].present)
+				continue;
+			if (clip.trace.allsolid)
+				break;
+
+			touch = EDICT_NUM (&sv_pr_state, li + 1);
+			if (!ctl_pretest_other (touch, &clip))
+				continue;
+			VectorBlend (SVvector(touch, origin), sv.lagents[li].laggedpos,
+						 sv.lagentsfrac, lp);
+			if (!ctl_touch_test_origin (touch, lp, &clip))
+				continue;
+			ctl_do_clip (touch, &clip, &trace);
+		}
+	} else {
+		SV_ClipToLinks (sv_areanodes, &clip);
+	}
 
 	return clip.trace;
 }

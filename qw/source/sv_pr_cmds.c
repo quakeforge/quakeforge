@@ -387,6 +387,9 @@ PF_traceline (progs_t *pr)
 	nomonsters = P_FLOAT (pr, 2);
 	ent = P_EDICT (pr, 3);
 
+	if (sv_antilag->int_val == 2)
+		nomonsters |= MOVE_LAGGED;
+
 	trace = SV_Move (v1, vec3_origin, vec3_origin, v2, nomonsters, ent);
 
 	*sv_globals.trace_allsolid = trace.allsolid;
