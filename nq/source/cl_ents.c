@@ -599,9 +599,9 @@ CL_RelinkEntities (void)
 			set_entity_model (ent, new->modelindex);
 		}
 		ent->frame = new->frame;
-		if (cl_forcelink[i] || new->colormod != old->colormod) {
-			old->colormod = new->colormod;
-			ent->skin = mod_funcs->Skin_SetColormap (ent->skin, new->colormod);
+		if (cl_forcelink[i] || new->colormap != old->colormap) {
+			old->colormap = new->colormap;
+			ent->skin = mod_funcs->Skin_SetColormap (ent->skin, new->colormap);
 		}
 		if (cl_forcelink[i] || new->skinnum != old->skinnum) {
 			old->skinnum = new->skinnum;
