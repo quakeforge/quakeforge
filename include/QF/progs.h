@@ -216,6 +216,7 @@ void PR_BoundsCheck (progs_t *pr, int addr, etype_t type);
 
 struct edict_s {
 	qboolean    free;
+	int         entnum;			///< number of this entity
 	float       freetime;		///< sv.time when the object was freed
 	void       *edata;			///< external per-edict data
 	pr_type_t   v[1];			///< fields from progs
@@ -254,7 +255,7 @@ void ED_EntityParseFunction (progs_t *pr);
 #define NEXT_EDICT(p,e)		((edict_t *) ((byte *) e + (p)->pr_edict_size))
 #define EDICT_TO_PROG(p,e)	((pr_int_t)(intptr_t)((byte *)(e) - PR_edicts (p)))
 #define PROG_TO_EDICT(p,e)	((edict_t *) (PR_edicts (p) + (e)))
-#define NUM_FOR_BAD_EDICT(p,e) (EDICT_TO_PROG (p, e) / (p)->pr_edict_size)
+#define NUM_FOR_BAD_EDICT(p,e) ((e)->entnum)
 #ifndef PR_PARANOID_PROGS
 # define EDICT_NUM(p,n)		(PROG_TO_EDICT (p, (n) * (p)->pr_edict_size))
 # define NUM_FOR_EDICT(p,e)	NUM_FOR_BAD_EDICT (p, e)

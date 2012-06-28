@@ -508,6 +508,7 @@ SV_LoadProgs (void)
 	// init the data field of the edicts
 	for (i = 0; i < sv.max_edicts; i++) {
 		edict_t    *ent = EDICT_NUM (&sv_pr_state, i);
+		ent->entnum = i;
 		ent->edata = &sv_data[i];
 		SVdata (ent)->edict = ent;
 	}
