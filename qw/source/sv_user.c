@@ -2028,8 +2028,9 @@ SV_UserInit (void)
 								Cvar_Info,
 								"FIXME something to do with sv_antilag");
 
-	sv_allowfake = Cvar_Get ("sv_allowfake", "2", CVAR_NONE, NULL, "Allow 'fake' messages (FuhQuake $\\). 1 = "
-								"always, 2 = only say_team");
+	sv_allowfake = Cvar_Get ("sv_allowfake", "2", CVAR_NONE, NULL,
+							 "Allow 'fake' messages (FuhQuake $\\). 1 = "
+							 "always, 2 = only say_team");
 	sv_spectalk = Cvar_Get ("sv_spectalk", "1", CVAR_NONE, NULL, "Toggles "
 							"the ability of spectators to talk to players");
 	sv_mapcheck = Cvar_Get ("sv_mapcheck", "1", CVAR_NONE, NULL, "Toggle the "
