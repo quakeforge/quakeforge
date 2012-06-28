@@ -71,12 +71,19 @@ static unsigned
 bi_map (progs_t *pr, unsigned binum)
 {
 	unsigned    range;
+	unsigned    base = sv_range << PR_RANGE_SHIFT;
 
 	if (sv_range != PR_RANGE_NONE) {
 		range = (binum & PR_RANGE_MASK) >> PR_RANGE_SHIFT;
 
-		if (!range && binum > PR_RANGE_ID_MAX)
-			binum |= sv_range << PR_RANGE_SHIFT;
+		if (!range) {
+			if (binum > PR_RANGE_ID_MAX) {
+				binum |= base;
+			} else {
+				if (PR_FindBuiltinNum (pr, binum | base))
+					binum |= base;
+			}
+		}
 	}
 	return binum;
 }
