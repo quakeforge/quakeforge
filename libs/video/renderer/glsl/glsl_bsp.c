@@ -101,7 +101,7 @@ static quat_t   sky_velocity;
 static double   sky_time;
 
 static quat_t   default_color = { 1, 1, 1, 1 };
-static float   *last_color = default_color;
+static quat_t   last_color;
 
 static const char quakebsp_vert[] =
 #include "quakebsp.vc"
@@ -796,12 +796,14 @@ draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc,
 	int         count;
 	float      *color;
 
-	color = ec->color;
-	if (color != last_color && colloc >= 0) {
-		last_color = color;
+	if (colloc >= 0) {
+		color = ec->color;
 		if (!color)
 			color = default_color;
-		qfeglVertexAttrib4fv (quake_bsp.color.location, color);
+		if (!QuatCompare (color, last_color)) {
+			QuatCopy (color, last_color);
+			qfeglVertexAttrib4fv (quake_bsp.color.location, color);
+		}
 	}
 	if (ec->transform) {
 		Mat4Mult (bsp_vp, ec->transform, mat);
@@ -832,7 +834,8 @@ bsp_begin (void)
 	quat_t      fog;
 
 	default_color[3] = 1;
-	last_color = default_color;
+	QuatCopy (default_color, last_color);
+	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
@@ -886,7 +889,8 @@ turb_begin (void)
 	quat_t      fog;
 
 	default_color[3] = bound (0, r_wateralpha->value, 1);
-	last_color = default_color;
+	QuatCopy (default_color, last_color);
+	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
@@ -957,7 +961,8 @@ sky_begin (void)
 	quat_t      fog;
 
 	default_color[3] = 1;
-	last_color = default_color;
+	QuatCopy (default_color, last_color);
+	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
 	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
 
@@ -1102,15 +1107,17 @@ glsl_R_DrawWorld (void)
 	}
 
 	bsp_begin ();
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
 	for (i = 0; i < r_num_texture_chains; i++) {
 		texture_t  *tex;
 		elechain_t *ec = 0;
 
 		tex = r_texture_chains[i];
-		qfeglActiveTexture (GL_TEXTURE0 + 0);
-		qfeglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 
 		build_tex_elechain (tex);
+
+		if (tex->elechain)
+			qfeglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 
 		for (ec = tex->elechain; ec; ec = ec->next) {
 			draw_elechain (ec, quake_bsp.mvp_matrix.location,
