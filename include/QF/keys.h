@@ -431,6 +431,7 @@ extern keydest_t	key_dest;
 extern imt_t		key_game_target;
 extern knum_t       key_togglemenu;
 extern knum_t       key_toggleconsole;
+extern void (*key_dest_callback) (void);
 
 extern struct keybind_s {
 	char *str;

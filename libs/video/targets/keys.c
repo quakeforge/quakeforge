@@ -59,6 +59,7 @@ VISIBLE keydest_t   key_dest = key_console;
 VISIBLE imt_t		key_game_target = IMT_0;
 VISIBLE knum_t      key_togglemenu = QFK_ESCAPE;
 VISIBLE knum_t      key_toggleconsole = QFK_BACKQUOTE;
+VISIBLE void (*key_dest_callback) (void);
 
 VISIBLE struct keybind_s keybindings[IMT_LAST][QFK_LAST];
 VISIBLE int			keydown[QFK_LAST];
@@ -980,4 +981,6 @@ Key_SetKeyDest(keydest_t kd)
 			game_target = IMT_CONSOLE;
 			break;
 	}
+	if (key_dest_callback)
+		key_dest_callback ();
 }
