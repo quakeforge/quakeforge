@@ -1102,6 +1102,8 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 			Info_SetValueForKey (player->userinfo, "team", "", 1);
 	while (!(player->skinname = Info_Key (player->userinfo, "skin")))
 			Info_SetValueForKey (player->userinfo, "skin", "", 1);
+	while (!(player->chat = Info_Key (player->userinfo, "chat")))
+			Info_SetValueForKey (player->userinfo, "chat", "0", 1);
 
 	if (Info_ValueForKey (player->userinfo, "*spectator")[0])
 		player->spectator = true;

@@ -67,6 +67,7 @@ typedef struct player_info_s {
 	// scoreboard information
 	struct info_key_s *name;
 	struct info_key_s *team;
+	struct info_key_s *chat;
 	float       entertime;
 	int         frags;
 	int         ping;

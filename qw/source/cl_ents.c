@@ -424,8 +424,16 @@ CL_LinkPlayers (void)
 			VectorCopy (state->pls.origin, org);
 			clientplayer = false;
 		}
-		CL_NewDlight (j + 1, org, state->pls.effects, state->pls.glow_size,
-					  state->pls.glow_color);
+		if (info->chat && info->chat->value[0] != '0') {
+			dlight_t   *dl = r_funcs->R_AllocDlight (j + 1);
+			VectorCopy (org, dl->origin);
+			dl->radius = 100;
+			dl->die = cl.time + 0.1;
+			QuatSet (0.0, 1.0, 0.0, 1.0, dl->color);
+		} else {
+			CL_NewDlight (j + 1, org, state->pls.effects, state->pls.glow_size,
+						  state->pls.glow_color);
+		}
 
 		// Draw player?
 		if (!Cam_DrawPlayer (j))
