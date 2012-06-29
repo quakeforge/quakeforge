@@ -355,7 +355,7 @@ Cam_CheckHighTarget (void)
 	j = -1;
 	for (i = 0, max = -9999; i < MAX_CLIENTS; i++) {
 		s = &cl.players[i];
-		if (s->name->value[0] && !s->spectator && s->frags > max) {
+		if (s->name && s->name->value[0] && !s->spectator && s->frags > max) {
 			max = s->frags;
 			j = i;
 		}
@@ -621,7 +621,7 @@ Cam_FinishMove (usercmd_t *cmd)
 	i = end;
 	do {
 		s = &cl.players[i];
-		if (s->name->value[0] && !s->spectator) {
+		if (s->name && s->name->value[0] && !s->spectator) {
 			Cam_Lock (i);
 			ideal_track = i;
 			return;
@@ -631,7 +631,7 @@ Cam_FinishMove (usercmd_t *cmd)
 	// stay on same guy?
 	i = spec_track;
 	s = &cl.players[i];
-	if (s->name->value[0] && !s->spectator) {
+	if (s->name && s->name->value[0] && !s->spectator) {
 		Cam_Lock (i);
 		ideal_track = i;
 		return;
