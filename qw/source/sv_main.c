@@ -193,6 +193,7 @@ int         sv_net_initialized;
 
 const char *client_info_filters[] = {  // Info keys needed by client
 	"name",
+	"chat",
 	"topcolor",
 	"bottomcolor",
 	"rate",
