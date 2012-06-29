@@ -38,6 +38,5 @@ void CL_Chat_User_Disconnected (int uid);
 void CL_Chat_Check_Name (const char *name, int slot);
 void CL_Chat_Flush_Ignores (void);
 void CL_Chat_Init (void);
-void CL_ChatInfo (int val);
 
 #endif

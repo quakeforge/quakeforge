@@ -39,6 +39,7 @@
 #include "QF/cmd.h"
 #include "QF/dstring.h"
 #include "QF/info.h"
+#include "QF/keys.h"
 #include "QF/llist.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -225,17 +226,7 @@ CL_Chat_Flush_Ignores (void)
 	llist_flush (ignore_list);
 }
 
-void
-CL_Chat_Init (void)
-{
-	ignore_list = llist_new (CL_Ignore_Free, CL_Ignore_Compare, 0);
-	dead_ignore_list = llist_new (CL_Ignore_Free, CL_Ignore_Compare, 0);
-
-	Cmd_AddCommand ("ignore", CL_Ignore_f, "Ignores chat and name-change messages from a user.");
-	Cmd_AddCommand ("unignore", CL_Unignore_f, "Removes a previously ignored user from the ignore list.");
-}
-
-void
+static void
 CL_ChatInfo (int val)
 {
 	if (val < 1 || val > 3)
@@ -244,4 +235,35 @@ CL_ChatInfo (int val)
 		cls.chat = val;
 		Cbuf_AddText(cl_cbuf, va ("setinfo chat \"%d\"\n", val));
 	}
+}
+
+static void
+cl_chat_key_dest (void)
+{
+	switch (key_dest) {
+		case key_game:
+			CL_ChatInfo (0);
+			break;
+		case key_message:
+			CL_ChatInfo (1);
+			break;
+		case key_console:
+		case key_menu:
+			CL_ChatInfo (2);	// supposed to be for loss of focus...
+			break;
+		case key_none:			// shouldn't happen
+			CL_ChatInfo (3);
+			break;
+	}
+}
+
+void
+CL_Chat_Init (void)
+{
+	ignore_list = llist_new (CL_Ignore_Free, CL_Ignore_Compare, 0);
+	dead_ignore_list = llist_new (CL_Ignore_Free, CL_Ignore_Compare, 0);
+
+	Cmd_AddCommand ("ignore", CL_Ignore_f, "Ignores chat and name-change messages from a user.");
+	Cmd_AddCommand ("unignore", CL_Unignore_f, "Removes a previously ignored user from the ignore list.");
+	key_dest_callback = cl_chat_key_dest;
 }
