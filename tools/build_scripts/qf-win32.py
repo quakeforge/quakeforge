@@ -26,51 +26,21 @@ server = [
 	dir + "bin/qtv.exe",
 ]
 
-client_wgl = [
-	dir,
-	dir + "bin",
-	dir + "bin/nq-wgl.exe",
-	dir + "bin/qw-client-wgl.exe",
-	dir + "QF",
-	dir + "QF/menu.dat.gz",
-	dir + "QF/menu.plist",
-]
-
-client_sgl = [
-	dir,
-	dir + "bin",
-	dir + "bin/nq-sgl.exe",
-	dir + "bin/qw-client-sgl.exe",
-	dir + "QF",
-	dir + "QF/menu.dat.gz",
-	dir + "QF/menu.plist",
-]
-
-client_sglsl = [
-	dir,
-	dir + "bin",
-	dir + "bin/nq-sglsl.exe",
-	dir + "bin/qw-client-sglsl.exe",
-	dir + "QF",
-	dir + "QF/menu.dat.gz",
-	dir + "QF/menu.plist",
-]
+#client_wgl = [
+#	dir,
+#	dir + "bin",
+#	dir + "bin/nq-wgl.exe",
+#	dir + "bin/qw-client-wgl.exe",
+#	dir + "QF",
+#	dir + "QF/menu.dat.gz",
+#	dir + "QF/menu.plist",
+#]
 
 client_sdl = [
 	dir,
 	dir + "bin",
 	dir + "bin/nq-sdl.exe",
 	dir + "bin/qw-client-sdl.exe",
-	dir + "QF",
-	dir + "QF/menu.dat.gz",
-	dir + "QF/menu.plist",
-]
-
-client_sdl32 = [
-	dir,
-	dir + "bin",
-	dir + "bin/nq-sdl32.exe",
-	dir + "bin/qw-client-sdl32.exe",
 	dir + "QF",
 	dir + "QF/menu.dat.gz",
 	dir + "QF/menu.plist",
@@ -97,15 +67,15 @@ qfcc = [
 	dir + "bin/qfprogs.exe",
 	dir + "bin/qfpreqcc",
 	dir + "qfcc.1",
-	dir + "qfcc.pc",
+	dir + "pkgconfig/qfcc.pc",
 ]
 qfcc_r = [
-	dir + "lib/qfcc",
+	dir + "share/qfcc",
 ]
 
 devel = [
 	dir,
-	dir + "quakeforge.pc",
+	dir + "pkgconfig/quakeforge.pc",
 ]
 
 devel_r = [
@@ -115,11 +85,8 @@ devel_r = [
 
 packages = [
 	(prefix + "-" + "server", server),
-	(prefix + "-" + "client-wgl", client_wgl),
-	(prefix + "-" + "client-sgl", client_sgl),
-	(prefix + "-" + "client-sglsl", client_sglsl),
+	#(prefix + "-" + "client-wgl", client_wgl),
 	(prefix + "-" + "client-sdl", client_sdl),
-	(prefix + "-" + "client-sdl32", client_sdl32),
 	(prefix + "-" + "tools", tools),
 	(prefix + "-" + "devel", devel),
 	(prefix + "-" + "devel", devel_r, "-r"),
