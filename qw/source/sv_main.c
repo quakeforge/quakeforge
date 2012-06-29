@@ -2395,7 +2395,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 		}
 
 		// finally, report it to all our friends
-		if (*cl->name)
+		if (!cl->spectator && *cl->name)
 			SV_BroadcastPrintf (PRINT_HIGH, "%s changed name to %s\n",
 								cl->name, newname);
 		strcpy (cl->name, newname);
