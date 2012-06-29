@@ -35,11 +35,14 @@
 # include <strings.h>
 #endif
 
-#include "QF/info.h"
-#include "QF/dstring.h"
-#include "QF/llist.h"
+#include "QF/cbuf.h"
 #include "QF/cmd.h"
+#include "QF/dstring.h"
+#include "QF/info.h"
+#include "QF/llist.h"
 #include "QF/sys.h"
+#include "QF/va.h"
+
 #include "client.h"
 #include "cl_chat.h"
 
@@ -230,4 +233,15 @@ CL_Chat_Init (void)
 
 	Cmd_AddCommand ("ignore", CL_Ignore_f, "Ignores chat and name-change messages from a user.");
 	Cmd_AddCommand ("unignore", CL_Unignore_f, "Removes a previously ignored user from the ignore list.");
+}
+
+void
+CL_ChatInfo (int val)
+{
+	if (val < 1 || val > 3)
+		val = 0;
+	if (cls.chat != val) {
+		cls.chat = val;
+		Cbuf_AddText(cl_cbuf, va ("setinfo chat \"%d\"\n", val));
+	}
 }

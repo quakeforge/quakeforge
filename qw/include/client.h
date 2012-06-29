@@ -136,6 +136,7 @@ typedef struct {
 
 // private userinfo for sending to masterless servers
 	struct info_s	*userinfo;
+	int         chat;
 
 // file transfer from server
 	QFile      *download;
