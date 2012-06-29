@@ -11,14 +11,14 @@ nobase_pkginclude_HEADERS = \
 	sound.h spritegn.h sys.h teamplay.h tga.h uint32.h va.h ver_check.h vid.h \
 	vrect.h view.h wad.h wadfile.h winding.h zone.h \
 	\
-	GL/ati.h GL/defines.h GL/extensions.h GL/funcs.h GL/qf_explosions.h \
-	GL/qf_funcs_list.h GL/qf_iqm.h GL/qf_lightmap.h \
+	GL/ati.h GL/defines.h GL/extensions.h GL/funcs.h GL/qf_draw.h \
+	GL/qf_explosions.h GL/qf_funcs_list.h GL/qf_iqm.h GL/qf_lightmap.h \
 	GL/qf_rlight.h GL/qf_rmain.h GL/qf_rsurf.h GL/qf_sky.h GL/qf_textures.h \
 	GL/qf_vid.h GL/types.h \
 	\
-	GLSL/defines.h GLSL/funcs.h GLSL/qf_alias.h GLSL/qf_bsp.h \
+	GLSL/defines.h GLSL/funcs.h GLSL/qf_alias.h GLSL/qf_bsp.h GLSL/qf_draw.h \
 	GLSL/qf_funcs_list.h GLSL/qf_iqm.h GLSL/qf_lightmap.h GLSL/qf_particles.h \
 	GLSL/qf_textures.h GLSL/qf_vid.h GLSL/types.h \
 	\
 	plugin/cd.h plugin/console.h plugin/general.h plugin/input.h \
-	plugin/snd_output.h plugin/snd_render.h
+	plugin/snd_output.h plugin/snd_render.h plugin/vid_render.h

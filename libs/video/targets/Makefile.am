@@ -11,7 +11,7 @@ noinst_LTLIBRARIES= @VID_TARGETS@ @vid_libs@
 
 EXTRA_LTLIBRARIES= \
 	libQFjs.la libQFfbdev.la libQFsvga.la libQFx11.la libQFsdl.la libQFwgl.la \
-	libvid_common.la libvid_gl.la libvid_glsl.la libvid_sdl.la \
+	libvid_common.la libvid_sdl.la \
 	libvid_svga.la libvid_x11.la
 
 joy_linux_src= joy_linux.c

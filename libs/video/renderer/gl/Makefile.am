@@ -13,4 +13,4 @@ gl_src = \
 
 libgl_la_SOURCES= $(gl_src)
 
-EXTRA_DIST = $(gl_src)
+EXTRA_DIST = $(gl_src) namehack.h

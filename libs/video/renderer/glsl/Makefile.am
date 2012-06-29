@@ -31,5 +31,5 @@ SUFFICES=.frag .vert .fc .vc
 
 libglsl_la_SOURCES= $(glsl_src)
 
-EXTRA_DIST = $(glsl_src) $(shader_src)
+EXTRA_DIST = $(glsl_src) $(shader_src) namehack.h
 CLEANFILES= *.vc *.fc

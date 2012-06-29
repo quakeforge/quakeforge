@@ -15,4 +15,4 @@ sw32_src= \
 
 libsw32_la_SOURCES= $(sw32_src)
 
-EXTRA_DIST= $(sw32_src)
+EXTRA_DIST= $(sw32_src) namehack.h
