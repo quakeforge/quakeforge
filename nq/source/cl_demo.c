@@ -498,6 +498,10 @@ CL_PlayDemo_f (void)
 		return;
 
 	switch (Cmd_Argc ()) {
+		case 1:
+			if (!demoname[0])
+				goto playdemo_error;
+			// fall through
 		case 2:
 			cls.demo_capture = 0;
 			break;
@@ -508,11 +512,14 @@ CL_PlayDemo_f (void)
 			}
 			// fall through
 		default:
+playdemo_error:
 			Sys_Printf ("play <demoname> : plays a demo\n");
 			return;
 	}
 	timedemo_runs = timedemo_count = 1;	// make sure looped timedemos stop
-	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
+
+	if (Cmd_Argc () > 1)
+		strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
 	CL_StartDemo ();
 }
 
