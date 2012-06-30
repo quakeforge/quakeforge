@@ -15,7 +15,7 @@ QF_WITH_TARGETS(
 QF_WITH_TARGETS(
 	tools,
 	[  --with-tools=<list>     compile qf tools:],
-	[bsp2img,carne,gsc,pak,qfbsp,qfcc,qflight,qflmp,qfmodelgen,qfvis,qwaq,wad,wav],dummy
+	[bsp2img,carne,gsc,pak,qfbsp,qfcc,qflight,qflmp,qfmodelgen,qfspritegen,qfvis,qwaq,wad,wav],dummy
 )
 
 unset CL_TARGETS
@@ -199,6 +199,9 @@ fi
 if test "x$ENABLE_tools_qfmodelgen" = xyes; then
 	QF_NEED(tools,[qfmodelgen])
 fi
+if test "x$ENABLE_tools_qfspritegen" = xyes; then
+	QF_NEED(tools,[qfspritegen])
+fi
 if test "x$ENABLE_tools_qfvis" = xyes; then
 	QF_NEED(tools,[qfvis])
 fi
@@ -214,8 +217,8 @@ fi
 
 QF_NEED(top, [libs hw nq qtv qw])
 
-QF_PROCESS_NEED_DIRS(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfvis qwaq wad wav])
-QF_PROCESS_NEED_FUNC(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfvis qwaq wad wav], QF_NEED(top,tools))
+QF_PROCESS_NEED_DIRS(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfspritegen qfvis qwaq wad wav])
+QF_PROCESS_NEED_FUNC(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfspritegen qfvis qwaq wad wav], QF_NEED(top,tools))
 
 if test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes"; then
 	QF_NEED(top, [ruamoko])
@@ -353,6 +356,12 @@ QF_DEPS(QFLMP,
 QF_DEPS(QFMODELGEN,
 	[-I$(top_srcdir)/tools/qfmodelgen/include],
 	[$(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
+QF_DEPS(QFSPRITEGEN,
+	[],
+	[$(top_builddir)/libs/image/libQFimage.la
+	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(QFVIS,

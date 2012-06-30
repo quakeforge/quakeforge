@@ -68,6 +68,7 @@
 	tools/qfmodelgen/Makefile
 	tools/qfmodelgen/include/Makefile
 	tools/qfmodelgen/source/Makefile
+	tools/qfspritegen/Makefile
 	tools/qfvis/Makefile
 	tools/qfvis/include/Makefile
 	tools/qfvis/source/Makefile
