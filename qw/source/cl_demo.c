@@ -783,7 +783,7 @@ demo_start_recording (int track)
 	// baselines
 	memset (&blankes, 0, sizeof (blankes));
 	for (i = 0; i < MAX_EDICTS; i++) {
-		es = cl_baselines + i;
+		es = qw_entstates.baseline + i;
 
 		if (memcmp (es, &blankes, sizeof (blankes))) {
 			MSG_WriteByte (&buf, svc_spawnbaseline);

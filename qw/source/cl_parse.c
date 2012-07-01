@@ -752,13 +752,14 @@ CL_ClearBaselines (void)
 {
 	int			i;
 
-	memset (cl_baselines, 0, sizeof (cl_baselines));
+	i = qw_entstates.num_entities;
+	memset (qw_entstates.baseline, 0, i * sizeof (entity_state_t));
 	for (i = 0; i < MAX_EDICTS; i++) {
-		cl_baselines[i].colormod = 255;
-		cl_baselines[i].alpha = 255;
-		cl_baselines[i].scale = 16;
-		cl_baselines[i].glow_size = 0;
-		cl_baselines[i].glow_color = 254;
+		qw_entstates.baseline[i].colormod = 255;
+		qw_entstates.baseline[i].alpha = 255;
+		qw_entstates.baseline[i].scale = 16;
+		qw_entstates.baseline[i].glow_size = 0;
+		qw_entstates.baseline[i].glow_color = 254;
 	}
 }
 
@@ -1495,7 +1496,7 @@ CL_ParseServerMessage (void)
 
 			case svc_spawnbaseline:
 				i = MSG_ReadShort (net_message);
-				CL_ParseBaseline (&cl_baselines[i]);
+				CL_ParseBaseline (&qw_entstates.baseline[i]);
 				break;
 
 			case svc_temp_entity:

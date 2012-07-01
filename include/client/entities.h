@@ -62,6 +62,8 @@ typedef struct entity_state_s {
 typedef struct {
 	entity_state_t * const baseline;
 	entity_state_t * const * const frame;
+	const int   num_frames;
+	const int   num_entities;
 } entstates_t;
 
 extern entstates_t nq_entstates;

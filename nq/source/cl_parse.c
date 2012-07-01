@@ -152,7 +152,7 @@ CL_EntityNum (int num)
 	if (num >= cl.num_entities)
 		cl.num_entities = num + 1;
 
-	return &cl_entity_states[0][num];
+	return &nq_entstates.baseline[num];
 }
 
 static void
@@ -486,7 +486,7 @@ CL_ParseUpdate (int bits)
 		num = MSG_ReadByte (net_message);
 
 	baseline = CL_EntityNum (num);
-	state = &cl_entity_states[1 + cl.mindex][num];
+	state = &nq_entstates.frame[0 + cl.mindex][num];
 
 	for (i = 0; i < 16; i++)
 		if (bits & (1 << i))

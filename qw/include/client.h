@@ -338,9 +338,8 @@ extern	struct cvar_s	*cl_fb_players;
 
 extern	client_state_t	cl;
 
-// FIXME, allocate dynamically
-extern	entity_state_t	cl_baselines[MAX_EDICTS];
 extern	entity_t		*cl_static_entities;
+extern	entity_t		cl_entities[512];
 
 extern	qboolean	nomaster;
 extern char	*server_version;	// version of server we connected to

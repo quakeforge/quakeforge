@@ -79,8 +79,8 @@ static entity_state_t * const qw_frames[64] = {
 	&entity_states[512 * 61], &entity_states[512 * 62],
 	&entity_states[512 * 63], &entity_states[512 * 64],
 };
-entstates_t nq_entstates = {&entity_states[0], nq_frames};
-entstates_t qw_entstates = {&entity_states[0], qw_frames};
+entstates_t nq_entstates = {&entity_states[0], nq_frames, 2, 32000};
+entstates_t qw_entstates = {&entity_states[0], qw_frames, 64, 512};
 
 vec3_t ent_colormod[256] = {
 	{0, 0, 0},

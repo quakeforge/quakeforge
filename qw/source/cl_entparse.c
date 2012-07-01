@@ -289,7 +289,8 @@ CL_ParsePacketEntities (qboolean delta)
 			if (newindex >= MAX_DEMO_PACKET_ENTITIES)
 				Host_Error ("CL_ParsePacketEntities: newindex == "
 							"MAX_DEMO_PACKET_ENTITIES");
-			CL_ParseDelta (&cl_baselines[newnum], &newp->entities[newindex],
+			CL_ParseDelta (&qw_entstates.baseline[newnum],
+						   &newp->entities[newindex],
 						   word);
 			newindex++;
 			continue;
@@ -301,7 +302,7 @@ CL_ParsePacketEntities (qboolean delta)
 				Sys_Printf ("WARNING: delta on full update");
 			}
 			if (word & U_REMOVE) {				// Clear the entity
-				entity_t	*ent = &cl_packet_ents[newnum];
+				entity_t	*ent = &cl_entities[newnum];
 				if (ent->efrag)
 					r_funcs->R_RemoveEfrags (ent);
 				memset (ent, 0, sizeof (entity_t));

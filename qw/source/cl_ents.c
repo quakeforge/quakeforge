@@ -59,15 +59,17 @@
 
 entity_t    cl_player_ents[MAX_CLIENTS];
 entity_t    cl_flag_ents[MAX_CLIENTS];
-entity_t    cl_packet_ents[512];	// FIXME: magic number
+entity_t    cl_entities[512];	// FIXME: magic number
 
 void
 CL_ClearEnts (void)
 {
 	size_t      i;
 
-	for (i = 0; i < sizeof (cl_packet_ents) / sizeof (cl_packet_ents[0]); i++)
-		CL_Init_Entity (&cl_packet_ents[i]);
+	i = qw_entstates.num_frames * qw_entstates.num_entities;
+	memset (qw_entstates.frame[0], 0, i * sizeof (entity_state_t));
+	for (i = 0; i < sizeof (cl_entities) / sizeof (cl_entities[0]); i++)
+		CL_Init_Entity (&cl_entities[i]);
 	for (i = 0; i < sizeof (cl_flag_ents) / sizeof (cl_flag_ents[0]); i++)
 		CL_Init_Entity (&cl_flag_ents[i]);
 	for (i = 0; i < sizeof (cl_player_ents) / sizeof (cl_player_ents[0]); i++)
@@ -248,7 +250,7 @@ CL_LinkPacketEntities (void)
 		CL_NewDlight (s1->number, s1->origin, s1->effects, s1->glow_size,
 					  s1->glow_color);
 
-		ent = &cl_packet_ents[s1->number];
+		ent = &cl_entities[s1->number];
 
 		// if set to invisible, skip
 		if (!s1->modelindex

@@ -52,7 +52,6 @@
 #include "server.h"
 
 entity_t        cl_entities[MAX_EDICTS];
-entity_state_t  cl_entity_states[3][MAX_EDICTS];
 double          cl_msgtime[MAX_EDICTS];
 byte            cl_forcelink[MAX_EDICTS];
 
@@ -63,7 +62,8 @@ CL_ClearEnts (void)
 
 	// clear other arrays
 	memset (cl_entities, 0, sizeof (cl_entities));
-	memset (cl_entity_states, 0, sizeof (cl_entity_states));
+	i = nq_entstates.num_frames * nq_entstates.num_entities;
+	memset (nq_entstates.frame[0], 0, i * sizeof (entity_state_t));
 	memset (cl_msgtime, 0, sizeof (cl_msgtime));
 	memset (cl_forcelink, 0, sizeof (cl_forcelink));
 
@@ -320,8 +320,8 @@ CL_RelinkEntities (void)
 
 	// start on the entity after the world
 	for (i = 1; i < cl.num_entities; i++) {
-		new = &cl_entity_states[1 + cl.mindex][i];
-		old = &cl_entity_states[2 - cl.mindex][i];
+		new = &nq_entstates.frame[0 + cl.mindex][i];
+		old = &nq_entstates.frame[1 - cl.mindex][i];
 		ent = &cl_entities[i];
 		// if the object wasn't included in the last packet, remove it
 		if (cl_msgtime[i] != cl.mtime[0] || !new->modelindex) {

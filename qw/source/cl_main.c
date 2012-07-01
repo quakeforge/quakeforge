@@ -186,7 +186,6 @@ static int  cl_usleep_cache;
 
 client_static_t cls;
 client_state_t cl;
-entity_state_t cl_entities[UPDATE_BACKUP][MAX_DEMO_PACKET_ENTITIES];
 
 entity_state_t cl_baselines[MAX_EDICTS];
 
@@ -404,8 +403,7 @@ CL_ClearState (void)
 	cl.fbskins = FBSKINS_DEFAULT;
 
 	for (i = 0; i < UPDATE_BACKUP; i++)
-		cl.frames[i].packet_entities.entities = cl_entities[i];
-	memset (cl_entities, 0, sizeof (cl_entities));
+		cl.frames[i].packet_entities.entities = qw_entstates.frame[i];
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
 	CL_Init_Entity (&cl.viewent);
