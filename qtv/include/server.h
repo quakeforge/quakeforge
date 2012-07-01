@@ -57,6 +57,16 @@ typedef struct frame_s {
 	packet_entities_t entities;
 } frame_t;
 
+typedef struct qtv_leaf_s {
+	struct qtv_leaf_s *next;
+	int         num;
+} qtv_leaf_t;
+
+typedef struct {
+	entity_state_t e;
+	qtv_leaf_t *leafs;
+} qtv_entity_t;
+
 #define MAX_SV_PLAYERS 32
 #define MAX_SV_ENTITIES 512
 #define MAX_SIGNON_BUFFERS  8
@@ -96,7 +106,7 @@ typedef struct server_s {
 	int         validsequence;
 
 	frame_t     frames[UPDATE_BACKUP];
-	entity_state_t entities[MAX_SV_ENTITIES];
+	qtv_entity_t  entities[MAX_SV_ENTITIES];
 	byte        ent_valid[MAX_SV_ENTITIES];
 	entity_state_t baselines[MAX_SV_ENTITIES];
 	player_t    players[MAX_SV_PLAYERS];

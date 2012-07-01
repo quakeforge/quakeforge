@@ -61,6 +61,54 @@
 #include "qtv/include/qtv.h"
 #include "qtv/include/server.h"
 
+#define QTV_LEAFS 32
+typedef struct qtv_leaf_bucket_s {
+	struct qtv_leaf_bucket_s *next;
+	qtv_leaf_t qtv_leafs[QTV_LEAFS];
+} qtv_leaf_bucket_t;
+
+static qtv_leaf_bucket_t *qtv_leaf_buckets;
+static qtv_leaf_bucket_t **qtv_leaf_bucket_tail = &qtv_leaf_buckets;
+static qtv_leaf_t *free_qtv_leaf_list;
+
+static qtv_leaf_t *
+alloc_qtv_leaf (void)
+{
+	qtv_leaf_bucket_t *bucket;
+	qtv_leaf_t *leaf;
+	int         i;
+
+	if ((leaf = free_qtv_leaf_list)) {
+		free_qtv_leaf_list = leaf->next;
+		leaf->next = 0;
+		return leaf;
+	}
+
+	bucket = malloc (sizeof (qtv_leaf_bucket_t));
+	bucket->next = 0;
+	*qtv_leaf_bucket_tail = bucket;
+	qtv_leaf_bucket_tail = &bucket->next;
+
+	for (leaf = bucket->qtv_leafs, i = 0; i < QTV_LEAFS - 1; i++, leaf++)
+		leaf->next = leaf + 1;
+	leaf->next = 0;
+	free_qtv_leaf_list = bucket->qtv_leafs;
+
+	return alloc_qtv_leaf ();
+}
+
+static void
+free_qtv_leafs (qtv_leaf_t **leafs)
+{
+	qtv_leaf_t **l;
+
+	for (l = leafs; *l; l = &(*l)->next)
+		;
+	*l = free_qtv_leaf_list;
+	free_qtv_leaf_list = *leafs;
+	*leafs = 0;
+}
+
 static void
 sv_serverdata (server_t *sv, qmsg_t *msg)
 {
@@ -430,7 +478,7 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 				}
 				newp->entities[newindex] = oldp->entities[oldindex];
 				num = newp->entities[newindex].number;
-				sv->entities[num] = newp->entities[newindex];
+				sv->entities[num].e = newp->entities[newindex];
 				sv->ent_valid[num] = 1;
 				newindex++;
 				oldindex++;
@@ -457,7 +505,7 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 			}
 			newp->entities[newindex] = oldp->entities[oldindex];
 			num = newp->entities[newindex].number;
-			sv->entities[num] = newp->entities[newindex];
+			sv->entities[num].e = newp->entities[newindex];
 			sv->ent_valid[num] = 1;
 			newindex++;
 			oldindex++;
@@ -484,7 +532,7 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 			}
 			newp->entities[newindex] = sv->baselines[newnum];
 			sv_parse_delta (msg, word, &newp->entities[newindex]);
-			sv->entities[newnum] = newp->entities[newindex];
+			sv->entities[newnum].e = newp->entities[newindex];
 			newindex++;
 			continue;
 		}
@@ -500,7 +548,7 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 			}
 			newp->entities[newindex] = oldp->entities[oldindex];
 			sv_parse_delta (msg, word, &newp->entities[newindex]);
-			sv->entities[newnum] = newp->entities[newindex];
+			sv->entities[newnum].e = newp->entities[newindex];
 			sv->ent_valid[newnum] = 1;
 			newindex++;
 			oldindex++;
