@@ -163,7 +163,7 @@ typedef struct {
 	int         prevtime;
 	double      basetime;
 	qboolean    timedemo;
-	int         td_lastframe;		// to meter out one message a frame
+	float       td_lastframe;		// to meter out one message a frame
 	int         td_startframe;		// host_framecount at start
 	float       td_starttime;		// realtime at second frame of timedemo
 } client_static_t;
