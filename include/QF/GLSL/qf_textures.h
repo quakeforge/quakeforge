@@ -58,6 +58,7 @@ void GLSL_ScrapClear (scrap_t *scrap);
 int GLSL_ScrapTexture (scrap_t *scrap);
 subpic_t *GLSL_ScrapSubpic (scrap_t *scrap, int width, int height);	//XXX slow!
 void GLSL_SubpicDelete (subpic_t *subpic);	//XXX slow!
-void GLSL_SubpicUpdate (subpic_t *subpic, byte *data);
+void GLSL_SubpicUpdate (subpic_t *subpic, byte *data, int batch);
+void GLSL_ScrapFlush (scrap_t *scrap);
 
 #endif//__QF_GLSL_textures_h

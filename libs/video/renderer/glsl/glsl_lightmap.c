@@ -141,7 +141,7 @@ R_BuildLightMap_1 (msurface_t *surf)
 	memset (blocklights, 0, size * sizeof (blocklights[0]));
 	if (!r_worldentity.model->lightdata) {
 		// because we by-pass the inversion, "no light" = "full bright"
-		GLSL_SubpicUpdate (surf->lightpic, (byte *) blocklights);
+		GLSL_SubpicUpdate (surf->lightpic, (byte *) blocklights, 1);
 		return;
 	}
 
@@ -174,7 +174,7 @@ R_BuildLightMap_1 (msurface_t *surf)
 		*out++ = t;
 	}
 
-	GLSL_SubpicUpdate (surf->lightpic, (byte *) blocklights);
+	GLSL_SubpicUpdate (surf->lightpic, (byte *) blocklights, 1);
 }
 
 static void
@@ -251,4 +251,10 @@ int
 glsl_R_LightmapTexture (void)
 {
 	return GLSL_ScrapTexture (light_scrap);
+}
+
+void
+glsl_R_FlushLightmaps (void)
+{
+	GLSL_ScrapFlush (light_scrap);
 }

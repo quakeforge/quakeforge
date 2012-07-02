@@ -1106,6 +1106,7 @@ glsl_R_DrawWorld (void)
 		}
 	}
 
+	glsl_R_FlushLightmaps ();
 	bsp_begin ();
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
 	for (i = 0; i < r_num_texture_chains; i++) {

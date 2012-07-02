@@ -56,6 +56,8 @@ struct scrap_s {
 	int         size;	// in pixels, for now, always square, power of 2
 	int         format;
 	int         bpp;
+	byte       *data;	// local copy of the texture so updates can be batched
+	vrect_t    *batch;
 	vrect_t    *free_rects;
 	vrect_t    *rects;
 	subpic_t   *subpics;
@@ -282,7 +284,6 @@ GLSL_CreateScrap (int size, int format)
 	int         i;
 	int         bpp;
 	scrap_t    *scrap;
-	byte       *data;
 
 	for (i = 0; i < 16; i++)
 		if (size <= 1 << i)
@@ -317,18 +318,18 @@ GLSL_CreateScrap (int size, int format)
 	scrap->next = scrap_list;
 	scrap_list = scrap;
 
-	data = calloc (1, size * size * bpp);
+	scrap->data = calloc (1, size * size * bpp);
+	scrap->batch = 0;
 
 	qfeglBindTexture (GL_TEXTURE_2D, scrap->tnum);
 	qfeglTexImage2D (GL_TEXTURE_2D, 0, format,
-					 size, size, 0, format, GL_UNSIGNED_BYTE, data);
+					 size, size, 0, format, GL_UNSIGNED_BYTE, scrap->data);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	//FIXME parameterize (linear for lightmaps)
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	qfeglGenerateMipmap (GL_TEXTURE_2D);
-	free (data);
 
 	return scrap;
 }
@@ -372,6 +373,7 @@ GLSL_DestroyScrap (scrap_t *scrap)
 	GLSL_ScrapClear (scrap);
 	VRect_Delete (scrap->free_rects);
 	GLSL_ReleaseTexture (scrap->tnum);
+	free (scrap->data);
 	free (scrap);
 }
 
@@ -480,13 +482,50 @@ GLSL_SubpicDelete (subpic_t *subpic)
 }
 
 void
-GLSL_SubpicUpdate (subpic_t *subpic, byte *data)
+GLSL_SubpicUpdate (subpic_t *subpic, byte *data, int batch)
 {
 	scrap_t    *scrap = (scrap_t *) subpic->scrap;
 	vrect_t    *rect = (vrect_t *) subpic->rect;
+	byte       *dest;
+	int         step, sbytes;
+	int         i;
 
+	if (batch) {
+		if (scrap->batch) {
+			vrect_t    *r = scrap->batch;
+			scrap->batch = VRect_Union (r, rect);
+			VRect_Delete (r);
+		} else {
+			scrap->batch = VRect_New (rect->x, rect->y,
+									  rect->width, rect->height);
+		}
+		step = scrap->size * scrap->bpp;
+		sbytes = subpic->width * scrap->bpp;
+		dest = scrap->data + rect->y * step + rect->x * scrap->bpp;
+		for (i = 0; i < subpic->height; i++, dest += step, data += sbytes)
+			memcpy (dest, data, sbytes);
+	} else {
+		qfeglBindTexture (GL_TEXTURE_2D, scrap->tnum);
+		qfeglTexSubImage2D (GL_TEXTURE_2D, 0, rect->x, rect->y,
+						   subpic->width, subpic->height, scrap->format,
+						   GL_UNSIGNED_BYTE, data);
+	}
+}
+
+void
+GLSL_ScrapFlush (scrap_t *scrap)
+{
+	vrect_t    *rect = scrap->batch;;
+
+	if (!rect)
+		return;
+	//FIXME: it seems gl (as opposed to egl) allows row step to be specified.
+	//should update to not update the entire horizontal block
 	qfeglBindTexture (GL_TEXTURE_2D, scrap->tnum);
-	qfeglTexSubImage2D (GL_TEXTURE_2D, 0, rect->x, rect->y,
-					   subpic->width, subpic->height, scrap->format,
-					   GL_UNSIGNED_BYTE, data);
+	qfeglTexSubImage2D (GL_TEXTURE_2D, 0, 0, rect->y,
+					   scrap->size, rect->height, scrap->format,
+					   GL_UNSIGNED_BYTE,
+					   scrap->data + rect->y * scrap->size * scrap->bpp);
+	VRect_Delete (rect);
+	scrap->batch = 0;
 }

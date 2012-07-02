@@ -123,6 +123,7 @@ static qpic_t *crosshair_pic;
 static qpic_t *white_pic;
 static qpic_t *backtile_pic;
 static hashtab_t *pic_cache;
+static cvar_t *glsl_conback_texnum;
 
 static qpic_t *
 make_glpic (const char *name, qpic_t *p)
@@ -444,6 +445,10 @@ glsl_Draw_Init (void)
 	qfeglBindTexture (GL_TEXTURE_2D, gl->texnum);
 	qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glsl_conback_texnum = Cvar_Get ("glsl_conback_texnum", "0", CVAR_NONE,
+									NULL, "bind conback to this texture for "
+									"debugging");
 }
 
 static inline void
@@ -684,7 +689,10 @@ glsl_Draw_ConsoleBackground (int lines, byte alpha)
 	qfeglUniform1i (quake_icon.icon.location, 0);
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
 	qfeglEnable (GL_TEXTURE_2D);
-	qfeglBindTexture (GL_TEXTURE_2D, conback_texture);
+	if (glsl_conback_texnum->int_val)
+		qfeglBindTexture (GL_TEXTURE_2D, glsl_conback_texnum->int_val);
+	else
+		qfeglBindTexture (GL_TEXTURE_2D, conback_texture);
 
 	qfeglUniform1i (quake_icon.palette.location, 1);
 	qfeglActiveTexture (GL_TEXTURE0 + 1);
