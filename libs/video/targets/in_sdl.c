@@ -530,15 +530,15 @@ IN_LL_ProcessEvents (void)
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
 				but = event.button.button;
+				if ((unsigned) but > 32)
+					break;
 				if (but == 2)
 					but = 3;
 				else if (but == 3)
 					but = 2;
 
 				switch (but) {
-					case 1:
-					case 2:
-					case 3:
+					default:
 						Key_Event (QFM_BUTTON1 + but - 1, 0,
 								   event.type == SDL_MOUSEBUTTONDOWN);
 						break;

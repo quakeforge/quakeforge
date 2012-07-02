@@ -59,9 +59,9 @@ extern qboolean win_canalttab;
 extern DEVMODE win_gdevmode;
 
 // mouse local variables
-static unsigned int uiWheelMessage;
-static int  mouse_buttons;
-static int  mouse_oldbuttonstate;
+static unsigned uiWheelMessage;
+static unsigned  mouse_buttons;
+static unsigned  mouse_oldbuttonstate;
 static POINT current_pos;
 static float mx_accum, my_accum;
 static qboolean mouseinitialized;
@@ -317,7 +317,7 @@ IN_StartupMouse (void)
 		}
 	}
 
-	mouse_buttons = 3;
+	mouse_buttons = 32;
 
 	// if a fullscreen video mode was set before the mouse was initialized,
 	// set the mouse state appropriately
@@ -383,7 +383,7 @@ IN_LL_Shutdown (void)
 }
 
 static void
-IN_MouseEvent (int mstate)
+IN_MouseEvent (unsigned mstate)
 {
 	int         i;
 
