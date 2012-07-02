@@ -608,8 +608,8 @@ CL_RelinkEntities (void)
 			ent->skinnum = new->skinnum;
 			if (i <= cl.maxclients) {
 				ent->skin = mod_funcs->Skin_SetColormap (ent->skin, i);
-				mod_funcs->Skin_SetTranslation (i, cl.scores[i].topcolor,
-												cl.scores[i].bottomcolor);
+				mod_funcs->Skin_SetTranslation (i, cl.scores[i - 1].topcolor,
+												cl.scores[i - 1].bottomcolor);
 			}
 		}
 		ent->scale = new->scale;

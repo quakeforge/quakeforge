@@ -363,6 +363,8 @@ CL_ParseServerInfo (void)
 	for (i = 0; i < cl.maxclients; i++) {
 		cl.scores[i].info = Info_ParseString ("name\\", 0, 0);
 		cl.scores[i].name = Info_Key (cl.scores[i].info, "name");
+		cl.scores[i].topcolor = 0;
+		cl.scores[i].bottomcolor = 0;
 	}
 
 	// parse gametype
