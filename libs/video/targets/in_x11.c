@@ -618,21 +618,19 @@ event_key (XEvent *event)
 static void
 event_button (XEvent *event)
 {
-	int         but;
+	unsigned    but;
 
 	x_time = event->xbutton.time;
 
 	but = event->xbutton.button;
+	if (but > 32)
+		return;
 	if (but == 2)
 		but = 3;
 	else if (but == 3)
 		but = 2;
 	switch (but) {
-		case 1:
-		case 2:
-		case 3:
-		case 6:
-		case 7:
+		default:
 			Key_Event (QFM_BUTTON1 + but - 1, 0, event->type == ButtonPress);
 			break;
 		case 4:
