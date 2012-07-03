@@ -612,7 +612,7 @@ CL_RelinkEntities (void)
 												cl.scores[i - 1].bottomcolor);
 			}
 		}
-		ent->scale = new->scale;
+		ent->scale = new->scale / 16.0;
 
 		VectorCopy (ent_colormod[new->colormod], ent->colormod);
 		ent->colormod[3] = ENTALPHA_DECODE (new->alpha);

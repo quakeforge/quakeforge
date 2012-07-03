@@ -570,6 +570,9 @@ CL_ParseUpdate (int bits)
 		if (bits & U_LERPFINISH) {
 			MSG_ReadByte (net_message); //FIXME ignored for now. see fitzquake
 		}
+		state->scale = baseline->scale;
+		state->glow_size = baseline->glow_size;
+		state->glow_color = baseline->glow_color;
 		state->colormod = baseline->colormod;
 	} else {
 		state->alpha = baseline->alpha;
