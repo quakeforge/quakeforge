@@ -240,6 +240,7 @@ R_SetupFrame (void)
 	VectorCopy (r_refdef.vieworg, r_origin);
 
 	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
+	R_SetFrustum ();
 
 	// current viewleaf
 	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);

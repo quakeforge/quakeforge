@@ -145,10 +145,11 @@ calc_lighting (entity_t *ent, float *ambient, float *shadelight,
 	unsigned    i;
 	float       add;
 	vec3_t      dist;
+	int         light;
 
 	VectorSet ( -1, 0, 0, lightvec);	//FIXME
-	*ambient = max (R_LightPoint (ent->origin), max (ent->model->min_light,
-													 ent->min_light) * 128);
+	light = R_LightPoint (ent->origin);
+	*ambient = max (light, max (ent->model->min_light, ent->min_light) * 128);
 	*shadelight = *ambient;
 
 	for (i = 0; i < r_maxdlights; i++) {

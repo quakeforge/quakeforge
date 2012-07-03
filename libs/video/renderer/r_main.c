@@ -85,3 +85,43 @@ int         d_lightstylevalue[256];     // 8.8 fraction of base light value
 
 byte        color_white[4] = { 255, 255, 255, 0 };	// alpha will be explicitly set
 byte        color_black[4] = { 0, 0, 0, 0 };		// alpha will be explicitly set
+
+static inline int
+SignbitsForPlane (plane_t *out)
+{
+	int		bits, j;
+
+	// for fast box on planeside test
+
+	bits = 0;
+	for (j = 0; j < 3; j++) {
+		if (out->normal[j] < 0)
+			bits |= 1 << j;
+	}
+	return bits;
+}
+
+void
+R_SetFrustum (void)
+{
+	int         i;
+
+	// rotate VPN right by FOV_X/2 degrees
+	RotatePointAroundVector (frustum[0].normal, vup, vpn,
+							 -(90 - r_refdef.fov_x / 2));
+	// rotate VPN left by FOV_X/2 degrees
+	RotatePointAroundVector (frustum[1].normal, vup, vpn,
+							 90 - r_refdef.fov_x / 2);
+	// rotate VPN up by FOV_Y/2 degrees
+	RotatePointAroundVector (frustum[2].normal, vright, vpn,
+							 90 - r_refdef.fov_y / 2);
+	// rotate VPN down by FOV_Y/2 degrees
+	RotatePointAroundVector (frustum[3].normal, vright, vpn,
+							 -(90 - r_refdef.fov_y / 2));
+
+	for (i = 0; i < 4; i++) {
+		frustum[i].type = PLANE_ANYZ;
+		frustum[i].dist = DotProduct (r_origin, frustum[i].normal);
+		frustum[i].signbits = SignbitsForPlane (&frustum[i]);
+	}
+}
