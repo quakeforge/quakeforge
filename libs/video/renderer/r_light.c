@@ -106,7 +106,7 @@ R_FindNearLights (const vec3_t pos, int count, dlight_t **lights)
 void
 R_MaxDlightsCheck (cvar_t *var)
 {
-	r_maxdlights = max(var->int_val, 0);
+	r_maxdlights = bound (0, var->int_val, 32);
 
 	if (r_dlights)
 		free (r_dlights);
