@@ -346,6 +346,8 @@ gl_R_SetupFrame (void)
 
 	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
 
+	R_SetFrustum ();
+
 	// current viewleaf
 	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
 
@@ -401,8 +403,6 @@ R_SetupGL_Viewport_and_Perspective (void)
 static void
 R_SetupGL (void)
 {
-	R_SetFrustum ();
-
 	R_SetupGL_Viewport_and_Perspective ();
 
 	if (gl_mirror) {
