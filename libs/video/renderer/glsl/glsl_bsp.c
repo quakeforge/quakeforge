@@ -805,11 +805,13 @@ draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc,
 			qfeglVertexAttrib4fv (quake_bsp.color.location, color);
 		}
 	}
-	if (ec->transform) {
-		Mat4Mult (bsp_vp, ec->transform, mat);
-		qfeglUniformMatrix4fv (matloc, 1, false, mat);
-	} else {
-		qfeglUniformMatrix4fv (matloc, 1, false, bsp_vp);
+	if (ec->elements && ec->elements->list->size) {
+		if (ec->transform) {
+			Mat4Mult (bsp_vp, ec->transform, mat);
+			qfeglUniformMatrix4fv (matloc, 1, false, mat);
+		} else {
+			qfeglUniformMatrix4fv (matloc, 1, false, bsp_vp);
+		}
 	}
 	for (el = ec->elements; el; el = el->next) {
 		if (!el->list->size)
