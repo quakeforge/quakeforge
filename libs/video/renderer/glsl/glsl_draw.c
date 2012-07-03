@@ -104,7 +104,7 @@ static struct {
 
 static scrap_t *draw_scrap;		// hold all 2d images
 static byte white_block[8 * 8];
-static dstring_t *char_queue;
+static dstring_t *draw_queue;
 static qpic_t *conchars;
 static int  conback_texture;
 static qpic_t *crosshair_pic;
@@ -249,9 +249,9 @@ draw_pic (float x, float y, int w, int h, qpic_t *pic,
 	int         size = sizeof (verts);
 
 	make_quad (pic, x, y, w, h, srcx, srcy, srcw, srch, verts, color);
-	char_queue->size += size;
-	dstring_adjust (char_queue);
-	v = char_queue->str + char_queue->size - size;
+	draw_queue->size += size;
+	dstring_adjust (draw_queue);
+	v = draw_queue->str + draw_queue->size - size;
 	memcpy (v, verts, size);
 }
 
@@ -379,7 +379,7 @@ glsl_Draw_Init (void)
 	//loading
 	crosshaircolor->callback (crosshaircolor);
 
-	char_queue = dstring_new ();
+	draw_queue = dstring_new ();
 
 	vert = GLSL_CompileShader ("quakeico.vert", quakeicon_vert,
 							   GL_VERTEX_SHADER);
@@ -445,12 +445,12 @@ flush_2d (void)
 	GLSL_ScrapFlush (draw_scrap);
 	qfeglBindTexture (GL_TEXTURE_2D, GLSL_ScrapTexture (draw_scrap));
 	qfeglVertexAttribPointer (quake_2d.vertex.location, 4, GL_FLOAT,
-							 0, 32, char_queue->str);
+							 0, 32, draw_queue->str);
 	qfeglVertexAttribPointer (quake_2d.color.location, 4, GL_FLOAT,
-							 0, 32, char_queue->str + 16);
+							 0, 32, draw_queue->str + 16);
 
-	qfeglDrawArrays (GL_TRIANGLES, 0, char_queue->size / 32);
-	char_queue->size = 0;
+	qfeglDrawArrays (GL_TRIANGLES, 0, draw_queue->size / 32);
+	draw_queue->size = 0;
 }
 
 void
@@ -733,8 +733,6 @@ set_2d (int width, int height)
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
 	qfeglEnable (GL_TEXTURE_2D);
 	qfeglBindTexture (GL_TEXTURE_2D, GLSL_ScrapTexture (draw_scrap));
-
-	qfeglVertexAttrib4f (quake_2d.color.location, 1, 1, 1, 1);
 }
 
 void
@@ -759,13 +757,13 @@ GLSL_End2D (void)
 void
 GLSL_DrawReset (void)
 {
-	char_queue->size = 0;
+	draw_queue->size = 0;
 }
 
 void
 GLSL_FlushText (void)
 {
-	if (char_queue->size)
+	if (draw_queue->size)
 		flush_2d ();
 }
 
