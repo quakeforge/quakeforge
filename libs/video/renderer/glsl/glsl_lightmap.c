@@ -200,7 +200,7 @@ glsl_R_BuildLightmaps (model_t **models, int num_models)
 
 	//FIXME RGB support
 	if (!light_scrap) {
-		light_scrap = GLSL_CreateScrap (2048, GL_LUMINANCE);
+		light_scrap = GLSL_CreateScrap (2048, GL_LUMINANCE, 1);
 		light_data = malloc (BLOCK_SIZE * MAX_LIGHTMAPS);
 	} else {
 		GLSL_ScrapClear (light_scrap);

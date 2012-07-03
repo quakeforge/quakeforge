@@ -279,7 +279,7 @@ GLSL_TextureInit (void)
 }
 
 scrap_t *
-GLSL_CreateScrap (int size, int format)
+GLSL_CreateScrap (int size, int format, int linear)
 {
 	int         i;
 	int         bpp;
@@ -326,9 +326,13 @@ GLSL_CreateScrap (int size, int format)
 					 size, size, 0, format, GL_UNSIGNED_BYTE, scrap->data);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	//FIXME parameterize (linear for lightmaps)
-	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	if (linear) {
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	} else {
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
 	qfeglGenerateMipmap (GL_TEXTURE_2D);
 
 	return scrap;

@@ -52,7 +52,7 @@ int GLSL_LoadRGBATexture (const char *identifier, int width, int height,
 void GLSL_ReleaseTexture (int tex);
 void GLSL_TextureInit (void);
 
-scrap_t *GLSL_CreateScrap (int size, int format);
+scrap_t *GLSL_CreateScrap (int size, int format, int linear);
 void GLSL_DestroyScrap (scrap_t *scrap);
 void GLSL_ScrapClear (scrap_t *scrap);
 int GLSL_ScrapTexture (scrap_t *scrap);
