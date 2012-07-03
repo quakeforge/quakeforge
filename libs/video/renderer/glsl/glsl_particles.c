@@ -1763,7 +1763,7 @@ draw_id_particles (void)
 void
 glsl_R_DrawParticles (void)
 {
-	if (!r_particles->int_val)
+	if (!r_particles->int_val || !numparticles)
 		return;
 	if (r_particles_style->int_val) {
 		draw_qf_particles ();

@@ -151,36 +151,30 @@ static void
 R_RenderEntities (void)
 {
 	entity_t   *ent;
+	int         begun;
 
 	if (!r_drawentities->int_val)
 		return;
+#define RE_LOOP(type_name, Type) \
+	do { \
+		begun = 0; \
+		for (ent = r_ent_queue; ent; ent = ent->next) { \
+			if (ent->model->type != mod_##type_name) \
+				continue; \
+			if (!begun) { \
+				glsl_R_##Type##Begin (); \
+				begun = 1; \
+			} \
+			currententity = ent; \
+			glsl_R_Draw##Type (); \
+		} \
+		if (begun) \
+			glsl_R_##Type##End (); \
+	} while (0)
 
-	glsl_R_AliasBegin ();
-	for (ent = r_ent_queue; ent; ent = ent->next) {
-		if (ent->model->type != mod_alias)
-			continue;
-		currententity = ent;
-		glsl_R_DrawAlias ();
-	}
-	glsl_R_AliasEnd ();
-
-	glsl_R_IQMBegin ();
-	for (ent = r_ent_queue; ent; ent = ent->next) {
-		if (ent->model->type != mod_iqm)
-			continue;
-		currententity = ent;
-		glsl_R_DrawIQM ();
-	}
-	glsl_R_IQMEnd ();
-
-	glsl_R_SpriteBegin ();
-	for (ent = r_ent_queue; ent; ent = ent->next) {
-		if (ent->model->type != mod_sprite)
-			continue;
-		currententity = ent;
-		glsl_R_DrawSprite ();
-	}
-	glsl_R_SpriteEnd ();
+	RE_LOOP (alias, Alias);
+	RE_LOOP (iqm, IQM);
+	RE_LOOP (sprite, Sprite);
 }
 
 static void
