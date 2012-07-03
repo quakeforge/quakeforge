@@ -30,6 +30,7 @@
 
 void GLSL_Set2D (void);
 void GLSL_Set2DScaled (void);
+void GLSL_End2D (void);
 void GLSL_DrawReset (void);
 void GLSL_FlushText (void);
 

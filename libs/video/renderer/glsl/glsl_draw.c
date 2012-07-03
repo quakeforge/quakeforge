@@ -58,7 +58,7 @@
 #include "r_internal.h"
 
 typedef struct {
-	int         texnum;
+	subpic_t   *subpic;
 } glpic_t;
 
 typedef struct cachepic_s {
@@ -66,6 +66,11 @@ typedef struct cachepic_s {
 	char       *name;
 	qpic_t     *pic;
 } cachepic_t;
+
+typedef struct {
+	float       xyst[4];
+	float       color[4];
+} drawvert_t;
 
 static const char quakeicon_vert[] =
 #include "quakeico.vc"
@@ -83,30 +88,12 @@ static float proj_matrix[16];
 
 static struct {
 	int         program;
-	shaderparam_t charmap;
+	shaderparam_t texture;
 	shaderparam_t palette;
 	shaderparam_t matrix;
 	shaderparam_t vertex;
 	shaderparam_t color;
-	shaderparam_t dchar;
-} quake_text = {
-	0,
-	{"texture", 1},
-	{"palette", 1},
-	{"mvp_mat", 1},
-	{"vertex", 0},
-	{"vcolor", 0},
-	{"dchar", 0},
-};
-
-static struct {
-	int         program;
-	shaderparam_t icon;
-	shaderparam_t palette;
-	shaderparam_t matrix;
-	shaderparam_t vertex;
-	shaderparam_t color;
-} quake_icon = {
+} quake_2d = {
 	0,
 	{"texture", 1},
 	{"palette", 1},
@@ -115,13 +102,14 @@ static struct {
 	{"vcolor", 0},
 };
 
+static scrap_t *draw_scrap;		// hold all 2d images
 static byte white_block[8 * 8];
 static dstring_t *char_queue;
-static int  char_texture;
+static qpic_t *conchars;
 static int  conback_texture;
 static qpic_t *crosshair_pic;
 static qpic_t *white_pic;
-static qpic_t *backtile_pic;
+//FIXME static qpic_t *backtile_pic;
 static hashtab_t *pic_cache;
 static cvar_t *glsl_conback_texnum;
 
@@ -134,10 +122,11 @@ make_glpic (const char *name, qpic_t *p)
 	if (p) {
 		// FIXME is alignment ok?
 		pic = malloc (sizeof (qpic_t) + sizeof (glpic_t));
-		*pic = *p;
+		pic->width = p->width;
+		pic->height = p->height;
 		gl = (glpic_t *) pic->data;
-		gl->texnum = GLSL_LoadQuakeTexture (name, p->width, p->height,
-											p->data);
+		gl->subpic = GLSL_ScrapSubpic (draw_scrap, pic->width, pic->height);
+		GLSL_SubpicUpdate (gl->subpic, p->data, 1);
 	}
 	return pic;
 }
@@ -147,7 +136,7 @@ pic_free (qpic_t *pic)
 {
 	glpic_t    *gl = (glpic_t *) pic->data;
 
-	GLSL_ReleaseTexture (gl->texnum);
+	GLSL_SubpicDelete (gl->subpic);
 	free (pic);
 }
 
@@ -195,44 +184,59 @@ pic_data (const char *name, int w, int h, const byte *data)
 
 static void
 make_quad (qpic_t *pic, float x, float y, int w, int h,
-		   int srcx, int srcy, int srcw, int srch, float verts[6][4])
+		   int srcx, int srcy, int srcw, int srch, drawvert_t verts[6],
+		   float *color)
 {
+	glpic_t    *gl;
+	subpic_t   *sp;
 	float       sl, sh, tl, th;
 
-	sl = (float) srcx / (float) pic->width;
-	sh = sl + (float) srcw / (float) pic->width;
-	tl = (float) srcy / (float) pic->height;
-	th = tl + (float) srch / (float) pic->height;
+	gl = (glpic_t *) pic->data;
+	sp = gl->subpic;
 
-	verts[0][0] = x;
-	verts[0][1] = y;
-	verts[0][2] = sl;
-	verts[0][3] = tl;
+	srcx += sp->rect->x;
+	srcy += sp->rect->y;
+	sl = (srcx + 0.25) * sp->size;
+	sh = sl + (srcw - 0.5) * sp->size;
+	tl = (srcy + 0.25) * sp->size;
+	th = tl + (srch - 0.5) * sp->size;
 
-	verts[1][0] = x + w;
-	verts[1][1] = y;
-	verts[1][2] = sh;
-	verts[1][3] = tl;
+	verts[0].xyst[0] = x;
+	verts[0].xyst[1] = y;
+	verts[0].xyst[2] = sl;
+	verts[0].xyst[3] = tl;
 
-	verts[2][0] = x + w;
-	verts[2][1] = y + h;
-	verts[2][2] = sh;
-	verts[2][3] = th;
+	verts[1].xyst[0] = x + w;
+	verts[1].xyst[1] = y;
+	verts[1].xyst[2] = sh;
+	verts[1].xyst[3] = tl;
 
-	verts[3][0] = x;
-	verts[3][1] = y;
-	verts[3][2] = sl;
-	verts[3][3] = tl;
+	verts[2].xyst[0] = x + w;
+	verts[2].xyst[1] = y + h;
+	verts[2].xyst[2] = sh;
+	verts[2].xyst[3] = th;
 
-	verts[4][0] = x + w;
-	verts[4][1] = y + h;
-	verts[4][2] = sh;
-	verts[4][3] = th;
+	verts[3].xyst[0] = x;
+	verts[3].xyst[1] = y;
+	verts[3].xyst[2] = sl;
+	verts[3].xyst[3] = tl;
 
-	verts[5][0] = x;
-	verts[5][1] = y + h;
-	verts[5][2] = sl;
-	verts[5][3] = th;
+	verts[4].xyst[0] = x + w;
+	verts[4].xyst[1] = y + h;
+	verts[4].xyst[2] = sh;
+	verts[4].xyst[3] = th;
+
+	verts[5].xyst[0] = x;
+	verts[5].xyst[1] = y + h;
+	verts[5].xyst[2] = sl;
+	verts[5].xyst[3] = th;
+
+	QuatCopy (color, verts[0].color);
+	QuatCopy (color, verts[1].color);
+	QuatCopy (color, verts[2].color);
+	QuatCopy (color, verts[3].color);
+	QuatCopy (color, verts[4].color);
+	QuatCopy (color, verts[5].color);
 }
 
 static void
@@ -240,35 +244,15 @@ draw_pic (float x, float y, int w, int h, qpic_t *pic,
 		  int srcx, int srcy, int srcw, int srch,
 		  float *color)
 {
-	glpic_t    *gl;
-	float       verts[6][4];
+	drawvert_t  verts[6];
+	void       *v;
+	int         size = sizeof (verts);
 
-	make_quad (pic, x, y, w, h, srcx, srcy, srcw, srch, verts);
-	gl = (glpic_t *) pic->data;
-
-	qfeglUseProgram (quake_icon.program);
-	qfeglEnableVertexAttribArray (quake_icon.vertex.location);
-
-	qfeglUniformMatrix4fv (quake_icon.matrix.location, 1, false, proj_matrix);
-
-	qfeglUniform1i (quake_icon.icon.location, 0);
-	qfeglActiveTexture (GL_TEXTURE0 + 0);
-	qfeglEnable (GL_TEXTURE_2D);
-	qfeglBindTexture (GL_TEXTURE_2D, gl->texnum);
-
-	qfeglUniform1i (quake_icon.palette.location, 1);
-	qfeglActiveTexture (GL_TEXTURE0 + 1);
-	qfeglEnable (GL_TEXTURE_2D);
-	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
-
-	qfeglVertexAttrib4fv (quake_icon.color.location, color);
-
-	qfeglVertexAttribPointer (quake_icon.vertex.location, 4, GL_FLOAT,
-							 0, 0, verts);
-
-	qfeglDrawArrays (GL_TRIANGLES, 0, 6);
-
-	qfeglDisableVertexAttribArray (quake_icon.vertex.location);
+	make_quad (pic, x, y, w, h, srcx, srcy, srcw, srch, verts, color);
+	char_queue->size += size;
+	dstring_adjust (char_queue);
+	v = char_queue->str + char_queue->size - size;
+	memcpy (v, verts, size);
 }
 
 qpic_t *
@@ -387,7 +371,7 @@ glsl_Draw_Init (void)
 	int         i;
 	int         frag, vert;
 	qpic_t     *pic;
-	glpic_t    *gl;
+	//FIXME glpic_t    *gl;
 
 	pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free, 0);
 	QFS_GamedirCallback (Draw_ClearCache);
@@ -396,33 +380,26 @@ glsl_Draw_Init (void)
 	crosshaircolor->callback (crosshaircolor);
 
 	char_queue = dstring_new ();
-	vert = GLSL_CompileShader ("quaketxt.vert", quaketext_vert,
-							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("quake2d.frag", quake2d_frag,
-							   GL_FRAGMENT_SHADER);
-	quake_text.program = GLSL_LinkProgram ("quaketxt", vert, frag);
-	GLSL_ResolveShaderParam (quake_text.program, &quake_text.charmap);
-	GLSL_ResolveShaderParam (quake_text.program, &quake_text.palette);
-	GLSL_ResolveShaderParam (quake_text.program, &quake_text.matrix);
-	GLSL_ResolveShaderParam (quake_text.program, &quake_text.vertex);
-	GLSL_ResolveShaderParam (quake_text.program, &quake_text.color);
-	GLSL_ResolveShaderParam (quake_text.program, &quake_text.dchar);
 
 	vert = GLSL_CompileShader ("quakeico.vert", quakeicon_vert,
 							   GL_VERTEX_SHADER);
-	quake_icon.program = GLSL_LinkProgram ("quakeico", vert, frag);
-	GLSL_ResolveShaderParam (quake_icon.program, &quake_icon.icon);
-	GLSL_ResolveShaderParam (quake_icon.program, &quake_icon.palette);
-	GLSL_ResolveShaderParam (quake_icon.program, &quake_icon.matrix);
-	GLSL_ResolveShaderParam (quake_icon.program, &quake_icon.vertex);
-	GLSL_ResolveShaderParam (quake_icon.program, &quake_icon.color);
+	frag = GLSL_CompileShader ("quake2d.frag", quake2d_frag,
+							   GL_FRAGMENT_SHADER);
+	quake_2d.program = GLSL_LinkProgram ("quake2d", vert, frag);
+	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.texture);
+	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.palette);
+	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.matrix);
+	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.vertex);
+	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.color);
+
+	draw_scrap = GLSL_CreateScrap (2048, GL_LUMINANCE, 0);
 
 	draw_chars = W_GetLumpName ("conchars");
 	for (i = 0; i < 256 * 64; i++)
 		if (draw_chars[i] == 0)
 			draw_chars[i] = 255;		// proper transparent color
 
-	char_texture = GLSL_LoadQuakeTexture ("conchars", 128, 128, draw_chars);
+	conchars = pic_data ("conchars", 128, 128, draw_chars);
 
 	pic = (qpic_t *) QFS_LoadFile ("gfx/conback.lmp", 0);
 	if (pic) {
@@ -440,11 +417,11 @@ glsl_Draw_Init (void)
 	memset (white_block, 0xfe, sizeof (white_block));
 	white_pic = pic_data ("white_block", 8, 8, white_block);
 
-	backtile_pic = glsl_Draw_PicFromWad ("backtile");
-	gl = (glpic_t *) backtile_pic->data;
-	qfeglBindTexture (GL_TEXTURE_2D, gl->texnum);
-	qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//FIXME backtile_pic = glsl_Draw_PicFromWad ("backtile");
+	//FIXME gl = (glpic_t *) backtile_pic->data;
+	//FIXME qfeglBindTexture (GL_TEXTURE_2D, gl->texnum);
+	//FIXME qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	//FIXME qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	glsl_conback_texnum = Cvar_Get ("glsl_conback_texnum", "0", CVAR_NONE,
 									NULL, "bind conback to this texture for "
@@ -454,53 +431,25 @@ glsl_Draw_Init (void)
 static inline void
 queue_character (int x, int y, byte chr)
 {
-	unsigned short *v;
-	unsigned    i, c;
-	const int   size = 5 * 2 * 6;
+	quat_t      color = {1, 1, 1, 1};
+	int         cx, cy;
 
-	char_queue->size += size;
-	dstring_adjust (char_queue);
-	v = (unsigned short *) (char_queue->str + char_queue->size - size);
-	c = 0x738;
-	for (i = 0; i < 6; i++, c >>= 2) {
-		*v++ = x;
-		*v++ = y;
-		*v++ = c & 1;
-		*v++ = (c >> 1) & 1;
-		*v++ = chr;
-	}
+	cx = chr % 16;
+	cy = chr / 16;
+	draw_pic (x, y, 8, 8, conchars, cx * 8, cy * 8, 8, 8, color);
 }
 
 static void
-flush_text (void)
+flush_2d (void)
 {
-	qfeglUseProgram (quake_text.program);
-	qfeglEnableVertexAttribArray (quake_text.vertex.location);
-	qfeglEnableVertexAttribArray (quake_text.dchar.location);
+	GLSL_ScrapFlush (draw_scrap);
+	qfeglBindTexture (GL_TEXTURE_2D, GLSL_ScrapTexture (draw_scrap));
+	qfeglVertexAttribPointer (quake_2d.vertex.location, 4, GL_FLOAT,
+							 0, 32, char_queue->str);
+	qfeglVertexAttribPointer (quake_2d.color.location, 4, GL_FLOAT,
+							 0, 32, char_queue->str + 16);
 
-	qfeglUniformMatrix4fv (quake_text.matrix.location, 1, false, proj_matrix);
-
-	qfeglUniform1i (quake_text.charmap.location, 0);
-	qfeglActiveTexture (GL_TEXTURE0 + 0);
-	qfeglEnable (GL_TEXTURE_2D);
-	qfeglBindTexture (GL_TEXTURE_2D, char_texture);
-
-	qfeglUniform1i (quake_text.palette.location, 1);
-	qfeglActiveTexture (GL_TEXTURE0 + 1);
-	qfeglEnable (GL_TEXTURE_2D);
-	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
-
-	qfeglVertexAttrib4f (quake_text.color.location, 1, 1, 1, 1);
-
-	qfeglVertexAttribPointer (quake_text.vertex.location, 4, GL_UNSIGNED_SHORT,
-							 0, 10, char_queue->str);
-	qfeglVertexAttribPointer (quake_text.dchar.location, 1, GL_UNSIGNED_SHORT,
-							 0, 10, char_queue->str + 8);
-
-	qfeglDrawArrays (GL_TRIANGLES, 0, char_queue->size / 10);
-
-	qfeglDisableVertexAttribArray (quake_text.dchar.location);
-	qfeglDisableVertexAttribArray (quake_text.vertex.location);
+	qfeglDrawArrays (GL_TRIANGLES, 0, char_queue->size / 32);
 	char_queue->size = 0;
 }
 
@@ -670,51 +619,43 @@ void
 glsl_Draw_ConsoleBackground (int lines, byte alpha)
 {
 	float       ofs = (vid.conheight - lines) / (float) vid.conheight;
-	float       verts[][4] = {
-		{           0,     0, 0, ofs},
-		{vid.conwidth,     0, 1, ofs},
-		{vid.conwidth, lines, 1,   1},
-		{           0,     0, 0, ofs},
-		{vid.conwidth, lines, 1,   1},
-		{           0, lines, 0,   1},
+	quat_t      color = {1, 1, 1, bound (0, alpha, 255) / 255.0};
+	drawvert_t  verts[] = {
+		{{           0,     0, 0, ofs}},
+		{{vid.conwidth,     0, 1, ofs}},
+		{{vid.conwidth, lines, 1,   1}},
+		{{           0,     0, 0, ofs}},
+		{{vid.conwidth, lines, 1,   1}},
+		{{           0, lines, 0,   1}},
 	};
 
 	GLSL_FlushText (); // Flush text that should be rendered before the console
 
-	qfeglUseProgram (quake_icon.program);
-	qfeglEnableVertexAttribArray (quake_icon.vertex.location);
+	QuatCopy (color, verts[0].color);
+	QuatCopy (color, verts[1].color);
+	QuatCopy (color, verts[2].color);
+	QuatCopy (color, verts[3].color);
+	QuatCopy (color, verts[4].color);
+	QuatCopy (color, verts[5].color);
 
-	qfeglUniformMatrix4fv (quake_icon.matrix.location, 1, false, proj_matrix);
-
-	qfeglUniform1i (quake_icon.icon.location, 0);
-	qfeglActiveTexture (GL_TEXTURE0 + 0);
-	qfeglEnable (GL_TEXTURE_2D);
 	if (glsl_conback_texnum->int_val)
 		qfeglBindTexture (GL_TEXTURE_2D, glsl_conback_texnum->int_val);
 	else
 		qfeglBindTexture (GL_TEXTURE_2D, conback_texture);
 
-	qfeglUniform1i (quake_icon.palette.location, 1);
-	qfeglActiveTexture (GL_TEXTURE0 + 1);
-	qfeglEnable (GL_TEXTURE_2D);
-	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
-
-	qfeglVertexAttrib4f (quake_icon.color.location,
-						1, 1, 1, bound (0, alpha, 255) / 255.0);
-
-	qfeglVertexAttribPointer (quake_icon.vertex.location, 4, GL_FLOAT,
-							 0, 0, verts);
+	qfeglVertexAttribPointer (quake_2d.vertex.location, 4, GL_FLOAT,
+							 0, sizeof (drawvert_t), &verts[0].xyst);
+	qfeglVertexAttribPointer (quake_2d.color.location, 4, GL_FLOAT,
+							 0, sizeof (drawvert_t), &verts[0].color);
 
 	qfeglDrawArrays (GL_TRIANGLES, 0, 6);
-
-	qfeglDisableVertexAttribArray (quake_icon.vertex.location);
 }
 
 void
 glsl_Draw_TileClear (int x, int y, int w, int h)
 {
-	static quat_t color = { 1, 1, 1, 1 };
-	draw_pic (x, y, w, h, backtile_pic, 0, 0, w, h, color);
+	//FIXME static quat_t color = { 1, 1, 1, 1 };
+	//FIXME draw_pic (x, y, w, h, backtile_pic, 0, 0, w, h, color);
 }
 
 void
@@ -776,6 +717,24 @@ set_2d (int width, int height)
 	qfeglDisable (GL_CULL_FACE);
 
 	ortho_mat (proj_matrix, 0, width, height, 0, -99999, 99999);
+
+	qfeglUseProgram (quake_2d.program);
+	qfeglEnableVertexAttribArray (quake_2d.vertex.location);
+	qfeglEnableVertexAttribArray (quake_2d.color.location);
+
+	qfeglUniformMatrix4fv (quake_2d.matrix.location, 1, false, proj_matrix);
+
+	qfeglUniform1i (quake_2d.palette.location, 1);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
+
+	qfeglUniform1i (quake_2d.texture.location, 0);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, GLSL_ScrapTexture (draw_scrap));
+
+	qfeglVertexAttrib4f (quake_2d.color.location, 1, 1, 1, 1);
 }
 
 void
@@ -791,6 +750,13 @@ GLSL_Set2DScaled (void)
 }
 
 void
+GLSL_End2D (void)
+{
+	qfeglDisableVertexAttribArray (quake_2d.vertex.location);
+	qfeglDisableVertexAttribArray (quake_2d.color.location);
+}
+
+void
 GLSL_DrawReset (void)
 {
 	char_queue->size = 0;
@@ -800,7 +766,7 @@ void
 GLSL_FlushText (void)
 {
 	if (char_queue->size)
-		flush_text ();
+		flush_2d ();
 }
 
 void

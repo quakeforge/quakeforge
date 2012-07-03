@@ -197,6 +197,7 @@ glsl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
 		scr_funcs++;
 		GLSL_FlushText ();
 	}
+	GLSL_End2D ();
 	qfeglFlush ();
 }
 
