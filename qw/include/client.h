@@ -203,6 +203,8 @@ typedef struct {
 								// accidentally do something the first frame
 	// sentcmds[cl.netchan.outgoing_sequence & UPDATE_MASK] = cmd
 	frame_t     frames[UPDATE_BACKUP];
+	int         link_sequence;
+	int         prev_sequence;
 
 // information for local display
 	int         stats[MAX_CL_STATS];	// health, etc
@@ -340,6 +342,7 @@ extern	client_state_t	cl;
 
 extern	entity_t		*cl_static_entities;
 extern	entity_t		cl_entities[512];
+extern	byte			cl_entity_valid[2][512];
 
 extern	qboolean	nomaster;
 extern char	*server_version;	// version of server we connected to

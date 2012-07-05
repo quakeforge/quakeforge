@@ -45,6 +45,7 @@
 #include "qw/msg_ucmd.h"
 
 #include "qw/bothdefs.h"
+#include "chase.h"
 #include "cl_cam.h"
 #include "cl_ents.h"
 #include "cl_main.h"
@@ -60,6 +61,7 @@
 entity_t    cl_player_ents[MAX_CLIENTS];
 entity_t    cl_flag_ents[MAX_CLIENTS];
 entity_t    cl_entities[512];	// FIXME: magic number
+byte        cl_entity_valid[2][512];
 
 void
 CL_ClearEnts (void)
@@ -68,6 +70,7 @@ CL_ClearEnts (void)
 
 	i = qw_entstates.num_frames * qw_entstates.num_entities;
 	memset (qw_entstates.frame[0], 0, i * sizeof (entity_state_t));
+	memset (cl_entity_valid, 0, sizeof (cl_entity_valid));
 	for (i = 0; i < sizeof (cl_entities) / sizeof (cl_entities[0]); i++)
 		CL_Init_Entity (&cl_entities[i]);
 	for (i = 0; i < sizeof (cl_flag_ents) / sizeof (cl_flag_ents[0]); i++)
@@ -233,89 +236,162 @@ CL_ModelEffects (entity_t *ent, int num, int glow_color)
 }
 
 static void
+set_entity_model (entity_t *ent, int modelindex)
+{
+	ent->model = cl.model_precache[modelindex];
+	// automatic animation (torches, etc) can be either all together
+	// or randomized
+	if (ent->model) {
+		if (ent->model->synctype == ST_RAND)
+			ent->syncbase = (float) (rand () & 0x7fff) / 0x7fff;
+		else
+			ent->syncbase = 0.0;
+	}
+}
+
+static void
 CL_LinkPacketEntities (void)
 {
-	int				pnum;
-	entity_t	   *ent;
-	entity_state_t *s1;
-	model_t		   *model;
-	packet_entities_t *pack;
+	int         i, j, forcelink;
+	float       frac, f;
+	entity_t   *ent;
+	entity_state_t *new, *old;
+	vec3_t      delta;
 
-	pack = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK].packet_entities;
-
-	for (pnum = 0; pnum < pack->num_entities; pnum++) {
-		s1 = &pack->entities[pnum];
+	frac = 1;
+	for (i = 0; i < 512; i++) {
+		new = &qw_entstates.frame[cl.link_sequence & UPDATE_MASK][i];
+		old = &qw_entstates.frame[cl.prev_sequence & UPDATE_MASK][i];
+		ent = &cl_entities[i];
+		forcelink = cl_entity_valid[0][i] != cl_entity_valid[1][i];
+		cl_entity_valid[1][i] = cl_entity_valid[0][i];
+		// if the object wasn't included in the last packet, remove it
+		if (!cl_entity_valid[0][i]) {
+			ent->model = NULL;
+			ent->pose1 = ent->pose2 = -1;
+			if (ent->efrag)
+				r_funcs->R_RemoveEfrags (ent);	// just became empty
+			continue;
+		}
 
 		// spawn light flashes, even ones coming from invisible objects
-		CL_NewDlight (s1->number, s1->origin, s1->effects, s1->glow_size,
-					  s1->glow_color);
-
-		ent = &cl_entities[s1->number];
+		CL_NewDlight (i, new->origin, new->effects, new->glow_size,
+					  new->glow_color);
 
 		// if set to invisible, skip
-		if (!s1->modelindex
-			|| (cl_deadbodyfilter->int_val && is_dead_body (s1))
-			|| (cl_gibfilter->int_val && is_gib (s1))) {
+		if (!new->modelindex
+			|| (cl_deadbodyfilter->int_val && is_dead_body (new))
+			|| (cl_gibfilter->int_val && is_gib (new))) {
 			if (ent->efrag)
 				r_funcs->R_RemoveEfrags (ent);
 			continue;
 		}
 
-		ent->model = model = cl.model_precache[s1->modelindex];
+		if (forcelink)
+			*old = *new;
+
+		if (forcelink || new->modelindex != old->modelindex) {
+			old->modelindex = new->modelindex;
+			set_entity_model (ent, new->modelindex);
+		}
+		ent->frame = new->frame;
+		if (forcelink || new->colormap != old->colormap
+			|| new->skinnum != old->skinnum) {
+			old->skinnum = new->skinnum;
+			ent->skinnum = new->skinnum;
+			old->colormap = new->colormap;
+			if (new->colormap && (new->colormap <= MAX_CLIENTS)
+				&& cl.players[new->colormap - 1].name
+				&& cl.players[new->colormap - 1].name->value[0]) {
+				player_info_t *player = &cl.players[new->colormap - 1];
+				ent->skin = mod_funcs->Skin_SetSkin (ent->skin, new->colormap,
+													 player->skinname->value);
+				ent->skin = mod_funcs->Skin_SetColormap (ent->skin,
+														 new->colormap);
+			} else {
+				ent->skin = mod_funcs->Skin_SetColormap (ent->skin, 0);
+			}
+		}
+		ent->scale = new->scale / 16.0;
+
+		VectorCopy (ent_colormod[new->colormod], ent->colormod);
+		ent->colormod[3] = new->alpha / 255.0;
 
 		ent->min_light = 0;
 		ent->fullbright = 0;
-
-		if (s1->modelindex == cl_playerindex) {
+		if (new->modelindex == cl_playerindex) {
 			ent->min_light = min (cl.fbskins, cl_fb_players->value);
 			if (ent->min_light >= 1.0)
 				ent->fullbright = 1;
 		}
 
-		// set colormap
-		ent->skin = s1->skin;
-
-		VectorCopy (ent_colormod[s1->colormod], ent->colormod);
-		ent->colormod[3] = s1->alpha / 255.0;
-		ent->scale = s1->scale / 16.0;
-		// Ender: Extend (Colormod) [QSG - End]
-
-		// set skin
-		ent->skinnum = s1->skinnum;
-
-		// set frame
-		ent->frame = s1->frame;
-
-		if (!ent->efrag) {
+		if (forcelink) {
 			ent->pose1 = ent->pose2 = -1;
-
-			// No trail if new this frame
-			VectorCopy (s1->origin, ent->origin);
+			VectorCopy (new->origin, ent->origin);
+			if (!(ent->model->flags & EF_ROTATE))
+				CL_TransformEntity (ent, new->angles, true);
+			if (i != cl.viewentity || chase_active->int_val) {
+				if (ent->efrag)
+					r_funcs->R_RemoveEfrags (ent);
+				r_funcs->R_AddEfrags (ent);
+			}
 			VectorCopy (ent->origin, ent->old_origin);
 		} else {
+			f = frac;
 			VectorCopy (ent->origin, ent->old_origin);
-			VectorCopy (s1->origin, ent->origin);
-			if (!VectorCompare (ent->origin, ent->old_origin)) {
-				// the entity moved, it must be relinked
-				r_funcs->R_RemoveEfrags (ent);
+			VectorSubtract (new->origin, old->origin, delta);
+			// If the delta is large, assume a teleport and don't lerp
+			if (fabs (delta[0]) > 100 || fabs (delta[1] > 100)
+				|| fabs (delta[2]) > 100) {
+				// assume a teleportation, not a motion
+				VectorCopy (new->origin, ent->origin);
+				if (!(ent->model->flags & EF_ROTATE))
+					CL_TransformEntity (ent, new->angles, true);
+				ent->pose1 = ent->pose2 = -1;
+			} else {
+				vec3_t      angles, d;
+				// interpolate the origin and angles
+				VectorMultAdd (old->origin, f, delta, ent->origin);
+				if (!(ent->model->flags & EF_ROTATE)) {
+					VectorSubtract (new->angles, old->angles, d);
+					for (j = 0; j < 3; j++) {
+						if (d[j] > 180)
+							d[j] -= 360;
+						else if (d[j] < -180)
+							d[j] += 360;
+					}
+					VectorMultAdd (old->angles, f, d, angles);
+					CL_TransformEntity (ent, angles, false);
+				}
+			}
+			if (i != cl.viewentity || chase_active->int_val) {
+				if (ent->efrag) {
+					if (!VectorCompare (ent->origin, ent->old_origin)) {
+						r_funcs->R_RemoveEfrags (ent);
+						r_funcs->R_AddEfrags (ent);
+					}
+				} else {
+					r_funcs->R_AddEfrags (ent);
+				}
 			}
 		}
 		if (!ent->efrag)
 			r_funcs->R_AddEfrags (ent);
 
 		// rotate binary objects locally
-		if (model->flags & EF_ROTATE) {
+		if (ent->model->flags & EF_ROTATE) {
 			vec3_t      angles;
 			angles[PITCH] = 0;
 			angles[YAW] = anglemod (100 * cl.time);
 			angles[ROLL] = 0;
 			CL_TransformEntity (ent, angles, false);
-		} else {
-			CL_TransformEntity (ent, s1->angles, false);
 		}
-
-		if (model->flags & ~EF_ROTATE)
-			CL_ModelEffects (ent, -s1->number, s1->glow_color);
+		//CL_EntityEffects (i, ent, new);
+		//CL_NewDlight (i, ent->origin, new->effects, 0, 0);
+		if (VectorDistance_fast (old->origin, ent->origin) > (256 * 256))
+			VectorCopy (ent->origin, old->origin);
+		if (ent->model->flags & ~EF_ROTATE)
+			CL_ModelEffects (ent, -new->number, new->glow_color);
 	}
 }
 

@@ -53,10 +53,6 @@ typedef struct entity_state_s {
 	byte        glow_size;
 	byte        glow_color;
 	byte        colormod;
-
-	struct skin_s *skin;	//FIXME this should not be here, but better state
-							//change tracking in the client is needed for this
-							//to be moved
 } entity_state_t;
 
 typedef struct {

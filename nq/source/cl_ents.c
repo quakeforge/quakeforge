@@ -362,6 +362,7 @@ CL_RelinkEntities (void)
 		if (cl_forcelink[i]) {
 			// The entity was not updated in the last message so move to the
 			// final spot
+			ent->pose1 = ent->pose2 = -1;
 			VectorCopy (new->origin, ent->origin);
 			if (!(ent->model->flags & EF_ROTATE))
 				CL_TransformEntity (ent, new->angles, true);
@@ -372,10 +373,10 @@ CL_RelinkEntities (void)
 			}
 			VectorCopy (ent->origin, ent->old_origin);
 		} else {
-			// If the delta is large, assume a teleport and don't lerp
 			f = frac;
 			VectorCopy (ent->origin, ent->old_origin);
 			VectorSubtract (new->origin, old->origin, delta);
+			// If the delta is large, assume a teleport and don't lerp
 			if (fabs (delta[0]) > 100 || fabs (delta[1] > 100)
 				|| fabs (delta[2]) > 100) {
 				// assume a teleportation, not a motion
@@ -419,7 +420,8 @@ CL_RelinkEntities (void)
 			CL_TransformEntity (ent, angles, false);
 		}
 		CL_EntityEffects (i, ent, new);
-		CL_NewDlight (i, ent->origin, new->effects, 0, 0);
+		CL_NewDlight (i, ent->origin, new->effects, new->glow_size,
+					  new->glow_color);
 		if (VectorDistance_fast (old->origin, ent->origin) > (256 * 256))
 			VectorCopy (ent->origin, old->origin);
 		if (ent->model->flags & ~EF_ROTATE)

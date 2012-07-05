@@ -103,12 +103,8 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 	if (bits & U_FRAME)
 		to->frame = MSG_ReadByte (net_message);
 
-	if (bits & U_COLORMAP) {
-		byte        cmap = MSG_ReadByte (net_message);
-		if (cmap != to->colormap)
-			to->skin = mod_funcs->Skin_SetColormap (to->skin, cmap);
-		to->colormap = cmap;
-	}
+	if (bits & U_COLORMAP)
+		to->colormap = MSG_ReadByte (net_message);
 
 	if (bits & U_SKIN)
 		to->skinnum = MSG_ReadByte (net_message);
@@ -193,22 +189,32 @@ FlushEntityPacket (void)
 	}
 }
 
+static void
+copy_state (packet_entities_t *newp, packet_entities_t *oldp, int newindex,
+			int oldindex, int num)
+{
+	newp->entities[num] = oldp->entities[num];
+	newp->ent_nums[newindex] = num;
+	cl_entity_valid[0][num] = 1;
+}
+
 void
 CL_ParsePacketEntities (qboolean delta)
 {
-	byte		from;
-	int			oldindex, newindex, newnum, oldnum, oldpacket, newpacket, word;
+	byte        from;
+	int         oldindex, newindex, newnum, oldnum, oldpacket, word;
 	packet_entities_t *oldp, *newp, dummy;
-	qboolean	full;
+	qboolean    full;
 
-	newpacket = cls.netchan.incoming_sequence & UPDATE_MASK;
-	newp = &cl.frames[newpacket].packet_entities;
-	cl.frames[newpacket].invalid = false;
+	cl.prev_sequence = cl.link_sequence;
+	cl.link_sequence = cls.netchan.incoming_sequence;
+	newp = &cl.frames[cl.link_sequence & UPDATE_MASK].packet_entities;
+	cl.frames[cl.link_sequence & UPDATE_MASK].invalid = false;
 
 	if (delta) {
 		from = MSG_ReadByte (net_message);
 
-		oldpacket = cl.frames[newpacket].delta_sequence;
+		oldpacket = cl.frames[cl.link_sequence & UPDATE_MASK].delta_sequence;
 		if (cls.demoplayback2)
 			from = oldpacket = (cls.netchan.incoming_sequence - 1);
 		if ((from & UPDATE_MASK) != (oldpacket & UPDATE_MASK))
@@ -217,6 +223,8 @@ CL_ParsePacketEntities (qboolean delta)
 		oldpacket = -1;
 
 	full = false;
+	//memcpy (cl_entity_valid[1], cl_entity_valid[0],
+	//		sizeof (cl_entity_valid[0]));
 	if (oldpacket != -1) {
 		if (cls.netchan.outgoing_sequence - oldpacket >= UPDATE_BACKUP - 1) {
 			// we can't use this, it is too old
@@ -230,12 +238,14 @@ CL_ParsePacketEntities (qboolean delta)
 		dummy.num_entities = 0;
 		cl.validsequence = cls.netchan.incoming_sequence;
 		full = true;
+		memset (cl_entity_valid[0], 0, sizeof (cl_entity_valid[0]));
 	}
 
 	oldindex = 0;
 	newindex = 0;
 	newp->num_entities = 0;
 
+	newnum = 0;
 	while (1) {
 		word = MSG_ReadShort (net_message);
 		if (net_message->badread) {		// something didn't parse right...
@@ -248,15 +258,14 @@ CL_ParsePacketEntities (qboolean delta)
 				if (newindex >= MAX_DEMO_PACKET_ENTITIES)
 					Host_Error ("CL_ParsePacketEntities: newindex == "
 								"MAX_DEMO_PACKET_ENTITIES");
-				newp->entities[newindex] = oldp->entities[oldindex];
-				newindex++;
-				oldindex++;
+				oldnum = oldp->ent_nums[oldindex];
+				copy_state (newp, oldp, newindex++, oldindex++, oldnum);
 			}
 			break;
 		}
 		newnum = word & 511;
 		oldnum = oldindex >= oldp->num_entities ? 9999 :
-			oldp->entities[oldindex].number;
+			oldp->ent_nums[oldindex];
 
 		while (newnum > oldnum) {
 			if (full) {
@@ -268,15 +277,14 @@ CL_ParsePacketEntities (qboolean delta)
 			if (newindex >= MAX_DEMO_PACKET_ENTITIES)
 				Host_Error ("CL_ParsePacketEntities: newindex == "
 							"MAX_DEMO_PACKET_ENTITIES");
-			newp->entities[newindex] = oldp->entities[oldindex];
-			newindex++;
-			oldindex++;
+			copy_state (newp, oldp, newindex++, oldindex++, oldnum);
 			oldnum = oldindex >= oldp->num_entities ? 9999 :
-				oldp->entities[oldindex].number;
+				oldp->ent_nums[oldindex];
 		}
 
 		if (newnum < oldnum) {						// new from baseline
 			if (word & U_REMOVE) {
+				cl_entity_valid[0][newnum] = 0;
 				if (full) {
 					cl.validsequence = 0;
 					Sys_Printf ("WARNING: U_REMOVE on full update\n");
@@ -290,8 +298,9 @@ CL_ParsePacketEntities (qboolean delta)
 				Host_Error ("CL_ParsePacketEntities: newindex == "
 							"MAX_DEMO_PACKET_ENTITIES");
 			CL_ParseDelta (&qw_entstates.baseline[newnum],
-						   &newp->entities[newindex],
-						   word);
+						   &newp->entities[newnum], word);
+			newp->ent_nums[newindex] = newnum;
+			cl_entity_valid[0][newnum] = 1;
 			newindex++;
 			continue;
 		}
@@ -302,20 +311,20 @@ CL_ParsePacketEntities (qboolean delta)
 				Sys_Printf ("WARNING: delta on full update");
 			}
 			if (word & U_REMOVE) {				// Clear the entity
-				entity_t	*ent = &cl_entities[newnum];
-				if (ent->efrag)
-					r_funcs->R_RemoveEfrags (ent);
-				memset (ent, 0, sizeof (entity_t));
+				cl_entity_valid[0][newnum] = 0;
 				oldindex++;
 				continue;
 			}
-			CL_ParseDelta (&oldp->entities[oldindex],
-						   &newp->entities[newindex], word);
+			CL_ParseDelta (&oldp->entities[oldnum],
+						   &newp->entities[newnum], word);
+			newp->ent_nums[newindex] = newnum;
+			cl_entity_valid[0][newnum] = 1;
 			newindex++;
 			oldindex++;
 		}
 	}
 
+	cl.num_entities = max (cl.num_entities, newnum);
 	newp->num_entities = newindex;
 }
 

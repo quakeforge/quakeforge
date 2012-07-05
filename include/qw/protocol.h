@@ -306,6 +306,7 @@
 #define	MAX_DEMO_PACKET_ENTITIES	196	// doesn't count nails
 typedef struct {
 	int         num_entities;
+	int         ent_nums[MAX_DEMO_PACKET_ENTITIES];
 	entity_state_t *entities;
 } packet_entities_t;
 
