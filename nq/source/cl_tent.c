@@ -310,14 +310,22 @@ CL_ParseBeam (model_t *m)
 	MSG_ReadCoordV (net_message, start);
 	MSG_ReadCoordV (net_message, end);
 
-	to = new_tent_object ();
-	to->next = cl_beams;
-	cl_beams = to;
+	to = 0;
+	if (ent) {
+		for (to = cl_beams; to; to = to->next)
+			if (to->to.beam.entity == ent)
+				break;
+	}
+	if (!to) {
+		to = new_tent_object ();
+		to->next = cl_beams;
+		cl_beams = to;
+		to->to.beam.tents = 0;
+		to->to.beam.entity = ent;
+	}
 	b = &to->to.beam;
-	b->tents = 0;
 
 	beam_clear (b);
-	b->entity = ent;
 	b->model = m;
 	b->endtime = cl.time + 0.2;
 	b->seed = rand ();
