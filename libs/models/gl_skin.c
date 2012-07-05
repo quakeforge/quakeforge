@@ -245,7 +245,8 @@ gl_Skin_SetupSkin (skin_t *skin, int cmap)
 		}
 		return;
 	}
-	do_fb_skin (s);
+	if (s->tex)
+		do_fb_skin (s);
 	build_skin (skin, cmap);
 }
 
