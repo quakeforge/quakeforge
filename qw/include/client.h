@@ -312,6 +312,7 @@ extern	struct cvar_s	*cl_pitchspeed;
 
 extern	struct cvar_s	*cl_anglespeedkey;
 
+extern	struct cvar_s	*cl_draw_locs;
 extern	struct cvar_s	*cl_shownet;
 extern	struct cvar_s	*hud_sbar;
 extern	struct cvar_s	*hud_sbar_separator;

@@ -592,14 +592,14 @@ CL_EmitEntities (void)
 	CL_LinkPlayers ();
 	CL_LinkPacketEntities ();
 	CL_UpdateTEnts ();
-#if 0 //FIXME
-	if (!r_drawentities->int_val) {
+	if (cl_draw_locs->int_val) {
+		//FIXME custom ent rendering code would be nice
 		dlight_t   *dl;
 		location_t *nearloc;
 		vec3_t      trueloc;
 		int         i;
 
-		nearloc = locs_find (r_origin);
+		nearloc = locs_find (cl.simorg);
 		if (nearloc) {
 			dl = r_funcs->R_AllocDlight (4096);
 			if (dl) {
@@ -623,7 +623,6 @@ CL_EmitEntities (void)
 						104 + (rand () & 7), 1.0, 0.0);
 		}
 	}
-#endif
 }
 
 void

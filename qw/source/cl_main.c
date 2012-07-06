@@ -138,6 +138,7 @@ cvar_t     *cl_paranoid;
 
 cvar_t     *cl_timeout;
 
+cvar_t     *cl_draw_locs;
 cvar_t     *cl_shownet;
 cvar_t     *cl_autoexec;
 cvar_t     *cl_quakerc;
@@ -1366,6 +1367,8 @@ CL_Init_Cvars (void)
 							"turning speed");
 	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL,
 							"write config files?");
+	cl_draw_locs = Cvar_Get ("cl_draw_locs", "0", CVAR_NONE, NULL,
+						   "Draw location markers.");
 	cl_shownet = Cvar_Get ("cl_shownet", "0", CVAR_NONE, NULL,
 						   "show network packets. 0=off, 1=basic, 2=verbose");
 	cl_maxfps = Cvar_Get ("cl_maxfps", "0", CVAR_ARCHIVE, NULL,
