@@ -254,7 +254,7 @@ PF_newstr (progs_t *pr)
 
 	if (pr->pr_argc > 1 && P_FLOAT (pr, 1) > dstr->size) {
 		int         s = dstr->size;
-		dstr->size = P_FLOAT (pr, 1) + 1;
+		dstr->size = P_FLOAT (pr, 1);
 		dstring_adjust (dstr);
 		memset (dstr->str + s, 0, dstr->size - s);
 	}
