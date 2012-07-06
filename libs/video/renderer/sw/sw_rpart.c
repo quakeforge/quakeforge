@@ -821,6 +821,8 @@ static vid_particle_funcs_t particles_QF = {
 	R_TeleportSplash_QF,
 	R_DarkFieldParticles_ID,
 	R_EntityParticles_ID,
+	R_Particle_New,
+	R_Particle_NewRandom,
 };
 
 static void

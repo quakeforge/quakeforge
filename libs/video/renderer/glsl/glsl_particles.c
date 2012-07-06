@@ -1796,6 +1796,8 @@ static vid_particle_funcs_t particles_QF = {
 	R_TeleportSplash_QF,
 	R_DarkFieldParticles_ID,
 	R_EntityParticles_ID,
+	R_Particle_New,
+	R_Particle_NewRandom,
 };
 
 static vid_particle_funcs_t particles_ID = {
@@ -1822,6 +1824,8 @@ static vid_particle_funcs_t particles_ID = {
 	R_TeleportSplash_ID,
 	R_DarkFieldParticles_ID,
 	R_EntityParticles_ID,
+	R_Particle_New,
+	R_Particle_NewRandom,
 };
 
 static vid_particle_funcs_t particles_QF_egg = {
@@ -1848,6 +1852,8 @@ static vid_particle_funcs_t particles_QF_egg = {
 	R_TeleportSplash_EE,
 	R_DarkFieldParticles_ID,
 	R_EntityParticles_ID,
+	R_Particle_New,
+	R_Particle_NewRandom,
 };
 
 static vid_particle_funcs_t particles_ID_egg = {
@@ -1874,6 +1880,8 @@ static vid_particle_funcs_t particles_ID_egg = {
 	R_TeleportSplash_EE,
 	R_DarkFieldParticles_ID,
 	R_EntityParticles_ID,
+	R_Particle_New,
+	R_Particle_NewRandom,
 };
 
 void
