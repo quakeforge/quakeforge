@@ -60,6 +60,7 @@ fbdev_c= fbset_modes_y.c fbset_modes_l.c
 fbdev_h= fbset_modes_y.h
 YFLAGS = -d
 YACCLEX_CLEANFILES=	$(fbdev_c) $(fbdev_h)
+BUILT_SOURCES= $(fbdev_c) $(fbdev_h)
 
 fbdev_libs=libvid_common.la
 libQFfbdev_la_CFLAGS=		@PREFER_NON_PIC@
