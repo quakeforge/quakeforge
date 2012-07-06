@@ -489,18 +489,20 @@ CL_SetState (cactive_t state)
 				break;
 			case ca_disconnected:
 				cls.signon = so_none;
-				cl.loading = true;
+				cl.loading = false;
 				VID_SetCaption ("Disconnected");
 				break;
 			case ca_connected:
 				cls.signon = so_none;		// need all the signon messages
 											// before playing
+				cl.loading = true;
 				Key_SetKeyDest (key_game);
 				IN_ClearStates ();
 				VID_SetCaption ("Connected");
 				break;
 			case ca_active:
 				// entering active state
+				cl.loading = false;
 				Key_SetKeyDest (key_game);
 				IN_ClearStates ();
 				VID_SetCaption ("");
