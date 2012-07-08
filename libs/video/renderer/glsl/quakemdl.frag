@@ -31,10 +31,12 @@ main (void)
 	float       pix = texture2D (skin, st).r;
 	float       light = ambient;
 	float       d, col;
+	vec4        lit;
 
 	d = dot (normal, lightvec);
 	d = min (d, 0.0);
 	light = 255.0 - light;
 	light += d * shadelight;
-	gl_FragColor = fogBlend (texture2D (colormap, vec2 (pix, light / 255.0)));
+	lit = texture2D (colormap, vec2 (pix, light / 255.0));
+	gl_FragColor = fogBlend (lit * color);
 }
