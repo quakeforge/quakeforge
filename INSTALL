@@ -65,6 +65,7 @@ The following is the list of relevant package names in debian.
 
 \li libsdl1.2-dev
 \li libsvga1-dev
+\li libxext-dev
 \li libxxf86dga-dev
 \li libxxf86vm-dev
 
