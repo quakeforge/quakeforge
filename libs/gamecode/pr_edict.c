@@ -85,7 +85,6 @@ ED_Alloc (progs_t *pr)
 	pr_int_t    i;
 	edict_t    *e;
 	int         start = pr->reserved_edicts ? *pr->reserved_edicts : 0;
-	pr_int_t    max_edicts = pr->pr_edictareasize / pr->pr_edict_size;
 
 	for (i = start + 1; i < *pr->num_edicts; i++) {
 		e = EDICT_NUM (pr, i);
@@ -99,7 +98,7 @@ ED_Alloc (progs_t *pr)
 		}
 	}
 
-	if (i == max_edicts) {
+	if (i == pr->max_edicts) {
 		Sys_Printf ("WARNING: ED_Alloc: no free edicts\n");
 		i--;							// step on whatever is the last edict
 		e = EDICT_NUM (pr, i);

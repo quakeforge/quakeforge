@@ -1592,6 +1592,7 @@ struct progs_s {
 	/// \name edicts
 	//@{
 	edict_t   **edicts;
+	int         max_edicts;
 	int        *num_edicts;
 	int        *reserved_edicts;	///< alloc will start at reserved_edicts+1
 	void      (*unlink) (edict_t *ent);

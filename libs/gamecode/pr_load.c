@@ -184,6 +184,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int max_edicts, int zone)
 	pr->pr_edict_size += sizeof (void*) - 1;
 	pr->pr_edict_size &= ~(sizeof (void*) - 1);
 	pr->pr_edictareasize = max_edicts * pr->pr_edict_size;
+	pr->max_edicts = max_edicts;
 
 	mem_size = pr->progs_size + pr->zone_size + pr->pr_edictareasize;
 	pr->progs = pr->allocate_progs_mem (pr, mem_size + 1);
