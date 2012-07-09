@@ -1500,14 +1500,7 @@ typedef struct {
 struct obj_list_s;
 
 struct progs_s {
-	edict_t   **edicts;
-	int        *num_edicts;
-	int        *reserved_edicts;	///< alloc will start at reserved_edicts+1
-	void      (*unlink) (edict_t *ent);
-	void      (*flush) (void);
 	int       (*parse_field) (progs_t *pr, const char *key, const char *value);
-	int       (*prune_edict) (progs_t *pr, edict_t *ent);
-	void      (*free_edict) (progs_t *pr, edict_t *ent);
 
 	int         null_bad;
 	int         no_exec_limit;
@@ -1596,9 +1589,19 @@ struct progs_s {
 	int         pr_param_size;		///< covers both params and return
 	//@}
 
+	/// \name edicts
+	//@{
+	edict_t   **edicts;
+	int        *num_edicts;
+	int        *reserved_edicts;	///< alloc will start at reserved_edicts+1
+	void      (*unlink) (edict_t *ent);
+	void      (*flush) (void);
+	int       (*prune_edict) (progs_t *pr, edict_t *ent);
+	void      (*free_edict) (progs_t *pr, edict_t *ent);
 	int         pr_edict_size;		///< in bytes
 	int         pr_edictareasize;	///< for bounds checking, starts at 0
 	func_t      edict_parse;
+	//@}
 
 	/// \name execution state
 	//@{
