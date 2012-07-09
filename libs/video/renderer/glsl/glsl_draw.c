@@ -654,7 +654,7 @@ glsl_Draw_ConsoleBackground (int lines, byte alpha)
 void
 glsl_Draw_TileClear (int x, int y, int w, int h)
 {
-	static quat_t color[2] = {{ 1, 1, 1, 1 }, {0.5,0.5,0.5,1}};
+	static quat_t color = { 1, 1, 1, 1 };
 	vrect_t     *tile_rect = VRect_New (x, y, w, h);
 	vrect_t     *sub = VRect_New (0, 0, 0, 0);	// filled in later;
 	glpic_t     *gl = (glpic_t *) backtile_pic->data;
@@ -677,8 +677,8 @@ glsl_Draw_TileClear (int x, int y, int w, int h)
 			sub = VRect_Intersect (sub, tile_rect);
 			VRect_Delete (t);
 			draw_pic (sub->x, sub->y, sub->width, sub->height, backtile_pic,
-					  sub->x % sub->width, sub->y % sub->height,
-					  sub->width, sub->height, color[(i + j)&1]);
+					  sub->x % sp->width, sub->y % sp->height,
+					  sub->width, sub->height, color);
 		}
 	}
 	VRect_Delete (sub);
