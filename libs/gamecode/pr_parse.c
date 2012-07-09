@@ -434,8 +434,6 @@ ED_SpawnEntities (progs_t *pr, plitem_t *entity_list)
 
 	max_edicts -= *pr->num_edicts;
 	count = PL_A_NumObjects (entity_list);
-	if (count > max_edicts)
-		PR_Error (pr, "too many entities: %d > %d", count, max_edicts);
 	for (i = 0; i < count; i++) {
 		entity = PL_ObjectAtIndex (entity_list, i);
 
@@ -447,6 +445,11 @@ ED_SpawnEntities (progs_t *pr, plitem_t *entity_list)
 			ent = EDICT_NUM (pr, 0);
 		else
 			ent = ED_Alloc (pr);
+
+		// don't allow the last edict to be used, as otherwise we can't detect
+		// too many edicts
+		if (NUM_FOR_EDICT (pr, ent) >= pr->max_edicts - 1)
+			PR_Error (pr, "too many entities: %d > %d", count, max_edicts);
 
 		ED_InitEntity (pr, entity, ent);
 
