@@ -109,7 +109,7 @@ static qpic_t *conchars;
 static int  conback_texture;
 static qpic_t *crosshair_pic;
 static qpic_t *white_pic;
-//FIXME static qpic_t *backtile_pic;
+static qpic_t *backtile_pic;
 static hashtab_t *pic_cache;
 static cvar_t *glsl_conback_texnum;
 
@@ -417,7 +417,7 @@ glsl_Draw_Init (void)
 	memset (white_block, 0xfe, sizeof (white_block));
 	white_pic = pic_data ("white_block", 8, 8, white_block);
 
-	//FIXME backtile_pic = glsl_Draw_PicFromWad ("backtile");
+	backtile_pic = glsl_Draw_PicFromWad ("backtile");
 	//FIXME gl = (glpic_t *) backtile_pic->data;
 	//FIXME qfeglBindTexture (GL_TEXTURE_2D, gl->texnum);
 	//FIXME qfeglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -654,8 +654,36 @@ glsl_Draw_ConsoleBackground (int lines, byte alpha)
 void
 glsl_Draw_TileClear (int x, int y, int w, int h)
 {
-	//FIXME static quat_t color = { 1, 1, 1, 1 };
-	//FIXME draw_pic (x, y, w, h, backtile_pic, 0, 0, w, h, color);
+	static quat_t color[2] = {{ 1, 1, 1, 1 }, {0.5,0.5,0.5,1}};
+	vrect_t     *tile_rect = VRect_New (x, y, w, h);
+	vrect_t     *sub = VRect_New (0, 0, 0, 0);	// filled in later;
+	glpic_t     *gl = (glpic_t *) backtile_pic->data;
+	subpic_t    *sp = gl->subpic;
+	int          sub_sx, sub_sy, sub_ex, sub_ey;
+	int          i, j;
+
+	sub_sx = x / sp->width;
+	sub_sy = y / sp->height;
+	sub_ex = (x + w + sp->width - 1) / sp->width;
+	sub_ey = (y + h + sp->height - 1) / sp->height;
+	for (j = sub_sy; j < sub_ey; j++) {
+		for (i = sub_sx; i < sub_ex; i++) {
+			vrect_t    *t = sub;
+
+			sub->x = i * sp->width;
+			sub->y = j * sp->height;
+			sub->width = sp->width;
+			sub->height = sp->height;
+			sub = VRect_Intersect (sub, tile_rect);
+			VRect_Delete (t);
+			draw_pic (sub->x, sub->y, sub->width, sub->height, backtile_pic,
+					  sub->x % sub->width, sub->y % sub->height,
+					  sub->width, sub->height, color[(i + j)&1]);
+		}
+	}
+	VRect_Delete (sub);
+	VRect_Delete (tile_rect);
+	flush_2d ();
 }
 
 void
