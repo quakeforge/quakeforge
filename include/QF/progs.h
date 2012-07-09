@@ -145,7 +145,7 @@ typedef int pr_load_func_t (progs_t *pr);
 	\param pr		pointer to ::progs_t VM struct
 	\param file		handle of file to read progs data from
 	\param size		bytes of \p file to read
-	\param edicts	\e number of entities to allocate space for
+	\param max_edicts \e number of entities to allocate space for
 	\param zone		minimum size of dynamic memory to allocate space for
 
 	\note \e All runtime strings (permanent or temporary) are allocated from
@@ -153,17 +153,18 @@ typedef int pr_load_func_t (progs_t *pr);
 	So far, 1MB has proven more than sufficient for Quakeword, even when using
 	Ruamoko objects.
 */
-void PR_LoadProgsFile (progs_t *pr, struct QFile_s *file, int size, int edicts,
-					   int zone);
+void PR_LoadProgsFile (progs_t *pr, struct QFile_s *file, int size,
+					   int max_edicts, int zone);
 
 /** Convenience wrapper for PR_LoadProgsFile() and PR_RunLoadFuncs().
 	Searches for the specified file in the Quake filesystem.
 	\param pr		pointer to ::progs_t VM struct
 	\param progsname name of the file to load as progs data
-	\param edicts	\e number of entities to allocate space for
+	\param max_edicts \e number of entities to allocate space for
 	\param zone		minimum size of dynamic memory to allocate space for
 */
-void PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone);
+void PR_LoadProgs (progs_t *pr, const char *progsname, int max_edicts,
+				   int zone);
 
 /** Register a primary function to be called after the progs code has been
 	loaded. These functions are remembered across progs loads. They will be

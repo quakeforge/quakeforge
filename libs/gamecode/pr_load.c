@@ -98,7 +98,7 @@ free_progs_mem (progs_t *pr, void *mem)
 }
 
 VISIBLE void
-PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int edicts, int zone)
+PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int max_edicts, int zone)
 {
 	size_t      i;
 	int         mem_size;
@@ -183,7 +183,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int edicts, int zone)
 	// properly aligned
 	pr->pr_edict_size += sizeof (void*) - 1;
 	pr->pr_edict_size &= ~(sizeof (void*) - 1);
-	pr->pr_edictareasize = edicts * pr->pr_edict_size;
+	pr->pr_edictareasize = max_edicts * pr->pr_edict_size;
 
 	mem_size = pr->progs_size + pr->zone_size + pr->pr_edictareasize;
 	pr->progs = pr->allocate_progs_mem (pr, mem_size + 1);
@@ -377,14 +377,14 @@ PR_RunLoadFuncs (progs_t *pr)
 	PR_LoadProgs
 */
 VISIBLE void
-PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone)
+PR_LoadProgs (progs_t *pr, const char *progsname, int max_edicts, int zone)
 {
 	QFile      *file;
 	QFS_FOpenFile (progsname, &file);
 
 	pr->progs_name = progsname;
 	if (file) {
-		PR_LoadProgsFile (pr, file, qfs_filesize, edicts, zone);
+		PR_LoadProgsFile (pr, file, qfs_filesize, max_edicts, zone);
 		Qclose (file);
 	}
 	if (!pr->progs)
