@@ -56,18 +56,6 @@ adding portability and optional extensions to enhance gameplay.
 This package contains headers and static libraries for the development of
 utilities and applications for QuakeForge.
 
-%package sdl-common
-Summary:	QuakeForge 3D game engine - SDL client
-Group:		Amusements/Games
-Requires:	quakeforge == %{rpmversion}, quakeforge-common == %{rpmversion}
-%description sdl-common
-QuakeForge is a source port of Quake and QuakeWorld, the successors to id
-Software's very popular DOOM series. Its primary development goal is to
-remain compatible with the original games released by id Software while
-adding portability and optional extensions to enhance gameplay.
-
-This package contains the common files for the SDL quakeforge packages.
-
 %package sdl
 Summary:	QuakeForge 3D game engine - SDL client
 Group:		Amusements/Games
@@ -121,11 +109,11 @@ This package contains both the QuakeWorld-compatible and
 NetQuake-compatible dedicated servers, as well as a simple
 QuakeWorld-compatible master server.
 
-%package libs-sw32
+%package sw32
 Summary:	QuakeForge 3D game engine - Software renderer libraries
 Group:	Amusements/Games
 #Requires:
-%description libs-sw32
+%description sw32
 QuakeForge is a source port of Quake and QuakeWorld, the successors to id
 Software's very popular DOOM series. Its primary development goal is to
 remain compatible with the original games released by id Software while
@@ -134,11 +122,11 @@ adding portability and optional extensions to enhance gameplay.
 This package contains the shared libraries needed to use the 32bpp software
 renderer.
 
-%package libs-sw
+%package sw
 Summary:	QuakeForge 3D game engine - Software renderer libraries
 Group:	Amusements/Games
 #Requires:
-%description libs-sw
+%description sw
 QuakeForge is a source port of Quake and QuakeWorld, the successors to id
 Software's very popular DOOM series. Its primary development goal is to
 remain compatible with the original games released by id Software while
@@ -147,11 +135,11 @@ adding portability and optional extensions to enhance gameplay.
 This package contains the shared libraries needed to use the software
 renderer.
 
-%package libs-gl
+%package gl
 Summary:	QuakeForge 3D game engine - OpenGL renderer libraries
 Group:	Amusements/Games
 #Requires:
-%description libs-gl
+%description gl
 QuakeForge is a source port of Quake and QuakeWorld, the successors to id
 Software's very popular DOOM series. Its primary development goal is to
 remain compatible with the original games released by id Software while
@@ -160,11 +148,11 @@ adding portability and optional extensions to enhance gameplay.
 This package contains the shared libraries needed to use the OpenGL
 renderer.
 
-%package libs-glsl
+%package glsl
 Summary:	QuakeForge 3D game engine - OpenGL renderer libraries
 Group:	Amusements/Games
 #Requires:
-%description libs-glsl
+%description glsl
 QuakeForge is a source port of Quake and QuakeWorld, the successors to id
 Software's very popular DOOM series. Its primary development goal is to
 remain compatible with the original games released by id Software while
@@ -332,16 +320,16 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/include/QF/*.h
 %attr(-,root,root)	%{_prefix}/include/QF/plugin/*.h
 
-%files libs-gl
+%files gl
 %attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/vid_render_gl.so*
 
-%files libs-glsl
+%files glsl
 %attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/vid_render_glsl.so*
 
-%files libs-sw32
+%files sw32
 %attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/vid_render_sw32.so*
 
-%files libs-sw
+%files sw
 %attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/vid_render_sw.so*
 
 %files servers
@@ -351,11 +339,9 @@ rm -rf $RPM_BUILD_ROOT
 #%attr(-,root,root)	%{_prefix}/bin/hw-master
 %attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/console_server.so*
 
-%files sdl-common
+%files sdl
 %attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/cd_sdl.so*
 %attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/snd_output_sdl.so*
-
-%files sdl
 %attr(-,root,root)	%{_prefix}/bin/qw-client-sdl
 %attr(-,root,root)	%{_prefix}/bin/nq-sdl
 
