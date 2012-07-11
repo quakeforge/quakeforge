@@ -4,18 +4,6 @@
 %define release 1
 %define builddir $RPM_BUILD_DIR/%{name}-%{qfversion}
 
-%define HAVE_FBDEV  '@HAVE_FBDEV@'
-%define HAVE_SDL    '@HAVE_SDL@'
-%define HAVE_SVGA   '@HAVE_SVGA@'
-%define HAVE_X11    '@HAVE_X@'
-%define HAVE_XMMS   '@HAVE_XMMS@'
-
-%define HAVE_ALSA   '@HAVE_ALSA@'
-%define HAVE_OSS    '@HAVE_OSS@'
-
-%define BUILD_GL    '@CAN_BUILD_GL@'
-%define BUILD_SW    '@CAN_BUILD_SW@'
-
 %define ALSA_PLUGIN 'snd_output_@ALSA_PLUGIN@'
 
 %define fs_sharepath %{_prefix}/share/games/quakeforge
@@ -68,7 +56,6 @@ adding portability and optional extensions to enhance gameplay.
 This package contains headers and static libraries for the development of
 utilities and applications for QuakeForge.
 
-%if "%{HAVE_SDL}"=="'yes'"
 %package sdl-common
 Summary:	QuakeForge 3D game engine - SDL client
 Group:		Amusements/Games
@@ -94,21 +81,6 @@ adding portability and optional extensions to enhance gameplay.
 This package contains the SDL versions of the QuakeWorld client and
 standalone engine.
 
-%package sgl
-Summary:	QuakeForge 3D game engine - SDL-GL client
-Group:		Amusements/Games
-Requires:	quakeforge == %{rpmversion}, quakeforge-common == %{rpmversion}, quakeforge-sdl-common == %{rpmversion}
-%description sgl
-QuakeForge is a source port of Quake and QuakeWorld, the successors to id
-Software's very popular DOOM series. Its primary development goal is to
-remain compatible with the original games released by id Software while
-adding portability and optional extensions to enhance gameplay.
-
-This package contains the SDL-GL versions of the QuakeForge client and
-standalone engine.
-%endif
-
-%if "%{HAVE_SVGA}"=="'yes'"
 %package svga
 Summary:	QuakeForge 3D game engine - SVGAlib client
 Group:		Amusements/Games
@@ -121,9 +93,7 @@ adding portability and optional extensions to enhance gameplay.
 
 This package contains the SVGAlib versions of the QuakeWorld client and
 standalone engine.
-%endif
 
-%if "%{HAVE_X11}"=="'yes'"
 %package x11
 Summary:	QuakeForge 3D game engine - X11 client
 Group:		Amusements/Games
@@ -136,22 +106,6 @@ adding portability and optional extensions to enhance gameplay.
 
 This package contains the X11 versions of the QuakeForge client and
 standalone engine.
-%endif
-
-%if "%{HAVE_X11}"=="'yes'"
-%package glx
-Summary:	QuakeForge 3D game engine - glx client
-Group:		Amusements/Games
-Requires:	quakeforge == %{rpmversion}, quakeforge-common == %{rpmversion}
-%description glx
-QuakeForge is a source port of Quake and QuakeWorld, the successors to id
-Software's very popular DOOM series. Its primary development goal is to
-remain compatible with the original games released by id Software while
-adding portability and optional extensions to enhance gameplay.
-
-This package contains the GLX versions of the QuakeForge client and
-standalone engine.
-%endif
 
 %package servers
 Summary:	QuakeForge 3D game engine - Server
@@ -167,7 +121,19 @@ This package contains both the QuakeWorld-compatible and
 NetQuake-compatible dedicated servers, as well as a simple
 QuakeWorld-compatible master server.
 
-%if "%{BUILD_SW}"=="'yes'"
+%package libs-sw32
+Summary:	QuakeForge 3D game engine - Software renderer libraries
+Group:	Amusements/Games
+#Requires:
+%description libs-sw32
+QuakeForge is a source port of Quake and QuakeWorld, the successors to id
+Software's very popular DOOM series. Its primary development goal is to
+remain compatible with the original games released by id Software while
+adding portability and optional extensions to enhance gameplay.
+
+This package contains the shared libraries needed to use the 32bpp software
+renderer.
+
 %package libs-sw
 Summary:	QuakeForge 3D game engine - Software renderer libraries
 Group:	Amusements/Games
@@ -179,10 +145,8 @@ remain compatible with the original games released by id Software while
 adding portability and optional extensions to enhance gameplay.
 
 This package contains the shared libraries needed to use the software
-rendering targets.
-%endif
+renderer.
 
-%if "%{BUILD_GL}"=="'yes'"
 %package libs-gl
 Summary:	QuakeForge 3D game engine - OpenGL renderer libraries
 Group:	Amusements/Games
@@ -194,10 +158,21 @@ remain compatible with the original games released by id Software while
 adding portability and optional extensions to enhance gameplay.
 
 This package contains the shared libraries needed to use the OpenGL
-rendering targets.
-%endif
+renderer.
 
-%if "%{HAVE_OSS}"=="'yes'"
+%package libs-glsl
+Summary:	QuakeForge 3D game engine - OpenGL renderer libraries
+Group:	Amusements/Games
+#Requires:
+%description libs-glsl
+QuakeForge is a source port of Quake and QuakeWorld, the successors to id
+Software's very popular DOOM series. Its primary development goal is to
+remain compatible with the original games released by id Software while
+adding portability and optional extensions to enhance gameplay.
+
+This package contains the shared libraries needed to use the OpenGL GLSL
+renderer.
+
 %package oss
 Summary:	OSS sound plugin for QuakeForge
 Group:		Amusements/Games
@@ -209,7 +184,6 @@ OSS/Free, or kernel sound) for QuakeForge targets that contain clients.
 NOTE: This plugin does not work on all systems, since it uses memory-mapped
 I/O for the output device. If you have trouble, try the quakeforge-alsa
 package.
-%endif
 
 %if "%{HAVE_XMMS}"=="'yes'"
 %package xmms
@@ -221,7 +195,6 @@ The XMMS plugin for QuakeForge allows the clients to use the XMMS playlist
 as a virtual cd for background music.
 %endif
 
-%if "%{HAVE_ALSA}"=="'yes'"
 %package alsa
 Summary:	ALSA sound plugin for QuakeForge
 Group:		Amusements/Games
@@ -229,7 +202,6 @@ Group:		Amusements/Games
 %description alsa
 The ALSA plugin for QuakeForge provides digital audio output for QuakeForge
 targets that contain clients.
-%endif
 
 %package utils
 Summary:	QuakeForge 3D game engine - utility programs
@@ -304,10 +276,6 @@ mkdir -p $RPM_BUILD_ROOT/%{fs_sharepath}/id1
 find $RPM_BUILD_ROOT/usr/lib/quakeforge -name '*.a' -exec rm {} \;
 find $RPM_BUILD_ROOT/usr/lib/quakeforge -name '*.la' -exec rm {} \;
 rm $RPM_BUILD_ROOT/usr/bin/hw-master
-rm $RPM_BUILD_ROOT/usr/bin/nq-fbdev
-rm $RPM_BUILD_ROOT/usr/bin/nq-sdl32
-rm $RPM_BUILD_ROOT/usr/bin/qw-client-fbdev
-rm $RPM_BUILD_ROOT/usr/bin/qw-client-sdl32
 rm $RPM_BUILD_ROOT/usr/bin/qfpc
 find $RPM_BUILD_ROOT/usr/lib -name 'libQFrenderer_sw32.*' -exec rm {} \;
 #FIXME until I feel like making packages
@@ -327,7 +295,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) /etc/quakeforge.conf
 %attr(-,root,root) %{_prefix}/lib/libQFcd.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFconsole.so.*
-%attr(-,root,root) %{_prefix}/lib/libQFgamecode.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFgib.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFimage.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFjs.so.*
@@ -338,7 +305,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) %{_prefix}/lib/quakeforge/plugins/cd_file.so*
 %attr(-,root,root) %{_prefix}/lib/quakeforge/plugins/cd_linux.so*
 %attr(-,root,root) %{_prefix}/lib/quakeforge/plugins/console_client.so*
-%attr(-,root,root) %{_prefix}/lib/quakeforge/plugins/snd_output_disk.so*
 %attr(-,root,root) %{_prefix}/lib/quakeforge/plugins/snd_render_default.so*
 %attr(-,root,root) %{fs_sharepath}/QF/menu.*
 
@@ -347,8 +313,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFcd.so
 %attr(-,root,root)	%{_prefix}/lib/libQFconsole.*a
 %attr(-,root,root)	%{_prefix}/lib/libQFconsole.so
-%attr(-,root,root)	%{_prefix}/lib/libQFgamecode.*a
-%attr(-,root,root)	%{_prefix}/lib/libQFgamecode.so
 %attr(-,root,root)	%{_prefix}/lib/libQFgib.*a
 %attr(-,root,root)	%{_prefix}/lib/libQFgib.so
 %attr(-,root,root)	%{_prefix}/lib/libQFimage.*a
@@ -364,29 +328,21 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFutil.*a
 %attr(-,root,root)	%{_prefix}/lib/libQFutil.so
 %attr(-,root,root)	%{_prefix}/include/QF/GL/*.h
+%attr(-,root,root)	%{_prefix}/include/QF/GLSL/*.h
 %attr(-,root,root)	%{_prefix}/include/QF/*.h
 %attr(-,root,root)	%{_prefix}/include/QF/plugin/*.h
-%if "%{BUILD_GL}"=="'yes'"
-%attr(-,root,root)	%{_prefix}/lib/libQFmodels_gl.*a
-%attr(-,root,root)	%{_prefix}/lib/libQFmodels_gl.so
-%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_gl.*a
-%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_gl.so
-%endif
-%if "%{BUILD_SW}"=="'yes'"
-%attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw.*a
-%attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw.so
-%endif
 
-%if "%{BUILD_GL}"=="'yes'"
 %files libs-gl
-%attr(-,root,root)	%{_prefix}/lib/libQFmodels_gl.so.*
-%attr(-,root,root)	%{_prefix}/lib/libQFrenderer_gl.so.*
-%endif
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/vid_render_gl.so*
 
-%if "%{BUILD_SW}"=="'yes'"
+%files libs-glsl
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/vid_render_glsl.so*
+
+%files libs-sw32
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/vid_render_sw32.so*
+
 %files libs-sw
-%attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw.so.*
-%endif
+%attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/vid_render_sw.so*
 
 %files servers
 %attr(-,root,root)	%{_prefix}/bin/qw-server
@@ -395,13 +351,6 @@ rm -rf $RPM_BUILD_ROOT
 #%attr(-,root,root)	%{_prefix}/bin/hw-master
 %attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/console_server.so*
 
-%if "%{HAVE_X11}"=="'yes'"
-%files glx
-%attr(-,root,root)	%{_prefix}/bin/qw-client-glx
-%attr(-,root,root)	%{_prefix}/bin/nq-glx
-%endif
-
-%if "%{HAVE_SDL}"=="'yes'"
 %files sdl-common
 %attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/cd_sdl.so*
 %attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/snd_output_sdl.so*
@@ -410,45 +359,28 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/bin/qw-client-sdl
 %attr(-,root,root)	%{_prefix}/bin/nq-sdl
 
-%files sgl
-%attr(-,root,root)	%{_prefix}/bin/qw-client-sgl
-%attr(-,root,root)	%{_prefix}/bin/nq-sgl
-%endif
-
-%if "%{HAVE_SVGA}"=="'yes'"
-%files svga
-%attr(4755,root,root)	%{_prefix}/bin/qw-client-svga
-%attr(4755,root,root)	%{_prefix}/bin/nq-svga
-%endif
-
-%if "%{HAVE_X11}"=="'yes'"
 %files x11
 %attr(-,root,root)	%{_prefix}/bin/qw-client-x11
 %attr(-,root,root)	%{_prefix}/bin/nq-x11
-%endif
 
 %if "%{HAVE_XMMS}"=="'yes'"
 %files xmms
 %attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/cd_xmms.so
 %endif
 
-%if "%{HAVE_ALSA}"=="'yes'"
 %files alsa
 %attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/snd_output_alsa.so*
-%endif
 
-%if "%{HAVE_OSS}"=="'yes'"
 %files oss
 %attr(-,root,root)	%{_prefix}/lib/quakeforge/plugins/snd_output_oss.so*
-%endif
 
 %files -n qfcc
 %attr(-,root,root)	%{_prefix}/bin/qfcc
 %attr(-,root,root)	%{_prefix}/bin/qfpreqcc
 %attr(-,root,root)	%{_prefix}/share/man/man1/qfcc.1.gz
 %attr(-,root,root)	%{_prefix}/lib/pkgconfig/qfcc.pc
-%attr(-,root,root)	%{_prefix}/lib/qfcc/include/*
-%attr(-,root,root)	%{_prefix}/lib/qfcc/lib/*
+%attr(-,root,root)	%{_prefix}/share/qfcc/include/*
+%attr(-,root,root)	%{_prefix}/share/qfcc/lib/*
 
 %files utils
 %attr(-,root,root)	%{_prefix}/bin/pak
@@ -466,6 +398,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/bin/qflight
 %attr(-,root,root)	%{_prefix}/bin/qflmp
 %attr(-,root,root)	%{_prefix}/bin/qfmodelgen
+%attr(-,root,root)	%{_prefix}/bin/qfspritegen
 %attr(-,root,root)	%{_prefix}/bin/qfvis
 %attr(-,root,root)	%{_prefix}/bin/wad
 %attr(-,root,root)	%{_prefix}/share/man/man1/qflight.1.gz

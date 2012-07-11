@@ -9,15 +9,15 @@ EXTRA_DIST= \
 	quakeforge-alsa.install quakeforge-alsa.postinst quakeforge-alsa.prerm \
 	quakeforge-common.install quakeforge-common.postinst \
 	quakeforge-dev.install \
-	quakeforge-glx.install \
+	quakeforge-gl.install \
+	quakeforge-glsl.install \
 	quakeforge-jack.install \
-	quakeforge-libs-gl.install \
-	quakeforge-libs-sw.install \
 	quakeforge-maptools.install \
 	quakeforge-oss.install quakeforge-oss.postinst quakeforge-oss.prerm \
 	quakeforge-sdl.install \
 	quakeforge-servers.install \
-	quakeforge-sgl.install \
 	quakeforge-stub.postinst \
+	quakeforge-sw32.install \
+	quakeforge-sw.install \
 	quakeforge-utils.install \
 	quakeforge-x11.install
