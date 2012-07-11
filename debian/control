@@ -3,7 +3,7 @@ Section: contrib/games
 Priority: optional
 Maintainer: Jeff Teunissen <deek@debian.org>
 Standards-Version: 3.1.1
-Build-Depends: automake (>= 1.8) | automake1.8, autoconf, libtool, bison, flex, debhelper, libsdl1.2-dev, zlib1g-dev, libncurses5-dev, libx11-dev, libxext-dev, libxxf86dga-dev, libxxf86vm-dev, libcurl-dev, libasound2-dev, libvorbis-dev, libflac-dev, libjack-dev, libpng12-dev, libsamplerate0-dev, git-core
+Build-Depends: automake (>= 1.8) | automake1.8, autoconf, libtool, bison, flex, debhelper, libsdl1.2-dev, zlib1g-dev, libncurses5-dev, libx11-dev, libxext-dev, libxxf86dga-dev, libxxf86vm-dev, libcurl-dev, libasound2-dev, libvorbis-dev, libflac-dev, libjack-dev, libpng12-dev, libsamplerate0-dev, libwildmidi-dev, git-core
 
 Package: quakeforge
 Architecture: any
@@ -84,36 +84,6 @@ Description: 3D first-person shooter engine - X11 client
  This package contains the X11 versions of the QuakeForge client and
  standalone engine.
 
-Package: quakeforge-glx
-Architecture: any
-Conflicts: quake-gl
-Depends: quake-game, libgl1-mesa-glx | libgl1, ${misc:Depends}, ${shlibs:Depends}
-Provides: quakeforge-client
-Suggests: joystick
-Description: 3D first-person shooter engine - GLX Client
- QuakeForge is a source port of Quake and QuakeWorld, the successors to id
- Software's very popular DOOM series. Its primary development goal is to
- remain compatible with the original games released by id Software while
- adding portability and optional extensions to enhance gameplay.
- .
- This package contains the GLX versions of the QuakeForge client and
- standalone engine.
-
-Package: quakeforge-sgl
-Architecture: any
-Conflicts: quake-sdl
-Depends: quake-game, libgl1-mesa-glx | libgl1, ${misc:Depends}, ${shlibs:Depends}
-Provides: quakeforge-client
-Suggests: joystick
-Description: 3D first-person shooter engine - SDL-GL client
- QuakeForge is a source port of Quake and QuakeWorld, the successors to id
- Software's very popular DOOM series. Its primary development goal is to
- remain compatible with the original games released by id Software while
- adding portability and optional extensions to enhance gameplay.
- .
- This package contains the SDL-GL versions of the QuakeForge client and
- standalone engine.
-
 Package: quakeforge-servers
 Architecture: any
 Depends: quake-game, ${misc:Depends}, ${shlibs:Depends}
@@ -128,7 +98,7 @@ Description: 3D first-person shooter engine - Servers
  NetQuake-compatible dedicated servers, as well as a simple
  QuakeWorld-compatible master server.
 
-Package: quakeforge-libs-sw
+Package: quakeforge-sw
 Architecture: any
 Depends: quakeforge-common, ${misc:Depends}, ${shlibs:Depends}
 Section: contrib/libs
@@ -138,10 +108,23 @@ Description: 3D first-person shooter engine - Software renderer libraries
  remain compatible with the original games released by id Software while
  adding portability and optional extensions to enhance gameplay.
  .
- This package contains the shared libraries needed to use the software 
- rendering targets.
+ This package contains the shared libraries needed to use the software
+ renderer.
 
-Package: quakeforge-libs-gl
+Package: quakeforge-sw32
+Architecture: any
+Depends: quakeforge-common, ${misc:Depends}, ${shlibs:Depends}
+Section: contrib/libs
+Description: 3D first-person shooter engine - Software renderer libraries
+ QuakeForge is a source port of Quake and QuakeWorld, the successors to id
+ Software's very popular DOOM series. Its primary development goal is to
+ remain compatible with the original games released by id Software while
+ adding portability and optional extensions to enhance gameplay.
+ .
+ This package contains the shared libraries needed to use the 32bppi
+ software renderer.
+
+Package: quakeforge-gl
 Architecture: any
 Depends: quakeforge-common, ${misc:Depends}, ${shlibs:Depends}
 Section: contrib/libs
@@ -152,7 +135,20 @@ Description: 3D first-person shooter engine - OpenGL renderer libraries
  adding portability and optional extensions to enhance gameplay.
  .
  This package contains the shared libraries needed to use the OpenGL
- rendering targets.
+ renderer.
+
+Package: quakeforge-glsl
+Architecture: any
+Depends: quakeforge-common, ${misc:Depends}, ${shlibs:Depends}
+Section: contrib/libs
+Description: 3D first-person shooter engine - OpenGL renderer libraries
+ QuakeForge is a source port of Quake and QuakeWorld, the successors to id
+ Software's very popular DOOM series. Its primary development goal is to
+ remain compatible with the original games released by id Software while
+ adding portability and optional extensions to enhance gameplay.
+ .
+ This package contains the shared libraries needed to use the OpenGL GLSL
+ renderer.
 
 Package: quakeforge-oss
 Architecture: any
@@ -205,7 +201,7 @@ Description: Quake mapping tools from the QuakeForge Project
 	* qflight, a program for generating lightmaps from the static lights
 	  in a BSP file.
 	* qfvis, a program for generating the Possibly-Visible Set
-	  information from a BSP and a portal information file (generated 
+	  information from a BSP and a portal information file (generated
 	  by qfbsp).
 
 Package: qfcc

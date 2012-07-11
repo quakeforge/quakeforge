@@ -89,7 +89,7 @@ quakeforge (0.5.1-0cvs20010912) frozen unstable; urgency=low
 
   * Change version number to be closer to CVS
   * Lots of changes, all new packaging.
-  
+
  -- Jeff Teunissen <deek@d2dc.net>  Wed, 12 Sep 2001 09:59:04 -0400
 
 quakeforge (0.2.99beta6-0) frozen unstable; urgency=low
@@ -185,7 +185,7 @@ quake (1.09-1.30-2pre3.1) unstable; urgency=low
   * Changed the wrappers of the glquake stuff a little
 
  -- Joseph Carter <knghtbrd@debian.org>  Sat, 31 Jul 1999 10:54:47 -0700
- 
+
 quake (1.09-1.30-2pre3) unstable; urgency=low
 
   * Not released officially
@@ -335,7 +335,7 @@ squake (1.07-1.0-1) unstable; urgency=low
 
   * New upstream release.
   * Register /usr/games/squake.real with suidregister, so permissions get
-    preserved across upgrades. This lets you come up with your own security 
+    preserved across upgrades. This lets you come up with your own security
     scheme for making squake suid.
 
  -- Joey Hess <joeyh@master.debian.org>  Tue, 6 May 1997 16:10:04 -0400
@@ -348,7 +348,7 @@ squake (1.07-0.992-2) unstable; urgency=high
   * New upstream version.
   * Fixed a problem with the .orig.tar.gz file which was making dpkg-source
     refuse to unpack it.
-  * Moved into contrib, which is the proper section for this package, as 
+  * Moved into contrib, which is the proper section for this package, as
     there is no source code available.
   * Converted menu file to menu-1 format.
 
@@ -379,7 +379,7 @@ quake (1.06-4) unstable; urgency=low
 
 quake (1.06-3) unstable; urgency=low
 
-  * Got rid of the binary patching, and went over to small wrapper scripts 
+  * Got rid of the binary patching, and went over to small wrapper scripts
     that cd to /var/lib/games/quake. This is to fix bug #7767, -game didn't
     work.
   * Routine update of debian/rules:
@@ -396,9 +396,9 @@ quake (1.06-2) unstable; urgency=low
 
 quake (1.06-1) unstable; urgency=low
 
-  * Added a squake binary (version 0.99), thanks to the work Dave 'Zoid' 
+  * Added a squake binary (version 0.99), thanks to the work Dave 'Zoid'
     Kirsch.
-  * Updated to new uptream release of xquake (thanks to Linus Torvalds for 
+  * Updated to new uptream release of xquake (thanks to Linus Torvalds for
     building the 1.06 xquake binaries (and for a few other things <g>)).
   * Split into 2 binary packages: xquake and squake.
   * Dropped xf86quake out of the package for now, as a 1.06 version is not
@@ -429,7 +429,7 @@ quake (1.01-2) unstable; urgency=low
     the new quake-lib-stub package.
   * Modified README.debian to document that quake-lib greater than 1.01
     will likely not work with this version of quake.
-  * xf86quake is no longer suid root, as that is almost certianly a security 
+  * xf86quake is no longer suid root, as that is almost certianly a security
     hole. Added documentation to README.debian about this.
   * Added a menu file.
   * Routine update of debian/rules:

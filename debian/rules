@@ -1,7 +1,7 @@
 #! /usr/bin/make -f
 # This file is public domain software, originally written by Joey Hess.
 
-# Uncomment this to turn on verbose mode. 
+# Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
 # This is the debhelper compatibility version to use.
@@ -15,14 +15,14 @@ maptools	:= $(PACKAGE)-maptools
 dev		:= $(PACKAGE)-dev
 
 alsa		:= $(PACKAGE)-alsa
-gllib		:= $(PACKAGE)-libs-gl
-glx		:= $(PACKAGE)-glx
+gllib		:= $(PACKAGE)-gl
+glsllib		:= $(PACKAGE)-glsl
 jack		:= $(PACKAGE)-jack
 oss		:= $(PACKAGE)-oss
 sdl		:= $(PACKAGE)-sdl
 servers		:= $(PACKAGE)-servers
-sgl		:= $(PACKAGE)-sgl
-swlib		:= $(PACKAGE)-libs-sw
+swlib		:= $(PACKAGE)-sw
+sw32lib		:= $(PACKAGE)-sw32
 utils		:= $(PACKAGE)-utils
 x11		:= $(PACKAGE)-x11
 
@@ -49,7 +49,7 @@ configure-stamp:
 		    --infodir=/usr/share/info \
 		    --with-sharepath=/usr/share/games/quake \
 		    --with-plugin-path=/usr/lib/quakeforge/plugins \
-		    --with-clients=glx,sdl,sgl,x11 \
+		    --with-clients=sdl,x11 \
 		    --with-servers=master,nq,qw
 
 	touch $@
@@ -65,7 +65,7 @@ changelog-stamp:
 	# Add here commands to build the changelog
 	if test -d .git; then $(MAKE) changelog; fi
 	touch $@
-	
+
 clean:
 	dh_testdir
 	dh_testroot
@@ -132,30 +132,30 @@ install: build
 	install -d -m755 debian/$(gllib)/usr/share/doc
 	ln -s $(common) debian/$(gllib)/usr/share/doc/$(gllib)
 
+	# quakeforge-libs-glsl
+	dh_install -p$(glsllib) --sourcedir=$(tmp)
+	install -d -m755 debian/$(glsllib)/usr/share/doc
+	ln -s $(common) debian/$(glsllib)/usr/share/doc/$(glsllib)
+
 	# quakeforge-libs-sw
 	dh_install -p$(swlib) --sourcedir=$(tmp)
 	install -d -m755 debian/$(swlib)/usr/share/doc
 	ln -s $(common) debian/$(swlib)/usr/share/doc/$(swlib)
+
+	# quakeforge-libs-sw32
+	dh_install -p$(sw32lib) --sourcedir=$(tmp)
+	install -d -m755 debian/$(sw32lib)/usr/share/doc
+	ln -s $(common) debian/$(sw32lib)/usr/share/doc/$(sw32lib)
 
 	# quakeforge-servers
 	dh_install -p$(servers) --sourcedir=$(tmp)
 	install -d -m755 debian/$(servers)/usr/share/doc
 	ln -s $(common) debian/$(servers)/usr/share/doc/$(servers)
 
-	# quakeforge-glx
-	dh_install -p$(glx) --sourcedir=$(tmp)
-	install -d -m755 debian/$(glx)/usr/share/doc
-	ln -s $(common) debian/$(glx)/usr/share/doc/$(glx)
-
 	# quakeforge-sdl
 	dh_install -p$(sdl) --sourcedir=$(tmp)
 	install -d -m755 debian/$(sdl)/usr/share/doc
 	ln -s $(common) debian/$(sdl)/usr/share/doc/$(sdl)
-
-	# quakeforge-sgl
-	dh_install -p$(sgl) --sourcedir=$(tmp)
-	install -d -m755 debian/$(sgl)/usr/share/doc
-	ln -s $(common) debian/$(sgl)/usr/share/doc/$(sgl)
 
 	# quakeforge-x11
 	dh_install -p$(x11) --sourcedir=$(tmp)
@@ -191,7 +191,7 @@ install: build
 	dh_install -p$(maptools) --sourcedir=$(tmp)
 	install -d -m755 debian/$(maptools)/usr/share/doc
 	ln -s $(common) debian/$(maptools)/usr/share/doc/$(maptools)
-	
+
 	# quakeforge
 	find $(tmp) -type d -empty -print | xargs -r rmdir -p --ignore-fail-on-non-empty
 	dh_install -p$(PACKAGE) --sourcedir=$(tmp)
@@ -216,7 +216,7 @@ binary-arch: build install
 	dh_installman -p$(maptools)
 	dh_installman -p$(utils)
 	dh_undocumented
-	dh_strip -Xlib/qfcc
+	dh_strip -Xshare/qfcc
 	dh_link
 	dh_compress
 	dh_fixperms
