@@ -69,8 +69,7 @@ cd quakeforge-$ver
 git checkout $tag_name
 cp NEWS $RELEASE
 if test "$tag_name" != master; then
-	sed -e "s/git-master/$tag_name/" configure.ac > configure.ac-
-	mv configure.ac- configure.ac
+	sed -i -e "s/git-master/$tag_name/" configure.ac
 fi
 mkdir -p linux.o qf-win32.o
 ./bootstrap
