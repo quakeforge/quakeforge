@@ -3,16 +3,60 @@ NEWS for the QuakeForge project
 Changes from 0.6.3
     o Renderer plugins. This means the same program is used for all
       renders. Which renderer to use is selected via the vid_render plugin
-      (one of gl, glsl, sw, sw32; defaults to glsl). Currently selectable
+      (one of gl, glsl, sw, sw32; defaults to gl). Currently selectable
       only at startup ("+set vid_render gl" on the command line, or "set
       vid_render gl" in a startup config file (not config.cfg))
     o MDL skins can now be 1024x1024
-    o Fix missing glsl console text with nvidia's drivers.
+    o GLSL renderer now works on (recent) nvidia drivers.
     o MDL import/export addon for blender can now export animated models
-      (skins and mesh deformations)
+      (skins and mesh deformations) and handles MD16 (QF extension: mdl
+      with 16 bit vertex data).
 	o Jumping is now independent of frame rate. Whether you get 72 fps or
       22, you jump the same height. The height is the same as if you got
       infinite fps.
+    o IQM support in all renderers.
+    o 32 bit x86 builds support asm again.
+    o inifinite think loop when playing honey fixed.
+    o jack sound driver tries to reconnect to the jack server if the
+      connection is lost.
+    o demo format auto-detection: no need to worry about mistakenly playing
+      a .qwd in nq or .dem in qw: the client will reject it with a message.
+      Also, the qw client now autodetects mvd and qwd demos, preferring mvd
+      over qwd if two demos have the same base name but different
+      extensions.
+    o view angles no longer messed up when loading a saved game.
+      Thanks to mh.
+    o frame-rate independe cshifts fades. Again, thanks to mh.
+    o r_flatlightstyles now supported.
+    o missing console prompt on demo stop fixed.
+    o missing health picup sound on aerowalk (qw) fixed.
+    o all entities lerped in nq.
+    o qw server now supports antilag (from fteqw).
+    o spectator name changes are no longer broadcast.
+    o preliminary support for chat info in qw (client and server). The
+      client currently only adds a dlight to the player (no icons yet).
+    o glsl renderer speedups (~2x for bigass1, ~2.5x for overkill)
+    o support for 32 mouse buttons added.
+    o excessive beams removed.
+    o "loading" plaque re-enabled.
+    o smarter entity counting: maps with many entities but most of them get
+      culled are now more likely to load with default settings (nq) or at
+      all (qw).
+    o qfcc changes
+        o now supports "vector = quaternion * vector" as a shortcut for
+          quaternion rotation. If the quaternion is not a unit quaternion,
+          scaling will be the square of the length of the quaternion (same
+          as for standard quaternion rotation).
+        o bug fixed where params and return slot were offset in v6 progs.
+        o progdefs.h now written correctly (with qfcc header, even, but the
+          CRC is still correct). Writing is optional, but default for v6
+          progs.
+        o jumps are now threaded, with some better dead-code elimination.
+        o qfcc's/ruamoko libs and headers are now in ${prefix}/share/qfcc
+        o The correct function name is reported for the function with the
+          most locals.
+        o constant folding for unary operators, including float/int
+          conversions.
 
 Changes from 0.6.2
     o Compile fix for zlib 1.2.6.
