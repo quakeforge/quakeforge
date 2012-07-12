@@ -168,9 +168,10 @@ CL_PredictMove (void)
 	// now interpolate some fraction of the final frame
 	if (to->senttime == from->senttime)
 		f = 0;
-	else
-		f = bound (0, (cl.time - from->senttime) /
-				   (to->senttime - from->senttime), 1);
+	else {
+		f = (cl.time - from->senttime) / (to->senttime - from->senttime);
+		f = bound (0, f, 1);
+	}
 
 	for (i = 0; i < 3; i++)
 		if (fabs (from->playerstate[cl.playernum].pls.origin[i] -

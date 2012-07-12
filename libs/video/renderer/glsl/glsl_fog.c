@@ -106,6 +106,12 @@ glsl_Fog_Update (float density, float red, float green, float blue, float time)
 static void
 Fog_FogCommand_f (void)
 {
+	float       density = fog_density;
+	float       red = fog_red;
+	float       green = fog_green;
+	float       blue = fog_blue;
+	float       time = 0.0;
+
 	switch (Cmd_Argc ()) {
 		default:
 		case 1:
@@ -118,38 +124,38 @@ Fog_FogCommand_f (void)
 			Sys_Printf ("   \"red\" is \"%f\"\n", fog_red);
 			Sys_Printf ("   \"green\" is \"%f\"\n", fog_green);
 			Sys_Printf ("   \"blue\" is \"%f\"\n", fog_blue);
-			break;
+			return;
 		case 2:
-			glsl_Fog_Update (max (0.0, atof (Cmd_Argv (1))),
-							 fog_red, fog_green, fog_blue, 0.0);
+			density = atof (Cmd_Argv(1));
 			break;
 		case 3: //TEST
-			glsl_Fog_Update (max (0.0, atof (Cmd_Argv (1))),
-							 fog_red, fog_green, fog_blue,
-							 atof (Cmd_Argv (2)));
+			density = atof (Cmd_Argv(1));
+			time = atof (Cmd_Argv(2));
 			break;
 		case 4:
-			glsl_Fog_Update (fog_density,
-							 bound (0.0, atof (Cmd_Argv (1)), 1.0),
-							 bound (0.0, atof (Cmd_Argv (2)), 1.0),
-							 bound (0.0, atof (Cmd_Argv (3)), 1.0),
-							 0.0);
+			red = atof (Cmd_Argv(1));
+			green = atof (Cmd_Argv(2));
+			blue = atof (Cmd_Argv(3));
 			break;
 		case 5:
-			glsl_Fog_Update (max (0.0, atof (Cmd_Argv (1))),
-							 bound (0.0, atof (Cmd_Argv (2)), 1.0),
-							 bound (0.0, atof (Cmd_Argv (3)), 1.0),
-							 bound (0.0, atof (Cmd_Argv (4)), 1.0),
-							 0.0);
+			density = atof (Cmd_Argv(1));
+			red = atof (Cmd_Argv(2));
+			green = atof (Cmd_Argv(3));
+			blue = atof (Cmd_Argv(4));
 			break;
 		case 6: //TEST
-			glsl_Fog_Update (max (0.0, atof (Cmd_Argv (1))),
-							 bound (0.0, atof (Cmd_Argv (2)), 1.0),
-							 bound (0.0, atof (Cmd_Argv (3)), 1.0),
-							 bound (0.0, atof (Cmd_Argv (4)), 1.0),
-							 atof (Cmd_Argv (5)));
+			density = atof (Cmd_Argv(1));
+			red = atof (Cmd_Argv(2));
+			green = atof (Cmd_Argv(3));
+			blue = atof (Cmd_Argv(4));
+			time = atof (Cmd_Argv(5));
 			break;
 	}
+	density = max (0.0, density);
+	red = bound (0.0, red, 1.0);
+	green = bound (0.0, green, 1.0);
+	blue = bound (0.0, blue, 1.0);
+	glsl_Fog_Update (density, red, green, blue, time);
 }
 
 /*
