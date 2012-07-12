@@ -193,13 +193,12 @@ R_BuildLightMap (void)
 	if (surf->dlightframe == r_framecount)
 		R_AddDynamicLights ();
 
-	// LordHavoc: changed to positive (not inverse) lighting
-	for (i = 0; i < size; i++) {
-		t = bound(256, blocklights[i] >> (8 - VID_CBITS),
-				  256 * (VID_GRADES - 1));
-		blocklights[i] = t;
-	}
-/*
+//	// LordHavoc: changed to positive (not inverse) lighting
+//	for (i = 0; i < size; i++) {
+//		t = bound(256, blocklights[i] >> (8 - VID_CBITS),
+//				  256 * (VID_GRADES - 1));
+//		blocklights[i] = t;
+//	}
 	// bound, invert, and shift
 	for (i = 0; i < size; i++) {
 		t = (255 * 256 - blocklights[i]) >> (8 - VID_CBITS);
@@ -209,7 +208,6 @@ R_BuildLightMap (void)
 
 		blocklights[i] = t;
 	}
-*/
 }
 
 void
