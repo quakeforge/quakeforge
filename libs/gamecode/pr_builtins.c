@@ -208,6 +208,8 @@ PR_RelocateBuiltins (progs_t *pr)
 							bi_name, -desc->first_statement);
 			proc = bi_no_function;
 		}
+		if (!desc->s_name && bi)
+			desc->s_name = PR_SetString (pr, bi->name);
 		func->first_statement = desc->first_statement;
 		func->func = proc;
 	}
