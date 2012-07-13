@@ -941,7 +941,7 @@ SV_Move (const vec3_t start, const vec3_t mins, const vec3_t maxs,
 			edict_t    *owner;
 			owner = PROG_TO_EDICT (&sv_pr_state, SVentity (passedict, owner));
 			if (owner->entnum && owner->entnum <= MAX_CLIENTS) {
-				client_t   *cl = &svs.clients[passedict->entnum - 1];
+				client_t   *cl = &svs.clients[owner->entnum - 1];
 				clip.type |= MOVE_LAGGED;
 				sv.lagents = cl->laggedents;
 				sv.maxlagents = cl->laggedents_count;
