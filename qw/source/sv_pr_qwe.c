@@ -351,7 +351,7 @@ PF_calltimeofday (progs_t *pr)
 		P_FLOAT (pr, 3) = (float) date.day;
 		P_FLOAT (pr, 4) = (float) date.mon;
 		P_FLOAT (pr, 5) = (float) date.year;
-		P_STRING (pr, 6) = PR_SetTempString (pr, date.str);
+		P_STRING (pr, 6) = PR_SetReturnString (pr, date.str);
 
 		PR_ExecuteProgram (pr, (func_t) (f - sv_pr_state.pr_functions));
 		PR_PopFrame (&sv_pr_state);
