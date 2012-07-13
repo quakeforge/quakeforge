@@ -120,7 +120,8 @@ if test $do_win32 -eq 1; then
 		man1dir=${qf_win32_dir} \
 		install
 	mkdir -p ${qf_win32_dir}/pkgconfig
-	mv ${qf_win32_dir}/QF/*.pc ${qf_win32_dir}/pkgconfig
+	cp -a ${qf_win32_dir}/QF/*.pc ${qf_win32_dir}/pkgconfig
+	cp -a ../tools/io_mesh_qfmdl ${qf_win32_dir}
 	$MINGW/bin/strip --strip-unneeded "$qf_win32"/bin/*.exe
 	../tools/build_scripts/qf-win32.py "$ver-win32" quakeforge "$qf_win32"
 	mv *.zip $RELEASE

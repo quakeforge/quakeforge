@@ -83,6 +83,14 @@ devel_r = [
 	dir + "lib",
 ]
 
+io_mesh_qfmdl = [
+	dir,
+]
+
+io_mesh_qfmdl_r = [
+	dir + "io_mesh_qfmdl",
+]
+
 packages = [
 	(prefix + "-" + "server", server),
 	#(prefix + "-" + "client-wgl", client_wgl),
@@ -92,6 +100,8 @@ packages = [
 	(prefix + "-" + "devel", devel_r, "-r"),
 	("qfcc", qfcc),
 	("qfcc", qfcc_r, "-r"),
+	("io_mesh_qfmdl", io_mesh_qfmdl),
+	("io_mesh_qfmdl", io_mesh_qfmdl_r, "-r"),
 ]
 
 for p in packages:
