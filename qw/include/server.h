@@ -115,8 +115,9 @@ typedef struct {
 	// multiple signon messages are kept
 	sizebuf_t	signon;
 	int			num_signon_buffers;
-	int			signon_buffer_size[MAX_SIGNON_BUFFERS];
-	byte		signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
+	int         max_signon_buffers;	// grows;
+	int        *signon_buffer_size;
+	byte      (*signon_buffers)[MAX_DATAGRAM];
 
 	// demo stuff
 	int         recording_demo;

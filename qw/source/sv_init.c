@@ -74,6 +74,28 @@ SV_ModelIndex (const char *name)
 	return i;
 }
 
+static void
+SV_NextSignon (void)
+{
+	int         size;
+
+	if (!sv.max_signon_buffers
+		|| sv.num_signon_buffers == sv.max_signon_buffers - 1) {
+		sv.max_signon_buffers += MAX_SIGNON_BUFFERS;
+		size = sv.max_signon_buffers * sizeof (int);
+		sv.signon_buffer_size = realloc (sv.signon_buffer_size, size);
+		size = sv.max_signon_buffers * MAX_DATAGRAM;
+		sv.signon_buffers = realloc (sv.signon_buffers, size);
+	}
+
+	if (sv.num_signon_buffers)
+		sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
+	sv.signon.maxsize = sizeof (sv.signon_buffers[0]);
+	sv.signon.data = sv.signon_buffers[sv.num_signon_buffers];
+	sv.num_signon_buffers++;
+	sv.signon.cursize = 0;
+}
+
 /*
 	SV_FlushSignon
 
@@ -85,13 +107,7 @@ SV_FlushSignon (void)
 	if (sv.signon.cursize < sv.signon.maxsize - 512)
 		return;
 
-	if (sv.num_signon_buffers == MAX_SIGNON_BUFFERS - 1)
-		Sys_Error ("sv.num_signon_buffers == MAX_SIGNON_BUFFERS-1");
-
-	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
-	sv.signon.data = sv.signon_buffers[sv.num_signon_buffers];
-	sv.num_signon_buffers++;
-	sv.signon.cursize = 0;
+	SV_NextSignon ();
 }
 
 /*
@@ -299,6 +315,9 @@ SV_SpawnServer (const char *server)
 	char       *buf;
 	edict_t    *ent;
 	int         i;
+	void       *so_buffers;
+	int        *so_sizes;
+	int         max_so;
 	struct recorder_s *recorders;
 
 	Sys_MaskPrintf (SYS_DEV, "SpawnServer: %s\n", server);
@@ -315,10 +334,18 @@ SV_SpawnServer (const char *server)
 	Hunk_FreeToLowMark (host_hunklevel);
 
 	// wipe the entire per-level structure, but don't lose sv.recorders
-	// (good thing we're not multi-threaded FIXME?)
+	// or signon buffers (good thing we're not multi-threaded FIXME?)
 	recorders = sv.recorders;
+	max_so = sv.max_signon_buffers;
+	so_buffers = sv.signon_buffers;
+	so_sizes = sv.signon_buffer_size;
+
 	memset (&sv, 0, sizeof (sv));
+
 	sv.recorders = recorders;
+	sv.max_signon_buffers = max_so;
+	sv.signon_buffers = so_buffers;
+	sv.signon_buffer_size = so_sizes;
 
 	sv.datagram.maxsize = sizeof (sv.datagram_buf);
 	sv.datagram.data = sv.datagram_buf;
@@ -333,9 +360,7 @@ SV_SpawnServer (const char *server)
 	sv.master.maxsize = sizeof (sv.master_buf);
 	sv.master.data = sv.master_buf;
 
-	sv.signon.maxsize = sizeof (sv.signon_buffers[0]);
-	sv.signon.data = sv.signon_buffers[0];
-	sv.num_signon_buffers = 1;
+	SV_NextSignon ();
 
 	strcpy (sv.name, server);
 
