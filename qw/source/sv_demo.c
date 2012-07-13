@@ -152,40 +152,29 @@ SV_Stop (int reason)
 		return;
 	}
 
-	if (reason == 2) {
-		// stop and remove
-		if (demo_disk)
-			Qclose (demo_file);
-
-		QFS_Remove (demo_name->str);
-		QFS_Remove (demo_text->str);
-
-		demo_file = NULL;
-		SVR_RemoveUser (recorder);
-		recorder = 0;
-		sv.recording_demo = 0;
-
-		SV_BroadcastPrintf (PRINT_CHAT,
-							"Server recording canceled, demo removed\n");
-
-		Cvar_Set (serverdemo, "");
-
-		return;
-	}
-
-	// clearup to be sure message will fit
-
 	SVR_RemoveUser (recorder);
 
+	//if (demo_disk)
 	Qclose (demo_file);
 	demo_file = NULL;
 	recorder = 0;
 	sv.recording_demo = 0;
-	if (!reason)
-		SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
-	else
-		SV_BroadcastPrintf (PRINT_CHAT, "Server recording stoped\n"
-							"Max demo size exceeded\n");
+	switch (reason) {
+		case 0:
+			SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
+			break;
+		case 2:
+			SV_BroadcastPrintf (PRINT_CHAT,
+								"Server recording canceled, demo removed\n");
+			Sys_Printf ("%s %s\n", demo_name->str, demo_text->str);
+			QFS_Remove (demo_name->str);
+			QFS_Remove (demo_text->str);
+			break;
+		default:
+			SV_BroadcastPrintf (PRINT_CHAT, "Server recording stoped\n"
+								"Max demo size exceeded\n");
+			break;
+	}
 /*
 	if (sv_onrecordfinish->string[0]) {
 		extern redirect_t sv_redirected;
@@ -384,13 +373,11 @@ SV_Record (char *name)
 
 	SV_InitRecord ();
 
-	s = name + strlen (name);
-	while (s > name && *s != '/')
-		s--;
-	dstring_copystr (demo_name, s + (*s == '/'));
+	dstring_copystr (demo_name, name);
 
 	SV_BroadcastPrintf (PRINT_CHAT, "Server started recording (%s):\n%s\n",
-						demo_disk ? "disk" : "memory", demo_name->str);
+						demo_disk ? "disk" : "memory",
+						QFS_SkipPath (demo_name->str));
 	Cvar_Set (serverdemo, demo_name->str);
 
 	dstring_copystr (demo_text, name);
