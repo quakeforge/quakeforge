@@ -171,12 +171,12 @@ PF_substr (progs_t *pr)
 	s += start;
 	l -= start;
 
-	if (len > l + 1)
-		len = l + 1;
+	if (len > l)
+		len = l;
 
-	tmp = Hunk_TempAlloc (len);
-	strncpy (tmp, s, len - 1);
-	tmp[len - 1] = 0;
+	tmp = Hunk_TempAlloc (len + 1);
+	strncpy (tmp, s, len);
+	tmp[len] = 0;
 
 	RETURN_STRING (pr, tmp);
 }
