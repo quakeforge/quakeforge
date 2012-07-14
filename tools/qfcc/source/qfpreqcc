@@ -74,7 +74,7 @@ comment_whole = re.compile (r'((/\*.*\*/)|//.*)')
 comment_start = re.compile (r'(/\*.*)')
 comment_end = re.compile (r'(.*\*/)')
 directive_re = re.compile (
-    r'^\s*#\s*(define|undef|include|includelist|endlist|ifdef|ifndef|endif|else|pragma)\b' +
+    r'^\s*#\s*(define|undef|include|includelist|endlist|ifdef|ifndef|endif|else|pragma|[0-9]+)\b' +
     r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)?)' +
     r'((\s*("[^"]*"|[^ \t\n\r\f\v/]+|/(?!/))+)*)')
 macro_re = re.compile (r'#([A-Za-z_][0-9A-Za-z_]*)')
@@ -194,6 +194,8 @@ def do_preprogs_src ():
 			if directive == 'pragma':
 				if condition[-1]:
 					parse_pragma (arg1, margs)
+			elif directive[0] in '0123456789':
+				pass
 			elif directive == 'includelist':
 				if condition[-1]:
 					fname = parse_filename (arg1)
@@ -340,9 +342,9 @@ while i < len (sys.argv):
 		continue
 	i = i + 1
 do_preprogs_src ()
+progs_dat = source_list[0]
+source_list = source_list[1:]
 for s in source_list:
-	if s[0]=='#':
-		continue		# preprocessor directive
 	process_source (s)
 f = open (progs_src, "wb")
 f.write (progs_dat + '\n\n')
