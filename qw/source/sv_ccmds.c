@@ -889,16 +889,29 @@ static void
 SV_Serverinfo_f (void)
 {
 	cvar_t     *var;
+	const char *key;
+	const char *value;
 
-	if (Cmd_Argc () == 1) {
-		SV_Printf ("Server info settings:\n");
-		Info_Print (svs.info);
-		return;
-	}
-
-	if (Cmd_Argc () != 3) {
-		SV_Printf ("usage: serverinfo [ <key> <value> ]\n");
-		return;
+	switch (Cmd_Argc ()) {
+		case 1:
+			SV_Printf ("Server info settings:\n");
+			Info_Print (svs.info);
+			return;
+		case 2:
+			key = Cmd_Argv (1);
+			value = Info_ValueForKey (svs.info, key);
+			if (Info_Key (svs.info, key))
+				SV_Printf ("Server info %s: \"%s\"\n", key, value);
+			else
+				SV_Printf ("No such key %s\n", Cmd_Argv(1));
+			return;
+		case 3:
+			key = Cmd_Argv (1);
+			value = Cmd_Argv (2);
+			break;
+		default:
+			SV_Printf ("usage: serverinfo [ <key> <value> ]\n");
+			return;
 	}
 
 	if (Cmd_Argv (1)[0] == '*') {
@@ -907,13 +920,12 @@ SV_Serverinfo_f (void)
 	}
 
 	// if this is a cvar, change it too
-	var = Cvar_FindVar (Cmd_Argv (1));
+	var = Cvar_FindVar (key);
 	if (var && (var->flags & CVAR_SERVERINFO)) {
-		Cvar_Set (var, Cmd_Argv (2));
+		Cvar_Set (var, value);
 	} else {
-		Info_SetValueForKey (svs.info, Cmd_Argv (1), Cmd_Argv (2),
-							 !sv_highchars->int_val);
-		SV_SendServerInfoChange (Cmd_Argv (1), Cmd_Argv (2));
+		Info_SetValueForKey (svs.info, key, value, !sv_highchars->int_val);
+		SV_SendServerInfoChange (key, value);
 	}
 }
 
@@ -954,22 +966,36 @@ SV_SetLocalinfo (const char *key, const char *value)
 static void
 SV_Localinfo_f (void)
 {
-	if (Cmd_Argc () == 1) {
-		SV_Printf ("Local info settings:\n");
-		Info_Print (localinfo);
-		return;
+	const char *key;
+	const char *value;
+
+	switch (Cmd_Argc ()) {
+		case 1:
+			SV_Printf ("Local info settings:\n");
+			Info_Print (localinfo);
+			return;
+		case 2:
+			key = Cmd_Argv (1);
+			value = Info_ValueForKey (localinfo, key);
+			if (Info_Key (localinfo, key))
+				SV_Printf ("Localinfo %s: \"%s\"\n", key, value);
+			else
+				SV_Printf ("No such key %s\n", Cmd_Argv(1));
+			return;
+		case 3:
+			key = Cmd_Argv (1);
+			value = Cmd_Argv (2);
+			break;
+		default:
+			SV_Printf ("usage: localinfo [ <key> <value> ]\n");
+			return;
 	}
 
-	if (Cmd_Argc () != 3) {
-		SV_Printf ("usage: localinfo [ <key> <value> ]\n");
-		return;
-	}
-
-	if (Cmd_Argv (1)[0] == '*') {
+	if (key[0] == '*') {
 		SV_Printf ("Star variables cannot be changed.\n");
 		return;
 	}
-	SV_SetLocalinfo (Cmd_Argv (1), Cmd_Argv (2));
+	SV_SetLocalinfo (key, value);
 }
 
 /*
