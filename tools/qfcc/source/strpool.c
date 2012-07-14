@@ -226,11 +226,13 @@ make_string (char *token, char **end)
 					c = '\a';
 					break;
 				case 'b':
-					if (options.qccx_escapes)
+					if (options.qccx_escapes) {
 						mask ^= 0x80;
-					else
+						continue;
+					} else {
 						c = '\b';
-					break;
+						break;
+					}
 				case 'e':
 					c = '\033';
 					break;
@@ -242,7 +244,7 @@ make_string (char *token, char **end)
 					break;
 				case 's':
 					mask ^= 0x80;
-					break;
+					continue;
 				case 't':
 					c = '\t';
 					break;
@@ -264,20 +266,24 @@ make_string (char *token, char **end)
 					c = 28;			// center dot
 					break;
 				case '<':
-					if (options.qccx_escapes)
+					if (options.qccx_escapes) {
 						c = 29;			// brown left end
-					else
+						break;
+					} else {
 						mask = 0x80;
-					continue;
+						continue;
+					}
 				case '-':
 					c = 30;			// brown center bit
 					break;
 				case '>':
-					if (options.qccx_escapes)
+					if (options.qccx_escapes) {
 						c = 31;			// brown right end
-					else
+						break;
+					} else {
 						mask = 0x00;
-					continue;
+						continue;
+					}
 				case '(':
 					c = 128;		// left slider end
 					break;
