@@ -114,6 +114,7 @@
 #define TransformVector sw32_TransformVector
 #define Turbulent sw32_Turbulent
 #define acolormap sw32_acolormap
+#define aliastransform sw32_aliastransform
 #define aliasxcenter sw32_aliasxcenter
 #define aliasxscale sw32_aliasxscale
 #define aliasycenter sw32_aliasycenter

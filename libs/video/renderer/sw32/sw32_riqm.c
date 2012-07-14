@@ -93,13 +93,13 @@ R_IQMTransformAndProjectFinalVerts (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 		vec3_t      tv, tn;
 		Mat4MultVec (mat, position, tv);
 		Mat4as3MultVec (mat, normal, tn);
-		zi = 1.0 / (DotProduct (tv, aliastransform[2])
-					+ aliastransform[2][3]);
+		zi = 1.0 / (DotProduct (tv, sw32_aliastransform[2])
+					+ sw32_aliastransform[2][3]);
 		fv->v[5] = zi;
-		fv->v[0] = (DotProduct (tv, aliastransform[0])
-					+ aliastransform[0][3]) * zi + aliasxcenter;
-		fv->v[1] = (DotProduct (tv, aliastransform[1])
-					+ aliastransform[1][3]) * zi + aliasxcenter;
+		fv->v[0] = (DotProduct (tv, sw32_aliastransform[0])
+					+ sw32_aliastransform[0][3]) * zi + aliasxcenter;
+		fv->v[1] = (DotProduct (tv, sw32_aliastransform[1])
+					+ sw32_aliastransform[1][3]) * zi + aliasxcenter;
 		fv->v[2] = texcoord[0];
 		fv->v[3] = texcoord[1];
 		fv->v[4] = calc_light (tn);
@@ -157,9 +157,12 @@ R_IQMPreparePoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 		vec3_t      tv, tn;
 		Mat4MultVec (mat, position, tv);
 		Mat4as3MultVec (mat, normal, tn);
-		av->fv[0] = DotProduct (tv, aliastransform[0]) + aliastransform[0][3];
-		av->fv[1] = DotProduct (tv, aliastransform[1]) + aliastransform[1][3];
-		av->fv[2] = DotProduct (tv, aliastransform[2]) + aliastransform[2][3];
+		av->fv[0] = DotProduct (tv, sw32_aliastransform[0])
+			+ sw32_aliastransform[0][3];
+		av->fv[1] = DotProduct (tv, sw32_aliastransform[1])
+			+ sw32_aliastransform[1][3];
+		av->fv[2] = DotProduct (tv, sw32_aliastransform[2])
+			+ sw32_aliastransform[2][3];
 		fv->v[2] = texcoord[0];
 		fv->v[3] = texcoord[1];
 		fv->flags = 0;
@@ -258,7 +261,7 @@ R_IQMSetUpTransform (int trivial_accept)
 //	viewmatrix[1][3] = 0;
 //	viewmatrix[2][3] = 0;
 
-	R_ConcatTransforms (viewmatrix, rotationmatrix, aliastransform);
+	R_ConcatTransforms (viewmatrix, rotationmatrix, sw32_aliastransform);
 
 // do the scaling up of x and y to screen coordinates as part of the transform
 // for the unclipped case (it would mess up clipping in the clipped case).
@@ -268,11 +271,11 @@ R_IQMSetUpTransform (int trivial_accept)
 
 	if (trivial_accept) {
 		for (i = 0; i < 4; i++) {
-			aliastransform[0][i] *= aliasxscale *
+			sw32_aliastransform[0][i] *= aliasxscale *
 				(1.0 / ((float) 0x8000 * 0x10000));
-			aliastransform[1][i] *= aliasyscale *
+			sw32_aliastransform[1][i] *= aliasyscale *
 				(1.0 / ((float) 0x8000 * 0x10000));
-			aliastransform[2][i] *= 1.0 / ((float) 0x8000 * 0x10000);
+			sw32_aliastransform[2][i] *= 1.0 / ((float) 0x8000 * 0x10000);
 		}
 	}
 }

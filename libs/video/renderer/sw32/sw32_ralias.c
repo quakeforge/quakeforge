@@ -70,7 +70,7 @@ int         sw32_r_amodels_drawn;
 static int         a_skinwidth;
 static int         r_anumverts;
 
-static float       sw32_aliastransform[3][4];
+float       sw32_aliastransform[3][4];
 
 typedef struct {
 	int         index0;
