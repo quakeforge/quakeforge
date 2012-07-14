@@ -46,6 +46,7 @@ typedef struct _inputline_t *inputline_t;
 */
 @extern void InputLine_SetCursor (inputline_t il, int cursor);
 
+typedef void (il_enterfunc)(string, void*);
 /**	Set the callback function for when the enter key is pressed.
 
 	\param	il		The inputline handle.
@@ -54,7 +55,7 @@ typedef struct _inputline_t *inputline_t;
 	\param	data	Pointer to a data block to be passed to the callback
 					function.
 */
-@extern @overload void InputLine_SetEnter (inputline_t il, void (f)(string, void*), void *data);
+@extern @overload void InputLine_SetEnter (inputline_t il, il_enterfunc f, void *data);
 
 /**	Set the callback method for when the enter key is pressed.
 
@@ -155,7 +156,7 @@ typedef struct _inputline_t *inputline_t;
 		-enter: (string) text;
 
 	\param	obj		The object receiving the message.
-	\param	sel		The selector representing the message.
+	\param	msg		The selector representing the message.
 
 	\todo -(void) set[X]Action: (SEL)aSelector;
 	\todo -(void) setTarget: (id)ahnObject;
@@ -219,7 +220,7 @@ typedef struct _inputline_t *inputline_t;
 		-enter: (string) text;
 
 	\param	obj		The object receiving the message.
-	\param	sel		The selector representing the message.
+	\param	msg		The selector representing the message.
 
 	\todo -(void) set[X]Action: (SEL)aSelector;
 	\todo -(void) setTarget: (id)ahnObject;
