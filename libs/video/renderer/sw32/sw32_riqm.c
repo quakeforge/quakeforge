@@ -303,8 +303,6 @@ sw32_R_IQMDrawModel (alight_t *plighting)
 	R_IQMSetUpTransform (ent->trivial_accept);
 
 	R_IQMSetupLighting (ent, plighting);
-	sw32_r_affinetridesc.drawtype = (ent->trivial_accept == 3) &&
-			r_recursiveaffinetriangles;
 
 	//if (!sw32_acolormap)
 		sw32_acolormap = vid.colormap8;
