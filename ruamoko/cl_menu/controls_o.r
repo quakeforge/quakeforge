@@ -314,7 +314,7 @@ DRAW_basic_control_binding =
 
 	opt_cursor  (x + 12, y + (Menu_GetIndex () * 10) + cursor_pad);
 
-	return 1;
+	return 0;
 };
 
 /*
@@ -390,7 +390,7 @@ DRAW_misc_control_binding =
 	}
 
 	opt_cursor  (x + 12, y + (Menu_GetIndex() * 10) + cursor_pad);
-	return 1;
+	return 0;
 };
 
 /*
@@ -467,7 +467,7 @@ DRAW_weapon_control_binding =
 
 	opt_cursor  (x + 12, y + (Menu_GetIndex () * 10) + cursor_pad);
 
-	return 1;
+	return 0;
 };
 
 /*
