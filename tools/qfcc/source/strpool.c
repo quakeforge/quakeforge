@@ -173,16 +173,20 @@ make_string (char *token, char **end)
 				error (0, "EOF inside quote");
 			switch (c) {
 				case '\\':
-					c = '\\';
+					boldnext = 0;
+					c = '\\' ^ mask;
 					break;
 				case 'n':
-					c = '\n';
+					boldnext = 0;
+					c = '\n' ^ mask;
 					break;
 				case '"':
-					c = '\"';
+					boldnext = 0;
+					c = '\"' ^ mask;
 					break;
 				case '\'':
-					c = '\'';
+					boldnext = 0;
+					c = '\'' ^ mask;
 					break;
 				case '0':
 				case '1':
@@ -201,13 +205,18 @@ make_string (char *token, char **end)
 						}
 						if (!*token)
 							error (0, "EOF inside quote");
+						c ^= mask;
+						boldnext = 0;
 						break;
 					}
 				case '8':
 				case '9':
+					boldnext = 0;
 					c = 18 + c - '0';
+					c ^= mask;
 					break;
 				case 'x':
+					boldnext = 0;
 					c = 0;
 					while (*token && isxdigit ((unsigned char)*token)) {
 						c *= 16;
@@ -221,35 +230,44 @@ make_string (char *token, char **end)
 					}
 					if (!*token)
 						error (0, "EOF inside quote");
+					c ^= mask;
 					break;
 				case 'a':
-					c = '\a';
+					boldnext = 0;
+					c = '\a' ^ mask;
 					break;
 				case 'b':
+					boldnext = 0;
 					if (options.qccx_escapes) {
 						mask ^= 0x80;
 						continue;
 					} else {
-						c = '\b';
+						c = '\b' ^ mask;
 						break;
 					}
 				case 'e':
-					c = '\033';
+					boldnext = 0;
+					c = '\033' ^ mask;
 					break;
 				case 'f':
-					c = '\f';
+					boldnext = 0;
+					c = '\f' ^ mask;
 					break;
 				case 'r':
-					c = '\r';
+					boldnext = 0;
+					c = '\r' ^ mask;
 					break;
 				case 's':
+					boldnext = 0;
 					mask ^= 0x80;
 					continue;
 				case 't':
-					c = '\t';
+					boldnext = 0;
+					c = '\t' ^ mask;
 					break;
 				case 'v':
-					c = '\v';
+					boldnext = 0;
+					c = '\v' ^ mask;
 					break;
 				case '^':
 					if (*token == '\"')
@@ -257,43 +275,53 @@ make_string (char *token, char **end)
 					boldnext = 1;
 					continue;
 				case '[':
+					boldnext = 0;
 					c = 0x90;		// gold [
 					break;
 				case ']':
+					boldnext = 0;
 					c = 0x91;		// gold ]
 					break;
 				case '.':
+					boldnext = 0;
 					c = 28;			// center dot
 					break;
 				case '<':
+					boldnext = 0;
 					if (options.qccx_escapes) {
-						c = 29;			// brown left end
+						c = 29 ^ mask;			// brown left end
 						break;
 					} else {
 						mask = 0x80;
 						continue;
 					}
 				case '-':
+					boldnext = 0;
 					c = 30;			// brown center bit
 					break;
 				case '>':
+					boldnext = 0;
 					if (options.qccx_escapes) {
-						c = 31;			// brown right end
+						c = 31 ^ mask;			// brown right end
 						break;
 					} else {
 						mask = 0x00;
 						continue;
 					}
 				case '(':
-					c = 128;		// left slider end
+					boldnext = 0;
+					c = 128 ^ mask;		// left slider end
 					break;
 				case '=':
-					c = 129;		// slider center
+					boldnext = 0;
+					c = 129 ^ mask;		// slider center
 					break;
 				case ')':
-					c = 130;		// right slider end
+					boldnext = 0;
+					c = 130 ^ mask;		// right slider end
 					break;
 				case '{':
+					boldnext = 0;
 					c = 0;
 					while (*token && *token != '}'
 						   && isdigit ((unsigned char)*token)) {
@@ -308,6 +336,7 @@ make_string (char *token, char **end)
 						token++;
 					if (c > 255)
 						warning (0, "\\{%d} > 255", c);
+					c ^= mask;
 					break;
 				default:
 					error (0, "Unknown escape char");
