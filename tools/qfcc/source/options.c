@@ -62,6 +62,7 @@ enum {
 	OPT_ADVANCED,
 	OPT_BLOCK_DOT,
 	OPT_CPP,
+	OPT_EXTENDED,
 	OPT_INCLUDE,
 	OPT_NO_DEFAULT_PATHS,
 	OPT_PROGDEFS,
@@ -75,6 +76,7 @@ static struct option const long_options[] = {
 	{"code", required_argument, 0, 'C'},
 	{"cpp", required_argument, 0, OPT_CPP},
 	{"define", required_argument, 0, 'D'},
+	{"extended", no_argument, 0, OPT_EXTENDED},
 	{"files", no_argument, 0, 'F'},
 	{"help", no_argument, 0, 'h'},
 	{"include", required_argument, 0, OPT_INCLUDE},
@@ -139,6 +141,7 @@ usage (int status)
 "        --cpp CPPSPEC         cpp execution command line\n"
 "    -D, --define SYMBOL[=VAL] Define symbols for the preprocessor\n"
 "    -E                        Only preprocess\n"
+"        --extended            Allow extended keywords in traditional mode\n"
 "    -F, --files               Generate files.dat\n"
 "    -g                        Generate debugging info\n"
 "    -h, --help                Display this help and exit\n"
@@ -351,13 +354,18 @@ DecodeArgs (int argc, char **argv)
 			case 'g':					// debug
 				options.code.debug = true;
 				break;
+			case OPT_EXTENDED:
+				options.traditional = 1;
+				options.advanced = false;
+				options.code.progsversion = PROG_ID_VERSION;
+				break;
 			case OPT_TRADITIONAL:
-				options.traditional = true;
+				options.traditional = 2;
 				options.advanced = false;
 				options.code.progsversion = PROG_ID_VERSION;
 				break;
 			case OPT_ADVANCED:
-				options.traditional = false;
+				options.traditional = 0;
 				options.advanced = true;
 				options.code.progsversion = PROG_VERSION;
 				break;
@@ -593,7 +601,9 @@ DecodeArgs (int argc, char **argv)
 		options.preprocess_only = 0;
 	if (!source_files && !options.advanced) {
 		// progs.src mode without --advanced implies --traditional
-		options.traditional = true;
+		// but --extended overrides
+		if (!options.traditional)
+			options.traditional = 2;
 		options.advanced = false;
 		if (!options.code.progsversion)
 			options.code.progsversion = PROG_ID_VERSION;

@@ -256,17 +256,17 @@ typedef struct {
 	const char *name;
 	int         value;
 	type_t     *type;
-	unsigned int traditional;
-	unsigned int version;
+	int         traditional;
+	unsigned    version;
 	int         objc;
 } keyword_t;
 
 static keyword_t keywords[] = {
-	{"void",		TYPE,	&type_void,			1, PROG_ID_VERSION,	0},
-	{"float",		TYPE,	&type_float,		1, PROG_ID_VERSION,	0},
-	{"string",		TYPE,	&type_string,		1, PROG_ID_VERSION,	0},
-	{"vector",		TYPE,	&type_vector,		1, PROG_ID_VERSION,	0},
-	{"entity",		TYPE,	&type_entity,		1, PROG_ID_VERSION,	0},
+	{"void",		TYPE,	&type_void,			2, PROG_ID_VERSION,	0},
+	{"float",		TYPE,	&type_float,		2, PROG_ID_VERSION,	0},
+	{"string",		TYPE,	&type_string,		2, PROG_ID_VERSION,	0},
+	{"vector",		TYPE,	&type_vector,		2, PROG_ID_VERSION,	0},
+	{"entity",		TYPE,	&type_entity,		2, PROG_ID_VERSION,	0},
 	{"quaternion",	TYPE,	&type_quaternion,	0, PROG_VERSION,	0},
 	{"int",			TYPE,	&type_integer,		0, PROG_VERSION,	0},
 	{"unsigned",	TYPE,	&type_integer,		0, PROG_VERSION,	0},//FIXME
@@ -278,18 +278,18 @@ static keyword_t keywords[] = {
 	{"Super",		TYPE,	&type_Super,		0, PROG_VERSION,	1},
 	{"SEL",			TYPE,	&type_SEL,			0, PROG_VERSION,	1},
 	{"IMP",			TYPE,	&type_IMP,			0, PROG_VERSION,	1},
-	{"local",		LOCAL,	0,					1, PROG_ID_VERSION,	0},
-	{"return",		RETURN,	0,					1, PROG_ID_VERSION,	0},
-	{"while",		WHILE,	0,					1, PROG_ID_VERSION,	0},
-	{"do",			DO,		0,					1, PROG_ID_VERSION,	0},
-	{"if",			IF,		0,					1, PROG_ID_VERSION,	0},
-	{"else",		ELSE,	0,					1, PROG_ID_VERSION,	0},
-	{"for",			FOR,	0,					0, PROG_ID_VERSION,	0},
-	{"break",		BREAK,	0,					1, PROG_ID_VERSION,	0},
-	{"continue",	CONTINUE, 0,				0, PROG_ID_VERSION,	0},
-	{"switch",		SWITCH,	0,					0, PROG_ID_VERSION,	0},
-	{"case",		CASE,	0,					0, PROG_ID_VERSION,	0},
-	{"default",		DEFAULT, 0,					0, PROG_ID_VERSION,	0},
+	{"local",		LOCAL,	0,					2, PROG_ID_VERSION,	0},
+	{"return",		RETURN,	0,					2, PROG_ID_VERSION,	0},
+	{"while",		WHILE,	0,					2, PROG_ID_VERSION,	0},
+	{"do",			DO,		0,					2, PROG_ID_VERSION,	0},
+	{"if",			IF,		0,					2, PROG_ID_VERSION,	0},
+	{"else",		ELSE,	0,					2, PROG_ID_VERSION,	0},
+	{"for",			FOR,	0,					1, PROG_ID_VERSION,	0},
+	{"break",		BREAK,	0,					2, PROG_ID_VERSION,	0},
+	{"continue",	CONTINUE, 0,				1, PROG_ID_VERSION,	0},
+	{"switch",		SWITCH,	0,					1, PROG_ID_VERSION,	0},
+	{"case",		CASE,	0,					1, PROG_ID_VERSION,	0},
+	{"default",		DEFAULT, 0,					1, PROG_ID_VERSION,	0},
 	{"nil",			NIL,	0,					0, PROG_ID_VERSION,	0},
 	{"struct",		STRUCT, 0,					0, PROG_VERSION,	0},
 	{"union",		STRUCT,	0,					0, PROG_VERSION,	0},

@@ -89,7 +89,7 @@ typedef struct {
 	qboolean		files_dat;		// generate files.dat
 	qboolean		progdefs_h;		// generate progdefs.h
 	qboolean		qccx_escapes;	// use qccx escapes instead of standard C
-	qboolean		traditional;	// behave more like qcc
+	int				traditional;	// behave more like qcc
 	qboolean		advanced;		// behold the power of Ruamoko
 	qboolean		compile;		// serparate compilation mode
 	qboolean		partial_link;	// partial linking
