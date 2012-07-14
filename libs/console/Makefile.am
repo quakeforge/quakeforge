@@ -15,7 +15,7 @@ EXTRA_LTLIBRARIES=  console_server.la console_client.la
 
 common_sources= \
 	buffer.c complete.c console.c inputline.c list.c filelist.c view.c
-client_sources= bi_inputline.c client.c menu.c pr_keys.c
+client_sources= bi_inputline.c client.c menu.c
 server_sources= server.c
 
 console_deps=$(top_builddir)/libs/util/libQFutil.la
