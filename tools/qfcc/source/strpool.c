@@ -240,6 +240,9 @@ make_string (char *token, char **end)
 				case 'r':
 					c = '\r';
 					break;
+				case 's':
+					mask ^= 0x80;
+					break;
 				case 't':
 					c = '\t';
 					break;
