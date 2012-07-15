@@ -67,50 +67,208 @@ new_node (void)
 const char *
 daglabel_string (daglabel_t *label)
 {
-	if ((label->opcode && label->op) || (!label->opcode || !label->op))
+	if ((label->opcode && label->op) || (!label->opcode && !label->op))
 		return "bad label";
 	if (label->opcode)
 		return label->opcode;
 	return operand_string (label->op);
 }
 
-static const dagnode_t *
-label_node (operand_t *op)
+static daglabel_t *
+opcode_label (const char *opcode)
 {
-	operand_t  *o = op;
-	dagnode_t  *node;
 	daglabel_t *label;
-	symbol_t   *sym = 0;
 
+	label = new_label ();
+	label->opcode = opcode;
+	return label;
+}
+
+static daglabel_t *
+operand_label (operand_t *op)
+{
+	operand_t  *o;
+	symbol_t   *sym = 0;
+	daglabel_t *label;
+
+	if (!op)
+		return 0;
+	o = op;
 	while (o->op_type == op_alias)
 		o = o->o.alias;
 	if (o->op_type != op_symbol) {
 		if (o->op_type != op_value && o->op_type != op_pointer)
 			debug (0, "unexpected operand type");
-		goto make_new_node;
+		goto make_new_label;
 	}
 	sym = o->o.symbol;
 	if (sym->daglabel)
-		return sym->daglabel->dagnode;
+		return sym->daglabel;
 
-make_new_node:
+make_new_label:
 	label = new_label ();
 	label->op = op;
 	if (sym)
 		sym->daglabel = label;
+	return label;
+}
+
+static dagnode_t *
+leaf_node (operand_t *op)
+{
+	daglabel_t *label;
+	dagnode_t  *node;
+
+	if (!op)
+		return 0;
+	label = operand_label (op);
 	node = new_node ();
 	node->label = label;
+	label->dagnode = node;
 	return node;
+}
+
+static dagnode_t *
+node (operand_t *op)
+{
+	operand_t  *o;
+	symbol_t   *sym;
+
+	if (!op)
+		return 0;
+	o = op;
+	while (o->op_type == op_alias)
+		o = o->o.alias;
+	if (o->op_type != op_symbol)
+		return 0;
+	sym = o->o.symbol;
+	if (sym->sy_type == sy_const)
+		return 0;
+	if (sym->daglabel)
+		return sym->daglabel->dagnode;
+	return 0;
+}
+
+static int
+find_operands (statement_t *s, operand_t **x, operand_t **y, operand_t **z,
+			   operand_t **w)
+{
+	int         simp = 0;
+
+	if (s->opc) {
+		*y = s->opa;
+		if (s->opb) {
+			// except for move, indexed pointer store, rcall2+, and state,
+			// all are of the form c = a op b
+			*z = s->opb;
+			if (s->opcode[0] == '<' || s->opcode[0] == '.') {
+				*w = s->opc;
+			} else {
+				*x = s->opc;
+			}
+		} else {
+			// these are all c = op a
+			*x = s->opc;
+		}
+	} else if (s->opb) {
+		*y = s->opa;
+		if (s->opcode[1] == 'I') {
+			// conditional
+		} else if (s->opcode[0] == '<' || s->opcode[0] == '.') {
+			// pointer store or branch
+			*z = s->opb;
+		} else {
+			// b = a
+			*x = s->opb;
+			simp = 1;
+		}
+	} else if (s->opa) {
+		if (s->opcode[1] == 'G') {
+		} else {
+			*y = s->opa;
+			if (s->opcode[1] == 'R')
+				simp = 1;
+		}
+	}
+	return simp;
+}
+
+static int
+dagnode_match (const dagnode_t *n, const daglabel_t *op,
+			   const dagnode_t *y, const dagnode_t *z, const dagnode_t *w)
+{
+	if (n->label->opcode != op->opcode)
+		return 0;
+	if (n->a && y && n->a->label->op != y->label->op)
+		return 0;
+	if (n->b && z && n->b->label->op != z->label->op)
+		return 0;
+	if (n->c && w && n->c->label->op != w->label->op)
+		return 0;
+	if ((!n->a) ^ (!y))
+		return 0;
+	if ((!n->c) ^ (!z))
+		return 0;
+	if ((!n->b) ^ (!w))
+		return 0;
+	return 1;
 }
 
 dagnode_t *
 make_dag (const sblock_t *block)
 {
 	statement_t *s;
-	dagnode_t   *dag;
+	dagnode_t   *dagnodes = 0;
+	dagnode_t   *dag = 0;
 
 	for (s = block->statements; s; s = s->next) {
-		dagnode_t  *x = 0, *y = 0, *z = 0;
+		operand_t  *x = 0, *y = 0, *z = 0, *w = 0;
+		dagnode_t  *n = 0, *nx, *ny, *nz, *nw;
+		daglabel_t *op;
+		int         simp;
+
+		simp = find_operands (s, &x, &y, &z, &w);
+		if (!(ny = node (y)))
+			ny = leaf_node (y);
+		if (!(nz = node (z)))
+			nz = leaf_node (z);
+		if (!(nw = node (w)))
+			nw = leaf_node (w);
+		op = opcode_label (s->opcode);
+		if (simp) {
+			n = ny;
+		} else {
+			for (n = dagnodes; n; n = n->next)
+				if (dagnode_match (n, op, ny, nz, nw))
+					break;
+		}
+		if (!n) {
+			n = new_node ();
+			n->label = op;
+			n->a = ny;
+			n->b = nz;
+			n->c = nw;
+			n->next = dagnodes;
+			dagnodes = n;
+		}
+		if ((nx = node (x))) {
+			daglabel_t **l;
+			for (l = &nx->identifiers; *l; l = &(*l)->next) {
+				if (*l == nx->label) {
+					*l = (*l)->next;
+					nx->label->next = 0;
+					break;
+				}
+			}
+		} else {
+			nx = leaf_node (x);
+		}
+		if (nx) {
+			nx->label->next = n->identifiers;
+			n->identifiers = nx->label;
+			nx->label->dagnode = n;
+		}
+		dag = n;
 		// c = a * b
 		// c = ~a
 		// c = a / b
@@ -140,4 +298,5 @@ make_dag (const sblock_t *block)
 		// c = a ^ b
 		// c = a (move) b (count)
 	}
+	return dag;
 }

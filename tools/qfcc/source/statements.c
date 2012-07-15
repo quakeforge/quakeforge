@@ -41,6 +41,7 @@
 
 #include "QF/va.h"
 
+#include "dags.h"
 #include "diagnostic.h"
 #include "expr.h"
 #include "function.h"
@@ -1393,6 +1394,7 @@ sblock_t *
 make_statements (expr_t *e)
 {
 	sblock_t   *sblock = new_sblock ();
+	sblock_t   *s;
 //	print_expr (e);
 	statement_slist (sblock, e);
 	if (options.block_dot.initial)
@@ -1408,5 +1410,10 @@ make_statements (expr_t *e)
 	check_final_block (sblock);
 	if (options.block_dot.final)
 		dump_flow (sblock, "final");
+
+	for (s = sblock; s; s = s->next) {
+		dagnode_t  *dag = make_dag (s);
+		print_dag (dag, 0);
+	}
 	return sblock;
 }
