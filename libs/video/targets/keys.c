@@ -53,6 +53,10 @@
 #include "compat.h"
 #include "old_keys.h"
 
+#define U __attribute__ ((used))
+static U void (*const key_progs_init)(struct progs_s *) = Key_Progs_Init;
+#undef U
+
 /*  key up events are sent even if in console mode */
 
 VISIBLE keydest_t   key_dest = key_console;
