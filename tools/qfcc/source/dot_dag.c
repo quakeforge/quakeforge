@@ -55,22 +55,28 @@ print_node (dstring_t *dstr, dagnode_t *node)
 		dasprintf (dstr, "  \"dag_%p\" [label=\"bad node\"];\n", node);
 		return;
 	}
-	if (node->a)
+	if (node->a) {
 		dasprintf (dstr, "  \"dag_%p\" -> \"dag_%p\" [label=a];\n", node,
 				   node->a);
-	if (node->b)
+		print_node (dstr, node->a);
+	}
+	if (node->b) {
 		dasprintf (dstr, "  \"dag_%p\" -> \"dag_%p\" [label=b];\n", node,
 				   node->b);
-	if (node->c)
+		print_node (dstr, node->b);
+	}
+	if (node->c) {
 		dasprintf (dstr, "  \"dag_%p\" -> \"dag_%p\" [label=c];\n", node,
 				   node->c);
+		print_node (dstr, node->c);
+	}
 	dasprintf (dstr, "  \"dag_%p\" [%slabel=\"%s\"];\n", node,
 			   node->a ? "" : "shape=none,", daglabel_string (node->label));
 	if (node->identifiers) {
 		daglabel_t *id;
 
 		dasprintf (dstr, "  \"dag_%p\" -> \"dagid_%p\";\n", node, node);
-		dasprintf (dstr, "  \"dagid_%p\" [shap=none,label=<\n", node);
+		dasprintf (dstr, "  \"dagid_%p\" [shape=none,label=<\n", node);
 		dasprintf (dstr, "    <table border=\"0\" cellborder=\"1\" "
 						 "cellspacing=\"0\">\n");
 		dasprintf (dstr, "      <tr>\n");
