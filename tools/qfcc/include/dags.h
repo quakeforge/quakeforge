@@ -30,6 +30,11 @@
 #ifndef dags_h
 #define dags_h
 
+/** \defgroup qfcc_dags DAG building
+	\ingroup qfcc
+*/
+//@{
+
 typedef struct daglabel_s {
 	struct daglabel_s *next;
 	struct daglabel_s **prev;
@@ -67,5 +72,7 @@ struct sblock_s;
 	\return			The dag representing the basic block.
 */
 dagnode_t *make_dag (const struct sblock_s *block);
+
+//@}
 
 #endif//dags_h
