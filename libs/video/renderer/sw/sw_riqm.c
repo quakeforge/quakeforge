@@ -48,6 +48,10 @@
 #include "d_ifacea.h"
 #include "r_internal.h"
 
+#ifdef PIC
+#undef USE_INTEL_ASM //XXX asm pic hack
+#endif
+
 #define LIGHT_MIN	5					// lowest light value we'll allow, to
 										// avoid the need for inner-loop light
 										// clamping
