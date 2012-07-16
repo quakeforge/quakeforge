@@ -227,7 +227,7 @@ void
 VID_InitGamma (unsigned char *pal)
 {
 	int 	i;
-	double	gamma = 1.45;
+	double	gamma = 1.0;
 
 	viddef.gammatable = malloc (256);
 	viddef.basepal = pal;
