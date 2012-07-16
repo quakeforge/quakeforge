@@ -97,9 +97,10 @@ binding_t misc_binding_list [4] = {
 	{"Screenshot", "screenshot"},
 };
 
-binding_t weapon_binding_list [10] = {
+binding_t weapon_binding_list [11] = {
 	{"Attack", "+attack"},
 	{"Next weapon", "impulse 10"},
+	{"Prev. weapon", "impulse 12"},
 	{"Axe", "impulse 1"},
 	{"Shotgun", "impulse 2"},
 	{"Super Shotgun", "impulse 3"},
