@@ -96,20 +96,24 @@ operand_label (operand_t *op)
 	o = op;
 	while (o->op_type == op_alias)
 		o = o->o.alias;
-	if (o->op_type != op_symbol) {
-		if (o->op_type != op_value && o->op_type != op_pointer)
-			debug (0, "unexpected operand type");
-		goto make_new_label;
-	}
-	sym = o->o.symbol;
-	if (sym->daglabel)
-		return sym->daglabel;
 
-make_new_label:
-	label = new_label ();
-	label->op = op;
-	if (sym)
+	if (o->op_type == op_temp) {
+		label = new_label ();
+		label->op = op;
+		o->o.tempop.daglabel = label;
+	} else if (o->op_type == op_symbol) {
+		sym = o->o.symbol;
+		if (sym->daglabel)
+			return sym->daglabel;
+		label = new_label ();
+		label->op = op;
 		sym->daglabel = label;
+	} else {
+		if (o->op_type != op_value && o->op_type != op_pointer)
+			debug (0, "unexpected operand type: %d", o->op_type);
+		label = new_label ();
+		label->op = op;
+	}
 	return label;
 }
 
@@ -139,13 +143,16 @@ node (operand_t *op)
 	o = op;
 	while (o->op_type == op_alias)
 		o = o->o.alias;
-	if (o->op_type != op_symbol)
-		return 0;
-	sym = o->o.symbol;
-	if (sym->sy_type == sy_const)
-		return 0;
-	if (sym->daglabel)
-		return sym->daglabel->dagnode;
+	if (o->op_type == op_symbol) {
+		sym = o->o.symbol;
+		if (sym->sy_type == sy_const)
+			return 0;
+		if (sym->daglabel)
+			return sym->daglabel->dagnode;
+	} else if (o->op_type == op_temp) {
+		if (o->o.tempop.daglabel)
+			return o->o.tempop.daglabel->dagnode;
+	}
 	return 0;
 }
 

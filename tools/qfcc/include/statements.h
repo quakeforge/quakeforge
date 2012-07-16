@@ -41,6 +41,11 @@ typedef enum {
 	op_alias,
 } op_type_e;
 
+typedef struct {
+	struct def_s   *def;
+	struct daglabel_s *daglabel;
+} tempop_t;
+
 typedef struct operand_s {
 	struct operand_s *next;
 	op_type_e   op_type;
@@ -51,7 +56,7 @@ typedef struct operand_s {
 		struct ex_value_s *value;
 		struct ex_label_s *label;
 		struct ex_pointer_s *pointer;
-		struct def_s   *def;
+		tempop_t    tempop;
 		struct operand_s *alias;
 	} o;
 } operand_t;
