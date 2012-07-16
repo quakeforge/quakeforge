@@ -48,9 +48,14 @@
 #include "symtab.h"
 #include "type.h"
 
+static int print_count;
+
 static void
 print_node (dstring_t *dstr, dagnode_t *node)
 {
+	if (node->print_count == print_count)
+		return;
+	node->print_count = print_count;
 	if (!node->a && (node->b || node->c)) {
 		dasprintf (dstr, "  \"dag_%p\" [label=\"bad node\"];\n", node);
 		return;
@@ -94,6 +99,7 @@ print_dag (dagnode_t *dag, const char *filename)
 {
 	dstring_t  *dstr = dstring_newstr();
 
+	print_count++;
 	dasprintf (dstr, "digraph dag_%p {\n", dag);
 	dasprintf (dstr, "  layout=dot; rankdir=TB;\n");
 	print_node (dstr, dag);

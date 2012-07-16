@@ -45,6 +45,7 @@ typedef struct daglabel_s {
 
 typedef struct dagnode_s {
 	struct dagnode_s *next;
+	int         print_count;	///< used to avoid double printing nodes
 	daglabel_t *label;			///< ident/const if leaf node, or operator
 	/// \name child nodes
 	/// All three child nodes will be null if this node is a leaf
