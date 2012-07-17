@@ -183,6 +183,43 @@ GL_DrawAliasFrameMulti (vert_order_t *vo)
 }
 
 /*
+	GL_DrawAliasShadowTri
+
+	Standard shadow drawing (triangles version)
+*/
+static void
+GL_DrawAliasShadowTri (const aliashdr_t *paliashdr, const vert_order_t *vo)
+{
+	int         count = vo->count;;
+	const blended_vert_t *verts = vo->verts;
+	float       height, lheight;
+	vec3_t      point;
+	const vec_t *scale = paliashdr->mdl.scale;
+	const vec_t *scale_origin = paliashdr->mdl.scale_origin;
+
+	lheight = currententity->origin[2] - lightspot[2];
+	height = -lheight + 1.0;
+
+	qfglBegin (GL_TRIANGLES);
+
+	do {
+		// normals and vertices come from the frame list
+		point[0] = verts->vert[0] * scale[0] + scale_origin[0];
+		point[1] = verts->vert[1] * scale[1] + scale_origin[1];
+		point[2] = verts->vert[2] * scale[2] + scale_origin[2] + lheight;
+
+		point[0] -= shadevector[0] * point[2];
+		point[1] -= shadevector[1] * point[2];
+		point[2] = height;
+		qfglVertex3fv (point);
+
+		verts++;
+	} while (--count);
+
+	qfglEnd ();
+}
+
+/*
 	GL_DrawAliasShadow
 
 	Standard shadow drawing
@@ -658,7 +695,10 @@ gl_R_DrawAliasModel (entity_t *e)
 			color_black[3] = model->shadow_alpha;
 			qfglColor4ubv (color_black);
 		}
-		GL_DrawAliasShadow (paliashdr, vo);
+		if (vo->tex_coord)
+			GL_DrawAliasShadowTri (paliashdr, vo);
+		else
+			GL_DrawAliasShadow (paliashdr, vo);
 
 		qfglDepthMask (GL_TRUE);
 		qfglEnable (GL_TEXTURE_2D);
