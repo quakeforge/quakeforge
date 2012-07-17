@@ -231,7 +231,7 @@ make_dag (const sblock_t *block)
 	for (s = block->statements; s; s = s->next) {
 		operand_t  *x = 0, *y = 0, *z = 0, *w = 0;
 		dagnode_t  *n = 0, *nx, *ny, *nz, *nw;
-		daglabel_t *op;
+		daglabel_t *op, *lx;
 		int         simp;
 
 		simp = find_operands (s, &x, &y, &z, &w);
@@ -258,22 +258,21 @@ make_dag (const sblock_t *block)
 			n->next = dagnodes;
 			dagnodes = n;
 		}
+		lx = operand_label (x);
 		if ((nx = node (x))) {
 			daglabel_t **l;
 			for (l = &nx->identifiers; *l; l = &(*l)->next) {
-				if (*l == nx->label) {
+				if (*l == lx) {
 					*l = (*l)->next;
-					nx->label->next = 0;
+					lx->next = 0;
 					break;
 				}
 			}
-		} else {
-			nx = leaf_node (x);
 		}
-		if (nx) {
-			nx->label->next = n->identifiers;
-			n->identifiers = nx->label;
-			nx->label->dagnode = n;
+		if (lx) {
+			lx->next = n->identifiers;
+			n->identifiers = lx;
+			lx->dagnode = n;
 		}
 		dag = n;
 		// c = a * b
