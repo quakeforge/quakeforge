@@ -1,5 +1,26 @@
 NEWS for the QuakeForge project
 -------------------------------
+Changes from 0.6.99 Beta 1
+    o The inverted lighting in sw32 render has been fixed.
+    o The mdl import/export addon is now included in the distribution
+      tarball/zip.
+    o Server segfault when firing nails in qw has been fixed.
+    o Server segfault when cancelling mvd recording fixed.
+    o Unlimited signon buffers for qw.
+    o Fix entity scaling issues in nq demos (gl).
+    o An off-by-one error in qwe's substr implementation has been fixed.
+    o Add support for the \s escape sequence (toggle bold characters) to
+      qfcc, and fix many escape sequence handling bugs.
+    o Add an "extended" compilation mode to qfcc. It implies traditional,
+      but with extra keywords (switch, for, continue, case, default) that
+      work with v6 progs.
+    o Fix mis-handlihg of the output file specification in qfpreqcc.
+    o sw32 and sw dynamic plugins now work.
+    o Fix double drawing of the key-bindings menus.
+    o serverinfo and localinfo can now disaplay the value for a single key.
+    o "Prev. weapon" keybinding menu entry added.
+    o Default vid_gamma is now 1.0 instead of 1.45.
+
 Changes from 0.6.3
     o Renderer plugins. This means the same program is used for all
       renders. Which renderer to use is selected via the vid_render plugin
