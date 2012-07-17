@@ -68,6 +68,11 @@ mv quakeforge quakeforge-$ver
 cd quakeforge-$ver
 git checkout $tag_name
 cp NEWS $RELEASE
+cd tools
+zip -r ../../io_mesh_qfmdl-$ver.zip io_mesh_qfmdl
+tar zcvf ../../io_mesh_qfmdl-$ver.tar.gz io_mesh_qfmdl
+tar jcvf ../../io_mesh_qfmdl-$ver.tar.bz2 io_mesh_qfmdl
+cd ..
 if test "$tag_name" != master; then
 	sed -i -e "s/git-master/$tag_name/" configure.ac
 fi
@@ -121,7 +126,6 @@ if test $do_win32 -eq 1; then
 		install
 	mkdir -p ${qf_win32_dir}/pkgconfig
 	mv ${qf_win32_dir}/QF/*.pc ${qf_win32_dir}/pkgconfig
-	cp -a ../tools/io_mesh_qfmdl ${qf_win32_dir}
 	$MINGW/bin/strip --strip-unneeded "$qf_win32"/bin/*.exe
 	../tools/build_scripts/qf-win32.py "$ver-win32" quakeforge "$qf_win32"
 	mv *.zip $RELEASE
