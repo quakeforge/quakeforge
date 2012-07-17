@@ -205,7 +205,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 		case HEADER_MDL16:			// QF Type 6 extended for 16bit precision
 			if (strequal (mod->name, "progs/grenade.mdl")) {
 				mod->fullbright = 0;
-				mod->shadow_alpha = 0;
+				mod->shadow_alpha = 255;
 			} else if (strnequal (mod->name, "progs/flame", 11)
 					   || strnequal (mod->name, "progs/bolt", 10)) {
 				mod->fullbright = 1;
