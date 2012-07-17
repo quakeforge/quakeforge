@@ -678,6 +678,8 @@ gl_R_DrawAliasModel (entity_t *e)
 
 	// torches, grenades, and lightning bolts do not have shadows
 	if (r_shadows->int_val && model->shadow_alpha) {
+		mat4_t      shadow_mat;
+
 		qfglPushMatrix ();
 		gl_R_RotateForEntity (e);
 
@@ -695,6 +697,12 @@ gl_R_DrawAliasModel (entity_t *e)
 			color_black[3] = model->shadow_alpha;
 			qfglColor4ubv (color_black);
 		}
+		shadevector[0] = 1;
+		shadevector[1] = 0;
+		shadevector[2] = 1;
+		VectorNormalize (shadevector);
+		Mat4Transpose (e->transform, shadow_mat);
+		Mat4as3MultVec (shadow_mat, shadevector, shadevector);
 		if (vo->tex_coord)
 			GL_DrawAliasShadowTri (paliashdr, vo);
 		else
