@@ -17,7 +17,7 @@ fogBlend (vec4 color)
 	float       f;
 	vec4        fog_color = vec4 (fog.rgb, 1.0);
 
-	f = exp (-sqr (fog.a / gl_FragCoord.w));
+	f = exp (-sqr (fog.a * gl_FragCoord.z / gl_FragCoord.w));
 	return vec4 (mix (fog_color.rgb, color.rgb, f), color.a);
 }
 
