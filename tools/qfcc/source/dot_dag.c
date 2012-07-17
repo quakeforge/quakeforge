@@ -80,7 +80,8 @@ print_node (dstring_t *dstr, dagnode_t *node)
 	if (node->identifiers) {
 		daglabel_t *id;
 
-		dasprintf (dstr, "  \"dag_%p\" -> \"dagid_%p\";\n", node, node);
+		dasprintf (dstr, "  \"dag_%p\" -> \"dagid_%p\" "
+						 "[style=dashed,dir=none];\n", node, node);
 		dasprintf (dstr, "  \"dagid_%p\" [shape=none,label=<\n", node);
 		dasprintf (dstr, "    <table border=\"0\" cellborder=\"1\" "
 						 "cellspacing=\"0\">\n");
