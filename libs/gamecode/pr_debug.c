@@ -717,7 +717,7 @@ global_string (progs_t *pr, pr_int_t ofs, etype_t type, int contents)
 
 	def = def_string (pr, ofs, line);
 
-	if (def || type != ev_void) {
+	if (contents && (def || type != ev_void)) {
 		const char *oi = "";
 		if (def) {
 			if (type == ev_void)
@@ -734,8 +734,7 @@ global_string (progs_t *pr, pr_int_t ofs, etype_t type, int contents)
 		if (strequal(line->str, "IMMEDIATE") || strequal(line->str, ".imm")) {
 			dsprintf (line, "%s", s);
 		} else {
-			if (contents)
-				dasprintf (line, "%s(%s)", oi, s);
+			dasprintf (line, "%s(%s)", oi, s);
 		}
 	}
 	return line->str;
