@@ -364,7 +364,7 @@ SV_Physics_Client (edict_t *ent, int num)
 				   (int) SVfloat (ent, movetype));
 	}
 
-	SV_LinkEdict (ent, true);
+	SV_LinkEdict (ent, SVfloat (ent, movetype) != MOVETYPE_NOCLIP);
 
 	// call standard player post-think
 	*sv_globals.time = sv.time;
