@@ -731,12 +731,16 @@ setup_console (void)
 		lines = 0;
 	}
 
-	if (lines < con_data.lines) {
-		con_data.lines -= max (0.2, con_speed->value) * *con_data.frametime;
-		con_data.lines = max (con_data.lines, lines);
-	} else if (lines > con_data.lines) {
-		con_data.lines += max (0.2, con_speed->value) * *con_data.frametime;
-		con_data.lines = min (con_data.lines, lines);
+	if (con_speed->value) {
+		if (lines < con_data.lines) {
+			con_data.lines -= max (0.2, con_speed->value) * *con_data.frametime;
+			con_data.lines = max (con_data.lines, lines);
+		} else if (lines > con_data.lines) {
+			con_data.lines += max (0.2, con_speed->value) * *con_data.frametime;
+			con_data.lines = min (con_data.lines, lines);
+		}
+	} else {
+		con_data.lines = lines;
 	}
 	if (con_data.lines >= r_data->vid->conheight - r_data->lineadj)
 		r_data->scr_copyeverything = 1;
