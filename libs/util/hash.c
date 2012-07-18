@@ -56,9 +56,9 @@ struct hashtab_s {
 	unsigned int size_bits;
 	size_t num_ele;
 	void *user_data;
-	int (*compare)(void*,void*,void*);
-	uintptr_t (*get_hash)(void*,void*);
-	const char *(*get_key)(void*,void*);
+	int (*compare)(const void*,const void*,void*);
+	uintptr_t (*get_hash)(const void*,void*);
+	const char *(*get_key)(const void*,void*);
 	void (*free_ele)(void*,void*);
 	hashlink_t *tab[1];             // variable size
 };
@@ -146,13 +146,13 @@ Hash_Buffer (const void *_buf, int len)
 }
 
 static uintptr_t
-get_hash (void *ele, void *data)
+get_hash (const void *ele, void *data)
 {
 	return (uintptr_t)ele;
 }
 
 static int
-compare (void *a, void *b, void *data)
+compare (const void *a, const void *b, void *data)
 {
 	return a == b;
 }
@@ -182,7 +182,7 @@ get_index (uintptr_t hash, size_t size, size_t bits)
 }
 
 VISIBLE hashtab_t *
-Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
+Hash_NewTable (int tsize, const char *(*gk)(const void*,void*),
 			   void (*f)(void*,void*), void *ud)
 {
 	hashtab_t *tab = calloc (1, field_offset (hashtab_t, tab[tsize]));
@@ -204,8 +204,8 @@ Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
 }
 
 VISIBLE void
-Hash_SetHashCompare (hashtab_t *tab, uintptr_t (*gh)(void*,void*),
-					 int (*cmp)(void*,void*,void*))
+Hash_SetHashCompare (hashtab_t *tab, uintptr_t (*gh)(const void*,void*),
+					 int (*cmp)(const void*,const void*,void*))
 {
 	tab->get_hash = gh;
 	tab->compare = cmp;
@@ -291,7 +291,7 @@ Hash_Find (hashtab_t *tab, const char *key)
 }
 
 VISIBLE void *
-Hash_FindElement (hashtab_t *tab, void *ele)
+Hash_FindElement (hashtab_t *tab, const void *ele)
 {
 	unsigned long h = tab->get_hash (ele, tab->user_data);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);

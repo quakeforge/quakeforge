@@ -411,14 +411,14 @@ bi_PL_Free (progs_t *pr)
 }
 
 static uintptr_t
-plist_get_hash (void *key, void *unused)
+plist_get_hash (const void *key, void *unused)
 {
 	bi_plist_t *plist = (bi_plist_t *) key;
 	return (uintptr_t) plist->plitem;
 }
 
 static int
-plist_compare (void *k1, void *k2, void *unused)
+plist_compare (const void *k1, const void *k2, void *unused)
 {
 	bi_plist_t *pl1 = (bi_plist_t *) k1;
 	bi_plist_t *pl2 = (bi_plist_t *) k2;

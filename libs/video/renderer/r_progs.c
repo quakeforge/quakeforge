@@ -304,7 +304,7 @@ bi_Draw_Crosshair (progs_t *pr)
 }
 
 static const char *
-bi_draw_get_key (void *p, void *unused)
+bi_draw_get_key (const void *p, void *unused)
 {
 	return ((qpic_res_t *) p)->name;
 }

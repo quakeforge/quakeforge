@@ -82,7 +82,7 @@ static hashtab_t *quaternion_imm_defs;
 static hashtab_t *integer_imm_defs;
 
 static uintptr_t
-imm_get_hash (void *_imm, void *_tab)
+imm_get_hash (const void *_imm, void *_tab)
 {
 	immediate_t *imm = (immediate_t *) _imm;
 	hashtab_t  **tab = (hashtab_t **) _tab;
@@ -113,7 +113,7 @@ imm_get_hash (void *_imm, void *_tab)
 }
 
 static int
-imm_compare (void *_imm1, void *_imm2, void *_tab)
+imm_compare (const void *_imm1, const void *_imm2, void *_tab)
 {
 	immediate_t *imm1 = (immediate_t *) _imm1;
 	immediate_t *imm2 = (immediate_t *) _imm2;

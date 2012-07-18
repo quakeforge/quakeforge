@@ -224,7 +224,7 @@ Skin_SetSkin (skin_t *skin, int cmap, const char *skinname)
 }
 
 static const char *
-skin_getkey (void *sb, void *unused)
+skin_getkey (const void *sb, void *unused)
 {
 	return ((skinbank_t *) sb)->name;
 }

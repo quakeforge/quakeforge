@@ -153,7 +153,7 @@ new_cachepic (const char *name, qpic_t *pic)
 }
 
 static const char *
-cachepic_getkey (void *_cp, void *unused)
+cachepic_getkey (const void *_cp, void *unused)
 {
 	return ((cachepic_t *) _cp)->name;
 }

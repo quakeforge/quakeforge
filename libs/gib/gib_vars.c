@@ -57,7 +57,7 @@ GIB_Var_New (const char *key)
 }
 
 static const char *
-GIB_Var_Get_Key (void *ele, void *ptr)
+GIB_Var_Get_Key (const void *ele, void *ptr)
 {
 	return ((gib_var_t *) ele)->key;
 }
@@ -270,7 +270,7 @@ GIB_Var_Assign (gib_var_t * var, unsigned int index, dstring_t ** values,
 }
 
 static const char *
-GIB_Domain_Get_Key (void *ele, void *ptr)
+GIB_Domain_Get_Key (const void *ele, void *ptr)
 {
 	return ((gib_domain_t *) ele)->name;
 }

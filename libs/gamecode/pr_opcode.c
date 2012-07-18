@@ -1046,13 +1046,13 @@ VISIBLE opcode_t pr_opcodes[] = {
 
 
 static uintptr_t
-opcode_get_hash (void *op, void *unused)
+opcode_get_hash (const void *op, void *unused)
 {
 	return ((opcode_t *)op)->opcode;
 }
 
 static int
-opcode_compare (void *_opa, void *_opb, void *unused)
+opcode_compare (const void *_opa, const void *_opb, void *unused)
 {
 	opcode_t   *opa = (opcode_t *)_opa;
 	opcode_t   *opb = (opcode_t *)_opb;

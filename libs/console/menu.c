@@ -139,7 +139,7 @@ error:
 }
 
 static const char *
-menu_get_key (void *m, void *unused)
+menu_get_key (const void *m, void *unused)
 {
 	return ((menu_item_t *) m)->text;
 }

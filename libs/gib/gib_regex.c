@@ -47,7 +47,7 @@ hashtab_t  *gib_regexs;
 static char errstr[1024];
 
 static const char *
-GIB_Regex_Get_Key (void *ele, void *ptr)
+GIB_Regex_Get_Key (const void *ele, void *ptr)
 {
 	return ((gib_regex_t *) ele)->regex;
 }

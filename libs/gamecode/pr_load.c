@@ -59,7 +59,7 @@ cvar_t     *pr_deadbeef_locals;
 cvar_t     *pr_faultchecks;
 
 static const char *
-function_get_key (void *f, void *_pr)
+function_get_key (const void *f, void *_pr)
 {
 	progs_t *pr = (progs_t*)_pr;
 	dfunction_t *func = (dfunction_t*)f;
@@ -67,7 +67,7 @@ function_get_key (void *f, void *_pr)
 }
 
 static const char *
-var_get_key (void *d, void *_pr)
+var_get_key (const void *d, void *_pr)
 {
 	progs_t *pr = (progs_t*)_pr;
 	ddef_t *def = (ddef_t*)d;

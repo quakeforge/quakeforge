@@ -212,7 +212,7 @@ static int num_gamedir_callbacks;
 static int max_gamedir_callbacks;
 
 static const char *
-qfs_var_get_key (void *_v, void *unused)
+qfs_var_get_key (const void *_v, void *unused)
 {
 	return ((qfs_var_t *)_v)->var;
 }
@@ -402,7 +402,7 @@ qfs_compare (const void *a, const void *b)
 }
 
 static const char *
-qfs_dir_get_key (void *_k, void *unused)
+qfs_dir_get_key (const void *_k, void *unused)
 {
 	return _k;
 }

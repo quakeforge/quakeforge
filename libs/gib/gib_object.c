@@ -53,7 +53,7 @@ hashtab_t  *gib_classes;
 	Hashtable callbacks
 */
 static const char *
-GIB_Class_Get_Key (void *ele, void *ptr)
+GIB_Class_Get_Key (const void *ele, void *ptr)
 {
 	return ((gib_class_t *) ele)->name;
 }
@@ -69,7 +69,7 @@ GIB_Class_Free (void *ele, void *ptr)
 }
 
 static const char *
-GIB_Method_Get_Key (void *ele, void *ptr)
+GIB_Method_Get_Key (const void *ele, void *ptr)
 {
 	return ((gib_method_t *) ele)->name;
 }
@@ -81,7 +81,7 @@ GIB_Method_Free (void *ele, void *ptr)
 }
 
 static const char *
-GIB_Signal_Get_Key (void *ele, void *ptr)
+GIB_Signal_Get_Key (const void *ele, void *ptr)
 {
 	return ((gib_signal_t *) ele)->name;
 }

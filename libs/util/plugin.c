@@ -77,13 +77,13 @@ hashtab_t  *registered_plugins, *loaded_plugins;
 static const char *pi_error = "";
 
 static const char *
-plugin_get_key (void *pl, void *unused)
+plugin_get_key (const void *pl, void *unused)
 {
 	return ((plugin_list_t *) pl)->name;
 }
 
 static const char *
-loaded_plugin_get_key (void *lp, void *unusued)
+loaded_plugin_get_key (const void *lp, void *unusued)
 {
 	return ((loaded_plugin_t *) lp)->name;
 }

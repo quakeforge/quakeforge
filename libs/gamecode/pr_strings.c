@@ -161,7 +161,7 @@ string_index (progs_t *pr, strref_t *sr)
 }
 
 static const char *
-strref_get_key (void *_sr, void *notused)
+strref_get_key (const void *_sr, void *notused)
 {
 	strref_t	*sr = (strref_t*)_sr;
 

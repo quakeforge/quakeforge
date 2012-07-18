@@ -119,7 +119,7 @@ static char *PL_ParseUnquotedString (pldata_t *);
 static char *PL_ParseData (pldata_t *, int *);
 
 static const char *
-dict_get_key (void *i, void *unused)
+dict_get_key (const void *i, void *unused)
 {
 	dictkey_t	*item = (dictkey_t *) i;
 	return item->key;

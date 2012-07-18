@@ -204,13 +204,13 @@ free_progs_mem (progs_t *pr, void *mem)
 }
 
 static uintptr_t
-func_hash (void *func, void *unused)
+func_hash (const void *func, void *unused)
 {
 	return ((dfunction_t *) func)->first_statement;
 }
 
 static int
-func_compare (void *f1, void *f2, void *unused)
+func_compare (const void *f1, const void *f2, void *unused)
 {
 	return ((dfunction_t *) f1)->first_statement
 			== ((dfunction_t *) f2)->first_statement;

@@ -57,7 +57,7 @@ connection_free (void *_c, void *unused)
 }
 
 static uintptr_t
-connection_get_hash (void *_c, void *unused)
+connection_get_hash (const void *_c, void *unused)
 {
 	connection_t *c = (connection_t *) _c;
 	unsigned long hash;
@@ -68,7 +68,7 @@ connection_get_hash (void *_c, void *unused)
 }
 
 static int
-connection_compare (void *_c1, void *_c2, void *unused)
+connection_compare (const void *_c1, const void *_c2, void *unused)
 {
 	connection_t *c1 = (connection_t *) _c1;
 	connection_t *c2 = (connection_t *) _c2;

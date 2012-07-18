@@ -49,7 +49,7 @@
 #include "QF/sys.h"
 
 static const char *
-pack_get_key (void *p, void *unused)
+pack_get_key (const void *p, void *unused)
 {
 	return ((dpackfile_t *) p)->name;
 }

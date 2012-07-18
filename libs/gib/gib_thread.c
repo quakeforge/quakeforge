@@ -105,7 +105,7 @@ GIB_Thread_Init (void)
 }
 
 static const char *
-GIB_Event_Get_Key (void *ele, void *ptr)
+GIB_Event_Get_Key (const void *ele, void *ptr)
 {
 	return ((gib_event_t *) ele)->name;
 }

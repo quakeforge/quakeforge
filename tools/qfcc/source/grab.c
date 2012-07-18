@@ -73,7 +73,7 @@ static frame_t grab_list[] = {
 };
 
 static const char *
-frame_get_key (void *f, void *unused)
+frame_get_key (const void *f, void *unused)
 {
 	return ((frame_t*)f)->name;
 }

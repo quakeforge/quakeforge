@@ -558,14 +558,14 @@ swap_bones (byte *bi, byte *bw, int b1, int b2)
 }
 
 static uintptr_t
-blend_get_hash (void *e, void *unused)
+blend_get_hash (const void *e, void *unused)
 {
 	iqmblend_t *b = (iqmblend_t *) e;
 	return CRC_Block ((byte *) b, sizeof (iqmblend_t));
 }
 
 static int
-blend_compare (void *e1, void *e2, void *unused)
+blend_compare (const void *e1, const void *e2, void *unused)
 {
 	iqmblend_t *b1 = (iqmblend_t *) e1;
 	iqmblend_t *b2 = (iqmblend_t *) e2;

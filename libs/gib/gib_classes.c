@@ -369,7 +369,7 @@ typedef struct ObjectHash_s {
 } ObjectHash_t;
 
 static const char *
-ObjRef_Get_Key (void *ele, void *ptr)
+ObjRef_Get_Key (const void *ele, void *ptr)
 {
 	return ((ObjRef_t *) ele)->key;
 }

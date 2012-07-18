@@ -288,26 +288,26 @@ obj_postorder_traverse (progs_t *pr, class_tree *tree, int level,
 }
 
 static const char *
-selector_get_key (void *s, void *_pr)
+selector_get_key (const void *s, void *_pr)
 {
 	progs_t    *pr = (progs_t *) _pr;
 	return PR_GetString (pr, pr->selector_names[(intptr_t) s]);
 }
 
 static const char *
-class_get_key (void *c, void *pr)
+class_get_key (const void *c, void *pr)
 {
 	return PR_GetString ((progs_t *)pr, ((pr_class_t *)c)->name);
 }
 
 static uintptr_t
-load_methods_get_hash (void *m, void *pr)
+load_methods_get_hash (const void *m, void *pr)
 {
 	return (uintptr_t) m;
 }
 
 static int
-load_methods_compare (void *m1, void *m2, void *pr)
+load_methods_compare (const void *m1, const void *m2, void *pr)
 {
 	return m1 == m2;
 }

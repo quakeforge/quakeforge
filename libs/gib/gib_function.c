@@ -53,7 +53,7 @@ hashtab_t  *gib_functions = 0;
 	Hashtable callbacks
 */
 static const char *
-GIB_Function_Get_Key (void *ele, void *ptr)
+GIB_Function_Get_Key (const void *ele, void *ptr)
 {
 	return ((gib_function_t *) ele)->name;
 }

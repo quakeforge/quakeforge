@@ -56,7 +56,7 @@
 
 // case insensitive hash and compare
 static uintptr_t
-wad_get_hash (void *l, void *unused)
+wad_get_hash (const void *l, void *unused)
 {
 	char        name[17];
 	int         i;
@@ -68,7 +68,7 @@ wad_get_hash (void *l, void *unused)
 }
 
 static int
-wad_compare (void *la, void *lb, void *unused)
+wad_compare (const void *la, const void *lb, void *unused)
 {
 	return strncasecmp (((lumpinfo_t *) la)->name,
 						((lumpinfo_t *) lb)->name, 16) == 0;

@@ -92,7 +92,7 @@ table_index (hash_resources_t *res, bi_hashtab_t *table)
 }
 
 static const char *
-bi_get_key (void *key, void *_ht)
+bi_get_key (const void *key, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
 	PR_RESET_PARAMS (ht->pr);
@@ -103,7 +103,7 @@ bi_get_key (void *key, void *_ht)
 }
 
 static uintptr_t
-bi_get_hash (void *key, void *_ht)
+bi_get_hash (const void *key, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
 	PR_RESET_PARAMS (ht->pr);
@@ -114,7 +114,7 @@ bi_get_hash (void *key, void *_ht)
 }
 
 static int
-bi_compare (void *key1, void *key2, void *_ht)
+bi_compare (const void *key1, const void *key2, void *_ht)
 {
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
 	PR_RESET_PARAMS (ht->pr);
@@ -140,7 +140,7 @@ bi_Hash_NewTable (progs_t *pr)
 {
 	hash_resources_t *res = PR_Resources_Find (pr, "Hash");
 	int         tsize = P_INT (pr, 0);
-	const char *(*gk)(void*,void*);
+	const char *(*gk)(const void*,void*);
 	void        (*f)(void*,void*);
 	bi_hashtab_t *ht;
 
@@ -177,8 +177,8 @@ static void
 bi_Hash_SetHashCompare (progs_t *pr)
 {
 	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
-	uintptr_t   (*gh)(void*,void*);
-	int         (*cmp)(void*,void*,void*);
+	uintptr_t   (*gh)(const void*,void*);
+	int         (*cmp)(const void*,const void*,void*);
 
 	ht->gh = P_FUNCTION (pr, 1);
 	ht->cmp = P_FUNCTION (pr, 2);

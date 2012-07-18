@@ -52,7 +52,7 @@
 #include "compat.h"
 
 static const char *
-builtin_get_key (void *_bi, void *unused)
+builtin_get_key (const void *_bi, void *unused)
 {
 	builtin_t *bi = (builtin_t *)_bi;
 
@@ -60,7 +60,7 @@ builtin_get_key (void *_bi, void *unused)
 }
 
 static uintptr_t
-builtin_get_hash (void *_bi, void *unused)
+builtin_get_hash (const void *_bi, void *unused)
 {
 	builtin_t *bi = (builtin_t *)_bi;
 
@@ -68,7 +68,7 @@ builtin_get_hash (void *_bi, void *unused)
 }
 
 static int
-builtin_compare (void *_bia, void *_bib, void *unused)
+builtin_compare (const void *_bia, const void *_bib, void *unused)
 {
 	builtin_t *bia = (builtin_t *)_bia;
 	builtin_t *bib = (builtin_t *)_bib;

@@ -45,7 +45,7 @@ struct pr_resource_s {
 };
 
 static const char *
-resource_get_key (void *r, void *unused)
+resource_get_key (const void *r, void *unused)
 {
 	return ((pr_resource_t *)r)->name;
 }

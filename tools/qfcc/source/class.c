@@ -175,13 +175,13 @@ static struct_def_t object_ivars[] = {
 };
 
 static const char *
-class_get_key (void *class, void *unused)
+class_get_key (const void *class, void *unused)
 {
 	return ((class_t *) class)->name;
 }
 
 static const char *
-protocol_get_key (void *protocol, void *unused)
+protocol_get_key (const void *protocol, void *unused)
 {
 	return ((protocol_t *) protocol)->name;
 }
@@ -869,14 +869,14 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 }
 
 static uintptr_t
-category_get_hash (void *_c, void *unused)
+category_get_hash (const void *_c, void *unused)
 {
 	category_t *c = (category_t *) _c;
 	return Hash_String (c->name) ^ Hash_String (c->class->name);
 }
 
 static int
-category_compare (void *_c1, void *_c2, void *unused)
+category_compare (const void *_c1, const void *_c2, void *unused)
 {
 	category_t *c1 = (category_t *) _c1;
 	category_t *c2 = (category_t *) _c2;

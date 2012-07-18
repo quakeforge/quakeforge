@@ -206,7 +206,7 @@ get_defref  (qfo_def_t *def, qfo_mspace_t *space)
 }
 
 static const char *
-defs_get_key (void *_r, void *unused)
+defs_get_key (const void *_r, void *unused)
 {
 	defref_t   *r = (defref_t *)_r;
 	qfo_def_t  *d = REF (r);

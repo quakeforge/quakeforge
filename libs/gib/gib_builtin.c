@@ -72,7 +72,7 @@ hashtab_t  *gib_builtins;
 	Hashtable callbacks
 */
 static const char *
-GIB_Builtin_Get_Key (void *ele, void *ptr)
+GIB_Builtin_Get_Key (const void *ele, void *ptr)
 {
 	return ((gib_builtin_t *) ele)->name;
 }

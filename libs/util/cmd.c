@@ -294,7 +294,7 @@ cmd_alias_free (void *_a, void *unused)
 }
 
 static const char *
-cmd_alias_get_key (void *_a, void *unused)
+cmd_alias_get_key (const void *_a, void *unused)
 {
 	cmdalias_t *a = (cmdalias_t *) _a;
 
@@ -302,7 +302,7 @@ cmd_alias_get_key (void *_a, void *unused)
 }
 
 static const char *
-cmd_get_key (void *c, void *unused)
+cmd_get_key (const void *c, void *unused)
 {
 	cmd_function_t *cmd = (cmd_function_t *) c;
 
@@ -319,7 +319,7 @@ cmd_provider_free (void *_a, void *unused)
 }
 
 static const char *
-cmd_provider_get_key (void *_a, void *unused)
+cmd_provider_get_key (const void *_a, void *unused)
 {
 	cmd_provider_t *p = (cmd_provider_t *) _a;
 

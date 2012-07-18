@@ -53,7 +53,7 @@ hashtab_t  *opcode_void_table;
 #define ROTL(x,n) ((((unsigned)(x))<<(n))|((unsigned)(x))>>(32-n))
 
 static uintptr_t
-get_hash (void *_op, void *_tab)
+get_hash (const void *_op, void *_tab)
 {
 	opcode_t   *op = (opcode_t *) _op;
 	uintptr_t   hash;
@@ -64,7 +64,7 @@ get_hash (void *_op, void *_tab)
 }
 
 static int
-compare (void *_opa, void *_opb, void *unused)
+compare (const void *_opa, const void *_opb, void *unused)
 {
 	opcode_t   *opa = (opcode_t *) _opa;
 	opcode_t   *opb = (opcode_t *) _opb;
@@ -77,7 +77,7 @@ compare (void *_opa, void *_opb, void *unused)
 }
 
 static const char *
-get_key (void *op, void *unused)
+get_key (const void *op, void *unused)
 {
 	return ((opcode_t *) op)->name;
 }

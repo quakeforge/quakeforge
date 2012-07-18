@@ -68,7 +68,7 @@ new_symbol_type (const char *name, type_t *type)
 }
 
 static const char *
-sym_getkey (void *k, void *unused)
+sym_getkey (const void *k, void *unused)
 {
 	return ((symbol_t *) k)->name;
 }

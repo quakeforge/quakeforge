@@ -223,7 +223,7 @@ old_keyname_t   old_keynames[] = {
 hashtab_t  *old_key_table;
 
 static const char *
-ok_get_key (void *_ok, void *unused)
+ok_get_key (const void *_ok, void *unused)
 {
 	old_keyname_t *ok = (old_keyname_t *)_ok;
 	return ok->old_name;

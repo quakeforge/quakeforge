@@ -78,7 +78,7 @@ map_error (const char *fmt, ...)
 }
 
 static const char *
-miptex_getkey (void *key, void *unused)
+miptex_getkey (const void *key, void *unused)
 {
 	intptr_t    index = (intptr_t) key;
 	return miptexnames[index - 1];

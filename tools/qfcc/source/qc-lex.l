@@ -326,7 +326,7 @@ static keyword_t keywords[] = {
 };
 
 static const char *
-keyword_get_key (void *kw, void *unused)
+keyword_get_key (const void *kw, void *unused)
 {
 	return ((keyword_t*)kw)->name;
 }

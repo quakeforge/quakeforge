@@ -556,7 +556,7 @@ cvar_free (void *c, void *unused)
 }
 
 static const char *
-cvar_get_key (void *c, void *unused)
+cvar_get_key (const void *c, void *unused)
 {
 	cvar_t *cvar = (cvar_t*)c;
 	return cvar->name;
@@ -571,7 +571,7 @@ calias_free (void *c, void *unused)
 }
 
 static const char *
-calias_get_key (void *c, void *unused)
+calias_get_key (const void *c, void *unused)
 {
 	cvar_alias_t *calias = (cvar_alias_t *) c;
 	return calias->name;

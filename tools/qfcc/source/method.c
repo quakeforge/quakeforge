@@ -64,7 +64,7 @@
 static hashtab_t *known_methods;
 
 static const char *
-method_get_key (void *meth, void *unused)
+method_get_key (const void *meth, void *unused)
 {
 	return ((method_t *) meth)->name;
 }
@@ -298,7 +298,7 @@ static hashtab_t *sel_index_hash;
 static int sel_index;
 
 static uintptr_t
-sel_get_hash (void *_sel, void *unused)
+sel_get_hash (const void *_sel, void *unused)
 {
 	selector_t *sel = (selector_t *) _sel;
 	uintptr_t   hash;
@@ -308,7 +308,7 @@ sel_get_hash (void *_sel, void *unused)
 }
 
 static int
-sel_compare (void *_s1, void *_s2, void *unused)
+sel_compare (const void *_s1, const void *_s2, void *unused)
 {
 	selector_t *s1 = (selector_t *) _s1;
 	selector_t *s2 = (selector_t *) _s2;
@@ -319,14 +319,14 @@ sel_compare (void *_s1, void *_s2, void *unused)
 }
 
 static uintptr_t
-sel_index_get_hash (void *_sel, void *unused)
+sel_index_get_hash (const void *_sel, void *unused)
 {
 	selector_t *sel = (selector_t *) _sel;
 	return sel->index;
 }
 
 static int
-sel_index_compare (void *_s1, void *_s2, void *unused)
+sel_index_compare (const void *_s1, const void *_s2, void *unused)
 {
 	selector_t *s1 = (selector_t *) _s1;
 	selector_t *s2 = (selector_t *) _s2;

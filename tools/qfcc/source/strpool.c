@@ -50,7 +50,7 @@
 static hashtab_t *saved_strings;
 
 static const char *
-strpool_get_key (void *_str, void *_strpool)
+strpool_get_key (const void *_str, void *_strpool)
 {
 	long        str = (long) _str;
 	strpool_t  *strpool = (strpool_t *) _strpool;
@@ -121,7 +121,7 @@ strpool_addstr (strpool_t *strpool, const char *str)
 }
 
 static const char *
-ss_get_key (void *s, void *unused)
+ss_get_key (const void *s, void *unused)
 {
 	return (const char *)s;
 }

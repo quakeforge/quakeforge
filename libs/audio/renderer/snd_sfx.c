@@ -56,7 +56,7 @@ static hashtab_t *snd_sfx_hash;
 static cvar_t  *precache;
 
 static const char *
-snd_sfx_getkey (void *sfx, void *unused)
+snd_sfx_getkey (const void *sfx, void *unused)
 {
 	return ((sfx_t *) sfx)->name;
 }

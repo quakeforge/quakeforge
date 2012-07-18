@@ -206,7 +206,7 @@ Info_Print (info_t *info)
 }
 
 static const char *
-info_get_key (void *k, void *unused)
+info_get_key (const void *k, void *unused)
 {
 	return ((info_key_t *)k)->key;
 }

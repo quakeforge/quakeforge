@@ -59,7 +59,7 @@ typedef struct bi_gib_resources_s {
 static hashtab_t *bi_gib_builtins;
 
 static const char *
-bi_gib_builtin_get_key (void *c, void *unused)
+bi_gib_builtin_get_key (const void *c, void *unused)
 {
 	return ((bi_gib_builtin_t *)c)->builtin->name;
 }

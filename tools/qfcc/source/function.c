@@ -68,14 +68,14 @@ static hashtab_t *overloaded_functions;
 static hashtab_t *function_map;
 
 static const char *
-ol_func_get_key (void *_f, void *unused)
+ol_func_get_key (const void *_f, void *unused)
 {
 	overloaded_function_t *f = (overloaded_function_t *) _f;
 	return f->full_name;
 }
 
 static const char *
-func_map_get_key (void *_f, void *unused)
+func_map_get_key (const void *_f, void *unused)
 {
 	overloaded_function_t *f = (overloaded_function_t *) _f;
 	return f->name;

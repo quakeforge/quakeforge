@@ -58,7 +58,7 @@ typedef struct hashtab_s hashtab_t;
 	multiple inserions of the same key are fine; later insertions override
 	previous ones until the later one is removed (Hash_Del).
 */
-hashtab_t *Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
+hashtab_t *Hash_NewTable (int tsize, const char *(*gk)(const void*,void*),
 						  void (*f)(void*,void*), void *ud);
 
 /** change the hash and compare functions used by the Hash_*Element functions.
@@ -74,8 +74,8 @@ hashtab_t *Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
 	\param gh takes the same parameters as gk in Hash_NewTable
 	\param cmp is element 1, element 2, userdata
 */
-void Hash_SetHashCompare (hashtab_t *tab, uintptr_t (*gh)(void*,void*),
-						  int (*cmp)(void*,void*,void*));
+void Hash_SetHashCompare (hashtab_t *tab, uintptr_t (*gh)(const void*,void*),
+						  int (*cmp)(const void*,const void*,void*));
 
 
 /** delete a hash table.
@@ -114,7 +114,7 @@ void *Hash_Find (hashtab_t *tab, const char *key);
 	\param ele	element with info identifying the element being searched for
 	\return		pointer to the element if found, otherwise 0.
 */
-void *Hash_FindElement (hashtab_t *tab, void *ele);
+void *Hash_FindElement (hashtab_t *tab, const void *ele);
 
 /** find a list of elements within a hash table.
 	\param tab	the table to search

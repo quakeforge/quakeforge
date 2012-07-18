@@ -1339,7 +1339,7 @@ call_qc_hook (void *qc_hook)
 }
 
 static const char *
-ucmds_getkey (void *_a, void *unused)
+ucmds_getkey (const void *_a, void *unused)
 {
 	ucmd_t *a = (ucmd_t*)_a;
 	return a->name;
@@ -1366,14 +1366,14 @@ ucmds_free (void *_c, void *unused)
 */
 
 static uintptr_t
-ucmd_get_hash (void *_a, void *data)
+ucmd_get_hash (const void *_a, void *data)
 {
 	ucmd_t *a = (ucmd_t*)_a;
 	return Hash_String (a->name);
 }
 
 static int
-ucmd_compare (void *a, void *b, void *data)
+ucmd_compare (const void *a, const void *b, void *data)
 {
 	return a == b;
 }

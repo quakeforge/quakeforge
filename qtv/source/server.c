@@ -64,7 +64,7 @@ static hashtab_t *server_hash;
 static server_t *servers;
 
 static const char *
-server_get_key (void *sv, void *unused)
+server_get_key (const void *sv, void *unused)
 {
 	return ((server_t *) sv)->name;
 }

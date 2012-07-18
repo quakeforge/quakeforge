@@ -60,7 +60,7 @@ typedef struct {
 static hashtab_t *bi_cmds;
 
 static const char *
-bi_cmd_get_key (void *c, void *unused)
+bi_cmd_get_key (const void *c, void *unused)
 {
 	return ((bi_cmd_t *)c)->name;
 }

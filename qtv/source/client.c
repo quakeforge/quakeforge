@@ -1193,7 +1193,7 @@ Client_NewConnection (void)
 }
 
 static const char *
-ucmds_getkey (void *_a, void *unused)
+ucmds_getkey (const void *_a, void *unused)
 {
 	ucmd_t *a = (ucmd_t*)_a;
 	return a->name;

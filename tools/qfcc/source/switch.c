@@ -72,7 +72,7 @@ get_value (expr_t *e)
 }
 
 static uintptr_t
-get_hash (void *_cl, void *unused)
+get_hash (const void *_cl, void *unused)
 {
 	case_label_t *cl = (case_label_t *) _cl;
 	ex_value_t  *val;
@@ -84,7 +84,7 @@ get_hash (void *_cl, void *unused)
 }
 
 static int
-compare (void *_cla, void *_clb, void *unused)
+compare (const void *_cla, const void *_clb, void *unused)
 {
 	case_label_t *cla = (case_label_t *) _cla;
 	case_label_t *clb = (case_label_t *) _clb;

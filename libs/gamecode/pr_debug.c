@@ -77,7 +77,7 @@ static char       **source_paths;
 
 
 static const char *
-file_get_key (void *_f, void *unused)
+file_get_key (const void *_f, void *unused)
 {
 	return ((file_t*)_f)->name;
 }
