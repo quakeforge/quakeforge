@@ -100,6 +100,7 @@ ED_Alloc (progs_t *pr)
 
 	if (i == pr->max_edicts) {
 		Sys_Printf ("WARNING: ED_Alloc: no free edicts\n");
+		PR_DumpState (pr);
 		i--;							// step on whatever is the last edict
 		e = EDICT_NUM (pr, i);
 		if (pr->unlink)
