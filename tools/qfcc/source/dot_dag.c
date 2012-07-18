@@ -96,24 +96,8 @@ print_node (dstring_t *dstr, dagnode_t *node)
 }
 
 void
-print_dag (dagnode_t *dag, const char *filename)
+print_dag (dstring_t *dstr, dagnode_t *dag)
 {
-	dstring_t  *dstr = dstring_newstr();
-
 	print_count++;
-	dasprintf (dstr, "digraph dag_%p {\n", dag);
-	dasprintf (dstr, "  layout=dot; rankdir=TB;\n");
 	print_node (dstr, dag);
-	dasprintf (dstr, "}\n");
-
-	if (filename) {
-		QFile      *file;
-
-		file = Qopen (filename, "wt");
-		Qwrite (file, dstr->str, dstr->size - 1);
-		Qclose (file);
-	} else {
-		fputs (dstr->str, stdout);
-	}
-	dstring_delete (dstr);
 }

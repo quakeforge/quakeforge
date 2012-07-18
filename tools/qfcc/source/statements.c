@@ -1411,9 +1411,9 @@ make_statements (expr_t *e)
 	if (options.block_dot.final)
 		dump_flow (sblock, "final");
 
-	for (s = sblock; s; s = s->next) {
-		dagnode_t  *dag = make_dag (s);
-		print_dag (dag, 0);
-	}
+	for (s = sblock; s; s = s->next)
+		s->dag = make_dag (s);
+	if (options.block_dot.dags)
+		dump_flow (sblock, "dags");
 	return sblock;
 }

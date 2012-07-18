@@ -72,6 +72,7 @@ typedef struct {
 	qboolean    thread;
 	qboolean    dead;
 	qboolean    final;
+	qboolean    dags;
 } blockdot_options_t;
 
 typedef struct {

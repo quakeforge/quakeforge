@@ -64,7 +64,8 @@ typedef struct dagnode_s {
 } dagnode_t;
 
 const char *daglabel_string (daglabel_t *label);
-void print_dag (dagnode_t *node, const char *filename);
+struct dstring_s;
+void print_dag (struct dstring_s *dstr, dagnode_t *node);
 struct sblock_s;
 
 /** Make a dag for a single basic block.

@@ -389,6 +389,8 @@ DecodeArgs (int argc, char **argv)
 							options.block_dot.dead = flag;
 						} else if (!(strcasecmp (temp, "final"))) {
 							options.block_dot.final = flag;
+						} else if (!(strcasecmp (temp, "dags"))) {
+							options.block_dot.dags = flag;
 						}
 						temp = strtok (NULL, ",");
 					}
@@ -398,6 +400,7 @@ DecodeArgs (int argc, char **argv)
 					options.block_dot.thread = true;
 					options.block_dot.dead = true;
 					options.block_dot.final = true;
+					options.block_dot.dags = true;
 				}
 				break;
 			case 'c':

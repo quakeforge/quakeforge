@@ -74,6 +74,7 @@ typedef struct sblock_s {
 	struct sblock_s *next;
 	struct reloc_s *relocs;
 	struct ex_label_s *labels;
+	struct dagnode_s *dag;
 	int         offset;			///< offset of first statement of block
 	int         reachable;
 	statement_t *statements;
