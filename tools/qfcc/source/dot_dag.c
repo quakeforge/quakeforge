@@ -99,5 +99,6 @@ void
 print_dag (dstring_t *dstr, dagnode_t *dag)
 {
 	print_count++;
-	print_node (dstr, dag);
+	for (; dag; dag = dag->next)
+		print_node (dstr, dag);
 }
