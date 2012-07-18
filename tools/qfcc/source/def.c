@@ -284,7 +284,7 @@ init_elements (struct def_s *def, expr_t *eles)
 			reloc_def_op (c->e.labelref.label, &loc);
 			continue;
 		} else if (c->type == ex_value) {
-			if (c->e.value.type == ev_integer
+			if (c->e.value->type == ev_integer
 				&& elements[i].type->type == ev_float)
 				convert_int (c);
 			if (get_type (c) != elements[i].type) {
@@ -306,11 +306,11 @@ init_elements (struct def_s *def, expr_t *eles)
 		} else {
 			if (c->type != ex_value)
 				internal_error (c, "bogus expression type in init_elements()");
-			if (c->e.value.type == ev_string) {
+			if (c->e.value->type == ev_string) {
 				EMIT_STRING (def->space, g->string_var,
-							 c->e.value.v.string_val);
+							 c->e.value->v.string_val);
 			} else {
-				memcpy (g, &c->e.value.v, type_size (get_type (c)) * 4);
+				memcpy (g, &c->e.value->v, type_size (get_type (c)) * 4);
 			}
 		}
 	}
@@ -341,12 +341,12 @@ init_vector_components (symbol_t *vector_sym, int is_field)
 					expr = sym->s.expr;
 					if (is_field) {
 						if (expr->type != ex_value
-							|| expr->e.value.type != ev_field) {
+							|| expr->e.value->type != ev_field) {
 							error (0, "%s redefined", name);
 							sym = 0;
 						} else {
-							expr->e.value.v.pointer.def = vector_sym->s.def;
-							expr->e.value.v.pointer.val = i;
+							expr->e.value->v.pointer.def = vector_sym->s.def;
+							expr->e.value->v.pointer.val = i;
 						}
 					}
 				}
@@ -505,14 +505,14 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 				error (0, "non-constant initializier");
 				return;
 			}
-			if (init->e.value.type == ev_pointer
-				|| init->e.value.type == ev_field) {
+			if (init->e.value->type == ev_pointer
+				|| init->e.value->type == ev_field) {
 				// FIXME offset pointers
-				D_INT (sym->s.def) = init->e.value.v.pointer.val;
-				if (init->e.value.v.pointer.def)
-					reloc_def_field (init->e.value.v.pointer.def, sym->s.def);
+				D_INT (sym->s.def) = init->e.value->v.pointer.val;
+				if (init->e.value->v.pointer.def)
+					reloc_def_field (init->e.value->v.pointer.def, sym->s.def);
 			} else {
-				ex_value_t  v = init->e.value;
+				ex_value_t  v = *init->e.value;
 				if (is_scalar (sym->type))
 					convert_value (&v, sym->type);
 				if (v.type == ev_string) {

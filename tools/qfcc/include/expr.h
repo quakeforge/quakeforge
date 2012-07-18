@@ -157,6 +157,7 @@ typedef struct {
 } ex_state_t;
 
 typedef struct ex_value_s {
+	struct ex_value_s *next;
 	etype_t     type;
 	union {
 		const char *string_val;			///< string constant
@@ -191,7 +192,7 @@ typedef struct expr_s {
 		ex_expr_t   expr;				///< binary or unary expression
 		struct symbol_s *symbol;		///< symbol reference expression
 		ex_temp_t   temp;				///< temporary variable expression
-		ex_value_t  value;				///< constant value
+		ex_value_t *value;				///< constant value
 	} e;
 } expr_t;
 

@@ -68,7 +68,7 @@ typedef struct symbol_s {
 	union {
 		int         offset;			///< st_var (in a struct/union)
 		struct def_s *def;			///< st_var
-		struct ex_value_s value;	///< st_const
+		struct ex_value_s *value;	///< st_const
 		struct expr_s *expr;		///< st_expr
 		struct function_s *func;	///< st_func
 	} s;

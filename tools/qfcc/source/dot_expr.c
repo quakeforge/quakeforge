@@ -305,55 +305,55 @@ print_value (expr_t *e, int level, int id)
 	type_t     *type;
 	const char *label = "?!?";
 
-	switch (e->e.value.type) {
+	switch (e->e.value->type) {
 		case ev_string:
-			label = va ("\\\"%s\\\"", e->e.value.v.string_val);
+			label = va ("\\\"%s\\\"", e->e.value->v.string_val);
 			break;
 		case ev_float:
-			label = va ("%g", e->e.value.v.float_val);
+			label = va ("%g", e->e.value->v.float_val);
 			break;
 		case ev_vector:
 			label = va ("'%g %g %g'",
-						e->e.value.v.vector_val[0],
-						e->e.value.v.vector_val[1],
-						e->e.value.v.vector_val[2]);
+						e->e.value->v.vector_val[0],
+						e->e.value->v.vector_val[1],
+						e->e.value->v.vector_val[2]);
 			break;
 		case ev_quat:
 			label = va ("'%g %g %g %g'",
-						e->e.value.v.quaternion_val[0],
-						e->e.value.v.quaternion_val[1],
-						e->e.value.v.quaternion_val[2],
-						e->e.value.v.quaternion_val[3]);
+						e->e.value->v.quaternion_val[0],
+						e->e.value->v.quaternion_val[1],
+						e->e.value->v.quaternion_val[2],
+						e->e.value->v.quaternion_val[3]);
 			break;
 		case ev_pointer:
-			type = e->e.value.v.pointer.type;
-			if (e->e.value.v.pointer.def)
+			type = e->e.value->v.pointer.type;
+			if (e->e.value->v.pointer.def)
 				label = va ("(%s)[%d]<%s>",
 							type ? pr_type_name[type->type] : "???",
-							e->e.value.v.pointer.val,
-							e->e.value.v.pointer.def->name);
+							e->e.value->v.pointer.val,
+							e->e.value->v.pointer.def->name);
 			else
 				label = va ("(%s)[%d]",
 							type ? pr_type_name[type->type] : "???",
-							e->e.value.v.pointer.val);
+							e->e.value->v.pointer.val);
 			break;
 		case ev_field:
-			label = va ("field %d", e->e.value.v.pointer.val);
+			label = va ("field %d", e->e.value->v.pointer.val);
 			break;
 		case ev_entity:
-			label = va ("ent %d", e->e.value.v.integer_val);
+			label = va ("ent %d", e->e.value->v.integer_val);
 			break;
 		case ev_func:
-			label = va ("func %d", e->e.value.v.integer_val);
+			label = va ("func %d", e->e.value->v.integer_val);
 			break;
 		case ev_integer:
-			label = va ("%d", e->e.value.v.integer_val);
+			label = va ("%d", e->e.value->v.integer_val);
 			break;
 		case ev_uinteger:
-			label = va ("%u", e->e.value.v.uinteger_val);
+			label = va ("%u", e->e.value->v.uinteger_val);
 			break;
 		case ev_short:
-			label = va ("%d", e->e.value.v.short_val);
+			label = va ("%d", e->e.value->v.short_val);
 			break;
 		case ev_void:
 			label = "<void>";

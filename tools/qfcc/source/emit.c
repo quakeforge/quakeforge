@@ -94,7 +94,7 @@ get_operand_def (expr_t *expr, operand_t *op)
 				case sy_func:
 					return op->o.symbol->s.func->def;
 				case sy_const:
-					return get_value_def (&op->o.symbol->s.value, op->type);
+					return get_value_def (op->o.symbol->s.value, op->type);
 				case sy_type:
 				case sy_expr:
 				case sy_class:

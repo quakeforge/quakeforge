@@ -67,8 +67,8 @@ static ex_value_t *
 get_value (expr_t *e)
 {
 	if (e->type == ex_symbol)
-		return &e->e.symbol->s.value;
-	return &e->e.value;
+		return e->e.symbol->s.value;
+	return e->e.value;
 }
 
 static uintptr_t

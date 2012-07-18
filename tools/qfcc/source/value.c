@@ -71,6 +71,162 @@ typedef struct {
 	} i;
 } immediate_t;
 
+static hashtab_t *value_table;
+static ex_value_t *free_values;
+
+static uintptr_t
+value_get_hash (const void *_val, void *unused)
+{
+	const ex_value_t *val = (const ex_value_t *) _val;
+	return Hash_Buffer (&val->v, sizeof (val->v)) + val->type;
+}
+
+static int
+value_compare (const void *_val1, const void *_val2, void *unused)
+{
+	const ex_value_t *val1 = (const ex_value_t *) _val1;
+	const ex_value_t *val2 = (const ex_value_t *) _val2;
+	if (val1->type != val2->type)
+		return 0;
+	return memcmp (&val1->v, &val2->v, sizeof (val1->v)) == 0;
+}
+
+static ex_value_t *
+new_value (void)
+{
+	ex_value_t *value;
+	ALLOC (256, ex_value_t, values, value);
+	return value;
+}
+
+static ex_value_t *
+find_value (const ex_value_t *val)
+{
+	ex_value_t *value;
+
+	value = Hash_FindElement (value_table, val);
+	if (value)
+		return value;
+	value = new_value ();
+	*value = *val;
+	return value;
+}
+
+ex_value_t *
+new_string_val (const char *string_val)
+{
+	ex_value_t  val;
+	val.type = ev_string;
+	if (string_val)
+		val.v.string_val = save_string (string_val);
+	return find_value (&val);
+}
+
+ex_value_t *
+new_float_val (float float_val)
+{
+	ex_value_t  val;
+	val.type = ev_float;
+	val.v.float_val = float_val;
+	return find_value (&val);
+}
+
+ex_value_t *
+new_vector_val (const float *vector_val)
+{
+	ex_value_t  val;
+	val.type = ev_vector;
+	VectorCopy (vector_val, val.v.vector_val);
+	return find_value (&val);
+}
+
+ex_value_t *
+new_entity_val (int entity_val)
+{
+	ex_value_t  val;
+	val.type = ev_entity;
+	val.v.entity_val = entity_val;
+	return find_value (&val);
+}
+
+ex_value_t *
+new_field_val (int field_val, type_t *type, def_t *def)
+{
+	ex_value_t  val;
+	val.type = ev_field;
+	val.v.pointer.val = field_val;
+	val.v.pointer.type = type;
+	val.v.pointer.def = def;
+	return find_value (&val);
+}
+
+ex_value_t *
+new_func_val (int func_val)
+{
+	ex_value_t  val;
+	val.type = ev_func;
+	val.v.func_val = func_val;
+	return find_value (&val);
+}
+
+ex_value_t *
+new_pointer_val (int pointer_val, type_t *type, def_t *def)
+{
+	ex_value_t  val;
+	val.type = ev_pointer;
+	val.v.pointer.val = pointer_val;
+	val.v.pointer.type = type;
+	val.v.pointer.def = def;
+	return find_value (&val);
+}
+
+ex_value_t *
+new_quaternion_val (const float *quaternion_val)
+{
+	ex_value_t  val;
+	val.type = ev_quat;
+	QuatCopy (quaternion_val, val.v.quaternion_val);
+	return find_value (&val);
+}
+
+ex_value_t *
+new_integer_val (int integer_val)
+{
+	ex_value_t  val;
+	val.type = ev_integer;
+	val.v.integer_val = integer_val;
+	return find_value (&val);
+}
+
+ex_value_t *
+new_uinteger_val (int uinteger_val)
+{
+	ex_value_t  val;
+	val.type = ev_uinteger;
+	val.v.uinteger_val = uinteger_val;
+	return find_value (&val);
+}
+
+ex_value_t *
+new_short_val (short short_val)
+{
+	ex_value_t  val;
+	val.type = ev_short;
+	val.v.short_val = short_val;
+	return find_value (&val);
+}
+
+ex_value_t *
+new_nil_val (type_t *type)
+{
+	ex_value_t  val;
+	val.type = low_level_type (type);
+	memset (&val.v, 0, sizeof (val.v));
+	if (val.type == ev_pointer|| val.type == ev_field )
+		val.v.pointer.type = type->t.fldptr.type;
+	return find_value (&val);
+}
+
 static hashtab_t *string_imm_defs;
 static hashtab_t *float_imm_defs;
 static hashtab_t *vector_imm_defs;
@@ -370,7 +526,8 @@ clear_immediates (void)
 {
 	immediate_t *imm;
 
-	if (string_imm_defs) {
+	if (value_table) {
+		Hash_FlushTable (value_table);
 		Hash_FlushTable (string_imm_defs);
 		Hash_FlushTable (float_imm_defs);
 		Hash_FlushTable (vector_imm_defs);
@@ -381,6 +538,9 @@ clear_immediates (void)
 		Hash_FlushTable (quaternion_imm_defs);
 		Hash_FlushTable (integer_imm_defs);
 	} else {
+		value_table = Hash_NewTable (16381, 0, 0, 0);
+		Hash_SetHashCompare (value_table, value_get_hash, value_compare);
+
 		string_imm_defs = Hash_NewTable (16381, 0, 0, &string_imm_defs);
 		Hash_SetHashCompare (string_imm_defs, imm_get_hash, imm_compare);
 

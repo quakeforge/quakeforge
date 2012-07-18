@@ -508,7 +508,7 @@ vector_call (sblock_t *sblock, expr_t *earg, expr_t *param, int ind,
 
 	for (i = 0; i < 3; i++) {
 		n = new_name_expr (names[i]);
-		v = new_float_expr (earg->e.value.v.vector_val[i]);
+		v = new_float_expr (earg->e.value->v.vector_val[i]);
 		a = assign_expr (binary_expr ('.', param, n), v);
 		param = new_param_expr (get_type (earg), ind);
 		a->line = earg->line;
@@ -544,7 +544,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 			pref = "R";
 			sblock = statement_subexpr (sblock, param, &arguments[ind]);
 			if (options.code.vector_calls && a->type == ex_value
-				&& a->e.value.type == ev_vector)
+				&& a->e.value->type == ev_vector)
 				sblock = vector_call (sblock, a, param, ind, &arguments[ind]);
 			else
 				sblock = statement_subexpr (sblock, a, &arguments[ind]);
@@ -558,7 +558,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 			sblock = statement_slist (sblock, mov);
 		} else {
 			if (options.code.vector_calls && a->type == ex_value
-				&& a->e.value.type == ev_vector) {
+				&& a->e.value->type == ev_vector) {
 				sblock = vector_call (sblock, a, param, ind, 0);
 			} else {
 				operand_t  *p = 0;
@@ -659,10 +659,10 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 			s->opc = *op;
 			sblock_add_statement (sblock, s);
 		}
-	} else if (e->type == ex_value && e->e.value.type == ev_pointer) {
+	} else if (e->type == ex_value && e->e.value->type == ev_pointer) {
 		*op = new_operand (op_pointer);
-		(*op)->type = low_level_type (e->e.value.v.pointer.type);
-		(*op)->o.pointer = &e->e.value.v.pointer;
+		(*op)->type = low_level_type (e->e.value->v.pointer.type);
+		(*op)->o.pointer = &e->e.value->v.pointer;
 	} else {
 		statement_t *s;
 		operand_t  *ptr = 0;
@@ -830,8 +830,8 @@ static sblock_t *
 expr_value (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	*op = new_operand (op_value);
-	(*op)->type = e->e.value.type;
-	(*op)->o.value = &e->e.value;
+	(*op)->type = e->e.value->type;
+	(*op)->o.value = e->e.value;
 	return sblock;
 }
 

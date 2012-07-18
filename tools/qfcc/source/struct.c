@@ -59,6 +59,7 @@
 #include "struct.h"
 #include "symtab.h"
 #include "type.h"
+#include "value.h"
 
 static symbol_t *
 find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
@@ -172,7 +173,7 @@ add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 	enum_tab = enum_type->t.symtab;
 	value = 0;
 	if (enum_tab->symbols)
-		value = ((symbol_t *)(enum_tab->symtail))->s.value.v.integer_val + 1;
+		value = ((symbol_t *)(enum_tab->symtail))->s.value->v.integer_val + 1;
 	if (val) {
 		if (!is_constant (val))
 			error (val, "non-constant initializer");
@@ -181,8 +182,7 @@ add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 		else
 			value = expr_integer (val);
 	}
-	name->s.value.type = ev_integer;
-	name->s.value.v.integer_val = value;
+	name->s.value = new_integer_val (value);
 	symtab_addsymbol (enum_tab, name);
 	sym = new_symbol_type (name->name, name->type);
 	sym->sy_type = sy_const;
@@ -204,12 +204,12 @@ enum_as_bool (type_t *enm, expr_t **zero, expr_t **one)
 	for (sym = symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy_const)
 			continue;
-		val = sym->s.value.v.integer_val;
+		val = sym->s.value->v.integer_val;
 		if (!val) {
 			zero_sym = sym;
 		} else {
 			if (one_sym) {
-				v = one_sym->s.value.v.integer_val;
+				v = one_sym->s.value->v.integer_val;
 				if (val * val > v * v)
 					continue;
 			}

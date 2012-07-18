@@ -140,7 +140,7 @@ convert_to_float (expr_t *e)
 
 	switch (e->type) {
 		case ex_value:
-			switch (e->e.value.type) {
+			switch (e->e.value->type) {
 				case ev_integer:
 					convert_int (e);
 					return e;
