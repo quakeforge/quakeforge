@@ -221,9 +221,31 @@ dagnode_match (const dagnode_t *n, const daglabel_t *op,
 	return 1;
 }
 
+static int
+op_is_identifer (operand_t *op)
+{
+	while (op->op_type == op_alias)
+		op = op->o.alias;
+	if (op->op_type == op_pointer)
+		return 1;
+	if (op->op_type == op_temp)
+		return 1;
+	if (op->op_type != op_symbol)
+		return 0;
+	if (op->o.symbol->sy_type != sy_var)
+		return 0;
+	return 1;
+}
+
 static void
 dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 {
+	if (!l->op)
+		internal_error (0, "attempt to attach operator label to dagnode "
+						"identifers");
+	if (!op_is_identifer (l->op))
+		internal_error (0, "attempt to attach non-identifer label to dagnode "
+						"identifers");
 	if (n->identifiers)
 		n->identifiers->prev = &l->next;
 	l->next = n->identifiers;
