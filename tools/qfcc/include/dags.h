@@ -36,8 +36,11 @@
 //@{
 
 typedef struct daglabel_s {
+	/// \name attached identifer linked list
+	//@{
 	struct daglabel_s *next;
 	struct daglabel_s **prev;
+	//@}
 	const char *opcode;			///< not if op
 	struct operand_s *op;		///< not if opcode;
 	struct dagnode_s *dagnode;	///< node with which this label is associated

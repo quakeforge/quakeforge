@@ -221,6 +221,26 @@ dagnode_match (const dagnode_t *n, const daglabel_t *op,
 	return 1;
 }
 
+static void
+dagnode_attach_label (dagnode_t *n, daglabel_t *l)
+{
+	if (n->identifiers)
+		n->identifiers->prev = &l->next;
+	l->next = n->identifiers;
+	l->prev = &n->identifiers;
+	l->dagnode = n;
+	n->identifiers = l;
+}
+
+static void
+daglabel_detatch (daglabel_t *l)
+{
+	if (l->next)
+		l->next->prev = l->prev;
+	*l->prev = l->next;
+	l->dagnode = 0;
+}
+
 dagnode_t *
 make_dag (const sblock_t *block)
 {
@@ -230,7 +250,7 @@ make_dag (const sblock_t *block)
 
 	for (s = block->statements; s; s = s->next) {
 		operand_t  *x = 0, *y = 0, *z = 0, *w = 0;
-		dagnode_t  *n = 0, *nx, *ny, *nz, *nw;
+		dagnode_t  *n = 0, *ny, *nz, *nw;
 		daglabel_t *op, *lx;
 		int         simp;
 
@@ -259,20 +279,10 @@ make_dag (const sblock_t *block)
 			dagnodes = n;
 		}
 		lx = operand_label (x);
-		if ((nx = node (x))) {
-			daglabel_t **l;
-			for (l = &nx->identifiers; *l; l = &(*l)->next) {
-				if (*l == lx) {
-					*l = (*l)->next;
-					lx->next = 0;
-					break;
-				}
-			}
-		}
 		if (lx) {
-			lx->next = n->identifiers;
-			n->identifiers = lx;
-			lx->dagnode = n;
+			if (lx->prev)
+				daglabel_detatch (lx);
+			dagnode_attach_label (n, lx);
 		}
 		dag = n;
 		// c = a * b
