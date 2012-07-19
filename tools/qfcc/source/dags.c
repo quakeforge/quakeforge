@@ -48,11 +48,37 @@
 static daglabel_t *free_labels;
 static dagnode_t *free_nodes;
 
+static daglabel_t *daglabel_chain;
+
+static void
+flush_daglabels (void)
+{
+	while (daglabel_chain) {
+		operand_t  *op;
+
+		if ((op = daglabel_chain->op)) {
+			while (op->op_type == op_alias)
+				op = op->o.alias;
+			if (op->op_type == op_symbol)
+				op->o.symbol->daglabel = 0;
+			else if (op->op_type == op_temp)
+				op->o.tempop.daglabel = 0;
+			else if (op->op_type == op_value || op->op_type == op_pointer)
+				op->o.value->daglabel = 0;
+			else
+				internal_error (0, "unexpected operand type");
+		}
+		daglabel_chain = daglabel_chain->daglabel_chain;
+	}
+}
+
 static daglabel_t *
 new_label (void)
 {
 	daglabel_t *label;
 	ALLOC (256, daglabel_t, labels, label);
+	label->daglabel_chain = daglabel_chain;
+	daglabel_chain = label;
 	return label;
 }
 
@@ -273,7 +299,9 @@ make_dag (const sblock_t *block)
 {
 	statement_t *s;
 	dagnode_t   *dagnodes = 0;
-	dagnode_t   *dag = 0;
+	dagnode_t   *d;
+
+	flush_daglabels ();
 
 	for (s = block->statements; s; s = s->next) {
 		operand_t  *x = 0, *y = 0, *z = 0, *w = 0;
@@ -282,8 +310,13 @@ make_dag (const sblock_t *block)
 		int         simp;
 
 		simp = find_operands (s, &x, &y, &z, &w);
-		if (!(ny = node (y)))
+		if (!(ny = node (y))) {
 			ny = leaf_node (y);
+			if (simp) {
+				ny->next = dagnodes;
+				dagnodes = ny;
+			}
+		}
 		if (!(nz = node (z)))
 			nz = leaf_node (z);
 		if (!(nw = node (w)))
@@ -302,6 +335,12 @@ make_dag (const sblock_t *block)
 			n->a = ny;
 			n->b = nz;
 			n->c = nw;
+			if (ny)
+				ny->is_child = 1;
+			if (nz)
+				nz->is_child = 1;
+			if (nw)
+				nw->is_child = 1;
 			n->next = dagnodes;
 			dagnodes = n;
 		}
@@ -311,7 +350,6 @@ make_dag (const sblock_t *block)
 				daglabel_detatch (lx);
 			dagnode_attach_label (n, lx);
 		}
-		dag = n;
 		// c = a * b
 		// c = ~a
 		// c = a / b
@@ -341,5 +379,17 @@ make_dag (const sblock_t *block)
 		// c = a ^ b
 		// c = a (move) b (count)
 	}
-	return dag;
+	while (dagnodes->is_child) {
+		dagnode_t  *n = dagnodes->next;
+		dagnodes->next = 0;
+		dagnodes = n;
+	}
+	for (d = dagnodes; d && d->next; d = d->next) {
+		while (d->next && d->next->is_child) {
+			dagnode_t  *n = d->next->next;
+			d->next->next = 0;
+			d->next = n;
+		}
+	}
+	return dagnodes;
 }

@@ -75,6 +75,9 @@ print_node (dstring_t *dstr, dagnode_t *node)
 				   node->c);
 		print_node (dstr, node->c);
 	}
+	if (node->next)
+		dasprintf (dstr, "  \"dag_%p\" -> \"dag_%p\" [style=dashed];\n", node,
+				   node->next);
 	dasprintf (dstr, "  \"dag_%p\" [%slabel=\"%s\"];\n", node,
 			   node->a ? "" : "shape=none,", daglabel_string (node->label));
 	if (node->identifiers) {

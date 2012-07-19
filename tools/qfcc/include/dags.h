@@ -41,6 +41,7 @@ typedef struct daglabel_s {
 	struct daglabel_s *next;
 	struct daglabel_s **prev;
 	//@}
+	struct daglabel_s *daglabel_chain;	///< all labels created for a dag
 	const char *opcode;			///< not if op
 	struct operand_s *op;		///< not if opcode;
 	struct dagnode_s *dagnode;	///< node with which this label is associated
@@ -49,6 +50,7 @@ typedef struct daglabel_s {
 typedef struct dagnode_s {
 	struct dagnode_s *next;
 	int         print_count;	///< used to avoid double printing nodes
+	int         is_child;		///< true if a child node
 	daglabel_t *label;			///< ident/const if leaf node, or operator
 	/// \name child nodes
 	/// All three child nodes will be null if this node is a leaf
