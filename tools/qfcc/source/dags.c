@@ -199,7 +199,10 @@ find_operands (statement_t *s, operand_t **x, operand_t **y, operand_t **z,
 			// except for move, indexed pointer store, rcall2+, and state,
 			// all are of the form c = a op b
 			*z = s->opb;
-			if (s->opcode[0] == '<' || s->opcode[0] == '.') {
+			if (!strncmp (s->opcode, "<MOVE", 5)
+				|| !strncmp (s->opcode, "<RCALL", 6)
+				|| !strcmp (s->opcode, "<STATE>")
+				|| !strcmp (s->opcode, ".=")) {
 				*w = s->opc;
 			} else {
 				*x = s->opc;
