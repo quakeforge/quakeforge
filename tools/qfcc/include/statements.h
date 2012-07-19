@@ -55,7 +55,6 @@ typedef struct operand_s {
 		struct symbol_s *symbol;
 		struct ex_value_s *value;
 		struct ex_label_s *label;
-		struct ex_pointer_s *pointer;
 		tempop_t    tempop;
 		struct operand_s *alias;
 	} o;

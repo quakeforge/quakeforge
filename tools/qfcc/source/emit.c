@@ -111,10 +111,10 @@ get_operand_def (expr_t *expr, operand_t *op)
 				op->o.tempop.def = temp_def (op->type, op->size);
 			return op->o.tempop.def;
 		case op_pointer:
-			def = op->o.pointer->def;
-			if (op->o.pointer->val || op->type != def->type->type) {
+			def = op->o.value->v.pointer.def;
+			if (op->o.value->v.pointer.val || op->type != def->type->type) {
 				def = alias_def (def, ev_types[op->type]);
-				def->offset = op->o.pointer->val;
+				def->offset = op->o.value->v.pointer.val;
 				def->offset_reloc = 1;
 			}
 			return def;

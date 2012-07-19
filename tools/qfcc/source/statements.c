@@ -109,15 +109,16 @@ operand_string (operand_t *op)
 		case op_temp:
 			return va ("tmp %p", op);
 		case op_pointer:
-			type = op->o.pointer->type;
-			if (op->o.pointer->def)
+			type = op->o.value->v.pointer.type;
+			if (op->o.value->v.pointer.def)
 				return va ("(%s)[%d]&lt;%s&gt;",
 						   type ? pr_type_name[type->type] : "???",
-						   op->o.pointer->val, op->o.pointer->def->name);
+						   op->o.value->v.pointer.val,
+						   op->o.value->v.pointer.def->name);
 			else
 				return va ("(%s)[%d]",
 						   type ? pr_type_name[type->type] : "???",
-						   op->o.pointer->val);
+						   op->o.value->v.pointer.val);
 		case op_alias:
 			return operand_string (op->o.alias);//FIXME better output
 	}
@@ -184,7 +185,9 @@ print_operand (operand_t *op)
 			printf ("tmp (%s) %p", pr_type_name[op->type], op);
 			break;
 		case op_pointer:
-			printf ("ptr %p", op->o.pointer);
+			printf ("ptr (%s)[%d]",
+					pr_type_name[op->o.value->v.pointer.type->type],
+					op->o.value->v.pointer.val);
 			break;
 		case op_alias:
 			printf ("alias %s ", pr_type_name[op->type]);
@@ -662,7 +665,7 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 	} else if (e->type == ex_value && e->e.value->type == ev_pointer) {
 		*op = new_operand (op_pointer);
 		(*op)->type = low_level_type (e->e.value->v.pointer.type);
-		(*op)->o.pointer = &e->e.value->v.pointer;
+		(*op)->o.value = e->e.value;
 	} else {
 		statement_t *s;
 		operand_t  *ptr = 0;

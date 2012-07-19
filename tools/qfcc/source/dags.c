@@ -109,16 +109,13 @@ operand_label (operand_t *op)
 		label = new_label ();
 		label->op = op;
 		sym->daglabel = label;
-	} else if (o->op_type == op_value) {
+	} else if (o->op_type == op_value || o->op_type == op_pointer) {
 		val = o->o.value;
 		if (val->daglabel)
 			return val->daglabel;
 		label = new_label ();
 		label->op = op;
 		val->daglabel = label;
-	} else if (o->op_type == op_pointer) {
-		label = new_label ();
-		label->op = op;
 	} else {
 		internal_error (0, "unexpected operand type: %d", o->op_type);
 	}
