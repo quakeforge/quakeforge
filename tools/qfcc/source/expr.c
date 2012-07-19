@@ -171,8 +171,7 @@ get_type (expr_t *e)
 				return field_type (e->e.value->v.pointer.type);
 			if (e->e.value->type == ev_integer
 				&& options.code.progsversion == PROG_ID_VERSION) {
-				e->e.value->type = ev_float;
-				e->e.value->v.float_val = e->e.value->v.integer_val;
+				convert_int (e);
 			}
 			return ev_types[e->e.value->type];
 	}
@@ -982,8 +981,7 @@ field_expr (expr_t *e1, expr_t *e2)
 				return e1;
 
 			e2->type = ex_value;
-			e2->e.value->type = ev_short;
-			e2->e.value->v.short_val = field->s.offset;
+			e2->e.value = new_short_val (field->s.offset);
 			e = new_binary_expr ('&', e1, e2);
 			e->e.expr.type = pointer_type (field->type);
 			return unary_expr ('.', e);
@@ -996,8 +994,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			if (!ivar)
 				return new_error_expr ();
 			e2->type = ex_value;
-			e2->e.value->type = ev_short;
-			e2->e.value->v.short_val = ivar->s.offset;
+			e2->e.value = new_short_val (ivar->s.offset);
 			e = new_binary_expr ('&', e1, e2);
 			e->e.expr.type = pointer_type (ivar->type);
 			return unary_expr ('.', e);
@@ -1029,14 +1026,12 @@ field_expr (expr_t *e1, expr_t *e2)
 			} else if (e2->type != ex_value || e2->e.value->type != ev_field) {
 				internal_error (e2, "unexpected field exression");
 			}
-			e2->e.value->v.pointer.val += field->s.offset;
-			e2->e.value->v.pointer.type = field->type;
+			e2->e.value = new_field_val (e2->e.value->v.pointer.val + field->s.offset, field->type, e2->e.value->v.pointer.def);
 			// create a new . expression
 			return field_expr (e1, e2);
 		} else {
 			e2->type = ex_value;
-			e2->e.value->type = ev_short;
-			e2->e.value->v.short_val = field->s.offset;
+			e2->e.value = new_short_val (field->s.offset);
 			e = address_expr (e1, e2, field->type);
 			return unary_expr ('.', e);
 		}
@@ -1286,25 +1281,25 @@ bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2)
 void
 convert_int (expr_t *e)
 {
-	e->e.value->v.float_val = expr_integer (e);
-	e->e.value->type = ev_float;
+	float       float_val = expr_integer (e);
 	e->type = ex_value;
+	e->e.value = new_float_val (float_val);
 }
 
 void
 convert_short (expr_t *e)
 {
-	e->e.value->v.float_val = expr_short (e);
-	e->e.value->type = ev_float;
+	float       float_val = expr_short (e);
 	e->type = ex_value;
+	e->e.value = new_float_val (float_val);
 }
 
 void
 convert_short_int (expr_t *e)
 {
-	e->e.value->v.integer_val = expr_short (e);
-	e->e.value->type = ev_integer;
+	float       integer_val = expr_short (e);
 	e->type = ex_value;
+	e->e.value = new_integer_val (integer_val);
 }
 
 void
