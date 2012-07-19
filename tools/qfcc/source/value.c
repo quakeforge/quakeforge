@@ -116,6 +116,7 @@ ex_value_t *
 new_string_val (const char *string_val)
 {
 	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
 	val.type = ev_string;
 	if (string_val)
 		val.v.string_val = save_string (string_val);
@@ -126,6 +127,7 @@ ex_value_t *
 new_float_val (float float_val)
 {
 	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
 	val.type = ev_float;
 	val.v.float_val = float_val;
 	return find_value (&val);
@@ -135,6 +137,7 @@ ex_value_t *
 new_vector_val (const float *vector_val)
 {
 	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
 	val.type = ev_vector;
 	VectorCopy (vector_val, val.v.vector_val);
 	return find_value (&val);
@@ -144,6 +147,7 @@ ex_value_t *
 new_entity_val (int entity_val)
 {
 	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
 	val.type = ev_entity;
 	val.v.entity_val = entity_val;
 	return find_value (&val);
@@ -153,6 +157,7 @@ ex_value_t *
 new_field_val (int field_val, type_t *type, def_t *def)
 {
 	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
 	val.type = ev_field;
 	val.v.pointer.val = field_val;
 	val.v.pointer.type = type;
@@ -164,6 +169,7 @@ ex_value_t *
 new_func_val (int func_val)
 {
 	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
 	val.type = ev_func;
 	val.v.func_val = func_val;
 	return find_value (&val);
@@ -173,6 +179,7 @@ ex_value_t *
 new_pointer_val (int pointer_val, type_t *type, def_t *def)
 {
 	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
 	val.type = ev_pointer;
 	val.v.pointer.val = pointer_val;
 	val.v.pointer.type = type;
@@ -184,6 +191,7 @@ ex_value_t *
 new_quaternion_val (const float *quaternion_val)
 {
 	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
 	val.type = ev_quat;
 	QuatCopy (quaternion_val, val.v.quaternion_val);
 	return find_value (&val);
@@ -193,6 +201,7 @@ ex_value_t *
 new_integer_val (int integer_val)
 {
 	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
 	val.type = ev_integer;
 	val.v.integer_val = integer_val;
 	return find_value (&val);
@@ -202,6 +211,7 @@ ex_value_t *
 new_uinteger_val (int uinteger_val)
 {
 	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
 	val.type = ev_uinteger;
 	val.v.uinteger_val = uinteger_val;
 	return find_value (&val);
@@ -211,6 +221,7 @@ ex_value_t *
 new_short_val (short short_val)
 {
 	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
 	val.type = ev_short;
 	val.v.short_val = short_val;
 	return find_value (&val);
@@ -220,8 +231,8 @@ ex_value_t *
 new_nil_val (type_t *type)
 {
 	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
 	val.type = low_level_type (type);
-	memset (&val.v, 0, sizeof (val.v));
 	if (val.type == ev_pointer|| val.type == ev_field )
 		val.v.pointer.type = type->t.fldptr.type;
 	return find_value (&val);
