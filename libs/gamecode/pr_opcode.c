@@ -136,6 +136,7 @@ VISIBLE opcode_t pr_opcodes[] = {
 	{"~", "conj.q", OP_CONJ_Q, false,
 	 ev_quat, ev_invalid, ev_quat,
 	 PROG_VERSION,
+	 "%Ga, %gc",
 	},
 
 	{"/", "div.f", OP_DIV_F, false,
