@@ -158,6 +158,7 @@ typedef struct {
 
 typedef struct ex_value_s {
 	struct ex_value_s *next;
+	struct daglabel_s *daglabel;///< dag label for this value
 	etype_t     type;
 	union {
 		const char *string_val;			///< string constant
