@@ -388,7 +388,10 @@ quote_string (const char *str)
 				dstring_appendstr (q, "&quot;");
 				break;
 			default:
-				dstring_appendstr (q, c);
+				if (c[0] >= 127 || c[0] < 32)
+					dasprintf (q, "\\\\x%02d", (byte) c[0]);
+				else
+					dstring_appendstr (q, c);
 				break;
 		}
 	}
