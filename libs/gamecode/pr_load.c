@@ -252,7 +252,8 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int max_edicts, int zone)
 		pr->pr_functions[i].numparms =
 			LittleLong (pr->pr_functions[i].numparms);
 		pr->pr_functions[i].locals = LittleLong (pr->pr_functions[i].locals);
-		Hash_Add (pr->function_hash, &pr->pr_functions[i]);
+		if (pr->pr_functions[i].s_name)
+			Hash_Add (pr->function_hash, &pr->pr_functions[i]);
 	}
 
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
