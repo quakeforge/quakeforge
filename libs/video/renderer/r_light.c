@@ -106,7 +106,7 @@ R_FindNearLights (const vec3_t pos, int count, dlight_t **lights)
 void
 R_MaxDlightsCheck (cvar_t *var)
 {
-	r_maxdlights = bound (0, var->int_val, 32);
+	r_maxdlights = bound (0, var->int_val, MAX_DLIGHTS);
 
 	if (r_dlights)
 		free (r_dlights);
@@ -146,11 +146,12 @@ R_AnimateLight (void)
 
 static inline void
 real_mark_surfaces (float dist, msurface_t *surf, const vec3_t lightorigin,
-					dlight_t *light, int bit)
+					dlight_t *light, unsigned lightnum)
 {
 	float      dist2, is, it;
 	float      maxdist = light->radius * light->radius;
 	vec3_t     impact;
+	unsigned   ind, bit;
 
 	dist2 = maxdist - dist * dist;
 	VectorMultSub (light->origin, dist, surf->plane->normal, impact);
@@ -173,15 +174,17 @@ real_mark_surfaces (float dist, msurface_t *surf, const vec3_t lightorigin,
 		return;
 
 	if (surf->dlightframe != r_framecount) {
-		surf->dlightbits = 0;
+		memset (surf->dlightbits, 0, sizeof (surf->dlightbits));
 		surf->dlightframe = r_framecount;
 	}
-	surf->dlightbits |= bit;
+	ind = lightnum / 32;
+	bit = 1 << (lightnum % 32);
+	surf->dlightbits[ind] |= bit;
 }
 
 static inline void
 mark_surfaces (msurface_t *surf, const vec3_t lightorigin, dlight_t *light,
-			   int bit)
+			   int lightnum)
 {
 	float      dist;
 
@@ -192,13 +195,13 @@ mark_surfaces (msurface_t *surf, const vec3_t lightorigin, dlight_t *light,
 		|| dist > light->radius)
 		return;
 
-	real_mark_surfaces (dist, surf, lightorigin, light, bit);
+	real_mark_surfaces (dist, surf, lightorigin, light, lightnum);
 }
 
 // LordHavoc: heavily modified, to eliminate unnecessary texture uploads,
 //            and support bmodel lighting better
 void
-R_RecursiveMarkLights (const vec3_t lightorigin, dlight_t *light, int bit,
+R_RecursiveMarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
 					   mnode_t *node)
 {
 	int         i;
@@ -237,12 +240,13 @@ loc0:
 	// mark the polygons
 	surf = r_worldentity.model->surfaces + node->firstsurface;
 	for (i = 0; i < node->numsurfaces; i++, surf++) {
-		mark_surfaces (surf, lightorigin, light, bit);
+		mark_surfaces (surf, lightorigin, light, lightnum);
 	}
 
 	if (node->children[0]->contents >= 0) {
 		if (node->children[1]->contents >= 0)
-			R_RecursiveMarkLights (lightorigin, light, bit, node->children[1]);
+			R_RecursiveMarkLights (lightorigin, light, lightnum,
+								   node->children[1]);
 		node = node->children[0];
 		goto loc0;
 	} else if (node->children[1]->contents >= 0) {
@@ -253,14 +257,14 @@ loc0:
 
 
 void
-R_MarkLights (const vec3_t lightorigin, dlight_t *light, int bit,
+R_MarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
 			  model_t *model)
 {
 	mleaf_t    *pvsleaf = Mod_PointInLeaf (lightorigin, model);
 
 	if (!pvsleaf->compressed_vis) {
 		mnode_t *node = model->nodes + model->hulls[0].firstclipnode;
-		R_RecursiveMarkLights (lightorigin, light, bit, node);
+		R_RecursiveMarkLights (lightorigin, light, lightnum, node);
 	} else {
 		float       radius = light->radius;
 		vec3_t      mins, maxs;
@@ -298,7 +302,7 @@ R_MarkLights (const vec3_t lightorigin, dlight_t *light, int bit,
 					msurface_t *surf = leaf->firstmarksurface[m];
 					if (surf->visframe != r_visframecount)
 						continue;
-					mark_surfaces (surf, lightorigin, light, bit);
+					mark_surfaces (surf, lightorigin, light, lightnum);
 				}
 			}
 		}
@@ -321,7 +325,7 @@ R_PushDlights (const vec3_t entorigin)
 		if (l->die < vr_data.realtime || !l->radius)
 			continue;
 		VectorSubtract (l->origin, entorigin, lightorigin);
-		R_MarkLights (lightorigin, l, 1 << i, r_worldentity.model);
+		R_MarkLights (lightorigin, l, i, r_worldentity.model);
 	}
 }
 

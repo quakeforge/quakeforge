@@ -123,7 +123,7 @@ R_AddDynamicLights_1 (msurface_t *surf)
 	tmax = (surf->extents[1] >> 4) + 1;
 
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
-		if (!(surf->dlightbits & (1 << lnum)))
+		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
 			continue;					// not lit by this light
 
 		VectorSubtract (r_dlights[lnum].origin, currententity->origin, local);
@@ -188,7 +188,7 @@ R_AddDynamicLights_3 (msurface_t *surf)
 	tmax = (surf->extents[1] >> 4) + 1;
 
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
-		if (!(surf->dlightbits & (1 << lnum)))
+		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
 			continue;					// not lit by this light
 
 		VectorSubtract (r_dlights[lnum].origin, currententity->origin, local);

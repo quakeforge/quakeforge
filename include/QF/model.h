@@ -141,6 +141,8 @@ typedef struct glpoly_s {
 	float	verts[4][VERTEXSIZE];	// variable sized (xyz s1t1 s2t2)
 } glpoly_t;
 
+#define MAX_DLIGHTS 128
+
 typedef struct msurface_s {
 	int			visframe;		// should be drawn when node is crossed
 
@@ -168,7 +170,7 @@ typedef struct msurface_s {
 // lighting info
 	struct subpic_s *lightpic;	///< light map texture ref (glsl)
 	int			dlightframe;
-	int			dlightbits;
+	uint32_t    dlightbits[(MAX_DLIGHTS + 31) >> 5];
 
 	int			lightmaptexturenum;
 	byte		styles[MAXLIGHTMAPS];
