@@ -510,13 +510,18 @@ convert_to_game_dict (script_t *script)
 	return game;
 }
 
+#define MAX_QUICK 5
+
 static void
 Host_Savegame_f (void)
 {
 	dstring_t  *name;
+	const char *save_name;
 	char       *save_text;
 	QFile      *f;
 	int         i;
+	char       *bup1, *bup2 = 0;
+
 
 	if (cmd_source != src_command)
 		return;
@@ -554,10 +559,25 @@ Host_Savegame_f (void)
 		}
 	}
 
+	save_name = Cmd_Argv (1);
 	name = dstring_newstr ();
-	dsprintf (name, "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
+	if (strcmp  (save_name, "quick") == 0) {
+		bup2 = nva ("%s/%s%d.sav", qfs_gamedir->dir.def, save_name, MAX_QUICK);
+		QFS_Remove (bup2);
+		for (i = MAX_QUICK - 1; i > 0; i--) {
+			bup1 = nva ("%s/%s%d.sav", qfs_gamedir->dir.def, save_name, i);
+			QFS_Rename (bup1, bup2);
+			free (bup2);
+			bup2 = bup1;
+		}
+	}
+	dsprintf (name, "%s/%s", qfs_gamedir->dir.def, save_name);
 	QFS_DefaultExtension (name, ".sav");
 
+	if (bup2) {
+		QFS_Rename (name->str, bup2);
+		free (bup2);
+	}
 	Sys_Printf ("Saving game to %s...\n", name->str);
 	f = QFS_WOpen (name->str, 0);
 	dstring_delete (name);

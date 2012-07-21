@@ -115,6 +115,7 @@ int quit_index;
 // ********* LOAD / SAVE
 
 #define MAX_SAVEGAMES 12
+#define MAX_QUICK 5
 string filenames[MAX_SAVEGAMES];
 int loadable[MAX_SAVEGAMES];
 int load_cursor;
@@ -130,16 +131,23 @@ string (QFile f) get_comment =
 	return line;
 }
 
-void () scan_saves =
+void (int quick) scan_saves =
 {
 	local int	i;
 	local QFile		f;
 	local string    line;
-	for (i = 0; i < MAX_SAVEGAMES; i++) {
+	local int max = MAX_SAVEGAMES;
+	if (quick)
+		max = MAX_QUICK;
+	for (i = 0; i < max; i++) {
 		if (!filenames[i])
 			filenames[i] = str_new ();
 		loadable[i] = 0;
-		f = File_Open (sprintf ("s%i.sav", i), "rz");
+		if (quick) {
+			f = File_Open (sprintf ("quick%i.sav", i + 1), "rz");
+		} else {
+			f = File_Open (sprintf ("s%i.sav", i), "rz");
+		}
 		if (!f) {
 			str_copy (filenames[i], "--- UNUSED SLOT ---");
 			continue;
@@ -153,29 +161,44 @@ void () scan_saves =
 		loadable[i] = 1;
 		Qclose (f);
 	}
+	for (i = max; i < MAX_SAVEGAMES; i++) {
+		loadable[i] = 0;
+	}
 };
 
 int (string text, int key) load_f =
 {
-	scan_saves ();
+	scan_saves (0);
 	Menu_SelectMenu ("load");
 	return 0;
 };
 
 int (string text, int key) save_f =
 {
-	scan_saves ();
+	scan_saves (0);
 	Menu_SelectMenu ("save");
 	return 0;
 };
 
 void () load_save_f =
 {
-	scan_saves ();
+	scan_saves (0);
 	if (Cmd_Argv (0) == "menu_load")
 		Menu_SelectMenu ("load");
 	else
 		Menu_SelectMenu ("save");
+};
+
+int (int x, int y) load_quickbup_draw =
+{
+	local int i;
+
+	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_load.lmp", 1));
+	for (i=0 ; i< MAX_QUICK; i++)
+		Draw_String (x + 16, y + 32 + 8 * i, filenames[i]);
+	Draw_Character (x + 8, y + 32 + load_cursor * 8,
+					12 + ((int) (time * 4) & 1));
+	return 1;
 };
 
 int (int x, int y) load_draw =
@@ -185,6 +208,7 @@ int (int x, int y) load_draw =
 	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_load.lmp", 1));
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
 		Draw_String (x + 16, y + 32 + 8 * i, filenames[i]);
+	Draw_String (x + 16, y + 32 + 8 * i, "Quick save backups");
 	Draw_Character (x + 8, y + 32 + load_cursor * 8,
 					12 + ((int) (time * 4) & 1));
 	return 1;
@@ -202,6 +226,34 @@ int (int x, int y) save_draw =
 	return 1;
 };
 
+int (int key, int unicode, int down) load_quickbup_keyevent =
+{
+	switch (key) {
+		case QFK_DOWN:
+		case QFM_WHEEL_DOWN:
+			S_LocalSound ("misc/menu1.wav");
+			load_cursor++;
+			load_cursor %= MAX_QUICK;
+			return 1;
+		case QFK_UP:
+		case QFM_WHEEL_UP:
+			S_LocalSound ("misc/menu1.wav");
+			load_cursor += MAX_QUICK - 1;
+			load_cursor %= MAX_QUICK;
+			return 1;
+		case QFK_RETURN:
+		case QFM_BUTTON1:
+			if (loadable[load_cursor]) {
+				S_LocalSound ("misc/menu2.wav");
+				Menu_SelectMenu (nil);
+				Cbuf_AddText (sprintf ("load quick%i.sav\n", load_cursor));
+				load_cursor = MAX_SAVEGAMES;
+			}
+			return 1;
+	}
+	return 0;
+};
+
 int (int key, int unicode, int down) load_keyevent =
 {
 	switch (key) {
@@ -209,17 +261,21 @@ int (int key, int unicode, int down) load_keyevent =
 		case QFM_WHEEL_DOWN:
 			S_LocalSound ("misc/menu1.wav");
 			load_cursor++;
-			load_cursor %= MAX_SAVEGAMES;
+			load_cursor %= MAX_SAVEGAMES + 1;
 			return 1;
 		case QFK_UP:
 		case QFM_WHEEL_UP:
 			S_LocalSound ("misc/menu1.wav");
-			load_cursor += MAX_SAVEGAMES - 1;
-			load_cursor %= MAX_SAVEGAMES;
+			load_cursor += MAX_SAVEGAMES;
+			load_cursor %= MAX_SAVEGAMES + 1;
 			return 1;
 		case QFK_RETURN:
 		case QFM_BUTTON1:
-			if (loadable[load_cursor]) {
+			if (load_cursor == MAX_SAVEGAMES) {
+				load_cursor = 0;
+				scan_saves (1);
+				Menu_SelectMenu ("load_quickbup");
+			} else if (loadable[load_cursor]) {
 				S_LocalSound ("misc/menu2.wav");
 				Menu_SelectMenu (nil);
 				Cbuf_AddText (sprintf ("load s%i.sav\n", load_cursor));
@@ -251,6 +307,17 @@ int (int key, int unicode, int down) save_keyevent =
 			return 1;
 	}
 	return 0;
+};
+
+void () load_quickbup_menu =
+{
+	Menu_Begin (0, 0, "load_quickbup");
+	Menu_EnterHook (menu_enter_sound);
+	Menu_LeaveHook (menu_leave_sound);
+	Menu_FadeScreen (1);
+	Menu_KeyEvent (load_quickbup_keyevent);
+	Menu_Draw (load_quickbup_draw);
+	Menu_End ();
 };
 
 void () load_menu =
@@ -574,6 +641,7 @@ void () menu_init =
 	main_menu ();
 	quit_menu ();
 	load_menu ();
+	load_quickbup_menu ();
 	save_menu ();
 
 	Menu_TopMenu ("main");
