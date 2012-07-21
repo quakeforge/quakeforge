@@ -279,6 +279,7 @@ CL_Disconnect (void)
 	}
 
 	cl.worldmodel = NULL;
+	cl.intermission = 0;
 }
 
 void
