@@ -512,7 +512,7 @@ CL_SetState (cactive_t state)
 		CL_UpdateScreen (cl.time);
 	}
 	if (con_module)
-		con_module->data->console->force_commandline = (state != ca_active);
+		con_module->data->console->force_commandline = (state < ca_connected);
 }
 
 static void
