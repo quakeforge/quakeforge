@@ -292,6 +292,7 @@ CL_RelinkEntities (void)
 	entity_state_t *new, *old;
 	float       bobjrotate, frac, f, d;
 	int         i, j;
+	int         entvalid;
 	vec3_t      delta;
 
 	r_data->player_entity = &cl_entities[cl.viewentity];
@@ -324,7 +325,13 @@ CL_RelinkEntities (void)
 		old = &nq_entstates.frame[1 - cl.mindex][i];
 		ent = &cl_entities[i];
 		// if the object wasn't included in the last packet, remove it
-		if (cl_msgtime[i] != cl.mtime[0] || !new->modelindex) {
+		entvalid = cl_msgtime[i] == cl.mtime[0];
+		if (entvalid && !new->modelindex) {
+			VectorCopy (new->origin, ent->origin);
+			VectorCopy (new->angles, ent->angles);
+			entvalid = 0;
+		}
+		if (!entvalid) {
 			ent->model = NULL;
 			ent->pose1 = ent->pose2 = -1;
 			if (ent->efrag)
