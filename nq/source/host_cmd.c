@@ -697,6 +697,8 @@ Host_Loadgame_f (void)
 	list = PL_ObjectForKey (game, "entities");
 	entnum = 0;
 	count = PL_A_NumObjects (list);
+	if (count > sv.max_edicts)
+		Host_Error ("too many entities in saved game. adjust max_edicts\n");
 	for (entnum = 0; entnum < count; entnum++) {
 		plitem_t   *entity = PL_ObjectAtIndex (list, entnum);
 		edict_t    *ent = EDICT_NUM (&sv_pr_state, entnum);
