@@ -635,8 +635,8 @@ void Mat4MultVec (const mat4_t a, const vec3_t b, vec3_t c);
 void Mat4as3MultVec (const mat4_t a, const vec3_t b, vec3_t c);
 /** Decompose a column major matrix into its component transformations.
 
-	This gives the matrix's rotation as a quaternion, shear, scale
-	(XY, XZ, YZ), and translation. Using the following sequence will give the
+	This gives the matrix's rotation as a quaternion, shear (XY, XZ, YZ),
+	scale, and translation. Using the following sequence will give the
 	same result as multiplying \a v by \a mat.
 
 	QuatMultVec (rot, v, v);
