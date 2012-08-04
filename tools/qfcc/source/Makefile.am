@@ -42,7 +42,7 @@ common_src=\
 	class.c codespace.c constfold.c cpp.c dags.c debug.c def.c defspace.c \
 	diagnostic.c dot_dag.c dot_expr.c dot_flow.c emit.c expr.c \
 	function.c grab.c idstuff.c linker.c method.c obj_file.c obj_type.c \
-	opcodes.c options.c qfcc.c reloc.c shared.c statements.c strpool.c \
+	opcodes.c options.c qfcc.c reloc.c set.c shared.c statements.c strpool.c \
 	struct.c switch.c symtab.c type.c value.c
 
 qfcc_SOURCES= qc-lex.l qc-parse.y qp-lex.l qp-parse.y $(common_src)
