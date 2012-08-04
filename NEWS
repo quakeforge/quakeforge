@@ -1,5 +1,27 @@
 NEWS for the QuakeForge project
 -------------------------------
+Changes from 0.6.99 Beta 2
+    o GL shadows fixes.
+        - gl_alias_render_tri 1 no longer crashes
+        - Shading vector setup "correctly". It's still in a fixed direction,
+          but tumbling models (eg, grenades) no longer produce wild shadows.
+    o Blender import/export addon packaged properly.
+    o GLSL fog calculation fixes: no more ugly squares for smoke particles
+      in foggy maps.
+    o con_speed 0 now raises/lowers the console instantly.
+    o The player will no longer touch triggers when running around in
+      noclip mode.
+    o Better handling of progs built by compilers that strip function names
+      from builtins: saved game data now works.
+    o Renderers now support up to 128 dlights.
+    o Broken intermission scenes fixed.
+    o Console no longer shows when chaning levels in nq.
+    o Automatic backups of quick-save (F6: quick.sav) data. F9 still loads
+      quick.sav, but up to 5 copies (quick1.sav .. quick5.sav) are kept.
+      The backups are loadable via a sub-menu in the load (F3) menu.
+    o NQ will now bail gracefully (back to the game console) if the saved
+      game data has too many entities for the current settings.
+
 Changes from 0.6.99 Beta 1
     o The inverted lighting in sw32 render has been fixed.
     o The mdl import/export addon is now included in the distribution
