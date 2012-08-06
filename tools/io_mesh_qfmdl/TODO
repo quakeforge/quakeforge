@@ -1,0 +1,7 @@
+o   auto-convert quads/ngons to tris
+o   combine multiple selected meshes into one mdl
+    ?   active object determines origin?
+    ?   non-active objects' meshes rotated relative to active? all objects
+        relative to world?
+o   bake image textures to the mdl
+    ?   how to handle overlapping UVs?
