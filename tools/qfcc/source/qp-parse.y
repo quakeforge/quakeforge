@@ -161,6 +161,7 @@ program
 			$1 = new_symbol (".main");
 			$1->params = 0;
 			$1->type = parse_params (&type_void, 0);
+			$1->type = find_type ($1->type);
 			$1 = function_symbol ($1, 0, 1);
 			current_func = begin_function ($1, 0, current_symtab, 0);
 			current_symtab = current_func->symtab;
@@ -176,6 +177,7 @@ program_head
 			$$ = $3;
 
 			$$->type = parse_params (&type_void, 0);
+			$$->type = find_type ($$->type);
 			$$ = function_symbol ($$, 0, 1);
 		}
 	;
@@ -258,6 +260,7 @@ subprogram_head
 			} else {
 				$$->params = $3;
 				$$->type = parse_params ($5, $3);
+				$$->type = find_type ($$->type);
 				$$ = function_symbol ($$, 0, 1);
 			}
 		}
@@ -269,6 +272,7 @@ subprogram_head
 			} else {
 				$$->params = $3;
 				$$->type = parse_params (&type_void, $3);
+				$$->type = find_type ($$->type);
 				$$ = function_symbol ($$, 0, 1);
 			}
 		}
