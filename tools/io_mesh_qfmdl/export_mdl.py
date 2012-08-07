@@ -289,9 +289,13 @@ def export_mdl(operator, context, filepath):
     if not mdl.skins:
         make_skin(mdl, mesh)
     if not mdl.frames:
-        if mdl.obj.qfmdl.xform:
-            mesh.transform (mdl.obj.matrix_world)
-        mdl.frames.append(make_frame(mesh, vertmap))
+        curframe = context.scene.frame_current
+        for fno in range(1, curframe + 1):
+            context.scene.frame_set(fno)
+            mesh = obj.to_mesh(context.scene, True, 'PREVIEW') #wysiwyg?
+            if mdl.obj.qfmdl.xform:
+                mesh.transform(mdl.obj.matrix_world)
+            mdl.frames.append(make_frame(mesh, vertmap))
     convert_stverts (mdl, mdl.stverts)
     mdl.size = calc_average_area(mdl)
     scale_verts(mdl)

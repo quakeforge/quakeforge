@@ -240,16 +240,19 @@ def write_text(mdl):
     header="""
     /*  This script represents the animation data within the model file. It
         is generated automatically on import, and is optional when exporting.
-        If no script is used when exporting, only a single frame and single
-        skin will be exported.
+        If no script is used when exporting, frames will be exported one per
+        blender frame from frame 1 to the current frame (inclusive), and only
+        one skin will be exported.
 
         The fundamental format of the script is documented at
         http://quakeforge.net/doxygen/property-list.html
 
         The expected layout is a top-level dictionary with two expected
         entries:
-            frames  array of frame entries
-            skins   array of skin entries
+            frames  array of frame entries. If missing, frames will be handled
+                    as if there were no script.
+            skins   array of skin entries. If missing, skins will be handled
+                    as if there were no script.
 
         A frame entry is a dictionary with the following fields:
             name    The name of the frame to be written to the mdl file. In a
