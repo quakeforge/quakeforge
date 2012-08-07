@@ -25,6 +25,7 @@ from mathutils import Vector,Matrix
 
 from .qfplist import pldata, PListError
 from .quakepal import palette
+from .quakenorm import map_normal
 from .mdl import MDL
 
 def check_faces(mesh):
@@ -142,7 +143,8 @@ def convert_stverts(mdl, stverts):
 def make_frame(mesh, vertmap):
     frame = MDL.Frame()
     for v in vertmap:
-        vert = MDL.Vert(tuple(mesh.vertices[v].co))
+        mv = mesh.vertices[v]
+        vert = MDL.Vert(tuple(mv.co), map_normal(mv.normal))
         frame.add_vert(vert)
     return frame
 
