@@ -88,6 +88,10 @@ class QFMDLSettings(bpy.types.PropertyGroup):
     script = StringProperty(
         name="Script",
         description="Script for animating frames and skins")
+    xform = BoolProperty(
+        name="Auto transform",
+        description="Auto-apply location/rotation/scale when exporting",
+        default=True)
     md16 = BoolProperty(
         name="16-bit",
         description="16 bit vertex coordinates: QuakeForge only")
@@ -143,6 +147,7 @@ class MDLPanel(bpy.types.Panel):
         layout.prop(obj.qfmdl, "rotate")
         layout.prop(obj.qfmdl, "effects")
         layout.prop(obj.qfmdl, "script")
+        layout.prop(obj.qfmdl, "xform")
         layout.prop(obj.qfmdl, "md16")
 
 def menu_func_import(self, context):

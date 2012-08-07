@@ -260,6 +260,8 @@ def process_frame(mdl, scene, frame, vertmap, ingroup = False,
         return fr.frames[-1]
     scene.frame_set (int(frameno), frameno - int(frameno))
     mesh = mdl.obj.to_mesh (scene, True, 'PREVIEW') #wysiwyg?
+    if mdl.obj.qfmdl.xform:
+        mesh.transform (mdl.obj.matrix_world)
     fr = make_frame(mesh, vertmap)
     fr.name = name
     return fr
@@ -287,6 +289,8 @@ def export_mdl(operator, context, filepath):
     if not mdl.skins:
         make_skin(mdl, mesh)
     if not mdl.frames:
+        if mdl.obj.qfmdl.xform:
+            mesh.transform (mdl.obj.matrix_world)
         mdl.frames.append(make_frame(mesh, vertmap))
     convert_stverts (mdl, mdl.stverts)
     mdl.size = calc_average_area(mdl)
