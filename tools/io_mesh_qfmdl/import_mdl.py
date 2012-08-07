@@ -65,7 +65,7 @@ def make_faces(mdl):
         if not tv[2]:
             tv = [tv[2]] + tv[:2]
             sts = [sts[2]] + sts[:2]
-        faces.append (tv)
+        faces.append(tv)
         uvs.append(sts)
     return faces, uvs
 
@@ -94,12 +94,12 @@ def load_skins(mdl):
     for i, skin in enumerate(mdl.skins):
         if skin.type:
             for j, subskin in enumerate(skin.skins):
-                load_skin (subskin, "%s_%d_%d" % (mdl.name, i, j))
+                load_skin(subskin, "%s_%d_%d" % (mdl.name, i, j))
         else:
-            load_skin (skin, "%s_%d" % (mdl.name, i))
+            load_skin(skin, "%s_%d" % (mdl.name, i))
 
-def setup_skins (mdl, uvs):
-    load_skins (mdl)
+def setup_skins(mdl, uvs):
+    load_skins(mdl)
     img = mdl.images[0]   # use the first skin for now
     uvlay = mdl.mesh.uv_textures.new(mdl.name)
     uvloop = mdl.mesh.uv_layers[0]
@@ -135,7 +135,7 @@ def make_shape_key(mdl, framenum, subframenum=0):
         frame.name = name
     frame.key = mdl.obj.shape_key_add(name)
     frame.key.value = 0.0
-    mdl.keys.append (frame.key)
+    mdl.keys.append(frame.key)
     s = Vector(mdl.scale)
     o = Vector(mdl.scale_origin)
     m = Matrix(((s.x,  0,  0,o.x),
@@ -171,7 +171,7 @@ def set_keys(act, data):
 def build_actions(mdl):
     sk = mdl.mesh.shape_keys
     ad = sk.animation_data_create()
-    track = ad.nla_tracks.new ();
+    track = ad.nla_tracks.new();
     track.name = mdl.name
     start_frame = 1.0
     for frame in mdl.frames:
@@ -183,14 +183,14 @@ def build_actions(mdl):
                 subframe.frameno = start_frame + j
                 co = []
                 if j > 1:
-                    co.append ((1.0, 0.0))
+                    co.append((1.0, 0.0))
                 if j > 0:
-                    co.append ((j * 1.0, 0.0))
-                co.append (((j + 1) * 1.0, 1.0))
+                    co.append((j * 1.0, 0.0))
+                co.append(((j + 1) * 1.0, 1.0))
                 if j < len(frame.frames) - 2:
-                    co.append (((j + 2) * 1.0, 0.0))
+                    co.append(((j + 2) * 1.0, 0.0))
                 if j < len(frame.frames) - 1:
-                    co.append ((len(frame.frames) * 1.0, 0.0))
+                    co.append((len(frame.frames) * 1.0, 0.0))
                 data.append((subframe.key, co))
                 if subframe.key in other_keys:
                     del(other_keys[other_keys.index(subframe.key)])
@@ -205,8 +205,8 @@ def build_actions(mdl):
             co = [(1.0, 0.0)]
             for k in other_keys:
                 data.append((k, co))
-        set_keys (act, data)
-        track.strips.new (act.name, start_frame, act)
+        set_keys(act, data)
+        track.strips.new(act.name, start_frame, act)
         start_frame += act.frame_range[1]
 
 def merge_frames(mdl):
@@ -349,15 +349,15 @@ def import_mdl(operator, context, filepath):
         operator.report({'ERROR'},
             "Unrecognized format: %s %d" % (mdl.ident, mdl.version))
         return {'CANCELLED'}
-    faces, uvs = make_faces (mdl)
-    verts = make_verts (mdl, 0)
+    faces, uvs = make_faces(mdl)
+    verts = make_verts(mdl, 0)
     mdl.mesh = bpy.data.meshes.new(mdl.name)
     mdl.mesh.from_pydata(verts, [], faces)
     mdl.obj = bpy.data.objects.new(mdl.name, mdl.mesh)
     bpy.context.scene.objects.link(mdl.obj)
     bpy.context.scene.objects.active = mdl.obj
     mdl.obj.select = True
-    setup_skins (mdl, uvs)
+    setup_skins(mdl, uvs)
     if len(mdl.frames) > 1 or mdl.frames[0].type:
         build_shape_keys(mdl)
         merge_frames(mdl)

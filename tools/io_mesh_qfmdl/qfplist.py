@@ -31,7 +31,7 @@ class pldata:
     def __init__(self, src = ''):
         self.src = src
         self.pos = 0;
-        self.end = len (self.src)
+        self.end = len(self.src)
         self.line = 1
     def skip_space(self):
         while self.pos < self.end:
@@ -226,7 +226,7 @@ class pldata:
                 self.data.append(';\n')
             self.data.append('\t' * (level))
             self.data.append("}")
-        elif type(item) in (list, tuple):
+        elif type(item) in(list, tuple):
             self.data.append("(\n")
             for n, i in enumerate(item):
                 self.data.append('\t' * (level + 1))
@@ -243,7 +243,7 @@ class pldata:
         elif type(item) == str:
             self.write_string(item)
         else:
-            raise PListError (0, "unsupported type")
+            raise PListError(0, "unsupported type")
     def write(self, item):
         self.data = []
         self.write_item(item, 0)

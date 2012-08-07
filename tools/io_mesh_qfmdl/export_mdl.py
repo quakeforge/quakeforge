@@ -70,7 +70,7 @@ def convert_image(image):
                     if i > 255:     # should never happen
                         break
                     r = 0
-                    for x in map (lambda a, b: (a - b) ** 2, rgb, p):
+                    for x in map(lambda a, b: (a - b) ** 2, rgb, p):
                         r += x
                     if r < best[0]:
                         best = (r, i)
@@ -115,7 +115,7 @@ def build_tris(mesh):
         uv = uvfaces[face.loop_start:face.loop_start + face.loop_total]
         uv = list(map(lambda a: a.uv, uv))
         face_tris = []
-        for i in range (1, len(fv) - 1):
+        for i in range(1, len(fv) - 1):
             # blender's and quake's vertex order are opposed
             face_tris.append([(fv[0], tuple(uv[0])),
                               (fv[i + 1], tuple(uv[i + 1])),
@@ -132,16 +132,16 @@ def build_tris(mesh):
     return tris, stverts, vertmap
 
 def convert_stverts(mdl, stverts):
-    for i, st in enumerate (stverts):
+    for i, st in enumerate(stverts):
         s, t = st
         # quake textures are top to bottom, but blender images
         # are bottom to top
-        s = int (s * (mdl.skinwidth - 1) + 0.5)
-        t = int ((1 - t) * (mdl.skinheight - 1) + 0.5)
+        s = int(s * (mdl.skinwidth - 1) + 0.5)
+        t = int((1 - t) * (mdl.skinheight - 1) + 0.5)
         # ensure st is within the skin
         s = ((s % mdl.skinwidth) + mdl.skinwidth) % mdl.skinwidth
         t = ((t % mdl.skinheight) + mdl.skinheight) % mdl.skinheight
-        stverts[i] = MDL.STVert ((s, t))
+        stverts[i] = MDL.STVert((s, t))
 
 def make_frame(mesh, vertmap):
     frame = MDL.Frame()
@@ -177,7 +177,7 @@ def calc_average_area(mdl):
     return totalarea / len(mdl.tris)
 
 def get_properties(operator, mdl, obj):
-    mdl.eyeposition = tuple (obj.qfmdl.eyeposition)
+    mdl.eyeposition = tuple(obj.qfmdl.eyeposition)
     mdl.synctype = MDL.SYNCTYPE[obj.qfmdl.synctype]
     mdl.flags = ((obj.qfmdl.rotate and MDL.EF_ROTATE or 0)
                  | MDL.EFFECTS[obj.qfmdl.effects])
@@ -215,7 +215,7 @@ def process_skin(mdl, skin, ingroup=False):
         sk.times = intervals[1:len(skin['skins']) + 1]
         sk.skins = []
         for s in skin['skins']:
-            sk.skins.append(process_skin (mdl, s, True))
+            sk.skins.append(process_skin(mdl, s, True))
         return sk
     else:
         #FIXME error handling
@@ -225,7 +225,8 @@ def process_skin(mdl, skin, ingroup=False):
             if (mdl.skinwidth != image.size[0]
                 or mdl.skinheight != image.size[1]):
                 raise ValueError("%s: different skin size (%d %d) (%d %d)"
-                                 % (name, mdl.skinwidth, mdl.skinheight, int(image.size[0]), int(image.size[1])))
+                                 % (name, mdl.skinwidth, mdl.skinheight,
+                                    int(image.size[0]), int(image.size[1])))
         else:
             mdl.skinwidth, mdl.skinheight = image.size
         sk = convert_image(image)
@@ -251,25 +252,25 @@ def process_frame(mdl, scene, frame, vertmap, ingroup = False,
             intervals.append(intervals[-1] + 0.1)
         fr = MDL.Frame()
         for i, f in enumerate(frame['frames']):
-            fr.add_frame(process_frame (mdl, scene, f, vertmap, True,
-                                        frameno + i, name + str(i + 1)),
+            fr.add_frame(process_frame(mdl, scene, f, vertmap, True,
+                                       frameno + i, name + str(i + 1)),
                          intervals[i + 1])
         if 'intervals' in frame:
             return fr
         mdl.frames += fr.frames[:-1]
         return fr.frames[-1]
-    scene.frame_set (int(frameno), frameno - int(frameno))
-    mesh = mdl.obj.to_mesh (scene, True, 'PREVIEW') #wysiwyg?
+    scene.frame_set(int(frameno), frameno - int(frameno))
+    mesh = mdl.obj.to_mesh(scene, True, 'PREVIEW') #wysiwyg?
     if mdl.obj.qfmdl.xform:
-        mesh.transform (mdl.obj.matrix_world)
+        mesh.transform(mdl.obj.matrix_world)
     fr = make_frame(mesh, vertmap)
     fr.name = name
     return fr
 
 def export_mdl(operator, context, filepath):
     obj = context.active_object
-    mesh = obj.to_mesh (context.scene, True, 'PREVIEW') #wysiwyg?
-    #if not check_faces (mesh):
+    mesh = obj.to_mesh(context.scene, True, 'PREVIEW') #wysiwyg?
+    #if not check_faces(mesh):
     #    operator.report({'ERROR'},
     #                    "Mesh has faces with more than 3 vertices.")
     #    return {'CANCELLED'}
@@ -296,7 +297,7 @@ def export_mdl(operator, context, filepath):
             if mdl.obj.qfmdl.xform:
                 mesh.transform(mdl.obj.matrix_world)
             mdl.frames.append(make_frame(mesh, vertmap))
-    convert_stverts (mdl, mdl.stverts)
+    convert_stverts(mdl, mdl.stverts)
     mdl.size = calc_average_area(mdl)
     scale_verts(mdl)
     mdl.write(filepath)

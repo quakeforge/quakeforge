@@ -346,7 +346,7 @@ class MDL:
         #read in the st verts (uv map)
         self.stverts = []
         for i in range(numverts):
-            self.stverts.append (MDL.STVert().read(self))
+            self.stverts.append(MDL.STVert().read(self))
         #read in the tris
         self.tris = []
         for i in range(numtris):
@@ -357,23 +357,23 @@ class MDL:
             self.frames.append(MDL.Frame().read(self, numverts))
         return self
 
-    def write (self, filepath):
+    def write(self, filepath):
         self.file = open(filepath, "wb")
-        self.write_string (self.ident, 4)
-        self.write_int (self.version)
-        self.write_float (self.scale)
-        self.write_float (self.scale_origin)
-        self.write_float (self.boundingradius)
-        self.write_float (self.eyeposition)
-        self.write_int (len(self.skins))
-        self.write_int ((self.skinwidth, self.skinheight))
-        self.write_int (len(self.stverts))
-        self.write_int (len(self.tris))
-        self.write_int (len(self.frames))
-        self.write_int (self.synctype)
+        self.write_string(self.ident, 4)
+        self.write_int(self.version)
+        self.write_float(self.scale)
+        self.write_float(self.scale_origin)
+        self.write_float(self.boundingradius)
+        self.write_float(self.eyeposition)
+        self.write_int(len(self.skins))
+        self.write_int((self.skinwidth, self.skinheight))
+        self.write_int(len(self.stverts))
+        self.write_int(len(self.tris))
+        self.write_int(len(self.frames))
+        self.write_int(self.synctype)
         if self.version == 6:
-            self.write_int (self.flags)
-            self.write_float (self.size)
+            self.write_int(self.flags)
+            self.write_float(self.size)
         # write out the skin data
         for skin in self.skins:
             skin.write(self)
