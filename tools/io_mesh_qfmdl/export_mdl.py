@@ -119,7 +119,7 @@ def build_tris(mesh):
         uv.reverse()
         tv = []
         for v, u in map(lambda a,b: (a,b), fv, uv):
-            k = tuple(u)
+            k = v, tuple(u)
             if k not in uvdict:
                 uvdict[k] = len(stverts)
                 vertmap.append(v)
