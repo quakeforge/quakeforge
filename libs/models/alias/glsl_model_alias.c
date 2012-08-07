@@ -184,7 +184,7 @@ glsl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 		for (j = 0; j < hdr->mdl.numverts; j++) {
 			pv = &poseverts[i][j];
 			if (extra) {
-				VectorMultAdd (pv[hdr->numposes].v, 256, pv->v,
+				VectorMultAdd (pv[hdr->mdl.numverts].v, 256, pv->v,
 							   verts[pose + j].vertex);
 			} else {
 				VectorCopy (pv->v, verts[pose + j].vertex);
