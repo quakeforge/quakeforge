@@ -109,23 +109,26 @@ def build_tris(mesh):
     stverts = []
     tris = []
     vertmap = []    # map mdl vert num to blender vert num (for 3d verts)
-    uvdict = {}
+    vuvdict = {}
     for face in mesh.polygons:
         fv = list(face.vertices)
         uv = uvfaces[face.loop_start:face.loop_start + face.loop_total]
         uv = list(map(lambda a: a.uv, uv))
-        # blender's and quake's vertex order seem to be opposed
-        fv.reverse()
-        uv.reverse()
-        tv = []
-        for v, u in map(lambda a,b: (a,b), fv, uv):
-            k = v, tuple(u)
-            if k not in uvdict:
-                uvdict[k] = len(stverts)
-                vertmap.append(v)
-                stverts.append(u)
-            tv.append(uvdict[k])
-        tris.append(MDL.Tri(tv))
+        face_tris = []
+        for i in range (1, len(fv) - 1):
+            # blender's and quake's vertex order are opposed
+            face_tris.append([(fv[0], tuple(uv[0])),
+                              (fv[i + 1], tuple(uv[i + 1])),
+                              (fv[i], tuple(uv[i]))])
+        for ft in face_tris:
+            tv = []
+            for vuv in ft:
+                if vuv not in vuvdict:
+                    vuvdict[vuv] = len(stverts)
+                    vertmap.append(vuv[0])
+                    stverts.append(vuv[1])
+                tv.append(vuvdict[vuv])
+            tris.append(MDL.Tri(tv))
     return tris, stverts, vertmap
 
 def convert_stverts(mdl, stverts):
@@ -264,10 +267,10 @@ def process_frame(mdl, scene, frame, vertmap, ingroup = False,
 def export_mdl(operator, context, filepath):
     obj = context.active_object
     mesh = obj.to_mesh (context.scene, True, 'PREVIEW') #wysiwyg?
-    if not check_faces (mesh):
-        operator.report({'ERROR'},
-                        "Mesh has faces with more than 3 vertices.")
-        return {'CANCELLED'}
+    #if not check_faces (mesh):
+    #    operator.report({'ERROR'},
+    #                    "Mesh has faces with more than 3 vertices.")
+    #    return {'CANCELLED'}
     mdl = MDL(obj.name)
     mdl.obj = obj
     if not get_properties(operator, mdl, obj):
