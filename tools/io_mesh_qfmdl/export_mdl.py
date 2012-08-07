@@ -81,6 +81,7 @@ def null_skin(size):
     skin = MDL.Skin()
     skin.type = 0
     skin.pixels = bytearray(size[0] * size[1]) # black skin
+    return skin
 
 def make_skin(mdl, mesh):
     if (not mesh.uv_textures or not mesh.uv_textures[0].data
