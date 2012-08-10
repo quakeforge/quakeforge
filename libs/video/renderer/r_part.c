@@ -93,13 +93,13 @@ static int  ramp3[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 static inline float
 grav (void)
 {
-	return vr_data.frametime * vr_data.gravity * 0.05;
+	return -vr_data.frametime * vr_data.gravity * 0.05;
 }
 
 static inline float
 fast_grav (void)
 {
-	return vr_data.frametime * vr_data.gravity;
+	return -vr_data.frametime * vr_data.gravity;
 }
 
 static inline void
@@ -111,7 +111,7 @@ add_vel (particle_t *part)
 static inline void
 add_grav (particle_t *part)
 {
-	part->vel[2] -= grav ();
+	part->vel[2] += grav ();
 }
 
 static inline void
@@ -123,7 +123,7 @@ sub_grav (particle_t *part)
 static inline void
 add_fastgrav (particle_t *part)
 {
-	part->vel[2] -= fast_grav ();
+	part->vel[2] += fast_grav ();
 }
 
 static inline qboolean
@@ -272,22 +272,22 @@ part_phys_flame (particle_t *part)
 }
 
 static pt_phys_func part_phys[] = {
-	part_phys_static,
-	part_phys_grav,
+	part_phys_static,		// pt_static
+	part_phys_grav,			// pt_grav
 	part_phys_grav,			// pt_slowgrav
-	part_phys_fire,
-	part_phys_explode,
-	part_phys_explode2,
-	part_phys_blob,
-	part_phys_blob2,
-	part_phys_smoke,
-	part_phys_smokecloud,
-	part_phys_bloodcloud,
+	part_phys_fire,			// pt_fire
+	part_phys_explode,		// pt_explode
+	part_phys_explode2,		// pt_explode2
+	part_phys_blob,			// pt_blob
+	part_phys_blob2,		// pt_blob2
+	part_phys_smoke,		// pt_smoke
+	part_phys_smokecloud,	// pt_smokecloud
+	part_phys_bloodcloud,	// pt_bloodcloud
 	part_phys_static,		// pt_fadespark
 	part_phys_static,		// pt_fadespark2
-	part_phys_fallfade,
-	part_phys_fallfadespark,
-	part_phys_flame,
+	part_phys_fallfade,		// pt_fallfade
+	part_phys_fallfadespark,// pt_fallfadespark
+	part_phys_flame,		// pt_flame
 };
 
 pt_phys_func
