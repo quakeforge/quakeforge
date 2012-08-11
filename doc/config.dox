@@ -18,7 +18,7 @@
 /**
 \page cmdline Command Line
 The \QF servers (\c nq-server, \c qw-server, and \c qtv), and clients
-(\c nq-glx, \c nq-wgl, \c qw-client-glx, \c qw-client-wgl etc) all parse
+(\c nq-x11, \c nq-sdl, \c qw-client-x11, \c qw-client-sdl etc) all parse
 the program command line looking for console commands.
 
 Console commands on the command line are marked with a \c + that follows
@@ -33,14 +33,14 @@ The following command line will fail to set m_pitch because the -0.022
 will not be part of the console command. <code>usage: setrom \<cvar\>
 \<value\></code> will be displayed instead.
 \verbatim
-nq-glx +setrom m_pitch -0.022
+nq-x11 +setrom m_pitch -0.022
 \endverbatim
 
 The following command line will successfully set m_pitch to \c -0.022
 because \QF will see the quotation mark before the \c - and thus \c -0.022 will be
 part of the console command.
 \verbatim
-nq-glx +setrom m_pitch \"-0.022\"
+nq-x11 +setrom m_pitch \"-0.022\"
 \endverbatim
 \note The above works in bash. Other shells may vary.
 */
@@ -124,7 +124,7 @@ either have little meaning or be difficult to implement. However, there
 command, the cvar can be created with the desired value before the engine
 creates the cvar (and sets its read-only flag). There are exactly three
 places where the cvar can be created before the engine does:
-\li the command line (eg <code>nq-glx +set snd_rate 48000</code>)
+\li the command line (eg <code>nq-x11 +set snd_rate 48000</code>)
 \li the global configuration file specified by the \c fs_globalcfg cvar.
 \li the user configuration file specified by the \c fs_usercfg cvar.
 
@@ -180,16 +180,16 @@ command line, even \c setrom in the config files can be overridden.
 \page cmdcvarlist Command and Cvar Lists
 Lists of commands and cvars by program.
 
-For now, only nq-glx, qw-client-glx and qw-server are covered (using the
+For now, only nq-x11, qw-client-x11 and qw-server are covered (using the
 ALSA sound plugin).
 
 Commands:
-\li <a href="/doc_cmds.php?program=nq-glx">nq-glx</a>
-\li <a href="/doc_cmds.php?program=qw-client-glx">qw-client-glx</a>
+\li <a href="/doc_cmds.php?program=nq-x11">nq-x11</a>
+\li <a href="/doc_cmds.php?program=qw-client-x11">qw-client-x11</a>
 \li <a href="/doc_cmds.php?program=qw-server">qw-server</a>
 
 Cvars:
-\li <a href="/doc_cvars.php?program=nq-glx">nq-glx</a>
-\li <a href="/doc_cvars.php?program=qw-client-glx">qw-client-glx</a>
+\li <a href="/doc_cvars.php?program=nq-x11">nq-x11</a>
+\li <a href="/doc_cvars.php?program=qw-client-x11">qw-client-x11</a>
 \li <a href="/doc_cvars.php?program=qw-server">qw-server</a>
 */
