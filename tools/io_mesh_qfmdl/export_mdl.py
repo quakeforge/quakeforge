@@ -84,13 +84,19 @@ def null_skin(size):
     skin.pixels = bytearray(size[0] * size[1]) # black skin
     return skin
 
+def active_uv(mesh):
+    for uvt in mesh.uv_textures:
+        if uvt.active:
+            return uvt
+    return None
+
 def make_skin(mdl, mesh):
-    if (not mesh.uv_textures or not mesh.uv_textures[0].data
-        or not mesh.uv_textures[0].data[0].image):
+    uvt = active_uv(mesh)
+    if (not uvt or not uvt.data or not uvt.data[0].image):
         mdl.skinwidth, mdl.skinheight = (4, 4)
         skin = null_skin((mdl.skinwidth, mdl.skinheight))
     else:
-        image = mesh.uv_textures[0].data[0].image
+        image = uvt.data[0].image
         mdl.skinwidth, mdl.skinheight = image.size
         skin = convert_image(image)
     mdl.skins.append(skin)
@@ -105,7 +111,8 @@ def build_tris(mesh):
     # the layout. However, there seems to be nothing in the mdl format
     # preventing the use of duplicate 3d vertices to allow complete freedom
     # of the UV layout.
-    uvfaces = mesh.uv_layers[0].data
+    uvtex = active_uv(mesh)
+    uvfaces = mesh.uv_layers[uvtex.name].data
     stverts = []
     tris = []
     vertmap = []    # map mdl vert num to blender vert num (for 3d verts)
