@@ -91,6 +91,12 @@ static int  ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
 static int  ramp3[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 
 static inline float
+slow_grav (void)
+{
+	return -vr_data.frametime * vr_data.gravity * 0.0375;
+}
+
+static inline float
 grav (void)
 {
 	return -vr_data.frametime * vr_data.gravity * 0.05;
@@ -106,6 +112,12 @@ static inline void
 add_vel (particle_t *part)
 {
 	VectorMultAdd (part->org, vr_data.frametime, part->vel, part->org);
+}
+
+static inline void
+sub_slowgrav (particle_t *part)
+{
+	part->vel[2] -= slow_grav ();
 }
 
 static inline void
@@ -218,7 +230,7 @@ part_phys_smoke (particle_t *part)
 		return;
 	add_vel (part);
 	part->scale += vr_data.frametime * 4.0;
-	//part->org[2] += vr_data.frametime * 30.0;
+	//sub_slowgrav (part);
 }
 
 static void
@@ -228,7 +240,7 @@ part_phys_smokecloud (particle_t *part)
 		return;
 	add_vel (part);
 	part->scale += vr_data.frametime * 50.0;
-	part->vel[2] += vr_data.frametime * 30.0;
+	sub_slowgrav (part);
 }
 
 static void
