@@ -49,7 +49,6 @@ typedef struct cmd_function_s {
 	const char *name;
 	xcommand_t  function;
 	const char *description;
-	qboolean    pure;
 } cmd_function_t;
 
 extern cmd_source_t	cmd_source;
