@@ -102,24 +102,14 @@ cvar_t	*Cvar_RemoveAlias (const char *name);
 void 	Cvar_Set (cvar_t *var, const char *value);
 void	Cvar_SetValue (cvar_t *var, float value);
 
-// sets a CVAR_ROM variable from within the engine
-void	Cvar_SetROM (cvar_t *var, const char *value);
-
 // allows you to change a Cvar's flags without a full Cvar_Get
 void	Cvar_SetFlags (cvar_t *var, int cvarflags);
-
-// reset a Cvar to its default setting
-void	Cvar_Reset (cvar_t *var);
 
 // returns 0 if not defined or non numeric
 float	Cvar_VariableValue (const char *var_name);
 
 // returns an empty string if not defined
 const char	*Cvar_VariableString (const char *var_name);
-
-// attempts to match a partial variable name for command line completion
-// returns NULL if nothing fits
-const char 	*Cvar_CompleteVariable (const char *partial);
 
 // called by Cmd_ExecuteString when Cmd_Argv(0) doesn't match a known
 // command.  Returns true if the command was a variable reference that
@@ -129,6 +119,10 @@ qboolean Cvar_Command (void);
 // Writes lines containing "set variable value" for all variables
 // with the archive flag set to true.
 void 	Cvar_WriteVariables (QFile *f);
+
+// attempts to match a partial variable name for command line completion
+// returns NULL if nothing fits
+const char 	*Cvar_CompleteVariable (const char *partial);
 
 // Added by EvilTypeGuy - functions for tab completion system
 // Thanks to Fett erich@heintz.com
@@ -141,8 +135,6 @@ cvar_t *Cvar_FindVar (const char *var_name);
 
 void Cvar_Init_Hash (void);
 void Cvar_Init (void);
-
-void Cvar_Shutdown (void);
 
 extern cvar_t	*cvar_vars;
 

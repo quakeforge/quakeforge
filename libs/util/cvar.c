@@ -278,31 +278,6 @@ Cvar_Set (cvar_t *var, const char *value)
 		var->callback (var);
 }
 
-/*
-	Cvar_SetROM
-
-	doesn't check for CVAR_ROM flag
-*/
-void
-Cvar_SetROM (cvar_t *var, const char *value)
-{
-	int     changed;
-
-	if (!var)
-		return;
-
-	changed = !strequal (var->string, value);
-	free ((char*)var->string);					// free the old value string
-
-	var->string = strdup (value);
-	var->value = atof (var->string);
-	var->int_val = atoi (var->string);
-	sscanf (var->string, "%f %f %f", &var->vec[0], &var->vec[1], &var->vec[2]);
-
-	if (changed && var->callback)
-		var->callback (var);
-}
-
 VISIBLE void
 Cvar_SetValue (cvar_t *var, float value)
 {
@@ -501,6 +476,12 @@ Cvar_Cycle_f (void)
 }
 
 static void
+Cvar_Reset (cvar_t *var)
+{
+	Cvar_Set (var, var->default_string);
+}
+
+static void
 Cvar_Reset_f (void)
 {
 	cvar_t     *var;
@@ -524,7 +505,8 @@ Cvar_Reset_f (void)
 	}
 }
 
-static void Cvar_ResetAll_f (void)
+static void
+Cvar_ResetAll_f (void)
 {
 	cvar_t     *var;
 
@@ -625,31 +607,6 @@ Cvar_Init (void)
 	Cmd_AddCommand ("resetall", Cvar_ResetAll_f, "Reset all cvars");
 }
 
-void
-Cvar_Shutdown (void)
-{
-	cvar_t     *var, *next;
-	cvar_alias_t *alias, *nextalias;
-
-	// Free cvars
-	var = cvar_vars;
-	while (var) {
-		next = var->next;
-		free ((char*)var->string);
-		free ((char*)var->name);
-		free (var);
-		var = next;
-	}
-	// Free aliases
-	alias = calias_vars;
-	while (alias) {
-		nextalias = alias->next;
-		free ((char*)alias->name);
-		free (alias);
-		alias = nextalias;
-	}
-}
-
 VISIBLE cvar_t *
 Cvar_Get (const char *name, const char *string, int cvarflags,
 		  void (*callback)(cvar_t*), const char *description)
@@ -715,10 +672,4 @@ Cvar_SetFlags (cvar_t *var, int cvarflags)
 		return;
 
 	var->flags = cvarflags;
-}
-
-VISIBLE void
-Cvar_Reset (cvar_t *var)
-{
-	Cvar_Set (var, var->default_string);
 }

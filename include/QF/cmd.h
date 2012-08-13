@@ -80,7 +80,6 @@ struct cbuf_interpreter_s *Cmd_GetProvider(const char *name);
 
 extern struct cbuf_args_s *cmd_args;
 extern struct cvar_s *cmd_warncmd;
-extern cmd_function_t *cmd_functions;	// possible commands to execute
 
 //@}
 

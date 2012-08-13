@@ -78,7 +78,7 @@ VISIBLE cmd_source_t cmd_source;
 
 /* Command parsing functions */
 
-VISIBLE cmd_function_t *cmd_functions;	// possible commands to execute
+static cmd_function_t *cmd_functions;	// possible commands to execute
 
 VISIBLE int
 Cmd_Argc (void)
