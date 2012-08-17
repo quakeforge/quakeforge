@@ -119,7 +119,7 @@ static void *
 pi_open_lib (const char *name, int global_syms)
 {
 	void       *dlhand;
-#ifndef _WIN32
+#ifdef HAVE_DLOPEN
 # ifdef __OpenBSD__
 	int        flags = RTLD_LAZY;
 # else
@@ -154,7 +154,7 @@ pi_realname (char *realname, int size, const char *type, const char *name)
 #elif defined(_WIN32)
 	const char *format = "%s/%s_%s.dll";
 #else
-# error "No shared library support. FIXME"
+	const char *format = "No shared library support. FIXME";
 #endif
 
 	snprintf (realname, size, format, fs_pluginpath->string, type, name);
