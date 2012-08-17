@@ -103,6 +103,7 @@ pi_close_lib (void *handle)
 #elif defined (_WIN32)
 	return (FreeLibrary (handle) == 0);
 #endif
+	return 1;
 }
 
 static void *
@@ -113,6 +114,7 @@ pi_get_symbol (void *handle, const char *name)
 #elif defined (_WIN32)
 	return GetProcAddress (handle, name);
 #endif
+	return 0;
 }
 
 static void *
