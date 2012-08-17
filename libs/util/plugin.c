@@ -120,7 +120,7 @@ pi_get_symbol (void *handle, const char *name)
 static void *
 pi_open_lib (const char *name, int global_syms)
 {
-	void       *dlhand;
+	void       *dlhand = 0;
 #ifdef HAVE_DLOPEN
 # ifdef __OpenBSD__
 	int        flags = RTLD_LAZY;
