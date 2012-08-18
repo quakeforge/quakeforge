@@ -37,7 +37,6 @@
 
 #include <SDL.h>
 #include <SDL_audio.h>
-#include <SDL_byteorder.h>
 #include <stdlib.h>
 
 #include "QF/cmd.h"
