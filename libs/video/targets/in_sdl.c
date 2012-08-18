@@ -479,12 +479,16 @@ IN_LL_ProcessEvents (void)
 					case SDLK_LMETA:
 						ksym = QFK_LMETA;
 						break;
+#ifndef SDLK_LSUPER	//FIXME need a better check
 					case SDLK_LSUPER:
 						ksym = QFK_LSUPER;
 						break;
+#endif
+#ifndef SDLK_RSUPER	//FIXME need a better check
 					case SDLK_RSUPER:
 						ksym = QFK_RSUPER;
 						break;
+#endif
 					case SDLK_MODE:
 						ksym = QFK_MODE;
 						break;
@@ -509,15 +513,17 @@ IN_LL_ProcessEvents (void)
 					case SDLK_POWER:
 						ksym = QFK_POWER;
 						break;
+#ifndef SDLK_EURO	//FIXME need a better check
 					case SDLK_EURO:
 						ksym = QFK_EURO;
 						break;
+#endif
 					case SDLK_UNDO:
 						ksym = QFK_UNDO;
 						break;
-					case SDLK_LAST:
-						ksym = QFK_LAST;
-						break;
+//					case SDLK_LAST:
+//						ksym = QFK_LAST;
+//						break;
 					default:
 						ksym = QFK_UNKNOWN;
 						break;
