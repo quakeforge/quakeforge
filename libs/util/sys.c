@@ -488,10 +488,10 @@ VISIBLE int
 Sys_TimeID (void) //FIXME I need a new name, one that doesn't make me feel 3 feet thick
 {
 	int val;
-#ifdef _WIN32
-	val = ((int) (timeGetTime () * 1000) * time (NULL)) & 0xffff;
-#else
+#ifdef HAVE_GETUID
 	val = ((int) (getpid () + getuid () * 1000) * time (NULL)) & 0xffff;
+#else
+	val = ((int) (Sys_DoubleTime () * 1000) * time (NULL)) & 0xffff;
 #endif
 	return val;
 }
@@ -813,10 +813,12 @@ Sys_CreatePath (const char *path)
 char *
 Sys_ExpandSquiggle (const char *path)
 {
-	char       *home;
+	const char *home;
 
 #ifndef _WIN32
+# ifdef HAVE_GETUID
 	struct passwd *pwd_ent;
+# endif
 #endif
 
 	if (strncmp (path, "~/", 2) != 0) {
@@ -830,10 +832,14 @@ Sys_ExpandSquiggle (const char *path)
 	if (!home || !home[0])
 		home = getenv ("WINDIR");
 #else
+# ifdef HAVE_GETUID
 	if ((pwd_ent = getpwuid (getuid ()))) {
 		home = pwd_ent->pw_dir;
 	} else
 		home = getenv ("HOME");
+# else
+	home = "";	//FIXME configurable?
+# endif
 #endif
 
 	if (home)
