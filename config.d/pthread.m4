@@ -1,7 +1,10 @@
 if test "x$ac_cv_header_pthread_h" = "xyes"; then
 	save_LIBS="$LIBS"
-	case "$host_os" in
+	echo $host_vendor-$host_os
+	case "$host_vendor-$host_os" in
 		*android*)  dnl android has all pthread* functions in the libc.
+			;;
+		*ps3*)  dnl qnx has all pthread* functions in the libc.
 			;;
 		*qnx*)  dnl qnx has all pthread* functions in the libc.
 			;;
