@@ -41,6 +41,9 @@
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#endif
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>
 #endif
@@ -120,7 +123,9 @@ byte        net_message_buffer[MAX_UDP_PACKET];
 #define ADDR_SIZE 4
 
 typedef union address {
+#ifdef HAV_SS_LEN	// FIXME check properly, but should be ok
 	struct sockaddr_storage ss;
+#endif
 	struct sockaddr         sa;
 	struct sockaddr_in      s4;
 } AF_address_t;
@@ -371,13 +376,15 @@ UDP_OpenSocket (int port)
 static void
 NET_GetLocalAddress (void)
 {
-	char        buff[MAXHOSTNAMELEN];
+	char        buff[MAXHOSTNAMELEN] = "127.0.0.1";	//FIXME
 	socklen_t   namelen;
 	AF_address_t address;
 
+#ifdef HAVE_GETHOSTNAME
 	if (gethostname (buff, MAXHOSTNAMELEN) == -1)
 		Sys_Error ("Net_GetLocalAddress: gethostname: %s", strerror (errno));
 	buff[MAXHOSTNAMELEN - 1] = 0;
+#endif
 
 	NET_StringToAdr (buff, &net_local_adr);
 

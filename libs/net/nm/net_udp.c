@@ -67,6 +67,9 @@
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#endif
 #ifdef __sun__
 # include <sys/filio.h>
 #endif
@@ -77,8 +80,12 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
+#endif
+#ifdef HAVE_NET_IF_H
 #include <net/if.h>
+#endif
 
 #include "QF/cvar.h"
 #include "QF/dstring.h"
@@ -112,7 +119,9 @@
 #define ADDR_SIZE 4
 
 typedef union address {
+#ifdef HAVE_SS_LEN
 	struct sockaddr_storage ss;
+#endif
 	struct sockaddr         sa;
 	struct sockaddr_in      s4;
 } AF_address_t;
@@ -213,7 +222,7 @@ no_ifaddrs:
 int
 UDP_Init (void)
 {
-	struct hostent *local;
+	struct hostent *local = 0;
 	char        buff[MAXHOSTNAMELEN];
 	netadr_t    addr;
 	char       *colon;
@@ -229,8 +238,10 @@ UDP_Init (void)
 		return -1;
 
 	// determine my name & address
+#ifdef HAVE_GETHOSTNAME	//FIXME
 	gethostname (buff, MAXHOSTNAMELEN);
 	local = gethostbyname (buff);
+#endif
 	if (local)
 		myAddr = *(uint32_t *) local->h_addr_list[0];
 	else
@@ -482,7 +493,7 @@ UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 	socklen_t   addrlen = sizeof (AF_address_t);
 
 	memset (&addr, 0, sizeof (addr));
-	ret = recvfrom (socket, buf, len, 0, &addr, &addrlen);
+	ret = recvfrom (socket, buf, len, 0, (struct sockaddr *) &addr, &addrlen);
 	if (ret == -1 && (errno == EWOULDBLOCK || errno == ECONNREFUSED))
 		return 0;
 	SockadrToNetadr (&addr, from);

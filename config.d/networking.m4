@@ -46,6 +46,16 @@ if test "x$ac_cv_func_gethostbyname" != "xyes"; then
 					ac_cv_func_gethostbyname=yes
 				)
 fi
+if test "x$ac_cv_func_gethostbyname" != "xyes"; then
+SAVELIBS="$LIBS"
+#FIXME this should be checked too
+LIBS="$LIBS -lsysmodule"
+	AC_CHECK_LIB(net, gethostbyname,
+					NET_LIBS="$NET_LIBS -lnet -lsysmodule"
+					ac_cv_func_gethostbyname=yes
+				)
+LIBS="$SAVELIBS"
+fi
 
 AC_MSG_CHECKING([for connect in -lwsock32])
 SAVELIBS="$LIBS"
