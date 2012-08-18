@@ -11,9 +11,9 @@ AC_FUNC_VA_COPY
 AC_FUNC__VA_COPY
 AC_CHECK_FUNCS(
 	access _access gethostname gethostbyname connect gettimeofday getuid \
-	getwd mkdir _mkdir ftime _ftime fcntl stat putenv select socket strerror \
-	strcasestr strnlen strstr snprintf _snprintf vsnprintf _vsnprintf \
-	strsep dlopen getaddrinfo getnameinfo mprotect getpagesize
+	getwd ioctl mkdir _mkdir ftime _ftime fcntl stat putenv select socket \
+	strerror strcasestr strnlen strstr snprintf _snprintf vsnprintf \
+	_vsnprintf strsep dlopen getaddrinfo getnameinfo mprotect getpagesize
 )
 
 DL_LIBS=""

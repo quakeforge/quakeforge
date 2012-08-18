@@ -344,17 +344,24 @@ UDP_OpenSocket (int port)
 
 #ifdef _WIN32
 #define ioctl ioctlsocket
-	unsigned long _true = true;
+	unsigned long flags;
 #else
-	int         _true = 1;
+	int         flags;
 #endif
 
 	memset (&address, 0, sizeof(address));
 
 	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
 		Sys_Error ("UDP_OpenSocket: socket: %s", strerror (errno));
-	if (ioctl (newsocket, FIONBIO, &_true) == -1)
+#if defined (HAVE_IOCTL) || defined (_WIN32)
+	flags = 1;
+	if (ioctl (newsocket, FIONBIO, &flags) == -1)
 		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO: %s", strerror (errno));
+#else
+	flags = fcntl(newsocket, F_GETFL, 0);
+	if (fcntl (newsocket, F_SETFL, flags | O_NONBLOCK) == -1)
+		Sys_Error ("UDP_OpenSocket: fcntl O_NONBLOCK: %s", strerror (errno));
+#endif
 	address.s4.sin_family = AF_INET;
 // ZOID -- check for interface binding option
 	if ((i = COM_CheckParm ("-ip")) != 0 && i < com_argc) {

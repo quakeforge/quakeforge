@@ -311,9 +311,9 @@ UDP_OpenSocket (int port)
 	struct sockaddr_in address;
 #ifdef _WIN32
 #define ioctl ioctlsocket
-	unsigned long _true = true;
+	unsigned long flags;
 #else
-	int         _true = true;
+	int         flags;
 #endif
 #ifdef HAVE_IN_PKTINFO
 	int         ip_pktinfo = 1;
@@ -322,8 +322,15 @@ UDP_OpenSocket (int port)
 	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
 		return -1;
 
-	if (ioctl (newsocket, FIONBIO, &_true) == -1)
+#if defined (HAVE_IOCTL) || defined (_WIN32)
+	flags = 1;
+	if (ioctl (newsocket, FIONBIO, &flags) == -1)
 		goto ErrorReturn;
+#else
+	flags = fcntl (newsocket, F_GETFL, 0);
+	if (fcntl (newsocket, F_SETFL, flags | O_NONBLOCK) == -1)
+		goto ErrorReturn;
+#endif
 #ifdef HAVE_IN_PKTINFO
 	if (setsockopt (newsocket, SOL_IP, IP_PKTINFO, &ip_pktinfo,
 					sizeof (ip_pktinfo)) == -1) {
@@ -425,14 +432,16 @@ UDP_Connect (int socket, netadr_t *addr)
 int
 UDP_CheckNewConnections (void)
 {
+#if defined (HAVE_IOCTL) || defined (_WIN32)
 	int         available;
 	AF_address_t from;
 	socklen_t   fromlen = sizeof (from);
 	char        buff[1];
+#endif
 
 	if (net_acceptsocket == -1)
 		return -1;
-
+#if defined (HAVE_IOCTL) || defined (_WIN32)
 	if (ioctl (net_acceptsocket, FIONREAD, &available) == -1)
 		Sys_Error ("UDP: ioctlsocket (FIONREAD) failed");
 	if (available)
@@ -443,6 +452,9 @@ UDP_CheckNewConnections (void)
 	// we don't care about the interface on which the packet arrived
 	recvfrom (net_acceptsocket, buff, 0, 0, &from.sa, &fromlen);
 	return -1;
+#else
+	return net_acceptsocket;
+#endif
 }
 
 int
