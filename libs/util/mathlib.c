@@ -799,6 +799,150 @@ Invert24To16 (fixed16_t val)
 #endif
 
 void
+Mat3Init (const quat_t rot, const vec3_t scale, mat3_t mat)
+{
+	QuatToMatrix (rot, mat, 0, 1);
+	VectorScale (mat + 0, scale[0], mat + 0);
+	VectorScale (mat + 3, scale[1], mat + 3);
+	VectorScale (mat + 6, scale[2], mat + 6);
+}
+
+void
+Mat3Transpose (const mat3_t a, mat3_t b)
+{
+	vec_t       t;
+	int         i, j;
+
+	for (i = 0; i < 2; i++) {
+		b[i * 3 + i] = a[i * 3 + i];		// in case b != a
+		for (j = i + 1; j < 3; j++) {
+			t = a[i * 3 + j];				// in case b == a
+			b[i * 3 + j] = a[j * 3 + i];
+			b[j * 3 + i] = t;
+		}
+	}
+	b[i * 3 + i] = a[i * 3 + i];		// in case b != a
+}
+
+vec_t
+Mat3Determinant (const mat3_t m)
+{
+	vec3_t      t;
+	CrossProduct (m + 3, m + 6, t);
+	return DotProduct (m + 0, t);
+}
+
+typedef vec_t mat2_t[2 * 2];
+
+static void
+Mat3Sub2 (const mat3_t m3, mat2_t m2, int i, int j)
+{
+	int         si, sj, di, dj;
+
+	for (di = 0; di < 2; di++) {
+		for (dj = 0; dj < 2; dj++) {
+			si = di + ((di >= i) ? 1 : 0);
+			sj = dj + ((dj >= j) ? 1 : 0);
+			m2[di * 2 + dj] = m3[si * 3 + sj];
+		}
+	}
+}
+
+static vec_t
+Mat2Det (const mat2_t m)
+{
+	return m[0] * m[3] - m[1] * m[2];
+}
+
+int
+Mat3Inverse (const mat3_t a, mat3_t b)
+{
+	mat3_t      tb;
+	mat2_t      m2;
+	vec_t      *m = b;
+	int         i, j;
+	vec_t       det;
+	vec_t       sign[2] = { 1, -1};
+
+	det = Mat3Determinant (a);
+	if (det * det < 1e-6) {
+		Mat3Identity (b);
+		return 0;
+	}
+	if (b == a)
+		m = tb;
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 3; j++) {
+			Mat3Sub2 (a, m2, i, j);
+			m[j * 3 + i] = sign[(i + j) & 1] * Mat2Det (m2) / det;
+		}
+	}
+	if (m != b)
+		Mat3Copy (m, b);
+	return 1;
+}
+
+void Mat3Mult (const mat3_t a, const mat3_t b, mat3_t c)
+{
+	mat3_t      ta, tb;					// in case c == b or c == a
+	int         i, j, k;
+
+	Mat3Transpose (a, ta);				// transpose so we can use dot
+	Mat3Copy (b, tb);
+
+	k = 0;
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 3; j++) {
+			c[k++] = DotProduct (ta + 3 * j, tb + 3 * i);
+		}
+	}
+}
+
+void Mat3MultVec (const mat3_t a, const vec3_t b, vec3_t c)
+{
+	int         i;
+	vec3_t      tb;
+
+	VectorCopy (b, tb);
+	for (i = 0; i < 3; i++)
+		c[i] = a[i + 0] * tb[0] + a[i + 3] * b[1] + a[i + 6] * b[2];
+}
+
+#define sqr(x) ((x) * (x))
+void Mat3SymEigen (const mat3_t m, vec3_t e)
+{
+	vec_t       p, q, r;
+	vec_t       phi;
+	mat3_t      B;
+
+	p = sqr (m[1]) + sqr (m[2]) + sqr (m[5]);
+	if (p < 1e-6) {
+		e[0] = m[0];
+		e[1] = m[4];
+		e[2] = m[8];
+		return;
+	}
+	q = Mat3Trace (m) / 3;
+	p = sqr (m[0] - q) + sqr (m[4] - q) + sqr (m[8] - q) + 2 * p;
+	p = sqrt (p);
+	Mat3Zero (B);
+	B[0] = B[4] = B[8] = q;
+	Mat3Subtract (m, B, B);
+	Mat3Scale (B, 1.0 / p, B);
+	r = Mat3Determinant (B) / 2;
+	if (r >= 1)
+		phi = 0;
+	else if (r <= -1)
+		phi = M_PI / 3;
+	else
+		phi = acos (r) / 3;
+
+	e[0] = q + 2 * p * cos (phi);
+	e[2] = q + 2 * p * cos (phi + M_PI * 2 / 3);
+	e[1] = 3 * q - e[0] - e[2];
+}
+
+void
 Mat4Init (const quat_t rot, const vec3_t scale, const vec3_t trans, mat4_t mat)
 {
 	QuatToMatrix (rot, mat, 1, 1);
@@ -825,16 +969,6 @@ Mat4Transpose (const mat4_t a, mat4_t b)
 	b[i * 4 + i] = a[i * 4 + i];		// in case b != a
 }
 
-typedef vec_t mat3_t[3 * 3];
-
-static vec_t
-Mat3Det (const mat3_t m)
-{
-	vec3_t      t;
-	CrossProduct (m + 3, m + 6, t);
-	return DotProduct (m, t);
-}
-
 static void
 Mat4Sub3 (const mat4_t m4, mat3_t m3, int i, int j)
 {
@@ -858,7 +992,7 @@ Mat4Det (const mat4_t m)
 
 	for (i = 0; i < 4; i++, s = -s) {
 		Mat4Sub3 (m, t, 0, i);
-		det = Mat3Det (t);
+		det = Mat3Determinant (t);
 		res += m[i] * det * s;
 	}
 	return res;
@@ -884,7 +1018,7 @@ Mat4Inverse (const mat4_t a, mat4_t b)
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < 4; j++) {
 			Mat4Sub3 (a, m3, i, j);
-			m[j * 4 + i] = sign[(i + j) & 1] * Mat3Det (m3) / det;
+			m[j * 4 + i] = sign[(i + j) & 1] * Mat3Determinant (m3) / det;
 		}
 	}
 	if (m != b)
@@ -932,8 +1066,7 @@ Mat4as3MultVec (const mat4_t a, const vec3_t b, vec3_t c)
 }
 
 int
-Mat4Decompose (const mat4_t mat, quat_t rot, vec3_t shear, vec3_t scale,
-			   vec3_t trans)
+Mat3Decompose (const mat3_t mat, quat_t rot, vec3_t shear, vec3_t scale)
 {
 	vec3_t      row[3], shr, scl;
 	vec_t       l, t;
@@ -941,7 +1074,7 @@ Mat4Decompose (const mat4_t mat, quat_t rot, vec3_t shear, vec3_t scale,
 
 	for (i = 0; i < 3; i++)
 		for (j = 0; j < 3; j++)
-			row[j][i] = mat[i * 4 + j];
+			row[j][i] = mat[i * 3 + j];
 
 	l = DotProduct (row[0], row[0]);
 	if (l < 1e-5)
@@ -973,8 +1106,6 @@ Mat4Decompose (const mat4_t mat, quat_t rot, vec3_t shear, vec3_t scale,
 		VectorCopy (scl, scale);
 	if (shear)
 		VectorCopy (shr, shear);
-	if (trans)
-		VectorCopy (mat + 12, trans);
 	if (!rot)
 		return 1;
 
@@ -1007,4 +1138,16 @@ Mat4Decompose (const mat4_t mat, quat_t rot, vec3_t shear, vec3_t scale,
 		}
 	}
 	return 1;
+}
+
+int
+Mat4Decompose (const mat4_t mat, quat_t rot, vec3_t shear, vec3_t scale,
+			   vec3_t trans)
+{
+	mat3_t      m3;
+
+	if (trans)
+		VectorCopy (mat + 12, trans);
+	Mat4toMat3 (mat, m3);
+	return Mat3Decompose (m3, rot, shear, scale);
 }

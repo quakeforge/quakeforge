@@ -93,6 +93,7 @@ typedef	int		fixed4_t;
 typedef int		fixed8_t;
 typedef	int		fixed16_t;
 
+typedef float   mat3_t[3 * 3];
 typedef float   mat4_t[4 * 4];
 
 #define SIDE_FRONT  0
