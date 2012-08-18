@@ -192,7 +192,12 @@ Sys_FileTime (const char *path)
 	if (_access (path, R_OK) == 0)
 		return 0;
 # else
-#  error do not know how to check access
+	int         fd;
+
+	if ((fd = open (path, O_RDONLY)) >= 0) {
+		close (fd);
+		return 0;
+	}
 # endif
 #endif
 	return -1;
