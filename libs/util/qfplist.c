@@ -481,7 +481,7 @@ PL_ParseData (pldata_t *pl, int *len)
 
 	while (pl->pos < pl->end) {
 		c = pl->ptr[pl->pos++];
-		if (isxdigit (c)) {
+		if (isxdigit ((byte) c)) {
 			nibbles++;
 			continue;
 		}

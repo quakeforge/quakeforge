@@ -556,7 +556,7 @@ Cmd_StuffCmds (cbuf_t *cbuf)
 
 			for (j = i;
 				 (com_cmdline[j]
-				  && !((j == 0 || isspace(com_cmdline[j - 1]))
+				  && !((j == 0 || isspace((byte) com_cmdline[j - 1]))
 					   && ((com_cmdline[j] == '+')
 						    || (com_cmdline[j] == '-'))));
 				 j++)
