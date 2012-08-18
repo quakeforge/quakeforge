@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS= foreign
-AM_CFLAGS= @PREFER_PIC@ $(PNG_CFLAGS)
+AM_CFLAGS= @PREFER_PIC@ $(Z_CFLAGS) $(PNG_CFLAGS)
 AM_CPPFLAGS= -I$(top_srcdir)/include
 
 lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \

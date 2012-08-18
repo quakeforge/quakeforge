@@ -63,21 +63,25 @@ AC_ARG_ENABLE(zlib, [  --disable-zlib          disable zlib support])
 HAVE_ZLIB=no
 Z_LIBS=""
 if test "x$enable_zlib" != "xno"; then
-  dnl Check for working -lz
-  dnl Note - must have gztell *and* gzgets in -lz *and* zlib.h
-  AC_CHECK_LIB(z, gztell, HAVE_ZLIB=yes, HAVE_ZLIB=no, [$LIBS])
-  if test "x$HAVE_ZLIB" = "xyes"; then
-     AC_CHECK_LIB(z, gzgets, HAVE_ZLIB=yes, HAVE_ZLIB=no, [$LIBS])
-     if test "x$HAVE_ZLIB" = "xyes"; then
-        AC_CHECK_HEADER(zlib.h, HAVE_ZLIB=yes, HAVE_ZLIB=no)
-        if test "x$HAVE_ZLIB" = "xyes"; then
-           Z_LIBS="-lz"
-           AC_DEFINE(HAVE_ZLIB, 1, [Define if you have zlib])
-        fi
-     fi
-  fi
+	if test "x$PKG_CONFIG" != "x"; then
+		PKG_CHECK_MODULES([Z], [zlib], HAVE_ZLIB=yes, HAVE_ZLIB=no)
+	else
+		dnl Check for working -lz
+		dnl Note - must have gztell *and* gzgets in -lz *and* zlib.h
+		AC_CHECK_LIB(z, gztell, HAVE_ZLIB=yes, HAVE_ZLIB=no, [$LIBS])
+		if test "x$HAVE_ZLIB" = "xyes"; then
+			 AC_CHECK_LIB(z, gzgets, HAVE_ZLIB=yes, HAVE_ZLIB=no, [$LIBS])
+			 if test "x$HAVE_ZLIB" = "xyes"; then
+				  AC_CHECK_HEADER(zlib.h, HAVE_ZLIB=yes Z_LIBS=-lz,
+								  HAVE_ZLIB=no)
+			 fi
+		fi
+	fi
 fi
 AC_SUBST(Z_LIBS)
+if test "x$HAVE_ZLIB" = "xyes"; then
+	 AC_DEFINE(HAVE_ZLIB, 1, [Define if you have zlib])
+fi
 
 AC_ARG_ENABLE(png,
 [  --disable-png           disable png support],
