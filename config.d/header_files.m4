@@ -61,7 +61,8 @@ AH_VERBATIM([HAVE_ALLOCA_PROTO],
 #undef HAVE_ALLOCA_PROTO
 #ifndef HAVE_ALLOCA_PROTO
 #ifndef QFASM
-void *alloca (int size);
+#include <stdlib.h>
+void *alloca (size_t size);
 #endif
 #endif])
 
