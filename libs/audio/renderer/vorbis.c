@@ -39,6 +39,7 @@
 #endif
 
 #include <stdlib.h>
+#define OV_EXCLUDE_STATIC_CALLBACKS
 #include <vorbis/vorbisfile.h>
 
 #include "QF/cvar.h"
