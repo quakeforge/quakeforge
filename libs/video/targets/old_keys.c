@@ -49,6 +49,7 @@
 #include <stdlib.h>
 
 #include "QF/hash.h"
+#include "QF/qtypes.h"
 #include "QF/sys.h"
 
 #include "old_keys.h"
@@ -246,7 +247,7 @@ OK_TranslateKeyName (const char *name)
 	const char *s = name;
 	char       *d = uname;
 
-	while ((*d++ = toupper (*s)))
+	while ((*d++ = toupper ((byte) *s)))
 		s++;
 	ok = Hash_Find (old_key_table, uname);
 	if (!ok) {

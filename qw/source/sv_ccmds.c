@@ -66,8 +66,8 @@ cvar_t     *sv_leetnickmatch;
 static qboolean
 match_char (char a, char b)
 {
-	a = tolower (sys_char_map[(byte)a]);
-	b = tolower (sys_char_map[(byte)b]);
+	a = tolower ((byte) sys_char_map[(byte) a]);
+	b = tolower ((byte) sys_char_map[(byte) b]);
 
 	if (a == b || (sv_leetnickmatch->int_val
 		&& (   (a == '1' && b == 'i') || (a == 'i' && b == '1')

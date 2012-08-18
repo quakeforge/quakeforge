@@ -256,7 +256,7 @@ KK_qwchar (char c)
 {
 	c &= 0x7f;
 	if (c >= ' ')
-		return tolower (c);
+		return tolower ((byte) c);
 	if (c >= 0x12 && c <= 0x1b)
 		return c - 0x12 + '0';
 	switch (c) {

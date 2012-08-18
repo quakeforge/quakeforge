@@ -227,7 +227,7 @@ CF_Open (const char *path, const char *mode)
 
 	j = fullpath->str + strlen (fullpath->str) - strlen (path);
 	for (i = 0; path[i]; i++, j++) // strcpy, but force lowercase
-		*j = tolower (path[i]);
+		*j = tolower ((byte) path[i]);
 	*j = '\0';
 
 	if (CF_AlreadyOpen (fullpath->str, mode[0])) {

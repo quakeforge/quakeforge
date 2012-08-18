@@ -384,9 +384,11 @@ SL_SortEntry (server_entry_t *start)
 			i = 0;
 
 			while ((start->desc[i] != '\0') && (q->desc[i] != '\0') &&
-				   (toupper (start->desc[i]) == toupper (q->desc[i])))
+				   (toupper ((byte) start->desc[i])
+					== toupper ((byte) q->desc[i])))
 				i++;
-			if (toupper (start->desc[i]) > toupper (q->desc[i])) {
+			if (toupper ((byte) start->desc[i])
+				> toupper ((byte) q->desc[i])) {
 				SL_Swap (start, q);
 				q = start;
 			}
