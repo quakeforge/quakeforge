@@ -59,6 +59,17 @@ AC_TRY_LINK(
 )
 AM_CONDITIONAL(BUILD_FNMATCH, test "x$BUILD_FNMATCH" = "xyes")
 
+AC_MSG_CHECKING(for opendir)
+AC_TRY_LINK(
+	[],
+	[opendir();],
+	BUILD_DIRENT=no
+	AC_MSG_RESULT(yes),
+	BUILD_DIRENT=yes
+	AC_MSG_RESULT(no)
+)
+AM_CONDITIONAL(BUILD_DIRENT, test "x$BUILD_DIRENT" = "xyes")
+
 AC_MSG_CHECKING(for getopt_long)
 AC_TRY_LINK(
 	[],
