@@ -162,7 +162,7 @@ parse_expression (progs_t *pr, const char *expr, int conditional)
 			d = *field;
 			expr_ptr = &ent->v[field->ofs];
 			d.ofs = PR_SetPointer (pr, expr_ptr);
-		} else if (isdigit (es->token->str[0])) {
+		} else if (isdigit ((byte) es->token->str[0])) {
 			expr_ptr = PR_GetPointer (pr, strtol (es->token->str, 0, 0));
 			d.type = ev_void;
 			d.ofs = PR_SetPointer (pr, expr_ptr);
@@ -252,8 +252,8 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 		f->lines[0].text = f->text;
 		for (f->num_lines = 0, l = f->text; *l; l++) {
 			if (*l == '\n') {
-				for (p = l; p > f->lines[f->num_lines].text && isspace(p[-1]);
-					 p--)
+				for (p = l; p > f->lines[f->num_lines].text
+							&& isspace((byte) p[-1]); p--)
 					;
 				f->lines[f->num_lines].len = p - f->lines[f->num_lines].text;
 				f->lines[++f->num_lines].text = l + 1;

@@ -701,14 +701,14 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 						case '.':
 							(*fi)->precision = 0;
 							c++;
-							while (isdigit (*c)) {
+							while (isdigit ((byte )*c)) {
 								(*fi)->precision *= 10;
 								(*fi)->precision += *c++ - '0';
 							}
 							continue;
 						case '1': case '2': case '3': case '4': case '5':
 						case '6': case '7': case '8': case '9':
-							while (isdigit (*c)) {
+							while (isdigit ((byte )*c)) {
 								(*fi)->minFieldWidth *= 10;
 								(*fi)->minFieldWidth += *c++ - '0';
 							}
