@@ -62,7 +62,7 @@ wad_get_hash (void *l, void *unused)
 	int         i;
 
 	for (i = 0; i < 16; i++)
-		name[i] = tolower (((lumpinfo_t *) l)->name[i]);
+		name[i] = tolower ((byte) ((lumpinfo_t *) l)->name[i]);
 	name[16] = 0;
 	return Hash_String (name);
 }
