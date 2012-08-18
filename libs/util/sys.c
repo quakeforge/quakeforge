@@ -52,6 +52,9 @@
 #ifdef HAVE_SYS_MMAN_H
 # include <sys/mman.h>
 #endif
+#ifdef HAVE_SYS_SELECT_H
+# include <sys/select.h>
+#endif
 #ifdef HAVE_PWD_H
 # include <pwd.h>
 #endif
