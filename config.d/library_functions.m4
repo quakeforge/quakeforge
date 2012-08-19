@@ -10,11 +10,11 @@ AC_FUNC_VPRINTF
 AC_FUNC_VA_COPY
 AC_FUNC__VA_COPY
 AC_CHECK_FUNCS(
-	access _access connect dlopen fcntl ftime _ftime getaddrinfo \
+	access _access connect dlopen execvp fcntl ftime _ftime getaddrinfo \
 	gethostbyname gethostname getnameinfo getpagesize gettimeofday getuid \
 	getwd ioctl mkdir _mkdir mprotect putenv select snprintf _snprintf \
 	socket stat strcasestr strerror strnlen strsep strstr vsnprintf \
-	_vsnprintf
+	_vsnprintf wait
 )
 
 DL_LIBS=""

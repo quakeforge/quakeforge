@@ -259,7 +259,11 @@ preprocess_file (const char *filename, const char *ext)
 					printf ("%s ", *a);
 				puts("");
 			}
+#ifdef HAVE_EXECVP
 			execvp (cpp_argv[0], (char **)cpp_argv);
+#else
+			execve (cpp_argv[0], (char **)cpp_argv, environ);
+#endif
 			perror (cpp_argv[0]);
 			exit (1);
 		} else {
@@ -268,7 +272,12 @@ preprocess_file (const char *filename, const char *ext)
 			pid_t       rc;
 
 //			printf ("pid = %d\n", pid);
-			if ((rc = waitpid (0, &status, 0 | WUNTRACED)) != pid) {
+#ifdef HAVE_WAITPID
+			rc = waitpid (0, &status, 0 | WUNTRACED);
+#else
+			rc = wait (&status);
+#endif
+			if ((rc) != pid) {
 				if (rc == -1) {
 					perror ("wait");
 					return 0;
