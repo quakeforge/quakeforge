@@ -10,16 +10,18 @@ AC_FUNC_VPRINTF
 AC_FUNC_VA_COPY
 AC_FUNC__VA_COPY
 AC_CHECK_FUNCS(
-	access _access gethostname gethostbyname connect gettimeofday getuid \
-	getwd ioctl mkdir _mkdir ftime _ftime fcntl stat putenv select socket \
-	strerror strcasestr strnlen strstr snprintf _snprintf vsnprintf \
-	_vsnprintf strsep dlopen getaddrinfo getnameinfo mprotect getpagesize
+	access _access connect dlopen fcntl ftime _ftime getaddrinfo \
+	gethostbyname gethostname getnameinfo getpagesize gettimeofday getuid \
+	getwd ioctl mkdir _mkdir mprotect putenv select snprintf _snprintf \
+	socket stat strcasestr strerror strnlen strsep strstr vsnprintf \
+	_vsnprintf
 )
 
 DL_LIBS=""
 if test "x$ac_cv_func_dlopen" != "xyes"; then
 	AC_CHECK_LIB(dl, dlopen,
-		AC_DEFINE(HAVE_DLOPEN, 1, [Define if you have the dlopen function.]) DL_LIBS="-ldl"
+		AC_DEFINE(HAVE_DLOPEN, 1, [Define if you have the dlopen function.])
+		DL_LIBS="-ldl"
 	)
 fi
 AC_SUBST(DL_LIBS)
