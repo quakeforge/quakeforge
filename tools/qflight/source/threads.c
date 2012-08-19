@@ -50,14 +50,14 @@
 #include "options.h"
 #include "threads.h"
 
-#ifdef HAVE_PTHREAD_H
+#if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
 pthread_mutex_t *my_mutex;
 #endif
 
 void
 InitThreads (void)
 {
-#ifdef HAVE_PTHREAD_H
+#if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
 	if (options.threads > 1) {
 		pthread_mutexattr_t mattrib;
 
@@ -75,7 +75,7 @@ InitThreads (void)
 void
 RunThreadsOn (threadfunc_t *func)
 {
-#ifdef HAVE_PTHREAD_H
+#if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
 	if (options.threads > 1) {
 		pthread_t work_threads[256];
 		void *status;

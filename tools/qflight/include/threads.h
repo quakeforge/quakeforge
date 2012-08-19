@@ -29,7 +29,7 @@
 #ifndef __threads_h
 #define __threads_h
 
-#ifdef HAVE_PTHREAD_H
+#if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
 #include <pthread.h>
 extern pthread_mutex_t *my_mutex;
 #define	LOCK	do { if (options.threads > 1) pthread_mutex_lock (my_mutex); } while (0);

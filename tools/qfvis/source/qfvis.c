@@ -62,7 +62,7 @@
 
 #define	MAX_THREADS		4
 
-#ifdef HAVE_PTHREAD_H
+#if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
 pthread_mutex_t *my_mutex;
 #endif
 
@@ -306,6 +306,7 @@ LeafThread (void *_thread)
 	return NULL;
 }
 
+#if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
 static void *
 WatchThread (void *_thread)
 {
@@ -340,6 +341,7 @@ WatchThread (void *_thread)
 
 	return NULL;
 }
+#endif
 
 static int
 CompressRow (byte *vis, byte *dest)
@@ -449,7 +451,7 @@ CalcPortalVis (void)
 		return;
 	}
 
-#ifdef HAVE_PTHREAD_H
+#if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
 	{
 		pthread_t   work_threads[MAX_THREADS + 1];
 		void *status;
@@ -789,7 +791,7 @@ LoadPortals (char *name)
 
 		for (j = 0; j < numpoints; j++) {
 			// (%ld %ld %ld)
-			while (isspace (*line))
+			while (isspace ((byte) *line))
 				line++;
 			if (*line++ != '(')
 				Sys_Error ("LoadPortals: reading portal %i", i);
@@ -801,7 +803,7 @@ LoadPortals (char *name)
 				line = err;
 			}
 
-			while (isspace (*line))
+			while (isspace ((byte) *line))
 				line++;
 			if (*line++ != ')')
 				Sys_Error ("LoadPortals: reading portal %i", i);
