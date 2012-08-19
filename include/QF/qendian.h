@@ -75,10 +75,10 @@
 
 extern qboolean		bigendien;
 
-short	_ShortSwap (short l);
-short	_ShortNoSwap (short l);
-int		_LongSwap (int l);
-int		_LongNoSwap (int l);
+uint16_t	_ShortSwap (uint16_t l);
+uint16_t	_ShortNoSwap (uint16_t l);
+uint32_t _LongSwap (uint32_t l);
+uint32_t _LongNoSwap (uint32_t l);
 float	_FloatSwap (float f);
 float	_FloatNoSwap (float f);
 

@@ -47,8 +47,8 @@ VISIBLE qboolean    bigendien = true;;
 #endif
 
 
-VISIBLE short
-_ShortSwap (short l)
+VISIBLE uint16_t
+_ShortSwap (uint16_t l)
 {
 	byte        b1, b2;
 
@@ -58,14 +58,14 @@ _ShortSwap (short l)
 	return (b1 << 8) + b2;
 }
 
-VISIBLE short
-_ShortNoSwap (short l)
+VISIBLE uint16_t
+_ShortNoSwap (uint16_t l)
 {
 	return l;
 }
 
-VISIBLE int
-_LongSwap (int l)
+VISIBLE uint32_t
+_LongSwap (uint32_t l)
 {
 	byte        b1, b2, b3, b4;
 
@@ -77,8 +77,8 @@ _LongSwap (int l)
 	return ((int) b1 << 24) + ((int) b2 << 16) + ((int) b3 << 8) + b4;
 }
 
-VISIBLE int
-_LongNoSwap (int l)
+VISIBLE uint32_t
+_LongNoSwap (uint32_t l)
 {
 	return l;
 }

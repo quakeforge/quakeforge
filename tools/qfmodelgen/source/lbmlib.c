@@ -349,15 +349,15 @@ LoadLBM (char *filename, byte **picture, byte **palette)
 
 // parse the LBM header
 	LBM_P = LBMbuffer;
-	if (*(int *) LBMbuffer != LittleLong (FORMID))
+	if (*(uint32_t *) LBMbuffer != LittleLong (FORMID))
 	   Sys_Error ("No FORM ID at start of file!\n");
 
 	LBM_P += 4;
-	formlength = BigLong (*(int *) LBM_P );
+	formlength = BigLong (*(uint32_t *) LBM_P );
 	LBM_P += 4;
 	LBMEND_P = LBM_P + Align (formlength);
 
-	formtype = LittleLong (*(int *) LBM_P);
+	formtype = LittleLong (*(uint32_t *) LBM_P);
 
 	if (formtype != ILBMID && formtype != PBMID)
 		Sys_Error ("Unrecognized form type: %c%c%c%c\n", formtype & 0xff,
@@ -467,7 +467,7 @@ void
 WriteLBMfile (char *filename, byte *data, int width, int height, byte *palette)
 {
 	byte    *lbm, *lbmptr;
-	int    *formlength, *bmhdlength, *cmaplength, *bodylength;
+	uint32_t    *formlength, *bmhdlength, *cmaplength, *bodylength;
 	int    length;
 	bmhd_t  basebmhd;
 
@@ -479,7 +479,7 @@ WriteLBMfile (char *filename, byte *data, int width, int height, byte *palette)
 	*lbmptr++ = 'R';
 	*lbmptr++ = 'M';
 
-	formlength = (int*)lbmptr;
+	formlength = (uint32_t*)lbmptr;
 	lbmptr+=4;                      // leave space for length
 
 	*lbmptr++ = 'P';
@@ -493,7 +493,7 @@ WriteLBMfile (char *filename, byte *data, int width, int height, byte *palette)
 	*lbmptr++ = 'H';
 	*lbmptr++ = 'D';
 
-	bmhdlength = (int *) lbmptr;
+	bmhdlength = (uint32_t *) lbmptr;
 	lbmptr += 4;						// leave space for length
 
 	memset (&basebmhd, 0, sizeof (basebmhd));
@@ -519,7 +519,7 @@ WriteLBMfile (char *filename, byte *data, int width, int height, byte *palette)
 	*lbmptr++ = 'A';
 	*lbmptr++ = 'P';
 
-	cmaplength = (int *) lbmptr;
+	cmaplength = (uint32_t *) lbmptr;
 	lbmptr += 4;							// leave space for length
 
 	memcpy (lbmptr, palette, 768);
@@ -536,7 +536,7 @@ WriteLBMfile (char *filename, byte *data, int width, int height, byte *palette)
 	*lbmptr++ = 'D';
 	*lbmptr++ = 'Y';
 
-	bodylength = (int *) lbmptr;
+	bodylength = (uint32_t *) lbmptr;
 	lbmptr += 4;							// leave space for length
 
 	memcpy (lbmptr, data, width * height);
