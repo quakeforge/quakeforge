@@ -20,5 +20,8 @@ nobase_pkginclude_HEADERS = \
 	GLSL/qf_funcs_list.h GLSL/qf_iqm.h GLSL/qf_lightmap.h GLSL/qf_particles.h \
 	GLSL/qf_textures.h GLSL/qf_vid.h GLSL/types.h \
 	\
+	math/dual.h math/half.h math/matrix3.h math/matrix4.h math/quaternion.h \
+	math/vector.h \
+	\
 	plugin/cd.h plugin/console.h plugin/general.h plugin/input.h \
 	plugin/snd_output.h plugin/snd_render.h plugin/vid_render.h
