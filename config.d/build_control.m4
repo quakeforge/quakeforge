@@ -53,6 +53,7 @@ if test "x$HAVE_FBDEV" = xyes; then
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
+		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
 	fi
 fi
 if test "x$HAVE_X" = xyes; then
@@ -83,6 +84,7 @@ if test "x$HAVE_X" = xyes; then
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
+		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
 	fi
 fi
 if test "x$HAVE_SDL" = xyes; then
@@ -106,6 +108,7 @@ if test "x$HAVE_SDL" = xyes; then
 		QF_NEED(qw, [client common sdl])
 		QF_NEED(nq, [client common sdl])
 		QF_NEED(console, [client])
+		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
 	fi
 fi
 if test "x$HAVE_SVGA" = xyes; then
@@ -127,6 +130,7 @@ if test "x$HAVE_SVGA" = xyes; then
 		QF_NEED(qw, [client common])
 		QF_NEED(nq, [client common])
 		QF_NEED(console, [client])
+		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
 	fi
 fi
 #if test "x$mingw" = xyes; then
@@ -145,6 +149,7 @@ fi
 #		QF_NEED(qw, [client common])
 #		QF_NEED(nq, [client common])
 #		QF_NEED(console, [client])
+#		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
 #	fi
 #fi
 
@@ -179,48 +184,63 @@ fi
 
 if test "x$ENABLE_tools_bsp2img" = xyes; then
 	QF_NEED(tools,[bsp2img])
+	QF_NEED(libs,[image util])
 fi
 if test "x$ENABLE_tools_carne" = xyes; then
 	QF_NEED(tools,[carne])
+	QF_NEED(libs,[gib ruamoko gamecode util])
 fi
 if test "x$ENABLE_tools_pak" = xyes; then
 	QF_NEED(tools,[pak])
+	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfbsp" = xyes; then
 	QF_NEED(tools,[qfbsp])
+	QF_NEED(libs,[models image util])
 fi
 if test "x$ENABLE_tools_qfcc" = xyes; then
 	QF_NEED(tools,[qfcc])
+	QF_NEED(libs,[gamecode util])
 fi
 if test "x$ENABLE_tools_qflight" = xyes; then
 	QF_NEED(tools,[qflight])
+	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qflmp" = xyes; then
 	QF_NEED(tools,[qflmp])
+	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfmodelgen" = xyes; then
 	QF_NEED(tools,[qfmodelgen])
+	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfspritegen" = xyes; then
 	QF_NEED(tools,[qfspritegen])
+	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfvis" = xyes; then
 	QF_NEED(tools,[qfvis])
+	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qwaq" = xyes; then
 	QF_NEED(tools,[qwaq])
+	QF_NEED(libs,[ruamoko gamecode util])
 fi
 if test "x$ENABLE_tools_wad" = xyes; then
 	QF_NEED(tools,[wad])
+	QF_NEED(libs,[image util])
 fi
 if test "x$ENABLE_tools_wav" = xyes; then
 	QF_NEED(tools,[wav])
+	QF_NEED(libs,[util])
 fi
 
 QF_NEED(top, [libs hw nq qtv qw])
 
 QF_PROCESS_NEED_DIRS(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfspritegen qfvis qwaq wad wav])
 QF_PROCESS_NEED_FUNC(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfspritegen qfvis qwaq wad wav], QF_NEED(top,tools))
+
+QF_PROCESS_NEED_DIRS(libs,[util gamecode ruamoko gib audio image models video console net qw client])
 
 if test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes"; then
 	QF_NEED(top, [ruamoko])
