@@ -138,6 +138,7 @@ r_farclip_f (cvar_t *var)
 		Cvar_SetValue (r_particles_nearclip,
 					   bound (r_nearclip->value, r_particles_nearclip->value,
 							  r_farclip->value));
+	vid.recalc_refdef = true;
 }
 
 static void
@@ -148,6 +149,7 @@ r_nearclip_f (cvar_t *var)
 		Cvar_SetValue (r_particles_nearclip,
 					   bound (r_nearclip->value, r_particles_nearclip->value,
 							  r_farclip->value));
+	vid.recalc_refdef = true;
 }
 
 static void
