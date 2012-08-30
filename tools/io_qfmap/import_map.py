@@ -68,7 +68,14 @@ def process_entity(ent):
         bpy.context.scene.objects.active=obj
         obj.select = True
     else:
-        pass
+        obj = bpy.data.objects.new(name, None)
+        obj.empty_draw_type = 'CUBE'
+        obj.empty_draw_size = 8
+        obj.show_name = True
+        obj.location = parse_vector (ent.d["origin"])
+        bpy.context.scene.objects.link(obj)
+        bpy.context.scene.objects.active=obj
+        obj.select = True
 
 def import_map(operator, context, filepath):
     bpy.context.user_preferences.edit.use_global_undo = False
