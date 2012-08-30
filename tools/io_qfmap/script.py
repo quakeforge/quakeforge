@@ -12,7 +12,7 @@ class Script:
         if self.unget:
             return True
         while self.pos < len(self.text):
-            while self.text[self.pos].isspace():
+            while self.pos < len(self.text) and self.text[self.pos].isspace():
                 if self.text[self.pos] == "\n":
                     if not crossline:
                         return False
@@ -41,16 +41,16 @@ class Script:
             return self.token
         if not self.tokenAvailable(crossline):
             if not crossline:
-                self.error("line is incomplete")
+                self.error(self, "line is incomplete")
             return None
         if self.text[self.pos] == "\"":
             self.pos += 1
             start = self.pos
             if self.text[self.pos] == len(self.text):
-                self.error("EOF inside quoted string")
+                self.error(self, "EOF inside quoted string")
             while self.text[self.pos] != "\"":
                 if self.pos == len(self.text):
-                    self.error("EOF inside quoted string")
+                    self.error(self, "EOF inside quoted string")
                     return None
                 if self.text[self.pos] == "\n":
                     self.line += 1

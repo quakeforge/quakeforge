@@ -1,5 +1,5 @@
 # vim:ts=4:et
-from script import Script
+from .script import Script
 
 MAX_FLAGS = 8
 
