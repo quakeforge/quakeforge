@@ -25,11 +25,27 @@ from mathutils import Vector,Matrix
 
 from .map import parse_map, MapError
 
+def parse_vector(vstr):
+    v = vstr.split()
+    for i in range(len(v)):
+        v[i] = float(v[i])
+    return Vector(v)
+
 def process_entity(ent):
+    if "targetname" in ent.d:
+        name = ent.d["targetname"]
+    else:
+        name = ent.d["classname"]
     if "classname" in ent.d and ent.d["classname"][:5] == "light":
-        pass
+        light = bpy.data.lamps.new("light", 'POINT')
+        light.distance = 300.0
+        light.falloff_type = 'CUSTOM_CURVE'
+        obj = bpy.data.objects.new(name, light)
+        obj.location = parse_vector (ent.d["origin"])
+        bpy.context.scene.objects.link(obj)
+        bpy.context.scene.objects.active=obj
+        obj.select = True
     elif ent.b:
-        name = "brush"
         verts = []
         faces = []
         for bverts, bfaces in ent.b:
