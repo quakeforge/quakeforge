@@ -84,6 +84,11 @@ def clip_plane(plane, clip_planes):
         poly = clip_poly(poly, p, True)
     return poly
 
+EPSILON = 0.5**5    # 1/32 plenty for quake maps
+
+def rnd(x):
+    return int(x / EPSILON) * EPSILON
+
 def convert_planes(planes):
     verts = []
     faces = []
@@ -91,6 +96,7 @@ def convert_planes(planes):
         poly = clip_plane(planes[i], planes[:i] + planes[i + 1:])
         face = []
         for v in poly:
+            v = Vector((rnd(v.x), rnd(v.y), rnd(v.z)))
             ind = len(verts)
             for i in range(len(verts)):
                 d = verts[i] - v
@@ -214,3 +220,4 @@ def parse_map(filename):
         if not ent:
             break
         entities.append(ent)
+    return entities
