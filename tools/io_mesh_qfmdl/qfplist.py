@@ -217,6 +217,9 @@ class pldata:
         self.data.append(item)
     def write_item(self, item, level):
         if type(item) == dict:
+            if not item:
+                self.data.append("{ }")
+                return
             self.data.append("{\n")
             for i in item.items():
                 self.data.append('\t' * (level + 1))
@@ -227,6 +230,9 @@ class pldata:
             self.data.append('\t' * (level))
             self.data.append("}")
         elif type(item) in(list, tuple):
+            if not item:
+                self.data.append("( )")
+                return
             self.data.append("(\n")
             for n, i in enumerate(item):
                 self.data.append('\t' * (level + 1))
