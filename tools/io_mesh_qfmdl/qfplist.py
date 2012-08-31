@@ -242,6 +242,8 @@ class pldata:
             self.data.append('>')
         elif type(item) == str:
             self.write_string(item)
+        elif type(item) in [int, float]:
+            self.write_string(str(item))
         else:
             raise PListError(0, "unsupported type")
     def write(self, item):
