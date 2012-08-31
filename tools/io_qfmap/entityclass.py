@@ -82,7 +82,7 @@ def scan_directory(path, entity_classes):
         if f[0] in [".", "_"]:
             continue
         if os.path.isdir(os.path.join(path, f)):
-            build_entityclasses(os.path.join(path, f), entity_classes)
+            scan_directory(os.path.join(path, f), entity_classes)
         else:
             if f[-3:] == ".qc":
                 scan_source(os.path.join(path, f), entity_classes)
