@@ -69,7 +69,12 @@ def process_entity(ent):
         name = classname
     if "classname" in ent.d and ent.d["classname"][:5] == "light":
         light = bpy.data.lamps.new("light", 'POINT')
-        light.distance = 300.0
+        if "light" in ent.d:
+            light.distance = float(ent.d["light"])
+        elif "_light" in ent.d:
+            light.distance = float(ent.d["_light"])
+        else:
+            light.distance = 300.0
         light.falloff_type = 'CUSTOM_CURVE'
         obj = bpy.data.objects.new(name, light)
         obj.location = parse_vector (ent.d["origin"])
