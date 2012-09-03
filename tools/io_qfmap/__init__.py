@@ -48,58 +48,66 @@ import bpy
 from bpy.props import BoolProperty, FloatProperty, StringProperty, EnumProperty
 from bpy.props import FloatVectorProperty, PointerProperty
 from bpy_extras.io_utils import ExportHelper, ImportHelper, path_reference_mode, axis_conversion
+from bpy.app.handlers import persistent
 
+from .entityclass import EntityClassDict
 from . import import_map
 #from . import export_map
 
-SYNCTYPE=(
-    ('ST_SYNC', "Syncronized", "Automatic animations are all together"),
-    ('ST_RAND', "Random", "Automatic animations have random offsets"),
-)
+@persistent
+def scene_load_handler(dummy):
+    for scene in bpy.data.scenes:
+        if hasattr(scene, "qfmap"):
+            qfmap = scene.qfmap
+            if qfmap.script in bpy.data.texts:
+                script = bpy.data.texts[qfmap.script].as_string()
+                qfmap.entity_classes.from_plist(script)
 
-EFFECTS=(
-    ('EF_NONE', "None", "No effects"),
-    ('EF_ROCKET', "Rocket", "Leave a rocket trail"),
-    ('EF_GRENADE', "Grenade", "Leave a grenade trail"),
-    ('EF_GIB', "Gib", "Leave a trail of blood"),
-    ('EF_TRACER', "Tracer", "Green split trail"),
-    ('EF_ZOMGIB', "Zombie Gib", "Leave a smaller blood trail"),
-    ('EF_TRACER2', "Tracer 2", "Orange split trail + rotate"),
-    ('EF_TRACER3', "Tracer 3", "Purple split trail"),
-)
+def ec_dir_update(self, context):
+    print("ec_dir_update")
+    self.entity_classes.from_source_tree(self.dirpath)
+    name = context.scene.name + '-EntityClasses'
+    if name in bpy.data.texts:
+        txt = bpy.data.texts[name]
+    else:
+        txt = bpy.data.texts.new(name)
+    txt.from_string(self.entity_classes.to_plist())
+    self.script = name
 
-class QFMDLSettings(bpy.types.PropertyGroup):
-    eyeposition = FloatVectorProperty(
-        name="Eye Position",
-        description="View possion relative to object origin")
-    synctype = EnumProperty(
-        items=SYNCTYPE,
-        name="Sync Type",
-        description="Add random time offset for automatic animations")
-    rotate = BoolProperty(
-        name="Rotate",
-        description="Rotate automatically (for pickup items)")
-    effects = EnumProperty(
-        items=EFFECTS,
-        name="Effects",
-        description="Particle trail effects")
-    #doesn't work :(
-    #script = PointerProperty(
-    #    type=bpy.types.Object,
-    #    name="Script",
-    #    description="Script for animating frames and skins")
+def ec_script_update(self, context):
+    print("ec_script_update")
+    if self.script in bpy.data.texts:
+        self.entity_classes.from_plist(bpy.data.texts[self.script].as_string())
+
+class QFEntityClasses(bpy.types.PropertyGroup):
+    dirpath = StringProperty(
+        name="dirpath",
+        description="Path to qc source tree",
+        subtype='DIR_PATH',
+        update=ec_dir_update)
     script = StringProperty(
-        name="Script",
-        description="Script for animating frames and skins")
-    xform = BoolProperty(
-        name="Auto transform",
-        description="Auto-apply location/rotation/scale when exporting",
-        default=True)
-    md16 = BoolProperty(
-        name="16-bit",
-        description="16 bit vertex coordinates: QuakeForge only")
+        name="script",
+        description="Script for animating frames and skins",
+        update=ec_script_update)
+    entity_classes = EntityClassDict()
 
-class ImportMDL6(bpy.types.Operator, ImportHelper):
+class QFECPanel(bpy.types.Panel):
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = 'scene'
+    bl_label = 'QF Entity Classes'
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        layout.prop(scene.qfmap, "dirpath")
+        layout.prop(scene.qfmap, "script")
+
+class ImportMap(bpy.types.Operator, ImportHelper):
     '''Load a Quake map File'''
     bl_idname = "import_mesh.quake_map"
     bl_label = "Import map"
@@ -111,7 +119,7 @@ class ImportMDL6(bpy.types.Operator, ImportHelper):
         keywords = self.as_keywords (ignore=("filter_glob",))
         return import_map.import_map(self, context, **keywords)
 
-class ExportMDL6(bpy.types.Operator, ExportHelper):
+class ExportMap(bpy.types.Operator, ExportHelper):
     '''Save a Quake map File'''
 
     bl_idname = "export_mesh.quake_map"
@@ -130,18 +138,22 @@ class ExportMDL6(bpy.types.Operator, ExportHelper):
         return export_map.export_map(self, context, **keywords)
 
 def menu_func_import(self, context):
-    self.layout.operator(ImportMDL6.bl_idname, text="Quake map (.map)")
+    self.layout.operator(ImportMap.bl_idname, text="Quake map (.map)")
 
 
 def menu_func_export(self, context):
-    self.layout.operator(ExportMDL6.bl_idname, text="Quake map (.map)")
+    self.layout.operator(ExportMap.bl_idname, text="Quake map (.map)")
 
 
 def register():
     bpy.utils.register_module(__name__)
 
+    bpy.types.Scene.qfmap = PointerProperty(type=QFEntityClasses)
+
     bpy.types.INFO_MT_file_import.append(menu_func_import)
     bpy.types.INFO_MT_file_export.append(menu_func_export)
+
+    bpy.app.handlers.load_post.append(scene_load_handler)
 
 
 def unregister():
