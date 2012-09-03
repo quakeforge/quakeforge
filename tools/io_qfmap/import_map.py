@@ -31,11 +31,42 @@ def parse_vector(vstr):
         v[i] = float(v[i])
     return Vector(v)
 
+def entity_box(entityclass):
+    name = entityclass.name
+    size = entityclass.size
+    color = entityclass.color
+    if name in bpy.data.meshes:
+        return bpy.data.meshes[name]
+    verts = [(size[0][0], size[0][1], size[0][2]),
+             (size[0][0], size[0][1], size[1][2]),
+             (size[0][0], size[1][1], size[0][2]),
+             (size[0][0], size[1][1], size[1][2]),
+             (size[1][0], size[0][1], size[0][2]),
+             (size[1][0], size[0][1], size[1][2]),
+             (size[1][0], size[1][1], size[0][2]),
+             (size[1][0], size[1][1], size[1][2])]
+    faces = [(0, 1, 3, 2),
+             (0, 2, 6, 4),
+             (0, 4, 5, 1),
+             (4, 6, 7, 5),
+             (6, 2, 3, 7),
+             (1, 5, 7, 3)]
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, [], faces)
+    mat = bpy.data.materials.new(name)
+    mat.diffuse_color = color
+    mat.use_raytrace = False
+    mesh.materials.append(mat)
+    return mesh
+
 def process_entity(ent):
+    qfmap = bpy.context.scene.qfmap
+    classname = ent.d["classname"]
+    entityclass = qfmap.entity_classes.entity_classes[classname]
     if "targetname" in ent.d:
         name = ent.d["targetname"]
     else:
-        name = ent.d["classname"]
+        name = classname
     if "classname" in ent.d and ent.d["classname"][:5] == "light":
         light = bpy.data.lamps.new("light", 'POINT')
         light.distance = 300.0
@@ -68,9 +99,13 @@ def process_entity(ent):
         bpy.context.scene.objects.active=obj
         obj.select = True
     else:
-        obj = bpy.data.objects.new(name, None)
-        obj.empty_draw_type = 'CUBE'
-        obj.empty_draw_size = 8
+        if entityclass.size:
+            mesh = entity_box(entityclass)
+            obj = bpy.data.objects.new(name, mesh)
+        else:
+            obj = bpy.data.objects.new(name, None)
+            obj.empty_draw_type = 'CUBE'
+            obj.empty_draw_size = 8
         obj.show_name = True
         obj.location = parse_vector (ent.d["origin"])
         bpy.context.scene.objects.link(obj)
