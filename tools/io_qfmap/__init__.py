@@ -87,7 +87,7 @@ class QFEntityClasses(bpy.types.PropertyGroup):
         update=ec_dir_update)
     script = StringProperty(
         name="script",
-        description="Script for animating frames and skins",
+        description="entity class storage",
         update=ec_script_update)
     entity_classes = EntityClassDict()
 
