@@ -26,6 +26,7 @@ from bpy_extras.object_utils import object_data_add
 from mathutils import Vector,Matrix
 
 from .map import parse_map, MapError
+from .quakepal import palette
 from .wad import WadFile
 
 def parse_vector(vstr):
@@ -62,7 +63,66 @@ def entity_box(entityclass):
     mesh.materials.append(mat)
     return mesh
 
-def process_entity(ent):
+def load_image(tx):
+    if tx.name in bpy.data.images:
+        return bpy.data.images[tx.name]
+    print(tx.name)
+    img = bpy.data.images.new(tx.name, tx.miptex.width, tx.miptex.height)
+    p = [0.0] * tx.miptex.width * tx.miptex.height * 4
+    d = tx.miptex.texels[0]
+    for j in range(tx.miptex.height):
+        for k in range(tx.miptex.width):
+            c = palette[d[j * tx.miptex.width + k]]
+            # quake textures are top to bottom, but blender images
+            # are bottom to top
+            l = ((tx.miptex.height - 1 - j) * tx.miptex.width + k) * 4
+            p[l + 0] = c[0] / 255.0
+            p[l + 1] = c[1] / 255.0
+            p[l + 2] = c[2] / 255.0
+            p[l + 3] = 1.0
+    img.pixels[:] = p[:]
+    img.pack(True)
+    return img
+
+def load_material(tx):
+    if tx.name in bpy.data.materials:
+        return bpy.data.materials[tx.name]
+    mat = bpy.data.materials.new(tx.name)
+    mat.diffuse_color = (1, 1, 1)
+    mat.use_raytrace = False
+    tex = bpy.data.textures.new(tx.name, 'IMAGE')
+    tex.extension = 'REPEAT'
+    tex.use_preview_alpha = True
+    tex.image = tx.image
+    mat.texture_slots.add()
+    ts = mat.texture_slots[0]
+    ts.texture = tex
+    ts.use_map_alpha = True
+    ts.texture_coords = 'UV'
+    return mat
+
+def load_textures(texdefs, wads):
+    for tx in texdefs:
+        if hasattr(tx, "miptex"):
+            continue
+        tx.miptex = wads[0].getData(tx.name)
+        tx.image = load_image(tx)
+        tx.material = load_material(tx)
+
+def build_uvs(verts, faces, texdefs):
+    uvs = [None] * len(faces)
+    for i, f in enumerate(faces):
+        tx = texdefs[i]
+        fuv = []
+        for vi in f:
+            v = Vector(verts[vi])
+            s = (v.dot(tx.vecs[0][0]) + tx.vecs[0][1]) / tx.miptex.width
+            t = (v.dot(tx.vecs[1][0]) + tx.vecs[1][1]) / tx.miptex.height
+            fuv.append((s, 1 - t))
+        uvs[i] = fuv
+    return uvs
+
+def process_entity(ent, wads):
     qfmap = bpy.context.scene.qfmap
     classname = ent.d["classname"]
     entityclass = qfmap.entity_classes.entity_classes[classname]
@@ -87,9 +147,11 @@ def process_entity(ent):
     elif ent.b:
         verts = []
         faces = []
-        for bverts, bfaces in ent.b:
+        texdefs = []
+        for bverts, bfaces, btexdefs in ent.b:
             base = len(verts)
             verts.extend(bverts)
+            texdefs.extend(btexdefs)
             for f in bfaces:
                 for i in range(len(f)):
                     f[i] += base
@@ -99,8 +161,31 @@ def process_entity(ent):
                     del f[0]
                     f.append(t)
             faces.extend(bfaces)
+        load_textures(texdefs, wads)
+        uvs = build_uvs(verts, faces, texdefs)
         mesh = bpy.data.meshes.new(name)
+        for tx in texdefs:
+            if hasattr(tx, "matindex"):
+                continue
+            for i, mat in enumerate(mesh.materials):
+                if mat.name == tx.material.name:
+                    tx.matindex = i
+            if hasattr(tx, "matindex"):
+                continue
+            tx.matindex = len(mesh.materials)
+            mesh.materials.append(tx.material)
         mesh.from_pydata(verts, [], faces)
+        uvlay = mesh.uv_textures.new(name)
+        uvloop = mesh.uv_layers[0]
+        for i, texpoly in enumerate(uvlay.data):
+            poly = mesh.polygons[i]
+            uv = uvs[i]
+            tx = texdefs[i]
+            texpoly.image = tx.image
+            print(poly.material_index, tx.matindex)
+            poly.material_index = tx.matindex
+            for j, k in enumerate(poly.loop_indices):
+                uvloop.data[k].uv = uv[j]
         mesh.update()
         obj = bpy.data.objects.new(name, mesh)
         bpy.context.scene.objects.link(obj)
@@ -146,6 +231,6 @@ def import_map(operator, context, filepath):
                 wads[i] = WadFile.load(os.path.join(wadpath,
                                         os.path.basename(wads[i])))
     for ent in entities:
-        process_entity(ent)
+        process_entity(ent, wads)
     bpy.context.user_preferences.edit.use_global_undo = True
     return {'FINISHED'}
