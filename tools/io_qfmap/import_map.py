@@ -66,7 +66,6 @@ def entity_box(entityclass):
 def load_image(tx):
     if tx.name in bpy.data.images:
         return bpy.data.images[tx.name]
-    print(tx.name)
     img = bpy.data.images.new(tx.name, tx.miptex.width, tx.miptex.height)
     p = [0.0] * tx.miptex.width * tx.miptex.height * 4
     d = tx.miptex.texels[0]
@@ -182,7 +181,6 @@ def process_entity(ent, wads):
             uv = uvs[i]
             tx = texdefs[i]
             texpoly.image = tx.image
-            print(poly.material_index, tx.matindex)
             poly.material_index = tx.matindex
             for j, k in enumerate(poly.loop_indices):
                 uvloop.data[k].uv = uv[j]

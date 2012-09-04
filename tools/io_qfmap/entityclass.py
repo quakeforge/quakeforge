@@ -114,7 +114,6 @@ class EntityClassDict:
                 ec = EntityClass.from_quaked(text[start:pos], fname,
                                              start_line)
                 self.entity_classes[ec.name] = ec
-                print(ec.name)
             else:
                 if text[pos] == "\n":
                     line += 1
