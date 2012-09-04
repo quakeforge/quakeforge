@@ -80,6 +80,10 @@ def ec_script_update(self, context):
         self.entity_classes.from_plist(bpy.data.texts[self.script].as_string())
 
 class QFEntityClasses(bpy.types.PropertyGroup):
+    wadpath = StringProperty(
+        name="wadpath",
+        description="Path to search for wad files",
+        subtype='DIR_PATH')
     dirpath = StringProperty(
         name="dirpath",
         description="Path to qc source tree",
@@ -104,6 +108,7 @@ class QFECPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
+        layout.prop(scene.qfmap, "wadpath")
         layout.prop(scene.qfmap, "dirpath")
         layout.prop(scene.qfmap, "script")
 

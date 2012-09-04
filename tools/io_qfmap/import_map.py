@@ -19,11 +19,14 @@
 
 # <pep8 compliant>
 
+import os
+
 import bpy
 from bpy_extras.object_utils import object_data_add
 from mathutils import Vector,Matrix
 
 from .map import parse_map, MapError
+from .wad import WadFile
 
 def parse_vector(vstr):
     v = vstr.split()
@@ -129,6 +132,19 @@ def import_map(operator, context, filepath):
         raise
         operator.report({'ERROR'}, repr(err))
         return {'CANCELLED'}
+    wads=[]
+    if entities:
+        if "_wad" in entities[0].d:
+            wads = entities[0].d["_wad"].split(";")
+        elif "wad" in entities[0].d:
+            wads = entities[0].d["wad"].split(";")
+        wadpath = bpy.context.scene.qfmap.wadpath
+        for i in range(len(wads)):
+            try:
+                wads[i] = WadFile.load(os.path.join(wadpath, wads[i]))
+            except IOError:
+                wads[i] = WadFile.load(os.path.join(wadpath,
+                                        os.path.basename(wads[i])))
     for ent in entities:
         process_entity(ent)
     bpy.context.user_preferences.edit.use_global_undo = True
