@@ -1,6 +1,7 @@
 # vim:ts=4:et
 
 from mathutils import Vector, Quaternion
+from math import pi
 
 from .script import Script
 
@@ -16,7 +17,7 @@ class Texinfo:
     def __init__(self, name, s_vec, t_vec, s_offs, t_offs, rotate, scale):
         self.name = name
         norm = s_vec.cross(t_vec)
-        q = Quaternion(norm, rotate)
+        q = Quaternion(norm, rotate * pi / 180)
         self.vecs = [None] * 2
         self.vecs[0] = (q * s_vec / scale[0], s_offs)
         self.vecs[1] = (q * t_vec / scale[1], t_offs)
