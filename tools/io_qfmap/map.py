@@ -1,6 +1,6 @@
 # vim:ts=4:et
 
-from mathutils import Vector
+from mathutils import Vector, Quaternion
 
 from .script import Script
 
@@ -10,31 +10,48 @@ class Entity:
         self.b = []
         pass
 
+texdefs=[]
+
 class Texinfo:
-    def __init__(self, script, plane):
-        self.name = script.getToken()
+    def __init__(self, name, s_vec, t_vec, s_offs, t_offs, rotate, scale):
+        self.name = name
+        norm = s_vec.cross(t_vec)
+        q = Quaternion(norm, rotate)
+        self.vecs = [None] * 2
+        self.vecs[0] = (q * s_vec / scale[0], s_offs)
+        self.vecs[1] = (q * t_vec / scale[1], t_offs)
+    def __cmp__(self, other):
+        return self.name == other.name and self.vecs == other.vecs
+    @classmethod
+    def unique(cls, script, plane):
+        name = script.getToken()
         script.getToken()
         if script.token == "[":
             hldef = True
-            self.s_vec = parse_vector(script)
-            self.s_offs = float(script.getToken())
+            s_vec = Vector(parse_vector(script))
+            s_offs = float(script.getToken())
             if script.getToken() != "]":
                 map_error(script, "Missing ]")
             if script.getToken() != "[":
                 map_error(script, "Missing [")
-            self.t_vec = parse_vector(script)
-            self.t_offs = float(script.getToken())
+            t_vec = Vector(parse_vector(script))
+            t_offs = float(script.getToken())
             if script.getToken() != "]":
                 map_error(script, "Missing ]")
         else:
             hldef = False
-            self.s_vec, self.t_vec = texture_axis_from_plane(plane)
-            self.s_offs = float(script.token)
-            self.t_offs = float(script.getToken())
-        self.rotate = float(script.getToken())
-        self.scale = [0, 0]
-        self.scale[0] = float(script.getToken())
-        self.scale[1] = float(script.getToken())
+            s_vec, t_vec = texture_axis_from_plane(plane)
+            s_offs = float(script.token)
+            t_offs = float(script.getToken())
+        rotate = float(script.getToken())
+        scale = [0, 0]
+        scale[0] = float(script.getToken())
+        scale[1] = float(script.getToken())
+        tx = cls(name, s_vec, t_vec, s_offs, t_offs, rotate, scale)
+        for t in texdefs:
+            if t == tx:
+                return t
+        return tx
 
 baseaxis = (
     (Vector((0,0, 1)), (Vector((1,0,0)), Vector((0,-1,0)))),    #floor
@@ -167,7 +184,8 @@ def parse_brush(script, mapent):
         norm.normalize()
         plane = (norm, planepts[1].dot(norm))
         planes.append(plane)
-        tx = Texinfo(script, plane)
+        tx = Texinfo.unique(script, plane)
+        texdefs.append(tx)
         detail = False
         while script.tokenAvailable():
             script.getToken()
@@ -177,7 +195,7 @@ def parse_brush(script, mapent):
                 map_error(script, "invalid flag")
     if not verts:
         verts, faces = convert_planes(planes)
-    mapent.b.append((verts,faces))
+    mapent.b.append((verts,faces,texdefs))
 
 def parse_epair(script, mapent):
     key = script.token
@@ -215,6 +233,8 @@ def parse_map(filename):
     script = Script(filename, text)
     script.error = map_error
     entities = []
+    global texdefs
+    texdefs = []
     while True:
         ent = parse_entity(script)
         if not ent:
