@@ -125,10 +125,7 @@ def process_entity(ent, wads):
     qfmap = bpy.context.scene.qfmap
     classname = ent.d["classname"]
     entityclass = qfmap.entity_classes.entity_classes[classname]
-    if "targetname" in ent.d:
-        name = ent.d["targetname"]
-    else:
-        name = classname
+    name = classname
     if "classname" in ent.d and ent.d["classname"][:5] == "light":
         light = bpy.data.lamps.new("light", 'POINT')
         if "light" in ent.d:
