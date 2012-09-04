@@ -62,12 +62,13 @@ class WadFile:
                 type, compression, pad1, pad2 = read_byte(f, 4)
                 name = read_string(f, 16)
                 name = name.split("\0")[0]
+                name = name.lower()
                 wf.lumps[name] = WadFile.LumpInfo(filepos, disksize, size,
                                                   type, compression)
             return wf
         return None
     def getLump(self, name):
-        return self.lumps[name]
+        return self.lumps[name.lower()]
     def getData(self, name):
         lump = self.getLump(name)
         f = open(self.path, "rb")
