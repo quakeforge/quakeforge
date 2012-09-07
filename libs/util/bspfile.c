@@ -754,20 +754,17 @@ LoadBSPFile (QFile *file, size_t size)
 	return bsp;
 }
 
-/*
-	WriteBSPFile
-*/
-VISIBLE void
-WriteBSPFile (const bsp_t *bsp, QFile *file)
+#define ROUND(x) (((x) + 3) & ~3)
+
+static bsp_t *
+set_bsp2_write (const bsp_t *bsp, size_t *_size)
 {
 	size_t      size;
 	byte       *data;
-	bsp_t       tbsp;
-	qboolean    bsp2 = false;
+	bsp_t      *tbsp;
 
-#define ROUND(x) (((x) + 3) & ~3)
-
-	size = ROUND (sizeof (dheader_t));
+	size = sizeof (*tbsp);
+	size += ROUND (sizeof (dheader_t));
 	size += ROUND (bsp->nummodels * sizeof (dmodel_t));
 	size += ROUND (bsp->visdatasize);
 	size += ROUND (bsp->lightdatasize);
@@ -781,31 +778,32 @@ WriteBSPFile (const bsp_t *bsp, QFile *file)
 	size += ROUND (bsp->numfaces * sizeof (dface_t));
 	size += ROUND (bsp->numclipnodes * sizeof (dclipnode_t));
 	size += ROUND (bsp->numedges * sizeof (dedge_t));
-	size += ROUND (bsp->nummarksurfaces * sizeof (uint16_t));
+	size += ROUND (bsp->nummarksurfaces * sizeof (uint32_t));
 	size += ROUND (bsp->numsurfedges * sizeof (uint32_t));
 
-	tbsp.header = calloc (size, 1);
+	tbsp = calloc (size, 1);
+	tbsp->header = (dheader_t *) &tbsp[1];
 
 #undef SET_LUMP
 #define SET_LUMP(l,n) \
 do { \
-	tbsp.num##n = bsp->num##n; \
-	if (tbsp.num##n) {\
-		tbsp.n = (void *) data; \
-		tbsp.header->lumps[l].fileofs = data - (byte *) tbsp.header; \
-		tbsp.header->lumps[l].filelen = tbsp.num##n * sizeof (bsp->n[0]); \
-		memcpy (data, bsp->n, tbsp.header->lumps[l].filelen); \
-		data += ROUND (tbsp.header->lumps[l].filelen); \
+	tbsp->num##n = bsp->num##n; \
+	if (tbsp->num##n) {\
+		tbsp->n = (void *) data; \
+		tbsp->header->lumps[l].fileofs = data - (byte *) tbsp->header; \
+		tbsp->header->lumps[l].filelen = tbsp->num##n * sizeof (tbsp->n[0]); \
+		memcpy (data, bsp->n, tbsp->header->lumps[l].filelen); \
+		data += ROUND (tbsp->header->lumps[l].filelen); \
 	} else {\
-		tbsp.n = 0; \
-		tbsp.header->lumps[l].fileofs = 0; \
-		tbsp.header->lumps[l].filelen = 0; \
+		tbsp->n = 0; \
+		tbsp->header->lumps[l].fileofs = 0; \
+		tbsp->header->lumps[l].filelen = 0; \
 	} \
 } while (0)
 
-	tbsp.header->version = BSPVERSION;
+	tbsp->header->version = BSPVERSION;
 
-	data = (byte *) &tbsp.header[1];
+	data = (byte *) &tbsp->header[1];
 	SET_LUMP (LUMP_PLANES, planes);
 	SET_LUMP (LUMP_LEAFS, leafs);
 	SET_LUMP (LUMP_VERTEXES, vertexes);
@@ -821,17 +819,17 @@ do { \
 #undef SET_LUMP
 #define SET_LUMP(l,n) \
 do { \
-	tbsp.n##size = bsp->n##size; \
-	if (tbsp.n##size) { \
-		tbsp.n = (void *) data; \
-		tbsp.header->lumps[l].fileofs = data - (byte *) tbsp.header; \
-		tbsp.header->lumps[l].filelen = tbsp.n##size; \
-		memcpy (data, bsp->n, bsp->n##size); \
-		data += ROUND (tbsp.header->lumps[l].filelen); \
+	tbsp->n##size = bsp->n##size; \
+	if (tbsp->n##size) { \
+		tbsp->n = (void *) data; \
+		tbsp->header->lumps[l].fileofs = data - (byte *) tbsp->header; \
+		tbsp->header->lumps[l].filelen = tbsp->n##size; \
+		memcpy (data, bsp->n, tbsp->n##size); \
+		data += ROUND (tbsp->header->lumps[l].filelen); \
 	} else {\
-		tbsp.n = 0; \
-		tbsp.header->lumps[l].fileofs = 0; \
-		tbsp.header->lumps[l].filelen = 0; \
+		tbsp->n = 0; \
+		tbsp->header->lumps[l].fileofs = 0; \
+		tbsp->header->lumps[l].filelen = 0; \
 	} \
 } while (0)
 
@@ -840,13 +838,133 @@ do { \
 	SET_LUMP (LUMP_ENTITIES, entdata);
 	SET_LUMP (LUMP_TEXTURES, texdata);
 
-	if (bsp2)
-		swap_bsp (&tbsp, 1, 0, 0);
-	else
-		swap_to_bsp29 (0, &tbsp);	//FIXME
+	*_size = size;
+	return tbsp;
+}
 
-	Qwrite (file, tbsp.header, size);
-	free (tbsp.header);
+static bsp29_t *
+set_bsp29_write (const bsp_t *bsp, size_t *_size)
+{
+	size_t      size;
+	byte       *data;
+	bsp29_t    *tbsp;
+
+	size = sizeof (*tbsp);
+	size += ROUND (sizeof (dheader_t));
+	size += ROUND (bsp->nummodels * sizeof (dmodel_t));
+	size += ROUND (bsp->visdatasize);
+	size += ROUND (bsp->lightdatasize);
+	size += ROUND (bsp->texdatasize);
+	size += ROUND (bsp->entdatasize);
+	size += ROUND (bsp->numleafs * sizeof (dleaf29_t));
+	size += ROUND (bsp->numplanes * sizeof (dplane_t));
+	size += ROUND (bsp->numvertexes * sizeof (dvertex_t));
+	size += ROUND (bsp->numnodes * sizeof (dnode29_t));
+	size += ROUND (bsp->numtexinfo * sizeof (texinfo_t));
+	size += ROUND (bsp->numfaces * sizeof (dface29_t));
+	size += ROUND (bsp->numclipnodes * sizeof (dclipnode29_t));
+	size += ROUND (bsp->numedges * sizeof (dedge29_t));
+	size += ROUND (bsp->nummarksurfaces * sizeof (uint16_t));
+	size += ROUND (bsp->numsurfedges * sizeof (uint32_t));
+
+	tbsp = calloc (size, 1);
+	tbsp->header = (dheader_t *) &tbsp[1];
+
+#undef SET_LUMP
+#define SET_LUMP(l,n) \
+do { \
+	tbsp->num##n = bsp->num##n; \
+	if (tbsp->num##n) {\
+		tbsp->n = (void *) data; \
+		tbsp->header->lumps[l].fileofs = data - (byte *) tbsp->header; \
+		tbsp->header->lumps[l].filelen = tbsp->num##n * sizeof (tbsp->n[0]); \
+		memcpy (data, bsp->n, tbsp->header->lumps[l].filelen); \
+		data += ROUND (tbsp->header->lumps[l].filelen); \
+	} else {\
+		tbsp->n = 0; \
+		tbsp->header->lumps[l].fileofs = 0; \
+		tbsp->header->lumps[l].filelen = 0; \
+	} \
+} while (0)
+
+	tbsp->header->version = BSPVERSION;
+
+	data = (byte *) &tbsp->header[1];
+	SET_LUMP (LUMP_PLANES, planes);
+	SET_LUMP (LUMP_LEAFS, leafs);
+	SET_LUMP (LUMP_VERTEXES, vertexes);
+	SET_LUMP (LUMP_NODES, nodes);
+	SET_LUMP (LUMP_TEXINFO, texinfo);
+	SET_LUMP (LUMP_FACES, faces);
+	SET_LUMP (LUMP_CLIPNODES, clipnodes);
+	SET_LUMP (LUMP_MARKSURFACES, marksurfaces);
+	SET_LUMP (LUMP_SURFEDGES, surfedges);
+	SET_LUMP (LUMP_EDGES, edges);
+	SET_LUMP (LUMP_MODELS, models);
+
+#undef SET_LUMP
+#define SET_LUMP(l,n) \
+do { \
+	tbsp->n##size = bsp->n##size; \
+	if (tbsp->n##size) { \
+		tbsp->n = (void *) data; \
+		tbsp->header->lumps[l].fileofs = data - (byte *) tbsp->header; \
+		tbsp->header->lumps[l].filelen = tbsp->n##size; \
+		memcpy (data, bsp->n, tbsp->n##size); \
+		data += ROUND (tbsp->header->lumps[l].filelen); \
+	} else {\
+		tbsp->n = 0; \
+		tbsp->header->lumps[l].fileofs = 0; \
+		tbsp->header->lumps[l].filelen = 0; \
+	} \
+} while (0)
+
+	SET_LUMP (LUMP_LIGHTING, lightdata);
+	SET_LUMP (LUMP_VISIBILITY, visdata);
+	SET_LUMP (LUMP_ENTITIES, entdata);
+	SET_LUMP (LUMP_TEXTURES, texdata);
+
+	*_size = size;
+	return tbsp;
+}
+
+/*
+	WriteBSPFile
+*/
+VISIBLE void
+WriteBSPFile (const bsp_t *bsp, QFile *file)
+{
+	qboolean    bsp2 = (   bsp->models[0].mins[0] < -32768.0f
+						|| bsp->models[0].mins[1] < -32768.0f
+						|| bsp->models[0].mins[2] < -32768.0f
+						|| bsp->models[0].mins[0] >= 32768.0f
+						|| bsp->models[0].mins[0] >= 32768.0f
+						|| bsp->models[0].mins[0] >= 32768.0f
+						|| bsp->nummarksurfaces >= 32768
+						|| bsp->numvertexes >= 32768
+						|| bsp->numnodes >= 32768
+						|| bsp->numleafs >= 32768
+						|| bsp->numplanes >= 32768
+						|| bsp->numtexinfo >= 32768
+						|| bsp->numclipnodes >= 32768);
+
+	if (bsp2) {
+		bsp_t      *tbsp;
+		size_t      size;
+
+		tbsp = set_bsp2_write (bsp, &size);
+		swap_bsp (tbsp, 1, 0, 0);
+		Qwrite (file, tbsp->header, size);
+		free (tbsp);
+	} else {
+		bsp29_t    *tbsp;
+		size_t      size;
+
+		tbsp = set_bsp29_write (bsp, &size);
+		swap_to_bsp29 (tbsp, bsp);
+		Qwrite (file, tbsp->header, size);
+		free (tbsp);
+	}
 }
 
 VISIBLE bsp_t *
