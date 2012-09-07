@@ -204,7 +204,7 @@ void
 R_RecursiveMarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
 					   mnode_t *node)
 {
-	int         i;
+	unsigned    i;
 	float       ndist, maxdist;
 	plane_t    *splitplane;
 	msurface_t *surf;
@@ -400,7 +400,8 @@ calc_lighting_3 (msurface_t  *surf, int ds, int dt)
 static int
 RecursiveLightPoint (mnode_t *node, const vec3_t start, const vec3_t end)
 {
-	int         i, r, s, t, ds, dt, side;
+	unsigned    i;
+	int         r, s, t, ds, dt, side;
 	float       front, back, frac;
 	plane_t    *plane;
 	msurface_t *surf;

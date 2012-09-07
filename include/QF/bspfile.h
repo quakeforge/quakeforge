@@ -45,6 +45,7 @@
 //=============================================================================
 
 #define BSPVERSION		29
+#define BSP2VERSION		"BSP2"		// use memcmp with 4 bytes
 #define Q2BSPVERSION	38
 #define TOOLVERSION		2
 
@@ -133,19 +134,20 @@ typedef struct dplane_s {
 #define CONTENTS_CURRENT_UP		-13
 #define CONTENTS_CURRENT_DOWN	-14
 
-
+//BSP2 version (bsp 29 version is in bspfile.c)
 typedef struct dnode_s {
 	int32_t     planenum;
-	int16_t     children[2];	// negative numbers are -(leafs+1), not nodes
-	int16_t     mins[3];		// for sphere culling
-	int16_t     maxs[3];
-	uint16_t    firstface;
-	uint16_t    numfaces;		// counting both sides
+	int32_t     children[2];	// negative numbers are -(leafs+1), not nodes
+	float       mins[3];		// for sphere culling
+	float       maxs[3];
+	uint32_t    firstface;
+	uint32_t    numfaces;		// counting both sides
 } dnode_t;
 
+//BSP2 version (bsp 29 version is in bspfile.c)
 typedef struct dclipnode_s {
 	int32_t     planenum;
-	int16_t     children[2];	// negative numbers are contents
+	int32_t     children[2];	// negative numbers are contents
 } dclipnode_t;
 
 
@@ -159,18 +161,20 @@ typedef struct texinfo_s {
 
 // note that edge 0 is never used, because negative edge nums are used for
 // counterclockwise use of the edge in a face
+//BSP2 version (bsp 29 version is in bspfile.c)
 typedef struct dedge_s {
-	uint16_t    v[2];			// vertex numbers
+	uint32_t    v[2];			// vertex numbers
 } dedge_t;
 
 #define MAXLIGHTMAPS 4
+//BSP2 version (bsp 29 version is in bspfile.c)
 typedef struct dface_s {
-	int16_t     planenum;
-	int16_t     side;
+	int32_t     planenum;
+	int32_t     side;
 
 	int32_t     firstedge;		// we must support > 64k edges
-	int16_t     numedges;
-	int16_t     texinfo;
+	int32_t     numedges;
+	int32_t     texinfo;
 
 // lighting info
 	byte        styles[MAXLIGHTMAPS];
@@ -187,15 +191,16 @@ typedef struct dface_s {
 
 // leaf 0 is the generic CONTENTS_SOLID leaf, used for all solid areas
 // all other leafs need visibility info
+//BSP2 version (bsp 29 version is in bspfile.c)
 typedef struct dleaf_s {
 	int32_t     contents;
 	int32_t     visofs;				// -1 = no visibility info
 
-	int16_t     mins[3];			// for frustum culling
-	int16_t     maxs[3];
+	float       mins[3];			// for frustum culling
+	float       maxs[3];
 
-	uint16_t    firstmarksurface;
-	uint16_t    nummarksurfaces;
+	uint32_t    firstmarksurface;
+	uint32_t    nummarksurfaces;
 
 	byte        ambient_level[NUM_AMBIENTS];
 } dleaf_t;
@@ -260,7 +265,7 @@ typedef struct bsp_s {
 
 	int         own_marksurfaces;
 	int         nummarksurfaces;
-	uint16_t   *marksurfaces;
+	uint32_t   *marksurfaces;
 
 	int         own_surfedges;
 	int         numsurfedges;

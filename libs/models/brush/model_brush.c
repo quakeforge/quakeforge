@@ -598,7 +598,8 @@ Mod_LoadNodes (bsp_t *bsp)
 		out->numsurfaces = in->numfaces;
 
 		for (j = 0; j < 2; j++) {
-			p = (uint16_t) in->children[j];
+			p = in->children[j];
+			// this check is for extended bsp 29 files
 			if (p < count) {
 				out->children[j] = loadmodel->nodes + p;
 			} else {
@@ -725,8 +726,9 @@ Mod_LoadClipnodes (bsp_t *bsp)
 		out->planenum = in->planenum;
 		if (out->planenum < 0 || out->planenum >= loadmodel->numplanes)
 			Sys_Error ("Mod_LoadClipnodes: planenum out of bounds");
-		out->children[0] = (uint16_t) in->children[0];
-		out->children[1] = (uint16_t) in->children[1];
+		out->children[0] = in->children[0];
+		out->children[1] = in->children[1];
+		// these checks are for extended bsp 29 files
 		if (out->children[0] >= count)
 			out->children[0] -= 65536;
 		if (out->children[1] >= count)
@@ -783,7 +785,7 @@ Mod_LoadMarksurfaces (bsp_t *bsp)
 {
 	int			 count, i, j;
 	msurface_t **out;
-	uint16_t    *in;
+	uint32_t    *in;
 
 	in = bsp->marksurfaces;
 	count = bsp->nummarksurfaces;
