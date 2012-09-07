@@ -838,7 +838,7 @@ do { \
 	SET_LUMP (LUMP_ENTITIES, entdata);
 	SET_LUMP (LUMP_TEXTURES, texdata);
 
-	*_size = size;
+	*_size = size - sizeof (*tbsp);
 	return tbsp;
 }
 
@@ -924,7 +924,7 @@ do { \
 	SET_LUMP (LUMP_ENTITIES, entdata);
 	SET_LUMP (LUMP_TEXTURES, texdata);
 
-	*_size = size;
+	*_size = size - sizeof (*tbsp);
 	return tbsp;
 }
 
