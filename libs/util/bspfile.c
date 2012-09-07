@@ -234,8 +234,8 @@ swap_to_bsp29 (bsp29_t *bsp29, const bsp_t *bsp2)
 			node29->mins[j] = LittleShort (node2->mins[j]);
 			node29->maxs[j] = LittleShort (node2->maxs[j]);
 		}
-		node29->children[0] = LittleShort (node2->children[0]);
-		node29->children[1] = LittleShort (node2->children[1]);
+		node29->children[0] = (uint16_t) LittleShort (node2->children[0]);
+		node29->children[1] = (uint16_t) LittleShort (node2->children[1]);
 		node29->firstface = LittleShort (node2->firstface);
 		node29->numfaces = LittleShort (node2->numfaces);
 	}
@@ -262,8 +262,8 @@ swap_to_bsp29 (bsp29_t *bsp29, const bsp_t *bsp2)
 		const dclipnode_t *clipnode2 = &bsp2->clipnodes[i];
 		dclipnode29_t *clipnode29 = (dclipnode29_t *) &bsp29->clipnodes[i];
 		clipnode29->planenum = LittleLong (clipnode2->planenum);
-		clipnode29->children[0] = LittleShort (clipnode2->children[0]);
-		clipnode29->children[1] = LittleShort (clipnode2->children[1]);
+		clipnode29->children[0] = (uint16_t) LittleShort (clipnode2->children[0]);
+		clipnode29->children[1] = (uint16_t) LittleShort (clipnode2->children[1]);
 	}
 
 	// miptex
@@ -383,8 +383,8 @@ swap_from_bsp29 (bsp_t *bsp2, const bsp29_t *bsp29,
 			node2->mins[j] = LittleShort (node29->mins[j]);
 			node2->maxs[j] = LittleShort (node29->maxs[j]);
 		}
-		node2->children[0] = LittleShort (node29->children[0]);
-		node2->children[1] = LittleShort (node29->children[1]);
+		node2->children[0] = (uint16_t) LittleShort (node29->children[0]);
+		node2->children[1] = (uint16_t) LittleShort (node29->children[1]);
 		node2->firstface = LittleShort (node29->firstface);
 		node2->numfaces = LittleShort (node29->numfaces);
 	}
@@ -411,8 +411,8 @@ swap_from_bsp29 (bsp_t *bsp2, const bsp29_t *bsp29,
 		dclipnode_t *clipnode2 = &bsp2->clipnodes[i];
 		const dclipnode29_t *clipnode29 = &bsp29->clipnodes[i];
 		clipnode2->planenum = LittleLong (clipnode29->planenum);
-		clipnode2->children[0] = LittleShort (clipnode29->children[0]);
-		clipnode2->children[1] = LittleShort (clipnode29->children[1]);
+		clipnode2->children[0] = (uint16_t) LittleShort (clipnode29->children[0]);
+		clipnode2->children[1] = (uint16_t) LittleShort (clipnode29->children[1]);
 	}
 
 	// miptex
@@ -588,25 +588,9 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 	}
 }
 
-bsp_t *
-LoadBSPMem (void *mem, size_t mem_size, void (*cb) (const bsp_t *, void *),
-			void *cbdata)
+static void
+set_bsp2_read (void *mem, size_t mem_size, bsp_t *bsp)
 {
-	bsp_t      *bsp;
-	int         version;
-	qboolean    bsp2 = false;
-
-	bsp = calloc (sizeof (bsp_t), 1);
-
-	bsp->header = mem;
-
-	version = LittleLong (bsp->header->version);
-	if (!memcmp (&bsp->header->version, BSP2VERSION, 4)) {
-		bsp2 = true;
-	} else if (version != BSPVERSION)
-		Sys_Error ("version %i, neither %i nor %s", version, BSPVERSION,
-				   BSP2VERSION);
-
 #undef SET_LUMP
 #define SET_LUMP(l,n) \
 do { \
@@ -653,11 +637,107 @@ do { \
 	SET_LUMP (LUMP_VISIBILITY, visdata);
 	SET_LUMP (LUMP_ENTITIES, entdata);
 	SET_LUMP (LUMP_TEXTURES, texdata);
+}
 
-	if (bsp2)
+static void
+set_bsp29_read (void *mem, size_t mem_size, bsp29_t *bsp29)
+{
+#undef SET_LUMP
+#define SET_LUMP(l,n) \
+do { \
+	size_t      size = LittleLong (bsp29->header->lumps[l].filelen); \
+	size_t      offs = LittleLong (bsp29->header->lumps[l].fileofs); \
+	void       *data = (byte *) mem + offs; \
+	if (offs >= mem_size || (offs + size) > mem_size) \
+		Sys_Error ("invalid lump"); \
+	if (size % sizeof (bsp29->n[0])) \
+		Sys_Error ("funny lump size"); \
+	bsp29->n = 0; \
+	if (size) \
+		bsp29->n = (void *) data; \
+	bsp29->num##n = size / sizeof (bsp29->n[0]); \
+} while (0)
+
+	SET_LUMP (LUMP_PLANES, planes);
+	SET_LUMP (LUMP_LEAFS, leafs);
+	SET_LUMP (LUMP_VERTEXES, vertexes);
+	SET_LUMP (LUMP_NODES, nodes);
+	SET_LUMP (LUMP_TEXINFO, texinfo);
+	SET_LUMP (LUMP_FACES, faces);
+	SET_LUMP (LUMP_CLIPNODES, clipnodes);
+	SET_LUMP (LUMP_MARKSURFACES, marksurfaces);
+	SET_LUMP (LUMP_SURFEDGES, surfedges);
+	SET_LUMP (LUMP_EDGES, edges);
+	SET_LUMP (LUMP_MODELS, models);
+
+#undef SET_LUMP
+#define SET_LUMP(l,n) \
+do { \
+	size_t      size = LittleLong (bsp29->header->lumps[l].filelen); \
+	size_t      offs = LittleLong (bsp29->header->lumps[l].fileofs); \
+	void       *data = (byte *) mem + offs; \
+	if (offs >= mem_size || (offs + size) > mem_size) \
+		Sys_Error ("invalid lump"); \
+	bsp29->n = 0; \
+	if (size) \
+		bsp29->n = (void *) data; \
+	bsp29->n##size = size; \
+} while (0)
+
+	SET_LUMP (LUMP_LIGHTING, lightdata);
+	SET_LUMP (LUMP_VISIBILITY, visdata);
+	SET_LUMP (LUMP_ENTITIES, entdata);
+	SET_LUMP (LUMP_TEXTURES, texdata);
+}
+
+bsp_t *
+LoadBSPMem (void *mem, size_t mem_size, void (*cb) (const bsp_t *, void *),
+			void *cbdata)
+{
+	bsp_t      *bsp;
+	int         version;
+	qboolean    bsp2 = false;
+
+	bsp = calloc (sizeof (bsp_t), 1);
+
+	bsp->header = mem;
+
+	version = LittleLong (bsp->header->version);
+	if (!memcmp (&bsp->header->version, BSP2VERSION, 4)) {
+		bsp2 = true;
+	} else if (version != BSPVERSION)
+		Sys_Error ("version %i, neither %i nor %s", version, BSPVERSION,
+				   BSP2VERSION);
+
+	if (bsp2) {
+		set_bsp2_read (mem, mem_size, bsp);
 		swap_bsp (bsp, 0, cb, cbdata);
-	else
-		swap_from_bsp29 (bsp, 0, cb, cbdata);//FIXME
+	} else {
+		bsp29_t     bsp29;
+
+		if (sizeof (bsp29) != sizeof (*bsp))
+			Sys_Error ("taniwha's being lazy about bsp29 support");
+		memcpy (&bsp29, bsp, sizeof (bsp29));
+		set_bsp29_read (mem, mem_size, &bsp29);
+		memcpy (bsp, &bsp29, sizeof (bsp29));
+
+#undef SET_LUMP
+#define SET_LUMP(n) \
+do { \
+	if (bsp->num##n) {\
+		bsp->n = (void *) malloc (bsp->num##n * sizeof (bsp->n[0])); \
+		bsp->own_##n = 1; \
+	} \
+} while (0)
+
+		SET_LUMP (nodes);
+		SET_LUMP (clipnodes);
+		SET_LUMP (edges);
+		SET_LUMP (faces);
+		SET_LUMP (leafs);
+		SET_LUMP (marksurfaces);
+		swap_from_bsp29 (bsp, &bsp29, cb, cbdata);
+	}
 	return bsp;
 }
 
