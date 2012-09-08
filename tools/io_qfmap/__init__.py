@@ -43,6 +43,7 @@ if "bpy" in locals():
     if "export_map" in locals():
         imp.reload(export_map)
 
+from pprint import pprint
 
 import bpy
 from bpy.props import BoolProperty, FloatProperty, StringProperty, EnumProperty
@@ -54,17 +55,53 @@ from .entityclass import EntityClassDict
 from . import import_map
 #from . import export_map
 
+def ecm_draw(self, context):
+    layout = self.layout
+    for item in self.menu_items:
+        if type(item[1]) is str:
+            layout.operator("object.add_entity", text=item[0]).entclass=item[1]
+        else:
+            layout.menu(item[1].bl_idname)
+
+class EntityClassMenu:
+    @classmethod
+    def clear(cls):
+        while cls.menu_items:
+            if type(cls.menu_item[0][1]) is not str:
+                bpy.utils.unregister_class(cls.menu_items[0][1])
+                cls.menu_items[0][1].clear()
+            del cls.menu_items[0]
+    @classmethod
+    def build(cls, menudict, name="INFO_MT_entity_add", label="entity"):
+        items = list(menudict.items())
+        items.sort()
+        menu_items = []
+        for i in items:
+            i = list(i)
+            if type(i[1]) is dict:
+                if i[0]:
+                    nm = "_".join((name, i[0]))
+                else:
+                    nm = name
+                i[1] = cls.build(i[1], nm, i[0])
+            menu_items.append(i)
+        attrs = {}
+        attrs["menu_items"] = menu_items
+        attrs["draw"] = ecm_draw
+        attrs["bl_idname"] = name
+        attrs["bl_label"] = label
+        attrs["clear"] = cls.clear
+        menu = type(name, (bpy.types.Menu,), attrs)
+        bpy.utils.register_class(menu)
+        return menu
+
 @persistent
 def scene_load_handler(dummy):
     for scene in bpy.data.scenes:
         if hasattr(scene, "qfmap"):
-            qfmap = scene.qfmap
-            if qfmap.script in bpy.data.texts:
-                script = bpy.data.texts[qfmap.script].as_string()
-                qfmap.entity_classes.from_plist(script)
+            scene.qfmap.script_update(bpy.context)
 
 def ec_dir_update(self, context):
-    print("ec_dir_update")
     self.entity_classes.from_source_tree(self.dirpath)
     name = context.scene.name + '-EntityClasses'
     if name in bpy.data.texts:
@@ -75,9 +112,15 @@ def ec_dir_update(self, context):
     self.script = name
 
 def ec_script_update(self, context):
-    print("ec_script_update")
-    if self.script in bpy.data.texts:
-        self.entity_classes.from_plist(bpy.data.texts[self.script].as_string())
+    self.script_update(context)
+
+class AddEntity(bpy.types.Operator):
+    bl_idname = "object.add_entity"
+    bl_label = "Entity"
+    entclass = StringProperty(name = "entclass")
+
+    def execute(self, context):
+        return {'FINISHED'}
 
 class QFEntityClasses(bpy.types.PropertyGroup):
     wadpath = StringProperty(
@@ -94,6 +137,29 @@ class QFEntityClasses(bpy.types.PropertyGroup):
         description="entity class storage",
         update=ec_script_update)
     entity_classes = EntityClassDict()
+    ecm = EntityClassMenu.build({})
+
+    def script_update(self, context):
+        if self.script in bpy.data.texts:
+            script = bpy.data.texts[self.script].as_string()
+            self.entity_classes.from_plist(script)
+            menudict = {}
+            entclasses = self.entity_classes.entity_classes.keys()
+            for ec in entclasses:
+                ecsub = ec.split("_")
+                d = menudict
+                for sub in ecsub[:-1]:
+                    if sub not in d:
+                        d[sub] = {}
+                    elif type(d[sub]) is str:
+                        d[sub] = {"":d[sub]}
+                    d = d[sub]
+                sub = ecsub[-1]
+                if sub in d:
+                    d[sub][""] = ec
+                else:
+                    d[sub] = ec
+            self.__class__.ecm = EntityClassMenu.build(menudict)
 
 class QFECPanel(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
@@ -145,10 +211,11 @@ class ExportMap(bpy.types.Operator, ExportHelper):
 def menu_func_import(self, context):
     self.layout.operator(ImportMap.bl_idname, text="Quake map (.map)")
 
-
 def menu_func_export(self, context):
     self.layout.operator(ExportMap.bl_idname, text="Quake map (.map)")
 
+def menu_func_add(self, context):
+    self.layout.menu(context.scene.qfmap.ecm.bl_idname)
 
 def register():
     bpy.utils.register_module(__name__)
@@ -157,6 +224,7 @@ def register():
 
     bpy.types.INFO_MT_file_import.append(menu_func_import)
     bpy.types.INFO_MT_file_export.append(menu_func_export)
+    bpy.types.INFO_MT_add.append(menu_func_add)
 
     bpy.app.handlers.load_post.append(scene_load_handler)
 
@@ -166,6 +234,7 @@ def unregister():
 
     bpy.types.INFO_MT_file_import.remove(menu_func_import)
     bpy.types.INFO_MT_file_export.remove(menu_func_export)
+    bpy.types.INFO_MT_add.remove(menu_func_add)
 
 if __name__ == "__main__":
     register()
