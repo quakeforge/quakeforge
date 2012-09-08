@@ -530,8 +530,8 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 		}
 		node->children[0] = LittleLong (node->children[0]);
 		node->children[1] = LittleLong (node->children[1]);
-		node->firstface = LittleShort (node->firstface);
-		node->numfaces = LittleShort (node->numfaces);
+		node->firstface = LittleLong (node->firstface);
+		node->numfaces = LittleLong (node->numfaces);
 	}
 
 	// leafs
