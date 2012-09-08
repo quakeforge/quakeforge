@@ -590,7 +590,8 @@ UDP_GetSocketAddr (int socket, netadr_t *na)
 	SockadrToNetadr (&addr, na);
 	memcpy (&a, na->ip, ADDR_SIZE);
 	if (a == 0 || a == inet_addr ("127.0.0.1")) {
-		memcpy (na->ip, default_iface, ADDR_SIZE);
+		if (default_iface)
+			memcpy (na->ip, default_iface, ADDR_SIZE);
 		if (last_iface)
 			memcpy (na->ip, last_iface, ADDR_SIZE);
 	}
