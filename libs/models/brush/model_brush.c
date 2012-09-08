@@ -600,10 +600,13 @@ Mod_LoadNodes (bsp_t *bsp)
 		for (j = 0; j < 2; j++) {
 			p = in->children[j];
 			// this check is for extended bsp 29 files
-			if (p < count) {
+			if (p >= 0 && p < count) {
 				out->children[j] = loadmodel->nodes + p;
 			} else {
-				p = 65535 - p; //NOTE this uses 65535 intentionally, -1 is leaf
+				if (p >= count)
+					p = 65535 - p; //NOTE 65535 is intentional, -1 is leaf
+				else
+					p = ~p;
 				if (p < loadmodel->numleafs) {
 					out->children[j] = (mnode_t *) (loadmodel->leafs + p);
 				} else {
@@ -631,9 +634,6 @@ Mod_LoadLeafs (bsp_t *bsp)
 	in = bsp->leafs;
 	count = bsp->numleafs;
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
-
-	if (count > 32767)
-		Sys_Error ("%i leafs exceeds limit of 32767.\n", count);
 
 	loadmodel->leafs = out;
 	loadmodel->numleafs = count;
