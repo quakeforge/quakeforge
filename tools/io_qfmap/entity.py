@@ -49,8 +49,8 @@ class EntityPanel(bpy.types.Panel):
         obj = context.active_object
         qfmap = context.scene.qfmap
         ec = qfmap.entity_classes.entity_classes[obj.qfentity.classname]
-        flags = ec.flagnames + [""] * (8 - len(ec.flagnames))
-        flags += ["!easy", "!medium", "!hard", "!dm"]
+        flags = ec.flagnames + ("",) * (8 - len(ec.flagnames))
+        flags += ("!easy", "!medium", "!hard", "!dm")
         layout.prop(obj.qfentity, "classname")
         split = layout.split()
         for c in range(3):

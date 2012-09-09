@@ -39,9 +39,9 @@ class EntityClass:
         else:
             size = None
         if "flagnames" in d:
-            flagnames = list(d["flagnames"])
+            flagnames = tuple(d["flagnames"])
         else:
-            flagnames = []
+            flagnames = ()
         if "comment" in d:
             comment = d["comment"]
         else:
