@@ -235,7 +235,7 @@ def map_error(self, msg):
 
 def parse_map(filename):
     text = open(filename, "rt").read()
-    script = Script(filename, text)
+    script = Script(filename, text, single="")
     script.error = map_error
     entities = []
     global texdefs
