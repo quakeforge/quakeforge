@@ -48,6 +48,10 @@ class Texinfo:
         scale = [0, 0]
         scale[0] = float(script.getToken())
         scale[1] = float(script.getToken())
+        if not scale[0]:
+            scale[0] = 1
+        if not scale[1]:
+            scale[1] = 1
         tx = cls(name, s_vec, t_vec, s_offs, t_offs, rotate, scale)
         for t in texdefs:
             if t == tx:
