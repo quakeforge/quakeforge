@@ -510,6 +510,7 @@ LoadMapFile (const char *filename)
 	Qclose (file);
 
 	map_script = Script_New ();
+	map_script->single = "";
 	Script_Start (map_script, filename, buf);
 
 	num_entities = 0;

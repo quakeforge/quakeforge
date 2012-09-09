@@ -336,6 +336,7 @@ readMapFile
 	dat[size] = 0;
 
 	script = Script_New ();
+	script->single = "";
 	Script_Start (script, [fname fileSystemRepresentation], dat);
 
 	do {
