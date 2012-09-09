@@ -24,11 +24,12 @@ import os
 import bpy
 from bpy_extras.object_utils import object_data_add
 from mathutils import Vector,Matrix
+from math import pi
 
 from .map import parse_map, MapError
 from .quakepal import palette
 from .wad import WadFile
-from .entity import entity_box
+from .entity import entity_box, set_entity_props
 
 def parse_vector(vstr):
     v = vstr.split()
@@ -109,10 +110,6 @@ def process_entity(ent, wads):
             light.distance = 300.0
         light.falloff_type = 'CUSTOM_CURVE'
         obj = bpy.data.objects.new(name, light)
-        obj.location = parse_vector (ent.d["origin"])
-        bpy.context.scene.objects.link(obj)
-        bpy.context.scene.objects.active=obj
-        obj.select = True
     elif ent.b:
         verts = []
         faces = []
@@ -156,9 +153,6 @@ def process_entity(ent, wads):
                 uvloop.data[k].uv = uv[j]
         mesh.update()
         obj = bpy.data.objects.new(name, mesh)
-        bpy.context.scene.objects.link(obj)
-        bpy.context.scene.objects.active=obj
-        obj.select = True
     else:
         if entityclass.size:
             mesh = entity_box(entityclass)
@@ -168,10 +162,24 @@ def process_entity(ent, wads):
             obj.empty_draw_type = 'CUBE'
             obj.empty_draw_size = 8
         obj.show_name = True
+    if "origin" in ent.d:
         obj.location = parse_vector (ent.d["origin"])
-        bpy.context.scene.objects.link(obj)
-        bpy.context.scene.objects.active=obj
-        obj.select = True
+    angles = Vector()
+    if not ent.b:
+        #brush entities doen't normally support rotation
+        if "angle" in ent.d:
+            angles = Vector((0, 0, float(ent.d["angle"])))
+            del ent.d["angle"]
+        elif "angles" in ent.d:
+            angles = parse_vector(ent.d["angles"])
+            angles = angles.xzy
+            del ent.d["angles"]
+    obj.rotation_mode = 'XZY'
+    obj.rotation_euler = angles * pi / 180
+    bpy.context.scene.objects.link(obj)
+    bpy.context.scene.objects.active=obj
+    obj.select = True
+    set_entity_props(obj, ent)
 
 def import_map(operator, context, filepath):
     bpy.context.user_preferences.edit.use_global_undo = False

@@ -14,6 +14,9 @@ class EntityClass:
         self.flagnames = flagnames
         self.comment = comment
     @classmethod
+    def null(cls):
+        return cls('', (1, 1, 1), None, (), "")
+    @classmethod
     def from_quaked(cls, text, filename, line = 0):
         script = Script(filename, text)
         if line:

@@ -21,18 +21,32 @@
 
 import bpy
 from bpy.props import BoolProperty, FloatProperty, StringProperty, EnumProperty
-from bpy.props import BoolVectorProperty, PointerProperty
+from bpy.props import BoolVectorProperty, CollectionProperty, PointerProperty
+from bpy.props import FloatVectorProperty, IntProperty
+
+from .entityclass import EntityClass
 
 def qfentity_items(self, context):
     qfmap = context.scene.qfmap
     entclasses = qfmap.entity_classes.entity_classes
     eclist = list(entclasses.keys())
     eclist.sort()
-    return tuple(map(lambda ec: (ec, ec, entclasses[ec].comment), eclist))
+    enum = (('', '--', 'No class. Will be exported as part of the world entity.'),)
+    enum += tuple(map(lambda ec: (ec, ec, entclasses[ec].comment), eclist))
+    return enum
+
+class QFEntityProp(bpy.types.PropertyGroup):
+    name = StringProperty()
+    float = FloatProperty()
+    vector = FloatVectorProperty()
+    string = StringProperty()
+    list_control = StringProperty(default="string", options={'HIDDEN'})
 
 class QFEntity(bpy.types.PropertyGroup):
     classname = EnumProperty(items = qfentity_items, name = "Entity Class")
     flags = BoolVectorProperty(size=12)
+    fields = CollectionProperty(type=QFEntityProp)
+    field_idx = IntProperty()
 
 class EntityPanel(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
@@ -48,7 +62,10 @@ class EntityPanel(bpy.types.Panel):
         layout = self.layout
         obj = context.active_object
         qfmap = context.scene.qfmap
-        ec = qfmap.entity_classes.entity_classes[obj.qfentity.classname]
+        if obj.qfentity.classname:
+            ec = qfmap.entity_classes.entity_classes[obj.qfentity.classname]
+        else:
+            ec = EntityClass.null()
         flags = ec.flagnames + ("",) * (8 - len(ec.flagnames))
         flags += ("!easy", "!medium", "!hard", "!dm")
         layout.prop(obj.qfentity, "classname")
@@ -58,7 +75,9 @@ class EntityPanel(bpy.types.Panel):
             sub = col.column(align=True)
             for r in range(4):
                 idx = c * 4 + r
-                sub.prop(obj.qfentity, "flags", text = flags[idx], index = idx)
+                sub.prop(obj.qfentity, "flags", text=flags[idx], index=idx)
+        layout.template_list(obj.qfentity, "fields", obj.qfentity, "field_idx",
+                             prop_list="list_control")
 
 def default_brush_entity(entityclass):
     name = entityclass.name
@@ -101,6 +120,21 @@ def entity_box(entityclass):
     mat.use_raytrace = False
     mesh.materials.append(mat)
     return mesh
+
+def set_entity_props(obj, ent):
+    qfe = obj.qfentity
+    if "classname" in ent.d:
+        qfe.classname = ent.d["classname"]
+    if "spawnflags" in ent.d:
+        flags = int(float(ent.d["spawnflags"]))
+        for i in range(12):
+            qfe.flags[i] = (flags & (1 << i)) and True or False
+    for key in ent.d.keys():
+        if key in {"classname", "spawnflags", "origin"}:
+            continue
+        item = qfe.fields.add()
+        item.name = key
+        item.string = ent.d[key]
 
 def add_entity(self, context, entclass):
     entity_class = context.scene.qfmap.entity_classes.entity_classes[entclass]
