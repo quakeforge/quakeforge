@@ -59,7 +59,13 @@ def ecm_draw(self, context):
     layout = self.layout
     for item in self.menu_items:
         if type(item[1]) is str:
-            layout.operator("object.add_entity", text=item[0]).entclass=item[1]
+            ec = context.scene.qfmap.entity_classes.entity_classes[item[1]]
+            if ec.size:
+                icon = 'OBJECT_DATA'
+            else:
+                icon = 'MESH_DATA'
+            op = layout.operator("object.add_entity", text=item[0], icon=icon)
+            op.entclass=item[1]
         else:
             layout.menu(item[1].bl_idname)
 
