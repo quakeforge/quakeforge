@@ -21,6 +21,20 @@
 
 import bpy
 
+def default_brush_entity(entityclass):
+    name = entityclass.name
+    verts = [(-8, -8, -8),
+             ( 8,  8, -8),
+             (-8,  8,  8),
+             ( 8, -8,  8)]
+    faces = [(0, 2, 1),
+             (0, 3, 2),
+             (0, 1, 3),
+             (1, 2, 3)]
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, [], faces)
+    return mesh
+
 def entity_box(entityclass):
     name = entityclass.name
     size = entityclass.size
@@ -57,7 +71,7 @@ def add_entity(self, context, entclass):
     if entity_class.size:
         mesh = entity_box(entity_class)
     else:
-        mesh = None
+        mesh = default_brush_entity(entity_class)
     obj = bpy.data.objects.new(entity_class.name, mesh)
     obj.location = context.scene.cursor_location
     obj.select = True
