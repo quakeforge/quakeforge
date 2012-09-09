@@ -137,10 +137,10 @@ def parse_vector(script):
     return v
 
 def parse_verts(script):
-    if script.token != ":":
+    if script.token[0] != ":":
         map_error(script, "Missing :")
-    script.getToken()
-    numverts = int(script.token)
+    #script.getToken()
+    numverts = int(script.token[1:])
     verts = []
     for i in range(numverts):
         script.tokenAvailable(True)
