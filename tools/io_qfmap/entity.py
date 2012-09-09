@@ -20,6 +20,45 @@
 # <pep8 compliant>
 
 import bpy
+from bpy.props import BoolProperty, FloatProperty, StringProperty, EnumProperty
+from bpy.props import BoolVectorProperty, PointerProperty
+
+def qfentity_items(self, context):
+    qfmap = context.scene.qfmap
+    entclasses = qfmap.entity_classes.entity_classes
+    eclist = list(entclasses.keys())
+    eclist.sort()
+    return tuple(map(lambda ec: (ec, ec, entclasses[ec].comment), eclist))
+
+class QFEntity(bpy.types.PropertyGroup):
+    classname = EnumProperty(items = qfentity_items, name = "Entity Class")
+    flags = BoolVectorProperty(size=12)
+
+class EntityPanel(bpy.types.Panel):
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = 'object'
+    bl_label = 'QF Entity'
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def draw(self, context):
+        layout = self.layout
+        obj = context.active_object
+        qfmap = context.scene.qfmap
+        ec = qfmap.entity_classes.entity_classes[obj.qfentity.classname]
+        flags = ec.flagnames + [""] * (8 - len(ec.flagnames))
+        flags += ["!easy", "!medium", "!hard", "!dm"]
+        layout.prop(obj.qfentity, "classname")
+        split = layout.split()
+        for c in range(3):
+            col = split.column()
+            sub = col.column(align=True)
+            for r in range(4):
+                idx = c * 4 + r
+                sub.prop(obj.qfentity, "flags", text = flags[idx], index = idx)
 
 def default_brush_entity(entityclass):
     name = entityclass.name
@@ -75,7 +114,11 @@ def add_entity(self, context, entclass):
     obj = bpy.data.objects.new(entity_class.name, mesh)
     obj.location = context.scene.cursor_location
     obj.select = True
+    obj.qfentity.classname = entclass
     context.scene.objects.link(obj)
     bpy.context.scene.objects.active=obj
     context.user_preferences.edit.use_global_undo = True
     return {'FINISHED'}
+
+def register():
+    bpy.types.Object.qfentity = PointerProperty(type=QFEntity)

@@ -238,6 +238,7 @@ def register():
     bpy.types.INFO_MT_add.append(menu_func_add)
 
     bpy.app.handlers.load_post.append(scene_load_handler)
+    entity.register()
 
 
 def unregister():
