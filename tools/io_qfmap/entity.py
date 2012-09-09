@@ -36,17 +36,35 @@ def qfentity_items(self, context):
     return enum
 
 class QFEntityProp(bpy.types.PropertyGroup):
-    name = StringProperty()
-    float = FloatProperty()
-    vector = FloatVectorProperty()
-    string = StringProperty()
-    list_control = StringProperty(default="string", options={'HIDDEN'})
+    value = StringProperty(name="")
+    template_list_controls = StringProperty(default="value", options={'HIDDEN'})
 
 class QFEntity(bpy.types.PropertyGroup):
     classname = EnumProperty(items = qfentity_items, name = "Entity Class")
     flags = BoolVectorProperty(size=12)
-    fields = CollectionProperty(type=QFEntityProp)
+    fields = CollectionProperty(type=QFEntityProp, name="Fields")
     field_idx = IntProperty()
+
+class QFEntpropAdd(bpy.types.Operator):
+    '''Add an entity field/value pair'''
+    bl_idname = "object.entprop_add"
+    bl_label = "Entprop Add"
+    def execute(self, context):
+        qfentity = context.active_object.qfentity
+        item = qfentity.fields.add()
+        item.name = ""
+        item.value = ""
+        return {'FINISHED'}
+
+class QFEntpropRemove(bpy.types.Operator):
+    '''Remove an entity field/value pair'''
+    bl_idname = "object.entprop_remove"
+    bl_label = "Entprop Remove"
+    def execute(self, context):
+        qfentity = context.active_object.qfentity
+        if qfentity.field_idx >= 0:
+            qfentity.fields.remove(qfentity.field_idx)
+        return {'FINISHED'}
 
 class EntityPanel(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
@@ -60,24 +78,34 @@ class EntityPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        obj = context.active_object
+        qfentity = context.active_object.qfentity
         qfmap = context.scene.qfmap
-        if obj.qfentity.classname:
-            ec = qfmap.entity_classes.entity_classes[obj.qfentity.classname]
+        if qfentity.classname:
+            ec = qfmap.entity_classes.entity_classes[qfentity.classname]
         else:
             ec = EntityClass.null()
         flags = ec.flagnames + ("",) * (8 - len(ec.flagnames))
         flags += ("!easy", "!medium", "!hard", "!dm")
-        layout.prop(obj.qfentity, "classname")
-        split = layout.split()
+        row = layout.row()
+        row.prop(qfentity, "classname")
+        row = layout.row()
         for c in range(3):
-            col = split.column()
+            col = row.column()
             sub = col.column(align=True)
             for r in range(4):
                 idx = c * 4 + r
-                sub.prop(obj.qfentity, "flags", text=flags[idx], index=idx)
-        layout.template_list(obj.qfentity, "fields", obj.qfentity, "field_idx",
-                             prop_list="list_control")
+                sub.prop(qfentity, "flags", text=flags[idx], index=idx)
+        row = layout.row()
+        col = row.column()
+        col.template_list(qfentity, "fields", qfentity, "field_idx",
+                          prop_list="template_list_controls", rows=3)
+        col = row.column(align=True)
+        col.operator("object.entprop_add", icon='ZOOMIN', text="")
+        col.operator("object.entprop_remove", icon='ZOOMOUT', text="")
+        if len(qfentity.fields) > qfentity.field_idx >= 0:
+            row = layout.row()
+            field = qfentity.fields[qfentity.field_idx]
+            row.prop(field, "name", text="Field Name")
 
 def default_brush_entity(entityclass):
     name = entityclass.name
@@ -134,7 +162,7 @@ def set_entity_props(obj, ent):
             continue
         item = qfe.fields.add()
         item.name = key
-        item.string = ent.d[key]
+        item.value = ent.d[key]
 
 def add_entity(self, context, entclass):
     entity_class = context.scene.qfmap.entity_classes.entity_classes[entclass]
