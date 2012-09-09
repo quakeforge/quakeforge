@@ -28,40 +28,13 @@ from mathutils import Vector,Matrix
 from .map import parse_map, MapError
 from .quakepal import palette
 from .wad import WadFile
+from .entity import entity_box
 
 def parse_vector(vstr):
     v = vstr.split()
     for i in range(len(v)):
         v[i] = float(v[i])
     return Vector(v)
-
-def entity_box(entityclass):
-    name = entityclass.name
-    size = entityclass.size
-    color = entityclass.color
-    if name in bpy.data.meshes:
-        return bpy.data.meshes[name]
-    verts = [(size[0][0], size[0][1], size[0][2]),
-             (size[0][0], size[0][1], size[1][2]),
-             (size[0][0], size[1][1], size[0][2]),
-             (size[0][0], size[1][1], size[1][2]),
-             (size[1][0], size[0][1], size[0][2]),
-             (size[1][0], size[0][1], size[1][2]),
-             (size[1][0], size[1][1], size[0][2]),
-             (size[1][0], size[1][1], size[1][2])]
-    faces = [(0, 1, 3, 2),
-             (0, 2, 6, 4),
-             (0, 4, 5, 1),
-             (4, 6, 7, 5),
-             (6, 2, 3, 7),
-             (1, 5, 7, 3)]
-    mesh = bpy.data.meshes.new(name)
-    mesh.from_pydata(verts, [], faces)
-    mat = bpy.data.materials.new(name)
-    mat.diffuse_color = color
-    mat.use_raytrace = False
-    mesh.materials.append(mat)
-    return mesh
 
 def load_image(tx):
     if tx.name in bpy.data.images:

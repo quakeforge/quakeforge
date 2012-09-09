@@ -52,6 +52,7 @@ from bpy_extras.io_utils import ExportHelper, ImportHelper, path_reference_mode,
 from bpy.app.handlers import persistent
 
 from .entityclass import EntityClassDict
+from . import entity
 from . import import_map
 #from . import export_map
 
@@ -66,6 +67,8 @@ def ecm_draw(self, context):
                 icon = 'MESH_DATA'
             op = layout.operator("object.add_entity", text=item[0], icon=icon)
             op.entclass=item[1]
+            if ec.comment:
+                pass
         else:
             layout.menu(item[1].bl_idname)
 
@@ -121,12 +124,14 @@ def ec_script_update(self, context):
     self.script_update(context)
 
 class AddEntity(bpy.types.Operator):
+    '''Add an entity'''
     bl_idname = "object.add_entity"
     bl_label = "Entity"
     entclass = StringProperty(name = "entclass")
 
     def execute(self, context):
-        return {'FINISHED'}
+        keywords = self.as_keywords()
+        return entity.add_entity(self, context, **keywords)
 
 class QFEntityClasses(bpy.types.PropertyGroup):
     wadpath = StringProperty(
@@ -221,7 +226,7 @@ def menu_func_export(self, context):
     self.layout.operator(ExportMap.bl_idname, text="Quake map (.map)")
 
 def menu_func_add(self, context):
-    self.layout.menu(context.scene.qfmap.ecm.bl_idname)
+    self.layout.menu(context.scene.qfmap.ecm.bl_idname, icon='PLUGIN')
 
 def register():
     bpy.utils.register_module(__name__)
