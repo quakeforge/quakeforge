@@ -94,8 +94,8 @@ def qfentity_items(self, context):
     entclasses = qfmap.entity_classes.entity_classes
     eclist = list(entclasses.keys())
     eclist.sort()
-    enum = (('', '--', 'No class. Will be exported as part of the world entity.'),)
-    enum += tuple(map(lambda ec: (ec, ec, entclasses[ec].comment), eclist))
+    enum = (('', "--", ""),)
+    enum += tuple(map(lambda ec: (ec, ec, ""), eclist))
     return enum
 
 class QFEntityProp(bpy.types.PropertyGroup):
@@ -151,6 +151,20 @@ class EntityPanel(bpy.types.Panel):
         flags += ("!easy", "!medium", "!hard", "!dm")
         row = layout.row()
         row.prop(qfentity, "classname")
+        box=layout.box()
+        for l in ec.comment.split("\n"):
+            if not l:
+                continue
+            words = l.split(" ")
+            line = ""
+            while words:
+                if len(line) + len(words[0]) > 40:
+                    box.label(line)
+                    line = ""
+                line += (line and " " or "") + words[0]
+                del words[0]
+            if line:
+                box.label(line)
         row = layout.row()
         for c in range(3):
             col = row.column()
