@@ -81,7 +81,7 @@ class QFEntityRelations(bpy.types.Panel):
             for reg in context.area.regions:
                 if reg.type != 'WINDOW':
                     continue
-                reg.callback_add(draw_callback, (cls, context), 'PRE_VIEW')
+                reg.callback_add(draw_callback, (cls, context), 'POST_VIEW')
                 cls.initDone = True
         return False
     def draw_header(self, context):
