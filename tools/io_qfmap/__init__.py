@@ -51,7 +51,7 @@ from bpy.props import FloatVectorProperty, PointerProperty
 from bpy_extras.io_utils import ExportHelper, ImportHelper, path_reference_mode, axis_conversion
 from bpy.app.handlers import persistent
 
-from .entityclass import EntityClassDict
+from .entityclass import EntityClassDict, EntityClassError
 from . import entity
 from . import import_map
 #from . import export_map
@@ -110,8 +110,32 @@ def scene_load_handler(dummy):
         if hasattr(scene, "qfmap"):
             scene.qfmap.script_update(bpy.context)
 
+class MapeditMessage(bpy.types.Operator):
+    bl_idname = "qfmapedit.message"
+    bl_label = "Message"
+    type = StringProperty()
+    message = StringProperty()
+
+    def execute(self, context):
+        self.report({'INFO'}, message)
+        return {'FINISHED'}
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_popup(self, width=400, height=200)
+    def draw(self, context):
+        self.layout.label(self.type, icon='ERROR')
+        self.layout.label(self.message)
+
 def ec_dir_update(self, context):
-    self.entity_classes.from_source_tree(self.dirpath)
+    if not self.dirpath:
+        return
+    try:
+        self.entity_classes.from_source_tree(self.dirpath)
+    except EntityClassError as err:
+        self.dirpath = ""
+        bpy.ops.qfmapedit.message('INVOKE_DEFAULT', type="Error",
+                                  message="Entity Class Error: %s" % err)
+        return
     name = context.scene.name + '-EntityClasses'
     if name in bpy.data.texts:
         txt = bpy.data.texts[name]
