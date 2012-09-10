@@ -190,7 +190,6 @@ def import_map(operator, context, filepath):
     try:
         entities = parse_map (filepath)
     except MapError as err:
-        raise
         operator.report({'ERROR'}, repr(err))
         return {'CANCELLED'}
     wads=[]
@@ -204,8 +203,13 @@ def import_map(operator, context, filepath):
             try:
                 wads[i] = WadFile.load(os.path.join(wadpath, wads[i]))
             except IOError:
-                wads[i] = WadFile.load(os.path.join(wadpath,
-                                        os.path.basename(wads[i])))
+                try:
+                    wads[i] = WadFile.load(os.path.join(wadpath,
+                                           os.path.basename(wads[i])))
+                except IOError:
+                    #give up
+                    operator.report({'INFO'}, "Cant't find %s" % wads[i])
+                    wads[i] = None
     for ent in entities:
         process_entity(ent, wads)
     bpy.context.user_preferences.edit.use_global_undo = True
