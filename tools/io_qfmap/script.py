@@ -19,6 +19,11 @@
 
 # <pep8 compliant>
 
+class ScriptError(Exception):
+    def __init__(self, fname, line, message):
+        Exception.__init__(self, "%s:%d: %s" % (fname, line, message))
+        self.line = line
+
 class Script:
     def __init__(self, filename, text, single="{}()':"):
         self.filename = filename
@@ -27,6 +32,8 @@ class Script:
         self.pos = 0
         self.line = 1
         self.unget = False
+    def error(self, msg):
+        raise ScriptError(self.filename, self.line, msg)
     def tokenAvailable(self, crossline=False):
         if self.unget:
             return True
@@ -60,16 +67,16 @@ class Script:
             return self.token
         if not self.tokenAvailable(crossline):
             if not crossline:
-                self.error(self, "line is incomplete")
+                self.error("line is incomplete")
             return None
         if self.text[self.pos] == "\"":
             self.pos += 1
             start = self.pos
             if self.text[self.pos] == len(self.text):
-                self.error(self, "EOF inside quoted string")
+                self.error("EOF inside quoted string")
             while self.text[self.pos] != "\"":
                 if self.pos == len(self.text):
-                    self.error(self, "EOF inside quoted string")
+                    self.error("EOF inside quoted string")
                     return None
                 if self.text[self.pos] == "\n":
                     self.line += 1
