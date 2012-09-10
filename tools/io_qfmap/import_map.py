@@ -62,6 +62,7 @@ def load_material(tx):
         return bpy.data.materials[tx.name]
     mat = bpy.data.materials.new(tx.name)
     mat.diffuse_color = (1, 1, 1)
+    mat.specular_intensity = 0
     mat.use_raytrace = False
     tex = bpy.data.textures.new(tx.name, 'IMAGE')
     tex.extension = 'REPEAT'
