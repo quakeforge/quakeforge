@@ -19,12 +19,75 @@
 
 # <pep8 compliant>
 
-import bpy
+import bpy, bgl
 from bpy.props import BoolProperty, FloatProperty, StringProperty, EnumProperty
 from bpy.props import BoolVectorProperty, CollectionProperty, PointerProperty
 from bpy.props import FloatVectorProperty, IntProperty
+from mathutils import Vector
 
 from .entityclass import EntityClass
+
+def draw_callback(self, context):
+    def obj_location(obj):
+        ec = None
+        if obj.qfentity.classname in entity_classes:
+            ec = entity_classes[obj.qfentity.classname]
+        if not ec or ec.size:
+            return obj.location
+        loc = Vector()
+        for i in range(8):
+            loc += Vector(obj.bound_box[i])
+        return obj.location + loc/8.0
+    qfmap = context.scene.qfmap
+    entity_classes = qfmap.entity_classes.entity_classes
+    entity_targets = qfmap.entity_targets
+    bgl.glLineWidth(3)
+    for obj in context.scene.objects:
+        qfentity = obj.qfentity
+        if qfentity.classname not in entity_classes:
+            continue
+        ec = entity_classes[qfentity.classname]
+        target = None
+        for field in qfentity.fields:
+            if field.name == "target" and field.value:
+                target = field.value
+                break
+        if target:
+            targets = entity_targets[target]
+            bgl.glColor4f(ec.color[0], ec.color[1], ec.color[2], 1)
+            for ton in targets:
+                to = bpy.data.objects[ton]
+                bgl.glBegin(bgl.GL_LINE_STRIP)
+                loc = obj_location(obj)
+                bgl.glVertex3f(loc.x, loc.y, loc.z)
+                loc = obj_location(to)
+                bgl.glVertex3f(loc.x, loc.y, loc.z)
+                bgl.glEnd()
+    bgl.glLineWidth(1)
+
+class QFEntityRelations(bpy.types.Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_label = "Register callback"
+    bl_default_closed = True
+
+    initDone = False
+
+    @classmethod
+    def poll(cls, context):
+        if cls.initDone:
+            return False
+        if context.area.type == 'VIEW_3D':
+            for reg in context.area.regions:
+                if reg.type != 'WINDOW':
+                    continue
+                reg.callback_add(draw_callback, (cls, context), 'PRE_VIEW')
+                cls.initDone = True
+        return False
+    def draw_header(self, context):
+        pass
+    def draw(self, context):
+        pass
 
 def qfentity_items(self, context):
     qfmap = context.scene.qfmap
@@ -157,6 +220,12 @@ def set_entity_props(obj, ent):
         flags = int(float(ent.d["spawnflags"]))
         for i in range(12):
             qfe.flags[i] = (flags & (1 << i)) and True or False
+    if "targetname" in ent.d:
+        targetname = ent.d["targetname"]
+        entity_targets = bpy.context.scene.qfmap.entity_targets
+        if targetname not in entity_targets:
+            entity_targets[targetname] = []
+        entity_targets[targetname].append(obj.name)
     for key in ent.d.keys():
         if key in {"classname", "spawnflags", "origin"}:
             continue

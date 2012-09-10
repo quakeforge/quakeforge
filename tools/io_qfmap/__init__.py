@@ -149,6 +149,7 @@ class QFEntityClasses(bpy.types.PropertyGroup):
         update=ec_script_update)
     entity_classes = EntityClassDict()
     ecm = EntityClassMenu.build({})
+    entity_targets = {}
 
     def script_update(self, context):
         if self.script in bpy.data.texts:
