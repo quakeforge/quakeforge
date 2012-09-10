@@ -25,6 +25,14 @@ from .qfplist import pldata
 
 MAX_FLAGS = 8
 
+class EntityClassError(Exception):
+    def __init__(self, fname, line, message):
+        Exception.__init__(self, "%s:%d: %s" % (fname, line, message))
+        self.line = line
+
+def entclass_error(self, msg):
+    raise EntityClassError(self.filename, self.line, msg)
+
 class EntityClass:
     def __init__(self, name, color, size, flagnames, comment):
         self.name = name
@@ -38,6 +46,7 @@ class EntityClass:
     @classmethod
     def from_quaked(cls, text, filename, line = 0):
         script = Script(filename, text)
+        script.error = entclass_error.__get__(script, Script)
         if line:
             script.line = line
         script.getToken()   # skip over the leading '/*QUAKED'
@@ -78,11 +87,11 @@ class EntityClass:
     @classmethod
     def parse_vector(cls, script):
         if script.getToken() != "(":
-            raise SyntaxError
+            script.error("Missing (")
         v = (float(script.getToken()), float(script.getToken()),
              float(script.getToken()))
         if script.getToken() != ")":
-            raise SyntaxError
+            script.error("Missing )")
         return v
     @classmethod
     def parse_size(cls, script):
