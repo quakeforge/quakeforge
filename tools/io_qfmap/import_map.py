@@ -108,7 +108,6 @@ def build_uvs(verts, faces, texdefs):
 def process_entity(ent, wads):
     qfmap = bpy.context.scene.qfmap
     classname = ent.d["classname"]
-    entityclass = qfmap.entity_classes.entity_classes[classname]
     name = classname
     if "classname" in ent.d and ent.d["classname"][:5] == "light":
         light = bpy.data.lamps.new("light", 'POINT')
@@ -164,7 +163,11 @@ def process_entity(ent, wads):
         mesh.update()
         obj = bpy.data.objects.new(name, mesh)
     else:
-        if entityclass.size:
+        try:
+            entityclass = qfmap.entity_classes.entity_classes[classname]
+        except KeyError:
+            entityclass = None
+        if entityclass and entityclass.size:
             mesh = entity_box(entityclass)
             obj = bpy.data.objects.new(name, mesh)
         else:

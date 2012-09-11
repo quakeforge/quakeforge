@@ -229,7 +229,11 @@ def entity_box(entityclass):
 def set_entity_props(obj, ent):
     qfe = obj.qfentity
     if "classname" in ent.d:
-        qfe.classname = ent.d["classname"]
+        try:
+            qfe.classname = ent.d["classname"]
+        except TypeError:
+            #FIXME hmm, maybe an enum wasn't the most brilliant idea?
+            qfe.classname
     if "spawnflags" in ent.d:
         flags = int(float(ent.d["spawnflags"]))
         for i in range(12):
