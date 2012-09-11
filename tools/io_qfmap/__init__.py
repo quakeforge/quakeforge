@@ -126,23 +126,29 @@ class MapeditMessage(bpy.types.Operator):
         self.layout.label(self.type, icon='ERROR')
         self.layout.label(self.message)
 
-def ec_dir_update(self, context):
-    if not self.dirpath:
+def scan_entity_classes(context):
+    qfmap = context.scene.qfmap
+    if not qfmap.dirpath:
         return
-    try:
-        self.entity_classes.from_source_tree(self.dirpath)
-    except EntityClassError as err:
-        self.dirpath = ""
-        bpy.ops.qfmapedit.message('INVOKE_DEFAULT', type="Error",
-                                  message="Entity Class Error: %s" % err)
-        return
+    qfmap.entity_classes.from_source_tree(qfmap.dirpath)
     name = context.scene.name + '-EntityClasses'
     if name in bpy.data.texts:
         txt = bpy.data.texts[name]
     else:
         txt = bpy.data.texts.new(name)
     txt.from_string(self.entity_classes.to_plist())
-    self.script = name
+    qfmap.script = name
+
+def parse_entity_classes(context):
+    context.scene.qfmap.script_update(context)
+
+def ec_dir_update(self, context):
+    try:
+        scan_entity_classes(context)
+    except EntityClassError as err:
+        self.dirpath = ""
+        bpy.ops.qfmapedit.message('INVOKE_DEFAULT', type="Error",
+                                  message="Entity Class Error: %s" % err)
 
 def ec_script_update(self, context):
     self.script_update(context)
@@ -156,6 +162,22 @@ class AddEntity(bpy.types.Operator):
     def execute(self, context):
         keywords = self.as_keywords()
         return entity.add_entity(self, context, **keywords)
+
+class QFEntityClassScan(bpy.types.Operator):
+    '''Rescan the specified QuakeC source tree'''
+    bl_idname = "scene.scan_entity_classes"
+    bl_label = "RELOAD"
+
+    def execute(self, context):
+        return scan_entity_classes(context)
+
+class QFEntityClassParse(bpy.types.Operator):
+    '''Reparse the specified entity class script'''
+    bl_idname = "scene.parse_entity_classes"
+    bl_label = "RELOAD"
+
+    def execute(self, context):
+        return parse_entity_classes(context)
 
 class QFEntityClasses(bpy.types.PropertyGroup):
     wadpath = StringProperty(
@@ -210,9 +232,14 @@ class QFECPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
+        row = layout.row()
         layout.prop(scene.qfmap, "wadpath")
-        layout.prop(scene.qfmap, "dirpath")
-        layout.prop(scene.qfmap, "script")
+        row = layout.row()
+        row.prop(scene.qfmap, "dirpath")
+        row.operator("scene.scan_entity_classes", text="", icon="FILE_REFRESH")
+        row = layout.row()
+        row.prop(scene.qfmap, "script")
+        row.operator("scene.parse_entity_classes", text="", icon="FILE_REFRESH")
 
 class ImportMap(bpy.types.Operator, ImportHelper):
     '''Load a Quake map File'''
