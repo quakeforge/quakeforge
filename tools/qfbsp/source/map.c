@@ -207,11 +207,19 @@ ParseVerts (int *n_verts)
 {
 	vec3_t     *verts;
 	int         i;
+	const char *token;
 
-	if (map_script->token->str[0] != ':')
+	token = Script_Token (map_script);
+	if (token[0] != ':')
 		map_error ("parsing brush");
-	Script_GetToken (map_script, false);
-	*n_verts = atoi (map_script->token->str);
+	// It's normally ":count", but somebody might have done ": count"
+	if (!token[1]) {
+		Script_GetToken (map_script, false);
+		token = Script_Token (map_script);
+	} else {
+		token++;
+	}
+	*n_verts = atoi (token);
 	verts = malloc (sizeof (vec3_t) * *n_verts);
 
 	for (i = 0; i < *n_verts; i++) {

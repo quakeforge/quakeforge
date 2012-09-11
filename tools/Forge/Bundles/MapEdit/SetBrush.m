@@ -643,11 +643,19 @@ ParseVerts (script_t *script, int *n_verts)
 {
 	vec3_t     *verts;
 	int         i;
+	const char *token;
 
-	if (strcmp (Script_Token (script), ":"))
+	token = Script_Token (script);
+	if (token[0] != ':')
 		Sys_Error ("parsing map file");
-	Script_GetToken (script, false);
-	*n_verts = atoi (Script_Token (script));
+	// It's normally ":count", but somebody might have done ": count"
+	if (!token[1]) {
+		Script_GetToken (script, false);
+		token = Script_Token (script);
+	} else {
+		token++;
+	}
+	*n_verts = atoi (token);
 	verts = malloc (sizeof (vec3_t) * *n_verts);
 
 	for (i = 0; i < *n_verts; i++) {
