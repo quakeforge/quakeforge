@@ -64,23 +64,32 @@ def load_material(tx):
     mat.diffuse_color = (1, 1, 1)
     mat.specular_intensity = 0
     mat.use_raytrace = False
-    tex = bpy.data.textures.new(tx.name, 'IMAGE')
-    tex.extension = 'REPEAT'
-    tex.use_preview_alpha = True
-    tex.image = tx.image
-    mat.texture_slots.add()
-    ts = mat.texture_slots[0]
-    ts.texture = tex
-    ts.use_map_alpha = True
-    ts.texture_coords = 'UV'
+    if tx.image:
+        tex = bpy.data.textures.new(tx.name, 'IMAGE')
+        tex.extension = 'REPEAT'
+        tex.use_preview_alpha = True
+        tex.image = tx.image
+        mat.texture_slots.add()
+        ts = mat.texture_slots[0]
+        ts.texture = tex
+        ts.use_map_alpha = True
+        ts.texture_coords = 'UV'
     return mat
 
 def load_textures(texdefs, wads):
     for tx in texdefs:
         if hasattr(tx, "miptex"):
             continue
-        tx.miptex = wads[0].getData(tx.name)
-        tx.image = load_image(tx)
+        try:
+            tx.miptex = wads[0].getData(tx.name)
+            tx.image = load_image(tx)
+        except KeyError:
+            class MT:
+                def __init__(self, x, y):
+                    self.width = x
+                    self.height = y
+            tx.miptex = MT(64,64)
+            tx.image = None
         tx.material = load_material(tx)
 
 def build_uvs(verts, faces, texdefs):
