@@ -465,6 +465,7 @@ ParseEntity (void)
 	mapent = &entities[num_entities];
 	num_entities++;
 	memset (mapent, 0, sizeof (entity_t));
+	mapent->line = map_script->line;
 
 	do {
 		if (!Script_GetToken (map_script, true))
@@ -552,6 +553,7 @@ PrintEntity (const entity_t *ent)
 {
 	const epair_t *ep;
 
+	printf ("%20s : %d\n", "map source line", ent->line);
 	for (ep = ent->epairs; ep; ep = ep->next)
 		printf ("%20s : %s\n", ep->key, ep->value);
 }
