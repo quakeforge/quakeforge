@@ -52,7 +52,7 @@ def draw_callback(self, context):
             if field.name == "target" and field.value:
                 target = field.value
                 break
-        if target:
+        if target and target in entity_targets:
             targets = entity_targets[target]
             bgl.glColor4f(ec.color[0], ec.color[1], ec.color[2], 1)
             for ton in targets:
