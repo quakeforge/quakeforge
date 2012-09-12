@@ -1326,22 +1326,14 @@ glsl_R_LoadSkys (const char *sky)
 	// NOTE: quake's world and GL's world are rotated relative to each other
 	// quake has x right, y in, z up. gl has x right, y up, z out
 	// However, skymaps have lf and rt swapped :/    lf    rt
-	static const char *sky_suffix[] = { "ft", "bk", "rt", "lf", "up", "dn"};
+	static const char *sky_suffix[] = { "ft", "bk", "up", "dn", "rt", "lf"};
 	static int  sky_coords[][2] = {
 		{2, 0},	// front
 		{0, 0}, // back
-		{2, 1}, // left
-		{1, 0}, // right
 		{1, 1}, // up
 		{0, 1}, // down
-	};
-	static int  sky_target[] = {
-		GL_TEXTURE_CUBE_MAP_POSITIVE_X,	// front
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_X, // back
-		GL_TEXTURE_CUBE_MAP_POSITIVE_Z, // left  (normally -ve Z, see shader)
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, // right (normally +ve Z, see shader)
-		GL_TEXTURE_CUBE_MAP_POSITIVE_Y, // up
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, // down
+		{2, 1}, // left
+		{1, 0}, // right
 	};
 
 	if (!sky || !*sky)
@@ -1377,7 +1369,7 @@ glsl_R_LoadSkys (const char *sky)
 			x = sky_coords[i][0] * size;
 			y = sky_coords[i][1] * size;
 			copy_sub_tex (tex, x, y, sub);
-			qfeglTexImage2D (sky_target[i], 0,
+			qfeglTexImage2D (GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
 							sub->format == 3 ? GL_RGB : GL_RGBA,
 							sub->width, sub->height, 0,
 							sub->format == 3 ? GL_RGB : GL_RGBA,
@@ -1400,7 +1392,7 @@ glsl_R_LoadSkys (const char *sky)
 				}
 			}
 			Sys_MaskPrintf (SYS_GLSL, "Loaded %s\n", name);
-			qfeglTexImage2D (sky_target[i], 0,
+			qfeglTexImage2D (GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
 							tex->format == 3 ? GL_RGB : GL_RGBA,
 							tex->width, tex->height, 0,
 							tex->format == 3 ? GL_RGB : GL_RGBA,
