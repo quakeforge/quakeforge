@@ -41,29 +41,42 @@ def draw_callback(self, context):
     qfmap = context.scene.qfmap
     entity_classes = qfmap.entity_classes.entity_classes
     entity_targets = qfmap.entity_targets
+    target_entities = qfmap.target_entities
     bgl.glLineWidth(3)
-    for obj in context.scene.objects:
+    ents = 0
+    targs = 0
+    for obj in target_entities:
+        #obj = bpy.data.objects[objname]
         qfentity = obj.qfentity
         if qfentity.classname not in entity_classes:
             continue
+        ents += 1
         ec = entity_classes[qfentity.classname]
         target = None
+        killtarget = None
         for field in qfentity.fields:
             if field.name == "target" and field.value:
                 target = field.value
-                break
-        if target and target in entity_targets:
-            targets = entity_targets[target]
-            bgl.glColor4f(ec.color[0], ec.color[1], ec.color[2], 1)
-            for ton in targets:
-                to = bpy.data.objects[ton]
-                bgl.glBegin(bgl.GL_LINE_STRIP)
-                loc = obj_location(obj)
-                bgl.glVertex3f(loc.x, loc.y, loc.z)
-                loc = obj_location(to)
-                bgl.glVertex3f(loc.x, loc.y, loc.z)
-                bgl.glEnd()
+            if field.name == "killtarget" and field.value:
+                killtarget = field.value
+        targetlist = [target, killtarget]
+        if target == killtarget:
+            del targetlist[1]
+        for tname in targetlist:
+            if tname and tname in entity_targets:
+                targets = entity_targets[tname]
+                bgl.glColor4f(ec.color[0], ec.color[1], ec.color[2], 1)
+                for ton in targets:
+                    targs += 1
+                    to = bpy.data.objects[ton]
+                    bgl.glBegin(bgl.GL_LINE_STRIP)
+                    loc = obj_location(obj)
+                    bgl.glVertex3f(loc.x, loc.y, loc.z)
+                    loc = obj_location(to)
+                    bgl.glVertex3f(loc.x, loc.y, loc.z)
+                    bgl.glEnd()
     bgl.glLineWidth(1)
+    print(ents, targs)
 
 class QFEntityRelations(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
@@ -238,6 +251,8 @@ def set_entity_props(obj, ent):
         flags = int(float(ent.d["spawnflags"]))
         for i in range(12):
             qfe.flags[i] = (flags & (1 << i)) and True or False
+    if "target" in ent.d or "killtarget" in ent.d:
+        bpy.context.scene.qfmap.target_entities.append(obj)
     if "targetname" in ent.d:
         targetname = ent.d["targetname"]
         entity_targets = bpy.context.scene.qfmap.entity_targets
