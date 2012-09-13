@@ -53,8 +53,12 @@ class EntityClass:
         script.getToken()   # skip over the leading '/*QUAKED'
         name = script.getToken()
         color = cls.parse_vector(script)
-        size = cls.parse_size(script)
-        flagnames = cls.parse_flags(script)
+        if script.tokenAvailable():
+            size = cls.parse_size(script)
+            flagnames = cls.parse_flags(script)
+        else:
+            size = None
+            flagnames = ()
         comment = cls.extract_comment(script)
         return cls(name, color, size, flagnames, comment)
     @classmethod
@@ -98,8 +102,12 @@ class EntityClass:
     def parse_size(cls, script):
         if script.getToken() == "?":
             return None                 # use brush size
-        script.ungetToken()
-        return cls.parse_vector(script), cls.parse_vector(script)
+        elif script.token == "(":
+            script.ungetToken()
+            return cls.parse_vector(script), cls.parse_vector(script)
+        else:
+            script.ungetToken()
+            return None
     @classmethod
     def parse_flags(cls, script):
         flagnames = []
