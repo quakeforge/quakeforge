@@ -136,7 +136,7 @@ def scan_entity_classes(context):
         txt = bpy.data.texts[name]
     else:
         txt = bpy.data.texts.new(name)
-    txt.from_string(self.entity_classes.to_plist())
+    txt.from_string(qfmap.entity_classes.to_plist())
     qfmap.script = name
 
 def parse_entity_classes(context):
@@ -169,7 +169,8 @@ class QFEntityClassScan(bpy.types.Operator):
     bl_label = "RELOAD"
 
     def execute(self, context):
-        return scan_entity_classes(context)
+        scan_entity_classes(context)
+        return {'FINISHED'}
 
 class QFEntityClassParse(bpy.types.Operator):
     '''Reparse the specified entity class script'''
@@ -177,7 +178,8 @@ class QFEntityClassParse(bpy.types.Operator):
     bl_label = "RELOAD"
 
     def execute(self, context):
-        return parse_entity_classes(context)
+        parse_entity_classes(context)
+        return {'FINISHED'}
 
 class QFEntityClasses(bpy.types.PropertyGroup):
     wadpath = StringProperty(
