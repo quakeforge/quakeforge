@@ -76,7 +76,6 @@ def draw_callback(self, context):
                     bgl.glVertex3f(loc.x, loc.y, loc.z)
                     bgl.glEnd()
     bgl.glLineWidth(1)
-    print(ents, targs)
 
 class QFEntityRelations(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
