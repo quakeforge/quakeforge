@@ -22,6 +22,7 @@
 import os
 from .script import Script
 from .qfplist import pldata
+from . import quakechr
 
 MAX_FLAGS = 8
 
@@ -129,7 +130,7 @@ class EntityClassDict:
         self.path = ""
         self.entity_classes = {}
     def scan_source(self, fname):
-        text = open(fname, "rt").read()
+        text = open(fname, "rt", encoding="idquake").read()
         line = 1
         pos = 0
         while pos < len(text):
