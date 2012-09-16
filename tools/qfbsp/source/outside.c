@@ -111,6 +111,25 @@ PlaceOccupant (int num, const vec3_t point, node_t *headnode)
 const portal_t *prevleaknode;
 FILE       *leakfile;
 
+static void
+write_points (const vec3_t p1, const vec3_t p2)
+{
+	vec3_t      p, dir;
+	float       len;
+
+	VectorSubtract (p2, p1, dir);
+	len = VectorLength (dir);
+	_VectorNormalize (dir);
+
+	VectorCopy (p1, p);
+
+	while (len > 2) {
+		fprintf (leakfile, "%f %f %f\n", p[0], p[1], p[2]);
+		VectorMultAdd(p, 2, dir, p);
+		len -= 2;
+	}
+}
+
 /**	Write the coords for points joining two portals to the point file.
 
 	\param n2		The second portal.
@@ -119,10 +138,9 @@ FILE       *leakfile;
 static void
 MarkLeakTrail (const portal_t *n2)
 {
-	float       len;
-	int         i, j;
+	int         i;
 	const portal_t *n1;
-	vec3_t      p1, p2, dir;
+	vec3_t      p1, p2;
 
 	n1 = prevleaknode;
 	prevleaknode = n2;
@@ -130,33 +148,22 @@ MarkLeakTrail (const portal_t *n2)
 	if (!n1)
 		return;
 
-	VectorCopy (n2->winding->points[0], p1);
-	for (i = 1; i < n2->winding->numpoints; i++) {
-		for (j = 0; j < 3; j++)
-			p1[j] = (p1[j] + n2->winding->points[i][j]) / 2;
-	}
+	VectorZero (p1);
+	for (i = 0; i < n2->winding->numpoints; i++)
+		VectorAdd (p1, n2->winding->points[i], p1);
+	VectorScale (p1, 1.0 / i, p1);
 
-	VectorCopy (n1->winding->points[0], p2);
-	for (i = 1; i < n1->winding->numpoints; i++) {
-		for (j = 0; j < 3; j++)
-			p2[j] = (p2[j] + n1->winding->points[i][j]) / 2;
-	}
-
-	VectorSubtract (p2, p1, dir);
-	len = VectorLength (dir);
-	_VectorNormalize (dir);
+	VectorZero (p2);
+	for (i = 0; i < n1->winding->numpoints; i++)
+		VectorAdd (p2, n1->winding->points[i], p2);
+	VectorScale (p2, 1.0 / i, p2);
 
 	if (!leakfile)
 		leakfile = fopen (options.pointfile, "w");
 	if (!leakfile)
 		Sys_Error ("Couldn't open %s\n", options.pointfile);
 
-	while (len > 2) {
-		fprintf (leakfile, "%f %f %f\n", p1[0], p1[1], p1[2]);
-		for (i = 0; i < 3; i++)
-			p1[i] += dir[i] * 2;
-		len -= 2;
-	}
+	write_points (p1, p2);
 }
 
 /**	Mark the trail from outside to the entity.
@@ -166,11 +173,11 @@ MarkLeakTrail (const portal_t *n2)
 static void
 MarkLeakTrail2 (void)
 {
-	int         i;
+	int         i, first;
 	int         next, side;
 	const node_t *n, *nextnode;
 	const portal_t *p, *p2;
-	vec3_t      wc;
+	vec3_t      wc, pwc;
 	const vec_t *v;
 
 	leakfile = fopen (options.pointfile, "w");
@@ -180,6 +187,7 @@ MarkLeakTrail2 (void)
 	n = &outside_node;
 	next = -1;
 
+	first = 1;
 	while ((n->o_dist > 1) || (next == -1)) {
 		nextnode = 0;
 		p2 = 0;
@@ -201,10 +209,14 @@ MarkLeakTrail2 (void)
 		for (i = 0; i < p2->winding->numpoints; i++)
 			VectorAdd (wc, p2->winding->points[i], wc);
 		VectorScale (wc, 1.0 / i, wc);
-		fprintf (leakfile, "%g %g %g", wc[0], wc[1], wc[2]);
+		if (first) {
+			first = 0;
+			write_points(pwc, wc);
+		}
+		VectorCopy(wc, pwc);
 	}
 	v = entities[n->occupied].origin;
-	fprintf (leakfile, "%g %g %g\n", v[0], v[1], v[2]);
+	write_points(wc, v);
 
 	fclose (leakfile);
 }
