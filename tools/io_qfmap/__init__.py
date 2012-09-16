@@ -244,6 +244,18 @@ class QFECPanel(bpy.types.Panel):
         row.prop(scene.qfmap, "script")
         row.operator("scene.parse_entity_classes", text="", icon="FILE_REFRESH")
 
+class ImportPoints(bpy.types.Operator, ImportHelper):
+    '''Load a Quake points File'''
+    bl_idname = "import_mesh.quake_points"
+    bl_label = "Import points"
+
+    filename_ext = ".pts"
+    filter_glob = StringProperty(default="*.pts", options={'HIDDEN'})
+
+    def execute(self, context):
+        keywords = self.as_keywords (ignore=("filter_glob",))
+        return import_map.import_pts(self, context, **keywords)
+
 class ImportMap(bpy.types.Operator, ImportHelper):
     '''Load a Quake map File'''
     bl_idname = "import_mesh.quake_map"
@@ -275,6 +287,7 @@ class ExportMap(bpy.types.Operator, ExportHelper):
 
 def menu_func_import(self, context):
     self.layout.operator(ImportMap.bl_idname, text="Quake map (.map)")
+    self.layout.operator(ImportPoints.bl_idname, text="Quake points (.pts)")
 
 def menu_func_export(self, context):
     self.layout.operator(ExportMap.bl_idname, text="Quake map (.map)")

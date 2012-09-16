@@ -227,3 +227,27 @@ def import_map(operator, context, filepath):
         process_entity(ent, wads)
     bpy.context.user_preferences.edit.use_global_undo = True
     return {'FINISHED'}
+
+def import_pts(operator, context, filepath):
+    bpy.context.user_preferences.edit.use_global_undo = False
+
+    for obj in bpy.context.scene.objects:
+        obj.select = False
+
+    lines = open(filepath, "rt").readlines()
+    verts = [None] * len(lines)
+    edges = [None] * (len(lines) - 1)
+    for i, line in enumerate(lines):
+        if i:
+            edges[i - 1] = (i - 1, i)
+        v = line.split(" ")
+        verts[i] = tuple(map(lambda x: float(x), v))
+    mesh = bpy.data.meshes.new("leak points")
+    mesh.from_pydata(verts, edges, [])
+    mesh.update()
+    obj = bpy.data.objects.new("leak points", mesh)
+    bpy.context.scene.objects.link(obj)
+    bpy.context.scene.objects.active=obj
+    obj.select = True
+    bpy.context.user_preferences.edit.use_global_undo = True
+    return {'FINISHED'}
