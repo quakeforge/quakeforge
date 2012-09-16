@@ -149,13 +149,13 @@ MarkLeakTrail (const portal_t *n2)
 		return;
 
 	VectorZero (p1);
-	for (i = 0; i < n2->winding->numpoints; i++)
-		VectorAdd (p1, n2->winding->points[i], p1);
+	for (i = 0; i < n1->winding->numpoints; i++)
+		VectorAdd (p1, n1->winding->points[i], p1);
 	VectorScale (p1, 1.0 / i, p1);
 
 	VectorZero (p2);
-	for (i = 0; i < n1->winding->numpoints; i++)
-		VectorAdd (p2, n1->winding->points[i], p2);
+	for (i = 0; i < n2->winding->numpoints; i++)
+		VectorAdd (p2, n2->winding->points[i], p2);
 	VectorScale (p2, 1.0 / i, p2);
 
 	if (!leakfile)
