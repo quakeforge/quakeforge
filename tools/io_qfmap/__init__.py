@@ -54,7 +54,7 @@ from bpy.app.handlers import persistent
 from .entityclass import EntityClassDict, EntityClassError
 from . import entity
 from . import import_map
-#from . import export_map
+from . import export_map
 
 def ecm_draw(self, context):
     layout = self.layout
@@ -267,8 +267,7 @@ class ExportMap(bpy.types.Operator, ExportHelper):
 
     @classmethod
     def poll(cls, context):
-        return (context.active_object != None
-                and type(context.active_object.data) == bpy.types.Mesh)
+        return True
 
     def execute(self, context):
         keywords = self.as_keywords (ignore=("check_existing", "filter_glob"))
