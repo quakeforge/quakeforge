@@ -98,6 +98,7 @@ static GLuint   skybox_tex;
 static qboolean skybox_loaded;
 static quat_t   sky_rotation[2];
 static quat_t   sky_velocity;
+static quat_t   sky_fix;
 static double   sky_time;
 
 static quat_t   default_color = { 1, 1, 1, 1 };
@@ -522,8 +523,9 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 	msurface_t *surf;
 	dstring_t  *vertices;
 
+	QuatSet (sqrt(0.5), 0, 0, sqrt(0.5), sky_fix);	// proper skies
 	QuatSet (1, 0, 0, 0, sky_rotation[0]);
-	QuatSet (1, 0, 0, 0, sky_rotation[1]);
+	QuatCopy (sky_rotation[0], sky_rotation[1]);
 	QuatSet (0, 0, 0, 0, sky_velocity);
 	QuatExp (sky_velocity, sky_velocity);
 	sky_time = vr_data.realtime;
@@ -948,6 +950,7 @@ spin (mat4_t mat)
 	blend = bound (0, (vr_data.realtime - sky_time), 1);
 
 	QuatBlend (sky_rotation[0], sky_rotation[1], blend, q);
+	QuatMult (sky_fix, q, q);
 	Mat4Identity (mat);
 	VectorNegate (r_origin, mat + 12);
 	QuatToMatrix (q, m, 1, 1);
@@ -1325,23 +1328,25 @@ glsl_R_LoadSkys (const char *sky)
 	tex_t      *tex;
 	// NOTE: quake's world and GL's world are rotated relative to each other
 	// quake has x right, y in, z up. gl has x right, y up, z out
-	// However, skymaps have lf and rt swapped :/    lf    rt
-	static const char *sky_suffix[] = { "ft", "bk", "rt", "lf", "up", "dn"};
+	// quake order:                      +x    -x    +z    -z    +y    -y
+	// gl order:                         +x    -x    +y    -y    +z    -z
+	// fizquake orger:                   -y    +y    +z    -z    +x    -x
+	// to get from quake order to fitzquake order, all that's needed is
+	// a -90 degree rotation on the (quake) z-axis. This is taken care of in
+	// the sky_matrix setup code.
+	// However, from the player's perspective, skymaps have lf and rt
+	// swapped, but everythink makes sense if looking at the cube from outside
+	// along the positive y axis, with the front of the cube being the nearest
+	// face. This matches nicely with Blender's default cube in front (num-1)
+	// view.
+	static const char *sky_suffix[] = { "ft", "bk", "up", "dn", "rt", "lf"};
 	static int  sky_coords[][2] = {
 		{2, 0},	// front
 		{0, 0}, // back
-		{2, 1}, // left
-		{1, 0}, // right
 		{1, 1}, // up
 		{0, 1}, // down
-	};
-	static int  sky_target[] = {
-		GL_TEXTURE_CUBE_MAP_POSITIVE_X,	// front
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_X, // back
-		GL_TEXTURE_CUBE_MAP_POSITIVE_Z, // left  (normally -ve Z, see shader)
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, // right (normally +ve Z, see shader)
-		GL_TEXTURE_CUBE_MAP_POSITIVE_Y, // up
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, // down
+		{2, 1}, // left
+		{1, 0}, // right
 	};
 
 	if (!sky || !*sky)
@@ -1377,7 +1382,7 @@ glsl_R_LoadSkys (const char *sky)
 			x = sky_coords[i][0] * size;
 			y = sky_coords[i][1] * size;
 			copy_sub_tex (tex, x, y, sub);
-			qfeglTexImage2D (sky_target[i], 0,
+			qfeglTexImage2D (GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
 							sub->format == 3 ? GL_RGB : GL_RGBA,
 							sub->width, sub->height, 0,
 							sub->format == 3 ? GL_RGB : GL_RGBA,
@@ -1400,7 +1405,7 @@ glsl_R_LoadSkys (const char *sky)
 				}
 			}
 			Sys_MaskPrintf (SYS_GLSL, "Loaded %s\n", name);
-			qfeglTexImage2D (sky_target[i], 0,
+			qfeglTexImage2D (GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
 							tex->format == 3 ? GL_RGB : GL_RGBA,
 							tex->width, tex->height, 0,
 							tex->format == 3 ? GL_RGB : GL_RGBA,

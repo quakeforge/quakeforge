@@ -66,7 +66,7 @@ texinfo_t  *texinfo;
 dvertex_t  *vertices;
 dedge_t    *edges;
 int        *surfedges;
-unsigned short *marksurfaces;
+uint32_t   *marksurfaces;
 static brushset_t bs;
 
 static void
@@ -161,7 +161,8 @@ static void
 load_leafs (void)
 {
 	const dleaf_t *l;
-	int         i, j;
+	int         i;
+	unsigned    j;
 
 	leafs = calloc (bsp->numleafs, sizeof (node_t));
 	for (i = 0; i < bsp->numleafs; i++) {
@@ -184,7 +185,8 @@ load_nodes (void)
 {
 	const dnode_t *n;
 	face_t     *f;
-	int         i, j;
+	int         i;
+	unsigned    j;
 
 	nodes = calloc (bsp->numnodes, sizeof (node_t));
 	for (i = 0; i < bsp->numnodes; i++) {

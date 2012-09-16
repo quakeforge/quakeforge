@@ -207,11 +207,19 @@ ParseVerts (int *n_verts)
 {
 	vec3_t     *verts;
 	int         i;
+	const char *token;
 
-	if (map_script->token->str[0] != ':')
+	token = Script_Token (map_script);
+	if (token[0] != ':')
 		map_error ("parsing brush");
-	Script_GetToken (map_script, false);
-	*n_verts = atoi (map_script->token->str);
+	// It's normally ":count", but somebody might have done ": count"
+	if (!token[1]) {
+		Script_GetToken (map_script, false);
+		token = Script_Token (map_script);
+	} else {
+		token++;
+	}
+	*n_verts = atoi (token);
 	verts = malloc (sizeof (vec3_t) * *n_verts);
 
 	for (i = 0; i < *n_verts; i++) {
@@ -457,6 +465,7 @@ ParseEntity (void)
 	mapent = &entities[num_entities];
 	num_entities++;
 	memset (mapent, 0, sizeof (entity_t));
+	mapent->line = map_script->line;
 
 	do {
 		if (!Script_GetToken (map_script, true))
@@ -510,6 +519,7 @@ LoadMapFile (const char *filename)
 	Qclose (file);
 
 	map_script = Script_New ();
+	map_script->single = "";
 	Script_Start (map_script, filename, buf);
 
 	num_entities = 0;
@@ -543,6 +553,7 @@ PrintEntity (const entity_t *ent)
 {
 	const epair_t *ep;
 
+	printf ("%20s : %d\n", "map source line", ent->line);
 	for (ep = ent->epairs; ep; ep = ep->next)
 		printf ("%20s : %s\n", ep->key, ep->value);
 }

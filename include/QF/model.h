@@ -121,7 +121,7 @@ typedef struct texture_s {
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct {
-	unsigned short	v[2];
+	unsigned int	v[2];
 	unsigned int	cachededgeoffset;
 } medge_t;
 
@@ -192,8 +192,8 @@ typedef struct mnode_s {
 	plane_t		*plane;
 	struct mnode_s	*children[2];
 
-	unsigned short		firstsurface;
-	unsigned short		numsurfaces;
+	unsigned int		firstsurface;
+	unsigned int		numsurfaces;
 } mnode_t;
 
 typedef struct mleaf_s {

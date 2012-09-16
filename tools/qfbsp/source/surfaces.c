@@ -344,7 +344,8 @@ static int
 GetEdge (const vec3_t p1, const vec3_t p2, face_t *f)
 {
 	dedge_t     edge;
-	int         v1, v2, i;
+	unsigned    v1, v2;
+	int         i;
 
 	if (!f->contents[0])
 		Sys_Error ("GetEdge: 0 contents");

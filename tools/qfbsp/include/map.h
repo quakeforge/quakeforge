@@ -51,6 +51,7 @@ typedef struct epair_s {
 /**	In-memory representation of an entity as parsed from the map script.
 */
 typedef struct {
+	int         line;			///< Map line of entity start (for messages)
 	vec3_t      origin;			///< Location of this entity in world-space.
 	mbrush_t   *brushes;		///< Nul terminated list of brushes.
 	epair_t    *epairs;			///< Nul terminated list of key=value pairs.

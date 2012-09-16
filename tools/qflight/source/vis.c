@@ -143,8 +143,9 @@ VisEntity (int ent_index)
 	entity_t   *entity = entities + ent_index;
 	dleaf_t    *leaf;
 	int         ignorevis = false;
-	int         i, j;
-	unsigned short *mark;
+	int         i;
+	unsigned    j;
+	uint32_t   *mark;
 	byte       *vis, *surfacehit;
 	int         vis_size;
 
@@ -202,7 +203,7 @@ VisEntity (int ent_index)
 			}
 		}
 		for (i = 1; i < bsp->nummodels; i++) {
-			for (j = 0; j < bsp->models[i].numfaces; j++) {
+			for (j = 0; (int) j < bsp->models[i].numfaces; j++) {
 				//FIXME vis
 				mark_face (bsp->models[i].firstface + j, surfacehit, entity);
 			}

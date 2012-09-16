@@ -66,6 +66,8 @@ glsl_brush_clear (model_t *m)
 		// NOTE: some maps (eg e1m2) have empty texture slots
 		if (m->textures[i] && m->textures[i]->gl_texturenum) {
 			GLSL_ReleaseTexture (m->textures[i]->gl_texturenum);
+			GLSL_ReleaseTexture (m->textures[i]->sky_tex[0]);
+			GLSL_ReleaseTexture (m->textures[i]->sky_tex[1]);
 			m->textures[i]->gl_texturenum = 0;
 		}
 	}
@@ -77,6 +79,18 @@ glsl_brush_clear (model_t *m)
 	}
 }
 
+static int
+load_skytex (texture_t *tx, byte *data)
+{
+	int         tex;
+
+	tex = GLSL_LoadQuakeTexture (tx->name, tx->height, tx->height, data);
+	// GLSL_LoadQuakeTexture () leaves the texture bound
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	return tex;
+}
+
 void
 glsl_Mod_ProcessTexture (texture_t *tx)
 {
@@ -85,22 +99,32 @@ glsl_Mod_ProcessTexture (texture_t *tx)
 		// wrapping on both sky layers.
 		byte       *data;
 		byte       *tx_data;
+		int         tx_w, tx_h;
 		int         i, j;
 
-		if (tx->width != 256 || tx->height != 128)
-			Sys_Error ("Mod_ProcessTexture: invalid sky texture: %dx%d\n",
-					   tx->width, tx->height);
-		data = alloca (128 * 128);
+		tx_w = tx->width;
+		tx_h = tx->height;
 		tx_data = (byte *)tx + tx->offsets[0];
-		for (i = 0; i < 2; i++) {
-			for (j = 0; j < 128; j++)
-				memcpy (&data[j * 128], &tx_data[j * 256 + i * 128], 128);
-			tx->sky_tex[i] = GLSL_LoadQuakeTexture (tx->name, 128, 128, data);
-			// GLSL_LoadQuakeTexture () leaves the texture bound
-			qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			qfeglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+		if (tx_w == tx_h) {
+			// a square sky texture probably means it's black, but just in
+			// case some other magic is being done, duplicate the square to
+			// both sky layers.
+			tx->sky_tex[0] = load_skytex (tx, tx_data);
+			tx->sky_tex[1] = tx->sky_tex[0];
+		} else if (tx_w == 2 * tx_h) {
+			data = alloca (tx_h * tx_h);
+			for (i = 0; i < 2; i++) {
+				for (j = 0; j < tx_h; j++)
+					memcpy (&data[j * tx_h], &tx_data[j * tx_w + i * tx_h],
+							tx_h);
+				tx->sky_tex[i] = load_skytex (tx, data);
+			}
+			tx->gl_texturenum = 0;
+		} else {
+			Sys_Error ("Mod_ProcessTexture: invalid sky texture: %dx%d\n",
+					   tx_w, tx_h);
 		}
-		tx->gl_texturenum = 0;
 	} else {
 		tx->gl_texturenum = GLSL_LoadQuakeMipTex (tx);
 	}

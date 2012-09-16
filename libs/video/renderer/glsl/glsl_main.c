@@ -41,6 +41,7 @@
 # include "strings.h"
 #endif
 
+#include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/image.h"
 #include "QF/render.h"
@@ -245,6 +246,8 @@ glsl_R_RenderView (void)
 void
 glsl_R_Init (void)
 {
+	Cmd_AddCommand ("pointfile", glsl_R_ReadPointFile_f,
+					"Load a pointfile to determine map leaks");
 	R_Init_Cvars ();
 	glsl_R_Particles_Init_Cvars ();
 	Draw_Init ();

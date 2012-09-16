@@ -94,7 +94,8 @@ void
 CalcAmbientSounds (void)
 {
 	byte		*vis;
-	int			 ambient_type, ofs, i, j, k, l;
+	int			 ambient_type, ofs, i, j, l;
+	unsigned     k;
 	float		 maxd, vol, d;
 	float		 dists[NUM_AMBIENTS];
 	dface_t		*surf;

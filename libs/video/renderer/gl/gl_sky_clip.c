@@ -64,7 +64,8 @@
 #define BOX_WIDTH 2056
 
 /* cube face to sky texture offset conversion */
-static const int skytex_offs[] = { 3, 0, 4, 1, 2, 5 };
+// see gl_sky.c for naming:       rt bk up lf ft dn
+static const int skytex_offs[] = { 0, 1, 4, 2, 3, 5 };
 
 /* convert axis and face distance into face */
 static const int faces_table[3][6] = {
@@ -238,8 +239,8 @@ set_vertex (struct box_def *box, int face, int ind, const vec3_t v)
 			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) / BOX_WIDTH;
 			break;
 		case 2:
-			box->face[face].poly.verts[ind][3] = (1024 + v[0] + 4) / BOX_WIDTH;
-			box->face[face].poly.verts[ind][4] = (1024 + v[1] + 4) / BOX_WIDTH;
+			box->face[face].poly.verts[ind][3] = (1024 - v[1] + 4) / BOX_WIDTH;
+			box->face[face].poly.verts[ind][4] = (1024 + v[0] + 4) / BOX_WIDTH;
 			break;
 		case 3:
 			box->face[face].poly.verts[ind][3] = (1024 + v[1] + 4) / BOX_WIDTH;
@@ -250,8 +251,8 @@ set_vertex (struct box_def *box, int face, int ind, const vec3_t v)
 			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) / BOX_WIDTH;
 			break;
 		case 5:
-			box->face[face].poly.verts[ind][3] = (1024 + v[0] + 4) / BOX_WIDTH;
-			box->face[face].poly.verts[ind][4] = (1024 - v[1] + 4) / BOX_WIDTH;
+			box->face[face].poly.verts[ind][3] = (1024 - v[1] + 4) / BOX_WIDTH;
+			box->face[face].poly.verts[ind][4] = (1024 - v[0] + 4) / BOX_WIDTH;
 			break;
 	}
 }

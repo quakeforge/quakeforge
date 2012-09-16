@@ -168,14 +168,11 @@ Mod_LoadTextures (bsp_t *bsp)
 	}
 	m = (dmiptexlump_t *) bsp->texdata;
 
-	m->nummiptex = LittleLong (m->nummiptex);
-
 	loadmodel->numtextures = m->nummiptex;
 	loadmodel->textures = Hunk_AllocName (m->nummiptex * sizeof
 										  (*loadmodel->textures), loadname);
 
 	for (i = 0; i < m->nummiptex; i++) {
-		m->dataofs[i] = LittleLong (m->dataofs[i]);
 		if (m->dataofs[i] == -1)
 			continue;
 		mt = (miptex_t *) ((byte *) m + m->dataofs[i]);
@@ -323,11 +320,8 @@ Mod_LoadVertexes (bsp_t *bsp)
 	loadmodel->vertexes = out;
 	loadmodel->numvertexes = count;
 
-	for (i = 0; i < count; i++, in++, out++) {
-		out->position[0] = LittleFloat (in->point[0]);
-		out->position[1] = LittleFloat (in->point[1]);
-		out->position[2] = LittleFloat (in->point[2]);
-	}
+	for (i = 0; i < count; i++, in++, out++)
+		VectorCopy (in->point, out->position);
 }
 
 static void
@@ -344,16 +338,16 @@ Mod_LoadSubmodels (bsp_t *bsp)
 	loadmodel->numsubmodels = count;
 
 	for (i = 0; i < count; i++, in++, out++) {
-		for (j = 0; j < 3; j++) {		// spread the mins / maxs by a pixel
-			out->mins[j] = LittleFloat (in->mins[j]) - 1;
-			out->maxs[j] = LittleFloat (in->maxs[j]) + 1;
-			out->origin[j] = LittleFloat (in->origin[j]);
-		}
+		static vec3_t offset = {1, 1, 1};
+		// spread the mins / maxs by a pixel
+		VectorSubtract (in->mins, offset, out->mins);
+		VectorAdd (in->maxs, offset, out->maxs);
+		VectorCopy (in->origin, out->origin);
 		for (j = 0; j < MAX_MAP_HULLS; j++)
-			out->headnode[j] = LittleLong (in->headnode[j]);
-		out->visleafs = LittleLong (in->visleafs);
-		out->firstface = LittleLong (in->firstface);
-		out->numfaces = LittleLong (in->numfaces);
+			out->headnode[j] = in->headnode[j];
+		out->visleafs = in->visleafs;
+		out->firstface = in->firstface;
+		out->numfaces = in->numfaces;
 	}
 
 	out = loadmodel->submodels;
@@ -384,8 +378,8 @@ Mod_LoadEdges (bsp_t *bsp)
 	loadmodel->numedges = count;
 
 	for (i = 0; i < count; i++, in++, out++) {
-		out->v[0] = (unsigned short) LittleShort (in->v[0]);
-		out->v[1] = (unsigned short) LittleShort (in->v[1]);
+		out->v[0] = in->v[0];
+		out->v[1] = in->v[1];
 	}
 }
 
@@ -406,8 +400,8 @@ Mod_LoadTexinfo (bsp_t *bsp)
 
 	for (i = 0; i < count; i++, in++, out++) {
 		for (j = 0; j < 4; j++) {
-			out->vecs[0][j] = LittleFloat (in->vecs[0][j]);
-			out->vecs[1][j] = LittleFloat (in->vecs[1][j]);
+			out->vecs[0][j] = in->vecs[0][j];
+			out->vecs[1][j] = in->vecs[1][j];
 		}
 		len1 = VectorLength (out->vecs[0]);
 		len2 = VectorLength (out->vecs[1]);
@@ -422,8 +416,8 @@ Mod_LoadTexinfo (bsp_t *bsp)
 		else
 			out->mipadjust = 1;
 
-		miptex = LittleLong (in->miptex);
-		out->flags = LittleLong (in->flags);
+		miptex = in->miptex;
+		out->flags = in->flags;
 
 		if (!loadmodel->textures) {
 			out->texture = r_notexture_mip;	// checkerboard texture
@@ -510,18 +504,18 @@ Mod_LoadFaces (bsp_t *bsp)
 	loadmodel->numsurfaces = count;
 
 	for (surfnum = 0; surfnum < count; surfnum++, in++, out++) {
-		out->firstedge = LittleLong (in->firstedge);
-		out->numedges = LittleShort (in->numedges);
+		out->firstedge = in->firstedge;
+		out->numedges = in->numedges;
 		out->flags = 0;
 
-		planenum = LittleShort (in->planenum);
-		side = LittleShort (in->side);
+		planenum = in->planenum;
+		side = in->side;
 		if (side)
 			out->flags |= SURF_PLANEBACK;
 
 		out->plane = loadmodel->planes + planenum;
 
-		out->texinfo = loadmodel->texinfo + LittleShort (in->texinfo);
+		out->texinfo = loadmodel->texinfo + in->texinfo;
 
 		CalcSurfaceExtents (out);
 
@@ -529,7 +523,7 @@ Mod_LoadFaces (bsp_t *bsp)
 
 		for (i = 0; i < MAXLIGHTMAPS; i++)
 			out->styles[i] = in->styles[i];
-		i = LittleLong (in->lightofs);
+		i = in->lightofs;
 		if (i == -1)
 			out->samples = NULL;
 		else
@@ -593,23 +587,26 @@ Mod_LoadNodes (bsp_t *bsp)
 
 	for (i = 0; i < count; i++, in++, out++) {
 		for (j = 0; j < 3; j++) {
-			out->minmaxs[j] = LittleShort (in->mins[j]);
-			out->minmaxs[3 + j] = LittleShort (in->maxs[j]);
+			out->minmaxs[j] = in->mins[j];
+			out->minmaxs[3 + j] = in->maxs[j];
 		}
 
-		p = LittleLong (in->planenum);
+		p = in->planenum;
 		out->plane = loadmodel->planes + p;
 
-		out->firstsurface = LittleShort (in->firstface);
-		out->numsurfaces = LittleShort (in->numfaces);
+		out->firstsurface = in->firstface;
+		out->numsurfaces = in->numfaces;
 
 		for (j = 0; j < 2; j++) {
-			// handle > 32k nodes. From darkplaces via fitzquake
-			p = (unsigned short) LittleShort (in->children[j]);
-			if (p < count) {
+			p = in->children[j];
+			// this check is for extended bsp 29 files
+			if (p >= 0 && p < count) {
 				out->children[j] = loadmodel->nodes + p;
 			} else {
-				p = 65535 - p; //NOTE this uses 65535 intentionally, -1 is leaf
+				if (p >= count)
+					p = 65535 - p; //NOTE 65535 is intentional, -1 is leaf
+				else
+					p = ~p;
 				if (p < loadmodel->numleafs) {
 					out->children[j] = (mnode_t *) (loadmodel->leafs + p);
 				} else {
@@ -638,9 +635,6 @@ Mod_LoadLeafs (bsp_t *bsp)
 	count = bsp->numleafs;
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
-	if (count > 32767)
-		Sys_Error ("%i leafs exceeds limit of 32767.\n", count);
-
 	loadmodel->leafs = out;
 	loadmodel->numleafs = count;
 //	snprintf(s, sizeof (s), "maps/%s.bsp",
@@ -649,18 +643,17 @@ Mod_LoadLeafs (bsp_t *bsp)
 		isnotmap = false;
 	for (i = 0; i < count; i++, in++, out++) {
 		for (j = 0; j < 3; j++) {
-			out->mins[j] = LittleShort (in->mins[j]);
-			out->maxs[j] = LittleShort (in->maxs[j]);
+			out->mins[j] = in->mins[j];
+			out->maxs[j] = in->maxs[j];
 		}
 
-		p = LittleLong (in->contents);
+		p = in->contents;
 		out->contents = p;
 
-		out->firstmarksurface = loadmodel->marksurfaces +
-			(uint16_t) LittleShort (in->firstmarksurface);
-		out->nummarksurfaces = (uint16_t) LittleShort (in->nummarksurfaces);
+		out->firstmarksurface = loadmodel->marksurfaces + in->firstmarksurface;
+		out->nummarksurfaces = in->nummarksurfaces;
 
-		p = LittleLong (in->visofs);
+		p = in->visofs;
 		if (p == -1)
 			out->compressed_vis = NULL;
 		else
@@ -730,11 +723,12 @@ Mod_LoadClipnodes (bsp_t *bsp)
 	hull->clip_maxs[2] = 64;
 
 	for (i = 0; i < count; i++, out++, in++) {
-		out->planenum = LittleLong (in->planenum);
+		out->planenum = in->planenum;
 		if (out->planenum < 0 || out->planenum >= loadmodel->numplanes)
 			Sys_Error ("Mod_LoadClipnodes: planenum out of bounds");
-		out->children[0] = (uint16_t) LittleShort (in->children[0]);
-		out->children[1] = (uint16_t) LittleShort (in->children[1]);
+		out->children[0] = in->children[0];
+		out->children[1] = in->children[1];
+		// these checks are for extended bsp 29 files
 		if (out->children[0] >= count)
 			out->children[0] -= 65536;
 		if (out->children[1] >= count)
@@ -791,7 +785,7 @@ Mod_LoadMarksurfaces (bsp_t *bsp)
 {
 	int			 count, i, j;
 	msurface_t **out;
-	uint16_t    *in;
+	uint32_t    *in;
 
 	in = bsp->marksurfaces;
 	count = bsp->nummarksurfaces;
@@ -807,7 +801,7 @@ Mod_LoadMarksurfaces (bsp_t *bsp)
 	loadmodel->nummarksurfaces = count;
 
 	for (i = 0; i < count; i++) {
-		j = (uint16_t) LittleShort (in[i]);
+		j = in[i];
 		if (j >= loadmodel->numsurfaces)
 			Sys_Error ("Mod_ParseMarksurfaces: bad surface number");
 		out[i] = loadmodel->surfaces + j;
@@ -829,7 +823,7 @@ Mod_LoadSurfedges (bsp_t *bsp)
 	loadmodel->numsurfedges = count;
 
 	for (i = 0; i < count; i++)
-		out[i] = LittleLong (in[i]);
+		out[i] = in[i];
 }
 
 static void
@@ -849,13 +843,13 @@ Mod_LoadPlanes (bsp_t *bsp)
 	for (i = 0; i < count; i++, in++, out++) {
 		bits = 0;
 		for (j = 0; j < 3; j++) {
-			out->normal[j] = LittleFloat (in->normal[j]);
+			out->normal[j] = in->normal[j];
 			if (out->normal[j] < 0)
 				bits |= 1 << j;
 		}
 
-		out->dist = LittleFloat (in->dist);
-		out->type = LittleLong (in->type);
+		out->dist = in->dist;
+		out->type = in->type;
 		out->signbits = bits;
 	}
 }
