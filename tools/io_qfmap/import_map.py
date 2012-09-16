@@ -164,7 +164,7 @@ def process_entity(ent, wads):
         obj = bpy.data.objects.new(name, mesh)
     else:
         try:
-            entityclass = qfmap.entity_classes.entity_classes[classname]
+            entityclass = qfmap.entity_classes[classname]
         except KeyError:
             entityclass = None
         if entityclass and entityclass.size:

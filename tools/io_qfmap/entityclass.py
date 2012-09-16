@@ -137,6 +137,22 @@ class EntityClassDict:
     def __init__(self):
         self.path = ""
         self.entity_classes = {}
+    def __len__(self):
+        return self.entity_classes.__len__()
+    def __getitem__(self, key):
+        return self.entity_classes.__getitem__(key)
+    def __iter__(self):
+        return self.entity_classes.__iter__()
+    def __contains__(self, item):
+        return self.entity_classes.__contains__(item)
+    def keys(self):
+        return self.entity_classes.keys()
+    def values(self):
+        return self.entity_classes.values()
+    def items(self):
+        return self.entity_classes.items()
+    def get(self, key, default=None):
+        return self.entity_classes.get(key, default)
     def scan_source(self, fname):
         text = open(fname, "rt", encoding="idquake").read()
         line = 1

@@ -39,7 +39,7 @@ def draw_callback(self, context):
             loc += Vector(obj.bound_box[i])
         return obj.location + loc/8.0
     qfmap = context.scene.qfmap
-    entity_classes = qfmap.entity_classes.entity_classes
+    entity_classes = qfmap.entity_classes
     entity_targets = qfmap.entity_targets
     target_entities = qfmap.target_entities
     bgl.glLineWidth(3)
@@ -103,7 +103,7 @@ class QFEntityRelations(bpy.types.Panel):
 
 def qfentity_items(self, context):
     qfmap = context.scene.qfmap
-    entclasses = qfmap.entity_classes.entity_classes
+    entclasses = qfmap.entity_classes
     eclist = list(entclasses.keys())
     eclist.sort()
     enum = (('', "--", ""),)
@@ -156,7 +156,7 @@ class EntityPanel(bpy.types.Panel):
         qfentity = context.active_object.qfentity
         qfmap = context.scene.qfmap
         if qfentity.classname:
-            ec = qfmap.entity_classes.entity_classes[qfentity.classname]
+            ec = qfmap.entity_classes[qfentity.classname]
         else:
             ec = EntityClass.null()
         flags = ec.flagnames + ("",) * (8 - len(ec.flagnames))
@@ -266,7 +266,7 @@ def set_entity_props(obj, ent):
         item.value = ent.d[key]
 
 def add_entity(self, context, entclass):
-    entity_class = context.scene.qfmap.entity_classes.entity_classes[entclass]
+    entity_class = context.scene.qfmap.entity_classes[entclass]
     context.user_preferences.edit.use_global_undo = False
     for obj in bpy.data.objects:
         obj.select = False
