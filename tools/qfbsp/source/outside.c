@@ -209,10 +209,9 @@ MarkLeakTrail2 (void)
 		for (i = 0; i < p2->winding->numpoints; i++)
 			VectorAdd (wc, p2->winding->points[i], wc);
 		VectorScale (wc, 1.0 / i, wc);
-		if (first) {
-			first = 0;
+		if (!first)
 			write_points(pwc, wc);
-		}
+		first = 0;
 		VectorCopy(wc, pwc);
 	}
 	v = entities[n->occupied].origin;
