@@ -36,7 +36,7 @@
 
 #include "QF/winding.h"
 
-#define BOGUS (65336.0)
+#define BOGUS (18000.0)
 
 /**	\addtogroup qfbsp_winding
 */
