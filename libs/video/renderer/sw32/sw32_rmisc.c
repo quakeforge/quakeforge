@@ -248,8 +248,8 @@ sw32_R_SetupFrame (void)
 
 	if ((sw32_r_dowarp != sw32_r_dowarpold) || sw32_r_viewchanged) {
 		if (sw32_r_dowarp) {
-			if ((vid.width <= (unsigned int) vid.maxwarpwidth) &&
-				(vid.height <= (unsigned int) vid.maxwarpheight)) {
+			if ((vid.width <= vid.maxwarpwidth)
+				&& (vid.height <= vid.maxwarpheight)) {
 				vrect.x = 0;
 				vrect.y = 0;
 				vrect.width = vid.width;

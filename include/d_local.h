@@ -102,7 +102,7 @@ extern void D_PolysetAff8End (void);
 #endif
 
 extern short *d_pzbuffer;
-extern unsigned int d_zrowbytes, d_zwidth;
+extern int	 d_zrowbytes, d_zwidth;
 
 extern int	*d_pscantable;
 extern int	 d_scantable[];

@@ -54,7 +54,7 @@ byte       *cacheblock;
 int         cachewidth;
 byte       *d_viewbuffer;
 short      *d_pzbuffer;
-unsigned int d_zrowbytes;
-unsigned int d_zwidth;
+int         d_zrowbytes;
+int         d_zwidth;
 
 #endif // !USE_INTEL_ASM

@@ -87,7 +87,7 @@ sw32_D_ViewChanged (void)
 		r_refdef.vrectbottom - (sw32_d_pix_max << sw32_d_y_aspect_shift);
 
 	{
-		unsigned int i;
+		int i;
 
 		for (i = 0; i < vid.height; i++) {
 			sw32_d_scantable[i] = i * rowpixels;

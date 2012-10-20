@@ -45,7 +45,7 @@ sw32_D_FillRect (vrect_t *rect, int color)
 	{
 	case 1:
 		{
-			unsigned int rx, ry, rwidth, rheight;
+			int rx, ry, rwidth, rheight;
 			byte *dest, pix;
 
 			pix = color;
@@ -83,7 +83,7 @@ sw32_D_FillRect (vrect_t *rect, int color)
 		break;
 	case 2:
 		{
-			unsigned int rx, ry, rwidth, rheight;
+			int rx, ry, rwidth, rheight;
 			unsigned short *dest, pix;
 
 			pix = sw32_8to16table[color];
@@ -122,7 +122,7 @@ sw32_D_FillRect (vrect_t *rect, int color)
 		break;
 	case 4:
 		{
-			unsigned int rx, ry, rwidth, rheight;
+			int rx, ry, rwidth, rheight;
 			unsigned int *dest, pix;
 
 			pix = d_8to24table[color];

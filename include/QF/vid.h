@@ -47,9 +47,9 @@ typedef struct {
 	unsigned short	*colormap16;	// 256 * VID_GRADES size
 	unsigned int	*colormap32;	// 256 * VID_GRADES size
 	int				 fullbright;	// index of first fullbright color
-	unsigned int	 rowbytes;		// may be > width if displayed in a window
-	unsigned int	 width;
-	unsigned int	 height;
+	int				 rowbytes;		// may be > width if displayed in a window
+	int				 width;
+	int				 height;
 	float			 aspect;	// width / height -- < 1 is taller than wide
 	int				 numpages;
 	qboolean		 recalc_refdef;	// if true, recalc vid-based stuff
@@ -57,8 +57,8 @@ typedef struct {
 	quat_t           cshift_color;
 	void			*conbuffer;
 	int				 conrowbytes;
-	unsigned int	 conwidth;
-	unsigned int	 conheight;
+	int				 conwidth;
+	int				 conheight;
 	int				 maxwarpwidth;
 	int				 maxwarpheight;
 	byte			*direct;		// direct drawing to framebuffer, if not

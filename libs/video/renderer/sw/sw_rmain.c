@@ -1083,8 +1083,8 @@ renderside (byte* bufs, double yaw, double pitch, double roll, int side)
 static void
 renderlookup (byte **offs, byte* bufs)
 {
-	byte *p = (byte*)vid.buffer;
-	unsigned int x, y;
+	byte       *p = (byte*)vid.buffer;
+	int        x, y;
 	for (y = 0; y < vid.height; y++) {
 		for (x = 0; x < vid.width; x++, offs++)
 		    p[x] = **offs;

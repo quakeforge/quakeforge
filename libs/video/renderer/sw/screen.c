@@ -95,10 +95,8 @@ SCR_ScreenShot (int width, int height)
 	// enable direct drawing of console to back buffer
 	D_EnableBackBufferAccess ();
 
-	w = (vid.width < (unsigned int) width) ? vid.width
-										   : (unsigned int) width;
-	h = (vid.height < (unsigned int) height) ? vid.height
-											 : (unsigned int) height;
+	w = (vid.width < width) ? vid.width : width;
+	h = (vid.height < height) ? vid.height : height;
 
 	fracw = (float) vid.width / (float) w;
 	frach = (float) vid.height / (float) h;

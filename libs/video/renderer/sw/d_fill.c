@@ -34,7 +34,7 @@
 void
 D_FillRect (vrect_t *rect, int color)
 {
-	unsigned int rx, ry, rwidth, rheight;
+	int rx, ry, rwidth, rheight;
 	unsigned char *dest;
 	unsigned int *ldest;
 

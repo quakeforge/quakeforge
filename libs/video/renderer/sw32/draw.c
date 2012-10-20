@@ -265,7 +265,7 @@ sw32_Draw_Character (int x, int y, unsigned int chr)
 	if (y <= -8)
 		return;							// totally off screen
 
-	if (y > (int) vid.conheight - 8 || x < 0 || x > (int) vid.conwidth - 8)
+	if (y > vid.conheight - 8 || x < 0 || x > vid.conwidth - 8)
 		return;
 	if (chr < 0 || chr > 255)
 		return;
@@ -494,8 +494,8 @@ sw32_Draw_Pic (int x, int y, qpic_t *pic)
 	byte       *source, tbyte;
 	int         v, u;
 
-	if (x < 0 || (unsigned int) (x + pic->width) > vid.conwidth || y < 0 ||
-		(unsigned int) (y + pic->height) > vid.conheight) {
+	if (x < 0 || (x + pic->width) > vid.conwidth
+		|| y < 0 || (y + pic->height) > vid.conheight) {
 		Sys_MaskPrintf (SYS_VID, "Draw_Pic: bad coordinates");
 		sw32_Draw_SubPic (x, y, pic, 0, 0, pic->width, pic->height);
 		return;
@@ -593,8 +593,8 @@ sw32_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	byte       *source, tbyte;
 	int   v, u;
 
-	if ((x < 0) || (x + width > (int) vid.conwidth)
-		|| (y < 0) || (y + height > (int) vid.conheight)) {
+	if ((x < 0) || (x + width > vid.conwidth)
+		|| (y < 0) || (y + height > vid.conheight)) {
 		Sys_MaskPrintf (SYS_VID, "Draw_SubPic: bad coordinates");
 	}
 	// first, clip to screen
@@ -603,7 +603,7 @@ sw32_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 		width += x;
 		x = 0;
 	}
-	if (x + width > (int) vid.width)
+	if (x + width > vid.width)
 		width = vid.width - x;
 	if (width <= 0)
 		return;
@@ -612,7 +612,7 @@ sw32_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 		height += y;
 		y = 0;
 	}
-	if (y + height > (int) vid.height)
+	if (y + height > vid.height)
 		height = vid.height - y;
 	if (height <= 0)
 		return;
@@ -687,7 +687,7 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 			else {
 				f = 0;
 				fstep = 320 * 0x10000 / vid.conwidth;
-				for (x = 0; x < (int) vid.conwidth; x += 4) {
+				for (x = 0; x < vid.conwidth; x += 4) {
 					dest[x] = src[f >> 16];
 					f += fstep;
 					dest[x + 1] = src[f >> 16];
@@ -712,7 +712,7 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 			src = conback->data + v * 320;
 			f = 0;
 			fstep = 320 * 0x10000 / vid.conwidth;
-			for (x = 0; x < (int) vid.conwidth; x += 4) {
+			for (x = 0; x < vid.conwidth; x += 4) {
 				dest[x] = sw32_8to16table[src[f >> 16]];
 				f += fstep;
 				dest[x + 1] = sw32_8to16table[src[f >> 16]];
@@ -733,7 +733,7 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 			src = conback->data + v * 320;
 			f = 0;
 			fstep = 320 * 0x10000 / vid.conwidth;
-			for (x = 0; x < (int) vid.conwidth; x += 4) {
+			for (x = 0; x < vid.conwidth; x += 4) {
 				dest[x    ] = d_8to24table[src[f >> 16]];f += fstep;
 				dest[x + 1] = d_8to24table[src[f >> 16]];f += fstep;
 				dest[x + 2] = d_8to24table[src[f >> 16]];f += fstep;
@@ -1046,7 +1046,7 @@ sw32_Draw_TileClear (int x, int y, int w, int h)
 	byte       *psrc;
 	vrect_t     vr;
 
-	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
+	CLIP (x, y, w, h, vid.width, vid.height);
 
 	r_rectdesc.rect.x = x;
 	r_rectdesc.rect.y = y;
@@ -1108,12 +1108,12 @@ sw32_Draw_Fill (int x, int y, int w, int h, int c)
 {
 	int         u, v;
 
-	if (x < 0 || x + w > (int) vid.conwidth
-		|| y < 0 || y + h > (int) vid.conheight) {
+	if (x < 0 || x + w > vid.conwidth
+		|| y < 0 || y + h > vid.conheight) {
 		Sys_MaskPrintf (SYS_VID, "Bad Draw_Fill(%d, %d, %d, %d, %c)\n",
 						x, y, w, h, c);
 	}
-	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
+	CLIP (x, y, w, h, vid.width, vid.height);
 
 	switch (sw32_r_pixbytes) {
 	case 1:
@@ -1153,7 +1153,7 @@ sw32_Draw_Fill (int x, int y, int w, int h, int c)
 void
 sw32_Draw_FadeScreen (void)
 {
-	unsigned int x, y;
+	int         x, y;
 
 	VID_UnlockBuffer ();
 	S_ExtraUpdate ();
@@ -1237,7 +1237,7 @@ sw32_Draw_BlendScreen (quat_t color)
 	break;
 	case 2:
 	{
-		unsigned int g1, g2, x, y;
+		int     g1, g2, x, y;
 		unsigned short rramp[32], gramp[64], bramp[32], *temp;
 		for (i = 0; i < 32; i++) {
 			r = i << 3;
@@ -1264,7 +1264,8 @@ sw32_Draw_BlendScreen (quat_t color)
 	break;
 	case 4:
 	{
-		unsigned int x, y;
+		int         x, y;
+
 		byte ramp[256][4], *temp;
 		for (i = 0; i < 256; i++) {
 			r = i;
@@ -1281,7 +1282,7 @@ sw32_Draw_BlendScreen (quat_t color)
 			ramp[i][3] = 0;
 		}
 		temp = vid.buffer;
-		for (y = 0;y < vid.height;y++, temp += vid.rowbytes)
+		for (y = 0; y < vid.height; y++, temp += vid.rowbytes)
 		{
 			for (x = 0;x < vid.width;x++)
 			{

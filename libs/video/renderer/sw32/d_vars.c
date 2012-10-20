@@ -51,5 +51,5 @@ byte       *sw32_cacheblock;
 int         sw32_cachewidth;
 byte       *sw32_d_viewbuffer;
 short      *sw32_d_pzbuffer;
-unsigned int sw32_d_zrowbytes;
-unsigned int sw32_d_zwidth;
+int         sw32_d_zrowbytes;
+int         sw32_d_zwidth;
