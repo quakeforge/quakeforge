@@ -108,7 +108,7 @@ imm_get_hash (void *_imm, void *_tab)
 	} else if (tab == &integer_imm_defs) {
 		return imm->i.integer_val;
 	} else {
-		abort ();
+		internal_error (0, 0);
 	}
 }
 
@@ -144,7 +144,7 @@ imm_compare (void *_imm1, void *_imm2, void *_tab)
 	} else if (tab == &integer_imm_defs) {
 		return imm1->i.integer_val == imm2->i.integer_val;
 	} else {
-		abort ();
+		internal_error (0, 0);
 	}
 }
 
@@ -282,7 +282,7 @@ emit_value (ex_value_t *value, def_t *def)
 			type = &type_quaternion;
 			break;
 		default:
-			abort ();
+			internal_error (0, 0);
 	}
 	memcpy (&search.i, &val.v, sizeof (search.i));
 	imm = (immediate_t *) Hash_FindElement (tab, &search);

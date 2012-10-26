@@ -71,6 +71,8 @@
 #include "strpool.h"
 #include "type.h"
 
+static void linker_internal_error (const char *fmt, ...)
+	__attribute__ ((format (printf, 1, 2), noreturn));
 static void linker_error (const char *fmt, ...)
 	__attribute__ ((format (printf, 1, 2)));
 static void linker_warning (const char *fmt, ...)
@@ -245,14 +247,12 @@ resolve_external_def (defref_t *ext, defref_t *def)
 	if (!(REF (ext)->flags & QFOD_EXTERNAL)) {
 		def_error (REF (ext), "%s %x", WORKSTR (REF (ext)->name),
 				   REF (ext)->flags);
-		linker_error ("ext is not an external def");
-		abort ();
+		linker_internal_error ("ext is not an external def");
 	}
 	if (!(REF (def)->flags & QFOD_GLOBAL)) {
 		def_error (REF (ext), "%s %x", WORKSTR (REF (ext)->name),
 				   REF (ext)->flags);
-		linker_error ("def is not a global def");
-		abort ();
+		linker_internal_error ("def is not a global def");
 	}
 	if (REF (ext)->type != REF (def)->type) {
 		linker_type_mismatch (REF (ext), REF (def));
@@ -1307,4 +1307,20 @@ linker_error (const char *fmt, ...)
 	fputs ("\n", stderr);
 
 	pr.error_count++;
+}
+
+static void
+linker_internal_error (const char *fmt, ...)
+{
+	va_list     args;
+
+	fprintf (stderr, "%s: ", linker_current_file->str);
+
+	va_start (args, fmt);
+	vfprintf (stderr, fmt, args);
+	va_end (args);
+
+	fputs ("\n", stderr);
+
+	abort ();
 }

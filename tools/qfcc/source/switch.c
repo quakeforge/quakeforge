@@ -206,10 +206,8 @@ new_case_node (expr_t *low, expr_t *high)
 	} else {
 		int         size;
 
-		if (!is_integer_val (low)) {
-			error (low, "switch: internal error");
-			abort ();
-		}
+		if (!is_integer_val (low))
+			internal_error (low, "switch");
 		size = expr_integer (high) - expr_integer (low) + 1;
 		node->labels = calloc (size, sizeof (case_node_t *));
 	}
@@ -435,8 +433,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 				op = '-';
 				break;
 			default:
-				error (0, "internal compiler error in switch");
-				abort ();
+				internal_error (0, "in switch");
 		}
 		build_switch (sw, case_tree, op, sw_val, temp, default_label->label);
 	}

@@ -293,8 +293,7 @@ convert_relop (const char *relop)
 			}
 			break;
 	}
-	error (0, "internal: bad relop %s", relop);
-	return EQ;
+	internal_error (0, "bad relop %s", relop);
 }
 
 #ifdef YY_FLEX_REALLOC_HACK

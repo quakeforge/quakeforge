@@ -143,10 +143,8 @@ copy_method (method_t *method)
 void
 add_method (methodlist_t *methodlist, method_t *method)
 {
-	if (method->next) {
-		error (0, "add_method: method loop detected");
-		abort ();
-	}
+	if (method->next)
+		internal_error (0, "add_method: method loop detected");
 
 	*methodlist->tail = method;
 	methodlist->tail = &method->next;
@@ -187,10 +185,8 @@ method_set_param_names (method_t *dst, method_t *src)
 		 dp = dp->next, sp = sp->next) {
 		dp->name = sp->name;
 	}
-	if (dp || sp) {
-		error (0, "internal compiler error: missmatched method params");
-		abort ();
-	}
+	if (dp || sp)
+		internal_error (0, "missmatched method params");
 }
 
 methodlist_t *

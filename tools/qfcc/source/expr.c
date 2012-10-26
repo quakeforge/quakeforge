@@ -322,10 +322,8 @@ copy_expr (expr_t *e)
 					append_expr (n, copy_expr (t));
 				}
 			}
-			if (e->e.block.result && !n->e.block.result) {
-				error (e, "internal: bogus block result?");
-				abort ();
-			}
+			if (e->e.block.result && !n->e.block.result)
+				internal_error (e, "bogus block result?");
 			break;
 		case ex_expr:
 			n = new_expr ();
@@ -350,8 +348,7 @@ copy_expr (expr_t *e)
 			n->e.temp.expr = copy_expr (e->e.temp.expr);
 			return n;
 	}
-	error (e, "internal: invalid expression");
-	abort ();
+	internal_error (e, "invalid expression");
 }
 
 const char *
@@ -914,15 +911,13 @@ expr_t *
 append_expr (expr_t *block, expr_t *e)
 {
 	if (block->type != ex_block)
-		abort ();
+		internal_error (block, "not a block expression");
 
 	if (!e || e->type == ex_error)
 		return block;
 
-	if (e->next) {
-		error (e, "append_expr: expr loop detected");
-		abort ();
-	}
+	if (e->next)
+		internal_error (e, "append_expr: expr loop detected");
 
 	*block->e.block.tail = e;
 	block->e.block.tail = &e->next;
@@ -1151,9 +1146,8 @@ merge (ex_list_t *l1, ex_list_t *l2)
 {
 	ex_list_t  *m;
 
-	if (!l1 && !l2) {
+	if (!l1 && !l2)
 		internal_error (0, 0);
-	}
 	if (!l2)
 		return l1;
 	if (!l1)
@@ -1493,9 +1487,8 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		return e2;
 	t1 = get_type (e1);
 	t2 = get_type (e2);
-	if (!t1 || !t2) {
+	if (!t1 || !t2)
 		internal_error (e1, 0);
-	}
 	if (op == EQ || op == NE) {
 		if (e1->type == ex_nil) {
 			t1 = t2;
@@ -2536,9 +2529,8 @@ assign_expr (expr_t *e1, expr_t *e2)
 	}
 	t1 = get_type (e1);
 	t2 = get_type (e2);
-	if (!t1 || !t2) {
+	if (!t1 || !t2)
 		internal_error (e1, 0);
-	}
 	//XXX func = func ???
 	if (t1->type == ev_pointer && is_array (t2)) {
 		e2 = address_expr (e2, 0, t2->t.fldptr.type);
@@ -2864,9 +2856,8 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 expr_t *
 sizeof_expr (expr_t *expr, struct type_s *type)
 {
-	if (!((!expr) ^ (!type))) {
+	if (!((!expr) ^ (!type)))
 		internal_error (0, 0);
-	}
 	if (!type)
 		type = get_type (expr);
 	expr = new_integer_expr (type_size (type));
