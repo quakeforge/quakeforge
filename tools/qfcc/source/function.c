@@ -165,7 +165,7 @@ parse_params (type_t *type, param_t *parms)
 		}
 		if (!p->selector && !p->type && !p->name) {
 			if (p->next)
-				internal_error (0, "");
+				internal_error (0, 0);
 			new->t.func.num_params = -(new->t.func.num_params + 1);
 		} else if (p->type) {
 			new->t.func.param_types[new->t.func.num_params] = p->type;
