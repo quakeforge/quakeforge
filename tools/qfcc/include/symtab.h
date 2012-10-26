@@ -41,11 +41,11 @@ enum storage_class_e;
 */
 //@{
 
-typedef enum {
+typedef enum vis_e {
 	vis_public,
 	vis_protected,
 	vis_private,
-} vis_e;
+} vis_t;
 
 typedef enum {
 	sy_var,						///< symbol refers to a variable
@@ -59,7 +59,7 @@ typedef enum {
 typedef struct symbol_s {
 	struct symbol_s *next;		///< chain of symbols in symbol table
 	struct symtab_s *table;		///< symbol table that owns this symbol
-	vis_e       visibility;		///< symbol visiblity. defaults to public
+	vis_t       visibility;		///< symbol visiblity. defaults to public
 	const char *name;			///< symbol name
 	sy_type_e   sy_type;		///< symbol type (st_type)
 	struct type_s *type;		///< type of object to which symbol refers

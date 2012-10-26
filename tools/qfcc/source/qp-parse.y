@@ -47,6 +47,7 @@
 #include "function.h"
 #include "qfcc.h"
 #include "reloc.h"
+#include "shared.h"
 #include "symtab.h"
 #include "type.h"
 
@@ -54,22 +55,22 @@
 #define YYERROR_VERBOSE 1
 #undef YYERROR_VERBOSE
 
-extern char *yytext;
+extern char *qp_yytext;
 
 static void
 yyerror (const char *s)
 {
 #ifdef YYERROR_VERBOSE
-	error (0, "%s %s\n", yytext, s);
+	error (0, "%s %s\n", qp_yytext, s);
 #else
-	error (0, "%s before %s", s, yytext);
+	error (0, "%s before %s", s, qp_yytext);
 #endif
 }
 
 static void
 parse_error (void)
 {
-	error (0, "parse error before %s", yytext);
+	error (0, "parse error before %s", qp_yytext);
 }
 
 #define PARSE_ERROR do { parse_error (); YYERROR; } while (0)
@@ -136,26 +137,6 @@ int yylex (void);
 %type	<op>		sign
 
 %{
-symtab_t       *current_symtab;
-storage_class_t current_storage = st_global;
-function_t *current_func;
-struct class_type_s *current_class;
-expr_t  *local_expr;
-param_t *current_params;
-
-/*	When defining a new symbol, already existing symbols must be in a
-	different scope. However, when they are in a different scope, we want a
-	truly new symbol.
-*/
-static symbol_t *
-check_redefined (symbol_t *sym)
-{
-	if (sym->table == current_symtab)
-		error (0, "%s redefined", sym->name);
-	if (sym->table)		// truly new symbols are not in any symbol table
-		sym = new_symbol (sym->name);
-	return sym;
-}
 %}
 
 %%

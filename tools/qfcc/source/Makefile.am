@@ -35,23 +35,19 @@ QFCC_INCS=@QFCC_INCS@
 INCLUDES=	-I$(top_srcdir)/include $(QFCC_INCS)
 YFLAGS = -v -d
 
-bin_PROGRAMS=	qfcc qfpc qfprogs
+bin_PROGRAMS=	qfcc qfprogs
 bin_SCRIPTS=	qfpreqcc
 
 common_src=\
 	class.c codespace.c constfold.c cpp.c debug.c def.c defspace.c \
 	diagnostic.c dot_expr.c dot_flow.c emit.c expr.c function.c grab.c \
 	idstuff.c linker.c method.c obj_file.c obj_type.c opcodes.c options.c \
-	qfcc.c reloc.c statements.c strpool.c struct.c switch.c symtab.c type.c \
-	value.c
+	qfcc.c reloc.c shared.c statements.c strpool.c struct.c switch.c symtab.c \
+	type.c value.c
 
-qfcc_SOURCES= qc-lex.l qc-parse.y $(common_src)
+qfcc_SOURCES= qc-lex.l qc-parse.y qp-lex.l qp-parse.y $(common_src)
 qfcc_LDADD=			$(QFCC_LIBS)
 qfcc_DEPENDENCIES=	$(QFCC_DEPS)
-
-qfpc_SOURCES= qp-lex.l qp-parse.y $(common_src)
-qfpc_LDADD=			$(QFCC_LIBS)
-qfpc_DEPENDENCIES=	$(QFCC_DEPS)
 
 qfprogs_SOURCES= \
 	disassemble.c dump_globals.c dump_lines.c dump_modules.c obj_file.c \
@@ -60,6 +56,15 @@ qfprogs_LDADD=	$(QFCC_LIBS)
 qfprogs_DEPENDENCIES= $(QFCC_DEPS)
 
 BUILT_SOURCES=qc-parse.c qc-parse.h qc-lex.c qp-parse.c qp-parse.h qp-lex.c
+
+qc-parse.c: qc-parse.y
+	$(YACC) $(YFLAGS) -Dapi.prefix=qc_yy $< -o $@
+qc-lex.c: qc-lex.l
+	$(LEX) $(LFLAGS) $(AM_LFLAGS) -Pqc_yy -o$@ $<
+qp-parse.c: qp-parse.y
+	$(YACC) $(YFLAGS) -Dapi.prefix=qp_yy $< -o $@
+qp-lex.c: qp-lex.l
+	$(LEX) $(LFLAGS) $(AM_LFLAGS) -Pqp_yy -o$@ $<
 
 EXTRA_DIST=qc-lex.c qc-parse.c qc-parse.h qfpreqcc \
 			qp-parse.c qp-parse.h qp-lex.c

@@ -54,6 +54,7 @@
 #include "options.h"
 #include "qfcc.h"
 #include "reloc.h"
+#include "shared.h"
 #include "strpool.h"
 #include "struct.h"
 #include "switch.h"
@@ -65,22 +66,22 @@
 #define YYERROR_VERBOSE 1
 #undef YYERROR_VERBOSE
 
-extern char *yytext;
+extern char *qc_yytext;
 
 static void
 yyerror (const char *s)
 {
 #ifdef YYERROR_VERBOSE
-	error (0, "%s %s\n", yytext, s);
+	error (0, "%s %s\n", qc_yytext, s);
 #else
-	error (0, "%s before %s", s, yytext);
+	error (0, "%s before %s", s, qc_yytext);
 #endif
 }
 
 static void
 parse_error (void)
 {
-	error (0, "parse error before %s", yytext);
+	error (0, "parse error before %s", qc_yytext);
 }
 
 #define PARSE_ERROR do { parse_error (); YYERROR; } while (0)
@@ -205,46 +206,9 @@ int yylex (void);
 
 %{
 
-function_t *current_func;
-class_type_t *current_class;
-expr_t     *local_expr;
-vis_e       current_visibility;
-storage_class_t current_storage = st_global;
-symtab_t   *current_symtab;
-
 static switch_block_t *switch_block;
 static expr_t *break_label;
 static expr_t *continue_label;
-
-/*	When defining a new symbol, already existing symbols must be in a
-	different scope. However, when they are in a different scope, we want a
-	truly new symbol.
-*/
-static symbol_t *
-check_redefined (symbol_t *sym)
-{
-	if (sym->table == current_symtab)
-		error (0, "%s redefined", sym->name);
-	if (sym->table)		// truly new symbols are not in any symbol table
-		sym = new_symbol (sym->name);
-	return sym;
-}
-
-/*	Check for undefined symbols. If the symbol is undefined, default its type
-	to float or int, depending on compiler mode.
-*/
-static symbol_t *
-check_undefined (symbol_t *sym)
-{
-	if (!sym->table) {	// truly new symbols are not in any symbol table
-		error (0, "%s undefined", sym->name);
-		if (options.code.progsversion == PROG_ID_VERSION)
-			sym->type = &type_float;
-		else
-			sym->type = &type_integer;
-	}
-	return sym;
-}
 
 static specifier_t
 make_spec (type_t *type, storage_class_t storage, int is_typedef,
@@ -1734,28 +1698,28 @@ keywordselector
 selector
 	: NAME						{ $$ = $1; }
 	| CLASS_NAME				{ $$ = $1; }
-	| TYPE						{ $$ = new_symbol (yytext); }
+	| TYPE						{ $$ = new_symbol (qc_yytext); }
 	| TYPE_NAME					{ $$ = $1; }
 	| reserved_word
 	;
 
 reserved_word
-	: LOCAL						{ $$ = new_symbol (yytext); }
-	| RETURN					{ $$ = new_symbol (yytext); }
-	| WHILE						{ $$ = new_symbol (yytext); }
-	| DO						{ $$ = new_symbol (yytext); }
-	| IF						{ $$ = new_symbol (yytext); }
-	| ELSE						{ $$ = new_symbol (yytext); }
-	| FOR						{ $$ = new_symbol (yytext); }
-	| BREAK						{ $$ = new_symbol (yytext); }
-	| CONTINUE					{ $$ = new_symbol (yytext); }
-	| SWITCH					{ $$ = new_symbol (yytext); }
-	| CASE						{ $$ = new_symbol (yytext); }
-	| DEFAULT					{ $$ = new_symbol (yytext); }
-	| NIL						{ $$ = new_symbol (yytext); }
-	| STRUCT					{ $$ = new_symbol (yytext); }
-	| ENUM						{ $$ = new_symbol (yytext); }
-	| TYPEDEF					{ $$ = new_symbol (yytext); }
+	: LOCAL						{ $$ = new_symbol (qc_yytext); }
+	| RETURN					{ $$ = new_symbol (qc_yytext); }
+	| WHILE						{ $$ = new_symbol (qc_yytext); }
+	| DO						{ $$ = new_symbol (qc_yytext); }
+	| IF						{ $$ = new_symbol (qc_yytext); }
+	| ELSE						{ $$ = new_symbol (qc_yytext); }
+	| FOR						{ $$ = new_symbol (qc_yytext); }
+	| BREAK						{ $$ = new_symbol (qc_yytext); }
+	| CONTINUE					{ $$ = new_symbol (qc_yytext); }
+	| SWITCH					{ $$ = new_symbol (qc_yytext); }
+	| CASE						{ $$ = new_symbol (qc_yytext); }
+	| DEFAULT					{ $$ = new_symbol (qc_yytext); }
+	| NIL						{ $$ = new_symbol (qc_yytext); }
+	| STRUCT					{ $$ = new_symbol (qc_yytext); }
+	| ENUM						{ $$ = new_symbol (qc_yytext); }
+	| TYPEDEF					{ $$ = new_symbol (qc_yytext); }
 	;
 
 keyworddecl

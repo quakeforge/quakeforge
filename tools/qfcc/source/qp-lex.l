@@ -109,13 +109,13 @@ FRAMEID		{ID}(\.{ID})*
 
 {INTEGER}			{
 						int         i = strtol (yytext, 0, 0);
-						yylval.expr = new_integer_expr (i);
+						qp_yylval.expr = new_integer_expr (i);
 						return CONST;
 					}
 
 {FLOAT}				{
 						float       f = strtof (yytext, 0);
-						yylval.expr = new_float_expr (f);
+						qp_yylval.expr = new_float_expr (f);
 						return CONST;
 					}
 
@@ -123,7 +123,7 @@ FRAMEID		{ID}(\.{ID})*
 
 \"(\\.|[^"\\])*\"	{
 						const char *s = make_string (yytext, 0);
-						yylval.expr = new_string_expr (s);
+						qp_yylval.expr = new_string_expr (s);
 						return CONST;
 					}
 
@@ -131,7 +131,7 @@ FRAMEID		{ID}(\.{ID})*
 						vec3_t      v;
 						sscanf (yytext, "' %f %f %f '",
 								&v[0], &v[1], &v[2]);
-						yylval.expr = new_vector_expr (v);
+						qp_yylval.expr = new_vector_expr (v);
 						return CONST;
 					}
 
@@ -139,20 +139,20 @@ FRAMEID		{ID}(\.{ID})*
 						quat_t      q;
 						sscanf (yytext, "' %f %f %f %f'",
 								&q[0], &q[1], &q[2], &q[3]);
-						yylval.expr = new_quaternion_expr (q);
+						qp_yylval.expr = new_quaternion_expr (q);
 						return CONST;
 					}
 
 {RELOP}				{
-						yylval.op = convert_relop (yytext);
+						qp_yylval.op = convert_relop (yytext);
 						return RELOP;
 					}
 {ADDOP}				{
-						yylval.op = yytext[0];
+						qp_yylval.op = yytext[0];
 						return ADDOP;
 					}
 {MULOP}				{
-						yylval.op = yytext[0];
+						qp_yylval.op = yytext[0];
 						return MULOP;
 					}
 
@@ -166,7 +166,7 @@ FRAMEID		{ID}(\.{ID})*
 "$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
-							yylval.expr = new_integer_expr (ret);
+							qp_yylval.expr = new_integer_expr (ret);
 							return CONST;
 						} else {
 							BEGIN (-ret);
@@ -251,9 +251,9 @@ keyword_or_id (const char *token)
 	keyword = Hash_Find (keyword_tab, token);
 	if (keyword) {
 		if (keyword->value == ADDOP || keyword->value == MULOP) {
-			yylval.op = token[0];
+			qp_yylval.op = token[0];
 		} else {
-			yylval.type = keyword->type;
+			qp_yylval.type = keyword->type;
 		}
 		return keyword->value;
 	}
@@ -261,10 +261,10 @@ keyword_or_id (const char *token)
 	if (!sym)
 		sym = new_symbol (token);
 	if (sym->sy_type == sy_type) {
-		yylval.type = sym->type;
+		qp_yylval.type = sym->type;
 		return TYPE_NAME;
 	}
-	yylval.symbol = sym;
+	qp_yylval.symbol = sym;
 	return ID;
 }
 

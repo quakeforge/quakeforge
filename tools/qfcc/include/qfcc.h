@@ -120,9 +120,12 @@ extern	struct symtab_s *current_symtab;
 const char *strip_path (const char *filename);
 
 void clear_frame_macros (void);
-extern FILE *yyin;
-int yyparse (void);
-extern int yydebug;
+extern FILE *qc_yyin;
+extern FILE *qp_yyin;
+int qc_yyparse (void);
+int qp_yyparse (void);
+extern int qc_yydebug;
+extern int qp_yydebug;
 
 #ifdef _WIN32
 char *fix_backslash (char *path);

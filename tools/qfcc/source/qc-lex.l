@@ -84,7 +84,7 @@ YY_DECL;
 
 static int keyword_or_id (char *token);
 
-extern YYSTYPE yylval;
+extern QC_YYSTYPE qc_yylval;
 
 %}
 
@@ -123,15 +123,15 @@ STRING		\"(\\.|[^"\\])*\"
 						const char *c = yytext + yyleng - 1;
 						int         i = strtol (yytext, 0, 0);
 						if (*c == 'u' || *c == 'U')
-							yylval.expr = new_integer_expr (i);//FIXME
+							qc_yylval.expr = new_integer_expr (i);//FIXME
 						else
-							yylval.expr = new_integer_expr (i);
+							qc_yylval.expr = new_integer_expr (i);
 						return CONST;
 					}
 
 {FLOAT}				{
 						float       f = strtof (yytext, 0);
-						yylval.expr = new_float_expr (f);
+						qc_yylval.expr = new_float_expr (f);
 						return CONST;
 					}
 
@@ -148,7 +148,7 @@ STRING		\"(\\.|[^"\\])*\"
 
 {STRING}			{
 						const char *s = make_string (yytext, 0);
-						yylval.expr = new_string_expr (s);
+						qc_yylval.expr = new_string_expr (s);
 						return STRING;
 					}
 @					return '@';
@@ -157,7 +157,7 @@ STRING		\"(\\.|[^"\\])*\"
 						vec3_t      v;
 						sscanf (yytext, "' %f %f %f '",
 								&v[0], &v[1], &v[2]);
-						yylval.expr = new_vector_expr (v);
+						qc_yylval.expr = new_vector_expr (v);
 						return CONST;
 					}
 
@@ -165,7 +165,7 @@ STRING		\"(\\.|[^"\\])*\"
 						quat_t      q;
 						sscanf (yytext, "' %f %f %f %f'",
 								&q[0], &q[1], &q[2], &q[3]);
-						yylval.expr = new_quaternion_expr (q);
+						qc_yylval.expr = new_quaternion_expr (q);
 						return CONST;
 					}
 
@@ -174,27 +174,27 @@ STRING		\"(\\.|[^"\\])*\"
 
 						if (str[1])
 							warning (0, "multibyte char constant");
-						yylval.expr = new_integer_expr (*str);
+						qc_yylval.expr = new_integer_expr (*str);
 						return CONST;
 					}
 
 [+\-*/&|^%]=		{
-						yylval.op = yytext[0];
+						qc_yylval.op = yytext[0];
 						return ASX;
 					}
 
 "<<="				{
-						yylval.op = SHL;
+						qc_yylval.op = SHL;
 						return ASX;
 					}
 
 ">>="				{
-						yylval.op = SHR;
+						qc_yylval.op = SHR;
 						return ASX;
 					}
 
 [!(){}.*/&|^~+\-=\[\];,#%?:] {
-						yylval.pointer = 0;	// ensure pointer values are null
+						qc_yylval.pointer = 0;	// ensure pointer vals are null
 						return yytext[0];
 					}
 
@@ -213,19 +213,19 @@ STRING		\"(\\.|[^"\\])*\"
 ">"					return GT;
 
 "++"				{
-						yylval.op = '+';
+						qc_yylval.op = '+';
 						return INCOP;
 					}
 
 "--"				{
-						yylval.op = '-';
+						qc_yylval.op = '-';
 						return INCOP;
 					}
 
 "$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
-							yylval.expr = new_integer_expr (ret);
+							qc_yylval.expr = new_integer_expr (ret);
 							return CONST;
 						} else {
 							BEGIN (-ret);
@@ -352,10 +352,10 @@ keyword_or_id (char *token)
 			class_init ();
 		if (keyword->value) {
 			if (keyword->value == STRUCT) {
-				yylval.op = token[0];
+				qc_yylval.op = token[0];
 			} else {
-				yylval.type = 0;
-				yylval.type = keyword->type;
+				qc_yylval.type = 0;
+				qc_yylval.type = keyword->type;
 			}
 			return keyword->value;
 		}
@@ -366,7 +366,7 @@ keyword_or_id (char *token)
 	sym = symtab_lookup (current_symtab, token);
 	if (!sym)
 		sym = new_symbol (token);
-	yylval.symbol = sym;
+	qc_yylval.symbol = sym;
 	if (sym->sy_type == sy_type)
 		return TYPE_NAME;
 	if (sym->sy_type == sy_class)

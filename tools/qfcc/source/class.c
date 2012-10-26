@@ -763,7 +763,7 @@ class_find_ivar (class_t *class, int vis, const char *name)
 
 	ivar = symtab_lookup (class->ivars, name);
 	if (ivar) {
-		if (ivar->visibility > (vis_e) vis)
+		if (ivar->visibility > (vis_t) vis)
 			goto access_error;
 		return ivar;
 	}

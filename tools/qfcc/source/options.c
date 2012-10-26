@@ -642,7 +642,9 @@ DecodeArgs (int argc, char **argv)
 		linker_add_path (QFCC_LIB_PATH);
 	}
 
-	if (options.verbosity >= 3)
-		yydebug = 1;
+	if (options.verbosity >= 3) {
+		qc_yydebug = 1;
+		qp_yydebug = 1;
+	}
 	return optind;
 }

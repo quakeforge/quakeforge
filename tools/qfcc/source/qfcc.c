@@ -60,6 +60,7 @@
 #include <QF/dstring.h>
 #include <QF/hash.h>
 #include <QF/qendian.h>
+#include <QF/quakefs.h>
 #include <QF/script.h>
 #include <QF/sys.h>
 #include <QF/va.h>
@@ -94,6 +95,17 @@ const char *sourcedir;
 const char *progs_src;
 
 pr_info_t   pr;
+
+typedef enum {
+	lang_object,
+	lang_ruamoko,
+	lang_pascal,
+} lang_t;
+
+typedef struct ext_lang_s {
+	const char *ext;
+	lang_t      lang;
+} ext_lang_t;
 
 #ifdef _WIN32
 char *
@@ -307,12 +319,27 @@ setup_sym_file (const char *output_file)
 }
 
 static int
-compile_to_obj (const char *file, const char *obj)
+compile_to_obj (const char *file, const char *obj, lang_t lang)
 {
 	int         err;
+	FILE      **yyin;
+	int       (*yyparse) (void);
 
-	yyin = preprocess_file (file, 0);
-	if (!yyin)
+	switch (lang) {
+		case lang_ruamoko:
+			yyin = &qc_yyin;
+			yyparse = qc_yyparse;
+			break;
+		case lang_pascal:
+			yyin = &qp_yyin;
+			yyparse = qp_yyparse;
+			break;
+		default:
+			internal_error (0, "unknown language enum");
+	}
+
+	*yyin = preprocess_file (file, 0);
+	if (!*yyin)
 		return !options.preprocess_only;
 
 	InitData ();
@@ -324,7 +351,7 @@ compile_to_obj (const char *file, const char *obj)
 	begin_compilation ();
 	pr.source_file = ReuseString (strip_path (file));
 	err = yyparse () || pr.error_count;
-	fclose (yyin);
+	fclose (*yyin);
 	if (cpp_name && !options.save_temps) {
 		if (unlink (tempname->str)) {
 			perror ("unlink");
@@ -397,14 +424,35 @@ finish_link (void)
 	return 0;
 }
 
+static lang_t
+file_language (const char *file, const char *ext)
+{
+	static ext_lang_t ext_lang[] = {
+		{".r",		lang_ruamoko},
+		{".c",		lang_ruamoko},
+		{".qc",		lang_ruamoko},
+		{".pas",	lang_pascal},
+		{".p",		lang_pascal},
+		{0,			lang_object},	// unrecognized extension = object file
+	};
+	ext_lang_t *el;
+
+	if (strncmp (file, "-l", 2) == 0)
+		return lang_object;
+	for (el = ext_lang; el->ext; el++)
+		if (strcmp (ext, el->ext) == 0)
+			break;
+	return el->lang;
+}
+
 static int
 separate_compile (void)
 {
-	const char **file;
+	const char **file, *ext;
 	const char **temp_files;
+	lang_t      lang;
 	dstring_t  *output_file = dstring_newstr ();
 	dstring_t  *extension = dstring_newstr ();
-	char       *f;
 	int         err = 0;
 	int         i;
 
@@ -420,32 +468,21 @@ separate_compile (void)
 	temp_files = calloc (i + 1, sizeof (const char*));
 
 	for (file = source_files, i = 0; *file; file++) {
-		dstring_clearstr (extension);
-		dstring_clearstr (output_file);
+		ext = QFS_FileExtension (*file);
+		dstring_copysubstr (output_file, *file, ext - *file);
+		dstring_copystr (extension, ext);
 
-		dstring_appendstr (output_file, *file);
-		f = output_file->str + strlen (output_file->str);
-		while (f >= output_file->str && *f != '.' && *f != '/')
-			f--;
-		if (f >= output_file->str && *f == '.') {
-			output_file->size -= strlen (f);
-			dstring_appendstr (extension, f);
-			*f = 0;
-		}
 		if (options.compile && options.output_file) {
 			dstring_clearstr (output_file);
 			dstring_appendstr (output_file, options.output_file);
 		} else {
 			dstring_appendstr (output_file, ".qfo");
 		}
-		if (strncmp (*file, "-l", 2)
-			&& (!strcmp (extension->str, ".r")
-				|| !strcmp (extension->str, ".qc")
-				|| !strcmp (extension->str, ".c"))) {
+		if ((lang = file_language (*file, extension->str)) != lang_object) {
 			if (options.verbosity >= 2)
 				printf ("%s %s\n", *file, output_file->str);
 			temp_files[i++] = save_string (output_file->str);
-			err = compile_to_obj (*file, output_file->str) || err;
+			err = compile_to_obj (*file, output_file->str, lang) || err;
 
 			free ((char *)*file);
 			*file = strdup (output_file->str);
@@ -530,16 +567,18 @@ static int
 compile_file (const char *filename)
 {
 	int         err;
+	FILE      **yyin = &qc_yyin;
+	int       (*yyparse) (void) = qc_yyparse;
 
-	yyin = preprocess_file (filename, 0);
-	if (!yyin)
+	*yyin = preprocess_file (filename, 0);
+	if (!*yyin)
 		return !options.preprocess_only;
 
 	pr.source_file = ReuseString (strip_path (filename));
 	pr.source_line = 1;
 	clear_frame_macros ();
 	err = yyparse () || pr.error_count;
-	fclose (yyin);
+	fclose (*yyin);
 	if (cpp_name && (!options.save_temps)) {
 		if (unlink (tempname->str)) {
 			perror ("unlink");
