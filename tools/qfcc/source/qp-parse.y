@@ -103,6 +103,7 @@ int yylex (void);
 %nonassoc CLASS_NOT_CATEGORY
 %nonassoc STORAGEX
 
+%left	COMMA
 %right  <op> '=' ASX PAS /* pointer assign */
 %right  '?' ':'
 %left   OR
