@@ -235,9 +235,9 @@ subprogram_declaration
 	: subprogram_head ';'
 		{
 			$<storage>$ = current_storage;
-			current_storage = st_local;
 			current_func = begin_function ($1, 0, current_symtab, 0);
 			current_symtab = current_func->symtab;
+			current_storage = st_local;
 		}
 	  declarations compound_statement ';'
 		{
