@@ -39,10 +39,13 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/dstring.h"
+
 #include "dags.h"
 #include "diagnostic.h"
 #include "qfcc.h"
 #include "statements.h"
+#include "strpool.h"
 #include "symtab.h"
 
 static daglabel_t *free_labels;
@@ -93,11 +96,17 @@ new_node (void)
 const char *
 daglabel_string (daglabel_t *label)
 {
+	static dstring_t *str;
 	if ((label->opcode && label->op) || (!label->opcode && !label->op))
 		return "bad label";
 	if (label->opcode)
 		return label->opcode;
-	return operand_string (label->op);
+	if (!str)
+		str = dstring_new ();
+	// operand_string might use quote_string, which returns a pointer to
+	// a static variable.
+	dstring_copystr (str, operand_string (label->op));
+	return quote_string (str->str);
 }
 
 static daglabel_t *
