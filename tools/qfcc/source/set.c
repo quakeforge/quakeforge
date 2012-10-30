@@ -40,6 +40,7 @@
 
 #include <stdlib.h>
 
+#include "QF/dstring.h"
 #include "QF/mathlib.h"
 
 #include "set.h"
@@ -242,4 +243,24 @@ set_is_member (const set_t *set, unsigned x)
 	if (x >= set->size)
 		return 0;
 	return (set->map[x / BITS] & (1 << (x % BITS))) != 0;
+}
+
+const char *
+set_as_string (const set_t *set)
+{
+	static dstring_t *str;
+	unsigned    i;
+
+	if (!str)
+		str = dstring_new ();
+	dstring_clearstr (str);
+	for (i = 0; i < set->size; i++) {
+		if (set_is_member (set, i)) {
+			if (str->str[0])
+				dasprintf (str, " %d", i);
+			else
+				dsprintf (str, "%d", i);
+		}
+	}
+	return str->str;
 }

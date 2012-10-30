@@ -59,6 +59,7 @@ int set_is_intersecting (const set_t *s1, const set_t *s2);
 int set_is_equivalent (const set_t *s1, const set_t *s2);
 int set_is_subset (const set_t *set, const set_t *sub);
 int set_is_member (const set_t *set, unsigned x);
+const char *set_as_string (const set_t *set);
 
 //@}
 #endif//set_h
