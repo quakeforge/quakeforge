@@ -136,10 +136,45 @@ flow_build_vars (function_t *func)
 	}
 }
 
+int
+flow_is_cond (statement_t *s)
+{
+	if (!s)
+		return 0;
+	return !strncmp (s->opcode, "<IF", 3);
+}
+
+int
+flow_is_goto (statement_t *s)
+{
+	if (!s)
+		return 0;
+	return !strcmp (s->opcode, "<GOTO>");
+}
+
+int
+flow_is_return (statement_t *s)
+{
+	if (!s)
+		return 0;
+	return !strncmp (s->opcode, "<RETURN", 7);
+}
+
+sblock_t *
+flow_get_target (statement_t *s)
+{
+	if (flow_is_cond (s))
+		return s->opb->o.label->dest;
+	if (flow_is_goto (s))
+		return s->opa->o.label->dest;
+	return 0;
+}
+
 void
 flow_build_graph (function_t *func)
 {
 	sblock_t   *sblock;
+	statement_t *st;
 	int         num_blocks = 0;
 
 	for (sblock = func->sblock; sblock; sblock = sblock->next)
@@ -148,4 +183,46 @@ flow_build_graph (function_t *func)
 	for (sblock = func->sblock; sblock; sblock = sblock->next)
 		func->graph[sblock->number] = sblock;
 	func->num_nodes = num_blocks;
+
+	for (sblock = func->sblock; sblock; sblock = sblock->next) {
+		if (sblock->statements) {
+			st = (statement_t *) sblock->tail;
+			//FIXME jump/jumpb
+			if (flow_is_goto (st)) {
+				sblock->succ = calloc (2, sizeof (sblock_t *));
+				sblock->succ[0] = flow_get_target (st);
+			} else if (flow_is_cond (st)) {
+				sblock->succ = calloc (3, sizeof (sblock_t *));
+				sblock->succ[0] = sblock->next;
+				sblock->succ[1] = flow_get_target (st);
+			} else if (flow_is_return (st)) {
+				sblock->succ = calloc (1, sizeof (sblock_t *));
+			} else {
+				sblock->succ = calloc (2, sizeof (sblock_t *));
+				sblock->succ[0] = sblock->next;
+			}
+		}
+	}
+	for (sblock = func->sblock; sblock; sblock = sblock->next) {
+		int         num_pred;
+		sblock_t   *sb, **ss;
+
+		for (num_pred = 0, sb = func->sblock; sb; sb = sb->next) {
+			for (ss = sb->succ; *ss; ss++) {
+				if (*ss == sblock) {
+					num_pred++;
+					break;
+				}
+			}
+		}
+		sblock->pred = calloc (num_pred + 1, sizeof (sblock_t *));
+		for (num_pred = 0, sb = func->sblock; sb; sb = sb->next) {
+			for (ss = sb->succ; *ss; ss++) {
+				if (*ss == sblock) {
+					sblock->pred[num_pred++] = sb;
+					break;
+				}
+			}
+		}
+	}
 }

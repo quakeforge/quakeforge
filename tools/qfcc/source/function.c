@@ -643,8 +643,11 @@ emit_function (function_t *f, expr_t *e)
 	f->code = pr.code->size;
 	lineno_base = f->def->line;
 	f->sblock = make_statements (e);
-	flow_build_graph (f);
 	flow_build_vars (f);
+	flow_build_graph (f);
+	if (options.block_dot.flow)
+		print_flow (f->sblock, nva ("%s.%s.%s.dot", GETSTR (pr.source_file),
+									f->name, "flow"));
 	printf ("%s %d %d\n", f->name, f->num_nodes, f->num_vars);
 	emit_statements (f->sblock);
 }

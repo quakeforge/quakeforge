@@ -44,6 +44,7 @@
 #include <QF/va.h>
 
 #include "dags.h"
+#include "flow.h"
 #include "expr.h"
 #include "statements.h"
 #include "strpool.h"
@@ -59,34 +60,6 @@ flow_statement (dstring_t *dstr, statement_t *s)
 	dasprintf (dstr, "<td>%s</td>", html_string(operand_string (s->opb)));
 	dasprintf (dstr, "<td>%s</td>", html_string(operand_string (s->opc)));
 	dasprintf (dstr, "</tr>\n");
-}
-
-static int
-is_goto (statement_t *s)
-{
-	if (!s)
-		return 0;
-	return !strcmp (s->opcode, "<GOTO>");
-}
-
-static int
-is_return (statement_t *s)
-{
-	if (!s)
-		return 0;
-	return !strncmp (s->opcode, "<RETURN", 7);
-}
-
-static sblock_t *
-get_target (statement_t *s)
-{
-	if (!s)
-		return 0;
-	if (!strncmp (s->opcode, "<IF", 3))
-		return s->opb->o.label->dest;
-	if (!strcmp (s->opcode, "<GOTO>"))
-		return s->opa->o.label->dest;
-	return 0;
 }
 
 static void
@@ -120,12 +93,22 @@ flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 	dasprintf (dstr, "        <td></td>\n");
 	dasprintf (dstr, "      </tr>\n");
 	dasprintf (dstr, "    </table>>];\n");
-	if (sblock->next && !is_goto ((statement_t *) sblock->tail)
-		&& !is_return ((statement_t *) sblock->tail))
-		dasprintf (dstr, "  sb_%p:e -> sb_%p:s;\n", sblock, sblock->next);
-	if ((target = get_target ((statement_t *) sblock->tail)))
-		dasprintf (dstr, "  sb_%p:e -> sb_%p:s [label=\"%s\"];\n", sblock,
-				   target, ((statement_t *) sblock->tail)->opcode);
+	if (!sblock->succ) {
+		if (sblock->next && !flow_is_goto ((statement_t *) sblock->tail)
+			&& !flow_is_return ((statement_t *) sblock->tail))
+			dasprintf (dstr, "  sb_%p:e -> sb_%p:s;\n", sblock, sblock->next);
+		if ((target = flow_get_target ((statement_t *) sblock->tail)))
+			dasprintf (dstr, "  sb_%p:e -> sb_%p:s [label=\"%s\"];\n", sblock,
+					   target, ((statement_t *) sblock->tail)->opcode);
+	} else {
+		sblock_t  **sb;
+		for (sb = sblock->succ; *sb; sb++)
+			dasprintf (dstr, "  sb_%p:e -> sb_%p:s [label=\"s\"];\n", sblock,
+					   *sb);
+		for (sb = sblock->pred; sb && *sb; sb++)
+			dasprintf (dstr, "  sb_%p:e -> sb_%p:s [label=\"p\"];\n", *sb,
+					   sblock);
+	}
 	dasprintf (dstr, "\n");
 }
 
