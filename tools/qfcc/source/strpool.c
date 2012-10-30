@@ -360,6 +360,39 @@ make_string (char *token, char **end)
 }
 
 const char *
+html_string (const char *str)
+{
+	static dstring_t *q;
+	char        c[2] = {0, 0};
+
+	if (!str)
+		return "(null)";
+	if (!q)
+		q = dstring_new ();
+	dstring_clearstr (q);
+	while ((c[0] = *str++)) {
+		switch (c[0]) {
+			case '<':
+				dstring_appendstr (q, "&lt;");
+				break;
+			case '>':
+				dstring_appendstr (q, "&gt;");
+				break;
+			case '&':
+				dstring_appendstr (q, "&amp;");
+				break;
+			case '"':
+				dstring_appendstr (q, "&quot;");
+				break;
+			default:
+				dstring_appendstr (q, c);
+				break;
+		}
+	}
+	return q->str;
+}
+
+const char *
 quote_string (const char *str)
 {
 	static dstring_t *q;
@@ -372,20 +405,32 @@ quote_string (const char *str)
 	dstring_clearstr (q);
 	while ((c[0] = *str++)) {
 		switch (c[0]) {
+			case '\a':
+				dstring_appendstr (q, "\\a");
+				break;
+			case '\b':
+				dstring_appendstr (q, "\\b");
+				break;
+			case '\f':
+				dstring_appendstr (q, "\\f");
+				break;
 			case '\n':
-				dstring_appendstr (q, "\\\\n");
+				dstring_appendstr (q, "\\n");
 				break;
-			case '<':
-				dstring_appendstr (q, "&lt;");
+			case '\r':
+				dstring_appendstr (q, "\\r");
 				break;
-			case '>':
-				dstring_appendstr (q, "&gt;");
+			case '\t':
+				dstring_appendstr (q, "\\t");
 				break;
-			case '&':
-				dstring_appendstr (q, "&amp;");
+			case '\\':
+				dstring_appendstr (q, "\\\\");
 				break;
-			case '"':
-				dstring_appendstr (q, "&quot;");
+			case '\'':
+				dstring_appendstr (q, "\\'");
+				break;
+			case '\"':
+				dstring_appendstr (q, "\\\"");
 				break;
 			default:
 				if (c[0] >= 127 || c[0] < 32)
