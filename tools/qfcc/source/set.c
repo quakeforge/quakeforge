@@ -235,3 +235,11 @@ set_is_subset (const set_t *set, const set_t *sub)
 			return 0;
 	return 1;
 }
+
+int
+set_is_member (const set_t *set, unsigned x)
+{
+	if (x >= set->size)
+		return 0;
+	return (set->map[x / BITS] & (1 << (x % BITS))) != 0;
+}
