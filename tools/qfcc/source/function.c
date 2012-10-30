@@ -52,6 +52,7 @@
 #include "diagnostic.h"
 #include "emit.h"
 #include "expr.h"
+#include "flow.h"
 #include "function.h"
 #include "opcodes.h"
 #include "options.h"
@@ -639,12 +640,13 @@ finish_function (function_t *f)
 void
 emit_function (function_t *f, expr_t *e)
 {
-	sblock_t   *sblock;
-
 	f->code = pr.code->size;
 	lineno_base = f->def->line;
-	sblock = make_statements (e);
-	emit_statements (sblock);
+	f->sblock = make_statements (e);
+	flow_build_graph (f);
+	flow_build_vars (f);
+	printf ("%s %d %d\n", f->name, f->num_nodes, f->num_vars);
+	emit_statements (f->sblock);
 }
 
 int

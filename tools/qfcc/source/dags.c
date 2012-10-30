@@ -119,7 +119,7 @@ opcode_label (const char *opcode)
 	return label;
 }
 
-static daglabel_t *
+daglabel_t *
 operand_label (operand_t *op)
 {
 	operand_t  *o;

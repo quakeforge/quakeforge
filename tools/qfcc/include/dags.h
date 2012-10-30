@@ -45,6 +45,7 @@ typedef struct daglabel_s {
 	const char *opcode;			///< not if op
 	struct operand_s *op;		///< not if opcode;
 	struct dagnode_s *dagnode;	///< node with which this label is associated
+	int         number;			///< number of variable in func's ref list
 } daglabel_t;
 
 typedef struct dagnode_s {
@@ -72,6 +73,8 @@ const char *daglabel_string (daglabel_t *label);
 struct dstring_s;
 void print_dag (struct dstring_s *dstr, dagnode_t *node);
 struct sblock_s;
+
+daglabel_t *operand_label (struct operand_s *op);
 
 /** Make a dag for a single basic block.
 

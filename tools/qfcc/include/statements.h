@@ -76,6 +76,7 @@ typedef struct sblock_s {
 	struct dagnode_s *dag;
 	int         offset;			///< offset of first statement of block
 	int         reachable;
+	int         number;			///< number of this block in flow graph
 	statement_t *statements;
 	statement_t **tail;
 } sblock_t;
