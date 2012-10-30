@@ -245,6 +245,17 @@ set_is_member (const set_t *set, unsigned x)
 	return (set->map[x / BITS] & (1 << (x % BITS))) != 0;
 }
 
+unsigned
+set_first (const set_t *set)
+{
+	unsigned    x;
+
+	for (x = 0; x < set->size; x++)
+		if (set_is_member (set, x))
+			return x;
+	return -1;	// FIXME error?
+}
+
 const char *
 set_as_string (const set_t *set)
 {
