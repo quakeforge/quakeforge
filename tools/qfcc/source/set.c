@@ -186,7 +186,7 @@ set_test (const set_t *s1, const set_t *s2)
 	end = min (s1->size, s2->size) / BITS;
 	for (i = 0; i < end; i++) {
 		if (s1->map[i] != s2->map[i]) {
-			if (s1->map[i] != s2->map[i])
+			if (s1->map[i] & s2->map[i])
 				return set_intersecting;
 			else
 				rval = set_disjoint;
