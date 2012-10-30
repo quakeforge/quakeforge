@@ -646,10 +646,17 @@ emit_function (function_t *f, expr_t *e)
 	flow_build_vars (f);
 	flow_build_graph (f);
 	flow_calc_dominators (f);
+	flow_find_loops (f);
 	if (options.block_dot.flow)
 		print_flow (f->sblock, nva ("%s.%s.%s.dot", GETSTR (pr.source_file),
 									f->name, "flow"));
-	printf ("%s %d %d\n", f->name, f->num_nodes, f->num_vars);
+	{
+		flowloop_t *l;
+		int         n = 0;
+		for (l = f->loops; l; l = l->next)
+			n++;
+		printf ("%s %d %d %d\n", f->name, f->num_nodes, f->num_vars, n);
+	}
 	emit_statements (f->sblock);
 }
 

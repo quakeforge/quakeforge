@@ -39,6 +39,12 @@ struct function_s;
 struct sblock_s;
 struct statement_s;
 
+typedef struct flowloop_s {
+	struct flowloop_s *next;
+	struct sblock_s *head;
+	struct set_s *nodes;
+} flowloop_t;
+
 int flow_is_cond (struct statement_s *s);
 int flow_is_goto (struct statement_s *s);
 int flow_is_return (struct statement_s *s);
@@ -46,6 +52,7 @@ struct sblock_s *flow_get_target (struct statement_s *s);
 void flow_build_vars (struct function_s *func);
 void flow_build_graph (struct function_s *func);
 void flow_calc_dominators (struct function_s *func);
+void flow_find_loops (struct function_s *func);
 
 //@}
 

@@ -94,6 +94,7 @@ typedef struct function_s {
 	*/
 	struct daglabel_s **vars;
 	int                 num_vars;	///< total number of variables referenced
+	struct flowloop_s *loops;		///< linked list of loops in the function
 } function_t;
 
 extern function_t *current_func;

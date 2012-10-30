@@ -44,9 +44,29 @@
 #include "dags.h"
 #include "flow.h"
 #include "function.h"
+#include "qfcc.h"
 #include "set.h"
 #include "statements.h"
 #include "symtab.h"
+
+static flowloop_t *free_loops;
+
+static flowloop_t *
+new_loop (void)
+{
+	flowloop_t *loop;
+	ALLOC (256, flowloop_t, loops, loop);
+	loop->nodes = set_new ();
+	return loop;
+}
+
+static void
+delete_loop (flowloop_t *loop)
+{
+	set_delete (loop->nodes);
+	loop->next = free_loops;
+	free_loops = loop;
+}
 
 static int
 is_variable (daglabel_t *var)
@@ -265,4 +285,65 @@ flow_calc_dominators (function_t *func)
 			set_assign (func->graph[i]->dom, work);
 		}
 	} while (changed);
+}
+
+static void
+insert_loop_node (flowloop_t *loop, sblock_t *node, set_t *stack)
+{
+	if (!set_is_member (loop->nodes, node->number)) {
+		set_add (loop->nodes, node->number);
+		set_add (stack, node->number);
+	}
+}
+
+static flowloop_t *
+make_loop (function_t *func, sblock_t *node, sblock_t *head)
+{
+	flowloop_t *loop = new_loop ();
+	set_t      *stack = set_new ();
+	sblock_t  **pred;
+
+	loop->head = head;
+	set_add (loop->nodes, head->number);
+	insert_loop_node (loop, node, stack);
+	while (!set_is_empty (stack)) {
+		unsigned    m = set_first (stack);
+		set_remove (stack, m);
+		node = func->graph[m];
+		for (pred = node->pred; *pred; pred++)
+			insert_loop_node (loop, *pred, stack);
+	}
+	return loop;
+}
+
+void
+flow_find_loops (function_t *func)
+{
+	sblock_t   *node;
+	sblock_t  **succ;
+	flowloop_t *loop, *l;
+	int         i;
+
+	for (i = 0; i < func->num_nodes; i++) {
+		node = func->graph[i];
+		for (succ = node->succ; *succ; succ++) {
+			if (set_is_member (node->dom, (*succ)->number)) {
+				loop = make_loop (func, node, *succ);
+				for (l = func->loops; l; l = l->next) {
+					if (l->head == loop->head
+						&& !set_is_subset (l->nodes, loop->nodes)
+						&& !set_is_subset (loop->nodes, l->nodes)) {
+						set_union (l->nodes, loop->nodes);
+						delete_loop (loop);
+						loop = 0;
+						break;
+					}
+				}
+				if (loop) {
+					loop->next = func->loops;
+					func->loops = loop;
+				}
+			}
+		}
+	}
 }
