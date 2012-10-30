@@ -66,7 +66,8 @@ operand_string (operand_t *op)
 		case op_value:
 			switch (op->o.value->type) {
 				case ev_string:
-					return quote_string (op->o.value->v.string_val);
+					return va ("\"%s\"",
+							   quote_string (op->o.value->v.string_val));
 				case ev_float:
 					return va ("%g", op->o.value->v.float_val);
 				case ev_vector:
