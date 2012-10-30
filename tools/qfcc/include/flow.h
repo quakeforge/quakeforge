@@ -45,6 +45,7 @@ int flow_is_return (struct statement_s *s);
 struct sblock_s *flow_get_target (struct statement_s *s);
 void flow_build_vars (struct function_s *func);
 void flow_build_graph (struct function_s *func);
+void flow_calc_dominators (struct function_s *func);
 
 //@}
 

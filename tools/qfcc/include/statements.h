@@ -81,6 +81,7 @@ typedef struct sblock_s {
 	int         number;			///< number of this block in flow graph
 	statement_t *statements;
 	statement_t **tail;
+	struct set_s *dom;			///< set of nodes that dominate this node
 } sblock_t;
 
 struct expr_s;

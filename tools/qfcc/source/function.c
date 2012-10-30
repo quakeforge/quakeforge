@@ -645,6 +645,7 @@ emit_function (function_t *f, expr_t *e)
 	f->sblock = make_statements (e);
 	flow_build_vars (f);
 	flow_build_graph (f);
+	flow_calc_dominators (f);
 	if (options.block_dot.flow)
 		print_flow (f->sblock, nva ("%s.%s.%s.dot", GETSTR (pr.source_file),
 									f->name, "flow"));

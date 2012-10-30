@@ -44,6 +44,7 @@
 #include "dags.h"
 #include "flow.h"
 #include "function.h"
+#include "set.h"
 #include "statements.h"
 #include "symtab.h"
 
@@ -225,4 +226,43 @@ flow_build_graph (function_t *func)
 			}
 		}
 	}
+}
+
+void
+flow_calc_dominators (function_t *func)
+{
+	set_t      *work;
+	sblock_t  **pred;
+	int         i;
+	int         changed;
+
+	if (!func->num_nodes)
+		return;
+
+	// First, create a base set for the initial state of the non-initial nodes
+	work = set_new ();
+	for (i = 0; i < func->num_nodes; i++)
+		set_add (work, i);
+
+	func->graph[0]->dom = set_new ();
+	set_add (func->graph[0]->dom, 0);
+
+	// initialize dom for the non-initial nodes
+	for (i = 1; i < func->num_nodes; i++) {
+		func->graph[i]->dom = set_new ();
+		set_assign (func->graph[i]->dom, work);
+	}
+
+	do {
+		changed = 0;
+		for (i = 1; i < func->num_nodes; i++) {
+			set_assign (work, func->graph[i]->pred[0]->dom);
+			for (pred = func->graph[i]->pred + 1; *pred; pred++)
+				set_intersection (work, (*pred)->dom);
+			set_add (work, i);
+			if (!set_is_equivalent (work, func->graph[i]->dom))
+				changed = 1;
+			set_assign (func->graph[i]->dom, work);
+		}
+	} while (changed);
 }
