@@ -362,6 +362,112 @@ flow_find_loops (flownode_t **node_list, unsigned num_nodes)
 	return loop_list;
 }
 
+static int
+is_predecessor (unsigned m, set_t *I, flownode_t *graph)
+{
+	flownode_t *node = graph->siblings[m];
+	int         i;
+
+	for (i = 0; i < node->num_pred; i++)
+		if (!set_is_member (I, node->predecessors[i]))
+			return 0;
+	return 1;
+}
+
+static set_t *
+select_nodes (flownode_t *graph, set_t *G, unsigned n)
+{
+	set_t      *I;
+	setstate_t *m;
+
+	I = set_new ();
+	set_add (I, n);
+	set_remove (G, n);
+	for (m = set_first (G); m; m = set_next (m)) {
+		if (m->member == n || !is_predecessor (m->member, I, graph))
+			continue;
+		set_remove (G, m->member);
+		set_add (I, m->member);
+	}
+	return I;
+}
+
+static flownode_t *
+flow_reduce (flownode_t *graph)
+{
+	set_t      *G;
+	set_t     **I;
+	unsigned    i, j, count = 0;
+	int         k;
+	flownode_t **node_list = 0;
+	flownode_t *node;
+	setstate_t *m;
+
+	if (graph->num_siblings < 2)
+		return 0;
+
+	G = set_new ();
+	// Initialize G to be the set of all nodes in graph
+	for (i = 0; i < graph->num_siblings; i++)
+		set_add (G, i);
+
+	// allocate space for the interval sets. There will never be more intervals
+	// than nodes in graph.
+	I = malloc (graph->num_siblings * sizeof (set_t *));
+
+	I[count++] = select_nodes (graph, G, 0);
+	for (m = set_first (G); m; m = set_first (G)) {
+		I[count++] = select_nodes (graph, G, m->member);
+		set_delstate (m);
+	}
+
+	if (count == graph->num_siblings)
+		goto irreducible;
+
+	node_list = malloc (count * sizeof (flownode_t *));
+	for (i = 0; i < count; i++) {
+		node = new_node ();
+		node->siblings = node_list;
+		node->num_siblings = count;
+		node->id = i;
+
+		node->num_nodes = set_size (I[i]);
+		node->nodes = malloc (node->num_nodes * sizeof (flownode_t *));
+		for (j = 0, m = set_first (I[i]); m; m = set_next (m), j++) {
+			node->nodes[j] = graph->siblings[m->member];
+			node->nodes[j]->region = i;
+		}
+
+		node_list[node->id] = node;
+	}
+
+	for (i = 0; i < count; i++) {
+		node = node_list[i];
+		set_empty (G);		// G now represents the set of successors of node
+		for (j = 0; j < node->num_nodes; j++) {
+			flownode_t *n = node->nodes[j];
+			for (k = 0; k < n->num_succ; k++) {
+				flownode_t *m = n->siblings[n->successors[k]];
+				if (m->region != i && !set_is_member (G, m->region))
+					set_add (G, m->region);
+			}
+		}
+		node->num_succ = set_size (G);
+		node->successors = malloc (node->num_succ * sizeof (unsigned));
+		for (j = 0, m = set_first (G); m; j++, m = set_next (m))
+			node->successors[j] = m->member;
+	}
+	flow_find_predecessors (node_list, count);
+irreducible:
+	for (i = 0; i < count; i++)
+		set_delete (I[i]);
+	free (I);
+	set_delete (G);
+	if (node_list)
+		return node_list[0];
+	return 0;
+}
+
 void
 flow_build_graph (function_t *func)
 {
@@ -427,4 +533,6 @@ flow_build_graph (function_t *func)
 	flow_calc_dominators (node_list, num_blocks);
 	func->loops = flow_find_loops (node_list, num_blocks);
 	func->flow = node_list[0];
+	while ((node = flow_reduce (func->flow)))
+		func->flow = node;
 }
