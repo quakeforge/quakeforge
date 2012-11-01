@@ -314,13 +314,16 @@ make_loop (flownode_t **node_list, unsigned num_nodes, unsigned n, unsigned d)
 	set_add (loop->nodes, d);
 	insert_loop_node (loop, n, stack);
 	while (!set_is_empty (stack)) {
-		unsigned    m = set_first (stack);
+		setstate_t *ss = set_first (stack);
+		unsigned    m = ss->member;
+		set_delstate (ss);
 		set_remove (stack, m);
 		node = node_list[m];
 		for (pred = node->predecessors;
 			 pred - node->predecessors < node->num_pred; pred++)
 			insert_loop_node (loop, *pred, stack);
 	}
+	set_delete (stack);
 	return loop;
 }
 

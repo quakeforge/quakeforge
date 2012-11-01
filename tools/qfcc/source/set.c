@@ -43,9 +43,33 @@
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
 
+#include "qfcc.h"
 #include "set.h"
 
 #define BITS (sizeof (unsigned) * 8)
+
+setstate_t *free_setstates;
+
+static setstate_t *
+new_setstate (void)
+{
+	setstate_t *setstate;
+	ALLOC (16, setstate_t, setstates, setstate);
+	return setstate;
+}
+
+static void
+delete_setstate (setstate_t *setstate)
+{
+	setstate->next = free_setstates;
+	free_setstates = setstate;
+}
+
+void
+set_delstate (setstate_t *setstate)
+{
+	delete_setstate (setstate);
+}
 
 set_t *
 set_new (void)
@@ -245,15 +269,36 @@ set_is_member (const set_t *set, unsigned x)
 	return (set->map[x / BITS] & (1 << (x % BITS))) != 0;
 }
 
-unsigned
+setstate_t *
 set_first (const set_t *set)
 {
 	unsigned    x;
+	setstate_t *setstate;
 
-	for (x = 0; x < set->size; x++)
-		if (set_is_member (set, x))
-			return x;
-	return -1;	// FIXME error?
+	for (x = 0; x < set->size; x++) {
+		if (set_is_member (set, x)) {
+			setstate = new_setstate ();
+			setstate->set = set;
+			setstate->member = x;
+			return setstate;
+		}
+	}
+	return 0;
+}
+
+setstate_t *
+set_next (setstate_t *setstate)
+{
+	unsigned    x;
+
+	for (x = setstate->member + 1; x < setstate->set->size; x++) {
+		if (set_is_member (setstate->set, x)) {
+			setstate->member = x;
+			return setstate;
+		}
+	}
+	delete_setstate (setstate);
+	return 0;
 }
 
 const char *
