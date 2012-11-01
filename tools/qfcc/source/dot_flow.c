@@ -49,16 +49,37 @@
 #include "strpool.h"
 
 static void
-print_flownode (dstring_t *dstr, flownode_t *node, int level)
+print_flow_node (dstring_t *dstr, flownode_t *node, int level)
+{
+	int         indent = level * 2 + 2;
+	unsigned    j;
+
+	if (node->nodes) {
+		dasprintf (dstr, "%*ssubgraph \"cluster_%p\" {\n", indent, "", node);
+		//dasprintf (dstr, "%*srankdir=TB;\n", indent + 2, "");
+		dasprintf (dstr, "%*slabel=\"%d\";\n", indent + 2, "", node->id);
+		for (j = 0; j < node->num_nodes; j++)
+			print_flow_node (dstr, node->nodes[j], level + 1);
+		dasprintf (dstr, "%*s}\n", indent, "");
+	}
+	dasprintf (dstr, "%*s\"fn_%p\" [label=\"%d\"];\n", indent, "", node,
+			   node->id);
+}
+
+static void
+print_flow_edges (dstring_t *dstr, flownode_t *node, int level)
 {
 	int         indent = level * 2 + 2;
 	int         i;
+	unsigned    j;
 
-	dasprintf (dstr, "%*s\"fn_%p\" [label=\"%d\"];\n", indent, "", node,
-			   node->id);
+	if (node->nodes) {
+		for (j = 0; j < node->num_nodes; j++)
+			print_flow_edges (dstr, node->nodes[j], level + 1);
+	}
 	for (i = 0; i < node->num_succ; i++)
 		dasprintf (dstr, "%*s\"fn_%p\" -> \"fn_%p\";\n", indent, "", node,
-				   node->siblings[node->successors[i]]);
+			   node->siblings[node->successors[i]]);
 }
 
 void
@@ -68,9 +89,14 @@ print_flowgraph (flownode_t *flow, const char *filename)
 	dstring_t  *dstr = dstring_newstr();
 
 	dasprintf (dstr, "digraph flow_%p {\n", flow->siblings);
-	dasprintf (dstr, "  layout=dot; rankdir=TB;\n");
-	for (i = 0; i < flow->num_siblings; i++)
-		print_flownode (dstr, flow->siblings[i], 0);
+	dasprintf (dstr, "  layout=dot;\n");
+	dasprintf (dstr, "  clusterrank=local;\n");
+	//dasprintf (dstr, "  rankdir=TB;\n");
+	dasprintf (dstr, "  compound=true;\n");
+	for (i = 0; i < flow->num_siblings; i++) {
+		print_flow_node (dstr, flow->siblings[i], 0);
+		print_flow_edges (dstr, flow->siblings[i], 0);
+	}
 	dasprintf (dstr, "}\n");
 
 	if (filename) {
