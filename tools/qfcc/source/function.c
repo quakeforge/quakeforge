@@ -662,3 +662,12 @@ function_parms (function_t *f, byte *parm_size)
 		parm_size[i] = type_size (f->sym->type->t.func.param_types[i]);
 	return f->sym->type->t.func.num_params;
 }
+
+void
+clear_functions (void)
+{
+	if (overloaded_functions)
+		Hash_FlushTable (overloaded_functions);
+	if (function_map)
+		Hash_FlushTable (function_map);
+}

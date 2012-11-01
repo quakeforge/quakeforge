@@ -111,5 +111,6 @@ void build_function (function_t *f);
 void finish_function (function_t *f);
 void emit_function (function_t *f, struct expr_s *e);
 int function_parms (function_t *f, byte *parm_size);
+void clear_functions (void);
 
 #endif//__function_h

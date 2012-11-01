@@ -343,6 +343,7 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 		return !options.preprocess_only;
 
 	InitData ();
+	clear_functions ();
 	clear_frame_macros ();
 	clear_classes ();
 	clear_immediates ();
