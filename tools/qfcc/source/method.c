@@ -72,7 +72,7 @@ method_get_key (const void *meth, void *unused)
 static void
 method_free (void *_meth, void *unused)
 {
-	method_t   *meth = (method_t *) meth;
+	method_t   *meth = (method_t *) _meth;
 
 	free (meth->name);
 	free (meth->types);

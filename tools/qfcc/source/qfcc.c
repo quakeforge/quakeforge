@@ -484,8 +484,7 @@ separate_compile (void)
 			temp_files[i++] = save_string (output_file->str);
 			err = compile_to_obj (*file, output_file->str, lang) || err;
 
-			free ((char *)*file);
-			*file = strdup (output_file->str);
+			*file = save_string (output_file->str);
 		} else {
 			if (options.compile)
 				fprintf (stderr, "%s: %s: ignoring object file since linking "
