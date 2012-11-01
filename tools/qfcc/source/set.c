@@ -269,6 +269,18 @@ set_is_member (const set_t *set, unsigned x)
 	return (set->map[x / BITS] & (1 << (x % BITS))) != 0;
 }
 
+unsigned
+set_size (const set_t *set)
+{
+	unsigned    count = 0;
+	unsigned    i;
+
+	for (i = 0; i < set->size; i++)
+		if (set_is_member (set, i))
+			count++;
+	return count;
+}
+
 setstate_t *
 set_first (const set_t *set)
 {
