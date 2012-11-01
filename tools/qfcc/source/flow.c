@@ -50,6 +50,7 @@
 #include "symtab.h"
 
 static flowloop_t *free_loops;
+static flownode_t *free_nodes;
 
 static flowloop_t *
 new_loop (void)
@@ -68,6 +69,27 @@ delete_loop (flowloop_t *loop)
 	free_loops = loop;
 }
 
+static flownode_t *
+new_node (void)
+{
+	flownode_t *node;
+	ALLOC (256, flownode_t, nodes, node);
+	return node;
+}
+#if 0
+static void
+delete_node (flownode_t *node)
+{
+	if (node->nodes)
+		free (node->nodes);
+	if (node->predecessors)
+		free (node->predecessors);
+	if (node->successors)
+		free (node->successors);
+	node->next = free_nodes;
+	free_nodes = node;
+}
+#endif
 static int
 is_variable (daglabel_t *var)
 {
@@ -191,56 +213,37 @@ flow_get_target (statement_t *s)
 	return 0;
 }
 
-void
-flow_build_graph (function_t *func)
+static void
+flow_find_predecessors (flownode_t **node_list, unsigned num_nodes)
 {
-	sblock_t   *sblock;
-	statement_t *st;
-	int         num_blocks = 0;
+	unsigned    i, j, k;
+	flownode_t *node;
 
-	for (sblock = func->sblock; sblock; sblock = sblock->next)
-		sblock->number = num_blocks++;
-	func->graph = malloc (num_blocks * sizeof (sblock_t *));
-	for (sblock = func->sblock; sblock; sblock = sblock->next)
-		func->graph[sblock->number] = sblock;
-	func->num_nodes = num_blocks;
+	for (i = 0; i < num_nodes; i++) {
+		node = node_list[i];
+		for (j = 0; j < num_nodes; j++) {
+			unsigned   *succ;
+			flownode_t *n;
 
-	for (sblock = func->sblock; sblock; sblock = sblock->next) {
-		if (sblock->statements) {
-			st = (statement_t *) sblock->tail;
-			//FIXME jump/jumpb
-			if (flow_is_goto (st)) {
-				sblock->succ = calloc (2, sizeof (sblock_t *));
-				sblock->succ[0] = flow_get_target (st);
-			} else if (flow_is_cond (st)) {
-				sblock->succ = calloc (3, sizeof (sblock_t *));
-				sblock->succ[0] = sblock->next;
-				sblock->succ[1] = flow_get_target (st);
-			} else if (flow_is_return (st)) {
-				sblock->succ = calloc (1, sizeof (sblock_t *));
-			} else {
-				sblock->succ = calloc (2, sizeof (sblock_t *));
-				sblock->succ[0] = sblock->next;
-			}
-		}
-	}
-	for (sblock = func->sblock; sblock; sblock = sblock->next) {
-		int         num_pred;
-		sblock_t   *sb, **ss;
-
-		for (num_pred = 0, sb = func->sblock; sb; sb = sb->next) {
-			for (ss = sb->succ; *ss; ss++) {
-				if (*ss == sblock) {
-					num_pred++;
+			n = node_list[j];
+			for (succ = n->successors; succ - n->successors < n->num_succ;
+				 succ++) {
+				if (*succ == i) {
+					node->num_pred++;
 					break;
 				}
 			}
 		}
-		sblock->pred = calloc (num_pred + 1, sizeof (sblock_t *));
-		for (num_pred = 0, sb = func->sblock; sb; sb = sb->next) {
-			for (ss = sb->succ; *ss; ss++) {
-				if (*ss == sblock) {
-					sblock->pred[num_pred++] = sb;
+		node->predecessors = malloc (node->num_pred * sizeof (flownode_t *));
+		for (k = j = 0; j < num_nodes; j++) {
+			unsigned   *succ;
+			flownode_t *n;
+
+			n = node_list[j];
+			for (succ = n->successors; succ - n->successors < n->num_succ;
+				 succ++) {
+				if (*succ == i) {
+					node->predecessors[k++] = j;
 					break;
 				}
 			}
@@ -248,88 +251,95 @@ flow_build_graph (function_t *func)
 	}
 }
 
-void
-flow_calc_dominators (function_t *func)
+static void
+flow_calc_dominators (flownode_t **node_list, unsigned num_nodes)
 {
 	set_t      *work;
-	sblock_t  **pred;
-	int         i;
+	flownode_t *node;
+	unsigned    i;
+	unsigned   *pred;
 	int         changed;
 
-	if (!func->num_nodes)
+	if (!num_nodes)
 		return;
 
 	// First, create a base set for the initial state of the non-initial nodes
 	work = set_new ();
-	for (i = 0; i < func->num_nodes; i++)
+	for (i = 0; i < num_nodes; i++)
 		set_add (work, i);
 
-	func->graph[0]->dom = set_new ();
-	set_add (func->graph[0]->dom, 0);
+	node_list[0]->dom = set_new ();
+	set_add (node_list[0]->dom, 0);
 
 	// initialize dom for the non-initial nodes
-	for (i = 1; i < func->num_nodes; i++) {
-		func->graph[i]->dom = set_new ();
-		set_assign (func->graph[i]->dom, work);
+	for (i = 1; i < num_nodes; i++) {
+		node_list[i]->dom = set_new ();
+		set_assign (node_list[i]->dom, work);
 	}
 
 	do {
 		changed = 0;
-		for (i = 1; i < func->num_nodes; i++) {
-			set_assign (work, func->graph[i]->pred[0]->dom);
-			for (pred = func->graph[i]->pred + 1; *pred; pred++)
-				set_intersection (work, (*pred)->dom);
+		for (i = 1; i < num_nodes; i++) {
+			node = node_list[i];
+			pred = node->predecessors;
+			set_assign (work, node_list[*pred]->dom);
+			for (pred++; pred - node->predecessors < node->num_pred; pred++)
+				set_intersection (work, node_list[*pred]->dom);
 			set_add (work, i);
-			if (!set_is_equivalent (work, func->graph[i]->dom))
+			if (!set_is_equivalent (work, node->dom))
 				changed = 1;
-			set_assign (func->graph[i]->dom, work);
+			set_assign (node->dom, work);
 		}
 	} while (changed);
 }
 
 static void
-insert_loop_node (flowloop_t *loop, sblock_t *node, set_t *stack)
+insert_loop_node (flowloop_t *loop, unsigned n, set_t *stack)
 {
-	if (!set_is_member (loop->nodes, node->number)) {
-		set_add (loop->nodes, node->number);
-		set_add (stack, node->number);
+	if (!set_is_member (loop->nodes, n)) {
+		set_add (loop->nodes, n);
+		set_add (stack, n);
 	}
 }
 
 static flowloop_t *
-make_loop (function_t *func, sblock_t *node, sblock_t *head)
+make_loop (flownode_t **node_list, unsigned num_nodes, unsigned n, unsigned d)
 {
 	flowloop_t *loop = new_loop ();
+	flownode_t *node;
 	set_t      *stack = set_new ();
-	sblock_t  **pred;
+	unsigned   *pred;
 
-	loop->head = head;
-	set_add (loop->nodes, head->number);
-	insert_loop_node (loop, node, stack);
+	loop->head = d;
+	set_add (loop->nodes, d);
+	insert_loop_node (loop, n, stack);
 	while (!set_is_empty (stack)) {
 		unsigned    m = set_first (stack);
 		set_remove (stack, m);
-		node = func->graph[m];
-		for (pred = node->pred; *pred; pred++)
+		node = node_list[m];
+		for (pred = node->predecessors;
+			 pred - node->predecessors < node->num_pred; pred++)
 			insert_loop_node (loop, *pred, stack);
 	}
 	return loop;
 }
 
-void
-flow_find_loops (function_t *func)
+static flowloop_t *
+flow_find_loops (flownode_t **node_list, unsigned num_nodes)
 {
-	sblock_t   *node;
-	sblock_t  **succ;
+	flownode_t *node;
+	unsigned   *succ;
 	flowloop_t *loop, *l;
-	int         i;
+	flowloop_t *loop_list = 0;
+	unsigned    i;
 
-	for (i = 0; i < func->num_nodes; i++) {
-		node = func->graph[i];
-		for (succ = node->succ; *succ; succ++) {
-			if (set_is_member (node->dom, (*succ)->number)) {
-				loop = make_loop (func, node, *succ);
-				for (l = func->loops; l; l = l->next) {
+	for (i = 0; i < num_nodes; i++) {
+		node = node_list[i];
+		for (succ = node->successors; succ - node->successors < node->num_succ;
+			 succ++) {
+			if (set_is_member (node->dom, *succ)) {
+				loop = make_loop (node_list, num_nodes, node->id, *succ);
+				for (l = loop_list; l; l = l->next) {
 					if (l->head == loop->head
 						&& !set_is_subset (l->nodes, loop->nodes)
 						&& !set_is_subset (loop->nodes, l->nodes)) {
@@ -340,10 +350,76 @@ flow_find_loops (function_t *func)
 					}
 				}
 				if (loop) {
-					loop->next = func->loops;
-					func->loops = loop;
+					loop->next = loop_list;
+					loop_list = loop;
 				}
 			}
 		}
 	}
+	return loop_list;
+}
+
+void
+flow_build_graph (function_t *func)
+{
+	sblock_t   *sblock;
+	statement_t *st;
+	flownode_t *node;
+	flownode_t **node_list;
+	unsigned    num_blocks = 0;
+	unsigned    i;
+
+	for (sblock = func->sblock; sblock; sblock = sblock->next)
+		sblock->number = num_blocks++;
+	func->graph = malloc (num_blocks * sizeof (sblock_t *));
+	func->num_nodes = num_blocks;
+	node_list = malloc (func->num_nodes * sizeof (flownode_t *));
+	for (sblock = func->sblock; sblock; sblock = sblock->next) {
+		func->graph[sblock->number] = sblock;
+
+		node = new_node ();
+		node->sblocks = func->graph;
+		node->siblings = node_list;
+		node->id = sblock->number;
+		node->num_nodes = func->num_nodes;
+
+		node_list[node->id] = node;
+	}
+
+	// "convert" the basic blocks connections to flow-graph connections
+	for (i = 0; i < num_blocks; i++) {
+		node = node_list[i];
+		sblock = node->sblocks[node->id];
+		st = 0;
+		if (sblock->statements)
+			st = (statement_t *) sblock->tail;
+		//FIXME jump/jumpb
+		//NOTE: if st is null (the sblock has no statements), flow_is_* will
+		//return false
+		if (flow_is_goto (st)) {
+			// sblock's next is never followed.
+			node->num_succ = 1;
+			node->successors = calloc (1, sizeof (unsigned));
+			node->successors[0] = flow_get_target (st)->number;
+		} else if (flow_is_cond (st)) {
+			// branch: either sblock's next or the conditional statment's
+			// target will be followed.
+			node->num_succ = 2;
+			node->successors = calloc (2, sizeof (unsigned));
+			node->successors[0] = sblock->next->number;
+			node->successors[1] = flow_get_target (st)->number;
+		} else if (flow_is_return (st)) {
+			// exit from function (dead end)
+			node->num_succ = 0;
+		} else {
+			// there is no flow-control statement in sblock, so sblock's next
+			// must be followed
+			node->num_succ = 1;
+			node->successors = calloc (1, sizeof (unsigned));
+			node->successors[0] = sblock->next->number;
+		}
+	}
+	flow_find_predecessors (node_list, num_blocks);
+	flow_calc_dominators (node_list, num_blocks);
+	func->loops = flow_find_loops (node_list, num_blocks);
 }

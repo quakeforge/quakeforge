@@ -93,22 +93,12 @@ flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 	dasprintf (dstr, "        <td></td>\n");
 	dasprintf (dstr, "      </tr>\n");
 	dasprintf (dstr, "    </table>>];\n");
-	if (!sblock->succ) {
-		if (sblock->next && !flow_is_goto ((statement_t *) sblock->tail)
-			&& !flow_is_return ((statement_t *) sblock->tail))
-			dasprintf (dstr, "  sb_%p:e -> sb_%p:s;\n", sblock, sblock->next);
-		if ((target = flow_get_target ((statement_t *) sblock->tail)))
-			dasprintf (dstr, "  sb_%p:e -> sb_%p:s [label=\"%s\"];\n", sblock,
-					   target, ((statement_t *) sblock->tail)->opcode);
-	} else {
-		sblock_t  **sb;
-		for (sb = sblock->succ; *sb; sb++)
-			dasprintf (dstr, "  sb_%p:e -> sb_%p:s [label=\"s\"];\n", sblock,
-					   *sb);
-		for (sb = sblock->pred; sb && *sb; sb++)
-			dasprintf (dstr, "  sb_%p:e -> sb_%p:s [label=\"p\"];\n", *sb,
-					   sblock);
-	}
+	if (sblock->next && !flow_is_goto ((statement_t *) sblock->tail)
+		&& !flow_is_return ((statement_t *) sblock->tail))
+		dasprintf (dstr, "  sb_%p:e -> sb_%p:s;\n", sblock, sblock->next);
+	if ((target = flow_get_target ((statement_t *) sblock->tail)))
+		dasprintf (dstr, "  sb_%p:e -> sb_%p:s [label=\"%s\"];\n", sblock,
+				   target, ((statement_t *) sblock->tail)->opcode);
 	dasprintf (dstr, "\n");
 }
 

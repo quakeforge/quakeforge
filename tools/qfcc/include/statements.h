@@ -71,8 +71,6 @@ typedef struct statement_s {
 
 typedef struct sblock_s {
 	struct sblock_s *next;
-	struct sblock_s **pred;		///< predecessors of this node
-	struct sblock_s **succ;		///< successors of this node
 	struct reloc_s *relocs;
 	struct ex_label_s *labels;
 	struct dagnode_s *dag;
@@ -81,7 +79,6 @@ typedef struct sblock_s {
 	int         number;			///< number of this block in flow graph
 	statement_t *statements;
 	statement_t **tail;
-	struct set_s *dom;			///< set of nodes that dominate this node
 } sblock_t;
 
 struct expr_s;
