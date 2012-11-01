@@ -1177,7 +1177,7 @@ dump_flow (sblock_t *sblock, const char *stage)
 
 	fname = nva ("%s.%s.%s.dot", GETSTR (pr.source_file), current_func->name,
 				 stage);
-	print_flow (sblock, fname);
+	print_sblock (sblock, fname);
 	free (fname);
 }
 

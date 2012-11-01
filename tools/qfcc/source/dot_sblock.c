@@ -1,7 +1,7 @@
 /*
-	dot_flow.c
+	dot_sblock.c
 
-	"emit" flow graphs to dot (graphvis).
+	"emit" sblock graphs to dot (graphvis).
 
 	Copyright (C) 2011 Bill Currie <bill@taniwha.org>
 
@@ -103,12 +103,12 @@ flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 }
 
 void
-print_flow (sblock_t *sblock, const char *filename)
+print_sblock (sblock_t *sblock, const char *filename)
 {
 	int         i;
 	dstring_t  *dstr = dstring_newstr();
 
-	dasprintf (dstr, "digraph flow_%p {\n", sblock);
+	dasprintf (dstr, "digraph sblock_%p {\n", sblock);
 	dasprintf (dstr, "  layout=dot; rankdir=TB;\n");
 	for (i = 0; sblock; sblock = sblock->next, i++)
 		flow_sblock (dstr, sblock, i);
