@@ -362,6 +362,32 @@ flow_find_loops (flownode_t **node_list, unsigned num_nodes)
 	return loop_list;
 }
 
+static void
+df_search (flownode_t *graph, set_t *visited, unsigned *i, unsigned n)
+{
+	int         j;
+	flownode_t *node;
+
+	set_add (visited, n);
+	node = graph->siblings[n];
+	for (j = 0; j < node->num_succ; j++) {
+		if (!set_is_member (visited, node->successors[j])) {
+			df_search (graph, visited, i, node->successors[j]);
+		}
+	}
+	graph->depth_first[--*i] = n;
+}
+
+static void
+flow_depth_first (flownode_t *graph)
+{
+	unsigned    i = graph->num_siblings;
+	set_t      *visited = set_new ();
+
+	graph->depth_first = malloc (graph->num_siblings * sizeof (unsigned));
+	df_search (graph, visited, &i, 0);
+}
+
 static int
 is_predecessor (unsigned m, set_t *I, flownode_t *graph)
 {
@@ -415,10 +441,11 @@ flow_reduce (flownode_t *graph)
 	// than nodes in graph.
 	I = malloc (graph->num_siblings * sizeof (set_t *));
 
-	I[count++] = select_nodes (graph, G, 0);
-	for (m = set_first (G); m; m = set_first (G)) {
-		I[count++] = select_nodes (graph, G, m->member);
-		set_delstate (m);
+	for (i = 0; i < graph->num_siblings; i++) {
+		unsigned m = graph->depth_first[i];
+		if (!set_is_member (G, m))
+			continue;
+		I[count++] = select_nodes (graph, G, m);
 	}
 
 	if (count == graph->num_siblings)
@@ -458,6 +485,7 @@ flow_reduce (flownode_t *graph)
 			node->successors[j] = m->member;
 	}
 	flow_find_predecessors (node_list, count);
+	flow_depth_first (node_list[0]);
 irreducible:
 	for (i = 0; i < count; i++)
 		set_delete (I[i]);
@@ -530,6 +558,8 @@ flow_build_graph (function_t *func)
 		}
 	}
 	flow_find_predecessors (node_list, num_blocks);
+	flow_depth_first (node_list[0]);
+
 	flow_calc_dominators (node_list, num_blocks);
 	func->loops = flow_find_loops (node_list, num_blocks);
 	func->flow = node_list[0];

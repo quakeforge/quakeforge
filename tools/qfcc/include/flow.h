@@ -64,6 +64,7 @@ typedef struct flownode_s {
 	unsigned   *successors;		//< indices into siblings
 	unsigned    num_nodes;		//< number of nodes or sblocks
 	unsigned    region;			//< the region of which this node is a member
+	unsigned   *depth_first;	//< indices into siblings in depth-first order
 	/// \name Node pointers.
 	/// Only one of \a sblocks or \a nodes will be non-null. If \a sblocks is
 	/// non-null, then this is an innermost flow-node, otherwise \a nodes
