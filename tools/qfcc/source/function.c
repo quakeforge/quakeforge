@@ -646,8 +646,8 @@ emit_function (function_t *f, expr_t *e)
 	flow_build_vars (f);
 	flow_build_graph (f);
 	if (options.block_dot.flow)
-		print_sblock (f->sblock, nva ("%s.%s.%s.dot", GETSTR (pr.source_file),
-									  f->name, "flow"));
+		print_flowgraph (f->flow, nva ("%s.%s.%s.dot", GETSTR (pr.source_file),
+									   f->name, "flow"));
 	{
 		flowloop_t *l;
 		int         n = 0;

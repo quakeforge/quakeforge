@@ -50,6 +50,11 @@ typedef struct flowedge_s {
 	unsigned    head;		//< successor index
 } flowedge_t;
 
+/** Represent a node in a flow graph.
+
+	With the \a siblings and \a num_siblings fields, the entire graph can be
+	accessed via any node within that graph.
+*/
 typedef struct flownode_s {
 	struct flownode_s *next;
 	unsigned    id;
@@ -77,6 +82,7 @@ typedef struct flownode_s {
 	struct sblock_s **sblocks;
 	struct flownode_s **nodes;
 	struct flownode_s **siblings;
+	unsigned    num_siblings;
 	//@}
 	struct set_s *dom;
 } flownode_t;
@@ -87,6 +93,7 @@ int flow_is_return (struct statement_s *s);
 struct sblock_s *flow_get_target (struct statement_s *s);
 void flow_build_vars (struct function_s *func);
 void flow_build_graph (struct function_s *func);
+void print_flowgraph (flownode_t *flow, const char *filename);
 
 //@}
 

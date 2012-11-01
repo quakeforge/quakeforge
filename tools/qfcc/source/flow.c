@@ -380,6 +380,7 @@ flow_build_graph (function_t *func)
 		node = new_node ();
 		node->sblocks = func->graph;
 		node->siblings = node_list;
+		node->num_siblings = num_blocks;
 		node->id = sblock->number;
 		node->num_nodes = func->num_nodes;
 
@@ -422,4 +423,5 @@ flow_build_graph (function_t *func)
 	flow_find_predecessors (node_list, num_blocks);
 	flow_calc_dominators (node_list, num_blocks);
 	func->loops = flow_find_loops (node_list, num_blocks);
+	func->flow = node_list[0];
 }
