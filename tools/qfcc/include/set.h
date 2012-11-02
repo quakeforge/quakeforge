@@ -42,16 +42,16 @@ typedef struct set_s {
 	unsigned	defmap[8];
 } set_t;
 
-typedef struct setstate_s {
-	struct setstate_s *next;	//< private. for ALLOC
+typedef struct set_iter_s {
+	struct set_iter_s *next;	//< private. for ALLOC
 	const set_t *set;
 	/** The result of set_first() or set_next(). set_next() will start at the
 		following member.
 	*/
 	unsigned    member;
-} setstate_t;
+} set_iter_t;
 
-void set_delstate (setstate_t *setstate);
+void set_del_iter (set_iter_t *set_iter);
 set_t *set_new (void);
 void set_delete (set_t *set);
 void set_add (set_t *set, unsigned x);
@@ -70,8 +70,8 @@ int set_is_equivalent (const set_t *s1, const set_t *s2);
 int set_is_subset (const set_t *set, const set_t *sub);
 int set_is_member (const set_t *set, unsigned x);
 unsigned set_size (const set_t *set);
-setstate_t *set_first (const set_t *set);
-setstate_t *set_next (setstate_t *setstate);
+set_iter_t *set_first (const set_t *set);
+set_iter_t *set_next (set_iter_t *set_iter);
 const char *set_as_string (const set_t *set);
 
 //@}

@@ -48,27 +48,27 @@
 
 #define BITS (sizeof (unsigned) * 8)
 
-setstate_t *free_setstates;
+set_iter_t *free_set_iters;
 
-static setstate_t *
-new_setstate (void)
+static set_iter_t *
+new_setiter (void)
 {
-	setstate_t *setstate;
-	ALLOC (16, setstate_t, setstates, setstate);
-	return setstate;
+	set_iter_t *set_iter;
+	ALLOC (16, set_iter_t, set_iters, set_iter);
+	return set_iter;
 }
 
 static void
-delete_setstate (setstate_t *setstate)
+delete_setiter (set_iter_t *set_iter)
 {
-	setstate->next = free_setstates;
-	free_setstates = setstate;
+	set_iter->next = free_set_iters;
+	free_set_iters = set_iter;
 }
 
 void
-set_delstate (setstate_t *setstate)
+set_del_iter (set_iter_t *set_iter)
 {
-	delete_setstate (setstate);
+	delete_setiter (set_iter);
 }
 
 set_t *
@@ -281,35 +281,35 @@ set_size (const set_t *set)
 	return count;
 }
 
-setstate_t *
+set_iter_t *
 set_first (const set_t *set)
 {
 	unsigned    x;
-	setstate_t *setstate;
+	set_iter_t *set_iter;
 
 	for (x = 0; x < set->size; x++) {
 		if (set_is_member (set, x)) {
-			setstate = new_setstate ();
-			setstate->set = set;
-			setstate->member = x;
-			return setstate;
+			set_iter = new_setiter ();
+			set_iter->set = set;
+			set_iter->member = x;
+			return set_iter;
 		}
 	}
 	return 0;
 }
 
-setstate_t *
-set_next (setstate_t *setstate)
+set_iter_t *
+set_next (set_iter_t *set_iter)
 {
 	unsigned    x;
 
-	for (x = setstate->member + 1; x < setstate->set->size; x++) {
-		if (set_is_member (setstate->set, x)) {
-			setstate->member = x;
-			return setstate;
+	for (x = set_iter->member + 1; x < set_iter->set->size; x++) {
+		if (set_is_member (set_iter->set, x)) {
+			set_iter->member = x;
+			return set_iter;
 		}
 	}
-	delete_setstate (setstate);
+	delete_setiter (set_iter);
 	return 0;
 }
 

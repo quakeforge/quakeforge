@@ -314,9 +314,9 @@ make_loop (flownode_t **node_list, unsigned num_nodes, unsigned n, unsigned d)
 	set_add (loop->nodes, d);
 	insert_loop_node (loop, n, stack);
 	while (!set_is_empty (stack)) {
-		setstate_t *ss = set_first (stack);
+		set_iter_t *ss = set_first (stack);
 		unsigned    m = ss->member;
-		set_delstate (ss);
+		set_del_iter (ss);
 		set_remove (stack, m);
 		node = node_list[m];
 		for (pred = node->predecessors;
@@ -404,7 +404,7 @@ static set_t *
 select_nodes (flownode_t *graph, set_t *G, unsigned n)
 {
 	set_t      *I;
-	setstate_t *m;
+	set_iter_t *m;
 
 	I = set_new ();
 	set_add (I, n);
@@ -427,7 +427,7 @@ flow_reduce (flownode_t *graph)
 	int         k;
 	flownode_t **node_list = 0;
 	flownode_t *node;
-	setstate_t *m;
+	set_iter_t *m;
 
 	if (graph->num_siblings < 2)
 		return 0;
