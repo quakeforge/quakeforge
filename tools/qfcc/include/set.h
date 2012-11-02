@@ -37,8 +37,9 @@
 //@{
 
 typedef struct set_s {
-	unsigned    size;
+	struct set_s *next;			//< private. for ALLOC
 	unsigned   *map;
+	unsigned    size;
 	unsigned	defmap[8];
 } set_t;
 

@@ -48,6 +48,7 @@
 
 #define BITS (sizeof (unsigned) * 8)
 
+set_t      *free_sets;
 set_iter_t *free_set_iters;
 
 static set_iter_t *
@@ -76,7 +77,7 @@ set_new (void)
 {
 	set_t      *set;
 
-	set = calloc (1, sizeof (set_t));
+	ALLOC (16, set_t, sets, set);
 	set->size = sizeof (set->defmap) * 8;
 	set->map = set->defmap;
 	return set;
@@ -87,7 +88,8 @@ set_delete (set_t *set)
 {
 	if (set->map != set->defmap)
 		free (set->map);
-	free (set);
+	set->next = free_sets;
+	free_sets = set;
 }
 
 static void
