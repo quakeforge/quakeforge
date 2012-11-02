@@ -46,57 +46,65 @@
 #include "dags.h"
 #include "flow.h"
 #include "expr.h"
+#include "set.h"
 #include "strpool.h"
 
 static void
 print_flow_node (dstring_t *dstr, flownode_t *node, int level)
 {
 	int         indent = level * 2 + 2;
-	unsigned    j;
 
-	if (node->nodes) {
-		dasprintf (dstr, "%*ssubgraph \"cluster_%p\" {\n", indent, "", node);
-		//dasprintf (dstr, "%*srankdir=TB;\n", indent + 2, "");
-		dasprintf (dstr, "%*slabel=\"%d\";\n", indent + 2, "", node->id);
-		for (j = 0; j < node->num_nodes; j++)
-			print_flow_node (dstr, node->nodes[j], level + 1);
-		dasprintf (dstr, "%*s}\n", indent, "");
-	}
 	dasprintf (dstr, "%*s\"fn_%p\" [label=\"%d\"];\n", indent, "", node,
 			   node->id);
 }
 
 static void
-print_flow_edges (dstring_t *dstr, flownode_t *node, int level)
+print_flow_edges (dstring_t *dstr, flowgraph_t *graph, int level)
 {
 	int         indent = level * 2 + 2;
 	int         i;
-	unsigned    j;
+	flowedge_t *edge;
+	flownode_t *t, *h;
+	const char *style;
+	int         weight;
 
-	if (node->nodes) {
-		for (j = 0; j < node->num_nodes; j++)
-			print_flow_edges (dstr, node->nodes[j], level + 1);
+	for (i = 0; i < graph->num_edges; i++) {
+		edge = &graph->edges[i];
+		t = graph->nodes[edge->tail];
+		h = graph->nodes[edge->head];
+		if (t->dfn < h->dfn) {
+			style = "solid";
+			weight = 0;
+			if (set_is_member (graph->dfst, i)) {
+				style = "bold";
+				weight = 10;
+			}
+			dasprintf (dstr,
+					   "%*s\"fn_%p\" -> \"fn_%p\" [style=%s,weight=%d];\n",
+					   indent, "", t, h, style, weight);
+		} else {
+			dasprintf (dstr,
+					   "%*s\"fn_%p\" -> \"fn_%p\" [dir=back, style=dashed];\n",
+					   indent, "", h, t);
+		}
 	}
-	for (i = 0; i < node->num_succ; i++)
-		dasprintf (dstr, "%*s\"fn_%p\" -> \"fn_%p\";\n", indent, "", node,
-			   node->siblings[node->successors[i]]);
 }
 
 void
-print_flowgraph (flownode_t *flow, const char *filename)
+print_flowgraph (flowgraph_t *graph, const char *filename)
 {
-	unsigned    i;
+	int         i;
 	dstring_t  *dstr = dstring_newstr();
 
-	dasprintf (dstr, "digraph flow_%p {\n", flow->siblings);
+	dasprintf (dstr, "digraph flowgraph_%p {\n", graph);
 	dasprintf (dstr, "  layout=dot;\n");
 	dasprintf (dstr, "  clusterrank=local;\n");
-	//dasprintf (dstr, "  rankdir=TB;\n");
+	dasprintf (dstr, "  rankdir=TB;\n");
 	dasprintf (dstr, "  compound=true;\n");
-	for (i = 0; i < flow->num_siblings; i++) {
-		print_flow_node (dstr, flow->siblings[i], 0);
-		print_flow_edges (dstr, flow->siblings[i], 0);
+	for (i = 0; i < graph->num_nodes; i++) {
+		print_flow_node (dstr, graph->nodes[i], 0);
 	}
+	print_flow_edges (dstr, graph, 0);
 	dasprintf (dstr, "}\n");
 
 	if (filename) {

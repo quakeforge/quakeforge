@@ -79,14 +79,8 @@ typedef struct function_s {
 	struct reloc_s     *refs;		///< relocation targets for this function
 	struct expr_s      *var_init;
 	const char         *name;		///< nice name for __PRETTY_FUNCTION__
-	struct sblock_s    *sblock;		///< initial node of function's flow graph
-	/** Array of pointers to all nodes in the function's flow graph.
-
-		This permits ready mapping of node number to node in the flow
-		analyzer.
-	*/
-	struct sblock_s   **graph;
-	int                 num_nodes;	///< number of nodes in the graph
+	struct sblock_s    *sblock;		///< initial node of function's code
+	struct flowgraph_s *graph;		///< the function's flow graph
 	/** Array of pointers to all variables referenced by the function's code.
 
 		This permits ready mapping of (function specific) variable number to
@@ -95,7 +89,6 @@ typedef struct function_s {
 	struct daglabel_s **vars;
 	int                 num_vars;	///< total number of variables referenced
 	struct flowloop_s *loops;		///< linked list of loops in the function
-	struct flownode_s *flow;		///< flow graph
 } function_t;
 
 extern function_t *current_func;

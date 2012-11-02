@@ -644,16 +644,16 @@ emit_function (function_t *f, expr_t *e)
 	lineno_base = f->def->line;
 	f->sblock = make_statements (e);
 	flow_build_vars (f);
-	flow_build_graph (f);
+	f->graph = flow_build_graph (f->sblock);
 	if (options.block_dot.flow)
-		print_flowgraph (f->flow, nva ("%s.%s.%s.dot", GETSTR (pr.source_file),
-									   f->name, "flow"));
+		print_flowgraph (f->graph, nva ("%s.%s.%s.dot", GETSTR (pr.source_file),
+										f->name, "flow"));
 	{
 		flowloop_t *l;
 		int         n = 0;
 		for (l = f->loops; l; l = l->next)
 			n++;
-		printf ("%s %d %d %d\n", f->name, f->num_nodes, f->num_vars, n);
+		printf ("%s %d %d %d\n", f->name, f->graph->num_nodes, f->num_vars, n);
 	}
 	emit_statements (f->sblock);
 }

@@ -46,56 +46,43 @@ typedef struct flowloop_s {
 } flowloop_t;
 
 typedef struct flowedge_s {
-	unsigned    tail;		//< node index
-	unsigned    head;		//< successor index
+	unsigned    tail;
+	unsigned    head;
 } flowedge_t;
 
 /** Represent a node in a flow graph.
-
-	With the \a siblings and \a num_siblings fields, the entire graph can be
-	accessed via any node within that graph.
 */
 typedef struct flownode_s {
-	struct flownode_s *next;
-	unsigned    id;
-	int         num_pred;
-	unsigned   *predecessors;	//< indices into siblings
-	int         num_succ;
-	unsigned   *successors;		//< indices into siblings
-	unsigned    num_nodes;		//< number of nodes or sblocks
-	unsigned    region;			//< the region of which this node is a member
-	unsigned   *depth_first;	//< indices into siblings in depth-first order
-	/// \name Node pointers.
-	/// Only one of \a sblocks or \a nodes will be non-null. If \a sblocks is
-	/// non-null, then this is an innermost flow-node, otherwise \a nodes
-	/// will be non-null and this is a higher level flow-node representing a
-	/// region.
-	///
-	/// \a sblocks points to the array of all sblocks in the function
-	/// (it is a copy of function_t's graph member). \a id acts as an index
-	/// into \a sblocks to identify the sblock associated with this node.
-	///
-	/// \a nodes is an array of all flow-nodes nested within the region
-	/// represented by this node.
-	///
-	/// \a siblings is an array of all flow-nodes contained within the same
-	/// region as this node.
-	//@{
-	struct sblock_s **sblocks;
-	struct flownode_s **nodes;
-	struct flownode_s **siblings;
-	unsigned    num_siblings;
-	//@}
-	struct set_s *dom;
+	struct flownode_s *next;	//< for ALLOC
+	unsigned    id;				//< index of this node in the flow graph
+	unsigned    dfn;			//< depth-first ordering of this node
+	struct set_s *predecessors;	//< predecessors of this node
+	struct set_s *successors;	//< successors of this node
+	struct set_s *edges;		//< edges leaving this node, to successor nodes
+	struct set_s *dom;			//< dominating nodes
+	struct sblock_s *sblock;	//< original statement block
 } flownode_t;
+
+typedef struct flowgraph_s {
+	struct flowgraph_s *next;	//< for ALLOC
+	flownode_t **nodes;			//< array of nodes in the graph
+	int         num_nodes;
+	flowedge_t *edges;			//< array of all edges in the graph
+	int         num_edges;
+	struct set_s *dfst;			//< edges in the depth-first search tree
+	unsigned   *dfo;			//< depth-first order of nodes
+	flowloop_t *loops;			//< linked list of natural loops
+} flowgraph_t;
 
 int flow_is_cond (struct statement_s *s);
 int flow_is_goto (struct statement_s *s);
 int flow_is_return (struct statement_s *s);
 struct sblock_s *flow_get_target (struct statement_s *s);
 void flow_build_vars (struct function_s *func);
-void flow_build_graph (struct function_s *func);
-void print_flowgraph (flownode_t *flow, const char *filename);
+flowgraph_t *flow_build_graph (struct sblock_s *func);
+void flow_del_graph (flowgraph_t *graph);
+
+void print_flowgraph (flowgraph_t *graph, const char *filename);
 
 //@}
 
