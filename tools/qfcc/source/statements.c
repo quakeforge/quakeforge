@@ -662,6 +662,18 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 		*op = new_operand (op_pointer);
 		(*op)->type = low_level_type (e->e.value.v.pointer.type);
 		(*op)->o.pointer = &e->e.value.v.pointer;
+	} else {
+		statement_t *s;
+		operand_t  *ptr = 0;
+
+		sblock = statement_subexpr (sblock, e, &ptr);
+		if (!*op)
+			*op = temp_operand (type);
+		s = new_statement (".", deref);
+		s->opa = ptr;
+		s->opb = short_operand (0);
+		s->opc = *op;
+		sblock_add_statement (sblock, s);
 	}
 	return sblock;
 }
