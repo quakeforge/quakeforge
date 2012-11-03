@@ -830,6 +830,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		0,					// ex_state
 		0,					// ex_bool
 		0,					// ex_label
+		0,					// ex_labelref
 		expr_block,			// ex_block
 		expr_expr,
 		expr_uexpr,
@@ -1107,6 +1108,7 @@ statement_slist (sblock_t *sblock, expr_t *e)
 		statement_state,
 		statement_bool,
 		statement_label,
+		0,					// ex_labelref
 		statement_block,
 		statement_expr,
 		statement_uexpr,

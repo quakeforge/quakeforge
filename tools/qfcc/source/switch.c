@@ -327,18 +327,25 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 	} else {
 		int         low = expr_integer (tree->low);
 		int         high = expr_integer (tree->high);
-		symbol_t   *sym;
-		expr_t     *table;
-		const char *name = new_label_name ();
+		symbol_t   *table_sym;
+		expr_t     *table_expr;
+		expr_t     *table_init;
+		const char *table_name = new_label_name ();
 		int         i;
 		expr_t     *range = binary_expr ('-', tree->high, tree->low);
 
 		range = fold_constants (range);
 
-		sym = make_symbol (name, array_type (&type_integer, high - low + 1),
-						   pr.near_data, st_static);
-		table = new_symbol_expr (sym);
-		table = new_alias_expr (&type_integer, table);
+		table_init = new_block_expr ();
+		for (i = 0; i <= high - low; i++) {
+			tree->labels[i]->e.label.used++;
+			append_expr (table_init, address_expr (tree->labels[i], 0, 0));
+		}
+		table_sym = new_symbol (table_name);
+		initialize_def (table_sym, array_type (&type_integer, high - low + 1),
+						table_init, pr.near_data, st_static);
+		table_expr = new_symbol_expr (table_sym);
+		table_expr = new_alias_expr (&type_integer, table_expr);
 
 		if (tree->left) {
 			branch = branch_expr (IFB, temp, low_label);
@@ -348,7 +355,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 							cast_expr (&type_uinteger, range));
 		branch = branch_expr ('i', test, high_label);
 		append_expr (sw, branch);
-		branch = new_binary_expr ('g', table, temp);
+		branch = new_binary_expr ('g', table_expr, temp);
 		append_expr (sw, branch);
 		if (tree->left) {
 			append_expr (sw, low_label);
@@ -357,13 +364,6 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		if (tree->right) {
 			append_expr (sw, high_label);
 			build_switch (sw, tree->right, op, sw_val, temp, default_label);
-		}
-		for (i = 0; i <= high - low; i++) {
-			def_t       loc;
-			loc.space = sym->s.def->space;
-			loc.offset = sym->s.def->offset + i;
-			tree->labels[i]->e.label.used++;
-			reloc_def_op (&tree->labels[i]->e.label, &loc);
 		}
 	}
 }

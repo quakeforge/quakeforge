@@ -1469,7 +1469,7 @@ fold_constants (expr_t *e)
 	if (e2->type == ex_error)
 		return e2;
 
-	if (e2->type == ex_label)
+	if (e2->type == ex_label || e2->type == ex_labelref)
 		return e;
 
 	t2 = extract_type (e2);

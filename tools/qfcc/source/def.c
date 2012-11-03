@@ -277,6 +277,12 @@ init_elements (struct def_s *def, expr_t *eles)
 			}
 			init_elements (&elements[i], c);
 			continue;
+		} else if (c->type == ex_labelref) {
+			def_t       loc;
+			loc.space = elements[i].space;
+			loc.offset = elements[i].offset;
+			reloc_def_op (c->e.labelref.label, &loc);
+			continue;
 		} else if (c->type == ex_value) {
 			if (c->e.value.type == ev_integer
 				&& elements[i].type->type == ev_float)

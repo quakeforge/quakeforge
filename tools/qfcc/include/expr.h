@@ -45,6 +45,7 @@ typedef enum {
 	ex_state,		///< state expression (::ex_state_t)
 	ex_bool,		///< short circuit boolean logic expression (::ex_bool_t)
 	ex_label,		///< goto/branch label (::ex_label_t)
+	ex_labelref,	///< label reference (::ex_labelref_t)
 	ex_block,		///< statement block expression (::ex_block_t)
 	ex_expr,		///< binary expression (::ex_expr_t)
 	ex_uexpr,		///< unary expression (::ex_expr_t)
@@ -69,12 +70,16 @@ typedef struct ex_expr_s {
 } ex_expr_t;
 
 typedef struct ex_label_s {
-	struct ex_label_s *next;	///< next label in global list of labels
+	struct ex_label_s *next;
 	struct reloc_s *refs;		///< relocations associated with this label
 	struct sblock_s *dest;		///< the location of this label if known
 	const char *name;			///< the name of this label
 	int         used;			///< label is used as a target
 } ex_label_t;
+
+typedef struct {
+	ex_label_t *label;
+} ex_labelref_t;
 
 typedef struct {
 	struct expr_s *head;	///< the first expression in the block
@@ -179,6 +184,7 @@ typedef struct expr_s {
 	unsigned	rvalue:1;		///< the expression is on the right side of =
 	union {
 		ex_label_t  label;				///< label expression
+		ex_labelref_t labelref;			///< label reference expression (&)
 		ex_state_t  state;				///< state expression
 		ex_bool_t   bool;				///< boolean logic expression
 		ex_block_t  block;				///< statement block expression
@@ -253,12 +259,20 @@ const char *new_label_name (void);
 
 /**	Create a new label expression node.
 
-	The label name is set using new_label_name(), and the label is linked
-	into the global list of labels for later resolution.
+	The label name is set using new_label_name().
 
 	\return			The new label expression (::ex_label_t) node.
 */
 expr_t *new_label_expr (void);
+
+/**	Create a new label reference expression node.
+
+	Used for taking the address of a label (eg. jump tables).
+	The label's \a used field is incremented.
+
+	\return			The new label reference expression (::ex_labelref_t) node.
+*/
+expr_t *new_label_ref (ex_label_t *label);
 
 /**	Create a new state expression node.
 

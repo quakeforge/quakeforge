@@ -156,6 +156,19 @@ print_label (expr_t *e, int level, int id)
 }
 
 static void
+print_labelref (expr_t *e, int level, int id)
+{
+	int         indent = level * 2 + 2;
+
+	if (e->next)
+		printf ("%*s\"e_%p\" -> \"e_%p\" "
+				"[constraint=false,style=dashed];\n", indent, "",
+				e, e->next);
+	printf ("%*s\"e_%p\" [label=\"&%s\\n%d\"];\n", indent, "", e,
+			e->e.label.name, e->line);
+}
+
+static void
 print_block (expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
@@ -364,6 +377,7 @@ _print_expr (expr_t *e, int level, int id)
 		print_state,
 		print_bool,
 		print_label,
+		print_labelref,
 		print_block,
 		print_subexpr,
 		print_uexpr,

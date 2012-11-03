@@ -140,6 +140,8 @@ get_type (expr_t *e)
 {
 	convert_name (e);
 	switch (e->type) {
+		case ex_labelref:
+			return &type_void;
 		case ex_label:
 		case ex_error:
 			return 0;					// something went very wrong
@@ -306,6 +308,8 @@ copy_expr (expr_t *e)
 		case ex_label:
 			/// Create a fresh label
 			return new_label_expr ();
+		case ex_labelref:
+			return new_label_ref (e->e.labelref.label);
 		case ex_block:
 			n = new_expr ();
 			*n = *e;
@@ -404,6 +408,18 @@ new_label_expr (void)
 
 	l->type = ex_label;
 	l->e.label.name = new_label_name ();
+	return l;
+}
+
+expr_t *
+new_label_ref (ex_label_t *label)
+{
+
+	expr_t     *l = new_expr ();
+
+	l->type = ex_labelref;
+	l->e.labelref.label = label;
+	label->used++;
 	return l;
 }
 
@@ -607,7 +623,7 @@ new_short_expr (short short_val)
 int
 is_constant (expr_t *e)
 {
-	if (e->type == ex_nil || e->type == ex_value
+	if (e->type == ex_nil || e->type == ex_value || e->type == ex_labelref
 		|| (e->type == ex_symbol && e->e.symbol->sy_type == sy_const)
 		|| (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
 			&& e->e.symbol->s.def->constant))
@@ -624,7 +640,7 @@ constant_expr (expr_t *e)
 
 	if (!is_constant (e))
 		return e;
-	if (e->type == ex_nil || e->type == ex_value)
+	if (e->type == ex_nil || e->type == ex_value || e->type == ex_labelref)
 		return e;
 	if (e->type != ex_symbol)
 		return e;
@@ -1623,6 +1639,7 @@ unary_expr (int op, expr_t *e)
 				case ex_value:	// should be handled above
 				case ex_error:
 				case ex_label:
+				case ex_labelref:
 				case ex_state:
 					internal_error (e, 0);
 				case ex_uexpr:
@@ -1685,6 +1702,7 @@ unary_expr (int op, expr_t *e)
 				case ex_value:	// should be handled above
 				case ex_error:
 				case ex_label:
+				case ex_labelref:
 				case ex_state:
 					internal_error (e, 0);
 				case ex_bool:
@@ -1742,6 +1760,7 @@ unary_expr (int op, expr_t *e)
 				case ex_value:	// should be handled above
 				case ex_error:
 				case ex_label:
+				case ex_labelref:
 				case ex_state:
 					internal_error (e, 0);
 				case ex_uexpr:
@@ -2217,6 +2236,8 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				return error (e1, "invalid type for unary &");
 			e1->e.block.result = address_expr (e1->e.block.result, e2, t);
 			return e1;
+		case ex_label:
+			return new_label_ref (&e1->e.label);
 		default:
 			return error (e1, "invalid type for unary &");
 	}
