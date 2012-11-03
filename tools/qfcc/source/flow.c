@@ -42,12 +42,14 @@
 #include "QF/dstring.h"
 
 #include "dags.h"
+#include "def.h"
 #include "flow.h"
 #include "function.h"
 #include "qfcc.h"
 #include "set.h"
 #include "statements.h"
 #include "symtab.h"
+#include "type.h"
 
 static flowloop_t *free_loops;
 static flownode_t *free_nodes;
@@ -230,6 +232,14 @@ flow_is_goto (statement_t *s)
 }
 
 int
+flow_is_jumpb (statement_t *s)
+{
+	if (!s)
+		return 0;
+	return !strcmp (s->opcode, "<JUMPB>");
+}
+
+int
 flow_is_return (statement_t *s)
 {
 	if (!s)
@@ -245,6 +255,36 @@ flow_get_target (statement_t *s)
 	if (flow_is_goto (s))
 		return s->opa->o.label->dest;
 	return 0;
+}
+
+sblock_t **
+flow_get_targetlist (statement_t *s)
+{
+	sblock_t  **target_list;
+	int         count, i;
+	def_t      *table = 0;
+	expr_t     *e;
+
+	if (flow_is_cond (s)) {
+		count = 1;
+	} else if (flow_is_goto (s)) {
+		count = 1;
+	} else if (flow_is_jumpb (s)) {
+		table = s->opa->o.alias->o.symbol->s.def;	//FIXME check!!!
+		count = table->type->t.array.size;
+	}
+	target_list = malloc ((count + 1) * sizeof (sblock_t *));
+	target_list[count] = 0;
+	if (flow_is_cond (s)) {
+		target_list[0] = flow_get_target (s);
+	} else if (flow_is_goto (s)) {
+		target_list[0] = flow_get_target (s);
+	} else if (flow_is_jumpb (s)) {
+		e = table->initializer->e.block.head;	//FIXME check!!!
+		for (i = 0; i < count; e = e->next, i++)
+			target_list[i] = e->e.labelref.label->dest;
+	}
+	return target_list;
 }
 
 static void
@@ -413,6 +453,7 @@ flow_build_graph (sblock_t *sblock)
 	flowgraph_t *graph;
 	flownode_t *node;
 	sblock_t   *sb;
+	sblock_t  **target_list, **target;
 	statement_t *st;
 	set_iter_t *succ;
 	int         i, j;
@@ -445,6 +486,11 @@ flow_build_graph (sblock_t *sblock)
 		if (flow_is_goto (st)) {
 			// sb's next is never followed.
 			set_add (node->successors, flow_get_target (st)->number);
+		} else if (flow_is_jumpb (st)) {
+			target_list = flow_get_targetlist (st);
+			for (target = target_list; *target; target++)
+				set_add (node->successors, (*target)->number);
+			free (target_list);
 		} else if (flow_is_cond (st)) {
 			// branch: either sb's next or the conditional statment's
 			// target will be followed.

@@ -76,8 +76,10 @@ typedef struct flowgraph_s {
 
 int flow_is_cond (struct statement_s *s);
 int flow_is_goto (struct statement_s *s);
+int flow_is_jumpb (struct statement_s *s);
 int flow_is_return (struct statement_s *s);
 struct sblock_s *flow_get_target (struct statement_s *s);
+struct sblock_s **flow_get_targetlist (struct statement_s *s);
 void flow_build_vars (struct function_s *func);
 flowgraph_t *flow_build_graph (struct sblock_s *func);
 void flow_del_graph (flowgraph_t *graph);
