@@ -527,4 +527,5 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 			sym->s.def->nosave = 1;
 		}
 	}
+	sym->s.def->initializer = init;
 }
