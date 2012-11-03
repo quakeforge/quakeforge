@@ -63,8 +63,10 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 {
 	const char *name;
 	const char *type;
-	int         offset;
+	pr_uint_t   offset;
 	const char *comment;
+	string_t    string;
+	const char *str;
 	int         saveglobal;
 
 	if (!def->type && !def->ofs && !def->s_name)
@@ -75,64 +77,72 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 	saveglobal = (def->type & DEF_SAVEGLOBAL) != 0;
 	offset = def->ofs;
 
-	comment = "";
+	comment = " invalid offset";
 
-	switch (def->type & ~DEF_SAVEGLOBAL) {
-		case ev_void:
-			break;
-		case ev_string:
-			comment = va (" %d \"%s\"", G_INT (pr, offset),
-						  quote_string (pr->pr_strings + G_INT (pr, offset)));
-			break;
-		case ev_float:
-			comment = va (" %g", G_FLOAT (pr, offset));
-			break;
-		case ev_vector:
-			comment = va (" '%g %g %g'",
-						  G_VECTOR (pr, offset)[0],
-						  G_VECTOR (pr, offset)[1],
-						  G_VECTOR (pr, offset)[2]);
-			break;
-		case ev_entity:
-			break;
-		case ev_field:
-			comment = va (" %x", G_INT (pr, offset));
-			break;
-		case ev_func:
-			{
-				func_t      func = G_FUNCTION (pr, offset);
-				int         start;
-				if (func >= 0 && func < pr->progs->numfunctions) {
-					start = pr->pr_functions[func].first_statement;
-					if (start > 0)
-						comment = va (" %d @ %x", func, start);
-					else
-						comment = va (" %d = #%d", func, -start);
+	if (offset < pr->progs->numglobals) {
+		switch (def->type & ~DEF_SAVEGLOBAL) {
+			case ev_void:
+				break;
+			case ev_string:
+				string = G_INT (pr, offset);
+				if (string < 0 || string >= pr->progs->numstrings) {
+					str = "invalid string offset";
+					comment = va (" %d %s", string, str);
 				} else {
-					comment = va (" %d = illegal function", func);
+					str = quote_string (pr->pr_strings + G_INT (pr, offset));
+					comment = va (" %d \"%s\"", string, str);
 				}
-			}
-			break;
-		case ev_pointer:
-			comment = va (" %x", G_INT (pr, offset));
-			break;
-		case ev_quat:
-			comment = va (" '%g %g %g %g'",
-						  G_QUAT (pr, offset)[0],
-						  G_QUAT (pr, offset)[1],
-						  G_QUAT (pr, offset)[2],
-						  G_QUAT (pr, offset)[3]);
-			break;
-		case ev_integer:
-			comment = va (" %d", G_INT (pr, offset));
-			break;
-		case ev_short:
-			break;
-		case ev_invalid:
-			comment = " struct?";
-			break;
-		case ev_type_count:
-			break;
+				break;
+			case ev_float:
+				comment = va (" %g", G_FLOAT (pr, offset));
+				break;
+			case ev_vector:
+				comment = va (" '%g %g %g'",
+							  G_VECTOR (pr, offset)[0],
+							  G_VECTOR (pr, offset)[1],
+							  G_VECTOR (pr, offset)[2]);
+				break;
+			case ev_entity:
+				break;
+			case ev_field:
+				comment = va (" %x", G_INT (pr, offset));
+				break;
+			case ev_func:
+				{
+					func_t      func = G_FUNCTION (pr, offset);
+					int         start;
+					if (func >= 0 && func < pr->progs->numfunctions) {
+						start = pr->pr_functions[func].first_statement;
+						if (start > 0)
+							comment = va (" %d @ %x", func, start);
+						else
+							comment = va (" %d = #%d", func, -start);
+					} else {
+						comment = va (" %d = illegal function", func);
+					}
+				}
+				break;
+			case ev_pointer:
+				comment = va (" %x", G_INT (pr, offset));
+				break;
+			case ev_quat:
+				comment = va (" '%g %g %g %g'",
+							  G_QUAT (pr, offset)[0],
+							  G_QUAT (pr, offset)[1],
+							  G_QUAT (pr, offset)[2],
+							  G_QUAT (pr, offset)[3]);
+				break;
+			case ev_integer:
+				comment = va (" %d", G_INT (pr, offset));
+				break;
+			case ev_short:
+				break;
+			case ev_invalid:
+				comment = " struct?";
+				break;
+			case ev_type_count:
+				break;
+		}
 	}
 	printf ("%*s %x %d %s %s%s\n", indent * 12, "",
 			offset, saveglobal, name, type, comment);
