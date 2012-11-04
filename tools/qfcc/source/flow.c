@@ -332,9 +332,9 @@ flow_find_dominators (flowgraph_t *graph)
 		for (i = 1; i < graph->num_nodes; i++) {
 			node = graph->nodes[i];
 			pred = set_first (node->predecessors);
-			if (pred)
-				set_assign (work, graph->nodes[pred->member]->dom);
-			for (pred = set_next (pred); pred; pred = set_next (pred))
+			set_empty (work);
+			for (pred = set_first (node->predecessors); pred;
+				 pred = set_next (pred))
 				set_intersection (work, graph->nodes[pred->member]->dom);
 			set_add (work, i);
 			if (!set_is_equivalent (work, node->dom))
