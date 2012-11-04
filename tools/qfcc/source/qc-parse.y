@@ -112,12 +112,13 @@ int yylex (void);
 	struct symtab_s *symtab;
 }
 
+// these tokens are common between qc and qp
+%left LOW
 %nonassoc IFX
 %nonassoc ELSE
 %nonassoc BREAK_PRIMARY
 %nonassoc ';'
 %nonassoc CLASS_NOT_CATEGORY
-
 %nonassoc STORAGEX
 
 %left			COMMA
@@ -130,10 +131,12 @@ int yylex (void);
 %left			'&'
 %left			EQ NE
 %left			LE GE LT GT
+// end of tokens common between qc and qp
+
 %left			SHL SHR
 %left			'+' '-'
 %left			'*' '/' '%'
-%right	<op>	UNARY INCOP
+%right	<op>	SIZEOF UNARY INCOP
 %left			HYPERUNARY
 %left			'.' '(' '['
 
@@ -181,7 +184,7 @@ int yylex (void);
 %type	<expr>		optional_state_expr think opt_step texpr
 %type	<expr>		statement statements compound_statement
 %type	<expr>		label break_label continue_label
-%type	<expr>		unary_expr primary cast_expr opt_arg_list arg_list
+%type	<expr>		unary_expr cast_expr opt_arg_list arg_list
 %type	<switch_block> switch_block
 %type	<symbol>	identifier
 
@@ -1157,7 +1160,18 @@ opt_expr
 	;
 
 unary_expr
-	: primary
+	: NAME      				{ $$ = new_symbol_expr ($1); }
+	| BREAK	%prec BREAK_PRIMARY { $$ = new_name_expr (save_string ("break")); }
+	| ARGS						{ $$ = new_name_expr (".args"); }
+	| SELF						{ $$ = new_self_expr (); }
+	| THIS						{ $$ = new_this_expr (); }
+	| const						{ $$ = $1; }
+	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
+	| unary_expr '(' opt_arg_list ')' { $$ = function_expr ($1, $3); }
+	| unary_expr '[' expr ']'		{ $$ = array_expr ($1, $3); }
+	| unary_expr '.' unary_expr		{ $$ = binary_expr ('.', $1, $3); }
+	| INCOP unary_expr				{ $$ = incop_expr ($1, $2, 0); }
+	| unary_expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
 	| '+' cast_expr %prec UNARY	{ $$ = $2; }
 	| '-' cast_expr %prec UNARY	{ $$ = unary_expr ('-', $2); }
 	| '!' cast_expr %prec UNARY	{ $$ = unary_expr ('!', $2); }
@@ -1169,30 +1183,15 @@ unary_expr
 		{
 			$$ = sizeof_expr (0, $3->type);
 		}
-	;
-
-primary
-	: NAME      				{ $$ = new_symbol_expr ($1); }
-	| BREAK	%prec BREAK_PRIMARY { $$ = new_name_expr (save_string ("break")); }
-	| ARGS						{ $$ = new_name_expr (".args"); }
-	| SELF						{ $$ = new_self_expr (); }
-	| THIS						{ $$ = new_this_expr (); }
-	| const						{ $$ = $1; }
-	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
-	| primary '(' opt_arg_list ')' { $$ = function_expr ($1, $3); }
-	| primary '[' expr ']'		{ $$ = array_expr ($1, $3); }
-	| primary '.' primary		{ $$ = binary_expr ('.', $1, $3); }
-	| INCOP primary				{ $$ = incop_expr ($1, $2, 0); }
-	| primary INCOP				{ $$ = incop_expr ($2, $1, 1); }
 	| obj_expr					{ $$ = $1; }
 	;
 
 cast_expr
-	: unary_expr
-	| '(' abstract_decl ')' cast_expr %prec UNARY
+	: '(' abstract_decl ')' cast_expr
 		{
 			$$ = cast_expr ($2->type, $4);
 		}
+	| unary_expr %prec LOW
 	;
 
 expr

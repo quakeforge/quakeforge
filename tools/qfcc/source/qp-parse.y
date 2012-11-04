@@ -95,7 +95,8 @@ int yylex (void);
 	int              storage;
 }
 
-// these tokens are common with qc
+// these tokens are common between qc and qp
+%left LOW
 %nonassoc IFX
 %nonassoc ELSE
 %nonassoc BREAK_PRIMARY
@@ -113,7 +114,7 @@ int yylex (void);
 %left   '&'
 %left   EQ NE
 %left   LE GE LT GT
-// end of tokens common with qc
+// end of tokens common between qc and qp
 
 %left	<op>		RELOP
 %left	<op>		ADDOP

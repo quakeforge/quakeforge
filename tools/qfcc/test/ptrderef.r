@@ -6,7 +6,7 @@ ptrderef (int *to, int *from)
 	x = *from;
 	x = *from++;
 	x = *++from;
-	//x = ++*from; FIXME syntax error (valid C)
+	x = ++*from;
 	to = from++;
 	to = ++from;
 	*to = *from++;
