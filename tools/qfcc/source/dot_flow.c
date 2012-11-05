@@ -54,8 +54,8 @@ print_flow_node (dstring_t *dstr, flownode_t *node, int level)
 {
 	int         indent = level * 2 + 2;
 
-	dasprintf (dstr, "%*s\"fn_%p\" [label=\"%d\"];\n", indent, "", node,
-			   node->id);
+	dasprintf (dstr, "%*s\"fn_%p\" [label=\"%d (%d)\"];\n", indent, "", node,
+			   node->id, node->dfn);
 }
 
 static void
