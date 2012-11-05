@@ -45,6 +45,7 @@
 #include "def.h"
 #include "flow.h"
 #include "function.h"
+#include "options.h"
 #include "qfcc.h"
 #include "set.h"
 #include "statements.h"
@@ -220,7 +221,10 @@ flow_build_vars (function_t *func)
 		for (sblock = func->sblock; sblock; sblock = sblock->next) {
 			for (s = sblock->statements; s; s = s->next)
 				func->statements[s->number] = s;
+			sblock->dag = make_dag (sblock);
 		}
+		if (options.block_dot.dags)
+			dump_sblock (func->sblock, "dags");
 	}
 }
 

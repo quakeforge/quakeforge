@@ -1403,9 +1403,5 @@ make_statements (expr_t *e)
 	if (options.block_dot.final)
 		dump_sblock (sblock, "final");
 
-	//for (s = sblock; s; s = s->next)
-	//	s->dag = make_dag (s);
-	//if (options.block_dot.dags)
-	//	dump_sblock (sblock, "dags");
 	return sblock;
 }
