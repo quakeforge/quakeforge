@@ -192,25 +192,34 @@ flow_build_vars (function_t *func)
 	sblock_t   *sblock;
 	statement_t *s;
 	int         num_vars;
+	int         num_statements = 0;
 
 	for (num_vars = 0, sblock = func->sblock; sblock; sblock = sblock->next) {
 		for (s = sblock->statements; s; s = s->next) {
 			num_vars += count_operand (s->opa);
 			num_vars += count_operand (s->opb);
 			num_vars += count_operand (s->opc);
+			s->number = num_statements++;
 		}
 	}
-	if (!num_vars)
-		return;
+	if (num_vars) {
+		func->vars = malloc (num_vars * sizeof (daglabel_t *));
 
-	func->vars = malloc (num_vars * sizeof (daglabel_t *));
-
-	func->num_vars = 0;	// incremented by add_operand
-	for (sblock = func->sblock; sblock; sblock = sblock->next) {
-		for (s = sblock->statements; s; s = s->next) {
-			add_operand (func, s->opa);
-			add_operand (func, s->opb);
-			add_operand (func, s->opc);
+		func->num_vars = 0;	// incremented by add_operand
+		for (sblock = func->sblock; sblock; sblock = sblock->next) {
+			for (s = sblock->statements; s; s = s->next) {
+				add_operand (func, s->opa);
+				add_operand (func, s->opb);
+				add_operand (func, s->opc);
+			}
+		}
+	}
+	if (num_statements) {
+		func->statements = malloc (num_statements * sizeof (statement_t *));
+		func->num_statements = num_statements;
+		for (sblock = func->sblock; sblock; sblock = sblock->next) {
+			for (s = sblock->statements; s; s = s->next)
+				func->statements[s->number] = s;
 		}
 	}
 }

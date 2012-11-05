@@ -88,6 +88,8 @@ typedef struct function_s {
 	*/
 	struct daglabel_s **vars;
 	int                 num_vars;	///< total number of variables referenced
+	struct statement_s **statements;
+	int                 num_statements;
 } function_t;
 
 extern function_t *current_func;

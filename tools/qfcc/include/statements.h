@@ -66,7 +66,8 @@ typedef struct statement_s {
 	operand_t  *opa;
 	operand_t  *opb;
 	operand_t  *opc;
-	struct expr_s *expr;	///< source expression for this statement
+	struct expr_s *expr;		///< source expression for this statement
+	int         number;			///< number of this statement in function
 } statement_t;
 
 typedef struct sblock_s {
