@@ -651,7 +651,7 @@ emit_function (function_t *f, expr_t *e)
 	{
 		flowloop_t *l;
 		int         n = 0;
-		for (l = f->loops; l; l = l->next)
+		for (l = f->graph->loops; l; l = l->next)
 			n++;
 		printf ("%s %d %d %d\n", f->name, f->graph->num_nodes, f->num_vars, n);
 	}
