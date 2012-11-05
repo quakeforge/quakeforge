@@ -86,7 +86,7 @@ typedef struct function_s {
 		This permits ready mapping of (function specific) variable number to
 		variable in the flow analyzer.
 	*/
-	struct daglabel_s **vars;
+	struct flowvar_s  **vars;
 	int                 num_vars;	///< total number of variables referenced
 	struct statement_s **statements;
 	int                 num_statements;

@@ -38,6 +38,14 @@
 struct function_s;
 struct sblock_s;
 struct statement_s;
+struct operand_s;
+
+typedef struct flowvar_s {
+	struct flowvar_s *next;		///< for ALLOC
+	struct set_s *use;			///< set of statements that use this var
+	struct set_s *define;		///< set of statements that define this var
+	int         number;			///< number of variable in func's ref list
+} flowvar_t;
 
 typedef struct flowloop_s {
 	struct flowloop_s *next;
@@ -74,6 +82,7 @@ typedef struct flowgraph_s {
 	flowloop_t *loops;			//< linked list of natural loops
 } flowgraph_t;
 
+flowvar_t *flow_get_var (struct operand_s *op);
 int flow_is_cond (struct statement_s *s);
 int flow_is_goto (struct statement_s *s);
 int flow_is_jumpb (struct statement_s *s);

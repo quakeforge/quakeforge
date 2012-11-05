@@ -52,9 +52,20 @@
 #include "symtab.h"
 #include "type.h"
 
+static flowvar_t *free_vars;
 static flowloop_t *free_loops;
 static flownode_t *free_nodes;
 static flowgraph_t *free_graphs;
+
+static flowvar_t *
+new_flowvar (void)
+{
+	flowvar_t *var;
+	ALLOC (256, flowvar_t, vars, var);
+	var->use = set_new ();
+	var->define = set_new ();
+	return var;
+}
 
 static flowloop_t *
 new_loop (void)
@@ -124,24 +135,28 @@ delete_graph (flowgraph_t *graph)
 	free_graphs = graph;
 }
 
-static int
-is_variable (daglabel_t *var)
+flowvar_t *
+flow_get_var (operand_t *op)
 {
 	operand_t  *o;
 
-	if (!var)
+	if (!op)
 		return 0;
 
-	o = var->op;
+	o = op;
 	while (o->op_type == op_alias)
 		o = o->o.alias;
 
-	if (o->op_type == op_temp)
-		return 1;
-	if (o->op_type != op_symbol)
-		return 0;
-	if (o->o.symbol->sy_type == sy_var)
-		return 1;
+	if (o->op_type == op_temp) {
+		if (!o->o.tempop.flowvar)
+			o->o.tempop.flowvar = new_flowvar ();
+		return o->o.tempop.flowvar;
+	}
+	if (o->op_type == op_symbol && o->o.symbol->sy_type == sy_var) {
+		if (!o->o.symbol->flowvar)
+			o->o.symbol->flowvar = new_flowvar ();
+		return o->o.symbol->flowvar;
+	}
 	//FIXME functions? (some are variable)
 	return 0;
 }
@@ -149,19 +164,25 @@ is_variable (daglabel_t *var)
 static int
 count_operand (operand_t *op)
 {
-	daglabel_t *var;
+	flowvar_t  *var;
 
 	if (!op)
 		return 0;
 	if (op->op_type == op_label)
 		return 0;
 
-	var = operand_label (op);
+	var = flow_get_var (op);
 	// daglabels are initialized with number == 0, and any global daglabel
 	// used by a function will always have a number >= 0 after flow analysis,
 	// and local daglabels will always be 0 before flow analysis, so use -1
 	// to indicate the variable has been counted.
-	if (is_variable (var) && var->number != -1) {
+	//
+	// Also, since this is the beginning of flow analysis for this function,
+	// ensure the define/use sets for global vars are empty. However, as
+	// checking if a var is global is too much trouble, just clear them all.
+	if (var && var->number != -1) {
+		set_empty (var->use);
+		set_empty (var->define);
 		var->number = -1;
 		return 1;
 	}
@@ -171,17 +192,17 @@ count_operand (operand_t *op)
 static void
 add_operand (function_t *func, operand_t *op)
 {
-	daglabel_t *var;
+	flowvar_t  *var;
 
 	if (!op)
 		return;
 	if (op->op_type == op_label)
 		return;
 
-	var = operand_label (op);
+	var = flow_get_var (op);
 	// If the daglabel number is still -1, then the daglabel has not yet been
 	// added to the list of variables referenced by the function.
-	if (is_variable (var) && var->number == -1) {
+	if (var && var->number == -1) {
 		var->number = func->num_vars++;
 		func->vars[var->number] = var;
 	}

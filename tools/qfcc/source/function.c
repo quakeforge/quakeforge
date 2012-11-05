@@ -645,16 +645,6 @@ emit_function (function_t *f, expr_t *e)
 	f->sblock = make_statements (e);
 	flow_build_vars (f);
 	f->graph = flow_build_graph (f->sblock);
-	if (options.block_dot.flow)
-		print_flowgraph (f->graph, nva ("%s.%s.%s.dot", GETSTR (pr.source_file),
-										f->name, "flow"));
-	{
-		flowloop_t *l;
-		int         n = 0;
-		for (l = f->graph->loops; l; l = l->next)
-			n++;
-		printf ("%s %d %d %d\n", f->name, f->graph->num_nodes, f->num_vars, n);
-	}
 	emit_statements (f->sblock);
 }
 

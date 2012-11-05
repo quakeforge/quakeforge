@@ -64,6 +64,7 @@ typedef struct symbol_s {
 	sy_type_e   sy_type;		///< symbol type (st_type)
 	struct type_s *type;		///< type of object to which symbol refers
 	struct param_s *params;		///< the parameters if a function
+	struct flowvar_s *flowvar;
 	struct daglabel_s *daglabel;///< dag label for this symbol
 	union {
 		int         offset;			///< st_var (in a struct/union)

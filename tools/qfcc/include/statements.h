@@ -43,6 +43,7 @@ typedef enum {
 
 typedef struct {
 	struct def_s   *def;
+	struct flowvar_s *flowvar;
 	struct daglabel_s *daglabel;
 } tempop_t;
 
