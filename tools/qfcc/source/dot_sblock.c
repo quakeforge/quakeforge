@@ -57,6 +57,7 @@ static void
 flow_statement (dstring_t *dstr, statement_t *s)
 {
 	dasprintf (dstr, "        <tr>");
+	dasprintf (dstr, "<td>%d</td>", s->number);
 	dasprintf (dstr, "<td>%s</td>", html_string(quote_string (s->opcode)));
 	dasprintf (dstr, "<td>%s</td>", html_string(operand_string (s->opa)));
 	dasprintf (dstr, "<td>%s</td>", html_string(operand_string (s->opb)));
@@ -80,7 +81,8 @@ flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 	dasprintf (dstr, "    <table border=\"0\" cellborder=\"1\" "
 					 "cellspacing=\"0\">\n");
 	dasprintf (dstr, "      <tr>\n");
-	dasprintf (dstr, "        <td>%p(%d)</td>\n", sblock, blockno);
+	dasprintf (dstr, "        <td colspan=\"2\" >%p(%d)</td>\n", sblock,
+			   blockno);
 	dasprintf (dstr, "        <td height=\"0\" colspan=\"2\" port=\"s\">\n");
 	for (l = sblock->labels; l; l = l->next)
 		dasprintf (dstr, "            %s(%d)\n", l->name, l->used);
