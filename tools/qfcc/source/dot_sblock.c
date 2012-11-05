@@ -46,6 +46,8 @@
 #include "dags.h"
 #include "flow.h"
 #include "expr.h"
+#include "qfcc.h"
+#include "function.h"
 #include "statements.h"
 #include "strpool.h"
 #include "symtab.h"
@@ -129,4 +131,15 @@ print_sblock (sblock_t *sblock, const char *filename)
 		fputs (dstr->str, stdout);
 	}
 	dstring_delete (dstr);
+}
+
+void
+dump_sblock (sblock_t *sblock, const char *stage)
+{
+	char       *fname;
+
+	fname = nva ("%s.%s.%s.dot", GETSTR (pr.source_file), current_func->name,
+				 stage);
+	print_sblock (sblock, fname);
+	free (fname);
 }

@@ -1171,17 +1171,6 @@ unuse_label (ex_label_t *label)
 }
 
 static void
-dump_flow (sblock_t *sblock, const char *stage)
-{
-	char       *fname;
-
-	fname = nva ("%s.%s.%s.dot", GETSTR (pr.source_file), current_func->name,
-				 stage);
-	print_sblock (sblock, fname);
-	free (fname);
-}
-
-static void
 thread_jumps (sblock_t *blocks)
 {
 	sblock_t   *sblock;
@@ -1401,22 +1390,22 @@ make_statements (expr_t *e)
 //	print_expr (e);
 	statement_slist (sblock, e);
 	if (options.block_dot.initial)
-		dump_flow (sblock, "initial");
+		dump_sblock (sblock, "initial");
 	thread_jumps (sblock);
 	if (options.block_dot.thread)
-		dump_flow (sblock, "thread");
+		dump_sblock (sblock, "thread");
 	do {
 		remove_dead_blocks (sblock);
 	} while (merge_blocks (sblock));
 	if (options.block_dot.dead)
-		dump_flow (sblock, "dead");
+		dump_sblock (sblock, "dead");
 	check_final_block (sblock);
 	if (options.block_dot.final)
-		dump_flow (sblock, "final");
+		dump_sblock (sblock, "final");
 
 	//for (s = sblock; s; s = s->next)
 	//	s->dag = make_dag (s);
 	//if (options.block_dot.dags)
-	//	dump_flow (sblock, "dags");
+	//	dump_sblock (sblock, "dags");
 	return sblock;
 }

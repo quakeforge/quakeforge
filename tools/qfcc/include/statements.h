@@ -86,6 +86,7 @@ struct expr_s;
 sblock_t *make_statements (struct expr_s *expr);
 void print_statement (statement_t *s);
 void print_sblock (sblock_t *sblock, const char *filename);
+void dump_sblock (sblock_t *sblock, const char *stage);
 const char *operand_string (operand_t *op);
 
 #endif//statement_h
