@@ -130,7 +130,7 @@ set_union (set_t *dst, const set_t *src)
 	unsigned    size;
 	unsigned    i;
 
-	size = max (dst->size, src->size) - 1;
+	size = max (dst->size, src->size);
 	set_expand (dst, size);
 	for (i = 0; i < src->size / BITS; i++)
 		dst->map[i] |= src->map[i];
@@ -143,7 +143,7 @@ set_intersection (set_t *dst, const set_t *src)
 	unsigned    size;
 	unsigned    i;
 
-	size = max (dst->size, src->size) - 1;
+	size = max (dst->size, src->size);
 	set_expand (dst, size);
 	for (i = 0; i < src->size / BITS; i++)
 		dst->map[i] &= src->map[i];
@@ -156,7 +156,7 @@ set_difference (set_t *dst, const set_t *src)
 	unsigned    size;
 	unsigned    i;
 
-	size = max (dst->size, src->size) - 1;
+	size = max (dst->size, src->size);
 	set_expand (dst, size);
 	for (i = 0; i < src->size / BITS; i++)
 		dst->map[i] &= ~src->map[i];
@@ -169,7 +169,7 @@ set_assign (set_t *dst, const set_t *src)
 	unsigned    size;
 	unsigned    i;
 
-	size = max (dst->size, src->size) - 1;
+	size = max (dst->size, src->size);
 	set_expand (dst, size);
 	for (i = 0; i < src->size / BITS; i++)
 		dst->map[i] = src->map[i];
