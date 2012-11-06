@@ -243,7 +243,7 @@ flow_build_vars (function_t *func)
 		for (sblock = func->sblock; sblock; sblock = sblock->next) {
 			for (s = sblock->statements; s; s = s->next)
 				func->statements[s->number] = s;
-			sblock->dag = make_dag (sblock);
+			sblock->dag = dag_create (sblock);
 		}
 		if (options.block_dot.dags)
 			dump_sblock (func->sblock, "dags");

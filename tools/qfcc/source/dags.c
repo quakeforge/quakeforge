@@ -121,7 +121,7 @@ opcode_label (const char *opcode)
 	return label;
 }
 
-daglabel_t *
+static daglabel_t *
 operand_label (operand_t *op)
 {
 	operand_t  *o;
@@ -264,7 +264,7 @@ daglabel_detatch (daglabel_t *l)
 }
 
 dagnode_t *
-make_dag (const sblock_t *block)
+dag_create (const sblock_t *block)
 {
 	statement_t *s;
 	dagnode_t   *dagnodes = 0;

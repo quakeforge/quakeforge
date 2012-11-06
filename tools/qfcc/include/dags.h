@@ -73,14 +73,12 @@ struct dstring_s;
 void print_dag (struct dstring_s *dstr, dagnode_t *node);
 struct sblock_s;
 
-daglabel_t *operand_label (struct operand_s *op);
-
 /** Make a dag for a single basic block.
 
 	\param block	The basic block for which the dag will be created.
 	\return			The dag representing the basic block.
 */
-dagnode_t *make_dag (const struct sblock_s *block);
+dagnode_t *dag_create (const struct sblock_s *block);
 
 //@}
 
