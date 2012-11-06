@@ -268,6 +268,7 @@ make_dag (const sblock_t *block)
 {
 	statement_t *s;
 	dagnode_t   *dagnodes = 0;
+	dagnode_t  **dagtail = &dagnodes;
 	dagnode_t   *d;
 
 	flush_daglabels ();
@@ -282,8 +283,8 @@ make_dag (const sblock_t *block)
 		if (!(ny = node (y))) {
 			ny = leaf_node (y);
 			if (simp) {
-				ny->next = dagnodes;
-				dagnodes = ny;
+				*dagtail = ny;
+				dagtail = &ny->next;
 			}
 		}
 		if (!(nz = node (z)))
@@ -310,8 +311,8 @@ make_dag (const sblock_t *block)
 				nz->is_child = 1;
 			if (nw)
 				nw->is_child = 1;
-			n->next = dagnodes;
-			dagnodes = n;
+			*dagtail = n;
+			dagtail = &n->next;
 		}
 		lx = operand_label (x);
 		if (lx) {
