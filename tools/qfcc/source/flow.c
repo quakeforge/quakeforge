@@ -321,6 +321,23 @@ flow_live_vars (flowgraph_t *graph)
 void
 flow_data_flow (flowgraph_t *graph)
 {
+	int         i, j;
+	flownode_t *node;
+	statement_t *st;
+	operand_t  *d, *u[3];
+	flowvar_t  *var;
+
+	for (i = 0; i < graph->num_nodes; i++) {
+		node = graph->nodes[i];
+		for (st = node->sblock->statements; st; st = st->next) {
+			find_operands (st, &d, &u[0], &u[1], &u[2]);
+			if (d && (var = flow_get_var (d)))
+				set_add (var->define, st->number);
+			for (j = 0; j < 3; j++)
+				if (u[j] && (var = flow_get_var (u[j])))
+					set_add (var->use, st->number);
+		}
+	}
 	flow_live_vars (graph);
 }
 

@@ -276,18 +276,9 @@ make_dag (const sblock_t *block)
 		operand_t  *x = 0, *y = 0, *z = 0, *w = 0;
 		dagnode_t  *n = 0, *ny, *nz, *nw;
 		daglabel_t *op, *lx;
-		flowvar_t  *var;
 		int         simp;
 
 		simp = find_operands (s, &x, &y, &z, &w);
-		if (x && (var = flow_get_var (x)))
-			set_add (var->define, s->number);
-		if (y && (var = flow_get_var (y)))
-			set_add (var->use, s->number);
-		if (z && (var = flow_get_var (z)))
-			set_add (var->use, s->number);
-		if (w && (var = flow_get_var (w)))
-			set_add (var->use, s->number);
 		if (!(ny = node (y))) {
 			ny = leaf_node (y);
 			if (simp) {
