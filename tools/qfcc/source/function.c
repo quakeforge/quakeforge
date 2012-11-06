@@ -646,6 +646,9 @@ emit_function (function_t *f, expr_t *e)
 	flow_build_vars (f);
 	f->graph = flow_build_graph (f->sblock);
 	flow_data_flow (f);
+	if (options.block_dot.flow)
+		print_flowgraph (f->graph, nva ("%s.%s.%s.dot", GETSTR (pr.source_file),
+										f->name, "flow"));
 	emit_statements (f->sblock);
 }
 
