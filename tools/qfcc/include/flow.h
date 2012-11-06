@@ -68,6 +68,13 @@ typedef struct flownode_s {
 	struct set_s *successors;	///< successors of this node
 	struct set_s *edges;		///< edges leaving this node to successor nodes
 	struct set_s *dom;			///< dominating nodes
+	struct {
+		struct set_s *use;
+		struct set_s *def;
+		struct set_s *in;
+		struct set_s *out;
+	}           live_vars;
+	struct sblock_s *sblock;	///< original statement block
 } flownode_t;
 
 typedef struct flowgraph_s {
@@ -91,6 +98,7 @@ struct sblock_s **flow_get_targetlist (struct statement_s *s);
 void flow_build_vars (struct function_s *func);
 flowgraph_t *flow_build_graph (struct sblock_s *func);
 void flow_del_graph (flowgraph_t *graph);
+void flow_data_flow (struct function_s *func);
 
 void print_flowgraph (flowgraph_t *graph, const char *filename);
 

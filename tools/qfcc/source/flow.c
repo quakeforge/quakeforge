@@ -249,6 +249,80 @@ flow_build_vars (function_t *func)
 	}
 }
 
+static void
+live_set_use (flowvar_t *var, set_t *use, set_t *def)
+{
+	// the variable is used before it is defined
+	if (var && !set_is_member (def, var->number))
+		set_add (use, var->number);
+}
+
+static void
+live_set_def (flowvar_t *var, set_t *use, set_t *def)
+{
+	// the variable is defined before it is used
+	if (var && !set_is_member (use, var->number))
+		set_add (def, var->number);
+}
+
+static void
+flow_live_vars (function_t *func)
+{
+	flowgraph_t *graph = func->graph;
+	int         i, j;
+	flownode_t *node;
+	set_t      *use;
+	set_t      *def;
+	set_t      *tmp = set_new ();
+	set_iter_t *succ;
+	operand_t  *d, *u[3];
+	statement_t *st;
+	int         changed = 1;
+
+	// first, calculate use and def for each block, and initialize the in and
+	// out sets.
+	for (i = 0; i < graph->num_nodes; i++) {
+		node = graph->nodes[i];
+		use = set_new ();
+		def = set_new ();
+		for (st = node->sblock->statements; st; st = st->next) {
+			find_operands (st, &d, &u[0], &u[1], &u[2]);
+			live_set_def (flow_get_var (d), use, def);
+			for (j = 0; j < 3; j++)
+				live_set_use (flow_get_var (u[j]), use, def);
+		}
+		node->live_vars.use = use;
+		node->live_vars.def = def;
+		node->live_vars.in = set_new ();
+		node->live_vars.out = set_new ();
+	}
+
+	while (changed) {
+		changed = 0;
+		// flow UP the graph because live variable analysis uses information
+		// from a node's successors rather than its predecessors.
+		for (j = graph->num_nodes - 1; j >= 0; j--) {
+			node = graph->nodes[graph->dfo[j]];
+			set_empty (tmp);
+			for (succ = set_first (node->successors); succ;
+				 succ = set_next (succ))
+				set_union (tmp, graph->nodes[succ->member]->live_vars.in);
+			if (!set_is_equivalent (node->live_vars.out, tmp)) {
+				changed = 1;
+				set_assign (node->live_vars.out, tmp);
+			}
+			set_assign (node->live_vars.in, node->live_vars.out);
+			set_difference (node->live_vars.in, node->live_vars.def);
+		}
+	}
+}
+
+void
+flow_data_flow (function_t *func)
+{
+	flow_live_vars (func);
+}
+
 int
 flow_is_cond (statement_t *s)
 {
