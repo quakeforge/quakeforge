@@ -74,7 +74,7 @@ flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 	ex_label_t *l;
 
 	if (sblock->dag) {
-		dasprintf (dstr, "  sb_%p -> dag_%p;", sblock, sblock->dag);
+		dasprintf (dstr, "  sb_%p -> dagnode_%p;", sblock, sblock->dag);
 		print_dag (dstr, sblock->dag);
 	}
 	dasprintf (dstr, "  sb_%p [shape=none,label=<\n", sblock);

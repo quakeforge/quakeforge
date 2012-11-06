@@ -51,39 +51,78 @@
 static int print_count;
 
 static void
+print_node_def (dstring_t *dstr, dagnode_t *node, int recurse)
+{
+	if (!node->a && (node->b || node->c)) {
+		dasprintf (dstr, "  \"dagnode_%p\" [label=\"bad node\"];\n", node);
+		return;
+	}
+	dasprintf (dstr, "  \"dagnode_%p\" [%slabel=\"%s\"];\n", node,
+			   node->a ? "" : "shape=none,", daglabel_string (node->label));
+	if (recurse) {
+		if (node->a)
+			print_node_def (dstr, node->a, 1);
+		if (node->b)
+			print_node_def (dstr, node->b, 1);
+		if (node->c)
+			print_node_def (dstr, node->c, 1);
+	}
+}
+
+static void
+print_root_nodes (dstring_t *dstr, dagnode_t *dag)
+{
+	dasprintf (dstr, "  subgraph roots_%p {", dag);
+	dasprintf (dstr, "    rank=same;");
+	for (; dag; dag = dag->next)
+		print_node_def (dstr, dag, 0);
+	dasprintf (dstr, "  }\n");
+}
+
+static void
+print_child_nodes (dstring_t *dstr, dagnode_t *dag)
+{
+	for (; dag; dag = dag->next) {
+		if (!dag->a && (dag->b || dag->c))
+			continue;
+		if (dag->a)
+			print_node_def (dstr, dag->a, 1);
+		if (dag->b)
+			print_node_def (dstr, dag->b, 1);
+		if (dag->c)
+			print_node_def (dstr, dag->c, 1);
+	}
+}
+
+static void
 print_node (dstring_t *dstr, dagnode_t *node)
 {
 	if (node->print_count == print_count)
 		return;
 	node->print_count = print_count;
-	if (!node->a && (node->b || node->c)) {
-		dasprintf (dstr, "  \"dag_%p\" [label=\"bad node\"];\n", node);
-		return;
-	}
 	if (node->a) {
-		dasprintf (dstr, "  \"dag_%p\" -> \"dag_%p\" [label=a];\n", node,
-				   node->a);
+		dasprintf (dstr, "  \"dagnode_%p\" -> \"dagnode_%p\" [label=a];\n",
+				   node, node->a);
 		print_node (dstr, node->a);
 	}
 	if (node->b) {
-		dasprintf (dstr, "  \"dag_%p\" -> \"dag_%p\" [label=b];\n", node,
-				   node->b);
+		dasprintf (dstr, "  \"dagnode_%p\" -> \"dagnode_%p\" [label=b];\n",
+				   node, node->b);
 		print_node (dstr, node->b);
 	}
 	if (node->c) {
-		dasprintf (dstr, "  \"dag_%p\" -> \"dag_%p\" [label=c];\n", node,
-				   node->c);
+		dasprintf (dstr, "  \"dagnode_%p\" -> \"dagnode_%p\" [label=c];\n",
+				   node, node->c);
 		print_node (dstr, node->c);
 	}
 	if (node->next)
-		dasprintf (dstr, "  \"dag_%p\" -> \"dag_%p\" [style=dashed];\n", node,
-				   node->next);
-	dasprintf (dstr, "  \"dag_%p\" [%slabel=\"%s\"];\n", node,
-			   node->a ? "" : "shape=none,", daglabel_string (node->label));
+		dasprintf (dstr,
+				   "  \"dagnode_%p\" -> \"dagnode_%p\" [style=dashed];\n",
+				   node, node->next);
 	if (node->identifiers) {
 		daglabel_t *id;
 
-		dasprintf (dstr, "  \"dag_%p\" -> \"dagid_%p\" "
+		dasprintf (dstr, "  \"dagnode_%p\" -> \"dagid_%p\" "
 						 "[style=dashed,dir=none];\n", node, node);
 		dasprintf (dstr, "  \"dagid_%p\" [shape=none,label=<\n", node);
 		dasprintf (dstr, "    <table border=\"0\" cellborder=\"1\" "
@@ -101,7 +140,11 @@ print_node (dstring_t *dstr, dagnode_t *node)
 void
 print_dag (dstring_t *dstr, dagnode_t *dag)
 {
+	dasprintf (dstr, "  subgraph dag_%p {", dag);
 	print_count++;
+	print_root_nodes (dstr, dag);
+	print_child_nodes (dstr, dag);
 	for (; dag; dag = dag->next)
 		print_node (dstr, dag);
+	dasprintf (dstr, "  }\n");
 }
