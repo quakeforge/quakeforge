@@ -58,10 +58,18 @@ print_flow_node (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 	int         indent = level * 2 + 2;
 	set_iter_t *var_iter;
 	flowvar_t  *var;
+	int         live;
 
+	live = node->live_vars.out && !set_is_empty (node->live_vars.out);
+
+	if (live) {
+		dasprintf (dstr, "%*ssubgraph sub_%p {\n", indent, "", node);
+		//dasprintf (dstr, "%*s  rank=same;\n", indent, "");
+		indent += 2;
+	}
 	dasprintf (dstr, "%*s\"fn_%p\" [label=\"%d (%d)\"];\n", indent, "", node,
 			   node->id, node->dfn);
-	if (node->live_vars.out && !set_is_empty (node->live_vars.out)) {
+	if (live) {
 		dasprintf (dstr, "%*slv_%p [shape=none,label=<\n", indent, "", node);
 		dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
 						 "cellspacing=\"0\">\n", indent + 2, "");
@@ -73,8 +81,12 @@ print_flow_node (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 					   var->number, html_string(operand_string (var->op)));
 		}
 		dasprintf (dstr, "%*s</table>>];\n", indent + 2, "");
-		dasprintf (dstr, "%*sfn_%p -> lv_%p [constraint=false,style=dashed];\n",
+		dasprintf (dstr, "%*sfn_%p -> lv_%p "
+				   //"[constraint=false,style=dashed,weight=10];\n",
+				   "[style=dashed,weight=10];\n",
 				   indent, "", node, node);
+		indent -= 2;
+		dasprintf (dstr, "%*s}\n", indent, "");
 	}
 }
 
