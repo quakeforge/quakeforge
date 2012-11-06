@@ -217,6 +217,8 @@ find_operands (statement_t *s, operand_t **x, operand_t **y, operand_t **z,
 {
 	int         simp = 0;
 
+	*x = *y = *z = *w = 0;
+
 	if (s->opc) {
 		*y = s->opa;
 		if (s->opb) {
