@@ -92,7 +92,7 @@ flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 	for (s = sblock->statements; s; s = s->next)
 		flow_statement (dstr, s);
 	dasprintf (dstr, "      <tr>\n");
-	dasprintf (dstr, "        <td></td>\n");
+	dasprintf (dstr, "        <td colspan=\"2\"></td>\n");
 	dasprintf (dstr, "        <td height=\"0\" colspan=\"2\" "
 					 "port=\"e\"></td>\n");
 	dasprintf (dstr, "        <td></td>\n");
