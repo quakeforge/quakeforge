@@ -201,53 +201,6 @@ node (operand_t *op)
 }
 
 static int
-find_operands (statement_t *s, operand_t **x, operand_t **y, operand_t **z,
-			   operand_t **w)
-{
-	int         simp = 0;
-
-	if (s->opc) {
-		*y = s->opa;
-		if (s->opb) {
-			// except for move, indexed pointer store, rcall2+, and state,
-			// all are of the form c = a op b
-			*z = s->opb;
-			if (!strncmp (s->opcode, "<MOVE", 5)
-				|| !strncmp (s->opcode, "<RCALL", 6)
-				|| !strcmp (s->opcode, "<STATE>")
-				|| !strcmp (s->opcode, ".=")) {
-				*w = s->opc;
-			} else {
-				*x = s->opc;
-			}
-		} else {
-			// these are all c = op a
-			*x = s->opc;
-		}
-	} else if (s->opb) {
-		*y = s->opa;
-		if (s->opcode[1] == 'I') {
-			// conditional
-		} else if (s->opcode[0] == '<' || s->opcode[0] == '.') {
-			// pointer store or branch
-			*z = s->opb;
-		} else {
-			// b = a
-			*x = s->opb;
-			simp = 1;
-		}
-	} else if (s->opa) {
-		if (s->opcode[1] == 'G') {
-		} else {
-			*y = s->opa;
-			if (s->opcode[1] == 'R')
-				simp = 1;
-		}
-	}
-	return simp;
-}
-
-static int
 dagnode_match (const dagnode_t *n, const daglabel_t *op,
 			   const dagnode_t *y, const dagnode_t *z, const dagnode_t *w)
 {
