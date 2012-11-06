@@ -61,25 +61,24 @@ typedef struct flowedge_s {
 /** Represent a node in a flow graph.
 */
 typedef struct flownode_s {
-	struct flownode_s *next;	//< for ALLOC
-	unsigned    id;				//< index of this node in the flow graph
-	unsigned    dfn;			//< depth-first ordering of this node
-	struct set_s *predecessors;	//< predecessors of this node
-	struct set_s *successors;	//< successors of this node
-	struct set_s *edges;		//< edges leaving this node, to successor nodes
-	struct set_s *dom;			//< dominating nodes
-	struct sblock_s *sblock;	//< original statement block
+	struct flownode_s *next;	///< for ALLOC
+	unsigned    id;				///< index of this node in the flow graph
+	unsigned    dfn;			///< depth-first ordering of this node
+	struct set_s *predecessors;	///< predecessors of this node
+	struct set_s *successors;	///< successors of this node
+	struct set_s *edges;		///< edges leaving this node to successor nodes
+	struct set_s *dom;			///< dominating nodes
 } flownode_t;
 
 typedef struct flowgraph_s {
-	struct flowgraph_s *next;	//< for ALLOC
-	flownode_t **nodes;			//< array of nodes in the graph
+	struct flowgraph_s *next;	///< for ALLOC
+	flownode_t **nodes;			///< array of nodes in the graph
 	int         num_nodes;
-	flowedge_t *edges;			//< array of all edges in the graph
+	flowedge_t *edges;			///< array of all edges in the graph
 	int         num_edges;
-	struct set_s *dfst;			//< edges in the depth-first search tree
-	unsigned   *dfo;			//< depth-first order of nodes
-	flowloop_t *loops;			//< linked list of natural loops
+	struct set_s *dfst;			///< edges in the depth-first search tree
+	unsigned   *dfo;			///< depth-first order of nodes
+	flowloop_t *loops;			///< linked list of natural loops
 } flowgraph_t;
 
 flowvar_t *flow_get_var (struct operand_s *op);
