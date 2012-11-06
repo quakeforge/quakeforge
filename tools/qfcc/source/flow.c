@@ -313,6 +313,7 @@ flow_live_vars (flowgraph_t *graph)
 			}
 			set_assign (node->live_vars.in, node->live_vars.out);
 			set_difference (node->live_vars.in, node->live_vars.def);
+			set_union (node->live_vars.in, node->live_vars.use);
 		}
 	}
 }
