@@ -287,9 +287,9 @@ flow_live_vars (flowgraph_t *graph)
 		def = set_new ();
 		for (st = node->sblock->statements; st; st = st->next) {
 			find_operands (st, &d, &u[0], &u[1], &u[2]);
-			live_set_def (flow_get_var (d), use, def);
 			for (j = 0; j < 3; j++)
 				live_set_use (flow_get_var (u[j]), use, def);
+			live_set_def (flow_get_var (d), use, def);
 		}
 		node->live_vars.use = use;
 		node->live_vars.def = def;
