@@ -204,6 +204,7 @@ add_operand (function_t *func, operand_t *op)
 	// added to the list of variables referenced by the function.
 	if (var && var->number == -1) {
 		var->number = func->num_vars++;
+		var->op = op;
 		func->vars[var->number] = var;
 	}
 }
@@ -266,9 +267,8 @@ live_set_def (flowvar_t *var, set_t *use, set_t *def)
 }
 
 static void
-flow_live_vars (function_t *func)
+flow_live_vars (flowgraph_t *graph)
 {
-	flowgraph_t *graph = func->graph;
 	int         i, j;
 	flownode_t *node;
 	set_t      *use;
@@ -318,9 +318,9 @@ flow_live_vars (function_t *func)
 }
 
 void
-flow_data_flow (function_t *func)
+flow_data_flow (flowgraph_t *graph)
 {
-	flow_live_vars (func);
+	flow_live_vars (graph);
 }
 
 int

@@ -44,6 +44,7 @@ typedef struct flowvar_s {
 	struct flowvar_s *next;		///< for ALLOC
 	struct set_s *use;			///< set of statements that use this var
 	struct set_s *define;		///< set of statements that define this var
+	struct operand_s *op;		///< an operand using this var
 	int         number;			///< number of variable in func's ref list
 } flowvar_t;
 
@@ -79,6 +80,7 @@ typedef struct flownode_s {
 
 typedef struct flowgraph_s {
 	struct flowgraph_s *next;	///< for ALLOC
+	struct function_s *func;	///< function to which this graph is attached
 	flownode_t **nodes;			///< array of nodes in the graph
 	int         num_nodes;
 	flowedge_t *edges;			///< array of all edges in the graph
@@ -98,7 +100,7 @@ struct sblock_s **flow_get_targetlist (struct statement_s *s);
 void flow_build_vars (struct function_s *func);
 flowgraph_t *flow_build_graph (struct sblock_s *func);
 void flow_del_graph (flowgraph_t *graph);
-void flow_data_flow (struct function_s *func);
+void flow_data_flow (flowgraph_t *graph);
 
 void print_flowgraph (flowgraph_t *graph, const char *filename);
 

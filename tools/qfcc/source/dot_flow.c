@@ -45,17 +45,37 @@
 
 #include "dags.h"
 #include "flow.h"
+#include "function.h"
 #include "expr.h"
 #include "set.h"
+#include "statements.h"
 #include "strpool.h"
 
 static void
-print_flow_node (dstring_t *dstr, flownode_t *node, int level)
+print_flow_node (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
+				 int level)
 {
 	int         indent = level * 2 + 2;
+	set_iter_t *var_iter;
+	flowvar_t  *var;
 
 	dasprintf (dstr, "%*s\"fn_%p\" [label=\"%d (%d)\"];\n", indent, "", node,
 			   node->id, node->dfn);
+	if (node->live_vars.out && !set_is_empty (node->live_vars.out)) {
+		dasprintf (dstr, "%*slv_%p [shape=none,label=<\n", indent, "", node);
+		dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
+						 "cellspacing=\"0\">\n", indent + 2, "");
+		dasprintf (dstr, "%*s<tr><td>Live Vars</td></tr>\n", indent + 4, "");
+		for (var_iter = set_first (node->live_vars.out); var_iter;
+			 var_iter = set_next (var_iter)) {
+			var = graph->func->vars[var_iter->member];
+			dasprintf (dstr, "%*s<tr><td>(%d) %s</td></tr>\n", indent + 4, "",
+					   var->number, html_string(operand_string (var->op)));
+		}
+		dasprintf (dstr, "%*s</table>>];\n", indent + 2, "");
+		dasprintf (dstr, "%*sfn_%p -> lv_%p [constraint=false,style=dashed];\n",
+				   indent, "", node, node);
+	}
 }
 
 static void
@@ -102,7 +122,7 @@ print_flowgraph (flowgraph_t *graph, const char *filename)
 	dasprintf (dstr, "  rankdir=TB;\n");
 	dasprintf (dstr, "  compound=true;\n");
 	for (i = 0; i < graph->num_nodes; i++) {
-		print_flow_node (dstr, graph->nodes[i], 0);
+		print_flow_node (dstr, graph, graph->nodes[i], 0);
 	}
 	print_flow_edges (dstr, graph, 0);
 	dasprintf (dstr, "}\n");
