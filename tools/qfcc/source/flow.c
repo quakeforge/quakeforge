@@ -436,7 +436,7 @@ sblock_t **
 flow_get_targetlist (statement_t *s)
 {
 	sblock_t  **target_list;
-	int         count, i;
+	int         count = 0, i;
 	def_t      *table = 0;
 	expr_t     *e;
 
