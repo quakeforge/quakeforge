@@ -350,6 +350,18 @@ dag_create (const flownode_t *flownode)
 		// c = a ^ b
 		// c = a (move) b (count)
 	}
+	for (d = dagnodes; d; d = d->next) {
+		daglabel_t **l = &d->identifiers;
+
+		while (*l) {
+			if ((*l)->op->op_type == op_temp
+				&& !set_is_member (flownode->live_vars.out,
+								   flow_get_var ((*l)->op)->number))
+				daglabel_detatch (*l);
+			else
+				l = &(*l)->next;
+		}
+	}
 	while (dagnodes->is_child) {
 		dagnode_t  *n = dagnodes->next;
 		dagnodes->next = 0;
