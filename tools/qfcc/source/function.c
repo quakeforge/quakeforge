@@ -647,6 +647,7 @@ emit_function (function_t *f, expr_t *e)
 	f->graph = flow_build_graph (f->sblock);
 	f->graph->func = f;
 	flow_data_flow (f->graph);
+	f->sblock = flow_generate (f->graph);
 	emit_statements (f->sblock);
 }
 

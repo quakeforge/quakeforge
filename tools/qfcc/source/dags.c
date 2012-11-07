@@ -40,6 +40,7 @@
 #include <stdlib.h>
 
 #include "QF/dstring.h"
+#include "QF/mathlib.h"
 
 #include "dags.h"
 #include "diagnostic.h"
@@ -375,4 +376,61 @@ dag_create (const flownode_t *flownode)
 		}
 	}
 	return dagnodes;
+}
+
+static void
+dag_calc_node_costs (dagnode_t *dagnode)
+{
+	if ((!dagnode->a && (dagnode->b || dagnode->c))
+		|| (dagnode->a && !dagnode->b && dagnode->c))
+		internal_error (0, "bad dag node");
+
+	if (dagnode->a)
+		dag_calc_node_costs (dagnode->a);
+	if (dagnode->b)
+		dag_calc_node_costs (dagnode->b);
+	if (dagnode->c)
+		dag_calc_node_costs (dagnode->c);
+
+	// if dagnode->a is null, then this is a leaf (as b and c are guaranted to
+	// be null)
+	if (!dagnode->a) {
+		// Because qc vm statements don't mix source and destination operands,
+		// leaves never need temporary variables.
+		dagnode->cost = 0;
+	} else {
+		int         different = 0;
+
+		// a non-leaf is guaranteed to have a valid "a"
+		dagnode->cost = dagnode->a->cost;
+		if (dagnode->b && dagnode->b->cost != dagnode->cost) {
+			dagnode->cost = max (dagnode->cost, dagnode->b->cost);
+			different = 1;
+		}
+		if (dagnode->c && (different || dagnode->c->cost != dagnode->cost)) {
+			dagnode->cost = max (dagnode->cost, dagnode->c->cost);
+			different = 1;
+		}
+		if (!different)
+			dagnode->cost += 1;
+	}
+}
+
+static operand_t *
+dag_gencode (sblock_t *block, const dagnode_t *dagnode)
+{
+	return 0;
+}
+
+void
+dag_generate (sblock_t *block, const flownode_t *flownode)
+{
+	const dagnode_t *dag;
+
+	dag_calc_node_costs (flownode->dag);
+	for (dag = flownode->dag; dag; dag = dag->next) {
+		//if (!dag->a || (strcmp (dag->label->opcode, ".=") && !dag->identifiers))
+		//	continue;
+		dag_gencode (block, dag);
+	}
 }

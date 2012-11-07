@@ -35,6 +35,10 @@
 */
 //@{
 
+struct dstring_s;
+struct flownode_s;
+struct sblock_s;
+
 typedef struct daglabel_s {
 	/// \name attached identifer linked list
 	//@{
@@ -51,6 +55,7 @@ typedef struct dagnode_s {
 	struct dagnode_s *next;
 	int         print_count;	///< used to avoid double printing nodes
 	int         is_child;		///< true if a child node
+	int         cost;			///< cost of this node in temp vars
 	daglabel_t *label;			///< ident/const if leaf node, or operator
 	/// \name child nodes
 	/// All three child nodes will be null if this node is a leaf
@@ -69,9 +74,7 @@ typedef struct dagnode_s {
 } dagnode_t;
 
 const char *daglabel_string (daglabel_t *label);
-struct dstring_s;
 void print_dag (struct dstring_s *dstr, dagnode_t *node);
-struct flownode_s;
 
 /** Make a dag for a single basic block.
 
@@ -80,7 +83,9 @@ struct flownode_s;
 					variable information already computed.
 	\return			The dag representing the basic block.
 */
-dagnode_t *dag_create (const struct flownode_s *node);
+dagnode_t *dag_create (const struct flownode_s *flownode);
+
+void dag_generate (struct sblock_s *block, const struct flownode_s *flownode);
 
 //@}
 

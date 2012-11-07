@@ -362,6 +362,34 @@ flow_data_flow (flowgraph_t *graph)
 		dump_dot ("flow", graph, dump_dot_flow);
 }
 
+sblock_t *
+flow_generate (flowgraph_t *graph)
+{
+	int         i;
+	sblock_t   *code = 0;
+	sblock_t  **tail = &code;
+
+	for (i = 0; i < graph->num_nodes; i++) {
+		ex_label_t *label;
+		sblock_t   *block;
+
+		flownode_t *node = graph->nodes[i];
+		*tail = block = new_sblock ();
+		tail = &(*tail)->next;
+		// first, transfer any labels on the old node to the new
+		while ((label = node->sblock->labels)) {
+			node->sblock->labels = label->next;
+			label->next = block->labels;
+			block->labels = label;
+			label->dest = block;
+		}
+		// generate new statements from the dag;
+		dag_generate (block, node);
+	}
+	dump_dot ("post", code, dump_dot_sblock);
+	return code;
+}
+
 int
 flow_is_cond (statement_t *s)
 {

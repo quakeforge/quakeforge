@@ -102,6 +102,7 @@ void flow_build_vars (struct function_s *func);
 flowgraph_t *flow_build_graph (struct sblock_s *func);
 void flow_del_graph (flowgraph_t *graph);
 void flow_data_flow (flowgraph_t *graph);
+struct sblock_s *flow_generate (flowgraph_t *graph);
 
 void print_flowgraph (flowgraph_t *graph, const char *filename);
 
