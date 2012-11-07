@@ -283,7 +283,7 @@ sblock_add_statement (sblock_t *sblock, statement_t *statement)
 	sblock->tail = &statement->next;
 }
 
-static statement_t *
+statement_t *
 new_statement (const char *opcode, expr_t *expr)
 {
 	statement_t *statement;

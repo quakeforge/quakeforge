@@ -87,6 +87,7 @@ struct type_s;
 
 operand_t *temp_operand (struct type_s *type);
 sblock_t *new_sblock (void);
+statement_t *new_statement (const char *opcode, struct expr_s *expr);
 int find_operands (statement_t *s, operand_t **x, operand_t **y, operand_t **z,
 				   operand_t **w);
 void sblock_add_statement (sblock_t *sblock, statement_t *statement);
