@@ -137,7 +137,7 @@ operand_label (operand_t *op)
 
 	if (o->op_type == op_temp) {
 		if (o->o.tempop.daglabel)
-			return sym->daglabel;
+			return o->o.tempop.daglabel;
 		label = new_label ();
 		label->op = op;
 		o->o.tempop.daglabel = label;
