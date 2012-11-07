@@ -310,6 +310,8 @@ free_operand (operand_t *op)
 		debug (0, "free_operand: double free");
 		return;
 	}
+	if (op->op_type == op_alias)
+		free_operand (op->o.alias);
 	op->next = free_operands;
 	free_operands = op;
 }
