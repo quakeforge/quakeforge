@@ -43,6 +43,7 @@
 
 #include "dags.h"
 #include "def.h"
+#include "dot.h"
 #include "flow.h"
 #include "function.h"
 #include "options.h"
@@ -56,6 +57,12 @@ static flowvar_t *free_vars;
 static flowloop_t *free_loops;
 static flownode_t *free_nodes;
 static flowgraph_t *free_graphs;
+
+static void
+dump_dot_flow (void *data, const char *fname)
+{
+	print_flowgraph ((flowgraph_t *) data, fname);
+}
 
 static flowvar_t *
 new_flowvar (void)
@@ -245,8 +252,6 @@ flow_build_vars (function_t *func)
 				func->statements[s->number] = s;
 			sblock->dag = dag_create (sblock);
 		}
-		if (options.block_dot.dags)
-			dump_sblock (func->sblock, "dags");
 	}
 }
 
@@ -339,6 +344,8 @@ flow_data_flow (flowgraph_t *graph)
 		}
 	}
 	flow_live_vars (graph);
+	if (options.block_dot.flow)
+		dump_dot ("flow", graph, dump_dot_flow);
 }
 
 int

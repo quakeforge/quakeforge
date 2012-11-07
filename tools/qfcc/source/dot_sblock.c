@@ -134,14 +134,3 @@ print_sblock (sblock_t *sblock, const char *filename)
 	}
 	dstring_delete (dstr);
 }
-
-void
-dump_sblock (sblock_t *sblock, const char *stage)
-{
-	char       *fname;
-
-	fname = nva ("%s.%s.%s.dot", GETSTR (pr.source_file), current_func->name,
-				 stage);
-	print_sblock (sblock, fname);
-	free (fname);
-}

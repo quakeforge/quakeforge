@@ -90,7 +90,6 @@ int find_operands (statement_t *s, operand_t **x, operand_t **y, operand_t **z,
 sblock_t *make_statements (struct expr_s *expr);
 void print_statement (statement_t *s);
 void print_sblock (sblock_t *sblock, const char *filename);
-void dump_sblock (sblock_t *sblock, const char *stage);
 const char *operand_string (operand_t *op);
 
 #endif//statement_h

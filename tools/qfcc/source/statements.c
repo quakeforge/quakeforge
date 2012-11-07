@@ -43,6 +43,7 @@
 
 #include "dags.h"
 #include "diagnostic.h"
+#include "dot.h"
 #include "expr.h"
 #include "function.h"
 #include "options.h"
@@ -1433,6 +1434,12 @@ check_final_block (sblock_t *sblock)
 	sblock_add_statement (sblock, s);
 }
 
+static void
+dump_dot_sblock (void *data, const char *fname)
+{
+	print_sblock ((sblock_t *) data, fname);
+}
+
 sblock_t *
 make_statements (expr_t *e)
 {
@@ -1441,18 +1448,18 @@ make_statements (expr_t *e)
 //	print_expr (e);
 	statement_slist (sblock, e);
 	if (options.block_dot.initial)
-		dump_sblock (sblock, "initial");
+		dump_dot ("initial", sblock, dump_dot_sblock);
 	thread_jumps (sblock);
 	if (options.block_dot.thread)
-		dump_sblock (sblock, "thread");
+		dump_dot ("thread", sblock, dump_dot_sblock);
 	do {
 		remove_dead_blocks (sblock);
 	} while (merge_blocks (sblock));
 	if (options.block_dot.dead)
-		dump_sblock (sblock, "dead");
+		dump_dot ("dead", sblock, dump_dot_sblock);
 	check_final_block (sblock);
 	if (options.block_dot.final)
-		dump_sblock (sblock, "final");
+		dump_dot ("final", sblock, dump_dot_sblock);
 
 	return sblock;
 }
