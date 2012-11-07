@@ -44,6 +44,7 @@
 #include "QF/va.h"
 
 #include "obj_file.h"
+#include "obj_type.h"
 #include "qfprogs.h"
 #include "reloc.h"
 
@@ -397,5 +398,73 @@ qfo_functions (qfo_t *qfo)
 		else
 			printf (" = #%d", -func->code);
 		puts ("");
+	}
+}
+
+static const char *ty_meta_names[] = {
+	"ty_none",
+	"ty_struct",
+	"ty_union",
+	"ty_enum",
+	"ty_array",
+	"ty_class",
+};
+#define NUM_META ((int)(sizeof (ty_meta_names) / sizeof (ty_meta_names[0])))
+
+void
+qfo_types (qfo_t *qfo)
+{
+	pointer_t   type_ptr;
+	qfot_type_t *type;
+	const char *meta;
+	int         i, count;
+
+	for (type_ptr = 4; type_ptr < qfo->spaces[qfo_type_space].data_size;
+		 type_ptr += type->size) {
+		type = &QFO_STRUCT (qfo, qfo_type_space, qfot_type_t, type_ptr);
+		if (type->ty < 0 || type->ty >= NUM_META)
+			meta = "invalid";
+		else
+			meta = ty_meta_names[type->ty];
+		printf ("%-5x %-9s %-20s", type_ptr, meta,
+				QFO_TYPESTR (qfo, type_ptr));
+		switch ((ty_meta_e) type->ty) {
+			case ty_none:
+				printf (" %-10s", (type->t.type < 0
+								   || type->t.type >= ev_type_count)
+								  ? "invalid type"
+								  : pr_type_name[type->t.type]);
+				if (type->t.type == ev_func) {
+					printf ("%5x %d", type->t.func.return_type,
+							count = type->t.func.num_params);
+					if (count < 0)
+						count = ~count;	//ones complement
+					for (i = 0; i < count; i++)
+						printf (" %x", type->t.func.param_types[i]);
+				} else if (type->t.type == ev_pointer
+						   || type->t.type == ev_field) {
+					printf (" %x", type->t.fldptr.aux_type);
+				}
+				printf ("\n");
+				break;
+			case ty_struct:
+			case ty_union:
+			case ty_enum:
+				printf (" %s\n", QFO_GETSTR (qfo, type->t.strct.tag));
+				for (i = 0; i < type->t.strct.num_fields; i++) {
+					printf ("        %-5x %4x %s\n",
+							type->t.strct.fields[i].type,
+							type->t.strct.fields[i].offset,
+							QFO_GETSTR (qfo, type->t.strct.fields[i].name));
+				}
+				break;
+			case ty_array:
+				printf (" %-5x %d %d\n", type->t.array.type,
+						type->t.array.base, type->t.array.size);
+				break;
+			case ty_class:
+				printf (" %-5x\n", type->t.class);
+				break;
+		}
 	}
 }

@@ -56,5 +56,6 @@ void dump_strings (struct progs_s *pr);
 void qfo_globals (struct qfo_s *qfo);
 void qfo_functions (struct qfo_s *qfo);
 void qfo_relocs (struct qfo_s *qfo);
+void qfo_types (struct qfo_s *qfo);
 
 #endif//__qfprogs_h

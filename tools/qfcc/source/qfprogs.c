@@ -103,6 +103,7 @@ static const struct option long_options[] = {
 	{"path", required_argument, 0, 'P'},
 	{"relocs", no_argument, 0, 'r'},
 	{"strings", no_argument, 0, 's'},
+	{"types", no_argument, 0, 't'},
 	{"verbose", no_argument, 0, 'v'},
 	{NULL, 0, NULL, 0},
 };
@@ -119,6 +120,7 @@ static const char *short_options =
 	"P:"	// path
 	"r"		// relocs
 	"s"		// strings
+	"t"		// types
 	"v"		// verbose
 	;
 
@@ -150,6 +152,7 @@ usage (int status)
 "    -P, --path DIR      Source path.\n"
 "    -r, --relocs        Dump reloc information.\n"
 "    -s, --strings       Dump static strings.\n"
+"    -t, --types         Dump type encodings.\n"
 "    -v, --verbose       Display more output than usual.\n"
     );
 	exit (status);
@@ -351,6 +354,7 @@ operation_t operations[] = {
 	{dump_lines,		0},					// lines
 	{dump_modules,		0},					// modules
 	{0,					qfo_relocs},		// relocs
+	{0,					qfo_types},			// types
 };
 
 int
@@ -393,6 +397,9 @@ main (int argc, char **argv)
 				break;
 			case 's':
 				func = &operations[2];
+				break;
+			case 't':
+				func = &operations[8];
 				break;
 			case 'v':
 				verbosity++;
