@@ -88,6 +88,10 @@ print_flow_node (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 		indent -= 2;
 		dasprintf (dstr, "%*s}\n", indent, "");
 	}
+	if (node->dag) {
+		dasprintf (dstr, "  fn_%p -> dagnode_%p;", node, node->dag);
+		print_dag (dstr, node->dag);
+	}
 }
 
 static void

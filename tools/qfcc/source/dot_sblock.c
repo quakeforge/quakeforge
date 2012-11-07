@@ -73,10 +73,6 @@ flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 	sblock_t  **target_list;
 	ex_label_t *l;
 
-	if (sblock->dag) {
-		dasprintf (dstr, "  sb_%p -> dagnode_%p;", sblock, sblock->dag);
-		print_dag (dstr, sblock->dag);
-	}
 	dasprintf (dstr, "  sb_%p [shape=none,label=<\n", sblock);
 	dasprintf (dstr, "    <table border=\"0\" cellborder=\"1\" "
 					 "cellspacing=\"0\">\n");

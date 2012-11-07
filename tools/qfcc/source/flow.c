@@ -250,7 +250,6 @@ flow_build_vars (function_t *func)
 		for (sblock = func->sblock; sblock; sblock = sblock->next) {
 			for (s = sblock->statements; s; s = s->next)
 				func->statements[s->number] = s;
-			sblock->dag = dag_create (sblock);
 		}
 	}
 }
@@ -323,6 +322,20 @@ flow_live_vars (flowgraph_t *graph)
 	}
 }
 
+static void
+flow_build_dags (flowgraph_t *graph)
+{
+	int         i;
+	flownode_t *node;
+
+	for (i = 0; i < graph->num_nodes; i++) {
+		node = graph->nodes[i];
+		node->dag = dag_create (node);
+	}
+	//if (options.block_dot.dags)
+	//	dump_dot ("dags", graph, dump_dot_flow);
+}
+
 void
 flow_data_flow (flowgraph_t *graph)
 {
@@ -344,6 +357,7 @@ flow_data_flow (flowgraph_t *graph)
 		}
 	}
 	flow_live_vars (graph);
+	flow_build_dags (graph);
 	if (options.block_dot.flow)
 		dump_dot ("flow", graph, dump_dot_flow);
 }

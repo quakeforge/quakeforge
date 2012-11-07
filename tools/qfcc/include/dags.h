@@ -71,14 +71,16 @@ typedef struct dagnode_s {
 const char *daglabel_string (daglabel_t *label);
 struct dstring_s;
 void print_dag (struct dstring_s *dstr, dagnode_t *node);
-struct sblock_s;
+struct flownode_s;
 
 /** Make a dag for a single basic block.
 
-	\param block	The basic block for which the dag will be created.
+	\param node		The flow graph node representing the basic block for which
+					the dag will be created. The node should have its live
+					variable information already computed.
 	\return			The dag representing the basic block.
 */
-dagnode_t *dag_create (const struct sblock_s *block);
+dagnode_t *dag_create (const struct flownode_s *node);
 
 //@}
 

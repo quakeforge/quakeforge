@@ -264,8 +264,9 @@ daglabel_detatch (daglabel_t *l)
 }
 
 dagnode_t *
-dag_create (const sblock_t *block)
+dag_create (const flownode_t *flownode)
 {
+	sblock_t    *block = flownode->sblock;
 	statement_t *s;
 	dagnode_t   *dagnodes = 0;
 	dagnode_t  **dagtail = &dagnodes;
