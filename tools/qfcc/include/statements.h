@@ -83,9 +83,13 @@ typedef struct sblock_s {
 } sblock_t;
 
 struct expr_s;
+struct type_s;
 
+operand_t *temp_operand (struct type_s *type);
+sblock_t *new_sblock (void);
 int find_operands (statement_t *s, operand_t **x, operand_t **y, operand_t **z,
 				   operand_t **w);
+void sblock_add_statement (sblock_t *sblock, statement_t *statement);
 sblock_t *make_statements (struct expr_s *expr);
 void print_statement (statement_t *s);
 void dump_dot_sblock (void *data, const char *fname);

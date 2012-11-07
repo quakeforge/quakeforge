@@ -265,7 +265,7 @@ static sblock_t *free_sblocks;
 static statement_t *free_statements;
 static operand_t *free_operands;
 
-static sblock_t *
+sblock_t *
 new_sblock (void)
 {
 	sblock_t   *sblock;
@@ -274,7 +274,7 @@ new_sblock (void)
 	return sblock;
 }
 
-static void
+void
 sblock_add_statement (sblock_t *sblock, statement_t *statement)
 {
 	// this should normally be null, but might be inserting
@@ -342,7 +342,7 @@ free_sblock (sblock_t *sblock)
 	free_sblocks = sblock;
 }
 
-static operand_t *
+operand_t *
 temp_operand (type_t *type)
 {
 	operand_t  *op = new_operand (op_temp);
