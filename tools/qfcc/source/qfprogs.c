@@ -126,7 +126,7 @@ static edict_t *edicts;
 static int      num_edicts;
 static int      reserved_edicts = 1;
 static progs_t  pr;
-
+static int      need_progs;
 static qfo_t   *qfo;
 
 static const char *source_path = "";
@@ -314,6 +314,8 @@ load_progs (const char *name)
 		if (!qfo)
 			return 0;
 
+		if (!need_progs)
+			return 1;
 		convert_qfo ();
 	} else {
 		pr.progs_name = name;
@@ -401,6 +403,7 @@ main (int argc, char **argv)
 	}
 	init_qf ();
 	while (optind < argc) {
+		need_progs = !func->qfo;
 		if (!load_progs (argv[optind++]))
 			return 1;
 		if (qfo && func->qfo)
