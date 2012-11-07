@@ -1434,7 +1434,7 @@ check_final_block (sblock_t *sblock)
 	sblock_add_statement (sblock, s);
 }
 
-static void
+void
 dump_dot_sblock (void *data, const char *fname)
 {
 	print_sblock ((sblock_t *) data, fname);
