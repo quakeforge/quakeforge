@@ -650,17 +650,17 @@ emit_function (function_t *f, expr_t *e)
 int
 function_parms (function_t *f, byte *parm_size)
 {
-	//FIXME this is icky
 	int         count, i;
+	ty_func_t  *func = &f->sym->type->t.func;
 
-	if (f->sym->type->t.func.num_params >= 0)
-		count = f->sym->type->t.func.num_params;
+	if (func->num_params >= 0)
+		count = func->num_params;
 	else
-		count = -f->sym->type->t.func.num_params - 1;
+		count = -func->num_params - 1;
 
 	for (i = 0; i < count; i++)
-		parm_size[i] = type_size (f->sym->type->t.func.param_types[i]);
-	return f->sym->type->t.func.num_params;
+		parm_size[i] = type_size (func->param_types[i]);
+	return func->num_params;
 }
 
 void
