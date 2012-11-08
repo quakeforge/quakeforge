@@ -84,10 +84,10 @@ type_t      type_moduleptr = { ev_pointer, 0, ty_none, {{&type_module}}};
 type_t      type_obj_exec_class = { ev_func, 0, ty_none,
 									{{&type_void, 1, { &type_moduleptr }}}};
 
-type_t      type_object = {ev_invalid, "object", ty_class};
-type_t      type_id = { ev_pointer, "id", ty_none, {{&type_object}}};
-type_t      type_Class = { ev_invalid, "Class", ty_class};
-type_t      type_ClassPtr = { ev_pointer, 0, ty_none, {{&type_Class}}};
+type_t      type_obj_object = {ev_invalid, "obj_object", ty_class};
+type_t      type_id = { ev_pointer, "id", ty_none, {{&type_obj_object}}};
+type_t      type_obj_class = { ev_invalid, "obj_class", ty_class};
+type_t      type_Class = { ev_pointer, 0, ty_none, {{&type_obj_class}}};
 type_t      type_Protocol = { ev_invalid, "Protocol", ty_class};
 
 class_t     class_object = {1, "id"};
@@ -133,7 +133,7 @@ static struct_def_t ivar_struct[] = {
 
 static struct_def_t super_struct[] = {
 	{"self", &type_id},
-	{"class", &type_ClassPtr},
+	{"class", &type_Class},
 	{0, 0}
 };
 
@@ -146,8 +146,8 @@ static struct_def_t module_struct[] = {
 };
 
 static struct_def_t class_ivars[] = {
-	{"class_pointer",  &type_ClassPtr},
-	{"super_class",    &type_ClassPtr},
+	{"class_pointer",  &type_Class},
+	{"super_class",    &type_Class},
 	{"name",           &type_string},
 	{"version",        &type_integer},
 	{"info",           &type_integer},
@@ -163,7 +163,7 @@ static struct_def_t class_ivars[] = {
 };
 
 static struct_def_t protocol_ivars[] = {
-	{"class_pointer",    &type_ClassPtr},
+	{"class_pointer",    &type_Class},
 	{"protocol_name",    &type_string},
 	{"protocol_list",    &type_pointer},
 	{"instance_methods", &type_pointer},
@@ -172,7 +172,7 @@ static struct_def_t protocol_ivars[] = {
 };
 
 static struct_def_t object_ivars[] = {
-	{"class_pointer", &type_ClassPtr},
+	{"class_pointer", &type_Class},
 	{0, 0}
 };
 
@@ -240,14 +240,14 @@ init_classes (void)
 {
 	symbol_t   *sym;
 
-	type_Class.meta = ty_class;
-	type_Class.t.class = &class_Class;
+	type_obj_class.meta = ty_class;
+	type_obj_class.t.class = &class_Class;
+	chain_type (&type_obj_class);
 	chain_type (&type_Class);
-	chain_type (&type_ClassPtr);
 
 	sym = make_structure (0, 's', class_ivars, 0);
 	class_Class.ivars = sym->type->t.symtab;
-	class_Class.type = &type_Class;
+	class_Class.type = &type_obj_class;
 	class_Class.super_class = get_class (sym = new_symbol ("Object"), 1);
 	class_Class.methods = new_methodlist ();
 	symtab_addsymbol (pr.symtab, sym);
@@ -259,8 +259,8 @@ init_classes (void)
 	class_Protocol.ivars = sym->type->t.symtab;
 	class_Protocol.type = &type_Protocol;
 
-	type_object.t.class = &class_object;
-	chain_type (&type_object);
+	type_obj_object.t.class = &class_object;
+	chain_type (&type_obj_object);
 	sym = make_structure (0, 's', object_ivars, 0);
 	class_object.ivars = sym->type->t.symtab;
 	class_object.type = &type_id;
@@ -310,7 +310,7 @@ class_symbol (class_type_t *class_type, int external)
 			break;
 		case ct_class:
 			name = va ("_OBJ_CLASS_%s", class_type->c.class->name);
-			type = &type_Class;
+			type = &type_obj_class;
 			break;
 		case ct_protocol:
 			return 0;		// probably in error recovery
@@ -362,7 +362,7 @@ set_self_type (class_t *class, method_t *method)
 	if (method->instance)
 		method->params->type = pointer_type (class->type);
 	else
-		method->params->type = &type_ClassPtr;
+		method->params->type = &type_Class;
 }
 
 static void
@@ -522,7 +522,7 @@ begin_class (class_t *class)
 	defspace_t *space;
 
 	sym = make_symbol (va ("_OBJ_METACLASS_%s", class->name),
-					   &type_Class, pr.far_data, st_static);
+					   &type_obj_class, pr.far_data, st_static);
 	meta_def = sym->s.def;
 	meta_def->initialized = meta_def->constant = meta_def->nosave = 1;
 	space = meta_def->space;
@@ -532,7 +532,7 @@ begin_class (class_t *class)
 		EMIT_STRING (space, meta->super_class, class->super_class->name);
 	EMIT_STRING (space, meta->name, class->name);
 	meta->info = _PR_CLS_META;
-	meta->instance_size = type_size (&type_Class);
+	meta->instance_size = type_size (&type_obj_class);
 	EMIT_DEF (space, meta->ivars, emit_ivars (class_Class.ivars, "Class"));
 	current_class = &class->class_type;
 	sym = class_symbol (current_class, 0);
@@ -1032,7 +1032,7 @@ class_pointer_symbol (class_t *class)
 	class_type.c.class = class;
 
 	sym = make_symbol (va ("_OBJ_CLASS_POINTER_%s", class->name),
-					   &type_ClassPtr,
+					   &type_Class,
 					   pr.near_data, st_static);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);

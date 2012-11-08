@@ -587,7 +587,7 @@ encode_type (dstring_t *encoding, type_t *type)
 				dasprintf (encoding, ":");
 				break;
 			}
-			if (type == &type_ClassPtr) {
+			if (type == &type_Class) {
 				dasprintf (encoding, "#");
 				break;
 			}

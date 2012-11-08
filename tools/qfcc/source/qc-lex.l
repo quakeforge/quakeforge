@@ -272,7 +272,7 @@ static keyword_t keywords[] = {
 	{"unsigned",	TYPE,	&type_integer,		0, PROG_VERSION,	0},//FIXME
 	{"function",	TYPE,	&type_function,		0, PROG_VERSION,	0},
 	{"id",			TYPE,	&type_id,			0, PROG_VERSION,	1},
-	{"Class",		TYPE,	&type_ClassPtr,		0, PROG_VERSION,	1},//FIXME
+	{"Class",		TYPE,	&type_Class,		0, PROG_VERSION,	1},
 //	{"Protocol",	TYPE,	&type_Protocol,		0, PROG_VERSION,	0},
 	{"Method",		TYPE,	&type_Method,		0, PROG_VERSION,	1},
 	{"Super",		TYPE,	&type_Super,		0, PROG_VERSION,	1},
