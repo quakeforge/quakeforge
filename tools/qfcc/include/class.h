@@ -103,6 +103,8 @@ extern class_t  class_Protocol;
 
 extern class_type_t *current_class;
 
+extern int obj_initialized;
+
 struct expr_s;
 struct method_s;
 struct protocol_s;

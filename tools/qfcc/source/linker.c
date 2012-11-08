@@ -1096,7 +1096,7 @@ check_defs (void)
 			int         flags;
 			defref_t   *this_ref;
 
-			if (!class_Class.super_class)
+			if (!obj_initialized)
 				class_init ();
 			flags = QFOD_GLOBAL | QFOD_NOSAVE;
 			this_ref = make_def (qfo_entity_space, name, &type_id, flags, 0);

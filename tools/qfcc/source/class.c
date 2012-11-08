@@ -94,6 +94,8 @@ class_t     class_object = {1, "id"};
 class_t     class_Class = {1, "Class"};
 class_t     class_Protocol = {1, "Protocol"};
 
+int         obj_initialized = 0;
+
 static struct_def_t sel_struct[] = {
 	{"sel_id",    &type_string},
 	{"sel_types", &type_string},
@@ -289,6 +291,7 @@ class_init (void)
 	class_init_obj_module ();
 	init_classes ();
 	init_objective_structs ();
+	obj_initialized = 1;
 }
 
 symbol_t *
@@ -1356,6 +1359,7 @@ clear_classes (void)
 		Hash_FlushTable (protocol_hash);
 	if (category_hash)
 		Hash_FlushTable (category_hash);
+	obj_initialized = 0;
 	if (class_hash)
 		class_Class.super_class = get_class (new_symbol ("Object"), 1);
 }

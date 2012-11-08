@@ -348,7 +348,7 @@ keyword_or_id (char *token)
 	}
 	keyword = Hash_Find (keyword_tab, token);
 	if (keyword) {
-		if (!options.traditional && keyword->objc && !class_Class.super_class)
+		if (!options.traditional && keyword->objc && !obj_initialized)
 			class_init ();
 		if (keyword->value) {
 			if (keyword->value == STRUCT) {
