@@ -1009,6 +1009,27 @@ rua_obj_msg_sendv (progs_t *pr)
 }
 
 static void
+rua_obj_increment_retaincount (progs_t *pr)
+{
+	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
+	R_INT (pr) = ++(*--obj).integer_var;
+}
+
+static void
+rua_obj_decrement_retaincount (progs_t *pr)
+{
+	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
+	R_INT (pr) = --(*--obj).integer_var;
+}
+
+static void
+rua_obj_get_retaincount (progs_t *pr)
+{
+	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
+	R_INT (pr) = (*--obj).integer_var;
+}
+
+static void
 rua_obj_malloc (progs_t *pr)
 {
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
@@ -1245,11 +1266,13 @@ rua_class_pose_as (progs_t *pr)
 static inline pr_id_t *
 class_create_instance (progs_t *pr, pr_class_t *class)
 {
-	int         size = class->instance_size * sizeof (pr_type_t);
+	int         size = (class->instance_size + 1) * sizeof (pr_type_t);
+	pr_type_t  *mem;
 	pr_id_t    *id;
 
-	id = PR_Zone_Malloc (pr, size);
-	memset (id, 0, size);
+	mem = PR_Zone_Malloc (pr, size);
+	// redundant memset (id, 0, size);
+	id = (pr_id_t *) (mem + 1);
 	id->class_pointer = PR_SetPointer (pr, class);
 	return id;
 }
@@ -1363,7 +1386,8 @@ static void
 rua_object_dispose (progs_t *pr)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
-	PR_Zone_Free (pr, object);
+	pr_type_t  *mem = (pr_type_t *) object;
+	PR_Zone_Free (pr, mem - 1);
 }
 
 static void
@@ -1375,6 +1399,8 @@ rua_object_copy (progs_t *pr)
 
 	id = class_create_instance (pr, class);
 	memcpy (id, object, sizeof (pr_type_t) * class->instance_size);
+	// copy the retain count
+	((pr_type_t *) id)[-1] = ((pr_type_t *) object)[-1];
 	RETURN_POINTER (pr, id);
 }
 
@@ -1522,6 +1548,9 @@ static builtin_t obj_methods [] = {
 	{"obj_msg_lookup",				rua_obj_msg_lookup,				-1},
 	{"obj_msg_lookup_super",		rua_obj_msg_lookup_super,		-1},
 	{"obj_msg_sendv",				rua_obj_msg_sendv,				-1},
+	{"obj_increment_retaincount",	rua_obj_increment_retaincount,	-1},
+	{"obj_decrement_retaincount",	rua_obj_decrement_retaincount,	-1},
+	{"obj_get_retaincount",			rua_obj_get_retaincount,		-1},
 	{"obj_malloc",					rua_obj_malloc,					-1},
 	{"obj_atomic_malloc",			rua_obj_atomic_malloc,			-1},
 	{"obj_valloc",					rua_obj_valloc,					-1},

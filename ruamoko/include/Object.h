@@ -46,7 +46,6 @@
 @interface Object <Object>
 {
 	Class		isa;
-	unsigned	retainCount;
 }
 
 + (id) alloc;

@@ -10,6 +10,9 @@ IMP (Super class, SEL op) obj_msg_lookup_super = #0;
 id (id receiver, SEL op, ...) obj_msgSend = #0;
 id obj_msgSend_super (Super *class, SEL op, ...) = #0;
 @param (id receiver, SEL op, @va_list args) obj_msg_sendv = #0;
+int obj_decrement_retaincount (id object) = #0;
+int obj_increment_retaincount (id object) = #0;
+int obj_get_retaincount (id object) = #0;
 void *obj_malloc (int size) = #0;
 void *obj_atomic_malloc (int size) = #0;
 void *obj_valloc (int size) = #0;
@@ -149,8 +152,7 @@ BOOL (id object) object_is_meta_class = #0;
 
 - (id) init
 {
-	retainCount = 1;
-
+	[self retain];
 	return self;
 }
 
@@ -282,16 +284,16 @@ BOOL (id object) object_is_meta_class = #0;
 */
 - (id) retain
 {
-	retainCount = [self retainCount] + 1;
+	obj_increment_retaincount (self);
 	return self;
 }
 
 - (/*oneway*/ void) release
 {
-	if ([self retainCount] == 1)	// don't let retain count actually reach zero
+	if ([self retainCount] == 1)	// don't let retain count reach zero
 		[self dealloc];
 	else
-		retainCount--;
+		obj_decrement_retaincount (self);
 }
 
 - (id) autorelease
@@ -302,7 +304,7 @@ BOOL (id object) object_is_meta_class = #0;
 
 - (unsigned) retainCount
 {
-	return retainCount;
+	return obj_get_retaincount (self);
 }
 /*
 	CONVENIENCE METHODS

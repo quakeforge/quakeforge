@@ -28,6 +28,8 @@ typedef enum {
 @extern IMP obj_msg_lookup (id receiver, SEL op);
 @extern IMP obj_msg_lookup_super (Super class, SEL op);
 @extern @param obj_msg_sendv (id receiver, SEL op, @va_list args);
+@extern BOOL obj_decrement_ref_was_zero (id object);
+@extern BOOL obj_increment_ref_was_zero (id object);
 @extern void *obj_malloc (int size);
 @extern void *obj_atomic_malloc (int size);
 @extern void *obj_valloc (int size);
