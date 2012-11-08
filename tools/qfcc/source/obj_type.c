@@ -184,6 +184,16 @@ qfo_encode_struct (type_t *type)
 			continue;
 		num_fields++;
 	}
+
+	size = field_offset (qfot_struct_t, fields[num_fields]);
+	def = qfo_new_encoding (type, size);
+	enc = D_POINTER (qfot_type_t, def);
+	strct = &enc->t.strct;
+	ENC_STR (strct->tag, type->name);
+	strct->num_fields = num_fields;
+
+	type->type_def = def;	// avoid infinite recursion
+
 	if (type->meta != ty_enum) {
 		field_types = alloca (num_fields * sizeof (def_t *));
 		for (i = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {
@@ -196,12 +206,6 @@ qfo_encode_struct (type_t *type)
 		}
 	}
 
-	size = field_offset (qfot_struct_t, fields[num_fields]);
-	def = qfo_new_encoding (type, size);
-	enc = D_POINTER (qfot_type_t, def);
-	strct = &enc->t.strct;
-	ENC_STR (strct->tag, type->name);
-	strct->num_fields = num_fields;
 	for (i = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy)
 			continue;
