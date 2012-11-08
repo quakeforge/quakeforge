@@ -64,6 +64,11 @@
 + (void) poseAsClass: (Class)aClass;
 + (Class) superclass;
 
++ (id) retain;
++ (id) autorelease;
++ (/*oneway*/ void) release;
++ (unsigned) retainCount;
+
 - (id) init;
 - (void) dealloc;
 - (void) doesNotRecognizeSelector: (SEL)aSelector;

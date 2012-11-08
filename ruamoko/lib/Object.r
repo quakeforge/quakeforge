@@ -306,6 +306,31 @@ BOOL (id object) object_is_meta_class = #0;
 {
 	return obj_get_retaincount (self);
 }
+
+/*	The class implementations of autorelease, retain and release are dummy
+	methods with no effect. They allow class objects to be stored in
+	containers that send retain and release messages. Thus, the class
+	implementation of retainCount always returns the maximum unsigned value.
+*/
++ (id) autorelease
+{
+	return self;
+}
+
++ (id) retain
+{
+	return self;
+}
+
++ (/*oneway*/ void) release
+{
+}
+
++ (unsigned) retainCount
+{
+	return UINT_MAX;
+}
+
 /*
 	CONVENIENCE METHODS
 
