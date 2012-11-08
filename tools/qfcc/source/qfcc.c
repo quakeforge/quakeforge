@@ -124,10 +124,13 @@ static void
 InitData (void)
 {
 	pr_lineno_t *line;
-	type_t     *type;
+	type_t     *type, *ntype;
 
-	for (type = pr.types; type; type = type->next)
+	for (type = pr.types; type; type = ntype) {
+		ntype = type->next;
+		free_type (type);
 		type->type_def = 0;
+	}
 
 	if (pr.code) {
 		codespace_delete (pr.code);

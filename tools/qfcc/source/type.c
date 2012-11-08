@@ -39,6 +39,7 @@
 #endif
 #include <stdlib.h>
 #include <ctype.h>
+#include <ctype.h>
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
@@ -113,6 +114,8 @@ low_level_type (type_t *type)
 void
 chain_type (type_t *type)
 {
+	if (type->next)
+		internal_error (0, "type already chained");
 	type->next = pr.types;
 	pr.types = type;
 	if (!type->encoding) {
@@ -135,13 +138,18 @@ new_type (void)
 	type_t     *type;
 	ALLOC (1024, type_t, types, type);
 	type->freeable = 1;
+	type->allocated = 1;
 	return type;
 }
 
 void
 free_type (type_t *type)
 {
-	if (!type || !type->freeable)
+	if (!type)
+		return;
+	if (!type->allocated)		// for statically allocated types
+		type->next = 0;
+	if (!type->freeable)
 		return;
 	switch (type->type) {
 		case ev_void:

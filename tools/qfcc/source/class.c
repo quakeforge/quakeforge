@@ -336,7 +336,10 @@ get_class (symbol_t *sym, int create)
 	c = calloc (sizeof (class_t), 1);
 	if (sym)
 		c->name = sym->name;
-	new = type_Class;
+	memset (&new, 0, sizeof (new));
+	new.type = ev_invalid;
+	new.name = c->name;
+	new.meta = ty_class;
 	new.t.class = c;
 	c->type = find_type (&new);
 	c->methods = new_methodlist ();
