@@ -47,6 +47,7 @@
 #include "obj_type.h"
 #include "qfprogs.h"
 #include "reloc.h"
+#include "strpool.h"
 
 static int
 cmp (const void *_a, const void *_b)
@@ -81,7 +82,7 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 			break;
 		case ev_string:
 			comment = va (" %d \"%s\"", G_INT (pr, offset),
-						  pr->pr_strings + G_INT (pr, offset));
+						  quote_string (pr->pr_strings + G_INT (pr, offset)));
 			break;
 		case ev_float:
 			comment = va (" %g", G_FLOAT (pr, offset));
