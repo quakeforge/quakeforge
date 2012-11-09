@@ -167,6 +167,13 @@ InitData (void)
 	pr.entity_data = defspace_new ();
 	pr.entity_fields = new_symtab (0, stab_global);
 	pr.entity_fields->space = pr.entity_data;;
+
+	clear_functions ();
+	clear_frame_macros ();
+	clear_classes ();
+	clear_immediates ();
+	clear_selectors ();
+	chain_initial_types ();
 }
 
 static int
@@ -350,12 +357,6 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 		return !options.preprocess_only;
 
 	InitData ();
-	clear_functions ();
-	clear_frame_macros ();
-	clear_classes ();
-	clear_immediates ();
-	clear_selectors ();
-	chain_initial_types ();
 	begin_compilation ();
 	pr.source_file = ReuseString (strip_path (file));
 	err = yyparse () || pr.error_count;
@@ -501,7 +502,7 @@ separate_compile (void)
 		}
 	}
 	if (!err && !options.compile) {
-		chain_initial_types ();
+		InitData ();
 		linker_begin ();
 		for (file = source_files; *file; file++) {
 			if (strncmp (*file, "-l", 2)) {
@@ -668,7 +669,6 @@ progs_src_compile (void)
 	setup_sym_file (options.output_file);
 
 	InitData ();
-	chain_initial_types ();
 
 	begin_compilation ();
 
