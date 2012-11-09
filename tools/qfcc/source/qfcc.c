@@ -163,6 +163,7 @@ InitData (void)
 
 	pr.symtab = new_symtab (0, stab_global);
 	pr.symtab->space = pr.near_data;
+	current_symtab = pr.symtab;
 
 	pr.entity_data = defspace_new ();
 	pr.entity_fields = new_symtab (0, stab_global);
