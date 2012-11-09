@@ -94,11 +94,11 @@ symbol_t *
 symtab_lookup (symtab_t *symtab, const char *name)
 {
 	symbol_t   *symbol;
-	while (symtab) {
+	do {
 		if ((symbol = Hash_Find (symtab->tab, name)))
 			return symbol;
 		symtab = symtab->parent;
-	}
+	} while (symtab);
 	return 0;
 }
 
@@ -160,7 +160,7 @@ symtab_flat_copy (symtab_t *symtab, symtab_t *parent)
 	symbol_t   *symbol;
 
 	newtab = new_symtab (parent, stab_local);
-	while (symtab) {
+	do {
 		for (symbol = symtab->symbols; symbol; symbol = symbol->next) {
 			if (Hash_Find (newtab->tab, symbol->name))
 				continue;
@@ -171,7 +171,7 @@ symtab_flat_copy (symtab_t *symtab, symtab_t *parent)
 		// Set the tail pointer so symbols in ancestor tables come before
 		// those in decendent tables.
 		newtab->symtail = &newtab->symbols;
-	}
+	} while (symtab);
 	// Reset the tail pointer so any symbols added to newtab come after
 	// those copied from the input symbol table chain.
 	for (symbol = newtab->symbols; symbol && symbol->next;
