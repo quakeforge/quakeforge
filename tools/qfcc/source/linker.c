@@ -564,6 +564,16 @@ linker_add_def (const char *name, type_t *type, unsigned flags, int v)
 	make_def (qfo_near_data_space, name, type, flags, v);
 }
 
+qfo_def_t *
+linker_find_def (const char *name)
+{
+	defref_t   *r;
+
+	if ((r = Hash_Find (defined_defs, name)))
+		return REF (r);
+	return 0;
+}
+
 /**	Initialize the linker state.
 */
 void

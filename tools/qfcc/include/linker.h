@@ -38,6 +38,7 @@ void linker_begin (void);
 int linker_add_string (const char *str);
 void linker_add_def (const char *name, struct type_s *type, unsigned flags,
 					 int v);
+struct qfo_def_s *linker_find_def (const char *name);
 int linker_add_qfo (struct qfo_s *qfo);
 int linker_add_object_file (const char *filename);
 int linker_add_lib (const char *libname);
