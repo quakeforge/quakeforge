@@ -858,16 +858,16 @@ init_types (void)
 		type_default = &type_float;
 	}
 
-	make_structure (0, 'u', zero_struct, &type_zero);
-	make_structure (0, 'u', param_struct, &type_param);
-	make_structure (0, 's', vector_struct, &type_vector);
+	make_structure ("@zero", 'u', zero_struct, &type_zero);
+	make_structure ("@param", 'u', param_struct, &type_param);
+	make_structure ("@vector", 's', vector_struct, &type_vector);
 	type_vector.type = ev_vector;
 	type_vector.meta = ty_none;
 
 	if (options.traditional)
 		return;
 
-	make_structure (0, 's', quaternion_struct, &type_quaternion);
+	make_structure ("@quaternion", 's', quaternion_struct, &type_quaternion);
 	type_quaternion.type = ev_quat;
 	type_quaternion.meta = ty_none;
 }
@@ -902,6 +902,6 @@ chain_initial_types (void)
 	chain_type (&type_zero);
 
 	va_list_struct[1].type = pointer_type (&type_param);
-	make_structure (0, 's', va_list_struct, &type_va_list);
+	make_structure ("@va_list", 's', va_list_struct, &type_va_list);
 	chain_type (&type_va_list);
 }
