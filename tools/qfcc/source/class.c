@@ -839,16 +839,7 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 	selector = get_selector (sel);
 	if (!selector)
 		return 0;
-	if (class->type == &type_id) {
-		m = find_method (selector->name);
-		if (m)
-			return m;
-		//FIXME right option?
-		if (options.warnings.interface_check)
-			warning (sel, "could not find method for %c%s",
-					 class_msg ? '+' : '-', selector->name);
-		return 0;
-	} else {
+	if (class->type != &type_id) {
 		while (c) {
 			for (cat = c->categories; cat; cat = cat->next) {
 				for (m = cat->methods->head; m; m = m->next) {
@@ -871,6 +862,13 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 			warning (sel, "%s may not respond to %c%s", class->name,
 					 class_msg ? '+' : '-', selector->name);
 	}
+	m = find_method (selector->name);
+	if (m)
+		return m;
+	//FIXME right option?
+	if (options.warnings.interface_check)
+		warning (sel, "could not find method for %c%s",
+				 class_msg ? '+' : '-', selector->name);
 	return 0;
 }
 
