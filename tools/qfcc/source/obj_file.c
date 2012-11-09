@@ -772,6 +772,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	pr_type_t  *far_data;
 	pr_type_t  *type_data;
 	dprograms_t *progs;
+	qfo_def_t  *types_def = 0;
 	int         i, j;
 	int         locals_size = 0;
 	int         locals_start;
@@ -872,8 +873,10 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	}
 
 	for (i = 0; i < qfo->spaces[qfo_near_data_space].num_defs; i++) {
-		convert_def (qfo, qfo->spaces[qfo_near_data_space].defs + i,
-					 globaldefs++);
+		qfo_def_t  *def = qfo->spaces[qfo_near_data_space].defs + i;
+		if (!strcmp (QFO_GETSTR (qfo, def->name), ".type_encodings"))
+			types_def = def;
+		convert_def (qfo, def, globaldefs++);
 	}
 
 	//FIXME ddef offsets are 16 bits
@@ -908,6 +911,8 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	qfo->spaces[qfo_type_space].d.data = type_data;
 
 	qfo_relocate_refs (qfo);
+	if (types_def)
+		globals[types_def->offset].pointer_var = type_data - globals;
 
 	// undo the relocation of the offsets of local defs so the local defs have
 	// the correct offset in the debug info
