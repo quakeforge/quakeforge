@@ -44,7 +44,7 @@ libnq_a_SOURCES=\
 libnq_a_AR=$(PAK) -cf
 
 libcsqc_a_SOURCES= \
-	draw.r gib.r key.r system.r
+	debug.r draw.r gib.r key.r system.r
 libcsqc_a_AR=	$(PAK) -cf
 
 CLEANFILES=	*.qfo *.o
