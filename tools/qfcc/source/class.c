@@ -222,7 +222,7 @@ class_symbol (class_type_t *class_type, int external)
 			break;
 		case ct_class:
 			name = va ("_OBJ_CLASS_%s", class_type->c.class->name);
-			type = &type_obj_object;
+			type = &type_obj_class;
 			break;
 		case ct_protocol:
 			return 0;		// probably in error recovery
