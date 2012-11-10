@@ -88,11 +88,7 @@ type_t      type_obj_object = {ev_invalid, "obj_object", ty_class};
 type_t      type_id = { ev_pointer, "id", ty_none, {{&type_obj_object}}};
 type_t      type_obj_class = { ev_invalid, "obj_class", ty_class};
 type_t      type_Class = { ev_pointer, 0, ty_none, {{&type_obj_class}}};
-type_t      type_Protocol = { ev_invalid, "Protocol", ty_class};
-
-class_t     class_object = {1, "id"};
-class_t     class_Class = {1, "Class"};
-class_t     class_Protocol = {1, "Protocol"};
+type_t      type_obj_protocol = { ev_invalid, "obj_protocol", ty_class};
 
 int         obj_initialized = 0;
 
@@ -210,90 +206,6 @@ get_class_name (class_type_t *class_type, int pretty)
 	return "???";
 }
 
-static void
-init_objective_structs (void)
-{
-	type_SEL.t.fldptr.type = make_structure (0, 's', sel_struct, 0)->type;
-	chain_type (&type_SEL);
-	chain_type (&type_IMP);
-
-	make_structure (0, 's', method_struct, &type_Method);
-	chain_type (&type_Method);
-
-	make_structure (0, 's', method_desc_struct, &type_method_description);
-	chain_type (&type_method_description);
-
-	make_structure (0, 's', category_struct, &type_category);
-	chain_type (&type_category);
-
-	make_structure (0, 's', ivar_struct, &type_ivar);
-	chain_type (&type_ivar);
-
-	make_structure (0, 's', super_struct, &type_Super);
-	chain_type (&type_Super);
-	chain_type (&type_SuperPtr);
-	chain_type (&type_supermsg);
-}
-
-static void
-init_classes (void)
-{
-	symbol_t   *sym;
-
-	type_obj_class.meta = ty_class;
-	type_obj_class.t.class = &class_Class;
-	chain_type (&type_obj_class);
-	chain_type (&type_Class);
-
-	sym = make_structure (0, 's', class_ivars, 0);
-	class_Class.ivars = sym->type->t.symtab;
-	class_Class.type = &type_obj_class;
-	class_Class.super_class = get_class (sym = new_symbol ("Object"), 1);
-	class_Class.methods = new_methodlist ();
-	symtab_addsymbol (pr.symtab, sym);
-
-	type_Protocol.meta = ty_class;
-	type_Protocol.t.class = &class_Protocol;
-	chain_type (&type_Protocol);
-	sym = make_structure (0, 's', protocol_ivars, &type_Protocol);
-	class_Protocol.ivars = sym->type->t.symtab;
-	class_Protocol.type = &type_Protocol;
-
-	type_obj_object.t.class = &class_object;
-	chain_type (&type_obj_object);
-	sym = make_structure (0, 's', object_ivars, 0);
-	class_object.ivars = sym->type->t.symtab;
-	class_object.type = &type_id;
-	chain_type (&type_id);
-}
-
-static void
-class_init_obj_module (void)
-{
-	symbol_t   *sym;
-
-	make_structure ("obj_module_s", 's', module_struct, &type_module);
-
-	chain_type (&type_module);
-	chain_type (&type_moduleptr);
-	chain_type (&type_obj_exec_class);
-
-	sym = new_symbol_type ("obj_module_t", &type_module);
-	sym->sy_type = sy_type;
-	symtab_addsymbol (pr.symtab, sym);
-}
-
-void
-class_init (void)
-{
-	if (!current_symtab)
-		current_symtab = pr.symtab;
-	class_init_obj_module ();
-	init_classes ();
-	init_objective_structs ();
-	obj_initialized = 1;
-}
-
 symbol_t *
 class_symbol (class_type_t *class_type, int external)
 {
@@ -310,7 +222,7 @@ class_symbol (class_type_t *class_type, int external)
 			break;
 		case ct_class:
 			name = va ("_OBJ_CLASS_%s", class_type->c.class->name);
-			type = &type_obj_class;
+			type = &type_obj_object;
 			break;
 		case ct_protocol:
 			return 0;		// probably in error recovery
@@ -322,11 +234,10 @@ class_symbol (class_type_t *class_type, int external)
 	return sym;
 }
 
-class_t *
-get_class (symbol_t *sym, int create)
+static class_t *
+_get_class (symbol_t *sym, int create)
 {
 	class_t    *c;
-	type_t      new;
 
 	if (!class_hash)
 		class_hash = Hash_NewTable (1021, class_get_key, 0, 0);
@@ -337,22 +248,34 @@ get_class (symbol_t *sym, int create)
 	}
 
 	c = calloc (sizeof (class_t), 1);
-	if (sym)
+	c->methods = new_methodlist ();
+	c->class_type.type = ct_class;
+	c->class_type.c.class = c;
+	if (sym) {
 		c->name = sym->name;
+		Hash_Add (class_hash, c);
+		sym->sy_type = sy_class;
+	}
+	return c;
+}
+
+class_t *
+get_class (symbol_t *sym, int create)
+{
+	class_t    *c;
+	type_t      new;
+
+	if (!(c = _get_class (sym, create)))
+		return c;
+
 	memset (&new, 0, sizeof (new));
 	new.type = ev_invalid;
 	new.name = c->name;
 	new.meta = ty_class;
 	new.t.class = c;
 	c->type = find_type (&new);
-	c->methods = new_methodlist ();
-	c->class_type.type = ct_class;
-	c->class_type.c.class = c;
-	if (sym) {
-		Hash_Add (class_hash, c);
+	if (sym)
 		sym->type = c->type;
-		sym->sy_type = sy_class;
-	}
 	return c;
 }
 
@@ -533,7 +456,8 @@ begin_class (class_t *class)
 	EMIT_STRING (space, meta->name, class->name);
 	meta->info = _PR_CLS_META;
 	meta->instance_size = type_size (&type_obj_class);
-	EMIT_DEF (space, meta->ivars, emit_ivars (class_Class.ivars, "Class"));
+	EMIT_DEF (space, meta->ivars,
+			  emit_ivars (type_obj_class.t.class->ivars, "Class"));
 	current_class = &class->class_type;
 	sym = class_symbol (current_class, 0);
 	class->def = def = sym->s.def;
@@ -839,7 +763,7 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 	selector = get_selector (sel);
 	if (!selector)
 		return 0;
-	if (class->type != &type_id) {
+	if (class->type != &type_obj_object) {
 		while (c) {
 			for (cat = c->categories; cat; cat = cat->next) {
 				for (m = cat->methods->head; m; m = m->next) {
@@ -1255,7 +1179,7 @@ protocol_add_protocols (protocol_t *protocol, protocollist_t *protocols)
 def_t *
 protocol_def (protocol_t *protocol)
 {
-	return make_symbol (protocol->name, &type_Protocol,
+	return make_symbol (protocol->name, &type_obj_protocol,
 						pr.far_data, st_static)->s.def;
 }
 
@@ -1293,7 +1217,7 @@ emit_protocol (protocol_t *protocol)
 	defspace_t *space;
 
 	proto_def = make_symbol (va ("_OBJ_PROTOCOL_%s", protocol->name),
-							 &type_Protocol, pr.far_data, st_static)->s.def;
+							 &type_obj_protocol, pr.far_data, st_static)->s.def;
 	if (proto_def->initialized)
 		return proto_def;
 	proto_def->initialized = proto_def->constant = 1;
@@ -1358,8 +1282,6 @@ clear_classes (void)
 	if (category_hash)
 		Hash_FlushTable (category_hash);
 	obj_initialized = 0;
-	if (class_hash)
-		class_Class.super_class = get_class (new_symbol ("Object"), 1);
 }
 
 symtab_t *
@@ -1421,4 +1343,86 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 		sym->s.expr = binary_expr ('.', copy_expr (self_expr),
 								   new_symbol_expr (new_symbol (sym->name)));
 	}
+}
+
+static void
+init_objective_structs (void)
+{
+	type_SEL.t.fldptr.type = make_structure (0, 's', sel_struct, 0)->type;
+	chain_type (&type_SEL);
+	chain_type (&type_IMP);
+
+	make_structure (0, 's', method_struct, &type_Method);
+	chain_type (&type_Method);
+
+	make_structure (0, 's', method_desc_struct, &type_method_description);
+	chain_type (&type_method_description);
+
+	make_structure (0, 's', category_struct, &type_category);
+	chain_type (&type_category);
+
+	make_structure (0, 's', ivar_struct, &type_ivar);
+	chain_type (&type_ivar);
+
+	make_structure (0, 's', super_struct, &type_Super);
+	chain_type (&type_Super);
+	chain_type (&type_SuperPtr);
+	chain_type (&type_supermsg);
+}
+
+static void
+make_class (const char *name, type_t *type, struct_def_t *ivar_defs)
+{
+	symbol_t   *ivars_sym, *class_sym;
+	symtab_t   *ivars;
+
+	ivars_sym = make_structure (type->name, 's', ivar_defs, type);
+	ivars = ivars_sym->type->t.symtab;
+	type->meta = ty_class;
+	type->t.class = _get_class (class_sym = new_symbol (name), 1);
+	type->t.class->ivars = ivars;
+	type->t.class->type = type;
+	class_sym->type = type;
+	chain_type (type);
+	if (!class_sym->table)
+		symtab_addsymbol (pr.symtab, class_sym);
+}
+
+static void
+init_classes (void)
+{
+	make_class ("Object", &type_obj_object, object_ivars);
+	chain_type (&type_id);
+
+	make_class ("Class", &type_obj_class, class_ivars);
+	chain_type (&type_Class);
+
+	make_class ("Protocol", &type_obj_protocol, protocol_ivars);
+}
+
+static void
+class_init_obj_module (void)
+{
+	symbol_t   *sym;
+
+	make_structure ("obj_module_s", 's', module_struct, &type_module);
+
+	chain_type (&type_module);
+	chain_type (&type_moduleptr);
+	chain_type (&type_obj_exec_class);
+
+	sym = new_symbol_type ("obj_module_t", &type_module);
+	sym->sy_type = sy_type;
+	symtab_addsymbol (pr.symtab, sym);
+}
+
+void
+class_init (void)
+{
+	if (!current_symtab)
+		current_symtab = pr.symtab;
+	class_init_obj_module ();
+	init_classes ();
+	init_objective_structs ();
+	obj_initialized = 1;
 }

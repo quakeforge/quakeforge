@@ -2836,7 +2836,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		if (self) {
 			if (!class)
 				class = extract_class (current_class);
-			if (rec_type == class_Class.type)
+			if (rec_type == &type_obj_class)
 				class_msg = 1;
 		} else {
 			if (!class)
