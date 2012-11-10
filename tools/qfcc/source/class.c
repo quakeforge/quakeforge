@@ -1371,7 +1371,8 @@ init_objective_structs (void)
 }
 
 static void
-make_class (const char *name, type_t *type, struct_def_t *ivar_defs)
+make_class (const char *name, type_t *type, struct_def_t *ivar_defs,
+			class_t *super)
 {
 	symbol_t   *ivars_sym, *class_sym;
 	symtab_t   *ivars;
@@ -1380,6 +1381,7 @@ make_class (const char *name, type_t *type, struct_def_t *ivar_defs)
 	ivars = ivars_sym->type->t.symtab;
 	type->meta = ty_class;
 	type->t.class = _get_class (class_sym = new_symbol (name), 1);
+	type->t.class->super_class = super;
 	type->t.class->ivars = ivars;
 	type->t.class->type = type;
 	class_sym->type = type;
@@ -1391,13 +1393,15 @@ make_class (const char *name, type_t *type, struct_def_t *ivar_defs)
 static void
 init_classes (void)
 {
-	make_class ("Object", &type_obj_object, object_ivars);
+	make_class ("Object", &type_obj_object, object_ivars, 0);
 	chain_type (&type_id);
 
-	make_class ("Class", &type_obj_class, class_ivars);
+	make_class ("Class", &type_obj_class, class_ivars + 1,
+				type_obj_object.t.class);
 	chain_type (&type_Class);
 
-	make_class ("Protocol", &type_obj_protocol, protocol_ivars);
+	make_class ("Protocol", &type_obj_protocol, protocol_ivars + 1,
+				type_obj_object.t.class);
 }
 
 static void
