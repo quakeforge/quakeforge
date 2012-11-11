@@ -523,7 +523,8 @@ transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
 												type->t.array.type);
 			break;
 		case ty_class:
-			//FIXME this is broken
+			// There's nothing to do here as it will be take care of by a
+			// relocation record.
 			break;
 	}
 	memcpy (work_type_data->data + type_offset, type, type_size);
