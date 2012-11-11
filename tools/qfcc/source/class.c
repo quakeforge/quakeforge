@@ -142,7 +142,6 @@ static struct_def_t module_struct[] = {
 };
 
 static struct_def_t class_ivars[] = {
-	{"class_pointer",  &type_Class},
 	{"super_class",    &type_Class},
 	{"name",           &type_string},
 	{"version",        &type_integer},
@@ -159,7 +158,6 @@ static struct_def_t class_ivars[] = {
 };
 
 static struct_def_t protocol_ivars[] = {
-	{"class_pointer",    &type_Class},
 	{"protocol_name",    &type_string},
 	{"protocol_list",    &type_pointer},
 	{"instance_methods", &type_pointer},
@@ -1396,11 +1394,11 @@ init_classes (void)
 	make_class ("Object", &type_obj_object, object_ivars, 0);
 	chain_type (&type_id);
 
-	make_class ("Class", &type_obj_class, class_ivars + 1,
+	make_class ("Class", &type_obj_class, class_ivars,
 				type_obj_object.t.class);
 	chain_type (&type_Class);
 
-	make_class ("Protocol", &type_obj_protocol, protocol_ivars + 1,
+	make_class ("Protocol", &type_obj_protocol, protocol_ivars,
 				type_obj_object.t.class);
 }
 
