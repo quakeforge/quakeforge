@@ -1412,8 +1412,8 @@ init_classes (void)
 	class_t    *class;
 
 	object = make_class ("Object", object_ivars, 0);
-	type_id.t.fldptr.type = object->type;
 	make_class_struct (object, &type_obj_object);
+	type_id.t.fldptr.type = &type_obj_object;
 	chain_type (&type_id);
 
 	class = make_class (".Class", class_ivars, object);
