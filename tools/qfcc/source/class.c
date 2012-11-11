@@ -84,11 +84,11 @@ type_t      type_moduleptr = { ev_pointer, 0, ty_none, {{&type_module}}};
 type_t      type_obj_exec_class = { ev_func, 0, ty_none,
 									{{&type_void, 1, { &type_moduleptr }}}};
 
-type_t      type_obj_object = {ev_invalid, "obj_object", ty_class};
-type_t      type_id = { ev_pointer, "id", ty_none, {{&type_obj_object}}};
-type_t      type_obj_class = { ev_invalid, "obj_class", ty_class};
+type_t      type_obj_object = {ev_invalid, "obj_object", ty_struct};
+type_t      type_id = { ev_pointer, "id", ty_none};
+type_t      type_obj_class = { ev_invalid, "obj_class", ty_struct};
 type_t      type_Class = { ev_pointer, 0, ty_none, {{&type_obj_class}}};
-type_t      type_obj_protocol = { ev_invalid, "obj_protocol", ty_class};
+type_t      type_obj_protocol = { ev_invalid, "obj_protocol", ty_struct};
 
 int         obj_initialized = 0;
 
@@ -1368,38 +1368,60 @@ init_objective_structs (void)
 	chain_type (&type_supermsg);
 }
 
-static void
-make_class (const char *name, type_t *type, struct_def_t *ivar_defs,
-			class_t *super)
+static class_t *
+make_class (const char *name, struct_def_t *ivar_defs, class_t *super)
 {
-	symbol_t   *ivars_sym, *class_sym;
+	symbol_t   *class_sym;
 	symtab_t   *ivars;
+	class_t    *class;
 
-	ivars_sym = make_structure (type->name, 's', ivar_defs, type);
-	ivars = ivars_sym->type->t.symtab;
-	type->meta = ty_class;
-	type->t.class = _get_class (class_sym = new_symbol (name), 1);
-	type->t.class->super_class = super;
-	type->t.class->ivars = ivars;
-	type->t.class->type = type;
-	class_sym->type = type;
+	class_sym = new_symbol (name);
+	class = get_class (class_sym, 1);
+	symtab_addsymbol (pr.symtab, class_sym);
+	class->super_class = super;
+
+	ivars = class_new_ivars (class);
+	while (ivar_defs->name) {
+		symbol_t   *iv;
+		iv = new_symbol_type (ivar_defs->name, ivar_defs->type);
+		if (!symtab_addsymbol (ivars, iv))
+			internal_error (0, "duplicate ivar: %s", ivar_defs->name);
+		ivar_defs++;
+	}
+	class_add_ivars (class, ivars);
+
+	return class;
+}
+
+static void
+make_class_struct (class_t *class, type_t *type)
+{
+	symbol_t   *struct_sym;
+
+	struct_sym = find_struct ('s', new_symbol (type->name), 0);
+	symtab_addsymbol (pr.symtab, struct_sym);
+	build_struct ('s', struct_sym,
+				  class_to_struct (class, new_symtab (0, stab_local)), type);
 	chain_type (type);
-	if (!class_sym->table)
-		symtab_addsymbol (pr.symtab, class_sym);
 }
 
 static void
 init_classes (void)
 {
-	make_class ("Object", &type_obj_object, object_ivars, 0);
+	class_t    *object;
+	class_t    *class;
+
+	object = make_class ("Object", object_ivars, 0);
+	type_id.t.fldptr.type = object->type;
+	make_class_struct (object, &type_obj_object);
 	chain_type (&type_id);
 
-	make_class ("Class", &type_obj_class, class_ivars,
-				type_obj_object.t.class);
+	class = make_class (".Class", class_ivars, object);
+	make_class_struct (class, &type_obj_class);
 	chain_type (&type_Class);
 
-	make_class ("Protocol", &type_obj_protocol, protocol_ivars,
-				type_obj_object.t.class);
+	class = make_class ("Protocol", protocol_ivars, object);
+	make_class_struct (class, &type_obj_protocol);
 }
 
 static void
