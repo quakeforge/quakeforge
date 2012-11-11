@@ -761,7 +761,7 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 	selector = get_selector (sel);
 	if (!selector)
 		return 0;
-	if (class->type != &type_obj_object) {
+	if (class && class->type != &type_obj_object) {
 		while (c) {
 			for (cat = c->categories; cat; cat = cat->next) {
 				for (m = cat->methods->head; m; m = m->next) {

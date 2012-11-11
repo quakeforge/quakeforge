@@ -2828,19 +2828,22 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		if (receiver->type == ex_error)
 			return receiver;
 
-		if (rec_type->type == ev_pointer)
-			rec_type = rec_type->t.fldptr.type;
-		if (!is_class (rec_type))
-			return error (receiver, "not a class/object");
-
-		if (self) {
-			if (!class)
-				class = extract_class (current_class);
-			if (rec_type == &type_obj_class)
-				class_msg = 1;
+		if (rec_type == &type_id || rec_type == &type_Class) {
 		} else {
-			if (!class)
-				class = rec_type->t.class;
+			if (rec_type->type == ev_pointer)
+				rec_type = rec_type->t.fldptr.type;
+			if (!is_class (rec_type))
+				return error (receiver, "not a class/object");
+
+			if (self) {
+				if (!class)
+					class = extract_class (current_class);
+				if (rec_type == &type_obj_class)
+					class_msg = 1;
+			} else {
+				if (!class)
+					class = rec_type->t.class;
+			}
 		}
 	}
 
