@@ -273,6 +273,8 @@ qfo_encode_type (type_t *type)
 		return type->type_def;
 	if (type->meta < 0 || type->meta > ty_class)
 		internal_error (0, "bad type meta type");
+	if (!type->encoding)
+		type->encoding = type_get_encoding (type);
 	type->type_def = funcs[type->meta] (type);
 	return type->type_def;
 }

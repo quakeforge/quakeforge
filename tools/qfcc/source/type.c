@@ -111,6 +111,19 @@ low_level_type (type_t *type)
 	internal_error (0, "invalid complex type");
 }
 
+const char *
+type_get_encoding (type_t *type)
+{
+	static dstring_t *encoding;
+
+	if (!encoding)
+		encoding = dstring_newstr();
+	else
+		dstring_clearstr (encoding);
+	encode_type (encoding, type);
+	return save_string (encoding->str);
+}
+
 void
 chain_type (type_t *type)
 {
@@ -118,16 +131,8 @@ chain_type (type_t *type)
 		internal_error (0, "type already chained");
 	type->next = pr.types;
 	pr.types = type;
-	if (!type->encoding) {
-		static dstring_t *encoding;
-
-		if (!encoding)
-			encoding = dstring_newstr();
-		else
-			dstring_clearstr (encoding);
-		encode_type (encoding, type);
-		type->encoding = save_string (encoding->str);
-	}
+	if (!type->encoding)
+		type->encoding = type_get_encoding (type);
 	if (!type->type_def)
 		type->type_def = qfo_encode_type (type);
 }
