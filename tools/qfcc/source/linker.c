@@ -470,13 +470,24 @@ add_space (qfo_t *qfo, qfo_mspace_t *space)
 static pointer_t
 transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
 {
+	qfot_type_t *type_buffer;
 	qfot_type_t *type;
 	int         i;
+	int         type_size;
 	const char *str;
 
 	type = (qfot_type_t *) (char *) &space->d.data[type_offset];
 	if (type->ty < 0)
 		return type->t.class;
+
+	type_size = type->size * sizeof (pr_type_t);
+	type_buffer = alloca (type_size);
+	memcpy (type_buffer, type, type_size);
+	type_offset = defspace_alloc_loc (work_type_data, type->size);
+	type->t.class = type_offset;
+	type->ty = -1;
+	type = type_buffer;
+
 	type->encoding = linker_add_string (QFOSTR (qfo, type->encoding));
 	switch ((ty_meta_e) type->ty) {
 		case ty_none:
@@ -515,11 +526,7 @@ transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
 			//FIXME this is broken
 			break;
 	}
-	type_offset = defspace_alloc_loc (work_type_data, type->size);
-	memcpy (work_type_data->data + type_offset, type,
-			type->size * sizeof (pr_type_t));
-	type->ty = -1;
-	type->t.class = type_offset;
+	memcpy (work_type_data->data + type_offset, type, type_size);
 	return type_offset;
 }
 
