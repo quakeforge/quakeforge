@@ -85,7 +85,7 @@ type_t      type_obj_exec_class = { ev_func, 0, ty_none,
 									{{&type_void, 1, { &type_moduleptr }}}};
 
 type_t      type_obj_object = {ev_invalid, "obj_object", ty_struct};
-type_t      type_id = { ev_pointer, "id", ty_none};
+type_t      type_id = { ev_pointer, "id", ty_none, {{&type_obj_object}}};
 type_t      type_obj_class = { ev_invalid, "obj_class", ty_struct};
 type_t      type_Class = { ev_pointer, 0, ty_none, {{&type_obj_class}}};
 type_t      type_obj_protocol = { ev_invalid, "obj_protocol", ty_struct};
@@ -1412,13 +1412,12 @@ init_classes (void)
 	class_t    *class;
 
 	object = make_class ("Object", object_ivars, 0);
-	make_class_struct (object, &type_obj_object);
-	type_id.t.fldptr.type = &type_obj_object;
-	chain_type (&type_id);
-
 	class = make_class (".Class", class_ivars, object);
+
 	make_class_struct (class, &type_obj_class);
 	chain_type (&type_Class);
+	make_class_struct (object, &type_obj_object);
+	chain_type (&type_id);
 
 	class = make_class ("Protocol", protocol_ivars, object);
 	make_class_struct (class, &type_obj_protocol);
