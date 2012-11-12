@@ -5,7 +5,7 @@
 #ifndef __ruamoko_runtime_h_
 #define __ruamoko_runtime_h_
 
-#define INT_MAX		2147483648
+#define INT_MAX		2147483647
 #define INT_MIN		(-INT_MAX - 1)
 
 #define UINT_MAX 	4294967295U
