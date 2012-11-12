@@ -67,28 +67,28 @@ static hashtab_t *category_hash;
 static hashtab_t *protocol_hash;
 
 // these will be built up further
-type_t      type_SEL = { ev_pointer, "SEL" };
+type_t      type_obj_selector = { ev_invalid, 0, ty_struct};
+type_t      type_SEL = { ev_pointer, "SEL", ty_none, {{&type_obj_selector}}};
 type_t      type_IMP = { ev_func, "IMP", ty_none,
 						 {{&type_id, -3, {&type_id, &type_SEL}}}};
-type_t      type_Super = { ev_invalid, "Super" };
-type_t      type_SuperPtr = { ev_pointer, 0, ty_none, {{&type_Super}}};
+type_t      type_obj_super = { ev_invalid, 0 };
+type_t      type_SuperPtr = { ev_pointer, 0, ty_none, {{&type_obj_super}}};
 type_t      type_supermsg = { ev_func, ".supermsg", ty_none,
 							  {{&type_id, -3, {&type_SuperPtr, &type_SEL}}}};
-type_t      type_Method = { ev_invalid, "Method" };
-type_t      type_method_description = { ev_invalid, "obj_method_description",
-										ty_struct };
-type_t      type_category = { ev_invalid, "category", ty_struct};
-type_t      type_ivar = { ev_invalid, "ivar", ty_struct};
-type_t      type_module = { ev_invalid, 0, ty_struct};
-type_t      type_moduleptr = { ev_pointer, 0, ty_none, {{&type_module}}};
+type_t      type_obj_method = { ev_invalid, 0, ty_struct };
+type_t      type_obj_method_description = { ev_invalid, 0, ty_struct };
+type_t      type_obj_category = { ev_invalid, 0, ty_struct};
+type_t      type_obj_ivar = { ev_invalid, 0, ty_struct};
+type_t      type_obj_module = { ev_invalid, 0, ty_struct};
+type_t      type_moduleptr = { ev_pointer, 0, ty_none, {{&type_obj_module}}};
 type_t      type_obj_exec_class = { ev_func, 0, ty_none,
 									{{&type_void, 1, { &type_moduleptr }}}};
 
-type_t      type_obj_object = {ev_invalid, "obj_object", ty_struct};
+type_t      type_obj_object = {ev_invalid, 0, ty_struct};
 type_t      type_id = { ev_pointer, "id", ty_none, {{&type_obj_object}}};
-type_t      type_obj_class = { ev_invalid, "obj_class", ty_struct};
+type_t      type_obj_class = { ev_invalid, 0, ty_struct};
 type_t      type_Class = { ev_pointer, 0, ty_none, {{&type_obj_class}}};
-type_t      type_obj_protocol = { ev_invalid, "obj_protocol", ty_struct};
+type_t      type_obj_protocol = { ev_invalid, 0, ty_struct};
 
 int         obj_initialized = 0;
 
@@ -141,7 +141,8 @@ static struct_def_t module_struct[] = {
 	{0, 0}
 };
 
-static struct_def_t class_ivars[] = {
+static struct_def_t class_struct[] = {
+	{"class_pointer",  &type_Class},
 	{"super_class",    &type_Class},
 	{"name",           &type_string},
 	{"version",        &type_integer},
@@ -157,7 +158,8 @@ static struct_def_t class_ivars[] = {
 	{0, 0}
 };
 
-static struct_def_t protocol_ivars[] = {
+static struct_def_t protocol_struct[] = {
+	{"class_pointer",    &type_Class},
 	{"protocol_name",    &type_string},
 	{"protocol_list",    &type_pointer},
 	{"instance_methods", &type_pointer},
@@ -165,7 +167,7 @@ static struct_def_t protocol_ivars[] = {
 	{0, 0}
 };
 
-static struct_def_t object_ivars[] = {
+static struct_def_t object_struct[] = {
 	{"class_pointer", &type_Class},
 	{0, 0}
 };
@@ -216,7 +218,7 @@ class_symbol (class_type_t *class_type, int external)
 			name = va ("_OBJ_CATEGORY_%s_%s",
 					   class_type->c.category->class->name,
 					   class_type->c.category->name);
-			type = &type_category;
+			type = &type_obj_category;
 			break;
 		case ct_class:
 			name = va ("_OBJ_CLASS_%s", class_type->c.class->name);
@@ -423,7 +425,7 @@ emit_ivars (symtab_t *ivars, const char *name)
 			if (s->sy_type == sy_var)
 				ivar_data.count++;
 	}
-	ivar_list_struct[1].type = array_type (&type_ivar, ivar_data.count);
+	ivar_list_struct[1].type = array_type (&type_obj_ivar, ivar_data.count);
 
 	def = emit_structure (va ("_OBJ_INSTANCE_VARIABLES_%s", name), 's',
 						  ivar_list_struct, 0, &ivar_data, st_static);
@@ -1098,11 +1100,11 @@ class_finish_module (void)
 	free (data.classes);
 	free (data.categories);
 
-	module_sym = make_symbol ("_OBJ_MODULE", &type_module, pr.far_data,
+	module_sym = make_symbol ("_OBJ_MODULE", &type_obj_module, pr.far_data,
 							  st_static);
 	symtab_addsymbol (current_symtab, module_sym);
 	module = &D_STRUCT (pr_module_t, module_sym->s.def);
-	module->size = type_size (&type_module);
+	module->size = type_size (&type_obj_module);
 	EMIT_STRING (module_sym->s.def->space, module->name,
 				 GETSTR (pr.source_file));
 	EMIT_DEF (module_sym->s.def->space, module->symtab, symtab_def);
@@ -1346,97 +1348,51 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 static void
 init_objective_structs (void)
 {
-	type_SEL.t.fldptr.type = make_structure (0, 's', sel_struct, 0)->type;
+	make_structure ("obj_selector", 's', sel_struct, &type_obj_selector);
+	chain_type (&type_obj_selector);
 	chain_type (&type_SEL);
 	chain_type (&type_IMP);
 
-	make_structure (0, 's', method_struct, &type_Method);
-	chain_type (&type_Method);
+	make_structure ("obj_method", 's', method_struct, &type_obj_method);
+	chain_type (&type_obj_method);
 
-	make_structure (0, 's', method_desc_struct, &type_method_description);
-	chain_type (&type_method_description);
+	make_structure ("obj_method_description", 's', method_desc_struct,
+					&type_obj_method_description);
+	chain_type (&type_obj_method_description);
 
-	make_structure (0, 's', category_struct, &type_category);
-	chain_type (&type_category);
+	make_structure ("obj_category", 's', category_struct, &type_obj_category);
+	chain_type (&type_obj_category);
 
-	make_structure (0, 's', ivar_struct, &type_ivar);
-	chain_type (&type_ivar);
+	make_structure ("obj_ivar", 's', ivar_struct, &type_obj_ivar);
+	chain_type (&type_obj_ivar);
 
-	make_structure (0, 's', super_struct, &type_Super);
-	chain_type (&type_Super);
+	make_structure ("obj_super", 's', super_struct, &type_obj_super);
+	chain_type (&type_obj_super);
 	chain_type (&type_SuperPtr);
 	chain_type (&type_supermsg);
-}
-
-static class_t *
-make_class (const char *name, struct_def_t *ivar_defs, class_t *super)
-{
-	symbol_t   *class_sym;
-	symtab_t   *ivars;
-	class_t    *class;
-
-	class_sym = new_symbol (name);
-	class = get_class (class_sym, 1);
-	symtab_addsymbol (pr.symtab, class_sym);
-	class->super_class = super;
-
-	ivars = class_new_ivars (class);
-	while (ivar_defs->name) {
-		symbol_t   *iv;
-		iv = new_symbol_type (ivar_defs->name, ivar_defs->type);
-		if (!symtab_addsymbol (ivars, iv))
-			internal_error (0, "duplicate ivar: %s", ivar_defs->name);
-		ivar_defs++;
-	}
-	class_add_ivars (class, ivars);
-
-	return class;
-}
-
-static void
-make_class_struct (class_t *class, type_t *type)
-{
-	symbol_t   *struct_sym;
-
-	struct_sym = find_struct ('s', new_symbol (type->name), 0);
-	symtab_addsymbol (pr.symtab, struct_sym);
-	build_struct ('s', struct_sym,
-				  class_to_struct (class, new_symtab (0, stab_local)), type);
-	chain_type (type);
 }
 
 static void
 init_classes (void)
 {
-	class_t    *object;
-	class_t    *class;
-
-	object = make_class ("Object", object_ivars, 0);
-	class = make_class (".Class", class_ivars, object);
-
-	make_class_struct (class, &type_obj_class);
+	make_structure ("obj_class", 's', class_struct, &type_obj_class);
+	chain_type (&type_obj_class);
 	chain_type (&type_Class);
-	make_class_struct (object, &type_obj_object);
+	make_structure ("obj_object", 's', object_struct, &type_obj_object);
+	chain_type (&type_obj_object);
 	chain_type (&type_id);
-
-	class = make_class ("Protocol", protocol_ivars, object);
-	make_class_struct (class, &type_obj_protocol);
+	make_structure ("obj_protocol", 's', protocol_struct, &type_obj_protocol);
+	chain_type (&type_obj_protocol);
 }
 
 static void
 class_init_obj_module (void)
 {
-	symbol_t   *sym;
+	make_structure ("obj_module", 's', module_struct, &type_obj_module);
 
-	make_structure ("obj_module_s", 's', module_struct, &type_module);
-
-	chain_type (&type_module);
+	chain_type (&type_obj_module);
 	chain_type (&type_moduleptr);
 	chain_type (&type_obj_exec_class);
-
-	sym = new_symbol_type ("obj_module_t", &type_module);
-	sym->sy_type = sy_type;
-	symtab_addsymbol (pr.symtab, sym);
 }
 
 void

@@ -859,6 +859,8 @@ process_loose_relocs (qfo_t *qfo)
 		}
 		if (reloc->space == qfo_type_defs - qfo->spaces) {
 			// loose relocs in the type space become invalid
+			if (reloc->type != rel_def_string)
+				printf ("%d\n", reloc->type);
 			reloc->type = rel_none;
 			continue;
 		}

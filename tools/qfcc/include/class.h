@@ -91,10 +91,10 @@ extern struct type_s type_SEL;
 extern struct type_s type_IMP;
 extern struct type_s type_supermsg;
 extern struct type_s type_obj_exec_class;
-extern struct type_s type_Method;
-extern struct type_s type_Super;
-extern struct type_s type_method_description;
-extern struct type_s type_category;
+extern struct type_s type_obj_method;
+extern struct type_s type_obj_super;
+extern struct type_s type_obj_method_description;
+extern struct type_s type_obj_category;
 extern struct type_s type_ivar;
 extern struct type_s type_module;
 

@@ -1,7 +1,7 @@
 #include "Object.h"
 #include "AutoreleasePool.h"
 
-void __obj_exec_class (obj_module_t *msg) = #0;
+void __obj_exec_class (struct obj_module *msg) = #0;
 void (id object, int code, string fmt, ...) obj_error = #0;
 void (id object, int code, string fmt, @va_list args) obj_verror = #0;
 //obj_error_handler (objc_error_handler func) obj_set_error_handler = #0;

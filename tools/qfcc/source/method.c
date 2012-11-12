@@ -431,7 +431,7 @@ emit_methods_list_item (def_t *def, void *data, int index)
 	method_t   *m;
 	pr_method_t *meth;
 
-	if (!is_array (def->type) || def->type->t.array.type != &type_Method)
+	if (!is_array (def->type) || def->type->t.array.type != &type_obj_method)
 		internal_error (0, "%s: expected array of method def",
 						__FUNCTION__);
 	if (index < 0 || index >= methods->count)
@@ -487,7 +487,7 @@ emit_methods (methodlist_t *methods, const char *name, int instance)
 	methods->count = count;
 	methods->instance = instance;
 
-	methods_struct[2].type = array_type (&type_Method, count);
+	methods_struct[2].type = array_type (&type_obj_method, count);
 	return emit_structure (va ("_OBJ_%s_METHODS_%s", type, name), 's',
 						   methods_struct, 0, methods, st_static);
 }
@@ -509,7 +509,7 @@ emit_method_list_item (def_t *def, void *data, int index)
 	method_t   *m;
 	pr_method_description_t *desc;
 
-	if (def->type != &type_method_description)
+	if (def->type != &type_obj_method_description)
 		internal_error (0, "%s: expected method_descripting def",
 						__FUNCTION__);
 	if (index < 0 || index >= methods->count)
@@ -553,7 +553,8 @@ emit_method_descriptions (methodlist_t *methods, const char *name,
 	methods->count = count;
 	methods->instance = instance;
 
-	method_list_struct[1].type = array_type (&type_method_description, count);
+	method_list_struct[1].type = array_type (&type_obj_method_description,
+											 count);
 	return emit_structure (va ("_OBJ_%s_METHODS_%s", type, name), 's',
 						   method_list_struct, 0, methods, st_static);
 }
