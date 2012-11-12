@@ -391,7 +391,7 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 		}
 		if (!field_sym->s.def) {
 			field_sym->s.def = new_def (def->name, type, pr.entity_data, storage);
-			field_sym->s.def->relocs = relocs;
+			reloc_attach_relocs (relocs, &field_sym->s.def->relocs);
 			field_sym->s.def->nosave = 1;
 		}
 		field_def = field_sym->s.def;
@@ -470,7 +470,7 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 	}
 	if (!sym->s.def) {
 		sym->s.def = new_def (sym->name, type, space, storage);
-		sym->s.def->relocs = relocs;
+		reloc_attach_relocs (relocs, &sym->s.def->relocs);
 	}
 	if (type == &type_vector && options.code.vector_components)
 		init_vector_components (sym, 0);

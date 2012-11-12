@@ -513,7 +513,7 @@ make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
 	}
 	if (!sym->s.func->def) {
 		sym->s.func->def = new_def (sym->name, sym->type, space, storage);
-		sym->s.func->def->relocs = relocs;
+		reloc_attach_relocs (relocs, &sym->s.func->def->relocs);
 	}
 }
 

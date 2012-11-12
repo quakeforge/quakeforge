@@ -42,6 +42,7 @@
 #include "diagnostic.h"
 #include "function.h"
 #include "qfcc.h"
+#include "reloc.h"
 #include "strpool.h"
 #include "symtab.h"
 #include "type.h"
@@ -213,7 +214,7 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 	}
 	if (!sym->s.def) {
 		sym->s.def = new_def (name, type, space, storage);
-		sym->s.def->relocs = relocs;
+		reloc_attach_relocs (relocs, &sym->s.def->relocs);
 	}
 	return sym;
 }

@@ -239,6 +239,8 @@ void reloc_def_field_ofs (struct def_s *def, struct def_s *location);
 */
 void reloc_def_op (struct ex_label_s *label, struct def_s *location);
 
+void reloc_attach_relocs (reloc_t *relocs, reloc_t **location);
+
 ///@}
 
 #endif//__reloc_h

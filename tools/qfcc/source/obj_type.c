@@ -255,6 +255,8 @@ qfo_encode_class (type_t *type)
 def_t *
 qfo_encode_type (type_t *type)
 {
+	reloc_t    *relocs = 0;
+
 	static encode_f funcs[] = {
 		qfo_encode_none,	// ty_none
 		qfo_encode_struct,	// ty_struct
@@ -265,7 +267,7 @@ qfo_encode_type (type_t *type)
 	};
 
 	if (type->type_def && type->type_def->external) {
-		//FIXME relocs
+		relocs = type->type_def->relocs;
 		free_def (type->type_def);
 		type->type_def = 0;
 	}
@@ -276,5 +278,6 @@ qfo_encode_type (type_t *type)
 	if (!type->encoding)
 		type->encoding = type_get_encoding (type);
 	type->type_def = funcs[type->meta] (type);
+	reloc_attach_relocs (relocs, &type->type_def->relocs);
 	return type->type_def;
 }

@@ -282,3 +282,16 @@ reloc_def_op (ex_label_t *label, def_t *location)
 	ref->label = label;
 	pr.relocs = ref;
 }
+
+void
+reloc_attach_relocs (reloc_t *relocs, reloc_t **location)
+{
+	reloc_t    *r;
+
+	if (!relocs)
+		return;
+	for (r = relocs; r->next; r = r->next)
+		;
+	r->next = *location;
+	*location = relocs;
+}
