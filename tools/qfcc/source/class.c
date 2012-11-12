@@ -256,6 +256,10 @@ _get_class (symbol_t *sym, int create)
 		Hash_Add (class_hash, c);
 		sym->sy_type = sy_class;
 	}
+
+	sym = class_symbol (&c->class_type, 1);
+	c->def = sym->s.def;
+
 	return c;
 }
 

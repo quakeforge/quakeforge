@@ -291,6 +291,13 @@ qfo_from_progs (pr_info_t *pr)
 	def = qfo->defs;
 	reloc = qfo->relocs;
 
+	pr->code->qfo_space = qfo_code_space;
+	pr->near_data->qfo_space = qfo_near_data_space;
+	pr->far_data->qfo_space = qfo_far_data_space;
+	pr->entity_data->qfo_space = qfo_entity_space;
+	pr->type_data->qfo_space = qfo_type_space;
+	pr->strings->qfo_space = qfo_strings_space;
+
 	qfo_init_code_space (qfo, &qfo->spaces[qfo_code_space], pr->code);
 	qfo_init_data_space (qfo, &def, &reloc, &qfo->spaces[qfo_near_data_space],
 						 pr->near_data);
