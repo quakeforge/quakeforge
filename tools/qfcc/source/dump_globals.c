@@ -432,6 +432,17 @@ qfo_types (qfo_t *qfo)
 
 	for (type_ptr = 4; type_ptr < qfo->spaces[qfo_type_space].data_size;
 		 type_ptr += type->size) {
+		if (qfo->spaces[qfo_type_space].data_size - type_ptr < 2) {
+			printf ("%-5x overflow, can't check size. %x\n", type_ptr,
+					qfo->spaces[qfo_type_space].data_size);
+		}
+		if (type_ptr + type->size > qfo->spaces[qfo_type_space].data_size) {
+			printf ("%-5x overflow by %d words. %x\n", type_ptr,
+					(type_ptr + type->size
+					 - qfo->spaces[qfo_type_space].data_size),
+					qfo->spaces[qfo_type_space].data_size);
+			continue;
+		}
 		type = &QFO_STRUCT (qfo, qfo_type_space, qfot_type_t, type_ptr);
 		if (type->ty < 0 || type->ty >= NUM_META)
 			meta = "invalid";
