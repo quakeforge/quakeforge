@@ -159,13 +159,17 @@ static defspace_t **work_spaces[qfo_num_spaces] = {
 	&work_near_data,
 	&work_far_data,
 	&work_entity_data,
-	0,
+	&work_type_data,
 };
 
 static dstring_t *linker_current_file;
 
 #define QFOSTR(q,s)		QFO_GETSTR (q, s)
 #define WORKSTR(s)		QFOSTR (work, s)
+#define QFOTYPE(t)		((qfot_type_t *) (char *) \
+						 (qfo_type_defs->d.data + (t)))
+#define WORKTYPE(t)		((qfot_type_t *) (char *) \
+						 (work_type_data->data + (t)))
 
 /**	Produce an error message for defs with mismatched types.
 
@@ -301,7 +305,6 @@ define_def (defref_t *ref, hashtab_t *extern_tab, hashtab_t *defined_tab)
 			// treat the new def as external
 			REF (ref)->flags |= QFOD_EXTERNAL;
 			resolve_external_def (ref, r);
-			//FIXME copy stuff from new def to existing def???
 		} else {
 			def_error (REF (ref), "%s redefined", WORKSTR (REF (ref)->name));
 			def_error (REF (r), "previous definition");
@@ -345,15 +348,57 @@ process_def (defref_t *ref, qfo_mspace_t *space,
 }
 
 static void
-process_data_def (defref_t *ref, qfo_mspace_t *space)
+process_data_def (defref_t *ref, qfo_mspace_t *space, qfo_def_t *old)
 {
 	process_def (ref, space, extern_field_defs, defined_field_defs);
 }
 
 static void
-process_field_def (defref_t *ref, qfo_mspace_t *space)
+process_field_def (defref_t *ref, qfo_mspace_t *space, qfo_def_t *old)
 {
 	process_def (ref, space, extern_field_defs, defined_field_defs);
+}
+
+static void
+process_type_def (defref_t *ref, qfo_mspace_t *space, qfo_def_t *old)
+{
+	if (REF (ref)->flags & QFOD_EXTERNAL) {
+		// The most common (only?) time external type encodings show up is
+		// in pointers to incomplete structs. eg, struct foo *bar; with no
+		// struct foo {...};
+		extern_def (ref, extern_type_defs, defined_type_defs);
+	} else {
+		const char *name;
+		defref_t   *r;
+		qfot_type_t *old_type;
+		qfot_type_t *new_type;
+
+		old_type = QFOTYPE(old->offset);
+		name = WORKSTR (REF (ref)->name);
+		if ((r = Hash_Find (defined_type_defs, name))) {
+			// The type has been defined already, so treat this def as if it
+			// were external
+			REF (ref)->flags |= QFOD_EXTERNAL;
+			resolve_external_def (ref, r);
+		} else {
+			// The type is new to the program, so we need to allocate space
+			// for it and copy the type encoding. Relocation records will
+			// take care of any cross-references.
+
+			REF (ref)->offset = alloc_data (qfo_type_space, old_type->size);
+			new_type = WORKTYPE(REF (ref)->offset);
+			memcpy (new_type, old_type, old_type->size * sizeof (pr_type_t));
+			define_def (ref, extern_type_defs, defined_type_defs);
+		}
+		// save the new address in the old def's type field so relocation
+		// records can be updated.
+		old->type = REF (ref)->offset;
+		// mark the old type encoding as having been transfered, and save the
+		// new address in the encoding's class field so def and function types
+		// can be updated easily.
+		old_type->ty = -1;
+		old_type->t.class = REF (ref)->offset;
+	}
 }
 
 static int
@@ -388,7 +433,7 @@ add_relocs (qfo_t *qfo, int start, int count, int target)
 
 static int
 add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
-		  void (*process) (defref_t *ref, qfo_mspace_t *space))
+		  void (*process) (defref_t *ref, qfo_mspace_t *space, qfo_def_t *old))
 {
 	int         count = space->num_defs;
 	int         size;
@@ -406,16 +451,15 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 	odef = dest_space->defs + dest_space->num_defs;
 	for (i = 0; i < count; i++, idef++, odef++) {
 		*odef = *idef;						// copy the def data
-		idef->offset = num_work_defrefs;	// so def can be found
 		odef->name = linker_add_string (QFOSTR (qfo, idef->name));
 		odef->file = linker_add_string (QFOSTR (qfo, idef->file));
-		type = (qfot_type_t *) (char *) (qfo_type_defs->d.data + idef->type);
+		type = QFOTYPE(idef->type);
 		odef->type = type->t.class;			// pointer to type in work
 		if (odef->flags & QFOD_EXTERNAL && !odef->num_relocs)
 			continue;
 		ref = get_defref (odef, dest_space);
 		work_defrefs[num_work_defrefs++] = ref;
-		process (ref, dest_space);
+		process (ref, dest_space, idef);
 		odef->relocs = add_relocs (qfo, odef->relocs, odef->num_relocs,
 								   odef - dest_space->defs);
 	}
@@ -495,70 +539,6 @@ add_data_space (qfo_t *qfo, qfo_mspace_t *space)
 	}
 	ws->data_size = space->data_size;
 	ws->id = space->id;
-}
-
-static pointer_t
-transfer_type (qfo_t *qfo, qfo_mspace_t *space, pointer_t type_offset)
-{
-	qfot_type_t *type_buffer;
-	qfot_type_t *type;
-	int         i;
-	int         type_size;
-	const char *str;
-
-	type = (qfot_type_t *) (char *) &space->d.data[type_offset];
-	if (type->ty < 0)
-		return type->t.class;
-
-	type_size = type->size * sizeof (pr_type_t);
-	type_buffer = alloca (type_size);
-	memcpy (type_buffer, type, type_size);
-	type_offset = defspace_alloc_loc (work_type_data, type->size);
-	type->t.class = type_offset;
-	type->ty = -1;
-	type = type_buffer;
-
-	type->encoding = linker_add_string (QFOSTR (qfo, type->encoding));
-	switch ((ty_meta_e) type->ty) {
-		case ty_none:
-			if (type->t.type == ev_func) {
-				int         count;
-				qfot_func_t *f = &type->t.func;
-				pointer_t  *p;
-				count = f->num_params;
-				if (count < 0)
-					count = ~count;	//ones complement
-				f->return_type = transfer_type (qfo, space, f->return_type);
-				for (i = 0, p = f->param_types; i < count; i++, p++)
-					*p = transfer_type (qfo, space, *p);
-			} else if (type->t.type == ev_pointer
-					   || type->t.type == ev_field) {
-				qfot_fldptr_t *fp = &type->t.fldptr;
-				fp->aux_type = transfer_type (qfo, space, fp->aux_type);
-			}
-			break;
-		case ty_struct:
-		case ty_union:
-		case ty_enum:
-			str = QFOSTR (qfo, type->t.strct.tag);
-			type->t.strct.tag = linker_add_string (str);
-			for (i = 0; i < type->t.strct.num_fields; i++) {
-				qfot_var_t *field = &type->t.strct.fields[i];
-				field->type = transfer_type (qfo, space, field->type);
-				field->name = linker_add_string (QFOSTR (qfo, field->name));
-			}
-			break;
-		case ty_array:
-			type->t.array.type = transfer_type (qfo, space,
-												type->t.array.type);
-			break;
-		case ty_class:
-			// There's nothing to do here as it will be take care of by a
-			// relocation record.
-			break;
-	}
-	memcpy (work_type_data->data + type_offset, type, type_size);
-	return type_offset;
 }
 
 static defref_t *
@@ -754,18 +734,25 @@ process_entity_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 	return 0;
 }
 
+// NOTE this will likely give weird results for qsort if the defs overlapp.
+// However, that should not happen.
+static int
+type_def_compare (const void *a, const void *b)
+{
+	qfo_def_t  *ta = (qfo_def_t *) a;
+	qfo_def_t  *tb = (qfo_def_t *) b;
+
+	if (ta->offset < tb->offset)
+		return -1;
+	if (ta->offset >= tb->offset + QFOTYPE (tb->offset)->size)
+		return 1;
+	return 0;
+}
+
 static int
 process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
 	int         i;
-	int         size;
-	qfo_def_t  *def;
-	qfo_def_t  *type_def;
-	qfo_mspace_t *type_space;
-	qfot_type_t *type;
-	const char *name;
-	defref_t   *ref;
-	pointer_t   offset;
 
 	if (pass != 0)
 		return 0;
@@ -774,54 +761,30 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 		return 1;
 	}
 	qfo_type_defs = space;
-	type_space = &work->spaces[qfo_type_space];
-	size = (type_space->num_defs + space->num_defs) * sizeof (qfo_def_t);
-	type_space->defs = realloc (type_space->defs, size);
-	// first pass: check for already defined types
-	for (i = 0, def = space->defs; i < space->num_defs; i++, def++) {
-		name = QFOSTR (qfo, def->name);
-		type = (qfot_type_t *) (char *) &space->d.data[def->offset];
-		if ((ref = Hash_Find (defined_type_defs, name))) {
-			type->ty = -1;
-			type->t.class = REF (ref)->offset;
-			continue;
-		}
-	}
-	// second pass: transfer any new types
-	for (i = 0, def = space->defs; i < space->num_defs; i++, def++) {
-		name = QFOSTR (qfo, def->name);
-		type = (qfot_type_t *) (char *) &space->d.data[def->offset];
-		if (type->ty < 0)
-			continue;
-		offset = transfer_type (qfo, space, def->offset);
-		type_def = type_space->defs + type_space->num_defs++;
-		memset (type_def, 0, sizeof (*type_def));
-		type_def->name = linker_add_string (name);
-		type_def->offset = offset;
-		ref = get_defref (type_def, type_space);
-		Hash_Add (defined_type_defs, ref);
-		while ((ref = Hash_Del (extern_type_defs, name))) {
-			REF (ref)->flags = 0;
-			REF (ref)->offset = type_def->offset;
-		}
-	}
-	size = type_space->num_defs * sizeof (qfo_def_t);
-	type_space->defs = realloc (type_space->defs, size);
+	add_defs (qfo, space, work->spaces + qfo_type_space, process_type_def);
+	// the defs in qfo are no longer needed by the rest of the linker, so
+	// we're free to mess around with them
 
-	type_space->d.data = work_type_data->data;
-	type_space->data_size = work_type_data->size;
+	// sort the defs by addres. Unfortunately, they will usually be in order,
+	// so qsort will likely be pessimistic, but oh well.
+	qsort (space->defs, space->num_defs, sizeof (qfo_def_t), type_def_compare);
 
-	for (i = 0; i < num_builtins; i++) {
-		builtin_sym_t *bi = builtin_symbols + i;
-		if (!bi->defref)
+	// update the offsets of all relocation records that point into the type
+	// encoding space
+	for (i = 0; i < qfo->num_relocs; i++) {
+		qfo_reloc_t *reloc = qfo->relocs + i;
+		qfo_def_t    dummy;
+		qfo_def_t   *def;
+
+		if (reloc->space != space->id)
 			continue;
-		def = REF (bi->defref);
-		if (def->type >= 0)
-			continue;
-		ref = Hash_Find (defined_type_defs, WORKSTR (-def->type));
-		if (!ref)
-			continue;
-		def->type = REF (ref)->offset;
+		dummy.offset = reloc->offset;
+		def = (qfo_def_t *) bsearch (&dummy, space->defs, space->num_defs,
+									 sizeof (qfo_def_t), type_def_compare);
+		if (!def)
+			linker_internal_error ("relocation record with invalid address. "
+								   "corrupt object file?");
+		reloc->offset += def->type - def->offset;
 	}
 	return 0;
 }
@@ -839,7 +802,7 @@ process_funcs (qfo_t *qfo)
 			qfo->num_funcs * sizeof (qfo_func_t));
 	while (work->num_funcs < size) {
 		func = work->funcs + work->num_funcs++;
-		type = (qfot_type_t *) (char *) (qfo_type_defs->d.data + func->type);
+		type = QFOTYPE(func->type);
 		func->type = type->t.class;
 		func->name = linker_add_string (QFOSTR (qfo, func->name));
 		func->file = linker_add_string (QFOSTR (qfo, func->file));
@@ -891,13 +854,6 @@ process_loose_relocs (qfo_t *qfo)
 		reloc = work_loose_relocs + work_num_loose_relocs++;
 		if (reloc->space < 0 || reloc->space >= qfo->num_spaces) {
 			linker_error ("bad reloc space");
-			reloc->type = rel_none;
-			continue;
-		}
-		if (reloc->space == qfo_type_defs - qfo->spaces) {
-			// loose relocs in the type space become invalid
-			if (reloc->type != rel_def_string)
-				printf ("%d\n", reloc->type);
 			reloc->type = rel_none;
 			continue;
 		}
