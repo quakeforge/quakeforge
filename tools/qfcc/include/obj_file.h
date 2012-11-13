@@ -361,6 +361,9 @@ enum {
 */
 #define QFO_GETSTR(q, s)	((q)->spaces[qfo_strings_space].d.strings + (s))
 
+#define QFO_TYPE(q, t)		((qfot_type_t *) (char *) \
+							 ((q)->spaces[qfo_type_space].d.data + (t)))
+
 /** Retrieve a type string from the object file, converting it to a C string.
 
 	\param q pointer to ::qfo_t struct
