@@ -267,17 +267,11 @@ resolve_external_def (defref_t *ext, defref_t *def)
 }
 
 static void
-define_def (defref_t *ref, int field)
+define_def (defref_t *ref, hashtab_t *extern_tab, hashtab_t *defined_tab)
 {
 	defref_t   *r;
 	const char *name;
-	hashtab_t  *extern_tab = extern_defs;
-	hashtab_t  *defined_tab = defined_defs;
 
-	if (field) {
-		extern_tab = extern_field_defs;
-		defined_tab = defined_field_defs;
-	}
 	name = WORKSTR (REF (ref)->name);
 	if ((r = Hash_Find (defined_tab, name))) {
 		if (REF (r)->flags & QFOD_SYSTEM) {
@@ -299,33 +293,46 @@ define_def (defref_t *ref, int field)
 }
 
 static void
-process_def (defref_t *ref, qfo_mspace_t *space, int field)
+extern_def (defref_t *ref, hashtab_t *extern_tab, hashtab_t *defined_tab)
 {
 	defref_t   *r;
 	const char *name;
-	hashtab_t  *extern_tab = extern_defs;
-	hashtab_t  *defined_tab = defined_defs;
 
-	if (field) {
-		extern_tab = extern_field_defs;
-		defined_tab = defined_field_defs;
+	name = WORKSTR (REF (ref)->name);
+	r = Hash_Find (defined_tab, name);
+	if (!REF (ref)->num_relocs)
+		return;
+	if (r) {
+		resolve_external_def (ref, r);
+	} else {
+		Hash_Add (extern_tab, ref);
 	}
+}
+
+static void
+process_def (defref_t *ref, qfo_mspace_t *space,
+			 hashtab_t  *extern_tab, hashtab_t  *defined_tab)
+{
 	if (REF (ref)->flags & QFOD_EXTERNAL) {
-		name = WORKSTR (REF (ref)->name);
-		r = Hash_Find (defined_tab, name);
-		if (!REF (ref)->num_relocs)
-			return;
-		if (r) {
-			resolve_external_def (ref, r);
-		} else {
-			Hash_Add (extern_tab, ref);
-		}
+		extern_def (ref, extern_tab, defined_tab);
 	} else {
 		if (!(REF (ref)->flags & QFOD_LOCAL))
 			REF (ref)->offset += space->data_size;
 		if (REF (ref)->flags & QFOD_GLOBAL)
-			define_def (ref, field);
+			define_def (ref, extern_tab, defined_tab);
 	}
+}
+
+static void
+process_data_def (defref_t *ref, qfo_mspace_t *space)
+{
+	process_def (ref, space, extern_field_defs, defined_field_defs);
+}
+
+static void
+process_field_def (defref_t *ref, qfo_mspace_t *space)
+{
+	process_def (ref, space, extern_field_defs, defined_field_defs);
 }
 
 static int
@@ -359,8 +366,8 @@ add_relocs (qfo_t *qfo, int start, int count, int target)
 }
 
 static int
-add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space, int field,
-		  void (*process) (defref_t *ref, qfo_mspace_t *space, int field))
+add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
+		  void (*process) (defref_t *ref, qfo_mspace_t *space))
 {
 	int         count = space->num_defs;
 	int         size;
@@ -387,7 +394,7 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space, int field,
 			continue;
 		ref = get_defref (odef, dest_space);
 		work_defrefs[num_work_defrefs++] = ref;
-		process (ref, dest_space, field);
+		process (ref, dest_space);
 		odef->relocs = add_relocs (qfo, odef->relocs, odef->num_relocs,
 								   odef - dest_space->defs);
 	}
@@ -446,11 +453,12 @@ add_data (int space, qfo_mspace_t *data)
 					qfo.
 */
 static void
-add_space (qfo_t *qfo, qfo_mspace_t *space)
+add_data_space (qfo_t *qfo, qfo_mspace_t *space)
 {
 	qfo_mspace_t *ws;
 	if (space->type != qfos_data)
-		internal_error (0, "bad space type for add_space (): %d", space->type);
+		internal_error (0, "bad space type for add_data_space (): %d",
+						space->type);
 	space->id = work->num_spaces++;	// so the space in work can be found
 	work->spaces = realloc (work->spaces,
 							work->num_spaces * sizeof (qfo_mspace_t));
@@ -458,7 +466,7 @@ add_space (qfo_t *qfo, qfo_mspace_t *space)
 	memset (ws, 0, sizeof (qfo_mspace_t));
 	ws->type = space->type;
 	if (space->num_defs)
-		add_defs (qfo, space, ws, 0, process_def);
+		add_defs (qfo, space, ws, process_data_def);
 	if (space->d.data) {
 		int         size = space->data_size * sizeof (pr_type_t);
 		ws->d.data = malloc (size);
@@ -562,7 +570,11 @@ make_def (int s, const char *name, type_t *type, unsigned flags, int v)
 	work_defrefs = realloc (work_defrefs,
 							(num_work_defrefs + 1) * sizeof (defref_t *));
 	work_defrefs[num_work_defrefs++] = ref;
-	define_def (ref, s == qfo_entity_space);
+	if (s == qfo_entity_space) {
+		define_def (ref, extern_field_defs, defined_field_defs);
+	} else {
+		define_def (ref, extern_defs, defined_defs);
+	}
 
 	return ref;
 }
@@ -684,15 +696,15 @@ process_data_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 	if (pass != 1)
 		return 0;
 	if (space->id == qfo_near_data_space) {
-		add_defs (qfo, space, work->spaces + qfo_near_data_space, 0,
-				  process_def);
+		add_defs (qfo, space, work->spaces + qfo_near_data_space,
+				  process_data_def);
 		add_data (qfo_near_data_space, space);
 	} else if (space->id == qfo_far_data_space) {
-		add_defs (qfo, space, work->spaces + qfo_far_data_space, 0,
-				  process_def);
+		add_defs (qfo, space, work->spaces + qfo_far_data_space,
+				  process_data_def);
 		add_data (qfo_far_data_space, space);
 	} else {
-		add_space (qfo, space);
+		add_data_space (qfo, space);
 	}
 	return 0;
 }
@@ -715,7 +727,7 @@ process_entity_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
 	if (pass != 1)
 		return 0;
-	add_defs (qfo, space, work->spaces + qfo_entity_space, 1, process_def);
+	add_defs (qfo, space, work->spaces + qfo_entity_space, process_field_def);
 	add_data (qfo_entity_space, space);
 	return 0;
 }
