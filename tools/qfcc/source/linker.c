@@ -359,7 +359,8 @@ add_relocs (qfo_t *qfo, int start, int count, int target)
 }
 
 static int
-add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space, int field)
+add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space, int field,
+		  void (*process) (defref_t *ref, qfo_mspace_t *space, int field))
 {
 	int         count = space->num_defs;
 	int         size;
@@ -386,7 +387,7 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space, int field)
 			continue;
 		ref = get_defref (odef, dest_space);
 		work_defrefs[num_work_defrefs++] = ref;
-		process_def (ref, dest_space, field);
+		process (ref, dest_space, field);
 		odef->relocs = add_relocs (qfo, odef->relocs, odef->num_relocs,
 								   odef - dest_space->defs);
 	}
@@ -457,7 +458,7 @@ add_space (qfo_t *qfo, qfo_mspace_t *space)
 	memset (ws, 0, sizeof (qfo_mspace_t));
 	ws->type = space->type;
 	if (space->num_defs)
-		add_defs (qfo, space, ws, 0);
+		add_defs (qfo, space, ws, 0, process_def);
 	if (space->d.data) {
 		int         size = space->data_size * sizeof (pr_type_t);
 		ws->d.data = malloc (size);
@@ -683,10 +684,12 @@ process_data_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 	if (pass != 1)
 		return 0;
 	if (space->id == qfo_near_data_space) {
-		add_defs (qfo, space, work->spaces + qfo_near_data_space, 0);
+		add_defs (qfo, space, work->spaces + qfo_near_data_space, 0,
+				  process_def);
 		add_data (qfo_near_data_space, space);
 	} else if (space->id == qfo_far_data_space) {
-		add_defs (qfo, space, work->spaces + qfo_far_data_space, 0);
+		add_defs (qfo, space, work->spaces + qfo_far_data_space, 0,
+				  process_def);
 		add_data (qfo_far_data_space, space);
 	} else {
 		add_space (qfo, space);
@@ -712,7 +715,7 @@ process_entity_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
 	if (pass != 1)
 		return 0;
-	add_defs (qfo, space, work->spaces + qfo_entity_space, 1);
+	add_defs (qfo, space, work->spaces + qfo_entity_space, 1, process_def);
 	add_data (qfo_entity_space, space);
 	return 0;
 }
