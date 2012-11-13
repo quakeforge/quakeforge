@@ -461,7 +461,7 @@ static void
 add_data (int space, qfo_mspace_t *data)
 {
 	if (space < 0 || space >= qfo_num_spaces || !work_spaces[space])
-		internal_error (0, "bad space for add_data (): %d", space);
+		linker_internal_error ("bad space for add_data (): %d", space);
 	defspace_add_data (*work_spaces[space], data->d.data, data->data_size);
 	work->spaces[space].d.data = (*work_spaces[space])->data;
 	work->spaces[space].data_size = (*work_spaces[space])->size;
@@ -478,8 +478,8 @@ add_data_space (qfo_t *qfo, qfo_mspace_t *space)
 {
 	qfo_mspace_t *ws;
 	if (space->type != qfos_data)
-		internal_error (0, "bad space type for add_data_space (): %d",
-						space->type);
+		linker_internal_error ("bad space type for add_data_space (): %d",
+							   space->type);
 	space->id = work->num_spaces++;	// so the space in work can be found
 	work->spaces = realloc (work->spaces,
 							work->num_spaces * sizeof (qfo_mspace_t));
