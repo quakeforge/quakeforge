@@ -233,6 +233,27 @@ linker_add_string (const char *str)
 	return new;
 }
 
+/** Allocate data from the working qfo.
+
+	\param space	The space from which to allocate data.
+	\param size		The number of words to allocate.
+	\return			The offset of the allocated data.
+*/
+static int
+alloc_data (int space, int size)
+{
+	int         offset;
+
+	if (space < 0 || space >= qfo_num_spaces || !work_spaces[space])
+		linker_internal_error ("bad space for alloc_data (): %d", space);
+	if (size <= 0)
+		linker_internal_error ("bad size for alloc_data (): %d", space);
+	offset = defspace_alloc_loc (*work_spaces[space], size);
+	work->spaces[space].d.data = (*work_spaces[space])->data;
+	work->spaces[space].data_size = (*work_spaces[space])->size;
+	return offset;
+}
+
 /**	Resolve an external def with its global definition.
 
 	The types of the external def and the global def must match.
@@ -560,7 +581,7 @@ make_def (int s, const char *name, type_t *type, unsigned flags, int v)
 	ref = Hash_Find (defined_type_defs, WORKSTR (-def->type));
 	if (ref)
 		def->type = REF (ref)->offset;
-	def->offset = defspace_alloc_loc (def_space, type_size (type));
+	def->offset = alloc_data (s, type_size (type));
 	def->flags = flags;
 	def_space->data[def->offset].integer_var = v;
 	space->d.data = def_space->data;
@@ -619,7 +640,6 @@ linker_begin (void)
 	work_far_data = defspace_new ();
 	work_entity_data = defspace_new ();
 	work_type_data = defspace_new ();
-	defspace_alloc_loc (work_type_data, 4);
 
 	pr.strings = work_strings;
 
@@ -647,6 +667,8 @@ linker_begin (void)
 	work->spaces[qfo_type_space].data_size = work_type_data->size;
 	for (i = 0; i < qfo_num_spaces; i++)
 		work->spaces[i].id = i;
+
+	alloc_data (qfo_type_space, 4);
 
 	work->lines = calloc (1, sizeof (pr_lineno_t));
 	work->num_lines = 1;
