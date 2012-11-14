@@ -130,8 +130,8 @@ static const int num_builtins = sizeof (builtin_symbols)
 
 static defref_t *free_defrefs;
 
-static hashtab_t *extern_defs;
-static hashtab_t *defined_defs;
+static hashtab_t *extern_data_defs;
+static hashtab_t *defined_data_defs;
 
 static hashtab_t *extern_field_defs;
 static hashtab_t *defined_field_defs;
@@ -350,7 +350,7 @@ process_def (defref_t *ref, qfo_mspace_t *space,
 static void
 process_data_def (defref_t *ref, qfo_mspace_t *space, qfo_def_t *old)
 {
-	process_def (ref, space, extern_field_defs, defined_field_defs);
+	process_def (ref, space, extern_data_defs, defined_data_defs);
 }
 
 static void
@@ -585,7 +585,7 @@ make_def (int s, const char *name, type_t *type, unsigned flags, void *val)
 	if (s == qfo_entity_space) {
 		define_def (ref, extern_field_defs, defined_field_defs);
 	} else {
-		define_def (ref, extern_defs, defined_defs);
+		define_def (ref, extern_data_defs, defined_data_defs);
 	}
 
 	return ref;
@@ -602,7 +602,7 @@ linker_find_def (const char *name)
 {
 	defref_t   *r;
 
-	if ((r = Hash_Find (defined_defs, name)))
+	if ((r = Hash_Find (defined_data_defs, name)))
 		return REF (r);
 	return 0;
 }
@@ -616,8 +616,8 @@ linker_begin (void)
 
 	linker_current_file = dstring_newstr ();
 
-	extern_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
-	defined_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
+	extern_data_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
+	defined_data_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
 
 	extern_field_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
 	defined_field_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
@@ -1023,7 +1023,7 @@ linker_add_lib (const char *libname)
 				qfo_def_t  *def = qfo->defs + j;
 				if ((def->flags & QFOD_GLOBAL)
 					&& !(def->flags & QFOD_EXTERNAL)
-					&& Hash_Find (extern_defs, QFOSTR (qfo, def->name))) {
+					&& Hash_Find (extern_data_defs, QFOSTR (qfo, def->name))) {
 					if (options.verbosity >= 2)
 						fprintf (stderr, "adding %s because of %s\n",
 								 pack->files[i].name,
@@ -1095,13 +1095,13 @@ check_defs (void)
 	defref_t  **undef_defs, **defref;
 	int         did_self = 0, did_this = 0;
 
-	undef_defs = (defref_t **) Hash_GetList (extern_defs);
+	undef_defs = (defref_t **) Hash_GetList (extern_data_defs);
 	for (defref = undef_defs; *defref; defref++) {
 		qfo_def_t  *def = REF (*defref);
 		const char *name = WORKSTR (def->name);
 
 		if (strcmp (name, ".self") == 0 && !did_self) {
-			defref_t   *_d = Hash_Find (defined_defs, "self");
+			defref_t   *_d = Hash_Find (defined_data_defs, "self");
 			if (_d) {
 				qfo_def_t  *d = REF (_d);
 				if (QFO_TYPEMETA (work, d->type) == ty_none
@@ -1121,12 +1121,12 @@ check_defs (void)
 			this_ref = make_def (qfo_entity_space, name, &type_id, flags, 0);
 			flags |= QFOD_CONSTANT | QFOD_INITIALIZED;
 			type = field_type (&type_id);
-			linker_add_def (".this", type, flags, REF (this_ref)->offset);
+			linker_add_def (".this", type, flags, &REF (this_ref)->offset);
 			did_this = 1;
 		}
 	}
 	free (undef_defs);
-	undef_defs = (defref_t **) Hash_GetList (extern_defs);
+	undef_defs = (defref_t **) Hash_GetList (extern_data_defs);
 	for (defref = undef_defs; *defref; defref++) {
 		qfo_def_t  *def = REF (*defref);
 		undefined_def (def);
