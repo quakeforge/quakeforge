@@ -152,7 +152,7 @@ BOOL (id object) object_is_meta_class = #0;
 
 - (id) init
 {
-	[self retain];
+	obj_increment_retaincount (self);
 	return self;
 }
 
