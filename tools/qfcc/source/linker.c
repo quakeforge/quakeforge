@@ -479,8 +479,9 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 		ref = get_defref (odef, dest_space);
 		work_defrefs[num_work_defrefs++] = ref;
 		process (ref, dest_space, idef);
-		odef->relocs = add_relocs (qfo, odef->relocs, odef->num_relocs,
-								   odef - dest_space->defs);
+		REF (ref)->relocs = add_relocs (qfo, REF (ref)->relocs,
+										REF (ref)->num_relocs,
+										REF (ref) - dest_space->defs);
 	}
 	dest_space->num_defs += count;
 	return count;
