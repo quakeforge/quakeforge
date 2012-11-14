@@ -390,16 +390,17 @@ finish_link (void)
 
 	flags = (QFOD_GLOBAL | QFOD_CONSTANT | QFOD_INITIALIZED | QFOD_NOSAVE);
 	if (options.code.progsversion != PROG_ID_VERSION) {
+		pr_int_t    param_size = type_size (&type_param);
 		linker_add_def (".param_size", &type_integer, flags,
-						type_size (&type_param));
+						&param_size);
 	}
 
 	if (options.code.debug) {
-		int         str;
+		pr_int_t    str;
 
 		setup_sym_file (options.output_file);
 		str = linker_add_string (options.debug_file);
-		linker_add_def (".debug_file", &type_string, flags, str);
+		linker_add_def (".debug_file", &type_string, flags, &str);
 	}
 	linker_add_def (".type_encodings", &type_pointer, flags, 0);
 

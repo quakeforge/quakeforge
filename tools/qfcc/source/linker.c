@@ -551,7 +551,7 @@ add_data_space (qfo_t *qfo, qfo_mspace_t *space)
 }
 
 static defref_t *
-make_def (int s, const char *name, type_t *type, unsigned flags, int v)
+make_def (int s, const char *name, type_t *type, unsigned flags, void *val)
 {
 	qfo_def_t  *def;
 	defref_t   *ref;
@@ -572,7 +572,9 @@ make_def (int s, const char *name, type_t *type, unsigned flags, int v)
 		def->type = REF (ref)->offset;
 	def->offset = alloc_data (s, type_size (type));
 	def->flags = flags;
-	def_space->data[def->offset].integer_var = v;
+	if (val)
+		memcpy (&def_space->data[def->offset], val,
+				type_size (type) * sizeof (pr_type_t));
 	space->d.data = def_space->data;
 	space->data_size = def_space->size;
 
@@ -590,9 +592,9 @@ make_def (int s, const char *name, type_t *type, unsigned flags, int v)
 }
 
 void
-linker_add_def (const char *name, type_t *type, unsigned flags, int v)
+linker_add_def (const char *name, type_t *type, unsigned flags, void *val)
 {
-	make_def (qfo_near_data_space, name, type, flags, v);
+	make_def (qfo_near_data_space, name, type, flags, val);
 }
 
 qfo_def_t *
