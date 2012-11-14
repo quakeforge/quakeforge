@@ -179,11 +179,21 @@ static dstring_t *linker_current_file;
 static void
 linker_type_mismatch (qfo_def_t *def, qfo_def_t *prev)
 {
-	def_error (def, "type mismatch for `%s' `%s'",
-			   WORKSTR (def->name),
-			   QFO_TYPESTR (work, def->type));
+	const char *def_encoding;
+	const char *prev_encoding;
+
+	if (def->type < 0)
+		def_encoding = QFO_GETSTR (work, -def->type);
+	else
+		def_encoding = QFO_TYPESTR (work, def->type);
+	if (prev->type < 0)
+		prev_encoding = QFO_GETSTR (work, -prev->type);
+	else
+		prev_encoding = QFO_TYPESTR (work, prev->type);
+	def_error (def, "type mismatch for `%s' `%s'", WORKSTR (def->name),
+			   def_encoding);
 	def_error (prev, "previous definition `%s'",
-			   QFO_TYPESTR (work, prev->type));
+			   prev_encoding);
 }
 
 /**	Create a new def reference.
@@ -386,7 +396,7 @@ process_type_def (defref_t *ref, qfo_mspace_t *space, qfo_def_t *old)
 			// take care of any cross-references.
 
 			REF (ref)->offset = alloc_data (qfo_type_space, old_type->size);
-			new_type = WORKTYPE(REF (ref)->offset);
+			new_type = WORKTYPE (REF (ref)->offset);
 			memcpy (new_type, old_type, old_type->size * sizeof (pr_type_t));
 			define_def (ref, extern_type_defs, defined_type_defs);
 		}
