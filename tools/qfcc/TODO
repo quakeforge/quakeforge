@@ -13,6 +13,8 @@ M	unnamed function parameters for prototypes/typdefs etc.
 o	fix object files
 o	optimizations (esp CSE)
 W	fix used/uninitialized warnings
+o	optional arguments for functions
+	vector(vector fwd, optional vector up) vectoangles = #51;
 o	arrays in entities
 o	embedded nul characters in strings
 ?	try to reduce memory consumption
