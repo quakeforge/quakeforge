@@ -284,10 +284,10 @@ resolve_external_def (defref_t *ext, defref_t *def)
 				   REF (ext)->flags);
 		linker_internal_error ("ext is not an external def");
 	}
-	if (!(REF (def)->flags & QFOD_GLOBAL)) {
-		def_error (REF (ext), "%s %x", WORKSTR (REF (ext)->name),
-				   REF (ext)->flags);
-		linker_internal_error ("def is not a global def");
+	if (REF (def)->flags & (QFOD_EXTERNAL | QFOD_LOCAL)) {
+		def_error (REF (def), "%s %x", WORKSTR (REF (def)->name),
+				   REF (def)->flags);
+		linker_internal_error ("def is an external or local def");
 	}
 	if (REF (ext)->type != REF (def)->type) {
 		linker_type_mismatch (REF (ext), REF (def));
@@ -307,6 +307,11 @@ define_def (defref_t *ref, hashtab_t *extern_tab, hashtab_t *defined_tab)
 	defref_t   *r;
 	const char *name;
 
+	if (REF (ref)->flags & (QFOD_EXTERNAL | QFOD_LOCAL)) {
+		def_error (REF (ref), "%s %x", WORKSTR (REF (ref)->name),
+				   REF (ref)->flags);
+		linker_internal_error ("ref is an external or local def");
+	}
 	name = WORKSTR (REF (ref)->name);
 	if ((r = Hash_Find (defined_tab, name))) {
 		if (REF (r)->flags & QFOD_SYSTEM) {
