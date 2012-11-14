@@ -808,6 +808,21 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 								   "corrupt object file?");
 		reloc->offset += def->type - def->offset;
 	}
+	for (i = 0; i < num_builtins; i++) {
+		builtin_sym_t *bi = builtin_symbols + i;
+		qfo_def_t  *def;
+		defref_t   *ref;
+
+		if (!bi->defref)
+			continue;
+		def = REF (bi->defref);
+		if (def->type >= 0)
+			continue;
+		ref = Hash_Find (defined_type_defs, WORKSTR (-def->type));
+		if (!ref)
+			continue;
+		def->type = REF (ref)->offset;
+	}
 	return 0;
 }
 
