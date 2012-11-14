@@ -40,7 +40,17 @@ AC_MSG_CHECKING(for debugging)
 if test "x$debug" != xno -a "x$leave_cflags_alone" != xyes; then
 	AC_MSG_RESULT(yes)
 	BUILD_TYPE="$BUILD_TYPE Debug"
-	CFLAGS="$CFLAGS -g"
+	DEBUG=-g
+	if test "x$GCC" = xyes; then
+		if test "$CC_MAJ" -ge 4; then
+			DEBUG=-g3
+		else
+			if test "$CC_MAJ" -eq 3 -a "$CC_MIN" -ge 1; then
+				DEBUG=-g3
+			fi
+		fi
+	fi
+	CFLAGS="$CFLAGS $DEBUG"
 else
 	AC_MSG_RESULT(no)
 fi
