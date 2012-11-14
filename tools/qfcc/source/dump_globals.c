@@ -445,11 +445,15 @@ qfo_types (qfo_t *qfo)
 		}
 		type = &QFO_STRUCT (qfo, qfo_type_space, qfot_type_t, type_ptr);
 		if (type->ty < 0 || type->ty >= NUM_META)
-			meta = "invalid";
+			meta = va ("invalid meta: %d", type->ty);
 		else
 			meta = ty_meta_names[type->ty];
 		printf ("%-5x %-9s %-20s", type_ptr, meta,
 				QFO_TYPESTR (qfo, type_ptr));
+		if (type->ty < 0 || type->ty >= NUM_META) {
+			puts ("");
+			break;
+		}
 		switch ((ty_meta_e) type->ty) {
 			case ty_none:
 				printf (" %-10s", (type->t.type < 0
