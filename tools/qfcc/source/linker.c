@@ -401,6 +401,20 @@ process_type_def (defref_t *ref, qfo_mspace_t *space, qfo_def_t *old)
 	}
 }
 
+static void
+adjust_reloc_offset (qfo_reloc_t *reloc)
+{
+	if (!reloc->space) {
+		//FIXME double check
+		reloc->offset += work_base[qfo_code_space];
+	} else if (reloc->space < qfo_num_spaces) {
+		// Relocs in type space are handled by process_type_space, so don't
+		// touch them here.
+		if (reloc->space != qfo_type_space)
+			reloc->offset += work_base[reloc->space];
+	}
+}
+
 static int
 add_relocs (qfo_t *qfo, int start, int count, int target)
 {
@@ -420,12 +434,7 @@ add_relocs (qfo_t *qfo, int start, int count, int target)
 			continue;
 		}
 		reloc->space = qfo->spaces[reloc->space].id;
-		if (!reloc->space) {
-			//FIXME double check
-			reloc->offset += work_base[qfo_code_space];
-		} else if (reloc->space < qfo_num_spaces) {
-			reloc->offset += work_base[reloc->space];
-		}
+		adjust_reloc_offset (reloc);
 		reloc->target = target;
 	}
 	return work->num_relocs - count;
@@ -872,12 +881,7 @@ process_loose_relocs (qfo_t *qfo)
 		}
 		if (reloc->type == rel_def_op)
 			reloc->target += work_base[qfo_code_space];
-		if (!reloc->space) {
-			//FIXME double check
-			reloc->offset += work_base[qfo_code_space];
-		} else if (reloc->space < qfo_num_spaces) {
-			reloc->offset += work_base[reloc->space];
-		}
+		adjust_reloc_offset (reloc);
 	}
 }
 
