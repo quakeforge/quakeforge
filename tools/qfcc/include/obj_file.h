@@ -404,7 +404,7 @@ enum {
 */
 #define	QFO_FUNCTION(q, s, o)	QFO_var (q, s, func, o)
 
-/** Access a pointer variable in the object file. Can be assigned to.
+/** Access a block of memory in the object file as a C struct.
 
 	\par QC type:
 		\c void []
@@ -412,7 +412,7 @@ enum {
 	\param s space index
 	\param t C type of the structure
 	\param o offset into object file data space
-	\return pointer_t lvalue
+	\return C pointer to the struct at space:offset
 
 	\hideinitializer
 */

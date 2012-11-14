@@ -711,7 +711,7 @@ qfo_relocate_refs (qfo_t *qfo)
 	qfo_reloc_t *reloc;
 
 	for (i = 0, reloc = qfo->relocs; i < qfo->num_relocs; i++, reloc++) {
-		// this will be valid only for *_def relocs
+		// this will be valid only for *_def[_ofs] and *_field[_ofs] relocs
 		qfo_def_t  *def = qfo->defs + reloc->target;
 
 		switch (reloc->type) {
