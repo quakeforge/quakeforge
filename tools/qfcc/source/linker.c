@@ -434,23 +434,26 @@ static int
 add_relocs (qfo_t *qfo, int start, int count, int target)
 {
 	int         size;
-	qfo_reloc_t *reloc;
+	qfo_reloc_t *ireloc;
+	qfo_reloc_t *oreloc;
 
 	size = work->num_relocs + count;
 	work->relocs = realloc (work->relocs, size * sizeof (qfo_reloc_t));
-	memcpy (work->relocs + work->num_relocs, qfo->relocs + start,
-			count * sizeof (qfo_reloc_t));
-	while (work->num_relocs < size) {
-		reloc = work->relocs + work->num_relocs++;
-		if (reloc->space < 0 || reloc->space >= qfo->num_spaces) {
-			linker_error ("bad reloc space: %d (%d)", reloc->space,
+	ireloc = qfo->relocs + start;
+	oreloc = work->relocs + work->num_relocs;
+	for  ( ; work->num_relocs < size; ireloc++, oreloc++) {
+		*oreloc = *ireloc;
+		ireloc->type = -1;
+		ireloc->offset = work->num_relocs++;
+		if (oreloc->space < 0 || oreloc->space >= qfo->num_spaces) {
+			linker_error ("bad reloc space: %d (%d)", oreloc->space,
 						  qfo->num_spaces);
-			reloc->type = rel_none;
+			oreloc->type = rel_none;
 			continue;
 		}
-		reloc->space = qfo->spaces[reloc->space].id;
-		adjust_reloc_offset (reloc);
-		reloc->target = target;
+		oreloc->space = qfo->spaces[oreloc->space].id;
+		adjust_reloc_offset (oreloc);
+		oreloc->target = target;
 	}
 	return work->num_relocs - count;
 }
@@ -477,6 +480,8 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 		*odef = *idef;						// copy the def data
 		odef->name = linker_add_string (QFOSTR (qfo, idef->name));
 		odef->file = linker_add_string (QFOSTR (qfo, idef->file));
+		idef->file = -1;					// mark def as copied
+		idef->line = num_work_defrefs;		// so def can be found
 		type = QFOTYPE(idef->type);
 		odef->type = type->t.class;			// pointer to type in work
 		if (odef->flags & QFOD_EXTERNAL && !odef->num_relocs)
@@ -776,6 +781,23 @@ type_def_compare (const void *a, const void *b)
 	return 0;
 }
 
+static void
+update_type_space_reloc (qfo_mspace_t *space, qfo_reloc_t *reloc)
+{
+	qfo_def_t    dummy;
+	qfo_def_t   *def;
+
+	if (reloc->type == -1)
+		reloc = work->relocs + reloc->offset;
+	dummy.offset = reloc->offset;
+	def = (qfo_def_t *) bsearch (&dummy, space->defs, space->num_defs,
+								 sizeof (qfo_def_t), type_def_compare);
+	if (!def)
+		linker_internal_error ("relocation record with invalid address. "
+							   "corrupt object file?");
+	reloc->offset += def->type - def->offset;
+}
+
 static int
 process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
@@ -797,21 +819,20 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 	qsort (space->defs, space->num_defs, sizeof (qfo_def_t), type_def_compare);
 
 	// update the offsets of all relocation records that point into the type
-	// encoding space
+	// encoding space.
 	for (i = 0; i < qfo->num_relocs; i++) {
 		qfo_reloc_t *reloc = qfo->relocs + i;
-		qfo_def_t    dummy;
-		qfo_def_t   *def;
 
 		if (reloc->space != space->id)
 			continue;
-		dummy.offset = reloc->offset;
-		def = (qfo_def_t *) bsearch (&dummy, space->defs, space->num_defs,
-									 sizeof (qfo_def_t), type_def_compare);
-		if (!def)
-			linker_internal_error ("relocation record with invalid address. "
-								   "corrupt object file?");
-		reloc->offset += def->type - def->offset;
+		update_type_space_reloc (space, reloc);
+		// while we're at it, update the strings so the type space strings
+		// are always correct.
+		if (reloc->type == rel_def_string) {
+			string_t     str;
+			str = linker_add_string (QFOSTR (qfo, reloc->target));
+			QFO_STRING (work, reloc->space, reloc->offset) = str;
+		}
 	}
 	for (i = 0; i < num_builtins; i++) {
 		builtin_sym_t *bi = builtin_symbols + i;
@@ -1254,6 +1275,17 @@ build_qfo (void)
 			reloc->target = i;
 			reloc++;
 		}
+	}
+	for (i = 0; i < qfo->num_relocs; i++) {
+		qfo_def_t  *def;
+
+		reloc = qfo->relocs + i;
+		if (reloc->space != qfo_type_space)
+			continue;
+		if (reloc->type != rel_def_def)
+			continue;
+		def = qfo->defs + reloc->target;
+		QFO_INT (qfo, reloc->space, reloc->offset) = def->offset;
 	}
 	return qfo;
 }
