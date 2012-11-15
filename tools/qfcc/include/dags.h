@@ -35,6 +35,8 @@
 */
 //@{
 
+#include "QF/pr_comp.h"
+
 struct dstring_s;
 struct flownode_s;
 struct sblock_s;
@@ -57,6 +59,7 @@ typedef struct dagnode_s {
 	int         is_child;		///< true if a child node
 	int         cost;			///< cost of this node in temp vars
 	daglabel_t *label;			///< ident/const if leaf node, or operator
+	struct statement_s *statement;	///< statement generating this node
 	/// \name child nodes
 	/// All three child nodes will be null if this node is a leaf
 	/// If \a a is null, both \a b and \a c must also be null. If \a is not
@@ -66,9 +69,8 @@ typedef struct dagnode_s {
 	/// \a b and \a c are used to help keep track of the original statement
 	/// operands
 	//@{
-	struct dagnode_s *a;
-	struct dagnode_s *b;
-	struct dagnode_s *c;
+	struct dagnode_s *a, *b, *c;
+	etype_t     ta, tb, tc;		///< desired type of each operand (to alias)
 	//@}
 	daglabel_t *identifiers;	///< list of identifiers with value of this node
 } dagnode_t;

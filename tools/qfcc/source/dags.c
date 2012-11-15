@@ -125,39 +125,37 @@ opcode_label (const char *opcode)
 static daglabel_t *
 operand_label (operand_t *op)
 {
-	operand_t  *o;
 	symbol_t   *sym = 0;
 	ex_value_t *val = 0;
 	daglabel_t *label;
 
 	if (!op)
 		return 0;
-	o = op;
-	while (o->op_type == op_alias)
-		o = o->o.alias;
+	while (op->op_type == op_alias)
+		op = op->o.alias;
 
-	if (o->op_type == op_temp) {
-		if (o->o.tempop.daglabel)
-			return o->o.tempop.daglabel;
+	if (op->op_type == op_temp) {
+		if (op->o.tempop.daglabel)
+			return op->o.tempop.daglabel;
 		label = new_label ();
 		label->op = op;
-		o->o.tempop.daglabel = label;
-	} else if (o->op_type == op_symbol) {
-		sym = o->o.symbol;
+		op->o.tempop.daglabel = label;
+	} else if (op->op_type == op_symbol) {
+		sym = op->o.symbol;
 		if (sym->daglabel)
 			return sym->daglabel;
 		label = new_label ();
 		label->op = op;
 		sym->daglabel = label;
-	} else if (o->op_type == op_value || o->op_type == op_pointer) {
-		val = o->o.value;
+	} else if (op->op_type == op_value || op->op_type == op_pointer) {
+		val = op->o.value;
 		if (val->daglabel)
 			return val->daglabel;
 		label = new_label ();
 		label->op = op;
 		val->daglabel = label;
 	} else {
-		internal_error (0, "unexpected operand type: %d", o->op_type);
+		internal_error (0, "unexpected operand type: %d", op->op_type);
 	}
 	return label;
 }
@@ -180,23 +178,21 @@ leaf_node (operand_t *op)
 static dagnode_t *
 node (operand_t *op)
 {
-	operand_t  *o;
 	symbol_t   *sym;
 
 	if (!op)
 		return 0;
-	o = op;
-	while (o->op_type == op_alias)
-		o = o->o.alias;
-	if (o->op_type == op_symbol) {
-		sym = o->o.symbol;
+	while (op->op_type == op_alias)
+		op = op->o.alias;
+	if (op->op_type == op_symbol) {
+		sym = op->o.symbol;
 		if (sym->sy_type == sy_const)
 			return 0;
 		if (sym->daglabel)
 			return sym->daglabel->dagnode;
-	} else if (o->op_type == op_temp) {
-		if (o->o.tempop.daglabel)
-			return o->o.tempop.daglabel->dagnode;
+	} else if (op->op_type == op_temp) {
+		if (op->o.tempop.daglabel)
+			return op->o.tempop.daglabel->dagnode;
 	}
 	return 0;
 }
@@ -264,6 +260,19 @@ daglabel_detatch (daglabel_t *l)
 	l->dagnode = 0;
 }
 
+static statement_t *
+build_statement (const char *opcode, operand_t *a, operand_t *b, operand_t *c,
+				 expr_t *expr)
+{
+	if ((!a && (b || c)) || (a && !b && c))
+		internal_error (0, "invalid operand combo");
+	statement_t *st = new_statement (opcode, expr);
+	st->opa = a;
+	st->opb = b;
+	st->opc = c;
+	return st;
+}
+
 dagnode_t *
 dag_create (const flownode_t *flownode)
 {
@@ -303,16 +312,23 @@ dag_create (const flownode_t *flownode)
 		}
 		if (!n) {
 			n = new_node ();
+			n->statement = s;
 			n->label = op;
 			n->a = ny;
 			n->b = nz;
 			n->c = nw;
-			if (ny)
+			if (ny) {
 				ny->is_child = 1;
-			if (nz)
+				n->ta = y->type;
+			}
+			if (nz) {
 				nz->is_child = 1;
-			if (nw)
+				n->tb = z->type;
+			}
+			if (nw) {
 				nw->is_child = 1;
+				n->tc = w->type;
+			}
 			*dagtail = n;
 			dagtail = &n->next;
 		}
@@ -419,6 +435,68 @@ dag_calc_node_costs (dagnode_t *dagnode)
 static operand_t *
 dag_gencode (sblock_t *block, const dagnode_t *dagnode)
 {
+	if (!dagnode->a) {
+		statement_t *st;
+		daglabel_t *var = 0;
+		operand_t *op = dagnode->label->op;
+
+		if (dagnode->identifiers) {
+			var = dagnode->identifiers;
+		}
+		for (var = dagnode->identifiers; var; var = var->next) {
+			st = build_statement ("=", op, var->op, 0, 0);
+			sblock_add_statement (block, st);
+		}
+		return op;
+	} else {
+		statement_t *st;
+		daglabel_t *var = 0;
+		operand_t  *op_a = 0;
+		operand_t  *op_b = 0;
+		operand_t  *op_c = 0;
+
+		if (flow_is_cond (dagnode->statement))
+			op_b = dagnode->statement->opb;
+
+		if (dagnode->b && dagnode->c) {
+			op_a = dag_gencode (block, dagnode->a);
+			op_b = dag_gencode (block, dagnode->b);
+			op_c = dag_gencode (block, dagnode->c);
+		} else if (dagnode->b) {
+			if (dagnode->a->cost < dagnode->b->cost) {
+				op_b = dag_gencode (block, dagnode->b);
+				op_a = dag_gencode (block, dagnode->a);
+			} else {
+				op_a = dag_gencode (block, dagnode->a);
+				op_b = dag_gencode (block, dagnode->b);
+			}
+		} else {
+			op_a = dag_gencode (block, dagnode->a);
+		}
+		if (op_a && op_b && get_type (dagnode->statement->expr)) {
+			if (dagnode->identifiers) {
+				op_c = dagnode->identifiers->op;
+				var = dagnode->identifiers->next;
+			} else {
+				op_c = temp_operand (get_type (dagnode->statement->expr));
+			}
+		}
+		if (op_a && op_a->op_type != op_label && op_a->type != dagnode->ta)
+			op_a = alias_operand (op_a, dagnode->ta);
+		if (op_b && op_b->op_type != op_label && op_b->type != dagnode->tb)
+			op_b = alias_operand (op_b, dagnode->tb);
+		if (op_c && op_c->op_type != op_label && op_c->type != dagnode->tc)
+			op_c = alias_operand (op_c, dagnode->tc);
+		st = build_statement (dagnode->label->opcode, op_a, op_b, op_c,
+							  dagnode->statement->expr);
+		sblock_add_statement (block, st);
+		while (var) {
+			st = build_statement ("=", op_c, var->op, 0, 0);
+			sblock_add_statement (block, st);
+			var = var->next;
+		}
+		return op_c;
+	}
 	return 0;
 }
 
@@ -429,8 +507,8 @@ dag_generate (sblock_t *block, const flownode_t *flownode)
 
 	dag_calc_node_costs (flownode->dag);
 	for (dag = flownode->dag; dag; dag = dag->next) {
-		//if (!dag->a || (strcmp (dag->label->opcode, ".=") && !dag->identifiers))
-		//	continue;
+		if (!dag->a || (strcmp (dag->label->opcode, ".=") && !dag->identifiers))
+			continue;
 		dag_gencode (block, dag);
 	}
 }
