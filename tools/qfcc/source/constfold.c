@@ -448,7 +448,7 @@ static expr_t *
 do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	type_t     *type;
-	static int  valid[] = {'=', PAS, '&', 'M', '.', EQ, NE, 0};
+	static int  valid[] = {'=', PAS, '-', '&', 'M', '.', EQ, NE, 0};
 
 	if (is_integral (type = get_type (e2)) && (op == '-' || op == '+')) {
 		// pointer arithmetic
@@ -458,8 +458,20 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		return new_alias_expr (get_type (e1), e);
 	}
 	if (!valid_op (op, valid))
-		return error (e1, "invalid operator for pointer");
+		return error (e1, "invalid operator for pointer: %s",
+					  get_op_string (op));
 
+	if (op == '-') {
+		type = get_type (e1);
+		if (type != get_type (e2))
+			return error (e2, "invalid operands to binary -");
+		e1 = new_alias_expr (&type_integer, e1);
+		e2 = new_alias_expr (&type_integer, e2);
+		e = binary_expr ('-', e1, e2);
+		if (type_size (type) != 1)
+			e = binary_expr ('/', e, new_integer_expr (type_size (type)));
+		return e;
+	}
 	if (op == PAS && (type = get_type (e1)->t.fldptr.type) != get_type (e2)) {
 		// make sure auto-convertions happen
 		expr_t     *tmp = new_temp_def_expr (type);
