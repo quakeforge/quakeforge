@@ -168,10 +168,11 @@ leaf_node (operand_t *op)
 
 	if (!op)
 		return 0;
-	label = operand_label (op);
 	node = new_node ();
-	node->label = label;
+	node->tl = op->type;
+	label = operand_label (op);
 	label->dagnode = node;
+	node->label = label;
 	return node;
 }
 
@@ -446,13 +447,14 @@ dag_gencode (sblock_t *block, const dagnode_t *dagnode)
 	if (!dagnode->a) {
 		statement_t *st;
 		daglabel_t *var = 0;
-		operand_t *op = dagnode->label->op;
+		operand_t *op = fix_op_type (dagnode->label->op, dagnode->tl);
 
 		if (dagnode->identifiers) {
 			var = dagnode->identifiers;
 		}
 		for (var = dagnode->identifiers; var; var = var->next) {
-			st = build_statement ("=", op, var->op, 0, 0);
+			operand_t  *vop = fix_op_type (var->op, op->type);
+			st = build_statement ("=", op, vop, 0, 0);
 			sblock_add_statement (block, st);
 		}
 		return op;
@@ -470,6 +472,7 @@ dag_gencode (sblock_t *block, const dagnode_t *dagnode)
 			op_a = dag_gencode (block, dagnode->a);
 			op_b = dag_gencode (block, dagnode->b);
 			op_c = dag_gencode (block, dagnode->c);
+			op_c = fix_op_type (op_c, dagnode->tc);
 		} else if (dagnode->b) {
 			if (dagnode->a->cost < dagnode->b->cost) {
 				op_b = dag_gencode (block, dagnode->b);
@@ -485,18 +488,20 @@ dag_gencode (sblock_t *block, const dagnode_t *dagnode)
 			if (dagnode->identifiers) {
 				op_c = dagnode->identifiers->op;
 				var = dagnode->identifiers->next;
+				op_c = fix_op_type (op_c,
+									extract_type (dagnode->statement->expr));
 			} else {
 				op_c = temp_operand (get_type (dagnode->statement->expr));
 			}
 		}
 		op_a = fix_op_type (op_a, dagnode->ta);
 		op_b = fix_op_type (op_b, dagnode->tb);
-		op_c = fix_op_type (op_c, dagnode->tc);
 		st = build_statement (dagnode->label->opcode, op_a, op_b, op_c,
 							  dagnode->statement->expr);
 		sblock_add_statement (block, st);
 		while (var) {
-			st = build_statement ("=", op_c, var->op, 0, 0);
+			operand_t  *vop = fix_op_type (var->op, op_c->type);
+			st = build_statement ("=", op_c, vop, 0, 0);
 			sblock_add_statement (block, st);
 			var = var->next;
 		}
@@ -512,8 +517,8 @@ dag_generate (sblock_t *block, const flownode_t *flownode)
 
 	dag_calc_node_costs (flownode->dag);
 	for (dag = flownode->dag; dag; dag = dag->next) {
-		if (!dag->a || (strcmp (dag->label->opcode, ".=") && !dag->identifiers))
-			continue;
+		//if (!dag->a || (strcmp (dag->label->opcode, ".=") && !dag->identifiers))
+		//	continue;
 		dag_gencode (block, dag);
 	}
 }

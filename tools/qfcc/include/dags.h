@@ -59,6 +59,7 @@ typedef struct dagnode_s {
 	int         is_child;		///< true if a child node
 	int         cost;			///< cost of this node in temp vars
 	daglabel_t *label;			///< ident/const if leaf node, or operator
+	etype_t     tl;
 	struct statement_s *statement;	///< statement generating this node
 	/// \name child nodes
 	/// All three child nodes will be null if this node is a leaf
