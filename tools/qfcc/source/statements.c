@@ -784,6 +784,12 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 	*op = new_operand (op_alias);
 	(*op)->type = low_level_type (e->e.expr.type);
 	sblock = statement_subexpr (sblock, e->e.expr.e1, &(*op)->o.alias);
+	while ((*op)->o.alias->op_type == op_alias) {
+		operand_t  *top = (*op)->o.alias;
+		(*op)->o.alias = (*op)->o.alias->o.alias;
+		top->type = op_symbol;	// so free_operand won't follow the alias
+		free_operand (top);
+	}
 	return sblock;
 }
 

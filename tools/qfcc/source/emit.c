@@ -149,7 +149,7 @@ add_statement_def_ref (def_t *def, dstatement_t *st, int field)
 			free_def (a);
 		}
 		if (alias_depth > 1) {
-			bug (&alias_depth_expr, "alias chain detected: %d %s",
+			internal_error (&alias_depth_expr, "alias chain detected: %d %s",
 				 alias_depth, def->name);
 		}
 		if (offset_reloc)
