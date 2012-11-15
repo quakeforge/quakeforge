@@ -433,6 +433,14 @@ dag_calc_node_costs (dagnode_t *dagnode)
 }
 
 static operand_t *
+fix_op_type (operand_t *op, etype_t type)
+{
+	if (op && op->op_type != op_label && op->type != type)
+		op = alias_operand (op, type);
+	return op;
+}
+
+static operand_t *
 dag_gencode (sblock_t *block, const dagnode_t *dagnode)
 {
 	if (!dagnode->a) {
@@ -481,12 +489,9 @@ dag_gencode (sblock_t *block, const dagnode_t *dagnode)
 				op_c = temp_operand (get_type (dagnode->statement->expr));
 			}
 		}
-		if (op_a && op_a->op_type != op_label && op_a->type != dagnode->ta)
-			op_a = alias_operand (op_a, dagnode->ta);
-		if (op_b && op_b->op_type != op_label && op_b->type != dagnode->tb)
-			op_b = alias_operand (op_b, dagnode->tb);
-		if (op_c && op_c->op_type != op_label && op_c->type != dagnode->tc)
-			op_c = alias_operand (op_c, dagnode->tc);
+		op_a = fix_op_type (op_a, dagnode->ta);
+		op_b = fix_op_type (op_b, dagnode->tb);
+		op_c = fix_op_type (op_c, dagnode->tc);
 		st = build_statement (dagnode->label->opcode, op_a, op_b, op_c,
 							  dagnode->statement->expr);
 		sblock_add_statement (block, st);
