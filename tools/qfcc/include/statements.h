@@ -85,6 +85,7 @@ typedef struct sblock_s {
 struct expr_s;
 struct type_s;
 
+operand_t *alias_operand (operand_t *op, etype_t type);
 operand_t *temp_operand (struct type_s *type);
 sblock_t *new_sblock (void);
 statement_t *new_statement (const char *opcode, struct expr_s *expr);

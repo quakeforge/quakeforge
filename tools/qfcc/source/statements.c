@@ -352,6 +352,16 @@ temp_operand (type_t *type)
 	return op;
 }
 
+operand_t *
+alias_operand (operand_t *op, etype_t type)
+{
+	operand_t  *alias = new_operand (op_alias);
+	alias->type = type;
+	alias->size = pr_type_size[type];
+	alias->o.alias = op;
+	return alias;
+}
+
 static operand_t *
 short_operand (short short_val)
 {
