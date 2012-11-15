@@ -80,6 +80,7 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 	comment = " invalid offset";
 
 	if (offset < pr->progs->numglobals) {
+		comment = "";
 		switch (def->type & ~DEF_SAVEGLOBAL) {
 			case ev_void:
 				break;
@@ -422,8 +423,8 @@ static const char *ty_meta_names[] = {
 };
 #define NUM_META ((int)(sizeof (ty_meta_names) / sizeof (ty_meta_names[0])))
 
-void
-qfo_types (qfo_t *qfo)
+static void
+dump_qfo_types (qfo_t *qfo, int base_address)
 {
 	pointer_t   type_ptr;
 	qfot_type_t *type;
@@ -434,11 +435,12 @@ qfo_types (qfo_t *qfo)
 		 type_ptr += type->size) {
 		type = &QFO_STRUCT (qfo, qfo_type_space, qfot_type_t, type_ptr);
 		if (qfo->spaces[qfo_type_space].data_size - type_ptr < 2) {
-			printf ("%-5x overflow, can't check size. %x\n", type_ptr,
+			printf ("%-5x overflow, can't check size. %x\n",
+					type_ptr + base_address,
 					qfo->spaces[qfo_type_space].data_size);
 		}
 		if (type_ptr + type->size > qfo->spaces[qfo_type_space].data_size) {
-			printf ("%-5x overflow by %d words. %x\n", type_ptr,
+			printf ("%-5x overflow by %d words. %x\n", type_ptr + base_address,
 					(type_ptr + type->size
 					 - qfo->spaces[qfo_type_space].data_size),
 					qfo->spaces[qfo_type_space].data_size);
@@ -448,7 +450,7 @@ qfo_types (qfo_t *qfo)
 			meta = va ("invalid meta: %d", type->ty);
 		else
 			meta = ty_meta_names[type->ty];
-		printf ("%-5x %-9s %-20s", type_ptr, meta,
+		printf ("%-5x %-9s %-20s", type_ptr + base_address, meta,
 				QFO_TYPESTR (qfo, type_ptr));
 		if (type->ty < 0 || type->ty >= NUM_META) {
 			puts ("");
@@ -493,4 +495,49 @@ qfo_types (qfo_t *qfo)
 				break;
 		}
 	}
+}
+
+void
+qfo_types (qfo_t *qfo)
+{
+	dump_qfo_types (qfo, 0);
+}
+
+void
+dump_types (progs_t *pr)
+{
+	qfo_mspace_t spaces[qfo_num_spaces];
+	qfo_t       qfo;
+	ddef_t     *encodings_def;
+	qfot_type_encodings_t *encodings;
+
+	encodings_def = PR_FindGlobal (pr, ".type_encodings");
+	if (!encodings_def) {
+		printf ("no type encodings found");
+		return;
+	}
+	if (encodings_def->ofs > pr->globals_size - 2) {
+		printf ("invalid .type_encodings address");
+		return;
+	}
+	encodings = &G_STRUCT (pr, qfot_type_encodings_t, encodings_def->ofs);
+	if (encodings->types > pr->globals_size) {
+		printf ("invalid encodings block start");
+		return;
+	}
+	if (encodings->types + encodings->size > pr->globals_size) {
+		printf ("truncating encodings block size");
+		encodings->size = pr->globals_size - encodings->types;
+	}
+	memset (spaces, 0, sizeof (spaces));
+	spaces[qfo_strings_space].type = qfos_string;
+	spaces[qfo_strings_space].d.strings = pr->pr_strings;
+	spaces[qfo_strings_space].data_size = pr->pr_stringsize;
+	spaces[qfo_type_space].type = qfos_type;
+	spaces[qfo_type_space].d.data = pr->pr_globals + encodings->types;
+	spaces[qfo_type_space].data_size = encodings->size;
+	memset (&qfo, 0, sizeof (qfo));
+	qfo.spaces = spaces;
+	qfo.num_spaces = qfo_num_spaces;
+	dump_qfo_types (&qfo, encodings->types);
 }

@@ -354,7 +354,7 @@ operation_t operations[] = {
 	{dump_lines,		0},					// lines
 	{dump_modules,		0},					// modules
 	{0,					qfo_relocs},		// relocs
-	{0,					qfo_types},			// types
+	{dump_types,		qfo_types},			// types
 };
 
 int

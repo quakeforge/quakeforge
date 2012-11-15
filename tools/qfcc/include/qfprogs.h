@@ -44,6 +44,7 @@ void disassemble_progs (struct progs_s *pr);
 void dump_globals (struct progs_s *pr);
 void dump_fields (struct progs_s *pr);
 void dump_functions (struct progs_s *pr);
+void dump_types (struct progs_s *pr);
 
 void dump_lines (struct progs_s *pr);
 
