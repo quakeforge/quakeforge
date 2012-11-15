@@ -2125,7 +2125,7 @@ array_expr (expr_t *array, expr_t *index)
 
 	if (array_type->type != ev_pointer && !is_array (array_type))
 		return error (array, "not an array");
-	if (index_type != &type_integer)
+	if (!is_integral (index_type))
 		return error (index, "invalid array index type");
 	if (is_short_val (index))
 		ind = expr_short (index);
