@@ -58,7 +58,7 @@ typedef struct qfot_func_s {
 									///< types
 } qfot_func_t;
 
-typedef struct qfot_var_t {
+typedef struct qfot_var_s {
 	pointer_t   type;				///< type of field or self reference for
 									///< enum
 	string_t    name;				///< name of field/enumerator

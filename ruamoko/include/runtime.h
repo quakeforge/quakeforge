@@ -80,6 +80,8 @@ typedef enum {
 @extern BOOL object_is_instance (id object);
 @extern BOOL object_is_meta_class (id object);
 
+@extern void *PR_FindGlobal (string name);	//FIXME where?
+
 #endif	//__ruamoko_runtime_h_
 /**
 	\}

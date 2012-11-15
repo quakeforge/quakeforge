@@ -781,6 +781,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
+extern int foo;
 #define R_POINTER(p)	R_var (p, pointer)
 
 

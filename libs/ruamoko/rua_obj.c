@@ -1537,6 +1537,18 @@ rua__c_Object__conformsToProtocol_ (progs_t *pr)
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
+static void
+rua_PR_FindGlobal (progs_t *pr)
+{
+	const char *name = P_GSTRING (pr, 0);
+	ddef_t     *def;
+
+	R_POINTER (pr) = 0;
+	def = PR_FindGlobal (pr, name);
+	if (def)
+		R_POINTER (pr) = def->ofs;	//FIXME def's can't access > 32k
+}
+
 //====================================================================
 
 static builtin_t obj_methods [] = {
@@ -1602,6 +1614,8 @@ static builtin_t obj_methods [] = {
 	{"_i_Object__hash",				rua__i_Object__hash,			-1},
 	{"_i_Object_error_error_",		rua__i_Object_error_error_,		-1},
 	{"_c_Object__conformsToProtocol_", rua__c_Object__conformsToProtocol_, -1},
+
+	{"PR_FindGlobal",				rua_PR_FindGlobal,				-1},//FIXME
 	{0}
 };
 

@@ -12,7 +12,7 @@ noinst_PROGRAMS=qwaq @QWAQ_TARGETS@
 noinst_DATA=qwaq.dat
 
 qwaq_dat_src= \
-	defs.qc main.qc test.r
+	defs.qc main.qc test.r types.r
 
 qwaq_SOURCES= main.c builtins.c
 qwaq_LDADD= $(QWAQ_LIBS)

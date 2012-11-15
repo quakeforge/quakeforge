@@ -108,5 +108,6 @@ int main (int argc, string *argv)
 	test_str ();
 	test_script ();
 	test_plist ();
+	test_types ();
 	return 0;
 };

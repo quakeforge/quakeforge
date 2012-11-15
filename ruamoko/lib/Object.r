@@ -1,6 +1,8 @@
 #include "Object.h"
 #include "AutoreleasePool.h"
 
+void *PR_FindGlobal (string name) = #0;	//FIXME where?
+
 void __obj_exec_class (struct obj_module *msg) = #0;
 void (id object, int code, string fmt, ...) obj_error = #0;
 void (id object, int code, string fmt, @va_list args) obj_verror = #0;
