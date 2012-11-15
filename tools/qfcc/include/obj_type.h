@@ -99,6 +99,11 @@ typedef struct qfot_type_s {
 	}           t;
 } qfot_type_t;
 
+typedef struct qfot_type_encodings_s {
+	pointer_t   types;
+	pr_int_t    size;
+} qfot_type_encodings_t;
+
 struct type_s;
 struct def_s *qfo_encode_type (struct type_s *type);
 

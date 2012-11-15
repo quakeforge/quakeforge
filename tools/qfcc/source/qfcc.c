@@ -402,7 +402,7 @@ finish_link (void)
 		str = linker_add_string (options.debug_file);
 		linker_add_def (".debug_file", &type_string, flags, &str);
 	}
-	linker_add_def (".type_encodings", &type_pointer, flags, 0);
+	linker_add_def (".type_encodings", &type_type_encodings, flags, 0);
 
 	qfo = linker_finish ();
 	if (!qfo)

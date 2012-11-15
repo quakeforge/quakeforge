@@ -114,6 +114,7 @@ extern	type_t	*type_default;	// default type (float or int)
 extern	type_t	type_va_list;
 extern	type_t	type_param;
 extern	type_t	type_zero;
+extern	type_t	type_type_encodings;
 
 extern struct symtab_s *vector_struct;
 extern struct symtab_s *quaternion_struct;

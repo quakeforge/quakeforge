@@ -83,6 +83,7 @@ type_t     *type_default;
 type_t      type_va_list = { ev_invalid, "@va_list", ty_struct };
 type_t      type_param = { ev_invalid, "@param", ty_struct };
 type_t      type_zero = { ev_invalid, "@zero", ty_struct };
+type_t      type_type_encodings = { ev_invalid, "@type_encodings", ty_struct };
 
 type_t      type_floatfield = { ev_field, ".float", ty_none, {{&type_float}} };
 
@@ -850,6 +851,11 @@ init_types (void)
 		{"v", &type_vector},
 		{0, 0}
 	};
+	static struct_def_t type_encoding_struct[] = {
+		{"types",	&type_pointer},
+		{"size",	&type_integer},
+		{0, 0}
+	};
 
 	type_nil = &type_quaternion;
 	type_default = &type_integer;
@@ -868,6 +874,9 @@ init_types (void)
 	make_structure ("@vector", 's', vector_struct, &type_vector);
 	type_vector.type = ev_vector;
 	type_vector.meta = ty_none;
+
+	make_structure ("@type_encodings", 's', type_encoding_struct,
+					&type_type_encodings);
 
 	if (options.traditional)
 		return;
@@ -905,6 +914,7 @@ chain_initial_types (void)
 
 	chain_type (&type_param);
 	chain_type (&type_zero);
+	chain_type (&type_type_encodings);
 
 	va_list_struct[1].type = pointer_type (&type_param);
 	make_structure ("@va_list", 's', va_list_struct, &type_va_list);

@@ -918,8 +918,12 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	qfo->spaces[qfo_type_space].d.data = type_data;
 
 	qfo_relocate_refs (qfo);
-	if (types_def)
-		globals[types_def->offset].pointer_var = type_data - globals;
+	if (types_def) {
+		qfot_type_encodings_t *encodings;
+		encodings = (qfot_type_encodings_t *) &globals[types_def->offset];
+		encodings->types = type_data - globals;
+		encodings->size = qfo->spaces[qfo_type_space].data_size;
+	}
 
 	// undo the relocation of the offsets of local defs so the local defs have
 	// the correct offset in the debug info
