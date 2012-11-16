@@ -527,7 +527,7 @@ void
 flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 						operand_t *operands[4])
 {
-	int         i, start, calln;
+	int         i, start, calln = -1;
 
 	if (use)
 		set_empty (use);
@@ -593,17 +593,15 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			if (strcmp (s->opcode, "<RETURN>") == 0
 				|| strcmp (s->opcode, "<DONE>") == 0) {
 				flow_add_op_var (use, s->opa);
-				break;
 			} else if (strcmp (s->opcode, "<RETURN_V>") == 0) {
 				if (use)
 					set_add (use, 0);		//FIXME assumes .return location
-				break;
 			}
 			if (strncmp (s->opcode, "<CALL", 5) == 0) {
 				start = 0;
 				calln = s->opcode[5] - '0';
 				flow_add_op_var (use, s->opa);
-			} else {					// RCALL
+			} else if (strncmp (s->opcode, "<RCALL", 6) == 0) {
 				start = 2;
 				calln = s->opcode[6] - '0';
 				flow_add_op_var (use, s->opa);
@@ -611,12 +609,14 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				if (s->opc)
 					flow_add_op_var (use, s->opc);
 			}
-			if (use) {
-				for (i = start; i < calln; i++)
-					set_add (use, i + 1);	//FIXME assumes .param_N locations
+			if (calln >= 0) {
+				if (use) {
+					for (i = start; i < calln; i++)
+						set_add (use, i + 1);//FIXME assumes .param_N locations
+				}
+				if (kill)
+					set_add (kill, 0);		//FIXME assumes .return location
 			}
-			if (kill)
-				set_add (kill, 0);			//FIXME assumes .return location
 			if (operands) {
 				operands[1] = s->opa;
 				operands[2] = s->opb;
