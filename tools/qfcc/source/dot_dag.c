@@ -140,7 +140,7 @@ print_node (dstring_t *dstr, dagnode_t *node)
 void
 print_dag (dstring_t *dstr, dagnode_t *dag)
 {
-	dasprintf (dstr, "  subgraph dag_%p {", dag);
+	dasprintf (dstr, "  subgraph cluster_dag_%p {", dag);
 	print_count++;
 	print_root_nodes (dstr, dag);
 	print_child_nodes (dstr, dag);
