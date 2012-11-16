@@ -816,7 +816,7 @@ expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 		operand_t  *src = 0;
 		sblock = statement_subexpr (sblock, e->e.expr.e1, &src);
 		*op = temp_operand (e->e.expr.type);
-		s = new_statement ("=", e);
+		s = new_statement ("<CONV>", e);
 		s->opa = src;
 		s->opc = *op;
 		sblock_add_statement (sblock, s);
