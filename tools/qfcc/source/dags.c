@@ -155,7 +155,7 @@ operand_label (operand_t *op)
 		label->op = op;
 		val->daglabel = label;
 	} else {
-		internal_error (0, "unexpected operand type: %d", op->op_type);
+		//internal_error (0, "unexpected operand type: %d", op->op_type);
 	}
 	return label;
 }
@@ -286,25 +286,24 @@ dag_create (const flownode_t *flownode)
 	flush_daglabels ();
 
 	for (s = block->statements; s; s = s->next) {
-		operand_t  *x = 0, *y = 0, *z = 0, *w = 0;
+		operand_t  *operands[4];
 		dagnode_t  *n = 0, *ny, *nz, *nw;
 		daglabel_t *op, *lx;
-		int         simp = 0;
 
-		//simp = find_operands (s, &x, &y, &z, &w);
-		if (!(ny = node (y))) {
-			ny = leaf_node (y);
-			if (simp) {
+		flow_analyze_statement (s, 0, 0, 0, operands);
+		if (!(ny = node (operands[1]))) {
+			ny = leaf_node (operands[1]);
+			if (s->type == st_assign) {
 				*dagtail = ny;
 				dagtail = &ny->next;
 			}
 		}
-		if (!(nz = node (z)))
-			nz = leaf_node (z);
-		if (!(nw = node (w)))
-			nw = leaf_node (w);
+		if (!(nz = node (operands[2])))
+			nz = leaf_node (operands[2]);
+		if (!(nw = node (operands[3])))
+			nw = leaf_node (operands[3]);
 		op = opcode_label (s->opcode);
-		if (simp) {
+		if (s->type == st_assign) {
 			n = ny;
 		} else {
 			for (n = dagnodes; n; n = n->next)
@@ -320,53 +319,25 @@ dag_create (const flownode_t *flownode)
 			n->c = nw;
 			if (ny) {
 				ny->is_child = 1;
-				n->ta = y->type;
+				n->ta = operands[1]->type;
 			}
 			if (nz) {
 				nz->is_child = 1;
-				n->tb = z->type;
+				n->tb = operands[2]->type;
 			}
 			if (nw) {
 				nw->is_child = 1;
-				n->tc = w->type;
+				n->tc = operands[3]->type;
 			}
 			*dagtail = n;
 			dagtail = &n->next;
 		}
-		lx = operand_label (x);
+		lx = operand_label (operands[0]);
 		if (lx) {
 			if (lx->prev)
 				daglabel_detatch (lx);
 			dagnode_attach_label (n, lx);
 		}
-		// c = a * b
-		// c = ~a
-		// c = a / b
-		// c = a + b
-		// c = a - b
-		// c = a {==,!=,<=,>=,<,>} b
-		// c = a.b
-		// c = &a.b
-		// c = a (convert)
-		// b = a
-		// b .= a
-		// b.c = a
-		// c = !a
-		// cond a goto b
-		// callN a
-		// rcallN a, [b, [c]]
-		// state a, b
-		// state a, b, c
-		// goto a
-		// jump a
-		// jumpb a, b
-		// c = a &&/|| b
-		// c = a <</>> b
-		// c = a & b
-		// c = a | b
-		// c = a % b
-		// c = a ^ b
-		// c = a (move) b (count)
 	}
 	for (d = dagnodes; d; d = d->next) {
 		daglabel_t **l = &d->identifiers;
