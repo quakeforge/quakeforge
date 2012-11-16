@@ -75,6 +75,7 @@ typedef struct ex_label_s {
 	struct sblock_s *dest;		///< the location of this label if known
 	const char *name;			///< the name of this label
 	int         used;			///< label is used as a target
+	struct daglabel_s *daglabel;
 } ex_label_t;
 
 typedef struct {

@@ -71,6 +71,8 @@ flush_daglabels (void)
 				op->o.tempop.daglabel = 0;
 			else if (op->op_type == op_value || op->op_type == op_pointer)
 				op->o.value->daglabel = 0;
+			else if (op->op_type == op_label)
+				op->o.label->daglabel = 0;
 			else
 				internal_error (0, "unexpected operand type");
 		}
@@ -154,8 +156,14 @@ operand_label (operand_t *op)
 		label = new_label ();
 		label->op = op;
 		val->daglabel = label;
+	} else if (op->op_type == op_label) {
+		if (op->o.label->daglabel)
+			return op->o.label->daglabel;
+		label = new_label ();
+		label->op = op;
+		op->o.label->daglabel = label;
 	} else {
-		//internal_error (0, "unexpected operand type: %d", op->op_type);
+		internal_error (0, "unexpected operand type: %d", op->op_type);
 	}
 	return label;
 }
