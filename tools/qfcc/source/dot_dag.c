@@ -58,7 +58,8 @@ print_node_def (dstring_t *dstr, dagnode_t *node, int recurse)
 		return;
 	}
 	dasprintf (dstr, "  \"dagnode_%p\" [%slabel=\"%s\"];\n", node,
-			   node->a ? "" : "shape=none,", daglabel_string (node->label));
+			   node->type != st_none ? "" : "shape=none,",
+			   daglabel_string (node->label));
 	if (recurse) {
 		if (node->a)
 			print_node_def (dstr, node->a, 1);

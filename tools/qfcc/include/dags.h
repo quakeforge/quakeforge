@@ -37,9 +37,10 @@
 
 #include "QF/pr_comp.h"
 
+#include "statements.h"
+
 struct dstring_s;
 struct flownode_s;
-struct sblock_s;
 
 typedef struct daglabel_s {
 	/// \name attached identifer linked list
@@ -58,6 +59,7 @@ typedef struct dagnode_s {
 	int         print_count;	///< used to avoid double printing nodes
 	int         is_child;		///< true if a child node
 	int         cost;			///< cost of this node in temp vars
+	st_type_t   type;			///< type of node (st_node = leaf)
 	daglabel_t *label;			///< ident/const if leaf node, or operator
 	etype_t     tl;
 	struct statement_s *statement;	///< statement generating this node
@@ -88,7 +90,7 @@ void print_dag (struct dstring_s *dstr, dagnode_t *node);
 */
 dagnode_t *dag_create (const struct flownode_s *flownode);
 
-void dag_generate (struct sblock_s *block, const struct flownode_s *flownode);
+void dag_generate (sblock_t *block, const struct flownode_s *flownode);
 
 //@}
 

@@ -273,9 +273,7 @@ static statement_t *
 build_statement (const char *opcode, operand_t *a, operand_t *b, operand_t *c,
 				 expr_t *expr)
 {
-	if ((!a && (b || c)) || (a && !b && c))
-		internal_error (0, "invalid operand combo");
-	statement_t *st = new_statement (st_none, opcode, expr);//FIXME
+	statement_t *st = new_statement (st_none, opcode, expr);
 	st->opa = a;
 	st->opb = b;
 	st->opc = c;
@@ -321,6 +319,7 @@ dag_create (const flownode_t *flownode)
 		if (!n) {
 			n = new_node ();
 			n->statement = s;
+			n->type = s->type;
 			n->label = op;
 			n->a = ny;
 			n->b = nz;
@@ -421,72 +420,98 @@ fix_op_type (operand_t *op, etype_t type)
 }
 
 static operand_t *
+generate_assignments (sblock_t *block, operand_t *src, daglabel_t *var)
+{
+	statement_t *st;
+	operand_t   *dst = 0;
+
+	while (var) {
+		operand_t  *vop = fix_op_type (var->op, src->type);
+		if (!dst) {
+			dst = vop;
+			while (dst->op_type == op_alias)
+				dst = dst->o.alias;
+		}
+		st = build_statement ("=", src, vop, 0, 0);//FIXME expr
+		sblock_add_statement (block, st);
+		var = var->next;
+	}
+	return dst;
+}
+
+static operand_t *
 dag_gencode (sblock_t *block, const dagnode_t *dagnode)
 {
-	if (!dagnode->a) {
-		statement_t *st;
-		daglabel_t *var = 0;
-		operand_t *op = fix_op_type (dagnode->label->op, dagnode->tl);
+	operand_t  *opa = 0, *opb = 0, *opc = 0;
+	operand_t  *dst = 0;
+	statement_t *st;
+	daglabel_t *var;
 
-		if (dagnode->identifiers) {
-			var = dagnode->identifiers;
-		}
-		for (var = dagnode->identifiers; var; var = var->next) {
-			operand_t  *vop = fix_op_type (var->op, op->type);
-			st = build_statement ("=", op, vop, 0, 0);
-			sblock_add_statement (block, st);
-		}
-		return op;
-	} else {
-		statement_t *st;
-		daglabel_t *var = 0;
-		operand_t  *op_a = 0;
-		operand_t  *op_b = 0;
-		operand_t  *op_c = 0;
-
-		if (flow_is_cond (dagnode->statement))
-			op_b = dagnode->statement->opb;
-
-		if (dagnode->b && dagnode->c) {
-			op_a = dag_gencode (block, dagnode->a);
-			op_b = dag_gencode (block, dagnode->b);
-			op_c = dag_gencode (block, dagnode->c);
-			op_c = fix_op_type (op_c, dagnode->tc);
-		} else if (dagnode->b) {
-			if (dagnode->a->cost < dagnode->b->cost) {
-				op_b = dag_gencode (block, dagnode->b);
-				op_a = dag_gencode (block, dagnode->a);
+	switch (dagnode->type) {
+		case st_none:
+			if (!dagnode->label->op)
+				internal_error (0, "non-leaf label in leaf node");
+			dst = dagnode->label->op;
+			if (dagnode->identifiers)
+				dst = generate_assignments (block, dst, dagnode->identifiers);
+			break;
+		case st_expr:
+			opa = fix_op_type (dag_gencode (block, dagnode->a), dagnode->ta);
+			if (dagnode->b)
+				opb = fix_op_type (dag_gencode (block, dagnode->b),
+								   dagnode->tb);
+			if (!(var = dagnode->identifiers)) {
+				opc = temp_operand (get_type (dagnode->statement->expr));
 			} else {
-				op_a = dag_gencode (block, dagnode->a);
-				op_b = dag_gencode (block, dagnode->b);
+				opc = fix_op_type (var->op,
+								   extract_type (dagnode->statement->expr));
+				var = var->next;
 			}
-		} else {
-			op_a = dag_gencode (block, dagnode->a);
-		}
-		if (op_a && op_b && get_type (dagnode->statement->expr)) {
-			if (dagnode->identifiers) {
-				op_c = dagnode->identifiers->op;
-				var = dagnode->identifiers->next;
-				op_c = fix_op_type (op_c,
-									extract_type (dagnode->statement->expr));
-			} else {
-				op_c = temp_operand (get_type (dagnode->statement->expr));
-			}
-		}
-		op_a = fix_op_type (op_a, dagnode->ta);
-		op_b = fix_op_type (op_b, dagnode->tb);
-		st = build_statement (dagnode->label->opcode, op_a, op_b, op_c,
-							  dagnode->statement->expr);
-		sblock_add_statement (block, st);
-		while (var) {
-			operand_t  *vop = fix_op_type (var->op, op_c->type);
-			st = build_statement ("=", op_c, vop, 0, 0);
+			dst = opc;
+			st = build_statement (dagnode->label->opcode, opa, opb, opc,
+								  dagnode->statement->expr);
 			sblock_add_statement (block, st);
-			var = var->next;
-		}
-		return op_c;
+			generate_assignments (block, opc, var);
+			break;
+		case st_assign:
+			internal_error (0, "unexpected assignment node");
+		case st_ptrassign:
+			opa = fix_op_type (dag_gencode (block, dagnode->a), dagnode->ta);
+			opb = fix_op_type (dag_gencode (block, dagnode->b), dagnode->tb);
+			if (dagnode->c)
+				opc = fix_op_type (dag_gencode (block, dagnode->c),
+								   dagnode->tc);
+			st = build_statement (dagnode->label->opcode, opa, opb, opc,
+								  dagnode->statement->expr);
+			sblock_add_statement (block, st);
+			break;
+		case st_move:
+		case st_state:
+		case st_func:
+			if (dagnode->a)
+				opa = fix_op_type (dag_gencode (block, dagnode->a),
+								   dagnode->ta);
+			if (dagnode->b)
+				opb = fix_op_type (dag_gencode (block, dagnode->b),
+								   dagnode->tb);
+			if (dagnode->c)
+				opc = fix_op_type (dag_gencode (block, dagnode->c),
+								   dagnode->tc);
+			st = build_statement (dagnode->label->opcode, opa, opb, opc,
+								  dagnode->statement->expr);
+			sblock_add_statement (block, st);
+			break;
+		case st_flow:
+			opa = fix_op_type (dag_gencode (block, dagnode->a), dagnode->ta);
+			if (dagnode->b)
+				opb = fix_op_type (dag_gencode (block, dagnode->b),
+								   dagnode->tb);
+			st = build_statement (dagnode->label->opcode, opa, opb, 0,
+								  dagnode->statement->expr);
+			sblock_add_statement (block, st);
+			break;
 	}
-	return 0;
+	return dst;
 }
 
 void
