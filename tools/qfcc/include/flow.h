@@ -98,6 +98,9 @@ int flow_is_jumpb (struct statement_s *s);
 int flow_is_return (struct statement_s *s);
 struct sblock_s *flow_get_target (struct statement_s *s);
 struct sblock_s **flow_get_targetlist (struct statement_s *s);
+void flow_analyze_statement (struct statement_s *s, struct set_s *use,
+							 struct set_s *def, struct set_s *kill,
+							 struct operand_s *operands[4]);
 void flow_build_vars (struct function_s *func);
 flowgraph_t *flow_build_graph (struct sblock_s *func);
 void flow_del_graph (flowgraph_t *graph);

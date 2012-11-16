@@ -289,9 +289,9 @@ dag_create (const flownode_t *flownode)
 		operand_t  *x = 0, *y = 0, *z = 0, *w = 0;
 		dagnode_t  *n = 0, *ny, *nz, *nw;
 		daglabel_t *op, *lx;
-		int         simp;
+		int         simp = 0;
 
-		simp = find_operands (s, &x, &y, &z, &w);
+		//simp = find_operands (s, &x, &y, &z, &w);
 		if (!(ny = node (y))) {
 			ny = leaf_node (y);
 			if (simp) {

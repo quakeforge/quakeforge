@@ -40,9 +40,11 @@
 #include <stdlib.h>
 
 #include "QF/dstring.h"
+#include "QF/va.h"
 
 #include "dags.h"
 #include "def.h"
+#include "diagnostic.h"
 #include "dot.h"
 #include "flow.h"
 #include "function.h"
@@ -57,6 +59,22 @@ static flowvar_t *free_vars;
 static flowloop_t *free_loops;
 static flownode_t *free_nodes;
 static flowgraph_t *free_graphs;
+
+static struct {
+	const char *name;
+	operand_t   op;
+} flow_params[] = {
+	{".return",		{0, op_symbol}},
+	{".param_0",	{0, op_symbol}},
+	{".param_1",	{0, op_symbol}},
+	{".param_2",	{0, op_symbol}},
+	{".param_3",	{0, op_symbol}},
+	{".param_4",	{0, op_symbol}},
+	{".param_5",	{0, op_symbol}},
+	{".param_6",	{0, op_symbol}},
+	{".param_7",	{0, op_symbol}},
+};
+static const int num_flow_params = sizeof(flow_params)/sizeof(flow_params[0]);
 
 static void
 dump_dot_flow (void *data, const char *fname)
@@ -164,7 +182,7 @@ flow_get_var (operand_t *op)
 			o->o.symbol->flowvar = new_flowvar ();
 		return o->o.symbol->flowvar;
 	}
-	//FIXME functions? (some are variable)
+	//FIXME functions? (some are variable) values?
 	return 0;
 }
 
@@ -216,15 +234,33 @@ add_operand (function_t *func, operand_t *op)
 	}
 }
 
+static symbol_t *
+param_symbol (const char *name)
+{
+	symbol_t   *sym;
+	sym = make_symbol (name, &type_param, pr.symtab->space, st_extern);
+	if (!sym->table)
+		symtab_addsymbol (pr.symtab, sym);
+	return sym;
+}
+
 void
 flow_build_vars (function_t *func)
 {
 	sblock_t   *sblock;
 	statement_t *s;
-	int         num_vars;
+	int         num_vars = 0;
 	int         num_statements = 0;
+	int         i;
 
-	for (num_vars = 0, sblock = func->sblock; sblock; sblock = sblock->next) {
+	// first, count .return and .param_[0-7] as they are always needed
+	for (i = 0; i < num_flow_params; i++) {
+		flow_params[i].op.o.symbol = param_symbol (flow_params[i].name);
+		num_vars += count_operand (&flow_params[i].op);
+	}
+	// then run through the statements in the function looking for accessed
+	// variables
+	for (sblock = func->sblock; sblock; sblock = sblock->next) {
 		for (s = sblock->statements; s; s = s->next) {
 			num_vars += count_operand (s->opa);
 			num_vars += count_operand (s->opb);
@@ -236,6 +272,11 @@ flow_build_vars (function_t *func)
 		func->vars = malloc (num_vars * sizeof (daglabel_t *));
 
 		func->num_vars = 0;	// incremented by add_operand
+		// first, add .return and .param_[0-7] as they are always needed
+		for (i = 0; i < num_flow_params; i++)
+			add_operand (func, &flow_params[i].op);
+		// then run through the statements in the function adding accessed
+		// variables
 		for (sblock = func->sblock; sblock; sblock = sblock->next) {
 			for (s = sblock->statements; s; s = s->next) {
 				add_operand (func, s->opa);
@@ -255,19 +296,19 @@ flow_build_vars (function_t *func)
 }
 
 static void
-live_set_use (flowvar_t *var, set_t *use, set_t *def)
+live_set_use (set_t *stuse, set_t *use, set_t *def)
 {
 	// the variable is used before it is defined
-	if (var && !set_is_member (def, var->number))
-		set_add (use, var->number);
+	set_difference (stuse, def);
+	set_union (use, stuse);
 }
 
 static void
-live_set_def (flowvar_t *var, set_t *use, set_t *def)
+live_set_def (set_t *stdef, set_t *use, set_t *def)
 {
 	// the variable is defined before it is used
-	if (var && !set_is_member (use, var->number))
-		set_add (def, var->number);
+	set_difference (stdef, use);
+	set_union (def, stdef);
 }
 
 static void
@@ -277,9 +318,10 @@ flow_live_vars (flowgraph_t *graph)
 	flownode_t *node;
 	set_t      *use;
 	set_t      *def;
+	set_t      *stuse = set_new ();
+	set_t      *stdef = set_new ();
 	set_t      *tmp = set_new ();
 	set_iter_t *succ;
-	operand_t  *d, *u[3];
 	statement_t *st;
 	int         changed = 1;
 
@@ -290,10 +332,9 @@ flow_live_vars (flowgraph_t *graph)
 		use = set_new ();
 		def = set_new ();
 		for (st = node->sblock->statements; st; st = st->next) {
-			find_operands (st, &d, &u[0], &u[1], &u[2]);
-			for (j = 0; j < 3; j++)
-				live_set_use (flow_get_var (u[j]), use, def);
-			live_set_def (flow_get_var (d), use, def);
+			flow_analyze_statement (st, stuse, stdef, 0, 0);
+			live_set_use (stuse, use, def);
+			live_set_def (stdef, use, def);
 		}
 		node->live_vars.use = use;
 		node->live_vars.def = def;
@@ -320,6 +361,9 @@ flow_live_vars (flowgraph_t *graph)
 			set_union (node->live_vars.in, node->live_vars.use);
 		}
 	}
+	set_delete (stuse);
+	set_delete (stdef);
+	set_delete (tmp);
 }
 
 static void
@@ -339,21 +383,26 @@ flow_build_dags (flowgraph_t *graph)
 void
 flow_data_flow (flowgraph_t *graph)
 {
-	int         i, j;
+	int         i;
 	flownode_t *node;
 	statement_t *st;
-	operand_t  *d, *u[3];
 	flowvar_t  *var;
+	set_t      *stuse = set_new ();
+	set_t      *stdef = set_new ();
+	set_iter_t *var_i;
 
 	for (i = 0; i < graph->num_nodes; i++) {
 		node = graph->nodes[i];
 		for (st = node->sblock->statements; st; st = st->next) {
-			find_operands (st, &d, &u[0], &u[1], &u[2]);
-			if (d && (var = flow_get_var (d)))
+			flow_analyze_statement (st, stuse, stdef, 0, 0);
+			for (var_i = set_first (stdef); var_i; var_i = set_next (var_i)) {
+				var = graph->func->vars[var_i->member];
 				set_add (var->define, st->number);
-			for (j = 0; j < 3; j++)
-				if (u[j] && (var = flow_get_var (u[j])))
-					set_add (var->use, st->number);
+			}
+			for (var_i = set_first (stuse); var_i; var_i = set_next (var_i)) {
+				var = graph->func->vars[var_i->member];
+				set_add (var->use, st->number);
+			}
 		}
 	}
 	flow_live_vars (graph);
@@ -386,7 +435,7 @@ flow_generate (flowgraph_t *graph)
 		// generate new statements from the dag;
 		dag_generate (block, node);
 	}
-	dump_dot ("post", code, dump_dot_sblock);
+	//dump_dot ("post", code, dump_dot_sblock);
 	return code;
 }
 
@@ -460,6 +509,132 @@ flow_get_targetlist (statement_t *s)
 			target_list[i] = e->e.labelref.label->dest;
 	}
 	return target_list;
+}
+
+static void
+flow_add_op_var (set_t *set, operand_t *op)
+{
+	flowvar_t  *var;
+
+	if (!set)
+		return;
+	if (!(var = flow_get_var (op)))
+		return;
+	set_add (set, var->number);
+}
+
+void
+flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
+						operand_t *operands[4])
+{
+	int         i, start, calln;
+
+	if (use)
+		set_empty (use);
+	if (def)
+		set_empty (def);
+	if (kill)
+		set_empty (kill);
+	if (operands) {
+		for (i = 0; i < 4; i++)
+			operands[i] = 0;
+	}
+
+	switch (s->type) {
+		case st_none:
+			internal_error (s->expr, "not a statement");
+		case st_expr:
+			flow_add_op_var (def, s->opc);
+			flow_add_op_var (use, s->opa);
+			if (s->opb)
+				flow_add_op_var (use, s->opb);
+			if (operands) {
+				operands[0] = s->opc;
+				operands[1] = s->opa;
+				operands[2] = s->opb;
+			}
+			break;
+		case st_assign:
+			flow_add_op_var (def, s->opb);
+			flow_add_op_var (use, s->opa);
+			if (operands) {
+				operands[0] = s->opb;
+				operands[1] = s->opa;
+			}
+			break;
+		case st_ptrassign:
+		case st_move:
+			flow_add_op_var (use, s->opa);
+			flow_add_op_var (use, s->opb);
+			if (s->opc)
+				flow_add_op_var (use, s->opc);
+			if (kill) {
+				//FIXME set of everything
+			}
+			if (operands) {
+				operands[1] = s->opa;
+				operands[2] = s->opb;
+				operands[3] = s->opc;
+			}
+			break;
+		case st_state:
+			flow_add_op_var (use, s->opa);
+			flow_add_op_var (use, s->opb);
+			if (s->opc)
+				flow_add_op_var (use, s->opc);
+			//FIXME entity members
+			if (operands) {
+				operands[1] = s->opa;
+				operands[2] = s->opb;
+				operands[3] = s->opc;
+			}
+			break;
+		case st_func:
+			if (strcmp (s->opcode, "<RETURN>") == 0
+				|| strcmp (s->opcode, "<DONE>") == 0) {
+				flow_add_op_var (use, s->opa);
+				break;
+			} else if (strcmp (s->opcode, "<RETURN_V>") == 0) {
+				if (use)
+					set_add (use, 0);		//FIXME assumes .return location
+				break;
+			}
+			if (strncmp (s->opcode, "<CALL", 5) == 0) {
+				start = 0;
+				calln = s->opcode[5] - '0';
+				flow_add_op_var (use, s->opa);
+			} else {					// RCALL
+				start = 2;
+				calln = s->opcode[6] - '0';
+				flow_add_op_var (use, s->opa);
+				flow_add_op_var (use, s->opb);
+				if (s->opc)
+					flow_add_op_var (use, s->opc);
+			}
+			if (use) {
+				for (i = start; i < calln; i++)
+					set_add (use, i + 1);	//FIXME assumes .param_N locations
+			}
+			if (kill)
+				set_add (kill, 0);			//FIXME assumes .return location
+			if (operands) {
+				operands[1] = s->opa;
+				operands[2] = s->opb;
+				operands[3] = s->opc;
+			}
+			break;
+		case st_flow:
+			if (strcmp (s->opcode, "<GOTO>") != 0) {
+				flow_add_op_var (use, s->opa);
+				if (strcmp (s->opcode, "<JUMPB>") == 0)
+					flow_add_op_var (use, s->opb);
+			}
+			if (operands) {
+				operands[1] = s->opa;
+				operands[2] = s->opb;
+			}
+			break;
+	}
 }
 
 static void
