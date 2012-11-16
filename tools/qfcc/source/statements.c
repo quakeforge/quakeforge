@@ -284,10 +284,11 @@ sblock_add_statement (sblock_t *sblock, statement_t *statement)
 }
 
 statement_t *
-new_statement (const char *opcode, expr_t *expr)
+new_statement (st_type_t type, const char *opcode, expr_t *expr)
 {
 	statement_t *statement;
 	ALLOC (256, statement_t, statements, statement);
+	statement->type = type;
 	statement->opcode = save_string (opcode);
 	statement->expr = expr;
 	return statement;
@@ -463,17 +464,17 @@ statement_branch (sblock_t *sblock, expr_t *e)
 	const char *opcode;
 
 	if (e->type == ex_uexpr && e->e.expr.op == 'g') {
-		s = new_statement ("<GOTO>", e);
+		s = new_statement (st_flow, "<GOTO>", e);
 		s->opa = new_operand (op_label);
 		s->opa->o.label = &e->e.expr.e1->e.label;
 	} else {
 		if (e->e.expr.op == 'g') {
-			s = new_statement ("<JUMPB>", e);
+			s = new_statement (st_flow, "<JUMPB>", e);
 			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
 			sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
 		} else {
 			opcode = convert_op (e->e.expr.op);
-			s = new_statement (opcode, e);
+			s = new_statement (st_flow, opcode, e);
 			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
 			s->opb = new_operand (op_label);
 			s->opb->o.label = &e->e.expr.e2->e.label;
@@ -495,6 +496,7 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 	operand_t  *dst = 0;
 	operand_t  *ofs = 0;
 	const char *opcode = convert_op (e->e.expr.op);
+	st_type_t   type;
 
 	if (e->e.expr.op == '=') {
 		sblock = statement_subexpr (sblock, dst_expr, &dst);
@@ -505,6 +507,7 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 			*op = dst;
 		if (src == dst)
 			return sblock;
+		type = st_assign;
 	} else {
 		//FIXME this sucks. find a better way to handle both pointer
 		//dereferences and pointer assignements
@@ -525,8 +528,9 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 		}
 		if (op)
 			*op = src;
+		type = st_ptrassign;
 	}
-	s = new_statement (opcode, e);
+	s = new_statement (type, opcode, e);
 	s->opa = src;
 	s->opb = dst;
 	s->opc = ofs;
@@ -553,7 +557,7 @@ expr_move (sblock_t *sblock, expr_t *e, operand_t **op)
 	dst = *op;
 	sblock = statement_subexpr (sblock, src_expr, &src);
 	sblock = statement_subexpr (sblock, size_expr, &size);
-	s = new_statement (convert_op (e->e.expr.op), e);
+	s = new_statement (st_move, convert_op (e->e.expr.op), e);
 	s->opa = src;
 	s->opb = size;
 	s->opc = dst;
@@ -632,7 +636,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 				arg = p;
 				sblock = statement_subexpr (sblock, a, &arg);
 				if (arg != p) {
-					s = new_statement ("=", a);
+					s = new_statement (st_assign, "=", a);
 					s->opa = arg;
 					s->opb = p;
 					sblock_add_statement (sblock, s);
@@ -641,7 +645,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		}
 	}
 	opcode = va ("<%sCALL%d>", pref, count);
-	s = new_statement (opcode, call);
+	s = new_statement (st_func, opcode, call);
 	sblock = statement_subexpr (sblock, func, &s->opa);
 	s->opb = arguments[0];
 	s->opc = arguments[1];
@@ -663,7 +667,7 @@ expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 static statement_t *
 lea_statement (operand_t *pointer, operand_t *offset, expr_t *e)
 {
-	statement_t *s = new_statement ("&", e);
+	statement_t *s = new_statement (st_expr, "&", e);
 	s->opa = pointer;
 	s->opb = offset;
 	s->opc = temp_operand (&type_pointer);
@@ -673,7 +677,7 @@ lea_statement (operand_t *pointer, operand_t *offset, expr_t *e)
 static statement_t *
 address_statement (operand_t *value, expr_t *e)
 {
-	statement_t *s = new_statement ("&", e);
+	statement_t *s = new_statement (st_expr, "&", e);
 	s->opa = value;
 	s->opc = temp_operand (&type_pointer);
 	return s;
@@ -712,13 +716,13 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 			dst_addr = s->opc;
 			sblock_add_statement (sblock, s);
 
-			s = new_statement ("<MOVEP>", deref);
+			s = new_statement (st_move, "<MOVEP>", deref);
 			s->opa = src_addr;
 			s->opb = short_operand (type_size (type));
 			s->opc = dst_addr;
 			sblock_add_statement (sblock, s);
 		} else {
-			s = new_statement (".", deref);
+			s = new_statement (st_expr, ".", deref);
 			s->opa = ptr;
 			s->opb = offs;
 			s->opc = *op;
@@ -735,7 +739,7 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 		sblock = statement_subexpr (sblock, e, &ptr);
 		if (!*op)
 			*op = temp_operand (type);
-		s = new_statement (".", deref);
+		s = new_statement (st_expr, ".", deref);
 		s->opa = ptr;
 		s->opb = short_operand (0);
 		s->opc = *op;
@@ -776,7 +780,7 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 			opcode = convert_op (e->e.expr.op);
 			if (!opcode)
 				internal_error (e, "ice ice baby");
-			s = new_statement (opcode, e);
+			s = new_statement (st_expr, opcode, e);
 			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
 			sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
 			if (!*op)
@@ -816,7 +820,7 @@ expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 		operand_t  *src = 0;
 		sblock = statement_subexpr (sblock, e->e.expr.e1, &src);
 		*op = temp_operand (e->e.expr.type);
-		s = new_statement ("<CONV>", e);
+		s = new_statement (st_expr, "<CONV>", e);
 		s->opa = src;
 		s->opc = *op;
 		sblock_add_statement (sblock, s);
@@ -869,7 +873,7 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 			opcode = convert_op (e->e.expr.op);
 			if (!opcode)
 				internal_error (e, "ice ice baby");
-			s = new_statement (opcode, e);
+			s = new_statement (st_expr, opcode, e);
 			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
 			if (!*op)
 				*op = temp_operand (e->e.expr.type);
@@ -948,7 +952,7 @@ statement_state (sblock_t *sblock, expr_t *e)
 {
 	statement_t *s;
 
-	s = new_statement ("<STATE>", e);
+	s = new_statement (st_state, "<STATE>", e);
 	sblock = statement_subexpr (sblock, e->e.state.frame, &s->opa);
 	sblock = statement_subexpr (sblock, e->e.state.think, &s->opb);
 	sblock = statement_subexpr (sblock, e->e.state.step, &s->opc);
@@ -1157,7 +1161,7 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 					e->e.expr.e1 = new_float_expr (0);
 				}
 			}
-			s = new_statement (opcode, e);
+			s = new_statement (st_func, opcode, e);
 			if (e->e.expr.e1)
 				sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
 			sblock_add_statement (sblock, s);
@@ -1295,7 +1299,7 @@ join_blocks (sblock_t *sblock, sblock_t *dest)
 	label->e.label.next = dest->next->labels;
 	label->e.label.used++;
 	dest->next->labels = &label->e.label;
-	g = new_statement ("<GOTO>", 0);
+	g = new_statement (st_flow, "<GOTO>", 0);
 	g->opa = new_operand (op_label);
 	g->opa->o.label = &label->e.label;
 	sblock_add_statement (dest, g);
@@ -1445,7 +1449,7 @@ check_final_block (sblock_t *sblock)
 		return_operand->type = ev_void;
 		return_operand->o.symbol = return_symbol;
 	}
-	s = new_statement (return_opcode, 0);
+	s = new_statement (st_func, return_opcode, 0);
 	s->opa = return_operand;
 	sblock_add_statement (sblock, s);
 }

@@ -267,7 +267,7 @@ build_statement (const char *opcode, operand_t *a, operand_t *b, operand_t *c,
 {
 	if ((!a && (b || c)) || (a && !b && c))
 		internal_error (0, "invalid operand combo");
-	statement_t *st = new_statement (opcode, expr);
+	statement_t *st = new_statement (st_none, opcode, expr);//FIXME
 	st->opa = a;
 	st->opb = b;
 	st->opc = c;

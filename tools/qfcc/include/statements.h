@@ -61,8 +61,29 @@ typedef struct operand_s {
 	} o;
 } operand_t;
 
+/** Overall type of statement.
+
+	Statement types are broken down into expressions (binary and unary,
+	includes address and pointer dereferencing (read)), assignment, pointer
+	assignment (write to dereference pointer), move (special case of pointer
+	assignment), state, function related (call, rcall, return and done), and
+	flow control (conditional branches, goto, jump (single pointer and jump
+	table)).
+*/
+typedef enum {
+	st_none,		///< not a (valid) statement. Used in dags.
+	st_expr,		///< c = a op b; or c = op a;
+	st_assign,		///< b = a
+	st_ptrassign,	///< *b = a; or *(b + c) = a;
+	st_move,		///< memcpy (c, a, b);
+	st_state,		///< state (a, b); or state (a, b, c)
+	st_func,		///< call, rcall or return/done
+	st_flow,		///< if/ifa/ifae/ifb/ifbe/ifnot or goto or jump/jumpb
+} st_type_t;
+
 typedef struct statement_s {
 	struct statement_s *next;
+	st_type_t   type;
 	const char *opcode;
 	operand_t  *opa;
 	operand_t  *opb;
@@ -88,7 +109,8 @@ struct type_s;
 operand_t *alias_operand (operand_t *op, etype_t type);
 operand_t *temp_operand (struct type_s *type);
 sblock_t *new_sblock (void);
-statement_t *new_statement (const char *opcode, struct expr_s *expr);
+statement_t *new_statement (st_type_t type, const char *opcode,
+							struct expr_s *expr);
 int find_operands (statement_t *s, operand_t **x, operand_t **y, operand_t **z,
 				   operand_t **w);
 void sblock_add_statement (sblock_t *sblock, statement_t *statement);
