@@ -90,24 +90,27 @@ new_dag (void)
 }
 
 static daglabel_t *
-new_label (void)
+new_label (dag_t *dag)
 {
 	daglabel_t *label;
 	ALLOC (256, daglabel_t, labels, label);
 	label->daglabel_chain = daglabel_chain;
 	daglabel_chain = label;
-	label->number = -1;
+	label->number = dag->num_labels;
+	dag->labels[dag->num_labels++] = label;
 	return label;
 }
 
 static dagnode_t *
-new_node (void)
+new_node (dag_t *dag)
 {
 	dagnode_t *node;
 	ALLOC (256, dagnode_t, nodes, node);
 	node->parents = set_new ();
 	node->edges = set_new ();
 	node->identifiers = set_new ();
+	node->number = dag->num_nodes;
+	dag->nodes[dag->num_nodes++] = node;
 	return node;
 }
 
@@ -128,18 +131,18 @@ daglabel_string (daglabel_t *label)
 }
 
 static daglabel_t *
-opcode_label (const char *opcode, expr_t *expr)
+opcode_label (dag_t *dag, const char *opcode, expr_t *expr)
 {
 	daglabel_t *label;
 
-	label = new_label ();
+	label = new_label (dag);
 	label->opcode = opcode;
 	label->expr = expr;
 	return label;
 }
 
 static daglabel_t *
-operand_label (operand_t *op)
+operand_label (dag_t *dag, operand_t *op)
 {
 	symbol_t   *sym = 0;
 	ex_value_t *val = 0;
@@ -153,27 +156,27 @@ operand_label (operand_t *op)
 	if (op->op_type == op_temp) {
 		if (op->o.tempop.daglabel)
 			return op->o.tempop.daglabel;
-		label = new_label ();
+		label = new_label (dag);
 		label->op = op;
 		op->o.tempop.daglabel = label;
 	} else if (op->op_type == op_symbol) {
 		sym = op->o.symbol;
 		if (sym->daglabel)
 			return sym->daglabel;
-		label = new_label ();
+		label = new_label (dag);
 		label->op = op;
 		sym->daglabel = label;
 	} else if (op->op_type == op_value || op->op_type == op_pointer) {
 		val = op->o.value;
 		if (val->daglabel)
 			return val->daglabel;
-		label = new_label ();
+		label = new_label (dag);
 		label->op = op;
 		val->daglabel = label;
 	} else if (op->op_type == op_label) {
 		if (op->o.label->daglabel)
 			return op->o.label->daglabel;
-		label = new_label ();
+		label = new_label (dag);
 		label->op = op;
 		op->o.label->daglabel = label;
 	} else {
@@ -183,16 +186,16 @@ operand_label (operand_t *op)
 }
 
 static dagnode_t *
-leaf_node (operand_t *op, expr_t *expr)
+leaf_node (dag_t *dag, operand_t *op, expr_t *expr)
 {
 	daglabel_t *label;
 	dagnode_t  *node;
 
 	if (!op)
 		return 0;
-	node = new_node ();
+	node = new_node (dag);
 	node->tl = op->type;
-	label = operand_label (op);
+	label = operand_label (dag, op);
 	label->dagnode = node;
 	label->expr = expr;
 	node->label = label;
@@ -276,11 +279,9 @@ dag_create (const flownode_t *flownode)
 	dag_t      *dag;
 	sblock_t   *block = flownode->sblock;
 	statement_t *s;
-	dagnode_t  **nodes;
+	dagnode_t **nodes;
 	daglabel_t **labels;
 	int         num_statements = 0;
-	int         num_nodes = 0;
-	int         num_labels = 0;
 	int         i;
 
 	flush_daglabels ();
@@ -288,10 +289,11 @@ dag_create (const flownode_t *flownode)
 	for (s = block->statements; s; s = s->next)
 		num_statements++;
 
+	dag = new_dag ();
 	// at most 4 per statement
-	nodes = alloca (num_statements * 4 * sizeof (dagnode_t));
+	dag->nodes = alloca (num_statements * 4 * sizeof (dagnode_t));
 	// at most 3 per statement
-	labels = alloca (num_statements * 3 * sizeof (daglabel_t));
+	dag->labels = alloca (num_statements * 3 * sizeof (daglabel_t));
 
 	for (s = block->statements; s; s = s->next) {
 		operand_t  *operands[4];
@@ -301,38 +303,25 @@ dag_create (const flownode_t *flownode)
 
 		flow_analyze_statement (s, 0, 0, 0, operands);
 		for (i = 0; i < 3; i++) {
-			if (!(children[i] = node (operands[i + 1]))) {
-				children[i] = leaf_node (operands[i + 1], s->expr);
-				if (children[i]) {
-					children[i]->number = num_nodes;
-					nodes[num_nodes++] = children[i];
-					if (children[i]->label->number == -1) {
-						children[i]->label->number = num_labels;
-						labels[num_labels++] = children[i]->label;
-					}
-				}
-			}
+			if (!(children[i] = node (operands[i + 1])))
+				children[i] = leaf_node (dag, operands[i + 1], s->expr);
 		}
-		op = opcode_label (s->opcode, s->expr);
-		op->number = num_labels;
-		labels[num_labels++] = op;
+		op = opcode_label (dag, s->opcode, s->expr);
 		if (s->type == st_assign) {
 			n = children[0];
 		} else {
 			n = 0;
-			for (i = 0; i < num_nodes; i++) {
-				if (dagnode_match (nodes[i], op, children)) {
-					n = nodes[i];
+			for (i = 0; i < dag->num_nodes; i++) {
+				if (dagnode_match (dag->nodes[i], op, children)) {
+					n = dag->nodes[i];
 					break;
 				}
 			}
 		}
 		if (!n) {
-			n = new_node ();
+			n = new_node (dag);
 			n->type = s->type;
 			n->label = op;
-			n->number = num_nodes;
-			nodes[num_nodes++] = n;
 			for (i = 0; i < 3; i++) {
 				n->children[i] = children[i];
 				if (n->children[i]) {
@@ -341,27 +330,22 @@ dag_create (const flownode_t *flownode)
 				}
 			}
 		}
-		lx = operand_label (operands[0]);
+		lx = operand_label (dag, operands[0]);
 		if (lx) {
 			flowvar_t  *var = flow_get_var (lx->op);
 			lx->expr = s->expr;
-			if (lx->number == -1) {
-				lx->number = num_labels;
-				labels[num_labels++] = lx;
-			}
 			if (set_is_member (flownode->live_vars.out, var->number))
 				dagnode_attach_label (n, lx);
 		}
 	}
-	dag = new_dag ();
-	dag->nodes = malloc (num_nodes * sizeof (dagnode_t *));
-	memcpy (dag->nodes, nodes, num_nodes * sizeof (dagnode_t *));
-	dag->num_nodes = num_nodes;
-	dag->labels = malloc (num_labels * sizeof (daglabel_t *));
-	memcpy (dag->labels, labels, num_labels * sizeof (daglabel_t *));
-	dag->num_labels = num_labels;
+	nodes = malloc (dag->num_nodes * sizeof (dagnode_t *));
+	memcpy (nodes, dag->nodes, dag->num_nodes * sizeof (dagnode_t *));
+	dag->nodes = nodes;
+	labels = malloc (dag->num_labels * sizeof (daglabel_t *));
+	memcpy (labels, dag->labels, dag->num_labels * sizeof (daglabel_t *));
+	dag->labels = labels;
 	dag->roots = set_new ();
-	for (i = 0; i < num_nodes; i++) {
+	for (i = 0; i < dag->num_nodes; i++) {
 		if (set_is_empty (dag->nodes[i]->parents))
 			set_add (dag->roots, dag->nodes[i]->number);
 	}
