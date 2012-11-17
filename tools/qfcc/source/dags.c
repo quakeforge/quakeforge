@@ -332,10 +332,8 @@ dag_create (const flownode_t *flownode)
 		}
 		lx = operand_label (dag, operands[0]);
 		if (lx) {
-			flowvar_t  *var = flow_get_var (lx->op);
 			lx->expr = s->expr;
-			if (set_is_member (flownode->live_vars.out, var->number))
-				dagnode_attach_label (n, lx);
+			dagnode_attach_label (n, lx);
 		}
 	}
 	nodes = malloc (dag->num_nodes * sizeof (dagnode_t *));
@@ -348,6 +346,18 @@ dag_create (const flownode_t *flownode)
 	for (i = 0; i < dag->num_nodes; i++) {
 		if (set_is_empty (dag->nodes[i]->parents))
 			set_add (dag->roots, dag->nodes[i]->number);
+	}
+	for (i = 0; i < dag->num_labels; i++) {
+		daglabel_t *l = dag->labels[i];
+		flowvar_t  *var;
+
+		if (!l->op || !l->dagnode)
+			continue;
+		var = flow_get_var (l->op);
+		if (!var)
+			continue;
+		if (!set_is_member (flownode->live_vars.out, var->number))
+			set_remove (l->dagnode->identifiers, l->number);
 	}
 	return dag;
 }
