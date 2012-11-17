@@ -43,11 +43,8 @@ struct dstring_s;
 struct flownode_s;
 
 typedef struct daglabel_s {
-	/// \name attached identifer linked list
-	//@{
 	struct daglabel_s *next;
-	struct daglabel_s **prev;
-	//@}
+	int         number;			///< index into array of labels in dag_t
 	struct daglabel_s *daglabel_chain;	///< all labels created for a dag
 	const char *opcode;			///< not if op
 	struct operand_s *op;		///< not if opcode;
@@ -57,29 +54,41 @@ typedef struct daglabel_s {
 
 typedef struct dagnode_s {
 	struct dagnode_s *next;
-	int         print_count;	///< used to avoid double printing nodes
-	int         is_child;		///< true if a child node
+	int         number;			///< index into array of nodes in dag_t
+	struct set_s *parents;		///< empty if root node
 	int         cost;			///< cost of this node in temp vars
 	st_type_t   type;			///< type of node (st_node = leaf)
 	daglabel_t *label;			///< ident/const if leaf node, or operator
 	etype_t     tl;
 	/// \name child nodes
-	/// All three child nodes will be null if this node is a leaf
-	/// If \a a is null, both \a b and \a c must also be null. If \a is not
-	/// null, either \a b or \a c or even both may be non-null. Both \a b and
-	/// \a c being non-null is reserved for the few opcodes that take three
-	/// inputs (rcall2+, 3 op state, indirect move, indexed pointer assignment)
-	/// \a b and \a c are used to help keep track of the original statement
-	/// operands
+	/// if \a children[0] is null, the rest must be null as well. Similar for
+	///	\a children[1].
+	///
+	/// \a edges is the set of all nodes upon which this node depends. ie,
+	/// they must be evaluated before this node is evaluted. So while nodes
+	/// in \a edges may not be true children of this node, they are effective
+	/// children in the DAG. That is, \a edges is for producing a correct
+	/// topological sort of the DAG.
 	//@{
-	struct dagnode_s *a, *b, *c;
-	etype_t     ta, tb, tc;		///< desired type of each operand (to alias)
+	struct dagnode_s *children[3];
+	etype_t     types[3];		///< desired type of each operand (to alias)
+	struct set_s *edges;		///< includes nodes pointed to by \a children
 	//@}
-	daglabel_t *identifiers;	///< list of identifiers with value of this node
+	struct set_s *identifiers;	///< set of identifiers attached to this node
 } dagnode_t;
 
+typedef struct dag_s {
+	struct dag_s *next;
+	dagnode_t **nodes;			///< array of all dagnodes in this dag
+	int         num_nodes;
+	daglabel_t **labels;		///< array of all daglabels in this dag
+	int         num_labels;;
+	struct set_s *roots;		///< set of root nodes
+	struct flownode_s *flownode;///< flow node this dag represents
+} dag_t;
+
 const char *daglabel_string (daglabel_t *label);
-void print_dag (struct dstring_s *dstr, dagnode_t *node);
+void print_dag (struct dstring_s *dstr, dag_t *dag);
 
 /** Make a dag for a single basic block.
 
@@ -88,9 +97,9 @@ void print_dag (struct dstring_s *dstr, dagnode_t *node);
 					variable information already computed.
 	\return			The dag representing the basic block.
 */
-dagnode_t *dag_create (const struct flownode_s *flownode);
+dag_t *dag_create (const struct flownode_s *flownode);
 
-void dag_generate (sblock_t *block, const struct flownode_s *flownode);
+void dag_generate (dag_t *dag, sblock_t *block);
 
 //@}
 

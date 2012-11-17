@@ -44,83 +44,58 @@
 #include <QF/va.h>
 
 #include "dags.h"
+#include "set.h"
 #include "statements.h"
 #include "symtab.h"
 #include "type.h"
 
-static int print_count;
-
 static void
-print_node_def (dstring_t *dstr, dagnode_t *node, int recurse)
+print_node_def (dstring_t *dstr, dagnode_t *node)
 {
-	if (!node->a && (node->b || node->c)) {
-		dasprintf (dstr, "  \"dagnode_%p\" [label=\"bad node\"];\n", node);
-		return;
-	}
 	dasprintf (dstr, "  \"dagnode_%p\" [%slabel=\"%s\"];\n", node,
 			   node->type != st_none ? "" : "shape=none,",
 			   daglabel_string (node->label));
-	if (recurse) {
-		if (node->a)
-			print_node_def (dstr, node->a, 1);
-		if (node->b)
-			print_node_def (dstr, node->b, 1);
-		if (node->c)
-			print_node_def (dstr, node->c, 1);
-	}
 }
 
 static void
-print_root_nodes (dstring_t *dstr, dagnode_t *dag)
+print_root_nodes (dstring_t *dstr, dag_t *dag)
 {
+	set_iter_t *node_iter;
 	dasprintf (dstr, "  subgraph roots_%p {", dag);
 	dasprintf (dstr, "    rank=same;");
-	for (; dag; dag = dag->next)
-		print_node_def (dstr, dag, 0);
+	for (node_iter = set_first (dag->roots); node_iter;
+		 node_iter = set_next (node_iter))
+		print_node_def (dstr, dag->nodes[node_iter->member]);
 	dasprintf (dstr, "  }\n");
 }
 
 static void
-print_child_nodes (dstring_t *dstr, dagnode_t *dag)
+print_child_nodes (dstring_t *dstr, dag_t *dag)
 {
-	for (; dag; dag = dag->next) {
-		if (!dag->a && (dag->b || dag->c))
-			continue;
-		if (dag->a)
-			print_node_def (dstr, dag->a, 1);
-		if (dag->b)
-			print_node_def (dstr, dag->b, 1);
-		if (dag->c)
-			print_node_def (dstr, dag->c, 1);
+	int         i;
+	dagnode_t  *node;
+
+	for (i = 0; i < dag->num_nodes; i++) {
+		node = dag->nodes[i];
+		if (!set_is_empty (node->parents))
+			print_node_def (dstr, node);
 	}
 }
 
 static void
-print_node (dstring_t *dstr, dagnode_t *node)
+print_node (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 {
-	if (node->print_count == print_count)
-		return;
-	node->print_count = print_count;
-	if (node->a) {
-		dasprintf (dstr, "  \"dagnode_%p\" -> \"dagnode_%p\" [label=a];\n",
-				   node, node->a);
-		print_node (dstr, node->a);
+	int         i;
+
+	for (i = 0; i < 3; i++) {
+		if (node->children[i]) {
+			dasprintf (dstr,
+					   "  \"dagnode_%p\" -> \"dagnode_%p\" [label=%c];\n",
+					   node, node->children[i], i + 'a');
+		}
 	}
-	if (node->b) {
-		dasprintf (dstr, "  \"dagnode_%p\" -> \"dagnode_%p\" [label=b];\n",
-				   node, node->b);
-		print_node (dstr, node->b);
-	}
-	if (node->c) {
-		dasprintf (dstr, "  \"dagnode_%p\" -> \"dagnode_%p\" [label=c];\n",
-				   node, node->c);
-		print_node (dstr, node->c);
-	}
-	if (node->next)
-		dasprintf (dstr,
-				   "  \"dagnode_%p\" -> \"dagnode_%p\" [style=dashed];\n",
-				   node, node->next);
-	if (node->identifiers) {
+	if (!set_is_empty (node->identifiers)) {
+		set_iter_t *id_iter;
 		daglabel_t *id;
 
 		dasprintf (dstr, "  \"dagnode_%p\" -> \"dagid_%p\" "
@@ -130,8 +105,11 @@ print_node (dstring_t *dstr, dagnode_t *node)
 						 "cellspacing=\"0\">\n");
 		dasprintf (dstr, "      <tr>\n");
 		dasprintf (dstr, "        <td>");
-		for (id = node->identifiers; id; id = id->next)
-			dasprintf (dstr, "%s%s", daglabel_string(id), id->next ? " " : "");
+		for (id_iter = set_first (node->identifiers); id_iter;
+			 id_iter = set_next (id_iter)) {
+			id = dag->labels[id_iter->member];
+			dasprintf (dstr, " %s", daglabel_string(id));
+		}
 		dasprintf (dstr, "        </td>");
 		dasprintf (dstr, "      </tr>\n");
 		dasprintf (dstr, "    </table>>];\n");
@@ -139,13 +117,13 @@ print_node (dstring_t *dstr, dagnode_t *node)
 }
 
 void
-print_dag (dstring_t *dstr, dagnode_t *dag)
+print_dag (dstring_t *dstr, dag_t *dag)
 {
+	int         i;
 	dasprintf (dstr, "  subgraph cluster_dag_%p {", dag);
-	print_count++;
 	print_root_nodes (dstr, dag);
 	print_child_nodes (dstr, dag);
-	for (; dag; dag = dag->next)
-		print_node (dstr, dag);
+	for (i = 0; i < dag->num_nodes; i++)
+		print_node (dstr, dag, dag->nodes[i]);
 	dasprintf (dstr, "  }\n");
 }

@@ -76,7 +76,7 @@ typedef struct flownode_s {
 		struct set_s *out;
 	}           live_vars;
 	struct sblock_s *sblock;	///< original statement block
-	struct dagnode_s *dag;		///< dag for this node
+	struct dag_s *dag;			///< dag for this node
 } flownode_t;
 
 typedef struct flowgraph_s {

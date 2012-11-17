@@ -433,7 +433,7 @@ flow_generate (flowgraph_t *graph)
 			label->dest = block;
 		}
 		// generate new statements from the dag;
-		dag_generate (block, node);
+		dag_generate (node->dag, block);
 	}
 	//dump_dot ("post", code, dump_dot_sblock);
 	return code;
