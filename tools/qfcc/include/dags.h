@@ -52,6 +52,7 @@ typedef struct daglabel_s {
 	const char *opcode;			///< not if op
 	struct operand_s *op;		///< not if opcode;
 	struct dagnode_s *dagnode;	///< node with which this label is associated
+	struct expr_s *expr;		///< expression associated with this label
 } daglabel_t;
 
 typedef struct dagnode_s {
@@ -62,7 +63,6 @@ typedef struct dagnode_s {
 	st_type_t   type;			///< type of node (st_node = leaf)
 	daglabel_t *label;			///< ident/const if leaf node, or operator
 	etype_t     tl;
-	struct statement_s *statement;	///< statement generating this node
 	/// \name child nodes
 	/// All three child nodes will be null if this node is a leaf
 	/// If \a a is null, both \a b and \a c must also be null. If \a is not
