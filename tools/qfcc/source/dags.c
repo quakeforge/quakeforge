@@ -325,6 +325,7 @@ dag_create (const flownode_t *flownode)
 			for (i = 0; i < 3; i++) {
 				n->children[i] = children[i];
 				if (n->children[i]) {
+					set_add (n->edges, n->children[i]->number);
 					set_add (n->children[i]->parents, n->number);
 					n->types[i] = operands[i + 1]->type;
 				}
