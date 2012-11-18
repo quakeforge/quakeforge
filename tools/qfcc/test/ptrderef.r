@@ -11,4 +11,6 @@ ptrderef (int *to, int *from)
 	to = ++from;
 	*to = *from++;
 	*to = *++from;
+	*to = x;
+	*to++ = *from++;
 }
