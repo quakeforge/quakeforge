@@ -332,7 +332,6 @@ dag_create (flownode_t *flownode)
 	dagnode_t **nodes;
 	daglabel_t **labels;
 	int         num_statements = 0;
-	int         i;
 
 	flush_daglabels ();
 
@@ -345,6 +344,7 @@ dag_create (flownode_t *flownode)
 	dag->nodes = alloca (num_statements * 4 * sizeof (dagnode_t));
 	// at most 3 per statement
 	dag->labels = alloca (num_statements * 3 * sizeof (daglabel_t));
+	dag->roots = set_new ();
 
 	for (s = block->statements; s; s = s->next) {
 		operand_t  *operands[4];
@@ -354,8 +354,11 @@ dag_create (flownode_t *flownode)
 
 		flow_analyze_statement (s, 0, 0, 0, operands);
 		for (i = 0; i < 3; i++) {
-			if (!(children[i] = node (operands[i + 1])))
+			if (!(children[i] = node (operands[i + 1]))) {
 				children[i] = leaf_node (dag, operands[i + 1], s->expr);
+				if (children[i])
+					set_add (dag->roots, children[i]->number);
+			}
 		}
 		op = opcode_label (dag, s->opcode, s->expr);
 		if (s->type == st_assign) {
@@ -373,9 +376,11 @@ dag_create (flownode_t *flownode)
 			n = new_node (dag);
 			n->type = s->type;
 			n->label = op;
+			set_add (dag->roots, n->number);
 			for (i = 0; i < 3; i++) {
 				n->children[i] = children[i];
 				if (n->children[i]) {
+					set_remove (dag->roots, children[i]->number);
 					set_add (n->edges, n->children[i]->number);
 					set_add (n->children[i]->parents, n->number);
 					n->types[i] = operands[i + 1]->type;
@@ -388,17 +393,14 @@ dag_create (flownode_t *flownode)
 			dagnode_attach_label (n, lx);
 		}
 	}
+
 	nodes = malloc (dag->num_nodes * sizeof (dagnode_t *));
 	memcpy (nodes, dag->nodes, dag->num_nodes * sizeof (dagnode_t *));
 	dag->nodes = nodes;
 	labels = malloc (dag->num_labels * sizeof (daglabel_t *));
 	memcpy (labels, dag->labels, dag->num_labels * sizeof (daglabel_t *));
 	dag->labels = labels;
-	dag->roots = set_new ();
-	for (i = 0; i < dag->num_nodes; i++) {
-		if (set_is_empty (dag->nodes[i]->parents))
-			set_add (dag->roots, dag->nodes[i]->number);
-	}
+
 	dag_remove_dead_vars (dag);
 	dag_sort_nodes (dag);
 	return dag;
