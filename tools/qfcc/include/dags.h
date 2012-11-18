@@ -61,6 +61,7 @@ typedef struct dagnode_s {
 	st_type_t   type;			///< type of node (st_node = leaf)
 	daglabel_t *label;			///< ident/const if leaf node, or operator
 	etype_t     tl;
+	struct operand_s *value;	///< operand holding the value of this node
 	/// \name child nodes
 	/// if \a children[0] is null, the rest must be null as well. Similar for
 	///	\a children[1].

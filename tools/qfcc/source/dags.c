@@ -492,21 +492,18 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 	return dst;
 }
 
-static operand_t *dag_gencode (dag_t *dag, sblock_t *block,
-							   const dagnode_t *dagnode);
-
 static operand_t *
 make_operand (dag_t *dag, sblock_t *block, const dagnode_t *dagnode, int index)
 {
 	operand_t  *op;
 
-	op = dag_gencode (dag, block, dagnode->children[index]);
+	op = dagnode->children[index]->value;
 	op = fix_op_type (op, dagnode->types[index]);
 	return op;
 }
 
-static operand_t *
-dag_gencode (dag_t *dag, sblock_t *block, const dagnode_t *dagnode)
+static void
+dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 {
 	operand_t  *operands[3] = {0, 0, 0};
 	operand_t  *dst = 0;
@@ -570,15 +567,14 @@ dag_gencode (dag_t *dag, sblock_t *block, const dagnode_t *dagnode)
 			sblock_add_statement (block, st);
 			break;
 	}
-	return dst;
+	dagnode->value = dst;
 }
 
 void
 dag_generate (dag_t *dag, sblock_t *block)
 {
-	set_iter_t *node_iter;
+	int         i;
 
-	for (node_iter = set_first (dag->roots); node_iter;
-		 node_iter = set_next (node_iter))
-		dag_gencode (dag, block, dag->nodes[node_iter->member]);
+	for (i = 0; i < dag->num_nodes; i++)
+		dag_gencode (dag, block, dag->nodes[dag->topo[i]]);
 }
