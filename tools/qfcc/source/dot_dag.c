@@ -61,12 +61,16 @@ static void
 print_root_nodes (dstring_t *dstr, dag_t *dag)
 {
 	set_iter_t *node_iter;
-	dasprintf (dstr, "  subgraph roots_%p {", dag);
-	dasprintf (dstr, "    rank=same;");
+	dasprintf (dstr, "    subgraph roots_%p {", dag);
+	dasprintf (dstr, "      rank=same;");
 	for (node_iter = set_first (dag->roots); node_iter;
-		 node_iter = set_next (node_iter))
-		print_node_def (dstr, dag->nodes[node_iter->member]);
-	dasprintf (dstr, "  }\n");
+		 node_iter = set_next (node_iter)) {
+		dagnode_t  *node = dag->nodes[node_iter->member];
+		print_node_def (dstr, node);
+		dasprintf (dstr, "      dag_%p ->dagnode_%p [style=invis];\n", dag,
+				   node);
+	}
+	dasprintf (dstr, "    }\n");
 }
 
 static void
@@ -120,7 +124,8 @@ void
 print_dag (dstring_t *dstr, dag_t *dag)
 {
 	int         i;
-	dasprintf (dstr, "  subgraph cluster_dag_%p {", dag);
+	dasprintf (dstr, "  subgraph cluster_dag_%p {\n", dag);
+	dasprintf (dstr, "    dag_%p [label=\"\", style=invis];\n", dag);
 	print_root_nodes (dstr, dag);
 	print_child_nodes (dstr, dag);
 	for (i = 0; i < dag->num_nodes; i++)

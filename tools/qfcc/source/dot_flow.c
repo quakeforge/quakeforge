@@ -89,7 +89,8 @@ print_flow_node (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 		dasprintf (dstr, "%*s}\n", indent, "");
 	}
 	if (node->dag) {
-		dasprintf (dstr, "  fn_%p -> dagnode_%p;\n", node, node->dag);
+		dasprintf (dstr, "  fn_%p -> dag_%p [lhead=cluster_dag_%p];\n", node,
+				   node->dag, node->dag);
 		print_dag (dstr, node->dag);
 	}
 }
