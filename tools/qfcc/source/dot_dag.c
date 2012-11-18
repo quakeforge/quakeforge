@@ -46,6 +46,7 @@
 #include "dags.h"
 #include "set.h"
 #include "statements.h"
+#include "strpool.h"
 #include "symtab.h"
 #include "type.h"
 
@@ -123,7 +124,7 @@ print_node (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 		for (id_iter = set_first (node->identifiers); id_iter;
 			 id_iter = set_next (id_iter)) {
 			id = dag->labels[id_iter->member];
-			dasprintf (dstr, " %s", daglabel_string(id));
+			dasprintf (dstr, " %s", html_string (daglabel_string(id)));
 		}
 		dasprintf (dstr, "        </td>");
 		dasprintf (dstr, "      </tr>\n");

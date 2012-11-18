@@ -172,14 +172,31 @@ add_statement_op_ref (operand_t *op, dstatement_t *st, int field)
 }
 
 static void
+use_tempop (operand_t *op)
+{
+	if (!op || op->op_type != op_temp)
+		return;
+	if (--op->o.tempop.users == 0)
+		free_temp_def (op->o.tempop.def);
+	if (op->o.tempop.users <= -1)
+		bug (0, "temp users went negative: %s", operand_string (op));
+}
+
+static void
 emit_statement (statement_t *statement)
 {
 	const char *opcode = statement->opcode;
-	def_t      *def_a = get_operand_def (statement->expr, statement->opa);
-	def_t      *def_b = get_operand_def (statement->expr, statement->opb);
-	def_t      *def_c = get_operand_def (statement->expr, statement->opc);
-	opcode_t   *op = opcode_find (opcode, def_a, def_b, def_c);
+	def_t      *def_a, *def_b, *def_c;
+	opcode_t   *op;
 	dstatement_t *s;
+
+	def_a = get_operand_def (statement->expr, statement->opa);
+	use_tempop (statement->opa);
+	def_b = get_operand_def (statement->expr, statement->opb);
+	use_tempop (statement->opb);
+	def_c = get_operand_def (statement->expr, statement->opc);
+	use_tempop (statement->opc);
+	op = opcode_find (opcode, def_a, def_b, def_c);
 
 	if (!op) {
 		print_expr (statement->expr);

@@ -67,6 +67,7 @@ typedef struct function_s {
 	string_t            s_file;		///< source file with definition
 	string_t            s_name;		///< name of function in output
 	int                 temp_num;	///< number for next temp var
+	struct def_s       *temp_defs[4];	///< freed temp vars (by size)
 	struct def_s       *def;		///< output def holding function number
 	struct symbol_s    *sym;		///< internal symbol for this function
 	/** Root scope symbol table of the function.

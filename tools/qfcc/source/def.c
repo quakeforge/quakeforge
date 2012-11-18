@@ -162,6 +162,11 @@ temp_def (etype_t type, int size)
 	def_t      *temp;
 	defspace_t *space = current_func->symtab->space;
 
+	if ((temp = current_func->temp_defs[size - 1])) {
+		current_func->temp_defs[size - 1] = temp->next;
+		temp->next = 0;
+		return temp;
+	}
 	ALLOC (16384, def_t, defs, temp);
 	temp->return_addr = __builtin_return_address (0);
 	temp->name = save_string (va (".tmp%d", current_func->temp_num++));
@@ -174,6 +179,14 @@ temp_def (etype_t type, int size)
 	*space->def_tail = temp;
 	space->def_tail = &temp->next;
 	return temp;
+}
+
+void
+free_temp_def (def_t *temp)
+{
+	int         size = type_size (temp->type) - 1;
+	temp->next = current_func->temp_defs[size];
+	current_func->temp_defs[size] = temp;
 }
 
 void

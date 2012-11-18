@@ -45,6 +45,7 @@ typedef struct {
 	struct def_s   *def;
 	struct flowvar_s *flowvar;
 	struct daglabel_s *daglabel;
+	int         users;
 } tempop_t;
 
 typedef struct operand_s {

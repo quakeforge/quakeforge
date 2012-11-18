@@ -77,6 +77,7 @@ def_t *new_def (const char *name, struct type_s *type,
 				struct defspace_s *space, storage_class_t storage);
 def_t *alias_def (def_t *def, struct type_s *type);
 def_t *temp_def (etype_t type, int size);
+void free_temp_def (def_t *temp);
 void free_def (def_t *def);
 
 void def_to_ddef (def_t *def, ddef_t *ddef, int aux);

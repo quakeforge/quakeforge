@@ -108,7 +108,7 @@ operand_string (operand_t *op)
 		case op_label:
 			return op->o.label->name;
 		case op_temp:
-			return va ("tmp %p", op);
+			return va ("<tmp %p:%d>", op, op->o.tempop.users);
 		case op_pointer:
 			type = op->o.value->v.pointer.type;
 			if (op->o.value->v.pointer.def)
