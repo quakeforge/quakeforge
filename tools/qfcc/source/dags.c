@@ -267,8 +267,12 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 	if (!op_is_identifer (l->op))
 		internal_error (0, "attempt to attach non-identifer label to dagnode "
 						"identifers");
-	if (l->dagnode)
-		set_remove (l->dagnode->identifiers, l->number);
+	if (l->dagnode) {
+		dagnode_t  *node = l->dagnode;
+		set_union (n->edges, node->parents);
+		set_remove (n->edges, n->number);
+		set_remove (node->identifiers, l->number);
+	}
 	l->dagnode = n;
 	set_add (n->identifiers, l->number);
 }
@@ -378,11 +382,18 @@ dag_create (flownode_t *flownode)
 			n->label = op;
 			set_add (dag->roots, n->number);
 			for (i = 0; i < 3; i++) {
-				n->children[i] = children[i];
-				if (n->children[i]) {
-					set_remove (dag->roots, children[i]->number);
-					set_add (n->edges, n->children[i]->number);
-					set_add (n->children[i]->parents, n->number);
+				dagnode_t  *child = children[i];
+				n->children[i] = child;
+				if (child) {
+					if (child->label->op) {
+						dagnode_t  *node = child->label->dagnode;
+						if (node != child && node != n)
+							set_add (node->edges, n->number);
+					}
+					set_remove (dag->roots, child->number);
+					if (n != child)
+						set_add (n->edges, child->number);
+					set_add (child->parents, n->number);
 					n->types[i] = operands[i + 1]->type;
 				}
 			}
