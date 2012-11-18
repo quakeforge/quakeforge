@@ -90,14 +90,25 @@ static void
 print_node (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 {
 	int         i;
+	set_t      *edges = set_new ();
+	set_iter_t *edge_iter;
 
+	set_assign (edges, node->edges);
 	for (i = 0; i < 3; i++) {
 		if (node->children[i]) {
+			set_remove (edges, node->children[i]->number);
 			dasprintf (dstr,
 					   "  \"dagnode_%p\" -> \"dagnode_%p\" [label=%c];\n",
 					   node, node->children[i], i + 'a');
 		}
 	}
+	for (edge_iter = set_first (edges); edge_iter;
+		 edge_iter = set_next (edge_iter)) {
+		dasprintf (dstr,
+				   "  \"dagnode_%p\" -> \"dagnode_%p\" [style=dashed];\n",
+				   node, dag->nodes[edge_iter->member]);
+	}
+	set_delete (edges);
 	if (!set_is_empty (node->identifiers)) {
 		set_iter_t *id_iter;
 		daglabel_t *id;
