@@ -420,7 +420,18 @@ dag_create (flownode_t *flownode)
 static statement_t *
 build_statement (const char *opcode, operand_t **operands, expr_t *expr)
 {
+	int         i;
+	operand_t  *op;
 	statement_t *st = new_statement (st_none, opcode, expr);
+
+	for (i = 0; i < 3; i++) {
+		if ((op = operands[i])) {
+			while (op->op_type == op_alias)
+				op = op->o.alias;
+			if (op->op_type == op_temp)
+				op->o.tempop.users++;
+		}
+	}
 	st->opa = operands[0];
 	st->opb = operands[1];
 	st->opc = operands[2];
@@ -500,8 +511,6 @@ make_operand (dag_t *dag, sblock_t *block, const dagnode_t *dagnode, int index)
 	op = dagnode->children[index]->value;
 	while (op->op_type == op_alias)
 		op = op->o.alias;
-	if (op->op_type == op_temp)
-		op->o.tempop.users++;
 	op = fix_op_type (op, dagnode->types[index]);
 	return op;
 }
@@ -529,7 +538,6 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 				operands[1] = make_operand (dag, block, dagnode, 1);
 			if (!(var_iter = set_first (dagnode->identifiers))) {
 				operands[2] = temp_operand (get_type (dagnode->label->expr));
-				operands[2]->o.tempop.users++;
 			} else {
 				daglabel_t *var = dag->labels[var_iter->member];
 				etype_t     type = extract_type (dagnode->label->expr);
