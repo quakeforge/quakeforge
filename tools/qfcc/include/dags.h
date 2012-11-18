@@ -55,6 +55,7 @@ typedef struct daglabel_s {
 typedef struct dagnode_s {
 	struct dagnode_s *next;
 	int         number;			///< index into array of nodes in dag_t
+	int         topo;			///< topological sort order
 	struct set_s *parents;		///< empty if root node
 	int         cost;			///< cost of this node in temp vars
 	st_type_t   type;			///< type of node (st_node = leaf)
@@ -81,6 +82,7 @@ typedef struct dag_s {
 	struct dag_s *next;
 	dagnode_t **nodes;			///< array of all dagnodes in this dag
 	int         num_nodes;
+	int        *topo;			///< nodes in topological sort order
 	daglabel_t **labels;		///< array of all daglabels in this dag
 	int         num_labels;;
 	struct set_s *roots;		///< set of root nodes
@@ -97,7 +99,7 @@ void print_dag (struct dstring_s *dstr, dag_t *dag);
 					variable information already computed.
 	\return			The dag representing the basic block.
 */
-dag_t *dag_create (const struct flownode_s *flownode);
+dag_t *dag_create (struct flownode_s *flownode);
 
 void dag_generate (dag_t *dag, sblock_t *block);
 

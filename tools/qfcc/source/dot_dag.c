@@ -52,9 +52,9 @@
 static void
 print_node_def (dstring_t *dstr, dagnode_t *node)
 {
-	dasprintf (dstr, "  \"dagnode_%p\" [%slabel=\"%s\"];\n", node,
+	dasprintf (dstr, "  \"dagnode_%p\" [%slabel=\"%s (%d)\"];\n", node,
 			   node->type != st_none ? "" : "shape=none,",
-			   daglabel_string (node->label));
+			   daglabel_string (node->label), node->topo);
 }
 
 static void

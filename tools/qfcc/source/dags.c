@@ -273,8 +273,58 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 	set_add (n->identifiers, l->number);
 }
 
+static void
+dag_remove_dead_vars (dag_t *dag)
+{
+	int         i;
+
+	for (i = 0; i < dag->num_labels; i++) {
+		daglabel_t *l = dag->labels[i];
+		flowvar_t  *var;
+
+		if (!l->op || !l->dagnode)
+			continue;
+		var = flow_get_var (l->op);
+		if (!var)
+			continue;
+		if (!set_is_member (dag->flownode->live_vars.out, var->number))
+			set_remove (l->dagnode->identifiers, l->number);
+	}
+}
+
+static void
+dag_sort_visit (dag_t *dag, set_t *visited, int node_index, int *topo)
+{
+	set_iter_t *node_iter;
+	dagnode_t  *node;
+
+	if (set_is_member (visited, node_index))
+		return;
+	set_add (visited, node_index);
+	node = dag->nodes[node_index];
+	for (node_iter = set_first (node->edges); node_iter;
+		 node_iter = set_next (node_iter))
+		dag_sort_visit (dag, visited, node_iter->member, topo);
+	node->topo = *topo;
+	dag->topo[(*topo)++] = node_index;
+}
+
+static void
+dag_sort_nodes (dag_t *dag)
+{
+	set_iter_t *root_iter;
+	set_t      *visited = set_new ();
+	int         topo = 0;
+
+	dag->topo = malloc (dag->num_nodes * sizeof (int));
+	for (root_iter = set_first (dag->roots); root_iter;
+		 root_iter = set_next (root_iter))
+		dag_sort_visit (dag, visited, root_iter->member, &topo);
+	set_delete (visited);
+}
+
 dag_t *
-dag_create (const flownode_t *flownode)
+dag_create (flownode_t *flownode)
 {
 	dag_t      *dag;
 	sblock_t   *block = flownode->sblock;
@@ -290,6 +340,7 @@ dag_create (const flownode_t *flownode)
 		num_statements++;
 
 	dag = new_dag ();
+	dag->flownode = flownode;
 	// at most 4 per statement
 	dag->nodes = alloca (num_statements * 4 * sizeof (dagnode_t));
 	// at most 3 per statement
@@ -348,18 +399,8 @@ dag_create (const flownode_t *flownode)
 		if (set_is_empty (dag->nodes[i]->parents))
 			set_add (dag->roots, dag->nodes[i]->number);
 	}
-	for (i = 0; i < dag->num_labels; i++) {
-		daglabel_t *l = dag->labels[i];
-		flowvar_t  *var;
-
-		if (!l->op || !l->dagnode)
-			continue;
-		var = flow_get_var (l->op);
-		if (!var)
-			continue;
-		if (!set_is_member (flownode->live_vars.out, var->number))
-			set_remove (l->dagnode->identifiers, l->number);
-	}
+	dag_remove_dead_vars (dag);
+	dag_sort_nodes (dag);
 	return dag;
 }
 
