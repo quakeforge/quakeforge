@@ -393,6 +393,8 @@ DecodeArgs (int argc, char **argv)
 							options.block_dot.dags = flag;
 						} else if (!(strcasecmp (temp, "flow"))) {
 							options.block_dot.flow = flag;
+						} else if (!(strcasecmp (temp, "post"))) {
+							options.block_dot.post = flag;
 						}
 						temp = strtok (NULL, ",");
 					}
@@ -404,6 +406,7 @@ DecodeArgs (int argc, char **argv)
 					options.block_dot.final = true;
 					options.block_dot.dags = true;
 					options.block_dot.flow = true;
+					options.block_dot.post = true;
 				}
 				break;
 			case 'c':

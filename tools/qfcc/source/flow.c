@@ -435,7 +435,8 @@ flow_generate (flowgraph_t *graph)
 		// generate new statements from the dag;
 		dag_generate (node->dag, block);
 	}
-	dump_dot ("post", code, dump_dot_sblock);
+	if (options.block_dot.post)
+		dump_dot ("post", code, dump_dot_sblock);
 	return code;
 }
 
