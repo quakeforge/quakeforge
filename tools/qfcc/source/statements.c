@@ -1206,6 +1206,8 @@ thread_jumps (sblock_t *blocks)
 		statement_t *s;
 		ex_label_t **label, *l;
 
+		if (!sblock->statements)
+			continue;
 		s = (statement_t *) sblock->tail;
 		if (is_goto (s))
 			label = &s->opa->o.label;
@@ -1274,6 +1276,8 @@ merge_blocks (sblock_t *blocks)
 		sblock_t    *dest;
 		sblock_t    *sb;
 
+		if (!sblock->statements)
+			continue;
 		s = (statement_t *) sblock->tail;
 		if (!is_goto (s))
 			continue;
@@ -1332,6 +1336,10 @@ remove_dead_blocks (sblock_t *blocks)
 				sb->reachable = 1;
 				continue;
 			}
+			if (!sblock->statements) {
+				sb->reachable = 1;
+				continue;
+			}
 			s = (statement_t *) sblock->tail;
 			if (is_conditional (s) && is_goto (sb->statements)
 				&& s->opb->o.label->dest == sb->next) {
@@ -1358,11 +1366,13 @@ remove_dead_blocks (sblock_t *blocks)
 
 				debug (0, "removing dead block %p", sb);
 
-				s = (statement_t *) sb->tail;
-				if (is_goto (s))
-					label = s->opa->o.label;
-				else if (is_conditional (s))
-					label = s->opb->o.label;
+				if (sb->statements) {
+					s = (statement_t *) sb->tail;
+					if (is_goto (s))
+						label = s->opa->o.label;
+					else if (is_conditional (s))
+						label = s->opb->o.label;
+				}
 				unuse_label (label);
 				did_something = 1;
 
@@ -1385,11 +1395,13 @@ check_final_block (sblock_t *sblock)
 		return;
 	while (sblock->next)
 		sblock = sblock->next;
-	s = (statement_t *) sblock->tail;
-	if (is_goto (s))
-		return;					// the end of function is the end of a loop
-	if (is_return (s))
-		return;
+	if (sblock->statements) {
+		s = (statement_t *) sblock->tail;
+		if (is_goto (s))
+			return;				// the end of function is the end of a loop
+		if (is_return (s))
+			return;
+	}
 	if (current_func->sym->type->t.func.type != &type_void)
 		warning (0, "control reaches end of non-void function");
 	if (options.traditional || options.code.progsversion == PROG_ID_VERSION) {
