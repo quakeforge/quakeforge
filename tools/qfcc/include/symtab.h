@@ -67,11 +67,11 @@ typedef struct symbol_s {
 	struct flowvar_s *flowvar;
 	struct daglabel_s *daglabel;///< dag label for this symbol
 	union {
-		int         offset;			///< st_var (in a struct/union)
-		struct def_s *def;			///< st_var
-		struct ex_value_s *value;	///< st_const
-		struct expr_s *expr;		///< st_expr
-		struct function_s *func;	///< st_func
+		int         offset;			///< sy_var (in a struct/union)
+		struct def_s *def;			///< sy_var
+		struct ex_value_s *value;	///< sy_const
+		struct expr_s *expr;		///< sy_expr
+		struct function_s *func;	///< sy_func
 	} s;
 } symbol_t;
 

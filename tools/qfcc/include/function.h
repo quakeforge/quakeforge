@@ -89,6 +89,7 @@ typedef struct function_s {
 	*/
 	struct flowvar_s  **vars;
 	int                 num_vars;	///< total number of variables referenced
+	struct set_s       *global_vars;///< set indicating which vars are global
 	struct statement_s **statements;
 	int                 num_statements;
 } function_t;

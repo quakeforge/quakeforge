@@ -160,6 +160,23 @@ delete_graph (flowgraph_t *graph)
 	free_graphs = graph;
 }
 
+static int
+flowvar_is_global (flowvar_t *var)
+{
+	symbol_t   *sym;
+	def_t      *def;
+
+	if (var->op->op_type != op_symbol)
+		return 0;
+	sym = var->op->o.symbol;
+	if (sym->sy_type != sy_var)
+		return 0;
+	def = sym->s.def;
+	if (def->local)
+		return 0;
+	return 1;
+}
+
 flowvar_t *
 flow_get_var (operand_t *op)
 {
@@ -284,6 +301,12 @@ flow_build_vars (function_t *func)
 				add_operand (func, s->opc);
 			}
 		}
+		func->global_vars = set_new ();
+		// mark all global vars (except .return and .param_N)
+		for (i = num_flow_params; i < func->num_vars; i++) {
+			if (flowvar_is_global (func->vars[i]))
+				set_add (func->global_vars, i);
+		}
 	}
 	if (num_statements) {
 		func->statements = malloc (num_statements * sizeof (statement_t *));
@@ -333,6 +356,13 @@ flow_live_vars (flowgraph_t *graph)
 		def = set_new ();
 		for (st = node->sblock->statements; st; st = st->next) {
 			flow_analyze_statement (st, stuse, stdef, 0, 0);
+			if (st->type == st_func && !strncmp (st->opcode, "<RETURN", 7)) {
+				set_t      *global_vars = set_new ();
+
+				set_assign (global_vars, graph->func->global_vars);
+				live_set_use (global_vars, use, def);
+				set_delete (global_vars);
+			}
 			live_set_use (stuse, use, def);
 			live_set_def (stdef, use, def);
 		}
@@ -799,7 +829,7 @@ flow_build_dfst (flowgraph_t *graph)
 }
 
 flowgraph_t *
-flow_build_graph (sblock_t *sblock)
+flow_build_graph (sblock_t *sblock, function_t *func)
 {
 	flowgraph_t *graph;
 	flownode_t *node;
@@ -819,6 +849,7 @@ flow_build_graph (sblock_t *sblock)
 		node->successors = set_new ();
 		node->edges = set_new ();
 		node->dom = set_new ();
+		node->global_vars = func->global_vars;
 		node->id = sb->number;
 		node->sblock = sb;
 		graph->nodes[node->id] = node;
