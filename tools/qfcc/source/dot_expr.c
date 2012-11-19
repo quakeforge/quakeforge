@@ -417,7 +417,7 @@ dump_dot_expr (void *_e, const char *filename)
 {
 	static int  id = 0;
 	dstring_t  *dstr = dstring_newstr ();
-	expr_t     *e = (expr_t *) e;
+	expr_t     *e = (expr_t *) _e;
 
 	dasprintf (dstr, "digraph expr_%p {\n", e);
 	dasprintf (dstr, "  layout=dot; rankdir=TB; compound=true;\n");
