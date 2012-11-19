@@ -50,6 +50,7 @@
 #include "statements.h"
 #include "strpool.h"
 #include "symtab.h"
+#include "type.h"
 
 static daglabel_t *free_labels;
 static dagnode_t *free_nodes;
@@ -546,7 +547,9 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 				operands[2] = temp_operand (get_type (dagnode->label->expr));
 			} else {
 				daglabel_t *var = dag->labels[var_iter->member];
-				etype_t     type = extract_type (dagnode->label->expr);
+				etype_t     type;
+
+				type = low_level_type (get_type (dagnode->label->expr));
 				operands[2] = fix_op_type (var->op, type);
 				var_iter = set_next (var_iter);
 			}

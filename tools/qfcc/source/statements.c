@@ -1418,7 +1418,7 @@ make_statements (expr_t *e)
 {
 	sblock_t   *sblock = new_sblock ();
 	//sblock_t   *s;
-//	print_expr (e);
+	//dump_dot ("expr", e, dump_dot_expr);
 	statement_slist (sblock, e);
 	if (options.block_dot.initial)
 		dump_dot ("initial", sblock, dump_dot_sblock);

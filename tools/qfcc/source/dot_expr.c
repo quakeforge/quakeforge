@@ -184,8 +184,9 @@ print_block (dstring_t *dstr, expr_t *e, int level, int id)
 		dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e,
 				   e->e.block.result);
 	}
-	dasprintf (dstr, "%*se_%p -> e_%p [style=dashed];\n", indent, "", e,
-			   e->e.block.head);
+	if (e->e.block.head)
+		dasprintf (dstr, "%*se_%p -> e_%p [style=dashed];\n", indent, "", e,
+				   e->e.block.head);
 	//dasprintf (dstr, "%*ssubgraph cluster_%p {\n", indent, "", e);
 	for (se = e->e.block.head; se; se = se->next) {
 		_print_expr (dstr, se, level + 1, id);
@@ -272,7 +273,8 @@ print_uexpr (dstring_t *dstr, expr_t *e, int level, int id)
 		dstring_copystr (typestr, "\\n");
 		print_type_str (typestr, e->e.expr.type);
 	}
-	dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->e.expr.e1);
+	if (e->e.expr.op != 'r' || e->e.expr.e1)
+		dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->e.expr.e1);
 	dasprintf (dstr, "%*se_%p [label=\"%s%s\\n%d\"];\n", indent, "", e,
 			   get_op_string (e->e.expr.op), typestr->str, e->line);
 	dstring_delete (typestr);
