@@ -163,8 +163,8 @@ temp_def (etype_t type, int size)
 	defspace_t *space = current_func->symtab->space;
 
 	if ((temp = current_func->temp_defs[size - 1])) {
-		current_func->temp_defs[size - 1] = temp->next;
-		temp->next = 0;
+		current_func->temp_defs[size - 1] = temp->temp_next;
+		temp->temp_next = 0;
 	} else {
 		ALLOC (16384, def_t, defs, temp);
 		temp->offset = defspace_alloc_loc (space, size);
@@ -185,7 +185,7 @@ void
 free_temp_def (def_t *temp)
 {
 	int         size = type_size (temp->type) - 1;
-	temp->next = current_func->temp_defs[size];
+	temp->temp_next = current_func->temp_defs[size];
 	current_func->temp_defs[size] = temp;
 }
 

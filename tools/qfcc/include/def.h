@@ -37,6 +37,7 @@
 typedef struct def_s {
 	struct def_s	*next;			///< general purpose linking
 
+	struct def_s    *temp_next;		///< linked list of "free" temp defs
 	struct type_s	*type;
 	const char		*name;
 	struct defspace_s *space;
