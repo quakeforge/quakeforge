@@ -363,7 +363,7 @@ Z_CheckHeap (memzone_t *zone)
 		if ( (byte *)block + block->size != (byte *)block->next)
 			Sys_Error ("Z_CheckHeap: block size does not touch the next "
 					   "block\n");
-		if ( block->next->prev != block)
+		if (block->next->prev != block)
 			Sys_Error ("Z_CheckHeap: next block doesn't have proper back "
 					   "link\n");
 		if (!block->tag && !block->next->tag)
@@ -376,6 +376,30 @@ Z_SetError (memzone_t *zone, void (*err) (void *, const char *), void *data)
 {
 	zone->error = err;
 	zone->data = data;
+}
+
+void
+Z_CheckPointer (const memzone_t *zone, const void *ptr, int size)
+{
+	const memblock_t *block;
+	const char *block_mem;
+	const char *check = (char *) ptr;
+
+	for (block = zone->blocklist.next ; ; block = block->next) {
+		if (block->next == &zone->blocklist)
+			break;			// all blocks have been hit
+		if (check < (const char *) block
+			|| check >= (const char *) block + block->size)
+			continue;
+		// a block that overlaps with the memory region has been found
+		if (!block->tag)
+			zone->error (zone->data, "invalid access to unallocated memory");
+		block_mem = (char *) &block[1];
+		if (check < block_mem
+			|| check + size > block_mem + block->size - sizeof (*block))
+			zone->error (zone->data, "invalid access to allocated memory");
+		return;		// access ok
+	}
 }
 
 //============================================================================
