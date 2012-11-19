@@ -104,6 +104,7 @@ get_operand_def (expr_t *expr, operand_t *op)
 		case op_value:
 			return get_value_def (op->o.value, op->type);
 		case op_label:
+			op->type = ev_short;
 			zero_def.type = &type_short;
 			return &zero_def;	//FIXME
 		case op_temp:
