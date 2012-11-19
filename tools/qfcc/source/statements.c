@@ -184,6 +184,8 @@ print_operand (operand_t *op)
 			break;
 		case op_temp:
 			printf ("tmp (%s) %p", pr_type_name[op->type], op);
+			if (op->o.tempop.def)
+				printf (" %s", op->o.tempop.def->name);
 			break;
 		case op_pointer:
 			printf ("ptr (%s)[%d]",

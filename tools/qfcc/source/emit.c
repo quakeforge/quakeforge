@@ -178,10 +178,8 @@ use_tempop (operand_t *op, expr_t *expr)
 		op = op->o.alias;
 	if (!op || op->op_type != op_temp)
 		return;
-	if (--op->o.tempop.users == 0) {
+	if (--op->o.tempop.users == 0)
 		free_temp_def (op->o.tempop.def);
-		op->o.tempop.def = 0;
-	}
 	if (op->o.tempop.users <= -1)
 		bug (expr, "temp users went negative: %s", operand_string (op));
 }
