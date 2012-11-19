@@ -165,19 +165,19 @@ temp_def (etype_t type, int size)
 	if ((temp = current_func->temp_defs[size - 1])) {
 		current_func->temp_defs[size - 1] = temp->next;
 		temp->next = 0;
-		return temp;
+	} else {
+		ALLOC (16384, def_t, defs, temp);
+		temp->offset = defspace_alloc_loc (space, size);
+		*space->def_tail = temp;
+		space->def_tail = &temp->next;
+		temp->name = save_string (va (".tmp%d", current_func->temp_num++));
 	}
-	ALLOC (16384, def_t, defs, temp);
 	temp->return_addr = __builtin_return_address (0);
-	temp->name = save_string (va (".tmp%d", current_func->temp_num++));
 	temp->type = ev_types[type];
 	temp->file = pr.source_file;
 	temp->line = pr.source_line;
 	set_storage_bits (temp, st_local);
-	temp->offset = defspace_alloc_loc (space, size);
 	temp->space = space;
-	*space->def_tail = temp;
-	space->def_tail = &temp->next;
 	return temp;
 }
 
