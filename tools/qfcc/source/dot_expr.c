@@ -40,12 +40,14 @@
 #include <stdlib.h>
 
 #include <QF/dstring.h>
+#include <QF/quakeio.h>
 #include <QF/va.h>
 
 #include "expr.h"
 #include "symtab.h"
 #include "type.h"
 #include "qc-parse.h"
+#include "strpool.h"
 
 const char *
 get_op_string (int op)
@@ -92,115 +94,119 @@ get_op_string (int op)
 	}
 }
 
-typedef void (*print_f) (expr_t *, int, int);
-static void _print_expr (expr_t *e, int level, int id);
+typedef void (*print_f) (dstring_t *dstr, expr_t *, int, int);
+static void _print_expr (dstring_t *dstr, expr_t *e, int level, int id);
 
 static void
-print_error (expr_t *e, int level, int id)
+print_error (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 
-	printf ("%*s\"e_%p\" [label=\"(error)\\n%d\"];\n", indent, "", e, e->line);
+	dasprintf (dstr, "%*se_%p [label=\"(error)\\n%d\"];\n", indent, "", e,
+			   e->line);
 }
 
 static void
-print_state (expr_t *e, int level, int id)
+print_state (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 
-	_print_expr (e->e.state.frame, level, id);
-	_print_expr (e->e.state.think, level, id);
+	_print_expr (dstr, e->e.state.frame, level, id);
+	_print_expr (dstr, e->e.state.think, level, id);
 	if (e->e.state.step)
-		_print_expr (e->e.state.step, level, id);
-	printf ("%*s\"e_%p\":f -> \"e_%p\";\n", indent, "", e, e->e.state.frame);
-	printf ("%*s\"e_%p\":t -> \"e_%p\";\n", indent, "", e, e->e.state.think);
+		_print_expr (dstr, e->e.state.step, level, id);
+	dasprintf (dstr, "%*se_%p:f -> e_%p;\n", indent, "", e, e->e.state.frame);
+	dasprintf (dstr, "%*se_%p:t -> e_%p;\n", indent, "", e, e->e.state.think);
 	if (e->e.state.step)
-		printf ("%*s\"e_%p\":s -> \"e_%p\";\n", indent, "", e,
-				e->e.state.step);
-	printf ("%*s\"e_%p\" [label=\"<f>state|<t>think|<s>step\","
-			"shape=record];\n", indent, "", e);
+		dasprintf (dstr, "%*se_%p:s -> e_%p;\n", indent, "", e,
+				   e->e.state.step);
+	dasprintf (dstr,
+			   "%*se_%p [label=\"<f>state|<t>think|<s>step\",shape=record];\n",
+			   indent, "", e);
 }
 
 static void
-print_bool (expr_t *e, int level, int id)
+print_bool (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 
-	_print_expr (e->e.bool.e, level, id);
+	_print_expr (dstr, e->e.bool.e, level, id);
 	if (e->e.bool.e->type == ex_block && e->e.bool.e->e.block.head) {
 		expr_t     *se;
 
-		printf ("%*s\"e_%p\" -> \"e_%p\";\n", indent, "", e, e->e.bool.e);
+		dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->e.bool.e);
 		se = (expr_t *) e->e.bool.e->e.block.tail;
 		if (se && se->type == ex_label && e->next)
-			printf ("%*s\"e_%p\" -> \"e_%p\" "
-					"[constraint=false,style=dashed];\n", indent, "",
-					se, e->next);
+			dasprintf (dstr,
+					   "%*se_%p -> e_%p [constraint=false,style=dashed];\n",
+					   indent, "", se, e->next);
 	} else {
-		printf ("%*s\"e_%p\" -> \"e_%p\";\n", indent, "", e, e->e.bool.e);
+		dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->e.bool.e);
 	}
-	printf ("%*s\"e_%p\" [label=\"<bool>\\n%d\"];\n", indent, "", e, e->line);
+	dasprintf (dstr, "%*se_%p [label=\"<bool>\\n%d\"];\n", indent, "", e,
+			   e->line);
 }
 
 static void
-print_label (expr_t *e, int level, int id)
+print_label (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 
 	if (e->next)
-		printf ("%*s\"e_%p\" -> \"e_%p\" "
-				"[constraint=false,style=dashed];\n", indent, "",
-				e, e->next);
-	printf ("%*s\"e_%p\" [label=\"%s\\n%d\"];\n", indent, "", e,
-			e->e.label.name, e->line);
+		dasprintf (dstr, "%*se_%p -> e_%p [constraint=false,style=dashed];\n",
+				   indent, "", e,
+				   e->next);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   e->e.label.name, e->line);
 }
 
 static void
-print_labelref (expr_t *e, int level, int id)
+print_labelref (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 
 	if (e->next)
-		printf ("%*s\"e_%p\" -> \"e_%p\" "
-				"[constraint=false,style=dashed];\n", indent, "",
-				e, e->next);
-	printf ("%*s\"e_%p\" [label=\"&%s\\n%d\"];\n", indent, "", e,
-			e->e.label.name, e->line);
+		dasprintf (dstr, "%*se_%p -> e_%p [constraint=false,style=dashed];\n",
+				   indent, "", e,
+				   e->next);
+	dasprintf (dstr, "%*se_%p [label=\"&%s\\n%d\"];\n", indent, "", e,
+			   e->e.label.name, e->line);
 }
 
 static void
-print_block (expr_t *e, int level, int id)
+print_block (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 	expr_t     *se;
 
 	if (e->e.block.result) {
-		_print_expr (e->e.block.result, level + 1, id);
-		printf ("%*s\"e_%p\" -> \"e_%p\";\n", indent, "",
-				e, e->e.block.result);
+		_print_expr (dstr, e->e.block.result, level + 1, id);
+		dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e,
+				   e->e.block.result);
 	}
-	printf ("%*s\"e_%p\" -> \"e_%p\" [style=dashed];\n", indent, "",
-			e, e->e.block.head);
-	//printf ("%*ssubgraph cluster_%p {\n", indent, "", e);
+	dasprintf (dstr, "%*se_%p -> e_%p [style=dashed];\n", indent, "", e,
+			   e->e.block.head);
+	//dasprintf (dstr, "%*ssubgraph cluster_%p {\n", indent, "", e);
 	for (se = e->e.block.head; se; se = se->next) {
-		_print_expr (se, level + 1, id);
+		_print_expr (dstr, se, level + 1, id);
 	}
 	for (se = e->e.block.head; se && se->next; se = se->next) {
 		if ((se->type == ex_uexpr && se->e.expr.op == 'g')
 			|| se->type == ex_label || se->type == ex_bool)
 			continue;
-		printf ("%*s\"e_%p\" -> \"e_%p\" [constraint=false,style=dashed];\n",
-				indent, "", se, se->next);
+		dasprintf (dstr, "%*se_%p -> e_%p [constraint=false,style=dashed];\n",
+				   indent, "", se, se->next);
 	}
 	if (se && se->type == ex_label && e->next)
-		printf ("%*s\"e_%p\" -> \"e_%p\" [constraint=false,style=dashed];\n",
-				indent, "", se, e->next);
-	//printf ("%*s}\n", indent, "");
-	printf ("%*s\"e_%p\" [label=\"<block>\\n%d\"];\n", indent, "", e, e->line);
+		dasprintf (dstr, "%*se_%p -> e_%p [constraint=false,style=dashed];\n",
+				   indent, "", se, e->next);
+	//dasprintf (dstr, "%*s}\n", indent, "");
+	dasprintf (dstr, "%*se_%p [label=\"<block>\\n%d\"];\n", indent, "", e,
+			   e->line);
 }
 
 static void
-print_call (expr_t *e, int level, int id)
+print_call (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 	expr_t     *p;
@@ -213,93 +219,94 @@ print_call (expr_t *e, int level, int id)
 	for (i = 0, p = e->e.expr.e2; p; p = p->next, i++)
 		args[count - 1 - i] = p;
 
-	_print_expr (e->e.expr.e1, level, id);
-	printf ("%*s\"e_%p\" [label=\"<c>call", indent, "", e);
+	_print_expr (dstr, e->e.expr.e1, level, id);
+	dasprintf (dstr, "%*se_%p [label=\"<c>call", indent, "", e);
 	for (i = 0; i < count; i++)
-		printf ("|<p%d>p%d", i, i);
-	printf ("\",shape=record];\n");
+		dasprintf (dstr, "|<p%d>p%d", i, i);
+	dasprintf (dstr, "\",shape=record];\n");
 	for (i = 0; i < count; i++) {
-		_print_expr (args[i], level + 1, id);
-		printf ("%*s\"e_%p\":p%d -> \"e_%p\";\n", indent + 2, "", e, i,
-				args[i]);
+		_print_expr (dstr, args[i], level + 1, id);
+		dasprintf (dstr, "%*se_%p:p%d -> e_%p;\n", indent + 2, "", e, i,
+				   args[i]);
 	}
-	printf ("%*s\"e_%p\":c -> \"e_%p\";\n", indent, "", e, e->e.expr.e1);
+	dasprintf (dstr, "%*se_%p:c -> e_%p;\n", indent, "", e, e->e.expr.e1);
 }
 
 static void
-print_subexpr (expr_t *e, int level, int id)
+print_subexpr (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 
 	if (e->e.expr.op == 'c') {
-		print_call (e, level, id);
+		print_call (dstr, e, level, id);
 		return;
 	} else if (e->e.expr.op == 'i' || e->e.expr.op == 'n'
 			   || e->e.expr.op == IFB || e->e.expr.op ==IFBE
 			   || e->e.expr.op == IFA || e->e.expr.op ==IFAE) {
-		_print_expr (e->e.expr.e1, level, id);
-		printf ("%*s\"e_%p\" -> \"e_%p\" [label=\"t\"];\n", indent, "",
-				e, e->e.expr.e1);
-		printf ("%*s\"e_%p\" -> \"e_%p\" [label=\"g\"];\n", indent, "",
-				e, e->e.expr.e2);
+		_print_expr (dstr, e->e.expr.e1, level, id);
+		dasprintf (dstr, "%*se_%p -> e_%p [label=\"t\"];\n", indent, "", e,
+				   e->e.expr.e1);
+		dasprintf (dstr, "%*se_%p -> e_%p [label=\"g\"];\n", indent, "", e,
+				   e->e.expr.e2);
 	} else {
-		_print_expr (e->e.expr.e1, level, id);
-		_print_expr (e->e.expr.e2, level, id);
-		printf ("%*s\"e_%p\" -> \"e_%p\" [label=\"l\"];\n", indent, "",
-				e, e->e.expr.e1);
-		printf ("%*s\"e_%p\" -> \"e_%p\" [label=\"r\"];\n", indent, "",
-				e, e->e.expr.e2);
+		_print_expr (dstr, e->e.expr.e1, level, id);
+		_print_expr (dstr, e->e.expr.e2, level, id);
+		dasprintf (dstr, "%*se_%p -> e_%p [label=\"l\"];\n", indent, "", e,
+				   e->e.expr.e1);
+		dasprintf (dstr, "%*se_%p -> e_%p [label=\"r\"];\n", indent, "", e,
+				   e->e.expr.e2);
 	}
-	printf ("%*s\"e_%p\" [label=\"%s\\n%d\"];\n", indent, "", e,
-			get_op_string (e->e.expr.op), e->line);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   get_op_string (e->e.expr.op), e->line);
 }
 
 static void
-print_uexpr (expr_t *e, int level, int id)
+print_uexpr (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
-	dstring_t  *dstr = dstring_newstr();
+	dstring_t  *typestr = dstring_newstr();
 
 	if (e->e.expr.op != 'g')
-		_print_expr (e->e.expr.e1, level, id);
+		_print_expr (dstr, e->e.expr.e1, level, id);
 	if (e->e.expr.op == 'A') {
-		dstring_copystr (dstr, "\\n");
-		print_type_str (dstr, e->e.expr.type);
+		dstring_copystr (typestr, "\\n");
+		print_type_str (typestr, e->e.expr.type);
 	}
-	printf ("%*s\"e_%p\" -> \"e_%p\";\n", indent, "", e, e->e.expr.e1);
-	printf ("%*s\"e_%p\" [label=\"%s%s\\n%d\"];\n", indent, "", e,
-			get_op_string (e->e.expr.op), dstr->str, e->line);
-	dstring_delete (dstr);
+	dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->e.expr.e1);
+	dasprintf (dstr, "%*se_%p [label=\"%s%s\\n%d\"];\n", indent, "", e,
+			   get_op_string (e->e.expr.op), typestr->str, e->line);
+	dstring_delete (typestr);
 }
 
 static void
-print_symbol (expr_t *e, int level, int id)
+print_symbol (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 
-	printf ("%*s\"e_%p\" [label=\"%s\\n%d\"];\n", indent, "", e,
-			e->e.symbol->name, e->line);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   e->e.symbol->name, e->line);
 }
 
 static void
-print_temp (expr_t *e, int level, int id)
+print_temp (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 
-	printf ("%*s\"e_%p\" [label=\"tmp_%p\\n%d\"];\n", indent, "", e, e,
-			e->line);
+	dasprintf (dstr, "%*se_%p [label=\"tmp_%p\\n%d\"];\n", indent, "", e, e,
+			   e->line);
 }
 
 static void
-print_nil (expr_t *e, int level, int id)
+print_nil (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 
-	printf ("%*s\"e_%p\" [label=\"nil\\n%d\"];\n", indent, "", e, e->line);
+	dasprintf (dstr, "%*se_%p [label=\"nil\\n%d\"];\n", indent, "", e,
+			   e->line);
 }
 
 static void
-print_value (expr_t *e, int level, int id)
+print_value (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
 	type_t     *type;
@@ -307,7 +314,7 @@ print_value (expr_t *e, int level, int id)
 
 	switch (e->e.value->type) {
 		case ev_string:
-			label = va ("\\\"%s\\\"", e->e.value->v.string_val);
+			label = va ("\\\"%s\\\"", quote_string (e->e.value->v.string_val));
 			break;
 		case ev_float:
 			label = va ("%g", e->e.value->v.float_val);
@@ -365,12 +372,12 @@ print_value (expr_t *e, int level, int id)
 			label = "<type_count>";
 			break;
 	}
-	printf ("%*s\"e_%p\" [label=\"%s\\n%d\"];\n", indent, "", e, label,
-			e->line);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e, label,
+			   e->line);
 }
 
 static void
-_print_expr (expr_t *e, int level, int id)
+_print_expr (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	static print_f print_funcs[] = {
 		print_error,
@@ -389,7 +396,7 @@ _print_expr (expr_t *e, int level, int id)
 	int         indent = level * 2 + 2;
 
 	if (!e) {
-		printf ("%*s\"e_%p\" [label=\"(null)\"];\n", indent, "", e);
+		dasprintf (dstr, "%*se_%p [label=\"(null)\"];\n", indent, "", e);
 		return;
 	}
 	if (e->printid == id)		// already printed this expression
@@ -397,20 +404,40 @@ _print_expr (expr_t *e, int level, int id)
 	e->printid = id;
 
 	if (e->type < 0 || e->type > ex_value) {
-		printf ("%*s\"e_%p\" [label=\"(bad expr type)\\n%d\"];\n", indent, "",
-				e, e->line);
+		dasprintf (dstr, "%*se_%p [label=\"(bad expr type)\\n%d\"];\n",
+				   indent, "", e, e->line);
 		return;
 	}
-	print_funcs [e->type] (e, level, id);
+	print_funcs [e->type] (dstr, e, level, id);
 
+}
+
+void
+dump_dot_expr (void *_e, const char *filename)
+{
+	static int  id = 0;
+	dstring_t  *dstr = dstring_newstr ();
+	expr_t     *e = (expr_t *) e;
+
+	dasprintf (dstr, "digraph expr_%p {\n", e);
+	dasprintf (dstr, "  layout=dot; rankdir=TB; compound=true;\n");
+	_print_expr (dstr, e, 0, ++id);
+	dasprintf (dstr, "}\n");
+
+	if (filename) {
+		QFile      *file;
+
+		file = Qopen (filename, "wt");
+		Qwrite (file, dstr->str, dstr->size - 1);
+		Qclose (file);
+	} else {
+		fputs (dstr->str, stdout);
+	}
+	dstring_delete (dstr);
 }
 
 void
 print_expr (expr_t *e)
 {
-	static int id = 0;
-	printf ("digraph expr_%p {\n", e);
-	printf ("  layout=dot; rankdir=TB; compound=true;\n");
-	_print_expr (e, 0, ++id);
-	printf ("}\n");
+	dump_dot_expr (e, 0);
 }

@@ -559,6 +559,7 @@ void convert_name (expr_t *e);
 expr_t *append_expr (expr_t *block, expr_t *e);
 
 void print_expr (expr_t *e);
+void dump_dot_expr (void *e, const char *filename);
 
 void convert_int (expr_t *e);
 void convert_short (expr_t *e);
