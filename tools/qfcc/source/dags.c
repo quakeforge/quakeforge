@@ -279,7 +279,7 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 }
 
 static void
-dag_remove_dead_vars (dag_t *dag)
+dag_remove_dead_vars (dag_t *dag, set_t *live_vars)
 {
 	int         i;
 
@@ -292,7 +292,7 @@ dag_remove_dead_vars (dag_t *dag)
 		var = flow_get_var (l->op);
 		if (!var)
 			continue;
-		if (!set_is_member (dag->flownode->live_vars.out, var->number))
+		if (!set_is_member (live_vars, var->number))
 			set_remove (l->dagnode->identifiers, l->number);
 	}
 }
@@ -337,11 +337,14 @@ dag_create (flownode_t *flownode)
 	dagnode_t **nodes;
 	daglabel_t **labels;
 	int         num_statements = 0;
+	set_t      *live_vars = set_new ();
 
 	flush_daglabels ();
 
 	for (s = block->statements; s; s = s->next)
 		num_statements++;
+
+	set_assign (live_vars, flownode->live_vars.out);
 
 	dag = new_dag ();
 	dag->flownode = flownode;
@@ -404,6 +407,25 @@ dag_create (flownode_t *flownode)
 			lx->expr = s->expr;
 			dagnode_attach_label (n, lx);
 		}
+		if (n->type == st_func
+			&& (!strncmp (n->label->opcode, "<CALL", 5)
+				|| !strncmp (n->label->opcode, "<RCALL", 6))) {
+			int         start, end;
+
+			if (!strncmp (n->label->opcode, "<CALL", 5)) {
+				start = 0;
+				end = 0;
+				if (n->label->opcode[5] != '>')
+					end = n->label->opcode[5] - '0';
+			} else {
+				start = 2;
+				end = n->label->opcode[6] - '0';
+			}
+			while (start < end) {
+				set_add (live_vars, start + 1);
+				start++;
+			}
+		}
 	}
 
 	nodes = malloc (dag->num_nodes * sizeof (dagnode_t *));
@@ -413,8 +435,9 @@ dag_create (flownode_t *flownode)
 	memcpy (labels, dag->labels, dag->num_labels * sizeof (daglabel_t *));
 	dag->labels = labels;
 
-	dag_remove_dead_vars (dag);
+	dag_remove_dead_vars (dag, live_vars);
 	dag_sort_nodes (dag);
+	set_delete (live_vars);
 	return dag;
 }
 
