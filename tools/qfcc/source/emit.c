@@ -198,7 +198,7 @@ emit_statement (statement_t *statement)
 	use_tempop (statement->opb, statement->expr);
 	def_c = get_operand_def (statement->expr, statement->opc);
 	use_tempop (statement->opc, statement->expr);
-	op = opcode_find (opcode, def_a, def_b, def_c);
+	op = opcode_find (opcode, statement->opa, statement->opb, statement->opc);
 
 	if (!op) {
 		print_expr (statement->expr);

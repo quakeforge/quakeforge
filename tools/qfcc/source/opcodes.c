@@ -41,10 +41,10 @@
 
 #include <QF/hash.h>
 
-#include "def.h"
 #include "opcodes.h"
 #include "options.h"
 #include "qfcc.h"
+#include "statements.h"
 #include "type.h"
 
 hashtab_t  *opcode_type_table;
@@ -92,7 +92,8 @@ check_operand_type (etype_t ot1, etype_t ot2)
 }
 
 opcode_t *
-opcode_find (const char *name, def_t *def_a, def_t *def_b, def_t *def_c)
+opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
+			 operand_t *op_c)
 {
 	opcode_t    search_op;
 	opcode_t   *op;
@@ -101,9 +102,9 @@ opcode_find (const char *name, def_t *def_a, def_t *def_b, def_t *def_c)
 	int         i;
 
 	search_op.name = name;
-	search_op.type_a = def_a ? def_a->type->type : ev_invalid;
-	search_op.type_b = def_b ? def_b->type->type : ev_invalid;
-	search_op.type_c = def_c ? def_c->type->type : ev_invalid;
+	search_op.type_a = op_a ? op_a->type : ev_invalid;
+	search_op.type_b = op_b ? op_b->type : ev_invalid;
+	search_op.type_c = op_c ? op_c->type : ev_invalid;
 	op = Hash_FindElement (opcode_type_table, &search_op);
 	if (op)
 		return op;
