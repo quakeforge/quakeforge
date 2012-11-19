@@ -485,12 +485,18 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 {
 	statement_t *st;
 	operand_t   *dst = 0;
-	operand_t   *operands[3] = {src, 0, 0};
+	operand_t   *operands[3] = {0, 0, 0};
 	daglabel_t  *var;
 
 	for ( ; var_iter; var_iter = set_next (var_iter)) {
 		var = dag->labels[var_iter->member];
-		operands[1] = fix_op_type (var->op, src->type);
+		if (src->type == ev_void) {
+			operands[0] = fix_op_type (src, var->op->type);
+			operands[1] = var->op;
+		} else {
+			operands[0] = src;
+			operands[1] = fix_op_type (var->op, src->type);
+		}
 		if (!dst) {
 			dst = operands[1];
 			while (dst->op_type == op_alias)
