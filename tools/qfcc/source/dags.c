@@ -505,22 +505,17 @@ fix_op_type (operand_t *op, etype_t type)
 
 static operand_t *
 generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
-					  set_iter_t *var_iter)
+					  set_iter_t *var_iter, etype_t type)
 {
 	statement_t *st;
 	operand_t   *dst = 0;
 	operand_t   *operands[3] = {0, 0, 0};
 	daglabel_t  *var;
 
+	operands[0] = fix_op_type (src, type);
 	for ( ; var_iter; var_iter = set_next (var_iter)) {
 		var = dag->labels[var_iter->member];
-		if (src->type == ev_void) {
-			operands[0] = fix_op_type (src, var->op->type);
-			operands[1] = var->op;
-		} else {
-			operands[0] = src;
-			operands[1] = fix_op_type (var->op, src->type);
-		}
+		operands[1] = fix_op_type (var->op, type);
 		if (!dst) {
 			dst = operands[1];
 			while (dst->op_type == op_alias)
@@ -553,26 +548,28 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	statement_t *st;
 	set_iter_t *var_iter;
 	int         i;
+	etype_t     type;
 
 	switch (dagnode->type) {
 		case st_none:
 			if (!dagnode->label->op)
 				internal_error (0, "non-leaf label in leaf node");
 			dst = dagnode->label->op;
-			if ((var_iter = set_first (dagnode->identifiers)))
-				dst = generate_assignments (dag, block, dst, var_iter);
+			if ((var_iter = set_first (dagnode->identifiers))) {
+				type = low_level_type (get_type (dagnode->label->expr));
+				dst = generate_assignments (dag, block, dst, var_iter, type);
+			}
 			break;
 		case st_expr:
 			operands[0] = make_operand (dag, block, dagnode, 0);
 			if (dagnode->children[1])
 				operands[1] = make_operand (dag, block, dagnode, 1);
+			type = low_level_type (get_type (dagnode->label->expr));
 			if (!(var_iter = set_first (dagnode->identifiers))) {
 				operands[2] = temp_operand (get_type (dagnode->label->expr));
 			} else {
 				daglabel_t *var = dag->labels[var_iter->member];
-				etype_t     type;
 
-				type = low_level_type (get_type (dagnode->label->expr));
 				operands[2] = fix_op_type (var->op, type);
 				var_iter = set_next (var_iter);
 			}
@@ -580,7 +577,7 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			st = build_statement (dagnode->label->opcode, operands,
 								  dagnode->label->expr);
 			sblock_add_statement (block, st);
-			generate_assignments (dag, block, operands[2], var_iter);
+			generate_assignments (dag, block, operands[2], var_iter, type);
 			break;
 		case st_assign:
 			internal_error (0, "unexpected assignment node");
