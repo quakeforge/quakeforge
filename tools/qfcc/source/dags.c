@@ -207,6 +207,7 @@ static dagnode_t *
 node (operand_t *op)
 {
 	symbol_t   *sym;
+	dagnode_t  *node = 0;
 
 	if (!op)
 		return 0;
@@ -214,15 +215,21 @@ node (operand_t *op)
 		op = op->o.alias;
 	if (op->op_type == op_symbol) {
 		sym = op->o.symbol;
-		if (sym->sy_type == sy_const)
-			return 0;
+		//if (sym->sy_type == sy_const)
+		//	return 0;
 		if (sym->daglabel)
-			return sym->daglabel->dagnode;
+			node = sym->daglabel->dagnode;
 	} else if (op->op_type == op_temp) {
 		if (op->o.tempop.daglabel)
-			return op->o.tempop.daglabel->dagnode;
+			node = op->o.tempop.daglabel->dagnode;
+	} else if (op->op_type == op_value || op->op_type == op_pointer) {
+		if (op->o.value->daglabel)
+			node = op->o.value->daglabel->dagnode;
+	} else if (op->op_type == op_label) {
+		if (op->o.label->daglabel)
+			node = op->o.label->daglabel->dagnode;
 	}
-	return 0;
+	return node;
 }
 
 static int
@@ -248,6 +255,10 @@ op_is_identifer (operand_t *op)
 {
 	while (op->op_type == op_alias)
 		op = op->o.alias;
+	if (op->op_type == op_label)
+		return 0;
+	if (op->op_type == op_value)
+		return 0;
 	if (op->op_type == op_pointer)
 		return 1;
 	if (op->op_type == op_temp)
