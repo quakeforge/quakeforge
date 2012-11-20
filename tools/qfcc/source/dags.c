@@ -235,6 +235,19 @@ node (operand_t *op)
 }
 
 static int
+dagnode_deref_match (const dagnode_t *n, const daglabel_t *op,
+				     dagnode_t *operands[3])
+{
+	int         i;
+
+	for (i = 0; i < 2; i++) {
+		if (n->children[i + 1] != operands[i])
+			return 0;
+	}
+	return 1;
+}
+
+static int
 dagnode_match (const dagnode_t *n, const daglabel_t *op,
 			   dagnode_t *operands[3])
 {
@@ -242,6 +255,9 @@ dagnode_match (const dagnode_t *n, const daglabel_t *op,
 
 	if (n->killed)
 		return 0;
+	if (!strcmp (op->opcode, ".")
+		&& n->label->opcode && !strcmp (n->label->opcode, ".="))
+		return dagnode_deref_match (n, op, operands);
 	if (n->label->opcode != op->opcode)
 		return 0;
 	for (i = 0; i < 3; i++) {
@@ -624,6 +640,8 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			st = build_statement (dagnode->label->opcode, operands,
 								  dagnode->label->expr);
 			sblock_add_statement (block, st);
+			// the source location is suitable for use in other nodes
+			dst = operands[0];
 			break;
 		case st_move:
 		case st_state:
