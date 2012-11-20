@@ -255,7 +255,7 @@ dagnode_match (const dagnode_t *n, const daglabel_t *op,
 }
 
 static int
-op_is_identifer (operand_t *op)
+op_is_identifier (operand_t *op)
 {
 	while (op->op_type == op_alias)
 		op = op->o.alias;
@@ -280,7 +280,7 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 	if (!l->op)
 		internal_error (0, "attempt to attach operator label to dagnode "
 						"identifers");
-	if (!op_is_identifer (l->op))
+	if (!op_is_identifier (l->op))
 		internal_error (0, "attempt to attach non-identifer label to dagnode "
 						"identifers");
 	if (l->dagnode) {
