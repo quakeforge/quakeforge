@@ -90,6 +90,8 @@ qfo_def_flags (def_t *def)
 		flags |= QFOD_SYSTEM;
 	if (def->nosave)
 		flags |= QFOD_NOSAVE;
+	if (def->param)
+		flags |= QFOD_PARAM;
 	return flags;
 }
 

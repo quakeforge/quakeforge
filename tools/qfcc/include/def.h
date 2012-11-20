@@ -53,6 +53,7 @@ typedef struct def_s {
 	unsigned		global:1;		///< globally declared def
 	unsigned		external:1;		///< externally declared def
 	unsigned		local:1;		///< function local def
+	unsigned		param:1;		///< function param def
 	unsigned		system:1;		///< system def
 	unsigned        nosave:1;		///< don't set DEF_SAVEGLOBAL
 
@@ -69,6 +70,7 @@ typedef enum storage_class_e {
 	st_system,
 	st_extern,
 	st_static,
+	st_param,
 	st_local
 } storage_class_t;
 

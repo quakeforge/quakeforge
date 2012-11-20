@@ -72,21 +72,31 @@ set_storage_bits (def_t *def, storage_class_t storage)
 			def->global = 1;
 			def->external = 0;
 			def->local = 0;
+			def->param = 0;
 			break;
 		case st_extern:
 			def->global = 1;
 			def->external = 1;
 			def->local = 0;
+			def->param = 0;
 			break;
 		case st_static:
 			def->external = 0;
 			def->global = 0;
 			def->local = 0;
+			def->param = 0;
 			break;
 		case st_local:
 			def->external = 0;
 			def->global = 0;
 			def->local = 1;
+			def->param = 0;
+			break;
+		case st_param:
+			def->external = 0;
+			def->global = 0;
+			def->local = 1;
+			def->param = 1;
 			break;
 	}
 	def->initialized = 0;
@@ -487,7 +497,7 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 	}
 	if (type == &type_vector && options.code.vector_components)
 		init_vector_components (sym, 0);
-	if (type->type == ev_field && storage != st_local)
+	if (type->type == ev_field && storage != st_local && storage != st_param)
 		init_field_def (sym->s.def, init, storage);
 	if (storage == st_extern) {
 		if (init)

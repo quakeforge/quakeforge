@@ -249,6 +249,7 @@ flags_string (pr_uint_t flags)
 	dstring_appendstr (str, (flags & QFOD_LOCAL)       ? "L" : "-");
 	dstring_appendstr (str, (flags & QFOD_SYSTEM)      ? "S" : "-");
 	dstring_appendstr (str, (flags & QFOD_NOSAVE)      ? "N" : "-");
+	dstring_appendstr (str, (flags & QFOD_PARAM)       ? "P" : "-");
 	return str->str;
 }
 

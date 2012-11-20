@@ -161,6 +161,13 @@ typedef struct qfo_def_s {
 	\hideinitializer
 */
 #define QFOD_NOSAVE			(1u<<7)
+
+/** The def is a parameter to a function and is considered to be initialized.
+	QFOD_LOCAL will be set too.
+
+	\hideinitializer
+*/
+#define QFOD_PARAM			(1u<<8)
 //@}
 
 /** \addtogroup qfcc_qfo
