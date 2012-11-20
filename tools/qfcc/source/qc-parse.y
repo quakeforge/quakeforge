@@ -1044,6 +1044,7 @@ local_def
 			local_expr = 0;
 			(void) ($<spec>2);
 		}
+	;
 
 statement
 	: ';'						{ $$ = 0; }
