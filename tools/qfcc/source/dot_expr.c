@@ -89,6 +89,7 @@ get_op_string (int op)
 		case 'A':	return "<alias>";
 		case 'C':	return "<cast>";
 		case 'M':	return "<move>";
+		case 'm':	return "<move>";
 		default:
 			return "unknown";
 	}
