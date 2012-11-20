@@ -2189,6 +2189,16 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				e->e.expr.type = pointer_type (e->e.expr.type);
 				break;
 			}
+			if (e1->e.expr.op == 'm') {
+				// direct move, so obtain the address of the source
+				e = address_expr (e1->e.expr.e2, 0, t);
+				break;
+			}
+			if (e1->e.expr.op == 'M') {
+				// indirect move, so we already have the address of the source
+				e = e1->e.expr.e2;
+				break;
+			}
 			return error (e1, "invalid type for unary &");
 		case ex_uexpr:
 			if (e1->e.expr.op == '.') {
