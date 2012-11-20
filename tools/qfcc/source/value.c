@@ -109,6 +109,7 @@ find_value (const ex_value_t *val)
 		return value;
 	value = new_value ();
 	*value = *val;
+	Hash_AddElement (value_table, value);
 	return value;
 }
 
