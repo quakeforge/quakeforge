@@ -22,7 +22,7 @@
 
 	do {
 		if (_objs[--i] == anObject) {
-			for (tmp = i; tmp < count; tmp++) {
+			for (tmp = i; tmp < count - 1; tmp++) {
 				_objs[tmp] = _objs[tmp + 1];
 			}
 			count--;
