@@ -388,9 +388,25 @@ static void
 dag_kill_nodes (dag_t *dag, dagnode_t *n)
 {
 	int         i;
+	dagnode_t  *node;
 
-	for (i = 0; i < dag->num_nodes; i++)
-		dag->nodes[i]->killed = 1;
+	for (i = 0; i < dag->num_nodes; i++) {
+		node = dag->nodes[i];
+		if (node == n->children[1])	{
+			// assume the pointer does not point to itself. This should be
+			// reasonable because without casting, only a void pointer can
+			// point to itself (the required type is recursive).
+			continue;
+		}
+		if (node->label->op && !op_is_identifier (node->label->op)) {
+			// While constants in the Quake VM can be changed via a pointer,
+			// doing so would cause much more fun than a simple
+			// mis-optimization would, so consider them safe from pointer
+			// operations.
+			continue;
+		}
+		node->killed = 1;
+	}
 	n->killed = 0;
 }
 
