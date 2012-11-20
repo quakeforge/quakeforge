@@ -160,6 +160,29 @@ delete_graph (flowgraph_t *graph)
 	free_graphs = graph;
 }
 
+static def_t *
+flowvar_get_def (flowvar_t *var)
+{
+	operand_t  *op = var->op;
+
+	while (op->op_type == op_alias)
+		op = op->o.alias;
+	switch (op->op_type) {
+		case op_symbol:
+			return op->o.symbol->s.def;
+		case op_value:
+		case op_label:
+			return 0;
+		case op_temp:
+			return op->o.tempop.def;
+		case op_pointer:
+			return op->o.value->v.pointer.def;
+		case op_alias:
+			internal_error (0, "oops, blue pill");
+	}
+	return 0;
+}
+
 static int
 flowvar_is_global (flowvar_t *var)
 {
@@ -173,6 +196,25 @@ flowvar_is_global (flowvar_t *var)
 		return 0;
 	def = sym->s.def;
 	if (def->local)
+		return 0;
+	return 1;
+}
+
+static int
+flowvar_is_param (flowvar_t *var)
+{
+	symbol_t   *sym;
+	def_t      *def;
+
+	if (var->op->op_type != op_symbol)
+		return 0;
+	sym = var->op->o.symbol;
+	if (sym->sy_type != sy_var)
+		return 0;
+	def = sym->s.def;
+	if (!def->local)
+		return 0;
+	if (!def->param)
 		return 0;
 	return 1;
 }
@@ -397,6 +439,96 @@ flow_live_vars (flowgraph_t *graph)
 }
 
 static void
+flow_uninitialized (flowgraph_t *graph)
+{
+	set_t      *stuse;
+	set_t      *stdef;
+	set_t      *tmp;
+	set_t      *uninit;
+	set_t      *use;
+	set_t      *def;
+	set_iter_t *pred_iter;
+	set_iter_t *var_iter;
+	flownode_t *node, *pred;
+	function_t *func = graph->func;
+	statement_t *st;
+	int         i;
+
+	if (!graph->num_nodes)
+		return;
+
+	stuse = set_new ();
+	stdef = set_new ();
+	tmp = set_new ();
+	uninit = set_new ();
+
+	// def for the inital node contains parameters and global vars
+	def = set_new ();
+	for (i = 0; i < func->num_vars; i++) {
+		flowvar_t  *var = func->vars[i];
+		if (flowvar_is_global (var) || flowvar_is_param (var))
+			set_add (def, i);
+	}
+	// first, calculate use and def for each block, and initialize the in and
+	// out sets.
+	for (i = 0; i < graph->num_nodes; i++) {
+		node = graph->nodes[i];
+		use = set_new ();
+		for (st = node->sblock->statements; st; st = st->next) {
+			flow_analyze_statement (st, stuse, stdef, 0, 0);
+			live_set_use (stuse, use, def);	// init use uses same rules as live
+			set_union (def, stdef);			// for init, always def a set var
+		}
+		node->init_vars.use = use;
+		node->init_vars.def = def;
+		node->init_vars.in = set_new ();
+		node->init_vars.out = set_new ();
+		def = set_new ();
+	}
+	// flow DOWN the graph in dept-first order
+	for (i = 0; i < graph->num_nodes; i++) {
+		node = graph->nodes[graph->dfo[i]];
+		pred_iter = set_first (node->predecessors);
+		if (pred_iter) {
+			do {
+				// not interested in back edges
+				pred = graph->nodes[pred_iter->member];
+				pred_iter = set_next (pred_iter);
+			} while (pred->dfn >= node->dfn && pred_iter);
+			if (pred_iter)
+				set_assign (tmp, pred->init_vars.out);
+		}
+		for ( ; pred_iter; pred_iter = set_next (pred_iter)) {
+			if (graph->nodes[pred_iter->member]->dfn >= node->dfn)
+				continue;		// not interested in back edges
+			set_intersection (tmp,
+							  graph->nodes[pred_iter->member]->init_vars.out);
+		}
+		set_assign (node->init_vars.in, tmp);
+		set_assign (node->init_vars.out, tmp);
+		set_union (node->init_vars.out, node->init_vars.def);
+		set_assign (tmp, node->init_vars.use);
+		set_difference (tmp, node->init_vars.in);
+		set_union (uninit, tmp);
+	}
+	for (var_iter = set_first (uninit); var_iter;
+		 var_iter = set_next (var_iter)) {
+		expr_t  dummy;
+		flowvar_t  *var = func->vars[var_iter->member];
+		def_t      *def;
+
+		def = flowvar_get_def (var);
+		dummy.line = def->line;
+		dummy.file = def->file;
+		warning (&dummy, "%s may be used uninitialized", def->name);
+	}
+	set_delete (stuse);
+	set_delete (stdef);
+	set_delete (tmp);
+	set_delete (uninit);
+}
+
+static void
 flow_build_dags (flowgraph_t *graph)
 {
 	int         i;
@@ -436,6 +568,7 @@ flow_data_flow (flowgraph_t *graph)
 		}
 	}
 	flow_live_vars (graph);
+	flow_uninitialized (graph);
 	flow_build_dags (graph);
 	if (options.block_dot.flow)
 		dump_dot ("flow", graph, dump_dot_flow);
