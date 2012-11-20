@@ -229,6 +229,8 @@ node (operand_t *op)
 		if (op->o.label->daglabel)
 			node = op->o.label->daglabel->dagnode;
 	}
+	if (node && node->killed)
+		node = 0;
 	return node;
 }
 
@@ -238,6 +240,8 @@ dagnode_match (const dagnode_t *n, const daglabel_t *op,
 {
 	int         i;
 
+	if (n->killed)
+		return 0;
 	if (n->label->opcode != op->opcode)
 		return 0;
 	for (i = 0; i < 3; i++) {
@@ -364,6 +368,16 @@ dag_set_live_vars (set_t *live_vars, dag_t *dag, dagnode_t *n)
 	}
 }
 
+static void
+dag_kill_nodes (dag_t *dag, dagnode_t *n)
+{
+	int         i;
+
+	for (i = 0; i < dag->num_nodes; i++)
+		dag->nodes[i]->killed = 1;
+	n->killed = 0;
+}
+
 dag_t *
 dag_create (flownode_t *flownode)
 {
@@ -445,6 +459,8 @@ dag_create (flownode_t *flownode)
 		}
 		if (n->type == st_func)
 			dag_set_live_vars (live_vars, dag, n);
+		if (n->type == st_ptrassign)
+			dag_kill_nodes (dag, n);
 	}
 
 	nodes = malloc (dag->num_nodes * sizeof (dagnode_t *));
