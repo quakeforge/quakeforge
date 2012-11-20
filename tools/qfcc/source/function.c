@@ -472,7 +472,7 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	if (args) {
 		while (i < MAX_PARMS) {
 			param = new_symbol_type (va (".par%d", i), &type_param);
-			symtab_addsymbol (symtab, param);
+			initialize_def (param, &type_param, 0, symtab->space, st_local);
 			i++;
 		}
 	}
