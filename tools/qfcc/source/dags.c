@@ -485,7 +485,7 @@ dag_create (flownode_t *flownode)
 			}
 		}
 		lx = operand_label (dag, operands[0]);
-		if (lx) {
+		if (lx && lx->dagnode != n) {
 			lx->expr = s->expr;
 			dagnode_attach_label (n, lx);
 		}
