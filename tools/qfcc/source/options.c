@@ -63,6 +63,7 @@ enum {
 	OPT_BLOCK_DOT,
 	OPT_CPP,
 	OPT_EXTENDED,
+	OPT_FRAMES,
 	OPT_INCLUDE,
 	OPT_NO_DEFAULT_PATHS,
 	OPT_PROGDEFS,
@@ -78,6 +79,7 @@ static struct option const long_options[] = {
 	{"define", required_argument, 0, 'D'},
 	{"extended", no_argument, 0, OPT_EXTENDED},
 	{"files", no_argument, 0, 'F'},
+	{"frames", no_argument, 0, OPT_FRAMES},
 	{"help", no_argument, 0, 'h'},
 	{"include", required_argument, 0, OPT_INCLUDE},
 	{"no-default-paths", no_argument, 0, OPT_NO_DEFAULT_PATHS},
@@ -143,6 +145,7 @@ usage (int status)
 "    -E                        Only preprocess\n"
 "        --extended            Allow extended keywords in traditional mode\n"
 "    -F, --files               Generate files.dat\n"
+"        --frames              Generate <source>.frame files\n"
 "    -g                        Generate debugging info\n"
 "    -h, --help                Display this help and exit\n"
 "    -I DIR                    Set directories for the preprocessor\n"
@@ -353,6 +356,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'g':					// debug
 				options.code.debug = true;
+				break;
+			case OPT_FRAMES:
+				options.frames_files = 1;
 				break;
 			case OPT_EXTENDED:
 				options.traditional = 1;

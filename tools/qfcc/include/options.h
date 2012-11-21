@@ -87,6 +87,7 @@ typedef struct {
 	qboolean		no_default_paths;	// no default -I or -L
 	qboolean		save_temps;		// save temporary files
 	qboolean		files_dat;		// generate files.dat
+	qboolean		frames_files;	// generate <basename>.frame files
 	qboolean		progdefs_h;		// generate progdefs.h
 	qboolean		qccx_escapes;	// use qccx escapes instead of standard C
 	int				traditional;	// behave more like qcc

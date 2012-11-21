@@ -76,6 +76,7 @@
 #include "emit.h"
 #include "expr.h"
 #include "function.h"
+#include "grab.h"
 #include "idstuff.h"
 #include "linker.h"
 #include "method.h"
@@ -306,6 +307,25 @@ strip_path (const char *filename)
 	return filename;
 }
 
+static const char *
+basename (const char *filename)
+{
+	const char *p;
+	const char *dot;
+	static dstring_t *base;
+
+	if (!base)
+		base = dstring_new ();
+	for (dot = p = filename + strlen (filename); p > filename; p--) {
+		if (p[-1] == '/' || p[-1] == '\\')
+			break;
+		if (p[0] == '.')
+			dot = p;
+	}
+	dstring_copysubstr (base, p, dot - p);
+	return base->str;
+}
+
 static void
 setup_sym_file (const char *output_file)
 {
@@ -368,6 +388,7 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 			exit (1);
 		}
 	}
+	write_frame_macros (va ("%s.frame", basename (file)));
 	if (!err) {
 		qfo_t      *qfo;
 
@@ -696,9 +717,14 @@ progs_src_compile (void)
 				fprintf (single, "#line %d \"%s\"\n", script->line,
 						 script->file);
 				fprintf (single, "#include \"%s\"\n", qc_filename->str);
+				if (options.frames_files)
+					fprintf (single, "$frame_write \"%s.frame\"\n",
+							 basename (qc_filename->str));
 			} else {
 				if (compile_file (qc_filename->str))
 					return 1;
+				write_frame_macros (va ("%s.frame",
+										basename (qc_filename->str)));
 			}
 			if (!Script_TokenAvailable (script, 0))
 				break;

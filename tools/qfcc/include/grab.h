@@ -33,8 +33,10 @@
 
 extern int grab_frame;
 extern int grab_other;
+extern int grab_write;
 
-int do_grab (char *token);
-void add_frame_macro (char *token);
+int do_grab (const char *token);
+void add_frame_macro (const char *token);
+void write_frame_macros (const char *filename);
 
 #endif//__grab_h

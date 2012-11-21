@@ -100,11 +100,12 @@ ELLIPSIS	\.\.\.
 FRAMEID		{ID}(\.{ID})*
 STRING		\"(\\.|[^"\\])*\"
 
-%x		GRAB_FRAME GRAB_OTHER COMMENT
+%x		GRAB_FRAME GRAB_OTHER GRAB_WRITE COMMENT
 
 %%
 					grab_frame = GRAB_FRAME;
 					grab_other = GRAB_OTHER;
+					grab_write = GRAB_WRITE;
 
 "/*"				{ BEGIN (COMMENT); }
 <COMMENT>"/*"		{ warning (0, "nested /* in comment"); }
@@ -234,6 +235,11 @@ STRING		\"(\\.|[^"\\])*\"
 
 <GRAB_FRAME>{FRAMEID}	add_frame_macro (yytext);
 <GRAB_OTHER>[^\r\n]*	/* skip */
+<GRAB_WRITE>{STRING}	{
+							const char *s = make_string (yytext, 0);
+							write_frame_macros (s);
+							BEGIN (GRAB_OTHER);	// ignore rest of line
+						}
 
 <*>\r*\n			{
 						pr.source_line++;

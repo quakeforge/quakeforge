@@ -41,6 +41,7 @@
 #include <ctype.h>
 
 #include "QF/hash.h"
+#include "QF/quakeio.h"
 
 #include "diagnostic.h"
 #include "expr.h"
@@ -51,6 +52,7 @@
 
 int grab_frame;
 int grab_other;
+int grab_write;
 
 static hashtab_t *frame_tab;
 static hashtab_t *grab_tab;
@@ -62,6 +64,8 @@ typedef struct frame_s {
 } frame_t;
 
 static frame_t *free_frames;
+static frame_t *frame_list;
+static frame_t **frame_tail = &frame_list;
 
 static frame_t grab_list[] = {
 	{0, "cd",		0},
@@ -87,7 +91,7 @@ frame_free (void *_f, void *unused)
 }
 
 int
-do_grab (char *token)
+do_grab (const char *token)
 {
 	static int initialized;
 	frame_t *frame;
@@ -110,6 +114,8 @@ do_grab (char *token)
 		clear_frame_macros ();
 		return -grab_other;
 	}
+	if (!strcmp (token, "frame_write"))
+		return -grab_write;
 	if (Hash_Find (grab_tab, token))
 		return -grab_other;
 	frame = Hash_Find (frame_tab, token);
@@ -121,7 +127,7 @@ do_grab (char *token)
 static int frame_number;
 
 void
-add_frame_macro (char *token)
+add_frame_macro (const char *token)
 {
 	frame_t *frame;
 
@@ -133,6 +139,8 @@ add_frame_macro (char *token)
 	}
 	ALLOC (1024, frame_t, frames, frame);
 
+	*frame_tail = frame;
+	frame_tail = &frame->next;
 	frame->name = save_string (token);
 	frame->num = frame_number++;
 	Hash_Add (frame_tab, frame);
@@ -142,7 +150,22 @@ void
 clear_frame_macros (void)
 {
 	frame_number = 0;
+	frame_tail = &frame_list;
+	frame_list = 0;
 	if (frame_tab)
 		Hash_FlushTable (frame_tab);
 }
 
+void
+write_frame_macros (const char *filename)
+{
+	frame_t *frame;
+	QFile      *file;
+
+	if (!frame_list)
+		return;
+	file = Qopen (filename, "wt");
+	for (frame = frame_list; frame; frame = frame->next)
+		Qprintf (file, "%s %d\n", frame->name, frame->num);
+	Qclose (file);
+}
