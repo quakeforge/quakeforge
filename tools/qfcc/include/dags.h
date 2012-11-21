@@ -92,7 +92,7 @@ typedef struct dag_s {
 } dag_t;
 
 const char *daglabel_string (daglabel_t *label);
-void print_dag (struct dstring_s *dstr, dag_t *dag);
+void print_dag (struct dstring_s *dstr, dag_t *dag, const char *label);
 
 /** Make a dag for a single basic block.
 

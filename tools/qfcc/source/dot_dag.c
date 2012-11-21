@@ -68,8 +68,8 @@ print_root_nodes (dstring_t *dstr, dag_t *dag)
 		 node_iter = set_next (node_iter)) {
 		dagnode_t  *node = dag->nodes[node_iter->member];
 		print_node_def (dstr, node);
-		dasprintf (dstr, "      dag_%p ->dagnode_%p [style=invis];\n", dag,
-				   node);
+		dasprintf (dstr, "      dag_enter_%p ->dagnode_%p [style=invis];\n",
+				   dag, node);
 	}
 	dasprintf (dstr, "    }\n");
 }
@@ -130,17 +130,24 @@ print_node (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 		dasprintf (dstr, "      </tr>\n");
 		dasprintf (dstr, "    </table>>];\n");
 	}
+	if (set_is_empty (node->edges))
+		dasprintf (dstr,
+				   "  \"dagnode_%p\" -> \"dag_leave_%p\" [style=invis];\n",
+				   node, dag);
 }
 
 void
-print_dag (dstring_t *dstr, dag_t *dag)
+print_dag (dstring_t *dstr, dag_t *dag, const char *label)
 {
 	int         i;
 	dasprintf (dstr, "  subgraph cluster_dag_%p {\n", dag);
-	dasprintf (dstr, "    dag_%p [label=\"\", style=invis];\n", dag);
+	if (label)
+		dasprintf (dstr, "    label=\"%s\";\n", label);
+	dasprintf (dstr, "    dag_enter_%p [label=\"\", style=invis];\n", dag);
 	print_root_nodes (dstr, dag);
 	print_child_nodes (dstr, dag);
 	for (i = 0; i < dag->num_nodes; i++)
 		print_node (dstr, dag, dag->nodes[i]);
+	dasprintf (dstr, "    dag_leave_%p [label=\"\", style=invis];\n", dag);
 	dasprintf (dstr, "  }\n");
 }
