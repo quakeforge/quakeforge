@@ -167,12 +167,13 @@ new_field_val (int field_val, type_t *type, def_t *def)
 }
 
 ex_value_t *
-new_func_val (int func_val)
+new_func_val (int func_val, type_t *type)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
 	val.type = ev_func;
-	val.v.func_val = func_val;
+	val.v.func_val.val = func_val;
+	val.v.func_val.type = type;
 	return find_value (&val);
 }
 
@@ -236,6 +237,8 @@ new_nil_val (type_t *type)
 	val.type = low_level_type (type);
 	if (val.type == ev_pointer|| val.type == ev_field )
 		val.v.pointer.type = type->t.fldptr.type;
+	if (val.type == ev_func)
+		val.v.func_val.type = type;
 	return find_value (&val);
 }
 
@@ -501,7 +504,7 @@ emit_value (ex_value_t *value, def_t *def)
 			reloc_def_string (cn);
 			break;
 		case ev_func:
-			if (val.v.func_val) {
+			if (val.v.func_val.val) {
 				reloc_t    *reloc;
 				reloc = new_reloc (cn->space, cn->offset, rel_def_func);
 				reloc->next = pr.relocs;

@@ -165,6 +165,8 @@ get_type (expr_t *e)
 		case ex_temp:
 			return e->e.temp.type;
 		case ex_value:
+			if (e->e.value->type == ev_func)
+				return e->e.value->v.func_val.type;
 			if (e->e.value->type == ev_pointer)
 				return pointer_type (e->e.value->v.pointer.type);
 			if (e->e.value->type == ev_field)
@@ -552,11 +554,11 @@ new_field_expr (int field_val, type_t *type, def_t *def)
 }
 
 expr_t *
-new_func_expr (int func_val)
+new_func_expr (int func_val, type_t *type)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value = new_func_val (func_val);
+	e->e.value = new_func_val (func_val, type);
 	return e;
 }
 

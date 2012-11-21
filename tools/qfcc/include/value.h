@@ -45,7 +45,7 @@ struct ex_value_s *new_vector_val (const float *vector_val);
 struct ex_value_s *new_entity_val (int entity_val);
 struct ex_value_s *new_field_val (int field_val, struct type_s *type,
 								  struct def_s *def);
-struct ex_value_s *new_func_val (int func_val);
+struct ex_value_s *new_func_val (int func_val, struct type_s *type);
 struct ex_value_s *new_pointer_val (int val, struct type_s *type,
 									struct def_s *def);
 struct ex_value_s *new_quaternion_val (const float *quaternion_val);

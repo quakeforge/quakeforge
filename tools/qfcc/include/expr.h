@@ -106,6 +106,11 @@ typedef struct ex_pointer_s {
 	struct def_s *def;
 } ex_pointer_t;
 
+typedef struct ex_func_s {
+	int         val;
+	struct type_s *type;
+} ex_func_t;
+
 typedef struct {
 	int         size;
 	struct expr_s *e[1];
@@ -166,7 +171,7 @@ typedef struct ex_value_s {
 		float       float_val;			///< float constant
 		float       vector_val[3];		///< vector constant
 		int         entity_val;			///< entity constant
-		int         func_val;			///< function constant
+		ex_func_t   func_val;			///< function constant
 		ex_pointer_t pointer;			///< pointer constant
 		float       quaternion_val[4];	///< quaternion constant
 		int         integer_val;		///< integer constant
@@ -406,10 +411,11 @@ expr_t *new_field_expr (int field_val, struct type_s *type, struct def_s *def);
 /** Create a new function constant expression node.
 
 	\param func_val	The function constant being represented.
+	\param type		The type of the function
 	\return			The new function constant expression node
 					(expr_t::e::func_val).
 */
-expr_t *new_func_expr (int func_val);
+expr_t *new_func_expr (int func_val, struct type_s *type);
 
 /** Create a new pointer constant expression node.
 
