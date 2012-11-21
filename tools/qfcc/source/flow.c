@@ -528,11 +528,14 @@ flow_uninitialized (flowgraph_t *graph)
 		flowvar_t  *var = func->vars[var_iter->member];
 		def_t      *def;
 
-		def = flowvar_get_def (var);
-		dummy.line = def->line;
-		dummy.file = def->file;
-		warning (&dummy, "%s may be used uninitialized", def->name);
-		puts (operand_string (var->op));
+		if (var->op->op_type == op_temp) {
+			bug (0, "uninitialized temporary: %s", operand_string (var->op));
+		} else {
+			def = flowvar_get_def (var);
+			dummy.line = def->line;
+			dummy.file = def->file;
+			warning (&dummy, "%s may be used uninitialized", def->name);
+		}
 	}
 	set_delete (stuse);
 	set_delete (stdef);
