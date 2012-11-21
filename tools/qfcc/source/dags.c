@@ -111,6 +111,7 @@ new_node (dag_t *dag)
 	node->edges = set_new ();
 	node->identifiers = set_new ();
 	node->number = dag->num_nodes;
+	set_add (dag->roots, node->number);	// nodes start out as root nodes
 	dag->nodes[dag->num_nodes++] = node;
 	return node;
 }
@@ -204,7 +205,7 @@ leaf_node (dag_t *dag, operand_t *op, expr_t *expr)
 }
 
 static dagnode_t *
-node (operand_t *op)
+dag_node (operand_t *op)
 {
 	symbol_t   *sym;
 	dagnode_t  *node = 0;
@@ -234,14 +235,27 @@ node (operand_t *op)
 	return node;
 }
 
+static void
+dag_make_children (dag_t *dag, statement_t *s, operand_t *operands[4],
+				   dagnode_t *children[3])
+{
+	int         i;
+
+	flow_analyze_statement (s, 0, 0, 0, operands);
+	for (i = 0; i < 3; i++) {
+		if (!(children[i] = dag_node (operands[i + 1])))
+			children[i] = leaf_node (dag, operands[i + 1], s->expr);
+	}
+}
+
 static int
 dagnode_deref_match (const dagnode_t *n, const daglabel_t *op,
-				     dagnode_t *operands[3])
+				     dagnode_t *children[3])
 {
 	int         i;
 
 	for (i = 0; i < 2; i++) {
-		if (n->children[i + 1] != operands[i])
+		if (n->children[i + 1] != children[i])
 			return 0;
 	}
 	return 1;
@@ -249,7 +263,7 @@ dagnode_deref_match (const dagnode_t *n, const daglabel_t *op,
 
 static int
 dagnode_match (const dagnode_t *n, const daglabel_t *op,
-			   dagnode_t *operands[3])
+			   dagnode_t *children[3])
 {
 	int         i;
 
@@ -257,17 +271,63 @@ dagnode_match (const dagnode_t *n, const daglabel_t *op,
 		return 0;
 	if (!strcmp (op->opcode, ".")
 		&& n->label->opcode && !strcmp (n->label->opcode, ".="))
-		return dagnode_deref_match (n, op, operands);
+		return dagnode_deref_match (n, op, children);
 	if (n->label->opcode != op->opcode)
 		return 0;
 	for (i = 0; i < 3; i++) {
-		if (n->children[i] && operands[i]
-			&& n->children[i]->label->op != operands[i]->label->op )
+		if (n->children[i] && children[i]
+			&& n->children[i]->label->op != children[i]->label->op )
 			return 0;
-		if ((!n->children[i]) ^ (!operands[i]))
+		if ((!n->children[i]) ^ (!children[i]))
 			return 0;
 	}
 	return 1;
+}
+
+static dagnode_t *
+dagnode_search (dag_t *dag, daglabel_t *op, dagnode_t *children[3])
+{
+	int         i;
+
+	for (i = 0; i < dag->num_nodes; i++)
+		if (dagnode_match (dag->nodes[i], op, children))
+			return dag->nodes[i];
+	return 0;
+}
+
+static void
+dagnode_add_children (dag_t *dag, dagnode_t *n, operand_t *operands[4],
+					  dagnode_t *children[3])
+{
+	int         i;
+
+	for (i = 0; i < 3; i++) {
+		dagnode_t  *child = children[i];
+		if ((n->children[i] = child)) {
+			n->types[i] = operands[i + 1]->type;
+			set_remove (dag->roots, child->number);
+			set_add (child->parents, n->number);
+		}
+	}
+}
+
+static void
+dagnode_set_edges (dagnode_t *n)
+{
+	int         i;
+
+	for (i = 0; i < 3; i++) {
+		dagnode_t  *child = n->children[i];
+		if (child) {
+			if (child->label->op) {
+				dagnode_t  *node = child->label->dagnode;
+				if (node != child && node != n)
+					set_add (node->edges, n->number);
+			}
+			if (n != child)
+				set_add (n->edges, child->number);
+		}
+	}
 }
 
 static int
@@ -440,49 +500,17 @@ dag_create (flownode_t *flownode)
 		operand_t  *operands[4];
 		dagnode_t  *n = 0, *children[3] = {0, 0, 0};
 		daglabel_t *op, *lx;
-		int         i;
 
-		flow_analyze_statement (s, 0, 0, 0, operands);
-		for (i = 0; i < 3; i++) {
-			if (!(children[i] = node (operands[i + 1]))) {
-				children[i] = leaf_node (dag, operands[i + 1], s->expr);
-				if (children[i])
-					set_add (dag->roots, children[i]->number);
-			}
-		}
+		dag_make_children (dag, s, operands, children);
 		op = opcode_label (dag, s->opcode, s->expr);
-		if (s->type == st_assign) {
-			n = children[0];
-		} else {
-			n = 0;
-			for (i = 0; i < dag->num_nodes; i++) {
-				if (dagnode_match (dag->nodes[i], op, children)) {
-					n = dag->nodes[i];
-					break;
-				}
-			}
-		}
-		if (!n) {
+		n = children[0];
+		if (s->type != st_assign
+			&& !(n = dagnode_search (dag, op, children))) {
 			n = new_node (dag);
 			n->type = s->type;
 			n->label = op;
-			set_add (dag->roots, n->number);
-			for (i = 0; i < 3; i++) {
-				dagnode_t  *child = children[i];
-				n->children[i] = child;
-				if (child) {
-					if (child->label->op) {
-						dagnode_t  *node = child->label->dagnode;
-						if (node != child && node != n)
-							set_add (node->edges, n->number);
-					}
-					set_remove (dag->roots, child->number);
-					if (n != child)
-						set_add (n->edges, child->number);
-					set_add (child->parents, n->number);
-					n->types[i] = operands[i + 1]->type;
-				}
-			}
+			dagnode_add_children (dag, n, operands, children);
+			dagnode_set_edges (n);
 		}
 		lx = operand_label (dag, operands[0]);
 		if (lx && lx->dagnode != n) {
