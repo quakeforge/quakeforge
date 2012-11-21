@@ -447,6 +447,7 @@ flow_uninitialized (flowgraph_t *graph)
 	set_t      *uninit;
 	set_t      *use;
 	set_t      *def;
+	set_t      *predecessors;
 	set_iter_t *pred_iter;
 	set_iter_t *var_iter;
 	flownode_t *node, *pred;
@@ -461,19 +462,21 @@ flow_uninitialized (flowgraph_t *graph)
 	stdef = set_new ();
 	tmp = set_new ();
 	uninit = set_new ();
+	predecessors = set_new ();
 
-	// def for the inital node contains parameters and global vars
-	def = set_new ();
+	// in for the inital node contains parameters and global vars
+	tmp = set_new ();
 	for (i = 0; i < func->num_vars; i++) {
 		flowvar_t  *var = func->vars[i];
 		if (flowvar_is_global (var) || flowvar_is_param (var))
-			set_add (def, i);
+			set_add (tmp, i);
 	}
 	// first, calculate use and def for each block, and initialize the in and
 	// out sets.
 	for (i = 0; i < graph->num_nodes; i++) {
 		node = graph->nodes[i];
 		use = set_new ();
+		def = set_new ();
 		for (st = node->sblock->statements; st; st = st->next) {
 			flow_analyze_statement (st, stuse, stdef, 0, 0);
 			live_set_use (stuse, use, def);	// init use uses same rules as live
@@ -483,26 +486,35 @@ flow_uninitialized (flowgraph_t *graph)
 		node->init_vars.def = def;
 		node->init_vars.in = set_new ();
 		node->init_vars.out = set_new ();
-		def = set_new ();
 	}
 	// flow DOWN the graph in dept-first order
-	for (i = 0; i < graph->num_nodes; i++) {
+	node = graph->nodes[0];
+	set_assign (node->init_vars.in, tmp);
+	set_assign (node->init_vars.out, tmp);
+	set_union (node->init_vars.out, node->init_vars.def);
+	set_assign (tmp, node->init_vars.use);
+	set_difference (tmp, node->init_vars.in);
+	set_union (uninit, tmp);
+	for (i = 1; i < graph->num_nodes; i++) {
 		node = graph->nodes[graph->dfo[i]];
-		pred_iter = set_first (node->predecessors);
+		set_assign (predecessors, node->predecessors);
+		// not interested in back edges
+		for (pred_iter = set_first (predecessors); pred_iter;
+			 pred_iter = set_next (pred_iter)) {
+			pred = graph->nodes[pred_iter->member];
+			if (pred->dfn >= node->dfn)
+				set_remove (predecessors, pred->id);
+		}
+		set_empty (tmp);
+		pred_iter = set_first (predecessors);
 		if (pred_iter) {
-			do {
-				// not interested in back edges
-				pred = graph->nodes[pred_iter->member];
-				pred_iter = set_next (pred_iter);
-			} while (pred->dfn >= node->dfn && pred_iter);
-			if (pred_iter)
-				set_assign (tmp, pred->init_vars.out);
+			pred = graph->nodes[pred_iter->member];
+			set_assign (tmp, pred->init_vars.out);
+			pred_iter = set_next (pred_iter);
 		}
 		for ( ; pred_iter; pred_iter = set_next (pred_iter)) {
-			if (graph->nodes[pred_iter->member]->dfn >= node->dfn)
-				continue;		// not interested in back edges
-			set_intersection (tmp,
-							  graph->nodes[pred_iter->member]->init_vars.out);
+			pred = graph->nodes[pred_iter->member];
+			set_intersection (tmp, pred->init_vars.out);
 		}
 		set_assign (node->init_vars.in, tmp);
 		set_assign (node->init_vars.out, tmp);
@@ -521,11 +533,13 @@ flow_uninitialized (flowgraph_t *graph)
 		dummy.line = def->line;
 		dummy.file = def->file;
 		warning (&dummy, "%s may be used uninitialized", def->name);
+		puts (operand_string (var->op));
 	}
 	set_delete (stuse);
 	set_delete (stdef);
 	set_delete (tmp);
 	set_delete (uninit);
+	set_delete (predecessors);
 }
 
 static void
