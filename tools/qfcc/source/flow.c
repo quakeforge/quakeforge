@@ -222,24 +222,21 @@ flowvar_is_param (flowvar_t *var)
 flowvar_t *
 flow_get_var (operand_t *op)
 {
-	operand_t  *o;
-
 	if (!op)
 		return 0;
 
-	o = op;
-	while (o->op_type == op_alias)
-		o = o->o.alias;
+	while (op->op_type == op_alias)
+		op = op->o.alias;
 
-	if (o->op_type == op_temp) {
-		if (!o->o.tempop.flowvar)
-			o->o.tempop.flowvar = new_flowvar ();
-		return o->o.tempop.flowvar;
+	if (op->op_type == op_temp) {
+		if (!op->o.tempop.flowvar)
+			op->o.tempop.flowvar = new_flowvar ();
+		return op->o.tempop.flowvar;
 	}
-	if (o->op_type == op_symbol && o->o.symbol->sy_type == sy_var) {
-		if (!o->o.symbol->flowvar)
-			o->o.symbol->flowvar = new_flowvar ();
-		return o->o.symbol->flowvar;
+	if (op->op_type == op_symbol && op->o.symbol->sy_type == sy_var) {
+		if (!op->o.symbol->flowvar)
+			op->o.symbol->flowvar = new_flowvar ();
+		return op->o.symbol->flowvar;
 	}
 	//FIXME functions? (some are variable) values?
 	return 0;
@@ -280,6 +277,8 @@ add_operand (function_t *func, operand_t *op)
 
 	if (!op)
 		return;
+	while (op->op_type == op_alias)
+		op = op->o.alias;
 	if (op->op_type == op_label)
 		return;
 
