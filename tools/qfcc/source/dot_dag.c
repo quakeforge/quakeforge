@@ -140,14 +140,44 @@ void
 print_dag (dstring_t *dstr, dag_t *dag, const char *label)
 {
 	int         i;
-	dasprintf (dstr, "  subgraph cluster_dag_%p {\n", dag);
-	if (label)
+
+	if (label) {
+		dasprintf (dstr, "  subgraph cluster_dag_%p {\n", dag);
 		dasprintf (dstr, "    label=\"%s\";\n", label);
+	}
 	dasprintf (dstr, "    dag_enter_%p [label=\"\", style=invis];\n", dag);
 	print_root_nodes (dstr, dag);
 	print_child_nodes (dstr, dag);
 	for (i = 0; i < dag->num_nodes; i++)
 		print_node (dstr, dag, dag->nodes[i]);
 	dasprintf (dstr, "    dag_leave_%p [label=\"\", style=invis];\n", dag);
-	dasprintf (dstr, "  }\n");
+	if (label)
+		dasprintf (dstr, "  }\n");
+}
+
+void
+dot_dump_dag (void *_dag, const char *filename)
+{
+	dag_t      *dag = _dag;
+	dstring_t  *dstr = dstring_newstr();
+
+	dasprintf (dstr, "digraph dag_%p {\n", dag);
+	dasprintf (dstr, "  layout=dot;\n");
+	dasprintf (dstr, "  clusterrank=local;\n");
+	dasprintf (dstr, "  rankdir=TB;\n");
+	dasprintf (dstr, "  compound=true;\n");
+	print_dag (dstr, dag, "");
+
+	dasprintf (dstr, "}\n");
+
+	if (filename) {
+		QFile      *file;
+
+		file = Qopen (filename, "wt");
+		Qwrite (file, dstr->str, dstr->size - 1);
+		Qclose (file);
+	} else {
+		fputs (dstr->str, stdout);
+	}
+	dstring_delete (dstr);
 }
