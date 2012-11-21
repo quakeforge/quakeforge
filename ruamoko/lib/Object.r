@@ -237,7 +237,7 @@ BOOL (id object) object_is_meta_class = #0;
 
 - (id) performSelector: (SEL)aSelector
 {
-	local IMP msg;
+	local IMP msg = nil;		// FIXME teach qfcc about noreturn
 
 	if (!aSelector || !(msg = obj_msg_lookup (self, aSelector)))
 		[self error: "invalid selector passed to %s: %s",
@@ -249,7 +249,7 @@ BOOL (id object) object_is_meta_class = #0;
 
 - (id) performSelector: (SEL)aSelector withObject: (id)anObject
 {
-	local IMP msg;
+	local IMP msg = nil;		// FIXME teach qfcc about noreturn
 
 	if (!aSelector || !(msg = obj_msg_lookup (self, aSelector)))
 		[self error: "invalid selector passed to %s: %s",
@@ -265,9 +265,11 @@ BOOL (id object) object_is_meta_class = #0;
 {
 	local IMP msg;
 
-	if (!aSelector || !(msg = obj_msg_lookup (self, aSelector)))
+	if (!aSelector || !(msg = obj_msg_lookup (self, aSelector))) {
 		[self error: "invalid selector passed to %s",
 					sel_get_name (_cmd)];
+		return nil;		//FIXME teach qfcc about noreturn
+	}
 
 	return msg (self, aSelector, anObject, anotherObject);
 }
