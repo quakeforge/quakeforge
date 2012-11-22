@@ -52,10 +52,12 @@
 enum {
 	start_opts = 255,   // not used, starts the enum.
 	OPT_DEVELOPER,
+	OPT_FLOAT,
 };
 
 static struct option const long_options[] = {
 	{"developer",	required_argument,	0, OPT_DEVELOPER},
+	{"float",		no_argument,		0, OPT_FLOAT},
 	{"trace",		no_argument,		0, 't'},
 	{"help",		no_argument,		0, 'h'},
 	{"version",		no_argument,		0, 'V'},
@@ -77,6 +79,7 @@ static const char *this_program;
 static struct {
 	int         developer;
 	int         trace;
+	int         flote;
 } options;
 
 static QFile *
@@ -177,6 +180,7 @@ usage (int exitval)
 	printf (
 "Options:\n"
 "        --developer FLAGS     Set the developer cvar to FLAGS.\n"
+"        --float               main () returns float instead of int.\n"
 "    -h, --help                Display this help and exit\n"
 "    -t, --trace               Set the trace flag in the VM.\n"
 "    -V, --version             Output version information and exit\n"
@@ -195,6 +199,9 @@ parse_options (int argc, char **argv)
 		switch (c) {
 			case OPT_DEVELOPER:
 				options.developer = atoi (optarg);
+				break;
+			case OPT_FLOAT:
+				options.flote = 1;
 				break;
 			case 't':
 				options.trace = 1;
@@ -252,5 +259,7 @@ main (int argc, char **argv)
 	P_POINTER (&pr, 1) = PR_SetPointer (&pr, pr_argv);
 	PR_ExecuteProgram (&pr, main_func);
 	PR_PopFrame (&pr);
+	if (options.flote)
+		return R_FLOAT (&pr);
 	return R_INT (&pr);
 }

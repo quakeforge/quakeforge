@@ -6,6 +6,6 @@ shift
 
 cat > $script <<EOF
 #! /bin/sh
-./test-harness \$TEST_HARNESS_OPTS $progs "\$@"
+./test-harness $TEST_HARNESS_OPTS $progs "\$@"
 EOF
 chmod +x $script
