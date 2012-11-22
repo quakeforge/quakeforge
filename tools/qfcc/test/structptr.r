@@ -9,9 +9,9 @@ typedef struct {
 } valstruct_t;
 
 int
-printval (int val)
+saveval (int val)
 {
-	printf ("%d\n", val);
+	//printf ("%d\n", val);
 	return val;
 }
 
@@ -20,7 +20,7 @@ test (valstruct_t *v)
 {
 	if (v.val == v.cap) {
 		v.val += v.ofs;
-		v.res = printval (v.val * @sizeof (int));
+		v.res = saveval (v.val * @sizeof (int));
 	}
 }
 
@@ -33,8 +33,9 @@ main ()
 	vs.val = 1;
 	vs.cap = 1;
 	vs.ofs = 2;
-	printf ("before: %d\nafter: ", vs.val);
+	//printf ("before: %d\nafter: ", vs.val);
 	test (vs);
-	printf ("val vs res: %d %d\n", vs.val, vs.res);
+	if (vs.val != vs.res)
+		printf ("val vs res: %d %d\n", vs.val, vs.res);
 	return vs.val != vs.res;
 }
