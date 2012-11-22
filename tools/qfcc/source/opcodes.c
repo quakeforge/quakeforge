@@ -122,33 +122,46 @@ opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 	return op;
 }
 
+static void
+opcode_free (void *_op, void *unused)
+{
+	free (_op);
+}
+
 void
 opcode_init (void)
 {
-	opcode_t   *op;
+	opcode_t   *op, *mop;
 
-	PR_Opcode_Init ();
-	opcode_type_table = Hash_NewTable (1021, 0, 0, 0);
-	Hash_SetHashCompare (opcode_type_table, get_hash, compare);
-	opcode_void_table = Hash_NewTable (1021, get_key, 0, 0);
+	if (opcode_type_table) {
+		Hash_FlushTable (opcode_void_table);
+		Hash_FlushTable (opcode_type_table);
+	} else {
+		PR_Opcode_Init ();
+		opcode_type_table = Hash_NewTable (1021, 0, opcode_free, 0);
+		Hash_SetHashCompare (opcode_type_table, get_hash, compare);
+		opcode_void_table = Hash_NewTable (1021, get_key, 0, 0);
+	}
 	for (op = pr_opcodes; op->name; op++) {
 		if (op->min_version > options.code.progsversion)
 			continue;
+		mop = malloc (sizeof (opcode_t));
+		*mop = *op;
 		if (options.code.progsversion == PROG_ID_VERSION) {
 			// v6 progs have no concept of integer, but the QF engine
 			// treats the operands of certain operands as integers
 			// irrespective the progs version, so convert the engine's
 			// view of the operands to the prog's view.
-			if (op->type_a == ev_integer)
-				op->type_a = ev_float;
-			if (op->type_b == ev_integer)
-				op->type_b = ev_float;
-			if (op->type_c == ev_integer)
-				op->type_c = ev_float;
+			if (mop->type_a == ev_integer)
+				mop->type_a = ev_float;
+			if (mop->type_b == ev_integer)
+				mop->type_b = ev_float;
+			if (mop->type_c == ev_integer)
+				mop->type_c = ev_float;
 		}
-		Hash_AddElement (opcode_type_table, op);
-		if (op->type_a == ev_void || op->type_b == ev_void
-			|| op->type_c == ev_void)
-			Hash_Add (opcode_void_table, op);
+		Hash_AddElement (opcode_type_table, mop);
+		if (mop->type_a == ev_void || mop->type_b == ev_void
+			|| mop->type_c == ev_void)
+			Hash_Add (opcode_void_table, mop);
 	}
 }

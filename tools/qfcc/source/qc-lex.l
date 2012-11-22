@@ -51,6 +51,7 @@
 #include "expr.h"
 #include "grab.h"
 #include "options.h"
+#include "pragma.h"
 #include "qfcc.h"
 #include "strpool.h"
 #include "struct.h"
@@ -98,9 +99,10 @@ INT			({D}+|0[xX]{X}+)
 RANGE		\.\.
 ELLIPSIS	\.\.\.
 FRAMEID		{ID}(\.{ID})*
+PRAGMAID	{ID}(-{ID})*
 STRING		\"(\\.|[^"\\])*\"
 
-%x		GRAB_FRAME GRAB_OTHER COMMENT
+%x		GRAB_FRAME GRAB_OTHER COMMENT PRAGMA
 
 %%
 					grab_frame = GRAB_FRAME;
@@ -117,7 +119,7 @@ STRING		\"(\\.|[^"\\])*\"
 ^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
 ^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 5); }
 
-^{s}*#{s}*pragma.*$	/* skip */
+^{s}*#{s}*pragma{s}+	{ BEGIN (PRAGMA); }
 
 {INT}+[uU]?			{
 						const char *c = yytext + yyleng - 1;
@@ -234,6 +236,7 @@ STRING		\"(\\.|[^"\\])*\"
 
 <GRAB_FRAME>{FRAMEID}	add_frame_macro (yytext);
 <GRAB_OTHER>[^\r\n]*	/* skip */
+<PRAGMA>{ID}		{ pragma (yytext); }
 
 <*>\r*\n			{
 						pr.source_line++;
