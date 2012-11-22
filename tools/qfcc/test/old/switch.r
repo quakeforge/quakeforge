@@ -50,4 +50,3 @@ duffs_device (int *to, int *from, int count)
 			} while(--n > 0);
 	}
 }
-

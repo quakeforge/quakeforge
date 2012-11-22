@@ -45,4 +45,3 @@ void (Foo f) bar =
 //	local val_t v = foo ();
 	local val_t u = [f v];
 }
-

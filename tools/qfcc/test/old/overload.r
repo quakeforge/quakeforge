@@ -28,4 +28,3 @@ void func (string y)
 	func (0.0, "");
 //	func (0, 0, 0, 0, 0.0);
 }
-
