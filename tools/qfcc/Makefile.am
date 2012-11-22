@@ -26,7 +26,7 @@
 #
 AUTOMAKE_OPTIONS= foreign
 
-SUBDIRS=	include source doc
+SUBDIRS=	include source doc test
 
 dist-zip: distdir
 	-chmod -R a+r $(distdir)
