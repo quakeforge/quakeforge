@@ -275,10 +275,7 @@ dagnode_match (const dagnode_t *n, const daglabel_t *op,
 	if (n->label->opcode != op->opcode)
 		return 0;
 	for (i = 0; i < 3; i++) {
-		if (n->children[i] && children[i]
-			&& n->children[i]->label->op != children[i]->label->op )
-			return 0;
-		if ((!n->children[i]) ^ (!children[i]))
+		if (n->children[i] != children[i])
 			return 0;
 	}
 	return 1;
