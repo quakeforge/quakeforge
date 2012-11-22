@@ -28,7 +28,12 @@ float test (string name, float (func)(float a, float b),
 
 	ret = func (a, b);
 	if (ret != c) {
-		printf ("%s: %g %% %g: %g != %g\n", name, a, b, ret, c);
+		if (func == baz)
+			printf ("%s: (%g + %g) %% (%g - %g): %g != %g\n",
+					name, a, b, a, b, ret, c);
+		else
+			printf ("%s: %g %% %g: %g != %g\n",
+					name, a, b, ret, c);
 		return 1;
 	}
 	return 0;
