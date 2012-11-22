@@ -18,7 +18,7 @@ QFCC_TEST_LIBS=@QFCC_TEST_LIBS@
 QFCC_TEST_DEPS=@QFCC_TEST_DEPS@
 QFCC_TEST_INCS=@QFCC_TEST_INCS@
 
-test_progs_dat=structptr.dat while.dat
+test_progs_dat=modulo.dat structptr.dat while.dat
 
 TESTS=$(test_progs_dat:.dat=.run)
 
@@ -27,6 +27,13 @@ check_PROGRAMS=test-harness $(test_progs_dat)
 test_harness_SOURCES=		test-bi.c test-harness.c
 test_harness_LDADD=			$(QFCC_TEST_LIBS)
 test_harness_DEPENDENCIES=	$(QFCC_TEST_DEPS)
+
+modulo_dat_SOURCES=modulo.r
+modulo_obj=$(modulo_dat_SOURCES:.r=.qfo)
+modulo.dat: $(modulo_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(modulo_obj)
+modulo.run: Makefile build-run
+	TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
 
 structptr_dat_SOURCES=structptr.r
 structptr_obj=$(structptr_dat_SOURCES:.r=.qfo)
