@@ -6,10 +6,13 @@ QFCC=$(QFCC_DEP)
 
 QCFLAGS=-qq -g --no-default-paths
 QCPPFLAGS=
+QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
 
 SUFFIXES=.qfo .r
 .r.qfo:
-	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
+	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -c -o $@ $<
+	sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
+	$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
 
 QFCC_TEST_LIBS=@QFCC_TEST_LIBS@
 QFCC_TEST_DEPS=@QFCC_TEST_DEPS@
@@ -38,6 +41,8 @@ while.dat: $(while_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(while_obj)
 while.run: Makefile build-run
 	$(srcdir)/build-run $@
+
+include ./$(DEPDIR)/*.Qo
 
 EXTRA_DIST= test-bi.h build-run
 CLEANFILES= *.dat *.sym *.qfo *.run
