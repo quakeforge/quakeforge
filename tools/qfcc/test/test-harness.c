@@ -128,7 +128,7 @@ static void
 init_qf (void)
 {
 	Sys_Init ();
-	//Cvar_Get ("developer", "128", 0, 0, 0);
+	Cvar_Get ("developer", va ("%d", options.developer), 0, 0, 0);
 
 	Memory_Init (malloc (1024 * 1024), 1024 * 1024);
 
@@ -142,6 +142,7 @@ init_qf (void)
 	pr.allocate_progs_mem = allocate_progs_mem;
 	pr.free_progs_mem = free_progs_mem;
 	pr.no_exec_limit = 1;
+	pr.pr_trace = options.trace;
 
 	PR_Init_Cvars ();
 	PR_Init ();
