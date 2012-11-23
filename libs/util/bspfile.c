@@ -944,8 +944,8 @@ WriteBSPFile (const bsp_t *bsp, QFile *file)
 						|| bsp->models[0].mins[1] < -32768.0f
 						|| bsp->models[0].mins[2] < -32768.0f
 						|| bsp->models[0].mins[0] >= 32768.0f
-						|| bsp->models[0].mins[0] >= 32768.0f
-						|| bsp->models[0].mins[0] >= 32768.0f
+						|| bsp->models[0].mins[1] >= 32768.0f
+						|| bsp->models[0].mins[2] >= 32768.0f
 						|| bsp->nummarksurfaces >= 32768
 						|| bsp->numvertexes >= 32768
 						|| bsp->numnodes >= 32768
