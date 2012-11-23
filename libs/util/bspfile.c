@@ -206,8 +206,10 @@ swap_to_bsp29 (bsp29_t *bsp29, const bsp_t *bsp2)
 	// texinfos
 	for (i=0 ; i<bsp29->numtexinfo ; i++) {
 		texinfo_t  *texinfo = &bsp29->texinfo[i];
-		for (j=0 ; j<8 ; j++)
+		for (j=0 ; j < 4 ; j++) {
 			texinfo->vecs[0][j] = LittleFloat (texinfo->vecs[0][j]);
+			texinfo->vecs[1][j] = LittleFloat (texinfo->vecs[1][j]);
+		}
 		texinfo->miptex = LittleLong (texinfo->miptex);
 		texinfo->flags = LittleLong (texinfo->flags);
 	}
@@ -355,8 +357,10 @@ swap_from_bsp29 (bsp_t *bsp2, const bsp29_t *bsp29,
 	// texinfos
 	for (i=0 ; i<bsp2->numtexinfo ; i++) {
 		texinfo_t  *texinfo = &bsp2->texinfo[i];
-		for (j=0 ; j<8 ; j++)
+		for (j=0 ; j < 4 ; j++) {
 			texinfo->vecs[0][j] = LittleFloat (texinfo->vecs[0][j]);
+			texinfo->vecs[1][j] = LittleFloat (texinfo->vecs[1][j]);
+		}
 		texinfo->miptex = LittleLong (texinfo->miptex);
 		texinfo->flags = LittleLong (texinfo->flags);
 	}
@@ -503,8 +507,10 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 	// texinfos
 	for (i=0 ; i<bsp->numtexinfo ; i++) {
 		texinfo_t  *texinfo = &bsp->texinfo[i];
-		for (j=0 ; j<8 ; j++)
+		for (j=0 ; j < 4 ; j++) {
 			texinfo->vecs[0][j] = LittleFloat (texinfo->vecs[0][j]);
+			texinfo->vecs[1][j] = LittleFloat (texinfo->vecs[1][j]);
+		}
 		texinfo->miptex = LittleLong (texinfo->miptex);
 		texinfo->flags = LittleLong (texinfo->flags);
 	}
