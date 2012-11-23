@@ -429,6 +429,9 @@ core
 # /tools/qfmodelgen/source/
 /tools/qfmodelgen/source/qfmodelgen
 
+# /tools/qfspritegen/qfspritegen
+/tools/qfspritegen/qfspritegen
+
 # /tools/qfvis/
 
 # /tools/qfvis/include/
@@ -445,6 +448,7 @@ core
 /tools/qwaq/*.src
 /tools/qwaq/*.sym
 /tools/qwaq/qwaq
+/tools/qwaq/qwaq-x11
 
 # /tools/texpaint/
 /tools/texpaint/aclocal.m4
