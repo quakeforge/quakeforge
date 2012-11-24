@@ -71,10 +71,17 @@ bi_strerror (progs_t *pr)
 	RETURN_STRING (pr, strerror (err));
 }
 
+static void
+bi_exit (progs_t *pr)
+{
+	exit (P_INT (pr, 0));
+}
+
 static builtin_t builtins[] = {
 	{"printf",		bi_printf,		-1},
 	{"errno",		bi_errno,		-1},
 	{"strerror",	bi_strerror,	-1},
+	{"exit",		bi_exit,		-1},
 	{0}
 };
 
