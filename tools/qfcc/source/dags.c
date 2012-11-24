@@ -315,6 +315,13 @@ dagnode_set_edges (dagnode_t *n)
 
 	for (i = 0; i < 3; i++) {
 		dagnode_t  *child = n->children[i];
+		if (child && n != child)
+			set_add (n->edges, child->number);
+	}
+	if (n->type == st_flow)
+		return;
+	for (i = 0; i < 3; i++) {
+		dagnode_t  *child = n->children[i];
 		if (child) {
 			if (child->label->op) {
 				dagnode_t  *node = child->label->dagnode;
@@ -417,6 +424,17 @@ dag_sort_nodes (dag_t *dag)
 }
 
 static void
+dag_make_var_live (set_t *live_vars, operand_t *op)
+{
+	flowvar_t  *var = 0;
+
+	if (op)
+		var = flow_get_var (op);
+	if (var)
+		set_add (live_vars, var->number);
+}
+
+static void
 dag_set_live_vars (set_t *live_vars, dag_t *dag, dagnode_t *n)
 {
 	if (!strncmp (n->label->opcode, "<CALL", 5)
@@ -480,6 +498,8 @@ dag_create (flownode_t *flownode)
 
 	flush_daglabels ();
 
+	// count the number of statements so the number of nodes and labels can be
+	// guessed
 	for (s = block->statements; s; s = s->next)
 		num_statements++;
 
@@ -497,8 +517,13 @@ dag_create (flownode_t *flownode)
 		operand_t  *operands[4];
 		dagnode_t  *n = 0, *children[3] = {0, 0, 0};
 		daglabel_t *op, *lx;
+		int         i;
 
 		dag_make_children (dag, s, operands, children);
+		if (s->type == st_flow)
+			for (i = 0; i < 3; i++)
+				if (children[i])
+					dag_make_var_live (live_vars, operands[i]);
 		op = opcode_label (dag, s->opcode, s->expr);
 		n = children[0];
 		if (s->type != st_assign
