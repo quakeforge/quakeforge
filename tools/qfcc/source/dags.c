@@ -387,6 +387,8 @@ dag_remove_dead_vars (dag_t *dag, set_t *live_vars)
 		var = flow_get_var (l->op);
 		if (!var)
 			continue;
+		if (set_is_member (dag->flownode->global_vars, var->number))
+			continue;
 		if (!set_is_member (live_vars, var->number))
 			set_remove (l->dagnode->identifiers, l->number);
 	}
