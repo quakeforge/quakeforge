@@ -550,7 +550,11 @@ flow_uninitialized (flowgraph_t *graph)
 			def = flowvar_get_def (var);
 			dummy.line = def->line;
 			dummy.file = def->file;
-			warning (&dummy, "%s may be used uninitialized", def->name);
+			if (type_size (def->type) != 1) {
+				bug (&dummy, "too hard basket");
+			} else {
+				warning (&dummy, "%s may be used uninitialized", def->name);
+			}
 		}
 	}
 	set_delete (stuse);
