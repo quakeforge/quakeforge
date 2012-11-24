@@ -514,12 +514,14 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 	if ((is_array (type) || is_struct (type))
 		&& init->type == ex_block && !init->e.block.result) {
 		init_elements (sym->s.def, init);
+		sym->s.def->initialized = 1;
 	} else {
 		if (!type_assignable (type, get_type (init))) {
 			error (init, "type mismatch in initializer");
 			return;
 		}
 		if (local_expr) {
+			sym->s.def->initialized = 1;
 			init = assign_expr (new_symbol_expr (sym), init);
 			// fold_constants takes care of int/float conversions
 			append_expr (local_expr, fold_constants (init));

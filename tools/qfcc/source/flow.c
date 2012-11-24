@@ -219,6 +219,21 @@ flowvar_is_param (flowvar_t *var)
 	return 1;
 }
 
+static int
+flowvar_is_initialized (flowvar_t *var)
+{
+	symbol_t   *sym;
+	def_t      *def;
+
+	if (var->op->op_type != op_symbol)
+		return 0;
+	sym = var->op->o.symbol;
+	if (sym->sy_type != sy_var)
+		return 0;
+	def = sym->s.def;
+	return def->initialized;
+}
+
 flowvar_t *
 flow_get_var (operand_t *op)
 {
@@ -467,7 +482,8 @@ flow_uninitialized (flowgraph_t *graph)
 	tmp = set_new ();
 	for (i = 0; i < func->num_vars; i++) {
 		flowvar_t  *var = func->vars[i];
-		if (flowvar_is_global (var) || flowvar_is_param (var))
+		if (flowvar_is_global (var) || flowvar_is_param (var)
+			|| flowvar_is_initialized (var))
 			set_add (tmp, i);
 	}
 	// first, calculate use and def for each block, and initialize the in and
