@@ -395,7 +395,6 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		default_label = &_default_label;
 		default_label->label = break_label;
 	}
-	default_expr = goto_expr (default_label->label);
 
 	append_expr (sw, assign_expr (sw_val, switch_block->test));
 
@@ -412,6 +411,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 
 			append_expr (sw, test);
 		}
+		default_expr = goto_expr (default_label->label);
 		append_expr (sw, default_expr);
 	} else {
 		expr_t     *temp;
