@@ -1310,6 +1310,8 @@ merge_blocks (sblock_t *blocks)
 				break;
 		if (!sb)		// dest is
 			internal_error (0, "dangling label");
+		if (!sb->statements)
+			continue;
 		s = (statement_t *) sb->tail;
 		if (!is_goto (s) && !is_return (s))
 			continue;
