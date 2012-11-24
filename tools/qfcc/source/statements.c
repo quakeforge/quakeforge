@@ -1313,7 +1313,7 @@ merge_blocks (sblock_t *blocks)
 		s = (statement_t *) sb->tail;
 		if (!is_goto (s) && !is_return (s))
 			continue;
-		// desination block is reachable via only goto of the current block
+		// desination block is reachable only via goto of the current block
 		if (!dest->next)
 			dest->next = new_sblock ();
 		sb->next = dest->next;			// pull dest out of the chain
