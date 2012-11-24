@@ -762,8 +762,12 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 		case st_move:
 			flow_add_op_var (use, s->opa);
 			flow_add_op_var (use, s->opb);
-			if (s->opc)
-				flow_add_op_var (use, s->opc);
+			if (!strcmp (s->opcode, "<MOVE>")) {
+				flow_add_op_var (def, s->opc);
+			} else {
+				if (s->opc)
+					flow_add_op_var (use, s->opc);
+			}
 			if (kill) {
 				//FIXME set of everything
 			}
