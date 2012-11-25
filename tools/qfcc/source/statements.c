@@ -1352,7 +1352,8 @@ remove_dead_blocks (sblock_t *blocks)
 				continue;
 			}
 			s = (statement_t *) sblock->tail;
-			if (is_conditional (s) && is_goto (sb->statements)
+			if (is_conditional (s)
+				&& sb->statements && is_goto (sb->statements)
 				&& s->opb->o.label->dest == sb->next) {
 				debug (0, "merging if/goto %p %p", sblock, sb);
 				unuse_label (s->opb->o.label);
