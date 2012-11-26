@@ -40,6 +40,7 @@
 #include <stdlib.h>
 
 #include <QF/dstring.h>
+#include <QF/mathlib.h>
 #include <QF/quakeio.h>
 #include <QF/va.h>
 
@@ -148,22 +149,44 @@ static void
 print_bool (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
+	int         i, count;
+	ex_bool_t  *bool = &e->e.bool;
 
+	dasprintf (dstr, "%*se_%p [shape=none,label=<\n", indent, "", e);
+	dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
+			   "cellspacing=\"0\">\n",
+			   indent + 2, "");
+	dasprintf (dstr, "%*s<tr><td colspan=\"2\">&lt;bool&gt;(%d)</td></tr>\n",
+			   indent + 4, "", e->line);
+	dasprintf (dstr, "%*s<tr><td>true</td><td>false</td></tr>\n",
+			   indent + 4, "");
+	count = min (bool->true_list->size, bool->false_list->size);
+	for (i = 0; i < count; i++)
+		dasprintf (dstr, "%*s<tr><td port=\"t%d\">t</td>"
+				   "<td port=\"f%d\">f</td></tr>\n", indent, "", i, i);
+	for ( ; i < bool->true_list->size; i++)
+		dasprintf (dstr, "%*s<tr><td port=\"t%d\">t</td>%s</tr>\n",
+				   indent, "", i,
+				   i == count ? va ("<td rowspan=\"%d\"></td>",
+									bool->true_list->size - count)
+							  : "");
+	for ( ; i < bool->false_list->size; i++)
+		dasprintf (dstr, "%*s<tr>%s<td port=\"f%d\">f</td></tr>\n",
+				   indent, "",
+				   i == count ? va ("<td rowspan=\"%d\"></td>",
+									bool->true_list->size - count)
+							  : "",
+				   i);
+	dasprintf (dstr, "%*s</table>\n", indent + 2, "");
+	dasprintf (dstr, "%*s>];\n", indent, "");
 	_print_expr (dstr, e->e.bool.e, level, id);
-	if (e->e.bool.e->type == ex_block && e->e.bool.e->e.block.head) {
-		expr_t     *se;
-
-		dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->e.bool.e);
-		se = (expr_t *) e->e.bool.e->e.block.tail;
-		if (se && se->type == ex_label && e->next)
-			dasprintf (dstr,
-					   "%*se_%p -> e_%p [constraint=false,style=dashed];\n",
-					   indent, "", se, e->next);
-	} else {
-		dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->e.bool.e);
-	}
-	dasprintf (dstr, "%*se_%p [label=\"<bool>\\n%d\"];\n", indent, "", e,
-			   e->line);
+	for (i = 0; i < bool->true_list->size; i++)
+		dasprintf (dstr, "%*se_%p:t%d -> e_%p;\n", indent, "", e, i,
+				   bool->true_list->e[i]);
+	for (i = 0; i < bool->false_list->size; i++)
+		dasprintf (dstr, "%*se_%p:f%d -> e_%p;\n", indent, "", e, i,
+				   bool->false_list->e[i]);
+	dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->e.bool.e);
 }
 
 static void
@@ -200,13 +223,14 @@ print_block (dstring_t *dstr, expr_t *e, int level, int id)
 	expr_t     *se;
 
 	dasprintf (dstr, "%*se_%p [shape=none,label=<\n", indent, "", e);
-	dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" cellspacing=\"0\">\n",
-			   indent + 2, "");
-	dasprintf (dstr, "%*s<tr><td colspan=\"2\">&lt;block&gt;(%d)%s</td></tr>\n",
-			   indent + 4, "", e->line, e->e.block.is_call ? "c" : "");
+	dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
+			   "cellspacing=\"0\">\n", indent + 2, "");
+	dasprintf (dstr, "%*s<tr><td colspan=\"2\">&lt;block&gt;(%d)%s</td>"
+			   "</tr>\n", indent + 4, "", e->line,
+			   e->e.block.is_call ? "c" : "");
 	if (e->e.block.result)
-		dasprintf (dstr, "%*s<tr><td colspan=\"2\" port=\"result\">=</td></tr>\n",
-				   indent + 4, "");
+		dasprintf (dstr, "%*s<tr><td colspan=\"2\" port=\"result\">=</td>"
+				   "</tr>\n", indent + 4, "");
 	for (se = e->e.block.head, i = 0; se; se = se->next, i++)
 		dasprintf (dstr, "%*s<tr><td>%d</td><td port=\"b%d\">%s</td></tr>\n",
 				   indent + 4, "", i, i, expr_names[se->type]);
