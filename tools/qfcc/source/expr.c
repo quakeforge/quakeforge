@@ -295,7 +295,7 @@ copy_expr (expr_t *e)
 				n->e.bool.true_list = malloc (size);
 				while (count--)
 					n->e.bool.true_list->e[count] =
-						copy_expr ( e->e.bool.true_list->e[count]);
+						copy_expr (e->e.bool.true_list->e[count]);
 			}
 			if (e->e.bool.false_list) {
 				int         count = e->e.bool.false_list->size;
@@ -303,7 +303,7 @@ copy_expr (expr_t *e)
 				n->e.bool.false_list = malloc (size);
 				while (count--)
 					n->e.bool.false_list->e[count] =
-						copy_expr ( e->e.bool.false_list->e[count]);
+						copy_expr (e->e.bool.false_list->e[count]);
 			}
 			n->e.bool.e = copy_expr (e->e.bool.e);
 			return n;
