@@ -391,6 +391,8 @@ DecodeArgs (int argc, char **argv)
 							options.block_dot.final = flag;
 						} else if (!(strcasecmp (temp, "dags"))) {
 							options.block_dot.dags = flag;
+						} else if (!(strcasecmp (temp, "expr"))) {
+							options.block_dot.expr = flag;
 						} else if (!(strcasecmp (temp, "flow"))) {
 							options.block_dot.flow = flag;
 						} else if (!(strcasecmp (temp, "post"))) {
@@ -405,6 +407,7 @@ DecodeArgs (int argc, char **argv)
 					options.block_dot.dead = true;
 					options.block_dot.final = true;
 					options.block_dot.dags = true;
+					options.block_dot.expr = true;
 					options.block_dot.flow = true;
 					options.block_dot.post = true;
 				}

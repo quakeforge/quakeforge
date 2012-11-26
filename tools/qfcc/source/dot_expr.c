@@ -175,7 +175,7 @@ print_bool (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		dasprintf (dstr, "%*s<tr>%s<td port=\"f%d\">f</td></tr>\n",
 				   indent, "",
 				   i == count ? va ("<td rowspan=\"%d\"></td>",
-									bool->true_list->size - count)
+									bool->false_list->size - count)
 							  : "",
 				   i);
 	dasprintf (dstr, "%*s</table>\n", indent + 2, "");
