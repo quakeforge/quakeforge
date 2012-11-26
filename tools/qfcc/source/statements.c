@@ -1018,6 +1018,7 @@ statement_bool (sblock_t *sblock, expr_t *e)
 			l = (*s)->e.expr.e1;
 			for (e = (*s)->next; e && e->type == ex_label; e = e->next) {
 				if (e == l) {
+					l->e.label.used--;
 					*s = (*s)->next;
 					l = 0;
 					break;
