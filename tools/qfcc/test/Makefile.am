@@ -18,7 +18,13 @@ QFCC_TEST_LIBS=@QFCC_TEST_LIBS@
 QFCC_TEST_DEPS=@QFCC_TEST_DEPS@
 QFCC_TEST_INCS=@QFCC_TEST_INCS@
 
-test_progs_dat=deadbool.dat infloop.dat modulo.dat structptr.dat while.dat
+test_progs_dat=\
+	chewed-alias.dat \
+	deadbool.dat \
+	infloop.dat \
+	modulo.dat \
+	structptr.dat \
+	while.dat
 
 TESTS=$(test_progs_dat:.dat=.run)
 
@@ -27,6 +33,13 @@ check_PROGRAMS=test-harness $(test_progs_dat)
 test_harness_SOURCES=		test-bi.c test-harness.c
 test_harness_LDADD=			$(QFCC_TEST_LIBS)
 test_harness_DEPENDENCIES=	$(QFCC_TEST_DEPS)
+
+chewed_alias_dat_SOURCES=chewed-alias.r
+chewed_alias_obj=$(chewed_alias_dat_SOURCES:.r=.qfo)
+chewed-alias.dat: $(chewed_alias_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(chewed_alias_obj)
+chewed-alias.run: Makefile build-run
+	$(srcdir)/build-run $@
 
 deadbool_dat_SOURCES=deadbool.r
 deadbool_obj=$(deadbool_dat_SOURCES:.r=.qfo)
