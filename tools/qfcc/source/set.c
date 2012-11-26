@@ -46,7 +46,7 @@
 #include "qfcc.h"
 #include "set.h"
 
-#define BITS (sizeof (unsigned) * 8)
+#define BITS (sizeof (((set_t *) 0)->map[0]) * 8)
 
 set_t      *free_sets;
 set_iter_t *free_set_iters;
@@ -101,9 +101,11 @@ set_expand (set_t *set, unsigned x)
 	if (x < set->size)
 		return;
 
-	size = (x + BITS - 1) & ~(BITS - 1);
+	size = (x + BITS) & ~(BITS - 1);
 	set->map = malloc (size / 8);
 	memcpy (set->map, map, set->size / 8);
+	memset (set->map + set->size / BITS, 0, (size - set->size) / 8);
+	set->size = size;
 	if (map != set->defmap)
 		free (map);
 }
@@ -147,6 +149,8 @@ set_intersection (set_t *dst, const set_t *src)
 	set_expand (dst, size);
 	for (i = 0; i < src->size / BITS; i++)
 		dst->map[i] &= src->map[i];
+	for ( ; i < dst->size / BITS; i++)
+		dst->map[i] = 0;
 	return dst;
 }
 
@@ -173,6 +177,8 @@ set_assign (set_t *dst, const set_t *src)
 	set_expand (dst, size);
 	for (i = 0; i < src->size / BITS; i++)
 		dst->map[i] = src->map[i];
+	for ( ; i < dst->size / BITS; i++)
+		dst->map[i] = 0;
 	return dst;
 }
 
@@ -263,12 +269,18 @@ set_is_subset (const set_t *set, const set_t *sub)
 	return 1;
 }
 
-int
-set_is_member (const set_t *set, unsigned x)
+static inline int
+_set_is_member (const set_t *set, unsigned x)
 {
 	if (x >= set->size)
 		return 0;
 	return (set->map[x / BITS] & (1 << (x % BITS))) != 0;
+}
+
+int
+set_is_member (const set_t *set, unsigned x)
+{
+	return _set_is_member (set, x);
 }
 
 unsigned
