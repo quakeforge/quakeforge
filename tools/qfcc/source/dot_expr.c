@@ -49,6 +49,22 @@
 #include "qc-parse.h"
 #include "strpool.h"
 
+static const char *expr_names[] =
+{
+	"error",
+	"state",
+	"bool",
+	"label",
+	"labelref",
+	"block",
+	"expr",
+	"uexpr",
+	"symbol",
+	"temp",
+	"nil",
+	"value",
+};
+
 const char *
 get_op_string (int op)
 {
@@ -180,33 +196,33 @@ static void
 print_block (dstring_t *dstr, expr_t *e, int level, int id)
 {
 	int         indent = level * 2 + 2;
+	int         i;
 	expr_t     *se;
+
+	dasprintf (dstr, "%*se_%p [shape=none,label=<\n", indent, "", e);
+	dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" cellspacing=\"0\">\n",
+			   indent + 2, "");
+	dasprintf (dstr, "%*s<tr><td colspan=\"2\">&lt;block&gt;(%d)%s</td></tr>\n",
+			   indent + 4, "", e->line, e->e.block.is_call ? "c" : "");
+	if (e->e.block.result)
+		dasprintf (dstr, "%*s<tr><td colspan=\"2\" port=\"result\">=</td></tr>\n",
+				   indent + 4, "");
+	for (se = e->e.block.head, i = 0; se; se = se->next, i++)
+		dasprintf (dstr, "%*s<tr><td>%d</td><td port=\"b%d\">%s</td></tr>\n",
+				   indent + 4, "", i, i, expr_names[se->type]);
+	dasprintf (dstr, "%*s</table>\n", indent + 2, "");
+	dasprintf (dstr, "%*s>];\n", indent, "");
 
 	if (e->e.block.result) {
 		_print_expr (dstr, e->e.block.result, level + 1, id);
-		dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e,
+		dasprintf (dstr, "%*se_%p:result -> e_%p;\n", indent, "", e,
 				   e->e.block.result);
 	}
-	if (e->e.block.head)
-		dasprintf (dstr, "%*se_%p -> e_%p [style=dashed];\n", indent, "", e,
-				   e->e.block.head);
-	//dasprintf (dstr, "%*ssubgraph cluster_%p {\n", indent, "", e);
-	for (se = e->e.block.head; se; se = se->next) {
+	for (se = e->e.block.head, i = 0; se; se = se->next, i++) {
 		_print_expr (dstr, se, level + 1, id);
+		dasprintf (dstr, "%*se_%p:b%d -> e_%p;\n", indent, "", e,
+				   i, se);
 	}
-	for (se = e->e.block.head; se && se->next; se = se->next) {
-		if ((se->type == ex_uexpr && se->e.expr.op == 'g')
-			|| se->type == ex_label || se->type == ex_bool)
-			continue;
-		dasprintf (dstr, "%*se_%p -> e_%p [constraint=false,style=dashed];\n",
-				   indent, "", se, se->next);
-	}
-	if (se && se->type == ex_label && e->next)
-		dasprintf (dstr, "%*se_%p -> e_%p [constraint=false,style=dashed];\n",
-				   indent, "", se, e->next);
-	//dasprintf (dstr, "%*s}\n", indent, "");
-	dasprintf (dstr, "%*se_%p [label=\"<block>\\n%d\"];\n", indent, "", e,
-			   e->line);
 }
 
 static void
@@ -270,7 +286,7 @@ print_uexpr (dstring_t *dstr, expr_t *e, int level, int id)
 	int         indent = level * 2 + 2;
 	dstring_t  *typestr = dstring_newstr();
 
-	if (e->e.expr.op != 'g')
+	if (e->e.expr.op != 'g' && e->e.expr.e1)
 		_print_expr (dstr, e->e.expr.e1, level, id);
 	if (e->e.expr.op == 'A') {
 		dstring_copystr (typestr, "\\n");
