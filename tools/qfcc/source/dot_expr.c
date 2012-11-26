@@ -116,8 +116,10 @@ print_state (dstring_t *dstr, expr_t *e, int level, int id)
 	_print_expr (dstr, e->e.state.think, level, id);
 	if (e->e.state.step)
 		_print_expr (dstr, e->e.state.step, level, id);
-	dasprintf (dstr, "%*se_%p:f -> e_%p;\n", indent, "", e, e->e.state.frame);
-	dasprintf (dstr, "%*se_%p:t -> e_%p;\n", indent, "", e, e->e.state.think);
+	dasprintf (dstr, "%*se_%p:f -> \"e_%p\";\n", indent, "", e,
+			   e->e.state.frame);
+	dasprintf (dstr, "%*se_%p:t -> \"e_%p\";\n", indent, "", e,
+			   e->e.state.think);
 	if (e->e.state.step)
 		dasprintf (dstr, "%*se_%p:s -> e_%p;\n", indent, "", e,
 				   e->e.state.step);
@@ -246,16 +248,16 @@ print_subexpr (dstring_t *dstr, expr_t *e, int level, int id)
 			   || e->e.expr.op == IFB || e->e.expr.op ==IFBE
 			   || e->e.expr.op == IFA || e->e.expr.op ==IFAE) {
 		_print_expr (dstr, e->e.expr.e1, level, id);
-		dasprintf (dstr, "%*se_%p -> e_%p [label=\"t\"];\n", indent, "", e,
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"t\"];\n", indent, "", e,
 				   e->e.expr.e1);
-		dasprintf (dstr, "%*se_%p -> e_%p [label=\"g\"];\n", indent, "", e,
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"g\"];\n", indent, "", e,
 				   e->e.expr.e2);
 	} else {
 		_print_expr (dstr, e->e.expr.e1, level, id);
 		_print_expr (dstr, e->e.expr.e2, level, id);
-		dasprintf (dstr, "%*se_%p -> e_%p [label=\"l\"];\n", indent, "", e,
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"l\"];\n", indent, "", e,
 				   e->e.expr.e1);
-		dasprintf (dstr, "%*se_%p -> e_%p [label=\"r\"];\n", indent, "", e,
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"r\"];\n", indent, "", e,
 				   e->e.expr.e2);
 	}
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
@@ -275,7 +277,8 @@ print_uexpr (dstring_t *dstr, expr_t *e, int level, int id)
 		print_type_str (typestr, e->e.expr.type);
 	}
 	if (e->e.expr.op != 'r' || e->e.expr.e1)
-		dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->e.expr.e1);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
+				   e->e.expr.e1);
 	dasprintf (dstr, "%*se_%p [label=\"%s%s\\n%d\"];\n", indent, "", e,
 			   get_op_string (e->e.expr.op), typestr->str, e->line);
 	dstring_delete (typestr);
@@ -399,7 +402,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id)
 	int         indent = level * 2 + 2;
 
 	if (!e) {
-		dasprintf (dstr, "%*se_%p [label=\"(null)\"];\n", indent, "", e);
+		dasprintf (dstr, "%*s\"e_%p\" [label=\"(null)\"];\n", indent, "", e);
 		return;
 	}
 	if (e->printid == id)		// already printed this expression
