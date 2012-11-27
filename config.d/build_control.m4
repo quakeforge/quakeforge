@@ -160,6 +160,7 @@ if test "x$ENABLE_servers_nq" = xyes; then
 	QF_NEED(nq, [common server])
 	QF_NEED(console, [server])
 	QF_NEED(top, [nq])
+	QF_NEED(libs,[util gamecode ruamoko gib image models console net])
 fi
 if test "x$ENABLE_servers_qtv" = xyes; then
 	QTV_TARGETS="qtv\$(EXEEXT) $QTV_TARGETS"
@@ -167,12 +168,14 @@ if test "x$ENABLE_servers_qtv" = xyes; then
 #	QF_NEED(qtv, [common server])
 	QF_NEED(console, [server])
 	QF_NEED(top, [qtv])
+	QF_NEED(libs,[util models console net qw])
 fi
 if test "x$ENABLE_servers_master" = xyes; then
 	HW_TARGETS="hw-master\$(EXEEXT) $HW_TARGETS"
 	QW_TARGETS="qw-master\$(EXEEXT) $QW_TARGETS"
 	SV_TARGETS="$SV_TARGETS master"
 	QF_NEED(top, [hw qw])
+	QF_NEED(libs,[util console net qw])
 fi
 if test "x$ENABLE_servers_qw" = xyes; then
 	QW_TARGETS="qw-server\$(EXEEXT) $QW_TARGETS"
@@ -180,6 +183,7 @@ if test "x$ENABLE_servers_qw" = xyes; then
 	QF_NEED(qw, [common server])
 	QF_NEED(console, [server])
 	QF_NEED(top, [qw])
+	QF_NEED(libs,[util gamecode ruamoko gib models console net qw])
 fi
 
 if test "x$ENABLE_tools_bsp2img" = xyes; then
