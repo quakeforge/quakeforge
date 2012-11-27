@@ -1416,8 +1416,8 @@ check_final_block (sblock_t *sblock)
 	if (current_func->sym->type->t.func.type != &type_void)
 		warning (0, "control reaches end of non-void function");
 	if (options.traditional || options.code.progsversion == PROG_ID_VERSION) {
-		expr_t     *e = new_ret_expr (current_func->sym->type->t.func.type);
-		return_symbol = e->e.expr.e1->e.symbol;//FIXME ick
+		return_symbol = make_symbol (".return", &type_param, pr.symtab->space,
+									 st_extern);
 		return_opcode = "<RETURN>";
 	}
 	if (return_symbol) {
