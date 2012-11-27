@@ -299,10 +299,9 @@ static keyword_t keywords[] = {
 	{"enum",		ENUM,	0,					0, PROG_ID_VERSION,	0},
 	{"typedef",		TYPEDEF, 0,					0, PROG_ID_VERSION,	0},
 
-	// these two are a hack to trigger the initialization of the class
+	// this is a hack to trigger the initialization of the class
 	// sytem if they are seen before any other Objective-QC symbol
-	{"obj_module_s", 0,		0,					0, PROG_VERSION,	1},
-	{"obj_module_t", 0,		0,					0, PROG_VERSION,	1},
+	{"obj_module", 0,		0,					0, PROG_VERSION,	1},
 
 	{"@class",		CLASS,	0,					0, PROG_VERSION,	1},
 	{"@defs",		DEFS,	0,					0, PROG_VERSION,	1},
