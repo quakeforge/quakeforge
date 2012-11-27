@@ -294,6 +294,7 @@ static keyword_t keywords[] = {
 	{"case",		CASE,	0,					1, PROG_ID_VERSION,	0},
 	{"default",		DEFAULT, 0,					1, PROG_ID_VERSION,	0},
 	{"nil",			NIL,	0,					0, PROG_ID_VERSION,	0},
+	{"@nil",		NIL,	0,					2, PROG_ID_VERSION,	0},
 	{"struct",		STRUCT, 0,					0, PROG_VERSION,	0},
 	{"union",		STRUCT,	0,					0, PROG_VERSION,	0},
 	{"enum",		ENUM,	0,					0, PROG_ID_VERSION,	0},
