@@ -783,12 +783,16 @@ MOD_TraceLine (hull_t *hull, int num,
 	vec3_t      start, end, dist;
 	int         side;
 	tracestack_t *tstack;
-	tracestack_t tracestack[256];
+	tracestack_t *tracestack;
 	mclipnode_t *node;
 	plane_t    *plane;
 	clipleaf_t *leaf;
 	trace_state_t trace_state;
 
+	if (!hull->depth)
+		Sys_Error ("hull depth not set");
+	// +2 for paranoia
+	tracestack = alloca ((hull->depth + 2) * sizeof (tracestack_t));
 	VectorCopy (start_point, start);
 	VectorCopy (end_point, end);
 	VectorSubtract (end, start, trace_state.dist);

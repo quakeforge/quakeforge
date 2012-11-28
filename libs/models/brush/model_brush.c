@@ -880,6 +880,48 @@ do_checksums (const bsp_t *bsp, void *_mod)
 	}
 }
 
+static void
+recurse_draw_tree (mnode_t *node, int depth)
+{
+	if (!node || node->contents < 0) {
+		if (depth > loadmodel->depth)
+			loadmodel->depth = depth;
+		return;
+	}
+	recurse_draw_tree (node->children[0], depth + 1);
+	recurse_draw_tree (node->children[1], depth + 1);
+}
+
+static void
+Mod_FindDrawDepth (void)
+{
+	loadmodel->depth = 0;
+	recurse_draw_tree (loadmodel->nodes, 1);
+}
+
+static void
+recurse_clip_tree (hull_t *hull, int num, int depth)
+{
+	mclipnode_t *node;
+
+	if (num < 0) {
+		if (depth > hull->depth)
+			hull->depth = depth;
+		return;
+	}
+	node = hull->clipnodes + num;
+	recurse_clip_tree (hull, node->children[0], depth + 1);
+	recurse_clip_tree (hull, node->children[1], depth + 1);
+}
+
+void
+Mod_FindClipDepth (hull_t *hull)
+{
+	hull->depth = 0;
+	if (hull->clipnodes)	// no hull 3?
+		recurse_clip_tree (hull, hull->firstclipnode, 1);
+}
+
 void
 Mod_LoadBrushModel (model_t *mod, void *buffer)
 {
@@ -912,6 +954,10 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 	BSP_Free(bsp);
 
 	Mod_MakeHull0 ();
+
+	Mod_FindDrawDepth ();
+	for (i = 0; i < MAX_MAP_HULLS; i++)
+		Mod_FindClipDepth (&mod->hulls[i]);
 
 	mod->numframes = 2;					// regular and alternate animation
 

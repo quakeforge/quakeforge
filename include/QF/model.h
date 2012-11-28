@@ -230,6 +230,7 @@ typedef struct hull_s {
 	vec3_t		clip_mins;
 	vec3_t		clip_maxs;
 	struct nodeleaf_s *nodeleafs;
+	int         depth;				///< maximum depth of the tree
 } hull_t;
 
 // SPRITE MODELS ==============================================================
@@ -393,6 +394,7 @@ typedef struct model_s {
 
 	int			 numnodes;
 	mnode_t		*nodes;
+	int          depth;				///< maximum depth of the tree
 
 	int			 numtexinfo;
 	mtexinfo_t	*texinfo;
@@ -449,6 +451,7 @@ void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
 void    *Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 							 int extra);
 
+void Mod_FindClipDepth (hull_t *hull);
 void	 Mod_LoadBrushModel (model_t *mod, void *buffer);
 void	 Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight);
 

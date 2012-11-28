@@ -255,6 +255,8 @@ run_test (test_t *test)
 	static int  output = 0;
 	portlist_t *portal_list = 0;
 
+	if (!test->hull->depth)
+		Mod_FindClipDepth (test->hull);
 	if (!test->hull->nodeleafs) {
 		hull_t     *hull = test->hull;
 		int         i, j;

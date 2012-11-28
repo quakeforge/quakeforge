@@ -652,16 +652,21 @@ test_node (mnode_t *node)
 }
 
 static void
-R_VisitWorldNodes (mnode_t *node)
+R_VisitWorldNodes (model_t *model)
 {
-#define NODE_STACK 1024
-	struct {
+	typedef struct {
 		mnode_t    *node;
 		int         side;
-	}          *node_ptr, node_stack[NODE_STACK];
+	} rstack_t;
+	rstack_t   *node_ptr;
+	rstack_t   *node_stack;
+	mnode_t    *node;
 	mnode_t    *front;
 	int         side;
 
+	node = model->nodes;
+	// +2 for paranoia
+	node_stack = alloca ((model->depth + 2) * sizeof (rstack_t));
 	node_ptr = node_stack;
 
 	while (1) {
@@ -669,8 +674,6 @@ R_VisitWorldNodes (mnode_t *node)
 			side = get_side (node);
 			front = node->children[side];
 			if (test_node (front)) {
-				if (node_ptr - node_stack == NODE_STACK)
-					Sys_Error ("node_stack overflow");
 				node_ptr->node = node;
 				node_ptr->side = side;
 				node_ptr++;
@@ -716,7 +719,7 @@ gl_R_DrawWorld (void)
 		gl_R_DrawSky ();
 	}
 
-	R_VisitWorldNodes (r_worldentity.model->nodes);
+	R_VisitWorldNodes (r_worldentity.model);
 	if (r_drawentities->int_val) {
 		entity_t   *ent;
 		for (ent = r_ent_queue; ent; ent = ent->next) {
