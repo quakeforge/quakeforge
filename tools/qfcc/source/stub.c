@@ -32,3 +32,4 @@ pr_auxfunction_t *new_auxfunction (void) {return 0;}
 ddef_t *new_local (void) {return 0;}
 void def_to_ddef (def_t *def, ddef_t *ddef, int aux) {}
 expr_t *warning (expr_t *e, const char *fmt, ...) {return 0;}
+expr_t *error (expr_t *e, const char *fmt, ...) {return 0;}
