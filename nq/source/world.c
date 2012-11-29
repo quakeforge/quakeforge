@@ -47,6 +47,8 @@
 #include "sv_progs.h"
 #include "world.h"
 
+#define always_inline inline __attribute__((__always_inline__))
+
 #define EDICT_LEAFS 32
 typedef struct edict_leaf_bucket_s {
 	struct edict_leaf_bucket_s *next;
@@ -674,7 +676,7 @@ SV_ClipMoveToEntity (edict_t *touched, const vec3_t start,
 	return trace;
 }
 
-static inline int
+static always_inline int
 ctl_pretest_everything (edict_t *touch, moveclip_t *clip)
 {
 	if (touch->free)
@@ -690,7 +692,7 @@ ctl_pretest_everything (edict_t *touch, moveclip_t *clip)
 	return 1;
 }
 
-static inline int
+static always_inline int
 ctl_pretest_triggers (edict_t *touch, moveclip_t *clip)
 {
 	if (SVfloat (touch, solid) != SOLID_TRIGGER)
@@ -702,7 +704,7 @@ ctl_pretest_triggers (edict_t *touch, moveclip_t *clip)
 	return 1;
 }
 
-static inline int
+static always_inline int
 ctl_pretest_other (edict_t *touch, moveclip_t *clip)
 {
 	if (SVfloat (touch, solid) == SOLID_NOT)
@@ -717,7 +719,7 @@ ctl_pretest_other (edict_t *touch, moveclip_t *clip)
 	return 1;
 }
 
-static inline int
+static always_inline int
 ctl_touch_test (edict_t *touch, moveclip_t *clip)
 {
 	if (clip->boxmins[0] > SVvector (touch, absmax)[0]
