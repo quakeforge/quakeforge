@@ -81,8 +81,6 @@ mkdir -p linux.o qf-win32.o
 #begin linux
 	cd linux.o
 	../configure -C --without-clients --with-servers=master
-	#make changelog
-	touch ChangeLog
 	make dist-all-local
 	if test $do_rpm -eq 1; then
 		cd RPM
@@ -110,13 +108,9 @@ if test $do_win32 -eq 1; then
 	cd qf-win32.o
 	qf_win32="quakeforge-$ver-win32"
 	qf_win32_dir=`pwd`"/$qf_win32"
-	mingw32="/usr/local/cross-tools/i386-mingw32msvc"
-	sed -e 's@^\./config@../config@' \
-		../tools/cross/mingw/cross-configure.sh > cross-configure.sh
-	chmod +x cross-configure.sh
 	rm -rf $qf_win32_dir *.zip
-	./cross-configure.sh \
-		--disable-debug --disable-shared \
+	../tools/cross/mingw/cross-configure.sh \
+		--disable-debug \
 		--program-prefix=
 	../tools/cross/mingw/cross-make.sh $QFSMP \
 		prefix=${qf_win32_dir} \
