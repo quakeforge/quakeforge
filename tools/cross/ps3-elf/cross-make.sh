@@ -1,7 +1,8 @@
 #!/bin/sh -x
+set -e
 if test -d native; then
 	cd native
-	make
+	make $*
 	cd ../powerpc64-ps3-elf
 	ln -fs ../native/tools/qfcc/source/qfcc .
 	ln -fs ../native/tools/pak/pak .

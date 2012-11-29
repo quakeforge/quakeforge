@@ -1,13 +1,21 @@
 #!/bin/sh -x
-mkdir native mipsel-linux
+set -e
+mkdir -p native mipsel-linux
 cd native
-../../configure --without-clients --without-servers --with-tools=qfcc,pak
+../../configure \
+	--disable-shared \
+	--without-clients \
+	--without-servers \
+	--with-tools=qfcc,pak
 cd ../mipsel-linux
 export MIPSEL=/opt/gcw0-toolchain
-export PKG_CONFIG_LIBDIR=$MIPSEL/usr/mipsel-gcw0-linux-uclibc/sysroot/lib/pkgconfig
+export MIPSEL_SYSROOT=$MIPSEL/usr/mipsel-gcw0-linux-uclibc/sysroot
+export PKG_CONFIG_LIBDIR=$MIPSEL_SYSROOT/lib/pkgconfig
+export PKG_CONFIG_PATH=$MIPSEL_SYSROOT/usr/local/lib/pkgconfig
 export PATH=$MIPSEL/usr/bin:$PATH
 ../../configure --host=mipsel-linux \
+	--with-sysroot=$MIPSEL_SYSROOT \
 	--disable-sdl-cd \
 	--with-endian=little \
-	SDL_CONFIG=$MIPSEL/usr/mipsel-gcw0-linux-uclibc/sysroot/usr/bin/sdl-config \
+	SDL_CONFIG=$MIPSEL_SYSROOT/usr/bin/sdl-config \
 	$*

@@ -1,7 +1,12 @@
 #!/bin/sh -x
-mkdir native powerpc64-ps3-elf
+set -e
+mkdir -p native powerpc64-ps3-elf
 cd native
-../../configure --without-clients --without-servers --with-tools=qfcc,pak
+../../configure \
+	--disable-shared \
+	--without-clients \
+	--without-servers \
+	--with-tools=qfcc,pak
 cd ../powerpc64-ps3-elf
 export PS3DEV=/usr/local/ps3dev
 export PSL1GHT=$PS3DEV
