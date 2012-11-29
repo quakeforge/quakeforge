@@ -4,9 +4,11 @@ AC_ARG_ENABLE(sdl,
 )
 
 if test "x$enable_sdl" != xno; then
-	AM_PATH_SDL(1.2.0,
-		HAVE_SDL=yes,
-		HAVE_SDL=no)
+	if test "x$PKG_CONFIG" != "x"; then
+		PKG_CHECK_MODULES([SDL], [sdl >= 1.2.0], HAVE_SDL=yes, HAVE_SDL=no)
+	else
+		AM_PATH_SDL(1.2.0, HAVE_SDL=yes, HAVE_SDL=no)
+	fi
 	if test "x$HAVE_SDL" = "xyes"; then
 		case "$host_os" in
 			mingw*)
