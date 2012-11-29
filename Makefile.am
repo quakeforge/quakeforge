@@ -10,10 +10,15 @@ DIST_SUBDIRS=desktop pkg-config include \
 
 ## configure.ac needs to be listed here for older autoconfs
 EXTRA_DIST=	ChangeLog configure.ac bootstrap \
-		tools/cross/droid/arm-linux-androideabi-pkg-config \
-		tools/cross/droid/cross-configure.sh tools/cross/droid/cross-make.sh \
-		tools/cross/mingw/cross-configure.sh tools/cross/mingw/cross-make.sh \
+		tools/cross/droid/cross-configure.sh \
+		tools/cross/droid/cross-make.sh \
+		tools/cross/mingw/cross-configure.sh \
+		tools/cross/mingw/cross-make.sh \
 		tools/cross/mingw/cross.sh \
+		tools/cross/mipsel-linux/cross-configure.sh \
+		tools/cross/mipsel-linux/cross-make.sh \
+		tools/cross/ps3-elf/cross-configure.sh \
+		tools/cross/ps3-elf/cross-make.sh \
 		tools/gas2masm/Makefile tools/gas2masm/gas2masm.c \
 		tools/gas2masm/gas2masm.dsp tools/gas2masm/gas2masm.dsw \
 		tools/gas2masm/gas2masm.mak tools/gas2masm/gas2masm.mdp
