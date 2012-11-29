@@ -348,6 +348,7 @@ link_t        **sv_link_prev;
 void
 SV_UnlinkEdict (edict_t *ent)
 {
+	free_edict_leafs (&SVdata (ent)->leafs);
 	if (!SVdata (ent)->area.prev)
 		return;							// not linked in anywhere
 	RemoveLink (&SVdata (ent)->area);
