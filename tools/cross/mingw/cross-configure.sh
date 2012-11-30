@@ -8,7 +8,7 @@ cd native
 	--without-servers \
 	--with-tools=qfcc,pak
 cd ../i686-pc-mingw32
-export MINGW=/home/bill/src/mingw/mingw-cross-env-2.18
+export MINGW=/opt/mingw-cross-env-2.18
 export MINGW_USR=$MINGW/usr/i686-pc-mingw32
 export PKG_CONFIG_LIBDIR=$MINGW_USR/lib/pkgconfig
 export PKG_CONFIG_PATH=$MINGW_USR/local/lib/pkgconfig
