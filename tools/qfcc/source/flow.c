@@ -604,6 +604,7 @@ flow_return_type (flowgraph_t *graph)
 	flow_set_return_type (node, ev_void);
 	for (i = 1; i < graph->num_nodes; i++) {
 		node = graph->nodes[graph->dfo[i]];
+		return_type = ev_type_count;
 		for (pred_iter = set_first (node->predecessors); pred_iter;
 			 pred_iter = set_next (pred_iter)) {
 			pred = graph->nodes[pred_iter->member];
