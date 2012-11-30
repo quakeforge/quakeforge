@@ -595,26 +595,34 @@ static void
 flow_return_type (flowgraph_t *graph)
 {
 	etype_t     return_type;
+	etype_t     old_rtype;
 	flownode_t *node;
 	set_iter_t *pred_iter;
 	flownode_t *pred;
 	int         i;
+	int         changed;
 
-	node = graph->nodes[0];
-	flow_set_return_type (node, ev_void);
-	for (i = 1; i < graph->num_nodes; i++) {
-		node = graph->nodes[graph->dfo[i]];
-		return_type = ev_type_count;
-		for (pred_iter = set_first (node->predecessors); pred_iter;
-			 pred_iter = set_next (pred_iter)) {
-			pred = graph->nodes[pred_iter->member];
-			if (return_type == ev_type_count)
-				return_type = pred->return_type.out;
-			if (return_type != pred->return_type.out)
-				return_type = ev_void;
+	do {
+		changed = 0;
+		node = graph->nodes[0];
+		flow_set_return_type (node, ev_void);
+		for (i = 1; i < graph->num_nodes; i++) {
+			node = graph->nodes[graph->dfo[i]];
+			return_type = ev_type_count;
+			old_rtype = node->return_type.in;
+			for (pred_iter = set_first (node->predecessors); pred_iter;
+				 pred_iter = set_next (pred_iter)) {
+				pred = graph->nodes[pred_iter->member];
+				if (return_type == ev_type_count)
+					return_type = pred->return_type.out;
+				if (return_type != pred->return_type.out)
+					return_type = ev_void;
+			}
+			flow_set_return_type (node, return_type);
+			if (return_type != old_rtype)
+				changed = 1;
 		}
-		flow_set_return_type (node, return_type);
-	}
+	} while (changed);
 }
 
 static void
