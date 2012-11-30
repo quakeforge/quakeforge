@@ -115,6 +115,7 @@ statement_t *new_statement (st_type_t type, const char *opcode,
 int statement_is_cond (statement_t *s);
 int statement_is_goto (statement_t *s);
 int statement_is_jumpb (statement_t *s);
+int statement_is_call (statement_t *s);
 int statement_is_return (statement_t *s);
 sblock_t *statement_get_target (statement_t *s);
 sblock_t **statement_get_targetlist (statement_t *s);

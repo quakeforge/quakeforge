@@ -393,6 +393,18 @@ statement_is_jumpb (statement_t *s)
 }
 
 int
+statement_is_call (statement_t *s)
+{
+	if (!s)
+		return 0;
+	if (!strncmp (s->opcode, "<CALL", 5))
+		return 1;
+	if (!strncmp (s->opcode, "<RCALL", 6))
+		return 2;
+	return 0;
+}
+
+int
 statement_is_return (statement_t *s)
 {
 	if (!s)

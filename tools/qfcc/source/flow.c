@@ -558,6 +558,64 @@ flow_uninitialized (flowgraph_t *graph)
 	set_delete (predecessors);
 }
 
+static etype_t
+get_function_type (operand_t *op)
+{
+	type_t     *type = &type_void;
+
+	//FIXME fuction type casts?
+	while (op->op_type == op_alias)
+		op = op->o.alias;
+	if (op->op_type == op_symbol) {
+		type = op->o.symbol->type;
+		if (type->type != ev_func)
+			internal_error (0, "not a function symbol");
+		type = type->t.func.type;
+	} else if (op->op_type == op_value) {
+		if (op->o.value->type != ev_func)
+			internal_error (0, "not a function value");
+		type = op->o.value->v.func_val.type;
+	}
+	// fixme temps?
+	return low_level_type (type);
+}
+
+static void
+flow_set_return_type (flownode_t *node, etype_t type)
+{
+	statement_t *st = (statement_t *) node->sblock->tail;
+	node->return_type.in = type;
+	node->return_type.out = node->return_type.in;
+	if (node->sblock->statements
+		&& statement_is_call (st))
+		node->return_type.out = get_function_type (st->opa);
+}
+
+static void
+flow_return_type (flowgraph_t *graph)
+{
+	etype_t     return_type;
+	flownode_t *node;
+	set_iter_t *pred_iter;
+	flownode_t *pred;
+	int         i;
+
+	node = graph->nodes[0];
+	flow_set_return_type (node, ev_void);
+	for (i = 1; i < graph->num_nodes; i++) {
+		node = graph->nodes[graph->dfo[i]];
+		for (pred_iter = set_first (node->predecessors); pred_iter;
+			 pred_iter = set_next (pred_iter)) {
+			pred = graph->nodes[pred_iter->member];
+			if (return_type == ev_type_count)
+				return_type = pred->return_type.out;
+			if (return_type != pred->return_type.out)
+				return_type = ev_void;
+		}
+		flow_set_return_type (node, return_type);
+	}
+}
+
 static void
 flow_build_dags (flowgraph_t *graph)
 {
@@ -599,6 +657,7 @@ flow_data_flow (flowgraph_t *graph)
 	}
 	flow_live_vars (graph);
 	flow_uninitialized (graph);
+	flow_return_type (graph);
 	flow_build_dags (graph);
 	if (options.block_dot.flow)
 		dump_dot ("flow", graph, dump_dot_flow);
