@@ -675,7 +675,10 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 				internal_error (0, "non-leaf label in leaf node");
 			dst = dagnode->label->op;
 			if ((var_iter = set_first (dagnode->identifiers))) {
-				type = low_level_type (get_type (dagnode->label->expr));
+				type = dst->type;
+				if (dst->op_type == op_symbol
+					&& !strcmp (dst->o.symbol->name, ".return"))
+					type = dag->flownode->return_type.in;
 				dst = generate_assignments (dag, block, dst, var_iter, type);
 			}
 			break;

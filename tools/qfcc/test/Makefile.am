@@ -20,6 +20,7 @@ QFCC_TEST_INCS=@QFCC_TEST_INCS@
 
 test_progs_dat=\
 	chewed-alias.dat \
+	chewed-return.dat \
 	deadbool.dat \
 	infloop.dat \
 	modulo.dat \
@@ -40,6 +41,13 @@ chewed-alias.dat: $(chewed_alias_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(chewed_alias_obj)
 chewed-alias.run: Makefile build-run
 	$(srcdir)/build-run $@
+
+chewed_return_dat_SOURCES=chewed-return.r
+chewed_return_obj=$(chewed_return_dat_SOURCES:.r=.qfo)
+chewed-return.dat: $(chewed_return_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(chewed_return_obj)
+chewed-return.run: Makefile build-run
+	TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
 
 deadbool_dat_SOURCES=deadbool.r
 deadbool_obj=$(deadbool_dat_SOURCES:.r=.qfo)
