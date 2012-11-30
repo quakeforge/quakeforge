@@ -568,8 +568,8 @@ flow_build_dags (flowgraph_t *graph)
 		node = graph->nodes[i];
 		node->dag = dag_create (node);
 	}
-	//if (options.block_dot.dags)
-	//	dump_dot ("dags", graph, dump_dot_flow_dags);
+	if (options.block_dot.dags)
+		dump_dot ("dags", graph, dump_dot_flow_dags);
 }
 
 void
