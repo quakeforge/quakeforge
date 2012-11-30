@@ -51,9 +51,129 @@
 #include "statements.h"
 #include "strpool.h"
 
+typedef struct {
+	const char *type;
+	void (*print_node) (dstring_t *, flowgraph_t *, flownode_t *, int);
+	void (*print_edge) (dstring_t *, flowgraph_t *, flowedge_t *, int);
+} flow_dot_t;
+
 static void
 print_flow_node (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 				 int level)
+{
+	int         indent = level * 2 + 2;
+
+	dasprintf (dstr, "%*s\"fn_%p\" [label=\"%d (%d)\"];\n", indent, "",
+			   node, node->id, node->dfn);
+}
+
+static void
+print_flow_edge (dstring_t *dstr, flowgraph_t *graph, flowedge_t *edge,
+				 int level)
+{
+	int         indent = level * 2 + 2;
+	int         edge_num = edge - graph->edges;
+	flownode_t *t, *h;
+	const char *style;
+	const char *dir;
+	int         weight;
+
+	t = graph->nodes[edge->tail];
+	h = graph->nodes[edge->head];
+	if (t->dfn >= h->dfn) {
+		flownode_t *temp;
+		temp = h;
+		h = t;
+		t = temp;
+
+		dir = "dir=back,";
+		style = "dashed";
+		weight = 0;
+	} else if (set_is_member (graph->dfst, edge_num)) {
+		dir = "";
+		style = "bold";
+		weight = 10;
+	} else {
+		dir = "";
+		style = "solid";
+		weight = 0;
+	}
+	dasprintf (dstr, "%*s", indent, "");
+	dasprintf (dstr, "fn_%p -> ", t);
+	dasprintf (dstr, "fn_%p [%sstyle=%s,weight=%d", h, dir, style, weight);
+	dasprintf (dstr, "];\n");
+}
+
+static void
+print_flow_node_dag (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
+					 int level)
+{
+	if (node->dag)
+		print_dag (dstr, node->dag, va ("%d (%d)", node->id, node->dfn));
+	else
+		print_flow_node (dstr, graph, node, level);
+}
+
+static void
+print_flow_edge_dag (dstring_t *dstr, flowgraph_t *graph, flowedge_t *edge,
+					 int level)
+{
+	int         indent = level * 2 + 2;
+	int         edge_num = edge - graph->edges;
+	flownode_t *t, *h;
+	const char *tpref;
+	const char *hpref;
+	const char *style;
+	const char *dir;
+	int         weight;
+
+	t = graph->nodes[edge->tail];
+	h = graph->nodes[edge->head];
+	if (t->dfn >= h->dfn) {
+		flownode_t *temp;
+		temp = h;
+		h = t;
+		t = temp;
+
+		tpref = "enter";
+		hpref = "leave";
+		dir = "dir=back,";
+		style = "dashed";
+		weight = 0;
+	} else if (set_is_member (graph->dfst, edge_num)) {
+		tpref = "leave";
+		hpref = "enter";
+		dir = "";
+		style = "bold";
+		weight = 10;
+	} else {
+		tpref = "leave";
+		hpref = "enter";
+		dir = "";
+		style = "solid";
+		weight = 0;
+	}
+	dasprintf (dstr, "%*s", indent, "");
+	if (t->dag)
+		dasprintf (dstr, "dag_%s_%p -> ", tpref, t->dag);
+	else
+		dasprintf (dstr, "fn_%p -> ", t);
+	if (h->dag)
+		dasprintf (dstr, "dag_%s_%p [%sstyle=%s,weight=%d",
+				   hpref, h->dag, dir, style, weight);
+	else
+		dasprintf (dstr, "fn_%p [%sstyle=%s,weight=%d",
+				   h, dir, style, weight);
+	if (t->dag)
+		dasprintf (dstr, ",ltail=cluster_dag_%p", t->dag);
+	if (h->dag)
+		dasprintf (dstr, ",lhead=cluster_dag_%p", h->dag);
+	dasprintf (dstr, "];\n");
+}
+
+static void
+print_flow_node_live (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
+					  int level)
 {
 	int         indent = level * 2 + 2;
 	set_iter_t *var_iter;
@@ -63,21 +183,11 @@ print_flow_node (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 	live = node->live_vars.out && !set_is_empty (node->live_vars.out);
 
 	if (live) {
-		dasprintf (dstr, "%*ssubgraph sub_%p {\n", indent, "", node);
-		//dasprintf (dstr, "%*s  rank=same;\n", indent, "");
-		indent += 2;
-	}
-	if (node->dag) {
-		print_dag (dstr, node->dag, va ("%d (%d)", node->id, node->dfn));
-	} else {
-		dasprintf (dstr, "%*s\"fn_%p\" [label=\"%d (%d)\"];\n", indent, "",
-				   node, node->id, node->dfn);
-	}
-	if (live) {
-		dasprintf (dstr, "%*slv_%p [shape=none,label=<\n", indent, "", node);
+		dasprintf (dstr, "%*sfn_%p [shape=none,label=<\n", indent, "", node);
 		dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
 						 "cellspacing=\"0\">\n", indent + 2, "");
-		dasprintf (dstr, "%*s<tr><td>Live Vars</td></tr>\n", indent + 4, "");
+		dasprintf (dstr, "%*s<tr><td>%d (%d)</td></tr>\n", indent + 4, "",
+				   node->id, node->dfn);
 		for (var_iter = set_first (node->live_vars.out); var_iter;
 			 var_iter = set_next (var_iter)) {
 			var = graph->func->vars[var_iter->member];
@@ -85,97 +195,34 @@ print_flow_node (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 					   var->number, html_string(operand_string (var->op)));
 		}
 		dasprintf (dstr, "%*s</table>>];\n", indent + 2, "");
-		if (node->dag) {
-			dasprintf (dstr, "%*sdag_enter_%p -> lv_%p "
-					   //"[constraint=false,style=dashed,weight=10];\n",
-					   "[style=dashed,weight=10,ltail=cluster_dag_%p];\n",
-					   indent, "", node->dag, node, node->dag);
-		} else {
-			dasprintf (dstr, "%*sfn_%p -> lv_%p "
-					   //"[constraint=false,style=dashed,weight=10];\n",
-					   "[style=dashed,weight=10];\n",
-					   indent, "", node, node);
-		}
-		indent -= 2;
-		dasprintf (dstr, "%*s}\n", indent, "");
+	} else {
+		print_flow_node (dstr, graph, node, level);
 	}
 }
+
+static flow_dot_t flow_dot_methods[] = {
+	{"",		print_flow_node,		print_flow_edge},
+	{"dag",		print_flow_node_dag,	print_flow_edge_dag},
+	{"live",	print_flow_node_live,	print_flow_edge},
+};
 
 static void
-print_flow_edges (dstring_t *dstr, flowgraph_t *graph, int level)
-{
-	int         indent = level * 2 + 2;
-	int         i;
-	flowedge_t *edge;
-	flownode_t *t, *h;
-	const char *tpref;
-	const char *hpref;
-	const char *style;
-	const char *dir;
-	int         weight;
-
-	for (i = 0; i < graph->num_edges; i++) {
-		edge = &graph->edges[i];
-		t = graph->nodes[edge->tail];
-		h = graph->nodes[edge->head];
-		if (t->dfn >= h->dfn) {
-			flownode_t *temp;
-			temp = h;
-			h = t;
-			t = temp;
-
-			tpref = "enter";
-			hpref = "leave";
-			dir = "dir=back,";
-			style = "dashed";
-			weight = 0;
-		} else if (set_is_member (graph->dfst, i)) {
-			tpref = "leave";
-			hpref = "enter";
-			dir = "";
-			style = "bold";
-			weight = 10;
-		} else {
-			tpref = "leave";
-			hpref = "enter";
-			dir = "";
-			style = "solid";
-			weight = 0;
-		}
-		dasprintf (dstr, "%*s", indent, "");
-		if (t->dag)
-			dasprintf (dstr, "dag_%s_%p -> ", tpref, t->dag);
-		else
-			dasprintf (dstr, "fn_%p -> ", t);
-		if (h->dag)
-			dasprintf (dstr, "dag_%s_%p [%sstyle=%s,weight=%d",
-					   hpref, h->dag, dir, style, weight);
-		else
-			dasprintf (dstr, "fn_%p [%sstyle=%s,weight=%d",
-					   h, dir, style, weight);
-		if (t->dag)
-			dasprintf (dstr, ",ltail=cluster_dag_%p", t->dag);
-		if (h->dag)
-			dasprintf (dstr, ",lhead=cluster_dag_%p", h->dag);
-		dasprintf (dstr, "];\n");
-	}
-}
-
-void
-print_flowgraph (flowgraph_t *graph, const char *filename)
+print_flowgraph (flow_dot_t *method, flowgraph_t *graph, const char *filename)
 {
 	int         i;
 	dstring_t  *dstr = dstring_newstr();
 
-	dasprintf (dstr, "digraph flowgraph_%p {\n", graph);
+	dasprintf (dstr, "digraph flowgraph_%s_%p {\n", method->type, graph);
 	dasprintf (dstr, "  layout=dot;\n");
 	dasprintf (dstr, "  clusterrank=local;\n");
 	dasprintf (dstr, "  rankdir=TB;\n");
 	dasprintf (dstr, "  compound=true;\n");
 	for (i = 0; i < graph->num_nodes; i++) {
-		print_flow_node (dstr, graph, graph->nodes[i], 0);
+		method->print_node (dstr, graph, graph->nodes[i], 0);
 	}
-	print_flow_edges (dstr, graph, 0);
+	for (i = 0; i < graph->num_edges; i++) {
+		method->print_edge (dstr, graph, &graph->edges[i], 0);
+	}
 	dasprintf (dstr, "}\n");
 
 	if (filename) {
@@ -188,4 +235,22 @@ print_flowgraph (flowgraph_t *graph, const char *filename)
 		fputs (dstr->str, stdout);
 	}
 	dstring_delete (dstr);
+}
+
+void
+dump_dot_flow (void *g, const char *filename)
+{
+	print_flowgraph (&flow_dot_methods[0], (flowgraph_t *) g, filename);
+}
+
+void
+dump_dot_flow_dags (void *g, const char *filename)
+{
+	print_flowgraph (&flow_dot_methods[1], (flowgraph_t *) g, filename);
+}
+
+void
+dump_dot_flow_live (void *g, const char *filename)
+{
+	print_flowgraph (&flow_dot_methods[2], (flowgraph_t *) g, filename);
 }

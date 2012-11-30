@@ -109,7 +109,9 @@ void flow_del_graph (flowgraph_t *graph);
 void flow_data_flow (flowgraph_t *graph);
 struct sblock_s *flow_generate (flowgraph_t *graph);
 
-void print_flowgraph (flowgraph_t *graph, const char *filename);
+void dump_dot_flow (void *g, const char *filename);
+void dump_dot_flow_dags (void *g, const char *filename);
+void dump_dot_flow_live (void *g, const char *filename);
 
 //@}
 

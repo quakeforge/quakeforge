@@ -76,12 +76,6 @@ static struct {
 };
 static const int num_flow_params = sizeof(flow_params)/sizeof(flow_params[0]);
 
-static void
-dump_dot_flow (void *data, const char *fname)
-{
-	print_flowgraph ((flowgraph_t *) data, fname);
-}
-
 static flowvar_t *
 new_flowvar (void)
 {
@@ -575,7 +569,7 @@ flow_build_dags (flowgraph_t *graph)
 		node->dag = dag_create (node);
 	}
 	//if (options.block_dot.dags)
-	//	dump_dot ("dags", graph, dump_dot_flow);
+	//	dump_dot ("dags", graph, dump_dot_flow_dags);
 }
 
 void
