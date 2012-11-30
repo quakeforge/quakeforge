@@ -97,7 +97,7 @@ void dot_dump_dag (void *_dag, const char *filename);
 
 /** Make a dag for a single basic block.
 
-	\param node		The flow graph node representing the basic block for which
+	\param flownode	The flow graph node representing the basic block for which
 					the dag will be created. The node should have its live
 					variable information already computed.
 	\return			The dag representing the basic block.
