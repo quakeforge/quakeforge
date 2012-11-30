@@ -368,22 +368,76 @@ convert_op (int op)
 	}
 }
 
-static int
-is_goto (statement_t *s)
+int
+statement_is_cond (statement_t *s)
 {
+	if (!s)
+		return 0;
+	return !strncmp (s->opcode, "<IF", 3);
+}
+
+int
+statement_is_goto (statement_t *s)
+{
+	if (!s)
+		return 0;
 	return !strcmp (s->opcode, "<GOTO>");
 }
 
-static int
-is_return (statement_t *s)
+int
+statement_is_jumpb (statement_t *s)
 {
+	if (!s)
+		return 0;
+	return !strcmp (s->opcode, "<JUMPB>");
+}
+
+int
+statement_is_return (statement_t *s)
+{
+	if (!s)
+		return 0;
 	return !strncmp (s->opcode, "<RETURN", 7);
 }
 
-static int
-is_conditional (statement_t *s)
+sblock_t *
+statement_get_target (statement_t *s)
 {
-	return !strncmp (s->opcode, "<IF", 3);
+	if (statement_is_cond (s))
+		return s->opb->o.label->dest;
+	if (statement_is_goto (s))
+		return s->opa->o.label->dest;
+	return 0;
+}
+
+sblock_t **
+statement_get_targetlist (statement_t *s)
+{
+	sblock_t  **target_list;
+	int         count = 0, i;
+	def_t      *table = 0;
+	expr_t     *e;
+
+	if (statement_is_cond (s)) {
+		count = 1;
+	} else if (statement_is_goto (s)) {
+		count = 1;
+	} else if (statement_is_jumpb (s)) {
+		table = s->opa->o.alias->o.symbol->s.def;	//FIXME check!!!
+		count = table->type->t.array.size;
+	}
+	target_list = malloc ((count + 1) * sizeof (sblock_t *));
+	target_list[count] = 0;
+	if (statement_is_cond (s)) {
+		target_list[0] = statement_get_target (s);
+	} else if (statement_is_goto (s)) {
+		target_list[0] = statement_get_target (s);
+	} else if (statement_is_jumpb (s)) {
+		e = table->initializer->e.block.head;	//FIXME check!!!
+		for (i = 0; i < count; e = e->next, i++)
+			target_list[i] = e->e.labelref.label->dest;
+	}
+	return target_list;
 }
 
 static void
@@ -1208,14 +1262,14 @@ thread_jumps (sblock_t *blocks)
 		if (!sblock->statements)
 			continue;
 		s = (statement_t *) sblock->tail;
-		if (is_goto (s))
+		if (statement_is_goto (s))
 			label = &s->opa->o.label;
-		else if (is_conditional (s))
+		else if (statement_is_cond (s))
 			label = &s->opb->o.label;
 		else
 			continue;
 		for (l = *label;
-			 l->dest->statements && is_goto (l->dest->statements);
+			 l->dest->statements && statement_is_goto (l->dest->statements);
 			 l = l->dest->statements->opa->o.label) {
 		}
 		if (l != *label) {
@@ -1223,7 +1277,7 @@ thread_jumps (sblock_t *blocks)
 			l->used++;
 			*label = l;
 		}
-		if (is_goto (s) && (*label)->dest == sblock->next) {
+		if (statement_is_goto (s) && (*label)->dest == sblock->next) {
 			statement_t **p;
 			unuse_label (*label);
 			for (p = &sblock->statements; *p != s; p = &(*p)->next)
@@ -1287,7 +1341,7 @@ merge_blocks (sblock_t *blocks)
 		if (!sblock->statements)
 			continue;
 		s = (statement_t *) sblock->tail;
-		if (!is_goto (s))
+		if (!statement_is_goto (s))
 			continue;
 		dest = s->opa->o.label->dest;
 		// The destination block must not be the current block
@@ -1312,7 +1366,7 @@ merge_blocks (sblock_t *blocks)
 		if (!sb->statements)
 			continue;
 		s = (statement_t *) sb->tail;
-		if (!is_goto (s) && !is_return (s))
+		if (!statement_is_goto (s) && !statement_is_return (s))
 			continue;
 		// desination block is reachable only via goto of the current block
 		if (!dest->next)
@@ -1351,8 +1405,8 @@ remove_dead_blocks (sblock_t *blocks)
 				continue;
 			}
 			s = (statement_t *) sblock->tail;
-			if (is_conditional (s)
-				&& sb->statements && is_goto (sb->statements)
+			if (statement_is_cond (s)
+				&& sb->statements && statement_is_goto (sb->statements)
 				&& s->opb->o.label->dest == sb->next) {
 				debug (0, "merging if/goto %p %p", sblock, sb);
 				unuse_label (s->opb->o.label);
@@ -1363,7 +1417,7 @@ remove_dead_blocks (sblock_t *blocks)
 				for (sb = sb->next; sb; sb = sb->next)
 					sb->reachable = 1;
 				break;
-			} else if (!is_goto (s) && !is_return (s)) {
+			} else if (!statement_is_goto (s) && !statement_is_return (s)) {
 				sb->reachable = 1;
 				continue;
 			}
@@ -1379,9 +1433,9 @@ remove_dead_blocks (sblock_t *blocks)
 
 				if (sb->statements) {
 					s = (statement_t *) sb->tail;
-					if (is_goto (s))
+					if (statement_is_goto (s))
 						label = s->opa->o.label;
-					else if (is_conditional (s))
+					else if (statement_is_cond (s))
 						label = s->opb->o.label;
 				}
 				unuse_label (label);
@@ -1408,9 +1462,9 @@ check_final_block (sblock_t *sblock)
 		sblock = sblock->next;
 	if (sblock->statements) {
 		s = (statement_t *) sblock->tail;
-		if (is_goto (s))
+		if (statement_is_goto (s))
 			return;				// the end of function is the end of a loop
-		if (is_return (s))
+		if (statement_is_return (s))
 			return;
 	}
 	if (current_func->sym->type->t.func.type != &type_void)

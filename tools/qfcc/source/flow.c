@@ -639,78 +639,6 @@ flow_generate (flowgraph_t *graph)
 	return code;
 }
 
-int
-flow_is_cond (statement_t *s)
-{
-	if (!s)
-		return 0;
-	return !strncmp (s->opcode, "<IF", 3);
-}
-
-int
-flow_is_goto (statement_t *s)
-{
-	if (!s)
-		return 0;
-	return !strcmp (s->opcode, "<GOTO>");
-}
-
-int
-flow_is_jumpb (statement_t *s)
-{
-	if (!s)
-		return 0;
-	return !strcmp (s->opcode, "<JUMPB>");
-}
-
-int
-flow_is_return (statement_t *s)
-{
-	if (!s)
-		return 0;
-	return !strncmp (s->opcode, "<RETURN", 7);
-}
-
-sblock_t *
-flow_get_target (statement_t *s)
-{
-	if (flow_is_cond (s))
-		return s->opb->o.label->dest;
-	if (flow_is_goto (s))
-		return s->opa->o.label->dest;
-	return 0;
-}
-
-sblock_t **
-flow_get_targetlist (statement_t *s)
-{
-	sblock_t  **target_list;
-	int         count = 0, i;
-	def_t      *table = 0;
-	expr_t     *e;
-
-	if (flow_is_cond (s)) {
-		count = 1;
-	} else if (flow_is_goto (s)) {
-		count = 1;
-	} else if (flow_is_jumpb (s)) {
-		table = s->opa->o.alias->o.symbol->s.def;	//FIXME check!!!
-		count = table->type->t.array.size;
-	}
-	target_list = malloc ((count + 1) * sizeof (sblock_t *));
-	target_list[count] = 0;
-	if (flow_is_cond (s)) {
-		target_list[0] = flow_get_target (s);
-	} else if (flow_is_goto (s)) {
-		target_list[0] = flow_get_target (s);
-	} else if (flow_is_jumpb (s)) {
-		e = table->initializer->e.block.head;	//FIXME check!!!
-		for (i = 0; i < count; e = e->next, i++)
-			target_list[i] = e->e.labelref.label->dest;
-	}
-	return target_list;
-}
-
 static void
 flow_add_op_var (set_t *set, operand_t *op)
 {
@@ -1040,23 +968,23 @@ flow_build_graph (sblock_t *sblock, function_t *func)
 		st = 0;
 		if (sb->statements)
 			st = (statement_t *) sb->tail;
-		//NOTE: if st is null (the sblock has no statements), flow_is_* will
-		//return false
+		//NOTE: if st is null (the sblock has no statements), statement_is_*
+		//will return false
 		//FIXME jump/jumpb
-		if (flow_is_goto (st)) {
+		if (statement_is_goto (st)) {
 			// sb's next is never followed.
-			set_add (node->successors, flow_get_target (st)->number);
-		} else if (flow_is_jumpb (st)) {
-			target_list = flow_get_targetlist (st);
+			set_add (node->successors, statement_get_target (st)->number);
+		} else if (statement_is_jumpb (st)) {
+			target_list = statement_get_targetlist (st);
 			for (target = target_list; *target; target++)
 				set_add (node->successors, (*target)->number);
 			free (target_list);
-		} else if (flow_is_cond (st)) {
+		} else if (statement_is_cond (st)) {
 			// branch: either sb's next or the conditional statment's
 			// target will be followed.
 			set_add (node->successors, sb->next->number);
-			set_add (node->successors, flow_get_target (st)->number);
-		} else if (flow_is_return (st)) {
+			set_add (node->successors, statement_get_target (st)->number);
+		} else if (statement_is_return (st)) {
 			// exit from function (dead end)
 		} else {
 			// there is no flow-control statement in sb, so sb's next

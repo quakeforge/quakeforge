@@ -99,12 +99,6 @@ typedef struct flowgraph_s {
 } flowgraph_t;
 
 flowvar_t *flow_get_var (struct operand_s *op);
-int flow_is_cond (struct statement_s *s);
-int flow_is_goto (struct statement_s *s);
-int flow_is_jumpb (struct statement_s *s);
-int flow_is_return (struct statement_s *s);
-struct sblock_s *flow_get_target (struct statement_s *s);
-struct sblock_s **flow_get_targetlist (struct statement_s *s);
 void flow_analyze_statement (struct statement_s *s, struct set_s *use,
 							 struct set_s *def, struct set_s *kill,
 							 struct operand_s *operands[4]);

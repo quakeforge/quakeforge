@@ -97,11 +97,11 @@ flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 	if (sblock->statements) {
 		statement_t *st = (statement_t *) sblock->tail;
 		if (sblock->next
-			&& !flow_is_goto (st)
-			&& !flow_is_jumpb (st)
-			&& !flow_is_return (st))
+			&& !statement_is_goto (st)
+			&& !statement_is_jumpb (st)
+			&& !statement_is_return (st))
 			dasprintf (dstr, "  sb_%p:e -> sb_%p:s;\n", sblock, sblock->next);
-		if ((target_list = flow_get_targetlist (st))) {
+		if ((target_list = statement_get_targetlist (st))) {
 			for (target = target_list; *target; target++)
 				dasprintf (dstr, "  sb_%p:e -> sb_%p:s [label=\"%s\"];\n",
 						   sblock, *target, st->opcode);
