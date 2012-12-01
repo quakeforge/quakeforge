@@ -136,6 +136,10 @@ InitData (void)
 		codespace_delete (pr.code);
 		strpool_delete (pr.strings);
 	}
+
+	if (pr.linenos)
+		free (pr.linenos);
+
 	memset (&pr, 0, sizeof (pr));
 	pr.source_line = 1;
 	pr.error_count = 0;
@@ -463,8 +467,8 @@ separate_compile (void)
 	const char **file, *ext;
 	const char **temp_files;
 	lang_t      lang;
-	dstring_t  *output_file = dstring_newstr ();
-	dstring_t  *extension = dstring_newstr ();
+	dstring_t  *output_file;
+	dstring_t  *extension;
 	int         err = 0;
 	int         i;
 
@@ -478,6 +482,9 @@ separate_compile (void)
 	for (file = source_files, i = 0; *file; file++)
 		i++;
 	temp_files = calloc (i + 1, sizeof (const char*));
+
+	output_file = dstring_newstr ();
+	extension = dstring_newstr ();
 
 	for (file = source_files, i = 0; *file; file++) {
 		ext = QFS_FileExtension (*file);
@@ -503,6 +510,8 @@ separate_compile (void)
 						 "not done\n", this_program, *file);
 		}
 	}
+	dstring_delete (output_file);
+	dstring_delete (extension);
 	if (!err && !options.compile) {
 		InitData ();
 		linker_begin ();
@@ -517,14 +526,17 @@ separate_compile (void)
 			} else {
 				err = linker_add_lib (*file);
 			}
-			if (err)
+			if (err) {
+				free (temp_files);
 				return err;
+			}
 		}
 		err = finish_link ();
 		if (!options.save_temps)
 			for (file = temp_files; *file; file++)
 				unlink (*file);
 	}
+	free (temp_files);
 	return err;
 }
 
