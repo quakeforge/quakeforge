@@ -1526,3 +1526,29 @@ make_statements (expr_t *e)
 
 	return sblock;
 }
+
+static void
+count_temp (operand_t *op)
+{
+	if (!op)
+		return;
+	while (op->op_type == op_alias)
+		op = op->o.alias;
+	if (op->op_type == op_temp)
+		op->o.tempop.users++;
+}
+
+void
+statements_count_temps (sblock_t *sblock)
+{
+	statement_t *st;
+
+	while (sblock) {
+		for (st = sblock->statements; st; st = st->next) {
+			count_temp (st->opa);
+			count_temp (st->opb);
+			count_temp (st->opc);
+		}
+		sblock = sblock->next;
+	}
+}

@@ -114,6 +114,7 @@ static const char *short_options =
 	"M::"
 	"N:"	// notice options
 	"o:"	// output file
+	"O"		// optimize
 	"P:"	// progs.src name
 	"p:"	// strip path
 	"q"		// quiet
@@ -194,6 +195,7 @@ code_usage (void)
 "    [no-]fast-float         Use float values directly in \"if\" statements.\n"
 "    help                    Display his text.\n"
 "    [no-]local-merging      Merge the local variable blocks into one.\n"
+"    [no-]optimize           Perform various optimizations on the code.\n"
 "    [no-]short-circuit      Generate short circuit code for logical\n"
 "                            operators.\n"
 "    [no-]single-cpp         Convert progs.src to cpp input file.\n"
@@ -354,6 +356,9 @@ DecodeArgs (int argc, char **argv)
 			case 'g':					// debug
 				options.code.debug = true;
 				break;
+			case 'O':					// optimize
+				options.code.optimize = true;
+				break;
 			case OPT_EXTENDED:
 				options.traditional = 1;
 				options.advanced = false;
@@ -446,6 +451,8 @@ DecodeArgs (int argc, char **argv)
 							code_usage ();
 						} else if (!(strcasecmp (temp, "local-merging"))) {
 							options.code.local_merging = flag;
+						} else if (!(strcasecmp (temp, "optimize"))) {
+							options.code.optimize = flag;
 						} else if (!(strcasecmp (temp, "short-circuit"))) {
 							options.code.short_circuit = flag;
 						} else if (!(strcasecmp (temp, "single-cpp"))) {

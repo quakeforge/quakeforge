@@ -122,6 +122,8 @@ sblock_t *statement_get_target (statement_t *s);
 sblock_t **statement_get_targetlist (statement_t *s);
 void sblock_add_statement (sblock_t *sblock, statement_t *statement);
 sblock_t *make_statements (struct expr_s *expr);
+void statements_count_temps (sblock_t *sblock);
+
 void print_statement (statement_t *s);
 void dump_dot_sblock (void *data, const char *fname);
 void print_sblock (sblock_t *sblock, const char *filename);

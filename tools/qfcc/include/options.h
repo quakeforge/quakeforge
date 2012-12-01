@@ -38,6 +38,7 @@ typedef struct {
 	qboolean	crc;				// Write progsdef.h crc to progs.dat
 	qboolean	debug;				// Generate debug info for the engine
 	qboolean	short_circuit;		// short circuit logic for && and ||
+	qboolean    optimize;			// perform optimizations
 	qboolean	fast_float;			// use floats directly in ifs
 	qboolean    vector_calls;		// use floats instead of vectors for constant function args
 	qboolean    local_merging;		// merge function locals into one block

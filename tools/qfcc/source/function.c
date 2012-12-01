@@ -643,11 +643,15 @@ emit_function (function_t *f, expr_t *e)
 	f->code = pr.code->size;
 	lineno_base = f->def->line;
 	f->sblock = make_statements (e);
-	flow_build_vars (f);
-	f->graph = flow_build_graph (f->sblock, f);
-	f->graph->func = f;
-	flow_data_flow (f->graph);
-	f->sblock = flow_generate (f->graph);
+	if (options.code.optimize) {
+		flow_build_vars (f);
+		f->graph = flow_build_graph (f->sblock, f);
+		f->graph->func = f;
+		flow_data_flow (f->graph);
+		f->sblock = flow_generate (f->graph);
+	} else {
+		statements_count_temps (f->sblock);
+	}
 	emit_statements (f->sblock);
 }
 
