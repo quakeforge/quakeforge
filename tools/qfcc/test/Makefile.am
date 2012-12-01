@@ -4,7 +4,7 @@ INCLUDES= -I$(top_srcdir)/include $(QFCC_INCS)
 QFCC_DEP=$(builddir)/../source/qfcc$(EXEEXT)
 QFCC=$(QFCC_DEP)
 
-QCFLAGS=-qq -g --no-default-paths
+QCFLAGS=-qq -O -g --no-default-paths
 QCPPFLAGS=
 QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
 
