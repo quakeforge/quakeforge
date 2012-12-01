@@ -6,7 +6,7 @@ INCLUDES=	-I$(top_srcdir)/include $(QWAQ_INCS)
 
 QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc
-QCFLAGS=-qq -g -Werror --advanced --no-default-paths
+QCFLAGS=-qq -O -g -Werror --advanced --no-default-paths
 
 noinst_PROGRAMS=qwaq @QWAQ_TARGETS@
 noinst_DATA=qwaq.dat
