@@ -301,6 +301,7 @@ temp_operand (type_t *type)
 {
 	operand_t  *op = new_operand (op_temp);
 
+	op->o.tempop.type = type;
 	op->type = low_level_type (type);
 	op->size = type_size (type);
 	return op;

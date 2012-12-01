@@ -575,6 +575,13 @@ get_function_type (operand_t *op)
 		if (op->o.value->type != ev_func)
 			internal_error (0, "not a function value");
 		type = op->o.value->v.func_val.type;
+	} else if (op->op_type == op_temp) {
+		type = op->o.tempop.type;
+		if (type->type != ev_func)
+			internal_error (0, "not a function temp");
+		type = type->t.func.type;
+	} else {
+		internal_error (0, "don't know how to extract function type");
 	}
 	// fixme temps?
 	return low_level_type (type);
