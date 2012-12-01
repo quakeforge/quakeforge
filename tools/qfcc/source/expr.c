@@ -2250,7 +2250,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 }
 
 expr_t *
-build_if_statement (expr_t *test, expr_t *s1, expr_t *s2)
+build_if_statement (expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
 {
 	int         line = pr.source_line;
 	string_t    file = pr.source_file;
@@ -2271,6 +2271,11 @@ build_if_statement (expr_t *test, expr_t *s1, expr_t *s2)
 		append_expr (if_expr, test);
 	}
 	append_expr (if_expr, s1);
+
+	if (els) {
+		pr.source_line = els->line;
+		pr.source_file = els->file;
+	}
 
 	if (s2) {
 		expr_t     *nl = new_label_expr ();

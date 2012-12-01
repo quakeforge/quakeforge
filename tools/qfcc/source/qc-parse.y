@@ -183,7 +183,7 @@ int yylex (void);
 %type	<expr>		opt_expr fexpr expr element_list element
 %type	<expr>		optional_state_expr think opt_step texpr
 %type	<expr>		statement statements compound_statement
-%type	<expr>		label break_label continue_label
+%type	<expr>		else label break_label continue_label
 %type	<expr>		unary_expr cast_expr opt_arg_list arg_list
 %type	<switch_block> switch_block
 %type	<symbol>	identifier
@@ -1087,11 +1087,11 @@ statement
 		}
 	| IF '(' texpr ')' statement %prec IFX
 		{
-			$$ = build_if_statement ($3, $5, 0);
+			$$ = build_if_statement ($3, $5, 0, 0);
 		}
-	| IF '(' texpr ')' statement ELSE statement
+	| IF '(' texpr ')' statement else statement
 		{
-			$$ = build_if_statement ($3, $5, $7);
+			$$ = build_if_statement ($3, $5, $6, $7);
 		}
 	| FOR break_label continue_label
 			'(' opt_expr ';' opt_expr ';' opt_expr ')' statement
@@ -1117,6 +1117,14 @@ statement
 	| fexpr ';'
 		{
 			$$ = $1;
+		}
+	;
+
+else
+	: ELSE
+		{
+			// this is only to get the the file and line number info
+			$$ = new_nil_expr ();
 		}
 	;
 
