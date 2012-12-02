@@ -61,7 +61,7 @@ typedef struct symbol_s {
 	struct symtab_s *table;		///< symbol table that owns this symbol
 	vis_t       visibility;		///< symbol visiblity. defaults to public
 	const char *name;			///< symbol name
-	sy_type_e   sy_type;		///< symbol type (st_type)
+	sy_type_e   sy_type;		///< symbol type
 	struct type_s *type;		///< type of object to which symbol refers
 	struct param_s *params;		///< the parameters if a function
 	struct flowvar_s *flowvar;
@@ -226,10 +226,10 @@ symtab_t *symtab_flat_copy (symtab_t *symtab, symtab_t *parent);
 	\param name		The name of the symbol.
 	\param type		The type of the symbol.
 	\param space	The defspace from which space will be allocated for the
-					symbol. Ignored for st_extern, must not be null for
+					symbol. Ignored for sc_extern, must not be null for
 					others.
-	\param storage	The storage class for the symbol. Only st_extern,
-					st_global, and st_static are valid.
+	\param storage	The storage class for the symbol. Only sc_extern,
+					sc_global, and sc_static are valid.
 */
 symbol_t *make_symbol (const char *name, struct type_s *type,
 					   struct defspace_s *space, enum storage_class_e storage);
