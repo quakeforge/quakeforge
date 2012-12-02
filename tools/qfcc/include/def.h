@@ -34,62 +34,186 @@
 #include "QF/pr_comp.h"
 #include "QF/pr_debug.h"
 
-typedef struct def_s {
-	struct def_s	*next;			///< general purpose linking
-
-	struct def_s    *temp_next;		///< linked list of "free" temp defs
-	struct type_s	*type;
-	const char		*name;
-	struct defspace_s *space;
-	int				offset;
-
-	struct def_s   *alias;
-	struct reloc_s *relocs;			///< for relocations
-	struct expr_s  *initializer;	///< initialer expression
-
-	unsigned		offset_reloc:1;	///< use *_def_ofs relocs
-	unsigned		initialized:1;
-	unsigned		constant:1;		///< stores constant value
-	unsigned		global:1;		///< globally declared def
-	unsigned		external:1;		///< externally declared def
-	unsigned		local:1;		///< function local def
-	unsigned		param:1;		///< function param def
-	unsigned		system:1;		///< system def
-	unsigned        nosave:1;		///< don't set DEF_SAVEGLOBAL
-
-	string_t		file;			///< source file
-	int				line;			///< source line
-
-	int              qfo_def;		///< index to def in qfo defs
-
-	void			*return_addr;	///< who allocated this
-} def_t;
-
-typedef enum storage_class_e {
-	sc_global,
-	sc_system,
-	sc_extern,
-	sc_static,
-	sc_param,
-	sc_local
-} storage_class_t;
-
-extern storage_class_t current_storage;
-
-def_t *new_def (const char *name, struct type_s *type,
-				struct defspace_s *space, storage_class_t storage);
-def_t *alias_def (def_t *def, struct type_s *type);
-def_t *temp_def (etype_t type, int size);
-void free_temp_def (def_t *temp);
-void free_def (def_t *def);
-
-void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
+/** \defgroup qfcc_def Def handling
+	\ingroup qfcc
+*/
+//@{
 
 struct symbol_s;
 struct expr_s;
 
+/** Represent a memory location that holds a QuakeC/Ruamoko object.
+
+	The object represented by the def may be of any type (either internally
+	defined by qfcc (float, int, vector, etc) or user defined (structs, arrays
+	etc)).
+
+	Unless the def is external (ie, declared to be in another compilation
+	unit), defs are always attached to a defspace. Storage for the def's
+	object is allocated from that space.
+*/
+typedef struct def_s {
+	struct def_s *next;			///< general purpose linking
+
+	struct def_s *temp_next;	///< linked list of "free" temp defs
+	struct type_s *type;		///< QC type of this def
+	const char *name;			///< the def's name
+	struct defspace_s *space;	///< defspace to which this def belongs
+	int	        offset;			///< address of this def in its defspace
+
+	struct def_s   *alias;		///< real def which this def aliases
+	struct reloc_s *relocs;		///< for relocations
+	struct expr_s  *initializer;///< initialer expression
+
+	unsigned    offset_reloc:1;	///< use *_def_ofs relocs
+	unsigned    initialized:1;	///< the def has been initialized
+	unsigned    constant:1;		///< stores constant value
+	unsigned    global:1;		///< globally declared def
+	unsigned    external:1;		///< externally declared def
+	unsigned    local:1;		///< function local def
+	unsigned    param:1;		///< function param def
+	unsigned    system:1;		///< system def
+	unsigned    nosave:1;		///< don't set DEF_SAVEGLOBAL
+
+	string_t    file;			///< declaring/defining source file
+	int         line;			///< declaring/defining source line
+
+	int         qfo_def;		///< index to def in qfo defs
+
+	void       *return_addr;	///< who allocated this
+} def_t;
+
+/** Specify the storage class of a def.
+*/
+typedef enum storage_class_e {
+	sc_global,					///< def is globally visibil across units
+	sc_system,					///< def may be redefined once
+	sc_extern,					///< def is externally allocated
+	sc_static,					///< def is private to the current unit
+	sc_param,					///< def is an incoming function parameter
+	sc_local					///< def is local to the current function
+} storage_class_t;
+
+/** Create a new def.
+
+	Defs may be unnamed.
+
+	Untyped defs (used by type encodings) never allocate space for the def.
+
+	If \a storage is not sc_extern and \a type is not null, space of the
+	size specified by \a type will be allocated to the def from the defspace
+	specified by \a space.
+
+	\param name		The name for the def. May be null for unnamed defs.
+	\param type		The type for the def. May be null for untyped defs.
+	\param space    The defspace to which the def belongs. Must not be null
+					for if \a storage is not sc_extern.
+	\param storage	The storage class for the def.
+	\return			The new def.
+*/
+def_t *new_def (const char *name, struct type_s *type,
+				struct defspace_s *space, storage_class_t storage);
+
+/** Create a def that aliases another def.
+
+	Aliasing a def to the same type is useless, but not checked. Aliasing a
+	def to a type larger than the def's type is a bad idea as another def may
+	be overwritten via the alias, but is not checked.
+
+	\param def		The def to be aliased.
+	\param type		The type of the alias.
+	\return			The def aliasing \a def.
+
+	\todo Check for type size?
+	\todo Make aliasing to the same type a no-op?
+*/
+def_t *alias_def (def_t *def, struct type_s *type);
+
+/** Free a def.
+
+	If the def has space allocated to it, the space will be freed.
+
+	\param def		The def to be freed.
+*/
+void free_def (def_t *def);
+
+/** \name Temporary defs
+
+	Temporary defs are used for recycling memory for tempary variables. They
+	always have names in the form of <code>.tmpN</code> where N is a
+	non-negative integer. The type of the temporary def can change throughout
+	its life, but the size will never change.
+
+	Temporary defs are bound to the current function (::current_func must
+	be valid). They are always allocated from the funciont's local defspace.
+*/
+//@{
+/** Get a temporary def.
+
+	If the current function has a free temp def of the same size as \a size,
+	then that def will be recycled, otherwise a new temp will be created. When
+	a new temp is created, its name is set to <code>.tmpN</code> where \c N
+	comes from function_t::temp_num, which is then incremented.
+
+	\note ::current_func must be valid.
+
+	\param type		The low-level type of the temporary variable.
+	\param size		The amount of space to allocate to the temp.
+	\return			The def for the temparary variable.
+
+	\bug \a size is not checked for validity (must be 1-4).
+	\todo support arbitrary sizes
+*/
+def_t *temp_def (etype_t type, int size);
+
+/** Free a tempary def so it may be recycled.
+
+	The temp is put into a list of free temp defs maintained by ::current_func.
+
+	\note ::current_func must be valid.
+
+	\param temp		The temp def to be recycled.
+*/
+void free_temp_def (def_t *temp);
+//@}
+
+/** Initialize a vm def from a qfcc def.
+
+	\param def		The qfcc def to copy.
+	\param ddef		The vm def to be initialized.
+	\param aux		Copy the field object's type rather than the def's.
+
+	\bug The def is not verified to be a field def when \a aux is true.
+*/
+void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
+
+/** Initialize a def referenced by the given symbol.
+
+	The symbol is checked for redefinition. (FIXME check rules)
+
+	If \a type is null, then the def will be given the default type (as
+	specified by ::type_default).
+
+	If an initializer expressions is given (\a init is not null), then it
+	must be a constant expression (eg, 2 + 3) for non-local defs. Aggregate
+	types (structs, arrays (unions?)) use block expressions where each
+	expression in the block initializes one element of the aggregate. Nested
+	aggregates simply use nested block expressions. As for simple types, each
+	expression in a block expression must also be constant for non-local defs.
+
+	For \a space and \a storage, see new_def().
+
+	\param sym		The symbol for which to create and initialize a def.
+	\param type		The type of the def. sym_t::type is set to this. If null,
+					the default type is used.
+	\param init		If not null, the expressions to use to initialize the def.
+	\param space	The space from which to allocate space for the def.
+	\param storage	The storage class of the def.
+*/
 void initialize_def (struct symbol_s *sym, struct type_s *type,
 					 struct expr_s *init, struct defspace_s *space,
 					 storage_class_t storage);
+
+//@}
 
 #endif//__def_h

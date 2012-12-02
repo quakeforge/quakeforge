@@ -57,6 +57,7 @@
 #include "opcodes.h"
 #include "options.h"
 #include "reloc.h"
+#include "shared.h"
 #include "statements.h"
 #include "strpool.h"
 #include "symtab.h"
