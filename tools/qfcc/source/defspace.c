@@ -117,10 +117,8 @@ defspace_alloc_loc (defspace_t *space, int size)
 	ofs = space->size;
 	space->size += size;
 	if (space->size > space->max_size) {
-		if (!space->grow) {
-			error (0, "unable to allocate %d globals", size);
-			exit (1);
-		}
+		if (!space->grow)
+			internal_error (0, "unable to allocate %d words", size);
 		space->grow (space);
 	}
 	return ofs;
