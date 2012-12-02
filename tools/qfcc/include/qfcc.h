@@ -60,7 +60,6 @@ typedef struct pr_info_s {
 
 	struct strpool_s *strings;			///< progs string data
 	struct codespace_s *code;			///< progs code data
-	struct defspace_s *data;			///< combined near and far data
 	struct defspace_s *near_data;		///< data directly addressable by
 										///< statments (address < 64k)
 	struct defspace_s *far_data;		///< data that might not be directly

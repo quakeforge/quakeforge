@@ -153,8 +153,6 @@ InitData (void)
 	line->fa.func = -1;
 	line->line = -1;
 
-	pr.data = defspace_new ();
-
 	pr.far_data = defspace_new ();
 
 	pr.near_data = defspace_new ();

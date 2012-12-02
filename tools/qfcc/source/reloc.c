@@ -165,7 +165,9 @@ relocate_refs (reloc_t *reloc, int offset)
 				RELOC (reloc) += offset;
 				break;
 			case rel_def_field_ofs:
-				RELOC (reloc) += pr.data->data[offset].integer_var;
+				//FIXME what is correct here?
+				//RELOC (reloc) += pr.data->data[offset].integer_var;
+				RELOC (reloc) += pr.near_data->data[offset].integer_var;
 				break;
 		}
 		reloc = reloc->next;
