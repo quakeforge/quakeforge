@@ -65,34 +65,34 @@ static void
 set_storage_bits (def_t *def, storage_class_t storage)
 {
 	switch (storage) {
-		case st_system:
+		case sc_system:
 			def->system = 1;
 			// fall through
-		case st_global:
+		case sc_global:
 			def->global = 1;
 			def->external = 0;
 			def->local = 0;
 			def->param = 0;
 			break;
-		case st_extern:
+		case sc_extern:
 			def->global = 1;
 			def->external = 1;
 			def->local = 0;
 			def->param = 0;
 			break;
-		case st_static:
+		case sc_static:
 			def->external = 0;
 			def->global = 0;
 			def->local = 0;
 			def->param = 0;
 			break;
-		case st_local:
+		case sc_local:
 			def->external = 0;
 			def->global = 0;
 			def->local = 1;
 			def->param = 0;
 			break;
-		case st_param:
+		case sc_param:
 			def->external = 0;
 			def->global = 0;
 			def->local = 1;
@@ -129,10 +129,10 @@ new_def (const char *name, type_t *type, defspace_t *space,
 	if (!type)
 		return def;
 
-	if (!space && storage != st_extern)
+	if (!space && storage != sc_extern)
 		internal_error (0, "non-external def with no storage space");
 
-	if (storage != st_extern) {
+	if (storage != sc_extern) {
 		int         size = type_size (type);
 		if (!size) {
 			error (0, "%s has incomplete type", name);
@@ -186,7 +186,7 @@ temp_def (etype_t type, int size)
 	temp->type = ev_types[type];
 	temp->file = pr.source_file;
 	temp->line = pr.source_line;
-	set_storage_bits (temp, st_local);
+	set_storage_bits (temp, sc_local);
 	temp->space = space;
 	return temp;
 }
@@ -420,7 +420,7 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 		field_def = field_sym->s.def;
 		if (!field_sym->table)
 			symtab_addsymbol (pr.entity_fields, field_sym);
-		if (storage != st_extern) {
+		if (storage != sc_extern) {
 			D_INT (def) = field_def->offset;
 			reloc_def_field (field_def, def);
 			def->constant = 1;
@@ -459,7 +459,7 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 			// is var and same type
 			if (!check->s.def)
 				internal_error (0, "half defined var");
-			if (storage == st_extern) {
+			if (storage == sc_extern) {
 				if (init)
 					warning (0, "initializing external variable");
 				return;
@@ -474,7 +474,7 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 	sym->type = type;
 	if (!sym->table)
 		symtab_addsymbol (current_symtab, sym);
-//	if (storage == st_global && init && is_scalar (type)) {
+//	if (storage == sc_global && init && is_scalar (type)) {
 //		sym->sy_type = sy_const;
 //		memset (&sym->s.value, 0, sizeof (&sym->s.value));
 //		if (init->type != ex_value) {	//FIXME arrays/structs
@@ -497,9 +497,9 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 	}
 	if (type == &type_vector && options.code.vector_components)
 		init_vector_components (sym, 0);
-	if (type->type == ev_field && storage != st_local && storage != st_param)
+	if (type->type == ev_field && storage != sc_local && storage != sc_param)
 		init_field_def (sym->s.def, init, storage);
-	if (storage == st_extern) {
+	if (storage == sc_extern) {
 		if (init)
 			warning (0, "initializing external variable");
 		return;

@@ -456,7 +456,7 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 
 	if (fsym->type->t.func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
-		initialize_def (args, args->type, 0, symtab->space, st_param);
+		initialize_def (args, args->type, 0, symtab->space, sc_param);
 	}
 
 	for (p = fsym->params, i = 0; p; p = p->next) {
@@ -465,14 +465,14 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 		if (!p->type)
 			continue;					// non-param selector
 		param = new_symbol_type (p->name, p->type);
-		initialize_def (param, param->type, 0, symtab->space, st_param);
+		initialize_def (param, param->type, 0, symtab->space, sc_param);
 		i++;
 	}
 
 	if (args) {
 		while (i < MAX_PARMS) {
 			param = new_symbol_type (va (".par%d", i), &type_param);
-			initialize_def (param, &type_param, 0, symtab->space, st_param);
+			initialize_def (param, &type_param, 0, symtab->space, sc_param);
 			i++;
 		}
 	}
@@ -499,14 +499,14 @@ make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
 	reloc_t    *relocs = 0;
 	if (sym->sy_type != sy_func)
 		internal_error (0, "%s is not a function", sym->name);
-	if (storage == st_extern && sym->s.func)
+	if (storage == sc_extern && sym->s.func)
 		return;
 	if (!sym->s.func) {
 		sym->s.func = new_function (sym->name, nice_name);
 		sym->s.func->sym = sym;
 	}
 	if (sym->s.func->def && sym->s.func->def->external
-		&& storage != st_extern) {
+		&& storage != sc_extern) {
 		//FIXME this really is not the right way
 		relocs = sym->s.func->def->relocs;
 		free_def (sym->s.func->def);

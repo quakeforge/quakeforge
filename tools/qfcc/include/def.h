@@ -66,12 +66,12 @@ typedef struct def_s {
 } def_t;
 
 typedef enum storage_class_e {
-	st_global,
-	st_system,
-	st_extern,
-	st_static,
-	st_param,
-	st_local
+	sc_global,
+	sc_system,
+	sc_extern,
+	sc_static,
+	sc_param,
+	sc_local
 } storage_class_t;
 
 extern storage_class_t current_storage;

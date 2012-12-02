@@ -844,7 +844,7 @@ new_self_expr (void)
 {
 	symbol_t   *sym;
 
-	sym = make_symbol (".self", &type_entity, pr.near_data, st_extern);
+	sym = make_symbol (".self", &type_entity, pr.near_data, sc_extern);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
 	return new_symbol_expr (sym);
@@ -855,7 +855,7 @@ new_this_expr (void)
 {
 	symbol_t   *sym;
 
-	sym = make_symbol (".this", field_type (&type_id), pr.near_data, st_extern);
+	sym = make_symbol (".this", field_type (&type_id), pr.near_data, sc_extern);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
 	return new_symbol_expr (sym);
@@ -881,7 +881,7 @@ param_expr (const char *name, type_t *type)
 	symbol_t   *sym;
 	expr_t     *sym_expr;
 
-	sym = make_symbol (name, &type_param, pr.symtab->space, st_extern);
+	sym = make_symbol (name, &type_param, pr.symtab->space, sc_extern);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
 	sym_expr = new_symbol_expr (sym);
@@ -2702,12 +2702,12 @@ selector_expr (keywordarg_t *selector)
 	index = selector_index (sel_id->str);
 	index *= type_size (type_SEL.t.fldptr.type);
 	sel_sym = make_symbol ("_OBJ_SELECTOR_TABLE_PTR", &type_SEL,
-						   pr.near_data, st_static);
+						   pr.near_data, sc_static);
 	if (!sel_sym->table) {
 		symtab_addsymbol (pr.symtab, sel_sym);
 		sel_table = make_symbol ("_OBJ_SELECTOR_TABLE",
 								 array_type (type_SEL.t.fldptr.type, 0),
-								 pr.far_data, st_extern);
+								 pr.far_data, sc_extern);
 		if (!sel_table->table)
 			symtab_addsymbol (pr.symtab, sel_table);
 		reloc_def_def (sel_table->s.def, sel_sym->s.def);
@@ -2758,7 +2758,7 @@ super_expr (class_type_t *class_type)
 	if (!sym || sym->table != current_symtab) {
 		sym = new_symbol (".super");
 		initialize_def (sym, &type_obj_super, 0, current_symtab->space,
-						st_local);
+						sc_local);
 	}
 	super = new_symbol_expr (sym);
 

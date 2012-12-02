@@ -305,7 +305,7 @@ static symbol_t *
 param_symbol (const char *name)
 {
 	symbol_t   *sym;
-	sym = make_symbol (name, &type_param, pr.symtab->space, st_extern);
+	sym = make_symbol (name, &type_param, pr.symtab->space, sc_extern);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
 	return sym;

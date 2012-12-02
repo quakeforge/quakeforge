@@ -343,7 +343,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		}
 		table_sym = new_symbol (table_name);
 		initialize_def (table_sym, array_type (&type_integer, high - low + 1),
-						table_init, pr.near_data, st_static);
+						table_init, pr.near_data, sc_static);
 		table_expr = new_symbol_expr (table_sym);
 		table_expr = new_alias_expr (&type_integer, table_expr);
 

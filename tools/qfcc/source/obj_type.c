@@ -84,7 +84,7 @@ qfo_new_encoding (type_t *type, int size)
 	size += sizeof (qfot_type_t) - sizeof (enc->t);
 	size /= sizeof (pr_type_t);
 
-	def = new_def (type->encoding, 0, pr.type_data, st_static);
+	def = new_def (type->encoding, 0, pr.type_data, sc_static);
 	def->offset = defspace_alloc_loc (pr.type_data, size);
 
 	enc = D_POINTER (qfot_type_t, def);
@@ -176,7 +176,7 @@ qfo_encode_struct (type_t *type)
 	if (type->meta == ty_enum)
 		sy = sy_const;
 	if (!type->t.symtab) {
-		def = new_def (type->encoding, 0, pr.type_data, st_extern);
+		def = new_def (type->encoding, 0, pr.type_data, sc_extern);
 		return def;
 	}
 	for (num_fields = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {

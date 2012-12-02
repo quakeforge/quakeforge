@@ -239,7 +239,7 @@ subprogram_declaration
 			$<storage>$ = current_storage;
 			current_func = begin_function ($1, 0, current_symtab, 0);
 			current_symtab = current_func->symtab;
-			current_storage = st_local;
+			current_storage = sc_local;
 		}
 	  declarations compound_statement ';'
 		{

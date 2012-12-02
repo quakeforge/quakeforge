@@ -333,7 +333,7 @@ function_body
 			$<symtab>$ = current_symtab;
 			current_func = begin_function ($<symbol>2, 0, current_symtab, 0);
 			current_symtab = current_func->symtab;
-			current_storage = st_local;
+			current_storage = sc_local;
 		}
 	  compound_statement
 		{
@@ -413,10 +413,10 @@ external_decl
 	;
 
 storage_class
-	: EXTERN					{ $$ = make_spec (0, st_extern, 0, 0); }
-	| STATIC					{ $$ = make_spec (0, st_static, 0, 0); }
-	| SYSTEM					{ $$ = make_spec (0, st_system, 0, 0); }
-	| TYPEDEF					{ $$ = make_spec (0, st_global, 1, 0); }
+	: EXTERN					{ $$ = make_spec (0, sc_extern, 0, 0); }
+	| STATIC					{ $$ = make_spec (0, sc_static, 0, 0); }
+	| SYSTEM					{ $$ = make_spec (0, sc_system, 0, 0); }
+	| TYPEDEF					{ $$ = make_spec (0, sc_global, 1, 0); }
 	| OVERLOAD					{ $$ = make_spec (0, current_storage, 0, 1); }
 	;
 
@@ -939,7 +939,7 @@ code_func
 			$<symtab>$ = current_symtab;
 			current_func = begin_function ($<symbol>0, 0, current_symtab, 0);
 			current_symtab = current_func->symtab;
-			current_storage = st_local;
+			current_storage = sc_local;
 		}
 	  compound_statement
 		{
@@ -1034,7 +1034,7 @@ local_def
 	: local_specifiers
 		{
 			if (!$1.storage)
-				$1.storage = st_local;
+				$1.storage = sc_local;
 			$<spec>$ = $1;
 			local_expr = new_block_expr ();
 		}
@@ -1614,7 +1614,7 @@ methoddef
 			method->func = sym->s.func;
 			method->def = sym->s.func->def;
 			current_symtab = current_func->symtab;
-			current_storage = st_local;
+			current_storage = sc_local;
 		}
 	  compound_statement
 		{

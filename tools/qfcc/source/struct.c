@@ -281,7 +281,7 @@ emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 	}
 	if (defs[i].name)
 		internal_error (0, "structure %s too many defs", name);
-	if (storage != st_global && storage != st_static)
+	if (storage != sc_global && storage != sc_static)
 		internal_error (0, "structure %s must be global or static", name);
 
 	struct_sym = make_symbol (name, type, pr.far_data, storage);

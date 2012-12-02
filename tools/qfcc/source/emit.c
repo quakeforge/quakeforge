@@ -66,7 +66,7 @@ get_value_def (ex_value_t *value, etype_t type)
 	def_t      *def;
 
 	if (type == ev_short) {
-		def = new_def (0, &type_short, 0, st_extern);
+		def = new_def (0, &type_short, 0, sc_extern);
 		def->offset = value->v.short_val;
 		return def;
 	}

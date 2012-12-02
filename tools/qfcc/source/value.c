@@ -481,7 +481,7 @@ emit_value (ex_value_t *value, def_t *def)
 			imm = 0;	//FIXME do full def aliasing
 		} else {
 			symbol_t   *sym;
-			sym = make_symbol (".zero", &type_zero, 0, st_extern);
+			sym = make_symbol (".zero", &type_zero, 0, sc_extern);
 			return sym->s.def;
 		}
 	}
@@ -496,7 +496,7 @@ emit_value (ex_value_t *value, def_t *def)
 			cn = def;
 		} else {
 			if (cn->type != type) {
-				def = new_def (".imm", type, pr.near_data, st_static);
+				def = new_def (".imm", type, pr.near_data, sc_static);
 				def->offset = cn->offset;
 				cn = def;
 			}
@@ -507,13 +507,13 @@ emit_value (ex_value_t *value, def_t *def)
 	// always share immediates
 	if (def) {
 		if (def->type != type) {
-			cn = new_def (".imm", type, pr.near_data, st_static);
+			cn = new_def (".imm", type, pr.near_data, sc_static);
 			cn->offset = def->offset;
 		} else {
 			cn = def;
 		}
 	} else {
-		cn = new_def (".imm", type, pr.near_data, st_static);
+		cn = new_def (".imm", type, pr.near_data, sc_static);
 	}
 	cn->initialized = cn->constant = 1;
 	cn->nosave = 1;
@@ -603,7 +603,7 @@ clear_immediates (void)
 		Hash_SetHashCompare (integer_imm_defs, imm_get_hash, imm_compare);
 	}
 
-	def = make_symbol (".zero", &type_zero, 0, st_extern)->s.def;
+	def = make_symbol (".zero", &type_zero, 0, sc_extern)->s.def;
 
 	make_def_imm (def, string_imm_defs);
 	make_def_imm (def, float_imm_defs);

@@ -189,9 +189,9 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 	symbol_t   *sym;
 	struct reloc_s *relocs = 0;
 
-	if (storage != st_extern && storage != st_global && storage != st_static)
+	if (storage != sc_extern && storage != sc_global && storage != sc_static)
 		internal_error (0, "invalid storage class for %s", __FUNCTION__);
-	if (storage != st_extern && !space)
+	if (storage != sc_extern && !space)
 		internal_error (0, "null space for non-external storage");
 	sym = symtab_lookup (pr.symtab, name);
 	if (!sym) {
@@ -206,7 +206,7 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 			sym = new_symbol_type (name, type);
 		}
 	}
-	if (sym->s.def && sym->s.def->external && storage != st_extern) {
+	if (sym->s.def && sym->s.def->external && storage != sc_extern) {
 		//FIXME this really is not the right way
 		relocs = sym->s.def->relocs;
 		free_def (sym->s.def);

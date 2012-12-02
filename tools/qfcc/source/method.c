@@ -260,7 +260,7 @@ send_message (int super)
 		current_symtab = pr.symtab;
 		sym = new_symbol_type (sm_name, sm_type);
 		sym = function_symbol (sym, 0, 1);
-		make_function (sym, 0, sym->table->space, st_extern);
+		make_function (sym, 0, sym->table->space, sc_extern);
 		current_symtab = save;
 	}
 	return new_symbol_expr (sym);
@@ -387,7 +387,7 @@ emit_selectors (void)
 
 	sel_type = array_type (type_SEL.t.fldptr.type, sel_index);
 	sel_sym = make_symbol ("_OBJ_SELECTOR_TABLE", sel_type,
-						   pr.far_data, st_static);
+						   pr.far_data, sc_static);
 	if (!sel_sym->table)
 		symtab_addsymbol (pr.symtab, sel_sym);
 	sel_def = sel_sym->s.def;
@@ -489,7 +489,7 @@ emit_methods (methodlist_t *methods, const char *name, int instance)
 
 	methods_struct[2].type = array_type (&type_obj_method, count);
 	return emit_structure (va ("_OBJ_%s_METHODS_%s", type, name), 's',
-						   methods_struct, 0, methods, st_static);
+						   methods_struct, 0, methods, sc_static);
 }
 
 static void
@@ -556,7 +556,7 @@ emit_method_descriptions (methodlist_t *methods, const char *name,
 	method_list_struct[1].type = array_type (&type_obj_method_description,
 											 count);
 	return emit_structure (va ("_OBJ_%s_METHODS_%s", type, name), 's',
-						   method_list_struct, 0, methods, st_static);
+						   method_list_struct, 0, methods, sc_static);
 }
 
 void

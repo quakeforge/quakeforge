@@ -1484,7 +1484,7 @@ check_final_block (sblock_t *sblock)
 		warning (0, "control reaches end of non-void function");
 	if (options.traditional || options.code.progsversion == PROG_ID_VERSION) {
 		return_symbol = make_symbol (".return", &type_param, pr.symtab->space,
-									 st_extern);
+									 sc_extern);
 		return_opcode = "<RETURN>";
 	}
 	if (return_symbol) {
