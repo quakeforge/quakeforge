@@ -159,6 +159,10 @@ alias_def (def_t *def, type_t *type, int offset)
 		internal_error (0, "aliasing a def to a larger type");
 	if (offset < 0 || offset + type_size (type) > type_size (def->type))
 		internal_error (0, "invalid alias offset");
+	for (alias = def->alias_defs; alias; alias = alias->next) {
+		if (alias->type == type && alias->offset == offset)
+			return alias;
+	}
 	ALLOC (16384, def_t, defs, alias);
 	alias->return_addr = __builtin_return_address (0);
 	alias->offset = offset;
@@ -167,6 +171,8 @@ alias_def (def_t *def, type_t *type, int offset)
 	alias->alias = def;
 	alias->line = pr.source_line;
 	alias->file = pr.source_file;
+	alias->next = def->alias_defs;
+	def->alias_defs = alias;
 	return alias;
 }
 
@@ -206,7 +212,20 @@ free_temp_def (def_t *temp)
 void
 free_def (def_t *def)
 {
-	if (!def->alias && def->space) {
+	if (!def->return_addr)
+		internal_error (0, "double free of def");
+	if (def->alias) {
+		def_t     **a;
+
+		// pull the alias out of the base def's list of alias defs to avoid
+		// messing up the list when the alias def is freed.
+		for (a = &def->alias->alias_defs; *a; a = &(*a)->next) {
+			if (*a == def) {
+				*a = def->next;
+				break;
+			}
+		}
+	} else if (def->space) {
 		def_t     **d;
 
 		for (d = &def->space->defs; *d && *d != def; d = &(*d)->next)
@@ -219,6 +238,8 @@ free_def (def_t *def)
 		if (!def->external)
 			defspace_free_loc (def->space, def->offset, type_size (def->type));
 	}
+	def->return_addr = 0;
+	def->free_addr = __builtin_return_address (0);
 	def->next = free_defs;
 	free_defs = def;
 }

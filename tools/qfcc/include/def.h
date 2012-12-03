@@ -61,6 +61,7 @@ typedef struct def_s {
 	struct defspace_s *space;	///< defspace to which this def belongs
 	int	        offset;			///< address of this def in its defspace
 
+	struct def_s   *alias_defs;	///< defs that alias this def
 	struct def_s   *alias;		///< real def which this def aliases
 	struct reloc_s *relocs;		///< for relocations
 	struct expr_s  *initializer;///< initialer expression
@@ -81,6 +82,7 @@ typedef struct def_s {
 	int         qfo_def;		///< index to def in qfo defs
 
 	void       *return_addr;	///< who allocated this
+	void       *free_addr;		///< who freed this
 } def_t;
 
 /** Specify the storage class of a def.
@@ -122,6 +124,12 @@ def_t *new_def (const char *name, struct type_s *type,
 	If the offset is negative, or the offset plus the size of the aliasing type
 	is greater than the size of the def's type, then an internal error will
 	be generated.
+
+	The alias def keeps track of its base def and is attached to the base def
+	so any aliases of that def can be found.
+
+	For any combination of type and offset, there will be only one alias def
+	created.
 
 	\param def		The def to be aliased.
 	\param type		The type of the alias.
