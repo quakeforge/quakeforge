@@ -72,7 +72,7 @@ get_value_def (ex_value_t *value, etype_t type)
 	}
 	def = emit_value (value, 0);
 	if (type != def->type->type)
-		return alias_def (def, ev_types[type]);
+		return alias_def (def, ev_types[type], 0);
 	return def;
 }
 
@@ -89,7 +89,7 @@ get_operand_def (expr_t *expr, operand_t *op)
 				case sy_var:
 					if (op->type != op->o.symbol->type->type)
 						return alias_def (op->o.symbol->s.def,
-										  ev_types[op->type]);
+										  ev_types[op->type], 0);
 					return op->o.symbol->s.def;
 				case sy_func:
 					return op->o.symbol->s.func->def;
@@ -114,16 +114,15 @@ get_operand_def (expr_t *expr, operand_t *op)
 		case op_pointer:
 			def = op->o.value->v.pointer.def;
 			if (op->o.value->v.pointer.val || op->type != def->type->type) {
-				def = alias_def (def, ev_types[op->type]);
-				def->offset = op->o.value->v.pointer.val;
-				def->offset_reloc = 1;
+				def = alias_def (def, ev_types[op->type],
+								 op->o.value->v.pointer.val);
 			}
 			return def;
 		case op_alias:
 			def = get_operand_def (expr, op->o.alias);
 			if (def->alias)
 				def = def->alias;
-			def = alias_def (def, ev_types[op->type]);
+			def = alias_def (def, ev_types[op->type], 0);
 			return def;
 	}
 	return 0;

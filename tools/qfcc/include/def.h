@@ -119,13 +119,18 @@ def_t *new_def (const char *name, struct type_s *type,
 	Aliasing a def to the same type is useless, but not checked. Aliasing a
 	def to a type larger than the def's type will generate an internal error.
 
+	If the offset is negative, or the offset plus the size of the aliasing type
+	is greater than the size of the def's type, then an internal error will
+	be generated.
+
 	\param def		The def to be aliased.
 	\param type		The type of the alias.
+	\param offset	Offset of the alias relative to the def.
 	\return			The def aliasing \a def.
 
 	\todo Make aliasing to the same type a no-op?
 */
-def_t *alias_def (def_t *def, struct type_s *type);
+def_t *alias_def (def_t *def, struct type_s *type, int offset);
 
 /** Free a def.
 

@@ -145,7 +145,7 @@ new_def (const char *name, type_t *type, defspace_t *space,
 }
 
 def_t *
-alias_def (def_t *def, type_t *type)
+alias_def (def_t *def, type_t *type, int offset)
 {
 	def_t      *alias;
 
@@ -157,9 +157,12 @@ alias_def (def_t *def, type_t *type)
 	}
 	if (type_size (type) > type_size (def->type))
 		internal_error (0, "aliasing a def to a larger type");
+	if (offset < 0 || offset + type_size (type) > type_size (def->type))
+		internal_error (0, "invalid alias offset");
 	ALLOC (16384, def_t, defs, alias);
 	alias->return_addr = __builtin_return_address (0);
-	alias->offset = def->offset;
+	alias->offset = offset;
+	alias->offset_reloc = 1;
 	alias->type = type;
 	alias->alias = def;
 	alias->line = pr.source_line;
