@@ -21,13 +21,18 @@ QFCC_TEST_INCS=@QFCC_TEST_INCS@
 test_progs_dat=\
 	chewed-alias.dat \
 	chewed-return.dat \
+	func-static.dat \
 	deadbool.dat \
 	infloop.dat \
 	modulo.dat \
 	structptr.dat \
 	while.dat
 
+fail_progs_dat=\
+	func-static.dat
+
 TESTS=$(test_progs_dat:.dat=.run)
+XFAIL_TESTS=$(fail_progs_dat:.dat=.run)
 
 check_PROGRAMS=test-harness $(test_progs_dat)
 
@@ -48,6 +53,13 @@ chewed-return.dat: $(chewed_return_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(chewed_return_obj)
 chewed-return.run: Makefile build-run
 	TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
+
+func_static_dat_SOURCES=func-static.r
+func_static_obj=$(func_static_dat_SOURCES:.r=.qfo)
+func-static.dat: $(func_static_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(func_static_obj)
+func-static.run: Makefile build-run
+	$(srcdir)/build-run $@
 
 deadbool_dat_SOURCES=deadbool.r
 deadbool_obj=$(deadbool_dat_SOURCES:.r=.qfo)
