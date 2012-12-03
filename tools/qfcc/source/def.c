@@ -149,13 +149,14 @@ alias_def (def_t *def, type_t *type)
 {
 	def_t      *alias;
 
-
 	if (def->alias) {
 		expr_t      e;
 		e.file = def->file;
 		e.line = def->line;
 		internal_error (&e, "aliasing an alias def");
 	}
+	if (type_size (type) > type_size (def->type))
+		internal_error (0, "aliasing a def to a larger type");
 	ALLOC (16384, def_t, defs, alias);
 	alias->return_addr = __builtin_return_address (0);
 	alias->offset = def->offset;

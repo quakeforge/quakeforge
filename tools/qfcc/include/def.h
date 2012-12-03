@@ -117,14 +117,12 @@ def_t *new_def (const char *name, struct type_s *type,
 /** Create a def that aliases another def.
 
 	Aliasing a def to the same type is useless, but not checked. Aliasing a
-	def to a type larger than the def's type is a bad idea as another def may
-	be overwritten via the alias, but is not checked.
+	def to a type larger than the def's type will generate an internal error.
 
 	\param def		The def to be aliased.
 	\param type		The type of the alias.
 	\return			The def aliasing \a def.
 
-	\todo Check for type size?
 	\todo Make aliasing to the same type a no-op?
 */
 def_t *alias_def (def_t *def, struct type_s *type);
