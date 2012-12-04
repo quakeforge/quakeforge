@@ -122,6 +122,11 @@ new_def (const char *name, type_t *type, defspace_t *space,
 	set_storage_bits (def, storage);
 
 	if (space) {
+		if (space->type == ds_virtual && storage == sc_static)
+			internal_error (0, "static in a virtual space");
+		if (space->type != ds_virtual
+			&& (storage == sc_param || storage == sc_local))
+			internal_error (0, "param or local in a non-virtual space");
 		def->space = space;
 		*space->def_tail = def;
 		space->def_tail = &def->next;
