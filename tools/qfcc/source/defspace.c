@@ -99,6 +99,8 @@ defspace_alloc_loc (defspace_t *space, int size)
 	locref_t   *loc;
 	locref_t  **l = &space->free_locs;
 
+	if (size <= 0)
+		internal_error (0, "invalid number of words requested: %d", size);
 	while (*l && (*l)->size < size)
 		l = &(*l)->next;
 	if ((loc = *l)) {
@@ -116,9 +118,8 @@ defspace_alloc_loc (defspace_t *space, int size)
 	ofs = space->size;
 	space->size += size;
 	if (space->size > space->max_size) {
-		if (!space->grow)
+		if (!space->grow || !space->grow (space))
 			internal_error (0, "unable to allocate %d words", size);
-		space->grow (space);
 	}
 	return ofs;
 }
@@ -129,8 +130,8 @@ defspace_free_loc (defspace_t *space, int ofs, int size)
 	locref_t  **l;
 	locref_t   *loc;
 
-	if (!size)
-		internal_error (0, "defspace: freeing size 0 location");
+	if (size <= 0)
+		internal_error (0, "defspace: freeing size %d location", size);
 	if (ofs < 0 || ofs >= space->size || ofs + size > space->size)
 		internal_error (0, "defspace: freeing bogus location %d:%d",
 						ofs, size);

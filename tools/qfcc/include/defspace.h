@@ -57,9 +57,8 @@ typedef struct defspace_s {
 		be allocated and an internal error will be generated.
 
 		\param space	This defspace.
-		\return			1 for success, 0 for failure.
-
-		\bug The return value is ignored.
+		\return			1 for success, 0 for failure. On failure, an internal
+						error will be generated.
 	*/
 	int       (*grow) (struct defspace_s *space);
 	int         qfo_space;		///< index to space in qfo spaces
@@ -91,7 +90,6 @@ defspace_t *defspace_new (void);
 	\return			The offset of the first word of the freshly allocated
 					space. May be 0 if the allocated space is at the beginning
 					of the defspace.
-	\bug does not check for allocating 0 (or negative) words.
 */
 int defspace_alloc_loc (defspace_t *space, int size);
 
@@ -113,8 +111,6 @@ int defspace_alloc_loc (defspace_t *space, int size);
 	\param space	The space to which the freed block will be returned.
 	\param ofs		The first word of the block to be freed.
 	\param size		The number of words in the block to be freed.
-
-	\bug \a size is not checked for being negative.
 */
 void defspace_free_loc (defspace_t *space, int ofs, int size);
 

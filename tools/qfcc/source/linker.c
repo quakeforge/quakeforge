@@ -536,7 +536,8 @@ add_data (int space, qfo_mspace_t *data)
 {
 	if (space < 0 || space >= qfo_num_spaces || !work_spaces[space])
 		linker_internal_error ("bad space for add_data (): %d", space);
-	defspace_add_data (*work_spaces[space], data->d.data, data->data_size);
+	if (data->data_size)
+		defspace_add_data (*work_spaces[space], data->d.data, data->data_size);
 	work->spaces[space].d.data = (*work_spaces[space])->data;
 	work->spaces[space].data_size = (*work_spaces[space])->size;
 }
