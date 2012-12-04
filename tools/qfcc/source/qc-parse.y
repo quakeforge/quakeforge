@@ -852,12 +852,15 @@ decl
 		{
 			specifier_t spec = $<spec>0;
 			type_t     *type;
+			storage_class_t sc = $<spec>0.storage;
+			struct defspace_s *space = current_symtab->space;
 
 			if (!spec.type)
 				spec.type = type_default;
+			if (sc == sc_static)
+				space = pr.near_data;
 			type = find_type (append_type ($1->type, spec.type));
-			initialize_def ($1, type, $2, current_symtab->space,
-							$<spec>0.storage);
+			initialize_def ($1, type, $2, space, sc);
 		}
 	;
 
