@@ -69,12 +69,11 @@ grow_space (defspace_t *space)
 {
 	int         size;
 
-	if (space->size >= space->size) {
-		size = space->size + GROW;
-		size -= size % GROW;
-	} else {
-		size = space->max_size + GROW;
-	}
+	if (space->size <= space->max_size)
+		return 1;
+
+	size = space->size + GROW;
+	size -= size % GROW;
 	space->data = realloc (space->data, size * sizeof (pr_type_t));
 	memset (space->data + space->max_size, 0, GROW * sizeof (pr_type_t));
 	space->max_size = size;
