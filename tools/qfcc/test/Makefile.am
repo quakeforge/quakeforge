@@ -29,7 +29,7 @@ test_progs_dat=\
 	while.dat
 
 fail_progs_dat=\
-	func-static.dat
+	$E
 
 TESTS=$(test_progs_dat:.dat=.run)
 XFAIL_TESTS=$(fail_progs_dat:.dat=.run)
