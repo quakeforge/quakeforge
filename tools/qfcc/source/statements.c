@@ -256,7 +256,7 @@ new_operand (op_type_e op)
 	return operand;
 }
 
-static void
+static void __attribute__((unused)) //FIXME
 free_operand (operand_t *op)
 {
 	if (op->next) {
@@ -267,21 +267,19 @@ free_operand (operand_t *op)
 	}
 	if (op->op_type == op_alias)
 		free_operand (op->o.alias);
-	op->next = free_operands;
-	free_operands = op;
+	FREE (operands, op);
 }
 
 static void
 free_statement (statement_t *s)
 {
-	if (s->opa)
-		free_operand (s->opa);
-	if (s->opb)
-		free_operand (s->opb);
-	if (s->opc)
-		free_operand (s->opc);
-	s->next = free_statements;
-	free_statements = s;
+//	if (s->opa)
+//		free_operand (s->opa);
+//	if (s->opb)
+//		free_operand (s->opb);
+//	if (s->opc)
+//		free_operand (s->opc);
+	FREE (statements, s);
 }
 
 static void
@@ -292,8 +290,7 @@ free_sblock (sblock_t *sblock)
 		sblock->statements = s->next;
 		free_statement (s);
 	}
-	sblock->next = free_sblocks;
-	free_sblocks = sblock;
+	FREE (sblocks, sblock);
 }
 
 operand_t *

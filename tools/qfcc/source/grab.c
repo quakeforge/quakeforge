@@ -82,8 +82,7 @@ static void
 frame_free (void *_f, void *unused)
 {
 	frame_t    *f = (frame_t *)_f;
-	f->next = free_frames;
-	free_frames = f;
+	FREE (frames, f);
 }
 
 int

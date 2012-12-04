@@ -75,8 +75,7 @@ pop_source_file (void)
 	}
 	tmp = pr.srcline_stack;
 	pr.srcline_stack = tmp->next;
-	tmp->next = free_srclines;
-	free_srclines = tmp;
+	FREE (srclines, tmp);
 }
 
 void

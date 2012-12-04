@@ -123,6 +123,7 @@ char *fix_backslash (char *path);
 #define NORMALIZE(x) x
 #endif
 
+#ifndef DEBUG_QFCC_MEMORY
 /**	High-tide structure allocator for use in linked lists.
 
 	Using a free-list with the name of \c free_NAME, return a single element.
@@ -152,6 +153,28 @@ char *fix_backslash (char *path);
 		free_##n = free_##n->next;					\
 		memset (v, 0, sizeof (*v));					\
 	} while (0)
+
+/** Free a block allocated by #ALLOC
+
+	\param n		The \c NAME portion of the \c free_NAME free-list.
+	\param p		The pointer to the block to be freed.
+
+	\hideinitializer
+*/
+#define FREE(n, p)			\
+	do {					\
+		p->next = free_##n;	\
+		free_##n = p->next;	\
+	} while (0)
+#else
+#define ALLOC(s, t, n, v)								\
+	do {												\
+		__attribute__((unused)) t **dummy = &free_##n;	\
+		v = (t *) calloc (1, sizeof (t));				\
+	} while (0)
+
+#define FREE(n, p)			do { free (p); } while (0)
+#endif
 
 /**	Round \a x up to the next multiple of \a a.
 	\note \a a must be a power of two or this will break.

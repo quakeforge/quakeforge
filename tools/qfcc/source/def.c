@@ -241,8 +241,7 @@ free_def (def_t *def)
 	}
 	def->return_addr = 0;
 	def->free_addr = __builtin_return_address (0);
-	def->next = free_defs;
-	free_defs = def;
+	FREE (defs, def);
 }
 
 void

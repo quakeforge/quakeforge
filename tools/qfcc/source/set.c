@@ -62,8 +62,7 @@ new_setiter (void)
 static void
 delete_setiter (set_iter_t *set_iter)
 {
-	set_iter->next = free_set_iters;
-	free_set_iters = set_iter;
+	FREE (set_iters, set_iter);
 }
 
 void
@@ -88,8 +87,7 @@ set_delete (set_t *set)
 {
 	if (set->map != set->defmap)
 		free (set->map);
-	set->next = free_sets;
-	free_sets = set;
+	FREE (sets, set);
 }
 
 static void

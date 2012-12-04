@@ -106,8 +106,7 @@ defspace_alloc_loc (defspace_t *space, int size)
 		if ((*l)->size == size) {
 			loc = *l;
 			*l = (*l)->next;
-			loc->next = free_locrefs;
-			free_locrefs = loc;
+			FREE (locrefs, loc);
 		} else {
 			(*l)->ofs += size;
 			(*l)->size -= size;
@@ -163,8 +162,7 @@ defspace_free_loc (defspace_t *space, int ofs, int size)
 				loc->size += loc->next->size;
 				loc = loc->next;
 				*l = loc->next;
-				loc->next = free_locrefs;
-				free_locrefs = loc;
+				FREE (locrefs, loc);
 			}
 			return;
 		}

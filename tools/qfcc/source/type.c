@@ -182,8 +182,7 @@ free_type (type_t *type)
 			break;
 	}
 	memset (type, 0, sizeof (type));
-	type->next = free_types;
-	free_types = type;
+	FREE (types, type);
 }
 
 type_t *

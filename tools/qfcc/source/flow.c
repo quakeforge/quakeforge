@@ -99,8 +99,7 @@ static void
 delete_loop (flowloop_t *loop)
 {
 	set_delete (loop->nodes);
-	loop->next = free_loops;
-	free_loops = loop;
+	FREE (loops, loop);
 }
 
 static flownode_t *
@@ -122,8 +121,7 @@ delete_node (flownode_t *node)
 		set_delete (node->edges);
 	if (node->dom)
 		set_delete (node->dom);
-	node->next = free_nodes;
-	free_nodes = node;
+	FREE (nodes, node);
 }
 
 static flowgraph_t *
@@ -150,8 +148,7 @@ delete_graph (flowgraph_t *graph)
 		set_delete (graph->dfst);
 	if (graph->dfo)
 		free (graph->dfo);
-	graph->next = free_graphs;
-	free_graphs = graph;
+	FREE (graphs, graph);
 }
 
 static def_t *
