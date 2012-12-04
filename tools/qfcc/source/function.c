@@ -560,7 +560,6 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 	if (options.code.debug) {
 		pr_lineno_t *lineno = new_lineno ();
 		sym->s.func->line_info = lineno - pr.linenos;
-		sym->s.func->local_defs = pr.num_locals;
 	}
 
 	build_scope (sym, parent);

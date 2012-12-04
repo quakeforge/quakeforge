@@ -86,18 +86,9 @@ typedef struct pr_info_s {
 	struct pr_lineno_s *linenos;
 	int             linenos_size;
 	int             num_linenos;
-
-	ddef_t         *locals;
-	int             locals_size;
-	int             num_locals;
 } pr_info_t;
 
 extern	pr_info_t	pr;
-
-
-extern	char		destfile[];
-
-extern	struct symtab_s *current_symtab;
 
 #define GETSTR(s)			(pr.strings->strings + (s))
 #define D_var(t, d)			((d)->space->data[(d)->offset].t##_var)
@@ -118,7 +109,6 @@ extern	struct symtab_s *current_symtab;
 
 const char *strip_path (const char *filename);
 
-void clear_frame_macros (void);
 extern FILE *qc_yyin;
 extern FILE *qp_yyin;
 int qc_yyparse (void);

@@ -32,6 +32,7 @@
 #define __function_h
 
 /** \defgroup qfcc_function Internal function structures.
+	\ingroup qfcc
 */
 
 #include "QF/pr_comp.h"

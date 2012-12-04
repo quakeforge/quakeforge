@@ -53,6 +53,7 @@
 #include "options.h"
 #include "pragma.h"
 #include "qfcc.h"
+#include "shared.h"
 #include "strpool.h"
 #include "struct.h"
 #include "symtab.h"

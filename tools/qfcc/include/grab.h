@@ -36,5 +36,6 @@ extern int grab_other;
 
 int do_grab (char *token);
 void add_frame_macro (char *token);
+void clear_frame_macros (void);
 
 #endif//__grab_h

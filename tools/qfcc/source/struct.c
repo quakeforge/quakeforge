@@ -55,6 +55,7 @@
 #include "obj_type.h"
 #include "qfcc.h"
 #include "reloc.h"
+#include "shared.h"
 #include "strpool.h"
 #include "struct.h"
 #include "symtab.h"
