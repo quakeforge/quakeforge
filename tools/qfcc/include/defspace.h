@@ -39,10 +39,18 @@
 */
 //@{
 
+typedef enum {
+	ds_backed,		///< data space is globally addressable (near/far/type) and
+					///< has backing store
+	ds_virtual,		///< data space has no backing store (local vars, entity
+					///< fields)
+} ds_type_t;
+
 /** Represent a block of memory in the progs data space.
 */
 typedef struct defspace_s {
 	struct defspace_s *next;	///< for ALLOC
+	ds_type_t   type;			///< basic type of defspace
 	struct locref_s *free_locs;	///< list of free blocks in this space
 	struct def_s *defs;			///< list of defs using this space
 	struct def_s **def_tail;	///< for appending to \a defs
@@ -52,13 +60,17 @@ typedef struct defspace_s {
 	/** Grow the backing memory of the defspace.
 
 		This function is called when more memory is needed for the space.
-		The default \a grow function expands the backing memory by 1024
-		pr_type_t words and initializes them to 0. If null, more space cannot
-		be allocated and an internal error will be generated.
+		The default \a grow function for ds_backed defspaces expands the
+		backing memory by 1024 pr_type_t words and initializes them to 0.
+		Other defspace types do not actually allocate backing memory as it
+		is not needed.  If null, more space cannot be allocated and an
+		internal error will be generated.
 
 		\param space	This defspace.
 		\return			1 for success, 0 for failure. On failure, an internal
 						error will be generated.
+
+		\note Setting to null forces failure and thus an internal error.
 	*/
 	int       (*grow) (struct defspace_s *space);
 	int         qfo_space;		///< index to space in qfo spaces
@@ -70,9 +82,13 @@ typedef struct defspace_s {
 	initialized to the default grow function so the backing memory may be
 	accessed after space has been allocated via defspace_alloc_loc().
 
+	\param	type	The type of defspace to create. Affects only the default
+					defspace_t::grow function: ds_backed uses a grow function
+					that allocates backing memory, while ds_virtual uses a
+					grow function that only increases defspace_t::max_size
 	\return			The new, empty defspace.
 */
-defspace_t *defspace_new (void);
+defspace_t *defspace_new (ds_type_t type);
 
 /** Allocate space from the defspace's backing memory.
 

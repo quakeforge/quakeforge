@@ -65,7 +65,7 @@ static locref_t *free_locrefs;
 #define GROW 1024
 
 static int
-grow_space (defspace_t *space)
+grow_space_global (defspace_t *space)
 {
 	int         size;
 
@@ -80,14 +80,35 @@ grow_space (defspace_t *space)
 	return 1;
 }
 
+static int
+grow_space_virtual (defspace_t *space)
+{
+	int         size;
+
+	if (space->size <= space->max_size)
+		return 1;
+
+	size = space->size + GROW;
+	size -= size % GROW;
+	space->max_size = size;
+	return 1;
+}
+
 defspace_t *
-defspace_new (void)
+defspace_new (ds_type_t type)
 {
 	defspace_t *space;
 
 	ALLOC (1024, defspace_t, spaces, space);
 	space->def_tail = &space->defs;
-	space->grow = grow_space;
+	space->type = type;
+	if (type == ds_backed) {
+		space->grow = grow_space_global;
+	} else if (type == ds_virtual) {
+		space->grow = grow_space_virtual;
+	} else {
+		internal_error (0, "unknown defspace type");
+	}
 	return space;
 }
 

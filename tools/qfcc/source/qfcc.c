@@ -155,21 +155,21 @@ InitData (void)
 	line->fa.func = -1;
 	line->line = -1;
 
-	pr.far_data = defspace_new ();
+	pr.far_data = defspace_new (ds_backed);
 
-	pr.near_data = defspace_new ();
+	pr.near_data = defspace_new (ds_backed);
 	pr.near_data->data = calloc (65536, sizeof (pr_type_t));
 	pr.near_data->max_size = 65536;
 	pr.near_data->grow = 0;
 
-	pr.type_data = defspace_new ();
+	pr.type_data = defspace_new (ds_backed);
 	defspace_alloc_loc (pr.type_data, 4);// reserve space for a null descriptor
 
 	pr.symtab = new_symtab (0, stab_global);
 	pr.symtab->space = pr.near_data;
 	current_symtab = pr.symtab;
 
-	pr.entity_data = defspace_new ();
+	pr.entity_data = defspace_new (ds_virtual);
 	pr.entity_fields = new_symtab (0, stab_global);
 	pr.entity_fields->space = pr.entity_data;;
 

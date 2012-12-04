@@ -649,10 +649,10 @@ linker_begin (void)
 
 	work_strings = strpool_new ();
 	work_code = codespace_new ();
-	work_near_data = defspace_new ();
-	work_far_data = defspace_new ();
-	work_entity_data = defspace_new ();
-	work_type_data = defspace_new ();
+	work_near_data = defspace_new (ds_backed);
+	work_far_data = defspace_new (ds_backed);
+	work_entity_data = defspace_new (ds_virtual);
+	work_type_data = defspace_new (ds_backed);
 
 	pr.strings = work_strings;
 
