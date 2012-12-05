@@ -94,6 +94,8 @@ typedef struct symtab_s {
 	struct defspace_s *space;	///< storage for vars in scope symtabs
 } symtab_t;
 
+const char *symtype_str (sy_type_e type);
+
 /**	Create a new, empty named symbol.
 
 	Only the symbol name field will be filled in. \a name will be copied

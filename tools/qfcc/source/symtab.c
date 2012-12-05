@@ -50,6 +50,23 @@
 static symtab_t *free_symtabs;
 static symbol_t *free_symbols;
 
+static const char *sy_type_names[] = {
+	"sy_var",
+	"sy_const",
+	"sy_type",
+	"sy_expr",
+	"sy_func",
+	"sy_class",
+};
+
+const char *
+symtype_str (sy_type_e type)
+{
+	if (type < 0 || type > sy_class)
+		return "<invalid sy_type>";
+	return sy_type_names[type];
+}
+
 symbol_t *
 new_symbol (const char *name)
 {
