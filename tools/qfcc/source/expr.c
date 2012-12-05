@@ -2675,7 +2675,10 @@ cast_expr (type_t *type, expr_t *e)
 	}
 	if (is_array (e_type))
 		return address_expr (e, 0, 0);
-	if ((is_float (type) && is_integral (e_type))
+	if (is_constant (e) && is_scalar (type) && is_scalar (e_type)) {
+		e->e.value = convert_value (e->e.value, type);
+		c = e;
+	} else if ((is_float (type) && is_integral (e_type))
 		|| (is_integral (type) && is_float (e_type))) {
 		c = new_unary_expr ('C', e);
 		c->e.expr.type = type;
