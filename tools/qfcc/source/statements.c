@@ -418,6 +418,8 @@ statement_get_targetlist (statement_t *s)
 	} else if (statement_is_goto (s)) {
 		target_list[0] = statement_get_target (s);
 	} else if (statement_is_jumpb (s)) {
+		if (table->alias)
+			internal_error (0, "aliased jump table");
 		e = table->initializer->e.block.head;	//FIXME check!!!
 		for (i = 0; i < count; e = e->next, i++)
 			target_list[i] = e->e.labelref.label->dest;
