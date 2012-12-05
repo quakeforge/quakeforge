@@ -200,23 +200,10 @@ print_flow_node_live (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 	}
 }
 
-static void
-print_flow_node_return (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
-						int level)
-{
-	int         indent = level * 2 + 2;
-
-	dasprintf (dstr, "%*s\"fn_%p\" [label=\"%d (%d)\\n%s\\n%s\"];\n",
-			   indent, "", node, node->id, node->dfn,
-			   pr_type_name[node->return_type.in],
-			   pr_type_name[node->return_type.out]);
-}
-
 static flow_dot_t flow_dot_methods[] = {
 	{"",		print_flow_node,		print_flow_edge},
 	{"dag",		print_flow_node_dag,	print_flow_edge_dag},
 	{"live",	print_flow_node_live,	print_flow_edge},
-	{"return",	print_flow_node_return,	print_flow_edge},
 };
 
 static void
@@ -266,10 +253,4 @@ void
 dump_dot_flow_live (void *g, const char *filename)
 {
 	print_flowgraph (&flow_dot_methods[2], (flowgraph_t *) g, filename);
-}
-
-void
-dump_dot_flow_return (void *g, const char *filename)
-{
-	print_flowgraph (&flow_dot_methods[3], (flowgraph_t *) g, filename);
 }

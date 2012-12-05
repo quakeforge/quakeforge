@@ -82,10 +82,6 @@ typedef struct flownode_s {
 		struct set_s *in;
 		struct set_s *out;
 	}           init_vars;
-	struct {
-		etype_t     in;
-		etype_t     out;		///< if different from in, then block defines
-	}           return_type;	///< type of .return for this node
 	struct sblock_s *sblock;	///< original statement block
 	struct dag_s *dag;			///< dag for this node
 } flownode_t;
@@ -116,7 +112,6 @@ struct sblock_s *flow_generate (flowgraph_t *graph);
 void dump_dot_flow (void *g, const char *filename);
 void dump_dot_flow_dags (void *g, const char *filename);
 void dump_dot_flow_live (void *g, const char *filename);
-void dump_dot_flow_return (void *g, const char *filename);
 
 //@}
 
