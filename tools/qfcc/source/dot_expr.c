@@ -417,13 +417,13 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 			label = va ("func %d", e->e.value->v.integer_val);
 			break;
 		case ev_integer:
-			label = va ("%d", e->e.value->v.integer_val);
+			label = va ("i %d", e->e.value->v.integer_val);
 			break;
 		case ev_uinteger:
-			label = va ("%u", e->e.value->v.uinteger_val);
+			label = va ("u %u", e->e.value->v.uinteger_val);
 			break;
 		case ev_short:
-			label = va ("%d", e->e.value->v.short_val);
+			label = va ("s %d", e->e.value->v.short_val);
 			break;
 		case ev_void:
 			label = "<void>";
