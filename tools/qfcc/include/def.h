@@ -65,6 +65,8 @@ typedef struct def_s {
 	struct def_s   *alias;		///< real def which this def aliases
 	struct reloc_s *relocs;		///< for relocations
 	struct expr_s  *initializer;///< initialer expression
+	struct daglabel_s *daglabel;///< daglabel for this def
+	struct flowvar_s *flowvar;	///< flowvar for this def
 
 	unsigned    offset_reloc:1;	///< use *_def_ofs relocs
 	unsigned    initialized:1;	///< the def has been initialized

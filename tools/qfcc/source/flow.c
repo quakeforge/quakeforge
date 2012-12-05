@@ -64,15 +64,15 @@ static struct {
 	const char *name;
 	operand_t   op;
 } flow_params[] = {
-	{".return",		{0, op_symbol}},
-	{".param_0",	{0, op_symbol}},
-	{".param_1",	{0, op_symbol}},
-	{".param_2",	{0, op_symbol}},
-	{".param_3",	{0, op_symbol}},
-	{".param_4",	{0, op_symbol}},
-	{".param_5",	{0, op_symbol}},
-	{".param_6",	{0, op_symbol}},
-	{".param_7",	{0, op_symbol}},
+	{".return",		{0, op_def}},
+	{".param_0",	{0, op_def}},
+	{".param_1",	{0, op_def}},
+	{".param_2",	{0, op_def}},
+	{".param_3",	{0, op_def}},
+	{".param_4",	{0, op_def}},
+	{".param_5",	{0, op_def}},
+	{".param_6",	{0, op_def}},
+	{".param_7",	{0, op_def}},
 };
 static const int num_flow_params = sizeof(flow_params)/sizeof(flow_params[0]);
 
@@ -156,36 +156,27 @@ flowvar_get_def (flowvar_t *var)
 {
 	operand_t  *op = var->op;
 
-	while (op->op_type == op_alias)
-		op = op->o.alias;
 	switch (op->op_type) {
-		case op_symbol:
-			return op->o.symbol->s.def;
+		case op_def:
+			return op->o.def;
 		case op_value:
 		case op_label:
 			return 0;
 		case op_temp:
 			return op->o.tempop.def;
-		case op_pointer:
-			return op->o.value->v.pointer.def;
-		case op_alias:
-			internal_error (0, "oops, blue pill");
 	}
+	internal_error (0, "oops, blue pill");
 	return 0;
 }
 
 static int
 flowvar_is_global (flowvar_t *var)
 {
-	symbol_t   *sym;
 	def_t      *def;
 
-	if (var->op->op_type != op_symbol)
+	if (var->op->op_type != op_def)
 		return 0;
-	sym = var->op->o.symbol;
-	if (sym->sy_type != sy_var)
-		return 0;
-	def = sym->s.def;
+	def = var->op->o.def;
 	if (def->local)
 		return 0;
 	return 1;
@@ -194,15 +185,11 @@ flowvar_is_global (flowvar_t *var)
 static int
 flowvar_is_param (flowvar_t *var)
 {
-	symbol_t   *sym;
 	def_t      *def;
 
-	if (var->op->op_type != op_symbol)
+	if (var->op->op_type != op_def)
 		return 0;
-	sym = var->op->o.symbol;
-	if (sym->sy_type != sy_var)
-		return 0;
-	def = sym->s.def;
+	def = var->op->o.def;
 	if (!def->local)
 		return 0;
 	if (!def->param)
@@ -213,15 +200,11 @@ flowvar_is_param (flowvar_t *var)
 static int
 flowvar_is_initialized (flowvar_t *var)
 {
-	symbol_t   *sym;
 	def_t      *def;
 
-	if (var->op->op_type != op_symbol)
+	if (var->op->op_type != op_def)
 		return 0;
-	sym = var->op->o.symbol;
-	if (sym->sy_type != sy_var)
-		return 0;
-	def = sym->s.def;
+	def = var->op->o.def;
 	return def->initialized;
 }
 
@@ -231,18 +214,15 @@ flow_get_var (operand_t *op)
 	if (!op)
 		return 0;
 
-	while (op->op_type == op_alias)
-		op = op->o.alias;
-
 	if (op->op_type == op_temp) {
 		if (!op->o.tempop.flowvar)
 			op->o.tempop.flowvar = new_flowvar ();
 		return op->o.tempop.flowvar;
 	}
-	if (op->op_type == op_symbol && op->o.symbol->sy_type == sy_var) {
-		if (!op->o.symbol->flowvar)
-			op->o.symbol->flowvar = new_flowvar ();
-		return op->o.symbol->flowvar;
+	if (op->op_type == op_def) {
+		if (!op->o.def->flowvar)
+			op->o.def->flowvar = new_flowvar ();
+		return op->o.def->flowvar;
 	}
 	//FIXME functions? (some are variable) values?
 	return 0;
@@ -283,8 +263,6 @@ add_operand (function_t *func, operand_t *op)
 
 	if (!op)
 		return;
-	while (op->op_type == op_alias)
-		op = op->o.alias;
 	if (op->op_type == op_label)
 		return;
 
@@ -319,7 +297,7 @@ flow_build_vars (function_t *func)
 
 	// first, count .return and .param_[0-7] as they are always needed
 	for (i = 0; i < num_flow_params; i++) {
-		flow_params[i].op.o.symbol = param_symbol (flow_params[i].name);
+		flow_params[i].op.o.def = param_symbol (flow_params[i].name)->s.def;
 		num_vars += count_operand (&flow_params[i].op);
 	}
 	// then run through the statements in the function looking for accessed
@@ -561,10 +539,8 @@ get_function_type (operand_t *op)
 	type_t     *type = &type_void;
 
 	//FIXME fuction type casts?
-	while (op->op_type == op_alias)
-		op = op->o.alias;
-	if (op->op_type == op_symbol) {
-		type = op->o.symbol->type;
+	if (op->op_type == op_def) {
+		type = op->o.def->type;
 		if (type->type != ev_func)
 			internal_error (0, "not a function symbol");
 		type = type->t.func.type;

@@ -79,28 +79,11 @@ get_value_def (ex_value_t *value, etype_t type)
 static def_t *
 get_operand_def (expr_t *expr, operand_t *op)
 {
-	def_t      *def;
-
 	if (!op)
 		return 0;
 	switch (op->op_type) {
-		case op_symbol:
-			switch (op->o.symbol->sy_type) {
-				case sy_var:
-					if (op->type != op->o.symbol->type->type)
-						return alias_def (op->o.symbol->s.def,
-										  ev_types[op->type], 0);
-					return op->o.symbol->s.def;
-				case sy_func:
-					return op->o.symbol->s.func->def;
-				case sy_const:
-					return get_value_def (op->o.symbol->s.value, op->type);
-				case sy_type:
-				case sy_expr:
-				case sy_class:
-					internal_error (expr, "invalid operand type");
-			}
-			break;
+		case op_def:
+			return op->o.def;
 		case op_value:
 			return get_value_def (op->o.value, op->type);
 		case op_label:
@@ -108,22 +91,11 @@ get_operand_def (expr_t *expr, operand_t *op)
 			zero_def.type = &type_short;
 			return &zero_def;	//FIXME
 		case op_temp:
+			while (op->o.tempop.alias)
+				op = op->o.tempop.alias;
 			if (!op->o.tempop.def)
 				op->o.tempop.def = temp_def (op->type, op->size);
 			return op->o.tempop.def;
-		case op_pointer:
-			def = op->o.value->v.pointer.def;
-			if (op->o.value->v.pointer.val || op->type != def->type->type) {
-				def = alias_def (def, ev_types[op->type],
-								 op->o.value->v.pointer.val);
-			}
-			return def;
-		case op_alias:
-			def = get_operand_def (expr, op->o.alias);
-			if (def->alias)
-				def = def->alias;
-			def = alias_def (def, ev_types[op->type], 0);
-			return def;
 	}
 	return 0;
 }
@@ -172,10 +144,10 @@ add_statement_op_ref (operand_t *op, dstatement_t *st, int field)
 static void
 use_tempop (operand_t *op, expr_t *expr)
 {
-	while (op && op->op_type == op_alias)
-		op = op->o.alias;
 	if (!op || op->op_type != op_temp)
 		return;
+	while (op->o.tempop.alias)
+		op = op->o.tempop.alias;
 	if (--op->o.tempop.users == 0)
 		free_temp_def (op->o.tempop.def);
 	if (op->o.tempop.users <= -1)

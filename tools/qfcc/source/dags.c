@@ -65,13 +65,11 @@ flush_daglabels (void)
 		operand_t  *op;
 
 		if ((op = daglabel_chain->op)) {
-			while (op->op_type == op_alias)
-				op = op->o.alias;
-			if (op->op_type == op_symbol)
-				op->o.symbol->daglabel = 0;
+			if (op->op_type == op_def)
+				op->o.def->daglabel = 0;
 			else if (op->op_type == op_temp)
 				op->o.tempop.daglabel = 0;
-			else if (op->op_type == op_value || op->op_type == op_pointer)
+			else if (op->op_type == op_value)
 				op->o.value->daglabel = 0;
 			else if (op->op_type == op_label)
 				op->o.label->daglabel = 0;
@@ -146,14 +144,12 @@ opcode_label (dag_t *dag, const char *opcode, expr_t *expr)
 static daglabel_t *
 operand_label (dag_t *dag, operand_t *op)
 {
-	symbol_t   *sym = 0;
+	def_t      *def = 0;
 	ex_value_t *val = 0;
 	daglabel_t *label;
 
 	if (!op)
 		return 0;
-	while (op->op_type == op_alias)
-		op = op->o.alias;
 
 	if (op->op_type == op_temp) {
 		if (op->o.tempop.daglabel)
@@ -161,14 +157,14 @@ operand_label (dag_t *dag, operand_t *op)
 		label = new_label (dag);
 		label->op = op;
 		op->o.tempop.daglabel = label;
-	} else if (op->op_type == op_symbol) {
-		sym = op->o.symbol;
-		if (sym->daglabel)
-			return sym->daglabel;
+	} else if (op->op_type == op_def) {
+		def = op->o.def;
+		if (def->daglabel)
+			return def->daglabel;
 		label = new_label (dag);
 		label->op = op;
-		sym->daglabel = label;
-	} else if (op->op_type == op_value || op->op_type == op_pointer) {
+		def->daglabel = label;
+	} else if (op->op_type == op_value) {
 		val = op->o.value;
 		if (val->daglabel)
 			return val->daglabel;
@@ -207,23 +203,19 @@ leaf_node (dag_t *dag, operand_t *op, expr_t *expr)
 static dagnode_t *
 dag_node (operand_t *op)
 {
-	symbol_t   *sym;
+	def_t      *def;
 	dagnode_t  *node = 0;
 
 	if (!op)
 		return 0;
-	while (op->op_type == op_alias)
-		op = op->o.alias;
-	if (op->op_type == op_symbol) {
-		sym = op->o.symbol;
-		//if (sym->sy_type == sy_const)
-		//	return 0;
-		if (sym->daglabel)
-			node = sym->daglabel->dagnode;
+	if (op->op_type == op_def) {
+		def = op->o.def;
+		if (def->daglabel)
+			node = def->daglabel->dagnode;
 	} else if (op->op_type == op_temp) {
 		if (op->o.tempop.daglabel)
 			node = op->o.tempop.daglabel->dagnode;
-	} else if (op->op_type == op_value || op->op_type == op_pointer) {
+	} else if (op->op_type == op_value) {
 		if (op->o.value->daglabel)
 			node = op->o.value->daglabel->dagnode;
 	} else if (op->op_type == op_label) {
@@ -337,19 +329,13 @@ dagnode_set_edges (dagnode_t *n)
 static int
 op_is_identifier (operand_t *op)
 {
-	while (op->op_type == op_alias)
-		op = op->o.alias;
 	if (op->op_type == op_label)
 		return 0;
 	if (op->op_type == op_value)
 		return 0;
-	if (op->op_type == op_pointer)
-		return 1;
 	if (op->op_type == op_temp)
 		return 1;
-	if (op->op_type != op_symbol)
-		return 0;
-	if (op->o.symbol->sy_type != sy_var)
+	if (op->op_type != op_def)
 		return 0;
 	return 1;
 }
@@ -569,10 +555,11 @@ build_statement (const char *opcode, operand_t **operands, expr_t *expr)
 
 	for (i = 0; i < 3; i++) {
 		if ((op = operands[i])) {
-			while (op->op_type == op_alias)
-				op = op->o.alias;
-			if (op->op_type == op_temp)
+			if (op->op_type == op_temp) {
+				while (op->o.tempop.alias)
+					op = op->o.tempop.alias;
 				op->o.tempop.users++;
+			}
 		}
 	}
 	st->opa = operands[0];
@@ -614,13 +601,6 @@ dag_calc_node_costs (dagnode_t *dagnode)
 	}
 }
 #endif
-static operand_t *
-fix_op_type (operand_t *op, etype_t type)
-{
-	if (op && op->op_type != op_label && op->type != type)
-		op = alias_operand (op, type);
-	return op;
-}
 
 static operand_t *
 generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
@@ -631,15 +611,12 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 	operand_t   *operands[3] = {0, 0, 0};
 	daglabel_t  *var;
 
-	operands[0] = fix_op_type (src, type);
+	operands[0] = src;
 	for ( ; var_iter; var_iter = set_next (var_iter)) {
 		var = dag->labels[var_iter->member];
-		operands[1] = fix_op_type (var->op, type);
-		if (!dst) {
+		operands[1] = var->op;
+		if (!dst)
 			dst = operands[1];
-			while (dst->op_type == op_alias)
-				dst = dst->o.alias;
-		}
 
 		st = build_statement ("=", operands, var->expr);
 		sblock_add_statement (block, st);
@@ -653,9 +630,6 @@ make_operand (dag_t *dag, sblock_t *block, const dagnode_t *dagnode, int index)
 	operand_t  *op;
 
 	op = dagnode->children[index]->value;
-	while (op->op_type == op_alias)
-		op = op->o.alias;
-	op = fix_op_type (op, dagnode->types[index]);
 	return op;
 }
 
@@ -676,9 +650,9 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			dst = dagnode->label->op;
 			if ((var_iter = set_first (dagnode->identifiers))) {
 				type = dst->type;
-				if (dst->op_type == op_symbol
-					&& !strcmp (dst->o.symbol->name, ".return"))
-					type = dag->flownode->return_type.in;
+				//if (dst->op_type == op_def
+				//	&& !strcmp (dst->o.def->name, ".return"))
+				//	type = dag->flownode->return_type.in;
 				dst = generate_assignments (dag, block, dst, var_iter, type);
 			}
 			break;
@@ -692,7 +666,7 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			} else {
 				daglabel_t *var = dag->labels[var_iter->member];
 
-				operands[2] = fix_op_type (var->op, type);
+				operands[2] = var->op;
 				var_iter = set_next (var_iter);
 			}
 			dst = operands[2];

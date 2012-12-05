@@ -33,12 +33,10 @@
 #include "QF/pr_comp.h"
 
 typedef enum {
-	op_symbol,
+	op_def,
 	op_value,
 	op_label,
 	op_temp,
-	op_pointer,
-	op_alias,
 } op_type_e;
 
 typedef struct {
@@ -46,20 +44,20 @@ typedef struct {
 	struct type_s *type;
 	struct flowvar_s *flowvar;
 	struct daglabel_s *daglabel;
+	struct operand_s *alias;
 	int         users;
 } tempop_t;
 
 typedef struct operand_s {
 	struct operand_s *next;
 	op_type_e   op_type;
-	etype_t     type;			///< possibly override symbol's type
+	etype_t     type;			///< possibly override def's type
 	int         size;			///< for structures
 	union {
-		struct symbol_s *symbol;
+		struct def_s *def;
 		struct ex_value_s *value;
 		struct ex_label_s *label;
 		tempop_t    tempop;
-		struct operand_s *alias;
 	} o;
 } operand_t;
 
@@ -108,7 +106,8 @@ typedef struct sblock_s {
 struct expr_s;
 struct type_s;
 
-operand_t *alias_operand (operand_t *op, etype_t type);
+const char *optype_str (op_type_e type);
+
 operand_t *temp_operand (struct type_s *type);
 sblock_t *new_sblock (void);
 statement_t *new_statement (st_type_t type, const char *opcode,
