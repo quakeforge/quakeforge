@@ -569,14 +569,14 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 				if (init->e.value->v.pointer.def)
 					reloc_def_field (init->e.value->v.pointer.def, sym->s.def);
 			} else {
-				ex_value_t  v = *init->e.value;
+				ex_value_t *v = init->e.value;
 				if (is_scalar (sym->type))
-					convert_value (&v, sym->type);
-				if (v.type == ev_string) {
+					v = convert_value (v, sym->type);
+				if (v->type == ev_string) {
 					EMIT_STRING (sym->s.def->space, D_STRING (sym->s.def),
-								 v.v.string_val);
+								 v->v.string_val);
 				} else {
-					memcpy (D_POINTER (void, sym->s.def), &v.v,
+					memcpy (D_POINTER (void, sym->s.def), &v->v,
 							type_size (type) * sizeof (pr_type_t));
 				}
 			}

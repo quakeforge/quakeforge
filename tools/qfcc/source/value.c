@@ -373,30 +373,26 @@ value_as_uint (ex_value_t *value)
 	return 0;
 }
 
-void
+ex_value_t *
 convert_value (ex_value_t *value, type_t *type)
 {
 	if (!is_scalar (type) || !is_scalar (ev_types[value->type])) {
 		error (0, "unable to convert non-scalar value");
-		return;
+		return value;
 	}
 	if (is_float (type)) {
 		float       val = value_as_float (value);
-		value->type = ev_float;
-		value->v.float_val = val;
+		return new_float_val (val);
 	} else if (type->type == ev_short) {
 		int         val = value_as_int (value);
-		value->type = ev_short;
-		value->v.short_val = val;
+		return new_short_val (val);
 	} else if (type->type == ev_uinteger) {
 		unsigned    val = value_as_uint (value);
-		value->type = ev_uinteger;
-		value->v.uinteger_val = val;
+		return new_uinteger_val (val);
 	} else {
 		//FIXME handle enums separately?
 		int         val = value_as_int (value);
-		value->type = ev_integer;
-		value->v.integer_val = val;
+		return new_integer_val (val);
 	}
 }
 
