@@ -793,7 +793,10 @@ static sblock_t *
 expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	operand_t *aop = 0;
+	operand_t *top;
+	etype_t    type;
 	def_t     *def;
+
 	sblock = statement_subexpr (sblock, e->e.expr.e1, &aop);
 	if (aop->op_type == op_temp) {
 		while (aop->o.tempop.alias) {
@@ -801,9 +804,20 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 			if (aop->op_type != op_temp)
 				internal_error (e, "temp alias of non-temp var");
 		}
-		*op = new_operand (op_temp);
-		(*op)->type = low_level_type (e->e.expr.type);
-		(*op)->o.tempop.alias = aop;
+		type = low_level_type (e->e.expr.type);
+		if (aop->type == type) {
+			top = aop;
+		} else {
+			for (top = aop->o.tempop.alias_ops; top; top = top->next)
+				if (top->type == type)
+					break;
+		}
+		if (!top) {
+			top = new_operand (op_temp);
+			top->type = type;
+			top->o.tempop.alias = aop;
+		}
+		*op = top;
 	} else if (aop->op_type == op_def) {
 		def = aop->o.def;
 		while (def->alias)
