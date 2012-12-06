@@ -407,7 +407,7 @@ flow_live_vars (flowgraph_t *graph)
 			set_empty (tmp);
 			for (succ = set_first (node->successors); succ;
 				 succ = set_next (succ))
-				set_union (tmp, graph->nodes[succ->member]->live_vars.in);
+				set_union (tmp, graph->nodes[succ->value]->live_vars.in);
 			if (!set_is_equivalent (node->live_vars.out, tmp)) {
 				changed = 1;
 				set_assign (node->live_vars.out, tmp);
@@ -486,19 +486,19 @@ flow_uninitialized (flowgraph_t *graph)
 		// not interested in back edges
 		for (pred_iter = set_first (predecessors); pred_iter;
 			 pred_iter = set_next (pred_iter)) {
-			pred = graph->nodes[pred_iter->member];
+			pred = graph->nodes[pred_iter->value];
 			if (pred->dfn >= node->dfn)
 				set_remove (predecessors, pred->id);
 		}
 		set_empty (tmp);
 		pred_iter = set_first (predecessors);
 		if (pred_iter) {
-			pred = graph->nodes[pred_iter->member];
+			pred = graph->nodes[pred_iter->value];
 			set_assign (tmp, pred->init_vars.out);
 			pred_iter = set_next (pred_iter);
 		}
 		for ( ; pred_iter; pred_iter = set_next (pred_iter)) {
-			pred = graph->nodes[pred_iter->member];
+			pred = graph->nodes[pred_iter->value];
 			set_intersection (tmp, pred->init_vars.out);
 		}
 		set_assign (node->init_vars.in, tmp);
@@ -511,7 +511,7 @@ flow_uninitialized (flowgraph_t *graph)
 	for (var_iter = set_first (uninit); var_iter;
 		 var_iter = set_next (var_iter)) {
 		expr_t  dummy;
-		flowvar_t  *var = func->vars[var_iter->member];
+		flowvar_t  *var = func->vars[var_iter->value];
 		def_t      *def;
 
 		if (var->op->op_type == op_temp) {
@@ -564,11 +564,11 @@ flow_data_flow (flowgraph_t *graph)
 		for (st = node->sblock->statements; st; st = st->next) {
 			flow_analyze_statement (st, stuse, stdef, 0, 0);
 			for (var_i = set_first (stdef); var_i; var_i = set_next (var_i)) {
-				var = graph->func->vars[var_i->member];
+				var = graph->func->vars[var_i->value];
 				set_add (var->define, st->number);
 			}
 			for (var_i = set_first (stuse); var_i; var_i = set_next (var_i)) {
-				var = graph->func->vars[var_i->member];
+				var = graph->func->vars[var_i->value];
 				set_add (var->use, st->number);
 			}
 		}
@@ -750,7 +750,7 @@ flow_find_predecessors (flowgraph_t *graph)
 		node = graph->nodes[i];
 		for (succ = set_first (node->successors); succ;
 			 succ = set_next (succ)) {
-			set_add (graph->nodes[succ->member]->predecessors, i);
+			set_add (graph->nodes[succ->value]->predecessors, i);
 		}
 	}
 	for (i = 1; i < graph->num_nodes; i++) {
@@ -792,7 +792,7 @@ flow_find_dominators (flowgraph_t *graph)
 			set_empty (work);
 			for (pred = set_first (node->predecessors); pred;
 				 pred = set_next (pred))
-				set_intersection (work, graph->nodes[pred->member]->dom);
+				set_intersection (work, graph->nodes[pred->value]->dom);
 			set_add (work, i);
 			if (!set_is_equivalent (work, node->dom))
 				changed = 1;
@@ -824,13 +824,13 @@ make_loop (flowgraph_t *graph, unsigned n, unsigned d)
 	insert_loop_node (loop, n, stack);
 	while (!set_is_empty (stack)) {
 		set_iter_t *ss = set_first (stack);
-		unsigned    m = ss->member;
+		unsigned    m = ss->value;
 		set_del_iter (ss);
 		set_remove (stack, m);
 		node = graph->nodes[m];
 		for (pred = set_first (node->predecessors); pred;
 			 pred = set_next (pred))
-			insert_loop_node (loop, pred->member, stack);
+			insert_loop_node (loop, pred->value, stack);
 	}
 	set_delete (stack);
 	return loop;
@@ -849,8 +849,8 @@ flow_find_loops (flowgraph_t *graph)
 		node = graph->nodes[i];
 		for (succ = set_first (node->successors); succ;
 			 succ = set_next (succ)) {
-			if (set_is_member (node->dom, succ->member)) {
-				loop = make_loop (graph, node->id, succ->member);
+			if (set_is_member (node->dom, succ->value)) {
+				loop = make_loop (graph, node->id, succ->value);
 				for (l = loop_list; l; l = l->next) {
 					if (l->head == loop->head
 						&& !set_is_subset (l->nodes, loop->nodes)
@@ -881,9 +881,9 @@ df_search (flowgraph_t *graph, set_t *visited, int *i, int n)
 	set_add (visited, n);
 	node = graph->nodes[n];
 	for (edge = set_first (node->edges); edge; edge = set_next (edge)) {
-		succ = graph->edges[edge->member].head;
+		succ = graph->edges[edge->value].head;
 		if (!set_is_member (visited, succ)) {
-			set_add (graph->dfst, edge->member);
+			set_add (graph->dfst, edge->value);
 			df_search (graph, visited, i, succ);
 		}
 	}
@@ -970,7 +970,7 @@ flow_build_graph (sblock_t *sblock, function_t *func)
 			 succ = set_next (succ), j++) {
 			set_add (node->edges, j);
 			graph->edges[j].tail = i;
-			graph->edges[j].head = succ->member;
+			graph->edges[j].head = succ->value;
 		}
 	}
 	flow_build_dfst (graph);

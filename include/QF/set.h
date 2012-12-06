@@ -60,18 +60,18 @@ typedef struct set_s {
 
 		create_and_populate (set);
 		for (iter = set_first (set); iter; iter = set_next (iter))
-			do_something (iter->member);
+			do_something (iter->value);
 	\endcode
 */
 typedef struct set_iter_s {
 	struct set_iter_s *next;	///< private. for ALLOC
 	const set_t *set;			///< the set to which this iterator belongs
 	/** The result of set_first() or set_next(). set_next() will start at the
-		following member.
+		following value.
 
 		\note	For inverted sets, indicates a non-member.
 	*/
-	unsigned    member;
+	unsigned    value;
 } set_iter_t;
 
 /** Delete a set iterator that is no longer needed.

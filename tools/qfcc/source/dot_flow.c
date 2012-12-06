@@ -190,7 +190,7 @@ print_flow_node_live (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 				   node->id, node->dfn);
 		for (var_iter = set_first (node->live_vars.out); var_iter;
 			 var_iter = set_next (var_iter)) {
-			var = graph->func->vars[var_iter->member];
+			var = graph->func->vars[var_iter->value];
 			dasprintf (dstr, "%*s<tr><td>(%d) %s</td></tr>\n", indent + 4, "",
 					   var->number, html_string(operand_string (var->op)));
 		}

@@ -393,7 +393,7 @@ dag_sort_visit (dag_t *dag, set_t *visited, int node_index, int *topo)
 	node = dag->nodes[node_index];
 	for (node_iter = set_first (node->edges); node_iter;
 		 node_iter = set_next (node_iter))
-		dag_sort_visit (dag, visited, node_iter->member, topo);
+		dag_sort_visit (dag, visited, node_iter->value, topo);
 	node->topo = *topo;
 	dag->topo[(*topo)++] = node_index;
 }
@@ -408,7 +408,7 @@ dag_sort_nodes (dag_t *dag)
 	dag->topo = malloc (dag->num_nodes * sizeof (int));
 	for (root_iter = set_first (dag->roots); root_iter;
 		 root_iter = set_next (root_iter))
-		dag_sort_visit (dag, visited, root_iter->member, &topo);
+		dag_sort_visit (dag, visited, root_iter->value, &topo);
 	set_delete (visited);
 }
 
@@ -614,7 +614,7 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 
 	operands[0] = src;
 	for ( ; var_iter; var_iter = set_next (var_iter)) {
-		var = dag->labels[var_iter->member];
+		var = dag->labels[var_iter->value];
 		operands[1] = var->op;
 		if (!dst)
 			dst = operands[1];
@@ -665,7 +665,7 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			if (!(var_iter = set_first (dagnode->identifiers))) {
 				operands[2] = temp_operand (get_type (dagnode->label->expr));
 			} else {
-				daglabel_t *var = dag->labels[var_iter->member];
+				daglabel_t *var = dag->labels[var_iter->value];
 
 				operands[2] = var->op;
 				var_iter = set_next (var_iter);

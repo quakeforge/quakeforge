@@ -66,7 +66,7 @@ print_root_nodes (dstring_t *dstr, dag_t *dag)
 	dasprintf (dstr, "      rank=same;");
 	for (node_iter = set_first (dag->roots); node_iter;
 		 node_iter = set_next (node_iter)) {
-		dagnode_t  *node = dag->nodes[node_iter->member];
+		dagnode_t  *node = dag->nodes[node_iter->value];
 		print_node_def (dstr, node);
 		dasprintf (dstr, "      dag_enter_%p ->dagnode_%p [style=invis];\n",
 				   dag, node);
@@ -107,7 +107,7 @@ print_node (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 		 edge_iter = set_next (edge_iter)) {
 		dasprintf (dstr,
 				   "  \"dagnode_%p\" -> \"dagnode_%p\" [style=dashed];\n",
-				   node, dag->nodes[edge_iter->member]);
+				   node, dag->nodes[edge_iter->value]);
 	}
 	set_delete (edges);
 	if (!set_is_empty (node->identifiers)) {
@@ -123,7 +123,7 @@ print_node (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 		dasprintf (dstr, "        <td>");
 		for (id_iter = set_first (node->identifiers); id_iter;
 			 id_iter = set_next (id_iter)) {
-			id = dag->labels[id_iter->member];
+			id = dag->labels[id_iter->value];
 			dasprintf (dstr, " %s", html_string (daglabel_string(id)));
 		}
 		dasprintf (dstr, "        </td>");

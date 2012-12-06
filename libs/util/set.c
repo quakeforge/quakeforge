@@ -530,7 +530,7 @@ set_first (const set_t *set)
 		if (_set_is_member (set, x)) {
 			set_iter = new_setiter ();
 			set_iter->set = set;
-			set_iter->member = x;
+			set_iter->value = x;
 			return set_iter;
 		}
 	}
@@ -542,9 +542,9 @@ set_next (set_iter_t *set_iter)
 {
 	unsigned    x;
 
-	for (x = set_iter->member + 1; x < set_iter->set->size; x++) {
+	for (x = set_iter->value + 1; x < set_iter->set->size; x++) {
 		if (_set_is_member (set_iter->set, x)) {
-			set_iter->member = x;
+			set_iter->value = x;
 			return set_iter;
 		}
 	}
