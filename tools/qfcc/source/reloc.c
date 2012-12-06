@@ -39,6 +39,8 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/alloc.h"
+
 #include "codespace.h"
 #include "def.h"
 #include "defspace.h"

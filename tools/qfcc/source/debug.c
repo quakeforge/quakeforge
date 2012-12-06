@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "QF/alloc.h"
 #include "QF/pr_comp.h"
 
 #include "debug.h"

@@ -40,6 +40,7 @@
 
 #include <ctype.h>
 
+#include "QF/alloc.h"
 #include "QF/hash.h"
 
 #include "diagnostic.h"

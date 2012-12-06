@@ -28,11 +28,11 @@
 
 */
 
-#ifndef set_h
-#define set_h
+#ifndef __QF_set_h
+#define __QF_set_h
 
-/**	\defgroup qfcc_set Set handling
-	\ingroup qfcc
+/**	\defgroup set Set handling
+	\ingroup utils
 */
 //@{
 
@@ -319,4 +319,4 @@ set_iter_t *set_next (set_iter_t *set_iter);
 const char *set_as_string (const set_t *set);
 
 //@}
-#endif//set_h
+#endif//__QF_set_h

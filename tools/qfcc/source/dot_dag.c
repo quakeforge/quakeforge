@@ -39,12 +39,12 @@
 #endif
 #include <stdlib.h>
 
-#include <QF/dstring.h>
-#include <QF/quakeio.h>
-#include <QF/va.h>
+#include "QF/dstring.h"
+#include "QF/quakeio.h"
+#include "QF/set.h"
+#include "QF/va.h"
 
 #include "dags.h"
-#include "set.h"
 #include "statements.h"
 #include "strpool.h"
 #include "symtab.h"

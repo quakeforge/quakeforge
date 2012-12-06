@@ -39,6 +39,7 @@
 
 #include <stdlib.h>
 
+#include "QF/alloc.h"
 #include "QF/va.h"
 
 #include "dags.h"

@@ -50,6 +50,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include "QF/alloc.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/pakfile.h"

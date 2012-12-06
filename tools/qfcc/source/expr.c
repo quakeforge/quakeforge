@@ -39,10 +39,11 @@
 #endif
 #include <stdlib.h>
 
-#include <QF/dstring.h>
-#include <QF/mathlib.h>
-#include <QF/sys.h>
-#include <QF/va.h>
+#include "QF/alloc.h"
+#include "QF/dstring.h"
+#include "QF/mathlib.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 
 #include "qfcc.h"
 #include "class.h"

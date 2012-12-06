@@ -39,7 +39,9 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/alloc.h"
 #include "QF/dstring.h"
+#include "QF/set.h"
 #include "QF/va.h"
 
 #include "dags.h"
@@ -50,7 +52,6 @@
 #include "function.h"
 #include "options.h"
 #include "qfcc.h"
-#include "set.h"
 #include "statements.h"
 #include "symtab.h"
 #include "type.h"

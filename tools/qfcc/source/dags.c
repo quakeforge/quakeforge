@@ -39,14 +39,15 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/alloc.h"
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
+#include "QF/set.h"
 
 #include "dags.h"
 #include "diagnostic.h"
 #include "flow.h"
 #include "qfcc.h"
-#include "set.h"
 #include "statements.h"
 #include "strpool.h"
 #include "symtab.h"

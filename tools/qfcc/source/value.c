@@ -39,6 +39,7 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/alloc.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"

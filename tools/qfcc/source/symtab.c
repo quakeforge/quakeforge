@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "QF/alloc.h"
 #include "QF/hash.h"
 
 #include "class.h"

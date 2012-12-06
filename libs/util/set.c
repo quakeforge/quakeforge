@@ -40,11 +40,10 @@
 
 #include <stdlib.h>
 
+#include "QF/alloc.h"
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
-
-#include "qfcc.h"
-#include "set.h"
+#include "QF/set.h"
 
 #define BITS (sizeof (((set_t *) 0)->map[0]) * 8)
 
