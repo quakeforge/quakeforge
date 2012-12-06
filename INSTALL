@@ -93,6 +93,15 @@ in an already configured source tree:
 	make doc
 \endverbatim
 
+If the tree has not been configured and doing so is not desirable or
+possible, then the documentation may be configured separately:
+\verbatim
+	cd doc
+	./docstrap
+	./configure
+	make doc
+\endverbatim
+
 Then either point your webbrowser to <code>doxygen/html/index.html</code>, or
 copy/move <code>doxygen/html</code> to a webserver and point your browser
 to that. The documentation is currently grossly inadequate, but hopefully

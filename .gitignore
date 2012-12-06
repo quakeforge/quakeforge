@@ -72,7 +72,9 @@ core
 
 # /doc/
 /doc/doxygen
+/doc/install-sh
 /doc/man
+/doc/missing
 /doc/progs/vm-mem.eps
 /doc/progs/vm-mem.png
 /doc/progs/vm-mem.svg
