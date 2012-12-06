@@ -108,16 +108,16 @@ set_expand (set_t *set, unsigned x)
 		free (map);
 }
 
-void
-set_add (set_t *set, unsigned x)
+static inline void
+_set_add (set_t *set, unsigned x)
 {
 	if (x >= set->size)
 		set_expand (set, x);
 	set->map[x / BITS] |= 1 << (x % BITS);
 }
 
-void
-set_remove (set_t *set, unsigned x)
+static inline void
+_set_remove (set_t *set, unsigned x)
 {
 	if (x >= set->size)
 		return;
@@ -125,7 +125,34 @@ set_remove (set_t *set, unsigned x)
 }
 
 set_t *
-set_union (set_t *dst, const set_t *src)
+set_add (set_t *set, unsigned x)
+{
+	if (set->inverted)
+		_set_remove (set, x);
+	else
+		_set_add (set, x);
+	return set;
+}
+
+set_t *
+set_remove (set_t *set, unsigned x)
+{
+	if (set->inverted)
+		_set_add (set, x);
+	else
+		_set_remove (set, x);
+	return set;
+}
+
+set_t *
+set_invert (set_t *set)
+{
+	set->inverted = !set->inverted;
+	return set;
+}
+
+static set_t *
+_set_union (set_t *dst, const set_t *src)
 {
 	unsigned    size;
 	unsigned    i;
@@ -137,8 +164,8 @@ set_union (set_t *dst, const set_t *src)
 	return dst;
 }
 
-set_t *
-set_intersection (set_t *dst, const set_t *src)
+static set_t *
+_set_intersection (set_t *dst, const set_t *src)
 {
 	unsigned    size;
 	unsigned    i;
@@ -152,8 +179,8 @@ set_intersection (set_t *dst, const set_t *src)
 	return dst;
 }
 
-set_t *
-set_difference (set_t *dst, const set_t *src)
+static set_t *
+_set_difference (set_t *dst, const set_t *src)
 {
 	unsigned    size;
 	unsigned    i;
@@ -165,6 +192,81 @@ set_difference (set_t *dst, const set_t *src)
 	return dst;
 }
 
+static set_t *
+_set_reverse_difference (set_t *dst, const set_t *src)
+{
+	unsigned    size;
+	unsigned    i;
+
+	size = max (dst->size, src->size);
+	set_expand (dst, size);
+	for (i = 0; i < src->size / BITS; i++)
+		dst->map[i] = ~dst->map[i] & src->map[i];
+	return dst;
+}
+
+set_t *
+set_union (set_t *dst, const set_t *src)
+{
+	if (dst->inverted && src->inverted) {
+		return _set_intersection (dst, src);
+	} else if (src->inverted) {
+		dst->inverted = 1;
+		return _set_difference (dst, src);
+	} else if (dst->inverted) {
+		return _set_reverse_difference (dst, src);
+	} else {
+		return _set_union (dst, src);
+	}
+}
+
+set_t *
+set_intersection (set_t *dst, const set_t *src)
+{
+	if (dst->inverted && src->inverted) {
+		return _set_union (dst, src);
+	} else if (src->inverted) {
+		return _set_difference (dst, src);
+	} else if (dst->inverted) {
+		dst->inverted = 0;
+		return _set_reverse_difference (dst, src);
+	} else {
+		return _set_intersection (dst, src);
+	}
+}
+
+set_t *
+set_difference (set_t *dst, const set_t *src)
+{
+	if (dst->inverted && src->inverted) {
+		dst->inverted = 0;
+		return _set_reverse_difference (dst, src);
+	} else if (src->inverted) {
+		return _set_intersection (dst, src);
+	} else if (dst->inverted) {
+		return _set_union (dst, src);
+	} else {
+		return _set_difference (dst, src);
+	}
+}
+
+set_t *
+set_reverse_difference (set_t *dst, const set_t *src)
+{
+	if (dst->inverted && src->inverted) {
+		dst->inverted = 0;
+		return _set_difference (dst, src);
+	} else if (src->inverted) {
+		dst->inverted = 1;
+		return _set_union (dst, src);
+	} else if (dst->inverted) {
+		dst->inverted = 0;
+		return _set_intersection (dst, src);
+	} else {
+		return _set_reverse_difference (dst, src);
+	}
+}
+
 set_t *
 set_assign (set_t *dst, const set_t *src)
 {
@@ -173,6 +275,7 @@ set_assign (set_t *dst, const set_t *src)
 
 	size = max (dst->size, src->size);
 	set_expand (dst, size);
+	dst->inverted = src->inverted;
 	for (i = 0; i < src->size / BITS; i++)
 		dst->map[i] = src->map[i];
 	for ( ; i < dst->size / BITS; i++)
@@ -185,13 +288,25 @@ set_empty (set_t *set)
 {
 	unsigned    i;
 
+	set->inverted = 0;
 	for (i = 0; i < set->size / BITS; i++)
 		set->map[i] = 0;
 	return set;
 }
 
-int
-set_is_empty (const set_t *set)
+set_t *
+set_everything (set_t *set)
+{
+	unsigned    i;
+
+	set->inverted = 1;
+	for (i = 0; i < set->size / BITS; i++)
+		set->map[i] = 0;
+	return set;
+}
+
+static inline int
+_set_is_empty (const set_t *set)
 {
 	unsigned    i;
 
@@ -201,6 +316,22 @@ set_is_empty (const set_t *set)
 	return 1;
 }
 
+int
+set_is_empty (const set_t *set)
+{
+	if (set->inverted)
+		return 0;
+	return _set_is_empty (set);
+}
+
+int
+set_is_everything (const set_t *set)
+{
+	if (!set->inverted)
+		return 0;
+	return _set_is_empty (set);
+}
+
 typedef enum {
 	set_equiv,
 	set_intersecting,
@@ -208,7 +339,7 @@ typedef enum {
 } set_test_e;
 
 static int
-set_test (const set_t *s1, const set_t *s2)
+set_test_intersect_n_n (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
 	set_test_e  rval = set_equiv;
@@ -222,11 +353,88 @@ set_test (const set_t *s1, const set_t *s2)
 				rval = set_disjoint;
 		}
 	}
+	return rval;
+}
+
+static int
+set_test_intersect_n_i (const set_t *s1, const set_t *s2)
+{
+	unsigned    i, end;
+	set_test_e  rval = set_equiv;
+
+	end = min (s1->size, s2->size) / BITS;
+	for (i = 0; i < end; i++) {
+		if (s1->map[i] != ~s2->map[i]) {
+			if (s1->map[i] & ~s2->map[i])
+				return set_intersecting;
+			else
+				rval = set_disjoint;
+		}
+	}
+	return rval;
+}
+
+static int
+set_test_intersect_i_n (const set_t *s1, const set_t *s2)
+{
+	unsigned    i, end;
+	set_test_e  rval = set_equiv;
+
+	end = min (s1->size, s2->size) / BITS;
+	for (i = 0; i < end; i++) {
+		if (~s1->map[i] != s2->map[i]) {
+			if (~s1->map[i] & s2->map[i])
+				return set_intersecting;
+			else
+				rval = set_disjoint;
+		}
+	}
+	return rval;
+}
+
+static int
+set_test_intersect_i_i (const set_t *s1, const set_t *s2)
+{
+	unsigned    i, end;
+	set_test_e  rval = set_equiv;
+
+	end = min (s1->size, s2->size) / BITS;
+	for (i = 0; i < end; i++) {
+		if (~s1->map[i] != ~s2->map[i]) {
+			if (~s1->map[i] & ~s2->map[i])
+				return set_intersecting;
+			else
+				rval = set_disjoint;
+		}
+	}
+	return rval;
+}
+
+static int
+set_test (const set_t *s1, const set_t *s2)
+{
+	unsigned    i, end;
+	set_test_e  rval = set_equiv;
+
+	if (s1->inverted && s2->inverted) {
+		rval = set_test_intersect_i_i (s1, s2);
+	} else if (s2->inverted) {
+		rval = set_test_intersect_n_i (s1, s2);
+		if (rval == set_equiv)
+			rval = set_disjoint;
+	} else if (s1->inverted) {
+		rval = set_test_intersect_i_n (s1, s2);
+		if (rval == set_equiv)
+			rval = set_disjoint;
+	} else {
+		rval = set_test_intersect_n_n (s1, s2);
+	}
 	if (rval == set_equiv) {
-		for (; i < s1->size / BITS; i++)
+		end = min (s1->size, s2->size) / BITS;
+		for (i = end; i < s1->size / BITS; i++)
 			if (s1->map[i])
 				return set_disjoint;
-		for (; i < s2->size / BITS; i++)
+		for (i = end; i < s2->size / BITS; i++)
 			if (s2->map[i])
 				return set_disjoint;
 	}
@@ -257,13 +465,31 @@ set_is_subset (const set_t *set, const set_t *sub)
 	unsigned    i, end;
 
 	end = min (set->size, sub->size) / BITS;
-	for (i = 0; i < end; i++) {
-		if (sub->map[i] & ~set->map[i])
-			return 0;
+	if (set->inverted && sub->inverted) {
+		for (i = 0; i < end; i++) {
+			if (~sub->map[i] & set->map[i])
+				return 0;
+		}
+		for ( ; i < set->size / BITS; i++)
+			if (set->map[i])
+				return 0;
+	} else if (set->inverted) {
+		for (i = 0; i < end; i++) {
+			if (sub->map[i] & set->map[i])
+				return 0;
+		}
+	} else if (sub->inverted) {
+		// an inverted set cannot be a subset of a set that is not inverted
+		return 0;
+	} else {
+		for (i = 0; i < end; i++) {
+			if (sub->map[i] & ~set->map[i])
+				return 0;
+		}
+		for ( ; i < sub->size / BITS; i++)
+			if (sub->map[i])
+				return 0;
 	}
-	for (i = 0; i < sub->size / BITS; i++)
-		if (sub->map[i])
-			return 0;
 	return 1;
 }
 
@@ -278,6 +504,8 @@ _set_is_member (const set_t *set, unsigned x)
 int
 set_is_member (const set_t *set, unsigned x)
 {
+	if (set->inverted)
+		return !_set_is_member (set, x);
 	return _set_is_member (set, x);
 }
 
@@ -288,7 +516,7 @@ set_size (const set_t *set)
 	unsigned    i;
 
 	for (i = 0; i < set->size; i++)
-		if (set_is_member (set, i))
+		if (_set_is_member (set, i))
 			count++;
 	return count;
 }
@@ -300,7 +528,7 @@ set_first (const set_t *set)
 	set_iter_t *set_iter;
 
 	for (x = 0; x < set->size; x++) {
-		if (set_is_member (set, x)) {
+		if (_set_is_member (set, x)) {
 			set_iter = new_setiter ();
 			set_iter->set = set;
 			set_iter->member = x;
@@ -316,7 +544,7 @@ set_next (set_iter_t *set_iter)
 	unsigned    x;
 
 	for (x = set_iter->member + 1; x < set_iter->set->size; x++) {
-		if (set_is_member (set_iter->set, x)) {
+		if (_set_is_member (set_iter->set, x)) {
 			set_iter->member = x;
 			return set_iter;
 		}
@@ -334,6 +562,14 @@ set_as_string (const set_t *set)
 	if (!str)
 		str = dstring_new ();
 	dstring_clearstr (str);
+	if (set_is_empty (set)) {
+		dstring_copystr (str, "[empty]");
+		return str->str;
+	}
+	if (set_is_everything (set)) {
+		dstring_copystr (str, "[everythign]");
+		return str->str;
+	}
 	for (i = 0; i < set->size; i++) {
 		if (set_is_member (set, i)) {
 			if (str->str[0])
@@ -342,5 +578,7 @@ set_as_string (const set_t *set)
 				dsprintf (str, "%d", i);
 		}
 	}
+	if (set->inverted)
+		dasprintf (str, "%s%d ...", str->str[0] ? " " : "", i);
 	return str->str;
 }
