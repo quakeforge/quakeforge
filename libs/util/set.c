@@ -566,7 +566,7 @@ set_as_string (const set_t *set)
 		return str->str;
 	}
 	if (set_is_everything (set)) {
-		dstring_copystr (str, "[everythign]");
+		dstring_copystr (str, "[everything]");
 		return str->str;
 	}
 	for (i = 0; i < set->size; i++) {
