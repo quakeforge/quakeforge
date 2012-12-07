@@ -237,6 +237,8 @@ int set_is_disjoint (const set_t *s1, const set_t *s2);
 	\param s1		The first set to test.
 	\param s2		The second set to test.
 	\return			1 if \a s2 intersects \a s1, 0 if not.
+
+	\note Equivalent sets are treated as not intersecting.
 */
 int set_is_intersecting (const set_t *s1, const set_t *s2);
 

@@ -74,6 +74,32 @@ check_size (const set_t *set, const set_t *unused)
 	return set->size;
 }
 
+static set_t *
+make_5 (void)
+{
+	set_t      *set = set_new ();
+	return set_add (set, 5);
+}
+
+static set_t *
+make_55 (void)
+{
+	set_t      *set = set_new ();
+	return set_add (set, 55);
+}
+
+static set_t *
+make_not_5 (void)
+{
+	return set_invert (make_5 ());
+}
+
+static set_t *
+make_not_55 (void)
+{
+	return set_invert (make_55 ());
+}
+
 struct {
 	setup_func  set1;
 	setup_func  set2;
@@ -102,6 +128,27 @@ struct {
 	},
 	{make_everything, make_empty, 0, set_is_subset, 1, 0},
 	{make_empty, make_everything, 0, set_is_subset, 0, 0},
+	{make_5, make_5, 0, set_is_equivalent, 1, 0},
+	{make_5, make_5, 0, set_is_intersecting, 0, 0},
+	{make_5, make_5, 0, set_is_disjoint, 0, 0},
+	{make_5, make_55, 0, set_is_equivalent, 0, 0},
+	{make_5, make_55, 0, set_is_intersecting, 0, 0},
+	{make_5, make_55, 0, set_is_disjoint, 1, 0},
+	{make_not_5, make_55, 0, set_is_equivalent, 0, 0},
+	{make_not_5, make_55, 0, set_is_intersecting, 1, 0},
+	{make_not_5, make_55, 0, set_is_disjoint, 0, 0},
+	{make_5, make_not_55, 0, set_is_equivalent, 0, 0},
+	{make_5, make_not_55, 0, set_is_intersecting, 1, 0},
+	{make_5, make_not_55, 0, set_is_disjoint, 0, 0},
+	{make_not_5, make_not_55, 0, set_is_equivalent, 0, 0},
+	{make_not_5, make_not_55, 0, set_is_intersecting, 1, 0},
+	{make_not_5, make_not_55, 0, set_is_disjoint, 0, 0},
+	{make_5, make_55, set_union, set_is_equivalent, 0, "5 55"},
+	{make_5, make_55, set_union, set_is_intersecting, 1, "5 55"},
+	{make_5, make_55, set_union, set_is_disjoint, 0, "5 55"},
+	{make_55, make_5,  set_union, set_is_equivalent,   0, "5 55"},
+	{make_55, make_5,  set_union, set_is_intersecting, 1, "5 55"},
+	{make_55, make_5,  set_union, set_is_disjoint,     0, "5 55"},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
