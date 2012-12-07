@@ -95,7 +95,7 @@ set_expand (set_t *set, unsigned x)
 	unsigned   *map = set->map;
 	size_t      size;
 
-	if (x < set->size)
+	if (x <= set->size)
 		return;
 
 	size = (x + BITS) & ~(BITS - 1);
@@ -111,7 +111,7 @@ static inline void
 _set_add (set_t *set, unsigned x)
 {
 	if (x >= set->size)
-		set_expand (set, x);
+		set_expand (set, x + 1);
 	set->map[x / BITS] |= 1 << (x % BITS);
 }
 
