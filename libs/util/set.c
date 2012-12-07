@@ -416,8 +416,6 @@ set_test_intersect_i_i (const set_t *s1, const set_t *s2)
 		if (m1 != m2)
 			rval = set_intersecting;
 	}
-	if (rval == set_intersecting && !intersection)
-		rval = set_disjoint;
 	return rval;
 }
 
@@ -426,9 +424,11 @@ set_test (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
 	set_test_e  rval = set_equiv;
+	set_test_e  ext = set_disjoint;
 
 	if (s1->inverted && s2->inverted) {
 		rval = set_test_intersect_i_i (s1, s2);
+		ext = set_intersecting;
 	} else if (s2->inverted) {
 		rval = set_test_intersect_n_i (s1, s2);
 		if (rval == set_equiv)
@@ -444,10 +444,10 @@ set_test (const set_t *s1, const set_t *s2)
 		end = min (s1->size, s2->size) / BITS;
 		for (i = end; i < s1->size / BITS; i++)
 			if (s1->map[i])
-				return set_disjoint;
+				return ext;
 		for (i = end; i < s2->size / BITS; i++)
 			if (s2->map[i])
-				return set_disjoint;
+				return ext;
 	}
 	return rval;
 }
