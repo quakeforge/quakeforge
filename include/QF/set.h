@@ -36,6 +36,11 @@
 */
 //@{
 
+#define DEFMAP_SIZE ((32 - sizeof (struct set_s *) \
+					  - sizeof (unsigned *) \
+					  - sizeof (int) - sizeof (unsigned))\
+					 / sizeof (unsigned))
+
 /** Represent a set using a bitmap.
 
 	When \a inverted is zero, ones in the bitmap represent members, but when
@@ -44,11 +49,11 @@
 	set_t as a black box.
 */
 typedef struct set_s {
-	struct set_s *next;			///< private. for ALLOC
-	int         inverted;		///< if true, 0 indicates membership
-	unsigned   *map;			///< bitmap of set members
-	unsigned    size;			///< number of representable members
-	unsigned	defmap[8];		///< backing store for small sets
+	struct set_s *next;				///< private. for ALLOC
+	unsigned   *map;				///< bitmap of set members
+	int         inverted;			///< if true, 0 indicates membership
+	unsigned    size;				///< number of representable members
+	unsigned	defmap[DEFMAP_SIZE];///< backing store for small sets
 } set_t;
 
 /** Represent the state of a scan through a set.
