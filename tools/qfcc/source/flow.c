@@ -239,9 +239,9 @@ count_operand (operand_t *op)
 		return 0;
 
 	var = flow_get_var (op);
-	// daglabels are initialized with number == 0, and any global daglabel
+	// flowvars are initialized with number == 0, and any global flowvar
 	// used by a function will always have a number >= 0 after flow analysis,
-	// and local daglabels will always be 0 before flow analysis, so use -1
+	// and local flowvars will always be 0 before flow analysis, so use -1
 	// to indicate the variable has been counted.
 	//
 	// Also, since this is the beginning of flow analysis for this function,
@@ -267,7 +267,7 @@ add_operand (function_t *func, operand_t *op)
 		return;
 
 	var = flow_get_var (op);
-	// If the daglabel number is still -1, then the daglabel has not yet been
+	// If the flowvar number is still -1, then the flowvar has not yet been
 	// added to the list of variables referenced by the function.
 	if (var && var->number == -1) {
 		var->number = func->num_vars++;
