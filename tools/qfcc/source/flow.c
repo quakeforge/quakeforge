@@ -287,12 +287,32 @@ param_symbol (const char *name)
 }
 
 static void
-flow_build_vars (function_t *func)
+flow_build_statements (function_t *func)
 {
 	sblock_t   *sblock;
 	statement_t *s;
-	int         num_vars = 0;
 	int         num_statements = 0;
+
+	for (sblock = func->sblock; sblock; sblock = sblock->next) {
+		for (s = sblock->statements; s; s = s->next)
+			s->number = num_statements++;
+	}
+	if (!num_statements)
+		return;
+
+	func->statements = malloc (num_statements * sizeof (statement_t *));
+	func->num_statements = num_statements;
+	for (sblock = func->sblock; sblock; sblock = sblock->next) {
+		for (s = sblock->statements; s; s = s->next)
+			func->statements[s->number] = s;
+	}
+}
+
+static void
+flow_build_vars (function_t *func)
+{
+	statement_t *s;
+	int         num_vars = 0;
 	int         i;
 
 	// first, count .return and .param_[0-7] as they are always needed
@@ -302,44 +322,34 @@ flow_build_vars (function_t *func)
 	}
 	// then run through the statements in the function looking for accessed
 	// variables
-	for (sblock = func->sblock; sblock; sblock = sblock->next) {
-		for (s = sblock->statements; s; s = s->next) {
-			num_vars += count_operand (s->opa);
-			num_vars += count_operand (s->opb);
-			num_vars += count_operand (s->opc);
-			s->number = num_statements++;
-		}
+	for (i = 0; i < func->num_statements; i++) {
+		s = func->statements[i];
+		num_vars += count_operand (s->opa);
+		num_vars += count_operand (s->opb);
+		num_vars += count_operand (s->opc);
 	}
-	if (num_vars) {
-		func->vars = malloc (num_vars * sizeof (daglabel_t *));
+	if (!num_vars)
+		return;
 
-		func->num_vars = 0;	// incremented by add_operand
-		// first, add .return and .param_[0-7] as they are always needed
-		for (i = 0; i < num_flow_params; i++)
-			add_operand (func, &flow_params[i].op);
-		// then run through the statements in the function adding accessed
-		// variables
-		for (sblock = func->sblock; sblock; sblock = sblock->next) {
-			for (s = sblock->statements; s; s = s->next) {
-				add_operand (func, s->opa);
-				add_operand (func, s->opb);
-				add_operand (func, s->opc);
-			}
-		}
-		func->global_vars = set_new ();
-		// mark all global vars (except .return and .param_N)
-		for (i = num_flow_params; i < func->num_vars; i++) {
-			if (flowvar_is_global (func->vars[i]))
-				set_add (func->global_vars, i);
-		}
+	func->vars = malloc (num_vars * sizeof (daglabel_t *));
+
+	func->num_vars = 0;	// incremented by add_operand
+	// first, add .return and .param_[0-7] as they are always needed
+	for (i = 0; i < num_flow_params; i++)
+		add_operand (func, &flow_params[i].op);
+	// then run through the statements in the function adding accessed
+	// variables
+	for (i = 0; i < func->num_statements; i++) {
+		s = func->statements[i];
+		add_operand (func, s->opa);
+		add_operand (func, s->opb);
+		add_operand (func, s->opc);
 	}
-	if (num_statements) {
-		func->statements = malloc (num_statements * sizeof (statement_t *));
-		func->num_statements = num_statements;
-		for (sblock = func->sblock; sblock; sblock = sblock->next) {
-			for (s = sblock->statements; s; s = s->next)
-				func->statements[s->number] = s;
-		}
+	func->global_vars = set_new ();
+	// mark all global vars (except .return and .param_N)
+	for (i = num_flow_params; i < func->num_vars; i++) {
+		if (flowvar_is_global (func->vars[i]))
+			set_add (func->global_vars, i);
 	}
 }
 
@@ -961,6 +971,7 @@ flow_data_flow (function_t *func)
 	set_t      *stdef = set_new ();
 	set_iter_t *var_i;
 
+	flow_build_statements (func);
 	flow_build_vars (func);
 	graph = flow_build_graph (func);
 	func->graph = graph;
