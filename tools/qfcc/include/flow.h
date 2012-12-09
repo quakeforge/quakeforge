@@ -71,6 +71,12 @@ typedef struct flownode_s {
 	struct set_s *dom;			///< dominating nodes
 	struct set_s *global_vars;	///< global vars used by function
 	struct {
+		struct set_s *gen;
+		struct set_s *kill;
+		struct set_s *in;
+		struct set_s *out;
+	}           reaching_defs;
+	struct {
 		struct set_s *use;
 		struct set_s *def;
 		struct set_s *in;
@@ -109,6 +115,7 @@ void flow_data_flow (struct function_s *func);
 void dump_dot_flow (void *g, const char *filename);
 void dump_dot_flow_dags (void *g, const char *filename);
 void dump_dot_flow_live (void *g, const char *filename);
+void dump_dot_flow_reaching (void *g, const char *filename);
 
 //@}
 

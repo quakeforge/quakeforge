@@ -200,10 +200,35 @@ print_flow_node_live (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 	}
 }
 
+static void
+print_flow_node_reaching (dstring_t *dstr, flowgraph_t *graph,
+						  flownode_t *node, int level)
+{
+	int         indent = level * 2 + 2;
+	int         reach;
+	set_t      *gen = node->reaching_defs.gen;
+	set_t      *kill = node->reaching_defs.kill;
+	set_t      *in = node->reaching_defs.in;
+	set_t      *out = node->reaching_defs.out;
+
+	reach = gen && kill && in && out;
+
+	if (reach) {
+		dasprintf (dstr, "%*sfn_%p [label=\"", indent, "", node);
+		dasprintf (dstr, "gen: %s\\n", set_as_string (gen));
+		dasprintf (dstr, "kill: %s\\n", set_as_string (kill));
+		dasprintf (dstr, "in: %s\\n", set_as_string (in));
+		dasprintf (dstr, "out: %s\"];\n", set_as_string (out));
+	} else {
+		print_flow_node (dstr, graph, node, level);
+	}
+}
+
 static flow_dot_t flow_dot_methods[] = {
-	{"",		print_flow_node,		print_flow_edge},
-	{"dag",		print_flow_node_dag,	print_flow_edge_dag},
-	{"live",	print_flow_node_live,	print_flow_edge},
+	{"",		print_flow_node,			print_flow_edge},
+	{"dag",		print_flow_node_dag,		print_flow_edge_dag},
+	{"live",	print_flow_node_live,		print_flow_edge},
+	{"reaching",print_flow_node_reaching,	print_flow_edge},
 };
 
 static void
@@ -253,4 +278,10 @@ void
 dump_dot_flow_live (void *g, const char *filename)
 {
 	print_flowgraph (&flow_dot_methods[2], (flowgraph_t *) g, filename);
+}
+
+void
+dump_dot_flow_reaching (void *g, const char *filename)
+{
+	print_flowgraph (&flow_dot_methods[3], (flowgraph_t *) g, filename);
 }

@@ -374,6 +374,78 @@ flow_build_vars (function_t *func)
 }
 
 static void
+flow_reaching_defs (flowgraph_t *graph)
+{
+	int         i;
+	int         changed;
+	flownode_t *node;
+	statement_t *st;
+	set_t      *stdef = set_new ();
+	set_t      *stgen = set_new ();
+	set_t      *stkill = set_new ();
+	set_t      *oldout = set_new ();
+	set_t      *gen, *kill, *in, *out;
+	set_iter_t *var_i;
+	set_iter_t *pred_i;
+	flowvar_t  *var;
+
+	// First, calculate gen and kill for each block, and initialize in and out
+	for (i = 0; i < graph->num_nodes; i++) {
+		node = graph->nodes[i];
+		gen = set_new ();
+		kill = set_new ();
+		for (st = node->sblock->statements; st; st = st->next) {
+			flow_analyze_statement (st, 0, stdef, 0, 0);
+			set_empty (stgen);
+			set_empty (stkill);
+			for (var_i = set_first (stdef); var_i; var_i = set_next (var_i)) {
+				var = graph->func->vars[var_i->value];
+				set_union (stkill, var->define);
+				set_remove (stkill, st->number);
+				set_add (stgen, st->number);
+			}
+
+			set_difference (gen, stkill);
+			set_union (gen, stgen);
+
+			set_difference (kill, stgen);
+			set_union (kill, stkill);
+		}
+		node->reaching_defs.gen = gen;
+		node->reaching_defs.kill = kill;
+		node->reaching_defs.in = set_new ();
+		node->reaching_defs.out = set_new ();
+	}
+
+	while (changed) {
+		changed = 0;
+		// flow down the graph
+		for (i = 0; i < graph->num_nodes; i++) {
+			node = graph->nodes[graph->dfo[i]];
+			in = node->reaching_defs.in;
+			out = node->reaching_defs.out;
+			gen = node->reaching_defs.gen;
+			kill = node->reaching_defs.kill;
+			for (pred_i = set_first (node->predecessors); pred_i;
+				 pred_i = set_next (pred_i)) {
+				flownode_t *pred = graph->nodes[pred_i->value];
+				set_union (in, pred->reaching_defs.out);
+			}
+			set_assign (oldout, out);
+			set_assign (out, in);
+			set_difference (out, kill);
+			set_union (out, gen);
+			if (!set_is_equivalent (out, oldout))
+				changed = 1;
+		}
+	}
+	set_delete (oldout);
+	set_delete (stdef);
+	set_delete (stgen);
+	set_delete (stkill);
+}
+
+static void
 live_set_use (set_t *stuse, set_t *use, set_t *def)
 {
 	// the variable is used before it is defined
@@ -988,6 +1060,8 @@ flow_data_flow (function_t *func)
 	flow_build_vars (func);
 	graph = flow_build_graph (func);
 	func->graph = graph;
+	flow_reaching_defs (graph);
+	dump_dot ("reaching", graph, dump_dot_flow_reaching);
 	flow_live_vars (graph);
 	flow_uninitialized (graph);
 	flow_build_dags (graph);
