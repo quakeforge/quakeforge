@@ -116,23 +116,23 @@ struct {
 	int         test_expect;
 	const char *str_expect;
 } tests[] = {
-	{make_empty,             0, 0, check_size, SIZE, "[empty]"},
-	{make_empty2,            0, 0, check_size, SIZE, "[empty]"},
-	{make_everything,        0, 0, check_size, SIZE, "[everything]"},
-	{make_empty_invert,      0, 0, check_size, SIZE, "[everything]"},
-	{make_everything_invert, 0, 0, check_size, SIZE, "[empty]"},
-	{make_SIZE,              0, 0, check_size, SIZE + BITS, "64"},
+	{make_empty,             0, 0, check_size, SIZE, "{}"},
+	{make_empty2,            0, 0, check_size, SIZE, "{}"},
+	{make_everything,        0, 0, check_size, SIZE, "{...}"},
+	{make_empty_invert,      0, 0, check_size, SIZE, "{...}"},
+	{make_everything_invert, 0, 0, check_size, SIZE, "{}"},
+	{make_SIZE,              0, 0, check_size, SIZE + BITS, "{64}"},
 	{make_0_to_SIZEm1,       0, 0, check_size, SIZE,
-		"0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
+		"{0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
 		" 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31"
 		" 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47"
-		" 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63"
+		" 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63}"
 	},
 	{make_everything,        make_0_to_SIZEm1, set_difference, check_size,
-		SIZE, "64 ..."
+		SIZE, "{64 ...}"
 	},
 	{make_0_to_SIZEm1,        make_everything, set_reverse_difference,
-		check_size, SIZE, "64 ..."
+		check_size, SIZE, "{64 ...}"
 	},
 	{make_everything, make_empty, 0, set_is_subset,      1, 0},
 	{make_everything, make_empty, 0, set_is_equivalent,   0, 0},
@@ -165,12 +165,12 @@ struct {
 	{make_not_5, make_not_55, 0, set_is_equivalent,   0, 0},
 	{make_not_5, make_not_55, 0, set_is_intersecting, 1, 0},
 	{make_not_5, make_not_55, 0, set_is_disjoint,     0, 0},
-	{make_5,  make_55, set_union, set_is_equivalent,   0, "5 55"},
-	{make_5,  make_55, set_union, set_is_intersecting, 1, "5 55"},
-	{make_5,  make_55, set_union, set_is_disjoint,     0, "5 55"},
-	{make_55, make_5,  set_union, set_is_equivalent,   0, "5 55"},
-	{make_55, make_5,  set_union, set_is_intersecting, 1, "5 55"},
-	{make_55, make_5,  set_union, set_is_disjoint,     0, "5 55"},
+	{make_5,  make_55, set_union, set_is_equivalent,   0, "{5 55}"},
+	{make_5,  make_55, set_union, set_is_intersecting, 1, "{5 55}"},
+	{make_5,  make_55, set_union, set_is_disjoint,     0, "{5 55}"},
+	{make_55, make_5,  set_union, set_is_equivalent,   0, "{5 55}"},
+	{make_55, make_5,  set_union, set_is_intersecting, 1, "{5 55}"},
+	{make_55, make_5,  set_union, set_is_disjoint,     0, "{5 55}"},
 	{make_not_SIZE, make_everything, 0, set_is_equivalent,   0, 0},
 	{make_not_SIZE, make_everything, 0, set_is_intersecting, 1, 0},
 	{make_not_SIZE, make_everything, 0, set_is_disjoint,     0, 0},

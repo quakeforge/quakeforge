@@ -564,24 +564,25 @@ set_as_string (const set_t *set)
 
 	if (!str)
 		str = dstring_new ();
-	dstring_clearstr (str);
 	if (set_is_empty (set)) {
-		dstring_copystr (str, "[empty]");
+		dstring_copystr (str, "{}");
 		return str->str;
 	}
 	if (set_is_everything (set)) {
-		dstring_copystr (str, "[everything]");
+		dstring_copystr (str, "{...}");
 		return str->str;
 	}
+	dstring_copystr (str, "{");
 	for (i = 0; i < set->size; i++) {
 		if (set_is_member (set, i)) {
-			if (str->str[0])
+			if (str->str[1])
 				dasprintf (str, " %d", i);
 			else
-				dsprintf (str, "%d", i);
+				dasprintf (str, "%d", i);
 		}
 	}
 	if (set->inverted)
-		dasprintf (str, "%s%d ...", str->str[0] ? " " : "", i);
+		dasprintf (str, "%s%d ...", str->str[1] ? " " : "", i);
+	dstring_appendstr (str, "}");
 	return str->str;
 }
