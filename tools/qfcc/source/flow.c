@@ -314,6 +314,10 @@ flow_build_vars (function_t *func)
 	statement_t *s;
 	int         num_vars = 0;
 	int         i;
+	set_t      *stuse;
+	set_t      *stdef;
+	set_iter_t *var_i;
+	flowvar_t  *var;
 
 	// first, count .return and .param_[0-7] as they are always needed
 	for (i = 0; i < num_flow_params; i++) {
@@ -333,6 +337,9 @@ flow_build_vars (function_t *func)
 
 	func->vars = malloc (num_vars * sizeof (daglabel_t *));
 
+	stuse = set_new ();
+	stdef = set_new ();
+
 	func->num_vars = 0;	// incremented by add_operand
 	// first, add .return and .param_[0-7] as they are always needed
 	for (i = 0; i < num_flow_params; i++)
@@ -344,6 +351,16 @@ flow_build_vars (function_t *func)
 		add_operand (func, s->opa);
 		add_operand (func, s->opb);
 		add_operand (func, s->opc);
+
+		flow_analyze_statement (s, stuse, stdef, 0, 0);
+		for (var_i = set_first (stdef); var_i; var_i = set_next (var_i)) {
+			var = func->vars[var_i->value];
+			set_add (var->define, i);
+		}
+		for (var_i = set_first (stuse); var_i; var_i = set_next (var_i)) {
+			var = func->vars[var_i->value];
+			set_add (var->use, i);
+		}
 	}
 	func->global_vars = set_new ();
 	// mark all global vars (except .return and .param_N)
@@ -351,6 +368,9 @@ flow_build_vars (function_t *func)
 		if (flowvar_is_global (func->vars[i]))
 			set_add (func->global_vars, i);
 	}
+
+	set_delete (stuse);
+	set_delete (stdef);
 }
 
 static void
@@ -962,34 +982,12 @@ flow_build_graph (function_t *func)
 void
 flow_data_flow (function_t *func)
 {
-	int         i;
 	flowgraph_t *graph;
-	flownode_t *node;
-	statement_t *st;
-	flowvar_t  *var;
-	set_t      *stuse = set_new ();
-	set_t      *stdef = set_new ();
-	set_iter_t *var_i;
 
 	flow_build_statements (func);
 	flow_build_vars (func);
 	graph = flow_build_graph (func);
 	func->graph = graph;
-
-	for (i = 0; i < graph->num_nodes; i++) {
-		node = graph->nodes[i];
-		for (st = node->sblock->statements; st; st = st->next) {
-			flow_analyze_statement (st, stuse, stdef, 0, 0);
-			for (var_i = set_first (stdef); var_i; var_i = set_next (var_i)) {
-				var = graph->func->vars[var_i->value];
-				set_add (var->define, st->number);
-			}
-			for (var_i = set_first (stuse); var_i; var_i = set_next (var_i)) {
-				var = graph->func->vars[var_i->value];
-				set_add (var->use, st->number);
-			}
-		}
-	}
 	flow_live_vars (graph);
 	flow_uninitialized (graph);
 	flow_build_dags (graph);
