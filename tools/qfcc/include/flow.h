@@ -99,15 +99,12 @@ typedef struct flowgraph_s {
 } flowgraph_t;
 
 flowvar_t *flow_get_var (struct operand_s *op);
+
 void flow_analyze_statement (struct statement_s *s, struct set_s *use,
 							 struct set_s *def, struct set_s *kill,
 							 struct operand_s *operands[4]);
-void flow_build_vars (struct function_s *func);
-flowgraph_t *flow_build_graph (struct sblock_s *sblock,
-							   struct function_s *func);
-void flow_del_graph (flowgraph_t *graph);
-void flow_data_flow (flowgraph_t *graph);
-struct sblock_s *flow_generate (flowgraph_t *graph);
+
+void flow_data_flow (struct function_s *func);
 
 void dump_dot_flow (void *g, const char *filename);
 void dump_dot_flow_dags (void *g, const char *filename);

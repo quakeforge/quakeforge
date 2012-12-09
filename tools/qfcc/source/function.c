@@ -645,11 +645,7 @@ emit_function (function_t *f, expr_t *e)
 	lineno_base = f->def->line;
 	f->sblock = make_statements (e);
 	if (options.code.optimize) {
-		flow_build_vars (f);
-		f->graph = flow_build_graph (f->sblock, f);
-		f->graph->func = f;
-		flow_data_flow (f->graph);
-		f->sblock = flow_generate (f->graph);
+		flow_data_flow (f);
 	} else {
 		statements_count_temps (f->sblock);
 	}

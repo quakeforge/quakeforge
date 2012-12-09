@@ -133,7 +133,7 @@ new_graph (void)
 	return graph;
 }
 
-static void
+static void __attribute__((unused))
 delete_graph (flowgraph_t *graph)
 {
 	int         i;
@@ -225,7 +225,6 @@ flow_get_var (operand_t *op)
 			op->o.def->flowvar = new_flowvar ();
 		return op->o.def->flowvar;
 	}
-	//FIXME functions? (some are variable) values?
 	return 0;
 }
 
@@ -287,7 +286,7 @@ param_symbol (const char *name)
 	return sym;
 }
 
-void
+static void
 flow_build_vars (function_t *func)
 {
 	sblock_t   *sblock;
@@ -548,39 +547,7 @@ flow_build_dags (flowgraph_t *graph)
 		dump_dot ("dags", graph, dump_dot_flow_dags);
 }
 
-void
-flow_data_flow (flowgraph_t *graph)
-{
-	int         i;
-	flownode_t *node;
-	statement_t *st;
-	flowvar_t  *var;
-	set_t      *stuse = set_new ();
-	set_t      *stdef = set_new ();
-	set_iter_t *var_i;
-
-	for (i = 0; i < graph->num_nodes; i++) {
-		node = graph->nodes[i];
-		for (st = node->sblock->statements; st; st = st->next) {
-			flow_analyze_statement (st, stuse, stdef, 0, 0);
-			for (var_i = set_first (stdef); var_i; var_i = set_next (var_i)) {
-				var = graph->func->vars[var_i->value];
-				set_add (var->define, st->number);
-			}
-			for (var_i = set_first (stuse); var_i; var_i = set_next (var_i)) {
-				var = graph->func->vars[var_i->value];
-				set_add (var->use, st->number);
-			}
-		}
-	}
-	flow_live_vars (graph);
-	flow_uninitialized (graph);
-	flow_build_dags (graph);
-	if (options.block_dot.flow)
-		dump_dot ("flow", graph, dump_dot_flow);
-}
-
-sblock_t *
+static sblock_t *
 flow_generate (flowgraph_t *graph)
 {
 	int         i;
@@ -904,9 +871,10 @@ flow_build_dfst (flowgraph_t *graph)
 	set_delete (visited);
 }
 
-flowgraph_t *
-flow_build_graph (sblock_t *sblock, function_t *func)
+static flowgraph_t *
+flow_build_graph (function_t *func)
 {
+	sblock_t   *sblock = func->sblock;
 	flowgraph_t *graph;
 	flownode_t *node;
 	sblock_t   *sb;
@@ -916,6 +884,7 @@ flow_build_graph (sblock_t *sblock, function_t *func)
 	int         i, j;
 
 	graph = new_graph ();
+	graph->func = func;
 	for (sb = sblock; sb; sb = sb->next)
 		sb->number = graph->num_nodes++;
 	graph->nodes = malloc (graph->num_nodes * sizeof (flownode_t *));
@@ -981,7 +950,39 @@ flow_build_graph (sblock_t *sblock, function_t *func)
 }
 
 void
-flow_del_graph (flowgraph_t *graph)
+flow_data_flow (function_t *func)
 {
-	delete_graph (graph);
+	int         i;
+	flowgraph_t *graph;
+	flownode_t *node;
+	statement_t *st;
+	flowvar_t  *var;
+	set_t      *stuse = set_new ();
+	set_t      *stdef = set_new ();
+	set_iter_t *var_i;
+
+	flow_build_vars (func);
+	graph = flow_build_graph (func);
+	func->graph = graph;
+
+	for (i = 0; i < graph->num_nodes; i++) {
+		node = graph->nodes[i];
+		for (st = node->sblock->statements; st; st = st->next) {
+			flow_analyze_statement (st, stuse, stdef, 0, 0);
+			for (var_i = set_first (stdef); var_i; var_i = set_next (var_i)) {
+				var = graph->func->vars[var_i->value];
+				set_add (var->define, st->number);
+			}
+			for (var_i = set_first (stuse); var_i; var_i = set_next (var_i)) {
+				var = graph->func->vars[var_i->value];
+				set_add (var->use, st->number);
+			}
+		}
+	}
+	flow_live_vars (graph);
+	flow_uninitialized (graph);
+	flow_build_dags (graph);
+	if (options.block_dot.flow)
+		dump_dot ("flow", graph, dump_dot_flow);
+	func->sblock = flow_generate (graph);
 }
