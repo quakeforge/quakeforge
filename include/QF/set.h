@@ -229,6 +229,8 @@ int set_is_everything (const set_t *set);
 	\param s1		The first set to test.
 	\param s2		The second set to test.
 	\return			1 if \a s2 is disjoint from \a s1, 0 if not.
+
+	\note	The emtpy set is disjoint with itself.
 */
 int set_is_disjoint (const set_t *s1, const set_t *s2);
 
@@ -238,7 +240,7 @@ int set_is_disjoint (const set_t *s1, const set_t *s2);
 	\param s2		The second set to test.
 	\return			1 if \a s2 intersects \a s1, 0 if not.
 
-	\note Equivalent sets are treated as not intersecting.
+	\note	Equivalent non-empty sets are treated as intersecting.
 */
 int set_is_intersecting (const set_t *s1, const set_t *s2);
 

@@ -58,6 +58,14 @@ make_SIZE (void)
 }
 
 static set_t *
+make_not_SIZE (void)
+{
+	set_t      *set = set_new ();
+	set_add (set, SIZE);
+	return set_invert (set);
+}
+
+static set_t *
 make_0_to_SIZEm1 (void)
 {
 	set_t      *set = set_new ();
@@ -126,10 +134,24 @@ struct {
 	{make_0_to_SIZEm1,        make_everything, set_reverse_difference,
 		check_size, SIZE, "64 ..."
 	},
-	{make_everything, make_empty, 0, set_is_subset, 1, 0},
-	{make_empty, make_everything, 0, set_is_subset, 0, 0},
+	{make_everything, make_empty, 0, set_is_subset,      1, 0},
+	{make_everything, make_empty, 0, set_is_equivalent,   0, 0},
+	{make_everything, make_empty, 0, set_is_intersecting, 0, 0},
+	{make_everything, make_empty, 0, set_is_disjoint,     1, 0},
+	{make_empty, make_everything, 0, set_is_subset,       0, 0},
+	{make_empty, make_everything, 0, set_is_equivalent,   0, 0},
+	{make_empty, make_everything, 0, set_is_intersecting, 0, 0},
+	{make_empty, make_everything, 0, set_is_disjoint,     1, 0},
+	{make_everything, make_everything, 0, set_is_subset,       1, 0},
+	{make_everything, make_everything, 0, set_is_equivalent,   1, 0},
+	{make_everything, make_everything, 0, set_is_intersecting, 1, 0},
+	{make_everything, make_everything, 0, set_is_disjoint,     0, 0},
+	{make_empty, make_empty, 0, set_is_subset,       1, 0},
+	{make_empty, make_empty, 0, set_is_equivalent,   1, 0},
+	{make_empty, make_empty, 0, set_is_intersecting, 0, 0},
+	{make_empty, make_empty, 0, set_is_disjoint,     1, 0},
 	{make_5, make_5, 0, set_is_equivalent,   1, 0},
-	{make_5, make_5, 0, set_is_intersecting, 0, 0},
+	{make_5, make_5, 0, set_is_intersecting, 1, 0},
 	{make_5, make_5, 0, set_is_disjoint,     0, 0},
 	{make_5,     make_55, 0, set_is_equivalent,   0, 0},
 	{make_5,     make_55, 0, set_is_intersecting, 0, 0},
@@ -149,6 +171,18 @@ struct {
 	{make_55, make_5,  set_union, set_is_equivalent,   0, "5 55"},
 	{make_55, make_5,  set_union, set_is_intersecting, 1, "5 55"},
 	{make_55, make_5,  set_union, set_is_disjoint,     0, "5 55"},
+	{make_not_SIZE, make_everything, 0, set_is_equivalent,   0, 0},
+	{make_not_SIZE, make_everything, 0, set_is_intersecting, 1, 0},
+	{make_not_SIZE, make_everything, 0, set_is_disjoint,     0, 0},
+	{make_SIZE, make_everything, 0, set_is_equivalent,   0, 0},
+	{make_SIZE, make_everything, 0, set_is_intersecting, 1, 0},
+	{make_SIZE, make_everything, 0, set_is_disjoint,     0, 0},
+	{make_not_5, make_everything, 0, set_is_equivalent,   0, 0},
+	{make_not_5, make_everything, 0, set_is_intersecting, 1, 0},
+	{make_not_5, make_everything, 0, set_is_disjoint,     0, 0},
+	{make_5, make_everything, 0, set_is_equivalent,   0, 0},
+	{make_5, make_everything, 0, set_is_intersecting, 1, 0},
+	{make_5, make_everything, 0, set_is_disjoint,     0, 0},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 

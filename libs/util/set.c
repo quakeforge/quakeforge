@@ -331,18 +331,12 @@ set_is_everything (const set_t *set)
 	return _set_is_empty (set);
 }
 
-typedef enum {
-	set_equiv,
-	set_intersecting,
-	set_disjoint,
-} set_test_e;
-
 static int
-set_test_intersect_n_n (const set_t *s1, const set_t *s2)
+set_test_n_n (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
 	unsigned    intersection = 0;
-	set_test_e  rval = set_equiv;
+	unsigned    difference = 0;
 
 	end = min (s1->size, s2->size) / BITS;
 	for (i = 0; i < end; i++) {
@@ -350,20 +344,23 @@ set_test_intersect_n_n (const set_t *s1, const set_t *s2)
 		unsigned    m2 = s2->map[i];
 
 		intersection |= m1 & m2;
-		if (m1 != m2)
-			rval = set_intersecting;
+		difference |= m1 ^ m2;
 	}
-	if (rval == set_intersecting && !intersection)
-		rval = set_disjoint;
-	return rval;
+	for ( ; i < s1->size / BITS; i++) {
+		difference |= s1->map[i];
+	}
+	for ( ; i < s2->size / BITS; i++) {
+		difference |= s2->map[i];
+	}
+	return (difference != 0) | ((intersection != 0) << 1);
 }
 
 static int
-set_test_intersect_n_i (const set_t *s1, const set_t *s2)
+set_test_n_i (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
 	unsigned    intersection = 0;
-	set_test_e  rval = set_equiv;
+	unsigned    difference = 0;
 
 	end = min (s1->size, s2->size) / BITS;
 	for (i = 0; i < end; i++) {
@@ -371,20 +368,24 @@ set_test_intersect_n_i (const set_t *s1, const set_t *s2)
 		unsigned    m2 = ~s2->map[i];
 
 		intersection |= m1 & m2;
-		if (m1 != m2)
-			rval = set_intersecting;
+		difference |= m1 ^ m2;
 	}
-	if (rval == set_intersecting && !intersection)
-		rval = set_disjoint;
-	return rval;
+	for ( ; i < s1->size / BITS; i++) {
+		intersection |= s1->map[i];
+		difference |= ~s1->map[i];
+	}
+	for ( ; i < s2->size / BITS; i++) {
+		difference |= ~s2->map[i];
+	}
+	return (difference != 0) | ((intersection != 0) << 1);
 }
 
 static int
-set_test_intersect_i_n (const set_t *s1, const set_t *s2)
+set_test_i_n (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
 	unsigned    intersection = 0;
-	set_test_e  rval = set_equiv;
+	unsigned    difference = 0;
 
 	end = min (s1->size, s2->size) / BITS;
 	for (i = 0; i < end; i++) {
@@ -392,20 +393,24 @@ set_test_intersect_i_n (const set_t *s1, const set_t *s2)
 		unsigned    m2 = s2->map[i];
 
 		intersection |= m1 & m2;
-		if (m1 != m2)
-			rval = set_intersecting;
+		difference |= m1 ^ m2;
 	}
-	if (rval == set_intersecting && !intersection)
-		rval = set_disjoint;
-	return rval;
+	for ( ; i < s1->size / BITS; i++) {
+		difference |= ~s1->map[i];
+	}
+	for ( ; i < s2->size / BITS; i++) {
+		intersection |= s2->map[i];
+		difference |= ~s2->map[i];
+	}
+	return (difference != 0) | ((intersection != 0) << 1);
 }
 
 static int
-set_test_intersect_i_i (const set_t *s1, const set_t *s2)
+set_test_i_i (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
 	unsigned    intersection = 0;
-	set_test_e  rval = set_equiv;
+	unsigned    difference = 0;
 
 	end = min (s1->size, s2->size) / BITS;
 	for (i = 0; i < end; i++) {
@@ -413,61 +418,48 @@ set_test_intersect_i_i (const set_t *s1, const set_t *s2)
 		unsigned    m2 = ~s2->map[i];
 
 		intersection |= m1 & m2;
-		if (m1 != m2)
-			rval = set_intersecting;
+		difference |= m1 ^ m2;
 	}
-	return rval;
+	for ( ; i < s1->size / BITS; i++) {
+		difference |= ~s1->map[i];
+	}
+	for ( ; i < s2->size / BITS; i++) {
+		intersection |= s2->map[i];
+		difference |= ~s2->map[i];
+	}
+	intersection |= ~0;		// two inverted sets can never be disjoint
+	return (difference != 0) | ((intersection != 0) << 1);
 }
 
 static int
 set_test (const set_t *s1, const set_t *s2)
 {
-	unsigned    i, end;
-	set_test_e  rval = set_equiv;
-	set_test_e  ext = set_disjoint;
-
-	if (s1->inverted && s2->inverted) {
-		rval = set_test_intersect_i_i (s1, s2);
-		ext = set_intersecting;
-	} else if (s2->inverted) {
-		rval = set_test_intersect_n_i (s1, s2);
-		if (rval == set_equiv)
-			rval = set_disjoint;
-	} else if (s1->inverted) {
-		rval = set_test_intersect_i_n (s1, s2);
-		if (rval == set_equiv)
-			rval = set_disjoint;
-	} else {
-		rval = set_test_intersect_n_n (s1, s2);
-	}
-	if (rval == set_equiv) {
-		end = min (s1->size, s2->size) / BITS;
-		for (i = end; i < s1->size / BITS; i++)
-			if (s1->map[i])
-				return ext;
-		for (i = end; i < s2->size / BITS; i++)
-			if (s2->map[i])
-				return ext;
-	}
-	return rval;
+	if (s1->inverted && s2->inverted)
+		return set_test_i_i (s1, s2);
+	else if (s2->inverted)
+		return set_test_n_i (s1, s2);
+	else if (s1->inverted)
+		return set_test_i_n (s1, s2);
+	else
+		return set_test_n_n (s1, s2);
 }
 
 int
 set_is_disjoint (const set_t *s1, const set_t *s2)
 {
-	return set_test (s1, s2) == set_disjoint;
+	return !(set_test (s1, s2) & 2);
 }
 
 int
 set_is_intersecting (const set_t *s1, const set_t *s2)
 {
-	return set_test (s1, s2) == set_intersecting;
+	return !!(set_test (s1, s2) & 2);
 }
 
 int
 set_is_equivalent (const set_t *s1, const set_t *s2)
 {
-	return set_test (s1, s2) == set_equiv;
+	return !(set_test (s1, s2) & 1);
 }
 
 int
