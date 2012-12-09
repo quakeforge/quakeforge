@@ -54,15 +54,35 @@ struct expr_s;
 */
 typedef struct def_s {
 	struct def_s *next;			///< general purpose linking
-
 	struct def_s *temp_next;	///< linked list of "free" temp defs
+
 	struct type_s *type;		///< QC type of this def
 	const char *name;			///< the def's name
 	struct defspace_s *space;	///< defspace to which this def belongs
 	int	        offset;			///< address of this def in its defspace
 
+	/** \name Def aliasing.
+		Aliasing a def provides a different view of the def providing access
+		via a different type, or access to members of structs, unions and
+		arrays.
+
+		Alias defs are very simple: they store only the type and relative
+		offset off the def they alias. All other information is held in the
+		def they alias, including relocation records. However, they do keep
+		track of the source file and line that first created the alias.
+
+		The relations between a def an any of its aliases are maintained by
+		a linked list headed by def_t::alias_defs and connected by
+		def_t::next. def_t::alias is used to find the main def via one if its
+		aliases. The order of the aliases in the list is arbitrary: it is the
+		reverse of the order in which they were created.
+
+		\dotfile vector-alias.dot "Accessing a vector via its components."
+	*/
+	//@{
 	struct def_s   *alias_defs;	///< defs that alias this def
 	struct def_s   *alias;		///< real def which this def aliases
+	//@}
 	struct reloc_s *relocs;		///< for relocations
 	struct expr_s  *initializer;///< initialer expression
 	struct daglabel_s *daglabel;///< daglabel for this def

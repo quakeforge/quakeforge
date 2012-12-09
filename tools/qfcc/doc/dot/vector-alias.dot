@@ -1,0 +1,25 @@
+digraph vector_alias {
+	rankdir=LR;
+	subgraph types {
+		rank = same;
+		vector [fontsize=10,label="type\nvector"];
+		float [fontsize=10,label="type\nfloat"];
+	}
+	subgraph alias {
+		vec [fontsize=10,shape=record,label="<v>vec|<n>next|<t>type|<a>alias|<d>alias_defs|offset ?|..."];
+		vec_x [fontsize=10,shape=record,label="<v>vec.x|<n>next|<t>type|<a>alias|<d>alias_defs|offset 0|..."];
+		vec_y [fontsize=10,shape=record,label="<v>vec.y|<n>next|<t>type|<a>alias|<d>alias_defs|offset 1|..."];
+		vec_z [fontsize=10,shape=record,label= "<v>vec.z|<n>next|<t>type|<a>alias|<d>alias_defs|offset 2|..."];
+	}
+	vector -> float [style=invis];
+	vec:t -> vector [weight=2];
+	vec_x:t -> float [weight=2];
+	vec_y:t -> float [weight=2];
+	vec_z:t -> float [weight=2];
+	vec:d -> vec_z:v [weight=5];
+	vec_z:n -> vec_y:v [weight=15];
+	vec_y:n -> vec_x:v [weight=15];
+	vec:v -> vec_z:a [dir=back,weight=4];
+	vec:v -> vec_y:a [dir=back,weight=4];
+	vec:v -> vec_x:a [dir=back,weight=4];
+}
