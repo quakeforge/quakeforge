@@ -4,7 +4,7 @@ INCLUDES= -I$(top_srcdir)/include $(QFCC_INCS)
 QFCC_DEP=$(builddir)/../source/qfcc$(EXEEXT)
 QFCC=$(QFCC_DEP)
 
-QCFLAGS=-qq -O -g --no-default-paths
+QCFLAGS=-qq -O -g --no-default-paths -Werror
 QCPPFLAGS=
 QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
 
@@ -26,6 +26,7 @@ test_progs_dat=\
 	infloop.dat \
 	modulo.dat \
 	structptr.dat \
+	vecinit.dat \
 	while.dat
 
 fail_progs_dat=\
@@ -87,6 +88,13 @@ structptr_obj=$(structptr_dat_SOURCES:.r=.qfo)
 structptr.dat: $(structptr_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(structptr_obj)
 structptr.run: Makefile build-run
+	$(srcdir)/build-run $@
+
+vecinit_dat_SOURCES=vecinit.r
+vecinit_obj=$(vecinit_dat_SOURCES:.r=.qfo)
+vecinit.dat: $(vecinit_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(vecinit_obj)
+vecinit.run: Makefile build-run
 	$(srcdir)/build-run $@
 
 while_dat_SOURCES=while.r
