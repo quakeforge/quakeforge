@@ -374,6 +374,45 @@ flow_build_vars (function_t *func)
 }
 
 static void
+flow_kill_aliases (set_t *kill, flowvar_t *var)
+{
+	operand_t  *op;
+	def_t      *st_def;
+	def_t      *def;
+
+	set_union (kill, var->define);
+	op = var->op;
+	if (op->op_type == op_temp) {
+		if (op->o.tempop.alias) {
+			op = op->o.tempop.alias;
+			var = op->o.tempop.flowvar;
+			if (var)
+				set_union (kill, var->define);
+		}
+		for (op = op->o.tempop.alias_ops; op; op = op->next) {
+			var = op->o.tempop.flowvar;
+			if (var)
+				set_union (kill, var->define);
+		}
+	} else if (op->op_type == op_def) {
+		st_def = def = op->o.def;
+		if (def->alias) {
+			def = def->alias;
+			var = def->flowvar;
+			if (var)
+				set_union (kill, var->define);
+		}
+		for (def = def->alias_defs; def; def = def->next) {
+			if (!def_overlap (def, st_def))
+				continue;
+			var = def->flowvar;
+			if (var)
+				set_union (kill, var->define);
+		}
+	}
+}
+
+static void
 flow_reaching_defs (flowgraph_t *graph)
 {
 	int         i;
@@ -400,7 +439,7 @@ flow_reaching_defs (flowgraph_t *graph)
 			set_empty (stkill);
 			for (var_i = set_first (stdef); var_i; var_i = set_next (var_i)) {
 				var = graph->func->vars[var_i->value];
-				set_union (stkill, var->define);
+				flow_kill_aliases (stkill, var);
 				set_remove (stkill, st->number);
 				set_add (stgen, st->number);
 			}
