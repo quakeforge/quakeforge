@@ -611,3 +611,18 @@ def_overlap (def_t *d1, def_t *d2)
 		return 1;
 	return 0;
 }
+
+int
+def_offset (def_t *def)
+{
+	int         offset = def->offset;
+	if (def->alias)
+		offset += def->alias->offset;
+	return offset;
+}
+
+int
+def_size (def_t *def)
+{
+	return type_size (def->type);
+}

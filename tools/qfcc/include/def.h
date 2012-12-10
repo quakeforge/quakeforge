@@ -254,6 +254,24 @@ void initialize_def (struct symbol_s *sym, struct type_s *type,
 	\return			1 if the defs overlap, 0 otherwise.
 */
 int def_overlap (def_t *d1, def_t *d2);
+
+/** Convenience function for obtaining a def's actual offset.
+
+	Takes care of an alias def's relative offset.
+
+	\param def		The def of which to obtain the offset. May be an alias def.
+	\return			The actual offset of the def in the def's defspace.
+*/
+int def_offset (def_t *def);
+
+/** Convenience function for obtaining a def's size.
+
+	Whether the def is an alias or not is irrelevant.
+
+	\param def		The def of which to obtain the size.
+	\return			The size of the def.
+*/
+int def_size (def_t *def);
 //@}
 
 #endif//__def_h
