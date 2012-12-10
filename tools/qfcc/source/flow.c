@@ -1061,7 +1061,8 @@ flow_data_flow (function_t *func)
 	graph = flow_build_graph (func);
 	func->graph = graph;
 	flow_reaching_defs (graph);
-	dump_dot ("reaching", graph, dump_dot_flow_reaching);
+	if (options.block_dot.reaching)
+		dump_dot ("reaching", graph, dump_dot_flow_reaching);
 	flow_live_vars (graph);
 	flow_uninitialized (graph);
 	flow_build_dags (graph);
