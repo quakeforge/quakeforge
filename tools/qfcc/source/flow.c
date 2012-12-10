@@ -202,7 +202,7 @@ flowvar_is_param (flowvar_t *var)
 		return 0;
 	return 1;
 }
-
+#if 0
 static int
 flowvar_is_initialized (flowvar_t *var)
 {
@@ -213,7 +213,7 @@ flowvar_is_initialized (flowvar_t *var)
 	def = var->op->o.def;
 	return def->initialized;
 }
-
+#endif
 flowvar_t *
 flow_get_var (operand_t *op)
 {
@@ -603,113 +603,43 @@ flow_live_vars (flowgraph_t *graph)
 static void
 flow_uninitialized (flowgraph_t *graph)
 {
-	set_t      *stuse;
-	set_t      *stdef;
-	set_t      *tmp;
-	set_t      *uninit;
-	set_t      *use;
-	set_t      *def;
-	set_t      *predecessors;
-	set_iter_t *pred_iter;
-	set_iter_t *var_iter;
-	flownode_t *node, *pred;
-	function_t *func = graph->func;
-	statement_t *st;
 	int         i;
+	flownode_t *node;
+	flowvar_t  *var;
+	set_iter_t *var_i;
+	set_t      *defs;
+	set_t      *uninitialized;
 
-	if (!graph->num_nodes)
-		return;
+	uninitialized = set_new ();
+	node = graph->nodes[graph->num_nodes];
+	set_assign (uninitialized, node->reaching_defs.out);
+	defs = set_new ();
 
-	stuse = set_new ();
-	stdef = set_new ();
-	tmp = set_new ();
-	uninit = set_new ();
-	predecessors = set_new ();
-
-	// in for the inital node contains parameters and global vars
-	tmp = set_new ();
-	for (i = 0; i < func->num_vars; i++) {
-		flowvar_t  *var = func->vars[i];
-		if (flowvar_is_global (var) || flowvar_is_param (var)
-			|| flowvar_is_initialized (var))
-			set_add (tmp, i);
-	}
-	// first, calculate use and def for each block, and initialize the in and
-	// out sets.
 	for (i = 0; i < graph->num_nodes; i++) {
 		node = graph->nodes[i];
-		use = set_new ();
-		def = set_new ();
-		for (st = node->sblock->statements; st; st = st->next) {
-			flow_analyze_statement (st, stuse, stdef, 0, 0);
-			live_set_use (stuse, use, def);	// init use uses same rules as live
-			set_union (def, stdef);			// for init, always def a set var
-		}
-		node->init_vars.use = use;
-		node->init_vars.def = def;
-		node->init_vars.in = set_new ();
-		node->init_vars.out = set_new ();
-	}
-	// flow DOWN the graph in dept-first order
-	node = graph->nodes[0];
-	set_assign (node->init_vars.in, tmp);
-	set_assign (node->init_vars.out, tmp);
-	set_union (node->init_vars.out, node->init_vars.def);
-	set_assign (tmp, node->init_vars.use);
-	set_difference (tmp, node->init_vars.in);
-	set_union (uninit, tmp);
-	for (i = 1; i < graph->num_nodes; i++) {
-		node = graph->nodes[graph->dfo[i]];
-		set_assign (predecessors, node->predecessors);
-		// not interested in back edges
-		for (pred_iter = set_first (predecessors); pred_iter;
-			 pred_iter = set_next (pred_iter)) {
-			pred = graph->nodes[pred_iter->value];
-			if (pred->dfn >= node->dfn)
-				set_remove (predecessors, pred->id);
-		}
-		set_empty (tmp);
-		pred_iter = set_first (predecessors);
-		if (pred_iter) {
-			pred = graph->nodes[pred_iter->value];
-			set_assign (tmp, pred->init_vars.out);
-			pred_iter = set_next (pred_iter);
-		}
-		for ( ; pred_iter; pred_iter = set_next (pred_iter)) {
-			pred = graph->nodes[pred_iter->value];
-			set_intersection (tmp, pred->init_vars.out);
-		}
-		set_assign (node->init_vars.in, tmp);
-		set_assign (node->init_vars.out, tmp);
-		set_union (node->init_vars.out, node->init_vars.def);
-		set_assign (tmp, node->init_vars.use);
-		set_difference (tmp, node->init_vars.in);
-		set_union (uninit, tmp);
-	}
-	for (var_iter = set_first (uninit); var_iter;
-		 var_iter = set_next (var_iter)) {
-		expr_t  dummy;
-		flowvar_t  *var = func->vars[var_iter->value];
-		def_t      *def;
+		for (var_i = set_first (node->live_vars.use); var_i;
+			 var_i = set_next (var_i)) {
+			var = graph->func->vars[var_i->value];
+			set_assign (defs, var->define);
+			set_intersection (defs, node->reaching_defs.in);
+			if (set_is_intersecting (defs, uninitialized)) {
+				expr_t      dummy;
+				def_t      *def;
 
-		if (var->op->op_type == op_temp) {
-			bug (0, "uninitialized temporary: %s", operand_string (var->op));
-		} else {
-			def = flowvar_get_def (var);
-			dummy.line = def->line;
-			dummy.file = def->file;
-			if (type_size (def->type) != 1) {
-				bug (&dummy, "too hard basket");
-			} else {
-				warning (&dummy, "%s may be used uninitialized", def->name);
+				if (var->op->op_type == op_temp) {
+					bug (0, "uninitialized temporary: %s",
+						 operand_string (var->op));
+				} else {
+					def = flowvar_get_def (var);
+					dummy.line = def->line;
+					dummy.file = def->file;
+					warning (&dummy, "%s may be used uninitialized",
+							 def->name);
+				}
 			}
 		}
 	}
-	set_delete (stuse);
-	set_delete (stdef);
-	set_delete (tmp);
-	set_delete (uninit);
-	set_delete (predecessors);
+	set_delete (defs);
 }
 
 static void
