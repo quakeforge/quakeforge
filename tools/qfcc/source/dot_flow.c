@@ -246,6 +246,9 @@ print_flowgraph (flow_dot_t *method, flowgraph_t *graph, const char *filename)
 		method->print_node (dstr, graph, graph->nodes[i], 0);
 	}
 	for (i = 0; i < graph->num_edges; i++) {
+		if ((int) graph->edges[i].head >= graph->num_nodes
+			|| (int) graph->edges[i].tail >= graph->num_nodes)
+			continue;		// dummy node
 		method->print_edge (dstr, graph, &graph->edges[i], 0);
 	}
 	dasprintf (dstr, "}\n");

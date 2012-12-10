@@ -854,7 +854,7 @@ flow_find_predecessors (flowgraph_t *graph)
 	flownode_t *node;
 	set_iter_t *succ;
 
-	for (i = 0; i < graph->num_nodes; i++) {
+	for (i = 0; i < graph->num_nodes + 2; i++) {
 		node = graph->nodes[i];
 		for (succ = set_first (node->successors); succ;
 			 succ = set_next (succ)) {
@@ -1005,11 +1005,31 @@ flow_build_dfst (flowgraph_t *graph)
 	set_t      *visited = set_new ();
 	int         i;
 
+	// mark the dummy nodes as visited to keep them out of the dfst
+	set_add (visited, graph->num_nodes);
+	set_add (visited, graph->num_nodes + 1);
+
 	graph->dfo = malloc (graph->num_nodes * sizeof (unsigned));
 	graph->dfst = set_new ();
 	i = graph->num_nodes;
 	df_search (graph, visited, &i, 0);
 	set_delete (visited);
+}
+
+static flownode_t *
+flow_make_node (sblock_t *sblock, int id, function_t *func)
+{
+	flownode_t *node;
+
+	node = new_node ();
+	node->predecessors = set_new ();
+	node->successors = set_new ();
+	node->edges = set_new ();
+	node->dom = set_new ();
+	node->global_vars = func->global_vars;
+	node->id = id;
+	node->sblock = sblock;
+	return node;
 }
 
 static flowgraph_t *
@@ -1028,18 +1048,16 @@ flow_build_graph (function_t *func)
 	graph->func = func;
 	for (sb = sblock; sb; sb = sb->next)
 		sb->number = graph->num_nodes++;
-	graph->nodes = malloc (graph->num_nodes * sizeof (flownode_t *));
-	for (sb = sblock; sb; sb = sb->next) {
-		node = new_node ();
-		node->predecessors = set_new ();
-		node->successors = set_new ();
-		node->edges = set_new ();
-		node->dom = set_new ();
-		node->global_vars = func->global_vars;
-		node->id = sb->number;
-		node->sblock = sb;
-		graph->nodes[node->id] = node;
-	}
+	// + 2 for the uninitialized dummy head block and the live dummy end block
+	graph->nodes = malloc ((graph->num_nodes + 2) * sizeof (flownode_t *));
+	for (sb = sblock; sb; sb = sb->next)
+		graph->nodes[sb->number] = flow_make_node (sb, sb->number, func);
+	// Create the dummy node for detecting uninitialized variables
+	node = flow_make_node (0, graph->num_nodes, func);
+	graph->nodes[graph->num_nodes] = node;
+	// Create the dummy node for making global vars live at function exit
+	node = flow_make_node (0, graph->num_nodes + 1, func);
+	graph->nodes[graph->num_nodes + 1] = node;
 
 	// "convert" the basic blocks connections to flow-graph connections
 	for (i = 0; i < graph->num_nodes; i++) {
@@ -1066,15 +1084,29 @@ flow_build_graph (function_t *func)
 			set_add (node->successors, statement_get_target (st)->number);
 		} else if (statement_is_return (st)) {
 			// exit from function (dead end)
+			// however, make the exit dummy block the node's successor
+			set_add (node->successors, graph->num_nodes + 1);
 		} else {
 			// there is no flow-control statement in sb, so sb's next
 			// must be followed
-			set_add (node->successors, sb->next->number);
+			if (sb->next) {
+				set_add (node->successors, sb->next->number);
+			} else {
+				bug (0, "code drops off the end of the function");
+				// this shouldn't happen
+				// however, make the exit dummy block the node's successor
+				set_add (node->successors, graph->num_nodes + 1);
+			}
 		}
 		graph->num_edges += set_size (node->successors);
 	}
+	// set the successor for the entry dummy node to the real entry node
+	node = graph->nodes[graph->num_nodes];
+	set_add (node->successors, 0);
+	graph->num_edges += set_size (node->successors);
+
 	graph->edges = malloc (graph->num_edges * sizeof (flowedge_t *));
-	for (j = 0, i = 0; i < graph->num_nodes; i++) {
+	for (j = 0, i = 0; i < graph->num_nodes + 2; i++) {
 		node = graph->nodes[i];
 		for (succ = set_first (node->successors); succ;
 			 succ = set_next (succ), j++) {
@@ -1098,6 +1130,8 @@ flow_data_flow (function_t *func)
 	flow_build_statements (func);
 	flow_build_vars (func);
 	graph = flow_build_graph (func);
+	if (options.block_dot.flow)
+		dump_dot ("flow", graph, dump_dot_flow);
 	func->graph = graph;
 	flow_reaching_defs (graph);
 	if (options.block_dot.reaching)
@@ -1105,7 +1139,5 @@ flow_data_flow (function_t *func)
 	flow_live_vars (graph);
 	flow_uninitialized (graph);
 	flow_build_dags (graph);
-	if (options.block_dot.flow)
-		dump_dot ("flow", graph, dump_dot_flow);
 	func->sblock = flow_generate (graph);
 }

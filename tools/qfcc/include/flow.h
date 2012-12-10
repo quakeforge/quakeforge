@@ -96,7 +96,7 @@ typedef struct flowgraph_s {
 	struct flowgraph_s *next;	///< for ALLOC
 	struct function_s *func;	///< function to which this graph is attached
 	flownode_t **nodes;			///< array of nodes in the graph
-	int         num_nodes;
+	int         num_nodes;		///< number of real nodes in the graph
 	flowedge_t *edges;			///< array of all edges in the graph
 	int         num_edges;
 	struct set_s *dfst;			///< edges in the depth-first search tree
