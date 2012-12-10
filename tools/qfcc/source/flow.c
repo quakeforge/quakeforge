@@ -558,13 +558,6 @@ flow_live_vars (flowgraph_t *graph)
 		def = set_new ();
 		for (st = node->sblock->statements; st; st = st->next) {
 			flow_analyze_statement (st, stuse, stdef, 0, 0);
-			if (st->type == st_func && !strncmp (st->opcode, "<RETURN", 7)) {
-				set_t      *global_vars = set_new ();
-
-				set_assign (global_vars, graph->func->global_vars);
-				live_set_use (global_vars, use, def);
-				set_delete (global_vars);
-			}
 			live_set_use (stuse, use, def);
 			live_set_def (stdef, use, def);
 		}
@@ -573,6 +566,15 @@ flow_live_vars (flowgraph_t *graph)
 		node->live_vars.in = set_new ();
 		node->live_vars.out = set_new ();
 	}
+	// create in for the exit dummy block using the global vars used by the
+	// function
+	use = set_new ();
+	set_assign (use, graph->func->global_vars);
+	node = graph->nodes[graph->num_nodes + 1];
+	node->live_vars.in = use;
+	node->live_vars.out = set_new ();
+	node->live_vars.use = set_new ();
+	node->live_vars.def = set_new ();
 
 	while (changed) {
 		changed = 0;
