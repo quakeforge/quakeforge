@@ -65,6 +65,7 @@ typedef struct flownode_s {
 	struct flownode_s *next;	///< for ALLOC
 	unsigned    id;				///< index of this node in the flow graph
 	unsigned    dfn;			///< depth-first ordering of this node
+	struct flowgraph_s *graph;	///< graph owning this node
 	struct set_s *predecessors;	///< predecessors of this node
 	struct set_s *successors;	///< successors of this node
 	struct set_s *edges;		///< edges leaving this node to successor nodes

@@ -608,6 +608,46 @@ flow_live_vars (flowgraph_t *graph)
 }
 
 static void
+flow_uninit_scan_statements (flownode_t *node, set_t *defs, set_t *uninit)
+{
+	set_t      *stuse;
+	set_t      *stdef;
+	statement_t *st;
+	set_iter_t *var_i;
+	flowvar_t  *var;
+
+	// defs holds only reaching definitions. make it hold only reaching
+	// uninitialized definitions
+	set_intersection (defs, uninit);
+	stuse = set_new ();
+	stdef = set_new ();
+	for (st = node->sblock->statements; st; st = st->next) {
+		flow_analyze_statement (st, stuse, stdef, 0, 0);
+		for (var_i = set_first (stuse); var_i; var_i = set_next (var_i)) {
+			var = node->graph->func->vars[var_i->value];
+			if (set_is_intersecting (defs, var->define)) {
+				def_t      *def = flowvar_get_def (var);
+				if (def) {
+					warning (st->expr, "%s may be used uninitialized",
+							 def->name);
+				} else {
+					bug (st->expr, "uninitialized temp");
+				}
+			}
+			// avoid repeat warnings in this node
+			set_difference (defs, var->define);
+		}
+		for (var_i = set_first (stdef); var_i; var_i = set_next (var_i)) {
+			var = node->graph->func->vars[var_i->value];
+			// kill any reaching uninitialized definitions for this variable
+			set_difference (defs, var->define);
+		}
+	}
+	set_delete (stuse);
+	set_delete (stdef);
+}
+
+static void
 flow_uninitialized (flowgraph_t *graph)
 {
 	int         i;
@@ -623,28 +663,23 @@ flow_uninitialized (flowgraph_t *graph)
 	defs = set_new ();
 
 	for (i = 0; i < graph->num_nodes; i++) {
-		node = graph->nodes[i];
+		node = graph->nodes[graph->dfo[i]];
+		set_empty (defs);
+		// collect definitions of all variables "used" in this node. use from
+		// the live vars analysis is perfect for the job
 		for (var_i = set_first (node->live_vars.use); var_i;
 			 var_i = set_next (var_i)) {
 			var = graph->func->vars[var_i->value];
-			set_assign (defs, var->define);
-			set_intersection (defs, node->reaching_defs.in);
-			if (set_is_intersecting (defs, uninitialized)) {
-				expr_t      dummy;
-				def_t      *def;
-
-				if (var->op->op_type == op_temp) {
-					bug (0, "uninitialized temporary: %s",
-						 operand_string (var->op));
-				} else {
-					def = flowvar_get_def (var);
-					dummy.line = def->line;
-					dummy.file = def->file;
-					warning (&dummy, "%s may be used uninitialized",
-							 def->name);
-				}
-			}
+			set_union (defs, var->define);
 		}
+		// interested in only those defintions that actually reach this node
+		set_intersection (defs, node->reaching_defs.in);
+		// if any of the definitions come from the entry dummy block, then
+		// the statements need to be scanned in case an aliasing definition
+		// kills the dummy definition before the usage, and also so the line
+		// number information can be obtained from the statement.
+		if (set_is_intersecting (defs, uninitialized))
+			flow_uninit_scan_statements (node, defs, uninitialized);
 	}
 	set_delete (defs);
 }
@@ -1004,6 +1039,7 @@ flow_make_node (sblock_t *sblock, int id, function_t *func)
 	node->global_vars = func->global_vars;
 	node->id = id;
 	node->sblock = sblock;
+	node->graph = func->graph;
 	return node;
 }
 
@@ -1021,6 +1057,7 @@ flow_build_graph (function_t *func)
 
 	graph = new_graph ();
 	graph->func = func;
+	func->graph = graph;
 	for (sb = sblock; sb; sb = sb->next)
 		sb->number = graph->num_nodes++;
 	// + 2 for the uninitialized dummy head block and the live dummy end block
@@ -1107,7 +1144,6 @@ flow_data_flow (function_t *func)
 	graph = flow_build_graph (func);
 	if (options.block_dot.flow)
 		dump_dot ("flow", graph, dump_dot_flow);
-	func->graph = graph;
 	flow_reaching_defs (graph);
 	if (options.block_dot.reaching)
 		dump_dot ("reaching", graph, dump_dot_flow_reaching);
