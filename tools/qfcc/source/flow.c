@@ -46,6 +46,7 @@
 
 #include "dags.h"
 #include "def.h"
+#include "defspace.h"
 #include "diagnostic.h"
 #include "dot.h"
 #include "flow.h"
@@ -178,6 +179,8 @@ flowvar_is_global (flowvar_t *var)
 	if (var->op->op_type != op_def)
 		return 0;
 	def = var->op->o.def;
+	if (def->alias)
+		def = def->alias;
 	if (def->local)
 		return 0;
 	return 1;
@@ -191,6 +194,8 @@ flowvar_is_param (flowvar_t *var)
 	if (var->op->op_type != op_def)
 		return 0;
 	def = var->op->o.def;
+	if (def->alias)
+		def = def->alias;
 	if (!def->local)
 		return 0;
 	if (!def->param)
@@ -368,6 +373,23 @@ flow_build_vars (function_t *func)
 		if (flowvar_is_global (func->vars[i]))
 			set_add (func->global_vars, i);
 	}
+	// create dummy defs for local vars
+	for (i = 0; i < func->num_vars; i++) {
+		int         offset, size;
+		int         j;
+
+		var = func->vars[i];
+		if (flowvar_is_global (var) || flowvar_is_param (var))
+			continue;
+		if (var->op->op_type == op_temp) {
+			set_add (var->define, func->symtab->space->size + var->number);
+		} else {
+			offset = def_offset (var->op->o.def);
+			size = def_size (var->op->o.def);
+			for (j = offset; j < offset + size; j++)
+				set_add (var->define, func->num_statements + j);
+		}
+	}
 
 	set_delete (stuse);
 	set_delete (stdef);
@@ -455,6 +477,20 @@ flow_reaching_defs (flowgraph_t *graph)
 		node->reaching_defs.in = set_new ();
 		node->reaching_defs.out = set_new ();
 	}
+	// Create out for the entry dummy node using fake statement numbers.
+	kill = set_new ();
+	for (i = 0; i < graph->func->num_statements; i++)
+		set_add (kill, i);
+	out = set_new ();
+	for (i = 0; i < graph->func->num_vars; i++) {
+		var = graph->func->vars[i];
+		set_union (out, var->define);	// do not want alias handling here
+		set_difference (out, kill);		// remove any gens from the function
+	}
+	graph->nodes[graph->num_nodes]->reaching_defs.out = out;
+	graph->nodes[graph->num_nodes]->reaching_defs.in = set_new ();
+	graph->nodes[graph->num_nodes]->reaching_defs.gen = set_new ();
+	graph->nodes[graph->num_nodes]->reaching_defs.kill = set_new ();
 
 	while (changed) {
 		changed = 0;
