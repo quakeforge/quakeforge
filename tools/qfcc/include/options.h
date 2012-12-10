@@ -76,6 +76,7 @@ typedef struct {
 	qboolean    dags;
 	qboolean    expr;
 	qboolean    reaching;
+	qboolean    live;
 	qboolean    flow;
 	qboolean    post;
 } blockdot_options_t;

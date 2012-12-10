@@ -1173,6 +1173,8 @@ flow_data_flow (function_t *func)
 	if (options.block_dot.reaching)
 		dump_dot ("reaching", graph, dump_dot_flow_reaching);
 	flow_live_vars (graph);
+	if (options.block_dot.live)
+		dump_dot ("live", graph, dump_dot_flow_live);
 	flow_uninitialized (graph);
 	flow_build_dags (graph);
 	func->sblock = flow_generate (graph);
