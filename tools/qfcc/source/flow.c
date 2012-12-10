@@ -396,25 +396,27 @@ flow_build_vars (function_t *func)
 }
 
 static void
-flow_kill_aliases (set_t *kill, flowvar_t *var)
+flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 {
 	operand_t  *op;
 	def_t      *st_def;
 	def_t      *def;
+	set_t      *tmp;
 
 	set_union (kill, var->define);
 	op = var->op;
+	tmp = set_new ();
 	if (op->op_type == op_temp) {
 		if (op->o.tempop.alias) {
 			op = op->o.tempop.alias;
 			var = op->o.tempop.flowvar;
 			if (var)
-				set_union (kill, var->define);
+				set_union (tmp, var->define);
 		}
 		for (op = op->o.tempop.alias_ops; op; op = op->next) {
 			var = op->o.tempop.flowvar;
 			if (var)
-				set_union (kill, var->define);
+				set_union (tmp, var->define);
 		}
 	} else if (op->op_type == op_def) {
 		st_def = def = op->o.def;
@@ -422,16 +424,20 @@ flow_kill_aliases (set_t *kill, flowvar_t *var)
 			def = def->alias;
 			var = def->flowvar;
 			if (var)
-				set_union (kill, var->define);
+				set_union (tmp, var->define);
 		}
 		for (def = def->alias_defs; def; def = def->next) {
 			if (!def_overlap (def, st_def))
 				continue;
 			var = def->flowvar;
 			if (var)
-				set_union (kill, var->define);
+				set_union (tmp, var->define);
 		}
 	}
+	// don't allow aliases to kill definitions in the entry dummy block
+	set_difference (tmp, uninit);
+	// merge the alias kills with the current def's kills
+	set_union (kill, tmp);
 }
 
 static void
@@ -445,12 +451,27 @@ flow_reaching_defs (flowgraph_t *graph)
 	set_t      *stgen = set_new ();
 	set_t      *stkill = set_new ();
 	set_t      *oldout = set_new ();
-	set_t      *gen, *kill, *in, *out;
+	set_t      *gen, *kill, *in, *out, *uninit;
 	set_iter_t *var_i;
 	set_iter_t *pred_i;
 	flowvar_t  *var;
 
-	// First, calculate gen and kill for each block, and initialize in and out
+	// First, create out for the entry dummy node using fake statement numbers.
+	kill = set_new ();
+	for (i = 0; i < graph->func->num_statements; i++)
+		set_add (kill, i);
+	uninit = set_new ();
+	for (i = 0; i < graph->func->num_vars; i++) {
+		var = graph->func->vars[i];
+		set_union (uninit, var->define);// do not want alias handling here
+		set_difference (uninit, kill);	// remove any gens from the function
+	}
+	graph->nodes[graph->num_nodes]->reaching_defs.out = uninit;
+	graph->nodes[graph->num_nodes]->reaching_defs.in = set_new ();
+	graph->nodes[graph->num_nodes]->reaching_defs.gen = set_new ();
+	graph->nodes[graph->num_nodes]->reaching_defs.kill = set_new ();
+
+	// Calculate gen and kill for each block, and initialize in and out
 	for (i = 0; i < graph->num_nodes; i++) {
 		node = graph->nodes[i];
 		gen = set_new ();
@@ -461,7 +482,7 @@ flow_reaching_defs (flowgraph_t *graph)
 			set_empty (stkill);
 			for (var_i = set_first (stdef); var_i; var_i = set_next (var_i)) {
 				var = graph->func->vars[var_i->value];
-				flow_kill_aliases (stkill, var);
+				flow_kill_aliases (stkill, var, uninit);
 				set_remove (stkill, st->number);
 				set_add (stgen, st->number);
 			}
@@ -477,20 +498,6 @@ flow_reaching_defs (flowgraph_t *graph)
 		node->reaching_defs.in = set_new ();
 		node->reaching_defs.out = set_new ();
 	}
-	// Create out for the entry dummy node using fake statement numbers.
-	kill = set_new ();
-	for (i = 0; i < graph->func->num_statements; i++)
-		set_add (kill, i);
-	out = set_new ();
-	for (i = 0; i < graph->func->num_vars; i++) {
-		var = graph->func->vars[i];
-		set_union (out, var->define);	// do not want alias handling here
-		set_difference (out, kill);		// remove any gens from the function
-	}
-	graph->nodes[graph->num_nodes]->reaching_defs.out = out;
-	graph->nodes[graph->num_nodes]->reaching_defs.in = set_new ();
-	graph->nodes[graph->num_nodes]->reaching_defs.gen = set_new ();
-	graph->nodes[graph->num_nodes]->reaching_defs.kill = set_new ();
 
 	while (changed) {
 		changed = 0;
