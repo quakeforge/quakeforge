@@ -247,6 +247,13 @@ void initialize_def (struct symbol_s *sym, struct type_s *type,
 					 struct expr_s *init, struct defspace_s *space,
 					 storage_class_t storage);
 
+/** Determine if two defs overlap.
+
+	\param d1		The first def to check. May be an alias def.
+	\param d2		The second def to check. May be an alias def.
+	\return			1 if the defs overlap, 0 otherwise.
+*/
+int def_overlap (def_t *d1, def_t *d2);
 //@}
 
 #endif//__def_h

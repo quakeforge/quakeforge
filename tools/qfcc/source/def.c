@@ -587,3 +587,27 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 	}
 	sym->s.def->initializer = init;
 }
+
+int
+def_overlap (def_t *d1, def_t *d2)
+{
+	int         offs1, size1;
+	int         offs2, size2;
+	/// Defs in different spaces never overlap.
+	if (d1->space != d2->space)
+		return 0;
+
+	offs1 = d1->offset;
+	if (d1->alias)
+		offs1 += d1->alias->offset;
+	size1 = type_size (d1->type);
+
+	offs2 = d2->offset;
+	if (d2->alias)
+		offs2 += d2->alias->offset;
+	size2 = type_size (d2->type);
+
+	if (offs1 < offs2 + size2 && offs2 < offs1 + size1)
+		return 1;
+	return 0;
+}
