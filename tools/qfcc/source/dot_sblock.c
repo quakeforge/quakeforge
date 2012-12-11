@@ -65,12 +65,10 @@ flow_statement (dstring_t *dstr, statement_t *s)
 	dasprintf (dstr, "</tr>\n");
 }
 
-static void
-flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
+void
+dot_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 {
 	statement_t *s;
-	sblock_t  **target;
-	sblock_t  **target_list;
 	ex_label_t *l;
 
 	dasprintf (dstr, "  sb_%p [shape=none,label=<\n", sblock);
@@ -94,6 +92,15 @@ flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 	dasprintf (dstr, "        <td></td>\n");
 	dasprintf (dstr, "      </tr>\n");
 	dasprintf (dstr, "    </table>>];\n");
+}
+
+static void
+flow_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
+{
+	sblock_t  **target;
+	sblock_t  **target_list;
+
+	dot_sblock (dstr, sblock, blockno);
 	if (sblock->statements) {
 		statement_t *st = (statement_t *) sblock->tail;
 		if (sblock->next

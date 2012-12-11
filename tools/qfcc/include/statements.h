@@ -106,6 +106,7 @@ typedef struct sblock_s {
 
 struct expr_s;
 struct type_s;
+struct dstring_s;
 
 const char *optype_str (op_type_e type);
 
@@ -126,6 +127,7 @@ void statements_count_temps (sblock_t *sblock);
 
 void print_statement (statement_t *s);
 void dump_dot_sblock (void *data, const char *fname);
+void dot_sblock (struct dstring_s *dstr, sblock_t *sblock, int blockno);
 void print_sblock (sblock_t *sblock, const char *filename);
 const char *operand_string (operand_t *op);
 

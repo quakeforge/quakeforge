@@ -117,6 +117,7 @@ void dump_dot_flow (void *g, const char *filename);
 void dump_dot_flow_dags (void *g, const char *filename);
 void dump_dot_flow_live (void *g, const char *filename);
 void dump_dot_flow_reaching (void *g, const char *filename);
+void dump_dot_flow_statements (void *g, const char *filename);
 
 //@}
 

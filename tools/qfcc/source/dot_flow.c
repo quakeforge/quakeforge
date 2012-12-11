@@ -224,11 +224,70 @@ print_flow_node_reaching (dstring_t *dstr, flowgraph_t *graph,
 	}
 }
 
+static void
+print_flow_node_statements (dstring_t *dstr, flowgraph_t *graph,
+							flownode_t *node, int level)
+{
+	if (node->sblock) {
+		dot_sblock (dstr, node->sblock, node->id);
+	} else {
+		print_flow_node (dstr, graph, node, level);
+	}
+}
+
+static void
+print_flow_edge_statements (dstring_t *dstr, flowgraph_t *graph,
+							flowedge_t *edge, int level)
+{
+	int         indent = level * 2 + 2;
+	int         edge_num = edge - graph->edges;
+	flownode_t *h, *t;
+	const char *hpre = "fn_", *tpre = "fn_";
+	const char *style;
+	const char *dir;
+	int         weight;
+
+	t = graph->nodes[edge->tail];
+	h = graph->nodes[edge->head];
+	if (t->dfn >= h->dfn) {
+		flownode_t *temp;
+		temp = h;
+		h = t;
+		t = temp;
+
+		dir = "dir=back,";
+		style = "dashed";
+		weight = 0;
+	} else if (set_is_member (graph->dfst, edge_num)) {
+		dir = "";
+		style = "bold";
+		weight = 10;
+	} else {
+		dir = "";
+		style = "solid";
+		weight = 0;
+	}
+	if (t->sblock) {
+		tpre = "sb_";
+		t = (flownode_t *) t->sblock;
+	}
+	if (h->sblock) {
+		hpre = "sb_";
+		h = (flownode_t *) h->sblock;
+	}
+	dasprintf (dstr, "%*s", indent, "");
+	dasprintf (dstr, "%s%p -> ", tpre, t);
+	dasprintf (dstr, "%s%p [%sstyle=%s,weight=%d", hpre, h, dir, style,
+			   weight);
+	dasprintf (dstr, "];\n");
+}
+
 static flow_dot_t flow_dot_methods[] = {
-	{"",		print_flow_node,			print_flow_edge},
-	{"dag",		print_flow_node_dag,		print_flow_edge_dag},
-	{"live",	print_flow_node_live,		print_flow_edge},
-	{"reaching",print_flow_node_reaching,	print_flow_edge},
+	{"",			print_flow_node,			print_flow_edge},
+	{"dag",			print_flow_node_dag,		print_flow_edge_dag},
+	{"live",		print_flow_node_live,		print_flow_edge},
+	{"reaching",	print_flow_node_reaching,	print_flow_edge},
+	{"statements",	print_flow_node_statements,	print_flow_edge_statements},
 };
 
 static void
@@ -287,4 +346,10 @@ void
 dump_dot_flow_reaching (void *g, const char *filename)
 {
 	print_flowgraph (&flow_dot_methods[3], (flowgraph_t *) g, filename);
+}
+
+void
+dump_dot_flow_statements (void *g, const char *filename)
+{
+	print_flowgraph (&flow_dot_methods[4], (flowgraph_t *) g, filename);
 }

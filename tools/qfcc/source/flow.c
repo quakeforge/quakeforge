@@ -631,7 +631,8 @@ flow_uninit_scan_statements (flownode_t *node, set_t *defs, set_t *uninit)
 					warning (st->expr, "%s may be used uninitialized",
 							 def->name);
 				} else {
-					bug (st->expr, "uninitialized temp");
+					bug (st->expr, "st %d, uninitialized temp %s",
+						 st->number, operand_string (var->op));
 				}
 			}
 			// avoid repeat warnings in this node
