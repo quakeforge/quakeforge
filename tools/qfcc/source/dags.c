@@ -560,6 +560,8 @@ build_statement (const char *opcode, operand_t **operands, expr_t *expr)
 
 	for (i = 0; i < 3; i++) {
 		if ((op = operands[i])) {
+			while (op->op_type == op_alias)
+				op = op->o.alias;
 			if (op->op_type == op_temp) {
 				while (op->o.tempop.alias)
 					op = op->o.tempop.alias;
@@ -606,6 +608,13 @@ dag_calc_node_costs (dagnode_t *dagnode)
 	}
 }
 #endif
+static operand_t *
+fix_op_type (operand_t *op, etype_t type)
+{
+	if (op && op->op_type != op_label && op->type != type)
+		op = alias_operand (type, op);
+	return op;
+}
 
 static operand_t *
 generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
@@ -616,10 +625,10 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 	operand_t   *operands[3] = {0, 0, 0};
 	daglabel_t  *var;
 
-	operands[0] = src;
+	operands[0] = fix_op_type (src, type);
 	for ( ; var_iter; var_iter = set_next (var_iter)) {
 		var = dag->labels[var_iter->value];
-		operands[1] = var->op;
+		operands[1] = fix_op_type (var->op, type);
 		if (!dst)
 			dst = operands[1];
 
@@ -635,6 +644,7 @@ make_operand (dag_t *dag, sblock_t *block, const dagnode_t *dagnode, int index)
 	operand_t  *op;
 
 	op = dagnode->children[index]->value;
+	op = fix_op_type (op, dagnode->types[index]);
 	return op;
 }
 
@@ -655,9 +665,6 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			dst = dagnode->label->op;
 			if ((var_iter = set_first (dagnode->identifiers))) {
 				type = dst->type;
-				//if (dst->op_type == op_def
-				//	&& !strcmp (dst->o.def->name, ".return"))
-				//	type = dag->flownode->return_type.in;
 				dst = generate_assignments (dag, block, dst, var_iter, type);
 			}
 			break;
@@ -671,7 +678,7 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			} else {
 				daglabel_t *var = dag->labels[var_iter->value];
 
-				operands[2] = var->op;
+				operands[2] = fix_op_type (var->op, type);
 				var_iter = set_next (var_iter);
 			}
 			dst = operands[2];

@@ -127,6 +127,13 @@ operand_string (operand_t *op)
 						   op->o.tempop.alias,
 						   op->o.tempop.alias->o.tempop.users);
 			return va ("<tmp %p:%d>", op, op->o.tempop.users);
+		case op_alias:
+			{
+				const char *alias = operand_string (op->o.alias);
+				char       *buf = alloca (strlen (alias) + 1);
+				strcpy (buf, alias);
+				return va ("alias(%s,%s)", pr_type_name[op->type], buf);
+			}
 	}
 	return ("??");
 }
@@ -192,6 +199,10 @@ print_operand (operand_t *op)
 			if (op->o.tempop.def)
 				printf (" %s", op->o.tempop.def->name);
 			break;
+		case op_alias:
+			printf ("alias(%s,", pr_type_name[op->type]);
+			print_operand (op->o.alias);
+			printf (")");
 	}
 }
 
@@ -290,6 +301,20 @@ temp_operand (type_t *type)
 	op->type = low_level_type (type);
 	op->size = type_size (type);
 	return op;
+}
+
+operand_t *
+alias_operand (etype_t type, operand_t *op)
+{
+	operand_t  *aop;
+
+	if (pr_type_size[type] != pr_type_size[op->type])
+		internal_error (0, "aliasing operand with type of diffent size");
+	aop = new_operand (op_alias);
+	aop->o.alias = op;
+	aop->type = type;
+	aop->size = pr_type_size[type];
+	return aop;
 }
 
 static operand_t *

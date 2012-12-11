@@ -37,6 +37,7 @@ typedef enum {
 	op_value,
 	op_label,
 	op_temp,
+	op_alias,
 } op_type_e;
 
 typedef struct {
@@ -59,6 +60,7 @@ typedef struct operand_s {
 		struct ex_value_s *value;
 		struct ex_label_s *label;
 		tempop_t    tempop;
+		struct operand_s *alias;
 	} o;
 } operand_t;
 
@@ -111,6 +113,7 @@ struct dstring_s;
 const char *optype_str (op_type_e type);
 
 operand_t *temp_operand (struct type_s *type);
+operand_t *alias_operand (etype_t type, operand_t *op);
 sblock_t *new_sblock (void);
 statement_t *new_statement (st_type_t type, const char *opcode,
 							struct expr_s *expr);

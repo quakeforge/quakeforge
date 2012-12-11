@@ -96,6 +96,8 @@ get_operand_def (expr_t *expr, operand_t *op)
 			if (!op->o.tempop.def)
 				op->o.tempop.def = temp_def (op->type, op->size);
 			return op->o.tempop.def;
+		case op_alias:
+			return get_operand_def (expr, op->o.alias);
 	}
 	return 0;
 }
