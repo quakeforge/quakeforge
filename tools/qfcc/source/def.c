@@ -594,8 +594,15 @@ def_overlap (def_t *d1, def_t *d2)
 {
 	int         offs1, size1;
 	int         offs2, size2;
+	defspace_t *s1 = d1->space;
+	defspace_t *s2 = d2->space;
+
+	if (d1->alias)
+		s1 = d1->alias->space;
+	if (d2->alias)
+		s2 = d2->alias->space;
 	/// Defs in different spaces never overlap.
-	if (d1->space != d2->space)
+	if (s1 != s2)
 		return 0;
 
 	offs1 = d1->offset;
