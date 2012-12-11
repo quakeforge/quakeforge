@@ -382,7 +382,8 @@ flow_build_vars (function_t *func)
 		if (flowvar_is_global (var) || flowvar_is_param (var))
 			continue;
 		if (var->op->op_type == op_temp) {
-			set_add (var->define, func->symtab->space->size + var->number);
+			j = func->symtab->space->size + var->number;
+			set_add (var->define, func->num_statements + j);
 		} else {
 			offset = def_offset (var->op->o.def);
 			size = def_size (var->op->o.def);
