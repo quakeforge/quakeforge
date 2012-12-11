@@ -434,9 +434,9 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 			if (var)
 				set_union (tmp, var->define);
 		}
+		// don't allow aliases to kill definitions in the entry dummy block
+		set_difference (tmp, uninit);
 	}
-	// don't allow aliases to kill definitions in the entry dummy block
-	set_difference (tmp, uninit);
 	// merge the alias kills with the current def's kills
 	set_union (kill, tmp);
 }
