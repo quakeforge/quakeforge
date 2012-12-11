@@ -322,8 +322,31 @@ dagnode_set_edges (dagnode_t *n)
 		if (child) {
 			if (child->label->op) {
 				dagnode_t  *node = child->label->dagnode;
+				operand_t  *op = child->label->op;
 				if (node != child && node != n)
 					set_add (node->edges, n->number);
+				if (op->op_type == op_def) {
+					def_t      *def = op->o.def;
+					def_t      *ndef = def;
+					daglabel_t *label;
+					if (def->alias) {
+						def = def->alias;
+						label = def->daglabel;
+						if (label && label->dagnode) {
+							set_add (n->edges, label->dagnode->number);
+							label->live = 1;
+						}
+					}
+					for (def = def->alias_defs; def; def = def->next) {
+						if (!def_overlap (def, ndef))
+							continue;
+						label = def->daglabel;
+						if (label && label->dagnode) {
+							set_add (node->edges, label->dagnode->number);
+							label->live = 1;
+						}
+					}
+				}
 			}
 			if (n != child)
 				set_add (n->edges, child->number);
@@ -360,6 +383,7 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 		set_remove (n->edges, n->number);
 		set_remove (node->identifiers, l->number);
 	}
+	l->live = 0;	// remove live forcing on assignment
 	l->dagnode = n;
 	set_add (n->identifiers, l->number);
 }
@@ -374,6 +398,8 @@ dag_remove_dead_vars (dag_t *dag, set_t *live_vars)
 		flowvar_t  *var;
 
 		if (!l->op || !l->dagnode)
+			continue;
+		if (l->live)		// label forced live (probably via an alias)
 			continue;
 		var = flow_get_var (l->op);
 		if (!var)
