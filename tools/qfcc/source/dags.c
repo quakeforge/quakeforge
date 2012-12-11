@@ -153,6 +153,8 @@ operand_label (dag_t *dag, operand_t *op)
 		return 0;
 
 	if (op->op_type == op_temp) {
+		while (op->o.tempop.alias)
+			op = op->o.tempop.alias;
 		if (op->o.tempop.daglabel)
 			return op->o.tempop.daglabel;
 		label = new_label (dag);
@@ -214,6 +216,8 @@ dag_node (operand_t *op)
 		if (def->daglabel)
 			node = def->daglabel->dagnode;
 	} else if (op->op_type == op_temp) {
+		while (op->o.tempop.alias)
+			op = op->o.tempop.alias;
 		if (op->o.tempop.daglabel)
 			node = op->o.tempop.daglabel->dagnode;
 	} else if (op->op_type == op_value) {
