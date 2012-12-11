@@ -819,6 +819,8 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 			top = new_operand (op_temp);
 			top->type = type;
 			top->o.tempop.alias = aop;
+			top->next = aop->o.tempop.alias_ops;
+			aop->o.tempop.alias_ops = top;
 		}
 		*op = top;
 	} else if (aop->op_type == op_def) {
