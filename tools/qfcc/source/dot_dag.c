@@ -51,27 +51,38 @@
 #include "type.h"
 
 static void
-print_node_def (dstring_t *dstr, dagnode_t *node)
+print_node_def (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 {
-	dasprintf (dstr, "  \"dagnode_%p\" [%slabel=\"%s (%d)\"];\n", node,
-			   node->type != st_none ? "" : "shape=none,",
-			   daglabel_string (node->label), node->topo);
+	set_iter_t *id_iter;
+	daglabel_t *id;
+
+	dasprintf (dstr, "  \"dagnode_%p\" [%slabel=\"%s%s (%d)", node,
+			   node->type != st_none ? "" : "shape=box,",
+			   daglabel_string (node->label),
+			   node->killed ? " k" : "",
+			   node->topo);
+	for (id_iter = set_first (node->identifiers); id_iter;
+		 id_iter = set_next (id_iter)) {
+		id = dag->labels[id_iter->value];
+		dasprintf (dstr, "\\n%s", daglabel_string(id));
+	}
+	dasprintf (dstr, "\"];\n");
 }
 
 static void
 print_root_nodes (dstring_t *dstr, dag_t *dag)
 {
 	set_iter_t *node_iter;
-	dasprintf (dstr, "    subgraph roots_%p {", dag);
-	dasprintf (dstr, "      rank=same;");
+//	dasprintf (dstr, "    subgraph roots_%p {", dag);
+//	dasprintf (dstr, "      rank=same;");
 	for (node_iter = set_first (dag->roots); node_iter;
 		 node_iter = set_next (node_iter)) {
 		dagnode_t  *node = dag->nodes[node_iter->value];
-		print_node_def (dstr, node);
+		print_node_def (dstr, dag, node);
 		dasprintf (dstr, "      dag_enter_%p ->dagnode_%p [style=invis];\n",
 				   dag, node);
 	}
-	dasprintf (dstr, "    }\n");
+//	dasprintf (dstr, "    }\n");
 }
 
 static void
@@ -83,7 +94,7 @@ print_child_nodes (dstring_t *dstr, dag_t *dag)
 	for (i = 0; i < dag->num_nodes; i++) {
 		node = dag->nodes[i];
 		if (!set_is_empty (node->parents))
-			print_node_def (dstr, node);
+			print_node_def (dstr, dag, node);
 	}
 }
 
@@ -110,7 +121,7 @@ print_node (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 				   node, dag->nodes[edge_iter->value]);
 	}
 	set_delete (edges);
-	if (!set_is_empty (node->identifiers)) {
+	if (0 && !set_is_empty (node->identifiers)) {
 		set_iter_t *id_iter;
 		daglabel_t *id;
 
