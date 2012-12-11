@@ -173,6 +173,7 @@ alias_def (def_t *def, type_t *type, int offset)
 			return alias;
 	}
 	ALLOC (16384, def_t, defs, alias);
+	alias->name = save_string (va ("[%s:%d]", def->name, offset));
 	alias->return_addr = __builtin_return_address (0);
 	alias->offset = offset;
 	alias->offset_reloc = 1;

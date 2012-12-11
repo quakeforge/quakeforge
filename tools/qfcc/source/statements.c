@@ -122,8 +122,10 @@ operand_string (operand_t *op)
 		case op_label:
 			return op->o.label->name;
 		case op_temp:
-			while (op->o.tempop.alias)
-				op = op->o.tempop.alias;
+			if (op->o.tempop.alias)
+				return va ("<tmp %p:%d:%p:%d>", op, op->o.tempop.users,
+						   op->o.tempop.alias,
+						   op->o.tempop.alias->o.tempop.users);
 			return va ("<tmp %p:%d>", op, op->o.tempop.users);
 	}
 	return ("??");
