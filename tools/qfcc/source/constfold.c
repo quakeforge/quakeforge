@@ -876,6 +876,9 @@ do_op_invalid (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	type_t     *t1 = get_type (e1);
 	type_t     *t2 = get_type (e2);
+
+	if (e->e.expr.op == 'm')
+		return e;	// assume the rest of the compiler got it right
 	if (is_scalar (t1) && is_scalar (t2)) {
 		// one or both expressions are an enum, and the other is one of
 		// int, float or short. Treat the enum as the other type, or as

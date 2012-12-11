@@ -49,7 +49,7 @@ class_from_plist (PLDictionary *pldict)
 	local SEL sel;
 	local PLItem *item;
 
-	ret.quaternion_val = nil;	//FIXME should be ret = nil;
+	ret = nil;
 	classname = [(PLString*) [pldict getObjectForKey:"Class"] string];
 	class = obj_lookup_class (classname);
 	if (!class) {
@@ -98,7 +98,7 @@ array_from_plist (PLArray *plarray)
 	local int i, count;
 	local @param ret;
 
-	ret.quaternion_val = nil;	//FIXME should be ret = nil;
+	ret = nil;
 	array = [[Array alloc] init];
 	count = [plarray count];
 	for (i = 0; i < count; i++) {
@@ -155,7 +155,7 @@ object_from_plist (PLItem *plist)
 {
 	local @param ret;
 
-	ret.quaternion_val = nil;	//FIXME should be ret = nil;
+	ret = nil;
 	switch ([plist type]) {
 		case QFDictionary:
 			return class_from_plist ((PLDictionary *) plist);
