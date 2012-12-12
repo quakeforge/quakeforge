@@ -137,11 +137,9 @@ add_statement_def_ref (def_t *def, dstatement_t *st, int field)
 		int         alias_depth = 0;
 		expr_t      alias_depth_expr;
 
+		alias_depth_expr.file = def->file;
+		alias_depth_expr.line = def->line;
 		while (def->alias) {
-			if (!alias_depth) {
-				alias_depth_expr.file = def->file;
-				alias_depth_expr.line = def->line;
-			}
 			alias_depth++;
 			def_t      *a = def;
 			offset_reloc |= def->offset_reloc;
