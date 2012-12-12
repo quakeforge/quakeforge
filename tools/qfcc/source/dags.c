@@ -339,6 +339,11 @@ dagnode_set_edges (dagnode_t *n)
 				operand_t  *op = child->label->op;
 				if (node != child && node != n)
 					set_add (node->edges, n->number);
+				if (op->op_type == op_value
+					&& op->o.value->type == ev_pointer
+					&& op->o.value->v.pointer.def)
+					def_visit_all (op->o.value->v.pointer.def, 1,
+								   dagnode_set_edges_visit, n);
 				if (op->op_type == op_def
 					&& (op->o.def->alias || op->o.def->alias_defs))
 					def_visit_all (op->o.def, 1, dagnode_set_edges_visit, n);
