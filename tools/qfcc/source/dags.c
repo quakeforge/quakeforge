@@ -388,6 +388,15 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 	set_add (n->identifiers, l->number);
 }
 
+static int
+dag_alias_live (def_t *def, void *_live_vars)
+{
+	set_t      *live_vars = (set_t *) _live_vars;
+	if (!def->flowvar)
+		return 0;
+	return set_is_member (live_vars, def->flowvar->number);
+}
+
 static void
 dag_remove_dead_vars (dag_t *dag, set_t *live_vars)
 {
@@ -405,6 +414,9 @@ dag_remove_dead_vars (dag_t *dag, set_t *live_vars)
 		if (!var)
 			continue;
 		if (set_is_member (dag->flownode->global_vars, var->number))
+			continue;
+		if (l->op->op_type == op_def
+			&& def_visit_all (l->op->o.def, 1, dag_alias_live, live_vars))
 			continue;
 		if (!set_is_member (live_vars, var->number))
 			set_remove (l->dagnode->identifiers, l->number);
