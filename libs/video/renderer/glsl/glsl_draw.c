@@ -196,10 +196,10 @@ make_quad (qpic_t *pic, float x, float y, int w, int h,
 
 	srcx += sp->rect->x;
 	srcy += sp->rect->y;
-	sl = (srcx + 0.25) * sp->size;
-	sh = sl + (srcw - 0.5) * sp->size;
-	tl = (srcy + 0.25) * sp->size;
-	th = tl + (srch - 0.5) * sp->size;
+	sl = (srcx) * sp->size;
+	sh = sl + (srcw) * sp->size;
+	tl = (srcy) * sp->size;
+	th = tl + (srch) * sp->size;
 
 	verts[0].xyst[0] = x;
 	verts[0].xyst[1] = y;
