@@ -128,6 +128,7 @@ test_types (void)
 		printf ("%p %-6s %-20s", type, ty_meta_name[type.meta],
 				type.encoding);
 		if (!type.size) {
+			printf ("\n");
 			continue;
 		}
 		switch (type.meta) {
