@@ -379,10 +379,76 @@ crosshair_3 (int x, int y)
 	Draw_Pixel (x + 3, y + 3, c);
 }
 
+static void
+crosshair_4 (int x, int y)
+{
+	//byte        c = crosshaircolor->int_val;
+
+	Draw_Pixel (x,     y - 2, 8);
+	Draw_Pixel (x + 1, y - 2, 9);
+
+	Draw_Pixel (x,     y - 1, 6);
+	Draw_Pixel (x + 1, y - 1, 8);
+	Draw_Pixel (x + 2, y - 1, 2);
+
+	Draw_Pixel (x - 2, y,     6);
+	Draw_Pixel (x - 1, y,     8);
+	Draw_Pixel (x,     y,     8);
+	Draw_Pixel (x + 1, y,     6);
+	Draw_Pixel (x + 2, y,     8);
+	Draw_Pixel (x + 3, y,     8);
+
+	Draw_Pixel (x - 1, y + 1, 2);
+	Draw_Pixel (x,     y + 1, 8);
+	Draw_Pixel (x + 1, y + 1, 8);
+	Draw_Pixel (x + 2, y + 1, 2);
+	Draw_Pixel (x + 3, y + 1, 2);
+	Draw_Pixel (x + 4, y + 1, 2);
+
+	Draw_Pixel (x,     y + 2, 7);
+	Draw_Pixel (x + 1, y + 2, 8);
+	Draw_Pixel (x + 2, y + 2, 2);
+
+	Draw_Pixel (x + 1, y + 3, 2);
+	Draw_Pixel (x + 2, y + 3, 2);
+}
+
+static void
+crosshair_5 (int x, int y)
+{
+	byte        c = crosshaircolor->int_val;
+
+	Draw_Pixel (x - 1, y - 3, c);
+	Draw_Pixel (x + 0, y - 3, c);
+	Draw_Pixel (x + 1, y - 3, c);
+
+	Draw_Pixel (x - 2, y - 2, c);
+	Draw_Pixel (x + 2, y - 2, c);
+
+	Draw_Pixel (x - 3, y - 1, c);
+	Draw_Pixel (x + 3, y - 1, c);
+
+	Draw_Pixel (x - 3, y, c);
+	Draw_Pixel (x, y, c);
+	Draw_Pixel (x + 3, y, c);
+
+	Draw_Pixel (x - 3, y + 1, c);
+	Draw_Pixel (x + 3, y + 1, c);
+
+	Draw_Pixel (x - 2, y + 2, c);
+	Draw_Pixel (x + 2, y + 2, c);
+
+	Draw_Pixel (x - 1, y + 3, c);
+	Draw_Pixel (x + 0, y + 3, c);
+	Draw_Pixel (x + 1, y + 3, c);
+}
+
 static void (*crosshair_func[]) (int x, int y) = {
 	crosshair_1,
 	crosshair_2,
 	crosshair_3,
+	crosshair_4,
+	crosshair_5,
 };
 
 void

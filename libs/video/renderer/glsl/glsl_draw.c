@@ -519,66 +519,34 @@ glsl_Draw_AltString (int x, int y, const char *str)
 }
 
 static void
-crosshair_1 (int x, int y)
+draw_crosshair_plus (int ch, int x, int y)
 {
 	glsl_Draw_Character (x - 4, y - 4, '+');
 }
 
-//FIXME these should use an index to select the region.
 static void
-crosshair_2 (int x, int y)
+draw_crosshair_pic (int ch, int x, int y)
 {
-	draw_pic (x, y, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_pic,
-			  0, 0, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_color);
+	static const int pos[CROSSHAIR_COUNT][4] = {
+		{0,               0,                CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
+		{CROSSHAIR_WIDTH, 0,                CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
+		{0,               CROSSHAIR_HEIGHT, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
+		{CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
+	};
+	const int *p = pos[ch - 1];
+
+	draw_pic (x - CROSSHAIR_WIDTH / 2, y - CROSSHAIR_HEIGHT / 2,
+			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_pic,
+			  p[0], p[1], p[2], p[3], crosshair_color);
 }
 
-static void
-crosshair_3 (int x, int y)
-{
-	draw_pic (x, y, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_pic,
-			  CROSSHAIR_WIDTH, 0,
-			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_color);
-}
-
-static void
-crosshair_4 (int x, int y)
-{
-	draw_pic (x, y, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_pic,
-			  0, CROSSHAIR_HEIGHT,
-			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_color);
-}
-
-static void
-crosshair_5 (int x, int y)
-{
-	draw_pic (x, y, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_pic,
-			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT,
-			  CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, crosshair_color);
-}
-
-static void (*crosshair_func[]) (int x, int y) = {
-	crosshair_1,
-	crosshair_2,
-	crosshair_3,
-	crosshair_4,
-	crosshair_5,
+static void (*crosshair_func[]) (int ch, int x, int y) = {
+	draw_crosshair_plus,
+	draw_crosshair_pic,
+	draw_crosshair_pic,
+	draw_crosshair_pic,
+	draw_crosshair_pic,
 };
-
-void
-glsl_Draw_Crosshair (void)
-{
-	int         x, y;
-	size_t      ch;
-
-	ch = crosshair->int_val - 1;
-	if (ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
-		return;
-
-	x = vid.conwidth / 2 + cl_crossx->int_val;
-	y = vid.conheight / 2 + cl_crossy->int_val;
-
-	crosshair_func[ch] (x, y);
-}
 
 void
 glsl_Draw_CrosshairAt (int ch, int x, int y)
@@ -588,7 +556,18 @@ glsl_Draw_CrosshairAt (int ch, int x, int y)
 	if (c >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
 		return;
 
-	crosshair_func[c] (x, y);
+	crosshair_func[c] (c, x, y);
+}
+
+void
+glsl_Draw_Crosshair (void)
+{
+	int         x, y;
+
+	x = vid.conwidth / 2 + cl_crossx->int_val;
+	y = vid.conheight / 2 + cl_crossy->int_val;
+
+	glsl_Draw_CrosshairAt (crosshair->int_val, x, y);
 }
 
 void

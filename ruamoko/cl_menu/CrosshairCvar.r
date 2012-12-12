@@ -6,7 +6,7 @@
 -(void) next
 {
 	local int val = Cvar_GetInteger (name);
-	Cvar_SetInteger (name, (val + 1) % 4);
+	Cvar_SetInteger (name, (val + 1) % 6);
 }
 
 -(int) crosshair
