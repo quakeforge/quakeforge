@@ -272,6 +272,38 @@ int def_offset (def_t *def);
 	\return			The size of the def.
 */
 int def_size (def_t *def);
+
+/** Visit all defs that alias the given def, including itself.
+
+	First, the given def is visited, and then every candidate def connected
+	to the given def via the aliasing links will be visited. Candidate defs
+	are those that overlap the given def when \a overlap is true, otherwise
+	every connected def is a candidate. \a overlap has no meaning if the
+	given def is not an alias def as all alias defs connected to the given
+	def are guaranteed to overlap with the given def. Any def will be visited
+	at most once.
+
+	The \a visit function may return non-zero to terminate the loop early.
+	Any data needed by \a visit should be made available via \a data, which
+	will be passed on to \a visit via the second parameter. The first
+	parameter of \a visit is the def currently being visted.
+
+	This function is useful also for defs that are not alias defs and do not
+	have any aliases: \a visit will be called for the def and then the
+	function will return.
+
+	\param def		The def representing the alias cluster to visit.
+	\param overlap  If true, then only defs that overlap \a def will be
+					visited.
+	\param visit	The function to call when visiting a def. The first
+					parameter is the def being visited, and the second
+					parameter is \a data passed on. If non-zero is returned,
+					the pass through the alias cluster will terminate.
+	\param data		Pointer to the data needed by \a visit.
+	\return			1 if \a visit returned non-zero, otherwise 0.
+*/
+int def_visit_all (def_t *def, int overlap,
+				   int (*visit) (def_t *, void *), void *data);
 //@}
 
 #endif//__def_h

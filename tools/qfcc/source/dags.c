@@ -305,6 +305,20 @@ dagnode_add_children (dag_t *dag, dagnode_t *n, operand_t *operands[4],
 	}
 }
 
+static int
+dagnode_set_edges_visit (def_t *def, void *_node)
+{
+	dagnode_t  *node = (dagnode_t *) _node;
+	daglabel_t *label;
+
+	label = def->daglabel;
+	if (label && label->dagnode) {
+		set_add (node->edges, label->dagnode->number);
+		label->live = 1;
+	}
+	return 0;
+}
+
 static void
 dagnode_set_edges (dagnode_t *n)
 {
@@ -325,28 +339,8 @@ dagnode_set_edges (dagnode_t *n)
 				operand_t  *op = child->label->op;
 				if (node != child && node != n)
 					set_add (node->edges, n->number);
-				if (op->op_type == op_def) {
-					def_t      *def = op->o.def;
-					def_t      *ndef = def;
-					daglabel_t *label;
-					if (def->alias) {
-						def = def->alias;
-						label = def->daglabel;
-						if (label && label->dagnode) {
-							set_add (n->edges, label->dagnode->number);
-							label->live = 1;
-						}
-					}
-					for (def = def->alias_defs; def; def = def->next) {
-						if (!def_overlap (def, ndef))
-							continue;
-						label = def->daglabel;
-						if (label && label->dagnode) {
-							set_add (node->edges, label->dagnode->number);
-							label->live = 1;
-						}
-					}
-				}
+				if (op->op_type == op_def)
+					def_visit_all (op->o.def, 1, dagnode_set_edges_visit, n);
 			}
 			if (n != child)
 				set_add (n->edges, child->number);

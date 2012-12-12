@@ -398,12 +398,21 @@ flow_build_vars (function_t *func)
 	set_delete (stdef);
 }
 
+static int
+flow_kill_aliases_visit (def_t *def, void *_kill)
+{
+	set_t      *kill = (set_t *) _kill;
+	flowvar_t  *var;
+	var = def->flowvar;
+	if (var)
+		set_union (kill, var->define);
+	return 0;
+}
+
 static void
 flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 {
 	operand_t  *op;
-	def_t      *st_def;
-	def_t      *def;
 	set_t      *tmp;
 
 	set_union (kill, var->define);
@@ -422,20 +431,7 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 				set_union (tmp, var->define);
 		}
 	} else if (op->op_type == op_def) {
-		st_def = def = op->o.def;
-		if (def->alias) {
-			def = def->alias;
-			var = def->flowvar;
-			if (var)
-				set_union (tmp, var->define);
-		}
-		for (def = def->alias_defs; def; def = def->next) {
-			if (!def_overlap (def, st_def))
-				continue;
-			var = def->flowvar;
-			if (var)
-				set_union (tmp, var->define);
-		}
+		def_visit_all (op->o.def, 1, flow_kill_aliases_visit, tmp);
 		// don't allow aliases to kill definitions in the entry dummy block
 		set_difference (tmp, uninit);
 	}
