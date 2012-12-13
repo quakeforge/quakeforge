@@ -498,6 +498,7 @@ flow_reaching_defs (flowgraph_t *graph)
 		node->reaching_defs.out = set_new ();
 	}
 
+	changed = 1;
 	while (changed) {
 		changed = 0;
 		// flow down the graph
