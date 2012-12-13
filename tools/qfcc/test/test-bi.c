@@ -52,6 +52,8 @@ bi_printf (progs_t *pr)
 
 	if (!dstr)
 		dstr = dstring_new ();
+	else
+		dstring_clear (dstr);
 
 	PR_Sprintf (pr, dstr, "bi_printf", fmt, count, args);
 	if (dstr->str)
