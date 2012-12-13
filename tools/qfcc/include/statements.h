@@ -112,8 +112,12 @@ struct dstring_s;
 
 const char *optype_str (op_type_e type);
 
+operand_t *def_operand (struct def_s *def, struct type_s *type);
+operand_t *value_operand (struct ex_value_s *value);
 operand_t *temp_operand (struct type_s *type);
 operand_t *alias_operand (etype_t type, operand_t *op);
+void free_operand (operand_t *op);
+
 sblock_t *new_sblock (void);
 statement_t *new_statement (st_type_t type, const char *opcode,
 							struct expr_s *expr);

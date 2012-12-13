@@ -54,6 +54,7 @@
 #include "strpool.h"
 #include "symtab.h"
 #include "type.h"
+#include "value.h"
 #include "qc-parse.h"
 
 static const char *op_type_names[] = {
@@ -263,7 +264,7 @@ new_operand (op_type_e op)
 	return operand;
 }
 
-static void __attribute__((unused)) //FIXME
+void
 free_operand (operand_t *op)
 {
 	FREE (operands, op);
@@ -290,6 +291,29 @@ free_sblock (sblock_t *sblock)
 		free_statement (s);
 	}
 	FREE (sblocks, sblock);
+}
+
+operand_t *
+def_operand (def_t *def, type_t *type)
+{
+	operand_t  *op;
+
+	if (!type)
+		type = def->type;
+	op = new_operand (op_def);
+	op->type = low_level_type (type);
+	op->o.def = def;
+	return op;
+}
+
+operand_t *
+value_operand (ex_value_t *value)
+{
+	operand_t  *op;
+	op = new_operand (op_value);
+	op->type = value->type;
+	op->o.value = value;
+	return op;
 }
 
 operand_t *
@@ -320,13 +344,8 @@ alias_operand (etype_t type, operand_t *op)
 static operand_t *
 short_operand (short short_val)
 {
-	operand_t  *op = new_operand (op_value);
-
-	op->type = ev_short;
-	op->o.value = calloc (1, sizeof (ex_value_t));
-	op->o.value->type = ev_short;
-	op->o.value->v.short_val = short_val;
-	return op;
+	ex_value_t *val = new_short_val (short_val);
+	return value_operand (val);
 }
 
 static const char *
@@ -716,9 +735,7 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 		&& e->e.expr.e1->type == ex_symbol) {
 		if (e->e.expr.e1->e.symbol->sy_type != sy_var)
 			internal_error (e, "address of non-var");
-		*op = new_operand (op_def);
-		(*op)->type = low_level_type (type);
-		(*op)->o.def = e->e.expr.e1->e.symbol->s.def;
+		*op = def_operand (e->e.expr.e1->e.symbol->s.def, type);
 	} else if (e->type == ex_expr && e->e.expr.op == '&') {
 		statement_t *s;
 		operand_t  *ptr = 0;
@@ -754,9 +771,8 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 		}
 	} else if (e->type == ex_value && e->e.value->type == ev_pointer) {
 		ex_pointer_t *ptr = &e->e.value->v.pointer;
-		*op = new_operand (op_def);
-		(*op)->type = low_level_type (ptr->type);
-		(*op)->o.def = alias_def (ptr->def, ptr->type, ptr->val);
+		*op = def_operand (alias_def (ptr->def, ptr->type, ptr->val),
+						   ptr->type);
 	} else {
 		statement_t *s;
 		operand_t  *ptr = 0;
@@ -852,9 +868,7 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 		def = aop->o.def;
 		while (def->alias)
 			def = def->alias;
-		*op = new_operand (op_def);
-		(*op)->type = low_level_type (e->e.expr.type);
-		(*op)->o.def = alias_def (def, ev_types[(*op)->type], 0);
+		*op = def_operand (alias_def (def, ev_types[type], 0), 0);
 	} else {
 		internal_error (e, "invalid alias target: %s: %s",
 						optype_str (aop->op_type), operand_string (aop));
@@ -944,17 +958,11 @@ expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
 	symbol_t   *sym = e->e.symbol;
 
 	if (sym->sy_type == sy_var) {
-		*op = new_operand (op_def);
-		(*op)->type = low_level_type (sym->type);
-		(*op)->o.def = sym->s.def;
+		*op = def_operand (sym->s.def, sym->type);
 	} else if (sym->sy_type == sy_const) {
-		*op = new_operand (op_value);
-		(*op)->type = sym->s.value->type;
-		(*op)->o.value = sym->s.value;
+		*op = value_operand (sym->s.value);
 	} else if (sym->sy_type == sy_func) {
-		*op = new_operand (op_def);
-		(*op)->type = ev_func;
-		(*op)->o.def = sym->s.func->def;
+		*op = def_operand (sym->s.func->def, 0);
 	} else {
 		internal_error (e, "unexpected symbol type: %s",
 						symtype_str(sym->sy_type));
@@ -974,9 +982,7 @@ expr_temp (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 expr_value (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	*op = new_operand (op_value);
-	(*op)->type = e->e.value->type;
-	(*op)->o.value = e->e.value;
+	*op = value_operand (e->e.value);
 	return sblock;
 }
 
@@ -1541,11 +1547,8 @@ check_final_block (sblock_t *sblock)
 		return_def = return_symbol->s.def;
 		return_opcode = "<RETURN>";
 	}
-	if (return_symbol) {
-		return_operand = new_operand (op_def);
-		return_operand->type = ev_void;
-		return_operand->o.def = return_def;
-	}
+	if (return_symbol)
+		return_operand = def_operand (return_def, &type_void);
 	s = new_statement (st_func, return_opcode, 0);
 	s->opa = return_operand;
 	sblock_add_statement (sblock, s);
