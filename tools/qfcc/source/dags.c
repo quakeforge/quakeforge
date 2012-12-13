@@ -437,6 +437,15 @@ dag_kill_aliases (daglabel_t *l)
 	}
 }
 
+static int
+dag_live_aliases (def_t *def, void *_d)
+{
+
+	if (def != _d && def->daglabel)
+		def->daglabel->live = 1;
+	return 0;
+}
+
 static void
 dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 {
@@ -456,6 +465,15 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 	l->dagnode = n;
 	set_add (n->identifiers, l->number);
 	dag_kill_aliases (l);
+	if (n->label->op) {
+		// FIXME temps
+		// FIXME it would be better to propogate the aliasing
+		if (n->label->op->op_type == op_def
+			&& (n->label->op->o.def->alias
+				|| n->label->op->o.def->alias_defs))
+			def_visit_all (n->label->op->o.def, 1, dag_live_aliases,
+						   n->label->op->o.def);
+	}
 }
 
 static int
