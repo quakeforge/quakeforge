@@ -38,6 +38,7 @@
 # include <strings.h>
 #endif
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "QF/alloc.h"
 #include "QF/dstring.h"
@@ -47,6 +48,7 @@
 #include "dags.h"
 #include "diagnostic.h"
 #include "flow.h"
+#include "function.h"
 #include "qfcc.h"
 #include "statements.h"
 #include "strpool.h"
@@ -319,8 +321,16 @@ dagnode_set_edges_visit (def_t *def, void *_node)
 	return 0;
 }
 
+static int
+dag_find_node (def_t *def, void *unused)
+{
+	if (def->daglabel && def->daglabel->dagnode)
+		return def->daglabel->dagnode->number + 1;	// ensure never 0
+	return 0;
+}
+
 static void
-dagnode_set_edges (dagnode_t *n)
+dagnode_set_edges (dag_t *dag, dagnode_t *n)
 {
 	int         i;
 
@@ -350,6 +360,33 @@ dagnode_set_edges (dagnode_t *n)
 			}
 			if (n != child)
 				set_add (n->edges, child->number);
+		}
+	}
+	if (n->type == st_func) {
+		const char *num_params = 0;
+		int         first_param = 0;
+		flowvar_t **flowvars = dag->flownode->graph->func->vars;
+
+		if (!strncmp (n->label->opcode, "<RCALL", 6)) {
+			num_params = n->label->opcode + 6;
+			first_param = 2;
+		} else if (!strncmp (n->label->opcode, "<CALL", 5)) {
+			num_params = n->label->opcode + 5;
+		}
+		if (num_params && isdigit (*num_params)) {
+			for (i = first_param; i < *num_params - '0'; i++) {
+				flowvar_t  *var = flowvars[i + 1];
+				def_t      *param_def = var->op->o.def;
+				int         param_node;
+
+				// FIXME hopefully only the one alias :P
+				param_node = def_visit_all (param_def, 0, dag_find_node, 0);
+				if (!param_node) {
+					bug (0, ".param_%d not set for %s", i, n->label->opcode);
+					continue;
+				}
+				set_add (n->edges, param_node - 1);
+			}
 		}
 	}
 }
@@ -563,7 +600,7 @@ dag_create (flownode_t *flownode)
 			n->type = s->type;
 			n->label = op;
 			dagnode_add_children (dag, n, operands, children);
-			dagnode_set_edges (n);
+			dagnode_set_edges (dag, n);
 		}
 		lx = operand_label (dag, operands[0]);
 		if (lx && lx->dagnode != n) {
