@@ -464,7 +464,7 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 								  ? "invalid type"
 								  : pr_type_name[type->t.type]);
 				if (type->t.type == ev_func) {
-					printf ("%5x %d", type->t.func.return_type,
+					printf (" %4x %d", type->t.func.return_type,
 							count = type->t.func.num_params);
 					if (count < 0)
 						count = ~count;	//ones complement
@@ -472,7 +472,7 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 						printf (" %x", type->t.func.param_types[i]);
 				} else if (type->t.type == ev_pointer
 						   || type->t.type == ev_field) {
-					printf (" %x", type->t.fldptr.aux_type);
+					printf (" %4x", type->t.fldptr.aux_type);
 				}
 				printf ("\n");
 				break;
