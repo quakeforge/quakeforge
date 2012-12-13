@@ -406,11 +406,14 @@ op_is_identifier (operand_t *op)
 }
 
 static int
-dag_kill_aliases_visit (def_t *def, void *_node)
+dag_kill_aliases_visit (def_t *def, void *_l)
 {
-	dagnode_t  *node = (dagnode_t *) _node;
+	daglabel_t *l = (daglabel_t *) _l;
+	dagnode_t  *node = l->dagnode;;
 	daglabel_t *label;
 
+	if (def == l->op->o.def)
+		return 0;
 	label = def->daglabel;
 	if (label && label->dagnode) {
 		set_add (node->edges, label->dagnode->number);
@@ -428,7 +431,7 @@ dag_kill_aliases (daglabel_t *l)
 	if (op->op_type == op_temp) {
 	} else if (op->op_type == op_def) {
 		if (op->o.def->alias || op->o.def->alias_defs)
-			def_visit_all (op->o.def, 1, dag_kill_aliases_visit, l->dagnode);
+			def_visit_all (op->o.def, 1, dag_kill_aliases_visit, l);
 	} else {
 		internal_error (0, "rvalue assignment?");
 	}
