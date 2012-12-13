@@ -2637,7 +2637,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 		}
 	}
 	if (is_struct (get_type (e1))) {
-		return new_move_expr (e1, e2, get_type (e2), 0);
+		return new_move_expr (e1, e2, get_type (e1), 0);
 	}
 	if (!type)
 		internal_error (e1, 0);
