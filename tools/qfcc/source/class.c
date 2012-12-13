@@ -56,6 +56,7 @@
 #include "method.h"
 #include "options.h"
 #include "reloc.h"
+#include "shared.h"
 #include "strpool.h"
 #include "struct.h"
 #include "symtab.h"
@@ -228,7 +229,7 @@ class_symbol (class_type_t *class_type, int external)
 			return 0;		// probably in error recovery
 	}
 	sym = make_symbol (name, type, pr.far_data,
-					   external ? st_extern : st_global);
+					   external ? sc_extern : sc_global);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
 	return sym;
@@ -432,7 +433,7 @@ emit_ivars (symtab_t *ivars, const char *name)
 	ivar_list_struct[1].type = array_type (&type_obj_ivar, ivar_data.count);
 
 	def = emit_structure (va ("_OBJ_INSTANCE_VARIABLES_%s", name), 's',
-						  ivar_list_struct, 0, &ivar_data, st_static);
+						  ivar_list_struct, 0, &ivar_data, sc_static);
 
 	dstring_delete (ivar_data.encoding);
 	return def;
@@ -449,7 +450,7 @@ begin_class (class_t *class)
 	defspace_t *space;
 
 	sym = make_symbol (va ("_OBJ_METACLASS_%s", class->name),
-					   &type_obj_class, pr.far_data, st_static);
+					   &type_obj_class, pr.far_data, sc_static);
 	meta_def = sym->s.def;
 	meta_def->initialized = meta_def->constant = meta_def->nosave = 1;
 	space = meta_def->space;
@@ -511,7 +512,7 @@ emit_class_ref (const char *class_name)
 	def_t      *name_def;
 
 	ref_sym = make_symbol (va (".obj_class_ref_%s", class_name), &type_pointer,
-						   pr.far_data, st_static);
+						   pr.far_data, sc_static);
 	if (!ref_sym->table)
 		symtab_addsymbol (pr.symtab, ref_sym);
 	ref_def = ref_sym->s.def;
@@ -519,7 +520,7 @@ emit_class_ref (const char *class_name)
 		return;
 	ref_def->initialized = ref_def->constant = ref_def->nosave = 1;
 	name_sym = make_symbol (va (".obj_class_name_%s", class_name),
-							&type_pointer, pr.far_data, st_extern);
+							&type_pointer, pr.far_data, sc_extern);
 	if (!name_sym->table)
 		symtab_addsymbol (pr.symtab, name_sym);
 	name_def = name_sym->s.def;
@@ -535,7 +536,7 @@ emit_class_name (const char *class_name)
 	def_t      *name_def;
 
 	name_sym = make_symbol (va (".obj_class_name_%s", class_name),
-							&type_pointer, pr.far_data, st_global);
+							&type_pointer, pr.far_data, sc_global);
 	if (!name_sym->table)
 		symtab_addsymbol (pr.symtab, name_sym);
 	name_def = name_sym->s.def;
@@ -556,7 +557,7 @@ emit_category_ref (const char *class_name, const char *category_name)
 
 	ref_sym = make_symbol (va (".obj_category_ref_%s_%s",
 						   class_name, category_name),
-					   &type_pointer, pr.far_data, st_static);
+					   &type_pointer, pr.far_data, sc_static);
 	if (!ref_sym->table)
 		symtab_addsymbol (pr.symtab, ref_sym);
 	ref_def = ref_sym->s.def;
@@ -566,7 +567,7 @@ emit_category_ref (const char *class_name, const char *category_name)
 	ref_def->nosave = 1;
 	name_sym = make_symbol (va (".obj_category_name_%s_%s",
 						   class_name, category_name),
-					   &type_pointer, pr.far_data, st_extern);
+					   &type_pointer, pr.far_data, sc_extern);
 	if (!name_sym->table)
 		symtab_addsymbol (pr.symtab, name_sym);
 	name_def = name_sym->s.def;
@@ -583,7 +584,7 @@ emit_category_name (const char *class_name, const char *category_name)
 
 	name_sym = make_symbol (va (".obj_category_name_%s_%s",
 							    class_name, category_name),
-							&type_pointer, pr.far_data, st_global);
+							&type_pointer, pr.far_data, sc_global);
 	if (!name_sym->table)
 		symtab_addsymbol (pr.symtab, name_sym);
 	name_def = name_sym->s.def;
@@ -959,7 +960,7 @@ class_pointer_symbol (class_t *class)
 
 	sym = make_symbol (va ("_OBJ_CLASS_POINTER_%s", class->name),
 					   &type_Class,
-					   pr.near_data, st_static);
+					   pr.near_data, sc_static);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
 	def = sym->s.def;
@@ -1100,12 +1101,12 @@ class_finish_module (void)
 	symtab_struct[4].type = array_type (&type_pointer,
 										data.cls_def_cnt + data.cat_def_cnt);
 	symtab_def = emit_structure ("_OBJ_SYMTAB", 's', symtab_struct, 0, &data,
-								 st_static);
+								 sc_static);
 	free (data.classes);
 	free (data.categories);
 
 	module_sym = make_symbol ("_OBJ_MODULE", &type_obj_module, pr.far_data,
-							  st_static);
+							  sc_static);
 	symtab_addsymbol (current_symtab, module_sym);
 	module = &D_STRUCT (pr_module_t, module_sym->s.def);
 	module->size = type_size (&type_obj_module);
@@ -1119,7 +1120,7 @@ class_finish_module (void)
 										  &type_obj_exec_class);
 		exec_class_sym = function_symbol (exec_class_sym, 0, 1);
 		make_function (exec_class_sym, 0, exec_class_sym->table->space,
-					   st_extern);
+					   sc_extern);
 	}
 
 	init_sym = new_symbol_type (".ctor", &type_function);
@@ -1133,7 +1134,7 @@ class_finish_module (void)
 									 		   0, 0)));
 
 	save_storage = current_storage;
-	current_storage = st_static;
+	current_storage = sc_static;
 	current_func = begin_function (init_sym, 0, current_symtab, 1);
 	build_code_function (init_sym, 0, init_expr);;
 	current_func = 0;
@@ -1184,7 +1185,7 @@ def_t *
 protocol_def (protocol_t *protocol)
 {
 	return make_symbol (protocol->name, &type_obj_protocol,
-						pr.far_data, st_static)->s.def;
+						pr.far_data, sc_static)->s.def;
 }
 
 protocollist_t *
@@ -1221,7 +1222,7 @@ emit_protocol (protocol_t *protocol)
 	defspace_t *space;
 
 	proto_def = make_symbol (va ("_OBJ_PROTOCOL_%s", protocol->name),
-							 &type_obj_protocol, pr.far_data, st_static)->s.def;
+							 &type_obj_protocol, pr.far_data, sc_static)->s.def;
 	if (proto_def->initialized)
 		return proto_def;
 	proto_def->initialized = proto_def->constant = 1;
@@ -1263,7 +1264,7 @@ emit_protocol_list (protocollist_t *protocols, const char *name)
 	proto_list_type = make_structure (0, 's', proto_list_struct, 0)->type;
 	proto_list_def = make_symbol (va ("_OBJ_PROTOCOLS_%s", name),
 								  proto_list_type,
-								  pr.far_data, st_static)->s.def;
+								  pr.far_data, sc_static)->s.def;
 	proto_list_def->initialized = proto_list_def->constant = 1;
 	proto_list_def->nosave = 1;
 	space = proto_list_def->space;

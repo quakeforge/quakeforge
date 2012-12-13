@@ -56,4 +56,3 @@ typedef struct bot_data_t bot_data_t;
 	b_sound &= ~flag;
 }
 @end
-

@@ -51,7 +51,9 @@
 #include "expr.h"
 #include "grab.h"
 #include "options.h"
+#include "pragma.h"
 #include "qfcc.h"
+#include "shared.h"
 #include "strpool.h"
 #include "struct.h"
 #include "symtab.h"
@@ -98,9 +100,10 @@ INT			({D}+|0[xX]{X}+)
 RANGE		\.\.
 ELLIPSIS	\.\.\.
 FRAMEID		{ID}(\.{ID})*
+PRAGMAID	{ID}(-{ID})*
 STRING		\"(\\.|[^"\\])*\"
 
-%x		GRAB_FRAME GRAB_OTHER GRAB_WRITE COMMENT
+%x		GRAB_FRAME GRAB_OTHER GRAB_WRITE COMMENT PRAGMA
 
 %%
 					grab_frame = GRAB_FRAME;
@@ -118,7 +121,7 @@ STRING		\"(\\.|[^"\\])*\"
 ^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
 ^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 5); }
 
-^{s}*#{s}*pragma.*$	/* skip */
+^{s}*#{s}*pragma{s}+	{ BEGIN (PRAGMA); }
 
 {INT}+[uU]?			{
 						const char *c = yytext + yyleng - 1;
@@ -240,6 +243,7 @@ STRING		\"(\\.|[^"\\])*\"
 							write_frame_macros (s);
 							BEGIN (GRAB_OTHER);	// ignore rest of line
 						}
+<PRAGMA>{ID}		{ pragma (yytext); }
 
 <*>\r*\n			{
 						pr.source_line++;
@@ -297,15 +301,15 @@ static keyword_t keywords[] = {
 	{"case",		CASE,	0,					1, PROG_ID_VERSION,	0},
 	{"default",		DEFAULT, 0,					1, PROG_ID_VERSION,	0},
 	{"nil",			NIL,	0,					0, PROG_ID_VERSION,	0},
+	{"@nil",		NIL,	0,					2, PROG_ID_VERSION,	0},
 	{"struct",		STRUCT, 0,					0, PROG_VERSION,	0},
 	{"union",		STRUCT,	0,					0, PROG_VERSION,	0},
 	{"enum",		ENUM,	0,					0, PROG_ID_VERSION,	0},
 	{"typedef",		TYPEDEF, 0,					0, PROG_ID_VERSION,	0},
 
-	// these two are a hack to trigger the initialization of the class
+	// this is a hack to trigger the initialization of the class
 	// sytem if they are seen before any other Objective-QC symbol
-	{"obj_module_s", 0,		0,					0, PROG_VERSION,	1},
-	{"obj_module_t", 0,		0,					0, PROG_VERSION,	1},
+	{"obj_module", 0,		0,					0, PROG_VERSION,	1},
 
 	{"@class",		CLASS,	0,					0, PROG_VERSION,	1},
 	{"@defs",		DEFS,	0,					0, PROG_VERSION,	1},

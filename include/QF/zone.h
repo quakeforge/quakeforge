@@ -103,7 +103,7 @@ void Z_Print (memzone_t *zone);
 void Z_CheckHeap (memzone_t *zone);
 void Z_SetError (memzone_t *zone, void (*err) (void *data, const char *msg),
 				 void *data);
-
+void Z_CheckPointer (const memzone_t *zone, const void *ptr, int size);
 
 void *Hunk_Alloc (int size);		// returns 0 filled memory
 void *Hunk_AllocName (int size, const char *name);

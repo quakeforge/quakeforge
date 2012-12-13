@@ -67,8 +67,8 @@ static ex_value_t *
 get_value (expr_t *e)
 {
 	if (e->type == ex_symbol)
-		return &e->e.symbol->s.value;
-	return &e->e.value;
+		return e->e.symbol->s.value;
+	return e->e.value;
 }
 
 static uintptr_t
@@ -343,9 +343,8 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		}
 		table_sym = new_symbol (table_name);
 		initialize_def (table_sym, array_type (&type_integer, high - low + 1),
-						table_init, pr.near_data, st_static);
+						table_init, pr.near_data, sc_static);
 		table_expr = new_symbol_expr (table_sym);
-		table_expr = new_alias_expr (&type_integer, table_expr);
 
 		if (tree->left) {
 			branch = branch_expr (IFB, temp, low_label);
@@ -357,6 +356,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		append_expr (sw, branch);
 		branch = new_binary_expr ('g', table_expr, temp);
 		append_expr (sw, branch);
+		debug (sw, "switch using jump table");
 		if (tree->left) {
 			append_expr (sw, low_label);
 			build_switch (sw, tree->left, op, sw_val, temp, default_label);
@@ -394,7 +394,6 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		default_label = &_default_label;
 		default_label->label = break_label;
 	}
-	default_expr = goto_expr (default_label->label);
 
 	append_expr (sw, assign_expr (sw_val, switch_block->test));
 
@@ -411,6 +410,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 
 			append_expr (sw, test);
 		}
+		default_expr = goto_expr (default_label->label);
 		append_expr (sw, default_expr);
 	} else {
 		expr_t     *temp;

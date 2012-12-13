@@ -116,6 +116,7 @@ static const char *short_options =
 	"M::"
 	"N:"	// notice options
 	"o:"	// output file
+	"O"		// optimize
 	"P:"	// progs.src name
 	"p:"	// strip path
 	"q"		// quiet
@@ -197,6 +198,7 @@ code_usage (void)
 "    [no-]fast-float         Use float values directly in \"if\" statements.\n"
 "    help                    Display his text.\n"
 "    [no-]local-merging      Merge the local variable blocks into one.\n"
+"    [no-]optimize           Perform various optimizations on the code.\n"
 "    [no-]short-circuit      Generate short circuit code for logical\n"
 "                            operators.\n"
 "    [no-]single-cpp         Convert progs.src to cpp input file.\n"
@@ -357,6 +359,9 @@ DecodeArgs (int argc, char **argv)
 			case 'g':					// debug
 				options.code.debug = true;
 				break;
+			case 'O':					// optimize
+				options.code.optimize = true;
+				break;
 			case OPT_FRAMES:
 				options.frames_files = 1;
 				break;
@@ -395,6 +400,18 @@ DecodeArgs (int argc, char **argv)
 							options.block_dot.dead = flag;
 						} else if (!(strcasecmp (temp, "final"))) {
 							options.block_dot.final = flag;
+						} else if (!(strcasecmp (temp, "dags"))) {
+							options.block_dot.dags = flag;
+						} else if (!(strcasecmp (temp, "expr"))) {
+							options.block_dot.expr = flag;
+						} else if (!(strcasecmp (temp, "flow"))) {
+							options.block_dot.flow = flag;
+						} else if (!(strcasecmp (temp, "reaching"))) {
+							options.block_dot.reaching = flag;
+						} else if (!(strcasecmp (temp, "live"))) {
+							options.block_dot.live = flag;
+						} else if (!(strcasecmp (temp, "post"))) {
+							options.block_dot.post = flag;
 						}
 						temp = strtok (NULL, ",");
 					}
@@ -404,6 +421,12 @@ DecodeArgs (int argc, char **argv)
 					options.block_dot.thread = true;
 					options.block_dot.dead = true;
 					options.block_dot.final = true;
+					options.block_dot.dags = true;
+					options.block_dot.expr = true;
+					options.block_dot.flow = true;
+					options.block_dot.reaching = true;
+					options.block_dot.live = true;
+					options.block_dot.post = true;
 				}
 				break;
 			case 'c':
@@ -440,6 +463,8 @@ DecodeArgs (int argc, char **argv)
 							code_usage ();
 						} else if (!(strcasecmp (temp, "local-merging"))) {
 							options.code.local_merging = flag;
+						} else if (!(strcasecmp (temp, "optimize"))) {
+							options.code.optimize = flag;
 						} else if (!(strcasecmp (temp, "short-circuit"))) {
 							options.code.short_circuit = flag;
 						} else if (!(strcasecmp (temp, "single-cpp"))) {

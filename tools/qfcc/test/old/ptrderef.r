@@ -1,3 +1,4 @@
+int y;
 void
 ptrderef (int *to, int *from)
 {
@@ -11,4 +12,7 @@ ptrderef (int *to, int *from)
 	to = ++from;
 	*to = *from++;
 	*to = *++from;
+	*to = x;
+	*to++ = *from++;
+	y = *to++;
 }

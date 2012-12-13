@@ -133,7 +133,7 @@ int yylex (void);
 %type	<symbol>	program_head identifier_list subprogram_head
 %type	<symtab>	param_scope
 %type	<param>		arguments parameter_list
-%type	<expr>		compound_statement optional_statements statement_list
+%type	<expr>		compound_statement else optional_statements statement_list
 %type	<expr>		statement procedure_statement
 %type	<expr>		expression_list expression unary_expr primary variable name
 %type	<op>		sign
@@ -239,7 +239,7 @@ subprogram_declaration
 			$<storage>$ = current_storage;
 			current_func = begin_function ($1, 0, current_symtab, 0);
 			current_symtab = current_func->symtab;
-			current_storage = st_local;
+			current_storage = sc_local;
 		}
 	  declarations compound_statement ';'
 		{
@@ -352,13 +352,13 @@ statement
 		}
 	| procedure_statement
 	| compound_statement
-	| IF expression THEN statement ELSE statement
+	| IF expression THEN statement else statement
 		{
-			$$ = build_if_statement ($2, $4, $6);
+			$$ = build_if_statement ($2, $4, $5, $6);
 		}
 	| IF expression THEN statement %prec IFX
 		{
-			$$ = build_if_statement ($2, $4, 0);
+			$$ = build_if_statement ($2, $4, 0, 0);
 		}
 	| WHILE expression DO statement
 		{
@@ -369,6 +369,13 @@ statement
 	| RETURN
 		{
 			$$ = return_expr (current_func, 0);
+		}
+	;
+
+else
+	: ELSE
+		{
+			$$ = new_nil_expr ();
 		}
 	;
 

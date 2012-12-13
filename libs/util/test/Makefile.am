@@ -3,7 +3,8 @@ AUTOMAKE_OPTIONS= foreign
 INCLUDES= -I$(top_srcdir)/include
 
 check_PROGRAMS= \
-	test-dq test-half test-mat3 test-mat4 test-qfs test-quat test-vrect
+	test-dq test-half test-mat3 test-mat4 test-qfs test-quat test-set \
+	test-vrect
 
 test_dq_SOURCES=test-dq.c
 test_dq_LDADD=$(top_builddir)/libs/util/libQFutil.la
@@ -28,6 +29,10 @@ test_qfs_DEPENDENCIES=$(top_builddir)/libs/util/libQFutil.la
 test_quat_SOURCES=test-quat.c
 test_quat_LDADD=$(top_builddir)/libs/util/libQFutil.la
 test_quat_DEPENDENCIES=$(top_builddir)/libs/util/libQFutil.la
+
+test_set_SOURCES=test-set.c
+test_set_LDADD=$(top_builddir)/libs/util/libQFutil.la
+test_set_DEPENDENCIES=$(top_builddir)/libs/util/libQFutil.la
 
 test_vrect_SOURCES=test-vrect.c
 test_vrect_LDADD=$(top_builddir)/libs/util/libQFutil.la

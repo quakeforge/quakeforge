@@ -1770,7 +1770,7 @@ DOT_PATH               =
 # contain dot files that are included in the documentation (see the
 # \dotfile command).
 
-DOTFILE_DIRS           =
+DOTFILE_DIRS           = @TOPSRC@/tools/qfcc/doc/dot
 
 # The MSCFILE_DIRS tag can be used to specify one or more directories that
 # contain msc files that are included in the documentation (see the

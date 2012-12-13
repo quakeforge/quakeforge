@@ -75,6 +75,7 @@ typedef struct ex_label_s {
 	struct sblock_s *dest;		///< the location of this label if known
 	const char *name;			///< the name of this label
 	int         used;			///< label is used as a target
+	struct daglabel_s *daglabel;
 } ex_label_t;
 
 typedef struct {
@@ -104,6 +105,11 @@ typedef struct ex_pointer_s {
 	struct type_s *type;
 	struct def_s *def;
 } ex_pointer_t;
+
+typedef struct ex_func_s {
+	int         val;
+	struct type_s *type;
+} ex_func_t;
 
 typedef struct {
 	int         size;
@@ -157,13 +163,15 @@ typedef struct {
 } ex_state_t;
 
 typedef struct ex_value_s {
+	struct ex_value_s *next;
+	struct daglabel_s *daglabel;///< dag label for this value
 	etype_t     type;
 	union {
 		const char *string_val;			///< string constant
 		float       float_val;			///< float constant
 		float       vector_val[3];		///< vector constant
 		int         entity_val;			///< entity constant
-		int         func_val;			///< function constant
+		ex_func_t   func_val;			///< function constant
 		ex_pointer_t pointer;			///< pointer constant
 		float       quaternion_val[4];	///< quaternion constant
 		int         integer_val;		///< integer constant
@@ -191,7 +199,7 @@ typedef struct expr_s {
 		ex_expr_t   expr;				///< binary or unary expression
 		struct symbol_s *symbol;		///< symbol reference expression
 		ex_temp_t   temp;				///< temporary variable expression
-		ex_value_t  value;				///< constant value
+		ex_value_t *value;				///< constant value
 	} e;
 } expr_t;
 
@@ -403,10 +411,11 @@ expr_t *new_field_expr (int field_val, struct type_s *type, struct def_s *def);
 /** Create a new function constant expression node.
 
 	\param func_val	The function constant being represented.
+	\param type		The type of the function
 	\return			The new function constant expression node
 					(expr_t::e::func_val).
 */
-expr_t *new_func_expr (int func_val);
+expr_t *new_func_expr (int func_val, struct type_s *type);
 
 /** Create a new pointer constant expression node.
 
@@ -556,6 +565,7 @@ void convert_name (expr_t *e);
 expr_t *append_expr (expr_t *block, expr_t *e);
 
 void print_expr (expr_t *e);
+void dump_dot_expr (void *e, const char *filename);
 
 void convert_int (expr_t *e);
 void convert_short (expr_t *e);
@@ -581,7 +591,7 @@ expr_t *incop_expr (int op, expr_t *e, int postop);
 expr_t *array_expr (expr_t *array, expr_t *index);
 expr_t *pointer_expr (expr_t *pointer);
 expr_t *address_expr (expr_t *e1, expr_t *e2, struct type_s *t);
-expr_t *build_if_statement (expr_t *test, expr_t *s1, expr_t *s2);
+expr_t *build_if_statement (expr_t *test, expr_t *s1, expr_t *els, expr_t *s2);
 expr_t *build_while_statement (expr_t *test, expr_t *statement,
 							   expr_t *break_label, expr_t *continue_label);
 expr_t *build_do_while_statement (expr_t *statement, expr_t *test,

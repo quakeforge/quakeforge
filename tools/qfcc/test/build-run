@@ -1,0 +1,11 @@
+#! /bin/sh
+
+script=$1
+progs=`basename $script .run`.dat
+shift
+
+cat > $script <<EOF
+#! /bin/sh
+./test-harness $TEST_HARNESS_OPTS $progs "\$@"
+EOF
+chmod +x $script

@@ -39,6 +39,7 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/alloc.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/va.h"
@@ -52,10 +53,12 @@
 #include "diagnostic.h"
 #include "emit.h"
 #include "expr.h"
+#include "flow.h"
 #include "function.h"
 #include "opcodes.h"
 #include "options.h"
 #include "reloc.h"
+#include "shared.h"
 #include "statements.h"
 #include "strpool.h"
 #include "symtab.h"
@@ -450,12 +453,12 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 
 	symtab = new_symtab (parent, stab_local);
 	fsym->s.func->symtab = symtab;
-	symtab->space = defspace_new ();
+	symtab->space = defspace_new (ds_virtual);
 	current_symtab = symtab;
 
 	if (fsym->type->t.func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
-		initialize_def (args, args->type, 0, symtab->space, st_local);
+		initialize_def (args, args->type, 0, symtab->space, sc_param);
 	}
 
 	for (p = fsym->params, i = 0; p; p = p->next) {
@@ -464,14 +467,14 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 		if (!p->type)
 			continue;					// non-param selector
 		param = new_symbol_type (p->name, p->type);
-		initialize_def (param, param->type, 0, symtab->space, st_local);
+		initialize_def (param, param->type, 0, symtab->space, sc_param);
 		i++;
 	}
 
 	if (args) {
 		while (i < MAX_PARMS) {
 			param = new_symbol_type (va (".par%d", i), &type_param);
-			symtab_addsymbol (symtab, param);
+			initialize_def (param, &type_param, 0, symtab->space, sc_param);
 			i++;
 		}
 	}
@@ -498,14 +501,14 @@ make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
 	reloc_t    *relocs = 0;
 	if (sym->sy_type != sy_func)
 		internal_error (0, "%s is not a function", sym->name);
-	if (storage == st_extern && sym->s.func)
+	if (storage == sc_extern && sym->s.func)
 		return;
 	if (!sym->s.func) {
 		sym->s.func = new_function (sym->name, nice_name);
 		sym->s.func->sym = sym;
 	}
 	if (sym->s.func->def && sym->s.func->def->external
-		&& storage != st_extern) {
+		&& storage != sc_extern) {
 		//FIXME this really is not the right way
 		relocs = sym->s.func->def->relocs;
 		free_def (sym->s.func->def);
@@ -558,7 +561,6 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 	if (options.code.debug) {
 		pr_lineno_t *lineno = new_lineno ();
 		sym->s.func->line_info = lineno - pr.linenos;
-		sym->s.func->local_defs = pr.num_locals;
 	}
 
 	build_scope (sym, parent);
@@ -639,12 +641,15 @@ finish_function (function_t *f)
 void
 emit_function (function_t *f, expr_t *e)
 {
-	sblock_t   *sblock;
-
 	f->code = pr.code->size;
 	lineno_base = f->def->line;
-	sblock = make_statements (e);
-	emit_statements (sblock);
+	f->sblock = make_statements (e);
+	if (options.code.optimize) {
+		flow_data_flow (f);
+	} else {
+		statements_count_temps (f->sblock);
+	}
+	emit_statements (f->sblock);
 }
 
 int

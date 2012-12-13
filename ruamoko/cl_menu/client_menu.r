@@ -662,6 +662,10 @@ void menu_pre ()
 
 void menu_post ()
 {
-	[autorelease_pool release];
+	//FIXME called too often by the engine?
+	AutoreleasePool *ar;
+
+	ar = autorelease_pool;
 	autorelease_pool = nil;
+	[ar release];
 }

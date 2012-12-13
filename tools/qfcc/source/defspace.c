@@ -39,9 +39,10 @@
 #endif
 #include <stdlib.h>
 
-#include <QF/hash.h>
-#include <QF/sys.h>
-#include <QF/va.h>
+#include "QF/alloc.h"
+#include "QF/hash.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 
 #include "qfcc.h"
 #include "defspace.h"
@@ -65,30 +66,50 @@ static locref_t *free_locrefs;
 #define GROW 1024
 
 static int
-grow_space (defspace_t *space)
+grow_space_global (defspace_t *space)
 {
 	int         size;
 
-	if (space->size >= space->size) {
-		size = space->size + GROW;
-		size -= size % GROW;
-	} else {
-		size = space->max_size + GROW;
-	}
+	if (space->size <= space->max_size)
+		return 1;
+
+	size = space->size + GROW;
+	size -= size % GROW;
 	space->data = realloc (space->data, size * sizeof (pr_type_t));
 	memset (space->data + space->max_size, 0, GROW * sizeof (pr_type_t));
 	space->max_size = size;
 	return 1;
 }
 
+static int
+grow_space_virtual (defspace_t *space)
+{
+	int         size;
+
+	if (space->size <= space->max_size)
+		return 1;
+
+	size = space->size + GROW;
+	size -= size % GROW;
+	space->max_size = size;
+	return 1;
+}
+
 defspace_t *
-defspace_new (void)
+defspace_new (ds_type_t type)
 {
 	defspace_t *space;
 
 	ALLOC (1024, defspace_t, spaces, space);
 	space->def_tail = &space->defs;
-	space->grow = grow_space;
+	space->type = type;
+	if (type == ds_backed) {
+		space->grow = grow_space_global;
+	} else if (type == ds_virtual) {
+		space->grow = grow_space_virtual;
+	} else {
+		internal_error (0, "unknown defspace type");
+	}
 	return space;
 }
 
@@ -99,6 +120,8 @@ defspace_alloc_loc (defspace_t *space, int size)
 	locref_t   *loc;
 	locref_t  **l = &space->free_locs;
 
+	if (size <= 0)
+		internal_error (0, "invalid number of words requested: %d", size);
 	while (*l && (*l)->size < size)
 		l = &(*l)->next;
 	if ((loc = *l)) {
@@ -106,8 +129,7 @@ defspace_alloc_loc (defspace_t *space, int size)
 		if ((*l)->size == size) {
 			loc = *l;
 			*l = (*l)->next;
-			loc->next = free_locrefs;
-			free_locrefs = loc;
+			FREE (locrefs, loc);
 		} else {
 			(*l)->ofs += size;
 			(*l)->size -= size;
@@ -117,11 +139,8 @@ defspace_alloc_loc (defspace_t *space, int size)
 	ofs = space->size;
 	space->size += size;
 	if (space->size > space->max_size) {
-		if (!space->grow) {
-			error (0, "unable to allocate %d globals", size);
-			exit (1);
-		}
-		space->grow (space);
+		if (!space->grow || !space->grow (space))
+			internal_error (0, "unable to allocate %d words", size);
 	}
 	return ofs;
 }
@@ -132,8 +151,8 @@ defspace_free_loc (defspace_t *space, int ofs, int size)
 	locref_t  **l;
 	locref_t   *loc;
 
-	if (!size)
-		internal_error (0, "defspace: freeing size 0 location");
+	if (size <= 0)
+		internal_error (0, "defspace: freeing size %d location", size);
 	if (ofs < 0 || ofs >= space->size || ofs + size > space->size)
 		internal_error (0, "defspace: freeing bogus location %d:%d",
 						ofs, size);
@@ -165,8 +184,7 @@ defspace_free_loc (defspace_t *space, int ofs, int size)
 				loc->size += loc->next->size;
 				loc = loc->next;
 				*l = loc->next;
-				loc->next = free_locrefs;
-				free_locrefs = loc;
+				FREE (locrefs, loc);
 			}
 			return;
 		}

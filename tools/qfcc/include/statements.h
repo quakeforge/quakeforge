@@ -33,36 +33,66 @@
 #include "QF/pr_comp.h"
 
 typedef enum {
-	op_symbol,
+	op_def,
 	op_value,
 	op_label,
 	op_temp,
-	op_pointer,
 	op_alias,
 } op_type_e;
+
+typedef struct {
+	struct def_s   *def;
+	struct type_s *type;
+	struct flowvar_s *flowvar;
+	struct daglabel_s *daglabel;
+	struct operand_s *alias;
+	struct operand_s *alias_ops;
+	int         users;
+} tempop_t;
 
 typedef struct operand_s {
 	struct operand_s *next;
 	op_type_e   op_type;
-	etype_t     type;			///< possibly override symbol's type
+	etype_t     type;			///< possibly override def's type
 	int         size;			///< for structures
 	union {
-		struct symbol_s *symbol;
+		struct def_s *def;
 		struct ex_value_s *value;
 		struct ex_label_s *label;
-		struct ex_pointer_s *pointer;
-		struct def_s   *def;
+		tempop_t    tempop;
 		struct operand_s *alias;
 	} o;
 } operand_t;
 
+/** Overall type of statement.
+
+	Statement types are broken down into expressions (binary and unary,
+	includes address and pointer dereferencing (read)), assignment, pointer
+	assignment (write to dereference pointer), move (special case of pointer
+	assignment), state, function related (call, rcall, return and done), and
+	flow control (conditional branches, goto, jump (single pointer and jump
+	table)).
+*/
+typedef enum {
+	st_none,		///< not a (valid) statement. Used in dags.
+	st_expr,		///< c = a op b; or c = op a;
+	st_assign,		///< b = a
+	st_ptrassign,	///< *b = a; or *(b + c) = a;
+	st_move,		///< memcpy (c, a, b);
+	st_state,		///< state (a, b); or state (a, b, c)
+	st_func,		///< call, rcall or return/done
+	st_flow,		///< if/ifa/ifae/ifb/ifbe/ifnot or goto or jump/jumpb
+} st_type_t;
+
 typedef struct statement_s {
 	struct statement_s *next;
+	st_type_t   type;
 	const char *opcode;
 	operand_t  *opa;
 	operand_t  *opb;
 	operand_t  *opc;
-	struct expr_s *expr;	///< source expression for this statement
+	struct expr_s *expr;		///< source expression for this statement
+	int         number;			///< number of this statement in function
 } statement_t;
 
 typedef struct sblock_s {
@@ -71,15 +101,41 @@ typedef struct sblock_s {
 	struct ex_label_s *labels;
 	int         offset;			///< offset of first statement of block
 	int         reachable;
+	int         number;			///< number of this block in flow graph
 	statement_t *statements;
 	statement_t **tail;
 } sblock_t;
 
 struct expr_s;
+struct type_s;
+struct dstring_s;
 
+const char *optype_str (op_type_e type);
+
+operand_t *def_operand (struct def_s *def, struct type_s *type);
+operand_t *value_operand (struct ex_value_s *value);
+operand_t *temp_operand (struct type_s *type);
+operand_t *alias_operand (etype_t type, operand_t *op);
+void free_operand (operand_t *op);
+
+sblock_t *new_sblock (void);
+statement_t *new_statement (st_type_t type, const char *opcode,
+							struct expr_s *expr);
+int statement_is_cond (statement_t *s);
+int statement_is_goto (statement_t *s);
+int statement_is_jumpb (statement_t *s);
+int statement_is_call (statement_t *s);
+int statement_is_return (statement_t *s);
+sblock_t *statement_get_target (statement_t *s);
+sblock_t **statement_get_targetlist (statement_t *s);
+void sblock_add_statement (sblock_t *sblock, statement_t *statement);
 sblock_t *make_statements (struct expr_s *expr);
+void statements_count_temps (sblock_t *sblock);
+
 void print_statement (statement_t *s);
-void print_flow (sblock_t *sblock, const char *filename);
+void dump_dot_sblock (void *data, const char *fname);
+void dot_sblock (struct dstring_s *dstr, sblock_t *sblock, int blockno);
+void print_sblock (sblock_t *sblock, const char *filename);
 const char *operand_string (operand_t *op);
 
 #endif//statement_h

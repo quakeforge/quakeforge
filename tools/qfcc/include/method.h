@@ -54,12 +54,12 @@ typedef struct selector_s {
 typedef struct methodlist_s {
 	method_t   *head;
 	method_t  **tail;
-	int         count;		///< used only for emitting
+	int         count;			///< used only for emitting
 	int         instance;		///< used only for emitting
 } methodlist_t;
 
 typedef struct keywordarg_s {
-	// the first two fields match the first two fiels of param_t in
+	// the first two fields match the first two fields of param_t in
 	// functionl.h
 	struct keywordarg_s *next;
 	const char *selector;

@@ -41,6 +41,7 @@
 #include <ctype.h>
 #include <ctype.h>
 
+#include "QF/alloc.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/sys.h"
@@ -80,9 +81,9 @@ type_t     *type_nil;
 type_t     *type_default;
 
 // these will be built up further
-type_t      type_va_list = { ev_invalid, "@va_list", ty_struct };
-type_t      type_param = { ev_invalid, "@param", ty_struct };
-type_t      type_zero = { ev_invalid, "@zero", ty_struct };
+type_t      type_va_list = { ev_invalid, 0, ty_struct };
+type_t      type_param = { ev_invalid, 0, ty_struct };
+type_t      type_zero = { ev_invalid, 0, ty_struct };
 type_t      type_type_encodings = { ev_invalid, "@type_encodings", ty_struct };
 
 type_t      type_floatfield = { ev_field, ".float", ty_none, {{&type_float}} };
@@ -113,7 +114,7 @@ low_level_type (type_t *type)
 }
 
 const char *
-type_get_encoding (type_t *type)
+type_get_encoding (const type_t *type)
 {
 	static dstring_t *encoding;
 
@@ -182,8 +183,7 @@ free_type (type_t *type)
 			break;
 	}
 	memset (type, 0, sizeof (type));
-	type->next = free_types;
-	free_types = type;
+	FREE (types, type);
 }
 
 type_t *
@@ -411,7 +411,7 @@ based_array_type (type_t *aux, int base, int top)
 }
 
 void
-print_type_str (dstring_t *str, type_t *type)
+print_type_str (dstring_t *str, const type_t *type)
 {
 	if (!type) {
 		dasprintf (str, " (null)");
@@ -489,7 +489,7 @@ print_type_str (dstring_t *str, type_t *type)
 }
 
 void
-print_type (type_t *type)
+print_type (const type_t *type)
 {
 	dstring_t  *str = dstring_newstr ();
 	print_type_str (str, type);
@@ -498,7 +498,7 @@ print_type (type_t *type)
 }
 
 const char *
-encode_params (type_t *type)
+encode_params (const type_t *type)
 {
 	const char *ret;
 	dstring_t  *encoding = dstring_newstr ();
@@ -519,7 +519,7 @@ encode_params (type_t *type)
 }
 
 static void
-encode_class (dstring_t *encoding, type_t *type)
+encode_class (dstring_t *encoding, const type_t *type)
 {
 	class_t    *class = type->t.class;
 	const char *name ="?";
@@ -530,7 +530,7 @@ encode_class (dstring_t *encoding, type_t *type)
 }
 
 static void
-encode_struct (dstring_t *encoding, type_t *type)
+encode_struct (dstring_t *encoding, const type_t *type)
 {
 	const char *name ="?";
 	char        su = ' ';
@@ -545,7 +545,7 @@ encode_struct (dstring_t *encoding, type_t *type)
 }
 
 static void
-encode_enum (dstring_t *encoding, type_t *type)
+encode_enum (dstring_t *encoding, const type_t *type)
 {
 	const char *name ="?";
 
@@ -555,7 +555,7 @@ encode_enum (dstring_t *encoding, type_t *type)
 }
 
 void
-encode_type (dstring_t *encoding, type_t *type)
+encode_type (dstring_t *encoding, const type_t *type)
 {
 	if (!type)
 		return;
@@ -646,7 +646,7 @@ encode_type (dstring_t *encoding, type_t *type)
 }
 
 int
-is_enum (type_t *type)
+is_enum (const type_t *type)
 {
 	if (type->type == ev_invalid && type->meta == ty_enum)
 		return 1;
@@ -654,7 +654,7 @@ is_enum (type_t *type)
 }
 
 int
-is_integral (type_t *type)
+is_integral (const type_t *type)
 {
 	etype_t     t = type->type;
 
@@ -664,19 +664,19 @@ is_integral (type_t *type)
 }
 
 int
-is_float (type_t *type)
+is_float (const type_t *type)
 {
 	return type->type == ev_float;
 }
 
 int
-is_scalar (type_t *type)
+is_scalar (const type_t *type)
 {
 	return is_float (type) || is_integral (type);
 }
 
 int
-is_math (type_t *type)
+is_math (const type_t *type)
 {
 	etype_t     t = type->type;
 
@@ -684,7 +684,7 @@ is_math (type_t *type)
 }
 
 int
-is_struct (type_t *type)
+is_struct (const type_t *type)
 {
 	if (type->type == ev_invalid
 		&& (type->meta == ty_struct || type->meta == ty_union))
@@ -693,7 +693,7 @@ is_struct (type_t *type)
 }
 
 int
-is_class (type_t *type)
+is_class (const type_t *type)
 {
 	if (type->type == ev_invalid && type->meta == ty_class)
 		return 1;
@@ -701,7 +701,7 @@ is_class (type_t *type)
 }
 
 int
-is_array (type_t *type)
+is_array (const type_t *type)
 {
 	if (type->type == ev_invalid && type->meta == ty_array)
 		return 1;
@@ -709,7 +709,7 @@ is_array (type_t *type)
 }
 
 int
-type_assignable (type_t *dst, type_t *src)
+type_assignable (const type_t *dst, const type_t *src)
 {
 	class_t    *dst_class, *src_class;
 
@@ -760,7 +760,7 @@ type_assignable (type_t *dst, type_t *src)
 }
 
 int
-type_size (type_t *type)
+type_size (const type_t *type)
 {
 	if (!type)
 		return 0;
@@ -822,6 +822,8 @@ init_types (void)
 		{"func_val",         &type_function},
 		{"pointer_val",      &type_pointer},
 		{"vector_val",       &type_vector},
+		{"int_val",          &type_integer},
+		{"uint_val",         &type_uinteger},
 		{"integer_val",      &type_integer},
 		{"uinteger_val",     &type_uinteger},
 		{"quaternion_val",   &type_quaternion},
@@ -835,6 +837,8 @@ init_types (void)
 		{"field_val",        &type_field},
 		{"func_val",         &type_function},
 		{"pointer_val",      &type_pointer},
+		{"int_val",          &type_integer},
+		{"uint_val",         &type_uinteger},
 		{"integer_val",      &type_integer},
 		{"uinteger_val",     &type_uinteger},
 		{"quaternion_val",   &type_quaternion},

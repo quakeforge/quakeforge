@@ -31,14 +31,37 @@
 #ifndef __value_h
 #define __value_h
 
+/** \defgroup qfcc_value Constant values.
+	\ingroup qfcc_expr
+*/
+//@{
+
 struct ex_value_s;
 struct type_s;
 
-void convert_value (struct ex_value_s *value, struct type_s *type);
+struct ex_value_s *new_string_val (const char *string_val);
+struct ex_value_s *new_float_val (float float_val);
+struct ex_value_s *new_vector_val (const float *vector_val);
+struct ex_value_s *new_entity_val (int entity_val);
+struct ex_value_s *new_field_val (int field_val, struct type_s *type,
+								  struct def_s *def);
+struct ex_value_s *new_func_val (int func_val, struct type_s *type);
+struct ex_value_s *new_pointer_val (int val, struct type_s *type,
+									struct def_s *def);
+struct ex_value_s *new_quaternion_val (const float *quaternion_val);
+struct ex_value_s *new_integer_val (int integer_val);
+struct ex_value_s *new_uinteger_val (int uinteger_val);
+struct ex_value_s *new_short_val (short short_val);
+struct ex_value_s *new_nil_val (struct type_s *type);
+
+struct ex_value_s * convert_value (struct ex_value_s *value,
+								   struct type_s *type);
 struct def_s *emit_value (struct ex_value_s *value, struct def_s *def);
 
 int	ReuseString (const char *str);
 
 void clear_immediates (void);
+
+//@}
 
 #endif//__value_h

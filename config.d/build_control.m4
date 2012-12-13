@@ -369,6 +369,12 @@ QF_DEPS(QFCC,
 	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
+QF_DEPS(QFCC_TEST,
+	[],
+	[$(top_builddir)/libs/ruamoko/libQFruamoko.la
+	 $(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
 QF_DEPS(QFLIGHT,
 	[-I$(top_srcdir)/tools/qflight/include],
 	[$(top_builddir)/libs/util/libQFutil.la],

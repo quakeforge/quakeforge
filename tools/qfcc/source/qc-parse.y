@@ -183,7 +183,7 @@ int yylex (void);
 %type	<expr>		opt_expr fexpr expr element_list element
 %type	<expr>		optional_state_expr think opt_step texpr
 %type	<expr>		statement statements compound_statement
-%type	<expr>		label break_label continue_label
+%type	<expr>		else label break_label continue_label
 %type	<expr>		unary_expr cast_expr opt_arg_list arg_list
 %type	<switch_block> switch_block
 %type	<symbol>	identifier
@@ -333,7 +333,7 @@ function_body
 			$<symtab>$ = current_symtab;
 			current_func = begin_function ($<symbol>2, 0, current_symtab, 0);
 			current_symtab = current_func->symtab;
-			current_storage = st_local;
+			current_storage = sc_local;
 		}
 	  compound_statement
 		{
@@ -413,10 +413,10 @@ external_decl
 	;
 
 storage_class
-	: EXTERN					{ $$ = make_spec (0, st_extern, 0, 0); }
-	| STATIC					{ $$ = make_spec (0, st_static, 0, 0); }
-	| SYSTEM					{ $$ = make_spec (0, st_system, 0, 0); }
-	| TYPEDEF					{ $$ = make_spec (0, st_global, 1, 0); }
+	: EXTERN					{ $$ = make_spec (0, sc_extern, 0, 0); }
+	| STATIC					{ $$ = make_spec (0, sc_static, 0, 0); }
+	| SYSTEM					{ $$ = make_spec (0, sc_system, 0, 0); }
+	| TYPEDEF					{ $$ = make_spec (0, sc_global, 1, 0); }
 	| OVERLOAD					{ $$ = make_spec (0, current_storage, 0, 1); }
 	;
 
@@ -852,12 +852,15 @@ decl
 		{
 			specifier_t spec = $<spec>0;
 			type_t     *type;
+			storage_class_t sc = $<spec>0.storage;
+			struct defspace_s *space = current_symtab->space;
 
 			if (!spec.type)
 				spec.type = type_default;
+			if (sc == sc_static)
+				space = pr.near_data;
 			type = find_type (append_type ($1->type, spec.type));
-			initialize_def ($1, type, $2, current_symtab->space,
-							$<spec>0.storage);
+			initialize_def ($1, type, $2, space, sc);
 		}
 	;
 
@@ -939,7 +942,7 @@ code_func
 			$<symtab>$ = current_symtab;
 			current_func = begin_function ($<symbol>0, 0, current_symtab, 0);
 			current_symtab = current_func->symtab;
-			current_storage = st_local;
+			current_storage = sc_local;
 		}
 	  compound_statement
 		{
@@ -1034,7 +1037,7 @@ local_def
 	: local_specifiers
 		{
 			if (!$1.storage)
-				$1.storage = st_local;
+				$1.storage = sc_local;
 			$<spec>$ = $1;
 			local_expr = new_block_expr ();
 		}
@@ -1044,6 +1047,7 @@ local_def
 			local_expr = 0;
 			(void) ($<spec>2);
 		}
+	;
 
 statement
 	: ';'						{ $$ = 0; }
@@ -1086,11 +1090,11 @@ statement
 		}
 	| IF '(' texpr ')' statement %prec IFX
 		{
-			$$ = build_if_statement ($3, $5, 0);
+			$$ = build_if_statement ($3, $5, 0, 0);
 		}
-	| IF '(' texpr ')' statement ELSE statement
+	| IF '(' texpr ')' statement else statement
 		{
-			$$ = build_if_statement ($3, $5, $7);
+			$$ = build_if_statement ($3, $5, $6, $7);
 		}
 	| FOR break_label continue_label
 			'(' opt_expr ';' opt_expr ';' opt_expr ')' statement
@@ -1116,6 +1120,14 @@ statement
 	| fexpr ';'
 		{
 			$$ = $1;
+		}
+	;
+
+else
+	: ELSE
+		{
+			// this is only to get the the file and line number info
+			$$ = new_nil_expr ();
 		}
 	;
 
@@ -1605,7 +1617,7 @@ methoddef
 			method->func = sym->s.func;
 			method->def = sym->s.func->def;
 			current_symtab = current_func->symtab;
-			current_storage = st_local;
+			current_storage = sc_local;
 		}
 	  compound_statement
 		{

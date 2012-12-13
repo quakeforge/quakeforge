@@ -8,4 +8,3 @@ void foo (entity e)
 	e.thinkMethod = @selector(foo:);
 }
 void __obj_exec_class (obj_module_t *msg) = #0;
-

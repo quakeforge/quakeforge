@@ -79,6 +79,6 @@ disassemble_progs (progs_t *pr)
 			Sys_Printf ("%s:\n", PR_GetString (pr, desc->s_name));
 			pr->pr_xfunction = &func;
 		}
-		PR_PrintStatement (pr, &pr->pr_statements[i], 2);
+		PR_PrintStatement (pr, &pr->pr_statements[i], 2 | (verbosity > 1));
 	}
 }

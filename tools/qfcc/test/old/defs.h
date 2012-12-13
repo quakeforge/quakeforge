@@ -720,5 +720,3 @@
 @extern float (entity e, float healamount, float ignore) T_Heal; // health function
 
 @extern float(entity targ, entity inflictor) CanDamage;
-
-

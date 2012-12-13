@@ -50,6 +50,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include "QF/alloc.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/pakfile.h"
@@ -536,7 +537,8 @@ add_data (int space, qfo_mspace_t *data)
 {
 	if (space < 0 || space >= qfo_num_spaces || !work_spaces[space])
 		linker_internal_error ("bad space for add_data (): %d", space);
-	defspace_add_data (*work_spaces[space], data->d.data, data->data_size);
+	if (data->data_size)
+		defspace_add_data (*work_spaces[space], data->d.data, data->data_size);
 	work->spaces[space].d.data = (*work_spaces[space])->data;
 	work->spaces[space].data_size = (*work_spaces[space])->size;
 }
@@ -648,10 +650,10 @@ linker_begin (void)
 
 	work_strings = strpool_new ();
 	work_code = codespace_new ();
-	work_near_data = defspace_new ();
-	work_far_data = defspace_new ();
-	work_entity_data = defspace_new ();
-	work_type_data = defspace_new ();
+	work_near_data = defspace_new (ds_backed);
+	work_far_data = defspace_new (ds_backed);
+	work_entity_data = defspace_new (ds_virtual);
+	work_type_data = defspace_new (ds_backed);
 
 	pr.strings = work_strings;
 

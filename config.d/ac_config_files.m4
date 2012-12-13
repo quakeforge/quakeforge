@@ -62,6 +62,7 @@
 	tools/qfcc/doc/man/Makefile
 	tools/qfcc/include/Makefile
 	tools/qfcc/source/Makefile
+	tools/qfcc/test/Makefile
 	tools/qflight/Makefile
 	tools/qflight/include/Makefile
 	tools/qflight/source/Makefile

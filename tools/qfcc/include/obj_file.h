@@ -67,7 +67,7 @@ typedef struct qfo_header_s {
 	pr_int_t    num_funcs;		///< number of function records
 	pr_int_t    num_lines;		///< number of line records
 	pr_int_t    num_loose_relocs;	///< number of loose relocation records
-								///< included in num_relocs
+								///< (included in num_relocs)
 } qfo_header_t;
 
 typedef enum qfos_type_e {
@@ -161,6 +161,13 @@ typedef struct qfo_def_s {
 	\hideinitializer
 */
 #define QFOD_NOSAVE			(1u<<7)
+
+/** The def is a parameter to a function and is considered to be initialized.
+	QFOD_LOCAL will be set too.
+
+	\hideinitializer
+*/
+#define QFOD_PARAM			(1u<<8)
 //@}
 
 /** \addtogroup qfcc_qfo

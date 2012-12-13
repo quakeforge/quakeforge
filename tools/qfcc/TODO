@@ -5,17 +5,15 @@ M = more testing
 I = in progress
 W = waiting on other work
 
-X	C style pointer/array declarations (type system in general?)
-X	better error handling to continue parsing after a syntax error
-X	fix field defs
+X	fix object files
 M	arrays in structures
 M	unnamed function parameters for prototypes/typdefs etc.
-o	fix object files
-o	optimizations (esp CSE)
-W	fix used/uninitialized warnings
-o	optional arguments for functions
-	vector(vector fwd, optional vector up) vectoangles = #51;
+I	optimizations (esp CSE)
+I	fix used/uninitialized warnings
+o	fix enums in switch statements (use tables (treat as int), check missing)
 o	arrays in entities
-o	embedded nul characters in strings
+o	optional arguments for functions (alternative to overloading)
+	vector(vector fwd, optional vector up) vectoangles = #51;
 ?	try to reduce memory consumption
-?	"":"" string concatenation (parser issues)
+??	embedded nul characters in strings (why?)
+??	"":"" string concatenation (parser issues) (why?)

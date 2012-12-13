@@ -147,6 +147,7 @@ typedef int pr_load_func_t (progs_t *pr);
 	\param size		bytes of \p file to read
 	\param max_edicts \e number of entities to allocate space for
 	\param zone		minimum size of dynamic memory to allocate space for
+					dynamic memory (bytes).
 
 	\note \e All runtime strings (permanent or temporary) are allocated from
 	the VM's dynamic memory space, so be sure \p zone is of sufficient size.

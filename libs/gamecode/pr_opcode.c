@@ -847,7 +847,7 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 "%Ga",
 	},
 	{"<JUMPB>", "jumpb", OP_JUMPB, false,
-	 ev_integer, ev_integer, ev_invalid,
+	 ev_void, ev_integer, ev_invalid,
 	 PROG_VERSION,
 	 "%Ga[%Gb]",
 	},

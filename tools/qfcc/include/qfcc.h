@@ -60,7 +60,6 @@ typedef struct pr_info_s {
 
 	struct strpool_s *strings;			///< progs string data
 	struct codespace_s *code;			///< progs code data
-	struct defspace_s *data;			///< combined near and far data
 	struct defspace_s *near_data;		///< data directly addressable by
 										///< statments (address < 64k)
 	struct defspace_s *far_data;		///< data that might not be directly
@@ -87,18 +86,9 @@ typedef struct pr_info_s {
 	struct pr_lineno_s *linenos;
 	int             linenos_size;
 	int             num_linenos;
-
-	ddef_t         *locals;
-	int             locals_size;
-	int             num_locals;
 } pr_info_t;
 
 extern	pr_info_t	pr;
-
-
-extern	char		destfile[];
-
-extern	struct symtab_s *current_symtab;
 
 #define GETSTR(s)			(pr.strings->strings + (s))
 #define D_var(t, d)			((d)->space->data[(d)->offset].t##_var)
@@ -119,7 +109,6 @@ extern	struct symtab_s *current_symtab;
 
 const char *strip_path (const char *filename);
 
-void clear_frame_macros (void);
 extern FILE *qc_yyin;
 extern FILE *qp_yyin;
 int qc_yyparse (void);
@@ -133,36 +122,6 @@ char *fix_backslash (char *path);
 #else
 #define NORMALIZE(x) x
 #endif
-
-/**	High-tide structure allocator for use in linked lists.
-
-	Using a free-list with the name of \c free_NAME, return a single element.
-	The type of the element must be a structure with a field named \c next.
-	When the free-list is empty, memory is claimed from the system in blocks.
-	elements may be returned to the pool by linking them into the free-list.
-
-	\param s		The number of structures in the block.
-	\param t		The structure type.
-	\param n		The \c NAME portion of the \c free_NAME free-list.
-	\param v		The destination of the pointer to the allocated
-					element. The contents of the allocated element will be
-					memset to 0.
-
-	\hideinitializer
-*/
-#define ALLOC(s, t, n, v)							\
-	do {											\
-		if (!free_##n) {							\
-			int         i;							\
-			free_##n = malloc ((s) * sizeof (t));	\
-			for (i = 0; i < (s) - 1; i++)			\
-				free_##n[i].next = &free_##n[i + 1];\
-			free_##n[i].next = 0;					\
-		}											\
-		v = free_##n;								\
-		free_##n = free_##n->next;					\
-		memset (v, 0, sizeof (*v));					\
-	} while (0)
 
 /**	Round \a x up to the next multiple of \a a.
 	\note \a a must be a power of two or this will break.

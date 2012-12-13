@@ -37,6 +37,7 @@ extern int grab_write;
 
 int do_grab (const char *token);
 void add_frame_macro (const char *token);
+void clear_frame_macros (void);
 void write_frame_macros (const char *filename);
 
 #endif//__grab_h

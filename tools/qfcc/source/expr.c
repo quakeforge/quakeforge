@@ -39,10 +39,11 @@
 #endif
 #include <stdlib.h>
 
-#include <QF/dstring.h>
-#include <QF/mathlib.h>
-#include <QF/sys.h>
-#include <QF/va.h>
+#include "QF/alloc.h"
+#include "QF/dstring.h"
+#include "QF/mathlib.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 
 #include "qfcc.h"
 #include "class.h"
@@ -56,10 +57,12 @@
 #include "method.h"
 #include "options.h"
 #include "reloc.h"
+#include "shared.h"
 #include "strpool.h"
 #include "struct.h"
 #include "symtab.h"
 #include "type.h"
+#include "value.h"
 #include "qc-parse.h"
 
 static expr_t *free_exprs;
@@ -164,16 +167,17 @@ get_type (expr_t *e)
 		case ex_temp:
 			return e->e.temp.type;
 		case ex_value:
-			if (e->e.value.type == ev_pointer)
-				return pointer_type (e->e.value.v.pointer.type);
-			if (e->e.value.type == ev_field)
-				return field_type (e->e.value.v.pointer.type);
-			if (e->e.value.type == ev_integer
+			if (e->e.value->type == ev_func)
+				return e->e.value->v.func_val.type;
+			if (e->e.value->type == ev_pointer)
+				return pointer_type (e->e.value->v.pointer.type);
+			if (e->e.value->type == ev_field)
+				return field_type (e->e.value->v.pointer.type);
+			if (e->e.value->type == ev_integer
 				&& options.code.progsversion == PROG_ID_VERSION) {
-				e->e.value.type = ev_float;
-				e->e.value.v.float_val = e->e.value.v.integer_val;
+				convert_int (e);
 			}
-			return ev_types[e->e.value.type];
+			return ev_types[e->e.value->type];
 	}
 	return 0;
 }
@@ -293,7 +297,7 @@ copy_expr (expr_t *e)
 				n->e.bool.true_list = malloc (size);
 				while (count--)
 					n->e.bool.true_list->e[count] =
-						copy_expr ( e->e.bool.true_list->e[count]);
+						copy_expr (e->e.bool.true_list->e[count]);
 			}
 			if (e->e.bool.false_list) {
 				int         count = e->e.bool.false_list->size;
@@ -301,7 +305,7 @@ copy_expr (expr_t *e)
 				n->e.bool.false_list = malloc (size);
 				while (count--)
 					n->e.bool.false_list->e[count] =
-						copy_expr ( e->e.bool.false_list->e[count]);
+						copy_expr (e->e.bool.false_list->e[count]);
 			}
 			n->e.bool.e = copy_expr (e->e.bool.e);
 			return n;
@@ -511,8 +515,7 @@ new_string_expr (const char *string_val)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value.type = ev_string;
-	e->e.value.v.string_val = string_val;
+	e->e.value = new_string_val (string_val);
 	return e;
 }
 
@@ -521,8 +524,7 @@ new_float_expr (float float_val)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value.type = ev_float;
-	e->e.value.v.float_val = float_val;
+	e->e.value = new_float_val (float_val);
 	return e;
 }
 
@@ -531,8 +533,7 @@ new_vector_expr (const float *vector_val)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value.type = ev_vector;
-	VectorCopy (vector_val, e->e.value.v.vector_val);
+	e->e.value = new_vector_val (vector_val);
 	return e;
 }
 
@@ -541,8 +542,7 @@ new_entity_expr (int entity_val)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value.type = ev_entity;
-	e->e.value.v.entity_val = entity_val;
+	e->e.value = new_entity_val (entity_val);
 	return e;
 }
 
@@ -551,20 +551,16 @@ new_field_expr (int field_val, type_t *type, def_t *def)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value.type = ev_field;
-	e->e.value.v.pointer.val = field_val;
-	e->e.value.v.pointer.type = type;
-	e->e.value.v.pointer.def = def;
+	e->e.value = new_field_val (field_val, type, def);
 	return e;
 }
 
 expr_t *
-new_func_expr (int func_val)
+new_func_expr (int func_val, type_t *type)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value.type = ev_func;
-	e->e.value.v.func_val = func_val;
+	e->e.value = new_func_val (func_val, type);
 	return e;
 }
 
@@ -573,10 +569,7 @@ new_pointer_expr (int val, type_t *type, def_t *def)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value.type = ev_pointer;
-	e->e.value.v.pointer.val = val;
-	e->e.value.v.pointer.type = type;
-	e->e.value.v.pointer.def = def;
+	e->e.value = new_pointer_val (val, type, def);
 	return e;
 }
 
@@ -585,8 +578,7 @@ new_quaternion_expr (const float *quaternion_val)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value.type = ev_quat;
-	QuatCopy (quaternion_val, e->e.value.v.quaternion_val);
+	e->e.value = new_quaternion_val (quaternion_val);
 	return e;
 }
 
@@ -595,8 +587,7 @@ new_integer_expr (int integer_val)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value.type = ev_integer;
-	e->e.value.v.integer_val = integer_val;
+	e->e.value = new_integer_val (integer_val);
 	return e;
 }
 
@@ -605,8 +596,7 @@ new_uinteger_expr (unsigned uinteger_val)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value.type = ev_uinteger;
-	e->e.value.v.uinteger_val = uinteger_val;
+	e->e.value = new_uinteger_val (uinteger_val);
 	return e;
 }
 
@@ -615,8 +605,7 @@ new_short_expr (short short_val)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value.type = ev_short;
-	e->e.value.v.short_val = short_val;
+	e->e.value = new_short_val (short_val);
 	return e;
 }
 
@@ -636,7 +625,7 @@ constant_expr (expr_t *e)
 {
 	expr_t     *new;
 	symbol_t   *sym;
-	ex_value_t  value;
+	ex_value_t *value;
 
 	if (!is_constant (e))
 		return e;
@@ -649,9 +638,10 @@ constant_expr (expr_t *e)
 		value = sym->s.value;
 	} else if (sym->sy_type == sy_var && sym->s.def->constant) {
 		//FIXME pointers and fields
-		memset (&value, 0, sizeof (value));
-		memcpy (&value.v, &D_INT (sym->s.def),
-				type_size (sym->s.def->type) * sizeof (pr_type_t));
+		internal_error (e, "what to do here?");
+		//memset (&value, 0, sizeof (value));
+		//memcpy (&value.v, &D_INT (sym->s.def),
+				//type_size (sym->s.def->type) * sizeof (pr_type_t));
 	} else {
 		return e;
 	}
@@ -668,7 +658,7 @@ is_string_val (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 1;
-	if (e->type == ex_value && e->e.value.type == ev_string)
+	if (e->type == ex_value && e->e.value->type == ev_string)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_string)
@@ -681,11 +671,8 @@ expr_string (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 0;
-	if (e->type == ex_value && e->e.value.type == ev_string)
-		return e->e.value.v.string_val;
-	//if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-	//	&& e->e.symbol->type->type == ev_string)
-	//	return e->e.symbol->s.value;
+	if (e->type == ex_value && e->e.value->type == ev_string)
+		return e->e.value->v.string_val;
 	internal_error (e, "not a string constant");
 }
 
@@ -694,7 +681,7 @@ is_float_val (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 1;
-	if (e->type == ex_value && e->e.value.type == ev_float)
+	if (e->type == ex_value && e->e.value->type == ev_float)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_float)
@@ -707,11 +694,11 @@ expr_float (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 0;
-	if (e->type == ex_value && e->e.value.type == ev_float)
-		return e->e.value.v.float_val;
+	if (e->type == ex_value && e->e.value->type == ev_float)
+		return e->e.value->v.float_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_float)
-		return e->e.symbol->s.value.v.float_val;
+		return e->e.symbol->s.value->v.float_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
 		&& e->e.symbol->s.def->constant
 		&& is_float (e->e.symbol->s.def->type))
@@ -724,7 +711,7 @@ is_vector_val (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 1;
-	if (e->type == ex_value && e->e.value.type == ev_vector)
+	if (e->type == ex_value && e->e.value->type == ev_vector)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_vector)
@@ -737,11 +724,11 @@ expr_vector (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return vec3_origin;
-	if (e->type == ex_value && e->e.value.type == ev_vector)
-		return e->e.value.v.vector_val;
+	if (e->type == ex_value && e->e.value->type == ev_vector)
+		return e->e.value->v.vector_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_vector)
-		return e->e.symbol->s.value.v.vector_val;
+		return e->e.symbol->s.value->v.vector_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
 		&& e->e.symbol->s.def->constant
 		&& e->e.symbol->s.def->type->type == ev_vector)
@@ -754,7 +741,7 @@ is_quaternion_val (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 1;
-	if (e->type == ex_value && e->e.value.type == ev_quat)
+	if (e->type == ex_value && e->e.value->type == ev_quat)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_quat)
@@ -767,11 +754,11 @@ expr_quaternion (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return quat_origin;
-	if (e->type == ex_value && e->e.value.type == ev_quat)
-		return e->e.value.v.quaternion_val;
+	if (e->type == ex_value && e->e.value->type == ev_quat)
+		return e->e.value->v.quaternion_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_quat)
-		return e->e.symbol->s.value.v.quaternion_val;
+		return e->e.symbol->s.value->v.quaternion_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
 		&& e->e.symbol->s.def->constant
 		&& e->e.symbol->s.def->type->type == ev_quat)
@@ -784,7 +771,7 @@ is_integer_val (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 1;
-	if (e->type == ex_value && e->e.value.type == ev_integer)
+	if (e->type == ex_value && e->e.value->type == ev_integer)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& (e->e.symbol->type->type == ev_integer
@@ -798,12 +785,12 @@ expr_integer (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 0;
-	if (e->type == ex_value && e->e.value.type == ev_integer)
-		return e->e.value.v.integer_val;
+	if (e->type == ex_value && e->e.value->type == ev_integer)
+		return e->e.value->v.integer_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& (e->e.symbol->type->type == ev_integer
 			|| is_enum (e->e.symbol->type)))
-		return e->e.symbol->s.value.v.integer_val;
+		return e->e.symbol->s.value->v.integer_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
 		&& e->e.symbol->s.def->constant
 		&& is_integral (e->e.symbol->s.def->type))
@@ -816,11 +803,11 @@ expr_uinteger (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 0;
-	if (e->type == ex_value && e->e.value.type == ev_uinteger)
-		return e->e.value.v.uinteger_val;
+	if (e->type == ex_value && e->e.value->type == ev_uinteger)
+		return e->e.value->v.uinteger_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_uinteger)
-		return e->e.symbol->s.value.v.uinteger_val;
+		return e->e.symbol->s.value->v.uinteger_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
 		&& e->e.symbol->s.def->constant
 		&& is_integral (e->e.symbol->s.def->type))
@@ -833,7 +820,7 @@ is_short_val (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 1;
-	if (e->type == ex_value && e->e.value.type == ev_short)
+	if (e->type == ex_value && e->e.value->type == ev_short)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_short)
@@ -846,11 +833,11 @@ expr_short (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 0;
-	if (e->type == ex_value && e->e.value.type == ev_short)
-		return e->e.value.v.short_val;
+	if (e->type == ex_value && e->e.value->type == ev_short)
+		return e->e.value->v.short_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_short)
-		return e->e.symbol->s.value.v.short_val;
+		return e->e.symbol->s.value->v.short_val;
 	internal_error (e, "not a short constant");
 }
 
@@ -859,7 +846,7 @@ new_self_expr (void)
 {
 	symbol_t   *sym;
 
-	sym = make_symbol (".self", &type_entity, pr.near_data, st_extern);
+	sym = make_symbol (".self", &type_entity, pr.near_data, sc_extern);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
 	return new_symbol_expr (sym);
@@ -870,7 +857,7 @@ new_this_expr (void)
 {
 	symbol_t   *sym;
 
-	sym = make_symbol (".this", field_type (&type_id), pr.near_data, st_extern);
+	sym = make_symbol (".this", field_type (&type_id), pr.near_data, sc_extern);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
 	return new_symbol_expr (sym);
@@ -896,7 +883,7 @@ param_expr (const char *name, type_t *type)
 	symbol_t   *sym;
 	expr_t     *sym_expr;
 
-	sym = make_symbol (name, &type_param, pr.symtab->space, st_extern);
+	sym = make_symbol (name, &type_param, pr.symtab->space, sc_extern);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
 	sym_expr = new_symbol_expr (sym);
@@ -998,8 +985,7 @@ field_expr (expr_t *e1, expr_t *e2)
 				return e1;
 
 			e2->type = ex_value;
-			e2->e.value.type = ev_short;
-			e2->e.value.v.short_val = field->s.offset;
+			e2->e.value = new_short_val (field->s.offset);
 			e = new_binary_expr ('&', e1, e2);
 			e->e.expr.type = pointer_type (field->type);
 			return unary_expr ('.', e);
@@ -1012,8 +998,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			if (!ivar)
 				return new_error_expr ();
 			e2->type = ex_value;
-			e2->e.value.type = ev_short;
-			e2->e.value.v.short_val = ivar->s.offset;
+			e2->e.value = new_short_val (ivar->s.offset);
 			e = new_binary_expr ('&', e1, e2);
 			e->e.expr.type = pointer_type (ivar->type);
 			return unary_expr ('.', e);
@@ -1042,17 +1027,15 @@ field_expr (expr_t *e1, expr_t *e2)
 				}
 				def = sym->s.def;
 				e2 = new_field_expr (0, field->type, def);
-			} else if (e2->type != ex_value || e2->e.value.type != ev_field) {
+			} else if (e2->type != ex_value || e2->e.value->type != ev_field) {
 				internal_error (e2, "unexpected field exression");
 			}
-			e2->e.value.v.pointer.val += field->s.offset;
-			e2->e.value.v.pointer.type = field->type;
+			e2->e.value = new_field_val (e2->e.value->v.pointer.val + field->s.offset, field->type, e2->e.value->v.pointer.def);
 			// create a new . expression
 			return field_expr (e1, e2);
 		} else {
 			e2->type = ex_value;
-			e2->e.value.type = ev_short;
-			e2->e.value.v.short_val = field->s.offset;
+			e2->e.value = new_short_val (field->s.offset);
 			e = address_expr (e1, e2, field->type);
 			return unary_expr ('.', e);
 		}
@@ -1302,35 +1285,32 @@ bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2)
 void
 convert_int (expr_t *e)
 {
-	e->e.value.v.float_val = expr_integer (e);
-	e->e.value.type = ev_float;
+	float       float_val = expr_integer (e);
 	e->type = ex_value;
+	e->e.value = new_float_val (float_val);
 }
 
 void
 convert_short (expr_t *e)
 {
-	e->e.value.v.float_val = expr_short (e);
-	e->e.value.type = ev_float;
+	float       float_val = expr_short (e);
 	e->type = ex_value;
+	e->e.value = new_float_val (float_val);
 }
 
 void
 convert_short_int (expr_t *e)
 {
-	e->e.value.v.integer_val = expr_short (e);
-	e->e.value.type = ev_integer;
+	float       integer_val = expr_short (e);
 	e->type = ex_value;
+	e->e.value = new_integer_val (integer_val);
 }
 
 void
 convert_nil (expr_t *e, type_t *t)
 {
-	memset (&e->e.value, 0, sizeof (e->e.value));
-	e->e.value.type = low_level_type (t);
-	if (t->type == ev_pointer || t->type == ev_field)
-		e->e.value.v.pointer.type = t->t.fldptr.type;
 	e->type = ex_value;
+	e->e.value = new_nil_val (t);
 }
 
 int
@@ -1541,13 +1521,14 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		switch (op) {
 			case '%':
 				{
-					expr_t     *tmp1, *tmp2, *tmp3, *t1, *t2;
+					expr_t     *tmp1, *tmp2, *tmp3, *tmp4, *t1, *t2;
 					e = new_block_expr ();
 					t1 = new_temp_def_expr (&type_float);
 					t2 = new_temp_def_expr (&type_float);
 					tmp1 = new_temp_def_expr (&type_float);
 					tmp2 = new_temp_def_expr (&type_float);
 					tmp3 = new_temp_def_expr (&type_float);
+					tmp4 = new_temp_def_expr (&type_float);
 
 					append_expr (e, assign_expr (t1, e1));
 					e1 = binary_expr ('&', t1, t1);
@@ -1561,9 +1542,9 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 					append_expr (e, assign_expr (tmp3, e1));
 
 					e2 = binary_expr ('&', tmp3, tmp3);
-					append_expr (e, assign_expr (tmp3, e2));
+					append_expr (e, assign_expr (tmp4, e2));
 
-					e1 = binary_expr ('*', tmp2, tmp3);
+					e1 = binary_expr ('*', tmp2, tmp4);
 					e2 = binary_expr ('-', tmp1, e1);
 					e->e.block.result = e2;
 					return e;
@@ -2196,10 +2177,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				if (is_array (type)) {
 					e = e1;
 					e->type = ex_value;
-					e->e.value.type = ev_pointer;
-					e->e.value.v.pointer.val = 0;
-					e->e.value.v.pointer.type = t;
-					e->e.value.v.pointer.def = def;
+					e->e.value = new_pointer_val (0, t, def);
 				} else {
 					e = new_pointer_expr (0, t, def);
 					e->line = e1->line;
@@ -2213,6 +2191,16 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				e = e1;
 				e->e.expr.op = '&';
 				e->e.expr.type = pointer_type (e->e.expr.type);
+				break;
+			}
+			if (e1->e.expr.op == 'm') {
+				// direct move, so obtain the address of the source
+				e = address_expr (e1->e.expr.e2, 0, t);
+				break;
+			}
+			if (e1->e.expr.op == 'M') {
+				// indirect move, so we already have the address of the source
+				e = e1->e.expr.e2;
 				break;
 			}
 			return error (e1, "invalid type for unary &");
@@ -2244,10 +2232,9 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 	if (e2) {
 		if (e2->type == ex_error)
 			return e2;
-		if (e->type == ex_value && e->e.value.type == ev_pointer
+		if (e->type == ex_value && e->e.value->type == ev_pointer
 			&& is_short_val (e2)) {
-			e->e.value.v.pointer.val += expr_short (e2);
-			e->e.value.v.pointer.type = t;
+			e->e.value = new_pointer_val (e->e.value->v.pointer.val + expr_short (e2), t, e->e.value->v.pointer.def);
 		} else {
 			if (!is_short_val (e2) || expr_short (e2)) {
 				if (e->type == ex_expr && e->e.expr.op == '&') {
@@ -2265,7 +2252,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 }
 
 expr_t *
-build_if_statement (expr_t *test, expr_t *s1, expr_t *s2)
+build_if_statement (expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
 {
 	int         line = pr.source_line;
 	string_t    file = pr.source_file;
@@ -2286,6 +2273,11 @@ build_if_statement (expr_t *test, expr_t *s1, expr_t *s2)
 		append_expr (if_expr, test);
 	}
 	append_expr (if_expr, s1);
+
+	if (els) {
+		pr.source_line = els->line;
+		pr.source_file = els->file;
+	}
 
 	if (s2) {
 		expr_t     *nl = new_label_expr ();
@@ -2474,9 +2466,9 @@ is_indirect (expr_t *e)
 	if (!(e->type == ex_uexpr && e->e.expr.op == '.'))
 		return 0;
 	e = e->e.expr.e1;
-	if (e->type != ex_value || e->e.value.type != ev_pointer
-		|| !(POINTER_VAL (e->e.value.v.pointer) >= 0
-			 && POINTER_VAL (e->e.value.v.pointer) < 65536)) {
+	if (e->type != ex_value || e->e.value->type != ev_pointer
+		|| !(POINTER_VAL (e->e.value->v.pointer) >= 0
+			 && POINTER_VAL (e->e.value->v.pointer) < 65536)) {
 		return 1;
 	}
 	return 0;
@@ -2614,9 +2606,9 @@ assign_expr (expr_t *e1, expr_t *e2)
 			op = PAS;
 		} else {
 			e = e1->e.expr.e1;
-			if ((e->type != ex_value || e->e.value.type != ev_pointer)
-				|| !(POINTER_VAL (e->e.value.v.pointer) > 0
-					 && POINTER_VAL (e->e.value.v.pointer) < 65536)) {
+			if ((e->type != ex_value || e->e.value->type != ev_pointer)
+				|| !(POINTER_VAL (e->e.value->v.pointer) > 0
+					 && POINTER_VAL (e->e.value->v.pointer) < 65536)) {
 				e1 = e;
 				op = PAS;
 			}
@@ -2630,9 +2622,9 @@ assign_expr (expr_t *e1, expr_t *e2)
 		}
 		if (e2->type == ex_uexpr) {
 			e = e2->e.expr.e1;
-			if ((e->type != ex_value || e->e.value.type != ev_pointer)
-				|| !(POINTER_VAL (e->e.value.v.pointer) > 0
-					 && POINTER_VAL (e->e.value.v.pointer) < 65536)) {
+			if ((e->type != ex_value || e->e.value->type != ev_pointer)
+				|| !(POINTER_VAL (e->e.value->v.pointer) > 0
+					 && POINTER_VAL (e->e.value->v.pointer) < 65536)) {
 				if (e->type == ex_expr && e->e.expr.op == '&'
 					&& e->e.expr.type->type == ev_pointer
 					&& !is_constant (e)) {
@@ -2645,7 +2637,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 		}
 	}
 	if (is_struct (get_type (e1))) {
-		return new_move_expr (e1, e2, get_type (e2), 0);
+		return new_move_expr (e1, e2, get_type (e1), 0);
 	}
 	if (!type)
 		internal_error (e1, 0);
@@ -2684,7 +2676,10 @@ cast_expr (type_t *type, expr_t *e)
 	}
 	if (is_array (e_type))
 		return address_expr (e, 0, 0);
-	if ((is_float (type) && is_integral (e_type))
+	if (is_constant (e) && is_scalar (type) && is_scalar (e_type)) {
+		e->e.value = convert_value (e->e.value, type);
+		c = e;
+	} else if ((is_float (type) && is_integral (e_type))
 		|| (is_integral (type) && is_float (e_type))) {
 		c = new_unary_expr ('C', e);
 		c->e.expr.type = type;
@@ -2712,12 +2707,12 @@ selector_expr (keywordarg_t *selector)
 	index = selector_index (sel_id->str);
 	index *= type_size (type_SEL.t.fldptr.type);
 	sel_sym = make_symbol ("_OBJ_SELECTOR_TABLE_PTR", &type_SEL,
-						   pr.near_data, st_static);
+						   pr.near_data, sc_static);
 	if (!sel_sym->table) {
 		symtab_addsymbol (pr.symtab, sel_sym);
 		sel_table = make_symbol ("_OBJ_SELECTOR_TABLE",
 								 array_type (type_SEL.t.fldptr.type, 0),
-								 pr.far_data, st_extern);
+								 pr.far_data, sc_extern);
 		if (!sel_table->table)
 			symtab_addsymbol (pr.symtab, sel_table);
 		reloc_def_def (sel_table->s.def, sel_sym->s.def);
@@ -2768,7 +2763,7 @@ super_expr (class_type_t *class_type)
 	if (!sym || sym->table != current_symtab) {
 		sym = new_symbol (".super");
 		initialize_def (sym, &type_obj_super, 0, current_symtab->space,
-						st_local);
+						sc_local);
 	}
 	super = new_symbol_expr (sym);
 

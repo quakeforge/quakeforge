@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "QF/alloc.h"
 #include "QF/pr_comp.h"
 
 #include "debug.h"
@@ -53,7 +54,7 @@ int         lineno_base;
 
 static srcline_t *free_srclines;
 
-void
+static void
 push_source_file (void)
 {
 	srcline_t  *srcline;
@@ -64,7 +65,7 @@ push_source_file (void)
 	pr.srcline_stack = srcline;
 }
 
-void
+static void
 pop_source_file (void)
 {
 	srcline_t  *tmp;
@@ -75,8 +76,7 @@ pop_source_file (void)
 	}
 	tmp = pr.srcline_stack;
 	pr.srcline_stack = tmp->next;
-	tmp->next = free_srclines;
-	free_srclines = tmp;
+	FREE (srclines, tmp);
 }
 
 void
@@ -124,15 +124,4 @@ new_lineno (void)
 	}
 	memset (&pr.linenos[pr.num_linenos], 0, sizeof (pr_lineno_t));
 	return &pr.linenos[pr.num_linenos++];
-}
-
-ddef_t *
-new_local (void)
-{
-	if (pr.num_locals == pr.locals_size) {
-		pr.locals_size += 1024;
-		pr.locals = realloc (pr.locals, pr.locals_size * sizeof (ddef_t));
-	}
-	memset (&pr.locals[pr.num_locals], 0, sizeof (ddef_t));
-	return &pr.locals[pr.num_locals++];
 }

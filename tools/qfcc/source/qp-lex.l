@@ -39,6 +39,7 @@
 #include "expr.h"
 #include "grab.h"
 #include "qfcc.h"
+#include "shared.h"
 #include "strpool.h"
 #include "symtab.h"
 #include "type.h"

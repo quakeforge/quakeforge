@@ -261,6 +261,11 @@ PR_BoundsCheckSize (progs_t *pr, int addr, unsigned size)
 		|| size > (unsigned) (pr->globals_size - addr))
 		PR_RunError (pr, "invalid memory access: %d (0 to %d-%d)", addr,
 					 pr->globals_size, size);
+	if (pr_boundscheck->int_val >= 2
+		&& PR_GetPointer (pr, addr + size) > (pr_type_t *) pr->zone) {
+		void       *mem = (void *) PR_GetPointer (pr, addr);
+		Z_CheckPointer (pr->zone, mem, size * sizeof (pr_type_t));
+	}
 }
 
 VISIBLE void

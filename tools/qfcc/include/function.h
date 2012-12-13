@@ -31,11 +31,21 @@
 #ifndef __function_h
 #define __function_h
 
+/** \defgroup qfcc_function Internal function structures.
+	\ingroup qfcc
+*/
+//@{
+
 #include "QF/pr_comp.h"
 #include "QF/pr_debug.h"
 
 #include "def.h"
 
+/** Represent an overloading of a function.
+
+	Every function, whether overloaded or not, has an entry in the overloaded
+	function database.
+*/
 typedef struct overloaded_function_s {
 	struct overloaded_function_s *next;
 	const char *name;				///< source level name of function
@@ -47,6 +57,8 @@ typedef struct overloaded_function_s {
 	int         line;				///< source line of this function
 } overloaded_function_t;
 
+/** Internal representation of a function.
+*/
 typedef struct function_s {
 	struct function_s  *next;
 	int                 builtin;	///< if non 0, call an internal function
@@ -55,21 +67,42 @@ typedef struct function_s {
 	int                 line_info;
 	int                 local_defs;
 	string_t            s_file;		///< source file with definition
-	string_t            s_name;
+	string_t            s_name;		///< name of function in output
 	int                 temp_num;	///< number for next temp var
-	struct def_s       *def;
-	struct symbol_s    *sym;
+	struct def_s       *temp_defs[4];	///< freed temp vars (by size)
+	struct def_s       *def;		///< output def holding function number
+	struct symbol_s    *sym;		///< internal symbol for this function
+	/** Root scope symbol table of the function.
+
+		Sub-scope symbol tables are not directly accessible, but all defs
+		created in the function's local data space are recorded in the root
+		scope symbol table's defspace.
+	*/
 	struct symtab_s    *symtab;
-	struct reloc_s     *refs;
+	struct reloc_s     *refs;		///< relocation targets for this function
 	struct expr_s      *var_init;
 	const char         *name;		///< nice name for __PRETTY_FUNCTION__
+	struct sblock_s    *sblock;		///< initial node of function's code
+	struct flowgraph_s *graph;		///< the function's flow graph
+	/** Array of pointers to all variables referenced by the function's code.
+
+		This permits ready mapping of (function specific) variable number to
+		variable in the flow analyzer.
+	*/
+	struct flowvar_s  **vars;
+	int                 num_vars;	///< total number of variables referenced
+	struct set_s       *global_vars;///< set indicating which vars are global
+	struct statement_s **statements;
+	int                 num_statements;
 } function_t;
 
 extern function_t *current_func;
 
+/** Representation of a function parameter.
+	\note	The first two fields match the first two fields of keywordarg_t
+			in method.h
+*/
 typedef struct param_s {
-	// the first two fields match the first two fiels of keywordarg_t in
-	// method.h
 	struct param_s *next;
 	const char *selector;
 	struct type_s *type;		//FIXME redundant
@@ -112,5 +145,7 @@ void finish_function (function_t *f);
 void emit_function (function_t *f, struct expr_s *e);
 int function_parms (function_t *f, byte *parm_size);
 void clear_functions (void);
+
+//@}
 
 #endif//__function_h

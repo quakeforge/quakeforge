@@ -52,6 +52,6 @@ typedef enum {
 void test_plist (void)
 {
 	plitem_t pl;
-	
+
 	pl = PL_GetPropertyList ("{}");
 }

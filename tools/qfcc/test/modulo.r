@@ -1,4 +1,5 @@
-#if 1
+#pragma traditional
+
 void (...) printf = #0;
 float foo (float a, float b)
 {
@@ -13,26 +14,48 @@ float bar (float a, float b)
 	c = a - ((a / b) & -1) * b;
 	return c;
 }
-#endif
+
 float baz (float a, float b)
 {
 	float c = (a + b) % (a - b);
 	return c;
 }
-#if 1
-float main (void)
+
+float test (string name, float (func)(float a, float b),
+			float a, float b, float c)
 {
-	printf ("foo: 5 %% 3: %f\n", foo (5, 3));
-	printf ("bar: 5 %% 3: %f\n", bar (5, 3));
+	float ret;
 
-	printf ("foo: -5 %% 3: %f\n", foo (-5, 3));
-	printf ("bar: -5 %% 3: %f\n", bar (-5, 3));
-
-	printf ("foo: 5 %% -3: %f\n", foo (5, -3));
-	printf ("bar: 5 %% -3: %f\n", bar (5, -3));
-
-	printf ("foo: -5 %% -3: %f\n", foo (-5, -3));
-	printf ("bar: -5 %% -3: %f\n", bar (-5, -3));
+	ret = func (a, b);
+	if (ret != c) {
+		if (func == baz)
+			printf ("%s: (%g + %g) %% (%g - %g): %g != %g\n",
+					name, a, b, a, b, ret, c);
+		else
+			printf ("%s: %g %% %g: %g != %g\n",
+					name, a, b, ret, c);
+		return 1;
+	}
 	return 0;
 }
-#endif
+
+float main (void)
+{
+	float res = 0;
+	res |= test ("foo", foo, 5, 3, 2);
+	res |= test ("bar", bar, 5, 3, 2);
+	res |= test ("baz", baz, 5, 3, 0);
+
+	res |= test ("foo", foo, -5, 3, -2);
+	res |= test ("bar", bar, -5, 3, -2);
+	res |= test ("baz", baz, -5, 3, -2);
+
+	res |= test ("foo", foo, 5, -3, 2);
+	res |= test ("bar", bar, 5, -3, 2);
+	res |= test ("baz", baz, 5, -3, 2);
+
+	res |= test ("foo", foo, -5, -3, -2);
+	res |= test ("bar", bar, -5, -3, -2);
+	res |= test ("baz", baz, -5, -3, 0);
+	return res;
+}

@@ -90,6 +90,8 @@ qfo_def_flags (def_t *def)
 		flags |= QFOD_SYSTEM;
 	if (def->nosave)
 		flags |= QFOD_NOSAVE;
+	if (def->param)
+		flags |= QFOD_PARAM;
 	return flags;
 }
 
@@ -312,8 +314,12 @@ qfo_from_progs (pr_info_t *pr)
 
 	qfo_encode_functions (qfo, &def, &reloc, qfo->spaces + qfo_num_spaces,
 						  pr->func_head);
-	qfo->lines = pr->linenos;
-	qfo->num_lines = pr->num_linenos;
+	if (pr->num_linenos) {
+		qfo->lines = malloc (pr->num_linenos * sizeof (pr_lineno_t));
+		memcpy (qfo->lines, pr->linenos,
+				pr->num_linenos * sizeof (pr_lineno_t));
+		qfo->num_lines = pr->num_linenos;
+	}
 	// strings must be done last because encoding defs and functions adds the
 	// names
 	qfo_init_string_space (qfo, &qfo->spaces[qfo_strings_space], pr->strings);
