@@ -540,8 +540,8 @@ dag_create (flownode_t *flownode)
 	dag->flownode = flownode;
 	// at most 4 per statement
 	dag->nodes = alloca (num_statements * 4 * sizeof (dagnode_t));
-	// at most 3 per statement
-	dag->labels = alloca (num_statements * 3 * sizeof (daglabel_t));
+	// at most 3 per statement, + return + params
+	dag->labels = alloca (num_statements * (3 + 1 + 8) * sizeof (daglabel_t));
 	dag->roots = set_new ();
 
 	for (s = block->statements; s; s = s->next) {
