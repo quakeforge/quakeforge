@@ -251,7 +251,8 @@ void initialize_def (struct symbol_s *sym, struct type_s *type,
 
 	\param d1		The first def to check. May be an alias def.
 	\param d2		The second def to check. May be an alias def.
-	\return			1 if the defs overlap, 0 otherwise.
+	\return			1 if the defs overlap, 2 if \a d1 fully overlaps \a d2,
+					otherwise 0.
 */
 int def_overlap (def_t *d1, def_t *d2);
 
@@ -293,8 +294,9 @@ int def_size (def_t *def);
 	function will return.
 
 	\param def		The def representing the alias cluster to visit.
-	\param overlap  If true, then only defs that overlap \a def will be
-					visited.
+	\param overlap  If non-zero, then only defs that overlap \a def will
+					be visited. If 2, then the given def must fully overlap
+					the visited def.
 	\param visit	The function to call when visiting a def. The first
 					parameter is the def being visited, and the second
 					parameter is \a data passed on. If non-zero is returned,

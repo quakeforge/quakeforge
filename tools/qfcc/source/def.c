@@ -615,8 +615,10 @@ def_overlap (def_t *d1, def_t *d2)
 		offs2 += d2->alias->offset;
 	size2 = type_size (d2->type);
 
+	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2)
+		return 2;	// d1 fully overlaps d2
 	if (offs1 < offs2 + size2 && offs2 < offs1 + size1)
-		return 1;
+		return 1;	// d1 and d2 at least partially overlap
 	return 0;
 }
 
@@ -652,7 +654,7 @@ def_visit_all (def_t *def, int overlap,
 	for (def = def->alias_defs; def; def = def->next) {
 		if (def == start_def)
 			continue;
-		if (overlap && !def_overlap (def, start_def))
+		if (overlap && def_overlap (def, start_def) < overlap)
 			continue;
 		if ((ret = visit (def, data)))
 			return ret;
