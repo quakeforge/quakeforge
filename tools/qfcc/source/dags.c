@@ -577,8 +577,8 @@ dag_create (flownode_t *flownode)
 	dag->flownode = flownode;
 	// at most 4 per statement
 	dag->nodes = alloca (num_statements * 4 * sizeof (dagnode_t));
-	// at most 3 per statement, + return + params
-	dag->labels = alloca (num_statements * (3 + 1 + 8) * sizeof (daglabel_t));
+	// at most 4 per statement, + return + params
+	dag->labels = alloca (num_statements * (4 + 1 + 8) * sizeof (daglabel_t));
 	dag->roots = set_new ();
 
 	for (s = block->statements; s; s = s->next) {
@@ -692,6 +692,39 @@ fix_op_type (operand_t *op, etype_t type)
 }
 
 static operand_t *
+make_operand (dag_t *dag, sblock_t *block, const dagnode_t *dagnode, int index)
+{
+	operand_t  *op;
+
+	op = dagnode->children[index]->value;
+	op = fix_op_type (op, dagnode->types[index]);
+	return op;
+}
+
+static operand_t *
+generate_moves (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
+{
+	set_iter_t *var_iter;
+	daglabel_t  *var;
+	operand_t   *operands[3] = {0, 0, 0};
+	statement_t *st;
+	operand_t   *dst;
+
+	operands[0] = make_operand (dag, block, dagnode, 0);
+	operands[1] = make_operand (dag, block, dagnode, 1);
+	dst = operands[0];
+	for (var_iter = set_first (dagnode->identifiers); var_iter;
+		 var_iter = set_next (var_iter)) {
+		var = dag->labels[var_iter->value];
+		operands[2] = var->op;
+		dst = operands[2];
+		st = build_statement ("<MOVE>", operands, var->expr);
+		sblock_add_statement (block, st);
+	}
+	return dst;
+}
+
+static operand_t *
 generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 					  set_iter_t *var_iter, etype_t type)
 {
@@ -711,16 +744,6 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 		sblock_add_statement (block, st);
 	}
 	return dst;
-}
-
-static operand_t *
-make_operand (dag_t *dag, sblock_t *block, const dagnode_t *dagnode, int index)
-{
-	operand_t  *op;
-
-	op = dagnode->children[index]->value;
-	op = fix_op_type (op, dagnode->types[index]);
-	return op;
 }
 
 static void
@@ -776,6 +799,11 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			dst = operands[0];
 			break;
 		case st_move:
+			if (!strcmp (dagnode->label->opcode, "<MOVE>")) {
+				dst = generate_moves (dag, block, dagnode);
+				break;
+			}
+			//fall through
 		case st_state:
 		case st_func:
 			for (i = 0; i < 3; i++)
