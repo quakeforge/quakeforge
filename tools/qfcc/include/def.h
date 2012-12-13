@@ -300,7 +300,8 @@ int def_size (def_t *def);
 					parameter is \a data passed on. If non-zero is returned,
 					the pass through the alias cluster will terminate.
 	\param data		Pointer to the data needed by \a visit.
-	\return			1 if \a visit returned non-zero, otherwise 0.
+	\return			The value returned by \a visit returned non-zero,
+					otherwise 0.
 */
 int def_visit_all (def_t *def, int overlap,
 				   int (*visit) (def_t *, void *), void *data);

@@ -640,21 +640,22 @@ def_visit_all (def_t *def, int overlap,
 			   int (*visit) (def_t *, void *), void *data)
 {
 	def_t      *start_def = def;
+	int         ret;
 
-	if (visit (def, data))
-		return 1;
+	if ((ret = visit (def, data)))
+		return ret;
 	if (def->alias) {
 		def = def->alias;
-		if (visit (def, data))
-			return 1;
+		if ((ret = visit (def, data)))
+			return ret;
 	}
 	for (def = def->alias_defs; def; def = def->next) {
 		if (def == start_def)
 			continue;
 		if (overlap && !def_overlap (def, start_def))
 			continue;
-		if (visit (def, data))
-			return 1;
+		if ((ret = visit (def, data)))
+			return ret;
 	}
 	return 0;
 }
