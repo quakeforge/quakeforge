@@ -25,6 +25,7 @@ test_progs_dat=\
 	deadbool.dat \
 	infloop.dat \
 	modulo.dat \
+	structlive.dat \
 	structptr.dat \
 	vecinit.dat \
 	while.dat
@@ -82,6 +83,13 @@ modulo.dat: $(modulo_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(modulo_obj)
 modulo.run: Makefile build-run
 	TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
+
+structlive_dat_SOURCES=structlive.r
+structlive_obj=$(structlive_dat_SOURCES:.r=.qfo)
+structlive.dat: $(structlive_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(structlive_obj)
+structlive.run: Makefile build-run
+	$(srcdir)/build-run $@
 
 structptr_dat_SOURCES=structptr.r
 structptr_obj=$(structptr_dat_SOURCES:.r=.qfo)
