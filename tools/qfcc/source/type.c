@@ -81,9 +81,9 @@ type_t     *type_nil;
 type_t     *type_default;
 
 // these will be built up further
-type_t      type_va_list = { ev_invalid, "@va_list", ty_struct };
-type_t      type_param = { ev_invalid, "@param", ty_struct };
-type_t      type_zero = { ev_invalid, "@zero", ty_struct };
+type_t      type_va_list = { ev_invalid, 0, ty_struct };
+type_t      type_param = { ev_invalid, 0, ty_struct };
+type_t      type_zero = { ev_invalid, 0, ty_struct };
 type_t      type_type_encodings = { ev_invalid, "@type_encodings", ty_struct };
 
 type_t      type_floatfield = { ev_field, ".float", ty_none, {{&type_float}} };
@@ -822,6 +822,8 @@ init_types (void)
 		{"func_val",         &type_function},
 		{"pointer_val",      &type_pointer},
 		{"vector_val",       &type_vector},
+		{"int_val",          &type_integer},
+		{"uint_val",         &type_uinteger},
 		{"integer_val",      &type_integer},
 		{"uinteger_val",     &type_uinteger},
 		{"quaternion_val",   &type_quaternion},
@@ -835,6 +837,8 @@ init_types (void)
 		{"field_val",        &type_field},
 		{"func_val",         &type_function},
 		{"pointer_val",      &type_pointer},
+		{"int_val",          &type_integer},
+		{"uint_val",         &type_uinteger},
 		{"integer_val",      &type_integer},
 		{"uinteger_val",     &type_uinteger},
 		{"quaternion_val",   &type_quaternion},
