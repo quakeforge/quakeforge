@@ -405,6 +405,35 @@ op_is_identifier (operand_t *op)
 	return 1;
 }
 
+static int
+dag_kill_aliases_visit (def_t *def, void *_node)
+{
+	dagnode_t  *node = (dagnode_t *) _node;
+	daglabel_t *label;
+
+	label = def->daglabel;
+	if (label && label->dagnode) {
+		set_add (node->edges, label->dagnode->number);
+		set_remove (node->edges, node->number);
+		label->dagnode->killed = 1;
+	}
+	return 0;
+}
+
+static void
+dag_kill_aliases (daglabel_t *l)
+{
+	operand_t  *op = l->op;
+
+	if (op->op_type == op_temp) {
+	} else if (op->op_type == op_def) {
+		if (op->o.def->alias || op->o.def->alias_defs)
+			def_visit_all (op->o.def, 1, dag_kill_aliases_visit, l->dagnode);
+	} else {
+		internal_error (0, "rvalue assignment?");
+	}
+}
+
 static void
 dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 {
@@ -423,6 +452,7 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 	l->live = 0;	// remove live forcing on assignment
 	l->dagnode = n;
 	set_add (n->identifiers, l->number);
+	dag_kill_aliases (l);
 }
 
 static int
