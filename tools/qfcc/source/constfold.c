@@ -296,7 +296,7 @@ static expr_t *
 do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	const float *v1, *v2;
-	vec3_t      v;
+	vec3_t      v, float_vec;
 	static int  valid[] = {'=', '+', '-', '*', EQ, NE, 0};
 	expr_t     *t;
 
@@ -358,8 +358,18 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '=' || !is_constant (e1) || !is_constant (e2))
 		return e;
 
-	v1 = expr_vector (e1);
-	v2 = expr_vector (e2);
+	if (is_float_val (e1)) {
+		float_vec[0] = expr_float (e1);
+		v2 = float_vec;
+		v1 = expr_vector (e2);
+	} else if (is_float_val (e2)) {
+		float_vec[0] = expr_float (e2);
+		v2 = float_vec;
+		v1 = expr_vector (e1);
+	} else {
+		v1 = expr_vector (e1);
+		v2 = expr_vector (e2);
+	}
 
 	switch (op) {
 		case '+':
@@ -374,6 +384,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			if (!v2[0])
 				return error (e1, "divide by zero");
 			VectorScale (v1, 1 / v2[0], v);
+			e = new_vector_expr (v);
 			break;
 		case '*':
 			if (get_type (e2) == &type_vector) {
@@ -528,7 +539,7 @@ static expr_t *
 do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	const float *q1, *q2;
-	quat_t      q;
+	quat_t      q, float_quat;
 	static int  valid[] = {'=', '+', '-', '*', EQ, NE, 0};
 	expr_t     *t;
 
@@ -581,8 +592,18 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '=' || !is_constant (e1) || !is_constant (e2))
 		return e;
 
-	q1 = expr_quaternion (e1);
-	q2 = expr_quaternion (e2);
+	if (is_float_val (e1)) {
+		float_quat[0] = expr_float (e1);
+		q2 = float_quat;
+		q1 = expr_quaternion (e2);
+	} else if (is_float_val (e2)) {
+		float_quat[0] = expr_float (e2);
+		q2 = float_quat;
+		q1 = expr_quaternion (e1);
+	} else {
+		q1 = expr_quaternion (e1);
+		q2 = expr_quaternion (e2);
+	}
 
 	switch (op) {
 		case '+':
