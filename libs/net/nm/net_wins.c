@@ -231,7 +231,7 @@ WINS_Init (void)
 	if (winsock_initialized == 0) {
 		wVersionRequested = MAKEWORD (1, 1);
 
-		r = pWSAStartup (MAKEWORD (1, 1), &winsockdata);
+		r = pWSAStartup (wVersionRequested, &winsockdata);
 
 		if (r) {
 			Sys_Printf ("Winsock initialization failed.\n");

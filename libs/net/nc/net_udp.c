@@ -412,7 +412,7 @@ NET_Init (int port)
 
 	wVersionRequested = MAKEWORD (1, 1);
 
-	r = WSAStartup (MAKEWORD (1, 1), &winsockdata);
+	r = WSAStartup (wVersionRequested, &winsockdata);
 	if (r)
 		Sys_Error ("Winsock initialization failed.");
 #endif /* _WIN32 */
