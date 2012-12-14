@@ -324,6 +324,9 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e->e.expr.type = &type_float;
 	} else if (op == '*' && get_type (e2) == &type_vector) {
 		e->e.expr.type = &type_float;
+	} else if (op == '/' && !is_constant (e1)) {
+		e2 = fold_constants (binary_expr ('/', new_float_expr (1), e2));
+		e = fold_constants (binary_expr ('*', e1, e2));
 	} else {
 		e->e.expr.type = &type_vector;
 	}
@@ -553,6 +556,9 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e->e.expr.type = &type_integer;
 		else
 			e->e.expr.type = &type_float;
+	} else if (op == '/' && !is_constant (e1)) {
+		e2 = fold_constants (binary_expr ('/', new_float_expr (1), e2));
+		e = fold_constants (binary_expr ('*', e1, e2));
 	} else {
 		e->e.expr.type = &type_quaternion;
 	}
