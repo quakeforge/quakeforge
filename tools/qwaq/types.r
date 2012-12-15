@@ -67,7 +67,7 @@ typedef struct qfot_type_s {
 		qfot_func_t func;
 		qfot_struct_t strct;
 		qfot_array_t array;
-		Class       class;
+		string      class;
 	}           t;
 } qfot_type_t;
 
@@ -166,7 +166,8 @@ test_types (void)
 						type.t.array.base, type.t.array.size);
 				break;
 			case ty_class:
-				printf (" %p %s\n", type.t.class, type.t.class.name);
+				printf (" %s %p\n", type.t.class,
+						obj_lookup_class (type.t.class));
 				break;
 		}
 	 }

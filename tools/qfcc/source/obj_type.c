@@ -248,7 +248,7 @@ qfo_encode_class (type_t *type)
 
 	def = qfo_new_encoding (type, sizeof (enc->t.class));
 	enc = D_POINTER (qfot_type_t, def);
-	ENC_DEF (enc->t.class, type->t.class->def);
+	ENC_STR (enc->t.class, type->t.class->name);
 	return def;
 }
 
