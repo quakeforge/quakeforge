@@ -620,6 +620,7 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far)
 
 	// for debug info
 	build_scope (sym, current_symtab);
+	sym->s.func->symtab->space->size = 0;
 	return sym->s.func;
 }
 
