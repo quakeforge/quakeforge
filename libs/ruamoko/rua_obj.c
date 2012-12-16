@@ -682,8 +682,14 @@ obj_find_message (progs_t *pr, pr_class_t *class, pr_sel_t *selector)
 					Sys_Printf ("  %s\n",
 								PR_GetString (pr, names[sel->sel_id]));
 				}
-				if (sel->sel_id == selector->sel_id)
+				if (sel->sel_id == selector->sel_id) {
+					if (dev & SYS_RUA_MSG) {
+						Sys_Printf ("found %s: %x\n",
+									PR_GetString (pr, names[selector->sel_id]),
+									method->method_imp);
+					}
 					return method;
+				}
 			}
 			method_list = &G_STRUCT (pr, pr_method_list_t,
 									 method_list->method_next);
@@ -774,15 +780,11 @@ obj_msg_lookup_super (progs_t *pr, pr_super_t *super, pr_sel_t *op)
 
 static void
 obj_verror (progs_t *pr, pr_id_t *object, int code, const char *fmt, int count,
-			pr_type_t *args)
+			pr_type_t **args)
 {
-	pr_type_t **arglist = (pr_type_t **) alloca (count * sizeof (pr_type_t *));
 	dstring_t  *dstr = dstring_newstr ();
-	int         i;
 
-	for (i = 0; i < count; i++)
-		arglist[i] = args + i * 3;
-	PR_Sprintf (pr, dstr, "obj_verror", fmt, count, arglist);
+	PR_Sprintf (pr, dstr, "obj_verror", fmt, count, args);
 	PR_RunError (pr, "%s", dstr->str);
 }
 
@@ -942,7 +944,7 @@ rua_obj_error (progs_t *pr)
 	int         code = P_INT (pr, 1);
 	const char *fmt = P_GSTRING (pr, 2);
 	int         count = pr->pr_argc - 3;
-	pr_type_t  *args = pr->pr_params[3];
+	pr_type_t **args = &pr->pr_params[3];
 
 	obj_verror (pr, object, code, fmt, count, args);
 }
@@ -954,9 +956,13 @@ rua_obj_verror (progs_t *pr)
 	int         code = P_INT (pr, 1);
 	const char *fmt = P_GSTRING (pr, 2);
 	pr_va_list_t *val = (pr_va_list_t *) pr->pr_params[3];
+	pr_type_t  *params = &G_STRUCT (pr, pr_type_t, val->list);
+	pr_type_t **args = alloca (val->count * sizeof (pr_type_t *));
+	int         i;
 
-	obj_verror (pr, object, code, fmt, val->count,
-				&G_STRUCT (pr, pr_type_t, val->list));
+	for (i = 0; i < val->count; i++)
+		args[i] = params + i * pr->pr_param_size;
+	obj_verror (pr, object, code, fmt, val->count, args);
 }
 
 static void
@@ -1519,7 +1525,7 @@ rua__i_Object_error_error_ (progs_t *pr)
 	const char *fmt = P_GSTRING (pr, 2);
 	dstring_t  *dstr = dstring_new ();
 	int         count = pr->pr_argc - 3;
-	pr_type_t  *args = pr->pr_params[3];
+	pr_type_t **args = &pr->pr_params[3];
 
 	dsprintf (dstr, "error: %s (%s)\n%s",
 			  PR_GetString (pr, object_get_class_name (pr, self)),
