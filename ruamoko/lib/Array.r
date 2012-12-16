@@ -288,8 +288,8 @@
 {
 	local id tmp;
 
-	if (!anObject)	// FIXME: need exceptions
-		[self error: "-replaceObjectAtIndex:withObject: passed nil object"];
+	//if (!anObject)	// FIXME: need exceptions
+	//	[self error: "-replaceObjectAtIndex:withObject: passed nil object"];
 	if (index >= count) // FIXME: need exceptions
 		[self error: "-replaceObjectAtIndex:withObject: index out of range"];
 
