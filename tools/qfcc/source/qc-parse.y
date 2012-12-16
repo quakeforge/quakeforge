@@ -1635,6 +1635,7 @@ methoddef
 			method = class_find_method (current_class, method);
 			sym = method_symbol (current_class, method);
 			build_builtin_function (sym, $5, 1);
+			method->func = sym->s.func;
 			method->def = sym->s.func->def;
 		}
 	;
