@@ -29,7 +29,7 @@ libr_a_SOURCES=\
 	cbuf.r cmd.r cvar.r file.r hash.r msgbuf.r plist.r qfile.r qfs.r script.r \
 	sound.r string.r math.r \
 	Object.r Protocol.r \
-	AutoreleasePool.r Array.r Array+Private.r Entity.r PropertyList.r
+	AutoreleasePool.r Array.r Array+Private.r Entity.r PropertyList.r Set.r
 libr_a_AR=$(PAK) -cf
 
 libqw_a_SOURCES=\
