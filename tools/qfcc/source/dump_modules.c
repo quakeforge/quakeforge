@@ -65,8 +65,8 @@ dump_methods (progs_t *pr, pr_method_list_t *methods, int class)
 				types = PR_GetString (pr, method->method_types);
 			else
 				types = "<invalid string>";
-			printf ("        %c%s %d @ %x %s\n", mark, sel_id,
-					method->method_imp,
+			printf ("        %c%s %d @ %x %s\n",
+					mark, sel_id, method->method_imp,
 					PR_SetPointer (pr, method), types);
 			method++;
 		}
