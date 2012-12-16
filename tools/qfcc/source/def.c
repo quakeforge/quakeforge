@@ -286,7 +286,9 @@ init_elements (struct def_s *def, expr_t *eles)
 			elements[i].offset = base_offset + i * type_size (array_type);
 		}
 		num_elements = i;
-	} else if (is_struct (def->type)) {
+	} else if (is_struct (def->type)
+			   || def->type == &type_vector
+			   || def->type == &type_quaternion) {
 		symtab_t   *symtab = def->type->t.symtab;
 		symbol_t   *field;
 
@@ -545,7 +547,8 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 		return;
 	if (init->type == ex_nil)
 		convert_nil (init, type);
-	if ((is_array (type) || is_struct (type))
+	if ((is_array (type) || is_struct (type)
+		 || type == &type_vector || type == &type_quaternion)
 		&& init->type == ex_block && !init->e.block.result) {
 		init_elements (sym->s.def, init);
 		sym->s.def->initialized = 1;
