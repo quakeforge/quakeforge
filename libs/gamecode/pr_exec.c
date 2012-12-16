@@ -62,9 +62,9 @@ PR_RunError (progs_t * pr, const char *error, ...)
 	dvsprintf (string, error, argptr);
 	va_end (argptr);
 
-	PR_DumpState (pr);
-
 	Sys_Printf ("%s\n", string->str);
+
+	PR_DumpState (pr);
 
 	// dump the stack so PR_Error can shutdown functions
 	pr->pr_depth = 0;
