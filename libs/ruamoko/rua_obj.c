@@ -1105,7 +1105,7 @@ rua_obj_msgSend (progs_t *pr)
 	func_t      imp;
 
 	if (!self) {
-		R_INT (pr) = R_INT (pr);
+		R_INT (pr) = P_INT (pr, 0);
 		return;
 	}
 	if (!_cmd)
