@@ -243,18 +243,19 @@ s_playcenter_f (void)
 	dstring_t  *name = dstring_new ();
 	int			i;
 	sfx_t	   *sfx;
+	int         viewent = 0;
 
-	i = 1;
-	while (i < Cmd_Argc ()) {
+	if (snd_render_data.viewentity)
+		viewent = *snd_render_data.viewentity;
+
+	for (i = 1; i < Cmd_Argc (); i++) {
 		if (!strrchr (Cmd_Argv (i), '.')) {
 			dsprintf (name, "%s.wav", Cmd_Argv (i));
 		} else {
 			dsprintf (name, "%s", Cmd_Argv (i));
 		}
 		sfx = SND_PrecacheSound (name->str);
-		SND_StartSound (*snd_render_data.viewentity, 0, sfx, listener_origin,
-						1.0, 1.0);
-		i++;
+		SND_StartSound (viewent, 0, sfx, listener_origin, 1.0, 1.0);
 	}
 	dstring_delete (name);
 }
@@ -703,11 +704,14 @@ void
 SND_LocalSound (const char *sound)
 {
 	sfx_t	   *sfx;
+	int         viewent = 0;
 
 	sfx = SND_PrecacheSound (sound);
 	if (!sfx) {
 		Sys_Printf ("S_LocalSound: can't cache %s\n", sound);
 		return;
 	}
-	SND_StartSound (*snd_render_data.viewentity, -1, sfx, vec3_origin, 1, 1);
+	if (snd_render_data.viewentity)
+		viewent = *snd_render_data.viewentity;
+	SND_StartSound (viewent, -1, sfx, vec3_origin, 1, 1);
 }
