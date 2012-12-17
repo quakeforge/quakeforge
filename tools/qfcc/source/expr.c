@@ -2818,6 +2818,8 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 				class_msg = 1;
 				receiver = new_symbol_expr (class_pointer_symbol (class));
 			}
+		} else if (receiver->type == ex_nil) {
+			convert_nil (receiver, &type_id);
 		}
 		rec_type = get_type (receiver);
 
