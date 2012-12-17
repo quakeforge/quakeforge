@@ -181,6 +181,7 @@ BI_Init (progs_t *pr)
 	R_Init ();
 	R_Progs_Init (pr);
 	Key_Progs_Init (pr);
+	S_Progs_Init (pr);
 
 	Con_Init ("client");
 	if (con_module) {
