@@ -111,7 +111,7 @@ init_qf (void)
 	GIB_Init (true);
 	COM_ParseConfig ();
 
-	//Cvar_Get ("developer", "128", 0, 0, 0);
+	//Cvar_Set (developer, "1");
 
 	Memory_Init (malloc (1024 * 1024), 1024 * 1024);
 

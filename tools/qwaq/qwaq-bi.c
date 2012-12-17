@@ -191,7 +191,7 @@ BI_Init (progs_t *pr)
 	}
 	Key_SetKeyDest (key_game);
 
-	//S_Init (&cl.worldmodel, &viewentity, &host_frametime);
+	S_Init (0, &con_frametime);
 	//CDAudio_Init ();
 	Con_NewMap ();
 }
