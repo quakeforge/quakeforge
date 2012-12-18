@@ -107,7 +107,7 @@ struct expr_s;
 struct method_s;
 struct symbol_s;
 
-int is_id (const struct type_s *type);
+int obj_is_id (const struct type_s *type);
 
 class_t *extract_class (class_type_t *class_type);
 const char *get_class_name (class_type_t *class_type, int pretty);

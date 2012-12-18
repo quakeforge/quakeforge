@@ -443,7 +443,7 @@ print_type_str (dstring_t *str, const type_t *type)
 			}
 			break;
 		case ev_pointer:
-			if (is_id (type)) {
+			if (obj_is_id (type)) {
 				dasprintf (str, "id");
 				if (type->t.fldptr.type->protos)
 					print_protocollist (str, type->t.fldptr.type->protos);
@@ -724,11 +724,11 @@ type_assignable (const type_t *dst, const type_t *src)
 	if (dst->type == ev_field && src->type == ev_field)
 		return 1;
 	// id = any class pointer
-	if (is_id (dst) && src->type == ev_pointer
+	if (obj_is_id (dst) && src->type == ev_pointer
 		&& (is_class (src->t.fldptr.type) || src == &type_Class))
 		return 1;
 	// any class pointer = id
-	if (is_id (src) && dst->type == ev_pointer
+	if (obj_is_id (src) && dst->type == ev_pointer
 		&& (is_class (dst->t.fldptr.type) || dst == &type_Class))
 		return 1;
 	// pointer = array

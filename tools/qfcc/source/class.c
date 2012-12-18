@@ -174,7 +174,7 @@ static struct_def_t object_struct[] = {
 };
 
 int
-is_id (const type_t *type)
+obj_is_id (const type_t *type)
 {
 	if (type == &type_id)
 		return 1;
