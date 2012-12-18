@@ -148,7 +148,7 @@ int yylex (void);
 %token				ARGS EXTERN STATIC SYSTEM SIZEOF OVERLOAD
 %token	<op>		STRUCT
 %token	<type>		TYPE
-%token	<symbol>	TYPE_NAME
+%token	<symbol>	OBJECT TYPE_NAME
 %token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
 %token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
 
@@ -462,7 +462,11 @@ type_specifier
 		{
 			$$ = make_spec ($1->type, 0, 0, 0);
 		}
-	| CLASS_NAME
+	| OBJECT protocolrefs
+		{
+			$$ = make_spec (&type_id, 0, 0, 0);
+		}
+	| CLASS_NAME protocolrefs
 		{
 			$$ = make_spec ($1->type, 0, 0, 0);
 		}
@@ -1271,6 +1275,7 @@ identifier
 			if (!($$ = symtab_lookup (current_symtab, "break")))
 				$$ = new_symbol ("break");
 		}
+	| OBJECT
 	| CLASS_NAME
 	| TYPE_NAME
 	;
@@ -1710,6 +1715,7 @@ keywordselector
 selector
 	: NAME						{ $$ = $1; }
 	| CLASS_NAME				{ $$ = $1; }
+	| OBJECT					{ $$ = new_symbol (qc_yytext); }
 	| TYPE						{ $$ = new_symbol (qc_yytext); }
 	| TYPE_NAME					{ $$ = $1; }
 	| reserved_word

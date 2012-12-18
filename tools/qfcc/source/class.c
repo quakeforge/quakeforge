@@ -1375,6 +1375,8 @@ init_objective_structs (void)
 	chain_type (&type_obj_super);
 	chain_type (&type_SuperPtr);
 	chain_type (&type_supermsg);
+
+	symtab_addsymbol (current_symtab, new_symbol ("id"));
 }
 
 static void

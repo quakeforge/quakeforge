@@ -281,7 +281,7 @@ static keyword_t keywords[] = {
 	{"int",			TYPE,	&type_integer,		0, PROG_VERSION,	0},
 	{"unsigned",	TYPE,	&type_integer,		0, PROG_VERSION,	0},//FIXME
 	{"function",	TYPE,	&type_function,		0, PROG_VERSION,	0},
-	{"id",			TYPE,	&type_id,			0, PROG_VERSION,	1},
+	{"id",			OBJECT,	&type_id,			0, PROG_VERSION,	1},
 	{"Class",		TYPE,	&type_Class,		0, PROG_VERSION,	1},
 //	{"Protocol",	TYPE,	&type_Protocol,		0, PROG_VERSION,	0},
 	{"Method",		TYPE,	&type_obj_method,	0, PROG_VERSION,	1},
@@ -363,6 +363,9 @@ keyword_or_id (char *token)
 		if (keyword->value) {
 			if (keyword->value == STRUCT) {
 				qc_yylval.op = token[0];
+			} else if (keyword->value == OBJECT) {
+				sym = symtab_lookup (current_symtab, token);
+				qc_yylval.symbol = sym;
 			} else {
 				qc_yylval.type = 0;
 				qc_yylval.type = keyword->type;
