@@ -237,7 +237,7 @@ types_same (type_t *a, type_t *b)
 				case ev_pointer:
 					if (a->t.fldptr.type != b->t.fldptr.type)
 						return 0;
-					return 1;
+					return compare_protocols (a->protos, b->protos);
 				case ev_func:
 					if (a->t.func.type != b->t.func.type
 						|| a->t.func.num_params != b->t.func.num_params)
@@ -443,8 +443,10 @@ print_type_str (dstring_t *str, const type_t *type)
 			}
 			break;
 		case ev_pointer:
-			if (type == &type_id) {
+			if (is_id (type)) {
 				dasprintf (str, "id");
+				if (type->t.fldptr.type->protos)
+					print_protocollist (str, type->t.fldptr.type->protos);
 				break;
 			}
 			if (type == &type_SEL) {
@@ -693,6 +695,18 @@ is_struct (const type_t *type)
 }
 
 int
+is_id (const type_t *type)
+{
+	if (type == &type_id)
+		return 1;
+	// type may be a qualified id
+	if (type->type == ev_pointer
+		&& type->t.fldptr.type == type_id.t.fldptr.type)
+		return 1;
+	return 0;
+}
+
+int
 is_class (const type_t *type)
 {
 	if (type->type == ev_invalid && type->meta == ty_class)
@@ -720,11 +734,11 @@ type_assignable (const type_t *dst, const type_t *src)
 	if (dst->type == ev_field && src->type == ev_field)
 		return 1;
 	// id = any class pointer
-	if (dst == &type_id && src->type == ev_pointer
+	if (is_id (dst) && src->type == ev_pointer
 		&& (is_class (src->t.fldptr.type) || src == &type_Class))
 		return 1;
 	// any class pointer = id
-	if (src == &type_id && dst->type == ev_pointer
+	if (is_id (src) && dst->type == ev_pointer
 		&& (is_class (dst->t.fldptr.type) || dst == &type_Class))
 		return 1;
 	// pointer = array

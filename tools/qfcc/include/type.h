@@ -75,6 +75,7 @@ typedef struct type_s {
 	struct type_s *next;
 	int         freeable;
 	int         allocated;
+	struct protocollist_s *protos;
 	const char *encoding;	///< Objective-QC encoding
 	struct def_s *type_def;	///< offset of qfo encodoing
 } type_t;
@@ -154,6 +155,7 @@ int is_float (const type_t *type);
 int is_scalar (const type_t *type);
 int is_math (const type_t *type);
 int is_struct (const type_t *type);
+int is_id (const type_t *type);
 int is_class (const type_t *type);
 int is_array (const type_t *type);
 int type_assignable (const type_t *dst, const type_t *src);

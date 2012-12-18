@@ -464,11 +464,23 @@ type_specifier
 		}
 	| OBJECT protocolrefs
 		{
-			$$ = make_spec (&type_id, 0, 0, 0);
+			if ($2) {
+				type_t      type = *type_id.t.fldptr.type;
+				type.protos = $2;
+				$$ = make_spec (pointer_type (&type), 0, 0, 0);
+			} else {
+				$$ = make_spec (&type_id, 0, 0, 0);
+			}
 		}
 	| CLASS_NAME protocolrefs
 		{
-			$$ = make_spec ($1->type, 0, 0, 0);
+			if ($2) {
+				type_t      type = *$1->type;
+				type.protos = $2;
+				$$ = make_spec (find_type (&type), 0, 0, 0);
+			} else {
+				$$ = make_spec ($1->type, 0, 0, 0);
+			}
 		}
 	// NOTE: fields don't parse the way they should. This is not a problem
 	// for basic types, but functions need special treatment

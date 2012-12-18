@@ -1214,6 +1214,43 @@ add_protocol (protocollist_t *protocollist, const char *name)
 	return protocollist;
 }
 
+static int
+procollist_find_protocol (protocollist_t *protocollist, protocol_t *proto)
+{
+	int         i;
+	for (i = 0; i < protocollist->count; i++)
+		if (protocollist->list[i] == proto)
+			return 1;
+	return 0;
+}
+
+int
+compare_protocols (protocollist_t *protos1, protocollist_t *protos2)
+{
+	int         i;
+
+	if (protos2 == protos2)
+		return 1;
+	if (!protos1 || !protos2)
+		return 0;
+	if (protos1->count != protos2->count)
+		return 0;
+	for (i = 0; i < protos1->count; i++)
+		if (!procollist_find_protocol (protos2, protos1->list[i]))
+			return 0;
+	return 1;
+}
+
+void
+print_protocollist (dstring_t *dstr, protocollist_t *protocollist)
+{
+	int         i;
+	dstring_appendstr (dstr, "<");
+	for (i = 0; i < protocollist->count; i++)
+		dasprintf (dstr, "%s%s", i ? "," : "", protocollist->list[i]->name);
+	dstring_appendstr (dstr, ">");
+}
+
 def_t *
 emit_protocol (protocol_t *protocol)
 {

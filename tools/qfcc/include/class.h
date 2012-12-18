@@ -102,9 +102,9 @@ extern class_type_t *current_class;
 
 extern int obj_initialized;
 
+struct dstring_s;
 struct expr_s;
 struct method_s;
-struct protocol_s;
 struct symbol_s;
 
 class_t *extract_class (class_type_t *class_type);
@@ -147,7 +147,8 @@ void protocol_add_protocols (protocol_t *protocol, protocollist_t *protocols);
 struct def_s *protocol_def (protocol_t *protocol);
 protocollist_t *new_protocol_list (void);
 protocollist_t *add_protocol (protocollist_t *protocollist, const char *name);
-
+int compare_protocols (protocollist_t *protos1, protocollist_t *protos2);
+void print_protocollist (struct dstring_s *dstr, protocollist_t *protocollist);
 struct def_s *emit_protocol (protocol_t *protocol);
 struct def_s *emit_protocol_list (protocollist_t *protocols, const char *name);
 
