@@ -46,6 +46,7 @@
 #include "QF/va.h"
 
 #include "qfcc.h"
+#include "class.h"
 #include "def.h"
 #include "defspace.h"
 #include "diagnostic.h"
@@ -138,6 +139,12 @@ new_def (const char *name, type_t *type, defspace_t *space,
 
 	if (!space && storage != sc_extern)
 		internal_error (0, "non-external def with no storage space");
+
+	if (is_class (type)) {
+		error (0, "statically allocated instance of class %s",
+			   type->t.class->name);
+		return def;
+	}
 
 	if (storage != sc_extern) {
 		int         size = type_size (type);
