@@ -173,6 +173,18 @@ static struct_def_t object_struct[] = {
 	{0, 0}
 };
 
+int
+is_id (const type_t *type)
+{
+	if (type == &type_id)
+		return 1;
+	// type may be a qualified id
+	if (type->type == ev_pointer
+		&& type->t.fldptr.type == type_id.t.fldptr.type)
+		return 1;
+	return 0;
+}
+
 static const char *
 class_get_key (const void *class, void *unused)
 {
