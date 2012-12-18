@@ -154,6 +154,7 @@ int is_integral (const type_t *type);
 int is_float (const type_t *type);
 int is_scalar (const type_t *type);
 int is_math (const type_t *type);
+int is_pointer (const type_t *type);
 int is_struct (const type_t *type);
 int is_class (const type_t *type);
 int is_array (const type_t *type);

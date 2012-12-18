@@ -697,6 +697,14 @@ is_struct (const type_t *type)
 }
 
 int
+is_pointer (const type_t *type)
+{
+	if (type->type == ev_pointer)
+		return 1;
+	return 0;
+}
+
+int
 is_class (const type_t *type)
 {
 	if (type->type == ev_invalid && type->meta == ty_class)
