@@ -130,13 +130,13 @@ STRING		\"(\\.|[^"\\])*\"
 							qc_yylval.expr = new_integer_expr (i);//FIXME
 						else
 							qc_yylval.expr = new_integer_expr (i);
-						return CONST;
+						return VALUE;
 					}
 
 {FLOAT}				{
 						float       f = strtof (yytext, 0);
 						qc_yylval.expr = new_float_expr (f);
-						return CONST;
+						return VALUE;
 					}
 
 {ID}				{
@@ -162,7 +162,7 @@ STRING		\"(\\.|[^"\\])*\"
 						sscanf (yytext, "' %f %f %f '",
 								&v[0], &v[1], &v[2]);
 						qc_yylval.expr = new_vector_expr (v);
-						return CONST;
+						return VALUE;
 					}
 
 '{s}*{m}?{FLOAT}{s}+{m}?{FLOAT}{s}+{m}?{FLOAT}{s}+{m}?{FLOAT}{s}*'	{
@@ -170,7 +170,7 @@ STRING		\"(\\.|[^"\\])*\"
 						sscanf (yytext, "' %f %f %f %f'",
 								&q[0], &q[1], &q[2], &q[3]);
 						qc_yylval.expr = new_quaternion_expr (q);
-						return CONST;
+						return VALUE;
 					}
 
 '(\\[^xX0-7\r\n]|[^'\r\n]|\\[xX][0-9A-Fa-f]+|\\[0-7]+)*'	{
@@ -179,7 +179,7 @@ STRING		\"(\\.|[^"\\])*\"
 						if (str[1])
 							warning (0, "multibyte char constant");
 						qc_yylval.expr = new_integer_expr (*str);
-						return CONST;
+						return VALUE;
 					}
 
 [+\-*/&|^%]=		{
@@ -230,7 +230,7 @@ STRING		\"(\\.|[^"\\])*\"
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
 							qc_yylval.expr = new_integer_expr (ret);
-							return CONST;
+							return VALUE;
 						} else {
 							BEGIN (-ret);
 						}

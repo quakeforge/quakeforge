@@ -141,7 +141,7 @@ int yylex (void);
 %left			'.' '(' '['
 
 %token	<symbol>	CLASS_NAME NAME
-%token	<expr>		CONST STRING
+%token	<expr>		VALUE STRING
 
 %token				LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS
 %token				NIL IFBE IFB IFAE IFA SWITCH CASE DEFAULT ENUM TYPEDEF
@@ -1258,7 +1258,7 @@ arg_list
 	;
 
 const
-	: CONST
+	: VALUE
 	| NIL						{ $$ = new_nil_expr (); }
 	| string
 	;

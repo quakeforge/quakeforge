@@ -111,13 +111,13 @@ FRAMEID		{ID}(\.{ID})*
 {INTEGER}			{
 						int         i = strtol (yytext, 0, 0);
 						qp_yylval.expr = new_integer_expr (i);
-						return CONST;
+						return VALUE;
 					}
 
 {FLOAT}				{
 						float       f = strtof (yytext, 0);
 						qp_yylval.expr = new_float_expr (f);
-						return CONST;
+						return VALUE;
 					}
 
 {ID}				return keyword_or_id (yytext);
@@ -125,7 +125,7 @@ FRAMEID		{ID}(\.{ID})*
 \"(\\.|[^"\\])*\"	{
 						const char *s = make_string (yytext, 0);
 						qp_yylval.expr = new_string_expr (s);
-						return CONST;
+						return VALUE;
 					}
 
 '{s}*{m}{FLOAT}{s}+{m}{FLOAT}{s}+{m}{FLOAT}{s}*'  {
@@ -133,7 +133,7 @@ FRAMEID		{ID}(\.{ID})*
 						sscanf (yytext, "' %f %f %f '",
 								&v[0], &v[1], &v[2]);
 						qp_yylval.expr = new_vector_expr (v);
-						return CONST;
+						return VALUE;
 					}
 
 '{s}*{m}{FLOAT}{s}+{m}{FLOAT}{s}+{m}{FLOAT}{s}+{m}{FLOAT}{s}*'  {
@@ -141,7 +141,7 @@ FRAMEID		{ID}(\.{ID})*
 						sscanf (yytext, "' %f %f %f %f'",
 								&q[0], &q[1], &q[2], &q[3]);
 						qp_yylval.expr = new_quaternion_expr (q);
-						return CONST;
+						return VALUE;
 					}
 
 {RELOP}				{
@@ -168,7 +168,7 @@ FRAMEID		{ID}(\.{ID})*
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
 							qp_yylval.expr = new_integer_expr (ret);
-							return CONST;
+							return VALUE;
 						} else {
 							BEGIN (-ret);
 						}

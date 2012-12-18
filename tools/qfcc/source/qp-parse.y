@@ -123,7 +123,7 @@ int yylex (void);
 
 %token	<type>		TYPE TYPE_NAME
 %token	<symbol>	ID
-%token	<expr>		CONST
+%token	<expr>		VALUE
 
 %token	PROGRAM VAR ARRAY OF FUNCTION PROCEDURE PBEGIN END IF THEN ELSE
 %token	WHILE DO RANGE ASSIGNOP NOT ELLIPSIS
@@ -217,7 +217,7 @@ declarations
 
 type
 	: standard_type
-	| ARRAY '[' CONST RANGE CONST ']' OF standard_type
+	| ARRAY '[' VALUE RANGE VALUE ']' OF standard_type
 		{
 			$$ = based_array_type ($8, expr_integer ($3), expr_integer ($5));
 		}
@@ -248,7 +248,7 @@ subprogram_declaration
 			current_symtab = current_symtab->parent;
 			current_storage = $<storage>3;
 		}
-	| subprogram_head ASSIGNOP '#' CONST ';'
+	| subprogram_head ASSIGNOP '#' VALUE ';'
 		{
 			build_builtin_function ($1, $4, 0);
 		}
@@ -411,7 +411,7 @@ primary
 			if ($$->type == ex_symbol && extract_type ($$) == ev_func)
 				$$ = function_expr ($$, 0);
 		}
-	| CONST
+	| VALUE
 	| name '(' expression_list ')'			{ $$ = function_expr ($1, $3); }
 	| '(' expression ')'					{ $$ = $2; }
 	;
