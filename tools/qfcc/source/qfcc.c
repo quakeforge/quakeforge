@@ -466,6 +466,7 @@ file_language (const char *file, const char *ext)
 	static ext_lang_t ext_lang[] = {
 		{".r",		lang_ruamoko},
 		{".c",		lang_ruamoko},
+		{".m",		lang_ruamoko},
 		{".qc",		lang_ruamoko},
 		{".pas",	lang_pascal},
 		{".p",		lang_pascal},
