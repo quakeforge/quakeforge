@@ -566,8 +566,7 @@ struct_specifier
 	;
 
 struct_defs
-	: /* empty */	//FIXME for new syntax
-	| struct_defs struct_def ';'
+	: struct_def_list ';'
 	| DEFS '(' identifier ')'
 		{
 			$3 = check_undefined ($3);
@@ -581,6 +580,11 @@ struct_defs
 												  current_symtab);
 			}
 		}
+	;
+
+struct_def_list
+	: struct_def
+	| struct_def_list ';' struct_def
 	;
 
 struct_def

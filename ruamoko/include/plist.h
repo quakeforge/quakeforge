@@ -3,9 +3,7 @@
 
 #include "qfile.h"
 
-struct plitem_s {int dummy;};
-#define PL_TEST(item) (item.dummy)
-typedef struct plitem_s plitem_t;
+typedef struct plitem_s *plitem_t;
 typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;	// possible types
 
 @extern plitem_t PL_GetFromFile (QFile file);

@@ -27,7 +27,7 @@
 	local string classname = nil;
 	local id class;
 
-	if (!PL_TEST (item))
+	if (!item)
 		return nil;
 	switch (PL_Type (item)) {
 	case QFDictionary:

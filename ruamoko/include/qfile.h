@@ -1,7 +1,6 @@
 #ifndef __ruamoko_qfile_h
 #define __ruamoko_qfile_h
 
-struct _qfile_t {};
 typedef struct _qfile_t *QFile;
 
 @extern int Qrename (string old, string new);
