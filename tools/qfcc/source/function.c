@@ -466,6 +466,10 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 			continue;					// ellipsis marker
 		if (!p->type)
 			continue;					// non-param selector
+		if (!p->name) {
+			error (0, "parameter name omitted");
+			p->name = save_string ("");
+		}
 		param = new_symbol_type (p->name, p->type);
 		initialize_def (param, param->type, 0, symtab->space, sc_param);
 		i++;
