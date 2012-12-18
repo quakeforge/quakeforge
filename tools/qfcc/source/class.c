@@ -178,9 +178,14 @@ is_id (const type_t *type)
 {
 	if (type == &type_id)
 		return 1;
-	// type may be a qualified id
-	if (type->type == ev_pointer
-		&& type->t.fldptr.type == type_id.t.fldptr.type)
+	// type may be a qualified id, in which case it will be a pointer to
+	// a qualified obj_object struct
+	if (type->type != ev_pointer)
+		return 0;
+	if (!is_struct (type->t.fldptr.type))
+		return 0;
+	// if the the symtabs match, then type is id in disguise
+	if (type->t.fldptr.type->t.symtab == type_obj_object.t.symtab)
 		return 1;
 	return 0;
 }

@@ -461,6 +461,8 @@ print_type_str (dstring_t *str, const type_t *type)
 			switch (type->meta) {
 				case ty_class:
 					dasprintf (str, " %s", type->t.class->name);
+					if (type->protos)
+						print_protocollist (str, type->protos);
 					break;
 				case ty_enum:
 					dasprintf (str, " enum %s", type->name);
