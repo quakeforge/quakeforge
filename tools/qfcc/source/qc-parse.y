@@ -626,7 +626,6 @@ new_name
 		}
 	;
 
-//FIXME function overloading
 var_decl
 	: new_name
 		{
@@ -649,7 +648,6 @@ var_decl
 	| '(' var_decl ')'						{ $$ = $2; }
 	;
 
-//FIXME function overloading
 function_decl
 	: '*' function_decl
 		{
