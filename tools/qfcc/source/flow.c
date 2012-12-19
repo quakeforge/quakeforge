@@ -886,6 +886,89 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 }
 
 static void
+flow_find_successors (flowgraph_t *graph)
+{
+	int         i;
+	flownode_t *node;
+	sblock_t   *sb;
+	statement_t *st;
+	sblock_t  **target_list, **target;
+
+	// "convert" the basic blocks connections to flow-graph connections
+	for (i = 0; i < graph->num_nodes + 2; i++) {
+		node = graph->nodes[i];
+		set_empty (node->successors);
+		set_empty (node->predecessors);
+	}
+	graph->num_edges = 0;
+
+	for (i = 0; i < graph->num_nodes; i++) {
+		node = graph->nodes[i];
+		sb = node->sblock;
+		st = 0;
+		if (sb->statements)
+			st = (statement_t *) sb->tail;
+		//NOTE: if st is null (the sblock has no statements), statement_is_*
+		//will return false
+		//FIXME jump/jumpb
+		if (statement_is_goto (st) || statement_is_jumpb (st)) {
+			// sb's next is never followed.
+			target_list = statement_get_targetlist (st);
+			for (target = target_list; *target; target++)
+				set_add (node->successors, (*target)->flownode->id);
+			free (target_list);
+		} else if (statement_is_cond (st)) {
+			// branch: either sb's next or the conditional statment's
+			// target will be followed.
+			set_add (node->successors, sb->next->flownode->id);
+			target_list = statement_get_targetlist (st);
+			for (target = target_list; *target; target++)
+				set_add (node->successors, (*target)->flownode->id);
+			free (target_list);
+		} else if (statement_is_return (st)) {
+			// exit from function (dead end)
+			// however, make the exit dummy block the node's successor
+			set_add (node->successors, graph->num_nodes + 1);
+		} else {
+			// there is no flow-control statement in sb, so sb's next
+			// must be followed
+			if (sb->next) {
+				set_add (node->successors, sb->next->flownode->id);
+			} else {
+				bug (0, "code drops off the end of the function");
+				// this shouldn't happen
+				// however, make the exit dummy block the node's successor
+				set_add (node->successors, graph->num_nodes + 1);
+			}
+		}
+		graph->num_edges += set_size (node->successors);
+	}
+	// set the successor for the entry dummy node to the real entry node
+	node = graph->nodes[graph->num_nodes];
+	set_add (node->successors, 0);
+	graph->num_edges += set_size (node->successors);
+}
+
+static void
+flow_make_edges (flowgraph_t *graph)
+{
+	int         i, j;
+	flownode_t *node;
+	set_iter_t *succ;
+
+	graph->edges = malloc (graph->num_edges * sizeof (flowedge_t *));
+	for (j = 0, i = 0; i < graph->num_nodes + 2; i++) {
+		node = graph->nodes[i];
+		for (succ = set_first (node->successors); succ;
+			 succ = set_next (succ), j++) {
+			set_add (node->edges, j);
+			graph->edges[j].tail = i;
+			graph->edges[j].head = succ->value;
+		}
+	}
+}
+
+static void
 flow_find_predecessors (flowgraph_t *graph)
 {
 	int         i;
@@ -1078,10 +1161,7 @@ flow_build_graph (function_t *func)
 	flowgraph_t *graph;
 	flownode_t *node;
 	sblock_t   *sb;
-	sblock_t  **target_list, **target;
-	statement_t *st;
-	set_iter_t *succ;
-	int         i, j;
+	int         i;
 
 	graph = new_graph ();
 	graph->func = func;
@@ -1099,63 +1179,8 @@ flow_build_graph (function_t *func)
 	node = flow_make_node (0, graph->num_nodes + 1, func);
 	graph->nodes[graph->num_nodes + 1] = node;
 
-	// "convert" the basic blocks connections to flow-graph connections
-	for (i = 0; i < graph->num_nodes; i++) {
-		node = graph->nodes[i];
-		sb = node->sblock;
-		st = 0;
-		if (sb->statements)
-			st = (statement_t *) sb->tail;
-		//NOTE: if st is null (the sblock has no statements), statement_is_*
-		//will return false
-		//FIXME jump/jumpb
-		if (statement_is_goto (st) || statement_is_jumpb (st)) {
-			// sb's next is never followed.
-			target_list = statement_get_targetlist (st);
-			for (target = target_list; *target; target++)
-				set_add (node->successors, (*target)->flownode->id);
-			free (target_list);
-		} else if (statement_is_cond (st)) {
-			// branch: either sb's next or the conditional statment's
-			// target will be followed.
-			set_add (node->successors, sb->next->flownode->id);
-			target_list = statement_get_targetlist (st);
-			for (target = target_list; *target; target++)
-				set_add (node->successors, (*target)->flownode->id);
-			free (target_list);
-		} else if (statement_is_return (st)) {
-			// exit from function (dead end)
-			// however, make the exit dummy block the node's successor
-			set_add (node->successors, graph->num_nodes + 1);
-		} else {
-			// there is no flow-control statement in sb, so sb's next
-			// must be followed
-			if (sb->next) {
-				set_add (node->successors, sb->next->flownode->id);
-			} else {
-				bug (0, "code drops off the end of the function");
-				// this shouldn't happen
-				// however, make the exit dummy block the node's successor
-				set_add (node->successors, graph->num_nodes + 1);
-			}
-		}
-		graph->num_edges += set_size (node->successors);
-	}
-	// set the successor for the entry dummy node to the real entry node
-	node = graph->nodes[graph->num_nodes];
-	set_add (node->successors, 0);
-	graph->num_edges += set_size (node->successors);
-
-	graph->edges = malloc (graph->num_edges * sizeof (flowedge_t *));
-	for (j = 0, i = 0; i < graph->num_nodes + 2; i++) {
-		node = graph->nodes[i];
-		for (succ = set_first (node->successors); succ;
-			 succ = set_next (succ), j++) {
-			set_add (node->edges, j);
-			graph->edges[j].tail = i;
-			graph->edges[j].head = succ->value;
-		}
-	}
+	flow_find_successors (graph);
+	flow_make_edges (graph);
 	flow_build_dfst (graph);
 	flow_find_predecessors (graph);
 	flow_find_dominators (graph);
