@@ -684,6 +684,7 @@ obj_find_message (progs_t *pr, pr_class_t *class, pr_sel_t *selector)
 				}
 				if (sel->sel_id == selector->sel_id) {
 					if (dev & SYS_RUA_MSG) {
+						names = pr->selector_names;
 						Sys_Printf ("found %s: %x\n",
 									PR_GetString (pr, names[selector->sel_id]),
 									method->method_imp);
