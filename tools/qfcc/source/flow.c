@@ -1042,7 +1042,7 @@ flow_build_dfst (flowgraph_t *graph)
 	set_add (visited, graph->num_nodes);
 	set_add (visited, graph->num_nodes + 1);
 
-	graph->dfo = malloc (graph->num_nodes * sizeof (unsigned));
+	graph->dfo = calloc (graph->num_nodes, sizeof (unsigned));
 	graph->dfst = set_new ();
 	i = graph->num_nodes;
 	df_search (graph, visited, &i, 0);
