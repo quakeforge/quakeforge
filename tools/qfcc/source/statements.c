@@ -281,7 +281,7 @@ free_statement (statement_t *s)
 //		free_operand (s->opc);
 	FREE (statements, s);
 }
-#if 0
+
 static void
 free_sblock (sblock_t *sblock)
 {
@@ -292,7 +292,7 @@ free_sblock (sblock_t *sblock)
 	}
 	FREE (sblocks, sblock);
 }
-#endif
+
 operand_t *
 def_operand (def_t *def, type_t *type)
 {
@@ -1292,6 +1292,79 @@ statement_slist (sblock_t *sblock, expr_t *e)
 }
 
 static void
+move_labels (sblock_t *dst, sblock_t *src)
+{
+	ex_label_t *src_labels = src->labels;
+
+	if (!src_labels)
+		return;
+	while (src_labels->next)
+		src_labels = src_labels->next;
+	src_labels->next = dst->labels;
+	dst->labels = src->labels;
+	src->labels = 0;
+}
+
+static void
+move_code (sblock_t *dst, sblock_t *src)
+{
+	if (!src->statements)
+		return;
+	*dst->tail = src->statements;
+	dst->tail = src->tail;
+	src->statements = 0;
+	src->tail = &src->statements;
+}
+
+static sblock_t *
+merge_blocks (sblock_t *blocks)
+{
+	sblock_t  **sb;
+	sblock_t   *sblock;
+	statement_t *s;
+
+	if (!blocks)
+		return blocks;
+	// merge any blocks that can be merged
+	for (sblock = blocks; sblock; sblock = sblock->next) {
+		if (sblock->statements && sblock->next) {
+			s = (statement_t *) sblock->tail;
+			// func and flow statements end blocks
+			if (s->type >= st_func)
+				continue;
+			// labels begin blocks
+			if (sblock->next->labels)
+				continue;
+			// blocks can be merged
+			move_code (sblock, sblock->next);
+		}
+	}
+	for (sb = &blocks; (*sb)->next;) {
+		if (!(*sb)->statements) {
+			// empty non-final block
+			// move labels from empty block to next block
+			if ((*sb)->labels)
+				move_labels ((*sb)->next, (*sb));
+			sblock = *sb;
+			*sb = (*sb)->next;
+			free_sblock (sblock);
+			continue;
+		}
+		sb = &(*sb)->next;
+	}
+	// so long as blocks doesn't become null, remove an empty final block
+	if (sb != &blocks) {
+		if (!(*sb)->statements && !(*sb)->labels) {
+			// empty final block with no labels
+			sblock = *sb;
+			*sb = (*sb)->next;
+			free_sblock (sblock);
+		}
+	}
+	return blocks;
+}
+
+static void
 remove_label_from_dest (ex_label_t *label)
 {
 	sblock_t   *sblock;
@@ -1408,6 +1481,7 @@ make_statements (expr_t *e)
 	if (options.block_dot.expr)
 		dump_dot ("expr", e, dump_dot_expr);
 	statement_slist (sblock, e);
+	sblock = merge_blocks (sblock);
 	if (options.block_dot.initial)
 		dump_dot ("initial", sblock, dump_dot_sblock);
 	thread_jumps (sblock);
