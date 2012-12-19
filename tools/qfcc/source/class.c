@@ -199,26 +199,46 @@ obj_is_class (const type_t *type)
 }
 
 int
+obj_is_Class (const type_t *type)
+{
+	if (type == &type_Class)
+		return 1;
+	// type may be a qualified Class, in which case it will be a pointer to
+	// a qualified obj_class struct
+	if (type->type != ev_pointer)
+		return 0;
+	if (!is_struct (type->t.fldptr.type))
+		return 0;
+	// if the the symtabs match, then type is Class in disguise
+	if (type->t.fldptr.type->t.symtab == type_obj_class.t.symtab)
+		return 1;
+	return 0;
+}
+
+int
+obj_is_classptr (const type_t *type)
+{
+	// easy cases first :)
+	if (obj_is_id (type) || obj_is_Class (type))
+		return 1;
+	if (type->type != ev_pointer)
+		return 0;
+	type = type->t.fldptr.type;
+	if (obj_is_class (type))
+		return 1;
+	return 0;
+}
+
+int
 obj_types_assignable (const type_t *dst, const type_t *src)
 {
 	class_t    *dst_class, *src_class;
 
-	if (obj_is_id (dst)
-		&& (obj_is_id (src)
-			|| obj_is_class (src->t.fldptr.type)
-			|| src == &type_Class)) {
-		return 1;
-	}
-	if (obj_is_id (src)
-		&& (obj_is_id (dst)
-			|| obj_is_class (dst->t.fldptr.type)
-			|| dst == &type_Class)) {
-		return 1;
-	}
-
-	if (!obj_is_class (dst->t.fldptr.type)
-		|| !obj_is_class (src->t.fldptr.type))
+	if (!obj_is_classptr (dst) || !obj_is_classptr (src))
 		return -1;
+
+	if (obj_is_id (dst) || obj_is_id (src))
+		return 1;
 
 	// check dst is a base class of src
 	dst_class = dst->t.fldptr.type->t.class;
