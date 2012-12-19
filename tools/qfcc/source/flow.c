@@ -899,11 +899,6 @@ flow_find_predecessors (flowgraph_t *graph)
 			set_add (graph->nodes[succ->value]->predecessors, i);
 		}
 	}
-	for (i = 1; i < graph->num_nodes; i++) {
-		node = graph->nodes[i];
-		if (set_is_empty (node->predecessors))
-			internal_error (0, "non-initial node with no predecessors");
-	}
 }
 
 static void
