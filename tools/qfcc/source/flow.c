@@ -1063,6 +1063,9 @@ flow_make_node (sblock_t *sblock, int id, function_t *func)
 	node->id = id;
 	node->sblock = sblock;
 	node->graph = func->graph;
+	// Mark the node as unreachable. flow_build_dfst() will mark reachable
+	// nodes with a value >= 0
+	node->dfn = -1;
 	return node;
 }
 
