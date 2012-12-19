@@ -63,8 +63,8 @@ typedef struct flowedge_s {
 */
 typedef struct flownode_s {
 	struct flownode_s *next;	///< for ALLOC
-	unsigned    id;				///< index of this node in the flow graph
-	unsigned    dfn;			///< depth-first ordering of this node
+	int         id;				///< index of this node in the flow graph
+	int         dfn;			///< depth-first ordering of this node
 	struct flowgraph_s *graph;	///< graph owning this node
 	struct set_s *predecessors;	///< predecessors of this node
 	struct set_s *successors;	///< successors of this node
@@ -101,7 +101,7 @@ typedef struct flowgraph_s {
 	flowedge_t *edges;			///< array of all edges in the graph
 	int         num_edges;
 	struct set_s *dfst;			///< edges in the depth-first search tree
-	unsigned   *dfo;			///< depth-first order of nodes
+	int        *dfo;			///< depth-first order of nodes
 	flowloop_t *loops;			///< linked list of natural loops
 } flowgraph_t;
 
