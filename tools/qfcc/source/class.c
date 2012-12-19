@@ -190,6 +190,50 @@ obj_is_id (const type_t *type)
 	return 0;
 }
 
+int
+obj_is_class (const type_t *type)
+{
+	if (type->type == ev_invalid && type->meta == ty_class)
+		return 1;
+	return 0;
+}
+
+int
+obj_types_assignable (const type_t *dst, const type_t *src)
+{
+	class_t    *dst_class, *src_class;
+
+	if (obj_is_id (dst)
+		&& (obj_is_id (src)
+			|| obj_is_class (src->t.fldptr.type)
+			|| src == &type_Class)) {
+		return 1;
+	}
+	if (obj_is_id (src)
+		&& (obj_is_id (dst)
+			|| obj_is_class (dst->t.fldptr.type)
+			|| dst == &type_Class)) {
+		return 1;
+	}
+
+	if (!obj_is_class (dst->t.fldptr.type)
+		|| !obj_is_class (src->t.fldptr.type))
+		return -1;
+
+	// check dst is a base class of src
+	dst_class = dst->t.fldptr.type->t.class;
+	src_class = src->t.fldptr.type->t.class;
+	//printf ("%s %s\n", dst_class->name, src_class->name);
+	while (dst_class != src_class && src_class) {
+		src_class = src_class->super_class;
+		//if (src_class)
+		//	printf ("%s %s\n", dst_class->name, src_class->name);
+	}
+	if (dst_class == src_class)
+		return 1;
+	return 0;
+}
+
 static const char *
 class_get_key (const void *class, void *unused)
 {

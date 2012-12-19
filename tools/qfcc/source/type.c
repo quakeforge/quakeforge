@@ -101,7 +101,7 @@ low_level_type (type_t *type)
 		return type->type;
 	if (is_enum (type))
 		return type_default->type;
-	if (is_struct (type) || is_class (type)) {
+	if (is_struct (type)) {
 		//FIXME does this break anything?
 		//maybe the peephole optimizer should do this sort of thing.
 		if (type_size (type) == 1)
@@ -705,14 +705,6 @@ is_pointer (const type_t *type)
 }
 
 int
-is_class (const type_t *type)
-{
-	if (type->type == ev_invalid && type->meta == ty_class)
-		return 1;
-	return 0;
-}
-
-int
 is_array (const type_t *type)
 {
 	if (type->type == ev_invalid && type->meta == ty_array)
@@ -723,21 +715,13 @@ is_array (const type_t *type)
 int
 type_assignable (const type_t *dst, const type_t *src)
 {
-	class_t    *dst_class, *src_class;
+	int         ret;
 
 	// same type
 	if (dst == src)
 		return 1;
 	// any field = any field
 	if (dst->type == ev_field && src->type == ev_field)
-		return 1;
-	// id = any class pointer
-	if (obj_is_id (dst) && src->type == ev_pointer
-		&& (is_class (src->t.fldptr.type) || src == &type_Class))
-		return 1;
-	// any class pointer = id
-	if (obj_is_id (src) && dst->type == ev_pointer
-		&& (is_class (dst->t.fldptr.type) || dst == &type_Class))
 		return 1;
 	// pointer = array
 	if (dst->type == ev_pointer
@@ -748,25 +732,20 @@ type_assignable (const type_t *dst, const type_t *src)
 	}
 	if (dst->type != ev_pointer || src->type != ev_pointer)
 		return is_scalar (dst) && is_scalar (src);
+
 	// pointer = pointer
+	// give the object system first shot because the pointee types might have
+	// protocols attached.
+	ret = obj_types_assignable (dst, src);
+	// ret < 0 means obj_types_assignable can't decide
+	if (ret >= 0)
+		return ret;
+
 	dst = dst->t.fldptr.type;
 	src = src->t.fldptr.type;
 	if (dst->type == ev_void)
 		return 1;
 	if (src->type == ev_void)
-		return 1;
-	if (!is_class (dst) || !is_class (src))
-		return 0;
-	// check dst is a base class of src
-	dst_class = dst->t.class;
-	src_class = src->t.class;
-	//printf ("%s %s\n", dst_class->class_name, src_class->class_name);
-	while (dst_class != src_class && src_class) {
-		src_class = src_class->super_class;
-		//if (src_class)
-		//	printf ("%s %s\n", dst_class->class_name, src_class->class_name);
-	}
-	if (dst_class == src_class)
 		return 1;
 	return 0;
 }

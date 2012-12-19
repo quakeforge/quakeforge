@@ -582,7 +582,7 @@ struct_defs
 	| DEFS '(' identifier ')'
 		{
 			$3 = check_undefined ($3);
-			if (!$3->type || !is_class ($3->type)) {
+			if (!$3->type || !obj_is_class ($3->type)) {
 				error (0, "`%s' is not a class", $3->name);
 			} else {
 				// replace the struct symbol table with one built from
@@ -1338,7 +1338,7 @@ class_name
 	: identifier %prec CLASS_NOT_CATEGORY
 		{
 			$1 = check_undefined ($1);
-			if (!$1->type || !is_class ($1->type)) {
+			if (!$1->type || !obj_is_class ($1->type)) {
 				error (0, "`%s' is not a class %p", $1->name, $1->type);
 				$$ = get_class (0, 1);
 			} else {

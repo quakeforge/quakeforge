@@ -156,7 +156,6 @@ int is_scalar (const type_t *type);
 int is_math (const type_t *type);
 int is_pointer (const type_t *type);
 int is_struct (const type_t *type);
-int is_class (const type_t *type);
 int is_array (const type_t *type);
 int type_assignable (const type_t *dst, const type_t *src);
 int type_size (const type_t *type);

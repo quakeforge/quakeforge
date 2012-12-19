@@ -108,6 +108,8 @@ struct method_s;
 struct symbol_s;
 
 int obj_is_id (const struct type_s *type);
+int obj_is_class (const struct type_s *type);
+int obj_types_assignable (const struct type_s *dst, const struct type_s *src);
 
 class_t *extract_class (class_type_t *class_type);
 const char *get_class_name (class_type_t *class_type, int pretty);

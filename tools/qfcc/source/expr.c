@@ -989,7 +989,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			e = new_binary_expr ('&', e1, e2);
 			e->e.expr.type = pointer_type (field->type);
 			return unary_expr ('.', e);
-		} else if (is_class (t1->t.fldptr.type)) {
+		} else if (obj_is_class (t1->t.fldptr.type)) {
 			class_t    *class = t1->t.fldptr.type->t.class;
 			symbol_t   *sym = e2->e.symbol;//FIXME need to check
 			symbol_t   *ivar;
@@ -1039,7 +1039,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			e = address_expr (e1, e2, field->type);
 			return unary_expr ('.', e);
 		}
-	} else if (is_class (t1)) {
+	} else if (obj_is_class (t1)) {
 		internal_error (e1, "access to class instances not implemented");
 	}
 	return type_mismatch (e1, e2, '.');
@@ -2830,7 +2830,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		} else {
 			if (rec_type->type == ev_pointer)
 				rec_type = rec_type->t.fldptr.type;
-			if (!is_class (rec_type))
+			if (!obj_is_class (rec_type))
 				return error (receiver, "not a class/object");
 
 			if (self) {
