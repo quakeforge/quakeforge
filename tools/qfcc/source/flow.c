@@ -899,6 +899,7 @@ flow_find_successors (flowgraph_t *graph)
 		node = graph->nodes[i];
 		set_empty (node->successors);
 		set_empty (node->predecessors);
+		set_empty (node->edges);
 	}
 	graph->num_edges = 0;
 
@@ -956,6 +957,8 @@ flow_make_edges (flowgraph_t *graph)
 	flownode_t *node;
 	set_iter_t *succ;
 
+	if (graph->edges);
+		free (graph->edges);
 	graph->edges = malloc (graph->num_edges * sizeof (flowedge_t *));
 	for (j = 0, i = 0; i < graph->num_nodes + 2; i++) {
 		node = graph->nodes[i];
@@ -1125,11 +1128,42 @@ flow_build_dfst (flowgraph_t *graph)
 	set_add (visited, graph->num_nodes);
 	set_add (visited, graph->num_nodes + 1);
 
+	if (graph->dfo)
+		free (graph->dfo);
+	if (graph->dfst)
+		set_delete (graph->dfst);
 	graph->dfo = calloc (graph->num_nodes, sizeof (int));
 	graph->dfst = set_new ();
 	i = graph->num_nodes;
 	df_search (graph, visited, &i, 0);
 	set_delete (visited);
+}
+
+static int
+flow_remove_unreachable_nodes (flowgraph_t *graph)
+{
+	int         i, j;
+	flownode_t *node;
+
+	for (i = 0, j = 0; i < graph->num_nodes; i++) {
+		node = graph->nodes[i];
+		if (node->dfn < 0)	// skip over unreachable nodes
+			continue;
+		node->id = j;		// new node number
+		graph->nodes[j++] = node;
+	}
+	graph->nodes[j] = graph->nodes[i];			// copy entry dummy node
+	graph->nodes[j + 1] = graph->nodes[i + 1];	// copy exit dummy node
+
+	// kill the pointers to unreachable nodes
+	for (i = j; i < graph->num_nodes; i++)
+		graph->nodes[i + 2] = 0;
+
+	if (j < graph->num_nodes) {
+		graph->num_nodes = j;
+		return 1;
+	}
+	return 0;
 }
 
 static flownode_t *
@@ -1162,6 +1196,7 @@ flow_build_graph (function_t *func)
 	flownode_t *node;
 	sblock_t   *sb;
 	int         i;
+	int         pass = 0;
 
 	graph = new_graph ();
 	graph->func = func;
@@ -1179,9 +1214,16 @@ flow_build_graph (function_t *func)
 	node = flow_make_node (0, graph->num_nodes + 1, func);
 	graph->nodes[graph->num_nodes + 1] = node;
 
-	flow_find_successors (graph);
-	flow_make_edges (graph);
-	flow_build_dfst (graph);
+	do {
+		if (pass > 1)
+			internal_error (0, "too many unreachable node passes");
+		flow_find_successors (graph);
+		flow_make_edges (graph);
+		flow_build_dfst (graph);
+		if (options.block_dot.flow)
+			dump_dot (va ("flow-%d", pass), graph, dump_dot_flow);
+		pass++;
+	} while (flow_remove_unreachable_nodes (graph));
 	flow_find_predecessors (graph);
 	flow_find_dominators (graph);
 	flow_find_loops (graph);
@@ -1196,8 +1238,6 @@ flow_data_flow (function_t *func)
 	flow_build_statements (func);
 	flow_build_vars (func);
 	graph = flow_build_graph (func);
-	if (options.block_dot.flow)
-		dump_dot ("flow", graph, dump_dot_flow);
 	flow_reaching_defs (graph);
 	if (options.block_dot.reaching)
 		dump_dot ("reaching", graph, dump_dot_flow_reaching);
