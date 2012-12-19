@@ -1062,6 +1062,8 @@ flow_make_node (sblock_t *sblock, int id, function_t *func)
 	node->global_vars = func->global_vars;
 	node->id = id;
 	node->sblock = sblock;
+	if (sblock)
+		sblock->flownode = node;
 	node->graph = func->graph;
 	// Mark the node as unreachable. flow_build_dfst() will mark reachable
 	// nodes with a value >= 0
@@ -1085,11 +1087,11 @@ flow_build_graph (function_t *func)
 	graph->func = func;
 	func->graph = graph;
 	for (sb = sblock; sb; sb = sb->next)
-		sb->number = graph->num_nodes++;
+		graph->num_nodes++;
 	// + 2 for the uninitialized dummy head block and the live dummy end block
 	graph->nodes = malloc ((graph->num_nodes + 2) * sizeof (flownode_t *));
-	for (sb = sblock; sb; sb = sb->next)
-		graph->nodes[sb->number] = flow_make_node (sb, sb->number, func);
+	for (i = 0, sb = sblock; sb; i++, sb = sb->next)
+		graph->nodes[i] = flow_make_node (sb, i, func);
 	// Create the dummy node for detecting uninitialized variables
 	node = flow_make_node (0, graph->num_nodes, func);
 	graph->nodes[graph->num_nodes] = node;
@@ -1107,19 +1109,20 @@ flow_build_graph (function_t *func)
 		//NOTE: if st is null (the sblock has no statements), statement_is_*
 		//will return false
 		//FIXME jump/jumpb
-		if (statement_is_goto (st)) {
+		if (statement_is_goto (st) || statement_is_jumpb (st)) {
 			// sb's next is never followed.
-			set_add (node->successors, statement_get_target (st)->number);
-		} else if (statement_is_jumpb (st)) {
 			target_list = statement_get_targetlist (st);
 			for (target = target_list; *target; target++)
-				set_add (node->successors, (*target)->number);
+				set_add (node->successors, (*target)->flownode->id);
 			free (target_list);
 		} else if (statement_is_cond (st)) {
 			// branch: either sb's next or the conditional statment's
 			// target will be followed.
-			set_add (node->successors, sb->next->number);
-			set_add (node->successors, statement_get_target (st)->number);
+			set_add (node->successors, sb->next->flownode->id);
+			target_list = statement_get_targetlist (st);
+			for (target = target_list; *target; target++)
+				set_add (node->successors, (*target)->flownode->id);
+			free (target_list);
 		} else if (statement_is_return (st)) {
 			// exit from function (dead end)
 			// however, make the exit dummy block the node's successor
@@ -1128,7 +1131,7 @@ flow_build_graph (function_t *func)
 			// there is no flow-control statement in sb, so sb's next
 			// must be followed
 			if (sb->next) {
-				set_add (node->successors, sb->next->number);
+				set_add (node->successors, sb->next->flownode->id);
 			} else {
 				bug (0, "code drops off the end of the function");
 				// this shouldn't happen
