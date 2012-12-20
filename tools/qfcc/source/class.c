@@ -229,14 +229,89 @@ obj_is_classptr (const type_t *type)
 	return 0;
 }
 
+static protocollist_t *
+obj_get_class_protos (const type_t *type)
+{
+	if (is_pointer (type))
+		type = type->t.fldptr.type;
+	if (obj_is_class (type))
+		return type->t.class->protocols;
+	return 0;
+}
+
+static protocollist_t *
+obj_get_protos (const type_t *type)
+{
+	if (is_pointer (type))
+		type = type->t.fldptr.type;
+	return type->protos;
+}
+
+static const char *
+obj_classname (const type_t *type)
+{
+	static dstring_t *str;
+	protocollist_t *protos;
+
+	if (!str)
+		str = dstring_new ();
+	dstring_clearstr (str);
+	if (obj_is_id (type)) {
+		dstring_copystr (str, "id");
+	} else if (obj_is_Class (type)) {
+		dstring_copystr (str, "Class");
+	} else {
+		if (is_pointer (type))
+			type = type->t.fldptr.type;
+		if (obj_is_class (type))
+			dstring_copystr (str, type->t.class->name);
+	}
+	if ((protos = obj_get_protos (type)))
+		print_protocollist (str, protos);
+	return str->str;
+}
+
 int
 obj_types_assignable (const type_t *dst, const type_t *src)
 {
 	class_t    *dst_class, *src_class;
+	int         dst_is_proto, src_is_proto;
+	protocollist_t *dst_protos = 0, *src_protos = 0;
+	int         i;
 
+	//puts ("%$$\"$#%");
 	if (!obj_is_classptr (dst) || !obj_is_classptr (src))
 		return -1;
 
+	dst_is_proto = obj_is_id (dst) && (dst_protos = obj_get_protos (dst));
+	src_is_proto = obj_is_id (src) && (src_protos = obj_get_protos (src));
+
+	if (dst_is_proto) {
+		if (src_is_proto) {
+			// id <protos> = id <protos>
+			for (i = 0; i < dst_protos->count; i++) {
+				if (!procollist_find_protocol (src_protos,
+											   dst_protos->list[i])) {
+					warning (0, "type %s does not conform to the %s protocol",
+							 obj_classname (src), dst_protos->list[i]->name);
+					return 1;
+				}
+			}
+		} else if (!obj_is_id (src)) {
+			src_protos = obj_get_class_protos (src);
+			for (i = 0; i < dst_protos->count; i++) {
+				if (!procollist_find_protocol (src_protos,
+											   dst_protos->list[i])) {
+					warning (0,
+							 "class %s does not implement to the %s protocol",
+							 obj_classname (src), dst_protos->list[i]->name);
+					return 1;
+				}
+			}
+		}
+	} else if (src_is_proto) {
+	} else {
+	}
 	if (obj_is_id (dst) || obj_is_id (src))
 		return 1;
 
