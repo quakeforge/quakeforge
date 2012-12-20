@@ -798,18 +798,22 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			flow_add_op_var (use, s->opb);
 			if (!strcmp (s->opcode, "<MOVE>")) {
 				flow_add_op_var (def, s->opc);
-			} else if (!strcmp (s->opcode, "<MOVEP>")
-				&& s->opc->op_type == op_value
-				&& s->opc->o.value->type == ev_pointer
-				&& s->opc->o.value->v.pointer.def) {
-				operand_t  *op;
-				ex_pointer_t *ptr = &s->opc->o.value->v.pointer;
-				op = def_operand (ptr->def, ptr->type);
-				flow_add_op_var (def, op);
-				if (operands)
-					operands[0] = op;
-				else
-					free_operand (op);
+			} else if (!strcmp (s->opcode, "<MOVEP>")) {
+				if (s->opc->op_type == op_value
+					&& s->opc->o.value->type == ev_pointer
+					&& s->opc->o.value->v.pointer.def) {
+					operand_t  *op;
+					ex_pointer_t *ptr = &s->opc->o.value->v.pointer;
+					op = def_operand (ptr->def, ptr->type);
+					flow_add_op_var (def, op);
+					if (operands)
+						operands[0] = op;
+					else
+						free_operand (op);
+				} else {
+					if (operands)
+						operands[3] = s->opc;
+				}
 			} else {
 				if (s->opc)
 					flow_add_op_var (use, s->opc);
@@ -822,7 +826,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 					operands[0] = s->opc;
 				operands[1] = s->opa;
 				operands[2] = s->opb;
-				if (strcmp (s->opcode, "<MOVE>"))
+				if (strncmp (s->opcode, "<MOVE", 5))
 					operands[3] = s->opc;
 			}
 			break;
