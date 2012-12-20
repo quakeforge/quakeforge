@@ -254,7 +254,7 @@ dagnode_deref_match (const dagnode_t *n, const daglabel_t *op,
 	int         i;
 
 	for (i = 0; i < 2; i++) {
-		if (n->children[i + 1] != children[i])
+		if (n->children[i] != children[i + 1])
 			return 0;
 	}
 	return 1;
