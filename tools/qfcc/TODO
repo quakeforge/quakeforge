@@ -13,6 +13,8 @@ I	optimizations (esp CSE)
 I	fix used/uninitialized warnings
 o	id id;
 o	vec = [x, y, z]; expressions (nice feature in fteqcc)
+o	finish -Fifstring
+o	isset() intrinsic for more consistent string handling.
 o	arrays in entities
 o	optional arguments for functions (alternative to overloading)
 	vector(vector fwd, optional vector up) vectoangles = #51;
