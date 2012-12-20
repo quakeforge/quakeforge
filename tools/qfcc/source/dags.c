@@ -554,31 +554,6 @@ dag_make_var_live (set_t *live_vars, operand_t *op)
 }
 
 static void
-dag_set_live_vars (set_t *live_vars, dag_t *dag, dagnode_t *n)
-{
-	if (!strncmp (n->label->opcode, "<CALL", 5)
-		|| !strncmp (n->label->opcode, "<RCALL", 6)) {
-		int         start, end;
-
-		if (!strncmp (n->label->opcode, "<CALL", 5)) {
-			start = 0;
-			end = 0;
-			if (n->label->opcode[5] != '>')
-				end = n->label->opcode[5] - '0';
-		} else {
-			start = 2;
-			end = n->label->opcode[6] - '0';
-		}
-		while (start < end) {
-			set_add (live_vars, start + 1);
-			start++;
-		}
-	} else if (!strncmp (n->label->opcode, "<RETURN", 7)) {
-		set_union (live_vars, dag->flownode->global_vars);
-	}
-}
-
-static void
 dag_kill_nodes (dag_t *dag, dagnode_t *n)
 {
 	int         i;
@@ -658,8 +633,6 @@ dag_create (flownode_t *flownode)
 			lx->expr = s->expr;
 			dagnode_attach_label (n, lx);
 		}
-		if (n->type == st_func)
-			dag_set_live_vars (live_vars, dag, n);
 		if (n->type == st_ptrassign)
 			dag_kill_nodes (dag, n);
 	}
