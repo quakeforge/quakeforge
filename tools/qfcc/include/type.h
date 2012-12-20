@@ -149,6 +149,7 @@ void print_type (const type_t *type);
 const char *encode_params (const type_t *type);
 void encode_type (struct dstring_s *encoding, const type_t *type);
 const char *type_get_encoding (const type_t *type);
+int is_void (const type_t *type);
 int is_enum (const type_t *type);
 int is_integral (const type_t *type);
 int is_float (const type_t *type);

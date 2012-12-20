@@ -650,6 +650,12 @@ encode_type (dstring_t *encoding, const type_t *type)
 }
 
 int
+is_void (const type_t *type)
+{
+	return type->type == ev_void;
+}
+
+int
 is_enum (const type_t *type)
 {
 	if (type->type == ev_invalid && type->meta == ty_enum)
@@ -724,13 +730,12 @@ type_assignable (const type_t *dst, const type_t *src)
 	if (dst->type == ev_field && src->type == ev_field)
 		return 1;
 	// pointer = array
-	if (dst->type == ev_pointer
-		&& src->type == ev_invalid && src->meta == ty_array) {
+	if (is_pointer (dst) && is_array (src)) {
 		if (dst->t.fldptr.type == src->t.array.type)
 			return 1;
 		return 0;
 	}
-	if (dst->type != ev_pointer || src->type != ev_pointer)
+	if (!is_pointer (dst) || !is_pointer (src))
 		return is_scalar (dst) && is_scalar (src);
 
 	// pointer = pointer
@@ -743,9 +748,9 @@ type_assignable (const type_t *dst, const type_t *src)
 
 	dst = dst->t.fldptr.type;
 	src = src->t.fldptr.type;
-	if (dst->type == ev_void)
+	if (is_void (dst))
 		return 1;
-	if (src->type == ev_void)
+	if (is_void (src))
 		return 1;
 	return 0;
 }
