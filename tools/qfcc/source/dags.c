@@ -749,6 +749,28 @@ generate_moves (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 }
 
 static operand_t *
+generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
+{
+	set_iter_t *var_iter;
+	daglabel_t  *var;
+	operand_t   *operands[3] = {0, 0, 0};
+	statement_t *st;
+	operand_t   *dst = 0;
+
+	operands[0] = make_operand (dag, block, dagnode, 0);
+	operands[1] = make_operand (dag, block, dagnode, 1);
+	for (var_iter = set_first (dagnode->identifiers); var_iter;
+		 var_iter = set_next (var_iter)) {
+		var = dag->labels[var_iter->value];
+		dst = var->op;
+		operands[2] = value_operand (new_pointer_val (0, 0, dst->o.def));
+		st = build_statement ("<MOVEP>", operands, var->expr);
+		sblock_add_statement (block, st);
+	}
+	return dst;
+}
+
+static operand_t *
 generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 					  set_iter_t *var_iter, etype_t type)
 {
@@ -823,11 +845,11 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			dst = operands[0];
 			break;
 		case st_move:
-			if (!strcmp (dagnode->label->opcode, "<MOVE>")) {
+			if (!strcmp (dagnode->label->opcode, "<MOVE>"))
 				dst = generate_moves (dag, block, dagnode);
-				break;
-			}
-			//fall through
+			if (!strcmp (dagnode->label->opcode, "<MOVEP>"))
+				dst = generate_moveps (dag, block, dagnode);
+			break;
 		case st_state:
 		case st_func:
 			for (i = 0; i < 3; i++)
