@@ -124,10 +124,13 @@ operand_string (operand_t *op)
 			return op->o.label->name;
 		case op_temp:
 			if (op->o.tempop.alias)
-				return va ("<tmp %p:%d:%p:%d>", op, op->o.tempop.users,
+				return va ("<tmp %s %p:%d:%p:%d>",
+						   pr_type_name[op->o.tempop.type->type],
+						   op, op->o.tempop.users,
 						   op->o.tempop.alias,
 						   op->o.tempop.alias->o.tempop.users);
-			return va ("<tmp %p:%d>", op, op->o.tempop.users);
+			return va ("<tmp %s %p:%d>", pr_type_name[op->o.tempop.type->type],
+					   op, op->o.tempop.users);
 		case op_alias:
 			{
 				const char *alias = operand_string (op->o.alias);
