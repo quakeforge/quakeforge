@@ -1082,6 +1082,8 @@ test_expr (expr_t *e)
 			}
 			return error (e, "void has no value");
 		case ev_string:
+			if (!options.code.ifstring)
+				return new_alias_expr (type_default, e);
 			new = new_string_expr (0);
 			break;
 		case ev_uinteger:
@@ -1211,7 +1213,8 @@ convert_bool (expr_t *e, int block)
 		return b;
 	}
 
-	if (e->type == ex_uexpr && e->e.expr.op == '!') {
+	if (e->type == ex_uexpr && e->e.expr.op == '!'
+		&& get_type (e->e.expr.e1) != &type_string) {
 		e = convert_bool (e->e.expr.e1, 0);
 		if (e->type == ex_error)
 			return e;

@@ -470,6 +470,8 @@ DecodeArgs (int argc, char **argv)
 							options.code.optimize = flag;
 						} else if (!(strcasecmp (temp, "short-circuit"))) {
 							options.code.short_circuit = flag;
+						} else if (!(strcasecmp (temp, "ifstring"))) {
+							options.code.ifstring = flag;
 						} else if (!(strcasecmp (temp, "single-cpp"))) {
 							options.single_cpp = flag;
 						} else if (!(strcasecmp (temp, "vector-calls"))) {
@@ -645,6 +647,8 @@ DecodeArgs (int argc, char **argv)
 		options.advanced = false;
 		if (!options.code.progsversion)
 			options.code.progsversion = PROG_ID_VERSION;
+		if (options.code.ifstring == (qboolean) -1)
+			options.code.ifstring = false;
 		if (options.code.short_circuit == (qboolean) -1)
 			options.code.short_circuit = false;
 		if (options.code.local_merging == (qboolean) -1)
@@ -658,6 +662,8 @@ DecodeArgs (int argc, char **argv)
 		options.advanced = true;
 		add_cpp_def ("-D__RUAMOKO__=1");
 		add_cpp_def ("-D__RAUMOKO__=1");
+		if (options.code.ifstring == (qboolean) -1)
+			options.code.ifstring = false;
 		if (options.code.short_circuit == (qboolean) -1)
 			options.code.short_circuit = true;
 		if (options.code.local_merging == (qboolean) -1)
