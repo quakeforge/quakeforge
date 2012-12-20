@@ -1295,10 +1295,12 @@ add_protocol (protocollist_t *protocollist, const char *name)
 	return protocollist;
 }
 
-static int
+int
 procollist_find_protocol (protocollist_t *protocollist, protocol_t *proto)
 {
 	int         i;
+	if (!protocollist)
+		return 0;
 	for (i = 0; i < protocollist->count; i++)
 		if (protocollist->list[i] == proto)
 			return 1;
@@ -1310,7 +1312,7 @@ compare_protocols (protocollist_t *protos1, protocollist_t *protos2)
 {
 	int         i;
 
-	if (protos2 == protos2)
+	if (protos1 == protos2)
 		return 1;
 	if (!protos1 || !protos2)
 		return 0;

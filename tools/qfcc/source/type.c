@@ -237,7 +237,6 @@ types_same (type_t *a, type_t *b)
 				case ev_pointer:
 					if (a->t.fldptr.type != b->t.fldptr.type)
 						return 0;
-					return compare_protocols (a->protos, b->protos);
 				case ev_func:
 					if (a->t.func.type != b->t.func.type
 						|| a->t.func.num_params != b->t.func.num_params)
@@ -259,6 +258,8 @@ types_same (type_t *a, type_t *b)
 		case ty_enum:
 			if (strcmp (a->name, b->name))
 				return 0;
+			if (a->meta == ty_struct)
+				return compare_protocols (a->protos, b->protos);
 			return 1;
 		case ty_array:
 			if (a->t.array.type != b->t.array.type
@@ -269,7 +270,7 @@ types_same (type_t *a, type_t *b)
 		case ty_class:
 			if (a->t.class != b->t.class)
 				return 0;
-			return 1;
+			return compare_protocols (a->protos, b->protos);
 	}
 	internal_error (0, "we be broke");
 }

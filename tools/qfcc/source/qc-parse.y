@@ -466,8 +466,9 @@ type_specifier
 		{
 			if ($2) {
 				type_t      type = *type_id.t.fldptr.type;
+				type.next = 0;
 				type.protos = $2;
-				$$ = make_spec (pointer_type (&type), 0, 0, 0);
+				$$ = make_spec (pointer_type (find_type (&type)), 0, 0, 0);
 			} else {
 				$$ = make_spec (&type_id, 0, 0, 0);
 			}
@@ -476,6 +477,7 @@ type_specifier
 		{
 			if ($2) {
 				type_t      type = *$1->type;
+				type.next = 0;
 				type.protos = $2;
 				$$ = make_spec (find_type (&type), 0, 0, 0);
 			} else {

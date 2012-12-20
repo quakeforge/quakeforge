@@ -153,6 +153,7 @@ void protocol_add_protocols (protocol_t *protocol, protocollist_t *protocols);
 struct def_s *protocol_def (protocol_t *protocol);
 protocollist_t *new_protocol_list (void);
 protocollist_t *add_protocol (protocollist_t *protocollist, const char *name);
+int procollist_find_protocol (protocollist_t *protocollist, protocol_t *proto);
 int compare_protocols (protocollist_t *protos1, protocollist_t *protos2);
 void print_protocollist (struct dstring_s *dstr, protocollist_t *protocollist);
 struct def_s *emit_protocol (protocol_t *protocol);
