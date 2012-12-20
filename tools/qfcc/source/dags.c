@@ -856,11 +856,16 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			dst = operands[0];
 			break;
 		case st_move:
-			if (!strcmp (dagnode->label->opcode, "<MOVE>"))
+			if (!strcmp (dagnode->label->opcode, "<MOVE>")) {
 				dst = generate_moves (dag, block, dagnode);
-			if (!strcmp (dagnode->label->opcode, "<MOVEP>"))
+				break;
+			}
+			if (!strcmp (dagnode->label->opcode, "<MOVEP>")
+				&& !dagnode->children[2]) {
 				dst = generate_moveps (dag, block, dagnode);
-			break;
+				break;
+			}
+			//fall through
 		case st_state:
 		case st_func:
 			for (i = 0; i < 3; i++)
