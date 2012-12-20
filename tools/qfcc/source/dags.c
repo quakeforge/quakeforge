@@ -451,10 +451,10 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 {
 	if (!l->op)
 		internal_error (0, "attempt to attach operator label to dagnode "
-						"identifers");
+						"identifiers");
 	if (!op_is_identifier (l->op))
 		internal_error (0, "attempt to attach non-identifer label to dagnode "
-						"identifers");
+						"identifiers");
 	if (l->dagnode) {
 		dagnode_t  *node = l->dagnode;
 		set_union (n->edges, node->parents);
