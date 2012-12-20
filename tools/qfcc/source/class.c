@@ -247,6 +247,16 @@ obj_get_protos (const type_t *type)
 	return type->protos;
 }
 
+static category_t *
+obj_get_categories (const type_t *type)
+{
+	if (is_pointer (type))
+		type = type->t.fldptr.type;
+	if (obj_is_class (type))
+		return type->t.class->categories;
+	return 0;
+}
+
 static const char *
 obj_classname (const type_t *type)
 {
@@ -271,10 +281,23 @@ obj_classname (const type_t *type)
 	return str->str;
 }
 
+static int
+category_implements (category_t *cat, protocol_t *protocol)
+{
+	for (; cat; cat = cat->next) {
+		if (!cat->protocols)
+			continue;
+		if (procollist_find_protocol (cat->protocols, protocol))
+			return 1;
+	}
+	return 0;
+}
+
 int
 obj_types_assignable (const type_t *dst, const type_t *src)
 {
 	class_t    *dst_class, *src_class;
+	category_t *cat;
 	int         dst_is_proto, src_is_proto;
 	protocollist_t *dst_protos = 0, *src_protos = 0;
 	int         i;
@@ -300,14 +323,16 @@ obj_types_assignable (const type_t *dst, const type_t *src)
 		} else if (!obj_is_id (src)) {
 			src_protos = obj_get_class_protos (src);
 			for (i = 0; i < dst_protos->count; i++) {
-				if (!procollist_find_protocol (src_protos,
-											   dst_protos->list[i])) {
-					warning (0,
-							 "class %s does not implement to the %s protocol",
-							 obj_classname (src), dst_protos->list[i]->name);
-					return 1;
-				}
+				if (procollist_find_protocol (src_protos, dst_protos->list[i]))
+					continue;
+				cat = obj_get_categories (src);
+				if (cat && category_implements (cat, dst_protos->list[i]))
+					continue;
+				warning (0, "class %s does not implement to the %s protocol",
+						 obj_classname (src), dst_protos->list[i]->name);
+				return 1;
 			}
+			return 1;
 		}
 	} else if (src_is_proto) {
 	} else {
