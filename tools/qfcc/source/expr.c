@@ -2284,7 +2284,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 }
 
 expr_t *
-build_if_statement (expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
+build_if_statement (int not, expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
 {
 	int         line = pr.source_line;
 	string_t    file = pr.source_file;
@@ -2299,8 +2299,13 @@ build_if_statement (expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
 
 	test = convert_bool (test, 1);
 	if (test->type != ex_error) {
-		backpatch (test->e.bool.true_list, tl);
-		backpatch (test->e.bool.false_list, fl);
+		if (not) {
+			backpatch (test->e.bool.true_list, fl);
+			backpatch (test->e.bool.false_list, tl);
+		} else {
+			backpatch (test->e.bool.true_list, tl);
+			backpatch (test->e.bool.false_list, fl);
+		}
 		append_expr (test->e.bool.e, tl);
 		append_expr (if_expr, test);
 	}

@@ -598,7 +598,8 @@ expr_t *incop_expr (int op, expr_t *e, int postop);
 expr_t *array_expr (expr_t *array, expr_t *index);
 expr_t *pointer_expr (expr_t *pointer);
 expr_t *address_expr (expr_t *e1, expr_t *e2, struct type_s *t);
-expr_t *build_if_statement (expr_t *test, expr_t *s1, expr_t *els, expr_t *s2);
+expr_t *build_if_statement (int not, expr_t *test, expr_t *s1, expr_t *els,
+							expr_t *s2);
 expr_t *build_while_statement (expr_t *test, expr_t *statement,
 							   expr_t *break_label, expr_t *continue_label);
 expr_t *build_do_while_statement (expr_t *statement, expr_t *test,

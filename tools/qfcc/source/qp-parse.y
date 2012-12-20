@@ -354,11 +354,11 @@ statement
 	| compound_statement
 	| IF expression THEN statement else statement
 		{
-			$$ = build_if_statement ($2, $4, $5, $6);
+			$$ = build_if_statement (0, $2, $4, $5, $6);
 		}
 	| IF expression THEN statement %prec IFX
 		{
-			$$ = build_if_statement ($2, $4, 0, 0);
+			$$ = build_if_statement (0, $2, $4, 0, 0);
 		}
 	| WHILE expression DO statement
 		{

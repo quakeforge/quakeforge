@@ -145,7 +145,7 @@ int yylex (void);
 
 %token				LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS
 %token				NIL IFBE IFB IFAE IFA SWITCH CASE DEFAULT ENUM TYPEDEF
-%token				ARGS EXTERN STATIC SYSTEM NOSAVE OVERLOAD
+%token				ARGS EXTERN STATIC SYSTEM NOSAVE OVERLOAD NOT
 %token	<op>		STRUCT
 %token	<type>		TYPE
 %token	<symbol>	OBJECT TYPE_NAME
@@ -205,7 +205,7 @@ int yylex (void);
 %type	<protocol>	protocol_name
 %type	<methodlist> methodprotolist methodprotolist2
 %type	<symtab>	ivar_decl_list
-%type	<op>		ci
+%type	<op>		ci not
 
 %{
 
@@ -1149,13 +1149,13 @@ statement
 			switch_block = $5;
 			break_label = $2;
 		}
-	| IF '(' texpr ')' statement %prec IFX
+	| IF not '(' texpr ')' statement %prec IFX
 		{
-			$$ = build_if_statement ($3, $5, 0, 0);
+			$$ = build_if_statement ($2, $4, $6, 0, 0);
 		}
-	| IF '(' texpr ')' statement else statement
+	| IF not '(' texpr ')' statement else statement
 		{
-			$$ = build_if_statement ($3, $5, $6, $7);
+			$$ = build_if_statement ($2, $4, $6, $7, $8);
 		}
 	| FOR break_label continue_label
 			'(' opt_expr ';' opt_expr ';' opt_expr ')' statement
@@ -1182,6 +1182,11 @@ statement
 		{
 			$$ = $1;
 		}
+	;
+
+not
+	: NOT						{ $$ = 1; }
+	| /* empty */				{ $$ = 0; }
 	;
 
 else
