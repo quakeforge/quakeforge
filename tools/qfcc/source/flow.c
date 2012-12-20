@@ -319,8 +319,9 @@ static void
 flow_build_vars (function_t *func)
 {
 	statement_t *s;
+	operand_t   *operands[4];
 	int         num_vars = 0;
-	int         i;
+	int         i, j;
 	set_t      *stuse;
 	set_t      *stdef;
 	set_iter_t *var_i;
@@ -335,9 +336,9 @@ flow_build_vars (function_t *func)
 	// variables
 	for (i = 0; i < func->num_statements; i++) {
 		s = func->statements[i];
-		num_vars += count_operand (s->opa);
-		num_vars += count_operand (s->opb);
-		num_vars += count_operand (s->opc);
+		flow_analyze_statement (s, 0, 0, 0, operands);
+		for (j = 0; j < 4; j++)
+			num_vars += count_operand (operands[j]);
 	}
 	if (!num_vars)
 		return;
@@ -355,9 +356,9 @@ flow_build_vars (function_t *func)
 	// variables
 	for (i = 0; i < func->num_statements; i++) {
 		s = func->statements[i];
-		add_operand (func, s->opa);
-		add_operand (func, s->opb);
-		add_operand (func, s->opc);
+		flow_analyze_statement (s, 0, 0, 0, operands);
+		for (j = 0; j < 4; j++)
+			add_operand (func, operands[j]);
 
 		flow_analyze_statement (s, stuse, stdef, 0, 0);
 		for (var_i = set_first (stdef); var_i; var_i = set_next (var_i)) {
