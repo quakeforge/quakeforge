@@ -2677,7 +2677,19 @@ cast_expr (type_t *type, expr_t *e)
 	if (is_array (e_type))
 		return address_expr (e, 0, 0);
 	if (is_constant (e) && is_scalar (type) && is_scalar (e_type)) {
-		e->e.value = convert_value (e->e.value, type);
+		ex_value_t *val = 0;
+		if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const) {
+			val = e->e.symbol->s.value;
+		} else if (e->type == ex_value) {
+			val = e->e.value;
+		} else if (e->type == ex_nil) {
+			convert_nil (e, type);
+			return e;
+		}
+		if (!val)
+			internal_error (e, "unexpected constant expression type");
+		e->e.value = convert_value (val, type);
+		e->type = ex_value;
 		c = e;
 	} else if ((is_float (type) && is_integral (e_type))
 		|| (is_integral (type) && is_float (e_type))) {
