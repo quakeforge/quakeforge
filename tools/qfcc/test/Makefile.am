@@ -29,7 +29,8 @@ test_progs_dat=\
 	structlive.dat \
 	structptr.dat \
 	vecinit.dat \
-	while.dat
+	while.dat \
+	voidfor.dat
 
 fail_progs_dat=\
 	$E
@@ -118,6 +119,13 @@ while_obj=$(while_dat_SOURCES:.r=.qfo)
 while.dat: $(while_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(while_obj)
 while.run: Makefile build-run
+	$(srcdir)/build-run $@
+
+voidfor_dat_SOURCES=voidfor.r
+voidfor_obj=$(voidfor_dat_SOURCES:.r=.qfo)
+voidfor.dat: $(voidfor_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(voidfor_obj)
+voidfor.run: Makefile build-run
 	$(srcdir)/build-run $@
 
 include ./$(DEPDIR)/*.Qo

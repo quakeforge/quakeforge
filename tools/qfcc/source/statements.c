@@ -1512,7 +1512,7 @@ remove_dead_blocks (sblock_t *blocks)
 static void
 check_final_block (sblock_t *sblock)
 {
-	statement_t *s;
+	statement_t *s = 0;
 	symbol_t   *return_symbol = 0;
 	def_t      *return_def = 0;
 	operand_t  *return_operand = 0;
@@ -1531,6 +1531,12 @@ check_final_block (sblock_t *sblock)
 	}
 	if (current_func->sym->type->t.func.type != &type_void)
 		warning (0, "control reaches end of non-void function");
+	if (s && s->type >= st_func) {
+		// func and flow end blocks, so we need to add a new block to take the
+		// return
+		sblock->next = new_sblock ();
+		sblock = sblock->next;
+	}
 	if (options.traditional || options.code.progsversion == PROG_ID_VERSION) {
 		return_symbol = make_symbol (".return", &type_param, pr.symtab->space,
 									 sc_extern);
