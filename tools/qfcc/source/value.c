@@ -398,12 +398,13 @@ convert_value (ex_value_t *value, type_t *type)
 }
 
 static immediate_t *
-make_def_imm (def_t *def, hashtab_t *tab)
+make_def_imm (def_t *def, hashtab_t *tab, ex_value_t *val)
 {
 	immediate_t *imm;
 
 	imm = calloc (1, sizeof (immediate_t));
 	imm->def = def;
+	memcpy (&imm->i, &val->v, sizeof (imm->i));
 
 	Hash_AddElement (tab, imm);
 
@@ -543,8 +544,7 @@ emit_value (ex_value_t *value, def_t *def)
 
 	memcpy (D_POINTER (void, cn), &val.v, 4 * type_size (type));
 
-	imm = make_def_imm (cn, tab);
-	memcpy (&imm->i, &val.v, sizeof (imm->i));
+	imm = make_def_imm (cn, tab, &val);
 
 	return cn;
 }
@@ -553,6 +553,7 @@ void
 clear_immediates (void)
 {
 	def_t      *def;
+	ex_value_t  zero_val;
 
 	if (value_table) {
 		Hash_FlushTable (value_table);
@@ -602,9 +603,10 @@ clear_immediates (void)
 
 	def = make_symbol (".zero", &type_zero, 0, sc_extern)->s.def;
 
-	make_def_imm (def, string_imm_defs);
-	make_def_imm (def, float_imm_defs);
-	make_def_imm (def, entity_imm_defs);
-	make_def_imm (def, pointer_imm_defs);
-	make_def_imm (def, integer_imm_defs);
+	memset (&zero_val, 0, sizeof (zero_val));
+	make_def_imm (def, string_imm_defs, &zero_val);
+	make_def_imm (def, float_imm_defs, &zero_val);
+	make_def_imm (def, entity_imm_defs, &zero_val);
+	make_def_imm (def, pointer_imm_defs, &zero_val);
+	make_def_imm (def, integer_imm_defs, &zero_val);
 }
