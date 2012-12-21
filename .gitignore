@@ -17,6 +17,7 @@ Makefile.in
 core
 
 # /
+/.version
 /aclocal.m4
 /build-stamp
 /changelog-stamp

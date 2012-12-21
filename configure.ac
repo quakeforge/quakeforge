@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.61)
 
 dnl This is the only place where the package name and version appear
-AC_INIT([QuakeForge], [git-master])
+AC_INIT([QuakeForge], m4_esyscmd([config.d/git-version-gen --prefix '' .tarball-version]))
 AM_INIT_AUTOMAKE([foreign])
 
 dnl LT_INIT messes with CFLAGS (evil bastard)

@@ -9,7 +9,8 @@ DIST_SUBDIRS=desktop pkg-config include \
 			 RPM debian doc vc2005 vc2008
 
 ## configure.ac needs to be listed here for older autoconfs
-EXTRA_DIST=	ChangeLog configure.ac bootstrap \
+EXTRA_DIST=	ChangeLog configure.ac bootstrap
+		$(top_srcdir)/.version \
 		tools/cross/droid/cross-configure.sh \
 		tools/cross/droid/cross-make.sh \
 		tools/cross/mingw/cross-configure.sh \
@@ -59,5 +60,11 @@ dist-all-local: distdir
 	-rm -f $(NOCONV_DIST)
 	ZIP="-r9ql" zip $(distdir).zip $(distdir)
 	-rm -rf $(distdir)
+
+BUILT_SOURCES = $(top_srcdir)/.version
+$(top_srcdir)/.version:
+	echo $(VERSION) > $@-t && mv $@-t $@
+dist-hook:
+	echo $(VERSION) > $(distdir)/.tarball-version
 
 FORCE:
