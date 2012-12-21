@@ -1319,8 +1319,8 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 		if (mask == -1) {
 			if (sv_filter_automask->int_val) {
 				mask = sizeof (b) * 8;
-				i = sizeof (b) - 1;
-				while (i >= 0 && !b[i]) {
+				i = sizeof (b);
+				while (i > 0 && !b[i - 1]) {
 					mask -= 8;
 					i--;
 				}

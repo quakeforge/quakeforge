@@ -67,7 +67,7 @@ static const char *op_type_names[] = {
 const char *
 optype_str (op_type_e type)
 {
-	if (type < 0 || type > op_temp)
+	if (type > op_temp)
 		return "<invalid op_type>";
 	return op_type_names[type];
 }
@@ -1011,7 +1011,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		return sblock;
 	}
 
-	if (e->type < 0 || e->type > ex_value)
+	if (e->type > ex_value)
 		internal_error (e, "bad expression type");
 	if (!sfuncs[e->type])
 		internal_error (e, "unexpected expression type");
@@ -1287,7 +1287,7 @@ statement_slist (sblock_t *sblock, expr_t *e)
 	};
 
 	for (/**/; e; e = e->next) {
-		if (e->type < 0 || e->type > ex_value)
+		if (e->type > ex_value)
 			internal_error (e, "bad expression type");
 		sblock = sfuncs[e->type] (sblock, e);
 	}

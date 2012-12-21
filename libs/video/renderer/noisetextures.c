@@ -68,7 +68,7 @@ noise_diamondsquare (unsigned char *noise, unsigned int size,
 	if (startgrid != (unsigned int) (1 << gridpower))
 		Sys_Error("fractalnoise: grid must be power of 2");
 
-	startgrid = bound(0, startgrid, size);
+	startgrid = min(startgrid, size);
 	amplitude = 0xFFFF; // this gets halved before use
 	noisebuf = calloc (size * size, sizeof (int));
 	memset(noisebuf, 0, size * size * sizeof(int));
@@ -121,8 +121,8 @@ noise_diamondsquare (unsigned char *noise, unsigned int size,
 void
 noise_plasma (unsigned char *noise, int size)
 {
-	unsigned int   a, b, c, d, i;
-	int            j, k;
+	unsigned int   a, b, c, i;
+	int            d, j, k;
 
 	if (128 >= size)
 		d = 64 / size;

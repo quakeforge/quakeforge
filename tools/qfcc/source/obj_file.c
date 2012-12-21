@@ -621,7 +621,7 @@ static etype_t
 get_def_type (qfo_t *qfo, pointer_t type)
 {
 	qfot_type_t *type_def;
-	if (type < 0 || type >= qfo->spaces[qfo_type_space].data_size)
+	if (type >= qfo->spaces[qfo_type_space].data_size)
 		return ev_void;
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
 	switch ((ty_meta_e)type_def->ty) {
@@ -646,7 +646,7 @@ get_type_size (qfo_t *qfo, pointer_t type)
 {
 	qfot_type_t *type_def;
 	int          i, size;
-	if (type < 0 || type >= qfo->spaces[qfo_type_space].data_size)
+	if (type >= qfo->spaces[qfo_type_space].data_size)
 		return 1;
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
 	switch ((ty_meta_e)type_def->ty) {
@@ -684,7 +684,7 @@ function_params (qfo_t *qfo, qfo_func_t *func, dfunction_t *df)
 	int         num_params;
 	int         i;
 
-	if (func->type < 0 || func->type >= qfo->spaces[qfo_type_space].data_size)
+	if (func->type >= qfo->spaces[qfo_type_space].data_size)
 		return;
 	type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, func->type);
 	if (type->ty != ty_none && type->t.type != ev_func)
@@ -787,7 +787,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	dprograms_t *progs;
 	qfo_def_t  *types_def = 0;
 	int         i, j;
-	int         locals_size = 0;
+	unsigned    locals_size = 0;
 	int         locals_start;
 	int         big_locals = 0;
 	int         big_func = 0;

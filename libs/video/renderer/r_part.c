@@ -305,7 +305,7 @@ static pt_phys_func part_phys[] = {
 pt_phys_func
 R_ParticlePhysics (ptype_t type)
 {
-	if (type < pt_static || type > pt_flame)
+	if (type > pt_flame)
 		Sys_Error ("R_ParticlePhysics: invalid particle type");
 	return part_phys[type];
 }

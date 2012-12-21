@@ -255,9 +255,9 @@ PR_LeaveFunction (progs_t *pr)
 }
 
 VISIBLE void
-PR_BoundsCheckSize (progs_t *pr, int addr, unsigned size)
+PR_BoundsCheckSize (progs_t *pr, pointer_t addr, unsigned size)
 {
-	if (addr < 0 || addr >= pr->globals_size
+	if (addr >= pr->globals_size
 		|| size > (unsigned) (pr->globals_size - addr))
 		PR_RunError (pr, "invalid memory access: %d (0 to %d-%d)", addr,
 					 pr->globals_size, size);

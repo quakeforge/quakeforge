@@ -1487,7 +1487,7 @@ fold_constants (expr_t *e)
 		if (op == 'A' || op == 'g' || op == 'r')
 			return e;
 		t1 = extract_type (e1);
-		if (t1 < 0 || t1 >= ev_type_count || !do_unary_op[t1]) {
+		if (t1 >= ev_type_count || !do_unary_op[t1]) {
 			print_expr (e);
 			internal_error (e, "invalid type: %d", t1);
 		}
@@ -1519,7 +1519,7 @@ fold_constants (expr_t *e)
 	if (op == 's')
 		return e;
 
-	if (t1 < 0 || t1 >= ev_type_count || t2 < 0 || t2 >= ev_type_count
+	if (t1 >= ev_type_count || t2 >= ev_type_count
 		|| !do_op[t1] || !do_op[t1][t2])
 		internal_error (e, "invalid type");
 	return do_op[t1][t2] (op, e, e1, e2);

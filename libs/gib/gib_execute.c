@@ -103,13 +103,13 @@ GIB_Execute_Split_Var (cbuf_t * cbuf)
 			&GIB_DATA (cbuf)->globals,
 			str, &i, false)))
 				return;
-		if (end < 0)
+		if ((int) end < 0)
 			end += var->size;
 		else if (end > var->size)
 			end = var->size;
-		if (start < 0) {
+		if ((int) start < 0) {
 			start += var->size;
-			if (start < 0)
+			if ((int) start < 0)
 				start = 0;
 		} else if (start >= var->size || start >= end)
 			return;

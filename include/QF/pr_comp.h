@@ -29,7 +29,7 @@ typedef int32_t pr_int_t;
 typedef uint32_t pr_uint_t;
 typedef pr_int_t func_t;
 typedef pr_int_t string_t;
-typedef pr_int_t pointer_t;
+typedef pr_uint_t pointer_t;
 
 typedef enum {
 	ev_void,

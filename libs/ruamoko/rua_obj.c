@@ -1653,7 +1653,7 @@ static int
 rua_init_runtime (progs_t *pr)
 {
 	ddef_t     *def;
-	int         i;
+	unsigned    i;
 
 	if (!pr->selector_hash)
 		pr->selector_hash = Hash_NewTable (1021, selector_get_key, 0, pr);

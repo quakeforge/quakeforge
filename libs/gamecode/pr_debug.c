@@ -395,8 +395,7 @@ PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno)
 
 	if (lineno->line)
 		return lineno->fa.addr;
-	if (lineno->fa.func >= 0
-		&& lineno->fa.func < pr->debug->num_auxfunctions) {
+	if (lineno->fa.func < pr->debug->num_auxfunctions) {
 		f = &pr->auxfunctions[lineno->fa.func];
 		return pr->pr_functions[f->function].first_statement;
 	}
@@ -701,7 +700,7 @@ def_string (progs_t *pr, pr_int_t ofs, dstring_t *dstr)
 }
 
 static const char *
-global_string (progs_t *pr, pr_int_t ofs, etype_t type, int contents)
+global_string (progs_t *pr, pointer_t ofs, etype_t type, int contents)
 {
 	static dstring_t *line = NULL;
 	ddef_t     *def = NULL;

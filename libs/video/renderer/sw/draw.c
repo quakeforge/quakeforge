@@ -265,7 +265,7 @@ Draw_Character (int x, int y, unsigned int chr)
 
 	if (y > vid.conheight - 8 || x < 0 || x > vid.conwidth - 8)
 		return;
-	if (chr < 0 || chr > 255)
+	if (chr > 255)
 		return;
 
 	row = chr >> 4;

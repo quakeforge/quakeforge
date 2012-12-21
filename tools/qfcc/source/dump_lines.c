@@ -60,10 +60,9 @@ dump_lines (progs_t *pr)
 		if (!lineno->line) {
 			aux_func = 0;
 			func = 0;
-			if (lineno->fa.func >= 0
-				&& lineno->fa.func < pr->debug->num_auxfunctions)
+			if (lineno->fa.func < pr->debug->num_auxfunctions)
 				aux_func = pr->auxfunctions + lineno->fa.func;
-			if (aux_func && aux_func->function >= 0
+			if (aux_func
 				&& aux_func->function < (unsigned int) pr->progs->numfunctions)
 				func = pr->pr_functions + aux_func->function;
 		}

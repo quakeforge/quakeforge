@@ -159,7 +159,7 @@ plotpoint (image_t *image, long xco, long yco, unsigned int color)
 
 	bigcol += color;
 
-	bigcol = bound (0, bigcol, 255);
+	bigcol = min (bigcol, 255);
 
 	image->image[yco * image->width + xco] = (eightbit) bigcol;
 

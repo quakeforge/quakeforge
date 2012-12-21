@@ -478,7 +478,7 @@ SND_SetPaint (sfxbuffer_t *sc)
 	};
 
 	wavinfo_t *info = sc->sfx->wavinfo (sc->sfx);
-	if (info->channels < 0 || info->channels > 8)
+	if (info->channels > 8)
 		Sys_Error ("illegal channel count %d", info->channels);
 	sc->paint = painters[info->channels];
 }

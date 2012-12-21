@@ -107,10 +107,10 @@ Hash_String (const char *str)
 	// dx_hack_hash
 	// shamelessly stolen from Daniel Phillips <phillips@innominate.de>
 	// from his post to lkml
-	unsigned long hash0 = 0x12a3fe2d, hash1 = 0x37abe8f9;
+	uint32_t hash0 = 0x12a3fe2d, hash1 = 0x37abe8f9;
 	while (*str) {
-		unsigned long hash = hash1 + (hash0 ^ ((unsigned char)*str++ * 71523));
-		if (hash < 0) hash -= 0x7fffffff;
+		uint32_t hash = hash1 + (hash0 ^ ((unsigned char)*str++ * 71523));
+		if (hash & 0x80000000) hash -= 0x7fffffff;
 		hash1 = hash0;
 		hash0 = hash;
 	}
@@ -134,10 +134,10 @@ Hash_Buffer (const void *_buf, int len)
 	// dx_hack_hash
 	// shamelessly stolen from Daniel Phillips <phillips@innominate.de>
 	// from his post to lkml
-	unsigned long hash0 = 0x12a3fe2d, hash1 = 0x37abe8f9;
+	uint32_t hash0 = 0x12a3fe2d, hash1 = 0x37abe8f9;
 	while (len-- > 0) {
-		unsigned long hash = hash1 + (hash0 ^ ((unsigned char)*buf++ * 71523));
-		if (hash < 0) hash -= 0x7fffffff;
+		uint32_t hash = hash1 + (hash0 ^ ((unsigned char)*buf++ * 71523));
+		if (hash & 0x80000000) hash -= 0x7fffffff;
 		hash1 = hash0;
 		hash0 = hash;
 	}

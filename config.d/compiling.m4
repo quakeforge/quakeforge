@@ -190,6 +190,7 @@ QF_CC_OPTION(-Wsign-compare)
 if test $CC_MAJ -gt 4 -o $CC_MAJ -eq 4 -a $CC_MIN -ge 5; then
 	QF_CC_OPTION(-Wlogical-op)
 fi
+QF_CC_OPTION(-Wtype-limits)
 QF_CC_OPTION_TEST([-fvisibility=hidden], [VISIBILITY=-fvisibility=hidden])
 
 dnl QuakeForge uses lots of BCPL-style (//) comments, which can cause problems

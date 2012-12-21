@@ -206,7 +206,7 @@ int PR_RunLoadFuncs (progs_t *pr);
 */
 int PR_Check_Opcodes (progs_t *pr);
 
-void PR_BoundsCheckSize (progs_t *pr, int addr, unsigned size);
+void PR_BoundsCheckSize (progs_t *pr, pointer_t addr, unsigned size);
 void PR_BoundsCheck (progs_t *pr, int addr, etype_t type);
 
 //@}
@@ -1577,7 +1577,7 @@ struct progs_s {
 	ddef_t     *pr_fielddefs;
 	dstatement_t *pr_statements;
 	pr_type_t  *pr_globals;
-	int         globals_size;
+	unsigned    globals_size;
 	//@}
 
 	/// \name parameter block
@@ -1630,8 +1630,8 @@ struct progs_s {
 
 	/// \name obj info
 	//@{
-	int         selector_index;
-	int         selector_index_max;
+	unsigned    selector_index;
+	unsigned    selector_index_max;
 	struct obj_list_s **selector_sels;
 	string_t   *selector_names;
 	struct hashtab_s *selector_hash;

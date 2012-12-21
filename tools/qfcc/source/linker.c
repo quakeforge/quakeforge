@@ -183,12 +183,12 @@ linker_type_mismatch (qfo_def_t *def, qfo_def_t *prev)
 	const char *def_encoding;
 	const char *prev_encoding;
 
-	if (def->type < 0)
-		def_encoding = QFO_GETSTR (work, -def->type);
+	if ((int) def->type < 0)
+		def_encoding = QFO_GETSTR (work, -(int) def->type);
 	else
 		def_encoding = QFO_TYPESTR (work, def->type);
-	if (prev->type < 0)
-		prev_encoding = QFO_GETSTR (work, -prev->type);
+	if ((int) prev->type < 0)
+		prev_encoding = QFO_GETSTR (work, -(int) prev->type);
 	else
 		prev_encoding = QFO_TYPESTR (work, prev->type);
 	def_error (def, "type mismatch for `%s' `%s'", WORKSTR (def->name),
@@ -844,7 +844,7 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 		if (!bi->defref)
 			continue;
 		def = REF (bi->defref);
-		if (def->type >= 0)
+		if ((int) def->type >= 0)
 			continue;
 		ref = Hash_Find (defined_type_defs, WORKSTR (-def->type));
 		if (!ref)
@@ -926,8 +926,7 @@ process_loose_relocs (qfo_t *qfo)
 		if (reloc->type == rel_def_string) {
 			const char *str;
 
-			if (reloc->target < 0
-				|| reloc->target >= qfo->spaces[qfo_strings_space].data_size) {
+			if (reloc->target >= qfo->spaces[qfo_strings_space].data_size) {
 				linker_error ("bad string reloc at %d:%x", reloc->space,
 							  reloc->offset);
 				reloc->target = 0;
@@ -963,7 +962,7 @@ linker_add_qfo (qfo_t *qfo)
 	work_func_base = work->num_funcs;
 	for (pass = 0; pass < 2; pass++) {
 		for (i = 0, space = qfo->spaces; i < qfo->num_spaces; i++, space++) {
-			if (space->type < 0 || space->type > qfos_type) {
+			if ((int) space->type < 0 || space->type > qfos_type) {
 				linker_error ("bad space type");
 				return 1;
 			}

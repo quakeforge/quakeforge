@@ -86,7 +86,7 @@ typedef struct qfo_space_s {
 	pr_int_t    defs;			///< index of first def
 	pr_int_t    num_defs;		///< zero for code or string spaces
 	pr_int_t    data;			///< byte offset in qfo
-	pr_int_t    data_size;		///< in elements. zero for entity spaces
+	pr_uint_t   data_size;		///< in elements. zero for entity spaces
 	pr_int_t    id;
 	pr_int_t    reserved[2];
 } qfo_space_t;
@@ -240,7 +240,7 @@ typedef struct qfo_reloc_s {
 	pr_int_t    space;			///< index of space holding data to be adjusted
 	pr_int_t    offset;			///< offset of the relocation
 	pr_int_t    type;			///< type of the relocation (::reloc_type)
-	pr_int_t    target;			///< def/func/etc this relocation is for
+	pr_uint_t   target;			///< def/func/etc this relocation is for
 } qfo_reloc_t;
 
 /**	In-memory representation of a QFO space
@@ -254,7 +254,7 @@ typedef struct qfo_mspace_s {
 		pr_type_t  *data;
 		char       *strings;
 	}           d;
-	int         data_size;
+	unsigned    data_size;
 	int         id;
 } qfo_mspace_t;
 
