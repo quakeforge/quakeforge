@@ -65,18 +65,18 @@ typedef struct set_s {
 
 		create_and_populate (set);
 		for (iter = set_first (set); iter; iter = set_next (iter))
-			do_something (iter->value);
+			do_something (iter->element);
 	\endcode
 */
 typedef struct set_iter_s {
 	struct set_iter_s *next;	///< private. for ALLOC
 	const set_t *set;			///< the set to which this iterator belongs
 	/** The result of set_first() or set_next(). set_next() will start at the
-		following value.
+		following element.
 
 		\note	For inverted sets, indicates a non-member.
 	*/
-	unsigned    value;
+	unsigned    element;
 } set_iter_t;
 
 /** Delete a set iterator that is no longer needed.
@@ -99,26 +99,26 @@ set_t *set_new (void);
 */
 void set_delete (set_t *set);
 
-/** Add a value to a set.
+/** Add an element to a set.
 
-	It is not an error to add a value that is already a member of the set.
+	It is not an error to add an element that is already a member of the set.
 
 	\note \a set is modified.
 
-	\param set		The set to which the value will be added.
-	\param x		The value to be added.
+	\param set		The set to which the element will be added.
+	\param x		The element to be added.
 	\return			The modified set.
 */
 set_t *set_add (set_t *set, unsigned x);
 
-/** Remove a value from a set.
+/** Remove an element from a set.
 
-	It is not an error to remove a value that is not a member of the set.
+	It is not an error to remove an element that is not a member of the set.
 
 	\note \a set is modified.
 
-	\param set		The set from which the value will be removed.
-	\param x		The value to be removed.
+	\param set		The set from which the element will be removed.
+	\param x		The element to be removed.
 	\return			The modified set.
 */
 set_t *set_remove (set_t *set, unsigned x);
@@ -263,11 +263,11 @@ int set_is_equivalent (const set_t *s1, const set_t *s2);
 */
 int set_is_subset (const set_t *set, const set_t *sub);
 
-/** Test a value for membership in a set.
+/** Test an element for membership in a set.
 
 	\param set		The set to test.
-	\param x		The value to test.
-	\return			1 if the value is a member of the set, otherwise 0.
+	\param x		The element to test.
+	\return			1 if the element is a member of the set, otherwise 0.
 */
 int set_is_member (const set_t *set, unsigned x);
 

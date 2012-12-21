@@ -424,7 +424,7 @@ bi_i_SetIterator__element (progs_t *pr)
 	pr_set_iter_t *iter_obj = &P_STRUCT (pr, pr_set_iter_t, 0);
 	bi_set_iter_t *set_iter = get_set_iter (pr, __FUNCTION__, iter_obj->iter);
 
-	R_INT (pr) = set_iter->iter->value;
+	R_INT (pr) = set_iter->iter->element;
 }
 
 static void

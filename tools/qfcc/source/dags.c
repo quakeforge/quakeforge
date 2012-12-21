@@ -379,7 +379,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 				set_iter_t *lab_i;
 				for (lab_i = set_first (n->children[0]->identifiers); lab_i;
 					 lab_i = set_next (lab_i)) {
-					label = dag->labels[lab_i->value];
+					label = dag->labels[lab_i->element];
 				}
 			}
 			label->live = 1;
@@ -534,7 +534,7 @@ dag_sort_visit (dag_t *dag, set_t *visited, int node_index, int *topo)
 	node = dag->nodes[node_index];
 	for (node_iter = set_first (node->edges); node_iter;
 		 node_iter = set_next (node_iter))
-		dag_sort_visit (dag, visited, node_iter->value, topo);
+		dag_sort_visit (dag, visited, node_iter->element, topo);
 	node->topo = *topo;
 	dag->topo[(*topo)++] = node_index;
 }
@@ -549,7 +549,7 @@ dag_sort_nodes (dag_t *dag)
 	dag->topo = malloc (dag->num_nodes * sizeof (int));
 	for (root_iter = set_first (dag->roots); root_iter;
 		 root_iter = set_next (root_iter))
-		dag_sort_visit (dag, visited, root_iter->value, &topo);
+		dag_sort_visit (dag, visited, root_iter->element, &topo);
 	set_delete (visited);
 }
 
@@ -750,7 +750,7 @@ generate_moves (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	dst = operands[0];
 	for (var_iter = set_first (dagnode->identifiers); var_iter;
 		 var_iter = set_next (var_iter)) {
-		var = dag->labels[var_iter->value];
+		var = dag->labels[var_iter->element];
 		operands[2] = var->op;
 		dst = operands[2];
 		st = build_statement ("<MOVE>", operands, var->expr);
@@ -772,7 +772,7 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	operands[1] = make_operand (dag, block, dagnode, 1);
 	for (var_iter = set_first (dagnode->identifiers); var_iter;
 		 var_iter = set_next (var_iter)) {
-		var = dag->labels[var_iter->value];
+		var = dag->labels[var_iter->element];
 		dst = var->op;
 		operands[2] = value_operand (new_pointer_val (0, 0, dst->o.def));
 		st = build_statement ("<MOVEP>", operands, var->expr);
@@ -792,7 +792,7 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 
 	operands[0] = fix_op_type (src, type);
 	for ( ; var_iter; var_iter = set_next (var_iter)) {
-		var = dag->labels[var_iter->value];
+		var = dag->labels[var_iter->element];
 		operands[1] = fix_op_type (var->op, type);
 		if (!dst)
 			dst = operands[1];
@@ -831,7 +831,7 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			if (!(var_iter = set_first (dagnode->identifiers))) {
 				operands[2] = temp_operand (get_type (dagnode->label->expr));
 			} else {
-				daglabel_t *var = dag->labels[var_iter->value];
+				daglabel_t *var = dag->labels[var_iter->element];
 
 				operands[2] = fix_op_type (var->op, type);
 				var_iter = set_next (var_iter);
