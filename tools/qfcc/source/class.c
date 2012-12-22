@@ -805,7 +805,7 @@ finish_class (class_t *class)
 	pr_class_t *cls;
 	defspace_t *space;
 
-	if (!class->def)	// probably in error recovery
+	if (pr.error_count)	// probably in error recovery
 		return;
 	space = class->def->space;
 	cls = &D_STRUCT (pr_class_t, class->def);
@@ -1539,6 +1539,8 @@ symtab_t *
 class_ivar_scope (class_type_t *class_type, symtab_t *parent)
 {
 	class_t    *class = extract_class (class_type);
+	if (!class->ivars)
+		return 0;
 	return symtab_flat_copy (class->ivars, parent);
 }
 
@@ -1552,6 +1554,8 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 	symbol_t   *self;
 	expr_t     *self_expr;
 
+	if (!ivar_scope)
+		return;
 	self = symtab_lookup (param_scope, "self");
 	if (!self)
 		internal_error (0, "I've lost my self!");
