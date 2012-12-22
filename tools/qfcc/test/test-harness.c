@@ -136,7 +136,7 @@ init_qf (void)
 	Memory_Init (malloc (1024 * 1024), 1024 * 1024);
 
 	Cvar_Get ("pr_debug", "2", 0, 0, 0);
-	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
+	Cvar_Get ("pr_boundscheck", "2", 0, 0, 0);
 
 	pr.edicts = &edicts;
 	pr.num_edicts = &num_edicts;
