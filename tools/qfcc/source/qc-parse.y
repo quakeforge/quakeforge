@@ -1193,7 +1193,6 @@ opt_expr
 
 unary_expr
 	: NAME      				{ $$ = new_symbol_expr ($1); }
-	| BREAK	%prec BREAK_PRIMARY { $$ = new_name_expr (save_string ("break")); }
 	| ARGS						{ $$ = new_name_expr (".args"); }
 	| SELF						{ $$ = new_self_expr (); }
 	| THIS						{ $$ = new_this_expr (); }
@@ -1286,11 +1285,6 @@ string
 
 identifier
 	: NAME
-	| BREAK
-		{
-			if (!($$ = symtab_lookup (current_symtab, "break")))
-				$$ = new_symbol ("break");
-		}
 	| OBJECT
 	| CLASS_NAME
 	| TYPE_NAME
