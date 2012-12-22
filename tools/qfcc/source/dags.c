@@ -323,10 +323,13 @@ dagnode_set_edges_visit (def_t *def, void *_node)
 }
 
 static int
-dag_find_node (def_t *def, void *unused)
+dag_find_node (def_t *def, void *_daglabel)
 {
-	if (def->daglabel && def->daglabel->dagnode)
+	daglabel_t **daglabel = (daglabel_t **) _daglabel;
+	if (def->daglabel && def->daglabel->dagnode) {
+		*daglabel = def->daglabel;
 		return def->daglabel->dagnode->number + 1;	// ensure never 0
+	}
 	return 0;
 }
 
@@ -388,14 +391,17 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 			for (i = first_param; i < *num_params - '0'; i++) {
 				flowvar_t  *var = flowvars[i + 1];
 				def_t      *param_def = var->op->o.def;
+				daglabel_t *daglabel;
 				int         param_node;
 
 				// FIXME hopefully only the one alias :P
-				param_node = def_visit_all (param_def, 0, dag_find_node, 0);
+				param_node = def_visit_all (param_def, 0, dag_find_node,
+											&daglabel);
 				if (!param_node) {
 					bug (0, ".param_%d not set for %s", i, n->label->opcode);
 					continue;
 				}
+				daglabel->live = 1;
 				set_add (n->edges, param_node - 1);
 			}
 		}
