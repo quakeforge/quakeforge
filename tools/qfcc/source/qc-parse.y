@@ -285,12 +285,14 @@ external_def_list
 	| error ';'
 		{
 			yyerrok;
+			current_class = 0;
 			current_symtab = pr.symtab;
 			current_storage = sc_global;
 		}
 	| error '}'
 		{
 			yyerrok;
+			current_class = 0;
 			current_symtab = pr.symtab;
 			current_storage = sc_global;
 		}
