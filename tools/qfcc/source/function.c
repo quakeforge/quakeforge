@@ -646,6 +646,8 @@ finish_function (function_t *f)
 void
 emit_function (function_t *f, expr_t *e)
 {
+	if (pr.error_count)
+		return;
 	f->code = pr.code->size;
 	lineno_base = f->def->line;
 	f->sblock = make_statements (e);
