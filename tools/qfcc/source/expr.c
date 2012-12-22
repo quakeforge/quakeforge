@@ -1040,7 +1040,9 @@ field_expr (expr_t *e1, expr_t *e2)
 			return unary_expr ('.', e);
 		}
 	} else if (obj_is_class (t1)) {
-		internal_error (e1, "access to class instances not implemented");
+		//Class instance variables aren't allowed and thus declaring one
+		//is treated as an error, so this is a follow-on error.
+		return error (e1, "class instance access");
 	}
 	return type_mismatch (e1, e2, '.');
 }
