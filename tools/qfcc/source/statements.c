@@ -125,7 +125,7 @@ operand_string (operand_t *op)
 		case op_temp:
 			if (op->o.tempop.alias)
 				return va ("<tmp %s %p:%d:%p:%d>",
-						   pr_type_name[op->o.tempop.type->type],
+						   pr_type_name[op->type],
 						   op, op->o.tempop.users,
 						   op->o.tempop.alias,
 						   op->o.tempop.alias->o.tempop.users);
