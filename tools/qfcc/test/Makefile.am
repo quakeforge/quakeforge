@@ -26,6 +26,7 @@ test_progs_dat=\
 	infloop.dat \
 	modulo.dat \
 	return-ivar.dat \
+	sendv.dat \
 	structlive.dat \
 	structptr.dat \
 	vecinit.dat \
@@ -91,6 +92,13 @@ return_ivar_obj=$(return_ivar_dat_SOURCES:.r=.qfo)
 return-ivar.dat: $(return_ivar_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(return_ivar_obj)
 return-ivar.run: Makefile build-run
+	$(srcdir)/build-run $@
+
+sendv_dat_SOURCES=sendv.r
+sendv_obj=$(sendv_dat_SOURCES:.r=.qfo)
+sendv.dat: $(sendv_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(sendv_obj)
+sendv.run: Makefile build-run
 	$(srcdir)/build-run $@
 
 structlive_dat_SOURCES=structlive.r
