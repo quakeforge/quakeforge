@@ -1629,10 +1629,13 @@ class_init_obj_module (void)
 void
 class_init (void)
 {
-	if (!current_symtab)
-		current_symtab = pr.symtab;
+	symtab_t   *cs = current_symtab;
+
+	current_symtab = pr.symtab;
 	class_init_obj_module ();
 	init_classes ();
 	init_objective_structs ();
 	obj_initialized = 1;
+
+	current_symtab = cs;
 }
