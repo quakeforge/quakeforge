@@ -271,12 +271,29 @@ external_def_list
 	: /* empty */
 		{
 			current_symtab = pr.symtab;
+			current_storage = sc_global;
 		}
 	| external_def_list external_def
 	| external_def_list obj_def
-	| error END { current_class = 0; yyerrok; current_symtab = pr.symtab; }
-	| error ';' { yyerrok; current_symtab = pr.symtab; }
-	| error '}' { yyerrok; current_symtab = pr.symtab; }
+	| error END
+		{
+			yyerrok;
+			current_class = 0;
+			current_symtab = pr.symtab;
+			current_storage = sc_global;
+		}
+	| error ';'
+		{
+			yyerrok;
+			current_symtab = pr.symtab;
+			current_storage = sc_global;
+		}
+	| error '}'
+		{
+			yyerrok;
+			current_symtab = pr.symtab;
+			current_storage = sc_global;
+		}
 	;
 
 external_def
