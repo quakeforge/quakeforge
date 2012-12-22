@@ -266,73 +266,94 @@ typedef struct {
 	const char *name;
 	int         value;
 	type_t     *type;
-	int         traditional;
-	unsigned    version;
-	int         objc;
 } keyword_t;
 
+// These keywords are all part of the Ruamoko (Objective-QC) language.
+// The first time any one of them is encountered, the class system will be
+// initialized.
+// If not compiling for the QuakeForge VM, or if Ruamoko has been disabled,
+// then they will be unavailable as keywords.
+static keyword_t obj_keywords[] = {
+	{"id",				OBJECT,	&type_id		},
+	{"Class",			TYPE,	&type_Class		},
+	{"Method",			TYPE,	&type_obj_method},
+	{"Super",			TYPE,	&type_obj_super	},
+	{"SEL",				TYPE,	&type_SEL		},
+	{"IMP",				TYPE,	&type_IMP		},
+
+	{"@class",			CLASS					},
+	{"@defs",			DEFS					},
+	{"@encode",			ENCODE					},
+	{"@end",			END						},
+	{"@implementation",	IMPLEMENTATION			},
+	{"@interface",		INTERFACE				},
+	{"@private",		PRIVATE					},
+	{"@protected",		PROTECTED				},
+	{"@protocol",		PROTOCOL				},
+	{"@public",			PUBLIC					},
+	{"@reference",		REFERENCE				},
+	{"@selector",		SELECTOR				},
+	{"@self",			SELF					},
+	{"@this",			THIS					},
+
+	// This is a hack to trigger the initialization of the class
+	// sytem if it is seen before any other Objective-QC symbol. Otherwise,
+	// it is just an identifier, though it does reference a built-in type
+	// created by the class system.
+	{"obj_module",		0						},
+};
+
+// These keywords are extensions to QC and thus available only in advanced
+// or extended code. However, if they are preceeded by an @ (eg, @for), then
+// they are always available. This is to prevent them from causing trouble
+// for traditional code that might use these words as identifiers, but still
+// make the language features available to traditional code.
+static keyword_t at_keywords[] = {
+	{"for",			FOR		},
+	{"break",		BREAK	},
+	{"continue",	CONTINUE},
+	{"switch",		SWITCH	},
+	{"case",		CASE	},
+	{"default",		DEFAULT	},
+	{"nil",			NIL		},
+	{"struct",		STRUCT	},
+	{"union",		STRUCT	},
+	{"enum",		ENUM	},
+	{"typedef",		TYPEDEF	},
+	{"extern",		EXTERN	},
+	{"static",		STATIC	},
+	{"sizeof",		SIZEOF	},
+};
+
+// These keywords require the QuakeForge VM to be of any use. ie, they cannot
+// be supported (sanely) by v6 progs.
+static keyword_t qf_keywords[] = {
+	{"quaternion",	TYPE,	&type_quaternion},
+	{"int",			TYPE,	&type_integer	},
+	{"unsigned",	TYPE,	&type_integer	},//FIXME
+	{"function",	TYPE,	&type_function	},
+
+	{"@args",		ARGS,	0				},
+	{"@va_list",	TYPE,	&type_va_list	},
+	{"@param",		TYPE,	&type_param		},
+};
+
+// These keywors are always available. Other than @system and @overload, they
+// form traditional QuakeC.
 static keyword_t keywords[] = {
-	{"void",		TYPE,	&type_void,			2, PROG_ID_VERSION,	0},
-	{"float",		TYPE,	&type_float,		2, PROG_ID_VERSION,	0},
-	{"string",		TYPE,	&type_string,		2, PROG_ID_VERSION,	0},
-	{"vector",		TYPE,	&type_vector,		2, PROG_ID_VERSION,	0},
-	{"entity",		TYPE,	&type_entity,		2, PROG_ID_VERSION,	0},
-	{"quaternion",	TYPE,	&type_quaternion,	0, PROG_VERSION,	0},
-	{"int",			TYPE,	&type_integer,		0, PROG_VERSION,	0},
-	{"unsigned",	TYPE,	&type_integer,		0, PROG_VERSION,	0},//FIXME
-	{"function",	TYPE,	&type_function,		0, PROG_VERSION,	0},
-	{"id",			OBJECT,	&type_id,			0, PROG_VERSION,	1},
-	{"Class",		TYPE,	&type_Class,		0, PROG_VERSION,	1},
-//	{"Protocol",	TYPE,	&type_Protocol,		0, PROG_VERSION,	0},
-	{"Method",		TYPE,	&type_obj_method,	0, PROG_VERSION,	1},
-	{"Super",		TYPE,	&type_obj_super,	0, PROG_VERSION,	1},
-	{"SEL",			TYPE,	&type_SEL,			0, PROG_VERSION,	1},
-	{"IMP",			TYPE,	&type_IMP,			0, PROG_VERSION,	1},
-	{"local",		LOCAL,	0,					2, PROG_ID_VERSION,	0},
-	{"return",		RETURN,	0,					2, PROG_ID_VERSION,	0},
-	{"while",		WHILE,	0,					2, PROG_ID_VERSION,	0},
-	{"do",			DO,		0,					2, PROG_ID_VERSION,	0},
-	{"if",			IF,		0,					2, PROG_ID_VERSION,	0},
-	{"else",		ELSE,	0,					2, PROG_ID_VERSION,	0},
-	{"for",			FOR,	0,					1, PROG_ID_VERSION,	0},
-	{"break",		BREAK,	0,					2, PROG_ID_VERSION,	0},
-	{"continue",	CONTINUE, 0,				1, PROG_ID_VERSION,	0},
-	{"switch",		SWITCH,	0,					1, PROG_ID_VERSION,	0},
-	{"case",		CASE,	0,					1, PROG_ID_VERSION,	0},
-	{"default",		DEFAULT, 0,					1, PROG_ID_VERSION,	0},
-	{"nil",			NIL,	0,					0, PROG_ID_VERSION,	0},
-	{"@nil",		NIL,	0,					2, PROG_ID_VERSION,	0},
-	{"struct",		STRUCT, 0,					0, PROG_VERSION,	0},
-	{"union",		STRUCT,	0,					0, PROG_VERSION,	0},
-	{"enum",		ENUM,	0,					0, PROG_ID_VERSION,	0},
-	{"typedef",		TYPEDEF, 0,					0, PROG_ID_VERSION,	0},
-
-	// this is a hack to trigger the initialization of the class
-	// sytem if they are seen before any other Objective-QC symbol
-	{"obj_module", 0,		0,					0, PROG_VERSION,	1},
-
-	{"@class",		CLASS,	0,					0, PROG_VERSION,	1},
-	{"@defs",		DEFS,	0,					0, PROG_VERSION,	1},
-	{"@encode",		ENCODE,	0,					0, PROG_VERSION,	1},
-	{"@end",		END,	0,					0, PROG_VERSION,	1},
-	{"@implementation", IMPLEMENTATION, 0,		0, PROG_VERSION,	1},
-	{"@interface",	INTERFACE, 0,				0, PROG_VERSION,	1},
-	{"@private",	PRIVATE, 0,					0, PROG_VERSION,	1},
-	{"@protected",	PROTECTED, 0,				0, PROG_VERSION,	1},
-	{"@protocol",	PROTOCOL, 0,				0, PROG_VERSION,	1},
-	{"@public",		PUBLIC,	0,					0, PROG_VERSION,	1},
-	{"@reference",	REFERENCE, 0,				0, PROG_VERSION,	1},
-	{"@selector",	SELECTOR, 0,				0, PROG_VERSION,	1},
-	{"@self",		SELF,	0,					0, PROG_VERSION,	1},
-	{"@this",		THIS,	0,					0, PROG_VERSION,	1},
-	{"@args",		ARGS,	0,					0, PROG_VERSION,	0},
-	{"@va_list",	TYPE,	&type_va_list,		0, PROG_VERSION,	0},
-	{"@param",		TYPE,	&type_param,		0, PROG_VERSION,	0},
-	{"@extern",		EXTERN,	0,					1, PROG_ID_VERSION,	0},
-	{"@static",		STATIC,	0,					1, PROG_ID_VERSION,	0},
-	{"@system",		SYSTEM,	0,					1, PROG_ID_VERSION,	0},
-	{"@sizeof",		SIZEOF,	0,					0, PROG_VERSION,	0},
-	{"@overload",	OVERLOAD, 0,				0, PROG_VERSION,	0},
+	{"void",		TYPE,		&type_void	},
+	{"float",		TYPE,		&type_float	},
+	{"string",		TYPE,		&type_string},
+	{"vector",		TYPE,		&type_vector},
+	{"entity",		TYPE,		&type_entity},
+	{"local",		LOCAL,		0			},
+	{"return",		RETURN,		0			},
+	{"while",		WHILE,		0			},
+	{"do",			DO,			0			},
+	{"if",			IF,			0			},
+	{"else",		ELSE,		0			},
+	{"@system",		SYSTEM,		0			},
+	{"@overload",	OVERLOAD,	0			},
 };
 
 static const char *
@@ -342,37 +363,71 @@ keyword_get_key (const void *kw, void *unused)
 }
 
 static int
+process_keyword (keyword_t *keyword, const char *token)
+{
+	if (keyword->value == STRUCT) {
+		qc_yylval.op = token[0];
+	} else if (keyword->value == OBJECT) {
+		symbol_t   *sym;
+
+		sym = symtab_lookup (current_symtab, token);
+		qc_yylval.symbol = sym;
+	} else {
+		qc_yylval.type = keyword->type;
+	}
+	return keyword->value;
+}
+
+static int
 keyword_or_id (char *token)
 {
 	static hashtab_t *keyword_tab;
-	keyword_t  *keyword;
+	static hashtab_t *qf_keyword_tab;
+	static hashtab_t *at_keyword_tab;
+	static hashtab_t *obj_keyword_tab;
+
+	keyword_t  *keyword = 0;
 	symbol_t   *sym;
 
 	if (!keyword_tab) {
 		size_t      i;
-		keyword_tab = Hash_NewTable (1021, keyword_get_key, 0, 0);
-		for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); i++)
-			if (keywords[i].traditional >= options.traditional
-				&& keywords[i].version <= options.code.progsversion)
-				Hash_Add (keyword_tab, &keywords[i]);
+
+		keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
+		qf_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
+		at_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
+		obj_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
+
+		#define NUMKEYS(_k) (sizeof (_k) / sizeof (_k[0]))
+
+		for (i = 0; i < NUMKEYS(keywords); i++)
+			Hash_Add (keyword_tab, &keywords[i]);
+		for (i = 0; i < NUMKEYS(qf_keywords); i++)
+			Hash_Add (qf_keyword_tab, &qf_keywords[i]);
+		for (i = 0; i < NUMKEYS(at_keywords); i++)
+			Hash_Add (at_keyword_tab, &at_keywords[i]);
+		for (i = 0; i < NUMKEYS(obj_keywords); i++)
+			Hash_Add (obj_keyword_tab, &obj_keywords[i]);
 	}
-	keyword = Hash_Find (keyword_tab, token);
-	if (keyword) {
-		if (!options.traditional && keyword->objc && !obj_initialized)
-			class_init ();
-		if (keyword->value) {
-			if (keyword->value == STRUCT) {
-				qc_yylval.op = token[0];
-			} else if (keyword->value == OBJECT) {
-				sym = symtab_lookup (current_symtab, token);
-				qc_yylval.symbol = sym;
-			} else {
-				qc_yylval.type = 0;
-				qc_yylval.type = keyword->type;
-			}
-			return keyword->value;
+	if (options.traditional < 1) {
+		keyword = Hash_Find (obj_keyword_tab, token);
+		if (keyword) {
+			if (!obj_initialized)
+				class_init ();
 		}
+		if (!keyword)
+			keyword = Hash_Find (qf_keyword_tab, token);
 	}
+	if (!keyword && options.traditional < 2)
+		keyword = Hash_Find (at_keyword_tab, token);
+	if (!keyword && token[0] == '@') {
+		keyword = Hash_Find (at_keyword_tab, token + 1);
+		if (keyword)
+			token += 1;
+	}
+	if (!keyword)
+		keyword = Hash_Find (keyword_tab, token);
+	if (keyword && keyword->value)
+		return process_keyword (keyword, token);
 	if (token[0] == '@') {
 		return '@';
 	}
