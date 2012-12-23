@@ -356,6 +356,13 @@ expr_t *new_temp_def_expr (struct type_s *type);
 */
 expr_t *new_nil_expr (void);
 
+/** Create a new value expression node.
+
+	\param value	The value to put in the expression node.
+	\return			The new value expression.
+*/
+expr_t *new_value_expr (ex_value_t *value);
+
 /**	Create a new symbol expression node from a name.
 
 	\param name		The name for the symbol.

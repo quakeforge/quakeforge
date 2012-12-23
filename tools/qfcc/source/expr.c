@@ -497,6 +497,15 @@ new_nil_expr (void)
 }
 
 expr_t *
+new_value_expr (ex_value_t *value)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_value;
+	e->e.value = value;
+	return e;
+}
+
+expr_t *
 new_name_expr (const char *name)
 {
 	expr_t     *e = new_expr ();
