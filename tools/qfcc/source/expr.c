@@ -1125,7 +1125,7 @@ test_expr (expr_t *e)
 	new = binary_expr (NE, e, new);
 	new->line = e->line;
 	new->file = e->file;
-	return new;
+	return fold_constants (new);
 }
 
 void
