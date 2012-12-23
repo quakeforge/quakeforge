@@ -1191,6 +1191,17 @@ convert_bool (expr_t *e, int block)
 		if (!e->paren && options.warnings.precedence)
 			warning (e, "suggest parentheses around assignment "
 					 "used as truth value");
+		b = convert_bool (e->e.expr.e2, 1);
+		if (b->type == ex_error)
+			return b;
+		// insert the assignment into the bool's block
+		e->next = b->e.bool.e->e.block.head;
+		b->e.bool.e->e.block.head = e;
+		if (b->e.bool.e->e.block.tail == &b->e.bool.e->e.block.head) {
+			// shouldn't happen, but just in case
+			b->e.bool.e->e.block.tail = &e->next;
+		}
+		return b;
 	}
 
 	if (e->type == ex_uexpr && e->e.expr.op == '!') {
