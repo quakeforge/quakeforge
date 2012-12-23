@@ -2077,6 +2077,8 @@ incop_expr (int op, expr_t *e, int postop)
 		expr_t     *block = new_block_expr ();
 		expr_t     *res = new_expr ();
 
+		if (e->type == ex_error)	// get_type failed
+			return e;
 		t1 = new_temp_def_expr (type);
 		t2 = new_temp_def_expr (type);
 		append_expr (block, assign_expr (t1, e));
