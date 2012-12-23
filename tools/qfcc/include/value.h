@@ -54,8 +54,9 @@ struct ex_value_s *new_uinteger_val (int uinteger_val);
 struct ex_value_s *new_short_val (short short_val);
 struct ex_value_s *new_nil_val (struct type_s *type);
 
-struct ex_value_s * convert_value (struct ex_value_s *value,
-								   struct type_s *type);
+struct ex_value_s *convert_value (struct ex_value_s *value,
+								  struct type_s *type);
+struct ex_value_s *alias_value (struct ex_value_s *value, struct type_s *type);
 struct def_s *emit_value (struct ex_value_s *value, struct def_s *def);
 
 int	ReuseString (const char *str);

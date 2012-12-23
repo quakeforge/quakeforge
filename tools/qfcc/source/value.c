@@ -397,6 +397,20 @@ convert_value (ex_value_t *value, type_t *type)
 	}
 }
 
+ex_value_t *
+alias_value (ex_value_t *value, type_t *type)
+{
+	ex_value_t  new;
+
+	if (type_size (type) != type_size (ev_types[value->type])) {
+		error (0, "unable to alias different sized values");
+		return value;
+	}
+	new = *value;
+	new.type = type->type;
+	return find_value (&new);
+}
+
 static immediate_t *
 make_def_imm (def_t *def, hashtab_t *tab, ex_value_t *val)
 {
