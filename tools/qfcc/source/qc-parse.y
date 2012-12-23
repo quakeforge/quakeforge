@@ -426,7 +426,9 @@ external_decl
 				symtab_addsymbol (current_symtab, $1);
 			} else {
 				$1 = function_symbol ($1, spec.is_overload, 1);
-				make_function ($1, 0, $1->table->space, spec.storage);
+				// things might be a confused mess from earlier errors
+				if ($1->sy_type == sy_func)
+					make_function ($1, 0, $1->table->space, spec.storage);
 			}
 		}
 	;
@@ -966,7 +968,9 @@ non_code_func
 			symbol_t   *sym = $<symbol>0;
 			specifier_t spec = $<spec>-1;
 			if (!local_expr && sym->type->type != ev_field) {
-				make_function (sym, 0, sym->table->space, spec.storage);
+				// things might be a confused mess from earlier errors
+				if (sym->sy_type == sy_func)
+					make_function (sym, 0, sym->table->space, spec.storage);
 			} else {
 				initialize_def (sym, sym->type, 0, current_symtab->space,
 								spec.storage);
