@@ -1060,6 +1060,9 @@ build_bool_block (expr_t *block, expr_t *e)
 			} else if (e->e.expr.op == 'n') {
 				e->next = 0;
 				append_expr (block, e);
+			} else {
+				e->next = 0;
+				append_expr (block, e);
 			}
 			return;
 		case ex_uexpr:
