@@ -877,6 +877,8 @@ new_alias_expr (type_t *type, expr_t *expr)
 {
 	expr_t     *alias;
 
+	if (expr->type == ex_value)
+		return new_value_expr (alias_value (expr->e.value, type));
 	alias = new_unary_expr ('A', expr);
 	alias->e.expr.type = type;
 	//if (expr->type == ex_uexpr && expr->e.expr.op == 'A')
