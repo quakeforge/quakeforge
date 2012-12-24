@@ -205,7 +205,7 @@ print_label (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 	if (e->next)
 		next = e->next;
 	if (next)
-		dasprintf (dstr, "%*se_%p -> e_%p [constraint=false,style=dashed];\n",
+		dasprintf (dstr, "%*se_%p -> e_%p [constraint=true,style=dashed];\n",
 				   indent, "", e, next);
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
 			   e->e.label.name, e->line);
@@ -219,7 +219,7 @@ print_labelref (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 	if (e->next)
 		next = e->next;
 	if (next)
-		dasprintf (dstr, "%*se_%p -> e_%p [constraint=false,style=dashed];\n",
+		dasprintf (dstr, "%*se_%p -> e_%p [constraint=true,style=dashed];\n",
 				   indent, "", e, e->next);
 	dasprintf (dstr, "%*se_%p [label=\"&%s\\n%d\"];\n", indent, "", e,
 			   e->e.label.name, e->line);
@@ -307,7 +307,7 @@ print_subexpr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		if (e->next)
 			next = e->next;
 		if (next)
-			dasprintf (dstr, "%*se_%p -> e_%p [constraint=false,"
+			dasprintf (dstr, "%*se_%p -> e_%p [constraint=true,"
 					   "style=dashed];\n", indent, "", e, next);
 	} else {
 		_print_expr (dstr, e->e.expr.e1, level, id, next);
