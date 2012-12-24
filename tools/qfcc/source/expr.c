@@ -1188,10 +1188,16 @@ convert_bool (expr_t *e, int block)
 	expr_t     *b;
 
 	if (e->type == ex_expr && (e->e.expr.op == '=' || e->e.expr.op == PAS)) {
+		expr_t     *src;
 		if (!e->paren && options.warnings.precedence)
 			warning (e, "suggest parentheses around assignment "
 					 "used as truth value");
-		b = convert_bool (e->e.expr.e2, 1);
+		src = e->e.expr.e2;
+		if (src->type == ex_block) {
+			src = new_temp_def_expr (get_type (src));
+			e = assign_expr (e->e.expr.e1, assign_expr (src, e->e.expr.e2));
+		}
+		b = convert_bool (src, 1);
 		if (b->type == ex_error)
 			return b;
 		// insert the assignment into the bool's block
