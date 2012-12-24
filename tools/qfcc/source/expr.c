@@ -1195,7 +1195,8 @@ convert_bool (expr_t *e, int block)
 		src = e->e.expr.e2;
 		if (src->type == ex_block) {
 			src = new_temp_def_expr (get_type (src));
-			e = assign_expr (e->e.expr.e1, assign_expr (src, e->e.expr.e2));
+			e = new_binary_expr (e->e.expr.op, e->e.expr.e1,
+								 assign_expr (src, e->e.expr.e2));
 		}
 		b = convert_bool (src, 1);
 		if (b->type == ex_error)
