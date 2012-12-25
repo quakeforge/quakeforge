@@ -271,7 +271,6 @@ external_def_list
 	: /* empty */
 		{
 			current_symtab = pr.symtab;
-			current_storage = sc_global;
 		}
 	| external_def_list external_def
 	| external_def_list obj_def
