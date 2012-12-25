@@ -714,6 +714,20 @@ flow_build_dags (flowgraph_t *graph)
 		dump_dot ("dags", graph, dump_dot_flow_dags);
 }
 
+static void
+flow_cleanup_dags (flowgraph_t *graph)
+{
+	int         i;
+	flownode_t *node;
+
+	for (i = 0; i < graph->num_nodes; i++) {
+		node = graph->nodes[i];
+		dag_remove_dead_nodes (node->dag);
+	}
+	if (options.block_dot.dags)
+		dump_dot ("cleaned-dags", graph, dump_dot_flow_dags);
+}
+
 static sblock_t *
 flow_generate (flowgraph_t *graph)
 {
@@ -1253,5 +1267,6 @@ flow_data_flow (function_t *func)
 		dump_dot ("live", graph, dump_dot_flow_live);
 	flow_uninitialized (graph);
 	flow_build_dags (graph);
+	flow_cleanup_dags (graph);
 	func->sblock = flow_generate (graph);
 }

@@ -86,6 +86,8 @@ typedef struct dag_s {
 	dagnode_t **nodes;			///< array of all dagnodes in this dag
 	int         num_nodes;
 	int        *topo;			///< nodes in topological sort order
+	int         num_topo;		///< number of nodes in topo (may be <
+								///< num_nodes after dead node removal)
 	daglabel_t **labels;		///< array of all daglabels in this dag
 	int         num_labels;;
 	struct set_s *roots;		///< set of root nodes
@@ -105,6 +107,7 @@ void dot_dump_dag (void *_dag, const char *filename);
 */
 dag_t *dag_create (struct flownode_s *flownode);
 
+void dag_remove_dead_nodes (dag_t *dag);
 void dag_generate (dag_t *dag, sblock_t *block);
 
 //@}

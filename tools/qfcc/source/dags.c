@@ -551,12 +551,19 @@ dag_sort_nodes (dag_t *dag)
 	set_iter_t *root_iter;
 	set_t      *visited = set_new ();
 	int         topo = 0;
+	int        *tmp_topo;
 
-	dag->topo = malloc (dag->num_nodes * sizeof (int));
+	if (dag->topo)
+		free (dag->topo);
+	dag->topo = alloca (dag->num_nodes * sizeof (int));
 	for (root_iter = set_first (dag->roots); root_iter;
 		 root_iter = set_next (root_iter))
 		dag_sort_visit (dag, visited, root_iter->element, &topo);
 	set_delete (visited);
+	tmp_topo = malloc (topo * sizeof (int));
+	memcpy (tmp_topo, dag->topo, topo * sizeof (int));
+	dag->topo = tmp_topo;
+	dag->num_topo = topo;
 }
 
 static void
@@ -894,10 +901,49 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 }
 
 void
+dag_remove_dead_nodes (dag_t *dag)
+{
+	int         added_root;
+	set_iter_t *root_i, *child_i;
+	dagnode_t  *node, *child;
+
+	do {
+		added_root = 0;
+		for (root_i = set_first (dag->roots); root_i;
+			 root_i = set_next (root_i)) {
+			node = dag->nodes[root_i->element];
+			// only st_none (leaf nodes), st_expr and st_move can become
+			// dead nodes (no live vars attached).
+			if (node->type != st_none && node->type != st_expr
+				&& node->type != st_move)
+				continue;
+			if (!set_is_empty (node->identifiers))
+				continue;
+			// MOVEP with a variable destination pointer is never dead
+			if (node->type == st_move && node->children[3])
+				continue;
+			set_remove (dag->roots, node->number);
+			for (child_i = set_first (node->edges); child_i;
+				 child_i = set_next (child_i)) {
+				child = dag->nodes[child_i->element];
+				if (!set_is_member (child->parents, node->number))
+					continue;	// not really a child (dependency edge)
+				set_remove (child->parents, node->number);
+				if (set_is_empty (child->parents)) {
+					set_add (dag->roots, child->number);
+					added_root = 1;
+				}
+			}
+		}
+	} while (added_root);
+	dag_sort_nodes (dag);
+}
+
+void
 dag_generate (dag_t *dag, sblock_t *block)
 {
 	int         i;
 
-	for (i = 0; i < dag->num_nodes; i++)
+	for (i = 0; i < dag->num_topo; i++)
 		dag_gencode (dag, block, dag->nodes[dag->topo[i]]);
 }

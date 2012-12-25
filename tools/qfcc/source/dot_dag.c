@@ -105,6 +105,9 @@ print_node (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 	set_t      *edges = set_new ();
 	set_iter_t *edge_iter;
 
+	if (!set_is_member (dag->roots, node->number)
+		&& set_is_empty (node->parents))
+		return;
 	set_assign (edges, node->edges);
 	for (i = 0; i < 3; i++) {
 		if (node->children[i]) {
