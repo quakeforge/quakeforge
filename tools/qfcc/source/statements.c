@@ -1398,13 +1398,14 @@ unuse_label (ex_label_t *label)
 		remove_label_from_dest (label);
 }
 
-static void
+static int
 thread_jumps (sblock_t *blocks)
 {
 	sblock_t   *sblock;
+	int         did_something = 0;
 
 	if (!blocks)
-		return;
+		return 0;
 	for (sblock = blocks; sblock; sblock = sblock->next) {
 		statement_t *s;
 		ex_label_t **label, *l;
@@ -1426,6 +1427,7 @@ thread_jumps (sblock_t *blocks)
 			unuse_label (*label);
 			l->used++;
 			*label = l;
+			did_something = 1;
 		}
 		if ((statement_is_goto (s) || statement_is_cond (s))
 			&& (*label)->dest == sblock->next) {
@@ -1436,8 +1438,10 @@ thread_jumps (sblock_t *blocks)
 			free_statement (s);
 			*p = 0;
 			sblock->tail = p;
+			did_something = 1;
 		}
 	}
+	return did_something;
 }
 
 static int
@@ -1565,21 +1569,23 @@ make_statements (expr_t *e)
 {
 	sblock_t   *sblock = new_sblock ();
 	int         did_something;
+	int         pass = 0;
 
 	if (options.block_dot.expr)
 		dump_dot ("expr", e, dump_dot_expr);
 	statement_slist (sblock, e);
 	if (options.block_dot.initial)
 		dump_dot ("initial", sblock, dump_dot_sblock);
-	thread_jumps (sblock);
-	if (options.block_dot.thread)
-		dump_dot ("thread", sblock, dump_dot_sblock);
 	do {
-		did_something = remove_dead_blocks (sblock);
+		did_something = thread_jumps (sblock);
+		if (options.block_dot.thread)
+			dump_dot (va ("thread-%d", pass), sblock, dump_dot_sblock);
+		did_something |= remove_dead_blocks (sblock);
 		sblock = merge_blocks (sblock);
+		if (options.block_dot.dead)
+			dump_dot (va ("dead-%d", pass), sblock, dump_dot_sblock);
+		pass++;
 	} while (did_something);
-	if (options.block_dot.dead)
-		dump_dot ("dead", sblock, dump_dot_sblock);
 	check_final_block (sblock);
 	if (options.block_dot.final)
 		dump_dot ("final", sblock, dump_dot_sblock);
