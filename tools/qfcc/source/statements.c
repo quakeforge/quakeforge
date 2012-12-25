@@ -1427,7 +1427,8 @@ thread_jumps (sblock_t *blocks)
 			l->used++;
 			*label = l;
 		}
-		if (statement_is_goto (s) && (*label)->dest == sblock->next) {
+		if ((statement_is_goto (s) || statement_is_cond (s))
+			&& (*label)->dest == sblock->next) {
 			statement_t **p;
 			unuse_label (*label);
 			for (p = &sblock->statements; *p != s; p = &(*p)->next)
