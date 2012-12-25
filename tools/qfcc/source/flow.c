@@ -648,11 +648,13 @@ flow_uninit_scan_statements (flownode_t *node, set_t *defs, set_t *uninit)
 				op = var->op;
 				if (op->o.tempop.alias) {
 					var = op->o.tempop.alias->o.tempop.flowvar;
-					set_difference (defs, var->define);
+					if (var)
+						set_difference (defs, var->define);
 				}
 				for (op = op->o.tempop.alias_ops; op; op = op->next) {
 					var = op->o.tempop.flowvar;
-					set_difference (defs, var->define);
+					if (var)
+						set_difference (defs, var->define);
 				}
 			}
 		}
