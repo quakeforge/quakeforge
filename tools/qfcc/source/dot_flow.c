@@ -55,6 +55,7 @@ typedef struct {
 	const char *type;
 	void (*print_node) (dstring_t *, flowgraph_t *, flownode_t *, int);
 	void (*print_edge) (dstring_t *, flowgraph_t *, flowedge_t *, int);
+	void (*print_extra) (dstring_t *, flowgraph_t *, int);
 } flow_dot_t;
 
 static void
@@ -176,28 +177,41 @@ print_flow_node_live (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 					  int level)
 {
 	int         indent = level * 2 + 2;
-	set_iter_t *var_iter;
-	flowvar_t  *var;
 	int         live;
+	set_t      *use = node->live_vars.use;
+	set_t      *def = node->live_vars.def;
+	set_t      *in = node->live_vars.in;
+	set_t      *out = node->live_vars.out;
 
 	live = node->live_vars.out && !set_is_empty (node->live_vars.out);
 
 	if (live) {
-		dasprintf (dstr, "%*sfn_%p [shape=none,label=<\n", indent, "", node);
-		dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
-						 "cellspacing=\"0\">\n", indent + 2, "");
-		dasprintf (dstr, "%*s<tr><td>%d (%d)</td></tr>\n", indent + 4, "",
-				   node->id, node->dfn);
-		for (var_iter = set_first (node->live_vars.out); var_iter;
-			 var_iter = set_next (var_iter)) {
-			var = graph->func->vars[var_iter->element];
-			dasprintf (dstr, "%*s<tr><td>(%d) %s</td></tr>\n", indent + 4, "",
-					   var->number, html_string(operand_string (var->op)));
-		}
-		dasprintf (dstr, "%*s</table>>];\n", indent + 2, "");
+		dasprintf (dstr, "%*sfn_%p [label=\"", indent, "", node);
+		dasprintf (dstr, "use: %s\\n", set_as_string (use));
+		dasprintf (dstr, "def: %s\\n", set_as_string (def));
+		dasprintf (dstr, "in: %s\\n", set_as_string (in));
+		dasprintf (dstr, "out: %s\"];\n", set_as_string (out));
 	} else {
 		print_flow_node (dstr, graph, node, level);
 	}
+}
+
+static void
+print_extra_live (dstring_t *dstr, flowgraph_t *graph, int level)
+{
+	int         indent = level * 2 + 2;
+	int         i;
+	flowvar_t  *var;
+
+	dasprintf (dstr, "%*sfv_%p [shape=none,label=<\n", indent, "", graph);
+	dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
+					 "cellspacing=\"0\">\n", indent + 2, "");
+	for (i = 0; i < graph->func->num_vars; i++) {
+		var = graph->func->vars[i];
+		dasprintf (dstr, "%*s<tr><td>(%d) %s</td></tr>\n", indent + 4, "",
+				   var->number, html_string(operand_string (var->op)));
+	}
+	dasprintf (dstr, "%*s</table>>];\n", indent + 2, "");
 }
 
 static void
@@ -285,7 +299,7 @@ print_flow_edge_statements (dstring_t *dstr, flowgraph_t *graph,
 static flow_dot_t flow_dot_methods[] = {
 	{"",			print_flow_node,			print_flow_edge},
 	{"dag",			print_flow_node_dag,		print_flow_edge_dag},
-	{"live",		print_flow_node_live,		print_flow_edge},
+	{"live",		print_flow_node_live, print_flow_edge, print_extra_live},
 	{"reaching",	print_flow_node_reaching,	print_flow_edge},
 	{"statements",	print_flow_node_statements,	print_flow_edge_statements},
 };
@@ -310,6 +324,8 @@ print_flowgraph (flow_dot_t *method, flowgraph_t *graph, const char *filename)
 			continue;		// dummy node
 		method->print_edge (dstr, graph, &graph->edges[i], 0);
 	}
+	if (method->print_extra)
+		method->print_extra (dstr, graph, 0);
 	dasprintf (dstr, "}\n");
 
 	if (filename) {
