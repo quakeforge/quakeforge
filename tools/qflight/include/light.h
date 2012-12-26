@@ -29,7 +29,15 @@
 #ifndef __light_h
 #define __light_h
 
+/** \defgroup qflight QuakeForge light compiler.
+*/
+
 #include "QF/bspfile.h"
+
+/** \defgroup qflight_general General functions
+	\ingroup qflight
+*/
+//@{
 
 #define	ON_EPSILON	0.1
 #define	MAXLIGHTS	1024
@@ -113,5 +121,7 @@ extern lightchain_t **surfacelightchain;
 extern vec3_t *surfaceorgs;
 extern struct entity_s **novislights;
 extern int num_novislights;
+
+//@}
 
 #endif// __light_h

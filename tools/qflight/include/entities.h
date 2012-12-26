@@ -29,6 +29,11 @@
 #ifndef __entities_h
 #define __entities_h
 
+/** \defgroup qflight_entities Light entity data.
+	\ingroup qflight
+*/
+//@{
+
 #define DEFAULTLIGHTLEVEL	300
 #define DEFAULTFALLOFF 1.0f
 
@@ -97,5 +102,7 @@ void GetVectorForKey (entity_t *ent, const char *key, vec3_t vec);
 
 void LoadEntities (void);
 void WriteEntitiesToString (void);
+
+//@}
 
 #endif// __entities_h

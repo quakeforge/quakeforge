@@ -27,12 +27,25 @@
 		Boston, MA  02111-1307, USA
 
 */
+#ifndef __properties_h
+#define __properties_h
+
+/** \defgroup qflight_properties Lighting properties
+	\ingroup qflight
+*/
+//@{
+
+struct plitem_s;
+
 float parse_float (const char *str);
 void parse_color (const char *str, vec3_t color);
 float parse_light (const char *str, vec3_t color);
 int parse_attenuation (const char *arg);
 int parse_noise (const char *arg);
-struct plitem_s;
 void set_properties (entity_t *ent, struct plitem_s *dict);
 
 void LoadProperties (const char *filename);
+
+//@}
+
+#endif//__properties_h

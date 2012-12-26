@@ -29,14 +29,34 @@
 #ifndef __threads_h
 #define __threads_h
 
+/** \defgroup qflight_threads Light thread handling.
+	\ingroup qflight
+*/
+//@{
+
 #if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
+
 #include <pthread.h>
+
 extern pthread_mutex_t *my_mutex;
-#define	LOCK	do { if (options.threads > 1) pthread_mutex_lock (my_mutex); } while (0);
-#define	UNLOCK	do { if (options.threads > 1) pthread_mutex_unlock (my_mutex); } while (0);
+
+#define	LOCK							\
+	do {								\
+		if (options.threads > 1)		\
+		pthread_mutex_lock (my_mutex);	\
+	} while (0)
+
+#define	UNLOCK									\
+	do {										\
+		if (options.threads > 1)				\
+			pthread_mutex_unlock (my_mutex);	\
+	} while (0)
+
 #else
+
 #define	LOCK
 #define	UNLOCK
+
 #endif
 
 extern int numthreads;
@@ -45,5 +65,7 @@ typedef void *(threadfunc_t) (void *);
 
 void InitThreads (void);
 void RunThreadsOn (threadfunc_t func);
+
+//@}
 
 #endif// __threads_h
