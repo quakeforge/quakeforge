@@ -367,15 +367,6 @@ SetKeyValue (entity_t *ent, const char *key, const char *value)
 	ep->value = strdup (value);
 }
 
-float
-FloatForKey (entity_t *ent, const char *key)
-{
-	const char*k;
-
-	k = ValueForKey (ent, key);
-	return atof (k);
-}
-
 entity_t *
 FindEntityWithKeyPair (const char *key, const char *value)
 {

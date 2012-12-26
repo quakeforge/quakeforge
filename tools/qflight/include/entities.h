@@ -96,7 +96,6 @@ extern int num_entities;
 
 const char *ValueForKey (entity_t *ent, const char *key);
 void SetKeyValue (entity_t *ent, const char *key, const char *value);
-float FloatForKey (entity_t *ent, const char *key);
 entity_t *FindEntityWithKeyPair(const char *key, const char *value);
 void GetVectorForKey (entity_t *ent, const char *key, vec3_t vec);
 
