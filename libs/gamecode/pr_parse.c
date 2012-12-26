@@ -311,11 +311,11 @@ ED_ConvertToPlist (progs_t *pr, script_t *script)
 	while (Script_GetToken (script, 1)) {
 		token = script->token->str;
 		if (!strequal (token, "{"))
-			PR_Error (pr, "ED_ParseEntity: EOF without closing brace");
+			PR_Error (pr, "ED_ConvertToPlist: EOF without closing brace");
 		ent = PL_NewDictionary ();
 		while (1) {
 			if (!Script_GetToken (script, 1))
-				PR_Error (pr, "ED_ParseEntity: EOF without closing brace");
+				PR_Error (pr, "ED_ConvertToPlist: EOF without closing brace");
 			token = script->token->str;
 			if (strequal (token, "}"))
 				break;
@@ -329,11 +329,11 @@ ED_ConvertToPlist (progs_t *pr, script_t *script)
 				key = PL_NewString (token);
 			}
 			if (!Script_TokenAvailable (script, 0))
-				PR_Error (pr, "ED_ParseEntity: EOL without value");
+				PR_Error (pr, "ED_ConvertToPlist: EOL without value");
 			Script_GetToken (script, 0);
 			token = script->token->str;
 			if (strequal (token, "}"))
-				PR_Error (pr, "ED_ParseEntity: closing brace without data");
+				PR_Error (pr, "ED_ConvertToPlist: closing brace without data");
 			if (anglehack)
 				value = PL_NewString (va ("0 %s 0", token));
 			else
