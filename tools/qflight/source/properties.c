@@ -87,7 +87,7 @@ parse_light (const char *str, vec3_t color)
 	i = sscanf (str, "%lf %lf %lf %lf", &vec[0], &vec[1], &vec[2], &vec[3]);
 	switch (i) {
 		case 4:		// HalfLife light
-			VectorScale (vec + 1, 1.0 / 255, color);
+			VectorScale (vec, 1.0 / 255, color);
 			return vec[3];
 			break;
 		case 3:
