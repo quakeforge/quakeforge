@@ -25,6 +25,7 @@ test_progs_dat=\
 	deadbool.dat \
 	infloop.dat \
 	modulo.dat \
+	paramret.dat \
 	return-ivar.dat \
 	sendv.dat \
 	structlive.dat \
@@ -85,6 +86,13 @@ modulo_obj=$(modulo_dat_SOURCES:.r=.qfo)
 modulo.dat: $(modulo_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(modulo_obj)
 modulo.run: Makefile build-run
+	TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
+
+paramret_dat_SOURCES=paramret.r
+paramret_obj=$(paramret_dat_SOURCES:.r=.qfo)
+paramret.dat: $(paramret_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(paramret_obj)
+paramret.run: Makefile build-run
 	TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
 
 return_ivar_dat_SOURCES=return-ivar.r
