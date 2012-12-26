@@ -920,7 +920,7 @@ dag_remove_dead_nodes (dag_t *dag)
 			if (!set_is_empty (node->identifiers))
 				continue;
 			// MOVEP with a variable destination pointer is never dead
-			if (node->type == st_move && node->children[3])
+			if (node->type == st_move && node->children[2])
 				continue;
 			set_remove (dag->roots, node->number);
 			for (child_i = set_first (node->edges); child_i;
