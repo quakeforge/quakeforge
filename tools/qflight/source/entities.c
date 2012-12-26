@@ -47,6 +47,7 @@
 #include "QF/bspfile.h"
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
+#include "QF/progs.h"
 #include "QF/qfplist.h"
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
@@ -61,7 +62,6 @@
 
 entity_t *entities;
 int num_entities;
-static int max_entities;
 
 /*
 	ENTITY FILE PARSING
@@ -164,36 +164,31 @@ WriteLights (void)
 void
 LoadEntities (void)
 {
-	const char *key;
 	double      vec[4];
 	entity_t   *entity;
-	epair_t    *epair;
 	float       cutoff_range;
 	float       intensity;
 	plitem_t   *dict;
+	plitem_t   *entity_list;
+	plitem_t   *keys;
+	int         count;
 	script_t   *script;
+	const char *field_name;
+	const char *value;
+	int         i;
 
 	script = Script_New ();
 	Script_Start (script, "ent data", bsp->entdata);
+	entity_list = ED_ConvertToPlist (script);
+	Script_Delete (script);
 
 	// start parsing
-	max_entities = num_entities = 0;
-	entities = 0;
+	num_entities = PL_A_NumObjects (entity_list);
+	entities = malloc (num_entities * sizeof (entity_t));;
 
 	// go through all the entities
-	while (Script_GetToken (script, 1)) {
-		// parse the opening brace
-		if (strcmp (script->token->str, "{"))
-			fprintf (stderr, "LoadEntities: found %s when expecting {\n",
-					 script->token->str);
-
-		if (num_entities == max_entities) {
-			max_entities += 128;
-			entities = realloc (entities, max_entities * sizeof (entity_t));
-		}
-		entity = &entities[num_entities];
-		num_entities++;
-
+	for (i = 0; i < num_entities; i++) {
+		entity = &entities[i];
 		memset (entity, 0, sizeof (*entity));
 		entity->color[0] = entity->color[1] = entity->color[2] = 1.0f;
 		VectorCopy (entity->color, entity->color2);
@@ -201,41 +196,27 @@ LoadEntities (void)
 		entity->lightradius = 0;
 		entity->lightoffset = LIGHTDISTBIAS;
 		entity->attenuation = options.attenuation;
+		entity->dict = PL_ObjectAtIndex (entity_list, i);
 
 		dict = PL_NewDictionary ();
 
 		// go through all the keys in this entity
-		while (1) {
-			// parse key
-			if (!Script_GetToken (script, 1))
-				fprintf (stderr, "LoadEntities: EOF without closing brace");
-			if (!strcmp (script->token->str, "}"))
-				break;
-			key = strdup (script->token->str);
+		keys = PL_D_AllKeys (entity->dict);
+		count = PL_A_NumObjects (keys);
+		while (count-- > 0) {
+			field_name = PL_String (PL_ObjectAtIndex (keys, count));
+			value = PL_String (PL_ObjectForKey (entity->dict, field_name));
 
-			// parse value
-			// FIXME shouldn't cross line
-			if (!Script_GetToken (script, 1))
-				fprintf (stderr, "LoadEntities: EOF without closing brace");
-			if (!strcmp (script->token->str, "}"))
-				fprintf (stderr, "LoadEntities: closing brace without data");
-
-			epair = calloc (1, sizeof (epair_t));
-			epair->key = key;
-			epair->value = strdup (script->token->str);
-			epair->next = entity->epairs;
-			entity->epairs = epair;
-
-			if (!strcmp (key, "classname"))
-				entity->classname = epair->value;
-			else if (!strcmp (key, "target"))
-				entity->target = epair->value;
-			else if (!strcmp (key, "targetname"))
-				entity->targetname = epair->value;
-			else if (!strcmp (key, "origin")) {
+			if (!strcmp (field_name, "classname"))
+				entity->classname = value;
+			else if (!strcmp (field_name, "target"))
+				entity->target = value;
+			else if (!strcmp (field_name, "targetname"))
+				entity->targetname = value;
+			else if (!strcmp (field_name, "origin")) {
 				// scan into doubles, then assign
 				// which makes it vec_t size independent
-				if (sscanf (script->token->str, "%lf %lf %lf",
+				if (sscanf (value, "%lf %lf %lf",
 							&vec[0], &vec[1], &vec[2]) != 3)
 					fprintf (stderr, "LoadEntities: not 3 values for origin");
 				else
@@ -244,9 +225,9 @@ LoadEntities (void)
 
 			// the leading _ is so the engine doesn't search for the field,
 			// but it's not wanted in the properties dictionary
-			if (*key == '_')
-				key++;
-			PL_D_AddObject (dict, key, PL_NewString (script->token->str));
+			if (*field_name == '_')
+				field_name++;
+			PL_D_AddObject (dict, field_name, PL_NewString (value));
 		}
 
 		if (options.verbosity > 1 && entity->targetname)
@@ -346,47 +327,45 @@ LoadEntities (void)
 const char *
 ValueForKey (entity_t *ent, const char *key)
 {
-	epair_t		*ep;
+	plitem_t   *obj = PL_ObjectForKey (ent->dict, key);
+	const char *val;
 
-	for (ep = ent->epairs; ep; ep = ep->next)
-		if (!strcmp (ep->key, key))
-			return ep->value;
-	return "";
+	if (!obj)
+		return "";
+	val = PL_String (obj);
+	if (!val)
+		return "";
+	return val;
 }
 
 void
 SetKeyValue (entity_t *ent, const char *key, const char *value)
 {
-	epair_t		*ep;
+	plitem_t   *obj;
 
-	for (ep = ent->epairs; ep; ep = ep->next)
-		if (!strcmp (ep->key, key)) {
-			ep->value = strdup (value);
-			return;
-		}
-	ep = malloc (sizeof (*ep));
-	ep->next = ent->epairs;
-	ent->epairs = ep;
-	ep->key = strdup (key);
-	ep->value = strdup (value);
+	obj = PL_NewString (value);
+	PL_D_AddObject (ent->dict, key, obj);
 }
 
 entity_t *
 FindEntityWithKeyPair (const char *key, const char *value)
 {
-	entity_t   *ent;
-	epair_t    *ep;
 	int         i;
+	entity_t   *ent;
+	plitem_t   *obj;
+	const char *val;
 
 	for (i = 0; i < num_entities; i++) {
 		ent = &entities[i];
-		for (ep = ent->epairs; ep; ep = ep->next) {
-			if (!strcmp (ep->key, key)) {
-				if (!strcmp (ep->value, value))
-					return ent;
-				break;
-			}
-		}
+		obj = PL_ObjectForKey (ent->dict, key);
+		if (!obj)
+			continue;
+		val = PL_String (obj);
+		if (!val)
+			break;
+		if (!strcmp (val, value))
+			return ent;
+		break;
 	}
 	return 0;
 }
@@ -404,8 +383,11 @@ void
 WriteEntitiesToString (void)
 {
 	dstring_t  *buf;
-	epair_t		*ep;
 	int			i;
+	plitem_t   *keys;
+	int         count;
+	const char *field_name;
+	const char *value;
 
 	buf = dstring_newstr ();
 
@@ -413,14 +395,17 @@ WriteEntitiesToString (void)
 		printf ("%i switchable light styles\n", numlighttargets);
 
 	for (i = 0; i < num_entities; i++) {
-		ep = entities[i].epairs;
-		if (!ep)
+		if (!entities[i].dict)
 			continue;		// ent got removed
 
 		dstring_appendstr (buf, "{\n");
 
-		for (ep = entities[i].epairs; ep; ep = ep->next) {
-			dasprintf (buf, "\"%s\" \"%s\"\n", ep->key, ep->value);
+		keys = PL_D_AllKeys (entities[i].dict);
+		count = PL_A_NumObjects (keys);
+		while (count-- > 0) {
+			field_name = PL_String (PL_ObjectAtIndex (keys, count));
+			value = PL_String (PL_ObjectForKey (entities[i].dict, field_name));
+			dasprintf (buf, "\"%s\" \"%s\"\n", field_name, value);
 		}
 		dstring_appendstr (buf, "}\n");
 	}

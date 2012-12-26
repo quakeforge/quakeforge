@@ -50,12 +50,6 @@
 #define	NOISE_SMOOTH	1	// low res noise with interpolation
 #define NOISE_PERLIN	2	// combines several noise frequencies
 
-typedef struct epair_s {
-	struct epair_s *next;
-	const char *key;
-	const char *value;
-} epair_t;
-
 typedef struct entity_s {
 	const char *classname;
 	vec3_t      origin;
@@ -87,8 +81,8 @@ typedef struct entity_s {
 
 	const char *target;
 	const char *targetname;
-	struct epair_s *epairs;
 	struct entity_s *targetent;
+	struct plitem_s *dict;
 } entity_t;
 
 extern entity_t *entities;
