@@ -299,7 +299,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 */
 
 VISIBLE plitem_t *
-ED_ConvertToPlist (progs_t *pr, script_t *script)
+ED_ConvertToPlist (script_t *script)
 {
 	plitem_t   *plist = PL_NewArray ();
 	plitem_t   *ent;
@@ -311,11 +311,11 @@ ED_ConvertToPlist (progs_t *pr, script_t *script)
 	while (Script_GetToken (script, 1)) {
 		token = script->token->str;
 		if (!strequal (token, "{"))
-			PR_Error (pr, "ED_ConvertToPlist: EOF without closing brace");
+			Sys_Error ("ED_ConvertToPlist: EOF without closing brace");
 		ent = PL_NewDictionary ();
 		while (1) {
 			if (!Script_GetToken (script, 1))
-				PR_Error (pr, "ED_ConvertToPlist: EOF without closing brace");
+				Sys_Error ("ED_ConvertToPlist: EOF without closing brace");
 			token = script->token->str;
 			if (strequal (token, "}"))
 				break;
@@ -329,11 +329,11 @@ ED_ConvertToPlist (progs_t *pr, script_t *script)
 				key = PL_NewString (token);
 			}
 			if (!Script_TokenAvailable (script, 0))
-				PR_Error (pr, "ED_ConvertToPlist: EOL without value");
+				Sys_Error ("ED_ConvertToPlist: EOL without value");
 			Script_GetToken (script, 0);
 			token = script->token->str;
 			if (strequal (token, "}"))
-				PR_Error (pr, "ED_ConvertToPlist: closing brace without data");
+				Sys_Error ("ED_ConvertToPlist: closing brace without data");
 			if (anglehack)
 				value = PL_NewString (va ("0 %s 0", token));
 			else
@@ -501,7 +501,7 @@ ED_Parse (progs_t *pr, const char *data)
 		} else {
 			// oldstyle entity data
 			Script_UngetToken (script);
-			entity_list = ED_ConvertToPlist (pr, script);
+			entity_list = ED_ConvertToPlist (script);
 		}
 	}
 	Script_Delete (script);
