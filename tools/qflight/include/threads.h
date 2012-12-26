@@ -40,10 +40,10 @@
 
 extern pthread_mutex_t *my_mutex;
 
-#define	LOCK							\
-	do {								\
-		if (options.threads > 1)		\
-		pthread_mutex_lock (my_mutex);	\
+#define	LOCK								\
+	do {									\
+		if (options.threads > 1)			\
+			pthread_mutex_lock (my_mutex);	\
 	} while (0)
 
 #define	UNLOCK									\
