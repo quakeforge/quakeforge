@@ -173,7 +173,7 @@ set_properties (entity_t *ent, plitem_t *dict)
 
 	if (properties) {
 		prop = PL_ObjectForKey (properties, ent->classname);
-		if ((p = get_item ("_light_name", dict, 0))
+		if ((p = get_item ("light_name", dict, 0))
 			&& (str = PL_String (p)))
 			prop = PL_ObjectForKey (properties, str);
 		if (!prop)
@@ -183,8 +183,7 @@ set_properties (entity_t *ent, plitem_t *dict)
 		if (!prop)
 			prop = PL_ObjectForKey (properties, "default");
 	}
-	if ((p = get_item ("light", dict, prop))
-		|| (p = get_item ("_light", dict, prop))) {
+	if ((p = get_item ("light", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->light = parse_light (str, ent->color);
 		}
@@ -208,18 +207,17 @@ set_properties (entity_t *ent, plitem_t *dict)
 			ent->falloff *= ent->falloff;			// presquared
 		}
 	}
-	if ((p = get_item ("_lightradius", dict, prop))) {
+	if ((p = get_item ("lightradius", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->lightradius = parse_float (str);
 		}
 	}
-	if ((p = get_item ("color", dict, prop))
-		|| (p = get_item ("_color", dict, prop))) {
+	if ((p = get_item ("color", dict, prop))) {
 		if ((str = PL_String (p))) {
 			parse_color (str, ent->color2);
 		}
 	}
-	if ((p = get_item ("_attenuation", dict, prop))) {
+	if ((p = get_item ("attenuation", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->attenuation = parse_attenuation (str);
 			if (ent->attenuation == -1) {
@@ -229,27 +227,27 @@ set_properties (entity_t *ent, plitem_t *dict)
 			}
 		}
 	}
-	if ((p = get_item ("_radius", dict, prop))) {
+	if ((p = get_item ("radius", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->radius = parse_float (str);
 		}
 	}
-	if ((p = get_item ("_noise", dict, prop))) {
+	if ((p = get_item ("noise", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->noise = parse_float (str);
 		}
 	}
-	if ((p = get_item ("_noisetype", dict, prop))) {
+	if ((p = get_item ("noisetype", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->noisetype = parse_noise (str);
 		}
 	}
-	if ((p = get_item ("_persistence", dict, prop))) {
+	if ((p = get_item ("persistence", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->persistence = parse_float (str);
 		}
 	}
-	if ((p = get_item ("_resolution", dict, prop))) {
+	if ((p = get_item ("resolution", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->resolution = parse_float (str);
 		}

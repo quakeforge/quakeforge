@@ -126,19 +126,19 @@ int parse_noise (const char *arg);
 	will be ignored.
 
 	Supported properties:
-	\arg \c light/_light	see \ref parse_light
+	\arg \c light			see \ref parse_light
 	\arg \c style			light style: 0-254
 	\arg \c angle			spotlight con angle in degress. defaults to 20
 	\arg \c wait			light "falloff". defaults to 1.0
-	\arg \c _lightradius	size of light. interacts with falloff for
+	\arg \c lightradius		size of light. interacts with falloff for
 							distance clipping (?). defaults to 0
-	\arg \c color/_color	see \ref parse_color
-	\arg \c _attenuation	see \ref parse_attenuation
-	\arg \c _radius			the range of the light.
-	\arg \c _noise			noise intensity (?)
-	\arg \c _noisetype		see \ref parse_noise
-	\arg \c _persistence	noise parameter
-	\arg \c _resolution		noise parameter
+	\arg \c color			see \ref parse_color
+	\arg \c attenuation		see \ref parse_attenuation
+	\arg \c radius			the range of the light.
+	\arg \c noise			noise intensity (?)
+	\arg \c noisetype		see \ref parse_noise
+	\arg \c persistence		noise parameter
+	\arg \c resolution		noise parameter
 
 	\param ent		The entity for which to set the lighting values.
 	\param dict		A dictionary property list item representing the fields

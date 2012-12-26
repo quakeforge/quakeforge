@@ -226,8 +226,6 @@ LoadEntities (void)
 			epair->next = entity->epairs;
 			entity->epairs = epair;
 
-			PL_D_AddObject (dict, key, PL_NewString (script->token->str));
-
 			if (!strcmp (key, "classname"))
 				entity->classname = epair->value;
 			else if (!strcmp (key, "target"))
@@ -243,6 +241,12 @@ LoadEntities (void)
 				else
 					VectorCopy (vec, entity->origin);
 			}
+
+			// the leading _ is so the engine doesn't search for the field,
+			// but it's not wanted in the properties dictionary
+			if (*key == '_')
+				key++;
+			PL_D_AddObject (dict, key, PL_NewString (script->token->str));
 		}
 
 		if (options.verbosity > 1 && entity->targetname)
