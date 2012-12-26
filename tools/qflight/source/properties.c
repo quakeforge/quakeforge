@@ -1,12 +1,12 @@
 /*
-	#FILENAME#
+	properties.c
 
-	#DESCRIPTION#
+	Light properties handling.
 
-	Copyright (C) 2004 #AUTHOR#
+	Copyright (C) 2004 Bill Currie <bill@taniwha.org>
 
-	Author: #AUTHOR#
-	Date: #DATE#
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2004/01/27
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
