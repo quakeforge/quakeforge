@@ -153,6 +153,7 @@ SV_InitHull (hull_t *hull, mclipnode_t *clipnodes, plane_t *planes)
 	hull->planes = planes;
 	hull->firstclipnode = 0;
 	hull->lastclipnode = 5;
+	hull->depth = 6;
 
 	for (i = 0; i < 6; i++) {
 		hull->clipnodes[i].planenum = i;
