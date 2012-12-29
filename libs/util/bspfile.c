@@ -159,13 +159,13 @@ swap_to_bsp29 (bsp29_t *bsp29, const bsp_t *bsp2)
 	dmiptexlump_t  *mtl;
 	dmodel_t       *d;
 
-	if (bsp2->header && bsp29->header) {
-		bsp29->header->version = LittleLong (bsp2->header->version);
+	if (bsp29->header) {
+		bsp29->header->version = LittleLong (bsp29->header->version);
 		for (i = 0; i < HEADER_LUMPS; i++) {
 			bsp29->header->lumps[i].fileofs =
-				LittleLong (bsp2->header->lumps[i].fileofs);
+				LittleLong (bsp29->header->lumps[i].fileofs);
 			bsp29->header->lumps[i].filelen =
-				LittleLong (bsp2->header->lumps[i].filelen);
+				LittleLong (bsp29->header->lumps[i].filelen);
 		}
 	}
 
