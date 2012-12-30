@@ -84,16 +84,22 @@ float minlights[MAX_MAP_FACES];
 int
 GetFileSpace (int size)
 {
+	int oldsize;
 	int ofs;
 
 	LOCK;
+	oldsize = lightdata->size;
 	lightdata->size = (lightdata->size + 3) & ~3;
 	ofs = lightdata->size;
 	lightdata->size += size;
 	dstring_adjust (lightdata);
+	memset (lightdata->str + oldsize, 0, ofs - oldsize);
+	memset (lightdata->str + ofs, 0, size);
 
 	rgblightdata->size = (ofs + size) * 3;
 	dstring_adjust (rgblightdata);
+	memset (rgblightdata->str + oldsize * 3, 0, (ofs - oldsize) * 3);
+	memset (rgblightdata->str + ofs * 3, 0, size * 3);
 	UNLOCK;
 	return ofs;
 }
