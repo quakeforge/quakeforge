@@ -499,7 +499,7 @@ convert_to_game_dict (script_t *script)
 	PL_D_AddObject (game, "lightstyles", item);
 
 	// load the edicts out of the savegame file
-	list = ED_ConvertToPlist (script);
+	list = ED_ConvertToPlist (script, 0);
 	item = PL_RemoveObjectAtIndex (list, 0);
 	PL_D_AddObject (game, "globals", item);
 	PL_D_AddObject (game, "entities", list);

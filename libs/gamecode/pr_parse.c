@@ -299,7 +299,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 */
 
 VISIBLE plitem_t *
-ED_ConvertToPlist (script_t *script)
+ED_ConvertToPlist (script_t *script, int nohack)
 {
 	plitem_t   *plist = PL_NewArray ();
 	plitem_t   *ent;
@@ -320,10 +320,10 @@ ED_ConvertToPlist (script_t *script)
 			if (strequal (token, "}"))
 				break;
 			anglehack = 0;
-			if (strequal (token, "angle")) {
+			if (!nohack && strequal (token, "angle")) {
 				key = PL_NewString ("angles");
 				anglehack = 1;
-			} else if (strequal (token, "light")) {
+			} else if (!nohack && strequal (token, "light")) {
 				key = PL_NewString ("light_lev");
 			} else {
 				key = PL_NewString (token);
@@ -501,7 +501,7 @@ ED_Parse (progs_t *pr, const char *data)
 		} else {
 			// oldstyle entity data
 			Script_UngetToken (script);
-			entity_list = ED_ConvertToPlist (script);
+			entity_list = ED_ConvertToPlist (script, 0);
 		}
 	}
 	Script_Delete (script);

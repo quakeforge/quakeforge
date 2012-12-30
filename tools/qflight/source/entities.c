@@ -179,7 +179,7 @@ LoadEntities (void)
 
 	script = Script_New ();
 	Script_Start (script, "ent data", bsp->entdata);
-	entity_list = ED_ConvertToPlist (script);
+	entity_list = ED_ConvertToPlist (script, 1);
 	Script_Delete (script);
 
 	// start parsing
