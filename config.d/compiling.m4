@@ -72,7 +72,7 @@ if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 		if test "$CC_MAJ" -ge 4; then
 			QF_CC_OPTION(-finline-limit=32000 -Winline)
 		fi
-		heavy="-O2 $CFLAGS -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
+		heavy="-O2 $CFLAGS -ffast-math -fno-unsafe-math-optimizations -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
 		CFLAGS="$saved_cflags"
 		light="-O2"
 		AC_ARG_ENABLE(strict-aliasing,
