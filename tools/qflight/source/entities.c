@@ -365,7 +365,6 @@ FindEntityWithKeyPair (const char *key, const char *value)
 			break;
 		if (!strcmp (val, value))
 			return ent;
-		break;
 	}
 	return 0;
 }
