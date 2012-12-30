@@ -384,11 +384,14 @@ swap_from_bsp29 (bsp_t *bsp2, const bsp29_t *bsp29,
 		const dnode29_t  *node29 = &bsp29->nodes[i];
 		node2->planenum = LittleLong (node29->planenum);
 		for (j=0 ; j<3 ; j++) {
-			node2->mins[j] = LittleShort (node29->mins[j]);
-			node2->maxs[j] = LittleShort (node29->maxs[j]);
+			node2->mins[j] = (int16_t) LittleShort (node29->mins[j]);
+			node2->maxs[j] = (int16_t) LittleShort (node29->maxs[j]);
 		}
-		node2->children[0] = (uint16_t) LittleShort (node29->children[0]);
-		node2->children[1] = (uint16_t) LittleShort (node29->children[1]);
+		for (j = 0; j < 2; j++) {
+			node2->children[j] = LittleShort (node29->children[j]);
+			if (node2->children[j] >= bsp2->numnodes)
+				node2->children[j] = (int16_t) node2->children[j];
+		}
 		node2->firstface = LittleShort (node29->firstface);
 		node2->numfaces = LittleShort (node29->numfaces);
 	}

@@ -600,13 +600,10 @@ Mod_LoadNodes (bsp_t *bsp)
 		for (j = 0; j < 2; j++) {
 			p = in->children[j];
 			// this check is for extended bsp 29 files
-			if (p >= 0 && p < count) {
+			if (p >= 0) {
 				out->children[j] = loadmodel->nodes + p;
 			} else {
-				if (p >= count)
-					p = 65535 - p; //NOTE 65535 is intentional, -1 is leaf
-				else
-					p = ~p;
+				p = ~p;
 				if (p < loadmodel->numleafs) {
 					out->children[j] = (mnode_t *) (loadmodel->leafs + p);
 				} else {
