@@ -103,9 +103,9 @@ float	_FloatNoSwap (float f);
 #define FloatSwap(l) _FloatSwap (l)
 #endif
 
-#define ShortNoSwap(l) (l)
-#define LongNoSwap(l) (l)
-#define FloatNoSwap(l) (l)
+#define ShortNoSwap(l) ((uint16_t) (l))
+#define LongNoSwap(l) ((uint32_t) (l))
+#define FloatNoSwap(l) ((float) (l))
 
 // NOTE: these /always/ read and write /little/ endian entities.
 struct QFile_s;
