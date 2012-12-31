@@ -53,6 +53,7 @@
 #include "QF/quakefs.h"
 #include "QF/script.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "light.h"
 #include "threads.h"
@@ -122,11 +123,8 @@ MatchTargets (void)
 		}
 		// set the style on the source ent for switchable lights
 		if (entities[j].style) {
-			char s[16];
-
 			entities[i].style = entities[j].style;
-			sprintf (s, "%i", entities[i].style);
-			SetKeyValue (&entities[i], "style", s);
+			SetKeyValue (&entities[i], "style", va ("%i", entities[i].style));
 		}
 
 		if (entities[i].spotcone >= 0) {
