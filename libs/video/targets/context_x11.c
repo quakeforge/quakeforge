@@ -426,6 +426,14 @@ X11_SetVidMode (int width, int height)
 										&vidmodes);
 			XF86VidModeGetModeLine (x_disp, x_screen, &dotclock, &orig_data);
 
+			if (developer->int_val & SYS_VID) {
+				Sys_Printf ("VID: %d modes\n", nummodes);
+				for (i = 0; i < nummodes; i++) {
+					Sys_Printf ("VID: %xx%d\n", vidmodes[i]->hdisplay,
+								vidmodes[i]->vdisplay);
+				}
+			}
+
 			for (i = 0; i < nummodes; i++) {
 				if ((vidmodes[i]->hdisplay == orig_data.hdisplay) &&
 						(vidmodes[i]->vdisplay == orig_data.vdisplay)) {
