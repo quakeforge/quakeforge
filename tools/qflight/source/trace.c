@@ -142,8 +142,8 @@ MakeTnodes (dmodel_t *bm)
 #define TESTLINESTATE_EMPTY 1
 #define TESTLINESTATE_SOLID 2
 
-qboolean
-TestLine (lightinfo_t *l, vec3_t start, vec3_t end)
+static qboolean
+TestLineOrSky (lightinfo_t *l, vec3_t start, vec3_t end, qboolean sky_test)
 {
 	vec_t       front, back;
 	vec3_t      frontpt, backpt;
@@ -161,6 +161,8 @@ TestLine (lightinfo_t *l, vec3_t start, vec3_t end)
 
 	while (1) {
 		while (node < 0) {
+			if (sky_test && node == CONTENTS_SKY)
+				return true;
 			if (node != CONTENTS_SOLID)
 				empty = 1;
 			else if (empty) {
@@ -171,7 +173,7 @@ TestLine (lightinfo_t *l, vec3_t start, vec3_t end)
 
 			// pop up the stack for a back side
 			if (tstack-- == tracestack)
-				return true;
+				return !sky_test;
 
 			// set the hit point for this plane
 			VectorCopy (backpt, frontpt);
@@ -218,4 +220,18 @@ TestLine (lightinfo_t *l, vec3_t start, vec3_t end)
 
 		node = tnode->children[side];
 	}
+}
+
+qboolean
+TestLine (lightinfo_t *l, vec3_t start, vec3_t stop)
+{
+	return TestLineOrSky (l, start, stop, false);
+}
+
+qboolean
+TestSky (lightinfo_t *l, vec3_t start, vec3_t dir)
+{
+	vec3_t      stop;
+	VectorAdd (dir, start, stop);
+	return TestLineOrSky (l, start, stop, true);
 }
