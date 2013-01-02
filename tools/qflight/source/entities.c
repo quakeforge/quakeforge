@@ -63,6 +63,7 @@
 
 entity_t *entities;
 int num_entities;
+entity_t *world_entity;
 
 /*
 	ENTITY FILE PARSING
@@ -233,14 +234,21 @@ LoadEntities (void)
 					entity->style);
 
 		// all fields have been parsed
-		if (entity->classname && !strncmp (entity->classname, "light", 5)) {
-			set_properties (entity, dict);
-			if (!entity->light)
-				entity->light = DEFAULTLIGHTLEVEL;
-			if (!entity->noise)
-				entity->noise = options.noise;
-			if (!entity->persistence)
-				entity->persistence = 1;
+		if (entity->classname) {
+			if (strcmp (entity->classname, "worldspawn")) {
+				if (world_entity)
+					Sys_Error ("More than one worldspawn entity");
+				world_entity = entity;
+			}
+			if (!strncmp (entity->classname, "light", 5)) {
+				set_properties (entity, dict);
+				if (!entity->light)
+					entity->light = DEFAULTLIGHTLEVEL;
+				if (!entity->noise)
+					entity->noise = options.noise;
+				if (!entity->persistence)
+					entity->persistence = 1;
+			}
 		}
 		PL_Free (dict);
 
@@ -311,6 +319,8 @@ LoadEntities (void)
 			}
 		}
 	}
+	if (!world_entity)
+		Sys_Error ("no worldspawn entity");
 
 	if (options.verbosity >= 0)
 		printf ("%d entities read\n", num_entities);

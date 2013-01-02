@@ -87,6 +87,7 @@ typedef struct entity_s {
 
 extern entity_t *entities;
 extern int num_entities;
+extern entity_t *world_entity;
 
 const char *ValueForKey (entity_t *ent, const char *key);
 void SetKeyValue (entity_t *ent, const char *key, const char *value);
