@@ -29,6 +29,8 @@
 #ifndef __entities_h
 #define __entities_h
 
+#include "light.h"
+
 /** \defgroup qflight_entities Light entity data.
 	\ingroup qflight
 */
@@ -55,6 +57,13 @@ typedef struct entity_s {
 	vec3_t      origin;
 	vec_t       angle;
 	int         light;
+
+	int         sun_light[2];
+	vec3_t      sun_color[2];
+	int         num_suns;
+	vec3_t      sun_dir[NUMSUNS];
+	float       shadow_sense;
+
 	// LordHavoc: added falloff (smaller fractions = bigger light area),
 	// color, and lightradius (also subbrightness to implement lightradius)
 	vec_t       falloff;

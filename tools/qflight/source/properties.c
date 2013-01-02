@@ -47,6 +47,7 @@
 #include "compat.h"
 
 #include "entities.h"
+#include "light.h"
 #include "options.h"
 #include "properties.h"
 
@@ -58,6 +59,22 @@ parse_float (const char *str)
 	char       *eptr;
 	double      val = strtod (str, &eptr);
 	return val;
+}
+
+void
+parse_vector (const char *str, vec3_t vec)
+{
+	double      tvec[3];
+	int         count;
+
+	tvec[2] = 0;	// assume 2 components is yaw and pitch
+	count = sscanf (str, "%lf %lf %lf", &tvec[0], &tvec[1], &tvec[2]);
+
+	if (count < 2 || count > 3) {
+		fprintf (stderr, "invalid vector");
+		VectorZero (tvec);
+	}
+	VectorCopy (tvec, vec);
 }
 
 void
@@ -162,6 +179,54 @@ get_item (const char *key, plitem_t *d1, plitem_t *d2)
 	if (d2)
 		return PL_ObjectForKey (d2, key);
 	return 0;
+}
+
+void
+set_sun_properties (entity_t *ent, plitem_t *dict)
+{
+	plitem_t   *prop = 0;
+	plitem_t   *p;
+	const char *str;
+
+	if (properties) {
+		prop = PL_ObjectForKey (properties, "worldspawn");
+	}
+	if ((p = get_item ("sunlight", dict, prop))) {
+		if ((str = PL_String (p))) {
+			ent->sun_light[0] = parse_light (str, ent->sun_color[0]);
+		}
+	}
+	if ((p = get_item ("sunlight2", dict, prop))) {
+		if ((str = PL_String (p))) {
+			ent->sun_light[1] = parse_light (str, ent->sun_color[1]);
+		}
+	}
+	if ((p = get_item ("sunlight3", dict, prop))) {
+		if ((str = PL_String (p))) {
+			ent->sun_light[1] = parse_light (str, ent->sun_color[1]);
+			ent->shadow_sense = SHADOWSENSE;
+		}
+	}
+	if ((p = get_item ("sunlight_color", dict, prop))) {
+		if ((str = PL_String (p))) {
+			parse_color (str, ent->sun_color[0]);
+		}
+	}
+	if ((p = get_item ("sunlight_color2", dict, prop))) {
+		if ((str = PL_String (p))) {
+			parse_color (str, ent->sun_color[1]);
+		}
+	}
+	if ((p = get_item ("sunlight_color3", dict, prop))) {
+		if ((str = PL_String (p))) {
+			parse_color (str, ent->sun_color[1]);
+		}
+	}
+	if ((p = get_item ("sun_mangle", dict, prop))) {
+		if ((str = PL_String (p))) {
+			parse_vector (str, ent->sun_dir[0]);
+		}
+	}
 }
 
 void

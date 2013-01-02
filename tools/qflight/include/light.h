@@ -44,6 +44,11 @@
 #define LIGHTDISTBIAS 65536.0
 #define BOGUS_RANGE 1000000000
 
+#define NUMHSUNS    32
+#define NUMVSUNS    4
+#define NUMSUNS     (1 + NUMHSUNS * NUMVSUNS)
+#define SHADOWSENSE 0.4
+
 #define	SINGLEMAP	(256*256)
 
 typedef struct {

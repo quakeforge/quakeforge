@@ -46,6 +46,16 @@ struct plitem_s;
 */
 float parse_float (const char *str);
 
+/** Parse a vector from a string.
+
+	\param str		The string holding the float.
+	\param vec		The destination vector into which the vector values will
+					be written.
+
+	\bug			No error checking is performed.
+*/
+void parse_vector (const char *str, vec3_t vec);
+
 /** Parse an RGB color vector from a string.
 
 	The RGB values are normalized such that the magnitude of the largest
@@ -108,6 +118,31 @@ int parse_attenuation (const char *arg);
 	\return 		The parsed noise type value, or -1 if ivalid.
 */
 int parse_noise (const char *arg);
+
+/** Set the world entity's sun values based on its fields and the loaded
+	lighting properties database.
+
+	The database is loaded via LoadProperties().
+
+	If a set of properties named "worldspawn" is in the database, the it
+	will be used for default values, otherwise the database will be
+	ignored.
+
+	Supported properties:
+	\arg \c sunlight		see \ref parse_light
+	\arg \c sunlight2		see \ref parse_light
+	\arg \c sunlight3		see \ref parse_light
+	\arg \c sunlight_color	see \ref parse_color
+	\arg \c sunlight_color2	see \ref parse_color
+	\arg \c sunlight_color3	see \ref parse_color
+	\arg \c sun_mangle		see \ref parse_vector
+
+	\param ent		The entity for which to set the lighting values.
+	\param dict		A dictionary property list item representing the fields
+					of the entity. Values specified in \a dict will override
+					those specified in the database.
+*/
+void set_sun_properties (entity_t *ent, struct plitem_s *dict);
 
 /** Set the light entity's lighting values based on its fields and the loaded
 	lighting properties database.

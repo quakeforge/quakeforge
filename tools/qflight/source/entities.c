@@ -174,7 +174,7 @@ LoadEntities (void)
 	script_t   *script;
 	const char *field_name;
 	const char *value;
-	int         i;
+	int         i, j;
 
 	script = Script_New ();
 	Script_Start (script, "ent data", bsp->entdata);
@@ -189,12 +189,22 @@ LoadEntities (void)
 	for (i = 0; i < num_entities; i++) {
 		entity = &entities[i];
 		memset (entity, 0, sizeof (*entity));
-		entity->color[0] = entity->color[1] = entity->color[2] = 1.0f;
+
+		VectorSet (1, 1, 1, entity->color);
 		VectorCopy (entity->color, entity->color2);
 		entity->falloff = DEFAULTFALLOFF * DEFAULTFALLOFF;
 		entity->lightradius = 0;
 		entity->lightoffset = LIGHTDISTBIAS;
 		entity->attenuation = options.attenuation;
+		entity->sun_light[0] = -1;
+		entity->sun_light[1] = -1;
+		VectorSet (1, 1, 1, entity->sun_color[0]);
+		VectorSet (1, 1, 1, entity->sun_color[1]);
+		entity->num_suns = 1 + NUMHSUNS * NUMVSUNS;
+		for (j = 0; j < entity->num_suns; j++) {
+			// default to straight down
+			VectorSet (0, 0, 1, entity->sun_dir[j]);
+		}
 		entity->dict = PL_ObjectAtIndex (entity_list, i);
 
 		dict = PL_NewDictionary ();
@@ -235,10 +245,23 @@ LoadEntities (void)
 
 		// all fields have been parsed
 		if (entity->classname) {
-			if (strcmp (entity->classname, "worldspawn")) {
+			if (!strcmp (entity->classname, "worldspawn")) {
+				int         hsuns = NUMHSUNS;
 				if (world_entity)
 					Sys_Error ("More than one worldspawn entity");
+				set_sun_properties (entity, dict);
+				if (options.extrabit == 1)
+					hsuns = 6;
+				else if (options.extrabit == 2)
+					hsuns = 16;
+				entity->num_suns = 1 + hsuns * NUMVSUNS;
+				if (entity->sun_light[1] <= 0)
+					entity->num_suns = 1;
+				if (entity->sun_light[0] <= 0)
+					entity->num_suns = 0;
 				world_entity = entity;
+			} else {
+				entity->num_suns = 0;
 			}
 			if (!strncmp (entity->classname, "light", 5)) {
 				set_properties (entity, dict);
