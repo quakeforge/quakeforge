@@ -122,6 +122,8 @@ extern vec3_t *surfaceorgs;
 extern struct entity_s **novislights;
 extern int num_novislights;
 
+const char *get_tex_name (int texindex);
+
 //@}
 
 #endif// __light_h

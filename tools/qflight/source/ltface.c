@@ -61,6 +61,24 @@
 int c_bad;
 int c_culldistplane, c_proper;
 
+const char *
+get_tex_name (int texindex)
+{
+	dmiptexlump_t *mtl;
+	miptex_t   *mt;
+	int         miptex;
+
+	if (bsp->texdatasize) {
+		mtl = (dmiptexlump_t *) bsp->texdata;
+		miptex = bsp->texinfo[texindex].miptex;
+		if (mtl->dataofs[miptex] != -1) {
+			mt = (miptex_t *) (bsp->texdata + mtl->dataofs[miptex]);
+			return mt->name;
+		}
+	}
+	return "notex";
+}
+
 /*
 SAMPLE POINT DETERMINATION
 

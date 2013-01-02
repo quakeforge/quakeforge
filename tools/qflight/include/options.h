@@ -41,6 +41,7 @@ typedef struct {
 	int         novis;
 	int         extrabit;
 	int         attenuation;
+	int         solid_sky;
 	vec_t       extrascale;
 	vec_t		distance;
 	vec_t		range;

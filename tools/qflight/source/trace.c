@@ -49,7 +49,9 @@
 #include "QF/dstring.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
+
 #include "light.h"
+#include "options.h"
 
 typedef struct {
 	int         type;
@@ -98,9 +100,14 @@ MakeTnode (int nodenum)
 	t->dist = plane->dist;
 
 	for (i = 0; i < 2; i++) {
-		if (node->children[i] < 0)
+		if (node->children[i] < 0) {
 			t->children[i] = bsp->leafs[-node->children[i] - 1].contents;
-		else {
+			if (options.solid_sky && t->children[i] == CONTENTS_SOLID) {
+				dface_t    *face = &bsp->faces[node->firstface];
+				if (!strncmp (get_tex_name (face->texinfo), "sky", 3))
+					t->children[i] = CONTENTS_SKY;	// Simulate real sky
+			}
+		} else {
 			t->children[i] = tnode_p - tnodes;
 			MakeTnode (node->children[i]);
 		}
