@@ -143,7 +143,8 @@ MakeTnodes (dmodel_t *bm)
 #define TESTLINESTATE_SOLID 2
 
 static qboolean
-TestLineOrSky (lightinfo_t *l, vec3_t start, vec3_t end, qboolean sky_test)
+TestLineOrSky (lightinfo_t *l, const vec3_t start, const vec3_t end,
+			   qboolean sky_test)
 {
 	vec_t       front, back;
 	vec3_t      frontpt, backpt;
@@ -223,13 +224,13 @@ TestLineOrSky (lightinfo_t *l, vec3_t start, vec3_t end, qboolean sky_test)
 }
 
 qboolean
-TestLine (lightinfo_t *l, vec3_t start, vec3_t stop)
+TestLine (lightinfo_t *l, const vec3_t start, const vec3_t stop)
 {
 	return TestLineOrSky (l, start, stop, false);
 }
 
 qboolean
-TestSky (lightinfo_t *l, vec3_t start, vec3_t dir)
+TestSky (lightinfo_t *l, const vec3_t start, const vec3_t dir)
 {
 	vec3_t      stop;
 	VectorAdd (dir, start, stop);

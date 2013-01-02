@@ -100,8 +100,8 @@ extern qboolean extrasamples;
 extern float minlights[MAX_MAP_FACES];
 
 void LoadNodes (const char *file);
-qboolean TestLine (lightinfo_t *l, vec3_t start, vec3_t stop);
-qboolean TestSky (lightinfo_t *l, vec3_t start, vec3_t stop);
+qboolean TestLine (lightinfo_t *l, const vec3_t start, const vec3_t stop);
+qboolean TestSky (lightinfo_t *l, const vec3_t start, const vec3_t stop);
 
 void LightFace (lightinfo_t *l, int surfnum);
 void LightLeaf (dleaf_t *leaf);
