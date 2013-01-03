@@ -140,6 +140,23 @@ class QFEntpropRemove(bpy.types.Operator):
             qfentity.fields.remove(qfentity.field_idx)
         return {'FINISHED'}
 
+def reflow_text(text, max_width):
+    lines = []
+    for text_line in text.split("\n"):
+        if not text_line:
+            continue
+        words = text_line.split(" ")
+        flowed_line = ""
+        while words:
+            if len(flowed_line) + len(words[0]) > max_width:
+                lines.append(flowed_line)
+                flowed_line = ""
+            flowed_line += (" " if flowed_line else "") + words[0]
+            del words[0]
+        if flowed_line:
+            lines.append(flowed_line)
+    return lines
+
 class EntityPanel(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
@@ -163,19 +180,9 @@ class EntityPanel(bpy.types.Panel):
         row = layout.row()
         row.prop(qfentity, "classname")
         box=layout.box()
-        for l in ec.comment.split("\n"):
-            if not l:
-                continue
-            words = l.split(" ")
-            line = ""
-            while words:
-                if len(line) + len(words[0]) > 40:
-                    box.label(line)
-                    line = ""
-                line += (line and " " or "") + words[0]
-                del words[0]
-            if line:
-                box.label(line)
+        lines = reflow_text(ec.comment, 40)
+        for l in lines:
+            box.label(l)
         row = layout.row()
         for c in range(3):
             col = row.column()
