@@ -90,11 +90,10 @@ class QFEntityRelations(bpy.types.Panel):
         if cls.initDone:
             return False
         if context.area.type == 'VIEW_3D':
-            for reg in context.area.regions:
-                if reg.type != 'WINDOW':
-                    continue
-                reg.callback_add(draw_callback, (cls, context), 'POST_VIEW')
-                cls.initDone = True
+            sv3d = bpy.types.SpaceView3D
+            sv3d.draw_handler_add (draw_callback, (cls, context), 'WINDOW',
+                                   'POST_VIEW')
+            cls.initDone = True
         return False
     def draw_header(self, context):
         pass
