@@ -100,6 +100,12 @@ class QFEntityRelations(bpy.types.Panel):
     def draw(self, context):
         pass
 
+class EntityField_list(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        layout.label(item.name)
+        layout.label(item.value)
+
 def qfentity_items(self, context):
     qfmap = context.scene.qfmap
     entclasses = qfmap.entity_classes
@@ -192,8 +198,8 @@ class EntityPanel(bpy.types.Panel):
                 sub.prop(qfentity, "flags", text=flags[idx], index=idx)
         row = layout.row()
         col = row.column()
-        col.template_list(qfentity, "fields", qfentity, "field_idx",
-                          prop_list="template_list_controls", rows=3)
+        col.template_list("EntityField_list", "", qfentity, "fields",
+                          qfentity, "field_idx", rows=3)
         col = row.column(align=True)
         col.operator("object.entprop_add", icon='ZOOMIN', text="")
         col.operator("object.entprop_remove", icon='ZOOMOUT', text="")
