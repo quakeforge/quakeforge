@@ -207,6 +207,7 @@ class EntityPanel(bpy.types.Panel):
             row = layout.row()
             field = qfentity.fields[qfentity.field_idx]
             row.prop(field, "name", text="Field Name")
+            row.prop(field, "value", text="Value")
 
 def default_brush_entity(entityclass):
     name = entityclass.name
