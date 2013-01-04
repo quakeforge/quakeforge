@@ -31,6 +31,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#include <ctype.h>
 
 #include "QF/hash.h"
 
@@ -76,6 +77,7 @@ static int convert_relop (const char *relop);
 s			[ \t]
 m			[\-+]
 D			[0-9]
+B			[01]
 X			[0-9a-fA-F]
 ID			[a-zA-Z_][0-9a-zA-Z_]*
 FLOAT		({D}+|{D}*\.{D}+|{D}+\.{D}*)([eE]{m}?{D}+)?
@@ -109,7 +111,12 @@ FRAMEID		{ID}(\.{ID})*
 ^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$	{ line_info (yytext + 1); }
 
 {INTEGER}			{
-						int         i = strtol (yytext, 0, 0);
+						int         i;
+
+						if (yytext[0] == '0' && tolower (yytext[1] == 'b'))
+							i = strtol (yytext + 2, 0, 2);
+						else
+							i = strtol (yytext, 0, 0);
 						qp_yylval.expr = new_integer_expr (i);
 						return VALUE;
 					}

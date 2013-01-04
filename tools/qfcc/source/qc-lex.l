@@ -93,10 +93,11 @@ extern QC_YYSTYPE qc_yylval;
 s			[ \t]
 m			[\-+]
 D			[0-9]
+B			[01]
 X			[0-9a-fA-F]
 ID			[a-zA-Z_][a-zA-Z_0-9]*
 FLOAT		({D}+|{D}*\.{D}+|{D}+\.{D}*)([eE]{m}?{D}+)?
-INT			({D}+|0[xX]{X}+)
+INT			({D}+|0[xX]{X}+|0[bB]{B})
 RANGE		\.\.
 ELLIPSIS	\.\.\.
 FRAMEID		{ID}(\.{ID})*
@@ -125,7 +126,12 @@ STRING		\"(\\.|[^"\\])*\"
 
 {INT}+[uU]?			{
 						const char *c = yytext + yyleng - 1;
-						int         i = strtol (yytext, 0, 0);
+						int         i;
+
+						if (yytext[0] == '0' && tolower (yytext[1] == 'b'))
+							i = strtol (yytext + 2, 0, 2);
+						else
+							i = strtol (yytext, 0, 0);
 						if (*c == 'u' || *c == 'U')
 							qc_yylval.expr = new_integer_expr (i);//FIXME
 						else
