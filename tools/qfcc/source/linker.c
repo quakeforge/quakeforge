@@ -507,9 +507,10 @@ add_qfo_strings (qfo_mspace_t *strings)
 {
 	const char *str = strings->d.strings;
 
-	while (str - strings->d.strings < strings->data_size) {
+	while ((pr_uint_t) (str - strings->d.strings) < strings->data_size) {
 		linker_add_string (str);
-		while (str - strings->d.strings < strings->data_size && *str)
+		while ((pr_uint_t) (str - strings->d.strings) < strings->data_size
+			   && *str)
 			str++;
 		str++;		// advance past the terminating nul
 	}
