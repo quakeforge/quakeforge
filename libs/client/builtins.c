@@ -31,11 +31,14 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((used)) const char rcsid[] =
-	"$Id$";
+#include <string.h>
+
 #include "QF/mathlib.h"
+#include "QF/sys.h"
 
 #include "csqc.h"
+
+#define CSQC_API_VERSION 1.0f
 
 static struct {
 	vec3_t     *v_forward;
@@ -46,6 +49,39 @@ static struct {
 static struct {
 	int         origin;
 } csqc_fields;
+
+static struct {
+	func_t      Init;
+	func_t      Shutdown;
+	func_t      UpdateView;
+	func_t      WorldLoaded;
+	func_t      Parse_StuffCmd;
+	func_t      Parse_CenterPrint;
+	func_t      Parse_Print;
+	func_t      InputEvent;
+	func_t      ConsoleCommand;
+	func_t      Ent_Update;
+	func_t      Event_Sound;
+	func_t      Remove;
+} csqc_funcs;
+
+static struct {
+	const char *name;
+	func_t     *field;
+} csqc_func_list[] = {
+	{"CSQC_Init",				&csqc_funcs.Init},
+	{"CSQC_Shutdown",			&csqc_funcs.Shutdown},
+	{"CSQC_UpdateView",			&csqc_funcs.UpdateView},
+	{"CSQC_WorldLoaded",		&csqc_funcs.WorldLoaded},
+	{"CSQC_Parse_StuffCmd",		&csqc_funcs.Parse_StuffCmd},
+	{"CSQC_Parse_CenterPrint",	&csqc_funcs.Parse_CenterPrint},
+	{"CSQC_Parse_Print",		&csqc_funcs.Parse_Print},
+	{"CSQC_InputEvent",			&csqc_funcs.InputEvent},
+	{"CSQC_ConsoleCommand",		&csqc_funcs.ConsoleCommand},
+	{"CSQC_Ent_Update",			&csqc_funcs.Ent_Update},
+	{"CSQC_Event_Sound",		&csqc_funcs.Event_Sound},
+	{"CSQC_Remove",				&csqc_funcs.Remove},
+};
 
 static progs_t csqc_pr_state;
 
@@ -446,6 +482,8 @@ CSQC_registercommand (progs_t *pr)
 static void
 CSQC_wasfreed (progs_t *pr)
 {
+	edict_t    *ed = P_EDICT (pr, 0);
+	R_FLOAT (pr) = ed->free;
 }
 
 static void
@@ -582,9 +620,64 @@ static builtin_t builtins[] = {
 	CSQC_BUILTIN (sendevent, 359),
 };
 
+static float
+version_number (void)
+{
+	union {
+		float       f;
+		int         i;
+	}           version;
+	int         ver[4];
+
+	memset (ver, 0, sizeof (ver));
+	sscanf (VERSION, "%d.%d.%d.%d", &ver[0], &ver[1], &ver[2], &ver[3]);
+	// allow 1 digit for patch, 2 for minor and N for major.
+	version.f = ver[2] + ver[1] * 10 + ver[0] * 1000;
+	// hack in the git revision count. for the same count, the fraction of the
+	// version will move around depending on the last release version, but
+	// for the same last release version, newer revisions are guaranteed to
+	// compare greater than older revisions.
+	//
+	// Of course, this will break if the bits needed to represent the last
+	// release version ever overlap with the bits needed for the git revision
+	// count, but that's not likely any time soon as major is still 0 and minor
+	// is still single digit thus only 7 bits are needed for the version
+	// leaving 17 for the revision count. There better not be 128k revisions
+	// between releases :P
+	version.i |= ver[3];
+	Sys_MaskPrintf (SYS_CSQC, "version: %.8e\n", version.f);
+	return version.f;
+}
+
+static int
+csqc_load (progs_t *pr)
+{
+	size_t      i;
+
+	for (i = 0;
+		 i < sizeof (csqc_func_list) / sizeof (csqc_func_list[0]); i++) {
+		dfunction_t *f = PR_FindFunction (pr, csqc_func_list[i].name);
+
+		*csqc_func_list[i].field = 0;
+		if (f)
+			*csqc_func_list[i].field = (func_t) (f - pr->pr_functions);
+	}
+	if (csqc_funcs.Init) {
+		PR_RESET_PARAMS (&csqc_pr_state);
+		P_FLOAT (&csqc_pr_state, 0) = CSQC_API_VERSION;
+		P_STRING (&csqc_pr_state, 1) = PR_SetTempString (&csqc_pr_state,
+														 PACKAGE_NAME);
+		P_FLOAT (&csqc_pr_state, 2) = version_number ();
+		PR_ExecuteProgram (&csqc_pr_state, csqc_funcs.Init);
+	}
+	return 1;
+}
+
 void
 CSQC_Cmds_Init (void)
 {
+	version_number();
 	PR_Cmds_Init (&csqc_pr_state);
 	PR_RegisterBuiltins (&csqc_pr_state, builtins);
+	PR_AddLoadFunc (&csqc_pr_state, csqc_load);
 }

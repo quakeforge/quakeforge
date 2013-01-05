@@ -107,6 +107,7 @@
 #include "cl_tent.h"
 #include "client.h"
 #include "compat.h"
+#include "csqc.h"
 #include "game.h"
 #include "host.h"
 #include "netchan.h"
@@ -1210,6 +1211,8 @@ CL_Init (void)
 	CL_Skin_Init ();
 	Locs_Init ();
 	V_Init ();
+
+	CSQC_Cmds_Init ();
 
 	Info_SetValueForStarKey (cls.userinfo, "*ver", QW_VERSION, 0);
 
