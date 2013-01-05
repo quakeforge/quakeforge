@@ -183,6 +183,276 @@ CSQC_ambientsound (progs_t *pr)
 {
 }
 
+static void
+CSQC_clearscene (progs_t *pr)
+{
+}
+
+static void
+CSQC_addentities (progs_t *pr)
+{
+}
+
+static void
+CSQC_addentity (progs_t *pr)
+{
+}
+
+static void
+CSQC_setviewprop (progs_t *pr)
+{
+}
+
+static void
+CSQC_getviewprop (progs_t *pr)
+{
+}
+
+static void
+CSQC_adddynamiclight (progs_t *pr)
+{
+}
+
+static void
+CSQC_renderscene (progs_t *pr)
+{
+}
+
+static void
+CSQC_unproject (progs_t *pr)
+{
+}
+
+static void
+CSQC_project (progs_t *pr)
+{
+}
+
+static void
+CSQC_drawfillpal (progs_t *pr)
+{
+}
+
+static void
+CSQC_is_cached_pic (progs_t *pr)
+{
+}
+
+static void
+CSQC_precache_pic (progs_t *pr)
+{
+}
+
+static void
+CSQC_drawgetimagesize (progs_t *pr)
+{
+}
+
+static void
+CSQC_free_pic (progs_t *pr)
+{
+}
+
+static void
+CSQC_drawcharacter (progs_t *pr)
+{
+}
+
+static void
+CSQC_drawrawstring (progs_t *pr)
+{
+}
+
+static void
+CSQC_drawpic (progs_t *pr)
+{
+}
+
+static void
+CSQC_drawfillrgb (progs_t *pr)
+{
+}
+
+static void
+CSQC_drawcolorocodedstring (progs_t *pr)
+{
+}
+
+static void
+CSQC_setmodelindex (progs_t *pr)
+{
+}
+
+static void
+CSQC_modelnameforindex (progs_t *pr)
+{
+}
+
+static void
+CSQC_setsensitivityscaler (progs_t *pr)
+{
+}
+
+static void
+CSQC_cprint (progs_t *pr)
+{
+}
+
+static void
+CSQC_print (progs_t *pr)
+{
+}
+
+static void
+CSQC_pointparticles (progs_t *pr)
+{
+}
+
+static void
+CSQC_trailparticles (progs_t *pr)
+{
+}
+
+static void
+CSQC_particleeffectnum (progs_t *pr)
+{
+}
+
+static void
+CSQC_getinputstate (progs_t *pr)
+{
+}
+
+static void
+CSQC_runplayerphysics (progs_t *pr)
+{
+}
+
+static void
+CSQC_isdemo (progs_t *pr)
+{
+}
+
+static void
+CSQC_isserver (progs_t *pr)
+{
+}
+
+static void
+CSQC_keynumtostring (progs_t *pr)
+{
+}
+
+static void
+CSQC_stringtokeynum (progs_t *pr)
+{
+}
+
+static void
+CSQC_getkeybind (progs_t *pr)
+{
+}
+
+static void
+CSQC_setlistener (progs_t *pr)
+{
+}
+
+static void
+CSQC_deltalisten (progs_t *pr)
+{
+}
+
+static void
+CSQC_readbyte (progs_t *pr)
+{
+}
+
+static void
+CSQC_readchar (progs_t *pr)
+{
+}
+
+static void
+CSQC_readshort (progs_t *pr)
+{
+}
+
+static void
+CSQC_readlong (progs_t *pr)
+{
+}
+
+static void
+CSQC_readcoord (progs_t *pr)
+{
+}
+
+static void
+CSQC_readangle (progs_t *pr)
+{
+}
+
+static void
+CSQC_readstring (progs_t *pr)
+{
+}
+
+static void
+CSQC_readfloat (progs_t *pr)
+{
+}
+
+static void
+CSQC_readentitynum (progs_t *pr)
+{
+}
+
+static void
+CSQC_getstatf (progs_t *pr)
+{
+}
+
+static void
+CSQC_getstati (progs_t *pr)
+{
+}
+
+static void
+CSQC_getstats (progs_t *pr)
+{
+}
+
+static void
+CSQC_getplayerkey (progs_t *pr)
+{
+}
+
+static void
+CSQC_serverkey (progs_t *pr)
+{
+}
+
+static void
+CSQC_getentitytoken (progs_t *pr)
+{
+}
+
+static void
+CSQC_registercommand (progs_t *pr)
+{
+}
+
+static void
+CSQC_wasfreed (progs_t *pr)
+{
+}
+
+static void
+CSQC_sendevent (progs_t *pr)
+{
+}
+
 #define CSQC_BUILTIN(name, number) {#name, CSQC_##name, number}
 static builtin_t builtins[] = {
 	CSQC_BUILTIN (makevectors, 1),
@@ -245,6 +515,71 @@ static builtin_t builtins[] = {
 //	CSQC_BUILTIN (logfrag, 79),
 //	CSQC_BUILTIN (infokey, 80),
 //	CSQC_BUILTIN (multicast, 82),
+
+	// 3D scene management
+	CSQC_BUILTIN (clearscene, 300),
+	CSQC_BUILTIN (addentities, 301),
+	CSQC_BUILTIN (addentity, 302),
+	CSQC_BUILTIN (setviewprop, 303),
+	CSQC_BUILTIN (getviewprop, 309),
+	CSQC_BUILTIN (adddynamiclight, 305),
+	CSQC_BUILTIN (renderscene, 304),
+	CSQC_BUILTIN (unproject, 310),
+	CSQC_BUILTIN (project, 311),
+
+	// 2D display
+	CSQC_BUILTIN (drawfillpal, 314),
+	CSQC_BUILTIN (is_cached_pic, 316),
+	CSQC_BUILTIN (precache_pic, 317),
+	CSQC_BUILTIN (drawgetimagesize, 318),
+	CSQC_BUILTIN (free_pic, 319),
+	CSQC_BUILTIN (drawcharacter, 320),
+	CSQC_BUILTIN (drawrawstring, 321),
+	CSQC_BUILTIN (drawpic, 322),
+	CSQC_BUILTIN (drawfillrgb, 323),
+	CSQC_BUILTIN (drawcolorocodedstring, 326),
+
+	CSQC_BUILTIN (setmodelindex, 333),
+	CSQC_BUILTIN (modelnameforindex, 334),
+	CSQC_BUILTIN (setsensitivityscaler, 346),
+	CSQC_BUILTIN (cprint, 338),
+	CSQC_BUILTIN (print, 339),
+	CSQC_BUILTIN (pointparticles, 337),
+	CSQC_BUILTIN (trailparticles, 336),
+	CSQC_BUILTIN (particleeffectnum, 335),
+
+	CSQC_BUILTIN (getinputstate, 345),
+	CSQC_BUILTIN (runplayerphysics, 347),
+	CSQC_BUILTIN (isdemo, 349),
+	CSQC_BUILTIN (isserver, 350),
+	CSQC_BUILTIN (keynumtostring, 340),
+	CSQC_BUILTIN (stringtokeynum, 341),
+	CSQC_BUILTIN (getkeybind, 342),
+
+	CSQC_BUILTIN (setlistener, 351),
+
+	CSQC_BUILTIN (deltalisten, 371),
+
+	CSQC_BUILTIN (readbyte, 360),
+	CSQC_BUILTIN (readchar, 361),
+	CSQC_BUILTIN (readshort, 362),
+	CSQC_BUILTIN (readlong, 363),
+	CSQC_BUILTIN (readcoord, 364),
+	CSQC_BUILTIN (readangle, 365),
+	CSQC_BUILTIN (readstring, 366),
+	CSQC_BUILTIN (readfloat, 367),
+	CSQC_BUILTIN (readentitynum, 368),
+
+	CSQC_BUILTIN (getstatf, 330),
+	CSQC_BUILTIN (getstati, 331),
+	CSQC_BUILTIN (getstats, 332),
+	CSQC_BUILTIN (getplayerkey, 348),
+	CSQC_BUILTIN (serverkey, 354),
+	CSQC_BUILTIN (getentitytoken, 355),
+	CSQC_BUILTIN (registercommand, 352),
+
+	CSQC_BUILTIN (wasfreed, 353),
+	CSQC_BUILTIN (sendevent, 359),
 };
 
 void
