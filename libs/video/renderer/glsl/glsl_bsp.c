@@ -1132,6 +1132,8 @@ glsl_R_DrawWorld (void)
 						   quake_bsp.tlst.location,
 						   quake_bsp.color.location);
 		}
+		tex->elechain = 0;
+		tex->elechain_tail = &tex->elechain;
 	}
 	bsp_end ();
 }
