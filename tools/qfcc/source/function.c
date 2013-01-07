@@ -319,6 +319,7 @@ find_function (expr_t *fexpr, expr_t *params)
 		return fexpr;
 
 	memset (&type, 0, sizeof (type));
+	type.type = ev_func;
 
 	for (e = params; e; e = e->next) {
 		if (e->type == ex_error)
