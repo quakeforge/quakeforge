@@ -31,6 +31,7 @@
 #define NH_DEFINE
 #include "namehack.h"
 
+#include <alloca.h>
 #include <math.h>
 
 #include "QF/render.h"
@@ -446,15 +447,21 @@ test_node (mnode_t *node, int *clipflags)
 
 //FIXME no longer recursive: need a new name
 static void
-R_RecursiveWorldNode (mnode_t *node, int clipflags)
+R_RecursiveWorldNode (model_t *model, int clipflags)
 {
-	struct {
+	typedef struct {
 		mnode_t    *node;
 		int         side, clipflags;
-	}          *node_ptr, node_stack[256];
+	} rstack_t;
+	rstack_t   *node_ptr;
+	rstack_t   *node_stack;
+	mnode_t    *node;
 	mnode_t    *front;
 	int         side, cf;
 
+	node = model->nodes;
+	// +2 for paranoia
+	node_stack = alloca ((model->depth + 2) * sizeof (rstack_t));
 	node_ptr = node_stack;
 
 	cf = clipflags;
@@ -464,9 +471,6 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 			side = get_side (node);
 			front = node->children[side];
 			if (test_node (front, &cf)) {
-				if (node_ptr - node_stack
-					== sizeof (node_stack) / sizeof (node_stack[0]))
-					Sys_Error ("node_stack overflow");
 				node_ptr->node = node;
 				node_ptr->side = side;
 				node_ptr->clipflags = clipflags;
@@ -661,7 +665,7 @@ sw32_R_RenderWorld (void)
 	clmodel = currententity->model;
 	r_pcurrentvertbase = clmodel->vertexes;
 
-	R_RecursiveWorldNode (clmodel->nodes, 15);
+	R_RecursiveWorldNode (clmodel, 15);
 
 	// if the driver wants the polygons back to front, play the visible ones
 	// back in that order
