@@ -145,7 +145,7 @@ int yylex (void);
 
 %token				LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS
 %token				NIL IFBE IFB IFAE IFA SWITCH CASE DEFAULT ENUM TYPEDEF
-%token				ARGS EXTERN STATIC SYSTEM SIZEOF OVERLOAD
+%token				ARGS EXTERN STATIC SYSTEM NOSAVE OVERLOAD
 %token	<op>		STRUCT
 %token	<type>		TYPE
 %token	<symbol>	OBJECT TYPE_NAME
@@ -248,6 +248,7 @@ spec_merge (specifier_t spec, specifier_t new)
 		spec.is_typedef = new.is_typedef;
 	}
 	spec.is_overload |= new.is_overload;
+	spec.nosave |= new.nosave;
 	return spec;
 }
 
@@ -394,6 +395,8 @@ external_decl
 			} else {
 				initialize_def ($1, type, 0, current_symtab->space,
 								spec.storage);
+				if ($1->s.def)
+					$1->s.def->nosave |= spec.nosave;
 			}
 		}
 	| var_decl var_initializer
@@ -412,6 +415,8 @@ external_decl
 			} else {
 				initialize_def ($1, type, $2, current_symtab->space,
 								spec.storage);
+				if ($1->s.def)
+					$1->s.def->nosave |= spec.nosave;
 			}
 		}
 	| function_decl
@@ -438,6 +443,11 @@ storage_class
 	| SYSTEM					{ $$ = make_spec (0, sc_system, 0, 0); }
 	| TYPEDEF					{ $$ = make_spec (0, sc_global, 1, 0); }
 	| OVERLOAD					{ $$ = make_spec (0, current_storage, 0, 1); }
+	| NOSAVE
+		{
+			$$ = make_spec (0, current_storage, 0, 0);
+			$$.nosave = 1;
+		}
 	;
 
 optional_specifiers
@@ -901,6 +911,8 @@ decl
 				space = pr.near_data;
 			type = find_type (append_type ($1->type, spec.type));
 			initialize_def ($1, type, $2, space, sc);
+			if ($1->s.def)
+				$1->s.def->nosave |= $<spec>0.nosave;
 		}
 	;
 
@@ -961,6 +973,8 @@ non_code_func
 			specifier_t spec = $<spec>-1;
 			initialize_def (sym, sym->type, $2, current_symtab->space,
 							spec.storage);
+			if (sym->s.def)
+				sym->s.def->nosave |= spec.nosave;
 		}
 	| /* emtpy */
 		{
@@ -973,6 +987,8 @@ non_code_func
 			} else {
 				initialize_def (sym, sym->type, 0, current_symtab->space,
 								spec.storage);
+				if (sym->s.def)
+					sym->s.def->nosave |= spec.nosave;
 			}
 		}
 	;
