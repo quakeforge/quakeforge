@@ -351,8 +351,12 @@ find_function (expr_t *fexpr, expr_t *params)
 					   func_compare);
 	if (dummy_p) {
 		f = (overloaded_function_t *) *(void **) dummy_p;
-		if (f->overloaded)
-			fexpr->e.symbol->name = f->full_name;
+		if (f->overloaded) {
+			fexpr->e.symbol = symtab_lookup (current_symtab, f->full_name);
+			if (!fexpr->e.symbol)
+				internal_error (fexpr, "overloaded function %s not found",
+								best->full_name);
+		}
 		free (funcs);
 		return fexpr;
 	}
