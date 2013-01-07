@@ -441,9 +441,8 @@ test_node (mnode_t *node, int *clipflags)
 	return 1;
 }
 
-//FIXME no longer recursive: need a new name
 static void
-R_RecursiveWorldNode (model_t *model, int clipflags)
+R_VisitWorldNodes (model_t *model, int clipflags)
 {
 	typedef struct {
 		mnode_t    *node;
@@ -511,7 +510,7 @@ R_RenderWorld (void)
 	clmodel = currententity->model;
 	r_pcurrentvertbase = clmodel->vertexes;
 
-	R_RecursiveWorldNode (clmodel, 15);
+	R_VisitWorldNodes (clmodel, 15);
 
 	// if the driver wants the polygons back to front, play the visible ones
 	// back in that order
