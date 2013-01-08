@@ -526,7 +526,7 @@ PL_ParseQuotedString (pldata_t *pl)
 		char	c = pl->ptr[pl->pos];
 
 		if (escaped) {
-			if (escaped == 1 && c == '0') {
+			if (escaped == 1 && inrange (c, '0', '7')) {
 				escaped++;
 				hex = false;
 			} else if (escaped > 1) {
@@ -534,10 +534,11 @@ PL_ParseQuotedString (pldata_t *pl)
 					hex = true;
 					shrink++;
 					escaped++;
-				} else if (hex && isxdigit ((byte) c)) {
+				} else if (hex && inrange (escaped, 3, 4)
+						   && isxdigit ((byte) c)) {
 					shrink++;
 					escaped++;
-				} else if (c >= '0' && c <= '7') {
+				} else if (inrange (escaped, 1, 3) && inrange (c, '0', '7')) {
 					shrink++;
 					escaped++;
 				} else {
@@ -585,19 +586,21 @@ PL_ParseQuotedString (pldata_t *pl)
 			char	c = pl->ptr[j];
 
 			if (escaped) {
-				if (escaped == 1 && c == '0') {
-					chars[k] = 0;
+				if (escaped == 1 && inrange (c, '0', '7')) {
+					chars[k] = c - '0';
 					hex = false;
 					escaped++;
 				} else if (escaped > 1) {
 					if (escaped == 2 && c == 'x') {
 						hex = true;
 						escaped++;
-					} else if (hex && isxdigit ((byte) c)) {
+					} else if (hex && inrange (escaped, 3, 4)
+							   && isxdigit ((byte) c)) {
 						chars[k] <<= 4;
 						chars[k] |= char2num (c);
 						escaped++;
-					} else if (inrange (c, '0', '7')) {
+					} else if (inrange (escaped, 1, 3)
+							   && inrange (c, '0', '7')) {
 						chars[k] <<= 3;
 						chars[k] |= (c - '0');
 						escaped++;
