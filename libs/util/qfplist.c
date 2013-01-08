@@ -917,7 +917,7 @@ write_string (dstring_t *dstr, const char *str)
 		return;
 	}
 	// assume worst case of all octal chars plus two quotes.
-	dst = dstring_reservestr (dstr, strlen (str) * 4 + 2);
+	dst = dstring_reservestr (dstr, len * 4 + 2);
 	*dst++= '\"';
 	while (*str) {
 		if (*str && isascii ((byte) *str) && isprint ((byte) *str)
