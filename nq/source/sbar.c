@@ -120,6 +120,7 @@ static view_t *hud_frags_view;
 
 static view_t *overlay_view;
 static view_t *stuff_view;
+static view_t *main_view;
 
 static void
 hud_swap_f (cvar_t *var)
@@ -210,16 +211,12 @@ hud_sbar_f (cvar_t *var)
 	if (r_data->scr_viewsize)
 		calc_sb_lines (r_data->scr_viewsize);
 	r_data->lineadj = var->int_val ? sb_lines : 0;
-	if (con_module) {
-		if (var->int_val) {
-			view_remove (con_module->data->console->view,
-						 con_module->data->console->view->children[0]);
-			view_insert (con_module->data->console->view, sbar_view, 0);
-		} else {
-			view_remove (con_module->data->console->view,
-						 con_module->data->console->view->children[0]);
-			view_insert (con_module->data->console->view, hud_view, 0);
-		}
+	if (var->int_val) {
+		view_remove (main_view, main_view->children[0]);
+		view_insert (main_view, sbar_view, 0);
+	} else {
+		view_remove (main_view, main_view->children[0]);
+		view_insert (main_view, hud_view, 0);
 	}
 }
 
@@ -1018,6 +1015,7 @@ Sbar_Draw (void)
 	r_data->scr_copyeverything = 1;
 	sb_updates++;
 
+	main_view->draw (main_view);
 }
 
 static void
@@ -1377,8 +1375,7 @@ init_hud_views (void)
 
 	view_add (hud_view, hud_armament_view);
 
-	if (con_module)
-		view_insert (con_module->data->console->view, hud_view, 0);
+	view_insert (main_view, hud_view, 0);
 }
 
 static void
@@ -1489,8 +1486,7 @@ init_hipnotic_hud_views (void)
 
 	view_add (hud_view, hud_armament_view);
 
-	if (con_module)
-		view_insert (con_module->data->console->view, hud_view, 0);
+	view_insert (main_view, hud_view, 0);
 }
 
 static void
@@ -1587,13 +1583,19 @@ init_rogue_hud_views (void)
 
 	view_add (hud_view, hud_armament_view);
 
-	if (con_module)
-		view_insert (con_module->data->console->view, hud_view, 0);
+	view_insert (main_view, hud_view, 0);
 }
 
 static void
 init_views (void)
 {
+	main_view = view_new (0, 0, r_data->vid->conwidth, r_data->vid->conheight,
+						  grav_northwest);
+	if (con_module)
+		view_insert (con_module->data->console->view, main_view, 0);
+	main_view->resize_x = 1;	// get resized if the 2d view resizes
+	main_view->resize_y = 1;
+	main_view->visible = 0;		// but don't let the console draw our stuff
 	if (r_data->vid->conheight > 300)
 		overlay_view = view_new (0, 0, 320, 300, grav_center);
 	else
@@ -1605,10 +1607,8 @@ init_views (void)
 	stuff_view = view_new (0, 48, 152, 16, grav_southwest);
 	stuff_view->draw = draw_stuff;
 
-	if (con_module) {
-		view_insert (con_module->data->console->view, overlay_view, 0);
-		view_insert (con_module->data->console->view, stuff_view, 0);
-	}
+	view_insert (main_view, overlay_view, 0);
+	view_insert (main_view, stuff_view, 0);
 
 	if (!strcmp (qfs_gamedir->hudtype, "hipnotic")) {
 		init_hipnotic_sbar_views ();
