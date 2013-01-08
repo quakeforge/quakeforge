@@ -99,8 +99,14 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 		case ev_float:
 			dsprintf (line, "%f", val->float_var);
 			break;
+		case ev_integer:
+			dsprintf (line, "%d", val->integer_var);
+			break;
 		case ev_vector:
 			dsprintf (line, "%f %f %f", VectorExpand (val->vector_var));
+			break;
+		case ev_quat:
+			dsprintf (line, "%f %f %f %f", QuatExpand (val->quat_var));
 			break;
 		default:
 			dsprintf (line, "bad type %i", type);
