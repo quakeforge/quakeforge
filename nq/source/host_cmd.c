@@ -398,7 +398,7 @@ spawn_parms_array (void)
 	const char *parm;
 
 	for (i = 0; i < NUM_SPAWN_PARMS; i++) {
-		parm = va ("%.8e", svs.clients->spawn_parms[i]);
+		parm = va ("%.9g", svs.clients->spawn_parms[i]);
 		PL_A_AddObject (parms, PL_NewString (parm));
 	}
 	return parms;
@@ -447,8 +447,8 @@ game_dict (void)
 	PL_D_AddObject (game, "current_skill",
 					PL_NewString (va ("%d", current_skill)));
 	PL_D_AddObject (game, "name", PL_NewString (sv.name));
-	// sv.time is a double, so it gets 16 digits after the .
-	PL_D_AddObject (game, "time", PL_NewString (va ("%.16e", sv.time)));
+	// sv.time is a double, so it gets 17 digits
+	PL_D_AddObject (game, "time", PL_NewString (va ("%.17g", sv.time)));
 	PL_D_AddObject (game, "lightstyles", lightstyles_array ());
 	PL_D_AddObject (game, "globals", ED_GlobalsDict (&sv_pr_state));
 	PL_D_AddObject (game, "entities", entities_array ());
