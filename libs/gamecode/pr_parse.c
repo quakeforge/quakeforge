@@ -46,6 +46,7 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/mathlib.h"
 #include "QF/progs.h"
 #include "QF/qdefs.h"
 #include "QF/qfplist.h"
@@ -64,49 +65,49 @@
 	Returns a string describing *data in a type specific manner
 	Easier to parse than PR_ValueString
 */
-static char *
+static const char *
 PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 {
-	static char	 line[256];
+	static dstring_t *line = 0;
 	ddef_t		*def;
 	dfunction_t	*f;
+
+	if (!line)
+		line = dstring_new ();
 
 	type &= ~DEF_SAVEGLOBAL;
 
 	switch (type) {
 		case ev_string:
-			snprintf (line, sizeof (line), "%s",
-					  PR_GetString (pr, val->string_var));
+			dsprintf (line, "%s", PR_GetString (pr, val->string_var));
 			break;
 		case ev_entity:
-			snprintf (line, sizeof (line), "%d",
+			dsprintf (line, "%d",
 					  NUM_FOR_BAD_EDICT (pr, PROG_TO_EDICT (pr, val->entity_var)));
 			break;
 		case ev_func:
 			f = pr->pr_functions + val->func_var;
-			snprintf (line, sizeof (line), "%s", PR_GetString (pr, f->s_name));
+			dsprintf (line, "%s", PR_GetString (pr, f->s_name));
 			break;
 		case ev_field:
 			def = PR_FieldAtOfs (pr, val->integer_var);
-			snprintf (line, sizeof (line), "%s",
-					  PR_GetString (pr, def->s_name));
+			dsprintf (line, "%s", PR_GetString (pr, def->s_name));
 			break;
 		case ev_void:
-			strcpy (line, "void");
+			dstring_copystr (line, "void");
 			break;
 		case ev_float:
-			snprintf (line, sizeof (line), "%f", val->float_var);
+			dsprintf (line, "%f", val->float_var);
 			break;
 		case ev_vector:
-			snprintf (line, sizeof (line), "%f %f %f", val->vector_var[0],
-					  val->vector_var[1], val->vector_var[2]);
+			dsprintf (line, "%f %f %f", VectorExpand (val->vector_var));
 			break;
 		default:
-			snprintf (line, sizeof (line), "bad type %i", type);
+			dsprintf (line, "bad type %i", type);
 			break;
 	}
 
-	return line;
+	return line->str;
 }
 
 VISIBLE plitem_t *
