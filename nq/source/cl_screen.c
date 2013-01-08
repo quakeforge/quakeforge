@@ -98,11 +98,11 @@ static SCR_Func scr_funcs_normal[] = {
 	0, //SCR_DrawTurtle,
 	0, //SCR_DrawPause,
 	SCR_DrawNet,
-	Sbar_DrawCenterPrint,
 	Sbar_Draw,
+	SCR_CShift,
+	Sbar_DrawCenterPrint,
 	Con_DrawConsole,
 	SCR_DrawLoading,
-	SCR_CShift,
 	0
 };
 

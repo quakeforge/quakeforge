@@ -99,11 +99,11 @@ static SCR_Func scr_funcs_normal[] = {
 	0, //SCR_DrawPause,
 	SCR_DrawNet,
 	CL_NetGraph,
-	Sbar_DrawCenterPrint,
 	Sbar_Draw,
+	SCR_CShift,
+	Sbar_DrawCenterPrint,
 	Con_DrawConsole,
 	SCR_DrawLoading,
-	SCR_CShift,
 	0
 };
 
