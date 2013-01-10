@@ -52,17 +52,6 @@
 #else
 # define YY_FLEX_REALLOC_HACK
 #endif
-int yyget_lineno  (void);
-FILE *yyget_in  (void);
-FILE *yyget_out  (void);
-int yyget_leng  (void);
-char *yyget_text  (void);
-void yyset_lineno (int  line_number);
-void yyset_in (FILE *  in_str);
-void yyset_out (FILE *  out_str);
-int yyget_debug  (void);
-void yyset_debug (int  bdebug);
-int yylex_destroy  (void);
 
 #define YY_NO_UNPUT
 #define YY_DECL int yylex YY_PROTO(( void ))
