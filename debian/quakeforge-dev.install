@@ -18,5 +18,6 @@ usr/lib/libQFutil.*a
 usr/lib/libQFutil.so
 usr/lib/pkgconfig/quakeforge.pc
 usr/include/QF/GL/*.h
+usr/include/QF/math/*.h
 usr/include/QF/plugin/*.h
 usr/include/QF/*.h
