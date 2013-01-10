@@ -264,7 +264,6 @@ mkdir -p $RPM_BUILD_ROOT/%{fs_sharepath}/id1
 find $RPM_BUILD_ROOT/usr/lib/quakeforge -name '*.a' -exec rm {} \;
 find $RPM_BUILD_ROOT/usr/lib/quakeforge -name '*.la' -exec rm {} \;
 rm $RPM_BUILD_ROOT/usr/bin/hw-master
-rm $RPM_BUILD_ROOT/usr/bin/qfpc
 find $RPM_BUILD_ROOT/usr/lib -name 'libQFrenderer_sw32.*' -exec rm {} \;
 #FIXME until I feel like making packages
 rm $RPM_BUILD_ROOT/usr/bin/qtv
