@@ -317,6 +317,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/include/QF/GL/*.h
 %attr(-,root,root)	%{_prefix}/include/QF/GLSL/*.h
 %attr(-,root,root)	%{_prefix}/include/QF/*.h
+%attr(-,root,root)	%{_prefix}/include/QF/math/*.h
 %attr(-,root,root)	%{_prefix}/include/QF/plugin/*.h
 
 %files gl
