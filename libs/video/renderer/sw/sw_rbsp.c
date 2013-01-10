@@ -28,8 +28,8 @@
 # include "config.h"
 #endif
 
-#include <alloca.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "QF/render.h"
 #include "QF/sys.h"

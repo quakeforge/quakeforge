@@ -31,8 +31,8 @@
 #define NH_DEFINE
 #include "namehack.h"
 
-#include <alloca.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "QF/render.h"
 #include "QF/sys.h"
