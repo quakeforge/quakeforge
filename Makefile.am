@@ -9,8 +9,9 @@ DIST_SUBDIRS=desktop pkg-config include \
 			 RPM debian doc vc2005 vc2008
 
 ## configure.ac needs to be listed here for older autoconfs
-EXTRA_DIST=	ChangeLog configure.ac bootstrap
+EXTRA_DIST=	ChangeLog configure.ac bootstrap \
 		$(top_srcdir)/.version \
+		config.d/git-version-gen \
 		tools/cross/droid/cross-configure.sh \
 		tools/cross/droid/cross-make.sh \
 		tools/cross/mingw/cross-configure.sh \
