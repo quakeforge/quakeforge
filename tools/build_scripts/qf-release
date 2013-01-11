@@ -1,4 +1,4 @@
-#! /bin/bash -x
+#! /bin/bash
 
 . ~/.bash_profile
 
@@ -15,12 +15,10 @@ if test $# -lt 1; then
 	exit 1;
 fi
 
-ver="$1"
+tag_name="$1"
 shift
-if test "$ver" = "current"; then
+if test "$tag_name" = "current"; then
 	tag_name=master
-else
-	tag_name="$ver"
 fi
 
 do_rpm=0
@@ -64,6 +62,7 @@ if test $no_rm -ne 1; then
 	rm -rf NEWS io_mesh_qfmdl-* quakeforge-* qfcc-* quakeforge_* qfcc_*
 fi
 git clone $git_url || true
+ver=`(cd quakeforge; config.d/git-version-gen --prefix '' .tarball-version)`
 mv quakeforge quakeforge-$ver
 cd quakeforge-$ver
 git checkout $tag_name
@@ -73,9 +72,6 @@ zip -r ../../io_mesh_qfmdl-$ver.zip io_mesh_qfmdl
 tar zcvf ../../io_mesh_qfmdl-$ver.tar.gz io_mesh_qfmdl
 tar jcvf ../../io_mesh_qfmdl-$ver.tar.bz2 io_mesh_qfmdl
 cd ..
-if test "$tag_name" != master; then
-	sed -i -e "s/git-master/$tag_name/" configure.ac
-fi
 mkdir -p linux.o qf-win32.o
 ./bootstrap
 #begin linux
