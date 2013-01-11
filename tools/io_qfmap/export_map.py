@@ -46,12 +46,8 @@ def make_face(bmface, mesh):
             mesh.vertices[v[2]].co, mat.name, 0, 0, 0, 1, 1)
 
 def make_brushes(obj):
-    act = bpy.context.scene.objects.active
-    bpy.context.scene.objects.active = obj
-    bpy.ops.object.editmode_toggle()
-    brushmesh = bmesh.from_edit_mesh(obj.data).copy()
-    bpy.ops.object.editmode_toggle()
-    bpy.context.scene.objects.active = act
+    brushmesh = bmesh.new()
+    brushmesh.from_mesh(obj.data)
     brushes = []
     face_set = set(brushmesh.faces)
     while face_set:
