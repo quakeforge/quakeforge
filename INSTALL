@@ -23,7 +23,7 @@ The following packages are required to build QuakeForge:
 \li GNU autoconf 2.50 or later
 \li GNU automake 1.6 or later
 \li GNU libtool 1.4 or later
-\li GNU bison
+\li GNU bison 2.6 or later
 \li GNU flex
 \li GNU make (BSD make doesn't like some constructs used)
 \li C compiler and preprocessor (gcc and cpp recommended)

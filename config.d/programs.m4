@@ -19,6 +19,18 @@ else
 		AC_MSG_ERROR(GNU bison is required but was not found)
 	fi
 fi
+BISON_REQ=2.6
+AC_MSG_CHECKING([is bison version >= ${BISON_REQ}])
+BISON_VER=`$YACC --version | sed -n '1s/^.*) //p'`
+AS_VERSION_COMPARE([$BISON_VER], [2.6],
+	[AC_MSG_RESULT([no])
+	LOC=`which ${YACC}`
+	AC_MSG_ERROR(
+		[GNU bison >= 2.6 is required. $BISON_VER found in $LOC]
+	)],
+	AC_MSG_RESULT([yes]),
+	AC_MSG_RESULT([yes])
+)
 
 AM_PROG_LEX
 if echo $LEX | grep -v flex > /dev/null; then
