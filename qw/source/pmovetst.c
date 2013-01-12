@@ -64,6 +64,7 @@ PM_InitBoxHull (void)
 	box_hull.planes = box_planes;
 	box_hull.firstclipnode = 0;
 	box_hull.lastclipnode = 5;
+	box_hull.depth = 6;
 
 	for (i = 0; i < 6; i++) {
 		box_clipnodes[i].planenum = i;
