@@ -250,23 +250,18 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		vrect.width = vid.width;
 		vrect.height = vid.height;
 		vrect.next = 0;
-
-		VID_Update (&vrect);
 	} else if (scr_copytop) {
 		vrect.x = 0;
 		vrect.y = 0;
 		vrect.width = vid.width;
 		vrect.height = vid.height - vr_data.lineadj;
 		vrect.next = 0;
-
-		VID_Update (&vrect);
 	} else {
 		vrect.x = scr_vrect.x;
 		vrect.y = scr_vrect.y;
 		vrect.width = scr_vrect.width;
 		vrect.height = scr_vrect.height;
 		vrect.next = 0;
-
-		VID_Update (&vrect);
 	}
+	VID_Update (&vrect);
 }
