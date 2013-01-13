@@ -23,5 +23,8 @@
 @extern void Menu_SetQuit (int (func)(void));
 @extern void Menu_Quit (void);
 @extern int  Menu_GetIndex (void);
+@extern void Menu_Next (void);
+@extern void Menu_Prev (void);
+@extern void Menu_Enter (void);
 
 #endif//__menu_h;

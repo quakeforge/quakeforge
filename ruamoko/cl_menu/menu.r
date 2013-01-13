@@ -18,3 +18,6 @@ void (string name) Menu_SelectMenu = #0;
 void (int () func) Menu_SetQuit = #0;
 void () Menu_Quit = #0;
 int () Menu_GetIndex = #0;
+void (void) Menu_Next = #0;
+void (void) Menu_Prev = #0;
+void (void) Menu_Enter = #0;
