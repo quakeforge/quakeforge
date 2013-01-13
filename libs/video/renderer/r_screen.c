@@ -115,7 +115,7 @@ vrect_t     scr_vrect;
 qboolean    scr_skipupdate;
 
 void
-R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
+R_SetVrect (vrect_t *vrectin, vrect_t *vrect, int lineadj)
 {
 	float       size;
 	int         h;
@@ -129,22 +129,22 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 	}
 	size /= 100.0;
 
-	h = pvrectin->height - lineadj;
+	h = vrectin->height - lineadj;
 
-	pvrect->width = pvrectin->width * size + 0.5;
-	if (pvrect->width < 96) {
-		size = 96.0 / pvrectin->width;
-		pvrect->width = 96;				// min for icons
+	vrect->width = vrectin->width * size + 0.5;
+	if (vrect->width < 96) {
+		size = 96.0 / vrectin->width;
+		vrect->width = 96;				// min for icons
 	}
-	pvrect->width &= ~7;
+	vrect->width &= ~7;
 
-	pvrect->height = pvrectin->height * size + 0.5;
-	if (pvrect->height > h)
-		pvrect->height = h;
-	pvrect->height &= ~1;
+	vrect->height = vrectin->height * size + 0.5;
+	if (vrect->height > h)
+		vrect->height = h;
+	vrect->height &= ~1;
 
-	pvrect->x = (pvrectin->width - pvrect->width) / 2;
-	pvrect->y = (h - pvrect->height) / 2;
+	vrect->x = (vrectin->width - vrect->width) / 2;
+	vrect->y = (h - vrect->height) / 2;
 }
 
 void
