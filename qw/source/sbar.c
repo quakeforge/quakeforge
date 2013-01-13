@@ -908,8 +908,8 @@ draw_overlay (view_t *view)
 		Sbar_TeamOverlay (view);
 }
 
-void
-Sbar_Draw (void)
+static void
+sbar_update_vis (void)
 {
 	qboolean    headsup;
 
@@ -944,7 +944,12 @@ Sbar_Draw (void)
 
 	if (sb_showscores || sb_showteamscores || cl.stats[STAT_HEALTH] <= 0)
 		sb_updates = 0;
+}
 
+void
+Sbar_Draw (void)
+{
+	sbar_update_vis ();
 	main_view->draw (main_view);
 }
 

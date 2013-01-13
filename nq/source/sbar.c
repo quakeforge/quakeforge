@@ -985,8 +985,8 @@ draw_hipnotic_status (view_t *view)
 		draw_pic (view, 209, 12, sb_items[1]);
 }
 
-void
-Sbar_Draw (void)
+static void
+sbar_update_vis (void)
 {
 	qboolean    headsup;
 
@@ -1017,7 +1017,12 @@ Sbar_Draw (void)
 
 	r_data->scr_copyeverything = 1;
 	sb_updates++;
+}
 
+void
+Sbar_Draw (void)
+{
+	sbar_update_vis ();
 	main_view->draw (main_view);
 }
 
