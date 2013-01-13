@@ -650,6 +650,32 @@ Key_Unbindall_f (void)
 }
 
 static void
+Key_In_Clear (void)
+{
+	int         err = 0;
+	int         imt;
+	int         i, j;
+
+	if (Cmd_Argc () == 1) {
+		Sys_Printf ("in_clear <imt> ...\n");
+		return;
+	}
+	for (i = 1; i < Cmd_Argc (); i++) {
+		if (Key_StringToIMTnum (Cmd_Argv (i)) == -1) {
+			Sys_Printf ("\"%s\" isn't a valid imt\n", Cmd_Argv (i));
+			err = 1;
+		}
+	}
+	if (err)
+		return;
+	for (i = 1; i < Cmd_Argc (); i++) {
+		imt = Key_StringToIMTnum (Cmd_Argv (i));
+		for (j = 0; j < QFK_LAST; j++)
+			Key_SetBinding (imt, j, NULL);
+	}
+}
+
+static void
 Key_In_Bind (const char *imt, const char *key, const char *cmd)
 {
 	int t, b;
@@ -946,6 +972,8 @@ Key_Init (cbuf_t *cb)
 					"Remove the bind from the the selected key");
 	Cmd_AddCommand ("unbindall", Key_Unbindall_f,
 					"Remove all binds (USE CAUTIOUSLY!!!)");
+	Cmd_AddCommand ("in_clear", Key_In_Clear,
+					"Remove all binds from the specified imts");
 	Cmd_AddCommand ("imt", Key_InputMappingTable_f, "");
 	Cmd_AddCommand ("bind", Key_Bind_f, "wrapper for in_bind that uses "
 					"in_bind_imt for the imt parameter");
