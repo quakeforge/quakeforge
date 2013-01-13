@@ -794,6 +794,7 @@ Draw_FadeScreen (void)
 				pbuf[x] = 0;
 		}
 	}
+	vr_data.scr_copyeverything = 1;
 
 	VID_UnlockBuffer ();
 	S_ExtraUpdate ();

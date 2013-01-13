@@ -1264,6 +1264,7 @@ sw32_Draw_FadeScreen (void)
 	default:
 		Sys_Error("Draw_FadeScreen: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
+	vr_data.scr_copyeverything = 1;
 
 	VID_UnlockBuffer ();
 	S_ExtraUpdate ();
