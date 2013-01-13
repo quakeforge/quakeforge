@@ -468,7 +468,7 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 			key = QFK_KATAKANA;
 			break;
 		case XK_Hiragana_Katakana:
-			key = QFK_HIRAGANA_kATAKANA;
+			key = QFK_HIRAGANA_KATAKANA;
 			break;
 		case XK_Zenkaku:
 			key = QFK_ZENKAKU;

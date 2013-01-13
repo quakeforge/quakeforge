@@ -300,7 +300,7 @@ typedef enum {
 	QFK_ROMAJI,						/* to Romaji */
 	QFK_HIRAGANA,					/* to Hiragana */
 	QFK_KATAKANA,					/* to Katakana */
-	QFK_HIRAGANA_kATAKANA,			/* Hiragana/Katakana toggle */
+	QFK_HIRAGANA_KATAKANA,			/* Hiragana/Katakana toggle */
 	QFK_ZENKAKU,					/* to Zenkaku */
 	QFK_HANKAKU,					/* to Hankaku */
 	QFK_ZENKAKU_HANKAKU,			/* Zenkaku/Hankaku toggle */
