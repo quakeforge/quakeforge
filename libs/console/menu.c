@@ -428,6 +428,9 @@ bi_Menu_Enter (progs_t *pr)
 {
 	menu_item_t *item;
 
+	if (!menu)
+		return;
+
 	item = menu->items[menu->cur_item];
 	if (item->func) {
 		run_menu_pre ();
