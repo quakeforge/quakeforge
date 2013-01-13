@@ -990,6 +990,9 @@ Sbar_Draw (void)
 {
 	qboolean    headsup;
 
+	if (r_data->scr_copyeverything)
+		Sbar_Changed ();
+
 	sbar_view->visible = 0;
 
 	headsup = !(hud_sbar->int_val || r_data->scr_viewsize->int_val < 100);
