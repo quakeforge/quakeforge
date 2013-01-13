@@ -118,11 +118,10 @@ R_SetVrect (vrect_t *vrectin, vrect_t *vrect, int lineadj)
 	int         h;
 
 	// intermission is always full screen
-	if (r_viewsize >= 100 || vr_data.force_fullscreen /*FIXME: better test*/) {
+	size = min (r_viewsize, 100);
+	if (vr_data.force_fullscreen) {
 		size = 100.0;
 		lineadj = 0;
-	} else {
-		size = r_viewsize;
 	}
 	size /= 100.0;
 
