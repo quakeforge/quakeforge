@@ -78,6 +78,7 @@ typedef struct {
 } imtname_t;
 
 imtname_t   imtnames[] = {
+	{"IMT_MENU",	IMT_MENU},
 	{"IMT_CONSOLE",	IMT_CONSOLE},
 	{"IMT_MOD",	    IMT_MOD},
 	{"IMT_DEMO",	IMT_DEMO},
@@ -1034,8 +1035,10 @@ Key_SetKeyDest(keydest_t kd)
 			break;
 		case key_console:
 		case key_message:
-		case key_menu:
 			key_target = IMT_CONSOLE;
+			break;
+		case key_menu:
+			key_target = IMT_MENU;
 			break;
 	}
 	if (key_dest_callback)

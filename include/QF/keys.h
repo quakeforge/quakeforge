@@ -414,6 +414,7 @@ typedef enum {
 } knum_t;
 
 typedef enum {
+	IMT_MENU,
 	IMT_CONSOLE,
 	IMT_MOD,
 	IMT_DEMO,
