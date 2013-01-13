@@ -68,7 +68,7 @@ VISIBLE void (*key_dest_callback) (void);
 VISIBLE struct keybind_s keybindings[IMT_LAST][QFK_LAST];
 VISIBLE int			keydown[QFK_LAST];
 
-static imt_t game_target = IMT_CONSOLE;
+static imt_t key_target = IMT_CONSOLE;
 static int  keyhelp;
 static cbuf_t *cbuf;
 
@@ -487,15 +487,15 @@ Key_Game (knum_t key, short unicode)
 {
 	const char *kb;
 
-	kb = Key_GetBinding (game_target, key);
-	if (!kb && (game_target > IMT_0))
+	kb = Key_GetBinding (key_target, key);
+	if (!kb && (key_target > IMT_0))
 		kb = Key_GetBinding (IMT_0, key);
-	if (!kb && (game_target >= IMT_MOD))
+	if (!kb && (key_target >= IMT_MOD))
 		kb = Key_GetBinding (IMT_MOD, key);
 
 /*
-	Sys_DPrintf("kb %p, game_target %d, key_dest %d, key %d\n", kb,
-				game_target, key_dest, key);
+	Sys_DPrintf("kb %p, key_target %d, key_dest %d, key %d\n", kb,
+				key_target, key_dest, key);
 */
 	if (!kb)
 		return false;
@@ -845,7 +845,7 @@ Key_InputMappingTable_f (void)
 	c = Cmd_Argc ();
 
 	if (c != 2) {
-		Sys_Printf ("Current imt is %s\n", Key_IMTnumToString(game_target));
+		Sys_Printf ("Current imt is %s\n", Key_IMTnumToString(key_target));
 		Sys_Printf ("imt <imt> : set to a specific input mapping table\n");
 		return;
 	}
@@ -856,7 +856,7 @@ Key_InputMappingTable_f (void)
 		return;
 	}
 
-	game_target = t;
+	key_target = t;
 }
 
 /*
@@ -906,7 +906,7 @@ keyhelp_f (void)
 VISIBLE void
 Key_Event (knum_t key, short unicode, qboolean down)
 {
-//  Sys_Printf ("%d %d %d : %d\n", game_target, key_dest, key, down); //@@@
+//  Sys_Printf ("%d %d %d : %d\n", key_target, key_dest, key, down); //@@@
 
 	if (down) {
 		keydown[key]++;
@@ -1030,12 +1030,12 @@ Key_SetKeyDest(keydest_t kd)
 		default:
 			Sys_Error ("Bad key_dest");
 		case key_game:
-			game_target = key_game_target;
+			key_target = key_game_target;
 			break;
 		case key_console:
 		case key_message:
 		case key_menu:
-			game_target = IMT_CONSOLE;
+			key_target = IMT_CONSOLE;
 			break;
 	}
 	if (key_dest_callback)
