@@ -213,7 +213,7 @@ gl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	vid.numpages = 2 + gl_triplebuffer->int_val;
 
 	scr_copytop = 0;
-	vr_data.scr_copyeverything = 0;
+	vr_data.scr_copyeverything = 1;
 
 	if (!scr_initialized)
 		return;							// not initialized yet
