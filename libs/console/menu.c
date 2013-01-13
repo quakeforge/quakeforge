@@ -410,6 +410,46 @@ bi_Menu_GetIndex (progs_t *pr)
 }
 
 static void
+bi_Menu_Next (progs_t *pr)
+{
+	menu->cur_item++;
+	menu->cur_item %= menu->num_items;
+}
+
+static void
+bi_Menu_Prev (progs_t *pr)
+{
+	menu->cur_item += menu->num_items - 1;
+	menu->cur_item %= menu->num_items;
+}
+
+static void
+bi_Menu_Enter (progs_t *pr)
+{
+	menu_item_t *item;
+
+	item = menu->items[menu->cur_item];
+	if (item->func) {
+		run_menu_pre ();
+		PR_PushFrame (&menu_pr_state);
+		PR_RESET_PARAMS (&menu_pr_state);
+		P_STRING (&menu_pr_state, 0) =
+			PR_SetTempString (&menu_pr_state, item->text);
+		P_INT (&menu_pr_state, 1) = 0;
+		PR_ExecuteProgram (&menu_pr_state, item->func);
+		PR_PopFrame (&menu_pr_state);
+		run_menu_post ();
+	} else {
+		menu = item;
+		if (menu->enter_hook) {
+			run_menu_pre ();
+			PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
+			run_menu_post ();
+		}
+	}
+}
+
+static void
 togglemenu_f (void)
 {
 	if (menu)
@@ -471,6 +511,9 @@ static builtin_t builtins[] = {
 	{"Menu_SetQuit",		bi_Menu_SetQuit,		-1},
 	{"Menu_Quit",			bi_Menu_Quit,			-1},
 	{"Menu_GetIndex",		bi_Menu_GetIndex,		-1},
+	{"Menu_Next",			bi_Menu_Next,			-1},
+	{"Menu_Prev",			bi_Menu_Prev,			-1},
+	{"Menu_Enter",			bi_Menu_Enter,			-1},
 	{0},
 };
 
@@ -657,37 +700,15 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 	switch (key) {
 		case QFK_DOWN:
 		case QFM_WHEEL_DOWN:
-			menu->cur_item++;
-			menu->cur_item %= menu->num_items;
+			bi_Menu_Next (&menu_pr_state);
 			return 1;
 		case QFK_UP:
 		case QFM_WHEEL_UP:
-			menu->cur_item += menu->num_items - 1;
-			menu->cur_item %= menu->num_items;
+			bi_Menu_Prev (&menu_pr_state);
 			return 1;
 		case QFK_RETURN:
 		case QFM_BUTTON1:
-			{
-				item = menu->items[menu->cur_item];
-				if (item->func) {
-					run_menu_pre ();
-					PR_PushFrame (&menu_pr_state);
-					PR_RESET_PARAMS (&menu_pr_state);
-					P_STRING (&menu_pr_state, 0) =
-						PR_SetTempString (&menu_pr_state, item->text);
-					P_INT (&menu_pr_state, 1) = key;
-					PR_ExecuteProgram (&menu_pr_state, item->func);
-					PR_PopFrame (&menu_pr_state);
-					run_menu_post ();
-				} else {
-					menu = item;
-					if (menu->enter_hook) {
-						run_menu_pre ();
-						PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
-						run_menu_post ();
-					}
-				}
-			}
+			bi_Menu_Enter (&menu_pr_state);
 			return 1;
 		default:
 			return 0;
