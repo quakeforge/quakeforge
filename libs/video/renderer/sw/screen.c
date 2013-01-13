@@ -197,7 +197,7 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	vr_data.realtime = realtime;
 
 	scr_copytop = 0;
-	scr_copyeverything = 0;
+	vr_data.scr_copyeverything = 0;
 
 	if (!scr_initialized)
 		return;							// not initialized yet
@@ -214,8 +214,8 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
 										// directly
 
-	if (scr_fullupdate++ < vid.numpages) {	// clear the entire screen
-		scr_copyeverything = 1;
+	if (vr_data.scr_fullupdate++ < vid.numpages) {	// clear the entire screen
+		vr_data.scr_copyeverything = 1;
 		Draw_TileClear (0, 0, vid.width, vid.height);
 	}
 
@@ -244,7 +244,7 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	}
 
 	// update one of three areas
-	if (scr_copyeverything) {
+	if (vr_data.scr_copyeverything) {
 		vrect.x = 0;
 		vrect.y = 0;
 		vrect.width = vid.width;

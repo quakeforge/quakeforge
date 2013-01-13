@@ -92,7 +92,6 @@
 
 // only the refresh window will be updated unless these variables are flagged
 int         scr_copytop;
-int         scr_copyeverything;
 byte       *draw_chars;					// 8*8 graphic characters FIXME location
 
 float       oldfov;
@@ -102,8 +101,6 @@ qboolean    scr_initialized;			// ready to draw
 
 qpic_t     *scr_ram;
 qpic_t     *scr_turtle;
-
-int         scr_fullupdate;
 
 int         clearconsole;
 
@@ -154,7 +151,7 @@ SCR_CalcRefdef (void)
 	refdef_t   *refdef = r_data->refdef;
 
 	// force a background redraw
-	scr_fullupdate = 0;
+	vr_data.scr_fullupdate = 0;
 	vid.recalc_refdef = 0;
 
 	// bound field of view

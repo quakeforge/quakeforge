@@ -47,7 +47,6 @@ void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
 
 
 extern int         scr_copytop;
-extern int         scr_copyeverything;
 
 extern float       scr_con_current;
 extern float       scr_conlines;				// lines of console to display
@@ -61,8 +60,6 @@ extern qboolean    scr_initialized;			// ready to draw
 extern struct qpic_s *scr_ram;
 extern struct qpic_s *scr_net;
 extern struct qpic_s *scr_turtle;
-
-extern int         scr_fullupdate;
 
 extern int         clearconsole;
 extern int         clearnotify;
