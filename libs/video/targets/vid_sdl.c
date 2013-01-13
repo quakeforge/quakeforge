@@ -84,6 +84,9 @@ static void (GLAPIENTRY *qfglFinish) (void);
 static int use_gl_procaddress = 0;
 static cvar_t  *gl_driver;
 
+static byte cached_palette[256 * 3];
+static int update_palette;
+
 static void *
 QFGL_ProcAddress (const char *name, qboolean crit)
 {
@@ -180,7 +183,7 @@ sdl_load_gl (void)
 }
 
 static void
-VID_SetPalette (const byte *palette)
+sdl_update_palette (const byte *palette)
 {
 	SDL_Color   colors[256];
 	int         i;
@@ -191,6 +194,15 @@ VID_SetPalette (const byte *palette)
 		colors[i].b = *palette++;
 	}
 	SDL_SetColors (screen, colors, 0, 256);
+}
+
+static void
+VID_SetPalette (const byte *palette)
+{
+	if (memcmp (cached_palette, palette, sizeof (cached_palette))) {
+		memcpy (cached_palette, palette, sizeof (cached_palette));
+		update_palette = 1;
+	}
 }
 
 static void
@@ -293,6 +305,10 @@ VID_Update (vrect_t *rects)
 	int         i, n;
 	vrect_t    *rect;
 
+	if (update_palette) {
+		update_palette = 0;
+		sdl_update_palette (cached_palette);
+	}
 	// Two-pass system, since Quake doesn't do it the SDL way...
 
 	// First, count the number of rectangles
