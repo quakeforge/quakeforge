@@ -63,7 +63,11 @@ VISIBLE keydest_t   key_dest = key_console;
 VISIBLE imt_t		key_game_target = IMT_0;
 VISIBLE knum_t      key_togglemenu = QFK_ESCAPE;
 VISIBLE knum_t      key_toggleconsole = QFK_BACKQUOTE;
-VISIBLE void (*key_dest_callback) (void);
+
+#define KEYDEST_CALLBACK_CHUNK 16
+static keydest_callback_t **keydest_callbacks;
+static int num_keydest_callbacks;
+static int max_keydest_callbacks;
 
 VISIBLE struct keybind_s keybindings[IMT_LAST][QFK_LAST];
 VISIBLE int			keydown[QFK_LAST];
@@ -1026,6 +1030,8 @@ Key_SetBinding (imt_t target, knum_t keynum, const char *binding)
 VISIBLE void
 Key_SetKeyDest(keydest_t kd)
 {
+	int         i;
+
 	key_dest = kd;
 	switch (key_dest) {
 		default:
@@ -1041,6 +1047,24 @@ Key_SetKeyDest(keydest_t kd)
 			key_target = IMT_MENU;
 			break;
 	}
-	if (key_dest_callback)
-		key_dest_callback ();
+	for (i = 0; i < num_keydest_callbacks; i++)
+		keydest_callbacks[i] (key_dest);
+}
+
+VISIBLE void
+Key_KeydestCallback (keydest_callback_t *callback)
+{
+	if (num_keydest_callbacks == max_keydest_callbacks) {
+		size_t size = (max_keydest_callbacks + KEYDEST_CALLBACK_CHUNK)
+					  * sizeof (keydest_callback_t *);
+		keydest_callbacks = realloc (keydest_callbacks, size);
+		if (!keydest_callbacks)
+			Sys_Error ("Too many keydest callbacks!");
+		max_keydest_callbacks += KEYDEST_CALLBACK_CHUNK;
+	}
+
+	if (!callback)
+		Sys_Error ("null keydest callback");
+
+	keydest_callbacks[num_keydest_callbacks++] = callback;
 }

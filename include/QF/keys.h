@@ -457,7 +457,6 @@ extern keydest_t	key_dest;
 extern imt_t		key_game_target;
 extern knum_t       key_togglemenu;
 extern knum_t       key_toggleconsole;
-extern void (*key_dest_callback) (void);
 
 extern struct keybind_s {
 	char *str;
@@ -473,6 +472,8 @@ void Key_ClearStates (void);
 const char *Key_GetBinding (imt_t imt, knum_t key);
 void Key_SetBinding (imt_t target, knum_t keynum, const char *binding);
 void Key_SetKeyDest(keydest_t kd);
+typedef void keydest_callback_t (keydest_t);
+void Key_KeydestCallback (keydest_callback_t *callback);
 
 
 const char *Key_KeynumToString (knum_t keynum);
