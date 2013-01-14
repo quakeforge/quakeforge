@@ -45,7 +45,6 @@
 
 cvar_t *in_snd_block;
 
-static keydest_t old_key_dest = key_none;
 static int have_focus = 1;
 
 
@@ -71,6 +70,16 @@ event_focusin (void)
 	}
 }
 
+static void
+sdl_keydest_callback (keydest_t key_dest)
+{
+	if (key_dest == key_game)
+		SDL_EnableKeyRepeat (0, SDL_DEFAULT_REPEAT_INTERVAL);
+	else
+		SDL_EnableKeyRepeat (SDL_DEFAULT_REPEAT_DELAY,
+							 SDL_DEFAULT_REPEAT_INTERVAL);
+}
+
 void
 IN_LL_ProcessEvents (void)
 {
@@ -81,16 +90,6 @@ IN_LL_ProcessEvents (void)
 
 
 	while (SDL_PollEvent (&event)) {
-		// Ugly key repeat handling. Should use a key_dest callback...
-		if (old_key_dest != key_dest) {
-			old_key_dest = key_dest;
-			if (key_dest == key_game)
-				SDL_EnableKeyRepeat (0, SDL_DEFAULT_REPEAT_INTERVAL);
-			else
-				SDL_EnableKeyRepeat (SDL_DEFAULT_REPEAT_DELAY,
-									 SDL_DEFAULT_REPEAT_INTERVAL);
-		}
-
 		switch (event.type) {
 			case SDL_ACTIVEEVENT:
 				if (event.active.state == SDL_APPINPUTFOCUS) {
@@ -589,6 +588,7 @@ IN_LL_Init (void)
 {
 	SDL_EnableUNICODE (1);	// Enable UNICODE translation for keyboard input
 
+	Key_KeydestCallback (sdl_keydest_callback);
 	if (COM_CheckParm ("-nomouse"))
 		return;
 

@@ -84,7 +84,6 @@ cvar_t	   *in_mouse_accel;
 
 static qboolean dga_avail;
 static qboolean dga_active;
-static keydest_t old_key_dest = key_none;
 static int  p_mouse_x, p_mouse_y;
 static int input_grabbed = 0;
 
@@ -598,19 +597,21 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 }
 
 static void
+x11_keydest_callback (keydest_t key_dst)
+{
+	if (key_dest == key_game) {
+		XAutoRepeatOff (x_disp);
+	} else {
+		XAutoRepeatOn (x_disp);
+	}
+}
+
+static void
 event_key (XEvent *event)
 {
 	int key, unicode;
 
 	x_time = event->xkey.time;
-	if (old_key_dest != key_dest) {
-		old_key_dest = key_dest;
-		if (key_dest == key_game) {
-			XAutoRepeatOff (x_disp);
-		} else {
-			XAutoRepeatOn (x_disp);
-		}
-	}
 	XLateKey (&event->xkey, &key, &unicode);
 	Key_Event (key, unicode, event->type == KeyPress);
 }
@@ -841,6 +842,8 @@ IN_LL_Init (void)
 
 		in_mouse_avail = 1;
 	}
+
+	Key_KeydestCallback (x11_keydest_callback);
 
 	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
 					"Paste the contents of X's C&P buffer to the console");
