@@ -438,13 +438,11 @@ typedef enum {
 	IMT_LAST,
 } imt_t;											// Input Mapping Table
 
-// key_none should, preferably, be last
 typedef enum {
 	key_game,
 	key_console,
 	key_message,
 	key_menu,
-	key_none
 } keydest_t;
 
 #ifndef __QFCC__

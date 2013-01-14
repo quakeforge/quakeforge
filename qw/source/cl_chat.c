@@ -251,9 +251,6 @@ cl_chat_keydest (keydest_t keydest)
 		case key_menu:
 			CL_ChatInfo (2);	// supposed to be for loss of focus...
 			break;
-		case key_none:			// shouldn't happen
-			CL_ChatInfo (3);
-			break;
 	}
 }
 
