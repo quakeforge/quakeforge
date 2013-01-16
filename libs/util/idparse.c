@@ -118,7 +118,7 @@ skipwhite:
 	// skip /*..*/ comments
 	if (data[0] == '/' && data[1] == '*') {
 		data += 2;		// skip over the leading /*
-		while (data[0] && (data[0] != '*' && data[1] != '/'))
+		while (data[0] && !(data[0] == '*' && data[1] == '/'))
 			data++;
 		if (data[0])
 			data +=2;	// skip over the trailing */
