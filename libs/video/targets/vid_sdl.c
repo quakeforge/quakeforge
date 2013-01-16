@@ -235,15 +235,13 @@ VID_Init (byte *palette, byte *colormap)
 {
 	Uint32      flags;
 
-	viddef.load_gl = sdl_load_gl;
-	viddef.set_palette = VID_SetPalette;
 	set_vid_mode = sdl_set_vid_mode;
 
 	// Load the SDL library
 	if (SDL_Init (SDL_INIT_VIDEO) < 0)
 		Sys_Error ("VID: Couldn't load SDL: %s", SDL_GetError ());
 
-	R_LoadModule ();
+	R_LoadModule (sdl_load_gl, VID_SetPalette);
 
 	viddef.numpages = 1;
 	viddef.colormap8 = colormap;

@@ -121,7 +121,6 @@ sw_vid_render_init (void)
 {
 	vr_funcs = &sw_vid_render_funcs;
 	m_funcs = &model_funcs;
-	vid = *vr_data.vid;
 }
 
 static void

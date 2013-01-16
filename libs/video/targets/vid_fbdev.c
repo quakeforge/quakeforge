@@ -406,7 +406,7 @@ VID_Init (byte *palette, byte *colormap)
 	if (fbdev_inited)
 		return;
 
-	viddef.set_palette = VID_SetPalette;
+	R_LoadModule (0, VID_SetPalette);
 
 	if (COM_CheckParm ("-novideo")) {
 		viddef.width = 320;
@@ -425,8 +425,6 @@ VID_Init (byte *palette, byte *colormap)
 		VID_InitBuffers ();
 		return;
 	}
-
-	R_LoadModule ();
 
 	fbname = getenv("FRAMEBUFFER");
 	if (!fbname)

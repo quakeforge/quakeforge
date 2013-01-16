@@ -65,7 +65,7 @@ VID_Shutdown (void)
 static void
 VID_UpdateFullscreen (cvar_t *vid_fullscreen)
 {
-	if (!viddef.initialized)
+	if (!r_data || !viddef.initialized)
 		return;
 	if ((vid_fullscreen->int_val && !(screen->flags & SDL_FULLSCREEN))
 		|| (!vid_fullscreen->int_val && screen->flags & SDL_FULLSCREEN))

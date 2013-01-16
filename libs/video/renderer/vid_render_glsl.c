@@ -131,7 +131,6 @@ glsl_vid_render_init (void)
 	vr_data.vid->load_gl ();
 	vr_funcs = &glsl_vid_render_funcs;
 	m_funcs = &model_funcs;
-	vid = *vr_data.vid;
 }
 
 static void

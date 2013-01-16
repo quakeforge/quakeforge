@@ -172,7 +172,8 @@ extern	struct texture_s	*r_notexture_mip;
 extern entity_t r_worldentity;
 
 void R_Init (void);
-void R_LoadModule (void);
+void R_LoadModule (void (*load_gl)(void),
+				   void (*set_palette) (const byte *palette));
 struct progs_s;
 void R_Progs_Init (struct progs_s *pr);
 

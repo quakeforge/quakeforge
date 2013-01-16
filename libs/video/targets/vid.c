@@ -47,7 +47,7 @@
 #include "vid_internal.h"
 
 /* Software and hardware gamma support */
-viddef_t    viddef;
+#define viddef (*r_data->vid)
 byte       *vid_colormap;
 cvar_t	   *vid_gamma;
 cvar_t	   *vid_system_gamma;

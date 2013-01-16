@@ -63,7 +63,7 @@ static U void (*const r_progs_init)(struct progs_s *) = R_Progs_Init;
 #undef U
 
 VISIBLE void
-R_LoadModule (void)
+R_LoadModule (void (*load_gl)(void), void (*set_palette) (const byte *palette))
 {
 	PI_RegisterPlugins (vidrend_plugin_list);
 	vidrend_plugin = Cvar_Get ("vid_render", VID_RENDER_DEFAULT, CVAR_ROM, 0,
@@ -76,7 +76,8 @@ R_LoadModule (void)
 	r_funcs = vidrendmodule->functions->vid_render;
 	mod_funcs = r_funcs->model_funcs;
 	r_data = vidrendmodule->data->vid_render;
-	r_data->vid = &viddef;
+	r_data->vid->load_gl = load_gl;
+	r_data->vid->set_palette = set_palette;
 
 	vidrendmodule->functions->general->p_Init ();
 }

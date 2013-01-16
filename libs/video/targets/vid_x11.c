@@ -670,10 +670,8 @@ VID_Init (byte *palette, byte *colormap)
 {
 	choose_visual = x11_choose_visual;
 	create_context = x11_create_context;
-	viddef.load_gl = glx_load_gl;
-	viddef.set_palette = VID_SetPalette;
 
-	R_LoadModule ();
+	R_LoadModule (glx_load_gl, VID_SetPalette);
 
 	viddef.numpages = 2;
 	viddef.colormap8 = colormap;

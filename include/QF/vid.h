@@ -76,7 +76,7 @@ typedef struct {
 	void           (*end_rendering)(void);
 } viddef_t;
 
-extern viddef_t viddef;
+#define viddef (*r_data->vid)
 
 extern unsigned int 	d_8to24table[256];	//FIXME nq/qw uses
 
