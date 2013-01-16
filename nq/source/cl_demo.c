@@ -125,7 +125,6 @@ CL_StopPlayback (void)
 
 	Qclose (cls.demofile);
 	cls.demofile = NULL;
-	key_game_target = IMT_0;
 	CL_SetState (ca_disconnected);
 	cls.demo_capture = 0;
 	cls.demoplayback = 0;
@@ -472,8 +471,7 @@ CL_StartDemo (void)
 	cls.demoplayback = true;
 	CL_SetState (ca_connected);
 	cls.forcetrack = 0;
-	key_game_target = IMT_DEMO;
-	Key_SetKeyDest (key_game);
+	Key_SetKeyDest (key_demo);
 
 	while ((c = Qgetc (cls.demofile)) != '\n')
 		if (c == '-')

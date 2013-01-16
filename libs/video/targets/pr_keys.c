@@ -48,15 +48,19 @@
 static void
 bi_Key_SetBinding (progs_t *pr)
 {
-	int	        target  = P_INT (pr, 0);
+	const char *imt_name  = P_GSTRING (pr, 0);
 	int         keynum  = P_INT (pr, 1);
 	const char *binding = P_GSTRING (pr, 2);
+	imt_t      *imt;
 
-	if (strlen (binding) == 0 || binding[0] == '\0') {
+	if (binding && !binding[0]) {
 		binding = NULL;	/* unbind a binding */
 	}
 
-	Key_SetBinding (target, keynum, binding);
+	imt = Key_FindIMT (imt_name);
+	if (imt) {
+		Key_SetBinding (imt, keynum, binding);
+	}
 }
 
 /*
@@ -67,23 +71,27 @@ bi_Key_SetBinding (progs_t *pr)
 static void
 bi_Key_LookupBinding (progs_t *pr)
 {
-	int	        target  = P_INT (pr, 0);
+	const char *imt_name = P_GSTRING (pr, 0);
 	int	        bindnum = P_INT (pr, 1);
 	const char *binding = P_GSTRING (pr, 2);
+	imt_t      *imt;
 	int i;
 	knum_t keynum = -1;
 	const char *keybind = NULL;
 
-	for (i = 0; i < QFK_LAST; i++) {
-		keybind = keybindings[target][i].str;
-		if (keybind == NULL) {
-		  continue;
-		}
-		if (strcmp (keybind, binding) == 0) {
-			bindnum--;
-			if (bindnum == 0) {
-				keynum = i;
-				break;
+	imt = Key_FindIMT (imt_name);
+	if (imt) {
+		for (i = 0; i < QFK_LAST; i++) {
+			keybind = imt->bindings[i].str;
+			if (keybind == NULL) {
+			  continue;
+			}
+			if (strcmp (keybind, binding) == 0) {
+				bindnum--;
+				if (bindnum == 0) {
+					keynum = i;
+					break;
+				}
 			}
 		}
 	}
@@ -99,18 +107,22 @@ bi_Key_LookupBinding (progs_t *pr)
 static void
 bi_Key_CountBinding (progs_t *pr)
 {
-	int	        target  = P_INT (pr, 0);
+	const char *imt_name = P_GSTRING (pr, 0);
 	const char *binding = P_GSTRING (pr, 1);
 	int         i, res = 0;
 	const char *keybind = NULL;
+	imt_t      *imt;
 
-	for (i = 0; i < QFK_LAST; i++) {
-		keybind = keybindings[target][i].str;
-		if (keybind == NULL) {
-		  continue;
-		}
-		if (strcmp (keybind, binding) == 0) {
-			res++;
+	imt = Key_FindIMT (imt_name);
+	if (imt) {
+		for (i = 0; i < QFK_LAST; i++) {
+			keybind = imt->bindings[i].str;
+			if (keybind == NULL) {
+			  continue;
+			}
+			if (strcmp (keybind, binding) == 0) {
+				res++;
+			}
 		}
 	}
 

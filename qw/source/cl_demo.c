@@ -144,7 +144,6 @@ CL_StopPlayback (void)
 
 	Qclose (cls.demofile);
 	cls.demofile = NULL;
-	key_game_target = IMT_0;
 	CL_SetState (ca_disconnected);
 	cls.demo_capture = 0;
 	cls.demoplayback = 0;
@@ -1018,8 +1017,7 @@ CL_StartDemo (void)
 	Sys_Printf ("Playing demo from %s.\n", name->str);
 
 	cls.demoplayback = true;
-	key_game_target = IMT_DEMO;
-	Key_SetKeyDest (key_game);
+	Key_SetKeyDest (key_demo);
 	net_blocksend = 1;
 	if (type == 2) {
 		cls.demoplayback2 = true;

@@ -242,6 +242,7 @@ cl_chat_keydest (keydest_t keydest)
 {
 	switch (keydest) {
 		case key_game:
+		case key_demo:
 			CL_ChatInfo (0);
 			break;
 		case key_message:
@@ -250,6 +251,7 @@ cl_chat_keydest (keydest_t keydest)
 		case key_console:
 		case key_menu:
 		case key_unfocused:
+		case key_last:			// should not happen
 			CL_ChatInfo (2);
 			break;
 	}

@@ -59,8 +59,8 @@ static U void (*const key_progs_init)(struct progs_s *) = Key_Progs_Init;
 
 /*  key up events are sent even if in console mode */
 
-VISIBLE keydest_t    key_dest = key_unfocused;
-VISIBLE imt_t		key_game_target = IMT_0;
+static keydest_t    key_dest = key_unfocused;
+static keytarget_t  key_targets[key_last];
 VISIBLE knum_t      key_togglemenu = QFK_ESCAPE;
 VISIBLE knum_t      key_toggleconsole = QFK_BACKQUOTE;
 
@@ -69,45 +69,27 @@ static keydest_callback_t **keydest_callbacks;
 static int num_keydest_callbacks;
 static int max_keydest_callbacks;
 
-VISIBLE struct keybind_s keybindings[IMT_LAST][QFK_LAST];
 VISIBLE int			keydown[QFK_LAST];
 
-static imt_t key_target = IMT_CONSOLE;
 static int  keyhelp;
 static cbuf_t *cbuf;
+
+static const char *keydest_names[] = {
+	"key_unfocused",
+	"key_game",
+	"key_demo",
+	"key_console",
+	"key_message",
+	"key_menu",
+
+	"key_last"
+};
+
 
 typedef struct {
 	const char *name;
 	imt_t	imtnum;
 } imtname_t;
-
-imtname_t   imtnames[] = {
-	{"IMT_MENU",	IMT_MENU},
-	{"IMT_CONSOLE",	IMT_CONSOLE},
-	{"IMT_MOD",	    IMT_MOD},
-	{"IMT_DEMO",	IMT_DEMO},
-	{"IMT_0",		IMT_0},
-	{"IMT_1",		IMT_1},
-	{"IMT_2",		IMT_2},
-	{"IMT_3",		IMT_3},
-	{"IMT_4",		IMT_4},
-	{"IMT_5",		IMT_5},
-	{"IMT_6",		IMT_6},
-	{"IMT_7",		IMT_7},
-	{"IMT_8",		IMT_8},
-	{"IMT_9",		IMT_9},
-	{"IMT_10",		IMT_10},
-	{"IMT_11",		IMT_11},
-	{"IMT_12",		IMT_12},
-	{"IMT_13",		IMT_13},
-	{"IMT_14",		IMT_14},
-	{"IMT_15",		IMT_15},
-	{"IMT_16",		IMT_16},
-
-	{"IMT_DEFAULT",	IMT_0},
-
-	{NULL, 0}
-};
 
 typedef struct {
 	const char *name;
@@ -464,6 +446,81 @@ keyname_t   keynames[] = {
 	{NULL, 0}
 };
 
+static imt_t *
+key_target_find_imt (keytarget_t *kt, const char *imt_name)
+{
+	imt_t      *imt;
+	for (imt = kt->imts; imt; imt = imt->next) {
+		if (!strcasecmp (imt->name, imt_name)) {
+			return imt;
+		}
+	}
+	return 0;
+}
+
+VISIBLE imt_t *
+Key_FindIMT (const char *imt_name)
+{
+	keydest_t   kd;
+	imt_t      *imt = 0;
+
+	for (kd = key_unfocused; !imt && kd < key_last; kd++) {
+		imt = key_target_find_imt (&key_targets[kd], imt_name);
+	}
+	return imt;
+}
+
+void
+Key_CreateIMT (keydest_t kd, const char *imt_name, const char *chain_imt_name)
+{
+	imt_t      *imt;
+	imt_t      *chain_imt = 0;
+	keytarget_t *kt = &key_targets[kd];
+
+	imt = Key_FindIMT (imt_name);
+	if (imt) {
+		Sys_Printf ("imt error: imt %s already exists\n", imt_name);
+		return;
+	}
+	if (chain_imt_name) {
+		chain_imt = Key_FindIMT (chain_imt_name);
+		if (!chain_imt) {
+			Sys_Printf ("imt error: chain imt %s does not exist\n",
+						chain_imt_name);
+			return;
+		}
+		imt = key_target_find_imt (kt, chain_imt_name);
+		if (!imt) {
+			Sys_Printf ("imt error: chain imt %s not on target key "
+						"destination\n", chain_imt_name);
+			return;
+		}
+	}
+	imt = calloc (1, sizeof (imt_t));
+	imt->name = strdup (imt_name);
+	imt->chain = chain_imt;
+	imt->next = kt->imts;
+	kt->imts = imt;
+	if (!kt->active) {
+		kt->active = imt;
+	}
+}
+
+VISIBLE void
+Key_SetBinding (imt_t *imt, knum_t keynum, const char *binding)
+{
+	if (keynum == (knum_t) -1)
+		return;
+
+	if (imt->bindings[keynum].str) {
+		free (imt->bindings[keynum].str);
+		imt->bindings[keynum].str = NULL;
+	}
+	if (binding) {
+		imt->bindings[keynum].str = strdup(binding);
+	}
+}
+
 static void
 Key_CallDestCallbacks (keydest_t kd)
 {
@@ -490,6 +547,7 @@ process_binding (knum_t key, const char *kb)
 	}
 	Cbuf_AddText (cbuf, cmd);
 }
+
 /*
   Key_Game
 
@@ -499,25 +557,22 @@ static qboolean
 Key_Game (knum_t key, short unicode)
 {
 	const char *kb;
+	imt_t      *imt = key_targets[key_dest].active;
 
-	kb = Key_GetBinding (key_target, key);
-	if (!kb && (key_target > IMT_0))
-		kb = Key_GetBinding (IMT_0, key);
-	if (!kb && (key_target >= IMT_MOD))
-		kb = Key_GetBinding (IMT_MOD, key);
-
+	while (imt) {
+		kb = imt->bindings[key].str;
+		if (kb) {
+			if (keydown[key] <= 1)
+				process_binding (key, kb);
+			return true;
+		}
+		imt = imt->chain;
+	}
+	return false;
 /*
 	Sys_DPrintf("kb %p, key_target %d, key_dest %d, key %d\n", kb,
 				key_target, key_dest, key);
 */
-	if (!kb)
-		return false;
-
-	if (keydown[key] > 1)
-		return true;
-
-	process_binding (key, kb);
-	return true;
 }
 
 /*
@@ -536,48 +591,6 @@ Key_Console (knum_t key, short unicode)
 }
 
 //============================================================================
-
-/*
-  Key_StringToIMTnum
-  Returns an imt number to be used to index imtbindings[] by looking at
-  the given string.  Single ascii characters return themselves, while
-  the QFK_* names are matched up.
-*/
-static int
-Key_StringToIMTnum (const char *str)
-{
-	imtname_t  *kn;
-
-	if (!str || !str[0])
-		return -1;
-
-	for (kn = imtnames; kn->name; kn++) {
-		if (!strcasecmp (str, kn->name))
-			return kn->imtnum;
-	}
-	return -1;
-}
-
-/*
-  Key_IMTnumToString
-
-  Returns a string (a QFK_* name) for the given imtnum.
-  FIXME: handle quote special (general escape sequence?)
-*/
-static const char *
-Key_IMTnumToString (const imt_t imtnum)
-{
-	imtname_t  *kn;
-
-	if (imtnum == (imt_t) -1)
-		return "<IMT NOT FOUND>";
-
-	for (kn = imtnames; kn->name; kn++)
-		if (imtnum == kn->imtnum)
-			return kn->name;
-
-	return "<UNKNOWN IMTNUM>";
-}
 
 /*
   Key_StringToKeynum
@@ -623,23 +636,24 @@ Key_KeynumToString (knum_t keynum)
 }
 
 static void
-Key_In_Unbind (const char *imt, const char *key)
+Key_In_Unbind (const char *imt_name, const char *key_name)
 {
-	int t, b;
+	imt_t      *imt;
+	int         key;
 
-	t = Key_StringToIMTnum (imt);
-	if (t == -1) {
-		Sys_Printf ("\"%s\" isn't a valid imt\n", imt);
+	imt = Key_FindIMT (imt_name);
+	if (!imt) {
+		Sys_Printf ("\"%s\" isn't a valid imt\n", imt_name);
 		return;
 	}
 
-	b = Key_StringToKeynum (key);
-	if (b == -1) {
-		Sys_Printf ("\"%s\" isn't a valid key\n", key);
+	key = Key_StringToKeynum (key_name);
+	if (key == -1) {
+		Sys_Printf ("\"%s\" isn't a valid key\n", key_name);
 		return;
 	}
 
-	Key_SetBinding (t, b, NULL);
+	Key_SetBinding (imt, key, NULL);
 }
 
 static void
@@ -655,18 +669,24 @@ Key_In_Unbind_f (void)
 static void
 Key_Unbindall_f (void)
 {
-	int         i, j;
+	keydest_t   kd;
+	imt_t      *imt;
+	int         i;
 
-	for (j = 0; j < IMT_LAST; j++)
-		for (i = 0; i < QFK_LAST; i++)
-			Key_SetBinding (j, i, NULL);
+	for (kd = key_unfocused; kd < key_last; kd++) {
+		for (imt = key_targets[kd].imts; imt; imt = imt->next) {
+			for (i = 0; i < QFK_LAST; i++) {
+				Key_SetBinding (imt, i, 0);
+			}
+		}
+	}
 }
 
 static void
 Key_In_Clear (void)
 {
 	int         err = 0;
-	int         imt;
+	imt_t      *imt;
 	int         i, j;
 
 	if (Cmd_Argc () == 1) {
@@ -674,7 +694,7 @@ Key_In_Clear (void)
 		return;
 	}
 	for (i = 1; i < Cmd_Argc (); i++) {
-		if (Key_StringToIMTnum (Cmd_Argv (i)) == -1) {
+		if (!Key_FindIMT (Cmd_Argv (i))) {
 			Sys_Printf ("\"%s\" isn't a valid imt\n", Cmd_Argv (i));
 			err = 1;
 		}
@@ -682,38 +702,85 @@ Key_In_Clear (void)
 	if (err)
 		return;
 	for (i = 1; i < Cmd_Argc (); i++) {
-		imt = Key_StringToIMTnum (Cmd_Argv (i));
+		imt = Key_FindIMT (Cmd_Argv (i));
 		for (j = 0; j < QFK_LAST; j++)
 			Key_SetBinding (imt, j, NULL);
 	}
 }
 
 static void
-Key_In_Bind (const char *imt, const char *key, const char *cmd)
+Key_IMT_Create_f (void)
 {
-	int t, b;
+	const char *keydest;
+	const char *imt_name;
+	const char *chain_imt_name = 0;
+	keydest_t   kd;
 
-	t = Key_StringToIMTnum (imt);
-	if (t == -1) {
-		Sys_Printf ("\"%s\" isn't a valid imt\n", imt);
+	if (Cmd_Argc () < 3 || Cmd_Argc () > 4) {
+		Sys_Printf ("see help imt_create\n");
+		return;
+	}
+	keydest = Cmd_Argv (1);
+	imt_name = Cmd_Argv (2);
+	if (Cmd_Argc () == 4) {
+		chain_imt_name = Cmd_Argv (3);
+	}
+	for (kd = key_game; kd < key_last; kd++) {
+		if (!strcasecmp (keydest_names[kd], keydest)) {
+			break;
+		}
+	}
+	if (kd == key_last) {
+		Sys_Printf ("imt error: invalid keydest: %s\n", keydest);
+		return;
+	}
+	Key_CreateIMT (kd, imt_name, chain_imt_name);
+}
+
+static void
+Key_IMT_Drop_All_f (void)
+{
+	keydest_t   kd;
+	imt_t       *imt;
+
+	for (kd = key_unfocused; kd < key_last; kd++) {
+		while (key_targets[kd].imts) {
+			imt = key_targets[kd].imts;
+			key_targets[kd].imts = imt->next;
+			free ((char *) imt->name);
+			free (imt);
+		}
+		key_targets[kd].active = 0;
+	}
+}
+
+static void
+Key_In_Bind (const char *imt_name, const char *key_name, const char *cmd)
+{
+	imt_t      *imt;
+	int         key;
+
+	imt = Key_FindIMT (imt_name);
+	if (!imt) {
+		Sys_Printf ("\"%s\" isn't a valid imt\n", imt_name);
 		return;
 	}
 
-	b = Key_StringToKeynum (key);
-	if (b == -1) {
-		Sys_Printf ("\"%s\" isn't a valid key\n", key);
+	key = Key_StringToKeynum (key_name);
+	if (key == -1) {
+		Sys_Printf ("\"%s\" isn't a valid key\n", key_name);
 		return;
 	}
 
 	if (!cmd) {
-		if (Key_GetBinding (t, b))
-			Sys_Printf ("%s %s \"%s\"\n", imt, key,
-						Key_GetBinding(t, b));
+		if (imt->bindings[key].str)
+			Sys_Printf ("%s %s \"%s\"\n", imt_name, key_name,
+						imt->bindings[key].str);
 		else
-			Sys_Printf ("%s %s is not bound\n", imt, key);
+			Sys_Printf ("%s %s is not bound\n", imt_name, key_name);
 		return;
 	}
-	Key_SetBinding (t, b, cmd);
+	Key_SetBinding (imt, key, cmd);
 }
 
 static void
@@ -810,7 +877,7 @@ Key_GIB_Bind_Get_f (void)
 		return;
 	}
 
-	if (!(cmd = Key_GetBinding (IMT_MOD, k)))
+	if (!(cmd = Key_GetBinding ("IMT_MOD", k)))
 		GIB_Return ("");
 	else
 		GIB_Return (cmd);
@@ -853,49 +920,137 @@ in_key_toggleconsole_f (cvar_t *var)
 static void
 Key_InputMappingTable_f (void)
 {
-	int         c, t;
+	int         c;
+	imt_t      *imt;
 
 	c = Cmd_Argc ();
 
 	if (c != 2) {
-		Sys_Printf ("Current imt is %s\n", Key_IMTnumToString(key_target));
+		Sys_Printf ("Current imt is %s\n", key_targets[key_game].active->name);
 		Sys_Printf ("imt <imt> : set to a specific input mapping table\n");
 		return;
 	}
 
-	t = Key_StringToIMTnum (Cmd_Argv (1));
-	if (t == -1) {
+	imt = Key_FindIMT (Cmd_Argv (1));
+	if (!imt) {
 		Sys_Printf ("\"%s\" isn't a valid imt\n", Cmd_Argv (1));
 		return;
 	}
 
-	key_target = t;
+	key_targets[key_game].active = imt;
 }
 
-/*
-  Key_WriteBindings
+static void
+Key_IMT_Keydest_f (void)
+{
+	int         c;
+	imt_t      *imt;
+	const char *imt_name = 0;
+	const char *keydest;
+	keydest_t   kd;
 
-  Writes lines containing "bind key value"
-*/
+	c = Cmd_Argc ();
+	switch (c) {
+		case 3:
+			imt_name = Cmd_Argv (2);
+		case 2:
+			keydest = Cmd_Argv (1);
+			break;
+		default:
+			return;
+	}
+	for (kd = key_game; kd < key_last; kd++) {
+		if (!strcasecmp (keydest_names[kd], keydest)) {
+			break;
+		}
+	}
+	if (kd == key_last) {
+		Sys_Printf ("imt error: invalid keydest: %s\n", keydest);
+		return;
+	}
+
+	if (!imt_name) {
+		Sys_Printf ("Current imt is %s\n", key_targets[key_game].active->name);
+		Sys_Printf ("imt <imt> : set to a specific input mapping table\n");
+		return;
+	}
+
+	imt = key_target_find_imt (&key_targets[kd], imt_name);
+	if (!imt) {
+		Sys_Printf ("\"%s\" isn't an imt on %s\n", imt_name, keydest);
+		return;
+	}
+
+	key_targets[kd].active = imt;
+}
+
+static void __attribute__((format(printf,2,3)))
+key_printf (QFile *f, const char *fmt, ...)
+{
+	va_list     args;
+	static dstring_t *string;
+
+	if (!string) {
+		string = dstring_new ();
+	}
+	va_start (args, fmt);
+	dvsprintf (string, fmt, args);
+	va_end (args);
+
+	if (f) {
+		Qprintf (f, "%s", string->str);
+	} else {
+		Sys_Printf ("%s", string->str);
+	}
+}
+
+static void
+key_write_imt (QFile *f, keydest_t kd, imt_t *imt)
+{
+	int         i;
+	const char *bind;
+
+	if (!imt || imt->written) {
+		return;
+	}
+	imt->written = 1;
+	key_write_imt (f, kd, imt->chain);
+	if (imt->chain) {
+		key_printf (f, "imt_create %s %s %s\n", keydest_names[kd],
+					imt->name, imt->chain->name);
+	} else {
+		key_printf (f, "imt_create %s %s\n", keydest_names[kd], imt->name);
+	}
+	for (i = 0; i < QFK_LAST; i++) {
+		bind = imt->bindings[i].str;
+		if (bind) {
+			key_printf (f, "in_bind %s %s \"%s\"\n", imt->name,
+						Key_KeynumToString (i), bind);
+		}
+	}
+}
+
 void
 Key_WriteBindings (QFile *f)
 {
-	int			i, j;
-	const char	*bind;
+	keydest_t   kd;
+	imt_t      *imt;
 
-	for (j = 0; j < IMT_LAST; j++)
-		for (i = 0; i < QFK_LAST; i++)
-			if ((bind = Key_GetBinding(j, i))) {
-			  if (f) {
-					Qprintf (f, "in_bind %s %s \"%s\"\n",
-							 Key_IMTnumToString (j),
-							 Key_KeynumToString (i), bind);
-			  } else {
-					Sys_Printf ("in_bind %s %s \"%s\"\n",
-							 Key_IMTnumToString (j),
-							 Key_KeynumToString (i), bind);
-			  }
+	for (kd = key_unfocused; kd < key_last; kd++) {
+		for (imt = key_targets[kd].imts; imt; imt = imt->next) {
+			imt->written = 0;
+		}
+	}
+	key_printf (f, "imt_drop_all\n");
+	for (kd = key_unfocused; kd < key_last; kd++) {
+		if (key_targets[kd].imts) {
+			for (imt = key_targets[kd].imts; imt; imt = imt->next) {
+				key_write_imt (f, kd, imt);
 			}
+			key_printf (f, "imt_keydest %s %s\n", keydest_names[kd],
+						key_targets[kd].active->name);
+		}
+	}
 }
 
 static void
@@ -979,10 +1134,53 @@ Key_ClearStates (void)
 	}
 }
 
+static struct {
+	keydest_t   kd;
+	const char *imt_name;
+	const char *chain_imt_name;
+} default_imts[] = {
+	{key_game,		"imt_mod",		0},
+	{key_game,		"imt_0",		"imt_mod"},
+	{key_game,		"imt_1",		"imt_0"},
+	{key_game,		"imt_2",		"imt_0"},
+	{key_game,		"imt_3",		"imt_0"},
+	{key_game,		"imt_4",		"imt_0"},
+	{key_game,		"imt_5",		"imt_0"},
+	{key_game,		"imt_6",		"imt_0"},
+	{key_game,		"imt_7",		"imt_0"},
+	{key_game,		"imt_8",		"imt_0"},
+	{key_game,		"imt_9",		"imt_0"},
+	{key_game,		"imt_10",		"imt_0"},
+	{key_game,		"imt_11",		"imt_0"},
+	{key_game,		"imt_12",		"imt_0"},
+	{key_game,		"imt_13",		"imt_0"},
+	{key_game,		"imt_14",		"imt_0"},
+	{key_game,		"imt_15",		"imt_0"},
+	{key_game,		"imt_16",		"imt_0"},
+	{key_demo,		"imt_demo",		0},
+	{key_console,	"imt_console",	0},
+	{key_message,	"imt_message",	0},
+	{key_menu,		"imt_menu",		0},
+	{key_last,		0,				0},
+};
+
+static void
+Key_CreateDefaultIMTs (void)
+{
+	int         i;
+
+	for (i = 0; default_imts[i].kd != key_last; i++) {
+		Key_CreateIMT (default_imts[i].kd, default_imts[i].imt_name,
+					   default_imts[i].chain_imt_name);
+	}
+}
+
 void
 Key_Init (cbuf_t *cb)
 {
 	cbuf = cb;
+
+	Key_CreateDefaultIMTs ();
 
 	OK_Init ();
 
@@ -998,6 +1196,17 @@ Key_Init (cbuf_t *cb)
 	Cmd_AddCommand ("in_clear", Key_In_Clear,
 					"Remove all binds from the specified imts");
 	Cmd_AddCommand ("imt", Key_InputMappingTable_f, "");
+	Cmd_AddCommand ("imt_keydest", Key_IMT_Keydest_f, "");
+	Cmd_AddCommand ("imt_create", Key_IMT_Create_f,
+					"create a new imt table:\n"
+					"    imt_create <keydest> <imt_name> [chain_name]\n"
+					"\n"
+					"The new table will be attached to the specified keydest\n"
+					"imt_name must not already exist.\n"
+					"If given, chain_name must already exist and be on "
+						"keydest.\n");
+	Cmd_AddCommand ("imt_drop_all", Key_IMT_Drop_All_f,
+					"delete all imt tables\n");
 	Cmd_AddCommand ("bind", Key_Bind_f, "wrapper for in_bind that uses "
 					"in_bind_imt for the imt parameter");
 	Cmd_AddCommand ("unbind", Key_Unbind_f,
@@ -1023,46 +1232,24 @@ Key_Init_Cvars (void)
 }
 
 const char *
-Key_GetBinding (imt_t imt, knum_t key)
+Key_GetBinding (const char *imt_name, knum_t key)
 {
-	return keybindings[imt][key].str;
-}
+	imt_t      *imt;
 
-VISIBLE void
-Key_SetBinding (imt_t target, knum_t keynum, const char *binding)
-{
-	if (keynum == (knum_t) -1)
-		return;
-
-	// free old bindings
-	if (keybindings[target][keynum].str) {
-		free (keybindings[target][keynum].str);
-		keybindings[target][keynum].str = NULL;
+	imt = Key_FindIMT (imt_name);
+	if (imt) {
+		return imt->bindings[key].str;
 	}
-	// allocate memory for new binding
-	if (binding) {
-		keybindings[target][keynum].str = strdup(binding);
-	}
+	return 0;
 }
 
 VISIBLE void
 Key_SetKeyDest(keydest_t kd)
 {
-	key_dest = kd;
-	switch (key_dest) {
-		default:
-			Sys_Error ("Bad key_dest");
-		case key_game:
-			key_target = key_game_target;
-			break;
-		case key_console:
-		case key_message:
-			key_target = IMT_CONSOLE;
-			break;
-		case key_menu:
-			key_target = IMT_MENU;
-			break;
+	if ((int) kd < key_unfocused || kd >= key_last) {
+		Sys_Error ("Bad key_dest");
 	}
+	key_dest = kd;
 	Key_CallDestCallbacks (key_dest);
 }
 

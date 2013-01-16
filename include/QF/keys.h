@@ -414,36 +414,14 @@ typedef enum {
 } knum_t;
 
 typedef enum {
-	IMT_MENU,
-	IMT_CONSOLE,
-	IMT_MOD,
-	IMT_DEMO,
-	IMT_0,
-	IMT_1,
-	IMT_2,
-	IMT_3,
-	IMT_4,
-	IMT_5,
-	IMT_6,
-	IMT_7,
-	IMT_8,
-	IMT_9,
-	IMT_10,
-	IMT_11,
-	IMT_12,
-	IMT_13,
-	IMT_14,
-	IMT_15,
-	IMT_16,
-	IMT_LAST,
-} imt_t;											// Input Mapping Table
-
-typedef enum {
 	key_unfocused,			// engine has lost input focus
 	key_game,
+	key_demo,
 	key_console,
 	key_message,
 	key_menu,
+
+	key_last				// enum size
 } keydest_t;
 
 #ifndef __QFCC__
@@ -452,14 +430,33 @@ typedef struct {
 	int     state;          // low bit is down state
 } kbutton_t;
 
-extern imt_t		key_game_target;
 extern knum_t       key_togglemenu;
 extern knum_t       key_toggleconsole;
 
-extern struct keybind_s {
+typedef struct keybind_s {
 	char *str;
-} keybindings[IMT_LAST][QFK_LAST];
+} keybind_t;
+
+/**	Input Mapping Table
+*/
+typedef struct imt_s {
+	struct imt_s *next;				///< list of tables attached to key_dest
+	struct imt_s *chain;			///< fallback table if key not bound
+	const char *name;				///< for user interaction
+	keybind_t   bindings[QFK_LAST];
+	int         written;			///< avoid duplicate config file writes
+} imt_t;
+
+typedef struct keytarget_s {
+	imt_t      *imts;
+	imt_t      *active;
+} keytarget_t;
+
 extern int		keydown[QFK_LAST];
+
+imt_t *Key_FindIMT (const char *imt_name);
+void Key_CreateIMT (keydest_t kd, const char *imt_name,
+					const char *chain_imt_name);
 
 struct cbuf_s;
 void Key_Event (knum_t key, short unicode, qboolean down);
@@ -468,8 +465,8 @@ void Key_Init (struct cbuf_s *cb);
 void Key_Init_Cvars (void);
 void Key_WriteBindings (QFile *f);
 void Key_ClearStates (void);
-const char *Key_GetBinding (imt_t imt, knum_t key);
-void Key_SetBinding (imt_t target, knum_t keynum, const char *binding);
+const char *Key_GetBinding (const char *imt_name, knum_t key);
+void Key_SetBinding (imt_t *imt, knum_t keynum, const char *binding);
 void Key_SetKeyDest(keydest_t kd);
 typedef void keydest_callback_t (keydest_t);
 void Key_KeydestCallback (keydest_callback_t *callback);
