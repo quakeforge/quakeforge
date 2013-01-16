@@ -153,7 +153,7 @@ get_keyname =
 	local int keynum;
 	local string  keyname;
 
-	keynum = Key_LookupBinding(IMT_0, bindnum, binding);
+	keynum = Key_LookupBinding("imt_0", bindnum, binding);
 	if(keynum == -1) {
 		keyname = "";
 	} else {
@@ -236,15 +236,15 @@ CB_MAIN_control_binding (Binding *binding, int key)
 	local int	retval = 0, bindcnt = 0;
 
 	if(set_key_flag) {
-		bindcnt = Key_CountBinding(IMT_0, binding.command);
+		bindcnt = Key_CountBinding("imt_0", binding.command);
 		/* we are not binding keys for more than one command
 		   by the menu (maybe extended later) */
 		if(bindcnt < 2) {
-			Key_SetBinding (IMT_0, key, binding.command);
+			Key_SetBinding ("imt_0", key, binding.command);
 		} else {
 			// else, remove a binding and assign a new one
-			Key_SetBinding (IMT_0, Key_LookupBinding(IMT_0, 1, binding.command), "");
-			Key_SetBinding (IMT_0, key, binding.command);
+			Key_SetBinding ("imt_0", Key_LookupBinding("imt_0", 1, binding.command), "");
+			Key_SetBinding ("imt_0", key, binding.command);
 		}
 
 		set_key_flag = 0;
@@ -254,7 +254,7 @@ CB_MAIN_control_binding (Binding *binding, int key)
 			set_key_flag = 1;
 			retval = 1;
 		} else if(key == QFK_BACKSPACE || key == QFK_DELETE) {
-			Key_SetBinding (IMT_0, Key_LookupBinding(IMT_0, 1, binding.command), "");
+			Key_SetBinding ("imt_0", Key_LookupBinding("imt_0", 1, binding.command), "");
 
 			retval = 1;
 		}
