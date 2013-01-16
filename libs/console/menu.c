@@ -752,4 +752,5 @@ Menu_Leave ()
 			}
 		}
 	}
+	r_data->vid->recalc_refdef = true;
 }
