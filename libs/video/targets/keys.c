@@ -59,7 +59,7 @@ static U void (*const key_progs_init)(struct progs_s *) = Key_Progs_Init;
 
 /*  key up events are sent even if in console mode */
 
-VISIBLE keydest_t   key_dest = key_console;
+VISIBLE keydest_t    key_dest = key_unfocused;
 VISIBLE imt_t		key_game_target = IMT_0;
 VISIBLE knum_t      key_togglemenu = QFK_ESCAPE;
 VISIBLE knum_t      key_toggleconsole = QFK_BACKQUOTE;
@@ -464,6 +464,14 @@ keyname_t   keynames[] = {
 	{NULL, 0}
 };
 
+static void
+Key_CallDestCallbacks (keydest_t kd)
+{
+	int         i;
+
+	for (i = 0; i < num_keydest_callbacks; i++)
+		keydest_callbacks[i] (kd);
+}
 
 static void
 process_binding (knum_t key, const char *kb)
@@ -949,6 +957,16 @@ Key_Event (knum_t key, short unicode, qboolean down)
 	}
 }
 
+VISIBLE void
+Key_FocusEvent (int gain)
+{
+	if (gain) {
+		Key_CallDestCallbacks (key_dest);
+	} else {
+		Key_CallDestCallbacks (key_unfocused);
+	}
+}
+
 void
 Key_ClearStates (void)
 {
@@ -1030,8 +1048,6 @@ Key_SetBinding (imt_t target, knum_t keynum, const char *binding)
 VISIBLE void
 Key_SetKeyDest(keydest_t kd)
 {
-	int         i;
-
 	key_dest = kd;
 	switch (key_dest) {
 		default:
@@ -1047,8 +1063,7 @@ Key_SetKeyDest(keydest_t kd)
 			key_target = IMT_MENU;
 			break;
 	}
-	for (i = 0; i < num_keydest_callbacks; i++)
-		keydest_callbacks[i] (key_dest);
+	Key_CallDestCallbacks (key_dest);
 }
 
 VISIBLE void

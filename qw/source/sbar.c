@@ -115,8 +115,6 @@ static view_t *stuff_view;
 static view_t *main_view;
 
 static void (*Sbar_Draw_DMO_func) (view_t *view, int l, int y, int skip);
-static void Sbar_TeamOverlay (view_t *view);
-static void Sbar_DeathmatchOverlay (view_t *view, int start);
 
 static void
 hud_swap_f (cvar_t *var)
@@ -892,65 +890,52 @@ draw_status (view_t *view)
 	draw_num (view, 248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
 }
 
+/*
+	Sbar_DeathmatchOverlay
+
+	ping time frags name
+*/
 static void
-draw_overlay (view_t *view)
+Sbar_DeathmatchOverlay (view_t *view, int start)
 {
-	// main screen deathmatch rankings
-	// if we're dead show team scores in team games
-	if (cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
-		if (cl.teamplay > 0 && !sb_showscores)
-			Sbar_TeamOverlay (view);
-		else
-			Sbar_DeathmatchOverlay (view, 0);
-	else if (sb_showscores)
-		Sbar_DeathmatchOverlay (view, 0);
-	else if (sb_showteamscores)
-		Sbar_TeamOverlay (view);
-}
+	int			l, y;
+	int			skip = 10;
 
-static void
-sbar_update_vis (void)
-{
-	qboolean    headsup;
-
-	if (r_data->scr_copyeverything)
-		Sbar_Changed ();
-
-	sbar_view->visible = 0;
-
-	headsup = !(hud_sbar->int_val || r_data->scr_viewsize->int_val < 100);
-
-	if ((sb_updates >= r_data->vid->numpages) && !headsup)
+	if (r_data->vid->conwidth < 244) // FIXME: magic number, gained through experimentation
 		return;
 
-	if (con_module
-		&& con_module->data->console->lines == r_data->vid->conheight)
-		return;							// console is full screen
+	if (largegame)
+		skip = 8;
 
-	if (cls.state == ca_active
-		&& ((cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
-			|| sb_showscores || sb_showteamscores))
-		overlay_view->visible = 1;
-	else
-		overlay_view->visible = 0;
-
-	if (!sb_lines)
-		return;
-
-	sbar_view->visible = 1;
+	// request new ping times every two second
+	if (realtime - cl.last_ping_request > 2.0) {
+		cl.last_ping_request = realtime;
+		if (!cls.demoplayback) {
+			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+			SZ_Print (&cls.netchan.message, "pings");
+		}
+	}
 
 	r_data->scr_copyeverything = 1;
-	sb_updates++;
+	r_data->scr_fullupdate = 0;
 
-	if (sb_showscores || sb_showteamscores || cl.stats[STAT_HEALTH] <= 0)
-		sb_updates = 0;
-}
+	if (!start) {
+		draw_cachepic (view, 0, 0, "gfx/ranking.lmp", 1);
+		y = 24;
+	} else
+		y = start;
 
-void
-Sbar_Draw (void)
-{
-	sbar_update_vis ();
-	main_view->draw (main_view);
+	// scores
+	Sbar_SortFrags (true);
+
+	// draw the text
+	l = scoreboardlines;
+
+	// func ptr, avoids absurd if testing
+	Sbar_Draw_DMO_func (view, l, y, skip);
+
+	if (y >= view->ylen - 10)		// we ran over the screen size, squish
+		largegame = true;
 }
 
 /*
@@ -959,7 +944,7 @@ Sbar_Draw (void)
 	team frags
 	added by Zoid
 */
-void
+static void
 Sbar_TeamOverlay (view_t *view)
 {
 	char        num[20];
@@ -1031,6 +1016,64 @@ Sbar_TeamOverlay (view_t *view)
 	}
 	y += 8;
 	Sbar_DeathmatchOverlay (view, y);
+}
+
+static void
+draw_overlay (view_t *view)
+{
+	if (cls.state != ca_active
+		|| !((cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
+			 || sb_showscores || sb_showteamscores))
+		return;
+	// main screen deathmatch rankings
+	// if we're dead show team scores in team games
+	if (cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
+		if (cl.teamplay > 0 && !sb_showscores)
+			Sbar_TeamOverlay (view);
+		else
+			Sbar_DeathmatchOverlay (view, 0);
+	else if (sb_showscores)
+		Sbar_DeathmatchOverlay (view, 0);
+	else if (sb_showteamscores)
+		Sbar_TeamOverlay (view);
+}
+
+static void
+sbar_update_vis (void)
+{
+	qboolean    headsup;
+
+	if (r_data->scr_copyeverything)
+		Sbar_Changed ();
+
+	sbar_view->visible = 0;
+
+	headsup = !(hud_sbar->int_val || r_data->scr_viewsize->int_val < 100);
+
+	if ((sb_updates >= r_data->vid->numpages) && !headsup)
+		return;
+
+	if (con_module
+		&& con_module->data->console->lines == r_data->vid->conheight)
+		return;							// console is full screen
+
+	if (!sb_lines)
+		return;
+
+	sbar_view->visible = 1;
+
+	r_data->scr_copyeverything = 1;
+	sb_updates++;
+
+	if (sb_showscores || sb_showteamscores || cl.stats[STAT_HEALTH] <= 0)
+		sb_updates = 0;
+}
+
+void
+Sbar_Draw (void)
+{
+	sbar_update_vis ();
+	main_view->draw (main_view);
 }
 
 /*
@@ -1395,54 +1438,6 @@ Sbar_DMO_Init_f (cvar_t *var)
 }
 
 /*
-	Sbar_DeathmatchOverlay
-
-	ping time frags name
-*/
-void
-Sbar_DeathmatchOverlay (view_t *view, int start)
-{
-	int			l, y;
-	int			skip = 10;
-
-	if (r_data->vid->conwidth < 244) // FIXME: magic number, gained through experimentation
-		return;
-
-	if (largegame)
-		skip = 8;
-
-	// request new ping times every two second
-	if (realtime - cl.last_ping_request > 2.0) {
-		cl.last_ping_request = realtime;
-		if (!cls.demoplayback) {
-			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-			SZ_Print (&cls.netchan.message, "pings");
-		}
-	}
-
-	r_data->scr_copyeverything = 1;
-	r_data->scr_fullupdate = 0;
-
-	if (!start) {
-		draw_cachepic (view, 0, 0, "gfx/ranking.lmp", 1);
-		y = 24;
-	} else
-		y = start;
-
-	// scores
-	Sbar_SortFrags (true);
-
-	// draw the text
-	l = scoreboardlines;
-
-	// func ptr, avoids absurd if testing
-	Sbar_Draw_DMO_func (view, l, y, skip);
-
-	if (y >= view->ylen - 10)		// we ran over the screen size, squish
-		largegame = true;
-}
-
-/*
 	draw_minifrags
 
 	frags name
@@ -1719,10 +1714,6 @@ Sbar_FinaleOverlay (void)
 {
 	int         remaining;
 
-	//FIXME cleaner test
-	if (key_dest != key_game)
-		return;
-
 	r_data->scr_copyeverything = 1;
 
 	draw_cachepic (overlay_view, 0, 16, "gfx/finale.lmp", 1);
@@ -1738,10 +1729,6 @@ Sbar_DrawCenterPrint (void)
 
 	centertime_off -= r_data->frametime;
 	if (centertime_off <= 0)
-		return;
-
-	//FIXME cleaner test
-	if (key_dest != key_game)
 		return;
 
 	Sbar_DrawCenterString (overlay_view, -1);
@@ -1946,12 +1933,20 @@ Sbar_GIB_Print_Center_f (void)
 		Sbar_CenterPrint (GIB_Argv(1));
 }
 
+static void
+sbar_keydest_callback (keydest_t kd)
+{
+	overlay_view->visible = kd == key_game;
+}
+
 void
 Sbar_Init (void)
 {
 	int         i;
 
 	init_views ();
+
+	Key_KeydestCallback (sbar_keydest_callback);
 
 	for (i = 0; i < 10; i++) {
 		sb_nums[0][i] = r_funcs->Draw_PicFromWad (va ("num_%i", i));

@@ -1253,10 +1253,6 @@ Sbar_FinaleOverlay (void)
 {
 	int         remaining;
 
-	//FIXME cleaner test
-	if (key_dest != key_game)
-		return;
-
 	r_data->scr_copyeverything = 1;
 
 	draw_cachepic (overlay_view, 0, 16, "gfx/finale.lmp", 1);
@@ -1272,10 +1268,6 @@ Sbar_DrawCenterPrint (void)
 
 	centertime_off -= r_data->frametime;
 	if (centertime_off <= 0)
-		return;
-
-	//FIXME cleaner test
-	if (key_dest != key_game)
 		return;
 
 	Sbar_DrawCenterString (overlay_view, -1);
@@ -1639,12 +1631,20 @@ Sbar_GIB_Print_Center_f (void)
 		Sbar_CenterPrint (GIB_Argv(1));
 }
 
+static void
+sbar_keydest_callback (keydest_t kd)
+{
+	overlay_view->visible = kd == key_game;
+}
+
 void
 Sbar_Init (void)
 {
 	int         i;
 
 	init_views ();
+
+	Key_KeydestCallback (sbar_keydest_callback);
 
 	for (i = 0; i < 10; i++) {
 		sb_nums[0][i] = r_funcs->Draw_PicFromWad (va ("num_%i", i));

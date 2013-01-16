@@ -30,6 +30,7 @@
 
 #include "QF/cdaudio.h"
 #include "QF/cvar.h"
+#include "QF/keys.h"
 #include "QF/plugin.h"
 #include "QF/screen.h"
 
@@ -41,8 +42,6 @@
 client_state_t cl;
 client_static_t cls;
 
-keydest_t   key_dest = key_game;
-
 cvar_t     *cl_name;
 cvar_t     *cl_writecfg;
 cvar_t     *demo_speed;
@@ -53,6 +52,11 @@ int         viewentity;
 
 vid_render_data_t *r_data;
 vid_render_funcs_t *r_funcs;
+
+void
+Key_KeydestCallback (keydest_callback_t *callback)
+{
+}
 
 void
 CL_SetState (cactive_t state)

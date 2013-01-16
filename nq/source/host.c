@@ -94,6 +94,7 @@ double      oldcon_realtime;
 
 int			host_framecount;
 int			host_hunklevel;
+int         host_in_game;
 int			minimum_memory;
 
 client_t   *host_client;				// current client
@@ -562,7 +563,7 @@ Host_ServerFrame (void)
 
 	// move things around and think
 	// always pause in single player if in console or menus
-	if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game)) {
+	if (!sv.paused && (svs.maxclients > 1 || host_in_game)) {
 		SV_Physics ();
 		sv.time += host_frametime;
 	}
@@ -871,6 +872,12 @@ Host_Init_Memory (void)
 	Sys_Printf ("%4.1f megabyte heap\n", host_mem_size->value);
 }
 
+static void
+host_keydest_callback (keydest_t kd)
+{
+	host_in_game = kd == key_game;
+}
+
 void
 Host_Init (void)
 {
@@ -908,6 +915,8 @@ Host_Init (void)
 	NET_Init ();
 
 	Mod_Init ();
+
+	Key_KeydestCallback (host_keydest_callback);
 
 	SV_Init ();
 

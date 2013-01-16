@@ -62,10 +62,6 @@ int         current_skill;
 void
 Host_Quit_f (void)
 {
-//	if (key_dest != key_console && cls.state != ca_dedicated) {
-//		M_Menu_Quit_f ();
-//		return;
-//	}
 	if (!con_module)
 		Sys_Printf ("I hope you wanted to quit\n");
 	CL_Disconnect ();

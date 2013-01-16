@@ -597,7 +597,7 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 }
 
 static void
-x11_keydest_callback (keydest_t key_dst)
+x11_keydest_callback (keydest_t key_dest)
 {
 	if (key_dest == key_game) {
 		XAutoRepeatOff (x_disp);
@@ -646,9 +646,9 @@ event_button (XEvent *event)
 static void
 event_focusout (XEvent *event)
 {
+	Key_FocusEvent (0);
 	if (x_have_focus) {
 		x_have_focus = false;
-		XAutoRepeatOn (x_disp);
 		if (in_snd_block->int_val) {
 			S_BlockSound ();
 			CDAudio_Pause ();
@@ -661,8 +661,7 @@ static void
 event_focusin (XEvent *event)
 {
 	x_have_focus = true;
-	if (key_dest == key_game)
-		XAutoRepeatOff (x_disp);
+	Key_FocusEvent (1);
 	if (in_snd_block->int_val) {
 		S_UnblockSound ();
 		CDAudio_Resume ();

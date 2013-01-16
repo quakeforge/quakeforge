@@ -51,6 +51,7 @@ extern int viewentity;
 extern	qboolean	host_initialized;		// true if into command execution
 extern	double		host_frametime;
 extern	int			host_framecount;	// incremented every frame, never reset
+extern	int			host_in_game;		// input focus goes to the game
 extern	double		realtime;			// not bounded in any way, changed at
 										// start of every frame, never reset
 

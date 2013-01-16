@@ -103,6 +103,7 @@ static view_t *hud_view;
 
 static qboolean con_initialized;
 
+static keydest_t con_keydest;
 
 static void
 ClearNotify (void)
@@ -119,7 +120,7 @@ ToggleConsole_f (void)
 {
 	Con_ClearTyping (input_line, 0);
 
-	if (key_dest == key_console && !con_data.force_commandline) {
+	if (con_keydest == key_console && !con_data.force_commandline) {
 		Key_SetKeyDest (key_game);
 	} else {
 		Key_SetKeyDest (key_console);
@@ -133,7 +134,7 @@ ToggleChat_f (void)
 {
 	Con_ClearTyping (input_line, 0);
 
-	if (key_dest == key_console && !con_data.force_commandline) {
+	if (con_keydest == key_console && !con_data.force_commandline) {
 		Key_SetKeyDest (key_game);
 	} else {
 		Key_SetKeyDest (key_console);
@@ -448,14 +449,14 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 	if (!down)
 		return;
 
-	if (key_dest == key_menu) {
+	if (con_keydest == key_menu) {
 		if (Menu_KeyEvent (key, unicode, down))
 			return;
 	}
 
 	if (down) {
 		if (key == key_togglemenu) {
-			switch (key_dest) {
+			switch (con_keydest) {
 				case key_menu:
 					Menu_Leave ();
 					return;
@@ -476,7 +477,7 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 					Menu_Enter ();
 					return;
 				default:
-					Sys_Error ("Bad key_dest");
+					Sys_Error ("Bad con_keydest");
 			}
 		} else if (key == key_toggleconsole) {
 			ToggleConsole_f ();
@@ -484,9 +485,9 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 		}
 	}
 
-	if (key_dest == key_menu) {
+	if (con_keydest == key_menu) {
 		return;
-	} else if (key_dest == key_message) {
+	} else if (con_keydest == key_message) {
 		if (chat_team) {
 			il = say_team_line;
 		} else {
@@ -570,7 +571,7 @@ C_DrawInputLine (inputline_t *il)
 static void
 draw_input (view_t *view)
 {
-	if (key_dest != key_console)// && !con_data.force_commandline)
+	if (con_keydest != key_console)// && !con_data.force_commandline)
 		return;				// don't draw anything (always draw if not active)
 
 	DrawInputLine (view->xabs + 8, view->yabs, 1, input_line);
@@ -725,7 +726,7 @@ setup_console (void)
 
 	if (con_data.force_commandline) {
 		lines = con_data.lines = r_data->vid->conheight;
-	} else if (key_dest == key_console) {
+	} else if (con_keydest == key_console) {
 		lines = r_data->vid->conheight * bound (0.2, con_size->value, 1);
 	} else {
 		lines = 0;
@@ -754,9 +755,9 @@ C_DrawConsole (void)
 	if (console_view->ylen != con_data.lines)
 		view_resize (console_view, console_view->xlen, con_data.lines);
 
-	say_view->visible = key_dest == key_message;
+	say_view->visible = con_keydest == key_message;
 	console_view->visible = con_data.lines != 0;
-	menu_view->visible = key_dest == key_menu;
+	menu_view->visible = con_keydest == key_menu;
 
 	con_data.view->draw (con_data.view);
 }
@@ -797,6 +798,13 @@ exec_line (inputline_t *il)
 }
 
 static void
+con_keydest_callback (keydest_t kd)
+{
+	// simply cache the value
+	con_keydest = kd;
+}
+
+static void
 C_Init (void)
 {
 	view_t     *view;
@@ -805,6 +813,7 @@ C_Init (void)
 	setlocale (LC_ALL, "C-TRADITIONAL");
 #endif
 
+	Key_KeydestCallback (con_keydest_callback);
 	Menu_Init ();
 
 	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,

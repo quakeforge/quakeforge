@@ -167,6 +167,7 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 
 	for (i = 0; i < hdr->num_vertexarrays; i++) {
 		va = vas + i;
+		Sys_MaskPrintf (SYS_MODEL, "%u %u %u %u %u %u\n", i, va->type, va->flags, va->format, va->size, va->offset);
 		switch (va->type) {
 			case IQM_POSITION:
 				if (position)

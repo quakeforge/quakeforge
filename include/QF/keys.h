@@ -439,6 +439,7 @@ typedef enum {
 } imt_t;											// Input Mapping Table
 
 typedef enum {
+	key_unfocused,			// engine has lost input focus
 	key_game,
 	key_console,
 	key_message,
@@ -451,7 +452,6 @@ typedef struct {
 	int     state;          // low bit is down state
 } kbutton_t;
 
-extern keydest_t	key_dest;
 extern imt_t		key_game_target;
 extern knum_t       key_togglemenu;
 extern knum_t       key_toggleconsole;
@@ -463,6 +463,7 @@ extern int		keydown[QFK_LAST];
 
 struct cbuf_s;
 void Key_Event (knum_t key, short unicode, qboolean down);
+void Key_FocusEvent (int gain);
 void Key_Init (struct cbuf_s *cb);
 void Key_Init_Cvars (void);
 void Key_WriteBindings (QFile *f);
