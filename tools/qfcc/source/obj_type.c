@@ -167,7 +167,7 @@ qfo_encode_struct (type_t *type)
 	qfot_type_t *enc;
 	qfot_struct_t *strct;
 	def_t      *def;
-	def_t     **field_types = &def;
+	def_t     **field_types;
 	int         i;
 	int         size;
 	int         offset;
@@ -194,16 +194,18 @@ qfo_encode_struct (type_t *type)
 
 	type->type_def = def;	// avoid infinite recursion
 
-	if (type->meta != ty_enum) {
-		field_types = alloca (num_fields * sizeof (def_t *));
-		for (i = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {
-			if (sym->sy_type != sy)
-				continue;
-			if (i == num_fields)
-				internal_error (0, "whoa, what happened?");
+	field_types = alloca (num_fields * sizeof (def_t *));
+	for (i = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {
+		if (sym->sy_type != sy)
+			continue;
+		if (i == num_fields)
+			internal_error (0, "whoa, what happened?");
+		if (type->meta != ty_enum) {
 			field_types[i] = qfo_encode_type (sym->type);
-			i++;
+		} else {
+			field_types[i] = type_default->type_def;
 		}
+		i++;
 	}
 
 	for (i = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {
