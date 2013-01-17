@@ -932,8 +932,9 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 								str = "bad entity.field";
 								break;
 							}
-							str = global_string (pr, opval, optype, contents & 1);
-							str = va ("%d %d %s", s->a, s->b, str);
+							str = global_string (pr, opval, optype,
+												 contents & 1);
+							str = va ("$%x $%x %s", s->a, s->b, str);
 						}
 						break;
 					default:
