@@ -633,7 +633,9 @@ get_def_type (qfo_t *qfo, pointer_t type)
 		case ty_union:
 			return ev_invalid;
 		case ty_enum:
-			return ev_integer;	// FIXME v6 progs should be float
+			if (options.code.progsversion == PROG_ID_VERSION)
+				return ev_float;
+			return ev_integer;
 		case ty_array:
 		case ty_class:
 			return ev_invalid;
