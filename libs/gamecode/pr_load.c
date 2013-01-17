@@ -166,6 +166,16 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int max_edicts, int zone)
 	pr->progs_size += sizeof (void*) - 1;
 	pr->progs_size &= ~(sizeof (void*) - 1);
 
+	// size of edict asked for by progs, but at least 1
+	pr->pr_edict_size = max (1, progs.entityfields);
+	// round off to next highest multiple of 4 words
+	// this ensures that progs that try to align vectors and quaternions
+	// get what they want
+	pr->pr_edict_size += (4 - 1);
+	pr->pr_edict_size &= ~(4 - 1);
+	pr->pr_edict_area_size = max_edicts * pr->pr_edict_size;
+	pr->max_edicts = max_edicts;
+
 	// size of heap asked for by vm-subsystem
 	pr->zone_size = zone;
 	// round off to next highest whole word address (esp for Alpha)
@@ -174,19 +184,8 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int max_edicts, int zone)
 	pr->zone_size += sizeof (void*) - 1;
 	pr->zone_size &= ~(sizeof (void*) - 1);
 
-	// size of edict asked for by progs
-	pr->pr_edict_size = max (1, progs.entityfields) * 4;
-	// size of engine data
-	pr->pr_edict_size += sizeof (edict_t) - sizeof (pr_type_t);
-	// round off to next highest whole word address (esp for Alpha)
-	// this ensures that pointers in the engine data area are always
-	// properly aligned
-	pr->pr_edict_size += sizeof (void*) - 1;
-	pr->pr_edict_size &= ~(sizeof (void*) - 1);
-	pr->pr_edictareasize = max_edicts * pr->pr_edict_size;
-	pr->max_edicts = max_edicts;
-
-	mem_size = pr->progs_size + pr->zone_size + pr->pr_edictareasize;
+	mem_size = pr->pr_edict_area_size * sizeof (pr_type_t);
+	mem_size += pr->progs_size + pr->zone_size;
 	pr->progs = pr->allocate_progs_mem (pr, mem_size + 1);
 	if (!pr->progs)
 		return;
@@ -198,13 +197,10 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int max_edicts, int zone)
 	CRC_ProcessBlock (base, &pr->crc, size - sizeof (progs));
 	base -= sizeof (progs);	// offsets are from file start
 
-	if (pr->edicts)
-		*pr->edicts = (edict_t *)((byte *) pr->progs + pr->progs_size);
-	pr->zone = (memzone_t *)((byte *) pr->progs + pr->progs_size
-						   + pr->pr_edictareasize);
+	pr->pr_edict_area = (pr_type_t *)((byte *) pr->progs + pr->progs_size);
+	pr->zone = (memzone_t *)(&pr->pr_edict_area[pr->pr_edict_area_size]);
 
-	pr->pr_functions =
-		(dfunction_t *) (base + pr->progs->ofs_functions);
+	pr->pr_functions = (dfunction_t *) (base + pr->progs->ofs_functions);
 	pr->pr_strings = (char *) base + pr->progs->ofs_strings;
 	pr->pr_stringsize = (char *) pr->zone + pr->zone_size - (char *) base;
 	pr->pr_globaldefs = (ddef_t *) (base + pr->progs->ofs_globaldefs);

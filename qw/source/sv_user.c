@@ -376,7 +376,7 @@ SV_Spawn (client_t *client)
 	// set up the edict
 	ent = client->edict;
 
-	memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
+	memset (&E_fld (ent, 0), 0, sv_pr_state.progs->entityfields * 4);
 	SVfloat (ent, colormap) = NUM_FOR_EDICT (&sv_pr_state, ent);
 	SVfloat (ent, team) = 0; // FIXME
 	SVstring (ent, netname) = PR_SetString (&sv_pr_state, client->name);

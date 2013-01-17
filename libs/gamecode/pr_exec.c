@@ -355,9 +355,9 @@ VISIBLE void
 PR_ExecuteProgram (progs_t * pr, func_t fnum)
 {
 	int         exitdepth, profile, startprofile;
+	int         fldofs;
 	pr_uint_t   pointer;
 	dstatement_t *st;
-	edict_t    *ed;
 	pr_type_t  *ptr;
 	pr_type_t   old_val = {0}, *watch = 0;
 
@@ -642,7 +642,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_ADDRESS:
 				if (pr_boundscheck->int_val) {
 					if (OPA.entity_var < 0
-						|| OPA.entity_var >= pr->pr_edictareasize)
+						|| OPA.entity_var >= pr->pr_edict_area_size)
 						PR_RunError (pr, "Progs attempted to address an out "
 									 "of bounds edict");
 					if (OPA.entity_var == 0 && pr->null_bad)
@@ -651,8 +651,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						PR_RunError (pr, "Progs attempted to address an "
 									 "invalid field in an edict");
 				}
-				ed = PROG_TO_EDICT (pr, OPA.entity_var);
-				OPC.integer_var = &ed->v[OPB.integer_var] - pr->pr_globals;
+				fldofs = OPA.entity_var + OPB.integer_var;
+				OPC.integer_var = &pr->pr_edict_area[fldofs] - pr->pr_globals;
 				break;
 			case OP_ADDRESS_VOID:
 			case OP_ADDRESS_F:
@@ -676,41 +676,41 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_LOAD_P:
 				if (pr_boundscheck->int_val) {
 					if (OPA.entity_var < 0
-						|| OPA.entity_var >= pr->pr_edictareasize)
+						|| OPA.entity_var >= pr->pr_edict_area_size)
 						PR_RunError (pr, "Progs attempted to read an out of "
 									 "bounds edict number");
 					if (OPB.uinteger_var >= pr->progs->entityfields)
 						PR_RunError (pr, "Progs attempted to read an invalid "
 									 "field in an edict");
 				}
-				ed = PROG_TO_EDICT (pr, OPA.entity_var);
-				OPC.integer_var = ed->v[OPB.integer_var].integer_var;
+				fldofs = OPA.entity_var + OPB.integer_var;
+				OPC.integer_var = pr->pr_edict_area[fldofs].integer_var;
 				break;
 			case OP_LOAD_V:
 				if (pr_boundscheck->int_val) {
 					if (OPA.entity_var < 0
-						|| OPA.entity_var >= pr->pr_edictareasize)
+						|| OPA.entity_var >= pr->pr_edict_area_size)
 						PR_RunError (pr, "Progs attempted to read an out of "
 									 "bounds edict number");
 					if (OPB.uinteger_var + 2 >= pr->progs->entityfields)
 						PR_RunError (pr, "Progs attempted to read an invalid "
 									 "field in an edict");
 				}
-				ed = PROG_TO_EDICT (pr, OPA.entity_var);
-				memcpy (&OPC, &ed->v[OPB.integer_var], 3 * sizeof (OPC));
+				fldofs = OPA.entity_var + OPB.integer_var;
+				memcpy (&OPC, &pr->pr_edict_area[fldofs], 3 * sizeof (OPC));
 				break;
 			case OP_LOAD_Q:
 				if (pr_boundscheck->int_val) {
 					if (OPA.entity_var < 0
-						|| OPA.entity_var >= pr->pr_edictareasize)
+						|| OPA.entity_var >= pr->pr_edict_area_size)
 						PR_RunError (pr, "Progs attempted to read an out of "
 									 "bounds edict number");
 					if (OPB.uinteger_var + 3 >= pr->progs->entityfields)
 						PR_RunError (pr, "Progs attempted to read an invalid "
 									 "field in an edict");
 				}
-				ed = PROG_TO_EDICT (pr, OPA.entity_var);
-				memcpy (&OPC, &ed->v[OPB.integer_var], 3 * sizeof (OPC));
+				fldofs = OPA.entity_var + OPB.integer_var;
+				memcpy (&OPC, &pr->pr_edict_area[fldofs], 4 * sizeof (OPC));
 				break;
 
 			case OP_LOADB_F:
@@ -965,18 +965,34 @@ op_call:
 				}
 				break;
 			case OP_STATE:
-				ed = PROG_TO_EDICT (pr, *pr->globals.self);
-				ed->v[pr->fields.nextthink].float_var = *pr->globals.time +
-					0.1;
-				ed->v[pr->fields.frame].float_var = OPA.float_var;
-				ed->v[pr->fields.think].func_var = OPB.func_var;
+				{
+					int         self = *pr->globals.self;
+					int         nextthink = pr->fields.nextthink;
+					int         frame = pr->fields.frame;
+					int         think = pr->fields.think;
+					fldofs = self + nextthink;
+					pr->pr_edict_area[fldofs].float_var = *pr->globals.time +
+															0.1;
+					fldofs = self + frame;
+					pr->pr_edict_area[fldofs].float_var = OPA.float_var;
+					fldofs = self + think;
+					pr->pr_edict_area[fldofs].func_var = OPB.func_var;
+				}
 				break;
 			case OP_STATE_F:
-				ed = PROG_TO_EDICT (pr, *pr->globals.self);
-				ed->v[pr->fields.nextthink].float_var = *pr->globals.time +
-					OPC.float_var;
-				ed->v[pr->fields.frame].float_var = OPA.float_var;
-				ed->v[pr->fields.think].func_var = OPB.func_var;
+				{
+					int         self = *pr->globals.self;
+					int         nextthink = pr->fields.nextthink;
+					int         frame = pr->fields.frame;
+					int         think = pr->fields.think;
+					fldofs = self + nextthink;
+					pr->pr_edict_area[fldofs].float_var = *pr->globals.time +
+															OPC.float_var;
+					fldofs = self + frame;
+					pr->pr_edict_area[fldofs].float_var = OPA.float_var;
+					fldofs = self + think;
+					pr->pr_edict_area[fldofs].func_var = OPB.func_var;
+				}
 				break;
 			case OP_ADD_I:
 				OPC.integer_var = OPA.integer_var + OPB.integer_var;

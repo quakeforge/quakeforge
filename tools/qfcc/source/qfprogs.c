@@ -238,7 +238,7 @@ init_qf (void)
 	PR_Init_Cvars ();
 	PR_Init ();
 
-	pr.edicts = &edicts;
+	pr.pr_edicts = &edicts;
 	pr.num_edicts = &num_edicts;
 	pr.reserved_edicts = &reserved_edicts;
 	pr.file_error = file_error;
@@ -267,8 +267,8 @@ convert_qfo (void)
 	pr.pr_fielddefs = P (ddef_t, ofs_fielddefs);
 	pr.pr_globals = P (pr_type_t, ofs_globals);
 	pr.globals_size = pr.progs->numglobals;
-	pr.pr_edict_size = max (1, pr.progs->entityfields) * 4;
-	pr.pr_edictareasize = 1 * pr.pr_edict_size;
+	pr.pr_edict_size = max (1, pr.progs->entityfields);
+	pr.pr_edict_area_size = 1 * pr.pr_edict_size;
 #undef P
 
 	if (verbosity) {

@@ -306,7 +306,7 @@ PF_Find (progs_t *pr)
 		}
 	}
 
-	RETURN_EDICT (pr, *pr->edicts);
+	RETURN_EDICT (pr, EDICT_NUM (pr, 0));
 }
 
 /*
@@ -401,7 +401,7 @@ PF_nextent (progs_t *pr)
 	while (1) {
 		i++;
 		if (i == *pr->num_edicts) {
-			RETURN_EDICT (pr, *pr->edicts);
+			RETURN_EDICT (pr, EDICT_NUM (pr, 0));
 			return;
 		}
 		ent = EDICT_NUM (pr, i);
@@ -601,7 +601,7 @@ PF_PR_SetField (progs_t *pr)
 
 	R_INT (pr) = 0;
 	if (field)
-		R_INT (pr) = ED_ParseEpair (pr, ent->v, field, value);
+		R_INT (pr) = ED_ParseEpair (pr, &E_fld (ent, 0), field, value);
 }
 
 static void

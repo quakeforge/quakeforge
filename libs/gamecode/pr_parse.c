@@ -139,7 +139,7 @@ ED_EntityDict (progs_t *pr, edict_t *ed)
 			if (name[strlen (name) - 2] == '_')
 				continue;					// skip _x, _y, _z vars
 
-			v = &ed->v[d->ofs];
+			v = &E_fld (ed, d->ofs);
 
 			// if the value is still all 0, skip the field
 			type = d->type & ~DEF_SAVEGLOBAL;
@@ -418,7 +418,7 @@ ED_InitEntity (progs_t *pr, plitem_t *entity, edict_t *ent)
 				continue;
 			}
 		} else {
-			if (!ED_ParseEpair (pr, ent->v, field, value))
+			if (!ED_ParseEpair (pr, &E_fld (ent, 0), field, value))
 				PR_Error (pr, "ED_InitEntity: parse error");
 		}
 		init = 1;
@@ -439,7 +439,7 @@ ED_SpawnEntities (progs_t *pr, plitem_t *entity_list)
 	int         count;
 	const char *classname;
 	dfunction_t *func;
-	pr_int_t    max_edicts = pr->pr_edictareasize / pr->pr_edict_size;
+	pr_int_t    max_edicts = pr->pr_edict_area_size / pr->pr_edict_size;
 
 	max_edicts -= *pr->num_edicts;
 	count = PL_A_NumObjects (entity_list);

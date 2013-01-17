@@ -160,7 +160,7 @@ parse_expression (progs_t *pr, const char *expr, int conditional)
 			if (!field)
 				goto error;
 			d = *field;
-			expr_ptr = &ent->v[field->ofs];
+			expr_ptr = &E_fld (ent, field->ofs);
 			d.ofs = PR_SetPointer (pr, expr_ptr);
 		} else if (isdigit ((byte) es->token->str[0])) {
 			expr_ptr = PR_GetPointer (pr, strtol (es->token->str, 0, 0));
@@ -924,9 +924,9 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 							parm_ind = pr->pr_globals[s->b].uinteger_var;
 							if (parm_ind < pr->progs->entityfields
 								&& opval >= 0
-								&& opval < pr->pr_edictareasize) {
+								&& opval < pr->pr_edict_area_size) {
 								ed = PROG_TO_EDICT (pr, opval);
-								opval = &ed->v[parm_ind] - pr->pr_globals;
+								opval = &E_fld(ed, parm_ind) - pr->pr_globals;
 							}
 							if (!ed) {
 								str = "bad entity.field";
@@ -1064,7 +1064,7 @@ ED_Print (progs_t *pr, edict_t *ed)
 			&& strchr ("xyz", name[strlen (name) -1]))
 			continue;					// skip _x, _y, _z vars
 
-		v = ed->v + d->ofs;
+		v = &E_fld(ed, d->ofs);
 
 		// if the value is still all 0, skip the field
 		type = d->type & ~DEF_SAVEGLOBAL;
