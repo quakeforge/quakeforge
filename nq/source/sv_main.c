@@ -1193,7 +1193,7 @@ SV_SpawnServer (const char *server)
 
 	// load the rest of the entities
 	ent = EDICT_NUM (&sv_pr_state, 0);
-	memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
+	memset (&E_fld (ent, 0), 0, sv_pr_state.progs->entityfields * 4);
 	ent->free = false;
 	SVstring (ent, model) = PR_SetString (&sv_pr_state, sv.worldmodel->name);
 	SVfloat (ent, modelindex) = 1;			// world model

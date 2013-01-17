@@ -218,10 +218,11 @@ void PR_BoundsCheck (progs_t *pr, int addr, etype_t type);
 
 struct edict_s {
 	qboolean    free;
+	progs_t    *pr;				///< progs owning this edict
 	int         entnum;			///< number of this entity
+	int         edict;			///< offset of this entity in pr_edict_area
 	float       freetime;		///< sv.time when the object was freed
 	void       *edata;			///< external per-edict data
-	pr_type_t   v[1];			///< fields from progs
 };
 
 // pr_edict.c
@@ -252,18 +253,18 @@ struct plitem_s *ED_Parse (progs_t *pr, const char *data);
 void ED_LoadFromFile (progs_t *pr, const char *data);
 void ED_EntityParseFunction (progs_t *pr);
 
-#define PR_edicts(p)		((byte *) *(p)->edicts)
+#define PR_edicts(p)		(*(p)->pr_edicts)
 
-#define NEXT_EDICT(p,e)		((edict_t *) ((byte *) e + (p)->pr_edict_size))
-#define EDICT_TO_PROG(p,e)	((pr_int_t)(intptr_t)((byte *)(e) - PR_edicts (p)))
-#define PROG_TO_EDICT(p,e)	((edict_t *) (PR_edicts (p) + (e)))
+#define NEXT_EDICT(p,e)		((e) + 1)
+#define EDICT_TO_PROG(p,e)	((e)->entnum * (p)->pr_edict_size)
+#define PROG_TO_EDICT(p,e)	(&PR_edicts(p)[(e) / (p)->pr_edict_size])
 #define NUM_FOR_BAD_EDICT(p,e) ((e)->entnum)
 #ifndef PR_PARANOID_PROGS
-# define EDICT_NUM(p,n)		(PROG_TO_EDICT (p, (n) * (p)->pr_edict_size))
-# define NUM_FOR_EDICT(p,e)	NUM_FOR_BAD_EDICT (p, e)
+# define EDICT_NUM(p,n)		(PR_edicts (p) + (n))
+# define NUM_FOR_EDICT(p,e)	NUM_FOR_BAD_EDICT ((p), (e))
 #else
-# define EDICT_NUM(p,n)		ED_EdictNum (p, n)
-# define NUM_FOR_EDICT(p,e)	ED_NumForEdict (p, e)
+# define EDICT_NUM(p,n)		ED_EdictNum ((p), (n))
+# define NUM_FOR_EDICT(p,e)	ED_NumForEdict ((p), (e))
 #endif
 
 //@}
@@ -420,7 +421,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define G_EDICT(p,o)	((edict_t *)(PR_edicts (p) + G_INT (p, o)))
+#define G_EDICT(p,o)	PROG_TO_EDICT ((p), G_INT (p, o))
 
 /** Access an entity global.
 
@@ -610,7 +611,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define P_EDICT(p,n)	((edict_t *)(PR_edicts (p) + P_INT (p, n)))
+#define P_EDICT(p,n)	PROG_TO_EDICT ((p), P_INT (p, n))
 
 /** Access an entity parameter.
 
@@ -807,7 +808,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define RETURN_EDICT(p,e)		(R_STRING (p) = EDICT_TO_PROG(p, e))
+#define RETURN_EDICT(p,e)		(R_INT (p) = EDICT_TO_PROG(p, e))
 
 /** Set the return value to the given C pointer. NULL is converted to 0.
 
@@ -858,7 +859,18 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define E_var(e,o,t)	((e)->v[o].t##_var)
+#define E_fld(e,o)	((e)->pr->pr_edict_area[(e)->edict + (o)])
+
+
+/** \internal
+	\param e		pointer to the entity
+	\param o		field offset into entity data space
+	\param t		typename prefix (see pr_type_u)
+	\return			lvalue of the appropriate type
+
+	\hideinitializer
+*/
+#define E_var(e,o,t)	(E_fld (e,o).t##_var)
 
 
 /** Access a float entity field. Can be assigned to.
@@ -1592,7 +1604,7 @@ struct progs_s {
 
 	/// \name edicts
 	//@{
-	edict_t   **edicts;
+	edict_t   **pr_edicts;
 	int         max_edicts;
 	int        *num_edicts;
 	int        *reserved_edicts;	///< alloc will start at reserved_edicts+1
@@ -1600,8 +1612,9 @@ struct progs_s {
 	void      (*flush) (void);
 	int       (*prune_edict) (progs_t *pr, edict_t *ent);
 	void      (*free_edict) (progs_t *pr, edict_t *ent);
-	int         pr_edict_size;		///< in bytes
-	int         pr_edictareasize;	///< for bounds checking, starts at 0
+	pr_type_t  *pr_edict_area;
+	int         pr_edict_size;		///< # of pr_type_t slots
+	int         pr_edict_area_size;	///< for bounds checking, starts at 0
 	func_t      edict_parse;
 	//@}
 

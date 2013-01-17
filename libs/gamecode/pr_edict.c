@@ -66,13 +66,11 @@ ED_ClearEdict (progs_t *pr, edict_t *e, int val)
 	if (NUM_FOR_EDICT (pr, e) < *pr->reserved_edicts)
 		Sys_Printf ("clearing reserved edict %d\n", NUM_FOR_EDICT (pr, e));
 	for (i=0; i < pr->progs->entityfields; i++)
-		e->v[i].integer_var = val;
+		E_INT (e, i) = val;
 	e->free = false;
 }
 
 /*
-	ED_Alloc
-
 	Either finds a free edict, or allocates a new one.
 	Try to avoid reusing an entity that was recently freed, because it
 	can cause the client to think the entity morphed into something else
@@ -203,9 +201,9 @@ ED_Count (progs_t *pr)
 			continue;
 		}
 		active++;
-		if (solid_def && ent->v[solid_def->ofs].float_var)
+		if (solid_def && E_FLOAT (ent, solid_def->ofs))
 			solid++;
-		if (model_def && ent->v[model_def->ofs].float_var)
+		if (model_def && E_FLOAT (ent, model_def->ofs))
 			models++;
 	}
 
@@ -219,12 +217,10 @@ ED_Count (progs_t *pr)
 edict_t *
 ED_EdictNum (progs_t *pr, pr_int_t n)
 {
-	pr_int_t    offs = n * pr->pr_edict_size;
-
-	if (offs < 0 || n >= pr->pr_edictareasize)
+	if (n < 0 || n >= *pr->num_edicts)
 		PR_RunError (pr, "EDICT_NUM: bad number %d", n);
 
-	return PROG_TO_EDICT (pr, offs);
+	return PR_edicts(pr) + n;
 }
 
 pr_int_t
@@ -234,9 +230,9 @@ ED_NumForEdict (progs_t *pr, edict_t *e)
 
 	b = NUM_FOR_BAD_EDICT (pr, e);
 
-	if (b && (b < 0 || b >= *(pr)->num_edicts))
+	if (b && (b < 0 || b >= *pr->num_edicts))
 		PR_RunError (pr, "NUM_FOR_EDICT: bad pointer %d %p %p", b, e,
-					 *(pr)->edicts);
+					 pr->pr_edicts);
 
 	return b;
 }
@@ -244,7 +240,7 @@ ED_NumForEdict (progs_t *pr, edict_t *e)
 qboolean
 PR_EdictValid (progs_t *pr, pr_int_t e)
 {
-	if (e < 0 || e >= pr->pr_edictareasize)
+	if (e < 0 || e >= pr->pr_edict_area_size)
 		return false;
 	if (e % pr->pr_edict_size)
 		return false;

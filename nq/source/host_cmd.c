@@ -700,7 +700,7 @@ Host_Loadgame_f (void)
 		plitem_t   *entity = PL_ObjectAtIndex (list, entnum);
 		edict_t    *ent = EDICT_NUM (&sv_pr_state, entnum);
 
-		memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
+		memset (&E_fld (ent, 0), 0, sv_pr_state.progs->entityfields * 4);
 		ent->free = false;
 		ED_InitEntity (&sv_pr_state, entity, ent);
 
@@ -989,7 +989,7 @@ Host_Spawn_f (void)
 	} else {
 		// set up the edict
 		ent = host_client->edict;
-		memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
+		memset (&E_fld (ent, 0), 0, sv_pr_state.progs->entityfields * 4);
 		SVfloat (ent, colormap) = NUM_FOR_EDICT (&sv_pr_state, ent);
 		SVfloat (ent, team) = (host_client->colors & 15) + 1;
 		SVstring (ent, netname) = PR_SetString (&sv_pr_state,

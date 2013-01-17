@@ -138,7 +138,7 @@ init_qf (void)
 	Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "2", 0, 0, 0);
 
-	pr.edicts = &edicts;
+	pr.pr_edicts = &edicts;
 	pr.num_edicts = &num_edicts;
 	pr.reserved_edicts = &reserved_edicts;
 	pr.load_file = load_file;

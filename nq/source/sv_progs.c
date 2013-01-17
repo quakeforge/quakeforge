@@ -51,6 +51,7 @@ sv_globals_t sv_globals;
 sv_funcs_t sv_funcs;
 sv_fields_t sv_fields;
 
+edict_t sv_edicts[MAX_EDICTS];
 sv_data_t sv_data[MAX_EDICTS];
 
 cvar_t     *sv_progs;
@@ -448,12 +449,32 @@ resolve (progs_t *pr)
 	return ret;
 }
 
+static int
+sv_init_edicts (progs_t *pr)
+{
+	int         i;
+
+	memset (sv_edicts, 0, sizeof (sv_edicts));
+	memset (sv_data, 0, sizeof (sv_data));
+
+	// init the data field of the edicts
+	for (i = 0; i < sv.max_edicts; i++) {
+		edict_t    *ent = EDICT_NUM (&sv_pr_state, i);
+		ent->pr = &sv_pr_state;
+		ent->entnum = i;
+		ent->edict = EDICT_TO_PROG (&sv_pr_state, ent);
+		ent->edata = &sv_data[i];
+		SVdata (ent)->edict = ent;
+	}
+
+	return 1;
+}
+
 void
 SV_LoadProgs (void)
 {
 	const char *progs_name = "progs.dat";
 	const char *range;
-	int         i;
 
 	if (strequal (sv_progs_ext->string, "qf")) {
 		sv_range = PR_RANGE_QF;
@@ -475,27 +496,18 @@ SV_LoadProgs (void)
 	if (*sv_progs->string)
 		progs_name = sv_progs->string;
 
+	sv.edicts = sv_edicts;
 	PR_LoadProgs (&sv_pr_state, progs_name, sv.max_edicts,
 				  sv_progs_zone->int_val * 1024);
 	if (!sv_pr_state.progs)
 		Host_Error ("SV_LoadProgs: couldn't load %s", progs_name);
-
-	memset (sv_data, 0, sizeof (sv_data));
-
-	// init the data field of the edicts
-	for (i = 0; i < sv.max_edicts; i++) {
-		edict_t    *ent = EDICT_NUM (&sv_pr_state, i);
-		ent->entnum = i;
-		ent->edata = &sv_data[i];
-		SVdata (ent)->edict = ent;
-	}
 }
 
 void
 SV_Progs_Init (void)
 {
 	pr_gametype = "netquake";
-	sv_pr_state.edicts = &sv.edicts;
+	sv_pr_state.pr_edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
 	sv_pr_state.reserved_edicts = &svs.maxclients;
 	sv_pr_state.unlink = SV_UnlinkEdict;
@@ -503,6 +515,8 @@ SV_Progs_Init (void)
 	sv_pr_state.prune_edict = prune_edict;
 	sv_pr_state.bi_map = bi_map;
 	sv_pr_state.resolve = resolve;
+
+	PR_AddLoadFunc (&sv_pr_state, sv_init_edicts);
 
 	SV_PR_Cmds_Init ();
 
