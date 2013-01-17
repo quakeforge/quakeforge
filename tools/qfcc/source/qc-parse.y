@@ -552,7 +552,10 @@ optional_enum_list
 	;
 
 enum_list
-	: '{' enum_init enumerator_list optional_comma '}'	{ $$ = $3; }
+	: '{' enum_init enumerator_list optional_comma '}'
+		{
+			$$ = finish_enum ($3);
+		}
 	;
 
 enum_init

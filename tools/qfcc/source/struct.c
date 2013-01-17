@@ -153,8 +153,14 @@ start_enum (symbol_t *sym)
 		sym = find_enum (0);
 	}
 	sym->type->t.symtab = new_symtab (current_symtab, stab_local);
-	sym->type = find_type (sym->type);
 	return sym->type->t.symtab;
+}
+
+symbol_t *
+finish_enum (symbol_t *sym)
+{
+	sym->type = find_type (sym->type);
+	return sym;
 }
 
 void
