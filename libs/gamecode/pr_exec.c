@@ -430,10 +430,20 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.float_var = DotProduct (OPA.vector_var, OPB.vector_var);
 				break;
 			case OP_MUL_FV:
-				VectorScale (OPB.vector_var, OPA.float_var, OPC.vector_var);
+				{
+					// avoid issues with the likes of x = x.x * x;
+					// makes for faster code, too
+					float       scale = OPA.float_var;
+					VectorScale (OPB.vector_var, scale, OPC.vector_var);
+				}
 				break;
 			case OP_MUL_VF:
-				VectorScale (OPA.vector_var, OPB.float_var, OPC.vector_var);
+				{
+					// avoid issues with the likes of x = x * x.x;
+					// makes for faster code, too
+					float       scale = OPB.float_var;
+					VectorScale (OPA.vector_var, scale, OPC.vector_var);
+				}
 				break;
 			case OP_MUL_Q:
 				QuatMult (OPA.quat_var, OPB.quat_var, OPC.quat_var);
@@ -442,10 +452,20 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				QuatMultVec (OPA.quat_var, OPB.vector_var, OPC.vector_var);
 				break;
 			case OP_MUL_FQ:
-				QuatScale (OPB.quat_var, OPA.float_var, OPC.quat_var);
+				{
+					// avoid issues with the likes of x = x.s * x;
+					// makes for faster code, too
+					float       scale = OPA.float_var;
+					QuatScale (OPB.quat_var, scale, OPC.quat_var);
+				}
 				break;
 			case OP_MUL_QF:
-				QuatScale (OPA.quat_var, OPB.float_var, OPC.quat_var);
+				{
+					// avoid issues with the likes of x = x * x.s;
+					// makes for faster code, too
+					float       scale = OPB.float_var;
+					QuatScale (OPA.quat_var, scale, OPC.quat_var);
+				}
 				break;
 			case OP_CONJ_Q:
 				QuatConj (OPA.quat_var, OPC.quat_var);
