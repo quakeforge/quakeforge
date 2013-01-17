@@ -261,6 +261,8 @@ WriteProgdefs (dprograms_t *progs, const char *filename)
 			continue;
 		if (def->type != ev_field)
 			continue;
+		if (!strcmp (name, ".imm"))
+			continue;
 
 		fdef = (ddef_t *) ((char *) progs + progs->ofs_fielddefs) + j++;
 		if (fdef->s_name != def->s_name)
