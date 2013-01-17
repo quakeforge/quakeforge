@@ -398,7 +398,7 @@ VISIBLE opcode_t pr_opcodes[] = {
 	{"&", "address", OP_ADDRESS, false,
 	 ev_entity, ev_field, ev_pointer,
 	 PROG_ID_VERSION,
-	 "%Ga.%Gb, %gc",
+	 "%Ga.%Gb(%Ec), %gc",
 	},
 
 	{"&", "address", OP_ADDRESS_VOID, false,
