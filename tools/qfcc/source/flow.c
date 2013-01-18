@@ -630,8 +630,10 @@ flow_uninit_scan_statements (flownode_t *node, set_t *defs, set_t *uninit)
 			if (set_is_intersecting (defs, var->define)) {
 				def_t      *def = flowvar_get_def (var);
 				if (def) {
-					warning (st->expr, "%s may be used uninitialized",
-							 def->name);
+					if (options.warnings.uninited_variable) {
+						warning (st->expr, "%s may be used uninitialized",
+								 def->name);
+					}
 				} else {
 					bug (st->expr, "st %d, uninitialized temp %s",
 						 st->number, operand_string (var->op));
