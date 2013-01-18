@@ -1,5 +1,112 @@
 NEWS for the QuakeForge project
 -------------------------------
+Changes from 0.7.0
+    o General build fixes.
+        - gcc 4.7
+        - mingw cross build improvements (including moving to use MXE)
+        - android cross build improvements (still no actual support yet,
+          though)
+        - new cross scripts: mipsel-linux ps3-elf
+        - all cross build scripts now use the same setup of creating a
+          native directory (for qfcc and pak) and a target directory (using
+          the host tuple)
+        - DWARF debuggin available with recent enough gcc (pretty much any
+          system these days). Macros in gdb :)
+        - -funsafe-math-optimizations disabled for gcc. While -ffast-math
+          is considered to be "don't use that!" by general consensus on the
+          internet, more testing is needed for its effects on code speed,
+          but the unsafe-math-optimizations part of -ffast-math is nothing
+          but a source of headaches.
+        - Bison 2.6+ is now required.
+    o Various sbar/hud fixes for the software renderer.
+    o All keys in specific IMTs can be unbound via in_clear <imt>...
+    o Single player nq pauses when the window loses focus.
+    o Dynamic IMTs. The user now has full control over IMT names and
+      fallback paths.
+    o Higher precision for Sys_DoubleTime in windows (thanks to MH)
+    o Support for octal escapes in plists fixed.
+    o 255 char limit for strings in saved game data fixed.
+    o Centerprints now print over top of cshifts in gl and glsl.
+    o think functions cannot produce infinite loops anymore.
+    o Adjusting nearclip or farclip in gl or glsl now take effect
+      immediately.
+    o new crosshair (5). Just a circled dot, and still low res because it
+      is available in all renderers.
+    o glsl scrolling sky (id standard) texture requirements loosened: any
+      NxN or 2NxN texture is accepted (was 256x128).
+    o glsl and gl sky orientation corrected (was rotated on Z)
+    o glsl pointfile loading works
+    o BSP2 support (note: NOT 2PSB)
+    o Incorrect acceleration of fire particles fixed.
+    o Blender map addon: targets blender 2.65a+
+      Still only a work in progress, but maps/wads/qc quaked comments can
+      be loaded and browsed. As it is still WIP, no separate package will
+      be built at this stage.
+    o QC VM:
+        - very basic valgrind-like pointer access checking
+          (pr_boundscheck 2)
+        - vector * float and quaternion * float (either order) now work
+          correctly when source and destination operands overlap
+          (eg, v *= v.x;)
+    o Ruamoko:
+        - IMT_MAX definition corrected.
+    o qfcc:
+        - messages to nil ([nil message]) supported (weird, but legal).
+        - Creation of static class instances now correctly rejected.
+        - id <protocol> and classname <protocol> supported, along with the
+          attendant type checks.
+        - vector / float and quaternion / float emulated (* 1/float)
+        - much more robust in the face of compilation errors.
+        - local static variables fixed (were emitted to the wrong place)
+        - nosave from fteqcc added.
+        - Only Objective-C style keywords that normally have a leading @
+          require the @ in advanced or extended modes (better C
+          compatibility).
+        - break no longer supported as an identifier in advanced or
+          extended modes.
+        - binary constants using the 0b prefix (eg, 0b101010)
+        - all extended keywords that can be supported by v6 progs are now
+          always available when prefixed with an at sign (eg, "@typedef"),
+          even in traditional mode.
+            break   case    continue    default enum
+            extern  for     nil         nosave  static
+            struct  switch  typedef     union
+        - automated test suite: very basic, but it's a start
+        - qfprogs can now dump type encodings if present.
+        - qfprogs now uses quotes and escapes when dumping strings.
+        - type encodings now generated correctly, are can be accessed by
+          the progs code.
+        - pointer arithmetic now supported.
+        - simple pointer dereferences fixed (no code was generated!)
+        - grammar now supports ++*foo.
+        - local CSE optimizations when optimizing (-O).
+        - very aggressive dead code elimination when optimizing (some is
+          done even when not optimizing)
+        - temporary variable optimizations (was lost in the rewrite two
+          years ago)
+        - uninitialized variable detection supported again, but only when
+          optimizing.
+    o qfbsp:
+        - The source line of the entity is now reported in messages.
+        - Leak file improvements (more points for smart leak files, trails
+          centered for standard leak files).
+        - Map compilation correctness improvements.
+    o Blender MDL addon (not in 0.7.0a bugfix release)
+        - Support for meshes with multiple UV maps.
+    o Blender MDL addon (in 0.7.0a bugfix release):
+        - An exception when exporting a model with no image textures has
+          been fixed
+        - Vertex normals are now exported
+        - Multiple vertices sharing the one UV coordinate now work as
+          expected
+        - Quads and n-gons automatically get converted to triangles.
+        - The model's location, rotation and scale are now
+          non-destructively applied to the mesh (optional, default) before
+          exporting.
+        - If no frame information is available via the export script,
+          Blender's frames 1 to the current frame (inclusive) will be
+          exported as individual frames.
+
 Changes from 0.6.99 Beta 2
     o GL shadows fixes.
         - gl_alias_render_tri 1 no longer crashes
