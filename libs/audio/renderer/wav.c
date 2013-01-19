@@ -59,7 +59,7 @@ wav_callback_load (void *object, cache_allocator_t allocator)
 	sfx_t      *sfx = block->sfx;
 	const char *name = (const char *) block->file;
 	QFile      *file;
-	int         len;
+	int         len, fdata_ofs;
 	byte       *data;
 	float      *fdata;
 	sfxbuffer_t *buffer;
@@ -70,9 +70,10 @@ wav_callback_load (void *object, cache_allocator_t allocator)
 		return; //FIXME Sys_Error?
 
 	Qseek (file, info->dataofs, SEEK_SET);
-	len = info->datalen + info->frames * info->channels * sizeof (float);
+	fdata_ofs = (info->datalen + sizeof (float) - 1) & ~(sizeof (float) - 1);
+	len = fdata_ofs + info->frames * info->channels * sizeof (float);
 	data = malloc (len);
-	fdata = (float *) (data + info->datalen);
+	fdata = (float *) (data + fdata_ofs);
 	Qread (file, data, info->datalen);
 	Qclose (file);
 
