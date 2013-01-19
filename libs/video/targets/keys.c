@@ -59,7 +59,7 @@ static U void (*const key_progs_init)(struct progs_s *) = Key_Progs_Init;
 
 /*  key up events are sent even if in console mode */
 
-static keydest_t    key_dest = key_unfocused;
+static keydest_t    key_dest = key_console;
 static keytarget_t  key_targets[key_last];
 VISIBLE knum_t      key_togglemenu = QFK_ESCAPE;
 VISIBLE knum_t      key_toggleconsole = QFK_BACKQUOTE;
