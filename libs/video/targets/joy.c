@@ -67,6 +67,41 @@ ocvar_t joy_axes_cvar_init[JOY_MAX_AXES] = {
 struct joy_axis joy_axes[JOY_MAX_AXES];
 struct joy_button joy_buttons[JOY_MAX_BUTTONS];
 
+static void
+joy_check_axis_buttons (struct joy_axis *ja, float value)
+{
+	struct joy_axis_button *ab;
+	int         pressed = -1;
+	int         i;
+
+	// the axis button list is sorted in decending order of absolute threshold
+	for (i = 0; i < ja->num_buttons; i++) {
+		ab = &ja->axis_buttons[i];
+		if ((value < 0) == (ab->threshold < 0)
+			&& fabsf(value) >= fabsf (ab->threshold)) {
+			pressed = i;
+			break;
+
+		}
+	}
+	// make sure any buttons that are no longer active are "released"
+	for (i = 0; i < ja->num_buttons; i++) {
+		if (i == pressed)
+			continue;
+		ab = &ja->axis_buttons[i];
+		if (ab->state) {
+			Key_Event (ab->key, 0, 0);
+			ab->state = 0;
+		}
+	}
+	// press the active button if there is one
+	if (pressed >= 0) {
+		// FIXME support repeat?
+		if (!ab->state)
+			Key_Event (ab->key, 0, 1);
+		ab->state = 1;
+	}
+}
 
 VISIBLE void
 JOY_Command (void)
@@ -77,70 +112,32 @@ JOY_Command (void)
 VISIBLE void
 JOY_Move (void)
 {
-	float       mult_joy;
+	struct joy_axis *ja;
+	float       value;
+	float       amp = joy_amp->value * in_amp->value;
+	float       pre = joy_pre_amp->value * in_pre_amp->value;
 	int         i;
 
 	if (!joy_active || !joy_enable->int_val)
 		return;
 
-	mult_joy = (joy_amp->value * joy_pre_amp->value *
-				in_amp->value * in_pre_amp->value) / 200.0;
-	// Yes, mult_joy looks like a mess, but use of pre_amp values is useful in
-	// scripts, and *_pre_amp will matter once joystick filtering/acceleration
-	// is implemented
-
 	for (i = 0; i < JOY_MAX_AXES; i++) {
-		switch (joy_axes[i].axis->int_val) {
-			case 1:
-				if (joy_axes[i].current)
-					viewdelta.angles[YAW] -= joy_axes[i].current * mult_joy;
+		ja = &joy_axes[i];
+		value = amp * ja->amp * (ja->offset + ja->current * pre * ja->pre_amp);
+		switch (ja->dest) {
+			case js_none:
+				// ignore axis
 				break;
-			case -1:
-				if (joy_axes[i].current)
-					viewdelta.angles[YAW] += joy_axes[i].current * mult_joy;
+			case js_position:
+				if (ja->current)
+					viewdelta.position[ja->axis] += value;
 				break;
-			case 2:
-				if (joy_axes[i].current)
-					viewdelta.position[2] -= joy_axes[i].current * mult_joy;
+			case js_angles:
+				if (ja->current)
+					viewdelta.angles[ja->axis] -= value;
 				break;
-			case -2:
-				if (joy_axes[i].current)
-					viewdelta.position[2] += joy_axes[i].current * mult_joy;
-				break;
-			case 3:
-				if (joy_axes[i].current)
-					viewdelta.position[0] += joy_axes[i].current * mult_joy;
-				break;
-			case -3:
-				if (joy_axes[i].current)
-					viewdelta.position[0] -= joy_axes[i].current * mult_joy;
-				break;
-			case 4:
-				if (joy_axes[i].current)
-					viewdelta.angles[PITCH] -= joy_axes[i].current * mult_joy;
-				break;
-			case -4:
-				if (joy_axes[i].current)
-					viewdelta.angles[PITCH] += joy_axes[i].current * mult_joy;
-				break;
-			case 5:
-				if (joy_axes[i].current)
-					viewdelta.position[1] -= joy_axes[i].current * mult_joy;
-				break;
-			case -5:
-				if (joy_axes[i].current)
-					viewdelta.position[1] += joy_axes[i].current * mult_joy;
-				break;
-// Futureproofing
-			case 6:
-				if (joy_axes[i].current)
-					viewdelta.angles[ROLL] += joy_axes[i].current * mult_joy;
-				break;
-			case -6:
-				if (joy_axes[i].current)
-					viewdelta.angles[ROLL] -= joy_axes[i].current * mult_joy;
-				break;
-			default:
+			case js_button:
+				joy_check_axis_buttons (ja, value);
 				break;
 		}
 	}
@@ -185,8 +182,6 @@ joyamp_f (cvar_t *var)
 VISIBLE void
 JOY_Init_Cvars (void)
 {
-	int         i;
-
 	joy_device = Cvar_Get ("joy_device", "/dev/input/js0", CVAR_NONE | CVAR_ROM, 0,
 						   "Joystick device");
 	joy_enable = Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
@@ -195,12 +190,6 @@ JOY_Init_Cvars (void)
 						"Joystick amplification");
 	joy_pre_amp = Cvar_Get ("joy_pre_amp", "1", CVAR_NONE | CVAR_ARCHIVE,
 							joyamp_f, "Joystick pre-amplification");
-
-	for (i = 0; i < JOY_MAX_AXES; i++) {
-		joy_axes[i].axis = Cvar_Get (joy_axes_cvar_init[i].name,
-									 joy_axes_cvar_init[i].string,
-									 CVAR_ARCHIVE, 0, "Set joystick axes");
-	}
 }
 
 VISIBLE void

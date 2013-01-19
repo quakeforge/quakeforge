@@ -36,13 +36,32 @@
 extern struct cvar_s	*joy_device;		// Joystick device name
 extern struct cvar_s	*joy_enable;		// Joystick enabling flag
 
-extern qboolean 	joy_found;			// Joystick present?
-extern qboolean 	joy_active; 		// Joystick in use?
+struct joy_axis_button{
+	float       threshold;
+	int         key;
+	int         state;
+};
+
+typedef enum {
+	js_none,								// ignore axis
+	js_position,							// linear delta
+	js_angles,								// linear delta
+	js_button,								// axis button
+} js_dest_t;
 
 struct joy_axis {
-	struct cvar_s	*axis;
-	int 			current;
+	int         current;
+	float       amp;
+	float       pre_amp;
+	float       offset;
+	js_dest_t   dest;
+	int         axis;						// if linear delta
+	int         num_buttons;				// if axis button
+	struct joy_axis_button *axis_buttons;	// if axis button
 };
+
+extern qboolean 	joy_found;			// Joystick present?
+extern qboolean 	joy_active; 		// Joystick in use?
 
 struct joy_button {
 	int 	old;
