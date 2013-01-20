@@ -1587,45 +1587,57 @@ QFS_FilelistAdd (filelist_t *filelist, const char *fname, const char *ext)
 	filelist->list[filelist->count++] = str;
 }
 
+static void
+qfs_filelistfill_do (filelist_t *list, const searchpath_t *search, const char *cp, const char *ext, int strip)
+{
+	const char *separator = "/";
+
+	if (*cp && cp[strlen (cp) - 1] == '/')
+		separator = "";
+
+	if (search->pack) {
+		int         i;
+		pack_t     *pak = search->pack;
+
+		for (i = 0; i < pak->numfiles; i++) {
+			char       *name = pak->files[i].name;
+			if (!fnmatch (va("%s%s*.%s", cp, separator, ext), name,
+						  FNM_PATHNAME)
+				|| !fnmatch (va("%s%s*.%s.gz", cp, separator, ext), name,
+							 FNM_PATHNAME))
+				QFS_FilelistAdd (list, name, strip ? ext : 0);
+		}
+	} else {
+		DIR        *dir_ptr;
+		struct dirent *dirent;
+
+		dir_ptr = opendir (va ("%s/%s", search->filename, cp));
+		if (!dir_ptr)
+			return;
+		while ((dirent = readdir (dir_ptr)))
+			if (!fnmatch (va("*.%s", ext), dirent->d_name, 0)
+				|| !fnmatch (va("*.%s.gz", ext), dirent->d_name, 0))
+				QFS_FilelistAdd (list, dirent->d_name, strip ? ext : 0);
+		closedir (dir_ptr);
+	}
+}
+
 VISIBLE void
 QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 				  int strip)
 {
+	vpath_t    *vpath;
 	searchpath_t *search;
-	DIR        *dir_ptr;
-	struct dirent *dirent;
 	char       *cpath, *cp;
-	const char *separator = "/";
 
 	if (strchr (ext, '/') || strchr (ext, '\\'))
 		return;
 
 	cp = cpath = QFS_CompressPath (path);
-	if (*cp && cp[strlen (cp) - 1] == '/')
-		separator = "";
 
-	for (search = qfs_searchpaths; search != NULL; search = search->next) {
-		if (search->pack) {
-			int         i;
-			pack_t     *pak = search->pack;
-
-			for (i = 0; i < pak->numfiles; i++) {
-				char       *name = pak->files[i].name;
-				if (!fnmatch (va("%s%s*.%s", cp, separator, ext), name,
-							  FNM_PATHNAME)
-					|| !fnmatch (va("%s%s*.%s.gz", cp, separator, ext), name,
-								 FNM_PATHNAME))
-					QFS_FilelistAdd (list, name, strip ? ext : 0);
-			}
-		} else {
-			dir_ptr = opendir (va ("%s/%s", search->filename, cp));
-			if (!dir_ptr)
-				continue;
-			while ((dirent = readdir (dir_ptr)))
-				if (!fnmatch (va("*.%s", ext), dirent->d_name, 0)
-					|| !fnmatch (va("*.%s.gz", ext), dirent->d_name, 0))
-					QFS_FilelistAdd (list, dirent->d_name, strip ? ext : 0);
-			closedir (dir_ptr);
+	for (vpath = qfs_vpaths; vpath; vpath = vpath->next) {
+		for (search = vpath->user; search; search = search->next) {
+			qfs_filelistfill_do (list, search, cp, ext, strip);
 		}
 	}
 	free (cpath);
