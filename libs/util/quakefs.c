@@ -768,6 +768,7 @@ qfs_path_f (void)
 
 	Sys_Printf ("Current search path:\n");
 	for (vp = qfs_vpaths; vp; vp = vp->next) {
+		Sys_Printf ("%s\n", vp->name);
 		for (sp = vp->user; sp; sp = sp->next) {
 			qfs_path_print (sp);
 		}
