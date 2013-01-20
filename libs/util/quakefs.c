@@ -146,12 +146,20 @@ typedef struct searchpath_s {
 	The purpose is to enable searches to be limited to a single gamedir or to
 	not search past a certain gamedir.
 */
-typedef struct vpath_s {
+struct vpath_s {			// typedef to vpath_t is in quakefs.h
 	char       *name;		// usually the gamedir name
 	searchpath_t *user;
 	searchpath_t *share;
 	struct vpath_s *next;
-} vpath_t;
+};
+
+typedef struct int_findfile_s {
+	findfile_t ff;
+	struct pack_s *pack;
+	dpackfile_t *packfile;
+	const char *path;
+	int         fname_index;
+} int_findfile_t;
 
 static searchpath_t *free_searchpaths;
 static vpath_t *free_vpaths;
@@ -790,6 +798,129 @@ QFS_WriteFile (const char *filename, const void *data, int len)
 
 	Qwrite (f, data, len);
 	Qclose (f);
+}
+
+static int_findfile_t *
+qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
+					 const char **fnames)
+{
+	static int_findfile_t found;
+	const char **fn;
+
+	found.ff.vpath = 0;
+	found.ff.in_pak = false;
+	found.pack = 0;
+	found.packfile = 0;
+	found.fname_index = 0;
+	if (found.ff.realname) {
+		free ((char *) found.ff.realname);
+		found.ff.realname = 0;
+	}
+	if (found.path) {
+		free ((char *) found.path);
+		found.path = 0;
+	}
+	// is the element a pak file?
+	if (sp->pack) {
+		dpackfile_t *packfile;
+
+		for (fn = fnames; *fn; fn++) {
+			packfile = pack_find_file (sp->pack, *fn);
+			if (packfile) {
+				break;
+			}
+		}
+		if (packfile) {
+			Sys_MaskPrintf (SYS_FS_F, "PackFile: %s : %s\n",
+							sp->pack->filename, packfile->name);
+			found.ff.vpath = vpath;
+			found.ff.in_pak = true;
+			found.ff.realname = strdup (*fn);
+			found.pack = sp->pack;
+			found.packfile = packfile;
+			found.fname_index = fn - fnames;
+			found.path = strdup (sp->pack->filename);
+			return &found;
+		}
+	} else {
+		// check a file in the directory tree
+		dstring_t  *path = dstring_new ();
+
+		for (fn = fnames; *fn; fn++) {
+			if (qfs_expand_path (path, sp->filename, *fn, 1) == 0) {
+				if (Sys_FileTime (path->str) == -1) {
+					dstring_delete (path);
+					return 0;
+				}
+
+				Sys_MaskPrintf (SYS_FS_F, "FindFile: %s\n", path->str);
+
+				found.ff.vpath = vpath;
+				found.ff.in_pak = false;
+				found.ff.realname = strdup (*fn);
+				found.path = strdup (path->str);
+				found.fname_index = fn - fnames;
+				return &found;
+			}
+		}
+		dstring_delete (path);
+	}
+	return 0;
+}
+
+static int_findfile_t *
+qfs_findfile (const char **fnames, const vpath_t *start, const vpath_t *end)
+{
+	const vpath_t *vp;
+	searchpath_t *sp;
+	int_findfile_t *found;
+
+	if (!start) {
+		start = qfs_vpaths;
+	}
+	if (end) {
+		for (vp = start; vp; vp = vp->next) {
+			if (vp == end) {
+				break;
+			}
+		}
+		if (!vp) {
+			Sys_Error ("QFS_FindFile: end vpath not in search list");
+		}
+		end = end->next;
+	}
+	for (vp = start; vp && vp != end; vp = vp->next) {
+		for (sp = vp->user; sp; sp = sp->next) {
+			found = qfs_findfile_search (vp, sp, fnames);
+			if (found) {
+				return found;
+			}
+		}
+		for (sp = vp->share; sp; sp = sp->next) {
+			found = qfs_findfile_search (vp, sp, fnames);
+			if (found) {
+				return found;
+			}
+		}
+	}
+	// file not found
+	return 0;
+}
+
+VISIBLE findfile_t *
+QFS_FindFile (const char *fname, const vpath_t *start, const vpath_t *end)
+{
+	int_findfile_t *found;
+	const char *fname_list[2];
+
+	fname_list[0] = fname;
+	fname_list[1] = 0;
+
+	found = qfs_findfile (fname_list, start, end);
+	if (found) {
+		return &found->ff;
+	}
+	return 0;
 }
 
 static QFile *

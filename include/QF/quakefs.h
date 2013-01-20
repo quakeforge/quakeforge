@@ -67,6 +67,17 @@ typedef struct gamedir_s {
 	} dir;
 } gamedir_t;
 
+typedef struct vpath_s vpath_t;
+
+typedef struct findfile_s {
+	const vpath_t *vpath;		///< vpath in which file was found
+	qboolean    in_pak;			///< if true, path refers to a pak file rather
+								///< than a directory
+	const char *realname;		///< the name of the file as found (may have
+								///< .gz appended, or .ogg substituded for
+								///< .wav) does not include the path
+} findfile_t;
+
 /**	Cached information about the current game directory. \see \ref dirconf.
 */
 extern gamedir_t *qfs_gamedir;
@@ -120,6 +131,30 @@ void QFS_Init (const char *game);
 	\param gamedir	The directory to which the game directory will be set.
 */
 void QFS_Gamedir (const char *gamedir);
+
+/** Search for a file in the quake file-system.
+
+	The search will begin in the \a start vpath and end in the \a end vpath.
+	If \a start is null, the search will begin in the vpath specified by
+	qfs_vpaths (ie, the first directory in the \c Path attribute
+	(\ref dirconf). If \a end is null, the search will continue to the end
+	of the list of vpaths. If \a start and \a end are the same (and non-null),
+	then only the one vpath will be searched.
+
+	\note	All search paths in a vpath will be searched. This keeps \QF's
+			directory system transparent.
+
+	\note	It is a fatal error for \a end to be non-null but not in the list
+			of vpaths.
+
+	\param fname	The name of the file to be searched for.
+	\param start	The first vpath (gamedir) to search.
+	\param start	The last vpath (gamedir) to search.
+	\return			Pointer to the findfile_t record indicating the location
+					of the file, or null if the file was not found.
+*/
+findfile_t *QFS_FindFile (const char *fname, const vpath_t *start,
+						  const vpath_t *end);
 
 /** Open a file from within the user directory.
 
