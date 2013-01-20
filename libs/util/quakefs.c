@@ -1019,83 +1019,34 @@ VISIBLE int file_from_pak; // global indicating file came from pack file ZOID
 	Sets qfs_filesize and one of handle or file
 */
 
-static int
-open_file (searchpath_t *search, const char *filename, QFile **gzfile,
-		   dstring_t *foundname, int zip)
+static void
+open_file (int_findfile_t *found, QFile **gzfile, dstring_t *foundname,
+		   int zip)
 {
-	file_from_pak = 0;
-
-	// is the element a pak file?
-	if (search->pack) {
-		dpackfile_t *packfile;
-
-		packfile = pack_find_file (search->pack, filename);
-		if (packfile) {
-			Sys_MaskPrintf (SYS_FS_F, "PackFile: %s : %s\n",
-							search->pack->filename, packfile->name);
-			// open a new file on the pakfile
-			if (foundname) {
-				dstring_clearstr (foundname);
-				dstring_appendstr (foundname, packfile->name);
-			}
-			*gzfile = qfs_openread (search->pack->filename, packfile->filepos,
-									packfile->filelen, zip);
-			file_from_pak = 1;
-			return qfs_filesize;
-		}
-	} else {
-		// check a file in the directory tree
-		dstring_t  *netpath = dstring_new ();
-
-		if (qfs_expand_path (netpath, search->filename, filename, 1) == 0) {
-			if (foundname) {
-				dstring_clearstr (foundname);
-				dstring_appendstr (foundname, filename);
-			}
-			if (Sys_FileExists (netpath->str) == -1) {
-				dstring_delete (netpath);
-				return -1;
-			}
-
-			Sys_MaskPrintf (SYS_FS_F, "FindFile: %s\n", netpath->str);
-
-			*gzfile = qfs_openread (netpath->str, -1, -1, zip);
-			dstring_delete (netpath);
-			return qfs_filesize;
-		}
-		dstring_delete (netpath);
-		return -1;
+	file_from_pak = found->ff.in_pak;
+	if (foundname) {
+		dstring_copystr (foundname, found->ff.realname);
 	}
-
-	return -1;
-}
-
-static int
-qfs_check_path (searchpath_t *search, const char *oggfilename,
-				const char *gzfilename, const char *path, QFile **gzfile,
-				dstring_t *foundname, int zip)
-{
-	//NOTE gzipped oggs not supported
-	if (oggfilename
-		&& open_file (search, oggfilename, gzfile, foundname, false) != -1)
-		return 0;
-	if (gzfilename
-		&& open_file (search, gzfilename, gzfile, foundname, zip) != -1)
-		return 0;
-	if (open_file (search, path, gzfile, foundname, zip) != -1)
-		return 0;
-	return -1;
+	if (found->ff.in_pak) {
+		*gzfile = qfs_openread (found->pack->filename,
+								found->packfile->filepos,
+								found->packfile->filelen, zip);
+	} else {
+		*gzfile = qfs_openread (found->path, -1, -1, zip);
+	}
 }
 
 VISIBLE int
 _QFS_FOpenFile (const char *filename, QFile **gzfile,
 				dstring_t *foundname, int zip)
 {
-	vpath_t    *vpath;
-	searchpath_t *search;
+	int_findfile_t *found;
 	char       *path;
 	char       *oggfilename = 0;
 	char       *gzfilename = 0;
+	const char *fnames[4];
+	int         zip_flags[3];
+	int         ind;
 
 	// make sure they're not trying to do weird stuff with our private files
 	path = QFS_CompressPath (filename);
@@ -1106,31 +1057,38 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 		goto error;
 	}
 
+	ind = 0;
 #ifdef HAVE_VORBIS
 	if (strequal (".wav", QFS_FileExtension (path))) {
 		oggfilename = alloca (strlen (path) + 1);
 		QFS_StripExtension (path, oggfilename);
 		strncat (oggfilename, ".ogg",
 				 sizeof (oggfilename) - strlen (oggfilename) - 1);
+		fnames[ind] = oggfilename;
+		zip_flags[ind] = 0;
+		ind++;
 	}
 #endif
 #ifdef HAVE_ZLIB
 	gzfilename = alloca (strlen (path) + 3 + 1);
 	sprintf (gzfilename, "%s.gz", path);
+	fnames[ind] = gzfilename;
+	zip_flags[ind] = zip;
+	ind++;
 #endif
 
-	// search through the path, one element at a time
-	for (vpath = qfs_vpaths; vpath; vpath = vpath->next) {
-		for (search = vpath->user; search; search = search->next) {
-			if (qfs_check_path (search, oggfilename, gzfilename, path, gzfile,
-								foundname, zip) != -1)
-				goto ok;
-		}
-		for (search = vpath->share; search; search = search->next) {
-			if (qfs_check_path (search, oggfilename, gzfilename, path, gzfile,
-								foundname, zip) != -1)
-				goto ok;
-		}
+	fnames[ind] = path;
+	zip_flags[ind] = zip;
+	ind++;
+
+	fnames[ind] = 0;
+
+	found = qfs_findfile (fnames, 0, 0);
+
+	if (found) {
+		open_file (found, gzfile, foundname, zip_flags[found->fname_index]);
+		free(path);
+		return qfs_filesize;
 	}
 
 	Sys_MaskPrintf (SYS_FS_NF, "FindFile: can't find %s\n", filename);
@@ -1139,9 +1097,6 @@ error:
 	qfs_filesize = -1;
 	free (path);
 	return -1;
-ok:
-	free(path);
-	return qfs_filesize;
 }
 
 VISIBLE int
