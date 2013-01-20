@@ -822,7 +822,7 @@ qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
 	}
 	// is the element a pak file?
 	if (sp->pack) {
-		dpackfile_t *packfile;
+		dpackfile_t *packfile = 0;
 
 		for (fn = fnames; *fn; fn++) {
 			packfile = pack_find_file (sp->pack, *fn);
