@@ -1042,8 +1042,6 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 {
 	int_findfile_t *found;
 	char       *path;
-	char       *oggfilename = 0;
-	char       *gzfilename = 0;
 	const char *fnames[4];
 	int         zip_flags[3];
 	int         ind;
@@ -1060,6 +1058,7 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 	ind = 0;
 #ifdef HAVE_VORBIS
 	if (strequal (".wav", QFS_FileExtension (path))) {
+		char       *oggfilename;
 		oggfilename = alloca (strlen (path) + 1);
 		QFS_StripExtension (path, oggfilename);
 		strncat (oggfilename, ".ogg",
@@ -1070,11 +1069,14 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 	}
 #endif
 #ifdef HAVE_ZLIB
-	gzfilename = alloca (strlen (path) + 3 + 1);
-	sprintf (gzfilename, "%s.gz", path);
-	fnames[ind] = gzfilename;
-	zip_flags[ind] = zip;
-	ind++;
+	{
+		char       *gzfilename;
+		gzfilename = alloca (strlen (path) + 3 + 1);
+		sprintf (gzfilename, "%s.gz", path);
+		fnames[ind] = gzfilename;
+		zip_flags[ind] = zip;
+		ind++;
+	}
 #endif
 
 	fnames[ind] = path;
