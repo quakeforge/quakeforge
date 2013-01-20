@@ -871,12 +871,8 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 {
 	searchpath_t *search;
 	char       *path;
-#ifdef HAVE_VORBIS
-	char       *oggfilename;
-#endif
-#ifdef HAVE_ZLIB
-	char       *gzfilename;
-#endif
+	char       *oggfilename = 0;
+	char       *gzfilename = 0;
 
 	// make sure they're not trying to do weird stuff with our private files
 	path = QFS_CompressPath (filename);
@@ -893,8 +889,6 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 		QFS_StripExtension (path, oggfilename);
 		strncat (oggfilename, ".ogg",
 				 sizeof (oggfilename) - strlen (oggfilename) - 1);
-	} else {
-		oggfilename = 0;
 	}
 #endif
 #ifdef HAVE_ZLIB
@@ -904,16 +898,13 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 
 	// search through the path, one element at a time
 	for (search = qfs_searchpaths; search; search = search->next) {
-#ifdef HAVE_VORBIS
 		//NOTE gzipped oggs not supported
 		if (oggfilename
 			&& open_file (search, oggfilename, gzfile, foundname, false) != -1)
 			goto ok;
-#endif
-#ifdef HAVE_ZLIB
-		if (open_file (search, gzfilename, gzfile, foundname, zip) != -1)
+		if (gzfilename
+			&& open_file (search, gzfilename, gzfile, foundname, zip) != -1)
 			goto ok;
-#endif
 		if (open_file (search, path, gzfile, foundname, zip) != -1)
 			goto ok;
 	}
