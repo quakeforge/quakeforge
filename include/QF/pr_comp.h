@@ -314,7 +314,7 @@ void PR_Opcode_Init (void);
 typedef struct dstatement_s {
 	pr_opcode_e op:16;
 	pr_ushort_t a,b,c;
-} dstatement_t;
+} __attribute__((gcc_struct)) dstatement_t;
 
 typedef struct ddef_s {
 	pr_ushort_t type;			// if DEF_SAVEGLOBGAL bit is set
