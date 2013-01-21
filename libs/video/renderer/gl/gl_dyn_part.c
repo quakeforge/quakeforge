@@ -42,6 +42,7 @@
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/mersenne.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
@@ -66,6 +67,7 @@ static int						pVAsize;
 static int					   *pVAindices;
 static varray_t2f_c4ub_v3f_t   *particleVertexArray;
 
+static mtstate_t mt;	// private PRNG state
 
 inline static void
 particle_new (ptype_t type, int texnum, const vec3_t org, float scale,
@@ -110,14 +112,14 @@ particle_new_random (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
 	int         rnd;
 	vec3_t      porg, pvel;
 
-	rnd = rand ();
+	rnd = mtwist_rand (&mt);
 	porg[0] = o_fuzz * ((rnd & 63) - 31.5) / 63.0 + org[0];
-	porg[1] = o_fuzz * (((rnd >> 5) & 63) - 31.5) / 63.0 + org[1];
-	porg[2] = o_fuzz * (((rnd >> 9) & 63) - 31.5) / 63.0 + org[2];
-	rnd = rand ();
+	porg[1] = o_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0 + org[1];
+	porg[2] = o_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0 + org[2];
+	rnd = mtwist_rand (&mt);
 	pvel[0] = v_fuzz * ((rnd & 63) - 31.5) / 63.0;
-	pvel[1] = v_fuzz * (((rnd >> 5) & 63) - 31.5) / 63.0;
-	pvel[2] = v_fuzz * (((rnd >> 9) & 63) - 31.5) / 63.0;
+	pvel[1] = v_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0;
+	pvel[2] = v_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0;
 
 	particle_new (type, texnum, porg, scale, pvel, die, color, alpha, ramp);
 }
@@ -150,6 +152,8 @@ void
 gl_R_InitParticles (void)
 {
 	int		i;
+
+	mtwist_seed (&mt, 0xdeadbeef);
 
 	if (r_maxparticles && r_init) {
 		if (vaelements) {
@@ -245,7 +249,7 @@ R_ParticleExplosion_QF (const vec3_t org)
 	if (numparticles >= r_maxparticles)
 		return;
 	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4, 30, 8,
-						 vr_data.realtime + 5.0, (rand () & 7) + 8,
+						 vr_data.realtime + 5.0, (mtwist_rand (&mt) & 7) + 8,
 						 0.5 + qfrandom (0.25), 0.0);
 }
 
@@ -279,12 +283,12 @@ R_BlobExplosion_QF (const vec3_t org)
 
 	for (i = 0; i < j >> 1; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 12, 2, 256,
-							 vr_data.realtime + 1.0 + (rand () & 7) * 0.05,
+							 vr_data.realtime + 1.0 + (mtwist_rand (&mt) & 7) * 0.05,
 							 66 + i % 6, 1.0, 0.0);
 	}
 	for (i = 0; i < j / 2; i++) {
 		particle_new_random (pt_blob2, part_tex_dot, org, 12, 2, 256,
-							 vr_data.realtime + 1.0 + (rand () & 7) * 0.05,
+							 vr_data.realtime + 1.0 + (mtwist_rand (&mt) & 7) * 0.05,
 							 150 + i % 6, 1.0, 0.0);
 	}
 }
@@ -295,7 +299,7 @@ R_RunSparkEffect_QF (const vec3_t org, int count, int ofuzz)
 	if (numparticles >= r_maxparticles)
 		return;
 	particle_new (pt_smokecloud, part_tex_smoke, org, ofuzz * 0.08,
-				  vec3_origin, vr_data.realtime + 9, 12 + (rand () & 3),
+				  vec3_origin, vr_data.realtime + 9, 12 + (mtwist_rand (&mt) & 3),
 				  0.25 + qfrandom (0.125), 0.0);
 
 	if (numparticles + count >= r_maxparticles)
@@ -306,7 +310,7 @@ R_RunSparkEffect_QF (const vec3_t org, int count, int ofuzz)
 			orgfuzz = 1;
 
 		while (count--) {
-			int		color = rand () & 7;
+			int		color = mtwist_rand (&mt) & 7;
 
 			particle_new_random (pt_fallfadespark, part_tex_dot, org, orgfuzz,
 								 0.7, 96, vr_data.realtime + 5.0, ramp1[color],
@@ -322,7 +326,7 @@ R_BloodPuff_QF (const vec3_t org, int count)
 		return;
 
 	particle_new (pt_bloodcloud, part_tex_smoke, org, count / 5, vec3_origin,
-				  vr_data.realtime + 99.0, 70 + (rand () & 3), 0.5, 0.0);
+				  vr_data.realtime + 99.0, 70 + (mtwist_rand (&mt) & 3), 0.5, 0.0);
 }
 
 static void
@@ -350,7 +354,7 @@ R_LightningBloodEffect_QF (const vec3_t org)
 	if (numparticles >= r_maxparticles)
 		return;
 	particle_new (pt_smokecloud, part_tex_smoke, org, 3.0, vec3_origin,
-				  vr_data.realtime + 9.0, 12 + (rand () & 3),
+				  vr_data.realtime + 9.0, 12 + (mtwist_rand (&mt) & 3),
 				  0.25 + qfrandom (0.125), 0.0);
 
 	if (numparticles + count >= r_maxparticles)
@@ -378,7 +382,7 @@ R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
 		count = r_maxparticles - numparticles;
 
 	for (i = 0; i < count; i++) {
-		int 	rnd = rand ();
+		int 	rnd = mtwist_rand (&mt);
 
 		porg[0] = org[0] + scale * (((rnd >> 3) & 15) - 7.5);
 		porg[1] = org[1] + scale * (((rnd >> 7) & 15) - 7.5);
@@ -453,7 +457,7 @@ R_LavaSplash_QF (const vec3_t org)
 	dir[2] = 256;
 	for (i = -128; i < 128; i += 16) {
 		for (j = -128; j < 128; j += 16) {
-			rnd = rand ();
+			rnd = mtwist_rand (&mt);
 			dir[0] = j + (rnd & 7);
 			dir[1] = i + ((rnd >> 6) & 7);
 
@@ -462,7 +466,7 @@ R_LavaSplash_QF (const vec3_t org)
 			porg[2] = org[2] + ((rnd >> 9) & 63);
 
 			VectorNormalize (dir);
-			rnd = rand ();
+			rnd = mtwist_rand (&mt);
 			vel = 50.0 + 0.5 * (float) (rnd & 127);
 			VectorScale (dir, vel, pvel);
 			particle_new (pt_grav, part_tex_dot, porg, 3, pvel,
@@ -496,7 +500,7 @@ R_TeleportSplash_QF (const vec3_t org)
 				VectorCopy (dir, pdir);
 				VectorNormalize (pdir);
 
-				rnd = rand ();
+				rnd = mtwist_rand (&mt);
 				porg[0] = org[0] + i + (rnd & 3);
 				porg[1] = org[1] + j + ((rnd >> 2) & 3);
 				porg[2] = org[2] + k + ((rnd >> 4) & 3);
@@ -504,7 +508,7 @@ R_TeleportSplash_QF (const vec3_t org)
 				vel = 50 + ((rnd >> 6) & 63);
 				VectorScale (pdir, vel, pvel);
 				particle_new (pt_grav, part_tex_spark, porg, 0.6, pvel,
-							  (vr_data.realtime + 0.2 + (rand () & 15) * 0.01),
+							  (vr_data.realtime + 0.2 + (mtwist_rand (&mt) & 15) * 0.01),
 							  (7 + ((rnd >> 12) & 7)), 1.0, 0.0);
 			}
 		}
@@ -535,7 +539,7 @@ R_RocketTrail_QF (const entity_t *ent)
 		particle_new (pt_smoke, part_tex_smoke, old_origin,
 					  pscale + percent * 4.0, vec3_origin,
 					  vr_data.realtime + 2.0 - percent * 2.0,
-					  12 + (rand () & 3),
+					  12 + (mtwist_rand (&mt) & 3),
 					  0.5 + qfrandom (0.125) - percent * 0.40, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
@@ -569,7 +573,7 @@ R_GrenadeTrail_QF (const entity_t *ent)
 		particle_new (pt_smoke, part_tex_smoke, old_origin,
 					  pscale + percent * 4.0, vec3_origin,
 					  vr_data.realtime + 2.0 - percent * 2.0,
-					  1 + (rand () & 3),
+					  1 + (mtwist_rand (&mt) & 3),
 					  0.625 + qfrandom (0.125) - percent * 0.40, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
@@ -610,7 +614,7 @@ R_BloodTrail_QF (const entity_t *ent)
 
 		particle_new (pt_grav, part_tex_smoke, porg, pscale, pvel,
 					  vr_data.realtime + 2.0 - percent * 2.0,
-					  68 + (rand () & 3), 1.0, 0.0);
+					  68 + (mtwist_rand (&mt) & 3), 1.0, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -650,7 +654,7 @@ R_SlightBloodTrail_QF (const entity_t *ent)
 
 		particle_new (pt_grav, part_tex_smoke, porg, pscale, pvel,
 					  vr_data.realtime + 1.5 - percent * 1.5,
-					  68 + (rand () & 3), 0.75, 0.0);
+					  68 + (mtwist_rand (&mt) & 3), 0.75, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -692,7 +696,7 @@ R_WizTrail_QF (const entity_t *ent)
 		particle_new (pt_flame, part_tex_smoke, old_origin,
 					  2.0 + qfrandom (1.0) - percent * 2.0, pvel,
 					  vr_data.realtime + 0.5 - percent * 0.5,
-					  52 + (rand () & 4), 1.0 - percent * 0.125, 0.0);
+					  52 + (mtwist_rand (&mt) & 4), 1.0 - percent * 0.125, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -766,7 +770,7 @@ R_VoorTrail_QF (const entity_t *ent)
 
 		particle_new (pt_static, part_tex_dot, porg, 1.0 + qfrandom (1.0),
 					  vec3_origin, vr_data.realtime + 0.3 - percent * 0.3,
-					  9 * 16 + 8 + (rand () & 3), 1.0, 0.0);
+					  9 * 16 + 8 + (mtwist_rand (&mt) & 3), 1.0, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
 		len += dist;
@@ -794,7 +798,7 @@ R_GlowTrail_QF (const entity_t *ent, int glow_color)
 	while (len < maxlen) {
 		percent = len * origlen;
 
-		rnd = rand ();
+		rnd = mtwist_rand (&mt);
 		org[0] = old_origin[0] + ((rnd >> 12) & 7) * (5.0/7.0) - 2.5;
 		org[1] = old_origin[1] + ((rnd >> 9) & 7) * (5.0/7.0) - 2.5;
 		org[2] = old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
@@ -818,7 +822,7 @@ R_ParticleExplosion_EE (const vec3_t org)
 	if (numparticles >= r_maxparticles)
 		return;
 	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4, 30, 8,
-						 vr_data.realtime + 5.0, rand () & 255,
+						 vr_data.realtime + 5.0, mtwist_rand (&mt) & 255,
 						 0.5 + qfrandom (0.25), 0.0);
 }
 
@@ -843,7 +847,7 @@ R_TeleportSplash_EE (const vec3_t org)
 			for (j = -16; j < 16; j += 4) {
 				dir[0] = j * 8;
 
-				rnd = rand ();
+				rnd = mtwist_rand (&mt);
 				porg[0] = org[0] + i + (rnd & 3);
 				porg[1] = org[1] + j + ((rnd >> 2) & 3);
 				porg[2] = org[2] + k + ((rnd >> 4) & 3);
@@ -852,7 +856,7 @@ R_TeleportSplash_EE (const vec3_t org)
 				vel = 50 + ((rnd >> 6) & 63);
 				VectorScale (dir, vel, pvel);
 				particle_new (pt_grav, part_tex_spark, porg, 0.6, pvel,
-							  (vr_data.realtime + 0.2 + (rand () & 15) * 0.01),
+							  (vr_data.realtime + 0.2 + (mtwist_rand (&mt) & 15) * 0.01),
 							  qfrandom (1.0), 1.0, 0.0);
 			}
 		}
@@ -883,7 +887,7 @@ R_RocketTrail_EE (const entity_t *ent)
 		particle_new (pt_smoke, part_tex_smoke, old_origin,
 					  pscale + percent * 4.0, vec3_origin,
 					  vr_data.realtime + 2.0 - percent * 2.0,
-					  rand () & 255,
+					  mtwist_rand (&mt) & 255,
 					  0.5 + qfrandom (0.125) - percent * 0.40, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
@@ -918,7 +922,7 @@ R_GrenadeTrail_EE (const entity_t *ent)
 		particle_new (pt_smoke, part_tex_smoke, old_origin,
 					  pscale + percent * 4.0, vec3_origin,
 					  vr_data.realtime + 2.0 - percent * 2.0,
-					  rand () & 255,
+					  mtwist_rand (&mt) & 255,
 					  0.625 + qfrandom (0.125) - percent * 0.40, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
@@ -963,12 +967,12 @@ R_BlobExplosion_ID (const vec3_t org)
 
 	for (i = 0; i < j >> 1; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 12, 1.0, 256,
-							 vr_data.realtime + 1.0 + (rand () & 8) * 0.05,
+							 vr_data.realtime + 1.0 + (mtwist_rand (&mt) & 8) * 0.05,
 							 66 + i % 6, 1.0, 0.0);
 	}
 	for (i = 0; i < j / 2; i++) {
 		particle_new_random (pt_blob2, part_tex_dot, org, 12, 1.0, 256,
-							 vr_data.realtime + 1.0 + (rand () & 8) * 0.05,
+							 vr_data.realtime + 1.0 + (mtwist_rand (&mt) & 8) * 0.05,
 							 150 + i % 6, 1.0, 0.0);
 	}
 }
@@ -995,7 +999,7 @@ R_RunParticleEffect_ID (const vec3_t org, const vec3_t dir, int color,
 		count = r_maxparticles - numparticles;
 
 	for (i = 0; i < count; i++) {
-		int rnd = rand ();
+		int rnd = mtwist_rand (&mt);
 
 		porg[0] = org[0] + scale * (((rnd >> 3) & 15) - 8);
 		porg[1] = org[1] + scale * (((rnd >> 7) & 15) - 8);
@@ -1067,7 +1071,7 @@ R_LavaSplash_ID (const vec3_t org)
 	dir[2] = 256;
 	for (i = -128; i < 128; i += 16) {
 		for (j = -128; j < 128; j += 16) {
-			rnd = rand ();
+			rnd = mtwist_rand (&mt);
 			dir[0] = j + (rnd & 7);
 			dir[1] = i + ((rnd >> 6) & 7);
 
@@ -1076,7 +1080,7 @@ R_LavaSplash_ID (const vec3_t org)
 			porg[2] = org[2] + ((rnd >> 9) & 63);
 
 			VectorNormalize (dir);
-			rnd = rand ();
+			rnd = mtwist_rand (&mt);
 			vel = 50 + (rnd & 63);
 			VectorScale (dir, vel, pvel);
 			particle_new (pt_grav, part_tex_dot, porg, 1.0, pvel,
@@ -1110,7 +1114,7 @@ R_TeleportSplash_ID (const vec3_t org)
 				VectorCopy (dir, pdir);
 				VectorNormalize (pdir);
 
-				rnd = rand ();
+				rnd = mtwist_rand (&mt);
 				porg[0] = org[0] + i + (rnd & 3);
 				porg[1] = org[1] + j + ((rnd >> 2) & 3);
 				porg[2] = org[2] + k + ((rnd >> 4) & 3);
@@ -1118,7 +1122,7 @@ R_TeleportSplash_ID (const vec3_t org)
 				vel = 50 + ((rnd >> 6) & 63);
 				VectorScale (pdir, vel, pvel);
 				particle_new (pt_grav, part_tex_dot, porg, 1.0, pvel,
-							  (vr_data.realtime + 0.2 + (rand () & 7) * 0.02),
+							  (vr_data.realtime + 0.2 + (mtwist_rand (&mt) & 7) * 0.02),
 							  (7 + ((rnd >> 12) & 7)), 1.0, 0.0);
 			}
 		}
@@ -1147,7 +1151,7 @@ R_DarkFieldParticles_ID (const entity_t *ent)
 			dir [0] = j * 8;
 			for (k = 0; k < 32; k += 8) {
 				dir [2] = k * 8;
-				rnd = rand ();
+				rnd = mtwist_rand (&mt);
 
 				porg[0] = org[0] + i + ((rnd >> 3) & 3);
 				porg[1] = org[1] + j + ((rnd >> 5) & 3);
@@ -1158,7 +1162,7 @@ R_DarkFieldParticles_ID (const entity_t *ent)
 				VectorScale (dir, vel, pvel);
 				particle_new (pt_slowgrav, part_tex_dot, porg, 1.5, pvel,
 							  (vr_data.realtime + 0.2 + (rnd & 7) * 0.02),
-							  (150 + rand () % 6), 1.0, 0.0);
+							  (150 + mtwist_rand (&mt) % 6), 1.0, 0.0);
             }
 		}
 	}
@@ -1182,7 +1186,7 @@ R_EntityParticles_ID (const entity_t *ent)
 
 	if (!avelocities[0][0]) {
 		for (i = 0; i < NUMVERTEXNORMALS * 3; i++)
-			avelocities[0][i] = (rand () & 255) * 0.01;
+			avelocities[0][i] = (mtwist_rand (&mt) & 255) * 0.01;
 	}
 
 	for (i = 0; i < j; i++) {
@@ -1229,7 +1233,7 @@ R_RocketTrail_ID (const entity_t *ent)
 	VectorScale (vec, (maxlen - dist), subtract);
 
 	while (len < maxlen) {
-		rnd = rand ();
+		rnd = mtwist_rand (&mt);
 		org[0] = old_origin[0] + ((rnd >> 12) & 7) * (5.0/7.0) - 2.5;
 		org[1] = old_origin[1] + ((rnd >> 9) & 7) * (5.0/7.0) - 2.5;
 		org[2] = old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
@@ -1261,7 +1265,7 @@ R_GrenadeTrail_ID (const entity_t *ent)
 	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
-		rnd = rand ();
+		rnd = mtwist_rand (&mt);
 		org[0] = old_origin[0] + ((rnd >> 12) & 7) * (5.0/7.0) - 2.5;
 		org[1] = old_origin[1] + ((rnd >> 9) & 7) * (5.0/7.0) - 2.5;
 		org[2] = old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
@@ -1293,7 +1297,7 @@ R_BloodTrail_ID (const entity_t *ent)
 	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
-		rnd = rand ();
+		rnd = mtwist_rand (&mt);
 		porg[0] = old_origin[0] + ((rnd >> 12) & 7) * (5.0/7.0) - 2.5;
 		porg[1] = old_origin[1] + ((rnd >> 9) & 7) * (5.0/7.0) - 2.5;
 		porg[2] = old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
@@ -1324,7 +1328,7 @@ R_SlightBloodTrail_ID (const entity_t *ent)
 	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
-		rnd = rand ();
+		rnd = mtwist_rand (&mt);
 		porg[0] = old_origin[0] + ((rnd >> 12) & 7) * (5.0/7.0) - 2.5;
 		porg[1] = old_origin[1] + ((rnd >> 9) & 7) * (5.0/7.0) - 2.5;
 		porg[2] = old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
@@ -1429,7 +1433,7 @@ R_VoorTrail_ID (const entity_t *ent)
 	VectorScale (vec, maxlen - dist, subtract);
 
 	while (len < maxlen) {
-		rnd = rand ();
+		rnd = mtwist_rand (&mt);
 		porg[0] = old_origin[0] + ((rnd >> 3) & 15) - 7.5;
 		porg[1] = old_origin[1] + ((rnd >> 7) & 15) - 7.5;
 		porg[2] = old_origin[2] + ((rnd >> 11) & 15) - 7.5;

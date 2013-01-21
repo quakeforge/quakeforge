@@ -37,6 +37,7 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/mersenne.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
@@ -50,10 +51,12 @@ static int		ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 //static int	ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
 static int		ramp3[8] = { 0x6d, 0x6b, 6, 5, 4, 3 };
 
+static mtstate_t mt;	// private PRNG state
 
 void
 R_InitParticles (void)
 {
+	mtwist_seed (&mt, 0xdeadbeef);
 }
 
 void
@@ -145,15 +148,15 @@ R_ParticleExplosion_QF (const vec3_t org)
 
 		p->die = vr_data.realtime + 5;
 		p->color = ramp1[0];
-		p->ramp = rand () & 3;
+		p->ramp = mtwist_rand (&mt) & 3;
 		if (i & 1)
 			p->type = pt_explode;
 		else
 			p->type = pt_explode2;
 		p->phys = R_ParticlePhysics (p->type);
 		for (j = 0; j < 3; j++) {
-			p->org[j] = org[j] + ((rand () % 32) - 16);
-			p->vel[j] = (rand () % 512) - 256;
+			p->org[j] = org[j] + ((mtwist_rand (&mt) % 32) - 16);
+			p->vel[j] = (mtwist_rand (&mt) % 512) - 256;
 		}
 	}
 }
@@ -180,8 +183,8 @@ R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 		p->type = pt_blob;
 		p->phys = R_ParticlePhysics (p->type);
 		for (j=0 ; j<3 ; j++) {
-			p->org[j] = org[j] + ((rand()%32)-16);
-			p->vel[j] = (rand()%512)-256;
+			p->org[j] = org[j] + ((mtwist_rand (&mt)%32)-16);
+			p->vel[j] = (mtwist_rand (&mt)%512)-256;
 		}
 	}
 }
@@ -203,19 +206,19 @@ R_BlobExplosion_QF (const vec3_t org)
 		p->next = active_particles;
 		active_particles = p;
 
-		p->die = vr_data.realtime + 1 + (rand () & 8) * 0.05;
+		p->die = vr_data.realtime + 1 + (mtwist_rand (&mt) & 8) * 0.05;
 
 		if (i & 1) {
 			p->type = pt_blob;
-			p->color = 66 + rand () % 6;
+			p->color = 66 + mtwist_rand (&mt) % 6;
 		} else {
 			p->type = pt_blob2;
-			p->color = 150 + rand () % 6;
+			p->color = 150 + mtwist_rand (&mt) % 6;
 		}
 		p->phys = R_ParticlePhysics (p->type);
 		for (j = 0; j < 3; j++) {
-			p->org[j] = org[j] + ((rand () % 32) - 16);
-			p->vel[j] = (rand () % 512) - 256;
+			p->org[j] = org[j] + ((mtwist_rand (&mt) % 32) - 16);
+			p->vel[j] = (mtwist_rand (&mt) % 512) - 256;
 		}
 	}
 }
@@ -238,13 +241,13 @@ R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
 		p->next = active_particles;
 		active_particles = p;
 
-		p->die = vr_data.realtime + 0.1 * (rand () % 5);
-		p->color = (color & ~7) + (rand () & 7);
+		p->die = vr_data.realtime + 0.1 * (mtwist_rand (&mt) % 5);
+		p->color = (color & ~7) + (mtwist_rand (&mt) & 7);
 		p->type = pt_grav;
 		p->phys = R_ParticlePhysics (p->type);
 		for (j = 0; j < 3; j++) {
-			p->org[j] = org[j] + ((rand () & 15) - 8);
-			p->vel[j] = dir[j];	// + (rand()%300)-150;
+			p->org[j] = org[j] + ((mtwist_rand (&mt) & 15) - 8);
+			p->vel[j] = dir[j];	// + (mtwist_rand (&mt)%300)-150;
 		}
 	}
 }
@@ -312,21 +315,21 @@ R_LavaSplash_QF (const vec3_t org)
 				p->next = active_particles;
 				active_particles = p;
 
-				p->die = vr_data.realtime + 2 + (rand () & 31) * 0.02;
-				p->color = 224 + (rand () & 7);
+				p->die = vr_data.realtime + 2 + (mtwist_rand (&mt) & 31) * 0.02;
+				p->color = 224 + (mtwist_rand (&mt) & 7);
 				p->type = pt_grav;
 				p->phys = R_ParticlePhysics (p->type);
 
-				dir[0] = j * 8 + (rand () & 7);
-				dir[1] = i * 8 + (rand () & 7);
+				dir[0] = j * 8 + (mtwist_rand (&mt) & 7);
+				dir[1] = i * 8 + (mtwist_rand (&mt) & 7);
 				dir[2] = 256;
 
 				p->org[0] = org[0] + dir[0];
 				p->org[1] = org[1] + dir[1];
-				p->org[2] = org[2] + (rand () & 63);
+				p->org[2] = org[2] + (mtwist_rand (&mt) & 63);
 
 				VectorNormalize (dir);
-				vel = 50 + (rand () & 63);
+				vel = 50 + (mtwist_rand (&mt) & 63);
 				VectorScale (dir, vel, p->vel);
 			}
 }
@@ -352,8 +355,8 @@ R_TeleportSplash_QF (const vec3_t org)
 				p->next = active_particles;
 				active_particles = p;
 
-				p->die = vr_data.realtime + 0.2 + (rand () & 7) * 0.02;
-				p->color = 7 + (rand () & 7);
+				p->die = vr_data.realtime + 0.2 + (mtwist_rand (&mt) & 7) * 0.02;
+				p->color = 7 + (mtwist_rand (&mt) & 7);
 				p->type = pt_grav;
 				p->phys = R_ParticlePhysics (p->type);
 
@@ -361,12 +364,12 @@ R_TeleportSplash_QF (const vec3_t org)
 				dir[1] = i * 8;
 				dir[2] = k * 8;
 
-				p->org[0] = org[0] + i + (rand () & 3);
-				p->org[1] = org[1] + j + (rand () & 3);
-				p->org[2] = org[2] + k + (rand () & 3);
+				p->org[0] = org[0] + i + (mtwist_rand (&mt) & 3);
+				p->org[1] = org[1] + j + (mtwist_rand (&mt) & 3);
+				p->org[2] = org[2] + k + (mtwist_rand (&mt) & 3);
 
 				VectorNormalize (dir);
-				vel = 50 + (rand () & 63);
+				vel = 50 + (mtwist_rand (&mt) & 63);
 				VectorScale (dir, vel, p->vel);
 			}
 }
@@ -396,10 +399,10 @@ R_DarkFieldParticles_ID (const entity_t *ent)
                 p->next = active_particles;
 				active_particles = p;
 
-				rnd = rand ();
+				rnd = mtwist_rand (&mt);
 
 				p->die = vr_data.realtime + 0.2 + (rnd & 7) * 0.02;
-				p->color = 150 + rand () % 6;
+				p->color = 150 + mtwist_rand (&mt) % 6;
 				p->type = pt_slowgrav;
 				p->phys = R_ParticlePhysics (p->type);
 				dir[0] = j * 8;
@@ -434,7 +437,7 @@ R_EntityParticles_ID (const entity_t *ent)
 
 	if (!avelocities[0][0]) {
 		for (i = 0; i < NUMVERTEXNORMALS * 3; i++)
-			avelocities[0][i] = (rand () & 255) * 0.01;
+			avelocities[0][i] = (mtwist_rand (&mt) & 255) * 0.01;
 	}
 
 	for (i = 0; i < NUMVERTEXNORMALS; i++) {
@@ -502,12 +505,12 @@ R_RocketTrail_QF (const entity_t *ent)
 		VectorZero (p->vel);
 
 		p->die = vr_data.realtime + 2;
-		p->ramp = (rand () & 3);
+		p->ramp = (mtwist_rand (&mt) & 3);
 		p->color = ramp3[(int) p->ramp];
 		p->type = pt_fire;
 		p->phys = R_ParticlePhysics (p->type);
 		for (j = 0; j < 3; j++)
-			p->org[j] = old_origin[j] + ((rand () % 6) - 3);
+			p->org[j] = old_origin[j] + ((mtwist_rand (&mt) % 6) - 3);
 
 		VectorAdd (old_origin, vec, old_origin);
 	}
@@ -541,12 +544,12 @@ R_GrenadeTrail_QF (const entity_t *ent)
 		VectorZero (p->vel);
 
 		p->die = vr_data.realtime + 2;
-		p->ramp = (rand () & 3) + 2;
+		p->ramp = (mtwist_rand (&mt) & 3) + 2;
 		p->color = ramp3[(int) p->ramp];
 		p->type = pt_fire;
 		p->phys = R_ParticlePhysics (p->type);
 		for (j = 0; j < 3; j++)
-			p->org[j] = old_origin[j] + ((rand () % 6) - 3);
+			p->org[j] = old_origin[j] + ((mtwist_rand (&mt) % 6) - 3);
 
 		VectorAdd (old_origin, vec, old_origin);
 	}
@@ -582,9 +585,9 @@ R_BloodTrail_QF (const entity_t *ent)
 		p->die = vr_data.realtime + 2;
 		p->type = pt_slowgrav;
 		p->phys = R_ParticlePhysics (p->type);
-		p->color = 67 + (rand () & 3);
+		p->color = 67 + (mtwist_rand (&mt) & 3);
 		for (j = 0; j < 3; j++)
-			p->org[j] = old_origin[j] + ((rand () % 6) - 3);
+			p->org[j] = old_origin[j] + ((mtwist_rand (&mt) % 6) - 3);
 		break;
 
 		VectorAdd (old_origin, vec, old_origin);
@@ -621,9 +624,9 @@ R_SlightBloodTrail_QF (const entity_t *ent)
 		p->die = vr_data.realtime + 2;
 		p->type = pt_slowgrav;
 		p->phys = R_ParticlePhysics (p->type);
-		p->color = 67 + (rand () & 3);
+		p->color = 67 + (mtwist_rand (&mt) & 3);
 		for (j = 0; j < 3; j++)
-			p->org[j] = old_origin[j] + ((rand () % 6) - 3);
+			p->org[j] = old_origin[j] + ((mtwist_rand (&mt) % 6) - 3);
 
 		VectorAdd (old_origin, vec, old_origin);
 	}
@@ -753,9 +756,9 @@ R_VoorTrail_QF (const entity_t *ent)
 		p->die = vr_data.realtime + 0.3;
 		p->type = pt_static;
 		p->phys = R_ParticlePhysics (p->type);
-		p->color = 9 * 16 + 8 + (rand () & 3);
+		p->color = 9 * 16 + 8 + (mtwist_rand (&mt) & 3);
 		for (j = 0; j < 3; j++)
-			p->org[j] = old_origin[j] + ((rand () & 15) - 8);
+			p->org[j] = old_origin[j] + ((mtwist_rand (&mt) & 15) - 8);
 
 		VectorAdd (old_origin, vec, old_origin);
 	}
@@ -905,14 +908,14 @@ R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
 	int         rnd;
 	vec3_t      porg, pvel;
 
-	rnd = rand ();
+	rnd = mtwist_rand (&mt);
 	porg[0] = o_fuzz * ((rnd & 63) - 31.5) / 63.0 + org[0];
-	porg[1] = o_fuzz * (((rnd >> 5) & 63) - 31.5) / 63.0 + org[1];
-	porg[2] = o_fuzz * (((rnd >> 9) & 63) - 31.5) / 63.0 + org[2];
-	rnd = rand ();
+	porg[1] = o_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0 + org[1];
+	porg[2] = o_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0 + org[2];
+	rnd = mtwist_rand (&mt);
 	pvel[0] = v_fuzz * ((rnd & 63) - 31.5) / 63.0;
-	pvel[1] = v_fuzz * (((rnd >> 5) & 63) - 31.5) / 63.0;
-	pvel[2] = v_fuzz * (((rnd >> 9) & 63) - 31.5) / 63.0;
+	pvel[1] = v_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0;
+	pvel[2] = v_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0;
 
 	R_Particle_New (type, texnum, porg, scale, pvel, die, color, alpha, ramp);
 }
