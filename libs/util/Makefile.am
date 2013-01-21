@@ -51,7 +51,7 @@ libQFutil_la_DEPENDENCIES=	$(asm)
 libQFutil_la_SOURCES= \
 	bspfile.c buildnum.c cbuf.c checksum.c cmd.c crc.c cvar.c dstring.c \
 	fendian.c hash.c idparse.c info.c link.c llist.c \
-	mathlib.c mdfour.c msg.c pakfile.c plugin.c qargs.c qendian.c \
+	mathlib.c mdfour.c mersenne.c msg.c pakfile.c plugin.c qargs.c qendian.c \
 	qfplist.c quakefs.c quakeio.c riff.c script.c set.c sizebuf.c string.c \
 	sys.c va.c ver_check.c vrect.c wad.c wadfile.c zone.c \
 	$(dirent) $(fnmatch) $(getopt)
