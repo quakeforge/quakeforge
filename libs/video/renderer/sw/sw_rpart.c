@@ -908,11 +908,11 @@ R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
 	rnd = rand ();
 	porg[0] = o_fuzz * ((rnd & 63) - 31.5) / 63.0 + org[0];
 	porg[1] = o_fuzz * (((rnd >> 5) & 63) - 31.5) / 63.0 + org[1];
-	porg[2] = o_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0 + org[2];
+	porg[2] = o_fuzz * (((rnd >> 9) & 63) - 31.5) / 63.0 + org[2];
 	rnd = rand ();
 	pvel[0] = v_fuzz * ((rnd & 63) - 31.5) / 63.0;
 	pvel[1] = v_fuzz * (((rnd >> 5) & 63) - 31.5) / 63.0;
-	pvel[2] = v_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0;
+	pvel[2] = v_fuzz * (((rnd >> 9) & 63) - 31.5) / 63.0;
 
 	R_Particle_New (type, texnum, porg, scale, pvel, die, color, alpha, ramp);
 }
