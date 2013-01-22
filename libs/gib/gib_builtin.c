@@ -496,8 +496,8 @@ GIB_Slice_Find_f (void)
 		dsprintf (GIB_Return (0), "%lu",
 				  (unsigned long int) (res - GIB_Argv (1)));
 		dsprintf (GIB_Return (0), "%lu",
-				  (unsigned long int) (res - GIB_Argv (1)) +
-				  strlen (GIB_Argv (2)));
+				  (unsigned long int) (res - GIB_Argv (1) +
+									   strlen (GIB_Argv (2))));
 	}
 }
 

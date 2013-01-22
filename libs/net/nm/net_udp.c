@@ -109,10 +109,14 @@
 #endif
 
 #ifndef HAVE_SOCKLEN_T
-# ifdef HAVE_SIZE
-	typedef size_t socklen_t;
+# ifdef _WIN64
+	typedef int socklen_t;
 # else
+#  ifdef HAVE_SIZE
+	typedef size_t socklen_t;
+#  else
 	typedef unsigned int socklen_t;
+#  endif
 # endif
 #endif
 
@@ -433,7 +437,11 @@ int
 UDP_CheckNewConnections (void)
 {
 #if defined (HAVE_IOCTL) || defined (_WIN32)
+# ifdef _WIN64
+	u_long      available;
+# else
 	int         available;
+# endif
 	AF_address_t from;
 	socklen_t   fromlen = sizeof (from);
 	char        buff[1];
@@ -505,7 +513,8 @@ UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 	socklen_t   addrlen = sizeof (AF_address_t);
 
 	memset (&addr, 0, sizeof (addr));
-	ret = recvfrom (socket, buf, len, 0, (struct sockaddr *) &addr, &addrlen);
+	ret = recvfrom (socket, (void *) buf, len, 0, (struct sockaddr *) &addr,
+					&addrlen);
 	if (ret == -1 && (errno == EWOULDBLOCK || errno == ECONNREFUSED))
 		return 0;
 	SockadrToNetadr (&addr, from);
@@ -555,7 +564,8 @@ UDP_Write (int socket, byte *buf, int len, netadr_t *to)
 	AF_address_t addr;
 
 	NetadrToSockadr (to, &addr);
-	ret = sendto (socket, buf, len, 0, &addr.sa, SA_LEN (&addr.sa));
+	ret = sendto (socket, (const void *) buf, len, 0, &addr.sa,
+				  SA_LEN (&addr.sa));
 	if (ret == -1 && errno == EWOULDBLOCK)
 		return 0;
 	Sys_MaskPrintf (SYS_NET, "sent %d bytes to %s\n", ret,

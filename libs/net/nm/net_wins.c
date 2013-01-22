@@ -29,6 +29,7 @@
 # include "config.h"
 #endif
 
+#include <winsock2.h>
 #include "winquake.h"
 
 #include "QF/cvar.h"
@@ -127,7 +128,11 @@ SockadrToNetadr (AF_address_t *s, netadr_t *a)
 
 static double blocktime;
 
+#ifdef _WIN64
+static INT_PTR PASCAL FAR
+#else
 static BOOL PASCAL FAR
+#endif
 BlockingHook (void)
 {
 	MSG         msg;

@@ -52,7 +52,7 @@ static hashtab_t *saved_strings;
 static const char *
 strpool_get_key (const void *_str, void *_strpool)
 {
-	long        str = (long) _str;
+	long        str = (intptr_t) _str;
 	strpool_t  *strpool = (strpool_t *) _strpool;
 
 	return strpool->strings + str;
@@ -74,7 +74,7 @@ strpool_new (void)
 strpool_t *
 strpool_build (const char *strings, int size)
 {
-	long        s;
+	intptr_t    s;
 
 	strpool_t  *strpool = malloc (sizeof (strpool_t));
 	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool);
@@ -100,12 +100,12 @@ strpool_delete (strpool_t *strpool)
 int
 strpool_addstr (strpool_t *strpool, const char *str)
 {
-	long        s;
+	intptr_t    s;
 	int         len;
 
 	if (!str || !*str)
 		return 0;
-	s = (long) Hash_Find (strpool->str_tab, str);
+	s = (intptr_t) Hash_Find (strpool->str_tab, str);
 	if (s)
 		return s;
 	len = strlen (str) + 1;

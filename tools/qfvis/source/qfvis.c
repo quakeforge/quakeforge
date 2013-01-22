@@ -468,11 +468,11 @@ CalcPortalVis (void)
 				Sys_Error ("pthread_attr_setstacksize failed");
 			for (i = 0; i < options.threads; i++) {
 				if (pthread_create (&work_threads[i], &attrib, LeafThread,
-									(void *) i) == -1)
+									(void *) (intptr_t) i) == -1)
 					Sys_Error ("pthread_create failed");
 			}
 			if (pthread_create (&work_threads[i], &attrib, WatchThread,
-								(void *) i) == -1)
+								(void *) (intptr_t) i) == -1)
 				Sys_Error ("pthread_create failed");
 
 			for (i = 0; i < options.threads; i++) {

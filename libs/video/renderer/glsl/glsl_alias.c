@@ -176,7 +176,7 @@ set_arrays (const shaderparam_t *vert, const shaderparam_t *norm,
 		GLint size;
 
 		qfeglGetBufferParameteriv (GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-		if (size <= (long)pose_offs) {
+		if (size <= (intptr_t)pose_offs) {
 			Sys_Printf ("Invalid pose");
 			pose = 0;
 		}

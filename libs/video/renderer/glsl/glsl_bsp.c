@@ -582,20 +582,20 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 			if (!tex->elechain) {
 				ec = add_elechain (tex, surf->ec_index);
 				el = ec->elements;
-				el->base = (byte *) vertices->size;
+				el->base = (byte *) (intptr_t) vertices->size;
 				vertex_index_base = 0;
 			}
 			if (surf->ec_index != ec->index) {	// next sub-model
 				ec = add_elechain (tex, surf->ec_index);
 				el = ec->elements;
-				el->base = (byte *) vertices->size;
+				el->base = (byte *) (intptr_t) vertices->size;
 				vertex_index_base = 0;
 			}
 			if (vertex_index_base + surf->numedges > 65535) {
 				// elements index overflow
 				el->next = get_elements ();
 				el = el->next;
-				el->base = (byte *) vertices->size;
+				el->base = (byte *) (intptr_t) vertices->size;
 				vertex_index_base = 0;
 			}
 			// we don't use it now, but pre-initializing the list won't hurt
@@ -610,7 +610,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 	}
 	clear_texture_chains ();
 	Sys_MaskPrintf (SYS_GLSL, "R_BuildDisplayLists: %ld verts total\n",
-					vertices->size / sizeof (bspvert_t));
+					(long) (vertices->size / sizeof (bspvert_t)));
 	if (!bsp_vbo)
 		qfeglGenBuffers (1, &bsp_vbo);
 	qfeglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
