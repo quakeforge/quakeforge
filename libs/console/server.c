@@ -56,6 +56,8 @@
 #include <signal.h>
 #include <stdlib.h>
 
+#include "qfalloca.h"
+
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/console.h"

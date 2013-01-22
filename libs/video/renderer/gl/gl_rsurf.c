@@ -39,6 +39,8 @@
 # include <strings.h>
 #endif
 
+#include "qfalloca.h"
+
 #include <math.h>
 #include <stdio.h>
 

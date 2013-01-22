@@ -61,6 +61,8 @@
 #include <errno.h>
 #include <setjmp.h>
 
+#include "qfalloca.h"
+
 #include "QF/cbuf.h"
 #include "QF/idparse.h"
 #include "QF/cdaudio.h"

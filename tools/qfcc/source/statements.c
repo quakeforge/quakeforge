@@ -39,6 +39,8 @@
 
 #include <stdlib.h>
 
+#include "qfalloca.h"
+
 #include "QF/alloc.h"
 #include "QF/va.h"
 

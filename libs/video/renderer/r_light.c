@@ -38,6 +38,8 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "qfalloca.h"
+
 #include "QF/cvar.h"
 #include "QF/render.h"
 

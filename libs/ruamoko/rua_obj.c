@@ -42,6 +42,8 @@
 #include <malloc.h>
 #endif
 
+#include "qfalloca.h"
+
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"

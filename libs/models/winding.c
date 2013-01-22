@@ -32,6 +32,8 @@
 #endif
 #include <stdlib.h>
 
+#include "qfalloca.h"
+
 #include "QF/sys.h"
 
 #include "QF/winding.h"

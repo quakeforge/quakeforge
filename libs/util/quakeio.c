@@ -59,6 +59,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "qfalloca.h"
+
 #include "QF/dstring.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"

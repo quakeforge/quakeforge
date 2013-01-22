@@ -41,6 +41,8 @@
 #include <stdlib.h>
 #include <FLAC/export.h>
 
+#include "qfalloca.h"
+
 /* FLAC 1.1.3 has FLAC_API_VERSION_CURRENT == 8 */
 #if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT < 8
 #define LEGACY_FLAC

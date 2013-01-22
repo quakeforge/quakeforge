@@ -38,6 +38,8 @@
 # include <strings.h>
 #endif
 
+#include "qfalloca.h"
+
 #include "QF/model.h"
 #include "QF/sys.h"
 #include "QF/winding.h"

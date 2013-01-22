@@ -32,6 +32,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include <ctype.h>
 
+#include "qfalloca.h"
+
 #include "QF/cmd.h"
 #include "QF/dstring.h"
 #include "QF/quakefs.h"

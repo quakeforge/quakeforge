@@ -37,9 +37,8 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#endif
+
+#include "qfalloca.h"
 
 #include "compat.h"
 

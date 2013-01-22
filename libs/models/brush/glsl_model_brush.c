@@ -41,6 +41,8 @@
 # include <strings.h>
 #endif
 
+#include "qfalloca.h"
+
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/image.h"

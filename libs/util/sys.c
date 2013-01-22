@@ -75,6 +75,8 @@
 #include <direct.h>
 #endif
 
+#include "qfalloca.h"
+
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"

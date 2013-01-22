@@ -36,6 +36,8 @@
 #include <malloc.h>
 #endif
 
+#include "qfalloca.h"
+
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/qfplist.h"

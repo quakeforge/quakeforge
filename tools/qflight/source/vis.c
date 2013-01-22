@@ -42,6 +42,8 @@
 # include <malloc.h>
 #endif
 
+#include "qfalloca.h"
+
 #include "QF/bspfile.h"
 #include "QF/mathlib.h"
 

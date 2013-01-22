@@ -39,6 +39,8 @@
 # include <strings.h>
 #endif
 
+#include "qfalloca.h"
+
 #include "QF/dstring.h"
 #include "QF/image.h"
 #include "QF/qendian.h"

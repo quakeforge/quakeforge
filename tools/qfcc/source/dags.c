@@ -40,6 +40,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "qfalloca.h"
+
 #include "QF/alloc.h"
 #include "QF/dstring.h"
 #include "QF/mathlib.h"

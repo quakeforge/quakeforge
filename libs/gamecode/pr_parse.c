@@ -37,6 +37,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "qfalloca.h"
+
 #if defined(_WIN32) && defined(HAVE_MALLOC_H)
 #include <malloc.h>
 #endif

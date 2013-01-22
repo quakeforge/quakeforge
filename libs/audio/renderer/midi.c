@@ -37,6 +37,8 @@
 #include <stdlib.h>
 #include <wildmidi_lib.h>
 
+#include "qfalloca.h"
+
 #include "QF/cvar.h"
 #include "QF/sound.h"
 #include "QF/sys.h"

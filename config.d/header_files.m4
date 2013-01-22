@@ -7,7 +7,7 @@ AC_HEADER_STDC
 AC_HEADER_MAJOR
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(
-	alloca.h arpa/inet.h asm/io.h assert.h conio.h \
+	arpa/inet.h asm/io.h assert.h conio.h \
 	ctype.h ddraw.h dinput.h direct.h dirent.h dlfcn.h dmedia/audio.h \
 	dmedia/cdaudio.h dpmi.h dsound.h errno.h fcntl.h io.h \
 	ifaddrs.h libc.h limits.h linux/cdrom.h linux/joystick.h \
@@ -30,41 +30,7 @@ else
 	AC_CHECK_HEADERS(fnmatch.h)
 fi
 
-if test "x$ac_cv_header_alloca_h" = xno; then
-	AC_MSG_CHECKING(for alloca in stdlib.h)
-	AC_TRY_COMPILE(
-		[#include <stdlib.h>],
-		[void *(*foo)(size_t) = alloca;],
-		have_alloca_proto=yes
-		AC_MSG_RESULT(yes),
-		have_alloca_proto=no
-		AC_MSG_RESULT(no)
-	)
-else
-	AC_MSG_CHECKING(for alloca in alloca.h)
-	AC_TRY_COMPILE(
-		[#include <stdlib.h>]
-		[#include <alloca.h>],
-		[void *(*foo)(size_t) = alloca;],
-		have_alloca_proto=yes
-		AC_MSG_RESULT(yes),
-		have_alloca_proto=no
-		AC_MSG_RESULT(no)
-	)
-fi
-
-if test "x$have_alloca_proto" = xyes; then
-	AC_DEFINE(HAVE_ALLOCA_PROTO)
-fi
-AH_VERBATIM([HAVE_ALLOCA_PROTO],
-[/* Define this if alloca is prototyped */
-#undef HAVE_ALLOCA_PROTO
-#ifndef HAVE_ALLOCA_PROTO
-#ifndef QFASM
-#include <stdlib.h>
-void *alloca (size_t size);
-#endif
-#endif])
+AC_FUNC_ALLOCA
 
 AC_MSG_CHECKING(for fnmatch in fnmatch.h)
 AC_TRY_COMPILE(

@@ -38,9 +38,6 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#endif
 
 #if defined(_WIN32) && defined(HAVE_MALLOC_H)
 #include <malloc.h>
@@ -48,6 +45,8 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
+
+#include "qfalloca.h"
 
 #include "QF/cvar.h"
 #include "QF/render.h"

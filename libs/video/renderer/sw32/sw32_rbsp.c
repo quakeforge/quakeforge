@@ -34,6 +34,8 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include "qfalloca.h"
+
 #include "QF/render.h"
 #include "QF/sys.h"
 

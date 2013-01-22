@@ -44,6 +44,8 @@
 #include <QF/quakeio.h>
 #include <QF/va.h>
 
+#include "qfalloca.h"
+
 #include "expr.h"
 #include "symtab.h"
 #include "type.h"
