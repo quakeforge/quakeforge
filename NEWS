@@ -1,5 +1,16 @@
 NEWS for the QuakeForge project
 -------------------------------
+Changes from 0.7.1
+    o Critical bug with incorrect key_dest fixed. (fixed in 0.7.1a)
+    o Alignment bug loading wav files fixed (affects only mips)
+    o Critical bug incorrect handling of progs code fixed (windows builds)
+    o Id style (r_particles_style 0) particle explosions fixed (windows)
+    o 64-bit windows target now supported (though untested).
+	o QF now writes all data only to the user's home directory (usually the
+      local application data dir) if it can be found, writing to the
+      current directory only if the local application data dir can't be
+      found and neither HOME nor USERPROFILE are set.
+
 Changes from 0.7.0
     o General build fixes.
         - gcc 4.7
