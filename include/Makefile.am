@@ -10,9 +10,9 @@ EXTRA_DIST = \
 	gib_process.h gib_regex.h gib_semantics.h gib_thread.h gib_tree.h \
 	gib_vars.h gl_warp_sin.h in_win.h logos.h mod_internal.h net_dgrm.h \
 	net_loop.h net_udp.h net_vcr.h net_wins.h netchan.h netmain.h \
-	noisetextures.h old_keys.h ops.h pstdint.h qstring.h quakeasm.h \
-	r_cvar.h r_dynamic.h r_internal.h r_local.h r_screen.h r_shared.h \
-	regex.h rua_internal.h sbar.h skin_stencil.h snd_internal.h \
+	noisetextures.h old_keys.h ops.h pstdint.h qfalloca.h qstring.h \
+	quakeasm.h r_cvar.h r_dynamic.h r_internal.h r_local.h r_screen.h \
+	r_shared.h regex.h rua_internal.h sbar.h skin_stencil.h snd_internal.h \
 	sv_console.h varrays.h vgamodes.h vid_internal.h vregset.h winquake.h \
 	world.h \
 	\
