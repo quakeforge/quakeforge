@@ -16,7 +16,8 @@ EXTRA_DIST=	ChangeLog configure.ac bootstrap \
 		tools/cross/droid/cross-make.sh \
 		tools/cross/mingw/cross-configure.sh \
 		tools/cross/mingw/cross-make.sh \
-		tools/cross/mingw/cross.sh \
+		tools/cross/mingw64/cross-configure.sh \
+		tools/cross/mingw64/cross-make.sh \
 		tools/cross/mipsel-linux/cross-configure.sh \
 		tools/cross/mipsel-linux/cross-make.sh \
 		tools/cross/ps3-elf/cross-configure.sh \
