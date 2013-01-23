@@ -48,6 +48,7 @@
 #endif
 #ifdef HAVE_WINDOWS_H
 # include "winquake.h"
+# include "shlobj.h"
 #endif
 #ifdef HAVE_SYS_MMAN_H
 # include <sys/mman.h>
@@ -861,9 +862,10 @@ Sys_CreatePath (const char *path)
 char *
 Sys_ExpandSquiggle (const char *path)
 {
-	const char *home;
-
-#ifndef _WIN32
+	const char *home = 0;
+#ifdef _WIN32
+	char        userpath[MAX_PATH];	// sigh, why can't windows give the size?
+#else
 # ifdef HAVE_GETUID
 	struct passwd *pwd_ent;
 # endif
@@ -874,24 +876,27 @@ Sys_ExpandSquiggle (const char *path)
 	}
 
 #ifdef _WIN32
+	if (SHGetFolderPathA (0, CSIDL_LOCAL_APPDATA, 0, 0, userpath) == S_OK) {
+		home = userpath;
+	}
 	// LordHavoc: first check HOME to duplicate previous version behavior
 	// (also handy if someone wants it elsewhere than their windows directory)
-	home = getenv ("HOME");
+	if (!home)
+		home = getenv ("HOME");
 	if (!home || !home[0])
-		home = getenv ("WINDIR");
+		home = getenv ("USERPROFILE");
+	if (!home || !home[0])
+		home = 0;
 #else
 # ifdef HAVE_GETUID
 	if ((pwd_ent = getpwuid (getuid ()))) {
 		home = pwd_ent->pw_dir;
 	} else
 		home = getenv ("HOME");
-# else
-	home = "";	//FIXME configurable?
 # endif
 #endif
 
-	if (home)
-		return nva ("%s%s", home, path + 1);	// skip leading ~
-
-	return strdup (path);
+	if (!home)
+		home = ".";
+	return nva ("%s%s", home, path + 1);	// skip leading ~
 }

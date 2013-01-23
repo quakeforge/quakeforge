@@ -20,7 +20,7 @@ if test "x$SYSTYPE" = "xWIN32"; then
 	default_globalconf="~/${PACKAGE}.conf"
 	default_userconf="~/${PACKAGE}rc"
 	default_sharepath="."
-	default_userpath="."
+	default_userpath="~/${PACKAGE}"
 else
 	default_globalconf="/etc/${PACKAGE}.conf"
 	eval foo="$datarootdir"
