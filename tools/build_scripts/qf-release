@@ -5,7 +5,6 @@
 set -e
 
 PATH=/usr/local/bin:$PATH
-MINGW=~/src/mingw/mingw-cross-env-2.18/usr/i686-pc-mingw32
 RELEASE=~/release
 export QFSMP=${QFSMP--j4}
 
@@ -104,8 +103,14 @@ if test $do_win32 -eq 1; then
 	cd qf-win32.o
 	qf_win32="quakeforge-$ver-win32"
 	qf_win32_dir=`pwd`"/$qf_win32"
+	qf_win64="quakeforge-$ver-win64"
+	qf_win64_dir=`pwd`"/$qf_win64"
 	rm -rf $qf_win32_dir *.zip
+	rm -rf $qf_win64_dir *.zip
 	../tools/cross/mingw/cross-configure.sh \
+		--disable-debug \
+		--program-prefix=
+	../tools/cross/mingw64/cross-configure.sh \
 		--disable-debug \
 		--program-prefix=
 	../tools/cross/mingw/cross-make.sh $QFSMP \
@@ -114,10 +119,18 @@ if test $do_win32 -eq 1; then
 		pkgdatadir=${qf_win32_dir}/QF \
 		man1dir=${qf_win32_dir} \
 		install
-	mkdir -p ${qf_win32_dir}/pkgconfig
+	../tools/cross/mingw64/cross-make.sh $QFSMP \
+		prefix=${qf_win64_dir} \
+		exec_prefix=${qf_win64_dir} \
+		pkgdatadir=${qf_win64_dir}/QF \
+		man1dir=${qf_win64_dir} \
+		install
+	mkdir -p ${qf_win32_dir}/pkgconfig ${qf_win64_dir}/pkgconfig
 	mv ${qf_win32_dir}/QF/*.pc ${qf_win32_dir}/pkgconfig
-	$MINGW/bin/strip --strip-unneeded "$qf_win32"/bin/*.exe
+	mv ${qf_win64_dir}/QF/*.pc ${qf_win64_dir}/pkgconfig
+	#$MINGW/bin/strip --strip-unneeded "$qf_win32"/bin/*.exe
 	../tools/build_scripts/qf-win32.py "$ver-win32" quakeforge "$qf_win32"
+	../tools/build_scripts/qf-win32.py "$ver-win64" quakeforge "$qf_win64"
 	mv *.zip $RELEASE
 	cd ..
 fi
