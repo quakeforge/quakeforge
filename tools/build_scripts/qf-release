@@ -128,7 +128,9 @@ if test $do_win32 -eq 1; then
 	mkdir -p ${qf_win32_dir}/pkgconfig ${qf_win64_dir}/pkgconfig
 	mv ${qf_win32_dir}/QF/*.pc ${qf_win32_dir}/pkgconfig
 	mv ${qf_win64_dir}/QF/*.pc ${qf_win64_dir}/pkgconfig
-	#$MINGW/bin/strip --strip-unneeded "$qf_win32"/bin/*.exe
+	eval `grep MINGW= ../tools/cross/mingw/cross-configure.sh`
+	$MINGW/usr/bin/i686-pc-mingw32-strip --strip-unneeded "$qf_win32"/bin/*.exe
+	$MINGW/usr/bin/x86_64-w64-mingw32-strip --strip-unneeded "$qf_win64"/bin/*.exe
 	../tools/build_scripts/qf-win32.py "$ver-win32" quakeforge "$qf_win32"
 	../tools/build_scripts/qf-win32.py "$ver-win64" quakeforge "$qf_win64"
 	mv *.zip $RELEASE
