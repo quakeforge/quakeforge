@@ -48,7 +48,6 @@
 
 /* Software and hardware gamma support */
 #define viddef (*r_data->vid)
-byte       *vid_colormap;
 cvar_t	   *vid_gamma;
 cvar_t	   *vid_system_gamma;
 cvar_t     *con_width; // FIXME: Try to move with rest of con code
