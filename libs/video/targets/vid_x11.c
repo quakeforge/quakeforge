@@ -679,7 +679,7 @@ VID_Init (byte *palette, byte *colormap)
 
 	srandom (getpid ());
 
-	VID_GetWindowSize (320, 200);
+	VID_GetWindowSize (640, 480);
 	X11_OpenDisplay ();
 	choose_visual ();
 	X11_SetVidMode (viddef.width, viddef.height);

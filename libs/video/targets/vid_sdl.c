@@ -54,10 +54,6 @@
 HWND 		mainwindow;
 #endif
 
-// The original defaults
-#define BASEWIDTH 320
-#define BASEHEIGHT 200
-
 byte       *VGA_pagebase;
 int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
 
@@ -248,7 +244,7 @@ VID_Init (byte *palette, byte *colormap)
 	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 
 	// Set up display mode (width and height)
-	VID_GetWindowSize (BASEWIDTH, BASEHEIGHT);
+	VID_GetWindowSize (640, 480);
 
 	// Set video width, height and flags
 	flags = (SDL_SWSURFACE | SDL_HWPALETTE);

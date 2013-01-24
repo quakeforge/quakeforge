@@ -444,7 +444,7 @@ VID_Init (byte *palette, byte *colormap)
 	Cmd_AddCommand ("vid_fbset", VID_fbset_f, "No Description");
 
 	/* Interpret command-line params */
-	VID_GetWindowSize (320, 200);
+	VID_GetWindowSize (640, 480);
 
 	modestr = get_mode (viddef.width, viddef.height, 8);
 

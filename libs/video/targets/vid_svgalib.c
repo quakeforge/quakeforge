@@ -374,7 +374,7 @@ VID_Init (byte *palette, byte *colormap)
 	VID_InitModes ();
 
 	/* Interpret command-line params */
-	VID_GetWindowSize (320, 200);
+	VID_GetWindowSize (640, 480);
 
 	current_mode = get_mode (vid.width, vid.height, 8);
 
