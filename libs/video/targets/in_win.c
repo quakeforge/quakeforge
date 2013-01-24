@@ -354,6 +354,13 @@ static void
 win_keydest_callback (keydest_t key_dest)
 {
 	win_in_game = key_dest == key_game;
+	if (win_in_game) {
+		IN_ActivateMouse ();
+		IN_HideMouse ();
+	} else {
+		IN_DeactivateMouse ();
+		IN_ShowMouse ();
+	}
 }
 
 void

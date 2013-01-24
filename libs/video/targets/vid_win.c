@@ -264,19 +264,9 @@ VID_SetMode (unsigned char *palette)
 
 	// Set either the fullscreen or windowed mode
 	if (!vid_fullscreen->int_val) {
-		if (in_grab->int_val && key_dest == key_game) {
-			stat = VID_SetWindowedMode ();
-			IN_ActivateMouse ();
-			IN_HideMouse ();
-		} else {
-			IN_DeactivateMouse ();
-			IN_ShowMouse ();
-			stat = VID_SetWindowedMode ();
-		}
+		stat = VID_SetWindowedMode ();
 	} else {
 		stat = VID_SetFullDIBMode ();
-		IN_ActivateMouse ();
-		IN_HideMouse ();
 	}
 
 	VID_UpdateWindowStatus (window_x, window_y);
@@ -361,13 +351,6 @@ GL_EndRendering (void)
 			}
 		} else {
 			windowed_mouse = true;
-			if (key_dest == key_game && !in_mouse_avail && ActiveApp) {
-				IN_ActivateMouse ();
-				IN_HideMouse ();
-			} else if (in_mouse_avail && key_dest != key_game) {
-				IN_DeactivateMouse ();
-				IN_ShowMouse ();
-			}
 		}
 	}
 }
