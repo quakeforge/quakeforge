@@ -12,7 +12,7 @@ noinst_LTLIBRARIES= @VID_TARGETS@ @vid_libs@
 EXTRA_LTLIBRARIES= \
 	libQFjs.la libQFfbdev.la libQFsvga.la libQFx11.la libQFsdl.la libQFwin.la \
 	libvid_common.la libvid_sdl.la \
-	libvid_svga.la libvid_x11.la
+	libvid_svga.la libvid_win.la libvid_x11.la
 
 joy_linux_src= joy_linux.c
 joy_win_src= joy_win.c
@@ -44,6 +44,10 @@ libvid_common_la_LDFLAGS=	@STATIC@
 libvid_x11_la_SOURCES=		in_x11.c context_x11.c dga_check.c
 libvid_x11_la_CFLAGS=		@PREFER_NON_PIC@ $(X_CFLAGS)
 libvid_x11_la_LDFLAGS=		@STATIC@
+
+libvid_win_la_SOURCES=		in_win.c
+libvid_win_la_CFLAGS=		@PREFER_NON_PIC@ $(X_CFLAGS)
+libvid_win_la_LDFLAGS=		@STATIC@
 
 libvid_svga_la_SOURCES=		in_svgalib.c
 libvid_svga_la_CFLAGS=		@PREFER_NON_PIC@ $(SVGA_CFLAGS)
@@ -94,9 +98,9 @@ libQFsvga_la_DEPENDENCIES=	$(svga_libs)
 #
 # OpenGL in Win32
 #
-win_libs=libvid_common.la libvid_gl.la
+win_libs=libvid_common.la libvid_win.la
 libQFwin_la_CFLAGS=			@PREFER_NON_PIC@ $(WGL_CFLAGS)
-libQFwin_la_SOURCES=		in_win.c vid_win.c
+libQFwin_la_SOURCES=		vid_win.c
 libQFwin_la_LDFLAGS=		@STATIC@
 libQFwin_la_LIBADD=			$(win_libs)
 libQFwin_la_DEPENDENCIES=	$(win_libs)
