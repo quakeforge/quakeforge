@@ -36,7 +36,7 @@ AM_CFLAGS= @PTHREAD_CFLAGS@
 
 bin_PROGRAMS=	@NQ_TARGETS@
 
-EXTRA_PROGRAMS= nq-fbdev nq-sdl nq-svga nq-wgl nq-x11 nq-server
+EXTRA_PROGRAMS= nq-fbdev nq-sdl nq-svga nq-win nq-x11 nq-server
 
 noinst_LIBRARIES= @nq_libs@
 EXTRA_LIBRARIES=libnq_client.a libnq_common.a libnq_sdl.a libnq_server.a
@@ -144,17 +144,18 @@ nq_x11_DEPENDENCIES=	$(nq_x11_libs)
 
 # OpenGL-using targets
 							
-# ... SGI/Microsoft WGL (Windows OpenGL)
-nq_wgl_libs=  \
+# ... Microsoft Windows
+nq_win_libs=  \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
-			$(opengl_QFLIBS) \
-			$(top_builddir)/libs/video/targets/libQFwgl.la \
+			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
+			$(top_builddir)/libs/models/libQFmodels.la \
+			$(top_builddir)/libs/video/targets/libQFwin.la \
 			$(client_LIBS)
-nq_wgl_SOURCES= 	sys_win.c
-nq_wgl_LDADD=		$(nq_wgl_libs) -lgdi32 -lcomctl32 -lwinmm $(NET_LIBS)
-nq_wgl_LDFLAGS= 	$(common_ldflags)
-nq_wgl_DEPENDENCIES=	$(nq_wgl_libs)
+nq_win_SOURCES= 	sys_win.c
+nq_win_LDADD=		$(nq_win_libs) -lgdi32 -lcomctl32 -lwinmm $(NET_LIBS)
+nq_win_LDFLAGS= 	$(common_ldflags)
+nq_win_DEPENDENCIES=	$(nq_win_libs)
 
 # Dedicated Server
 if SYSTYPE_WIN32

@@ -37,7 +37,7 @@ AM_CFLAGS= @PTHREAD_CFLAGS@
 bin_PROGRAMS=	@QW_TARGETS@
 
 EXTRA_PROGRAMS= \
-	qw-client-fbdev qw-client-sdl qw-client-svga qw-client-wgl qw-client-x11 \
+	qw-client-fbdev qw-client-sdl qw-client-svga qw-client-win qw-client-x11 \
 	qw-server qw-master
 
 noinst_LIBRARIES= @qw_libs@
@@ -172,17 +172,18 @@ qw_client_x11_LDADD= $(qw_client_x11_libs) \
 qw_client_x11_LDFLAGS=	$(common_ldflags)
 qw_client_x11_DEPENDENCIES= $(qw_client_x11_libs)
 
-# ... SGI/Microsoft WGL (Windows OpenGL)
-qw_client_wgl_libs= \
+# ... Microsoft Windows
+qw_client_win_libs= \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
-			$(opengl_LIBS) \
-			$(top_builddir)/libs/video/targets/libQFwgl.la \
+			$(top_builddir)/libs/video/renderer/libQFrenderer.la \
+			$(top_builddir)/libs/models/libQFmodels.la \
+			$(top_builddir)/libs/video/targets/libQFwin.la \
 			$(client_LIBS)
-qw_client_wgl_SOURCES=	cl_sys_win.c
-qw_client_wgl_LDADD= $(qw_client_wgl_libs) -lgdi32 -lwinmm $(NET_LIBS) $(LIBCURL_LIBS)
-qw_client_wgl_LDFLAGS=  $(common_ldflags)
-qw_client_wgl_DEPENDENCIES= $(qw_client_wgl_libs)
+qw_client_win_SOURCES=	cl_sys_win.c
+qw_client_win_LDADD= $(qw_client_win_libs) -lgdi32 -lwinmm $(NET_LIBS) $(LIBCURL_LIBS)
+qw_client_win_LDFLAGS=  $(common_ldflags)
+qw_client_win_DEPENDENCIES= $(qw_client_win_libs)
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'
