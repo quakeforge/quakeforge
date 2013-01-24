@@ -1,7 +1,7 @@
 /*
-	vid_wgl.c
+	vid_win.c
 
-	Win32 WGL vid component
+	Win32 vid component
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -52,6 +52,7 @@
 #include "r_cvar.h"
 #include "win32/resources/resource.h"
 #include "sbar.h"
+#include "vid_internal.h"
 
 extern const char *gl_renderer;
 
@@ -63,11 +64,12 @@ DEVMODE		win_gdevmode;
 int			window_center_x, window_center_y, window_x, window_y, window_width,
 			window_height;
 
-static HGLRC (GLAPIENTRY *qf_wglCreateContext) (HDC);
-static BOOL (GLAPIENTRY *qf_wglDeleteContext) (HGLRC);
-static HGLRC (GLAPIENTRY *qf_wglGetCurrentContext) (void);
-static HDC (GLAPIENTRY *qf_wglGetCurrentDC) (void);
-static BOOL (GLAPIENTRY *qf_wglMakeCurrent) (HDC, HGLRC);
+static void *libgl_handle;
+static HGLRC (GLAPIENTRY *qfwglCreateContext) (HDC);
+static BOOL (GLAPIENTRY *qfwglDeleteContext) (HGLRC);
+static HGLRC (GLAPIENTRY *qfwglGetCurrentContext) (void);
+static HDC (GLAPIENTRY *qfwglGetCurrentDC) (void);
+static BOOL (GLAPIENTRY *qfwglMakeCurrent) (HDC, HGLRC);
 
 #define MAX_MODE_LIST	30
 #define VID_ROW_SIZE	3
@@ -97,7 +99,7 @@ static void GL_Init (void);
 static void * (WINAPI *glGetProcAddress) (const char *symbol) = NULL;
 
 
-void *
+static void *
 QFGL_GetProcAddress (void *handle, const char *name)
 {
 	void   *glfunc = NULL;
@@ -109,15 +111,25 @@ QFGL_GetProcAddress (void *handle, const char *name)
 	return glfunc;
 }
 
-void *
-QFGL_LoadLibrary (void)
+static void *
+QFGL_ProcAddress (const char *name, qboolean crit)
 {
-	void	   *handle;
+	void    *glfunc = NULL;
 
-	if (!(handle = LoadLibrary (gl_driver->string)))
-		Sys_Error ("Couldn't load OpenGL library %s!", gl_driver->string);
-	glGetProcAddress = (void *(WINAPI *)(const char*)) GetProcAddress (handle, "wglGetProcAddress");
-	return handle;
+	Sys_MaskPrintf (SYS_VID, "DEBUG: Finding symbol %s ... ", name);
+
+	glfunc = QFGL_GetProcAddress (libgl_handle, name);
+	if (glfunc) {
+		Sys_MaskPrintf (SYS_VID, "found [%p]\n", glfunc);
+		return glfunc;
+	}
+	Sys_MaskPrintf (SYS_VID, "not found\n");
+
+	if (crit) {
+		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...",
+				   name);
+	}
+	return NULL;
 }
 
 //====================================
@@ -178,7 +190,7 @@ VID_SetWindowedMode ( void )
 	PatBlt (hdc, 0, 0, WindowRect.right, WindowRect.bottom, BLACKNESS);
 	ReleaseDC (mainwindow, hdc);
 
-	vid.numpages = 2;
+	viddef.numpages = 2;
 
 	if(hIcon) {
 		SendMessage (mainwindow, WM_SETICON, (WPARAM) TRUE, (LPARAM) hIcon);
@@ -231,7 +243,7 @@ VID_SetFullDIBMode ( void )
 	PatBlt (hdc, 0, 0, WindowRect.right, WindowRect.bottom, BLACKNESS);
 	ReleaseDC (mainwindow, hdc);
 
-	vid.numpages = 2;
+	viddef.numpages = 2;
 
 	// needed because we're not getting WM_MOVE messages fullscreen on NT
 	window_x = 0;
@@ -256,11 +268,11 @@ VID_SetMode (unsigned char *palette)
 
 	WindowRect.top = WindowRect.left = 0;
 
-	WindowRect.right = vid_width->int_val;
-	WindowRect.bottom = vid_height->int_val;
+	WindowRect.right = viddef.width;
+	WindowRect.bottom = viddef.height;
 
-	window_width = vid_width->int_val;
-	window_height = vid_height->int_val;
+	window_width = viddef.width;
+	window_height = viddef.height;
 
 	// Set either the fullscreen or windowed mode
 	if (!vid_fullscreen->int_val) {
@@ -284,7 +296,7 @@ VID_SetMode (unsigned char *palette)
 	// ourselves at the top of the z order, then grab the foreground again,
 	// Who knows if it helps, but it probably doesn't hurt
 	SetForegroundWindow (mainwindow);
-	VID_SetPalette (palette);
+	viddef.set_palette (palette);
 
 	while (PeekMessage (&msg, NULL, 0, 0, PM_REMOVE)) {
 		TranslateMessage (&msg);
@@ -302,12 +314,12 @@ VID_SetMode (unsigned char *palette)
 	// fix the leftover Alt from any Alt-Tab or the like that switched us away
 	IN_ClearStates ();
 
-	Sys_Printf ("Video mode %ix%i initialized.\n", vid_width->int_val,
-				vid_height->int_val);
+	Sys_Printf ("Video mode %ix%i initialized.\n",
+				viddef.width, viddef.height);
 
-	VID_SetPalette (palette);
+	viddef.set_palette (palette);
 
-	vid.recalc_refdef = 1;
+	viddef.recalc_refdef = 1;
 
 	return true;
 }
@@ -333,7 +345,7 @@ GL_Init (void)
 		fullsbardraw = true;
 }
 
-void
+static void
 GL_EndRendering (void)
 {
 	if (!scr_skipupdate) {
@@ -368,12 +380,12 @@ VID_Shutdown (void)
 		DestroyWindow (hwnd_dialog);
 #endif
 
-	if (vid.initialized) {
+	if (viddef.initialized) {
 		win_canalttab = false;
-		hRC = qf_wglGetCurrentContext ();
-		hDC = qf_wglGetCurrentDC ();
+		hRC = qfwglGetCurrentContext ();
+		hDC = qfwglGetCurrentDC ();
 
-		qf_wglMakeCurrent (NULL, NULL);
+		qfwglMakeCurrent (NULL, NULL);
 
 		// LordHavoc: free textures before closing (may help NVIDIA)
 		for (i = 0; i < 8192; i++)
@@ -381,7 +393,7 @@ VID_Shutdown (void)
 		qfglDeleteTextures (8192, temp);
 
 		if (hRC)
-			qf_wglDeleteContext (hRC);
+			qfwglDeleteContext (hRC);
 
 		if (hDC && mainwindow)
 			ReleaseDC (mainwindow, hDC);
@@ -427,6 +439,23 @@ bSetupPixelFormat (HDC hDC)
 	return TRUE;
 }
 
+static void
+wgl_load_gl (void)
+{
+	viddef.get_proc_address = QFGL_ProcAddress;
+	viddef.end_rendering = GL_EndRendering;
+
+	if (!(libgl_handle = LoadLibrary (gl_driver->string)))
+		Sys_Error ("Couldn't load OpenGL library %s!", gl_driver->string);
+	glGetProcAddress =(void*)GetProcAddress(libgl_handle, "wglGetProcAddress");
+
+	qfwglCreateContext = QFGL_ProcAddress ("wglCreateContext", true);
+	qfwglDeleteContext = QFGL_ProcAddress ("wglDeleteContext", true);
+	qfwglGetCurrentContext = QFGL_ProcAddress ("wglGetCurrentContext", true);
+	qfwglGetCurrentDC = QFGL_ProcAddress ("wglGetCurrentDC", true);
+	qfwglMakeCurrent = QFGL_ProcAddress ("wglMakeCurrent", true);
+}
+
 void
 VID_Init (byte *palette, byte *colormap)
 {
@@ -437,20 +466,11 @@ VID_Init (byte *palette, byte *colormap)
 	DWORD		lasterror;
 	WNDCLASS	wc;
 
+	R_LoadModule (wgl_load_gl, 0);	//FIXME VID_SetPalette
+
 	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ROM | CVAR_ARCHIVE,
 							   NULL, "Run WGL client at fullscreen");
 	GLF_Init ();
-
-	qf_wglCreateContext = QFGL_ProcAddress (libgl_handle, "wglCreateContext",
-											true);
-	qf_wglDeleteContext = QFGL_ProcAddress (libgl_handle, "wglDeleteContext",
-											true);
-	qf_wglGetCurrentContext = QFGL_ProcAddress (libgl_handle,
-												"wglGetCurrentContext", true);
-	qf_wglGetCurrentDC = QFGL_ProcAddress (libgl_handle, "wglGetCurrentDC",
-										   true);
-	qf_wglMakeCurrent = QFGL_ProcAddress (libgl_handle, "wglMakeCurrent",
-										  true);
 
 	memset (&win_gdevmode, 0, sizeof (win_gdevmode));
 
@@ -493,8 +513,8 @@ VID_Init (byte *palette, byte *colormap)
 			stat = EnumDisplaySettings (NULL, vid_mode, &win_gdevmode);
 
 			if ((win_gdevmode.dmBitsPerPel == bpp)
-				&& (win_gdevmode.dmPelsWidth == vid.width)
-				&& (win_gdevmode.dmPelsHeight == vid.height)) {
+				&& (win_gdevmode.dmPelsWidth == viddef.width)
+				&& (win_gdevmode.dmPelsHeight == viddef.height)) {
 				win_gdevmode.dmFields = (DM_BITSPERPEL | DM_PELSWIDTH
 										 | DM_PELSHEIGHT);
 
@@ -509,13 +529,13 @@ VID_Init (byte *palette, byte *colormap)
 		} while (stat);
 		if (!stat)
 			Sys_Error ("Couldn't get requested resolution (%i, %i, %i)",
-					   vid_width->int_val, vid_height->int_val, bpp);
+					   viddef.width, viddef.height, bpp);
 	}
 
-	vid.maxwarpwidth = WARP_WIDTH;
-	vid.maxwarpheight = WARP_HEIGHT;
-	vid.colormap8 = vid_colormap = colormap;
-	vid.fullbright = 256 - vid.colormap8[256 * VID_GRADES];
+	viddef.maxwarpwidth = WARP_WIDTH;
+	viddef.maxwarpheight = WARP_HEIGHT;
+	viddef.colormap8 = colormap;
+	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 
 #ifdef SPLASH_SCREEN
 	if(hwnd_dialog)
@@ -527,7 +547,7 @@ VID_Init (byte *palette, byte *colormap)
 	maindc = GetDC (mainwindow);
 	bSetupPixelFormat (maindc);
 
-	baseRC = qf_wglCreateContext (maindc);
+	baseRC = qfwglCreateContext (maindc);
 	if (!baseRC) {
 		lasterror=GetLastError();
 		if (maindc && mainwindow)
@@ -538,10 +558,10 @@ VID_Init (byte *palette, byte *colormap)
 				   "Error code: (%lx)", lasterror);
 	}
 
-	if (!qf_wglMakeCurrent (maindc, baseRC)) {
+	if (!qfwglMakeCurrent (maindc, baseRC)) {
 		lasterror = GetLastError ();
 		if (baseRC)
-			qf_wglDeleteContext (baseRC);
+			qfwglDeleteContext (baseRC);
 		if (maindc && mainwindow)
 			ReleaseDC (mainwindow, maindc);
 		Sys_Error ("wglMakeCurrent failed (%lx)", lasterror);
@@ -550,10 +570,9 @@ VID_Init (byte *palette, byte *colormap)
 	GL_Init ();
 
 	VID_InitGamma (palette);
-	VID_Init8bitPalette ();
-	VID_SetPalette (vid.palette);
+	viddef.set_palette (viddef.palette);
 
-	vid.initialized = true;
+	viddef.initialized = true;
 
 	win_canalttab = true;
 
@@ -591,7 +610,7 @@ VID_SetGamma (double gamma)
 
 	for (i = 0; i < 256; i++) {
 		currentgammaramps[2][i] = currentgammaramps[1][i] =
-			currentgammaramps[0][i] = gammatable[i] * 256;
+			currentgammaramps[0][i] = viddef.gammatable[i] * 256;
 	}
 
 	i = SetDeviceGammaRamp (hdc, &currentgammaramps[0][0]);
