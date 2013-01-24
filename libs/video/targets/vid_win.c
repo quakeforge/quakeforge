@@ -470,7 +470,6 @@ VID_Init (byte *palette, byte *colormap)
 
 	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ROM | CVAR_ARCHIVE,
 							   NULL, "Run WGL client at fullscreen");
-	GLF_Init ();
 
 	memset (&win_gdevmode, 0, sizeof (win_gdevmode));
 
@@ -616,6 +615,22 @@ VID_SetGamma (double gamma)
 	i = SetDeviceGammaRamp (hdc, &currentgammaramps[0][0]);
 	ReleaseDC (NULL, hdc);
 	return i;
+}
+
+void
+VID_LockBuffer (void)
+{
+}
+
+void
+VID_UnlockBuffer (void)
+{
+}
+
+void
+VID_Update (vrect_t *rects)
+{
+	//FIXME sw
 }
 
 #if 0
