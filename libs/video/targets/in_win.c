@@ -81,6 +81,7 @@ static HINSTANCE hInstDI;
 static qboolean dinput;
 
 static qboolean vid_wassuspended = false;
+static qboolean win_in_game = false;
 
 typedef struct MYDATA {
 	LONG        lX;						// X axis goes here
@@ -349,12 +350,20 @@ in_paste_buffer_f (void)
 	}
 }
 
+static void
+win_keydest_callback (keydest_t key_dest)
+{
+	win_in_game = key_dest == key_game;
+}
+
 void
 IN_LL_Init (void)
 {
 	uiWheelMessage = RegisterWindowMessage ("MSWHEEL_ROLLMSG");
 
 	IN_StartupMouse ();
+
+	Key_KeydestCallback (win_keydest_callback);
 	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
 					"Paste the contents of the C&P buffer to the console");
 }
@@ -733,7 +742,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 			}
 		}
 		else if ((modestate == MS_WINDOWED) && in_grab->int_val
-			&& key_dest == key_game) {
+				 && win_in_game) {
 			IN_ActivateMouse ();
 			IN_HideMouse ();
 		}
