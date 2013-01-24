@@ -228,7 +228,7 @@ glsl_SCR_CaptureBGR (void)
 }
 
 tex_t *
-glsl_SCR_ScreenShot (int width, int height)
+glsl_SCR_ScreenShot (unsigned width, unsigned height)
 {
 	return 0;
 }

@@ -339,7 +339,8 @@ check_mouse_event (Display *disp, XEvent *ev, XPointer arg)
 	XMotionEvent *me = &ev->xmotion;
 	if (ev->type != MotionNotify)
 		return False;
-	if (me->x != viddef.width / 2 || me->y != viddef.height / 2)
+	if ((unsigned) me->x != viddef.width / 2
+		|| (unsigned) me->y != viddef.height / 2)
 		return False;
 	return True;
 }

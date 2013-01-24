@@ -669,7 +669,7 @@ sw32_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 		width += x;
 		x = 0;
 	}
-	if (x + width > vid.width)
+	if ((unsigned) (x + width) > vid.width)
 		width = vid.width - x;
 	if (width <= 0)
 		return;
@@ -678,7 +678,7 @@ sw32_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 		height += y;
 		y = 0;
 	}
-	if (y + height > vid.height)
+	if ((unsigned) (y + height) > vid.height)
 		height = vid.height - y;
 	if (height <= 0)
 		return;
@@ -1112,7 +1112,7 @@ sw32_Draw_TileClear (int x, int y, int w, int h)
 	byte       *psrc;
 	vrect_t     vr;
 
-	CLIP (x, y, w, h, vid.width, vid.height);
+	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
 
 	r_rectdesc.rect.x = x;
 	r_rectdesc.rect.y = y;
@@ -1179,7 +1179,7 @@ sw32_Draw_Fill (int x, int y, int w, int h, int c)
 		Sys_MaskPrintf (SYS_VID, "Bad Draw_Fill(%d, %d, %d, %d, %c)\n",
 						x, y, w, h, c);
 	}
-	CLIP (x, y, w, h, vid.width, vid.height);
+	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
 
 	switch (sw32_r_pixbytes) {
 	case 1:
@@ -1304,7 +1304,8 @@ sw32_Draw_BlendScreen (quat_t color)
 	break;
 	case 2:
 	{
-		int     g1, g2, x, y;
+		int         g1, g2;
+		unsigned    x, y;
 		unsigned short rramp[32], gramp[64], bramp[32], *temp;
 		for (i = 0; i < 32; i++) {
 			r = i << 3;
@@ -1331,7 +1332,7 @@ sw32_Draw_BlendScreen (quat_t color)
 	break;
 	case 4:
 	{
-		int         x, y;
+		unsigned    x, y;
 
 		byte ramp[256][4], *temp;
 		for (i = 0; i < 256; i++) {

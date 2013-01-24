@@ -138,7 +138,7 @@ typedef struct vid_render_funcs_s {
 	void (*SCR_DrawTurtle) (void);
 	void (*SCR_DrawPause) (void);
 	struct tex_s *(*SCR_CaptureBGR) (void);
-	struct tex_s *(*SCR_ScreenShot) (int width, int height);
+	struct tex_s *(*SCR_ScreenShot) (unsigned width, unsigned height);
 	void (*SCR_DrawStringToSnap) (const char *s, struct tex_s *tex,
 								  int x, int y);
 

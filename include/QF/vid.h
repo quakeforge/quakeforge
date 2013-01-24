@@ -48,8 +48,8 @@ typedef struct {
 	unsigned int	*colormap32;	// 256 * VID_GRADES size
 	int				 fullbright;	// index of first fullbright color
 	int				 rowbytes;		// may be > width if displayed in a window
-	int				 width;
-	int				 height;
+	unsigned		 width;
+	unsigned		 height;
 	float			 aspect;	// width / height -- < 1 is taller than wide
 	int				 numpages;
 	qboolean		 recalc_refdef;	// if true, recalc vid-based stuff
@@ -59,8 +59,8 @@ typedef struct {
 	int				 conrowbytes;
 	int				 conwidth;
 	int				 conheight;
-	int				 maxwarpwidth;
-	int				 maxwarpheight;
+	unsigned         maxwarpwidth;
+	unsigned         maxwarpheight;
 	byte			*direct;		// direct drawing to framebuffer, if not
 									//  NULL
 	int			   (*surf_cache_size)(int width, int height);

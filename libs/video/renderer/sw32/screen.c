@@ -88,7 +88,7 @@ sw32_SCR_CaptureBGR (void)
 }
 
 tex_t *
-sw32_SCR_ScreenShot (int width, int height)
+sw32_SCR_ScreenShot (unsigned width, unsigned height)
 {
 	return 0;
 }

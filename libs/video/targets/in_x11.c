@@ -700,8 +700,8 @@ event_motion (XEvent *event)
 	} else {
 		if (vid_fullscreen->int_val || input_grabbed) {
 			if (!event->xmotion.send_event) {
-				int         dist_x = abs (viddef.width / 2 - event->xmotion.x);
-				int         dist_y = abs (viddef.height / 2 - event->xmotion.y);
+				unsigned    dist_x = abs (viddef.width / 2 - event->xmotion.x);
+				unsigned    dist_y = abs (viddef.height / 2 - event->xmotion.y);
 				in_mouse_x += (event->xmotion.x - p_mouse_x);
 				in_mouse_y += (event->xmotion.y - p_mouse_y);
 				if (dist_x > viddef.width / 4 || dist_y > viddef.height / 4) {

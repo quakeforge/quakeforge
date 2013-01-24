@@ -1084,7 +1084,7 @@ static void
 renderlookup (byte **offs, byte* bufs)
 {
 	byte       *p = (byte*)vid.buffer;
-	int        x, y;
+	unsigned   x, y;
 	for (y = 0; y < vid.height; y++) {
 		for (x = 0; x < vid.width; x++, offs++)
 		    p[x] = **offs;

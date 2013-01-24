@@ -81,7 +81,7 @@ gl_SCR_CaptureBGR (void)
 }
 
 tex_t *
-gl_SCR_ScreenShot (int width, int height)
+gl_SCR_ScreenShot (unsigned width, unsigned height)
 {
 	unsigned char *src, *dest, *snap;
 	float          fracw, frach;
