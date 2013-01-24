@@ -385,7 +385,7 @@ IN_LL_Shutdown (void)
 static void
 IN_MouseEvent (unsigned mstate)
 {
-	int         i;
+	unsigned    i;
 
 	if (in_mouse_avail && !dinput) {
 		// perform button actions
@@ -424,7 +424,7 @@ IN_LL_ProcessEvents (void)
 	MSG         msg;
 	int         mx, my;
 //  HDC hdc;
-	int         i;
+	unsigned    i;
 	DIDEVICEOBJECTDATA od;
 	DWORD       dwElements;
 	HRESULT     hr;
