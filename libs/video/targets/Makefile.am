@@ -10,7 +10,7 @@ lib_LTLIBRARIES= @JOY_TARGETS@
 noinst_LTLIBRARIES= @VID_TARGETS@ @vid_libs@
 
 EXTRA_LTLIBRARIES= \
-	libQFjs.la libQFfbdev.la libQFsvga.la libQFx11.la libQFsdl.la libQFwgl.la \
+	libQFjs.la libQFfbdev.la libQFsvga.la libQFx11.la libQFsdl.la libQFwin.la \
 	libvid_common.la libvid_sdl.la \
 	libvid_svga.la libvid_x11.la
 
@@ -94,12 +94,12 @@ libQFsvga_la_DEPENDENCIES=	$(svga_libs)
 #
 # OpenGL in Win32
 #
-wgl_libs=libvid_common.la libvid_gl.la
-libQFwgl_la_CFLAGS=			@PREFER_NON_PIC@ $(WGL_CFLAGS)
-libQFwgl_la_SOURCES=		in_win.c vid_wgl.c
-libQFwgl_la_LDFLAGS=		@STATIC@
-libQFwgl_la_LIBADD=			$(wgl_libs)
-libQFwgl_la_DEPENDENCIES=	$(wgl_libs)
+win_libs=libvid_common.la libvid_gl.la
+libQFwin_la_CFLAGS=			@PREFER_NON_PIC@ $(WGL_CFLAGS)
+libQFwin_la_SOURCES=		in_win.c vid_win.c
+libQFwin_la_LDFLAGS=		@STATIC@
+libQFwin_la_LIBADD=			$(win_libs)
+libQFwin_la_DEPENDENCIES=	$(win_libs)
 
 #
 # X11 software rendering

@@ -5,7 +5,7 @@ dnl ==================================================================
 QF_WITH_TARGETS(
 	clients,
 	[  --with-clients=<list>   compile clients in <list>:],
-	[fbdev,sdl,svga,x11],dummy
+	[fbdev,sdl,svga,win,x11],dummy
 )
 QF_WITH_TARGETS(
 	servers,
@@ -133,25 +133,28 @@ if test "x$HAVE_SVGA" = xyes; then
 		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
 	fi
 fi
-#if test "x$mingw" = xyes; then
-#	if test "x$ENABLE_clients_wgl" = xyes; then
-#		QW_TARGETS="$QW_TARGETS qw-client-wgl\$(EXEEXT)"
-#		NQ_TARGETS="$NQ_TARGETS nq-wgl\$(EXEEXT)"
-#		CL_TARGETS="$CL_TARGETS WGL"
-#		VID_TARGETS="$VID_TARGETS libQFwgl.la"
-#		QF_NEED(vid_render, [gl])
-#		QF_NEED(models, [gl])
-#		QF_NEED(alias, [gl])
-#		QF_NEED(brush, [gl])
-#		QF_NEED(iqm, [gl])
-#		QF_NEED(sprite, [gl])
-#		QF_NEED(vid, [common])
-#		QF_NEED(qw, [client common])
-#		QF_NEED(nq, [client common])
-#		QF_NEED(console, [client])
-#		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
-#	fi
-#fi
+if test "x$mingw" = xyes; then
+	if test "x$ENABLE_clients_win" = xyes; then
+		QW_TARGETS="$QW_TARGETS qw-client-win\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-win\$(EXEEXT)"
+		CL_TARGETS="$CL_TARGETS WIN"
+		VID_TARGETS="$VID_TARGETS libQFwin.la"
+		QF_NEED(vid_render, [sw sw32 gl glsl])
+		QF_NEED(models, [sw gl glsl])
+		QF_NEED(alias, [sw gl glsl])
+		QF_NEED(brush, [sw gl glsl])
+		QF_NEED(iqm, [sw gl glsl])
+		QF_NEED(sprite, [sw gl glsl])
+		if test "x$ASM_ARCH" = "xyes"; then
+			QF_NEED(swrend, [asm])
+		fi
+		QF_NEED(vid, [common win])
+		QF_NEED(qw, [client common])
+		QF_NEED(nq, [client common])
+		QF_NEED(console, [client])
+		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
+	fi
+fi
 
 unset SV_TARGETS
 if test "x$ENABLE_servers_nq" = xyes; then
@@ -265,9 +268,9 @@ QF_PROCESS_NEED_LIBS(brush, [gl glsl sw])
 QF_PROCESS_NEED_LIBS(iqm, [gl glsl sw])
 QF_PROCESS_NEED_LIBS(sprite, [gl glsl sw])
 
-QF_PROCESS_NEED_LIBS(vid, [common sdl svga x11])
-QF_PROCESS_NEED_LIBS(qw, [client common sdl server], a)
-QF_PROCESS_NEED_LIBS(nq, [client common sdl server], a)
+QF_PROCESS_NEED_LIBS(vid, [common sdl svga win x11])
+QF_PROCESS_NEED_LIBS(qw, [client common sdl win server], a)
+QF_PROCESS_NEED_LIBS(nq, [client common sdl win server], a)
 
 if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libQFcd.la"
