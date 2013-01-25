@@ -584,9 +584,9 @@ VID_CheckWindowXY
 static void
 VID_CheckWindowXY (void)
 {
-	if (((int) vid_window_x->value > (GetSystemMetrics (SM_CXSCREEN) - 160)) ||
-		((int) vid_window_y->value > (GetSystemMetrics (SM_CYSCREEN) - 120)) ||
-		((int) vid_window_x->value < 0) || ((int) vid_window_y->value < 0)) {
+	if ((vid_window_x->int_val > (GetSystemMetrics (SM_CXSCREEN) - 160)) ||
+		(vid_window_y->int_val > (GetSystemMetrics (SM_CYSCREEN) - 120)) ||
+		(vid_window_x->int_val < 0) || (vid_window_y->int_val < 0)) {
 		Cvar_SetValue (vid_window_x, 0.0);
 		Cvar_SetValue (vid_window_y, 0.0);
 	}
@@ -859,8 +859,8 @@ VID_SetWindowedMode (int modenum)
 
 	// position and show the DIB window
 	VID_CheckWindowXY ();
-	SetWindowPos (hWndWinQuake, NULL, (int) vid_window_x->value,
-				  (int) vid_window_y->value, 0, 0,
+	SetWindowPos (hWndWinQuake, NULL, vid_window_x->int_val,
+				  vid_window_y->int_val, 0, 0,
 				  SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW | SWP_DRAWFRAME);
 
 	if (force_minimized)
@@ -1042,7 +1042,7 @@ VID_SetMode (int modenum, byte *palette)
 
 	// Set either the fullscreen or windowed mode
 	if (modelist[modenum].type == MS_WINDOWED) {
-		if (_windowed_mouse->value) {
+		if (_windowed_mouse->int_val) {
 			stat = VID_SetWindowedMode (modenum);
 			IN_ActivateMouse ();
 			IN_HideMouse ();
@@ -1073,7 +1073,7 @@ VID_SetMode (int modenum, byte *palette)
 	vid_usingddraw = false;
 
 	// attempt to create a direct draw driver
-	if (vid_ddraw->value)
+	if (vid_ddraw->int_val)
 		VID_CreateDDrawDriver (DIBWidth, DIBHeight, palette, &viddef.buffer,
 							   &viddef.rowbytes);
 
@@ -1089,7 +1089,7 @@ VID_SetMode (int modenum, byte *palette)
 							 &viddef.rowbytes);
 	}
 	// if ddraw failed to come up we disable the cvar too
-	if (vid_ddraw->value && !vid_usingddraw)
+	if (vid_ddraw->int_val && !vid_usingddraw)
 		Cvar_Set (vid_ddraw, "0");
 
 	// set the rest of the buffers we need (why not just use one single buffer
@@ -1653,24 +1653,24 @@ VID_Update (vrect_t *rects)
 		if (modestate == MS_WINDOWED) {
 			GetWindowRect (hWndWinQuake, &trect);
 
-			if ((trect.left != (int) vid_window_x->value) ||
-				(trect.top != (int) vid_window_y->value)) {
+			if ((trect.left != vid_window_x->int_val) ||
+				(trect.top != vid_window_y->int_val)) {
 				if (COM_CheckParm ("-resetwinpos")) {
 					Cvar_SetValue (vid_window_x, 0.0);
 					Cvar_SetValue (vid_window_y, 0.0);
 				}
 
 				VID_CheckWindowXY ();
-				SetWindowPos (hWndWinQuake, NULL, (int) vid_window_x->value,
-							  (int) vid_window_y->value, 0, 0,
+				SetWindowPos (hWndWinQuake, NULL, vid_window_x->int_val,
+							  vid_window_y->int_val, 0, 0,
 							  SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW |
 							  SWP_DRAWFRAME);
 			}
 		}
 
-		if ((_vid_default_mode_win->value != vid_default) &&
+		if ((_vid_default_mode_win->int_val != vid_default) &&
 			(!startwindowed
-			 || (_vid_default_mode_win->value < MODE_FULLSCREEN_DEFAULT))) {
+			 || (_vid_default_mode_win->int_val < MODE_FULLSCREEN_DEFAULT))) {
 			firstupdate = 0;
 
 			if (COM_CheckParm ("-resetwinpos")) {
@@ -1678,23 +1678,23 @@ VID_Update (vrect_t *rects)
 				Cvar_SetValue (vid_window_y, 0.0);
 			}
 
-			if ((_vid_default_mode_win->value < 0) ||
-				(_vid_default_mode_win->value >= nummodes)) {
+			if ((_vid_default_mode_win->int_val < 0) ||
+				(_vid_default_mode_win->int_val >= nummodes)) {
 				Cvar_SetValue (_vid_default_mode_win, windowed_default);
 			}
 
-			Cvar_SetValue (vid_mode, _vid_default_mode_win->value);
+			Cvar_SetValue (vid_mode, _vid_default_mode_win->int_val);
 		}
 	}
 	// We've drawn the frame; copy it to the screen
 	FlipScreen (rects);
 
 	// check for a driver change
-	if ((vid_ddraw->value && !vid_usingddraw)
-		|| (!vid_ddraw->value && vid_usingddraw)) {
+	if ((vid_ddraw->int_val && !vid_usingddraw)
+		|| (!vid_ddraw->int_val && vid_usingddraw)) {
 		// reset the mode
 		force_mode_set = true;
-		VID_SetMode ((int) vid_mode->value, vid_curpal);
+		VID_SetMode (vid_mode->int_val, vid_curpal);
 		force_mode_set = false;
 
 		// store back
@@ -1710,8 +1710,8 @@ VID_Update (vrect_t *rects)
 			vid_testingmode = 0;
 		}
 	} else {
-		if ((int) vid_mode->value != vid_realmode) {
-			VID_SetMode ((int) vid_mode->value, vid_curpal);
+		if (vid_mode->int_val != vid_realmode) {
+			VID_SetMode (vid_mode->int_val, vid_curpal);
 			Cvar_SetValue (vid_mode, (float) vid_modenum);
 			// so if mode set fails, we don't keep on
 			// trying to set that mode
@@ -1721,8 +1721,8 @@ VID_Update (vrect_t *rects)
 
 	// handle the mouse state when windowed if that's changed
 	if (modestate == MS_WINDOWED) {
-		if ((int) _windowed_mouse->value != windowed_mouse) {
-			if (_windowed_mouse->value) {
+		if (_windowed_mouse->int_val != windowed_mouse) {
+			if (_windowed_mouse->int_val) {
 				IN_ActivateMouse ();
 				IN_HideMouse ();
 			} else {
@@ -1730,7 +1730,7 @@ VID_Update (vrect_t *rects)
 				IN_ShowMouse ();
 			}
 
-			windowed_mouse = (int) _windowed_mouse->value;
+			windowed_mouse = _windowed_mouse->int_val;
 		}
 	}
 }
@@ -1747,7 +1747,7 @@ VID_HandlePause
 static void __attribute__ ((used))
 	VID_HandlePause (qboolean pause)
 {
-	if ((modestate == MS_WINDOWED) && _windowed_mouse->value) {
+	if ((modestate == MS_WINDOWED) && _windowed_mouse->int_val) {
 		if (pause) {
 			IN_DeactivateMouse ();
 			IN_ShowMouse ();
@@ -2031,7 +2031,7 @@ VID_Windowed_f
 void
 VID_Windowed_f (void)
 {
-	VID_SetMode ((int) vid_windowed_mode->value, vid_curpal);
+	VID_SetMode (vid_windowed_mode->int_val, vid_curpal);
 }
 
 
@@ -2043,7 +2043,7 @@ VID_Fullscreen_f
 void
 VID_Fullscreen_f (void)
 {
-	VID_SetMode ((int) vid_fullscreen_mode->value, vid_curpal);
+	VID_SetMode (vid_fullscreen_mode->int_val, vid_curpal);
 }
 
 
