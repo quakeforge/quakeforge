@@ -37,8 +37,10 @@
 #include "QF/mathlib.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/cmd.h"
 
 #include "compat.h"
+#include <string.h>
 
 cvar_t     *joy_device;					// Joystick device name
 cvar_t     *joy_enable;					// Joystick enabling flag
@@ -123,7 +125,10 @@ JOY_Move (void)
 
 	for (i = 0; i < JOY_MAX_AXES; i++) {
 		ja = &joy_axes[i];
-		value = amp * ja->amp * (ja->offset + ja->current * pre * ja->pre_amp);
+		if (abs(ja->offset) + abs(ja->current) < abs(ja->offset) + abs(ja->deadzone))
+			ja->current = -ja->offset;
+
+		value = amp * ja->amp * (ja->offset + ja->current * pre * ja->pre_amp) / 120.0f;
 		switch (ja->dest) {
 			case js_none:
 				// ignore axis
@@ -179,6 +184,122 @@ joyamp_f (cvar_t *var)
 	Cvar_Set (var, va ("%g", max (0.0001, var->value)));
 }
 
+typedef struct {
+	const char	*name;
+	js_dest_t	destnum;
+} js_dests_t;
+
+typedef struct {
+	const char	*name;
+	js_dest_t	optnum;
+} js_opts_t;
+
+js_dests_t js_dests[] = {
+		{"none", 		js_none},								// ignore axis
+		{"movement",	js_position},							// linear delta
+		{"aim", 		js_angles},								// linear delta
+		{"button",		js_button},								// axis button
+};
+
+
+js_opts_t js_opts[] = {
+		{"amp",		js_amp},
+		{"pre_amp",	js_pre_amp},
+		{"deadzone",js_deadzone},
+		{"offset",	js_offset},
+		{"type",	js_type},
+		{"button",	js_axis_button},
+};
+
+const char *
+JOY_GetOption_c (int i)
+{
+	js_opts_t *opt;
+	for (opt=&js_opts[0]; opt->name; opt++) {
+		if ((int)opt->optnum == i)
+			return opt->name;
+	}
+
+	return NULL;
+}
+
+int
+JOY_GetOption_i (const char *c)
+{
+	js_opts_t *opt;
+	for (opt=&js_opts[0]; opt->name; opt++) {
+		if (!strcmp(opt->name, c))
+			return opt->optnum;
+	}
+
+	return -1; //Failure code;
+}
+
+const char *
+JOY_GetDest_c (int i)
+{
+	js_dests_t *dest;
+	for (dest=&js_dests[0]; dest->name; dest++) {
+		if ((int)dest->destnum == i)
+			return dest->name;
+	}
+
+	return NULL;
+}
+
+int
+JOY_GetDest_i (const char *c)
+{
+	js_dests_t *dest;
+	for (dest=&js_dests[0]; dest->name; dest++) {
+		if (!strcmp(dest->name, c))
+			return dest->destnum;
+	}
+
+	return -1; //Failure code;
+}
+
+static void
+in_joy_f (void)
+{
+	int i, ax, c = Cmd_Argc();
+
+	if (c < 3) {
+		Sys_Printf ("in_joy <axis#> [<var> <value>]* : Configures the joystick behaviour\n");
+	}
+
+	ax = strtol(Cmd_Argv(1), NULL ,0);
+
+	i = 2;
+	while(i<c)
+	{
+		int var = JOY_GetOption_i (Cmd_Argv(i++));
+
+		switch (var) {
+		case js_amp:
+			joy_axes[ax].amp = strtof (Cmd_Argv(i++), NULL);
+			Sys_Printf("Set axis %i's amp to %f\n", ax, joy_axes[ax].amp);
+			break;
+		case js_pre_amp:
+			joy_axes[ax].pre_amp = strtof (Cmd_Argv(i++), NULL);
+			break;
+		case js_deadzone:
+			joy_axes[ax].deadzone = strtol (Cmd_Argv(i++), NULL, 10);
+			break;
+		case js_offset:
+			joy_axes[ax].offset = strtol (Cmd_Argv(i++), NULL, 10);
+			break;
+		case js_type:
+			joy_axes[ax].dest = JOY_GetDest_i (Cmd_Argv(i++));
+			joy_axes[ax].axis = strtol (Cmd_Argv(i++), NULL, 10);
+			break;
+		default:
+			Sys_Printf ("Unknown option %s.\n", Cmd_Argv(i-1));
+			break;
+		}
+	}
+}
+
 VISIBLE void
 JOY_Init_Cvars (void)
 {
@@ -190,6 +311,8 @@ JOY_Init_Cvars (void)
 						"Joystick amplification");
 	joy_pre_amp = Cvar_Get ("joy_pre_amp", "1", CVAR_NONE | CVAR_ARCHIVE,
 							joyamp_f, "Joystick pre-amplification");
+
+	Cmd_AddCommand("in_joy", in_joy_f, "Configures the joystick behaviour");
 }
 
 VISIBLE void
