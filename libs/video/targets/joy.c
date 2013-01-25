@@ -264,8 +264,22 @@ in_joy_f (void)
 {
 	int i, ax, c = Cmd_Argc();
 
-	if (c < 3) {
+	if (c == 2) {
+		ax = strtol(Cmd_Argv(1), NULL ,0);
+
+		Sys_Printf ("<=====> AXIS %i <=====>\n", ax);
+		Sys_Printf ("amp:       %f\n", joy_axes[ax].amp);
+		Sys_Printf ("pre_amp:   %f\n", joy_axes[ax].pre_amp);
+		Sys_Printf ("deadzone:  %i\n", joy_axes[ax].deadzone);
+		Sys_Printf ("offset:    %f\n", joy_axes[ax].offset);
+		Sys_Printf ("type:      %s\n", JOY_GetDest_c(joy_axes[ax].dest));
+		Sys_Printf ("<====================>\n");
+
+
+	}
+	else if (c < 4) {
 		Sys_Printf ("in_joy <axis#> [<var> <value>]* : Configures the joystick behaviour\n");
+		return;
 	}
 
 	ax = strtol(Cmd_Argv(1), NULL ,0);
@@ -278,7 +292,6 @@ in_joy_f (void)
 		switch (var) {
 		case js_amp:
 			joy_axes[ax].amp = strtof (Cmd_Argv(i++), NULL);
-			Sys_Printf("Set axis %i's amp to %f\n", ax, joy_axes[ax].amp);
 			break;
 		case js_pre_amp:
 			joy_axes[ax].pre_amp = strtof (Cmd_Argv(i++), NULL);
@@ -292,6 +305,8 @@ in_joy_f (void)
 		case js_type:
 			joy_axes[ax].dest = JOY_GetDest_i (Cmd_Argv(i++));
 			joy_axes[ax].axis = strtol (Cmd_Argv(i++), NULL, 10);
+			break;
+		case js_axis_button:
 			break;
 		default:
 			Sys_Printf ("Unknown option %s.\n", Cmd_Argv(i-1));
@@ -313,6 +328,19 @@ JOY_Init_Cvars (void)
 							joyamp_f, "Joystick pre-amplification");
 
 	Cmd_AddCommand("in_joy", in_joy_f, "Configures the joystick behaviour");
+}
+
+
+void
+Joy_WriteBindings (QFile *f)
+{
+	int i;
+	for (i=0;i<JOY_MAX_AXES;i++)
+	{
+		Qprintf(f, "in_joy %i amp %f pre_amp %f deadzone %i offset %f type %s %i\n",
+				i, joy_axes[i].amp, joy_axes[i].pre_amp, joy_axes[i].deadzone,
+				joy_axes[i].offset, JOY_GetDest_c (joy_axes[i].dest), joy_axes[i].axis);
+	}
 }
 
 VISIBLE void

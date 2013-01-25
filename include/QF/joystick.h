@@ -29,6 +29,7 @@
 #define __QF_joystick_h_
 
 #include <QF/qtypes.h>
+#include "QF/quakeio.h"
 
 #define JOY_MAX_AXES    8
 #define JOY_MAX_BUTTONS 18
@@ -146,5 +147,8 @@ int JOY_GetOption_i (const char *c);
 
 const char * JOY_GetDest_c (int i);
 int JOY_GetDest_i (const char *c);
+
+
+void Joy_WriteBindings (QFile *f);
 
 #endif	// __QF_joystick_h_
