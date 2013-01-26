@@ -128,18 +128,18 @@ JOY_Move (void)
 		if (abs(ja->offset) + abs(ja->current) < abs(ja->offset) + abs(ja->deadzone))
 			ja->current = -ja->offset;
 
-		value = amp * ja->amp * (ja->offset + ja->current * pre * ja->pre_amp) / 120.0f;
+		value = amp * ja->amp * (ja->offset + ja->current * pre * ja->pre_amp) / 100.0f;
 		switch (ja->dest) {
 			case js_none:
 				// ignore axis
 				break;
 			case js_position:
 				if (ja->current)
-					viewdelta.position[ja->axis] += value;
+					viewdelta.position[(ja->axis) ? 2 : 0] += value;
 				break;
 			case js_angles:
 				if (ja->current)
-					viewdelta.angles[ja->axis] -= value;
+					viewdelta.angles[(ja->axis) ? 1 : 0] -= value;
 				break;
 			case js_button:
 				joy_check_axis_buttons (ja, value);
@@ -305,6 +305,10 @@ in_joy_f (void)
 		case js_type:
 			joy_axes[ax].dest = JOY_GetDest_i (Cmd_Argv(i++));
 			joy_axes[ax].axis = strtol (Cmd_Argv(i++), NULL, 10);
+			if (joy_axes[ax].axis > 1 || joy_axes[ax].axis < 0) {
+				joy_axes[ax].axis = 0;
+				Sys_Printf("Invalid axis value.");
+			}
 			break;
 		case js_axis_button:
 			break;
@@ -328,6 +332,14 @@ JOY_Init_Cvars (void)
 							joyamp_f, "Joystick pre-amplification");
 
 	Cmd_AddCommand("in_joy", in_joy_f, "Configures the joystick behaviour");
+	int i;
+	for (i=0;i<JOY_MAX_AXES;i++)
+	{
+		joy_axes[i].dest		= js_none;
+		joy_axes[i].amp 		= 1;
+		joy_axes[i].pre_amp 	= 1;
+		joy_axes[i].deadzone 	= 7500;
+	}
 }
 
 
