@@ -453,6 +453,26 @@ bi_Menu_Enter (progs_t *pr)
 }
 
 static void
+bi_Menu_Leave (progs_t *pr)
+{
+	if (menu) {
+		if (menu->leave_hook) {
+			run_menu_pre ();
+			PR_ExecuteProgram (&menu_pr_state, menu->leave_hook);
+			run_menu_post ();
+		}
+		menu = menu->parent;
+		if (!menu) {
+			if (con_data.force_commandline) {
+				Key_SetKeyDest (key_console);
+			} else {
+				Key_SetKeyDest (key_game);
+			}
+		}
+	}
+}
+
+static void
 togglemenu_f (void)
 {
 	if (menu)
@@ -517,8 +537,37 @@ static builtin_t builtins[] = {
 	{"Menu_Next",			bi_Menu_Next,			-1},
 	{"Menu_Prev",			bi_Menu_Prev,			-1},
 	{"Menu_Enter",			bi_Menu_Enter,			-1},
+	{"Menu_Leave",		 	bi_Menu_Leave,			-1},
 	{0},
 };
+
+
+
+void
+Menu_Enter_f (void)
+{
+	if (!Menu_KeyEvent(QFK_RETURN, '\0', true))
+		Menu_KeyEvent('y', 'y', true);
+}
+
+void
+Menu_Leave_f (void)
+{
+	Menu_Leave ();
+}
+
+void
+Menu_Prev_f (void)
+{
+	Menu_KeyEvent (QFK_UP, '\0', true);
+}
+
+void
+Menu_Next_f (void)
+{
+	Menu_KeyEvent (QFK_DOWN, '\0', true);
+}
+
 
 void
 Menu_Init (void)
@@ -549,6 +598,10 @@ Menu_Init (void)
 					"Toggle the display of the menu");
 	Cmd_RemoveCommand ("quit");
 	Cmd_AddCommand ("quit", quit_f, "Exit the program");
+	Cmd_AddCommand ("Menu_Enter", Menu_Enter_f, "Do menu action/move up in the menu tree.");
+	Cmd_AddCommand ("Menu_Leave", Menu_Leave_f, "Move down in the menu tree.");
+	Cmd_AddCommand ("Menu_Prev",  Menu_Prev_f, "Move cursor up.");
+	Cmd_AddCommand ("Menu_Next",  Menu_Next_f, "Move cursor up.");
 }
 
 void

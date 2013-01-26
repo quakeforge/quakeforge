@@ -51,6 +51,7 @@ typedef enum {
 } js_dest_t;
 
 typedef enum {
+		js_clear,
 		js_amp,
 		js_pre_amp,
 		js_deadzone,
@@ -94,6 +95,7 @@ extern struct joy_button joy_buttons[JOY_MAX_BUTTONS];
 	joy_enable->int_val are zero.
 */
 void JOY_Command (void);
+void joy_clear_axis (int i);
 
 /*
 	JOY_Move (usercmd_t *) // FIXME: Not anymore!

@@ -146,4 +146,9 @@ int Menu_KeyEvent (knum_t key, short unicode, qboolean down);
 void Menu_Enter (void);
 void Menu_Leave (void);
 
+void Menu_Enter_f (void);
+void Menu_Leave_f (void);
+void Menu_Prev_f (void);
+void Menu_Next_f (void);
+
 #endif // __console_h

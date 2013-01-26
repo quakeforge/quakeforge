@@ -69,6 +69,21 @@ ocvar_t joy_axes_cvar_init[JOY_MAX_AXES] = {
 struct joy_axis joy_axes[JOY_MAX_AXES];
 struct joy_button joy_buttons[JOY_MAX_BUTTONS];
 
+void
+joy_clear_axis (int i)
+{
+	joy_axes[i].dest		= js_none;
+	joy_axes[i].amp 		= 1;
+	joy_axes[i].pre_amp 	= 1;
+	joy_axes[i].deadzone 	= 12500;
+
+	joy_axes[i].num_buttons = 0;
+	if (joy_axes[i].axis_buttons) {
+		free (joy_axes[i].axis_buttons);
+		joy_axes[i].axis_buttons = NULL;
+	}
+}
+
 static void
 joy_check_axis_buttons (struct joy_axis *ja, float value)
 {
@@ -203,6 +218,7 @@ js_dests_t js_dests[] = {
 
 
 js_opts_t js_opts[] = {
+		{"clear",	js_clear},
 		{"amp",		js_amp},
 		{"pre_amp",	js_pre_amp},
 		{"deadzone",js_deadzone},
@@ -267,6 +283,12 @@ in_joy_f (void)
 	if (c == 2) {
 		ax = JOY_GetOption_i (Cmd_Argv(1));
 		switch (ax) {
+		case js_clear:
+			Sys_Printf("Clearing all joystick settings...\n");
+			for (i = 0; i<JOY_MAX_AXES;i++) {
+				joy_clear_axis (i);
+			}
+			break;
 		case js_amp:
 			Sys_Printf("[...]<amp> [<#amp>]: Axis sensitivity\n");
 			break;
@@ -302,15 +324,23 @@ in_joy_f (void)
 			Sys_Printf ("<====================>\n");
 			break;
 		}
-
+		return;
 	}
 	else if (c < 4) {
-		Sys_Printf ("in_joy <axis#> [<var> <value>]* : Configures the joystick behaviour\n");
-		return;
+		if (JOY_GetOption_i (Cmd_Argv(2)) == js_clear) {
+			ax = strtol(Cmd_Argv(1), NULL ,0);
+
+			joy_clear_axis (ax);
+			return;
+		} else {
+			Sys_Printf ("in_joy <axis#> [<var> <value>]* : Configures the joystick behaviour\n");
+			return;
+		}
 	}
 
 	ax = strtol(Cmd_Argv(1), NULL ,0);
 
+	const char *arg;
 	i = 2;
 	while(i<c)
 	{
@@ -338,8 +368,15 @@ in_joy_f (void)
 			}
 			break;
 		case js_axis_button:
-			char *arg = Cmd_Argv(i++);
+			arg = Cmd_Argv(i++);
+			if (!strcmp("add", arg)) {
+				int n = joy_axes[ax].num_buttons++;
+				joy_axes[ax].axis_buttons = realloc(joy_axes[ax].axis_buttons,
+/*sizeof*/				n*sizeof(joy_axes[ax].axis_buttons));
 
+				joy_axes[ax].axis_buttons[n].key = strtol (Cmd_Argv(i++), NULL, 10) + QFJ_AXIS1;
+				joy_axes[ax].axis_buttons[n].threshold = strtof(Cmd_Argv(i++), NULL);
+			}
 			break;
 		default:
 			Sys_Printf ("Unknown option %s.\n", Cmd_Argv(i-1));
@@ -367,7 +404,7 @@ JOY_Init_Cvars (void)
 		joy_axes[i].dest		= js_none;
 		joy_axes[i].amp 		= 1;
 		joy_axes[i].pre_amp 	= 1;
-		joy_axes[i].deadzone 	= 7500;
+		joy_axes[i].deadzone 	= 12500;
 	}
 }
 
@@ -381,6 +418,15 @@ Joy_WriteBindings (QFile *f)
 		Qprintf(f, "in_joy %i amp %f pre_amp %f deadzone %i offset %f type %s %i\n",
 				i, joy_axes[i].amp, joy_axes[i].pre_amp, joy_axes[i].deadzone,
 				joy_axes[i].offset, JOY_GetDest_c (joy_axes[i].dest), joy_axes[i].axis);
+
+		if (joy_axes[i].num_buttons > 0) {
+			int n;
+			for (n=0;n<joy_axes[i].num_buttons;n++) {
+				Qprintf(f, "in_joy %i button add %i %f\n", i,
+						joy_axes[i].axis_buttons[n].key - QFJ_AXIS1,
+						joy_axes[i].axis_buttons[n].threshold);
+			}
+		}
 	}
 }
 
