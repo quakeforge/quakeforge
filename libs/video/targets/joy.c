@@ -265,16 +265,43 @@ in_joy_f (void)
 	int i, ax, c = Cmd_Argc();
 
 	if (c == 2) {
-		ax = strtol(Cmd_Argv(1), NULL ,0);
+		ax = JOY_GetOption_i (Cmd_Argv(1));
+		switch (ax) {
+		case js_amp:
+			Sys_Printf("[...]<amp> [<#amp>]: Axis sensitivity\n");
+			break;
+		case js_pre_amp:
+			Sys_Printf("[...]<pre_amp> [<#pre_amp>]: Axis sensitivity.\n");
+			break;
+		case js_deadzone:
+			Sys_Printf("[...]<deadzone> [<#dz>]: Axis deadzone.\n");
+			break;
+		case js_offset:
+			Sys_Printf("[...]<offset> [<#off>]: Axis initial position.\n");
+			break;
+		case js_type:
+			Sys_Printf("[...]<type> [<act> <#act>].\n");
+			Sys_Printf("Values for <act>:\n");
+			Sys_Printf("none:     #0\n");
+			Sys_Printf("aim:      #1..0\n");
+			Sys_Printf("movement: #1..0\n");
 
-		Sys_Printf ("<=====> AXIS %i <=====>\n", ax);
-		Sys_Printf ("amp:       %f\n", joy_axes[ax].amp);
-		Sys_Printf ("pre_amp:   %f\n", joy_axes[ax].pre_amp);
-		Sys_Printf ("deadzone:  %i\n", joy_axes[ax].deadzone);
-		Sys_Printf ("offset:    %f\n", joy_axes[ax].offset);
-		Sys_Printf ("type:      %s\n", JOY_GetDest_c(joy_axes[ax].dest));
-		Sys_Printf ("<====================>\n");
+			break;
+		case js_axis_button:
+			/* TODO */
+			break;
+		default:
+			ax = strtol(Cmd_Argv(1), NULL ,0);
 
+			Sys_Printf ("<=====> AXIS %i <=====>\n", ax);
+			Sys_Printf ("amp:       %f\n", joy_axes[ax].amp);
+			Sys_Printf ("pre_amp:   %f\n", joy_axes[ax].pre_amp);
+			Sys_Printf ("deadzone:  %i\n", joy_axes[ax].deadzone);
+			Sys_Printf ("offset:    %f\n", joy_axes[ax].offset);
+			Sys_Printf ("type:      %s\n", JOY_GetDest_c(joy_axes[ax].dest));
+			Sys_Printf ("<====================>\n");
+			break;
+		}
 
 	}
 	else if (c < 4) {
@@ -311,6 +338,8 @@ in_joy_f (void)
 			}
 			break;
 		case js_axis_button:
+			char *arg = Cmd_Argv(i++);
+
 			break;
 		default:
 			Sys_Printf ("Unknown option %s.\n", Cmd_Argv(i-1));
