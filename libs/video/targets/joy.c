@@ -213,21 +213,23 @@ typedef struct {
 } js_opts_t;
 
 js_dests_t  js_dests[] = {
-	{"none", js_none},					// ignore axis
-	{"movement", js_position},			// linear delta
-	{"aim", js_angles},					// linear delta
-	{"button", js_button},				// axis button
+	{"none",		js_none},				// ignore axis
+	{"movement",	js_position},			// linear delta
+	{"aim",			js_angles},				// linear delta
+	{"button",		js_button},				// axis button
+	{0, 0}
 };
 
 
 js_opts_t   js_opts[] = {
-	{"clear", js_clear},
-	{"amp", js_amp},
-	{"pre_amp", js_pre_amp},
-	{"deadzone", js_deadzone},
-	{"offset", js_offset},
-	{"type", js_type},
-	{"button", js_axis_button},
+	{"clear",		js_clear},
+	{"amp",			js_amp},
+	{"pre_amp",		js_pre_amp},
+	{"deadzone",	js_deadzone},
+	{"offset",		js_offset},
+	{"type",		js_type},
+	{"button",		js_axis_button},
+	{0, 0}
 };
 
 const char *
