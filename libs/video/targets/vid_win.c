@@ -234,8 +234,8 @@ DD_UpdateRects (int width, int height)
 
 
 static void
-VID_CreateDDrawDriver (int width, int height, byte *palette, void **buffer,
-					   int *rowbytes)
+VID_CreateDDrawDriver (int width, int height, const byte *palette,
+					   void **buffer, int *rowbytes)
 {
 	HRESULT     hr;
 	DDSURFACEDESC ddsd;
@@ -333,7 +333,7 @@ HDC         hdcGDI = NULL;
 
 
 static void
-VID_CreateGDIDriver (int width, int height, byte *palette, void **buffer,
+VID_CreateGDIDriver (int width, int height, const byte *palette, void **buffer,
 					 int *rowbytes)
 {
 	dibinfo_t   dibheader;
@@ -499,7 +499,7 @@ static qboolean vid_initialized = false, vid_palettized;
 static int  vid_fulldib_on_focus_mode;
 static qboolean force_minimized, in_mode_set, force_mode_set;
 static int  windowed_mouse;
-static qboolean palette_changed, vid_mode_set, hide_window;
+static qboolean palette_changed, vid_mode_set;
 static HICON hIcon;
 
 #define MODE_WINDOWED			0
@@ -570,6 +570,8 @@ void        VID_MenuKey (int key);
 
 LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void        AppActivate (BOOL fActive, BOOL minimize);
+
+static int  VID_SetMode (int modenum, const byte *palette);
 
 // video commands
 int         VID_NumModes (void);
@@ -815,6 +817,59 @@ VID_GetDisplayModes (void)
 		Sys_Printf ("No fullscreen DIB modes found\n");
 }
 
+static void
+WIN_OpenDisplay (void)
+{
+	VID_InitModes (global_hInstance);
+	VID_GetDisplayModes ();
+
+	vid_testingmode = 0;
+
+	// if (COM_CheckParm("-startwindowed"))
+	{
+		startwindowed = 1;
+		vid_default = windowed_default;
+	}
+
+//FIXME?    if (hwnd_dialog)
+//FIXME?        DestroyWindow (hwnd_dialog);
+
+	// sound initialization has to go here, preceded by a windowed mode set,
+	// so there's a window for DirectSound to work with but we're not yet
+	// fullscreen so the "hardware already in use" dialog is visible if it
+	// gets displayed
+	// keep the window minimized until we're ready for the first real mode set
+	hWndWinQuake = CreateWindowEx (ExWindowStyle,
+								   "WinQuake",
+								   "WinQuake",
+								   WindowStyle,
+								   0, 0,
+								   WindowRect.right - WindowRect.left,
+								   WindowRect.bottom - WindowRect.top,
+								   NULL, NULL, global_hInstance, NULL);
+
+	if (!hWndWinQuake)
+		Sys_Error ("Couldn't create DIB window");
+
+	// compatibility
+	mainwindow = hWndWinQuake;
+
+	// done
+	vid_mode_set = true;
+//FIXME if (firsttime) S_Init ();
+}
+
+static void
+WIN_SetVidMode (unsigned width, unsigned height, const byte *palette)
+{
+//FIXME SCR_StretchInit();
+
+	force_mode_set = true;
+	VID_SetMode (vid_default, palette);
+	force_mode_set = false;
+	vid_realmode = vid_modenum;
+	strcpy (badmode.modedesc, "Bad mode");
+}
 
 static void
 VID_DestroyWindow (void)
@@ -858,23 +913,6 @@ VID_SetWindowedMode (int modenum)
 	// the first time we're called to set the mode, create the window we'll use
 	// for the rest of the session
 	if (!vid_mode_set) {
-		hWndWinQuake = CreateWindowEx (ExWindowStyle,
-									   "WinQuake",
-									   "WinQuake",
-									   WindowStyle,
-									   0, 0,
-									   WindowRect.right - WindowRect.left,
-									   WindowRect.bottom - WindowRect.top,
-									   NULL, NULL, global_hInstance, NULL);
-
-		if (!hWndWinQuake)
-			Sys_Error ("Couldn't create DIB window");
-
-		// compatibility
-		mainwindow = hWndWinQuake;
-
-		// done
-		vid_mode_set = true;
 	} else {
 		SetWindowLong (hWndWinQuake, GWL_STYLE, WindowStyle | WS_VISIBLE);
 		SetWindowLong (hWndWinQuake, GWL_EXSTYLE, ExWindowStyle);
@@ -888,9 +926,6 @@ VID_SetWindowedMode (int modenum)
 					   SWP_NOCOPYBITS | SWP_NOZORDER | SWP_HIDEWINDOW)) {
 		Sys_Error ("Couldn't resize DIB window");
 	}
-
-	if (hide_window)
-		return true;
 
 	// position and show the DIB window
 	VID_CheckWindowXY ();
@@ -990,8 +1025,6 @@ VID_SetFullDIBMode (int modenum)
 	return true;
 }
 
-static int  VID_SetMode (int modenum, byte *palette);
-
 static void
 VID_RestoreOldMode (int original_mode)
 {
@@ -1027,7 +1060,7 @@ VID_SetDefaultMode (void)
 
 
 static int
-VID_SetMode (int modenum, byte *palette)
+VID_SetMode (int modenum, const byte *palette)
 {
 	int         original_mode;			// FIXME, temp;
 	qboolean    stat;
@@ -1136,9 +1169,6 @@ VID_SetMode (int modenum, byte *palette)
 		VID_RestoreOldMode (original_mode);
 		return false;
 	}
-
-	if (hide_window)
-		return true;
 
 	// now we try to make sure we get the focus on the mode switch, because
 	// sometimes in some systems we don't.  We grab the foreground, then
@@ -1314,45 +1344,15 @@ VID_Init (byte *palette, byte *colormap)
 	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 
 	VID_GetWindowSize (640, 480);
-
-	VID_InitModes (global_hInstance);
-	VID_GetDisplayModes ();
+	WIN_OpenDisplay ();
 	choose_visual ();
-
+	WIN_SetVidMode (viddef.width, viddef.height, palette);
 	create_context ();
 
 	VID_InitGamma (palette);
 	viddef.set_palette (palette);
 
-	vid_testingmode = 0;
-
-	// if (COM_CheckParm("-startwindowed"))
-	{
-		startwindowed = 1;
-		vid_default = windowed_default;
-	}
-
-//FIXME?    if (hwnd_dialog)
-//FIXME?        DestroyWindow (hwnd_dialog);
-
-	// sound initialization has to go here, preceded by a windowed mode set,
-	// so there's a window for DirectSound to work with but we're not yet
-	// fullscreen so the "hardware already in use" dialog is visible if it
-	// gets displayed
-	// keep the window minimized until we're ready for the first real mode set
-	hide_window = true;
-	VID_SetMode (MODE_WINDOWED, palette);
-	hide_window = false;
-//FIXME if (firsttime) S_Init ();
 	vid_initialized = true;
-
-//FIXME SCR_StretchInit();
-
-	force_mode_set = true;
-	VID_SetMode (vid_default, palette);
-	force_mode_set = false;
-	vid_realmode = vid_modenum;
-	strcpy (badmode.modedesc, "Bad mode");
 }
 
 #if 0
