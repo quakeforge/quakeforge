@@ -326,10 +326,10 @@ in_joy_f (void)
 				ax = strtol (Cmd_Argv (1), NULL, 0);
 
 				Sys_Printf ("<=====> AXIS %i <=====>\n", ax);
-				Sys_Printf ("amp:       %f\n", joy_axes[ax].amp);
-				Sys_Printf ("pre_amp:   %f\n", joy_axes[ax].pre_amp);
+				Sys_Printf ("amp:       %.9g\n", joy_axes[ax].amp);
+				Sys_Printf ("pre_amp:   %.9g\n", joy_axes[ax].pre_amp);
 				Sys_Printf ("deadzone:  %i\n", joy_axes[ax].deadzone);
-				Sys_Printf ("offset:    %f\n", joy_axes[ax].offset);
+				Sys_Printf ("offset:    %.9g\n", joy_axes[ax].offset);
 				Sys_Printf ("type:      %s\n",
 							JOY_GetDest_c (joy_axes[ax].dest));
 				Sys_Printf ("<====================>\n");
@@ -429,8 +429,8 @@ Joy_WriteBindings (QFile * f)
 	int         i;
 
 	for (i = 0; i < JOY_MAX_AXES; i++) {
-		Qprintf (f,
-			 "in_joy %i amp %f pre_amp %f deadzone %i offset %f type %s %i\n",
+		Qprintf (f, "in_joy %i amp %.9g pre_amp %.9g deadzone %i "
+				 "offset %.9g type %s %i\n",
 				 i, joy_axes[i].amp, joy_axes[i].pre_amp, joy_axes[i].deadzone,
 				 joy_axes[i].offset, JOY_GetDest_c (joy_axes[i].dest),
 				 joy_axes[i].axis);
@@ -439,7 +439,7 @@ Joy_WriteBindings (QFile * f)
 			int         n;
 
 			for (n = 0; n < joy_axes[i].num_buttons; n++) {
-				Qprintf (f, "in_joy %i button add %i %f\n", i,
+				Qprintf (f, "in_joy %i button add %i %.9g\n", i,
 						 joy_axes[i].axis_buttons[n].key - QFJ_AXIS1,
 						 joy_axes[i].axis_buttons[n].threshold);
 			}
