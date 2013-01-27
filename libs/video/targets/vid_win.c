@@ -59,8 +59,7 @@ qboolean    win_canalttab = false;
 // main application window
 HWND        hWndWinQuake = NULL;
 HDC         maindc;
-
-byte        gammatable[256];
+HGLRC       baseRC;
 
 //FIXME?int yeahimconsoled;
 
@@ -130,10 +129,46 @@ GL_EndRendering (void)
 	}
 }
 
+static void
+wgl_choose_visual (void)
+{
+}
+
+static void
+wgl_create_context (void)
+{
+	DWORD       lasterror;
+
+	Sys_Printf ("maindc: %p\n", maindc);
+	baseRC = qfwglCreateContext (maindc);
+	if (!baseRC) {
+		lasterror=GetLastError();
+		if (maindc && mainwindow)
+			ReleaseDC (mainwindow, maindc);
+		Sys_Error ("Could not initialize GL (wglCreateContext failed).\n\n"
+				   "Make sure you are in 65535 color mode, and try running "
+				   "with -window.\n"
+				   "Error code: (%lx)", lasterror);
+	}
+
+	if (!qfwglMakeCurrent (maindc, baseRC)) {
+		lasterror = GetLastError ();
+		if (baseRC)
+			qfwglDeleteContext (baseRC);
+		if (maindc && mainwindow)
+			ReleaseDC (mainwindow, maindc);
+		Sys_Error ("wglMakeCurrent failed (%lx)", lasterror);
+	}
+
+	viddef.init_gl ();
+}
 
 static void
 wgl_load_gl (void)
 {
+	choose_visual = wgl_choose_visual;
+	create_context = wgl_create_context;
+
 	viddef.get_proc_address = QFGL_ProcAddress;
 	viddef.end_rendering = GL_EndRendering;
 
@@ -561,7 +596,7 @@ VID_RememberWindowPos
 ================
 */
 static void __attribute__ ((used))
-	VID_RememberWindowPos (void)
+VID_RememberWindowPos (void)
 {
 	RECT        rect;
 
@@ -874,12 +909,6 @@ VID_SetWindowedMode (int modenum)
 
 	viddef.numpages = 1;
 
-	viddef.maxwarpwidth = WARP_WIDTH;
-	viddef.maxwarpheight = WARP_HEIGHT;
-
-	// viddef.maxlowwidth = LOW_WIDTH;
-	// viddef.maxlowheight = LOW_HEIGHT;
-
 //  viddef.height = viddef.conheight = DIBHeight;
 //  viddef.width = viddef.conwidth = DIBWidth;
 
@@ -943,11 +972,6 @@ VID_SetFullDIBMode (int modenum)
 	UpdateWindow (hWndWinQuake);
 
 	viddef.numpages = 1;
-	viddef.maxwarpwidth = WARP_WIDTH;
-	viddef.maxwarpheight = WARP_HEIGHT;
-
-	// viddef.maxlowwidth = LOW_WIDTH;
-	// viddef.maxlowheight = LOW_HEIGHT;
 
 #ifdef SCALED2D
 	viddef.height = viddef.conheight = DIBHeight;
@@ -993,7 +1017,7 @@ VID_RestoreOldMode (int original_mode)
 
 
 static void __attribute__ ((used))
-	VID_SetDefaultMode (void)
+VID_SetDefaultMode (void)
 {
 	if (vid_initialized)
 		VID_SetMode (0, vid_curpal);
@@ -1063,7 +1087,7 @@ VID_SetMode (int modenum, byte *palette)
 	// because we have set the background brush for the window to NULL (to
 	// avoid flickering when re-sizing the window on the desktop), we clear
 	// the window to black when created, otherwise it will be empty while
-	// Quake starts up.  This also prevents a screen flash to while when
+	// Quake starts up.  This also prevents a screen flash to white when
 	// switching drivers.  it still flashes, but at least it's black now
 	hdc = GetDC (hWndWinQuake);
 	PatBlt (hdc, 0, 0, WindowRect.right, WindowRect.bottom, BLACKNESS);
@@ -1183,9 +1207,9 @@ VID_SetPalette (const byte *palette)
 			for (i = 0; i < 256; i++, pal += 3) {
 				PALETTEENTRY *p = (PALETTEENTRY *) & ddpal[i];
 
-				p->peRed = gammatable[pal[2]];
-				p->peGreen = gammatable[pal[1]];
-				p->peBlue = gammatable[pal[0]];
+				p->peRed = viddef.gammatable[pal[2]];
+				p->peGreen = viddef.gammatable[pal[1]];
+				p->peBlue = viddef.gammatable[pal[0]];
 				p->peFlags = 255;
 			}
 		} else {
@@ -1196,14 +1220,14 @@ VID_SetPalette (const byte *palette)
 				for (i = 0; i < 256; i++, pal += 3) {
 					PALETTEENTRY *p = (PALETTEENTRY *) & ddpal[i];
 
-					colors[i].rgbRed = gammatable[pal[0]];
-					colors[i].rgbGreen = gammatable[pal[1]];
-					colors[i].rgbBlue = gammatable[pal[2]];
+					colors[i].rgbRed = viddef.gammatable[pal[0]];
+					colors[i].rgbGreen = viddef.gammatable[pal[1]];
+					colors[i].rgbBlue = viddef.gammatable[pal[2]];
 					colors[i].rgbReserved = 0;
 
-					p->peRed = gammatable[pal[2]];
-					p->peGreen = gammatable[pal[1]];
-					p->peBlue = gammatable[pal[0]];
+					p->peRed = viddef.gammatable[pal[2]];
+					p->peGreen = viddef.gammatable[pal[1]];
+					p->peBlue = viddef.gammatable[pal[0]];
 					p->peFlags = 255;
 				}
 
@@ -1229,6 +1253,8 @@ VID_SetPalette (const byte *palette)
 void
 VID_Init_Cvars (void)
 {
+	gl_driver = Cvar_Get ("gl_driver", GL_DRIVER, CVAR_ROM, NULL,
+						  "The OpenGL library to use. (path optional)");
 	vid_ddraw = Cvar_Get ("vid_ddraw", "1", CVAR_ORIGINAL, 0, "");
 	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_ORIGINAL, 0, "");
 	vid_wait = Cvar_Get ("vid_wait", "0", CVAR_ORIGINAL, 0, "");
@@ -1294,13 +1320,10 @@ VID_Init (byte *palette, byte *colormap)
 	choose_visual ();
 
 	create_context ();
+
 	VID_InitGamma (palette);
+	viddef.set_palette (palette);
 
-	viddef.maxwarpwidth = WARP_WIDTH;
-	viddef.maxwarpheight = WARP_HEIGHT;
-
-	// viddef.maxlowwidth = LOW_WIDTH;
-	// viddef.maxlowheight = LOW_HEIGHT;
 	vid_testingmode = 0;
 
 	// if (COM_CheckParm("-startwindowed"))
@@ -1329,7 +1352,6 @@ VID_Init (byte *palette, byte *colormap)
 	VID_SetMode (vid_default, palette);
 	force_mode_set = false;
 	vid_realmode = vid_modenum;
-	viddef.set_palette (palette);
 	strcpy (badmode.modedesc, "Bad mode");
 }
 
@@ -1745,7 +1767,7 @@ VID_HandlePause
 ================
 */
 static void __attribute__ ((used))
-	VID_HandlePause (qboolean pause)
+VID_HandlePause (qboolean pause)
 {
 	if ((modestate == MS_WINDOWED) && _windowed_mouse->int_val) {
 		if (pause) {
