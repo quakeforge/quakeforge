@@ -140,13 +140,11 @@ JOY_Move (void)
 
 	for (i = 0; i < JOY_MAX_AXES; i++) {
 		ja = &joy_axes[i];
-		if (abs (ja->offset) + abs (ja->current) <
-			abs (ja->offset) + abs (ja->deadzone))
-			ja->current = -ja->offset;
-
-		value =
-			amp * ja->amp * (ja->offset +
-							 ja->current * pre * ja->pre_amp) / 100.0f;
+		value = ja->current * pre * ja->pre_amp;
+		if (fabs (value) < ja->deadzone)
+			value = -ja->offset;
+		value += ja->offset;
+		value *= amp * ja->amp / 100.0f;
 		switch (ja->dest) {
 			case js_none:
 				// ignore axis
