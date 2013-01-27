@@ -37,7 +37,7 @@
 extern struct cvar_s	*joy_device;		// Joystick device name
 extern struct cvar_s	*joy_enable;		// Joystick enabling flag
 
-struct joy_axis_button{
+struct joy_axis_button {
 	float       threshold;
 	int         key;
 	int         state;
@@ -51,33 +51,33 @@ typedef enum {
 } js_dest_t;
 
 typedef enum {
-		js_clear,
-		js_amp,
-		js_pre_amp,
-		js_deadzone,
-		js_offset,
-		js_type,
-		js_axis_button,
+	js_clear,
+	js_amp,
+	js_pre_amp,
+	js_deadzone,
+	js_offset,
+	js_type,
+	js_axis_button,
 } js_opt_t;
 
 struct joy_axis {
-	int			current;
-	float		amp;
-	float		pre_amp;
-	int			deadzone;
-	float		offset;
+	int         current;
+	float       amp;
+	float       pre_amp;
+	int         deadzone;
+	float       offset;
 	js_dest_t   dest;
-	int			axis;						// if linear delta
-	int			num_buttons;				// if axis button
+	int         axis;						// if linear delta
+	int         num_buttons;				// if axis button
 	struct joy_axis_button *axis_buttons;	// if axis button
 };
 
-extern qboolean 	joy_found;			// Joystick present?
-extern qboolean 	joy_active; 		// Joystick in use?
+extern qboolean joy_found;					// Joystick present?
+extern qboolean joy_active; 				// Joystick in use?
 
 struct joy_button {
-	int 	old;
-	int 	current;
+	int         old;
+	int         current;
 };
 
 extern struct joy_axis joy_axes[JOY_MAX_AXES];
@@ -144,10 +144,10 @@ void JOY_Close (void);
 void JOY_Read (void);
 
 
-const char * JOY_GetOption_c (int i);
+const char *JOY_GetOption_c (int i);
 int JOY_GetOption_i (const char *c);
 
-const char * JOY_GetDest_c (int i);
+const char *JOY_GetDest_c (int i);
 int JOY_GetDest_i (const char *c);
 
 
