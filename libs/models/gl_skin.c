@@ -132,7 +132,8 @@ build_skin_32 (tex_t *tex, int texnum, byte *translate,
 	unsigned    i, j;
 	int         samples = alpha ? gl_alpha_format : gl_solid_format;
 	unsigned    frac, fracstep;
-	byte        pixels[512 * 256 * 4], *out, *pal;
+	byte        pixels[512 * 256 * 4], *out;
+	const byte *pal;
 	byte        c;
 
 	out = pixels;

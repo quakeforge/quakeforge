@@ -47,7 +47,7 @@
 
 
 VISIBLE tex_t *
-LoadPCX (QFile *f, qboolean convert, byte *pal)
+LoadPCX (QFile *f, qboolean convert, const byte *pal)
 {
 	pcx_t      *pcx;
 	int         pcx_mark;
@@ -141,12 +141,13 @@ LoadPCX (QFile *f, qboolean convert, byte *pal)
 }
 
 VISIBLE pcx_t *
-EncodePCX (byte * data, int width, int height,
-		   int rowbytes, byte * palette, qboolean flip, int *length)
+EncodePCX (const byte *data, int width, int height,
+		   int rowbytes, const byte *palette, qboolean flip, int *length)
 {
-	int 	i, run, pix, size;
-	pcx_t	*pcx;
-	byte	*pack, *dataend;
+	int         i, run, pix, size;
+	pcx_t      *pcx;
+	byte       *pack;
+	const byte *dataend;
 
 	size = width * height * 2 + 1000;
 	if (!(pcx = Hunk_TempAlloc (size))) {

@@ -67,7 +67,7 @@ glsl_Skin_ProcessTranslation (int cmap, const byte *translation)
 	for (i = 0, dst = top; i < VID_GRADES; i++, src += 256 - 16) {
 		for (j = 0; j < 16; j++) {
 			byte        c = *src++;
-			byte       *in = vid.palette + c * 3;
+			const byte *in = vid.palette + c * 3;
 			*dst++ = *in++;
 			*dst++ = *in++;
 			*dst++ = *in++;
@@ -78,7 +78,7 @@ glsl_Skin_ProcessTranslation (int cmap, const byte *translation)
 	for (i = 0, dst = bottom; i < VID_GRADES; i++, src += 256 - 16) {
 		for (j = 0; j < 16; j++) {
 			byte        c = *src++;
-			byte       *in = vid.palette + c * 3;
+			const byte *in = vid.palette + c * 3;
 			*dst++ = *in++;
 			*dst++ = *in++;
 			*dst++ = *in++;
@@ -129,7 +129,7 @@ glsl_Skin_InitTranslations (void)
 
 	for (i = 0, dst = map, src = vid.colormap8; i < 256 * VID_GRADES; i++) {
 		byte        c = *src++;
-		byte       *in = vid.palette + c * 3;
+		const byte *in = vid.palette + c * 3;
 		*dst++ = *in++;
 		*dst++ = *in++;
 		*dst++ = *in++;

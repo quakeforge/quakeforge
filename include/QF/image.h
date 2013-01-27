@@ -29,15 +29,16 @@
 #ifndef __QF_image_h
 #define __QF_image_h
 
+#include "QF/qtypes.h"
 #include "QF/quakeio.h"
 
 // could not use texture_t as that is used for models.
 typedef struct tex_s {
-	int				width;
-	int				height;
-	int				format;
-	unsigned char  *palette;					// 0 = 32 bit, otherwise 8
-	unsigned char	data[4];					// variable length
+	int         width;
+	int         height;
+	int         format;
+	const byte *palette;					// 0 = 32 bit, otherwise 8
+	byte        data[4];					// variable length
 } tex_t;
 
 #define tex_palette 0

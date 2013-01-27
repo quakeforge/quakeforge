@@ -805,7 +805,8 @@ void
 Draw_BlendScreen (quat_t color)
 {
 	int         r, g, b, i;
-	byte       *basepal, *newpal;
+	const byte *basepal;
+	byte       *newpal;
 	byte        pal[768];
 	basepal = vid.basepal;
 	newpal = pal;

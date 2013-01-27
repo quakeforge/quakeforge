@@ -62,8 +62,8 @@ typedef struct
 	\return A pointer to the newly-coded PCX data.
 	\warning Uses Hunk_TempAlloc() to allocate the output PCX content.
 */
-pcx_t *EncodePCX (byte *data, int width, int height, int rowbytes,
-                  byte *palette, qboolean flip, int *length);
+pcx_t *EncodePCX (const byte *data, int width, int height, int rowbytes,
+                  const byte *palette, qboolean flip, int *length);
 
 /**
 	Load a texture from a PCX file.
@@ -75,6 +75,6 @@ pcx_t *EncodePCX (byte *data, int width, int height, int rowbytes,
 	\return A pointer to the texture.
 	\warning Uses Hunk_TempAlloc() to allocate the texture.
 */
-struct tex_s *LoadPCX (QFile *f, qboolean convert, byte *pal);
+struct tex_s *LoadPCX (QFile *f, qboolean convert, const byte *pal);
 
 #endif // __pcx_h

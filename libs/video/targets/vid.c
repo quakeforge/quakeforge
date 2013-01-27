@@ -230,7 +230,7 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 	Initialize the vid_gamma Cvar, and set up the palette
 */
 void
-VID_InitGamma (unsigned char *pal)
+VID_InitGamma (const byte *pal)
 {
 	int 	i;
 	double	gamma = 1.0;
