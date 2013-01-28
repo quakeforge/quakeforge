@@ -267,6 +267,40 @@ JOY_GetDest_i (const char *c)
 }
 
 static void
+in_joy_button_add_f (int ax, int index)
+{
+	int         n;
+	size_t      size;
+	const char *key = Cmd_Argv (index);
+	int         keynum;
+	const char *thrsh = Cmd_Argv (index + 1);
+	float       threshold;
+	char       *end = 0;
+
+	keynum = strtol (key, &end, 10) + QFJ_AXIS1;
+	if (*end || keynum < QFJ_AXIS1 || keynum > QFJ_AXIS32) {
+		// if the key is not valid, try a key name
+		 keynum = Key_StringToKeynum (key);
+	}
+	if (keynum == -1) {
+		Sys_Printf ("\"%s\" isn't a valid key\n", key);
+	}
+	threshold = strtof (thrsh, &end);
+	if (*end) {
+		Sys_Printf ("invalid threshold: %s\n", thrsh);
+		keynum = -1;
+	}
+	if (keynum == -1)
+		return;
+
+	n = joy_axes[ax].num_buttons++;
+	size = n * sizeof (joy_axes[ax].axis_buttons);
+	joy_axes[ax].axis_buttons = realloc (joy_axes[ax].axis_buttons, size);
+	joy_axes[ax].axis_buttons[n].key = keynum;
+	joy_axes[ax].axis_buttons[n].threshold = threshold;
+}
+
+static void
 in_joy_f (void)
 {
 	const char *arg;
@@ -361,16 +395,8 @@ in_joy_f (void)
 			case js_axis_button:
 				arg = Cmd_Argv (i++);
 				if (!strcmp ("add", arg)) {
-					int         n = joy_axes[ax].num_buttons++;
-
-					joy_axes[ax].axis_buttons =
-						realloc (joy_axes[ax].axis_buttons,
-								 n * sizeof (joy_axes[ax].axis_buttons));
-
-					joy_axes[ax].axis_buttons[n].key =
-						strtol (Cmd_Argv (i++), NULL, 10) + QFJ_AXIS1;
-					joy_axes[ax].axis_buttons[n].threshold =
-						strtof (Cmd_Argv (i++), NULL);
+					in_joy_button_add_f (ax, i);
+					i += 2;
 				}
 				break;
 			default:
@@ -421,8 +447,8 @@ Joy_WriteBindings (QFile * f)
 			int         n;
 
 			for (n = 0; n < joy_axes[i].num_buttons; n++) {
-				Qprintf (f, "in_joy %i button add %i %.9g\n", i,
-						 joy_axes[i].axis_buttons[n].key - QFJ_AXIS1,
+				Qprintf (f, "in_joy %i button add %s %.9g\n", i,
+						 Key_KeynumToString (joy_axes[i].axis_buttons[n].key),
 						 joy_axes[i].axis_buttons[n].threshold);
 			}
 		}
