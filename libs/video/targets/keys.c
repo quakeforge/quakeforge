@@ -632,7 +632,7 @@ Key_Console (knum_t key, short unicode)
   the given string.  Single ascii characters return themselves, while
   the QFK_* names are matched up.
 */
-static int
+VISIBLE int
 Key_StringToKeynum (const char *str)
 {
 	keyname_t  *kn;

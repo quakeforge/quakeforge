@@ -509,6 +509,7 @@ void Key_KeydestCallback (keydest_callback_t *callback);
 
 
 const char *Key_KeynumToString (knum_t keynum);
+int Key_StringToKeynum (const char *str);
 struct progs_s;
 void Key_Progs_Init (struct progs_s *pr);
 #endif
