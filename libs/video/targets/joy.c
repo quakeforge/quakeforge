@@ -426,7 +426,7 @@ JOY_Init_Cvars (void)
 		joy_axes[i].dest = js_none;
 		joy_axes[i].amp = 1;
 		joy_axes[i].pre_amp = 1;
-		joy_axes[i].deadzone = 12500;
+		joy_axes[i].deadzone = 500;
 	}
 }
 
