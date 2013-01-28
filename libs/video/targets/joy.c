@@ -300,6 +300,7 @@ in_joy_button_add_f (int ax, int index)
 	joy_axes[ax].axis_buttons = realloc (joy_axes[ax].axis_buttons, size);
 	joy_axes[ax].axis_buttons[n].key = keynum;
 	joy_axes[ax].axis_buttons[n].threshold = threshold;
+	joy_axes[ax].axis_buttons[n].state = 0;
 }
 
 static void
