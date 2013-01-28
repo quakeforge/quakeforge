@@ -73,7 +73,7 @@ static BOOL (GLAPIENTRY * qfwglMakeCurrent) (HDC, HGLRC);
 static void *(WINAPI * glGetProcAddress) (const char *symbol) = NULL;
 
 static void (*choose_visual) (void);
-static void (*create_context) (void);
+static void (*create_context) (const byte *palette);
 
 static void *
 QFGL_GetProcAddress (void *handle, const char *name)
@@ -135,7 +135,7 @@ wgl_choose_visual (void)
 }
 
 static void
-wgl_create_context (void)
+wgl_create_context (const byte *palette)
 {
 	DWORD       lasterror;
 
@@ -1058,6 +1058,17 @@ VID_SetDefaultMode (void)
 	IN_DeactivateMouse ();
 }
 
+static void
+win_init_bufers (void)
+{
+	// set the rest of the buffers we need (why not just use one single buffer
+	// instead of all this crap? oh well, it's Quake...)
+	viddef.direct = (byte *) viddef.buffer;
+	viddef.conbuffer = viddef.buffer;
+
+	// more crap for the console
+	viddef.conrowbytes = viddef.rowbytes;
+}
 
 static int
 VID_SetMode (int modenum, const byte *palette)
@@ -1114,49 +1125,6 @@ VID_SetMode (int modenum, const byte *palette)
 		IN_HideMouse ();
 	}
 
-	// shutdown any old driver that was active
-	VID_UnloadAllDrivers ();
-
-	// because we have set the background brush for the window to NULL (to
-	// avoid flickering when re-sizing the window on the desktop), we clear
-	// the window to black when created, otherwise it will be empty while
-	// Quake starts up.  This also prevents a screen flash to white when
-	// switching drivers.  it still flashes, but at least it's black now
-	hdc = GetDC (hWndWinQuake);
-	PatBlt (hdc, 0, 0, WindowRect.right, WindowRect.bottom, BLACKNESS);
-	ReleaseDC (hWndWinQuake, hdc);
-
-	// create the new driver
-	vid_usingddraw = false;
-
-	// attempt to create a direct draw driver
-	if (vid_ddraw->int_val)
-		VID_CreateDDrawDriver (DIBWidth, DIBHeight, palette, &viddef.buffer,
-							   &viddef.rowbytes);
-
-	// create a gdi driver if directdraw failed or if we preferred not to use
-	// it
-	if (!vid_usingddraw) {
-		// because directdraw may have been partially created we must shut it
-		// down again first
-		VID_UnloadAllDrivers ();
-
-		// now create the gdi driver
-		VID_CreateGDIDriver (DIBWidth, DIBHeight, palette, &viddef.buffer,
-							 &viddef.rowbytes);
-	}
-	// if ddraw failed to come up we disable the cvar too
-	if (vid_ddraw->int_val && !vid_usingddraw)
-		Cvar_Set (vid_ddraw, "0");
-
-	// set the rest of the buffers we need (why not just use one single buffer
-	// instead of all this crap? oh well, it's Quake...)
-	viddef.direct = (byte *) viddef.buffer;
-	viddef.conbuffer = viddef.buffer;
-
-	// more crap for the console
-	viddef.conrowbytes = viddef.rowbytes;
-
 	window_width = viddef.width;
 	window_height = viddef.height;
 
@@ -1190,8 +1158,6 @@ VID_SetMode (int modenum, const byte *palette)
 	ReleaseDC (NULL, hdc);
 	vid_modenum = modenum;
 	Cvar_SetValue (vid_mode, (float) vid_modenum);
-
-	VID_InitBuffers ();
 
 	while (PeekMessage (&msg, NULL, 0, 0, PM_REMOVE)) {
 		TranslateMessage (&msg);
@@ -1327,8 +1293,47 @@ win_choose_visual (void)
 }
 
 static void
-win_create_context (void)
+win_create_context (const byte *palette)
 {
+	HDC         hdc;
+
+	// shutdown any old driver that was active
+	VID_UnloadAllDrivers ();
+
+	// because we have set the background brush for the window to NULL (to
+	// avoid flickering when re-sizing the window on the desktop), we clear
+	// the window to black when created, otherwise it will be empty while
+	// Quake starts up.  This also prevents a screen flash to white when
+	// switching drivers.  it still flashes, but at least it's black now
+	hdc = GetDC (hWndWinQuake);
+	PatBlt (hdc, 0, 0, WindowRect.right, WindowRect.bottom, BLACKNESS);
+	ReleaseDC (hWndWinQuake, hdc);
+
+	// create the new driver
+	vid_usingddraw = false;
+
+	// attempt to create a direct draw driver
+	if (vid_ddraw->int_val)
+		VID_CreateDDrawDriver (DIBWidth, DIBHeight, palette, &viddef.buffer,
+							   &viddef.rowbytes);
+
+	// create a gdi driver if directdraw failed or if we preferred not to use
+	// it
+	if (!vid_usingddraw) {
+		// because directdraw may have been partially created we must shut it
+		// down again first
+		VID_UnloadAllDrivers ();
+
+		// now create the gdi driver
+		VID_CreateGDIDriver (DIBWidth, DIBHeight, palette, &viddef.buffer,
+							 &viddef.rowbytes);
+	}
+	// if ddraw failed to come up we disable the cvar too
+	if (vid_ddraw->int_val && !vid_usingddraw)
+		Cvar_Set (vid_ddraw, "0");
+
+	viddef.do_screen_buffer = win_init_bufers;
+	VID_InitBuffers ();
 }
 
 void
@@ -1347,7 +1352,7 @@ VID_Init (byte *palette, byte *colormap)
 	WIN_OpenDisplay ();
 	choose_visual ();
 	WIN_SetVidMode (viddef.width, viddef.height, palette);
-	create_context ();
+	create_context (palette);
 
 	VID_InitGamma (palette);
 	viddef.set_palette (palette);
