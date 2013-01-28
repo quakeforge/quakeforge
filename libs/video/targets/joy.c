@@ -196,6 +196,11 @@ typedef struct {
 	js_dest_t   optnum;
 } js_opts_t;
 
+typedef struct {
+	const char *name;
+	int         axis;
+} js_axis_t;
+
 js_dests_t  js_dests[] = {
 	{"none",		js_none},				// ignore axis
 	{"movement",	js_position},			// linear delta
@@ -203,7 +208,6 @@ js_dests_t  js_dests[] = {
 	{"button",		js_button},				// axis button
 	{0, 0}
 };
-
 
 js_opts_t   js_opts[] = {
 	{"clear",		js_clear},
@@ -214,6 +218,30 @@ js_opts_t   js_opts[] = {
 	{"type",		js_type},
 	{"button",		js_axis_button},
 	{0, 0}
+};
+
+js_axis_t   js_position_names[] = {
+	{"x",	0},
+	{"y",	1},
+	{"z",   2},
+	{0, 0}
+};
+
+js_axis_t   js_angles_names[] = {
+	{"pitch",	PITCH},
+	{"yaw",		YAW},
+	{"roll",	ROLL},
+	{"p",		PITCH},
+	{"y",		YAW},
+	{"r",		ROLL},
+	{0, 0}
+};
+
+js_axis_t  *js_axis_names[] = {
+	0,				// js_none
+	js_position_names,
+	js_angles_names,
+	0,				// js_button
 };
 
 const char *
@@ -266,6 +294,28 @@ JOY_GetDest_i (const char *c)
 	}
 
 	return -1;							// Failure code;
+}
+
+int
+JOY_GetAxis_i (int dest, const char *c)
+{
+	char       *end;
+	int         axis;
+	js_axis_t  *axis_names;
+
+	axis = strtol (c, &end, 10);
+	if (*end || axis < 0 || axis > 2) {
+		axis = -1;
+		for (axis_names = js_axis_names[dest]; axis_names && axis_names->name;
+			 axis_names++) {
+			if (!strcasecmp (axis_names->name, c)) {
+				axis = axis_names->axis;
+				break;
+			}
+		}
+	}
+
+	return axis;
 }
 
 static void
@@ -389,8 +439,9 @@ in_joy_f (void)
 				break;
 			case js_type:
 				joy_axes[ax].dest = JOY_GetDest_i (Cmd_Argv (i++));
-				joy_axes[ax].axis = strtol (Cmd_Argv (i++), NULL, 10);
-				if (joy_axes[ax].axis > 1 || joy_axes[ax].axis < 0) {
+				joy_axes[ax].axis = JOY_GetAxis_i (joy_axes[ax].dest,
+												   Cmd_Argv (i++));
+				if (joy_axes[ax].axis > 2 || joy_axes[ax].axis < 0) {
 					joy_axes[ax].axis = 0;
 					Sys_Printf ("Invalid axis value.");
 				}
@@ -440,11 +491,21 @@ Joy_WriteBindings (QFile * f)
 	int         i;
 
 	for (i = 0; i < JOY_MAX_AXES; i++) {
-		Qprintf (f, "in_joy %i amp %.9g pre_amp %.9g deadzone %i "
-				 "offset %.9g type %s %i\n",
-				 i, joy_axes[i].amp, joy_axes[i].pre_amp, joy_axes[i].deadzone,
-				 joy_axes[i].offset, JOY_GetDest_c (joy_axes[i].dest),
-				 joy_axes[i].axis);
+		if (!js_axis_names[joy_axes[i].dest]) {
+			Qprintf (f, "in_joy %i amp %.9g pre_amp %.9g deadzone %i "
+					 "offset %.9g type %s %i\n",
+					 i, joy_axes[i].amp, joy_axes[i].pre_amp,
+					 joy_axes[i].deadzone,
+					 joy_axes[i].offset, JOY_GetDest_c (joy_axes[i].dest),
+					 joy_axes[i].axis);
+		} else {
+			Qprintf (f, "in_joy %i amp %.9g pre_amp %.9g deadzone %i "
+					 "offset %.9g type %s %s\n",
+					 i, joy_axes[i].amp, joy_axes[i].pre_amp,
+					 joy_axes[i].deadzone,
+					 joy_axes[i].offset, JOY_GetDest_c (joy_axes[i].dest),
+					 js_axis_names[joy_axes[i].dest][joy_axes[i].axis].name);
+		}
 
 		if (joy_axes[i].num_buttons > 0) {
 			int         n;

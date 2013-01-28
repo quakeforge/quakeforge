@@ -149,6 +149,7 @@ int JOY_GetOption_i (const char *c);
 
 const char *JOY_GetDest_c (int i);
 int JOY_GetDest_i (const char *c);
+int JOY_GetAxis_i (int dest, const char *c);
 
 
 void Joy_WriteBindings (QFile *f);
