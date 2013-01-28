@@ -346,7 +346,7 @@ in_joy_button_add_f (int ax, int index)
 		return;
 
 	n = joy_axes[ax].num_buttons++;
-	size = n * sizeof (joy_axes[ax].axis_buttons);
+	size = joy_axes[ax].num_buttons * sizeof (struct joy_axis_button);
 	joy_axes[ax].axis_buttons = realloc (joy_axes[ax].axis_buttons, size);
 	joy_axes[ax].axis_buttons[n].key = keynum;
 	joy_axes[ax].axis_buttons[n].threshold = threshold;
