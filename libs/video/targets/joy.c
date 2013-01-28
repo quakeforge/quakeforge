@@ -50,22 +50,6 @@ cvar_t     *joy_pre_amp;				// Joystick pre-amplification
 qboolean    joy_found = false;
 qboolean    joy_active = false;
 
-typedef struct {
-	const char *name;
-	const char *string;
-} ocvar_t;
-
-ocvar_t     joy_axes_cvar_init[JOY_MAX_AXES] = {
-	{"joyaxis1", "1"},
-	{"joyaxis2", "2"},
-	{"joyaxis3", "3"},
-	{"joyaxis4", "0"},
-	{"joyaxis5", "0"},
-	{"joyaxis6", "0"},
-	{"joyaxis7", "0"},
-	{"joyaxis8", "0"}
-};
-
 struct joy_axis joy_axes[JOY_MAX_AXES];
 struct joy_button joy_buttons[JOY_MAX_BUTTONS];
 
