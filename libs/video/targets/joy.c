@@ -130,7 +130,7 @@ JOY_Move (void)
 		if (fabs (value) < ja->deadzone)
 			value = -ja->offset;
 		value += ja->offset;
-		value *= amp * ja->amp / 100.0f;
+		value *= amp * ja->amp;
 		switch (ja->dest) {
 			case js_none:
 				// ignore axis
