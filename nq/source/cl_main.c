@@ -35,6 +35,7 @@
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/input.h"
+#include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
 #include "QF/qfplist.h"
@@ -113,6 +114,7 @@ CL_WriteConfiguration (void)
 
 		Key_WriteBindings (f);
 		Cvar_WriteVariables (f);
+		Joy_WriteBindings (f);
 
 		Qclose (f);
 	}
