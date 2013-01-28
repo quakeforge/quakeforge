@@ -98,8 +98,10 @@ joy_check_axis_buttons (struct joy_axis *ja, float value)
 	// press the active button if there is one
 	if (pressed >= 0) {
 		// FIXME support repeat?
-		if (!ab->state)
+		ab = &ja->axis_buttons[pressed];
+		if (!ab->state) {
 			Key_Event (ab->key, 0, 1);
+		}
 		ab->state = 1;
 	}
 }
