@@ -716,6 +716,22 @@ Key_Unbindall_f (void)
 }
 
 static void
+Key_In_Type_f (void)
+{
+	const char *str, *p;
+	if (Cmd_Argc () != 2) {
+		Sys_Printf ("in_type <string>\n");
+		Sys_Printf ("    Send the given string as simulated key presses.\n");
+		return;
+	}
+	str = Cmd_Argv (1);
+	for (p = str; *p; p++) {
+		Key_Event (QFK_UNKNOWN, *p, 1);
+		Key_Event (QFK_UNKNOWN, 0, 0);
+	}
+}
+
+static void
 Key_In_Clear (void)
 {
 	int         err = 0;
@@ -1228,6 +1244,8 @@ Key_Init (cbuf_t *cb)
 					"Remove all binds (USE CAUTIOUSLY!!!)");
 	Cmd_AddCommand ("in_clear", Key_In_Clear,
 					"Remove all binds from the specified imts");
+	Cmd_AddCommand ("in_type", Key_In_Type_f,
+					"Send the given string as simulated key presses.");
 	Cmd_AddCommand ("imt", Key_InputMappingTable_f, "");
 	Cmd_AddCommand ("imt_keydest", Key_IMT_Keydest_f, "");
 	Cmd_AddCommand ("imt_create", Key_IMT_Create_f,
