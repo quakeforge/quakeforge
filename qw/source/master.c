@@ -70,6 +70,12 @@
 
 #include "qw/protocol.h"
 
+#ifdef HAVE_IN_PKTINFO
+# ifndef SOL_IP		// BSD-based stacks don't define this.
+#  define SOL_IP IPPROTO_IP
+# endif
+#endif
+
 static void __attribute__ ((format (printf, 1, 2)))
 ma_log (const char *fmt, ...);
 

@@ -97,6 +97,12 @@
 #include "netmain.h"
 #include "net_udp.h"
 
+#ifdef HAVE_IN_PKTINFO
+# ifndef SOL_IP		// BSD-based stacks don't define this.
+#  define SOL_IP IPPROTO_IP
+# endif
+#endif
+
 #ifdef _WIN32
 # undef EWOULDBLOCK
 # define EWOULDBLOCK    WSAEWOULDBLOCK
