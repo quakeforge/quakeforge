@@ -83,6 +83,7 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	Draw_Picf,
 	Draw_SubPic,
 
+	SCR_SetFOV,
 	SCR_UpdateScreen,
 	SCR_DrawRam,
 	SCR_DrawTurtle,

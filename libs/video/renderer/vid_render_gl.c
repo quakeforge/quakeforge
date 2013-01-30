@@ -90,6 +90,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_Draw_Picf,
 	gl_Draw_SubPic,
 
+	SCR_SetFOV,
 	gl_SCR_UpdateScreen,
 	SCR_DrawRam,
 	SCR_DrawTurtle,
