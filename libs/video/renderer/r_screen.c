@@ -111,7 +111,7 @@ vrect_t     scr_vrect;
 qboolean    scr_skipupdate;
 
 void
-R_SetVrect (vrect_t *vrectin, vrect_t *vrect, int lineadj)
+R_SetVrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
 {
 	float       size;
 	int         h;
