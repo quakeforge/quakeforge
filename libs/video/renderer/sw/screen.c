@@ -202,11 +202,6 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	if (!scr_initialized)
 		return;							// not initialized yet
 
-	if (oldfov != scr_fov->value) {		// determine size of refresh window
-		oldfov = scr_fov->value;
-		vid.recalc_refdef = true;
-	}
-
 	if (vid.recalc_refdef)
 		SCR_CalcRefdef ();
 

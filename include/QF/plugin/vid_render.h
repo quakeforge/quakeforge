@@ -130,7 +130,7 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_Picf) (float x, float y, qpic_t *pic);
 	void (*Draw_SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 
-
+	void (*SCR_SetFOV) (float fov);
 	// scr_funcs is a null terminated array
 	void (*SCR_UpdateScreen) (double realtime, SCR_Func scr_3dfunc,
 							  SCR_Func *scr_funcs);

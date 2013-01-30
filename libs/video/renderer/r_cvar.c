@@ -153,6 +153,12 @@ r_nearclip_f (cvar_t *var)
 }
 
 static void
+scr_fov_f (cvar_t *var)
+{
+	SCR_SetFOV (var->value);
+}
+
+static void
 scr_fisheye_f (cvar_t *var)
 {
 	if (var->int_val)
@@ -291,9 +297,9 @@ R_Init_Cvars (void)
 	r_zgraph = Cvar_Get ("r_zgraph", "0", CVAR_NONE, NULL,
 						 "Toggle the graph that reports the changes of "
 						 "z-axis position");
-	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, NULL, "Your field of view in "
-						"degrees. Smaller than 90 zooms in. Don't touch in "
-						"fisheye mode, use ffov instead.");
+	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, scr_fov_f,
+						"Your field of view in degrees. Smaller than 90 zooms "
+						"in. Don't touch in fisheye mode, use ffov instead.");
 	scr_fisheye = Cvar_Get ("fisheye", "0", CVAR_NONE, scr_fisheye_f,
 							"Toggles fisheye mode.");
 	scr_fviews = Cvar_Get ("fviews", "6", CVAR_NONE, NULL, "The number of "

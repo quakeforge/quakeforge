@@ -179,10 +179,6 @@ glsl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
 
 	begun = 1;
 
-	if (oldfov != scr_fov->value) {
-		oldfov = scr_fov->value;
-		vid.recalc_refdef = true;
-	}
 	if (vid.recalc_refdef)
 		SCR_CalcRefdef ();
 

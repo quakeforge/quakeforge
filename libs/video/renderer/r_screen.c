@@ -94,7 +94,6 @@
 int         scr_copytop;
 byte       *draw_chars;					// 8*8 graphic characters FIXME location
 
-float       oldfov;
 int         oldsbar;
 
 qboolean    scr_initialized;			// ready to draw
@@ -164,15 +163,12 @@ SCR_CalcRefdef (void)
 	R_SetVrect (&vrect, &scr_vrect, vr_data.lineadj);
 
 	refdef->vrect = scr_vrect;
-	refdef->fov_x = scr_fov->value;
-	refdef->fov_y =
-		CalcFov (refdef->fov_x, refdef->vrect.width, refdef->vrect.height);
 
 	// notify the refresh of the change
 	vr_funcs->R_ViewChanged (vid.aspect);
 }
 
-float
+static float
 CalcFov (float fov_x, float width, float height)
 {
 	float       a, x;
@@ -187,6 +183,15 @@ CalcFov (float fov_x, float width, float height)
 	a = a * (360 / M_PI);
 
 	return a;
+}
+
+void
+SCR_SetFOV (float fov)
+{
+	refdef_t   *refdef = r_data->refdef;
+	refdef->fov_x = fov;
+	refdef->fov_y = CalcFov (fov, refdef->vrect.width, refdef->vrect.height);
+	vid.recalc_refdef = 1;
 }
 
 static void
