@@ -642,8 +642,15 @@ begin_class (class_t *class)
 	EMIT_STRING (space, meta->name, class->name);
 	meta->info = _PR_CLS_META;
 	meta->instance_size = type_size (&type_obj_class);
-	EMIT_DEF (space, meta->ivars,
-			  emit_ivars (type_obj_class.t.class->ivars, "Class"));
+	if (!class->super_class) {
+		// The ivars list for the meta class struct get emitted only for the
+		// root class of the hierachy.
+		// NOTE: type_obj_class is not actually a class
+		EMIT_DEF (space, meta->ivars,
+				  emit_ivars (type_obj_class.t.symtab, "Class"));
+	} else {
+		meta->ivars = 0;
+	}
 	current_class = &class->class_type;
 	sym = class_symbol (current_class, 0);
 	class->def = def = sym->s.def;
