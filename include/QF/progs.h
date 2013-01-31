@@ -1348,27 +1348,27 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	\return			A pointer to the new resource, or null if no more could
 					be allocated.
 */
-#define PR_RESNEW(type,map)									\
-	type       *t;											\
-															\
-	if (!map._free) {										\
-		int         i, size;								\
-		map._size++;										\
-		size = map._size * sizeof (type *);					\
-		map._map = realloc (map._map, size);				\
-		if (!map._map)										\
-			return 0;										\
-		map._free = calloc (1024, sizeof (type));			\
-		if (!map._free)										\
-			return 0;										\
-		map._map[map._size - 1] = map._free;				\
-		for (i = 0; i < 1023; i++)							\
-			*(type **) &map._free[i] = &map._free[i + 1];	\
-		*(type **) &map._free[i] = 0;						\
-	}														\
-	t = map._free;											\
-	map._free = *(type **) t;								\
-	memset (t, 0, sizeof (type));							\
+#define PR_RESNEW(type,map)										\
+	type       *t;												\
+																\
+	if (!(map)._free) {											\
+		int         i, size;									\
+		(map)._size++;											\
+		size = (map)._size * sizeof (type *);					\
+		(map)._map = realloc ((map)._map, size);				\
+		if (!(map)._map)										\
+			return 0;											\
+		(map)._free = calloc (1024, sizeof (type));				\
+		if (!(map)._free)										\
+			return 0;											\
+		(map)._map[(map)._size - 1] = (map)._free;				\
+		for (i = 0; i < 1023; i++)								\
+			*(type **) &(map)._free[i] = &(map)._free[i + 1];	\
+		*(type **) &(map)._free[i] = 0;							\
+	}															\
+	t = (map)._free;											\
+	(map)._free = *(type **) t;									\
+	memset (t, 0, sizeof (type));								\
 	return t
 
 /** Free a resource returning it to the resource map.
@@ -1378,10 +1378,10 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	\param map		The resource map.
 	\param t		Pointer to the resource to be freed.
 */
-#define PR_RESFREE(type,map,t)								\
-	memset (t, 0, sizeof (type));							\
-	*(type **) t = map._free;								\
-	map._free = t
+#define PR_RESFREE(type,map,t)									\
+	memset (t, 0, sizeof (type));								\
+	*(type **) t = (map)._free;									\
+	(map)._free = t
 
 /** Free all resources in the resource map.
 
@@ -1392,18 +1392,18 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 					used for PR_RESMAP.
 	\param map		The resource map.
 */
-#define PR_RESRESET(type,map)								\
-	unsigned    i, j;										\
-	if (!map._size)											\
-		return;												\
-	for (i = 0; i < map._size; i++) {						\
-		map._free = map._map[i];							\
-		for (j = 0; j < 1023; j++)							\
-			*(type **) &map._free[j] = &map._free[j + 1];	\
-		if (i < map._size - 1)								\
-			*(type **) &map._free[j] = &map._map[i + 1][0];	\
-	}														\
-	map._free = map._map[0];
+#define PR_RESRESET(type,map)									\
+	unsigned    i, j;											\
+	if (!(map)._size)											\
+		return;													\
+	for (i = 0; i < (map)._size; i++) {							\
+		(map)._free = (map)._map[i];							\
+		for (j = 0; j < 1023; j++)								\
+			*(type **) &(map)._free[j] = &(map)._free[j + 1];	\
+		if (i < (map)._size - 1)								\
+			*(type **) &(map)._free[j] = &(map)._map[i + 1][0];	\
+	}															\
+	(map)._free = (map)._map[0];
 
 /** Retrieve a resource from the resource map using a handle.
 
@@ -1412,12 +1412,12 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	\return			A pointer to the resource, or NULL if the handle is
 					invalid.
 */
-#define PR_RESGET(map,col)									\
-	unsigned    row = ~col / 1024;							\
-	col = ~col % 1024;										\
-	if (row >= map._size)									\
-		return 0;											\
-	return &map._map[row][col]
+#define PR_RESGET(map,col)										\
+	unsigned    row = ~col / 1024;								\
+	col = ~col % 1024;											\
+	if (row >= (map)._size)										\
+		return 0;												\
+	return &(map)._map[row][col]
 
 /** Convert a resource pointer to a handle.
 
@@ -1425,13 +1425,13 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	\param ptr		The resource pointer.
 	\return			The handle or 0 if the pointer is invalid.
 */
-#define PR_RESINDEX(map,ptr)								\
-	unsigned    i;											\
-	for (i = 0; i < map._size; i++) {						\
-		long d = ptr - map._map[i];							\
-		if (d >= 0 && d < 1024)								\
-			return ~(i * 1024 + d);							\
-	}														\
+#define PR_RESINDEX(map,ptr)									\
+	unsigned    i;												\
+	for (i = 0; i < (map)._size; i++) {							\
+		long d = ptr - (map)._map[i];							\
+		if (d >= 0 && d < 1024)									\
+			return ~(i * 1024 + d);								\
+	}															\
 	return 0
 //@}
 
