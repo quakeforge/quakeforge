@@ -41,14 +41,76 @@
 #define CSQC_API_VERSION 1.0f
 
 static struct {
+	pr_int_t   *self;
+	pr_int_t   *other;
+	pr_int_t   *world;
+	float      *time;
+	float      *cltime;
+	float      *player_localentnum;
+	float      *player_localnum;
+	float      *maxclients;
+	float      *clientcommandframe;
+	float      *servercommandframe;
+	string_t   *mapname;
+	float      *intermission;
 	vec3_t     *v_forward;
 	vec3_t     *v_up;
 	vec3_t     *v_right;
-} csqc_globals;
+	vec3_t     *view_angles;
+	float      *trace_allsolid;
+	float      *trace_startsolid;
+	float      *trace_fraction;
+	vec3_t     *trace_endpos;
+	vec3_t     *trace_plane_normal;
+	float      *trace_plane_dist;
+	pr_int_t   *trace_ent;
+	float      *trace_inopen;
+	float      *trace_inwater;
+	float      *input_timelength;
+	vec3_t     *input_angles;
+	vec3_t     *input_movevalues;
+	float      *input_buttons;
+	float      *input_impulse;
+} cl_globals;
 
 static struct {
+	int         modelindex;
+	int         absmin;
+	int         absmax;
+	int         entnum;
+	int         drawmask;
+	int         predraw;
+	int         movetype;
+	int         solid;
 	int         origin;
-} csqc_fields;
+	int         oldorigin;
+	int         velocity;
+	int         angles;
+	int         avelocity;
+	int         pmove_flags;
+	int         classname;
+	int         renderflags;
+	int         model;
+	int         frame;
+	int         frame1time;
+	int         frame2;
+	int         frame2time;
+	int         lerpfrac;
+	int         skin;
+	int         effects;
+	int         mins;
+	int         maxs;
+	int         size;
+	int         touch;
+	int         think;
+	int         blocked;
+	int         nextthink;
+	int         chain;
+	int         enemy;
+	int         flags;
+	int         colormap;
+	int         owner;
+} cl_fields;
 
 static struct {
 	func_t      Init;
@@ -64,6 +126,86 @@ static struct {
 	func_t      Event_Sound;
 	func_t      Remove;
 } csqc_funcs;
+
+typedef struct {
+	etype_t     type;
+	const char *name;
+	void       *field;
+} csqc_def_t;
+
+#define CSQC_DEF(t,n) {ev_##t, #n, &cl_globals.n}
+static csqc_def_t csqc_defs[] = {
+	CSQC_DEF (entity,	self),
+	CSQC_DEF (entity,	other),
+	CSQC_DEF (entity,	world),
+	CSQC_DEF (float,	time),
+	CSQC_DEF (float,	cltime),
+	CSQC_DEF (float,	player_localentnum),
+	CSQC_DEF (float,	player_localnum),
+	CSQC_DEF (float,	maxclients),
+	CSQC_DEF (float,	clientcommandframe),
+	CSQC_DEF (float,	servercommandframe),
+	CSQC_DEF (string,	mapname),
+	CSQC_DEF (float,	intermission),
+	CSQC_DEF (vector,	v_forward),
+	CSQC_DEF (vector,	v_up),
+	CSQC_DEF (vector,	v_right),
+	CSQC_DEF (vector,	view_angles),
+	CSQC_DEF (float,	trace_allsolid),
+	CSQC_DEF (float,	trace_startsolid),
+	CSQC_DEF (float,	trace_fraction),
+	CSQC_DEF (vector,	trace_endpos),
+	CSQC_DEF (vector,	trace_plane_normal),
+	CSQC_DEF (float,	trace_plane_dist),
+	CSQC_DEF (entity,	trace_ent),
+	CSQC_DEF (float,	trace_inopen),
+	CSQC_DEF (float,	trace_inwater),
+	CSQC_DEF (float,	input_timelength),
+	CSQC_DEF (vector,	input_angles),
+	CSQC_DEF (vector,	input_movevalues),
+	CSQC_DEF (float,	input_buttons),
+	CSQC_DEF (float,	input_impulse),
+};
+
+#define CSQC_FIELD(t,n) {ev_##t, #n, &cl_fields.n}
+static csqc_def_t csqc_fields[] = {
+	CSQC_FIELD (float,	modelindex),
+	CSQC_FIELD (vector,	absmin),
+	CSQC_FIELD (vector,	absmax),
+	CSQC_FIELD (float,	entnum),
+	CSQC_FIELD (float,	drawmask),
+	CSQC_FIELD (func,	predraw),
+	CSQC_FIELD (float,	movetype),
+	CSQC_FIELD (float,	solid),
+	CSQC_FIELD (vector,	origin),
+	CSQC_FIELD (vector,	oldorigin),
+	CSQC_FIELD (vector,	velocity),
+	CSQC_FIELD (vector,	angles),
+	CSQC_FIELD (vector,	avelocity),
+	CSQC_FIELD (float,	pmove_flags),
+	CSQC_FIELD (string,	classname),
+	CSQC_FIELD (float,	renderflags),
+	CSQC_FIELD (string,	model),
+	CSQC_FIELD (float,	frame),
+	CSQC_FIELD (float,	frame1time),
+	CSQC_FIELD (float,	frame2),
+	CSQC_FIELD (float,	frame2time),
+	CSQC_FIELD (float,	lerpfrac),
+	CSQC_FIELD (float,	skin),
+	CSQC_FIELD (float,	effects),
+	CSQC_FIELD (vector,	mins),
+	CSQC_FIELD (vector,	maxs),
+	CSQC_FIELD (vector,	size),
+	CSQC_FIELD (func,	touch),
+	CSQC_FIELD (func,	think),
+	CSQC_FIELD (func,	blocked),
+	CSQC_FIELD (float,	nextthink),
+	CSQC_FIELD (entity,	chain),
+	CSQC_FIELD (entity,	enemy),
+	CSQC_FIELD (float,	flags),
+	CSQC_FIELD (float,	colormap),
+	CSQC_FIELD (entity,	owner),
+};
 
 static struct {
 	const char *name;
@@ -88,7 +230,7 @@ static progs_t csqc_pr_state;
 #if TYPECHECK_PROGS
 #define CSQCFIELD(e,f,t) E_var (e, PR_AccessField (&csqc_pr_state, #f, ev_##t, __FILE__, __LINE__), t)
 #else
-#define CSQCFIELD(e,f,t) E_var (e, csqc_fields.f, t)
+#define CSQCFIELD(e,f,t) E_var (e, cl_fields.f, t)
 #endif
 
 #define CSQCfloat(e,f)      CSQCFIELD (e, f, float)
@@ -102,8 +244,8 @@ static progs_t csqc_pr_state;
 static void
 CSQC_makevectors (progs_t *pr)
 {
-	AngleVectors (P_VECTOR (pr, 0), *csqc_globals.v_forward,
-				  *csqc_globals.v_right, *csqc_globals.v_up);
+	AngleVectors (P_VECTOR (pr, 0), *cl_globals.v_forward,
+				  *cl_globals.v_right, *cl_globals.v_up);
 }
 
 static void
@@ -650,10 +792,90 @@ version_number (void)
 }
 
 static int
+check_type (const csqc_def_t *def, const ddef_t *ddef)
+{
+	etype_t     ddef_type = ddef->type & ~DEF_SAVEGLOBAL;
+
+	if (ddef_type != def->type) {
+		Sys_Printf ("def type mismatch: %s %s\n", pr_type_name[ddef_type],
+					pr_type_name[def->type]);
+		return 0;
+	}
+	return 1;
+}
+
+static void
+set_address (const csqc_def_t *def, void *address)
+{
+	switch (def->type) {
+		case ev_void:
+		case ev_short:
+		case ev_invalid:
+		case ev_type_count:
+			break;
+		case ev_float:
+		case ev_vector:
+		case ev_quat:
+			*(float **)def->field = (float *) address;
+			break;
+		case ev_string:
+		case ev_entity:
+		case ev_field:
+		case ev_func:
+		case ev_pointer:
+		case ev_integer:
+		case ev_uinteger:
+			*(int **)def->field = (int *) address;
+			break;
+	}
+}
+
+static int
+resolve_globals (progs_t *pr, csqc_def_t *def)
+{
+	ddef_t     *ddef;
+	int         ret = 1;
+
+	for (; def->name; def++) {
+		ddef = PR_FindGlobal (pr, def->name);
+		if (ddef) {
+			ret = check_type (def, ddef) && ret;
+			set_address (def, &G_FLOAT (pr, ddef->ofs));
+		} else {
+			PR_Undefined (pr, "global", def->name);
+			ret = 0;
+		}
+	}
+	return ret;
+}
+
+static int
+resolve_fields (progs_t *pr, csqc_def_t *def)
+{
+	ddef_t     *ddef;
+	int         ret = 1;
+
+	for (; def->name; def++) {
+		*(int *) def->field = -1;
+		ddef = PR_FindField (pr, def->name);
+		if (ddef) {
+			ret = check_type (def, ddef) && ret;
+			*(int *) def->field = ddef->ofs;
+		} else {
+			PR_Undefined (pr, "field", def->name);
+			ret = 0;
+		}
+	}
+	return ret;
+}
+
+static int
 csqc_load (progs_t *pr)
 {
 	size_t      i;
 
+	resolve_globals (pr, csqc_defs);
+	resolve_fields (pr, csqc_fields);
 	for (i = 0;
 		 i < sizeof (csqc_func_list) / sizeof (csqc_func_list[0]); i++) {
 		dfunction_t *f = PR_FindFunction (pr, csqc_func_list[i].name);
