@@ -199,14 +199,20 @@ typedef struct {
 
 	char        levelname[40];	// for display on solo scoreboard
 	int         spectator;
+	int         playernum;
 	int         viewentity;		// cl_entitites[cl.viewentity] = player
 	unsigned    protocol;
+	float       stdver;
 	int         gametype;
 	int         maxclients;
+	// serverinfo mirrors
 	int         chase;
 	int         sv_cshifts;
+	int         no_pogo_stick;
+	int         teamplay;
 	int         watervis;
 	int         fpd;
+	int         fbskins;
 
 // refresh related state
 	struct model_s *worldmodel;	// cl_entitites[0].model
