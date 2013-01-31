@@ -668,7 +668,7 @@ R_DrawBrushModel (entity_t *e)
 				continue;
 
 			VectorSubtract (r_dlights[k].origin, e->origin, lightorigin);
-			R_RecursiveMarkLights (lightorigin, &r_dlights[k], 1 << k,
+			R_RecursiveMarkLights (lightorigin, &r_dlights[k], k,
 							model->nodes + model->hulls[0].firstclipnode);
 		}
 	}
