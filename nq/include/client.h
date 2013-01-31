@@ -38,6 +38,7 @@
 #include "QF/render.h"
 
 #include "client/entities.h"
+#include "client/state.h"
 
 #include "game.h"
 #include "netmain.h"
@@ -52,16 +53,6 @@ typedef struct usercmd_s {
 	float	sidemove;
 	float	upmove;
 } usercmd_t;
-
-typedef struct {
-	struct info_s *info;
-	struct info_key_s *name;
-	float	entertime;
-	int		frags;
-	int		topcolor;
-	int		bottomcolor;
-} scoreboard_t;
-
 
 // client_state_t should hold all pieces of the client state
 
@@ -225,7 +216,7 @@ typedef struct {
 	int         cdtrack;		// cd audio
 
 // frag scoreboard
-	scoreboard_t *scores;		// [cl.maxclients]
+	player_info_t *scores;		// [cl.maxclients]
 
 	lightstyle_t lightstyle[MAX_LIGHTSTYLES];
 } client_state_t;

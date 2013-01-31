@@ -361,8 +361,8 @@ CL_ParseServerInfo (void)
 	}
 	cl.scores = Hunk_AllocName (cl.maxclients * sizeof (*cl.scores), "scores");
 	for (i = 0; i < cl.maxclients; i++) {
-		cl.scores[i].info = Info_ParseString ("name\\", 0, 0);
-		cl.scores[i].name = Info_Key (cl.scores[i].info, "name");
+		cl.scores[i].userinfo = Info_ParseString ("name\\", 0, 0);
+		cl.scores[i].name = Info_Key (cl.scores[i].userinfo, "name");
 		cl.scores[i].topcolor = 0;
 		cl.scores[i].bottomcolor = 0;
 	}
@@ -983,7 +983,7 @@ CL_ParseServerMessage (void)
 				if (i >= cl.maxclients)
 					Host_Error ("CL_ParseServerMessage: svc_updatename > "
 								"MAX_SCOREBOARD");
-				Info_SetValueForKey (cl.scores[i].info, "name",
+				Info_SetValueForKey (cl.scores[i].userinfo, "name",
 									 MSG_ReadString (net_message), 0);
 				break;
 
