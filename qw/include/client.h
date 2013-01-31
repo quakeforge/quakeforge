@@ -245,7 +245,9 @@ typedef struct {
 	int         spectator;
 	int         playernum;
 	int         viewentity;
+	unsigned    protocol;
 	float       stdver;
+	int         gametype;
 	int         maxclients;
 	// serverinfo mirrors
 	int         chase;
