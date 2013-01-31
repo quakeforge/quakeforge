@@ -40,92 +40,9 @@
 
 #define CSQC_API_VERSION 1.0f
 
-static struct {
-	pr_int_t   *self;
-	pr_int_t   *other;
-	pr_int_t   *world;
-	float      *time;
-	float      *cltime;
-	float      *player_localentnum;
-	float      *player_localnum;
-	float      *maxclients;
-	float      *clientcommandframe;
-	float      *servercommandframe;
-	string_t   *mapname;
-	float      *intermission;
-	vec3_t     *v_forward;
-	vec3_t     *v_up;
-	vec3_t     *v_right;
-	vec3_t     *view_angles;
-	float      *trace_allsolid;
-	float      *trace_startsolid;
-	float      *trace_fraction;
-	vec3_t     *trace_endpos;
-	vec3_t     *trace_plane_normal;
-	float      *trace_plane_dist;
-	pr_int_t   *trace_ent;
-	float      *trace_inopen;
-	float      *trace_inwater;
-	float      *input_timelength;
-	vec3_t     *input_angles;
-	vec3_t     *input_movevalues;
-	float      *input_buttons;
-	float      *input_impulse;
-} cl_globals;
-
-static struct {
-	int         modelindex;
-	int         absmin;
-	int         absmax;
-	int         entnum;
-	int         drawmask;
-	int         predraw;
-	int         movetype;
-	int         solid;
-	int         origin;
-	int         oldorigin;
-	int         velocity;
-	int         angles;
-	int         avelocity;
-	int         pmove_flags;
-	int         classname;
-	int         renderflags;
-	int         model;
-	int         frame;
-	int         frame1time;
-	int         frame2;
-	int         frame2time;
-	int         lerpfrac;
-	int         skin;
-	int         effects;
-	int         mins;
-	int         maxs;
-	int         size;
-	int         touch;
-	int         think;
-	int         blocked;
-	int         nextthink;
-	int         chain;
-	int         enemy;
-	int         flags;
-	int         colormap;
-	int         owner;
-} cl_fields;
-
-static struct {
-	func_t      Init;
-	func_t      Shutdown;
-	func_t      UpdateView;
-	func_t      WorldLoaded;
-	func_t      Parse_StuffCmd;
-	func_t      Parse_CenterPrint;
-	func_t      Parse_Print;
-	func_t      InputEvent;
-	func_t      ConsoleCommand;
-	func_t      Ent_Update;
-	func_t      Event_Sound;
-	func_t      Remove;
-} csqc_funcs;
+cl_globals_t cl_globals;
+cl_fields_t  cl_fields;
+cl_funcs_t   cl_funcs;
 
 typedef struct {
 	etype_t     type;
@@ -211,34 +128,21 @@ static struct {
 	const char *name;
 	func_t     *field;
 } csqc_func_list[] = {
-	{"CSQC_Init",				&csqc_funcs.Init},
-	{"CSQC_Shutdown",			&csqc_funcs.Shutdown},
-	{"CSQC_UpdateView",			&csqc_funcs.UpdateView},
-	{"CSQC_WorldLoaded",		&csqc_funcs.WorldLoaded},
-	{"CSQC_Parse_StuffCmd",		&csqc_funcs.Parse_StuffCmd},
-	{"CSQC_Parse_CenterPrint",	&csqc_funcs.Parse_CenterPrint},
-	{"CSQC_Parse_Print",		&csqc_funcs.Parse_Print},
-	{"CSQC_InputEvent",			&csqc_funcs.InputEvent},
-	{"CSQC_ConsoleCommand",		&csqc_funcs.ConsoleCommand},
-	{"CSQC_Ent_Update",			&csqc_funcs.Ent_Update},
-	{"CSQC_Event_Sound",		&csqc_funcs.Event_Sound},
-	{"CSQC_Remove",				&csqc_funcs.Remove},
+	{"CSQC_Init",				&cl_funcs.Init},
+	{"CSQC_Shutdown",			&cl_funcs.Shutdown},
+	{"CSQC_UpdateView",			&cl_funcs.UpdateView},
+	{"CSQC_WorldLoaded",		&cl_funcs.WorldLoaded},
+	{"CSQC_Parse_StuffCmd",		&cl_funcs.Parse_StuffCmd},
+	{"CSQC_Parse_CenterPrint",	&cl_funcs.Parse_CenterPrint},
+	{"CSQC_Parse_Print",		&cl_funcs.Parse_Print},
+	{"CSQC_InputEvent",			&cl_funcs.InputEvent},
+	{"CSQC_ConsoleCommand",		&cl_funcs.ConsoleCommand},
+	{"CSQC_Ent_Update",			&cl_funcs.Ent_Update},
+	{"CSQC_Event_Sound",		&cl_funcs.Event_Sound},
+	{"CSQC_Remove",				&cl_funcs.Remove},
 };
 
-static progs_t csqc_pr_state;
-
-#if TYPECHECK_PROGS
-#define CSQCFIELD(e,f,t) E_var (e, PR_AccessField (&csqc_pr_state, #f, ev_##t, __FILE__, __LINE__), t)
-#else
-#define CSQCFIELD(e,f,t) E_var (e, cl_fields.f, t)
-#endif
-
-#define CSQCfloat(e,f)      CSQCFIELD (e, f, float)
-#define CSQCstring(e,f)     CSQCFIELD (e, f, string)
-#define CSQCfunc(e,f)       CSQCFIELD (e, f, func)
-#define CSQCentity(e,f)     CSQCFIELD (e, f, entity)
-#define CSQCvector(e,f)     CSQCFIELD (e, f, vector)
-#define CSQCinteger(e,f)    CSQCFIELD (e, f, integer)
+progs_t csqc_pr_state;
 
 
 static void
@@ -884,13 +788,13 @@ csqc_load (progs_t *pr)
 		if (f)
 			*csqc_func_list[i].field = (func_t) (f - pr->pr_functions);
 	}
-	if (csqc_funcs.Init) {
+	if (cl_funcs.Init) {
 		PR_RESET_PARAMS (&csqc_pr_state);
 		P_FLOAT (&csqc_pr_state, 0) = CSQC_API_VERSION;
 		P_STRING (&csqc_pr_state, 1) = PR_SetTempString (&csqc_pr_state,
 														 PACKAGE_NAME);
 		P_FLOAT (&csqc_pr_state, 2) = version_number ();
-		PR_ExecuteProgram (&csqc_pr_state, csqc_funcs.Init);
+		PR_ExecuteProgram (&csqc_pr_state, cl_funcs.Init);
 	}
 	return 1;
 }
