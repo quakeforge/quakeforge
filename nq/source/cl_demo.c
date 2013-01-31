@@ -394,6 +394,8 @@ demo_check_dem (void)
 	// .dem demo files begin with an ascii integer (possibly negative)
 	// representing the forced bgm track, followed by a newline
 	c = Qgetc (cls.demofile);
+	while (isspace (c))	// hipnotic demos have leading whitespace :P
+		c = Qgetc (cls.demofile);
 	if (c == '-')
 		c = Qgetc (cls.demofile);
 	while (isdigit (c))
