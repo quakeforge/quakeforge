@@ -574,7 +574,7 @@ draw_frags (view_t *view)
 	int         i, k, l, p = -1;
 	int         top, bottom;
 	int         x;
-	scoreboard_t *s;
+	player_info_t *s;
 
 	if (cl.maxclients == 1)
 		return;
@@ -800,7 +800,7 @@ static void
 draw_rogue_face (view_t *view)
 {
 	int         top, bottom;
-	scoreboard_t *s;
+	player_info_t *s;
 
 	// PGM 01/19/97 - team color drawing
 
@@ -1032,7 +1032,7 @@ Sbar_DeathmatchOverlay (view_t *view)
 	int         i, k, l;
 	int         top, bottom;
 	int         x, y;
-	scoreboard_t *s;
+	player_info_t *s;
 
 	r_data->scr_copyeverything = 1;
 	r_data->scr_fullupdate = 0;

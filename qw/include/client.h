@@ -36,6 +36,7 @@
 #include "QF/plugin/vid_render.h"
 
 #include "client/entities.h"
+#include "client/state.h"
 
 #include "netchan.h"
 #include "qw/bothdefs.h"
@@ -61,31 +62,6 @@ typedef struct player_state_s {
 	int         oldonground;
 
 } player_state_t;
-
-typedef struct player_info_s {
-	int         userid;
-	struct info_s *userinfo;
-
-	// scoreboard information
-	struct info_key_s *name;
-	struct info_key_s *team;
-	struct info_key_s *chat;
-	float       entertime;
-	int         frags;
-	int         ping;
-	byte        pl;
-
-	// skin information
-	int         topcolor;
-	int         bottomcolor;
-	struct info_key_s *skinname;
-	struct skin_s *skin;
-
-	int         spectator;
-	int         stats[MAX_CL_STATS];	// health, etc
-	int         prevcount;
-} player_info_t;
-
 
 typedef struct {
 	// generated on client side

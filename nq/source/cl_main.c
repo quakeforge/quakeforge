@@ -205,7 +205,7 @@ CL_ClearState (void)
 		int         i;
 
 		for (i = 0; i < cl.maxclients; i++)
-			Info_Destroy (cl.scores[i].info);
+			Info_Destroy (cl.scores[i].userinfo);
 	}
 
 	// wipe the entire cl structure
