@@ -395,7 +395,10 @@ CL_ClearState (void)
 	// wipe the entire cl structure
 	if (cl.serverinfo)
 		Info_Destroy (cl.serverinfo);
+	if (cl.players)
+		free (cl.players);
 	memset (&cl, 0, sizeof (cl));
+	cl.players = calloc (MAX_CLIENTS, sizeof (player_info_t));
 	r_data->force_fullscreen = 0;
 
 	cl.maxclients = MAX_CLIENTS;
@@ -1219,6 +1222,7 @@ CL_Init (void)
 	cls.downloadname = dstring_newstr ();
 	cls.downloadurl = dstring_newstr ();
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
+	cl.players = calloc (MAX_CLIENTS, sizeof (player_info_t));
 
 	// register our commands
 	Cmd_AddCommand ("version", CL_Version_f, "Report version information");
