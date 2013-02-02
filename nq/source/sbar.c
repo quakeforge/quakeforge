@@ -519,7 +519,7 @@ Sbar_SortFrags (void)
 	// sort by frags
 	scoreboardlines = 0;
 	for (i = 0; i < cl.maxclients; i++) {
-		if (cl.scores[i].name->value[0]) {
+		if (cl.players[i].name->value[0]) {
 			fragsort[scoreboardlines] = i;
 			scoreboardlines++;
 		}
@@ -527,7 +527,8 @@ Sbar_SortFrags (void)
 
 	for (i = 0; i < scoreboardlines; i++) {
 		for (j = 0; j < (scoreboardlines - 1 - i); j++) {
-			if (cl.scores[fragsort[j]].frags < cl.scores[fragsort[j + 1]].frags) {
+			if (cl.players[fragsort[j]].frags
+				< cl.players[fragsort[j + 1]].frags) {
 				k = fragsort[j];
 				fragsort[j] = fragsort[j + 1];
 				fragsort[j + 1] = k;
@@ -588,7 +589,7 @@ draw_frags (view_t *view)
 
 	for (i = 0; i < l; i++) {
 		k = fragsort[i];
-		s = &cl.scores[k];
+		s = &cl.players[k];
 		if (!s->name->value[0])
 			continue;
 
@@ -804,7 +805,7 @@ draw_rogue_face (view_t *view)
 
 	// PGM 01/19/97 - team color drawing
 
-	s = &cl.scores[cl.viewentity - 1];
+	s = &cl.players[cl.viewentity - 1];
 
 	top = Sbar_ColorForMap (s->topcolor);
 	bottom = Sbar_ColorForMap (s->bottomcolor);
@@ -1049,7 +1050,7 @@ Sbar_DeathmatchOverlay (view_t *view)
 	y = 40;
 	for (i = 0; i < l; i++) {
 		k = fragsort[i];
-		s = &cl.scores[k];
+		s = &cl.players[k];
 		if (!s->name->value[0])
 			continue;
 

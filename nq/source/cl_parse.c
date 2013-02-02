@@ -359,12 +359,13 @@ CL_ParseServerInfo (void)
 		Sys_Printf ("Bad maxclients (%u) from server\n", cl.maxclients);
 		goto done;
 	}
-	cl.scores = Hunk_AllocName (cl.maxclients * sizeof (*cl.scores), "scores");
+	cl.players = Hunk_AllocName (cl.maxclients * sizeof (*cl.players),
+								 "players");
 	for (i = 0; i < cl.maxclients; i++) {
-		cl.scores[i].userinfo = Info_ParseString ("name\\", 0, 0);
-		cl.scores[i].name = Info_Key (cl.scores[i].userinfo, "name");
-		cl.scores[i].topcolor = 0;
-		cl.scores[i].bottomcolor = 0;
+		cl.players[i].userinfo = Info_ParseString ("name\\", 0, 0);
+		cl.players[i].name = Info_Key (cl.players[i].userinfo, "name");
+		cl.players[i].topcolor = 0;
+		cl.players[i].bottomcolor = 0;
 	}
 
 	// parse gametype
@@ -983,7 +984,7 @@ CL_ParseServerMessage (void)
 				if (i >= cl.maxclients)
 					Host_Error ("CL_ParseServerMessage: svc_updatename > "
 								"MAX_SCOREBOARD");
-				Info_SetValueForKey (cl.scores[i].userinfo, "name",
+				Info_SetValueForKey (cl.players[i].userinfo, "name",
 									 MSG_ReadString (net_message), 0);
 				break;
 
@@ -993,7 +994,7 @@ CL_ParseServerMessage (void)
 				if (i >= cl.maxclients)
 					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
 								"MAX_SCOREBOARD");
-				cl.scores[i].frags = (short) MSG_ReadShort (net_message);
+				cl.players[i].frags = (short) MSG_ReadShort (net_message);
 				break;
 
 			case svc_clientdata:
@@ -1016,11 +1017,11 @@ CL_ParseServerMessage (void)
 					byte        col = MSG_ReadByte (net_message);
 					byte        top = col >> 4;
 					byte        bot = col & 0xf;
-					if (top != cl.scores[i].topcolor
-						|| bot != cl.scores[i].bottomcolor)
+					if (top != cl.players[i].topcolor
+						|| bot != cl.players[i].bottomcolor)
 						mod_funcs->Skin_SetTranslation (i + 1, top, bot);
-					cl.scores[i].topcolor = top;
-					cl.scores[i].bottomcolor = bot;
+					cl.players[i].topcolor = top;
+					cl.players[i].bottomcolor = bot;
 					ent->skin = mod_funcs->Skin_SetColormap (ent->skin, i + 1);
 				}
 				break;
