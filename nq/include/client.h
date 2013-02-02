@@ -133,7 +133,7 @@ extern client_static_t	cls;
 /*
   the client_state_t structure is wiped completely at every server signon
 */
-typedef struct {
+typedef struct client_state_s {
 	qboolean    loading;
 
 	int         movemessages;	// Since connecting to this server throw out
@@ -144,7 +144,7 @@ typedef struct {
 // information for local display
 	int         stats[MAX_CL_STATS];	// Health, etc
 	float       item_gettime[32];	// cl.time of aquiring item, for blinking
-	float       faceanimtime;	// Use anim frame if cl.time < this
+	float       faceanimtime;			// Use anim frame if cl.time < this
 
 	cshift_t    cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
 	cshift_t    prev_cshifts[NUM_CSHIFTS];	// and content types
@@ -170,13 +170,13 @@ typedef struct {
 	double      laststop;
 
 	qboolean    paused;			// Sent over by server
-	int         onground;
+	int         onground;		// -1 when in air
 	float       viewheight;
 	float       crouch;			// Local amount for smoothing stepups
 	qboolean    inwater;
 
 	int         intermission;	// Don't change view angle, full screen, etc
-	int         completed_time;	// Latched at intermission start
+	int         completed_time;	// Latched from time at intermission start
 
 	double      mtime[2];		// The timestamp of last two messages
 	double      time;			// Clients view of time, should be between
@@ -185,6 +185,7 @@ typedef struct {
 	double      oldtime;		// Previous cl.time, time-oldtime is used
 								// to decay light values and smooth step ups
 
+	double      last_ping_request;	// while showing scoreboard
 	double      last_servermessage;	// (realtime) for net trouble icon
 
 /* information that is static for the entire time connected to a server */
