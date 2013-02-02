@@ -266,7 +266,7 @@ typedef struct {
 	int         cdtrack;		// cd audio
 
 // all player information
-	player_info_t players[MAX_CLIENTS];
+	player_info_t *players;
 
 	lightstyle_t lightstyle[MAX_LIGHTSTYLES];
 } client_state_t;
