@@ -80,7 +80,8 @@ CL_Ignore_Sanity_Check (void)
 
 static qboolean live_iterator (ignore_t *ig, llist_node_t *node)
 {
-	Sys_Printf ("%5i - %s\n", ig->uid, Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
+	Sys_Printf ("%5i - %s\n", ig->uid,
+				Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
 	return true;
 }
 
@@ -115,7 +116,8 @@ CL_Ignore_f (void)
 				new->slot = i;
 				new->uid = uid;
 				llist_append (ignore_list, new);
-				Sys_Printf ("User %i (%s) is now ignored.\n", uid, Info_ValueForKey (cl.players[i].userinfo, "name"));
+				Sys_Printf ("User %i (%s) is now ignored.\n", uid,
+							Info_ValueForKey (cl.players[i].userinfo, "name"));
 				return;
 			}
 		}
@@ -136,11 +138,14 @@ CL_Unignore_f (void)
 	else {
 		uid = atoi (Cmd_Argv (1));
 		if ((node = llist_findnode (ignore_list, &uid))) {
-			Sys_Printf ("User %i (%s) is no longer ignored.\n", uid, Info_ValueForKey (cl.players[LLIST_DATA (node, ignore_t)->slot].userinfo, "name"));
+			int         slot = LLIST_DATA (node, ignore_t)->slot;
+			Sys_Printf ("User %i (%s) is no longer ignored.\n", uid,
+						Info_ValueForKey (cl.players[slot].userinfo, "name"));
 			CL_Ignore_Free (llist_remove (node), 0);
 			return;
 		}
-		Sys_Printf ("User %i does not exist or is not presently ignored.\n", uid);
+		Sys_Printf ("User %i does not exist or is not presently ignored.\n",
+					uid);
 	}
 }
 
@@ -159,7 +164,8 @@ static qboolean cam_iterator (ignore_t *ig, llist_node_t *node)
 		llist_remove (node);
 		return true;
 	}
-	dsprintf (g_cam_test, "%s: ", Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
+	dsprintf (g_cam_test, "%s: ",
+			  Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
 	if (!strncmp (g_cam_test->str, g_cam_str, sizeof (g_cam_test->str))) {
 		return g_cam_allowed = false;
 	} else
@@ -187,9 +193,11 @@ CL_Chat_User_Disconnected (int uid)
 	if ((ig = llist_remove (llist_findnode (ignore_list, &uid)))) {
 		if (ig->lastname)
 			free ((void *)ig->lastname);
-		ig->lastname = strdup (Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
+		ig->lastname = strdup (Info_ValueForKey (cl.players[ig->slot].userinfo,
+												 "name"));
 		llist_append (dead_ignore_list, ig);
-		Sys_Printf ("Ignored user %i (%s) left the server.  Now ignoring by name...\n", ig->uid, ig->lastname);
+		Sys_Printf ("Ignored user %i (%s) left the server.  "
+					"Now ignoring by name...\n", ig->uid, ig->lastname);
 	}
 }
 
@@ -215,8 +223,12 @@ CL_Chat_Check_Name (const char *name, int slot)
 	if (g_ccn_found) {
 		g_ccn_found->slot = slot;
 		g_ccn_found->uid = cl.players[slot].userid;
-		llist_append (ignore_list, llist_remove (llist_getnode (dead_ignore_list, g_ccn_found)));
-		Sys_Printf ("User %i (%s) is using an ignored name.  Now ignoring by user id...\n", g_ccn_found->uid, g_ccn_found->lastname);
+		llist_append (ignore_list,
+					  llist_remove (llist_getnode (dead_ignore_list,
+												   g_ccn_found)));
+		Sys_Printf ("User %i (%s) is using an ignored name.  "
+					"Now ignoring by user id...\n", g_ccn_found->uid,
+					g_ccn_found->lastname);
 	}
 }
 
