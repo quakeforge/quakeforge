@@ -54,7 +54,7 @@ static qpic_t  *scr_net;
 static void
 SCR_DrawNet (void)
 {
-	if (realtime - cl.last_received_message < 0.3)
+	if (realtime - cl.last_servermessage < 0.3)
 		return;
 	if (cls.demoplayback)
 		return;

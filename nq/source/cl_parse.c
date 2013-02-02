@@ -833,6 +833,8 @@ CL_ParseServerMessage (void)
 	static dstring_t *stuffbuf;
 	signon_t    so;
 
+	cl.last_servermessage = realtime;
+
 	// if recording demos, copy the message out
 	if (cl_shownet->int_val == 1)
 		Sys_Printf ("%i ", net_message->message->cursize);
