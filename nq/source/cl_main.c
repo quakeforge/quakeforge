@@ -426,7 +426,6 @@ CL_ReadFromServer (void)
 		if (!ret)
 			break;
 
-		cl.last_received_message = realtime;
 		CL_ParseServerMessage ();
 	} while (ret && cls.state >= ca_connected);
 
