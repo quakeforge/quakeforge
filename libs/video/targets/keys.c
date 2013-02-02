@@ -1149,16 +1149,20 @@ Key_Event (knum_t key, short unicode, qboolean down)
 	// if not a consolekey, send to the interpreter no matter what mode is
 	switch (key_dest) {
 		case key_game:
+		case key_demo:
 			Key_Game (key, unicode);
-			break;
+			return;
 		case key_message:
 		case key_menu:
 		case key_console:
 			Key_Console (key, unicode);
-			break;
-		default:
-			Sys_Error ("Bad key_dest");
+			return;
+		case key_unfocused:
+			return;
+		case key_last:
+			break;	// should not happen, so hit the error
 	}
+	Sys_Error ("Bad key_dest");
 }
 
 VISIBLE void
