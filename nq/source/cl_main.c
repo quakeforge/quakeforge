@@ -201,11 +201,11 @@ CL_ClearState (void)
 	if (cl.edicts)
 		PL_Free (cl.edicts);
 
-	if (cl.scores) {
+	if (cl.players) {
 		int         i;
 
 		for (i = 0; i < cl.maxclients; i++)
-			Info_Destroy (cl.scores[i].userinfo);
+			Info_Destroy (cl.players[i].userinfo);
 	}
 
 	// wipe the entire cl structure

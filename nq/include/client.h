@@ -221,8 +221,8 @@ typedef struct {
 
 	int         cdtrack;		// cd audio
 
-// frag scoreboard
-	player_info_t *scores;		// [cl.maxclients]
+// all player information
+	player_info_t *players;
 
 	lightstyle_t lightstyle[MAX_LIGHTSTYLES];
 } client_state_t;
