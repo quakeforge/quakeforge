@@ -578,7 +578,7 @@ Cmd_Base (void)
 	ExpandPath/*AndArchive*/ (file1);
 
 	sprintf (file1, "%s/%s.tri", cddir, scr.token->str);
-	time1 = Sys_FileTime (file1);
+	time1 = Sys_FileExists (file1);
 	if (time1 == -1)
 		Sys_Error ("%s doesn't exist", file1);
 
@@ -633,7 +633,7 @@ Cmd_Skin (void)
 	ExpandPath/*AndArchive*/ (file1);
 
 	sprintf (file1, "%s/%s.lbm", cddir, scr.token->str);
-	time1 = Sys_FileTime (file1);
+	time1 = Sys_FileExists (file1);
 	if (time1 == -1)
 		Sys_Error ("%s not found", file1);
 
@@ -683,7 +683,7 @@ GrabFrame (char *frame, int isgroup)
 	ExpandPath/*AndArchive*/ (file1);
 
 	sprintf (file1, "%s/%s.tri", cddir, frame);
-	time1 = Sys_FileTime (file1);
+	time1 = Sys_FileExists (file1);
 	if (time1 == -1)
 		Sys_Error ("%s does not exist", file1);
 

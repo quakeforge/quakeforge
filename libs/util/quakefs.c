@@ -847,7 +847,7 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 				dstring_clearstr (foundname);
 				dstring_appendstr (foundname, filename);
 			}
-			if (Sys_FileTime (netpath->str) == -1) {
+			if (Sys_FileExists (netpath->str) == -1) {
 				dstring_delete (netpath);
 				return -1;
 			}
@@ -1399,7 +1399,7 @@ QFS_NextFilename (dstring_t *filename, const char *prefix, const char *ext)
 
 		if (qfs_expand_userpath (full_path, filename->str) == -1)
 			break;
-		if (Sys_FileTime (full_path->str) == -1) {
+		if (Sys_FileExists (full_path->str) == -1) {
 			// file doesn't exist, so we can use this name
 			ret = 1;
 			break;

@@ -185,7 +185,7 @@ Sys_mkdir (const char *path)
 }
 
 VISIBLE int
-Sys_FileTime (const char *path)
+Sys_FileExists (const char *path)
 {
 #ifdef HAVE_ACCESS
 	if (access (path, R_OK) == 0)

@@ -58,7 +58,7 @@ typedef struct date_s {
 	char        str[128];
 } date_t;
 
-int	Sys_FileTime (const char *path);
+int	Sys_FileExists (const char *path);
 int Sys_mkdir (const char *path);
 
 typedef void (*sys_printf_t) (const char *fmt, va_list args);
