@@ -168,7 +168,7 @@ qw_client_x11_libs= \
 qw_client_x11_SOURCES=	cl_sys_unix.c
 qw_client_x11_LDADD= $(qw_client_x11_libs) \
 			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
-			$(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS) $(LIBCURL_LIBS)
+			$(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS) $(LIBCURL_LIBS) $(DL_LIBS)
 qw_client_x11_LDFLAGS=	$(common_ldflags)
 qw_client_x11_DEPENDENCIES= $(qw_client_x11_libs)
 

@@ -138,7 +138,7 @@ nq_x11_libs=  \
 nq_x11_SOURCES= 	sys_unix.c
 nq_x11_LDADD=		$(nq_x11_libs) \
 			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
-			$(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS)
+			$(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS) $(DL_LIBS)
 nq_x11_LDFLAGS= 	$(common_ldflags)
 nq_x11_DEPENDENCIES=	$(nq_x11_libs)
 
