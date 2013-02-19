@@ -46,11 +46,8 @@
 #include "game.h"
 #include "server.h"
 
-
-
 cvar_t     *registered;
 int         static_registered = 1;		// only for startup check, then set
-qboolean    com_modified;				// set true if using non-id files
 
 /*
 	Game_CheckRegistered
@@ -63,7 +60,6 @@ qboolean    com_modified;				// set true if using non-id files
 static void
 Game_CheckRegistered (void)
 {
-	unsigned short check[128];
 	QFile      *h;
 
 	QFS_FOpenFile ("gfx/pop.lmp", &h);
@@ -71,7 +67,6 @@ Game_CheckRegistered (void)
 
 	if (h) {
 		static_registered = 1;
-		Qread (h, check, sizeof (check));
 		Qclose (h);
 	}
 

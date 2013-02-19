@@ -44,7 +44,6 @@ cvar_t     *registered;
 cvar_t     *cmdline;
 int         static_registered = 1;
 
-
 /*
 	Game_CheckRegistered
 
@@ -56,7 +55,6 @@ int         static_registered = 1;
 static void
 Game_CheckRegistered (void)
 {
-	unsigned short check[128];
 	QFile      *h;
 
 	QFS_FOpenFile ("gfx/pop.lmp", &h);
@@ -64,7 +62,6 @@ Game_CheckRegistered (void)
 
 	if (h) {
 		static_registered = 1;
-		Qread (h, check, sizeof (check));
 		Qclose (h);
 	}
 
