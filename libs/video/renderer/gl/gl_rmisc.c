@@ -148,7 +148,7 @@ gl_R_Init (void)
 					"Load a pointfile to determine map leaks");
 	Cmd_AddCommand ("loadsky", gl_R_LoadSky_f, "Load a skybox");
 
-	Draw_Init ();
+	gl_Draw_Init ();
 	SCR_Init ();
 	gl_R_InitBubble ();
 

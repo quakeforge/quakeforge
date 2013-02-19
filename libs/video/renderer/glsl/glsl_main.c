@@ -252,7 +252,7 @@ glsl_R_Init (void)
 					"Test the current refresh rate for the current location.");
 	R_Init_Cvars ();
 	glsl_R_Particles_Init_Cvars ();
-	Draw_Init ();
+	glsl_Draw_Init ();
 	SCR_Init ();
 	glsl_R_InitBsp ();
 	glsl_R_InitAlias ();
