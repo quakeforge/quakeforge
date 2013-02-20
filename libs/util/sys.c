@@ -66,6 +66,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <time.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
@@ -159,6 +160,25 @@ Sys_MaskFPUExceptions (void)
 {
 }
 #endif
+
+int
+Sys_isdir (const char *path)
+{
+	int         res;
+#ifdef _WIN32
+	struct _stat st;
+	res = _stat (path, &st);
+#else
+	struct stat st;
+	res = stat (path, &st);
+#endif
+	if (res < 0) {
+		// assume any error means path does not refer to a directory. certainly
+		// true if errno == ENOENT
+		return 0;
+	}
+	return S_ISDIR (st.st_mode);
+}
 
 int
 Sys_mkdir (const char *path)
