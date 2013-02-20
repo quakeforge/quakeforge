@@ -199,9 +199,7 @@ Sys_mkdir (const char *path)
 #  error do not know how to make directories
 # endif
 #endif
-	if (errno != EEXIST)
-		return -1;
-	return 0;
+	return -1;
 }
 
 VISIBLE int
@@ -869,10 +867,13 @@ Sys_CreatePath (const char *path)
 
 	strcpy (e_path, path);
 	for (ofs = e_path + 1; *ofs; ofs++) {
-		if (*ofs == '/') {				// create the directory
+		if (*ofs == '/') {
 			*ofs = 0;
-			if (Sys_mkdir (e_path) == -1)
-				return -1;
+			if (!Sys_isdir (e_path)) {
+				// create the directory
+				if (Sys_mkdir (e_path) == -1)
+					return -1;
+			}
 			*ofs = '/';
 		}
 	}
