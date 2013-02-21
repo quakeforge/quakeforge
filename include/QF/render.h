@@ -106,6 +106,8 @@ typedef struct entity_s {
 	int						fullbright;
 	float					min_light;
 
+	struct trail_s			*trail;
+
 	// FIXME: could turn these into a union
 	int						trivial_accept;
 	struct mnode_s			*topnode; // for bmodels, first world node that

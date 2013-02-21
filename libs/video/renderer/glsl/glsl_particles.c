@@ -40,6 +40,7 @@
 
 #include <stdlib.h>
 
+#include "QF/alloc.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/image.h"
@@ -173,6 +174,54 @@ static struct {
 	{"texoff", 0},
 	{"smoke", 1},
 };
+
+typedef struct trail_s {
+	struct trail_s *next;
+	struct trail_s **prev;
+	struct trail_s **owner;
+	particle_t *points;
+	particle_t **head;	// new points are appended to the list
+	int         num_points;
+} trail_t;
+
+typedef struct trailvtx_s {
+	quat_t      vertex;
+	vec3_t      bary;
+	float       texoff;
+} trailvtx_t;
+
+static trail_t *free_trails;
+static trail_t *active_trails;
+static particle_t *free_points;
+
+static trail_t *
+new_trail (void)
+{
+	trail_t    *trail;
+	ALLOC (16, trail_t, trails, trail);
+	trail->head = &trail->points;
+	return trail;
+}
+
+static void
+free_trail (trail_t *trail)
+{
+	FREE (trails, trail);
+}
+
+static particle_t *
+new_point (void)
+{
+	particle_t  *point;
+	ALLOC (128, particle_t, points, point);
+	return point;
+}
+
+static void
+free_point (particle_t *point)
+{
+	FREE (points, point);
+}
 
 inline static void
 particle_new (ptype_t type, int texnum, const vec3_t org, float scale,
@@ -668,6 +717,57 @@ R_TeleportSplash_QF (const vec3_t org)
 							  (7 + ((rnd >> 12) & 7)), 1.0, 0.0);
 			}
 		}
+	}
+}
+
+static void
+R_RocketTrail_trail (entity_t *ent)
+{
+	float		dist, maxlen, origlen, percent, pscale, pscalenext;
+	float		len = 0.0;
+	vec3_t		old_origin, vec;
+	particle_t *point;
+
+	if (!ent->trail) {
+		ent->trail = new_trail ();
+		ent->trail->next = active_trails;
+		ent->trail->prev = &active_trails;
+		ent->trail->owner = &ent->trail;
+		if (active_trails)
+			active_trails->prev = &ent->trail->next;
+		active_trails = ent->trail;
+	}
+
+	VectorCopy (ent->old_origin, old_origin);
+	VectorSubtract (ent->origin, old_origin, vec);
+	maxlen = VectorNormalize (vec);
+	origlen = vr_data.frametime / maxlen;
+	pscale = 1.5 + qfrandom (1.5);
+
+	while (len < maxlen) {
+		pscalenext = 1.5 + qfrandom (1.5);
+		dist = (pscale + pscalenext) * 3.0;
+		percent = len * origlen;
+
+		point = new_point ();
+		VectorCopy (old_origin, point->org);
+		point->color = 12 + (mtwist_rand (&mt) & 3);
+		point->tex = part_tex_smoke;
+		point->scale = pscale + percent * 4.0;
+		point->alpha = 0.5 + qfrandom (0.125) - percent * 0.40;
+		VectorCopy (vec3_origin, point->vel);
+		point->type = pt_smoke;
+		point->die = vr_data.realtime + 2.0 - percent * 2.0;
+		point->ramp = 0.0;
+		point->phys = R_ParticlePhysics (point->type);
+
+		*ent->trail->head = point;
+		ent->trail->head = &point->next;
+		ent->trail->num_points++;
+
+		len += dist;
+		VectorMultAdd (old_origin, len, vec, old_origin);
+		pscale = pscalenext;
 	}
 }
 
@@ -1606,6 +1706,150 @@ R_VoorTrail_ID (entity_t *ent)
 	}
 }
 
+static inline void
+set_vertex (trailvtx_t *v, const particle_t *point, float w, const vec3_t bary,
+			float off)
+{
+	VectorCopy (point->org, v->vertex);
+	VectorCopy (bary, v->bary);
+	v->vertex[3] = w;
+	v->texoff = off;
+}
+
+static void
+count_points (int *num_verts, int *num_elements)
+{
+	trail_t    *trail;
+
+	*num_verts = 0;
+	*num_elements = 0;
+	for (trail = active_trails; trail; trail = trail->next) {
+		if (trail->num_points < 2)
+			continue;
+		// +2 for an extra point at either end of the strip
+		*num_verts += (trail->num_points + 2) * 2;
+		*num_elements += trail->num_points * 2;
+	}
+}
+
+static void
+build_verts (trailvtx_t *v, GLushort *e)
+{
+	trail_t    *trail;
+	int         index = 0;
+	particle_t *point, *last_point = 0;
+	float       bary[] = {0, 0, 1, 0, 0, 1, 0, 0};
+	int         bind = 0;
+
+	for (trail = active_trails; trail; trail = trail->next) {
+		if (trail->num_points < 2)
+			continue;
+		point = trail->points;
+		set_vertex (v++, point, 1, bary + bind++, index/2);
+		set_vertex (v++, point, -1, bary + bind++, index/2);
+		bind %= 3;
+		for (; point; point = point->next) {
+			set_vertex (v++, point, 1, bary + bind++, index/2 + 1);
+			set_vertex (v++, point, -1, bary + bind++, index/2 + 1);
+			bind %= 3;
+			*e++ = index++;
+			*e++ = index++;
+			last_point = point;
+			point->phys (point);
+		}
+		set_vertex (v++, last_point, 1, bary + bind++, index/2 + 1);
+		set_vertex (v++, last_point, -1, bary + bind++, index/2 + 1);
+		index += 4;
+	}
+}
+
+static void
+expire_trails (void)
+{
+	trail_t    *trail, *next_trail;
+
+	for (trail = active_trails; trail; trail = next_trail) {
+		next_trail = trail->next;
+		while (trail->points && trail->points->die <= vr_data.realtime) {
+			particle_t *point = trail->points;
+			trail->points = point->next;
+			free_point (point);
+			trail->num_points--;
+		}
+		if (trail->num_points < 2) {
+			if (trail->next)
+				trail->next->prev = trail->prev;
+			*trail->prev = trail->next;
+			*trail->owner = 0;
+			free_trail (trail);
+		}
+	}
+}
+
+static void
+draw_trails (void)
+{
+	trail_t    *trl;
+	int         num_verts;
+	int         num_elements;
+	trailvtx_t *verts;
+	GLushort   *elements;
+
+	count_points (&num_verts, &num_elements);
+	if (!num_elements)
+		return;
+
+	verts = alloca (num_verts * sizeof (trailvtx_t));
+	elements = alloca (num_verts * sizeof (GLushort));
+	build_verts (verts, elements);
+
+	qfeglDisable (GL_CULL_FACE);
+
+	qfeglUseProgram (trail.program);
+	qfeglEnableVertexAttribArray (trail.last.location);
+	qfeglEnableVertexAttribArray (trail.current.location);
+	qfeglEnableVertexAttribArray (trail.next.location);
+	qfeglEnableVertexAttribArray (trail.barycentric.location);
+	qfeglEnableVertexAttribArray (trail.texoff.location);
+
+	qfeglUniformMatrix4fv (trail.proj.location, 1, false, glsl_projection);
+	qfeglUniformMatrix4fv (trail.view.location, 1, false, glsl_view);
+	qfeglUniform2f (trail.viewport.location, r_refdef.vrect.width,
+					r_refdef.vrect.height);
+	qfeglUniform1f (trail.width.location, 10);
+
+	qfeglVertexAttribPointer (trail.last.location, 4, GL_FLOAT,
+							 0, sizeof (trailvtx_t), &verts[0].vertex);
+	qfeglVertexAttribPointer (trail.current.location, 4, GL_FLOAT,
+							 0, sizeof (trailvtx_t), &verts[2].vertex);
+	qfeglVertexAttribPointer (trail.next.location, 4, GL_FLOAT,
+							 0, sizeof (trailvtx_t), &verts[4].vertex);
+	qfeglVertexAttribPointer (trail.barycentric.location, 3, GL_FLOAT,
+							 0, sizeof (trailvtx_t), &verts[2].bary);
+	qfeglVertexAttribPointer (trail.texoff.location, 1, GL_FLOAT,
+							 0, sizeof (trailvtx_t), &verts[0].texoff);
+
+	for (trl = active_trails; trl; trl = trl->next) {
+		int         count;
+		if (trl->num_points < 2)
+			continue;
+		count = trl->num_points * 2;
+		qfeglDrawElements (GL_TRIANGLE_STRIP, count, GL_UNSIGNED_SHORT,
+						   elements);
+		elements += count;
+	}
+
+	qfeglDisableVertexAttribArray (trail.last.location);
+	qfeglDisableVertexAttribArray (trail.current.location);
+	qfeglDisableVertexAttribArray (trail.next.location);
+	qfeglDisableVertexAttribArray (trail.barycentric.location);
+	qfeglDisableVertexAttribArray (trail.texoff.location);
+
+	qfeglEnable (GL_CULL_FACE);
+
+	expire_trails ();
+}
+
 static void
 draw_qf_particles (void)
 {
@@ -1839,6 +2083,7 @@ draw_id_particles (void)
 void
 glsl_R_DrawParticles (void)
 {
+	draw_trails ();
 	if (!r_particles->int_val || !numparticles)
 		return;
 	if (r_particles_style->int_val) {
@@ -1847,6 +2092,34 @@ glsl_R_DrawParticles (void)
 		draw_id_particles ();
 	}
 }
+
+static vid_particle_funcs_t particles_trail = {
+	R_RocketTrail_trail,
+	R_GrenadeTrail_QF,
+	R_BloodTrail_QF,
+	R_SlightBloodTrail_QF,
+	R_WizTrail_QF,
+	R_FlameTrail_QF,
+	R_VoorTrail_QF,
+	R_GlowTrail_QF,
+	R_RunParticleEffect_QF,
+	R_BloodPuffEffect_QF,
+	R_GunshotEffect_QF,
+	R_LightningBloodEffect_QF,
+	R_SpikeEffect_QF,
+	R_KnightSpikeEffect_QF,
+	R_SuperSpikeEffect_QF,
+	R_WizSpikeEffect_QF,
+	R_BlobExplosion_QF,
+	R_ParticleExplosion_QF,
+	R_ParticleExplosion2_QF,
+	R_LavaSplash_QF,
+	R_TeleportSplash_QF,
+	R_DarkFieldParticles_ID,
+	R_EntityParticles_ID,
+	R_Particle_New,
+	R_Particle_NewRandom,
+};
 
 static vid_particle_funcs_t particles_QF = {
 	R_RocketTrail_QF,
@@ -1971,8 +2244,10 @@ glsl_r_easter_eggs_f (cvar_t *var)
 				glsl_vid_render_funcs.particles = &particles_ID_egg;
 			}
 		} else if (r_particles_style) {
-			if (r_particles_style->int_val) {
+			if (r_particles_style->int_val > 1) {
 				glsl_vid_render_funcs.particles = &particles_QF;
+			} else if (r_particles_style->int_val) {
+				glsl_vid_render_funcs.particles = &particles_trail;
 			} else {
 				glsl_vid_render_funcs.particles = &particles_ID;
 			}
