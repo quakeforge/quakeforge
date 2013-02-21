@@ -106,6 +106,14 @@ static const char *particle_textured_frag_effects[] =
 	0
 };
 
+static const char trail_vert[] =
+#include "trail.vc"
+;
+
+static const char trail_frag[] =
+#include "trail.fc"
+;
+
 static struct {
 	int         program;
 	shaderparam_t mvp_matrix;
@@ -138,6 +146,32 @@ static struct {
 	{"vcolor", 0},
 	{"texture", 1},
 	{"fog", 1},
+};
+
+static struct {
+	int         program;
+	shaderparam_t proj;
+	shaderparam_t view;
+	shaderparam_t viewport;
+	shaderparam_t width;
+	shaderparam_t last;
+	shaderparam_t current;
+	shaderparam_t next;
+	shaderparam_t barycentric;
+	shaderparam_t texoff;
+	shaderparam_t smoke;
+} trail = {
+	0,
+	{"proj", 1},
+	{"view", 1},
+	{"viewport", 1},
+	{"width", 1},
+	{"last", 0},
+	{"current", 0},
+	{"next", 0},
+	{"barycentric", 0},
+	{"texoff", 0},
+	{"smoke", 1},
 };
 
 inline static void
@@ -266,6 +300,20 @@ glsl_R_InitParticles (void)
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.fog);
 	GLSL_FreeShader (vert_shader);
 	GLSL_FreeShader (frag_shader);
+
+	vert = GLSL_CompileShader ("trail.vert", trail_vert, GL_VERTEX_SHADER);
+	frag = GLSL_CompileShader ("trail.frag", trail_frag, GL_FRAGMENT_SHADER);
+	trail.program = GLSL_LinkProgram ("trail", vert, frag);
+	GLSL_ResolveShaderParam (trail.program, &trail.proj);
+	GLSL_ResolveShaderParam (trail.program, &trail.view);
+	GLSL_ResolveShaderParam (trail.program, &trail.viewport);
+	GLSL_ResolveShaderParam (trail.program, &trail.width);
+	GLSL_ResolveShaderParam (trail.program, &trail.last);
+	GLSL_ResolveShaderParam (trail.program, &trail.current);
+	GLSL_ResolveShaderParam (trail.program, &trail.next);
+	GLSL_ResolveShaderParam (trail.program, &trail.barycentric);
+	GLSL_ResolveShaderParam (trail.program, &trail.texoff);
+	GLSL_ResolveShaderParam (trail.program, &trail.smoke);
 
 	memset (data, 0, sizeof (data));
 	qfeglGenTextures (1, &part_tex);
