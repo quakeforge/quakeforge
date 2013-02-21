@@ -42,14 +42,14 @@ struct skin_s;
 */
 
 typedef struct vid_particle_funcs_s {
-	void (*R_RocketTrail) (const struct entity_s *ent);
-	void (*R_GrenadeTrail) (const struct entity_s *ent);
-	void (*R_BloodTrail) (const struct entity_s *ent);
-	void (*R_SlightBloodTrail) (const struct entity_s *ent);
-	void (*R_WizTrail) (const struct entity_s *ent);
-	void (*R_FlameTrail) (const struct entity_s *ent);
-	void (*R_VoorTrail) (const struct entity_s *ent);
-	void (*R_GlowTrail) (const struct entity_s *ent, int glow_color);
+	void (*R_RocketTrail) (struct entity_s *ent);
+	void (*R_GrenadeTrail) (struct entity_s *ent);
+	void (*R_BloodTrail) (struct entity_s *ent);
+	void (*R_SlightBloodTrail) (struct entity_s *ent);
+	void (*R_WizTrail) (struct entity_s *ent);
+	void (*R_FlameTrail) (struct entity_s *ent);
+	void (*R_VoorTrail) (struct entity_s *ent);
+	void (*R_GlowTrail) (struct entity_s *ent, int glow_color);
 
 	void (*R_RunParticleEffect) (const vec3_t org, const vec3_t dir,
 									int color, int count);
@@ -67,8 +67,8 @@ typedef struct vid_particle_funcs_s {
 									 int colorLength);
 	void (*R_LavaSplash) (const vec3_t org);
 	void (*R_TeleportSplash) (const vec3_t org);
-	void (*R_DarkFieldParticles) (const struct entity_s *ent);
-	void (*R_EntityParticles) (const struct entity_s *ent);
+	void (*R_DarkFieldParticles) (struct entity_s *ent);
+	void (*R_EntityParticles) (struct entity_s *ent);
 
 	void (*R_Particle_New) (ptype_t type, int texnum, const vec3_t org,
 							float scale, const vec3_t vel, float die,

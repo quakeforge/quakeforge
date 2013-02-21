@@ -322,7 +322,7 @@ R_TeleportSplash_QF (const vec3_t org)
 }
 
 static void
-R_DarkFieldParticles_ID (const entity_t *ent)
+R_DarkFieldParticles_ID (entity_t *ent)
 {
 	int				i, j, k;
 	unsigned int	rnd;
@@ -369,7 +369,7 @@ R_DarkFieldParticles_ID (const entity_t *ent)
 static vec3_t		avelocities[NUMVERTEXNORMALS];
 
 static void
-R_EntityParticles_ID (const entity_t *ent)
+R_EntityParticles_ID (entity_t *ent)
 {
 	int			i;
 	float		angle, sp, sy, cp, cy; // cr, sr
@@ -493,7 +493,7 @@ R_LightningBloodEffect_QF (const vec3_t org)
 }
 
 static void
-R_RocketTrail_QF (const entity_t *ent)
+R_RocketTrail_QF (entity_t *ent)
 {
 	float		len;
 	int			j;
@@ -532,7 +532,7 @@ R_RocketTrail_QF (const entity_t *ent)
 }
 
 static void
-R_GrenadeTrail_QF (const entity_t *ent)
+R_GrenadeTrail_QF (entity_t *ent)
 {
 	float		len;
 	int			j;
@@ -571,7 +571,7 @@ R_GrenadeTrail_QF (const entity_t *ent)
 }
 
 static void
-R_BloodTrail_QF (const entity_t *ent)
+R_BloodTrail_QF (entity_t *ent)
 {
 	float		len;
 	int			j;
@@ -610,7 +610,7 @@ R_BloodTrail_QF (const entity_t *ent)
 }
 
 static void
-R_SlightBloodTrail_QF (const entity_t *ent)
+R_SlightBloodTrail_QF (entity_t *ent)
 {
 	float		len;
 	int			j;
@@ -648,7 +648,7 @@ R_SlightBloodTrail_QF (const entity_t *ent)
 }
 
 static void
-R_WizTrail_QF (const entity_t *ent)
+R_WizTrail_QF (entity_t *ent)
 {
 	float		len;
 	particle_t *p;
@@ -695,7 +695,7 @@ R_WizTrail_QF (const entity_t *ent)
 }
 
 static void
-R_FlameTrail_QF (const entity_t *ent)
+R_FlameTrail_QF (entity_t *ent)
 {
 	float		len;
 	particle_t *p;
@@ -742,7 +742,7 @@ R_FlameTrail_QF (const entity_t *ent)
 }
 
 static void
-R_VoorTrail_QF (const entity_t *ent)
+R_VoorTrail_QF (entity_t *ent)
 {
 	float		len;
 	int			j;

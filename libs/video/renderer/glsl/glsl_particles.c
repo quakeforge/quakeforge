@@ -672,7 +672,7 @@ R_TeleportSplash_QF (const vec3_t org)
 }
 
 static void
-R_RocketTrail_QF (const entity_t *ent)
+R_RocketTrail_QF (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
 	float		len = 0.0;
@@ -706,7 +706,7 @@ R_RocketTrail_QF (const entity_t *ent)
 }
 
 static void
-R_GrenadeTrail_QF (const entity_t *ent)
+R_GrenadeTrail_QF (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
 	float		len = 0.0;
@@ -740,7 +740,7 @@ R_GrenadeTrail_QF (const entity_t *ent)
 }
 
 static void
-R_BloodTrail_QF (const entity_t *ent)
+R_BloodTrail_QF (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
 	float		len = 0.0;
@@ -780,7 +780,7 @@ R_BloodTrail_QF (const entity_t *ent)
 }
 
 static void
-R_SlightBloodTrail_QF (const entity_t *ent)
+R_SlightBloodTrail_QF (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
 	float		len = 0.0;
@@ -820,7 +820,7 @@ R_SlightBloodTrail_QF (const entity_t *ent)
 }
 
 static void
-R_WizTrail_QF (const entity_t *ent)
+R_WizTrail_QF (entity_t *ent)
 {
 	float		maxlen, origlen, percent;
 	float		dist = 3.0, len = 0.0;
@@ -861,7 +861,7 @@ R_WizTrail_QF (const entity_t *ent)
 }
 
 static void
-R_FlameTrail_QF (const entity_t *ent)
+R_FlameTrail_QF (entity_t *ent)
 {
 	float		maxlen, origlen, percent;
 	float		dist = 3.0, len = 0.0;
@@ -902,7 +902,7 @@ R_FlameTrail_QF (const entity_t *ent)
 }
 
 static void
-R_VoorTrail_QF (const entity_t *ent)
+R_VoorTrail_QF (entity_t *ent)
 {
 	float		maxlen, origlen, percent;
 	float		dist = 3.0, len = 0.0;
@@ -935,7 +935,7 @@ R_VoorTrail_QF (const entity_t *ent)
 }
 
 static void
-R_GlowTrail_QF (const entity_t *ent, int glow_color)
+R_GlowTrail_QF (entity_t *ent, int glow_color)
 {
 	float		maxlen, origlen, percent;
 	float		dist = 3.0, len = 0.0;
@@ -1020,7 +1020,7 @@ R_TeleportSplash_EE (const vec3_t org)
 }
 
 static void
-R_RocketTrail_EE (const entity_t *ent)
+R_RocketTrail_EE (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
 	float		len = 0.0;
@@ -1055,7 +1055,7 @@ R_RocketTrail_EE (const entity_t *ent)
 }
 
 static void
-R_GrenadeTrail_EE (const entity_t *ent)
+R_GrenadeTrail_EE (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
 	float		len = 0.0;
@@ -1286,7 +1286,7 @@ R_TeleportSplash_ID (const vec3_t org)
 }
 
 static void
-R_DarkFieldParticles_ID (const entity_t *ent)
+R_DarkFieldParticles_ID (entity_t *ent)
 {
 	int				i, j, k, l = 64;
 	unsigned int	rnd;
@@ -1327,7 +1327,7 @@ R_DarkFieldParticles_ID (const entity_t *ent)
 static vec3_t		avelocities[NUMVERTEXNORMALS];
 
 static void
-R_EntityParticles_ID (const entity_t *ent)
+R_EntityParticles_ID (entity_t *ent)
 {
 	int         i, j = NUMVERTEXNORMALS;
 	float       angle, sp, sy, cp, cy; // cr, sr
@@ -1375,7 +1375,7 @@ R_EntityParticles_ID (const entity_t *ent)
 }
 
 static void
-R_RocketTrail_ID (const entity_t *ent)
+R_RocketTrail_ID (entity_t *ent)
 {
 	float		maxlen;
 	float		dist = 3.0, len = 0.0;
@@ -1407,7 +1407,7 @@ R_RocketTrail_ID (const entity_t *ent)
 }
 
 static void
-R_GrenadeTrail_ID (const entity_t *ent)
+R_GrenadeTrail_ID (entity_t *ent)
 {
 	float			maxlen;
 	float			dist = 3.0, len = 0.0;
@@ -1439,7 +1439,7 @@ R_GrenadeTrail_ID (const entity_t *ent)
 }
 
 static void
-R_BloodTrail_ID (const entity_t *ent)
+R_BloodTrail_ID (entity_t *ent)
 {
 	float			maxlen;
 	float			dist = 3.0, len = 0.0;
@@ -1470,7 +1470,7 @@ R_BloodTrail_ID (const entity_t *ent)
 }
 
 static void
-R_SlightBloodTrail_ID (const entity_t *ent)
+R_SlightBloodTrail_ID (entity_t *ent)
 {
 	float			maxlen;
 	float			dist = 6.0, len = 0.0;
@@ -1501,7 +1501,7 @@ R_SlightBloodTrail_ID (const entity_t *ent)
 }
 
 static void
-R_WizTrail_ID (const entity_t *ent)
+R_WizTrail_ID (entity_t *ent)
 {
 	float		maxlen;
 	float		dist = 3.0, len = 0.0;
@@ -1538,7 +1538,7 @@ R_WizTrail_ID (const entity_t *ent)
 }
 
 static void
-R_FlameTrail_ID (const entity_t *ent)
+R_FlameTrail_ID (entity_t *ent)
 {
 	float		maxlen;
 	float		dist = 3.0, len = 0.0;
@@ -1575,7 +1575,7 @@ R_FlameTrail_ID (const entity_t *ent)
 }
 
 static void
-R_VoorTrail_ID (const entity_t *ent)
+R_VoorTrail_ID (entity_t *ent)
 {
 	float			maxlen;
 	float			dist = 3.0, len = 0.0;
