@@ -1745,20 +1745,20 @@ build_verts (trailvtx_t *v, GLushort *e)
 		if (trail->num_points < 2)
 			continue;
 		point = trail->points;
-		set_vertex (v++, point, 1, bary + bind++, index/2);
 		set_vertex (v++, point, -1, bary + bind++, index/2);
+		set_vertex (v++, point, 1, bary + bind++, index/2);
 		bind %= 3;
 		for (; point; point = point->next) {
-			set_vertex (v++, point, 1, bary + bind++, index/2 + 1);
 			set_vertex (v++, point, -1, bary + bind++, index/2 + 1);
+			set_vertex (v++, point, 1, bary + bind++, index/2 + 1);
 			bind %= 3;
 			*e++ = index++;
 			*e++ = index++;
 			last_point = point;
 			point->phys (point);
 		}
-		set_vertex (v++, last_point, 1, bary + bind++, index/2 + 1);
 		set_vertex (v++, last_point, -1, bary + bind++, index/2 + 1);
+		set_vertex (v++, last_point, 1, bary + bind++, index/2 + 1);
 		index += 4;
 	}
 }
@@ -1803,8 +1803,6 @@ draw_trails (void)
 	elements = alloca (num_verts * sizeof (GLushort));
 	build_verts (verts, elements);
 
-	qfeglDisable (GL_CULL_FACE);
-
 	qfeglUseProgram (trail.program);
 	qfeglEnableVertexAttribArray (trail.last.location);
 	qfeglEnableVertexAttribArray (trail.current.location);
@@ -1844,8 +1842,6 @@ draw_trails (void)
 	qfeglDisableVertexAttribArray (trail.next.location);
 	qfeglDisableVertexAttribArray (trail.barycentric.location);
 	qfeglDisableVertexAttribArray (trail.texoff.location);
-
-	qfeglEnable (GL_CULL_FACE);
 
 	expire_trails ();
 }
