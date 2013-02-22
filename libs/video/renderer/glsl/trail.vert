@@ -44,6 +44,7 @@ estimateScale (vec3 position, vec2 sPosition)
 void
 main (void)
 {
+	vec2        t, n1, n2, n;
 	vec2        sLast = project (transform (last.xyz));
 	vec2        sNext = project (transform (next.xyz));
 	vec4        dCurrent = transform (current.xyz);
@@ -53,11 +54,21 @@ main (void)
 	texcoord = vec2 (texoff * 0.7, off * 0.5 + 0.5);
 	vBC = barycentric;
 
-	// FIXME either n1 or n2 could be zero
-	vec2        n1 = normalize (sLast - sCurrent);
-	vec2        n2 = normalize (sCurrent - sNext);
-	// FIXME if n1 == -n2, the vector will be zero
-	vec2        n = normalize (n1 + n2);
+	t = sLast - sCurrent;
+	n1 = vec2 (0.0);
+	if (dot (t, t) > 0.001)
+		n1 = normalize (t);
+	t = sCurrent - sNext;
+	n2 = vec2 (0.0);
+	if (dot (t, t) > 0.001)
+		n2 = normalize (t);
+	n = vec2 (0.0);
+	if (n1 != -n2)
+		n = normalize (n1 + n2);
+	else if (dot (n1, n1) > 0.001)
+		n = n1;
+	else if (dot (n2, n2) > 0.001)
+		n = n2;
 
 	// rotate the normal by 90 degrees and scale by the desired width
 	vec2        dir = vec2 (n.y, -n.x) * off;
