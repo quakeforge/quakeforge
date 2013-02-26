@@ -113,9 +113,9 @@ glsl_R_InitAlias (void)
 	int         vert;
 	int         frag;
 
-	vert = GLSL_CompileShader ("quakemdl.vert", quakemdl_vert,
+	vert = GLSL_CompileShaderS ("quakemdl.vert", quakemdl_vert,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("quakemdl.frag", quakemdl_frag,
+	frag = GLSL_CompileShaderS ("quakemdl.frag", quakemdl_frag,
 							   GL_FRAGMENT_SHADER);
 	quake_mdl.program = GLSL_LinkProgram ("quakemdl", vert, frag);
 	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.mvp_matrix);

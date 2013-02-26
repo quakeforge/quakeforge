@@ -381,9 +381,9 @@ glsl_Draw_Init (void)
 
 	draw_queue = dstring_new ();
 
-	vert = GLSL_CompileShader ("quakeico.vert", quakeicon_vert,
+	vert = GLSL_CompileShaderS ("quakeico.vert", quakeicon_vert,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("quake2d.frag", quake2d_frag,
+	frag = GLSL_CompileShaderS ("quake2d.frag", quake2d_frag,
 							   GL_FRAGMENT_SHADER);
 	quake_2d.program = GLSL_LinkProgram ("quake2d", vert, frag);
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.texture);

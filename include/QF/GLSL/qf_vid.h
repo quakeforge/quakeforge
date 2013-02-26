@@ -30,6 +30,12 @@
 
 #include "QF/qtypes.h"
 
+typedef struct shader_s {
+	int         num_strings;
+	const char **strings;
+	const char **src;
+} shader_t;
+
 typedef struct shaderparam_s {
 	const char *name;
 	qboolean    uniform;
@@ -40,9 +46,15 @@ extern int glsl_palette;
 extern int glsl_colormap;
 
 void GLSL_Init_Common (void);
-int GLSL_CompileShader (const char *name, const char *shader_src, int type);
+
+int GLSL_CompileShader (const char *name, const shader_t *shader, int type);
+int GLSL_CompileShaderS (const char *name, const char *src, int type);
 int GLSL_LinkProgram (const char *name, int vert, int frag);
 int GLSL_ResolveShaderParam (int program, shaderparam_t *param);
 void GLSL_DumpAttribArrays (void);
+
+int GLSL_RegisterEffect (const char *name, const char *src);
+shader_t *GLSL_BuildShader (const char **effect_keys);
+void GLSL_FreeShader (shader_t *shader);
 
 #endif // __QF_GLSL_vid_h

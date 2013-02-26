@@ -98,9 +98,9 @@ glsl_R_InitSprites (void)
 {
 	int         frag, vert;
 
-	vert = GLSL_CompileShader ("quakespr.vert", quakesprite_vert,
+	vert = GLSL_CompileShaderS ("quakespr.vert", quakesprite_vert,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("quakespr.frag", quakesprite_frag,
+	frag = GLSL_CompileShaderS ("quakespr.frag", quakesprite_frag,
 							   GL_FRAGMENT_SHADER);
 	quake_sprite.program = GLSL_LinkProgram ("quakespr", vert, frag);
 	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.spritea);

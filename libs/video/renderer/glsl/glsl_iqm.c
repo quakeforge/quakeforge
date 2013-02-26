@@ -140,8 +140,8 @@ glsl_R_InitIQM (void)
 	int         frag;
 	int         i;
 
-	vert = GLSL_CompileShader ("iqm.vert", iqm_vert, GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("iqm.frag", iqm_frag, GL_FRAGMENT_SHADER);
+	vert = GLSL_CompileShaderS ("iqm.vert", iqm_vert, GL_VERTEX_SHADER);
+	frag = GLSL_CompileShaderS ("iqm.frag", iqm_frag, GL_FRAGMENT_SHADER);
 	iqm_shader.program = GLSL_LinkProgram ("iqm", vert, frag);
 	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.mvp_matrix);
 	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.norm_matrix);

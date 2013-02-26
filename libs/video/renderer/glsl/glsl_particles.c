@@ -223,9 +223,9 @@ glsl_R_InitParticles (void)
 	qfeglGetFloatv (GL_ALIASED_POINT_SIZE_RANGE, v);
 	Sys_MaskPrintf (SYS_GLSL, "point size: %g - %g\n", v[0], v[1]);
 
-	vert = GLSL_CompileShader ("quakepnt.vert", quakepoint_vert,
+	vert = GLSL_CompileShaderS ("quakepnt.vert", quakepoint_vert,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("quakepnt.frag", quakepoint_frag,
+	frag = GLSL_CompileShaderS ("quakepnt.frag", quakepoint_frag,
 							   GL_FRAGMENT_SHADER);
 	quake_point.program = GLSL_LinkProgram ("quakepoint", vert, frag);
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.mvp_matrix);
@@ -234,9 +234,9 @@ glsl_R_InitParticles (void)
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.color);
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.fog);
 
-	vert = GLSL_CompileShader ("quakepar.vert", quakepart_vert,
+	vert = GLSL_CompileShaderS ("quakepar.vert", quakepart_vert,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("quakepar.frag", quakepart_frag,
+	frag = GLSL_CompileShaderS ("quakepar.frag", quakepart_frag,
 							   GL_FRAGMENT_SHADER);
 	quake_part.program = GLSL_LinkProgram ("quakepart", vert, frag);
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.mvp_matrix);

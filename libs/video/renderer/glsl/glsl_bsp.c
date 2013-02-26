@@ -1244,9 +1244,9 @@ glsl_R_InitBsp (void)
 	int         vert;
 	int         frag;
 
-	vert = GLSL_CompileShader ("quakebsp.vert", quakebsp_vert,
+	vert = GLSL_CompileShaderS ("quakebsp.vert", quakebsp_vert,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("quakebsp.frag", quakebsp_frag,
+	frag = GLSL_CompileShaderS ("quakebsp.frag", quakebsp_frag,
 							   GL_FRAGMENT_SHADER);
 	quake_bsp.program = GLSL_LinkProgram ("quakebsp", vert, frag);
 	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.mvp_matrix);
@@ -1258,7 +1258,7 @@ glsl_R_InitBsp (void)
 	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.color);
 	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.fog);
 
-	frag = GLSL_CompileShader ("quaketrb.frag", quaketurb_frag,
+	frag = GLSL_CompileShaderS ("quaketrb.frag", quaketurb_frag,
 							   GL_FRAGMENT_SHADER);
 	quake_turb.program = GLSL_LinkProgram ("quaketrb", vert, frag);
 	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.mvp_matrix);
@@ -1270,9 +1270,9 @@ glsl_R_InitBsp (void)
 	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.color);
 	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.fog);
 
-	vert = GLSL_CompileShader ("quakesky.vert", quakesky_vert,
+	vert = GLSL_CompileShaderS ("quakesky.vert", quakesky_vert,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("quakeski.frag", quakeskyid_frag,
+	frag = GLSL_CompileShaderS ("quakeski.frag", quakeskyid_frag,
 							   GL_FRAGMENT_SHADER);
 	quake_skyid.program = GLSL_LinkProgram ("quakeskyid", vert, frag);
 	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.mvp_matrix);
@@ -1284,7 +1284,7 @@ glsl_R_InitBsp (void)
 	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.realtime);
 	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.fog);
 
-	frag = GLSL_CompileShader ("quakeskb.frag", quakeskybox_frag,
+	frag = GLSL_CompileShaderS ("quakeskb.frag", quakeskybox_frag,
 							   GL_FRAGMENT_SHADER);
 	quake_skybox.program = GLSL_LinkProgram ("quakeskybox", vert, frag);
 	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.mvp_matrix);
