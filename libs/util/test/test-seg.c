@@ -43,6 +43,19 @@ struct {
 };
 #define num_seg_tests (sizeof (seg_tests) / sizeof (seg_tests[0]))
 
+struct {
+	const char *tag;
+	int         expect;
+} line_tests[] = {
+	{"Vertex", 3},
+	{"Geometry", 5},
+	{"Fragment.Erosion", 7},
+	{"Fragment.Grassfire", 9},
+	{"TessControl", 11},
+	{"TessEvaluation", 13},	// final chunk doesn't have \n
+};
+#define num_line_tests (sizeof (line_tests) / sizeof (line_tests[0]))
+
 int
 main (int argc, const char **argv)
 {
@@ -58,6 +71,15 @@ main (int argc, const char **argv)
 				|| strcmp (text, seg_tests[i].expect))) {
 			fprintf (stderr, "FAIL: (%zd) \"%s\" -> \"%s\", got \"%s\"\n", i,
 					 seg_tests[i].tag, seg_tests[i].expect, text);
+			res = 1;
+		}
+	}
+	for (i = 0; i < num_line_tests; i++) {
+		const segchunk_t *chunk = Segtext_FindChunk (st, line_tests[i].tag);
+		if (!chunk || chunk->start_line != line_tests[i].expect) {
+			fprintf (stderr, "FAIL: (%zd) \"%s\" -> %d, got %d\n", i,
+					 line_tests[i].tag, line_tests[i].expect,
+					 chunk->start_line);
 			res = 1;
 		}
 	}
