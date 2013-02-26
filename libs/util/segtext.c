@@ -157,7 +157,8 @@ Segtext_new (const char *source_string)
 		*src++ = 0;							// terminate the previous chunk
 		*chunk = new_chunk ();
 		(*chunk)->tag = find_tag (src);
-		(*chunk)->text = next_line (src, &line);
+		src = next_line (src, &line);
+		(*chunk)->text = src;
 		(*chunk)->start_line = line;
 		// If tags are duplicated, the first one takes precedence
 		if ((*chunk)->tag && !Hash_Find (text->tab, (*chunk)->tag))
