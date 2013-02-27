@@ -305,8 +305,8 @@ Sys_MaskPrintf (int mask, const char *fmt, ...)
 	va_end (args);
 }
 
-VISIBLE double
-Sys_DoubleTime (void)
+VISIBLE int64_t
+Sys_LongTime (void)
 {
 	static qboolean first = true;
 #ifdef _WIN32
@@ -332,13 +332,13 @@ Sys_DoubleTime (void)
 # else
 	// MH's solution combining timeGetTime for stability and
 	// QueryPerformanceCounter for precision.
-	static __int64 qpcfreq = 0;
-	static __int64 currqpccount = 0;
-	static __int64 lastqpccount = 0;
-	static double qpcfudge = 0;
-	DWORD currtime = 0;
-	static DWORD lasttime = 0;
-	static DWORD starttime = 0;
+	static int64_t qpcfreq = 0;
+	static int64_t currqpccount = 0;
+	static int64_t lastqpccount = 0;
+	static int64_t qpcfudge = 0;
+	int64_t currtime = 0;
+	static int64_t lasttime = 0;
+	static int64_t starttime = 0;
 
 	if (first) {
 		timeBeginPeriod (1);
@@ -360,9 +360,8 @@ Sys_DoubleTime (void)
 
 		// store back times and calc a fudge factor as timeGetTime can
 		// overshoot on a sub-millisecond scale
-		qpcfudge = (((double) (currqpccount - lastqpccount)
-					/ (double) qpcfreq))
-				- ((double) (currtime - lasttime) * 0.001);
+		qpcfudge = (( (currqpccount - lastqpccount) * 1000000 / qpcfreq))
+				- ((currtime - lasttime) * 1000);
 		lastqpccount = currqpccount;
 		lasttime = currtime;
 	} else {
@@ -370,19 +369,18 @@ Sys_DoubleTime (void)
 	}
 
 	// the final time is the base from timeGetTime plus an addition from QPC
-	return ((double) (currtime - starttime) * 0.001)
-		+ ((double) (currqpccount - lastqpccount) / (double) qpcfreq)
-		+ qpcfudge;
+	return (((currtime - starttime) * 1000)
+			+ ((currqpccount - lastqpccount) * 1000000 / qpcfreq) + qpcfudge);
 # endif
 #else
 	struct timeval tp;
 	struct timezone tzp;
-	double now;
-	static double start_time;
+	int64_t now;
+	static int64_t start_time;
 
 	gettimeofday (&tp, &tzp);
 
-	now = tp.tv_sec + tp.tv_usec / 1e6;
+	now = tp.tv_sec * 1000000 + tp.tv_usec;
 
 	if (first) {
 		first = false;
@@ -391,6 +389,12 @@ Sys_DoubleTime (void)
 
 	return now - start_time;
 #endif
+}
+
+VISIBLE double
+Sys_DoubleTime (void)
+{
+	return (__INT64_C (4294967296000000) + Sys_LongTime ()) / 1e6;
 }
 
 VISIBLE void
