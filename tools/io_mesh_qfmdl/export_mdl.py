@@ -90,15 +90,18 @@ def active_uv(mesh):
             return uvt
     return None
 
-def make_skin(mdl, mesh):
+def make_skin(operator, mdl, mesh):
     uvt = active_uv(mesh)
-    if (not uvt or not uvt.data or not uvt.data[0].image):
-        mdl.skinwidth, mdl.skinheight = (4, 4)
-        skin = null_skin((mdl.skinwidth, mdl.skinheight))
-    else:
+    mdl.skinwidth, mdl.skinheight = (4, 4)
+    skin = null_skin((mdl.skinwidth, mdl.skinheight))
+    if (uvt and uvt.data and uvt.data[0].image):
         image = uvt.data[0].image
-        mdl.skinwidth, mdl.skinheight = image.size
-        skin = convert_image(image)
+        if (uvt.data[0].image.size[0] and uvt.data[0].image.size[1]):
+            mdl.skinwidth, mdl.skinheight = image.size
+            skin = convert_image(image)
+        else:
+            operator.report({'WARNING'},
+                            "Texture '%s' invalid (missing?)." % image.name)
     mdl.skins.append(skin)
 
 def build_tris(mesh):
@@ -294,7 +297,7 @@ def export_mdl(operator, context, filepath):
                 mdl.frames.append(process_frame(mdl, context.scene, frame,
                                                 vertmap))
     if not mdl.skins:
-        make_skin(mdl, mesh)
+        make_skin(operator, mdl, mesh)
     if not mdl.frames:
         curframe = context.scene.frame_current
         for fno in range(1, curframe + 1):
