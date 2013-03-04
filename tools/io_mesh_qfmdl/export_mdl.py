@@ -111,8 +111,7 @@ def build_tris(mesh):
     # the layout. However, there seems to be nothing in the mdl format
     # preventing the use of duplicate 3d vertices to allow complete freedom
     # of the UV layout.
-    uvtex = active_uv(mesh)
-    uvfaces = mesh.uv_layers[uvtex.name].data
+    uvfaces = mesh.uv_layers.active.data
     stverts = []
     tris = []
     vertmap = []    # map mdl vert num to blender vert num (for 3d verts)
