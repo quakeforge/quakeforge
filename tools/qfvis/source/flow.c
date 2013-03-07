@@ -22,7 +22,7 @@
 
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
-		Boston, MA  02111-1307, USA
+		Boston, MA	02111-1307, USA
 
 */
 #ifdef HAVE_CONFIG_H
@@ -60,9 +60,9 @@
 static int
 CheckStack (cluster_t *cluster, threaddata_t *thread)
 {
-    pstack_t	*portal;
+	pstack_t   *portal;
 
-    for (portal = thread->pstack_head.next; portal; portal = portal->next)
+	for (portal = thread->pstack_head.next; portal; portal = portal->next)
 		if (portal->cluster == cluster) {
 			printf ("CheckStack: cluster recursion\n");
 			return 1;
@@ -84,20 +84,20 @@ CheckStack (cluster_t *cluster, threaddata_t *thread)
 	order goes source, pass, target.  If the order goes pass, source, target
 	then flipclip should be set.
 */
-static winding_t	*
+static winding_t *
 ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 				  qboolean flipclip)
 {
-    float		d;
-    int			i, j, k, l;
-    int			counts[3];
-    qboolean	fliptest;
-    plane_t		plane;
-    vec3_t		v1, v2;
-    vec_t		length;
+	float       d;
+	int         i, j, k, l;
+	int         counts[3];
+	qboolean    fliptest;
+	plane_t     plane;
+	vec3_t      v1, v2;
+	vec_t       length;
 
 	// check all combinations
-    for (i = 0; i < source->numpoints; i++) {
+	for (i = 0; i < source->numpoints; i++) {
 		l = (i + 1) % source->numpoints;
 		VectorSubtract (source->points[l], source->points[i], v1);
 
@@ -183,8 +183,8 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 				return NULL;	// target is not visible
 			break;				//XXX is this correct? big speedup
 		}
-    }
-    return target;
+	}
+	return target;
 }
 
 /*
@@ -196,40 +196,40 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 static void
 RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 {
-	int			i;
+	int         i;
 	set_t      *might;
-    const set_t *test, *vis;
-    qboolean	more;
-    cluster_t  *cluster;
-    pstack_t	stack;
-    portal_t   *portal;
-    plane_t		backplane;
-    winding_t  *source, *target;
+	const set_t *test, *vis;
+	qboolean    more;
+	cluster_t  *cluster;
+	pstack_t    stack;
+	portal_t   *portal;
+	plane_t     backplane;
+	winding_t  *source, *target;
 
-    c_chains++;
+	c_chains++;
 
-    cluster = &clusters[clusternum];
-    if (CheckStack(cluster, thread))
+	cluster = &clusters[clusternum];
+	if (CheckStack(cluster, thread))
 		return;
 
 	// mark the cluster as visible
 	if (!set_is_member (thread->clustervis, clusternum)) {
 		set_add (thread->clustervis, clusternum);
 		thread->base->numcansee++;
-    }
+	}
 
-    prevstack->next = &stack;
-    stack.next = NULL;
-    stack.cluster = cluster;
-    stack.portal = NULL;
+	prevstack->next = &stack;
+	stack.next = NULL;
+	stack.cluster = cluster;
+	stack.portal = NULL;
 	LOCK;
-    stack.mightsee = set_new_size (portalclusters);
+	stack.mightsee = set_new_size (portalclusters);
 	UNLOCK;
-    might = stack.mightsee;
-    vis = thread->clustervis;
+	might = stack.mightsee;
+	vis = thread->clustervis;
 
 	// check all portals for flowing into other clusters
-    for (i = 0; i < cluster->numportals; i++) {
+	for (i = 0; i < cluster->numportals; i++) {
 		portal = cluster->portals[i];
 
 		if (!set_is_member (prevstack->mightsee, portal->cluster))
@@ -344,35 +344,35 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 
 		FreeWinding (source);
 		FreeWinding (target);
-    }
+	}
 
 	LOCK;
-    set_delete (stack.mightsee);
+	set_delete (stack.mightsee);
 	UNLOCK;
 }
 
 void
 PortalFlow (portal_t *portal)
 {
-    threaddata_t	data;
+	threaddata_t    data;
 
 	LOCK;
-    if (portal->status != stat_selected)
+	if (portal->status != stat_selected)
 		Sys_Error ("PortalFlow: reflowed");
-    portal->status = stat_working;
-    portal->visbits = set_new_size (portalclusters);
+	portal->status = stat_working;
+	portal->visbits = set_new_size (portalclusters);
 	UNLOCK;
 
-    memset (&data, 0, sizeof (data));
-    data.clustervis = portal->visbits;
-    data.base = portal;
+	memset (&data, 0, sizeof (data));
+	data.clustervis = portal->visbits;
+	data.base = portal;
 
-    data.pstack_head.portal = portal;
-    data.pstack_head.source = portal->winding;
-    data.pstack_head.portalplane = portal->plane;
-    data.pstack_head.mightsee = portal->mightsee;
+	data.pstack_head.portal = portal;
+	data.pstack_head.source = portal->winding;
+	data.pstack_head.portalplane = portal->plane;
+	data.pstack_head.mightsee = portal->mightsee;
 
-    RecursiveClusterFlow (portal->cluster, &data, &data.pstack_head);
+	RecursiveClusterFlow (portal->cluster, &data, &data.pstack_head);
 
-    portal->status = stat_done;
+	portal->status = stat_done;
 }
