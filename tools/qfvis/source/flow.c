@@ -243,7 +243,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		}
 		set_assign (might, prevstack->mightsee);
 		set_intersection (might, test);
-		more = !set_is_subset (might, vis);
+		more = !set_is_subset (vis, might);
 
 		if (!more)			// can't see anything new
 			continue;
