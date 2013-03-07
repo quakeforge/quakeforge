@@ -94,8 +94,6 @@ BasePortalVis (void)
     portal_t   *tp, *portal;
     winding_t  *winding;
 
-	if (portalsee)
-		set_delete (portalsee);
 	portalsee = set_new_size (numportals * 2);
     for (i = 0, portal = portals; i < numportals * 2; i++, portal++) {
 		portal->mightsee = set_new_size (portalclusters);
@@ -133,4 +131,5 @@ BasePortalVis (void)
 		SimpleFlood (portal, portal->cluster);
 		portal->nummightsee = clustersee;
     }
+	set_delete (portalsee);
 }

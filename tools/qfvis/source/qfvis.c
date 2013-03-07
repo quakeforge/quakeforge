@@ -338,6 +338,7 @@ WatchThread (void *_thread)
 		}
 	}
 	printf ("watch thread done\n");
+	free (local_work);
 
 	return NULL;
 }
@@ -425,6 +426,8 @@ ClusterFlow (int clusternum)
 	// expand to cluster->leaf PVS
 	ClusterFlowExpand (visclusters, outbuffer);
 
+	set_delete (visclusters);
+
 	// compress the bit string
 	if (options.verbosity > 0)
 		printf ("cluster %4i : %4i visible\n", clusternum, numvis);
@@ -482,6 +485,8 @@ CalcPortalVis (void)
 
 			if (pthread_mutex_destroy (my_mutex) == -1)
 				Sys_Error ("pthread_mutex_destroy failed");
+			free (working);
+			free (my_mutex);
 		} else {
 			LeafThread (0);
 		}
@@ -908,6 +913,15 @@ main (int argc, char **argv)
 
 	if (options.verbosity >= 0)
 		printf ("%5.1f seconds elapsed\n", stop - start);
+
+	dstring_delete (portalfile);
+	dstring_delete (visdata);
+	dstring_delete (options.bspfile);
+	BSP_Free (bsp);
+	free (leafcluster);
+	free (uncompressed);
+	free (portals);
+	free (clusters);
 
 	return 0;
 }
