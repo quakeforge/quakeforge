@@ -107,6 +107,17 @@ set_expand (set_t *set, unsigned x)
 		free (map);
 }
 
+set_t *
+set_new_size (int size)
+{
+	set_t      *set;
+
+	set = set_new ();
+	set_expand (set, size);
+
+	return set;
+}
+
 static inline void
 _set_add (set_t *set, unsigned x)
 {

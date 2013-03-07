@@ -93,6 +93,19 @@ void set_del_iter (set_iter_t *set_iter);
 */
 set_t *set_new (void);
 
+/** Create a new set with space pre-allocated for the specified set size.
+
+	Although sets automatically grow to accommodate new members as necessary,
+	sometimes the maximum set size is known in advance and it can be more
+	efficient to grow the set in advance.
+
+	The set is initialized to be the empty set.
+
+	\param size		The number of elements for which space is to be allocated.
+	\return			The newly created, empty set.
+*/
+set_t *set_new_size (int size);
+
 /** Delete a set that is no longer needed.
 
 	\param set		The set to be deleted.
