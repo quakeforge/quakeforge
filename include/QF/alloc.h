@@ -80,7 +80,7 @@
 #define FREE(n, p)			\
 	do {					\
 		p->next = free_##n;	\
-		free_##n = p->next;	\
+		free_##n = p;	\
 	} while (0)
 #else
 #define ALLOC(s, t, n, v)								\
