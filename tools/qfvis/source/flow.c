@@ -197,7 +197,8 @@ static void
 RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 {
 	int			i;
-    set_t	   *test, *might, *vis;
+	set_t      *might;
+    const set_t *test, *vis;
     qboolean	more;
     cluster_t  *cluster;
     pstack_t	stack;
