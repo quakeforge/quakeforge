@@ -293,11 +293,12 @@ LeafThread (void *_thread)
 			working[thread] = (int) (portal - portals);
 		PortalFlow (portal);
 
-		if (options.verbosity > 0)
-			printf ("portal:%4i  mightsee:%4i  cansee:%4i\n",
+		if (options.verbosity > 1)
+			printf ("portal:%5i  mightsee:%5i  cansee:%5i %5d/%d\n",
 						(int) (portal - portals),
 						portal->nummightsee,
-						portal->numcansee);
+						portal->numcansee,
+						portal_count, numportals * 2);
 	} while (1);
 
 	printf ("thread %d done\n", thread);
@@ -429,7 +430,7 @@ ClusterFlow (int clusternum)
 	set_delete (visclusters);
 
 	// compress the bit string
-	if (options.verbosity > 0)
+	if (options.verbosity > 1)
 		printf ("cluster %4i : %4i visible\n", clusternum, numvis);
 	totalvis += numvis;
 
