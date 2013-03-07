@@ -58,7 +58,7 @@
 #include "options.h"
 
 static int  clustersee;
-static byte portalsee[MAX_PORTALS];
+static set_t *portalsee;
 
 /*
 	This is a rough first-order aproximation that is used to trivially reject
@@ -80,7 +80,7 @@ SimpleFlood (portal_t *srcportal, int clusternum)
 
     for (i = 0; i < cluster->numportals; i++) {
 		portal = cluster->portals[i];
-		if (!portalsee[portal - portals])
+		if (!set_is_member (portalsee, portal - portals))
 			continue;
 		SimpleFlood (srcportal, portal->cluster);
     }
@@ -94,10 +94,13 @@ BasePortalVis (void)
     portal_t   *tp, *portal;
     winding_t  *winding;
 
+	if (portalsee)
+		set_delete (portalsee);
+	portalsee = set_new_size (numportals * 2);
     for (i = 0, portal = portals; i < numportals * 2; i++, portal++) {
 		portal->mightsee = set_new_size (portalclusters);
 
-		memset (portalsee, 0, numportals * 2);
+		set_empty (portalsee);
 
 		for (j = 0, tp = portals; j < numportals * 2; j++, tp++) {
 			if (j == i)
@@ -123,7 +126,7 @@ BasePortalVis (void)
 			if (k == winding->numpoints)
 				continue;	// no points on front
 
-			portalsee[j] = 1;
+			set_add (portalsee, j);
 		}
 
 		clustersee = 0;
