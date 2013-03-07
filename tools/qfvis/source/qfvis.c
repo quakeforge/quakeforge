@@ -744,6 +744,18 @@ LoadPortals (char *name)
 		if (!line || sscanf (line, "%i\n", &numrealleafs) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		read_leafs = 1;
+	} else if (line && (!strcmp (line, PORTALFILE2 "\n")
+						|| !strcmp (line, PORTALFILE2 "\r\n"))) {
+		line = Qgetline (f);
+		if (!line || sscanf (line, "%i\n", &numrealleafs) != 1)
+			Sys_Error ("LoadPortals: failed to read header");
+		line = Qgetline (f);
+		if (!line || sscanf (line, "%i\n", &portalclusters) != 1)
+			Sys_Error ("LoadPortals: failed to read header");
+		line = Qgetline (f);
+		if (!line || sscanf (line, "%i\n", &numportals) != 1)
+			Sys_Error ("LoadPortals: failed to read header");
+		read_leafs = 1;
 	} else {
 		Sys_Error ("LoadPortals: not a portal file");
 	}

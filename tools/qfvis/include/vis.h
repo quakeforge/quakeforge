@@ -48,6 +48,7 @@ extern pthread_mutex_t *my_mutex;
 #define	MAX_PORTALS				32768
 #define	PORTALFILE				"PRT1"
 #define	PORTALFILE_AM			"PRT1-AM"
+#define	PORTALFILE2				"PRT2"
 #define	ON_EPSILON				0.1
 #define MAX_POINTS_ON_WINDING	64
 #define	MAX_PORTALS_ON_CLUSTER	128
