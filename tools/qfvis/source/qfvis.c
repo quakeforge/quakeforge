@@ -371,12 +371,12 @@ CompressRow (byte *vis, byte *dest)
 }
 
 static void
-ClusterFlowExpand (byte *src, byte *dest)
+ClusterFlowExpand (const set_t *src, byte *dest)
 {
 	int         i, j;
 
 	for (j = 1, i = 0; i < numrealleafs; i++) {
-		if (src[leafcluster[i] >> 3] & (1 << (leafcluster[i] & 7)))
+		if (set_is_member (src, leafcluster[i]))
 			*dest |= j;
 		j <<= 1;
 		if (j == 256) {
@@ -394,9 +394,10 @@ ClusterFlowExpand (byte *src, byte *dest)
 void
 ClusterFlow (int clusternum)
 {
+	set_t      *visclusters;
 	byte        compressed[MAX_MAP_LEAFS / 8];
 	byte       *outbuffer;
-	int         numvis, i, j;
+	int         numvis, i;
 	cluster_t  *cluster;
 	portal_t   *portal;
 
@@ -406,26 +407,23 @@ ClusterFlow (int clusternum)
 	// flow through all portals, collecting visible bits
 
 	memset (compressed, 0, sizeof (compressed));
+	visclusters = set_new ();
 	for (i = 0; i < cluster->numportals; i++) {
 		portal = cluster->portals[i];
 		if (portal->status != stat_done)
 			Sys_Error ("portal not done");
-		for (j = 0; j < bitbytes; j++)
-			compressed[j] |= portal->visbits[j];
+		set_union (visclusters, portal->visbits);
 	}
 
-	if (compressed[clusternum >> 3] & (1 << (clusternum & 7)))
+	if (set_is_member (visclusters, clusternum))
 		Sys_Error ("Cluster portals saw into cluster");
 
-	compressed[clusternum >> 3] |= (1 << (clusternum & 7));
+	set_add (visclusters, clusternum);
 
-	numvis = 0;
-	for (i = 0; i < portalclusters; i++)
-		if (compressed[i >> 3] & (1 << (i & 3)))
-			numvis++;
+	numvis = set_size (visclusters);
 
 	// expand to cluster->leaf PVS
-	ClusterFlowExpand (compressed, outbuffer);
+	ClusterFlowExpand (visclusters, outbuffer);
 
 	// compress the bit string
 	if (options.verbosity > 0)

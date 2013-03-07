@@ -196,8 +196,8 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 static void
 RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 {
-	int			i, j;
-    long	   *test, *might, *vis;
+	int			i;
+    set_t	   *test, *might, *vis;
     qboolean	more;
     cluster_t  *cluster;
     pstack_t	stack;
@@ -212,8 +212,8 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		return;
 
 	// mark the cluster as visible
-    if (!(thread->clustervis[clusternum >> 3] & (1 << (clusternum & 7)))) {
-		thread->clustervis[clusternum >> 3] |= 1 << (clusternum & 7);
+	if (!set_is_member (thread->clustervis, clusternum)) {
+		set_add (thread->clustervis, clusternum);
 		thread->base->numcansee++;
     }
 
@@ -221,31 +221,29 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
     stack.next = NULL;
     stack.cluster = cluster;
     stack.portal = NULL;
-    stack.mightsee = malloc(bitbytes);
-    might = (long *) stack.mightsee;
-    vis = (long *) thread->clustervis;
+	LOCK;
+    stack.mightsee = set_new_size (portalclusters);
+	UNLOCK;
+    might = stack.mightsee;
+    vis = thread->clustervis;
 
 	// check all portals for flowing into other clusters
     for (i = 0; i < cluster->numportals; i++) {
 		portal = cluster->portals[i];
 
-		if (!(prevstack->mightsee[portal->cluster >> 3]
-			  & (1 << (portal->cluster & 7))))
+		if (!set_is_member (prevstack->mightsee, portal->cluster))
 			continue;		// can't possibly see it
 		// if the portal can't see anything we haven't already seen, skip it
 		if (portal->status == stat_done) {
 			c_vistest++;
-			test = (long *) portal->visbits;
+			test = portal->visbits;
 		} else {
 			c_mighttest++;
-			test = (long *) portal->mightsee;
+			test = portal->mightsee;
 		}
-		more = false;
-		for (j = 0; j < bitlongs; j++) {
-			might[j] = ((long *) prevstack->mightsee)[j] & test[j];
-			if (might[j] & ~vis[j])
-				more = true;
-		}
+		set_assign (might, prevstack->mightsee);
+		set_intersection (might, test);
+		more = !set_is_subset (might, vis);
 
 		if (!more)			// can't see anything new
 			continue;
@@ -347,7 +345,9 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		FreeWinding (target);
     }
 
-    free (stack.mightsee);
+	LOCK;
+    set_delete (stack.mightsee);
+	UNLOCK;
 }
 
 void
@@ -359,9 +359,8 @@ PortalFlow (portal_t *portal)
     if (portal->status != stat_selected)
 		Sys_Error ("PortalFlow: reflowed");
     portal->status = stat_working;
+    portal->visbits = set_new_size (portalclusters);
 	UNLOCK;
-
-    portal->visbits = calloc (1, bitbytes);
 
     memset (&data, 0, sizeof (data));
     data.clustervis = portal->visbits;

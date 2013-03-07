@@ -71,9 +71,9 @@ SimpleFlood (portal_t *srcportal, int clusternum)
     cluster_t  *cluster;
     portal_t   *portal;
 
-    if (srcportal->mightsee[clusternum >> 3] & (1 << (clusternum & 7)))
+	if (set_is_member (srcportal->mightsee, clusternum))
 		return;
-    srcportal->mightsee[clusternum >> 3] |= (1 << (clusternum & 7));
+	set_add (srcportal->mightsee, clusternum);
     clustersee++;
 
     cluster = &clusters[clusternum];
@@ -95,7 +95,7 @@ BasePortalVis (void)
     winding_t  *winding;
 
     for (i = 0, portal = portals; i < numportals * 2; i++, portal++) {
-		portal->mightsee = calloc (1, bitbytes);
+		portal->mightsee = set_new_size (portalclusters);
 
 		memset (portalsee, 0, numportals * 2);
 

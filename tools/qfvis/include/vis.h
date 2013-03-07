@@ -43,6 +43,8 @@ extern pthread_mutex_t *my_mutex;
 #define	UNLOCK
 #endif
 
+#include "QF/set.h"
+
 #define	MAX_PORTALS				32768
 #define	PORTALFILE				"PRT1"
 #define	PORTALFILE_AM			"PRT1-AM"
@@ -68,8 +70,8 @@ typedef struct {
 	int         cluster;	// neighbor
 	winding_t  *winding;
 	vstatus_t   status;
-	byte       *visbits;
-	byte       *mightsee;
+	set_t      *visbits;
+	set_t      *mightsee;
 	int         nummightsee;
 	int         numcansee;
 } portal_t;
@@ -98,11 +100,11 @@ typedef struct pstack_s {
 	portal_t   *portal;		// portal exiting
 	winding_t  *source, *pass;
 	plane_t     portalplane;
-	byte       *mightsee;	// bit string
+	set_t      *mightsee;
 } pstack_t;
 
 typedef struct {
-	byte       *clustervis;	// bit string
+	set_t      *clustervis;
 	portal_t   *base;
 	pstack_t    pstack_head;
 } threaddata_t;
