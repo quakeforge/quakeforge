@@ -97,17 +97,20 @@ typedef struct cluster_s {
 
 typedef struct pstack_s {
 	struct pstack_s *next;
+	struct threaddata_s *thread;
 	cluster_t  *cluster;
 	portal_t   *portal;		// portal exiting
 	winding_t  *source, *pass;
 	plane_t     portalplane;
 	set_t      *mightsee;
+	sep_t      *separators[2];
 } pstack_t;
 
-typedef struct {
+typedef struct threaddata_s {
 	set_t      *clustervis;
 	portal_t   *base;
 	pstack_t    pstack_head;
+	sep_t      *sep_freelist;
 } threaddata_t;
 
 extern int numportals;

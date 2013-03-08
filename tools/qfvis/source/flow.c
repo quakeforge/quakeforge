@@ -48,6 +48,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "QF/alloc.h"
 #include "QF/bspfile.h"
 #include "QF/cmd.h"
 #include "QF/mathlib.h"
@@ -70,6 +71,35 @@ CheckStack (cluster_t *cluster, threaddata_t *thread)
 	return 0;
 }
 
+static sep_t *
+new_separator (threaddata_t *thread)
+{
+	sep_t      *sep;
+
+	ALLOC (128, sep_t, thread->sep, sep);
+	return sep;
+}
+
+static void
+delete_separator (threaddata_t *thread, sep_t *sep)
+{
+	FREE (thread->sep, sep);
+}
+
+static void
+free_separators (pstack_t *stack)
+{
+	int         i;
+
+	for (i = 2; i > 0; i--) {
+		while (stack->separators[i - 1]) {
+			sep_t      *sep = stack->separators[i - 1];
+			stack->separators[i - 1] = sep->next;
+			delete_separator (stack->thread, sep);
+		}
+	}
+}
+
 /*
 	ClipToSeparators
 
@@ -82,12 +112,13 @@ CheckStack (cluster_t *cluster, threaddata_t *thread)
 
 	Normal clip keeps target on the same side as pass, which is correct if the
 	order goes source, pass, target.  If the order goes pass, source, target
-	then flipclip should be set.
+	then test should be odd.
 */
 static winding_t *
-ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
-				  qboolean flipclip)
+ClipToSeparators (pstack_t *stack, winding_t *source, winding_t *pass,
+				  winding_t *target, int test)
 {
+	threaddata_t *thread = stack->thread;
 	float       d;
 	int         i, j, k, l;
 	int         counts[3];
@@ -96,6 +127,14 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 	vec3_t      v1, v2;
 	vec_t       length;
 
+	if (test < 2 && stack->separators[test]) {
+		sep_t      *sep;
+
+		for (sep = stack->separators[test]; target && sep; sep = sep->next) {
+			target = ClipWinding (target, &sep->plane, false);
+		}
+		return target;
+	}
 	// check all combinations
 	for (i = 0; i < source->numpoints; i++) {
 		l = (i + 1) % source->numpoints;
@@ -172,16 +211,24 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 			}
 
 			// flip the normal if we want the back side
-			if (flipclip) {
+			if (test & 1) {
 				VectorNegate (plane.normal, plane.normal);
 				plane.dist = -plane.dist;
 			}
 
-			// clip target by the seperating plane
-			target = ClipWinding (target, &plane, false);
-			if (!target)
+			// clip target by the seperating plane. If target is null, then
+			// we're pre-caching the rest of the separators
+			if (target)
+				target = ClipWinding (target, &plane, false);
+			if (test < 2) {
+				sep_t *sep = new_separator (thread);
+				sep->plane = plane;
+				sep->next = stack->separators[test];
+				stack->separators[test] = sep;
+			} else if (!target) {
 				return NULL;	// target is not visible
-			break;				//XXX is this correct? big speedup
+			}
+			break;
 		}
 	}
 	return target;
@@ -194,8 +241,9 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 	If src_portal is NULL, this is the originating cluster
 */
 static void
-RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
+RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
 {
+	threaddata_t *thread = prevstack->thread;
 	int         i;
 	set_t      *might;
 	const set_t *test, *vis;
@@ -220,11 +268,14 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 
 	prevstack->next = &stack;
 	stack.next = NULL;
+	stack.thread = thread;
 	stack.cluster = cluster;
 	stack.portal = NULL;
 	LOCK;
 	stack.mightsee = set_new_size (portalclusters);
 	UNLOCK;
+	stack.separators[0] = 0;
+	stack.separators[1] = 0;
 	might = stack.mightsee;
 	vis = thread->clustervis;
 
@@ -272,7 +323,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 
 			stack.source = prevstack->source;
 			stack.pass = target;
-			RecursiveClusterFlow (portal->cluster, thread, &stack);
+			RecursiveClusterFlow (portal->cluster, &stack);
 			FreeWinding (target);
 			continue;
 		}
@@ -295,7 +346,8 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			// clip target to the image that would be formed by a laser
 			// pointing from the edges of source passing though the corners of
 			// pass
-			target = ClipToSeparators (source, prevstack->pass, target, false);
+			target = ClipToSeparators (&stack, source, prevstack->pass, target,
+									   0);
 			if (!target) {
 				FreeWinding (source);
 				continue;
@@ -309,7 +361,8 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			// source shining past pass. eg, if source and pass are equilateral
 			// triangles rotated 60 (or 180) degrees relative to each other,
 			// parallel and in line, target will wind up being a hexagon.
-			target = ClipToSeparators (prevstack->pass, source, target, true);
+			target = ClipToSeparators (&stack, prevstack->pass, source, target,
+									   1);
 			if (!target) {
 				FreeWinding (source);
 				continue;
@@ -319,7 +372,8 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		// now do the same as for levels 1 and 2, but trimming source using
 		// the trimmed target
 		if (options.level > 2) {
-			source = ClipToSeparators (target, prevstack->pass, source, false);
+			source = ClipToSeparators (&stack, target, prevstack->pass, source,
+									   2);
 			if (!source) {
 				FreeWinding (target);
 				continue;
@@ -327,7 +381,8 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		}
 
 		if (options.level > 3) {
-			source = ClipToSeparators (prevstack->pass, target, source, true);
+			source = ClipToSeparators (&stack, prevstack->pass, target, source,
+									   3);
 			if (!source) {
 				FreeWinding (target);
 				continue;
@@ -340,11 +395,12 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		c_portalpass++;
 
 		// flow through it for real
-		RecursiveClusterFlow (portal->cluster, thread, &stack);
+		RecursiveClusterFlow (portal->cluster, &stack);
 
 		FreeWinding (source);
 		FreeWinding (target);
 	}
+	free_separators (&stack);
 
 	LOCK;
 	set_delete (stack.mightsee);
@@ -367,12 +423,13 @@ PortalFlow (portal_t *portal)
 	data.clustervis = portal->visbits;
 	data.base = portal;
 
+	data.pstack_head.thread = &data;
 	data.pstack_head.portal = portal;
 	data.pstack_head.source = portal->winding;
 	data.pstack_head.portalplane = portal->plane;
 	data.pstack_head.mightsee = portal->mightsee;
 
-	RecursiveClusterFlow (portal->cluster, &data, &data.pstack_head);
+	RecursiveClusterFlow (portal->cluster, &data.pstack_head);
 
 	portal->status = stat_done;
 }
