@@ -65,7 +65,7 @@
 #include "value.h"
 #include "qc-parse.h"
 
-static expr_t *free_exprs;
+static expr_t *exprs_freelist;
 
 type_t     *ev_types[ev_type_count] = {
 	&type_void,

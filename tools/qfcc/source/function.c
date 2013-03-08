@@ -65,8 +65,8 @@
 #include "type.h"
 #include "value.h"
 
-static param_t *free_params;
-static function_t *free_functions;
+static param_t *params_freelist;
+static function_t *functions_freelist;
 static hashtab_t *overloaded_functions;
 static hashtab_t *function_map;
 

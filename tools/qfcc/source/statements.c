@@ -227,9 +227,9 @@ print_statement (statement_t *s)
 	printf (")\n");
 }
 
-static sblock_t *free_sblocks;
-static statement_t *free_statements;
-static operand_t *free_operands;
+static sblock_t *sblocks_freelist;
+static statement_t *statements_freelist;
+static operand_t *operands_freelist;
 
 sblock_t *
 new_sblock (void)

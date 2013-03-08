@@ -47,8 +47,8 @@
 
 #define BITS (sizeof (((set_t *) 0)->map[0]) * 8)
 
-set_t      *free_sets;
-set_iter_t *free_set_iters;
+set_t      *sets_freelist;
+set_iter_t *set_iters_freelist;
 
 static set_iter_t *
 new_setiter (void)

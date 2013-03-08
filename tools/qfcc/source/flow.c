@@ -57,10 +57,10 @@
 #include "symtab.h"
 #include "type.h"
 
-static flowvar_t *free_vars;
-static flowloop_t *free_loops;
-static flownode_t *free_nodes;
-static flowgraph_t *free_graphs;
+static flowvar_t *vars_freelist;
+static flowloop_t *loops_freelist;
+static flownode_t *nodes_freelist;
+static flowgraph_t *graphs_freelist;
 
 static struct {
 	const char *name;

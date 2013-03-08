@@ -131,7 +131,7 @@ static builtin_sym_t builtin_symbols[] __attribute__ ((used)) = {
 static const int num_builtins = sizeof (builtin_symbols)
 								/ sizeof (builtin_symbols[0]);
 
-static defref_t *free_defrefs;
+static defref_t *defrefs_freelist;
 
 static hashtab_t *extern_data_defs;
 static hashtab_t *defined_data_defs;

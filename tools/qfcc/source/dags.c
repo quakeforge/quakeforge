@@ -58,9 +58,9 @@
 #include "type.h"
 #include "value.h"
 
-static daglabel_t *free_labels;
-static dagnode_t *free_nodes;
-static dag_t *free_dags;
+static daglabel_t *labels_freelist;
+static dagnode_t *nodes_freelist;
+static dag_t *dags_freelist;
 
 static daglabel_t *daglabel_chain;
 

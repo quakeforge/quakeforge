@@ -88,7 +88,7 @@ type_t      type_type_encodings = { ev_invalid, "@type_encodings", ty_struct };
 
 type_t      type_floatfield = { ev_field, ".float", ty_none, {{&type_float}} };
 
-static type_t *free_types;
+static type_t *types_freelist;
 
 etype_t
 low_level_type (type_t *type)

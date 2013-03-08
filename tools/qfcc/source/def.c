@@ -62,7 +62,7 @@
 #include "type.h"
 #include "value.h"
 
-static def_t *free_defs;
+static def_t *defs_freelist;
 
 static void
 set_storage_bits (def_t *def, storage_class_t storage)
