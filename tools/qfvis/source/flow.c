@@ -430,6 +430,4 @@ PortalFlow (portal_t *portal)
 	data.pstack_head.mightsee = portal->mightsee;
 
 	RecursiveClusterFlow (portal->cluster, &data.pstack_head);
-
-	portal->status = stat_done;
 }

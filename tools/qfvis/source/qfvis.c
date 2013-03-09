@@ -76,6 +76,7 @@ int         c_portaltest;
 int         c_portalpass;
 int         c_portalcheck;
 int         c_vistest;
+int         c_mightseeupdate;
 
 int         portal_count;
 int         numportals;
@@ -278,6 +279,60 @@ GetNextPortal (void)
 	return p;
 }
 
+static void
+UpdateMightsee (cluster_t *source, cluster_t *dest)
+{
+	int         i, clusternum;
+	portal_t   *portal;
+
+	clusternum = dest - clusters;
+	for (i = 0; i < source->numportals; i++) {
+		portal = source->portals[i];
+		if (portal->status != stat_none)
+			continue;
+		if (set_is_member (portal->mightsee, clusternum)) {
+			set_remove (portal->mightsee, clusternum);
+			portal->nummightsee--;
+			c_mightseeupdate++;
+		}
+	}
+}
+
+static void
+PortalCompleted (portal_t *completed)
+{
+	portal_t   *portal;
+	cluster_t  *cluster;
+	set_t      *changed;
+	set_iter_t *ci;
+	int         i, j;
+
+	completed->status = stat_done;
+	LOCK;
+	changed = set_new_size (portalclusters);
+	cluster = &clusters[completed->cluster];
+	for (i = 0; i < cluster->numportals; i++) {
+		portal = cluster->portals[i];
+		if (portal->status != stat_done)
+			continue;
+		set_assign (changed, portal->mightsee);
+		set_difference (changed, portal->visbits);
+		for (j = 0; j < cluster->numportals; j++) {
+			if (j == i)
+				continue;
+			if (cluster->portals[j]->status == stat_done)
+				set_difference (changed, cluster->portals[j]->visbits);
+			else
+				set_difference (changed, cluster->portals[j]->mightsee);
+		}
+		for (ci = set_first (changed); ci; ci = set_next (ci)) {
+			UpdateMightsee (&clusters[ci->element], cluster);
+		}
+	}
+	set_delete (changed);
+	UNLOCK;
+}
+
 static void *
 LeafThread (void *_thread)
 {
@@ -292,6 +347,8 @@ LeafThread (void *_thread)
 		if (working)
 			working[thread] = (int) (portal - portals);
 		PortalFlow (portal);
+
+		PortalCompleted (portal);
 
 		if (options.verbosity > 1)
 			printf ("portal:%5i  mightsee:%5i  cansee:%5i %5d/%d\n",
@@ -499,7 +556,7 @@ CalcPortalVis (void)
 	if (options.verbosity > 0) {
 		printf ("portalcheck: %i  portaltest: %i  portalpass: %i\n",
 				c_portalcheck, c_portaltest, c_portalpass);
-		printf ("c_vistest: %i  c_mighttest: %i\n", c_vistest, c_mighttest);
+		printf ("c_vistest: %i  c_mighttest: %i c_mightseeupdate: %i\n", c_vistest, c_mighttest, c_mightseeupdate);
 	}
 }
 
