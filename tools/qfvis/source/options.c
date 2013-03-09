@@ -94,6 +94,7 @@ DecodeArgs (int argc, char **argv)
 	options.verbosity = 0;
 	options.bspfile = NULL;
 	options.threads = 1;
+	options.level = 4;
 
 	while ((c = getopt_long (argc, argv, short_options, long_options, 0))
 		   != EOF) {
