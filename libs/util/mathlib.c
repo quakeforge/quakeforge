@@ -1151,3 +1151,52 @@ Mat4Decompose (const mat4_t mat, quat_t rot, vec3_t shear, vec3_t scale,
 	Mat4toMat3 (mat, m3);
 	return Mat3Decompose (m3, rot, shear, scale);
 }
+
+void
+BarycentricCoords (const vec_t **points, int num_points, const vec3_t p,
+				   vec_t *lambda)
+{
+	vec3_t      a, b, c, x, ab, bc, ca, n;
+	vec_t       div;
+	if (num_points > 4)
+		Sys_Error ("Don't know how to compute the barycentric coordinates "
+				   "for %d points", num_points);
+	switch (num_points) {
+		case 1:
+			lambda[0] = 1;
+			return;
+		case 2:
+			VectorSubtract (p, points[0], x);
+			VectorSubtract (points[1], points[0], a);
+			lambda[1] = DotProduct (x, a) / DotProduct (a, a);
+			lambda[0] = 1 - lambda[1];
+			return;
+		case 3:
+			VectorSubtract (p, points[0], x);
+			VectorSubtract (points[1], points[0], a);
+			VectorSubtract (points[2], points[0], b);
+			CrossProduct (a, b, ab);
+			div = DotProduct (ab, ab);
+			CrossProduct (x, b, n);
+			lambda[1] = DotProduct (n, ab) / div;
+			CrossProduct (a, x, n);
+			lambda[2] = DotProduct (n, ab) / div;
+			lambda[0] = 1 - lambda[1] - lambda[2];
+			return;
+		case 4:
+			VectorSubtract (p, points[0], x);
+			VectorSubtract (points[1], points[0], a);
+			VectorSubtract (points[2], points[0], b);
+			VectorSubtract (points[3], points[0], c);
+			CrossProduct (a, b, ab);
+			CrossProduct (b, c, bc);
+			CrossProduct (c, a, ca);
+			div = DotProduct (a, bc);
+			lambda[1] = DotProduct (x, bc) / div;
+			lambda[2] = DotProduct (x, ca) / div;
+			lambda[3] = DotProduct (x, ab) / div;
+			lambda[0] = 1 - lambda[1] - lambda[2] - lambda[3];
+			return;
+	}
+	Sys_Error ("Not enough points to project or enclose the point");
+}

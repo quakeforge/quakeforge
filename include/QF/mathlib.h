@@ -213,6 +213,9 @@ R_CullSphere (const vec3_t origin, const float radius)
 	return false;
 }
 
+void BarycentricCoords (const vec_t **points, int num_points, const vec3_t p,
+		                vec_t *lambda);
+
 //@}
 
 #endif // __mathlib_h
