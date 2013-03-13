@@ -56,7 +56,7 @@ main (int argc, const char **argv)
 	double      start, end;
 
 	for (i = 0; i < num_tests; i ++) {
-		sphere = BoundingSphere (tests[i].points, tests[i].num_points);
+		CircumSphere (tests[i].points, tests[i].num_points, &sphere);
 		if (VectorDistance_fast (sphere.center, tests[i].expect.center) > 1e-4
 			|| fabs (sphere.radius - tests[i].expect.radius) > 1e-4) {
 			res = 1;
