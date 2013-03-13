@@ -110,4 +110,9 @@ typedef struct plane_s {
 	byte    pad[2];
 } plane_t;
 
+typedef struct sphere_s {
+	vec3_t      center;
+	vec_t       radius;
+} sphere_t;
+
 #endif // __qtypes_h

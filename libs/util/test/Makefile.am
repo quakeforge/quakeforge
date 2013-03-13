@@ -3,12 +3,16 @@ AUTOMAKE_OPTIONS= foreign
 INCLUDES= -I$(top_srcdir)/include
 
 check_PROGRAMS= \
-	test-bary test-dq test-half test-mat3 test-mat4 test-plist test-qfs \
-	test-quat test-set test-vrect
+	test-bary test-cs test-dq test-half test-mat3 test-mat4 \
+	test-plist test-qfs test-quat test-set test-vrect
 
 test_bary_SOURCES=test-bary.c
 test_bary_LDADD=$(top_builddir)/libs/util/libQFutil.la
 test_bary_DEPENDENCIES=$(top_builddir)/libs/util/libQFutil.la
+
+test_cs_SOURCES=test-cs.c
+test_cs_LDADD=$(top_builddir)/libs/util/libQFutil.la
+test_cs_DEPENDENCIES=$(top_builddir)/libs/util/libQFutil.la
 
 test_dq_SOURCES=test-dq.c
 test_dq_LDADD=$(top_builddir)/libs/util/libQFutil.la

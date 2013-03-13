@@ -1200,3 +1200,84 @@ BarycentricCoords (const vec_t **points, int num_points, const vec3_t p,
 	}
 	Sys_Error ("Not enough points to project or enclose the point");
 }
+
+static int
+circum_circle (const vec_t **points, int num_points, sphere_t *sphere)
+{
+	vec3_t      a, c, b;
+	vec3_t      bc, ca, ab;
+	vec_t       aa, bb, cc;
+	vec_t       div;
+	vec_t       alpha, beta, gamma;
+
+	switch (num_points) {
+		case 1:
+			VectorCopy (points[0], sphere->center);
+			return 1;
+		case 2:
+			VectorBlend (points[0], points[1], 0.5, sphere->center);
+			return 1;
+		case 3:
+			VectorSubtract (points[0], points[1], a);
+			VectorSubtract (points[0], points[2], b);
+			VectorSubtract (points[1], points[2], c);
+			aa = DotProduct (a, a);
+			bb = DotProduct (b, b);
+			cc = DotProduct (c, c);
+			div = DotProduct (a, c);
+			div = 2 * (aa * cc - div * div);
+			if (fabs (div) < EQUAL_EPSILON) {
+				// degenerate
+				return 0;
+			}
+			alpha = cc * DotProduct (a, b) / div;
+			beta = -bb * DotProduct (a, c) / div;
+			gamma = aa * DotProduct (b, c) / div;
+			VectorScale (points[0], alpha, sphere->center);
+			VectorMultAdd (sphere->center, beta, points[1], sphere->center);
+			VectorMultAdd (sphere->center, gamma, points[2], sphere->center);
+			return 1;
+		case 4:
+			VectorSubtract (points[1], points[0], a);
+			VectorSubtract (points[2], points[0], b);
+			VectorSubtract (points[3], points[0], c);
+			CrossProduct (b, c, bc);
+			CrossProduct (c, a, ca);
+			CrossProduct (a, b, ab);
+			div = 2 * DotProduct (a, bc);
+			if (fabs (div) < EQUAL_EPSILON) {
+				// degenerate
+				return 0;
+			}
+			aa = DotProduct (a, a) / div;
+			bb = DotProduct (b, b) / div;
+			cc = DotProduct (c, c) / div;
+			VectorScale (bc, aa, sphere->center);
+			VectorMultAdd (sphere->center, bb, ca, sphere->center);
+			VectorMultAdd (sphere->center, cc, ab, sphere->center);
+			VectorAdd (sphere->center, points[0], sphere->center);
+			sphere->radius = VectorDistance (sphere->center, points[0]);
+			return 1;
+	}
+	return 0;
+}
+
+int
+CircumSphere (const vec3_t points[], int num_points, sphere_t *sphere)
+{
+	const vec_t *p[] = {points[0], points[1], points[2], points[3]};
+
+	if (num_points > 4)
+		return 0;
+	sphere->radius = 0;
+	if (num_points) {
+		if (circum_circle (p, num_points, sphere)) {
+			if (num_points > 1)
+				sphere->radius = VectorDistance (sphere->center, points[0]);
+			return 1;
+		}
+		return 0;
+	}
+	VectorZero (sphere->center);
+	return 1;
+}
