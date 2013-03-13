@@ -1281,3 +1281,132 @@ CircumSphere (const vec3_t points[], int num_points, sphere_t *sphere)
 	VectorZero (sphere->center);
 	return 1;
 }
+
+static void
+closest_point (const vec_t **points, int num_points, const vec3_t x,
+			   vec3_t closest)
+{
+	vec3_t      a, b, n, d;
+	vec_t       l;
+
+	switch (num_points) {
+		default:
+		case 1:
+			VectorCopy (points[0], closest);
+			break;
+		case 2:
+			VectorSubtract (points[1], points[0], n);
+			VectorSubtract (x, points[0], d);
+			l = DotProduct (d, n) / DotProduct (n, n);
+			VectorMultAdd (points[0], l, n, closest);
+			break;
+		case 3:
+			VectorSubtract (points[1], points[0], a);
+			VectorSubtract (points[2], points[0], b);
+			CrossProduct (a, b, n);
+			VectorSubtract (points[0], x, d);
+			l = DotProduct (d, n) / DotProduct (n, n);
+			VectorMultAdd (x, l, n, closest);
+			break;
+	}
+}
+
+sphere_t
+SmallestEnclosingBall (const vec3_t points[], int num_points)
+{
+	sphere_t    sphere;
+	const vec_t *best;
+	const vec_t *support[4];
+	int         num_support;
+	vec_t       dist, best_dist;
+	int         i;
+	int         itters = 0;
+
+	if (num_points < 3) {
+		CircumSphere (points, num_points, &sphere);
+		return sphere;
+	}
+
+	for (i = 0; i < 4; i++)
+		support[i] = 0;
+
+	VectorCopy (points[0], sphere.center);
+	best_dist = dist = 0;
+	best = 0;
+	for (i = 1; i < num_points; i++) {
+		dist = VectorDistance_fast (points[i], sphere.center);
+		if (dist > best_dist) {
+			best_dist = dist;
+			best = points[i];
+		}
+	}
+	num_support = 1;
+	support[0] = best;
+	sphere.radius = best_dist;	// note: radius squared until the end
+
+	while (1) {
+		vec3_t      affine;
+		vec3_t      center_to_affine, center_to_point;
+		vec_t       affine_dist, point_proj, point_dist, bound;
+		vec_t       scale = 1;
+		int         i;
+
+		if (itters++ > 10)
+			Sys_Error ("stuck SEB");
+		best = 0;
+
+		if (num_support == 4) {
+			vec_t       lambda[4];
+			int         dropped = 0;
+
+			BarycentricCoords (support, 4, sphere.center, lambda);
+			for (i = 0; i < 4; i++) {
+				support[i - dropped] = support[i];
+				if (lambda[i] < 0) {
+					dropped++;
+					num_support--;
+				}
+			}
+			if (!dropped)
+				break;
+			for (i = 4 - dropped; i < 4; i++)
+				support[i] = 0;
+		}
+		closest_point (support, num_support, sphere.center, affine);
+		VectorSubtract (affine, sphere.center, center_to_affine);
+		affine_dist = DotProduct (center_to_affine, center_to_affine);
+		if (affine_dist < 1e-2 * sphere.radius)
+			break;
+		for (i = 0; i < num_points; i++) {
+			if (points[i] == support [0] || points[i] == support[1]
+				|| points[i] == support[2])
+				continue;
+			VectorSubtract (points[i], sphere.center, center_to_point);
+			point_proj = DotProduct (center_to_affine, center_to_point);
+			if (affine_dist - point_proj <= 0
+				|| ((affine_dist - point_proj) * (affine_dist - point_proj)
+					< 1e-8 * sphere.radius * affine_dist))
+				continue;
+			point_dist = DotProduct (center_to_point, center_to_point);
+			bound = sphere.radius - point_dist;
+			bound /= 2 * (affine_dist - point_proj);
+			if (bound < scale) {
+				best = points[i];
+				scale = bound;
+			}
+		}
+		VectorMultAdd (sphere.center, scale, center_to_affine, sphere.center);
+		if (!best)
+			break;
+		sphere.radius = VectorDistance_fast (sphere.center, best);
+		support[num_support++] = best;
+	}
+	best_dist = 0;
+	for (i = 0; i < num_points; i++) {
+		dist = VectorDistance_fast (sphere.center, points[i]);
+		if (dist > best_dist)
+			best_dist = dist;
+	}
+	sphere.radius = sqrt (best_dist);
+	return sphere;
+}

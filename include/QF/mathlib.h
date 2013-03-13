@@ -213,6 +213,7 @@ R_CullSphere (const vec3_t origin, const float radius)
 	return false;
 }
 
+sphere_t SmallestEnclosingBall (const vec3_t points[], int num_points);
 int CircumSphere (const vec3_t points[], int num_points, sphere_t *sphere);
 void BarycentricCoords (const vec_t **points, int num_points, const vec3_t p,
 		                vec_t *lambda);
