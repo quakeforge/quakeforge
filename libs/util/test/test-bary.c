@@ -58,9 +58,11 @@ rnd (mtstate_t *mt)
 	}           uf;
 
 	do {
-		uf.u = mtwist_rand (mt) & 0x3fffffff;
+		uf.u = mtwist_rand (mt) & 0x007fffff;
 	} while (!uf.u);
-	return uf.f - 1.0;
+	uf.u |= 0x40000000;
+
+	return uf.f - 3.0;
 }
 
 int
