@@ -72,7 +72,7 @@ main (int argc, const char **argv)
 
 	mtwist_seed (&mt, 0);
 	start = Sys_DoubleTime ();
-	for (i = 0; !res && i < 100000; i++) {
+	for (i = 0; !res && i < 1000000; i++) {
 		vec3_t      cloud[4];
 		sphere_t    cc;
 		vec_t       r2;
@@ -85,14 +85,15 @@ main (int argc, const char **argv)
 		r2 = cc.radius * cc.radius;
 		for (j = 0; j < 4; j++) {
 			if (fabs (VectorDistance_fast (cloud[j], cc.center) - r2)
-				< 1e-4 * r2)
+				< 1e-3 * r2)
 				continue;
 			printf ("%d %.9g - %.9g = %.9g\n", (int)j,
 					VectorDistance_fast (cloud[j], cc.center), r2,
 					VectorDistance_fast (cloud[j], cc.center) - r2);
-			printf ("[%.9g %.9g %.9g] - [%.9g %.9g %.9g] = %.9g > %.9g\n",
+			printf ("[%.9g %.9g %.9g] - [%.9g %.9g %.9g] = %.9g != %.9g\n",
 					VectorExpand (cloud[j]), VectorExpand (cc.center),
 					VectorDistance_fast (cloud[j], cc.center), r2);
+			res = 1;
 		}
 	}
 	end = Sys_DoubleTime ();
