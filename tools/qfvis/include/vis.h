@@ -69,6 +69,7 @@ typedef enum {
 typedef struct {
 	plane_t     plane;		// normal pointing into neighbor
 	int         cluster;	// neighbor
+	sphere_t    sphere;		// bounding sphere
 	winding_t  *winding;
 	vstatus_t   status;
 	set_t      *visbits;

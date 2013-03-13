@@ -765,6 +765,7 @@ LoadPortals (char *name)
 	plane_t     plane;
 	portal_t   *portal;
 	winding_t  *winding;
+	sphere_t    sphere;
 	QFile	   *f;
 
 	if (!strcmp (name, "-"))
@@ -884,6 +885,8 @@ LoadPortals (char *name)
 
 		// calc plane
 		PlaneFromWinding (winding, &plane);
+		sphere = SmallestEnclosingBall((const vec_t(*)[3])winding->points,
+									   winding->numpoints);
 
 		// create forward portal
 		cluster = &clusters[clusternums[0]];
@@ -896,6 +899,7 @@ LoadPortals (char *name)
 		VectorNegate (plane.normal, portal->plane.normal);
 		portal->plane.dist = -plane.dist;
 		portal->cluster = clusternums[1];
+		portal->sphere = sphere;
 		portal++;
 
 		// create backwards portal
@@ -908,6 +912,7 @@ LoadPortals (char *name)
 		portal->winding = winding;
 		portal->plane = plane;
 		portal->cluster = clusternums[0];
+		portal->sphere = sphere;
 		portal++;
 	}
 

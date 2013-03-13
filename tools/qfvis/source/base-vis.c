@@ -86,6 +86,20 @@ SimpleFlood (portal_t *srcportal, int clusternum)
     }
 }
 
+static inline int
+test_sphere (sphere_t *sphere, plane_t *plane, int test_front)
+{
+	float       d;
+	int         pass;
+
+	d = DotProduct (sphere->center, plane->normal) - plane->dist;
+	if (test_front)
+		pass = (d >= -sphere->radius);
+	else
+		pass = (d <= sphere->radius);
+	return pass;
+}
+
 void
 BasePortalVis (void)
 {
@@ -93,7 +107,10 @@ BasePortalVis (void)
 	float		d;
     portal_t   *tp, *portal;
     winding_t  *winding;
+	int         base_mightsee = 0;
+	double      start, end;
 
+	start = Sys_DoubleTime ();
 	portalsee = set_new_size (numportals * 2);
     for (i = 0, portal = portals; i < numportals * 2; i++, portal++) {
 		portal->mightsee = set_new_size (portalclusters);
@@ -103,6 +120,11 @@ BasePortalVis (void)
 		for (j = 0, tp = portals; j < numportals * 2; j++, tp++) {
 			if (j == i)
 				continue;
+
+			if (!test_sphere (&tp->sphere, &portal->plane, 1))
+				continue;	// entirely behind
+			if (!test_sphere (&portal->sphere, &tp->plane, 0))
+				continue;	// entirely behind
 
 			winding = tp->winding;
 			for (k = 0; k < winding->numpoints; k++) {
@@ -130,6 +152,10 @@ BasePortalVis (void)
 		clustersee = 0;
 		SimpleFlood (portal, portal->cluster);
 		portal->nummightsee = clustersee;
+		base_mightsee += clustersee;
     }
 	set_delete (portalsee);
+	end = Sys_DoubleTime ();
+	if (options.verbosity > 0)
+		printf ("base_mightsee: %d %gs\n", base_mightsee, end - start);
 }
