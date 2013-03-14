@@ -355,17 +355,22 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		}
 
 		thread->stats.portaltest++;
+		thread->stats.targettested++;
 
 		if (options.level > 0) {
 			// clip target to the image that would be formed by a laser
 			// pointing from the edges of source passing though the corners of
 			// pass
+			winding_t  *old = target;
 			target = ClipToSeparators (thread, &stack, source, prevstack->pass,
 									   target, 0);
 			if (!target) {
+				thread->stats.targetclipped++;
 				FreeWinding (source);
 				continue;
 			}
+			if (target != old)
+				thread->stats.targettrimmed++;
 		}
 
 		if (options.level > 1) {
@@ -375,32 +380,45 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			// source shining past pass. eg, if source and pass are equilateral
 			// triangles rotated 60 (or 180) degrees relative to each other,
 			// parallel and in line, target will wind up being a hexagon.
+			winding_t  *old = target;
 			target = ClipToSeparators (thread, &stack, prevstack->pass, source,
 									   target, 1);
 			if (!target) {
+				thread->stats.targetclipped++;
 				FreeWinding (source);
 				continue;
 			}
+			if (target != old)
+				thread->stats.targettrimmed++;
 		}
 
+		thread->stats.sourcetested++;
 		// now do the same as for levels 1 and 2, but trimming source using
 		// the trimmed target
 		if (options.level > 2) {
+			winding_t  *old = source;
 			source = ClipToSeparators (thread, &stack, target, prevstack->pass,
 									   source, 2);
 			if (!source) {
+				thread->stats.sourceclipped++;
 				FreeWinding (target);
 				continue;
 			}
+			if (source != old)
+				thread->stats.sourcetrimmed++;
 		}
 
 		if (options.level > 3) {
+			winding_t  *old = source;
 			source = ClipToSeparators (thread, &stack, prevstack->pass, target,
 									   source, 3);
 			if (!source) {
+				thread->stats.sourceclipped++;
 				FreeWinding (target);
 				continue;
 			}
+			if (source != old)
+				thread->stats.sourcetrimmed++;
 		}
 
 		stack.source = source;

@@ -306,6 +306,12 @@ PortalCompleted (threaddata_t *thread, portal_t *completed)
 	stats.portaltest += thread->stats.portaltest;
 	stats.portalpass += thread->stats.portalpass;
 	stats.portalcheck += thread->stats.portalcheck;
+	stats.targettested += thread->stats.targettested;
+	stats.targettrimmed += thread->stats.targettrimmed;
+	stats.targetclipped += thread->stats.targetclipped;
+	stats.sourcetested += thread->stats.sourcetested;
+	stats.sourcetrimmed += thread->stats.sourcetrimmed;
+	stats.sourceclipped += thread->stats.sourceclipped;
 	stats.chains += thread->stats.chains;
 	stats.mighttest += thread->stats.mighttest;
 	stats.vistest += thread->stats.vistest;
@@ -562,7 +568,12 @@ CalcPortalVis (void)
 	if (options.verbosity > 0) {
 		printf ("portalcheck: %i  portaltest: %i  portalpass: %i\n",
 				stats.portalcheck, stats.portaltest, stats.portalpass);
-		printf ("vistest: %i  mighttest: %i mightseeupdate: %i\n", stats.vistest, stats.mighttest, stats.mightseeupdate);
+		printf ("target trimmed: %d clipped: %d tested: %d\n",
+				stats.targettrimmed, stats.targetclipped, stats.targettested);
+		printf ("source trimmed: %d clipped: %d tested: %d\n",
+				stats.sourcetrimmed, stats.sourceclipped, stats.sourcetested);
+		printf ("vistest: %i  mighttest: %i mightseeupdate: %i\n",
+				stats.vistest, stats.mighttest, stats.mightseeupdate);
 	}
 }
 

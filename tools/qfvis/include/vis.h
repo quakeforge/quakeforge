@@ -110,6 +110,12 @@ typedef struct {
 	int         portaltest;		///< number of portals tested via separators
 	int         portalpass;		///< number of portals through which vis passes
 	int         portalcheck;	///< number of portal checks
+	int         targettested;	///< number of times target portal tested
+	int         targettrimmed;	///< number of times target portal trimmed
+	int         targetclipped;	///< number of times target portal clipped away
+	int         sourcetested;	///< number of times source portal tested
+	int         sourcetrimmed;	///< number of times source portal trimmed
+	int         sourceclipped;	///< number of times source portal clipped away
 	int         chains;			///< number of visits to clusters
 	int         mighttest;		///< amount mightsee is used for masked tests
 	int         vistest;		///< amount visbits is used for masked tests
