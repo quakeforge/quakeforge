@@ -234,6 +234,30 @@ ClipToSeparators (threaddata_t *thread, pstack_t *stack,
 	return target;
 }
 
+static inline set_t *
+select_test_set (portal_t *portal, threaddata_t *thread)
+{
+	set_t      *test;
+
+	if (portal->status == stat_done) {
+		thread->stats.vistest++;
+		test = portal->visbits;
+	} else {
+		thread->stats.mighttest++;
+		test = portal->mightsee;
+	}
+	return test;
+}
+
+static inline int
+mightsee_more (set_t *might, const set_t *prev_might, const set_t *test,
+			   const set_t *vis)
+{
+	set_assign (might, prev_might);
+	set_intersection (might, test);
+	return !set_is_subset (vis, might);
+}
+
 /*
 	RecursiveClusterFlow
 
@@ -246,7 +270,6 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 	int         i;
 	set_t      *might;
 	const set_t *test, *vis;
-	qboolean    more;
 	cluster_t  *cluster;
 	pstack_t    stack;
 	portal_t   *portal;
@@ -283,20 +306,13 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 
 		if (!set_is_member (prevstack->mightsee, portal->cluster))
 			continue;		// can't possibly see it
-		// if the portal can't see anything we haven't already seen, skip it
-		if (portal->status == stat_done) {
-			thread->stats.vistest++;
-			test = portal->visbits;
-		} else {
-			thread->stats.mighttest++;
-			test = portal->mightsee;
-		}
-		set_assign (might, prevstack->mightsee);
-		set_intersection (might, test);
-		more = !set_is_subset (vis, might);
 
-		if (!more)			// can't see anything new
+		// if the portal can't see anything we haven't already seen, skip it
+		test = select_test_set (portal, thread);
+		if (!mightsee_more (might, prevstack->mightsee, test, vis)) {
+			// can't see anything new
 			continue;
+		}
 
 		// get plane of portal, point normal into the neighbor cluster
 		stack.portalplane = portal->plane;
