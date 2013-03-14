@@ -98,7 +98,6 @@ typedef struct cluster_s {
 
 typedef struct pstack_s {
 	struct pstack_s *next;
-	struct threaddata_s *thread;
 	cluster_t  *cluster;
 	portal_t   *portal;		// portal exiting
 	winding_t  *source, *pass;

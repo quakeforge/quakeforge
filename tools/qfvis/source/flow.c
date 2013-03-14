@@ -87,7 +87,7 @@ delete_separator (threaddata_t *thread, sep_t *sep)
 }
 
 static void
-free_separators (pstack_t *stack)
+free_separators (threaddata_t *thread, pstack_t *stack)
 {
 	int         i;
 
@@ -95,7 +95,7 @@ free_separators (pstack_t *stack)
 		while (stack->separators[i - 1]) {
 			sep_t      *sep = stack->separators[i - 1];
 			stack->separators[i - 1] = sep->next;
-			delete_separator (stack->thread, sep);
+			delete_separator (thread, sep);
 		}
 	}
 }
@@ -115,10 +115,10 @@ free_separators (pstack_t *stack)
 	then test should be odd.
 */
 static winding_t *
-ClipToSeparators (pstack_t *stack, winding_t *source, winding_t *pass,
-				  winding_t *target, int test)
+ClipToSeparators (threaddata_t *thread, pstack_t *stack,
+				  winding_t *source, winding_t *pass, winding_t *target,
+				  int test)
 {
-	threaddata_t *thread = stack->thread;
 	float       d;
 	int         i, j, k, l;
 	int         counts[3];
@@ -241,9 +241,8 @@ ClipToSeparators (pstack_t *stack, winding_t *source, winding_t *pass,
 	If src_portal is NULL, this is the originating cluster
 */
 static void
-RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
+RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 {
-	threaddata_t *thread = prevstack->thread;
 	int         i;
 	set_t      *might;
 	const set_t *test, *vis;
@@ -268,7 +267,6 @@ RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
 
 	prevstack->next = &stack;
 	stack.next = NULL;
-	stack.thread = thread;
 	stack.cluster = cluster;
 	stack.portal = NULL;
 	LOCK;
@@ -323,7 +321,7 @@ RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
 
 			stack.source = prevstack->source;
 			stack.pass = target;
-			RecursiveClusterFlow (portal->cluster, &stack);
+			RecursiveClusterFlow (portal->cluster, thread, &stack);
 			FreeWinding (target);
 			continue;
 		}
@@ -346,8 +344,8 @@ RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
 			// clip target to the image that would be formed by a laser
 			// pointing from the edges of source passing though the corners of
 			// pass
-			target = ClipToSeparators (&stack, source, prevstack->pass, target,
-									   0);
+			target = ClipToSeparators (thread, &stack, source, prevstack->pass,
+									   target, 0);
 			if (!target) {
 				FreeWinding (source);
 				continue;
@@ -361,8 +359,8 @@ RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
 			// source shining past pass. eg, if source and pass are equilateral
 			// triangles rotated 60 (or 180) degrees relative to each other,
 			// parallel and in line, target will wind up being a hexagon.
-			target = ClipToSeparators (&stack, prevstack->pass, source, target,
-									   1);
+			target = ClipToSeparators (thread, &stack, prevstack->pass, source,
+									   target, 1);
 			if (!target) {
 				FreeWinding (source);
 				continue;
@@ -372,8 +370,8 @@ RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
 		// now do the same as for levels 1 and 2, but trimming source using
 		// the trimmed target
 		if (options.level > 2) {
-			source = ClipToSeparators (&stack, target, prevstack->pass, source,
-									   2);
+			source = ClipToSeparators (thread, &stack, target, prevstack->pass,
+									   source, 2);
 			if (!source) {
 				FreeWinding (target);
 				continue;
@@ -381,8 +379,8 @@ RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
 		}
 
 		if (options.level > 3) {
-			source = ClipToSeparators (&stack, prevstack->pass, target, source,
-									   3);
+			source = ClipToSeparators (thread, &stack, prevstack->pass, target,
+									   source, 3);
 			if (!source) {
 				FreeWinding (target);
 				continue;
@@ -395,12 +393,12 @@ RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
 		thread->stats.portalpass++;
 
 		// flow through it for real
-		RecursiveClusterFlow (portal->cluster, &stack);
+		RecursiveClusterFlow (portal->cluster, thread, &stack);
 
 		FreeWinding (source);
 		FreeWinding (target);
 	}
-	free_separators (&stack);
+	free_separators (thread, &stack);
 
 	LOCK;
 	set_delete (stack.mightsee);
@@ -421,11 +419,10 @@ PortalFlow (threaddata_t *data, portal_t *portal)
 	data->base = portal;
 
 	memset (&data->pstack_head, 0, sizeof (data->pstack_head));
-	data->pstack_head.thread = data;
 	data->pstack_head.portal = portal;
 	data->pstack_head.source = portal->winding;
 	data->pstack_head.portalplane = portal->plane;
 	data->pstack_head.mightsee = portal->mightsee;
 
-	RecursiveClusterFlow (portal->cluster, &data->pstack_head);
+	RecursiveClusterFlow (portal->cluster, data, &data->pstack_head);
 }
