@@ -107,7 +107,18 @@ typedef struct pstack_s {
 	sep_t      *separators[2];
 } pstack_t;
 
+typedef struct {
+	int         portaltest;
+	int         portalpass;
+	int         portalcheck;
+	int         chains;
+	int         mighttest;
+	int         vistest;
+	int         mightseeupdate;
+} visstat_t;
+
 typedef struct threaddata_s {
+	visstat_t   stats;
 	set_t      *clustervis;
 	portal_t   *base;
 	pstack_t    pstack_head;
@@ -117,9 +128,6 @@ typedef struct threaddata_s {
 extern int numportals;
 extern int portalclusters;
 extern int numrealleafs;
-extern int c_portaltest;
-extern int c_portalpass;
-extern int c_portalcheck;
 extern int bitbytes;
 extern int bitbytes_l;
 extern int bitlongs;
@@ -130,10 +138,6 @@ extern cluster_t *clusters;
 extern int *leafcluster;
 extern byte *uncompressed;
 
-extern int c_chains;
-extern int c_mighttest;
-extern int c_vistest;
-
 void FreeWinding (winding_t *w);
 winding_t *NewWinding (int points);
 winding_t *ClipWinding (winding_t *in, plane_t *split, qboolean keepon);
@@ -141,7 +145,7 @@ winding_t *CopyWinding (winding_t *w);
 
 void ClusterFlow (int clusternum);
 void BasePortalVis (void);
-void PortalFlow (portal_t *portal);
+void PortalFlow (threaddata_t *data, portal_t *portal);
 void CalcAmbientSounds (void);
 
 #endif// __vis_h

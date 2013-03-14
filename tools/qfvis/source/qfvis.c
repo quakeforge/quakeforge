@@ -70,13 +70,7 @@ bsp_t *bsp;
 
 options_t   options;
 
-int         c_chains;
-int         c_mighttest;
-int         c_portaltest;
-int         c_portalpass;
-int         c_portalcheck;
-int         c_vistest;
-int         c_mightseeupdate;
+static visstat_t stats;
 
 int         portal_count;
 int         numportals;
@@ -293,13 +287,13 @@ UpdateMightsee (cluster_t *source, cluster_t *dest)
 		if (set_is_member (portal->mightsee, clusternum)) {
 			set_remove (portal->mightsee, clusternum);
 			portal->nummightsee--;
-			c_mightseeupdate++;
+			stats.mightseeupdate++;
 		}
 	}
 }
 
 static void
-PortalCompleted (portal_t *completed)
+PortalCompleted (threaddata_t *thread, portal_t *completed)
 {
 	portal_t   *portal;
 	cluster_t  *cluster;
@@ -309,6 +303,15 @@ PortalCompleted (portal_t *completed)
 
 	completed->status = stat_done;
 	LOCK;
+	stats.portaltest += thread->stats.portaltest;
+	stats.portalpass += thread->stats.portalpass;
+	stats.portalcheck += thread->stats.portalcheck;
+	stats.chains += thread->stats.chains;
+	stats.mighttest += thread->stats.mighttest;
+	stats.vistest += thread->stats.vistest;
+	stats.mightseeupdate += thread->stats.mightseeupdate;
+	memset (&thread->stats, 0, sizeof (thread->stats));
+
 	changed = set_new_size (portalclusters);
 	cluster = &clusters[completed->cluster];
 	for (i = 0; i < cluster->numportals; i++) {
@@ -338,7 +341,9 @@ LeafThread (void *_thread)
 {
 	portal_t   *portal;
 	int         thread = (int) (intptr_t) _thread;
+	threaddata_t data;
 
+	memset (&data, 0, sizeof (data));
 	do {
 		portal = GetNextPortal ();
 		if (!portal)
@@ -346,9 +351,10 @@ LeafThread (void *_thread)
 
 		if (working)
 			working[thread] = (int) (portal - portals);
-		PortalFlow (portal);
 
-		PortalCompleted (portal);
+		PortalFlow (&data, portal);
+
+		PortalCompleted (&data, portal);
 
 		if (options.verbosity > 1)
 			printf ("portal:%5i  mightsee:%5i  cansee:%5i %5d/%d\n",
@@ -555,8 +561,8 @@ CalcPortalVis (void)
 
 	if (options.verbosity > 0) {
 		printf ("portalcheck: %i  portaltest: %i  portalpass: %i\n",
-				c_portalcheck, c_portaltest, c_portalpass);
-		printf ("c_vistest: %i  c_mighttest: %i c_mightseeupdate: %i\n", c_vistest, c_mighttest, c_mightseeupdate);
+				stats.portalcheck, stats.portaltest, stats.portalpass);
+		printf ("vistest: %i  mighttest: %i mightseeupdate: %i\n", stats.vistest, stats.mighttest, stats.mightseeupdate);
 	}
 }
 
@@ -968,7 +974,7 @@ main (int argc, char **argv)
 	CalcVis ();
 
 	if (options.verbosity >= 0)
-		printf ("c_chains: %i%s\n", c_chains,
+		printf ("chains: %i%s\n", stats.chains,
 				options.threads > 1 ? " (not reliable)" :"");
 
 	BSP_AddVisibility (bsp, (byte *) visdata->str, visdata->size);

@@ -254,7 +254,7 @@ RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
 	plane_t     backplane;
 	winding_t  *source, *target;
 
-	c_chains++;
+	thread->stats.chains++;
 
 	cluster = &clusters[clusternum];
 	if (CheckStack(cluster, thread))
@@ -287,10 +287,10 @@ RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
 			continue;		// can't possibly see it
 		// if the portal can't see anything we haven't already seen, skip it
 		if (portal->status == stat_done) {
-			c_vistest++;
+			thread->stats.vistest++;
 			test = portal->visbits;
 		} else {
-			c_mighttest++;
+			thread->stats.mighttest++;
 			test = portal->mightsee;
 		}
 		set_assign (might, prevstack->mightsee);
@@ -308,7 +308,7 @@ RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
 		if (_VectorCompare (prevstack->portalplane.normal, backplane.normal))
 			continue;		// can't go out a coplanar face
 
-		c_portalcheck++;
+		thread->stats.portalcheck++;
 
 		stack.portal = portal;
 		stack.next = NULL;
@@ -340,7 +340,7 @@ RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
 			continue;
 		}
 
-		c_portaltest++;
+		thread->stats.portaltest++;
 
 		if (options.level > 0) {
 			// clip target to the image that would be formed by a laser
@@ -392,7 +392,7 @@ RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
 		stack.source = source;
 		stack.pass = target;
 
-		c_portalpass++;
+		thread->stats.portalpass++;
 
 		// flow through it for real
 		RecursiveClusterFlow (portal->cluster, &stack);
@@ -408,10 +408,8 @@ RecursiveClusterFlow (int clusternum, pstack_t *prevstack)
 }
 
 void
-PortalFlow (portal_t *portal)
+PortalFlow (threaddata_t *data, portal_t *portal)
 {
-	threaddata_t    data;
-
 	LOCK;
 	if (portal->status != stat_selected)
 		Sys_Error ("PortalFlow: reflowed");
@@ -419,15 +417,15 @@ PortalFlow (portal_t *portal)
 	portal->visbits = set_new_size (portalclusters);
 	UNLOCK;
 
-	memset (&data, 0, sizeof (data));
-	data.clustervis = portal->visbits;
-	data.base = portal;
+	data->clustervis = portal->visbits;
+	data->base = portal;
 
-	data.pstack_head.thread = &data;
-	data.pstack_head.portal = portal;
-	data.pstack_head.source = portal->winding;
-	data.pstack_head.portalplane = portal->plane;
-	data.pstack_head.mightsee = portal->mightsee;
+	memset (&data->pstack_head, 0, sizeof (data->pstack_head));
+	data->pstack_head.thread = data;
+	data->pstack_head.portal = portal;
+	data->pstack_head.source = portal->winding;
+	data->pstack_head.portalplane = portal->plane;
+	data->pstack_head.mightsee = portal->mightsee;
 
-	RecursiveClusterFlow (portal->cluster, &data.pstack_head);
+	RecursiveClusterFlow (portal->cluster, &data->pstack_head);
 }
