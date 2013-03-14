@@ -87,17 +87,15 @@ SimpleFlood (portal_t *srcportal, int clusternum)
 }
 
 static inline int
-test_sphere (sphere_t *sphere, plane_t *plane, int test_front)
+test_sphere (sphere_t *sphere, plane_t *plane)
 {
 	float       d;
-	int         pass;
+	int         front, back;
 
 	d = DotProduct (sphere->center, plane->normal) - plane->dist;
-	if (test_front)
-		pass = (d >= -sphere->radius);
-	else
-		pass = (d <= sphere->radius);
-	return pass;
+	front = (d >= sphere->radius);
+	back = (d <= -sphere->radius);
+	return front - back;
 }
 
 void
@@ -121,9 +119,9 @@ BasePortalVis (void)
 			if (j == i)
 				continue;
 
-			if (!test_sphere (&tp->sphere, &portal->plane, 1))
+			if (test_sphere (&tp->sphere, &portal->plane) < 0)
 				continue;	// entirely behind
-			if (!test_sphere (&portal->sphere, &tp->plane, 0))
+			if (test_sphere (&portal->sphere, &tp->plane) > 0)
 				continue;	// entirely behind
 
 			winding = tp->winding;
