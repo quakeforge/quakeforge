@@ -106,6 +106,7 @@ BasePortalVis (void)
     portal_t   *tp, *portal;
     winding_t  *winding;
 	int         base_mightsee = 0;
+	int         tp_side, portal_side;
 	double      start, end;
 
 	start = Sys_DoubleTime ();
@@ -119,30 +120,54 @@ BasePortalVis (void)
 			if (j == i)
 				continue;
 
-			if (test_sphere (&tp->sphere, &portal->plane) < 0)
-				continue;	// entirely behind
-			if (test_sphere (&portal->sphere, &tp->plane) > 0)
-				continue;	// entirely behind
+			// If the target portal is behind the portals's plane, then it
+			// can't possibly be seen by the portal.
+			//
+			// If the portal is in front of the target's plane, then the target
+			// is of no interest as it is facing counter to the flow of
+			// visibility.
 
-			winding = tp->winding;
-			for (k = 0; k < winding->numpoints; k++) {
-				d = DotProduct (winding->points[k],
-								portal->plane.normal) - portal->plane.dist;
-				if (d > ON_EPSILON)
-					break;
+			// First check using the bounding spheres of the two portals.
+			tp_side = test_sphere (&tp->sphere, &portal->plane);
+			if (tp_side < 0) {
+				// The test portal definitely is entirely behind the portal's
+				// plane.
+				continue;	// entirely behind
 			}
-			if (k == winding->numpoints)
-				continue;	// no points on front
+			portal_side = test_sphere (&portal->sphere, &tp->plane);
+			if (portal_side > 0) {
+				// The portal definitely is entirely in front of the test
+				// portal's plane.
+				continue;	// entirely in front
+			}
 
-			winding = portal->winding;
-			for (k = 0; k < winding->numpoints; k++) {
-				d = DotProduct (winding->points[k],
-								tp->plane.normal) - tp->plane.dist;
-				if (d < -ON_EPSILON)
-					break;
+			if (tp_side == 0) {
+				// The test portal's sphere touches the portal's plane, so
+				// do a more refined check.
+				winding = tp->winding;
+				for (k = 0; k < winding->numpoints; k++) {
+					d = DotProduct (winding->points[k],
+									portal->plane.normal) - portal->plane.dist;
+					if (d > ON_EPSILON)
+						break;
+				}
+				if (k == winding->numpoints)
+					continue;	// no points on front
 			}
-			if (k == winding->numpoints)
-				continue;	// no points on front
+
+			if (portal_side == 0) {
+				// The portal's sphere touches the test portal's plane, so
+				// do a more refined check.
+				winding = portal->winding;
+				for (k = 0; k < winding->numpoints; k++) {
+					d = DotProduct (winding->points[k],
+									tp->plane.normal) - tp->plane.dist;
+					if (d < -ON_EPSILON)
+						break;
+				}
+				if (k == winding->numpoints)
+					continue;	// no points on front
+			}
 
 			set_add (portalsee, j);
 		}
