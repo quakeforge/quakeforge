@@ -97,7 +97,7 @@ typedef struct cluster_s {
 } cluster_t;
 
 typedef struct pstack_s {
-	struct pstack_s *next;
+	struct pstack_s *next;		///< linked list of active stack objects
 	cluster_t  *cluster;
 	portal_t   *portal;		// portal exiting
 	winding_t  *source, *pass;
@@ -107,21 +107,21 @@ typedef struct pstack_s {
 } pstack_t;
 
 typedef struct {
-	int         portaltest;
-	int         portalpass;
-	int         portalcheck;
-	int         chains;
-	int         mighttest;
-	int         vistest;
-	int         mightseeupdate;
+	int         portaltest;		///< number of portals tested via separators
+	int         portalpass;		///< number of portals through which vis passes
+	int         portalcheck;	///< number of portal checks
+	int         chains;			///< number of visits to clusters
+	int         mighttest;		///< amount mightsee is used for masked tests
+	int         vistest;		///< amount visbits is used for masked tests
+	int         mightseeupdate;	///< amount of updates to waiting portals
 } visstat_t;
 
 typedef struct threaddata_s {
-	visstat_t   stats;
-	set_t      *clustervis;
-	portal_t   *base;
+	visstat_t   stats;			///< per-thread statistics merged on completion
+	set_t      *clustervis;		///< clusters base portal can see
+	portal_t   *base;			///< portal for which this thread is being run
 	pstack_t    pstack_head;
-	sep_t      *sep_freelist;
+	sep_t      *sep_freelist;	///< per-thread list of free separators
 } threaddata_t;
 
 extern int numportals;
