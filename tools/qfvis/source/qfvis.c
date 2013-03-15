@@ -128,7 +128,7 @@ FreeWinding (winding_t *w)
 }
 
 winding_t *
-CopyWinding (winding_t *w)
+CopyWinding (const winding_t *w)
 {
 	size_t      size;
 	winding_t  *copy;
