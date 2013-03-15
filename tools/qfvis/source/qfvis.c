@@ -97,7 +97,7 @@ PlaneFromWinding (winding_t *winding, plane_t *plane)
 {
 	vec3_t      v1, v2;
 
-	// calc plane
+	// calc plane using CCW winding
 	VectorSubtract (winding->points[2], winding->points[1], v1);
 	VectorSubtract (winding->points[0], winding->points[1], v2);
 	CrossProduct (v2, v1, plane->normal);
@@ -138,6 +138,19 @@ CopyWinding (winding_t *w)
 	memcpy (copy, w, size);
 	copy->original = false;
 	return copy;
+}
+
+static winding_t *
+NewFlippedWinding (const winding_t *w)
+{
+	winding_t  *flipped;
+	int         i;
+
+	flipped = NewWinding (w->numpoints);
+	for (i = 0; i < w->numpoints; i++)
+		VectorCopy (w->points[i], flipped->points[w->numpoints - 1 - i]);
+	flipped->numpoints = w->numpoints;
+	return flipped;
 }
 
 /*
@@ -914,7 +927,7 @@ LoadPortals (char *name)
 
 		portal->winding = winding;
 		VectorNegate (plane.normal, portal->plane.normal);
-		portal->plane.dist = -plane.dist;
+		portal->plane.dist = -plane.dist;	// plane is for CCW, portal is CW
 		portal->cluster = clusternums[1];
 		portal->sphere = sphere;
 		portal++;
@@ -926,7 +939,10 @@ LoadPortals (char *name)
 		cluster->portals[cluster->numportals] = portal;
 		cluster->numportals++;
 
-		portal->winding = winding;
+		// Use a flipped winding for the reverse portal so the winding
+		// direction and plane normal match.
+		portal->winding = NewFlippedWinding (winding);
+		portal->winding->original = true;
 		portal->plane = plane;
 		portal->cluster = clusternums[0];
 		portal->sphere = sphere;
