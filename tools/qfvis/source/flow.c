@@ -87,37 +87,30 @@ delete_separator (threaddata_t *thread, sep_t *sep)
 }
 
 static void
-free_separators (threaddata_t *thread, pstack_t *stack)
+free_separators (threaddata_t *thread, sep_t *sep_list)
 {
-	int         i;
-
-	for (i = 2; i > 0; i--) {
-		while (stack->separators[i - 1]) {
-			sep_t      *sep = stack->separators[i - 1];
-			stack->separators[i - 1] = sep->next;
-			delete_separator (thread, sep);
-		}
+	while (sep_list) {
+		sep_t      *sep = sep_list;
+		sep_list = sep->next;
+		delete_separator (thread, sep);
 	}
 }
 
 /*
-	ClipToSeparators
+	Find the planes separating source from pass. The planes form a double
+	pyramid with source as the base (ie, source's edges will all be in one
+	plane each) and the vertex of the pyramid is between source and pass.
+	Edges from pass may or may not be in a plane, but each vertex will be in
+	at least one plane.
 
-	Source, pass, and target are an ordering of portals.
-
-	Generates seperating planes candidates by taking two points from source and
-	one point from pass, and clips target by them.
-
-	If target is totally clipped away, that portal can not be seen through.
-
-	Normal clip keeps target on the same side as pass, which is correct if the
-	order goes source, pass, target.  If the order goes pass, source, target
-	then test should be odd.
+	If flip is false, the planes will be such that the space enclosed by the
+	planes and on the pass side of the vertex are on the front sides of the
+	planes. If flip is true, then the space on the source side of the vertex
+	and enclosed by the planes is on the front side of the planes.
 */
-static winding_t *
-ClipToSeparators (threaddata_t *thread, pstack_t *stack,
-				  winding_t *source, winding_t *pass, winding_t *target,
-				  int test)
+static sep_t *
+FindSeparators (threaddata_t *thread, winding_t *source, winding_t *pass,
+				int flip)
 {
 	float       d;
 	int         i, j, k, l;
@@ -127,15 +120,8 @@ ClipToSeparators (threaddata_t *thread, pstack_t *stack,
 	vec3_t      v1, v2;
 	vec_t       length;
 
-	if (test < 2 && stack->separators[test]) {
-		sep_t      *sep;
+	sep_t      *separators = 0;
 
-		for (sep = stack->separators[test]; target && sep; sep = sep->next) {
-			target = ClipWinding (target, &sep->plane, false);
-		}
-		return target;
-	}
-	// check all combinations
 	for (i = 0; i < source->numpoints; i++) {
 		l = (i + 1) % source->numpoints;
 		VectorSubtract (source->points[l], source->points[i], v1);
@@ -211,25 +197,28 @@ ClipToSeparators (threaddata_t *thread, pstack_t *stack,
 			}
 
 			// flip the normal if we want the back side
-			if (test & 1) {
+			if (flip) {
 				VectorNegate (plane.normal, plane.normal);
 				plane.dist = -plane.dist;
 			}
 
-			// clip target by the seperating plane. If target is null, then
-			// we're pre-caching the rest of the separators
-			if (target)
-				target = ClipWinding (target, &plane, false);
-			if (test < 2) {
-				sep_t *sep = new_separator (thread);
-				sep->plane = plane;
-				sep->next = stack->separators[test];
-				stack->separators[test] = sep;
-			} else if (!target) {
-				return NULL;	// target is not visible
-			}
+			sep_t *sep = new_separator (thread);
+			sep->plane = plane;
+			sep->next = separators;
+			separators = sep;
 			break;
 		}
+	}
+	return separators;
+}
+
+static winding_t *
+ClipToSeparators (const sep_t *separators, winding_t *target)
+{
+	const sep_t *sep;
+
+	for (sep = separators; target && sep; sep = sep->next) {
+		target = ClipWinding (target, &sep->plane, false);
 	}
 	return target;
 }
@@ -362,8 +351,10 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			// pointing from the edges of source passing though the corners of
 			// pass
 			winding_t  *old = target;
-			target = ClipToSeparators (thread, &stack, source, prevstack->pass,
-									   target, 0);
+			if (!stack.separators[0])
+				stack.separators[0] = FindSeparators (thread, source,
+													  prevstack->pass, 0);
+			target = ClipToSeparators (stack.separators[0], target);
 			if (!target) {
 				thread->stats.targetclipped++;
 				FreeWinding (source);
@@ -381,8 +372,10 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			// triangles rotated 60 (or 180) degrees relative to each other,
 			// parallel and in line, target will wind up being a hexagon.
 			winding_t  *old = target;
-			target = ClipToSeparators (thread, &stack, prevstack->pass, source,
-									   target, 1);
+			if (!stack.separators[1])
+				stack.separators[1] = FindSeparators (thread, prevstack->pass,
+													  source, 1);
+			target = ClipToSeparators (stack.separators[1], target);
 			if (!target) {
 				thread->stats.targetclipped++;
 				FreeWinding (source);
@@ -397,8 +390,10 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		// the trimmed target
 		if (options.level > 2) {
 			winding_t  *old = source;
-			source = ClipToSeparators (thread, &stack, target, prevstack->pass,
-									   source, 2);
+			sep_t      *sep;
+			sep = FindSeparators (thread, target, prevstack->pass, 0);
+			source = ClipToSeparators (sep, source);
+			free_separators (thread, sep);
 			if (!source) {
 				thread->stats.sourceclipped++;
 				FreeWinding (target);
@@ -410,8 +405,10 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 
 		if (options.level > 3) {
 			winding_t  *old = source;
-			source = ClipToSeparators (thread, &stack, prevstack->pass, target,
-									   source, 3);
+			sep_t      *sep;
+			sep = FindSeparators (thread, prevstack->pass, target, 1);
+			source = ClipToSeparators (sep, source);
+			free_separators (thread, sep);
 			if (!source) {
 				thread->stats.sourceclipped++;
 				FreeWinding (target);
@@ -432,7 +429,8 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		FreeWinding (source);
 		FreeWinding (target);
 	}
-	free_separators (thread, &stack);
+	free_separators (thread, stack.separators[1]);
+	free_separators (thread, stack.separators[0]);
 
 	LOCK;
 	set_delete (stack.mightsee);
