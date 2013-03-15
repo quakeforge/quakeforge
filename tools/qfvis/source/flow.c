@@ -109,12 +109,12 @@ free_separators (threaddata_t *thread, sep_t *sep_list)
 	and enclosed by the planes is on the front side of the planes.
 */
 static sep_t *
-FindSeparators (threaddata_t *thread, winding_t *source, winding_t *pass,
-				int flip)
+FindSeparators (threaddata_t *thread, winding_t *source, const plane_t src_pl,
+				winding_t *pass, int flip)
 {
 	float       d;
 	int         i, j, k, l;
-	int         counts[3];
+	int         count;
 	qboolean    fliptest;
 	plane_t     plane;
 	vec3_t      v1, v2;
@@ -130,11 +130,27 @@ FindSeparators (threaddata_t *thread, winding_t *source, winding_t *pass,
 		// vertexes of pass on the front side and all of the vertexes of
 		// source on the back side
 		for (j = 0; j < pass->numpoints; j++) {
+			d = DotProduct (pass->points[j], src_pl.normal) - src_pl.dist;
+			if (d < -ON_EPSILON)
+				fliptest = true;
+			else if (d > ON_EPSILON)
+				fliptest = false;
+			else
+				continue;	// The point lies in the source plane
+
 			VectorSubtract (pass->points[j], source->points[i], v2);
 
-			plane.normal[0] = v1[1] * v2[2] - v1[2] * v2[1];
-			plane.normal[1] = v1[2] * v2[0] - v1[0] * v2[2];
-			plane.normal[2] = v1[0] * v2[1] - v1[1] * v2[0];
+			if (fliptest) {
+				//CrossProduct (v2, v1, plane.normal);
+				plane.normal[0] = v2[1] * v1[2] - v2[2] * v1[1];
+				plane.normal[1] = v2[2] * v1[0] - v2[0] * v1[2];
+				plane.normal[2] = v2[0] * v1[1] - v2[1] * v1[0];
+			} else {
+				//CrossProduct (v1, v2, plane.normal);
+				plane.normal[0] = v1[1] * v2[2] - v1[2] * v2[1];
+				plane.normal[1] = v1[2] * v2[0] - v1[0] * v2[2];
+				plane.normal[2] = v1[0] * v2[1] - v1[1] * v2[0];
+			}
 
 			length = DotProduct (plane.normal, plane.normal);
 
@@ -147,37 +163,15 @@ FindSeparators (threaddata_t *thread, winding_t *source, winding_t *pass,
 
 			plane.dist = DotProduct (pass->points[j], plane.normal);
 
-			// find out which side of the generated seperating plane has the
-			// source portal
-			fliptest = false;
-			for (k = 0; k < source->numpoints; k++) {
-				if (k == i || k == l)
-					continue;
-				d = DotProduct (source->points[k], plane.normal) - plane.dist;
-				if (d < -ON_EPSILON) {
-					// source is on the negative side, so we want all
-					// pass and target on the positive side
-					fliptest = false;
-					break;
-				} else if (d > ON_EPSILON) {
-					// source is on the positive side, so we want all
-					// pass and target on the negative side
-					fliptest = true;
-					break;
-				}
-			}
-			if (k == source->numpoints)
-				continue;	// planar with source portal
-
 			// flip the normal if the source portal is backwards
-			if (fliptest) {
-				VectorNegate (plane.normal, plane.normal);
-				plane.dist = -plane.dist;
-			}
+			//if (fliptest) {
+			//	VectorNegate (plane.normal, plane.normal);
+			//	plane.dist = -plane.dist;
+			//}
 
 			// if all of the pass portal points are now on the positive side,
 			// this is the seperating plane
-			counts[0] = counts[1] = counts[2] = 0;
+			count = 0;
 			for (k = 0; k < pass->numpoints; k++) {
 				if (k == j)
 					continue;
@@ -185,14 +179,12 @@ FindSeparators (threaddata_t *thread, winding_t *source, winding_t *pass,
 				if (d < -ON_EPSILON)
 					break;
 				else if (d > ON_EPSILON)
-					counts[0]++;
-				else
-					counts[2]++;
+					count++;
 			}
 			if (k != pass->numpoints)
 				continue;	// points on negative side, not a seperating plane
 
-			if (!counts[0]) {
+			if (!count) {
 				continue;	// planar with seperating plane
 			}
 
@@ -353,6 +345,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			winding_t  *old = target;
 			if (!stack.separators[0])
 				stack.separators[0] = FindSeparators (thread, source,
+											  thread->pstack_head.portalplane,
 													  prevstack->pass, 0);
 			target = ClipToSeparators (stack.separators[0], target);
 			if (!target) {
@@ -374,6 +367,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			winding_t  *old = target;
 			if (!stack.separators[1])
 				stack.separators[1] = FindSeparators (thread, prevstack->pass,
+													  prevstack->portalplane,
 													  source, 1);
 			target = ClipToSeparators (stack.separators[1], target);
 			if (!target) {
@@ -391,7 +385,8 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		if (options.level > 2) {
 			winding_t  *old = source;
 			sep_t      *sep;
-			sep = FindSeparators (thread, target, prevstack->pass, 0);
+			sep = FindSeparators (thread, target, portal->plane,
+								  prevstack->pass, 0);
 			source = ClipToSeparators (sep, source);
 			free_separators (thread, sep);
 			if (!source) {
@@ -406,7 +401,8 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		if (options.level > 3) {
 			winding_t  *old = source;
 			sep_t      *sep;
-			sep = FindSeparators (thread, prevstack->pass, target, 1);
+			sep = FindSeparators (thread, prevstack->pass,
+								  prevstack->portalplane, target, 1);
 			source = ClipToSeparators (sep, source);
 			free_separators (thread, sep);
 			if (!source) {
