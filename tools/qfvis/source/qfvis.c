@@ -152,7 +152,7 @@ CopyWinding (winding_t *w)
 	it will be clipped away.
 */
 winding_t *
-ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
+ClipWinding (winding_t *in, const plane_t *split, qboolean keepon)
 {
 	int         maxpts, i, j;
 	int         counts[3], sides[MAX_POINTS_ON_WINDING];

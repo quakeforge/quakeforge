@@ -145,7 +145,7 @@ extern byte *uncompressed;
 
 void FreeWinding (winding_t *w);
 winding_t *NewWinding (int points);
-winding_t *ClipWinding (winding_t *in, plane_t *split, qboolean keepon);
+winding_t *ClipWinding (winding_t *in, const plane_t *split, qboolean keepon);
 winding_t *CopyWinding (winding_t *w);
 
 void ClusterFlow (int clusternum);
