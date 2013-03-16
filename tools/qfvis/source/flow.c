@@ -63,12 +63,28 @@ CheckStack (cluster_t *cluster, threaddata_t *thread)
 {
 	pstack_t   *portal;
 
-	for (portal = thread->pstack_head.next; portal; portal = portal->next)
+	for (portal = thread->pstack_head.next; portal; portal = portal->next) {
 		if (portal->cluster == cluster) {
 			printf ("CheckStack: cluster recursion\n");
 			return 1;
 		}
+		if (!portal->cluster)
+			break;
+	}
 	return 0;
+}
+
+static pstack_t *
+new_stack (void)
+{
+	pstack_t   *stack;
+
+	stack = malloc (sizeof (pstack_t));
+	stack->next = 0;
+	LOCK;
+	stack->mightsee = set_new_size (portalclusters);
+	UNLOCK;
+	return stack;
 }
 
 static sep_t *
@@ -259,12 +275,17 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 	set_t      *might;
 	const set_t *test, *vis;
 	cluster_t  *cluster;
-	pstack_t    stack;
+	pstack_t   *stack;
 	portal_t   *portal;
 	plane_t     backplane;
 	winding_t  *source, *target;
 
 	thread->stats.chains++;
+
+	if (!prevstack->next)
+		prevstack->next = new_stack ();
+	stack = prevstack->next;
+	stack->cluster = 0;
 
 	cluster = &clusters[clusternum];
 	if (CheckStack(cluster, thread))
@@ -276,16 +297,11 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		thread->base->numcansee++;
 	}
 
-	prevstack->next = &stack;
-	stack.next = NULL;
-	stack.cluster = cluster;
-	stack.portal = NULL;
-	LOCK;
-	stack.mightsee = set_new_size (portalclusters);
-	UNLOCK;
-	stack.separators[0] = 0;
-	stack.separators[1] = 0;
-	might = stack.mightsee;
+	stack->cluster = cluster;
+	stack->portal = NULL;
+	stack->separators[0] = 0;
+	stack->separators[1] = 0;
+	might = stack->mightsee;
 	vis = thread->clustervis;
 
 	// check all portals for flowing into other clusters
@@ -303,7 +319,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		}
 
 		// get plane of portal, point normal into the neighbor cluster
-		stack.portalplane = portal->plane;
+		stack->portalplane = portal->plane;
 		VectorNegate (portal->plane.normal, backplane.normal);
 		backplane.dist = -portal->plane.dist;
 
@@ -312,8 +328,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 
 		thread->stats.portalcheck++;
 
-		stack.portal = portal;
-		stack.next = NULL;
+		stack->portal = portal;
 
 		target = ClipWinding (portal->winding,
 							  &thread->pstack_head.portalplane, false);
@@ -323,9 +338,9 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		if (!prevstack->pass) {
 			// the second cluster can be blocked only if coplanar
 
-			stack.source = prevstack->source;
-			stack.pass = target;
-			RecursiveClusterFlow (portal->cluster, thread, &stack);
+			stack->source = prevstack->source;
+			stack->pass = target;
+			RecursiveClusterFlow (portal->cluster, thread, stack);
 			FreeWinding (target);
 			continue;
 		}
@@ -350,11 +365,11 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			// pointing from the edges of source passing though the corners of
 			// pass
 			winding_t  *old = target;
-			if (!stack.separators[0])
-				stack.separators[0] = FindSeparators (thread, source,
+			if (!stack->separators[0])
+				stack->separators[0] = FindSeparators (thread, source,
 											  thread->pstack_head.portalplane,
 													  prevstack->pass, 0);
-			target = ClipToSeparators (stack.separators[0], target);
+			target = ClipToSeparators (stack->separators[0], target);
 			if (!target) {
 				thread->stats.targetclipped++;
 				FreeWinding (source);
@@ -372,11 +387,11 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			// triangles rotated 60 (or 180) degrees relative to each other,
 			// parallel and in line, target will wind up being a hexagon.
 			winding_t  *old = target;
-			if (!stack.separators[1])
-				stack.separators[1] = FindSeparators (thread, prevstack->pass,
+			if (!stack->separators[1])
+				stack->separators[1] = FindSeparators (thread, prevstack->pass,
 													  prevstack->portalplane,
 													  source, 1);
-			target = ClipToSeparators (stack.separators[1], target);
+			target = ClipToSeparators (stack->separators[1], target);
 			if (!target) {
 				thread->stats.targetclipped++;
 				FreeWinding (source);
@@ -421,23 +436,19 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 				thread->stats.sourcetrimmed++;
 		}
 
-		stack.source = source;
-		stack.pass = target;
+		stack->source = source;
+		stack->pass = target;
 
 		thread->stats.portalpass++;
 
 		// flow through it for real
-		RecursiveClusterFlow (portal->cluster, thread, &stack);
+		RecursiveClusterFlow (portal->cluster, thread, stack);
 
 		FreeWinding (source);
 		FreeWinding (target);
 	}
-	free_separators (thread, stack.separators[1]);
-	free_separators (thread, stack.separators[0]);
-
-	LOCK;
-	set_delete (stack.mightsee);
-	UNLOCK;
+	free_separators (thread, stack->separators[1]);
+	free_separators (thread, stack->separators[0]);
 }
 
 void
@@ -453,11 +464,14 @@ PortalFlow (threaddata_t *data, portal_t *portal)
 	data->clustervis = portal->visbits;
 	data->base = portal;
 
-	memset (&data->pstack_head, 0, sizeof (data->pstack_head));
+	data->pstack_head.cluster = 0;
 	data->pstack_head.portal = portal;
 	data->pstack_head.source = portal->winding;
+	data->pstack_head.pass = 0;
 	data->pstack_head.portalplane = portal->plane;
 	data->pstack_head.mightsee = portal->mightsee;
+	data->pstack_head.separators[0] = 0;
+	data->pstack_head.separators[1] = 0;
 
 	RecursiveClusterFlow (portal->cluster, data, &data->pstack_head);
 }
