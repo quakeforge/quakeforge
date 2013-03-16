@@ -234,9 +234,16 @@ static inline int
 mightsee_more (set_t *might, const set_t *prev_might, const set_t *test,
 			   const set_t *vis)
 {
-	set_assign (might, prev_might);
-	set_intersection (might, test);
-	return !set_is_subset (vis, might);
+	unsigned    i;
+	set_bits_t  more = 0;
+
+	// might = intersection (prev_might, test)
+	// more = (might is not a subset of vis)
+	for (i = 0; i < SET_WORDS (might); i++) {
+		might->map[i] = prev_might->map[i] & test->map[i];
+		more |= might->map[i] & ~vis->map[i];
+	}
+	return more != 0;
 }
 
 /*
