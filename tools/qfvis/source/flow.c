@@ -112,6 +112,16 @@ free_separators (threaddata_t *thread, sep_t *sep_list)
 	}
 }
 
+static inline int
+test_zero (float d)
+{
+	if (d < -ON_EPSILON)
+		return -1;
+	else if (d > ON_EPSILON)
+		return 1;
+	return 0;
+}
+
 /*
 	Find the planes separating source from pass. The planes form a double
 	pyramid with source as the base (ie, source's edges will all be in one
@@ -131,7 +141,7 @@ FindSeparators (threaddata_t *thread, winding_t *source, const plane_t src_pl,
 	float       d;
 	int         i, j, k, l;
 	int         count;
-	qboolean    fliptest;
+	int         fliptest;
 	plane_t     plane;
 	vec3_t      v1, v2;
 	vec_t       length;
@@ -147,16 +157,12 @@ FindSeparators (threaddata_t *thread, winding_t *source, const plane_t src_pl,
 		// source on the back side
 		for (j = 0; j < pass->numpoints; j++) {
 			d = DotProduct (pass->points[j], src_pl.normal) - src_pl.dist;
-			if (d < -ON_EPSILON)
-				fliptest = true;
-			else if (d > ON_EPSILON)
-				fliptest = false;
-			else
+			if ((fliptest = test_zero (d)) == 0)
 				continue;	// The point lies in the source plane
 
 			VectorSubtract (pass->points[j], source->points[i], v2);
 
-			if (fliptest) {
+			if (fliptest < 0) {
 				//CrossProduct (v2, v1, plane.normal);
 				plane.normal[0] = v2[1] * v1[2] - v2[2] * v1[1];
 				plane.normal[1] = v2[2] * v1[0] - v2[0] * v1[2];
@@ -178,12 +184,6 @@ FindSeparators (threaddata_t *thread, winding_t *source, const plane_t src_pl,
 			VectorScale (plane.normal, length, plane.normal);
 
 			plane.dist = DotProduct (pass->points[j], plane.normal);
-
-			// flip the normal if the source portal is backwards
-			//if (fliptest) {
-			//	VectorNegate (plane.normal, plane.normal);
-			//	plane.dist = -plane.dist;
-			//}
 
 			// if all of the pass portal points are now on the positive side,
 			// this is the seperating plane
