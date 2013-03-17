@@ -98,10 +98,11 @@ typedef struct cluster_s {
 
 typedef struct pstack_s {
 	struct pstack_s *next;		///< linked list of active stack objects
-	cluster_t  *cluster;
-	portal_t   *portal;		// portal exiting
-	winding_t  *source, *pass;
-	plane_t     portalplane;
+	cluster_t  *cluster;		///< the cluster being sub-vised
+	winding_t  *source_winding;	///< clipped source portal winding
+	portal_t   *pass_portal;	///< the portal exiting from the cluster
+	winding_t  *pass_winding;	///< clipped pass portal winding
+	plane_t     pass_plane;		///< plane of the pass portal
 	sep_t      *separators[2];
 	set_t       mightsee;
 } pstack_t;
