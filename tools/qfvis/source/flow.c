@@ -135,8 +135,9 @@ test_zero (float d)
 	and enclosed by the planes is on the front side of the planes.
 */
 static sep_t *
-FindSeparators (threaddata_t *thread, winding_t *source, const plane_t src_pl,
-				winding_t *pass, int flip)
+FindSeparators (threaddata_t *thread,
+				const winding_t *source, const plane_t src_pl,
+				const winding_t *pass, int flip)
 {
 	float       d;
 	int         i, j, k, l;
@@ -276,9 +277,11 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 	const set_t *test, *vis;
 	cluster_t  *cluster;
 	pstack_t   *stack;
-	portal_t   *portal;
+	portal_t   *target_portal;
 	plane_t     backplane;
-	winding_t  *source, *target;
+	const plane_t *source_plane, *pass_plane;
+	const winding_t *pass_winding;
+	winding_t  *source_winding, *target_winding;
 
 	thread->stats.chains++;
 
@@ -304,57 +307,63 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 	might = &stack->mightsee;
 	vis = thread->clustervis;
 
+	source_plane = &thread->pstack_head->pass_plane;
+	pass_winding = prevstack->pass_winding;
+	pass_plane = &prevstack->pass_plane;
+
 	// check all portals for flowing into other clusters
 	for (i = 0; i < cluster->numportals; i++) {
-		portal = cluster->portals[i];
+		target_portal = cluster->portals[i];
 
-		if (!set_is_member (&prevstack->mightsee, portal->cluster))
+		if (!set_is_member (&prevstack->mightsee, target_portal->cluster))
 			continue;		// can't possibly see it
 
-		// if the portal can't see anything we haven't already seen, skip it
-		test = select_test_set (portal, thread);
+		// if target_portal can't see anything we haven't already seen, skip it
+		test = select_test_set (target_portal, thread);
 		if (!mightsee_more (might, &prevstack->mightsee, test, vis)) {
 			// can't see anything new
 			continue;
 		}
 
-		// get plane of portal, point normal into the neighbor cluster
-		VectorNegate (portal->plane.normal, backplane.normal);
-		backplane.dist = -portal->plane.dist;
+		// get plane of target_portal, point normal into the neighbor cluster
+		VectorNegate (target_portal->plane.normal, backplane.normal);
+		backplane.dist = -target_portal->plane.dist;
 
-		if (_VectorCompare (prevstack->pass_plane.normal, backplane.normal))
+		if (_VectorCompare (pass_plane->normal, backplane.normal))
 			continue;		// can't go out a coplanar face
 
 		thread->stats.portalcheck++;
 
-		target = ClipWinding (portal->winding,
-							  &thread->pstack_head->pass_plane, false);
-		if (!target)
+		target_winding = target_portal->winding;
+		target_winding = ClipWinding (target_winding, source_plane, false);
+		if (!target_winding)
 			continue;
 
-		if (!prevstack->pass_winding) {
+		if (!pass_winding) {
 			// the second cluster can be blocked only if coplanar
 
 			stack->source_winding = prevstack->source_winding;
-			stack->pass_winding = target;
 
-			stack->pass_plane = portal->plane;
-			stack->pass_portal = portal;
+			stack->pass_winding = target_winding;
+			stack->pass_plane = target_portal->plane;
+			stack->pass_portal = target_portal;
 
-			RecursiveClusterFlow (portal->cluster, thread, stack);
-			FreeWinding (target);
+			RecursiveClusterFlow (target_portal->cluster, thread, stack);
+			FreeWinding (target_winding);
 			continue;
 		}
 
-		target = ClipWinding (target, &prevstack->pass_plane, false);
-		if (!target)
+		target_winding = ClipWinding (target_winding, pass_plane, false);
+		if (!target_winding)
 			continue;
 
-		source = CopyWinding (prevstack->source_winding);
+		// copy source_winding because it likely is already a copy and thus
+		// if it gets clipped away, earlier stack levels will get corrupted
+		source_winding = CopyWinding (prevstack->source_winding);
 
-		source = ClipWinding (source, &backplane, false);
-		if (!source) {
-			FreeWinding (target);
+		source_winding = ClipWinding (source_winding, &backplane, false);
+		if (!source_winding) {
+			FreeWinding (target_winding);
 			continue;
 		}
 
@@ -362,94 +371,88 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		thread->stats.targettested++;
 
 		if (options.level > 0) {
-			// clip target to the image that would be formed by a laser
-			// pointing from the edges of source passing though the corners of
-			// pass_winding
-			winding_t  *old = target;
+			winding_t  *old = target_winding;
 			if (!stack->separators[0])
-				stack->separators[0] = FindSeparators (thread, source,
-											  thread->pstack_head->pass_plane,
-													  prevstack->pass_winding, 0);
-			target = ClipToSeparators (stack->separators[0], target);
-			if (!target) {
+				stack->separators[0] = FindSeparators (thread,
+													   source_winding,
+													   *source_plane,
+													   pass_winding, 0);
+			target_winding = ClipToSeparators (stack->separators[0],
+											   target_winding);
+			if (!target_winding) {
 				thread->stats.targetclipped++;
-				FreeWinding (source);
+				FreeWinding (source_winding);
 				continue;
 			}
-			if (target != old)
+			if (target_winding != old)
 				thread->stats.targettrimmed++;
 		}
 
 		if (options.level > 1) {
-			// now pass the laser along the edges of pass_winding from the corners of
-			// source. the resulting image will have a smaller aree. The
-			// resulting shape will be the light image produced by a backlit
-			// source shining past pass_winding. eg, if source and pass_winding are equilateral
-			// triangles rotated 60 (or 180) degrees relative to each other,
-			// parallel and in line, target will wind up being a hexagon.
-			winding_t  *old = target;
+			winding_t  *old = target_winding;
 			if (!stack->separators[1])
-				stack->separators[1] = FindSeparators (thread, prevstack->pass_winding,
-													  prevstack->pass_plane,
-													  source, 1);
-			target = ClipToSeparators (stack->separators[1], target);
-			if (!target) {
+				stack->separators[1] = FindSeparators (thread,
+													   pass_winding,
+													   *pass_plane,
+													   source_winding, 1);
+			target_winding = ClipToSeparators (stack->separators[1],
+											   target_winding);
+			if (!target_winding) {
 				thread->stats.targetclipped++;
-				FreeWinding (source);
+				FreeWinding (source_winding);
 				continue;
 			}
-			if (target != old)
+			if (target_winding != old)
 				thread->stats.targettrimmed++;
 		}
 
 		thread->stats.sourcetested++;
-		// now do the same as for levels 1 and 2, but trimming source using
-		// the trimmed target
 		if (options.level > 2) {
-			winding_t  *old = source;
+			winding_t  *old = source_winding;
 			sep_t      *sep;
-			sep = FindSeparators (thread, target, portal->plane,
-								  prevstack->pass_winding, 0);
-			source = ClipToSeparators (sep, source);
+			sep = FindSeparators (thread,
+								  target_winding, target_portal->plane,
+								  pass_winding, 0);
+			source_winding = ClipToSeparators (sep, source_winding);
 			free_separators (thread, sep);
-			if (!source) {
+			if (!source_winding) {
 				thread->stats.sourceclipped++;
-				FreeWinding (target);
+				FreeWinding (target_winding);
 				continue;
 			}
-			if (source != old)
+			if (source_winding != old)
 				thread->stats.sourcetrimmed++;
 		}
 
 		if (options.level > 3) {
-			winding_t  *old = source;
+			winding_t  *old = source_winding;
 			sep_t      *sep;
-			sep = FindSeparators (thread, prevstack->pass_winding,
-								  prevstack->pass_plane, target, 1);
-			source = ClipToSeparators (sep, source);
+			sep = FindSeparators (thread, pass_winding, *pass_plane,
+								  target_winding, 1);
+			source_winding = ClipToSeparators (sep, source_winding);
 			free_separators (thread, sep);
-			if (!source) {
+			if (!source_winding) {
 				thread->stats.sourceclipped++;
-				FreeWinding (target);
+				FreeWinding (target_winding);
 				continue;
 			}
-			if (source != old)
+			if (source_winding != old)
 				thread->stats.sourcetrimmed++;
 		}
 
-		stack->source_winding = source;
-		stack->pass_winding = target;
+		stack->source_winding = source_winding;
+		stack->pass_winding = target_winding;
 
-		stack->pass_plane = portal->plane;
-		stack->pass_portal = portal;
+		stack->pass_plane = target_portal->plane;
+		stack->pass_portal = target_portal;
 
 		thread->stats.portalpass++;
 
 		// flow through it for real
-		RecursiveClusterFlow (portal->cluster, thread, stack);
+		RecursiveClusterFlow (target_portal->cluster, thread, stack);
 
-		FreeWinding (source);
-		FreeWinding (target);
+		FreeWinding (source_winding);
+		FreeWinding (target_winding);
 	}
 	free_separators (thread, stack->separators[1]);
 	free_separators (thread, stack->separators[0]);
