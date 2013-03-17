@@ -102,8 +102,8 @@ typedef struct pstack_s {
 	portal_t   *portal;		// portal exiting
 	winding_t  *source, *pass;
 	plane_t     portalplane;
-	set_t      *mightsee;
 	sep_t      *separators[2];
+	set_t       mightsee;
 } pstack_t;
 
 typedef struct {
@@ -126,7 +126,7 @@ typedef struct threaddata_s {
 	visstat_t   stats;			///< per-thread statistics merged on completion
 	set_t      *clustervis;		///< clusters base portal can see
 	portal_t   *base;			///< portal for which this thread is being run
-	pstack_t    pstack_head;
+	pstack_t   *pstack_head;
 	sep_t      *sep_freelist;	///< per-thread list of free separators
 } threaddata_t;
 
