@@ -292,6 +292,7 @@ UpdateMightsee (cluster_t *source, cluster_t *dest)
 	int         i, clusternum;
 	portal_t   *portal;
 
+	LOCK;
 	clusternum = dest - clusters;
 	for (i = 0; i < source->numportals; i++) {
 		portal = source->portals[i];
@@ -303,6 +304,7 @@ UpdateMightsee (cluster_t *source, cluster_t *dest)
 			stats.mightseeupdate++;
 		}
 	}
+	UNLOCK;
 }
 
 static void
@@ -329,9 +331,10 @@ PortalCompleted (threaddata_t *thread, portal_t *completed)
 	stats.mighttest += thread->stats.mighttest;
 	stats.vistest += thread->stats.vistest;
 	stats.mightseeupdate += thread->stats.mightseeupdate;
+	UNLOCK;
 	memset (&thread->stats, 0, sizeof (thread->stats));
 
-	changed = set_new_size (portalclusters);
+	changed = set_new_size_r (&thread->set_pool, portalclusters);
 	cluster = &clusters[completed->cluster];
 	for (i = 0; i < cluster->numportals; i++) {
 		portal = cluster->portals[i];
@@ -347,12 +350,12 @@ PortalCompleted (threaddata_t *thread, portal_t *completed)
 			else
 				set_difference (changed, cluster->portals[j]->mightsee);
 		}
-		for (ci = set_first (changed); ci; ci = set_next (ci)) {
+		for (ci = set_first_r (&thread->set_pool, changed); ci;
+			 ci = set_next_r (&thread->set_pool, ci)) {
 			UpdateMightsee (&clusters[ci->element], cluster);
 		}
 	}
-	set_delete (changed);
-	UNLOCK;
+	set_delete_r (&thread->set_pool, changed);
 }
 
 static void *
