@@ -65,6 +65,7 @@
 #ifdef USE_PTHREADS
 pthread_attr_t threads_attrib;
 pthread_rwlock_t *global_lock;
+pthread_rwlock_t *portal_locks;
 pthread_rwlock_t *stats_lock;
 #endif
 
@@ -310,8 +311,10 @@ GetNextPortal (void)
 	}
 
 	if (p) {
+		WRLOCK_PORTAL (p);
 		portal_count++;
 		p->status = stat_selected;
+		UNLOCK_PORTAL (p);
 	}
 
 	UNLOCK (global_lock);
@@ -325,19 +328,19 @@ UpdateMightsee (cluster_t *source, cluster_t *dest)
 	int         i, clusternum;
 	portal_t   *portal;
 
-	WRLOCK (global_lock);
 	clusternum = dest - clusters;
 	for (i = 0; i < source->numportals; i++) {
 		portal = source->portals[i];
-		if (portal->status != stat_none)
-			continue;
-		if (set_is_member (portal->mightsee, clusternum)) {
-			set_remove (portal->mightsee, clusternum);
-			portal->nummightsee--;
-			stats.mightseeupdate++;
+		WRLOCK_PORTAL (portal);
+		if (portal->status == stat_none) {
+			if (set_is_member (portal->mightsee, clusternum)) {
+				set_remove (portal->mightsee, clusternum);
+				portal->nummightsee--;
+				stats.mightseeupdate++;
+			}
 		}
+		UNLOCK_PORTAL (portal);
 	}
-	UNLOCK (global_lock);
 }
 
 static void
@@ -888,6 +891,13 @@ LoadPortals (char *name)
 	// each file portal is split into two memory portals, one for each
 	// direction
 	portals = calloc (2 * numportals, sizeof (portal_t));
+#ifdef USE_PTHREADS
+	portal_locks = calloc (2 * numportals, sizeof (pthread_rwlock_t));
+	for (i = 0; i < 2 * numportals; i++) {
+		if (pthread_rwlock_init (&portal_locks[i], 0))
+			Sys_Error ("pthread_rwlock_init failed");
+	}
+#endif
 
 	clusters = calloc (portalclusters, sizeof (cluster_t));
 

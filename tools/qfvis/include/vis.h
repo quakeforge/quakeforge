@@ -40,6 +40,7 @@
 #ifdef USE_PTHREADS
 #include <pthread.h>
 extern pthread_rwlock_t *global_lock;
+extern pthread_rwlock_t *portal_locks;
 
 #define	WRLOCK(l) \
 	do { \
@@ -58,6 +59,11 @@ extern pthread_rwlock_t *global_lock;
 		if (options.threads > 1)  \
 			pthread_rwlock_unlock (l); \
 	} while (0)
+
+#define WRLOCK_PORTAL(p) WRLOCK (&portal_locks[p - portals])
+#define RDLOCK_PORTAL(p) RDLOCK (&portal_locks[p - portals])
+#define UNLOCK_PORTAL(p) UNLOCK (&portal_locks[p - portals])
+
 #else
 #define	LOCK
 #define	UNLOCK
