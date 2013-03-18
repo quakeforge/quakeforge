@@ -45,46 +45,70 @@
 #include "QF/mathlib.h"
 #include "QF/set.h"
 
-set_t      *sets_freelist;
-set_iter_t *set_iters_freelist;
+static set_pool_t static_set_pool = {0, 0};
 
 static set_iter_t *
-new_setiter (void)
+new_setiter (set_pool_t *set_pool)
 {
 	set_iter_t *set_iter;
-	ALLOC (16, set_iter_t, set_iters, set_iter);
+	ALLOC (16, set_iter_t, set_pool->set_iter, set_iter);
 	return set_iter;
 }
 
 static void
-delete_setiter (set_iter_t *set_iter)
+delete_setiter (set_pool_t *set_pool, set_iter_t *set_iter)
 {
-	FREE (set_iters, set_iter);
+	FREE (set_pool->set_iter, set_iter);
 }
 
 void
 set_del_iter (set_iter_t *set_iter)
 {
-	delete_setiter (set_iter);
+	delete_setiter (&static_set_pool, set_iter);
 }
 
-set_t *
-set_new (void)
+void
+set_del_iter_r (set_pool_t *set_pool, set_iter_t *set_iter)
+{
+	delete_setiter (set_pool, set_iter);
+}
+
+void
+set_pool_init (set_pool_t *set_pool)
+{
+	set_pool->set_freelist = 0;
+	set_pool->set_iter_freelist = 0;
+}
+
+inline set_t *
+set_new_r (set_pool_t *set_pool)
 {
 	set_t      *set;
 
-	ALLOC (16, set_t, sets, set);
+	ALLOC (16, set_t, set_pool->set, set);
 	set->size = sizeof (set->defmap) * 8;
 	set->map = set->defmap;
 	return set;
 }
 
+set_t *
+set_new (void)
+{
+	return set_new_r (&static_set_pool);
+}
+
 void
-set_delete (set_t *set)
+set_delete_r (set_pool_t *set_pool, set_t *set)
 {
 	if (set->map != set->defmap)
 		free (set->map);
-	FREE (sets, set);
+	FREE (set_pool->set, set);
+}
+
+void
+set_delete (set_t *set)
+{
+	set_delete_r (&static_set_pool, set);
 }
 
 static void
@@ -105,15 +129,21 @@ set_expand (set_t *set, unsigned x)
 		free (map);
 }
 
-set_t *
-set_new_size (int size)
+inline set_t *
+set_new_size_r (set_pool_t *set_pool, int size)
 {
 	set_t      *set;
 
-	set = set_new ();
+	set = set_new_r (set_pool);
 	set_expand (set, size);
 
 	return set;
+}
+
+set_t *
+set_new_size (int size)
+{
+	return set_new_size_r (&static_set_pool, size);
 }
 
 static inline void
@@ -534,14 +564,14 @@ set_size (const set_t *set)
 }
 
 set_iter_t *
-set_first (const set_t *set)
+set_first_r (set_pool_t *set_pool, const set_t *set)
 {
 	unsigned    x;
 	set_iter_t *set_iter;
 
 	for (x = 0; x < set->size; x++) {
 		if (_set_is_member (set, x)) {
-			set_iter = new_setiter ();
+			set_iter = new_setiter (set_pool);
 			set_iter->set = set;
 			set_iter->element = x;
 			return set_iter;
@@ -551,7 +581,13 @@ set_first (const set_t *set)
 }
 
 set_iter_t *
-set_next (set_iter_t *set_iter)
+set_first (const set_t *set)
+{
+	return set_first_r (&static_set_pool, set);
+}
+
+set_iter_t *
+set_next_r (set_pool_t *set_pool, set_iter_t *set_iter)
 {
 	unsigned    x;
 
@@ -561,8 +597,14 @@ set_next (set_iter_t *set_iter)
 			return set_iter;
 		}
 	}
-	delete_setiter (set_iter);
+	delete_setiter (set_pool, set_iter);
 	return 0;
+}
+
+set_iter_t *
+set_next (set_iter_t *set_iter)
+{
+	return set_next_r (&static_set_pool, set_iter);
 }
 
 const char *

@@ -96,11 +96,19 @@ typedef struct set_iter_s {
 	unsigned    element;
 } set_iter_t;
 
+typedef struct set_pool_s {
+	set_t      *set_freelist;
+	set_iter_t *set_iter_freelist;
+} set_pool_t;
+
+void set_pool_init (set_pool_t *set_pool);
+
 /** Delete a set iterator that is no longer needed.
 
 	\param set_iter	The set iterator to be deleted.
 */
 void set_del_iter (set_iter_t *set_iter);
+void set_del_iter_r (set_pool_t *set_pool, set_iter_t *set_iter);
 
 /** Create a new set.
 
@@ -109,6 +117,7 @@ void set_del_iter (set_iter_t *set_iter);
 	\return			The newly created, empty set.
 */
 set_t *set_new (void);
+set_t *set_new_r (set_pool_t *set_pool);
 
 /** Create a new set with space pre-allocated for the specified set size.
 
@@ -122,12 +131,14 @@ set_t *set_new (void);
 	\return			The newly created, empty set.
 */
 set_t *set_new_size (int size);
+set_t *set_new_size_r (set_pool_t *set_pool, int size);
 
 /** Delete a set that is no longer needed.
 
 	\param set		The set to be deleted.
 */
 void set_delete (set_t *set);
+void set_delete_r (set_pool_t *set_pool, set_t *set);
 
 /** Add an element to a set.
 
@@ -325,6 +336,7 @@ unsigned set_size (const set_t *set);
 					of everything.
 */
 set_iter_t *set_first (const set_t *set);
+set_iter_t *set_first_r (set_pool_t *set_pool, const set_t *set);
 
 /** Find the next "member" of the set.
 
@@ -342,6 +354,7 @@ set_iter_t *set_first (const set_t *set);
 			is reached.
 */
 set_iter_t *set_next (set_iter_t *set_iter);
+set_iter_t *set_next_r (set_pool_t *set_pool, set_iter_t *set_iter);
 
 /** Return a human-readable string representing the set.
 
