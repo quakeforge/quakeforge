@@ -363,6 +363,7 @@ LeafThread (void *_thread)
 	threaddata_t data;
 
 	memset (&data, 0, sizeof (data));
+	set_pool_init (&data.set_pool);
 	do {
 		portal = GetNextPortal ();
 		if (!portal)

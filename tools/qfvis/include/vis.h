@@ -129,6 +129,7 @@ typedef struct threaddata_s {
 	portal_t   *base;			///< portal for which this thread is being run
 	pstack_t    pstack_head;
 	sep_t      *sep_freelist;	///< per-thread list of free separators
+	set_pool_t  set_pool;
 } threaddata_t;
 
 extern int numportals;

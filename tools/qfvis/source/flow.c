@@ -75,15 +75,13 @@ CheckStack (cluster_t *cluster, threaddata_t *thread)
 }
 
 static pstack_t *
-new_stack (void)
+new_stack (threaddata_t *td)
 {
 	pstack_t   *stack;
 
 	stack = malloc (sizeof (pstack_t));
 	stack->next = 0;
-	LOCK;
-	stack->mightsee = set_new_size (portalclusters);
-	UNLOCK;
+	stack->mightsee = set_new_size_r (&td->set_pool, portalclusters);
 	return stack;
 }
 
@@ -286,7 +284,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 	thread->stats.chains++;
 
 	if (!prevstack->next)
-		prevstack->next = new_stack ();
+		prevstack->next = new_stack (thread);
 	stack = prevstack->next;
 	stack->cluster = 0;
 
@@ -465,8 +463,9 @@ PortalFlow (threaddata_t *data, portal_t *portal)
 	if (portal->status != stat_selected)
 		Sys_Error ("PortalFlow: reflowed");
 	portal->status = stat_working;
-	portal->visbits = set_new_size (portalclusters);
 	UNLOCK;
+
+	portal->visbits = set_new_size_r (&data->set_pool, portalclusters);
 
 	data->clustervis = portal->visbits;
 	data->base = portal;
