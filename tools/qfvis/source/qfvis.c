@@ -467,6 +467,41 @@ WatchThread (void *_thread)
 }
 #endif
 
+static void
+RunThreads (void *(*thread_func) (void *))
+{
+#ifdef USE_PTHREADS
+	pthread_t   work_threads[MAX_THREADS + 1];
+	void       *status;
+	int         i;
+
+	if (options.threads > 1) {
+		working = calloc (options.threads, sizeof (int));
+		for (i = 0; i < options.threads; i++) {
+			if (pthread_create (&work_threads[i], &threads_attrib,
+								thread_func, (void *) (intptr_t) i) == -1)
+				Sys_Error ("pthread_create failed");
+		}
+		if (pthread_create (&work_threads[i], &threads_attrib,
+							WatchThread, (void *) (intptr_t) i) == -1)
+			Sys_Error ("pthread_create failed");
+
+		for (i = 0; i < options.threads; i++) {
+			if (pthread_join (work_threads[i], &status) == -1)
+				Sys_Error ("pthread_join failed");
+		}
+		if (pthread_join (work_threads[i], &status) == -1)
+			Sys_Error ("pthread_join failed");
+
+		free (working);
+	} else {
+		thread_func (0);
+	}
+#else
+	LeafThread (0);
+#endif
+}
+
 static int
 CompressRow (byte *vis, byte *dest)
 {
@@ -574,38 +609,7 @@ CalcPortalVis (void)
 		}
 		return;
 	}
-
-#ifdef USE_PTHREADS
-	{
-		pthread_t   work_threads[MAX_THREADS + 1];
-		void *status;
-
-		if (options.threads > 1) {
-			working = calloc (options.threads, sizeof (int));
-			for (i = 0; i < options.threads; i++) {
-				if (pthread_create (&work_threads[i], &threads_attrib,
-									LeafThread, (void *) (intptr_t) i) == -1)
-					Sys_Error ("pthread_create failed");
-			}
-			if (pthread_create (&work_threads[i], &threads_attrib,
-								WatchThread, (void *) (intptr_t) i) == -1)
-				Sys_Error ("pthread_create failed");
-
-			for (i = 0; i < options.threads; i++) {
-				if (pthread_join (work_threads[i], &status) == -1)
-					Sys_Error ("pthread_join failed");
-			}
-			if (pthread_join (work_threads[i], &status) == -1)
-				Sys_Error ("pthread_join failed");
-
-			free (working);
-		} else {
-			LeafThread (0);
-		}
-	}
-#else
-	LeafThread (0);
-#endif
+	RunThreads (LeafThread);
 
 	if (options.verbosity > 0) {
 		printf ("portalcheck: %i  portaltest: %i  portalpass: %i\n",
