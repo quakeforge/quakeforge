@@ -86,6 +86,8 @@ int         bitbytes;	// (portalleafs + 63)>>3
 int         bitlongs;
 int         bitbytes_l;	// (numrealleafs + 63)>>3
 
+portal_t  **portal_queue;
+
 portal_t   *portals;
 cluster_t  *clusters;
 dstring_t  *visdata;
@@ -285,40 +287,17 @@ ClipWinding (winding_t *in, const plane_t *split, qboolean keepon)
 	return neww;
 }
 
-/*
-	GetNextPortal
-
-	Returns the next portal for a thread to work on
-	Returns the portals from the least complex, so the later ones can reuse
-	the earlier information.
-*/
 static portal_t *
 GetNextPortal (void)
 {
-	int         min, j;
-	portal_t   *p, *tp;
+	portal_t *p = 0;
 
 	WRLOCK (global_lock);
-
-	min = 99999;
-	p = NULL;
-
-	for (j = 0, tp = portals; j < numportals * 2; j++, tp++) {
-		if (tp->nummightsee < min && tp->status == stat_none) {
-			min = tp->nummightsee;
-			p = tp;
-		}
-	}
-
-	if (p) {
-		WRLOCK_PORTAL (p);
-		portal_count++;
+	if (portal_count < 2 * numportals) {
+		p = portal_queue[portal_count++];
 		p->status = stat_selected;
-		UNLOCK_PORTAL (p);
 	}
-
 	UNLOCK (global_lock);
-
 	return p;
 }
 
@@ -596,10 +575,21 @@ ClusterFlow (int clusternum)
 	dstring_append (visdata, (char *) compressed, i);
 }
 
+static int
+portalcmp (const void *_a, const void *_b)
+{
+	portal_t   *a = *(portal_t **) _a;
+	portal_t   *b = *(portal_t **) _b;
+	return a->nummightsee - b->nummightsee;
+}
+
 static void
 CalcPortalVis (void)
 {
 	long        i;
+	double      start, end;
+
+	portal_count = 0;
 
 	// fastvis just uses mightsee for a very loose bound
 	if (options.minimal) {
@@ -609,6 +599,10 @@ CalcPortalVis (void)
 		}
 		return;
 	}
+	start = Sys_DoubleTime ();
+	qsort (portal_queue, numportals * 2, sizeof (portal_t *), portalcmp);
+	end = Sys_DoubleTime ();
+	printf ("qsort: %gs\n", end - start);
 	RunThreads (LeafThread);
 
 	if (options.verbosity > 0) {
@@ -895,6 +889,10 @@ LoadPortals (char *name)
 	// each file portal is split into two memory portals, one for each
 	// direction
 	portals = calloc (2 * numportals, sizeof (portal_t));
+	portal_queue = malloc (2 * numportals * sizeof (portal_t *));
+	for (i = 0; i < 2 * numportals; i++) {
+		portal_queue[i] = &portals[i];
+	}
 #ifdef USE_PTHREADS
 	portal_locks = calloc (2 * numportals, sizeof (pthread_rwlock_t));
 	for (i = 0; i < 2 * numportals; i++) {
