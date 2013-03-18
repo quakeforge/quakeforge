@@ -34,10 +34,22 @@
 #endif
 
 #if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
+#define USE_PTHREADS
+#endif
+
+#ifdef USE_PTHREADS
 #include <pthread.h>
 extern pthread_mutex_t *my_mutex;
-#define	LOCK	do {if (options.threads > 1) pthread_mutex_lock (my_mutex); } while (0)
-#define	UNLOCK	do {if (options.threads > 1) pthread_mutex_unlock (my_mutex); } while (0)
+#define	LOCK \
+	do { \
+		if (options.threads > 1) \
+			pthread_mutex_lock (my_mutex); \
+	} while (0)
+#define	UNLOCK	\
+	do { \
+		if (options.threads > 1)  \
+			pthread_mutex_unlock (my_mutex); \
+	} while (0)
 #else
 #define	LOCK
 #define	UNLOCK

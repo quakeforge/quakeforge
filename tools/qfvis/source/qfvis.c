@@ -62,7 +62,7 @@
 
 #define	MAX_THREADS		4
 
-#if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
+#ifdef USE_PTHREADS
 pthread_mutex_t *my_mutex;
 #endif
 
@@ -390,7 +390,7 @@ LeafThread (void *_thread)
 	return NULL;
 }
 
-#if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
+#ifdef USE_PTHREADS
 static void *
 WatchThread (void *_thread)
 {
@@ -536,7 +536,7 @@ CalcPortalVis (void)
 		return;
 	}
 
-#if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
+#ifdef USE_PTHREADS
 	{
 		pthread_t   work_threads[MAX_THREADS + 1];
 		void *status;
