@@ -63,7 +63,7 @@ CheckStack (cluster_t *cluster, threaddata_t *thread)
 {
 	pstack_t   *portal;
 
-	for (portal = thread->pstack_head->next; portal; portal = portal->next) {
+	for (portal = thread->pstack_head.next; portal; portal = portal->next) {
 		if (portal->cluster == cluster) {
 			printf ("CheckStack: cluster recursion\n");
 			return 1;
@@ -78,12 +78,12 @@ static pstack_t *
 new_stack (void)
 {
 	pstack_t   *stack;
-	unsigned    size = SET_SIZE (portalclusters - 1);
 
-	stack = calloc (1, field_offset (pstack_t,
-									 mightsee.defmap[size / SET_BITS]));
-	stack->mightsee.size = size;
-	stack->mightsee.map = stack->mightsee.defmap;
+	stack = malloc (sizeof (pstack_t));
+	stack->next = 0;
+	LOCK;
+	stack->mightsee = set_new_size (portalclusters);
+	UNLOCK;
 	return stack;
 }
 
@@ -304,10 +304,10 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 	stack->pass_portal = NULL;
 	stack->separators[0] = 0;
 	stack->separators[1] = 0;
-	might = &stack->mightsee;
+	might = stack->mightsee;
 	vis = thread->clustervis;
 
-	source_plane = &thread->pstack_head->pass_plane;
+	source_plane = &thread->pstack_head.pass_plane;
 	pass_winding = prevstack->pass_winding;
 	pass_plane = &prevstack->pass_plane;
 
@@ -315,12 +315,12 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 	for (i = 0; i < cluster->numportals; i++) {
 		target_portal = cluster->portals[i];
 
-		if (!set_is_member (&prevstack->mightsee, target_portal->cluster))
+		if (!set_is_member (prevstack->mightsee, target_portal->cluster))
 			continue;		// can't possibly see it
 
 		// if target_portal can't see anything we haven't already seen, skip it
 		test = select_test_set (target_portal, thread);
-		if (!mightsee_more (might, &prevstack->mightsee, test, vis)) {
+		if (!mightsee_more (might, prevstack->mightsee, test, vis)) {
 			// can't see anything new
 			continue;
 		}
@@ -471,16 +471,14 @@ PortalFlow (threaddata_t *data, portal_t *portal)
 	data->clustervis = portal->visbits;
 	data->base = portal;
 
-	if (!data->pstack_head)
-		data->pstack_head = new_stack ();
-	data->pstack_head->cluster = 0;
-	data->pstack_head->pass_portal = portal;
-	data->pstack_head->source_winding = portal->winding;
-	data->pstack_head->pass_winding = 0;
-	data->pstack_head->pass_plane = portal->plane;
-	set_assign (&data->pstack_head->mightsee, portal->mightsee);
-	data->pstack_head->separators[0] = 0;
-	data->pstack_head->separators[1] = 0;
+	data->pstack_head.cluster = 0;
+	data->pstack_head.pass_portal = portal;
+	data->pstack_head.source_winding = portal->winding;
+	data->pstack_head.pass_winding = 0;
+	data->pstack_head.pass_plane = portal->plane;
+	data->pstack_head.mightsee = portal->mightsee;
+	data->pstack_head.separators[0] = 0;
+	data->pstack_head.separators[1] = 0;
 
-	RecursiveClusterFlow (portal->cluster, data, data->pstack_head);
+	RecursiveClusterFlow (portal->cluster, data, &data->pstack_head);
 }
