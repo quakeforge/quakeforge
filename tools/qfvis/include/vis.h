@@ -39,16 +39,24 @@
 
 #ifdef USE_PTHREADS
 #include <pthread.h>
-extern pthread_mutex_t *my_mutex;
-#define	LOCK \
+extern pthread_rwlock_t *global_lock;
+
+#define	WRLOCK(l) \
 	do { \
 		if (options.threads > 1) \
-			pthread_mutex_lock (my_mutex); \
+			pthread_rwlock_wrlock (l); \
 	} while (0)
-#define	UNLOCK	\
+
+#define	RDLOCK(l) \
+	do { \
+		if (options.threads > 1) \
+			pthread_rwlock_rdlock (l); \
+	} while (0)
+
+#define	UNLOCK(l)	\
 	do { \
 		if (options.threads > 1)  \
-			pthread_mutex_unlock (my_mutex); \
+			pthread_rwlock_unlock (l); \
 	} while (0)
 #else
 #define	LOCK

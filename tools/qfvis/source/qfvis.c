@@ -63,7 +63,9 @@
 #define	MAX_THREADS		4
 
 #ifdef USE_PTHREADS
-pthread_mutex_t *my_mutex;
+pthread_attr_t threads_attrib;
+pthread_rwlock_t *global_lock;
+pthread_rwlock_t *stats_lock;
 #endif
 
 bsp_t *bsp;
@@ -91,6 +93,37 @@ int        *leafcluster;	// leaf to cluster mappings as read from .prt file
 
 int        *working;		// per thread current portal #
 
+static void
+InitThreads (void)
+{
+#ifdef USE_PTHREADS
+	if (pthread_attr_init (&threads_attrib) == -1)
+		Sys_Error ("pthread_attr_create failed");
+	if (pthread_attr_setstacksize (&threads_attrib, 0x100000) == -1)
+		Sys_Error ("pthread_attr_setstacksize failed");
+
+	global_lock = malloc (sizeof (pthread_rwlock_t));
+	if (pthread_rwlock_init (global_lock, 0))
+		Sys_Error ("pthread_rwlock_init failed");
+
+	stats_lock = malloc (sizeof (pthread_rwlock_t));
+	if (pthread_rwlock_init (stats_lock, 0))
+		Sys_Error ("pthread_rwlock_init failed");
+#endif
+}
+
+static void
+EndThreads (void)
+{
+#ifdef USE_PTHREADS
+	if (pthread_rwlock_destroy (global_lock) == -1)
+		Sys_Error ("pthread_rwlock_destroy failed");
+	free (global_lock);
+	if (pthread_rwlock_destroy (stats_lock) == -1)
+		Sys_Error ("pthread_rwlock_destroy failed");
+	free (stats_lock);
+#endif
+}
 
 static void
 PlaneFromWinding (winding_t *winding, plane_t *plane)
@@ -264,7 +297,7 @@ GetNextPortal (void)
 	int         min, j;
 	portal_t   *p, *tp;
 
-	LOCK;
+	WRLOCK (global_lock);
 
 	min = 99999;
 	p = NULL;
@@ -281,7 +314,7 @@ GetNextPortal (void)
 		p->status = stat_selected;
 	}
 
-	UNLOCK;
+	UNLOCK (global_lock);
 
 	return p;
 }
@@ -292,7 +325,7 @@ UpdateMightsee (cluster_t *source, cluster_t *dest)
 	int         i, clusternum;
 	portal_t   *portal;
 
-	LOCK;
+	WRLOCK (global_lock);
 	clusternum = dest - clusters;
 	for (i = 0; i < source->numportals; i++) {
 		portal = source->portals[i];
@@ -304,7 +337,7 @@ UpdateMightsee (cluster_t *source, cluster_t *dest)
 			stats.mightseeupdate++;
 		}
 	}
-	UNLOCK;
+	UNLOCK (global_lock);
 }
 
 static void
@@ -317,7 +350,7 @@ PortalCompleted (threaddata_t *thread, portal_t *completed)
 	int         i, j;
 
 	completed->status = stat_done;
-	LOCK;
+	WRLOCK (stats_lock);
 	stats.portaltest += thread->stats.portaltest;
 	stats.portalpass += thread->stats.portalpass;
 	stats.portalcheck += thread->stats.portalcheck;
@@ -331,7 +364,7 @@ PortalCompleted (threaddata_t *thread, portal_t *completed)
 	stats.mighttest += thread->stats.mighttest;
 	stats.vistest += thread->stats.vistest;
 	stats.mightseeupdate += thread->stats.mightseeupdate;
-	UNLOCK;
+	UNLOCK (stats_lock);
 	memset (&thread->stats, 0, sizeof (thread->stats));
 
 	changed = set_new_size_r (&thread->set_pool, portalclusters);
@@ -543,24 +576,16 @@ CalcPortalVis (void)
 	{
 		pthread_t   work_threads[MAX_THREADS + 1];
 		void *status;
-		pthread_attr_t attrib;
 
 		if (options.threads > 1) {
 			working = calloc (options.threads, sizeof (int));
-			my_mutex = malloc (sizeof (*my_mutex));
-			if (pthread_mutex_init (my_mutex, 0) == -1)
-				Sys_Error ("pthread_mutex_init failed");
-			if (pthread_attr_init (&attrib) == -1)
-				Sys_Error ("pthread_attr_create failed");
-			if (pthread_attr_setstacksize (&attrib, 0x100000) == -1)
-				Sys_Error ("pthread_attr_setstacksize failed");
 			for (i = 0; i < options.threads; i++) {
-				if (pthread_create (&work_threads[i], &attrib, LeafThread,
-									(void *) (intptr_t) i) == -1)
+				if (pthread_create (&work_threads[i], &threads_attrib,
+									LeafThread, (void *) (intptr_t) i) == -1)
 					Sys_Error ("pthread_create failed");
 			}
-			if (pthread_create (&work_threads[i], &attrib, WatchThread,
-								(void *) (intptr_t) i) == -1)
+			if (pthread_create (&work_threads[i], &threads_attrib,
+								WatchThread, (void *) (intptr_t) i) == -1)
 				Sys_Error ("pthread_create failed");
 
 			for (i = 0; i < options.threads; i++) {
@@ -570,10 +595,7 @@ CalcPortalVis (void)
 			if (pthread_join (work_threads[i], &status) == -1)
 				Sys_Error ("pthread_join failed");
 
-			if (pthread_mutex_destroy (my_mutex) == -1)
-				Sys_Error ("pthread_mutex_destroy failed");
 			free (working);
-			free (my_mutex);
 		} else {
 			LeafThread (0);
 		}
@@ -975,6 +997,8 @@ main (int argc, char **argv)
 	dstring_t  *portalfile = dstring_new ();
 	QFile      *f;
 
+	InitThreads ();
+
 	start = Sys_DoubleTime ();
 
 	this_program = argv[0];
@@ -1034,6 +1058,8 @@ main (int argc, char **argv)
 	free (uncompressed);
 	free (portals);
 	free (clusters);
+
+	EndThreads ();
 
 	return 0;
 }

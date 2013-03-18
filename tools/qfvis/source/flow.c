@@ -459,11 +459,11 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 void
 PortalFlow (threaddata_t *data, portal_t *portal)
 {
-	LOCK;
+	WRLOCK (global_lock);
 	if (portal->status != stat_selected)
 		Sys_Error ("PortalFlow: reflowed");
 	portal->status = stat_working;
-	UNLOCK;
+	UNLOCK (global_lock);
 
 	portal->visbits = set_new_size_r (&data->set_pool, portalclusters);
 
