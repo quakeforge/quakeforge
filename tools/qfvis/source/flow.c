@@ -120,6 +120,56 @@ test_zero (float d)
 	return 0;
 }
 
+static int
+calc_plane (const vec3_t v1, const vec3_t v2, int flip, const vec3_t p,
+			plane_t *plane)
+{
+	vec_t       length;
+
+	if (flip < 0) {
+		//CrossProduct (v2, v1, plane.normal);
+		plane->normal[0] = v2[1] * v1[2] - v2[2] * v1[1];
+		plane->normal[1] = v2[2] * v1[0] - v2[0] * v1[2];
+		plane->normal[2] = v2[0] * v1[1] - v2[1] * v1[0];
+	} else {
+		//CrossProduct (v1, v2, plane.normal);
+		plane->normal[0] = v1[1] * v2[2] - v1[2] * v2[1];
+		plane->normal[1] = v1[2] * v2[0] - v1[0] * v2[2];
+		plane->normal[2] = v1[0] * v2[1] - v1[1] * v2[0];
+	}
+
+	length = DotProduct (plane->normal, plane->normal);
+
+	// if points don't make a valid plane, skip it
+	if (length < ON_EPSILON)
+		return 0;
+
+	length = 1 / sqrt (length);
+	VectorScale (plane->normal, length, plane->normal);
+	plane->dist = DotProduct (p, plane->normal);
+	return 1;
+}
+
+static inline int
+test_plane (const plane_t *plane, const winding_t *pass, int index)
+{
+	int         s1, s2;
+	int         k;
+	vec_t       d;
+
+	k = (index + 1) % pass->numpoints;
+	d = DotProduct (pass->points[k], plane->normal) - plane->dist;
+	s1 = test_zero (d);
+	k = (index + pass->numpoints - 1) % pass->numpoints;
+	d = DotProduct (pass->points[k], plane->normal) - plane->dist;
+	s2 = test_zero (d);
+	if (s1 == 0 && s2 == 0)
+		return 0;
+	if (s1 < 0 || s2 < 0)
+		return 0;
+	return 1;
+}
+
 /*
 	Find the planes separating source from pass. The planes form a double
 	pyramid with source as the base (ie, source's edges will all be in one
@@ -138,12 +188,10 @@ FindSeparators (threaddata_t *thread,
 				const winding_t *pass, int flip)
 {
 	float       d;
-	int         i, j, k, l;
-	int         count;
+	int         i, j, l;
 	int         fliptest;
 	plane_t     plane;
 	vec3_t      v1, v2;
-	vec_t       length;
 
 	sep_t      *separators = 0;
 
@@ -160,48 +208,11 @@ FindSeparators (threaddata_t *thread,
 				continue;	// The point lies in the source plane
 
 			VectorSubtract (pass->points[j], source->points[i], v2);
+			if (!calc_plane (v1, v2, fliptest, pass->points[j], &plane))
+				continue;	// point does not form a valid plane
 
-			if (fliptest < 0) {
-				//CrossProduct (v2, v1, plane.normal);
-				plane.normal[0] = v2[1] * v1[2] - v2[2] * v1[1];
-				plane.normal[1] = v2[2] * v1[0] - v2[0] * v1[2];
-				plane.normal[2] = v2[0] * v1[1] - v2[1] * v1[0];
-			} else {
-				//CrossProduct (v1, v2, plane.normal);
-				plane.normal[0] = v1[1] * v2[2] - v1[2] * v2[1];
-				plane.normal[1] = v1[2] * v2[0] - v1[0] * v2[2];
-				plane.normal[2] = v1[0] * v2[1] - v1[1] * v2[0];
-			}
-
-			length = DotProduct (plane.normal, plane.normal);
-
-			// if points don't make a valid plane, skip it
-			if (length < ON_EPSILON)
-				continue;
-
-			length = 1 / sqrt (length);
-			VectorScale (plane.normal, length, plane.normal);
-
-			plane.dist = DotProduct (pass->points[j], plane.normal);
-
-			// if all of the pass portal points are now on the positive side,
-			// this is the seperating plane
-			count = 0;
-			for (k = 0; k < pass->numpoints; k++) {
-				if (k == j)
-					continue;
-				d = DotProduct (pass->points[k], plane.normal) - plane.dist;
-				if (d < -ON_EPSILON)
-					break;
-				else if (d > ON_EPSILON)
-					count++;
-			}
-			if (k != pass->numpoints)
-				continue;	// points on negative side, not a seperating plane
-
-			if (!count) {
-				continue;	// planar with seperating plane
-			}
+			if (!test_plane (&plane, pass, j))
+				continue;	// not the right point
 
 			// flip the normal if we want the back side
 			if (flip) {
