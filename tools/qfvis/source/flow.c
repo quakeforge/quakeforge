@@ -170,6 +170,39 @@ test_plane (const plane_t *plane, const winding_t *pass, int index)
 	return 1;
 }
 
+static inline sep_t *
+create_separator (threaddata_t *thread, const plane_t *src_pl,
+				  const vec3_t p1, const vec3_t v1,
+				  const winding_t *pass, int index, int flip)
+{
+	int         fliptest;
+	vec_t       d;
+	vec3_t      v2;
+	plane_t     plane;
+	sep_t      *sep;
+
+	d = DotProduct (pass->points[index], src_pl->normal) - src_pl->dist;
+	if ((fliptest = test_zero (d)) == 0)
+		return 0;	// The point lies in the source plane
+
+	VectorSubtract (pass->points[index], p1, v2);
+	if (!calc_plane (v1, v2, fliptest, pass->points[index], &plane))
+		return 0;	// point does not form a valid plane
+
+	if (!test_plane (&plane, pass, index))
+		return 0;	// not the right point
+
+	sep = new_separator (thread);
+	// flip the normal if we want the back side
+	if (flip) {
+		VectorNegate (plane.normal, sep->plane.normal);
+		sep->plane.dist = -plane.dist;
+	} else {
+		sep->plane = plane;
+	}
+	return sep;
+}
+
 /*
 	Find the planes separating source from pass. The planes form a double
 	pyramid with source as the base (ie, source's edges will all be in one
@@ -181,50 +214,33 @@ test_plane (const plane_t *plane, const winding_t *pass, int index)
 	planes and on the pass side of the vertex are on the front sides of the
 	planes. If flip is true, then the space on the source side of the vertex
 	and enclosed by the planes is on the front side of the planes.
+
+		// find a vertex of pass that makes a plane that puts all of the
+		// vertexes of pass on the front side and all of the vertexes of
+		// source on the back side
 */
 static sep_t *
 FindSeparators (threaddata_t *thread,
 				const winding_t *source, const plane_t src_pl,
 				const winding_t *pass, int flip)
 {
-	float       d;
 	int         i, j, l;
-	int         fliptest;
-	plane_t     plane;
-	vec3_t      v1, v2;
+	vec3_t      v1;
 
-	sep_t      *separators = 0;
+	sep_t      *separators = 0, *sep;
 
 	for (i = 0; i < source->numpoints; i++) {
 		l = (i + 1) % source->numpoints;
 		VectorSubtract (source->points[l], source->points[i], v1);
 
-		// find a vertex of pass that makes a plane that puts all of the
-		// vertexes of pass on the front side and all of the vertexes of
-		// source on the back side
 		for (j = 0; j < pass->numpoints; j++) {
-			d = DotProduct (pass->points[j], src_pl.normal) - src_pl.dist;
-			if ((fliptest = test_zero (d)) == 0)
-				continue;	// The point lies in the source plane
-
-			VectorSubtract (pass->points[j], source->points[i], v2);
-			if (!calc_plane (v1, v2, fliptest, pass->points[j], &plane))
-				continue;	// point does not form a valid plane
-
-			if (!test_plane (&plane, pass, j))
-				continue;	// not the right point
-
-			// flip the normal if we want the back side
-			if (flip) {
-				VectorNegate (plane.normal, plane.normal);
-				plane.dist = -plane.dist;
+			sep = create_separator (thread, &src_pl, source->points[i], v1,
+									pass, j, flip);
+			if (sep) {
+				sep->next = separators;
+				separators = sep;
+				break;
 			}
-
-			sep_t *sep = new_separator (thread);
-			sep->plane = plane;
-			sep->next = separators;
-			separators = sep;
-			break;
 		}
 	}
 	return separators;
