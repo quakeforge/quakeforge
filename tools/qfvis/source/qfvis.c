@@ -403,7 +403,8 @@ LeafThread (void *_thread)
 						portal_count, numportals * 2);
 	} while (1);
 
-	printf ("thread %d done\n", thread);
+	if (options.verbosity > 0)
+		printf ("thread %d done\n", thread);
 	if (working)
 		working[thread] = -1;
 	return NULL;
@@ -441,22 +442,54 @@ BaseVisThread (void *_thread)
 	base_mightsee += num_mightsee;
 	UNLOCK (stats_lock);
 
-	printf ("thread %d done\n", thread);
+	if (options.verbosity > 0)
+		printf ("thread %d done\n", thread);
 	if (working)
 		working[thread] = -1;
 	return NULL;
 }
 
 #ifdef USE_PTHREADS
+const char spinner[] = "|/-\\";
+const char progress[] = "0....1....2....3....4....5....6....7....8....9....";
+
+static void
+print_thread_stats (const int *local_work, int thread, int spinner_ind)
+{
+	int         i;
+
+	for (i = 0; i < thread; i++)
+		printf ("%6d", local_work[i]);
+	printf ("  %5d / %5d", portal_count, numportals * 2);
+	fflush (stdout);
+	printf (" %c\r", spinner[spinner_ind % 4]);
+	fflush (stdout);
+}
+
+static int
+print_progress (int prev_prog, int spinner_ind)
+{
+	int         prog;
+
+	prog = portal_count * 50 / (numportals * 2) + 1;
+	if (prog > prev_prog)
+		printf ("%.*s", prog - prev_prog, progress + prev_prog);
+	printf (" %c\b\b", spinner[spinner_ind % 4]);
+	fflush (stdout);
+	return prog;
+}
+
 static void *
 WatchThread (void *_thread)
 {
 	int         thread = (intptr_t) _thread;
 	int        *local_work = malloc (thread * sizeof (int));
 	int         i;
-	const char *spinner = "|/-\\";
 	int         spinner_ind = 0;
 	int         count = 0;
+	int         prev_prog = 0;
+	int         prev_port = 0;
+	int         stalled = 0;
 
 	while (1) {
 		usleep (1000);
@@ -465,20 +498,26 @@ WatchThread (void *_thread)
 				break;
 		if (i == thread)
 			break;
-		if (count++ == 1000) {
+		if (count++ == 100) {
 			count = 0;
 
 			for (i = 0; i < thread; i ++)
 				local_work[i] = working[i];
-			for (i = 0; i < thread; i++)
-				printf ("%6d", local_work[i]);
-			printf ("  %5d / %5d", portal_count, numportals * 2);
-			fflush (stdout);
-			printf (" %c\r", spinner[(spinner_ind++) % 4]);
-			fflush (stdout);
+			if (options.verbosity > 0)
+				print_thread_stats (local_work, thread, spinner_ind);
+			else if (options.verbosity == 0)
+				prev_prog = print_progress (prev_prog, spinner_ind);
+			if (prev_port != portal_count || stalled++ == 10) {
+				prev_port = portal_count;
+				stalled = 0;
+				spinner_ind++;
+			}
 		}
 	}
-	printf ("watch thread done\n");
+	if (options.verbosity > 0)
+		printf ("watch thread done\n");
+	else if (options.verbosity == 0)
+		printf ("\n");
 	free (local_work);
 
 	return NULL;
@@ -627,11 +666,15 @@ BasePortalVis (void)
 {
 	double      start, end;
 
+	if (options.verbosity >= 0)
+		printf ("Base vis: ");
+	if (options.verbosity >= 1)
+		printf ("\n");
+
 	start = Sys_DoubleTime ();
-
 	RunThreads (BaseVisThread);
-
 	end = Sys_DoubleTime ();
+
 	if (options.verbosity > 0)
 		printf ("base_mightsee: %d %gs\n", base_mightsee, end - start);
 }
@@ -655,7 +698,14 @@ CalcPortalVis (void)
 	start = Sys_DoubleTime ();
 	qsort (portal_queue, numportals * 2, sizeof (portal_t *), portalcmp);
 	end = Sys_DoubleTime ();
-	printf ("qsort: %gs\n", end - start);
+	if (options.verbosity > 0)
+		printf ("qsort: %gs\n", end - start);
+
+	if (options.verbosity >= 0)
+		printf ("Full vis: ");
+	if (options.verbosity >= 1)
+		printf ("\n");
+
 	RunThreads (LeafThread);
 
 	if (options.verbosity > 0) {
@@ -1093,7 +1143,7 @@ main (int argc, char **argv)
 
 	CalcVis ();
 
-	if (options.verbosity >= 0)
+	if (options.verbosity > 0)
 		printf ("chains: %i%s\n", stats.chains,
 				options.threads > 1 ? " (not reliable)" :"");
 
@@ -1112,7 +1162,7 @@ main (int argc, char **argv)
 
 	stop = Sys_DoubleTime ();
 
-	if (options.verbosity >= 0)
+	if (options.verbosity >= -1)
 		printf ("%5.1f seconds elapsed\n", stop - start);
 
 	dstring_delete (portalfile);
