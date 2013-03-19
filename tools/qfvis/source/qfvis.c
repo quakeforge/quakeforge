@@ -134,7 +134,7 @@ PlaneFromWinding (winding_t *winding, plane_t *plane)
 {
 	vec3_t      v1, v2;
 
-	// calc plane using CCW winding
+	// calc plane using CW winding
 	VectorSubtract (winding->points[2], winding->points[1], v1);
 	VectorSubtract (winding->points[0], winding->points[1], v2);
 	CrossProduct (v2, v1, plane->normal);
@@ -1068,7 +1068,7 @@ LoadPortals (char *name)
 
 		portal->winding = winding;
 		VectorNegate (plane.normal, portal->plane.normal);
-		portal->plane.dist = -plane.dist;	// plane is for CCW, portal is CW
+		portal->plane.dist = -plane.dist;	// plane is for CW, portal is CCW
 		portal->cluster = clusternums[1];
 		portal->sphere = sphere;
 		portal++;
