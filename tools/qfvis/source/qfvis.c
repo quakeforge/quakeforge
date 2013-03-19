@@ -74,6 +74,7 @@ bsp_t *bsp;
 options_t   options;
 
 static visstat_t stats;
+int         base_mightsee;
 
 int         portal_count;
 int         numportals;
@@ -408,6 +409,44 @@ LeafThread (void *_thread)
 	return NULL;
 }
 
+static void *
+BaseVisThread (void *_thread)
+{
+	portal_t   *portal;
+	int         thread = (int) (intptr_t) _thread;
+	basethread_t data;
+	set_pool_t  set_pool;
+	int         num_mightsee = 0;
+
+	memset (&data, 0, sizeof (data));
+	set_pool_init (&set_pool);
+	data.portalsee = set_new_size_r (&set_pool, numportals * 2);
+	do {
+		portal = GetNextPortal ();
+		if (!portal)
+			break;
+
+		if (working)
+			working[thread] = (int) (portal - portals);
+
+		portal->mightsee = set_new_size_r (&set_pool, portalclusters);
+		set_empty (data.portalsee);
+
+		PortalBase (&data, portal);
+		num_mightsee += data.clustersee;
+		data.clustersee = 0;
+	} while (1);
+
+	WRLOCK (stats_lock);
+	base_mightsee += num_mightsee;
+	UNLOCK (stats_lock);
+
+	printf ("thread %d done\n", thread);
+	if (working)
+		working[thread] = -1;
+	return NULL;
+}
+
 #ifdef USE_PTHREADS
 static void *
 WatchThread (void *_thread)
@@ -581,6 +620,20 @@ portalcmp (const void *_a, const void *_b)
 	portal_t   *a = *(portal_t **) _a;
 	portal_t   *b = *(portal_t **) _b;
 	return a->nummightsee - b->nummightsee;
+}
+
+static void
+BasePortalVis (void)
+{
+	double      start, end;
+
+	start = Sys_DoubleTime ();
+
+	RunThreads (BaseVisThread);
+
+	end = Sys_DoubleTime ();
+	if (options.verbosity > 0)
+		printf ("base_mightsee: %d %gs\n", base_mightsee, end - start);
 }
 
 static void

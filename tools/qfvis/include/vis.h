@@ -158,6 +158,11 @@ typedef struct threaddata_s {
 	set_pool_t  set_pool;
 } threaddata_t;
 
+typedef struct {
+	set_t      *portalsee;
+	int         clustersee;
+} basethread_t;
+
 extern int numportals;
 extern int portalclusters;
 extern int numrealleafs;
@@ -177,7 +182,7 @@ winding_t *ClipWinding (winding_t *in, const plane_t *split, qboolean keepon);
 winding_t *CopyWinding (const winding_t *w);
 
 void ClusterFlow (int clusternum);
-void BasePortalVis (void);
+void PortalBase (basethread_t *thread, portal_t *portal);
 void PortalFlow (threaddata_t *data, portal_t *portal);
 void CalcAmbientSounds (void);
 
