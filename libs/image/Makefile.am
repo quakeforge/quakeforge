@@ -13,6 +13,6 @@ libQFimage_la_LDFLAGS=		$(lib_ldflags)
 libQFimage_la_LIBADD=		$(image_deps) $(PNG_LIBS)
 libQFimage_la_DEPENDENCIES=	$(pmage_deps)
 libQFimage_la_SOURCES= \
-	image.c pcx.c png.c tga.c
+	convert.c image.c pcx.c png.c tga.c
 
 EXTRA_DIST=
