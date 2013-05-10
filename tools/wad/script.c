@@ -104,7 +104,7 @@ load_image (const char *name)
 	switch (tex->format) {
 		case tex_palette:
 			for (i = 0, s = tex->data, d = image->data; i < pixels; i++) {
-				byte        *v = tex->palette + *s++ * 3;
+				const byte *v = tex->palette + *s++ * 3;
 				*d++ = *v++;
 				*d++ = *v++;
 				*d++ = *v++;
