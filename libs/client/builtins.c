@@ -38,6 +38,8 @@
 
 #include "csqc.h"
 
+#include "r_internal.h"
+
 #define CSQC_API_VERSION 1.0f
 
 cl_globals_t cl_globals;
@@ -311,11 +313,6 @@ CSQC_project (progs_t *pr)
 }
 
 static void
-CSQC_drawfillpal (progs_t *pr)
-{
-}
-
-static void
 CSQC_is_cached_pic (progs_t *pr)
 {
 }
@@ -351,8 +348,17 @@ CSQC_drawpic (progs_t *pr)
 }
 
 static void
-CSQC_drawfillrgb (progs_t *pr)
+CSQC_drawfill (progs_t *pr)
 {
+	float      *pos = P_VECTOR (pr, 0);
+	float      *size = P_VECTOR (pr, 1);
+	quat_t      rgba;
+
+	VectorCopy (P_VECTOR (pr, 2), rgba);
+	rgba[3] = P_FLOAT (pr, 3);
+
+	r_funcs->Draw_FillRGBA (pos[0], pos[1], size[0], size[1], rgba);
+	R_FLOAT (pr) = 1;
 }
 
 static void
@@ -612,7 +618,7 @@ static builtin_t builtins[] = {
 	CSQC_BUILTIN (project, 311),
 
 	// 2D display
-	CSQC_BUILTIN (drawfillpal, 314),
+	//CSQC_BUILTIN (drawfillpal, 314),
 	CSQC_BUILTIN (is_cached_pic, 316),
 	CSQC_BUILTIN (precache_pic, 317),
 	CSQC_BUILTIN (drawgetimagesize, 318),
@@ -620,7 +626,7 @@ static builtin_t builtins[] = {
 	CSQC_BUILTIN (drawcharacter, 320),
 	CSQC_BUILTIN (drawrawstring, 321),
 	CSQC_BUILTIN (drawpic, 322),
-	CSQC_BUILTIN (drawfillrgb, 323),
+	CSQC_BUILTIN (drawfill, 323),
 	CSQC_BUILTIN (drawcolorocodedstring, 326),
 
 	CSQC_BUILTIN (setmodelindex, 333),

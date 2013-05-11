@@ -185,7 +185,7 @@ pic_data (const char *name, int w, int h, const byte *data)
 static void
 make_quad (qpic_t *pic, float x, float y, int w, int h,
 		   int srcx, int srcy, int srcw, int srch, drawvert_t verts[6],
-		   float *color)
+		   const float *color)
 {
 	glpic_t    *gl;
 	subpic_t   *sp;
@@ -242,7 +242,7 @@ make_quad (qpic_t *pic, float x, float y, int w, int h,
 static void
 draw_pic (float x, float y, int w, int h, qpic_t *pic,
 		  int srcx, int srcy, int srcw, int srch,
-		  float *color)
+		  const float *color)
 {
 	drawvert_t  verts[6];
 	void       *v;
@@ -673,6 +673,12 @@ glsl_Draw_Fill (int x, int y, int w, int h, int c)
 	VectorScale (vid.palette + c * 3, 1.0f/255.0f, color);
 	color[3] = 1.0;
 	draw_pic (x, y, w, h, white_pic, 0, 0, 8, 8, color);
+}
+
+void
+glsl_Draw_FillRGBA (int x, int y, int w, int h, const quat_t rgba)
+{
+	draw_pic (x, y, w, h, white_pic, 0, 0, 8, 8, rgba);
 }
 
 static inline void

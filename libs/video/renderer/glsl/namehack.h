@@ -10,6 +10,7 @@
 #define Draw_CrosshairAt glsl_Draw_CrosshairAt
 #define Draw_TileClear glsl_Draw_TileClear
 #define Draw_Fill glsl_Draw_Fill
+#define Draw_FillRGBA glsl_Draw_FillRGBA
 #define Draw_TextBox glsl_Draw_TextBox
 #define Draw_FadeScreen glsl_Draw_FadeScreen
 #define Draw_BlendScreen glsl_Draw_BlendScreen

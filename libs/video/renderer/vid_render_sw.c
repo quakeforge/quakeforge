@@ -71,6 +71,7 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	Draw_CrosshairAt,
 	Draw_TileClear,
 	Draw_Fill,
+	Draw_FillRGBA,
 	Draw_TextBox,
 	Draw_FadeScreen,
 	Draw_BlendScreen,

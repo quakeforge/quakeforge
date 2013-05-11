@@ -39,6 +39,7 @@
 #define Draw_DestroyPic sw32_Draw_DestroyPic
 #define Draw_FadeScreen sw32_Draw_FadeScreen
 #define Draw_Fill sw32_Draw_Fill
+#define Draw_FillRGBA sw32_Draw_FillRGBA
 #define Draw_Init sw32_Draw_Init
 #define Draw_MakePic sw32_Draw_MakePic
 #define Draw_Pic sw32_Draw_Pic

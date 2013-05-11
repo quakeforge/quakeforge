@@ -42,6 +42,7 @@
 
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/image.h"
 #include "QF/quakefs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
@@ -63,6 +64,7 @@ static rectdesc_t r_rectdesc;
 static qpic_t     *draw_disc;
 static qpic_t     *draw_backtile;
 
+static colcache_t *color_cache;
 
 /* Support Routines */
 
@@ -238,6 +240,8 @@ sw32_Draw_Init (void)
 	draw_chars = W_GetLumpName ("conchars");
 	draw_disc = W_GetLumpName ("disc");
 	draw_backtile = W_GetLumpName ("backtile");
+
+	color_cache = ColorCache_New ();
 
 	r_rectdesc.width = draw_backtile->width;
 	r_rectdesc.height = draw_backtile->height;
@@ -1213,6 +1217,21 @@ sw32_Draw_Fill (int x, int y, int w, int h, int c)
 	default:
 		Sys_Error("Draw_Fill: unsupported r_pixbytes %i", sw32_r_pixbytes);
 	}
+}
+
+void
+sw32_Draw_FillRGBA (int x, int y, int w, int h, const quat_t rgba)
+{
+	//FIXME don't need to convert for > 8 bit color
+	int         c;
+	byte        rgb[3];
+
+	// alpha >= 0.5 = solid, < 0.5 = transparent (too lazy:P)
+	if (rgba[3] < 0.5)
+		return;
+	VectorScale (rgba, 255, rgb);
+	c = ConvertColor (rgb, vid.palette, color_cache);
+	Draw_Fill (x, y, w, h, c);
 }
 
 

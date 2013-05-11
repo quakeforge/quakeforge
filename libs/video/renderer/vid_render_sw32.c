@@ -76,6 +76,7 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	sw32_Draw_CrosshairAt,
 	sw32_Draw_TileClear,
 	sw32_Draw_Fill,
+	sw32_Draw_FillRGBA,
 	sw32_Draw_TextBox,
 	sw32_Draw_FadeScreen,
 	sw32_Draw_BlendScreen,

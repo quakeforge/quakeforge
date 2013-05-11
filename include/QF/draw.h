@@ -144,6 +144,15 @@ void Draw_TileClear (int x, int y, int w, int h);
 */
 void Draw_Fill (int x, int y, int w, int h, int c);
 
+/** Clear a rectangle with a solid color.
+	\param x	horizontal position of the upper left corner of the rectangle
+	\param y	horizontal position of the upper left corner of the rectangle
+	\param w	width of the rectangle
+	\param h	height of the rectangle
+	\param rgba	float (0-1) red green blue alpha
+*/
+void Draw_FillRGBA (int x, int y, int w, int h, const quat_t rgba);
+
 /** Draw a text box on the screen
 	\param x	horizontal location of the upper left corner of the box
 	\param y	vertical location of the upper left corner of the box

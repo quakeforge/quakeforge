@@ -891,6 +891,24 @@ gl_Draw_Fill (int x, int y, int w, int h, int c)
 }
 
 void
+gl_Draw_FillRGBA (int x, int y, int w, int h, const quat_t rgba)
+{
+	qfglDisable (GL_TEXTURE_2D);
+	qfglColor4fv (rgba);
+
+	qfglBegin (GL_QUADS);
+
+	qfglVertex2f (x, y);
+	qfglVertex2f (x + w, y);
+	qfglVertex2f (x + w, y + h);
+	qfglVertex2f (x, y + h);
+
+	qfglEnd ();
+	qfglColor3ubv (color_white);
+	qfglEnable (GL_TEXTURE_2D);
+}
+
+void
 gl_Draw_FadeScreen (void)
 {
 	GL_FlushText (); // Flush text that should be rendered before the menu
