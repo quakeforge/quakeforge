@@ -38,8 +38,8 @@
 #include "QF/qtypes.h"
 #include "QF/segtext.h"
 
-static segchunk_t *free_chunks;
-static segtext_t *free_texts;
+static segchunk_t *chunks_freelist;
+static segtext_t *texts_freelist;
 
 static segchunk_t *
 new_chunk (void)
