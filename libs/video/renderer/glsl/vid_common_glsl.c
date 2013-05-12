@@ -56,6 +56,10 @@
 #include "d_iface.h"
 #include "r_internal.h"
 
+static const char quakeforge_effect[] =
+#include "quakeforge.slc"
+;
+
 int					glsl_palette;
 int					glsl_colormap;
 
@@ -181,6 +185,8 @@ GLSL_Init_Common (void)
 
 	qfeglEnable (GL_BLEND);
 	qfeglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	GLSL_RegisterEffect ("QuakeForge", quakeforge_effect);
 }
 
 int

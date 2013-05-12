@@ -3,13 +3,13 @@ AUTOMAKE_OPTIONS= foreign
 AM_CFLAGS= @PREFER_PIC@
 AM_CPPFLAGS= -I$(top_srcdir)/include $(GLX_CFLAGS)
 
-shader_src= \
+shader_src= quakeforge.glsl \
 	iqm.frag iqm.vert \
 	quake2d.frag quakebsp.frag quakebsp.vert quakeico.vert quakemdl.frag \
 	quakemdl.vert quakepar.frag quakepar.vert quakepnt.frag quakepnt.vert \
 	quakeskb.frag quakeski.frag quakesky.vert quakespr.frag quakespr.vert \
 	quaketrb.frag quaketxt.vert
-shader_gen= \
+shader_gen= quakeforge.slc \
 	iqm.fc iqm.vc \
 	quake2d.fc quakebsp.fc quakebsp.vc quakeico.vc quakemdl.fc quakemdl.vc \
 	quakepar.fc quakepar.vc quakepnt.fc quakepnt.vc quakeskb.fc quakeski.fc \
@@ -23,7 +23,9 @@ glsl_src = \
 noinst_LTLIBRARIES=	libglsl.la
 BUILT_SOURCES= $(shader_gen)
 
-SUFFICES=.frag .vert .fc .vc
+SUFFICES=.frag .vert .fc .vc .slc .glsl
+.glsl.slc:
+	sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
 .frag.fc:
 	sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
 .vert.vc:

@@ -55,13 +55,17 @@
 
 #include "r_internal.h"
 
-static const char quakemdl_vert[] =
-#include "quakemdl.vc"
-;
+static const char *alias_vert_effects[] =
+{
+	"QuakeForge.Vertex.mdl",
+};
 
-static const char quakemdl_frag[] =
-#include "quakemdl.fc"
-;
+static const char *alias_frag_effects[] =
+{
+	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.colormap",
+	"QuakeForge.Fragment.mdl",
+};
 
 static struct {
 	int         program;
@@ -110,12 +114,15 @@ static mat4_t alias_vp;
 void
 glsl_R_InitAlias (void)
 {
+	shader_t   *vert_shader, *frag_shader;
 	int         vert;
 	int         frag;
 
-	vert = GLSL_CompileShaderS ("quakemdl.vert", quakemdl_vert,
+	vert_shader = GLSL_BuildShader (alias_vert_effects);
+	frag_shader = GLSL_BuildShader (alias_frag_effects);
+	vert = GLSL_CompileShader ("quakemdl.vert", vert_shader,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShaderS ("quakemdl.frag", quakemdl_frag,
+	frag = GLSL_CompileShader ("quakemdl.frag", frag_shader,
 							   GL_FRAGMENT_SHADER);
 	quake_mdl.program = GLSL_LinkProgram ("quakemdl", vert, frag);
 	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.mvp_matrix);
@@ -136,6 +143,8 @@ glsl_R_InitAlias (void)
 	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.shadelight);
 	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.lightvec);
 	GLSL_ResolveShaderParam (quake_mdl.program, &quake_mdl.fog);
+	GLSL_FreeShader (vert_shader);
+	GLSL_FreeShader (frag_shader);
 }
 
 static void
