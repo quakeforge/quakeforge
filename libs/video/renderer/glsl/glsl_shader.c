@@ -106,7 +106,7 @@ GLSL_BuildShader (const char **effect_keys)
 
 	shader = malloc (sizeof (shader_t));
 	shader->num_strings = num_keys;
-	shader->strings = calloc (2, num_keys);
+	shader->strings = calloc (2 * num_keys, sizeof (const char *));
 	shader->src = shader->strings + num_keys;
 
 	ekey = dstring_new ();
