@@ -48,16 +48,24 @@ mappedColor (float pix, float light)
 	return texture2D (colormap, vec2 (pix, light));
 }
 
--- Fragment.turb
+-- env.warp.nop
+
+vec2
+warp_st (vec2 st, float time)
+{
+	return st;
+}
+
+-- env.warp.turb
 
 const float SPEED = 20.0;
 const float CYCLE = 128.0;
 const float FACTOR = PI * 2.0 / CYCLE;
-const vec2 BIAS = vec2 (1.0, 1.0)
+const vec2 BIAS = vec2 (1.0, 1.0);
 const float SCALE = 8.0;
 
 vec2
-turb_st (vec2 st, float time)
+warp_st (vec2 st, float time)
 {
 	vec2        angle = st.ts * CYCLE / 2.0;
 	vec2        phase = vec2 (time, time) * SPEED;
@@ -106,7 +114,7 @@ sky_color (vec3 dir)
 		st = base + flow * time / 16.0;
 		pix = texture2D (solid, st).r;
 	}
-	return texture2D (palette, pix);
+	return texture2D (palette, vec2 (pix, 0));
 }
 
 -- Vertex.mdl
@@ -194,6 +202,7 @@ main (void)
 
 uniform sampler2D texture;
 uniform sampler2D lightmap;
+uniform float time;
 
 varying vec2 tst;
 varying vec2 lst;
@@ -202,13 +211,39 @@ varying vec4 color;
 void
 main (void)
 {
-	float       pix = texture2D (texture, tst).r;
+	float       pix;
+	vec2        st;
 	float       light = texture2D (lightmap, lst).r;
 	vec4        c;
 
+	st = warp_st (tst, time);
+	pix = texture2D (texture, st).r;
 	c = mappedColor (pix, light * 4.0) * color;
 	gl_FragColor = fogBlend (c);
 }
+
+-- Fragment.bsp.unlit
+
+uniform sampler2D texture;
+uniform sampler2D palette;
+uniform float time;
+
+varying vec2 tst;
+varying vec4 color;
+
+void
+main (void)
+{
+	float       pix;
+	vec2        st;
+	vec4        c;
+
+	st = warp_st (tst, time);
+	pix = texture2D (texture, st).r;
+	c = texture2D (palette, vec2(pix, 0)) * color;
+	gl_FragColor = fogBlend (c);
+}
+
 
 -- Fragment.bsp.sky
 

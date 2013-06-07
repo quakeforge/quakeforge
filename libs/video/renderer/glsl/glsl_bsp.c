@@ -115,6 +115,7 @@ static const char *bsp_vert_effects[] =
 static const char *bsp_lit_effects[] =
 {
 	"QuakeForge.Fragment.fog",
+	"QuakeForge.env.warp.nop",
 	"QuakeForge.Fragment.colormap",
 	"QuakeForge.Fragment.bsp.lit",
 	0
@@ -122,9 +123,11 @@ static const char *bsp_lit_effects[] =
 
 static const char *bsp_turb_effects[] =
 {
+	"QuakeForge.Math.const",
 	"QuakeForge.Fragment.fog",
+	"QuakeForge.env.warp.turb",
 	"QuakeForge.Fragment.colormap",
-	"QuakeForge.Fragment.bsp.lit",
+	"QuakeForge.Fragment.bsp.unlit",
 	0
 };
 
