@@ -106,29 +106,45 @@ static double   sky_time;
 static quat_t   default_color = { 1, 1, 1, 1 };
 static quat_t   last_color;
 
-static const char quakebsp_vert[] =
-#include "quakebsp.vc"
-;
+static const char *bsp_vert_effects[] =
+{
+	"QuakeForge.Vertex.bsp",
+	0
+};
 
-static const char quakebsp_frag[] =
-#include "quakebsp.fc"
-;
+static const char *bsp_lit_effects[] =
+{
+	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.colormap",
+	"QuakeForge.Fragment.bsp.lit",
+	0
+};
 
-static const char quaketurb_frag[] =
-#include "quaketrb.fc"
-;
+static const char *bsp_turb_effects[] =
+{
+	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.colormap",
+	"QuakeForge.Fragment.bsp.lit",
+	0
+};
 
-static const char quakesky_vert[] =
-#include "quakesky.vc"
-;
+static const char *bsp_sky_cube_effects[] =
+{
+	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.colormap",
+	"QuakeForge.env.sky.cube",
+	"QuakeForge.Fragment.bsp.sky",
+	0
+};
 
-static const char quakeskyid_frag[] =
-#include "quakeski.fc"
-;
-
-static const char quakeskybox_frag[] =
-#include "quakeskb.fc"
-;
+static const char *bsp_sky_id_effects[] =
+{
+	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.colormap",
+	"QuakeForge.env.sky.id",
+	"QuakeForge.Fragment.bsp.sky",
+	0
+};
 
 static struct {
 	int         program;
@@ -159,7 +175,7 @@ static struct {
 	shaderparam_t vertex;
 	shaderparam_t palette;
 	shaderparam_t texture;
-	shaderparam_t realtime;
+	shaderparam_t time;
 	shaderparam_t color;
 	shaderparam_t fog;
 } quake_turb = {
@@ -169,7 +185,7 @@ static struct {
 	{"vertex", 0},
 	{"palette", 1},
 	{"texture", 1},
-	{"realtime", 1},
+	{"time", 1},
 	{"vcolor", 0},
 	{"fog", 1},
 };
@@ -182,7 +198,7 @@ static struct {
 	shaderparam_t palette;
 	shaderparam_t solid;
 	shaderparam_t trans;
-	shaderparam_t realtime;
+	shaderparam_t time;
 	shaderparam_t fog;
 } quake_skyid = {
 	0,
@@ -192,7 +208,7 @@ static struct {
 	{"palette", 1},
 	{"solid", 1},
 	{"trans", 1},
-	{"realtime", 1},
+	{"time", 1},
 	{"fog", 1},
 };
 
@@ -917,7 +933,7 @@ turb_begin (void)
 	qfeglEnable (GL_TEXTURE_2D);
 	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-	qfeglUniform1f (quake_turb.realtime.location, vr_data.realtime);
+	qfeglUniform1f (quake_turb.time.location, vr_data.realtime);
 
 	qfeglUniform1i (quake_turb.texture.location, 0);
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
@@ -1001,7 +1017,7 @@ sky_begin (void)
 		qfeglEnable (GL_TEXTURE_2D);
 		qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-		qfeglUniform1f (quake_skyid.realtime.location, vr_data.realtime);
+		qfeglUniform1f (quake_skyid.time.location, vr_data.realtime);
 
 		qfeglUniform1i (quake_skyid.trans.location, 0);
 		qfeglActiveTexture (GL_TEXTURE0 + 0);
@@ -1241,12 +1257,15 @@ glsl_R_DrawSky (void)
 void
 glsl_R_InitBsp (void)
 {
+	shader_t   *vert_shader, *frag_shader;
 	int         vert;
 	int         frag;
 
-	vert = GLSL_CompileShaderS ("quakebsp.vert", quakebsp_vert,
+	vert_shader = GLSL_BuildShader (bsp_vert_effects);
+	frag_shader = GLSL_BuildShader (bsp_lit_effects);
+	vert = GLSL_CompileShader ("quakebsp.vert", vert_shader,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShaderS ("quakebsp.frag", quakebsp_frag,
+	frag = GLSL_CompileShader ("quakebsp.frag", frag_shader,
 							   GL_FRAGMENT_SHADER);
 	quake_bsp.program = GLSL_LinkProgram ("quakebsp", vert, frag);
 	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.mvp_matrix);
@@ -1257,8 +1276,11 @@ glsl_R_InitBsp (void)
 	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.lightmap);
 	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.color);
 	GLSL_ResolveShaderParam (quake_bsp.program, &quake_bsp.fog);
+	GLSL_FreeShader (vert_shader);
+	GLSL_FreeShader (frag_shader);
 
-	frag = GLSL_CompileShaderS ("quaketrb.frag", quaketurb_frag,
+	frag_shader = GLSL_BuildShader (bsp_turb_effects);
+	frag = GLSL_CompileShader ("quaketrb.frag", frag_shader,
 							   GL_FRAGMENT_SHADER);
 	quake_turb.program = GLSL_LinkProgram ("quaketrb", vert, frag);
 	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.mvp_matrix);
@@ -1266,13 +1288,13 @@ glsl_R_InitBsp (void)
 	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.vertex);
 	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.palette);
 	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.texture);
-	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.realtime);
+	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.time);
 	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.color);
 	GLSL_ResolveShaderParam (quake_turb.program, &quake_turb.fog);
+	GLSL_FreeShader (frag_shader);
 
-	vert = GLSL_CompileShaderS ("quakesky.vert", quakesky_vert,
-							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShaderS ("quakeski.frag", quakeskyid_frag,
+	frag_shader = GLSL_BuildShader (bsp_sky_id_effects);
+	frag = GLSL_CompileShader ("quakeski.frag", frag_shader,
 							   GL_FRAGMENT_SHADER);
 	quake_skyid.program = GLSL_LinkProgram ("quakeskyid", vert, frag);
 	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.mvp_matrix);
@@ -1281,10 +1303,12 @@ glsl_R_InitBsp (void)
 	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.palette);
 	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.solid);
 	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.trans);
-	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.realtime);
+	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.time);
 	GLSL_ResolveShaderParam (quake_skyid.program, &quake_skyid.fog);
+	GLSL_FreeShader (frag_shader);
 
-	frag = GLSL_CompileShaderS ("quakeskb.frag", quakeskybox_frag,
+	frag_shader = GLSL_BuildShader (bsp_sky_cube_effects);
+	frag = GLSL_CompileShader ("quakeskb.frag", frag_shader,
 							   GL_FRAGMENT_SHADER);
 	quake_skybox.program = GLSL_LinkProgram ("quakeskybox", vert, frag);
 	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.mvp_matrix);
@@ -1292,6 +1316,7 @@ glsl_R_InitBsp (void)
 	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.vertex);
 	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.sky);
 	GLSL_ResolveShaderParam (quake_skybox.program, &quake_skybox.fog);
+	GLSL_FreeShader (frag_shader);
 }
 
 static inline int

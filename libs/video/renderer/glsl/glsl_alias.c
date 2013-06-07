@@ -58,6 +58,7 @@
 static const char *alias_vert_effects[] =
 {
 	"QuakeForge.Vertex.mdl",
+	0
 };
 
 static const char *alias_frag_effects[] =
@@ -65,6 +66,7 @@ static const char *alias_frag_effects[] =
 	"QuakeForge.Fragment.fog",
 	"QuakeForge.Fragment.colormap",
 	"QuakeForge.Fragment.mdl",
+	0
 };
 
 static struct {

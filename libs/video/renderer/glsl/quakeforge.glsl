@@ -64,24 +64,36 @@ turb_st (vec2 st, float time)
 	return st + (sin ((angle + phase) * FACTOR) + BIAS) / SCALE;
 }
 
--- Fragment.skydome
+-- env.sky.cube
+
+uniform samplerCube sky;
+
+vec4
+sky_color (vec3 dir)
+{
+	// NOTE: quake's world and GL's world are rotated relative to each other
+	// quake has x right, y in, z up. gl has x right, y up, z out
+	// The textures are loaded with GL's z (quake's y) already negated, so
+	// all that's needed here is to swizzle y and z.
+	return textureCube(sky, dir.xzy);
+}
+
+-- env.sky.id
 
 uniform sampler2D palette;
 uniform sampler2D solid;
 uniform sampler2D trans;
-uniform float time
-varying vec3 direction
+uniform float time;
 
 const float SCALE = 189.0 / 64.0;
 
 vec4
-skydome (dir, time)
+sky_color (vec3 dir)
 {
 	float       len;
 	float       pix;
 	vec2        flow = vec2 (1.0, 1.0);
 	vec2        st, base;
-	vec3        dir = direction;
 
 	dir.z *= 3.0;
 	len = dot (dir, dir);
@@ -91,13 +103,14 @@ skydome (dir, time)
 	st = base + flow * time / 8.0;
 	pix = texture2D (trans, st).r;
 	if (pix == 0.0) {
-		st = base + flow * realtime / 16.0;
+		st = base + flow * time / 16.0;
 		pix = texture2D (solid, st).r;
 	}
 	return texture2D (palette, pix);
 }
 
 -- Vertex.mdl
+
 uniform mat4 mvp_mat;
 uniform mat3 norm_mat;
 uniform vec2 skin_size;
@@ -125,7 +138,9 @@ main (void)
 	normal = norm_mat * vnormal;
 	color = mix (vcolora, vcolorb, blend);
 }
+
 -- Fragment.mdl
+
 uniform sampler2D skin;
 uniform float ambient;
 uniform float shadelight;
@@ -149,4 +164,59 @@ main (void)
 	light += d * shadelight;
 	lit = mappedColor (pix, light / 255.0);
 	gl_FragColor = fogBlend (lit * color);
+}
+
+-- Vertex.bsp
+
+uniform mat4 mvp_mat;
+uniform mat4 sky_mat;
+
+attribute vec4 vcolor;
+attribute vec4 tlst;
+attribute vec4 vertex;
+
+varying vec2 tst;
+varying vec2 lst;
+varying vec4 color;
+varying vec3 direction;
+
+void
+main (void)
+{
+	gl_Position = mvp_mat * vertex;
+	direction = (sky_mat * vertex).xyz;
+	tst = tlst.st;
+	lst = tlst.pq;
+	color = vcolor;
+}
+
+-- Fragment.bsp.lit
+
+uniform sampler2D texture;
+uniform sampler2D lightmap;
+
+varying vec2 tst;
+varying vec2 lst;
+varying vec4 color;
+
+void
+main (void)
+{
+	float       pix = texture2D (texture, tst).r;
+	float       light = texture2D (lightmap, lst).r;
+	vec4        c;
+
+	c = mappedColor (pix, light * 4.0) * color;
+	gl_FragColor = fogBlend (c);
+}
+
+-- Fragment.bsp.sky
+
+varying vec3 direction;
+
+void
+main (void)
+{
+	vec4        c = sky_color (direction);
+	gl_FragColor = fogBlend (c);
 }
