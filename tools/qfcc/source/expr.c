@@ -1539,6 +1539,10 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 
 	type = t1;
 
+	if (is_compare (op)) {
+		if (!type_assignable (t1, t2))
+			return error (e1, "type mismatch for %s", get_op_string (op));
+	}
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
 			type = &type_integer;
