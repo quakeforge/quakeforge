@@ -577,6 +577,8 @@ expr_t *new_move_expr (expr_t *e1, expr_t *e2, struct type_s *type,
 */
 void convert_name (expr_t *e);
 
+expr_t *convert_vector (expr_t *e);
+
 expr_t *append_expr (expr_t *block, expr_t *e);
 
 expr_t *reverse_expr_list (expr_t *e);

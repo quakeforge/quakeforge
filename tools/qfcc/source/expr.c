@@ -138,6 +138,65 @@ convert:
 	e->e = new->e;
 }
 
+expr_t *
+convert_vector (expr_t *e)
+{
+	float       val[4];
+
+	if (e->type != ex_vector)
+		return e;
+	if (e->e.vector.type == &type_vector) {
+		// guaranteed to have three elements
+		expr_t     *x = e->e.vector.list;
+		expr_t     *y = x->next;
+		expr_t     *z = y->next;
+		x = fold_constants (cast_expr (&type_float, x));
+		y = fold_constants (cast_expr (&type_float, y));
+		z = fold_constants (cast_expr (&type_float, z));
+		if (is_constant (x) && is_constant (y) && is_constant (z)) {
+			val[0] = expr_float(x);
+			val[1] = expr_float(y);
+			val[2] = expr_float(z);
+			return new_vector_expr (val);
+		}
+	}
+	if (e->e.vector.type == &type_quaternion) {
+		// guaranteed to have two or four elements
+		if (e->e.vector.list->next->next) {
+			// four vals: w, x, y, z
+			expr_t     *w = e->e.vector.list;
+			expr_t     *x = w->next;
+			expr_t     *y = x->next;
+			expr_t     *z = y->next;
+			w = fold_constants (cast_expr (&type_float, w));
+			x = fold_constants (cast_expr (&type_float, x));
+			y = fold_constants (cast_expr (&type_float, y));
+			z = fold_constants (cast_expr (&type_float, z));
+			if (is_constant (w) && is_constant (x) && is_constant (y)
+				&& is_constant (z)) {
+				val[0] = expr_float(w);
+				val[1] = expr_float(x);
+				val[2] = expr_float(y);
+				val[3] = expr_float(z);
+				return new_quaternion_expr (val);
+			}
+		} else {
+			// s, v
+			expr_t     *s = e->e.vector.list;
+			expr_t     *v = s->next;
+
+			s = fold_constants (cast_expr (&type_float, s));
+			v = convert_vector (v);
+			if (is_constant (s) && is_constant (v)) {
+				val[0] = expr_float (s);
+				memcpy (val + 1, expr_vector (v), 3 * sizeof (float));
+				return new_quaternion_expr (val);
+			}
+		}
+	}
+	internal_error (e, "bogus vector expression");
+}
+
 type_t *
 get_type (expr_t *e)
 {
@@ -2636,6 +2695,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 
 	convert_name (e1);
 	convert_name (e2);
+	e2 = convert_vector (e2);
 
 	if (e1->type == ex_error)
 		return e1;
