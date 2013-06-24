@@ -2472,8 +2472,18 @@ build_for_statement (expr_t *init, expr_t *test, expr_t *next,
 }
 
 expr_t *
-build_state_expr (expr_t *frame, expr_t *think, expr_t *step)
+build_state_expr (expr_t *e)
 {
+	expr_t     *frame = 0;
+	expr_t     *think = 0;
+	expr_t     *step = 0;
+
+	e = reverse_expr_list (e);
+	frame = e;
+	think = frame->next;
+	step = think->next;
+	if (think->type == ex_symbol)
+		think = think_expr (think->e.symbol);
 	if (is_integer_val (frame))
 		convert_int (frame);
 	if (!type_assignable (&type_float, get_type (frame)))
@@ -2481,10 +2491,12 @@ build_state_expr (expr_t *frame, expr_t *think, expr_t *step)
 	if (extract_type (think) != ev_func)
 		return error (think, "invalid type for think");
 	if (step) {
+		if (step->next)
+			return error (step->next, "too many state arguments");
 		if (is_integer_val (step))
 			convert_int (step);
 		if (!type_assignable (&type_float, get_type (step)))
-			return error (step, "invalid type for frame number");
+			return error (step, "invalid type for step");
 	}
 	return new_state_expr (frame, think, step);
 }
@@ -2950,4 +2962,18 @@ sizeof_expr (expr_t *expr, struct type_s *type)
 		type = get_type (expr);
 	expr = new_integer_expr (type_size (type));
 	return expr;
+}
+
+expr_t *
+reverse_expr_list (expr_t *e)
+{
+	expr_t     *r = 0;
+
+	while (e) {
+		expr_t     *t = e->next;
+		e->next = r;
+		r = e;
+		e = t;
+	}
+	return r;
 }

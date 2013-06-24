@@ -28,6 +28,7 @@ test_progs_dat=\
 	paramret.dat \
 	return-ivar.dat \
 	sendv.dat \
+	state.dat \
 	structlive.dat \
 	structptr.dat \
 	vecinit.dat \
@@ -107,6 +108,13 @@ sendv_obj=$(sendv_dat_SOURCES:.r=.qfo)
 sendv.dat: $(sendv_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(sendv_obj)
 sendv.run: Makefile build-run
+	$(srcdir)/build-run $@
+
+state_dat_SOURCES=state.r
+state_obj=$(state_dat_SOURCES:.r=.qfo)
+state.dat: $(state_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(state_obj)
+state.run: Makefile build-run
 	$(srcdir)/build-run $@
 
 structlive_dat_SOURCES=structlive.r

@@ -180,8 +180,8 @@ int yylex (void);
 %type	<symbol>	methoddef
 %type	<expr>		opt_initializer var_initializer local_def
 
-%type	<expr>		opt_expr fexpr expr element_list element
-%type	<expr>		optional_state_expr think opt_step texpr
+%type	<expr>		opt_expr fexpr expr element_list element vector_expr
+%type	<expr>		optional_state_expr texpr
 %type	<expr>		statement statements compound_statement
 %type	<expr>		else label break_label continue_label
 %type	<expr>		unary_expr cast_expr opt_arg_list arg_list
@@ -1026,23 +1026,7 @@ var_initializer
 
 optional_state_expr
 	: /* emtpy */						{ $$ = 0; }
-	| '[' fexpr ',' think opt_step ']'	{ $$ = build_state_expr ($2, $4, $5); }
-	;
-
-think
-	: identifier
-		{
-			$$ = think_expr ($1);
-		}
-	| '(' fexpr ')'
-		{
-			$$ = $2;
-		}
-	;
-
-opt_step
-	: ',' fexpr					{ $$ = $2; }
-	| /* empty */				{ $$ = 0; }
+	| vector_expr						{ $$ = build_state_expr ($1); }
 	;
 
 element_list
@@ -1261,7 +1245,19 @@ unary_expr
 		{
 			$$ = sizeof_expr (0, $3->type);
 		}
+	| vector_expr				{ $$ = $1; }
 	| obj_expr					{ $$ = $1; }
+	;
+
+vector_expr
+	: '[' fexpr ',' arg_list ']'
+		{
+			expr_t     *t = $4;
+			while (t->next)
+				t = t->next;
+			t->next = $2;
+			$$ = $4;
+		}
 	;
 
 cast_expr

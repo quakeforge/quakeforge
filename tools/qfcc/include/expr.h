@@ -571,6 +571,7 @@ void convert_name (expr_t *e);
 
 expr_t *append_expr (expr_t *block, expr_t *e);
 
+expr_t *reverse_expr_list (expr_t *e);
 void print_expr (expr_t *e);
 void dump_dot_expr (void *e, const char *filename);
 
@@ -607,7 +608,7 @@ expr_t *build_do_while_statement (expr_t *statement, int not, expr_t *test,
 expr_t *build_for_statement (expr_t *init, expr_t *test, expr_t *next,
 							 expr_t *statement,
 							 expr_t *break_label, expr_t *continue_label);
-expr_t *build_state_expr (expr_t *frame, expr_t *think, expr_t *step);
+expr_t *build_state_expr (expr_t *e);
 expr_t *think_expr (struct symbol_s *think_sym);
 expr_t *assign_expr (expr_t *e1, expr_t *e2);
 expr_t *cast_expr (struct type_s *t, expr_t *e);
