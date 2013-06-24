@@ -885,6 +885,21 @@ init_types (void)
 	make_structure ("@quaternion", 's', quaternion_struct, &type_quaternion);
 	type_quaternion.type = ev_quat;
 	type_quaternion.meta = ty_none;
+	{
+		symbol_t   *sym;
+		sym = new_symbol_type ("w", &type_float);
+		sym->s.offset = 0;
+		symtab_addsymbol (type_quaternion.t.symtab, sym);
+		sym = new_symbol_type ("x", &type_float);
+		sym->s.offset = 1;
+		symtab_addsymbol (type_quaternion.t.symtab, sym);
+		sym = new_symbol_type ("y", &type_float);
+		sym->s.offset = 2;
+		symtab_addsymbol (type_quaternion.t.symtab, sym);
+		sym = new_symbol_type ("z", &type_float);
+		sym->s.offset = 3;
+		symtab_addsymbol (type_quaternion.t.symtab, sym);
+	}
 }
 
 void
