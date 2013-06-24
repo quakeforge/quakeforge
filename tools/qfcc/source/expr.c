@@ -648,10 +648,14 @@ new_vector_list (expr_t *e)
 			// quaternion. first expression must be compatible with a float,
 			// the other must be a vector
 			if (!type_assignable (&type_float, get_type (e))
-				|| type_assignable (&type_vector, get_type(e->next))) {
+				|| !type_assignable (&type_vector, get_type(e->next))) {
 				return error (t, "invalid types for vector elements");
 			}
 			// s, v
+			vec = new_expr ();
+			vec->type = ex_vector;
+			vec->e.vector.type = &type_quaternion;
+			vec->e.vector.list = e;
 			break;
 		default:
 			return error (e, "invalid number of elements in vector exprssion");
