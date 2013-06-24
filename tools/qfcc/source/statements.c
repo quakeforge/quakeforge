@@ -1005,6 +1005,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		expr_uexpr,
 		expr_symbol,
 		expr_temp,
+		0,					// ex_vector
 		0,					// ex_nil
 		expr_value,
 	};
@@ -1287,6 +1288,7 @@ statement_slist (sblock_t *sblock, expr_t *e)
 		statement_uexpr,
 		statement_nonexec,	// ex_symbol
 		statement_nonexec,	// ex_temp
+		statement_nonexec,	// ex_vector
 		statement_nonexec,	// ex_nil
 		statement_nonexec,	// ex_value
 	};

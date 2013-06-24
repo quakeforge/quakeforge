@@ -178,6 +178,8 @@ get_type (expr_t *e)
 				convert_int (e);
 			}
 			return ev_types[e->e.value->type];
+		case ex_vector:
+			return e->e.vector.type;
 	}
 	return 0;
 }
@@ -354,6 +356,18 @@ copy_expr (expr_t *e)
 			n->line = pr.source_line;
 			n->file = pr.source_file;
 			n->e.temp.expr = copy_expr (e->e.temp.expr);
+			return n;
+		case ex_vector:
+			n = new_expr ();
+			n->e.vector.type = e->e.vector.type;
+			n->e.vector.list = copy_expr (e->e.vector.list);
+			n = n->e.vector.list;
+			t = e->e.vector.list;
+			while (t->next) {
+				n->next = copy_expr (t->next);
+				n = n->next;
+				t = t->next;
+			}
 			return n;
 	}
 	internal_error (e, "invalid expression");
@@ -544,6 +558,46 @@ new_vector_expr (const float *vector_val)
 	e->type = ex_value;
 	e->e.value = new_vector_val (vector_val);
 	return e;
+}
+
+expr_t *
+new_vector_list (expr_t *e)
+{
+	expr_t     *t;
+	int         count;
+	type_t     *type = &type_vector;
+	expr_t     *vec;
+
+	e = reverse_expr_list (e);		// put the elements in the right order
+	for (t = e, count = 0; t; t = t->next)
+		count++;
+	switch (count) {
+		case 4:
+			type = &type_quaternion;
+		case 3:
+			// quaternion or vector. all expressions must be compatible with
+			// a float
+			for (t = e; t; t = t->next)
+				if (!type_assignable (&type_float, get_type (t)))
+					return error (t, "invalid type for vector element");
+			vec = new_expr ();
+			vec->type = ex_vector;
+			vec->e.vector.type = type;
+			vec->e.vector.list = e;
+			break;
+		case 2:
+			// quaternion. first expression must be compatible with a float,
+			// the other must be a vector
+			if (!type_assignable (&type_float, get_type (e))
+				|| type_assignable (&type_vector, get_type(e->next))) {
+				return error (t, "invalid types for vector elements");
+			}
+			// s, v
+			break;
+		default:
+			return error (e, "invalid number of elements in vector exprssion");
+	}
+	return vec;
 }
 
 expr_t *
@@ -1669,6 +1723,7 @@ unary_expr (int op, expr_t *e)
 				case ex_expr:
 				case ex_bool:
 				case ex_temp:
+				case ex_vector:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -1733,6 +1788,7 @@ unary_expr (int op, expr_t *e)
 				case ex_expr:
 				case ex_symbol:
 				case ex_temp:
+				case ex_vector:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -1793,6 +1849,7 @@ unary_expr (int op, expr_t *e)
 				case ex_bool:
 				case ex_symbol:
 				case ex_temp:
+				case ex_vector:
 bitnot_expr:
 					if (options.code.progsversion == PROG_ID_VERSION) {
 						expr_t     *n1 = new_integer_expr (-1);

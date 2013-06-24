@@ -1245,7 +1245,7 @@ unary_expr
 		{
 			$$ = sizeof_expr (0, $3->type);
 		}
-	| vector_expr				{ $$ = $1; }
+	| vector_expr				{ $$ = new_vector_list ($1); }
 	| obj_expr					{ $$ = $1; }
 	;
 

@@ -51,6 +51,7 @@ typedef enum {
 	ex_uexpr,		///< unary expression (::ex_expr_t)
 	ex_symbol,		///< non-temporary variable (::symbol_t)
 	ex_temp,		///< temporary variable (::ex_temp_t)
+	ex_vector,		///< "vector" expression (::ex_vector_t)
 
 	ex_nil,			///< umm, nil, null. nuff said (0 of any type)
 	ex_value,		///< constant value (::ex_value_t)
@@ -95,6 +96,11 @@ typedef struct {
 							///< allocated
 	struct type_s *type;	///< The type of the temporary variable.
 } ex_temp_t;
+
+typedef struct {
+	struct type_s *type;	///< Type of vector (vector/quaternion)
+	struct expr_s *list;	///< Linked list of element expressions.
+} ex_vector_t;
 
 /**	Pointer constant expression.
 
@@ -199,6 +205,7 @@ typedef struct expr_s {
 		ex_expr_t   expr;				///< binary or unary expression
 		struct symbol_s *symbol;		///< symbol reference expression
 		ex_temp_t   temp;				///< temporary variable expression
+		ex_vector_t vector;				///< vector expression list
 		ex_value_t *value;				///< constant value
 	} e;
 } expr_t;
@@ -396,6 +403,7 @@ float expr_float (expr_t *e);
 */
 expr_t *new_vector_expr (const float *vector_val);
 const float *expr_vector (expr_t *e);
+expr_t *new_vector_list (expr_t *e);
 
 /** Create a new entity constant expression node.
 
