@@ -368,6 +368,24 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 	}
 }
 
+static void
+check_enum_switch (switch_block_t *switch_block)
+{
+	case_label_t cl;
+	symbol_t   *enum_val;
+	type_t     *type = get_type (switch_block->test);
+
+	for (enum_val = type->t.symtab->symbols; enum_val;
+		 enum_val = enum_val->next) {
+		cl.value = new_integer_expr (enum_val->s.value->v.integer_val);
+		if (!Hash_FindElement (switch_block->labels, &cl)) {
+			warning (switch_block->test,
+					 "enumeration value `%s' not handled in switch",
+					 enum_val->name);
+		}
+	}
+}
+
 struct expr_s *
 switch_expr (switch_block_t *switch_block, expr_t *break_label,
 			 expr_t *statements)
@@ -393,6 +411,8 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	if (!default_label) {
 		default_label = &_default_label;
 		default_label->label = break_label;
+		if (is_enum (type))
+			check_enum_switch (switch_block);
 	}
 
 	append_expr (sw, assign_expr (sw_val, switch_block->test));
