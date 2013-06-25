@@ -20,4 +20,3 @@ o	optional arguments for functions (alternative to overloading)
 	vector(vector fwd, optional vector up) vectoangles = #51;
 ?	try to reduce memory consumption
 ??	embedded nul characters in strings (why?)
-??	"":"" string concatenation (parser issues) (why?)
