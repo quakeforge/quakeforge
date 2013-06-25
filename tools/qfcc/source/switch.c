@@ -401,7 +401,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		num_labels++;
 	if (options.code.progsversion == PROG_ID_VERSION
 		|| (type != &type_string
-			&& type != &type_float && type != &type_integer)
+			&& type != &type_float && !is_integral (type))
 		|| num_labels < 8) {
 		for (l = labels; *l; l++) {
 			expr_t     *cmp = binary_expr (EQ, sw_val, (*l)->value);
@@ -421,20 +421,10 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 			temp = new_temp_def_expr (&type_integer);
 		else
 			temp = new_temp_def_expr (type);
-		case_tree = build_case_tree (labels, num_labels, type == &type_integer);
-		switch (type->type) {
-			case ev_string:
-				op = NE;
-				break;
-			case ev_float:
-				op = '-';
-				break;
-			case ev_integer:
-				op = '-';
-				break;
-			default:
-				internal_error (0, "in switch");
-		}
+		case_tree = build_case_tree (labels, num_labels, is_integral (type));
+		op = '-';
+		if (type->type == ev_string)
+			op = NE;
 		build_switch (sw, case_tree, op, sw_val, temp, default_label->label);
 	}
 	pr.source_line = saved_line;
