@@ -2337,7 +2337,7 @@ build_if_statement (int not, expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
 }
 
 expr_t *
-build_while_statement (expr_t *test, expr_t *statement,
+build_while_statement (int not, expr_t *test, expr_t *statement,
 					   expr_t *break_label, expr_t *continue_label)
 {
 	int         line = pr.source_line;
@@ -2358,8 +2358,13 @@ build_while_statement (expr_t *test, expr_t *statement,
 
 	test = convert_bool (test, 1);
 	if (test->type != ex_error) {
-		backpatch (test->e.bool.true_list, l1);
-		backpatch (test->e.bool.false_list, l2);
+		if (not) {
+			backpatch (test->e.bool.true_list, l2);
+			backpatch (test->e.bool.false_list, l1);
+		} else {
+			backpatch (test->e.bool.true_list, l1);
+			backpatch (test->e.bool.false_list, l2);
+		}
 		append_expr (test->e.bool.e, l2);
 		append_expr (while_expr, test);
 	}
@@ -2371,7 +2376,7 @@ build_while_statement (expr_t *test, expr_t *statement,
 }
 
 expr_t *
-build_do_while_statement (expr_t *statement, expr_t *test,
+build_do_while_statement (expr_t *statement, int not, expr_t *test,
 						  expr_t *break_label, expr_t *continue_label)
 {
 	expr_t *l1 = new_label_expr ();
@@ -2390,8 +2395,13 @@ build_do_while_statement (expr_t *statement, expr_t *test,
 
 	test = convert_bool (test, 1);
 	if (test->type != ex_error) {
-		backpatch (test->e.bool.true_list, l1);
-		backpatch (test->e.bool.false_list, break_label);
+		if (not) {
+			backpatch (test->e.bool.true_list, break_label);
+			backpatch (test->e.bool.false_list, l1);
+		} else {
+			backpatch (test->e.bool.true_list, l1);
+			backpatch (test->e.bool.false_list, break_label);
+		}
 		append_expr (test->e.bool.e, break_label);
 		append_expr (do_while_expr, test);
 	}

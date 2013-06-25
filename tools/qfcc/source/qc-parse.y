@@ -1165,15 +1165,16 @@ statement
 			break_label = $2;
 			continue_label = $3;
 		}
-	| WHILE break_label continue_label '(' texpr ')' statement
+	| WHILE break_label continue_label not '(' texpr ')' statement
 		{
-			$$ = build_while_statement ($5, $7, break_label, continue_label);
+			$$ = build_while_statement ($4, $6, $8, break_label,
+										continue_label);
 			break_label = $2;
 			continue_label = $3;
 		}
-	| DO break_label continue_label statement WHILE '(' texpr ')' ';'
+	| DO break_label continue_label statement WHILE not '(' texpr ')' ';'
 		{
-			$$ = build_do_while_statement ($4, $7,
+			$$ = build_do_while_statement ($4, $6, $8,
 										   break_label, continue_label);
 			break_label = $2;
 			continue_label = $3;
