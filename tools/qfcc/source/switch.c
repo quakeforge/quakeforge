@@ -68,6 +68,8 @@ get_value (expr_t *e)
 {
 	if (e->type == ex_symbol)
 		return e->e.symbol->s.value;
+	if (e->type != ex_value)
+		internal_error (e, "bogus case label");
 	return e->e.value;
 }
 
@@ -80,7 +82,7 @@ get_hash (const void *_cl, void *unused)
 	if (!cl->value)
 		return 0;
 	val = get_value (cl->value);
-	return Hash_Buffer (val, sizeof (*val));
+	return Hash_Buffer (&val->v, sizeof (val->v)) + val->type;
 }
 
 static int
@@ -99,8 +101,10 @@ compare (const void *_cla, const void *_clb, void *unused)
 	if (extract_type (v1) != extract_type (v2))
 		return 0;
 	val1 = get_value (v1);
-	val2 = get_value (v1);
-	return memcmp (val1, val2, sizeof (*val1));
+	val2 = get_value (v2);
+	if (val1->type != val2->type)
+		return 0;
+	return memcmp (&val1->v, &val2->v, sizeof (val1->v)) == 0;
 }
 
 struct expr_s *
