@@ -893,7 +893,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					&& (OPA.uinteger_var >= pr->progs->numstatements)) {
 					PR_RunError (pr, "Invalid jump destination");
 				}
-				pr->pr_xstatement = OPA.uinteger_var;
+				pr->pr_xstatement = OPA.uinteger_var - 1;	// offset the st++
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 			case OP_JUMPB:
