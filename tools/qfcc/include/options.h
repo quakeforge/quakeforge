@@ -61,6 +61,7 @@ typedef struct {
 	qboolean	initializer;		// Warn on excessive initializer elements
 	qboolean	unimplemented;		// Warn on unimplemented class methods
 	qboolean	redeclared;			// Warn on redeclared local variables
+	qboolean	enum_switch;		// Warn on unhandled enum values in switch
 } warn_options_t;
 
 typedef struct {

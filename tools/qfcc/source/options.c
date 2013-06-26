@@ -232,6 +232,8 @@ warning_usage (void)
 "                            interface.\n"
 "    none                    Turn off all warnings.\n"
 "    [no-]precedence         Warn about potentially ambiguous logic.\n"
+"    [no-]switch             Warn about unhandled enum values in switch\n"
+"                            statements.\n"
 "    [no-]redeclared         Warn about redeclared local variables.\n"
 "    [no-]traditional        Warn about bad code that qcc allowed.\n"
 "    [no-]undef-function     Warn about calling a yet to be defined\n"
@@ -295,6 +297,7 @@ DecodeArgs (int argc, char **argv)
 	options.warnings.initializer = true;
 	options.warnings.unimplemented = true;
 	options.warnings.redeclared = true;
+	options.warnings.enum_switch = true;
 
 	options.single_cpp = true;
 	options.save_temps = false;
@@ -503,6 +506,7 @@ DecodeArgs (int argc, char **argv)
 							options.warnings.initializer = true;
 							options.warnings.unimplemented = true;
 							options.warnings.redeclared = true;
+							options.warnings.enum_switch = true;
 						} else if (!(strcasecmp (temp, "none"))) {
 							options.warnings.cow = false;
 							options.warnings.undefined_function = false;
@@ -517,6 +521,7 @@ DecodeArgs (int argc, char **argv)
 							options.warnings.initializer = false;
 							options.warnings.unimplemented = false;
 							options.warnings.redeclared = false;
+							options.warnings.enum_switch = false;
 						} else {
 							qboolean    flag = true;
 
@@ -542,6 +547,8 @@ DecodeArgs (int argc, char **argv)
 								options.warnings.precedence = flag;
 							} else if (!strcasecmp (temp, "redeclared")) {
 								options.warnings.redeclared = flag;
+							} else if (!strcasecmp (temp, "switch")) {
+								options.warnings.enum_switch = flag;
 							} else if (!strcasecmp (temp, "traditional")) {
 								options.warnings.traditional = flag;
 							} else if (!strcasecmp (temp, "undef-function")) {

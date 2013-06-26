@@ -415,7 +415,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	if (!default_label) {
 		default_label = &_default_label;
 		default_label->label = break_label;
-		if (is_enum (type))
+		if (options.warnings.enum_switch && is_enum (type))
 			check_enum_switch (switch_block);
 	}
 
