@@ -1626,6 +1626,10 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		e1 = test_expr (e1);
 		e2 = test_expr (e2);
 	}
+	if (is_compare (op)) {
+		e1 = fold_constants (e1);
+		e2 = fold_constants (e2);
+	}
 
 	if (e1->type == ex_error)
 		return e1;
