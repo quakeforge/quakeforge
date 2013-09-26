@@ -182,7 +182,7 @@ free_type (type_t *type)
 				free_type (type->t.array.type);
 			break;
 	}
-	memset (type, 0, sizeof (type));
+	memset (type, 0, sizeof (*type));
 	FREE (types, type);
 }
 
