@@ -1363,7 +1363,7 @@ convert_bool (expr_t *e, int block)
 	return e;
 }
 
-static expr_t *
+expr_t *
 convert_from_bool (expr_t *e, type_t *type)
 {
 	expr_t     *zero;
