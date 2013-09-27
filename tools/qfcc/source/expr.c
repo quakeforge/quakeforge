@@ -1075,7 +1075,7 @@ get_struct_field (type_t *t1, expr_t *e1, expr_t *e2)
 	return field;
 }
 
-static expr_t *
+expr_t *
 field_expr (expr_t *e1, expr_t *e2)
 {
 	type_t     *t1, *t2;
@@ -2756,10 +2756,10 @@ assign_expr (expr_t *e1, expr_t *e2)
 				warning (e1, "assignment between disparate function types");
 			} else if (t1->type == ev_float && t2->type == ev_vector) {
 				warning (e1, "assignment of vector to float");
-				e2 = binary_expr ('.', e2, new_name_expr ("x"));
+				e2 = field_expr (e2, new_name_expr ("x"));
 			} else if (t1->type == ev_vector && t2->type == ev_float) {
 				warning (e1, "assignment of float to vector");
-				e1 = binary_expr ('.', e1, new_name_expr ("x"));
+				e1 = field_expr (e1, new_name_expr ("x"));
 			} else {
 				return type_mismatch (e1, e2, op);
 			}
@@ -2972,13 +2972,13 @@ super_expr (class_type_t *class_type)
 
 	super_block = new_block_expr ();
 
-	e = assign_expr (binary_expr ('.', super, new_name_expr ("self")),
-								  new_name_expr ("self"));
+	e = assign_expr (field_expr (super, new_name_expr ("self")),
+								 new_name_expr ("self"));
 	append_expr (super_block, e);
 
 	e = new_symbol_expr (class_pointer_symbol (class));
-	e = assign_expr (binary_expr ('.', super, new_name_expr ("class")),
-					 binary_expr ('.', e, new_name_expr ("super_class")));
+	e = assign_expr (field_expr (super, new_name_expr ("class")),
+					 field_expr (e, new_name_expr ("super_class")));
 	append_expr (super_block, e);
 
 	e = address_expr (super, 0, 0);

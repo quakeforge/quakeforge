@@ -1576,8 +1576,8 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 		if (sym->sy_type != sy_var)
 			continue;
 		sym->sy_type = sy_expr;
-		sym->s.expr = binary_expr ('.', copy_expr (self_expr),
-								   new_symbol_expr (new_symbol (sym->name)));
+		sym->s.expr = field_expr (copy_expr (self_expr),
+								  new_symbol_expr (new_symbol (sym->name)));
 	}
 }
 

@@ -596,6 +596,7 @@ expr_t *convert_bool (expr_t *e, int block);
 expr_t *convert_from_bool (expr_t *e, struct type_s *type);
 expr_t *bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2);
 expr_t *binary_expr (int op, expr_t *e1, expr_t *e2);
+expr_t *field_expr (expr_t *e1, expr_t *e2);
 expr_t *asx_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *unary_expr (int op, expr_t *e);
 expr_t *build_function_call (expr_t *fexpr, struct type_s *ftype,

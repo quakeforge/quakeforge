@@ -1231,7 +1231,7 @@ unary_expr
 	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
 	| unary_expr '(' opt_arg_list ')' { $$ = function_expr ($1, $3); }
 	| unary_expr '[' expr ']'		{ $$ = array_expr ($1, $3); }
-	| unary_expr '.' unary_expr		{ $$ = binary_expr ('.', $1, $3); }
+	| unary_expr '.' unary_expr		{ $$ = field_expr ($1, $3); }
 	| INCOP unary_expr				{ $$ = incop_expr ($1, $2, 0); }
 	| unary_expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
 	| '+' cast_expr %prec UNARY	{ $$ = $2; }
