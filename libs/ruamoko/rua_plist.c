@@ -45,6 +45,8 @@
 
 #include "rua_internal.h"
 
+#define always_inline inline __attribute__((__always_inline__))
+
 typedef struct bi_plist_s {
 	struct bi_plist_s *next;
 	struct bi_plist_s **prev;
@@ -140,7 +142,7 @@ plist_free_handle (plist_resources_t *res, bi_plist_t *plist)
 	plist_free (res, plist);
 }
 
-static inline bi_plist_t *
+static always_inline bi_plist_t *
 get_plist (progs_t *pr, const char *name, int handle)
 {
 	plist_resources_t *res = PR_Resources_Find (pr, "plist");
