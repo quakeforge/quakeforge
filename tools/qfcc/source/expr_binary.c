@@ -726,6 +726,11 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	expr_type_t *expr_type;
 
 	convert_name (e1);
+	if (e1->type == ex_block && e1->e.block.is_call
+		&& has_function_call (e2) && e1->e.block.result) {
+		e = new_temp_def_expr (get_type (e1->e.block.result));
+		e1 = assign_expr (e, e1);
+	}
 	if (e1->type == ex_error)
 		return e1;
 

@@ -1488,7 +1488,7 @@ is_logic (int op)
 	return 0;
 }
 
-static int
+int
 has_function_call (expr_t *e)
 {
 	switch (e->type) {

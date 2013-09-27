@@ -516,6 +516,8 @@ int is_math_op (int op);
 */
 int is_logic (int op);
 
+int has_function_call (expr_t *e);
+
 int is_string_val (expr_t *e);
 int is_float_val (expr_t *e);
 int is_vector_val (expr_t *e);
