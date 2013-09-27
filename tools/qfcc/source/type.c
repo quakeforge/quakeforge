@@ -101,13 +101,8 @@ low_level_type (type_t *type)
 		return type->type;
 	if (is_enum (type))
 		return type_default->type;
-	if (is_struct (type)) {
-		//FIXME does this break anything?
-		//maybe the peephole optimizer should do this sort of thing.
-		if (type_size (type) == 1)
-			return ev_integer;
+	if (is_struct (type))
 		return ev_void;
-	}
 	if (is_array (type))
 		return ev_void;
 	internal_error (0, "invalid complex type");
