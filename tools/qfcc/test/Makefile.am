@@ -21,6 +21,7 @@ QFCC_TEST_INCS=@QFCC_TEST_INCS@
 test_progs_dat=\
 	chewed-alias.dat \
 	chewed-return.dat \
+	func-expr.dat \
 	func-static.dat \
 	deadbool.dat \
 	infloop.dat \
@@ -60,6 +61,13 @@ chewed-return.dat: $(chewed_return_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(chewed_return_obj)
 chewed-return.run: Makefile build-run
 	TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
+
+func_expr_dat_SOURCES=func-expr.r
+func_expr_obj=$(func_expr_dat_SOURCES:.r=.qfo)
+func-expr.dat: $(func_expr_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(func_expr_obj)
+func-expr.run: Makefile build-run
+	$(srcdir)/build-run $@
 
 func_static_dat_SOURCES=func-static.r
 func_static_obj=$(func_static_dat_SOURCES:.r=.qfo)
