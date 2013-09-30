@@ -2222,6 +2222,14 @@ build_if_statement (int not, expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
 	expr_t     *tl = new_label_expr ();
 	expr_t     *fl = new_label_expr ();
 
+	if (els && !s2) {
+		warning (els,
+				 "suggest braces around empty body in an ‘else’ statement");
+	}
+	if (!els && !s1) {
+		warning (test,
+				 "suggest braces around empty body in an ‘if’ statement");
+	}
 	pr.source_line = test->line;
 	pr.source_file = test->file;
 
@@ -2310,6 +2318,11 @@ build_do_while_statement (expr_t *statement, int not, expr_t *test,
 	int         line = pr.source_line;
 	string_t    file = pr.source_file;
 	expr_t     *do_while_expr;
+
+	if (!statement) {
+		warning (break_label,
+				 "suggest braces around empty body in a ‘do’ statement");
+	}
 
 	pr.source_line = test->line;
 	pr.source_file = test->file;
