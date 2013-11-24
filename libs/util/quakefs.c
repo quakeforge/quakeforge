@@ -1020,13 +1020,9 @@ VISIBLE findfile_t qfs_foundfile;
 */
 
 static void
-open_file (int_findfile_t *found, QFile **gzfile, dstring_t *foundname,
-		   int zip)
+open_file (int_findfile_t *found, QFile **gzfile, int zip)
 {
 	qfs_foundfile = found->ff;
-	if (foundname) {
-		dstring_copystr (foundname, found->ff.realname);
-	}
 	if (found->ff.in_pak) {
 		*gzfile = qfs_openread (found->pack->filename,
 								found->packfile->filepos,
@@ -1037,8 +1033,7 @@ open_file (int_findfile_t *found, QFile **gzfile, dstring_t *foundname,
 }
 
 VISIBLE int
-_QFS_FOpenFile (const char *filename, QFile **gzfile,
-				dstring_t *foundname, int zip)
+_QFS_FOpenFile (const char *filename, QFile **gzfile, int zip)
 {
 	int_findfile_t *found;
 	char       *path;
@@ -1088,7 +1083,7 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 	found = qfs_findfile (fnames, 0, 0);
 
 	if (found) {
-		open_file (found, gzfile, foundname, zip_flags[found->fname_index]);
+		open_file (found, gzfile, zip_flags[found->fname_index]);
 		free(path);
 		return qfs_filesize;
 	}
@@ -1104,7 +1099,7 @@ error:
 VISIBLE int
 QFS_FOpenFile (const char *filename, QFile **gzfile)
 {
-	return _QFS_FOpenFile (filename, gzfile, 0, 1);
+	return _QFS_FOpenFile (filename, gzfile, 1);
 }
 
 cache_user_t *loadcache;

@@ -217,7 +217,6 @@ void QFS_WriteFile (const char *filename, const void *data, int len);
 
 	\param filename	The name of the file to open.
 	\param gzfile	Address of file handle pointer.
-	\param foundname If not NULL, will be set to the real name of the file.
 	\param zip		If true and the file has been compressed with gzip, the
 					file will be opened such that it decompresses on the fly.
 					Otherwise, the file will be read as-is.
@@ -227,8 +226,7 @@ void QFS_WriteFile (const char *filename, const void *data, int len);
 					occurs while opening the file, this will be -1 and
 					\a *gzfile will be set to NULL.
 */
-int _QFS_FOpenFile (const char *filename, QFile **gzfile,
-					struct dstring_s *foundname, int zip);
+int _QFS_FOpenFile (const char *filename, QFile **gzfile, int zip);
 
 /**	Open a file for reading.
 
