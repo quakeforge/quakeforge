@@ -764,7 +764,7 @@ SV_BeginDownload_f (void *unused)
 	if (!host_client->download
 		// ZOID: special check for maps, if it came from a pak file, don't
 		// allow download
-		|| (strncmp (name, "maps/", 5) == 0 && file_from_pak)) {
+		|| (strncmp (name, "maps/", 5) == 0 && qfs_file_from_pak)) {
 		if (host_client->download) {
 			Qclose (host_client->download);
 			host_client->download = NULL;

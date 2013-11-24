@@ -97,7 +97,7 @@ extern const char *qfs_userpath;
 
 	Set by QFS_FOpenFIle() and _QFS_FOpenFile().
 */
-extern int file_from_pak;
+extern int qfs_file_from_pak;
 
 /**	The size of the file found via QFS_FOpenFIle() or _QFS_FOpenFile().
 
@@ -146,6 +146,10 @@ void QFS_Gamedir (const char *gamedir);
 
 	\note	It is a fatal error for \a end to be non-null but not in the list
 			of vpaths.
+
+	\warning	The returned pointer is to a static instance of findfile_t and
+				thus will be overwritten on the next call to any of the search
+				functions (QFS_FindFile, QFS_FOpenFIle, _QFS_FOpenFile)
 
 	\param fname	The name of the file to be searched for.
 	\param start	The first vpath (gamedir) to search.

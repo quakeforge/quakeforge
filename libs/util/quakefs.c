@@ -1010,7 +1010,7 @@ QFS_CompressPath (const char *pth)
 	return path;
 }
 
-VISIBLE int file_from_pak; // global indicating file came from pack file ZOID
+VISIBLE int qfs_file_from_pak;
 
 /*
 	QFS_FOpenFile
@@ -1023,7 +1023,7 @@ static void
 open_file (int_findfile_t *found, QFile **gzfile, dstring_t *foundname,
 		   int zip)
 {
-	file_from_pak = found->ff.in_pak;
+	qfs_file_from_pak = found->ff.in_pak;
 	if (foundname) {
 		dstring_copystr (foundname, found->ff.realname);
 	}
