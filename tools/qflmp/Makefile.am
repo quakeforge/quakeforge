@@ -4,7 +4,7 @@ QFLMP_LIBS=@QFLMP_LIBS@
 QFLMP_DEPS=@QFLMP_DEPS@
 QFLMP_INCS=@QFLMP_INCS@
 
-INCLUDES= -I$(top_srcdir)/include $(QFLMP_INCS)
+AM_CPPFLAGS= -I$(top_srcdir)/include $(QFLMP_INCS)
 
 bin_PROGRAMS=	qflmp
 

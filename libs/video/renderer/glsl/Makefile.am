@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS= foreign
 
 AM_CFLAGS= @PREFER_PIC@
-INCLUDES= -I$(top_srcdir)/include $(GLX_CFLAGS)
+AM_CPPFLAGS= -I$(top_srcdir)/include $(GLX_CFLAGS)
 
 shader_src= \
 	iqm.frag iqm.vert \

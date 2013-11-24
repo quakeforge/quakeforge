@@ -2,7 +2,7 @@ QWAQ_LIBS=@QWAQ_LIBS@
 QWAQ_DEPS=@QWAQ_DEPS@
 QWAQ_INCS=@QWAQ_INCS@
 
-INCLUDES=	-I$(top_srcdir)/include $(QWAQ_INCS)
+AM_CPPFLAGS=	-I$(top_srcdir)/include $(QWAQ_INCS)
 
 QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc

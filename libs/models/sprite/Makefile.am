@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS= foreign
 
 AM_CFLAGS= @PREFER_PIC@
-INCLUDES= -I$(top_srcdir)/include
+AM_CPPFLAGS= -I$(top_srcdir)/include
 
 noinst_LTLIBRARIES=	@sprite_libs@
 EXTRA_LTLIBRARIES=libsprite_gl.la libsprite_glsl.la libsprite_sw.la

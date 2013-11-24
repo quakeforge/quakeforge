@@ -32,7 +32,7 @@ QFCC_LIBS=@QFCC_LIBS@
 QFCC_DEPS=@QFCC_DEPS@
 QFCC_INCS=@QFCC_INCS@
 
-INCLUDES=	-I$(top_srcdir)/include $(QFCC_INCS)
+AM_CPPFLAGS=	-I$(top_srcdir)/include $(QFCC_INCS)
 YFLAGS = -v -d
 
 bin_PROGRAMS=	qfcc qfprogs

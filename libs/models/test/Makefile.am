@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS= foreign
 
-INCLUDES= -I$(srcdir) -I$(top_srcdir)/include
+AM_CPPFLAGS= -I$(srcdir) -I$(top_srcdir)/include
 
 check_PROGRAMS=testclip testcontents testportals
 EXTRA_DIST=	trace-id.c trace-qf-bad.c hulls.h main.c

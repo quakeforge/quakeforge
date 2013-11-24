@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS= foreign
 
 AM_CFLAGS= @PREFER_PIC@
-INCLUDES= -I$(top_srcdir)/include
+AM_CPPFLAGS= -I$(top_srcdir)/include
 
 noinst_LTLIBRARIES=	libbrush.la @brush_libs@
 EXTRA_LTLIBRARIES=libbrush_gl.la libbrush_glsl.la libbrush_sw.la

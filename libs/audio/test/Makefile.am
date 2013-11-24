@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS= foreign
 
-INCLUDES= -I$(top_srcdir)/include
+AM_CPPFLAGS= -I$(top_srcdir)/include
 
 noinst_PROGRAMS= @AUDIO_TARGETS@
 

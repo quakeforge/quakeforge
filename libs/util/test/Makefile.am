@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS= foreign
 
-INCLUDES= -I$(top_srcdir)/include
+AM_CPPFLAGS= -I$(top_srcdir)/include
 
 check_PROGRAMS= \
 	test-bary test-cs test-dq test-half test-mat3 test-mat4 test-plist \

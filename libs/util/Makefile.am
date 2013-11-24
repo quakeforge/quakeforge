@@ -4,7 +4,7 @@ SUBDIRS= . test
 
 AM_CFLAGS= @PREFER_PIC@
 CCASFLAGS+= @PREFER_PIC@
-INCLUDES= -I$(top_srcdir)/include $(Z_CFLAGS) $(FNM_FLAGS)
+AM_CPPFLAGS= -I$(top_srcdir)/include $(Z_CFLAGS) $(FNM_FLAGS)
 
 lib_LTLIBRARIES= libQFutil.la
 

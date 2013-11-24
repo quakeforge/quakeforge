@@ -4,7 +4,7 @@ WAD_LIBS=@WAD_LIBS@
 WAD_DEPS=@WAD_DEPS@
 WAD_INCS=@WAD_INCS@
 
-INCLUDES= -I$(top_srcdir)/include $(WAD_INCS)
+AM_CPPFLAGS= -I$(top_srcdir)/include $(WAD_INCS)
 
 
 bin_PROGRAMS=	wad

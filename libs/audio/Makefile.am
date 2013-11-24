@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS= foreign
 
 SUBDIRS= targets renderer . test
 AM_CFLAGS= @PREFER_PIC@
-INCLUDES= -I$(top_srcdir)/include
+AM_CPPFLAGS= -I$(top_srcdir)/include
 SDL_LIBS= @SDL_LIBS@
 XMMS_LIBS= @XMMS_LIBS@
 plugin_ldflags= @plugin_ldflags@ -avoid-version -module -rpath $(plugindir)
