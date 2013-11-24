@@ -1010,7 +1010,7 @@ QFS_CompressPath (const char *pth)
 	return path;
 }
 
-VISIBLE int qfs_file_from_pak;
+VISIBLE findfile_t qfs_foundfile;
 
 /*
 	QFS_FOpenFile
@@ -1023,7 +1023,7 @@ static void
 open_file (int_findfile_t *found, QFile **gzfile, dstring_t *foundname,
 		   int zip)
 {
-	qfs_file_from_pak = found->ff.in_pak;
+	qfs_foundfile = found->ff;
 	if (foundname) {
 		dstring_copystr (foundname, found->ff.realname);
 	}

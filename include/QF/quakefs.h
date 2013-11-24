@@ -88,20 +88,20 @@ extern gamedir_t *qfs_gamedir;
 typedef void gamedir_callback_t (int phase);
 
 /**	Base of the QFS user directory tree. The QFS functions, except for
-	QFS_FOpenFIle() and _QFS_FOpenFile(),  will never access a file outside of
+	QFS_FOpenFile() and _QFS_FOpenFile(),  will never access a file outside of
 	this tree. Set via the \c fs_userpath directory.
 */
 extern const char *qfs_userpath;
 
-/**	Indicates the found file came from a pak file.
+/**	Gives information about the last file opened by the FOpenFile functions.
 
-	Set by QFS_FOpenFIle() and _QFS_FOpenFile().
+	Set by QFS_FOpenFile() and _QFS_FOpenFile().
 */
-extern int qfs_file_from_pak;
+extern findfile_t qfs_foundfile;
 
-/**	The size of the file found via QFS_FOpenFIle() or _QFS_FOpenFile().
+/**	The size of the file found via QFS_FOpenFile() or _QFS_FOpenFile().
 
-	Set by QFS_FOpenFIle() and _QFS_FOpenFile().
+	Set by QFS_FOpenFile() and _QFS_FOpenFile().
 */
 extern int qfs_filesize;
 
@@ -149,7 +149,7 @@ void QFS_Gamedir (const char *gamedir);
 
 	\warning	The returned pointer is to a static instance of findfile_t and
 				thus will be overwritten on the next call to any of the search
-				functions (QFS_FindFile, QFS_FOpenFIle, _QFS_FOpenFile)
+				functions (QFS_FindFile, QFS_FOpenFile, _QFS_FOpenFile)
 
 	\param fname	The name of the file to be searched for.
 	\param start	The first vpath (gamedir) to search.
