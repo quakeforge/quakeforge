@@ -161,8 +161,8 @@ typedef struct int_findfile_s {
 	int         fname_index;
 } int_findfile_t;
 
-static searchpath_t *free_searchpaths;
-static vpath_t *free_vpaths;
+static searchpath_t *searchpaths_freelist;
+static vpath_t *vpaths_freelist;
 static vpath_t *qfs_vpaths;
 
 //QFS
@@ -848,7 +848,7 @@ qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
 
 		for (fn = fnames; *fn; fn++) {
 			if (qfs_expand_path (path, sp->filename, *fn, 1) == 0) {
-				if (Sys_FileTime (path->str) == -1) {
+				if (Sys_FileExists (path->str) == -1) {
 					dstring_delete (path);
 					return 0;
 				}
