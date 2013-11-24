@@ -137,7 +137,7 @@ void QFS_Gamedir (const char *gamedir);
 	The search will begin in the \a start vpath and end in the \a end vpath.
 	If \a start is null, the search will begin in the vpath specified by
 	qfs_vpaths (ie, the first directory in the \c Path attribute
-	(\ref dirconf). If \a end is null, the search will continue to the end
+	(\ref dirconf)). If \a end is null, the search will continue to the end
 	of the list of vpaths. If \a start and \a end are the same (and non-null),
 	then only the one vpath will be searched.
 
@@ -149,7 +149,7 @@ void QFS_Gamedir (const char *gamedir);
 
 	\param fname	The name of the file to be searched for.
 	\param start	The first vpath (gamedir) to search.
-	\param start	The last vpath (gamedir) to search.
+	\param end		The last vpath (gamedir) to search.
 	\return			Pointer to the findfile_t record indicating the location
 					of the file, or null if the file was not found.
 */
