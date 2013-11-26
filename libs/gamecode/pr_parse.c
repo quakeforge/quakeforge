@@ -305,7 +305,7 @@ ED_ConvertToPlist (script_t *script, int nohack)
 	plitem_t   *ent;
 	plitem_t   *key;
 	plitem_t   *value;
-	const char *token;
+	char       *token;
 	int         anglehack;
 
 	while (Script_GetToken (script, 1)) {
@@ -314,11 +314,18 @@ ED_ConvertToPlist (script_t *script, int nohack)
 			Sys_Error ("ED_ConvertToPlist: EOF without closing brace");
 		ent = PL_NewDictionary ();
 		while (1) {
+			int         n;
+
 			if (!Script_GetToken (script, 1))
 				Sys_Error ("ED_ConvertToPlist: EOF without closing brace");
 			token = script->token->str;
 			if (strequal (token, "}"))
 				break;
+			// hack to take care of trailing spaces in field names
+			// (looking at you, Rogue)
+			for (n = strlen (token); n && token[n - 1] == ' '; n--) {
+				token[n - 1] = 0;
+			}
 			anglehack = 0;
 			if (!nohack && strequal (token, "angle")) {
 				key = PL_NewString ("angles");
