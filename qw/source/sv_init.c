@@ -285,15 +285,15 @@ SV_CalcPHS (void)
 static unsigned int
 SV_CheckModel (const char *mdl)
 {
-	byte        stackbuf[1024];			// avoid dirtying the cache heap
 	byte       *buf;
 	unsigned short crc = 0;
 
 //	int len;
 
-	buf = (byte *) QFS_LoadStackFile (mdl, stackbuf, sizeof (stackbuf));
+	buf = (byte *) QFS_LoadFile (mdl, 0);
 	if (buf) {
 		crc = CRC_Block (buf, qfs_filesize);
+		free (buf);
 	} else {
 		SV_Printf ("WARNING: cannot generate checksum for %s\n", mdl);
 	}

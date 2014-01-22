@@ -257,14 +257,6 @@ byte *QFS_LoadFile (const char *path, int usehunk);
 
 /** Load a file into memeory.
 
-	This is a wrapper for QFS_LoadFile().
-
-	\deprecated This should go away soon.
-*/
-byte *QFS_LoadStackFile (const char *path, void *buffer, int bufsize);
-
-/** Load a file into memeory.
-
 	The file is loaded into memory allocated from the hunk.
 */
 byte *QFS_LoadHunkFile (const char *path);

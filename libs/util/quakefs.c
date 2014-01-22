@@ -1169,19 +1169,6 @@ QFS_LoadCacheFile (const char *path, struct cache_user_s *cu)
 	QFS_LoadFile (path, 3);
 }
 
-// uses temp hunk if larger than bufsize
-VISIBLE byte *
-QFS_LoadStackFile (const char *path, void *buffer, int bufsize)
-{
-	byte       *buf;
-
-	loadbuf = (byte *) buffer;
-	loadsize = bufsize;
-	buf = QFS_LoadFile (path, 4);
-
-	return buf;
-}
-
 /*
 	qfs_load_pakfile
 
