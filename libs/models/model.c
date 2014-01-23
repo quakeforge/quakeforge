@@ -178,14 +178,13 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 		return NULL;
 	}
 
-	// allocate a new model
 	if (loadname)
 		free (loadname);
 	loadname = QFS_FileBase (mod->name);
-
 	loadmodel = mod;
 
 	// fill it in
+	mod->vpath = qfs_foundfile.vpath;
 	mod->fullbright = 0;
 	mod->shadow_alpha = 255;
 	mod->min_light = 0.0;
