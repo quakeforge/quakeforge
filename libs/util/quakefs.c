@@ -1033,7 +1033,8 @@ open_file (int_findfile_t *found, QFile **gzfile, int zip)
 }
 
 VISIBLE QFile *
-_QFS_FOpenFile (const char *filename, int zip)
+_QFS_VOpenFile (const char *filename, int zip,
+				const vpath_t *start, const vpath_t *end)
 {
 	QFile      *gzfile;
 	int_findfile_t *found;
@@ -1081,7 +1082,7 @@ _QFS_FOpenFile (const char *filename, int zip)
 
 	fnames[ind] = 0;
 
-	found = qfs_findfile (fnames, 0, 0);
+	found = qfs_findfile (fnames, start, end);
 
 	if (found) {
 		open_file (found, &gzfile, zip_flags[found->fname_index]);
@@ -1097,9 +1098,21 @@ error:
 }
 
 VISIBLE QFile *
+QFS_VOpenFile (const char *filename, const vpath_t *start, const vpath_t *end)
+{
+	return _QFS_VOpenFile (filename, 1, start, end);
+}
+
+VISIBLE QFile *
+_QFS_FOpenFile (const char *filename, int zip)
+{
+	return _QFS_VOpenFile (filename, zip, 0, 0);
+}
+
+VISIBLE QFile *
 QFS_FOpenFile (const char *filename)
 {
-	return _QFS_FOpenFile (filename, 1);
+	return _QFS_VOpenFile (filename, 1, 0, 0);
 }
 
 static cache_user_t *loadcache;

@@ -202,6 +202,11 @@ QFile *QFS_WOpen (const char *path, int zip);
 */
 void QFS_WriteFile (const char *filename, const void *data, int len);
 
+QFile *_QFS_VOpenFile (const char *filename, int zip,
+					   const vpath_t *start, const vpath_t *end);
+QFile *QFS_VOpenFile (const char *filename,
+					  const vpath_t *start, const vpath_t *end);
+
 /**	Open a file for reading.
 
 	The file will be searched for through all the subdirectories given in the
