@@ -717,7 +717,7 @@ static void
 SV_BeginDownload_f (void *unused)
 {
 	const char *name;
-	int			http, size, zip;
+	int			http, zip;
 	QFile	   *file;
 
 	name = Cmd_Argv (1);
@@ -753,10 +753,10 @@ SV_BeginDownload_f (void *unused)
 	http = sv_http_url_base->string[0]
 			&& strchr (Info_ValueForKey (host_client->userinfo, "*cap"), 'h');
 
-	size = _QFS_FOpenFile (name, &file, !zip);
+	file = _QFS_FOpenFile (name, !zip);
 
 	host_client->download = file;
-	host_client->downloadsize = size;
+	host_client->downloadsize = Qfilesize (file);
 	host_client->downloadcount = 0;
 
 	if (!host_client->download

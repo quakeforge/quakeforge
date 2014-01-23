@@ -268,7 +268,7 @@ map_cfg (const char *mapname, int all)
 
 	QFS_StripExtension (mapname, name);
 	strcat (name, ".cfg");
-	QFS_FOpenFile (name, &f);
+	f = QFS_FOpenFile (name);
 	if (f) {
 		Qclose (f);
 		Cmd_Exec_File (cbuf, name, 1);
@@ -294,7 +294,7 @@ map_ent (const char *mapname)
 
 	QFS_StripExtension (mapname, name);
 	strcat (name, ".ent");
-	if ((buf = (char *) QFS_LoadFile (name, 0))) {
+	if ((buf = (char *) QFS_LoadFile (QFS_FOpenFile (name), 0))) {
 		edicts = ED_Parse (&edpr, buf);
 		free (buf);
 	} else {

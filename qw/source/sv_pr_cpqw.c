@@ -390,7 +390,7 @@ PF_validatefile (progs_t *pr)
 
 	st = P_GSTRING (pr, 0);
 
-	QFS_FOpenFile (st, &f);
+	f = QFS_FOpenFile (st);
 	if (!f) {
 		retval = 0.0;
 	} else {

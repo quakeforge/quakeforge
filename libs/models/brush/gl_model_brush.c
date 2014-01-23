@@ -148,7 +148,7 @@ gl_Mod_LoadLighting (bsp_t *bsp)
 		// LordHavoc: check for a .lit file to load
 		QFS_StripExtension (litfilename->str, litfilename->str);
 		dstring_appendstr (litfilename, ".lit");
-		data = (byte *) QFS_LoadHunkFile (litfilename->str);
+		data = (byte *) QFS_LoadHunkFile (QFS_FOpenFile (litfilename->str));
 		if (data) {
 			if (data[0] == 'Q' && data[1] == 'L' && data[2] == 'I'
 				&& data[3] == 'T') {

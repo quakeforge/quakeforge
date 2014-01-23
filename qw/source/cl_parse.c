@@ -237,7 +237,7 @@ CL_CheckOrDownloadFile (const char *filename)
 		return true;
 	}
 */
-	QFS_FOpenFile (filename, &f);
+	f = QFS_FOpenFile (filename);
 	if (f) {							// it exists, no need to download
 		Qclose (f);
 		return true;
@@ -280,7 +280,7 @@ map_ent (const char *mapname)
 
 	QFS_StripExtension (mapname, name);
 	strcat (name, ".ent");
-	if ((buf = (char *) QFS_LoadFile (name, 0))) {
+	if ((buf = (char *) QFS_LoadFile (QFS_FOpenFile (name), 0))) {
 		edicts = ED_Parse (&edpr, buf);
 		free (buf);
 	} else {

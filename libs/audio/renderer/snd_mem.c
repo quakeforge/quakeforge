@@ -302,7 +302,7 @@ SND_Load (sfx_t *sfx)
 	sfx->close = snd_noop;
 	sfx->open = snd_open_fail;
 
-	QFS_FOpenFile (sfx->name, &file);
+	file = QFS_FOpenFile (sfx->name);
 	if (!file) {
 		Sys_Printf ("Couldn't load %s\n", sfx->name);
 		return -1;

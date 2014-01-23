@@ -290,7 +290,7 @@ SV_CheckModel (const char *mdl)
 
 //	int len;
 
-	buf = (byte *) QFS_LoadFile (mdl, 0);
+	buf = (byte *) QFS_LoadFile (QFS_FOpenFile (mdl), 0);
 	if (buf) {
 		crc = CRC_Block (buf, qfs_filesize);
 		free (buf);
@@ -312,7 +312,7 @@ SV_CheckModel (const char *mdl)
 void
 SV_SpawnServer (const char *server)
 {
-	char       *buf;
+	byte       *buf;
 	edict_t    *ent;
 	int         i;
 	void       *so_buffers;
@@ -433,8 +433,8 @@ SV_SpawnServer (const char *server)
 
 	// load and spawn all other entities
 	*sv_globals.time = sv.time;
-	if ((buf = (char *) QFS_LoadFile (va ("maps/%s.ent", server), 0))) {
-		ED_LoadFromFile (&sv_pr_state, buf);
+	if ((buf = QFS_LoadFile (QFS_FOpenFile (va ("maps/%s.ent", server)), 0))) {
+		ED_LoadFromFile (&sv_pr_state, (char *) buf);
 		free (buf);
 	} else {
 		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->entities);

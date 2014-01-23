@@ -1032,9 +1032,10 @@ open_file (int_findfile_t *found, QFile **gzfile, int zip)
 	}
 }
 
-VISIBLE int
-_QFS_FOpenFile (const char *filename, QFile **gzfile, int zip)
+VISIBLE QFile *
+_QFS_FOpenFile (const char *filename, int zip)
 {
+	QFile      *gzfile;
 	int_findfile_t *found;
 	char       *path;
 	const char *fnames[4];
@@ -1083,26 +1084,25 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile, int zip)
 	found = qfs_findfile (fnames, 0, 0);
 
 	if (found) {
-		open_file (found, gzfile, zip_flags[found->fname_index]);
+		open_file (found, &gzfile, zip_flags[found->fname_index]);
 		free(path);
-		return qfs_filesize;
+		return gzfile;
 	}
 
 	Sys_MaskPrintf (SYS_FS_NF, "FindFile: can't find %s\n", filename);
 error:
-	*gzfile = NULL;
 	qfs_filesize = -1;
 	free (path);
-	return -1;
+	return 0;
 }
 
-VISIBLE int
-QFS_FOpenFile (const char *filename, QFile **gzfile)
+VISIBLE QFile *
+QFS_FOpenFile (const char *filename)
 {
-	return _QFS_FOpenFile (filename, gzfile, 1);
+	return _QFS_FOpenFile (filename, 1);
 }
 
-cache_user_t *loadcache;
+static cache_user_t *loadcache;
 
 /*
 	QFS_LoadFile
@@ -1111,20 +1111,22 @@ cache_user_t *loadcache;
 	Always appends a 0 byte to the loaded data.
 */
 VISIBLE byte *
-QFS_LoadFile (const char *path, int usehunk)
+QFS_LoadFile (QFile *file, int usehunk)
 {
-	QFile      *h;
 	byte       *buf = NULL;
 	char       *base;
 	int         len;
 
 	// look for it in the filesystem or pack files
-	len = qfs_filesize = QFS_FOpenFile (path, &h);
-	if (!h)
+	if (!file)
 		return NULL;
 
+	base = strdup ("QFS_LoadFile");
+
+	len = qfs_filesize = Qfilesize (file);
+
 	// extract the filename base name for hunk tag
-	base = QFS_FileBase (path);
+	//base = QFS_FileBase (path);
 
 	if (usehunk == 1)
 		buf = Hunk_AllocName (len + 1, base);
@@ -1138,11 +1140,12 @@ QFS_LoadFile (const char *path, int usehunk)
 		Sys_Error ("QFS_LoadFile: bad usehunk");
 
 	if (!buf)
-		Sys_Error ("QFS_LoadFile: not enough space for %s", path);
+		Sys_Error ("QFS_LoadFile: not enough space");
+		//Sys_Error ("QFS_LoadFile: not enough space for %s", path);
 
 	buf[len] = 0;
-	Qread (h, buf, len);
-	Qclose (h);
+	Qread (file, buf, len);
+	Qclose (file);
 
 	free (base);
 
@@ -1150,16 +1153,16 @@ QFS_LoadFile (const char *path, int usehunk)
 }
 
 VISIBLE byte *
-QFS_LoadHunkFile (const char *path)
+QFS_LoadHunkFile (QFile *file)
 {
-	return QFS_LoadFile (path, 1);
+	return QFS_LoadFile (file, 1);
 }
 
 VISIBLE void
-QFS_LoadCacheFile (const char *path, struct cache_user_s *cu)
+QFS_LoadCacheFile (QFile *file, struct cache_user_s *cu)
 {
 	loadcache = cu;
-	QFS_LoadFile (path, 3);
+	QFS_LoadFile (file, 3);
 }
 
 /*

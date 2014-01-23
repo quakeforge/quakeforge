@@ -283,7 +283,7 @@ glsl_Draw_CachePic (const char *path, qboolean alpha)
 	if ((cpic = Hash_Find (pic_cache, path)))
 		return cpic->pic;
 	if (strlen (path) < 4 || strcmp (path + strlen (path) - 4, ".lmp")
-		|| !(p = (qpic_t *) QFS_LoadFile (path, 0))) {
+		|| !(p = (qpic_t *) QFS_LoadFile (QFS_FOpenFile (path), 0))) {
 		//FIXME load a null texture
 		Sys_Error ("Draw_CachePic: failed to load %s", path);
 	}
@@ -407,7 +407,7 @@ glsl_Draw_Init (void)
 
 	conchars = pic_data ("conchars", 128, 128, draw_chars);
 
-	pic = (qpic_t *) QFS_LoadFile ("gfx/conback.lmp", 0);
+	pic = (qpic_t *) QFS_LoadFile (QFS_FOpenFile ("gfx/conback.lmp"), 0);
 	if (pic) {
 		SwapPic (pic);
 		conback_texture = GLSL_LoadQuakeTexture ("conback",

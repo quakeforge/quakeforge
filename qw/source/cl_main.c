@@ -1169,10 +1169,10 @@ CL_Init (void)
 {
 	byte       *basepal, *colormap;
 
-	basepal = (byte *) QFS_LoadHunkFile ("gfx/palette.lmp");
+	basepal = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/palette.lmp"));
 	if (!basepal)
 		Sys_Error ("Couldn't load gfx/palette.lmp");
-	colormap = (byte *) QFS_LoadHunkFile ("gfx/colormap.lmp");
+	colormap = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/colormap.lmp"));
 	if (!colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
 
@@ -1716,7 +1716,7 @@ check_quakerc (void)
 	int ret = 1;
 	QFile *f;
 
-	QFS_FOpenFile ("quake.rc", &f);
+	f = QFS_FOpenFile ("quake.rc");
 	if (!f)
 		return 1;
 	while ((l = Qgetline (f))) {

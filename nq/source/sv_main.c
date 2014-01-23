@@ -1101,7 +1101,7 @@ SV_SaveSpawnparms (void)
 void
 SV_SpawnServer (const char *server)
 {
-	char       *buf;
+	byte       *buf;
 	int         i;
 	edict_t    *ent;
 
@@ -1211,8 +1211,8 @@ SV_SpawnServer (const char *server)
 	*sv_globals.serverflags = svs.serverflags;
 
 	*sv_globals.time = sv.time;
-	if ((buf = (char *) QFS_LoadFile (va ("maps/%s.ent", server), 0))) {
-		ED_LoadFromFile (&sv_pr_state, buf);
+	if ((buf = QFS_LoadFile (QFS_FOpenFile (va ("maps/%s.ent", server)), 0))) {
+		ED_LoadFromFile (&sv_pr_state, (char *) buf);
 		free (buf);
 	} else {
 		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->entities);

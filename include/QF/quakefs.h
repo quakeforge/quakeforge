@@ -216,17 +216,12 @@ void QFS_WriteFile (const char *filename, const void *data, int len);
 	substitution.
 
 	\param filename	The name of the file to open.
-	\param gzfile	Address of file handle pointer.
 	\param zip		If true and the file has been compressed with gzip, the
 					file will be opened such that it decompresses on the fly.
 					Otherwise, the file will be read as-is.
-	\return			The amount of bytes that can be read from the file handle.
-					This will be either the files true size if \a zip is true,
-					or the compressed size of \a zip is false. If an error
-					occurs while opening the file, this will be -1 and
-					\a *gzfile will be set to NULL.
+	\return			The file handle or NULL if there is an error.
 */
-int _QFS_FOpenFile (const char *filename, QFile **gzfile, int zip);
+QFile *_QFS_FOpenFile (const char *filename, int zip);
 
 /**	Open a file for reading.
 
@@ -235,31 +230,28 @@ int _QFS_FOpenFile (const char *filename, QFile **gzfile, int zip);
 	_QFS_FOpenFile() for more details.
 
 	\param filename	The name of the file to open.
-	\param gzfile	Address of file handle pointer.
-	\return			The amount of bytes that can be read from the file handle.
-					If an error occurs while opening the file, this will be
-					-1 and \a *gzfile will be set to NULL.
+	\return			The file handle pointer, or NULL if there is an error.
 */
-int QFS_FOpenFile (const char *filename, QFile **gzfile);
+QFile *QFS_FOpenFile (const char *filename);
 
 /**	Load a file into memory.
 
-	This is a convenience wrapper for QFS_FOpenFile(). The file will be loaded
-	in memory allocated from the location inicated by usehunk.
+	The file will be loaded into memory allocated from the location indicated
+	by \a usehunk.
 
-	\param path		The name of the file to load.
+	\param file		The handle of the file to load.
 	\param usehunk	The location from which to allocate memory for the file's
 					data. Use 0.
 	\return			Pointer to the file's data, or NULL on error.
 	\todo remove \a usehunk
 */
-byte *QFS_LoadFile (const char *path, int usehunk);
+byte *QFS_LoadFile (QFile *file, int usehunk);
 
 /** Load a file into memeory.
 
 	The file is loaded into memory allocated from the hunk.
 */
-byte *QFS_LoadHunkFile (const char *path);
+byte *QFS_LoadHunkFile (QFile *file);
 
 /** Load a file into memeory.
 
@@ -267,7 +259,7 @@ byte *QFS_LoadHunkFile (const char *path);
 
 	\deprecated This should go away soon.
 */
-void QFS_LoadCacheFile (const char *path, struct cache_user_s *cu);
+void QFS_LoadCacheFile (QFile *file, struct cache_user_s *cu);
 
 /**	Rename a file.
 

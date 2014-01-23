@@ -490,7 +490,7 @@ Cmd_Exec_f (void)
 	}
 
 	mark = Hunk_LowMark ();
-	f = (char *) QFS_LoadHunkFile (Cmd_Argv (1));
+	f = (char *) QFS_LoadHunkFile (QFS_FOpenFile (Cmd_Argv (1)));
 	if (!f) {
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
 		return;
@@ -638,7 +638,7 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 	if (!path || !*path)
 		return;
 	if (qfs) {
-		QFS_FOpenFile (path, &file);
+		file = QFS_FOpenFile (path);
 	} else {
 		char *newpath = Sys_ExpandSquiggle (path);
 		file = Qopen (newpath, "r");

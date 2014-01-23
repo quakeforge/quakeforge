@@ -91,7 +91,7 @@ R_ReadPointFile_f (void)
 	name = va ("maps/%s.pts", mapname);
 	free (mapname);
 
-	QFS_FOpenFile (name, &f);
+	f = QFS_FOpenFile (name);
 	if (!f) {
 		Sys_Printf ("couldn't open %s\n", name);
 		return;
