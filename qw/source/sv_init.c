@@ -319,6 +319,7 @@ SV_SpawnServer (const char *server)
 	int        *so_sizes;
 	int         max_so;
 	struct recorder_s *recorders;
+	QFile      *ent_file;
 
 	Sys_MaskPrintf (SYS_DEV, "SpawnServer: %s\n", server);
 
@@ -433,7 +434,9 @@ SV_SpawnServer (const char *server)
 
 	// load and spawn all other entities
 	*sv_globals.time = sv.time;
-	if ((buf = QFS_LoadFile (QFS_FOpenFile (va ("maps/%s.ent", server)), 0))) {
+	ent_file = QFS_VOpenFile (va ("maps/%s.ent", server), 0,
+							  sv.worldmodel->vpath);
+	if ((buf = QFS_LoadFile (ent_file, 0))) {
 		ED_LoadFromFile (&sv_pr_state, (char *) buf);
 		free (buf);
 	} else {

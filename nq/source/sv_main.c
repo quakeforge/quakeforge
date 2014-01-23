@@ -1102,8 +1102,10 @@ void
 SV_SpawnServer (const char *server)
 {
 	byte       *buf;
+	QFile      *ent_file;
 	int         i;
 	edict_t    *ent;
+
 
 	S_BlockSound ();
 	// let's not have any servers with no name
@@ -1211,7 +1213,9 @@ SV_SpawnServer (const char *server)
 	*sv_globals.serverflags = svs.serverflags;
 
 	*sv_globals.time = sv.time;
-	if ((buf = QFS_LoadFile (QFS_FOpenFile (va ("maps/%s.ent", server)), 0))) {
+	ent_file = QFS_VOpenFile (va ("maps/%s.ent", server), 0,
+							  sv.worldmodel->vpath);
+	if ((buf = QFS_LoadFile (ent_file, 0))) {
 		ED_LoadFromFile (&sv_pr_state, (char *) buf);
 		free (buf);
 	} else {

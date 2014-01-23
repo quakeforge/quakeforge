@@ -291,10 +291,12 @@ map_ent (const char *mapname)
 	char       *name = malloc (strlen (mapname) + 4 + 1);
 	char       *buf;
 	plitem_t   *edicts = 0;
+	QFile      *ent_file;
 
 	QFS_StripExtension (mapname, name);
 	strcat (name, ".ent");
-	if ((buf = (char *) QFS_LoadFile (QFS_FOpenFile (name), 0))) {
+	ent_file = QFS_VOpenFile (name, 0, cl.model_precache[1]->vpath);
+	if ((buf = (char *) QFS_LoadFile (ent_file, 0))) {
 		edicts = ED_Parse (&edpr, buf);
 		free (buf);
 	} else {
