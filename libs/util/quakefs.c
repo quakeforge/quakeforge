@@ -1103,8 +1103,6 @@ QFS_FOpenFile (const char *filename, QFile **gzfile)
 }
 
 cache_user_t *loadcache;
-byte       *loadbuf;
-int         loadsize;
 
 /*
 	QFS_LoadFile
@@ -1136,12 +1134,7 @@ QFS_LoadFile (const char *path, int usehunk)
 		buf = calloc (1, len + 1);
 	else if (usehunk == 3)
 		buf = Cache_Alloc (loadcache, len + 1, base);
-	else if (usehunk == 4) {
-		if (len + 1 > loadsize)
-			buf = Hunk_TempAlloc (len + 1);
-		else
-			buf = loadbuf;
-	} else
+	else
 		Sys_Error ("QFS_LoadFile: bad usehunk");
 
 	if (!buf)
