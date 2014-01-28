@@ -8,12 +8,12 @@ shader_src= quakeforge.glsl \
 	quake2d.frag quakeico.vert \
 	quakepar.frag quakepar.vert quakepnt.frag quakepnt.vert \
 	quakespr.frag quakespr.vert \
-	quaketrb.frag quaketxt.vert
+	quaketxt.vert
 shader_gen= quakeforge.slc \
 	iqm.fc iqm.vc \
 	quake2d.fc quakeico.vc \
 	quakepar.fc quakepar.vc quakepnt.fc quakepnt.vc \
-	quakespr.fc quakespr.vc quaketrb.fc quaketxt.vc
+	quakespr.fc quakespr.vc quaketxt.vc
 
 glsl_src = \
 	glsl_alias.c glsl_bsp.c glsl_draw.c glsl_fog.c glsl_iqm.c glsl_lightmap.c \
