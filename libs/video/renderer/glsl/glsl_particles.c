@@ -90,13 +90,17 @@ static const char *particle_point_frag_effects[] =
 	0
 };
 
-static const char quakepart_vert[] =
-#include "quakepar.vc"
-;
+static const char *particle_textured_vert_effects[] =
+{
+	"QuakeForge.Vertex.particle.textured",
+	0
+};
 
-static const char quakepart_frag[] =
-#include "quakepar.fc"
-;
+static const char *particle_textured_frag_effects[] =
+{
+	"QuakeForge.Fragment.particle.textured",
+	0
+};
 
 static struct {
 	int         program;
@@ -243,9 +247,11 @@ glsl_R_InitParticles (void)
 	GLSL_FreeShader (vert_shader);
 	GLSL_FreeShader (frag_shader);
 
-	vert = GLSL_CompileShaderS ("quakepar.vert", quakepart_vert,
+	vert_shader = GLSL_BuildShader (particle_textured_vert_effects);
+	frag_shader = GLSL_BuildShader (particle_textured_frag_effects);
+	vert = GLSL_CompileShader ("quakepar.vert", vert_shader,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShaderS ("quakepar.frag", quakepart_frag,
+	frag = GLSL_CompileShader ("quakepar.frag", frag_shader,
 							   GL_FRAGMENT_SHADER);
 	quake_part.program = GLSL_LinkProgram ("quakepart", vert, frag);
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.mvp_matrix);
@@ -254,6 +260,8 @@ glsl_R_InitParticles (void)
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.color);
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.texture);
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.fog);
+	GLSL_FreeShader (vert_shader);
+	GLSL_FreeShader (frag_shader);
 
 	memset (data, 0, sizeof (data));
 	qfeglGenTextures (1, &part_tex);

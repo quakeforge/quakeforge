@@ -279,6 +279,30 @@ main (void)
 	color = vcolor;
 }
 
+-- Vertex.particle.textured
+
+uniform mat4 mvp_mat;
+attribute vec4 vcolor;
+attribute vec2 vst;
+/** Vertex position.
+
+	x, y, z, c
+
+	c is the color of the point.
+*/
+attribute vec3 vertex;
+
+varying vec4 color;
+varying vec2 st;
+
+void
+main (void)
+{
+	gl_Position = mvp_mat * vec4 (vertex, 1.0);
+	color = vcolor;
+	st = vst;
+}
+
 -- Fragment.particle.point
 
 //precision mediump float;
@@ -309,4 +333,35 @@ main (void)
 	if (color == 1.0)
 		discard;
 	gl_FragColor = fogBlend (texture2D (palette, vec2 (color, 0.0)));
+}
+
+-- Fragment.particle.textured
+
+//precision mediump float;
+uniform sampler2D texture;
+uniform vec4 fog;
+
+varying vec4 color;
+varying vec2 st;
+
+float
+sqr (float x)
+{
+	return x * x;
+}
+
+vec4
+fogBlend (vec4 color)
+{
+	float       f;
+	vec4        fog_color = vec4 (fog.rgb, 1.0);
+
+	f = exp (-sqr (fog.a * gl_FragCoord.z / gl_FragCoord.w));
+	return vec4 (mix (fog_color.rgb, color.rgb, f), color.a);
+}
+
+void
+main (void)
+{
+	gl_FragColor = fogBlend (texture2D (texture, st) * color);
 }
