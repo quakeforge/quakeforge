@@ -268,7 +268,6 @@ main (void)
 -- Vertex.particle.point
 
 uniform mat4 mvp_mat;
-attribute float vcolor;
 /** Vertex position.
 
 	x, y, z, c
@@ -276,6 +275,7 @@ attribute float vcolor;
 	c is the color of the point.
 */
 attribute vec3 vertex;
+attribute float vcolor;
 
 varying float color;
 
@@ -290,8 +290,6 @@ main (void)
 -- Vertex.particle.textured
 
 uniform mat4 mvp_mat;
-attribute vec4 vcolor;
-attribute vec2 vst;
 /** Vertex position.
 
 	x, y, z, c
@@ -299,6 +297,8 @@ attribute vec2 vst;
 	c is the color of the point.
 */
 attribute vec3 vertex;
+attribute vec2 vst;
+attribute vec4 vcolor;
 
 varying vec4 color;
 varying vec2 st;
@@ -342,10 +342,10 @@ main (void)
 -- Vertex.sprite
 
 uniform mat4 mvp_mat;
-attribute float vblend;
-attribute vec4 vcolora, vcolorb;
-attribute vec4 uvab;	///< ua va ub vb
 attribute vec3 vertexa, vertexb;
+attribute vec4 uvab;	///< ua va ub vb
+attribute float vblend;	//FIXME why is this not a uniform?
+attribute vec4 vcolora, vcolorb;
 
 varying float blend;
 varying vec4 colora, colorb;
@@ -393,7 +393,6 @@ main (void)
 -- Vertex.2d
 
 uniform mat4 mvp_mat;
-attribute vec4 vcolor;
 /** Vertex position.
 
 	x, y, s, t
@@ -402,6 +401,7 @@ attribute vec4 vcolor;
 	(\a x, \a y) and texture coordinate for the icon (\a s=z, \a t=w).
 */
 attribute vec4 vertex;
+attribute vec4 vcolor;
 
 varying vec4 color;
 varying vec2 st;
