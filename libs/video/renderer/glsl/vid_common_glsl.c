@@ -217,15 +217,6 @@ GLSL_CompileShader (const char *name, const shader_t *shader, int type)
 	return sid;
 }
 
-int
-GLSL_CompileShaderS (const char *name, const char *src, int type)
-{
-	const char *shader_src = src;
-	const char *shader_name = "wrapped";
-	shader_t    shader = {1, &shader_src, &shader_name};
-	return GLSL_CompileShader (name, &shader, type);
-}
-
 static const char *
 type_name (GLenum type)
 {
