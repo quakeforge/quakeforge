@@ -6,13 +6,13 @@ AM_CPPFLAGS= -I$(top_srcdir)/include $(GLX_CFLAGS)
 shader_src= quakeforge.glsl \
 	iqm.frag iqm.vert \
 	quake2d.frag quakeico.vert \
-	quakepar.frag quakepar.vert quakepnt.frag quakepnt.vert \
+	quakepar.frag quakepar.vert \
 	quakespr.frag quakespr.vert \
 	quaketxt.vert
 shader_gen= quakeforge.slc \
 	iqm.fc iqm.vc \
 	quake2d.fc quakeico.vc \
-	quakepar.fc quakepar.vc quakepnt.fc quakepnt.vc \
+	quakepar.fc quakepar.vc \
 	quakespr.fc quakespr.vc quaketxt.vc
 
 glsl_src = \
