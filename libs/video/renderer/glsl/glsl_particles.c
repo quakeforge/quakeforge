@@ -107,13 +107,17 @@ static const char *particle_textured_frag_effects[] =
 	0
 };
 
-static const char trail_vert[] =
-#include "trail.vc"
-;
+static const char *particle_trail_vert_effects[] =
+{
+	"QuakeForge.Vertex.particle.trail",
+	0
+};
 
-static const char trail_frag[] =
-#include "trail.fc"
-;
+static const char *particle_trail_frag_effects[] =
+{
+	"QuakeForge.Fragment.particle.trail",
+	0
+};
 
 static struct {
 	int         program;
@@ -190,9 +194,9 @@ typedef struct trailvtx_s {
 	float       texoff;
 } trailvtx_t;
 
-static trail_t *free_trails;
-static trail_t *active_trails;
-static particle_t *free_points;
+static trail_t *trails_freelist;
+static trail_t *trails_active;
+static particle_t *points_freelist;
 
 static trail_t *
 new_trail (void)
@@ -350,8 +354,10 @@ glsl_R_InitParticles (void)
 	GLSL_FreeShader (vert_shader);
 	GLSL_FreeShader (frag_shader);
 
-	vert = GLSL_CompileShader ("trail.vert", trail_vert, GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("trail.frag", trail_frag, GL_FRAGMENT_SHADER);
+	vert_shader = GLSL_BuildShader (particle_trail_vert_effects);
+	frag_shader = GLSL_BuildShader (particle_trail_frag_effects);
+	vert = GLSL_CompileShader ("trail.vert", vert_shader, GL_VERTEX_SHADER);
+	frag = GLSL_CompileShader ("trail.frag", frag_shader, GL_FRAGMENT_SHADER);
 	trail.program = GLSL_LinkProgram ("trail", vert, frag);
 	GLSL_ResolveShaderParam (trail.program, &trail.proj);
 	GLSL_ResolveShaderParam (trail.program, &trail.view);
@@ -363,6 +369,8 @@ glsl_R_InitParticles (void)
 	GLSL_ResolveShaderParam (trail.program, &trail.barycentric);
 	GLSL_ResolveShaderParam (trail.program, &trail.texoff);
 	GLSL_ResolveShaderParam (trail.program, &trail.smoke);
+	GLSL_FreeShader (vert_shader);
+	GLSL_FreeShader (frag_shader);
 
 	memset (data, 0, sizeof (data));
 	qfeglGenTextures (1, &part_tex);
@@ -730,12 +738,12 @@ R_RocketTrail_trail (entity_t *ent)
 
 	if (!ent->trail) {
 		ent->trail = new_trail ();
-		ent->trail->next = active_trails;
-		ent->trail->prev = &active_trails;
+		ent->trail->next = trails_active;
+		ent->trail->prev = &trails_active;
 		ent->trail->owner = &ent->trail;
-		if (active_trails)
-			active_trails->prev = &ent->trail->next;
-		active_trails = ent->trail;
+		if (trails_active)
+			trails_active->prev = &ent->trail->next;
+		trails_active = ent->trail;
 	}
 
 	VectorCopy (ent->old_origin, old_origin);
@@ -1723,7 +1731,7 @@ count_points (int *num_verts, int *num_elements)
 
 	*num_verts = 0;
 	*num_elements = 0;
-	for (trail = active_trails; trail; trail = trail->next) {
+	for (trail = trails_active; trail; trail = trail->next) {
 		if (trail->num_points < 2)
 			continue;
 		// +2 for an extra point at either end of the strip
@@ -1741,7 +1749,7 @@ build_verts (trailvtx_t *v, GLushort *e)
 	float       bary[] = {0, 0, 1, 0, 0, 1, 0, 0};
 	int         bind = 0;
 
-	for (trail = active_trails; trail; trail = trail->next) {
+	for (trail = trails_active; trail; trail = trail->next) {
 		if (trail->num_points < 2)
 			continue;
 		point = trail->points;
@@ -1768,7 +1776,7 @@ expire_trails (void)
 {
 	trail_t    *trail, *next_trail;
 
-	for (trail = active_trails; trail; trail = next_trail) {
+	for (trail = trails_active; trail; trail = next_trail) {
 		next_trail = trail->next;
 		while (trail->points && trail->points->die <= vr_data.realtime) {
 			particle_t *point = trail->points;
@@ -1827,7 +1835,7 @@ draw_trails (void)
 	qfeglVertexAttribPointer (trail.texoff.location, 1, GL_FLOAT,
 							 0, sizeof (trailvtx_t), &verts[0].texoff);
 
-	for (trl = active_trails; trl; trl = trl->next) {
+	for (trl = trails_active; trl; trl = trl->next) {
 		int         count;
 		if (trl->num_points < 2)
 			continue;
