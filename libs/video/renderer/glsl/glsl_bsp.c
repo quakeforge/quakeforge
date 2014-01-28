@@ -125,8 +125,8 @@ static const char *bsp_turb_effects[] =
 {
 	"QuakeForge.Math.const",
 	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.palette",
 	"QuakeForge.env.warp.turb",
-	"QuakeForge.Fragment.colormap",
 	"QuakeForge.Fragment.bsp.unlit",
 	0
 };
@@ -134,7 +134,6 @@ static const char *bsp_turb_effects[] =
 static const char *bsp_sky_cube_effects[] =
 {
 	"QuakeForge.Fragment.fog",
-	"QuakeForge.Fragment.colormap",
 	"QuakeForge.env.sky.cube",
 	"QuakeForge.Fragment.bsp.sky",
 	0
@@ -143,7 +142,7 @@ static const char *bsp_sky_cube_effects[] =
 static const char *bsp_sky_id_effects[] =
 {
 	"QuakeForge.Fragment.fog",
-	"QuakeForge.Fragment.colormap",
+	"QuakeForge.Fragment.palette",
 	"QuakeForge.env.sky.id",
 	"QuakeForge.Fragment.bsp.sky",
 	0

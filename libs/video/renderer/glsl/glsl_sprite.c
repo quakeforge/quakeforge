@@ -63,6 +63,8 @@ static const char *sprite_vert_effects[] =
 
 static const char *sprite_frag_effects[] =
 {
+	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.palette",
 	"QuakeForge.Fragment.sprite",
 	0
 };

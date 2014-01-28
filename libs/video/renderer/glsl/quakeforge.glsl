@@ -38,6 +38,16 @@ fogBlend (vec4 color)
 	return vec4 (mix (fog_color.rgb, color.rgb, fog_factor), color.a);
 }
 
+-- Fragment.palette
+
+uniform sampler2D palette;
+
+vec4
+palettedColor (float pix)
+{
+	return texture2D (palette, vec2 (pix, 0.0));
+}
+
 -- Fragment.colormap
 
 uniform sampler2D colormap;
@@ -88,7 +98,6 @@ sky_color (vec3 dir)
 
 -- env.sky.id
 
-uniform sampler2D palette;
 uniform sampler2D solid;
 uniform sampler2D trans;
 uniform float time;
@@ -114,7 +123,7 @@ sky_color (vec3 dir)
 		st = base + flow * time / 16.0;
 		pix = texture2D (solid, st).r;
 	}
-	return texture2D (palette, vec2 (pix, 0));
+	return palettedColor (pix);
 }
 
 -- Vertex.mdl
@@ -225,7 +234,6 @@ main (void)
 -- Fragment.bsp.unlit
 
 uniform sampler2D texture;
-uniform sampler2D palette;
 uniform float time;
 
 varying vec2 tst;
@@ -240,7 +248,7 @@ main (void)
 
 	st = warp_st (tst, time);
 	pix = texture2D (texture, st).r;
-	c = texture2D (palette, vec2(pix, 0)) * color;
+	c = palettedColor (pix) * color;
 	gl_FragColor = fogBlend (c);
 }
 
@@ -306,59 +314,24 @@ main (void)
 -- Fragment.particle.point
 
 //precision mediump float;
-uniform sampler2D palette;
-uniform vec4 fog;
 
 varying float color;
-
-float
-sqr (float x)
-{
-	return x * x;
-}
-
-vec4
-fogBlend (vec4 color)
-{
-	float       f;
-	vec4        fog_color = vec4 (fog.rgb, 1.0);
-
-	f = exp (-sqr (fog.a * gl_FragCoord.z / gl_FragCoord.w));
-	return vec4 (mix (fog_color.rgb, color.rgb, f), color.a);
-}
 
 void
 main (void)
 {
 	if (color == 1.0)
 		discard;
-	gl_FragColor = fogBlend (texture2D (palette, vec2 (color, 0.0)));
+	gl_FragColor = fogBlend (palettedColor (color));
 }
 
 -- Fragment.particle.textured
 
 //precision mediump float;
 uniform sampler2D texture;
-uniform vec4 fog;
 
 varying vec4 color;
 varying vec2 st;
-
-float
-sqr (float x)
-{
-	return x * x;
-}
-
-vec4
-fogBlend (vec4 color)
-{
-	float       f;
-	vec4        fog_color = vec4 (fog.rgb, 1.0);
-
-	f = exp (-sqr (fog.a * gl_FragCoord.z / gl_FragCoord.w));
-	return vec4 (mix (fog_color.rgb, color.rgb, f), color.a);
-}
 
 void
 main (void)
@@ -393,28 +366,10 @@ main (void)
 
 uniform sampler2D spritea;
 uniform sampler2D spriteb;
-uniform sampler2D palette;
-uniform vec4 fog;
 
 varying float blend;
 varying vec4 colora, colorb;
 varying vec2 sta, stb;
-
-float
-sqr (float x)
-{
-	return x * x;
-}
-
-vec4
-fogBlend (vec4 color)
-{
-	float       f;
-	vec4        fog_color = vec4 (fog.rgb, 1.0);
-
-	f = exp (-sqr (fog.a * gl_FragCoord.z / gl_FragCoord.w));
-	return vec4 (mix (fog_color.rgb, color.rgb, f), color.a);
-}
 
 void
 main (void)
@@ -427,8 +382,8 @@ main (void)
 	pixb = texture2D (spriteb, stb).r;
 	if (pixa == 1.0 && pixb == 1.0)
 		discard;
-	cola = texture2D (palette, vec2 (pixa, 0.0)) * colora;
-	colb = texture2D (palette, vec2 (pixb, 0.0)) * colorb;
+	cola = palettedColor (pixa) * colora;
+	colb = palettedColor (pixb) * colorb;
 	col = mix (cola, colb, blend);
 	if (col.a == 0.0)
 		discard;

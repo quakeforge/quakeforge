@@ -86,6 +86,8 @@ static const char *particle_point_vert_effects[] =
 
 static const char *particle_point_frag_effects[] =
 {
+	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.palette",
 	"QuakeForge.Fragment.particle.point",
 	0
 };
@@ -98,6 +100,8 @@ static const char *particle_textured_vert_effects[] =
 
 static const char *particle_textured_frag_effects[] =
 {
+	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.palette",
 	"QuakeForge.Fragment.particle.textured",
 	0
 };
