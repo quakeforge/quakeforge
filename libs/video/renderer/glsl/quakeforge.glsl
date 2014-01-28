@@ -8,7 +8,7 @@ const float E = 2.71828183;
 vec3
 qmult (vec4 q, vec3 v)
 {
-	float       qc = q.w;
+	float       qs = q.w;
 	vec3        qv = q.xyz;
 	vec3        t = cross (qv, v);
 	return (qs * qs) * v + 2.0 * qs * t + dot (qv, v) * qv + cross (qv, t);
@@ -430,4 +430,124 @@ main (void)
 	if (pix == 1.0)
 		discard;
 	gl_FragColor = palettedColor (pix) * color;
+}
+
+-- Vertex.iqm
+
+uniform mat4 mvp_mat;
+uniform mat3 norm_mat;
+uniform mat4 bonemats[80];
+attribute vec4 vcolor;
+attribute vec4 vweights;
+attribute vec4 vbones;
+attribute vec4 vtangent;
+attribute vec3 vnormal;
+attribute vec2 texcoord;
+attribute vec3 vposition;
+
+varying vec3 position;
+varying vec3 bitangent;
+varying vec3 tangent;
+varying vec3 normal;
+varying vec2 st;
+varying vec4 color;
+
+void
+main (void)
+{
+	mat4        m;
+	vec4        q0, qe;
+	vec3        sh, sc, tr, v, n, t;
+
+	m  = bonemats[int (vbones.x)] * vweights.x;
+	m += bonemats[int (vbones.y)] * vweights.y;
+	m += bonemats[int (vbones.z)] * vweights.z;
+	m += bonemats[int (vbones.w)] * vweights.w;
+#if 0
+	q0 = m[0].yzwx; //swizzle for conversion betwen QF and GL
+	qe = m[1].yzwx; //swizzle for conversion betwen QF and GL
+	sh = m[2].xyz;
+	sc = m[3].xyz;
+
+	// extract translation from dual quaternion
+	tr = dqtrans (q0, qe);
+	// apply rotation and translation
+	v = qmult (q0, vposition) + tr;
+	// apply shear
+	v.z += v.y * sh.z + v.x * sh.y;
+	v.y += v.x * sh.x;
+	// apply scale
+	v *= sc;
+	// rotate normal (won't bother with shear or scale: not super accurate,
+	// but probably good enough)
+	n = qmult (q0, vnormal);
+	// rotate tangent (won't bother with shear or scale: not super accurate,
+	// but probably good enough)
+	t = qmult (q0, vtangent.xyz);
+#else
+	mat3 nm = mat3 (m[0].xyz, m[1].xyz, m[2].xyz);
+	v = (m * vec4 (vposition, 1.0)).xyz;
+	n = nm * vnormal;
+	t = nm * vtangent.xyz;
+#endif
+	position = v;
+	normal = norm_mat * n;
+	tangent = norm_mat * t;
+	bitangent = cross (normal, tangent) * vtangent.w;
+	color = vcolor;
+	st = texcoord;
+	gl_Position = mvp_mat * vec4 (position, 1.0);
+}
+
+-- Fragment.iqm
+
+struct light {
+	vec4        position;		// xyz = pos, w = strength
+	vec4        color;			// rgb. a = ?
+};
+uniform sampler2D texture;
+uniform sampler2D normalmap;
+uniform vec3 ambient;
+uniform light lights[8];
+
+varying vec3 position;
+varying vec3 bitangent;
+varying vec3 tangent;
+varying vec3 normal;
+varying vec2 st;
+varying vec4 color;
+
+vec3
+calc_light (vec3 n, int ind)
+{
+	vec3        d;
+	light       l = lights[ind];
+	float       mag;
+
+	d = l.position.xyz - position;
+	mag = dot (d, n);
+	mag = max (0.0, mag);
+	return l.color.rgb * (l.position.w * mag / dot (d, d));
+}
+
+void
+main (void)
+{
+	mat3        tbn = mat3 (tangent, bitangent, normal);
+	vec3        norm, l;
+	vec4        col;
+
+	norm = (texture2D (normalmap, st).xyz - vec3(0.5)) * 2.0;
+	norm = tbn * norm;
+	l = ambient;
+	l += calc_light (norm, 0);
+	l += calc_light (norm, 1);
+	l += calc_light (norm, 2);
+	l += calc_light (norm, 3);
+	l += calc_light (norm, 4);
+	l += calc_light (norm, 5);
+	l += calc_light (norm, 6);
+	l += calc_light (norm, 7);
+	col = texture2D (texture, st) * color * vec4 (l, 1.0);
+	gl_FragColor = fogBlend (col);
 }

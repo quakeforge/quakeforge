@@ -3,10 +3,8 @@ AUTOMAKE_OPTIONS= foreign
 AM_CFLAGS= @PREFER_PIC@
 AM_CPPFLAGS= -I$(top_srcdir)/include $(GLX_CFLAGS)
 
-shader_src= quakeforge.glsl \
-	iqm.frag iqm.vert
-shader_gen= quakeforge.slc \
-	iqm.fc iqm.vc
+shader_src= quakeforge.glsl
+shader_gen= quakeforge.slc
 
 glsl_src = \
 	glsl_alias.c glsl_bsp.c glsl_draw.c glsl_fog.c glsl_iqm.c glsl_lightmap.c \
