@@ -124,10 +124,10 @@ uniform mat3 norm_mat;
 uniform vec2 skin_size;
 uniform float blend;
 
-attribute vec4 vcolora, vcolorb;
-attribute vec2 vsta, vstb;
-attribute vec3 vnormala, vnormalb;
 attribute vec3 vertexa, vertexb;
+attribute vec3 vnormala, vnormalb;
+attribute vec2 vsta, vstb;
+attribute vec4 vcolora, vcolorb;
 
 varying vec3 normal;
 varying vec2 st;
@@ -179,9 +179,9 @@ main (void)
 uniform mat4 mvp_mat;
 uniform mat4 sky_mat;
 
-attribute vec4 vcolor;
-attribute vec4 tlst;
 attribute vec4 vertex;
+attribute vec4 tlst;
+attribute vec4 vcolor;
 
 varying vec2 tst;
 varying vec2 lst;
