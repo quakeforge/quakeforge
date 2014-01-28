@@ -4,11 +4,9 @@ AM_CFLAGS= @PREFER_PIC@
 AM_CPPFLAGS= -I$(top_srcdir)/include $(GLX_CFLAGS)
 
 shader_src= quakeforge.glsl \
-	iqm.frag iqm.vert \
-	quake2d.frag quakeico.vert
+	iqm.frag iqm.vert
 shader_gen= quakeforge.slc \
-	iqm.fc iqm.vc \
-	quake2d.fc quakeico.vc
+	iqm.fc iqm.vc
 
 glsl_src = \
 	glsl_alias.c glsl_bsp.c glsl_draw.c glsl_fog.c glsl_iqm.c glsl_lightmap.c \

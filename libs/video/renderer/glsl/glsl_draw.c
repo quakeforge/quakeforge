@@ -72,13 +72,18 @@ typedef struct {
 	float       color[4];
 } drawvert_t;
 
-static const char quakeicon_vert[] =
-#include "quakeico.vc"
-;
+static const char *twod_vert_effects[] =
+{
+	"QuakeForge.Vertex.2d",
+	0
+};
 
-static const char quake2d_frag[] =
-#include "quake2d.fc"
-;
+static const char *twod_frag_effects[] =
+{
+	"QuakeForge.Fragment.palette",
+	"QuakeForge.Fragment.2d",
+	0
+};
 
 static float proj_matrix[16];
 
@@ -364,6 +369,7 @@ Draw_ClearCache (int phase)
 void
 glsl_Draw_Init (void)
 {
+	shader_t   *vert_shader, *frag_shader;
 	int         i;
 	int         frag, vert;
 	qpic_t     *pic;
@@ -377,9 +383,11 @@ glsl_Draw_Init (void)
 
 	draw_queue = dstring_new ();
 
-	vert = GLSL_CompileShaderS ("quakeico.vert", quakeicon_vert,
+	vert_shader = GLSL_BuildShader (twod_vert_effects);
+	frag_shader = GLSL_BuildShader (twod_frag_effects);
+	vert = GLSL_CompileShader ("quakeico.vert", vert_shader,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShaderS ("quake2d.frag", quake2d_frag,
+	frag = GLSL_CompileShader ("quake2d.frag", frag_shader,
 							   GL_FRAGMENT_SHADER);
 	quake_2d.program = GLSL_LinkProgram ("quake2d", vert, frag);
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.texture);
@@ -387,6 +395,8 @@ glsl_Draw_Init (void)
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.matrix);
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.vertex);
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.color);
+	GLSL_FreeShader (vert_shader);
+	GLSL_FreeShader (frag_shader);
 
 	draw_scrap = GLSL_CreateScrap (2048, GL_LUMINANCE, 0);
 
