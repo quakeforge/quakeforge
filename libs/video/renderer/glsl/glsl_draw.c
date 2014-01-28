@@ -76,10 +76,6 @@ static const char quakeicon_vert[] =
 #include "quakeico.vc"
 ;
 
-static const char quaketext_vert[] =
-#include "quaketxt.vc"
-;
-
 static const char quake2d_frag[] =
 #include "quake2d.fc"
 ;
