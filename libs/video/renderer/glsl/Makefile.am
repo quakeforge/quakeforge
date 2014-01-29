@@ -3,8 +3,8 @@ AUTOMAKE_OPTIONS= foreign
 AM_CFLAGS= @PREFER_PIC@
 AM_CPPFLAGS= -I$(top_srcdir)/include $(GLX_CFLAGS)
 
-shader_src= quakeforge.glsl
-shader_gen= quakeforge.slc
+shader_src= sgustavson.glsl quakeforge.glsl
+shader_gen= sgustavson.slc quakeforge.slc
 
 glsl_src = \
 	glsl_alias.c glsl_bsp.c glsl_draw.c glsl_fog.c glsl_iqm.c glsl_lightmap.c \
@@ -16,7 +16,7 @@ BUILT_SOURCES= $(shader_gen)
 
 SUFFICES=.frag .vert .fc .vc .slc .glsl
 .glsl.slc:
-	sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
+	sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
 .frag.fc:
 	sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
 .vert.vc:
