@@ -849,8 +849,7 @@ qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
 		for (fn = fnames; *fn; fn++) {
 			if (qfs_expand_path (path, sp->filename, *fn, 1) == 0) {
 				if (Sys_FileExists (path->str) == -1) {
-					dstring_delete (path);
-					return 0;
+					continue;
 				}
 
 				Sys_MaskPrintf (SYS_FS_F, "FindFile: %s\n", path->str);
