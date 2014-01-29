@@ -187,7 +187,7 @@ void main(void) {
 	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 }
 
--- Fragement.flame
+-- Fragment.flame
 
 varying vec3 vTexCoord3D;
 void main( void )
@@ -394,7 +394,7 @@ void main(void) {
 	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 }
 
--- Fragement.spots
+-- Fragment.spots
 
 varying vec3 vTexCoord3D;
 
@@ -595,7 +595,7 @@ void main(void) {
 	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 }
 
--- Fragement.tile
+-- Fragment.tile
 
 #version 120
 
