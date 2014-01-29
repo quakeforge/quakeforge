@@ -590,7 +590,7 @@ uniform vec2 viewport;
 uniform float width;
 
 varying vec2 texcoord;
-varying vec3 vBC;
+varying vec3 vbarycentric;
 
 vec4
 transform (vec3 coord)
@@ -635,7 +635,7 @@ main (void)
 	float       off = current.w;
 
 	texcoord = vec2 (texoff * 0.7, off * 0.5 + 0.5);
-	vBC = barycentric;
+	vbarycentric = barycentric;
 
 	t = sLast - sCurrent;
 	n1 = vec2 (0.0);
@@ -666,20 +666,22 @@ main (void)
 uniform sampler2D smoke;
 
 varying vec2 texcoord;
-varying vec3 vBC;
 
-#if 0
 void
 main (void)
 {
 	gl_FragColor = texture2D (smoke, texcoord) * vec4 (1.0, 1.0, 1.0, 0.7);
 }
-#else
+
+-- Fragment.barycentric
+
+varying vec3 vbarycentric;
+
 float
 edgeFactor (void)
 {
-	vec3        d = fwidth (vBC);
-	vec3        a3 = smoothstep (vec3 (0.0), d * 1.5, vBC);
+	vec3        d = fwidth (vbarycentric);
+	vec3        a3 = smoothstep (vec3 (0.0), d * 1.5, vbarycentric);
 	return min (min (a3.x, a3.y), a3.z);
 }
 
@@ -688,4 +690,3 @@ main (void)
 {
 	gl_FragColor = vec4 (vec3 (edgeFactor ()), 0.5);
 }
-#endif

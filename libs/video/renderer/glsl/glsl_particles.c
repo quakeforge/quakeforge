@@ -115,7 +115,7 @@ static const char *particle_trail_vert_effects[] =
 
 static const char *particle_trail_frag_effects[] =
 {
-	"QuakeForge.Fragment.particle.trail",
+	"QuakeForge.Fragment.barycentric",
 	0
 };
 
@@ -1815,7 +1815,8 @@ draw_trails (void)
 	qfeglEnableVertexAttribArray (trail.last.location);
 	qfeglEnableVertexAttribArray (trail.current.location);
 	qfeglEnableVertexAttribArray (trail.next.location);
-	qfeglEnableVertexAttribArray (trail.barycentric.location);
+	if (trail.barycentric.location >= 0)
+		qfeglEnableVertexAttribArray (trail.barycentric.location);
 	qfeglEnableVertexAttribArray (trail.texoff.location);
 
 	qfeglUniformMatrix4fv (trail.proj.location, 1, false, glsl_projection);
@@ -1830,8 +1831,9 @@ draw_trails (void)
 							 0, sizeof (trailvtx_t), &verts[2].vertex);
 	qfeglVertexAttribPointer (trail.next.location, 4, GL_FLOAT,
 							 0, sizeof (trailvtx_t), &verts[4].vertex);
-	qfeglVertexAttribPointer (trail.barycentric.location, 3, GL_FLOAT,
-							 0, sizeof (trailvtx_t), &verts[2].bary);
+	if (trail.barycentric.location >= 0)
+		qfeglVertexAttribPointer (trail.barycentric.location, 3, GL_FLOAT,
+								 0, sizeof (trailvtx_t), &verts[2].bary);
 	qfeglVertexAttribPointer (trail.texoff.location, 1, GL_FLOAT,
 							 0, sizeof (trailvtx_t), &verts[0].texoff);
 
@@ -1848,7 +1850,8 @@ draw_trails (void)
 	qfeglDisableVertexAttribArray (trail.last.location);
 	qfeglDisableVertexAttribArray (trail.current.location);
 	qfeglDisableVertexAttribArray (trail.next.location);
-	qfeglDisableVertexAttribArray (trail.barycentric.location);
+	if (trail.barycentric.location >= 0)
+		qfeglDisableVertexAttribArray (trail.barycentric.location);
 	qfeglDisableVertexAttribArray (trail.texoff.location);
 
 	expire_trails ();
