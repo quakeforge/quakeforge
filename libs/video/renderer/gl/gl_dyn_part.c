@@ -70,7 +70,7 @@ static varray_t2f_c4ub_v3f_t   *particleVertexArray;
 static mtstate_t mt;	// private PRNG state
 
 inline static void
-particle_new (ptype_t type, int texnum, const vec3_t org, float scale,
+particle_new (const char *type, int texnum, const vec3_t org, float scale,
 			  const vec3_t vel, float die, int color, float alpha, float ramp)
 {
 	particle_t *part;
@@ -91,10 +91,9 @@ particle_new (ptype_t type, int texnum, const vec3_t org, float scale,
 	part->scale = scale;
 	part->alpha = alpha;
 	VectorCopy (vel, part->vel);
-	part->type = type;
 	part->die = die;
 	part->ramp = ramp;
-	part->phys = R_ParticlePhysics (type);
+	part->physics = R_ParticlePhysics (type);
 }
 
 /*
@@ -104,7 +103,8 @@ particle_new (ptype_t type, int texnum, const vec3_t org, float scale,
 	going to bother using this function.
 */
 inline static void
-particle_new_random (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
+particle_new_random (const char *type, int texnum,
+					 const vec3_t org, int org_fuzz,
 					 float scale, int vel_fuzz, float die, int color,
 					 float alpha, float ramp)
 {
@@ -152,6 +152,8 @@ void
 gl_R_InitParticles (void)
 {
 	int		i;
+
+	R_LoadParticles ();
 
 	mtwist_seed (&mt, 0xdeadbeef);
 
@@ -234,7 +236,7 @@ gl_R_ReadPointFile_f (void)
 			Sys_MaskPrintf (SYS_DEV, "Not enough free particles\n");
 			break;
 		} else {
-			particle_new (pt_static, part_tex_dot, org, 1.5, vec3_origin,
+			particle_new ("pt_static", part_tex_dot, org, 1.5, vec3_origin,
 						  99999, (-c) & 15, 1.0, 0.0);
 		}
 	}
@@ -248,7 +250,7 @@ R_ParticleExplosion_QF (const vec3_t org)
 //	R_NewExplosion (org);
 	if (numparticles >= r_maxparticles)
 		return;
-	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4, 30, 8,
+	particle_new_random ("pt_smokecloud", part_tex_smoke, org, 4, 30, 8,
 						 vr_data.realtime + 5.0, (mtwist_rand (&mt) & 7) + 8,
 						 0.5 + qfrandom (0.25), 0.0);
 }
@@ -264,7 +266,7 @@ R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 		j = r_maxparticles - numparticles;
 
 	for (i = 0; i < j; i++) {
-		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256,
+		particle_new_random ("pt_blob", part_tex_dot, org, 16, 2, 256,
 							 vr_data.realtime + 0.3,
 							 								 colorStart + (i % colorLength), 1.0, 0.0);
 	}
@@ -282,12 +284,12 @@ R_BlobExplosion_QF (const vec3_t org)
 		j = r_maxparticles - numparticles;
 
 	for (i = 0; i < j >> 1; i++) {
-		particle_new_random (pt_blob, part_tex_dot, org, 12, 2, 256,
+		particle_new_random ("pt_blob", part_tex_dot, org, 12, 2, 256,
 							 vr_data.realtime + 1.0 + (mtwist_rand (&mt) & 7) * 0.05,
 							 66 + i % 6, 1.0, 0.0);
 	}
 	for (i = 0; i < j / 2; i++) {
-		particle_new_random (pt_blob2, part_tex_dot, org, 12, 2, 256,
+		particle_new_random ("pt_blob2", part_tex_dot, org, 12, 2, 256,
 							 vr_data.realtime + 1.0 + (mtwist_rand (&mt) & 7) * 0.05,
 							 150 + i % 6, 1.0, 0.0);
 	}
@@ -298,7 +300,7 @@ R_RunSparkEffect_QF (const vec3_t org, int count, int ofuzz)
 {
 	if (numparticles >= r_maxparticles)
 		return;
-	particle_new (pt_smokecloud, part_tex_smoke, org, ofuzz * 0.08,
+	particle_new ("pt_smokecloud", part_tex_smoke, org, ofuzz * 0.08,
 				  vec3_origin, vr_data.realtime + 9, 12 + (mtwist_rand (&mt) & 3),
 				  0.25 + qfrandom (0.125), 0.0);
 
@@ -312,7 +314,7 @@ R_RunSparkEffect_QF (const vec3_t org, int count, int ofuzz)
 		while (count--) {
 			int		color = mtwist_rand (&mt) & 7;
 
-			particle_new_random (pt_fallfadespark, part_tex_dot, org, orgfuzz,
+			particle_new_random ("pt_fallfadespark", part_tex_dot, org, orgfuzz,
 								 0.7, 96, vr_data.realtime + 5.0, ramp1[color],
 								 1.0, color);
 		}
@@ -325,7 +327,7 @@ R_BloodPuff_QF (const vec3_t org, int count)
 	if (numparticles >= r_maxparticles)
 		return;
 
-	particle_new (pt_bloodcloud, part_tex_smoke, org, count / 5, vec3_origin,
+	particle_new ("pt_bloodcloud", part_tex_smoke, org, count / 5, vec3_origin,
 				  vr_data.realtime + 99.0, 70 + (mtwist_rand (&mt) & 3), 0.5, 0.0);
 }
 
@@ -353,14 +355,14 @@ R_LightningBloodEffect_QF (const vec3_t org)
 
 	if (numparticles >= r_maxparticles)
 		return;
-	particle_new (pt_smokecloud, part_tex_smoke, org, 3.0, vec3_origin,
+	particle_new ("pt_smokecloud", part_tex_smoke, org, 3.0, vec3_origin,
 				  vr_data.realtime + 9.0, 12 + (mtwist_rand (&mt) & 3),
 				  0.25 + qfrandom (0.125), 0.0);
 
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 	while (count--)
-		particle_new_random (pt_fallfade, part_tex_spark, org, 12, 2.0, 128,
+		particle_new_random ("pt_fallfade", part_tex_spark, org, 12, 2.0, 128,
 							 vr_data.realtime + 5.0, 244 + (count % 3), 1.0,
 							 0.0);
 }
@@ -388,7 +390,7 @@ R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
 		porg[1] = org[1] + scale * (((rnd >> 7) & 15) - 7.5);
 		porg[2] = org[2] + scale * (((rnd >> 11) & 15) - 7.5);
 		// Note that ParseParticleEffect handles (dir * 15)
-		particle_new (pt_grav, part_tex_dot, porg, 1.5, dir,
+		particle_new ("pt_grav", part_tex_dot, porg, 1.5, dir,
 					  vr_data.realtime + 0.1 * (i % 5),
 					  (color & ~7) + (rnd & 7), 1.0, 0.0);
 	}
@@ -413,13 +415,13 @@ R_KnightSpikeEffect_QF (const vec3_t org)
 
 	if (numparticles >= r_maxparticles)
 		return;
-	particle_new (pt_smokecloud, part_tex_smoke, org, 1.0, vec3_origin,
+	particle_new ("pt_smokecloud", part_tex_smoke, org, 1.0, vec3_origin,
 				  vr_data.realtime + 9.0, 234, 0.25 + qfrandom (0.125), 0.0);
 
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 	while (count--)
-		particle_new_random (pt_fallfade, part_tex_dot, org, 6, 0.7, 96,
+		particle_new_random ("pt_fallfade", part_tex_dot, org, 6, 0.7, 96,
 							 vr_data.realtime + 5.0, 234, 1.0, 0.0);
 }
 
@@ -430,13 +432,13 @@ R_WizSpikeEffect_QF (const vec3_t org)
 
 	if (numparticles >= r_maxparticles)
 		return;
-	particle_new (pt_smokecloud, part_tex_smoke, org, 2.0, vec3_origin,
+	particle_new ("pt_smokecloud", part_tex_smoke, org, 2.0, vec3_origin,
 				  vr_data.realtime + 9.0, 63, 0.25 + qfrandom (0.125), 0.0);
 
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 	while (count--)
-		particle_new_random (pt_fallfade, part_tex_dot, org, 12, 0.7, 96,
+		particle_new_random ("pt_fallfade", part_tex_dot, org, 12, 0.7, 96,
 							 vr_data.realtime + 5.0, 63, 1.0, 0.0);
 }
 
@@ -469,7 +471,7 @@ R_LavaSplash_QF (const vec3_t org)
 			rnd = mtwist_rand (&mt);
 			vel = 50.0 + 0.5 * (float) (rnd & 127);
 			VectorScale (dir, vel, pvel);
-			particle_new (pt_grav, part_tex_dot, porg, 3, pvel,
+			particle_new ("pt_grav", part_tex_dot, porg, 3, pvel,
 						  vr_data.realtime + 2.0 + ((rnd >> 7) & 31) * 0.02,
 						  224 + ((rnd >> 12) & 7), 0.75, 0.0);
 		}
@@ -507,7 +509,7 @@ R_TeleportSplash_QF (const vec3_t org)
 
 				vel = 50 + ((rnd >> 6) & 63);
 				VectorScale (pdir, vel, pvel);
-				particle_new (pt_grav, part_tex_spark, porg, 0.6, pvel,
+				particle_new ("pt_grav", part_tex_spark, porg, 0.6, pvel,
 							  (vr_data.realtime + 0.2 + (mtwist_rand (&mt) & 15) * 0.01),
 							  (7 + ((rnd >> 12) & 7)), 1.0, 0.0);
 			}
@@ -536,7 +538,7 @@ R_RocketTrail_QF (entity_t *ent)
 		dist = (pscale + pscalenext) * 3.0;
 		percent = len * origlen;
 
-		particle_new (pt_smoke, part_tex_smoke, old_origin,
+		particle_new ("pt_smoke", part_tex_smoke, old_origin,
 					  pscale + percent * 4.0, vec3_origin,
 					  vr_data.realtime + 2.0 - percent * 2.0,
 					  12 + (mtwist_rand (&mt) & 3),
@@ -570,7 +572,7 @@ R_GrenadeTrail_QF (entity_t *ent)
 		dist = (pscale + pscalenext) * 2.0;
 		percent = len * origlen;
 
-		particle_new (pt_smoke, part_tex_smoke, old_origin,
+		particle_new ("pt_smoke", part_tex_smoke, old_origin,
 					  pscale + percent * 4.0, vec3_origin,
 					  vr_data.realtime + 2.0 - percent * 2.0,
 					  1 + (mtwist_rand (&mt) & 3),
@@ -612,7 +614,7 @@ R_BloodTrail_QF (entity_t *ent)
 		percent = len * origlen;
 		pvel[2] -= percent * 40.0;
 
-		particle_new (pt_grav, part_tex_smoke, porg, pscale, pvel,
+		particle_new ("pt_grav", part_tex_smoke, porg, pscale, pvel,
 					  vr_data.realtime + 2.0 - percent * 2.0,
 					  68 + (mtwist_rand (&mt) & 3), 1.0, 0.0);
 		if (numparticles >= r_maxparticles)
@@ -652,7 +654,7 @@ R_SlightBloodTrail_QF (entity_t *ent)
 		percent = len * origlen;
 		pvel[2] -= percent * 40;
 
-		particle_new (pt_grav, part_tex_smoke, porg, pscale, pvel,
+		particle_new ("pt_grav", part_tex_smoke, porg, pscale, pvel,
 					  vr_data.realtime + 1.5 - percent * 1.5,
 					  68 + (mtwist_rand (&mt) & 3), 0.75, 0.0);
 		if (numparticles >= r_maxparticles)
@@ -693,7 +695,7 @@ R_WizTrail_QF (entity_t *ent)
 		}
 		pvel[2] = 0.0;
 
-		particle_new (pt_flame, part_tex_smoke, old_origin,
+		particle_new ("pt_flame", part_tex_smoke, old_origin,
 					  2.0 + qfrandom (1.0) - percent * 2.0, pvel,
 					  vr_data.realtime + 0.5 - percent * 0.5,
 					  52 + (mtwist_rand (&mt) & 4), 1.0 - percent * 0.125, 0.0);
@@ -734,7 +736,7 @@ R_FlameTrail_QF (entity_t *ent)
 		}
 		pvel[2] = 0.0;
 
-		particle_new (pt_flame, part_tex_smoke, old_origin,
+		particle_new ("pt_flame", part_tex_smoke, old_origin,
 					  2.0 + qfrandom (1.0) - percent * 2.0, pvel,
 					  vr_data.realtime + 0.5 - percent * 0.5, 234,
 					  1.0 - percent * 0.125, 0.0);
@@ -768,7 +770,7 @@ R_VoorTrail_QF (entity_t *ent)
 		for (j = 0; j < 3; j++)
 			porg[j] = old_origin[j] + qfrandom (16.0) - 8.0;
 
-		particle_new (pt_static, part_tex_dot, porg, 1.0 + qfrandom (1.0),
+		particle_new ("pt_static", part_tex_dot, porg, 1.0 + qfrandom (1.0),
 					  vec3_origin, vr_data.realtime + 0.3 - percent * 0.3,
 					  9 * 16 + 8 + (mtwist_rand (&mt) & 3), 1.0, 0.0);
 		if (numparticles >= r_maxparticles)
@@ -803,7 +805,7 @@ R_GlowTrail_QF (entity_t *ent, int glow_color)
 		org[1] = old_origin[1] + ((rnd >> 9) & 7) * (5.0/7.0) - 2.5;
 		org[2] = old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
 
-		particle_new (pt_smoke, part_tex_dot, org, 1.0, vec3_origin,
+		particle_new ("pt_smoke", part_tex_dot, org, 1.0, vec3_origin,
 					  vr_data.realtime + 2.0 - percent * 0.2,
 					  glow_color, 1.0, 0.0);
 		if (numparticles >= r_maxparticles)
@@ -821,7 +823,7 @@ R_ParticleExplosion_EE (const vec3_t org)
 */
 	if (numparticles >= r_maxparticles)
 		return;
-	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4, 30, 8,
+	particle_new_random ("pt_smokecloud", part_tex_smoke, org, 4, 30, 8,
 						 vr_data.realtime + 5.0, mtwist_rand (&mt) & 255,
 						 0.5 + qfrandom (0.25), 0.0);
 }
@@ -855,7 +857,7 @@ R_TeleportSplash_EE (const vec3_t org)
 				VectorNormalize (dir);
 				vel = 50 + ((rnd >> 6) & 63);
 				VectorScale (dir, vel, pvel);
-				particle_new (pt_grav, part_tex_spark, porg, 0.6, pvel,
+				particle_new ("pt_grav", part_tex_spark, porg, 0.6, pvel,
 							  (vr_data.realtime + 0.2 + (mtwist_rand (&mt) & 15) * 0.01),
 							  qfrandom (1.0), 1.0, 0.0);
 			}
@@ -884,7 +886,7 @@ R_RocketTrail_EE (entity_t *ent)
 		dist = (pscale + pscalenext) * 3.0;
 		percent = len * origlen;
 
-		particle_new (pt_smoke, part_tex_smoke, old_origin,
+		particle_new ("pt_smoke", part_tex_smoke, old_origin,
 					  pscale + percent * 4.0, vec3_origin,
 					  vr_data.realtime + 2.0 - percent * 2.0,
 					  mtwist_rand (&mt) & 255,
@@ -919,7 +921,7 @@ R_GrenadeTrail_EE (entity_t *ent)
 		dist = (pscale + pscalenext) * 2.0;
 		percent = len * origlen;
 
-		particle_new (pt_smoke, part_tex_smoke, old_origin,
+		particle_new ("pt_smoke", part_tex_smoke, old_origin,
 					  pscale + percent * 4.0, vec3_origin,
 					  vr_data.realtime + 2.0 - percent * 2.0,
 					  mtwist_rand (&mt) & 255,
@@ -945,11 +947,11 @@ R_ParticleExplosion_ID (const vec3_t org)
 		j = r_maxparticles - numparticles;
 
 	for (i = 0; i < j >> 1; i++) {
-		particle_new_random (pt_explode, part_tex_dot, org, 16, 1.0, 256,
+		particle_new_random ("pt_explode", part_tex_dot, org, 16, 1.0, 256,
 							 vr_data.realtime + 5.0, ramp1[0], 1.0, i & 3);
 	}
 	for (i = 0; i < j / 2; i++) {
-		particle_new_random (pt_explode2, part_tex_dot, org, 16, 1.0, 256,
+		particle_new_random ("pt_explode2", part_tex_dot, org, 16, 1.0, 256,
                              vr_data.realtime + 5.0, ramp1[0], 1.0, i & 3);
 	}
 }
@@ -966,12 +968,12 @@ R_BlobExplosion_ID (const vec3_t org)
 		j = r_maxparticles - numparticles;
 
 	for (i = 0; i < j >> 1; i++) {
-		particle_new_random (pt_blob, part_tex_dot, org, 12, 1.0, 256,
+		particle_new_random ("pt_blob", part_tex_dot, org, 12, 1.0, 256,
 							 vr_data.realtime + 1.0 + (mtwist_rand (&mt) & 8) * 0.05,
 							 66 + i % 6, 1.0, 0.0);
 	}
 	for (i = 0; i < j / 2; i++) {
-		particle_new_random (pt_blob2, part_tex_dot, org, 12, 1.0, 256,
+		particle_new_random ("pt_blob2", part_tex_dot, org, 12, 1.0, 256,
 							 vr_data.realtime + 1.0 + (mtwist_rand (&mt) & 8) * 0.05,
 							 150 + i % 6, 1.0, 0.0);
 	}
@@ -1006,7 +1008,7 @@ R_RunParticleEffect_ID (const vec3_t org, const vec3_t dir, int color,
 		porg[2] = org[2] + scale * (((rnd >> 11) & 15) - 8);
 
 		// Note that ParseParticleEffect handles (dir * 15)
-		particle_new (pt_grav, part_tex_dot, porg, 1.0, dir,
+		particle_new ("pt_grav", part_tex_dot, porg, 1.0, dir,
 					  vr_data.realtime + 0.1 * (i % 5),
 					  (color & ~7) + (rnd & 7), 1.0, 0.0);
 	}
@@ -1083,7 +1085,7 @@ R_LavaSplash_ID (const vec3_t org)
 			rnd = mtwist_rand (&mt);
 			vel = 50 + (rnd & 63);
 			VectorScale (dir, vel, pvel);
-			particle_new (pt_grav, part_tex_dot, porg, 1.0, pvel,
+			particle_new ("pt_grav", part_tex_dot, porg, 1.0, pvel,
 						  vr_data.realtime + 2 + ((rnd >> 7) & 31) * 0.02,
 						  224 + ((rnd >> 12) & 7), 1.0, 0.0);
 		}
@@ -1121,7 +1123,7 @@ R_TeleportSplash_ID (const vec3_t org)
 
 				vel = 50 + ((rnd >> 6) & 63);
 				VectorScale (pdir, vel, pvel);
-				particle_new (pt_grav, part_tex_dot, porg, 1.0, pvel,
+				particle_new ("pt_grav", part_tex_dot, porg, 1.0, pvel,
 							  (vr_data.realtime + 0.2 + (mtwist_rand (&mt) & 7) * 0.02),
 							  (7 + ((rnd >> 12) & 7)), 1.0, 0.0);
 			}
@@ -1160,7 +1162,7 @@ R_DarkFieldParticles_ID (entity_t *ent)
 				VectorNormalize (dir);
 				vel = 50 + ((rnd >> 9) & 63);
 				VectorScale (dir, vel, pvel);
-				particle_new (pt_slowgrav, part_tex_dot, porg, 1.5, pvel,
+				particle_new ("pt_slowgrav", part_tex_dot, porg, 1.5, pvel,
 							  (vr_data.realtime + 0.2 + (rnd & 7) * 0.02),
 							  (150 + mtwist_rand (&mt) % 6), 1.0, 0.0);
             }
@@ -1215,7 +1217,7 @@ R_EntityParticles_ID (entity_t *ent)
 			forward[1] * beamlength;
 		porg[2] = ent->origin[2] + r_avertexnormals[i][2] * dist +
 			forward[2] * beamlength;
-		particle_new (pt_explode, part_tex_dot, porg, 1.0, vec3_origin,
+		particle_new ("pt_explode", part_tex_dot, porg, 1.0, vec3_origin,
 					  vr_data.realtime + 0.01, 0x6f, 1.0, 0);
 	}
 }
@@ -1243,7 +1245,7 @@ R_RocketTrail_ID (entity_t *ent)
 		org[2] = old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
 		ramp = rnd & 3;
 
-		particle_new (pt_fire, part_tex_dot, org, 1.0, vec3_origin,
+		particle_new ("pt_fire", part_tex_dot, org, 1.0, vec3_origin,
 					  vr_data.realtime + 2.0, ramp3[ramp], 1.0, ramp);
 		if (numparticles >= r_maxparticles)
 			break;
@@ -1275,7 +1277,7 @@ R_GrenadeTrail_ID (entity_t *ent)
 		org[2] = old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
 		ramp = (rnd & 3) + 2;
 
-		particle_new (pt_fire, part_tex_dot, org, 1.0, vec3_origin,
+		particle_new ("pt_fire", part_tex_dot, org, 1.0, vec3_origin,
 					  vr_data.realtime + 2.0, ramp3[ramp], 1.0, ramp);
 		if (numparticles >= r_maxparticles)
 			break;
@@ -1306,7 +1308,7 @@ R_BloodTrail_ID (entity_t *ent)
 		porg[1] = old_origin[1] + ((rnd >> 9) & 7) * (5.0/7.0) - 2.5;
 		porg[2] = old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
 
-		particle_new (pt_grav, part_tex_dot, porg, 1.0, vec3_origin,
+		particle_new ("pt_grav", part_tex_dot, porg, 1.0, vec3_origin,
 					  vr_data.realtime + 2.0, 67 + (rnd & 3), 1.0, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
@@ -1337,7 +1339,7 @@ R_SlightBloodTrail_ID (entity_t *ent)
 		porg[1] = old_origin[1] + ((rnd >> 9) & 7) * (5.0/7.0) - 2.5;
 		porg[2] = old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
 
-		particle_new (pt_grav, part_tex_dot, porg, 1.0, vec3_origin,
+		particle_new ("pt_grav", part_tex_dot, porg, 1.0, vec3_origin,
 					  vr_data.realtime + 1.5, 67 + (rnd & 3), 1.0, 0.0);
 		if (numparticles >= r_maxparticles)
 			break;
@@ -1373,7 +1375,7 @@ R_WizTrail_ID (entity_t *ent)
 		}
 		pvel[2] = 0.0;
 
-		particle_new (pt_static, part_tex_dot, old_origin, 1.0, pvel,
+		particle_new ("pt_static", part_tex_dot, old_origin, 1.0, pvel,
 					  vr_data.realtime + 0.5, 52 + ((tracercount & 4) << 1),
 					  1.0, 0.0);
 		if (numparticles >= r_maxparticles)
@@ -1410,7 +1412,7 @@ R_FlameTrail_ID (entity_t *ent)
 		}
 		pvel[2] = 0.0;
 
-		particle_new (pt_static, part_tex_dot, old_origin, 1.0, pvel,
+		particle_new ("pt_static", part_tex_dot, old_origin, 1.0, pvel,
 					  vr_data.realtime + 0.5, 230 + ((tracercount & 4) << 1),
 					  1.0, 0.0);
 		if (numparticles >= r_maxparticles)
@@ -1442,7 +1444,7 @@ R_VoorTrail_ID (entity_t *ent)
 		porg[1] = old_origin[1] + ((rnd >> 7) & 15) - 7.5;
 		porg[2] = old_origin[2] + ((rnd >> 11) & 15) - 7.5;
 
-		particle_new (pt_static, part_tex_dot, porg, 1.0, vec3_origin,
+		particle_new ("pt_static", part_tex_dot, porg, 1.0, vec3_origin,
 					  vr_data.realtime + 0.3, 9 * 16 + 8 + (rnd & 3),
 					  1.0, 0.0);
 		if (numparticles >= r_maxparticles)
@@ -1550,7 +1552,7 @@ gl_R_DrawParticles (void)
 			}
 		}
 
-		part->phys (part);
+		R_RunParticlePhysics (part);
 
 		// LordHavoc: immediate removal of unnecessary particles (must be done
 		// to ensure compactor below operates properly in all cases)
@@ -1777,7 +1779,7 @@ gl_R_Particles_Init_Cvars (void)
 }
 
 void
-gl_R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
+gl_R_Particle_New (const char *type, int texnum, const vec3_t org, float scale,
 				   const vec3_t vel, float die, int color, float alpha,
 				   float ramp)
 {
@@ -1787,7 +1789,7 @@ gl_R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
 }
 
 void
-gl_R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org,
+gl_R_Particle_NewRandom (const char *type, int texnum, const vec3_t org,
 						 int org_fuzz, float scale, int vel_fuzz, float die,
 						 int color, float alpha, float ramp)
 {

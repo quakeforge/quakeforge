@@ -114,6 +114,8 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_R_RenderView,
 	R_DecayLights,
 	gl_R_ViewChanged,
+	R_CompileParticlePhysics,
+	R_AddParticlePhysicsFunction,
 	gl_R_ClearParticles,
 	gl_R_InitParticles,
 	gl_SCR_ScreenShot_f,

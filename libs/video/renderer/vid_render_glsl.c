@@ -114,6 +114,8 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_R_RenderView,
 	R_DecayLights,
 	glsl_R_ViewChanged,
+	R_CompileParticlePhysics,
+	R_AddParticlePhysicsFunction,
 	glsl_R_ClearParticles,
 	glsl_R_InitParticles,
 	glsl_SCR_ScreenShot_f,

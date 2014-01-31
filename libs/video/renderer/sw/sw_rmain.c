@@ -128,6 +128,7 @@ sw_R_Init (void)
 #ifdef USE_INTEL_ASM
 	R_InitVars ();
 #endif
+	R_InitParticles ();
 
 	R_InitTurb ();
 

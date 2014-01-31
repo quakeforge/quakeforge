@@ -107,6 +107,8 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	R_RenderView,
 	R_DecayLights,
 	R_ViewChanged,
+	R_CompileParticlePhysics,
+	R_AddParticlePhysicsFunction,
 	R_ClearParticles,
 	R_InitParticles,
 	SCR_ScreenShot_f,

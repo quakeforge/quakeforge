@@ -36,6 +36,7 @@
 struct plitem_s;
 struct cvar_s;
 struct skin_s;
+struct particle_s;
 
 /*
 	All video plugins must export these functions
@@ -70,13 +71,13 @@ typedef struct vid_particle_funcs_s {
 	void (*R_DarkFieldParticles) (struct entity_s *ent);
 	void (*R_EntityParticles) (struct entity_s *ent);
 
-	void (*R_Particle_New) (ptype_t type, int texnum, const vec3_t org,
+	void (*R_Particle_New) (const char *type, int texnum, const vec3_t org,
 							float scale, const vec3_t vel, float die,
 							int color, float alpha, float ramp);
-	void (*R_Particle_NewRandom) (ptype_t type, int texnum, const vec3_t org,
-								  int org_fuzz, float scale, int vel_fuzz,
-								  float die, int color, float alpha,
-								  float ramp);
+	void (*R_Particle_NewRandom) (const char *type, int texnum,
+								  const vec3_t org, int org_fuzz, float scale,
+								  int vel_fuzz, float die, int color,
+								  float alpha, float ramp);
 } vid_particle_funcs_t;
 
 typedef struct vid_model_funcs_s {
@@ -160,6 +161,10 @@ typedef struct vid_render_funcs_s {
 	void (*R_DecayLights) (double frametime);
 
 	void (*R_ViewChanged) (float aspect);
+	qboolean (*R_CompileParticlePhysics) (const char *name, const char *code);
+	qboolean (*R_AddParticlePhysicsFunction)
+		(const char *name, qboolean  (*func) (struct particle_s *, void *),
+		 void *data);
 	void (*R_ClearParticles) (void);
 	void (*R_InitParticles) (void);
 	void (*SCR_ScreenShot_f) (void);

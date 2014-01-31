@@ -10,9 +10,17 @@ plugin_ldflags= @plugin_ldflags@ -avoid-version -module -rpath $(plugindir)
 plugin_libadd= @plugin_libadd@
 EXEEXT=
 
+particles_src= particles.part
+particles_gen= particles.pc
+
+SUFFICES=.part .pc
+.part.pc:
+	sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
+
 #lib_LTLIBRARIES= @VID_REND_TARGETS@
 plugin_LTLIBRARIES= @vid_render_plugins@
 noinst_LTLIBRARIES= libQFrenderer.la @vid_render_static_plugins@
+BUILT_SOURCES= $(particles_gen)
 
 EXTRA_LTLIBRARIES=	\
 					vid_render_sw.la vid_render_sw32.la \
@@ -63,3 +71,6 @@ vid_render_sw32_la_LDFLAGS=		$(plugin_ldflags)
 vid_render_sw32_la_LIBADD=		$(sw32_libs)
 vid_render_sw32_la_DEPENDENCIES=$(sw32_libs)
 vid_render_sw32_la_SOURCES=		$(common_sources) vid_render_sw32.c
+
+EXTRA_DIST = $(particles_src)
+CLEANFILES= *.pc

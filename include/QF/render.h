@@ -33,25 +33,6 @@
 #include "QF/qdefs.h" // FIXME
 #include "QF/vid.h"
 
-typedef enum {
-	pt_static,
-	pt_grav,
-	pt_slowgrav,
-	pt_fire,
-	pt_explode,
-	pt_explode2,
-	pt_blob,
-	pt_blob2,
-	pt_smoke,
-	pt_smokecloud,
-	pt_bloodcloud,
-	pt_fadespark,
-	pt_fadespark2,
-	pt_fallfade,
-	pt_fallfadespark,
-	pt_flame
-} ptype_t;
-
 extern struct vid_render_funcs_s *r_funcs;
 extern struct vid_render_data_s *r_data;
 

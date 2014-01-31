@@ -150,6 +150,7 @@ sw32_R_Init (void)
 
 	sw32_Draw_Init ();
 	SCR_Init ();
+	R_InitParticles ();
 	sw32_R_InitTurb ();
 
 	Cmd_AddCommand ("timerefresh", sw32_R_TimeRefresh_f, "Tests the current "

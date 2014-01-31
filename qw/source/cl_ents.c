@@ -613,12 +613,12 @@ CL_EmitEntities (void)
 				dl->color[3] = 0.7;
 			}
 			VectorCopy (nearloc->loc, trueloc);
-			r_funcs->particles->R_Particle_New (pt_smokecloud, part_tex_smoke,
+			r_funcs->particles->R_Particle_New ("pt_smokecloud", part_tex_smoke,
 					trueloc, 2.0,
 					vec3_origin, r_data->realtime + 9.0, 254,
 					0.25 + qfrandom (0.125), 0.0);
 			for (i = 0; i < 15; i++)
-				r_funcs->particles->R_Particle_NewRandom (pt_fallfade,
+				r_funcs->particles->R_Particle_NewRandom ("pt_fallfade",
 						part_tex_dot, trueloc, 12,
 						0.7, 96, r_data->realtime + 5.0,
 						104 + (rand () & 7), 1.0, 0.0);

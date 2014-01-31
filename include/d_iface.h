@@ -63,9 +63,16 @@ typedef enum {
 } ptextype_t;
 
 typedef struct particle_s particle_t;
-typedef void (*pt_phys_func)(particle_t *);
 
-pt_phys_func R_ParticlePhysics (ptype_t type);
+void R_LoadParticles (void);
+qboolean R_CompileParticlePhysics (const char *name, const char *code);
+void R_RunParticlePhysics (particle_t *part);
+const union pt_phys_op_s *R_ParticlePhysics (const char *type);
+qboolean R_AddParticlePhysicsFunction (const char *name,
+									   qboolean  (*func) (struct particle_s *,
+														  void *),
+									   void *data);
+extern const char particle_types[];
 
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 struct particle_s
@@ -78,10 +85,9 @@ struct particle_s
 	float		scale;
 // drivers never touch the following fields
 	vec3_t		vel;
-	ptype_t		type;
 	float		die;
 	float		ramp;
-	pt_phys_func phys;
+	const union pt_phys_op_s *physics;
 	particle_t *next;
 };
 
