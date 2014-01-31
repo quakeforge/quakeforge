@@ -79,8 +79,6 @@ vec4 taylorInvSqrt(vec4 r)
 //     License : Copyright (C) 2011 Ashima Arts. All rights reserved.
 //               Distributed under the MIT License. See LICENSE file.
 
-#version 120
-
 float snoise(vec3 v)
 {
 	const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
@@ -155,8 +153,6 @@ float snoise(vec3 v)
 
 -- Vertex.simplex
 
-#version 120
-
 uniform float time;
 varying vec3 vTexCoord3D;
 
@@ -176,8 +172,6 @@ void main( void )
 }
 
 -- Vertex.flame
-
-#version 120
 
 uniform float time;
 varying vec3 vTexCoord3D;
@@ -291,8 +285,6 @@ float srdnoise(in vec2 P, in float rot, out vec2 grad) {
 
 -- Vertex.flow
 
-#version 120
-
 varying vec2 vTexCoord2D;
 
 void main(void) {
@@ -315,8 +307,6 @@ void main(void) {
 }
 
 -- Noise.spots
-
-#version 120
 
 // Cellular noise ("Worley noise") in 3D in GLSL.
 // Copyright (c) Stefan Gustavson 2011-04-19. All rights reserved.
@@ -382,8 +372,6 @@ vec2 cellular2x2x2(vec3 P)
 }
 
 -- Vertex.spots
-
-#version 120
 
 uniform float time;
 
@@ -581,8 +569,6 @@ vec2 cellular(vec3 P)
 
 -- Vertex.tile
 
-#version 120
-
 uniform float time;
 
 varying vec3 vTexCoord3D;
@@ -596,8 +582,6 @@ void main(void) {
 }
 
 -- Fragment.tile
-
-#version 120
 
 varying vec3 vTexCoord3D;
 
