@@ -151,10 +151,9 @@ Segtext_new (const char *source_string)
 	(*chunk)->text = src;
 	(*chunk)->start_line = line;
 
-	chunk = &(*chunk)->next;
-
 	while ((src = next_chunk (src, &line))) {
 		*src++ = 0;							// terminate the previous chunk
+		chunk = &(*chunk)->next;
 		*chunk = new_chunk ();
 		(*chunk)->tag = find_tag (src);
 		src = next_line (src, &line);
