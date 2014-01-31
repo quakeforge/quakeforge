@@ -584,6 +584,8 @@ main (void)
 attribute vec4 last, current, next;
 attribute vec3 barycentric;
 attribute float texoff;
+attribute vec4 vcolora;
+attribute vec4 vcolorb;
 
 uniform mat4 proj, view;
 uniform vec2 viewport;
@@ -591,6 +593,8 @@ uniform float width;
 
 varying vec2 texcoord;
 varying vec3 vbarycentric;
+varying vec4 colora;
+varying vec4 colorb;
 
 vec4
 transform (vec3 coord)
@@ -634,7 +638,9 @@ main (void)
 	vec2        sCurrent = project (dCurrent);
 	float       off = current.w;
 
-	texcoord = vec2 (texoff * 0.7, off * 0.5 + 0.5);
+	colora = vcolora;
+	colorb = vcolorb;
+	texcoord = vec2 (texoff * 0.7, off);// * 0.5 + 0.5);
 	vbarycentric = barycentric;
 
 	t = sLast - sCurrent;
@@ -663,14 +669,23 @@ main (void)
 
 -- Fragment.particle.trail
 
-uniform sampler2D smoke;
-
 varying vec2 texcoord;
+varying vec4 colora;
+varying vec4 colorb;
 
 void
 main (void)
 {
-	gl_FragColor = texture2D (smoke, texcoord) * vec4 (1.0, 1.0, 1.0, 0.7);
+	//gl_FragColor = texture2D (smoke, texcoord) * vec4 (1.0, 1.0, 1.0, 0.7);
+	vec3 tex3 = vec3 (texcoord, 0.5);
+	float n = abs(snoise(tex3));
+	float a = sqrt(1.0 - texcoord.y * texcoord.y);
+	n += 0.5 * abs(snoise(tex3 * 2.0));
+	n += 0.25 * abs(snoise(tex3 * 4.0));
+	n += 0.125 * abs(snoise(tex3 * 8.0));
+	vec4 c = colora + colorb * n;
+	c.a *= a;
+	gl_FragColor = c;
 }
 
 -- Fragment.barycentric

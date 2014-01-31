@@ -115,7 +115,10 @@ static const char *particle_trail_vert_effects[] =
 
 static const char *particle_trail_frag_effects[] =
 {
-	"QuakeForge.Fragment.barycentric",
+	"QuakeForge.Math.InvSqrt",
+	"QuakeForge.Math.permute",
+	"QuakeForge.Noise.simplex",
+	"QuakeForge.Fragment.particle.trail",
 	0
 };
 
@@ -164,7 +167,8 @@ static struct {
 	shaderparam_t next;
 	shaderparam_t barycentric;
 	shaderparam_t texoff;
-	shaderparam_t smoke;
+	shaderparam_t colora;
+	shaderparam_t colorb;
 } trail = {
 	0,
 	{"proj", 1},
@@ -176,7 +180,8 @@ static struct {
 	{"next", 0},
 	{"barycentric", 0},
 	{"texoff", 0},
-	{"smoke", 1},
+	{"vcolora", 0},
+	{"vcolorb", 0},
 };
 
 typedef struct trail_s {
@@ -192,6 +197,8 @@ typedef struct trailvtx_s {
 	quat_t      vertex;
 	vec3_t      bary;
 	float       texoff;
+	quat_t      colora;
+	quat_t      colorb;
 } trailvtx_t;
 
 static trail_t *trails_freelist;
@@ -369,7 +376,8 @@ glsl_R_InitParticles (void)
 	GLSL_ResolveShaderParam (trail.program, &trail.next);
 	GLSL_ResolveShaderParam (trail.program, &trail.barycentric);
 	GLSL_ResolveShaderParam (trail.program, &trail.texoff);
-	GLSL_ResolveShaderParam (trail.program, &trail.smoke);
+	GLSL_ResolveShaderParam (trail.program, &trail.colora);
+	GLSL_ResolveShaderParam (trail.program, &trail.colorb);
 	GLSL_FreeShader (vert_shader);
 	GLSL_FreeShader (frag_shader);
 
@@ -754,19 +762,20 @@ R_RocketTrail_trail (entity_t *ent)
 	pscale = 1.5 + qfrandom (1.5);
 
 	while (len < maxlen) {
+		int ramp;
 		pscalenext = 1.5 + qfrandom (1.5);
 		dist = (pscale + pscalenext) * 3.0;
 		percent = len * origlen;
 
 		point = new_point ();
 		VectorCopy (old_origin, point->org);
-		point->color = 12 + (mtwist_rand (&mt) & 3);
+		point->color = ramp3[ramp = mtwist_rand (&mt) & 3];
 		point->tex = part_tex_smoke;
 		point->scale = pscale + percent * 4.0;
 		point->alpha = 0.5 + qfrandom (0.125) - percent * 0.40;
 		VectorCopy (vec3_origin, point->vel);
 		point->die = vr_data.realtime + 2.0 - percent * 2.0;
-		point->ramp = 0.0;
+		point->ramp = ramp;
 		point->physics = R_ParticlePhysics ("pt_fire");
 
 		*ent->trail->head = point;
@@ -1718,10 +1727,15 @@ static inline void
 set_vertex (trailvtx_t *v, const particle_t *point, float w, const vec3_t bary,
 			float off)
 {
+	byte       *color = (byte *) &d_8to24table[(byte) point->color];
+
 	VectorCopy (point->org, v->vertex);
 	VectorCopy (bary, v->bary);
-	v->vertex[3] = w;
+	v->vertex[3] = w * point->scale;
 	v->texoff = off;
+	VectorScale (color, 1.5 / 255, v->colora);
+	v->colora[3] = point->alpha * 1.2;
+	QuatSet (-1, -1, -1, -0.5, v->colorb);
 }
 
 static void
@@ -1818,6 +1832,8 @@ draw_trails (void)
 	if (trail.barycentric.location >= 0)
 		qfeglEnableVertexAttribArray (trail.barycentric.location);
 	qfeglEnableVertexAttribArray (trail.texoff.location);
+	qfeglEnableVertexAttribArray (trail.colora.location);
+	qfeglEnableVertexAttribArray (trail.colorb.location);
 
 	qfeglUniformMatrix4fv (trail.proj.location, 1, false, glsl_projection);
 	qfeglUniformMatrix4fv (trail.view.location, 1, false, glsl_view);
@@ -1836,6 +1852,10 @@ draw_trails (void)
 								 0, sizeof (trailvtx_t), &verts[2].bary);
 	qfeglVertexAttribPointer (trail.texoff.location, 1, GL_FLOAT,
 							 0, sizeof (trailvtx_t), &verts[0].texoff);
+	qfeglVertexAttribPointer (trail.colora.location, 4, GL_FLOAT,
+							 0, sizeof (trailvtx_t), &verts[0].colora);
+	qfeglVertexAttribPointer (trail.colorb.location, 4, GL_FLOAT,
+							 0, sizeof (trailvtx_t), &verts[0].colorb);
 
 	for (trl = trails_active; trl; trl = trl->next) {
 		int         count;
@@ -1853,6 +1873,8 @@ draw_trails (void)
 	if (trail.barycentric.location >= 0)
 		qfeglDisableVertexAttribArray (trail.barycentric.location);
 	qfeglDisableVertexAttribArray (trail.texoff.location);
+	qfeglDisableVertexAttribArray (trail.colora.location);
+	qfeglDisableVertexAttribArray (trail.colorb.location);
 
 	expire_trails ();
 }
