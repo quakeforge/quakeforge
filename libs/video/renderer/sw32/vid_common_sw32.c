@@ -188,15 +188,13 @@ VID_MakeColormap8 (void *outcolormap, byte *pal)
 
 	LordHavoc: makes 8bit, 16bit, and 32bit colormaps and palettes
 */
-static __attribute__((used)) void //FIXME
+void
 VID_MakeColormaps (int fullbrights, byte *pal)
 {
 	vid.fullbright = fullbrights;
-	vid.colormap8 = malloc (256*VID_GRADES * sizeof (byte));
 	vid.colormap16 = malloc (256*VID_GRADES * sizeof (short));
 	vid.colormap32 = malloc (256*VID_GRADES * sizeof (int));
 	SYS_CHECKMEM (vid.colormap8 && vid.colormap16 && vid.colormap32);
-	VID_MakeColormap8(vid.colormap8, pal);
 	VID_MakeColormap16(vid.colormap16, pal);
 	VID_MakeColormap32(vid.colormap32, pal);
 }
