@@ -44,34 +44,6 @@ unsigned short sw32_8to16table[256];
 
 
 /*
-	lhfindcolor
-
-	LordHavoc: finds nearest matching color in a palette
-*/
-static int
-lhfindcolor (byte *pal, int colors, int r, int g, int b)
-{
-	int i, dist, best, bestdist, rd, gd, bd;
-	best = 0;
-	bestdist = 1000000000;
-	for (i = 0;i < colors;i++)
-	{
-		rd = pal[i*3+0] - r;
-		gd = pal[i*3+1] - g;
-		bd = pal[i*3+2] - b;
-		dist = rd*rd+gd*gd+bd*bd;
-		if (dist < bestdist)
-		{
-			if (!dist) // exact match
-				return i;
-			best = i;
-			bestdist = dist;
-		}
-	}
-	return best;
-}
-
-/*
 	VID_MakeColormap32
 
 	LordHavoc: makes a 32bit color*light table, RGBA order, no endian,
@@ -161,40 +133,16 @@ VID_MakeColormap16 (void *outcolormap, byte *pal)
 }
 
 /*
-	VID_MakeColormap8
-
-	LordHavoc: makes a 8bit color*light table
-*/
-static void
-VID_MakeColormap8 (void *outcolormap, byte *pal)
-{
-	int c, l;
-	byte *out;
-	out = (byte *) outcolormap;
-	for (l = 0;l < VID_GRADES;l++)
-	{
-		for (c = 0;c < vid.fullbright;c++)
-			out[l*256+c] = lhfindcolor(pal, 256,
-									   (pal[c*3+0] * l) >> (VID_CBITS - 1),
-									   (pal[c*3+1] * l) >> (VID_CBITS - 1),
-									   (pal[c*3+2] * l) >> (VID_CBITS - 1));
-		for (;c < 256;c++)
-			out[l*256+c] = c;
-	}
-}
-
-/*
 	VID_MakeColormaps
 
 	LordHavoc: makes 8bit, 16bit, and 32bit colormaps and palettes
 */
 void
-VID_MakeColormaps (int fullbrights, byte *pal)
+VID_MakeColormaps (void)
 {
-	vid.fullbright = fullbrights;
 	vid.colormap16 = malloc (256*VID_GRADES * sizeof (short));
 	vid.colormap32 = malloc (256*VID_GRADES * sizeof (int));
-	SYS_CHECKMEM (vid.colormap8 && vid.colormap16 && vid.colormap32);
-	VID_MakeColormap16(vid.colormap16, pal);
-	VID_MakeColormap32(vid.colormap32, pal);
+	SYS_CHECKMEM (vid.colormap16 && vid.colormap32);
+	VID_MakeColormap16(vid.colormap16, vid.palette);
+	VID_MakeColormap32(vid.colormap32, vid.palette);
 }
