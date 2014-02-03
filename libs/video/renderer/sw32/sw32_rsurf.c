@@ -193,20 +193,30 @@ R_BuildLightMap (void)
 	if (surf->dlightframe == r_framecount)
 		R_AddDynamicLights ();
 
-//	// LordHavoc: changed to positive (not inverse) lighting
-//	for (i = 0; i < size; i++) {
-//		t = bound(256, blocklights[i] >> (8 - VID_CBITS),
-//				  256 * (VID_GRADES - 1));
-//		blocklights[i] = t;
-//	}
-	// bound, invert, and shift
-	for (i = 0; i < size; i++) {
-		t = (255 * 256 - blocklights[i]) >> (8 - VID_CBITS);
+	/*
+	 * JohnnyonFlame:
+	 * 32 and 16bpp modes uses the positive lighting, unlike 8bpp
+	 */
+	switch (sw32_r_pixbytes) {
+	case 1:
+		// bound, invert, and shift
+		for (i = 0; i < size; i++) {
+			t = (255 * 256 - blocklights[i]) >> (8 - VID_CBITS);
 
-		if (t < (1 << 6))
-			t = (1 << 6);
+			if (t < (1 << 6))
+				t = (1 << 6);
 
-		blocklights[i] = t;
+			blocklights[i] = t;
+		}
+		break;
+	default:
+		// LordHavoc: changed to positive (not inverse) lighting
+		for (i = 0; i < size; i++) {
+			t = bound(256, blocklights[i] >> (8 - VID_CBITS),
+					  256 * (VID_GRADES - 1));
+			blocklights[i] = t;
+		}
+		break;
 	}
 }
 

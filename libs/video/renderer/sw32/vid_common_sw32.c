@@ -55,31 +55,41 @@ VID_MakeColormap32 (void *outcolormap, byte *pal)
 	int c, l;
 	byte *out;
 	out = (byte *)&d_8to24table;
+
+	/*
+	 * Generates colors not affected by lighting, such as
+	 * HUD pieces and general sprites (such as explosions)
+	 */
 	for (c = 0; c < 256; c++) {
-		*out++ = pal[c*3+0];
-		*out++ = pal[c*3+1];
 		*out++ = pal[c*3+2];
+		*out++ = pal[c*3+1];
+		*out++ = pal[c*3+0];
 		*out++ = 255;
 	}
 	d_8to24table[255] = 0;				// 255 is transparent
 	out = (byte *) outcolormap;
+
+	/*
+	 * Generates colors affected by lighting, such as the
+	 * world and other models that give it life, like foes and pickups.
+	 */
 	for (l = 0;l < VID_GRADES;l++)
 	{
 		for (c = 0;c < vid.fullbright;c++)
 		{
-			out[(l*256+c)*4+0] = bound(0, (pal[c*3+0] * l) >> (VID_CBITS - 1),
+			out[(l*256+c)*4+0] = bound(0, (pal[c*3+2] * l) >> (VID_CBITS - 1),
 									   255);
 			out[(l*256+c)*4+1] = bound(0, (pal[c*3+1] * l) >> (VID_CBITS - 1),
 									   255);
-			out[(l*256+c)*4+2] = bound(0, (pal[c*3+2] * l) >> (VID_CBITS - 1),
+			out[(l*256+c)*4+2] = bound(0, (pal[c*3+0] * l) >> (VID_CBITS - 1),
 									   255);
 			out[(l*256+c)*4+3] = 255;
 		}
 		for (;c < 255;c++)
 		{
-			out[(l*256+c)*4+0] = pal[c*3+0];
+			out[(l*256+c)*4+0] = pal[c*3+2];
 			out[(l*256+c)*4+1] = pal[c*3+1];
-			out[(l*256+c)*4+2] = pal[c*3+2];
+			out[(l*256+c)*4+2] = pal[c*3+0];
 			out[(l*256+c)*4+3] = 255;
 		}
 		out[(l*256+255)*4+0] = 0;
