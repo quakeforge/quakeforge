@@ -53,15 +53,17 @@ AH_VERBATIM([HAVE___ATTRIBUTE__VISIBILITY],
 # define VISIBLE
 #endif])
 
-AC_MSG_CHECKING(for __attribute__ ((gcc_struct)))
-AC_TRY_COMPILE(
-	[void foo (void);
-	typedef struct { int foo; } __attribute__ ((gcc_struct)) gcc_struct_test;],
-	[],
-	AC_DEFINE(HAVE___ATTRIBUTE__GCC_STRUCT)
-	AC_MSG_RESULT(yes),
-	AC_MSG_RESULT(no)
-)
+if test "x$SYSTYPE" = "xWIN32"; then
+	AC_MSG_CHECKING(for __attribute__ ((gcc_struct)))
+	AC_TRY_COMPILE(
+		[typedef struct { int foo; }
+		__attribute__ ((gcc_struct)) gcc_struct_test;],
+		[],
+		AC_DEFINE(HAVE___ATTRIBUTE__GCC_STRUCT)
+		AC_MSG_RESULT(yes),
+		AC_MSG_RESULT(no)
+	)
+fi
 AH_VERBATIM([HAVE___ATTRIBUTE__GCC_STRUCT],
 [/* Define this if the GCC gcc_struct __attribute__ is available */
 #undef HAVE___ATTRIBUTE__GCC_STRUCT
