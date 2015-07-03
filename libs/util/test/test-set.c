@@ -4,7 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "QF/dstring.h"
 #include "QF/set.h"
+#include "QF/va.h"
 
 #define SIZE (SET_DEFMAP_SIZE * sizeof (set_bits_t) * 8)
 
@@ -190,6 +192,21 @@ main (int argc, const char **argv)
 {
 	size_t      i;
 	int         res = 0;
+	dstring_t  *str;
+
+	//printf ("set_bits_t: %d, SET_DEFMAP_SIZE: %d, SIZE: %d\n",
+	//		sizeof (set_bits_t), SET_DEFMAP_SIZE, SIZE);
+
+	tests[5].str_expect = nva ("{%d}", SIZE);
+	tests[7].str_expect = nva ("{%d ...}", SIZE);
+	tests[8].str_expect = nva ("{%d ...}", SIZE);
+
+	str = dstring_new ();
+	for (i = 0; i < SIZE; i++) {
+		dasprintf (str, "%c%d", i ? ' ' : '{', i);
+	}
+	dstring_appendstr (str, "}");
+	tests[6].str_expect = dstring_freeze (str);
 
 	for (i = 0; i < num_tests; i++) {
 		set_t      *s1, *s2 = 0;
