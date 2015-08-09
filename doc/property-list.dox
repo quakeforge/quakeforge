@@ -87,5 +87,5 @@ And yes, these long strings were inspired by Python's long strings.
 	 for doxygen -->
 Binary data is hex-encoded and contained within angle brackets (\c \< \c
 \>). There must be an even number of hex-digits. That is, while \c \<FF00\>
-is value, \c \<F00\> is not.
+is valid, \c \<F00\> is not.
 */
