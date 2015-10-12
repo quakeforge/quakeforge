@@ -114,7 +114,7 @@ CL_HTTP_Update (void)
 				Sys_Printf ("download failed: %ld\n", response_code);
 				CL_FailDownload ();
 			}
-			curl_multi_remove_handle (multi_handle, easy_handle);
+			CL_HTTP_Reset ();
 		}
 	}
 }
