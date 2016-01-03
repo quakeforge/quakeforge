@@ -88,8 +88,6 @@ AH_VERBATIM([HAVE___BUILTIN_EXPECT],
 # define __builtin_expect(x,c) x
 #endif])
 
-AC_TYPE_VA_LIST
-
 AC_MSG_CHECKING(for type of fpos_t)
 AC_TRY_COMPILE(
 	[#include <stdio.h>],

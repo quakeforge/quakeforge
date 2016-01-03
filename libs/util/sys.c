@@ -493,21 +493,11 @@ Sys_Quit (void)
 	exit (0);
 }
 
-#if defined (HAVE_VA_COPY)
-# define VA_COPY(a,b) va_copy (a, b)
-#elif defined (HAVE__VA_COPY)
-# define VA_COPY(a,b) __va_copy (a, b)
-#else
-# define VA_COPY(a,b) memcpy (a, b, sizeof (a))
-#endif
-
 VISIBLE void
 Sys_Error (const char *error, ...)
 {
 	va_list     args;
-#ifdef VA_LIST_IS_ARRAY
 	va_list     tmp_args;
-#endif
 	static int  in_sys_error = 0;
 
 	if (in_sys_error) {
@@ -521,9 +511,7 @@ Sys_Error (const char *error, ...)
 	in_sys_error = 1;
 
 	va_start (args, error);
-#ifdef VA_LIST_IS_ARRAY
-	VA_COPY (tmp_args, args);
-#endif
+	va_copy (tmp_args, args);
 	sys_err_printf_function (error, args);
 	va_end (args);
 
@@ -532,9 +520,7 @@ Sys_Error (const char *error, ...)
 	if (sys_err_printf_function != Sys_ErrPrintf) {
 		// print the message again using the default error printer to increase
 		// the chances of the error being seen.
-#ifdef VA_LIST_IS_ARRAY
-		VA_COPY (args, tmp_args);
-#endif
+		va_copy (args, tmp_args);
 		Sys_ErrPrintf (error, args);
 	}
 
