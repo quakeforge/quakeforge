@@ -338,6 +338,10 @@ PR_CallFunction (progs_t *pr, func_t fnum)
 	f = pr->function_table + fnum;
 	if (f->first_statement < 0) {
 		// negative statements are built in functions
+		if (pr->pr_trace) {
+			Sys_Printf ("Calling builtin %s @ %p\n",
+						PR_GetString (pr, f->descriptor->s_name), f->func);
+		}
 		f->func (pr);
 		return 0;
 	} else {
