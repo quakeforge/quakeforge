@@ -328,6 +328,14 @@ signal_hook (int sig, void *data)
 	return 0;
 }
 
+static void
+error_handler (void *data)
+{
+	progs_t    *pr = (progs_t *) data;
+	PR_DumpState (pr);
+	fflush (stdout);
+}
+
 VISIBLE int
 PR_CallFunction (progs_t *pr, func_t fnum)
 {
@@ -370,11 +378,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 	startprofile = profile = 0;
 
 	Sys_PushSignalHook (signal_hook, pr);
+	Sys_PushErrorHandler (error_handler, pr);
 
 	if (!PR_CallFunction (pr, fnum)) {
 		// called a builtin instead of progs code
-		Sys_PopSignalHook ();
-		return;
+		goto exit_program;
 	}
 	st = pr->pr_statements + pr->pr_xstatement;
 
@@ -964,8 +972,8 @@ op_call:
 				if (pr->pr_depth == exitdepth) {
 					if (pr->pr_trace && pr->pr_depth <= pr->pr_trace_depth)
 						pr->pr_trace = false;
-					Sys_PopSignalHook ();
-					return;					// all done
+					// all done
+					goto exit_program;
 				}
 				break;
 			case OP_STATE:
@@ -1116,4 +1124,7 @@ op_call:
 			PR_RunError (pr, "watchpoint hit: %d -> %d", old_val.integer_var,
 						 watch->integer_var);
 	}
+exit_program:
+	Sys_PopErrorHandler ();
+	Sys_PopSignalHook ();
 }

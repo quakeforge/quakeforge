@@ -79,6 +79,7 @@
 
 #include "qfalloca.h"
 
+#include "QF/alloc.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
@@ -107,7 +108,16 @@ typedef struct shutdown_list_s {
 	void (*func)(void);
 } shutdown_list_t;
 
+typedef struct error_handler_s {
+	struct error_handler_s *next;
+	sys_error_t func;
+	void       *data;
+} error_handler_t;
+
 static shutdown_list_t *shutdown_list;
+
+static error_handler_t *error_handler_freelist;
+static error_handler_t *error_handler;
 
 #ifndef _WIN32
 static int  do_stdin = 1;
@@ -494,6 +504,31 @@ Sys_Quit (void)
 }
 
 VISIBLE void
+Sys_PushErrorHandler (sys_error_t func, void *data)
+{
+	error_handler_t *eh;
+	ALLOC (16, error_handler_t, error_handler, eh);
+	eh->func = func;
+	eh->data = data;
+	eh->next = error_handler;
+	error_handler = eh;
+}
+
+VISIBLE void
+Sys_PopErrorHandler (void)
+{
+	error_handler_t *eh;
+
+	if (!error_handler) {
+		Sys_Error ("Sys_PopErrorHandler: no handler to pop");
+	}
+	eh = error_handler;
+	error_handler = eh->next;
+	FREE (error_handler, eh);
+}
+
+
+VISIBLE void
 Sys_Error (const char *error, ...)
 {
 	va_list     args;
@@ -514,6 +549,10 @@ Sys_Error (const char *error, ...)
 	va_copy (tmp_args, args);
 	sys_err_printf_function (error, args);
 	va_end (args);
+
+	if (error_handler) {
+		error_handler->func (error_handler->data);
+	}
 
 	Sys_Shutdown ();
 
