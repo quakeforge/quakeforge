@@ -151,6 +151,14 @@ static builtin_t builtins[] = {
 	{0}
 };
 
+static void
+bi_shutdown (void)
+{
+	S_Shutdown ();
+	IN_Shutdown ();
+	VID_Shutdown ();
+}
+
 void
 BI_Init (progs_t *pr)
 {
@@ -161,6 +169,8 @@ BI_Init (progs_t *pr)
 	QFS_Init ("nq");
 	PI_Init ();
 	PI_RegisterPlugins (client_plugin_list);
+
+	Sys_RegisterShutdown (bi_shutdown);
 
 	VID_Init_Cvars ();
 	IN_Init_Cvars ();
