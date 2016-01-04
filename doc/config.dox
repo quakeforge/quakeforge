@@ -11,6 +11,7 @@
 \li \subpage sound
 \li \subpage tracklist
 \li \subpage key_binding
+\li \subpage imt
 \li \subpage cshift_cvars
 \li \subpage server_timestamps
 */
