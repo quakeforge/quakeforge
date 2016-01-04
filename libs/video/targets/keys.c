@@ -634,10 +634,6 @@ Key_Game (knum_t key, short unicode)
 		imt = imt->chain;
 	}
 	return false;
-/*
-	Sys_DPrintf("kb %p, key_target %d, key_dest %d, key %d\n", kb,
-				key_target, key_dest, key);
-*/
 }
 
 /*
@@ -655,15 +651,6 @@ Key_Console (knum_t key, short unicode)
 	Con_KeyEvent (key, unicode, keydown[key]);
 }
 
-//============================================================================
-
-/*
-  Key_StringToKeynum
-
-  Returns a key number to be used to index keybindings[] by looking at
-  the given string.  Single ascii characters return themselves, while
-  the QFK_* names are matched up.
-*/
 VISIBLE int
 Key_StringToKeynum (const char *str)
 {
@@ -679,12 +666,6 @@ Key_StringToKeynum (const char *str)
 	return -1;
 }
 
-/*
-  Key_KeynumToString
-
-  Returns a string (a QFK_* name) for the given keynum.
-  FIXME: handle quote special (general escape sequence?)
-*/
 VISIBLE const char *
 Key_KeynumToString (knum_t keynum)
 {
