@@ -34,8 +34,14 @@
 # include "QF/quakeio.h"
 #endif
 
-// these are the key numbers that should be passed to Key_Event
+/** \defgroup input Input Sub-system */
 
+/** \defgroup input_keybinding Key Binding Sub-system
+	\ingroup input
+*/
+//@{
+
+/// these are the key numbers that should be passed to Key_Event
 typedef enum {
 	/* The keyboard syms have been cleverly chosen to map to ASCII */
 	QFK_UNKNOWN		= 0,
@@ -652,5 +658,7 @@ struct progs_s;
 */
 void Key_Progs_Init (struct progs_s *pr);
 #endif
+
+//@}
 
 #endif // _KEYS_H
