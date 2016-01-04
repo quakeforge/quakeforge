@@ -600,7 +600,7 @@ const char *Key_GetBinding (imt_t *imt, knum_t key);
 	Only one command string can be bound to a key, but the command string may
 	contain multiple commands.
 
-	\param int		The input mapping table in which the key will be bound.
+	\param imt		The input mapping table in which the key will be bound.
 	\param keynum	The key to which the command string will be bound.
 	\param binding	The command string that will be bound.
 */
