@@ -944,6 +944,7 @@ static void
 Key_GIB_Bind_Get_f (void)
 {
 	const char *key, *cmd;
+	imt_t      *imt;
 	int k;
 
 	if (GIB_Argc () != 2) {
@@ -958,7 +959,8 @@ Key_GIB_Bind_Get_f (void)
 		return;
 	}
 
-	if (!(cmd = Key_GetBinding ("IMT_MOD", k)))
+	imt = Key_FindIMT ("imt_mod");
+	if (!imt || !(cmd = Key_GetBinding (imt, k)))
 		GIB_Return ("");
 	else
 		GIB_Return (cmd);
@@ -1319,11 +1321,8 @@ Key_Init_Cvars (void)
 }
 
 const char *
-Key_GetBinding (const char *imt_name, knum_t key)
+Key_GetBinding (imt_t *imt, knum_t key)
 {
-	imt_t      *imt;
-
-	imt = Key_FindIMT (imt_name);
 	if (imt) {
 		return imt->bindings[key].str;
 	}

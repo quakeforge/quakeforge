@@ -533,7 +533,7 @@ void Key_Init (struct cbuf_s *cb);
 void Key_Init_Cvars (void);
 void Key_WriteBindings (QFile *f);
 void Key_ClearStates (void);
-const char *Key_GetBinding (const char *imt_name, knum_t key);
+const char *Key_GetBinding (imt_t *imt, knum_t key);
 void Key_SetBinding (imt_t *imt, knum_t keynum, const char *binding);
 void Key_SetKeyDest(keydest_t kd);
 typedef void keydest_callback_t (keydest_t);
