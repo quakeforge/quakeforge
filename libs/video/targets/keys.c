@@ -689,13 +689,13 @@ Key_In_Unbind (const char *imt_name, const char *key_name)
 
 	imt = Key_FindIMT (imt_name);
 	if (!imt) {
-		Sys_Printf ("\"%s\" isn't a valid imt\n", imt_name);
+		Sys_Printf ("\"%s\" is not a valid imt\n", imt_name);
 		return;
 	}
 
 	key = Key_StringToKeynum (key_name);
 	if (key == -1) {
-		Sys_Printf ("\"%s\" isn't a valid key\n", key_name);
+		Sys_Printf ("\"%s\" is not a valid key\n", key_name);
 		return;
 	}
 
@@ -757,7 +757,7 @@ Key_In_Clear (void)
 	}
 	for (i = 1; i < Cmd_Argc (); i++) {
 		if (!Key_FindIMT (Cmd_Argv (i))) {
-			Sys_Printf ("\"%s\" isn't a valid imt\n", Cmd_Argv (i));
+			Sys_Printf ("\"%s\" is not a valid imt\n", Cmd_Argv (i));
 			err = 1;
 		}
 	}
@@ -824,13 +824,13 @@ Key_In_Bind (const char *imt_name, const char *key_name, const char *cmd)
 
 	imt = Key_FindIMT (imt_name);
 	if (!imt) {
-		Sys_Printf ("\"%s\" isn't a valid imt\n", imt_name);
+		Sys_Printf ("\"%s\" is not a valid imt\n", imt_name);
 		return;
 	}
 
 	key = Key_StringToKeynum (key_name);
 	if (key == -1) {
-		Sys_Printf ("\"%s\" isn't a valid key\n", key_name);
+		Sys_Printf ("\"%s\" is not a valid key\n", key_name);
 		return;
 	}
 
@@ -997,7 +997,7 @@ Key_InputMappingTable_f (void)
 
 	imt = Key_FindIMT (Cmd_Argv (1));
 	if (!imt) {
-		Sys_Printf ("\"%s\" isn't a valid imt\n", Cmd_Argv (1));
+		Sys_Printf ("\"%s\" is not a valid imt\n", Cmd_Argv (1));
 		return;
 	}
 
@@ -1041,7 +1041,7 @@ Key_IMT_Keydest_f (void)
 
 	imt = key_target_find_imt (&key_targets[kd], imt_name);
 	if (!imt) {
-		Sys_Printf ("\"%s\" isn't an imt on %s\n", imt_name, keydest);
+		Sys_Printf ("\"%s\" is not an imt on %s\n", imt_name, keydest);
 		return;
 	}
 
