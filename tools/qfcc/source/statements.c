@@ -1308,8 +1308,11 @@ move_labels (sblock_t *dst, sblock_t *src)
 
 	if (!src_labels)
 		return;
-	while (src_labels->next)
+	src_labels->dest = dst;
+	while (src_labels->next) {
 		src_labels = src_labels->next;
+		src_labels->dest = dst;
+	}
 	src_labels->next = dst->labels;
 	dst->labels = src->labels;
 	src->labels = 0;
