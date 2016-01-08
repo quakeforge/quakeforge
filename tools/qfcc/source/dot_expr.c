@@ -64,6 +64,7 @@ static const char *expr_names[] =
 	"uexpr",
 	"symbol",
 	"temp",
+	"vector",
 	"nil",
 	"value",
 };
