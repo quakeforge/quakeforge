@@ -40,6 +40,13 @@
 #include "QF/progs.h"
 #include "QF/zone.h"
 
+static void
+bi_Key_keydown (progs_t *pr)
+{
+	int         keynum  = P_INT (pr, 0);
+	R_INT (pr) = keydown[keynum];
+}
+
 /*
     bi_Key_SetBinding
 
@@ -151,6 +158,7 @@ bi_Key_StringToKeynum (progs_t *pr)
 }
 
 static builtin_t builtins[] = {
+	{"Key_keydown",			bi_Key_keydown,		-1},
 	{"Key_SetBinding",		bi_Key_SetBinding,		-1},
 	{"Key_LookupBinding",	bi_Key_LookupBinding,	-1},
 	{"Key_CountBinding",	bi_Key_CountBinding,	-1},
