@@ -311,7 +311,7 @@ strip_path (const char *filename)
 }
 
 static const char *
-basename (const char *filename)
+file_basename (const char *filename)
 {
 	const char *p;
 	const char *dot;
@@ -391,7 +391,7 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 			exit (1);
 		}
 	}
-	write_frame_macros (va ("%s.frame", basename (file)));
+	write_frame_macros (va ("%s.frame", file_basename (file)));
 	if (!err) {
 		qfo_t      *qfo;
 
@@ -731,12 +731,12 @@ progs_src_compile (void)
 				fprintf (single, "#include \"%s\"\n", qc_filename->str);
 				if (options.frames_files)
 					fprintf (single, "$frame_write \"%s.frame\"\n",
-							 basename (qc_filename->str));
+							 file_basename (qc_filename->str));
 			} else {
 				if (compile_file (qc_filename->str))
 					return 1;
 				write_frame_macros (va ("%s.frame",
-										basename (qc_filename->str)));
+										file_basename (qc_filename->str)));
 			}
 			if (!Script_TokenAvailable (script, 0))
 				break;

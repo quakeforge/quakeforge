@@ -31,8 +31,8 @@
 #include <QF/qtypes.h>
 #include "QF/quakeio.h"
 
-#define JOY_MAX_AXES    8
-#define JOY_MAX_BUTTONS 18
+#define JOY_MAX_AXES    32
+#define JOY_MAX_BUTTONS 64
 
 extern struct cvar_s	*joy_device;		// Joystick device name
 extern struct cvar_s	*joy_enable;		// Joystick enabling flag

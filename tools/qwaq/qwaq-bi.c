@@ -68,7 +68,7 @@ static plugin_list_t client_plugin_list[] = {
 };
 
 double      con_frametime;
-double      con_realtime;
+double      con_realtime, basetime;
 double      old_conrealtime;
 
 
@@ -120,7 +120,7 @@ static SCR_Func bi_2dfuncs[] = {
 static void
 bi_refresh (progs_t *pr)
 {
-	con_realtime = Sys_DoubleTime ();
+	con_realtime = Sys_DoubleTime () - basetime;
 	con_frametime = con_realtime - old_conrealtime;
 	old_conrealtime = con_realtime;
 	bi_rprogs = pr;
@@ -151,6 +151,14 @@ static builtin_t builtins[] = {
 	{0}
 };
 
+static void
+bi_shutdown (void)
+{
+	S_Shutdown ();
+	IN_Shutdown ();
+	VID_Shutdown ();
+}
+
 void
 BI_Init (progs_t *pr)
 {
@@ -161,6 +169,8 @@ BI_Init (progs_t *pr)
 	QFS_Init ("nq");
 	PI_Init ();
 	PI_RegisterPlugins (client_plugin_list);
+
+	Sys_RegisterShutdown (bi_shutdown);
 
 	VID_Init_Cvars ();
 	IN_Init_Cvars ();
@@ -195,4 +205,5 @@ BI_Init (progs_t *pr)
 	S_Init (0, &con_frametime);
 	//CDAudio_Init ();
 	Con_NewMap ();
+	basetime = Sys_DoubleTime ();
 }

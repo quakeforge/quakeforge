@@ -1836,11 +1836,11 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 	for (e = params, i = 0; e; e = e->next, i++) {
 		if (has_function_call (e)) {
 			*a = new_temp_def_expr (arg_types[i]);
-			arg_exprs[arg_expr_count][0] = cast_expr (arg_types[i], e);
+			arg_exprs[arg_expr_count][0] = cast_expr (arg_types[i], convert_vector (e));
 			arg_exprs[arg_expr_count][1] = *a;
 			arg_expr_count++;
 		} else {
-			*a = cast_expr (arg_types[i], e);
+			*a = cast_expr (arg_types[i], convert_vector (e));
 		}
 		a = &(*a)->next;
 	}

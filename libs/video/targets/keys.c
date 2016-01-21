@@ -442,6 +442,38 @@ keyname_t   keynames[] = {
 	{ "J_BUTTON30",		QFJ_BUTTON30 },
 	{ "J_BUTTON31",		QFJ_BUTTON31 },
 	{ "J_BUTTON32",		QFJ_BUTTON32 },
+	{ "J_BUTTON33",		QFJ_BUTTON33 },
+	{ "J_BUTTON34",		QFJ_BUTTON34 },
+	{ "J_BUTTON35",		QFJ_BUTTON35 },
+	{ "J_BUTTON36",		QFJ_BUTTON36 },
+	{ "J_BUTTON37",		QFJ_BUTTON37 },
+	{ "J_BUTTON38",		QFJ_BUTTON38 },
+	{ "J_BUTTON39",		QFJ_BUTTON39 },
+	{ "J_BUTTON40",		QFJ_BUTTON40 },
+	{ "J_BUTTON41",		QFJ_BUTTON41 },
+	{ "J_BUTTON42",		QFJ_BUTTON42 },
+	{ "J_BUTTON43",		QFJ_BUTTON43 },
+	{ "J_BUTTON44",		QFJ_BUTTON44 },
+	{ "J_BUTTON45",		QFJ_BUTTON45 },
+	{ "J_BUTTON46",		QFJ_BUTTON46 },
+	{ "J_BUTTON47",		QFJ_BUTTON47 },
+	{ "J_BUTTON48",		QFJ_BUTTON48 },
+	{ "J_BUTTON49",		QFJ_BUTTON49 },
+	{ "J_BUTTON50",		QFJ_BUTTON50 },
+	{ "J_BUTTON51",		QFJ_BUTTON51 },
+	{ "J_BUTTON52",		QFJ_BUTTON52 },
+	{ "J_BUTTON53",		QFJ_BUTTON53 },
+	{ "J_BUTTON54",		QFJ_BUTTON54 },
+	{ "J_BUTTON55",		QFJ_BUTTON55 },
+	{ "J_BUTTON56",		QFJ_BUTTON56 },
+	{ "J_BUTTON57",		QFJ_BUTTON57 },
+	{ "J_BUTTON58",		QFJ_BUTTON58 },
+	{ "J_BUTTON59",		QFJ_BUTTON59 },
+	{ "J_BUTTON60",		QFJ_BUTTON60 },
+	{ "J_BUTTON61",		QFJ_BUTTON61 },
+	{ "J_BUTTON62",		QFJ_BUTTON62 },
+	{ "J_BUTTON63",		QFJ_BUTTON63 },
+	{ "J_BUTTON64",		QFJ_BUTTON64 },
 
 	{ "J_AXIS1",		QFJ_AXIS1 },
 	{ "J_AXIS2",		QFJ_AXIS2 },
@@ -602,10 +634,6 @@ Key_Game (knum_t key, short unicode)
 		imt = imt->chain;
 	}
 	return false;
-/*
-	Sys_DPrintf("kb %p, key_target %d, key_dest %d, key %d\n", kb,
-				key_target, key_dest, key);
-*/
 }
 
 /*
@@ -623,15 +651,6 @@ Key_Console (knum_t key, short unicode)
 	Con_KeyEvent (key, unicode, keydown[key]);
 }
 
-//============================================================================
-
-/*
-  Key_StringToKeynum
-
-  Returns a key number to be used to index keybindings[] by looking at
-  the given string.  Single ascii characters return themselves, while
-  the QFK_* names are matched up.
-*/
 VISIBLE int
 Key_StringToKeynum (const char *str)
 {
@@ -647,12 +666,6 @@ Key_StringToKeynum (const char *str)
 	return -1;
 }
 
-/*
-  Key_KeynumToString
-
-  Returns a string (a QFK_* name) for the given keynum.
-  FIXME: handle quote special (general escape sequence?)
-*/
 VISIBLE const char *
 Key_KeynumToString (knum_t keynum)
 {
@@ -676,13 +689,13 @@ Key_In_Unbind (const char *imt_name, const char *key_name)
 
 	imt = Key_FindIMT (imt_name);
 	if (!imt) {
-		Sys_Printf ("\"%s\" isn't a valid imt\n", imt_name);
+		Sys_Printf ("\"%s\" is not a valid imt\n", imt_name);
 		return;
 	}
 
 	key = Key_StringToKeynum (key_name);
 	if (key == -1) {
-		Sys_Printf ("\"%s\" isn't a valid key\n", key_name);
+		Sys_Printf ("\"%s\" is not a valid key\n", key_name);
 		return;
 	}
 
@@ -744,7 +757,7 @@ Key_In_Clear (void)
 	}
 	for (i = 1; i < Cmd_Argc (); i++) {
 		if (!Key_FindIMT (Cmd_Argv (i))) {
-			Sys_Printf ("\"%s\" isn't a valid imt\n", Cmd_Argv (i));
+			Sys_Printf ("\"%s\" is not a valid imt\n", Cmd_Argv (i));
 			err = 1;
 		}
 	}
@@ -811,13 +824,13 @@ Key_In_Bind (const char *imt_name, const char *key_name, const char *cmd)
 
 	imt = Key_FindIMT (imt_name);
 	if (!imt) {
-		Sys_Printf ("\"%s\" isn't a valid imt\n", imt_name);
+		Sys_Printf ("\"%s\" is not a valid imt\n", imt_name);
 		return;
 	}
 
 	key = Key_StringToKeynum (key_name);
 	if (key == -1) {
-		Sys_Printf ("\"%s\" isn't a valid key\n", key_name);
+		Sys_Printf ("\"%s\" is not a valid key\n", key_name);
 		return;
 	}
 
@@ -912,6 +925,7 @@ static void
 Key_GIB_Bind_Get_f (void)
 {
 	const char *key, *cmd;
+	imt_t      *imt;
 	int k;
 
 	if (GIB_Argc () != 2) {
@@ -926,7 +940,8 @@ Key_GIB_Bind_Get_f (void)
 		return;
 	}
 
-	if (!(cmd = Key_GetBinding ("IMT_MOD", k)))
+	imt = Key_FindIMT ("imt_mod");
+	if (!imt || !(cmd = Key_GetBinding (imt, k)))
 		GIB_Return ("");
 	else
 		GIB_Return (cmd);
@@ -982,7 +997,7 @@ Key_InputMappingTable_f (void)
 
 	imt = Key_FindIMT (Cmd_Argv (1));
 	if (!imt) {
-		Sys_Printf ("\"%s\" isn't a valid imt\n", Cmd_Argv (1));
+		Sys_Printf ("\"%s\" is not a valid imt\n", Cmd_Argv (1));
 		return;
 	}
 
@@ -1026,7 +1041,7 @@ Key_IMT_Keydest_f (void)
 
 	imt = key_target_find_imt (&key_targets[kd], imt_name);
 	if (!imt) {
-		Sys_Printf ("\"%s\" isn't an imt on %s\n", imt_name, keydest);
+		Sys_Printf ("\"%s\" is not an imt on %s\n", imt_name, keydest);
 		return;
 	}
 
@@ -1287,11 +1302,8 @@ Key_Init_Cvars (void)
 }
 
 const char *
-Key_GetBinding (const char *imt_name, knum_t key)
+Key_GetBinding (imt_t *imt, knum_t key)
 {
-	imt_t      *imt;
-
-	imt = Key_FindIMT (imt_name);
 	if (imt) {
 		return imt->bindings[key].str;
 	}
