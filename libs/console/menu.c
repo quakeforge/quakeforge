@@ -512,7 +512,7 @@ menu_free_progs_mem (progs_t *pr, void *mem)
 static void *
 menu_load_file (progs_t *pr, const char *path)
 {
-	return QFS_LoadFile (path, 0);
+	return QFS_LoadFile (QFS_FOpenFile (path), 0);
 }
 
 static builtin_t builtins[] = {
@@ -615,7 +615,8 @@ Menu_Load (void)
 	top_menu = 0;
 
 	menu_pr_state.progs = 0;
-	if ((size = QFS_FOpenFile (menu_pr_state.progs_name, &file)) != -1) {
+	if ((file = QFS_FOpenFile (menu_pr_state.progs_name))) {
+		size = Qfilesize (file);
 		PR_LoadProgsFile (&menu_pr_state, file, size, 0, 1024 * 1024);
 		Qclose (file);
 

@@ -5,7 +5,7 @@ pkglibdir=$(datarootdir)/qfcc/lib
 QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QFCC=$(QFCC_DEP)
 QCFLAGS=-qq -O -g -Werror -Wall -Wno-integer-divide --no-default-paths
-QCPPFLAGS=$(INCLUDES)
+QCPPFLAGS=$(AM_CPPFLAGS)
 PAK=$(top_builddir)/tools/pak/pak$(EXEEXT)
 GZIP=if echo $@ | grep -q .gz; then gzip -f `basename $@ .gz`; if test -f `basename $@ .dat.gz`.sym; then gzip -f `basename $@ .dat.gz`.sym; fi; fi
 GZ=@progs_gz@
@@ -15,7 +15,7 @@ STRIP=`echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`
 
 RANLIB=touch
 
-INCLUDES=	-I$(top_srcdir)/ruamoko/include -I$(top_srcdir)/include
+AM_CPPFLAGS=	-I$(top_srcdir)/ruamoko/include -I$(top_srcdir)/include
 
 scheme_libs=libscheme.a
 libs=$(scheme_libs)

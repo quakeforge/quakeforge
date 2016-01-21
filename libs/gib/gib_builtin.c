@@ -792,7 +792,7 @@ GIB_File_Read_f (void)
 	if (!(ret = GIB_Return (0)))
 		return;
 	path = GIB_Argv (1);
-	QFS_FOpenFile (path, &file);
+	file = QFS_FOpenFile (path);
 	if (file) {
 		len = Qfilesize (file);
 		ret->size = len + 1;

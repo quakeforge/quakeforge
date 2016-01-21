@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS= foreign
 AM_CFLAGS= @PREFER_PIC@
-INCLUDES= -I$(top_srcdir)/include $(FNM_FLAGS)
+AM_CPPFLAGS= -I$(top_srcdir)/include $(FNM_FLAGS)
 
 lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
 			-rpath $(libdir) -no-undefined

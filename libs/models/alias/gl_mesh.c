@@ -366,7 +366,7 @@ gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 							cache->str + strlen ("glquake/"));
 			dstring_appendstr (cache, ".qfms");
 
-			QFS_FOpenFile (cache->str, &f);
+			f = QFS_FOpenFile (cache->str);
 			if (f) {
 				unsigned char d1[MDFOUR_DIGEST_BYTES];
 				unsigned char d2[MDFOUR_DIGEST_BYTES];

@@ -14,6 +14,27 @@ if test "x$CFLAGS" != "x"; then
 fi
 AC_MSG_RESULT([$leave_cflags_alone])
 
+AC_MSG_CHECKING(for C99 inline)
+c99_inline=no
+AC_TRY_LINK(
+	[inline int foo (int x) { return x * x; }
+	 int (*bar) (int) = foo;],
+	[],
+	c99_inline=no
+	AC_MSG_RESULT(no),
+	c99_inline=yes
+	AC_DEFINE(HAVE_C99INLINE, extern, [define this if using c99 inline])
+	AC_MSG_RESULT(yes)
+)
+AH_VERBATIM([HAVE_C99INLINE],
+[/* Define this if the GCC __attribute__ keyword is available */
+#undef HAVE_C99INLINE
+#ifdef HAVE_C99INLINE
+# define GNU89INLINE
+#else
+# define GNU89INLINE extern
+#endif])
+
 if test "x$GCC" = xyes; then
 	set $CC
 	shift

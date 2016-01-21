@@ -106,7 +106,7 @@ bi_QFS_LoadFile (progs_t *pr)
 	int         size;
 	void       *buffer;
 
-	QFS_FOpenFile (filename, &file);
+	file = QFS_FOpenFile (filename);
 	if (!file) {
 		RETURN_POINTER (pr, 0);
 		return;
@@ -129,7 +129,7 @@ bi_QFS_OpenFile (progs_t *pr)
 	QFile      *file;
 	const char *filename = P_GSTRING (pr, 0);
 
-	QFS_FOpenFile (filename, &file);
+	file = QFS_FOpenFile (filename);
 	if (!file) {
 		R_INT (pr) = 0;
 		return;

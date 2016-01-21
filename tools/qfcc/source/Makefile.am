@@ -32,7 +32,7 @@ QFCC_LIBS=@QFCC_LIBS@
 QFCC_DEPS=@QFCC_DEPS@
 QFCC_INCS=@QFCC_INCS@
 
-INCLUDES=	-I$(top_srcdir)/include $(QFCC_INCS)
+AM_CPPFLAGS=	-I$(top_srcdir)/include $(QFCC_INCS)
 YFLAGS = -v -d
 
 bin_PROGRAMS=	qfcc qfprogs
@@ -41,7 +41,8 @@ bin_SCRIPTS=	qfpreqcc
 common_src=\
 	class.c codespace.c constfold.c cpp.c dags.c debug.c def.c defspace.c \
 	diagnostic.c dot.c dot_dag.c dot_expr.c dot_flow.c dot_sblock.c emit.c \
-	expr.c flow.c function.c grab.c idstuff.c linker.c method.c obj_file.c \
+	expr.c expr_binary.c flow.c function.c grab.c idstuff.c linker.c method.c \
+	obj_file.c \
 	obj_type.c opcodes.c options.c pragma.c qfcc.c reloc.c shared.c \
 	statements.c strpool.c struct.c switch.c symtab.c type.c value.c
 

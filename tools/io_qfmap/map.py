@@ -229,7 +229,7 @@ def parse_epair(script, mapent):
 
 def parse_entity(script):
     if script.getToken(True) == None:
-        return False
+        return None
     if script.token != "{":
         map_error(script, "Missing {")
     mapent = Entity()

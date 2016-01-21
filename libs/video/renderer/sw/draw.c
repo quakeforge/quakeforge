@@ -150,7 +150,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 		return dat;
 
 	// load the pic from disk
-	QFS_LoadCacheFile (path, &pic->cache);
+	QFS_LoadCacheFile (QFS_FOpenFile (path), &pic->cache);
 
 	dat = (qpic_t *) pic->cache.data;
 	if (!dat) {

@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS= foreign
 
 AM_CFLAGS= @PREFER_PIC@ \
 	$(VORBIS_CFLAGS) $(OGG_CFLAGS) $(SAMPLERATE_CFLAGS) $(JACK_CFLAGS)
-INCLUDES= -I$(top_srcdir)/include
+AM_CPPFLAGS= -I$(top_srcdir)/include
 plugin_ldflags= @plugin_ldflags@ -avoid-version -module -rpath $(plugindir)
 plugin_libadd= @plugin_libadd@
 EXEEXT=

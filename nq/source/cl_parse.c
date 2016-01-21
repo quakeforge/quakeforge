@@ -268,7 +268,7 @@ map_cfg (const char *mapname, int all)
 
 	QFS_StripExtension (mapname, name);
 	strcat (name, ".cfg");
-	QFS_FOpenFile (name, &f);
+	f = QFS_FOpenFile (name);
 	if (f) {
 		Qclose (f);
 		Cmd_Exec_File (cbuf, name, 1);
@@ -291,10 +291,12 @@ map_ent (const char *mapname)
 	char       *name = malloc (strlen (mapname) + 4 + 1);
 	char       *buf;
 	plitem_t   *edicts = 0;
+	QFile      *ent_file;
 
 	QFS_StripExtension (mapname, name);
 	strcat (name, ".ent");
-	if ((buf = (char *) QFS_LoadFile (name, 0))) {
+	ent_file = QFS_VOpenFile (name, 0, cl.model_precache[1]->vpath);
+	if ((buf = (char *) QFS_LoadFile (ent_file, 0))) {
 		edicts = ED_Parse (&edpr, buf);
 		free (buf);
 	} else {

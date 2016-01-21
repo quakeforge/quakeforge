@@ -148,7 +148,7 @@ midi_stream_open (sfx_t *sfx)
 	unsigned long int local_buffer_size;
 	midi_file_t *mf;
 
-	QFS_FOpenFile (stream->file, &file);
+	file = QFS_FOpenFile (stream->file);
 
 	local_buffer_size = Qfilesize (file);
 

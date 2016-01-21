@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS= foreign
 
 AM_CFLAGS= @PREFER_PIC@
-INCLUDES= -I$(top_srcdir)/include
+AM_CPPFLAGS= -I$(top_srcdir)/include
 lib_ldflags=
 
 gc_deps=$(top_builddir)/libs/util/libQFutil.la

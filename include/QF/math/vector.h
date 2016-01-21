@@ -183,10 +183,10 @@ void _VectorSubtract (const vec3_t veca, const vec3_t vecb, vec3_t out);
 void CrossProduct (const vec3_t v1, const vec3_t v2, vec3_t cross);
 vec_t _VectorNormalize (vec3_t v);			// returns vector length
 
-extern inline float VectorNormalize (vec3_t v);	// returns vector length
+GNU89INLINE inline float VectorNormalize (vec3_t v);	// returns vector length
 
 #ifndef IMPLEMENT_VectorNormalize
-extern inline
+GNU89INLINE inline
 #else
 VISIBLE
 #endif

@@ -51,6 +51,7 @@ typedef enum {
 	ex_uexpr,		///< unary expression (::ex_expr_t)
 	ex_symbol,		///< non-temporary variable (::symbol_t)
 	ex_temp,		///< temporary variable (::ex_temp_t)
+	ex_vector,		///< "vector" expression (::ex_vector_t)
 
 	ex_nil,			///< umm, nil, null. nuff said (0 of any type)
 	ex_value,		///< constant value (::ex_value_t)
@@ -95,6 +96,11 @@ typedef struct {
 							///< allocated
 	struct type_s *type;	///< The type of the temporary variable.
 } ex_temp_t;
+
+typedef struct {
+	struct type_s *type;	///< Type of vector (vector/quaternion)
+	struct expr_s *list;	///< Linked list of element expressions.
+} ex_vector_t;
 
 /**	Pointer constant expression.
 
@@ -199,6 +205,7 @@ typedef struct expr_s {
 		ex_expr_t   expr;				///< binary or unary expression
 		struct symbol_s *symbol;		///< symbol reference expression
 		ex_temp_t   temp;				///< temporary variable expression
+		ex_vector_t vector;				///< vector expression list
 		ex_value_t *value;				///< constant value
 	} e;
 } expr_t;
@@ -396,6 +403,7 @@ float expr_float (expr_t *e);
 */
 expr_t *new_vector_expr (const float *vector_val);
 const float *expr_vector (expr_t *e);
+expr_t *new_vector_list (expr_t *e);
 
 /** Create a new entity constant expression node.
 
@@ -508,6 +516,8 @@ int is_math_op (int op);
 */
 int is_logic (int op);
 
+int has_function_call (expr_t *e);
+
 int is_string_val (expr_t *e);
 int is_float_val (expr_t *e);
 int is_vector_val (expr_t *e);
@@ -569,8 +579,11 @@ expr_t *new_move_expr (expr_t *e1, expr_t *e2, struct type_s *type,
 */
 void convert_name (expr_t *e);
 
+expr_t *convert_vector (expr_t *e);
+
 expr_t *append_expr (expr_t *block, expr_t *e);
 
+expr_t *reverse_expr_list (expr_t *e);
 void print_expr (expr_t *e);
 void dump_dot_expr (void *e, const char *filename);
 
@@ -582,8 +595,10 @@ void convert_nil (expr_t *e, struct type_s *t);
 expr_t *test_expr (expr_t *e);
 void backpatch (ex_list_t *list, expr_t *label);
 expr_t *convert_bool (expr_t *e, int block);
+expr_t *convert_from_bool (expr_t *e, struct type_s *type);
 expr_t *bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2);
 expr_t *binary_expr (int op, expr_t *e1, expr_t *e2);
+expr_t *field_expr (expr_t *e1, expr_t *e2);
 expr_t *asx_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *unary_expr (int op, expr_t *e);
 expr_t *build_function_call (expr_t *fexpr, struct type_s *ftype,
@@ -598,15 +613,16 @@ expr_t *incop_expr (int op, expr_t *e, int postop);
 expr_t *array_expr (expr_t *array, expr_t *index);
 expr_t *pointer_expr (expr_t *pointer);
 expr_t *address_expr (expr_t *e1, expr_t *e2, struct type_s *t);
-expr_t *build_if_statement (expr_t *test, expr_t *s1, expr_t *els, expr_t *s2);
-expr_t *build_while_statement (expr_t *test, expr_t *statement,
+expr_t *build_if_statement (int not, expr_t *test, expr_t *s1, expr_t *els,
+							expr_t *s2);
+expr_t *build_while_statement (int not, expr_t *test, expr_t *statement,
 							   expr_t *break_label, expr_t *continue_label);
-expr_t *build_do_while_statement (expr_t *statement, expr_t *test,
+expr_t *build_do_while_statement (expr_t *statement, int not, expr_t *test,
 								  expr_t *break_label, expr_t *continue_label);
 expr_t *build_for_statement (expr_t *init, expr_t *test, expr_t *next,
 							 expr_t *statement,
 							 expr_t *break_label, expr_t *continue_label);
-expr_t *build_state_expr (expr_t *frame, expr_t *think, expr_t *step);
+expr_t *build_state_expr (expr_t *e);
 expr_t *think_expr (struct symbol_s *think_sym);
 expr_t *assign_expr (expr_t *e1, expr_t *e2);
 expr_t *cast_expr (struct type_s *t, expr_t *e);

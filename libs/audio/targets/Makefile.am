@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS= foreign
 
 AM_CFLAGS= @PREFER_PIC@
-INCLUDES= -I$(top_srcdir)/include
+AM_CPPFLAGS= -I$(top_srcdir)/include
 SDL_LIBS = @SDL_LIBS@
 plugin_ldflags= @plugin_ldflags@ -avoid-version -module -rpath $(plugindir)
 plugin_libadd= @plugin_libadd@

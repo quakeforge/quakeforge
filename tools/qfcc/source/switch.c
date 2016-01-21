@@ -68,6 +68,8 @@ get_value (expr_t *e)
 {
 	if (e->type == ex_symbol)
 		return e->e.symbol->s.value;
+	if (e->type != ex_value)
+		internal_error (e, "bogus case label");
 	return e->e.value;
 }
 
@@ -80,7 +82,7 @@ get_hash (const void *_cl, void *unused)
 	if (!cl->value)
 		return 0;
 	val = get_value (cl->value);
-	return Hash_Buffer (val, sizeof (*val));
+	return Hash_Buffer (&val->v, sizeof (val->v)) + val->type;
 }
 
 static int
@@ -99,8 +101,10 @@ compare (const void *_cla, const void *_clb, void *unused)
 	if (extract_type (v1) != extract_type (v2))
 		return 0;
 	val1 = get_value (v1);
-	val2 = get_value (v1);
-	return memcmp (val1, val2, sizeof (*val1));
+	val2 = get_value (v2);
+	if (val1->type != val2->type)
+		return 0;
+	return memcmp (&val1->v, &val2->v, sizeof (val1->v)) == 0;
 }
 
 struct expr_s *
@@ -368,6 +372,24 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 	}
 }
 
+static void
+check_enum_switch (switch_block_t *switch_block)
+{
+	case_label_t cl;
+	symbol_t   *enum_val;
+	type_t     *type = get_type (switch_block->test);
+
+	for (enum_val = type->t.symtab->symbols; enum_val;
+		 enum_val = enum_val->next) {
+		cl.value = new_integer_expr (enum_val->s.value->v.integer_val);
+		if (!Hash_FindElement (switch_block->labels, &cl)) {
+			warning (switch_block->test,
+					 "enumeration value `%s' not handled in switch",
+					 enum_val->name);
+		}
+	}
+}
+
 struct expr_s *
 switch_expr (switch_block_t *switch_block, expr_t *break_label,
 			 expr_t *statements)
@@ -383,6 +405,10 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	int         saved_line = pr.source_line;
 	string_t    saved_file = pr.source_file;
 
+	if (switch_block->test->type == ex_error) {
+		return switch_block->test;
+	}
+
 	pr.source_line = sw_val->line = switch_block->test->line;
 	pr.source_file = sw_val->file = switch_block->test->file;
 
@@ -393,6 +419,8 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	if (!default_label) {
 		default_label = &_default_label;
 		default_label->label = break_label;
+		if (options.warnings.enum_switch && is_enum (type))
+			check_enum_switch (switch_block);
 	}
 
 	append_expr (sw, assign_expr (sw_val, switch_block->test));
@@ -401,7 +429,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		num_labels++;
 	if (options.code.progsversion == PROG_ID_VERSION
 		|| (type != &type_string
-			&& type != &type_float && type != &type_integer)
+			&& type != &type_float && !is_integral (type))
 		|| num_labels < 8) {
 		for (l = labels; *l; l++) {
 			expr_t     *cmp = binary_expr (EQ, sw_val, (*l)->value);
@@ -421,20 +449,10 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 			temp = new_temp_def_expr (&type_integer);
 		else
 			temp = new_temp_def_expr (type);
-		case_tree = build_case_tree (labels, num_labels, type == &type_integer);
-		switch (type->type) {
-			case ev_string:
-				op = NE;
-				break;
-			case ev_float:
-				op = '-';
-				break;
-			case ev_integer:
-				op = '-';
-				break;
-			default:
-				internal_error (0, "in switch");
-		}
+		case_tree = build_case_tree (labels, num_labels, is_integral (type));
+		op = '-';
+		if (type->type == ev_string)
+			op = NE;
 		build_switch (sw, case_tree, op, sw_val, temp, default_label->label);
 	}
 	pr.source_line = saved_line;

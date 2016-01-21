@@ -817,7 +817,7 @@ check_quakerc (void)
 	int ret = 1;
 	QFile *f;
 
-	QFS_FOpenFile ("quake.rc", &f);
+	f = QFS_FOpenFile ("quake.rc");
 	if (!f)
 		return 1;
 	while ((l = Qgetline (f))) {

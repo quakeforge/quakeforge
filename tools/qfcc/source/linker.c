@@ -876,7 +876,7 @@ process_funcs (qfo_t *qfo)
 		func->file = linker_add_string (QFOSTR (qfo, func->file));
 		if (func->code > 0)
 			func->code += work_base[qfo_code_space];
-		func->def = qfo->defs[func->def].offset;	// defref index
+		func->def = qfo->defs[func->def].line;	// defref index
 		func->locals_space = qfo->spaces[func->locals_space].id;
 		if (func->line_info)
 			func->line_info += work->num_lines - 1;		//FIXME order dependent

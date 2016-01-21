@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS= foreign
 
 AM_CFLAGS= @PREFER_PIC@
 CCASFLAGS+= @PREFER_PIC@
-INCLUDES= -I$(top_srcdir)/include
+AM_CPPFLAGS= -I$(top_srcdir)/include
 
 asm = @swrend_libs@
 

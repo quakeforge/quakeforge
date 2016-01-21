@@ -279,7 +279,7 @@ Host_Map_f (void)
 
 	// check to make sure the level exists
 	expanded = va ("maps/%s.bsp", Cmd_Argv (1));
-	QFS_FOpenFile (expanded, &f);
+	f = QFS_FOpenFile (expanded);
 	if (!f) {
 		Sys_Printf ("Can't find %s\n", expanded);
 		return;

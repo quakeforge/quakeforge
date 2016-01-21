@@ -319,6 +319,7 @@ static keyword_t at_keywords[] = {
 	{"static",		STATIC	},
 	{"sizeof",		SIZEOF	},
 	{"nosave",		NOSAVE	},
+	{"not",			NOT		},
 };
 
 // These keywords require the QuakeForge VM to be of any use. ie, they cannot

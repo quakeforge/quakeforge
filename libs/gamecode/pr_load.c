@@ -83,7 +83,7 @@ file_error (progs_t *pr, const char *path)
 static void *
 load_file (progs_t *pr, const char *path)
 {
-	return QFS_LoadHunkFile (path);
+	return QFS_LoadHunkFile (QFS_FOpenFile (path));
 }
 
 static void *
@@ -378,7 +378,7 @@ VISIBLE void
 PR_LoadProgs (progs_t *pr, const char *progsname, int max_edicts, int zone)
 {
 	QFile      *file;
-	QFS_FOpenFile (progsname, &file);
+	file = QFS_FOpenFile (progsname);
 
 	pr->progs_name = progsname;
 	if (file) {

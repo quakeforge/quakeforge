@@ -383,9 +383,7 @@ Qprintf (QFile *file, const char *fmt, ...)
 		if (!buf)
 			buf = dstring_new ();
 
-		va_start (args, fmt);
 		dvsprintf (buf, fmt, args);
-		va_end (args);
 		ret = strlen (buf->str);
 		if (ret > 0)
 			ret = gzwrite (file->gzfile, buf, (unsigned) ret);

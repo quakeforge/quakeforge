@@ -30,7 +30,7 @@
 AUTOMAKE_OPTIONS=	foreign
 
 # Stuff that is common to both client and server
-INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/hw/include
+AM_CPPFLAGS=	-I$(top_srcdir)/include -I$(top_srcdir)/hw/include
 SDL_LIBS = @SDL_LIBS@
 
 bin_PROGRAMS=	@HW_TARGETS@

@@ -60,8 +60,6 @@
 #include "vis.h"
 #include "options.h"
 
-#define	MAX_THREADS		4
-
 #ifdef USE_PTHREADS
 pthread_attr_t threads_attrib;
 pthread_rwlock_t *global_lock;
@@ -528,11 +526,12 @@ static void
 RunThreads (void *(*thread_func) (void *))
 {
 #ifdef USE_PTHREADS
-	pthread_t   work_threads[MAX_THREADS + 1];
+	pthread_t  *work_threads;
 	void       *status;
 	int         i;
 
 	if (options.threads > 1) {
+		work_threads = alloca ((options.threads + 1) * sizeof (pthread_t *));
 		working = calloc (options.threads, sizeof (int));
 		for (i = 0; i < options.threads; i++) {
 			if (pthread_create (&work_threads[i], &threads_attrib,

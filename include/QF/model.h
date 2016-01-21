@@ -350,6 +350,7 @@ typedef enum {mod_brush, mod_sprite, mod_alias, mod_iqm} modtype_t;
 
 typedef struct model_s {
 	char		 name[MAX_QPATH];
+	const struct vpath_s *vpath;// virtual path where this model was found
 	qboolean	 needload;		// bmodels and sprites don't cache normally
 	aliashdr_t  *aliashdr;		// if not null, alias model is not cached
 	qboolean	 hasfullbrights;

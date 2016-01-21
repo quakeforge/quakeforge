@@ -171,21 +171,20 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	uint32_t   *buf;
 
 	// load the file
-	buf = (uint32_t *) QFS_LoadFile (mod->name, 0);
+	buf = (uint32_t *) QFS_LoadFile (QFS_FOpenFile (mod->name), 0);
 	if (!buf) {
 		if (crash)
 			Sys_Error ("Mod_LoadModel: %s not found", mod->name);
 		return NULL;
 	}
 
-	// allocate a new model
 	if (loadname)
 		free (loadname);
 	loadname = QFS_FileBase (mod->name);
-
 	loadmodel = mod;
 
 	// fill it in
+	mod->vpath = qfs_foundfile.vpath;
 	mod->fullbright = 0;
 	mod->shadow_alpha = 255;
 	mod->min_light = 0.0;

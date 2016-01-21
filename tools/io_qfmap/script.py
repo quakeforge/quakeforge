@@ -61,6 +61,24 @@ class Script:
                 continue
             return True
         return False
+    def getLine(self):
+        start = self.pos
+        end = start
+        while self.pos < len(self.text):
+            if self.text[self.pos] == "\n":
+                self.line += 1
+                self.pos += 1
+                break
+            if self.text[self.pos:self.pos + 2] == "//":
+                break
+            self.pos += 1
+            end = self.pos
+        if self.unget:
+            self.unget = False
+            self.token = self.token + self.text[start:end]
+        else:
+            self.token = self.text[start:end]
+        return self.pos < len(self.text)
     def getToken(self, crossline=False):
         if self.unget:
             self.unget = False

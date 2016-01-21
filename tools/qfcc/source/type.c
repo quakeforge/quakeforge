@@ -101,13 +101,8 @@ low_level_type (type_t *type)
 		return type->type;
 	if (is_enum (type))
 		return type_default->type;
-	if (is_struct (type)) {
-		//FIXME does this break anything?
-		//maybe the peephole optimizer should do this sort of thing.
-		if (type_size (type) == 1)
-			return ev_integer;
+	if (is_struct (type))
 		return ev_void;
-	}
 	if (is_array (type))
 		return ev_void;
 	internal_error (0, "invalid complex type");
@@ -182,7 +177,7 @@ free_type (type_t *type)
 				free_type (type->t.array.type);
 			break;
 	}
-	memset (type, 0, sizeof (type));
+	memset (type, 0, sizeof (*type));
 	FREE (types, type);
 }
 
@@ -885,6 +880,21 @@ init_types (void)
 	make_structure ("@quaternion", 's', quaternion_struct, &type_quaternion);
 	type_quaternion.type = ev_quat;
 	type_quaternion.meta = ty_none;
+	{
+		symbol_t   *sym;
+		sym = new_symbol_type ("w", &type_float);
+		sym->s.offset = 0;
+		symtab_addsymbol (type_quaternion.t.symtab, sym);
+		sym = new_symbol_type ("x", &type_float);
+		sym->s.offset = 1;
+		symtab_addsymbol (type_quaternion.t.symtab, sym);
+		sym = new_symbol_type ("y", &type_float);
+		sym->s.offset = 2;
+		symtab_addsymbol (type_quaternion.t.symtab, sym);
+		sym = new_symbol_type ("z", &type_float);
+		sym->s.offset = 3;
+		symtab_addsymbol (type_quaternion.t.symtab, sym);
+	}
 }
 
 void

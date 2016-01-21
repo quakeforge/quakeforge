@@ -229,7 +229,7 @@ gl_Draw_CachePic (const char *path, qboolean alpha)
 
 	if (!strcmp (path + strlen (path) - 4, ".lmp")) {
 		// Load the picture..
-		qpic_t     *dat = (qpic_t *) QFS_LoadFile (path, 0);
+		qpic_t     *dat = (qpic_t *) QFS_LoadFile (QFS_FOpenFile (path), 0);
 		if (!dat)
 			Sys_Error ("Draw_CachePic: failed to load %s", path);
 

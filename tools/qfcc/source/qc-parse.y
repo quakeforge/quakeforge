@@ -145,7 +145,7 @@ int yylex (void);
 
 %token				LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS
 %token				NIL IFBE IFB IFAE IFA SWITCH CASE DEFAULT ENUM TYPEDEF
-%token				ARGS EXTERN STATIC SYSTEM NOSAVE OVERLOAD
+%token				ARGS EXTERN STATIC SYSTEM NOSAVE OVERLOAD NOT
 %token	<op>		STRUCT
 %token	<type>		TYPE
 %token	<symbol>	OBJECT TYPE_NAME
@@ -180,8 +180,8 @@ int yylex (void);
 %type	<symbol>	methoddef
 %type	<expr>		opt_initializer var_initializer local_def
 
-%type	<expr>		opt_expr fexpr expr element_list element
-%type	<expr>		optional_state_expr think opt_step texpr
+%type	<expr>		opt_expr fexpr expr element_list element vector_expr
+%type	<expr>		optional_state_expr texpr
 %type	<expr>		statement statements compound_statement
 %type	<expr>		else label break_label continue_label
 %type	<expr>		unary_expr cast_expr opt_arg_list arg_list
@@ -205,7 +205,7 @@ int yylex (void);
 %type	<protocol>	protocol_name
 %type	<methodlist> methodprotolist methodprotolist2
 %type	<symtab>	ivar_decl_list
-%type	<op>		ci
+%type	<op>		ci not
 
 %{
 
@@ -1026,23 +1026,7 @@ var_initializer
 
 optional_state_expr
 	: /* emtpy */						{ $$ = 0; }
-	| '[' fexpr ',' think opt_step ']'	{ $$ = build_state_expr ($2, $4, $5); }
-	;
-
-think
-	: identifier
-		{
-			$$ = think_expr ($1);
-		}
-	| '(' fexpr ')'
-		{
-			$$ = $2;
-		}
-	;
-
-opt_step
-	: ',' fexpr					{ $$ = $2; }
-	| /* empty */				{ $$ = 0; }
+	| vector_expr						{ $$ = build_state_expr ($1); }
 	;
 
 element_list
@@ -1149,13 +1133,13 @@ statement
 			switch_block = $5;
 			break_label = $2;
 		}
-	| IF '(' texpr ')' statement %prec IFX
+	| IF not '(' texpr ')' statement %prec IFX
 		{
-			$$ = build_if_statement ($3, $5, 0, 0);
+			$$ = build_if_statement ($2, $4, $6, 0, 0);
 		}
-	| IF '(' texpr ')' statement else statement
+	| IF not '(' texpr ')' statement else statement
 		{
-			$$ = build_if_statement ($3, $5, $6, $7);
+			$$ = build_if_statement ($2, $4, $6, $7, $8);
 		}
 	| FOR break_label continue_label
 			'(' opt_expr ';' opt_expr ';' opt_expr ')' statement
@@ -1165,15 +1149,16 @@ statement
 			break_label = $2;
 			continue_label = $3;
 		}
-	| WHILE break_label continue_label '(' texpr ')' statement
+	| WHILE break_label continue_label not '(' texpr ')' statement
 		{
-			$$ = build_while_statement ($5, $7, break_label, continue_label);
+			$$ = build_while_statement ($4, $6, $8, break_label,
+										continue_label);
 			break_label = $2;
 			continue_label = $3;
 		}
-	| DO break_label continue_label statement WHILE '(' texpr ')' ';'
+	| DO break_label continue_label statement WHILE not '(' texpr ')' ';'
 		{
-			$$ = build_do_while_statement ($4, $7,
+			$$ = build_do_while_statement ($4, $6, $8,
 										   break_label, continue_label);
 			break_label = $2;
 			continue_label = $3;
@@ -1182,6 +1167,11 @@ statement
 		{
 			$$ = $1;
 		}
+	;
+
+not
+	: NOT						{ $$ = 1; }
+	| /* empty */				{ $$ = 0; }
 	;
 
 else
@@ -1241,7 +1231,7 @@ unary_expr
 	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
 	| unary_expr '(' opt_arg_list ')' { $$ = function_expr ($1, $3); }
 	| unary_expr '[' expr ']'		{ $$ = array_expr ($1, $3); }
-	| unary_expr '.' unary_expr		{ $$ = binary_expr ('.', $1, $3); }
+	| unary_expr '.' unary_expr		{ $$ = field_expr ($1, $3); }
 	| INCOP unary_expr				{ $$ = incop_expr ($1, $2, 0); }
 	| unary_expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
 	| '+' cast_expr %prec UNARY	{ $$ = $2; }
@@ -1255,7 +1245,19 @@ unary_expr
 		{
 			$$ = sizeof_expr (0, $3->type);
 		}
+	| vector_expr				{ $$ = new_vector_list ($1); }
 	| obj_expr					{ $$ = $1; }
+	;
+
+vector_expr
+	: '[' fexpr ',' arg_list ']'
+		{
+			expr_t     *t = $4;
+			while (t->next)
+				t = t->next;
+			t->next = $2;
+			$$ = $4;
+		}
 	;
 
 cast_expr

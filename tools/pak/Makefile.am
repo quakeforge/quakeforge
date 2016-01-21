@@ -4,7 +4,7 @@ PAK_LIBS=@PAK_LIBS@
 PAK_DEPS=@PAK_DEPS@
 PAK_INCS=@PAK_INCS@
 
-INCLUDES= -I$(top_srcdir)/include $(PAK_INCS)
+AM_CPPFLAGS= -I$(top_srcdir)/include $(PAK_INCS)
 
 bin_PROGRAMS=		pak
 bin_SCRIPTS=		zpak

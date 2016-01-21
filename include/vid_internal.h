@@ -20,5 +20,7 @@ void VID_Update (vrect_t *rects);
 void VID_LockBuffer (void);
 void VID_UnlockBuffer (void);
 void VID_InitBuffers (void);
+void VID_MakeColormaps (void);
+
 
 #endif//__vid_internal_h

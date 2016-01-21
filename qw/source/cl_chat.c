@@ -166,7 +166,7 @@ static qboolean cam_iterator (ignore_t *ig, llist_node_t *node)
 	}
 	dsprintf (g_cam_test, "%s: ",
 			  Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
-	if (!strncmp (g_cam_test->str, g_cam_str, sizeof (g_cam_test->str))) {
+	if (!strncmp (g_cam_test->str, g_cam_str, g_cam_test->size - 1)) {
 		return g_cam_allowed = false;
 	} else
 		return true;

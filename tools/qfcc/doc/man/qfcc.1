@@ -314,6 +314,13 @@ Emit a warning when potentially ambiguous logic is used without parentheses.
 .B redeclared
 Emit a warning when a local variable is redeclared.
 .TP
+.B switch
+Emit a warning when an enum value is not handled in a switch statement that
+tests an enum.
+Using a default label will cause all otherwise unhandled enum values to be
+handled (for good or evil).
+.TP
+.TP
 .B traditional
 Emit a warning when code that should be an error is allowed by traditional
 \fBqcc\fP.

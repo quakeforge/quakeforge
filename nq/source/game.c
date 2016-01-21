@@ -57,7 +57,7 @@ Game_CheckRegistered (void)
 {
 	QFile      *h;
 
-	QFS_FOpenFile ("gfx/pop.lmp", &h);
+	h = QFS_FOpenFile ("gfx/pop.lmp");
 	static_registered = 0;
 
 	if (h) {

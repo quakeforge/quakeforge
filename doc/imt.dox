@@ -1,0 +1,28 @@
+//unfortunately, have to wrap the docs in a C comment for doxygen
+// vim:tw=74:formatoptions-=l
+/**
+\page imt Input Mapping Table
+
+The user can now create and destroy IMTs at will, though currently
+destroying IMTs is currently all or nothing (imt_drop_all).
+
+An IMT is created via imt_create which takes the keydest name (key_game
+etc), the name of the IMT (must be unique for all IMTs) and optionally the
+name of the IMT to which the key binding search will fall back if there is
+no binding in the current IMT, but must be already defined and on the same
+keydest. This means that IMTs now have user determined fallback paths. The
+requirements for the fallback IMT prevent loops and other weird behaviour.
+
+Actual key binding via in_bind is unaffected. This is why the IMT name must
+be unique across all IMTs.
+
+The "imt" command works with the key_game keydest, but imt_keydest is
+provided for specifying the active IMT for a specific keydest.
+
+At startup, default IMTs are setup to emulate the previous static IMTs so
+old configs will continue to work (mostly).  New config files will be
+written with commands to drop all of the current IMTs and build new ones,
+with the bindings and active IMT set as well.
+
+
+*/
